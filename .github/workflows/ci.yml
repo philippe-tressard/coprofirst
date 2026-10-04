@@ -1788,6 +1788,16 @@ jobs:
         working-directory: front
         run: npm run lint:version-servie
 
+      # 🔒 Ce qu'un écran télécharge AVANT de s'afficher (04/10/2026). APRÈS le
+      # build, comme les deux précédents : il lit le manifeste de Vite. L'éditeur
+      # riche (Tiptap, 121 Ko compressés) entrait dans le chargement initial de
+      # chaque écran portant un formulaire, même replié, et l'« Ouverture du
+      # site » de la télémétrie dépassait la seconde. Un import statique qui le
+      # ramènerait ne casse rien de visible — l'écran est seulement plus lent.
+      - name: Rien de chargé d'emblée qui doit l'être à la demande
+        working-directory: front
+        run: npm run lint:poids-ouverture
+
       # 🔒 `script-src` en mode BLOQUANT tient à SIX LIGNES de `svelte.config.js`
       # (#770, 06/09/2026) : c'est SvelteKit qui émet `script-src 'self'
       # 'sha256-…'`, parce que lui seul connaît le contenu de ses scripts

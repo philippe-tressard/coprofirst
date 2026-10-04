@@ -33,19 +33,21 @@
 -->
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-	import { Editor } from '@tiptap/core';
-	import StarterKit from '@tiptap/starter-kit';
-	//  🔴 `Underline` N'EST PLUS IMPORTÉ (Tiptap 3, 03/09/2026) : StarterKit 3
-	//  l'inclut. Le garder aurait chargé l'extension DEUX fois — Tiptap avertit à
-	//  l'exécution et n'en garde qu'une, mais un avertissement de console n'est lu
-	//  par personne. Vérifié en listant les extensions du StarterKit installé,
-	//  jamais supposé d'après le guide de migration.
-	import Placeholder from '@tiptap/extension-placeholder';
-	//  🔴 Deux nœuds pour que les blocs dépliables SURVIVENT à l'éditeur (#992) :
-	//  ProseMirror ne garde que ce que son schéma connaît, et le texte proposé
-	//  par l'assistant traverse ce formulaire avant d'être enregistré. Sans eux,
-	//  un `<details>` serait aplati sans un mot. Voir `$lib/blocDepliable`.
-	import { BlocDepliable, ResumeDepliable } from '$lib/blocDepliable';
+	//  🔴 TIPTAP SE CHARGE À LA DEMANDE, jamais par un import statique (04/10/2026).
+	//
+	//  Tiptap et ProseMirror pèsent 389 Ko de JavaScript (121 Ko compressés) : plus
+	//  que tout le reste d'un écran. Importés en tête de ce fichier, ils entraient
+	//  dans le chargement initial de CHAQUE écran qui contient un formulaire, même
+	//  replié — affaires, fiche d'une affaire, Résidence, Communauté,
+	//  administration —, et l'« Ouverture du site » de la télémétrie y passait une
+	//  seconde sur un téléphone. Seul le TYPE s'importe ici (effacé à la
+	//  compilation) ; le code arrive par `import()` dans `onMount`, quand un
+	//  éditeur s'affiche réellement. La barre est rendue d'emblée, et ses boutons
+	//  ne font rien tant que l'éditeur n'est pas monté (`editor?.`).
+	//
+	//  🔒 `npm run lint:poids-ouverture` (après le build) refuse Tiptap dans le
+	//  chargement initial d'un écran.
+	import type { Editor } from '@tiptap/core';
 
 	export let value: string = '';
 	export let placeholder: string = '';
@@ -79,7 +81,29 @@
 	let editor: Editor;
 	let modeSource = false;
 
-	onMount(() => {
+	/**  Vrai une fois le composant démonté : un chargement encore en cours ne
+	 *   monte alors plus rien — l'élément n'existe plus. */
+	let detruit = false;
+
+	onMount(async () => {
+		const [{ Editor }, { default: StarterKit }, { default: Placeholder }, blocs] =
+			await Promise.all([
+				import('@tiptap/core'),
+				import('@tiptap/starter-kit'),
+				//  🔴 `Underline` N'EST PLUS IMPORTÉ (Tiptap 3, 03/09/2026) : StarterKit 3
+				//  l'inclut. Le garder aurait chargé l'extension DEUX fois — Tiptap
+				//  avertit à l'exécution et n'en garde qu'une, mais un avertissement de
+				//  console n'est lu par personne. Vérifié en listant les extensions du
+				//  StarterKit installé, jamais supposé d'après le guide de migration.
+				import('@tiptap/extension-placeholder'),
+				//  🔴 Deux nœuds pour que les blocs dépliables SURVIVENT à l'éditeur
+				//  (#992) : ProseMirror ne garde que ce que son schéma connaît, et le
+				//  texte proposé par l'assistant traverse ce formulaire avant d'être
+				//  enregistré. Sans eux, un `<details>` serait aplati sans un mot.
+				//  Voir `$lib/blocDepliable` — chargé ici aussi : il importe Tiptap.
+				import('$lib/blocDepliable'),
+			]);
+		if (detruit) return;
 		editor = new Editor({
 			element: editorEl,
 			extensions: [
@@ -88,8 +112,8 @@
 				//  Il était lu une fois, à l'ouverture — une affaire devenue
 				//  actualité gardait « Décrivez le problème… » (23/09/2026).
 				Placeholder.configure({ placeholder: () => placeholder }),
-				BlocDepliable,
-				ResumeDepliable,
+				blocs.BlocDepliable,
+				blocs.ResumeDepliable,
 			],
 			// Tiptap remplace l'élément monté : les attributs doivent être posés sur la
 			// zone éditable qu'il génère, sinon ils désignent un nœud disparu.
@@ -112,6 +136,7 @@
 	$: if (editor && placeholder !== undefined) editor.view.dispatch(editor.state.tr);
 
 	onDestroy(() => {
+		detruit = true;
 		editor?.destroy();
 	});
 
@@ -136,7 +161,7 @@
 				<button
 					type="button"
 					class:active={editor?.isActive('heading', { level: 2 })}
-					on:click={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+					on:click={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
 					aria-label="Titre H2"
 					title="Titre H2"
 				>
@@ -145,7 +170,7 @@
 				<button
 					type="button"
 					class:active={editor?.isActive('heading', { level: 3 })}
-					on:click={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+					on:click={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
 					aria-label="Titre H3"
 					title="Titre H3"
 				>
@@ -156,7 +181,7 @@
 			<button
 				type="button"
 				class:active={editor?.isActive('bold')}
-				on:click={() => editor.chain().focus().toggleBold().run()}
+				on:click={() => editor?.chain().focus().toggleBold().run()}
 				aria-label="Gras"
 				title="Gras"
 			>
@@ -165,7 +190,7 @@
 			<button
 				type="button"
 				class:active={editor?.isActive('italic')}
-				on:click={() => editor.chain().focus().toggleItalic().run()}
+				on:click={() => editor?.chain().focus().toggleItalic().run()}
 				aria-label="Italique"
 				title="Italique"
 			>
@@ -174,7 +199,7 @@
 			<button
 				type="button"
 				class:active={editor?.isActive('underline')}
-				on:click={() => editor.chain().focus().toggleUnderline().run()}
+				on:click={() => editor?.chain().focus().toggleUnderline().run()}
 				aria-label="Souligné"
 				title="Souligné"
 			>
@@ -184,7 +209,7 @@
 			<button
 				type="button"
 				class:active={editor?.isActive('bulletList')}
-				on:click={() => editor.chain().focus().toggleBulletList().run()}
+				on:click={() => editor?.chain().focus().toggleBulletList().run()}
 				aria-label="Liste à puces"
 				title="Liste à puces"
 			>
@@ -193,7 +218,7 @@
 			<button
 				type="button"
 				class:active={editor?.isActive('orderedList')}
-				on:click={() => editor.chain().focus().toggleOrderedList().run()}
+				on:click={() => editor?.chain().focus().toggleOrderedList().run()}
 				aria-label="Liste numérotée"
 				title="Liste numérotée"
 			>
@@ -203,7 +228,7 @@
 			<button
 				type="button"
 				class:active={editor?.isActive('blockquote')}
-				on:click={() => editor.chain().focus().toggleBlockquote().run()}
+				on:click={() => editor?.chain().focus().toggleBlockquote().run()}
 				aria-label="Citation"
 				title="Citation"
 			>
@@ -212,7 +237,7 @@
 			{#if titres}
 				<button
 					type="button"
-					on:click={() => editor.chain().focus().setHorizontalRule().run()}
+					on:click={() => editor?.chain().focus().setHorizontalRule().run()}
 					aria-label="Ligne de séparation"
 					title="Ligne de séparation"
 				>
@@ -222,7 +247,7 @@
 			<button
 				aria-label="Annuler"
 				type="button"
-				on:click={() => editor.chain().focus().undo().run()}
+				on:click={() => editor?.chain().focus().undo().run()}
 				title="Annuler"
 			>
 				↩
@@ -230,7 +255,7 @@
 			<button
 				aria-label="Rétablir"
 				type="button"
-				on:click={() => editor.chain().focus().redo().run()}
+				on:click={() => editor?.chain().focus().redo().run()}
 				title="Rétablir"
 			>
 				↪
