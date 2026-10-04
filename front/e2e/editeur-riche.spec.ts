@@ -75,3 +75,28 @@ test('un éditeur de description n’a ni titres ni source', async ({ page, base
 	await expect(editeur.getByRole('button', { name: 'Titre H2' })).toHaveCount(0);
 	await expect(editeur.getByRole('button', { name: 'Source HTML' })).toHaveCount(0);
 });
+
+test('l’éditeur ne se télécharge qu’à l’ouverture d’un formulaire', async ({ page, baseURL }) => {
+	//  Tiptap et ProseMirror pesaient 121 Ko compressés dans le chargement
+	//  initial de chaque écran qui CONTIENT un formulaire, même replié (04/10/2026) :
+	//  `RichEditor` les charge désormais par `import()`. Le build est tenu par
+	//  `lint:poids-ouverture` ; ce test tient le COMPORTEMENT — rien à
+	//  l'ouverture, un éditeur qui marche une fois le formulaire déplié.
+	const tiptap: string[] = [];
+	page.on('request', (r) => {
+		if (/tiptap|prosemirror/i.test(r.url())) tiptap.push(r.url());
+	});
+	await page.context().addCookies([{ name: 'access_token', value: 'temoin', url: baseURL }]);
+	await ouvrir(page, '/prestataires');
+	await expect(page.getByRole('button', { name: 'Nouveau prestataire' })).toBeVisible();
+	expect(tiptap, 'Tiptap téléchargé à l’ouverture de l’écran').toEqual([]);
+
+	await page.getByRole('button', { name: 'Nouveau prestataire' }).click();
+	await page.getByRole('button', { name: /^Description/ }).click();
+	const zone = page.locator('.editeur-cadre .tiptap').first();
+	await expect(zone).toBeVisible();
+	expect(tiptap.length).toBeGreaterThan(0);
+	await zone.click();
+	await page.keyboard.type('Entreprise de plomberie');
+	await expect(zone).toContainText('Entreprise de plomberie');
+});

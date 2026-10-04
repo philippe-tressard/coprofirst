@@ -82,8 +82,11 @@ for (const chemin of fichiersSvelte(RACINE)) {
 		);
 	}
 
-	//  2. Une extension importée alors que StarterKit l'apporte déjà.
-	for (const m of source.matchAll(/from '@tiptap\/extension-([\w-]+)'/g)) {
+	//  2. Une extension importée alors que StarterKit l'apporte déjà — par
+	//  `import … from`, ou par `import(…)` : Tiptap se charge à la demande depuis
+	//  le 04/10/2026, et un motif qui ne lisait que la première forme serait
+	//  resté vert sans plus rien regarder.
+	for (const m of source.matchAll(/(?:from |import\(\s*)'@tiptap\/extension-([\w-]+)'/g)) {
 		if (incluses.has(m[1].replace(/-/g, '').toLowerCase())) {
 			fautes.push(
 				`  ${court} — \`@tiptap/extension-${m[1]}\` est DÉJÀ dans le ` +

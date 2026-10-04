@@ -73,6 +73,7 @@
 		"lint:detail-erreur": "node scripts/check-detail-erreur.mjs",
 		"lint:diffusion-auteur": "node scripts/check-diffusion-auteur.mjs",
 		"lint:version-servie": "node scripts/check-version-servie.mjs",
+		"lint:poids-ouverture": "node scripts/check-poids-ouverture.mjs --selftest && node scripts/check-poids-ouverture.mjs",
 		"lint:largeur-saisie": "node scripts/check-largeur-saisie.mjs",
 		"lint:each-key": "node scripts/check-each-key.mjs",
 		"lint:classe-relayee": "node scripts/check-classe-relayee.mjs",
