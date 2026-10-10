@@ -487,9 +487,17 @@ coupant. 🔴 **Les courriels de sécurité ne sont pas un service**
   Le nom stocké passe par `nom_stocke` : préfixe UUID, radical assaini, et
   **extension dérivée du type**, jamais du nom fourni — `/uploads/*` est servi
   en statique et Caddy pose le `Content-Type` d'après l'extension sur disque.
-- La **racine du volume** se lit dans `Settings.uploads_dir`, seule lecture de
-  la variable d'environnement. Elle était écrite six fois : un fichier posé hors
-  du volume n'est ni répliqué par `bascule.sh`, ni sauvegardé par `backup.py`.
+- **Un fichier se situe par `utils/stockage`, et nulle part ailleurs** (#1748) :
+  `stockage()` rend le stockage de la copropriété servie — `chemin(clé)`,
+  `fichier_de_url("/uploads/…")`, `cle_de_chemin(chemin gardé en base)`,
+  `url(clé)`, `supprimer_chemin(…)` ; toute clé est bornée sous la racine. La
+  racine (`Settings.uploads_dir`) ne se lit que par le contexte ; elle était
+  écrite six fois, puis traduite en `"/app" + url` à trois endroits — un fichier
+  posé hors du volume n'est ni répliqué par `bascule.sh`, ni sauvegardé par
+  `backup.py`. L'écriture du stockage n'est appelée que par `enregistrer_fichier_recu`
+  et les fichiers PRODUITS déclarés (`ECRIVAINS_DU_STOCKAGE`). Le service reste à
+  Caddy (arbitrage du 10/10/2026). 🔒 `test_stockage_source_unique.py`,
+  `test_televersement_source_unique.py`.
 - **Le dépôt est PUBLIC : aucun nom de personne réelle** — ni dans un test, un
   commentaire, un message de commit, ni dans un ticket. Un nom inventé de même
   forme (#1493). 🔒 `test_identites_fictives.py` (liste blanche) lit le code,

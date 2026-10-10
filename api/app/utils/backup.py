@@ -13,6 +13,7 @@ from sqlmodel import Session, select
 from app.utils.declenchement import AUTOMATIQUE
 from app.config import get_settings
 from app import contexte
+from app.utils.stockage import stockage
 from app.dialecte import chemin_fichier, point_de_controle, verifier_integrite
 from app.models.core import ConfigSauvegarde, HistoriqueSauvegarde, StatutSauvegarde
 
@@ -78,9 +79,6 @@ def horodatage_archive(nom_fichier: str) -> datetime | None:
 #: `scripts/lib/lib-export-hors-site.sh` le reconnaît : même valeur, tenue par
 #: `tests/test_sauvegarde_base_serveur.py`.
 NOM_EXPORT_BASE = "base-export.tar.gz"
-
-#: Les fichiers téléversés, sauvegardés avec la base.
-UPLOADS = "/app/uploads"
 
 
 def _integrite() -> str:
@@ -172,8 +170,8 @@ def run_backup(history_id: int | None = None):
                     _exporter_et_verifier(export, Path(dossier))
                     with tarfile.open(dest, "w:gz") as tar:
                         tar.add(export, arcname=NOM_EXPORT_BASE)
-                        if os.path.exists(UPLOADS):
-                            tar.add(UPLOADS, arcname="uploads")
+                        if (uploads := stockage().racine).exists():
+                            tar.add(uploads, arcname="uploads")
                 _reussie(session, entry, filename, dest)
                 return
 
@@ -195,8 +193,8 @@ def run_backup(history_id: int | None = None):
             with tarfile.open(dest, "w:gz") as tar:
                 if os.path.exists(db_path):
                     tar.add(db_path, arcname="app.db")
-                if os.path.exists(UPLOADS):
-                    tar.add(UPLOADS, arcname="uploads")
+                if (uploads := stockage().racine).exists():
+                    tar.add(uploads, arcname="uploads")
 
             _reussie(session, entry, filename, dest)
             return

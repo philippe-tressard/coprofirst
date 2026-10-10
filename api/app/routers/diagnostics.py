@@ -14,7 +14,8 @@ from sqlmodel import Session, select
 from app.auth.deps import get_current_user, require_cs_or_admin
 from app.database import get_session
 from app.models.core import DiagnosticRapport, DiagnosticType, Utilisateur
-from app.utils.fichiers import REPERTOIRE_PRIVE, enregistrer_televersement
+from app.utils.fichiers import enregistrer_televersement
+from app.utils.stockage import stockage
 from app.utils.lecture import lire_objet
 from app.utils.recuperer import fichier_ou_404, ou_404
 
@@ -125,10 +126,10 @@ async def upload_rapport(
 ):
     ou_404(session, DiagnosticType, type_id, "Type de diagnostic")
 
-    # REPERTOIRE_PRIVE et non la racine du volume : un rapport de diagnostic
-    # (DPE, amiante, plomb) se télécharge par un endpoint authentifié ; posé à la
-    # racine, il serait aussi servi en statique par Caddy, sans aucun contrôle.
-    os.makedirs(REPERTOIRE_PRIVE, exist_ok=True)
+    # Dans le dossier PRIVÉ (`enregistrer_televersement`) et non à la racine du
+    # volume : un rapport de diagnostic (DPE, amiante, plomb) se télécharge par un
+    # endpoint authentifié ; posé à la racine, il serait aussi servi en statique
+    # par Caddy, sans aucun contrôle.
     raw_name = file.filename or "rapport"
     #  Les 16 premiers octets suffisent à toutes les signatures connues ;
     #  🔴 Validation ET écriture en un seul geste (#825) : lire seize octets,
@@ -198,8 +199,7 @@ def delete_rapport(
 ):
     rapport = ou_404(session, DiagnosticRapport, rapport_id, "Rapport")
     # Supprime le fichier physique
-    if os.path.exists(rapport.fichier_chemin):
-        os.remove(rapport.fichier_chemin)
+    stockage().supprimer_chemin(rapport.fichier_chemin)
     session.delete(rapport)
     session.commit()
 

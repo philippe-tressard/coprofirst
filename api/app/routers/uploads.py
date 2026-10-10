@@ -10,7 +10,7 @@ import logging
 from app.auth.deps import get_current_user, require_cs_or_admin
 from app.database import get_session
 from app.models.core import Copropriete, Utilisateur
-from app import contexte
+from app.utils.stockage import stockage
 from app.utils.fichiers import (
     FAMILLES,
     enregistrer_fichier_recu,
@@ -34,8 +34,6 @@ router = APIRouter(prefix="/uploads", tags=["uploads"])
 #  Un routeur nomme désormais une **famille** — « image », « document » —, il ne
 #  décide plus de ce qu'il accepte. `test_televersement_source_unique.py` refuse
 #  qu'une liste MIME ou un plafond en mégaoctets réapparaisse ici.
-UPLOADS_ROOT = contexte.courante().racine_fichiers
-
 # ── helpers ────────────────────────────────────────────────────────────────
 
 
@@ -60,8 +58,6 @@ def _save_image(file: UploadFile, subfolder: str, max_dim: int = 1600) -> str:
     except ValueError:
         raise HTTPException(400, "Impossible de lire l'image.")
 
-    dest_dir = UPLOADS_ROOT / subfolder
-    dest_dir.mkdir(parents=True, exist_ok=True)
     #  Le nom passe par `nom_stocke`, comme toute autre pièce jointe. Il était
     #  fabriqué ici à la main — `f"{uuid4().hex}.jpg"`, sans radical — alors que
     #  `app/utils/fichiers.py` annonce en tête « écrit une seule fois ». Il l'était
@@ -87,10 +83,10 @@ def _save_image(file: UploadFile, subfolder: str, max_dim: int = 1600) -> str:
         file.filename,
         file.content_type,
         "image",
-        dest_dir,
+        subfolder,
         extension_forcee=".jpg",
     )
-    return f"/uploads/{subfolder}/{filename}"
+    return stockage().url(f"{subfolder}/{filename}")
 
 
 # ── endpoints ──────────────────────────────────────────────────────────────
@@ -188,10 +184,10 @@ def upload_fichier(
             original_name,
             file.content_type,
             "document",
-            UPLOADS_ROOT / "fichiers",
+            "fichiers",
             user=user,
         )
-        url = f"/uploads/fichiers/{filename}"
+        url = stockage().url(f"fichiers/{filename}")
         ftype = "document"
 
     return {"url": url, "nom": original_name, "type": ftype}

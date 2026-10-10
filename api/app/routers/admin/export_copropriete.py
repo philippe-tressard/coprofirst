@@ -73,9 +73,10 @@ class ExportLance(BaseModel):
 
 def _exporter(chemin: Path) -> None:
     from app import contexte
+    from app.utils.stockage import stockage
 
     partiel = chemin.with_suffix(".partiel")
-    ex.exporter(contexte.moteur(), partiel, fichiers=contexte.courante().racine_fichiers)
+    ex.exporter(contexte.moteur(), partiel, fichiers=stockage().racine)
     os.replace(partiel, chemin)  # l'archive n'existe sous son nom qu'entière
     anciennes = sorted(chemin.parent.glob(f"{PREFIXE}*.tar.gz"))[:-GARDER]
     for vieille in anciennes:

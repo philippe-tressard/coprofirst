@@ -30,10 +30,10 @@ from pathlib import Path
 
 from sqlmodel import Session
 
-from app import contexte
 from app.utils.config_site import config_site
 from app.utils.images import carre_png
 from app.utils.liens import base_site
+from app.utils.stockage import stockage
 
 #: La clé de configuration qui porte le NOM du fichier stocké — publique : le
 #: front s'en sert pour savoir qu'un logo existe et pour invalider son cache.
@@ -54,10 +54,6 @@ TAILLE_MIN, TAILLE_MAX = 16, 512
 NEUTRE_PNG = Path(__file__).with_name("logo-neutre.png")
 
 
-def dossier_logo() -> Path:
-    return contexte.courante().racine_fichiers / DOSSIER
-
-
 def fichier_logo(session: Session) -> Path | None:
     """Le fichier du logo téléversé, ou None s'il n'y en a pas (ou plus sur disque).
 
@@ -67,8 +63,9 @@ def fichier_logo(session: Session) -> Path | None:
     nom = (config_site(session, CLE_LOGO).get(CLE_LOGO) or "").strip()
     if not nom or Path(nom).name != nom:
         return None
-    chemin = dossier_logo() / nom
-    return chemin if chemin.is_file() else None
+    st = stockage()
+    cle = f"{DOSSIER}/{nom}"
+    return st.chemin(cle) if st.existe(cle) else None
 
 
 def logo_png(session: Session, taille: int) -> bytes:

@@ -21,9 +21,6 @@ from pathlib import Path
 
 logger = logging.getLogger("hostachy.pdf_theme")
 
-# Racine des fichiers uploadés dans le conteneur API (volume Docker `uploads`).
-UPLOADS_ROOT = Path("/app")
-
 
 # ── Palette (specs/design/charte-graphique.md) ───────────────────────────────
 
@@ -244,8 +241,13 @@ def image_data_uri(image_url: str | None) -> str | None:
     """
     if not image_url:
         return None
-    path = UPLOADS_ROOT / image_url.lstrip("/")
-    if not path.is_file():
+    #  Par le stockage de la copropriété (#1748), et borné sous sa racine : la
+    #  racine était ici `Path("/app")`, écrite en dur, et `/uploads/../…` sortait
+    #  du volume sans que rien ne l'arrête.
+    from app.utils.stockage import stockage
+
+    path = stockage().fichier_de_url(image_url)
+    if path is None:
         return None
     try:
         mime = mimetypes.guess_type(path.name)[0] or "image/jpeg"

@@ -93,8 +93,9 @@ type MIME autorisé s'exécuterait sur notre origine.
 
 #### La racine du volume
 
-`Settings.uploads_dir`, **seule** lecture de la variable d'environnement. Elle
-était écrite six fois. Un fichier posé hors du volume n'est ni répliqué vers le
+`Settings.uploads_dir`, lue par le seul contexte de copropriété ; un fichier ne
+se situe que par `utils/stockage`, qui borne toute clé sous la racine (#1748).
+Elle était écrite six fois, puis traduite en `"/app" + url` à trois endroits. Un fichier posé hors du volume n'est ni répliqué vers le
 standby par `bascule.sh`, ni sauvegardé par `backup.py` — il est perdu à la
 première bascule, sans aucun signal.
 

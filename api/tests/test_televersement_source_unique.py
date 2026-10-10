@@ -50,6 +50,20 @@ _APP = pathlib.Path(__file__).resolve().parents[1] / "app"
 #: Le module qui porte le geste — et le seul autorisé à écrire un fichier reçu.
 SOURCE = "utils/fichiers.py"
 
+#: Le SEUL module qui pose des octets sur le volume des fichiers : le stockage de
+#: la copropriété (#1748). `SOURCE` y écrit les fichiers REÇUS, après contrôle.
+STOCKAGE = "utils/stockage.py"
+
+#: Qui appelle l'écriture du stockage (`.ecrire(…)`, `.ecrire_flux(…)`), et pourquoi.
+#: Un fichier REÇU passe par `SOURCE` ; un fichier PRODUIT par l'application se
+#: déclare ici. Sans cette liste, un routeur écrirait des octets reçus par le
+#: stockage sans qu'aucune forme d'écriture ne paraisse chez lui.
+ECRIVAINS_DU_STOCKAGE = {
+    SOURCE: "les fichiers reçus, après la liste blanche, le plafond et la signature",
+    "routers/annonces_hall.py": "le PDF d'affiche que l'application vient de PRODUIRE "
+    "(WeasyPrint) — rien n'est reçu du client, il n'y a ni type ni signature à confronter",
+}
+
 #: Les écritures sur disque qui ne sont **pas** des téléversements, nommées une
 #: par une avec leur raison. Le dernier test échoue si l'une ne sert plus.
 #:
@@ -57,12 +71,6 @@ SOURCE = "utils/fichiers.py"
 #: l'application ne peut pas mentir sur son type, puisque c'est nous qui le
 #: fabriquons. Un fichier **reçu** vient du réseau.
 ECRITURES_NON_TELEVERSEMENT = {
-    (
-        "routers/annonces_hall.py",
-        "write_bytes",
-    ): "écrit le PDF d'affiche que l'application vient de PRODUIRE (WeasyPrint) "
-    "— rien n'est reçu du client, il n'y a donc ni type à vérifier ni "
-    "signature à confronter",
     (
         "utils/manuel_pdf_cache.py",
         "write_bytes",
@@ -183,7 +191,7 @@ def test_un_fichier_recu_ne_s_ecrit_que_dans_la_source():
     """Le défaut exact : deux routeurs écrivaient les octets reçus eux-mêmes."""
     fautes = []
     for fichier, ligne, appel in _ecritures_disque():
-        if fichier == SOURCE:
+        if fichier == STOCKAGE:
             continue
         if (fichier, appel) in ECRITURES_NON_TELEVERSEMENT:
             continue
@@ -316,44 +324,46 @@ def test_une_famille_inconnue_est_refusee_et_ne_passe_pas_en_silence():
         verifier_fichier_recu(b"%PDF-1.4", "x.pdf", "application/pdf", "famille-absente")
 
 
-def test_les_trois_regles_refusent_VRAIMENT(tmp_path):
+def test_les_trois_regles_refusent_VRAIMENT(tmp_path, monkeypatch):
     """Chacune, éprouvée séparément — sinon « type et taille contrôlés » reste
     une affirmation sans contenu.
     """
     import pytest
     from fastapi import HTTPException
 
+    from app.config import get_settings
     from app.utils.fichiers import FAMILLES, enregistrer_fichier_recu
+
+    #  Le dossier « essai » du stockage de la copropriété servie (#1748).
+    monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
 
     #  Un PDF minimal, dont la signature est cohérente.
     pdf = b"%PDF-1.4\n%%EOF\n"
 
     #  1. le type annoncé n'est pas dans la famille
     with pytest.raises(HTTPException) as refus:
-        enregistrer_fichier_recu(pdf, "x.pdf", "application/x-msdownload", "document", tmp_path)
+        enregistrer_fichier_recu(pdf, "x.pdf", "application/x-msdownload", "document", "essai")
     assert refus.value.status_code == 400
 
     #  2. le plafond
     trop_gros = b"%PDF-1.4" + b"0" * (FAMILLES["document"].plafond_mo * 1024 * 1024)
     with pytest.raises(HTTPException) as refus:
-        enregistrer_fichier_recu(trop_gros, "x.pdf", "application/pdf", "document", tmp_path)
+        enregistrer_fichier_recu(trop_gros, "x.pdf", "application/pdf", "document", "essai")
     assert refus.value.status_code == 413
 
     #  3. la signature : un exécutable annoncé PDF — le défaut de #773
     with pytest.raises(HTTPException) as refus:
         enregistrer_fichier_recu(
-            b"MZ\x90\x00" + b"0" * 20, "x.pdf", "application/pdf", "document", tmp_path
+            b"MZ\x90\x00" + b"0" * 20, "x.pdf", "application/pdf", "document", "essai"
         )
     assert refus.value.status_code == 400
 
     #  Et le cas qui doit PASSER, sans quoi les trois refus ne prouvent rien :
     #  un contrôle qui refuse tout est aussi faux qu'un contrôle qui accepte tout.
-    nom = enregistrer_fichier_recu(
-        pdf, "Devis toiture.pdf", "application/pdf", "document", tmp_path
-    )
+    nom = enregistrer_fichier_recu(pdf, "Devis toiture.pdf", "application/pdf", "document", "essai")
     assert nom.endswith(".pdf")
     assert "toiture" in nom, "le radical du nom d'origine est perdu"
-    assert (tmp_path / nom).read_bytes() == pdf
+    assert (tmp_path / "essai" / nom).read_bytes() == pdf
 
 
 def test_aucune_exception_ne_survit_a_son_motif():
@@ -369,3 +379,59 @@ def test_aucune_exception_ne_survit_a_son_motif():
         + "\n".join(perimees)
         + "\n\nLes retirer de ECRITURES_NON_TELEVERSEMENT."
     )
+
+
+def ecrivains(arbre: ast.AST) -> list[int]:
+    """Les lignes d'un arbre qui appellent l'écriture du STOCKAGE.
+
+    Le receveur est `stockage()` lui-même, ou un nom qui en a reçu la valeur
+    (`st = stockage()`) : un autre `.ecrire(…)` — le cache disque du manuel —
+    n'est pas la porte du volume.
+    """
+
+    def _est_stockage(noeud: ast.AST) -> bool:
+        return (
+            isinstance(noeud, ast.Call)
+            and isinstance(noeud.func, ast.Name)
+            and noeud.func.id == "stockage"
+        )
+
+    lies = {
+        cible.id
+        for n in ast.walk(arbre)
+        if isinstance(n, ast.Assign) and _est_stockage(n.value)
+        for cible in n.targets
+        if isinstance(cible, ast.Name)
+    }
+    return [
+        n.lineno
+        for n in ast.walk(arbre)
+        if isinstance(n, ast.Call)
+        and isinstance(n.func, ast.Attribute)
+        and n.func.attr in ("ecrire", "ecrire_flux")
+        and (
+            _est_stockage(n.func.value)
+            or (isinstance(n.func.value, ast.Name) and n.func.value.id in lies)
+        )
+    ]
+
+
+def test_seuls_les_ecrivains_declares_appellent_le_stockage():
+    """La porte du disque est le stockage ; qui la franchit se déclare (#1748)."""
+    vus = {m.rel for m in modules_app() if m.rel != STOCKAGE and ecrivains(m.arbre)}
+    assert vus == set(ECRIVAINS_DU_STOCKAGE), (
+        f"appelants de l'écriture du stockage : {sorted(vus)} — déclarés : "
+        f"{sorted(ECRIVAINS_DU_STOCKAGE)}. Un fichier REÇU passe par `{SOURCE}` ; "
+        "un fichier PRODUIT se déclare dans ECRIVAINS_DU_STOCKAGE, avec sa raison."
+    )
+
+
+def test_le_releve_des_ecrivains_voit_chaque_forme():
+    source = (
+        "st = stockage()\n"
+        "st.ecrire(cle, b'x')\n"
+        "stockage().ecrire_flux(cle, f)\n"
+        "st.lire(cle)\n"
+        "manuel_pdf_cache.ecrire(cle, pdf, dossier)\n"
+    )
+    assert ecrivains(ast.parse(source)) == [2, 3]

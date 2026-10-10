@@ -21,7 +21,8 @@ from app.models.core import (
     Utilisateur,
 )
 from app.routers.documents_schemas import DocumentRead
-from app.utils.fichiers import REPERTOIRE_PRIVE, enregistrer_televersement
+from app.utils.fichiers import enregistrer_televersement
+from app.utils.stockage import stockage
 
 # Toute règle de visibilité — documents compris — vient du module central.
 from app.utils.visibility import document_visible, profil_admet
@@ -308,10 +309,9 @@ async def upload_document(
         if not categorie or not categorie.actif:
             raise HTTPException(400, "Catégorie invalide")
 
-    # REPERTOIRE_PRIVE et non la racine du volume : `/uploads/*` est servi en
-    # statique sans authentification, et le contrôle d'accès à trois couches de
-    # `document_visible` serait contourné par la simple URL du fichier.
-    os.makedirs(REPERTOIRE_PRIVE, exist_ok=True)
+    # Dans le dossier PRIVÉ (`enregistrer_televersement`) et non à la racine du
+    # volume : `/uploads/*` est servi en statique, et le contrôle d'accès à trois
+    # couches de `document_visible` serait contourné par la simple URL du fichier.
     # Assainissement et préfixe UUID : app/utils/fichiers.py, seul endroit où
     # cette règle est écrite. Le téléchargement passe par un endpoint
     # authentifié qui impose lui-même le `media_type`, l'extension d'origine
@@ -389,7 +389,6 @@ def delete_document(
     ).all():
         contrat.document_id = None
         session.add(contrat)
-    if os.path.exists(doc.fichier_chemin):
-        os.remove(doc.fichier_chemin)
+    stockage().supprimer_chemin(doc.fichier_chemin)
     session.delete(doc)
     session.commit()

@@ -467,7 +467,14 @@ app.include_router(reglement.router)
 #  d'intégration continue — ce qui rendait l'application intestable dans son
 #  ensemble, et laissait passer toute rupture d'assemblage (cf.
 #  tests/test_demarrage.py).
-uploads_dir = contexte.courante().racine_fichiers
+#
+#  🏢 Monté UNE fois, au démarrage, sur la racine de l'unique copropriété (#1748) :
+#  un montage statique ne suit pas le contexte d'une requête. En production, c'est
+#  Caddy qui sert `/uploads/*` (arbitrage du 10/10/2026 : service inchangé en
+#  phase 2) ; ce montage sert le développement local.
+from app.utils.stockage import stockage as _stockage  # noqa: E402
+
+uploads_dir = _stockage().racine
 uploads_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 

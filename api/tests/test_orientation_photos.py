@@ -30,7 +30,7 @@ le bon sens après coup. C'est ce qui rend ce garde-fou irremplaçable — le d�
 qu'il prévient ne se répare pas par un correctif de code.
 
 Ils appellent donc désormais `uploads._save_image`, la fonction de production,
-avec `UPLOADS_ROOT` détourné vers un répertoire temporaire, et relisent le
+avec la racine du stockage (`uploads_dir`) détournée vers un répertoire temporaire, et relisent le
 fichier réellement écrit. `test_cas_zero_…` le prouve en neutralisant
 `exif_transpose` **dans le module de production** : si ces tests mesuraient
 encore une copie, il échouerait.
@@ -64,6 +64,7 @@ Image = pytest.importorskip(
 from fastapi import UploadFile  # noqa: E402
 from starlette.datastructures import Headers  # noqa: E402
 
+from app.config import get_settings  # noqa: E402
 from app.routers import uploads  # noqa: E402
 from app.utils import images  # noqa: E402
 
@@ -103,7 +104,7 @@ def _televerser(donnees: bytes, racine: pathlib.Path, patch) -> Image.Image:
     enregistre une image, et il est appelé ici tel quel. Seule la racine du
     volume est détournée — `/app/uploads` n'existe pas sur un poste.
     """
-    patch.setattr(uploads, "UPLOADS_ROOT", racine)
+    patch.setattr(get_settings(), "uploads_dir", str(racine))
     fichier = UploadFile(
         file=io.BytesIO(donnees),
         filename="photo-de-ticket.jpg",
