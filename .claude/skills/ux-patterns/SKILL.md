@@ -850,6 +850,7 @@ NOTION, et la forme aérée est devenue la base :
 | Brique | Ce qu'elle porte | Où |
 |---|---|---|
 | `Gouttiere` | `quand` (ISO, découpé par `partiesDate`) puis `classe` (`{icone, libelle, abrege}`), et un slot libre dessous (le vote d'une idée) ; au téléphone (≤ 480 px), une ligne au-dessus du titre | la carte pose `a-gouttiere` sur son `.carte-liste` (`normes.css` lui réserve `--largeur-gouttiere`) et **ne passe plus** `date` à `EnteteCarte` |
+| `$lib/gouttiere` | le type `ClasseGouttiere` et `classeDe(table, marques, val)` : une notion déclare la **marque** de chaque valeur (`[icone, abrege]`), le libellé vient de sa table — `$lib/prestataires-gouttiere`, `classementAnnonce` | tout écran qui classe |
 | `GouttiereAffaire` | la gouttière d'une affaire : `mis_a_jour_le ?? cree_le` et la nature (`natureDe`) ; la teinte vient de `[data-nature]` (`--nature-fort`), sans elle le Bleu Seine | `CarteTicket`, `CarteActualite` |
 | `ReglagesListe` | la grille des réglages : libellés dans une colonne de la largeur de la gouttière, `ChampRecherche` **en tête**, puis `ChoixPastilles libelleDevant` / `FiltrePerimetre libelleDevant`, chacun avec `compte` | `FiltresAffaires` et toute page à réglages |
 | `EnteteCarte` | la densité **aérée** est la base (l'ex-variante `ample`) : titre `--fs-lg`, aperçu `--fs-md` interligne 1,5, actions 26 px au bureau, 32 au doigt | toutes les cartes |
