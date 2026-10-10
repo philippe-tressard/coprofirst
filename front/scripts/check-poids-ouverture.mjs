@@ -164,7 +164,10 @@ function selftest() {
 	]);
 	cas.push(['composant différé : aucune faute', juger(m, lire, [onglet]).fautes.length === 0]);
 	m['.svelte-kit/generated/client-optimized/nodes/1.js'].imports.push(onglet);
-	cas.push(['composant importé statiquement : fautif', juger(m, lire, [onglet]).fautes.length === 1]);
+	cas.push([
+		'composant importé statiquement : fautif',
+		juger(m, lire, [onglet]).fautes.length === 1,
+	]);
 	cas.push([
 		'composant fondu dans un morceau commun : signalé',
 		juger(m, lire, ['src/lib/components/Fondu.svelte']).fondus.length === 1,
