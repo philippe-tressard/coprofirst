@@ -122,23 +122,32 @@
 	const lienOuvert = (e: EntreeCarnet, cs: boolean) =>
 		e.origine === 'contrat' && !cs ? '' : e.lien;
 
-	/**  L'ORIGINE d'une entrée, telle que la gouttière l'écrit — ce qui la classe.
-	 *   L'affaire reprend la nature « Affaire » de la page Affaires (`NATURES`) :
-	 *   même pictogramme, même abréviation, une seule écriture. */
+	/**  Ce que chaque ORIGINE d'une entrée donne à sa carte — UNE table, une
+	 *   entrée par origine (`lint:tables-statuts`) :
+	 *   - `classe` : ce que la gouttière écrit, ce qui classe l'entrée. L'affaire
+	 *     reprend la nature « Affaire » de la page Affaires (`NATURES`) : même
+	 *     pictogramme, même abréviation, une seule écriture ;
+	 *   - `vers` : « le contrat », « l'intervention », « l'affaire » — le nom du
+	 *     lien de la carte. */
 	const affaire = NATURES.find((n) => n.val === 'activite');
-	const ORIGINES: Record<EntreeCarnet['origine'], ClasseGouttiere | null> = {
-		contrat: { icone: 'file-text', libelle: 'Contrat', abrege: 'CONTRAT' },
-		intervention: { icone: 'hard-hat', libelle: 'Intervention', abrege: 'INTERV.' },
-		affaire: affaire
-			? { icone: affaire.icone, libelle: affaire.libelle, abrege: affaire.abrege }
-			: null,
-	};
-
-	/** « le contrat », « l'intervention », « l'affaire » — le nom du lien d'une carte. */
-	const VERS: Record<EntreeCarnet['origine'], string> = {
-		contrat: 'le contrat',
-		intervention: "l'intervention",
-		affaire: "l'affaire",
+	const ORIGINES: Record<
+		EntreeCarnet['origine'],
+		{ classe: ClasseGouttiere | null; vers: string }
+	> = {
+		contrat: {
+			classe: { icone: 'file-text', libelle: 'Contrat', abrege: 'CONTRAT' },
+			vers: 'le contrat',
+		},
+		intervention: {
+			classe: { icone: 'hard-hat', libelle: 'Intervention', abrege: 'INTERV.' },
+			vers: "l'intervention",
+		},
+		affaire: {
+			classe: affaire
+				? { icone: affaire.icone, libelle: affaire.libelle, abrege: affaire.abrege }
+				: null,
+			vers: "l'affaire",
+		},
 	};
 </script>
 
@@ -218,7 +227,7 @@
 								      qui mène à la fiche d'origine. -->
 								<CarteListe
 									quand={entree.date}
-									classe={ORIGINES[entree.origine]}
+									classe={ORIGINES[entree.origine].classe}
 									expanded={ouverte === entree.lien}
 									onDeplier={entree.synthese ? () => (ouverte = entree.lien) : null}
 								>
@@ -232,7 +241,7 @@
 												href={entree.lien}
 												icone="arrow-right"
 												titre="Ouvrir"
-												libelle="Ouvrir {VERS[entree.origine]} : {entree.libelle}"
+												libelle="Ouvrir {ORIGINES[entree.origine].vers} : {entree.libelle}"
 											/>
 											{#if entree.synthese}
 												<button
