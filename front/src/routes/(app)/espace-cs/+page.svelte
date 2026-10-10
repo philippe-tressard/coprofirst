@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import { page } from '$app/stores';
 	import { nomAffiche } from '$lib/noms';
 	import AnnuaireConseil from '$lib/components/AnnuaireConseil.svelte';
@@ -10,9 +11,6 @@
 	import { validerCompte } from '$lib/comptes';
 	import { messageErreur, tenter } from '$lib/erreurs';
 	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
-	import OngletAnnoncesHall from '$lib/components/OngletAnnoncesHall.svelte';
-	import OngletReglement from '$lib/components/OngletReglement.svelte';
-	import OngletCourriels from '$lib/components/OngletCourriels.svelte';
 	import { essayer, messagePartiel } from '$lib/chargement';
 	import { isCS, authResolue, quandAuthResolue } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
@@ -26,10 +24,8 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
 	import { fmtDateShort } from '$lib/date';
-	import OngletReporting from '$lib/components/reporting/OngletReporting.svelte';
 	import { trackTabView } from '$lib/telemetry';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
-	import BadgesCopropriete from '$lib/components/BadgesCopropriete.svelte';
 	import { agitPourAutrui } from '$lib/roles';
 	import { accepterCommandeAcces, refuserCommandeAcces } from '$lib/commandes-acces';
 	import EtatListe from '$lib/components/EtatListe.svelte';
@@ -317,19 +313,39 @@
 	{/if}
 {:else if onglet === 'badges'}
 	<!--  Le parc de badges a quitté « Mes lots & accès » (12/09/2026) : motif dans `pages.ts`. -->
-	<BadgesCopropriete />
+	<ChargementDiffere charger={() => import('$lib/components/BadgesCopropriete.svelte')}>
+		{#snippet contenu(BadgesCopropriete)}
+			<BadgesCopropriete />
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'reporting'}
-	<OngletReporting
-		titreOnglet={_pc.onglets?.reporting?.label ?? 'Reporting'}
-		vueInitiale={vueReporting}
-	/>
+	<ChargementDiffere charger={() => import('$lib/components/reporting/OngletReporting.svelte')}>
+		{#snippet contenu(OngletReporting)}
+			<OngletReporting
+				titreOnglet={_pc.onglets?.reporting?.label ?? 'Reporting'}
+				vueInitiale={vueReporting}
+			/>
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'annonces-hall'}
 	<!-- Aucune prop de plafond : l'affiche a la sienne (`$lib/annonces`, #651). -->
-	<OngletAnnoncesHall />
+	<ChargementDiffere charger={() => import('$lib/components/OngletAnnoncesHall.svelte')}>
+		{#snippet contenu(OngletAnnoncesHall)}
+			<OngletAnnoncesHall />
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'reglement'}
-	<OngletReglement />
+	<ChargementDiffere charger={() => import('$lib/components/OngletReglement.svelte')}>
+		{#snippet contenu(OngletReglement)}
+			<OngletReglement />
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'courriels'}
-	<OngletCourriels />
+	<ChargementDiffere charger={() => import('$lib/components/OngletCourriels.svelte')}>
+		{#snippet contenu(OngletCourriels)}
+			<OngletCourriels />
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'annuaire'}
 	<LienConsignes />
 

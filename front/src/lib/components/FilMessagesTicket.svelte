@@ -16,6 +16,7 @@
   composants — les fusionner effacerait la distinction que l'écran fait exprès.
 -->
 <script lang="ts">
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import { contexteCommentaire } from '$lib/assistant';
 	import { createEventDispatcher } from 'svelte';
 	import { nomAffiche } from '$lib/noms';
@@ -23,7 +24,6 @@
 	import { safeDescription } from '$lib/sanitize';
 	import { currentUser, isCS } from '$lib/stores/auth';
 	import PiecesJointes from '$lib/components/PiecesJointes.svelte';
-	import EvolForm from '$lib/components/EvolForm.svelte';
 	import { TICKET } from '$lib/entites/ticket';
 	import { conditionsDeLaSuite } from '$lib/formulaire-affaire';
 	import { motifWhatsappInterdit } from '$lib/options-publication';
@@ -95,26 +95,30 @@
 	{:else}
 		<div class="card reply-form">
 			{#key repondreOuvert}
-				<EvolForm
-					entrees={evolutions}
-					idPrefixe="tk-msg"
-					auteurNom={nomCopie(ticket)}
-					titre="Répondre"
-					entite={TICKET}
-					conditions={conditionsDeLaSuite(ticket)}
-					assistant={contexteCommentaire(ticket)}
-					avecPiecesJointes={!newInterne}
-					whatsappInterdit={motifWhatsappInterdit(
-						!!ticket && ticketLuDuSeulConseil(ticket),
-						'ticket',
-					)}
-					showEmail={$isCS && !newInterne}
-					avecInterne={$isCS}
-					bind:interne={newInterne}
-					saving={sending}
-					on:submit={(e) => dispatch('envoyer', e.detail)}
-					on:cancel={() => (repondreOuvert = false)}
-				/>
+				<ChargementDiffere charger={() => import('$lib/components/EvolForm.svelte')}>
+					{#snippet contenu(EvolForm)}
+						<EvolForm
+							entrees={evolutions}
+							idPrefixe="tk-msg"
+							auteurNom={nomCopie(ticket)}
+							titre="Répondre"
+							entite={TICKET}
+							conditions={conditionsDeLaSuite(ticket)}
+							assistant={contexteCommentaire(ticket)}
+							avecPiecesJointes={!newInterne}
+							whatsappInterdit={motifWhatsappInterdit(
+								!!ticket && ticketLuDuSeulConseil(ticket),
+								'ticket',
+							)}
+							showEmail={$isCS && !newInterne}
+							avecInterne={$isCS}
+							bind:interne={newInterne}
+							saving={sending}
+							on:submit={(e) => dispatch('envoyer', e.detail)}
+							on:cancel={() => (repondreOuvert = false)}
+						/>
+					{/snippet}
+				</ChargementDiffere>
 			{/key}
 		</div>
 	{/if}

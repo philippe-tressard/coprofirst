@@ -33,13 +33,13 @@
   après chaque écriture — c'est le seul contrat.
 -->
 <script lang="ts">
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import { SUITE } from '$lib/gestes';
 	import MentionFusion from './MentionFusion.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import RubriqueHistorique from './RubriqueHistorique.svelte';
 	import EtatListe from './EtatListe.svelte';
 	import { TITRE_HISTORIQUE } from '$lib/archives';
-	import SuiteAffaire from './SuiteAffaire.svelte';
 	import SyntheseAffaire from './SyntheseAffaire.svelte';
 	import SyntheseFil from './SyntheseFil.svelte';
 	import type { EtatSynthese, Ticket } from '$lib/api';
@@ -171,15 +171,19 @@
 		<svelte:fragment slot="edition" let:evol>
 			{#if ticket}
 				{#key enEdition}
-					<SuiteAffaire
-						{ticket}
-						{evol}
-						entrees={evolutions}
-						peutSuivre={$isCS}
-						saving={corrige}
-						on:submit={corriger}
-						on:cancel={() => (enEdition = null)}
-					/>
+					<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+						{#snippet contenu(SuiteAffaire)}
+							<SuiteAffaire
+								{ticket}
+								{evol}
+								entrees={evolutions}
+								peutSuivre={$isCS}
+								saving={corrige}
+								on:submit={corriger}
+								on:cancel={() => (enEdition = null)}
+							/>
+						{/snippet}
+					</ChargementDiffere>
 				{/key}
 			{/if}
 		</svelte:fragment>
@@ -188,14 +192,18 @@
 	{#if ouvert && ticket}
 		<div class="evol-form card">
 			{#key ouvert}
-				<SuiteAffaire
-					{ticket}
-					entrees={evolutions}
-					peutSuivre={$isCS}
-					saving={enregistre}
-					on:submit={ajouter}
-					on:cancel={() => (ouvert = false)}
-				/>
+				<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+					{#snippet contenu(SuiteAffaire)}
+						<SuiteAffaire
+							{ticket}
+							entrees={evolutions}
+							peutSuivre={$isCS}
+							saving={enregistre}
+							on:submit={ajouter}
+							on:cancel={() => (ouvert = false)}
+						/>
+					{/snippet}
+				</ChargementDiffere>
 			{/key}
 		</div>
 	{/if}

@@ -1794,6 +1794,9 @@ jobs:
       # chaque écran portant un formulaire, même replié, et l'« Ouverture du
       # site » de la télémétrie dépassait la seconde. Un import statique qui le
       # ramènerait ne casse rien de visible — l'écran est seulement plus lent.
+      # Il garde aussi, depuis le 11/10/2026, chaque composant confié à
+      # `ChargementDiffere` (onglets d'Admin et d'Espace CS, formulaires ouverts
+      # au geste) : la liste est lue dans le source, pas écrite dans le contrôle.
       - name: Rien de chargé d'emblée qui doit l'être à la demande
         working-directory: front
         run: npm run lint:poids-ouverture
