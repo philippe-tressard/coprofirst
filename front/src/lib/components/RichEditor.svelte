@@ -32,6 +32,7 @@
   de `@tiptap/core` / `@tiptap/starter-kit` hors de ce fichier.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	//  🔴 TIPTAP SE CHARGE À LA DEMANDE, jamais par un import statique (04/10/2026).
 	//
@@ -250,7 +251,7 @@
 				on:click={() => editor?.chain().focus().undo().run()}
 				title="Annuler"
 			>
-				↩
+				<IconeAction icone="undo-2" />
 			</button>
 			<button
 				aria-label="Rétablir"
@@ -258,7 +259,7 @@
 				on:click={() => editor?.chain().focus().redo().run()}
 				title="Rétablir"
 			>
-				↪
+				<IconeAction icone="redo-2" />
 			</button>
 		{/if}
 		<!--  🔴 Ce qui n'appartient pas à la MISE EN FORME va à droite (22/09/2026).

@@ -16,10 +16,19 @@
   équipements, qui défilait sous les deux autres, a cédé la place à la
   recherche — `ChampRecherche`, le même champ que la page Affaires ; un
   équipement se retrouve en le tapant.
+
+  🗂️ **La grille de la page Affaires** (10/10/2026, devenue le standard du site) :
+  `ReglagesListe` — la RECHERCHE en tête, puis la catégorie et le contrat, leur
+  libellé DEVANT, dans la colonne de la gouttière des cartes. Les « deux lignes »
+  du 28/09 cèdent la place à cette grille : on cherche avant de trier, et les
+  champs partent du même bord que le contenu des cartes. Les libellés se
+  raccourcissent pour tenir dans la colonne (« Catégorie », « Contrat ») : ce
+  sont aussi les noms accessibles des rangées.
 -->
 <script lang="ts">
 	import ChoixPastilles from './ChoixPastilles.svelte';
 	import ChampRecherche from './ChampRecherche.svelte';
+	import ReglagesListe from './ReglagesListe.svelte';
 	import { FILTRES_CONTRAT, TYPES_PRESTATAIRE, type FiltresPrestataires } from '$lib/prestataires';
 
 	export let filtres: FiltresPrestataires;
@@ -27,33 +36,26 @@
 	export let affiches: number | null = null;
 </script>
 
-<div class="filters filters--groupes filtres-prestataires">
-	<ChoixPastilles
-		options={TYPES_PRESTATAIRE}
-		bind:valeur={filtres.type}
-		avecDetail
-		compte={affiches}
-		libelle="Filtrer par type de prestataire"
-	/>
-	<span class="filtre-saut"></span>
-	<!--  Le CADRE, séparé du métier (#1444) : il se lit sur les contrats actifs. -->
-	<ChoixPastilles
-		options={FILTRES_CONTRAT}
-		bind:valeur={filtres.contrat}
-		compte={affiches}
-		libelle="Filtrer par contrat"
-	/>
+<ReglagesListe>
 	<ChampRecherche
 		id="recherche-prestataires"
 		bind:valeur={filtres.recherche}
 		placeholder="Nom, métier, équipement, contact, téléphone…"
 	/>
-</div>
-
-<style>
-	/*  `.filters--groupes` vient de la feuille commune : le saut force le métier
-	    seul sur sa ligne, le cadre et la recherche partagent la seconde. */
-	.filtres-prestataires {
-		column-gap: 1rem;
-	}
-</style>
+	<ChoixPastilles
+		options={TYPES_PRESTATAIRE}
+		bind:valeur={filtres.type}
+		avecDetail
+		compte={affiches}
+		libelle="Catégorie"
+		libelleDevant
+	/>
+	<!--  Le CADRE, séparé du métier (#1444) : il se lit sur les contrats actifs. -->
+	<ChoixPastilles
+		options={FILTRES_CONTRAT}
+		bind:valeur={filtres.contrat}
+		compte={affiches}
+		libelle="Contrat"
+		libelleDevant
+	/>
+</ReglagesListe>

@@ -25,6 +25,7 @@
 	import ListeIdees from '$lib/components/ListeIdees.svelte';
 	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
+	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
 	import { STATUTS_IDEE } from '$lib/idees';
 	import { enCours } from '$lib/archives';
 
@@ -84,14 +85,21 @@
 
       ⚠️ `STATUTS_IDEE_FILTRE` portait déjà son entrée « Toutes » en tête de
       liste ; c'est `tous` qui la pose maintenant, et la liste redevient celle
-      des seuls statuts (#795). -->
-<ChoixPastilles
-	options={STATUTS_IDEE.map((s) => ({ val: s.value, label: s.label }))}
-	bind:valeur={filtreStatut}
-	tous="Toutes"
-	compte={enCours(idees).length}
-	libelle="Filtrer les idées par état"
-/>
+      des seuls statuts (#795).
+
+      🗂️ Dans `ReglagesListe` depuis le 10/10/2026 — la page Affaires est le
+      standard du site : le libellé DEVANT la rangée, aligné sur la gouttière
+      des cartes, et le nombre d'idées affichées sur la pastille retenue (§5). -->
+<ReglagesListe>
+	<ChoixPastilles
+		options={STATUTS_IDEE.map((s) => ({ val: s.value, label: s.label }))}
+		bind:valeur={filtreStatut}
+		tous="Toutes"
+		compte={enCours(idees).length}
+		libelle="État"
+		libelleDevant
+	/>
+</ReglagesListe>
 
 <!--  §0 ter : la boîte de création vient APRÈS les filtres — ce qui qualifie la
       liste reste au-dessus du formulaire ouvert (#1186). `lint:filtre-avant-formulaire`. -->

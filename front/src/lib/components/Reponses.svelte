@@ -15,6 +15,7 @@
 	import { confirmer, SUPPRESSION } from '$lib/confirmation';
 	import { onDestroy } from 'svelte';
 	import { membre } from '$lib/accordeon';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 
 	export let reponses: ReponseCommunaute[] = [];
 	export let currentUserId: number | undefined = undefined;
@@ -92,11 +93,14 @@
 							>{/if}
 						<small class="reponse-date">{fmtDateShort(rep.cree_le)}</small>
 						{#if onReport && rep.auteur_id !== currentUserId}
+							<!--  Au trait, comme toutes les actions du site (10/10/2026) : le
+							      pictogramme gris EST la discrétion que l'opacité réduite
+							      donnait à l'émoji rouge. -->
 							<button
-								class="reponse-signaler"
+								class="btn-icon reponse-signaler"
 								title="Signaler cette réponse au conseil syndical"
 								aria-label="Signaler cette réponse"
-								on:click={() => onReport?.(rep.id)}>🚩</button
+								on:click={() => onReport?.(rep.id)}><IconeAction icone="flag" /></button
 							>
 						{/if}
 						{#if peutCommenter(rep, currentUserId, false, isCS)}
@@ -104,7 +108,7 @@
 								class="btn-icon-danger reponse-suppr"
 								title="Supprimer cette réponse"
 								aria-label="Supprimer cette réponse"
-								on:click={() => remove(rep.id)}>🗑️</button
+								on:click={() => remove(rep.id)}><IconeAction icone="trash-2" /></button
 							>
 						{/if}
 					</div>
@@ -192,17 +196,11 @@
 	}
 	.reponse-signaler {
 		margin-left: auto;
-		background: none;
-		border: none;
-		cursor: pointer;
-		font-size: var(--fs-sm);
-		opacity: 0.55;
-		padding: 0;
 	}
-	@media (hover: hover) and (pointer: fine) {
-		.reponse-signaler:hover {
-			opacity: 1;
-		}
+	/*  Signaler PUIS supprimer : la corbeille suit le drapeau, elle ne se pousse
+	    pas une seconde fois à droite. */
+	.reponse-signaler + .reponse-suppr {
+		margin-left: 0;
 	}
 	.reponse-contenu {
 		font-size: var(--fs-md);

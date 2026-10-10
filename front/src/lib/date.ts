@@ -64,17 +64,6 @@ export function fmtDateLong(d: string | null | undefined): string {
 	});
 }
 
-/** "02 avr. 2026" */
-export function fmtDate2d(d: string | null | undefined): string {
-	if (!d) return '—';
-	return new Date(d).toLocaleDateString(LOCALE, {
-		day: '2-digit',
-		month: 'short',
-		year: 'numeric',
-		timeZone: TZ,
-	});
-}
-
 /** "10/04/2026" */
 export function fmtDateShort(d: string | null | undefined): string {
 	if (!d) return '—';

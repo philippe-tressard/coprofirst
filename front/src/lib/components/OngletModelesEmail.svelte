@@ -31,6 +31,7 @@
   `{{ ["civilite" }}`. Recopier le geste aurait recopié le défaut.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
@@ -270,7 +271,7 @@
 								aria-pressed={emailEdit?.code === tpl.code}
 								on:click={() =>
 									emailEdit?.code === tpl.code ? (emailEdit = null) : openEmailEdit(tpl)}
-								>&#x270F;&#xFE0F;</button
+								><IconeAction icone="pencil" /></button
 							>
 						</td>
 					</tr>

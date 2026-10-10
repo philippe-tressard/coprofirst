@@ -60,6 +60,7 @@
   la duplication que la table supprime. Le sujet est le CONTRÔLE, pas ce code.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { confirmer, SUPPRESSION } from '$lib/confirmation';
 	import { createEventDispatcher } from 'svelte';
 	import { bailleur as bailApi, type ObjetRemis } from '$lib/api';
@@ -324,7 +325,7 @@
 													objetRetour = objet;
 													retourDate = '';
 													retourPerdu = false;
-												}}>↩</button
+												}}><IconeAction icone="undo-2" /></button
 											>
 										{/if}
 										<button

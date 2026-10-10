@@ -63,8 +63,11 @@ test('annuaire : 📦 dans la liste, la fiche rangée aux Archives avec ↩️',
 	const carte = page.locator('#presta-1');
 	await expect(carte).toBeVisible(); //  cas zéro
 
+	//  📦 se DESSINE au trait depuis le 10/10/2026 (`IconeAction`, la page
+	//  Affaires devenue le standard) : un pictogramme, aucun émoji.
 	const archiver = carte.getByRole('button', { name: 'Archiver' });
-	await expect(archiver).toHaveText('📦');
+	await expect(archiver.locator('.icone-action svg')).toHaveCount(1);
+	await expect(archiver).toHaveText('');
 	await expect(carte).not.toContainText('🗑');
 	//  La fiche rangée ne s'affiche qu'une fois la section dépliée.
 	await expect(page.locator('#presta-3')).toHaveCount(0);
@@ -100,7 +103,9 @@ test('contrats : 📦 dans la liste, le contrat rangé aux Archives avec ↩️'
 	await ouvrir(page, baseURL, '/prestataires/contrats');
 	const carte = page.locator('#contrat-11');
 	await expect(carte).toBeVisible(); //  cas zéro
-	await expect(carte.getByRole('button', { name: 'Archiver' })).toHaveText('📦');
+	const archiver = carte.getByRole('button', { name: 'Archiver' });
+	await expect(archiver.locator('.icone-action svg')).toHaveCount(1);
+	await expect(archiver).toHaveText('');
 	await expect(carte).not.toContainText('🗑');
 
 	await page.getByRole('button', { name: /Archives/ }).click();

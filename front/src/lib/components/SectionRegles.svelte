@@ -18,6 +18,20 @@
   servent qu'ici, et les faire transiter par l'écran aurait laissé dans celui-ci
   l'état, l'appel et la gestion d'erreur — c'est-à-dire la moitié de ce qu'on
   cherchait à en sortir.
+
+  ## La CARTE au standard de la page Affaires (10/10/2026)
+
+  Une règle se rend en `.carte-liste` avec `EnteteCarte` : le titre et les
+  actions au trait sur la première ligne, le détail en aperçu de trois lignes.
+  Elle se DÉPLIE quand elle a un détail — le texte entier —, sinon son titre
+  reste un simple texte. C'était une ligne `doc-row` dont le détail s'affichait
+  en entier, quelle que soit sa longueur.
+
+  ⚠️ PAS de gouttière. Une règle n'a pas de classement, et elle n'affiche aucune
+  date : la création et la correction n'en rendent pas (`RegleResidenceEcrite`),
+  si bien qu'une date posée ici serait fausse — absente sur la règle qu'on vient
+  d'écrire, périmée sur celle qu'on vient de corriger. Ce que l'objet n'a pas ne
+  s'invente pas (`Gouttiere`).
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -27,6 +41,11 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import { isCS } from '$lib/stores/auth';
 	import EtatListe from './EtatListe.svelte';
+	import ApercuCarte from './ApercuCarte.svelte';
+	import EnteteCarte from './EnteteCarte.svelte';
+	import IconeAction from './IconeAction.svelte';
+	import TexteDeplie from './TexteDeplie.svelte';
+	import { basculer } from '$lib/accordeon';
 	import FormulaireDocument from './FormulaireDocument.svelte';
 	import { essayer } from '$lib/chargement';
 
@@ -40,6 +59,8 @@
 	let regleTitre = '';
 	let regleContenu = '';
 	let savingRegle = false;
+	//  UNE règle dépliée à la fois (`$lib/accordeon`).
+	let deplie: number | null = null;
 
 	onMount(async () => {
 		[regles, eRegles] = await essayer(reglesApi.list(), []);
@@ -141,49 +162,62 @@
 		vide={regles.length === 0}
 		messageVide="Aucune règle ajoutée."
 	>
-		<div class="doc-list">
-			{#each regles as regle (regle.id)}
-				<div class="doc-row card">
-					<div class="doc-info info-regle">
-						<span class="doc-titre">{regle.titre}</span>
-						{#if regle.contenu}
-							<span class="contenu-regle">{regle.contenu}</span>
-						{/if}
-					</div>
-					{#if $isCS}
-						<div class="doc-actions">
+		{#each regles as regle (regle.id)}
+			{@const depliable = !!regle.contenu}
+			<!--  Repliée, toute la carte déplie ; dépliée, seul le titre replie
+			      (`ux-patterns` §3). -->
+			<div
+				class="carte-liste"
+				class:expanded={deplie === regle.id}
+				role="presentation"
+				on:click={() => {
+					if (depliable && deplie !== regle.id) deplie = regle.id;
+				}}
+			>
+				<EnteteCarte
+					titre={regle.titre}
+					basculable={depliable}
+					on:toggle={() => (deplie = basculer(deplie, regle.id))}
+				>
+					<svelte:fragment slot="actions">
+						{#if $isCS}
 							<button
 								class="btn-icon-edit"
 								aria-label="Modifier"
 								title="Modifier"
-								on:click={() => openRegleForm(regle)}>✏️</button
+								on:click|stopPropagation={() => openRegleForm(regle)}
+								><IconeAction icone="pencil" /></button
 							>
 							<button
 								class="btn-icon-danger"
 								aria-label="Supprimer"
 								title="Supprimer"
-								on:click={() => deleteRegle(regle.id)}>&#x1F5D1;️</button
+								on:click|stopPropagation={() => deleteRegle(regle.id)}
+								><IconeAction icone="trash-2" /></button
 							>
-						</div>
-					{/if}
-				</div>
-			{/each}
-		</div>
+						{/if}
+					</svelte:fragment>
+					<svelte:fragment slot="apercu">
+						{#if regle.contenu && deplie !== regle.id}
+							<ApercuCarte contenu={regle.contenu} dansLigne />
+						{/if}
+					</svelte:fragment>
+				</EnteteCarte>
+				{#if deplie === regle.id}
+					<!--  Le corps ne replie pas la carte : on lit, on sélectionne. Le
+					      même assainisseur que l'aperçu : un texte simple garde ses
+					      retours à la ligne, un texte riche ses balises sûres. -->
+					<div class="carte-corps" role="presentation" on:click|stopPropagation>
+						<TexteDeplie contenu={regle.contenu} />
+					</div>
+				{/if}
+			</div>
+		{/each}
 	</EtatListe>
 </section>
 
 <style>
 	.section-regles {
 		margin-bottom: 2.5rem;
-	}
-	.info-regle {
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 0.25rem;
-	}
-	.contenu-regle {
-		font-size: var(--fs-md);
-		color: var(--color-text-muted);
-		white-space: pre-wrap;
 	}
 </style>

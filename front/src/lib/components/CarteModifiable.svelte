@@ -30,8 +30,9 @@
   | Porté ici | Déclaré par l'appelant |
   |---|---|
   | le conteneur, son ancre, le geste asymétrique, l'urgence | `ancreId`, `urgent` |
-  | l'en-tête (`EnteteCarte`) | `titre`, `date`, et les emplacements `tags`, `apercu` |
-  | 🔗 puis ✏️ puis 📦, dans cet ordre (`ux-patterns` §3) | `quoi` ; un geste de plus par `gestes` (✨ du contrat) |
+  | la gouttière (`Gouttiere`) : QUAND, puis ce qui CLASSE | `quand`, `classe` |
+  | l'en-tête (`EnteteCarte`) | `titre`, et les emplacements `tags`, `apercu` |
+  | 🔗 puis ✏️ puis 📦, dans cet ordre (`ux-patterns` §3), au trait | `quoi` ; un geste de plus par `gestes` (✨ du contrat) |
   | aux Archives : ↩️ à la place de 📦, ✏️ et les gestes se taisent, la carte s'atténue | `archive`, et où l'objet revient (`titreRestaurer`) |
   | le corps : formulaire en correction, détail sinon | les emplacements `edition` et `detail` |
   | le fond du corps | `teinte` — le contrat le teinte, le prestataire non |
@@ -40,12 +41,23 @@
   différaient (fond secondaire et retrait haut d'un côté, ni l'un ni l'autre
   de l'autre), et rien ne disait si c'était voulu. Elle est déclarée ici, en
   attendant d'être arbitrée à l'écran — plutôt que tranchée en silence.
+
+  ## 🗂️ La gouttière (10/10/2026, la page Affaires devenue le standard)
+
+  Les deux cartes qui montent ce squelette sont des cartes de LISTE : elles
+  prennent la colonne de gauche de la carte d'affaire — la date de l'objet,
+  puis ce qui le classe (`Gouttiere`). La date n'est donc plus passée à
+  `EnteteCarte` : une seule date par carte, et la prop `date` est partie avec
+  elle. Les actions sont dessinées au trait (`IconeAction`).
 -->
 <script lang="ts">
 	import type { EntiteDeclaree } from '$lib/entites/types';
 	import BoutonLien from './BoutonLien.svelte';
 	import EnteteCarte from './EnteteCarte.svelte';
 	import FormulaireCreation from './FormulaireCreation.svelte';
+	import Gouttiere from './Gouttiere.svelte';
+	import IconeAction from './IconeAction.svelte';
+	import type { ClasseGouttiere } from '$lib/gouttiere';
 
 	/** L'objet : son `libelleModifier` titre la boîte et nomme le crayon. */
 	export let entite: EntiteDeclaree;
@@ -54,7 +66,10 @@
 	/** Ce que le lien copie, pour son nom accessible : « le contrat ». */
 	export let quoi: string;
 	export let titre: string;
-	export let date = '';
+	/** La date qui SITUE l'objet (ISO), en tête de la gouttière — ou rien. */
+	export let quand: string | null = null;
+	/** Ce qui le classe, sous la date — ou rien. */
+	export let classe: ClasseGouttiere | null = null;
 	export let expanded = false;
 	/** Cette carte est celle qu'on corrige : son corps cède la place au formulaire. */
 	export let enEdition = false;
@@ -76,7 +91,7 @@
 </script>
 
 <div
-	class="carte-liste"
+	class="carte-liste a-gouttiere"
 	class:expanded={expanded || enEdition}
 	class:urgent
 	class:attenue={archive && !expanded}
@@ -90,7 +105,8 @@
 	      montre le formulaire quoi qu'il arrive, et basculer un état invisible
 	      ferait croire à un geste mort. On sort par le crayon ou par
 	      « Annuler ». -->
-	<EnteteCarte {titre} {date} basculable on:toggle={() => !enEdition && onBasculer()}>
+	<Gouttiere {quand} {classe} />
+	<EnteteCarte {titre} basculable on:toggle={() => !enEdition && onBasculer()}>
 		<svelte:fragment slot="tags"><slot name="tags" /></svelte:fragment>
 
 		<svelte:fragment slot="actions">
@@ -107,7 +123,7 @@
 					title={enEdition ? 'Annuler la correction' : 'Modifier'}
 					aria-pressed={enEdition}
 					on:click|stopPropagation={() => (enEdition ? onAnnuler() : onModifier())}
-					>&#x270F;&#xFE0F;</button
+					><IconeAction icone="pencil" /></button
 				>
 				<!--  📦 et non 🗑️ (#1538) : la corbeille disait « supprimer » pour un
 				      geste qui range — et l'objet se retrouve aux Archives. -->
@@ -115,14 +131,14 @@
 					class="btn-icon"
 					aria-label="Archiver"
 					title="Archiver — rejoint les Archives, en bas de la liste"
-					on:click|stopPropagation={() => onArchiver(true)}>&#x1F4E6;</button
+					on:click|stopPropagation={() => onArchiver(true)}><IconeAction icone="archive" /></button
 				>
 			{:else if peutModifier && archive}
 				<button
 					class="btn-icon"
 					aria-label="Restaurer"
 					title={titreRestaurer}
-					on:click|stopPropagation={() => onArchiver(false)}>&#x21A9;&#xFE0F;</button
+					on:click|stopPropagation={() => onArchiver(false)}><IconeAction icone="undo-2" /></button
 				>
 			{/if}
 		</svelte:fragment>

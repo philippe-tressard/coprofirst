@@ -37,6 +37,8 @@
 	import MarqueIA from '$lib/components/MarqueIA.svelte';
 	import { nomAffiche } from '$lib/noms';
 	import EnteteCarte from './EnteteCarte.svelte';
+	import Gouttiere from './Gouttiere.svelte';
+	import IconeAction from './IconeAction.svelte';
 	import BoutonLien from './BoutonLien.svelte';
 	import ApercuCarte from './ApercuCarte.svelte';
 	import FichiersUpload from './FichiersUpload.svelte';
@@ -44,7 +46,6 @@
 	import Reponses from './Reponses.svelte';
 	import WorkflowPastilles from './WorkflowPastilles.svelte';
 	import { safeHtml } from '$lib/sanitize';
-	import { fmtDate2d as fmtDate } from '$lib/date';
 	import { fmtMontant } from '$lib/utils';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
@@ -53,10 +54,9 @@
 		MAX_PHOTOS_ANNONCE,
 		OPTIONS_STATUT_ANNONCE,
 		categorieAnnonceLabel,
+		classementAnnonce,
 		statutAnnonceClass,
 		statutAnnonceLabel,
-		typeAnnonceClass,
-		typeAnnonceLabel,
 	} from '$lib/annonces';
 
 	export let annonce: PetiteAnnonce;
@@ -102,31 +102,29 @@
 </script>
 
 <div
-	class="carte-liste"
+	class="carte-liste a-gouttiere"
 	class:expanded
 	class:attenue={annonce.archivee}
 	id="annonce-{annonce.id}"
+	data-type-annonce={annonce.type_annonce}
 	role="presentation"
 	on:click={() => {
 		if (!expanded) onToggle();
 	}}
 >
-	<!--  Titre sur sa propre ligne, puis tags à gauche / date + actions à droite :
-	      la norme de toutes les cartes du site. Elle vit dans `EnteteCarte`. -->
-	<EnteteCarte
-		titre={annonce.titre}
-		date={fmtDate(annonce.cree_le)}
-		basculable
-		on:toggle={onToggle}
-	>
+	<!--  🗂️ QUAND puis QUOI, dans la colonne de gauche — la carte d'affaire est le
+	      standard du site (10/10/2026). Le TYPE (vente, don, recherche) est ce
+	      qui classe une annonce : il quitte donc la ligne des tags, et la date
+	      n'est plus passée à l'en-tête — un seul fait, une place. -->
+	<Gouttiere quand={annonce.cree_le} classe={classementAnnonce(annonce.type_annonce)} />
+	<!--  Titre sur sa propre ligne, l'aperçu, puis les tags : la norme de toutes
+	      les cartes du site. Elle vit dans `EnteteCarte`. -->
+	<EnteteCarte titre={annonce.titre} basculable on:toggle={onToggle}>
 		<svelte:fragment slot="titre-suffixe">
 			<BadgeNouveau le={annonce.cree_le} si={!annonce.archivee} />
 		</svelte:fragment>
 
 		<svelte:fragment slot="tags">
-			<span class="badge {typeAnnonceClass(annonce.type_annonce)}"
-				>{typeAnnonceLabel(annonce.type_annonce)}</span
-			>
 			<span class="badge {statutAnnonceClass(annonce.statut)}"
 				>{statutAnnonceLabel(annonce.statut)}</span
 			>
@@ -169,7 +167,7 @@
 					title="Modifier"
 					aria-label="Modifier l'annonce"
 					aria-pressed={formulaireOuvert}
-					on:click|stopPropagation={onModifier}>&#x270F;&#xFE0F;</button
+					on:click|stopPropagation={onModifier}><IconeAction icone="pencil" /></button
 				>
 			{/if}
 			{#if peutSupprimer}
@@ -177,7 +175,7 @@
 					class="btn-icon-danger"
 					title="Supprimer"
 					aria-label="Supprimer l'annonce"
-					on:click|stopPropagation={onSupprimer}>&#x1F5D1;&#xFE0F;</button
+					on:click|stopPropagation={onSupprimer}><IconeAction icone="trash-2" /></button
 				>
 			{/if}
 		</svelte:fragment>
@@ -313,7 +311,18 @@
 <style>
 	/*  Conteneur, survol et espacement : `.carte-liste` (app.css). L'en-tête, ses
 	    tags et leur repli : `EnteteCarte`. L'aperçu et sa vignette : `ApercuCarte`.
-	    Ne reste ici que ce qui est propre à une annonce. */
+	    La gouttière : `Gouttiere`. Ne reste ici que ce qui est propre à une annonce.
+
+	    La TEINTE du type, que la gouttière lit (`--nature-fort`) : celle de son
+	    ancien badge — bleu pour la vente (le Bleu Seine, par défaut), vert pour
+	    le don, orange pour la recherche. Le type a changé de place, pas de
+	    couleur. */
+	[data-type-annonce='don'] {
+		--nature-fort: var(--color-success);
+	}
+	[data-type-annonce='recherche'] {
+		--nature-fort: var(--color-warning-texte);
+	}
 	.annonce-prix {
 		font-weight: 700;
 		color: var(--color-primary);

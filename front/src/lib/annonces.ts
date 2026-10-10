@@ -16,6 +16,8 @@
  * allers-retours d'encodage sous Windows (cf. skill `svelte-patterns`).
  */
 
+import { classeDe, type ClasseGouttiere, type MarqueGouttiere } from '$lib/gouttiere';
+
 /**  Photos d'une petite annonce. ⚠️ Bornée CÔTÉ SERVEUR — `routers/annonces.py`
  *   refuse au-delà (`MAX_PHOTOS = 5`). Les deux doivent rester d'accord :
  *   `api/tests/test_plafonds_pieces_jointes.py` le vérifie. */
@@ -40,6 +42,23 @@ export const TYPES_ANNONCE = [
 	{ val: 'don', label: '\u{1F381} Don' },
 	{ val: 'recherche', label: '\u{1F50D} Recherche' },
 ];
+
+/**  La marque de GOUTTIÈRE de chaque type (10/10/2026, la page Affaires devenue
+ *   le standard du site) : le type est ce qui CLASSE une annonce, comme la
+ *   nature classe une affaire. L'émoji reste celui du filtre ; la carte dessine
+ *   son pictogramme au trait. Le catalogue n'a ni étiquette ni cadeau : la vente
+ *   prend le reçu, le don la poignée de main au cœur. */
+const MARQUES_ANNONCE: Record<string, MarqueGouttiere> = {
+	vente: ['receipt', 'VENTE'],
+	don: ['heart-handshake', 'DON'],
+	recherche: ['search', 'RECH.'],
+};
+
+/**  Ce qui CLASSE une annonce dans la gouttière de sa carte — son type —, ou
+ *   rien pour un type inconnu : un classement ne s'invente pas. */
+export function classementAnnonce(val: string): ClasseGouttiere | null {
+	return classeDe(TYPES_ANNONCE, MARQUES_ANNONCE, val);
+}
 
 /**  Les ordres de la liste des annonces. Un TRI, pas un filtre : il n'a pas
  *   d'entrée vide et échappe au seuil des listes courtes (`PastilleDeroulante`,
@@ -104,17 +123,6 @@ export function typeAnnonceLabel(val: string) {
 
 export function categorieAnnonceLabel(val: string) {
 	return CATEGORIES_ANNONCE.find((c) => c.val === val)?.label ?? val;
-}
-
-export function typeAnnonceClass(val: string) {
-	return (
-		(
-			{ vente: 'badge-blue', don: 'badge-green', recherche: 'badge-orange' } as Record<
-				string,
-				string
-			>
-		)[val] ?? 'badge-gray'
-	);
 }
 
 export function statutAnnonceClass(val: string) {

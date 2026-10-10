@@ -130,13 +130,13 @@
 			ordre.push({
 				variante: 'deplacer',
 				libelle: 'Monter',
-				glyphe: '↑',
+				icone: 'arrow-up',
 				onClic: () => deplacer(i, -1),
 			});
 		ordre.push({
 			variante: 'deplacer',
 			libelle: 'Descendre',
-			glyphe: '↓',
+			icone: 'arrow-down',
 			desactive: i === membres.length - 1,
 			onClic: () => deplacer(i, 1),
 		});

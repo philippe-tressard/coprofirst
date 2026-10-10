@@ -1,4 +1,5 @@
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { nombreOuNull } from '$lib/utils';
 	import { confirmer } from '$lib/confirmation';
 	import { messageErreur } from '$lib/erreurs';
@@ -301,7 +302,7 @@
 										class="btn-icon-edit"
 										aria-label="Modifier"
 										title="Modifier"
-										on:click={() => openEdit(imp)}>✏️</button
+										on:click={() => openEdit(imp)}><IconeAction icone="pencil" /></button
 									>
 									{#if imp.utilisateurs?.length > 0}
 										<button class="btn btn-sm btn-primary" on:click={() => resoudre(imp.id)}
@@ -312,7 +313,7 @@
 										class="btn-icon-warn"
 										aria-label="Ignorer cet import"
 										title="Ignorer"
-										on:click={() => ignorer(imp.id)}>⊘</button
+										on:click={() => ignorer(imp.id)}><IconeAction icone="ban" /></button
 									>
 								</div>
 							{:else if imp.statut === 'resolu'}
@@ -322,7 +323,7 @@
 										class="btn-icon-edit"
 										aria-label="Lier un occupant"
 										title="Lier un occupant"
-										on:click={() => openEdit(imp)}>✏️</button
+										on:click={() => openEdit(imp)}><IconeAction icone="pencil" /></button
 									>
 								</div>
 							{/if}

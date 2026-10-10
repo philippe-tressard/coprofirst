@@ -63,7 +63,7 @@ Ce bloc n'énonce que les décisions et renvoie à la section qui les développe
 | 16 | **Le manuel montre la VRAIE pastille**, phrase au survol recalculée par le site — jamais une couleur propre au manuel | skill `user-manual` |
 | 17 | **Un seul bloc déplié à la fois, partout** (30/09/2026, « sans exception, formulaires compris ») — cartes, années d'archives, colonnes vides du kanban, sections de formulaire, réponses, `<details>`. Deux exceptions arbitrées : une section **modifiée** reste ouverte, une carte **en correction** aussi. Une seule mécanique : `$lib/accordeon` (`basculer`, `membre`, `listeMembre`, et l'écouteur des `<details>` posé par le layout) ; le bloc ouvert voit son **haut ramené à l'écran** quand le repli d'un voisin l'en a fait sortir (`amenerEnVue`, signalé dans Admin › IA : « on se trouve à la fin de la section ouverte ») ; 🔒 `npm run lint:accordeon` refuse un état d'ouverture en `Set`, `e2e/accordeon` éprouve formulaire et `<details>` | `$lib/accordeon` |
 | 18 | **Une rangée de filtres dit combien elle montre — sur la pastille RETENUE seulement** (10/10/2026, maquette J arbitrée à l'écran parmi dix) : le nombre est la longueur de la liste affichée, en vignette `Compte` inversée ; les autres pastilles n'en portent pas. Partout, sans exception — 🔒 `npm run lint:compte-filtres` | §5 |
-| 19 | **La carte d'AFFAIRE a une gouttière** (10/10/2026, maquette B « Gouttière » arbitrée parmi cinq, https://claude.ai/artifact/TUunrVHAwxQGhHgUn9wrGW) : à gauche la **date** (jour en grand) puis la **nature** (ACTU. · CAL. · AFF.), une ligne au-dessus du titre au téléphone ; densité aérée (`EnteteCarte ample`), actions **au trait** (`IconeAction`, posé par `ListeTickets`), dernière ligne en **capsules** dont seuls l'état, « qui la lit » et l'urgence sont teintés. Le n° 4 (« date à droite ») cède pour elle. 🔴 **Elle est devenue LE STANDARD des pages de liste similaires** (arbitré le soir même, après livraison : *« elle doit devenir un standard pour les autres pages similaires »*) : une page qui liste des objets en cartes s'aligne sur Affaires — au fil de l'eau, une page à la fois, constatée à l'écran ; F1 ne vaut plus que pour une page pas encore migrée. 🔒 `e2e/gouttiere-nature` | §3 |
+| 19 | **La carte d'AFFAIRE a une gouttière** (10/10/2026, maquette B « Gouttière » arbitrée parmi cinq, https://claude.ai/artifact/TUunrVHAwxQGhHgUn9wrGW) : à gauche la **date** (jour en grand) puis la **nature** (ACTU. · CAL. · AFF.), une ligne au-dessus du titre au téléphone ; densité aérée (base d'`EnteteCarte`), actions **au trait** (`IconeAction`), dernière ligne en **capsules** dont seuls l'état, « qui la lit » et l'urgence sont teintés. Le n° 4 (« date à droite ») cède pour elle. 🔴 **Elle est devenue LE STANDARD des pages de liste similaires** (arbitré le soir même, après livraison : *« elle doit devenir un standard pour les autres pages similaires »*) : **généralisé à tout le site le même soir (#1819)** : briques `Gouttiere`, `ReglagesListe`, `IconeAction` partout, capsules ; F1 n'existe plus. 🔒 `e2e/gouttiere-nature`, `lint:actions-au-trait` | §3 |
 
 ### ⚠️ Les trois pièges que ces onze arbitrages ont révélés
 
@@ -728,6 +728,11 @@ le frère d'un autre parent.
 
 ### 🔴 La densité — « F1 », validée à l'écran le 18/09/2026
 
+> ⚠️ **Relâchée le 10/10/2026** (maquette B, puis #1819) : la forme AÉRÉE de la page
+> Affaires est devenue la base de toutes les cartes — titre `--fs-lg`, aperçu `--fs-md`
+> interligne 1,5, 0,85 rem entre deux cartes. Ce qui suit reste vrai pour le PRINCIPE
+> (chaque bloc décide de son espacement ; le blanc venait des boutons), plus pour les chiffres.
+
 Six essais ont été soumis avant celui-ci. Les chiffres ne sont pas décoratifs :
 
 | | avant | F1 |
@@ -831,29 +836,31 @@ Prestataires & contrats, Espace CS, Documents… :
 |---|---|
 | la gouttière | la date de l'objet, puis ce qui le **classe** (nature, type, catégorie) — ce que l'objet n'a pas ne s'invente pas, la proposition le dit |
 | les réglages | recherche en tête, filtres dessous, libellés alignés sur la gouttière (`--largeur-gouttiere`) ; compteur sur la pastille retenue seule (§5) |
-| la carte | `EnteteCarte ample`, actions au trait (`IconeAction`), une seule date |
+| la carte | `EnteteCarte` (aérée), actions au trait (`IconeAction`), une seule date |
 | la dernière ligne | capsules neutres pour ce qui décrit, teintées pour l'état et « qui la lit » |
 
-⚠️ **Comment** : au fil de l'eau, quand un lot touche la page, sans attendre qu'on le
-redemande — mais **une page à la fois, constatée à l'écran avant la suivante** (R5).
-Les briques sont à **généraliser**, pas à recopier : `GouttiereAffaire` et
-`FiltresAffaires` portent le nom de l'affaire et devront prendre celui de la notion
-au premier écran migré. Ce qui suit décrit la référence telle qu'elle est livrée :
+🔴 **Généralisé à TOUT le site le 10/10/2026 au soir (#1819)** — *« l'UX (icônes,
+cartes, tout l'UX) de la page Affaires est le standard pour le site. Applique-le à
+toutes les pages, notamment Ma résidence, Prestataires, Contrats, Consommations, toute
+la Communauté, FAQ, Espace CS, Admin »*, en respectant `emil-design-eng`. La règle
+« une page à la fois » (R5) a cédé à cette demande explicite ; ce qui reste à
+constater se demande à l'écran après livraison. Les briques ont pris le nom de la
+NOTION, et la forme aérée est devenue la base :
 
-- `GouttiereAffaire` : la **date** (`mis_a_jour_le`, sinon `cree_le`, découpée par
-  `partiesDate`) puis la **nature** (`natureDe`, pictogramme `NATURES.icone`). Largeur :
-  le jeton `--largeur-gouttiere`, que la colonne des libellés de `FiltresAffaires` reprend —
-  la recherche en tête, puis Nature et Suivi, alignés sur elle. Au téléphone (≤ 480 px) :
-  une ligne « 5 oct. 2026 · CAL. » au-dessus du titre.
-- La carte ne passe **plus** `date` à `EnteteCarte` : une seule date par carte.
-- `EnteteCarte ample` : titre `--fs-lg`, aperçu `--fs-md` interligne 1,5, actions 26 px
-  au bureau (32 au doigt) ; 0,85 rem entre deux cartes (`normes.css`, prise `[data-nature]`).
-- Actions **au trait** : `ListeTickets` pose le contexte (`$lib/actions-au-trait`),
-  `IconeAction` dessine — gris `--color-text-muted`, Bleu Seine au survol. Hors de cette
-  liste, les mêmes boutons gardent leurs émojis.
-- `PastillesAffaire` habille la ligne en **capsules** ; neutres (pierre de la charte) pour
-  ce qui décrit, teintées pour l'état, « qui la lit » et l'urgence. Le fil d'accueil la
-  rend à l'identique (n° 13).
+| Brique | Ce qu'elle porte | Où |
+|---|---|---|
+| `Gouttiere` | `quand` (ISO, découpé par `partiesDate`) puis `classe` (`{icone, libelle, abrege}`), et un slot libre dessous (le vote d'une idée) ; au téléphone (≤ 480 px), une ligne au-dessus du titre | la carte pose `a-gouttiere` sur son `.carte-liste` (`normes.css` lui réserve `--largeur-gouttiere`) et **ne passe plus** `date` à `EnteteCarte` |
+| `GouttiereAffaire` | la gouttière d'une affaire : `mis_a_jour_le ?? cree_le` et la nature (`natureDe`) ; la teinte vient de `[data-nature]` (`--nature-fort`), sans elle le Bleu Seine | `CarteTicket`, `CarteActualite` |
+| `ReglagesListe` | la grille des réglages : libellés dans une colonne de la largeur de la gouttière, `ChampRecherche` **en tête**, puis `ChoixPastilles libelleDevant` / `FiltrePerimetre libelleDevant`, chacun avec `compte` | `FiltresAffaires` et toute page à réglages |
+| `EnteteCarte` | la densité **aérée** est la base (l'ex-variante `ample`) : titre `--fs-lg`, aperçu `--fs-md` interligne 1,5, actions 26 px au bureau, 32 au doigt | toutes les cartes |
+| `.carte-liste` | le filet sur trois côtés et 0,85 rem entre deux cartes (0,6 au téléphone) | `normes.css` |
+| `IconeAction` | le pictogramme **au trait**, partout : gris `--color-text-muted`, Bleu Seine au survol ; plus de contexte de liste, plus d'émoji | tout bouton d'action icône ; 🔒 `npm run lint:actions-au-trait` |
+| `.badge` | une **capsule** (coins de 6 px) sur tout le site ; `.badge-gray` neutre (pierre) sur la dernière ligne d'une carte (`.ec-tags`, `.pa`) | `composants.css` |
+
+Ce qui n'a pas d'équivalent ne s'invente pas : une gouttière sans date ne porte que le
+classement ; sans classement, que la date ; un objet sans l'un ni l'autre n'en a pas
+(un membre de l'annuaire). Un **tableau** reste un tableau (Admin, Reporting) : il
+prend les actions au trait et les capsules, pas la gouttière.
 
 ⚠️ Pas fait, et pourquoi : « NEW » n'est pas devenu « Nouveau » — `BadgeNouveau` porte
 l'arbitrage du 26/09 (« le NEW rouge, partout »), qu'une maquette d'affaires ne défait pas.

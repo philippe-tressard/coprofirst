@@ -17,6 +17,7 @@
   épinglé et chronologie. Une carte se rend de la même façon partout.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import { createEventDispatcher } from 'svelte';
 
@@ -143,7 +144,7 @@
 						title="Retirer du fil (l'élément reste à son origine)"
 						aria-label="Retirer cette carte du fil"
 						on:click|stopPropagation={() => dispatch('masquer', item.id)}
-						on:keydown|stopPropagation>🗑️</button
+						on:keydown|stopPropagation><IconeAction icone="trash-2" /></button
 					>
 				{/if}
 				<span class="chevron" class:open={expanded}>›</span>

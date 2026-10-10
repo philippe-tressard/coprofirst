@@ -22,6 +22,7 @@
   passés en slots — ils sont écrits dans la page, donc leurs styles y restent.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import { nomProprietaire } from '$lib/saisi-pour';
 	import { createEventDispatcher } from 'svelte';
@@ -174,7 +175,8 @@
 									type="button"
 									class="btn-icon"
 									aria-label="Supprimer le document {doc.titre || doc.fichier_nom}"
-									on:click|stopPropagation={() => onRetirerDocument?.(doc)}>🗑️</button
+									on:click|stopPropagation={() => onRetirerDocument?.(doc)}
+									><IconeAction icone="trash-2" /></button
 								>
 							{/if}
 						{/each}

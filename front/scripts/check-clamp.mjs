@@ -7,8 +7,9 @@
  *
  *  `ux-patterns` §7 et la checklist de `CLAUDE.md` posent la règle :
  *
- *    `.clamp-3` → l'aperçu d'une carte de liste · `.clamp-5` → un bloc
- *    expansible qui n'est pas une carte · `.clamp-2` → un titre de carte.
+ *    `.clamp-3` → l'aperçu d'une carte de liste · `.clamp-2` → un titre de
+ *    carte. (`.clamp-5`, pour un bloc expansible qui n'était pas une carte, est
+ *    parti le 10/10/2026 avec son dernier emploi, #1819.)
  *
  *  Elle a déjà été enfreinte de la façon la plus ordinaire : `.clamp-3` était
  *  écrit à la main dans `FluxCard`, et c'est lui qui a servi de référence le
@@ -19,15 +20,14 @@
  *
  *   1. une propriété `line-clamp` écrite ailleurs que dans `styles/normes.css` —
  *      c'est une quatrième classe de troncature qui naît ;
- *   2. `clamp-5` dans un fichier qui rend une `.carte-liste` — l'aperçu d'une
- *      carte fait trois lignes, validé à l'écran (densité « F1 », §3).
+ *   2. `clamp-5`, où que ce soit : la classe n'existe plus, et l'aperçu d'une
+ *      carte fait trois lignes, validé à l'écran (§3). Une classe sans règle
+ *      ne tronquerait rien, en silence.
  *   3. un SOUS-TEXTE déclaré dans `SOUS_TEXTES` qui ne porte pas `.clamp-3`,
  *      ou qui a disparu. Le sous-libellé d'une vignette de catégorie faisait
  *      quatre lignes (#1310, 25/09/2026) : raccourcir le texte ne suffit pas,
  *      la retouche suivante l'aurait rallongé.
  *
- *  ⚠️ Il ne vérifie pas qu'un bloc HORS carte emploie `clamp-5` plutôt que
- *  rien : « ce texte est un aperçu » ne se lit pas dans le balisage.
  *
  *  Lancer : node scripts/check-clamp.mjs [--selftest]
  */
@@ -37,18 +37,17 @@ import { neutraliserCommentaires } from './lib-commentaires.mjs';
 
 const RACINE = 'src';
 const SOURCE = 'styles/normes.css';
-const CLASSES = ['clamp-2', 'clamp-3', 'clamp-5'];
+const CLASSES = ['clamp-2', 'clamp-3'];
 
 const PROPRIETE = /(?:-webkit-)?line-clamp\s*:/;
-const CARTE = /class="[^"]*\bcarte-liste\b|class:carte-liste/;
 const CINQ_LIGNES = /\bclamp-5\b/;
 
 /**  Le verdict d'un fichier, PUR.
- *   @returns {'ok'|'propriete-recopiee'|'carte-a-cinq-lignes'} */
+ *   @returns {'ok'|'propriete-recopiee'|'cinq-lignes'} */
 export function verdictFichier(rel, source) {
 	const code = neutraliserCommentaires(source);
 	if (rel !== SOURCE && PROPRIETE.test(code)) return 'propriete-recopiee';
-	if (CARTE.test(code) && CINQ_LIGNES.test(code)) return 'carte-a-cinq-lignes';
+	if (CINQ_LIGNES.test(code)) return 'cinq-lignes';
 	return 'ok';
 }
 
@@ -84,14 +83,14 @@ if (process.argv.includes('--selftest')) {
 	t('la source elle-même', 'ok', SOURCE, '.clamp-3 { -webkit-line-clamp: 3; }');
 	t(
 		'carte à cinq lignes',
-		'carte-a-cinq-lignes',
+		'cinq-lignes',
 		'lib/components/C.svelte',
 		'<div class="carte-liste"><p class="clamp-5">x</p></div>',
 	);
 	t('carte à trois lignes', 'ok', 'c.svelte', '<div class="carte-liste"><p class="clamp-3">x</p>');
 	t(
-		'bloc hors carte à cinq lignes',
-		'ok',
+		'bloc hors carte à cinq lignes : la classe n’existe plus',
+		'cinq-lignes',
 		'l.svelte',
 		'<div class="idee"><p class="clamp-5">x</p>',
 	);
@@ -126,7 +125,7 @@ function fichiers(dir, acc = []) {
 	return acc;
 }
 
-//  🔴 LE CAS ZÉRO (`standards/04` §2) : la source doit définir les trois
+//  🔴 LE CAS ZÉRO (`standards/04` §2) : la source doit définir les deux
 //  classes. Sinon ce contrôle vérifie qu'on ne recopie pas une règle… absente.
 const normes = neutraliserCommentaires(readFileSync(join(RACINE, SOURCE), 'utf8'));
 const manquantes = CLASSES.filter((c) => !new RegExp(String.raw`\.${c}\b`).test(normes));
@@ -138,7 +137,7 @@ if (manquantes.length || !PROPRIETE.test(normes)) {
 	process.exit(2);
 }
 
-const fautes = { 'propriete-recopiee': [], 'carte-a-cinq-lignes': [] };
+const fautes = { 'propriete-recopiee': [], 'cinq-lignes': [] };
 for (const f of fichiers(RACINE)) {
 	const rel = f
 		.split(sep)
@@ -168,17 +167,17 @@ if (fautes['propriete-recopiee'].length) {
 	console.error('\n✗ Troncature écrite hors de `styles/normes.css` :\n');
 	for (const f of fautes['propriete-recopiee']) console.error(`  ${f}`);
 	console.error(
-		'\n  Employer `.clamp-2` (titre), `.clamp-3` (aperçu de carte) ou `.clamp-5`\n' +
-			'  (bloc hors carte). Une quatrième troncature se décide dans `normes.css`.\n',
+		'\n  Employer `.clamp-2` (titre) ou `.clamp-3` (aperçu de carte). Une autre\n' +
+			'  troncature se décide dans `normes.css`.\n',
 	);
 }
-if (fautes['carte-a-cinq-lignes'].length) {
+if (fautes['cinq-lignes'].length) {
 	echec = true;
-	console.error('\n✗ Carte de liste tronquée à cinq lignes :\n');
-	for (const f of fautes['carte-a-cinq-lignes']) console.error(`  ${f}`);
+	console.error('\n✗ `.clamp-5` employée — elle n’existe plus :\n');
+	for (const f of fautes['cinq-lignes']) console.error(`  ${f}`);
 	console.error(
 		'\n  L’aperçu d’une carte fait trois lignes (`.clamp-3`, par `ApercuCarte`) —\n' +
-			'  `ux-patterns` §3 et §7. `.clamp-5` est réservé à ce qui n’est pas une carte.\n',
+			'  `ux-patterns` §3 et §7. Elle est partie avec son dernier emploi (#1819).\n',
 	);
 }
 if (echec) process.exit(1);

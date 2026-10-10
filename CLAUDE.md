@@ -592,6 +592,11 @@ coupant. 🔴 **Les courriels de sécurité ne sont pas un service**
       écrit à la main — il y en avait **23** avant #1045 (`npm run lint:chargement`)
 - [ ] En-tête de page : `<EntetePage>`, jamais `<div class="page-header">`
       (`ux-patterns` §13)
+- [ ] Bouton d'action icône : `<IconeAction icone="…" />`, **au trait** — jamais un
+      émoji (✏️ 🗑️ 📦 ↩️…). La page Affaires est le standard du site depuis le
+      10/10/2026 (#1819) : une liste en cartes prend `Gouttiere` (date, puis ce qui
+      classe) et `ReglagesListe` (recherche en tête) — `ux-patterns` §3.
+      `npm run lint:actions-au-trait`
 - [ ] Icône vérifiée dans `$lib/icones-svg.json` — un nom inconnu échoue en silence
       (`npm run lint:icones` le refuse ; un relais d'icône s'appelle `icone`)
 - [ ] Tout champ libellé dans un `.field` — jamais une nomenclature locale

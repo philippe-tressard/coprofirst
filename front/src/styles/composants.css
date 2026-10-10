@@ -781,33 +781,22 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 .filters--egalisee {
 	align-items: stretch;
 }
-/*  Une barre à PLUSIEURS GROUPES (métier, recherche…) : `.filtre-saut` force
-    un retour de ligne. Sous 768 px, un groupe par ligne.
-    `.filter-sep` (un filet entre deux groupes) est parti le 10/10/2026 avec la
-    barre des Affaires, alignée depuis sur la gouttière de ses cartes
-    (`FiltresAffaires`) : plus aucun écran ne le posait.
+/*  Le libellé DEVANT une rangée de pastilles : il reste en place, la rangée
+    défile à côté (`min-width: 0` — sans lui, une rangée `--defilante` pousse
+    la page). Écrit ici, et plus dans `ChoixPastilles` ET `FiltrePerimetre` :
+    les deux rangées se rangent dans la même grille de réglages (#1819). */
+.choix-libelle-devant {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-width: 0;
+	max-width: 100%;
+}
 
-    Écrite ici le 28/09/2026 : Affaires la portait seule, et l'annuaire des
-    prestataires en aurait fait la copie. ⚠️ `nowrap` au téléphone n'est pas un
-    détail : une colonne qui PEUT passer à la ligne prend pour largeur de ligne
-    celle de son groupe le plus large — la rangée de pastilles qui défile —, et
-    le champ de recherche, étiré sur elle, sortait de l'écran (422 px pour 363). */
-.filters--groupes {
-	row-gap: 0.6rem;
-}
-.filters--groupes > .filtre-saut {
-	flex-basis: 100%;
-}
-@media (max-width: 767px) {
-	.filters--groupes {
-		flex-direction: column;
-		flex-wrap: nowrap;
-		align-items: stretch;
-	}
-	.filters--groupes > .filtre-saut {
-		display: none;
-	}
-}
+/*  `.filters--groupes` (une barre à plusieurs groupes, `.filtre-saut` pour
+    forcer un retour de ligne) est partie le 10/10/2026 (#1819) : l'annuaire des
+    prestataires, sa dernière barre, a pris la grille des réglages de la page
+    Affaires (`ReglagesListe`). */
 /*  ── Rangée en GRILLE — pour un choix qu'on doit embrasser d'un coup d'œil ──
     Arbitré à l'écran le 07/09/2026 : *« la lisibilité globale des vignettes en
     une seule fois est importante pour sélectionner la bonne catégorie — tri,
@@ -1010,11 +999,6 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 
    C'est la règle que le contrôle énonce lui-même : une notion PARTAGÉE par
    plusieurs écrans se remonte dans `src/styles/`, elle ne se recopie pas. */
-.doc-list {
-	display: flex;
-	flex-direction: column;
-	gap: 0.4rem;
-}
 .doc-row {
 	display: flex;
 	align-items: center;

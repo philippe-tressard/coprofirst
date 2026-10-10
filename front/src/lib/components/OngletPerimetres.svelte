@@ -1,4 +1,5 @@
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import BoiteNouveauPerimetre from '$lib/components/BoiteNouveauPerimetre.svelte';
 	import ChampsPerimetre from '$lib/components/ChampsPerimetre.svelte';
 	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
@@ -337,32 +338,32 @@
 									aria-label="Modifier"
 									title="Modifier"
 									aria-pressed={edite?.code === n.code}
-									on:click={() => editer(n)}>&#x270F;&#xFE0F;</button
+									on:click={() => editer(n)}><IconeAction icone="pencil" /></button
 								>
 								<button
 									class="btn-icon"
 									aria-label="Ajouter un sous-périmètre"
 									title="Ajouter un sous-périmètre"
 									aria-pressed={creation?.parent === n.code}
-									on:click={() => creer(n.code)}>＋</button
+									on:click={() => creer(n.code)}><IconeAction icone="plus" /></button
 								>
 								<button
 									class="btn-icon"
 									aria-label="Monter"
 									title="Monter"
-									on:click={() => deplacer(n, -1)}>▲</button
+									on:click={() => deplacer(n, -1)}><IconeAction icone="arrow-up" /></button
 								>
 								<button
 									class="btn-icon"
 									aria-label="Descendre"
 									title="Descendre"
-									on:click={() => deplacer(n, 1)}>▼</button
+									on:click={() => deplacer(n, 1)}><IconeAction icone="arrow-down" /></button
 								>
 								<button
 									class="btn-icon-danger"
 									aria-label="Supprimer"
 									title="Supprimer"
-									on:click={() => supprimer(n)}>🗑️</button
+									on:click={() => supprimer(n)}><IconeAction icone="trash-2" /></button
 								>
 							</div>
 						{/if}

@@ -109,14 +109,6 @@
 {/if}
 
 <style>
-	/*  Le libellé DEVANT, comme `ChoixPastilles` : il reste en place. */
-	.choix-libelle-devant {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		min-width: 0;
-		max-width: 100%;
-	}
 	.filtre-perimetre {
 		display: flex;
 		flex-wrap: wrap;

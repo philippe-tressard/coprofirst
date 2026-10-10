@@ -127,7 +127,7 @@
 			{
 				variante: 'designer',
 				libelle: 'Définir interlocuteur principal',
-				glyphe: '★',
+				icone: 'star',
 				onClic: () =>
 					(membresSyndic = membresSyndic.map((x, j) => ({ ...x, est_principal: j === i }))),
 			},

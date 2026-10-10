@@ -23,6 +23,7 @@
 <script lang="ts">
 	import { fmtDateShort } from '$lib/date';
 	import { PRESTATAIRE } from '$lib/entites/prestataire';
+	import { classeTypePrestataire } from '$lib/prestataires-gouttiere';
 	import {
 		equipLabel,
 		typePrestataireLabel,
@@ -84,13 +85,21 @@
 
       Le squelette — conteneur, en-tête, 🔗 ✏️ 📦, corps qui cède la place au
       formulaire — vit dans `CarteModifiable` depuis le 02/10/2026 (#1539) :
-      `CarteContrat` le recopiait. -->
+      `CarteContrat` le recopiait.
+
+      🗂️ La GOUTTIÈRE (10/10/2026, la page Affaires devenue le standard) : la
+      prochaine visite — la date que la ligne portait —, puis la catégorie, qui
+      range l'annuaire. La date y figure même en mode compact : elle ne coûte
+      plus de hauteur. La catégorie reste AUSSI en capsule sur la dernière
+      ligne : l'abrégé de la gouttière ne dit pas le mot entier, et la recherche
+      comme les tests la lisent là. -->
 <CarteModifiable
 	entite={PRESTATAIRE}
 	ancreId="presta-{p.id}"
 	quoi="la fiche prestataire"
 	titre={p.nom}
-	date={nextVisit && (!compactPrests || expanded) ? fmtDateShort(nextVisit) : ''}
+	quand={nextVisit}
+	classe={classeTypePrestataire(p.type_prestataire)}
 	{expanded}
 	enEdition={editPrestId === p.id}
 	{peutModifier}
@@ -102,8 +111,10 @@
 	onArchiver={(archivee) => onArchiver(p.id, archivee)}
 >
 	<svelte:fragment slot="tags">
-		<span class="badge badge-type">{typePrestataireLabel(p.type_prestataire)}</span>
-		<span class="badge badge-blue">{equipLabel(p.specialite)}</span>
+		<!--  Capsules NEUTRES : la catégorie et la spécialité décrivent, elles ne
+		      disent aucun état (la dernière ligne d'une affaire, `ux-patterns` §3). -->
+		<span class="badge badge-gray">{typePrestataireLabel(p.type_prestataire)}</span>
+		<span class="badge badge-gray">{equipLabel(p.specialite)}</span>
 		<NotationsPrestataire resume {notations} />
 		<!--  « Sous contrat » se LIT sur les contrats actifs, il ne se saisit pas
 		      (#1444) : c'était une catégorie, et une entreprise qui entretient
@@ -204,11 +215,10 @@
 
 	    ⚠️ Le style part AVEC le balisage. Laissé derrière, il ne lève rien à
 	    l'exécution : `lint:css-orphelin` et `svelte-check` sont les seuls à le
-	    voir, et c'est le défaut qui a été repris quatre fois cette semaine. */
-	.badge-type {
-		background: var(--color-bg-secondary, #f0f0f0);
-		color: var(--color-text);
-	}
+	    voir, et c'est le défaut qui a été repris quatre fois cette semaine.
+
+	    `.badge-type` est partie le 10/10/2026 : la catégorie est une capsule
+	    neutre (`badge-gray`), comme toute pastille qui décrit. */
 	/*  L'aperçu de la carte : les contacts, sous l'en-tête. */
 	/*  Plus de retrait propre : les contacts sont rendus DANS l'en-tête
 	    (`slot="apercu"`, 18/09/2026), qui porte déjà le sien. L'y laisser

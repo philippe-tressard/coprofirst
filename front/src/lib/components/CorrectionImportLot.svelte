@@ -8,6 +8,7 @@
   réseau, qu'il lance sur `enregistre`.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import type { LigneImportLot, MonLot, UtilisateurAdmin } from '$lib/api';
 	import { nomAffiche } from '$lib/noms';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
@@ -82,7 +83,7 @@
 					class="btn-icon-danger"
 					aria-label="Retirer cet occupant"
 					title="Retirer"
-					on:click={() => supprimerOccupant(i)}>&#x1F5D1;️</button
+					on:click={() => supprimerOccupant(i)}><IconeAction icone="trash-2" /></button
 				>
 			</div>
 		{/each}

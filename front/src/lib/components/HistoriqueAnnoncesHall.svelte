@@ -26,9 +26,13 @@
 	import MarqueIA from '$lib/components/MarqueIA.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
-	import Vignette from '$lib/components/Vignette.svelte';
+	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
+	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
+	import Gouttiere from '$lib/components/Gouttiere.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
-	import { fmtDateShort as fmtDate, fmtDatetimeShort as fmtDatetime } from '$lib/date';
+	import { fmtDatetimeShort as fmtDatetime } from '$lib/date';
+	import { basculer } from '$lib/accordeon';
 	import { safeHtml } from '$lib/sanitize';
 	import { isAdmin } from '$lib/stores/auth';
 	import { confirmer } from '$lib/confirmation';
@@ -140,6 +144,15 @@
 		);
 	}
 
+	/**  Ce qui CLASSE une affiche dans la gouttière : son format. Le serveur
+	 *   l'écrit déjà (`format_label`, « A4 », « A5 ») : il est repris, pas
+	 *   réécrit. */
+	const classeFormat = (annonce: AnnonceHall) => ({
+		icone: 'file-text',
+		libelle: `Format ${annonce.format_label}`,
+		abrege: annonce.format_label,
+	});
+
 	//  Un poids absent ou nul ne s'écrit pas : l'échelle, elle, est `fmtOctets`.
 	const ahPoids = (octets: number | null): string => (octets ? fmtOctets(octets) : '');
 </script>
@@ -155,125 +168,112 @@
 	/>
 {:else}
 	{#each ahList as annonce (annonce.id)}
-		<!--  🔴 `EnteteCarte` + `Vignette`, la NORME des cartes du site depuis le
-				      18/08/2026 (#480). Cette liste recomposait son en-tête à la main —
-				      titre après les badges, méta sur sa propre ligne — alors que les cinq
-				      autres listes passent par le composant. Deux cartes du même site ne
-				      se lisaient pas pareil, et surtout : c'est en recomposant un en-tête
-				      que le titre avait disparu sur téléphone.
+		<!--  🔴 La carte de liste du site (`.carte-liste`, `EnteteCarte`) avec sa
+		      GOUTTIÈRE — la page Affaires est le standard (10/10/2026) : QUAND,
+		      puis CE QUI CLASSE l'affiche.
 
-				      ⚠️ `basculable` : le titre déplie, comme partout ailleurs. Le bouton
-				      ▼ reste — il porte l'affordance pour qui ne devine pas qu'un titre
-				      clique —, mais il n'est plus le seul chemin. -->
-		<div class="card ah-card">
-			<div class="ah-card-top">
-				<Vignette
-					src={annonce.images?.[0] ?? null}
-					alt={annonce.titre}
-					placeholder={annonce.format_label}
-					count={Math.max(0, (annonce.images?.length ?? 0) - 1)}
-					title="Format {annonce.format_label}"
-				/>
-				<div class="ah-card-body">
-					<EnteteCarte
-						titre={annonce.titre}
-						date={fmtDate(annonce.cree_le)}
-						basculable
-						on:toggle={() => (ahExpandedId = ahExpandedId === annonce.id ? null : annonce.id)}
+		      Ce qui la classe, c'est son FORMAT (A4, A5) : c'est lui qui décide de
+		      sa taille, de sa mise en page et du panneau où elle s'affiche. Sa
+		      provenance (« Actualité ») est un trait de l'objet, pas un classement :
+		      elle reste en capsule sur la dernière ligne, comme les marqueurs d'une
+		      affaire. Le badge de format quitte donc cette ligne — un seul fait,
+		      une place.
+
+		      ⚠️ Le bouton ▲/▼ qui doublait le titre a disparu : `EnteteCarte
+		      basculable` rend déjà le chevron, et toute la carte repliée ouvre.
+		      Deux affordances pour un geste n'en apprenaient pas plus qu'une. -->
+		<div
+			class="carte-liste a-gouttiere"
+			class:expanded={ahExpandedId === annonce.id}
+			role="presentation"
+			on:click={() => {
+				if (ahExpandedId !== annonce.id) ahExpandedId = basculer(ahExpandedId, annonce.id);
+			}}
+		>
+			<Gouttiere quand={annonce.cree_le} classe={classeFormat(annonce)} />
+			<EnteteCarte
+				titre={annonce.titre}
+				basculable
+				on:toggle={() => (ahExpandedId = basculer(ahExpandedId, annonce.id))}
+			>
+				<svelte:fragment slot="actions">
+					<!--  🔴 LES ACTIONS SONT DANS L'EN-TÊTE, à droite du titre — jamais
+					      en pied de carte (`ux-patterns` §3, signalé à l'écran le
+					      10/09/2026). Ordre : PDF · renvoyer · ranger · effacer — le
+					      lien d'abord, le destructif en dernier. Au trait
+					      (`IconeAction`) : le standard des actions du site. -->
+					<a
+						class="btn btn-sm btn-outline ah-pdf"
+						href={annoncesHallApi.pdfUrl(annonce.id)}
+						target="_blank"
+						rel="noopener"
+						on:click|stopPropagation
 					>
-						<svelte:fragment slot="titre-suffixe">
-							<MarqueIA assiste={annonce.assiste_ia} />
-						</svelte:fragment>
-						<svelte:fragment slot="tags">
-							<span class="badge badge-blue">{annonce.format_label}</span>
-							<BadgePerimetre perimetre={annonce.perimetre_cible} />
-							{#if annonce.ticket_id}<span
-									class="badge badge-gray"
-									title="Générée depuis une actualité">&#x1F4F0; Actualité</span
-								>{/if}
-							{#if annonce.archivee}<span class="badge badge-gray">Archivée</span>{/if}
-						</svelte:fragment>
-						<svelte:fragment slot="actions">
-							<a
-								class="btn btn-sm btn-outline"
-								href={annoncesHallApi.pdfUrl(annonce.id)}
-								target="_blank"
-								rel="noopener"
-							>
-								&#x1F4C4; PDF{#if annonce.taille_octets}
-									<span class="ah-poids">{ahPoids(annonce.taille_octets)}</span>{/if}
-							</a>
-							<!--  🔴 LES ACTIONS SONT DANS L'EN-TÊTE, à droite du titre — jamais
-							      en pied de carte (`ux-patterns` §3). Signalé à l'écran le
-							      10/09/2026 : « les icônes de suppression et d'archivage sont
-							      mises en bas de l'annonce archivée, alors que le standard les
-							      préconise à droite du titre ».
-
-							      Elles vivaient dans le corps DÉPLIÉ : il fallait ouvrir une
-							      affiche pour découvrir qu'on pouvait l'archiver ou l'effacer,
-							      alors que le PDF, lui, se téléchargeait depuis l'en-tête.
-							      Trois gestes du même objet, deux endroits, deux moments.
-
-							      Ordre : PDF · renvoyer · ranger · effacer — le lien d'abord,
-							      le destructif en dernier. -->
-							<button
-								class="btn-icon"
-								title="Renvoyer au CS du périmètre"
-								aria-label="Renvoyer cette annonce au CS"
-								on:click|stopPropagation={() => ahRenvoyer(annonce)}>&#x2709;</button
-							>
-							<!--  Le geste n'est offert que s'il a un effet (#515, 02/09/2026) :
-							      une affiche archivée par le TEMPS ne se restaure pas, et un
-							      bouton qui ne ferait rien ne s'affiche pas. -->
-							{#if !annonce.archivee || annonce.archivee_manuellement}
-								<button
-									class="btn-icon-warn"
-									title={annonce.archivee ? 'Restaurer' : 'Archiver'}
-									aria-label={annonce.archivee
-										? 'Restaurer cette annonce'
-										: 'Archiver cette annonce'}
-									on:click|stopPropagation={() => ahArchiver(annonce)}
-								>
-									{annonce.archivee ? '↩️' : '\u{1F4E6}'}
-								</button>
-							{/if}
-							{#if $isAdmin}
-								<button
-									class="btn-icon-danger"
-									title="Supprimer définitivement"
-									aria-label="Supprimer définitivement cette annonce"
-									on:click|stopPropagation={() => ahSupprimer(annonce)}>&#x1F5D1;&#xFE0F;</button
-								>
-							{/if}
-							<button
-								class="btn btn-sm btn-outline"
-								aria-label={ahExpandedId === annonce.id ? 'Replier' : 'Déplier'}
-								on:click|stopPropagation={() =>
-									(ahExpandedId = ahExpandedId === annonce.id ? null : annonce.id)}
-							>
-								{ahExpandedId === annonce.id ? '▲' : '▼'}
-							</button>
-						</svelte:fragment>
-					</EnteteCarte>
-					<!--  La méta reste SOUS l'en-tête : elle porte l'envoi, qui n'est ni
-							      un tag ni une date de création. -->
-					<small class="ah-card-meta">
-						{#if annonce.auteur_nom}{annonce.auteur_nom} ·
-						{/if}
-						{#if annonce.destinataires.length}
-							&#x2709; {annonce.destinataires.length} destinataire{annonce.destinataires.length > 1
+						<IconeAction icone="file-text" /> PDF{#if annonce.taille_octets}
+							<span class="ah-poids">{ahPoids(annonce.taille_octets)}</span>{/if}
+					</a>
+					<button
+						class="btn-icon"
+						title="Renvoyer au CS du périmètre"
+						aria-label="Renvoyer cette annonce au CS"
+						on:click|stopPropagation={() => ahRenvoyer(annonce)}
+						><IconeAction icone="mail" /></button
+					>
+					<!--  Le geste n'est offert que s'il a un effet (#515, 02/09/2026) :
+					      une affiche archivée par le TEMPS ne se restaure pas, et un
+					      bouton qui ne ferait rien ne s'affiche pas. -->
+					{#if !annonce.archivee || annonce.archivee_manuellement}
+						<button
+							class="btn-icon"
+							title={annonce.archivee ? 'Restaurer' : 'Archiver'}
+							aria-label={annonce.archivee ? 'Restaurer cette annonce' : 'Archiver cette annonce'}
+							on:click|stopPropagation={() => ahArchiver(annonce)}
+							><IconeAction icone={annonce.archivee ? 'undo-2' : 'archive'} /></button
+						>
+					{/if}
+					{#if $isAdmin}
+						<button
+							class="btn-icon-danger"
+							title="Supprimer définitivement"
+							aria-label="Supprimer définitivement cette annonce"
+							on:click|stopPropagation={() => ahSupprimer(annonce)}
+							><IconeAction icone="trash-2" /></button
+						>
+					{/if}
+				</svelte:fragment>
+				<!--  L'aperçu passe par l'en-tête, avant la dernière ligne — avec la
+				      vignette de la première illustration à droite, comme toute carte. -->
+				<svelte:fragment slot="apercu">
+					{#if ahExpandedId !== annonce.id}
+						<ApercuCarte contenu={annonce.apercu} photos={annonce.images ?? []} dansLigne />
+					{/if}
+				</svelte:fragment>
+				<!--  La dernière ligne, dans l'ordre du site (`ux-patterns` §3) :
+				      état · 🔹 · marqueurs · ce qui est propre à l'objet (l'envoi) ·
+				      ✍️ auteur · ✨ en fin de ligne. -->
+				<svelte:fragment slot="tags">
+					{#if annonce.archivee}<span class="badge badge-gray">Archivée</span>{/if}
+					<BadgePerimetre perimetre={annonce.perimetre_cible} />
+					{#if annonce.ticket_id}<span class="badge badge-gray" title="Générée depuis une actualité"
+							>&#x1F4F0; Actualité</span
+						>{/if}
+					{#if annonce.destinataires.length}
+						<span class="badge badge-gray"
+							>&#x2709; {annonce.destinataires.length} destinataire{annonce.destinataires.length > 1
 								? 's'
-								: ''}
-						{:else}
-							<span class="non-envoyee">non envoyée</span>
-						{/if}
-					</small>
-					<p class="ah-card-apercu clamp-5">{annonce.apercu}</p>
-				</div>
-			</div>
+								: ''}</span
+						>
+					{:else}
+						<span class="badge badge-orange">Non envoyée</span>
+					{/if}
+					<AuteurCarte nom={annonce.auteur_nom} />
+					<MarqueIA assiste={annonce.assiste_ia} />
+				</svelte:fragment>
+			</EnteteCarte>
 
 			{#if ahExpandedId === annonce.id}
-				<div class="ah-card-details">
+				<!--  Le corps ne replie pas la carte : on y lit, on y sélectionne. -->
+				<div class="carte-corps ah-corps" role="presentation" on:click|stopPropagation>
 					<div class="rich-content message-annonce">
 						{@html safeHtml(annonce.message)}
 					</div>
@@ -296,41 +296,26 @@
 
 <style>
 	/*  Les règles suivent le balisage qui les emploie : un style laissé chez
-	    l'hôte n'atteint pas un enfant (Svelte scope au composant, v2.67.11). */
+	    l'hôte n'atteint pas un enfant (Svelte scope au composant, v2.67.11).
+	    Conteneur, survol, dépliage et gouttière viennent de `.carte-liste` et
+	    `.a-gouttiere` (`composants.css`, `normes.css`). */
 
-	.ah-card-apercu {
-		font-size: var(--fs-md);
-		color: var(--color-text-muted);
-		margin-top: 0.35rem;
-	}
-	.ah-card-body {
-		flex: 1;
-		min-width: 0;
-	}
-	.ah-card-details {
-		border-top: 1px solid var(--color-border);
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
+	/*  Le retrait de l'en-tête (`EnteteCarte`) : le corps s'aligne sur le titre. */
+	.ah-corps {
+		padding: 0 0.7rem 0.75rem;
 	}
 	.ah-card-meta {
 		color: var(--color-text-muted);
 		font-size: var(--fs-sm);
 	}
-	.ah-card-top {
-		display: flex;
-		gap: 0.85rem;
-		align-items: flex-start;
-	}
-	.ah-card {
-		padding: 0.85rem 1.1rem;
-		margin-bottom: 0.5rem;
+	.ah-pdf {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
 	}
 	.ah-poids {
 		font-size: var(--fs-2xs);
 		color: var(--color-text-muted);
-	}
-	.non-envoyee {
-		color: var(--color-warning);
 	}
 	.message-annonce {
 		font-size: var(--fs-base);

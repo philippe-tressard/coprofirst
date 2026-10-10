@@ -13,6 +13,7 @@
   l'onglet Site en lit aussi les gestionnaires possibles.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import { admin as adminApi, type UtilisateurAdmin } from '$lib/api';
 	import {
@@ -287,20 +288,21 @@
 										class="btn-icon-edit"
 										aria-label="Modifier"
 										title="Modifier"
-										on:click={() => openEdit(u)}>✏️</button
+										on:click={() => openEdit(u)}><IconeAction icone="pencil" /></button
 									>
 									<button
 										class="btn-icon"
 										aria-label="Accueil nouvel arrivant"
 										title="Accueil nouvel arrivant"
-										on:click={() => (accueilPour = u)}>&#x1F3E0;</button
+										on:click={() => (accueilPour = u)}><IconeAction icone="home" /></button
 									>
 									{#if u.actif && !u.has_lots}
 										<button
 											class="btn-icon"
 											aria-label="Rejouer auto-match lots"
 											title="Rejouer auto-match lots"
-											on:click={() => relancerAutoMatch(u.id, nomAffiche(u))}>🔄</button
+											on:click={() => relancerAutoMatch(u.id, nomAffiche(u))}
+											><IconeAction icone="refresh-cw" /></button
 										>
 									{/if}
 									<button
@@ -320,18 +322,25 @@
 												: 'Interdire la communauté'}
 										on:click={() => toggleBanCommunaute(u)}
 									>
-										{u.communaute_interdit
-											? '⛔'
-											: u.communaute_ban_jusqu_au &&
-												  new Date(u.communaute_ban_jusqu_au) > new Date()
-												? '🔓'
-												: '🔒'}
+										<!--  Au trait (10/10/2026) : banni pour de bon, banni pour un
+										      mois — le sablier dit le temps qui reste —, ou autorisé et
+										      le cadenas pose l'interdiction. Il n'y a pas de cadenas
+										      OUVERT au catalogue : le sablier dit mieux l'état probatoire. -->
+										<IconeAction
+											icone={u.communaute_interdit
+												? 'ban'
+												: u.communaute_ban_jusqu_au &&
+													  new Date(u.communaute_ban_jusqu_au) > new Date()
+													? 'hourglass'
+													: 'lock'}
+										/>
 									</button>
 									<button
 										class="btn-icon-danger"
 										aria-label="Supprimer"
 										title="Supprimer"
-										on:click={() => void supprimerUtilisateur(u)}>&#x1F5D1;️</button
+										on:click={() => void supprimerUtilisateur(u)}
+										><IconeAction icone="trash-2" /></button
 									>
 								</div>
 							</td>

@@ -28,7 +28,9 @@
 	import { fmtDateShort } from '$lib/date';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import { safeHtml } from '$lib/sanitize';
+	import Gouttiere from '$lib/components/Gouttiere.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
+	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
 	import { currentUser, isAdmin } from '$lib/stores/auth';
@@ -41,30 +43,40 @@
 	 *   ou un admin, et **pas** un sondage clôturé — le serveur le refuse, et un
 	 *   bouton qui déclencherait un refus serait pire qu'absent. */
 	export let modifierSondage: (s: Sondage, e: Event) => void;
+	/**  Le sondage en cours de correction, ou `null` (10/10/2026). Le
+	 *   formulaire s'ouvre DANS sa carte, à la place de l'aperçu — le motif des
+	 *   annonces et des idées (#787) ; la page le fournit par le slot
+	 *   `formulaire`, elle seule tient l'état. */
+	export let editId: number | null = null;
 </script>
 
 {#each sondages as s (s.id)}
-	<!--  🔴 Un BLOC, et un lien qui en couvre la surface (#1329) : la carte était
+	<!--  🗂️ LA CARTE DU STANDARD (10/10/2026, la page Affaires devenue celle du
+	      site) : `.carte-liste`, la gouttière à gauche, l'aperçu dans l'en-tête et
+	      les tags en dernière ligne. Un sondage n'a pas de CLASSEMENT — ni nature
+	      ni type : la gouttière ne porte que sa date. Son état (Ouvert, Clôturé)
+	      reste une capsule teintée de la dernière ligne, comme celui d'une affaire.
+
+	      🔴 Un BLOC, et un lien qui en couvre la surface (#1329) : la carte était
 	      un `<a>` qui contenait des boutons — HTML invalide, et un lecteur
 	      d'écran y annonçait un lien géant. Le lien s'étire sous le contenu, les
-	      boutons passent au-dessus. -->
-	<div class="sondage-card card">
-		<a class="lien-sondage" href="/sondages/{s.id}" aria-label="Ouvrir le sondage : {s.question}"
-		></a>
-		<!--  L'EN-TÊTE DU SITE (#794). Cette carte était la SIXIÈME et dernière à
-		      composer le sien à la main : titre en `<strong>`, date en
-		      `<small style="…">`, badge « New » avec quatre propriétés CSS écrites
-		      en ligne. Les cinq autres — annonce, idée, ticket, actualité,
-		      événement — passent par `EnteteCarte` depuis le 18/08/2026.
+	      boutons passent au-dessus.
 
-		      ⚠️ `ListeIdees` portait ce jour-là le commentaire « seule carte du
-		      produit dans ce cas ». C'était faux au moment où il a été écrit : le
-		      sondage l'était aussi. Une correction posée sur l'écran qui l'a
-		      révélée, sans passer les voisins en revue.
-
-		      `basculable` reste faux : la carte mène à la fiche par son lien
-		      étiré ; un bouton de dépliage n'y aurait rien à déplier. -->
-		<EnteteCarte titre={s.question} date={fmtDateShort(s.cree_le)}>
+	      ⚠️ Le lien est posé APRÈS la gouttière : elle est positionnée elle
+	      aussi, et la dernière posée passe dessus — avant, un clic sur la date
+	      n'aurait mené nulle part. -->
+	<div class="sondage-card carte-liste a-gouttiere" class:expanded={editId === s.id}>
+		<Gouttiere quand={s.cree_le} />
+		<!--  Pendant la correction, la carte est OUVERTE (`expanded`) et son lien
+		      se retire : il couvrirait les champs du formulaire. -->
+		{#if editId !== s.id}
+			<a class="lien-sondage" href="/sondages/{s.id}" aria-label="Ouvrir le sondage : {s.question}"
+			></a>
+		{/if}
+		<!--  L'EN-TÊTE DU SITE (#794). `basculable` reste faux : la carte mène à la
+		      fiche par son lien étiré ; un bouton de dépliage n'y aurait rien à
+		      déplier. Sa date est dans la gouttière : un seul fait, une place. -->
+		<EnteteCarte titre={s.question}>
 			<svelte:fragment slot="titre-suffixe">
 				<BadgeNouveau le={s.cree_le} />
 			</svelte:fragment>
@@ -96,13 +108,14 @@
 						class="btn-icon"
 						aria-label="Modifier ce sondage"
 						title="Modifier"
-						on:click={(e) => modifierSondage(s, e)}>&#x270F;&#xFE0F;</button
+						aria-pressed={editId === s.id}
+						on:click={(e) => modifierSondage(s, e)}><IconeAction icone="pencil" /></button
 					>
 					<button
 						class="btn-icon-warn"
 						aria-label="Stopper ce sondage"
 						title="Stopper"
-						on:click={(e) => arreterSondage(s, e)}>⏹️</button
+						on:click={(e) => arreterSondage(s, e)}><IconeAction icone="square" /></button
 					>
 				{/if}
 				{#if $currentUser?.id === s.auteur_id || $isAdmin}
@@ -110,48 +123,50 @@
 						class="btn-icon-danger"
 						aria-label="Supprimer"
 						title="Supprimer"
-						on:click={(e) => supprimerSondage(s, e)}>&#x1F5D1;️</button
+						on:click={(e) => supprimerSondage(s, e)}><IconeAction icone="trash-2" /></button
 					>
 				{/if}
 			</svelte:fragment>
+			<!--  L'aperçu passe par l'EN-TÊTE (18/09/2026) : c'est ce qui fait
+			      descendre les tags en dernière ligne. Trois lignes, la typographie
+			      de toutes les cartes (`ApercuCarte`). -->
+			<svelte:fragment slot="apercu">
+				{#if s.description && editId !== s.id}
+					<ApercuCarte contenu={s.description} dansLigne />
+				{/if}
+			</svelte:fragment>
 		</EnteteCarte>
-		{#if s.description}
-			<div class="sondage-desc rich-content clamp-3">{@html safeHtml(s.description)}</div>
+		<!--  La correction ENTRE comme le corps d'une carte dépliée (`carte-corps`). -->
+		{#if editId === s.id}
+			<div class="carte-corps sondage-correction">
+				<slot name="formulaire" />
+			</div>
 		{/if}
 	</div>
 {/each}
 
 <style>
-	.sondage-card {
-		position: relative;
-		/*  Plus de `display: flex` à deux colonnes : les actions vivaient dans une
-		    COLONNE à droite, qui prenait sa largeur au titre. `EnteteCarte` les
-		    place sur la ligne des tags, comme les cinq autres cartes (#794). */
-		display: block;
-		padding: 1rem 1.25rem;
-		margin-bottom: 0.5rem;
-		text-decoration: none;
-		color: var(--color-text);
-		transition: border-color var(--duree-geste);
-	}
-	@media (hover: hover) and (pointer: fine) {
-		.sondage-card:hover {
-			border-color: var(--color-primary);
-		}
-	}
+	/*  Conteneur, filet, survol et écart entre cartes : `.carte-liste` et
+	    `.a-gouttiere` (`normes.css`) — le survol y colore le titre et le liseré,
+	    ce qui dit juste ici : toute la carte mène à la fiche. L'en-tête et ses
+	    tags : `EnteteCarte`. L'aperçu : `ApercuCarte`. La colonne : `Gouttiere`.
+	    Ne reste ici que le lien étiré. */
 	.lien-sondage {
 		position: absolute;
 		inset: 0;
 		border-radius: inherit;
 	}
+	.lien-sondage:focus-visible {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 2px;
+	}
+	.sondage-correction {
+		padding: 0.75rem 1rem 1rem;
+		border-top: 1px solid var(--color-border);
+	}
 	/*  Les gestes au-dessus du lien étiré : sinon il prendrait leurs clics. */
 	.sondage-card :global(button) {
 		position: relative;
 		z-index: 1;
-	}
-	.sondage-desc {
-		font-size: var(--fs-md);
-		color: var(--color-text-muted);
-		margin: 0.2rem 0 0.3rem;
 	}
 </style>

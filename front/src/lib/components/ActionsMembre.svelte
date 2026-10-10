@@ -36,14 +36,15 @@
 	export type Geste = {
 		variante: 'deplacer' | 'designer';
 		libelle: string;
-		glyphe: string;
+		/** Le pictogramme au trait, nommé dans `$lib/icones-svg.json` (10/10/2026). */
+		icone: string;
 		desactive?: boolean;
 		onClic: () => void;
 	};
 </script>
 
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 
 	export let gestes: Geste[] = [];
 	/** Le membre est en cours d'édition : la disquette remplace le crayon. */
@@ -76,7 +77,7 @@
 			aria-label={g.libelle}
 			title={g.libelle}
 			disabled={g.desactive}
-			on:click={g.onClic}>{g.glyphe}</button
+			on:click={g.onClic}><IconeAction icone={g.icone} /></button
 		>
 	{/each}
 	{#if onEnregistrer && enEdition}
@@ -88,7 +89,7 @@
 			disabled={enregistrement}
 			on:click={onEnregistrer}
 		>
-			{#if enregistrement}…{:else}&#x1F4BE;{/if}
+			{#if enregistrement}…{:else}<IconeAction icone="save" />{/if}
 		</button>
 	{:else if onModifier}
 		<button
@@ -96,7 +97,7 @@
 			class="btn-icon btn-icon-edit"
 			aria-label="Modifier"
 			title="Modifier"
-			on:click={onModifier}><Icon name="pencil" size={13} /></button
+			on:click={onModifier}><IconeAction icone="pencil" /></button
 		>
 	{/if}
 	{#if onSupprimer}
@@ -105,7 +106,7 @@
 			class="btn-icon btn-icon-remove"
 			aria-label="Supprimer"
 			title="Supprimer"
-			on:click={onSupprimer}><Icon name="trash-2" size={14} /></button
+			on:click={onSupprimer}><IconeAction icone="trash-2" /></button
 		>
 	{/if}
 </div>
@@ -142,6 +143,14 @@
 			background var(--duree-geste),
 			border-color var(--duree-geste);
 		padding: 0;
+	}
+	/*  Les pictogrammes sont AU TRAIT (`IconeAction`, standard du site depuis le
+	    10/10/2026) ; dans cette barre cerclée, ils prennent la couleur de LEUR
+	    bouton — primaire pour le crayon, danger pour la corbeille, accent pour
+	    l'étoile — et la surface quand le survol remplit le cercle. Sans cela, le
+	    Bleu Seine du survol d'`IconeAction` disparaîtrait sur le cercle bleu. */
+	.membre-card-actions button.btn-icon :global(.icone-action) {
+		color: inherit;
 	}
 	.btn-icon:disabled {
 		opacity: 0.5;

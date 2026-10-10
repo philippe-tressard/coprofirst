@@ -17,8 +17,14 @@
   tri : c'est lui qui fait apparaître les trous. Une chaudière dont la dernière
   ligne date de trois ans se voit parce que ses voisines en ont de récentes —
   dans une liste chronologique, elle serait simplement plus bas.
+
+  🗂️ Les entrées sont des CARTES au standard de la page Affaires (10/10/2026) :
+  la gouttière porte la date et l'ORIGINE (contrat, intervention, affaire), les
+  filtres vivent dans la grille des réglages (`ReglagesListe`). Les intertitres
+  d'équipement restent — ce sont eux qui font l'écran.
 -->
 <script lang="ts">
+	import type { ClasseGouttiere } from '$lib/gouttiere';
 	import { onMount } from 'svelte';
 	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
 	import { carnet as carnetApi, type Carnet, type EntreeCarnet } from '$lib/api';
@@ -28,9 +34,13 @@
 	import { relire } from '$lib/utils';
 	import FiltrePerimetre from './FiltrePerimetre.svelte';
 	import ChoixPastilles from './ChoixPastilles.svelte';
+	import ReglagesListe from './ReglagesListe.svelte';
+	import EnteteCarte from './EnteteCarte.svelte';
+	import Gouttiere from './Gouttiere.svelte';
+	import IconeAction from './IconeAction.svelte';
+	import LienAction from './LienAction.svelte';
 	import { anneesDuCarnet, entreesDeLAnnee } from '$lib/carnet';
-	import { fmtDate } from '$lib/date';
-	import { categorieTicketLabel } from '$lib/tickets';
+	import { categorieTicketLabel, NATURES } from '$lib/tickets';
 	import { essayer } from '$lib/chargement';
 	import EtatListe from './EtatListe.svelte';
 	import SyntheseAffaire from './SyntheseAffaire.svelte';
@@ -112,10 +122,23 @@
 	const lienOuvert = (e: EntreeCarnet, cs: boolean) =>
 		e.origine === 'contrat' && !cs ? '' : e.lien;
 
-	const ORIGINES: Record<string, string> = {
-		contrat: 'Contrat',
-		intervention: 'Intervention',
-		affaire: 'Affaire',
+	/**  L'ORIGINE d'une entrée, telle que la gouttière l'écrit — ce qui la classe.
+	 *   L'affaire reprend la nature « Affaire » de la page Affaires (`NATURES`) :
+	 *   même pictogramme, même abréviation, une seule écriture. */
+	const affaire = NATURES.find((n) => n.val === 'activite');
+	const ORIGINES: Record<EntreeCarnet['origine'], ClasseGouttiere | null> = {
+		contrat: { icone: 'file-text', libelle: 'Contrat', abrege: 'CONTRAT' },
+		intervention: { icone: 'hard-hat', libelle: 'Intervention', abrege: 'INTERV.' },
+		affaire: affaire
+			? { icone: affaire.icone, libelle: affaire.libelle, abrege: affaire.abrege }
+			: null,
+	};
+
+	/** « le contrat », « l'intervention », « l'affaire » — le nom du lien d'une carte. */
+	const VERS: Record<EntreeCarnet['origine'], string> = {
+		contrat: 'le contrat',
+		intervention: "l'intervention",
+		affaire: "l'affaire",
 	};
 </script>
 
@@ -129,19 +152,27 @@
 
 	<!--  Le filtre est le composant STANDARD : il prend ses pastilles dans
 	      l'arborescence administrée, donc un périmètre créé demain y apparaît
-	      sans qu'on touche à cet écran. -->
-	<FiltrePerimetre bind:choisi={perimetreChoisi} compte={entreesVues.length} on:changer={charger} />
-	{#if annees.length > 1}
-		<ChoixPastilles
-			options={annees}
-			bind:valeur={anneeChoisie}
-			tous="Toutes"
-			compte={entreesVues.length}
-			libelle="Année"
+	      sans qu'on touche à cet écran. Les deux rangées tiennent dans la
+	      grille des réglages, libellés alignés sur la gouttière des cartes. -->
+	<ReglagesListe>
+		<FiltrePerimetre
 			libelleDevant
+			bind:choisi={perimetreChoisi}
+			compte={entreesVues.length}
+			on:changer={charger}
 		/>
-		<p class="aide">Les contrats en cours restent affichés : ils valent pour chaque année.</p>
-	{/if}
+		{#if annees.length > 1}
+			<ChoixPastilles
+				options={annees}
+				bind:valeur={anneeChoisie}
+				tous="Toutes"
+				compte={entreesVues.length}
+				libelle="Année"
+				libelleDevant
+			/>
+			<p class="aide">Les contrats en cours restent affichés : ils valent pour chaque année.</p>
+		{/if}
+	</ReglagesListe>
 
 	{#if enRetard > 0}
 		<!--  L'alerte est en TÊTE parce que c'est ce que le carnet apprend et que
@@ -181,41 +212,79 @@
 					<h3 class="groupe-titre">{libelleEquipement(equipement)}</h3>
 					<ol class="entrees">
 						{#each entrees as entree (entree.origine + entree.lien + entree.date)}
-							<li class="entree" class:alertee={!!entree.alerte}>
-								<span class="quand">{fmtDate(entree.date)}</span>
-								<span class="quoi">
-									<a href={entree.lien}>{entree.libelle}</a>
-									<span class="detail">
-										{entree.detail}{#if entree.detail}&nbsp;·
-										{/if}{portee(entree.perimetre)}
-									</span>
-									{#if entree.alerte}
-										<span class="alerte">⚠️ {entree.alerte}</span>
-									{/if}
-								</span>
-								<!--  Une affaire se dit par sa CATÉGORIE : « Incident » qualifiait
-								      toutes, une étude de travaux comprise (26/09/2026). -->
-								<span class="badge badge-gray origine"
-									>{entree.categorie
-										? categorieTicketLabel(entree.categorie)
-										: ORIGINES[entree.origine]}</span
+							<li>
+								<!--  Une carte ne se DÉPLIE que si elle a une synthèse validée
+								      (#1643) ; sinon le titre reste un texte, et c'est la flèche
+								      qui mène à la fiche d'origine. -->
+								<div
+									class="carte-liste a-gouttiere"
+									class:expanded={ouverte === entree.lien}
+									role="presentation"
+									on:click={() => {
+										if (entree.synthese && ouverte !== entree.lien) ouverte = entree.lien;
+									}}
 								>
-								{#if entree.synthese}
-									<button
-										type="button"
-										class="btn-icon deplier"
-										aria-expanded={ouverte === entree.lien}
-										aria-label="Synthèse de l'affaire"
-										title="Synthèse de l'affaire"
-										on:click={() => (ouverte = basculer(ouverte, entree.lien))}>🧾</button
+									<Gouttiere quand={entree.date} classe={ORIGINES[entree.origine]} />
+									<EnteteCarte
+										titre={entree.libelle}
+										basculable={!!entree.synthese}
+										on:toggle={() => (ouverte = basculer(ouverte, entree.lien))}
 									>
-									{#if ouverte === entree.lien}
-										<div class="pli">
+										<svelte:fragment slot="actions">
+											<LienAction
+												href={entree.lien}
+												icone="arrow-right"
+												titre="Ouvrir"
+												libelle="Ouvrir {VERS[entree.origine]} : {entree.libelle}"
+											/>
+											{#if entree.synthese}
+												<button
+													type="button"
+													class="btn-icon"
+													aria-expanded={ouverte === entree.lien}
+													aria-label="Synthèse de l'affaire"
+													title="Synthèse de l'affaire"
+													on:click|stopPropagation={() =>
+														(ouverte = basculer(ouverte, entree.lien))}
+													><IconeAction icone="receipt" /></button
+												>
+											{/if}
+										</svelte:fragment>
+										<svelte:fragment slot="apercu">
+											{#if entree.detail}
+												<p class="detail">{entree.detail}</p>
+											{/if}
+										</svelte:fragment>
+										<!--  La dernière ligne : ce qui DÉCRIT en capsules neutres, ce
+										      qui ALERTE en capsule teintée. Une affaire se dit par sa
+										      CATÉGORIE (26/09/2026) — son origine est déjà dans la
+										      gouttière. -->
+										<svelte:fragment slot="tags">
+											{#if entree.categorie}
+												<span class="badge badge-gray"
+													>{categorieTicketLabel(entree.categorie)}</span
+												>
+											{/if}
+											{#if entree.alerte}
+												<span class="badge badge-orange">⚠️ {entree.alerte}</span>
+											{/if}
+											{#if portee(entree.perimetre)}
+												<span class="badge badge-gray">{portee(entree.perimetre)}</span>
+											{/if}
+										</svelte:fragment>
+									</EnteteCarte>
+									{#if entree.synthese && ouverte === entree.lien}
+										<div
+											class="carte-corps pli"
+											role="presentation"
+											on:click|stopPropagation
+											on:keydown|stopPropagation
+										>
 											<SyntheseAffaire synthese={entree.synthese} />
 											<a class="vers-affaire" href={entree.lien}>Voir l'affaire →</a>
 										</div>
 									{/if}
-								{/if}
+								</div>
 							</li>
 						{/each}
 					</ol>
@@ -247,58 +316,14 @@
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
 	}
-	/*  Trois colonnes, et le pli de la synthèse en quatrième : la date est FIXE et tabulaire pour que les jours
-	    s'alignent, le libellé est élastique, la provenance se cale à droite. */
-	.entree {
-		display: grid;
-		grid-template-columns: 6rem minmax(0, 1fr) auto auto;
-		gap: 0.3rem 0.75rem;
-		align-items: baseline;
-		padding: 0.35rem 0.4rem;
-		border-radius: var(--radius);
-	}
-	.entree:nth-child(odd) {
-		background: var(--color-bg);
-	}
-	.entree.alertee {
-		box-shadow: inset 3px 0 0 var(--color-warning);
-	}
-	.quand {
-		font-size: var(--fs-sm);
+	/*  Le détail (prestataire, échéance…) dans la typographie de l'aperçu d'une
+	    carte aérée : `--fs-md`, interligne 1,5, gris (`EnteteCarte`). */
+	.detail {
+		margin: 0.3rem 0 0;
+		font-size: var(--fs-md);
+		line-height: 1.5;
 		color: var(--color-text-muted);
-		font-variant-numeric: tabular-nums;
-	}
-	.quoi {
-		min-width: 0;
-	}
-	.quoi a {
-		color: var(--color-text);
-		text-decoration: none;
-	}
-	@media (hover: hover) and (pointer: fine) {
-		.quoi a:hover {
-			color: var(--color-primary);
-			text-decoration: underline;
-		}
-	}
-	/*  Le focus au clavier n'est pas un survol : il reste hors du média souris. */
-	.quoi a:focus-visible {
-		color: var(--color-primary);
-		text-decoration: underline;
-	}
-	.detail,
-	.alerte {
-		display: block;
-		font-size: var(--fs-sm);
-		color: var(--color-text-muted);
-		line-height: 1.45;
-	}
-	.alerte {
-		color: var(--color-warning);
 	}
 	.concernees {
 		margin: 0.35rem 0 0;
@@ -311,35 +336,21 @@
 	.concernee-detail {
 		font-size: var(--fs-sm);
 	}
-	.origine {
-		white-space: nowrap;
-	}
-	/*  Le bouton du pli se cale après la provenance ; le pli prend la ligne. */
-	.deplier {
-		grid-column: 4;
-	}
+	/*  Le pli de la synthèse, dans le retrait de l'en-tête de la carte. */
 	.pli {
-		grid-column: 1 / -1;
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		padding: 0.5rem 0.25rem 0.75rem;
+		padding: 0 1.1rem 0.9rem;
 	}
 	.vers-affaire {
 		align-self: flex-end;
 		font-size: var(--fs-sm);
 		color: var(--color-primary);
 	}
-	/*  Sous 560 px, la colonne de droite passe sous le libellé : trois colonnes
-	    écrasent le titre, qui est ce qu'on vient lire. */
 	@media (max-width: 480px) {
-		.entree {
-			grid-template-columns: 5rem minmax(0, 1fr);
-		}
-		.origine,
-		.deplier {
-			grid-column: 2;
-			justify-self: start;
+		.pli {
+			padding: 0 0.7rem 0.75rem;
 		}
 	}
 </style>

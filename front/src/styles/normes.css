@@ -191,7 +191,14 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
     `:not(.expanded)` porte donc toute la règle. Sans lui, le curseur
     promettrait partout un clic qui ne fait rien, et le fond se surlignerait
     sous un formulaire ouvert. */
-.carte-liste:not(.expanded) {
+/*  🔴 …et seulement sur une carte qui SE DÉPLIE (#1819) — celle dont le titre
+    est un bouton (`EnteteCarte basculable`). Le standard a fait entrer dans
+    `.carte-liste` des cartes qui ne se déplient pas (un relevé, une idée, un
+    document sans description) : le curseur et le titre coloré y promettaient
+    un clic qui ne fait rien. Le liseré et l'ombre du survol restent : ils
+    disent « cette carte-ci », pas « cliquez ». Deux pages l'avaient corrigé
+    chacune chez elle ; la règle se pose ici, une fois. */
+.carte-liste:not(.expanded):has(.ec-titre-btn) {
 	cursor: pointer;
 }
 
@@ -205,14 +212,31 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 
     `.a-gouttiere` est la prise — une carte qui rend `Gouttiere` la pose ;
     `[data-nature]` (`attributsNature`) n'en porte plus que la TEINTE. */
+/*  🔴 UNE COLONNE DE LA CARTE, pas un calque posé dessus (#1819). La gouttière
+    était en `position: absolute` dans un retrait : elle ne comptait pas dans
+    la hauteur de la carte, et sous une carte COURTE — un contrat sans aperçu,
+    un relevé, une affaire sans texte — le mot du classement sortait par le
+    bas (121 px demandés pour une carte de 82, mesuré au navigateur). La
+    gouttière occupe la première colonne et TOUTES les rangées : elle s'étire
+    sur une carte haute, elle fait grandir une carte basse. La dernière rangée
+    est flexible — c'est elle, et elle seule, qui absorbe la hauteur que la
+    gouttière demande en plus ; les rangées du contenu restent à leur taille
+    (une rangée `auto` ne grandit pas pour un élément qui traverse une rangée
+    flexible). Huit rangées de contenu : une carte en compte trois au plus
+    (en-tête, corps déplié, formulaire). */
 :is(.carte-liste, .history-item).a-gouttiere {
 	--filet-carte: color-mix(in srgb, var(--color-border) 70%, transparent);
 	position: relative;
-	padding-left: var(--largeur-gouttiere);
+	display: grid;
+	grid-template-columns: var(--largeur-gouttiere) minmax(0, 1fr);
+	grid-template-rows: repeat(8, auto) 1fr;
 	margin-bottom: 0.85rem;
 	border-top: 1px solid var(--filet-carte);
 	border-right: 1px solid var(--filet-carte);
 	border-bottom: 1px solid var(--filet-carte);
+}
+.a-gouttiere > :not(.gouttiere) {
+	grid-column: 2;
 }
 [data-nature='actualite'] {
 	--nature-fort: #1d4ed8;
@@ -230,8 +254,12 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 		margin-bottom: 0.6rem;
 	}
 	:is(.carte-liste, .history-item).a-gouttiere {
-		padding-left: 0;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: none;
 		margin-bottom: 0.6rem;
+	}
+	.a-gouttiere > :not(.gouttiere) {
+		grid-column: 1;
 	}
 }
 
@@ -249,7 +277,7 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
     PARENT, qu'un composant enfant ne peut pas connaître. `.carte-liste` est déjà
     une classe globale de ce fichier — les deux vont ensemble. */
 @media (hover: hover) and (pointer: fine) {
-	.carte-liste:not(.expanded):hover .ec-titre {
+	.carte-liste:not(.expanded):has(.ec-titre-btn):hover .ec-titre {
 		color: var(--color-primary);
 	}
 	/*  Dépliée, la carte n'est plus une cible : le titre se colore à son propre
@@ -269,7 +297,9 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 
 /* ── Norme UX : troncature à N lignes ──
    `.clamp-3` : l'aperçu d'une CARTE de liste (validé à l'écran le 18/09/2026).
-   `.clamp-5` : l'aperçu d'un bloc expansible qui n'est pas une carte.
+   `.clamp-5` (un bloc expansible qui n'était pas une carte) est parti le
+   10/10/2026 (#1819) : son dernier emploi, l'historique des annonces de hall,
+   est devenu une carte — le standard de la page Affaires.
    `.clamp-2` : un TITRE de carte, qui doit rester sur deux lignes au plus.
 
    ⚠️ `.clamp-3` existait DÉJÀ, écrit à la main dans `FluxCard` : le fil
@@ -281,16 +311,11 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
    kanban du tableau de bord (#561, 28/08/2026), et les trois écritures de la
    notion omettaient toutes `line-clamp` — la propriété STANDARD, que les
    navigateurs non-WebKit lisent. Elles tronquaient donc par chance. */
-.clamp-5,
 .clamp-3,
 .clamp-2 {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
-}
-.clamp-5 {
-	-webkit-line-clamp: 5;
-	line-clamp: 5;
 }
 .clamp-3 {
 	-webkit-line-clamp: 3;

@@ -2227,6 +2227,16 @@ jobs:
         working-directory: front
         run: npm run lint:bouton-icone
 
+      # 🗂️ LES ACTIONS SE DESSINENT AU TRAIT (10/10/2026, #1819) — la page
+      # Affaires est le standard du site, ses actions au trait aussi. Une
+      # centaine de boutons ✏️ 🗑️ 📦 ↩️ sont passes par `IconeAction` ; ce
+      # controle refuse le suivant. Il a d'abord revele un faux vert de
+      # `lib-balises` : une fermeture `</button` + `>` a la ligne suivante (la
+      # forme de Prettier) faisait lire le contenu des elements suivants.
+      - name: Un bouton d'action se dessine au trait, jamais en emoji
+        working-directory: front
+        run: npm run lint:actions-au-trait
+
       # 🔴 DIX FICHIERS ÉNUMÉRAIENT LE MÊME ENSEMBLE D'ÉTATS DEUX OU TROIS FOIS
       # (15/09/2026, #779) — un libellé ici, une pastille là, un abrégé plus bas.
       #

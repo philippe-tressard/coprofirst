@@ -32,14 +32,12 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
 	import { partiesDate } from '$lib/date';
-
-	/** Ce qui classe un objet, tel que la gouttière l'écrit. */
-	type Classement = { icone: string; libelle: string; abrege: string };
+	import type { ClasseGouttiere } from '$lib/gouttiere';
 
 	/** L'instant qui situe l'objet (ISO), ou rien. */
 	export let quand: string | null | undefined = null;
 	/** Ce qui classe l'objet — nature, type, rubrique —, ou rien. */
-	export let classe: Classement | null = null;
+	export let classe: ClasseGouttiere | null = null;
 
 	$: date = partiesDate(quand);
 </script>
@@ -63,14 +61,14 @@
 </div>
 
 <style>
-	/*  La colonne court sur toute la hauteur de la carte, dépliée comprise : elle
-	    est posée en absolu dans le retrait que la carte lui réserve
-	    (`.a-gouttiere`, `normes.css`). Son fond est un pierre ADOUCI — la charte,
-	    mêlée au blanc de la carte : le repère existe sans crier. */
+	/*  La PREMIÈRE COLONNE de la grille que la carte pose (`.a-gouttiere`,
+	    `normes.css`) : elle traverse toutes les rangées, s'étire sur une carte
+	    haute et fait grandir une carte courte — posée en absolu, elle débordait
+	    sous elle (#1819). Son fond est un pierre ADOUCI — la charte, mêlée au
+	    blanc de la carte : le repère existe sans crier. */
 	.gouttiere {
-		position: absolute;
-		inset: 0 auto 0 0;
-		width: var(--largeur-gouttiere);
+		grid-column: 1;
+		grid-row: 1 / -1;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -124,8 +122,7 @@
 	    hauteur que la colonne vient de rendre. */
 	@media (max-width: 480px) {
 		.gouttiere {
-			position: static;
-			width: auto;
+			grid-row: auto;
 			flex-direction: row;
 			align-items: center;
 			justify-content: space-between;

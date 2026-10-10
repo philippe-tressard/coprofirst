@@ -35,6 +35,8 @@
 -->
 <script lang="ts">
 	import { frequenceLabel, type FormulaireContratData } from '$lib/prestataires';
+	import { classeEquipement } from '$lib/prestataires-gouttiere';
+	import { typeEquipementDuContrat } from '$lib/reporting';
 	import type { ContratEntretien, Document, Prestataire } from '$lib/api';
 	import { fmtDateShort } from '$lib/date';
 	import { safeHtml } from '$lib/sanitize';
@@ -43,6 +45,7 @@
 	import ListeDocuments from './ListeDocuments.svelte';
 	import FormulaireContrat from './FormulaireContrat.svelte';
 	import GesteEnPlace from './GesteEnPlace.svelte';
+	import IconeAction from './IconeAction.svelte';
 	import NoteEtoiles from './NoteEtoiles.svelte';
 
 	export let contrat: ContratEntretien;
@@ -106,6 +109,14 @@
 	/**  Cette carte est-elle celle qu'on corrige ? Son corps cède alors la place au
 	 *   formulaire, et le crayon s'inverse. */
 	$: enEdition = editContratId === contrat.id;
+
+	/**  🗂️ La gouttière (10/10/2026, la page Affaires devenue le standard) : la
+	 *   date que la carte affichait — la prochaine visite, sinon le début du
+	 *   contrat —, puis le TYPE D'ÉQUIPEMENT. C'est lui qui classe un contrat :
+	 *   l'onglet range déjà ses groupes par cette clé, par la même règle
+	 *   (`typeEquipementDuContrat`). La fréquence est un rythme, pas un
+	 *   classement : elle reste une capsule de la dernière ligne. */
+	$: classe = classeEquipement(typeEquipementDuContrat(contrat, prestataires));
 </script>
 
 <!--  L'ancre `contrat-{id}` : le carnet d'entretien y renvoie (#870 → carnet,
@@ -127,7 +138,8 @@
 	ancreId="contrat-{contrat.id}"
 	quoi="le contrat"
 	titre={contrat.libelle}
-	date={contrat.prochaine_visite ? '' : fmtDateShort(contrat.date_debut)}
+	quand={contrat.prochaine_visite ?? contrat.date_debut}
+	{classe}
 	{expanded}
 	{enEdition}
 	urgent={enRetard}
@@ -151,18 +163,19 @@
 			<span class="badge badge-gray">sans intervenant</span>
 		{/if}
 		{#if contrat.numero_contrat}<span class="contrat-meta">🔖 {contrat.numero_contrat}</span>{/if}
-		<!--  L'échéance reste un TAG et non la `date` de l'en-tête : elle porte
-		      son état de retard, donc sa couleur, et `date` ne rend qu'un texte. -->
-		{#if contrat.prochaine_visite}
-			<span class="contrat-echeance" class:contrat-echeance--retard={enRetard}>
-				{enRetard ? '⚠️' : '🗓'}
-				{fmtDateShort(contrat.prochaine_visite)}
-			</span>
+		<!--  L'échéance est montée dans la GOUTTIÈRE (10/10/2026) : une seule date
+		      par carte. Son ÉTAT reste ici, en capsule teintée — le retard, qui
+		      était la couleur de la date —, et la carte sans échéance le dit :
+		      sa gouttière montre alors le DÉBUT du contrat, pas une visite. -->
+		{#if contrat.prochaine_visite && enRetard}
+			<span class="badge badge-red">⚠️ Visite en retard</span>
+		{:else if !contrat.prochaine_visite}
+			<span class="badge badge-gray">Sans échéance</span>
 		{/if}
 		{#if contrat.frequence_type}
-			<span class="badge badge-blue">{frequenceLabel(contrat)}</span>
+			<span class="badge badge-gray">{frequenceLabel(contrat)}</span>
 		{/if}
-		<span class="badge">📄 {documents?.length ?? 0}</span>
+		<span class="badge badge-gray">📄 {documents?.length ?? 0}</span>
 	</svelte:fragment>
 
 	<svelte:fragment slot="gestes">
@@ -175,7 +188,7 @@
 				title={syntheseEnCoursId === contrat.id ? 'Rédaction en cours…' : 'Proposer une synthèse'}
 				disabled={syntheseEnCoursId !== null}
 				on:click|stopPropagation={() => onSynthetiser(contrat)}
-				>{syntheseEnCoursId === contrat.id ? '⏳' : '✨'}</button
+				><IconeAction icone={syntheseEnCoursId === contrat.id ? 'hourglass' : 'sparkles'} /></button
 			>
 		{/if}
 	</svelte:fragment>
@@ -314,13 +327,6 @@
 	    là-bas. C'est la régression de #356, et ce sont `lint:css-orphelin` et
 	    `lint:classes-nues` qui l'ont refusée — la relecture, elle, ne l'avait pas
 	    vue. */
-	.contrat-echeance {
-		font-weight: 600;
-		color: var(--color-primary);
-	}
-	.contrat-echeance--retard {
-		color: var(--color-danger);
-	}
 	.contrat-noter {
 		color: var(--color-warning-texte);
 	}

@@ -14,6 +14,14 @@
 
   Même forme que les onglets d'administration : l'état vit ici, la page ne garde
   que le choix de l'onglet.
+
+  🗂️ **Les relevés sont des cartes de liste** (10/10/2026, la page Affaires
+  devenue le standard du site) : `.carte-liste` à gouttière — la date du relevé
+  en tête de la colonne de gauche —, `EnteteCarte` pour le titre (l'index) et
+  les actions, dessinées au trait. Une carte de relevé ne se déplie pas : elle
+  montre tout — la note en aperçu, la photo dessous. Le compteur n'a pas de
+  pictogramme : la gouttière ne porte que la date, et la rangée des réglages dit
+  de quel compteur il s'agit.
 -->
 <script lang="ts">
 	import { fmtNombre, nombreOuNull } from '$lib/utils';
@@ -27,12 +35,15 @@
 	import { isCS } from '$lib/stores/auth';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { SUPPRESSION, confirmerPuis } from '$lib/confirmation';
-	import { fmtDayMonth } from '$lib/date';
 	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
 	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
 	import CategoriesCompteur from '$lib/components/CategoriesCompteur.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
+	import Gouttiere from '$lib/components/Gouttiere.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
+	import IntertitreGroupe from '$lib/components/IntertitreGroupe.svelte';
 
 	/** L'annuaire des prestataires — la page le charge déjà, on ne le recharge pas. */
 	export let prestataires: Prestataire[] = [];
@@ -178,15 +189,22 @@
 		});
 	}
 
-	function fmtReleve(r: ReleveCompteur) {
-		return fmtDayMonth(r.date_releve);
+	/**  Le titre d'une carte de relevé : ce qu'on est venu lire, l'index. Sa date
+	 *   est dans la gouttière ; un relevé sans index (une note seule) le dit. */
+	function titreReleve(r: ReleveCompteur): string {
+		return r.index != null ? `Index ${fmtNombre(r.index)}` : 'Relevé sans index';
 	}
 </script>
 
 <!--  Les catégories de compteur et leur fournisseur — `CategoriesCompteur`,
       sorti le 26/09/2026 (#1329) quand ses deux petits formulaires ont reçu le
       pied commun : le fichier passait 500 lignes. -->
-<CategoriesCompteur bind:compteurConfigs bind:typeCompteur {prestataires} />
+<CategoriesCompteur
+	bind:compteurConfigs
+	bind:typeCompteur
+	{prestataires}
+	compte={releveLoading ? null : releves.length}
+/>
 
 {#if showReleveForm && $isCS}
 	<FormulaireCreation
@@ -254,35 +272,38 @@
 	</div>
 {:else}
 	{#each relevesByYear as [year, yearReleves] (year)}
-		<h2 class="releve-year">{year}</h2>
+		<IntertitreGroupe libelle={String(year)} />
 		{#each yearReleves as r (r.id)}
-			<div class="releve-row">
-				<div class="releve-main">
-					<span class="releve-date">Relevé {fmtReleve(r)}</span>
-					{#if r.note}<span class="releve-note">{r.note}</span>{/if}
-					{#if r.index != null}
-						<span class="releve-index">Index : <strong>{fmtNombre(r.index)}</strong></span>
-					{/if}
-					{#if r.photo_url}
+			<div class="carte-liste a-gouttiere releve-carte" id="releve-{r.id}">
+				<Gouttiere quand={r.date_releve} />
+				<EnteteCarte titre={titreReleve(r)}>
+					<svelte:fragment slot="actions">
+						{#if $isCS}
+							<button
+								class="btn-icon-edit"
+								aria-label="Modifier"
+								title="Modifier"
+								on:click={() => startEditReleve(r)}><IconeAction icone="pencil" /></button
+							>
+							<button
+								class="btn-icon-danger"
+								aria-label="Supprimer"
+								title="Supprimer"
+								on:click={() => deleteReleve(r.id)}><IconeAction icone="trash-2" /></button
+							>
+						{/if}
+					</svelte:fragment>
+					<svelte:fragment slot="apercu">
+						{#if r.note}<p class="releve-note">{r.note}</p>{/if}
+					</svelte:fragment>
+				</EnteteCarte>
+				{#if r.photo_url}
+					<!--  La photo est le CORPS de la carte, toujours montré : une carte de
+					      relevé ne se déplie pas. -->
+					<div class="carte-corps releve-corps">
 						<a href={r.photo_url} target="_blank" rel="noopener">
 							<img src={r.photo_url} alt="Relevé de compteur" class="releve-photo-thumb" />
 						</a>
-					{/if}
-				</div>
-				{#if $isCS}
-					<div class="releve-actions">
-						<button
-							class="btn-icon-edit"
-							aria-label="Modifier"
-							title="Modifier"
-							on:click={() => startEditReleve(r)}>✏️</button
-						>
-						<button
-							class="btn-icon-danger"
-							aria-label="Supprimer"
-							title="Supprimer"
-							on:click={() => deleteReleve(r.id)}>🗑️</button
-						>
 					</div>
 				{/if}
 			</div>
@@ -291,54 +312,19 @@
 {/if}
 
 <style>
-	/* ── Configuration des compteurs ── */
-
-	/* Relevés compteurs */
-	.releve-year {
-		font-size: 1.1rem;
-		font-weight: 700;
-		margin: 1.25rem 0 0.6rem;
-		padding-bottom: 0.3rem;
-		border-bottom: 2px solid var(--color-border);
-	}
-	.releve-row {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding: 0.6rem 0.9rem;
-		border-left: 3px solid var(--color-border);
-		border-radius: var(--radius);
-		background: var(--color-surface);
-		margin-bottom: 0.3rem;
-		transition: border-color var(--duree-geste);
-	}
-	@media (hover: hover) and (pointer: fine) {
-		.releve-row:hover {
-			border-left-color: var(--color-primary);
-		}
-	}
-	.releve-main {
-		display: flex;
-		flex-direction: column;
-		gap: 0.2rem;
-	}
-	.releve-date {
-		font-size: var(--fs-base);
-		font-weight: 600;
-	}
+	/*  La carte de relevé : `.carte-liste` à gouttière (`normes.css`) porte le
+	    conteneur, la colonne et l'espacement — seules restent ici la note et la
+	    photo. `.releve-row`, `.releve-main`, `.releve-date`, `.releve-index`,
+	    `.releve-actions` et `.releve-year` sont parties avec la rangée écrite à
+	    la main (10/10/2026). */
 	.releve-note {
+		margin: 0;
 		font-size: var(--fs-md);
 		color: var(--color-text-muted);
 		font-style: italic;
 	}
-	.releve-index {
-		font-size: var(--fs-base);
-	}
-	.releve-actions {
-		display: flex;
-		gap: 0.25rem;
-		flex-shrink: 0;
+	.releve-corps {
+		padding: 0 1rem 0.85rem;
 	}
 	.releve-photo-thumb {
 		width: 56px;

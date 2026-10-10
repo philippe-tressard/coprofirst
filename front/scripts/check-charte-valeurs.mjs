@@ -93,7 +93,7 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, resoudre };
  *  jeton `--fs-chiffre` (1.6rem) rend quatre tailles égales à lui : elles
  *  s'écrivent par lui (Lightbox, PiecesJointes, Vignette, legal.css).
  */
-const PLAFOND = { couleurs: 120, tailles: 73 };
+const PLAFOND = { couleurs: 119, tailles: 71 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 

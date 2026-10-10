@@ -1,4 +1,5 @@
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { confirmer, SUPPRESSION } from '$lib/confirmation';
 	import { onMount } from 'svelte';
 	import { admin as adminApi, type LienCompteLot } from '$lib/api';
@@ -174,7 +175,7 @@
 									class="btn-icon-danger"
 									aria-label="Supprimer cette association"
 									title="Supprimer cette association"
-									on:click={() => supprimer(ul)}>&#x1F5D1;️</button
+									on:click={() => supprimer(ul)}><IconeAction icone="trash-2" /></button
 								>
 							</td>
 						</tr>

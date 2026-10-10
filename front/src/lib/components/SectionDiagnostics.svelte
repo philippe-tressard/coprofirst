@@ -34,6 +34,8 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
+	import LienAction from '$lib/components/LienAction.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import FormulaireDocument from '$lib/components/FormulaireDocument.svelte';
 	import {
@@ -250,7 +252,7 @@
 									title="Non applicable à cette copropriété"
 									disabled={togglingNonApplicableId === dtype.id}
 									on:click={() => toggleNonApplicable(dtype.id, true)}
-									><Icon name="eye-off" size={14} /></button
+									><IconeAction icone="eye-off" /></button
 								>
 							{/if}
 						</div>
@@ -269,37 +271,43 @@
 												<span class="doc-date">{fmt(rapport.date_rapport)}</span>
 											{/if}
 											{#if rapport.synthese}
+												<!--  Un bouton TEXTE : le mot reste, l'ampoule passe au
+												      trait (10/10/2026) et prend la couleur du mot. -->
 												<button
 													class="synthese-toggle"
 													aria-label="Afficher la synthèse"
+													aria-expanded={deplie === rapport.id}
 													on:click={() => (deplie = basculer(deplie, rapport.id))}
-													>&#x1F4A1; Synthèse {deplie === rapport.id ? '▲' : '▼'}</button
+													><Icon name="lightbulb" size={14} /> Synthèse {deplie === rapport.id
+														? '▲'
+														: '▼'}</button
 												>
 											{/if}
 										</div>
 										<div class="doc-actions">
 											<BoutonLien ancre="diag-{rapport.id}" quoi="le rapport" />
-											<a
+											<LienAction
 												href={diagnosticsApi.downloadUrl(rapport.id)}
-												target="_blank"
-												rel="noopener"
-												class="btn btn-sm"
-												download
-											>
-												⬇ Télécharger
-											</a>
+												icone="arrow-down"
+												mot="Télécharger"
+												titre="Télécharger"
+												libelle="Télécharger le rapport"
+												telecharger
+											/>
 											{#if peutModifier}
 												<button
 													class="btn-icon-edit"
 													aria-label="Modifier"
 													title="Modifier"
-													on:click={() => startEditRapport(rapport)}>✏️</button
+													on:click={() => startEditRapport(rapport)}
+													><IconeAction icone="pencil" /></button
 												>
 												<button
 													class="btn-icon-danger"
 													aria-label="Supprimer"
 													title="Supprimer"
-													on:click={() => deleteRapport(dtype.id, rapport.id)}>&#x1F5D1;️</button
+													on:click={() => deleteRapport(dtype.id, rapport.id)}
+													><IconeAction icone="trash-2" /></button
 												>
 											{/if}
 										</div>
@@ -349,7 +357,8 @@
 									<button
 										class="btn btn-sm"
 										disabled={togglingNonApplicableId === dtype.id}
-										on:click={() => toggleNonApplicable(dtype.id, false)}>↩ Réactiver</button
+										on:click={() => toggleNonApplicable(dtype.id, false)}
+										><Icon name="undo-2" size={14} /> Réactiver</button
 									>
 								</div>
 								<p class="diag-texte">{dtype.texte_legislatif}</p>
@@ -448,6 +457,9 @@
 		border-bottom: none;
 	}
 	.synthese-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
 		background: none;
 		border: none;
 		cursor: pointer;
