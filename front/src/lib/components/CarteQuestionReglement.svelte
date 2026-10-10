@@ -18,11 +18,11 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
 	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import Gouttiere from '$lib/components/Gouttiere.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import type { QuestionReglement } from '$lib/api';
 	import { fmtDatetime } from '$lib/date';
@@ -40,23 +40,19 @@
 	$: verifies = q.extraits.filter((e) => e.verifie).length;
 </script>
 
-<div
+<!--  La GOUTTIÈRE de la page Affaires, standard du site (10/10/2026) : la date
+      de la question, et RIEN dessous. Une question n'a pas de rubrique ; son
+      verdict est un ÉTAT — teinté, il se lit en capsule sur la dernière ligne,
+      comme l'état d'une affaire. Le ranger dans la colonne qui CLASSE en ferait
+      une nature, et la gouttière prendrait sa teinte au lieu de celle de la
+      charte. L'heure, que la gouttière n'écrit pas, passe au pied de l'avis
+      (« Posée le … »). -->
+<CarteListe
 	id="question-reglement-{q.id}"
-	class="carte-liste a-gouttiere"
-	class:expanded={ouvert || publication}
-	role="presentation"
-	on:click={() => {
-		if (!ouvert && !publication) dispatch('basculer');
-	}}
+	quand={q.cree_le}
+	expanded={ouvert || publication}
+	onDeplier={() => dispatch('basculer')}
 >
-	<!--  La GOUTTIÈRE de la page Affaires, standard du site (10/10/2026) : la
-	      date de la question, et RIEN dessous. Une question n'a pas de rubrique ;
-	      son verdict est un ÉTAT — teinté, il se lit en capsule sur la dernière
-	      ligne, comme l'état d'une affaire. Le ranger dans la colonne qui CLASSE
-	      en ferait une nature, et la gouttière prendrait sa teinte au lieu de
-	      celle de la charte. L'heure, que la gouttière n'écrit pas, passe au
-	      pied de l'avis (« Posée le … »). -->
-	<Gouttiere quand={q.cree_le} />
 	<EnteteCarte titre={q.question} basculable on:toggle={() => dispatch('basculer')}>
 		<svelte:fragment slot="actions">
 			<BoutonLien ancre="question-reglement-{q.id}" quoi="la question" />
@@ -167,7 +163,7 @@
 			</p>
 		</div>
 	{/if}
-</div>
+</CarteListe>
 
 <style>
 	/*  Le retrait de l'en-tête (`EnteteCarte`, 0,7 rem) : le corps s'aligne sur le titre. */

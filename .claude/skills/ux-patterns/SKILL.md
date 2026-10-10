@@ -849,14 +849,17 @@ NOTION, et la forme aérée est devenue la base :
 
 | Brique | Ce qu'elle porte | Où |
 |---|---|---|
-| `Gouttiere` | `quand` (ISO, découpé par `partiesDate`) puis `classe` (`{icone, libelle, abrege}`), et un slot libre dessous (le vote d'une idée) ; au téléphone (≤ 480 px), une ligne au-dessus du titre | la carte pose `a-gouttiere` sur son `.carte-liste` (`normes.css` lui réserve `--largeur-gouttiere`) et **ne passe plus** `date` à `EnteteCarte` |
+| `CarteListe` | **le conteneur de toute carte de liste** (10/10/2026) : `.carte-liste`, la gouttière dès que `quand`, `classe` ou le créneau `gouttiere` la remplit (`.a-gouttiere`), le geste asymétrique (`onDeplier`, absent = la carte ne se déplie pas), `expanded`, `urgent`, `archive` ; `class` et les `data-*` (teinte) sont transmis | les 14 cartes du site ; 🔒 `npm run lint:carte-liste` refuse le conteneur, la gouttière ou un état de carte écrits ailleurs |
+| `Gouttiere` | `quand` (ISO, découpé par `partiesDate`) puis `classe` (`{icone, libelle, abrege}`), et un slot libre dessous (le vote d'une idée) ; au téléphone (≤ 480 px), une ligne au-dessus du titre | rendue par `CarteListe` **seul** ; la carte **ne passe plus** `date` à `EnteteCarte` |
 | `$lib/gouttiere` | le type `ClasseGouttiere` et `classeDe(table, marques, val)` : une notion déclare la **marque** de chaque valeur (`[icone, abrege]`), le libellé vient de sa table — `$lib/prestataires-gouttiere`, `classementAnnonce` | tout écran qui classe |
-| `GouttiereAffaire` | la gouttière d'une affaire : `mis_a_jour_le ?? cree_le` et la nature (`natureDe`) ; la teinte vient de `[data-nature]` (`--nature-fort`), sans elle le Bleu Seine | `CarteTicket`, `CarteActualite` |
+| `gouttiereAffaire(t)` | la gouttière d'une affaire, `{ quand, classe }` : `mis_a_jour_le ?? cree_le` et la nature (`natureDe`), à étaler sur `CarteListe` ; la teinte vient de `[data-nature]` (`--nature-fort`), sans elle le Bleu Seine | `CarteTicket`, `CarteActualite` (`$lib/tickets`) |
 | `ReglagesListe` | la grille des réglages : libellés dans une colonne de la largeur de la gouttière, `ChampRecherche` **en tête**, puis `ChoixPastilles libelleDevant` / `FiltrePerimetre libelleDevant`, chacun avec `compte` | `FiltresAffaires` et toute page à réglages |
 | `EnteteCarte` | la densité **aérée** est la base (l'ex-variante `ample`) : titre `--fs-lg`, aperçu `--fs-md` interligne 1,5, actions 26 px au bureau, 32 au doigt | toutes les cartes |
 | `.carte-liste` | le filet sur trois côtés et 0,85 rem entre deux cartes (0,6 au téléphone) | `normes.css` |
 | `IconeAction` | le pictogramme **au trait**, partout : gris `--color-text-muted`, Bleu Seine au survol ; plus de contexte de liste, plus d'émoji | tout bouton d'action icône ; 🔒 `npm run lint:actions-au-trait` |
 | `.badge` | une **capsule** (coins de 6 px) sur tout le site ; `.badge-gray` neutre (pierre) sur la dernière ligne d'une carte (`.ec-tags`, `.pa`) | `composants.css` |
+
+🔴 **Une carte archivée a UNE allure** (10/10/2026, `CarteListe archive`) : atténuée à 0,8, pleine une fois dépliée et au survol (au pointeur seulement). Il y en avait cinq — `.attenue` sous trois variantes, `.item-inactive` de la FAQ (0,55, jamais pleine), `.history-item` de l'affaire (liseré gris, sans le filet de la carte). Une classe passée par `class` vit dans `CarteListe` : le `<style>` de l'appelant ne l'atteint qu'en `:global(…)` — les teintes (`[data-nature]`, `[data-type-annonce]`) et les états vivent donc dans `normes.css`.
 
 Ce qui n'a pas d'équivalent ne s'invente pas : une gouttière sans date ne porte que le
 classement ; sans classement, que la date ; un objet sans l'un ni l'autre n'en a pas

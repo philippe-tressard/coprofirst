@@ -26,6 +26,7 @@
 <script lang="ts">
 	import type { ClasseGouttiere } from '$lib/gouttiere';
 	import { onMount } from 'svelte';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
 	import { carnet as carnetApi, type Carnet, type EntreeCarnet } from '$lib/api';
 	import { EQUIPEMENTS } from '$lib/prestataires';
@@ -36,7 +37,6 @@
 	import ChoixPastilles from './ChoixPastilles.svelte';
 	import ReglagesListe from './ReglagesListe.svelte';
 	import EnteteCarte from './EnteteCarte.svelte';
-	import Gouttiere from './Gouttiere.svelte';
 	import IconeAction from './IconeAction.svelte';
 	import LienAction from './LienAction.svelte';
 	import { anneesDuCarnet, entreesDeLAnnee } from '$lib/carnet';
@@ -216,15 +216,12 @@
 								<!--  Une carte ne se DÉPLIE que si elle a une synthèse validée
 								      (#1643) ; sinon le titre reste un texte, et c'est la flèche
 								      qui mène à la fiche d'origine. -->
-								<div
-									class="carte-liste a-gouttiere"
-									class:expanded={ouverte === entree.lien}
-									role="presentation"
-									on:click={() => {
-										if (entree.synthese && ouverte !== entree.lien) ouverte = entree.lien;
-									}}
+								<CarteListe
+									quand={entree.date}
+									classe={ORIGINES[entree.origine]}
+									expanded={ouverte === entree.lien}
+									onDeplier={entree.synthese ? () => (ouverte = entree.lien) : null}
 								>
-									<Gouttiere quand={entree.date} classe={ORIGINES[entree.origine]} />
 									<EnteteCarte
 										titre={entree.libelle}
 										basculable={!!entree.synthese}
@@ -284,7 +281,7 @@
 											<a class="vers-affaire" href={entree.lien}>Voir l'affaire →</a>
 										</div>
 									{/if}
-								</div>
+								</CarteListe>
 							</li>
 						{/each}
 					</ol>

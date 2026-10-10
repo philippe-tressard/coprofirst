@@ -33,11 +33,11 @@
 -->
 <script lang="ts">
 	import type { PetiteAnnonce } from '$lib/api';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import MarqueIA from '$lib/components/MarqueIA.svelte';
 	import { nomAffiche } from '$lib/noms';
 	import EnteteCarte from './EnteteCarte.svelte';
-	import Gouttiere from './Gouttiere.svelte';
 	import IconeAction from './IconeAction.svelte';
 	import BoutonLien from './BoutonLien.svelte';
 	import ApercuCarte from './ApercuCarte.svelte';
@@ -101,22 +101,20 @@
 	$: peutSupprimer = annonce.est_auteur || estCS || estAdmin;
 </script>
 
-<div
-	class="carte-liste a-gouttiere"
-	class:expanded
-	class:attenue={annonce.archivee}
+<!--  🗂️ QUAND puis QUOI, dans la colonne de gauche — la carte d'affaire est le
+      standard du site (10/10/2026). Le TYPE (vente, don, recherche) est ce qui
+      classe une annonce : il quitte donc la ligne des tags, et la date n'est
+      plus passée à l'en-tête — un seul fait, une place. Sa teinte se lit sur
+      `data-type-annonce` (`normes.css`). -->
+<CarteListe
 	id="annonce-{annonce.id}"
+	quand={annonce.cree_le}
+	classe={classementAnnonce(annonce.type_annonce)}
+	{expanded}
+	archive={annonce.archivee}
+	onDeplier={onToggle}
 	data-type-annonce={annonce.type_annonce}
-	role="presentation"
-	on:click={() => {
-		if (!expanded) onToggle();
-	}}
 >
-	<!--  🗂️ QUAND puis QUOI, dans la colonne de gauche — la carte d'affaire est le
-	      standard du site (10/10/2026). Le TYPE (vente, don, recherche) est ce
-	      qui classe une annonce : il quitte donc la ligne des tags, et la date
-	      n'est plus passée à l'en-tête — un seul fait, une place. -->
-	<Gouttiere quand={annonce.cree_le} classe={classementAnnonce(annonce.type_annonce)} />
 	<!--  Titre sur sa propre ligne, l'aperçu, puis les tags : la norme de toutes
 	      les cartes du site. Elle vit dans `EnteteCarte`. -->
 	<EnteteCarte titre={annonce.titre} basculable on:toggle={onToggle}>
@@ -306,23 +304,13 @@
 			{/if}
 		</div>
 	{/if}
-</div>
+</CarteListe>
 
 <style>
-	/*  Conteneur, survol et espacement : `.carte-liste` (app.css). L'en-tête, ses
-	    tags et leur repli : `EnteteCarte`. L'aperçu et sa vignette : `ApercuCarte`.
-	    La gouttière : `Gouttiere`. Ne reste ici que ce qui est propre à une annonce.
-
-	    La TEINTE du type, que la gouttière lit (`--nature-fort`) : celle de son
-	    ancien badge — bleu pour la vente (le Bleu Seine, par défaut), vert pour
-	    le don, orange pour la recherche. Le type a changé de place, pas de
-	    couleur. */
-	[data-type-annonce='don'] {
-		--nature-fort: var(--color-success);
-	}
-	[data-type-annonce='recherche'] {
-		--nature-fort: var(--color-warning-texte);
-	}
+	/*  Conteneur, gouttière, survol, archive et la TEINTE du type : `CarteListe`
+	    et `normes.css`. L'en-tête, ses tags et leur repli : `EnteteCarte`.
+	    L'aperçu et sa vignette : `ApercuCarte`. Ne reste ici que ce qui est
+	    propre à une annonce. */
 	.annonce-prix {
 		font-weight: 700;
 		color: var(--color-primary);
@@ -374,16 +362,5 @@
 
 	.annonce-signaler {
 		margin-top: 0.4rem;
-	}
-
-	/*  Archives : la carte s'efface tant qu'on ne la vise pas — `.attenue` vient de
-	    la charte ; seul le retour à l'opacité pleine diffère d'un écran à l'autre.
-
-	    ⚠️ Au pointeur seulement : sur un écran tactile, `:hover` reste collé
-	    après un appui, et la carte d'archive restait pleine une fois lue. */
-	@media (hover: hover) and (pointer: fine) {
-		.attenue:hover {
-			opacity: 1;
-		}
 	}
 </style>

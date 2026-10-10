@@ -15,10 +15,12 @@
     • le fil de suivi y était réécrit intégralement, deux fois.
 
   Une carte, un fichier. La seule différence retenue est l'**allure d'archive**
-  (`archive`), qui se voit : filet à gauche, fond atténué. Elle est portée ici, en
-  prop — une classe posée par la page sur le balisage d'un composant enfant ne
-  serait **pas atteinte** par le `<style>` de la page (panne des pastilles nues,
-  v2.67.11).
+  (`archive`) : la carte s'atténue. Elle est portée en prop jusqu'à `CarteListe`,
+  qui la rend comme toute carte archivée du site — une classe posée par la page
+  sur le balisage d'un composant enfant ne serait **pas atteinte** par le
+  `<style>` de la page (panne des pastilles nues, v2.67.11). Elle avait son
+  propre rendu (`.history-item` : liseré gris, sans le filet de `.carte-liste`)
+  jusqu'au 10/10/2026.
 
   ## Les formulaires vivent ICI, et pas dans un slot
 
@@ -38,12 +40,12 @@
 -->
 <script lang="ts">
 	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import ApercuTicket from './ApercuTicket.svelte';
 	import ExtraitRecherche from './ExtraitRecherche.svelte';
 	import EnteteCarte from './EnteteCarte.svelte';
-	import GouttiereAffaire from './GouttiereAffaire.svelte';
 	import EtatListe from './EtatListe.svelte';
 	import PastillesAffaire from './PastillesAffaire.svelte';
 	import ActionsTicket from './ActionsTicket.svelte';
@@ -64,6 +66,7 @@
 		optionsVersTicket,
 		ticketUrgent,
 		attributsNature,
+		gouttiereAffaire,
 		STATUT_TICKET_LABELS,
 	} from '$lib/tickets';
 	import { fmtDate } from '$lib/date';
@@ -151,27 +154,22 @@
 	let filSynthese: SyntheseFil;
 </script>
 
-<div
+<!--  QUAND puis QUOI, dans la colonne de gauche (maquette B, 10/10/2026) : la
+      date n'est donc plus passée à l'en-tête — un seul fait, une place. -->
+<CarteListe
 	id="ticket-{ticket.id}"
+	{...gouttiereAffaire(ticket)}
+	{expanded}
+	urgent={ticketUrgent(ticket)}
+	{archive}
+	onDeplier={() => dispatch('basculer')}
 	{...attributsNature(ticket)}
-	class="a-gouttiere"
-	class:carte-liste={!archive}
-	class:history-item={archive}
-	class:expanded
-	class:urgent={ticketUrgent(ticket)}
-	role="presentation"
-	on:click={() => {
-		if (!expanded) dispatch('basculer');
-	}}
 >
 	<!--  Le geste de dépliage vit dans `EnteteCarte` : le TITRE plie, avec un
 	      survol qui le dit (18/08/2026). Le conteneur ne porte plus
 	      `role="button"` — il interceptait la sélection de texte, et obligeait
 	      chaque bouton d'action à un `stopPropagation` pour qu'un clic sur ✏️ ne
 	      déplie pas la carte au même instant. -->
-	<!--  QUAND puis QUOI, dans la colonne de gauche (maquette B, 10/10/2026) :
-	      la date n'est donc plus passée à l'en-tête — un seul fait, une place. -->
-	<GouttiereAffaire affaire={ticket} />
 	<EnteteCarte titre={ticket.titre} basculable on:toggle={() => dispatch('basculer')}>
 		<svelte:fragment slot="titre-suffixe">
 			<BadgeNouveau le={ticket.cree_le} />
@@ -369,7 +367,7 @@
 			{/if}
 		</div>
 	{/if}
-</div>
+</CarteListe>
 
 <style>
 	/*  Conteneur, survol, `expanded` et `urgent` viennent de `.carte-liste`
@@ -400,37 +398,5 @@
 	    qu'elle suit. C'est cette marge que la fiche du ticket avait perdue. */
 	.tk-fil {
 		margin-top: 0.9rem;
-	}
-
-	/*  Allure d'archive — portée ici et non par la page hôte : le `<style>` d'une
-	    page n'atteint pas le balisage d'un composant enfant. */
-	.history-item {
-		border-left: 4px solid var(--color-border);
-		border-radius: var(--radius);
-		background: var(--color-surface);
-		opacity: 0.8;
-		transition:
-			opacity var(--duree-geste),
-			border-left-color var(--duree-geste);
-	}
-	@media (hover: hover) and (pointer: fine) {
-		.history-item:hover {
-			opacity: 1;
-		}
-	}
-	/*  ⚠️ Un ticket ARCHIVÉ porte `.history-item` et NON `.carte-liste` : la règle
-	    globale de survol ne l'atteint pas. Sans ces deux lignes, son titre serait
-	    le seul du site à ne pas répondre au survol — un écart invisible tant
-	    qu'on ne déroule pas les archives. */
-	@media (hover: hover) and (pointer: fine) {
-		.history-item:hover :global(.ec-titre) {
-			color: var(--color-primary);
-		}
-	}
-	.history-item :global(.ec-titre) {
-		transition: color var(--duree-geste);
-	}
-	.history-item.expanded {
-		opacity: 1;
 	}
 </style>

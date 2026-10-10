@@ -61,6 +61,7 @@
   ailleurs (`npm run lint:noms` le refuse).
 -->
 <script context="module" lang="ts">
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
 	/**
 	 *  Ce que TOUT membre d'annuaire porte, quel que soit son côté.
@@ -144,15 +145,11 @@
 <!--  `role="presentation"` et non `role="button"` : le conteneur n'est plus
       interactif, c'est le TITRE qui l'est (cf. l'en-tête du fichier). Replié, un
       clic n'importe où déplie ; déplié, seul le titre referme. -->
-<div
-	class="carte-liste carte-membre"
-	class:expanded={ouvert}
-	class:carte-membre--president={accent === 'president'}
-	class:carte-membre--principal={accent === 'principal'}
-	role="presentation"
-	on:click={() => {
-		if (!ouvert) dispatch('basculer');
-	}}
+<CarteListe
+	class="carte-membre"
+	data-accent={accent}
+	expanded={ouvert}
+	onDeplier={() => dispatch('basculer')}
 >
 	<EnteteCarte
 		titre={`${membre.genre} ${nomAffiche(membre) || '…'}`}
@@ -264,7 +261,7 @@
 			{/if}
 		</div>
 	{/if}
-</div>
+</CarteListe>
 
 <style>
 	/*  ⚠️ Le composant porte son balisage ET son style — leçon de `Pastille.svelte`
@@ -273,16 +270,18 @@
 
 	/*  `.carte-liste` (normes.css) donne déjà le fond, l'ombre, le rayon, la
 	    bordure gauche et son survol. Ne restent ici que les DIFFÉRENCES d'une
-	    fiche de membre : son fond propre, et l'accent de rôle. */
-	.carte-membre {
+	    fiche de membre : son fond propre, et l'accent de rôle. `:global` : ces
+	    classes sont posées sur le conteneur que `CarteListe` rend, hors de la
+	    portée de ce fichier ; bornées à `.carte-liste`, elles ne valent que là. */
+	:global(.carte-liste.carte-membre) {
 		background: var(--color-bg-secondary, #f8f9fa);
 		border: 1px solid var(--color-border);
 		border-left-width: 3px;
 	}
-	.carte-membre--president {
+	:global(.carte-liste.carte-membre[data-accent='president']) {
 		border-left-color: var(--color-warning);
 	}
-	.carte-membre--principal {
+	:global(.carte-liste.carte-membre[data-accent='principal']) {
 		border-left-color: var(--color-accent);
 	}
 

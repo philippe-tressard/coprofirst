@@ -23,12 +23,12 @@
 -->
 <script lang="ts">
 	import type { Sondage } from '$lib/api';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import MarqueIA from '$lib/components/MarqueIA.svelte';
 	import { fmtDateShort } from '$lib/date';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import Gouttiere from '$lib/components/Gouttiere.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
@@ -65,8 +65,7 @@
 	      ⚠️ Le lien est posé APRÈS la gouttière : elle est positionnée elle
 	      aussi, et la dernière posée passe dessus — avant, un clic sur la date
 	      n'aurait mené nulle part. -->
-	<div class="sondage-card carte-liste a-gouttiere" class:expanded={editId === s.id}>
-		<Gouttiere quand={s.cree_le} />
+	<CarteListe class="sondage-card" quand={s.cree_le} expanded={editId === s.id}>
 		<!--  Pendant la correction, la carte est OUVERTE (`expanded`) et son lien
 		      se retire : il couvrirait les champs du formulaire. -->
 		{#if editId !== s.id}
@@ -142,15 +141,14 @@
 				<slot name="formulaire" />
 			</div>
 		{/if}
-	</div>
+	</CarteListe>
 {/each}
 
 <style>
-	/*  Conteneur, filet, survol et écart entre cartes : `.carte-liste` et
-	    `.a-gouttiere` (`normes.css`) — le survol y colore le titre et le liseré,
-	    ce qui dit juste ici : toute la carte mène à la fiche. L'en-tête et ses
-	    tags : `EnteteCarte`. L'aperçu : `ApercuCarte`. La colonne : `Gouttiere`.
-	    Ne reste ici que le lien étiré. */
+	/*  Conteneur, filet, survol, écart entre cartes et gouttière : `CarteListe`
+	    (`normes.css`) — le survol y colore le titre et le liseré, ce qui dit
+	    juste ici : toute la carte mène à la fiche. L'en-tête et ses tags :
+	    `EnteteCarte`. L'aperçu : `ApercuCarte`. Ne reste ici que le lien étiré. */
 	.lien-sondage {
 		position: absolute;
 		inset: 0;
@@ -164,8 +162,10 @@
 		padding: 0.75rem 1rem 1rem;
 		border-top: 1px solid var(--color-border);
 	}
-	/*  Les gestes au-dessus du lien étiré : sinon il prendrait leurs clics. */
-	.sondage-card :global(button) {
+	/*  Les gestes au-dessus du lien étiré : sinon il prendrait leurs clics.
+	    `:global` : `.sondage-card` est posée sur le conteneur que `CarteListe`
+	    rend — hors de la portée de ce fichier. */
+	:global(.sondage-card button) {
 		position: relative;
 		z-index: 1;
 	}

@@ -123,6 +123,7 @@
 		"lint:compte-filtres": "node scripts/check-compte-filtres.mjs --selftest && node scripts/check-compte-filtres.mjs",
 		"lint:note-etoiles": "node scripts/check-note-etoiles.mjs",
 		"lint:entete-carte": "node scripts/check-entete-carte.mjs --selftest && node scripts/check-entete-carte.mjs",
+		"lint:carte-liste": "node scripts/check-carte-liste.mjs --selftest && node scripts/check-carte-liste.mjs",
 		"lint:pictogrammes": "node scripts/check-pictogrammes.mjs --selftest && node scripts/check-pictogrammes.mjs",
 		"lint:clamp": "node scripts/check-clamp.mjs --selftest && node scripts/check-clamp.mjs",
 		"lint:types-locaux": "node scripts/check-types-locaux.mjs --selftest && node scripts/check-types-locaux.mjs",

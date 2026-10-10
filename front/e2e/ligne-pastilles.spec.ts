@@ -162,7 +162,7 @@ const COMMUNAUTE: Record<string, unknown> = {
 
 for (const [route, carte, auteur] of [
 	['/annonces', '.carte-liste', '✍️ Jeanne MARTIN'],
-	['/idees', '.idee-card', null],
+	['/idees', '.carte-liste[id^="idee-"]', null],
 	['/sondages', '.sondage-card', null],
 ] as const) {
 	test(`${route} : pastille de lecture, ✨ en fin de ligne, auteur ${auteur ? 'nommé' : 'tu'}`, async ({

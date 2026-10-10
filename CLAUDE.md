@@ -510,6 +510,10 @@ coupant. 🔴 **Les courriels de sécurité ne sont pas un service**
 - [ ] Méta toujours visible en mode collapsé — tenue par `EnteteCarte`, qui porte
       les tags sur la carte repliée (`npm run lint:entete-carte` exige qu'une
       carte passe par lui)
+- [ ] Carte de liste : `<CarteListe>` — conteneur, gouttière (`quand`, `classe`), geste
+      (`onDeplier`), états (`expanded`, `urgent`, `archive`) ; jamais un `.carte-liste`
+      écrit à la main ni un `<Gouttiere>` rendu par la carte (`npm run lint:carte-liste`,
+      10/10/2026 : quatorze copies, et cinq allures d'archive)
 - [ ] Corps déplié d'une carte : `class="carte-corps …"` — c'est ce qui le fait
       entrer (fondu 200 ms) ; sans elle il apparaît sec, sans un mot. 🔒 `npm run
       lint:entete-carte` l'exige de tout fichier qui rend `.carte-liste` (#1579). Un survol

@@ -33,6 +33,7 @@
 	} from '$lib/api';
 	import { messageErreur } from '$lib/erreurs';
 	import { isCS } from '$lib/stores/auth';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { SUPPRESSION, confirmerPuis } from '$lib/confirmation';
 	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
@@ -41,7 +42,6 @@
 	import CategoriesCompteur from '$lib/components/CategoriesCompteur.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import Gouttiere from '$lib/components/Gouttiere.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import IntertitreGroupe from '$lib/components/IntertitreGroupe.svelte';
 
@@ -274,8 +274,7 @@
 	{#each relevesByYear as [year, yearReleves] (year)}
 		<IntertitreGroupe libelle={String(year)} />
 		{#each yearReleves as r (r.id)}
-			<div class="carte-liste a-gouttiere releve-carte" id="releve-{r.id}">
-				<Gouttiere quand={r.date_releve} />
+			<CarteListe id="releve-{r.id}" quand={r.date_releve}>
 				<EnteteCarte titre={titreReleve(r)}>
 					<svelte:fragment slot="actions">
 						{#if $isCS}
@@ -306,7 +305,7 @@
 						</a>
 					</div>
 				{/if}
-			</div>
+			</CarteListe>
 		{/each}
 	{/each}
 {/if}

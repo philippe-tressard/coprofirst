@@ -51,11 +51,11 @@
 -->
 <script lang="ts">
 	import type { ClasseGouttiere } from '$lib/gouttiere';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
-	import Gouttiere from '$lib/components/Gouttiere.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import LienAction from '$lib/components/LienAction.svelte';
 	import TexteDeplie from '$lib/components/TexteDeplie.svelte';
@@ -125,16 +125,13 @@
 			<!--  Repliée, toute la carte déplie ; dépliée, seul le titre replie
 			      (`ux-patterns` §3). L'`id` est la cible des liens profonds
 			      (`#doc-<id>`, fil d'activité et 🔗). -->
-			<div
+			<CarteListe
 				id="doc-{doc.id}"
-				class="carte-liste a-gouttiere"
-				class:expanded={deplie === doc.id}
-				role="presentation"
-				on:click={() => {
-					if (depliable && deplie !== doc.id) deplie = doc.id;
-				}}
+				quand={quandDe(doc)}
+				{classe}
+				expanded={deplie === doc.id}
+				onDeplier={depliable ? () => (deplie = doc.id) : null}
 			>
-				<Gouttiere quand={quandDe(doc)} {classe} />
 				<EnteteCarte
 					titre={doc.titre}
 					basculable={depliable}
@@ -185,7 +182,7 @@
 						<TexteDeplie contenu={doc.description} />
 					</div>
 				{/if}
-			</div>
+			</CarteListe>
 		{/each}
 	</EtatListe>
 </section>

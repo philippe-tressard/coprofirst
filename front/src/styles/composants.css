@@ -1287,12 +1287,10 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	margin: 0 0.2rem;
 }
 
-/*  Une carte d'archive : elle s'efface tant qu'on ne la vise pas, pour que la
-    liste courante garde le premier plan.
-
-    ⚠️ Seul le RETOUR à l'opacité pleine reste local : l'annonce le fait au
-    survol, l'actualité aussi mais également une fois DÉPLIÉE. Deux gestes
-    différents sur le même objet — c'est l'écart, il reste où il se décide. */
+/*  Un élément ATTÉNUÉ : il s'efface pour laisser le premier plan au reste.
+    Une carte archivée le reçoit de `CarteListe archive` ; son retour à
+    l'opacité pleine (dépliée, survolée) est une règle de CARTE, posée une
+    fois dans `normes.css` (`.carte-liste.attenue`) — il en existait cinq. */
 .attenue {
 	opacity: 0.8;
 	transition: opacity var(--duree-geste);

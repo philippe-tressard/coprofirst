@@ -22,6 +22,7 @@
   passés en slots — ils sont écrits dans la page, donc leurs styles y restent.
 -->
 <script lang="ts">
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import { nomProprietaire } from '$lib/saisi-pour';
@@ -29,7 +30,6 @@
 	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
 	import ExtraitRecherche from '$lib/components/ExtraitRecherche.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import GouttiereAffaire from '$lib/components/GouttiereAffaire.svelte';
 	import PastillesAffaire from '$lib/components/PastillesAffaire.svelte';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import PiecesJointes from '$lib/components/PiecesJointes.svelte';
@@ -40,7 +40,7 @@
 		type Ticket,
 	} from '$lib/api';
 	import { safeHtml } from '$lib/sanitize';
-	import { attributsNature, lienTicket, ticketUrgent } from '$lib/tickets';
+	import { attributsNature, gouttiereAffaire, lienTicket, ticketUrgent } from '$lib/tickets';
 	//  Glyphes et intitulés des quatre options : source unique. Ils étaient
 	//  écrits ici ET dans les cases du formulaire, et avaient divergé.
 	import { optionPublication } from '$lib/options-publication';
@@ -82,17 +82,16 @@
 	//  `routes/(app)/actualites`, qui mène à la fiche.
 </script>
 
-<div
-	class="carte-liste a-gouttiere"
-	{...attributsNature(pub)}
-	class:expanded
-	class:urgent={ticketUrgent(pub)}
-	class:attenue={!estFil}
+<!--  QUAND puis QUOI, dans la colonne de gauche (maquette B, 10/10/2026) : la
+      date n'est donc plus passée à l'en-tête — un seul fait, une place. -->
+<CarteListe
 	id="ticket-{pub.id}"
-	role="presentation"
-	on:click={() => {
-		if (!expanded) basculer();
-	}}
+	{...gouttiereAffaire(pub)}
+	{expanded}
+	urgent={ticketUrgent(pub)}
+	archive={!estFil}
+	onDeplier={basculer}
+	{...attributsNature(pub)}
 >
 	{#if estFil && pub.epingle}
 		{@const o = optionPublication('epingle')}
@@ -108,9 +107,6 @@
 	      `role="button"` — il interceptait la sélection de texte, et obligeait
 	      chaque bouton d'action à un `stopPropagation` pour qu'un clic sur ✏️ ne
 	      déplie pas la carte au même instant. -->
-	<!--  QUAND puis QUOI, dans la colonne de gauche (maquette B, 10/10/2026) :
-	      la date n'est donc plus passée à l'en-tête — un seul fait, une place. -->
-	<GouttiereAffaire affaire={pub} />
 	<EnteteCarte titre={pub.titre} basculable on:toggle={basculer}>
 		<svelte:fragment slot="titre-suffixe">
 			<BadgeNouveau le={pub.cree_le} si={estFil} />
@@ -192,7 +188,7 @@
 			{/if}
 		</div>
 	{/if}
-</div>
+</CarteListe>
 
 <style>
 	/*  Conteneur, survol, urgence et espacement : `.carte-liste` (app.css). Ne
@@ -244,17 +240,6 @@
 		}
 	}
 
-	/*  Archives : la carte s'efface tant qu'on ne la vise pas — `.attenue` vient de
-	    la charte ; ici la carte DÉPLIÉE reprend aussi son opacité pleine.
-	    Le survol, au pointeur seulement : au doigt, `:hover` reste collé. */
-	.attenue.expanded {
-		opacity: 1;
-	}
-	@media (hover: hover) and (pointer: fine) {
-		.attenue:hover {
-			opacity: 1;
-		}
-	}
 	.description-actualite {
 		font-size: var(--fs-base);
 		line-height: 1.6;

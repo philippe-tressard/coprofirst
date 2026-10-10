@@ -208,10 +208,11 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
     composant (`Gouttiere`), la carte lui réserve sa place.
 
     L'air (filet, écart entre cartes) est celui de toute `.carte-liste`,
-    plus haut ; la carte d'archive (`.history-item`) le reçoit ici.
+    plus haut.
 
-    `.a-gouttiere` est la prise — une carte qui rend `Gouttiere` la pose ;
-    `[data-nature]` (`attributsNature`) n'en porte plus que la TEINTE. */
+    `.a-gouttiere` est la prise — `CarteListe` la pose dès qu'il y a une
+    gouttière, et nulle autre carte (`lint:carte-liste`) ; `[data-nature]`
+    (`attributsNature`) et `[data-type-annonce]` n'en portent que la TEINTE. */
 /*  🔴 UNE COLONNE DE LA CARTE, pas un calque posé dessus (#1819). La gouttière
     était en `position: absolute` dans un retrait : elle ne comptait pas dans
     la hauteur de la carte, et sous une carte COURTE — un contrat sans aperçu,
@@ -224,16 +225,13 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
     (une rangée `auto` ne grandit pas pour un élément qui traverse une rangée
     flexible). Huit rangées de contenu : une carte en compte trois au plus
     (en-tête, corps déplié, formulaire). */
-:is(.carte-liste, .history-item).a-gouttiere {
-	--filet-carte: color-mix(in srgb, var(--color-border) 70%, transparent);
-	position: relative;
+/*  Le filet et l'écart ne se redéclarent plus ici : ils ne servaient qu'à la
+    carte d'affaire ARCHIVÉE, qui portait `.history-item` au lieu de
+    `.carte-liste`. Elle est une `.carte-liste` archivée depuis `CarteListe`. */
+.carte-liste.a-gouttiere {
 	display: grid;
 	grid-template-columns: var(--largeur-gouttiere) minmax(0, 1fr);
 	grid-template-rows: repeat(8, auto) 1fr;
-	margin-bottom: 0.85rem;
-	border-top: 1px solid var(--filet-carte);
-	border-right: 1px solid var(--filet-carte);
-	border-bottom: 1px solid var(--filet-carte);
 }
 .a-gouttiere > :not(.gouttiere) {
 	grid-column: 2;
@@ -247,16 +245,41 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 [data-nature='activite'] {
 	--nature-fort: #c2410c;
 }
+/*  Le TYPE d'une petite annonce, que sa gouttière lit : la teinte de son
+    ancien badge — vente au Bleu Seine (le défaut), don en vert, recherche en
+    orange. Elle vivait dans `AnnonceCard`, dont le `<style>` n'atteint plus le
+    conteneur depuis qu'il est rendu par `CarteListe`. */
+[data-type-annonce='don'] {
+	--nature-fort: var(--color-success);
+}
+[data-type-annonce='recherche'] {
+	--nature-fort: var(--color-warning-texte);
+}
+
+/*  📦 LA CARTE ARCHIVÉE — une forme, posée par `CarteListe archive`. Elle
+    s'efface tant qu'on ne la vise pas, pour que la liste courante garde le
+    premier plan, et reprend son opacité pleine dépliée ou survolée (au
+    pointeur seulement : au doigt, `:hover` reste collé et la carte lue
+    restait pleine). Il en existait CINQ rendus — annonce, actualité, contrat,
+    question de FAQ inactive (0,55, jamais pleine), affaire archivée (liseré
+    gris sans filet) : la plus disante a été retenue (`CarteListe`). */
+.carte-liste.attenue.expanded {
+	opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+	.carte-liste.attenue:hover {
+		opacity: 1;
+	}
+}
 /*  Au pouce, la colonne devient une ligne au-dessus du titre
     (`Gouttiere`) : la carte n'a plus de retrait à lui réserver. */
 @media (max-width: 480px) {
 	.carte-liste {
 		margin-bottom: 0.6rem;
 	}
-	:is(.carte-liste, .history-item).a-gouttiere {
+	.carte-liste.a-gouttiere {
 		grid-template-columns: minmax(0, 1fr);
 		grid-template-rows: none;
-		margin-bottom: 0.6rem;
 	}
 	.a-gouttiere > :not(.gouttiere) {
 		grid-column: 1;

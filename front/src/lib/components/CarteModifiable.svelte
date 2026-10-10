@@ -29,8 +29,7 @@
 
   | Porté ici | Déclaré par l'appelant |
   |---|---|
-  | le conteneur, son ancre, le geste asymétrique, l'urgence | `ancreId`, `urgent` |
-  | la gouttière (`Gouttiere`) : QUAND, puis ce qui CLASSE | `quand`, `classe` |
+  | le conteneur, son ancre, le geste asymétrique, l'urgence, la gouttière — par `CarteListe` | `ancreId`, `urgent`, `quand`, `classe` |
   | l'en-tête (`EnteteCarte`) | `titre`, et les emplacements `tags`, `apercu` |
   | 🔗 puis ✏️ puis 📦, dans cet ordre (`ux-patterns` §3), au trait | `quoi` ; un geste de plus par `gestes` (✨ du contrat) |
   | aux Archives : ↩️ à la place de 📦, ✏️ et les gestes se taisent, la carte s'atténue | `archive`, et où l'objet revient (`titreRestaurer`) |
@@ -54,8 +53,8 @@
 	import type { EntiteDeclaree } from '$lib/entites/types';
 	import BoutonLien from './BoutonLien.svelte';
 	import EnteteCarte from './EnteteCarte.svelte';
+	import CarteListe from './CarteListe.svelte';
 	import FormulaireCreation from './FormulaireCreation.svelte';
-	import Gouttiere from './Gouttiere.svelte';
 	import IconeAction from './IconeAction.svelte';
 	import type { ClasseGouttiere } from '$lib/gouttiere';
 
@@ -90,22 +89,19 @@
 	export let onArchiver: (archivee: boolean) => void = () => {};
 </script>
 
-<div
-	class="carte-liste a-gouttiere"
-	class:expanded={expanded || enEdition}
-	class:urgent
-	class:attenue={archive && !expanded}
+<CarteListe
 	id={ancreId}
-	role="presentation"
-	on:click={() => {
-		if (!expanded && !enEdition) onBasculer();
-	}}
+	{quand}
+	{classe}
+	expanded={expanded || enEdition}
+	{urgent}
+	{archive}
+	onDeplier={onBasculer}
 >
 	<!--  ⚠️ Pendant la correction, la ligne de titre ne replie pas : le corps
 	      montre le formulaire quoi qu'il arrive, et basculer un état invisible
 	      ferait croire à un geste mort. On sort par le crayon ou par
 	      « Annuler ». -->
-	<Gouttiere {quand} {classe} />
 	<EnteteCarte {titre} basculable on:toggle={() => !enEdition && onBasculer()}>
 		<svelte:fragment slot="tags"><slot name="tags" /></svelte:fragment>
 
@@ -169,7 +165,7 @@
 			<slot name="detail" />
 		</div>
 	{/if}
-</div>
+</CarteListe>
 
 <style>
 	/*  Les valeurs des deux corps d'origine : `.prest-body` (sans teinte) et

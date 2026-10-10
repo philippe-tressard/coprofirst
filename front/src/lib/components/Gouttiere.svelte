@@ -14,17 +14,22 @@
   🔴 Le soir même, la page Affaires est devenue le STANDARD du site (« applique-le
   à toutes les pages ») : ce composant s'appelait `GouttiereAffaire` et ne savait
   lire qu'une affaire. Il prend désormais une date et un classement — la NATURE
-  d'une affaire (`GouttiereAffaire`, qui l'appelle), le type d'un prestataire, la
-  rubrique d'une question… Ce que l'objet n'a pas ne s'invente pas : sans date, la
-  colonne ne porte que le classement.
+  d'une affaire (`gouttiereAffaire`, `$lib/tickets`), le type d'un prestataire,
+  la rubrique d'une question… Ce que l'objet n'a pas ne s'invente pas : sans
+  date, la colonne ne porte que le classement.
+
+  🔒 Il n'est rendu QUE par `CarteListe` (`lint:carte-liste`), qui pose la
+  colonne dès qu'il y a de quoi la remplir : une carte ne l'appelle plus
+  elle-même, et ne peut donc plus oublier `.a-gouttiere` ni le rendre ailleurs
+  qu'en premier enfant.
 
   La TEINTE du classement est portée par la carte (`--nature-fort`, posé par
   `[data-nature]` dans `styles/normes.css`) : ce composant la lit, il ne la
   décide pas. Sans teinte, le classement prend le Bleu Seine de la charte.
 
   🔴 Une carte qui a une gouttière NE PASSE PLUS sa date à `EnteteCarte` : deux
-  dates sur une carte en feraient deux faits. La carte se déclare par la classe
-  `a-gouttiere`, qui lui réserve le retrait (`normes.css`).
+  dates sur une carte en feraient deux faits. `CarteListe` pose la classe
+  `a-gouttiere`, qui lui réserve la colonne (`normes.css`).
 
   Au téléphone (≤ 480 px) la colonne prendrait la place du titre : elle devient
   une LIGNE d'en-tête — « 5 oct. 2026 · CAL. » —, posée au-dessus du titre.

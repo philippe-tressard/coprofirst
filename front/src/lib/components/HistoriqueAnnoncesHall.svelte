@@ -22,13 +22,13 @@
 	import { annoncesHall as annoncesHallApi } from '$lib/api';
 	import { messageErreur, tenter } from '$lib/erreurs';
 	import type { AnnonceHall } from '$lib/api';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
 	import MarqueIA from '$lib/components/MarqueIA.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
 	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
 	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
-	import Gouttiere from '$lib/components/Gouttiere.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { fmtDatetimeShort as fmtDatetime } from '$lib/date';
@@ -182,15 +182,12 @@
 		      ⚠️ Le bouton ▲/▼ qui doublait le titre a disparu : `EnteteCarte
 		      basculable` rend déjà le chevron, et toute la carte repliée ouvre.
 		      Deux affordances pour un geste n'en apprenaient pas plus qu'une. -->
-		<div
-			class="carte-liste a-gouttiere"
-			class:expanded={ahExpandedId === annonce.id}
-			role="presentation"
-			on:click={() => {
-				if (ahExpandedId !== annonce.id) ahExpandedId = basculer(ahExpandedId, annonce.id);
-			}}
+		<CarteListe
+			quand={annonce.cree_le}
+			classe={classeFormat(annonce)}
+			expanded={ahExpandedId === annonce.id}
+			onDeplier={() => (ahExpandedId = basculer(ahExpandedId, annonce.id))}
 		>
-			<Gouttiere quand={annonce.cree_le} classe={classeFormat(annonce)} />
 			<EnteteCarte
 				titre={annonce.titre}
 				basculable
@@ -290,15 +287,15 @@
 					{/if}
 				</div>
 			{/if}
-		</div>
+		</CarteListe>
 	{/each}
 {/if}
 
 <style>
 	/*  Les règles suivent le balisage qui les emploie : un style laissé chez
 	    l'hôte n'atteint pas un enfant (Svelte scope au composant, v2.67.11).
-	    Conteneur, survol, dépliage et gouttière viennent de `.carte-liste` et
-	    `.a-gouttiere` (`composants.css`, `normes.css`). */
+	    Conteneur, survol, dépliage et gouttière viennent de `CarteListe`
+	    (`normes.css`). */
 
 	/*  Le retrait de l'en-tête (`EnteteCarte`) : le corps s'aligne sur le titre. */
 	.ah-corps {

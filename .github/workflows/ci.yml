@@ -2111,6 +2111,14 @@ jobs:
         working-directory: front
         run: npm run lint:entete-carte
 
+      # 🔴 Le CONTENEUR d'une carte de liste — `.carte-liste`, la gouttière, le
+      # geste de dépliage, l'état archivé — est rendu par `CarteListe` seul
+      # (10/10/2026). Quatorze cartes le recopiaient, et l'état « archivé »
+      # avait cinq rendus que rien ne comparait.
+      - name: Conteneur de carte rendu par CarteListe seul
+        working-directory: front
+        run: npm run lint:carte-liste
+
       # 🔴 Trois règles de la checklist qui n'avaient AUCUN garde-fou (#1045,
       # point 2). La mesure du 24/09/2026 en a trouvé quatre écarts vivants :
       # « 📍 Concerne votre bâtiment » et « 📍 Dépannage » (📍 est un LIEU, un

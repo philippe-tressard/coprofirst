@@ -29,10 +29,10 @@
   l'autre.
 -->
 <script lang="ts">
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import MarqueIA from '$lib/components/MarqueIA.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import Gouttiere from '$lib/components/Gouttiere.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
@@ -79,8 +79,8 @@
 	      les tags en dernière ligne. Une idée n'a pas de CLASSEMENT — ni nature ni
 	      type : la gouttière ne porte que sa date, puis son VOTE, qui tenait déjà
 	      lieu de colonne gauche. Rien n'est inventé pour remplir la case. -->
-	<div class="idee-card carte-liste a-gouttiere" id="idee-{idee.id}">
-		<Gouttiere quand={idee.cree_le}>
+	<CarteListe id="idee-{idee.id}" quand={idee.cree_le}>
+		<svelte:fragment slot="gouttiere">
 			<!--  Au trait, comme toutes les actions : le CŒUR VIDE dit « pas voté »,
 			      le cœur PLEIN « voté ». `aria-pressed` le dit au lecteur d'écran, que
 			      les deux émojis ❤️/🤍 laissaient sans état. -->
@@ -98,7 +98,7 @@
 				<IconeAction icone="heart" />
 				<span class="vote-count">{idee.nb_votes}</span>
 			</button>
-		</Gouttiere>
+		</svelte:fragment>
 		<!--  🔴 L'EN-TÊTE DU SITE (18/08/2026, signalé à l'écran : « l'état sur une
 		      2nde ligne après le titre »). `basculable` reste faux — une idée ne se
 		      déplie pas, elle montre tout. Sa date est dans la gouttière : elle
@@ -199,7 +199,7 @@
 				onReport={(rid) => onSignaler('reponse', rid)}
 			/>
 		</div>
-	</div>
+	</CarteListe>
 {/each}
 
 <style>
@@ -208,10 +208,9 @@
 	    aurait livré les cartes NUES en production — c'est la panne des pastilles
 	    de la v2.67.11, refaite deux fois depuis.
 
-	    Conteneur, filet, survol et écart entre cartes : `.carte-liste` et
-	    `.a-gouttiere` (`normes.css`). L'en-tête et ses tags : `EnteteCarte`.
-	    L'aperçu : `ApercuCarte`. La colonne : `Gouttiere`. Ne reste ici que ce
-	    qui est propre à une idée.
+	    Conteneur, filet, survol, écart entre cartes et gouttière : `CarteListe`
+	    (`normes.css`). L'en-tête et ses tags : `EnteteCarte`. L'aperçu :
+	    `ApercuCarte`. Ne reste ici que ce qui est propre à une idée.
 
 	    Une idée ne se DÉPLIE pas : `normes.css` ne lui pose ni curseur ni titre
 	    coloré au survol (ils sont réservés à une carte dont le titre est un
