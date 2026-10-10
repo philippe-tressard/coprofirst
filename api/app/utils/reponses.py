@@ -25,6 +25,7 @@ from app.models.core import (
     Utilisateur,
 )
 from app.utils.noms import ANCIEN_RESIDENT, nom_affiche
+from app.utils.recuperer import ou_rien
 from app.utils.roles_libelles import libelle_role, libelle_statut_court
 from app.utils.liens import base_site
 from app.auth.deps import est_moderateur
@@ -80,7 +81,7 @@ def auteur_meta(auteur: Optional[Utilisateur], session: Session) -> dict:
 
 def enrich_reponse(rep, session: Session) -> dict:
     """Sérialise une réponse (ReponseCommunaute ou CommentaireSondage) + auteur."""
-    auteur = session.get(Utilisateur, rep.auteur_id)
+    auteur = ou_rien(session, Utilisateur, rep.auteur_id)
     return {
         "id": rep.id,
         "auteur_id": rep.auteur_id,

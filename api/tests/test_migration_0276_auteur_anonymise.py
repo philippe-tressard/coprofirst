@@ -1,7 +1,7 @@
 """La 0276 rend l'auteur facultatif sans toucher à une ligne (#1688).
 
 Exécutée pour de vrai par le contexte d'Alembic, sur une base au schéma d'AVANT :
-`auteur_id` obligatoire sur les quatre tables d'un fil, des lignes dedans, et une
+la référence au compte obligatoire sur chaque table gardée, des lignes dedans, et une
 politique qui porte le passage de conservation des comptes. Sous `TESTS_BASE_URL`,
 la même chose sur PostgreSQL — le moteur de la production.
 """
@@ -13,12 +13,13 @@ from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import inspect, text
 
-from app.seed.contenus_legaux import ANONYMISATION_AFFAIRES, CONSERVATION_COMPTES
+from app.seed.contenus_legaux import ANONYMISATION_CONTENUS, CONSERVATION_COMPTES
 from tests.aides_base import moteur_memoire
 from tests.aides_migrations import charger_migration
 
 _MIGRATION = "0276_auteur_anonymise"
-_TABLES = ("ticket", "message_ticket", "ticket_evolution", "evenement_evolution")
+#: Lues dans la migration : c'est SA liste qu'on éprouve, sur chaque table.
+_COLONNES = charger_migration(_MIGRATION).COLONNES
 _POLITIQUE = "<ul><li>" + CONSERVATION_COMPTES + "</li><li>Sauvegardes.</li></ul>"
 
 
@@ -31,11 +32,11 @@ def _jouer(moteur, sens: str = "upgrade") -> None:
 def _moteur():
     m = moteur_memoire(schema=False)
     with m.begin() as conn:
-        for table in _TABLES:
+        for table, colonne in _COLONNES:
             conn.execute(
                 text(
                     f"CREATE TABLE {table} (id INTEGER PRIMARY KEY, "  # noqa: S608 — constantes du test
-                    "auteur_id INTEGER NOT NULL, contenu VARCHAR)"
+                    f"{colonne} INTEGER NOT NULL, contenu VARCHAR)"
                 )
             )
             conn.execute(text(f"INSERT INTO {table} VALUES (1, 7, 'texte')"))  # noqa: S608
@@ -51,8 +52,8 @@ def _moteur():
 def _facultatives(moteur) -> dict[str, bool]:
     with moteur.connect() as conn:
         return {
-            t: next(c["nullable"] for c in inspect(conn).get_columns(t) if c["name"] == "auteur_id")
-            for t in _TABLES
+            t: next(c["nullable"] for c in inspect(conn).get_columns(t) if c["name"] == col)
+            for t, col in _COLONNES
         }
 
 
@@ -67,11 +68,11 @@ def test_l_auteur_devient_facultatif_et_les_lignes_restent():
     _jouer(moteur)  # idempotente : `start.sh` rejoue après un arrêt
     assert all(_facultatives(moteur).values())
     with moteur.begin() as conn:
-        for table in _TABLES:
-            assert conn.execute(text(f"SELECT auteur_id FROM {table}")).scalar() == 7  # noqa: S608
-            conn.execute(text(f"UPDATE {table} SET auteur_id = NULL"))  # noqa: S608
+        for table, col in _COLONNES:
+            assert conn.execute(text(f"SELECT {col} FROM {table}")).scalar() == 7  # noqa: S608
+            conn.execute(text(f"UPDATE {table} SET {col} = NULL"))  # noqa: S608
     #  La politique servie le dit, une fois — même rejouée.
-    assert _politique(moteur).count(ANONYMISATION_AFFAIRES) == 1
+    assert _politique(moteur).count(ANONYMISATION_CONTENUS) == 1
 
 
 def test_le_retour_arriere_n_invente_pas_d_auteur():
@@ -79,7 +80,7 @@ def test_le_retour_arriere_n_invente_pas_d_auteur():
     _jouer(moteur)
     _jouer(moteur, "downgrade")
     assert not any(_facultatives(moteur).values())
-    assert ANONYMISATION_AFFAIRES not in _politique(moteur)
+    assert ANONYMISATION_CONTENUS not in _politique(moteur)
 
     _jouer(moteur)
     with moteur.begin() as conn:

@@ -34,7 +34,9 @@ class Delegation(SQLModel, table=True):
     motif: str = ""  # raison de la délégation
     date_debut: date = Field(default_factory=horloge.aujourd_hui)
     date_fin: Optional[date] = None  # null = pas de limite
-    cree_par_id: int = Field(foreign_key="utilisateur.id")  # CS/admin qui a créé
+    cree_par_id: Optional[int] = Field(
+        default=None, foreign_key="utilisateur.id"
+    )  # CS/admin qui a créé
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     revoque_le: Optional[NaiveDatetime] = None
     revoque_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")

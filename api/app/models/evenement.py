@@ -83,7 +83,7 @@ class Evenement(SaisiPourMixin, AssisteIAMixin, table=True):
     #  défaut se lit dans les données (#1567).
     perimetre: str = Field(default_factory=perimetre_defaut_texte)
     batiment_id: Optional[int] = Field(default=None, foreign_key="batiment.id")
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     mis_a_jour_le: Optional[NaiveDatetime] = None
     #  La colonne `archivee` est retirée (#1568, migration 0250) : l'archivage des
@@ -142,7 +142,7 @@ class EvenementEvolution(EvolutionMixin, table=True):
     #  jalon là où il n'y en a pas.
     ancien_statut: Optional[str] = None
     nouveau_statut: Optional[str] = None
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     #  Tableau JSON d'URLs internes — même convention que `Ticket.photos_urls`.
     fichiers_urls: str = "[]"

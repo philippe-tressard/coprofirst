@@ -40,6 +40,7 @@ from app.models.core import (
 
 from app.utils.echeance_contrat import poser_echeance
 from app.utils.noms import nom_affiche, nom_auteur
+from app.utils.recuperer import ou_rien
 from app.utils.archivage import est_archivable
 from app.utils.assiste_ia import marquer
 from app.utils.recuperer import ou_404
@@ -377,7 +378,7 @@ class NotationRead(BaseModel):
     note: int
     commentaire: Optional[str] = None
     contrat_id: Optional[int] = None
-    auteur_id: int
+    auteur_id: Optional[int] = None  # compte supprimé (#1821)
     auteur_nom: Optional[str] = None
     cree_le: datetime
 
@@ -398,7 +399,7 @@ def list_notations(
     notations = session.exec(q).all()
     result = []
     for n in notations:
-        auteur = session.get(Utilisateur, n.auteur_id)
+        auteur = ou_rien(session, Utilisateur, n.auteur_id)
         nr = NotationRead.model_validate(n)
         nr.auteur_nom = nom_auteur(auteur)
         result.append(nr)
@@ -462,7 +463,7 @@ def get_prestataire_synthese(
     note_moy = round(sum(n.note for n in notations) / len(notations), 1) if notations else None
     notations_read = []
     for n in notations:
-        auteur = session.get(Utilisateur, n.auteur_id)
+        auteur = ou_rien(session, Utilisateur, n.auteur_id)
         notations_read.append(
             {
                 "id": n.id,

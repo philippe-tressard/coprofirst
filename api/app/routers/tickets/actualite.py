@@ -38,6 +38,7 @@ from sqlmodel import Session, select
 
 from app.models.annonce_hall import AnnonceHall
 from app.models.core import Ticket, TicketEvolution, Utilisateur
+from app.utils.recuperer import ou_rien
 from app.models.documents import Document
 from app.utils.config_site import config_site
 from app.utils.dates_fr import datetime_longue_paris as _fmt_paris
@@ -111,7 +112,7 @@ def _historique(session: Session, ticket: Ticket, *, sauf_derniere: bool) -> lis
     for e in evols:
         if not e.contenu:
             continue
-        auteur = session.get(Utilisateur, e.auteur_id)
+        auteur = ou_rien(session, Utilisateur, e.auteur_id)
         lignes.append(
             {
                 "auteur_nom": nom_auteur(auteur),

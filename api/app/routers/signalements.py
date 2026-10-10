@@ -25,7 +25,7 @@ from app.models.core import (
     Utilisateur,
 )
 from app.utils.communaute import exiger_acces
-from app.utils.noms import nom_affiche
+from app.utils.noms import nom_affiche, nom_auteur
 from app.utils.destinataires import membres_cs_ou_admin
 from app.utils.liens import lien_element, lien_sondage
 from app.utils.recuperer import ou_404, present_ou_404
@@ -159,7 +159,7 @@ def _enrich(sig: Signalement, session: Session) -> dict:
         "statut": sig.statut,
         "cree_le": sig.cree_le,
         "signale_par": nom_affiche(signaleur.prenom, signaleur.nom) if signaleur else "Inconnu",
-        "auteur_cible": nom_affiche(auteur.prenom, auteur.nom) if auteur else None,
+        "auteur_cible": nom_auteur(auteur),
         "auteur_cible_id": sig.auteur_cible_id,
     }
 

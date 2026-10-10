@@ -26,7 +26,7 @@ from app.schemas import TicketRead
 #  différents pour AFUL. Importés sous leur vrai nom et non ré-exportés : un
 #  alias qui délègue au helper partagé masque son origine (socle 02 §6).
 from app.utils.perimetres import parse_json_perimetres, parse_perimetres
-from app.utils.noms import nom_affiche
+from app.utils.noms import nom_auteur
 from app.utils.categories_ticket import libelle_categorie, ticket_urgent
 from app.utils.fichiers import est_image
 from app.utils.photos import parse_photos
@@ -80,11 +80,9 @@ def perimetres_de(obj) -> list[str]:
 # ── Résumés, auteurs, marqueurs ──────────────────────────────────────────────
 
 
-def auteur_nom(session: Session, uid: Optional[int]) -> Optional[str]:
-    if not uid:
-        return None
-    u = session.get(Utilisateur, uid)
-    return nom_affiche(u.prenom, u.nom) if u else None
+def auteur_nom(session: Session, uid: Optional[int]) -> str:
+    #  Sans compte (supprimé, #1688/#1821) : « Ancien résident », jamais rien.
+    return nom_auteur(session.get(Utilisateur, uid) if uid else None)
 
 
 def strip_html(text: Optional[str], max_len: int = 120) -> Optional[str]:

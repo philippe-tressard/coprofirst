@@ -79,6 +79,38 @@ def test_l_affaire_anonyme_avance_encore(session):  # noqa: F811
     assert session.get(Ticket, affaire_id).titre == "Ascenseur à l'arrêt"
 
 
+def test_un_sondage_vote_et_un_document_restent_et_le_resultat_ne_bouge_pas(session):  # noqa: F811
+    """#1821 : un ancien membre du conseil n'emporte ni ses documents ni ses consultations."""
+    from app.models.communaute import OptionSondage, Sondage, VoteSondage
+    from app.models.documents import Document
+
+    membre = _compte(session, role=RoleUtilisateur.conseil_syndical)
+    votant = _compte(session)
+    sondage = Sondage(question="Repeindre le hall ?", auteur_id=membre.id)
+    session.add(sondage)
+    session.commit()
+    oui = OptionSondage(sondage_id=sondage.id, libelle="Oui")
+    session.add(oui)
+    session.commit()
+    for qui in (membre, votant):
+        session.add(VoteSondage(sondage_id=sondage.id, option_id=oui.id, user_id=qui.id))
+    doc = Document(
+        titre="Règlement", fichier_nom="r.pdf", fichier_chemin="/x/r.pdf", publie_par_id=membre.id
+    )
+    session.add(doc)
+    session.commit()
+    sondage_id, doc_id = sondage.id, doc.id
+
+    supprimer_compte(session, membre.id)
+    session.commit()
+    session.expire_all()
+
+    assert session.get(Sondage, sondage_id).auteur_id is None
+    votes = session.exec(select(VoteSondage).where(VoteSondage.sondage_id == sondage_id)).all()
+    assert len(votes) == 2, "le résultat d'une consultation a changé avec un compte supprimé"
+    assert session.get(Document, doc_id).publie_par_id is None
+
+
 def test_ce_qui_n_appartient_qu_a_la_personne_part_toujours(session):  # noqa: F811
     """L'anonymisation ne garde que le contenu collectif : la purge reste une purge."""
     from app.models.core import Notification

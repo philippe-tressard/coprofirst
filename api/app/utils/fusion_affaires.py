@@ -51,6 +51,7 @@ from sqlmodel import Session, or_, select
 from app.auth.deps import est_moderateur
 from app.models.affaires_liees import AffaireLiee
 from app.models.core import STATUTS_TICKET_CLOS, Ticket, TicketEvolution, Utilisateur
+from app.utils.recuperer import ou_rien
 from app.models.courriel import CourrielReleve, FilCourriel, MessageVerse, VersementCourriel
 from app.models.documents import Document
 from app.models.tickets import MessageTicket
@@ -274,7 +275,7 @@ def prevenir_auteurs(
             continue
         prevenus.add(a.auteur_id)
         libelle = STATUT_LABELS.get(valeur(a.statut), valeur(a.statut))
-        auteur = session.get(Utilisateur, a.auteur_id)
+        auteur = ou_rien(session, Utilisateur, a.auteur_id)
         if courriel and auteur and auteur.email:
             background_tasks.add_task(
                 send_email,

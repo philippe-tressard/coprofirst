@@ -46,7 +46,7 @@ class DiagnosticRapport(SQLModel, table=True):
     taille_octets: Optional[int] = None
     mime_type: str = "application/octet-stream"
     synthese: Optional[str] = None  # synthèse des conclusions du rapport
-    publie_par_id: int = Field(foreign_key="utilisateur.id")
+    publie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     publie_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
 
     type_diagnostic: Optional[DiagnosticType] = Relationship(back_populates="rapports")

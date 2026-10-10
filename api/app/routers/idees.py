@@ -103,7 +103,7 @@ class IdeeRead(AssisteIASortie):
     id: int
     titre: str
     description: str
-    auteur_id: int
+    auteur_id: Optional[int] = None  # compte supprimé (#1821)
     statut: str
     perimetre_cible: list[str] = []
     public_cible: list[str] = []

@@ -77,7 +77,7 @@ class Document(SQLModel, table=True):
     perimetre: str = "résidence"
     batiment_id: Optional[int] = Field(default=None, foreign_key="batiment.id")
     lot_id: Optional[int] = Field(default=None, foreign_key="lot.id")
-    publie_par_id: int = Field(foreign_key="utilisateur.id")
+    publie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     publie_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     #  🔴 La DESCRIPTION, ajoutée le 08/09/2026 (#852). Demandée à l'écran :
     #  *« ajouter aussi un champ descriptif »*.

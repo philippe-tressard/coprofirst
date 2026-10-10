@@ -26,7 +26,8 @@ import { api, postFormData } from './client';
  *   sondage. `utils/reponses.enrich_reponse` + `auteur_meta`, seule écriture. */
 export interface ReponseCommunaute {
 	id: number;
-	auteur_id: number;
+	/** Vide quand le compte de l'auteur a été supprimé (#1821). */
+	auteur_id: number | null;
 	contenu: string;
 	cree_le: string;
 	/** « Utilisateur supprimé » quand le compte n'existe plus — jamais absent. */
@@ -51,7 +52,8 @@ export interface Sondage {
 	cloture_le: string | null;
 	cloture_forcee: boolean;
 	resultats_publics: boolean;
-	auteur_id: number;
+	/** Vide quand le compte de l'auteur a été supprimé (#1821). */
+	auteur_id: number | null;
 	cree_le: string;
 	perimetre_cible: string[];
 	public_cible: string[];
@@ -126,7 +128,8 @@ export interface Idee {
 	id: number;
 	titre: string;
 	description: string;
-	auteur_id: number;
+	/** Vide quand le compte de l'auteur a été supprimé (#1821). */
+	auteur_id: number | null;
 	/** `ouverte | retenue | rejetee | realisee` — une chaîne libre côté serveur. */
 	statut: string;
 	perimetre_cible: string[];

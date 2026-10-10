@@ -254,7 +254,7 @@ class RegleResidence(SQLModel, table=True):
     titre: str
     contenu: str = ""
     ordre: int = Field(default=0)
-    cree_par_id: int = Field(foreign_key="utilisateur.id")
+    cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     modifie_le: Optional[NaiveDatetime] = None
 

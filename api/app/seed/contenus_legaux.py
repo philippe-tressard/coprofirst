@@ -43,15 +43,18 @@ CONSERVATION_COMPTES = (
     "un compte en attente de validation, refusé ou désactivé n'est supprimé que sur "
     "décision de l'administration."
 )
-#: Ce que la suppression d'un compte GARDE (#1688, arbitrage du 10/10/2026) : le
-#: contenu collectif, sans nom. Posée juste après `CONSERVATION_COMPTES` par la
-#: 0276, qui la retire au retour arrière.
-ANONYMISATION_AFFAIRES = (
-    " Supprimer un compte, automatiquement ou à la demande, ne supprime pas les "
-    "affaires qu'il a ouvertes ni ce qu'il a écrit dans leur suivi\xa0: elles restent "
-    "à la copropriété, son nom remplacé par «\xa0Ancien résident\xa0». Leur texte "
-    "n'est pas réécrit\xa0; pour faire retirer un passage qui vous identifie, "
-    "écrivez à l'adresse indiquée au point\xa01."
+#: Ce que la suppression d'un compte GARDE (#1688, #1821 — arbitrages du
+#: 10/10/2026) : le contenu collectif, sans nom. Posée juste après
+#: `CONSERVATION_COMPTES` par la migration des auteurs facultatifs, qui la retire
+#: au retour arrière. La liste exacte : `utils/suppression_compte.CONTENUS_GARDES`.
+ANONYMISATION_CONTENUS = (
+    " Supprimer un compte, automatiquement ou à la demande, ne supprime pas ce qu'il "
+    "a apporté à la vie commune — affaires et leur suivi, documents, règles, sondages "
+    "et votes, idées, réponses de la Communauté, notes des prestataires : ils "
+    "restent à la copropriété, son nom remplacé par « Ancien résident ». Ses "
+    "petites annonces, ses délégations et ses demandes partent avec lui. Les textes "
+    "ne sont pas réécrits ; pour faire retirer un passage qui vous identifie, "
+    "écrivez à l'adresse indiquée au point 1."
 )
 
 
@@ -376,7 +379,7 @@ DEFAULT_LEGAL = {
         + RECEPTION_COURRIELS
         + "</ul><h2>5. Durée de conservation</h2><ul><li>"
         + CONSERVATION_COMPTES
-        + ANONYMISATION_AFFAIRES
+        + ANONYMISATION_CONTENUS
         + "</li><li>Tokens de rafraîchissement\xa0: 7 jours glissants.</li><li>Sauvegardes\xa0: selon la "
         "configuration.</li></ul><ul>"
         + TELEMETRIE_CONSERVATION

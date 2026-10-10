@@ -40,6 +40,7 @@ from .historique_courriel import (
     lignes_historique,
 )
 from app.utils.noms import contexte_personne, nom_auteur
+from app.utils.recuperer import ou_rien
 from app.utils.liens import base_site, nom_site
 
 
@@ -175,7 +176,7 @@ def contexte_ticket_syndic(
     historique = lignes_historique(ticket, evolutions or [], liees)
     for ev in evolutions or []:
         if ev.contenu:
-            auteur_e = session.get(Utilisateur, ev.auteur_id)
+            auteur_e = ou_rien(session, Utilisateur, ev.auteur_id)
             messages_ctx.append(
                 {
                     "auteur_nom": nom_auteur(auteur_e) or "?",
@@ -264,7 +265,7 @@ def envoyer_email_externe(
     msgs_for_history = messages[:-1] if (is_commentaire and messages) else messages
     msgs_ctx = []
     for m in msgs_for_history:
-        auteur_m = session.get(Utilisateur, m.auteur_id)
+        auteur_m = ou_rien(session, Utilisateur, m.auteur_id)
         msgs_ctx.append(
             {
                 "auteur_nom": nom_auteur(auteur_m),

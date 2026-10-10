@@ -27,7 +27,7 @@ from app.auth.deps import get_current_user
 from app.database import get_session
 from app.models.core import Ticket, Utilisateur
 from app.utils import versement_transfert as versements
-from app.utils.noms import nom_affiche
+from app.utils.noms import nom_auteur
 from app.utils.recuperer import ou_404
 from app.utils.visibility import ticket_visible
 
@@ -82,7 +82,7 @@ def lister_transferts(
             TransfertLu(
                 id=v.id,
                 cree_le=v.cree_le,
-                transfere_par_nom=nom_affiche(auteur.prenom, auteur.nom) if auteur else "",
+                transfere_par_nom=nom_auteur(auteur),
                 suites=len(versements.suites_du(session, v)),
                 affaire_creee=v.affaire_creee,
                 bloque=versements.motif_bloquant(session, v),

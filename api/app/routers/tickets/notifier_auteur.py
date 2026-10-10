@@ -15,6 +15,7 @@ from app.schemas import TicketEvolutionCreate
 from app.utils.cloche import sonner
 from app.utils.liens import lien_ticket
 from app.utils.noms import contexte_personne
+from app.utils.recuperer import ou_rien
 
 from .commun import STATUT_LABELS, config_site, contexte_site
 
@@ -32,7 +33,7 @@ def _notifier_auteur(
     from app.utils.email import send_email
 
     cfg = config_site(session)
-    auteur = session.get(Utilisateur, ticket.auteur_id)
+    auteur = ou_rien(session, Utilisateur, ticket.auteur_id)
     base_ticket = {"id": ticket.id, "numero": ticket.numero, "titre": ticket.titre}
 
     if auteur and auteur.email:
