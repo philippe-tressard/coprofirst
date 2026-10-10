@@ -162,7 +162,8 @@ def test_le_postgresql_d_une_replique_n_est_pas_celui_du_maitre():
 
 
 def _corps(texte: str, fonction: str) -> str:
-    m = re.search(rf"^{fonction}\(\) \{{\n(.*?)^\}}", texte, re.S | re.M)
+    #  La signature peut porter son commentaire (`{ # $1=… → …`) : il compte aussi.
+    m = re.search(rf"^{fonction}\(\) \{{([^\n]*\n.*?)^\}}", texte, re.S | re.M)
     assert m, f"{fonction} introuvable"
     return m.group(1)
 
@@ -173,4 +174,14 @@ def test_le_moteur_se_lit_comme_chez_le_maitre():
     replique = MISE_A_JOUR.read_text(encoding="utf-8")
     assert _corps(replique, "moteur_de_url") == _corps(maitre, "moteur_de_url"), (
         "les deux lectures du moteur ont divergé — recopier celle de lib-replication.sh"
+    )
+
+
+def test_le_listing_se_lit_comme_a_l_export_hors_site():
+    """`listing_contient` est une COPIE déclarée, pour la même raison (#1820)."""
+    maitre = (RACINE / "scripts" / "lib" / "lib-export-hors-site.sh").read_text(encoding="utf-8")
+    replique = MISE_A_JOUR.read_text(encoding="utf-8")
+    assert _corps(replique, "listing_contient") == _corps(maitre, "listing_contient"), (
+        "les deux lectures d'un listing d'archive ont divergé — recopier celle de "
+        "lib-export-hors-site.sh"
     )

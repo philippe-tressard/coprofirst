@@ -89,6 +89,27 @@ moteur_de_url() {
     esac
 }
 
+#  La ligne ENTIÈRE $2 figure-t-elle dans le listing $1 ? → oui|non
+#  🔒 COPIE DÉCLARÉE de `scripts/lib/lib-export-hors-site.sh`, pour la même
+#  raison que `moteur_de_url` ; `test_deploiement_standard` exige deux corps
+#  identiques.
+listing_contient() { # $1=listing tar · $2=entrée exacte → oui|non
+  case $'\n'"${1:-}"$'\n' in
+    *$'\n'"${2:?entrée cherchée manquante}"$'\n'*) echo "oui" ;;
+    *)                                              echo "non" ;;
+  esac
+}
+
+#  La sauvegarde SQLite porte-t-elle la base ? $1 archive → oui|non|illisible.
+#  Le listing se lit EN ENTIER, hors de tout tube : `tar -tzf … | grep -q`
+#  rendait « non » sur une sauvegarde saine sous `pipefail` (#1820), `grep -q`
+#  fermant le tube pendant que `tar` écrivait encore.
+base_dans_archive() {
+    local liste
+    liste=$(tar -tzf "$1" 2>/dev/null) || { echo illisible; return; }
+    listing_contient "$liste" ./app_data/app.db
+}
+
 #  $1 santé après la mise à jour (ok|ko) · $2 santé après le retour à l'image
 #  précédente (ok|ko|vide si non tenté) → reussie | revenir | revenue | restaurer
 decider_issue() {
@@ -127,6 +148,23 @@ if [ "${1:-}" = "--selftest" ]; then
     attendu "SQLite"                                    sqlite     moteur_de_url "sqlite:////app/data/app.db"
     attendu "PostgreSQL (psycopg)"                      postgresql moteur_de_url "postgresql+psycopg://u:p@postgres:5432/b"
     attendu "URL absente → inconnu, jamais SQLite"      inconnu    moteur_de_url ""
+    echo "== self-test : la sauvegarde SQLite porte-t-elle la base =="
+    attendu "listing : la base, ligne entière"          oui        listing_contient $'./app_data/app.db\n./uploads/' ./app_data/app.db
+    attendu "listing : une homonyme dans uploads"       non        listing_contient './uploads/app_data/app.db' ./app_data/app.db
+    #  Une VRAIE archive, la base suivie de deux mille téléversements : plus que
+    #  ce que le tube absorbe derrière la ligne trouvée — le cas de l'essai du
+    #  10/10/2026, où une sauvegarde saine était jugée invalide (#1820).
+    banc=$(mktemp -d)
+    mkdir -p "$banc/src/app_data" "$banc/src/uploads"
+    : > "$banc/src/app_data/app.db"
+    for i in $(seq 1 2000); do : > "$banc/src/uploads/photo-televersee-par-un-resident-numero-$i.jpg"; done
+    tar -czf "$banc/sauvegarde.tar.gz" -C "$banc/src" ./app_data/app.db ./uploads
+    tar -czf "$banc/sans-base.tar.gz" -C "$banc/src" ./uploads
+    : > "$banc/illisible.tar.gz"
+    attendu "archive saine, base suivie de 2000 fichiers" oui      base_dans_archive "$banc/sauvegarde.tar.gz"
+    attendu "archive sans la base"                      non        base_dans_archive "$banc/sans-base.tar.gz"
+    attendu "archive illisible → illisible, jamais oui" illisible  base_dans_archive "$banc/illisible.tar.gz"
+    rm -rf "$banc"
     exit "$fail"
 fi
 
@@ -256,12 +294,17 @@ sauvegarder() {
             && "${PONCTUEL[@]}" -m app.utils.export_copropriete verifier "/sortie/$BASE"
         return
     fi
-    tar -tzf "$SAUVEGARDES/$ARCHIVE" | grep -qx './app_data/app.db' \
-        && docker run --rm -v "$SAUVEGARDES:/sortie:ro" --entrypoint sh "$IMAGE_API" -c \
-            "cd /tmp && tar -xzf /sortie/$ARCHIVE ./app_data/app.db && python -c \"import sqlite3,sys; sys.exit(0 if sqlite3.connect('app_data/app.db').execute('PRAGMA integrity_check').fetchone()[0]=='ok' else 1)\""
+    local base
+    base=$(base_dans_archive "$SAUVEGARDES/$ARCHIVE")
+    [ "$base" = oui ] || { journal "Base dans la sauvegarde : $base."; return 1; }
+    docker run --rm -v "$SAUVEGARDES:/sortie:ro" --entrypoint sh "$IMAGE_API" -c \
+        "cd /tmp && tar -xzf /sortie/$ARCHIVE ./app_data/app.db && python -c \"import sqlite3,sys; sys.exit(0 if sqlite3.connect('app_data/app.db').execute('PRAGMA integrity_check').fetchone()[0]=='ok' else 1)\""
 }
 if ! sauvegarder; then
     "${COMPOSE[@]}" start api >/dev/null || true
+    #  Le rapport part par l'API : l'envoyer avant qu'elle réponde rendait 502,
+    #  et l'échec n'était connu que de ce journal (#1820).
+    [ "$(sante)" = ok ] || journal "⚠ L'API ne répond pas après la sauvegarde refusée."
     echouer "sauvegarde avant mise à jour impossible ou invalide : rien n'est changé."
 fi
 journal "Sauvegarde vérifiée : $SAUVEGARDES/$ARCHIVE$([ "$MOTEUR" = postgresql ] && echo " + $BASE")."
