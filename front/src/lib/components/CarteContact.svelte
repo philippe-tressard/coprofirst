@@ -73,7 +73,7 @@
 	{/each}
 	<Avatar photoUrl={personne.photo_url} prenom={personne.prenom} nom={personne.nom} />
 	<div>
-		<strong>{personne.genre ?? ''} {nomAffiche(personne)}</strong>
+		<strong class="contact-nom">{personne.genre ?? ''} {nomAffiche(personne)}</strong>
 		<slot />
 	</div>
 </div>
@@ -85,6 +85,23 @@
 		gap: 1rem;
 		padding: 1.4rem 1rem 0.9rem;
 		position: relative;
+		/*  Base de 15 rem dans la rangée `flex` de l'annuaire, et jamais moins que
+		    son contenu : c'est ce qui élargit la carte quand le nom l'exige. */
+		flex: 1 1 15rem;
+		max-width: 100%;
+	}
+	/*  « Mr Prénom NOM » sur UNE ligne (demandé à l'écran le 10/10/2026) : coupé,
+	    le NOM tombait seul sous la civilité et le prénom. C'est la carte qui
+	    s'élargit, pas le nom qui se plie. */
+	.contact-nom {
+		white-space: nowrap;
+	}
+	/*  Au téléphone la carte a déjà toute la largeur : un nom plus long qu'elle
+	    se replie plutôt que de faire défiler la page en largeur. */
+	@media (max-width: 480px) {
+		.contact-nom {
+			white-space: normal;
+		}
 	}
 	.card-principal {
 		border-left: 3px solid var(--color-accent);

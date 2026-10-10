@@ -256,9 +256,13 @@
 		align-items: center;
 		gap: 0.3rem;
 	}
+	/*  Une rangée `flex` et non une grille (10/10/2026) : une colonne de grille
+	    `auto-fill` a une largeur FIXE, et le nom « Mr Prénom NOM » s'y coupait.
+	    En `flex`, chaque carte (base 15 rem, `CarteContact`) garde au moins la
+	    largeur de son nom sur une ligne. */
 	.contact-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+		display: flex;
+		flex-wrap: wrap;
 		gap: 1rem;
 	}
 	/*  `.contact-card` et `.card-principal` vivent dans `CarteContact.svelte`
