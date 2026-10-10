@@ -205,7 +205,7 @@ TMP=$(mktemp -d) || exit 2
 trap 'ci_verrou_liberer "$VERROU_REJEU" $$; rm -rf "$TMP" ${SCRIPTS_PY_EXPOSES:+"$SCRIPTS_PY_EXPOSES"}' EXIT
 ci_extraire < "$CI" > "$TMP/flux"
 
-NB_OK=0; NB_FAIL=0; NB_INCONNU=0; NB_PREP=0; NB_SAUTS=0
+NB_OK=0; NB_FAIL=0; NB_INCONNU=0; NB_PREP=0; NB_SAUTS=0; NB_RELANCES=0
 
 #  Les tests SAUTÉS se nomment (#1734) : le crochet de `api/tests/conftest.py`
 #  les consigne dans ce fichier, que chaque étape vide avant de tourner. Hors
@@ -260,8 +260,48 @@ verifier_dependances() {   # $1 = job, $2 = rép, $3 = corps de l'installation
     "$motif · aligner : (cd ${2:-.} && $(printf '%s' "$3" | grep -v '^[[:space:]]*#' | tr '\n' ' ' | sed 's/ *$//'))"
 }
 
+#  Une commande dans le répertoire d'une étape, avec l'`env:` de son job.
+dans_etape() {             # $1 = rép, puis la commande
+  (
+    cd "$RACINE${1:+/$1}" || exit 127
+    shift
+    while IFS= read -r kv; do
+      [ -z "$kv" ] && continue
+      local_cle=${kv%%:*}
+      local_val=${kv#*: }
+      local_val=${local_val%\"}; local_val=${local_val#\"}
+      local_val=${local_val%\'}; local_val=${local_val#\'}
+      export "$local_cle=$local_val"
+    done < "$TMP/env"
+    "$@" < /dev/null
+  )
+}
+
+#  ── Relance des e2e tombés sur l'import dynamique de Vite (#1809) ───────────
+#  La règle est `ci_relance_e2e` (lib-ci-e2e.sh) : une seule relance, des seuls
+#  tests tombés, nommée sur la ligne de l'étape et JOURNALISÉE — date, lot,
+#  charge, workers, tests —, pour qu'on mesure enfin la cause. Sortie vide :
+#  pas de relance, ou relance rouge (sa sortie s'ajoute alors à celle de l'étape).
+PLAFOND_RELANCE_E2E=3
+JOURNAL_RELANCES="$(dirname "$VERROU_REJEU")/rejeu-e2e-relances.log"
+relancer_si_import_vite() { # $1 = rép, $2 = code, $3 = corps → détail à rapporter, ou vide
+  local tombes
+  [ "$(ci_relance_e2e "$2" "$(printf '%s\n' "$3" | ci_sert_par_vite)" "$PLAFOND_RELANCE_E2E" \
+       < "$TMP/sortie")" = oui ] || return 0
+  tombes=$(ci_tests_tombes < "$TMP/sortie")
+  if dans_etape "$1" npx playwright test --last-failed > "$TMP/relance" 2>&1 \
+     && ! grep -q "optimized dependencies changed" "$TMP/relance"; then
+    printf '%s\t%s\tcharge=%s\tworkers=%s\t%s\n' "$(date '+%F %T')" "$SHA_COURT" \
+      "${CHARGE:-?}" "${E2E_WORKERS:-défaut}" "$(printf '%s' "$tombes" | paste -sd '|' -)" \
+      >> "$JOURNAL_RELANCES"
+    echo "relancé, vert : $(printf '%s' "$tombes" | paste -sd ';' -) — import dynamique de Vite (#1809)"
+  else
+    { echo; echo "── Relance (#1809), rouge elle aussi ──"; cat "$TMP/relance"; } >> "$TMP/sortie"
+  fi
+}
+
 executer() {               # $1 = job, $2 = étape, $3 = rép, corps dans $TMP/corps
-  local corps genre sortie code duree t0 sauts n_sauts
+  local corps genre sortie code duree t0 sauts n_sauts relance
   corps=$(ci_substituer "$SHA_COURT" < "$TMP/corps")
   genre=$(printf '%s\n' "$corps" | ci_classer)
 
@@ -288,27 +328,17 @@ executer() {               # $1 = job, $2 = étape, $3 = rép, corps dans $TMP/c
   printf '%s\n' "$corps" > "$TMP/etape.sh"
   : > "$TMP/sauts"
   t0=$(date +%s)
-  (
-    cd "$RACINE${3:+/$3}" || exit 127
-    while IFS= read -r kv; do
-      [ -z "$kv" ] && continue
-      local_cle=${kv%%:*}
-      local_val=${kv#*: }
-      local_val=${local_val%\"}; local_val=${local_val#\"}
-      local_val=${local_val%\'}; local_val=${local_val#\'}
-      export "$local_cle=$local_val"
-    done < "$TMP/env"
-    bash -e "$TMP/etape.sh" < /dev/null
-  ) > "$TMP/sortie" 2>&1
+  dans_etape "$3" bash -e "$TMP/etape.sh" > "$TMP/sortie" 2>&1
   code=$?
-  duree=$(( $(date +%s) - t0 ))
-
   sortie=$(ci_requalifier "$code" < "$TMP/sortie")
+  relance=$(relancer_si_import_vite "$3" "$code" "$corps")
+  [ -n "$relance" ] && { sortie=OK; NB_RELANCES=$((NB_RELANCES + $(ci_tests_tombes < "$TMP/sortie" | grep -c .))); }
+  duree=$(( $(date +%s) - t0 ))
   case "$sortie" in
     OK)       sauts=$(ci_resumer_sauts < "$TMP/sauts")
               n_sauts=${sauts%% *}
               NB_SAUTS=$((NB_SAUTS + ${n_sauts:-0}))
-              rapporter OK "$1" "$2" "${duree}s${sauts:+ — $sauts}" ;;
+              rapporter OK "$1" "$2" "${duree}s${sauts:+ — $sauts}${relance:+ — $relance}" ;;
     INCONNU*) rapporter INCONNU "$1" "$2" "${sortie#INCONNU } (${duree}s)" ;;
     *)        rapporter FAIL "$1" "$2" "code $code (${duree}s)"
               sed 's/^/      │ /' "$TMP/sortie" | tail -15
@@ -370,6 +400,7 @@ echo "────────────────────────�
 printf "%d étape(s) rejouée(s) sur %d extraite(s) — OK=%d ÉCHEC=%d INCONNU=%d (préparation=%d)\n" \
        "$REJOUEES" "$ECRIT" "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_PREP"
 [ "$NB_SAUTS" -gt 0 ] && echo "· $NB_SAUTS test(s) sauté(s) ici, que seule la CI GitHub joue — le détail est sur la ligne de leur étape (#1734)."
+[ "$NB_RELANCES" -gt 0 ] && echo "· $NB_RELANCES test(s) e2e relancé(s) après l'import dynamique de Vite (#1809) — journal : $JOURNAL_RELANCES"
 
 if [ "$REJOUEES" -eq 0 ]; then
   echo "? Aucune étape rejouée — ce n'est pas un succès, c'est une absence de mesure."
@@ -380,7 +411,8 @@ if [ -n "$FILTRE" ]; then
   echo "  (rejeu partiel : aucune trace écrite — le point 16 du pré-check exige le rejeu complet.)"
 else
   mkdir -p "$(dirname "$MARQUEUR")"
-  printf '%s %s OK=%d FAIL=%d INCONNU=%d SAUTS=%d\n' "$SHA" "$(date +%s)" "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_SAUTS" > "$MARQUEUR"
+  printf '%s %s OK=%d FAIL=%d INCONNU=%d SAUTS=%d RELANCES=%d\n' "$SHA" "$(date +%s)" \
+    "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_SAUTS" "$NB_RELANCES" > "$MARQUEUR"
 fi
 
 [ "$NB_FAIL" -gt 0 ] && { echo "✗ La CI échouerait — corriger avant de pousser."; exit 1; }

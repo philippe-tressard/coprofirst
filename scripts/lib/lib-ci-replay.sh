@@ -33,6 +33,11 @@
 #  `@@ERREUR`, et l'appelant refuse alors de conclure — jamais un vert.
 # =============================================================================
 
+#  Ce que le rejeu décide pour les tests de navigateur (workers, node_modules,
+#  Vite, relance) vit à côté, depuis #1809.
+# shellcheck source=lib-ci-e2e.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-ci-e2e.sh"
+
 # ── Extraction ───────────────────────────────────────────────────────────────
 #  Le parseur ne prétend PAS lire YAML : il lit la forme que ce fichier-ci a, et
 #  il est strict dessus. Toute étape qu'il ne sait pas reconnaître est perdue —
@@ -251,50 +256,6 @@ ci_dependances_etat() {    # $1 = verdict du vérificateur → "" (mesurable) | 
   esac
 }
 
-# ── Combien de workers e2e sur un poste occupé ? (#1665, 04/10/2026) ─────────
-#  Trois rejeux complets de suite sont tombés sur les MÊMES quatre specs
-#  d'administration, la machine prise à ~55 % par d'autres sessions : hydratation
-#  médiane 2,9 s contre 0,8 s, pour des attentes de 5 s. La suite entière passait
-#  à 335/335 avec `--workers=1`, et la CI GitHub — au repos — était verte. Ce
-#  n'était pas le code mais la contention entre workers. La charge se mesure
-#  AVANT le rejeu : c'est celle des autres, pas la nôtre. (PURE)
-#    $1 = valeur imposée par qui lance (E2E_WORKERS), $2 = charge CPU en %
-#    (vide si non mesurable), $3 = seuil en % → nombre de workers, ou vide
-#    (le défaut de Playwright, celui de la CI).
-ci_workers_e2e() {
-  [ -n "${1:-}" ] && { echo "$1"; return; }
-  #  Charge inconnue → le défaut : ne pas mesurer n'autorise pas à brider.
-  case "${2:-}" in ''|*[!0-9]*) echo ""; return ;; esac
-  [ "$2" -ge "$3" ] && echo 1 || echo ""
-}
-
-# ── Les e2e peuvent-ils se fier au node_modules du worktree ? (#1722) ────────
-#  Un worktree dont `front/node_modules` est une JONCTION vers celui du clone
-#  principal partage aussi le cache d'optimisation de Vite (`node_modules/.vite`).
-#  Qu'une autre session lance Vite, et les e2e tombent au hasard — « Failed to
-#  fetch dynamically imported module … app.js », hydratation à 10 s —, un spec
-#  DIFFÉRENT à chaque passage, vert isolé. Écrit en mémoire le 03/10, revenu le
-#  07/10 : trois rejeux rouges pour #1718. Le lot n'y est pour rien : INCONNU,
-#  jamais FAIL. (PURE)
-#    $1 = lien | repertoire | absent → "" (mesurable) | motif d'INCONNU
-#    `absent` est laissé à l'étape elle-même, qui dit déjà « non installé ».
-ci_node_modules_etat() {
-  case "${1:-}" in
-    repertoire|absent) echo "" ;;
-    lien) echo "node_modules partagé par jonction : le cache de Vite l'est aussi (#1722)" ;;
-    *)    echo "node_modules non examiné : son genre est illisible" ;;
-  esac
-}
-
-#  Une étape SERT-elle l'application par Vite ? Ce sont les tests de navigateur :
-#  `npm run e2e` dans ci.yml, `playwright test` s'il était appelé en direct. Le
-#  mot « playwright » seul ne suffit pas — il désigne aussi l'INSTALLATION des
-#  navigateurs, qui n'est jamais rejouée : un premier jet le prenait pour critère
-#  et n'attrapait donc rien. (PURE) Corps sur stdin → oui | non
-ci_sert_par_vite() {
-  grep -v '^[[:space:]]*#' | grep -Eq '(^|[^[:alnum:]_:-])(npm run e2e([^[:alnum:]:_-]|$)|playwright test)'     && echo oui || echo non
-}
-
 # ── Les tests SAUTÉS d'une étape, nommés (#1734, 08/10/2026) ────────────────
 #  Le rejeu rendait « Run pytest — OK » sur un lot qui cassait deux tests de rendu
 #  PDF : ils portent `@besoin_weasyprint`, et WeasyPrint ne s'installe pas sur le
@@ -424,28 +385,7 @@ YAML
   t "dépendances — muet : jamais mesurable" \
     "$(ci_dependances_etat '')" "dépendances du poste non vérifiables : vérificateur muet"
 
-  t "workers — poste au repos : défaut"      "$(ci_workers_e2e "" 12 30)" ""
-  t "workers — poste occupé : un seul"       "$(ci_workers_e2e "" 55 30)" "1"
-  t "workers — au seuil : un seul"           "$(ci_workers_e2e "" 30 30)" "1"
-  t "workers — imposé : il prime"            "$(ci_workers_e2e 3 90 30)" "3"
-  #  🔴 Le cas zéro : une charge non mesurée ne bride pas en silence.
-  t "workers — charge inconnue : défaut"     "$(ci_workers_e2e "" "" 30)" ""
-  t "workers — charge illisible : défaut"    "$(ci_workers_e2e "" "n/a" 30)" ""
-
-  t "node_modules — propre au worktree : mesurable" "$(ci_node_modules_etat repertoire)" ""
-  t "node_modules — absent : laissé au contrôle de l'étape" "$(ci_node_modules_etat absent)" ""
-  t "node_modules — jonction partagée : INCONNU nommé"     "$(ci_node_modules_etat lien)"     "node_modules partagé par jonction : le cache de Vite l'est aussi (#1722)"
-  t "Vite — les tests de navigateur"       "$(printf 'npm run e2e 2>&1 | tee x.log
-' | ci_sert_par_vite)" "oui"
-  t "Vite — playwright appelé en direct"   "$(printf 'npx playwright test
-' | ci_sert_par_vite)" "oui"
-  t "Vite — l'installation n'en est pas"   "$(printf 'npx playwright install --with-deps chromium
-' | ci_sert_par_vite)" "non"
-  t "Vite — un lint voisin n'en est pas"   "$(printf 'npm run lint:e2e-serveur
-' | ci_sert_par_vite)" "non"
-  t "Vite — un commentaire n'en est pas"   "$(printf '# npm run e2e
-npm run build
-' | ci_sert_par_vite)" "non"
+  ci_e2e_cas   # workers, node_modules, Vite, relance (#1809) : lib-ci-e2e.sh
   #  #1734 : un saut se NOMME, il ne se tait pas ; aucun saut, aucune mention.
   t "sauts — aucun : rien à dire"    "$(printf '' | ci_resumer_sauts)" ""
   t "sauts — regroupés par raison, le plus fréquent d'abord"     "$(printf 'a::t1	WeasyPrint absent
@@ -454,8 +394,6 @@ c::t3	WeasyPrint absent
 ' | ci_resumer_sauts)"     "3 test(s) sauté(s) ici, joué(s) par la CI GitHub : WeasyPrint absent (2) ; front absent (1)"
   t "sauts — une ligne sans raison ne compte pas" "$(printf 'a::t1
 ' | ci_resumer_sauts)" ""
-  #  🔴 Le cas zéro : un genre que personne n'a su lire n'autorise pas les e2e.
-  t "node_modules — genre inconnu : INCONNU"     "$(ci_node_modules_etat '')" "node_modules non examiné : son genre est illisible"
 
   #  Éprouvé sur le VRAI fichier quand il est là : c'est le seul contrôle qui
   #  verrait un `ci.yml` réécrit dans une forme que le parseur ne sait plus lire.
