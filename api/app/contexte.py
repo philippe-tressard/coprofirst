@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import functools
 import logging
+import threading
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -73,6 +74,35 @@ def courante() -> Copropriete:
     règle 2).
     """
     return _servie.get() or _unique()
+
+
+def resoudre(scope: dict) -> Copropriete:
+    """La copropriété qu'une requête sert, lue à son ENTRÉE (§4.1).
+
+    Phase 2 : l'unique copropriété de l'installation. La résolution par nom d'hôte
+    (P2-9, #1751) remplacera ce corps ; un hôte inconnu ne résoudra rien (règle 2).
+    """
+    return _unique()
+
+
+class ResolutionCopropriete:
+    """Intergiciel ASGI : chaque requête s'exécute dans le contexte de SA copropriété.
+
+    Posé le plus à l'extérieur (`main.py`) : les dépendances (`get_session`), les
+    routes, les tâches de fond d'une requête et les autres intergiciels voient la
+    même copropriété. ASGI pur, et non `BaseHTTPMiddleware` : la variable de
+    contexte se transmet alors sans détour à la route et à son fil d'exécution.
+    """
+
+    def __init__(self, app) -> None:
+        self.app = app
+
+    async def __call__(self, scope, receive, send) -> None:
+        if scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+        with dans(resoudre(scope)):
+            await self.app(scope, receive, send)
 
 
 def coproprietes() -> tuple[Copropriete, ...]:
@@ -140,19 +170,31 @@ def _unique() -> Copropriete:
     )
 
 
+#: Les moteurs des copropriétés autres que l'unique, par (identifiant, URL de base).
+#: L'URL fait partie de la clé : une copropriété dont la base change d'adresse
+#: reçoit un moteur neuf, jamais celui de l'ancienne base.
+_moteurs: dict[tuple[str, str], Engine] = {}
+_verrou_moteurs = threading.Lock()
+
+
 def moteur() -> Engine:
     """Le moteur de la base de la copropriété servie.
 
-    Lu à l'APPEL dans `app.database` : un test qui remplace `app.database.engine`
-    obtient sa base partout, sans remplacer un attribut par module appelant.
-
-    ⚠️ Une seule base en phase 2 : le moteur ne dépend pas encore de la copropriété
-    servie. Le registre des moteurs, indexé par `identifiant`, viendra avec la
-    seconde copropriété (phase 3).
+    L'unique copropriété de la phase 2 garde `app.database.engine`, lu à l'APPEL :
+    un test qui le remplace obtient sa base partout. Toute autre copropriété reçoit
+    le sien, construit une fois par la même recette (`database.creer_moteur`) —
+    c'est ce qui permet au test d'étanchéité (#1746) de servir deux bases.
     """
     from app import database
 
-    return database.engine
+    copro = courante()
+    if copro.identifiant == IDENTIFIANT_UNIQUE:
+        return database.engine
+    cle_moteur = (copro.identifiant, copro.url_base)
+    with _verrou_moteurs:
+        if cle_moteur not in _moteurs:
+            _moteurs[cle_moteur] = database.creer_moteur(copro.url_base)
+        return _moteurs[cle_moteur]
 
 
 def nouvelle_session() -> Session:

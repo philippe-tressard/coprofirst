@@ -90,6 +90,7 @@ PLAFOND_A_INDEXER = 0
 #: `contexte.etat(nom)` à chaque usage, et ne garde rien à lui (#1744).
 PAR_COPROPRIETE = {
     ("contexte.py", "_etats"): "les états de processus, un dictionnaire par (copropriété, nom)",
+    ("contexte.py", "_moteurs"): "les moteurs des copropriétés, par (identifiant, URL de base)",
 }
 
 #: Les états qui ne portent aucune donnée de copropriété, avec leur raison.
@@ -223,7 +224,7 @@ def test_chaque_etat_de_module_est_declare():
 
 def test_la_porte_des_etats_de_copropriete_est_le_contexte_seul():
     """Une seconde « porte » serait un état de copropriété qui échappe au contexte."""
-    assert set(PAR_COPROPRIETE) == {("contexte.py", "_etats")}
+    assert {module for module, _nom in PAR_COPROPRIETE} == {"contexte.py"}
 
 
 def test_le_releve_voit_les_etats_connus():

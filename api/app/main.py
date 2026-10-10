@@ -391,6 +391,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+#  🏢 LE PLUS À L'EXTÉRIEUR, donc ajouté en dernier : chaque requête s'exécute
+#  dans le contexte de SA copropriété — base, fichiers, secret, caches (#1746,
+#  spec §4.1). Résolue à l'entrée, une fois ; en phase 2, l'unique copropriété.
+app.add_middleware(contexte.ResolutionCopropriete)
+
 # Routeurs
 app.include_router(auth.router)
 #  Même préfixe `/auth`, monté à part : FastAPI additionne les routers, les URL
