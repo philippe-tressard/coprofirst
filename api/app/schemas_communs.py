@@ -149,7 +149,7 @@ class EvolutionLue(BaseModel):
     contenu: Optional[str] = None
     ancien_statut: Optional[str] = None
     nouveau_statut: Optional[str] = None
-    auteur_id: int
+    auteur_id: Optional[int] = None  # #1688
     #: Composé par le serveur : l'écran ne rapproche pas un identifiant d'un nom.
     auteur_nom: Optional[str] = None
     cree_le: datetime

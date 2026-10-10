@@ -39,7 +39,7 @@ from app.models.core import (
 )
 
 from app.utils.echeance_contrat import poser_echeance
-from app.utils.noms import nom_affiche
+from app.utils.noms import nom_affiche, nom_auteur
 from app.utils.archivage import est_archivable
 from app.utils.assiste_ia import marquer
 from app.utils.recuperer import ou_404
@@ -400,7 +400,7 @@ def list_notations(
     for n in notations:
         auteur = session.get(Utilisateur, n.auteur_id)
         nr = NotationRead.model_validate(n)
-        nr.auteur_nom = nom_affiche(auteur.prenom, auteur.nom) if auteur else "?"
+        nr.auteur_nom = nom_auteur(auteur)
         result.append(nr)
     return result
 
@@ -469,7 +469,7 @@ def get_prestataire_synthese(
                 "note": n.note,
                 "commentaire": n.commentaire,
                 "contrat_id": n.contrat_id,
-                "auteur_nom": nom_affiche(auteur.prenom, auteur.nom) if auteur else "?",
+                "auteur_nom": nom_auteur(auteur),
                 "cree_le": n.cree_le.isoformat(),
             }
         )

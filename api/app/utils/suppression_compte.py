@@ -15,9 +15,11 @@ retirer une entrée d'un `..._json`, délier plutôt que supprimer un badge) et
 passent en premier. `purger` ramasse ensuite le reste en lisant les métadonnées :
 une référence obligatoire part avec le compte, une facultative est déliée.
 
-⚠️ **Le contenu part avec le compte** (arbitrage du 28/08/2026) : les affaires
-dont la personne est l'auteur partent avec leur fil, y compris les réponses
-d'autres personnes — `purge_referentielle` le dit en tête de fichier.
+✅ **Les affaires restent, sans nom** (arbitrage du 10/10/2026, #1688, qui
+inverse celui du 28/08) : une affaire, son fil et ses messages sont la mémoire
+de la copropriété. Leur `auteur_id` est facultatif, donc délié, et l'écran dit
+« Ancien résident » (`utils/noms.nom_auteur`). Ce qui n'appartient qu'à la
+personne part toujours avec elle. 🔒 `test_suppression_compte_anonymise.py`.
 
 ## Ce qu'elle ne fait pas
 

@@ -24,7 +24,7 @@ from app.models.core import (
     RoleUtilisateur,
     Utilisateur,
 )
-from app.utils.noms import nom_affiche
+from app.utils.noms import ANCIEN_RESIDENT, nom_affiche
 from app.utils.roles_libelles import libelle_role, libelle_statut_court
 from app.utils.liens import base_site
 from app.auth.deps import est_moderateur
@@ -50,7 +50,7 @@ def auteur_meta(auteur: Optional[Utilisateur], session: Session) -> dict:
     """
     if auteur is None:
         return {
-            "auteur_nom": "Utilisateur supprimé",
+            "auteur_nom": ANCIEN_RESIDENT,
             "auteur_batiment": None,
             "auteur_role": None,
             "est_cs": False,

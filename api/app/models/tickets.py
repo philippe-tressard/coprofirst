@@ -285,7 +285,10 @@ class Ticket(SaisiPourMixin, AssisteIAMixin, IntervenantMixin, table=True):
     categorie: CategorieTicket = CategorieTicket.panne
     statut: StatutTicket = StatutTicket.ouvert
     priorite: PrioriteTicket = PrioriteTicket.normale
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    #  Facultatif depuis #1688 : un compte supprimé laisse ses affaires, sans
+    #  nom (« Ancien résident », `utils/noms.nom_auteur`). La purge référentielle
+    #  délie une référence facultative au lieu d'emporter la ligne.
+    auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     lot_id: Optional[int] = Field(default=None, foreign_key="lot.id")
     batiment_id: Optional[int] = Field(default=None, foreign_key="batiment.id")
     #  JSON de codes de l'arbre ; le défaut se lit dans les données (#1567).
@@ -346,7 +349,7 @@ class MessageTicket(SQLModel, table=True):
     __tablename__ = "message_ticket"
     id: Optional[int] = Field(default=None, primary_key=True)
     ticket_id: int = Field(foreign_key="ticket.id")
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")  # #1688
     contenu: str
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     interne: bool = False  # True = visible CS seulement

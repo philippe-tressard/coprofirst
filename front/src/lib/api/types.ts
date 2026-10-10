@@ -149,7 +149,8 @@ export interface Ticket extends PorteSaisiPourLu {
 	categorie: string;
 	statut: string;
 	priorite: string;
-	auteur_id: number;
+	/** Vide quand le compte de l'auteur a été supprimé : « Ancien résident » (#1688). */
+	auteur_id: number | null;
 	auteur_nom?: string | null;
 	auteur_batiment_nom?: string | null;
 	lot_id?: number;
@@ -294,7 +295,8 @@ export interface TicketEvolution {
 	contenu?: string;
 	ancien_statut?: string;
 	nouveau_statut?: string;
-	auteur_id: number;
+	/** Vide quand le compte de l'auteur a été supprimé : « Ancien résident » (#1688). */
+	auteur_id: number | null;
 	auteur_nom?: string;
 	cree_le: string;
 	fichiers_urls?: string[];

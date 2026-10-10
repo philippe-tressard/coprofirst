@@ -54,7 +54,7 @@ def _poser(session: Session, destinataire_id: int, champs: dict) -> None:
 def sonner(
     session: Session,
     *,
-    destinataire_id: int,
+    destinataire_id: Optional[int],
     batiments: Optional[Iterable[int]] = None,
     **champs,
 ) -> bool:
@@ -63,6 +63,10 @@ def sonner(
     `batiments` : ceux que le contenu concerne, quand on les connaît — `None`
     vaut « chez moi » (`preferences_mail`). Rend `True` si la cloche a sonné.
     """
+    #  Personne à prévenir : l'auteur d'une affaire dont le compte a été
+    #  supprimé (#1688). Les cinq gestes qui « préviennent l'auteur » passent ici.
+    if destinataire_id is None:
+        return False
     destinataire = session.get(Utilisateur, destinataire_id)
     if destinataire is None or not cloche_autorisee(destinataire, batiments):
         return False

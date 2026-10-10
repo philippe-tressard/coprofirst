@@ -83,7 +83,8 @@ class EvolutionMixin(AssisteIAMixin):
     #: ensemble : une étape sans son avant ne dessine aucun mouvement.
     ancien_statut: Optional[str] = None
     nouveau_statut: Optional[str] = None
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    #: Facultatif depuis #1688 : l'entrée d'un compte supprimé reste au fil, sans nom.
+    auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     #: Tableau JSON d'URLs. `"[]"` et non `None` : « aucune pièce jointe » est
     #: une liste vide, pas une absence de réponse — c'est ce qui permet de lire

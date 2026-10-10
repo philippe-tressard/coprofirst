@@ -67,7 +67,9 @@ def test_les_references_sont_lues_dans_les_metadonnees_pas_recitees():
         f"seulement {len(refs)} références lues — la lecture des métadonnées est cassée"
     )
     obligatoires = [r for r in refs if r[2]]
-    assert len(obligatoires) > 30
+    #  31 avant #1688, qui a rendu facultatifs les quatre auteurs d'un fil : le seuil
+    #  garde l'ordre de grandeur (une liste de onze était le défaut), pas un compte.
+    assert len(obligatoires) > 20
     #  Une table à auteur OBLIGATOIRE doit en faire partie. C'était `publication`,
     #  qui a révélé le défaut ; elle est supprimée depuis le 30/09/2026 (#1177).
     assert any(t.name == "idee" and c.name == "auteur_id" for t, c, _ in refs)
@@ -130,13 +132,14 @@ def test_une_reference_NULLABLE_est_deliee_et_sa_ligne_reste(base_stricte):
 
 
 def test_la_purge_descend_sur_plusieurs_etages(base_stricte):
-    """Un ticket porte des messages : les deux partent avec leur auteur.
+    """Un sondage porte des commentaires : les deux partent avec leur auteur.
 
-    ⚠️ C'est la conséquence assumée de l'arbitrage du 28/08/2026 — supprimer un
-    compte supprime le FIL entier de ses tickets, réponses des autres comprises,
-    parce qu'un message n'a pas d'existence hors du ticket qui le porte.
+    Les affaires ne servent plus d'exemple depuis #1688 : leur auteur est
+    facultatif, et elles restent (`test_suppression_compte_anonymise.py`). Le
+    sondage garde la règle du 28/08/2026 — le commentaire d'un tiers n'a pas
+    d'existence hors du sondage qui le porte.
     """
-    from app.models.core import MessageTicket, Ticket
+    from app.models.communaute import CommentaireSondage, Sondage
 
     auteur = Utilisateur(email="a@test", hashed_password="x", prenom="A", nom="B")
     autre = Utilisateur(email="b@test", hashed_password="x", prenom="C", nom="D")
@@ -145,19 +148,21 @@ def test_la_purge_descend_sur_plusieurs_etages(base_stricte):
     base_stricte.commit()
     base_stricte.refresh(auteur)
     base_stricte.refresh(autre)
-    ticket = Ticket(numero="T-1", titre="Fuite", description="…", auteur_id=auteur.id)
-    base_stricte.add(ticket)
+    sondage = Sondage(question="Repeindre le hall ?", auteur_id=auteur.id)
+    base_stricte.add(sondage)
     base_stricte.commit()
-    base_stricte.refresh(ticket)
-    base_stricte.add(MessageTicket(ticket_id=ticket.id, auteur_id=autre.id, contenu="je confirme"))
+    base_stricte.refresh(sondage)
+    base_stricte.add(
+        CommentaireSondage(sondage_id=sondage.id, auteur_id=autre.id, contenu="je confirme")
+    )
     base_stricte.commit()
 
     purger(base_stricte, "utilisateur", auteur.id)
     base_stricte.commit()
 
-    assert base_stricte.exec(select(Ticket)).all() == []
-    assert base_stricte.exec(select(MessageTicket)).all() == [], (
-        "le message d'un TIERS part avec le ticket : il n'existe pas sans lui"
+    assert base_stricte.exec(select(Sondage)).all() == []
+    assert base_stricte.exec(select(CommentaireSondage)).all() == [], (
+        "le commentaire d'un TIERS part avec le sondage : il n'existe pas sans lui"
     )
     assert base_stricte.exec(select(Utilisateur)).all() != [], "l'autre compte devait rester"
     assert _compte_violations(base_stricte) == 0

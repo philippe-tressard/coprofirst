@@ -39,7 +39,7 @@ from .historique_courriel import (
     contexte_affaires_liees,
     lignes_historique,
 )
-from app.utils.noms import contexte_personne, nom_affiche
+from app.utils.noms import contexte_personne, nom_auteur
 from app.utils.liens import base_site, nom_site
 
 
@@ -178,11 +178,7 @@ def contexte_ticket_syndic(
             auteur_e = session.get(Utilisateur, ev.auteur_id)
             messages_ctx.append(
                 {
-                    "auteur_nom": nom_affiche(
-                        auteur_e.prenom if auteur_e else None,
-                        auteur_e.nom if auteur_e else None,
-                    )
-                    or "?",
+                    "auteur_nom": nom_auteur(auteur_e) or "?",
                     "date": fmt_paris(ev.cree_le),
                     "contenu": ev.contenu,
                     #  🔴 Le périmètre de CETTE entrée, demandé le 31/08/2026 :
@@ -271,7 +267,7 @@ def envoyer_email_externe(
         auteur_m = session.get(Utilisateur, m.auteur_id)
         msgs_ctx.append(
             {
-                "auteur_nom": nom_affiche(auteur_m.prenom, auteur_m.nom) if auteur_m else "?",
+                "auteur_nom": nom_auteur(auteur_m),
                 "date": fmt_paris(m.cree_le),
                 "contenu": m.contenu,
             }

@@ -123,10 +123,13 @@ async def _rediger(
         return None, None, "erreur", f"Réponse de l'assistant illisible : {exc}"
 
 
-def _auteur_de_la_suite(session: Session, ticket: Ticket, auteur_id: Optional[int]) -> int:
+def _auteur_de_la_suite(
+    session: Session, ticket: Ticket, auteur_id: Optional[int]
+) -> Optional[int]:
     """Qui signe la Suite : qui a demandé la production, sinon qui a clos l'affaire.
 
-    Une Suite exige un auteur (clé obligatoire). Pour la production automatique,
+    Vide seulement si ces comptes ont été supprimés (#1688) : la Suite se lit
+    alors « Ancien résident », comme le reste de leur fil. Pour la production automatique,
     la Suite est signée de la dernière transition qui a clos l'affaire, à défaut
     de son auteur — jamais d'un compte de service, qui signerait un texte qu'il
     n'a pas relu.

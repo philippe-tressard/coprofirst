@@ -44,6 +44,7 @@ from app.utils.dates_fr import date_courte
 from app.utils.destinataires import est_adresse_syndic
 from app.utils.jours_ouvres import libelle_jours
 from app.utils.synthese_affaire import metriques as m
+from app.utils.noms import ANCIEN_RESIDENT
 from app.utils.synthese_affaire.lecture import TYPE_SYNTHESE
 from app.utils.synthese_affaire import recidive as r
 from app.utils.valeurs import valeur
@@ -183,7 +184,7 @@ def metriques_de(session: Session, ticket: Ticket, cloture_le: datetime) -> dict
 
 def _role(user: Optional[Utilisateur], ticket: Ticket, est_syndic: Callable[[int], bool]) -> str:
     if user is None:
-        return "un compte supprimé"
+        return f"un {ANCIEN_RESIDENT.lower()}"
     if est_syndic(user.id):
         return "le syndic"
     if user.has_role(RoleUtilisateur.conseil_syndical):

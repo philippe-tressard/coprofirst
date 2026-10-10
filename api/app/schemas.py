@@ -180,7 +180,7 @@ class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant):
     categorie: str
     statut: str
     priorite: str
-    auteur_id: int
+    auteur_id: Optional[int] = None  # « Ancien résident » quand le compte est supprimé (#1688)
     auteur_nom: Optional[str] = None
     auteur_batiment_nom: Optional[str] = None
     lot_id: Optional[int] = None

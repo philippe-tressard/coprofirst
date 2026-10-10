@@ -141,7 +141,7 @@ from app.utils.destinataires import (  # noqa: F401  (ré-export volontaire)
     syndic_principal,
 )
 from app.utils.saisi_pour import noms_derives
-from app.utils.noms import nom_affiche
+from app.utils.noms import nom_auteur
 
 
 # ── Libellés d'évolution ─────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ def evol_read(
     return lire_objet(
         TicketEvolutionRead,
         e,
-        auteur_nom=nom_affiche(auteur.prenom, auteur.nom) if auteur else "?",
+        auteur_nom=nom_auteur(auteur),
         #  `None` — et non `[]` — quand l'entrée ne parle pas du périmètre : le
         #  front distingue « n'en parle pas » de « plus aucun périmètre » (#497).
         #
@@ -302,7 +302,7 @@ def ticket_read(
     return lire_objet(
         TicketRead,
         ticket,
-        auteur_nom=nom_affiche(auteur.prenom, auteur.nom) if auteur else None,
+        auteur_nom=nom_auteur(auteur),
         auteur_batiment_nom=libelle_batiment_ou(batiment, None),
         apercu_pieces=apercu_pieces(ticket, session),
         affaires_liees=[
