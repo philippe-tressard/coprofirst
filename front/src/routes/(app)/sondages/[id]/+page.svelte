@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
 	import { page } from '$app/stores';
 	import { sondages as sondagesApi, type SondageDetail } from '$lib/api';
@@ -11,7 +12,6 @@
 	import { siteNomStore } from '$lib/stores/pageConfig';
 	import { toast } from '$lib/components/Toast.svelte';
 	import FilAriane from '$lib/components/FilAriane.svelte';
-	import FormulaireSondage from '$lib/components/FormulaireSondage.svelte';
 	import Reponses from '$lib/components/Reponses.svelte';
 	import { fmtDateShort } from '$lib/date';
 	import EtatListe from '$lib/components/EtatListe.svelte';
@@ -209,7 +209,11 @@
 		<!--  La correction s'ouvre SOUS l'en-tête, près du ✏️ qui l'ouvre — elle
 		      était rendue en bas de page, après les résultats et les commentaires. -->
 		{#if edition}
-			<FormulaireSondage {sondage} on:modifie={corrige} on:annule={() => (edition = false)} />
+			<ChargementDiffere charger={() => import('$lib/components/FormulaireSondage.svelte')}>
+				{#snippet contenu(FormulaireSondage)}
+					<FormulaireSondage {sondage} on:modifie={corrige} on:annule={() => (edition = false)} />
+				{/snippet}
+			</ChargementDiffere>
 		{/if}
 		<h1 class="sondage-question">{sondage.question}</h1>
 		{#if sondage.description}

@@ -15,9 +15,9 @@
   ce qui était exactement le défaut d'origine.
 -->
 <script lang="ts">
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import EntetePage from '$lib/components/EntetePage.svelte';
 	import { IDEE_BADGE } from '$lib/idees';
-	import FormulaireSondage from '$lib/components/FormulaireSondage.svelte';
 	import OngletAnnonces from '$lib/components/OngletAnnonces.svelte';
 	import { goto } from '$app/navigation';
 	import {
@@ -362,13 +362,17 @@
 
 	{#if onglet === 'sondages'}
 		{#if showFormSondage && $isCS}
-			<FormulaireSondage
-				on:cree={async () => {
-					sondages = await sondagesApi.list();
-					showFormSondage = false;
-				}}
-				on:annule={() => (showFormSondage = false)}
-			/>
+			<ChargementDiffere charger={() => import('$lib/components/FormulaireSondage.svelte')}>
+				{#snippet contenu(FormulaireSondage)}
+					<FormulaireSondage
+						on:cree={async () => {
+							sondages = await sondagesApi.list();
+							showFormSondage = false;
+						}}
+						on:annule={() => (showFormSondage = false)}
+					/>
+				{/snippet}
+			</ChargementDiffere>
 		{/if}
 
 		<!--  La correction (#783), montée UNE seule fois et hors des deux listes —
@@ -388,14 +392,18 @@
 		      c'est la limite de ce que la carte-lien permet. -->
 		{#if editSondage}
 			{#key editSondage.id}
-				<FormulaireSondage
-					sondage={editSondage}
-					on:modifie={async () => {
-						sondages = await sondagesApi.list();
-						editSondage = null;
-					}}
-					on:annule={() => (editSondage = null)}
-				/>
+				<ChargementDiffere charger={() => import('$lib/components/FormulaireSondage.svelte')}>
+					{#snippet contenu(FormulaireSondage)}
+						<FormulaireSondage
+							sondage={editSondage}
+							on:modifie={async () => {
+								sondages = await sondagesApi.list();
+								editSondage = null;
+							}}
+							on:annule={() => (editSondage = null)}
+						/>
+					{/snippet}
+				</ChargementDiffere>
 			{/key}
 		{/if}
 

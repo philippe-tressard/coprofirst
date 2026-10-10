@@ -19,8 +19,8 @@
   l'état d'une idée.
 -->
 <script lang="ts">
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import type { Idee } from '$lib/api';
-	import FormulaireIdee from '$lib/components/FormulaireIdee.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import ListeIdees from '$lib/components/ListeIdees.svelte';
 	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
@@ -96,7 +96,11 @@
 <!--  §0 ter : la boîte de création vient APRÈS les filtres — ce qui qualifie la
       liste reste au-dessus du formulaire ouvert (#1186). `lint:filtre-avant-formulaire`. -->
 {#if showForm}
-	<FormulaireIdee on:cree on:annule />
+	<ChargementDiffere charger={() => import('$lib/components/FormulaireIdee.svelte')}>
+		{#snippet contenu(FormulaireIdee)}
+			<FormulaireIdee on:cree on:annule />
+		{/snippet}
+	</ChargementDiffere>
 {/if}
 
 <EtatListe
@@ -130,11 +134,15 @@
 			>
 				<svelte:fragment slot="formulaire" let:idee>
 					{#key idee.id}
-						<FormulaireIdee
-							{idee}
-							on:modifie={(e) => appliquerModification(e.detail)}
-							on:annule={() => (editIdee = null)}
-						/>
+						<ChargementDiffere charger={() => import('$lib/components/FormulaireIdee.svelte')}>
+							{#snippet contenu(FormulaireIdee)}
+								<FormulaireIdee
+									{idee}
+									on:modifie={(e) => appliquerModification(e.detail)}
+									on:annule={() => (editIdee = null)}
+								/>
+							{/snippet}
+						</ChargementDiffere>
 					{/key}
 				</svelte:fragment>
 			</ListeIdees>

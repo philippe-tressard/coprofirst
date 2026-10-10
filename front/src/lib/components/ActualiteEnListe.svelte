@@ -25,6 +25,7 @@
   | 🗑️ Supprimer (admin) | `gestes.supprimer` |
 -->
 <script lang="ts">
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import {
 		documents as docsApi,
 		type CorrespondanceAffaire,
@@ -38,8 +39,6 @@
 	import { OPTIONS_TICKET, ticketUrgent, type GestesTicket } from '$lib/tickets';
 	import ActionsActualite from './ActionsActualite.svelte';
 	import CarteActualite from './CarteActualite.svelte';
-	import SuiteAffaire from './SuiteAffaire.svelte';
-	import FormulaireTicket from './FormulaireTicket.svelte';
 	import PanneauOptionsPublication from './PanneauOptionsPublication.svelte';
 	import RubriqueHistorique from './RubriqueHistorique.svelte';
 	import EtatListe from './EtatListe.svelte';
@@ -136,11 +135,15 @@
 		      le corps de la carte ne se replie pas pendant la saisie (#640). -->
 		{#if mode === 'edition'}
 			{#key ticket.id}
-				<FormulaireTicket
-					{ticket}
-					on:modifie={(e) => gestes.modifie(e.detail)}
-					on:annule={gestes.annuler}
-				/>
+				<ChargementDiffere charger={() => import('$lib/components/FormulaireTicket.svelte')}>
+					{#snippet contenu(FormulaireTicket)}
+						<FormulaireTicket
+							{ticket}
+							on:modifie={(e) => gestes.modifie(e.detail)}
+							on:annule={gestes.annuler}
+						/>
+					{/snippet}
+				</ChargementDiffere>
 			{/key}
 		{:else if mode === 'options'}
 			<PanneauOptionsPublication
@@ -164,14 +167,18 @@
 			>
 				<!--  Le montage de TOUTE Suite d'affaire (`SuiteAffaire`) : il sait qu'une
 				      actualité n'a pas de suivi (#1091). -->
-				<SuiteAffaire
-					{ticket}
-					entrees={evolutions}
-					peutSuivre
-					saving={evolutionEnCours}
-					on:submit={(e) => gestes.evoluer(ticket, e.detail)}
-					on:cancel={gestes.annuler}
-				/>
+				<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+					{#snippet contenu(SuiteAffaire)}
+						<SuiteAffaire
+							{ticket}
+							entrees={evolutions}
+							peutSuivre
+							saving={evolutionEnCours}
+							on:submit={(e) => gestes.evoluer(ticket, e.detail)}
+							on:cancel={gestes.annuler}
+						/>
+					{/snippet}
+				</ChargementDiffere>
 			</div>
 		{/if}
 	</svelte:fragment>
@@ -192,15 +199,19 @@
 				>
 					<svelte:fragment slot="edition" let:evol>
 						<!--  Sa correction rouvre ses sections, comme celle d'une affaire. -->
-						<SuiteAffaire
-							{ticket}
-							{evol}
-							entrees={evolutions}
-							peutSuivre
-							saving={evolCorrectionEnCours}
-							on:submit={(e) => gestes.evolCorriger(ticket, e.detail)}
-							on:cancel={gestes.evolAnnuler}
-						/>
+						<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+							{#snippet contenu(SuiteAffaire)}
+								<SuiteAffaire
+									{ticket}
+									{evol}
+									entrees={evolutions}
+									peutSuivre
+									saving={evolCorrectionEnCours}
+									on:submit={(e) => gestes.evolCorriger(ticket, e.detail)}
+									on:cancel={gestes.evolAnnuler}
+								/>
+							{/snippet}
+						</ChargementDiffere>
 					</svelte:fragment>
 				</RubriqueHistorique>
 			</div>

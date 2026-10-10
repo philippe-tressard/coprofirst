@@ -25,9 +25,22 @@
  *  son morceau chargé à la demande) — un marqueur qui ne mord plus rendrait le
  *  contrôle vert sans rien regarder.
  *
+ *  ## Les composants chargés à la demande (11/10/2026)
+ *
+ *  Même télémétrie, une semaine plus tard : `/admin` et `/espace-cs` importaient
+ *  tous leurs onglets, et chaque carte d'affaire le formulaire de correction
+ *  qu'on n'ouvre qu'au ✏️. Ils passent désormais par `ChargementDiffere`, qui
+ *  reçoit un `import('$lib/components/….svelte')`. La liste n'est écrite nulle
+ *  part : elle est LUE dans le source (`composantsDifferes`), donc un onglet
+ *  différé demain est gardé sans qu'on y pense. Dans le build, chacun doit être
+ *  une entrée dynamique du manifeste (cas zéro : un composant renommé ou fondu
+ *  ailleurs est signalé) et n'apparaître dans le chargement initial d'AUCUN
+ *  écran — un `import X from` statique ajouté n'importe où l'y ramènerait, et
+ *  Vite ne le dit que par un avertissement que personne ne lit.
+ *
  *  Lancer APRÈS `npm run build` : node scripts/check-poids-ouverture.mjs [--selftest]
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
@@ -41,6 +54,33 @@ const CLIENT = new URL('../.svelte-kit/output/client', import.meta.url).pathname
 export const A_LA_DEMANDE = {
 	'Tiptap / ProseMirror (éditeur riche)': /ProseMirror/,
 };
+
+/**  `charger={() => import('$lib/components/X.svelte')}` : un composant confié à
+ *   `ChargementDiffere`. Un `import()` ailleurs ne promet rien sur l'ouverture
+ *   (`$lib/fichiers.ts` importe `Toast` à la demande, que la page a déjà). */
+const IMPORT_DIFFERE =
+	/charger=\{\s*\(\)\s*=>\s*import\(\s*'\$lib\/components\/([^']+\.svelte)'\s*\)\s*\}/g;
+
+/**  Les composants que le SOURCE charge à la demande, sous leur clé de manifeste
+ *   (`src/lib/components/X.svelte`). */
+export function composantsDifferes(sources) {
+	const cles = new Set();
+	for (const texte of sources) {
+		for (const m of texte.matchAll(IMPORT_DIFFERE)) cles.add(`src/lib/components/${m[1]}`);
+	}
+	return [...cles].sort();
+}
+
+/**  Le texte de chaque `.svelte` et `.ts` de `src/`. */
+function lireSources(dossier) {
+	const textes = [];
+	for (const e of readdirSync(dossier, { withFileTypes: true })) {
+		const chemin = join(dossier, e.name);
+		if (e.isDirectory()) textes.push(...lireSources(chemin));
+		else if (/\.(svelte|ts)$/.test(e.name)) textes.push(readFileSync(chemin, 'utf8'));
+	}
+	return textes;
+}
 
 /**  Les écrans : un nœud de route de SvelteKit par fichier `nodes/N.js`. */
 const estEcran = (cle) => /generated\/client[^/]*\/nodes\/\d+\.js$/.test(cle);
@@ -65,11 +105,14 @@ export function fermetureStatique(manifeste, cle, vus = new Set()) {
 	return vus;
 }
 
-/**  Les fautes : `[écran, bibliothèque]` pour chaque bibliothèque à la demande
- *   chargée d'emblée ; et les bibliothèques introuvables dans tout le build. */
-export function juger(manifeste, contenuDe) {
+/**  Les fautes : `[écran, bibliothèque]` pour chaque bibliothèque ou composant à
+ *   la demande chargé d'emblée ; et ceux qui sont introuvables dans le build. */
+export function juger(manifeste, contenuDe, differes = []) {
 	const fautes = [];
 	const trouvees = new Set();
+	//  Un composant passé à `import()` qui n'est pas une entrée dynamique du build
+	//  a été FONDU dans un morceau commun : un import statique ailleurs l'y a mis.
+	const fondus = differes.filter((c) => !manifeste[c]?.isDynamicEntry);
 	for (const [nom, motif] of Object.entries(A_LA_DEMANDE)) {
 		for (const cle of Object.keys(manifeste)) {
 			if (motif.test(contenuDe(manifeste[cle].file))) trouvees.add(nom);
@@ -82,9 +125,10 @@ export function juger(manifeste, contenuDe) {
 				fautes.push([ecran, nom]);
 			}
 		}
+		for (const c of differes) if (morceaux.includes(c)) fautes.push([ecran, c]);
 	}
 	const absentes = Object.keys(A_LA_DEMANDE).filter((n) => !trouvees.has(n));
-	return { fautes, absentes };
+	return { fautes, absentes, fondus };
 }
 
 function selftest() {
@@ -108,6 +152,23 @@ function selftest() {
 	cas.push(['import statique : deux écrans fautifs', juger(m, lire).fautes.length === 2]);
 	contenus['ed.js'] = '';
 	cas.push(['marqueur introuvable : signalé', juger(m, lire).absentes.length === 1]);
+	contenus['ed.js'] = 'class="ProseMirror"';
+	m['_a.js'].imports = [];
+	const onglet = 'src/lib/components/OngletX.svelte';
+	m['.svelte-kit/generated/client-optimized/nodes/2.js'].dynamicImports.push(onglet);
+	m[onglet] = { file: 'x.js', imports: [], isDynamicEntry: true };
+	contenus['x.js'] = '';
+	cas.push([
+		'source lu : le composant différé est trouvé',
+		composantsDifferes(["charger={() => import('$lib/components/OngletX.svelte')}"])[0] === onglet,
+	]);
+	cas.push(['composant différé : aucune faute', juger(m, lire, [onglet]).fautes.length === 0]);
+	m['.svelte-kit/generated/client-optimized/nodes/1.js'].imports.push(onglet);
+	cas.push(['composant importé statiquement : fautif', juger(m, lire, [onglet]).fautes.length === 1]);
+	cas.push([
+		'composant fondu dans un morceau commun : signalé',
+		juger(m, lire, ['src/lib/components/Fondu.svelte']).fondus.length === 1,
+	]);
 	const rates = cas.filter(([, v]) => !v);
 	for (const [n, v] of cas) console.log(`${v ? '✓' : '✗'} ${n}`);
 	process.exit(rates.length ? 1 : 0);
@@ -137,11 +198,28 @@ if (!ecrans.length) {
 	process.exit(1);
 }
 
-const { fautes, absentes } = juger(manifeste, contenuDe);
+const differes = composantsDifferes(lireSources(join(CLIENT, '..', '..', '..', 'src')));
+if (!differes.length) {
+	console.error(
+		"\n✗ lint:poids-ouverture — aucun `charger={() => import('$lib/components/….svelte')}` lu dans src/ :\n" +
+			'  le motif ne mord plus, ou le chemin des sources a changé. Il ne garde rien.\n',
+	);
+	process.exit(1);
+}
+const { fautes, absentes, fondus } = juger(manifeste, contenuDe, differes);
 if (absentes.length) {
 	console.error(
 		`\n✗ lint:poids-ouverture — introuvable(s) dans le build : ${absentes.join(', ')}.\n` +
 			`  Le marqueur de \`A_LA_DEMANDE\` ne mord plus : le contrôle ne mesure rien.\n`,
+	);
+	process.exit(1);
+}
+if (fondus.length) {
+	console.error(
+		`\n✗ lint:poids-ouverture — passé(s) à \`ChargementDiffere\` mais chargé(s) d'emblée :\n\n` +
+			fondus.map((c) => `  ${c}`).join('\n') +
+			`\n\n  Le build n'en fait pas une entrée dynamique : un \`import X from\` statique,\n` +
+			`  ailleurs, l'a fondu dans un morceau commun. Le retirer, ou différer aussi cet appelant.\n`,
 	);
 	process.exit(1);
 }
@@ -151,7 +229,7 @@ if (fautes.length) {
 			`doit se charger à la demande :\n\n` +
 			fautes.map(([e, n]) => `  ${routeDe(e)} — ${n}`).join('\n') +
 			`\n\n  Un import statique l'a ramené dans le chargement initial : passer par\n` +
-			`  \`import()\` au moment du geste (voir \`RichEditor.svelte\`).\n`,
+			`  \`import()\` au moment du geste (\`RichEditor.svelte\`, \`ChargementDiffere.svelte\`).\n`,
 	);
 	process.exit(1);
 }
@@ -167,7 +245,8 @@ const poids = ecrans
 	})
 	.sort((a, b) => b[0] - a[0]);
 console.log(
-	`✓ Ouverture des écrans : ${Object.keys(A_LA_DEMANDE).length} bibliothèque(s) chargée(s) ` +
-		`à la demande, aucune d'emblée (${ecrans.length} écrans). Les plus lourds :`,
+	`✓ Ouverture des écrans : ${Object.keys(A_LA_DEMANDE).length} bibliothèque(s) et ` +
+		`${differes.length} composant(s) chargés à la demande, aucun d'emblée ` +
+		`(${ecrans.length} écrans). Les plus lourds :`,
 );
 for (const [o, f] of poids.slice(0, 5)) console.log(`    ${Math.round(o / 1024)} Ko gz  ${f}`);
