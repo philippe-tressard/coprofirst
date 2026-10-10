@@ -219,6 +219,22 @@ ci_verrou_etat() {         # $1 = pid lu dans le verrou · $2 = vivant oui|non �
   [ -z "${1:-}" ] && { echo libre; return; }
   [ "${2:-non}" = oui ] && echo occupe || echo orphelin
 }
+#  #1808 (10/10/2026) : un verrou a DISPARU sous un rejeu vivant. La reprise
+#  d'un orphelin faisait `rm -rf` sur un verrou relu AVANT — entre-temps, un
+#  autre rejeu pouvait l'avoir reposé —, et les traps le retiraient sans
+#  regarder à qui il était. Deux règles, et le script n'en a pas d'autre :
+ci_verrou_liberer() {      # $1 = verrou · $2 = pid qui libère → retiré seulement s'il est à lui
+  [ "$(cat "$1/pid" 2>/dev/null)" = "$2" ] && rm -rf "$1"
+  return 0
+}
+ci_verrou_reprendre() {    # $1 = verrou · $2 = pid orphelin lu → 0 libre | 1 il a changé de main
+  local cote="$1.repris.$$"   # `mv` est atomique : on juge ce qu'on a DÉPLACÉ, pas ce qu'on a lu
+  mv -T "$1" "$cote" 2>/dev/null || return 0
+  [ "$(cat "$cote/pid" 2>/dev/null)" = "$2" ] && { rm -rf "$cote"; return 0; }
+  mv -T "$cote" "$1" 2>/dev/null ||                  # rendu à son propriétaire
+    echo "⚠ verrou vivant laissé dans $cote : un troisième rejeu a pris la place" >&2
+  return 1
+}
 
 # ── Les dépendances du poste sont-elles celles du lot ? (#1417) ──────────────
 #  Une installation n'est jamais exécutée ici ; les contrôles qui la suivent
@@ -383,6 +399,24 @@ YAML
   t "verrou — absent : libre"              "$(ci_verrou_etat "" non)" "libre"
   t "verrou — pid vivant : occupé"          "$(ci_verrou_etat 4242 oui)" "occupe"
   t "verrou — pid mort : orphelin, repris"  "$(ci_verrou_etat 4242 non)" "orphelin"
+  #  #1808 : un verrou ne se retire que par son propriétaire, et la reprise d'un
+  #  orphelin n'emporte pas celui qu'un autre rejeu vient de poser.
+  local vd; vd=$(mktemp -d)
+  mkdir "$vd/v" && echo 111 > "$vd/v/pid"; ci_verrou_liberer "$vd/v" 222
+  t "verrou — libéré par un autre : gardé"     "$([ -d "$vd/v" ] && echo garde || echo retire)" "garde"
+  ci_verrou_liberer "$vd/v" 111
+  t "verrou — libéré par son pid : retiré"     "$([ -d "$vd/v" ] && echo garde || echo retire)" "retire"
+  mkdir "$vd/v" && echo 111 > "$vd/v/pid"
+  t "reprise — l'orphelin lu : retiré"         "$(ci_verrou_reprendre "$vd/v" 111 && echo repris; [ -d "$vd/v" ] && echo present)" "repris"
+  mkdir "$vd/v" && echo 333 > "$vd/v/pid"
+  t "reprise — le verrou a changé de main"     "$(ci_verrou_reprendre "$vd/v" 111 || echo refus; cat "$vd/v/pid")" "refus
+333"
+  t "reprise — rien de mis de côté"            "$(ls -A "$vd" | grep -c repris)" "0"
+  rm -rf "$vd"
+  #  Le script ne retire le verrou QUE par ces fonctions : un `rm` direct sur
+  #  lui est le défaut même de #1808.
+  t "rejouer-ci.sh — aucun rm direct du verrou" \
+    "$(grep -cE 'rm [^#]*VERROU_REJEU' scripts/poste/rejouer-ci.sh 2>/dev/null)" "0"
   t "dépendances — alignées : mesurable"    "$(ci_dependances_etat ALIGNE)" ""
   t "dépendances — écart : INCONNU nommé" \
     "$(ci_dependances_etat 'ECART pypdf 6.19.0→6.14.2')" "dépendances du poste ≠ lot : pypdf 6.19.0→6.14.2"

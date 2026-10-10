@@ -64,14 +64,15 @@ case "$(ci_verrou_etat "$pid_verrou" "$vivant")" in
     echo "✗ Un autre rejeu tourne déjà (pid $pid_verrou) : deux rejeux simultanés se sabotent."
     echo "  Attendre sa fin — rien n'a été rejoué, ce n'est pas un succès."
     exit 2 ;;
-  orphelin) rm -rf "$VERROU_REJEU" ;;
+  orphelin) ci_verrou_reprendre "$VERROU_REJEU" "$pid_verrou" ;;   # refus → le mkdir le dira
 esac
-if ! mkdir "$VERROU_REJEU" 2>/dev/null; then
+#  Le pid relu après écriture : un verrou déplacé pendant ce temps n'est pas à nous (#1808).
+if ! mkdir "$VERROU_REJEU" 2>/dev/null || ! echo $$ > "$VERROU_REJEU/pid" 2>/dev/null \
+   || [ "$(cat "$VERROU_REJEU/pid" 2>/dev/null)" != "$$" ]; then
   echo "✗ Le verrou du rejeu vient d'être pris par un autre rejeu : attendre sa fin."
   exit 2
 fi
-echo $$ > "$VERROU_REJEU/pid"
-trap 'rm -rf "$VERROU_REJEU"' EXIT
+trap 'ci_verrou_liberer "$VERROU_REJEU" $$' EXIT
 
 #  ── Workers e2e sur un poste occupé (#1665) — la règle : `ci_workers_e2e` ────
 #  La charge est mesurée MAINTENANT, avant nos propres étapes : c'est celle des
@@ -201,7 +202,7 @@ if [ "${ECRIT:-0}" -eq 0 ] || [ "$ECRIT" != "$EXTRAIT" ]; then
 fi
 
 TMP=$(mktemp -d) || exit 2
-trap 'rm -rf "$TMP" "$VERROU_REJEU" ${SCRIPTS_PY_EXPOSES:+"$SCRIPTS_PY_EXPOSES"}' EXIT
+trap 'ci_verrou_liberer "$VERROU_REJEU" $$; rm -rf "$TMP" ${SCRIPTS_PY_EXPOSES:+"$SCRIPTS_PY_EXPOSES"}' EXIT
 ci_extraire < "$CI" > "$TMP/flux"
 
 NB_OK=0; NB_FAIL=0; NB_INCONNU=0; NB_PREP=0; NB_SAUTS=0
