@@ -23,8 +23,8 @@ const ANNUAIRE = {
 			{
 				id: 1,
 				genre: 'Mr',
-				prenom: 'Guillaume',
-				nom: 'Delacroix-Martin',
+				prenom: 'Christophe',
+				nom: 'Morin-Legrand',
 				fonction: 'Gestionnaire de Copropriétés',
 				email: 'gestion@exemple.fr',
 				telephone: '01 02 03 04 05',
@@ -56,7 +56,7 @@ test('le nom d’un contact du syndic tient sur une ligne, sans défilement hori
 	await page.goto('/annuaire');
 	await attendreHydratation(page);
 
-	const nom = page.locator('.contact-nom', { hasText: 'DELACROIX-MARTIN' });
+	const nom = page.locator('.contact-nom', { hasText: 'MORIN-LEGRAND' });
 	await expect(nom).toBeVisible();
 	//  Un élément en ligne rend un rectangle par ligne qu'il occupe : un seul,
 	//  c'est une seule ligne (la hauteur de ligne vaut `normal`, illisible en px).
