@@ -70,6 +70,24 @@ TACHES_PERMANENTES: dict[str, str] = {
 }
 
 
+#: Les tâches qui travaillent pour la PLATEFORME et non pour une copropriété, avec
+#: leur raison (#1745, spec §4.6). Toutes les autres s'enregistrent enveloppées par
+#: `contexte.pour_chaque_copropriete` : jouées dans le contexte de chaque
+#: copropriété, un passage journalisé par copropriété, l'échec de l'une sans effet
+#: sur les autres.
+#:
+#: Vide au 10/10/2026 : chacune des tâches d'aujourd'hui lit ou écrit la base d'une
+#: copropriété (sa sauvegarde, sa télémétrie, sa boîte de réception, ses comptes…).
+#: Le défaut va dans le sens de l'étanchéité : une tâche oubliée ici tourne PAR
+#: copropriété, jamais pour toutes à la fois.
+TACHES_DE_LA_PLATEFORME: dict[str, str] = {}
+
+
+def tache_hors_enveloppe(job) -> bool:
+    """Ce job travaille-t-il pour une copropriété sans passer par l'enveloppe ?"""
+    return job.id not in TACHES_DE_LA_PLATEFORME and not getattr(job.func, "par_copropriete", False)
+
+
 def verifier_taches_enregistrees(scheduler, logger) -> list[str]:
     """Comparer ce qui tourne à ce qui est déclaré, et journaliser l'écart.
 
@@ -95,4 +113,10 @@ def verifier_taches_enregistrees(scheduler, logger) -> list[str]:
     #  Les rattrapages sont attendus et non déclarés (voir l'en-tête).
     for identifiant in sorted(enregistrees - set(TACHES_PERMANENTES) - identifiants_rattrapage()):
         logger.warning("tache planifiee NON DECLAREE : %s", identifiant)
+    #  Et une tâche qui tournerait hors de toute copropriété : elle écrirait dans
+    #  la base de celle que le repli désigne, sans que rien le dise (#1745).
+    for job in sorted(
+        (j for j in scheduler.get_jobs() if tache_hors_enveloppe(j)), key=lambda j: j.id
+    ):
+        logger.warning("tache planifiee HORS COPROPRIETE : %s", job.id)
     return manquantes

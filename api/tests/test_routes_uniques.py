@@ -33,24 +33,12 @@ import collections
 import pytest
 
 from app.main import app
-
-
-def _aplatir(routeur, prefixe: str = ""):
-    """Toutes les opérations montées, y compris celles qu'une autre masque."""
-    for route in getattr(routeur, "routes", []):
-        sous = getattr(route, "original_router", None)
-        if sous is None and hasattr(route, "routes") and not getattr(route, "path", None):
-            sous = route
-        if sous is not None and getattr(sous, "routes", None):
-            yield from _aplatir(sous, prefixe + (getattr(sous, "prefix", "") or ""))
-        elif getattr(route, "path", None):
-            for methode in sorted(getattr(route, "methods", []) or []):
-                yield methode, prefixe + route.path, getattr(route, "name", "")
+from tests.aides_sources import operations_montees
 
 
 @pytest.fixture(scope="module")
 def operations() -> list[tuple[str, str, str]]:
-    return list(_aplatir(app))
+    return [(m, c, r.name) for m, c, r in operations_montees(app)]
 
 
 def test_cas_zero_le_balayage_voit_bien_l_application(operations):
