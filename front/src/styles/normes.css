@@ -140,8 +140,16 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
    ────────────────────────────────────────────────────────────────────────── */
 /*  0,45 rem et non 0,75 : les cartes sont deux fois plus basses depuis le
     18/09/2026, et l'écart d'origine les faisait flotter (`F1`, validé à l'écran). */
+/*  L'AIR de la maquette B (10/10/2026, page Affaires, devenue le standard du
+    site le soir même) : un filet sur les trois autres côtés, et 0,85 rem
+    entre deux cartes au lieu de 0,45 — la densité « F1 » se relâche. Le
+    liseré gauche garde son sens (survol, carte dépliée, urgence). */
 .carte-liste {
-	margin-bottom: 0.45rem;
+	--filet-carte: color-mix(in srgb, var(--color-border) 70%, transparent);
+	margin-bottom: 0.85rem;
+	border-top: 1px solid var(--filet-carte);
+	border-right: 1px solid var(--filet-carte);
+	border-bottom: 1px solid var(--filet-carte);
 	border-left: 4px solid var(--color-border);
 	border-radius: var(--radius);
 	position: relative;
@@ -187,29 +195,24 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 	cursor: pointer;
 }
 
-/*  🗂️ LA CARTE D'AFFAIRE — maquette B « Gouttière » (10/10/2026, choisie à
-    l'écran parmi cinq). Une colonne à gauche porte la DATE puis la NATURE ;
-    elle est un composant (`GouttiereAffaire`), la carte lui réserve sa place.
-    Elle succède à la gouttière teintée du 24/09/2026 (variante 3), qui ne
-    disait que la nature, par deux pseudo-éléments.
+/*  🗂️ LA CARTE À GOUTTIÈRE — maquette B (10/10/2026, choisie à l'écran parmi
+    cinq pour les affaires, devenue le STANDARD du site le soir même). Une
+    colonne à gauche porte la DATE puis ce qui CLASSE l'objet ; elle est un
+    composant (`Gouttiere`), la carte lui réserve sa place.
 
-    L'AIR demandé (« plus premium et aéré ») : un filet sur les trois autres
-    côtés, et 0,85 rem entre deux cartes au lieu de 0,45 — c'est la densité
-    « F1 » qui se relâche, POUR LES AFFAIRES SEULEMENT. Le liseré gauche garde
-    son sens (survol, carte dépliée, urgence) : seule sa largeur est celle de
-    `.carte-liste`, jamais redéfinie ici.
+    L'air (filet, écart entre cartes) est celui de toute `.carte-liste`,
+    plus haut ; la carte d'archive (`.history-item`) le reçoit ici.
 
-    `[data-nature]` (`attributsNature`) est la prise : affaires et actualités
-    de la liste comme des Archives, et rien d'autre. Les autres cartes du site
-    gardent F1 — arbitré le 10/10/2026 (« Affaires seulement »). */
-:is(.carte-liste, .history-item)[data-nature] {
+    `.a-gouttiere` est la prise — une carte qui rend `Gouttiere` la pose ;
+    `[data-nature]` (`attributsNature`) n'en porte plus que la TEINTE. */
+:is(.carte-liste, .history-item).a-gouttiere {
+	--filet-carte: color-mix(in srgb, var(--color-border) 70%, transparent);
 	position: relative;
 	padding-left: var(--largeur-gouttiere);
 	margin-bottom: 0.85rem;
 	border-top: 1px solid var(--filet-carte);
 	border-right: 1px solid var(--filet-carte);
 	border-bottom: 1px solid var(--filet-carte);
-	--filet-carte: color-mix(in srgb, var(--color-border) 70%, transparent);
 }
 [data-nature='actualite'] {
 	--nature-fort: #1d4ed8;
@@ -221,9 +224,12 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 	--nature-fort: #c2410c;
 }
 /*  Au pouce, la colonne devient une ligne au-dessus du titre
-    (`GouttiereAffaire`) : la carte n'a plus de retrait à lui réserver. */
+    (`Gouttiere`) : la carte n'a plus de retrait à lui réserver. */
 @media (max-width: 480px) {
-	:is(.carte-liste, .history-item)[data-nature] {
+	.carte-liste {
+		margin-bottom: 0.6rem;
+	}
+	:is(.carte-liste, .history-item).a-gouttiere {
 		padding-left: 0;
 		margin-bottom: 0.6rem;
 	}

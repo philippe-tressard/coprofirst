@@ -154,6 +154,7 @@
 <div
 	id="ticket-{ticket.id}"
 	{...attributsNature(ticket)}
+	class="a-gouttiere"
 	class:carte-liste={!archive}
 	class:history-item={archive}
 	class:expanded
@@ -171,7 +172,7 @@
 	<!--  QUAND puis QUOI, dans la colonne de gauche (maquette B, 10/10/2026) :
 	      la date n'est donc plus passée à l'en-tête — un seul fait, une place. -->
 	<GouttiereAffaire affaire={ticket} />
-	<EnteteCarte titre={ticket.titre} basculable ample on:toggle={() => dispatch('basculer')}>
+	<EnteteCarte titre={ticket.titre} basculable on:toggle={() => dispatch('basculer')}>
 		<svelte:fragment slot="titre-suffixe">
 			<BadgeNouveau le={ticket.cree_le} />
 		</svelte:fragment>

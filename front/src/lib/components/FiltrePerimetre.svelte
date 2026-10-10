@@ -20,6 +20,10 @@
   Usage :
       <FiltrePerimetre bind:choisi on:changer={recharger} />
 -->
+<script context="module" lang="ts">
+	let compteur = 0;
+</script>
+
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { perimetresStore } from '$lib/stores/perimetres';
@@ -40,6 +44,15 @@
 	/**  Combien la liste filtrée montre — porté par la pastille retenue, comme
 	 *   toute rangée de filtres (`ChoixPastilles.compte`). `null` : rien. */
 	export let compte: number | null = null;
+	/**  Le libellé « Périmètre » DEVANT la rangée, comme les rangées de
+	 *   `ChoixPastilles libelleDevant` — pour la grille des réglages d'une liste
+	 *   à gouttière (`ReglagesListe`, standard de la page Affaires). Sans lui, la
+	 *   rangée se nomme par `aria-label`, comme avant. */
+	export let libelleDevant = false;
+
+	//  Un identifiant par instance, compteur de MODULE (même raison que
+	//  `ChoixPastilles` : stable entre le rendu serveur et l'hydratation).
+	const idTitre = `filtre-perimetre-${++compteur}`;
 
 	const dispatch = createEventDispatcher<{ changer: string | null }>();
 
@@ -67,25 +80,43 @@
 	<!--  `role="group"` et non `radiogroup` : `Pastille` rend un `<button>`, et un
 	      `radiogroup` sans `<input type="radio">` promet une navigation par flèches
 	      qui n'existe pas. Mieux vaut un groupe honnête (`ux-patterns`). -->
-	<div class="filtre-perimetre" role="group" aria-label="Filtrer par périmètre">
-		<Pastille active={choisi === null} {compte} on:click={() => choisir(null)}>
-			{libelleRacine}
-		</Pastille>
-		{#each niveau1 as noeud (noeud.code)}
-			<Pastille
-				active={choisi === noeud.code}
-				{compte}
-				icone={noeud.icone ?? ''}
-				privatif={noeud.privatif}
-				on:click={() => choisir(noeud.code)}
-			>
-				{noeud.libelle_court || noeud.libelle}
+	<div class:choix-libelle-devant={libelleDevant}>
+		{#if libelleDevant}
+			<span class="libelle-groupe libelle-devant" id={idTitre}>Périmètre</span>
+		{/if}
+		<div
+			class="filtre-perimetre"
+			role="group"
+			aria-label={libelleDevant ? undefined : 'Filtrer par périmètre'}
+			aria-labelledby={libelleDevant ? idTitre : undefined}
+		>
+			<Pastille active={choisi === null} {compte} on:click={() => choisir(null)}>
+				{libelleRacine}
 			</Pastille>
-		{/each}
+			{#each niveau1 as noeud (noeud.code)}
+				<Pastille
+					active={choisi === noeud.code}
+					{compte}
+					icone={noeud.icone ?? ''}
+					privatif={noeud.privatif}
+					on:click={() => choisir(noeud.code)}
+				>
+					{noeud.libelle_court || noeud.libelle}
+				</Pastille>
+			{/each}
+		</div>
 	</div>
 {/if}
 
 <style>
+	/*  Le libellé DEVANT, comme `ChoixPastilles` : il reste en place. */
+	.choix-libelle-devant {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+		max-width: 100%;
+	}
 	.filtre-perimetre {
 		display: flex;
 		flex-wrap: wrap;

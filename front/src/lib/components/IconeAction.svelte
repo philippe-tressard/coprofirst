@@ -1,26 +1,30 @@
 <!--
-  IconeAction.svelte — ce qu'un bouton d'action AFFICHE : son émoji, ou son
-  pictogramme au trait quand la liste l'a demandé (`$lib/actions-au-trait`).
+  IconeAction.svelte — ce qu'un bouton d'action AFFICHE : son pictogramme AU
+  TRAIT.
+
+  ## Pourquoi (10/10/2026, maquette B « Gouttière »)
+
+  Sur une carte d'affaire, six émojis d'action de six couleurs : la couleur ne
+  hiérarchisait plus rien. La maquette retenue les dessine au trait, en gris,
+  Bleu Seine au survol. Arbitré d'abord pour les affaires seules — la liste
+  posait un contexte (`$lib/actions-au-trait`) que ce composant lisait —, puis
+  étendu à TOUT le site le soir même : la page Affaires est le standard. Le
+  contexte n'avait plus rien à décider ; il est retiré, et l'émoji avec lui.
 
   Le bouton reste celui de son composant — libellé, `aria-pressed`, geste — :
-  seul le dessin change. Au trait, il est gris au repos (`--color-text-muted`,
-  6,3:1 sur le blanc : la discrétion ne passe pas sous le seuil de contraste),
-  Bleu Seine au survol, et prend la couleur du bouton quand celui-ci est
-  ACTIF (blanc sur l'aplat bleu) ou de DANGER (la corbeille).
+  seul le dessin est ici. Gris au repos (`--color-text-muted`, 6,3:1 sur le
+  blanc : la discrétion ne passe pas sous le seuil de contraste), Bleu Seine au
+  survol, et la couleur du bouton quand celui-ci est ACTIF (blanc sur l'aplat
+  bleu) ou de DANGER (la corbeille).
 -->
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
-	import { actionsAuTrait } from '$lib/actions-au-trait';
 
-	/** L'émoji, tel que le site l'affiche hors des listes d'affaires. */
-	export let glyphe: string;
-	/** Le même au trait, nommé dans `$lib/icones-svg.json`. */
+	/** Le pictogramme au trait, nommé dans `$lib/icones-svg.json`. */
 	export let icone: string;
-
-	const trait = actionsAuTrait();
 </script>
 
-{#if trait}<span class="icone-action"><Icon name={icone} size={16} /></span>{:else}{glyphe}{/if}
+<span class="icone-action"><Icon name={icone} size={16} /></span>
 
 <style>
 	.icone-action {
@@ -29,6 +33,8 @@
 		transition: color var(--duree-geste);
 	}
 	:global(.btn-icon-danger) .icone-action,
+	:global(.btn-icon-warn) .icone-action,
+	:global(.btn-icon-success) .icone-action,
 	:global([aria-pressed='true']) .icone-action {
 		color: inherit;
 	}
@@ -37,6 +43,8 @@
 			color: var(--color-primary);
 		}
 		:global(.btn-icon-danger:hover) .icone-action,
+		:global(.btn-icon-warn:hover) .icone-action,
+		:global(.btn-icon-success:hover) .icone-action,
 		:global([aria-pressed='true']:hover) .icone-action {
 			color: inherit;
 		}

@@ -116,16 +116,11 @@
 	 *   Explicite, et non déduit d'un écouteur : Svelte ne sait pas dire si le
 	 *   parent écoute `on:toggle`, et la déduction serait muette. */
 	export let basculable = false;
-	/**  La densité AÉRÉE de la carte d'affaire (maquette B, 10/10/2026) : plus
-	 *   d'air autour du titre, un aperçu plus grand et plus interligné. Une
-	 *   variante NOMMÉE, que seules les deux cartes d'affaire prennent — les
-	 *   autres cartes du site gardent F1 (arbitré : « Affaires seulement »). */
-	export let ample = false;
 
 	const dispatch = createEventDispatcher<{ toggle: void }>();
 </script>
 
-<div class="entete" class:ample>
+<div class="entete">
 	<!--  Un vrai `<button>` : il porte le clavier dans les deux sens, et c'est la
 	      SEULE cible quand la carte est dépliée. `stopPropagation` l'isole du
 	      conteneur, qui ne déplie que depuis l'état replié. -->
@@ -186,11 +181,18 @@
 	    `gap: 0` et non `0.3rem` : l'espacement entre le titre, l'extrait et la
 	    ligne de méta est décidé PAR CHACUN (`margin-top`), pas par un écart
 	    uniforme qui ne convenait à aucun des trois. */
+	/*  🗂️ AÉRÉE depuis la maquette B (10/10/2026) : la page Affaires est devenue
+	    le standard du site le soir même, et sa variante `ample` la forme de
+	    TOUTES les cartes. L'air vient de l'INTERLIGNE et des marges, pas d'une
+	    carte plus haute pour rien : le titre monte d'un cran (`--fs-lg`),
+	    l'aperçu de deux (`--fs-md`, interligne 1,5) — l'écart entre les deux
+	    reste celui qui fait ressortir le titre. Les chiffres de F1 ci-dessus
+	    disent pourquoi chaque bloc décide de son espacement. */
 	.entete {
 		display: flex;
 		flex-direction: column;
 		gap: 0;
-		padding: 0.38rem 0.7rem 0.42rem;
+		padding: 0.8rem 1.1rem 0.75rem;
 		/*  Repère pour les actions, qui sortent du flux sous 480 px. */
 		position: relative;
 	}
@@ -227,12 +229,15 @@
 		align-items: flex-start;
 		margin-top: -0.1rem;
 	}
+	/*  26 px depuis la maquette B : avec un titre plus grand, ils n'ouvrent plus
+	    de blanc sous lui. `width: auto` : le bouton d'options porte un
+	    pictogramme PAR option active, il s'élargit au lieu de les écraser. */
 	.ec-droite--titre :global(button) {
-		width: 22px;
-		height: 22px;
-		min-width: 22px;
-		min-height: 22px;
-		padding: 0;
+		width: auto;
+		height: 26px;
+		min-width: 26px;
+		min-height: 26px;
+		padding: 0 0.2rem;
 		font-size: var(--fs-2xs);
 		line-height: 1;
 	}
@@ -246,7 +251,7 @@
 	    `.ec-titre-btn` juste en dessous l'écrasant (voir son commentaire). Le
 	    poids voulu n'a donc jamais été servi sur une carte basculable. */
 	.ec-titre {
-		font-size: var(--fs-base);
+		font-size: var(--fs-lg);
 		font-weight: 600;
 		line-height: 1.35;
 	}
@@ -272,7 +277,7 @@
 	    et seulement quand il le faut ; la date s'aligne sur la dernière.
 	    🔒 `e2e/ligne-pastilles.spec.ts` : rien ne sort de la ligne. */
 	.ec-meta {
-		margin-top: 0.22rem;
+		margin-top: 0.6rem;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -372,47 +377,20 @@
 		}
 	}
 
-	/*  ── La variante AÉRÉE (maquette B, 10/10/2026) ──
-	    Demandé : une liste des affaires « plus premium et aérée ». L'air vient de
-	    l'INTERLIGNE et des marges, pas d'une carte plus haute pour rien : le
-	    titre monte d'un cran (`--fs-lg`), l'aperçu de deux (`--fs-md`, interligne
-	    1,5 au lieu de 1,25) — l'écart entre les deux reste celui qui fait
-	    ressortir le titre. Les actions passent à 26 px : avec un titre plus
-	    grand, elles n'ouvrent plus de blanc sous lui (voir F1 plus haut).
-	    La typographie de l'aperçu vit dans `ApercuCarte` : la variante la
-	    surcharge ici, bornée à la carte qui la demande. */
-	.entete.ample {
-		padding: 0.8rem 1.1rem 0.75rem;
-	}
-	.ample .ec-titre {
-		font-size: var(--fs-lg);
-	}
-	/*  `width: auto` : le bouton d'options porte un pictogramme PAR option
-	    active, il s'élargit au lieu de les écraser. Sous 480 px, la cible
-	    tactile reprend la main plus bas, dans le bloc du téléphone. */
-	.ample .ec-droite--titre :global(button) {
-		width: auto;
-		height: 26px;
-		min-width: 26px;
-		min-height: 26px;
-		padding: 0 0.2rem;
-	}
-	.ample :global(.carte-apercu.dans-ligne) {
+	/*  L'aperçu de la carte aérée — sa typographie vit dans `ApercuCarte` ;
+	    la carte la surcharge ici, bornée à l'en-tête. */
+	.entete :global(.carte-apercu.dans-ligne) {
 		margin-top: 0.3rem;
 	}
-	.ample :global(.carte-preview) {
+	.entete :global(.carte-preview) {
 		font-size: var(--fs-md);
 		line-height: 1.5;
-	}
-	.ample .ec-meta {
-		margin-top: 0.6rem;
 	}
 
 	/*  Cible tactile sur les actions (socle 11 §10) : sous 480 px, les icônes
 	    d'une carte étaient hautes de 26 px. */
 	@media (max-width: 480px) {
-		.entete,
-		.entete.ample {
+		.entete {
 			padding: 0.55rem 0.7rem;
 		}
 		/*  🔴 SOUS 480 px, LE TITRE SE CENTRE SUR SES ACTIONS.
@@ -437,18 +415,15 @@
 
 		/*  `min-*` l'emporte sur les 22 px posés plus haut : la cible tactile
 		    reprend la main, et le glyphe retrouve sa taille avec elle. */
-		.ec-droite :global(button) {
-			min-height: 32px;
-			min-width: 32px;
-			font-size: var(--fs-base);
-		}
-		/*  La variante aérée fixe une hauteur de 26 px, plus spécifique que la
-		    règle ci-dessus : sans ce rappel, elle la battrait au téléphone
+		/*  `height` aussi : la règle du titre fixe 26 px, plus spécifique que
+		    celle-ci — sans ce rappel, elle la battrait au téléphone
 		    (`e2e/cible-tactile`). */
-		.ample .ec-droite--titre :global(button) {
+		.ec-droite :global(button),
+		.ec-droite--titre :global(button) {
 			height: 32px;
 			min-height: 32px;
 			min-width: 32px;
+			font-size: var(--fs-base);
 		}
 	}
 </style>

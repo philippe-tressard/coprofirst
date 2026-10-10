@@ -82,7 +82,7 @@
 </script>
 
 <div
-	class="carte-liste"
+	class="carte-liste a-gouttiere"
 	{...attributsNature(pub)}
 	class:expanded
 	class:urgent={ticketUrgent(pub)}
@@ -110,7 +110,7 @@
 	<!--  QUAND puis QUOI, dans la colonne de gauche (maquette B, 10/10/2026) :
 	      la date n'est donc plus passée à l'en-tête — un seul fait, une place. -->
 	<GouttiereAffaire affaire={pub} />
-	<EnteteCarte titre={pub.titre} basculable ample on:toggle={basculer}>
+	<EnteteCarte titre={pub.titre} basculable on:toggle={basculer}>
 		<svelte:fragment slot="titre-suffixe">
 			<BadgeNouveau le={pub.cree_le} si={estFil} />
 		</svelte:fragment>

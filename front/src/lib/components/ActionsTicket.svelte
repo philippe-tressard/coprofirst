@@ -60,7 +60,7 @@
 		aria-label={SUITE.libelle}
 		title={SUITE.libelle}
 		on:click|stopPropagation={() => dispatch('evoluer_ouvrir')}
-		><IconeAction glyphe="🔄" icone="refresh-cw" /></button
+		><IconeAction icone="refresh-cw" /></button
 	>
 {/if}
 {#if peutEditer}
@@ -72,8 +72,7 @@
 		aria-pressed={mode === 'edition'}
 		aria-label="Modifier"
 		title="Modifier"
-		on:click|stopPropagation={() => dispatch('modifier')}
-		><IconeAction glyphe="✏️" icone="pencil" /></button
+		on:click|stopPropagation={() => dispatch('modifier')}><IconeAction icone="pencil" /></button
 	>
 {/if}
 <!--  ⚠️ La corbeille NE SUIT PAS le droit d'édition : supprimer
@@ -103,15 +102,13 @@
 		class="btn-icon"
 		aria-label="Archiver"
 		title="Archiver — rejoint l'onglet Archives"
-		on:click|stopPropagation={() => dispatch('archiver')}
-		><IconeAction glyphe="📦" icone="archive" /></button
+		on:click|stopPropagation={() => dispatch('archiver')}><IconeAction icone="archive" /></button
 	>
 {:else if archive && peutAdministrer}
 	<button
 		class="btn-icon-danger"
 		aria-label="Supprimer"
 		title="Supprimer définitivement"
-		on:click|stopPropagation={() => dispatch('supprimer')}
-		><IconeAction glyphe="🗑️" icone="trash-2" /></button
+		on:click|stopPropagation={() => dispatch('supprimer')}><IconeAction icone="trash-2" /></button
 	>
 {/if}
