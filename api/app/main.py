@@ -393,7 +393,8 @@ app.add_middleware(
 
 #  🏢 LE PLUS À L'EXTÉRIEUR, donc ajouté en dernier : chaque requête s'exécute
 #  dans le contexte de SA copropriété — base, fichiers, secret, caches (#1746,
-#  spec §4.1). Résolue à l'entrée, une fois ; en phase 2, l'unique copropriété.
+#  spec §4.1). Résolue à l'entrée, une fois, par l'hôte : un hôte inconnu reçoit 421
+#  avant toute autre couche, débit et CORS compris (#1751).
 app.add_middleware(contexte.ResolutionCopropriete)
 
 # Routeurs

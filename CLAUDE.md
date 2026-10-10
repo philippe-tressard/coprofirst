@@ -874,6 +874,10 @@ le standby). Démarrer la stack sur un nœud dont le `.env` est resté en rôle
 standby sert le public avec une origine locale et un cookie de session sans
 drapeau `Secure`. C'est le « gap .env du 15/07/2026 ». La règle vit dans
 `scripts/lib/lib-env-role.sh` et nulle part ailleurs (#1077).
+Depuis #1751, `ORIGIN` dit aussi **quel nom l'API sert** : un nœud actif dont
+l'`ORIGIN` serait resté son IP répondrait **421** au public — le site entier, plus
+seulement un cookie. Les quatre chemins de prise de main passent par
+`env_role_appliquer` (bascule, failover, garde au démarrage, reprise en main).
 
 > 📇 **Les points d'entrée sont versionnés depuis le 15/08/2026** :
 > `infra/points-entree/` porte les crons et l'unité systemd attendus, et le

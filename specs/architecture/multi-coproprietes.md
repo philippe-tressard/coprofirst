@@ -94,6 +94,16 @@ Règles :
 3. **Aucune ressource ne se construit depuis la configuration globale** : base,
    fichiers, secret, expéditeur, clé d'IA viennent tous du contexte.
 
+**Livré en phase 2 (#1751, 10/10/2026)** — l'intergiciel `app/contexte.ResolutionCopropriete` lit
+`Host` à l'entrée et `app/contexte.resoudre` le cherche au registre : le nom d'`ORIGIN`
+et ceux de `HOTES_COPROPRIETE`. Un hôte inconnu reçoit **421**. Deux tolérances,
+déclarées et bornées :
+- une **IP privée** ou un **nom interne** (`localhost`, `api`) désigne la copropriété
+  *tant qu'elle est seule* — scripts et sondes des nœuds, rendu côté serveur du front ;
+  avec deux copropriétés, ils ne désignent plus personne, et ces appels devront
+  nommer leur copropriété ;
+- **`/health`** répond à tout hôte : une question sur la plateforme.
+
 ### 4.2 Le registre de la plateforme
 
 La seule donnée **commune** : la liste des copropriétés et de quoi résoudre leur
@@ -379,7 +389,7 @@ soumis à accord, lot par lot.
 | P2-6 | **Stockage des fichiers** derrière une interface, disque local puis stockage objet, préfixe par copro (§4.4). Décision à y prendre : `/uploads/*` n'est plus servi en statique par Caddy. **Arbitrage du 10/10/2026 : « Reporter »** — le service reste à Caddy (`forward_auth`) ; service par l'API ou URL signées se choisiront en phase 3, avec l'hébergeur dont ils dépendent. **Livré le 10/10/2026** : `utils/stockage` — l'interface `Stockage` et `StockageDisque`, une racine par copropriété lue au contexte à chaque appel, toute clé bornée sous elle ; les quatre racines figées au chargement (`RACINE_UPLOADS`, `REPERTOIRE_PRIVE`, `UPLOADS_ROOT`, `PDF_DIR`) et les trois traductions `"/app" + url` (pièces jointes, PDF, images d'affiche) passent par lui ; une écriture ne crée jamais la racine (volume non monté → erreur). 🔒 `test_stockage_source_unique.py`, et `test_televersement_source_unique.py` : seuls `enregistrer_fichier_recu` et les fichiers produits déclarés appellent l'écriture. Restent : les chemins ABSOLUS gardés en base (`Document.fichier_chemin`, `AnnonceHall.pdf_chemin`) deviendront des clés au passage au stockage objet (#1816) | M | P2-2 | #1748 |
 | P2-7 | **Export / import vérifié** d'une copro (comptes et sommes de contrôle par table) : sauvegarde vérifiée aujourd'hui, passage à PostgreSQL demain, réversibilité ensuite (§4.3, §4.9). **Livré en v2.125.0** : `utils/export_copropriete` — archive tar.gz au format neutre (manifeste, une table JSONL par modèle avec son empreinte SHA-256, fichiers du volume) ; l'import réécrit dans une base CIBLE neuve et refuse tout écart de compte ou d'empreinte ; *Admin › Maintenance › Export vérifié* prouve la restauration dans une base jetable | M | — | #1749 |
 | P2-8 | **Scission du rôle `admin`** : administrateur de copro et opérateur de plateforme, sans donnée personnelle (§4.7, §5.5). **Arbitrages du 10/10/2026** : l'opérateur est un **rôle porté par un compte** (cumulable avec `admin`, il quittera la base pour le registre en phase 3) ; la **supervision technique** (installation, tâches planifiées, contrôles de fiabilité, contrôle de santé, purges) et la **base de données** (`/admin/db/*`) passent à lui seul. **Livré le 10/10/2026** : `ROLE_OPERATEUR` (`models/roles.py`, dans `roles_json` seulement, jamais la colonne `role`), `require_operateur` et `est_operateur` (`auth/deps.py`) sur neuf routes ; la migration 0276 l'accorde aux administrateurs d'alors, le seed à l'administrateur initial ; 🔒 `test_operateur_sans_donnee_personnelle.py` (§5.5) appelle chaque route de l'opérateur sur une base dont chaque donnée personnelle porte un témoin. Restent à l'administrateur : sauvegardes, export vérifié, consommation de l'IA — ils portent des données de la résidence | M | — (D8 confirmée le 08/10/2026) | #1750 |
-| P2-9 | **Résolution par nom d'hôte** (§4.1, règles 1 et 2). ⚠️ Le standby est servi par son IP locale (`ORIGIN`) : le registre rattache **plusieurs hôtes** à une même copro. En dernier | S | P2-2 | #1751 |
+| P2-9 | **Résolution par nom d'hôte** (§4.1, règles 1 et 2). ⚠️ Le standby est servi par son IP locale (`ORIGIN`) : le registre rattache **plusieurs hôtes** à une même copro. En dernier | S | P2-2 | #1751 — **livré** (421) |
 
 **Ce que la phase 2 ne fait pas, exprès :**
 

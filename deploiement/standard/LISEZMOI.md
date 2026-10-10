@@ -53,6 +53,8 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 2. `cp .env.example .env`, puis renseigner au moins `SECRET_KEY` (32 caractères
    au minimum), `WHATSAPP_API_KEY` (16 au minimum, même si le service WhatsApp
    n'est pas employé), `ORIGIN` (l'adresse publique) et la configuration SMTP.
+   ⚠️ Le site ne répond qu'au nom de `ORIGIN` : un autre nom reçoit une erreur 421 (« requête mal dirigée »). Un second nom — un alias, un ancien domaine — se
+   déclare dans `HOTES_COPROPRIETE`, séparé par des virgules.
 3. Ajouter **la version à installer** dans `.env` :
    ```
    COPROFIRST_VERSION=2.119.1

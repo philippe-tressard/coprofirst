@@ -6,9 +6,9 @@ base, la racine des fichiers, le secret de signature et l'expéditeur des courri
 appartiennent à UNE copropriété ; ils se demandent ici, et nulle part ailleurs.
 
 Tant qu'il n'y a qu'une copropriété (phase 2, §8 bis), le contexte les lit dans
-`settings` : le comportement est inchangé. Le jour où une requête se résoudra par
-son nom d'hôte (P2-9, #1751), seul ce module changera — et les appelants, qui ne
-nomment plus `settings.database_url` ni `engine`, suivront sans un mot.
+`settings` : le comportement est inchangé. Une requête se résout par son nom
+d'hôte (`resoudre`, P2-9, #1751) à l'entrée, par l'intergiciel
+`ResolutionCopropriete` ; un hôte inconnu reçoit 421.
 
 🔒 `tests/test_contexte_source_unique.py` refuse, dans `app/`, toute lecture
 directe de ces ressources hors de ce module (et de `database.py`, qui construit
@@ -30,10 +30,13 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
+from ipaddress import ip_address
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlsplit
 
 from sqlmodel import Session
+from starlette.responses import JSONResponse
 
 from app.config import get_settings
 
@@ -69,20 +72,77 @@ _servie: ContextVar[Copropriete | None] = ContextVar("copropriete_servie", defau
 def courante() -> Copropriete:
     """La copropriété servie : celle que `dans()` a posée, sinon l'unique de l'installation.
 
-    Le repli sur l'unique copropriété ne vaut qu'en phase 2 : la résolution par nom
-    d'hôte (P2-9, #1751) le remplacera, et un hôte inconnu ne résoudra rien (§4.1,
-    règle 2).
+    Le repli sur l'unique copropriété ne vaut que hors requête (tâche, script,
+    démarrage) et en phase 2 : une requête, elle, est résolue par son hôte à
+    l'entrée (`resoudre`), et un hôte inconnu reçoit 421 (§4.1, #1751).
     """
     return _servie.get() or _unique()
 
 
-def resoudre(scope: dict) -> Copropriete:
-    """La copropriété qu'une requête sert, lue à son ENTRÉE (§4.1).
+#: Les noms qui atteignent l'installation de l'INTÉRIEUR : sondes et scripts des
+#: nœuds (`localhost`), rendu côté serveur du front (`api`, `PUBLIC_API_URL`).
+NOMS_INTERNES = frozenset({"localhost", "api"})
 
-    Phase 2 : l'unique copropriété de l'installation. La résolution par nom d'hôte
-    (P2-9, #1751) remplacera ce corps ; un hôte inconnu ne résoudra rien (règle 2).
+#: Les routes de la PLATEFORME, qui répondent à tout hôte : elles ne disent rien
+#: d'une copropriété. `/health` — les sondes des nœuds, le failover, l'essai de
+#: mise à jour l'appellent par IP ou par `localhost` (#1751).
+ROUTES_PLATEFORME = frozenset({"/health"})
+
+
+def _hote(valeur: str) -> str:
+    """`Host` → le nom seul : minuscules, sans port ni crochets d'IPv6."""
+    h = valeur.strip().lower()
+    if h.startswith("["):
+        return h[1 : h.find("]")] if "]" in h else ""
+    return h.rsplit(":", 1)[0] if h.count(":") == 1 else h
+
+
+def registre() -> dict[str, tuple[Copropriete, frozenset[str]]]:
+    """Le registre de la plateforme : chaque copropriété, et les hôtes qui la désignent.
+
+    Une entrée en phase 2 : le nom de l'`ORIGIN` et ceux de `HOTES_COPROPRIETE`.
     """
-    return _unique()
+    s = get_settings()
+    hotes = {_hote(urlsplit(s.origin).netloc)} | {
+        _hote(h) for h in s.hotes_copropriete.split(",") if h.strip()
+    }
+    seule = _unique()
+    return {seule.identifiant: (seule, frozenset(hotes - {""}))}
+
+
+def _interne(hote: str) -> bool:
+    if hote in NOMS_INTERNES:
+        return True
+    try:
+        ip = ip_address(hote)
+    except ValueError:
+        return False
+    return ip.is_private or ip.is_loopback
+
+
+def copropriete_de_l_hote(valeur_hote: str) -> Copropriete | None:
+    """La copropriété que désigne cet hôte, ou `None` — jamais une « par défaut » (§4.1, #1751).
+
+    Une IP privée ou un nom interne désigne la copropriété TANT QU'ELLE EST SEULE :
+    les scripts des nœuds et le rendu du front l'atteignent ainsi. Avec deux
+    copropriétés, ils ne désignent plus personne : il faudra un nom.
+    """
+    hote = _hote(valeur_hote)
+    entrees = registre()
+    for copro, hotes in entrees.values():
+        if hote in hotes:
+            return copro
+    if hote and len(entrees) == 1 and _interne(hote):
+        return next(iter(entrees.values()))[0]
+    return None
+
+
+def resoudre(scope: dict) -> Copropriete | None:
+    """La copropriété qu'une requête sert, lue à son ENTRÉE : par l'en-tête `Host`
+    seulement — jamais un paramètre, un champ ni un en-tête libre (§4.1, règle 1).
+    `None` pour un hôte que le registre ne connaît pas (règle 2)."""
+    hote = next((v.decode("latin-1") for k, v in scope.get("headers") or [] if k == b"host"), "")
+    return copropriete_de_l_hote(hote)
 
 
 class ResolutionCopropriete:
@@ -98,10 +158,20 @@ class ResolutionCopropriete:
         self.app = app
 
     async def __call__(self, scope, receive, send) -> None:
-        if scope["type"] not in ("http", "websocket"):
+        if scope["type"] not in ("http", "websocket") or scope["path"] in ROUTES_PLATEFORME:
             await self.app(scope, receive, send)
             return
-        with dans(resoudre(scope)):
+        copro = resoudre(scope)
+        if copro is None:
+            #  421 « requête mal dirigée » (arbitrage du 10/10/2026, #1751), avant
+            #  toute route, sans rien lire ni renvoyer de ce que l'hôte a envoyé.
+            reponse = JSONResponse(
+                {"detail": "Cette adresse ne désigne aucune copropriété de ce serveur."},
+                status_code=421,
+            )
+            await reponse(scope, receive, send)
+            return
+        with dans(copro):
             await self.app(scope, receive, send)
 
 
