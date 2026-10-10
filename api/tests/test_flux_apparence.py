@@ -43,15 +43,17 @@ def _types_emis() -> set[str]:
     return types
 
 
-#: Une rubrique et ses attributs : `annonce: { libelle: '…', couleur: '…', … }`.
-_ENTREE = re.compile(r"^	([a-z_]+):\s*\{(.+?)\},?\s*(?://.*)?$", re.M)
+#: Une rubrique et ses attributs : `annonce: { libelle: '…', couleur: '…', … }`,
+#: sur une ligne ou sur plusieurs — Prettier les replie depuis que la marque de
+#: gouttière (`icone`, `abrege`) s'y est ajoutée (10/10/2026).
+_ENTREE = re.compile(r"^	([a-z_]+):\s*\{(.+?)\}", re.M | re.S)
 _ATTRIBUT = re.compile(r"([a-z]+):\s*'([^']+)'")
 
 #: Les attributs qu'une rubrique DOIT porter. Écrits ici parce que le test doit
 #: pouvoir dire lequel manque ; côté TypeScript, c'est le compilateur qui le
 #: refuse (`$lib/table-statuts`), donc ce contrôle-ci ne peut plus échouer sur
 #: une entrée incomplète — il reste pour le jour où quelqu'un défera la table.
-_ATTENDUS = ("libelle", "couleur", "fond")
+_ATTENDUS = ("libelle", "couleur", "fond", "icone", "abrege")
 
 
 def _apparences() -> dict[str, dict[str, str]]:

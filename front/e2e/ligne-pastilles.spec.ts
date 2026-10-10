@@ -76,7 +76,7 @@ test('le fil rend la ligne de la carte d’affaire, sans 📌', async ({ page })
 	expect(carte).toContain(`✍️ ${AUTEUR}`);
 
 	await page.goto('/tableau-de-bord');
-	const fil = await texte(page, '.flux-badges');
+	const fil = await texte(page, '.flux-groupes .ec-tags');
 	expect(fil).toBe(
 		carte
 			.replace(/📌 Épinglée ?/, '')

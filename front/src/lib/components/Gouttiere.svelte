@@ -36,19 +36,25 @@
 -->
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
-	import { partiesDate } from '$lib/date';
+	import { fmtTime, partiesDate } from '$lib/date';
 	import type { ClasseGouttiere } from '$lib/gouttiere';
 
 	/** L'instant qui situe l'objet (ISO), ou rien. */
 	export let quand: string | null | undefined = null;
 	/** Ce qui classe l'objet — nature, type, rubrique —, ou rien. */
 	export let classe: ClasseGouttiere | null = null;
+	/**  L'HEURE de l'instant, et non son jour : quand le jour est déjà dit par
+	 *   l'intitulé du groupe (le fil d'activité, groupé sous « Aujourd'hui »,
+	 *   « Hier »…), le répéter sur chaque carte ne dirait rien (10/10/2026). */
+	export let heure = false;
 
-	$: date = partiesDate(quand);
+	$: date = heure ? null : partiesDate(quand);
 </script>
 
 <div class="gouttiere">
-	{#if date && quand}
+	{#if heure && quand}
+		<time class="g-date" datetime={quand}><span class="g-jour">{fmtTime(quand)}</span></time>
+	{:else if date && quand}
 		<time class="g-date" datetime={quand}>
 			<span class="g-jour">{date.jour}</span>
 			<span class="g-mois">{date.mois} <span class="g-annee">{date.annee}</span></span>

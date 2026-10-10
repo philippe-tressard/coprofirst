@@ -1121,33 +1121,18 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	padding: 0.4rem 0;
 }
 
-/*  ── La FRISE du fil d'actualité ────────────────────────────────────────────
-    Le trait vertical, les pastilles qui s'y accrochent et les libellés de jour.
+/*  ── Le FIL d'activité : ses groupes et l'intitulé de leur jour ──────────────
+    🔴 La FRISE est partie le 10/10/2026 (maquette B du fil, choisie à l'écran) :
+    le trait vertical et ses puces de couleur disaient l'ordre et la rubrique,
+    que la gouttière de chaque carte dit désormais — l'heure, puis la rubrique
+    dans sa teinte (`FluxCard` → `CarteListe heure`). Ne restent que le groupe
+    et l'intitulé de son jour (« Aujourd'hui », « Hier »…), que la gouttière ne
+    répète pas.
 
-    🔴 REMONTÉ ICI LE 31/08/2026, et la duplication était DÉCLARÉE : le
-    commentaire d'`ArchivesDuFil` disait en toutes lettres « `.flux-timeline` et
-    `.flux-day-label` sont **recopiées** depuis la page ». Deux copies qui
-    devaient rester d'accord, sans rien pour le vérifier — et une troisième
-    portion, les pastilles, vivait dans `FluxCard`, qui n'est pas la frise mais
-    ce qu'on y accroche.
-
-    ⚠️ Svelte scope ses styles au FICHIER : c'est ce qui obligeait à recopier.
-    Le remède n'est donc pas « faire attention », c'est de sortir la règle des
-    fichiers qui la partagent. Trois écrans la rendent aujourd'hui (tableau de
-    bord, archives du fil, cartes) ; le quatrième l'aura sans rien copier. */
-.flux-timeline {
+    Remontés ici le 31/08/2026 : `ArchivesDuFil` recopiait ces règles depuis
+    la page, Svelte scopant les styles au fichier. */
+.flux-groupes {
 	position: relative;
-	padding-left: 1.5rem;
-}
-.flux-timeline::before {
-	content: '';
-	position: absolute;
-	left: 0.45rem;
-	top: 1.5rem;
-	bottom: 0.5rem;
-	width: 2px;
-	background: var(--color-border);
-	border-radius: 1px;
 }
 .flux-day-label {
 	position: relative;
@@ -1157,46 +1142,8 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	letter-spacing: 0.06em;
 	color: var(--color-text-muted);
 	padding: 0.9rem 0 0.35rem;
-	margin-left: -0.15rem;
-}
-@media (max-width: 767px) {
-	.flux-timeline {
-		padding-left: 1.25rem;
-	}
-	.flux-timeline::before {
-		left: 0.35rem;
-	}
 }
 
-/*  Les PASTILLES accrochées à la frise. Elles vivaient dans `FluxCard`, qui est
-    ce qu'on accroche — pas la frise elle-même. Elles rejoignent le trait auquel
-    elles se rattachent : les deux n'ont de sens qu'ensemble, et la carte n'a pas
-    à savoir comment la chronologie se dessine. */
-.flux-dot {
-	width: 10px;
-	height: 10px;
-	border-radius: 50%;
-	flex-shrink: 0;
-	margin-top: 0.85rem;
-	position: absolute;
-	left: -1.35rem;
-	border: 2px solid var(--color-surface);
-	box-shadow: 0 0 0 2px var(--color-border);
-	z-index: 1;
-}
-.flux-new-dot {
-	position: absolute;
-	left: -1.7rem;
-	top: 0.55rem;
-	width: 18px;
-	height: 18px;
-	border-radius: 50%;
-	background: color-mix(in srgb, var(--color-danger) 15%, transparent);
-	/*  Fixe (26/09/2026) : un battement sans fin sur chaque entrée nouvelle du fil
-	    fatigue sans rien apprendre — le badge NEW l'a quitté le même jour. */
-	opacity: 0.6;
-	z-index: 0;
-}
 /*  ── L'AIDE SOUS UN BLOC ────────────────────────────────────────────────────
     La phrase qui explique ce qu'on attend, sous un sélecteur ou un groupe —
     « À renseigner seulement pour préciser le périmètre… ».

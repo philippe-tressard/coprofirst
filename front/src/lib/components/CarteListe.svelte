@@ -34,7 +34,7 @@
   | Porté ici | Déclaré par l'appelant |
   |---|---|
   | `.carte-liste`, et `.a-gouttiere` dès qu'il y a une gouttière | rien : la colonne naît de `quand`, `classe` ou du créneau `gouttiere` |
-  | la gouttière (`Gouttiere`) : QUAND, puis ce qui CLASSE | `quand`, `classe` ; le créneau `gouttiere` (le vote d'une idée) |
+  | la gouttière (`Gouttiere`) : QUAND, puis ce qui CLASSE | `quand`, `classe` ; `heure` quand le jour est l'intitulé du groupe (le fil) ; le créneau `gouttiere` (le vote d'une idée) |
   | le geste ASYMÉTRIQUE (`ux-patterns` §3) : repliée, toute la carte ouvre | `onDeplier` — absent, la carte ne se déplie pas (idée, sondage, relevé) |
   | déplié, urgent, archivé | `expanded`, `urgent`, `archive` |
   | l'ancre des liens profonds | `id` |
@@ -61,6 +61,8 @@
 	export let quand: string | null | undefined = null;
 	/** Ce qui le classe, sous la date — ou rien. */
 	export let classe: ClasseGouttiere | null = null;
+	/** La gouttière dit l'HEURE de `quand`, le jour étant l'intitulé du groupe (le fil). */
+	export let heure = false;
 	export let expanded = false;
 	export let urgent = false;
 	/** Rendue aux Archives (ou retirée) : la carte s'efface tant qu'on ne la vise pas. */
@@ -89,7 +91,7 @@
 	}}
 >
 	{#if gouttiere}
-		<Gouttiere {quand} {classe}><slot name="gouttiere" /></Gouttiere>
+		<Gouttiere {quand} {classe} {heure}><slot name="gouttiere" /></Gouttiere>
 	{/if}
 	<slot />
 </div>
