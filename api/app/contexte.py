@@ -22,9 +22,15 @@ quand il viendra, le sera de même — `test_etat_module_par_copropriete.py` y v
 
 from __future__ import annotations
 
+import functools
+import logging
+import time
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlmodel import Session
 
@@ -32,6 +38,8 @@ from app.config import get_settings
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
+
+logger = logging.getLogger("hostachy.taches")
 
 #: L'identifiant de l'unique copropriété d'une installation de phase 2. Il indexe
 #: déjà les états de processus (`etat`) : la seconde copropriété n'aura qu'à en
@@ -51,8 +59,76 @@ class Copropriete:
     nom_expediteur: str
 
 
+#: La copropriété que sert l'exécution en cours — posée par `dans()`. Une variable
+#: de CONTEXTE, propre à chaque fil et à chaque tâche asynchrone : deux tâches
+#: planifiées qui tournent en même temps ne se volent pas leur copropriété.
+_servie: ContextVar[Copropriete | None] = ContextVar("copropriete_servie", default=None)
+
+
 def courante() -> Copropriete:
-    """La copropriété servie. Une seule en phase 2 : celle de la configuration."""
+    """La copropriété servie : celle que `dans()` a posée, sinon l'unique de l'installation.
+
+    Le repli sur l'unique copropriété ne vaut qu'en phase 2 : la résolution par nom
+    d'hôte (P2-9, #1751) le remplacera, et un hôte inconnu ne résoudra rien (§4.1,
+    règle 2).
+    """
+    return _servie.get() or _unique()
+
+
+def coproprietes() -> tuple[Copropriete, ...]:
+    """Toutes les copropriétés de l'installation. Une seule en phase 2."""
+    return (_unique(),)
+
+
+@contextmanager
+def dans(copro: Copropriete) -> Iterator[Copropriete]:
+    """Exécute le bloc dans le contexte de `copro` : base, fichiers, états, expéditeur."""
+    jeton = _servie.set(copro)
+    try:
+        yield copro
+    finally:
+        _servie.reset(jeton)
+
+
+def pour_chaque_copropriete(tache: Callable[[], Any], nom: str) -> Callable[[], None]:
+    """L'enveloppe d'une tâche planifiée qui travaille pour UNE copropriété (§4.6, #1745).
+
+    La tâche tourne une fois par copropriété, dans son contexte. L'échec de l'une
+    est journalisé et ne bloque pas les suivantes ; chaque exécution laisse une
+    ligne qui nomme la copropriété. Avec une seule copropriété, la boucle fait un
+    tour.
+
+    🔒 Toute tâche enregistrée passe par elle, sauf celles que
+    `utils/taches.TACHES_DE_LA_PLATEFORME` déclare avec leur raison —
+    `test_taches_planifiees_declarees.py` le vérifie sur le code, et
+    `taches.verifier_taches_enregistrees` sur le planificateur au démarrage.
+    """
+
+    @functools.wraps(tache)
+    def _par_copropriete() -> None:
+        for copro in coproprietes():
+            debut = time.monotonic()
+            with dans(copro):
+                try:
+                    tache()
+                except Exception:
+                    #  ERROR, comme APScheduler l'aurait écrit sans l'enveloppe : une
+                    #  tâche qui lève est une panne, et le pré-check doit la compter.
+                    logger.exception("tache %s — copropriete %s : ECHEC", nom, copro.identifiant)
+                    continue
+            logger.info(
+                "tache %s — copropriete %s : faite (%.1f s)",
+                nom,
+                copro.identifiant,
+                time.monotonic() - debut,
+            )
+
+    _par_copropriete.par_copropriete = True  # type: ignore[attr-defined]
+    return _par_copropriete
+
+
+def _unique() -> Copropriete:
+    """L'unique copropriété d'une installation de phase 2 : celle de la configuration."""
     s = get_settings()
     return Copropriete(
         identifiant=IDENTIFIANT_UNIQUE,
@@ -69,6 +145,10 @@ def moteur() -> Engine:
 
     Lu à l'APPEL dans `app.database` : un test qui remplace `app.database.engine`
     obtient sa base partout, sans remplacer un attribut par module appelant.
+
+    ⚠️ Une seule base en phase 2 : le moteur ne dépend pas encore de la copropriété
+    servie. Le registre des moteurs, indexé par `identifiant`, viendra avec la
+    seconde copropriété (phase 3).
     """
     from app import database
 

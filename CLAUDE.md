@@ -872,7 +872,10 @@ les minutes y sont **décalées** exprès, et une cadence recopiée dans cette t
 
 **Les tâches de l'API**, elles, tournent **dans le process** et se déclarent dans
 `app/utils/taches.TACHES_PERMANENTES` — avec, pour chacune, **ce qu'on perd** si
-elle cesse de tourner. Le démarrage compare les tâches réellement enregistrées à
+elle cesse de tourner. Chacune s'enregistre **par copropriété** :
+`scheduler.add_job(contexte.pour_chaque_copropriete(tache, "id"), …, id="id")`, qui la
+joue dans le contexte de chacune et isole l'échec de l'une ; une tâche de la
+plateforme se déclare dans `TACHES_DE_LA_PLATEFORME` avec sa raison (#1745). Le démarrage compare les tâches réellement enregistrées à
 cette table et journalise tout écart en `WARNING` ; `test_taches_planifiees_declarees.py`
 le vérifie aussi en CI, dans les deux sens. Aucun des deux ne suffit seul : le test
 lit le code, le contrôle au démarrage lit le scheduler (#1047).

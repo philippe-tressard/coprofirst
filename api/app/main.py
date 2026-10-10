@@ -134,6 +134,11 @@ async def lifespan(app: FastAPI):
 
     scheduler = setup_scheduler()
 
+    #  🏢 CHAQUE TÂCHE TRAVAILLE POUR UNE COPROPRIÉTÉ (#1745, spec §4.6) : elle
+    #  s'enregistre enveloppée par `pour_chaque_copropriete`, qui la joue dans le
+    #  contexte de chacune, journalise chaque passage et isole l'échec de l'une.
+    #  Une tâche de la plateforme se déclare dans `taches.TACHES_DE_LA_PLATEFORME`.
+
     # Planificateur WhatsApp : fenêtre de rattrapage 18h00 → 21h45 (toutes les
     # 15 min) au lieu d'une tentative unique à 18h00 pile — cf. incident du
     # 24/07/2026 (bridge indisponible à 18h00, message mensuel perdu).
@@ -141,13 +146,23 @@ async def lifespan(app: FastAPI):
     # répétées sûres (aucun risque de doublon).
     from app.utils.whatsapp_scheduler import check_and_send as _wa_check
 
-    scheduler.add_job(_wa_check, "cron", hour="18-21", minute="*/15", id="whatsapp_scheduled")
+    scheduler.add_job(
+        contexte.pour_chaque_copropriete(_wa_check, "whatsapp_scheduled"),
+        "cron",
+        hour="18-21",
+        minute="*/15",
+        id="whatsapp_scheduled",
+    )
 
     # Agrégation télémétrie : chaque nuit à 2h
     from app.utils.telemetry_aggregation import run_telemetry_aggregation_cron
 
     scheduler.add_job(
-        run_telemetry_aggregation_cron, "cron", hour=2, minute=0, id="telemetry_aggregation"
+        contexte.pour_chaque_copropriete(run_telemetry_aggregation_cron, "telemetry_aggregation"),
+        "cron",
+        hour=2,
+        minute=0,
+        id="telemetry_aggregation",
     )
 
     #  🔴 LES RATTRAPAGES — et ils ne concernent PLUS que la télémétrie (#876).
@@ -189,18 +204,30 @@ async def lifespan(app: FastAPI):
         prechauffer(**identite)
 
     scheduler.add_job(
-        _prechauffer_manuel,
+        contexte.pour_chaque_copropriete(_prechauffer_manuel, "manuel_pdf_prechauffage"),
         "date",
         #  Conscient, donc indépendant du fuseau du planificateur (#1565).
         run_date=horloge.a_paris(horloge.maintenant()) + _timedelta(seconds=20),
         id="manuel_pdf_prechauffage",
     )
-    scheduler.add_job(_prechauffer_manuel, "cron", hour=0, minute=5, id="manuel_pdf_quotidien")
+    scheduler.add_job(
+        contexte.pour_chaque_copropriete(_prechauffer_manuel, "manuel_pdf_quotidien"),
+        "cron",
+        hour=0,
+        minute=5,
+        id="manuel_pdf_quotidien",
+    )
 
     # Contrôle santé quotidien : WhatsApp, sauvegardes, disque (06h00)
     from app.utils.health_monitor import run_health_check
 
-    scheduler.add_job(run_health_check, "cron", hour=6, minute=0, id="health_check")
+    scheduler.add_job(
+        contexte.pour_chaque_copropriete(run_health_check, "health_check"),
+        "cron",
+        hour=6,
+        minute=0,
+        id="health_check",
+    )
 
     #  Réponses par courriel aux tickets (#703). Toutes les 10 minutes : assez
     #  souvent pour qu'une réponse du syndic paraisse « immédiate » dans le fil,
@@ -214,14 +241,24 @@ async def lifespan(app: FastAPI):
     #  la fonction sort immédiatement.
     from app.utils.courriel_boite import relever as _relever_reponses
 
-    scheduler.add_job(_relever_reponses, "interval", minutes=10, id="courriel_reponses")
+    scheduler.add_job(
+        contexte.pour_chaque_copropriete(_relever_reponses, "courriel_reponses"),
+        "interval",
+        minutes=10,
+        id="courriel_reponses",
+    )
 
     #  La synthèse d'une affaire close (#1643) : la file se vide toutes les 10
     #  minutes, chaque demande attendant 30 min après la clôture. `traiter_file`
     #  ne lève jamais, et laisse une trace à chaque passage.
     from app.utils.synthese_affaire.file import traiter_file as _syntheses
 
-    scheduler.add_job(_syntheses, "interval", minutes=10, id="synthese_affaires")
+    scheduler.add_job(
+        contexte.pour_chaque_copropriete(_syntheses, "synthese_affaires"),
+        "interval",
+        minutes=10,
+        id="synthese_affaires",
+    )
 
     #  La purge des comptes inactifs (#1580) : chaque jour à 04:30, après la
     #  sauvegarde de la nuit (03:00 par défaut). Elle avertit, puis supprime trente jours plus tard ;
@@ -229,7 +266,13 @@ async def lifespan(app: FastAPI):
     #  `purger_comptes_inactifs` ne lève jamais et laisse une trace à chaque passage.
     from app.utils.purge_comptes.tache import purger_comptes_inactifs as _purge_comptes
 
-    scheduler.add_job(_purge_comptes, "cron", hour=4, minute=30, id="purge_comptes_inactifs")
+    scheduler.add_job(
+        contexte.pour_chaque_copropriete(_purge_comptes, "purge_comptes_inactifs"),
+        "cron",
+        hour=4,
+        minute=30,
+        id="purge_comptes_inactifs",
+    )
 
     #  🔴 Ce qui tourne VRAIMENT est comparé à ce qui est déclaré (#1047). Un
     #  `add_job` supprimé par mégarde — refactor, fusion, condition mal placée —
