@@ -33,6 +33,11 @@
 #  `@@ERREUR`, et l'appelant refuse alors de conclure — jamais un vert.
 # =============================================================================
 
+#  Ce que le rejeu décide pour les tests de navigateur (workers, node_modules,
+#  Vite, relance) vit à côté, depuis #1809.
+# shellcheck source=lib-ci-e2e.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-ci-e2e.sh"
+
 # ── Extraction ───────────────────────────────────────────────────────────────
 #  Le parseur ne prétend PAS lire YAML : il lit la forme que ce fichier-ci a, et
 #  il est strict dessus. Toute étape qu'il ne sait pas reconnaître est perdue —
@@ -219,6 +224,22 @@ ci_verrou_etat() {         # $1 = pid lu dans le verrou · $2 = vivant oui|non �
   [ -z "${1:-}" ] && { echo libre; return; }
   [ "${2:-non}" = oui ] && echo occupe || echo orphelin
 }
+#  #1808 (10/10/2026) : un verrou a DISPARU sous un rejeu vivant. La reprise
+#  d'un orphelin faisait `rm -rf` sur un verrou relu AVANT — entre-temps, un
+#  autre rejeu pouvait l'avoir reposé —, et les traps le retiraient sans
+#  regarder à qui il était. Deux règles, et le script n'en a pas d'autre :
+ci_verrou_liberer() {      # $1 = verrou · $2 = pid qui libère → retiré seulement s'il est à lui
+  [ "$(cat "$1/pid" 2>/dev/null)" = "$2" ] && rm -rf "$1"
+  return 0
+}
+ci_verrou_reprendre() {    # $1 = verrou · $2 = pid orphelin lu → 0 libre | 1 il a changé de main
+  local cote="$1.repris.$$"   # `mv` est atomique : on juge ce qu'on a DÉPLACÉ, pas ce qu'on a lu
+  mv -T "$1" "$cote" 2>/dev/null || return 0
+  [ "$(cat "$cote/pid" 2>/dev/null)" = "$2" ] && { rm -rf "$cote"; return 0; }
+  mv -T "$cote" "$1" 2>/dev/null ||                  # rendu à son propriétaire
+    echo "⚠ verrou vivant laissé dans $cote : un troisième rejeu a pris la place" >&2
+  return 1
+}
 
 # ── Les dépendances du poste sont-elles celles du lot ? (#1417) ──────────────
 #  Une installation n'est jamais exécutée ici ; les contrôles qui la suivent
@@ -233,50 +254,6 @@ ci_dependances_etat() {    # $1 = verdict du vérificateur → "" (mesurable) | 
     INCONNU*) echo "dépendances du poste non vérifiables : ${1#INCONNU }" ;;
     *)        echo "dépendances du poste non vérifiables : vérificateur muet" ;;
   esac
-}
-
-# ── Combien de workers e2e sur un poste occupé ? (#1665, 04/10/2026) ─────────
-#  Trois rejeux complets de suite sont tombés sur les MÊMES quatre specs
-#  d'administration, la machine prise à ~55 % par d'autres sessions : hydratation
-#  médiane 2,9 s contre 0,8 s, pour des attentes de 5 s. La suite entière passait
-#  à 335/335 avec `--workers=1`, et la CI GitHub — au repos — était verte. Ce
-#  n'était pas le code mais la contention entre workers. La charge se mesure
-#  AVANT le rejeu : c'est celle des autres, pas la nôtre. (PURE)
-#    $1 = valeur imposée par qui lance (E2E_WORKERS), $2 = charge CPU en %
-#    (vide si non mesurable), $3 = seuil en % → nombre de workers, ou vide
-#    (le défaut de Playwright, celui de la CI).
-ci_workers_e2e() {
-  [ -n "${1:-}" ] && { echo "$1"; return; }
-  #  Charge inconnue → le défaut : ne pas mesurer n'autorise pas à brider.
-  case "${2:-}" in ''|*[!0-9]*) echo ""; return ;; esac
-  [ "$2" -ge "$3" ] && echo 1 || echo ""
-}
-
-# ── Les e2e peuvent-ils se fier au node_modules du worktree ? (#1722) ────────
-#  Un worktree dont `front/node_modules` est une JONCTION vers celui du clone
-#  principal partage aussi le cache d'optimisation de Vite (`node_modules/.vite`).
-#  Qu'une autre session lance Vite, et les e2e tombent au hasard — « Failed to
-#  fetch dynamically imported module … app.js », hydratation à 10 s —, un spec
-#  DIFFÉRENT à chaque passage, vert isolé. Écrit en mémoire le 03/10, revenu le
-#  07/10 : trois rejeux rouges pour #1718. Le lot n'y est pour rien : INCONNU,
-#  jamais FAIL. (PURE)
-#    $1 = lien | repertoire | absent → "" (mesurable) | motif d'INCONNU
-#    `absent` est laissé à l'étape elle-même, qui dit déjà « non installé ».
-ci_node_modules_etat() {
-  case "${1:-}" in
-    repertoire|absent) echo "" ;;
-    lien) echo "node_modules partagé par jonction : le cache de Vite l'est aussi (#1722)" ;;
-    *)    echo "node_modules non examiné : son genre est illisible" ;;
-  esac
-}
-
-#  Une étape SERT-elle l'application par Vite ? Ce sont les tests de navigateur :
-#  `npm run e2e` dans ci.yml, `playwright test` s'il était appelé en direct. Le
-#  mot « playwright » seul ne suffit pas — il désigne aussi l'INSTALLATION des
-#  navigateurs, qui n'est jamais rejouée : un premier jet le prenait pour critère
-#  et n'attrapait donc rien. (PURE) Corps sur stdin → oui | non
-ci_sert_par_vite() {
-  grep -v '^[[:space:]]*#' | grep -Eq '(^|[^[:alnum:]_:-])(npm run e2e([^[:alnum:]:_-]|$)|playwright test)'     && echo oui || echo non
 }
 
 # ── Les tests SAUTÉS d'une étape, nommés (#1734, 08/10/2026) ────────────────
@@ -383,6 +360,24 @@ YAML
   t "verrou — absent : libre"              "$(ci_verrou_etat "" non)" "libre"
   t "verrou — pid vivant : occupé"          "$(ci_verrou_etat 4242 oui)" "occupe"
   t "verrou — pid mort : orphelin, repris"  "$(ci_verrou_etat 4242 non)" "orphelin"
+  #  #1808 : un verrou ne se retire que par son propriétaire, et la reprise d'un
+  #  orphelin n'emporte pas celui qu'un autre rejeu vient de poser.
+  local vd; vd=$(mktemp -d)
+  mkdir "$vd/v" && echo 111 > "$vd/v/pid"; ci_verrou_liberer "$vd/v" 222
+  t "verrou — libéré par un autre : gardé"     "$([ -d "$vd/v" ] && echo garde || echo retire)" "garde"
+  ci_verrou_liberer "$vd/v" 111
+  t "verrou — libéré par son pid : retiré"     "$([ -d "$vd/v" ] && echo garde || echo retire)" "retire"
+  mkdir "$vd/v" && echo 111 > "$vd/v/pid"
+  t "reprise — l'orphelin lu : retiré"         "$(ci_verrou_reprendre "$vd/v" 111 && echo repris; [ -d "$vd/v" ] && echo present)" "repris"
+  mkdir "$vd/v" && echo 333 > "$vd/v/pid"
+  t "reprise — le verrou a changé de main"     "$(ci_verrou_reprendre "$vd/v" 111 || echo refus; cat "$vd/v/pid")" "refus
+333"
+  t "reprise — rien de mis de côté"            "$(ls -A "$vd" | grep -c repris)" "0"
+  rm -rf "$vd"
+  #  Le script ne retire le verrou QUE par ces fonctions : un `rm` direct sur
+  #  lui est le défaut même de #1808.
+  t "rejouer-ci.sh — aucun rm direct du verrou" \
+    "$(grep -cE 'rm [^#]*VERROU_REJEU' scripts/poste/rejouer-ci.sh 2>/dev/null)" "0"
   t "dépendances — alignées : mesurable"    "$(ci_dependances_etat ALIGNE)" ""
   t "dépendances — écart : INCONNU nommé" \
     "$(ci_dependances_etat 'ECART pypdf 6.19.0→6.14.2')" "dépendances du poste ≠ lot : pypdf 6.19.0→6.14.2"
@@ -390,28 +385,7 @@ YAML
   t "dépendances — muet : jamais mesurable" \
     "$(ci_dependances_etat '')" "dépendances du poste non vérifiables : vérificateur muet"
 
-  t "workers — poste au repos : défaut"      "$(ci_workers_e2e "" 12 30)" ""
-  t "workers — poste occupé : un seul"       "$(ci_workers_e2e "" 55 30)" "1"
-  t "workers — au seuil : un seul"           "$(ci_workers_e2e "" 30 30)" "1"
-  t "workers — imposé : il prime"            "$(ci_workers_e2e 3 90 30)" "3"
-  #  🔴 Le cas zéro : une charge non mesurée ne bride pas en silence.
-  t "workers — charge inconnue : défaut"     "$(ci_workers_e2e "" "" 30)" ""
-  t "workers — charge illisible : défaut"    "$(ci_workers_e2e "" "n/a" 30)" ""
-
-  t "node_modules — propre au worktree : mesurable" "$(ci_node_modules_etat repertoire)" ""
-  t "node_modules — absent : laissé au contrôle de l'étape" "$(ci_node_modules_etat absent)" ""
-  t "node_modules — jonction partagée : INCONNU nommé"     "$(ci_node_modules_etat lien)"     "node_modules partagé par jonction : le cache de Vite l'est aussi (#1722)"
-  t "Vite — les tests de navigateur"       "$(printf 'npm run e2e 2>&1 | tee x.log
-' | ci_sert_par_vite)" "oui"
-  t "Vite — playwright appelé en direct"   "$(printf 'npx playwright test
-' | ci_sert_par_vite)" "oui"
-  t "Vite — l'installation n'en est pas"   "$(printf 'npx playwright install --with-deps chromium
-' | ci_sert_par_vite)" "non"
-  t "Vite — un lint voisin n'en est pas"   "$(printf 'npm run lint:e2e-serveur
-' | ci_sert_par_vite)" "non"
-  t "Vite — un commentaire n'en est pas"   "$(printf '# npm run e2e
-npm run build
-' | ci_sert_par_vite)" "non"
+  ci_e2e_cas   # workers, node_modules, Vite, relance (#1809) : lib-ci-e2e.sh
   #  #1734 : un saut se NOMME, il ne se tait pas ; aucun saut, aucune mention.
   t "sauts — aucun : rien à dire"    "$(printf '' | ci_resumer_sauts)" ""
   t "sauts — regroupés par raison, le plus fréquent d'abord"     "$(printf 'a::t1	WeasyPrint absent
@@ -420,8 +394,6 @@ c::t3	WeasyPrint absent
 ' | ci_resumer_sauts)"     "3 test(s) sauté(s) ici, joué(s) par la CI GitHub : WeasyPrint absent (2) ; front absent (1)"
   t "sauts — une ligne sans raison ne compte pas" "$(printf 'a::t1
 ' | ci_resumer_sauts)" ""
-  #  🔴 Le cas zéro : un genre que personne n'a su lire n'autorise pas les e2e.
-  t "node_modules — genre inconnu : INCONNU"     "$(ci_node_modules_etat '')" "node_modules non examiné : son genre est illisible"
 
   #  Éprouvé sur le VRAI fichier quand il est là : c'est le seul contrôle qui
   #  verrait un `ci.yml` réécrit dans une forme que le parseur ne sait plus lire.
