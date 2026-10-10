@@ -133,6 +133,31 @@ def _supprimer(
     return True
 
 
+def _supprimer_ferme(
+    session: Session, user: Utilisateur, maintenant: datetime, gestionnaire_id: Optional[int]
+) -> bool:
+    """Supprime un compte fermé dont la durée est échue (#1822) — relu juste avant."""
+    user_id = user.id
+    try:
+        session.refresh(user)
+        motif = regles.fermeture_echue(user, maintenant)
+        if motif is None or regles.compte_d_administration(user, gestionnaire_id) is not None:
+            return False
+        depuis = user.compte_ferme_le or user.cree_le
+        supprimer_compte(session, user_id)
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        logger.warning("Compte %s non supprimé par la purge : %s", user_id, exc)
+        return False
+    journaliser_securite(
+        "compte_purge_fermeture",
+        cible_id=user_id,
+        detail=f"{motif} depuis {(maintenant - depuis).days} j",
+    )
+    return True
+
+
 def purger_comptes_inactifs(
     session: Optional[Session] = None,
     *,
@@ -149,6 +174,7 @@ def purger_comptes_inactifs(
     rendu = {
         "avertis": 0,
         "supprimes": 0,
+        "supprimes_fermes": 0,
         "epargnes": 0,
         "echecs_envoi": 0,
         "echecs_suppression": 0,
@@ -159,7 +185,18 @@ def purger_comptes_inactifs(
         comptes = session.exec(select(Utilisateur).order_by(Utilisateur.id)).all()
         a_avertir: list[Utilisateur] = []
         a_supprimer: list[Utilisateur] = []
+        fermes: list[Utilisateur] = []
         for user in comptes:
+            #  Fermé (refusé, désactivé) ou jamais décidé : sa propre durée (#1822).
+            if not user.actif:
+                if regles.fermeture_echue(user, maintenant) is not None:
+                    motif = regles.compte_d_administration(user, gestionnaire_id)
+                    if motif is None:
+                        fermes.append(user)
+                    else:
+                        rendu["epargnes"] += 1
+                        _signaler(user, motif)
+                continue
             if not regles.est_inactif(user, maintenant):
                 if user.purge_avertie_le is not None:
                     user.purge_avertie_le = None  # redevenu actif : l'avertissement tombe
@@ -183,13 +220,13 @@ def purger_comptes_inactifs(
                 "avertis" if _avertir(session, user, maintenant, envoyer) else "echecs_envoi"
             ] += 1
 
-        if regles.suppressions_anormales(len(a_supprimer), len(comptes)):
+        if regles.suppressions_anormales(len(a_supprimer) + len(fermes), len(comptes)):
             rendu["suspendue"] = True
             logger.warning(
                 "Purge des comptes inactifs SUSPENDUE : %d suppression(s) sur %d compte(s), "
                 "au-delà du seuil de sûreté (%d, ou %d %%). Aucun compte supprimé — "
                 "horloge, base restaurée ? À examiner avant toute suppression manuelle.",
-                len(a_supprimer),
+                len(a_supprimer) + len(fermes),
                 len(comptes),
                 regles.SURETE_NOMBRE_MAX,
                 round(regles.SURETE_PROPORTION_MAX * 100),
@@ -198,11 +235,15 @@ def purger_comptes_inactifs(
             for user in a_supprimer:
                 ok = _supprimer(session, user, maintenant, gestionnaire_id)
                 rendu["supprimes" if ok else "echecs_suppression"] += 1
+            for user in fermes:
+                ok = _supprimer_ferme(session, user, maintenant, gestionnaire_id)
+                rendu["supprimes_fermes" if ok else "echecs_suppression"] += 1
         logger.info(
-            "Purge des comptes inactifs : %d averti(s), %d supprimé(s), %d épargné(s), "
-            "%d envoi(s) en échec, %d suppression(s) en échec%s",
+            "Purge des comptes inactifs : %d averti(s), %d supprimé(s), %d fermé(s) "
+            "supprimé(s), %d épargné(s), %d envoi(s) en échec, %d suppression(s) en échec%s",
             rendu["avertis"],
             rendu["supprimes"],
+            rendu["supprimes_fermes"],
             rendu["epargnes"],
             rendu["echecs_envoi"],
             rendu["echecs_suppression"],

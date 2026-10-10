@@ -84,11 +84,19 @@ def est_inactif(user, maintenant: datetime) -> bool:
 
 
 def exclusion(user, gestionnaire_id: Optional[int]) -> Optional[str]:
-    """Le motif pour lequel la purge ne touche pas ce compte, ou `None`."""
-    from app.models.roles import RoleUtilisateur
+    """Le motif pour lequel la purge pour INACTIVITÉ ne touche pas ce compte, ou `None`.
 
+    Un compte qui ne peut pas se connecter relève de `fermeture_echue`.
+    """
     if not user.actif:
         return MOTIF_SANS_CONNEXION
+    return compte_d_administration(user, gestionnaire_id)
+
+
+def compte_d_administration(user, gestionnaire_id: Optional[int]) -> Optional[str]:
+    """Jamais supprimé par la purge, ouvert ou fermé : il peut être la seule administration."""
+    from app.models.roles import RoleUtilisateur
+
     if user.has_role(RoleUtilisateur.admin):
         return MOTIF_ADMINISTRATEUR
     if gestionnaire_id is not None and user.id == gestionnaire_id:
@@ -111,6 +119,42 @@ def avertissement_echu(user, maintenant: datetime) -> bool:
 def avertissement_perime(user, maintenant: datetime) -> bool:
     averti = user.purge_avertie_le
     return averti is not None and maintenant - averti > VALIDITE_AVERTISSEMENT
+
+
+#: Les comptes FERMÉS ou jamais décidés (#1822, arbitrage du 10/10/2026). Ils ne
+#: peuvent pas se connecter : aucun avertissement ne leur part — « connectez-vous
+#: pour le garder » serait faux —, la suppression est journalisée.
+DELAI_REFUS_JOURS = 30
+DELAI_REFUS = timedelta(days=DELAI_REFUS_JOURS)
+#: Un compte désactivé suit la durée des comptes inactifs, comptée depuis sa
+#: désactivation : `INACTIVITE`.
+DELAI_ATTENTE_MOIS = 6
+#: Six mois, toujours au moins : 31 jours par mois, jamais un jour plus tôt.
+DELAI_ATTENTE = timedelta(days=31 * DELAI_ATTENTE_MOIS)
+
+MOTIF_REFUSE = "refusé"
+MOTIF_DESACTIVE = "désactivé"
+MOTIF_EN_ATTENTE = "en attente de validation"
+
+
+def fermeture_echue(user, maintenant: datetime) -> Optional[str]:
+    """Le motif pour lequel ce compte fermé — ou jamais décidé — se supprime, ou `None`.
+
+    Un compte OUVERT n'est jamais concerné : il relève de l'inactivité. Un compte
+    ancien, fermé avant que la fermeture soit notée, porte la date de la migration
+    qui l'a classé « désactivé » (#1822) : jamais plus tôt que l'annonce.
+    """
+    from app.utils.comptes import DESACTIVATION, REFUS
+
+    if user.actif:
+        return None
+    if user.fermeture_compte == REFUS and user.compte_ferme_le is not None:
+        return MOTIF_REFUSE if maintenant - user.compte_ferme_le >= DELAI_REFUS else None
+    if user.fermeture_compte == DESACTIVATION and user.compte_ferme_le is not None:
+        return MOTIF_DESACTIVE if maintenant - user.compte_ferme_le >= INACTIVITE else None
+    if user.decision_compte_le is None and user.fermeture_compte is None:
+        return MOTIF_EN_ATTENTE if maintenant - user.cree_le >= DELAI_ATTENTE else None
+    return None
 
 
 def suppressions_anormales(nb: int, total: int) -> bool:
@@ -146,8 +190,10 @@ __all__ = [
     "avertissement_echu",
     "avertissement_perime",
     "date_de_reference",
+    "compte_d_administration",
     "est_inactif",
     "exclusion",
+    "fermeture_echue",
     "marquer_activite",
     "suppressions_anormales",
 ]

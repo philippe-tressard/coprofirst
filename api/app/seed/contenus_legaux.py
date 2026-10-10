@@ -25,7 +25,12 @@ cherche qui contacter. La nôtre a vécu ainsi jusqu'à ce qu'un lecteur le voie
 
 from app.utils.courriel_journal import CONSERVATION_RELEVES_JOURS
 from app.utils.plateforme import LICENCE_NOM, LICENCE_SPDX, LICENCE_URL, NOM_PLATEFORME
-from app.utils.purge_comptes.regles import DELAI_AVANT_SUPPRESSION_JOURS, INACTIVITE_ANS
+from app.utils.purge_comptes.regles import (
+    DELAI_ATTENTE_MOIS,
+    DELAI_AVANT_SUPPRESSION_JOURS,
+    DELAI_REFUS_JOURS,
+    INACTIVITE_ANS,
+)
 
 
 #: La conservation des comptes (#1580, arbitrée le 04/10/2026). L'ancienne phrase
@@ -40,9 +45,22 @@ CONSERVATION_COMPTES = (
     f"courriel, puis il est <strong>supprimé {DELAI_AVANT_SUPPRESSION_JOURS}\xa0jours plus "
     "tard</strong> avec les données qui lui sont rattachées, sauf s'il s'est reconnecté "
     "entre-temps. Les comptes d'administration ne sont pas supprimés automatiquement\xa0; "
+)
+#: Les comptes FERMÉS ou jamais décidés (#1822, arbitrage du 10/10/2026) : la phrase
+#: d'avant — aucune durée — reste écrite pour que la migration la remplace
+#: EXACTEMENT ; la nouvelle se compose des constantes de la purge.
+COMPTES_FERMES_ANCIEN = (
     "un compte en attente de validation, refusé ou désactivé n'est supprimé que sur "
     "décision de l'administration."
 )
+COMPTES_FERMES = (
+    f"un compte refusé est supprimé <strong>{DELAI_REFUS_JOURS} jours</strong> après le "
+    f"refus, un compte désactivé <strong>{INACTIVITE_ANS} ans</strong> après sa "
+    "désactivation, et une inscription restée sans réponse de l'administration "
+    f"<strong>{DELAI_ATTENTE_MOIS} mois</strong> après la demande — sans avertissement "
+    "par courriel, puisqu'aucun de ces comptes ne permet de se connecter."
+)
+CONSERVATION_COMPTES += COMPTES_FERMES
 #: Ce que la suppression d'un compte GARDE (#1688, #1821 — arbitrages du
 #: 10/10/2026) : le contenu collectif, sans nom. Posée juste après
 #: `CONSERVATION_COMPTES` par la migration des auteurs facultatifs, qui la retire

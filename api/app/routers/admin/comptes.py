@@ -17,7 +17,11 @@ from app.models.core import (
     Utilisateur,
 )
 from app.schemas import UserRead
-from app.utils.comptes import comptes_en_attente as lister_comptes_en_attente, marquer_decide
+from app.utils.comptes import (
+    REFUS,
+    comptes_en_attente as lister_comptes_en_attente,
+    marquer_decide,
+)
 from typing import Any
 from app.utils.noms import nom_affiche
 from app.utils.recuperer import ou_404
@@ -102,7 +106,7 @@ def traiter_compte(
     #  envoyait un e-mail, laissait `actif` à False, et le compte remontait dans
     #  la file au chargement suivant — indéfiniment, sans qu'aucun écran ne
     #  puisse distinguer « refusé » de « jamais traité » (#399).
-    marquer_decide(user)
+    marquer_decide(user, None if body.action == "valider" else REFUS)
 
     sonner_systeme(
         session,

@@ -93,6 +93,7 @@ _NIVEAUX: dict[str, int] = {
     "compte_purge_averti": logging.INFO,
     "compte_purge_inactivite": logging.WARNING,
     "compte_purge_epargne": logging.WARNING,
+    "compte_purge_fermeture": logging.WARNING,
 }
 
 
