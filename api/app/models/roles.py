@@ -38,6 +38,26 @@ class RoleUtilisateur(str, Enum):
     admin = "admin"
 
 
+#: 🏢 L'OPÉRATEUR DE PLATEFORME (#1750, spec §4.7, D5) — pas un rôle DE la
+#: copropriété, et c'est pourquoi il n'est pas dans `RoleUtilisateur`.
+#:
+#: L'opérateur supervise l'installation (santé, contrôles, base) et ne lit
+#: AUCUNE donnée personnelle ; l'administrateur de copropriété gère sa
+#: résidence. Le rôle `admin` mêlait les deux. Arbitrage du 10/10/2026 : en
+#: phase 2, l'opérateur est un rôle porté par un compte (« Rôle sur un
+#: compte »), cumulable avec `admin` ; en phase 3, il quittera la base de la
+#: copropriété pour le registre de la plateforme.
+#:
+#: ⚠️ Il vit dans `roles_json` seulement, JAMAIS dans la colonne `role` : sous
+#: PostgreSQL, c'est un type énuméré qui le refuserait, et un code antérieur
+#: qui lirait « operateur » en rôle principal ne saurait pas le lire. Hors de
+#: `PRIORITE_ROLE` (rang 0) : il ne devient jamais le rôle principal. Aucun écran
+#: ne l'accorde (`ajouter-role` prend un `RoleUtilisateur`) — la migration 0276
+#: l'a posé sur les administrateurs d'alors, le seed sur l'administrateur
+#: initial d'une installation neuve.
+ROLE_OPERATEUR = "operateur"
+
+
 #  🔴 LA HIÉRARCHIE DES RÔLES — écrite UNE fois (15/09/2026).
 #
 #  Elle l'était **deux fois**, avec sa fonction de classement, dans

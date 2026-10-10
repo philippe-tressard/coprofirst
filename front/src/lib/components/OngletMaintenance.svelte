@@ -15,13 +15,26 @@
 	import ConsommationIA from '$lib/components/ConsommationIA.svelte';
 	import IntegriteReferentielle from '$lib/components/IntegriteReferentielle.svelte';
 	import TachesPlanifiees from '$lib/components/TachesPlanifiees.svelte';
+	import { isOperateur } from '$lib/stores/auth';
 </script>
 
-<p class="muted intro-maintenance">
-	Exécution des tâches planifiées sur les <strong>deux</strong> Raspberry&nbsp;Pi. Le nœud actif assure
-	la maintenance applicative (purges, VACUUM) ; le nœud en veille fait son hygiène locale (cache de build,
-	rotation des logs, images de base) et transmet son rapport au nœud actif.
-</p>
+<!--  🏢 La supervision technique (installation, tâches, contrôles, base, santé)
+      est à l'OPÉRATEUR de la plateforme (#1750, arbitrage du 10/10/2026) : le
+      serveur la refuse à l'administrateur de copropriété qui ne l'est pas. Ce
+      qui reste à l'administrateur — la consommation de l'IA, l'export de sa
+      copropriété — porte des données de la résidence, que l'opérateur ne lit pas. -->
+{#if $isOperateur}
+	<p class="muted intro-maintenance">
+		Exécution des tâches planifiées sur les <strong>deux</strong> Raspberry&nbsp;Pi. Le nœud actif assure
+		la maintenance applicative (purges, VACUUM) ; le nœud en veille fait son hygiène locale (cache de
+		build, rotation des logs, images de base) et transmet son rapport au nœud actif.
+	</p>
+{:else}
+	<p class="muted intro-maintenance">
+		La supervision technique de l'installation — tâches planifiées, contrôles de fiabilité, base de
+		données — est réservée à l'opérateur de la plateforme.
+	</p>
+{/if}
 
 <!--  Les deux cartes « Sauvegarde quotidienne — historique » et « Agrégation
       télémétrie — historique » vivaient ici. Supprimées avec #299 : depuis que la
@@ -32,12 +45,16 @@
       de l'agrégation — est déplacé dans `TachesPlanifiees` (AIDE_TACHE), et la
       profondeur d'historique y passe de 4 à 10 : retirer les cartes sans
       compenser aurait réduit en silence ce qu'un administrateur peut voir. -->
-<CarteInstallation />
-<TachesPlanifiees />
-<ControlesFiabilite />
+{#if $isOperateur}
+	<CarteInstallation />
+	<TachesPlanifiees />
+	<ControlesFiabilite />
+{/if}
 <ConsommationIA />
-<IntegriteReferentielle />
-<ControleSante />
+{#if $isOperateur}
+	<IntegriteReferentielle />
+	<ControleSante />
+{/if}
 <CarteExportCopropriete />
 
 <style>

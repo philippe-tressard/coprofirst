@@ -53,6 +53,7 @@ libellé manquant doit se voir, pas disparaître.
 """
 
 from app.models.core import RoleUtilisateur, StatutUtilisateur
+from app.models.roles import ROLE_OPERATEUR
 from app.utils.valeurs import valeur
 
 #  Les RÔLES — ce qu'un compte a le droit de faire.
@@ -62,6 +63,9 @@ LIBELLES_ROLE: dict[str, str] = {
     RoleUtilisateur.conseil_syndical.value: "Conseil syndical",
     RoleUtilisateur.admin.value: "Admin",
     RoleUtilisateur.externe.value: "Externe",
+    #  Pas un rôle de la copropriété (`models/roles.ROLE_OPERATEUR`, #1750), mais
+    #  un compte le porte : son badge le dit dans la liste des utilisateurs.
+    ROLE_OPERATEUR: "Opérateur",
 }
 
 #  Les STATUTS — ce qu'une personne EST dans la copropriété. Distinct du rôle :

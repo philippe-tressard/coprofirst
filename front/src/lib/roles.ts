@@ -64,6 +64,9 @@ const ROLE = parAttribut({
 	conseil_syndical: { libelle: 'Conseil syndical', badge: 'badge-blue' },
 	admin: { libelle: 'Admin', badge: 'badge-orange' },
 	externe: { libelle: 'Externe', badge: 'badge-yellow' },
+	//  L'opérateur de la plateforme (#1750) : pas un rôle de la copropriété, mais
+	//  un compte le porte — `ROLE_OPERATEUR` côté serveur (`models/roles.py`).
+	operateur: { libelle: 'Opérateur', badge: 'badge-purple' },
 });
 
 export const LIBELLES_ROLE: Record<string, string> = ROLE.libelle;

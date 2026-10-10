@@ -309,9 +309,10 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
 | `get_current_user` | Tout utilisateur connecté |
 | `require_cs_or_admin` | Création/modification de contenu |
 | `require_admin` | Suppression définitive, config système |
+| `require_operateur` | Supervision technique et base (`/admin/maintenance/sante`, `/admin/db/*`…) — l'**opérateur de la plateforme**, pas l'administrateur de la copropriété (#1750) |
 | `require_proprietaire` | Fonctions propriétaires |
 
-Ces quatre-là **refusent** (elles lèvent un 401 ou un 403). La délégation n'en
+Ces cinq-là **refusent** (elles lèvent un 401 ou un 403). La délégation n'en
 a pas : elle est en **lecture seule** depuis le 02/10/2026 (#1534) — l'aidant
 lit ce que lit la personne aidée, par `utils/delegations_actives`.
 `get_acting_user`, qui figurait ici (« Délégation, header `X-Acting-As` »),

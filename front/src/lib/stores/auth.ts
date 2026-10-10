@@ -39,6 +39,15 @@ export const isAdmin = derived(currentUser, ($u) => aRole($u, 'admin'));
 
 export const isCS = derived(currentUser, ($u) => aRole($u, 'conseil_syndical', 'admin'));
 
+/**
+ * L'opérateur de la plateforme (#1750, spec §4.7) : il supervise l'installation
+ * — santé, contrôles, base — sans lire aucune donnée de la copropriété. Distinct
+ * de l'administrateur, qui gère la résidence ; un même compte peut porter les
+ * deux. Le serveur refuse les routes de supervision à qui ne l'est pas
+ * (`require_operateur`) : ce dérivé n'en est que le reflet.
+ */
+export const isOperateur = derived(currentUser, ($u) => aRole($u, 'operateur'));
+
 //  🔴 Ces trois dérivées recomposaient la cascade `roles ?? [role]` à la main,
 //  DEUX LIGNES sous `aRole` qui la porte (#1041). Le fichier qui définit la règle
 //  était donc le premier à ne pas l'employer — et `aRole` traite un cas qu'elles

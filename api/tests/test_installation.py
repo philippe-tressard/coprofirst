@@ -12,6 +12,7 @@ import pytest
 from sqlmodel import Session
 
 from app.models.core import ConfigSite, RoleUtilisateur
+from app.models.roles import ROLE_OPERATEUR
 from app.routers.admin import installation as routeur_installation
 from app.utils import installation
 from tests.aides_http import base_http, client_http
@@ -115,8 +116,13 @@ def moteur():
         yield moteur
 
 
-@pytest.mark.parametrize("role", [None, RoleUtilisateur.résident, RoleUtilisateur.conseil_syndical])
-def test_la_route_est_reservee_a_l_administration(moteur, role):
+#  L'administrateur de copropriété n'y a plus accès : le bloc Installation est de la
+#  supervision technique, réservée à l'opérateur de la plateforme (#1750).
+@pytest.mark.parametrize(
+    "role",
+    [None, RoleUtilisateur.résident, RoleUtilisateur.conseil_syndical, RoleUtilisateur.admin],
+)
+def test_la_route_est_reservee_a_l_operateur(moteur, role):
     http, _ = client_http(moteur, role)
     assert http.get("/admin/installation").status_code in (401, 403)
 
@@ -130,7 +136,7 @@ def test_service_coupe_rien_ne_part(moteur, monkeypatch):
         "verifier",
         lambda *a, **k: appels.append(a) or installation.Verification("a_jour"),
     )
-    http, _ = client_http(moteur, RoleUtilisateur.admin)
+    http, _ = client_http(moteur, RoleUtilisateur.admin, roles_json=f"admin,{ROLE_OPERATEUR}")
     corps = http.get("/admin/installation").json()
     assert (corps["role"], corps["branche"], corps["etat"]) == ("maitre", "main", "non_verifie")
     assert corps["verification_active"] is False and appels == []
@@ -146,7 +152,7 @@ def test_service_active_la_route_verifie(moteur, monkeypatch):
         "verifier",
         lambda empreinte, branche: installation.Verification("en_retard", retard=1),
     )
-    http, _ = client_http(moteur, RoleUtilisateur.admin)
+    http, _ = client_http(moteur, RoleUtilisateur.admin, roles_json=f"admin,{ROLE_OPERATEUR}")
     corps = http.get("/admin/installation").json()
     assert (corps["libelle"], corps["branche"], corps["etat"], corps["retard"]) == (
         "Réplique",

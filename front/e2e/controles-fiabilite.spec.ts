@@ -14,7 +14,8 @@
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
 
-const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
+//  La supervision technique est à l'OPÉRATEUR de la plateforme (#1750).
+const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
 
 const RAPPORTS = [
 	{

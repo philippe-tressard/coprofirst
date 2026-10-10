@@ -68,6 +68,8 @@ _DEPS_AUTORISATION = {
     "require_proprietaire",
     "require_cs_or_admin",
     "require_admin",
+    #  L'opérateur de la plateforme (#1750) : supervision technique et base.
+    "require_operateur",
     "ma_notification",
 }
 

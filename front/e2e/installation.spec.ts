@@ -11,7 +11,8 @@
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
 
-const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
+//  La supervision technique est à l'OPÉRATEUR de la plateforme (#1750).
+const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
 
 const BASE = {
 	empreinte: '79ce8c5b',
@@ -90,4 +91,21 @@ test('Installation : un rôle non déclaré est « Inconnu », jamais « Maître
 	await expect(carte.getByText('Inconnu', { exact: true })).toBeVisible();
 	await expect(carte.getByText('Maître', { exact: true })).toHaveCount(0);
 	await expect(carte.getByText(/n’est pas déclaré dans le/)).toBeVisible();
+});
+
+test('Maintenance : un administrateur qui n’est pas opérateur ne voit pas la supervision', async ({
+	page,
+}) => {
+	//  #1750 : l'administrateur de copropriété garde ce qui porte des données de la
+	//  résidence ; la supervision technique est à l'opérateur, et la page le dit.
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return { ...ADMIN, roles: ['admin'] };
+		return undefined;
+	});
+	await page.goto('/admin?onglet=maintenance');
+	await expect(
+		page.getByText("réservée à l'opérateur de la plateforme", { exact: false }),
+	).toBeVisible();
+	await expect(page.getByText('Installation', { exact: true })).toHaveCount(0);
+	await expect(page.getByText('Contrôles de fiabilité', { exact: true })).toHaveCount(0);
 });
