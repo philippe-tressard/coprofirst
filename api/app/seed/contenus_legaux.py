@@ -149,11 +149,8 @@ SYNTHESE_AFFAIRE_CLOSE = (
 #: Les questions au règlement de copropriété (03/10/2026) : le texte ENTIER du
 #: règlement part à chaque question — il nomme des personnes (notaires, vendeurs).
 #: Écrite une fois : le gabarit et la migration 0256, qui l'insère dans le texte
-#: servi juste avant `ASSISTANT_DEUX_AUTOMATIQUES`, la lisent ici.
-#:
-#: Le 11/10/2026, l'usage s'ouvre aux copropriétaires : leur question est gardée
-#: avec leur identité, lisible d'eux, du conseil et de l'administration. La
-#: migration 0278 remplace dans le texte servi la version d'avant, qu'elle porte.
+#: servi juste avant `ASSISTANT_DEUX_AUTOMATIQUES`, la lisent ici. Ouvert aux
+#: copropriétaires le 11/10/2026 : la 0279 remplace la version d'avant, qu'elle porte.
 QUESTION_REGLEMENT = (
     "Lorsqu'une <strong>question au règlement de copropriété</strong> est posée — par un "
     "membre du conseil syndical, ou par un copropriétaire si l'administrateur le permet —, "

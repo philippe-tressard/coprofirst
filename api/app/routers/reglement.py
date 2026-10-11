@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, col, func, select
 
 from app.auth.deps import (
+    est_auteur,
     est_moderateur,
     peut_poser_questions_reglement,
     require_admin,
@@ -261,12 +262,15 @@ def lister_questions(
 
     Le conseil et l'administration lisent toutes les questions ; un copropriétaire,
     les SIENNES seulement : une question dit souvent ce qu'on envisage chez soi."""
-    requete = select(QuestionReglement)
-    if not est_moderateur(user):
-        requete = requete.where(QuestionReglement.auteur_id == user.id)
     lignes = session.exec(
-        requete.order_by(col(QuestionReglement.cree_le).desc(), col(QuestionReglement.id).desc())
+        select(QuestionReglement).order_by(
+            col(QuestionReglement.cree_le).desc(), col(QuestionReglement.id).desc()
+        )
     ).all()
+    #  La liste FILTRE par le prédicat de l'auteur, jamais par sa copie en SQL
+    #  (`test_regles_acces_centralisees.py`) : la table est courte.
+    if not est_moderateur(user):
+        lignes = [q for q in lignes if est_auteur(q, user)]
     return _lire_questions(session, list(lignes), user)
 
 
