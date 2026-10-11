@@ -280,7 +280,13 @@ def setup_scheduler():
     #  Une valeur ancienne qui ressurgirait — base non migrée, restauration —
     #  donne donc une sauvegarde quotidienne : le repli va dans le sens de la
     #  sécurité, jamais dans celui de la rareté.
-    scheduler.add_job(run_backup, "cron", hour=hour, minute=0, id="backup")
+    scheduler.add_job(
+        contexte.pour_chaque_copropriete(run_backup, "backup"),
+        "cron",
+        hour=hour,
+        minute=0,
+        id="backup",
+    )
 
     scheduler.start()
     return scheduler

@@ -13,48 +13,57 @@ from app.dialecte import (
 
 logger = logging.getLogger("hostachy.db")
 
-#  Le moteur de LA copropriété servie : son URL vient du contexte (#1744), jamais
+
+def creer_moteur(url: str):
+    """Le moteur d'UNE base, réglé comme la production (#1746).
+
+    `engine` ci-dessous est celui de l'unique copropriété ; `contexte.moteur()`
+    l'appelle aussi pour une autre copropriété — une seule recette, jamais deux
+    bases réglées différemment.
+    """
+    moteur = create_engine(
+        url,
+        connect_args=options_connexion(url),
+        echo=False,
+        pool_pre_ping=True,  # Teste chaque connexion avant usage → détecte les inodes orphelins (ex: post-VACUUM)
+    )
+
+    #  🔴 LES CLÉS ÉTRANGÈRES SONT ACTIVES — 30/08/2026, fin de #546. Les trois
+    #  conditions qui l'ont permis sont dans le docstring ci-dessus.
+    #
+    #  ⚠️ **CET APPEL EST AVANT LE BLOC D'AMORÇAGE, ET C'EST NÉCESSAIRE.** Placé
+    #  après, il ne prenait pas effet — mesuré, pas supposé :
+    #
+    #      appel APRÈS l'amorçage   → PRAGMA foreign_keys = 0
+    #      appel AVANT l'amorçage   → PRAGMA foreign_keys = 1
+    #
+    #  L'écouteur ne s'exécute qu'à l'ouverture d'une connexion. Le bloc d'amorçage
+    #  en ouvre une avant lui ; le `engine.dispose()` de la fonction devrait la
+    #  recycler, et ne suffit pas ici. Poser l'écouteur en premier garantit que
+    #  **toute** connexion l'obtient, quel que soit le pool.
+    #
+    #  C'est le piège que le docstring de la fonction décrit — « un écouteur
+    #  enregistré six lignes trop bas laisse le relevé dire foreign_keys = 0 » — et
+    #  je l'ai refait en la branchant. Il ne se voit qu'en LISANT le PRAGMA sur une
+    #  connexion réelle : l'appel est là, la fonction est juste, et le réglage
+    #  n'est pas posé.
+    #
+    #  ⚠️ Vérifié aussi : `synchronous=FULL` et `busy_timeout=5000`, posés par le
+    #  bloc ci-dessous, **survivent** au `dispose()` de la fonction (mesurés à 2 et
+    #  5000 sur deux connexions successives). La durabilité choisie après les
+    #  corruptions de juin n'est pas perdue.
+    activer_cles_etrangeres(moteur)
+
+    #  Durabilité de la base-fichier (WAL, synchronous=FULL, busy_timeout) : le
+    #  pourquoi de chaque réglage est dans `dialecte.regler_moteur`.
+    regler_moteur(moteur)
+    return moteur
+
+
+#  Le moteur de l'UNIQUE copropriété de la phase 2 : son URL vient du contexte (#1744), jamais
 #  de `settings`. Ce module le construit ; le reste de l'application le demande à
 #  `contexte.moteur()` / `contexte.nouvelle_session()` — 🔒 test_contexte_source_unique.
-_url_base = courante().url_base
-
-engine = create_engine(
-    _url_base,
-    connect_args=options_connexion(_url_base),
-    echo=False,
-    pool_pre_ping=True,  # Teste chaque connexion avant usage → détecte les inodes orphelins (ex: post-VACUUM)
-)
-
-
-#  🔴 LES CLÉS ÉTRANGÈRES SONT ACTIVES — 30/08/2026, fin de #546. Les trois
-#  conditions qui l'ont permis sont dans le docstring ci-dessus.
-#
-#  ⚠️ **CET APPEL EST AVANT LE BLOC D'AMORÇAGE, ET C'EST NÉCESSAIRE.** Placé
-#  après, il ne prenait pas effet — mesuré, pas supposé :
-#
-#      appel APRÈS l'amorçage   → PRAGMA foreign_keys = 0
-#      appel AVANT l'amorçage   → PRAGMA foreign_keys = 1
-#
-#  L'écouteur ne s'exécute qu'à l'ouverture d'une connexion. Le bloc d'amorçage
-#  en ouvre une avant lui ; le `engine.dispose()` de la fonction devrait la
-#  recycler, et ne suffit pas ici. Poser l'écouteur en premier garantit que
-#  **toute** connexion l'obtient, quel que soit le pool.
-#
-#  C'est le piège que le docstring de la fonction décrit — « un écouteur
-#  enregistré six lignes trop bas laisse le relevé dire foreign_keys = 0 » — et
-#  je l'ai refait en la branchant. Il ne se voit qu'en LISANT le PRAGMA sur une
-#  connexion réelle : l'appel est là, la fonction est juste, et le réglage
-#  n'est pas posé.
-#
-#  ⚠️ Vérifié aussi : `synchronous=FULL` et `busy_timeout=5000`, posés par le
-#  bloc ci-dessous, **survivent** au `dispose()` de la fonction (mesurés à 2 et
-#  5000 sur deux connexions successives). La durabilité choisie après les
-#  corruptions de juin n'est pas perdue.
-activer_cles_etrangeres(engine)
-
-#  Durabilité de la base-fichier (WAL, synchronous=FULL, busy_timeout) : le
-#  pourquoi de chaque réglage est dans `dialecte.regler_moteur`.
-regler_moteur(engine)
+engine = creer_moteur(courante().url_base)
 
 
 def get_session():
@@ -64,12 +73,17 @@ def get_session():
     ou docker exec concurrent), on purge le pool et on retente une fois avant
     de propager l'exception — qui sera capturée par le handler global dans main.py.
     """
+    #  Le moteur de la copropriété que la requête sert (#1746) : posée à l'entrée
+    #  par `contexte.ResolutionCopropriete`.
+    from app import contexte
+
+    moteur = contexte.moteur()
     try:
-        with Session(engine) as session:
+        with Session(moteur) as session:
             yield session
     except OperationalError as exc:
         logger.error("DB OperationalError — purge du pool et reconnexion : %s", exc)
-        engine.dispose()  # ferme toutes les connexions, force fresh connections
+        moteur.dispose()  # ferme toutes les connexions, force fresh connections
         # La requête en cours échoue proprement ; le prochain appel repartira sain
         raise
 
@@ -80,7 +94,10 @@ def _run_migrations():
     Une base SERVEUR n'a pas ce passé : son schéma est posé d'un coup par la
     migration initiale (`utils/schema_initial`, #1747), jamais rattrapé ici.
     """
-    if not est_fichier(engine):
+    from app import contexte
+
+    moteur = contexte.moteur()
+    if not est_fichier(moteur):
         return
     simple_migrations = [
         "ALTER TABLE utilisateur ADD COLUMN batiment_id INTEGER REFERENCES batiment(id)",
@@ -94,7 +111,7 @@ def _run_migrations():
         "ALTER TABLE membre_cs ADD COLUMN est_gestionnaire_site BOOLEAN DEFAULT 0",
         "ALTER TABLE membre_cs ADD COLUMN est_president BOOLEAN DEFAULT 0",
     ]
-    with engine.connect() as conn:
+    with moteur.connect() as conn:
         for sql in simple_migrations:
             try:
                 conn.execute(text(sql))
@@ -156,7 +173,9 @@ def _run_migrations():
 
 def _run_category_migrations():
     """Met à jour les catégories de documents existantes pour aligner les droits."""
-    with engine.connect() as conn:
+    from app import contexte
+
+    with contexte.moteur().connect() as conn:
         try:
             # Supprimer la catégorie Budget / Comptes annuels
             conn.execute(text("DELETE FROM categorie_document WHERE code = 'budget_comptes'"))
@@ -196,6 +215,9 @@ def _run_category_migrations():
 
 
 def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
+    #  Dans la base de la copropriété servie (#1746), jamais dans celle par défaut.
+    from app import contexte
+
+    SQLModel.metadata.create_all(contexte.moteur())
     _run_migrations()
     _run_category_migrations()

@@ -174,3 +174,22 @@ def routes_declarees() -> list:
         for route in routeur.routes
         if isinstance(route, APIRoute)
     ]
+
+
+def operations_montees(routeur, prefixe: str = ""):
+    """Chaque opération montée — `(méthode, chemin complet, route)` —, masquées comprises.
+
+    Cette version de FastAPI n'aplatit plus les routes incluses : `app.routes` rend
+    des `_IncludedRouter` opaques, et un parcours naïf n'y voit qu'UNE route. On
+    descend par `original_router` en cumulant les préfixes. Elle vivait dans
+    `test_routes_uniques.py` ; le test d'étanchéité en a eu besoin (#1746).
+    """
+    for route in getattr(routeur, "routes", []):
+        sous = getattr(route, "original_router", None)
+        if sous is None and hasattr(route, "routes") and not getattr(route, "path", None):
+            sous = route
+        if sous is not None and getattr(sous, "routes", None):
+            yield from operations_montees(sous, prefixe + (getattr(sous, "prefix", "") or ""))
+        elif getattr(route, "path", None):
+            for methode in sorted(getattr(route, "methods", []) or []):
+                yield methode, prefixe + route.path, route

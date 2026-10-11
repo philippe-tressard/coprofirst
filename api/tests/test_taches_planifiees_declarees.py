@@ -32,7 +32,8 @@ import pytest
 
 RACINE = Path(__file__).resolve().parents[1] / "app"
 
-from app.utils.taches import TACHES_PERMANENTES  # noqa: E402
+from app import contexte  # noqa: E402
+from app.utils.taches import TACHES_DE_LA_PLATEFORME, TACHES_PERMANENTES  # noqa: E402
 from tests.aides_sources import modules_app  # noqa: E402
 
 
@@ -136,7 +137,12 @@ def _planificateur_comme_au_demarrage(*supplementaires: str):
 
     planificateur = BackgroundScheduler(timezone="Europe/Paris")
     for identifiant in (*TACHES_PERMANENTES, *supplementaires):
-        planificateur.add_job(print, "interval", hours=24, id=identifiant)
+        planificateur.add_job(
+            contexte.pour_chaque_copropriete(print, identifiant),
+            "interval",
+            hours=24,
+            id=identifiant,
+        )
     poses = planifier_rattrapages(planificateur)
     assert poses, "cas zéro : aucun rattrapage posé, le test ne mesurerait rien"
     return planificateur
@@ -174,3 +180,116 @@ def test_une_tache_reellement_non_declaree_AVERTIT_toujours(caplog, intruse):
     """Témoin : faire taire le bruit ne doit pas rendre le contrôle muet."""
     avertissements = _avertissements(_planificateur_comme_au_demarrage(intruse), caplog)
     assert avertissements == [f"tache planifiee NON DECLAREE : {intruse}"]
+
+
+# ── Chaque tâche travaille pour UNE copropriété (#1745, spec §4.6) ──────────
+#
+#  Une tâche enregistrée nue tournerait hors de tout contexte : elle lirait la
+#  base que le repli désigne, pour toutes les copropriétés à la fois ou pour
+#  aucune. Elle passe par `contexte.pour_chaque_copropriete`, ou se déclare
+#  dans `TACHES_DE_LA_PLATEFORME` avec sa raison.
+
+
+def _enveloppe(appel: ast.Call) -> bool:
+    """Le premier argument d'un `add_job` est-il `pour_chaque_copropriete(…)` ?"""
+    if not appel.args or not isinstance(appel.args[0], ast.Call):
+        return False
+    fonction = appel.args[0].func
+    nom = fonction.attr if isinstance(fonction, ast.Attribute) else getattr(fonction, "id", "")
+    return nom == "pour_chaque_copropriete"
+
+
+def enregistrements_nus(arbre: ast.AST) -> list[tuple[int, str]]:
+    """Les `add_job` d'un arbre qui ne passent pas par l'enveloppe : `(ligne, id)`."""
+    nus = []
+    for noeud in ast.walk(arbre):
+        if not (
+            isinstance(noeud, ast.Call)
+            and isinstance(noeud.func, ast.Attribute)
+            and noeud.func.attr == "add_job"
+        ):
+            continue
+        ident = next((m.value for m in noeud.keywords if m.arg == "id"), None)
+        lisible = ident.value if isinstance(ident, ast.Constant) else ast.unparse(ident or noeud)
+        if lisible not in TACHES_DE_LA_PLATEFORME and not _enveloppe(noeud):
+            nus.append((noeud.lineno, lisible))
+    return nus
+
+
+def test_chaque_tache_est_enregistree_par_copropriete():
+    nus = {m.rel: n for m in modules_app() if (n := enregistrements_nus(m.arbre))}
+    assert not nus, (
+        "Tâche(s) enregistrée(s) hors de toute copropriété (#1745) — l'envelopper par "
+        "`contexte.pour_chaque_copropriete(tache, id)`, ou la déclarer dans "
+        "`taches.TACHES_DE_LA_PLATEFORME` avec sa raison :\n"
+        + "\n".join(f"  app/{rel}:{ligne} — {i}" for rel, n in nus.items() for ligne, i in n)
+    )
+
+
+def test_le_releve_des_enregistrements_voit_chaque_forme():
+    """Témoin : nu, enveloppé par attribut ou par nom, identifiant calculé."""
+    source = (
+        "s.add_job(f, 'cron', id='nue')\n"
+        "s.add_job(contexte.pour_chaque_copropriete(f, 'a'), 'cron', id='a')\n"
+        "s.add_job(pour_chaque_copropriete(f, 'b'), 'cron', id='b')\n"
+        "s.add_job(partial(f, 1), 'date', id=t.job_id)\n"
+    )
+    assert enregistrements_nus(ast.parse(source)) == [(1, "nue"), (4, "t.job_id")]
+
+
+def test_une_tache_de_la_plateforme_est_une_tache_declaree():
+    """Une exception qui ne désigne plus rien est un oubli qui ressemble à une décision."""
+    perimees = set(TACHES_DE_LA_PLATEFORME) - set(TACHES_PERMANENTES)
+    assert not perimees, f"déclarées « de la plateforme » sans exister : {sorted(perimees)}"
+    assert all(raison.strip() for raison in TACHES_DE_LA_PLATEFORME.values())
+
+
+def test_une_tache_nue_AVERTIT_au_demarrage(caplog):
+    """Le contrôle au démarrage voit aussi ce qu'une condition aurait posé sans enveloppe."""
+    planificateur = _planificateur_comme_au_demarrage()
+    planificateur.add_job(print, "interval", hours=24, id="backup", replace_existing=True)
+    avertissements = _avertissements(planificateur, caplog)
+    assert avertissements == ["tache planifiee HORS COPROPRIETE : backup"]
+
+
+def _deux_coproprietes(monkeypatch):
+    from dataclasses import replace
+
+    une = contexte.courante()
+    deux = (replace(une, identifiant="a"), replace(une, identifiant="b"))
+    monkeypatch.setattr(contexte, "coproprietes", lambda: deux)
+    return deux
+
+
+def test_l_enveloppe_joue_la_tache_dans_chaque_copropriete(monkeypatch, caplog):
+    _deux_coproprietes(monkeypatch)
+    vues = []
+    tache = contexte.pour_chaque_copropriete(
+        lambda: vues.append(contexte.courante().identifiant), "essai"
+    )
+    with caplog.at_level(logging.INFO, logger="hostachy.taches"):
+        tache()
+    assert vues == ["a", "b"]
+    lignes = [r.getMessage() for r in caplog.records if r.name == "hostachy.taches"]
+    assert [ligne.split(" : ")[0] for ligne in lignes] == [
+        "tache essai — copropriete a",
+        "tache essai — copropriete b",
+    ]
+    #  Hors de l'enveloppe, le contexte est rendu : rien ne fuit vers la suite.
+    assert contexte.courante().identifiant == contexte.IDENTIFIANT_UNIQUE
+
+
+def test_l_echec_d_une_copropriete_ne_bloque_pas_les_autres(monkeypatch, caplog):
+    _deux_coproprietes(monkeypatch)
+    vues = []
+
+    def tache():
+        if contexte.courante().identifiant == "a":
+            raise RuntimeError("base injoignable")
+        vues.append(contexte.courante().identifiant)
+
+    with caplog.at_level(logging.INFO, logger="hostachy.taches"):
+        contexte.pour_chaque_copropriete(tache, "essai")()
+    assert vues == ["b"]
+    echecs = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert [r.getMessage() for r in echecs] == ["tache essai — copropriete a : ECHEC"]

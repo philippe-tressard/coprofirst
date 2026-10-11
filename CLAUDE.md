@@ -210,8 +210,12 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   `engine`, `SessionLocal` ni `settings.database_url|secret_key|uploads_dir|mail_from`.
   Un cache ou un quota tenu en mémoire se range dans `contexte.etat("nom")`, jamais
   dans une variable de module : l'utilisateur n° 12 d'une copropriété n'est pas
-  celui d'une autre. 🔒 `test_contexte_source_unique.py`,
-  `test_etat_module_par_copropriete.py` (`A_INDEXER` vide, plafond zéro).
+  celui d'une autre. La copropriété d'une requête se résout à son ENTRÉE
+  (`contexte.ResolutionCopropriete`, le plus extérieur des intergiciels) ; une
+  tâche hors requête la reçoit de `contexte.dans(copro)`. 🔒 `test_contexte_source_unique.py`,
+  `test_etat_module_par_copropriete.py` (`A_INDEXER` vide, plafond zéro), et
+  `test_etancheite_coproprietes.py` : deux bases aux identifiants identiques, aucune
+  réponse servie pour l'une ne porte les données de l'autre (#1746).
 - Lire un objet ou rendre 404 : `utils/recuperer.ou_404(session, Modele, id,
   "libellé")` — jamais `session.get` suivi d'un `raise HTTPException(404)`. Les
   404 bruts qui restent sont un **plafond décroissant**, `PLAFOND_404_BRUTS` dans
@@ -872,7 +876,10 @@ les minutes y sont **décalées** exprès, et une cadence recopiée dans cette t
 
 **Les tâches de l'API**, elles, tournent **dans le process** et se déclarent dans
 `app/utils/taches.TACHES_PERMANENTES` — avec, pour chacune, **ce qu'on perd** si
-elle cesse de tourner. Le démarrage compare les tâches réellement enregistrées à
+elle cesse de tourner. Chacune s'enregistre **par copropriété** :
+`scheduler.add_job(contexte.pour_chaque_copropriete(tache, "id"), …, id="id")`, qui la
+joue dans le contexte de chacune et isole l'échec de l'une ; une tâche de la
+plateforme se déclare dans `TACHES_DE_LA_PLATEFORME` avec sa raison (#1745). Le démarrage compare les tâches réellement enregistrées à
 cette table et journalise tout écart en `WARNING` ; `test_taches_planifiees_declarees.py`
 le vérifie aussi en CI, dans les deux sens. Aucun des deux ne suffit seul : le test
 lit le code, le contrôle au démarrage lit le scheduler (#1047).

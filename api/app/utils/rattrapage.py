@@ -178,15 +178,20 @@ def planifier_rattrapages(scheduler, differe_minutes: int = 1) -> list[str]:
     """
     from functools import partial
 
+    from app import contexte
+
     poses = []
     for tache in taches_rattrapables():
         scheduler.add_job(
-            partial(
-                rattraper_si_manquee,
-                tache.libelle,
-                tache.derniere_reussite,
-                tache.relancer,
-                tache.periode_h,
+            contexte.pour_chaque_copropriete(
+                partial(
+                    rattraper_si_manquee,
+                    tache.libelle,
+                    tache.derniere_reussite,
+                    tache.relancer,
+                    tache.periode_h,
+                ),
+                tache.job_id,
             ),
             "date",
             #  Instant CONSCIENT : un `run_date` naïf est lu dans le fuseau du
