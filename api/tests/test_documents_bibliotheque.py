@@ -171,7 +171,8 @@ def test_les_pieces_jointes_se_lisent_par_leur_porteur(bibliotheque):
 def test_une_ligne_sans_aucun_rattachement_est_refusee(bibliotheque):
     """🔴 L'INVARIANT, et c'est lui qui empêche les orphelines.
 
-    Il portait trois rattachements ; il en porte cinq. Le relâcher — ce que le
+    Il portait trois rattachements ; il en porte huit (les trois fiches de
+    Ma résidence depuis la migration 0276). Le relâcher — ce que le
     découpage d'origine impliquait — aurait autorisé une ligne que rien ne
     supprime et que `document_visible` ne sait pas protéger.
     """
@@ -197,6 +198,9 @@ def test_une_ligne_sans_aucun_rattachement_est_refusee(bibliotheque):
                     contrat_id=None,
                     ticket_id=None,
                     evenement_id=None,
+                    document_parent_id=None,
+                    diagnostic_rapport_id=None,
+                    regle_residence_id=None,
                     file=None,
                     session=session,
                     user=admin,

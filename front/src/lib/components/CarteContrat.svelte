@@ -263,7 +263,7 @@
 		<!--  🔴 Les documents sont rendus par `ListeDocuments` — le rendu des
 		      tickets, pastilles « PDF: nom », et rien d'autre (12/09/2026).
 
-		      Cette liste était écrite ICI **et** dans `DocumentsContrat`, avec
+		      Cette liste était écrite ICI **et** dans `DocumentsRattaches`, avec
 		      les mêmes styles en ligne au caractère près : une duplication
 		      invisible à tout contrôle inter-fichiers, puisque chacune vivait
 		      chez elle. Elles auraient divergé à la première retouche — c'est

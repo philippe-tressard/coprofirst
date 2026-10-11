@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 from app.auth.deps import get_current_user, require_cs_or_admin
 from app.database import get_session
 from app.models.core import RegleResidence, Utilisateur
+from app.utils.annexes import supprimer_annexes
 from app.utils.recuperer import ou_404
 
 router = APIRouter(prefix="/regles-residence", tags=["règles-résidence"])
@@ -90,5 +91,7 @@ def delete_regle(
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
     regle = ou_404(session, RegleResidence, regle_id, "Règle")
+    #  La règle emporte ses pièces jointes (migration 0276, `utils/annexes`).
+    supprimer_annexes(session, "regle", regle_id)
     session.delete(regle)
     session.commit()

@@ -405,6 +405,9 @@ export const diagnostics = {
 		data: { titre?: string; date_rapport?: string | null; synthese?: string | null },
 	) => api.patch<RapportDiagnostic>(`/diagnostics/rapports/${id}`, data),
 	deleteRapport: (id: number) => api.delete(`/diagnostics/rapports/${id}`),
+	/** Remplacer le fichier du rapport — le geste du document (`documents.remplacerFichier`). */
+	remplacerFichier: (id: number, file: File) =>
+		postFormData<RapportDiagnostic>(`/diagnostics/rapports/${id}/fichier`, { file }),
 	downloadUrl: (id: number) => `${BASE}/diagnostics/rapports/${id}/télécharger`,
 	toggleNonApplicable: (typeId: number, nonApplicable: boolean) =>
 		api.patch<DiagnosticType>(`/diagnostics/types/${typeId}/non-applicable`, {

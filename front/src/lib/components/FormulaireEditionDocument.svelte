@@ -26,7 +26,9 @@
   ## Ce qu'il rend, et dans l'ordre du cadre
 
   1. **Titre** · 2. **Année et date d'AG**, pour les CR d'AG seulement ·
-  4. **Périmètre** · 6. **Description** · 8. **Fichier**.
+  4. **Périmètre** · 6. **Description** · 8. **Pièces jointes** — le fichier, qui
+  se remplace, et les annexes (11/10/2026 ; il n'y avait jusque-là rien à cette
+  place : un document déposé ne changeait plus de fichier).
 
   Les numéros sautent : ce sont ceux du cadre (`ux-patterns` §0), et un document
   n'a ni workflow, ni destinataires, ni diffusion. Les garder rend l'ordre
@@ -88,12 +90,15 @@
 
 	import ChampsCrAg from '$lib/components/ChampsCrAg.svelte';
 	import FormulaireDocument from '$lib/components/FormulaireDocument.svelte';
+	import type { PiecesFiche } from '$lib/components/PiecesJointesFiche.svelte';
 
 	const dispatch = createEventDispatcher<{ annuler: void; enregistrer: void }>();
 
 	/** Le document en cours de correction — lié par `bind:correction`. */
 	export let correction: CorrectionDocument;
 	export let enregistrement = false;
+	/** Section 8 — le fichier du document et ses annexes (11/10/2026). */
+	export let piecesJointes: PiecesFiche | null = null;
 </script>
 
 <FormulaireDocument
@@ -103,6 +108,7 @@
 	avecPerimetre
 	bind:perimetre={correction.perimetre}
 	avecFichier={false}
+	{piecesJointes}
 	{enregistrement}
 	complet={!!correction.titre.trim()}
 	on:annuler={() => dispatch('annuler')}

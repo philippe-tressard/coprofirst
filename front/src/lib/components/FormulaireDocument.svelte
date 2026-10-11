@@ -26,7 +26,9 @@
      d'AG, date de diagnostic) ;
   4. **Périmètre**, par `PerimetrePicker` — jamais un sélecteur écrit à la main ;
   6. `<slot name="description" />` — la synthèse d'un rapport ;
-  8. **Fichier(s)**.
+  8. **Fichier(s)** à la création ; **Pièces jointes** en édition, quand la fiche
+     en porte (`PiecesJointesFiche` : le fichier principal, qui se remplace, et
+     les annexes — 11/10/2026).
 
   ⚠️ Les numéros sautent parce que ce sont ceux du cadre : un document n'a ni
   workflow, ni destinataires, ni diffusion. Les garder rend l'ordre vérifiable.
@@ -55,6 +57,7 @@
 	import SectionPerimetre from '$lib/components/SectionPerimetre.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
+	import PiecesJointesFiche, { type PiecesFiche } from '$lib/components/PiecesJointesFiche.svelte';
 	import { MAX_FICHIERS } from '$lib/fichiers';
 
 	/** L'intitulé du formulaire — en-tête de la boîte, ou titre de la modale. */
@@ -83,6 +86,19 @@
 	 *   n'existe pas encore, l'appelant les envoie à l'enregistrement. */
 	export let fichiers: File[] = [];
 	export let libelleFichier = 'Fichier';
+
+	/**  Section 8 « Pièces jointes » d'une fiche de Ma résidence : le fichier
+	 *   principal et les annexes. `null` = la section n'existe pas pour ce
+	 *   formulaire (le dépôt d'un document, qui porte déjà son « Fichier »). */
+	export let piecesJointes: PiecesFiche | null = null;
+	/**  Les annexes choisies AVANT que la fiche existe (une règle qu'on crée) :
+	 *   l'appelant les attache après l'enregistrement (`attacherApres`). */
+	export let annexesEnAttente: File[] = [];
+	/**  Facultative, donc PLIÉE — la règle du cadre (`ux-patterns` §0, « obligatoire
+	 *   → déplié · facultatif → plié »). Un document n'a pas de déclaration
+	 *   d'entité où la lire (`check-pliage-transmis`, HORS_CADRE) : elle s'écrit ici,
+	 *   et `valeurModifiee` la rouvre dès qu'un fichier y est. */
+	const PIECES_JOINTES_PLIEES = true;
 	//  ⚠️ Plus de liste `accept` écrite ici (27/09/2026) : elle disait « PDF et
 	//  images » quand le serveur accepte aussi Word, Excel et texte (famille
 	//  `document_prive`). Le mode `mixte` lit `ACCEPT_FICHIERS` dans `$lib/fichiers`,
@@ -155,6 +171,15 @@
 				/>
 			</div>
 		</SectionFormulaire>
+	{/if}
+
+	{#if piecesJointes}
+		<PiecesJointesFiche
+			idPrefixe={uid}
+			pliable={PIECES_JOINTES_PLIEES}
+			{...piecesJointes}
+			bind:fichiersEnAttente={annexesEnAttente}
+		/>
 	{/if}
 
 	<!--  ⚠️ `soumission={false}` : pas de `<form>` ici non plus. -->

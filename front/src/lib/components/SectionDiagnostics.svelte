@@ -32,24 +32,24 @@
   état de chargement, qui est justement ce que #522 avait unifié.
 -->
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
-	import LienAction from '$lib/components/LienAction.svelte';
+	import LigneRapportDiagnostic from '$lib/components/LigneRapportDiagnostic.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import FormulaireDocument from '$lib/components/FormulaireDocument.svelte';
 	import {
 		diagnostics as diagnosticsApi,
+		documents as documentsApi,
 		type DiagnosticType,
+		type Document,
 		type RapportDiagnostic,
 	} from '$lib/api';
+	import { essayer } from '$lib/chargement';
+	import type { PiecesFiche } from '$lib/components/PiecesJointesFiche.svelte';
 	import { tenter } from '$lib/erreurs';
 	import { titreOuNomDuFichier } from '$lib/fichiers';
 	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
-	import { safeHtml } from '$lib/sanitize';
-	//  ⚠️ `fmtDateShort`, comme la page — jamais un format réécrit ici
-	//  (`CLAUDE.md`, règle des dates : `lint:dates` échoue dessus).
-	import { fmtDateShort as fmt } from '$lib/date';
 	import { basculer } from '$lib/accordeon';
 
 	/** Les types de diagnostic et leurs rapports — chargés par la page. */
@@ -71,6 +71,22 @@
 	let editingRapportDate = '';
 	let editingRapportSynthese = '';
 	let savingRapport = false;
+	/** La section « Pièces jointes » du rapport en correction (migration 0276). */
+	let piecesRapport: PiecesFiche | null = null;
+
+	/**  Les annexes des rapports, rangées sous leur rapport — un appel pour la
+	 *   section. Un échec les laisse vides : les rapports restent lisibles. */
+	let annexes = new Map<number, Document[]>();
+	onMount(async () => {
+		[annexes] = await essayer(documentsApi.annexesParFiche('diagnostic'), annexes);
+	});
+
+	function remplacerDans(rapport: RapportDiagnostic) {
+		types = types.map((t) => ({
+			...t,
+			rapports: t.rapports.map((r) => (r.id === rapport.id ? rapport : r)),
+		}));
+	}
 
 	let togglingNonApplicableId: number | null = null;
 	//  UN bloc déplié à la fois dans la section (accordéon, 30/09/2026 —
@@ -127,6 +143,20 @@
 		editingRapportTitre = r.titre;
 		editingRapportDate = r.date_rapport ? String(r.date_rapport).substring(0, 10) : '';
 		editingRapportSynthese = r.synthese ?? '';
+		piecesRapport = {
+			cible: 'diagnostic',
+			objetId: r.id,
+			principal: {
+				url: diagnosticsApi.downloadUrl(r.id),
+				nom: r.fichier_nom,
+				remplacer: async (file) => {
+					const remplace = await diagnosticsApi.remplacerFichier(r.id, file);
+					remplacerDans(remplace);
+					return { url: diagnosticsApi.downloadUrl(remplace.id), nom: remplace.fichier_nom };
+				},
+			},
+			onChange: (liste) => (annexes = new Map(annexes).set(r.id, liste)),
+		};
 	}
 
 	async function saveRapport() {
@@ -141,10 +171,7 @@
 				date_rapport: editingRapportDate || null,
 				synthese: editingRapportSynthese.trim() || null,
 			});
-			types = types.map((t) => ({
-				...t,
-				rapports: t.rapports.map((r) => (r.id === rapportId ? updated : r)),
-			}));
+			remplacerDans(updated);
 			editingRapportId = null;
 		}, 'Rapport mis à jour');
 		savingRapport = false;
@@ -210,6 +237,7 @@
 			intitule="Modifier le rapport"
 			bind:titre={editingRapportTitre}
 			avecFichier={false}
+			piecesJointes={piecesRapport}
 			enregistrement={savingRapport}
 			complet={!!editingRapportTitre.trim()}
 			on:annuler={() => (editingRapportId = null)}
@@ -262,64 +290,15 @@
 					{#if dtype.rapports.length > 0}
 						<div class="diag-rapports">
 							{#each dtype.rapports as rapport (rapport.id)}
-								<div class="diag-rapport-block" id="diag-{rapport.id}">
-									<div class="doc-row">
-										<div class="doc-info">
-											<Icon name="file-text" size={16} />
-											<span class="doc-titre">{rapport.titre}</span>
-											{#if rapport.date_rapport}
-												<span class="doc-date">{fmt(rapport.date_rapport)}</span>
-											{/if}
-											{#if rapport.synthese}
-												<!--  Un bouton TEXTE : le mot reste, l'ampoule passe au
-												      trait (10/10/2026) et prend la couleur du mot. -->
-												<button
-													class="synthese-toggle"
-													aria-label="Afficher la synthèse"
-													aria-expanded={deplie === rapport.id}
-													on:click={() => (deplie = basculer(deplie, rapport.id))}
-													><Icon name="lightbulb" size={14} /> Synthèse {deplie === rapport.id
-														? '▲'
-														: '▼'}</button
-												>
-											{/if}
-										</div>
-										<div class="doc-actions">
-											<BoutonLien ancre="diag-{rapport.id}" quoi="le rapport" />
-											<LienAction
-												href={diagnosticsApi.downloadUrl(rapport.id)}
-												icone="arrow-down"
-												mot="Télécharger"
-												titre="Télécharger"
-												libelle="Télécharger le rapport"
-												telecharger
-											/>
-											{#if peutModifier}
-												<button
-													class="btn-icon-edit"
-													aria-label="Modifier"
-													title="Modifier"
-													on:click={() => startEditRapport(rapport)}
-													><IconeAction icone="pencil" /></button
-												>
-												<button
-													class="btn-icon-danger"
-													aria-label="Supprimer"
-													title="Supprimer"
-													on:click={() => deleteRapport(dtype.id, rapport.id)}
-													><IconeAction icone="trash-2" /></button
-												>
-											{/if}
-										</div>
-									</div>
-									{#if rapport.synthese && deplie === rapport.id}
-										<!--  `safeHtml` — la synthèse est du HTML riche saisi par le
-										      conseil (`CLAUDE.md`, règle XSS). -->
-										<div class="synthese-body rich-content">
-											{@html safeHtml(rapport.synthese)}
-										</div>
-									{/if}
-								</div>
+								<LigneRapportDiagnostic
+									{rapport}
+									{peutModifier}
+									ouvert={deplie === rapport.id}
+									annexes={annexes.get(rapport.id) ?? []}
+									onBasculer={() => (deplie = basculer(deplie, rapport.id))}
+									onModifier={() => startEditRapport(rapport)}
+									onSupprimer={() => deleteRapport(dtype.id, rapport.id)}
+								/>
 							{/each}
 						</div>
 					{/if}
@@ -449,40 +428,6 @@
 		}
 	}
 
-	/* ── Synthèse rapport diagnostique ────────────────────── */
-	.diag-rapport-block {
-		border-bottom: 1px solid var(--color-border);
-	}
-	.diag-rapport-block:last-child {
-		border-bottom: none;
-	}
-	.synthese-toggle {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		background: none;
-		border: none;
-		cursor: pointer;
-		font-size: var(--fs-sm);
-		color: var(--color-primary);
-		padding: 0.1rem 0.3rem;
-		border-radius: var(--radius);
-		white-space: nowrap;
-		flex-shrink: 0;
-	}
-	@media (hover: hover) and (pointer: fine) {
-		.synthese-toggle:hover {
-			background: var(--color-bg);
-		}
-	}
-	.synthese-body {
-		padding: 0.5rem 1rem 0.75rem;
-		font-size: var(--fs-base);
-		background: var(--color-bg);
-		border-left: 3px solid var(--color-primary);
-		margin: 0 0.5rem 0.35rem;
-		border-radius: 0 var(--radius) var(--radius) 0;
-	}
 	.retablir {
 		margin-left: auto;
 	}

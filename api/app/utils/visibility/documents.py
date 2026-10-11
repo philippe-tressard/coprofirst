@@ -9,8 +9,10 @@ from __future__ import annotations
 import json
 
 from app.models.core import (
+    DiagnosticRapport,
     Document,
     ProfilAccesDocument,
+    RegleResidence,
     Ticket,
     Utilisateur,
 )
@@ -98,6 +100,27 @@ def document_visible(user: Utilisateur, doc: Document, session) -> bool:
         if not ev:
             return False
         return evenement_visible(ev, user)
+
+    #  Une ANNEXE de fiche de « Ma résidence » (migration 0276, `utils/annexes`) :
+    #  elle se lit EXACTEMENT comme sa fiche, comme une pièce jointe d'affaire
+    #  suit son affaire. Fiche introuvable → refus, pour la même raison.
+    if doc.document_parent_id and not doc.categorie_id:
+        parent = session.get(Document, doc.document_parent_id)
+        #  ⚠️ Une annexe d'annexe n'existe pas (`utils/annexes.verifier_porteur`) :
+        #  si elle apparaissait, elle serait refusée — la remontée s'arrête à un cran.
+        if not parent or parent.document_parent_id:
+            return False
+        return document_visible(user, parent, session)
+
+    #  Un rapport de diagnostic et une règle se lisent par tout compte connecté :
+    #  leurs routes de lecture ne demandent que `get_current_user`
+    #  (`routers/diagnostics.download_rapport`, `routers/regles_residence.list_regles`).
+    #  Seule l'EXISTENCE du porteur reste à vérifier.
+    if doc.diagnostic_rapport_id and not doc.categorie_id:
+        return session.get(DiagnosticRapport, doc.diagnostic_rapport_id) is not None
+
+    if doc.regle_residence_id and not doc.categorie_id:
+        return session.get(RegleResidence, doc.regle_residence_id) is not None
 
     #  🔴 UN DOCUMENT SANS SOURCE DE PROTECTION NE SE LIT PAS.
     #

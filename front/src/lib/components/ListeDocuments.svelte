@@ -5,7 +5,7 @@
   ## Pourquoi ce composant (12/09/2026)
 
   La même liste était écrite **trois fois** : dans `CarteContrat` (la lecture),
-  dans `DocumentsContrat` (l'édition), et sous une autre forme encore dans
+  dans `DocumentsRattaches` (l'édition), et sous une autre forme encore dans
   `FichiersUpload` (les tickets). Les deux premières portaient les mêmes styles en
   ligne au caractère près — une duplication qu'aucun contrôle inter-fichiers ne
   voit, chacune vivant dans son fichier.
