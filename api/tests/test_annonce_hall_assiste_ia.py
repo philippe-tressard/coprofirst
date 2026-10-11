@@ -12,58 +12,20 @@ neutralisé — WeasyPrint vit dans l'image, pas sur tous les postes.
 
 from __future__ import annotations
 
-import pytest
-from fastapi import BackgroundTasks
-from sqlmodel import Session
-
-from app.models.core import RoleUtilisateur, Utilisateur
-from app.config import get_settings
 from app.routers import annonces_hall
-from tests.aides_base import moteur_memoire
-
-
-@pytest.fixture(name="contexte")
-def contexte_fixture(monkeypatch, tmp_path):
-    moteur = moteur_memoire(partage=True)
-    monkeypatch.setattr(annonces_hall, "generer_pdf", lambda **_: b"%PDF-test")
-    #  Les affiches s'écrivent dans le stockage de la copropriété (#1748).
-    monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
-    with Session(moteur) as session:
-        cs = Utilisateur(
-            email="cs@test.fr",
-            hashed_password="x",
-            nom="C",
-            prenom="S",
-            roles_json=RoleUtilisateur.conseil_syndical.value,
-        )
-        session.add(cs)
-        session.commit()
-        session.refresh(cs)
-        yield session, cs
-
-
-def _creer(session, user, **options):
-    return annonces_hall.creer_annonce_hall(
-        session=session,
-        user=user,
-        background_tasks=BackgroundTasks(),
-        titre="Coupure d'eau",
-        message="<p>Mardi, de 9 h à 12 h.</p>",
-        perimetre_cible=["résidence"],
-        **options,
-    )
+from tests.aides_annonce_hall import contexte_fixture, creer  # noqa: F401 — la fixture `contexte`
 
 
 def test_une_annonce_redigee_avec_l_assistant_en_porte_la_marque(contexte):
     session, cs = contexte
-    annonce = _creer(session, cs, assiste_ia=True)
+    annonce = creer(session, cs, assiste_ia=True)
     assert annonce.assiste_ia is True
     assert annonces_hall._to_read(annonce, session)["assiste_ia"] is True
 
 
 def test_sans_l_assistant_la_marque_n_apparait_pas(contexte):
     session, cs = contexte
-    annonce = _creer(session, cs)
+    annonce = creer(session, cs)
     assert annonce.assiste_ia is False
     assert annonces_hall._to_read(annonce, session)["assiste_ia"] is False
 
