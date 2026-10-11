@@ -4,9 +4,11 @@ Ce que ces tests tiennent — chaque point est une règle de `utils/annexes` :
 
 1. une annexe se lit EXACTEMENT comme sa fiche, et pas autrement ;
 2. elle n'entre pas dans la bibliothèque — la règle de #390, étendue ;
-3. elle n'a qu'un porteur, jamais une annexe, jamais plus de `MAX_ANNEXES` ;
+3. elle n'a qu'un porteur, jamais une annexe, et une fiche ne porte jamais plus
+   de `MAX_FICHIERS_FICHE` fichiers, le sien compris ;
 4. une fiche supprimée emporte ses annexes, fichiers compris ;
-5. le fichier PRINCIPAL se remplace, et l'ancien s'efface après l'écriture.
+5. retirer le fichier PRINCIPAL fait monter la première annexe à sa place, et
+   l'ancien s'efface après l'écriture ; une fiche garde toujours un fichier.
 
 Le disque n'est pas touché : la porte de téléversement et le stockage sont
 remplacés par des doublures qui écrivent dans `tmp_path` et notent ce qu'on
@@ -61,7 +63,6 @@ def disque(tmp_path, monkeypatch):
 
     for module in (annexes, documents, diagnostics):
         monkeypatch.setattr(module, "stockage", lambda: stockage, raising=False)
-    monkeypatch.setattr(annexes, "enregistrer_televersement", televerser)
     monkeypatch.setattr(documents, "enregistrer_televersement", televerser)
     return stockage
 
@@ -266,12 +267,26 @@ def test_une_annexe_ne_porte_pas_d_annexe(session, residence, disque):
     assert leve.value.status_code == 400
 
 
-def test_une_fiche_porte_au_plus_dix_annexes(session, residence, disque):
+def test_une_regle_porte_au_plus_dix_annexes(session, residence, disque):
     r = residence
-    for _ in range(annexes.MAX_ANNEXES):
+    for _ in range(annexes.MAX_FICHIERS_FICHE):
         _deposer(session, r["cs"], regle_residence_id=r["regle"].id)
     with pytest.raises(HTTPException) as leve:
         _deposer(session, r["cs"], regle_residence_id=r["regle"].id)
+    assert leve.value.status_code == 400
+
+
+@pytest.mark.parametrize(
+    ("fiche", "colonne"),
+    [("plan", "document_parent_id"), ("rapport", "diagnostic_rapport_id")],
+)
+def test_le_fichier_principal_compte_dans_les_dix(session, residence, disque, fiche, colonne):
+    """Une seule liste à l'écran : le fichier de la fiche + neuf annexes = dix."""
+    r = residence
+    for _ in range(annexes.MAX_FICHIERS_FICHE - 1):
+        _deposer(session, r["cs"], **{colonne: r[fiche].id})
+    with pytest.raises(HTTPException) as leve:
+        _deposer(session, r["cs"], **{colonne: r[fiche].id})
     assert leve.value.status_code == 400
 
 
@@ -300,33 +315,47 @@ def test_supprimer_une_fiche_emporte_ses_annexes(session, residence, disque):
     assert chemins <= set(disque.effaces)
 
 
-# ── 5. Le fichier principal se remplace ───────────────────────────────────────
+# ── 5. Retirer le fichier principal : la pièce suivante prend sa place ────────
 
 
-def test_remplacer_le_fichier_d_un_plan(session, residence, disque):
+def test_retirer_le_fichier_d_un_plan_promeut_la_premiere_annexe(session, residence, disque):
     r = residence
-    remplace = documents.remplacer_fichier_document(
-        r["plan"].id, file=_fichier("plan-2026.pdf"), session=session, user=r["cs"]
-    )
-    assert remplace.fichier_nom == "plan-2026.pdf"
-    assert remplace.fichier_chemin != "/tmp/plan.pdf"
+    premiere = _deposer(session, r["cs"], document_parent_id=r["plan"].id)
+    seconde = _deposer(session, r["cs"], document_parent_id=r["plan"].id)
+    chemin, premiere_id = premiere.fichier_chemin, premiere.id
+
+    plan = documents.retirer_fichier_document(r["plan"].id, session=session, _=r["cs"])
+
+    assert plan.fichier_chemin == chemin
+    assert plan.fichier_nom == "annexe.pdf"
+    assert session.get(Document, premiere_id) is None
+    assert annexes.annexes_de(session, "document", plan.id) == [seconde]
+    #  Seul l'ANCIEN fichier s'efface : celui de l'annexe est désormais la fiche.
     assert disque.effaces == ["/tmp/plan.pdf"]
 
 
-def test_seul_un_document_de_la_bibliotheque_se_remplace(session, residence, disque):
+def test_une_fiche_garde_au_moins_un_fichier(session, residence, disque):
+    r = residence
+    with pytest.raises(HTTPException) as leve:
+        documents.retirer_fichier_document(r["plan"].id, session=session, _=r["cs"])
+    assert leve.value.status_code == 400
+    assert disque.effaces == []
+    assert session.get(Document, r["plan"].id).fichier_chemin == "/tmp/plan.pdf"
+
+
+def test_seul_un_document_de_la_bibliotheque_a_un_fichier_principal(session, residence, disque):
     r = residence
     annexe = _deposer(session, r["cs"], document_parent_id=r["plan"].id)
     with pytest.raises(HTTPException) as leve:
-        documents.remplacer_fichier_document(
-            annexe.id, file=_fichier(), session=session, user=r["cs"]
-        )
+        documents.retirer_fichier_document(annexe.id, session=session, _=r["cs"])
     assert leve.value.status_code == 400
 
 
-def test_remplacer_le_fichier_d_un_rapport(session, residence, disque):
+def test_retirer_le_fichier_d_un_rapport(session, residence, disque):
     r = residence
-    remplace = diagnostics.remplacer_fichier_rapport(
-        r["rapport"].id, file=_fichier("dpe-2026.pdf"), session=session, user=r["cs"]
-    )
-    assert remplace.fichier_nom == "dpe-2026.pdf"
+    annexe = _deposer(session, r["cs"], diagnostic_rapport_id=r["rapport"].id)
+    chemin = annexe.fichier_chemin
+    rapport = diagnostics.retirer_fichier_rapport(r["rapport"].id, session=session, _=r["cs"])
+    assert rapport.fichier_chemin == chemin
+    assert annexes.annexes_de(session, "diagnostic", rapport.id) == []
     assert disque.effaces == ["/tmp/dpe.pdf"]

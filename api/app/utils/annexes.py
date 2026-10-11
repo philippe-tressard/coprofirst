@@ -14,9 +14,18 @@ colonnes de `PORTEURS` — la forme des pièces jointes d'affaire et d'événeme
 porte unique de téléversement, le téléchargement authentifié, la visibilité
 (`utils/visibility/documents` : une annexe se lit EXACTEMENT comme sa fiche).
 
-⚠️ Le fichier PRINCIPAL ne devient pas une annexe : il se REMPLACE, il ne se
-retire pas — une fiche sans fichier n'existe pas. `remplacer_fichier` vaut pour
-le document comme pour le rapport, qui portent les quatre mêmes colonnes.
+## Une seule liste à l'écran, dix fichiers en tout (11/10/2026)
+
+Demandé : *« ne pas mettre Annexes — utilise l'objet PJ standard une seule fois
+en principal ; on pourra joindre jusqu'à 10 fichiers »*. L'édition montre donc
+UNE section « Pièces jointes », le composant standard du site, où le fichier de
+la fiche est la première pastille et ses annexes les suivantes. Le plafond vaut
+pour le tout : `MAX_FICHIERS_FICHE`, fichier principal compris.
+
+⚠️ Une fiche sans fichier n'existe pas : retirer la première pastille fait
+monter la suivante à sa place (`retirer_fichier_principal`), et refuse quand
+elle est seule — on dépose le nouveau fichier, puis on retire l'ancien. Le
+document et le rapport portent les quatre mêmes colonnes (`_COLONNES_FICHIER`).
 
 ## Ce que ce module garde
 
@@ -30,13 +39,10 @@ le document comme pour le rapport, qui portent les quatre mêmes colonnes.
 
 from __future__ import annotations
 
-import os
-
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from app.models.core import DiagnosticRapport, Document, RegleResidence
-from app.utils.fichiers import enregistrer_televersement
 from app.utils.recuperer import ou_404
 from app.utils.stockage import stockage
 
@@ -47,10 +53,18 @@ PORTEURS: dict[str, str] = {
     "regle": "regle_residence_id",
 }
 
-#: Le plafond d'une fiche — celui de la section « Pièces jointes » de tout le
-#: site (`MAX_FICHIERS`, `front/src/lib/fichiers.ts`). Tenu ICI aussi : l'écran
-#: dit ce que le serveur fait, et un appel direct ne passe pas par l'écran.
-MAX_ANNEXES = 10
+#: Les fiches qui SONT un fichier — la première pastille de leur liste. Une
+#: règle n'en a pas : ses pièces jointes ne sont que des annexes.
+PORTEURS_A_FICHIER = frozenset({"document", "diagnostic"})
+
+#: Le plafond d'une fiche, fichier principal COMPRIS — celui de la section
+#: « Pièces jointes » de tout le site (`MAX_FICHIERS`, `front/src/lib/fichiers.ts`).
+#: Tenu ICI aussi : l'écran dit ce que le serveur fait, et un appel direct ne
+#: passe pas par l'écran.
+MAX_FICHIERS_FICHE = 10
+
+#: Les colonnes qui décrivent le fichier, communes au document et au rapport.
+_COLONNES_FICHIER = ("fichier_nom", "fichier_chemin", "taille_octets", "mime_type")
 
 
 def porteurs_demandes(**colonnes: int | None) -> dict[str, int]:
@@ -87,8 +101,9 @@ def verifier_porteur(session: Session, porteur: str, porteur_id: int) -> None:
         ou_404(session, DiagnosticRapport, porteur_id, "Rapport")
     else:
         ou_404(session, RegleResidence, porteur_id, "Règle")
-    if len(annexes_de(session, porteur, porteur_id)) >= MAX_ANNEXES:
-        raise HTTPException(400, f"Une fiche porte au plus {MAX_ANNEXES} pièces jointes")
+    principal = 1 if porteur in PORTEURS_A_FICHIER else 0
+    if len(annexes_de(session, porteur, porteur_id)) + principal >= MAX_FICHIERS_FICHE:
+        raise HTTPException(400, f"Une fiche porte au plus {MAX_FICHIERS_FICHE} pièces jointes")
 
 
 def supprimer_annexes(session: Session, porteur: str, porteur_id: int) -> None:
@@ -98,18 +113,27 @@ def supprimer_annexes(session: Session, porteur: str, porteur_id: int) -> None:
         session.delete(annexe)
 
 
-def remplacer_fichier(fiche: Document | DiagnosticRapport, file, user) -> str:
-    """Pose un nouveau fichier principal sur la fiche ; rend le chemin de l'ancien.
+def retirer_fichier_principal(
+    session: Session, fiche: Document | DiagnosticRapport, porteur: str
+) -> None:
+    """Retire le fichier de la fiche : sa première annexe prend sa place.
 
-    ⚠️ L'ancien ne s'efface qu'APRÈS l'écriture en base, par l'appelant : effacé
-    avant, un échec de la transaction laisserait la fiche pointer un fichier
-    disparu.
+    L'annexe promue quitte la table — son fichier reste, la fiche le pointe
+    désormais. ⚠️ L'ancien fichier ne s'efface qu'APRÈS l'écriture en base :
+    effacé avant, un échec de la transaction laisserait la fiche pointer un
+    fichier disparu.
     """
-    raw_name = file.filename or "document"
-    dest = enregistrer_televersement(file, raw_name, user)
+    suivante = next(iter(annexes_de(session, porteur, fiche.id)), None)
+    if suivante is None:
+        raise HTTPException(
+            400,
+            "Une fiche garde au moins un fichier : déposez le nouveau avant de retirer celui-ci",
+        )
     ancien = fiche.fichier_chemin
-    fiche.fichier_nom = raw_name
-    fiche.fichier_chemin = dest
-    fiche.taille_octets = os.path.getsize(dest)
-    fiche.mime_type = file.content_type or "application/octet-stream"
-    return ancien
+    for colonne in _COLONNES_FICHIER:
+        setattr(fiche, colonne, getattr(suivante, colonne))
+    session.delete(suivante)
+    session.add(fiche)
+    session.commit()
+    session.refresh(fiche)
+    stockage().supprimer_chemin(ancien)

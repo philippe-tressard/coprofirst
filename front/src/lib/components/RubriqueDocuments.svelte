@@ -20,8 +20,9 @@
 
   ## Les pièces jointes d'un document (11/10/2026, migration 0278)
 
-  La correction porte la section « Pièces jointes » : le fichier du document,
-  qui se remplace, et ses annexes. La rubrique charge les annexes de TOUTE la
+  La correction porte la section « Pièces jointes » : une seule liste, dix
+  fichiers en tout — le fichier du document en tête, ses annexes ensuite
+  (`PiecesJointesFiche`). La rubrique charge les annexes de TOUTE la
   bibliothèque en un appel (`annexesParFiche`) et les range sous chaque carte.
 -->
 <script lang="ts">
@@ -126,10 +127,10 @@
 			principal: {
 				url: documentsApi.downloadUrl(doc.id),
 				nom: doc.fichier_nom,
-				remplacer: async (file) => {
-					const remplace = await documentsApi.remplacerFichier(doc.id, file);
-					documents = documents.map((d) => (d.id === remplace.id ? remplace : d));
-					return { url: documentsApi.downloadUrl(remplace.id), nom: remplace.fichier_nom };
+				retirer: async () => {
+					const suivant = await documentsApi.retirerFichier(doc.id);
+					documents = documents.map((d) => (d.id === suivant.id ? suivant : d));
+					return { url: documentsApi.downloadUrl(suivant.id), nom: suivant.fichier_nom };
 				},
 			},
 			onChange: (liste) => (annexes = new Map(annexes).set(doc.id, liste)),

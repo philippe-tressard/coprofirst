@@ -27,8 +27,8 @@
   4. **Périmètre**, par `PerimetrePicker` — jamais un sélecteur écrit à la main ;
   6. `<slot name="description" />` — la synthèse d'un rapport ;
   8. **Fichier(s)** à la création ; **Pièces jointes** en édition, quand la fiche
-     en porte (`PiecesJointesFiche` : le fichier principal, qui se remplace, et
-     les annexes — 11/10/2026).
+     en porte (`PiecesJointesFiche` : une seule liste, le fichier de la fiche en
+     tête, dix en tout — 11/10/2026).
 
   ⚠️ Les numéros sautent parce que ce sont ceux du cadre : un document n'a ni
   workflow, ni destinataires, ni diffusion. Les garder rend l'ordre vérifiable.

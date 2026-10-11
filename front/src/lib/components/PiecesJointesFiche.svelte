@@ -10,22 +10,23 @@
   passaient `avecFichier={false}` à `FormulaireDocument` : une fois déposé, un
   document ne pouvait plus changer de fichier, ni rien porter d'autre.
 
-  Arbitré avec l'utilisateur : le fichier PRINCIPAL reste, et se remplace ; la
-  fiche reçoit en plus jusqu'à dix ANNEXES (migration 0278, `utils/annexes` côté
-  API). Une règle, qui n'a pas de fichier, n'a que des annexes.
+  ## UNE liste, l'objet standard (11/10/2026, le soir même)
 
-  ## Ce qu'il réutilise, et rien d'autre
+  La première version montrait deux blocs : le fichier de la fiche (1/1, « pour
+  le remplacer, retirez-le… »), puis « Annexes — jusqu'à dix ». Signalé, capture
+  à l'appui : *« ne pas mettre Annexes — utilise l'objet PJ standard une seule
+  fois en principal ; on pourra joindre jusqu'à 10 fichiers »*, puis *« ne
+  réinvente pas cet objet, il doit être standard »*.
 
-  - l'intitulé vient de `SECTIONS_LIBELLE` — jamais écrit ici ;
-  - les annexes sont des `Document` rattachés à un objet existant :
-    `DocumentsRattaches`, le composant des pièces de contrat, paramétré par la
-    cible — même dépôt immédiat, même croix, même pastille ;
-  - le fichier principal passe par `FichiersUpload`, le seul sélecteur du site.
+  La section est donc UN `DocumentsRattaches` — le composant des pièces de
+  contrat, celui des tickets à l'œil — où le fichier de la fiche est la première
+  pastille (`principal`) et ses annexes les suivantes : dix en tout, le plafond
+  du site. Une règle, qui n'a pas de fichier, n'a que la liste.
 
-  ⚠️ **Le fichier principal se REMPLACE, il ne se retire pas.** Sa croix ne
-  supprime rien : elle libère la place, et c'est le dépôt du suivant qui
-  remplace l'ancien côté serveur. Fermer sans rien déposer laisse l'ancien en
-  place — l'aide le dit, pour que l'écran ne promette pas une suppression.
+  ⚠️ **Une fiche garde toujours un fichier.** La croix de la première pastille
+  le retire, et la pièce suivante prend sa place (`utils/annexes`) ; seule, elle
+  est refusée par le serveur, dont le message dit quoi faire : déposer le
+  nouveau, puis retirer l'ancien.
 -->
 <script context="module" lang="ts">
 	import type { Document, PorteurAnnexes } from '$lib/api';
@@ -34,14 +35,14 @@
 	export interface FichierPrincipal {
 		url: string;
 		nom: string;
-		/** Le dépôt qui remplace le fichier ; rend ce qu'il faut afficher ensuite. */
-		remplacer: (file: File) => Promise<{ url: string; nom: string }>;
+		/** Le retrait côté serveur ; rend ce qu'il faut afficher ensuite. */
+		retirer: () => Promise<{ url: string; nom: string }>;
 	}
 
 	/** Ce que `FormulaireDocument` reçoit pour monter la section. */
 	export interface PiecesFiche {
 		cible: PorteurAnnexes;
-		/** `null` pendant la création : les annexes attendent l'enregistrement. */
+		/** `null` pendant la création : les pièces attendent l'enregistrement. */
 		objetId: number | null;
 		principal?: FichierPrincipal | null;
 		/** Prévenu à chaque ajout ou retrait : la rubrique rafraîchit ses cartes. */
@@ -51,11 +52,13 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import DocumentsRattaches from '$lib/components/DocumentsRattaches.svelte';
-	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
+	import DocumentsRattaches, {
+		type PiecePrincipale,
+	} from '$lib/components/DocumentsRattaches.svelte';
 	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
 	import { documents as docsApi } from '$lib/api';
 	import { essayer } from '$lib/chargement';
+	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
 	import { supprimerDocument } from '$lib/gestes-document';
 	import { SECTIONS_LIBELLE } from '$lib/entites/types';
 
@@ -66,7 +69,7 @@
 	export let objetId: number | null;
 	export let principal: FichierPrincipal | null = null;
 	export let onChange: (annexes: Document[]) => void = () => {};
-	/** Les annexes choisies pendant la création — l'appelant les attache ensuite. */
+	/** Les pièces choisies pendant la création — l'appelant les attache ensuite. */
 	export let fichiersEnAttente: File[] = [];
 
 	let annexes: Document[] = [];
@@ -84,17 +87,20 @@
 	const supprimer = (_objetId: number, docId: number) =>
 		supprimerDocument(docId, 'Cette pièce jointe', recharger);
 
-	//  Le fichier principal : une pastille, une place.
-	let urlsPrincipal = principal ? [principal.url] : [];
-	let nomsPrincipal: Record<string, string> = principal ? { [principal.url]: principal.nom } : {};
+	//  Le fichier de la fiche : la première pastille. Son retrait est une
+	//  suppression du point de vue de qui le fait — même confirmation.
+	let tete: PiecePrincipale | null = principal && {
+		url: principal.url,
+		nom: principal.nom,
+		retirer: () =>
+			confirmerPuis(SUPPRESSION('Ce fichier'), 'Fichier retiré', async () => {
+				const suivant = await principal!.retirer();
+				tete = { ...tete!, ...suivant };
+				await recharger();
+			}),
+	};
 
-	async function remplacerPrincipal(file: File): Promise<string> {
-		const nouveau = await principal!.remplacer(file);
-		nomsPrincipal = { ...nomsPrincipal, [nouveau.url]: nouveau.nom };
-		return nouveau.url;
-	}
-
-	$: total = annexes.length + fichiersEnAttente.length + (principal ? 1 : 0);
+	$: total = annexes.length + fichiersEnAttente.length + (tete ? 1 : 0);
 </script>
 
 <SectionFormulaire
@@ -102,37 +108,19 @@
 	{pliable}
 	valeurModifiee={total > 0}
 	resume={total ? `${total} fichier${total > 1 ? 's' : ''}` : 'Aucune'}
-	pour="{idPrefixe}-{principal ? 'principal' : 'annexes'}"
+	pour="{idPrefixe}-pieces"
 >
-	{#if principal}
-		<div class="field champ-large">
-			<FichiersUpload
-				id="{idPrefixe}-principal"
-				mode="mixte"
-				titre=""
-				max={1}
-				bind:urls={urlsPrincipal}
-				noms={nomsPrincipal}
-				upload={remplacerPrincipal}
-				remove={async () => []}
-			/>
-			<span class="aide"
-				>Le fichier du document. Pour le remplacer, retirez-le puis déposez le nouveau ; sans
-				nouveau dépôt, il est conservé.</span
-			>
-		</div>
-	{/if}
 	<div class="field champ-large">
-		{#if principal}<span class="aide">Annexes — jusqu’à dix, photos ou documents.</span>{/if}
 		<DocumentsRattaches
 			{cible}
 			{objetId}
 			mode="mixte"
+			principal={tete}
 			documents={annexes}
 			onSupprimer={supprimer}
 			onAjoute={recharger}
 			bind:fichiersEnAttente
-			idChamp="{idPrefixe}-annexes"
+			idChamp="{idPrefixe}-pieces"
 		/>
 		{#if erreur}<span class="aide">{erreur}</span>{/if}
 	</div>
