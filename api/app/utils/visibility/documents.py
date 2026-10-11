@@ -13,6 +13,7 @@ from app.models.core import (
     Document,
     ProfilAccesDocument,
     RegleResidence,
+    RoleUtilisateur,
     Ticket,
     Utilisateur,
 )
@@ -47,6 +48,26 @@ def profil_admet(user: Utilisateur, profil: ProfilAccesDocument | None) -> bool:
     return any(r in roles_autorises for r in set(user.roles) | {valeur(user.statut)})
 
 
+#: Les catégories que l'ADMINISTRATION seule lit, dépose, corrige et retire
+#: (11/10/2026) : les fichiers du règlement que l'assistant interroge
+#: (Ma résidence › Règlement). Le texte de travail nomme notaires et parties ; le
+#: conseil comme les copropriétaires n'en lisent que les réponses, et un lien
+#: vers le règlement publié dans la Fiche.
+CATEGORIES_ADMIN_SEUL = frozenset({"texte_reglement"})
+
+
+def reserve_a_l_admin(categorie) -> bool:
+    """PURE. Cette catégorie est-elle réservée à l'administration ?"""
+    return categorie is not None and categorie.code in CATEGORIES_ADMIN_SEUL
+
+
+def peut_ecrire_dans(user: Utilisateur, categorie) -> bool:
+    """Ce modérateur peut-il déposer, corriger ou retirer un document de cette
+    catégorie ? — le conseil et l'admin partout, sauf `CATEGORIES_ADMIN_SEUL`.
+    Les routes d'écriture des documents exigent déjà le conseil ou l'admin."""
+    return not reserve_a_l_admin(categorie) or user.has_role(RoleUtilisateur.admin)
+
+
 def document_visible(user: Utilisateur, doc: Document, session) -> bool:
     """Retourne True si l'utilisateur a le droit de lire ce document.
 
@@ -63,6 +84,11 @@ def document_visible(user: Utilisateur, doc: Document, session) -> bool:
     `session` n'est typé que par usage (`.get`) pour ne pas faire dépendre ce module
     de SQLModel : seuls les porteurs et `ProfilAccesDocument` sont chargés.
     """
+    #  Avant la règle des modérateurs : le conseil ne lit PAS les fichiers du
+    #  règlement que l'assistant interroge (`CATEGORIES_ADMIN_SEUL`).
+    if reserve_a_l_admin(doc.categorie):
+        return user.has_role(RoleUtilisateur.admin)
+
     # Admin et CS voient tout
     if est_moderateur(user):
         return True

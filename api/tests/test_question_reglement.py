@@ -7,7 +7,9 @@ Ce qui est tenu ici :
   si l'usage leur est ouvert ; locataires et profils externes jamais (11/10/2026) ;
 - un copropriétaire ne lit que SES questions, sans modèle ni coût, et ne publie
   pas dans la FAQ ;
-- les actes liés au texte sont choisis par l'administration et filtrés par lecteur ;
+- les fichiers du règlement sont à l'administration SEULE — le conseil ne les lit
+  ni ne les dépose — et l'assistant lit tous les Markdown joints, bout à bout ;
+- les autres lisent un lien vers le règlement le plus récent qu'ils peuvent lire ;
 - le règlement part EN TÊTE du message, la question à la fin (lecture en cache) ;
 - chaque extrait cité est RECHERCHÉ dans le texte : un extrait reformulé est
   signalé, un extrait retrouvé reçoit la page et l'acte du texte, pas du modèle ;
@@ -40,7 +42,9 @@ from app.utils import llm
 from app.utils.description_format import ReponseIllisible
 from app.utils.question_reglement.extraits import verifier
 from app.utils.question_reglement.format import lire_reponse
-from app.utils.question_reglement.texte import preparer
+from app.config import get_settings
+from app.utils.question_reglement.documents import CODE_REGLEMENT_PUBLIE
+from app.utils.question_reglement.texte import CODE_CATEGORIE, preparer
 from tests.aides_base import moteur_memoire
 from tests.aides_http import base_http, client_http
 from tests.aides_migrations import charger_migration
@@ -70,9 +74,28 @@ CITATION_VRAIE = (
 
 
 @pytest.fixture(name="moteur")
-def moteur_fixture():
+def moteur_fixture(monkeypatch, tmp_path):
+    """La base, la catégorie des fichiers du règlement, et un disque jetable."""
+    monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
     with base_http() as moteur:
+        _categorie(moteur, CODE_CATEGORIE, ["syndic"])
         yield moteur
+
+
+def _categorie(moteur, code: str, roles: list[str]) -> int:
+    """La catégorie `code` (créée si absente), d'un profil lisible des `roles`."""
+    with Session(moteur) as s:
+        cat = s.exec(select(CategorieDocument).where(CategorieDocument.code == code)).first()
+        if cat is None:
+            profil = ProfilAccesDocument(
+                code=f"p-{code}", libelle=code, roles_autorises=json.dumps(roles)
+            )
+            s.add(profil)
+            s.commit()
+            cat = CategorieDocument(code=code, libelle=code, profil_acces_id=profil.id)
+            s.add(cat)
+            s.commit()
+        return cat.id
 
 
 @pytest.fixture()
@@ -120,8 +143,13 @@ def _admin(moteur):
     return client_http(moteur, RoleUtilisateur.admin)[0]
 
 
-def _charger(http, contenu: str = TEXTE, nom: str = "rcp.md"):
-    return http.post("/reglement/textes", json={"nom_fichier": nom, "contenu": contenu})
+def _joindre(http, moteur, contenu: str = TEXTE, nom: str = "rcp.md"):
+    """Joint un fichier du règlement par la route STANDARD des documents."""
+    return http.post(
+        "/documents",
+        data={"titre": nom, "categorie_id": str(_categorie(moteur, CODE_CATEGORIE, []))},
+        files={"file": (nom, contenu.encode("utf-8"), "text/markdown")},
+    )
 
 
 # ── Le texte ───────────────────────────────────────────────────────────────
@@ -136,8 +164,8 @@ def test_le_meme_texte_sous_windows_et_ailleurs_a_la_meme_empreinte():
 
 @pytest.mark.parametrize(
     "contenu, nom, code",
-    [(TEXTE, "rcp.pdf", 400), ("Trop court.", "rcp.md", 400), ("x" * 1_000_001, "rcp.md", 413)],
-    ids=["pas-markdown", "trop-court", "trop-long"],
+    [("Trop court.", "rcp.md", 400), ("x" * 1_000_001, "rcp.md", 413)],
+    ids=["trop-court", "trop-long"],
 )
 def test_un_texte_qui_n_est_pas_un_reglement_est_refuse(contenu, nom, code):
     with pytest.raises(HTTPException) as refus:
@@ -145,23 +173,31 @@ def test_un_texte_qui_n_est_pas_un_reglement_est_refuse(contenu, nom, code):
     assert refus.value.status_code == code
 
 
-def test_recharger_le_texte_en_vigueur_ne_cree_pas_de_version(moteur):
-    http = _admin(moteur)
-    premier = _charger(http).json()
-    assert _charger(http, TEXTE, "copie.md").json()["id"] == premier["id"]
-    assert http.get("/reglement").json()["nb_versions"] == 1
-    _charger(http, TEXTE + "\nAjout.")
-    etat = http.get("/reglement").json()
-    assert etat["nb_versions"] == 2 and etat["texte"]["id"] != premier["id"]
+def test_les_markdown_joints_se_lisent_bout_a_bout_et_font_une_version(moteur, assistant):
+    """Tous les .md, dans l'ordre d'ajout ; un PDF joint n'est pas lu ; le même
+    contenu ne crée pas une seconde version, un fichier de plus en crée une."""
+    admin = _admin(moteur)
+    _joindre(admin, moteur)
+    suite = "## Modificatif fictif de 2024\n\nLes vélos se rangent au sous-sol.\n"
+    _joindre(admin, moteur, suite, "modificatif.md")
+    _joindre(admin, moteur, "%PDF-1.4 acte", "acte.pdf")
+    premiere = admin.post("/reglement/questions", json={"question": "Puis-je ?"}).json()
+    message = assistant.messages[0]
+    assert message.index("DESTINATION DE L'IMMEUBLE") < message.index("Les vélos se rangent")
+    assert "%PDF" not in message
+    seconde = admin.post("/reglement/questions", json={"question": "Et ici ?"}).json()
+    assert seconde["texte_id"] == premiere["texte_id"]
+    _joindre(admin, moteur, suite + "Ajout.\n", "ajout.md")
+    assert all(not q["texte_en_vigueur"] for q in admin.get("/reglement/questions").json())
 
 
 # ── Les droits ─────────────────────────────────────────────────────────────
 
 
-def _refuse_partout(http, attendu: int) -> None:
+def _refuse_partout(http, moteur, attendu: int) -> None:
     assert http.get("/reglement").status_code == attendu
     assert http.get("/reglement/questions").status_code == attendu
-    assert _charger(http).status_code == attendu
+    assert _joindre(http, moteur).status_code == attendu
     assert http.post("/reglement/questions", json={"question": "Puis-je ?"}).status_code == attendu
 
 
@@ -173,16 +209,16 @@ def test_locataires_et_profils_externes_ne_passent_jamais(moteur, assistant, rol
     assistant.ouvert = ouvert
     http, _ = client_http(moteur, role)
     attendu = 401 if role is None else 403
-    _refuse_partout(http, attendu)
+    _refuse_partout(http, moteur, attendu)
     assert http.get("/reglement/acces").status_code == attendu
     assert assistant.messages == []
 
 
 def test_usage_ferme_le_coproprietaire_est_refuse_et_l_onglet_le_sait(moteur, assistant):
-    _charger(_admin(moteur))
+    _joindre(_admin(moteur), moteur)
     proprio, _ = client_http(moteur, RoleUtilisateur.propriétaire)
     assert proprio.get("/reglement/acces").json() == {"acces": False}
-    _refuse_partout(proprio, 403)
+    _refuse_partout(proprio, moteur, 403)
     assert assistant.messages == []
     #  Le conseil, lui, entre toujours.
     assert _cs(moteur).get("/reglement/acces").json() == {"acces": True}
@@ -192,7 +228,7 @@ def test_usage_ferme_le_coproprietaire_est_refuse_et_l_onglet_le_sait(moteur, as
 def test_usage_ouvert_le_coproprietaire_ne_lit_que_ses_questions(moteur, assistant):
     assistant.ouvert = True
     admin = _admin(moteur)
-    _charger(admin)
+    _joindre(admin, moteur)
     admin.post("/reglement/questions", json={"question": "Question du conseil ?"})
     proprio, _ = client_http(moteur, RoleUtilisateur.propriétaire)
     voisin, _ = client_http(moteur, RoleUtilisateur.propriétaire)
@@ -213,36 +249,42 @@ def test_usage_ouvert_le_coproprietaire_ne_lit_que_ses_questions(moteur, assista
 
 def test_le_coproprietaire_ne_publie_ni_ne_charge_ni_ne_lie(moteur, assistant):
     assistant.ouvert = True
-    _charger(_admin(moteur))
+    _joindre(_admin(moteur), moteur)
     proprio, _ = client_http(moteur, RoleUtilisateur.propriétaire)
     q = proprio.post("/reglement/questions", json={"question": "Puis-je ?"}).json()
     corps = {"categorie": "Règlement", "question": "Puis-je ?", "reponse": "<p>Relue.</p>"}
     assert proprio.post(f"/reglement/questions/{q['id']}/faq", json=corps).status_code == 403
-    assert _charger(proprio, TEXTE + "\nAutre.").status_code == 403
-    assert proprio.put("/reglement/documents", json={"ids": []}).status_code == 403
+    assert _joindre(proprio, moteur, TEXTE + "\nAutre.").status_code == 403
     assert proprio.delete(f"/reglement/questions/{q['id']}").status_code == 403
-    #  Ni la fiche technique du texte, ni ce que l'administration peut lier.
+    #  Il ne sait pas où les fichiers se déposent.
     etat = proprio.get("/reglement").json()
-    assert etat["texte"]["titre"] == "Règlement fictif de la résidence"
-    assert etat["texte"]["nom_fichier"] is None and etat["texte"]["charge_par"] is None
-    assert etat["documents_candidats"] is None and etat["documents_ids"] is None
+    assert etat["texte_disponible"] is True and etat["categorie_id"] is None
     #  Le conseil publie la question du copropriétaire.
     assert _cs(moteur).post(f"/reglement/questions/{q['id']}/faq", json=corps).status_code == 200
 
 
-def test_charger_le_texte_est_reserve_a_l_administration(moteur, assistant):
-    """Le conseil lit, interroge et publie ; il ne remplace pas le texte que l'assistant lit."""
-    cs = _cs(moteur)
-    assert _charger(cs).status_code == 403
-    assert cs.get("/reglement").json()["texte"] is None
-    admin = _admin(moteur)
-    assert _charger(admin).status_code == 200
-    assert cs.get("/reglement").json()["texte"] is not None
+def test_les_fichiers_du_reglement_sont_a_l_administration_seule(moteur, assistant):
+    """Le conseil interroge et publie ; il ne lit, ne joint ni ne retire les fichiers
+    que l'assistant lit — la règle vit dans `visibility.CATEGORIES_ADMIN_SEUL`."""
+    cs, admin = _cs(moteur), _admin(moteur)
+    assert _joindre(cs, moteur).status_code == 403
+    doc = _joindre(admin, moteur).json()
+    cat = _categorie(moteur, CODE_CATEGORIE, [])
+    assert cs.get(f"/documents?categorie_id={cat}").json() == []
+    assert cs.get(f"/documents/{doc['id']}/télécharger").status_code in (403, 404)
+    assert cs.patch(f"/documents/{doc['id']}", json={"titre": "x"}).status_code == 403
+    assert cs.delete(f"/documents/{doc['id']}").status_code == 403
+    assert CODE_CATEGORIE not in {c["code"] for c in cs.get("/documents/categories").json()}
+    assert cs.get("/reglement").json()["categorie_id"] is None
+    assert admin.get("/reglement").json()["categorie_id"] == cat
+    assert [d["id"] for d in admin.get(f"/documents?categorie_id={cat}").json()] == [doc["id"]]
+    assert admin.delete(f"/documents/{doc['id']}").status_code == 204
+    assert admin.get("/reglement").json()["texte_disponible"] is False
 
 
 def test_seule_l_administration_supprime_une_question(moteur, assistant):
     admin = _admin(moteur)
-    _charger(admin)
+    _joindre(admin, moteur)
     cs = _cs(moteur)
     identifiant = admin.post("/reglement/questions", json={"question": "Puis-je ?"}).json()["id"]
     assert cs.delete(f"/reglement/questions/{identifiant}").status_code == 403
@@ -263,7 +305,7 @@ def test_sans_texte_la_question_ne_part_pas(moteur, assistant):
 
 def test_le_reglement_part_en_tete_et_la_question_a_la_fin(moteur, assistant):
     http = _admin(moteur)
-    _charger(http)
+    _joindre(http, moteur)
     assert (
         http.post("/reglement/questions", json={"question": "Puis-je exercer ?"}).status_code == 201
     )
@@ -276,7 +318,7 @@ def test_le_reglement_part_en_tete_et_la_question_a_la_fin(moteur, assistant):
 
 def test_chaque_extrait_est_verifie_et_situe_par_le_code(moteur, assistant):
     http = _admin(moteur)
-    _charger(http)
+    _joindre(http, moteur)
     q = http.post("/reglement/questions", json={"question": "Puis-je exercer ?"}).json()
     assert q["verdict"] == "sous_conditions"
     assert q["verdict_libelle"] == "Oui, sous conditions"
@@ -291,9 +333,9 @@ def test_chaque_extrait_est_verifie_et_situe_par_le_code(moteur, assistant):
 
 def test_une_reponse_garde_la_version_qu_elle_a_lue(moteur, assistant):
     http = _admin(moteur)
-    _charger(http)
+    _joindre(http, moteur)
     http.post("/reglement/questions", json={"question": "Puis-je exercer ?"})
-    _charger(http, TEXTE + "\nVersion corrigée.")
+    _joindre(http, moteur, "Version corrigée.\n", "correction.md")
     (ancienne,) = http.get("/reglement/questions").json()
     assert ancienne["texte_en_vigueur"] is False
 
@@ -324,7 +366,7 @@ def test_un_verdict_inconnu_devient_incertain_et_une_reponse_vide_est_refusee():
 
 def test_une_reponse_relue_se_publie_une_fois_dans_la_faq(moteur, assistant):
     http = _admin(moteur)
-    _charger(http)
+    _joindre(http, moteur)
     q = http.post("/reglement/questions", json={"question": "Puis-je exercer ?"}).json()
     corps = {
         "categorie": "Règlement",
@@ -365,27 +407,23 @@ def test_la_politique_servie_nomme_la_transmission_une_seule_fois():
     assert _politique_apres(["upgrade", "downgrade"], depart) == depart
 
 
-# ── Les actes liés au texte (11/10/2026) ───────────────────────────────────
+# ── Le lien vers le règlement publié (11/10/2026) ──────────────────────────
 
 
-def _document(moteur, code: str, roles: list[str], auteur_id: int) -> int:
-    """Un document de la catégorie `code`, lisible des `roles` (profil surchargé)."""
+def _document(moteur, roles: list[str], auteur_id: int, titre: str) -> int:
+    """Un document de la catégorie du règlement publié, lisible des `roles`."""
     with Session(moteur) as s:
+        categorie_id = _categorie(moteur, CODE_REGLEMENT_PUBLIE, ["propriétaire"])
         profil = ProfilAccesDocument(
-            code=f"p-{code}-{'-'.join(roles)}", libelle=code, roles_autorises=json.dumps(roles)
+            code=f"p-{titre}", libelle=titre, roles_autorises=json.dumps(roles)
         )
         s.add(profil)
         s.commit()
-        categorie = s.exec(select(CategorieDocument).where(CategorieDocument.code == code)).first()
-        if categorie is None:
-            categorie = CategorieDocument(code=code, libelle=code, profil_acces_id=profil.id)
-            s.add(categorie)
-            s.commit()
         doc = Document(
-            titre=f"Acte {'-'.join(roles)}",
+            titre=titre,
             fichier_nom="acte.pdf",
             fichier_chemin="/inexistant/acte.pdf",
-            categorie_id=categorie.id,
+            categorie_id=categorie_id,
             profil_acces_override_id=profil.id,
             publie_par_id=auteur_id,
         )
@@ -394,27 +432,18 @@ def _document(moteur, code: str, roles: list[str], auteur_id: int) -> int:
         return doc.id
 
 
-def test_l_administration_lie_des_actes_que_chacun_ouvre_s_il_peut_les_lire(moteur, assistant):
+def test_les_autres_lisent_un_lien_vers_le_reglement_le_plus_recent(moteur, assistant):
+    """Aucun numéro dans le code : le plus récent de la catégorie, s'il est lisible."""
     assistant.ouvert = True
     admin, admin_id = client_http(moteur, RoleUtilisateur.admin)
-    _charger(admin)
-    public = _document(moteur, "reglement_copropriete", ["propriétaire"], admin_id)
-    reserve = _document(moteur, "reglement_copropriete", ["conseil_syndical"], admin_id)
-    ailleurs = _document(moteur, "facture", ["propriétaire"], admin_id)
-
-    etat = admin.get("/reglement").json()
-    assert {d["id"] for d in etat["documents_candidats"]} == {public, reserve}
-    #  Un document sans place sur Ma résidence ne se lie pas.
-    assert admin.put("/reglement/documents", json={"ids": [ailleurs]}).status_code == 422
-    choisis = admin.put("/reglement/documents", json={"ids": [reserve, public, reserve]})
-    assert choisis.json() == [reserve, public]
-    assert admin.get("/reglement").json()["documents_ids"] == [reserve, public]
-
     proprio, _ = client_http(moteur, RoleUtilisateur.propriétaire)
-    (seul,) = proprio.get("/reglement").json()["documents"]
-    assert seul == {"id": public, "titre": "Acte propriétaire", "lien": f"/residence#doc-{public}"}
-    lus_par_le_conseil = _cs(moteur).get("/reglement").json()["documents"]
-    assert [d["id"] for d in lus_par_le_conseil] == [reserve, public]
+    assert proprio.get("/reglement").json()["lien_reglement"] is None
+    ancien = _document(moteur, ["propriétaire"], admin_id, "original")
+    lisible = _document(moteur, ["propriétaire"], admin_id, "consolide")
+    _document(moteur, ["conseil_syndical"], admin_id, "reserve")
+    assert ancien != lisible
+    assert proprio.get("/reglement").json()["lien_reglement"] == f"/residence#doc-{lisible}"
+    assert admin.get("/reglement").json()["lien_reglement"] is None
 
 
 def test_l_ouverture_aux_coproprietaires_se_lit_dans_la_configuration_de_l_usage(moteur):

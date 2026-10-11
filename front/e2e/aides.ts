@@ -184,8 +184,13 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	'/api/admin/consignes-arrivant': { consignes: [], personnalisees: false },
 	//  `reglement.acces()` : Ma résidence le lit pour montrer l'onglet Règlement.
 	'/api/reglement/acces': { acces: true },
-	//  `EtatReglement` : l'onglet Règlement lit `documents` et `texte`.
-	'/api/reglement': { disponible: false, texte: null, nb_versions: 0, documents: [] },
+	//  `EtatReglement` : l'onglet Règlement lit `texte_disponible` et `lien_reglement`.
+	'/api/reglement': {
+		disponible: false,
+		texte_disponible: false,
+		lien_reglement: null,
+		categorie_id: null,
+	},
 };
 
 /**

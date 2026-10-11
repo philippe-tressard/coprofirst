@@ -1,8 +1,8 @@
 """Questions au règlement de copropriété — Ma résidence › Règlement (03/10/2026).
 
-L'administration y charge le texte de travail du règlement (Markdown) et choisit
-les actes de la bibliothèque montrés à côté ; on y pose une question, le conseil
-syndical relit l'historique et publie une réponse relue dans la FAQ.
+L'administration y joint les fichiers du règlement que l'assistant lit (Markdown),
+par l'objet Pièces jointes standard ; on y pose une question, le conseil syndical
+relit l'historique et publie une réponse relue dans la FAQ.
 
 ## Qui fait quoi (arbitré le 11/10/2026 — l'onglet quitte l'Espace CS)
 
@@ -11,10 +11,13 @@ syndical relit l'historique et publie une réponse relue dans la FAQ.
 | lire l'onglet, poser une question | copropriétaires (si l'usage leur est ouvert), conseil, admin — `require_questions_reglement` |
 | lire une question | son AUTEUR, le conseil et l'admin — filtré ici, jamais par l'écran |
 | publier dans la FAQ | le conseil et l'admin |
-| charger le texte, choisir les documents, supprimer une question | l'admin |
+| joindre ou retirer les fichiers du règlement, supprimer une question | l'admin |
 
-Le copropriétaire ne reçoit ni le modèle ni le coût d'un appel, ni la fiche
-technique du texte (fichier, taille, qui l'a chargé) : il lit l'avis, pas son
+Les fichiers se déposent par les routes des DOCUMENTS (catégorie
+`texte_reglement`, réservée à l'admin par `visibility.CATEGORIES_ADMIN_SEUL`) :
+ce routeur ne fait que dire à l'admin où les déposer (`categorie_id`). Les
+autres lisent un lien vers le règlement publié dans la Fiche. Le copropriétaire
+ne reçoit ni le modèle ni le coût d'un appel : il lit l'avis, pas son
 exploitation. L'écran masque, le serveur refuse (`standards/03` §1).
 
 La logique vit dans `utils/question_reglement/` ; ce routeur ne fait que la servir.
@@ -28,7 +31,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
-from sqlmodel import Session, col, func, select
+from sqlmodel import Session, col, select
 
 from app.auth.deps import (
     est_auteur,
@@ -47,16 +50,10 @@ from app.routers.faq import FaqItemCreate, creer_entree
 from app.utils.limiter import LIMITE_APPEL_FACTURE, limiter
 from app.utils.lecture import lire_objet
 from app.utils.noms import nom_affiche
-from app.utils.question_reglement.documents import (
-    MAX_DOCUMENTS,
-    candidats,
-    documents_lies,
-    ids_lies,
-    lier,
-)
+from app.utils.question_reglement.documents import lien_reglement
 from app.utils.question_reglement.format import MAX_CARACTERES_QUESTION, VERDICTS
 from app.utils.question_reglement.production import disponible, repondre
-from app.utils.question_reglement.texte import MAX_CARACTERES_TEXTE, charger, texte_en_vigueur
+from app.utils.question_reglement.texte import categorie, texte_disponible, texte_en_vigueur
 from app.utils.recuperer import ou_404
 
 router = APIRouter(prefix="/reglement", tags=["reglement"])
@@ -65,62 +62,23 @@ router = APIRouter(prefix="/reglement", tags=["reglement"])
 # ── Schémas propres à cet écran ────────────────────────────────────────────
 
 
-class TexteReglementRead(BaseModel):
-    id: int
-    titre: str
-    #: La fiche technique — rendue au conseil et à l'admin seulement.
-    nom_fichier: Optional[str] = None
-    nb_caracteres: Optional[int] = None
-    charge_par: Optional[str] = None
-    cree_le: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class DocumentLie(BaseModel):
-    """Un acte de la bibliothèque, et l'endroit où CE lecteur l'ouvre."""
-
-    id: int
-    titre: str
-    lien: str
-
-
-class DocumentCandidat(BaseModel):
-    id: int
-    titre: str
-    categorie: str
-
-
 class EtatReglement(BaseModel):
     """Ce que l'onglet lit en arrivant."""
 
     #: L'assistant peut-il répondre ? — décidé par le serveur.
     disponible: bool
-    texte: Optional[TexteReglementRead] = None
-    nb_versions: int
-    #: Les actes choisis par l'administration, filtrés pour le lecteur.
-    documents: list[DocumentLie] = []
-    #: Pour l'administration seule : ce qu'elle peut lier, et ce qu'elle a lié.
-    documents_candidats: Optional[list[DocumentCandidat]] = None
-    documents_ids: Optional[list[int]] = None
+    #: Un fichier Markdown lisible est-il joint ? — sans lui, pas de question.
+    texte_disponible: bool
+    #: Le règlement publié dans la Fiche, pour qui n'est pas l'administration.
+    lien_reglement: Optional[str] = None
+    #: Pour l'administration seule : la catégorie où joindre les fichiers.
+    categorie_id: Optional[int] = None
 
 
 class AccesReglement(BaseModel):
     """L'onglet doit-il se montrer à ce copropriétaire ?"""
 
     acces: bool
-
-
-class DocumentsChoisis(BaseModel):
-    ids: list[int] = Field(max_length=MAX_DOCUMENTS)
-
-
-class TexteCharge(BaseModel):
-    """Le fichier lu par le navigateur, envoyé comme texte."""
-
-    nom_fichier: str = Field(min_length=1, max_length=255)
-    contenu: str = Field(max_length=MAX_CARACTERES_TEXTE + 10_000)
 
 
 class ExtraitRead(BaseModel):
@@ -170,18 +128,6 @@ def _noms(session: Session, ids: set[Optional[int]]) -> dict[int, str]:
     return {u.id: nom_affiche(u.prenom, u.nom) for u in gens}
 
 
-def _lire_texte(session: Session, texte: TexteReglement, user: Utilisateur) -> TexteReglementRead:
-    if not est_moderateur(user):
-        return TexteReglementRead(id=texte.id, titre=texte.titre, cree_le=texte.cree_le)
-    noms = _noms(session, {texte.charge_par_id})
-    return lire_objet(
-        TexteReglementRead,
-        texte,
-        nb_caracteres=len(texte.contenu),
-        charge_par=noms.get(texte.charge_par_id),
-    )
-
-
 def _lire_questions(
     session: Session, lignes: list[QuestionReglement], user: Utilisateur
 ) -> list[QuestionReglementRead]:
@@ -227,29 +173,15 @@ def etat(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_questions_reglement),
 ):
-    """L'assistant est-il prêt, quel texte est en vigueur, quels actes montrer ?
-    — rien de la configuration."""
-    texte = texte_en_vigueur(session)
+    """L'assistant est-il prêt, un texte est-il joint, où lire le règlement ?
+    — rien de la configuration, et les fichiers à l'administration seule."""
     admin = user.has_role(RoleUtilisateur.admin)
+    cat = categorie(session) if admin else None
     return EtatReglement(
         disponible=disponible(session),
-        texte=_lire_texte(session, texte, user) if texte else None,
-        nb_versions=session.exec(select(func.count()).select_from(TexteReglement)).one(),
-        documents=[
-            DocumentLie(id=d.id, titre=d.titre, lien=lien)
-            for d, lien in documents_lies(session, user)
-        ],
-        documents_candidats=(
-            [
-                DocumentCandidat(
-                    id=d.id, titre=d.titre, categorie=d.categorie.libelle if d.categorie else ""
-                )
-                for d in candidats(session)
-            ]
-            if admin
-            else None
-        ),
-        documents_ids=ids_lies(session) if admin else None,
+        texte_disponible=texte_disponible(session),
+        lien_reglement=None if admin else lien_reglement(session, user),
+        categorie_id=cat.id if cat else None,
     )
 
 
@@ -275,31 +207,6 @@ def lister_questions(
 
 
 # ── Gestes ─────────────────────────────────────────────────────────────────
-
-
-@router.post("/textes", response_model=TexteReglementRead)
-def charger_texte(
-    body: TexteCharge,
-    session: Session = Depends(get_session),
-    user: Utilisateur = Depends(require_admin),
-):
-    """Charge une version du texte — geste de l'administration seule : le texte
-    est ce que l'assistant lit pour TOUTES les questions, et chaque version en
-    plus est une base à relire. Le même contenu que la version en vigueur ne
-    crée rien : elle est rendue telle quelle."""
-    version, _ = charger(session, body.contenu, body.nom_fichier, user.id)
-    return _lire_texte(session, version, user)
-
-
-@router.put("/documents", response_model=list[int])
-def choisir_documents(
-    body: DocumentsChoisis,
-    session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_admin),
-):
-    """Les actes montrés à côté du texte — geste de l'administration seule, comme
-    le texte lui-même. L'ordre envoyé est l'ordre d'affichage."""
-    return lier(session, body.ids)
 
 
 @router.post(
