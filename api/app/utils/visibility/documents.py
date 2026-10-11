@@ -58,7 +58,7 @@ CATEGORIES_ADMIN_SEUL = frozenset({"texte_reglement"})
 
 def reserve_a_l_admin(categorie) -> bool:
     """PURE. Cette catégorie est-elle réservée à l'administration ?"""
-    return categorie is not None and categorie.code in CATEGORIES_ADMIN_SEUL
+    return getattr(categorie, "code", None) in CATEGORIES_ADMIN_SEUL
 
 
 def peut_ecrire_dans(user: Utilisateur, categorie) -> bool:

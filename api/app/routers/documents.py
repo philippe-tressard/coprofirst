@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.utils.config_site import config_site
+from app.auth.appartenance import exiger_objet_autorise
 from app.auth.deps import est_moderateur, get_current_user, require_cs_or_admin
 from app.database import get_session
 from app.models.core import (
@@ -289,6 +290,20 @@ def _jour(valeur: str | None) -> date | None:
         raise HTTPException(422, "Date invalide") from None
 
 
+def _document_ecrivable(session: Session, doc_id: int, user: Utilisateur) -> Document:
+    """Le document (404), si ce modérateur peut le corriger ou le retirer (403) —
+    tous, sauf ceux d'une catégorie réservée à l'admin (`peut_ecrire_dans`)."""
+    return exiger_objet_autorise(
+        session,
+        Document,
+        doc_id,
+        "Document",
+        user,
+        lambda doc, u: peut_ecrire_dans(u, doc.categorie),
+        "Réservé à l'admin",
+    )
+
+
 @router.patch("/{doc_id}", response_model=DocumentRead)
 def update_document(
     doc_id: int,
@@ -296,9 +311,7 @@ def update_document(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
-    doc = ou_404(session, Document, doc_id, "Document")
-    if not peut_ecrire_dans(user, doc.categorie):
-        raise HTTPException(403, "Réservé à l'admin")
+    doc = _document_ecrivable(session, doc_id, user)
     if body.titre is not None:
         doc.titre = body.titre
     if body.description is not None:
@@ -463,9 +476,7 @@ def delete_document(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
-    doc = ou_404(session, Document, doc_id, "Document")
-    if not peut_ecrire_dans(user, doc.categorie):
-        raise HTTPException(403, "Réservé à l'admin")
+    doc = _document_ecrivable(session, doc_id, user)
     #  🔴 UN CONTRAT PEUT CITER CE DOCUMENT, et rien ne le déliait (#546).
     #  `contrat_entretien.document_id` référence le document : sous les clés, la
     #  suppression échoue ; sans elles — le régime actuel — le contrat garde une
