@@ -13,7 +13,7 @@
  *  s'ouvre sur les valeurs lues.
  */
 import type { Page } from '@playwright/test';
-import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { expect, MEMBRE_CS, retenirApi, simulerApi, test } from './aides';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 const COMMANDES = [
@@ -22,30 +22,19 @@ const COMMANDES = [
 
 /** Retient `/config/admin` et `/config/legal` jusqu'à `relacher()`. */
 async function retenirParametrage(page: Page) {
-	let relacher: () => void = () => {};
-	const relache = new Promise<void>((r) => (relacher = r));
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;
 		if (chemin === '/api/admin/commandes-acces') return COMMANDES;
 		return undefined;
 	});
-	//  Déclarée APRÈS `simulerApi` : Playwright essaie les routes de la plus
-	//  récente à la plus ancienne.
-	await page.route(
-		(url) => url.pathname === '/api/config/admin' || url.pathname === '/api/config/legal',
-		async (route) => {
-			await relache;
-			const corps = route.request().url().endsWith('/legal')
+	return retenirApi(
+		page,
+		(chemin) => chemin === '/api/config/admin' || chemin === '/api/config/legal',
+		(chemin) =>
+			chemin.endsWith('/legal')
 				? { mentions_legales: '<p>Mentions lues</p>' }
-				: { site_nom: 'Résidence témoin' };
-			await route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify(corps),
-			});
-		},
+				: { site_nom: 'Résidence témoin' },
 	);
-	return () => relacher();
 }
 
 test('Admin › À traiter : les files s’affichent sans attendre le paramétrage', async ({ page }) => {

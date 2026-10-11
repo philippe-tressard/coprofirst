@@ -231,6 +231,36 @@ export async function simulerApi(
 }
 
 /**
+ * **Retenir des lectures de l'API jusqu'à `relacher()`** — pour prouver qu'un
+ * écran n'attend pas ce qu'il n'affiche pas (#1842, #1843, #1845).
+ *
+ * `retenu` choisit les chemins ; `corps` rend, une fois relâchée, la réponse de
+ * chacun (une liste vide par défaut). À appeler APRÈS `simulerApi` : Playwright
+ * essaie les routes de la plus récente à la plus ancienne. Écrite ici : deux
+ * specs en recopiaient le mécanisme, et un troisième le prenait.
+ */
+export async function retenirApi(
+	page: Page,
+	retenu: (chemin: string) => boolean,
+	corps: (chemin: string) => unknown = () => [],
+): Promise<() => void> {
+	let relacher: () => void = () => {};
+	const relache = new Promise<void>((r) => (relacher = r));
+	await page.route(
+		(url) => retenu(url.pathname),
+		async (route) => {
+			await relache;
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify(corps(new URL(route.request().url()).pathname)),
+			});
+		},
+	);
+	return () => relacher();
+}
+
+/**
  * **La boîte d'un élément, une fois qu'il a fini d'entrer** (#1625).
  *
  * 🔴 Une boîte de dialogue entre en 200 ms, de 96 % à 100 % (`modale-entree`,
