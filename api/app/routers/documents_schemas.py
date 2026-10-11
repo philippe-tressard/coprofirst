@@ -36,6 +36,7 @@ class DocumentRead(BaseModel):
     publie_le: datetime
     annee: Optional[int] = None
     date_ag: Optional[date] = None
+    date_document: Optional[date] = None
     batiments_ids_json: Optional[str] = None
     #  De quoi parle le document, en codes de périmètre (#470). Descriptif, pas
     #  un droit — voir `models/documents.py`.

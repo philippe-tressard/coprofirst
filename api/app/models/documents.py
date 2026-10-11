@@ -101,6 +101,9 @@ class Document(SQLModel, table=True):
     # Champs spécifiques aux CR d'AG
     annee: Optional[int] = None
     date_ag: Optional[date] = Field(default=None)
+    #  La date DU DOCUMENT — un règlement de copropriété (migration 0280). La
+    #  gouttière de sa fiche la montre ; `publie_le` n'est que la date du dépôt.
+    date_document: Optional[date] = Field(default=None)
     #  🔴 DÉPRÉCIÉE au profit de `perimetre_cible` (#470, migration 0160). Elle
     #  n'est plus LUE par le code applicatif ; elle reste comme trace de ce que le
     #  CS avait choisi — l'arborescence des périmètres est administrée, elle bouge,

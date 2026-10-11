@@ -94,6 +94,7 @@ def _deposer(session, user, **rattachement) -> Document:
             "lot_id",
             "annee",
             "date_ag",
+            "date_document",
             "batiments_ids_json",
             "perimetre_cible",
         )

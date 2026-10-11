@@ -167,6 +167,22 @@ export function partiesDate(
 	return { jour: lire('day'), mois: lire('month'), annee: lire('year') };
 }
 
+/**
+ * Le JOUR de Paris d'un instant, en `AAAA-MM-JJ` — la valeur d'un champ
+ * `type="date"`. Sans argument, aujourd'hui : la date qu'un formulaire PROPOSE.
+ *
+ * ⚠️ Jamais `toISOString().slice(0, 10)` : c'est le jour UTC, faux d'un jour
+ * entre minuit et deux heures (le pendant serveur est `horloge.aujourd_hui`).
+ */
+export function jourIso(d: string | Date = new Date()): string {
+	return new Intl.DateTimeFormat('en-CA', {
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		timeZone: TZ,
+	}).format(new Date(d));
+}
+
 /** "2 avril" (jour + mois long, sans année) */
 export function fmtDayMonth(d: string | null | undefined): string {
 	if (!d) return '—';
