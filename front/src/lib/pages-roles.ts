@@ -68,13 +68,8 @@ export const PAGES_ROLES: PageDef[] = [
 				label: '\u{1F4D2} Annuaire CS & Syndic',
 				descriptif: 'Coordonnées des membres du CS et du syndic.',
 			},
-			{
-				id: 'reglement',
-				route: '/espace-cs/reglement',
-				label: '⚖️ Règlement',
-				descriptif:
-					"Posez la question d'un résident sur le règlement de copropriété (« ai-je le droit de… ? ») : l'assistant répond en juriste, d'après le texte chargé ici, avec les extraits et les pages qui justifient sa réponse. Une réponse relue peut rejoindre la FAQ.",
-			},
+			//  « ⚖️ Règlement » a rejoint Ma résidence le 11/10/2026 : il s'ouvre aux
+			//  copropriétaires (`pages.ts`). L'ancienne adresse redirige — sa route.
 			{
 				//  Né le 05/10/2026 d'un transfert refusé (numéro d'affaire mal tapé)
 				//  que seul l'administrateur pouvait relire : chaque message reçu à

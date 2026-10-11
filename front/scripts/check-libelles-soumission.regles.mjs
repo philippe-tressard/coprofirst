@@ -33,8 +33,11 @@ export const EXCEPTIONS = {
 	//  ENREGISTRÉ. « Poser la question » envoie une demande facturée à
 	//  l'assistant, « Charger ce texte » remplace le texte interrogé — deux
 	//  gestes que le verbe générique ne dirait pas, même raison que le courriel.
+	//  Le chargement du texte a quitté l'onglet pour sa section le 11/10/2026.
 	'lib/components/OngletReglement.svelte':
-		'« Poser la question » interroge l’assistant (facturé) et « Charger ce texte » change le texte interrogé : aucun n’enregistre une saisie',
+		'« Poser la question » interroge l’assistant (facturé) : il n’enregistre pas une saisie',
+	'lib/components/SectionTexteReglement.svelte':
+		'« Charger ce texte » change le texte que l’assistant interroge : il n’enregistre pas une saisie',
 	'lib/components/PartageCourriel.svelte':
 		'le bouton envoie un courriel et n’enregistre rien : « Envoyer » nomme le geste',
 	//  🔴 `PiedFormulaire` rend `{enCours ? libelleEnCours : libelle}` — des

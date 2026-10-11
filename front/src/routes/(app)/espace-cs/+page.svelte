@@ -334,12 +334,6 @@
 			<OngletAnnoncesHall />
 		{/snippet}
 	</ChargementDiffere>
-{:else if onglet === 'reglement'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletReglement.svelte')}>
-		{#snippet contenu(OngletReglement)}
-			<OngletReglement />
-		{/snippet}
-	</ChargementDiffere>
 {:else if onglet === 'courriels'}
 	<ChargementDiffere charger={() => import('$lib/components/OngletCourriels.svelte')}>
 		{#snippet contenu(OngletCourriels)}

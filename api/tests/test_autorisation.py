@@ -63,9 +63,14 @@ def _fichiers_routers() -> list[pathlib.Path]:
 #
 # `get_acting_user` et `require_role` en sont sortis le 02/10/2026 (#1534) :
 # aucune route ne les prenait, et le cas zéro plus bas le refuse désormais.
+#
+# `require_questions_reglement` (11/10/2026) prend `require_proprietaire` et y
+# ajoute la case de l'administration qui ouvre l'usage aux copropriétaires : une
+# règle de RÔLE et une de CONFIGURATION, écrites dans `deps.py` comme les autres.
 _DEPS_AUTORISATION = {
     "get_current_user",
     "require_proprietaire",
+    "require_questions_reglement",
     "require_cs_or_admin",
     "require_admin",
     #  L'opérateur de la plateforme (#1750) : supervision technique et base.

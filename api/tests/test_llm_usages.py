@@ -27,6 +27,7 @@ from app.utils.llm_usages import (
     USAGES,
     USAGE_DESCRIPTION,
     USAGE_SYNTHESE_CONTRAT,
+    champs,
     decrire,
 )
 from app.utils.synthese_format import CONSIGNE
@@ -83,7 +84,8 @@ def test_l_ecran_recoit_les_cles_et_les_origines_jamais_les_valeurs():
     """Les valeurs courantes viennent de `GET /config/admin` : ce descriptif ne
     doit pas devenir une seconde lecture de la configuration."""
     for d in decrire():
-        assert set(d["cles"]) == set(CHAMPS_USAGE)
+        assert set(d["cles"]) == set(champs(USAGES[d["code"]]))
+        assert set(CHAMPS_USAGE) <= set(d["cles"])
         assert "prompt_defaut" in d
         assert "valeur" not in d and "modele" not in d
 

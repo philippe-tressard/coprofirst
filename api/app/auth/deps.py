@@ -135,6 +135,40 @@ def require_operateur(user: Utilisateur = Depends(get_current_user)) -> Utilisat
     return user
 
 
+def peut_poser_questions_reglement(user: Utilisateur, session: Session) -> bool:
+    """Ce copropriétaire, ce membre du conseil, peut-il interroger le règlement ?
+
+    Le conseil syndical et l'administration, toujours ; les copropriétaires, si
+    l'administration leur a ouvert l'usage (Admin › Assistant IA, case décochée
+    par défaut). Le PRÉDICAT : l'onglet le demande pour se montrer
+    (`GET /reglement/acces`), la dépendance ci-dessous pour refuser. Il ne juge
+    pas le rôle de copropriétaire : la dépendance l'exige avant lui.
+    """
+    from app.utils.question_reglement.production import ouvert_aux_coproprietaires
+
+    return est_moderateur(user) or ouvert_aux_coproprietaires(session)
+
+
+def require_questions_reglement(
+    user: Utilisateur = Depends(require_proprietaire),
+    session: Session = Depends(get_session),
+) -> Utilisateur:
+    """Les questions au règlement de copropriété (Ma résidence › Règlement, 11/10/2026).
+
+    Les copropriétaires — occupants ou bailleurs —, le conseil syndical et
+    l'administration : la règle du carnet d'entretien (`require_proprietaire`),
+    qui laisse dehors locataires, mandataires, aidants et syndic ; puis
+    `peut_poser_questions_reglement`, qui ne laisse entrer les copropriétaires
+    que si l'usage leur est ouvert.
+    """
+    if not peut_poser_questions_reglement(user, session):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Les questions au règlement sont réservées au conseil syndical pour le moment.",
+        )
+    return user
+
+
 def est_moderateur(user: Utilisateur) -> bool:
     """Cet utilisateur MODÈRE-t-il — conseil syndical, ou administration ?
 

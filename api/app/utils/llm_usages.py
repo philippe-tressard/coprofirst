@@ -68,6 +68,11 @@ class Usage:
     #: automatique : la limite par heure et par personne n'y a pas de sens, et
     #: l'écran ne la propose pas (`llm_limites`, 04/10/2026).
     geste_manuel: bool = True
+    #: L'usage peut-il s'OUVRIR aux copropriétaires ? (11/10/2026) — l'écran
+    #: propose alors la case « Ouvert aux copropriétaires » (`CHAMP_COPROPRIETAIRES`),
+    #: décochée par défaut. Le conseil et l'administration gardent l'usage quoi
+    #: qu'il en soit : la case ne sert qu'à le refermer en cas d'abus.
+    ouvrable_aux_coproprietaires: bool = False
 
     def cle(self, champ: str) -> str:
         """La clé `ConfigSite` d'un réglage de cet usage."""
@@ -96,6 +101,17 @@ CHAMPS_USAGE = (
     "prix_cache",
     "effort",
 )
+
+#: Le réglage des seuls usages `ouvrable_aux_coproprietaires` : `"1"` ouvre
+#: l'usage aux copropriétaires. Absent des autres usages — l'écran ne montre la
+#: case que si l'usage la porte dans ses clés (`decrire`).
+CHAMP_COPROPRIETAIRES = "coproprietaires"
+
+
+def champs(u: "Usage") -> tuple[str, ...]:
+    """PURE. Les réglages que CET usage porte — ceux de tous, plus les siens."""
+    return CHAMPS_USAGE + ((CHAMP_COPROPRIETAIRES,) if u.ouvrable_aux_coproprietaires else ())
+
 
 #: 🔴 L'EFFORT DE RAISONNEMENT (30/09/2026, demandé : « gpt-5.6-luna +
 #: reasoning.effort=low = choix par défaut ? faut-il le paramétrer ? »). Un
@@ -207,16 +223,17 @@ USAGES: dict[str, Usage] = {
         code=USAGE_QUESTION_REGLEMENT,
         libelle="Question au règlement de copropriété",
         description=(
-            "Espace CS › Règlement : le conseil syndical pose la question d'un résident "
-            "(« ai-je le droit de… ? ») ; l'assistant, en juriste, répond d'après le texte "
-            "du règlement chargé sur cette page — verdict, réponse argumentée, extraits "
-            "cités mot pour mot avec leur page, réserves. Le texte entier et la question "
-            "sont transmis, jamais le nom de qui la pose. Délai d'attente d'au moins "
-            "deux minutes."
+            "Ma résidence › Règlement : le conseil syndical — et les copropriétaires si "
+            "la case ci-dessous est cochée — pose une question (« ai-je le droit de… ? ») ; "
+            "l'assistant, en juriste, répond d'après le texte du règlement chargé sur "
+            "cette page — verdict, réponse argumentée, extraits cités mot pour mot avec "
+            "leur page, réserves. Le texte entier et la question sont transmis, jamais "
+            "le nom de qui la pose. Délai d'attente d'au moins deux minutes."
         ),
         prompt_defaut=CONSIGNE_QUESTION_REGLEMENT,
         max_jetons_defaut=8_000,
         delai_min_s=120,
+        ouvrable_aux_coproprietaires=True,
     ),
 }
 
@@ -238,7 +255,7 @@ def decrire() -> list[dict]:
             "prompt_defaut": u.prompt_defaut,
             "max_jetons_defaut": u.max_jetons_defaut,
             "geste_manuel": u.geste_manuel,
-            "cles": {champ: u.cle(champ) for champ in CHAMPS_USAGE},
+            "cles": {champ: u.cle(champ) for champ in champs(u)},
             "efforts": [{"val": c, "label": libelle} for c, libelle, _ in EFFORTS],
         }
         for u in USAGES.values()
@@ -247,6 +264,7 @@ def decrire() -> list[dict]:
 
 __all__ = [
     "CHAMPS_USAGE",
+    "CHAMP_COPROPRIETAIRES",
     "EFFORTS",
     "USAGES",
     "USAGE_DESCRIPTION",
@@ -255,6 +273,7 @@ __all__ = [
     "USAGE_SYNTHESE_CONTRAT",
     "USAGE_TARIF_MODELE",
     "Usage",
+    "champs",
     "decrire",
     "usage",
     "valeur_effort",

@@ -99,8 +99,10 @@ export interface UsageIA {
 	max_jetons_defaut: number;
 	/** `false` pour un usage purement automatique : aucune limite par personne. */
 	geste_manuel: boolean;
-	/** Les clés `ConfigSite` de ses réglages — prix en DOLLARS par million. */
-	cles: Record<ChampUsageIA, string>;
+	/** Les clés `ConfigSite` de ses réglages — prix en DOLLARS par million.
+	 *  `coproprietaires` : seulement pour un usage qui peut s'ouvrir aux
+	 *  copropriétaires (`llm_usages.champs`). */
+	cles: Record<ChampUsageIA, string> & { coproprietaires?: string };
 	/** Les niveaux d'effort de raisonnement — la table de `llm_usages.EFFORTS`,
 	 *  jamais recopiée ici. Vide = le défaut du modèle, rien n'est envoyé. */
 	efforts: { val: string; label: string }[];

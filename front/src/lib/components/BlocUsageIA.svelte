@@ -85,6 +85,9 @@
 
 	$: cles = usage.cles;
 	$: actif = valeurs[cles.actif] === '1';
+	//  La case d'un usage qui peut s'ouvrir aux copropriétaires (11/10/2026) :
+	//  l'usage la porte dans ses clés (`llm_usages.champs`), aucun autre ne l'a.
+	$: cleCoproprietaires = cles.coproprietaires;
 	$: modele = valeurs[cles.modele] ?? '';
 	$: prompt = valeurs[cles.prompt] ?? '';
 	//  ── Le prompt : trois états, pas deux (#994, 17/09/2026) ─────────────────
@@ -194,6 +197,22 @@
 				geste.
 			</span>
 		</label>
+		{#if cleCoproprietaires}
+			<label class="field case">
+				<input
+					type="checkbox"
+					checked={valeurs[cleCoproprietaires] === '1'}
+					on:change={(e) => poser(cleCoproprietaires, e.currentTarget.checked ? '1' : '0')}
+				/>
+				Ouvert aux copropriétaires
+				<span class="aide">
+					Décochée, seuls le conseil syndical et l’administration s’en servent. Cochée, tous les
+					copropriétaires aussi — ni les locataires, ni les mandataires, ni le syndic. Les limites
+					d’appels ci-dessous valent pour chacun. À décocher en cas d’abus : le conseil syndical
+					garde l’accès.
+				</span>
+			</label>
+		{/if}
 		<!--  Le réglage propre à UN usage (la synthèse : envoyer le document). DANS le
 		      bloc, pour qu'il se replie avec lui (#1324) : posé à côté du composant,
 		      il restait visible sous le bloc replié. -->

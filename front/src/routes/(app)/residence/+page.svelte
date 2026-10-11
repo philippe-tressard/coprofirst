@@ -12,11 +12,13 @@
 		identiteDepuis,
 	} from '$lib/components/ChampsIdentiteCopropriete.svelte';
 	import { onMount } from 'svelte';
-	import { isCS, isLocataire } from '$lib/stores/auth';
+	import { afterNavigate } from '$app/navigation';
+	import { isCS, isLocataire, isProprioOuCS, quandAuthResolue } from '$lib/stores/auth';
 	import {
 		copropriete as coproprieteApi,
 		documents as documentsApi,
 		diagnostics as diagnosticsApi,
+		reglement as reglementApi,
 		type Batiment,
 		type Copropriete,
 		type DiagnosticType,
@@ -35,6 +37,7 @@
 	import { essayer, messagePartiel } from '$lib/chargement';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 
 	/**  L'onglet vient du CHEMIN, résolu par `+page.ts` — jamais d'un `let`
 	 *   qu'on affecte : une page qui écrit son propre onglet ne peut plus être
@@ -112,6 +115,36 @@
 		return b ? `Bât. ${b.numero}` : 'Bât. ?';
 	}
 
+	//  ⚖️ L'onglet Règlement (11/10/2026) : réservé comme le carnet (`reserve` dans
+	//  `pages.ts`), et MASQUÉ en plus quand l'administration ne l'a pas ouvert aux
+	//  copropriétaires — le serveur seul le sait. `null` tant qu'il n'a pas
+	//  répondu : l'onglet reste dans la rangée (sinon `BarreOnglets` renverrait sur
+	//  la Fiche un lien reçu avant de savoir), son contenu attend. Une réponse en
+	//  échec ne masque rien : l'onglet ouvert dira lui-même l'erreur.
+	let accesReglement: boolean | null = null;
+	$: masques = accesReglement === false ? ['reglement'] : [];
+	quandAuthResolue(async () => {
+		if (!$isProprioOuCS) return;
+		const [r] = await essayer(reglementApi.acces(), null);
+		accesReglement = r ? r.acces : true;
+	});
+
+	//  Lien profond depuis le fil d'activité, une notification ou l'onglet
+	//  Règlement : `#doc-<id>` (plan, règlement, PV d'AG) ou `#diag-<id>`
+	//  (rapport de diagnostic). La page est longue et découpée en sections — y
+	//  arriver sans viser l'élément revient à faire chercher l'utilisateur.
+	function revelerLienProfond() {
+		const idDoc = cibleDuHash('doc');
+		if (idDoc !== null) revelerCible(`doc-${idDoc}`);
+		const idDiag = cibleDuHash('diag');
+		if (idDiag !== null) revelerCible(`diag-${idDiag}`);
+	}
+	//  …et pas seulement à l'arrivée : un acte cité par l'onglet Règlement mène à
+	//  `/residence#doc-N` SANS remonter la page (même composant, autre onglet).
+	afterNavigate(({ type }) => {
+		if (type !== 'enter' && !loading) revelerLienProfond();
+	});
+
 	// ── Init ───────────────────────────────────────────────────────────────────
 	onMount(async () => {
 		try {
@@ -156,14 +189,7 @@
 			diagnosticTypes = diag;
 			eDiagnostics = ediag;
 
-			// Lien profond depuis le fil d'activité ou une notification :
-			// `#doc-<id>` (plan, règlement, PV d'AG) ou `#diag-<id>` (rapport de
-			// diagnostic). La page est longue et découpée en sections — y arriver
-			// sans viser l'élément revient à faire chercher l'utilisateur.
-			const idDoc = cibleDuHash('doc');
-			if (idDoc !== null) revelerCible(`doc-${idDoc}`);
-			const idDiag = cibleDuHash('diag');
-			if (idDiag !== null) revelerCible(`diag-${idDiag}`);
+			revelerLienProfond();
 		} catch (e) {
 			toast('error', messageErreur(e, 'Erreur de chargement'));
 		} finally {
@@ -196,7 +222,7 @@
       La rangée passe par `BarreOnglets`, qui lit la liste, l'ordre, les libellés
       et les routes dans `$lib/pages` — un `<div class="tabs">` local rouvrirait
       les cinq divergences que ce composant a fermées. -->
-<BarreOnglets pageId="residence" actif={onglet} />
+<BarreOnglets pageId="residence" actif={onglet} {masques} />
 
 <!--  ⚠️ En HAUT, avant tout le reste : les bâtiments et les catégories de
       document garnissent les menus déroulants et la correspondance « Bât. n ».
@@ -217,6 +243,16 @@
 		<BilanCarnet />
 	{/if}
 	<CarnetEntretien />
+{:else if onglet === 'reglement'}
+	{#if accesReglement === null}
+		<EtatListe chargement />
+	{:else}
+		<ChargementDiffere charger={() => import('$lib/components/OngletReglement.svelte')}>
+			{#snippet contenu(OngletReglement)}
+				<OngletReglement />
+			{/snippet}
+		</ChargementDiffere>
+	{/if}
 {:else if onglet === 'fiche' && loading}
 	<EtatListe chargement />
 {:else if onglet === 'fiche' && copropriete}

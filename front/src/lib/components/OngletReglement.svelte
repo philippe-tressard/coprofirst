@@ -1,12 +1,15 @@
 <!--
-  Espace CS › Règlement — poser au règlement de copropriété la question d'un résident.
+  Ma résidence › Règlement — poser une question au règlement de copropriété.
+
+  Venu de l'Espace CS le 11/10/2026 : il s'ouvre aux copropriétaires quand
+  l'administration le permet (la page masque l'onglet sinon, le serveur refuse).
 
   Trois blocs, dans l'ordre du geste :
-  1. le TEXTE du règlement — la version en vigueur, et le chargement d'une
-     nouvelle (Markdown, lu par le navigateur et envoyé comme texte) ;
+  1. le TEXTE du règlement et les actes qui font foi (`SectionTexteReglement`) ;
   2. la QUESTION — l'assistant répond en juriste, extraits à l'appui ;
   3. l'HISTORIQUE — une question déjà posée ne se repaie pas, et une réponse
-     relue peut rejoindre la FAQ (boîte ouverte dans la carte).
+     relue peut rejoindre la FAQ par le conseil (boîte ouverte dans la carte).
+     Un copropriétaire n'y lit que SES questions : le serveur les filtre.
 
   L'état et les appels réseau vivent ici, la page ne garde que le choix de
   l'onglet (`svelte-patterns`, famille `Onglet<Nom>`). Le serveur décide si
@@ -18,8 +21,8 @@
 	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
 	import FormulaireFaq from '$lib/components/FormulaireFaq.svelte';
+	import SectionTexteReglement from '$lib/components/SectionTexteReglement.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import {
 		faq as faqApi,
@@ -29,22 +32,16 @@
 	} from '$lib/api';
 	import { basculer } from '$lib/accordeon';
 	import { confirmer } from '$lib/confirmation';
-	import { fmtDatetime } from '$lib/date';
 	import { cibleDuHash, revelerCible } from '$lib/deepLink';
 	import { messageErreur } from '$lib/erreurs';
 	import { categorieSaisie, saisieFaqVide, type SaisieFaq } from '$lib/faq';
 	import { richEmpty } from '$lib/publications';
-	import { ACCEPT_TEXTE_REGLEMENT } from '$lib/reglement';
-	import { isAdmin } from '$lib/stores/auth';
-	import { fmtNombre } from '$lib/utils';
+	import { isCS } from '$lib/stores/auth';
 
 	let etat: EtatReglement | null = null;
 	let questions: QuestionReglement[] = [];
 	let chargement = true;
 	let erreur = '';
-
-	let fichiers: File[] = [];
-	let chargementTexte = false;
 
 	let question = '';
 	let envoi = false;
@@ -72,22 +69,8 @@
 		}
 	});
 
-	async function chargerTexte() {
-		const fichier = fichiers[0];
-		if (!fichier) return;
-		chargementTexte = true;
-		try {
-			const version = await reglementApi.charger(fichier.name, await fichier.text());
-			const nouvelle = version.id !== etat?.texte?.id;
-			etat = await reglementApi.etat();
-			questions = await reglementApi.questions();
-			fichiers = [];
-			toast('success', nouvelle ? 'Texte du règlement chargé.' : 'Ce texte est déjà en vigueur.');
-		} catch (e) {
-			toast('error', messageErreur(e));
-		} finally {
-			chargementTexte = false;
-		}
+	async function recharger() {
+		[etat, questions] = await Promise.all([reglementApi.etat(), reglementApi.questions()]);
 	}
 
 	async function poser() {
@@ -172,59 +155,20 @@
 
 <EncartAvertissement>
 	Les réponses sont un <strong>avis indicatif</strong>, rédigé par l'assistant d'après le texte de
-	travail chargé ici : il ne se substitue pas aux actes authentiques, qui seuls font foi. Relisez-le
-	— et vérifiez les extraits signalés ⚠️ — avant de le relayer.
+	travail chargé ici : il ne se substitue pas aux actes authentiques, qui seuls font foi.
+	{#if $isCS}
+		Relisez-le — et vérifiez les extraits signalés ⚠️ — avant de le relayer.
+	{:else}
+		En cas de doute, interrogez le conseil syndical.
+	{/if}
 </EncartAvertissement>
 
 <EtatListe {chargement} {erreur}>
 	{#if etat}
-		<section class="card config-section">
-			<h3 class="config-section-title">Texte du règlement</h3>
-			{#if etat.texte}
-				<p class="texte-courant">
-					<strong>{etat.texte.titre}</strong>
-					<span class="aide"
-						>{etat.texte.nom_fichier} · {fmtNombre(etat.texte.nb_caracteres)} caractères · chargé le
-						{fmtDatetime(etat.texte.cree_le)}{etat.texte.charge_par
-							? ` par ${etat.texte.charge_par}`
-							: ''}{etat.nb_versions > 1 ? ` · version ${etat.nb_versions}` : ''}</span
-					>
-				</p>
-			{:else}
-				<p class="aide">
-					{$isAdmin
-						? "Aucun texte n'est chargé : chargez le règlement pour pouvoir l'interroger."
-						: "Aucun texte n'est chargé : l'administration doit charger le règlement avant qu'on puisse l'interroger."}
-				</p>
-			{/if}
-			{#if $isAdmin}
-				<FichiersUpload
-					differe
-					bind:fichiers
-					max={1}
-					accept={ACCEPT_TEXTE_REGLEMENT}
-					types="Markdown (.md)"
-					label="Choisir le fichier"
-					titre={etat.texte
-						? 'Charger une nouvelle version (Markdown)'
-						: 'Charger le texte (Markdown)'}
-				/>
-				{#if fichiers.length}
-					<div class="form-actions">
-						<button class="btn btn-primary" disabled={chargementTexte} on:click={chargerTexte}
-							>{chargementTexte ? 'Chargement…' : 'Charger ce texte'}</button
-						>
-					</div>
-				{/if}
-			{/if}
-			<p class="aide">
-				Le texte reste dans l'application : il n'est ni publié, ni versé au dépôt du code. Les
-				questions déjà posées gardent la version qu'elles ont lue.
-			</p>
-		</section>
+		<SectionTexteReglement {etat} onRecharger={recharger} />
 
 		<section class="card config-section">
-			<h3 class="config-section-title">Question d'un résident</h3>
+			<h3 class="config-section-title">Votre question</h3>
 			<form on:submit|preventDefault={poser}>
 				<label class="field"
 					><span>Question<EtoileRequis vide={!question.trim()} /></span><textarea
@@ -236,8 +180,12 @@
 				>
 				{#if !etat.disponible}
 					<EncartAvertissement compact>
-						L'assistant n'est pas activé pour cet usage : Admin › Assistant IA › « Question au
-						règlement de copropriété ».
+						{#if $isCS}
+							L'assistant n'est pas activé pour cet usage : Admin › Assistant IA › « Question au
+							règlement de copropriété ».
+						{:else}
+							L'assistant ne répond pas pour le moment : réessayez plus tard.
+						{/if}
 					</EncartAvertissement>
 				{/if}
 				<div class="form-actions">
@@ -257,11 +205,13 @@
 		</section>
 	{/if}
 
-	<h3 class="titre-historique">Questions posées</h3>
+	<h3 class="titre-historique">{$isCS ? 'Questions posées' : 'Vos questions'}</h3>
 	<EtatListe
 		vide={questions.length === 0}
 		titreVide="Aucune question posée"
-		messageVide="Les réponses de l'assistant s'afficheront ici."
+		messageVide={$isCS
+			? "Les réponses de l'assistant s'afficheront ici."
+			: "Les réponses de l'assistant s'afficheront ici. Vous seul et le conseil syndical les lisez."}
 	>
 		{#each questions as q (q.id)}
 			<CarteQuestionReglement
@@ -275,27 +225,28 @@
 				on:publier={() => ouvrirPublication(q)}
 				on:supprimer={() => supprimerQuestion(q)}
 			>
-				<FormulaireFaq
-					slot="formulaire"
-					bind:form={formFaq}
-					{categories}
-					{erreurCategories}
-					enregistrement={enregistrementFaq}
-					onEnregistrer={() => publier(q)}
-					on:annule={() => (publication = null)}
-				/>
+				<svelte:fragment slot="formulaire">
+					<!--  Une entrée de FAQ ne porte aucun auteur ; la question, elle, peut
+					      le désigner (11/10/2026 — « en anonymisant l'auteur »). -->
+					<p class="aide">
+						Retirez de la question et de la réponse tout ce qui désignerait qui l'a posée : nom,
+						lot, étage, situation personnelle.
+					</p>
+					<FormulaireFaq
+						bind:form={formFaq}
+						{categories}
+						{erreurCategories}
+						enregistrement={enregistrementFaq}
+						onEnregistrer={() => publier(q)}
+						on:annule={() => (publication = null)}
+					/>
+				</svelte:fragment>
 			</CarteQuestionReglement>
 		{/each}
 	</EtatListe>
 </EtatListe>
 
 <style>
-	.texte-courant {
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
-		margin: 0 0 0.75rem;
-	}
 	.titre-historique {
 		margin: 1.5rem 0 0.6rem;
 		font-size: var(--fs-md);
