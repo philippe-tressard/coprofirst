@@ -27,7 +27,7 @@
 	import type { QuestionReglement } from '$lib/api';
 	import { fmtDatetime } from '$lib/date';
 	import { safeHtml } from '$lib/sanitize';
-	import { isAdmin } from '$lib/stores/auth';
+	import { isAdmin, isCS } from '$lib/stores/auth';
 
 	export let q: QuestionReglement;
 	/** La carte est-elle dépliée ? L'état vit dans l'onglet : une seule ouverte. */
@@ -56,7 +56,9 @@
 	<EnteteCarte titre={q.question} basculable on:toggle={() => dispatch('basculer')}>
 		<svelte:fragment slot="actions">
 			<BoutonLien ancre="question-reglement-{q.id}" quoi="la question" />
-			{#if !q.faq_item_id}
+			<!--  Le conseil seul publie (11/10/2026) : le copropriétaire lit sa réponse,
+			      il ne la verse pas à la FAQ. Le serveur refuse aussi. -->
+			{#if $isCS && !q.faq_item_id}
 				<button
 					class="btn-icon-edit"
 					aria-label="Publier dans la FAQ"

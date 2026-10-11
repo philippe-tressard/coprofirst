@@ -162,6 +162,18 @@ export const PAGES: PageDef[] = [
 				descriptif:
 					'Ce qui a été entretenu, réparé et contrôlé dans la résidence — et ce qui ne l’a pas été.',
 			},
+			{
+				//  Venu de l'Espace CS le 11/10/2026 pour s'ouvrir aux copropriétaires
+				//  (`/espace-cs/reglement` redirige ici). Réservé comme le carnet, et
+				//  MASQUÉ en plus par la page quand l'administration n'a pas ouvert
+				//  l'usage aux copropriétaires (`GET /reglement/acces`).
+				id: 'reglement',
+				route: '/residence/reglement',
+				reserve: 'proprioOuCS',
+				label: '⚖️ Règlement',
+				descriptif:
+					"Posez la question sur le règlement de copropriété (« ai-je le droit de… ? ») : l'assistant répond en juriste, d'après le texte chargé ici, avec les extraits et les pages qui justifient sa réponse. Une réponse relue pourra rejoindre la FAQ par le CS.",
+			},
 		],
 	},
 	//  « Actualités » n'est plus une page (#1091, #1092, 23/09/2026) : une

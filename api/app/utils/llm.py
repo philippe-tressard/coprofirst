@@ -64,7 +64,7 @@ from app.utils.llm_fournisseurs import (
     PieceJointe,
 )
 from app.utils import llm_journal, llm_limites
-from app.utils.llm_usages import USAGES, Usage, valeur_effort
+from app.utils.llm_usages import CHAMP_COPROPRIETAIRES, USAGES, Usage, valeur_effort
 from app.utils.services import SERVICE_IA, service_actif
 
 #: 🔴 Ce module reste **la porte d'entrée unique**, même depuis que les
@@ -190,6 +190,9 @@ class ConfigLLM:
     #: La valeur d'API de l'effort de raisonnement (« low »…), ou vide : rien
     #: n'est envoyé et le modèle garde son défaut (`llm_usages.EFFORTS`).
     effort: str = ""
+    #: L'usage est-il ouvert aux copropriétaires ? Toujours faux pour un usage
+    #: qui ne s'y ouvre pas (`Usage.ouvrable_aux_coproprietaires`).
+    ouvert_coproprietaires: bool = False
 
     def verifier(self, *, exiger_actif: bool = True, exiger_modele: bool = True) -> None:
         """Lève `ErreurLLM` si l'appel ne peut pas aboutir — avant de le tenter.
@@ -280,6 +283,9 @@ def config_llm(session: Session, usage: Optional[str] = None) -> ConfigLLM:
     commun.prompt = (cfg.get(u.cle("prompt")) or "").strip() or u.prompt_defaut
     commun.max_jetons = _entier(cfg, u.cle("max_jetons"), u.max_jetons_defaut)
     commun.effort = valeur_effort(cfg.get(u.cle("effort")))
+    commun.ouvert_coproprietaires = (
+        u.ouvrable_aux_coproprietaires and cfg.get(u.cle(CHAMP_COPROPRIETAIRES)) == "1"
+    )
     commun.delai_s = max(commun.delai_s, u.delai_min_s)
     return commun
 

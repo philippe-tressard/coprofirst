@@ -150,11 +150,19 @@ SYNTHESE_AFFAIRE_CLOSE = (
 #: règlement part à chaque question — il nomme des personnes (notaires, vendeurs).
 #: Écrite une fois : le gabarit et la migration 0256, qui l'insère dans le texte
 #: servi juste avant `ASSISTANT_DEUX_AUTOMATIQUES`, la lisent ici.
+#:
+#: Le 11/10/2026, l'usage s'ouvre aux copropriétaires : leur question est gardée
+#: avec leur identité, lisible d'eux, du conseil et de l'administration. La
+#: migration 0278 remplace dans le texte servi la version d'avant, qu'elle porte.
 QUESTION_REGLEMENT = (
-    "Lorsqu'un membre du conseil syndical pose une <strong>question au règlement de "
-    "copropriété</strong>, la question et le texte entier du règlement chargé par le "
-    "conseil — qui peut nommer les parties aux actes notariés — sont transmis, jamais le "
-    "nom de qui la pose ni de la personne qu'elle concerne. "
+    "Lorsqu'une <strong>question au règlement de copropriété</strong> est posée — par un "
+    "membre du conseil syndical, ou par un copropriétaire si l'administrateur le permet —, "
+    "la question et le texte entier du règlement chargé par l'administrateur — qui peut "
+    "nommer les parties aux actes notariés — sont transmis, jamais le nom de qui la pose ni "
+    "de la personne qu'elle concerne. La question et sa réponse restent dans l'application "
+    "avec le nom de leur auteur, lisibles de lui seul, du conseil syndical et de "
+    "l'administrateur\xa0; elles n'entrent dans la FAQ que relues par le conseil, sans "
+    "auteur. "
 )
 
 #: Les courriels TRANSFÉRÉS par un membre du conseil à l'adresse des affaires

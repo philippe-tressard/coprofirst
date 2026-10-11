@@ -70,6 +70,20 @@ const RESERVES = [
 			'décret n° 2001-477 — le carnet est destiné aux copropriétaires, et il porte ' +
 			'des références de contrats qui ne regardent pas un locataire',
 	},
+	{
+		//  11/10/2026 : venu de l'Espace CS, ouvert aux copropriétaires. La
+		//  dépendance prend `require_proprietaire` et y ajoute la case de
+		//  l'administration ; la page MASQUE en plus l'onglet quand l'usage n'est
+		//  pas ouvert aux copropriétaires (`GET /reglement/acces`).
+		page: 'residence',
+		onglet: 'reglement',
+		predicat: 'proprioOuCS',
+		routeurApi: 'api/app/routers/reglement.py',
+		dependance: 'require_questions_reglement',
+		pourquoi:
+			"un appel facturé, ouvert aux copropriétaires par l'administration — ni " +
+			'aux locataires, ni aux mandataires, ni au syndic',
+	},
 	//  Les onglets Kanban et Archives du Calendrier sont partis avec lui le
 	//  23/09/2026 (#1092). Ceux d'Affaires montrent des affaires que le serveur
 	//  filtre déjà (`ticket_visible`) : ils n'ont pas de place dans cette table,

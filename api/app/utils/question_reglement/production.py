@@ -47,6 +47,18 @@ def disponible(session: Session) -> bool:
     return config_llm(session, USAGE_QUESTION_REGLEMENT).pret
 
 
+def ouvert_aux_coproprietaires(session: Session) -> bool:
+    """L'administration a-t-elle ouvert les questions aux copropriétaires ?
+
+    Une case de l'usage (Admin › Assistant IA), décochée par défaut : elle ne
+    dit rien de l'assistant lui-même — `disponible` le dit —, seulement de QUI
+    entre. Le conseil et l'administration entrent toujours
+    (`auth/deps.require_questions_reglement`)."""
+    from app.utils.llm import config_llm
+
+    return config_llm(session, USAGE_QUESTION_REGLEMENT).ouvert_coproprietaires
+
+
 async def repondre(session: Session, question: str, auteur_id: Optional[int]) -> QuestionReglement:
     """Pose la question, vérifie les extraits, enregistre la réponse.
 
@@ -106,4 +118,4 @@ async def repondre(session: Session, question: str, auteur_id: Optional[int]) ->
     return ligne
 
 
-__all__ = ["disponible", "repondre"]
+__all__ = ["disponible", "ouvert_aux_coproprietaires", "repondre"]

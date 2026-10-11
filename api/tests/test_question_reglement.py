@@ -1,9 +1,13 @@
-"""Questions au règlement de copropriété — Espace CS › Règlement (03/10/2026).
+"""Questions au règlement de copropriété — Ma résidence › Règlement (03/10/2026).
 
 Ce qui est tenu ici :
 
 - le texte se charge en versions, et le même contenu n'en crée pas une seconde ;
-- seuls le conseil syndical et l'administration passent (l'appel est facturé) ;
+- le conseil et l'administration passent toujours ; les copropriétaires, seulement
+  si l'usage leur est ouvert ; locataires et profils externes jamais (11/10/2026) ;
+- un copropriétaire ne lit que SES questions, sans modèle ni coût, et ne publie
+  pas dans la FAQ ;
+- les actes liés au texte sont choisis par l'administration et filtrés par lecteur ;
 - le règlement part EN TÊTE du message, la question à la fin (lecture en cache) ;
 - chaque extrait cité est RECHERCHÉ dans le texte : un extrait reformulé est
   signalé, un extrait retrouvé reçoit la page et l'acte du texte, pas du modèle ;
@@ -23,7 +27,14 @@ from fastapi import HTTPException
 from sqlalchemy import text
 from sqlmodel import Session, select
 
-from app.models.core import FaqItem, RoleUtilisateur
+from app.models.core import (
+    CategorieDocument,
+    ConfigSite,
+    Document,
+    FaqItem,
+    ProfilAccesDocument,
+    RoleUtilisateur,
+)
 from app.seed.contenus_legaux import ASSISTANT_DEUX_AUTOMATIQUES, QUESTION_REGLEMENT
 from app.utils import llm
 from app.utils.description_format import ReponseIllisible
@@ -66,11 +77,15 @@ def moteur_fixture():
 
 @pytest.fixture()
 def assistant(monkeypatch):
-    """Un assistant prêt ; `assistant.messages` garde ce qu'il a reçu."""
+    """Un assistant prêt ; `assistant.messages` garde ce qu'il a reçu, et
+    `assistant.ouvert` ouvre l'usage aux copropriétaires (fermé par défaut)."""
     messages: list[str] = []
+    etat = SimpleNamespace(messages=messages, ouvert=False)
 
     def config(session, usage=None):
-        return SimpleNamespace(pret=True, prompt="PROMPT", modele="modele-test")
+        return SimpleNamespace(
+            pret=True, prompt="PROMPT", modele="modele-test", ouvert_coproprietaires=etat.ouvert
+        )
 
     async def demander(session, *, usage, message, consigne=None, **_):
         messages.append(message)
@@ -93,7 +108,7 @@ def assistant(monkeypatch):
 
     monkeypatch.setattr(llm, "config_llm", config)
     monkeypatch.setattr(llm, "demander", demander)
-    return SimpleNamespace(messages=messages)
+    return etat
 
 
 def _cs(moteur):
@@ -143,15 +158,76 @@ def test_recharger_le_texte_en_vigueur_ne_cree_pas_de_version(moteur):
 # ── Les droits ─────────────────────────────────────────────────────────────
 
 
-@pytest.mark.parametrize("role", [None, RoleUtilisateur.résident, RoleUtilisateur.propriétaire])
-def test_seuls_le_conseil_et_l_administration_passent(moteur, assistant, role):
-    http, _ = client_http(moteur, role)
-    attendu = 401 if role is None else 403
+def _refuse_partout(http, attendu: int) -> None:
     assert http.get("/reglement").status_code == attendu
     assert http.get("/reglement/questions").status_code == attendu
     assert _charger(http).status_code == attendu
     assert http.post("/reglement/questions", json={"question": "Puis-je ?"}).status_code == attendu
+
+
+@pytest.mark.parametrize("ouvert", [False, True], ids=["usage-ferme", "usage-ouvert"])
+@pytest.mark.parametrize("role", [None, RoleUtilisateur.résident, RoleUtilisateur.externe])
+def test_locataires_et_profils_externes_ne_passent_jamais(moteur, assistant, role, ouvert):
+    """Le locataire (résident) et le mandataire ou le syndic (externe) restent dehors,
+    même usage ouvert : c'est la règle du carnet d'entretien."""
+    assistant.ouvert = ouvert
+    http, _ = client_http(moteur, role)
+    attendu = 401 if role is None else 403
+    _refuse_partout(http, attendu)
+    assert http.get("/reglement/acces").status_code == attendu
     assert assistant.messages == []
+
+
+def test_usage_ferme_le_coproprietaire_est_refuse_et_l_onglet_le_sait(moteur, assistant):
+    _charger(_admin(moteur))
+    proprio, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    assert proprio.get("/reglement/acces").json() == {"acces": False}
+    _refuse_partout(proprio, 403)
+    assert assistant.messages == []
+    #  Le conseil, lui, entre toujours.
+    assert _cs(moteur).get("/reglement/acces").json() == {"acces": True}
+    assert _cs(moteur).get("/reglement").status_code == 200
+
+
+def test_usage_ouvert_le_coproprietaire_ne_lit_que_ses_questions(moteur, assistant):
+    assistant.ouvert = True
+    admin = _admin(moteur)
+    _charger(admin)
+    admin.post("/reglement/questions", json={"question": "Question du conseil ?"})
+    proprio, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    voisin, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    assert proprio.get("/reglement/acces").json() == {"acces": True}
+
+    posee = proprio.post("/reglement/questions", json={"question": "Puis-je exercer ?"})
+    assert posee.status_code == 201
+    #  Ni le modèle ni le coût : il lit l'avis, pas son exploitation.
+    assert posee.json()["modele"] is None and posee.json()["cout_usd"] is None
+    (mienne,) = proprio.get("/reglement/questions").json()
+    assert mienne["question"] == "Puis-je exercer ?"
+    assert voisin.get("/reglement/questions").json() == []
+    #  Le conseil les lit toutes, avec l'auteur et le modèle.
+    toutes = _cs(moteur).get("/reglement/questions").json()
+    assert len(toutes) == 2 and all(q["modele"] == "modele-test" for q in toutes)
+    assert len({q["auteur_nom"] for q in toutes}) == 2
+
+
+def test_le_coproprietaire_ne_publie_ni_ne_charge_ni_ne_lie(moteur, assistant):
+    assistant.ouvert = True
+    _charger(_admin(moteur))
+    proprio, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    q = proprio.post("/reglement/questions", json={"question": "Puis-je ?"}).json()
+    corps = {"categorie": "Règlement", "question": "Puis-je ?", "reponse": "<p>Relue.</p>"}
+    assert proprio.post(f"/reglement/questions/{q['id']}/faq", json=corps).status_code == 403
+    assert _charger(proprio, TEXTE + "\nAutre.").status_code == 403
+    assert proprio.put("/reglement/documents", json={"ids": []}).status_code == 403
+    assert proprio.delete(f"/reglement/questions/{q['id']}").status_code == 403
+    #  Ni la fiche technique du texte, ni ce que l'administration peut lier.
+    etat = proprio.get("/reglement").json()
+    assert etat["texte"]["titre"] == "Règlement fictif de la résidence"
+    assert etat["texte"]["nom_fichier"] is None and etat["texte"]["charge_par"] is None
+    assert etat["documents_candidats"] is None and etat["documents_ids"] is None
+    #  Le conseil publie la question du copropriétaire.
+    assert _cs(moteur).post(f"/reglement/questions/{q['id']}/faq", json=corps).status_code == 200
 
 
 def test_charger_le_texte_est_reserve_a_l_administration(moteur, assistant):
@@ -285,3 +361,72 @@ def test_la_politique_servie_nomme_la_transmission_une_seule_fois():
     deux_fois = _politique_apres(["upgrade", "upgrade"], depart)
     assert deux_fois.count(QUESTION_REGLEMENT) == 1
     assert _politique_apres(["upgrade", "downgrade"], depart) == depart
+
+
+# ── Les actes liés au texte (11/10/2026) ───────────────────────────────────
+
+
+def _document(moteur, code: str, roles: list[str], auteur_id: int) -> int:
+    """Un document de la catégorie `code`, lisible des `roles` (profil surchargé)."""
+    with Session(moteur) as s:
+        profil = ProfilAccesDocument(
+            code=f"p-{code}-{'-'.join(roles)}", libelle=code, roles_autorises=json.dumps(roles)
+        )
+        s.add(profil)
+        s.commit()
+        categorie = s.exec(select(CategorieDocument).where(CategorieDocument.code == code)).first()
+        if categorie is None:
+            categorie = CategorieDocument(code=code, libelle=code, profil_acces_id=profil.id)
+            s.add(categorie)
+            s.commit()
+        doc = Document(
+            titre=f"Acte {'-'.join(roles)}",
+            fichier_nom="acte.pdf",
+            fichier_chemin="/inexistant/acte.pdf",
+            categorie_id=categorie.id,
+            profil_acces_override_id=profil.id,
+            publie_par_id=auteur_id,
+        )
+        s.add(doc)
+        s.commit()
+        return doc.id
+
+
+def test_l_administration_lie_des_actes_que_chacun_ouvre_s_il_peut_les_lire(moteur, assistant):
+    assistant.ouvert = True
+    admin, admin_id = client_http(moteur, RoleUtilisateur.admin)
+    _charger(admin)
+    public = _document(moteur, "reglement_copropriete", ["propriétaire"], admin_id)
+    reserve = _document(moteur, "reglement_copropriete", ["conseil_syndical"], admin_id)
+    ailleurs = _document(moteur, "facture", ["propriétaire"], admin_id)
+
+    etat = admin.get("/reglement").json()
+    assert {d["id"] for d in etat["documents_candidats"]} == {public, reserve}
+    #  Un document sans place sur Ma résidence ne se lie pas.
+    assert admin.put("/reglement/documents", json={"ids": [ailleurs]}).status_code == 422
+    choisis = admin.put("/reglement/documents", json={"ids": [reserve, public, reserve]})
+    assert choisis.json() == [reserve, public]
+    assert admin.get("/reglement").json()["documents_ids"] == [reserve, public]
+
+    proprio, _ = client_http(moteur, RoleUtilisateur.propriétaire)
+    (seul,) = proprio.get("/reglement").json()["documents"]
+    assert seul == {"id": public, "titre": "Acte propriétaire", "lien": f"/residence#doc-{public}"}
+    lus_par_le_conseil = _cs(moteur).get("/reglement").json()["documents"]
+    assert [d["id"] for d in lus_par_le_conseil] == [reserve, public]
+
+
+def test_l_ouverture_aux_coproprietaires_se_lit_dans_la_configuration_de_l_usage(moteur):
+    """Sans substitut de l'assistant : la case de l'administration, et elle seule."""
+    from app.utils.llm import config_llm
+    from app.utils.llm_usages import CHAMP_COPROPRIETAIRES, USAGES, champs
+    from app.utils.question_reglement.format import USAGE_QUESTION_REGLEMENT
+
+    usage = USAGES[USAGE_QUESTION_REGLEMENT]
+    with Session(moteur) as s:
+        assert config_llm(s, USAGE_QUESTION_REGLEMENT).ouvert_coproprietaires is False
+        s.add(ConfigSite(cle=usage.cle(CHAMP_COPROPRIETAIRES), valeur="1"))
+        s.commit()
+        assert config_llm(s, USAGE_QUESTION_REGLEMENT).ouvert_coproprietaires is True
+    #  Seul cet usage porte la case : l'écran ne la montre nulle part ailleurs.
+    ouvrables = [u.code for u in USAGES.values() if CHAMP_COPROPRIETAIRES in champs(u)]
+    assert ouvrables == [USAGE_QUESTION_REGLEMENT]

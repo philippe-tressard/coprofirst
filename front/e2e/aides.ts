@@ -182,6 +182,10 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	'/api/bailleur/mon-bail': null,
 	//  `ConsignesArrivant` : Espace CS › Annuaire lit `consignes` (#1727).
 	'/api/admin/consignes-arrivant': { consignes: [], personnalisees: false },
+	//  `reglement.acces()` : Ma résidence le lit pour montrer l'onglet Règlement.
+	'/api/reglement/acces': { acces: true },
+	//  `EtatReglement` : l'onglet Règlement lit `documents` et `texte`.
+	'/api/reglement': { disponible: false, texte: null, nb_versions: 0, documents: [] },
 };
 
 /**
