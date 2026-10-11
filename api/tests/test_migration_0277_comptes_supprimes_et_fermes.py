@@ -1,4 +1,4 @@
-"""La 0276 : auteurs facultatifs, fermeture d'un compte, politique servie (#1688, #1821, #1822).
+"""La 0277 : auteurs facultatifs, fermeture d'un compte, politique servie (#1688, #1821, #1822).
 
 Exécutée pour de vrai par le contexte d'Alembic, sur une base au schéma d'AVANT :
 la référence au compte obligatoire sur chaque table gardée, des lignes dedans,
@@ -24,7 +24,7 @@ from app.seed.contenus_legaux import (
 from tests.aides_base import moteur_memoire
 from tests.aides_migrations import charger_migration
 
-_MIGRATION = "0276_comptes_supprimes_et_fermes"
+_MIGRATION = "0277_comptes_supprimes_et_fermes"
 #: Lues dans la migration : c'est SA liste qu'on éprouve, sur chaque table.
 _COLONNES = charger_migration(_MIGRATION).COLONNES
 #: La politique telle que la production la sert AVANT : l'ancienne phrase des

@@ -39,16 +39,16 @@ sans contrainte. Idempotente. Le retour arrière refuse d'inventer un auteur.
 
 ⚠️ Les noms de table et de colonne sont des CONSTANTES du fichier.
 
-Revision ID: 0276
-Revises: 0275
+Revision ID: 0277
+Revises: 0276
 """
 
 import sqlalchemy as sa
 
 from alembic import op
 
-revision = "0276"
-down_revision = "0275"
+revision = "0277"
+down_revision = "0276"
 branch_labels = None
 depends_on = None
 
