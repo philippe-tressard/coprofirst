@@ -148,6 +148,13 @@ const {
 		icone: 'help-circle',
 		abrege: 'FAQ',
 	}, // 295° fuchsia
+	question_reglement: {
+		libelle: 'Question au règlement',
+		couleur: '#BE185D',
+		fond: '#FDF2F8',
+		icone: 'book-open',
+		abrege: 'RÈGL.',
+	}, // 330° rose — ajouté le 11/10/2026, entre le fuchsia et le rouge
 });
 
 export const TYPE_LABELS: Record<string, string> = L;

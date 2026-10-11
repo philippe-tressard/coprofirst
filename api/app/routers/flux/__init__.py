@@ -26,6 +26,7 @@ treizième section à intercaler au milieu de 780 lignes.
 | `prestataires` | nouvelles fiches — page réservée au CS/admin |
 | `communaute` | sondages, petites annonces, boîte à idées |
 | `ressources` | questions fréquentes, documents partagés, diagnostics |
+| `reglement` | questions au règlement — leur auteur, le conseil, l'administration |
 | `annuaire` | nouveaux membres du conseil syndical et du syndic |
 | `sante` | indicateurs et agenda « Prochaines échéances » (aucune ligne de fil) |
 | `epingles` | endpoint `/flux/epingles`, décompte du bandeau « Épinglé » |
@@ -82,6 +83,7 @@ from . import (
     epingles,
     prestataires,
     publications,
+    reglement,
     ressources,
     sante,
     tickets,
@@ -102,6 +104,7 @@ _COLLECTEURS = (
     prestataires.collecter,
     communaute.collecter,
     ressources.collecter,
+    reglement.collecter,
     annuaire.collecter,
 )
 

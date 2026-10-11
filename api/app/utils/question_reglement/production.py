@@ -37,6 +37,7 @@ from app.utils.question_reglement.format import (
     construire_message,
     lire_reponse,
 )
+from app.utils.question_reglement.provenance import lire_provenance
 from app.utils.question_reglement.texte import assembler, enregistrer_version
 
 
@@ -103,6 +104,7 @@ async def repondre(session: Session, question: str, auteur_id: Optional[int]) ->
         texte_id=version.id,
         auteur_id=auteur_id,
         modele=cfg.modele,
+        provenance=lire_provenance(session),
         jetons_entree=rep.jetons_entree,
         jetons_sortie=rep.jetons_sortie,
         cout_usd=cout_appel(

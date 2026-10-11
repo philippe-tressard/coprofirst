@@ -34,6 +34,7 @@ from sqlmodel import Session
 
 from app.models.core import ConfigSite
 from app.seed.consignes_arrivant import GABARIT
+from app.utils.config_site import ecrire_cle
 
 #: La clé de `ConfigSite` qui porte les consignes de CETTE résidence.
 CLE = "consignes_arrivant"
@@ -75,12 +76,7 @@ def lire_consignes(session: Session) -> Consignes:
 def enregistrer_consignes(session: Session, consignes: list[Consigne]) -> Consignes:
     """Écrit les consignes de la résidence (le schéma a déjà borné leur forme)."""
     valeur = json.dumps([c.model_dump() for c in consignes], ensure_ascii=False)
-    ligne = session.get(ConfigSite, CLE)
-    if ligne:
-        ligne.valeur = valeur
-    else:
-        ligne = ConfigSite(cle=CLE, valeur=valeur)
-    session.add(ligne)
+    ecrire_cle(session, CLE, valeur)
     session.commit()
     return Consignes(consignes=consignes, personnalisees=True)
 

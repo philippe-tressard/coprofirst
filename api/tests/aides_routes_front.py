@@ -151,6 +151,12 @@ def _page_du_lien(lien: str) -> pathlib.Path | None:
 _MOTIF_IMPORT_COMPOSANT = re.compile(
     r"import\s+(\w+)\s+from\s+['\"](\$lib/components/|\./)([\w./-]+\.svelte)['\"]"
 )
+#: Un composant chargé AU GESTE : `ChargementDiffere charger={() =>
+#: import('$lib/components/OngletReglement.svelte')}`, rendu ensuite par
+#: `<OngletReglement />` dans son `{#snippet}`. Le nom est celui du fichier.
+_MOTIF_IMPORT_DIFFERE = re.compile(
+    r"import\(\s*['\"](\$lib/components/|\./)((\w+)\.svelte)['\"]\s*\)"
+)
 
 
 def contenu_deplie(fichier: pathlib.Path, _profondeur: int = 4) -> str:
@@ -190,12 +196,23 @@ def contenu_deplie(fichier: pathlib.Path, _profondeur: int = 4) -> str:
     if _profondeur <= 0:
         return contenu
 
-    for nom, base, cible in _MOTIF_IMPORT_COMPOSANT.findall(contenu):
+    #  ⚠️ Les imports DIFFÉRÉS aussi (11/10/2026) : l'onglet Règlement de Ma
+    #  résidence est chargé au geste, et son ancre `question-reglement-…` restait
+    #  invisible — le contrôle l'aurait déclarée orpheline, l'écran la rend.
+    imports = [
+        (nom, base, cible, "</script>")
+        for nom, base, cible in _MOTIF_IMPORT_COMPOSANT.findall(contenu)
+    ]
+    imports += [
+        (nom, base, cible, f"import('{base}{cible}')")
+        for base, cible, nom in _MOTIF_IMPORT_DIFFERE.findall(contenu)
+    ]
+    for nom, base, cible, apres in imports:
         dossier = fichier.parent if base == "./" else _FRONT_SRC / "lib" / "components"
         chemin = dossier / cible
         if not chemin.is_file():
             continue
-        position = contenu.find(f"<{nom}", contenu.find("</script>"))
+        position = contenu.find(f"<{nom}", max(contenu.find(apres), 0))
         if position == -1:
             continue  # importé mais pas utilisé dans le balisage
         interne = contenu_deplie(chemin, _profondeur - 1)

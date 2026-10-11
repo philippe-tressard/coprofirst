@@ -174,7 +174,9 @@ def test_les_ancres_des_liens_sont_produites_par_la_page_visee():
         if "#" not in lien:
             continue
         ancre = lien.split("#", 1)[1]
-        prefixe = ancre.split("-")[0]
+        #  Le préfixe est tout ce qui précède l'identifiant : `question-reglement-3`
+        #  porte un tiret dans son préfixe (11/10/2026).
+        prefixe = ancre.rsplit("-", 1)[0]
         page = _page_du_lien(lien)
         if page is None:
             continue  # déjà couvert par le test précédent

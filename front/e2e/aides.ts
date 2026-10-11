@@ -190,6 +190,7 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 		texte_disponible: false,
 		lien_reglement: null,
 		categorie_id: null,
+		provenance: null,
 	},
 };
 

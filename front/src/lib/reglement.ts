@@ -2,8 +2,7 @@
  * Les questions au règlement de copropriété — ce qui se déclare hors de l'écran.
  *
  * Le LIBELLÉ d'un verdict vient du serveur (`verdict_libelle`, une seule liste :
- * `utils/question_reglement/format.VERDICTS`) ; sa teinte, de la carte
- * (`CarteQuestionReglement`).
+ * `utils/question_reglement/format.VERDICTS`) ; sa teinte, de `BadgeVerdict`.
  */
 import { ACCEPT_DOCUMENTS, LIBELLE_TYPES } from '$lib/fichiers';
 

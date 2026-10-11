@@ -167,6 +167,10 @@ EMPLACEMENTS: dict[str, str] = {
     "contrat": "/prestataires/contrats",
     "diag": "/residence",
     "doc": "/residence",
+    #  Une question au règlement : l'onglet Règlement de Ma résidence la déplie
+    #  (`OngletReglement`, `cibleDuHash`). Le fil y mène (11/10/2026), et les
+    #  fichiers que l'assistant lit y sont joints — sans ancre, `page_element`.
+    "question-reglement": "/residence/reglement",
 }
 
 

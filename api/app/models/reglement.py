@@ -74,6 +74,9 @@ class QuestionReglement(SQLModel, table=True):
     auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     #: Le modèle qui a répondu — une réponse vieillit avec lui.
     modele: Optional[str] = None
+    #: La provenance du texte au moment de la question (« la numérisation du
+    #: RCP… ») — `utils/question_reglement/provenance`.
+    provenance: Optional[str] = None
     jetons_entree: Optional[int] = None
     jetons_sortie: Optional[int] = None
     #: En dollars, texte décimal — `None` sans tarif saisi (`llm_journal.cout_appel`).
