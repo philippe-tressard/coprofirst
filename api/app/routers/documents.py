@@ -24,7 +24,7 @@ from app.routers.documents_schemas import DocumentRead
 from app.utils.annexes import (
     PORTEURS,
     porteurs_demandes,
-    remplacer_fichier,
+    retirer_fichier_principal,
     supprimer_annexes,
     verifier_porteur,
 )
@@ -294,26 +294,22 @@ def update_document(
     return doc
 
 
-@router.post("/{doc_id}/fichier", response_model=DocumentRead)
-def remplacer_fichier_document(
+@router.delete("/{doc_id}/fichier", response_model=DocumentRead)
+def retirer_fichier_document(
     doc_id: int,
-    file: UploadFile = File(...),
     session: Session = Depends(get_session),
-    user: Utilisateur = Depends(require_cs_or_admin),
+    _: Utilisateur = Depends(require_cs_or_admin),
 ):
-    """Remplace le fichier PRINCIPAL d'une fiche de Ma résidence (`utils/annexes`).
+    """Retire le fichier PRINCIPAL d'une fiche de Ma résidence : sa première annexe
+    prend sa place (`utils/annexes`).
 
-    Seul un document de la bibliothèque — une catégorie — se remplace ainsi : une
-    pièce jointe d'affaire, de contrat ou une annexe se retire et se redépose.
+    Seul un document de la bibliothèque — une catégorie — porte un fichier
+    principal : une pièce jointe d'affaire, de contrat ou une annexe se supprime.
     """
     doc = ou_404(session, Document, doc_id, "Document")
     if not doc.categorie_id:
-        raise HTTPException(400, "Seul le fichier d'un document de Ma résidence se remplace")
-    ancien = remplacer_fichier(doc, file, user)
-    session.add(doc)
-    session.commit()
-    session.refresh(doc)
-    stockage().supprimer_chemin(ancien)
+        raise HTTPException(400, "Seul le fichier d'un document de Ma résidence se retire ainsi")
+    retirer_fichier_principal(session, doc, "document")
     return doc
 
 

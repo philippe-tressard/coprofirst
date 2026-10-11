@@ -48,8 +48,28 @@
 
   ⚠️ La seule différence qui subsiste est celle que l'utilisateur a admise : le
   **libellé** du champ de nommage. Elle est portée par `FichiersUpload`, pas ici.
+
+  ## La première pastille d'une fiche (11/10/2026)
+
+  Une fiche de Ma résidence EST un fichier, et porte des annexes. L'édition les
+  montrait en deux blocs — le fichier (1/1), puis « Annexes — jusqu'à dix ».
+  Demandé : *« ne réinvente pas cet objet, il doit être standard »* — une seule
+  liste, ce composant, dix fichiers en tout. Le fichier de la fiche y entre par
+  `principal` : première pastille, même rendu, et sa croix le RETIRE — la pièce
+  suivante prend sa place côté serveur (`utils/annexes`).
 -->
+<script lang="ts" context="module">
+	/**  Le fichier qui EST l'objet, en tête de liste. `retirer` confirme, agit et
+	 *   recharge : il ne rend la main qu'une fois la liste à jour. */
+	export interface PiecePrincipale {
+		url: string;
+		nom: string;
+		retirer: () => Promise<unknown>;
+	}
+</script>
+
 <script lang="ts">
+	import { tick } from 'svelte';
 	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
 	import { documents as docsApi, type CibleDocument, type Document } from '$lib/api';
 
@@ -87,6 +107,9 @@
 	 *   attache après création, par `attacherApres(cible, …)` — la même fonction
 	 *   que les actualités, et non une seconde boucle d'envoi. */
 	export let fichiersEnAttente: File[] = [];
+	/**  Le fichier de l'objet lui-même — absent partout, sauf sur une fiche de Ma
+	 *   résidence qui en porte un. Il compte dans le plafond de la liste. */
+	export let principal: PiecePrincipale | null = null;
 
 	//  Deux régimes, un seul rendu. `FichiersUpload` porte déjà la bascule
 	//  (`differe`) : la choisir ici plutôt que dupliquer le composant, c'est ce
@@ -102,10 +125,14 @@
 	//  Les pièces sont rendues par leur URL de téléchargement, et `noms` dit
 	//  comment les afficher : l'URL `/documents/12/télécharger` ne porte ni le
 	//  nom ni l'extension, donc ni le type de la pastille.
-	$: urls = (documents ?? []).map((d) => docsApi.downloadUrl(d.id));
-	$: noms = Object.fromEntries(
-		(documents ?? []).map((d) => [docsApi.downloadUrl(d.id), d.titre || d.fichier_nom]),
-	);
+	$: urls = [
+		...(principal ? [principal.url] : []),
+		...(documents ?? []).map((d) => docsApi.downloadUrl(d.id)),
+	];
+	$: noms = Object.fromEntries([
+		...(principal ? [[principal.url, principal.nom]] : []),
+		...(documents ?? []).map((d) => [docsApi.downloadUrl(d.id), d.titre || d.fichier_nom]),
+	]);
 
 	/**  L'envoi part dès que le fichier est choisi — l'objet existe déjà.
 	 *
@@ -121,6 +148,12 @@
 	/**  Retirer une pastille supprime le document. L'écran tient la table : il
 	 *   rend la nouvelle liste, et `FichiersUpload` s'y aligne. */
 	async function retirer(url: string): Promise<string[]> {
+		if (principal && url === principal.url) {
+			//  Rend la liste RECHARGÉE — refusée ou annulée, la pastille reste.
+			await principal.retirer();
+			await tick();
+			return urls;
+		}
 		const doc = (documents ?? []).find((d) => docsApi.downloadUrl(d.id) === url);
 		if (doc) onSupprimer(objetId!, doc.id);
 		return urls.filter((u) => u !== url);

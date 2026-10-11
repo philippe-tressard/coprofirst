@@ -184,10 +184,10 @@ export const documents = {
 		}
 		return parFiche;
 	},
-	/**  Remplacer le fichier PRINCIPAL d'un document de Ma résidence — il ne se
-	 *   retire pas : une fiche sans fichier n'existe pas. */
-	remplacerFichier: (id: number, file: File) =>
-		postFormData<Document>(`/documents/${id}/fichier`, { file }),
+	/**  Retirer le fichier PRINCIPAL d'un document de Ma résidence : sa première
+	 *   annexe prend sa place. Refusé s'il est seul — une fiche sans fichier
+	 *   n'existe pas (`utils/annexes.retirer_fichier_principal`). */
+	retirerFichier: (id: number) => api.delete<Document>(`/documents/${id}/fichier`),
 	downloadUrl: (docId: number) => `${BASE}/documents/${docId}/télécharger`,
 	delete: (id: number) => api.delete(`/documents/${id}`),
 };

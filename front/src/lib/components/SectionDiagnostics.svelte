@@ -149,10 +149,10 @@
 			principal: {
 				url: diagnosticsApi.downloadUrl(r.id),
 				nom: r.fichier_nom,
-				remplacer: async (file) => {
-					const remplace = await diagnosticsApi.remplacerFichier(r.id, file);
-					remplacerDans(remplace);
-					return { url: diagnosticsApi.downloadUrl(remplace.id), nom: remplace.fichier_nom };
+				retirer: async () => {
+					const suivant = await diagnosticsApi.retirerFichier(r.id);
+					remplacerDans(suivant);
+					return { url: diagnosticsApi.downloadUrl(suivant.id), nom: suivant.fichier_nom };
 				},
 			},
 			onChange: (liste) => (annexes = new Map(annexes).set(r.id, liste)),

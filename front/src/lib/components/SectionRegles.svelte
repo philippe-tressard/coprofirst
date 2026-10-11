@@ -35,7 +35,7 @@
 
   ## Les pièces jointes d'une règle (11/10/2026, migration 0278)
 
-  Une règle n'avait aucun fichier ; elle porte désormais jusqu'à dix annexes —
+  Une règle n'avait aucun fichier ; elle porte désormais jusqu'à dix pièces jointes —
   le nuancier d'une couleur, la photo d'une haie. La section « Pièces jointes »
   est dans le formulaire dès la CRÉATION (arbitré : sinon il faudrait créer la
   règle puis la rouvrir) ; les fichiers choisis attendent alors l'enregistrement

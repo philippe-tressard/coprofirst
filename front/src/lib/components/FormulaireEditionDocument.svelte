@@ -26,8 +26,8 @@
   ## Ce qu'il rend, et dans l'ordre du cadre
 
   1. **Titre** · 2. **Année et date d'AG**, pour les CR d'AG seulement ·
-  4. **Périmètre** · 6. **Description** · 8. **Pièces jointes** — le fichier, qui
-  se remplace, et les annexes (11/10/2026 ; il n'y avait jusque-là rien à cette
+  4. **Périmètre** · 6. **Description** · 8. **Pièces jointes** — une seule liste,
+  le fichier en tête puis les autres, dix en tout (11/10/2026 ; il n'y avait jusque-là rien à cette
   place : un document déposé ne changeait plus de fichier).
 
   Les numéros sautent : ce sont ceux du cadre (`ux-patterns` §0), et un document
@@ -97,7 +97,7 @@
 	/** Le document en cours de correction — lié par `bind:correction`. */
 	export let correction: CorrectionDocument;
 	export let enregistrement = false;
-	/** Section 8 — le fichier du document et ses annexes (11/10/2026). */
+	/** Section 8 — le fichier du document et les autres pièces, en une liste. */
 	export let piecesJointes: PiecesFiche | null = null;
 </script>
 
