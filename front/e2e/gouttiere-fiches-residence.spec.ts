@@ -43,10 +43,11 @@ function document(id: number, categorie: number, titre: string, champs: object =
 	};
 }
 
+//  Par CODE de catégorie : l'écran demande ses rubriques ainsi (#1841).
 const PAR_CATEGORIE: Record<string, object[]> = {
-	'11': [document(1, 11, 'Plan de masse')],
-	'12': [document(2, 12, 'Règlement de 1998', { date_document: '1998-03-12' })],
-	'13': [document(3, 13, 'PV AG 2025', { annee: 2025, date_ag: '2025-06-12' })],
+	plan_residence: [document(1, 11, 'Plan de masse')],
+	reglement_copropriete: [document(2, 12, 'Règlement de 1998', { date_document: '1998-03-12' })],
+	pv_ag: [document(3, 13, 'PV AG 2025', { annee: 2025, date_ag: '2025-06-12' })],
 };
 
 const DIAGNOSTICS = [
@@ -90,7 +91,7 @@ async function residence(page: Page): Promise<Request[]> {
 				depots.push(requete);
 				return route.fulfill({ json: document(900, 12, 'Déposé') });
 			}
-			const categorie = new URL(requete.url()).searchParams.get('categorie_id') ?? '';
+			const categorie = new URL(requete.url()).searchParams.get('categorie') ?? '';
 			return route.fulfill({ json: PAR_CATEGORIE[categorie] ?? [] });
 		},
 	);

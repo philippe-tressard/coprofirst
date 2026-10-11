@@ -160,26 +160,23 @@ def list_categories(
         .where(CategorieDocument.actif == True)  # noqa: E712
         .order_by(CategorieDocument.libelle)
     ).all()
+
     # CS et admin voient toutes les catégories — sauf, pour le CS, celles que
-    # l'administration seule lit (`CATEGORIES_ADMIN_SEUL`).
-    if est_moderateur(user):
-        return [
-            {"id": c.id, "code": c.code, "libelle": c.libelle}
-            for c in cats
-            if peut_ecrire_dans(user, c)
-        ]
-    #  Pour les autres : les catégories dont le profil admet le lecteur — la règle
-    #  de `document_visible`, appelée et non recopiée (#1551).
-    return [
-        {"id": c.id, "code": c.code, "libelle": c.libelle}
-        for c in cats
-        if profil_admet(user, session.get(ProfilAccesDocument, c.profil_acces_id))
-    ]
+    # l'administration seule lit (`CATEGORIES_ADMIN_SEUL`). Les autres : celles dont
+    # le profil admet le lecteur — la règle de `document_visible`, appelée (#1551).
+    def lisible(c: CategorieDocument) -> bool:
+        if est_moderateur(user):
+            return peut_ecrire_dans(user, c)
+        return profil_admet(user, session.get(ProfilAccesDocument, c.profil_acces_id))
+
+    return [{"id": c.id, "code": c.code, "libelle": c.libelle} for c in cats if lisible(c)]
 
 
 @router.get("", response_model=list[DocumentRead])
 def list_documents(
     categorie_id: int | None = None,
+    #  …ou par son CODE : Ma résidence n'attend plus les catégories (#1841).
+    categorie: str | None = None,
     contrat_id: int | None = None,
     ticket_id: int | None = None,
     evenement_id: int | None = None,
@@ -210,6 +207,9 @@ def list_documents(
         stmt = stmt.where(*(getattr(Document, c).is_(None) for c in PORTEURS.values()))
     if categorie_id:
         stmt = stmt.where(Document.categorie_id == categorie_id)
+    if categorie:
+        stmt = stmt.join(CategorieDocument, CategorieDocument.id == Document.categorie_id)
+        stmt = stmt.where(CategorieDocument.code == categorie)
     if contrat_id:
         stmt = stmt.where(Document.contrat_id == contrat_id)
     if ticket_id:

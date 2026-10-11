@@ -58,7 +58,7 @@ async function editerLePlan(page: Page): Promise<string[]> {
 		(route) => {
 			const parametres = new URL(route.request().url()).searchParams;
 			const corps =
-				parametres.get('categorie_id') === '11'
+				parametres.get('categorie') === 'plan_residence'
 					? [PLAN]
 					: parametres.has('annexes_de') || parametres.get('document_parent_id') === '1'
 						? [ANNEXE]
