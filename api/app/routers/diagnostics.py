@@ -216,7 +216,7 @@ def delete_rapport(
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
     rapport = ou_404(session, DiagnosticRapport, rapport_id, "Rapport")
-    #  Le rapport emporte ses annexes (migration 0276, `utils/annexes`).
+    #  Le rapport emporte ses annexes (migration 0278, `utils/annexes`).
     supprimer_annexes(session, "diagnostic", rapport_id)
     # Supprime le fichier physique
     stockage().supprimer_chemin(rapport.fichier_chemin)

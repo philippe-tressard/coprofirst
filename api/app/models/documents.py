@@ -71,7 +71,7 @@ class Document(SQLModel, table=True):
     #  tables d'évolution en ont chacune un —, jamais à l'évolution elle-même.
     ticket_id: Optional[int] = Field(default=None, foreign_key="ticket.id")
     evenement_id: Optional[int] = Field(default=None, foreign_key="evenement.id")
-    #  Les ANNEXES d'une fiche de « Ma résidence » (migration 0276) : un plan, un
+    #  Les ANNEXES d'une fiche de « Ma résidence » (migration 0278) : un plan, un
     #  règlement ou un CR d'AG (`document_parent_id`), un rapport de diagnostic,
     #  une règle. Une annexe n'a pas de catégorie : elle se lit comme sa fiche
     #  (`utils/visibility/documents`), et ses gestes vivent dans `utils/annexes`.

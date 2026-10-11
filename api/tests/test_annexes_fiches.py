@@ -1,4 +1,4 @@
-"""Les annexes des fiches de « Ma résidence » (migration 0276, `utils/annexes`).
+"""Les annexes des fiches de « Ma résidence » (migration 0278, `utils/annexes`).
 
 Ce que ces tests tiennent — chaque point est une règle de `utils/annexes` :
 

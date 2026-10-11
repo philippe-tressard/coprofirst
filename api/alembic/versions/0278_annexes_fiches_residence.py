@@ -15,16 +15,16 @@ interrompue la rejoue — une colonne déjà présente est laissée telle quelle
 
 ⚠️ Le nom de table et de colonnes sont des CONSTANTES du fichier.
 
-Revision ID: 0276
-Revises: 0275
+Revision ID: 0278
+Revises: 0277
 """
 
 import sqlalchemy as sa
 
 from alembic import op
 
-revision = "0276"
-down_revision = "0275"
+revision = "0278"
+down_revision = "0277"
 branch_labels = None
 depends_on = None
 
