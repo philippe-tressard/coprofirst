@@ -31,6 +31,31 @@
 	const INTERVALLE_MS = 30 * 60 * 1000;
 	const DELAI_BANDEAU_MS = 15 * 60 * 1000;
 
+	// ⏱ L'enregistrement attend que l'écran ait ses données (#1839). Il précache
+	// tout le build — environ 776 Ko, 333 fichiers — et partait à l'hydratation :
+	// à la première visite et après chaque MEP, ces requêtes disputaient le lien
+	// aux données de l'écran et aux morceaux chargés au geste. Le précache ne
+	// change pas (le hors-ligne non plus) ; il part après la page chargée, ce
+	// délai, puis un moment d'inactivité du navigateur.
+	const DELAI_ENREGISTREMENT_MS = 3000;
+	const INACTIVITE_MAX_MS = 5000;
+
+	function apresOuverture(action: () => void): () => void {
+		let minuteur: ReturnType<typeof setTimeout> | undefined;
+		const attendreInactivite = () => {
+			if ('requestIdleCallback' in window)
+				requestIdleCallback(action, { timeout: INACTIVITE_MAX_MS });
+			else action();
+		};
+		const differer = () => (minuteur = setTimeout(attendreInactivite, DELAI_ENREGISTREMENT_MS));
+		if (document.readyState === 'complete') differer();
+		else window.addEventListener('load', differer, { once: true });
+		return () => {
+			clearTimeout(minuteur);
+			window.removeEventListener('load', differer);
+		};
+	}
+
 	// Garde-fou anti-boucle : si une nouvelle version ne parvenait pas à prendre la
 	// main, on rechargerait sans fin. Au-delà de ce nombre d'applications
 	// automatiques dans le même onglet, on repasse en mode « bandeau », qui laisse
@@ -150,57 +175,60 @@
 
 		// Import dynamique : le module virtuel n'existe qu'au build (stub inerte en
 		// `vite dev`), et rien ne doit s'exécuter côté serveur au rendu SSR.
-		import('virtual:pwa-register').then(({ registerSW }) => {
-			if (annule) return;
+		const renoncer = apresOuverture(() =>
+			import('virtual:pwa-register').then(({ registerSW }) => {
+				if (annule) return;
 
-			appliquer = registerSW({
-				immediate: true,
-				onNeedRefresh() {
-					majPrete = true;
-					// Cas 1 : onglet en arrière-plan, rien à interrompre.
-					if (document.visibilityState === 'hidden') {
-						appliquerAutomatiquement();
-						return;
-					}
-					// Cas 3 : l'utilisateur est devant cet écran — on attend qu'il en
-					// change ou qu'il s'en aille ; passé ce délai, on propose.
-					minuteurBandeau = setTimeout(() => {
-						if (majPrete) disponible = true;
-					}, DELAI_BANDEAU_MS);
-				},
-				// Un enregistrement qui échoue supprime le cache hors ligne ET les mises
-				// à jour, sans rien afficher : le 26/07/2026 l'URL relative du service
-				// worker renvoyait 404 sur toute route imbriquée, en silence complet.
-				onRegisterError(erreur) {
-					console.error('[PWA] enregistrement du service worker échoué', erreur);
-				},
-				onRegisteredSW(_url, registration) {
-					if (!registration) return;
+				appliquer = registerSW({
+					immediate: true,
+					onNeedRefresh() {
+						majPrete = true;
+						// Cas 1 : onglet en arrière-plan, rien à interrompre.
+						if (document.visibilityState === 'hidden') {
+							appliquerAutomatiquement();
+							return;
+						}
+						// Cas 3 : l'utilisateur est devant cet écran — on attend qu'il en
+						// change ou qu'il s'en aille ; passé ce délai, on propose.
+						minuteurBandeau = setTimeout(() => {
+							if (majPrete) disponible = true;
+						}, DELAI_BANDEAU_MS);
+					},
+					// Un enregistrement qui échoue supprime le cache hors ligne ET les mises
+					// à jour, sans rien afficher : le 26/07/2026 l'URL relative du service
+					// worker renvoyait 404 sur toute route imbriquée, en silence complet.
+					onRegisterError(erreur) {
+						console.error('[PWA] enregistrement du service worker échoué', erreur);
+					},
+					onRegisteredSW(_url, registration) {
+						if (!registration) return;
 
-					const verifier = () => {
-						// Hors ligne, `update()` échoue sans rien apprendre
-						if (navigator.onLine) void registration.update();
-					};
-					const minuteur = setInterval(verifier, INTERVALLE_MS);
+						const verifier = () => {
+							// Hors ligne, `update()` échoue sans rien apprendre
+							if (navigator.onLine) void registration.update();
+						};
+						const minuteur = setInterval(verifier, INTERVALLE_MS);
 
-					// L'onglet passe en arrière-plan : moment idéal pour appliquer une
-					// version déjà prête. Il en revient : on en profite pour vérifier —
-					// c'est le cas d'une page ouverte toute la nuit.
-					const surVisibilite = () => {
-						if (document.visibilityState === 'hidden') appliquerAutomatiquement();
-						else verifier();
-					};
-					document.addEventListener('visibilitychange', surVisibilite);
+						// L'onglet passe en arrière-plan : moment idéal pour appliquer une
+						// version déjà prête. Il en revient : on en profite pour vérifier —
+						// c'est le cas d'une page ouverte toute la nuit.
+						const surVisibilite = () => {
+							if (document.visibilityState === 'hidden') appliquerAutomatiquement();
+							else verifier();
+						};
+						document.addEventListener('visibilitychange', surVisibilite);
 
-					arreter = () => {
-						clearInterval(minuteur);
-						document.removeEventListener('visibilitychange', surVisibilite);
-					};
-				},
-			});
-		});
+						arreter = () => {
+							clearInterval(minuteur);
+							document.removeEventListener('visibilitychange', surVisibilite);
+						};
+					},
+				});
+			}),
+		);
 
 		return () => {
+			renoncer();
 			window.removeEventListener('vite:preloadError', surImportEchoue);
 			document.removeEventListener('visibilitychange', surPerimeeCachee);
 			annule = true;
