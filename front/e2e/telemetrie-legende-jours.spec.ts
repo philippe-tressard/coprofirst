@@ -49,6 +49,9 @@ async function ouvrir(page: Page, jourPointe: string) {
 	});
 	await page.goto('/admin?onglet=telemetry');
 	await attendreHydratation(page);
+	//  L'onglet se charge au geste depuis la v2.133.1 : l'hydratation ne dit pas que
+	//  le graphe est rendu, et une lecture immédiate (`allTextContents`) le voyait vide.
+	await expect(page.locator('.tl-bar-label')).toHaveCount(JOURS.length);
 }
 
 test('le 🏆 est sur le bâton du jour le plus actif, la ligne qui le disait a disparu', async ({
