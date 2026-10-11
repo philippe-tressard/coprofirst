@@ -461,13 +461,15 @@ def delete_annonce_hall(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_admin),
 ):
-    """Suppression définitive : la ligne, le PDF et l'illustration partent."""
+    """Suppression définitive : la ligne et son PDF partent — ses images restent.
+
+    🔴 Les images d'une affiche ne lui appartiennent pas (#1828) : reprise d'une
+    affaire, elle porte les photos de l'affaire (`images_de`) ; reprise d'une autre
+    affiche, les mêmes adresses. Les effacer laissait l'affaire avec des photos
+    disparues. Comme partout ailleurs, supprimer un objet ne supprime pas les
+    photos qu'il référence. 🔒 `test_annonce_hall_suppression.py`.
+    """
     annonce = ou_404(session, AnnonceHall, annonce_id, "Annonce")
     _supprimer_fichier(annonce.pdf_chemin)
-    st = stockage()
-    for url in json.loads(annonce.images_json or "[]"):
-        #  L'adresse se traduisait ici en `"/app" + url` : une racine écrite en dur.
-        if (cle := cle_de_url(url)) is not None:
-            st.supprimer(cle)
     session.delete(annonce)
     session.commit()

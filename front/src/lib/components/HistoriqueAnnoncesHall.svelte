@@ -117,8 +117,9 @@
 	}
 
 	async function ahSupprimer(annonce: AnnonceHall) {
-		//  ⚠️ Le message dit ce qui part VRAIMENT — le PDF et les illustrations
-		//  sont effacés du disque par le serveur, pas seulement la ligne. Et il
+		//  ⚠️ Le message dit ce qui part VRAIMENT — le PDF est effacé du disque par
+		//  le serveur, pas seulement la ligne ; les photos restent, car elles sont
+		//  souvent celles de l'affaire reprise (#1828). Et il
 		//  rappelle l'envoi : une annonce déjà partie par courriel reste dans les
 		//  boîtes des destinataires, que la supprimer ici ne rattrape pas.
 		const envoyee = annonce.destinataires.length > 0;
@@ -128,7 +129,7 @@
 		if (
 			!(await confirmer({
 				titre: `Supprimer « ${annonce.titre} » ?`,
-				message: `Le PDF et les illustrations seront effacés.${avertissement}`,
+				message: `Son PDF sera effacé ; les photos qu'elle reprend restent.${avertissement}`,
 				libelleConfirmer: 'Supprimer',
 				danger: true,
 			}))
