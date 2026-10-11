@@ -2,8 +2,8 @@
 
 ## Ce qui part chez le fournisseur
 
-La consigne de l'usage, le texte du règlement EN VIGUEUR et la question — rien
-d'autre : ni le nom de qui la pose, ni celui du résident pour qui elle l'est.
+La consigne de l'usage, le texte du règlement (ses fichiers Markdown joints, bout
+à bout) et la question — rien d'autre : ni le nom de qui la pose, ni celui du résident pour qui elle l'est.
 La politique de confidentialité le dit (`seed/contenus_legaux.QUESTION_REGLEMENT`).
 
 ## L'ordre des écritures
@@ -37,7 +37,7 @@ from app.utils.question_reglement.format import (
     construire_message,
     lire_reponse,
 )
-from app.utils.question_reglement.texte import texte_en_vigueur
+from app.utils.question_reglement.texte import assembler, enregistrer_version
 
 
 def disponible(session: Session) -> bool:
@@ -74,9 +74,9 @@ async def repondre(session: Session, question: str, auteur_id: Optional[int]) ->
         raise HTTPException(
             400, f"La question dépasse {MAX_CARACTERES_QUESTION} caractères : resserrez-la."
         )
-    texte = texte_en_vigueur(session)
+    texte = assembler(session)
     if texte is None:
-        raise HTTPException(400, "Aucun texte du règlement n'est chargé.")
+        raise HTTPException(400, "Aucun fichier Markdown du règlement n'est joint.")
     cfg = config_llm(session, USAGE_QUESTION_REGLEMENT)
     try:
         rep = await demander(
@@ -93,13 +93,14 @@ async def repondre(session: Session, question: str, auteur_id: Optional[int]) ->
         raise HTTPException(400, f"Réponse de l'assistant illisible : {exc}")
 
     extraits = verifier(texte.contenu, lu["extraits"])
+    version = enregistrer_version(session, texte)
     ligne = QuestionReglement(
         question=question,
         verdict=lu["verdict"],
         reponse=lu["reponse"],
         reserves=lu["reserves"] or None,
         extraits_json=json.dumps(en_json(extraits), ensure_ascii=False),
-        texte_id=texte.id,
+        texte_id=version.id,
         auteur_id=auteur_id,
         modele=cfg.modele,
         jetons_entree=rep.jetons_entree,

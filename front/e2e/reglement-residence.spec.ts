@@ -5,10 +5,11 @@
  *
  *  • un copropriétaire voit l'onglet quand l'administration le lui a ouvert, et
  *    seulement alors — fermé, l'onglet disparaît et son adresse ramène à la Fiche ;
- *  • il y lit le titre du texte et les liens vers les ACTES, sans la fiche
- *    technique du texte, sans chargement ni choix d'actes, et ses questions sans
- *    l'icône de publication en FAQ ;
- *  • le conseil syndical, lui, publie ;
+ *  • il y lit une phrase et le lien vers le règlement publié, jamais les fichiers
+ *    que l'assistant lit, et ses questions sans l'icône de publication en FAQ ;
+ *  • l'administration, seule, voit ces fichiers dans l'objet Pièces jointes
+ *    standard (11/10/2026) ;
+ *  • le conseil syndical publie, et ne voit pas les fichiers non plus ;
  *  • l'ancienne adresse de l'Espace CS mène ici, ancre comprise.
  *
  *  Le serveur refuse de son côté (`api/tests/test_question_reglement.py`) : ces
@@ -27,23 +28,38 @@ const COPROPRIETAIRE = {
 	roles: ['propriétaire'],
 };
 
-const ACTE = { id: 27, titre: 'Règlement numérisé', lien: '/residence#doc-27' };
+const ADMIN = { ...MEMBRE_CS, id: 2, role: 'admin', roles: ['admin'] };
+const LIEN = '/residence#doc-27';
 
-/** `EtatReglement` tel que le serveur le rend à un copropriétaire. */
-const ETAT_COPROPRIETAIRE = {
+/** `EtatReglement` tel que le serveur le rend à qui n'est pas l'administration. */
+const ETAT_LECTEUR = {
 	disponible: true,
-	texte: {
-		id: 1,
-		titre: 'Règlement fictif de la résidence',
-		nom_fichier: null,
-		nb_caracteres: null,
-		charge_par: null,
-		cree_le: '2026-10-01T10:00:00',
-	},
-	nb_versions: 1,
-	documents: [ACTE],
-	documents_candidats: null,
-	documents_ids: null,
+	texte_disponible: true,
+	lien_reglement: LIEN,
+	categorie_id: null,
+};
+/** …et à l'administration : la catégorie où joindre les fichiers, pas de lien. */
+const ETAT_ADMIN = { ...ETAT_LECTEUR, lien_reglement: null, categorie_id: 40 };
+
+/** Un fichier du règlement joint (`Document`, catégorie réservée à l'admin). */
+const FICHIER = {
+	id: 91,
+	titre: 'RCP consolidé',
+	description: '',
+	fichier_nom: 'rcp.md',
+	taille_octets: 203008,
+	mime_type: 'text/markdown',
+	categorie_id: 40,
+	contrat_id: null,
+	ticket_id: null,
+	evenement_id: null,
+	document_parent_id: null,
+	diagnostic_rapport_id: null,
+	regle_residence_id: null,
+	perimetre: 'résidence',
+	batiment_id: null,
+	publie_le: '2026-10-11T10:00:00',
+	annee: null,
 };
 
 /** `QuestionReglement` — sans modèle ni coût, comme pour un copropriétaire. */
@@ -72,7 +88,8 @@ async function ouvrir(
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return compte;
 		if (chemin === '/api/reglement/acces') return { acces };
-		if (chemin === '/api/reglement') return ETAT_COPROPRIETAIRE;
+		if (chemin === '/api/reglement') return compte === ADMIN ? ETAT_ADMIN : ETAT_LECTEUR;
+		if (chemin === '/api/documents') return [FICHIER];
 		if (chemin === '/api/reglement/questions') return [QUESTION];
 	});
 	await page.goto(adresse);
@@ -81,20 +98,32 @@ async function ouvrir(
 
 const ongletReglement = (page: Page) => page.locator('.tabs').getByText('Règlement');
 
-test('ouvert, le copropriétaire lit le texte, les actes et ses questions — sans geste du conseil', async ({
+test('ouvert, le copropriétaire lit le lien et ses questions — ni fichier ni geste du conseil', async ({
 	page,
 }) => {
 	await ouvrir(page, { compte: COPROPRIETAIRE, acces: true, adresse: '/residence/reglement' });
 	await expect(ongletReglement(page)).toBeVisible();
-	await expect(page.getByText('Règlement fictif de la résidence')).toBeVisible();
-	await expect(page.getByRole('link', { name: ACTE.titre })).toHaveAttribute('href', ACTE.lien);
-	await expect(page.getByText(/interrogez le conseil syndical/)).toBeVisible();
+	await expect(
+		page.getByRole('link', { name: 'consulter le règlement de copropriété' }),
+	).toHaveAttribute('href', LIEN);
+	await expect(page.getByText(/interrogez un juriste ou le syndic/)).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Vos questions' })).toBeVisible();
 	await expect(page.getByText(QUESTION.question)).toBeVisible();
 	//  Ce que le serveur lui refuserait, l'écran ne le propose pas.
 	await expect(page.getByRole('button', { name: 'Publier dans la FAQ' })).toHaveCount(0);
-	await expect(page.getByText('Actes montrés à côté du texte')).toHaveCount(0);
-	await expect(page.getByText(/Charger le texte|Charger une nouvelle version/)).toHaveCount(0);
+	await expect(page.getByText(FICHIER.titre)).toHaveCount(0);
+	await expect(page.getByText(/Section visible de l'administration/)).toHaveCount(0);
+});
+
+test('l’administration seule voit les fichiers, dans les pièces jointes standard', async ({
+	page,
+}) => {
+	await ouvrir(page, { compte: ADMIN, acces: true, adresse: '/residence/reglement' });
+	await expect(page.getByText(FICHIER.titre)).toBeVisible();
+	await expect(page.getByText(/Section visible de l'administration seule/)).toBeVisible();
+	await expect(
+		page.getByRole('link', { name: 'consulter le règlement de copropriété' }),
+	).toHaveCount(0);
 });
 
 test('fermé, l’onglet disparaît et son adresse ramène à la Fiche', async ({ page }) => {
@@ -107,6 +136,11 @@ test('le conseil syndical publie une réponse dans la FAQ', async ({ page }) => 
 	await ouvrir(page, { compte: MEMBRE_CS, acces: true, adresse: '/residence/reglement' });
 	await expect(page.getByRole('heading', { name: 'Questions posées' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Publier dans la FAQ' })).toBeVisible();
+	//  Le conseil lit le lien, comme les copropriétaires — pas les fichiers.
+	await expect(page.getByText(FICHIER.titre)).toHaveCount(0);
+	await expect(
+		page.getByRole('link', { name: 'consulter le règlement de copropriété' }),
+	).toBeVisible();
 });
 
 test('l’ancienne adresse de l’Espace CS mène à Ma résidence, ancre comprise', async ({ page }) => {

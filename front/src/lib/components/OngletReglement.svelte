@@ -5,7 +5,8 @@
   l'administration le permet (la page masque l'onglet sinon, le serveur refuse).
 
   Trois blocs, dans l'ordre du geste :
-  1. le TEXTE du règlement et les actes qui font foi (`SectionTexteReglement`) ;
+  1. le TEXTE du règlement — ses fichiers pour l'admin, un lien pour les autres
+     (`SectionTexteReglement`) ;
   2. la QUESTION — l'assistant répond en juriste, extraits à l'appui ;
   3. l'HISTORIQUE — une question déjà posée ne se repaie pas, et une réponse
      relue peut rejoindre la FAQ par le conseil (boîte ouverte dans la carte).
@@ -36,7 +37,7 @@
 	import { messageErreur } from '$lib/erreurs';
 	import { categorieSaisie, saisieFaqVide, type SaisieFaq } from '$lib/faq';
 	import { richEmpty } from '$lib/publications';
-	import { isCS } from '$lib/stores/auth';
+	import { isAdmin, isCS } from '$lib/stores/auth';
 
 	let etat: EtatReglement | null = null;
 	let questions: QuestionReglement[] = [];
@@ -153,13 +154,16 @@
 	}
 </script>
 
+<!--  Deux lecteurs, deux phrases. Celle du copropriétaire est arbitrée mot pour mot
+      le 11/10/2026 : le conseil ne répond pas à sa place, un juriste ou le syndic si. -->
 <EncartAvertissement>
-	Les réponses sont un <strong>avis indicatif</strong>, rédigé par l'assistant d'après le texte de
-	travail chargé ici : il ne se substitue pas aux actes authentiques, qui seuls font foi.
 	{#if $isCS}
+		Les réponses sont un <strong>avis indicatif</strong>, rédigé par l'assistant d'après le texte de
+		travail joint ici : il ne se substitue pas aux actes authentiques, qui seuls font foi.
 		Relisez-le — et vérifiez les extraits signalés ⚠️ — avant de le relayer.
 	{:else}
-		En cas de doute, interrogez le conseil syndical.
+		Les réponses sont un <strong>avis indicatif</strong> : seuls les actes authentiques font foi. En cas
+		de doute, interrogez un juriste ou le syndic.
 	{/if}
 </EncartAvertissement>
 
@@ -187,12 +191,20 @@
 							L'assistant ne répond pas pour le moment : réessayez plus tard.
 						{/if}
 					</EncartAvertissement>
+				{:else if !etat.texte_disponible}
+					<EncartAvertissement compact>
+						{#if $isAdmin}
+							Aucun fichier Markdown n'est joint : joignez le texte du règlement ci-dessus.
+						{:else}
+							Le texte du règlement n'est pas encore à la disposition de l'assistant.
+						{/if}
+					</EncartAvertissement>
 				{/if}
 				<div class="form-actions">
 					<button
 						type="submit"
 						class="btn btn-primary"
-						disabled={envoi || !question.trim() || !etat.disponible || !etat.texte}
+						disabled={envoi || !question.trim() || !etat.disponible || !etat.texte_disponible}
 						>{envoi ? 'Lecture du règlement…' : 'Poser la question'}</button
 					>
 				</div>

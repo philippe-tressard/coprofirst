@@ -1,52 +1,28 @@
 /**
  *  Les questions au règlement de copropriété — Ma résidence › Règlement.
  *
- *  Le serveur décide de tout : si l'assistant peut répondre (`disponible`), quel
- *  texte est en vigueur, et quels extraits ont été RETROUVÉS dans ce texte
+ *  Le serveur décide de tout : si l'assistant peut répondre (`disponible`), si
+ *  un texte est joint, et quels extraits ont été RETROUVÉS dans ce texte
  *  (`verifie`, `page`, `acte` — calculés par le code, jamais par le modèle).
  *  L'écran ne recompose rien.
  *
  *  Routes : `api/app/routers/reglement.py` — copropriétaires (si l'usage leur est
  *  ouvert), conseil et admin. Un copropriétaire ne reçoit que SES questions, sans
- *  modèle ni coût, et le texte sans sa fiche technique : les champs concernés
- *  arrivent `null`.
+ *  modèle ni coût. Les FICHIERS du règlement passent par le client des documents
+ *  (catégorie réservée à l'administration).
  */
 import { api } from './client';
-
-/** Une version du texte du règlement chargée par l'administration. */
-export interface TexteReglement {
-	id: number;
-	titre: string;
-	/** La fiche technique — `null` pour un copropriétaire. */
-	nom_fichier: string | null;
-	nb_caracteres: number | null;
-	charge_par: string | null;
-	cree_le: string;
-}
-
-/** Un acte de la bibliothèque montré à côté du texte, et où CE lecteur l'ouvre. */
-export interface DocumentReglement {
-	id: number;
-	titre: string;
-	lien: string;
-}
-
-/** Un document que l'administration peut lier au texte. */
-export interface DocumentCandidatReglement {
-	id: number;
-	titre: string;
-	categorie: string;
-}
 
 /** Ce que l'onglet lit en arrivant. */
 export interface EtatReglement {
 	disponible: boolean;
-	texte: TexteReglement | null;
-	nb_versions: number;
-	documents: DocumentReglement[];
-	/** Pour l'administration seule — `null` pour les autres. */
-	documents_candidats: DocumentCandidatReglement[] | null;
-	documents_ids: number[] | null;
+	/** Un fichier Markdown lisible est-il joint ? — sans lui, pas de question. */
+	texte_disponible: boolean;
+	/** Le règlement publié dans la Fiche — `null` pour l'administration. */
+	lien_reglement: string | null;
+	/** Pour l'administration seule : la catégorie où joindre les fichiers
+	 *  (`documents.uploadPour('categorie', …)`). */
+	categorie_id: number | null;
 }
 
 /** Un extrait cité par l'assistant, et ce que le code en a vérifié. */
@@ -96,10 +72,6 @@ export const reglement = {
 	 *  l'administration ne lui a pas ouvert l'usage. */
 	acces: () => api.get<{ acces: boolean }>('/reglement/acces'),
 	etat: () => api.get<EtatReglement>('/reglement'),
-	charger: (nom_fichier: string, contenu: string) =>
-		api.post<TexteReglement>('/reglement/textes', { nom_fichier, contenu }),
-	/** Les actes montrés à côté du texte, dans l'ordre d'affichage (admin). */
-	choisirDocuments: (ids: number[]) => api.put<number[]>('/reglement/documents', { ids }),
 	questions: () => api.get<QuestionReglement[]>('/reglement/questions'),
 	poser: (question: string) => api.post<QuestionReglement>('/reglement/questions', { question }),
 	publierDansLaFaq: (id: number, corps: PublicationFaq) =>

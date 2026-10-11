@@ -60,7 +60,13 @@ from .objets import (
     reservee_au_conseil,
     ticket_visible,
 )
-from .documents import document_visible, profil_admet
+from .documents import (
+    CATEGORIES_ADMIN_SEUL,
+    document_visible,
+    peut_ecrire_dans,
+    profil_admet,
+    reserve_a_l_admin,
+)
 from .trace_droits import trace_droits, trace_lecture_par_defaut
 from .defauts_affaire import (
     CONCERNE,
@@ -100,8 +106,11 @@ __all__ = [
     "lus_dans_toute_la_residence",
     "reservee_au_conseil",
     "hors_du_hall",
+    "CATEGORIES_ADMIN_SEUL",
     "document_visible",
+    "peut_ecrire_dans",
     "profil_admet",
+    "reserve_a_l_admin",
     "trace_droits",
     "trace_lecture_par_defaut",
 ]

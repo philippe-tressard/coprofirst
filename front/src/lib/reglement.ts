@@ -5,6 +5,12 @@
  * `utils/question_reglement/format.VERDICTS`) ; sa teinte, de la carte
  * (`CarteQuestionReglement`).
  */
+import { ACCEPT_DOCUMENTS, LIBELLE_TYPES } from '$lib/fichiers';
 
-/** Les types de fichier acceptés pour le texte du règlement. */
-export const ACCEPT_TEXTE_REGLEMENT = '.md,.markdown,.txt,text/markdown,text/plain';
+/**
+ * Les fichiers du règlement : les documents de tout le site, PLUS le Markdown
+ * que l'assistant lit (11/10/2026). Dérivés des constantes communes : une
+ * extension ajoutée là-bas se retrouve ici sans y toucher.
+ */
+export const ACCEPT_FICHIERS_REGLEMENT = `${ACCEPT_DOCUMENTS},text/markdown,.md,.markdown`;
+export const TYPES_FICHIERS_REGLEMENT = `${LIBELLE_TYPES.documents}, Markdown (.md)`;

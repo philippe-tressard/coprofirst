@@ -76,4 +76,14 @@ CATEGORIES = [
     ("contrat_assurance", "Contrat assurance", "copropriétaires_et_cs", "résidence", True),
     ("devis_travaux", "Devis travaux", "cs_syndic_uniquement", "bâtiment", True),
     ("document_interne_cs", "Document interne CS", "cs_syndic_uniquement", "résidence", False),
+    #  Les fichiers du règlement que l'assistant interroge (11/10/2026). Le profil
+    #  n'est qu'une source de protection pour la forme : l'ADMINISTRATION seule
+    #  les lit et les dépose (`visibility.CATEGORIES_ADMIN_SEUL`), le conseil compris.
+    (
+        "texte_reglement",
+        "Texte du règlement (assistant)",
+        "cs_syndic_uniquement",
+        "résidence",
+        False,
+    ),
 ]

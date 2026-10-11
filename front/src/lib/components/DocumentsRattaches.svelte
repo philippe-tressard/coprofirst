@@ -102,6 +102,10 @@
 	export let mode: 'documents' | 'mixte' = 'documents';
 	/** Identifiant du champ de téléversement — unique par emplacement. */
 	export let idChamp: string;
+	/**  Les types acceptés, quand ils sortent de `mode` — les fichiers du
+	 *   règlement acceptent aussi le Markdown (11/10/2026). Relayés tels quels. */
+	export let accept: string | null = null;
+	export let types: string | null = null;
 
 	/**  Les fichiers EN ATTENTE, quand l'objet n'existe pas encore. L'écran les
 	 *   attache après création, par `attacherApres(cible, …)` — la même fonction
@@ -167,6 +171,8 @@
 <FichiersUpload
 	id={idChamp}
 	{mode}
+	{accept}
+	{types}
 	titre=""
 	avecLibelle
 	bind:libelleFichier

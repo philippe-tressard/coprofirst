@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.utils.config_site import config_site
+from app.auth.appartenance import exiger_objet_autorise
 from app.auth.deps import est_moderateur, get_current_user, require_cs_or_admin
 from app.database import get_session
 from app.models.core import (
@@ -33,7 +34,7 @@ from app.utils.fichiers import enregistrer_televersement
 from app.utils.stockage import stockage
 
 # Toute règle de visibilité — documents compris — vient du module central.
-from app.utils.visibility import document_visible, profil_admet
+from app.utils.visibility import document_visible, peut_ecrire_dans, profil_admet
 from app.utils.liens import base_site
 from app.utils.liens import nom_site
 from app.utils.recuperer import connu_ou_404, fichier_ou_404, ou_404
@@ -159,9 +160,14 @@ def list_categories(
         .where(CategorieDocument.actif == True)  # noqa: E712
         .order_by(CategorieDocument.libelle)
     ).all()
-    # CS et admin voient toutes les catégories
+    # CS et admin voient toutes les catégories — sauf, pour le CS, celles que
+    # l'administration seule lit (`CATEGORIES_ADMIN_SEUL`).
     if est_moderateur(user):
-        return [{"id": c.id, "code": c.code, "libelle": c.libelle} for c in cats]
+        return [
+            {"id": c.id, "code": c.code, "libelle": c.libelle}
+            for c in cats
+            if peut_ecrire_dans(user, c)
+        ]
     #  Pour les autres : les catégories dont le profil admet le lecteur — la règle
     #  de `document_visible`, appelée et non recopiée (#1551).
     return [
@@ -227,9 +233,10 @@ def list_documents(
 
     docs = session.exec(stmt.order_by(Document.publie_le.desc())).all()
 
-    # Filtrage côté serveur selon profil d'accès
-    if not est_moderateur(user):
-        docs = [d for d in docs if document_visible(user, d, session)]
+    #  Filtrage côté serveur selon profil d'accès — pour TOUS : un modérateur
+    #  passe en tête de `document_visible`, sauf sur les catégories réservées à
+    #  l'administration (`CATEGORIES_ADMIN_SEUL`, le texte du règlement).
+    docs = [d for d in docs if document_visible(user, d, session)]
 
     return docs
 
@@ -283,6 +290,20 @@ def _jour(valeur: str | None) -> date | None:
         raise HTTPException(422, "Date invalide") from None
 
 
+def _document_ecrivable(session: Session, doc_id: int, user: Utilisateur) -> Document:
+    """Le document (404), si ce modérateur peut le corriger ou le retirer (403) —
+    tous, sauf ceux d'une catégorie réservée à l'admin (`peut_ecrire_dans`)."""
+    return exiger_objet_autorise(
+        session,
+        Document,
+        doc_id,
+        "Document",
+        user,
+        lambda doc, u: peut_ecrire_dans(u, doc.categorie),
+        "Réservé à l'admin",
+    )
+
+
 @router.patch("/{doc_id}", response_model=DocumentRead)
 def update_document(
     doc_id: int,
@@ -290,7 +311,7 @@ def update_document(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
-    doc = ou_404(session, Document, doc_id, "Document")
+    doc = _document_ecrivable(session, doc_id, user)
     if body.titre is not None:
         doc.titre = body.titre
     if body.description is not None:
@@ -390,6 +411,9 @@ async def upload_document(
         categorie = session.get(CategorieDocument, categorie_id)
         if not categorie or not categorie.actif:
             raise HTTPException(400, "Catégorie invalide")
+        if not peut_ecrire_dans(user, categorie):
+            raise HTTPException(403, "Réservé à l'admin")
+
     #  Lues AVANT l'écriture du fichier : une date refusée ne laisse rien sur le disque.
     jour_ag, jour_document = _jour(date_ag), _jour(date_document)
 
@@ -452,7 +476,7 @@ def delete_document(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
-    doc = ou_404(session, Document, doc_id, "Document")
+    doc = _document_ecrivable(session, doc_id, user)
     #  🔴 UN CONTRAT PEUT CITER CE DOCUMENT, et rien ne le déliait (#546).
     #  `contrat_entretien.document_id` référence le document : sous les clés, la
     #  suppression échoue ; sans elles — le régime actuel — le contrat garde une
