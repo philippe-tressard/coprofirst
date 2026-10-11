@@ -7,7 +7,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
-	import VueKanbanAffaires from '$lib/components/VueKanbanAffaires.svelte';
+	//  ⏱ Le Kanban attend le passage sur son onglet (#1844).
 	import { routeOnglet } from '$lib/routes-onglets';
 	import { revelerCible } from '$lib/deepLink';
 	import { isAdmin, isCS } from '$lib/stores/auth';
@@ -438,15 +438,19 @@
 <!--  Les trois états par `EtatListe` (#796) — dont l'ERREUR, qui n'existait pas :
       une panne affichait « Aucune demande ». -->
 {#if onglet === 'kanban'}
-	<VueKanbanAffaires
-		tickets={ticketList}
-		peutDeplacer={$isCS}
-		on:cree={async () => (ticketList = await ticketsApi.list())}
-		on:deplace={(e) =>
-			(ticketList = ticketList.map((x) =>
-				x.id === e.detail.id ? { ...x, statut: e.detail.statut } : x,
-			))}
-	/>
+	<ChargementDiffere charger={() => import('$lib/components/VueKanbanAffaires.svelte')}>
+		{#snippet contenu(VueKanbanAffaires)}
+			<VueKanbanAffaires
+				tickets={ticketList}
+				peutDeplacer={$isCS}
+				on:cree={async () => (ticketList = await ticketsApi.list())}
+				on:deplace={(e) =>
+					(ticketList = ticketList.map((x) =>
+						x.id === e.detail.id ? { ...x, statut: e.detail.statut } : x,
+					))}
+			/>
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'liste'}
 	<EtatListe
 		chargement={loading}

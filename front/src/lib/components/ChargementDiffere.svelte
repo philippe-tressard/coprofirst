@@ -23,6 +23,12 @@
   chargement part au montage, une fois. Le service worker garde ensuite le
   fichier : le passage suivant à l'onglet n'attend plus le réseau.
 
+  🔴 Le parent ne s'adresse au composant qu'à travers des props liées, jamais
+  seulement par une méthode (`bind:this`) : tant que le morceau n'est pas arrivé,
+  la référence vaut `null` et l'appel se perd sans un mot. « Nouveau contrat »
+  cliqué tôt ne faisait rien (12/10/2026, trouvé par le rejeu sous charge) — le
+  repli passe par la prop que le composant lit à son montage.
+
   🔴 Un échec se DIT (`EtatListe`) : le cas réel est une version publiée entre
   l'ouverture de la page et le clic — le fichier d'avant n'existe plus.
 -->

@@ -97,3 +97,24 @@ test('sans session, l’écran renvoie à la connexion et garde son adresse', as
 	await page.goto('/prestataires/contrats');
 	await expect(page).toHaveURL(/\/auth\/connexion\?next=%2Fprestataires%2Fcontrats$/);
 });
+
+test('« Nouveau contrat » cliqué avant l’arrivée de l’onglet ouvre quand même la création', async ({
+	page,
+}) => {
+	//  L'onglet Contrats se charge au geste (#1844) : le bouton de l'en-tête
+	//  appelait une méthode d'un onglet pas encore monté, et le clic se perdait.
+	await simuler(page);
+	let relacher: () => void = () => {};
+	const relache = new Promise<void>((r) => (relacher = r));
+	await page.route(
+		(url) => url.pathname.endsWith('/OngletContrats.svelte'),
+		async (route) => {
+			await relache;
+			await route.continue();
+		},
+	);
+	await page.goto('/prestataires/contrats');
+	await page.getByRole('button', { name: 'Nouveau contrat' }).click();
+	relacher();
+	await expect(page.getByRole('heading', { name: 'Nouveau contrat' })).toBeVisible();
+});

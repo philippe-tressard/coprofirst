@@ -35,9 +35,11 @@
 	import BoutonNouveau from '$lib/components/BoutonNouveau.svelte';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
-	import OngletContrats from '$lib/components/OngletContrats.svelte';
+	//  ⏱ Contrats et Consommations attendent un geste — le passage sur leur
+	//  onglet : chargés à leur affichage (#1844). Le TYPE seul est importé ici.
+	import type OngletContrats from '$lib/components/OngletContrats.svelte';
 	import OngletPrestataires from '$lib/components/OngletPrestataires.svelte';
-	import OngletConsommations from '$lib/components/OngletConsommations.svelte';
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 
 	$: _pc = getPageConfig($configStore, 'prestataires', defautsDePage('prestataires'));
 	$: _siteNom = $siteNomStore;
@@ -126,7 +128,11 @@
 			<BoutonNouveau
 				ouvert={creationContrat}
 				libelle="Nouveau contrat"
-				on:basculer={() => ongletContrats?.basculerCreation()}
+				on:basculer={() =>
+					//  L'onglet se charge au geste (#1844) : pas encore monté, il lira
+					//  `creationOuverte` à son montage, formulaire vierge — ce que fait
+					//  `basculerCreation`. Sans ce repli, un clic rapide se perdait.
+					ongletContrats ? ongletContrats.basculerCreation() : (creationContrat = !creationContrat)}
 			/>
 		{:else if onglet === 'consommations'}
 			<BoutonNouveau
@@ -143,14 +149,18 @@
 {#if loading}
 	<EtatListe chargement />
 {:else if onglet === 'contrats'}
-	<OngletContrats
-		bind:this={ongletContrats}
-		bind:creationOuverte={creationContrat}
-		bind:contrats
-		bind:notations
-		bind:archives={archivesContrats}
-		{prestataires}
-	/>
+	<ChargementDiffere charger={() => import('$lib/components/OngletContrats.svelte')}>
+		{#snippet contenu(OngletContrats)}
+			<OngletContrats
+				bind:this={ongletContrats}
+				bind:creationOuverte={creationContrat}
+				bind:contrats
+				bind:notations
+				bind:archives={archivesContrats}
+				{prestataires}
+			/>
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'prestataires'}
 	<OngletPrestataires
 		bind:this={ongletPrestataires}
@@ -161,5 +171,9 @@
 		{contrats}
 	/>
 {:else if onglet === 'consommations'}
-	<OngletConsommations bind:showReleveForm bind:libelleBouton={libelleReleve} {prestataires} />
+	<ChargementDiffere charger={() => import('$lib/components/OngletConsommations.svelte')}>
+		{#snippet contenu(OngletConsommations)}
+			<OngletConsommations bind:showReleveForm bind:libelleBouton={libelleReleve} {prestataires} />
+		{/snippet}
+	</ChargementDiffere>
 {/if}

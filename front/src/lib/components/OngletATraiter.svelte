@@ -39,7 +39,8 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import AccepterRefuser from '$lib/components/AccepterRefuser.svelte';
-	import ValidationCompte from '$lib/components/ValidationCompte.svelte';
+	//  ⏱ La boîte de validation attend le geste « Valider » (#1844).
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import SectionRepliee from '$lib/components/SectionRepliee.svelte';
 
 	export let comptes: CompteEnAttenteEnrichi[] = [];
@@ -266,18 +267,24 @@
 						{#if cvModal?.user?.id === u.id}
 							<tr class="ligne-formulaire">
 								<td colspan="7">
-									<ValidationCompte
-										utilisateur={u}
-										precision={(cvModal?.lotsPrevus ?? 0) > 0
-											? `${cvModal?.lotsPrevus} lot(s) détecté(s) dans l'import`
-											: ''}
-										enCours={cvSubmitting}
-										bind:nouvelArrivant={cvNewArrivant}
-										bind:batiment={cvBatiment}
-										bind:ancienResident={cvAncienResident}
-										onAnnuler={() => (cvModal = null)}
-										onValider={confirmerCompteValidation}
-									/>
+									<ChargementDiffere
+										charger={() => import('$lib/components/ValidationCompte.svelte')}
+									>
+										{#snippet contenu(ValidationCompte)}
+											<ValidationCompte
+												utilisateur={u}
+												precision={(cvModal?.lotsPrevus ?? 0) > 0
+													? `${cvModal?.lotsPrevus} lot(s) détecté(s) dans l'import`
+													: ''}
+												enCours={cvSubmitting}
+												bind:nouvelArrivant={cvNewArrivant}
+												bind:batiment={cvBatiment}
+												bind:ancienResident={cvAncienResident}
+												onAnnuler={() => (cvModal = null)}
+												onValider={confirmerCompteValidation}
+											/>
+										{/snippet}
+									</ChargementDiffere>
 								</td>
 							</tr>
 						{/if}

@@ -33,8 +33,7 @@
 		lireRegles,
 		type LectureRegles,
 	} from '$lib/components/SectionRegles.svelte';
-	import CarnetEntretien from '$lib/components/CarnetEntretien.svelte';
-	import BilanCarnet from '$lib/components/BilanCarnet.svelte';
+	//  ⏱ Le Carnet et son bilan attendent le passage sur leur onglet (#1844).
 	import FicheResidence from '$lib/components/FicheResidence.svelte';
 	import RubriqueDocuments from '$lib/components/RubriqueDocuments.svelte';
 	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
@@ -256,9 +255,17 @@
 	      l'arrivée. À côté du carnet et non dedans — le carnet est la lecture de
 	      tous les copropriétaires, le bilan celle du conseil. -->
 	{#if $isCS}
-		<BilanCarnet />
+		<ChargementDiffere charger={() => import('$lib/components/BilanCarnet.svelte')}>
+			{#snippet contenu(BilanCarnet)}
+				<BilanCarnet />
+			{/snippet}
+		</ChargementDiffere>
 	{/if}
-	<CarnetEntretien />
+	<ChargementDiffere charger={() => import('$lib/components/CarnetEntretien.svelte')}>
+		{#snippet contenu(CarnetEntretien)}
+			<CarnetEntretien />
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'reglement'}
 	{#if accesReglement === null}
 		<EtatListe chargement />

@@ -4,8 +4,7 @@
 	import CaracteristiquesLot from '$lib/components/CaracteristiquesLot.svelte';
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
 	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import FormulaireBail from '$lib/components/FormulaireBail.svelte';
-	import ModaleAccesBail from '$lib/components/ModaleAccesBail.svelte';
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import { onMount } from 'svelte';
 	import {
 		lots as lotsApi,
@@ -27,8 +26,8 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
-	import OngletAcces from '$lib/components/OngletAcces.svelte';
-	import OngletGestionLocative from '$lib/components/OngletGestionLocative.svelte';
+	//  ⏱ Les onglets Accès et Location, la correction d'un bail et ses accès
+	//  attendent un geste : chargés à leur affichage (#1844).
 	import BoutonNouveau from '$lib/components/BoutonNouveau.svelte';
 	import { messageErreur, tenter } from '$lib/erreurs';
 	import { routeOnglet, routeSousOnglet } from '$lib/routes-onglets';
@@ -256,7 +255,15 @@
       onglets d'une page par UN écran, donc `/mon-lot/badges` arrive ici. Motif
       des dix-sept `Onglet*.svelte` de l'administration. -->
 {#if mainTab === 'badges' || mainTab === 'telecommandes'}
-	<OngletAcces section={mainTab} bind:showForm={accesDemande} bind:showDeclareForm={accesDeclare} />
+	<ChargementDiffere charger={() => import('$lib/components/OngletAcces.svelte')}>
+		{#snippet contenu(OngletAcces)}
+			<OngletAcces
+				section={mainTab}
+				bind:showForm={accesDemande}
+				bind:showDeclareForm={accesDeclare}
+			/>
+		{/snippet}
+	</ChargementDiffere>
 {/if}
 
 <!-- ── Onglet : Mes lots ────────────────────────────────────────────── -->
@@ -330,19 +337,23 @@
 	      deux sous-onglets d'accès, et le plafond de modularité a refusé — comme
 	      l'audit de l'issue l'avait annoncé. La coupe suit la frontière que la
 	      barre d'onglets dessine déjà. -->
-	<OngletGestionLocative
-		bind:baux
-		{bauxActifs}
-		{bauxTermines}
-		{bauxLoading}
-		{lots}
-		{bailTab}
-		bind:showNewBail
-		bind:newBailLotIds
-		{ouvrirEditionLocataire}
-		{ouvrirAccesBail}
-		{lireBaux}
-	/>
+	<ChargementDiffere charger={() => import('$lib/components/OngletGestionLocative.svelte')}>
+		{#snippet contenu(OngletGestionLocative)}
+			<OngletGestionLocative
+				bind:baux
+				{bauxActifs}
+				{bauxTermines}
+				{bauxLoading}
+				{lots}
+				{bailTab}
+				bind:showNewBail
+				bind:newBailLotIds
+				{ouvrirEditionLocataire}
+				{ouvrirAccesBail}
+				{lireBaux}
+			/>
+		{/snippet}
+	</ChargementDiffere>
 {/if}
 
 <!-- ── Correction d'un bail : LE MÊME formulaire, en modale ─────────── -->
@@ -350,25 +361,35 @@
       de création, donc en bas de page. Le motif est dans `FormulaireCreation`. -->
 {#if bailEdite}
 	<FormulaireCreation titre="Modifier les informations" cle={bailEdite.id}>
-		<FormulaireBail
-			edition
-			intitule=""
-			bind:bail={editLocataire}
-			bind:locataireId={editLocataireId}
-			on:annuler={() => (bailEdite = null)}
-			on:enregistrer={sauvegarderLocataire}
-		/>
+		<ChargementDiffere charger={() => import('$lib/components/FormulaireBail.svelte')}>
+			{#snippet contenu(FormulaireBail)}
+				<FormulaireBail
+					edition
+					intitule=""
+					bind:bail={editLocataire}
+					bind:locataireId={editLocataireId}
+					on:annuler={() => (bailEdite = null)}
+					on:enregistrer={sauvegarderLocataire}
+				/>
+			{/snippet}
+		</ChargementDiffere>
 	</FormulaireCreation>
 {/if}
 
 <!-- ── Modal : gestion des accès (Vigik / TC) ───────────────────────── -->
 {#if bailAcces}
-	<ModaleAccesBail
-		bailId={bailAcces.id}
-		titre={`Accès — ${nomLocataire(bailAcces)}`}
-		typeLot={bailAccesLot?.type ?? null}
-		on:fermer={() => (bailAcces = null)}
-	/>
+	<!--  Le bail fixé ici : le rétrécissement de `{#if}` ne traverse pas le snippet. -->
+	{@const bail = bailAcces}
+	<ChargementDiffere charger={() => import('$lib/components/ModaleAccesBail.svelte')}>
+		{#snippet contenu(ModaleAccesBail)}
+			<ModaleAccesBail
+				bailId={bail.id}
+				titre={`Accès — ${nomLocataire(bail)}`}
+				typeLot={bailAccesLot?.type ?? null}
+				on:fermer={() => (bailAcces = null)}
+			/>
+		{/snippet}
+	</ChargementDiffere>
 {/if}
 
 <!-- ── Modal : retour objet ─────────────────────────────────────────── -->
