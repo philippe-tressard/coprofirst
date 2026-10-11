@@ -7,7 +7,7 @@ import json
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlmodel import Session, select
-from app.utils.affaires_liees import index_des_liens, poser_liens, supprimer_liens_de
+from app.utils.affaires_liees import poser_liens, supprimer_liens_de
 from app.utils.intervenant import appliquer_intervenant
 from app.utils.nature_affaire import (
     categorie_reservee,
@@ -52,6 +52,7 @@ from .commun import (
     trier_par_activite,
     pieces_du_ticket,
 )
+from .lecture_groupee import lecture_groupee
 from .arrivee import _notifier_cs_creation, adresses_deja_servies
 from .courriels import (
     _alerter_bug,
@@ -97,11 +98,12 @@ def list_tickets(
     #  Le tri suit l'ACTIVITÉ, pas la date de dépôt (05/09/2026) : la règle et sa
     #  raison vivent dans `commun.py`, avec les autres décisions partagées.
     tickets = trier_par_activite(session, tickets)
-    #  Les liens de TOUTES les affaires en une requête (#1342), et la lecture
-    #  filtrée par ce lecteur — un lien ne révèle rien.
-    index, par_id = index_des_liens(session), {t.id: t for t in tickets}
+    #  Ce qui se lit autour de chaque affaire, lu UNE fois pour la liste (#1838) :
+    #  le compte de requêtes ne croît plus avec le nombre d'affaires. Les liens
+    #  restent filtrés par ce lecteur — un lien ne révèle rien (#1342).
+    groupe = lecture_groupee(session, tickets)
     return [
-        ticket_read(ticket, session, user, index=index, tickets=par_id)
+        ticket_read(ticket, session, user, groupe=groupe)
         for ticket in tickets
         if ticket_visible(ticket, user)
     ]

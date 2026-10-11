@@ -36,10 +36,11 @@ from app.models.core import (
 from app.models.prestataires import ContratEntretien, Prestataire
 from app.utils.recuperer import ou_rien
 from app.schemas import AffaireLieeLue, ContratDeLAffaire, TicketEvolutionRead, TicketRead
-from app.utils.archivage import est_archivable, perime_le, seuil_archivage_jours
+from app.utils.archivage import est_archivable, perime_le
 from app.utils.lecture import lire_objet
 from app.utils.corrections_texte import expliciter_ancienne
 from app.utils.photos import parse_photos
+from .lecture_groupee import LectureGroupee, lecture_groupee
 
 #: Libellé lisible de chaque état — e-mails, notifications, fil d'évolutions.
 #:
@@ -73,7 +74,7 @@ def pieces_du_ticket(ticket) -> list[str]:
     nature ne lève aucune erreur.
 
     ⚠️ « Propres » au sens de : celles du ticket lui-même, par opposition à
-    celles de ses évolutions — que `pieces_ticket_ou_repli` va chercher quand
+    celles de ses évolutions — que `lecture_groupee.pieces_du_fil` va chercher quand
     l'objet n'en porte aucune.
     """
     return parse_photos(ticket.photos_urls) + parse_photos(ticket.fichiers_urls)
@@ -206,55 +207,20 @@ def evol_read(
     )
 
 
-def apercu_pieces(ticket: Ticket, session: Session) -> list[str]:
-    """Les pièces à montrer en vignette sur la carte REPLIÉE (#464).
-
-    Celles du ticket si elle en porte ; sinon celles de l'entrée d'Historique **la
-    plus récente** qui en porte.
-
-    ## Pourquoi ce repli existe
-
-    Sur un ticket suivi, les photos arrivent souvent par le fil — « voici ce qu'a
-    constaté le plombier ». La carte restait alors nue, là où le même dossier saisi
-    avec ses photos dès l'ouverture montrait sa vignette. Deux tickets, même
-    contenu visible, deux apparences dans la liste.
-
-    Le calendrier faisait déjà ce repli côté front (`apercuAvecRepli`), parce que
-    son API livre le fil avec l'objet. Les tickets chargent leurs évolutions à la
-    demande : le repli se calcule donc **ici**, et ne transporte que les URLs.
-
-    ⚠️ La plus RÉCENTE, jamais la première : sinon un dossier qui a avancé
-    montrerait indéfiniment la photo du jour de son ouverture.
-    """
-    propres = pieces_du_ticket(ticket)
-    if propres:
-        return propres
-    #  Une seule requête, triée par date décroissante, et on s'arrête à la
-    #  première entrée qui porte quelque chose. Pas de N+1 : c'est un `SELECT` par
-    #  ticket, comme les trois que `ticket_read` fait déjà.
-    evols = session.exec(
-        select(TicketEvolution)
-        .where(TicketEvolution.ticket_id == ticket.id)
-        .order_by(TicketEvolution.cree_le.desc())
-    ).all()
-    for evol in evols:
-        pieces = parse_photos(evol.fichiers_urls)
-        if pieces:
-            return pieces
-    return []
-
-
 def ticket_read(
     ticket: Ticket,
     session: Session,
     lecteur: Utilisateur | None = None,
     *,
-    index: dict | None = None,
-    tickets: dict | None = None,
+    groupe: LectureGroupee | None = None,
 ) -> TicketRead:
     """`lecteur` : à qui l'on répond. Sans lui, aucune affaire liée n'est rendue
-    — un lien ne doit rien révéler à qui on ne sait pas (#1342). `index` et
-    `tickets` évitent une requête par affaire dans une liste."""
+    — un lien ne doit rien révéler à qui on ne sait pas (#1342).
+
+    `groupe` : ce qui se lit autour des affaires d'une LISTE, lu une fois pour
+    toutes (`lecture_groupee`, #1838). Sans lui, l'affaire seule passe par le
+    même chemin — une seule écriture de chaque lecture."""
+    groupe = groupe or lecture_groupee(session, [ticket])
     auteur = ou_rien(session, Utilisateur, ticket.auteur_id)
     #  🔴 LE BÂTIMENT DU DEMANDEUR, ET RIEN D'AUTRE (#653, 30/08/2026).
     #
@@ -305,23 +271,22 @@ def ticket_read(
         ticket,
         auteur_nom=nom_auteur(auteur),
         auteur_batiment_nom=libelle_batiment_ou(batiment, None),
-        apercu_pieces=apercu_pieces(ticket, session),
+        #  Les pièces de l'affaire, sinon celles de la dernière entrée du fil qui
+        #  en porte (#464) — `lecture_groupee.pieces_du_fil` dit pourquoi.
+        apercu_pieces=pieces_du_ticket(ticket) or groupe.pieces_du_fil.get(ticket.id, []),
         affaires_liees=[
             AffaireLieeLue(**lue)
-            for lue in liees_lisibles(session, ticket.id, lecteur, index=index, tickets=tickets)
+            for lue in liees_lisibles(
+                session, ticket.id, lecteur, index=groupe.liens, tickets=groupe.tickets
+            )
         ],
         fusionnee_dans=principale_lue(session, ticket, lecteur),
         fusionnee=ticket.fusionnee_dans_id is not None,
         saisi_pour_affichage=saisi_pour_affichage,
         proprietaire_nom=proprietaire_nom,
-        #  ⚠️ `seuil_archivage_jours` interroge la configuration, et l'on est ici
-        #  dans une fonction appelée PAR TICKET : c'est un appel par ticket, et
-        #  c'est assumé — la liste en compte quelques dizaines. Le factoriser
-        #  demanderait de passer le seuil à tous les appelants de `ticket_read`,
-        #  dont plusieurs n'en rendent qu'un. À revoir si la liste grossit, et à
-        #  mesurer avant d'optimiser.
-        archivee=est_archivable("ticket", ticket, seuil_jours=seuil_archivage_jours(session)),
-        relance_count=compter_relances(session, ticket.id),
+        #  Le délai du site, lu une fois par liste et non une fois par affaire.
+        archivee=est_archivable("ticket", ticket, seuil_jours=groupe.seuil_jours),
+        relance_count=groupe.relances[ticket.id],
         natures=natures(ticket),
         perime_le=perime_le(ticket, "ticket"),
         prestataire_nom=nom_prestataire(session, ticket.prestataire_id),
@@ -355,18 +320,6 @@ def nom_prestataire(session: Session, prestataire_id: Optional[int]) -> Optional
     """Le nom de l'intervenant, ou `None` — une ligne effacée ne casse pas la fiche."""
     p = session.get(Prestataire, prestataire_id) if prestataire_id else None
     return p.nom if p else None
-
-
-def compter_relances(session: Session, ticket_id: int) -> int:
-    """Nombre de relances syndic déjà envoyées — compté à trois endroits avant."""
-    return len(
-        session.exec(
-            select(TicketEvolution).where(
-                TicketEvolution.ticket_id == ticket_id,
-                TicketEvolution.type == "relance",
-            )
-        ).all()
-    )
 
 
 def trier_par_activite(session: Session, tickets: list[Ticket]) -> list[Ticket]:

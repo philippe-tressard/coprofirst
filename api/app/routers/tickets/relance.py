@@ -32,13 +32,13 @@ from app.utils.relance_syndic import conditions_relancable, delai_relance_jours,
 
 from .commun import (
     STATUT_LABELS,
-    compter_relances,
     config_site,
     destinataires_syndic_cs,
     libelle_evolution,
     syndic_principal,
     ticket_read,
 )
+from .lecture_groupee import lecture_groupee, relances_par_affaire
 from app.utils.noms import nom_affiche
 from app.utils.liens import nom_site
 from app.utils.recuperer import ou_404
@@ -69,9 +69,10 @@ def list_relance_syndic(
     tickets = session.exec(
         select(Ticket).where(*conditions_relancable()).order_by(Ticket.mis_a_jour_le)
     ).all()
+    groupe = lecture_groupee(session, tickets)  # une lecture pour la liste (#1838)
     return RelanceSyndicResponse(
         delai_jours=delai_relance_jours(session),
-        tickets=[ticket_read(t, session) for t in tickets],
+        tickets=[ticket_read(t, session, groupe=groupe) for t in tickets],
     )
 
 
@@ -99,7 +100,7 @@ def _contexte_ticket(session: Session, ticket: Ticket) -> dict:
         "perimetre": perimetre_label_json(ticket.perimetre_cible),
         "description": ticket.description,
         # La relance qui vient d'être enregistrée ne se compte pas elle-même.
-        "relance_count": compter_relances(session, ticket.id) - 1,
+        "relance_count": relances_par_affaire(session, [ticket.id])[ticket.id] - 1,
         "historique": historique,
     }
 
@@ -215,7 +216,7 @@ def envoyer_relance_syndic(
             TicketEvolution(
                 ticket_id=ticket.id,
                 type="relance",
-                contenu=f"Relance syndic n°{compter_relances(session, ticket.id) + 1}",
+                contenu=f"Relance syndic n°{relances_par_affaire(session, [ticket.id])[ticket.id] + 1}",
                 auteur_id=user.id,
                 cree_le=now,
             )
