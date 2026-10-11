@@ -13,6 +13,7 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { grouperParCategorie, normalizeCategorieLabel } from '$lib/faq';
 
 	export let items: EntreeFaq[];
@@ -150,14 +151,14 @@
 					disabled={idx === 0}
 					on:click={() => moveItem(categorie, item, -1)}
 					title="Monter"
-					aria-label="Monter">↑</button
+					aria-label="Monter"><IconeAction icone="arrow-up" /></button
 				>
 				<button
 					class="btn-icon-edit"
 					disabled={idx === catItems.length - 1}
 					on:click={() => moveItem(categorie, item, 1)}
 					title="Descendre"
-					aria-label="Descendre">↓</button
+					aria-label="Descendre"><IconeAction icone="arrow-down" /></button
 				>
 			</div>
 		</div>

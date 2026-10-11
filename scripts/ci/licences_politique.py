@@ -196,6 +196,9 @@ CATALOGUE_ICONES = "front/src/lib/icones-svg.json"
 #  celles-ci. Une entrée qui disparaît du catalogue fait échouer le contrôle.
 #  Le 03/10/2026, quatre tracés Lucide sont entrés (`circle`, `circle-check`,
 #  `circle-x`, `refresh-cw` — la chronologie d'une synthèse, #1643).
+#  Le 10/10/2026, dix-sept tracés de `lucide-static` 0.460.0 sont entrés (`undo-2`,
+#  `redo-2`,
+#  `plus`, `x`, `check`, `flag`, `save`, `mail`… — les actions au trait du site, #1819).
 ICONES_HORS_LUCIDE = {
     "whatsapp": "Simple Icons",
     "stairs": "absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur",

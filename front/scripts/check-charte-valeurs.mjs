@@ -92,8 +92,11 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, resoudre };
  *  trois teintes pâles de nature, qu'elle ne peint plus, sont retirées. Son
  *  jeton `--fs-chiffre` (1.6rem) rend quatre tailles égales à lui : elles
  *  s'écrivent par lui (Lightbox, PiecesJointes, Vignette, legal.css).
+ *  10/10/2026 : 70 tailles. La carte du fil passe à `CarteListe` (maquette B
+ *  du fil) : l'émoji de rubrique et sa taille en dur (1,05 rem) partent dans
+ *  la gouttière, qui écrit par l'échelle.
  */
-const PLAFOND = { couleurs: 120, tailles: 73 };
+const PLAFOND = { couleurs: 119, tailles: 70 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 

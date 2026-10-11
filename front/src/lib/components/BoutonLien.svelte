@@ -143,7 +143,7 @@
 	title="Copier le lien"
 	aria-label="Copier le lien de {quoi}"
 	aria-expanded={bulle !== null}
-	on:click|stopPropagation={copier}><IconeAction glyphe="🔗" icone="link" /></button
+	on:click|stopPropagation={copier}><IconeAction icone="link" /></button
 >
 {#if bulle && cible}
 	<div

@@ -27,6 +27,7 @@
   changement d'onglet. Elle vivait dans la page, qui, elle, restait montée.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import Pastille from '$lib/components/Pastille.svelte';
 	import { TICKET } from '$lib/entites/ticket';
@@ -259,8 +260,9 @@
 				on:click={refreshReporting}
 				disabled={occupe}
 				title="Rafraîchir les données"
+				aria-label="Rafraîchir les données"
 			>
-				&#x1F504;{occupe ? ' …' : ''}
+				<IconeAction icone="refresh-cw" />{occupe ? ' …' : ''}
 			</button>
 			<button class="btn btn-sm btn-primary" on:click={printCurrentReporting}>
 				&#x1F5A8; Imprimer / PDF

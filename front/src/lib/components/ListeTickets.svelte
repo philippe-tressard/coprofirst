@@ -37,11 +37,6 @@
 	import CarteTicket from './CarteTicket.svelte';
 	import type { CorrespondanceAffaire, Ticket, TicketEvolution } from '$lib/api';
 	import { estActualite, type GestesTicket } from '$lib/tickets';
-	import { poserActionsAuTrait } from '$lib/actions-au-trait';
-
-	//  Les cartes d'affaire dessinent leurs actions AU TRAIT (maquette B,
-	//  10/10/2026) : la décision appartient à la liste, pas à chaque bouton.
-	poserActionsAuTrait();
 
 	/**  Tout ce que la page fait quand la liste bouge — le type vit dans
 	 *   `$lib/tickets`, avec le reste du vocabulaire du ticket. */

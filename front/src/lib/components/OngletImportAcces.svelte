@@ -18,6 +18,7 @@
   « Vigik », ni « télécommande », ni un chemin d'API.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { champDe, nombreOuNull } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import {
@@ -296,7 +297,8 @@
 										class="btn-icon-success"
 										aria-label="Remettre en attente"
 										title="Remettre en attente"
-										on:click={() => remettreEnAttente(imp.id)}>↩</button
+										on:click={() => remettreEnAttente(imp.id)}
+										><IconeAction icone="undo-2" /></button
 									>
 								{:else}
 									{#if imp.rattachable}
@@ -315,14 +317,14 @@
 										aria-label="Préciser la ligne"
 										title="Préciser la ligne"
 										aria-pressed={editId === imp.id}
-										on:click={() => ouvrirEdition(imp)}>✏️</button
+										on:click={() => ouvrirEdition(imp)}><IconeAction icone="pencil" /></button
 									>
 									{#if imp.statut !== 'resolu'}
 										<button
 											class="btn-icon-warn"
 											aria-label="Ignorer cette ligne"
 											title="Ignorer"
-											on:click={() => ignorer(imp.id)}>⊘</button
+											on:click={() => ignorer(imp.id)}><IconeAction icone="ban" /></button
 										>
 									{/if}
 								{/if}
@@ -333,7 +335,7 @@
 										class="btn-icon-danger"
 										aria-label="Supprimer cette ligne"
 										title="Supprimer la ligne"
-										on:click={() => supprimer(imp.id)}>🗑️</button
+										on:click={() => supprimer(imp.id)}><IconeAction icone="trash-2" /></button
 									>
 								{/if}
 							</div>

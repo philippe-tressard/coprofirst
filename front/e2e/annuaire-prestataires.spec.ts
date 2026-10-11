@@ -74,7 +74,7 @@ test('la carte dit « Sous contrat » d’après ses contrats, et seulement alor
 
 test('le filtre sépare les prestataires sous contrat des autres', async ({ page, baseURL }) => {
 	await ouvrirAnnuaire(page, baseURL);
-	const filtre = page.getByRole('group', { name: 'Filtrer par contrat' });
+	const filtre = page.getByRole('group', { name: 'Contrat', exact: true });
 
 	await filtre.getByRole('button', { name: /Sous contrat/ }).click();
 	await expect(page.locator('#presta-1')).toBeVisible();
@@ -120,19 +120,27 @@ test('la recherche retrouve un prestataire par son équipement, ses contacts, sa
 	await expect(page.locator('#presta-2')).toBeVisible();
 });
 
-test('sur ordinateur, la barre tient en deux lignes', async ({ page, baseURL }, info) => {
-	test.skip(info.project.name !== 'bureau', 'la règle des deux lignes vaut pour un ordinateur');
+/*
+ *  🗂️ Les réglages de la page Affaires (10/10/2026, devenue le standard du site) :
+ *  la recherche EN TÊTE, puis la catégorie et le contrat, chaque libellé devant
+ *  sa rangée — les « deux lignes » du 28/09 cèdent la place à cette grille.
+ */
+test('sur ordinateur, la recherche en tête, puis la catégorie et le contrat', async ({
+	page,
+	baseURL,
+}, info) => {
+	test.skip(info.project.name !== 'bureau', 'la grille à deux colonnes vaut pour un ordinateur');
 	await ouvrirAnnuaire(page, baseURL);
-	const haut = async (nom: string) => (await page.getByRole('group', { name: nom }).boundingBox())!;
-	const type = await haut('Filtrer par type de prestataire');
-	const contrat = await haut('Filtrer par contrat');
+	const haut = async (nom: string) =>
+		(await page.getByRole('group', { name: nom, exact: true }).boundingBox())!;
+	const type = await haut('Catégorie');
+	const contrat = await haut('Contrat');
 	const recherche = (await page.getByRole('searchbox', { name: 'Recherche' }).boundingBox())!;
 
-	//  Le métier seul sur la première ligne ; le cadre et la recherche sur la
-	//  seconde, centrés sur la même hauteur.
+	expect(type.y).toBeGreaterThan(recherche.y + recherche.height - 1);
 	expect(contrat.y).toBeGreaterThan(type.y + type.height - 1);
-	const milieu = (b: { y: number; height: number }) => b.y + b.height / 2;
-	expect(Math.abs(milieu(recherche) - milieu(contrat))).toBeLessThan(8);
+	//  Les champs partent du même bord : la colonne des libellés devant eux.
+	expect(Math.abs(type.x - contrat.x)).toBeLessThan(2);
 	//  Et rien ne déborde de la page.
 	const deborde = await page.evaluate(
 		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,

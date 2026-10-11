@@ -16,6 +16,7 @@ import { estTicketClos } from '$lib/tickets';
 import { equipLabel } from '$lib/prestataires';
 import { parAttribut } from '$lib/table-statuts';
 import { fmtDateLong } from '$lib/date';
+import type { ClasseGouttiere } from '$lib/gouttiere';
 
 // ── Apparence par type d'élément ──────────────────────────────────────────
 //
@@ -52,24 +53,111 @@ const {
 	libelle: L,
 	couleur: C,
 	fond: F,
+	icone: I,
+	abrege: A,
 } = parAttribut({
-	ticket_resolu: { libelle: 'Affaire résolue', couleur: '#B91C1C', fond: '#FEF2F2' }, //   0° rouge
-	ticket_ouvert: { libelle: 'Affaire', couleur: '#B91C1C', fond: '#FEF2F2' },
-	ticket_mis_a_jour: { libelle: 'Affaire mise à jour', couleur: '#B91C1C', fond: '#FEF2F2' },
-	annonce: { libelle: 'Petite annonce', couleur: '#C2410C', fond: '#FFF7ED' }, //  17° orange
-	diagnostic: { libelle: 'Diagnostic', couleur: '#4D7C0F', fond: '#F7FEE7' }, //  86° olive
-	annuaire: { libelle: 'Annuaire', couleur: '#15803D', fond: '#F0FDF4' }, // 142° vert
-	prestataire: { libelle: 'Prestataire', couleur: '#0F766E', fond: '#F0FDFA' }, // 175° sarcelle
-	idee: { libelle: 'Boîte à idées', couleur: '#0E7490', fond: '#ECFEFF' }, // 193° cyan
+	ticket_resolu: {
+		libelle: 'Affaire résolue',
+		couleur: '#B91C1C',
+		fond: '#FEF2F2',
+		icone: 'circle-check',
+		abrege: 'AFF.',
+	}, //   0° rouge
+	ticket_ouvert: {
+		libelle: 'Affaire',
+		couleur: '#B91C1C',
+		fond: '#FEF2F2',
+		icone: 'wrench',
+		abrege: 'AFF.',
+	},
+	ticket_mis_a_jour: {
+		libelle: 'Affaire mise à jour',
+		couleur: '#B91C1C',
+		fond: '#FEF2F2',
+		icone: 'refresh-cw',
+		abrege: 'AFF.',
+	},
+	annonce: {
+		libelle: 'Petite annonce',
+		couleur: '#C2410C',
+		fond: '#FFF7ED',
+		icone: 'heart-handshake',
+		abrege: 'ANN.',
+	}, //  17° orange
+	diagnostic: {
+		libelle: 'Diagnostic',
+		couleur: '#4D7C0F',
+		fond: '#F7FEE7',
+		icone: 'activity',
+		abrege: 'DIAG.',
+	}, //  86° olive
+	annuaire: {
+		libelle: 'Annuaire',
+		couleur: '#15803D',
+		fond: '#F0FDF4',
+		icone: 'users',
+		abrege: 'ANNU.',
+	}, // 142° vert
+	prestataire: {
+		libelle: 'Prestataire',
+		couleur: '#0F766E',
+		fond: '#F0FDFA',
+		icone: 'hard-hat',
+		abrege: 'PREST.',
+	}, // 175° sarcelle
+	idee: {
+		libelle: 'Boîte à idées',
+		couleur: '#0E7490',
+		fond: '#ECFEFF',
+		icone: 'lightbulb',
+		abrege: 'IDÉE',
+	}, // 193° cyan
 	//  214° bleu Seine, la couleur de la charte
-	publication: { libelle: 'Actualité', couleur: 'var(--color-primary)', fond: '#EEF2F7' },
-	document: { libelle: 'Document', couleur: '#4338CA', fond: '#EEF2FF' }, // 245° indigo
-	sondage_clos: { libelle: 'Sondage clos', couleur: '#6D28D9', fond: '#F5F3FF' }, // 263° violet
-	sondage_ouvert: { libelle: 'Sondage', couleur: '#6D28D9', fond: '#F5F3FF' },
-	faq: { libelle: 'Question fréquente', couleur: '#A21CAF', fond: '#FDF4FF' }, // 295° fuchsia
+	publication: {
+		libelle: 'Actualité',
+		couleur: 'var(--color-primary)',
+		fond: '#EEF2F7',
+		icone: 'newspaper',
+		abrege: 'ACTU.',
+	},
+	document: {
+		libelle: 'Document',
+		couleur: '#4338CA',
+		fond: '#EEF2FF',
+		icone: 'file-text',
+		abrege: 'DOC.',
+	}, // 245° indigo
+	sondage_clos: {
+		libelle: 'Sondage clos',
+		couleur: '#6D28D9',
+		fond: '#F5F3FF',
+		icone: 'bar-chart-3',
+		abrege: 'SOND.',
+	}, // 263° violet
+	sondage_ouvert: {
+		libelle: 'Sondage',
+		couleur: '#6D28D9',
+		fond: '#F5F3FF',
+		icone: 'bar-chart-3',
+		abrege: 'SOND.',
+	},
+	faq: {
+		libelle: 'Question fréquente',
+		couleur: '#A21CAF',
+		fond: '#FDF4FF',
+		icone: 'help-circle',
+		abrege: 'FAQ',
+	}, // 295° fuchsia
 });
 
 export const TYPE_LABELS: Record<string, string> = L;
+/**  Ce qui CLASSE une carte du fil dans sa gouttière (10/10/2026, maquette B du
+ *   fil, choisie à l'écran) : le pictogramme et l'abrégé de sa rubrique, le
+ *   libellé entier en infobulle. Écrits dans la table des rubriques, avec le
+ *   libellé et la teinte — une rubrique neuve sans marque ne compile pas. */
+export function classeFlux(type: string): ClasseGouttiere | null {
+	return I[type] ? { icone: I[type], abrege: A[type], libelle: typeLibelle(type) } : null;
+}
 export const TYPE_COLORS: Record<string, string> = C;
 export const TYPE_BG: Record<string, string> = F;
 

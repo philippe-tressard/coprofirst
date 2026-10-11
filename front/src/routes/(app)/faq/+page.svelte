@@ -6,6 +6,7 @@
 	import CarteFaq from '$lib/components/CarteFaq.svelte';
 	import ReorganisationFaq from '$lib/components/ReorganisationFaq.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import EntetePage from '$lib/components/EntetePage.svelte';
 	import { onMount } from 'svelte';
 	import { cibleDuHash, revelerCible } from '$lib/deepLink';
@@ -283,14 +284,14 @@
 						on:click={saveCategory}
 						disabled={savingCategory}
 						title="Valider"
-						aria-label="Valider">✅</button
+						aria-label="Valider"><IconeAction icone="check" /></button
 					>
 					<button
 						class="btn-icon-edit"
 						on:click={cancelEditCategory}
 						disabled={savingCategory}
 						title="Annuler"
-						aria-label="Annuler">✖️</button
+						aria-label="Annuler"><IconeAction icone="x" /></button
 					>
 				</div>
 			{:else}
@@ -300,7 +301,7 @@
 						class="btn-icon-edit btn-edit-cat"
 						on:click={() => startEditCategory(categorie)}
 						title="Renommer la catégorie"
-						aria-label="Renommer la catégorie">✏️</button
+						aria-label="Renommer la catégorie"><IconeAction icone="pencil" /></button
 					>
 				{/if}
 			{/if}

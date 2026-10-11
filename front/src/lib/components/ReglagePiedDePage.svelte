@@ -16,6 +16,7 @@
   sous le champ porte l'exemple.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import LibelleGroupe from '$lib/components/LibelleGroupe.svelte';
 	import Pastille from '$lib/components/Pastille.svelte';
@@ -63,7 +64,7 @@
 								aria-label="Monter « {e.libelle} »"
 								title="Monter"
 								disabled={i === 0}
-								on:click={() => bouger(code, -1)}>↑</button
+								on:click={() => bouger(code, -1)}><IconeAction icone="arrow-up" /></button
 							>
 							<button
 								type="button"
@@ -71,7 +72,7 @@
 								aria-label="Descendre « {e.libelle} »"
 								title="Descendre"
 								disabled={i === reglage.ordre.length - 1}
-								on:click={() => bouger(code, 1)}>↓</button
+								on:click={() => bouger(code, 1)}><IconeAction icone="arrow-down" /></button
 							>
 							{#if e.verrouille}
 								<span class="fixe" title="Toujours affiché : {e.verrouille}"

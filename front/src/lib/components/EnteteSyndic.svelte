@@ -21,7 +21,7 @@
 <script lang="ts">
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import AideSource from '$lib/components/AideSource.svelte';
-	import Icon from '$lib/components/Icon.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 
 	export let nom = '';
 	export let adresse = '';
@@ -88,7 +88,7 @@
 			class="btn-icon btn-icon-edit"
 			aria-label="Modifier"
 			title="Modifier"
-			on:click={() => (edition = true)}><Icon name="pencil" size={13} /></button
+			on:click={() => (edition = true)}><IconeAction icone="pencil" /></button
 		>
 	</div>
 {/if}

@@ -63,6 +63,7 @@
 			class="icone"
 			class:icone-active={!form.icone}
 			title="Aucune icône"
+			aria-label="Aucune icône"
 			on:click={() => (form.icone = '')}>—</button
 		>
 		{#each ICONES_PERIMETRE as ic (ic.nom)}

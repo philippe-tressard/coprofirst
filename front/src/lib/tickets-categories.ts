@@ -349,9 +349,24 @@ export function natureDe(t: { natures?: string[] }): (typeof NATURES)[number] {
 }
 
 /**
+ *  Ce que la GOUTTIÈRE d'une affaire montre : sa date (`mis_a_jour_le`, sinon
+ *  `cree_le`) et sa nature. Se passe tel quel à `CarteListe`
+ *  (`<CarteListe {...gouttiereAffaire(t)}>`) — la carte d'affaire et celle
+ *  d'actualité le lisent ici, jamais chacune chez elle. Il remplace le composant
+ *  `GouttiereAffaire`, devenu inutile quand le conteneur a porté la gouttière.
+ */
+export function gouttiereAffaire(t: {
+	natures?: string[];
+	cree_le: string;
+	mis_a_jour_le?: string | null;
+}): { quand: string; classe: (typeof NATURES)[number] } {
+	return { quand: t.mis_a_jour_le ?? t.cree_le, classe: natureDe(t) };
+}
+
+/**
  *  L'attribut qui TEINTE une carte d'après sa nature (`styles/normes.css`). Le
  *  pictogramme et le mot ne passent plus par des attributs rendus en
- *  pseudo-éléments : la gouttière est un composant, `GouttiereAffaire`.
+ *  pseudo-éléments : la gouttière est un composant, rendu par `CarteListe`.
  */
 export function attributsNature(t: { natures?: string[] }): Record<string, string> {
 	return { 'data-nature': natureDe(t).val };

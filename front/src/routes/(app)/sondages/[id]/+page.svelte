@@ -17,6 +17,7 @@
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import { aboutirGeste, ouvrirGeste } from '$lib/aboutissement';
 	import ResultatsSondage from '$lib/components/ResultatsSondage.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 
 	let sondage: SondageDetail | null = null;
 	let loading = true;
@@ -191,7 +192,7 @@
 							aria-label="Modifier ce sondage"
 							aria-pressed={edition}
 							title="Modifier"
-							on:click={() => (edition = !edition)}>&#x270F;&#xFE0F;</button
+							on:click={() => (edition = !edition)}><IconeAction icone="pencil" /></button
 						>
 						<button class="btn btn-outline btn-sm btn-stopper" on:click={stopperSondage}
 							>⏹ Stopper</button

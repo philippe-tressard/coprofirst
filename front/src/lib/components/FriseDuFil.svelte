@@ -1,6 +1,12 @@
 <!--
-  **La frise du fil d'activité** — des cartes `FluxCard` sur la ligne de temps,
-  groupées sous l'intitulé de leur jour.
+  **Le fil d'activité** — des cartes `FluxCard` groupées sous l'intitulé de
+  leur jour.
+
+  🔴 Plus de ligne de temps depuis le 10/10/2026 (maquette B du fil, choisie à
+  l'écran) : chaque carte a la gouttière du site, qui dit l'HEURE puis la
+  rubrique — le jour étant l'intitulé du groupe. Le trait vertical et ses
+  puces de couleur disaient la même chose une seconde fois. Le nom du composant
+  est resté ; la frise, c'est désormais la colonne des heures.
 
   ## Pourquoi ce composant (#779, 01/10/2026)
 
@@ -14,15 +20,15 @@
 
   | `variante` | Où | Ce qui diffère |
   |---|---|---|
-  | `fil` | le fil récent de l'accueil | rien : c'est la frise de la charte |
-  | `archives` | `ArchivesDuFil` | atténuée — on distingue l'archive du fil vivant |
-  | `epingle` | le bandeau Épinglé | sans ligne de temps : l'ordre n'y est pas le sujet |
+  | `fil` | le fil récent de l'accueil | rien |
+  | `archives` | `ArchivesDuFil` | chaque carte a l'allure archivée (`CarteListe archive`) |
+  | `epingle` | le bandeau Épinglé | rien de plus : il n'a qu'un groupe, sans intitulé |
 
   Un groupe sans intitulé (`label: null`) n'en affiche pas : c'est le cas du
   bandeau Épinglé, qui n'a qu'un groupe.
 
-  La frise elle-même (`.flux-timeline`, `.flux-day-label`) vit dans la charte
-  (`composants.css`) ; la clé d'une carte, dans `cleFluxItem` (`$lib/flux`).
+  L'intitulé du jour (`.flux-day-label`) vit dans la charte (`composants.css`) ;
+  la clé d'une carte, dans `cleFluxItem` (`$lib/flux`).
 -->
 <script lang="ts">
 	import FluxCard from '$lib/components/FluxCard.svelte';
@@ -39,34 +45,17 @@
 	export let onMasquer: (id: string) => void = () => {};
 </script>
 
-<div
-	class="flux-timeline"
-	class:frise-archives={variante === 'archives'}
-	class:frise-epingle={variante === 'epingle'}
->
+<div class="flux-groupes">
 	{#each groupes as groupe (groupe.label)}
 		{#if groupe.label}<div class="flux-day-label">{groupe.label}</div>{/if}
 		{#each groupe.items as item (cleFluxItem(item))}
 			<FluxCard
 				{item}
 				expanded={itemDeplie === item.id}
+				archive={variante === 'archives'}
 				on:toggle={(e) => onBasculer(e.detail)}
 				on:masquer={(e) => onMasquer(e.detail)}
 			/>
 		{/each}
 	{/each}
 </div>
-
-<style>
-	.frise-archives {
-		opacity: 0.85;
-	}
-	/*  La carte est la même que dans le fil : seule la ligne de temps est
-	    inutile ici. Le retrait reste celui du bureau, même au téléphone. */
-	.frise-epingle {
-		padding-left: 1.5rem;
-	}
-	.frise-epingle::before {
-		display: none;
-	}
-</style>

@@ -39,9 +39,11 @@ _QUI_ARCHIVENT = _QUI_SUPPRIMENT + ["CarteModifiable.svelte"]
 #: monter, sans quoi le contrôle ci-dessus lirait un fichier qu'elles n'emploient plus.
 _MONTENT_CARTE_MODIFIABLE = ["CartePrestataire.svelte", "CarteContrat.svelte"]
 
-#: La corbeille et le carton, littéraux ou en entité HTML.
-_CORBEILLE = re.compile(r"🗑|&#x1F5D1;", re.IGNORECASE)
-_CARTON = re.compile(r"📦|&#x1F4E6;|\\u\{1F4E6\}", re.IGNORECASE)
+#: La corbeille et le carton, littéraux, en entité HTML, ou AU TRAIT : depuis le
+#: 10/10/2026 (#1819, la page Affaires devenue le standard du site), une action se
+#: dessine par `<IconeAction icone="…" />` — `trash-2` et `archive`.
+_CORBEILLE = re.compile(r'🗑|&#x1F5D1;|icone="trash-2"', re.IGNORECASE)
+_CARTON = re.compile(r'📦|&#x1F4E6;|\\u\{1F4E6\}|icone="archive"', re.IGNORECASE)
 
 
 def _sans_commentaires(source: str) -> str:

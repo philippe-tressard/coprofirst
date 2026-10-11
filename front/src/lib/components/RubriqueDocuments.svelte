@@ -19,6 +19,7 @@
   jour SA liste, sans aiguillage par mode.
 -->
 <script lang="ts">
+	import type { ClasseGouttiere } from '$lib/gouttiere';
 	import { nombreOuNull } from '$lib/utils';
 	import { documents as documentsApi, type Document } from '$lib/api';
 	import { tenter } from '$lib/erreurs';
@@ -44,7 +45,6 @@
 	export let peutModifier = false;
 	/** L'ordre d'affichage ; la liste elle-même garde l'ordre d'arrivée. */
 	export let trier: (docs: Document[]) => Document[] = (docs) => docs;
-	export let dateDe: ((doc: Document) => string) | undefined = undefined;
 	/** Le formulaire de dépôt. */
 	export let intitule: string;
 	export let placeholderTitre: string;
@@ -57,6 +57,30 @@
 	export let messageAjout: string;
 
 	const avecAg = mode === 'ag';
+
+	/**  La GOUTTIÈRE de chaque carte (10/10/2026, la page Affaires devenue le
+	 *   standard) : QUAND, puis ce qui CLASSE. La date est celle que la ligne
+	 *   affichait — la publication d'un plan ou d'un règlement, l'assemblée d'un
+	 *   compte-rendu (« AG du … », qui passe ainsi de la dernière ligne à la
+	 *   gouttière : une seule date par carte). Le classement est la rubrique ;
+	 *   les abréviations tiennent dans la colonne, comme « CAL. » (#1220). */
+	const GOUTTIERE: Record<
+		ModeDocument,
+		{ quand: (d: Document) => string | null; classe: ClasseGouttiere | null }
+	> = {
+		plan: {
+			quand: (d) => d.publie_le,
+			classe: { icone: 'layers', libelle: 'Plan', abrege: 'PLAN' },
+		},
+		reglement: {
+			quand: (d) => d.publie_le,
+			classe: { icone: 'book-open', libelle: 'Règlement', abrege: 'RÈGL.' },
+		},
+		ag: {
+			quand: (d) => d.date_ag,
+			classe: { icone: 'users', libelle: 'Assemblée générale', abrege: 'AG' },
+		},
+	};
 
 	function saisieVide() {
 		return {
@@ -167,7 +191,8 @@
 	{messageVide}
 	{peutModifier}
 	urlTelechargement={(d) => documentsApi.downloadUrl(d.id)}
-	{dateDe}
+	quandDe={GOUTTIERE[mode].quand}
+	classe={GOUTTIERE[mode].classe}
 	onAjouter={() => (ouvert = true)}
 	onModifier={corriger}
 	onSupprimer={supprimer}

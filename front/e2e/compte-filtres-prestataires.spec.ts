@@ -50,7 +50,7 @@ test('annuaire : la pastille retenue de chaque rangée compte les fiches affich�
 	await expect(page.locator('#presta-1')).toBeVisible(); //  cas zéro
 
 	//  « Tous » retenu dans les deux rangées : trois fiches, l'archivée à part.
-	for (const libelle of ['Filtrer par type de prestataire', 'Filtrer par contrat']) {
+	for (const libelle of ['Catégorie', 'Contrat']) {
 		await expect(comptes(page, libelle)).toHaveCount(1);
 		await expect(comptes(page, libelle)).toHaveText('3');
 		await expect(
@@ -59,12 +59,12 @@ test('annuaire : la pastille retenue de chaque rangée compte les fiches affich�
 	}
 
 	//  Retenir un métier : sa pastille prend le compte, l'autre rangée suit.
-	const maintenance = rangee(page, 'Filtrer par type de prestataire').getByRole('button', {
+	const maintenance = rangee(page, 'Catégorie').getByRole('button', {
 		name: /Maintenance/,
 	});
 	await maintenance.click();
 	await expect(maintenance.locator('.compte')).toHaveText('2');
-	await expect(comptes(page, 'Filtrer par type de prestataire')).toHaveCount(1);
-	await expect(comptes(page, 'Filtrer par contrat')).toHaveText('2');
+	await expect(comptes(page, 'Catégorie')).toHaveCount(1);
+	await expect(comptes(page, 'Contrat')).toHaveText('2');
 	await expect(page.locator('[id^="presta-"]')).toHaveCount(2);
 });

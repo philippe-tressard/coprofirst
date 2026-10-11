@@ -40,6 +40,7 @@
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
 	import PastilleDeroulante from '$lib/components/PastilleDeroulante.svelte';
+	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
 	import { CATEGORIES_ANNONCE, TRIS_ANNONCE, TYPES_ANNONCE } from '$lib/annonces';
 	import { enCours } from '$lib/archives';
 	import { annonces as annoncesApi, type PetiteAnnonce } from '$lib/api';
@@ -179,47 +180,51 @@
 	}
 </script>
 
-<div class="filters">
-	<!--  🔴 TROIS valeurs : sous le seuil des listes courtes, donc des PASTILLES —
-	      la règle est écrite dans `ux-patterns` depuis le 29/08/2026 (#491) et
-	      n'avait pas été appliquée ici. Confirmée par l'utilisateur le 06/09
-	      (« ≤ 5 valeurs en pastilles ») : les deux seuils coïncident, aucune liste
-	      du produit n'a cinq ou six valeurs.
+<!--  🗂️ LES RÉGLAGES DU STANDARD (10/10/2026, la page Affaires devenue celle du
+      site) : `ReglagesListe` aligne chaque libellé sur la gouttière des cartes,
+      et la pastille retenue porte le nombre d'annonces affichées (§5).
 
-	      ⚠️ La catégorie reste une LISTE juste à côté, et c'est la règle qui le
-	      veut : NEUF valeurs. Le §« seuil des listes courtes » nomme d'ailleurs
-	      `CATEGORIES_ANNONCE` comme le cas qui reste dehors.
+      🔴 Le TYPE : TROIS valeurs, sous le seuil des listes courtes, donc des
+      PASTILLES (#491, confirmé le 06/09 : « ≤ 5 valeurs en pastilles »).
 
-	      🔴 Mais plus un `<select>` natif (24/09/2026) : coins carrés, fond gris
-	      et police plus grande à côté de pastilles arrondies, signalé à l'écran
-	      (« son UX dénote à côté du filtre »). `PastilleDeroulante` garde la
-	      liste native et lui donne la forme d'une pastille ; le tri, qui est un
-	      ORDRE et non un filtre, se cale à droite.
+      ⚠️ La CATÉGORIE reste une liste, et c'est la règle qui le veut : NEUF
+      valeurs — le §« seuil des listes courtes » nomme `CATEGORIES_ANNONCE`
+      comme le cas qui reste dehors. Plus un `<select>` natif depuis le
+      24/09/2026 (« son UX dénote à côté du filtre ») : `PastilleDeroulante`
+      garde la liste native et lui donne la forme d'une pastille. Le TRI, qui
+      est un ORDRE et non un filtre, partage sa rangée et se cale à droite.
 
-	      ⚠️ `defilante={false}` : la barre passe déjà à la ligne, et la rangée
-	      défilante réservait 4 px sous elle pour sa barre de défilement — ce qui
-	      la remontait de 2 px au-dessus des deux listes, mesuré au navigateur. -->
+      ⚠️ `defilante={false}` : trois pastilles tiennent toujours, et la rangée
+      défilante réserve 4 px sous elle pour sa barre de défilement. -->
+<ReglagesListe>
 	<ChoixPastilles
 		options={TYPES_ANNONCE}
 		bind:valeur={filtreType}
-		tous="Tous types"
+		tous="Tous"
 		compte={enCours(filtrees).length}
-		libelle="Filtrer les annonces par type"
+		libelle="Type"
+		libelleDevant
 		defilante={false}
 	/>
-	<PastilleDeroulante
-		options={CATEGORIES_ANNONCE}
-		bind:valeur={filtreCategorie}
-		tous="Toutes catégories"
-		libelle="Filtrer par catégorie"
-	/>
-	<PastilleDeroulante
-		options={TRIS_ANNONCE}
-		bind:valeur={filtreTri}
-		libelle="Trier les annonces"
-		tri
-	/>
-</div>
+	<!--  Le libellé est celui de la rangée, posé dans la colonne de la gouttière ;
+	      chaque liste garde son nom accessible (`libelle`), la pastille n'en
+	      montrant que la valeur. -->
+	<span class="libelle-groupe libelle-devant" id="annonces-categorie">Catégorie</span>
+	<div class="annonces-listes" role="group" aria-labelledby="annonces-categorie">
+		<PastilleDeroulante
+			options={CATEGORIES_ANNONCE}
+			bind:valeur={filtreCategorie}
+			tous="Toutes catégories"
+			libelle="Filtrer par catégorie"
+		/>
+		<PastilleDeroulante
+			options={TRIS_ANNONCE}
+			bind:valeur={filtreTri}
+			libelle="Trier les annonces"
+			tri
+		/>
+	</div>
+</ReglagesListe>
 
 <!--  §0 ter : la boîte de création vient APRÈS les filtres — ce qui qualifie la
       liste reste au-dessus du formulaire ouvert (#1186). `lint:filtre-avant-formulaire`. -->
@@ -310,3 +315,15 @@
       ne voit pas ». Il vit maintenant DANS la carte de l'annonce, par le slot
       `formulaire` que `ListeAnnonces` relaie — le pattern de la carte
       d'actualité, qui existait déjà. -->
+
+<style>
+	/*  La catégorie et le tri sur une rangée, dans la colonne des champs : le tri
+	    se cale à droite de lui-même (`PastilleDeroulante`, `tri`). */
+	.annonces-listes {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+	}
+</style>

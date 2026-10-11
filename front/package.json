@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "2.133.1",
+	"version": "2.134.0",
 	"private": true,
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
@@ -123,6 +123,7 @@
 		"lint:compte-filtres": "node scripts/check-compte-filtres.mjs --selftest && node scripts/check-compte-filtres.mjs",
 		"lint:note-etoiles": "node scripts/check-note-etoiles.mjs",
 		"lint:entete-carte": "node scripts/check-entete-carte.mjs --selftest && node scripts/check-entete-carte.mjs",
+		"lint:carte-liste": "node scripts/check-carte-liste.mjs --selftest && node scripts/check-carte-liste.mjs",
 		"lint:pictogrammes": "node scripts/check-pictogrammes.mjs --selftest && node scripts/check-pictogrammes.mjs",
 		"lint:clamp": "node scripts/check-clamp.mjs --selftest && node scripts/check-clamp.mjs",
 		"lint:types-locaux": "node scripts/check-types-locaux.mjs --selftest && node scripts/check-types-locaux.mjs",
@@ -136,6 +137,7 @@
 		"lint:filtre-avant-formulaire": "node scripts/check-filtre-avant-formulaire.mjs --selftest && node scripts/check-filtre-avant-formulaire.mjs",
 		"lint:section-nommee": "node scripts/check-section-nommee.mjs --selftest && node scripts/check-section-nommee.mjs",
 		"lint:bouton-icone": "node scripts/lib-balises.mjs --selftest && node scripts/check-bouton-icone.mjs --selftest && node scripts/check-bouton-icone.mjs",
+		"lint:actions-au-trait": "node scripts/check-actions-au-trait.mjs --selftest && node scripts/check-actions-au-trait.mjs",
 		"lint:tables-statuts": "node scripts/check-tables-statuts.mjs",
 		"lint:statuts-acces": "node scripts/check-statuts-acces.mjs --selftest && node scripts/check-statuts-acces.mjs",
 		"lint:lock": "node scripts/check-lock-coherent.mjs && node scripts/check-licence-manifestes.mjs --selftest && node scripts/check-licence-manifestes.mjs",

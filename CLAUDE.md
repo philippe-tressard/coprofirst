@@ -510,6 +510,10 @@ coupant. 🔴 **Les courriels de sécurité ne sont pas un service**
 - [ ] Méta toujours visible en mode collapsé — tenue par `EnteteCarte`, qui porte
       les tags sur la carte repliée (`npm run lint:entete-carte` exige qu'une
       carte passe par lui)
+- [ ] Carte de liste : `<CarteListe>` — conteneur, gouttière (`quand`, `classe`), geste
+      (`onDeplier`), états (`expanded`, `urgent`, `archive`) ; jamais un `.carte-liste`
+      écrit à la main ni un `<Gouttiere>` rendu par la carte (`npm run lint:carte-liste`,
+      10/10/2026 : quatorze copies, et cinq allures d'archive)
 - [ ] Corps déplié d'une carte : `class="carte-corps …"` — c'est ce qui le fait
       entrer (fondu 200 ms) ; sans elle il apparaît sec, sans un mot. 🔒 `npm run
       lint:entete-carte` l'exige de tout fichier qui rend `.carte-liste` (#1579). Un survol
@@ -592,6 +596,11 @@ coupant. 🔴 **Les courriels de sécurité ne sont pas un service**
       écrit à la main — il y en avait **23** avant #1045 (`npm run lint:chargement`)
 - [ ] En-tête de page : `<EntetePage>`, jamais `<div class="page-header">`
       (`ux-patterns` §13)
+- [ ] Bouton d'action icône : `<IconeAction icone="…" />`, **au trait** — jamais un
+      émoji (✏️ 🗑️ 📦 ↩️…). La page Affaires est le standard du site depuis le
+      10/10/2026 (#1819) : une liste en cartes prend `Gouttiere` (date, puis ce qui
+      classe) et `ReglagesListe` (recherche en tête) — `ux-patterns` §3.
+      `npm run lint:actions-au-trait`
 - [ ] Icône vérifiée dans `$lib/icones-svg.json` — un nom inconnu échoue en silence
       (`npm run lint:icones` le refuse ; un relais d'icône s'appelle `icone`)
 - [ ] Tout champ libellé dans un `.field` — jamais une nomenclature locale

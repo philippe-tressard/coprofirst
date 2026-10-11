@@ -17,6 +17,7 @@
   page arrivent en `valeurs`, tout le reste vit ici.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import { onMount } from 'svelte';
 	import { config as configApi } from '$lib/api';
@@ -161,14 +162,15 @@
 							class="btn-order"
 							disabled={indicesMenu[0] === i}
 							on:click={() => movePage(i, -1)}
-							aria-label="Monter {pg.nom} dans le menu">▲</button
+							aria-label="Monter {pg.nom} dans le menu"><IconeAction icone="arrow-up" /></button
 						>
 						<button
 							type="button"
 							class="btn-order"
 							disabled={indicesMenu[indicesMenu.length - 1] === i}
 							on:click={() => movePage(i, 1)}
-							aria-label="Descendre {pg.nom} dans le menu">▼</button
+							aria-label="Descendre {pg.nom} dans le menu"
+							><IconeAction icone="arrow-down" /></button
 						>
 					{:else}
 						<span

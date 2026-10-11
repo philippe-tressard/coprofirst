@@ -26,7 +26,8 @@
  *
  *  ## Ce que le contrôle mesure
  *
- *  Tout fichier qui rend `class="carte-liste"` (ou `class:carte-liste`) doit
+ *  Tout fichier qui rend une carte de liste — `<CarteListe>`, seul conteneur
+ *  depuis le 10/10/2026 ; avant, `class="carte-liste"` écrit à la main — doit
  *  importer `EnteteCarte`. C'est volontairement grossier : il ne vérifie pas
  *  QUE l'en-tête est bien composé, seulement qu'il n'est pas réécrit. Un
  *  contrôle qui prétendrait juger la composition rendrait des verdicts qu'on
@@ -67,8 +68,9 @@ import { join, sep } from 'node:path';
 
 const RACINE = 'src';
 
-/** Le marqueur d'une carte de liste, sous ses deux écritures Svelte. */
-const CARTE = /class="[^"]*\bcarte-liste\b|class:carte-liste/;
+/**  Le marqueur d'une carte de liste : son conteneur, `CarteListe` — le seul
+ *   qui écrive `.carte-liste` depuis le 10/10/2026 (`lint:carte-liste`). */
+const CARTE = /<CarteListe\b/;
 /** L'emploi du composant — par l'IMPORT, qu'une portée locale ne peut pas feindre. */
 const EMPLOI = /import\s+EnteteCarte\s+from/;
 /** Le corps déplié : la classe qui le fait entrer, dans un `class="…"` (#1579). */
@@ -178,29 +180,29 @@ if (process.argv.includes('--selftest')) {
 	t(
 		'carte conforme',
 		'ok',
-		'import EnteteCarte from \'./EnteteCarte.svelte\';\n<div class="carte-liste"><div class="carte-corps">',
+		'import EnteteCarte from \'./EnteteCarte.svelte\';\n<CarteListe><div class="carte-corps">',
 	);
 	t(
 		'carte conforme (class:)',
 		'ok',
-		'import EnteteCarte from \'./x\';\n<div class:carte-liste={!a}><div class="carte-corps tk-body">',
+		'import EnteteCarte from \'./x\';\n<CarteListe archive={a}><div class="carte-corps tk-body">',
 	);
 	//  🔴 #1579 : l'état exact de `CarteModifiable` avant le 02/10/2026 — un corps
 	//  sous sa propre classe, qui n'entre pas en fondu.
 	t(
 		'corps sans carte-corps',
 		'sans-corps',
-		'import EnteteCarte from \'./x\';\n<div class="carte-liste"><div class="carte-modifiable-corps">',
+		'import EnteteCarte from \'./x\';\n<CarteListe><div class="carte-modifiable-corps">',
 	);
 	//  Un voisin de nom ne vaut pas la classe : `carte-corps-x` n'est pas `carte-corps`.
 	t(
 		'classe voisine',
 		'sans-corps',
-		'import EnteteCarte from \'./x\';\n<div class="carte-liste"><div class="carte-corps-x">',
+		'import EnteteCarte from \'./x\';\n<CarteListe><div class="carte-corps-x">',
 	);
 	//  🔴 LE cas qui donne sa raison d'être au contrôle : c'est l'état exact dans
 	//  lequel `CarteContrat` et `CartePrestataire` sont restées un mois.
-	t('carte qui réécrit son en-tête', 'sans-entete', '<div class="carte-liste expanded">');
+	t('carte qui réécrit son en-tête', 'sans-entete', '<CarteListe expanded>');
 	//  Un fichier qui ne rend aucune carte n'est ni bon ni mauvais : sans objet.
 	t('fichier sans carte', 'hors-sujet', '<div class="autre-chose">');
 	//  ⚠️ Le mot dans un COMMENTAIRE qui raconte la règle ne doit pas déclencher
@@ -210,20 +212,20 @@ if (process.argv.includes('--selftest')) {
 	t(
 		'mention en commentaire, avec import',
 		'ok',
-		'import EnteteCarte from \'./x\';\n// class="carte-liste"\n<div class="carte-corps">',
+		'import EnteteCarte from \'./x\';\n// <CarteListe>\n<div class="carte-corps">',
 	);
 	//  🔴 Le second cas que ce contrôle refuse depuis le 18/09/2026.
 	t(
 		'carte qui rend son propre chevron',
 		'chevron-recopie',
 		`import EnteteCarte from './x';
-<div class="carte-liste"><span class="chevron">›</span>`,
+<CarteListe><span class="chevron">›</span>`,
 	);
 	t(
 		'carte qui remplit le slot chevron',
 		'chevron-recopie',
 		`import EnteteCarte from './x';
-<div class="carte-liste"><svelte:fragment slot="chevron">`,
+<CarteListe><svelte:fragment slot="chevron">`,
 	);
 	const e = (libelle, attendu, src, classes) => {
 		const r = ecartsTaille(src, new Set(classes), '0.75rem').map((x) => x.classe);

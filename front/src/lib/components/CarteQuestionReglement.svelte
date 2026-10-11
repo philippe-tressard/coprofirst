@@ -18,10 +18,12 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
 	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import type { QuestionReglement } from '$lib/api';
 	import { fmtDatetime } from '$lib/date';
 	import { safeHtml } from '$lib/sanitize';
@@ -38,21 +40,20 @@
 	$: verifies = q.extraits.filter((e) => e.verifie).length;
 </script>
 
-<div
+<!--  La GOUTTIÈRE de la page Affaires, standard du site (10/10/2026) : la date
+      de la question, et RIEN dessous. Une question n'a pas de rubrique ; son
+      verdict est un ÉTAT — teinté, il se lit en capsule sur la dernière ligne,
+      comme l'état d'une affaire. Le ranger dans la colonne qui CLASSE en ferait
+      une nature, et la gouttière prendrait sa teinte au lieu de celle de la
+      charte. L'heure, que la gouttière n'écrit pas, passe au pied de l'avis
+      (« Posée le … »). -->
+<CarteListe
 	id="question-reglement-{q.id}"
-	class="carte-liste"
-	class:expanded={ouvert || publication}
-	role="presentation"
-	on:click={() => {
-		if (!ouvert && !publication) dispatch('basculer');
-	}}
+	quand={q.cree_le}
+	expanded={ouvert || publication}
+	onDeplier={() => dispatch('basculer')}
 >
-	<EnteteCarte
-		titre={q.question}
-		date={fmtDatetime(q.cree_le)}
-		basculable
-		on:toggle={() => dispatch('basculer')}
-	>
+	<EnteteCarte titre={q.question} basculable on:toggle={() => dispatch('basculer')}>
 		<svelte:fragment slot="actions">
 			<BoutonLien ancre="question-reglement-{q.id}" quoi="la question" />
 			{#if !q.faq_item_id}
@@ -61,7 +62,8 @@
 					aria-label="Publier dans la FAQ"
 					title="Publier dans la FAQ"
 					aria-pressed={publication}
-					on:click|stopPropagation={() => dispatch('publier')}>📚</button
+					on:click|stopPropagation={() => dispatch('publier')}
+					><IconeAction icone="book-open-check" /></button
 				>
 			{/if}
 			{#if $isAdmin}
@@ -69,7 +71,8 @@
 					class="btn-icon-danger"
 					aria-label="Supprimer la question"
 					title="Supprimer la question et sa réponse"
-					on:click|stopPropagation={() => dispatch('supprimer')}>🗑️</button
+					on:click|stopPropagation={() => dispatch('supprimer')}
+					><IconeAction icone="trash-2" /></button
 				>
 			{/if}
 		</svelte:fragment>
@@ -151,7 +154,8 @@
 			{/if}
 
 			<p class="aide">
-				Avis indicatif, qui ne se substitue pas aux actes authentiques.
+				Posée le {fmtDatetime(q.cree_le)}. Avis indicatif, qui ne se substitue pas aux actes
+				authentiques.
 				{#if q.modele}Rédigé par {q.modele}{#if q.texte_charge_le}, d'après le texte chargé le {fmtDatetime(
 							q.texte_charge_le,
 						)}{/if}.{/if}
@@ -159,7 +163,7 @@
 			</p>
 		</div>
 	{/if}
-</div>
+</CarteListe>
 
 <style>
 	/*  Le retrait de l'en-tête (`EnteteCarte`, 0,7 rem) : le corps s'aligne sur le titre. */

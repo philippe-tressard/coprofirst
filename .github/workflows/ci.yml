@@ -2111,6 +2111,14 @@ jobs:
         working-directory: front
         run: npm run lint:entete-carte
 
+      # 🔴 Le CONTENEUR d'une carte de liste — `.carte-liste`, la gouttière, le
+      # geste de dépliage, l'état archivé — est rendu par `CarteListe` seul
+      # (10/10/2026). Quatorze cartes le recopiaient, et l'état « archivé »
+      # avait cinq rendus que rien ne comparait.
+      - name: Conteneur de carte rendu par CarteListe seul
+        working-directory: front
+        run: npm run lint:carte-liste
+
       # 🔴 Trois règles de la checklist qui n'avaient AUCUN garde-fou (#1045,
       # point 2). La mesure du 24/09/2026 en a trouvé quatre écarts vivants :
       # « 📍 Concerne votre bâtiment » et « 📍 Dépannage » (📍 est un LIEU, un
@@ -2226,6 +2234,16 @@ jobs:
       - name: Un bouton icone-seule dit ce qu'il fait
         working-directory: front
         run: npm run lint:bouton-icone
+
+      # 🗂️ LES ACTIONS SE DESSINENT AU TRAIT (10/10/2026, #1819) — la page
+      # Affaires est le standard du site, ses actions au trait aussi. Une
+      # centaine de boutons ✏️ 🗑️ 📦 ↩️ sont passes par `IconeAction` ; ce
+      # controle refuse le suivant. Il a d'abord revele un faux vert de
+      # `lib-balises` : une fermeture `</button` + `>` a la ligne suivante (la
+      # forme de Prettier) faisait lire le contenu des elements suivants.
+      - name: Un bouton d'action se dessine au trait, jamais en emoji
+        working-directory: front
+        run: npm run lint:actions-au-trait
 
       # 🔴 DIX FICHIERS ÉNUMÉRAIENT LE MÊME ENSEMBLE D'ÉTATS DEUX OU TROIS FOIS
       # (15/09/2026, #779) — un libellé ici, une pastille là, un abrégé plus bas.

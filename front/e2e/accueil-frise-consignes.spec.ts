@@ -66,15 +66,48 @@ test('le fil récent est groupé sous « Aujourd’hui »', async ({ page }) => 
 	await expect(page.getByText('Coupure d’eau jeudi')).toBeVisible();
 });
 
-test('l’épinglé a son bandeau, sans intitulé de jour ni ligne de temps', async ({ page }) => {
+/**
+ *  🗂️ La carte du fil est celle du site (10/10/2026, maquette B du fil) : la
+ *  gouttière dit l'HEURE — le jour est l'intitulé du groupe — puis la rubrique,
+ *  et le geste est asymétrique : un clic dans le corps déplié ne referme pas.
+ */
+test('la carte du fil a la gouttière du site : l’heure, puis la rubrique', async ({
+	page,
+}, info) => {
+	await accueil(page);
+	const carte = page.locator('.flux-groupes .carte-liste', { hasText: 'Coupure d’eau jeudi' });
+	const heure = await page.evaluate(async (iso) => {
+		const { fmtTime } = await import('/src/lib/date.ts');
+		return fmtTime(iso);
+	}, ITEMS[0].date);
+	await expect(carte.locator('.gouttiere time')).toHaveText(heure);
+	await expect(carte.locator('.gouttiere abbr')).toHaveText('ACTU.');
+	if (info.project.name === 'bureau') {
+		//  « 14:32 » tient dans la colonne, comme le jour d'une affaire.
+		const deborde = await carte
+			.locator('.gouttiere')
+			.evaluate(
+				(g) =>
+					g.querySelector('.g-jour')!.getBoundingClientRect().right >
+					g.getBoundingClientRect().right - 2,
+			);
+		expect(deborde, 'l’heure sort de la gouttière').toBe(false);
+	}
+	//  Le geste du site : repliée, toute la carte ouvre ; dépliée, le corps se lit.
+	await carte.locator('.flux-detail').click();
+	await expect(carte).toHaveClass(/expanded/);
+	//  Dans un coin : le corps porte le lien vers l'écran d'origine.
+	await carte.locator('.carte-corps').click({ position: { x: 4, y: 4 } });
+	await expect(carte, 'un clic dans le corps a replié la carte').toHaveClass(/expanded/);
+	await carte.locator('.ec-titre-btn').click();
+	await expect(carte).not.toHaveClass(/expanded/);
+});
+
+test('l’épinglé a son bandeau, sans intitulé de jour', async ({ page }) => {
 	await accueil(page);
 	const bandeau = page.locator('.epingle-bloc');
 	await expect(bandeau.getByText('Règles du local vélos')).toBeVisible();
 	await expect(bandeau.locator('.flux-day-label')).toHaveCount(0);
-	const ligne = await bandeau
-		.locator('.flux-timeline')
-		.evaluate((el) => getComputedStyle(el, '::before').display);
-	expect(ligne).toBe('none');
 	//  Et il n'est pas lu deux fois : la chronologie ne le reprend pas.
 	await expect(page.getByText('Règles du local vélos')).toHaveCount(1);
 });
@@ -84,8 +117,10 @@ test('les Archives s’ouvrent et rendent leur carte, atténuée', async ({ page
 	await expect(page.getByText('Ravalement terminé')).toHaveCount(0);
 	await page.getByRole('button', { name: /Archives/ }).click();
 	await expect(page.getByText('Ravalement terminé')).toBeVisible();
+	//  L'allure archivée de toute carte du site (`CarteListe archive`), plus un
+	//  voile posé sur le groupe : c'est la carte qui s'atténue.
 	const opacite = await page
-		.locator('.flux-timeline', { hasText: 'Ravalement terminé' })
+		.locator('.carte-liste.attenue', { hasText: 'Ravalement terminé' })
 		.evaluate((el) => getComputedStyle(el).opacity);
 	expect(Number(opacite)).toBeLessThan(1);
 });

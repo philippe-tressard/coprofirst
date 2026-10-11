@@ -33,7 +33,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep as sepOS } from 'node:path';
 
-import { balisesOuvrantes, contenuDe, ligneDe } from './lib-balises.mjs';
+import { balisesOuvrantes, contenuDe, ligneDe, porteUnMot } from './lib-balises.mjs';
 
 const RACINE = new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
@@ -60,25 +60,14 @@ function baliseSeul(source) {
 	);
 }
 
-/** Le contenu porte-t-il un MOT lisible (deux lettres à la suite) ? */
-export function porteUnMot(contenu) {
-	//  ⚠️ Un `<slot>` porte le texte de l'APPELANT : on ne peut pas savoir ici
-	//  ce qu'il rendra, et `Pastille` le prouve — son libellé vient toujours de
-	//  l'écran qui l'emploie. Crier dessus ferait exiger un `aria-label` qui
-	//  MASQUERAIT ce libellé, c'est-à-dire un défaut pour corriger une absence
-	//  de défaut. Un contrôle qui crie sur du légitime finit désarmé.
-	const sansBalises = contenu
-		//  Un bloc Svelte (`{#if …}`) n'est pas du texte rendu ; son contenu, si.
-		.replace(/\{[#:/@][^}]*\}/g, ' ')
-		//  Une expression `{x}` peut rendre du texte : on ne peut pas trancher,
-		//  et on la traite comme du texte — ne pas crier sur du légitime.
-		.replace(/<[^>]*>/g, ' ');
-	if (contenu.includes('<slot')) return true;
-	return /\p{Letter}\p{Letter}/u.test(sansBalises);
-}
-
 /** Le nom accessible est-il porté par la balise ? */
 export function aUnNomAccessible(balise) {
+	//  Un bouton RETIRÉ de l'arbre d'accessibilité (`aria-hidden="true"`) n'a
+	//  pas de nom à porter : c'est un doublon pour la souris d'un geste qui a
+	//  son chemin clavier ailleurs (les flèches de `PiecesJointes`). Le contrôle
+	//  ne le voyait pas avant #1819 — la lecture des fermetures sur deux lignes
+	//  avalait son contenu.
+	if (/\saria-hidden="true"/.test(balise)) return true;
 	return /\saria-label(ledby)?[=\s]/.test(balise);
 }
 
@@ -102,6 +91,8 @@ if (process.argv.includes('--selftest')) {
 		['<button aria-label="Retravailler" on:click={f}>✨</button>', 0],
 		//  `aria-labelledby` compte aussi.
 		['<button aria-labelledby="t">✨</button>', 0],
+		//  Retiré de l'arbre d'accessibilité : rien à nommer.
+		['<button aria-hidden="true" tabindex="-1">&#x2039;</button>', 0],
 		//  ⚠️ `title` SEUL ne suffit pas : il n'existe pas au doigt ni au clavier.
 		['<button title="Gras"><b>B</b></button>', 1],
 		//  Un bouton qui PARLE n'a besoin de rien.

@@ -92,23 +92,10 @@
 		flex-shrink: 0;
 	}
 	/*  🔴 UN HABILLAGE, et la couleur seulement où elle DISTINGUE (maquette B,
-	    10/10/2026 : « visuellement brouillon »). La ligne portait cinq
-	    habillages — fond jaune, gris, contour, rose, texte nu — et la couleur
-	    n'y hiérarchisait plus rien. Désormais : des CAPSULES (coins de 6 px, et
-	    non la pilule), NEUTRES sur le pierre de la charte pour ce qui décrit
-	    sans alerter — périmètre, marqueurs ; seuls l'ÉTAT, « qui la lit » et
-	    l'URGENCE gardent leur teinte, parce qu'ils changent d'une affaire à
-	    l'autre et qu'on les cherche. Le numéro, l'auteur et ✨ restent du texte.
-	    Ici et non sur la carte : le fil d'accueil rend cette ligne à l'identique
-	    (arbitrage n° 13), il prend l'habillage avec elle. */
-	.pa :global(.badge) {
-		border-radius: 0.375rem;
-	}
-	.pa :global(.badge-gray) {
-		background: var(--color-bg);
-		color: var(--color-text-muted);
-		font-weight: 500;
-	}
+	    10/10/2026 : « visuellement brouillon ») : des CAPSULES, neutres pour ce
+	    qui décrit, teintées pour l'état, « qui la lit » et l'urgence. Devenu le
+	    standard du site : la règle vit dans `styles/composants.css` (`.badge`,
+	    `:is(.ec-tags, .pa) .badge-gray`), plus ici. */
 	.pa-cat {
 		flex-shrink: 0;
 		font-size: var(--fs-lg);

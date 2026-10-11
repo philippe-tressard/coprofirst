@@ -154,3 +154,33 @@ test('rien ne dépasse de la gouttière, ni des libellés alignés sur elle', as
 	expect(debords.mesures, 'rien n’a été mesuré').toBe(AFFAIRES.length * 3 + 3);
 	expect(debords.sortie, 'ces textes sortent de leur colonne').toEqual([]);
 });
+
+/**
+ *  🔴 La gouttière ne déborde pas d'une carte COURTE (#1819). Posée en absolu,
+ *  elle ne comptait pas dans la hauteur de la carte : sous une affaire sans
+ *  texte, un contrat ou un relevé, le mot du classement sortait par le bas
+ *  (121 px demandés pour une carte de 82, mesuré au navigateur). Elle est
+ *  devenue la première colonne d'une grille : elle fait grandir la carte, et
+ *  s'étire jusqu'à son bas.
+ */
+test('une carte courte grandit avec sa gouttière, qui s’étire jusqu’à son bas', async ({
+	page,
+}, info) => {
+	test.skip(info.project.name !== 'bureau', 'au téléphone, la gouttière est une ligne');
+	const COURTE = { ...AFFAIRES[0], id: 9, titre: 'Ampoule', description: '' };
+	await simulerApi(page, (chemin) => (chemin === '/api/tickets' ? [COURTE] : undefined));
+	await page.goto('/tickets');
+	const m = await page.locator('.carte-liste.a-gouttiere').evaluate((c) => {
+		const carte = c.getBoundingClientRect();
+		const g = c.querySelector<HTMLElement>('.gouttiere')!;
+		const bas = Math.max(...[...g.children].map((e) => e.getBoundingClientRect().bottom));
+		return {
+			basCarte: carte.bottom,
+			basGouttiere: g.getBoundingClientRect().bottom,
+			basContenu: bas,
+		};
+	});
+	expect(m.basContenu, 'le classement sort sous la carte').toBeLessThanOrEqual(m.basCarte);
+	//  La colonne s'étire jusqu'au bas de la carte (au filet près).
+	expect(Math.abs(m.basCarte - m.basGouttiere)).toBeLessThanOrEqual(2);
+});

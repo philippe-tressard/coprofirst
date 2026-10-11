@@ -120,10 +120,12 @@
 </div>
 
 <style>
+	/*  Aligné sur le titre d'`EnteteCarte` (10/10/2026) : le retrait de 1,7 rem
+	    le calait sous l'émoji de rubrique, parti dans la gouttière. Le retrait
+	    latéral est celui de la carte (`FluxCard`, `.flux-corps-carte`). */
 	.flux-body {
 		border-top: 1px solid var(--color-border);
-		padding: 0.75rem 0.5rem 0.75rem 1.7rem;
-		margin-top: 0.5rem;
+		padding: 0.75rem 0 0;
 	}
 	.flux-meta-line {
 		font-size: var(--fs-md);

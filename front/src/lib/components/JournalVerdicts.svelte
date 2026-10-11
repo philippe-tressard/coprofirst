@@ -39,6 +39,7 @@
 </script>
 
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { fmtDatetimeShort } from '$lib/date';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 
@@ -56,7 +57,7 @@
 <div class="largeur-saisie">
 	<div class="jv-outils">
 		<button class="btn btn-outline jv-rafraichir" on:click={recharger} aria-label={libelleRecharger}
-			>&#x1F504;</button
+			><IconeAction icone="refresh-cw" /></button
 		>
 	</div>
 	{#if erreur}

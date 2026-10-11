@@ -73,6 +73,8 @@
 	import { comparerParNom, nomAffiche } from '$lib/noms';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
+	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
+	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
 	import { ACCES } from '$lib/entites/acces';
 
 	let vigiks: AccesAdmin[] = [];
@@ -336,23 +338,26 @@
 		un administrateur retire définitivement une ligne.
 	</p>
 
-	<ChoixPastilles
-		options={TYPES}
-		bind:valeur={filtreType}
-		tous="Tous"
-		compte={filtrees.length}
-		libelle="Filtrer par type d’accès"
-	/>
-
-	<div class="field">
-		<label for="bc-recherche">Rechercher un code, un nom ou un lot</label>
-		<input
+	<!--  Les RÉGLAGES de la liste, à la façon de la page Affaires — standard du
+	      site depuis le 10/10/2026 : la recherche en tête (on cherche avant de
+	      trier), le filtre de type dessous, son libellé devant ; le compteur sur
+	      la pastille retenue seule (`ux-patterns` §5). -->
+	<ReglagesListe>
+		<ChampRecherche
 			id="bc-recherche"
-			type="search"
-			bind:value={recherche}
+			bind:valeur={recherche}
 			placeholder="4521, Dupont, appartement 12…"
+			aide="Un code, un nom ou un lot."
 		/>
-	</div>
+		<ChoixPastilles
+			options={TYPES}
+			bind:valeur={filtreType}
+			tous="Tous"
+			compte={filtrees.length}
+			libelle="Type"
+			libelleDevant
+		/>
+	</ReglagesListe>
 
 	<!--  ⚠️ L'ordre suit `ux-patterns` §0 ter : ce qui QUALIFIE la liste et ses
 	      commandes restent au-dessus du formulaire, qui reste au-dessus de la

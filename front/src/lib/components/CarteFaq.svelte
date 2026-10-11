@@ -24,11 +24,19 @@
   chevron AVANT les actions, survol qui repeignait le fond au lieu du titre.
   Et la correction s'ouvrait en bas de page, loin de la question : elle s'ouvre
   désormais DANS la carte (créneau `formulaire`), comme partout ailleurs.
+
+  ## Au standard de la page Affaires (10/10/2026)
+
+  Actions au trait (`IconeAction`). PAS de gouttière : une question n'affiche
+  aucune date, et sa catégorie est un texte libre, sans pictogramme — elle est
+  déjà l'intertitre du groupe. Ce que l'objet n'a pas ne s'invente pas.
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { safeHtml } from '$lib/sanitize';
 
 	/** La question, telle que l'API la rend. */
@@ -52,15 +60,14 @@
 </script>
 
 <!--  Repliée, toute la carte ouvre ; dépliée, seul le titre referme (`ux-patterns` §3). -->
-<div
+<!--  Une question RETIRÉE (`actif` faux) a l'allure de toute carte archivée
+      (`CarteListe archive`) : elle était à 0,55 et ne revenait jamais à
+      l'opacité pleine, même dépliée pour être corrigée (10/10/2026). -->
+<CarteListe
 	id="faq-{item.id}"
-	class="carte-liste"
-	class:expanded={ouvert || enEdition}
-	class:item-inactive={!item.actif}
-	role="presentation"
-	on:click={() => {
-		if (!ouvert && !enEdition) dispatch('basculer');
-	}}
+	expanded={ouvert || enEdition}
+	archive={!item.actif}
+	onDeplier={() => dispatch('basculer')}
 >
 	<EnteteCarte titre={item.question} basculable on:toggle={() => dispatch('basculer')}>
 		<svelte:fragment slot="actions">
@@ -71,21 +78,22 @@
 					aria-label="Modifier"
 					title="Modifier"
 					aria-pressed={enEdition}
-					on:click|stopPropagation={() => dispatch('modifier')}>✏️</button
+					on:click|stopPropagation={() => dispatch('modifier')}
+					><IconeAction icone="pencil" /></button
 				>
 				<button
 					class={item.actif ? 'btn-icon-warn' : 'btn-icon-edit'}
 					aria-label={item.actif ? 'Masquer' : 'Afficher'}
 					title={item.actif ? 'Masquer' : 'Afficher'}
 					on:click|stopPropagation={() => dispatch('basculerActif')}
+					><IconeAction icone={item.actif ? 'eye-off' : 'eye'} /></button
 				>
-					{item.actif ? '\u{1F648}' : '\u{1F441}️'}
-				</button>
 				<button
 					class="btn-icon-danger"
 					aria-label="Supprimer"
 					title="Supprimer"
-					on:click|stopPropagation={() => dispatch('supprimer')}>&#x1F5D1;️</button
+					on:click|stopPropagation={() => dispatch('supprimer')}
+					><IconeAction icone="trash-2" /></button
 				>
 			{/if}
 		</svelte:fragment>
@@ -119,12 +127,9 @@
 			{/if}
 		</div>
 	{/if}
-</div>
+</CarteListe>
 
 <style>
-	.item-inactive {
-		opacity: 0.55;
-	}
 	.faq-a {
 		font-size: var(--fs-base);
 		color: var(--color-text-muted);

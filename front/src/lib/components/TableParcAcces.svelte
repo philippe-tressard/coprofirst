@@ -20,6 +20,7 @@
   et la règle vivrait alors à deux endroits.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import { statutAccesBadge, statutAccesLabel } from '$lib/types-acces';
@@ -93,7 +94,7 @@
 					<td>
 						<span class="badge {statutAccesBadge(a.statut)}">{statutAccesLabel(a.statut)}</span>
 					</td>
-					<!--  ✏️ puis 🗑️, l'ordre arrêté par la carte de ticket. La
+					<!--  Crayon puis corbeille, au trait — l'ordre arrêté par la carte de ticket. La
 					      corbeille n'apparaît que pour l'admin : l'écran dit alors
 					      la même chose que le serveur, ni plus ni moins. -->
 					<td class="bc-gestes">
@@ -103,7 +104,7 @@
 							title="Corriger cet accès"
 							aria-label="Corriger cet accès"
 							aria-pressed={editId === `${a.type}-${a.id}`}
-							on:click={() => dispatch('editer', a)}>✏️</button
+							on:click={() => dispatch('editer', a)}><IconeAction icone="pencil" /></button
 						>
 						{#if estAdmin}
 							<button
@@ -111,7 +112,7 @@
 								type="button"
 								title="Supprimer définitivement"
 								aria-label="Supprimer définitivement"
-								on:click={() => dispatch('supprimer', a)}>🗑️</button
+								on:click={() => dispatch('supprimer', a)}><IconeAction icone="trash-2" /></button
 							>
 						{/if}
 					</td>

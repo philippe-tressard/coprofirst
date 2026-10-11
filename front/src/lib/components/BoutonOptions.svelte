@@ -50,8 +50,7 @@
 		aria-label={libelle}
 		title="{libelle} — cliquer pour les modifier"
 		on:click|stopPropagation={onOuvrir}
-		>{#each actives as o (o.cle)}<span class="opt-glyphe"
-				><IconeAction glyphe={o.glyphe} icone={o.icone} /></span
+		>{#each actives as o (o.cle)}<span class="opt-glyphe"><IconeAction icone={o.icone} /></span
 			>{/each}</button
 	>
 {/if}

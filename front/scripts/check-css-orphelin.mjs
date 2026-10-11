@@ -225,9 +225,17 @@ function sansCommentaires(source) {
 	return source.replace(/<!--[\s\S]*?-->/g, '').replace(/^\s*(\/\/|\*|\/\*).*$/gm, '');
 }
 
-const aveugles = tous.filter((f) =>
-	/class="[^"]*\{/.test(sansCommentaires(readFileSync(f, 'utf8'))),
-);
+/**
+ *  Un fichier SANS `<style>` n'a aucun sélecteur à perdre de vue : une classe
+ *  interpolée ne l'aveugle sur rien (10/10/2026). C'est le cas de `CarteListe`,
+ *  qui fusionne la classe de son appelant (`class="carte-liste {classes}"`) et
+ *  laisse tout son rendu à `normes.css` — le compter « non mesurable » aurait
+ *  fait monter le plafond pour une mesure qui n'existe pas.
+ */
+const aveugles = tous.filter((f) => {
+	const source = sansCommentaires(readFileSync(f, 'utf8'));
+	return /<style[\s>]/.test(source) && /class="[^"]*\{/.test(source);
+});
 
 /**
  *  Le nombre de fichiers que ce contrôle ne peut PAS mesurer. Il ne peut que

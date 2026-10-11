@@ -140,8 +140,16 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
    ────────────────────────────────────────────────────────────────────────── */
 /*  0,45 rem et non 0,75 : les cartes sont deux fois plus basses depuis le
     18/09/2026, et l'écart d'origine les faisait flotter (`F1`, validé à l'écran). */
+/*  L'AIR de la maquette B (10/10/2026, page Affaires, devenue le standard du
+    site le soir même) : un filet sur les trois autres côtés, et 0,85 rem
+    entre deux cartes au lieu de 0,45 — la densité « F1 » se relâche. Le
+    liseré gauche garde son sens (survol, carte dépliée, urgence). */
 .carte-liste {
-	margin-bottom: 0.45rem;
+	--filet-carte: color-mix(in srgb, var(--color-border) 70%, transparent);
+	margin-bottom: 0.85rem;
+	border-top: 1px solid var(--filet-carte);
+	border-right: 1px solid var(--filet-carte);
+	border-bottom: 1px solid var(--filet-carte);
 	border-left: 4px solid var(--color-border);
 	border-radius: var(--radius);
 	position: relative;
@@ -183,33 +191,50 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
     `:not(.expanded)` porte donc toute la règle. Sans lui, le curseur
     promettrait partout un clic qui ne fait rien, et le fond se surlignerait
     sous un formulaire ouvert. */
-.carte-liste:not(.expanded) {
+/*  🔴 …et seulement sur une carte qui SE DÉPLIE (#1819) — celle dont le titre
+    est un bouton (`EnteteCarte basculable`). Le standard a fait entrer dans
+    `.carte-liste` des cartes qui ne se déplient pas (un relevé, une idée, un
+    document sans description) : le curseur et le titre coloré y promettaient
+    un clic qui ne fait rien. Le liseré et l'ombre du survol restent : ils
+    disent « cette carte-ci », pas « cliquez ». Deux pages l'avaient corrigé
+    chacune chez elle ; la règle se pose ici, une fois. */
+.carte-liste:not(.expanded):has(.ec-titre-btn) {
 	cursor: pointer;
 }
 
-/*  🗂️ LA CARTE D'AFFAIRE — maquette B « Gouttière » (10/10/2026, choisie à
-    l'écran parmi cinq). Une colonne à gauche porte la DATE puis la NATURE ;
-    elle est un composant (`GouttiereAffaire`), la carte lui réserve sa place.
-    Elle succède à la gouttière teintée du 24/09/2026 (variante 3), qui ne
-    disait que la nature, par deux pseudo-éléments.
+/*  🗂️ LA CARTE À GOUTTIÈRE — maquette B (10/10/2026, choisie à l'écran parmi
+    cinq pour les affaires, devenue le STANDARD du site le soir même). Une
+    colonne à gauche porte la DATE puis ce qui CLASSE l'objet ; elle est un
+    composant (`Gouttiere`), la carte lui réserve sa place.
 
-    L'AIR demandé (« plus premium et aéré ») : un filet sur les trois autres
-    côtés, et 0,85 rem entre deux cartes au lieu de 0,45 — c'est la densité
-    « F1 » qui se relâche, POUR LES AFFAIRES SEULEMENT. Le liseré gauche garde
-    son sens (survol, carte dépliée, urgence) : seule sa largeur est celle de
-    `.carte-liste`, jamais redéfinie ici.
+    L'air (filet, écart entre cartes) est celui de toute `.carte-liste`,
+    plus haut.
 
-    `[data-nature]` (`attributsNature`) est la prise : affaires et actualités
-    de la liste comme des Archives, et rien d'autre. Les autres cartes du site
-    gardent F1 — arbitré le 10/10/2026 (« Affaires seulement »). */
-:is(.carte-liste, .history-item)[data-nature] {
-	position: relative;
-	padding-left: var(--largeur-gouttiere);
-	margin-bottom: 0.85rem;
-	border-top: 1px solid var(--filet-carte);
-	border-right: 1px solid var(--filet-carte);
-	border-bottom: 1px solid var(--filet-carte);
-	--filet-carte: color-mix(in srgb, var(--color-border) 70%, transparent);
+    `.a-gouttiere` est la prise — `CarteListe` la pose dès qu'il y a une
+    gouttière, et nulle autre carte (`lint:carte-liste`) ; `[data-nature]`
+    (`attributsNature`) et `[data-type-annonce]` n'en portent que la TEINTE. */
+/*  🔴 UNE COLONNE DE LA CARTE, pas un calque posé dessus (#1819). La gouttière
+    était en `position: absolute` dans un retrait : elle ne comptait pas dans
+    la hauteur de la carte, et sous une carte COURTE — un contrat sans aperçu,
+    un relevé, une affaire sans texte — le mot du classement sortait par le
+    bas (121 px demandés pour une carte de 82, mesuré au navigateur). La
+    gouttière occupe la première colonne et TOUTES les rangées : elle s'étire
+    sur une carte haute, elle fait grandir une carte basse. La dernière rangée
+    est flexible — c'est elle, et elle seule, qui absorbe la hauteur que la
+    gouttière demande en plus ; les rangées du contenu restent à leur taille
+    (une rangée `auto` ne grandit pas pour un élément qui traverse une rangée
+    flexible). Huit rangées de contenu : une carte en compte trois au plus
+    (en-tête, corps déplié, formulaire). */
+/*  Le filet et l'écart ne se redéclarent plus ici : ils ne servaient qu'à la
+    carte d'affaire ARCHIVÉE, qui portait `.history-item` au lieu de
+    `.carte-liste`. Elle est une `.carte-liste` archivée depuis `CarteListe`. */
+.carte-liste.a-gouttiere {
+	display: grid;
+	grid-template-columns: var(--largeur-gouttiere) minmax(0, 1fr);
+	grid-template-rows: repeat(8, auto) 1fr;
+}
+.a-gouttiere > :not(.gouttiere) {
+	grid-column: 2;
 }
 [data-nature='actualite'] {
 	--nature-fort: #1d4ed8;
@@ -220,12 +245,44 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 [data-nature='activite'] {
 	--nature-fort: #c2410c;
 }
+/*  Le TYPE d'une petite annonce, que sa gouttière lit : la teinte de son
+    ancien badge — vente au Bleu Seine (le défaut), don en vert, recherche en
+    orange. Elle vivait dans `AnnonceCard`, dont le `<style>` n'atteint plus le
+    conteneur depuis qu'il est rendu par `CarteListe`. */
+[data-type-annonce='don'] {
+	--nature-fort: var(--color-success);
+}
+[data-type-annonce='recherche'] {
+	--nature-fort: var(--color-warning-texte);
+}
+
+/*  📦 LA CARTE ARCHIVÉE — une forme, posée par `CarteListe archive`. Elle
+    s'efface tant qu'on ne la vise pas, pour que la liste courante garde le
+    premier plan, et reprend son opacité pleine dépliée ou survolée (au
+    pointeur seulement : au doigt, `:hover` reste collé et la carte lue
+    restait pleine). Il en existait CINQ rendus — annonce, actualité, contrat,
+    question de FAQ inactive (0,55, jamais pleine), affaire archivée (liseré
+    gris sans filet) : la plus disante a été retenue (`CarteListe`). */
+.carte-liste.attenue.expanded {
+	opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+	.carte-liste.attenue:hover {
+		opacity: 1;
+	}
+}
 /*  Au pouce, la colonne devient une ligne au-dessus du titre
-    (`GouttiereAffaire`) : la carte n'a plus de retrait à lui réserver. */
+    (`Gouttiere`) : la carte n'a plus de retrait à lui réserver. */
 @media (max-width: 480px) {
-	:is(.carte-liste, .history-item)[data-nature] {
-		padding-left: 0;
+	.carte-liste {
 		margin-bottom: 0.6rem;
+	}
+	.carte-liste.a-gouttiere {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: none;
+	}
+	.a-gouttiere > :not(.gouttiere) {
+		grid-column: 1;
 	}
 }
 
@@ -243,7 +300,7 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
     PARENT, qu'un composant enfant ne peut pas connaître. `.carte-liste` est déjà
     une classe globale de ce fichier — les deux vont ensemble. */
 @media (hover: hover) and (pointer: fine) {
-	.carte-liste:not(.expanded):hover .ec-titre {
+	.carte-liste:not(.expanded):has(.ec-titre-btn):hover .ec-titre {
 		color: var(--color-primary);
 	}
 	/*  Dépliée, la carte n'est plus une cible : le titre se colore à son propre
@@ -263,7 +320,9 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 
 /* ── Norme UX : troncature à N lignes ──
    `.clamp-3` : l'aperçu d'une CARTE de liste (validé à l'écran le 18/09/2026).
-   `.clamp-5` : l'aperçu d'un bloc expansible qui n'est pas une carte.
+   `.clamp-5` (un bloc expansible qui n'était pas une carte) est parti le
+   10/10/2026 (#1819) : son dernier emploi, l'historique des annonces de hall,
+   est devenu une carte — le standard de la page Affaires.
    `.clamp-2` : un TITRE de carte, qui doit rester sur deux lignes au plus.
 
    ⚠️ `.clamp-3` existait DÉJÀ, écrit à la main dans `FluxCard` : le fil
@@ -275,16 +334,11 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
    kanban du tableau de bord (#561, 28/08/2026), et les trois écritures de la
    notion omettaient toutes `line-clamp` — la propriété STANDARD, que les
    navigateurs non-WebKit lisent. Elles tronquaient donc par chance. */
-.clamp-5,
 .clamp-3,
 .clamp-2 {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
-}
-.clamp-5 {
-	-webkit-line-clamp: 5;
-	line-clamp: 5;
 }
 .clamp-3 {
 	-webkit-line-clamp: 3;

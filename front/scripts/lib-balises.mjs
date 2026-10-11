@@ -91,7 +91,11 @@ export function ligneDe(source, index) {
 export function contenuDe(source, nom, ouvrante) {
 	if (ouvrante.balise.endsWith('/>')) return '';
 	const ouvre = new RegExp(`<${nom}(?=[^A-Za-z0-9_-])`, 'g');
-	const ferme = new RegExp(`</${nom}[ ]*>`, 'g');
+	//  Des blancs, retours à la ligne compris, et non `[ ]*` : Prettier ferme un
+	//  bloc long par `</button` puis `>` à la ligne suivante, et la lecture
+	//  prenait alors le contenu des éléments suivants pour le sien — un bouton
+	//  en émoji passait pour un bouton qui parle (#1819).
+	const ferme = new RegExp(`</${nom}\\s*>`, 'g');
 	let profondeur = 1;
 	let i = ouvrante.fin + 1;
 	while (i < source.length) {
@@ -175,4 +179,26 @@ if (EXECUTE && process.argv.includes('--selftest')) {
 		`✓ lib-balises : ${cas.length} cas — le \`>\` d'une expression ne ferme pas la balise.`,
 	);
 	process.exit(0);
+}
+
+/**
+ * Le contenu porte-t-il un MOT lisible (deux lettres à la suite) ?
+ *
+ * Partagé par `check-bouton-icone` (un bouton sans mot doit se nommer) et
+ * `check-actions-au-trait` (un bouton sans mot ne se dessine pas en émoji).
+ */
+export function porteUnMot(contenu) {
+	//  ⚠️ Un `<slot>` porte le texte de l'APPELANT : on ne peut pas savoir ici
+	//  ce qu'il rendra, et `Pastille` le prouve — son libellé vient toujours de
+	//  l'écran qui l'emploie. Crier dessus ferait exiger un `aria-label` qui
+	//  MASQUERAIT ce libellé, c'est-à-dire un défaut pour corriger une absence
+	//  de défaut. Un contrôle qui crie sur du légitime finit désarmé.
+	const sansBalises = contenu
+		//  Un bloc Svelte (`{#if …}`) n'est pas du texte rendu ; son contenu, si.
+		.replace(/\{[#:/@][^}]*\}/g, ' ')
+		//  Une expression `{x}` peut rendre du texte : on ne peut pas trancher,
+		//  et on la traite comme du texte — ne pas crier sur du légitime.
+		.replace(/<[^>]*>/g, ' ');
+	if (contenu.includes('<slot')) return true;
+	return /\p{Letter}\p{Letter}/u.test(sansBalises);
 }

@@ -19,6 +19,7 @@
   pliée de la ligne, en lecture) : une entité, un rendu.
 -->
 <script lang="ts">
+	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { syntheses, type PropositionSynthese, type SyntheseAffaire } from '$lib/api';
 	import { confirmer } from '$lib/confirmation';
@@ -314,7 +315,7 @@
 				aria-label="Modifier la synthèse"
 				title="Modifier"
 				disabled={enCours || !!proposition}
-				on:click={ouvrirEdition}>✏️</button
+				on:click={ouvrirEdition}><IconeAction icone="pencil" /></button
 			>
 			{#if brouillon}
 				<button
@@ -343,7 +344,7 @@
 				aria-label="Supprimer la synthèse"
 				title="Supprimer la synthèse"
 				disabled={enCours || edition || !!proposition}
-				on:click={supprimer}>🗑️</button
+				on:click={supprimer}><IconeAction icone="trash-2" /></button
 			>
 		</div>
 	{/if}

@@ -38,6 +38,7 @@
 	import { confirmer } from '$lib/confirmation';
 	import { fmtDate } from '$lib/date';
 	import { etoiles, moyenneNotes } from '$lib/notations';
+	import IconeAction from './IconeAction.svelte';
 
 	/** Les notations de CE prestataire, déjà filtrées par l'appelant. */
 	export let notations: Notation[] = [];
@@ -106,7 +107,7 @@
 							class="btn-icon-danger"
 							title="Retirer cet avis"
 							aria-label="Retirer l’avis de {n.auteur_nom ?? 'ce membre'}"
-							on:click|stopPropagation={() => supprimer(n)}>&#x1F5D1;&#xFE0F;</button
+							on:click|stopPropagation={() => supprimer(n)}><IconeAction icone="trash-2" /></button
 						>
 					{/if}
 				</div>

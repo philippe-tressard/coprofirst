@@ -8,6 +8,14 @@
   passent par `PiedFormulaire`, et le fichier hôte dépassait alors 500 lignes.
   Le composant porte son état et ses gestes ; la page ne lui confie que la liste
   et la catégorie choisie, liées.
+
+  🗂️ **Les réglages de la page Affaires** (10/10/2026, devenue le standard du
+  site) : la rangée de boutons qui choisit le compteur FILTRE les relevés — elle
+  passe par `ChoixPastilles` dans `ReglagesListe`, son libellé devant, dans la
+  colonne de la gouttière des cartes de relevé, et sa pastille retenue dit
+  combien de relevés la liste montre (`compte`, `ux-patterns` §5). Pas d'entrée
+  « Tous » : les relevés d'un compteur ne se mêlent pas à ceux d'un autre. Le
+  fournisseur et « + Catégorie » viennent dessous, dans la colonne des champs.
 -->
 <script lang="ts">
 	import { nombreOuNull } from '$lib/utils';
@@ -19,6 +27,9 @@
 	import { SUPPRESSION, confirmerPuis } from '$lib/confirmation';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
+	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 
 	/** Les catégories de compteur, liées : la page les charge et les lit. */
 	export let compteurConfigs: CompteurConfig[] = [];
@@ -26,6 +37,10 @@
 	export let typeCompteur = '';
 	/** L'annuaire des prestataires, déjà chargé par la page. */
 	export let prestataires: Prestataire[] = [];
+	/** Combien de relevés la liste montre — porté par la pastille retenue. */
+	export let compte: number | null = null;
+
+	$: optionsCompteurs = compteurConfigs.map((c) => ({ val: c.type_compteur, label: c.label }));
 
 	let editCompteurId: number | null = null;
 	let editCompteurPrestId = '';
@@ -89,39 +104,29 @@
 	}
 </script>
 
-<div class="bloc-types">
-	<div class="choix-types">
-		{#each compteurConfigs as cfg (cfg.type_compteur)}
-			<button
-				class="btn btn-sm"
-				class:btn-primary={typeCompteur === cfg.type_compteur}
-				on:click={() => {
-					typeCompteur = cfg.type_compteur;
-				}}
-			>
-				{cfg.label}
-			</button>
-		{/each}
-		{#if $isCS}
-			<button
-				class="btn btn-sm btn-outline"
-				on:click={() => {
-					showAddCompteur = !showAddCompteur;
-					newCompteurLabel = '';
-				}}
-				title="Ajouter une catégorie">+ Catégorie</button
-			>
-		{/if}
-	</div>
+<ReglagesListe>
+	{#if compteurConfigs.length}
+		<ChoixPastilles
+			options={optionsCompteurs}
+			bind:valeur={typeCompteur}
+			tous={false}
+			{compte}
+			libelle="Compteur"
+			libelleDevant
+		/>
+	{/if}
 
-	{#if currentCompteur && $isCS}
+	{#if $isCS}
+		<!--  Le fournisseur du compteur choisi, et l'ajout d'une catégorie : dans la
+		      colonne des champs, sous la rangée qu'ils complètent. -->
 		<div class="compteur-config-row ligne-config">
-			{#if editCompteurId === currentCompteur.id}
+			{#if currentCompteur && editCompteurId === currentCompteur.id}
 				<!--  Un petit formulaire STANDARD (#1329) : champ libellé, pied commun.
 				      Les boutons étaient écrits à la main, sur la même ligne. -->
 				<form
 					class="compteur-edition"
-					on:submit|preventDefault={() => saveCompteurPrestataire(currentCompteur)}
+					on:submit|preventDefault={() =>
+						currentCompteur && saveCompteurPrestataire(currentCompteur)}
 				>
 					<div class="compteur-config-row">
 						<label class="field compteur-champ"
@@ -136,15 +141,16 @@
 								class="btn-icon-danger"
 								aria-label="Supprimer la catégorie"
 								title="Supprimer la catégorie"
-								on:click={() => deleteCompteurConfig(currentCompteur)}>🗑️</button
+								on:click={() => currentCompteur && deleteCompteurConfig(currentCompteur)}
+								><IconeAction icone="trash-2" /></button
 							>
 						{/if}
 					</div>
 					<PiedFormulaire petit on:annule={() => (editCompteurId = null)} />
 				</form>
-			{:else}
+			{:else if currentCompteur}
 				{@const prest = currentCompteur.prestataire_id
-					? prestataires.find((p) => p.id === currentCompteur.prestataire_id)
+					? prestataires.find((p) => p.id === currentCompteur?.prestataire_id)
 					: null}
 				{#if prest}
 					<span class="badge badge-blue prestataire-compteur">🔧 {prest.nom}</span>
@@ -155,32 +161,41 @@
 					class="btn-icon-edit"
 					aria-label="Modifier le fournisseur"
 					title="Modifier le fournisseur"
-					on:click={() => startEditCompteur(currentCompteur)}>✏️</button
+					on:click={() => currentCompteur && startEditCompteur(currentCompteur)}
+					><IconeAction icone="pencil" /></button
 				>
 			{/if}
-		</div>
-	{/if}
-
-	{#if showAddCompteur && $isCS}
-		<!--  Même forme : « Ajouter » AVANT « Annuler » et « … » en cours, c'était
-		      l'inverse de tous les formulaires du site (#1329). -->
-		<form class="compteur-edition" on:submit|preventDefault={addCompteurConfig}>
-			<label class="field"
-				><span>Nouvelle catégorie<EtoileRequis vide={!newCompteurLabel.trim()} /></span><input
-					type="text"
-					bind:value={newCompteurLabel}
-					placeholder="Ex. EDF Parking privé"
-				/></label
+			<button
+				class="btn btn-sm btn-outline ajout-categorie"
+				on:click={() => {
+					showAddCompteur = !showAddCompteur;
+					newCompteurLabel = '';
+				}}
+				title="Ajouter une catégorie">+ Catégorie</button
 			>
-			<PiedFormulaire
-				petit
-				enCours={addCompteurSaving}
-				desactive={!newCompteurLabel.trim()}
-				on:annule={() => (showAddCompteur = false)}
-			/>
-		</form>
+		</div>
+
+		{#if showAddCompteur}
+			<!--  Même forme : « Ajouter » AVANT « Annuler » et « … » en cours, c'était
+			      l'inverse de tous les formulaires du site (#1329). -->
+			<form class="compteur-edition ligne-config" on:submit|preventDefault={addCompteurConfig}>
+				<label class="field"
+					><span>Nouvelle catégorie<EtoileRequis vide={!newCompteurLabel.trim()} /></span><input
+						type="text"
+						bind:value={newCompteurLabel}
+						placeholder="Ex. EDF Parking privé"
+					/></label
+				>
+				<PiedFormulaire
+					petit
+					enCours={addCompteurSaving}
+					desactive={!newCompteurLabel.trim()}
+					on:annule={() => (showAddCompteur = false)}
+				/>
+			</form>
+		{/if}
 	{/if}
-</div>
+</ReglagesListe>
 
 <style>
 	.compteur-config-row {
@@ -198,17 +213,14 @@
 		flex: 1;
 		margin: 0;
 	}
-	.bloc-types {
-		margin-bottom: 1.25rem;
-	}
-	.choix-types {
-		display: flex;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-		align-items: center;
-	}
+	/*  Dans la colonne des CHAMPS de `ReglagesListe` : la dernière ligne de
+	    grille explicite — la seconde au bureau, la seule sous 768 px. */
 	.ligne-config {
-		margin-top: 0.6rem;
+		grid-column: -2 / -1;
+	}
+	/*  « + Catégorie » au bout de la ligne, après le fournisseur. */
+	.ajout-categorie {
+		margin-left: auto;
 	}
 	.prestataire-compteur {
 		font-size: var(--fs-sm);

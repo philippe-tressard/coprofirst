@@ -269,23 +269,17 @@
 <style>
 	/*  Le filet qui sépare « informer » de « faire traiter » (variante A,
 	    23/09/2026) : pleine ligne dans la grille, pointillé discret. */
-	/*  Le libellé DEVANT la rangée : il reste en place, la rangée défile à côté
-	    (`min-width: 0` — sans lui, une rangée `--defilante` pousse la page). */
-	.choix-libelle-devant {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		min-width: 0;
-		max-width: 100%;
-	}
-	.choix-libelle-devant > .libelle-groupe {
+	/*  Le libellé DEVANT la rangée : la règle de la ligne est globale
+	    (`composants.css`, partagée avec `FiltrePerimetre`) ; restent ici ses
+	    enfants, propres à ce balisage. */
+	:global(.choix-libelle-devant) > .libelle-groupe {
 		flex-shrink: 0;
 		/*  Compense la marge basse de la rangée qui défile (réservée à sa barre
 		    de défilement) : sans elle, le libellé tombe sous le centre des
 		    pastilles. */
 		margin-bottom: 0.25rem;
 	}
-	.choix-libelle-devant > .filters {
+	:global(.choix-libelle-devant) > .filters {
 		min-width: 0;
 		margin-bottom: 0;
 	}

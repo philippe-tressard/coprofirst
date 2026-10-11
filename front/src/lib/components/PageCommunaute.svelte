@@ -375,38 +375,17 @@
 			</ChargementDiffere>
 		{/if}
 
-		<!--  La correction (#783), montée UNE seule fois et hors des deux listes —
-		      `ListeSondages` est rendu deux fois (courants et Archives). `{#key}`
+		<!--  🔴 LA CORRECTION S'OUVRE DANS LA CARTE (10/10/2026), comme celle d'une
+		      annonce ou d'une idée depuis #787 (« c'est tout en bas, et on ne voit
+		      pas »). Elle était montée AU-DESSUS de la liste parce que la carte
+		      était un `<a>` : un formulaire dans un lien n'est rendu correctement
+		      par aucun navigateur. Ce n'est plus vrai depuis #1329 — la carte est
+		      un bloc, et son lien étiré se retire pendant la correction.
+
+		      L'état reste ICI, une seule fois : `ListeSondages` est rendu deux fois
+		      (courants et Archives), et n'en reçoit que l'identifiant. `{#key}`
 		      remonte le composant d'un sondage à l'autre : ses champs sont
-		      initialisés une seule fois, à la construction.
-
-		      ⚠️ ICI, ET NON DANS LA CARTE — contrairement aux annonces et aux idées,
-		      dont le formulaire est passé dans le corps de la carte le 06/09/2026
-		      (#787, « c'est tout en bas, et on ne voit pas »). Une carte de sondage
-		      est un `<a>` vers sa fiche : y glisser un formulaire mettrait des
-		      champs et des boutons **dans un lien**, ce qu'aucun navigateur ne rend
-		      correctement et qu'aucun lecteur d'écran n'annonce.
-
-		      Le formulaire est donc posé AU-DESSUS de la liste — le même endroit
-		      que les actualités, et il reste sous les yeux. Ce n'est pas un oubli :
-		      c'est la limite de ce que la carte-lien permet. -->
-		{#if editSondage}
-			{#key editSondage.id}
-				<ChargementDiffere charger={() => import('$lib/components/FormulaireSondage.svelte')}>
-					{#snippet contenu(FormulaireSondage)}
-						<FormulaireSondage
-							sondage={editSondage}
-							on:modifie={async () => {
-								sondages = await sondagesApi.list();
-								editSondage = null;
-							}}
-							on:annule={() => (editSondage = null)}
-						/>
-					{/snippet}
-				</ChargementDiffere>
-			{/key}
-		{/if}
-
+		      initialisés une seule fois, à la construction. -->
 		<EtatListe
 			chargement={sondagesLoading}
 			erreur={erreurSondages}
@@ -421,7 +400,34 @@
 				messageVideCourant="Les sondages clos sont rangés dans les Archives, ci-dessous."
 			>
 				<svelte:fragment let:items>
-					<ListeSondages sondages={items} {arreterSondage} {supprimerSondage} {modifierSondage} />
+					<ListeSondages
+						sondages={items}
+						{arreterSondage}
+						{supprimerSondage}
+						{modifierSondage}
+						editId={editSondage?.id ?? null}
+					>
+						<svelte:fragment slot="formulaire">
+							{#if editSondage}
+								{#key editSondage.id}
+									<ChargementDiffere
+										charger={() => import('$lib/components/FormulaireSondage.svelte')}
+									>
+										{#snippet contenu(FormulaireSondage)}
+											<FormulaireSondage
+												sondage={editSondage}
+												on:modifie={async () => {
+													sondages = await sondagesApi.list();
+													editSondage = null;
+												}}
+												on:annule={() => (editSondage = null)}
+											/>
+										{/snippet}
+									</ChargementDiffere>
+								{/key}
+							{/if}
+						</svelte:fragment>
+					</ListeSondages>
 				</svelte:fragment>
 			</ListeEtArchives>
 		</EtatListe>

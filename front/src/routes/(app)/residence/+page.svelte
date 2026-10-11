@@ -25,7 +25,6 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import { cibleDuHash, revelerCible } from '$lib/deepLink';
 	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import { fmtDateShort as fmt } from '$lib/date';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	import SectionRegles from '$lib/components/SectionRegles.svelte';
 	import CarnetEntretien from '$lib/components/CarnetEntretien.svelte';
@@ -35,6 +34,7 @@
 	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
 	import { essayer, messagePartiel } from '$lib/chargement';
 	import EtatListe from '$lib/components/EtatListe.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
 
 	/**  L'onglet vient du CHEMIN, résolu par `+page.ts` — jamais d'un `let`
 	 *   qu'on affecte : une page qui écrit son propre onglet ne peut plus être
@@ -231,7 +231,7 @@
 					class="btn-icon-edit"
 					aria-label="Modifier la fiche de la résidence"
 					title="Modifier"
-					on:click={startEdit}>&#x270F;&#xFE0F;</button
+					on:click={startEdit}><IconeAction icone="pencil" /></button
 				>
 			{/if}
 		</div>
@@ -281,7 +281,6 @@
 		trier={trierPlans}
 		messageVide="Aucun plan ajouté."
 		peutModifier={$isCS}
-		dateDe={(d) => fmt(d.publie_le)}
 		intitule="Ajouter un plan"
 		placeholderTitre="ex : Plan de masse résidence"
 		placeholderDescription="Ce que ce plan montre, à quelle date il a été relevé…"
@@ -290,7 +289,9 @@
 		messageAjout="Plan ajouté"
 	>
 		<svelte:fragment slot="badges" let:doc>
-			<span class="badge badge-blue"
+			<!--  Une capsule NEUTRE : elle décrit, elle ne signale pas (la page
+			      Affaires, standard du site depuis le 10/10/2026). -->
+			<span class="badge badge-gray"
 				>{doc.batiment_id ? batimentLabel(doc.batiment_id) : 'Copropriété'}</span
 			>
 		</svelte:fragment>
@@ -304,7 +305,6 @@
 		erreur={eReglements}
 		messageVide="Aucun règlement ajouté."
 		peutModifier={$isCS}
-		dateDe={(d) => fmt(d.publie_le)}
 		intitule="Ajouter un règlement"
 		placeholderTitre="ex : Règlement de copropriété 2024"
 		placeholderDescription="Ce qu'il remplace, ce qu'il ne couvre pas, où sont les annexes…"
@@ -331,15 +331,19 @@
 		>
 			<svelte:fragment slot="badges" let:doc>
 				{#if doc.annee}<span class="badge badge-gray annee-ag">{doc.annee}</span>{/if}
-				{#if doc.date_ag}<span class="doc-date">AG du {fmt(doc.date_ag)}</span>{/if}
+				<!--  La date de l'assemblée est dans la GOUTTIÈRE, sous « AG »
+				      (`RubriqueDocuments`) : une seule date par carte. -->
 				<!--  🔴 `perimetreLabel` sur des CODES, plus `batimentLabel` sur des
 			      identifiants (#470). Trois branches se sont réduites à une : le
 			      libellé d'un périmètre se calcule, il ne se décide pas ici.
 			      L'ancien rendu ne savait dire que « Bât. N » ou « Copropriété » ;
 			      celui-ci nomme le parking, les caves, l'AFUL et les espaces —
 			      et suit l'arbre quand un nœud est renommé. -->
-				<BadgePerimetre perimetre={doc.perimetre_cible} ton="purple">
-					<span class="badge badge-green">Copropriété</span>
+				<!--  Neutre, comme tout ce qui DÉCRIT (10/10/2026) : la couleur propre
+				      aux documents (`purple`) était l'écart que `BadgePerimetre`
+				      rendait visible pour qu'on le tranche — la page Affaires l'a fait. -->
+				<BadgePerimetre perimetre={doc.perimetre_cible}>
+					<span class="badge badge-gray">Copropriété</span>
 				</BadgePerimetre>
 			</svelte:fragment>
 		</RubriqueDocuments>

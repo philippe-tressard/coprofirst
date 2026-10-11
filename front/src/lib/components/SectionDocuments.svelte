@@ -25,18 +25,41 @@
   | Règlement | aucun |
   | Comptes-rendus d'AG | l'année, la date d'AG, les bâtiments concernés |
 
+  ## La CARTE au standard de la page Affaires (10/10/2026)
+
+  La page Affaires est devenue le standard du site : un document se rend donc en
+  `.carte-liste` à gouttière — la date à gauche (`quandDe`), puis ce qui le
+  classe (`classe`, la rubrique : plan, règlement, AG), le titre et les actions
+  au trait sur la première ligne, la description en aperçu, les pastilles en
+  dernière ligne (slot `badges`). C'était une ligne `doc-row` à part, la seule
+  forme de liste du site à ne pas passer par `EnteteCarte`.
+
+  La carte ne se DÉPLIE que si elle a quelque chose à montrer de plus : une
+  description. Repliée, elle en montre trois lignes (`ApercuCarte`) ; dépliée,
+  le texte entier. Sans description, le titre reste un simple texte — une
+  fiche qui n'a rien à replier ne propose pas un bouton inerte (`EnteteCarte`).
+
   ## 🔴 Les styles voyagent avec le balisage
 
   `.doc-list`, `.doc-row`, `.doc-info`… vivaient dans le `<style>` de la page.
   Svelte scope les styles au composant qui rend l'élément : les y laisser aurait
   livré les lignes **nues** en production — c'est la panne des pastilles de la
-  v2.67.11, refaite deux fois depuis. Ils sont donc ici, avec ce qu'ils habillent.
+  v2.67.11, refaite deux fois depuis. Depuis le passage aux cartes, ce composant
+  ne garde que sa section : le conteneur est `.carte-liste` (`normes.css`),
+  l'en-tête `EnteteCarte`, la colonne `Gouttiere`, le texte déplié
+  `TexteDeplie` — chacun avec ses règles.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
+	import type { ClasseGouttiere } from '$lib/gouttiere';
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
+	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
+	import LienAction from '$lib/components/LienAction.svelte';
+	import TexteDeplie from '$lib/components/TexteDeplie.svelte';
+	import { basculer } from '$lib/accordeon';
 	import type { Document } from '$lib/api';
 
 	/** Le titre affiché, emoji compris — la page reste maîtresse de son vocabulaire. */
@@ -53,8 +76,16 @@
 	export let onAjouter: () => void;
 	export let onModifier: (doc: Document) => void;
 	export let onSupprimer: (id: number) => void;
-	/** Rendu de la date d'un document ; vide = pas de date affichée. */
-	export let dateDe: (doc: Document) => string = () => '';
+	/**  L'instant qui SITUE un document (ISO), rendu par la gouttière ; rien = la
+	 *   gouttière ne porte que le classement. La date de publication pour un plan,
+	 *   celle de l'assemblée pour un compte-rendu : c'est l'appelant qui le sait. */
+	export let quandDe: (doc: Document) => string | null | undefined = () => null;
+	/**  Ce qui classe les documents de la section — la rubrique —, ou rien. Le type
+	 *   est celui de `Gouttiere`, lu et non recopié. */
+	export let classe: ClasseGouttiere | null = null;
+
+	//  UNE description dépliée à la fois (`$lib/accordeon`).
+	let deplie: number | null = null;
 </script>
 
 <section class="section-documents">
@@ -89,62 +120,70 @@
 	<slot name="formulaire" />
 
 	<EtatListe compact {erreur} vide={documents.length === 0} {messageVide}>
-		<div class="doc-list">
-			{#each documents as doc (doc.id)}
-				<div class="doc-row card" id="doc-{doc.id}">
-					<div class="doc-info">
-						<Icon name="file-text" size={16} />
-						<div class="doc-texte">
-							<div class="doc-ligne">
-								<span class="doc-titre">{doc.titre}</span>
-								<slot name="badges" {doc} />
-								{#if dateDe(doc)}<span class="doc-date">{dateDe(doc)}</span>{/if}
-							</div>
-							<!--  La DESCRIPTION, ajoutée le 08/09/2026 (#852) : le titre NOMME
-							      le document, elle dit ce qu'il couvre.
-
-							      🔴 Elle était coupée à DEUX lignes par une règle écrite ici,
-							      et finissait sur « … » au milieu d'une phrase — illisible,
-							      signalé à l'écran le 09/09. L'aperçu du site fait CINQ lignes
-							      (`ux-patterns` §7) et n'estompe sa fin que si le texte déborde
-							      VRAIMENT, ce qu'aucun sélecteur CSS ne sait dire : c'est
-							      `ApercuCarte` qui le mesure après rendu, pour les actualités,
-							      les tickets, les annonces et les événements. Une sixième
-							      écriture du même aperçu aurait divergé au premier réglage. -->
-							{#if doc.description}
-								<ApercuCarte contenu={doc.description} dansLigne />
-							{/if}
-						</div>
-					</div>
-					<div class="doc-actions">
+		{#each documents as doc (doc.id)}
+			{@const depliable = !!doc.description}
+			<!--  Repliée, toute la carte déplie ; dépliée, seul le titre replie
+			      (`ux-patterns` §3). L'`id` est la cible des liens profonds
+			      (`#doc-<id>`, fil d'activité et 🔗). -->
+			<CarteListe
+				id="doc-{doc.id}"
+				quand={quandDe(doc)}
+				{classe}
+				expanded={deplie === doc.id}
+				onDeplier={depliable ? () => (deplie = doc.id) : null}
+			>
+				<EnteteCarte
+					titre={doc.titre}
+					basculable={depliable}
+					on:toggle={() => (deplie = basculer(deplie, doc.id))}
+				>
+					<svelte:fragment slot="actions">
 						<BoutonLien ancre="doc-{doc.id}" quoi="le document" />
-						<a
+						<LienAction
 							href={urlTelechargement(doc)}
-							target="_blank"
-							rel="noopener"
-							class="btn btn-sm"
-							download
-						>
-							⬇ Télécharger
-						</a>
+							icone="arrow-down"
+							mot="Télécharger"
+							titre="Télécharger"
+							libelle="Télécharger le document"
+							telecharger
+						/>
 						{#if peutModifier}
 							<button
 								class="btn-icon-edit"
 								aria-label="Modifier"
 								title="Modifier"
-								on:click={() => onModifier(doc)}>✏️</button
+								on:click|stopPropagation={() => onModifier(doc)}
+								><IconeAction icone="pencil" /></button
 							>
 							<button
 								class="btn-icon-danger"
 								aria-label="Supprimer"
 								title="Supprimer"
-								on:click={() => onSupprimer(doc.id)}>&#x1F5D1;️</button
+								on:click|stopPropagation={() => onSupprimer(doc.id)}
+								><IconeAction icone="trash-2" /></button
 							>
 						{/if}
+					</svelte:fragment>
+					<!--  La DESCRIPTION (#852) : le titre NOMME le document, elle dit ce
+					      qu'il couvre. Trois lignes en aperçu, comme toute carte
+					      (`ux-patterns` §7) — le texte entier quand on déplie. -->
+					<svelte:fragment slot="apercu">
+						{#if doc.description && deplie !== doc.id}
+							<ApercuCarte contenu={doc.description} dansLigne />
+						{/if}
+					</svelte:fragment>
+					<svelte:fragment slot="tags">
+						<slot name="badges" {doc} />
+					</svelte:fragment>
+				</EnteteCarte>
+				{#if deplie === doc.id}
+					<!--  Le corps ne replie pas la carte : on lit, on sélectionne. -->
+					<div class="carte-corps" role="presentation" on:click|stopPropagation>
+						<TexteDeplie contenu={doc.description} />
 					</div>
-				</div>
-			{/each}
-		</div>
+				{/if}
+			</CarteListe>
+		{/each}
 	</EtatListe>
 </section>
 
@@ -156,66 +195,4 @@
 	.section-title {
 		margin: 0;
 	}
-	/*  Le titre et ses badges sur une ligne, la description dessous : c'est la
-	    structure d'`EnteteCarte` (`ux-patterns` §3), et pour la même raison —
-	    un titre qui partage sa ligne avec des badges de largeur fixe se réduit
-	    à trois points sur téléphone. */
-	/*  🔴 `flex: 1 1 0` — sans lui, l'icône se retrouvait SEULE sur sa ligne et le
-	    titre passait dessous, dès qu'un document portait une description
-	    (signalé à l'écran le 09/09/2026, sur « recueil des actes »).
-
-	    `.doc-info` est en `flex-wrap: wrap`. Avec une base `auto`, la largeur
-	    souhaitée de ce bloc est celle de sa description — bien plus que la place
-	    restante — et le navigateur le renvoie à la ligne AVANT de le rétrécir :
-	    l'enroulement passe avant la compression. Une base nulle supprime la
-	    question. `min-width: 0` seul ne suffisait pas, et c'est le piège : il
-	    autorise le rétrécissement, il n'empêche pas l'enroulement.
-
-	    ⚠️ Reproduit sur le composant réel avant correction, pas déduit. */
-	.doc-texte {
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
-		flex: 1 1 0;
-		min-width: 0;
-	}
-	/*  ⚠️ La charte pousse `.doc-date` à droite (`margin-left: auto`) — c'est juste
-	    là où la date est fille directe de `.doc-info` (diagnostics, résidence).
-	    Ici elle vit DANS `.doc-ligne`, qui occupe désormais toute la largeur :
-	    la date partait donc à l'autre bout de l'écran, loin du titre qu'elle
-	    date. Divergence déclarée, locale à cet écran — la règle de la charte ne
-	    bouge pas pour ses deux autres lecteurs.
-
-	    Elle rend au passage les lignes COHÉRENTES : avant, une ligne sans
-	    description gardait sa date collée au titre et une ligne avec description
-	    l'envoyait à droite. Personne n'avait choisi cet écart. */
-	.doc-ligne .doc-date {
-		margin-left: 0;
-	}
-	/*  L'icône se cale sur la ligne du TITRE, pas au milieu du bloc. La charte
-	    centre `.doc-info` verticalement — juste tant qu'une ligne fait une ligne ;
-	    avec une description, l'icône se retrouvait à hauteur du texte descriptif,
-	    donc décalée par rapport à toutes les lignes voisines.
-
-	    ⚠️ `align-self` sur l'ICÔNE, et non `align-items` sur `.doc-info` : cette
-	    seconde forme redéfinit une propriété de la charte pour ce seul écran, et
-	    `lint:charte` la refuse — à raison, elle aurait fait rendre celui-ci
-	    autrement sans que personne l'ait décidé, et pour ses deux autres lecteurs
-	    la question ne se pose pas. Le décalage de 2 px recentre optiquement
-	    l'icône sur la première ligne. */
-	.doc-info > :global(svg) {
-		align-self: flex-start;
-		margin-top: 2px;
-	}
-	.doc-ligne {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-		min-width: 0;
-	}
-	/*  🔴 `.doc-*` REMONTÉES dans `styles/composants.css` le 29/08/2026 (#491).
-	    Elles étaient scopées ici, et `residence` employait le même vocabulaire
-	    dans SON balisage — trois blocs y sortaient nus. Une notion partagée par
-	    plusieurs écrans vit dans la charte, elle ne se recopie pas. */
 </style>

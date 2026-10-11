@@ -76,7 +76,7 @@ test('le fil rend la ligne de la carte d’affaire, sans 📌', async ({ page })
 	expect(carte).toContain(`✍️ ${AUTEUR}`);
 
 	await page.goto('/tableau-de-bord');
-	const fil = await texte(page, '.flux-badges');
+	const fil = await texte(page, '.flux-groupes .ec-tags');
 	expect(fil).toBe(
 		carte
 			.replace(/📌 Épinglée ?/, '')
@@ -162,7 +162,7 @@ const COMMUNAUTE: Record<string, unknown> = {
 
 for (const [route, carte, auteur] of [
 	['/annonces', '.carte-liste', '✍️ Jeanne MARTIN'],
-	['/idees', '.idee-card', null],
+	['/idees', '.carte-liste[id^="idee-"]', null],
 	['/sondages', '.sondage-card', null],
 ] as const) {
 	test(`${route} : pastille de lecture, ✨ en fin de ligne, auteur ${auteur ? 'nommé' : 'tu'}`, async ({

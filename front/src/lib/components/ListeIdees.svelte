@@ -29,14 +29,15 @@
   l'autre.
 -->
 <script lang="ts">
+	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import MarqueIA from '$lib/components/MarqueIA.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
+	import IconeAction from '$lib/components/IconeAction.svelte';
+	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import WorkflowPastilles from '$lib/components/WorkflowPastilles.svelte';
 	import Reponses from '$lib/components/Reponses.svelte';
-	import { safeHtml } from '$lib/sanitize';
-	import { fmtDateShort } from '$lib/date';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
 	import { STATUTS_IDEE, STATUT_IDEE_LABELS } from '$lib/idees';
@@ -73,72 +74,119 @@
 </script>
 
 {#each idees as idee (idee.id)}
-	<div class="idee-card card" id="idee-{idee.id}">
-		<button
-			class="vote-btn"
-			class:voted={idee.mon_vote}
-			on:click={() => onVoter(idee.id)}
-			title={idee.mon_vote ? 'Retirer mon vote' : 'Voter pour cette idée'}
-		>
-			<span class="vote-icon">{idee.mon_vote ? '❤️' : '\u{1F90D}'}</span>
-			<span class="vote-count">{idee.nb_votes}</span>
-		</button>
-		<div class="idee-body">
-			<!--  🔴 L'EN-TÊTE DU SITE (18/08/2026, signalé à l'écran : « l'état sur une
-				      2nde ligne après le titre »). Le titre et le badge d'état partageaient une
-				      ligne en `space-between`, seule carte du produit dans ce cas — les quatre
-				      autres passent par `EnteteCarte`.
-
-				      ⚠️ L'en-tête vit DANS `.idee-body`, pas au-dessus : le bouton de vote reste
-				      à gauche de l'ensemble, il n'est pas un tag. `basculable` reste faux — une
-				      idée ne se déplie pas, elle montre tout. -->
-			<EnteteCarte titre={idee.titre} date={fmtDateShort(idee.cree_le)}>
-				<svelte:fragment slot="titre-suffixe">
-					<BadgeNouveau le={idee.cree_le} />
-				</svelte:fragment>
-				<svelte:fragment slot="tags">
-					<span class="badge {statutClass(idee.statut)}"
-						>{STATUT_IDEE_LABELS[idee.statut] ?? idee.statut}</span
-					>
-					<!--  État · 🔹 · qui la lit · ✨ — l'ordre de la carte d'affaire (#1373).
-					      🔴 PAS D'AUTEUR : arbitré le 27/09/2026, une idée reste anonyme
-					      pour ses lecteurs — aucune API ne l'expose, et l'exposer serait
-					      une décision de données personnelles. `lint:pastilles` le tient. -->
-					<BadgePerimetre perimetre={idee.perimetre_cible} />
-					<PastilleLecture cible={idee} />
-					<MarqueIA assiste={idee.assiste_ia} />
-				</svelte:fragment>
-				<!--  Dans l'en-tête, PAS dans `.idee-actions` : cette rangée-là n'existe
-				      que pour le conseil syndical, et copier un lien n'est pas un droit. -->
-				<svelte:fragment slot="actions">
-					<!--  🔗 EN PREMIER, et c'est délibéré : c'est la seule action que TOUT le
-					      monde a. Placée après ✏️, sa position dépendrait des droits du lecteur
-					      — elle sauterait d'un cran selon qu'on est l'auteur ou non. Même ordre
-					      que la petite annonce. -->
-					<BoutonLien ancre="idee-{idee.id}" quoi="l'idée" />
-					{#if peutEditer(idee, currentUserId, estAdmin)}
-						<button
-							class="btn-icon"
-							title="Modifier"
-							aria-label="Modifier l'idée"
-							aria-pressed={editId === idee.id}
-							on:click|stopPropagation={() => onModifier(idee)}>&#x270F;&#xFE0F;</button
-						>
-					{/if}
-				</svelte:fragment>
-			</EnteteCarte>
-			{#if editId === idee.id}
-				<slot name="formulaire" {idee} />
-			{:else}
-				<div class="idee-desc rich-content clamp-3">{@html safeHtml(idee.description)}</div>
-			{/if}
-			{#if idee.auteur_id !== currentUserId}
-				<button
-					class="signaler-inline"
-					title="Signaler cette idée au conseil syndical"
-					aria-label="Signaler cette idée"
-					on:click={() => onSignaler('idee', idee.id)}>🚩</button
+	<!--  🗂️ LA CARTE DU STANDARD (10/10/2026, la page Affaires devenue celle du
+	      site) : `.carte-liste`, la gouttière à gauche, l'aperçu dans l'en-tête et
+	      les tags en dernière ligne. Une idée n'a pas de CLASSEMENT — ni nature ni
+	      type : la gouttière ne porte que sa date, puis son VOTE, qui tenait déjà
+	      lieu de colonne gauche. Rien n'est inventé pour remplir la case. -->
+	<CarteListe id="idee-{idee.id}" quand={idee.cree_le}>
+		<svelte:fragment slot="gouttiere">
+			<!--  Au trait, comme toutes les actions : le CŒUR VIDE dit « pas voté »,
+			      le cœur PLEIN « voté ». `aria-pressed` le dit au lecteur d'écran, que
+			      les deux émojis ❤️/🤍 laissaient sans état. -->
+			<button
+				type="button"
+				class="vote-btn"
+				class:voted={idee.mon_vote}
+				aria-pressed={!!idee.mon_vote}
+				aria-label="{idee.mon_vote
+					? 'Retirer mon vote'
+					: 'Voter pour cette idée'} — {idee.nb_votes} vote{idee.nb_votes > 1 ? 's' : ''}"
+				title={idee.mon_vote ? 'Retirer mon vote' : 'Voter pour cette idée'}
+				on:click={() => onVoter(idee.id)}
+			>
+				<IconeAction icone="heart" />
+				<span class="vote-count">{idee.nb_votes}</span>
+			</button>
+		</svelte:fragment>
+		<!--  🔴 L'EN-TÊTE DU SITE (18/08/2026, signalé à l'écran : « l'état sur une
+		      2nde ligne après le titre »). `basculable` reste faux — une idée ne se
+		      déplie pas, elle montre tout. Sa date est dans la gouttière : elle
+		      n'est plus passée à l'en-tête — un seul fait, une place. -->
+		<EnteteCarte titre={idee.titre}>
+			<svelte:fragment slot="titre-suffixe">
+				<BadgeNouveau le={idee.cree_le} />
+			</svelte:fragment>
+			<svelte:fragment slot="tags">
+				<span class="badge {statutClass(idee.statut)}"
+					>{STATUT_IDEE_LABELS[idee.statut] ?? idee.statut}</span
 				>
+				<!--  État · 🔹 · qui la lit · ✨ — l'ordre de la carte d'affaire (#1373).
+				      🔴 PAS D'AUTEUR : arbitré le 27/09/2026, une idée reste anonyme
+				      pour ses lecteurs — aucune API ne l'expose, et l'exposer serait
+				      une décision de données personnelles. `lint:pastilles` le tient. -->
+				<BadgePerimetre perimetre={idee.perimetre_cible} />
+				<PastilleLecture cible={idee} />
+				<MarqueIA assiste={idee.assiste_ia} />
+			</svelte:fragment>
+			<!--  TOUTES les actions dans l'en-tête, dans l'ordre de la carte d'affaire :
+			      🔗 · ✏️ · 🚩 · 🗑️ (ux-patterns §3). Le 🚩 était posé seul entre la
+			      description et les réponses, la corbeille de l'administrateur sous la
+			      rangée de workflow : deux actions du même objet, deux autres endroits. -->
+			<svelte:fragment slot="actions">
+				<!--  🔗 EN PREMIER, et c'est délibéré : c'est la seule action que TOUT le
+				      monde a. Placée après ✏️, sa position dépendrait des droits du lecteur
+				      — elle sauterait d'un cran selon qu'on est l'auteur ou non. Même ordre
+				      que la petite annonce. -->
+				<BoutonLien ancre="idee-{idee.id}" quoi="l'idée" />
+				{#if peutEditer(idee, currentUserId, estAdmin)}
+					<button
+						class="btn-icon"
+						title="Modifier"
+						aria-label="Modifier l'idée"
+						aria-pressed={editId === idee.id}
+						on:click|stopPropagation={() => onModifier(idee)}><IconeAction icone="pencil" /></button
+					>
+				{/if}
+				{#if idee.auteur_id !== currentUserId}
+					<button
+						class="btn-icon"
+						title="Signaler cette idée au conseil syndical"
+						aria-label="Signaler cette idée"
+						on:click|stopPropagation={() => onSignaler('idee', idee.id)}
+						><IconeAction icone="flag" /></button
+					>
+				{/if}
+				<!--  Réservée à l'administrateur, comme dans la rangée du conseil où elle
+				      vivait (`$isCS` inclut l'admin : la condition était la même). -->
+				{#if estAdmin}
+					<button
+						class="btn-icon-danger"
+						aria-label="Supprimer cette idée"
+						title="Supprimer cette idée"
+						on:click|stopPropagation={() => onSupprimer(idee.id)}
+						><IconeAction icone="trash-2" /></button
+					>
+				{/if}
+			</svelte:fragment>
+			<!--  L'aperçu passe par l'EN-TÊTE (18/09/2026) : c'est ce qui fait
+			      descendre les tags en dernière ligne. Trois lignes, la typographie
+			      de toutes les cartes (`ApercuCarte`). La correction le remplace. -->
+			<svelte:fragment slot="apercu">
+				{#if editId !== idee.id}
+					<ApercuCarte contenu={idee.description} dansLigne />
+				{/if}
+			</svelte:fragment>
+		</EnteteCarte>
+
+		<div class="idee-suite">
+			<!--  La correction remplace l'aperçu, DANS la carte (#787) — et elle
+			      ENTRE comme le corps d'une carte dépliée (`carte-corps`). -->
+			{#if editId === idee.id}
+				<div class="carte-corps">
+					<slot name="formulaire" {idee} />
+				</div>
+			{/if}
+
+			{#if estCS}
+				<!--  Workflow en PASTILLES, jamais un `<select>` nu (R3, #423). -->
+				<div class="idee-actions">
+					<WorkflowPastilles
+						options={STATUTS_IDEE}
+						valeur={idee.statut}
+						on:choisir={(e) => onChangerStatut(idee.id, e.detail)}
+					/>
+				</div>
 			{/if}
 
 			<Reponses
@@ -151,25 +199,7 @@
 				onReport={(rid) => onSignaler('reponse', rid)}
 			/>
 		</div>
-		{#if estCS}
-			<div class="idee-actions">
-				<!--  Workflow en PASTILLES, jamais un `<select>` nu (R3, #423). -->
-				<WorkflowPastilles
-					options={STATUTS_IDEE}
-					valeur={idee.statut}
-					on:choisir={(e) => onChangerStatut(idee.id, e.detail)}
-				/>
-				{#if estAdmin}
-					<button
-						class="btn-icon-danger"
-						aria-label="Supprimer cette idée"
-						title="Supprimer cette idée"
-						on:click={() => onSupprimer(idee.id)}>🗑️</button
-					>
-				{/if}
-			</div>
-		{/if}
-	</div>
+	</CarteListe>
 {/each}
 
 <style>
@@ -178,71 +208,85 @@
 	    aurait livré les cartes NUES en production — c'est la panne des pastilles
 	    de la v2.67.11, refaite deux fois depuis.
 
-	    `.filters` n'est pas ici : elle vient d'`app.css`, partagée par plusieurs
-	    écrans. Trois orphelines sont restées derrière (`.idee-header`,
-	    `.idee-titre`, `.idee-actions select`) : leur balisage avait disparu avec
-	    `EnteteCarte` et `WorkflowPastilles`, elles n'habillaient plus rien.
+	    Conteneur, filet, survol, écart entre cartes et gouttière : `CarteListe`
+	    (`normes.css`). L'en-tête et ses tags : `EnteteCarte`. L'aperçu :
+	    `ApercuCarte`. Ne reste ici que ce qui est propre à une idée.
 
-	    ⚠️ 29/08/2026 — ce commentaire était FAUX pour `.idee-actions` : son
-	    balisage n'avait pas disparu (l. 110), seule la règle `.idee-actions select`
-	    l'avait. La rangée sortait donc nue, les pastilles de workflow empilées
-	    au-dessus du bouton de suppression au lieu d'être alignées avec.
-
-	    🔴 Personne ne l'a vu parce que `lint:classes-nues` lisait les COMMENTAIRES
-	    comme des définitions : cette phrase-ci, qui cite `.idee-actions` pour
-	    expliquer son retrait, la faisait passer pour définie. Le contrôle était
-	    aveuglé par la documentation de son propre sujet. */
+	    Une idée ne se DÉPLIE pas : `normes.css` ne lui pose ni curseur ni titre
+	    coloré au survol (ils sont réservés à une carte dont le titre est un
+	    bouton). */
+	/*  Sous l'en-tête : le rembourrage horizontal est celui d'`EnteteCarte`, pour
+	    que la rangée de workflow et les réponses partent du même bord que le
+	    titre. */
+	.idee-suite {
+		padding: 0 1.1rem 0.75rem;
+	}
 	.idee-actions {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 		flex-wrap: wrap;
+		margin-top: 0.25rem;
 	}
-	.idee-card {
-		display: flex;
-		gap: 1rem;
-		align-items: flex-start;
-		padding: 1rem 1.25rem;
-		margin-bottom: 0.5rem;
-	}
+
+	/*  Le vote, dans la gouttière, sous la date. Le chiffre est en chasse fixe :
+	    il change à chaque clic, la colonne ne doit pas bouger. Aucune animation
+	    sur le cœur — un geste qu'on refait souvent ne s'anime pas
+	    (`emil-design-eng`) ; seules les couleurs passent, en 200 ms. */
 	.vote-btn {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.2rem;
-		background: none;
+		background: var(--color-surface);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
-		padding: 0.5rem 0.6rem;
+		padding: 0.4rem 0.55rem;
 		cursor: pointer;
-		transition: border-color var(--duree-geste);
-		min-width: 3.5rem;
+		min-width: 3rem;
+		color: var(--color-text-muted);
+		transition:
+			border-color var(--duree-geste) var(--ease-out),
+			background-color var(--duree-geste) var(--ease-out),
+			color var(--duree-geste) var(--ease-out);
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.vote-btn:hover {
 			border-color: var(--color-primary);
 		}
 	}
+	.vote-btn:focus-visible {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 2px;
+	}
 	.vote-btn.voted {
 		border-color: var(--color-primary);
 		background: var(--color-primary-light);
+		color: var(--color-primary);
 	}
-	.vote-icon {
-		font-size: 1.1rem;
+	/*  Voté : le cœur se REMPLIT. Au trait seul, « voté » et « pas voté » ne se
+	    distinguaient plus que par la couleur — un état qui ne tient qu'à la
+	    couleur n'existe pas pour tout le monde. */
+	.vote-btn.voted :global(svg) {
+		fill: currentColor;
 	}
 	.vote-count {
 		font-size: var(--fs-md);
 		font-weight: 700;
 		color: var(--color-primary);
+		font-variant-numeric: tabular-nums;
 	}
-	.idee-body {
-		flex: 1;
+	/*  Au pouce, la gouttière est une LIGNE au-dessus du titre : le vote s'y
+	    couche, cœur et chiffre côte à côte, pour ne pas la rehausser. */
+	@media (max-width: 480px) {
+		.vote-btn {
+			flex-direction: row;
+			gap: 0.35rem;
+			padding: 0.25rem 0.55rem;
+			min-height: 32px;
+		}
+		.idee-suite {
+			padding: 0 0.7rem 0.55rem;
+		}
 	}
-	.idee-desc {
-		font-size: var(--fs-md);
-		color: var(--color-text-muted);
-		margin: 0.2rem 0 0.3rem;
-	}
-	/*  `:hover` vient de `styles/composants.css` — la redéfinir à l'identique
-	    ne servait à rien (29/08/2026). */
 </style>
