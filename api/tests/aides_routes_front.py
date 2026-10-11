@@ -145,12 +145,15 @@ def _page_du_lien(lien: str) -> pathlib.Path | None:
     return descendre(_ROUTES, segments)
 
 
+#  `$lib/components/X.svelte` ou `./X.svelte` : un composant voisin s'importe aussi
+#  en relatif (`ListeAnnonces` → `./AnnonceCard.svelte`), et ne suivre que la
+#  première forme laissait l'ancre qu'il pose hors de la vue du contrôle.
 _MOTIF_IMPORT_COMPOSANT = re.compile(
-    r"import\s+(\w+)\s+from\s+['\"]\$lib/components/([\w./-]+\.svelte)['\"]"
+    r"import\s+(\w+)\s+from\s+['\"](\$lib/components/|\./)([\w./-]+\.svelte)['\"]"
 )
 
 
-def contenu_deplie(fichier: pathlib.Path, _profondeur: int = 3) -> str:
+def contenu_deplie(fichier: pathlib.Path, _profondeur: int = 4) -> str:
     """Le balisage d'une page, **composants locaux inclus**, à leur place d'appel.
 
     Une page qui rend `id="annonce-…"` directement, ou qui délègue à
@@ -169,6 +172,12 @@ def contenu_deplie(fichier: pathlib.Path, _profondeur: int = 3) -> str:
     cette dernière qui pose `id="annonce-…"`. Une route qui délègue son écran à un
     composant ajoute un niveau, et le contrôle doit le suivre, sinon il déclare
     l'ancre absente alors qu'elle est rendue.
+    ⚠️ Et de 3 à 4 le 11/10/2026 : `OngletAnnonces` délègue désormais sa liste à
+    `ListeAnnonces`, qui monte `AnnonceCard` — un niveau de plus, que personne
+    n'avait vu, parce que le contrôle restait vert sur `id="annonce-titre-…"` du
+    FORMULAIRE de création, importé alors d'emblée. Quand le formulaire a été
+    chargé à la demande (`ChargementDiffere`), le vert de rencontre a disparu.
+    Un préfixe d'ancre trouvé ne dit pas QUEL élément le porte.
 
     Le contenu du composant est **inséré** à l'endroit de sa balise plutôt que
     substitué : `_segments_par_onglet` découpe la page par onglet, et l'ancre doit
@@ -181,8 +190,9 @@ def contenu_deplie(fichier: pathlib.Path, _profondeur: int = 3) -> str:
     if _profondeur <= 0:
         return contenu
 
-    for nom, cible in _MOTIF_IMPORT_COMPOSANT.findall(contenu):
-        chemin = _FRONT_SRC / "lib" / "components" / cible
+    for nom, base, cible in _MOTIF_IMPORT_COMPOSANT.findall(contenu):
+        dossier = fichier.parent if base == "./" else _FRONT_SRC / "lib" / "components"
+        chemin = dossier / cible
         if not chemin.is_file():
             continue
         position = contenu.find(f"<{nom}", contenu.find("</script>"))

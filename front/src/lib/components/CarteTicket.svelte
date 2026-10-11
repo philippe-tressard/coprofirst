@@ -37,6 +37,7 @@
   pour l'affichage.
 -->
 <script lang="ts">
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import ApercuTicket from './ApercuTicket.svelte';
@@ -55,8 +56,6 @@
 	import TransfertsVerses from './TransfertsVerses.svelte';
 	import { currentUser, isAdmin, isCS } from '$lib/stores/auth';
 	import { peutCommenter as peutCommenterCe, peutEditer } from '$lib/droits';
-	import FormulaireTicket from './FormulaireTicket.svelte';
-	import SuiteAffaire from './SuiteAffaire.svelte';
 	import MentionFusion from './MentionFusion.svelte';
 	import { TICKET } from '$lib/entites/ticket';
 	import {
@@ -262,19 +261,27 @@
 				</div>
 			{:else if mode === 'edition'}
 				<div class="tk-formulaire">
-					<FormulaireTicket {ticket} on:modifie on:annule={() => dispatch('annuler')} />
+					<ChargementDiffere charger={() => import('$lib/components/FormulaireTicket.svelte')}>
+						{#snippet contenu(FormulaireTicket)}
+							<FormulaireTicket {ticket} on:modifie on:annule={() => dispatch('annuler')} />
+						{/snippet}
+					</ChargementDiffere>
 				</div>
 			{:else if mode === 'evolution'}
 				<div class="tk-formulaire">
 					<!--  Le MÊME montage que la fiche (`SuiteAffaire`, 01/10/2026). -->
-					<SuiteAffaire
-						{ticket}
-						entrees={evolutions}
-						peutSuivre={peutSuivreCeTicket}
-						saving={evolutionEnCours}
-						on:submit={(e) => dispatch('evoluer', e.detail)}
-						on:cancel={() => dispatch('annuler')}
-					/>
+					<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+						{#snippet contenu(SuiteAffaire)}
+							<SuiteAffaire
+								{ticket}
+								entrees={evolutions}
+								peutSuivre={peutSuivreCeTicket}
+								saving={evolutionEnCours}
+								on:submit={(e) => dispatch('evoluer', e.detail)}
+								on:cancel={() => dispatch('annuler')}
+							/>
+						{/snippet}
+					</ChargementDiffere>
 				</div>
 			{:else}
 				<FicheLecture
@@ -340,15 +347,19 @@
 							</svelte:fragment>
 							<svelte:fragment slot="edition" let:evol>
 								{#key evolEnEdition}
-									<SuiteAffaire
-										{ticket}
-										{evol}
-										entrees={evolutions}
-										peutSuivre={peutSuivreCeTicket}
-										saving={evolCorrectionEnCours}
-										on:submit={(e) => dispatch('evol_corriger', e.detail)}
-										on:cancel={() => dispatch('evol_annuler')}
-									/>
+									<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+										{#snippet contenu(SuiteAffaire)}
+											<SuiteAffaire
+												{ticket}
+												{evol}
+												entrees={evolutions}
+												peutSuivre={peutSuivreCeTicket}
+												saving={evolCorrectionEnCours}
+												on:submit={(e) => dispatch('evol_corriger', e.detail)}
+												on:cancel={() => dispatch('evol_annuler')}
+											/>
+										{/snippet}
+									</ChargementDiffere>
 								{/key}
 							</svelte:fragment>
 						</RubriqueHistorique>

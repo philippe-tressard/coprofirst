@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import EntetePage from '$lib/components/EntetePage.svelte';
 	import BoutonNouveau from '$lib/components/BoutonNouveau.svelte';
 	import FiltresAffaires from '$lib/components/FiltresAffaires.svelte';
@@ -21,7 +22,6 @@
 	import ListeTickets from '$lib/components/ListeTickets.svelte';
 	import ArchivesParAnnee from '$lib/components/ArchivesParAnnee.svelte';
 	import { chargeCorrection, type ChargeUtileEvolution } from '$lib/evolutions';
-	import FormulaireTicket from '$lib/components/FormulaireTicket.svelte';
 	import { aboutirGeste, ouvrirGeste } from '$lib/aboutissement';
 	import AvertissementUrgence from '$lib/components/AvertissementUrgence.svelte';
 	import { OPTIONS_FILTRE_NATURE, estActualite, statutsPresents } from '$lib/tickets';
@@ -428,7 +428,11 @@
 <!--  Le formulaire s'ouvre APRÈS l'avertissement et les filtres : `ux-patterns`
       §0 ter, signalé ici le 12/09/2026. -->
 {#if showForm}
-	<FormulaireTicket cle="creation" on:cree={ticketCree} on:annule={() => (showForm = false)} />
+	<ChargementDiffere charger={() => import('$lib/components/FormulaireTicket.svelte')}>
+		{#snippet contenu(FormulaireTicket)}
+			<FormulaireTicket cle="creation" on:cree={ticketCree} on:annule={() => (showForm = false)} />
+		{/snippet}
+	</ChargementDiffere>
 {/if}
 
 <!--  Les trois états par `EtatListe` (#796) — dont l'ERREUR, qui n'existait pas :

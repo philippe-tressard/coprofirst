@@ -34,7 +34,7 @@
   commune aux trois rubriques et vit avec elles.
 -->
 <script lang="ts">
-	import FormulaireAnnonce from '$lib/components/FormulaireAnnonce.svelte';
+	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import ListeAnnonces from '$lib/components/ListeAnnonces.svelte';
 	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
@@ -224,14 +224,18 @@
 <!--  §0 ter : la boîte de création vient APRÈS les filtres — ce qui qualifie la
       liste reste au-dessus du formulaire ouvert (#1186). `lint:filtre-avant-formulaire`. -->
 {#if showForm}
-	<FormulaireAnnonce
-		on:cree={(e) => {
-			annonces = [e.detail, ...annonces];
-			showForm = false;
-			expandedAnnonce = e.detail.id;
-		}}
-		on:annule={() => (showForm = false)}
-	/>
+	<ChargementDiffere charger={() => import('$lib/components/FormulaireAnnonce.svelte')}>
+		{#snippet contenu(FormulaireAnnonce)}
+			<FormulaireAnnonce
+				on:cree={(e) => {
+					annonces = [e.detail, ...annonces];
+					showForm = false;
+					expandedAnnonce = e.detail.id;
+				}}
+				on:annule={() => (showForm = false)}
+			/>
+		{/snippet}
+	</ChargementDiffere>
 {/if}
 
 <!--  🔴 Les trois états — chargement, erreur, vide — étaient écrits ICI, à la
@@ -285,11 +289,15 @@
 					<!--  `{#key}` remonte le composant d'une annonce à l'autre : ses champs
 					      sont initialisés une seule fois, à la construction. -->
 					{#key annonce.id}
-						<FormulaireAnnonce
-							{annonce}
-							on:modifie={(e) => appliquerModification(e.detail)}
-							on:annule={() => (editAnnonce = null)}
-						/>
+						<ChargementDiffere charger={() => import('$lib/components/FormulaireAnnonce.svelte')}>
+							{#snippet contenu(FormulaireAnnonce)}
+								<FormulaireAnnonce
+									{annonce}
+									on:modifie={(e) => appliquerModification(e.detail)}
+									on:annule={() => (editAnnonce = null)}
+								/>
+							{/snippet}
+						</ChargementDiffere>
 					{/key}
 				</svelte:fragment>
 			</ListeAnnonces>
