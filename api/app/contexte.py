@@ -36,7 +36,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 
 from sqlmodel import Session
-from starlette.responses import JSONResponse
+from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 

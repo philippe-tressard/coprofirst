@@ -44,7 +44,7 @@ def test_un_hote_declare_resout_la_copropriete(origine, hote):
 
 
 @pytest.mark.parametrize(
-    "hote", ["192.168.1.223", "192.168.1.222:80", "127.0.0.1", "localhost", "api", "api:8000"]
+    "hote", ["10.0.0.23", "10.0.0.22:80", "127.0.0.1", "localhost", "api", "api:8000"]
 )
 def test_ip_privee_et_noms_internes_tant_qu_elle_est_seule(origine, hote):
     assert contexte.copropriete_de_l_hote(hote) is not None
@@ -75,7 +75,7 @@ def test_avec_deux_coproprietes_une_ip_ne_designe_plus_personne(origine, monkeyp
     )
     assert contexte.copropriete_de_l_hote("voisine.example").identifiant == "voisine"
     assert contexte.copropriete_de_l_hote("5hostachy.fr").identifiant == seule.identifiant
-    assert contexte.copropriete_de_l_hote("192.168.1.223") is None
+    assert contexte.copropriete_de_l_hote("10.0.0.23") is None
     assert contexte.copropriete_de_l_hote("localhost") is None
 
 

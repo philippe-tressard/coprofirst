@@ -185,19 +185,17 @@ def test_le_seuil_de_surete_compte_aussi_les_fermes(session):
 def test_la_fermeture_ne_s_ecrit_que_dans_marquer_decide():
     """Une écriture à côté fausserait la durée : un compte partirait trop tôt, ou jamais."""
     import re
-    from pathlib import Path
 
-    app = Path(__file__).resolve().parents[1] / "app"
+    from tests.aides_sources import modules_app
+
     motif = re.compile(
         r"\.(fermeture_compte|compte_ferme_le|decision_compte_le)\b\s*(,[^=]*)?=(?!=)"
     )
-    fichiers = list(app.rglob("*.py"))
-    assert len(fichiers) > 100
     fautes = [
-        f"{f.relative_to(app)}:{n}"
-        for f in fichiers
-        if f.name != "comptes.py" or f.parent.name != "utils"
-        for n, ligne in enumerate(f.read_text(encoding="utf-8").splitlines(), 1)
+        f"{m.rel}:{n}"
+        for m in modules_app()
+        if m.rel != "utils/comptes.py"
+        for n, ligne in enumerate(m.source.splitlines(), 1)
         if motif.search(ligne) and not ligne.lstrip().startswith("#")
     ]
     assert not fautes, f"écrire par `utils/comptes.marquer_decide` : {fautes}"

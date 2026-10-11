@@ -60,23 +60,19 @@ def test_un_auteur_garde_se_lit_par_ou_rien():
     pour un compte supprimé — avertit que la clé vide « pourra lever une erreur ». Elle
     se lit par `utils/recuperer.ou_rien`, qui ne demande rien quand la clé est vide."""
     import re
-    from pathlib import Path
+
+    from tests.aides_sources import modules_app
 
     #  `user_id` (les votes) est écarté : le nom est trop commun — jetons, liens de
     #  lot, tous obligatoires —, et aucun écran ne lit l'auteur d'un vote.
     colonnes = "|".join(sorted({col for _, col in CONTENUS_GARDES} - {"user_id"}))
     motif = re.compile(rf"session\.get\(\s*Utilisateur\s*,\s*[\w.]+\.({colonnes})\s*\)")
-    app = Path(__file__).resolve().parents[1] / "app"
-    fichiers = list(app.rglob("*.py"))
-    assert len(fichiers) > 100, "lecture du dossier de l'application cassée"
-    fautes = [
-        f"{f.relative_to(app)}:{n}"
-        for f in fichiers
-        for n, ligne in enumerate(f.read_text(encoding="utf-8").splitlines(), 1)
-        if motif.search(ligne)
-    ]
     #  `annonces.py` lit l'auteur d'une petite annonce : référence PERSONNELLE, jamais vide.
     fautes = [
-        x for x in fautes if not x.startswith(("routers\\annonces.py", "routers/annonces.py"))
+        f"{m.rel}:{n}"
+        for m in modules_app()
+        if m.rel != "routers/annonces.py"
+        for n, ligne in enumerate(m.source.splitlines(), 1)
+        if motif.search(ligne)
     ]
     assert not fautes, f"lire par `ou_rien(session, Utilisateur, …)` : {fautes}"
