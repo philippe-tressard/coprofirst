@@ -52,6 +52,7 @@ from app.models.core import (
     StatutUtilisateur,
     Utilisateur,
 )
+from app.models.roles import ROLE_OPERATEUR
 from app.seed.contenus_legaux import DEFAULT_LEGAL
 from app.seed.diagnostics import DIAGNOSTICS
 from app.seed.emails import EMAIL_TEMPLATES, INTENTIONS_PAR_MODELE
@@ -152,7 +153,9 @@ def _admin_initial(session: Session) -> None:
             hashed_password=hash_password(mot_de_passe),
             statut=StatutUtilisateur.admin_technique,
             role=RoleUtilisateur.admin,
-            roles_json="admin",
+            #  Administrateur de la copropriété ET opérateur de l'installation
+            #  (#1750) : qui installe une réplique la supervise.
+            roles_json=f"{RoleUtilisateur.admin.value},{ROLE_OPERATEUR}",
             actif=True,
             #  Son adresse ne reçoit rien : sans ce drapeau, la connexion le refuse
             #  (« vérifiez votre adresse ») et une installation neuve reste sans

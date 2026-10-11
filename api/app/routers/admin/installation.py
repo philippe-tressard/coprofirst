@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlmodel import Session
 
-from app.auth.deps import require_admin
+from app.auth.deps import require_operateur
 from app.database import get_session
 from app.models.core import Utilisateur
 from app.utils import installation
@@ -37,7 +37,7 @@ class EtatInstallation(BaseModel):
 @router.get("/installation", response_model=EtatInstallation)
 def etat_installation(
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_admin),
+    _: Utilisateur = Depends(require_operateur),
 ):
     role = installation.role_installation()
     libelle, branche = installation.ROLES.get(role, ("Inconnu", None))
