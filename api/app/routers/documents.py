@@ -21,6 +21,13 @@ from app.models.core import (
     Utilisateur,
 )
 from app.routers.documents_schemas import DocumentRead
+from app.utils.annexes import (
+    PORTEURS,
+    porteurs_demandes,
+    remplacer_fichier,
+    supprimer_annexes,
+    verifier_porteur,
+)
 from app.utils.fichiers import enregistrer_televersement
 from app.utils.stockage import stockage
 
@@ -28,7 +35,7 @@ from app.utils.stockage import stockage
 from app.utils.visibility import document_visible, profil_admet
 from app.utils.liens import base_site
 from app.utils.liens import nom_site
-from app.utils.recuperer import fichier_ou_404, ou_404
+from app.utils.recuperer import connu_ou_404, fichier_ou_404, ou_404
 from app.utils.cloche import sonner
 
 logger = logging.getLogger(__name__)
@@ -169,10 +176,31 @@ def list_documents(
     contrat_id: int | None = None,
     ticket_id: int | None = None,
     evenement_id: int | None = None,
+    #  Les annexes d'une fiche de Ma résidence (migration 0276, `utils/annexes`).
+    document_parent_id: int | None = None,
+    diagnostic_rapport_id: int | None = None,
+    regle_residence_id: int | None = None,
+    #  Toutes les annexes d'une RUBRIQUE (`document`, `diagnostic`, `regle`) en
+    #  un appel : l'écran les range sous leurs fiches, au lieu d'un appel par carte.
+    annexes_de: str | None = None,
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
     stmt = select(Document)
+    if annexes_de:
+        colonne = connu_ou_404(PORTEURS, annexes_de, "Fiche inconnue")
+        stmt = stmt.where(getattr(Document, colonne).is_not(None))
+    fiches = porteurs_demandes(
+        document_parent_id=document_parent_id,
+        diagnostic_rapport_id=diagnostic_rapport_id,
+        regle_residence_id=regle_residence_id,
+    )
+    for porteur, porteur_id in fiches.items():
+        stmt = stmt.where(getattr(Document, PORTEURS[porteur]) == porteur_id)
+    #  Une annexe n'est pas un document de la bibliothèque non plus : sans
+    #  filtre sur sa fiche, elle n'apparaît pas — la même raison que ci-dessous.
+    if not fiches and not annexes_de:
+        stmt = stmt.where(*(getattr(Document, c).is_(None) for c in PORTEURS.values()))
     if categorie_id:
         stmt = stmt.where(Document.categorie_id == categorie_id)
     if contrat_id:
@@ -266,6 +294,29 @@ def update_document(
     return doc
 
 
+@router.post("/{doc_id}/fichier", response_model=DocumentRead)
+def remplacer_fichier_document(
+    doc_id: int,
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(require_cs_or_admin),
+):
+    """Remplace le fichier PRINCIPAL d'une fiche de Ma résidence (`utils/annexes`).
+
+    Seul un document de la bibliothèque — une catégorie — se remplace ainsi : une
+    pièce jointe d'affaire, de contrat ou une annexe se retire et se redépose.
+    """
+    doc = ou_404(session, Document, doc_id, "Document")
+    if not doc.categorie_id:
+        raise HTTPException(400, "Seul le fichier d'un document de Ma résidence se remplace")
+    ancien = remplacer_fichier(doc, file, user)
+    session.add(doc)
+    session.commit()
+    session.refresh(doc)
+    stockage().supprimer_chemin(ancien)
+    return doc
+
+
 @router.post("", response_model=DocumentRead, status_code=201)
 async def upload_document(
     titre: str = Form(...),
@@ -276,6 +327,10 @@ async def upload_document(
     contrat_id: int | None = Form(None),
     ticket_id: int | None = Form(None),
     evenement_id: int | None = Form(None),
+    #  L'annexe d'une fiche de Ma résidence (migration 0276).
+    document_parent_id: int | None = Form(None),
+    diagnostic_rapport_id: int | None = Form(None),
+    regle_residence_id: int | None = Form(None),
     perimetre: str = Form("résidence"),
     batiment_id: int | None = Form(None),
     lot_id: int | None = Form(None),
@@ -298,10 +353,23 @@ async def upload_document(
     #  formulaire abandonné — c'est-à-dire pour toujours.
     #  `publication_id` n'en est plus un depuis le 23/09/2026 : une actualité est
     #  une affaire (#1091), ses pièces jointes portent `ticket_id`.
-    if not categorie_id and not contrat_id and not ticket_id and not evenement_id:
+    annexe = porteurs_demandes(
+        document_parent_id=document_parent_id,
+        diagnostic_rapport_id=diagnostic_rapport_id,
+        regle_residence_id=regle_residence_id,
+    )
+    if annexe:
+        #  🔴 UN SEUL rattachement pour une annexe : une catégorie lui donnerait
+        #  sa propre règle de lecture et l'enverrait dans la bibliothèque, deux
+        #  porteurs deux règles. Elle se lit comme SA fiche, et rien d'autre.
+        if len(annexe) > 1 or categorie_id or contrat_id or ticket_id or evenement_id:
+            raise HTTPException(400, "Une annexe se rattache à une seule fiche")
+        [(porteur, porteur_id)] = annexe.items()
+        verifier_porteur(session, porteur, porteur_id)
+    elif not categorie_id and not contrat_id and not ticket_id and not evenement_id:
         raise HTTPException(
             400,
-            "categorie_id, contrat_id, ticket_id ou evenement_id obligatoire",
+            "categorie_id, contrat_id, ticket_id, evenement_id ou une fiche obligatoire",
         )
 
     if categorie_id:
@@ -346,6 +414,9 @@ async def upload_document(
         contrat_id=contrat_id,
         ticket_id=ticket_id,
         evenement_id=evenement_id,
+        document_parent_id=document_parent_id,
+        diagnostic_rapport_id=diagnostic_rapport_id,
+        regle_residence_id=regle_residence_id,
         perimetre=perimetre,
         batiment_id=batiment_id,
         lot_id=lot_id,
@@ -389,6 +460,9 @@ def delete_document(
     ).all():
         contrat.document_id = None
         session.add(contrat)
+    #  Une fiche emporte ses annexes (migration 0276) : sans elle, elles
+    #  n'auraient plus de règle de lecture (`utils/annexes`).
+    supprimer_annexes(session, "document", doc_id)
     stockage().supprimer_chemin(doc.fichier_chemin)
     session.delete(doc)
     session.commit()

@@ -31,7 +31,7 @@ from sqlalchemy import text
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from app.database import activer_cles_etrangeres
-from app.models.communaute import Idee
+from app.models.communaute import PetiteAnnonce
 from app.models.core import Utilisateur
 from app.utils.purge_referentielle import purger, references_entrantes
 
@@ -67,7 +67,10 @@ def test_les_references_sont_lues_dans_les_metadonnees_pas_recitees():
         f"seulement {len(refs)} références lues — la lecture des métadonnées est cassée"
     )
     obligatoires = [r for r in refs if r[2]]
-    assert len(obligatoires) > 30
+    #  31 avant #1688/#1821, qui ont rendu facultatifs les auteurs des contenus
+    #  gardés : leur liste se lit dans `suppression_compte`, et
+    #  `test_references_au_compte_declarees` la tient. Ici, l'ordre de grandeur.
+    assert len(obligatoires) >= 10
     #  Une table à auteur OBLIGATOIRE doit en faire partie. C'était `publication`,
     #  qui a révélé le défaut ; elle est supprimée depuis le 30/09/2026 (#1177).
     assert any(t.name == "idee" and c.name == "auteur_id" for t, c, _ in refs)
@@ -78,22 +81,22 @@ def test_supprimer_un_compte_emporte_son_contenu_et_ne_laisse_aucun_orphelin(bas
 
     Sans purge, `DELETE FROM utilisateur` faisait tenter à l'ORM un
     `UPDATE publication SET auteur_id = NULL` — refusé, la colonne est NOT NULL.
-    La table `publication` n'existe plus (#1177) ; `idee` porte la même
-    contrainte, et c'est elle qui tient le cas.
+    La table `publication` n'existe plus (#1177) et l'idée est gardée depuis
+    #1821 ; la petite annonce, PERSONNELLE, porte la même contrainte et tient le cas.
     """
     auteur = Utilisateur(email="auteur@test", hashed_password="x", prenom="A", nom="B")
     base_stricte.add(auteur)
     base_stricte.commit()
     base_stricte.refresh(auteur)
-    base_stricte.add(Idee(titre="Une idée", description="…", auteur_id=auteur.id))
+    base_stricte.add(PetiteAnnonce(titre="Vélo", description="…", auteur_id=auteur.id))
     base_stricte.commit()
 
     comptes = purger(base_stricte, "utilisateur", auteur.id)
     base_stricte.commit()
 
-    assert base_stricte.exec(select(Idee)).all() == []
+    assert base_stricte.exec(select(PetiteAnnonce)).all() == []
     assert base_stricte.exec(select(Utilisateur)).all() == []
-    assert comptes.get("idee") == 1
+    assert comptes.get("petite_annonce") == 1
     assert _compte_violations(base_stricte) == 0
 
 
@@ -130,34 +133,35 @@ def test_une_reference_NULLABLE_est_deliee_et_sa_ligne_reste(base_stricte):
 
 
 def test_la_purge_descend_sur_plusieurs_etages(base_stricte):
-    """Un ticket porte des messages : les deux partent avec leur auteur.
+    """Un bail porte ses objets remis : les deux partent avec le bailleur.
 
-    ⚠️ C'est la conséquence assumée de l'arbitrage du 28/08/2026 — supprimer un
-    compte supprime le FIL entier de ses tickets, réponses des autres comprises,
-    parce qu'un message n'a pas d'existence hors du ticket qui le porte.
+    Les affaires (#1688) puis les sondages (#1821) ne servent plus d'exemple :
+    leur auteur est facultatif, ils restent. Le bail est PERSONNEL — et l'objet
+    remis n'a pas d'existence hors du bail qui le porte.
     """
-    from app.models.core import MessageTicket, Ticket
+    from datetime import date
 
-    auteur = Utilisateur(email="a@test", hashed_password="x", prenom="A", nom="B")
+    from app.models.bailleur import LocationBail, RemiseObjet
+    from app.models.copropriete import Lot
+
+    bailleur = Utilisateur(email="a@test", hashed_password="x", prenom="A", nom="B")
     autre = Utilisateur(email="b@test", hashed_password="x", prenom="C", nom="D")
-    base_stricte.add(auteur)
-    base_stricte.add(autre)
+    lot = Lot(numero="12")
+    for ligne in (bailleur, autre, lot):
+        base_stricte.add(ligne)
     base_stricte.commit()
-    base_stricte.refresh(auteur)
-    base_stricte.refresh(autre)
-    ticket = Ticket(numero="T-1", titre="Fuite", description="…", auteur_id=auteur.id)
-    base_stricte.add(ticket)
+    bail = LocationBail(lot_id=lot.id, bailleur_id=bailleur.id, date_entree=date(2026, 1, 1))
+    base_stricte.add(bail)
     base_stricte.commit()
-    base_stricte.refresh(ticket)
-    base_stricte.add(MessageTicket(ticket_id=ticket.id, auteur_id=autre.id, contenu="je confirme"))
+    base_stricte.add(RemiseObjet(bail_id=bail.id, libelle="Clé porte palière"))
     base_stricte.commit()
 
-    purger(base_stricte, "utilisateur", auteur.id)
+    purger(base_stricte, "utilisateur", bailleur.id)
     base_stricte.commit()
 
-    assert base_stricte.exec(select(Ticket)).all() == []
-    assert base_stricte.exec(select(MessageTicket)).all() == [], (
-        "le message d'un TIERS part avec le ticket : il n'existe pas sans lui"
+    assert base_stricte.exec(select(LocationBail)).all() == []
+    assert base_stricte.exec(select(RemiseObjet)).all() == [], (
+        "l'objet remis part avec le bail : il n'existe pas sans lui"
     )
     assert base_stricte.exec(select(Utilisateur)).all() != [], "l'autre compte devait rester"
     assert _compte_violations(base_stricte) == 0

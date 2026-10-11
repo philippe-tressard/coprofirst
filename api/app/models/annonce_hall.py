@@ -56,5 +56,5 @@ class AnnonceHall(AssisteIAMixin, table=True):
     #  schéma que les bases migrées n'ont pas. (`publication_id` : retirée par
     #  la 0238, #1177.)
     ticket_id: Optional[int] = Field(default=None)
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)

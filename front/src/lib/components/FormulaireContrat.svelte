@@ -8,7 +8,7 @@
 	 *
 	 * `prestataires/+page.svelte` rendait ce formulaire **deux fois**, à 110 lignes
 	 * d'écart : une fois en boîte de page, une fois déplié dans la carte du
-	 * contrat. Les deux montaient `ChampsContrat` puis `DocumentsContrat` — donc
+	 * contrat. Les deux montaient `ChampsContrat` puis `DocumentsRattaches` — donc
 	 * la même intention, écrite deux fois.
 	 *
 	 * 🔴 **Et les deux avaient déjà divergé**, sans que personne l'ait décidé :
@@ -48,7 +48,7 @@
 	 * choisir son enveloppe — alors que c'est l'écran qui sait lequel il déclenche.
 	 */
 	import ChampsContrat from './ChampsContrat.svelte';
-	import DocumentsContrat from './DocumentsContrat.svelte';
+	import DocumentsRattaches from './DocumentsRattaches.svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
 	import { CONTRAT } from '$lib/entites/contrat';
 	import { SECTIONS_LIBELLE } from '$lib/entites/types';
@@ -68,7 +68,7 @@
 	 * les envoie aussitôt. La section, elle, est rendue dans les deux cas.
 	 *
 	 * ⚠️ Jamais un booléen de plus : un drapeau séparé pourrait dire « avec
-	 * documents » sans identifiant, et `DocumentsContrat` recevrait alors
+	 * documents » sans identifiant, et `DocumentsRattaches` recevrait alors
 	 * `contratId={0}` — c'est ce que l'ancien code écrivait
 	 * (`contratId={editContratId ?? 0}`), un repli qui ne désignait aucun
 	 * contrat. `null` le dit, `0` le cachait.
@@ -144,8 +144,9 @@
 		      pour les tickets. Sans elle, le champ de nommage ne prend pas la
 		      largeur de la boîte. -->
 		<div class="field champ-large">
-			<DocumentsContrat
-				{contratId}
+			<DocumentsRattaches
+				cible="contrat"
+				objetId={contratId}
 				{documents}
 				{onSupprimer}
 				{onAjoute}

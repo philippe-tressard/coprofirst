@@ -26,6 +26,7 @@ from .commun import config_site, contexte_site
 from .courriels import envoyer_email_externe
 from app.utils.destinataires import membres_cs_ou_admin
 from app.utils.noms import contexte_personne
+from app.utils.recuperer import ou_rien
 from app.utils.cloche import sonner
 from app.utils.fusion_affaires import refuser_si_absorbee
 
@@ -160,7 +161,7 @@ def add_message(
         if est_cs:
             # CS/Admin répond → notifier l'auteur du ticket
             if ticket.auteur_id != user.id:
-                auteur = session.get(Utilisateur, ticket.auteur_id)
+                auteur = ou_rien(session, Utilisateur, ticket.auteur_id)
                 if auteur and auteur.email:
                     _prevenir(
                         session,

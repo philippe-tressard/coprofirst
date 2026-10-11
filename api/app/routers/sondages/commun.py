@@ -54,7 +54,7 @@ class SondageRead(AssisteIASortie):
     cloture_le: Optional[datetime] = None
     cloture_forcee: bool = False
     resultats_publics: bool
-    auteur_id: int
+    auteur_id: Optional[int] = None  # compte supprimé (#1821)
     cree_le: datetime
     #  Exposés en LISTES, comme les publications et les tickets : la colonne est
     #  du texte JSON, mais aucun appelant ne doit avoir à le savoir. La page des

@@ -59,6 +59,7 @@
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import LienAction from '$lib/components/LienAction.svelte';
 	import TexteDeplie from '$lib/components/TexteDeplie.svelte';
+	import ListeDocuments from '$lib/components/ListeDocuments.svelte';
 	import { basculer } from '$lib/accordeon';
 	import type { Document } from '$lib/api';
 
@@ -83,6 +84,9 @@
 	/**  Ce qui classe les documents de la section — la rubrique —, ou rien. Le type
 	 *   est celui de `Gouttiere`, lu et non recopié. */
 	export let classe: ClasseGouttiere | null = null;
+	/**  Les annexes d'un document (migration 0278) : elles se lisent carte
+	 *   dépliée, et une carte qui en porte se déplie même sans description. */
+	export let annexesDe: (doc: Document) => Document[] = () => [];
 
 	//  UNE description dépliée à la fois (`$lib/accordeon`).
 	let deplie: number | null = null;
@@ -121,7 +125,8 @@
 
 	<EtatListe compact {erreur} vide={documents.length === 0} {messageVide}>
 		{#each documents as doc (doc.id)}
-			{@const depliable = !!doc.description}
+			{@const pieces = annexesDe(doc)}
+			{@const depliable = !!doc.description || pieces.length > 0}
 			<!--  Repliée, toute la carte déplie ; dépliée, seul le titre replie
 			      (`ux-patterns` §3). L'`id` est la cible des liens profonds
 			      (`#doc-<id>`, fil d'activité et 🔗). -->
@@ -179,7 +184,8 @@
 				{#if deplie === doc.id}
 					<!--  Le corps ne replie pas la carte : on lit, on sélectionne. -->
 					<div class="carte-corps" role="presentation" on:click|stopPropagation>
-						<TexteDeplie contenu={doc.description} />
+						{#if doc.description}<TexteDeplie contenu={doc.description} />{/if}
+						{#if pieces.length}<ListeDocuments documents={pieces} />{/if}
 					</div>
 				{/if}
 			</CarteListe>

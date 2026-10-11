@@ -17,16 +17,16 @@ réciter, et une table créée demain est traitée sans qu'on y pense.
 
 ## La règle appliquée, et c'est une décision fonctionnelle
 
-Arbitrée le 28/08/2026 : **le contenu part avec le compte.**
-
 | Référence | Traitement |
 |---|---|
 | `NOT NULL` (la ligne n'existe pas sans son parent) | la ligne est **supprimée**, et ses propres enfants avec |
 | nullable (la référence est un détail de la ligne) | la référence est mise à **NULL**, la ligne reste |
 
-⚠️ La conséquence est réelle et assumée : supprimer un compte supprime le **fil
-entier** de ses tickets — y compris les réponses d'autres personnes, qui n'ont pas
-d'existence hors du ticket qui les porte.
+Ce module n'arbitre donc rien : c'est le **schéma** qui dit ce qui part avec le
+compte. Arbitrage du 28/08/2026 — « le contenu part avec le compte » —, inversé
+pour les affaires le 10/10/2026 (#1688) : leur auteur, celui de leur fil et de
+leurs messages est facultatif, et un compte supprimé y devient « Ancien
+résident ». Ailleurs, la référence obligatoire emporte encore la ligne.
 
 ## Ce que ce module ne fait pas
 

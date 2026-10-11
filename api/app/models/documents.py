@@ -71,13 +71,23 @@ class Document(SQLModel, table=True):
     #  tables d'évolution en ont chacune un —, jamais à l'évolution elle-même.
     ticket_id: Optional[int] = Field(default=None, foreign_key="ticket.id")
     evenement_id: Optional[int] = Field(default=None, foreign_key="evenement.id")
+    #  Les ANNEXES d'une fiche de « Ma résidence » (migration 0278) : un plan, un
+    #  règlement ou un CR d'AG (`document_parent_id`), un rapport de diagnostic,
+    #  une règle. Une annexe n'a pas de catégorie : elle se lit comme sa fiche
+    #  (`utils/visibility/documents`), et ses gestes vivent dans `utils/annexes`.
+    #  ⚠️ Sans `foreign_key` : posées par un `add_column`, que SQLite refuse
+    #  d'accompagner d'une contrainte (`CLAUDE.md`, « Migrations Alembic ») — la
+    #  déclarer ici ferait diverger une base neuve d'une base migrée.
+    document_parent_id: Optional[int] = None
+    diagnostic_rapport_id: Optional[int] = None
+    regle_residence_id: Optional[int] = None
     profil_acces_override_id: Optional[int] = Field(
         default=None, foreign_key="profil_acces_document.id"
     )
     perimetre: str = "résidence"
     batiment_id: Optional[int] = Field(default=None, foreign_key="batiment.id")
     lot_id: Optional[int] = Field(default=None, foreign_key="lot.id")
-    publie_par_id: int = Field(foreign_key="utilisateur.id")
+    publie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     publie_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     #  🔴 La DESCRIPTION, ajoutée le 08/09/2026 (#852). Demandée à l'écran :
     #  *« ajouter aussi un champ descriptif »*.

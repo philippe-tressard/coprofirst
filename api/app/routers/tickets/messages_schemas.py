@@ -22,7 +22,7 @@ class MessageCreate(AssisteIAEntree):
 class MessageRead(BaseModel):
     id: int
     ticket_id: int
-    auteur_id: int
+    auteur_id: Optional[int] = None  # #1688
     contenu: str
     interne: bool
     cree_le: datetime

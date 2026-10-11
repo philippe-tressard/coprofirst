@@ -32,10 +32,27 @@
   si bien qu'une date posée ici serait fausse — absente sur la règle qu'on vient
   d'écrire, périmée sur celle qu'on vient de corriger. Ce que l'objet n'a pas ne
   s'invente pas (`Gouttiere`).
+
+  ## Les pièces jointes d'une règle (11/10/2026, migration 0278)
+
+  Une règle n'avait aucun fichier ; elle porte désormais jusqu'à dix annexes —
+  le nuancier d'une couleur, la photo d'une haie. La section « Pièces jointes »
+  est dans le formulaire dès la CRÉATION (arbitré : sinon il faudrait créer la
+  règle puis la rouvrir) ; les fichiers choisis attendent alors l'enregistrement
+  et s'attachent ensuite (`attacherApres`). Une règle qui porte des annexes se
+  déplie, même sans détail.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { reglesResidence as reglesApi, type RegleResidenceEcrite } from '$lib/api';
+	import {
+		documents as documentsApi,
+		reglesResidence as reglesApi,
+		type Document,
+		type RegleResidenceEcrite,
+	} from '$lib/api';
+	import { attacherApres } from '$lib/fichiers';
+	import ListeDocuments from './ListeDocuments.svelte';
+	import type { PiecesFiche } from './PiecesJointesFiche.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import { confirmer, SUPPRESSION } from '$lib/confirmation';
 	import CarteListe from '$lib/components/CarteListe.svelte';
@@ -62,9 +79,18 @@
 	let savingRegle = false;
 	//  UNE règle dépliée à la fois (`$lib/accordeon`).
 	let deplie: number | null = null;
+	/** Les annexes, rangées sous leur règle ; un échec les laisse vides. */
+	let annexes = new Map<number, Document[]>();
+	/** Les pièces choisies pendant la CRÉATION, attachées après l'enregistrement. */
+	let annexesEnAttente: File[] = [];
+	let piecesRegle: PiecesFiche | null = null;
+
+	const chargerAnnexes = async () => {
+		[annexes] = await essayer(documentsApi.annexesParFiche('regle'), annexes);
+	};
 
 	onMount(async () => {
-		[regles, eRegles] = await essayer(reglesApi.list(), []);
+		[[regles, eRegles]] = await Promise.all([essayer(reglesApi.list(), []), chargerAnnexes()]);
 		chargement = false;
 	});
 
@@ -79,6 +105,14 @@
 			regleTitre = '';
 			regleContenu = '';
 		}
+		annexesEnAttente = [];
+		piecesRegle = {
+			cible: 'regle',
+			objetId: regle?.id ?? null,
+			onChange: (liste) => {
+				if (regle) annexes = new Map(annexes).set(regle.id, liste);
+			},
+		};
 		showRegleForm = true;
 	}
 
@@ -100,6 +134,8 @@
 				});
 				regles = [...regles, created];
 				toast('success', 'Règle ajoutée');
+				await attacherApres('regle', created.id, annexesEnAttente, 'Règle ajoutée');
+				if (annexesEnAttente.length) await chargerAnnexes();
 			}
 			showRegleForm = false;
 			regleTitre = '';
@@ -140,6 +176,8 @@
 			bind:titre={regleTitre}
 			placeholderTitre="Ex : RAL menuiseries façade bâtiment A"
 			avecFichier={false}
+			piecesJointes={piecesRegle}
+			bind:annexesEnAttente
 			enregistrement={savingRegle}
 			complet={!!regleTitre.trim()}
 			on:annuler={() => (showRegleForm = false)}
@@ -164,7 +202,8 @@
 		messageVide="Aucune règle ajoutée."
 	>
 		{#each regles as regle (regle.id)}
-			{@const depliable = !!regle.contenu}
+			{@const pieces = annexes.get(regle.id) ?? []}
+			{@const depliable = !!regle.contenu || pieces.length > 0}
 			<!--  Repliée, toute la carte déplie ; dépliée, seul le titre replie
 			      (`ux-patterns` §3). -->
 			<CarteListe
@@ -205,7 +244,8 @@
 					      même assainisseur que l'aperçu : un texte simple garde ses
 					      retours à la ligne, un texte riche ses balises sûres. -->
 					<div class="carte-corps" role="presentation" on:click|stopPropagation>
-						<TexteDeplie contenu={regle.contenu} />
+						{#if regle.contenu}<TexteDeplie contenu={regle.contenu} />{/if}
+						{#if pieces.length}<ListeDocuments documents={pieces} />{/if}
 					</div>
 				{/if}
 			</CarteListe>

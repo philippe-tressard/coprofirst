@@ -44,7 +44,7 @@ from app.utils.perimetres import (
 )
 from app.utils.config_site import config_site
 from app.utils.photos import parse_photos
-from app.utils.noms import nom_affiche
+from app.utils.noms import nom_auteur
 
 router = APIRouter(prefix="/annonces-hall", tags=["annonces-hall"])
 
@@ -74,7 +74,7 @@ DOSSIER_PDF = "annonces-hall"
 #  modularité) : ce qui DÉCLARE part, ce qui DÉCIDE reste.
 from app.utils.liens import base_site, nom_site
 from app.utils.logo import logo_televerse_png
-from app.utils.recuperer import fichier_ou_404, ou_404
+from app.utils.recuperer import fichier_ou_404, ou_404, ou_rien
 from app.routers.annonces_hall_schemas import (  # noqa: E402
     AnnonceHallArchive,
     AnnonceHallBase,
@@ -128,7 +128,7 @@ def _html_params(
 
 
 def _to_read(annonce: AnnonceHall, session: Session) -> dict:
-    auteur = session.get(Utilisateur, annonce.auteur_id)
+    auteur = ou_rien(session, Utilisateur, annonce.auteur_id)
     perimetres = parse_json_perimetres(annonce.perimetre_cible)
     return {
         "id": annonce.id,
@@ -154,7 +154,7 @@ def _to_read(annonce: AnnonceHall, session: Session) -> dict:
         "archivee_manuellement": annonce.archivee,
         "ticket_id": annonce.ticket_id,
         "cree_le": annonce.cree_le.isoformat(),
-        "auteur_nom": nom_affiche(auteur.prenom, auteur.nom) if auteur else "",
+        "auteur_nom": nom_auteur(auteur),
     }
 
 

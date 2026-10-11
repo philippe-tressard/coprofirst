@@ -40,7 +40,7 @@ class Sondage(AssisteIAMixin, table=True):
     description: Optional[str] = None
     cloture_le: Optional[NaiveDatetime] = None
     resultats_publics: bool = True  # visibles avant clôture
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     #  Ciblage : None/vide = tous. MÊMES deux champs que `Publication`, et c'est
     #  le point — le sondage avait les siens (`batiments_ids`, `profils_autorises`),
@@ -74,7 +74,7 @@ class VoteSondage(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     sondage_id: int = Field(foreign_key="sondage.id")
     option_id: int = Field(foreign_key="option_sondage.id")
-    user_id: int = Field(foreign_key="utilisateur.id")
+    user_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     reponse_libre: Optional[str] = Field(default=None)
 
@@ -181,7 +181,7 @@ class CommentaireSondage(SQLModel, table=True):
     __tablename__ = "commentaire_sondage"
     id: Optional[int] = Field(default=None, primary_key=True)
     sondage_id: int = Field(foreign_key="sondage.id")
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     contenu: str
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
 
@@ -196,7 +196,7 @@ class Idee(AssisteIAMixin, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     titre: str
     description: str
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     statut: str = "ouverte"  # ouverte | retenue | rejetee | realisee
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     #  Quand la décision a été prise — pas quand l'idée a été déposée. C'est
@@ -224,7 +224,7 @@ class VoteIdee(SQLModel, table=True):
     __tablename__ = "vote_idee"
     id: Optional[int] = Field(default=None, primary_key=True)
     idee_id: int = Field(foreign_key="idee.id")
-    user_id: int = Field(foreign_key="utilisateur.id")
+    user_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
 
     idee: Optional[Idee] = Relationship(back_populates="votes")
@@ -243,7 +243,7 @@ class ReponseCommunaute(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     rubrique: str = Field(index=True)  # 'idee' | 'annonce'
     cible_id: int = Field(index=True)  # id de l'idée / annonce (polymorphe)
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     contenu: str
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
 

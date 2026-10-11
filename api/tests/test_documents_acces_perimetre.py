@@ -83,6 +83,10 @@ def _cr_ag(perimetre="résidence", batiment_id=None, batiments_ids_json=None):
             "contrat_id": None,
             "ticket_id": None,
             "evenement_id": None,
+            #  Les annexes de fiche (migration 0276) : un CR d'AG n'en est pas une.
+            "document_parent_id": None,
+            "diagnostic_rapport_id": None,
+            "regle_residence_id": None,
             "categorie_id": 1,
             "profil_acces_override_id": None,
             "perimetre": perimetre,

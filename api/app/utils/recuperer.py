@@ -127,6 +127,17 @@ def present_ou_404(valeur: Optional[T], detail: str) -> T:
     return valeur
 
 
+def ou_rien(session: Session, modele: Type[T], ident: Optional[int]) -> Optional[T]:
+    """La ligne `ident` de `modele`, ou `None` — sans rien demander quand `ident` est vide.
+
+    Pour une référence FACULTATIVE, dont l'absence est un cas normal : l'auteur
+    d'un contenu dont le compte a été supprimé (#1688, #1821). `session.get` avec
+    une clé vide rend `None` mais avertit (« may raise an error in a future
+    release ») : quinze lectures d'auteur auraient cassé le jour de la montée.
+    """
+    return session.get(modele, ident) if ident is not None else None
+
+
 #: La FENÊTRE d'un historique d'exploitation : on ne lit que les derniers
 #: rapports. Au-delà, ils n'apprennent plus rien — la santé d'une tâche se lit
 #: sur ses dernières exécutions, pas sur un an d'archives.

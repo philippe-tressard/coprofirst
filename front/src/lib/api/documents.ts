@@ -17,6 +17,10 @@ export interface Document {
 	contrat_id: number | null;
 	ticket_id: number | null;
 	evenement_id: number | null;
+	/** La fiche de Ma résidence qui porte cette annexe (migration 0278) — une des trois. */
+	document_parent_id: number | null;
+	diagnostic_rapport_id: number | null;
+	regle_residence_id: number | null;
 	/** Le droit de lecture (`résidence`, `bâtiment`…). */
 	perimetre: string;
 	batiment_id: number | null;
@@ -31,12 +35,27 @@ export interface Document {
 }
 
 /**
- *  Les entités auxquelles un document peut se rattacher. **Quatre, et l'API en
- *  exige une** : `documents.py` refuse en 400 une création qui n'en porte aucune,
+ *  Les FICHES de « Ma résidence » qui portent des annexes (migration 0278) — un
+ *  plan, un règlement ou un CR d'AG (`document`), un rapport de diagnostic, une
+ *  règle. Les clés sont celles de `PORTEURS` (`api/app/utils/annexes.py`).
+ */
+export type PorteurAnnexes = 'document' | 'diagnostic' | 'regle';
+
+/**  La colonne de `Document` qui rattache une annexe à chaque porteur — lue par
+ *   `CHAMP_RATTACHEMENT` ci-dessous et par `annexesParFiche`, écrite ici seule. */
+const COLONNE_PORTEUR = {
+	document: 'document_parent_id',
+	diagnostic: 'diagnostic_rapport_id',
+	regle: 'regle_residence_id',
+} as const satisfies Record<PorteurAnnexes, keyof Document>;
+
+/**
+ *  Les entités auxquelles un document peut se rattacher, **et l'API en exige
+ *  une** : `documents.py` refuse en 400 une création qui n'en porte aucune,
  *  parce qu'une ligne orpheline n'aurait plus de source de protection à
  *  consulter (`document_visible`).
  */
-export type CibleDocument = 'contrat' | 'ticket' | 'evenement' | 'categorie';
+export type CibleDocument = 'contrat' | 'ticket' | 'evenement' | 'categorie' | PorteurAnnexes;
 
 /**  Le nom du champ que l'API attend pour chaque rattachement.
  *
@@ -48,6 +67,7 @@ const CHAMP_RATTACHEMENT: Record<CibleDocument, string> = {
 	ticket: 'ticket_id',
 	evenement: 'evenement_id',
 	categorie: 'categorie_id',
+	...COLONNE_PORTEUR,
 };
 
 export const documents = {
@@ -150,6 +170,24 @@ export const documents = {
 	//  Les `Document` d'une affaire — ceux des anciennes publications, que la
 	//  0210 lui a rattachés (#1091). Une affaire récente porte les siens en URLs.
 	listByTicket: (ticketId: number) => api.get<Document[]>(`/documents?ticket_id=${ticketId}`),
+	/** Les documents rattachés à UN objet — les annexes d'une fiche, par exemple. */
+	listPour: (cible: CibleDocument, id: number) =>
+		api.get<Document[]>(`/documents?${CHAMP_RATTACHEMENT[cible]}=${id}`),
+	/**  Toutes les annexes d'une RUBRIQUE de Ma résidence, en un appel, rangées
+	 *   sous l'identifiant de leur fiche — au lieu d'un appel par carte. */
+	annexesParFiche: async (rubrique: PorteurAnnexes): Promise<Map<number, Document[]>> => {
+		const colonne = COLONNE_PORTEUR[rubrique];
+		const parFiche = new Map<number, Document[]>();
+		for (const d of await api.get<Document[]>(`/documents?annexes_de=${rubrique}`)) {
+			const fiche = d[colonne];
+			if (fiche !== null) parFiche.set(fiche, [...(parFiche.get(fiche) ?? []), d]);
+		}
+		return parFiche;
+	},
+	/**  Remplacer le fichier PRINCIPAL d'un document de Ma résidence — il ne se
+	 *   retire pas : une fiche sans fichier n'existe pas. */
+	remplacerFichier: (id: number, file: File) =>
+		postFormData<Document>(`/documents/${id}/fichier`, { file }),
 	downloadUrl: (docId: number) => `${BASE}/documents/${docId}/télécharger`,
 	delete: (id: number) => api.delete(`/documents/${id}`),
 };

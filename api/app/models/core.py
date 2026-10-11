@@ -111,14 +111,12 @@ class Utilisateur(SQLModel, table=True):
         default=""
     )  # rôles cumulés, virgule-séparés : "résident,conseil_syndical"
     actif: bool = Field(default=False)  # False = pas (ou plus) autorisé à se connecter
-    #  Quand l'administration a TRANCHÉ sur ce compte — validation, refus ou
-    #  désactivation. `actif == False` ne suffisait pas à dire « en attente » :
-    #  un compte refusé et un compte désactivé volontairement portent le même
-    #  drapeau, et gonflaient donc le décompte des validations indéfiniment
-    #  (#399). Le refus ne changeait d'ailleurs AUCUN état — le compte refusé
-    #  revenait à chaque chargement de l'écran. Ne jamais lire ce champ à la
-    #  main : `app/utils/comptes.py` porte la question et la réponse.
+    #  La PREMIÈRE décision de l'administration (#399), puis la fermeture en
+    #  cours — `refus` ou `desactivation`, et depuis quand — que la purge compte
+    #  (#1822). Ni lues ni écrites à la main : `app/utils/comptes.py`.
     decision_compte_le: Optional[NaiveDatetime] = Field(default=None)
+    fermeture_compte: Optional[str] = None
+    compte_ferme_le: Optional[NaiveDatetime] = None
     email_verifie: bool = Field(default=False)  # False = email non confirmé
     onboarding_complete: bool = False
     onboarding_etape: int = 0  # 0-4
@@ -254,7 +252,7 @@ class RegleResidence(SQLModel, table=True):
     titre: str
     contenu: str = ""
     ordre: int = Field(default=0)
-    cree_par_id: int = Field(foreign_key="utilisateur.id")
+    cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     modifie_le: Optional[NaiveDatetime] = None
 

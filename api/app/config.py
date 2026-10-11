@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     # Le commit de l'image, posé à la construction (`GIT_HASH`, api/Dockerfile).
     git_hash: str = ""
 
+    # Le REGISTRE des hôtes de la copropriété (#1751, P2-9) : le nom de
+    # l'`ORIGIN` — le même `.env` que le front —, plus ceux qu'on déclare ici,
+    # séparés par des virgules. Lus par `app/contexte.py` et nulle part ailleurs.
+    origin: str = "http://localhost"
+    hotes_copropriete: str = ""
+
     # Sécurité
     secret_key: str = "dev-secret-key-change-in-production"
 

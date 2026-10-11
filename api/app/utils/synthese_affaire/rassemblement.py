@@ -44,6 +44,8 @@ from app.utils.dates_fr import date_courte
 from app.utils.destinataires import est_adresse_syndic
 from app.utils.jours_ouvres import libelle_jours
 from app.utils.synthese_affaire import metriques as m
+from app.utils.noms import ANCIEN_RESIDENT
+from app.utils.recuperer import ou_rien
 from app.utils.synthese_affaire.lecture import TYPE_SYNTHESE
 from app.utils.synthese_affaire import recidive as r
 from app.utils.valeurs import valeur
@@ -183,7 +185,7 @@ def metriques_de(session: Session, ticket: Ticket, cloture_le: datetime) -> dict
 
 def _role(user: Optional[Utilisateur], ticket: Ticket, est_syndic: Callable[[int], bool]) -> str:
     if user is None:
-        return "un compte supprimé"
+        return f"un {ANCIEN_RESIDENT.lower()}"
     if est_syndic(user.id):
         return "le syndic"
     if user.has_role(RoleUtilisateur.conseil_syndical):
@@ -279,7 +281,7 @@ def construire_message(
 
     entrees: list[tuple[datetime, str]] = []
     for e in _evolutions(session, ticket.id):
-        qui = _role(session.get(Utilisateur, e.auteur_id), ticket, est_syndic)
+        qui = _role(ou_rien(session, Utilisateur, e.auteur_id), ticket, est_syndic)
         if e.type == "etat":
             avant, apres = (
                 libelles.get(e.ancien_statut or "", "?"),
@@ -301,7 +303,7 @@ def construire_message(
             MessageTicket.interne == False,  # noqa: E712
         )
     ).all():
-        qui = _role(session.get(Utilisateur, msg.auteur_id), ticket, est_syndic)
+        qui = _role(ou_rien(session, Utilisateur, msg.auteur_id), ticket, est_syndic)
         entrees.append((msg.cree_le, f"Message ({qui}) : {_texte(msg.contenu)}"))
     entrees.sort(key=lambda x: x[0])
     fil = "\n".join(f"- {date_courte(horloge.jour_civil(q))} — {t}" for q, t in entrees)

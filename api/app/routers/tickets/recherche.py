@@ -33,7 +33,7 @@ from app.models.documents import Document
 from app.utils.annonce_hall import texte_brut
 from app.utils.categories_ticket import libelle_categorie
 from app.utils.fichiers import nom_lisible
-from app.utils.noms import nom_affiche
+from app.utils.noms import nom_auteur
 from app.utils.perimetres import parse_json_perimetres, perimetre_label
 from app.utils.photos import parse_photos
 from app.utils.recherche_affaires import Texte, correspondance, termes
@@ -109,11 +109,11 @@ def rechercher(
     )
     noms: dict[int, Optional[str]] = {}
 
-    def nom(uid: Optional[int]) -> Optional[str]:
-        if uid is not None and uid not in noms:
-            u = session.get(Utilisateur, uid)
-            noms[uid] = nom_affiche(u.prenom, u.nom) if u else None
-        return noms.get(uid) if uid is not None else None
+    def nom(uid: Optional[int]) -> str:
+        #  Sans compte (supprimé, #1688) : « Ancien résident », comme à l'écran.
+        if uid not in noms:
+            noms[uid] = nom_auteur(session.get(Utilisateur, uid) if uid is not None else None)
+        return noms[uid]
 
     trouves = []
     for rang, t in enumerate(affaires):

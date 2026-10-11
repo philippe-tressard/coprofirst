@@ -22,7 +22,7 @@ from app.models.core import (
     Utilisateur,
 )
 from app.schemas import UserRead
-from app.utils.comptes import marquer_decide
+from app.utils.comptes import DESACTIVATION, marquer_decide
 from app.utils.porteurs_acces import ids_detenteurs
 from app.utils.etiquettes_compte import etiquettes
 from app.models.copropriete import Lot
@@ -239,7 +239,7 @@ def modifier_utilisateur(
     #  qui déménage le renvoyait dans la file des comptes à valider, où plus rien
     #  ne le distinguait d'une inscription du jour (#399).
     if body.actif is not None:
-        marquer_decide(user)
+        marquer_decide(user, None if body.actif else DESACTIVATION)
     session.add(user)
     session.commit()
     #  Seulement si l'état CHANGE (#1548) : renvoyer le même état n'ouvre ni ne

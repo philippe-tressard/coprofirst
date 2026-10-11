@@ -13,6 +13,9 @@ import tempfile
 os.environ.setdefault("SECRET_KEY", "x" * 40)
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("ENABLE_API_DOCS", "false")
+#  Le client de test se présente sous l'hôte `testserver` : il se déclare au
+#  registre comme un nom de l'installation (#1751), sans quoi tout rendrait 421.
+os.environ.setdefault("HOTES_COPROPRIETE", "testserver")
 
 #  Importer `app.main` monte `/uploads` en statique et crée le répertoire au
 #  passage. Sans redirection, ce `mkdir` vise un chemin absolu de conteneur —

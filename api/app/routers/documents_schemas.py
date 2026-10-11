@@ -26,6 +26,11 @@ class DocumentRead(BaseModel):
     #  à quel porteur une ligne appartient sans refaire la requête.
     ticket_id: Optional[int] = None
     evenement_id: Optional[int] = None
+    #  La fiche de Ma résidence qui porte cette annexe (migration 0276) : l'écran
+    #  range ainsi sous chaque fiche les annexes de toute une rubrique.
+    document_parent_id: Optional[int] = None
+    diagnostic_rapport_id: Optional[int] = None
+    regle_residence_id: Optional[int] = None
     perimetre: str
     batiment_id: Optional[int] = None
     publie_le: datetime

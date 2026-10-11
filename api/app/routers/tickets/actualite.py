@@ -38,12 +38,13 @@ from sqlmodel import Session, select
 
 from app.models.annonce_hall import AnnonceHall
 from app.models.core import Ticket, TicketEvolution, Utilisateur
+from app.utils.recuperer import ou_rien
 from app.models.documents import Document
 from app.utils.config_site import config_site
 from app.utils.dates_fr import datetime_longue_paris as _fmt_paris
 from app.utils.fichiers import chemins_locaux
 from app.utils.liens import base_site, lien_ticket, nom_site
-from app.utils.noms import contexte_personne, nom_affiche
+from app.utils.noms import contexte_personne, nom_auteur
 from app.utils.perimetres import a_portee_globale, batiments_cibles, parse_json_perimetres
 from app.utils.photos import parse_photos, premiere_photo
 from app.utils.visibility import hors_du_hall, reservee_au_conseil
@@ -111,10 +112,10 @@ def _historique(session: Session, ticket: Ticket, *, sauf_derniere: bool) -> lis
     for e in evols:
         if not e.contenu:
             continue
-        auteur = session.get(Utilisateur, e.auteur_id)
+        auteur = ou_rien(session, Utilisateur, e.auteur_id)
         lignes.append(
             {
-                "auteur_nom": nom_affiche(auteur.prenom, auteur.nom) if auteur else "?",
+                "auteur_nom": nom_auteur(auteur),
                 "date": _fmt_paris(e.cree_le),
                 "contenu": e.contenu,
             }

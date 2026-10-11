@@ -14,11 +14,10 @@ hostiles, sans réseau ni base.
     ACCEPTE  → une entrée dans le fil du ticket, signée du compte de l'expéditeur.
 
 🔴 **Un message accepté dont l'expéditeur n'a pas de compte est REFUSÉ.**
-`TicketEvolution.auteur_id` est une clé obligatoire vers `utilisateur` : écrire
-quand même aurait demandé soit un compte de service — qui signerait « 5Hostachy »
-un texte écrit par un tiers —, soit de rendre la colonne nullable, ce qui touche
-tout le fil de tous les tickets. Les deux sont des décisions lourdes prises pour
-un cas rare. Le conseil syndical est prévenu, et recopie s'il le veut : c'est un
+Écrire quand même aurait demandé un compte de service — qui signerait
+« 5Hostachy » un texte écrit par un tiers. `TicketEvolution.auteur_id` est
+facultatif depuis #1688, mais un auteur vide y veut dire « compte supprimé » et
+s'affiche « Ancien résident » : y ranger un tiers mentirait sur qui a écrit. Le conseil syndical est prévenu, et recopie s'il le veut : c'est un
 clic de plus, pas une donnée perdue.
 
 ## Le silence est ce qui rend un filtre dangereux

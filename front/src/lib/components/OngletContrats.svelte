@@ -99,7 +99,7 @@
 	let contratForm = contratVierge(perimetreDefautListe());
 
 	// ── Documents ─────────────────────────────────────────────────
-	//  Chaque `DocumentsContrat` porte son propre envoi (#370) ; il ne reste ici
+	//  Chaque `DocumentsRattaches` porte son propre envoi (#370) ; il ne reste ici
 	//  que la liste, qui appartient à l'onglet puisque c'est lui qui l'affiche.
 	let contratDocsMap: Record<number, Document[]> = {};
 

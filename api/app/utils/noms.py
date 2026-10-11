@@ -54,6 +54,18 @@ def nom_affiche(prenom: Optional[str], nom: Optional[str], civilite=None) -> str
     return " ".join(p for p in (civilite, prenom, nom) if p)
 
 
+#: Le nom de l'auteur d'un contenu dont le compte a été supprimé (#1688). Le
+#: contenu collectif — une affaire, son fil, ses messages — reste, sans nom.
+#: Trois replis coexistaient (« ? », « Utilisateur supprimé », vide) : une seule
+#: chose à dire, une seule façon de la dire.
+ANCIEN_RESIDENT = "Ancien résident"
+
+
+def nom_auteur(auteur) -> str:
+    """Le nom affiché d'un auteur — « Ancien résident » quand son compte n'existe plus."""
+    return nom_affiche(auteur.prenom, auteur.nom) if auteur else ANCIEN_RESIDENT
+
+
 def contexte_personne(personne, **extras) -> dict:
     """Ce qu'un COURRIEL sait d'une personne — avec le nom **déjà rendu**.
 

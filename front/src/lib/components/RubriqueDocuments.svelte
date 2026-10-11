@@ -17,12 +17,21 @@
   (slot). La correction reste l'objet `CorrectionDocument` de
   `FormulaireEditionDocument`, désormais propre à chaque rubrique : elle met à
   jour SA liste, sans aiguillage par mode.
+
+  ## Les pièces jointes d'un document (11/10/2026, migration 0278)
+
+  La correction porte la section « Pièces jointes » : le fichier du document,
+  qui se remplace, et ses annexes. La rubrique charge les annexes de TOUTE la
+  bibliothèque en un appel (`annexesParFiche`) et les range sous chaque carte.
 -->
 <script lang="ts">
 	import type { ClasseGouttiere } from '$lib/gouttiere';
 	import { nombreOuNull } from '$lib/utils';
+	import { onMount } from 'svelte';
 	import { documents as documentsApi, type Document } from '$lib/api';
+	import { essayer } from '$lib/chargement';
 	import { tenter } from '$lib/erreurs';
+	import type { PiecesFiche } from '$lib/components/PiecesJointesFiche.svelte';
 	import { supprimerDocument } from '$lib/gestes-document';
 	import { titreOuNomDuFichier } from '$lib/fichiers';
 	import ChampsCrAg from '$lib/components/ChampsCrAg.svelte';
@@ -99,6 +108,33 @@
 	let enregistrement = false;
 	let correction: CorrectionDocument = correctionVide();
 	let enregistrementCorrection = false;
+	/** La section « Pièces jointes » du document en correction. */
+	let piecesCorrection: PiecesFiche | null = null;
+
+	/**  Les annexes, rangées sous leur document. Un échec de lecture les laisse
+	 *   vides : les cartes restent lisibles, seules leurs annexes manquent. */
+	let annexes = new Map<number, Document[]>();
+	onMount(async () => {
+		[annexes] = await essayer(documentsApi.annexesParFiche('document'), annexes);
+	});
+	$: annexesDe = (doc: Document) => annexes.get(doc.id) ?? [];
+
+	function piecesDe(doc: Document): PiecesFiche {
+		return {
+			cible: 'document',
+			objetId: doc.id,
+			principal: {
+				url: documentsApi.downloadUrl(doc.id),
+				nom: doc.fichier_nom,
+				remplacer: async (file) => {
+					const remplace = await documentsApi.remplacerFichier(doc.id, file);
+					documents = documents.map((d) => (d.id === remplace.id ? remplace : d));
+					return { url: documentsApi.downloadUrl(remplace.id), nom: remplace.fichier_nom };
+				},
+			},
+			onChange: (liste) => (annexes = new Map(annexes).set(doc.id, liste)),
+		};
+	}
 
 	$: affiches = trier(documents);
 	//  Le titre est facultatif : sans lui, chaque fichier prend le sien (#1479).
@@ -158,6 +194,7 @@
 			//  lire la même chose, et elles divergeraient au premier format ajouté.
 			perimetre: Array.isArray(doc.perimetre_cible) ? [...doc.perimetre_cible] : [],
 		};
+		piecesCorrection = piecesDe(doc);
 	}
 
 	async function enregistrerCorrection() {
@@ -191,6 +228,7 @@
 	{messageVide}
 	{peutModifier}
 	urlTelechargement={(d) => documentsApi.downloadUrl(d.id)}
+	{annexesDe}
 	quandDe={GOUTTIERE[mode].quand}
 	classe={GOUTTIERE[mode].classe}
 	onAjouter={() => (ouvert = true)}
@@ -233,6 +271,7 @@
 		{#if correction.id !== null}
 			<FormulaireEditionDocument
 				bind:correction
+				piecesJointes={piecesCorrection}
 				enregistrement={enregistrementCorrection}
 				on:annuler={() => (correction = correctionVide())}
 				on:enregistrer={enregistrerCorrection}

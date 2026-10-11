@@ -125,7 +125,8 @@ export interface Notation {
 	note: number;
 	commentaire: string | null;
 	contrat_id: number | null;
-	auteur_id: number;
+	/** Vide quand le compte de l'auteur a été supprimé (#1821). */
+	auteur_id: number | null;
 	/** « ? » quand l'auteur n'existe plus. */
 	auteur_nom: string | null;
 	cree_le: string;

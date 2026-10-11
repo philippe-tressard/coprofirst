@@ -34,6 +34,7 @@ from app.models.core import (
     Utilisateur,
 )
 from app.models.prestataires import ContratEntretien, Prestataire
+from app.utils.recuperer import ou_rien
 from app.schemas import AffaireLieeLue, ContratDeLAffaire, TicketEvolutionRead, TicketRead
 from app.utils.archivage import est_archivable, perime_le, seuil_archivage_jours
 from app.utils.lecture import lire_objet
@@ -141,7 +142,7 @@ from app.utils.destinataires import (  # noqa: F401  (ré-export volontaire)
     syndic_principal,
 )
 from app.utils.saisi_pour import noms_derives
-from app.utils.noms import nom_affiche
+from app.utils.noms import nom_auteur
 
 
 # ── Libellés d'évolution ─────────────────────────────────────────────────────
@@ -178,7 +179,7 @@ def libelle_evolution(e: TicketEvolution, *, avec_extrait: bool = False) -> str:
 def evol_read(
     e: TicketEvolution, session: Session, statut_avant: Optional[str] = None
 ) -> TicketEvolutionRead:
-    auteur = session.get(Utilisateur, e.auteur_id)
+    auteur = ou_rien(session, Utilisateur, e.auteur_id)
     #  🔴 Lu sur le modèle depuis le 02/10/2026 (#1563). La recopie colonne par
     #  colonne avait oublié `assiste_ia` et `contenu_origine` : le fil d'une
     #  affaire n'a jamais montré la marque « rédigé avec l'assistant » ni le
@@ -187,7 +188,7 @@ def evol_read(
     return lire_objet(
         TicketEvolutionRead,
         e,
-        auteur_nom=nom_affiche(auteur.prenom, auteur.nom) if auteur else "?",
+        auteur_nom=nom_auteur(auteur),
         #  `None` — et non `[]` — quand l'entrée ne parle pas du périmètre : le
         #  front distingue « n'en parle pas » de « plus aucun périmètre » (#497).
         #
@@ -254,7 +255,7 @@ def ticket_read(
     """`lecteur` : à qui l'on répond. Sans lui, aucune affaire liée n'est rendue
     — un lien ne doit rien révéler à qui on ne sait pas (#1342). `index` et
     `tickets` évitent une requête par affaire dans une liste."""
-    auteur = session.get(Utilisateur, ticket.auteur_id)
+    auteur = ou_rien(session, Utilisateur, ticket.auteur_id)
     #  🔴 LE BÂTIMENT DU DEMANDEUR, ET RIEN D'AUTRE (#653, 30/08/2026).
     #
     #  Cette ligne était :
@@ -302,7 +303,7 @@ def ticket_read(
     return lire_objet(
         TicketRead,
         ticket,
-        auteur_nom=nom_affiche(auteur.prenom, auteur.nom) if auteur else None,
+        auteur_nom=nom_auteur(auteur),
         auteur_batiment_nom=libelle_batiment_ou(batiment, None),
         apercu_pieces=apercu_pieces(ticket, session),
         affaires_liees=[

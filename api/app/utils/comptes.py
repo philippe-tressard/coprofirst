@@ -70,7 +70,15 @@ def valide_le(user: Utilisateur) -> datetime | None:
     return user.decision_compte_le or user.cree_le
 
 
-def marquer_decide(user: Utilisateur, maintenant: datetime | None = None) -> None:
+#: Les deux FERMETURES d'un compte (#1822) — celles dont la purge compte la durée.
+REFUS = "refus"
+DESACTIVATION = "desactivation"
+FERMETURES = (REFUS, DESACTIVATION)
+
+
+def marquer_decide(
+    user: Utilisateur, fermeture: str | None, maintenant: datetime | None = None
+) -> None:
     """Acter qu'une décision vient d'être prise sur ce compte.
 
     À appeler pour les trois issues — validation, refus, désactivation — et pas
@@ -79,6 +87,19 @@ def marquer_decide(user: Utilisateur, maintenant: datetime | None = None) -> Non
 
     Idempotent par construction : la date de la **première** décision est celle
     qui compte, la repousser n'apprendrait rien et effacerait un historique.
+
+    `fermeture` — `REFUS`, `DESACTIVATION`, ou `None` pour un compte ouvert
+    (validé, réactivé) — dit l'état que la décision laisse, et `compte_ferme_le` depuis
+    QUAND : c'est d'elle que la purge compte la durée de conservation (#1822).
+    La première date ne le pouvait pas — un compte validé puis désactivé gardait
+    la date de sa validation. Une fermeture répétée garde sa date d'origine.
     """
+    if fermeture is not None and fermeture not in FERMETURES:
+        raise ValueError(f"fermeture inconnue : {fermeture!r}")
+    instant = maintenant or horloge.maintenant()
     if user.decision_compte_le is None:
-        user.decision_compte_le = maintenant or horloge.maintenant()
+        user.decision_compte_le = instant
+    if fermeture is None:
+        user.fermeture_compte, user.compte_ferme_le = None, None
+    elif user.fermeture_compte != fermeture or user.compte_ferme_le is None:
+        user.fermeture_compte, user.compte_ferme_le = fermeture, instant

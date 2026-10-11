@@ -28,7 +28,7 @@ import json
 import uuid
 
 import pytest
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.database import engine
 from app.models.core import AnnonceHall, Ticket, Utilisateur
@@ -68,8 +68,14 @@ def scene():
             yield session, actu
         finally:
             session.rollback()
-            #  La purge passe par le code de production : elle emporte l'affiche
-            #  avec l'affaire, sans que la fixture ait à connaître le graphe.
+            #  L'affiche survit à son auteur depuis #1821 (contenu gardé, auteur
+            #  délié) et `ticket_id` n'est pas une clé étrangère : elle se purge
+            #  donc nommément, sinon SQLite redonne l'identifiant de l'affaire au
+            #  test suivant, qui trouve « son » affiche déjà posée.
+            for affiche in session.exec(
+                select(AnnonceHall).where(AnnonceHall.ticket_id == actu.id)
+            ).all():
+                purger_ligne(session, AnnonceHall, affiche.id)
             purger_ligne(session, Ticket, actu.id)
             purger_ligne(session, Utilisateur, auteur.id)
 

@@ -14,6 +14,7 @@ from sqlmodel import Session, select
 from app.auth.deps import get_current_user, require_cs_or_admin
 from app.database import get_session
 from app.models.core import DiagnosticRapport, DiagnosticType, Utilisateur
+from app.utils.annexes import remplacer_fichier, supprimer_annexes
 from app.utils.fichiers import enregistrer_televersement
 from app.utils.stockage import stockage
 from app.utils.lecture import lire_objet
@@ -191,6 +192,23 @@ def update_rapport(
     return rapport
 
 
+@router.post("/rapports/{rapport_id}/fichier", response_model=RapportRead)
+def remplacer_fichier_rapport(
+    rapport_id: int,
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(require_cs_or_admin),
+):
+    """Remplace le fichier du rapport — le geste du document (`utils/annexes`)."""
+    rapport = ou_404(session, DiagnosticRapport, rapport_id, "Rapport")
+    ancien = remplacer_fichier(rapport, file, user)
+    session.add(rapport)
+    session.commit()
+    session.refresh(rapport)
+    stockage().supprimer_chemin(ancien)
+    return rapport
+
+
 @router.delete("/rapports/{rapport_id}", status_code=204)
 def delete_rapport(
     rapport_id: int,
@@ -198,6 +216,8 @@ def delete_rapport(
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
     rapport = ou_404(session, DiagnosticRapport, rapport_id, "Rapport")
+    #  Le rapport emporte ses annexes (migration 0278, `utils/annexes`).
+    supprimer_annexes(session, "diagnostic", rapport_id)
     # Supprime le fichier physique
     stockage().supprimer_chemin(rapport.fichier_chemin)
     session.delete(rapport)
