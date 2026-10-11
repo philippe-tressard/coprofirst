@@ -86,9 +86,7 @@
 
 	//  Le fichier principal : une pastille, une place.
 	let urlsPrincipal = principal ? [principal.url] : [];
-	let nomsPrincipal: Record<string, string> = principal
-		? { [principal.url]: principal.nom }
-		: {};
+	let nomsPrincipal: Record<string, string> = principal ? { [principal.url]: principal.nom } : {};
 
 	async function remplacerPrincipal(file: File): Promise<string> {
 		const nouveau = await principal!.remplacer(file);
