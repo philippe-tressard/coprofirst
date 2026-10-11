@@ -65,6 +65,8 @@
 		titre: string;
 		annee: string | number;
 		dateAg: string;
+		/** La date du document — un règlement (`ChampDateDocument`). */
+		dateDocument: string;
 		/** Section 4 — `[]` signifie « toute la copropriété », valide ici. */
 		perimetre: string[];
 		/** Section 6 — ajoutée le 08/09/2026, elle n'existait sur aucun document. */
@@ -79,6 +81,7 @@
 			titre: '',
 			annee: '',
 			dateAg: '',
+			dateDocument: '',
 			perimetre: [],
 			description: '',
 		};
@@ -88,6 +91,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 
+	import ChampDateDocument from '$lib/components/ChampDateDocument.svelte';
 	import ChampsCrAg from '$lib/components/ChampsCrAg.svelte';
 	import FormulaireDocument from '$lib/components/FormulaireDocument.svelte';
 	import type { PiecesFiche } from '$lib/components/PiecesJointesFiche.svelte';
@@ -110,7 +114,8 @@
 	avecFichier={false}
 	{piecesJointes}
 	{enregistrement}
-	complet={!!correction.titre.trim()}
+	complet={!!correction.titre.trim() &&
+		(correction.mode !== 'reglement' || !!correction.dateDocument)}
 	on:annuler={() => dispatch('annuler')}
 	on:enregistrer={() => dispatch('enregistrer')}
 >
@@ -121,6 +126,8 @@
 				bind:annee={correction.annee}
 				bind:dateAg={correction.dateAg}
 			/>
+		{:else if correction.mode === 'reglement'}
+			<ChampDateDocument idPrefixe="edit-doc" bind:valeur={correction.dateDocument} />
 		{/if}
 	</svelte:fragment>
 

@@ -33,6 +33,9 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import CarteListe from '$lib/components/CarteListe.svelte';
+	import ChampDateDocument from '$lib/components/ChampDateDocument.svelte';
+	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import LigneRapportDiagnostic from '$lib/components/LigneRapportDiagnostic.svelte';
@@ -51,6 +54,8 @@
 	import { titreOuNomDuFichier } from '$lib/fichiers';
 	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
 	import { basculer } from '$lib/accordeon';
+	import { jourIso } from '$lib/date';
+	import { classeFlux } from '$lib/flux';
 
 	/** Les types de diagnostic et leurs rapports — chargés par la page. */
 	export let types: DiagnosticType[] = [];
@@ -96,18 +101,31 @@
 	const NON_APPLICABLES = 'non-applicables';
 	let deplie: number | typeof NON_APPLICABLES | null = null;
 
+	/**  La GOUTTIÈRE d'un diagnostic (arbitré le 11/10/2026) : la date de son
+	 *   rapport le plus récent — celle du diagnostic, jamais celle du dépôt —,
+	 *   puis « DIAG. », le classement du fil (`classeFlux`). Sans rapport daté,
+	 *   la gouttière ne porte que le classement. */
+	const CLASSE = classeFlux('diagnostic');
+	const dernierDiagnostic = (t: DiagnosticType) =>
+		t.rapports
+			.map((r) => r.date_rapport)
+			.filter((d): d is string => !!d)
+			.sort()
+			.at(-1) ?? null;
+
 	$: actifs = types.filter((t) => !t.non_applicable);
 	$: nonApplicables = types.filter((t) => t.non_applicable);
 
 	function startAddRapport(typeId: number) {
 		showDiagForm = typeId;
 		newDiagTitre = '';
-		newDiagDate = '';
+		//  La date est DEMANDÉE et PROPOSÉE — aujourd'hui, modifiable (11/10/2026).
+		newDiagDate = jourIso();
 		newDiagFichiers = [];
 	}
 
 	async function addRapport() {
-		if (!showDiagForm || !newDiagFichiers?.length) return;
+		if (!showDiagForm || !newDiagFichiers?.length || !newDiagDate) return;
 		//  Capturé AVANT le rappel : TypeScript ne conserve pas dans une closure le
 		//  fait que la garde ci-dessus a écarté `null`.
 		const typeId = showDiagForm;
@@ -120,12 +138,7 @@
 					//  Sans titre saisi, chaque fichier prend le sien — c'est ce que dit
 					//  l'aide du champ, et c'est ici que ça se décide.
 					const titre = titreOuNomDuFichier(newDiagTitre, file);
-					const rapport = await diagnosticsApi.uploadRapport(
-						typeId,
-						titre,
-						newDiagDate || undefined,
-						file,
-					);
+					const rapport = await diagnosticsApi.uploadRapport(typeId, titre, newDiagDate, file);
 					newRapports.push(rapport);
 				}
 				types = types.map((t) =>
@@ -141,7 +154,10 @@
 	function startEditRapport(r: RapportDiagnostic) {
 		editingRapportId = r.id;
 		editingRapportTitre = r.titre;
-		editingRapportDate = r.date_rapport ? String(r.date_rapport).substring(0, 10) : '';
+		//  Un rapport sans date : la correction PROPOSE celle de son dépôt.
+		editingRapportDate = r.date_rapport
+			? String(r.date_rapport).substring(0, 10)
+			: jourIso(r.publie_le);
 		editingRapportSynthese = r.synthese ?? '';
 		piecesRapport = {
 			cible: 'diagnostic',
@@ -220,14 +236,17 @@
 			libelleFichier="Fichier(s)"
 			bind:fichiers={newDiagFichiers}
 			enregistrement={savingDiag}
-			complet={!!newDiagFichiers?.length}
+			complet={!!newDiagFichiers?.length && !!newDiagDate}
 			on:annuler={() => (showDiagForm = null)}
 			on:enregistrer={addRapport}
 		>
-			<label class="field" for="diag-date" slot="specifiques">
-				Date du diagnostic
-				<input id="diag-date" type="date" bind:value={newDiagDate} />
-			</label>
+			<svelte:fragment slot="specifiques">
+				<ChampDateDocument
+					idPrefixe="diag"
+					libelle="Date du diagnostic"
+					bind:valeur={newDiagDate}
+				/>
+			</svelte:fragment>
 		</FormulaireDocument>
 	{/if}
 
@@ -239,14 +258,17 @@
 			avecFichier={false}
 			piecesJointes={piecesRapport}
 			enregistrement={savingRapport}
-			complet={!!editingRapportTitre.trim()}
+			complet={!!editingRapportTitre.trim() && !!editingRapportDate}
 			on:annuler={() => (editingRapportId = null)}
 			on:enregistrer={saveRapport}
 		>
-			<label class="field" for="edit-r-date" slot="specifiques">
-				Date du diagnostic
-				<input id="edit-r-date" type="date" bind:value={editingRapportDate} />
-			</label>
+			<svelte:fragment slot="specifiques">
+				<ChampDateDocument
+					idPrefixe="edit-r"
+					libelle="Date du diagnostic"
+					bind:valeur={editingRapportDate}
+				/>
+			</svelte:fragment>
 			<label class="field" for="edit-r-synthese" slot="description">
 				Synthèse
 				<textarea
@@ -264,18 +286,17 @@
 		vide={types.length === 0}
 		messageVide="Aucun diagnostic réglementaire disponible."
 	>
-		<div class="diag-list">
+		<div>
 			{#each actifs as dtype (dtype.id)}
-				<div class="diag-card card">
-					<div class="diag-header">
-						<div class="diag-title-row">
-							<span class="diag-nom">{dtype.nom}</span>
-							{#if dtype.frequence}
-								<span class="badge badge-blue">{dtype.frequence}</span>
-							{/if}
+				<!--  La carte du site (#1819), sans dépliage : ses rapports sont son
+				      contenu, toujours visibles. La date et « DIAG. » dans la
+				      gouttière (11/10/2026), la fréquence en capsule neutre. -->
+				<CarteListe quand={dernierDiagnostic(dtype)} classe={CLASSE}>
+					<EnteteCarte titre={dtype.nom}>
+						<svelte:fragment slot="actions">
 							{#if peutModifier && dtype.rapports.length === 0}
 								<button
-									class="btn-icon retablir"
+									class="btn-icon"
 									aria-label="Non applicable à cette copropriété"
 									title="Non applicable à cette copropriété"
 									disabled={togglingNonApplicableId === dtype.id}
@@ -283,34 +304,40 @@
 									><IconeAction icone="eye-off" /></button
 								>
 							{/if}
-						</div>
-						<p class="diag-texte">{dtype.texte_legislatif}</p>
+						</svelte:fragment>
+						<p class="diag-texte" slot="apercu">{dtype.texte_legislatif}</p>
+						<svelte:fragment slot="tags">
+							{#if dtype.frequence}
+								<span class="badge badge-gray">{dtype.frequence}</span>
+							{/if}
+						</svelte:fragment>
+					</EnteteCarte>
+					<div class="carte-corps corps-diagnostic">
+						{#if dtype.rapports.length > 0}
+							<div class="diag-rapports">
+								{#each dtype.rapports as rapport (rapport.id)}
+									<LigneRapportDiagnostic
+										{rapport}
+										{peutModifier}
+										ouvert={deplie === rapport.id}
+										annexes={annexes.get(rapport.id) ?? []}
+										onBasculer={() => (deplie = basculer(deplie, rapport.id))}
+										onModifier={() => startEditRapport(rapport)}
+										onSupprimer={() => deleteRapport(dtype.id, rapport.id)}
+									/>
+								{/each}
+							</div>
+						{/if}
+
+						{#if peutModifier}
+							<div class="diag-add">
+								<button class="btn btn-sm" on:click={() => startAddRapport(dtype.id)}
+									>+ Ajouter un rapport</button
+								>
+							</div>
+						{/if}
 					</div>
-
-					{#if dtype.rapports.length > 0}
-						<div class="diag-rapports">
-							{#each dtype.rapports as rapport (rapport.id)}
-								<LigneRapportDiagnostic
-									{rapport}
-									{peutModifier}
-									ouvert={deplie === rapport.id}
-									annexes={annexes.get(rapport.id) ?? []}
-									onBasculer={() => (deplie = basculer(deplie, rapport.id))}
-									onModifier={() => startEditRapport(rapport)}
-									onSupprimer={() => deleteRapport(dtype.id, rapport.id)}
-								/>
-							{/each}
-						</div>
-					{/if}
-
-					{#if peutModifier}
-						<div class="diag-add">
-							<button class="btn btn-sm" on:click={() => startAddRapport(dtype.id)}
-								>+ Ajouter un rapport</button
-							>
-						</div>
-					{/if}
-				</div>
+				</CarteListe>
 			{/each}
 		</div>
 
@@ -428,8 +455,14 @@
 		}
 	}
 
-	.retablir {
-		margin-left: auto;
+	/*  Le corps d'une carte de diagnostic s'aligne sur son en-tête (`EnteteCarte`). */
+	.corps-diagnostic {
+		padding: 0 1.1rem 0.75rem;
+	}
+	@media (max-width: 480px) {
+		.corps-diagnostic {
+			padding: 0 0.7rem 0.6rem;
+		}
 	}
 	.liste-non-applicables {
 		margin-top: 0.75rem;

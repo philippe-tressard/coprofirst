@@ -28,6 +28,8 @@ export interface Document {
 	annee: number | null;
 	/** Date ISO `AAAA-MM-JJ`. */
 	date_ag: string | null;
+	/** La date DU document (`AAAA-MM-JJ`) — un règlement (migration 0280). */
+	date_document: string | null;
 	batiments_ids_json: string | null;
 	/** De quoi PARLE le document, en codes de périmètre — descriptif, jamais un
 	 *  droit ; `null` quand le ciblage est absent ou illisible. */
@@ -95,6 +97,7 @@ export const documents = {
 			perimetre_cible?: string[];
 			annee?: number | null;
 			date_ag?: string | null;
+			date_document?: string | null;
 		},
 	) => api.patch<Document>(`/documents/${id}`, data),
 
@@ -123,6 +126,8 @@ export const documents = {
 		batimentId?: number;
 		annee?: number;
 		dateAg?: string;
+		/** La date du document (`AAAA-MM-JJ`) — un règlement. */
+		dateDocument?: string;
 		/**  De quoi PARLE le document, en codes de périmètre (`["bat:3"]`).
 		 *
 		 *   Remplace `batimentsIdsJson`, qui parlait en identifiants de lignes
@@ -140,6 +145,7 @@ export const documents = {
 			batiment_id: options.batimentId ? String(options.batimentId) : undefined,
 			annee: options.annee ? String(options.annee) : undefined,
 			date_ag: options.dateAg,
+			date_document: options.dateDocument,
 			perimetre_cible: options.perimetreCible?.length
 				? JSON.stringify(options.perimetreCible)
 				: undefined,

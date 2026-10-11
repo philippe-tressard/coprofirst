@@ -28,6 +28,7 @@
 <script lang="ts">
 	import type { ClasseGouttiere } from '$lib/gouttiere';
 	import { nombreOuNull } from '$lib/utils';
+	import { jourIso } from '$lib/date';
 	import { onMount } from 'svelte';
 	import { documents as documentsApi, type Document } from '$lib/api';
 	import { essayer } from '$lib/chargement';
@@ -35,6 +36,7 @@
 	import type { PiecesFiche } from '$lib/components/PiecesJointesFiche.svelte';
 	import { supprimerDocument } from '$lib/gestes-document';
 	import { titreOuNomDuFichier } from '$lib/fichiers';
+	import ChampDateDocument from '$lib/components/ChampDateDocument.svelte';
 	import ChampsCrAg from '$lib/components/ChampsCrAg.svelte';
 	import FormulaireDocument from '$lib/components/FormulaireDocument.svelte';
 	import FormulaireEditionDocument, {
@@ -67,23 +69,28 @@
 	export let messageAjout: string;
 
 	const avecAg = mode === 'ag';
+	/** Le règlement porte SA date (migration 0280) — demandée, proposée, modifiable. */
+	const avecDate = mode === 'reglement';
 
 	/**  La GOUTTIÈRE de chaque carte (10/10/2026, la page Affaires devenue le
-	 *   standard) : QUAND, puis ce qui CLASSE. La date est celle que la ligne
-	 *   affichait — la publication d'un plan ou d'un règlement, l'assemblée d'un
-	 *   compte-rendu (« AG du … », qui passe ainsi de la dernière ligne à la
-	 *   gouttière : une seule date par carte). Le classement est la rubrique ;
-	 *   les abréviations tiennent dans la colonne, comme « CAL. » (#1220). */
+	 *   standard) : QUAND, puis ce qui CLASSE. Le classement est la rubrique ;
+	 *   les abréviations tiennent dans la colonne, comme « CAL. » (#1220).
+	 *
+	 *   🔴 La date est celle DU document, jamais celle de son dépôt (arbitré le
+	 *   11/10/2026) : l'assemblée d'un compte-rendu, la date d'un règlement ; un
+	 *   plan n'en montre aucune. Elle était `publie_le` pour le plan et le
+	 *   règlement — un règlement de 1998 déposé ce mois-ci s'y datait du mois,
+	 *   sous la colonne qui donne ailleurs la date de l'AG. */
 	const GOUTTIERE: Record<
 		ModeDocument,
 		{ quand: (d: Document) => string | null; classe: ClasseGouttiere | null }
 	> = {
 		plan: {
-			quand: (d) => d.publie_le,
+			quand: () => null,
 			classe: { icone: 'layers', libelle: 'Plan', abrege: 'PLAN' },
 		},
 		reglement: {
-			quand: (d) => d.publie_le,
+			quand: (d) => d.date_document,
 			classe: { icone: 'book-open', libelle: 'Règlement', abrege: 'RÈGL.' },
 		},
 		ag: {
@@ -100,6 +107,8 @@
 			fichiers: [] as File[],
 			annee: '' as string | number,
 			dateAg: '',
+			//  PROPOSÉE : aujourd'hui, que le conseil corrige s'il le faut.
+			dateDocument: jourIso(),
 		};
 	}
 
@@ -139,7 +148,10 @@
 
 	$: affiches = trier(documents);
 	//  Le titre est facultatif : sans lui, chaque fichier prend le sien (#1479).
-	$: complet = !!saisie.fichiers?.length && (!avecAg || (!!saisie.annee && !!saisie.dateAg));
+	$: complet =
+		!!saisie.fichiers?.length &&
+		(!avecAg || (!!saisie.annee && !!saisie.dateAg)) &&
+		(!avecDate || !!saisie.dateDocument);
 
 	/**  Plusieurs fichiers → un document chacun (#1479) : un document porte UN
 	 *   fichier. Même motif que Diagnostics, même règle du titre. */
@@ -178,6 +190,7 @@
 			...(avecAg
 				? { annee: nombreOuNull(s.annee) ?? undefined, dateAg: s.dateAg || undefined }
 				: {}),
+			...(avecDate ? { dateDocument: s.dateDocument } : {}),
 		});
 	}
 
@@ -189,6 +202,9 @@
 			titre: doc.titre ?? '',
 			annee: doc.annee ?? '',
 			dateAg: doc.date_ag ? String(doc.date_ag).substring(0, 10) : '',
+			//  Un document déposé avant la 0280 n'a pas de date : la correction
+			//  PROPOSE celle de son dépôt, modifiable.
+			dateDocument: doc.date_document ?? jourIso(doc.publie_le),
 			description: doc.description ?? '',
 			//  ⚠️ `perimetre_cible` sort du serveur en LISTE, jamais en JSON brut
 			//  (`schemas.DocumentRead`). Le re-parser ici serait une seconde façon de
@@ -211,6 +227,7 @@
 				perimetre_cible: correction.perimetre,
 				annee: nombreOuNull(correction.annee),
 				date_ag: correction.dateAg || null,
+				...(avecDate ? { date_document: correction.dateDocument || null } : {}),
 			});
 			documents = documents.map((d) => (d.id === docId ? corrige : d));
 			correction = correctionVide();
@@ -257,6 +274,8 @@
 				<svelte:fragment slot="specifiques">
 					{#if avecAg}
 						<ChampsCrAg requis bind:annee={saisie.annee} bind:dateAg={saisie.dateAg} />
+					{:else if avecDate}
+						<ChampDateDocument idPrefixe={mode} bind:valeur={saisie.dateDocument} />
 					{/if}
 				</svelte:fragment>
 				<label class="field" for="{mode}-description" slot="description">

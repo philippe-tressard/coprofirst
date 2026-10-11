@@ -27,11 +27,11 @@
   reste un simple texte. C'était une ligne `doc-row` dont le détail s'affichait
   en entier, quelle que soit sa longueur.
 
-  ⚠️ PAS de gouttière. Une règle n'a pas de classement, et elle n'affiche aucune
-  date : la création et la correction n'en rendent pas (`RegleResidenceEcrite`),
-  si bien qu'une date posée ici serait fausse — absente sur la règle qu'on vient
-  d'écrire, périmée sur celle qu'on vient de corriger. Ce que l'objet n'a pas ne
-  s'invente pas (`Gouttiere`).
+  La gouttière porte « RÈGL. », et RIEN d'autre (arbitré le 11/10/2026) : une
+  règle n'affiche aucune date — la création et la correction n'en rendent pas
+  (`RegleResidenceEcrite`), si bien qu'une date posée ici serait fausse, absente
+  sur la règle qu'on vient d'écrire, périmée sur celle qu'on vient de corriger.
+  Ce que l'objet n'a pas ne s'invente pas (`Gouttiere`).
 
   ## Les pièces jointes d'une règle (11/10/2026, migration 0278)
 
@@ -56,6 +56,7 @@
 	import { messageErreur } from '$lib/erreurs';
 	import { confirmer, SUPPRESSION } from '$lib/confirmation';
 	import CarteListe from '$lib/components/CarteListe.svelte';
+	import type { ClasseGouttiere } from '$lib/gouttiere';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { isCS } from '$lib/stores/auth';
 	import EtatListe from './EtatListe.svelte';
@@ -66,6 +67,14 @@
 	import { basculer } from '$lib/accordeon';
 	import FormulaireDocument from './FormulaireDocument.svelte';
 	import { essayer } from '$lib/chargement';
+
+	/**  Le classement de la gouttière — le même mot que le règlement, l'icône de
+	 *   la section (📋) pour les distinguer. */
+	const CLASSE: ClasseGouttiere = {
+		icone: 'clipboard-list',
+		libelle: 'Règle ou recommandation',
+		abrege: 'RÈGL.',
+	};
 
 	//  Une règle qu'on vient d'ajouter n'a ni auteur ni dates (`RegleResidenceEcrite`).
 	let regles: RegleResidenceEcrite[] = [];
@@ -207,6 +216,7 @@
 			<!--  Repliée, toute la carte déplie ; dépliée, seul le titre replie
 			      (`ux-patterns` §3). -->
 			<CarteListe
+				classe={CLASSE}
 				expanded={deplie === regle.id}
 				onDeplier={depliable ? () => (deplie = regle.id) : null}
 			>

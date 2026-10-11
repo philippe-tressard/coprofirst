@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
@@ -264,6 +265,22 @@ class DocumentUpdate(BaseModel):
     perimetre_cible: Optional[list[str]] = None
     annee: Optional[int] = None
     date_ag: Optional[str] = None  # ISO date string
+    #  La date du document (migration 0280) — vide l'efface, comme `date_ag`.
+    date_document: Optional[str] = None
+
+
+def _jour(valeur: str | None) -> date | None:
+    """Une date ISO reçue d'un formulaire — vide = aucune, illisible = 422.
+
+    `date_ag` et `date_document` se lisent ainsi à la création et à la
+    correction : quatre lectures, une règle.
+    """
+    if not valeur:
+        return None
+    try:
+        return date.fromisoformat(valeur)
+    except ValueError:
+        raise HTTPException(422, "Date invalide") from None
 
 
 @router.patch("/{doc_id}", response_model=DocumentRead)
@@ -285,9 +302,9 @@ def update_document(
     if body.annee is not None:
         doc.annee = body.annee
     if body.date_ag is not None:
-        from datetime import date as dateclass
-
-        doc.date_ag = dateclass.fromisoformat(body.date_ag) if body.date_ag else None
+        doc.date_ag = _jour(body.date_ag)
+    if body.date_document is not None:
+        doc.date_document = _jour(body.date_document)
     session.add(doc)
     session.commit()
     session.refresh(doc)
@@ -332,6 +349,7 @@ async def upload_document(
     lot_id: int | None = Form(None),
     annee: int | None = Form(None),
     date_ag: str | None = Form(None),
+    date_document: str | None = Form(None),
     batiments_ids_json: str | None = Form(None),
     #  Codes de périmètre, ce que l'écran envoie depuis `PerimetrePicker` (#470).
     perimetre_cible: str | None = Form(None),
@@ -372,6 +390,8 @@ async def upload_document(
         categorie = session.get(CategorieDocument, categorie_id)
         if not categorie or not categorie.actif:
             raise HTTPException(400, "Catégorie invalide")
+    #  Lues AVANT l'écriture du fichier : une date refusée ne laisse rien sur le disque.
+    jour_ag, jour_document = _jour(date_ag), _jour(date_document)
 
     # Dans le dossier PRIVÉ (`enregistrer_televersement`) et non à la racine du
     # volume : `/uploads/*` est servi en statique, et le contrôle d'accès à trois
@@ -389,15 +409,6 @@ async def upload_document(
     dest = enregistrer_televersement(file, raw_name, user)
 
     size = os.path.getsize(dest)
-
-    parsed_date_ag = None
-    if date_ag:
-        from datetime import date as dateclass
-
-        try:
-            parsed_date_ag = dateclass.fromisoformat(date_ag)
-        except ValueError:
-            pass
 
     doc = Document(
         titre=titre,
@@ -418,7 +429,8 @@ async def upload_document(
         lot_id=lot_id,
         publie_par_id=user.id,
         annee=annee,
-        date_ag=parsed_date_ag,
+        date_ag=jour_ag,
+        date_document=jour_document,
         batiments_ids_json=batiments_ids_json,
         perimetre_cible=perimetre_cible,
     )
