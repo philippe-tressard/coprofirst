@@ -62,8 +62,12 @@ const simuler = (page: Page) =>
 	});
 
 /** Le texte d'une ligne, espaces normalisés. */
-const texte = async (page: Page, selecteur: string) =>
-	(await page.locator(selecteur).first().innerText()).replace(/\s+/g, ' ').trim();
+const texte = async (page: Page, selecteur: string) => {
+	const ligne = page.locator(selecteur).first();
+	//  Rendue d'abord : `innerText` ne réessaie pas, il lirait l'instant (#1830).
+	await expect(ligne).toBeVisible();
+	return (await ligne.innerText()).replace(/\s+/g, ' ').trim();
+};
 
 test('le fil rend la ligne de la carte d’affaire, sans 📌', async ({ page }) => {
 	await simuler(page);

@@ -43,7 +43,9 @@ async function nouvelEntretien(page: Page) {
 		.first()
 		.click();
 	const intervenant = section(page, 'Intervenant');
-	//  Pliée quand elle est vide : on l'ouvre comme on le ferait.
+	//  Pliée quand elle est vide : on l'ouvre comme on le ferait. La section
+	//  rendue d'abord — sinon `isVisible` jugerait l'instant (#1830).
+	await expect(intervenant).toBeVisible();
 	if (!(await intervenant.locator('select').first().isVisible()))
 		await intervenant.locator('.section-titre-texte').click();
 	return intervenant;

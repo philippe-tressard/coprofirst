@@ -2396,6 +2396,13 @@ jobs:
         working-directory: front
         run: npm run lint:e2e-test
 
+      # Une lecture sans attente (`count()`, `allTextContents`…) suivie d'un
+      # `expect` juge l'instant : verte en CI, rouge sous charge (#1830). Elle
+      # vit dans un `expect.poll`, ou se déclare avec sa raison.
+      - name: Les tests de navigateur ne jugent pas l'instant
+        working-directory: front
+        run: npm run lint:e2e-lectures
+
       - name: Le contrôle du test e2e s'éprouve lui-même
         working-directory: front
         run: node scripts/check-e2e-test.mjs --selftest
