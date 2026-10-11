@@ -51,10 +51,15 @@ decider_source() { # $1=code_rpi1 $2=code_rpi2 → rpi1|rpi2|split-brain|aucun
 #     app.db — un faux négatif silencieux sur le contrôle le plus important ;
 #   • une comparaison par sous-chaîne ferait passer `uploads/app.db` pour la
 #     base. Le nom doit correspondre à la ligne ENTIÈRE.
-contient_app_db() { # $1=listing tar → oui|non
+# Une seule question pour toute entrée cherchée — la base, ou l'export de la base
+# ci-dessous. `deploiement/standard/mise-a-jour.sh` en porte une COPIE DÉCLARÉE
+# (l'archive d'une réplique n'emporte pas `scripts/lib`) : le même tube y était
+# revenu le 10/10/2026 (#1820). `test_deploiement_standard.py` exige deux corps
+# identiques.
+listing_contient() { # $1=listing tar · $2=entrée exacte → oui|non
   case $'\n'"${1:-}"$'\n' in
-    *$'\napp.db\n'*) echo "oui" ;;
-    *)              echo "non" ;;
+    *$'\n'"${2:?entrée cherchée manquante}"$'\n'*) echo "oui" ;;
+    *)                                              echo "non" ;;
   esac
 }
 
@@ -63,12 +68,6 @@ contient_app_db() { # $1=listing tar → oui|non
 # l'archive son export vérifié (P2-7), sous ce nom — même valeur que
 # `backup.NOM_EXPORT_BASE`, tenue par `test_sauvegarde_base_serveur.py`.
 NOM_EXPORT_BASE="base-export.tar.gz"
-contient_export_base() { # $1=listing tar → oui|non
-  case $'\n'"${1:-}"$'\n' in
-    *$'\n'"$NOM_EXPORT_BASE"$'\n'*) echo "oui" ;;
-    *)                              echo "non" ;;
-  esac
-}
 
 # ── PURE : l'export compte-t-il les lignes que son manifeste annonce ? ───────
 # Lit le RÉSUMÉ que `verifier_export_base` produit (« table lues annoncees » par

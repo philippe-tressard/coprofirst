@@ -265,7 +265,7 @@ EMPREINTES="non"; [ -n "$SHA_SRC" ] && [ "$SHA_SRC" = "$SHA_DST" ] && EMPREINTES
 
 # ── 3. Vérifier la copie (sur le POSTE — jamais sur la base de production) ───
 LISTING=$(tar -tzf "$LOCAL" 2>/dev/null || true)
-CONTIENT=$(contient_app_db "$LISTING")
+CONTIENT=$(listing_contient "$LISTING" app.db)
 
 if [ "$CONTIENT" = "oui" ]; then
   TMP=$(mktemp -d 2>/dev/null || echo "/tmp/export-hs-$$")
@@ -296,7 +296,7 @@ fi
 # lieu d'app.db. On le relit ici, sans rien du projet : chaque table doit compter
 # les lignes que le manifeste annonce. Sa restauration, elle, a été éprouvée au
 # nœud avant que la sauvegarde se dise réussie (`backup.py`).
-if [ "$CONTIENT" = "non" ] && [ "$(contient_export_base "$LISTING")" = "oui" ]; then
+if [ "$CONTIENT" = "non" ] && [ "$(listing_contient "$LISTING" "$NOM_EXPORT_BASE")" = "oui" ]; then
   CONTIENT="export"
   TMP=$(mktemp -d 2>/dev/null || echo "/tmp/export-hs-$$")
   mkdir -p "$TMP"

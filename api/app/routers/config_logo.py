@@ -20,11 +20,12 @@ from app.database import get_session
 from app.models.core import ConfigSite, Utilisateur
 from app.utils.fichiers import enregistrer_fichier_recu
 from app.utils.images import carre_png
+from app.utils.stockage import stockage
 from app.utils.logo import (
     CLE_LOGO,
+    DOSSIER,
     TAILLE_MAX,
     TAILLE_MIN,
-    dossier_logo,
     fichier_logo,
     logo_png,
 )
@@ -50,14 +51,14 @@ def televerser_logo(
     """Remplace le logo. PNG ou JPEG (famille « logo »), lisible par Pillow."""
     octets = file.file.read()
     nom = enregistrer_fichier_recu(
-        octets, file.filename, file.content_type, "logo", dossier_logo(), user=user
+        octets, file.filename, file.content_type, "logo", DOSSIER, user=user
     )
     try:
         #  La signature dit « PNG » : encore faut-il que l'image se lise. Un
         #  fichier tronqué passerait le contrôle des premiers octets.
         carre_png(octets, 32)
     except ValueError:
-        (dossier_logo() / nom).unlink(missing_ok=True)
+        stockage().supprimer(f"{DOSSIER}/{nom}")
         raise HTTPException(400, "Impossible de lire l'image.")
     ancien = fichier_logo(session)
     ligne = session.get(ConfigSite, CLE_LOGO) or ConfigSite(cle=CLE_LOGO, valeur="")

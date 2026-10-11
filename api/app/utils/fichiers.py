@@ -18,36 +18,16 @@ les deux appelants n'ont pas la même contrainte :
 import os
 import re
 import unicodedata
-import pathlib
 import uuid
 
-from app import contexte
 from dataclasses import dataclass
 
-#: Racine réelle des fichiers téléversés. Résolue une fois : c'est elle qui borne
-#: `chemins_locaux`, donc elle ne doit pas dépendre d'un lien symbolique traversé
-#: au moment de l'appel.
-RACINE_UPLOADS = os.path.realpath(contexte.courante().racine_fichiers)
+from app.utils.stockage import DOSSIER_PRIVE, stockage
 
-#: Sous-répertoire des fichiers qui ne doivent JAMAIS être servis en statique.
-#:
-#: `/uploads/*` est publié par Caddy sans authentification : tout fichier posé à la
-#: racine du volume est accessible à qui connaît son URL. Or la bibliothèque
-#: documentaire et les rapports de diagnostic ont un contrôle d'accès applicatif
-#: (`document_visible`, session authentifiée) que cette URL contourne entièrement —
-#: 48 fichiers concernés le 03/08/2026, dont des PV d'assemblée générale et un plan
-#: pluriannuel de travaux.
-#:
-#: C'est un **sous-répertoire du volume existant**, et non un volume dédié, pour une
-#: raison de survie des données : `bascule.sh` réplique le volume `5hostachy_uploads`
-#: par son nom et `backup.py` archive `/app/uploads` par son chemin. Un volume
-#: nouveau serait absent des deux — donc ni répliqué vers le standby, ni sauvegardé,
-#: et perdu à la première bascule.
-#:
-#: Le blocage est posé dans le `Caddyfile`, sur le modèle de `/uploads/annonces-hall/*`
-#: qui applique déjà cette règle. `api/tests/test_uploads_prives.py` vérifie que la
-#: directive existe **et** qu'elle précède le service statique.
-REPERTOIRE_PRIVE = os.path.join(contexte.courante().racine_fichiers, "prive")
+#: Les fichiers qui ne doivent JAMAIS être servis en statique vivent sous
+#: `stockage.DOSSIER_PRIVE` — le pourquoi (48 fichiers exposés le 03/08/2026, un
+#: sous-dossier du volume plutôt qu'un volume neuf) est écrit à côté de la
+#: constante, et le blocage dans le `Caddyfile`.
 
 # Assez long pour rester lisible dans une URL, assez court pour ne pas buter sur
 # la limite de longueur de nom de fichier une fois le préfixe UUID ajouté.
@@ -113,16 +93,11 @@ def chemins_locaux(urls: list[str]) -> list[str]:
     sable et partirait en pièce jointe), et le fichier doit exister — une URL
     orpheline ne doit pas faire échouer l'envoi.
     """
-    chemins: list[str] = []
-    for url in urls:
-        if not isinstance(url, str) or not url.startswith("/uploads/"):
-            continue
-        chemin = os.path.realpath("/app" + url)
-        if not chemin.startswith(RACINE_UPLOADS + os.sep):
-            continue
-        if os.path.isfile(chemin):
-            chemins.append(chemin)
-    return chemins
+    #  Les trois vérifications vivent dans `stockage.fichier_de_url` (#1748). Elle
+    #  traduisait ici l'adresse en `"/app" + url` : une racine écrite en dur, fausse
+    #  dès que le volume est monté ailleurs — et pour toute autre copropriété.
+    st = stockage()
+    return [str(chemin) for url in urls if (chemin := st.fichier_de_url(url)) is not None]
 
 
 def nom_stocke(nom_origine: str | None, extension: str) -> str:
@@ -390,7 +365,7 @@ def enregistrer_fichier_recu(
     nom_origine: str | None,
     content_type: str | None,
     famille: str,
-    destination,
+    dossier: str,
     user=None,
     extension_forcee: str | None = None,
 ) -> str:
@@ -401,15 +376,14 @@ def enregistrer_fichier_recu(
     autre écriture, hors celles qui portent un fichier que l'application a
     elle-même produit.
 
-    :param destination: le répertoire où écrire. Créé si besoin.
+    :param dossier: la clé du répertoire où écrire, dans le stockage de la
+        copropriété servie (`photos`, `logo`…). Créé si besoin.
     :param extension_forcee: pour une image réencodée, dont l'extension écrite
         n'est plus celle du type reçu. Le contrôle, lui, porte sur le type reçu.
     """
     extension = verifier_fichier_recu(octets, nom_origine, content_type, famille, user)
-    dossier = pathlib.Path(destination)
-    dossier.mkdir(parents=True, exist_ok=True)
     nom = nom_stocke(nom_origine, extension_forcee or extension)
-    (dossier / nom).write_bytes(octets)
+    stockage().ecrire(f"{dossier}/{nom}", octets)
     return nom
 
 
@@ -444,7 +418,6 @@ def enregistrer_televersement(file, raw_name: str, user=None) -> str:
     que `user.id` — un refus qui plante sur le journal ne refuse plus rien.
     """
     import logging
-    import shutil
 
     from fastapi import HTTPException
 
@@ -464,10 +437,12 @@ def enregistrer_televersement(file, raw_name: str, user=None) -> str:
         )
         raise HTTPException(400, f"Fichier refusé : {motif}.")
 
-    dest = os.path.join(REPERTOIRE_PRIVE, nom_stocke(raw_name, extension))
-    with open(dest, "wb") as sortie:
-        shutil.copyfileobj(file.file, sortie)
-    return dest
+    st = stockage()
+    cle = f"{DOSSIER_PRIVE}/{nom_stocke(raw_name, extension)}"
+    st.ecrire_flux(cle, file.file)
+    #  Le chemin ABSOLU, que la ligne de la base garde (`fichier_chemin`) et que
+    #  `stockage.cle_de_chemin` relit, borné.
+    return str(st.chemin(cle))
 
 
 async def lire_tableur_recu(fichier, user=None) -> bytes:

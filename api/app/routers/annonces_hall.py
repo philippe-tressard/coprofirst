@@ -9,7 +9,6 @@ Deux usages :
 from __future__ import annotations
 
 import json
-import os
 import uuid
 from datetime import datetime
 from app.utils import horloge
@@ -61,15 +60,14 @@ from app.routers.annonces_hall_sources import router as _router_sources  # noqa:
 
 router.include_router(_router_sources)
 
-from app import contexte
+from app.utils.stockage import cle_de_url, stockage
 
 #  🔴 La racine venait d'un chemin écrit en dur, ici comme à cinq autres
-#  endroits (#1026). Elle se demande au contexte de copropriété (`contexte.courante()`,
-#  #1744), seul lecteur de la variable d'environnement : un fichier écrit hors du volume n'est ni
-#  répliqué vers le standby par `bascule.sh`, ni sauvegardé par `backup.py` — il
-#  est perdu à la première bascule, sans aucun signal.
-PDF_DIR = contexte.courante().racine_fichiers / "annonces-hall"
-UPLOADS_ROOT = os.path.realpath(contexte.courante().racine_fichiers)
+#  endroits (#1026). Les affiches s'écrivent dans le stockage de la copropriété
+#  (`utils/stockage`, #1748), sous ce dossier : un fichier écrit hors du volume
+#  n'est ni répliqué vers le standby par `bascule.sh`, ni sauvegardé par
+#  `backup.py` — il est perdu à la première bascule, sans aucun signal.
+DOSSIER_PDF = "annonces-hall"
 
 
 #  Les schémas vivent dans `annonces_hall_schemas` (02/09/2026, plafond de
@@ -108,7 +106,7 @@ def _valider(body: AnnonceHallBase) -> None:
         raise HTTPException(422, "Format invalide (auto, a4 ou a5)")
     if len(body.images) > MAX_PHOTOS:
         raise HTTPException(422, f"{MAX_PHOTOS} photos au maximum")
-    if any(not u.startswith("/uploads/") for u in body.images):
+    if any(cle_de_url(u) is None for u in body.images):
         raise HTTPException(422, "Photo invalide")
 
 
@@ -170,18 +168,19 @@ def images_de(ticket, session: Session) -> list[str]:
     urls: list[str] = [
         u
         for u in parse_photos(ticket.photos_urls) + parse_photos(ticket.fichiers_urls)
-        if u.startswith("/uploads/")
+        if cle_de_url(u) is not None
     ]
     docs = session.exec(
         select(Document).where(Document.ticket_id == ticket.id).order_by(Document.publie_le)  # type: ignore[arg-type]
     ).all()
+    st = stockage()
     for doc in docs:
         if not (doc.mime_type or "").startswith("image/"):
             continue
-        reel = os.path.realpath(doc.fichier_chemin or "")
-        if not reel.startswith(UPLOADS_ROOT + os.sep) or not os.path.isfile(reel):
+        cle = st.cle_de_chemin(doc.fichier_chemin)
+        if cle is None or not st.existe(cle):
             continue
-        url = "/uploads/" + os.path.relpath(reel, UPLOADS_ROOT).replace(os.sep, "/")
+        url = st.url(cle)
         if url not in urls:
             urls.append(url)
     return urls[:MAX_PHOTOS]
@@ -189,13 +188,8 @@ def images_de(ticket, session: Session) -> list[str]:
 
 def _supprimer_fichier(chemin: str | None) -> None:
     """Supprime un fichier du volume uploads (jamais hors de ce volume)."""
-    if not chemin:
-        return
-    reel = os.path.realpath(chemin)
-    if not reel.startswith(UPLOADS_ROOT + os.sep):
-        return
     try:
-        os.unlink(reel)
+        stockage().supprimer_chemin(chemin)
     except OSError:
         pass
 
@@ -307,9 +301,10 @@ def creer_annonce_hall(
     except Exception as exc:  # pragma: no cover - dépend de l'environnement de rendu
         raise HTTPException(500, f"Génération du PDF impossible : {exc}") from exc
 
-    PDF_DIR.mkdir(parents=True, exist_ok=True)
-    chemin = PDF_DIR / f"{uuid.uuid4().hex}.pdf"
-    chemin.write_bytes(pdf)
+    st = stockage()
+    cle_pdf = f"{DOSSIER_PDF}/{uuid.uuid4().hex}.pdf"
+    st.ecrire(cle_pdf, pdf)
+    chemin = st.chemin(cle_pdf)
 
     annonce = AnnonceHall(
         titre=body.titre.strip(),
@@ -469,8 +464,10 @@ def delete_annonce_hall(
     """Suppression définitive : la ligne, le PDF et l'illustration partent."""
     annonce = ou_404(session, AnnonceHall, annonce_id, "Annonce")
     _supprimer_fichier(annonce.pdf_chemin)
+    st = stockage()
     for url in json.loads(annonce.images_json or "[]"):
-        if url:
-            _supprimer_fichier(os.path.join("/app", url.lstrip("/")))
+        #  L'adresse se traduisait ici en `"/app" + url` : une racine écrite en dur.
+        if (cle := cle_de_url(url)) is not None:
+            st.supprimer(cle)
     session.delete(annonce)
     session.commit()

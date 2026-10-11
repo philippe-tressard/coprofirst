@@ -169,13 +169,13 @@ def test_le_geste_factorise_REMBOBINE_le_flux():
 
     from app.utils.fichiers import enregistrer_televersement
 
-    from app.utils.fichiers import REPERTOIRE_PRIVE
+    from app.utils.stockage import DOSSIER_PRIVE, stockage
 
     #  ⚠️ Le répertoire est créé PAR LE TEST, pas par la fonction : en
     #  production il existe (volume Docker), et le créer à chaque écriture
     #  masquerait un montage manquant — une panne d'infrastructure deviendrait
     #  un fichier écrit dans le vide du conteneur, perdu au redémarrage.
-    pathlib.Path(REPERTOIRE_PRIVE).mkdir(parents=True, exist_ok=True)
+    stockage().chemin(DOSSIER_PRIVE).mkdir(parents=True, exist_ok=True)
 
     contenu = b"%PDF-1.4 contenu de test"
     faux = SimpleNamespace(file=_io.BytesIO(contenu))

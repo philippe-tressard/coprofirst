@@ -70,7 +70,9 @@ class Settings(BaseSettings):
     #: chemin, c'est cinq occasions d'en oublier une le jour où le volume bouge
     #: — et un fichier écrit hors du volume n'est ni répliqué vers le standby
     #: par `bascule.sh`, ni sauvegardé par `backup.py`. Il est perdu à la
-    #: première bascule, sans aucun signal.
+    #: première bascule, sans aucun signal. Elle ne se lit plus que par le
+    #: contexte de copropriété (#1744), et un fichier ne se situe que par
+    #: `utils/stockage` (#1748).
     uploads_dir: str = "/app/uploads"
     backup_hour: int = 3
     backup_keep_versions: int = 7

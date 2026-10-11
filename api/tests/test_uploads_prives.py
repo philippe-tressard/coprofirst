@@ -10,7 +10,8 @@ entièrement.
 
 Deux conditions doivent tenir ensemble, et aucune ne se suffit :
 
-1. le code écrit ces fichiers dans `REPERTOIRE_PRIVE`, pas à la racine ;
+1. le code écrit ces fichiers sous `stockage.DOSSIER_PRIVE`, pas à la racine —
+   par `fichiers.enregistrer_televersement`, seule écriture d'un fichier privé ;
 2. le `Caddyfile` refuse `/uploads/prive/*`, **avant** le service statique —
    Caddy applique le premier `handle` qui correspond, une directive placée après
    ne servirait à rien.
@@ -31,7 +32,7 @@ RACINE = pathlib.Path(__file__).resolve().parents[2]
 
 
 def _routeurs_prives() -> tuple:
-    """Les routeurs qui écrivent dans le répertoire privé — DÉDUITS, pas listés.
+    """Les routeurs qui écrivent un fichier privé — DÉDUITS, pas listés.
 
     🔴 La liste était écrite à la main, et elle a dérivé au premier découpage :
     le 29/08/2026, les relevés de compteurs sont sortis de `prestataires.py`
@@ -46,7 +47,8 @@ def _routeurs_prives() -> tuple:
     routeurs = sorted(
         f.name
         for f in (RACINE / "api" / "app" / "routers").glob("*.py")
-        if "REPERTOIRE_PRIVE" in f.read_text(encoding="utf-8")
+        #  Depuis #1748, l'écriture privée a UNE porte : `enregistrer_televersement`.
+        if "enregistrer_televersement(" in f.read_text(encoding="utf-8")
     )
     #  Cas zéro : aucun routeur trouvé ⇒ le glob ou le motif a changé, et tous
     #  les tests qui s'appuient dessus passeraient au vert SANS RIEN VÉRIFIER.
@@ -92,12 +94,28 @@ def test_les_routeurs_prives_n_ecrivent_plus_a_la_racine(routeur):
     """Un fichier privé posé à la racine serait servi malgré le Caddyfile."""
     source = (RACINE / "api" / "app" / "routers" / routeur).read_text(encoding="utf-8")
 
-    assert "REPERTOIRE_PRIVE" in source, f"{routeur} n'utilise plus REPERTOIRE_PRIVE"
-    fautifs = re.findall(r"os\.path\.join\(\s*UPLOADS_DIR\s*,", source)
+    assert "enregistrer_televersement(" in source, f"{routeur} n'écrit plus par la porte privée"
+    fautifs = re.findall(r"os\.path\.join\(\s*UPLOADS_DIR\s*,|racine_fichiers", source)
     assert not fautifs, (
-        f"{routeur} écrit encore à la racine du volume servi "
-        f"({len(fautifs)} occurrence(s)) : utiliser REPERTOIRE_PRIVE."
+        f"{routeur} construit encore un chemin depuis la racine du volume servi "
+        f"({len(fautifs)} occurrence(s)) : passer par `enregistrer_televersement`."
     )
+
+
+def test_un_fichier_prive_s_ecrit_sous_le_dossier_prive(tmp_path, monkeypatch):
+    """Le comportement, pas la forme : le fichier ATTERRIT sous `prive/`."""
+    import io
+    from types import SimpleNamespace
+
+    from app.config import get_settings
+    from app.utils.fichiers import enregistrer_televersement
+    from app.utils.stockage import DOSSIER_PRIVE
+
+    monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
+    recu = SimpleNamespace(file=io.BytesIO(b"%PDF-1.7 essai"))
+    chemin = pathlib.Path(enregistrer_televersement(recu, "pv-ag.pdf"))
+    assert chemin.is_file() and chemin.read_bytes() == b"%PDF-1.7 essai"
+    assert chemin.parent == (tmp_path / DOSSIER_PRIVE).resolve()
 
 
 def test_le_repertoire_prive_est_bien_sous_le_volume_repliqué():
@@ -107,17 +125,19 @@ def test_le_repertoire_prive_est_bien_sous_le_volume_repliqué():
     `/app/uploads` par son CHEMIN. Sortir les fichiers de cette arborescence les
     priverait des deux — perte à la première bascule.
     """
-    from app.utils.fichiers import REPERTOIRE_PRIVE
+    from app.utils.stockage import DOSSIER_PRIVE, cle_valide, stockage
 
+    #  Une CLÉ relative, donc sous la racine par construction (`stockage.chemin`).
+    assert cle_valide(DOSSIER_PRIVE) == DOSSIER_PRIVE
     racine = os.getenv("UPLOADS_DIR", "/app/uploads")
-    assert os.path.normpath(REPERTOIRE_PRIVE).startswith(os.path.normpath(racine)), (
-        "REPERTOIRE_PRIVE est hors du volume répliqué et sauvegardé"
-    )
+    assert os.path.normpath(stockage().racine) == os.path.normpath(racine)
 
     bascule = (RACINE / "scripts" / "exploitation" / "bascule.sh").read_text(encoding="utf-8")
     assert "5hostachy_uploads" in bascule, "bascule.sh ne réplique plus ce volume"
     backup = (RACINE / "api" / "app" / "utils" / "backup.py").read_text(encoding="utf-8")
-    assert '"/app/uploads"' in backup, "backup.py n'archive plus ce répertoire"
+    assert "tar.add(uploads" in backup and "stockage().racine" in backup, (
+        "backup.py n'archive plus la racine du stockage"
+    )
 
 
 # ── forward_auth : le reste de /uploads exige une session ────────────────────

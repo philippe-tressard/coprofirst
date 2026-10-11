@@ -209,26 +209,6 @@ pair_injoignable_emettre() {
     esac
 }
 
-#  Les images de base nommées par des Dockerfile, une par ligne, sans doublon.
-#  Un `FROM` qui désigne une ÉTAPE du même fichier (`FROM builder`) n'est pas une
-#  image à télécharger, ni `scratch`. Lues dans les fichiers, jamais recopiées :
-#  une liste tenue à la main oublierait la prochaine image.
-images_de_base() {
-    #  `sub(/\r$/…)` : deux Dockerfile du dépôt sont en CRLF, et l'awk des RPi
-    #  garde le `\r` (celui de Git Bash le retire : sur le poste, rien ne se voit).
-    awk '
-        { sub(/\r$/, "") }
-        FNR == 1 { delete etapes }
-        toupper($1) == "FROM" {
-            i = 2
-            while ($i ~ /^--/) i++
-            img = $i
-            if (img != "" && img != "scratch" && !(img in etapes)) print img
-            if (toupper($(i + 1)) == "AS") etapes[$(i + 2)] = 1
-        }
-    ' "$@" 2>/dev/null | sort -u
-}
-
 # ── Les verdicts de C30, émis par check-reliability (via lib-conformite) ─────
 #  Dépend de l'appelant : ok/warn/fail, SELF/PEER/PEER_OK et les champs S_*/P_*.
 #  Tout sort en WARN, donc au digest quotidien : aucune de ces situations
@@ -392,25 +372,6 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "commande manuelle : les paquets de la liste" \
       "ssh -t ptressard@192.168.1.223 'sudo apt-get update && sudo apt-get install --only-upgrade $NOYAU_PAQUETS && sudo reboot'" \
       commande_montee_noyau 192.168.1.223
-
-    tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-    printf 'FROM node:22-alpine AS builder\nRUN x\nFROM node:22-alpine AS runner\nCOPY --from=builder /a /b\n' > "$tmp/front"
-    printf 'FROM python:3.12-slim\n' > "$tmp/api"
-    printf 'FROM --platform=linux/arm64 caddy:2 AS base\nFROM base\nFROM scratch\n' > "$tmp/caddy"
-    t "étapes, doublons, --platform et scratch écartés" \
-      "caddy:2 node:22-alpine python:3.12-slim" \
-      eval 'images_de_base "$tmp/front" "$tmp/api" "$tmp/caddy" | paste -sd" " -'
-    #  Une étape d'un fichier ne masque pas une image du même nom dans un autre.
-    printf 'FROM alpine AS python\n' > "$tmp/a"; printf 'FROM python\n' > "$tmp/b"
-    t "une étape ne déborde pas sur le fichier suivant" "alpine python" \
-      eval 'images_de_base "$tmp/a" "$tmp/b" | paste -sd" " -'
-    t "aucun fichier → rien"    ""  images_de_base "$tmp/absent"
-    #  🔴 Vécu sur le banc du 27/09/2026 : deux Dockerfile du dépôt sont en CRLF,
-    #  le `\r` restait collé au nom, et `docker pull` répondait « invalid
-    #  reference format » — deux images sur quatre jamais tirées.
-    printf 'FROM python:3.12-slim\r\nRUN x\r\n' > "$tmp/crlf"
-    t "Dockerfile en CRLF : nom sans retour chariot (\\r rendu en #)" "python:3.12-slim" \
-      eval 'images_de_base "$tmp/crlf" | tr "\r" "#"'
 
     #  La collecte est du shell VALIDE une fois assemblée (même piège que COLLECT).
     if bash -n <(printf '%s' "$COLLECT_MAJ") 2>/dev/null; then echo "PASS  COLLECT_MAJ est du shell valide"

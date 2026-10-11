@@ -36,7 +36,10 @@ def photos_internes(urls: list[str]) -> list[str]:
     contrôle. Les champs de photos exposés en écriture ne servent qu'à RETIRER des
     images déjà téléversées — tout le reste est écarté sans discussion.
     """
-    return [str(u) for u in urls if str(u).startswith("/uploads/") and ".." not in str(u)]
+    #  La règle d'une adresse « des nôtres » vit dans `stockage.cle_de_url` (#1748).
+    from app.utils.stockage import cle_de_url
+
+    return [str(u) for u in urls if cle_de_url(str(u)) is not None]
 
 
 def premiere_photo(raw: Optional[str]) -> Optional[str]:

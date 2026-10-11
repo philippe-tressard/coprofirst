@@ -458,16 +458,15 @@ app.include_router(assistant.router)
 app.include_router(reglement.router)
 
 # Fichiers statiques (photos uploadées)
-#  `UPLOADS_DIR` plutôt qu'un chemin figé : le motif existe déjà dans
-#  `routers/documents.py` et `utils/fichiers.py`, donc on l'applique à
-#  l'identique (CLAUDE.md — un pattern présent ≥ 2 fois fait loi). En
-#  production rien ne change, la variable n'étant pas définie.
-#  Ce qu'il débloque : importer `app.main` hors conteneur. Le `mkdir` d'un
-#  chemin absolu échouait sur un poste de développement et sur un exécuteur
-#  d'intégration continue — ce qui rendait l'application intestable dans son
-#  ensemble, et laissait passer toute rupture d'assemblage (cf.
-#  tests/test_demarrage.py).
-uploads_dir = contexte.courante().racine_fichiers
+#  La racine vient du stockage de la copropriété (`utils/stockage`, #1748), jamais
+#  d'un chemin figé : un `mkdir` absolu rendait `app.main` inimportable hors
+#  conteneur (tests/test_demarrage.py). Montée UNE fois, au démarrage, sur
+#  l'unique copropriété — un montage statique ne suit pas le contexte d'une
+#  requête. En production, c'est Caddy qui sert `/uploads/*` (arbitrage du
+#  10/10/2026 : inchangé en phase 2) ; ce montage sert le développement local.
+from app.utils.stockage import stockage as _stockage  # noqa: E402
+
+uploads_dir = _stockage().racine
 uploads_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 

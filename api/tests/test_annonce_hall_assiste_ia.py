@@ -17,6 +17,7 @@ from fastapi import BackgroundTasks
 from sqlmodel import Session
 
 from app.models.core import RoleUtilisateur, Utilisateur
+from app.config import get_settings
 from app.routers import annonces_hall
 from tests.aides_base import moteur_memoire
 
@@ -25,7 +26,8 @@ from tests.aides_base import moteur_memoire
 def contexte_fixture(monkeypatch, tmp_path):
     moteur = moteur_memoire(partage=True)
     monkeypatch.setattr(annonces_hall, "generer_pdf", lambda **_: b"%PDF-test")
-    monkeypatch.setattr(annonces_hall, "PDF_DIR", tmp_path)
+    #  Les affiches s'écrivent dans le stockage de la copropriété (#1748).
+    monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
     with Session(moteur) as session:
         cs = Utilisateur(
             email="cs@test.fr",

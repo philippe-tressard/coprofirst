@@ -58,14 +58,14 @@
   # « absent » sur une archive contenant app.db. Le listing est désormais
   # analysé hors de tout tube, et ces cas verrouillent l'analyse.
   LISTING_OK=$'app.db\nuploads/\nuploads/doc.pdf'
-  check "app.db en tête de listing"  "oui"        "$(contient_app_db "$LISTING_OK")"
-  check "app.db seul"                "oui"        "$(contient_app_db 'app.db')"
-  check "listing sans base"          "non"        "$(contient_app_db $'uploads/\nuploads/doc.pdf')"
-  check "listing vide"               "non"        "$(contient_app_db '')"
+  check "app.db en tête de listing"  "oui"        "$(listing_contient "$LISTING_OK" app.db)"
+  check "app.db seul"                "oui"        "$(listing_contient 'app.db' app.db)"
+  check "listing sans base"          "non"        "$(listing_contient $'uploads/\nuploads/doc.pdf' app.db)"
+  check "listing vide"               "non"        "$(listing_contient '' app.db)"
   # Le piège de la sous-chaîne : un fichier nommé app.db DANS uploads n'est pas
   # la base. Une comparaison naïve l'accepterait.
-  check "uploads/app.db ne compte pas" "non"      "$(contient_app_db $'uploads/app.db\nuploads/x')"
-  check "suffixe app.db2 ne compte pas" "non"     "$(contient_app_db 'app.db2')"
+  check "uploads/app.db ne compte pas" "non"      "$(listing_contient $'uploads/app.db\nuploads/x' app.db)"
+  check "suffixe app.db2 ne compte pas" "non"     "$(listing_contient 'app.db2' app.db)"
 
   # ── Liste blanche du nom d'archive ─────────────────────────────────────────
   # Le nom vient du nœud distant et repart dans une commande exécutée là-bas.
@@ -91,8 +91,8 @@
   check "export présent, lignes justes" "succes"  "$(verdict_archive 1024 oui export ok | cut -d'|' -f1)"
   check "export aux lignes manquantes"  "erreur"  "$(verdict_archive 1024 oui export 'écarts : lot 3/4' | cut -d'|' -f1)"
   check "export non vérifié"            "erreur"  "$(verdict_archive 1024 oui export inconnue | cut -d'|' -f1)"
-  check "export repéré dans le listing" "oui"     "$(contient_export_base $'uploads/\nbase-export.tar.gz')"
-  check "uploads/base-export… ne compte pas" "non" "$(contient_export_base 'uploads/base-export.tar.gz')"
+  check "export repéré dans le listing" "oui"     "$(listing_contient $'uploads/\nbase-export.tar.gz' "$NOM_EXPORT_BASE")"
+  check "uploads/base-export… ne compte pas" "non" "$(listing_contient 'uploads/base-export.tar.gz' "$NOM_EXPORT_BASE")"
   check "résumé juste"                  "ok"      "$(verdict_export_base $'lot 4 4\nticket 12 12')"
   check "une table incomplète"          "écarts : lot 3/4" "$(verdict_export_base $'lot 3 4\nticket 12 12')"
   check "résumé vide → inconnue, jamais ok" "inconnue" "$(verdict_export_base '')"

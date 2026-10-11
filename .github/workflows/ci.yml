@@ -560,8 +560,12 @@ jobs:
           # C17 : maintenance.sh écrit sa marque en fin d'hygiène, la collecte la
           # lit, et le seuil se lit en jours ET heures (faux retard du 05/10/2026).
           bash scripts/lib/lib-maintenance-trace.sh --selftest
+          # Les images de base re-tirées le dimanche (#1379) : une image ABSENTE
+          # du nœud se tire, et ne tue plus maintenance.sh sous set -e (#1826).
+          bash scripts/lib/lib-images-base.sh       --selftest
           # La ligne datée À L'ÉCRITURE et le contrat de sortie d'auto-deploy
-          # (#1587) : chaque `exit` daté, aucun `git fetch` sans repli.
+          # (#1587) : chaque `exit` daté, aucun `git fetch` sans repli ; le filet
+          # des sorties imprévues nomme la commande et prévient l'appelant (#1826).
           bash scripts/lib/lib-journal.sh           --selftest
           # Le tag d'une version (#1753) : créer, relancer, lot sans bump, version
           # illisible — la décision qui pose `vX.Y.Z` et autorise la publication.

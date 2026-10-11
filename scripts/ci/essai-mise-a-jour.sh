@@ -130,7 +130,7 @@ attendre_sante || true
 REUSSIE=$(grep -q "Mise à jour réussie : $VERS" "$TRAVAIL/maj.log" && echo oui || echo non)
 ENV_VERSION=$(sed -n 's/^COPROFIRST_VERSION=//p' .env | tail -1)
 SERVIE=$(node "$RACINE/front/scripts/check-version-servie.mjs" --site http://localhost 2>/dev/null | tail -1 || true)
-VOLUMES=$(ls "$SAUV"/coprofirst_*_vers_"$VERS"_*.tar.gz 2>/dev/null | grep -v -- '-base\.tar\.gz$' | grep -q . && echo oui || echo non)
+VOLUMES=$(ls "$SAUV"/coprofirst_*_vers_"$VERS"_*.tar.gz 2>/dev/null | grep -v -- '-base\.tar\.gz$' | grep . >/dev/null && echo oui || echo non)
 BASE=$(ls "$SAUV"/*-base.tar.gz >/dev/null 2>&1 && echo oui || echo non)
 TEMOIN=$(se_connecte)
 ls -la "$SAUV"
