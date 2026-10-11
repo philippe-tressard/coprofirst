@@ -70,6 +70,10 @@ CONTENUS_GARDES: dict[tuple[str, str], str] = {
     ("vote_sondage", "user_id"): "un vote — sans lui, le résultat d'un sondage clos changerait",
     ("commentaire_sondage", "auteur_id"): "une réplique dans un échange où d'autres ont répondu",
     ("idee", "auteur_id"): "une idée, que d'autres ont soutenue",
+    ("question_reglement", "auteur_id"): (
+        "une question au règlement — sa réponse relue a pu nourrir la FAQ, et la question "
+        "évite au conseil de repayer la même"
+    ),
     ("vote_idee", "user_id"): "un soutien — sans lui, le compte d'une idée changerait",
     ("reponse_communaute", "auteur_id"): "une réplique dans un échange où d'autres ont répondu",
     ("notation_prestataire", "auteur_id"): "l'évaluation collective d'un prestataire",

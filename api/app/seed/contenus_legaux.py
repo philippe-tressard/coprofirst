@@ -162,7 +162,7 @@ QUESTION_REGLEMENT = (
     "de la personne qu'elle concerne. La question et sa réponse restent dans l'application "
     "avec le nom de leur auteur, lisibles de lui seul, du conseil syndical et de "
     "l'administrateur\xa0; elles n'entrent dans la FAQ que relues par le conseil, sans "
-    "auteur. "
+    "auteur, et restent sans nom à la suppression du compte de leur auteur. "
 )
 
 #: Les courriels TRANSFÉRÉS par un membre du conseil à l'adresse des affaires
