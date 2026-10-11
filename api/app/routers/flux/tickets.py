@@ -17,12 +17,15 @@ Il n'en reste qu'une écriture : `_carte_mise_a_jour`, alimentée par
 table, pas un quatrième bloc à recopier.
 """
 
+from functools import partial
+
 from sqlmodel import select
 
-from app.models.core import STATUTS_TICKET_ACTIFS, Ticket, TicketEvolution
+from app.models.core import STATUTS_TICKET_ACTIFS, Ticket, TicketEvolution, Utilisateur
 from app.utils.nature_affaire import ACTUALITE
 from app.utils.dates_fr import duree_jhm
 from app.utils.photos import parse_photos
+from app.utils.recuperer import precharger
 from app.utils.visibility import ticket_visible
 
 from app.utils.copie_auteur import proprietaire
@@ -147,75 +150,105 @@ def _evolutions(ctx: ContexteFlux, type_evolution: str):
     ).all()
 
 
+def _carte_resolue(ctx: ContexteFlux, evol, tk) -> FluxItem:
+    """Carte « ticket résolu », avec la durée de résolution."""
+    #  🔴 `00j23h54'`, et non un arrondi décimal d'heures (01/09/2026,
+    #  demandé à l'écran). « Résolu en 23.9h » n'a de sens nulle part
+    #  ailleurs sur le site et se convertit de tête ; le point décimal
+    #  était en prime un point sur un site intégralement en français.
+    #  Les unités sont portées : `00:00:30` se lisait trente secondes
+    #  alors qu'il voulait dire trente minutes.
+    #  Le format vit dans `dates_fr.duree_jhm` — une durée EST un format.
+    duree = None
+    if tk.ferme_le and tk.cree_le:
+        duree = duree_jhm(tk.ferme_le - tk.cree_le)
+    return FluxItem(
+        id=f"tk_{tk.id}",
+        type="ticket_resolu",
+        date=evol.cree_le,
+        cree_le=tk.cree_le,
+        titre=tk.titre,
+        #  ⚠️ `is not None` et non `if duree`. L'ancien code testait un
+        #  FLOAT : une résolution en moins de six minutes s'arrondissait à
+        #  `0.0`, donc falsy, et la mention disparaissait — le ticket le
+        #  plus vite résolu était le seul à ne pas le dire. `duree_jhm`
+        #  rend `None` sur une donnée incohérente, jamais sur un zéro.
+        detail=f"Résolu{f' en {duree}' if duree is not None else ''}",
+        icon="✅",
+        badges=badges_ticket(tk),
+        lien="/tickets",
+        meta={
+            **_meta_ticket(ctx, tk),
+            "statut": "résolu",
+            #  Le nom dit désormais ce que la valeur EST : plus des heures
+            #  décimales, mais `00j23h54'`. Aucun écran ne la lisait — le
+            #  renommer maintenant évite qu'un futur lecteur croie à un nombre.
+            "duree": duree,
+            "cloture_le": tk.ferme_le.isoformat() if tk.ferme_le else None,
+            #  Même règle que les trois autres cartes de ticket : une photo
+            #  jointe au commentaire de clôture doit se voir.
+            **pieces_de_evolution(evol, tk),
+        },
+    )
+
+
+def _carte_ouverte(ctx: ContexteFlux, _evol, tk) -> FluxItem:
+    """Carte « nouveau ticket » — une affaire récente, sans aucune évolution."""
+    return FluxItem(
+        id=f"tk_{tk.id}",
+        type="ticket_ouvert",
+        date=tk.cree_le,
+        cree_le=tk.cree_le,
+        titre=tk.titre,
+        detail="Nouveau ticket",
+        icon="🎫",
+        badges=badges_ticket(tk),
+        lien="/tickets",
+        meta={
+            **_meta_ticket(ctx, tk),
+            "statut": tk.statut,
+            "photos_urls": parse_photos(tk.photos_urls),
+            "fichiers_urls": parse_photos(tk.fichiers_urls),
+        },
+    )
+
+
 def collecter(ctx: ContexteFlux) -> list[FluxItem]:
     """Une seule ligne par ticket : la plus récente.
 
     L'historique complet reste consultable sur la fiche du ticket — le fil n'est
     qu'un résumé « quoi de neuf ».
+
+    🔴 L'entrée retenue se CHOISIT avant que sa carte se construise (#1838). Le
+    fil construisait une carte par évolution de la période — propriétaire,
+    auteur, extrait du texte — puis n'en gardait qu'une par affaire : 135
+    lectures d'utilisateur pour 40 affaires. Chaque candidate est désormais une
+    date et une fabrique ; seules les retenues sont fabriquées, et leurs
+    personnes sont lues en une requête.
     """
-    cartes: list[FluxItem] = []
+    #  (ticket, date, évolution ou None, ticket, fabrique) — dans l'ordre où
+    #  l'ancien code construisait ses cartes : à date égale, la PREMIÈRE vue
+    #  l'emporte, comme avant.
+    candidates: list[tuple] = []
     vus: set[int] = set()
 
     # ── Changements d'état ───────────────────────────────────────────────────
-    etats = _evolutions(ctx, "etat")
-    for evol, tk in etats:
+    for evol, tk in _evolutions(ctx, "etat"):
         if not ticket_visible(tk, ctx.user):
             continue
         vus.add(tk.id)
         nouveau = evol.nouveau_statut or ""
         if nouveau == "résolu":
-            #  🔴 `00j23h54'`, et non un arrondi décimal d'heures (01/09/2026,
-            #  demandé à l'écran). « Résolu en 23.9h » n'a de sens nulle part
-            #  ailleurs sur le site et se convertit de tête ; le point décimal
-            #  était en prime un point sur un site intégralement en français.
-            #  Les unités sont portées : `00:00:30` se lisait trente secondes
-            #  alors qu'il voulait dire trente minutes.
-            #  Le format vit dans `dates_fr.duree_jhm` — une durée EST un format.
-            duree = None
-            if tk.ferme_le and tk.cree_le:
-                duree = duree_jhm(tk.ferme_le - tk.cree_le)
-            cartes.append(
-                FluxItem(
-                    id=f"tk_{tk.id}",
-                    type="ticket_resolu",
-                    date=evol.cree_le,
-                    cree_le=tk.cree_le,
-                    titre=tk.titre,
-                    #  ⚠️ `is not None` et non `if duree`. L'ancien code testait un
-                    #  FLOAT : une résolution en moins de six minutes s'arrondissait à
-                    #  `0.0`, donc falsy, et la mention disparaissait — le ticket le
-                    #  plus vite résolu était le seul à ne pas le dire. `duree_jhm`
-                    #  rend `None` sur une donnée incohérente, jamais sur un zéro.
-                    detail=f"Résolu{f' en {duree}' if duree is not None else ''}",
-                    icon="✅",
-                    badges=badges_ticket(tk),
-                    lien="/tickets",
-                    meta={
-                        **_meta_ticket(ctx, tk),
-                        "statut": "résolu",
-                        #  Le nom dit désormais ce que la valeur EST : plus des heures
-                        #  décimales, mais `00j23h54'`. Aucun écran ne la lisait — le
-                        #  renommer maintenant évite qu'un futur lecteur croie à un nombre.
-                        "duree": duree,
-                        "cloture_le": tk.ferme_le.isoformat() if tk.ferme_le else None,
-                        #  Même règle que les trois autres cartes de ticket : une photo
-                        #  jointe au commentaire de clôture doit se voir.
-                        **pieces_de_evolution(evol, tk),
-                    },
-                )
-            )
+            candidates.append((tk.id, evol.cree_le, evol, tk, _carte_resolue))
         elif nouveau in STATUTS_TICKET_ACTIFS:
-            cartes.append(
-                _carte_mise_a_jour(
-                    ctx,
-                    evol,
-                    tk,
-                    ident=f"tk_{tk.id}",
-                    detail="Réouvert" if nouveau == "ouvert" else "Pris en charge",
-                    icon="🔧",
-                    statut=nouveau,
-                )
+            fabrique = partial(
+                _carte_mise_a_jour,
+                ident=f"tk_{tk.id}",
+                detail="Réouvert" if nouveau == "ouvert" else "Pris en charge",
+                icon="🔧",
+                statut=nouveau,
             )
+            candidates.append((tk.id, evol.cree_le, evol, tk, fabrique))
 
     # ── Réponses du CS et commentaires ───────────────────────────────────────
     for type_evolution, prefixe, detail, icon in _MISES_A_JOUR:
@@ -229,17 +262,14 @@ def collecter(ctx: ContexteFlux) -> list[FluxItem]:
             if est_correction(evol):
                 continue
             vus.add(tk.id)
-            cartes.append(
-                _carte_mise_a_jour(
-                    ctx,
-                    evol,
-                    tk,
-                    ident=f"{prefixe}_{evol.id}",
-                    detail=detail,
-                    icon=icon,
-                    statut=tk.statut,
-                )
+            fabrique = partial(
+                _carte_mise_a_jour,
+                ident=f"{prefixe}_{evol.id}",
+                detail=detail,
+                icon=icon,
+                statut=tk.statut,
             )
+            candidates.append((tk.id, evol.cree_le, evol, tk, fabrique))
 
     # ── Tickets récemment créés, sans aucune évolution ───────────────────────
     for tk in ctx.session.exec(
@@ -249,30 +279,23 @@ def collecter(ctx: ContexteFlux) -> list[FluxItem]:
     ).all():
         if tk.id in vus or not ticket_visible(tk, ctx.user):
             continue
-        cartes.append(
-            FluxItem(
-                id=f"tk_{tk.id}",
-                type="ticket_ouvert",
-                date=tk.cree_le,
-                cree_le=tk.cree_le,
-                titre=tk.titre,
-                detail="Nouveau ticket",
-                icon="🎫",
-                badges=badges_ticket(tk),
-                lien="/tickets",
-                meta={
-                    **_meta_ticket(ctx, tk),
-                    "statut": tk.statut,
-                    "photos_urls": parse_photos(tk.photos_urls),
-                    "fichiers_urls": parse_photos(tk.fichiers_urls),
-                },
-            )
-        )
+        candidates.append((tk.id, tk.cree_le, None, tk, _carte_ouverte))
 
     # Un seul événement par ticket dans le fil : le plus récent.
-    dernier: dict[int, FluxItem] = {}
-    for carte in cartes:
-        tid = carte.meta.get("ticket_id")
-        if tid not in dernier or carte.date > dernier[tid].date:
-            dernier[tid] = carte
-    return list(dernier.values())
+    retenues: dict[int, tuple] = {}
+    for candidate in candidates:
+        tid, date = candidate[0], candidate[1]
+        if tid not in retenues or date > retenues[tid][1]:
+            retenues[tid] = candidate
+    #  Les personnes que les cartes nomment, lues d'un coup ; la liste les retient
+    #  le temps de la fabrication (`recuperer.precharger`).
+    _personnes = precharger(
+        ctx.session,
+        Utilisateur,
+        {
+            i
+            for _, _, evol, tk, _ in retenues.values()
+            for i in (tk.auteur_id, tk.saisi_pour_user_id, evol.auteur_id if evol else None)
+        },
+    )
+    return [fabrique(ctx, evol, tk) for _, _, evol, tk, fabrique in retenues.values()]

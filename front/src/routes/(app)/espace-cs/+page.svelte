@@ -70,7 +70,9 @@
 	//  charge de toute façon : elles servent aux deux à rapprocher un nom saisi
 	//  d'un inscrit et d'un logement (`$lib/annuaire-rapprochement`).
 	/** Non vide = une donnée de référence manque : l'écran est faux, pas vide. */
-	let erreurReference = '';
+	let erreurBatiments = '';
+	let erreurAnnuaire = '';
+	$: erreurReference = messagePartiel(erreurBatiments, erreurAnnuaire);
 	let allUsers: Inscrit[] = [];
 	let allLots: LotRapproche[] = [];
 	let lotImports: LigneImport[] = [];
@@ -80,29 +82,18 @@
 	quandAuthResolue(() => {
 		if ($isCS) charger();
 	});
+	//  🔴 L'onglet Validations n'attend que SES lectures (#1843). Il attendait
+	//  aussi les inscrits, les lots et les imports de lots, qui ne servent qu'à
+	//  l'Annuaire — dont `/lots/admin/imports`, l'une des routes les plus lentes
+	//  du serveur : +210 ms à chaque ouverture de l'Espace CS.
 	async function charger() {
 		try {
-			//  🔴 Quatre données de RÉFÉRENCE (#522) : elles ne s'affichent nulle
-			//  part, elles garnissent `batimentsMap` et les rapprochements de lots.
-			//  Un échec ne vidait aucune liste — il faisait afficher « Bât. ? »
-			//  partout et rendait le rapprochement automatique muet, sans que rien
-			//  ne distingue « aucune correspondance » de « je n'ai pas cherché ».
-			const [
-				comptes,
-				commandes,
-				[batList, eBat],
-				[users, eUsers],
-				[lotsData, eLots],
-				[importsData, eImports],
-			] = await Promise.all([
+			const [comptes, commandes, [batList, eBat]] = await Promise.all([
 				adminApi.comptesEnAttente(),
 				adminApi.commandesAccesEnAttente(),
 				essayer<{ id: number; numero: string }[]>(authApi.batiments(), []),
-				essayer(adminApi.utilisateurs(), []),
-				essayer(lotsApi.tous(), []),
-				essayer(lotsApi.listImports(), []),
 			]);
-			erreurReference = messagePartiel(eBat, eUsers, eLots, eImports);
+			erreurBatiments = eBat;
 			comptesEnAttente = comptes;
 			//  🔴 Le type du CLIENT, et non un type local (#1679) : `PendingAcces`
 			//  lisait un demandeur et un lot que la route ne rendait pas, et une
@@ -110,21 +101,46 @@
 			//  rend désormais `demandeur_nom`, `lot` et `batiment`.
 			commandesEnAttente = commandes;
 			batimentsMap = Object.fromEntries(batList.map((b) => [b.id, `Bât. ${b.numero}`]));
-			allUsers = users.map((u) => ({
-				id: u.id,
-				prenom: u.prenom,
-				nom: u.nom,
-				email: u.email,
-				telephone: u.telephone ?? null,
-				batiment_id: u.batiment_id ?? null,
-			}));
-			allLots = lotsData as LotRapproche[];
-			lotImports = importsData;
 		} catch {
 			toast('error', 'Erreur de chargement');
 		} finally {
 			loading = false;
 		}
+	}
+
+	//  Les données de RÉFÉRENCE de l'Annuaire se lisent à l'ouverture de
+	//  l'Annuaire, une fois (#1843) — et ses deux annuaires ne se montent qu'une
+	//  fois LUES : une donnée « pas encore là » ne doit pas se lire « aucune
+	//  correspondance » (#522).
+	let referenceDemandee = false;
+	let referenceLue = false;
+	$: if (onglet === 'annuaire' && $authResolue && $isCS && !referenceDemandee) {
+		referenceDemandee = true;
+		chargerReference();
+	}
+	async function chargerReference() {
+		//  🔴 Trois données de RÉFÉRENCE (#522) : elles ne s'affichent nulle
+		//  part, elles garnissent les rapprochements d'un nom saisi avec un inscrit
+		//  et un logement. Un échec ne vidait aucune liste — il rendait le
+		//  rapprochement automatique muet, sans que rien ne distingue « aucune
+		//  correspondance » de « je n'ai pas cherché ».
+		const [[users, eUsers], [lotsData, eLots], [importsData, eImports]] = await Promise.all([
+			essayer(adminApi.utilisateurs(), []),
+			essayer(lotsApi.tous(), []),
+			essayer(lotsApi.listImports(), []),
+		]);
+		erreurAnnuaire = messagePartiel(eUsers, eLots, eImports);
+		allUsers = users.map((u) => ({
+			id: u.id,
+			prenom: u.prenom,
+			nom: u.nom,
+			email: u.email,
+			telephone: u.telephone ?? null,
+			batiment_id: u.batiment_id ?? null,
+		}));
+		allLots = lotsData as LotRapproche[];
+		lotImports = importsData;
+		referenceLue = true;
 	}
 
 	// -- Validations handlers -----------------------------------------------
@@ -355,14 +371,22 @@
 		<div class="annuaire-section-header">
 			<h2 class="section-title">Conseil Syndical</h2>
 		</div>
-		<AnnuaireConseil {sources} />
+		{#if referenceLue}
+			<AnnuaireConseil {sources} />
+		{:else}
+			<EtatListe chargement />
+		{/if}
 	</section>
 
 	<section class="annuaire-section">
 		<div class="annuaire-section-header">
 			<h2 class="section-title">Syndic</h2>
 		</div>
-		<AnnuaireSyndic {sources} />
+		{#if referenceLue}
+			<AnnuaireSyndic {sources} />
+		{:else}
+			<EtatListe chargement />
+		{/if}
 	</section>
 {/if}
 

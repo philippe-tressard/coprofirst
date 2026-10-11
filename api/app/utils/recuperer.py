@@ -138,6 +138,27 @@ def ou_rien(session: Session, modele: Type[T], ident: Optional[int]) -> Optional
     return session.get(modele, ident) if ident is not None else None
 
 
+def precharger(session: Session, modele: Type[T], idents) -> list[T]:
+    """Charge d'UNE requête les lignes `idents` de `modele` dans la session (#1838).
+
+    `session.get` (et donc `ou_rien`) lit d'abord la carte d'identité de la
+    session : une ligne déjà chargée ne coûte plus de requête. Une liste qui
+    lirait l'auteur de chaque affaire par `ou_rien` paie donc une requête par
+    affaire — sauf si ces auteurs ont été préchargés ici, en une fois. Les
+    lectures unitaires restent écrites comme pour un objet seul.
+
+    Les identifiants vides sont ignorés ; un identifiant inconnu ne lève rien
+    (`ou_rien` rendra `None`, comme avant).
+
+    🔴 **Garder la liste rendue tant que les lectures durent.** La carte
+    d'identité ne retient ses lignes que FAIBLEMENT : une liste jetée aussitôt
+    est libérée aussitôt, et chaque `session.get` repart en base — le
+    préchargement aurait coûté une requête de plus, sans rien épargner.
+    """
+    voulus = {i for i in idents if i is not None}
+    return list(session.exec(select(modele).where(modele.id.in_(voulus))).all()) if voulus else []
+
+
 #: La FENÊTRE d'un historique d'exploitation : on ne lit que les derniers
 #: rapports. Au-delà, ils n'apprennent plus rien — la santé d'une tâche se lit
 #: sur ses dernières exécutions, pas sur un an d'archives.

@@ -150,7 +150,14 @@
 
 	//  Montage
 	onMount(async () => {
-		await loadSiteConfig();
+		//  🔴 Les files de « À traiter » partent D'ABORD, sans attendre le
+		//  paramétrage (#1842). Elles venaient après trois lectures en série
+		//  (coquille, `/config/admin`, `/config/legal`) qui ne servent qu'aux
+		//  onglets de réglage : +225 ms à chaque ouverture de l'administration.
+		loadBatiments();
+		loadComptes();
+		loadCommandes();
+		loadDemandesProfil();
 		// Paramétrage site — lu depuis `/config/admin` (require_admin) et NON depuis le
 		// store : depuis l'audit de sécurité du 26/07/2026, `/api/config` est filtré par
 		// liste blanche et n'expose plus que les clés de la coquille d'interface. Les
@@ -159,8 +166,12 @@
 		// pour afficher cet écran. Les clés légales en sont exclues (perf) : route dédiée.
 		//  🔴 Lu UNE fois (il l'était deux) et jamais en silence (#1459) : un échec
 		//  laissait les textes légaux vides, et « Enregistrer » les effaçait.
-		const [adminCfg, eAdmin] = await essayer(configApi.admin(), {} as Record<string, string>);
-		const [legal, eLegal] = await essayer(configApi.legal(), {} as Record<string, string>);
+		//  Les trois lectures partent ENSEMBLE ; aucune ne dépend d'une autre.
+		const [, [adminCfg, eAdmin], [legal, eLegal]] = await Promise.all([
+			loadSiteConfig(),
+			essayer(configApi.admin(), {} as Record<string, string>),
+			essayer(configApi.legal(), {} as Record<string, string>),
+		]);
 		erreurParametrage = messagePartiel(eAdmin, eLegal);
 		const cfg = { ...(get(configStore) as Record<string, string>), ...adminCfg };
 		siteConfig = lireConfigSite(cfg, {
@@ -172,10 +183,7 @@
 		// WhatsApp : la configuration part telle quelle vers l'onglet dédié.
 		waCfgPublique = cfg;
 		smtpValeurs = adminCfg;
-		loadBatiments();
-		loadComptes();
-		loadCommandes();
-		loadDemandesProfil();
+		parametrageLu = true;
 	});
 
 	// ── Paramétrage site ──────────────────────────────────────────
@@ -183,6 +191,11 @@
 	let siteSaving = false;
 	$: siteManagerUsers = utilisateurs.filter((u) => !!u.email && aRole(u, 'admin'));
 	let erreurParametrage = '';
+	//  🔴 Un onglet de réglage ne se monte qu'une fois le paramétrage LU (#1842) :
+	//  ses composants lisent leurs valeurs à leur montage, et un formulaire monté
+	//  sur les défauts écraserait la configuration en l'enregistrant (#1459).
+	//  Les files de « À traiter » ne l'attendent plus, ces onglets-là l'attendent.
+	let parametrageLu = false;
 	async function saveSiteConfig() {
 		siteSaving = true;
 		try {
@@ -287,6 +300,8 @@
 			<OngletModelesEmail />
 		{/snippet}
 	</ChargementDiffere>
+{:else if !parametrageLu && ONGLETS_DU_PARAMETRAGE.includes(onglet)}
+	<EtatListe chargement />
 {:else if erreurParametrage && ONGLETS_DU_PARAMETRAGE.includes(onglet)}
 	<EtatListe erreur={erreurParametrage} titreErreur={TITRE_PARAMETRAGE_ILLISIBLE} />
 {:else if onglet === 'services'}

@@ -232,6 +232,14 @@ def modifier(entite_id: int, body: EntiteUpdate, session: Session = Depends(get_
   (`app/utils/lecture.py`) — jamais `EntiteRead(id=obj.id, nom=obj.nom, …)`,
   où un champ oublié part à son défaut sans un mot.
   🔒 `test_lecture_colonne_par_colonne.py` (#1563).
+- **Une LISTE ne lit pas une table par élément** (#1838) : ce que chaque ligne
+  lit autour d'elle (auteur, bâtiment, compte, repli) se lit UNE fois pour la
+  liste — `recuperer.precharger(session, Modele, ids)` pour les `session.get` /
+  `ou_rien` (garder la liste rendue : la session ne retient ses lignes que
+  faiblement), une requête groupée (`group_by`, `in_`) pour le reste. Modèle :
+  `routers/tickets/lecture_groupee.py`, où l'objet seul passe par le même
+  chemin avec une liste d'un élément. 🔒 `test_requetes_listes_affaires.py` : le
+  compte de requêtes de `/tickets` et `/flux` est le même pour 5 et 40 affaires.
 - **Suppression** : physique réservée à `require_admin`. Ce que le résident voit
   disparaître s'**archive** (`utils/archivage`), il ne se supprime pas.
 - Une règle d'appartenance (« cet objet est-il le mien ? ») va dans
