@@ -44,12 +44,7 @@ const CONTRAT_OTIS = {
 	actif: true,
 };
 
-async function ouvrirAnnuaire(page: Page, baseURL: string | undefined) {
-	//  ⚠️ `/prestataires` a une garde SERVEUR (`+page.server.ts`) : sans cookie de
-	//  session, elle renvoie vers la connexion avant que l'API simulée ne serve
-	//  quoi que ce soit. Elle n'en regarde que la PRÉSENCE — la valeur est un
-	//  témoin, que l'API simulée ne lit jamais.
-	await page.context().addCookies([{ name: 'access_token', value: 'temoin', url: baseURL }]);
+async function ouvrirAnnuaire(page: Page) {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/prestataires') return [OTIS, PLOMBIER];
 		if (chemin === '/api/prestataires/contrats') return [CONTRAT_OTIS];
@@ -60,11 +55,8 @@ async function ouvrirAnnuaire(page: Page, baseURL: string | undefined) {
 	await expect(page.locator('#presta-2')).toBeVisible();
 }
 
-test('la carte dit « Sous contrat » d’après ses contrats, et seulement alors', async ({
-	page,
-	baseURL,
-}) => {
-	await ouvrirAnnuaire(page, baseURL);
+test('la carte dit « Sous contrat » d’après ses contrats, et seulement alors', async ({ page }) => {
+	await ouvrirAnnuaire(page);
 	await expect(page.locator('#presta-1')).toContainText('Sous contrat (1)');
 	await expect(page.locator('#presta-2')).not.toContainText('Sous contrat');
 	//  La catégorie dit le métier, la même pour les deux.
@@ -72,8 +64,8 @@ test('la carte dit « Sous contrat » d’après ses contrats, et seulement alor
 	await expect(page.locator('#presta-2')).toContainText('Maintenance & dépannage');
 });
 
-test('le filtre sépare les prestataires sous contrat des autres', async ({ page, baseURL }) => {
-	await ouvrirAnnuaire(page, baseURL);
+test('le filtre sépare les prestataires sous contrat des autres', async ({ page }) => {
+	await ouvrirAnnuaire(page);
 	const filtre = page.getByRole('group', { name: 'Contrat', exact: true });
 
 	await filtre.getByRole('button', { name: /Sous contrat/ }).click();
@@ -95,9 +87,8 @@ test('le filtre sépare les prestataires sous contrat des autres', async ({ page
  */
 test('la recherche retrouve un prestataire par son équipement, ses contacts, sans accents', async ({
 	page,
-	baseURL,
 }) => {
-	await ouvrirAnnuaire(page, baseURL);
+	await ouvrirAnnuaire(page);
 	await expect(page.getByRole('group', { name: 'Filtrer par équipement' })).toHaveCount(0);
 	const recherche = page.getByRole('searchbox', { name: 'Recherche' });
 	//  Le champ tient dans l'écran — au téléphone, il en sortait (422 px pour 363).
@@ -127,10 +118,9 @@ test('la recherche retrouve un prestataire par son équipement, ses contacts, sa
  */
 test('sur ordinateur, la recherche en tête, puis la catégorie et le contrat', async ({
 	page,
-	baseURL,
 }, info) => {
 	test.skip(info.project.name !== 'bureau', 'la grille à deux colonnes vaut pour un ordinateur');
-	await ouvrirAnnuaire(page, baseURL);
+	await ouvrirAnnuaire(page);
 	const haut = async (nom: string) =>
 		(await page.getByRole('group', { name: nom, exact: true }).boundingBox())!;
 	const type = await haut('Catégorie');

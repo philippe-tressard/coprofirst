@@ -45,10 +45,8 @@ const METRIQUES = {
 	],
 };
 
-async function ouvrir(page: Page, baseURL: string | undefined, metriques: object = METRIQUES) {
+async function ouvrir(page: Page, metriques: object = METRIQUES) {
 	const demandes: string[] = [];
-	//  `/prestataires` a une garde SERVEUR qui ne regarde que la PRÉSENCE du cookie.
-	await page.context().addCookies([{ name: 'access_token', value: 'temoin', url: baseURL }]);
 	await simulerApi(page, (api) => {
 		if (api === '/api/prestataires') return [OTIS];
 		if (api === '/api/prestataires/1/metriques') return metriques;
@@ -71,8 +69,8 @@ test.beforeEach(async ({ page }, info) => {
 	if (info.project.name === 'mobile') await page.setViewportSize({ width: 375, height: 812 });
 });
 
-test('rien n’est demandé avant de déplier la fiche', async ({ page, baseURL }) => {
-	const demandes = await ouvrir(page, baseURL);
+test('rien n’est demandé avant de déplier la fiche', async ({ page }) => {
+	const demandes = await ouvrir(page);
 	await expect(page.locator('#presta-1')).toBeVisible(); //  cas zéro
 	await expect(page.getByText('Affaires traitées')).toHaveCount(0);
 	expect(demandes).toEqual([]);
@@ -80,9 +78,8 @@ test('rien n’est demandé avant de déplier la fiche', async ({ page, baseURL 
 
 test('dépliée : l’étape « Chez le prestataire », les tuiles et chaque exercice', async ({
 	page,
-	baseURL,
 }) => {
-	await ouvrir(page, baseURL);
+	await ouvrir(page);
 	const carte = await deplier(page);
 	const bloc = carte.locator('section.metriques-presta');
 	await expect(bloc).toContainText('Affaires traitées — conseil syndical');
@@ -101,8 +98,8 @@ test('dépliée : l’étape « Chez le prestataire », les tuiles et chaque exe
 	expect(deborde, 'défilement horizontal de la page').toBe(false);
 });
 
-test('sans affaire close, la fiche le dit', async ({ page, baseURL }) => {
-	await ouvrir(page, baseURL, {
+test('sans affaire close, la fiche le dit', async ({ page }) => {
+	await ouvrir(page, {
 		prestataire_id: 1,
 		ensemble: resume(0, null, null),
 		exercices: [],

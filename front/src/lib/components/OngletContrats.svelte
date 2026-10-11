@@ -103,8 +103,11 @@
 	//  que la liste, qui appartient à l'onglet puisque c'est lui qui l'affiche.
 	let contratDocsMap: Record<number, Document[]> = {};
 
-	/** Les contrats rangés — `archivee` vient du serveur (`REGLES["contrat"]`). */
-	let archives: ContratEntretien[] = [];
+	/** Les contrats rangés — `archivee` vient du serveur (`REGLES["contrat"]`) ;
+	 *  `null` tant qu'ils ne sont pas lus. La page les lit avec ses listes quand
+	 *  elle s'ouvre sur cet onglet (#1845) ; sinon l'onglet les demande. */
+	export let archives: ContratEntretien[] | null = null;
+	$: rangees = archives ?? [];
 
 	// ── Échéances des contrats ────────────────────────────────────
 	//  🔴 L'onglet « Visites » lisait ces mêmes contrats dans un écran à part
@@ -150,8 +153,8 @@
 
 	onMount(async () => {
 		//  Sans message : un échec laisse simplement la section absente.
-		[archives] = await essayer(prestApi.contratsArchives(), []);
-		await chargerDocs([...contrats, ...archives]);
+		if (archives === null) [archives] = await essayer(prestApi.contratsArchives(), []);
+		await chargerDocs([...contrats, ...(archives ?? [])]);
 	});
 
 	function resetContratForm() {
@@ -268,7 +271,7 @@
 
 	/** 📦 Ranger (`true`) ou ressortir (`false`) un contrat — un geste, un mot. */
 	async function archiver(id: number, archivee: boolean) {
-		const libelle = [...contrats, ...archives].find((c) => c.id === id)?.libelle ?? '';
+		const libelle = [...contrats, ...rangees].find((c) => c.id === id)?.libelle ?? '';
 		await archiverPuis(`Le contrat « ${libelle} »`, 'les Archives', archivee, async () => {
 			await prestApi.archiverContrat(id, archivee);
 			[contrats, archives] = await Promise.all([prestApi.contrats(), prestApi.contratsArchives()]);
@@ -336,7 +339,7 @@
 </div>
 
 <!-- Groupé par spécialité du prestataire -->
-{#if contrats.length === 0 && archives.length === 0}
+{#if contrats.length === 0 && rangees.length === 0}
 	<div class="empty-state card">
 		<h3>Aucun contrat</h3>
 		<p>Ajoutez le premier contrat via le bouton ci-dessus.</p>
@@ -345,7 +348,7 @@
 	<!--  Le même rendu, deux fois : les contrats courants, puis les Archives
 	      repliées sous la liste — `items` est la seule différence. -->
 	<ListeEtArchives
-		liste={[...contrats, ...archives]}
+		liste={[...contrats, ...rangees]}
 		titreVideCourant="Aucun contrat actif"
 		messageVideCourant="Les contrats archivés sont rangés dans les Archives, ci-dessous."
 		let:items

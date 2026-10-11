@@ -7,8 +7,9 @@
 
   📦 Les fiches rangées ont leur écran depuis le 02/10/2026 (#1538) : la section
   Archives sous la liste, par `ListeEtArchives` — le motif des trois onglets de
-  la Communauté. L'onglet les charge lui-même (`archives()`) : la page partage
-  sa liste avec les contrats et les relevés, qui n'ont pas à les voir.
+  la Communauté. La page les lit avec ses listes quand l'onglet est celui
+  qu'elle ouvre (#1845) ; sinon l'onglet les demande à son montage (`null`).
+  Les contrats et les relevés n'ont pas à les voir.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -59,14 +60,15 @@
 	let prestForm = prestataireDepuis();
 	let prestContacts = contactsDepuis();
 
-	/** Les fiches rangées — `archivee` vient du serveur (`REGLES["prestataire"]`). */
-	let archives: Prestataire[] = [];
+	/** Les fiches rangées — `archivee` vient du serveur (`REGLES["prestataire"]`) ;
+	 *  `null` tant qu'elles ne sont pas lues. */
+	export let archives: Prestataire[] | null = null;
 
 	let filtres = filtresVides();
 	$: filteredPrests = filtrerPrestataires(prestataires, contrats, filtres);
 	//  Les filtres valent aussi pour les Archives : chercher « ascenseur » doit
 	//  retrouver l'ancien ascensoriste rangé.
-	$: archivesFiltrees = filtrerPrestataires(archives, contrats, filtres);
+	$: archivesFiltrees = filtrerPrestataires(archives ?? [], contrats, filtres);
 	$: compactPrests = filteredPrests.length > 7;
 
 	//  Tous les contrats du prestataire, assurances et mandats compris : la carte
@@ -88,7 +90,7 @@
 	//  portait (elle s'ouvre sur « Contrats » par défaut — signalé le 28/07/2026).
 	onMount(() => {
 		//  Sans message : un échec laisse simplement la section absente.
-		essayer(prestApi.archives(), []).then(([a]) => (archives = a));
+		if (archives === null) essayer(prestApi.archives(), []).then(([a]) => (archives = a));
 		const idPresta = cibleDuHash('presta');
 		if (idPresta === null) return;
 		ouvert = idPresta;
@@ -150,7 +152,7 @@
 
 	/** 📦 Ranger (`true`) ou ressortir (`false`) une fiche — un geste, un mot. */
 	async function archiver(id: number, archivee: boolean) {
-		const nom = [...prestataires, ...archives].find((p) => p.id === id)?.nom ?? '';
+		const nom = [...prestataires, ...(archives ?? [])].find((p) => p.id === id)?.nom ?? '';
 		await archiverPuis(`Le prestataire « ${nom} »`, 'les Archives', archivee, async () => {
 			await prestApi.archiver(id, archivee);
 			[prestataires, archives] = await Promise.all([prestApi.list(), prestApi.archives()]);

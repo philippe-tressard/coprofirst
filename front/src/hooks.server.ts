@@ -5,9 +5,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	//  n'inspecte pas : il laisse passer, et c'est voulu.
 	//
 	//  🔴 Il a longtemps affirmé que « la protection des routes se fait dans
-	//  +page.server.ts de chaque section ». C'était FAUX : deux fichiers
-	//  seulement en portent une (`routes/` et `prestataires/`), et elle n'y sert
-	//  qu'à éviter deux appels d'API à un visiteur manifestement déconnecté.
+	//  +page.server.ts de chaque section ». C'était FAUX : un seul fichier en
+	//  porte une, `routes/+page.server.ts` — la racine, qui trie —, et elle n'y
+	//  sert qu'à éviter deux appels d'API à un visiteur manifestement déconnecté.
+	//  Celle de `prestataires/` est partie (#1845) : elle ne protégeait rien, et
+	//  son existence faisait demander `__data.json` à chaque arrivée sur l'écran.
 	//
 	//  La protection réelle est ailleurs, et à trois niveaux :
 	//    • `(app)/+layout.svelte` — la garde centrale, qui charge l'utilisateur

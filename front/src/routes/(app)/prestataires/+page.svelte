@@ -5,6 +5,13 @@
 	//  qu'ils partagent : le chargement des trois listes, l'en-tête et ses
 	//  boutons « + Nouveau … », la barre d'onglets.
 	//
+	//  ⏱ Les archives de l'onglet AFFICHÉ partent avec ces trois listes (#1845).
+	//  Demandées par l'onglet, elles attendaient qu'il se monte, donc que les
+	//  listes soient arrivées : une seconde vague, +130 ms à chaque ouverture.
+	//  La page ne les lit pas ; elle les tient, comme les listes, pour qu'un
+	//  onglet quitté puis rouvert les retrouve. `null` = pas encore lues :
+	//  l'onglet ouvert ensuite les demande lui-même.
+	//
 	//  🔴 Le vocabulaire des prestataires vit dans `$lib/prestataires.ts`, pas
 	//  dans un écran. La table des équipements écrite ici recopiait
 	//  `TypeEquipement` et en OUBLIAIT deux valeurs — `assurance` et `syndic`,
@@ -12,6 +19,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { tenter } from '$lib/erreurs';
+	import { essayer } from '$lib/chargement';
 	import {
 		prestataires as prestApi,
 		type ContratEntretien,
@@ -37,6 +45,8 @@
 	let prestataires: Prestataire[] = [];
 	let contrats: ContratEntretien[] = [];
 	let notations: Notation[] = [];
+	let archivesPrestataires: Prestataire[] | null = null;
+	let archivesContrats: ContratEntretien[] | null = null;
 	let loading = true;
 
 	// ── Onglets (3) ────────────────────────────────────────────────
@@ -63,6 +73,11 @@
 
 	onMount(async () => {
 		//  Sans message de succès : un chargement réussi n'annonce rien.
+		//  Les archives sans message : un échec laisse la section absente.
+		const archives = Promise.all([
+			onglet === 'prestataires' ? essayer(prestApi.archives(), []) : null,
+			onglet === 'contrats' ? essayer(prestApi.contratsArchives(), []) : null,
+		]);
 		await tenter(async () => {
 			[prestataires, contrats, notations] = await Promise.all([
 				prestApi.list(),
@@ -70,6 +85,9 @@
 				prestApi.notations(),
 			]);
 		});
+		const [aPrest, aContrats] = await archives;
+		if (aPrest) archivesPrestataires = aPrest[0];
+		if (aContrats) archivesContrats = aContrats[0];
 		loading = false;
 
 		// Lien profond `#presta-<id>` : la page s'ouvre sur « Contrats », et une
@@ -130,6 +148,7 @@
 		bind:creationOuverte={creationContrat}
 		bind:contrats
 		bind:notations
+		bind:archives={archivesContrats}
 		{prestataires}
 	/>
 {:else if onglet === 'prestataires'}
@@ -138,6 +157,7 @@
 		bind:creationOuverte={creationPrestataire}
 		bind:prestataires
 		bind:notations
+		bind:archives={archivesPrestataires}
 		{contrats}
 	/>
 {:else if onglet === 'consommations'}

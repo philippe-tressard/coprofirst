@@ -22,9 +22,7 @@ const prestataire = (id: number, nom: string, type: string, archivee = false) =>
 	archivee,
 });
 
-async function ouvrir(page: Page, baseURL: string | undefined) {
-	//  `/prestataires` a une garde SERVEUR qui ne regarde que la PRÉSENCE du cookie.
-	await page.context().addCookies([{ name: 'access_token', value: 'temoin', url: baseURL }]);
+async function ouvrir(page: Page) {
 	await simulerApi(page, (api) => {
 		if (api === '/api/prestataires')
 			return [
@@ -44,9 +42,8 @@ const comptes = (page: Page, libelle: string) => rangee(page, libelle).locator('
 
 test('annuaire : la pastille retenue de chaque rangée compte les fiches affichées', async ({
 	page,
-	baseURL,
 }) => {
-	await ouvrir(page, baseURL);
+	await ouvrir(page);
 	await expect(page.locator('#presta-1')).toBeVisible(); //  cas zéro
 
 	//  « Tous » retenu dans les deux rangées : trois fiches, l'archivée à part.
