@@ -5,6 +5,7 @@
 	import FiltresAffaires from '$lib/components/FiltresAffaires.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import { onMount } from 'svelte';
+	import { marquerDonneesAffichees } from '$lib/telemetry';
 	import { goto } from '$app/navigation';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	//  ⏱ Le Kanban attend le passage sur son onglet (#1844).
@@ -122,6 +123,7 @@
 			erreur = messageErreur(e, 'Erreur de chargement');
 		} finally {
 			loading = false;
+			marquerDonneesAffichees();
 		}
 	});
 

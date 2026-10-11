@@ -36,6 +36,9 @@ const LONGUEUR_DETAIL = 100;
  *  `api/app/utils/mesures_affichage.py`. */
 const ACTION_MESURE = 'perf';
 const DUREE_MAX_MS = 60_000;
+/** Les indicateurs d'une durée d'affichage. ⚠️ Tenus avec `INDICATEURS` de
+ *  `api/app/utils/mesures_affichage.py` — `test_mesures_affichage.py` les compare. */
+export const INDICATEURS = ['chargement', 'navigation', 'donnees'] as const;
 
 const buffer: { page: string; action: string; detail?: string }[] = [];
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -109,10 +112,22 @@ export function codeHttp(status: number, chemin: string): string {
 
 /** Le début de la navigation en cours — `performance.now()`, ou `null`. */
 let debutNavigation: number | null = null;
+/** Le début de l'écran affiché, pour `donnees` — `null` une fois mesuré. Le
+ *  premier écran commence à l'ouverture de l'onglet (`0`, l'origine de
+ *  `performance.now()`), les suivants à `commencerNavigation`. */
+let debutEcran: number | null = 0;
 
 /** À appeler par `beforeNavigate` : une navigation commence. */
 export function commencerNavigation() {
-	if (typeof performance !== 'undefined') debutNavigation = performance.now();
+	if (typeof performance === 'undefined') return;
+	debutNavigation = debutEcran = performance.now();
+}
+
+/** Envoie une durée depuis `debut` — rien hors de `[0, DUREE_MAX_MS]`. */
+function envoyerDuree(indicateur: (typeof INDICATEURS)[number], debut: number) {
+	const duree = Math.round(performance.now() - debut);
+	if (duree < 0 || duree > DUREE_MAX_MS) return;
+	trackEvent(sansIdentifiants(window.location.pathname), ACTION_MESURE, `${indicateur}:${duree}`);
 }
 
 /**
@@ -131,10 +146,27 @@ export function mesurerNavigation(type: string) {
 	const indicateur = type === 'enter' ? 'chargement' : 'navigation';
 	const debut = type === 'enter' ? 0 : debutNavigation;
 	debutNavigation = null;
+	if (debut !== null) envoyerDuree(indicateur, debut);
+}
+
+/**
+ * **Les données principales de l'écran sont affichées** (#1846) — à appeler par
+ * l'écran, une fois ce qu'il montre d'abord arrivé et posé.
+ *
+ * `chargement` et `navigation` s'arrêtent à l'hydratation : la moitié de
+ * l'attente, celle des données, leur échappait (Affaires à chaud : 430 ms
+ * hydratée, 861 ms affichée). Cette durée part du même début et s'arrête au
+ * rendu suivant (`requestAnimationFrame`, puis la fin de la tâche : le dessin
+ * de la liste compte, #1840). Une fois par écran ; un écran qui ne l'appelle
+ * pas ne produit RIEN, jamais 0. 🔒 `npm run lint:donnees-affichees` exige
+ * l'appel des écrans de premier niveau.
+ */
+export function marquerDonneesAffichees() {
+	if (typeof window === 'undefined' || typeof performance === 'undefined') return;
+	const debut = debutEcran;
+	debutEcran = null;
 	if (debut === null) return;
-	const duree = Math.round(performance.now() - debut);
-	if (duree < 0 || duree > DUREE_MAX_MS) return;
-	trackEvent(sansIdentifiants(window.location.pathname), ACTION_MESURE, `${indicateur}:${duree}`);
+	requestAnimationFrame(() => setTimeout(() => envoyerDuree('donnees', debut)));
 }
 
 /** Signale une erreur vue à l'écran — une fois par page et par code, pour cet onglet. */

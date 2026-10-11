@@ -201,11 +201,13 @@ TELEMETRIE_ERREURS = (
     "Votre refus de la mesure d'audience les coupe aussi.</li>"
 )
 #: Les durées d'affichage des écrans (#1632) : par page, SANS rattachement au
-#: compte (`utils/mesures_affichage`). Écrite une fois : le gabarit et la
-#: migration 0252, qui l'insère dans le texte servi, la lisent ici.
+#: compte (`utils/mesures_affichage`). Écrite une fois : le gabarit, la migration
+#: 0252, qui l'insère dans le texte servi, et la 0282, qui y ajoute l'affichage des
+#: données (#1846), la lisent ici.
 TELEMETRIE_PERFORMANCE = (
-    "<li><strong>Durées d'affichage des écrans\xa0:</strong> le temps d'ouverture du site et "
-    "de passage d'un écran à l'autre, par page, mesurés dans votre navigateur "
+    "<li><strong>Durées d'affichage des écrans\xa0:</strong> le temps d'ouverture du site, "
+    "de passage d'un écran à l'autre et d'affichage de ses données, par page, mesurés dans "
+    "votre navigateur "
     "<strong>sans rattachement à votre compte</strong> et conservés 30\xa0jours. Elles servent "
     "à savoir quels écrans sont lents. Votre refus de la mesure d'audience les coupe aussi.</li>"
 )

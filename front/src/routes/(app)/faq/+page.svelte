@@ -9,6 +9,7 @@
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import EntetePage from '$lib/components/EntetePage.svelte';
 	import { onMount } from 'svelte';
+	import { marquerDonneesAffichees } from '$lib/telemetry';
 	import { cibleDuHash, revelerCible } from '$lib/deepLink';
 	import { faq as faqApi, manuel, type EntreeFaq } from '$lib/api';
 	import { isCS, currentUser } from '$lib/stores/auth';
@@ -86,6 +87,8 @@
 			erreur = messageErreur(e);
 		} finally {
 			loading = false;
+			//  Une fois par écran : un rechargement de la liste ne remesure rien.
+			marquerDonneesAffichees();
 		}
 	}
 

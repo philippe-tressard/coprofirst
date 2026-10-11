@@ -6,6 +6,7 @@
 	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
 	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import { onMount } from 'svelte';
+	import { marquerDonneesAffichees } from '$lib/telemetry';
 	import {
 		lots as lotsApi,
 		bailleur as bailApi,
@@ -130,6 +131,7 @@
 			toast('error', erreurLots);
 		} finally {
 			loading = false;
+			marquerDonneesAffichees();
 		}
 	});
 

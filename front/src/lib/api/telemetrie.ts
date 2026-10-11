@@ -20,9 +20,10 @@ export interface ResumeDurees {
 }
 
 /** Les durées d'affichage (#1632) — `utils/mesures_affichage.synthese_mesures`. */
+export type IndicateurDuree = 'chargement' | 'navigation' | 'donnees';
 export interface SyntheseDurees {
-	indicateurs: (ResumeDurees & { indicateur: 'chargement' | 'navigation' })[];
-	pages: (ResumeDurees & { page: string; indicateur: 'chargement' | 'navigation' })[];
+	indicateurs: (ResumeDurees & { indicateur: IndicateurDuree })[];
+	pages: (ResumeDurees & { page: string; indicateur: IndicateurDuree })[];
 }
 
 /** Un geste mesuré (#1633) — `utils/gestes_formulaire.synthese_gestes`. `geste` est

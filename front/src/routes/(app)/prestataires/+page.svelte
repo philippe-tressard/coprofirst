@@ -28,7 +28,7 @@
 	} from '$lib/api';
 	import { isCS } from '$lib/stores/auth';
 	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import { trackTabView } from '$lib/telemetry';
+	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
 	import { cibleDuHash } from '$lib/deepLink';
 	import { routeOnglet } from '$lib/routes-onglets';
 	import EntetePage from '$lib/components/EntetePage.svelte';
@@ -90,6 +90,7 @@
 		const [aPrest, aContrats] = await archives;
 		if (aPrest) archivesPrestataires = aPrest[0];
 		if (aContrats) archivesContrats = aContrats[0];
+		marquerDonneesAffichees();
 		loading = false;
 
 		// Lien profond `#presta-<id>` : la page s'ouvre sur « Contrats », et une

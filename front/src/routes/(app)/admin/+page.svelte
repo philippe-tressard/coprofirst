@@ -38,7 +38,7 @@
 	import RichEditor from '$lib/components/RichEditor.svelte';
 	import { IMPORT_TELECOMMANDES, IMPORT_VIGIK } from '$lib/imports-acces';
 	import OngletATraiter from '$lib/components/OngletATraiter.svelte';
-	import { trackTabView } from '$lib/telemetry';
+	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
 
 	//  Onglets
 	// 'sauvegardes' retiré le 02/08/2026 : ce bloc n'était accessible par AUCUN
@@ -154,10 +154,10 @@
 		//  paramétrage (#1842). Elles venaient après trois lectures en série
 		//  (coquille, `/config/admin`, `/config/legal`) qui ne servent qu'aux
 		//  onglets de réglage : +225 ms à chaque ouverture de l'administration.
-		loadBatiments();
-		loadComptes();
-		loadCommandes();
-		loadDemandesProfil();
+		//  Les quatre files arrivées : les données de l'onglet par défaut (#1846).
+		Promise.all([loadBatiments(), loadComptes(), loadCommandes(), loadDemandesProfil()]).then(() =>
+			marquerDonneesAffichees(),
+		);
 		// Paramétrage site — lu depuis `/config/admin` (require_admin) et NON depuis le
 		// store : depuis l'audit de sécurité du 26/07/2026, `/api/config` est filtré par
 		// liste blanche et n'expose plus que les clés de la coquille d'interface. Les

@@ -13,6 +13,7 @@
 	} from '$lib/components/ChampsIdentiteCopropriete.svelte';
 	import { tick } from 'svelte';
 	import { browser } from '$app/environment';
+	import { marquerDonneesAffichees } from '$lib/telemetry';
 	import { afterNavigate } from '$app/navigation';
 	import { isCS, isLocataire, isProprioOuCS, quandAuthResolue } from '$lib/stores/auth';
 	import {
@@ -207,9 +208,11 @@
 		} finally {
 			loading = false;
 		}
-		//  Après le rendu de la Fiche : l'élément visé doit exister.
+		//  Après le rendu de la Fiche : l'élément visé doit exister. Ouverte sur un
+		//  autre onglet, la page n'est mesurée qu'au passage sur la Fiche.
 		await tick();
 		revelerLienProfond();
+		marquerDonneesAffichees();
 	}
 
 	// ── Édition résidence ──────────────────────────────────────────────────────

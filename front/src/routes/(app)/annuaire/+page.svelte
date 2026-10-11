@@ -5,6 +5,7 @@
 	import CarteContact, { type Medaillon } from '$lib/components/CarteContact.svelte';
 	import QRCode from '$lib/components/QRCode.svelte';
 	import { onMount } from 'svelte';
+	import { marquerDonneesAffichees } from '$lib/telemetry';
 	import { annuaire as annuaireApi, type Annuaire, type MembreAnnuaireCS } from '$lib/api';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
@@ -60,6 +61,7 @@
 			toast('error', 'Erreur de chargement');
 		} finally {
 			loading = false;
+			marquerDonneesAffichees();
 		}
 
 		//  🔴 L'ancre `#syndic` ne suffit pas. Le navigateur applique le hash à

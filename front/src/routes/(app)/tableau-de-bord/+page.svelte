@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { messageErreur } from '$lib/erreurs';
 	import { onMount } from 'svelte';
+	import { marquerDonneesAffichees } from '$lib/telemetry';
 	import { relire } from '$lib/utils';
 	import KanbanTableauBord from '$lib/components/KanbanTableauBord.svelte';
 	import UrgencesAccueil from '$lib/components/UrgencesAccueil.svelte';
@@ -53,6 +54,7 @@
 			toast('error', 'Erreur chargement : ' + messageErreur(e));
 		} finally {
 			loading = false;
+			marquerDonneesAffichees();
 			setTimeout(() => {
 				ready = true;
 			}, 50);

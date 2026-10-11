@@ -23,7 +23,7 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
 	import { fmtDateShort } from '$lib/date';
-	import { trackTabView } from '$lib/telemetry';
+	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	import { agitPourAutrui } from '$lib/roles';
 	import { accepterCommandeAcces, refuserCommandeAcces } from '$lib/commandes-acces';
@@ -102,6 +102,7 @@
 			toast('error', 'Erreur de chargement');
 		} finally {
 			loading = false;
+			marquerDonneesAffichees();
 		}
 	}
 
