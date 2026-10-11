@@ -33,7 +33,7 @@
   d'écrire, périmée sur celle qu'on vient de corriger. Ce que l'objet n'a pas ne
   s'invente pas (`Gouttiere`).
 
-  ## Les pièces jointes d'une règle (11/10/2026, migration 0276)
+  ## Les pièces jointes d'une règle (11/10/2026, migration 0278)
 
   Une règle n'avait aucun fichier ; elle porte désormais jusqu'à dix annexes —
   le nuancier d'une couleur, la photo d'une haie. La section « Pièces jointes »

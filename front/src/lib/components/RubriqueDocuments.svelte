@@ -18,7 +18,7 @@
   `FormulaireEditionDocument`, désormais propre à chaque rubrique : elle met à
   jour SA liste, sans aiguillage par mode.
 
-  ## Les pièces jointes d'un document (11/10/2026, migration 0276)
+  ## Les pièces jointes d'un document (11/10/2026, migration 0278)
 
   La correction porte la section « Pièces jointes » : le fichier du document,
   qui se remplace, et ses annexes. La rubrique charge les annexes de TOUTE la

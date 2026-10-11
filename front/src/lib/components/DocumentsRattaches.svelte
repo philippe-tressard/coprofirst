@@ -4,7 +4,7 @@
 
   ## Il s'appelait `DocumentsContrat` (11/10/2026)
 
-  Les fiches de Ma résidence ont reçu des annexes (migration 0276) : des
+  Les fiches de Ma résidence ont reçu des annexes (migration 0278) : des
   `Document` rattachés à un objet existant, ajoutés dès qu'on les choisit,
   retirés d'une croix. C'est EXACTEMENT ce que ce composant faisait pour les
   contrats, à un nom de champ près — que `uploadPour(cible, …)` porte déjà. Il

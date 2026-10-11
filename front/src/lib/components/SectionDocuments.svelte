@@ -84,7 +84,7 @@
 	/**  Ce qui classe les documents de la section — la rubrique —, ou rien. Le type
 	 *   est celui de `Gouttiere`, lu et non recopié. */
 	export let classe: ClasseGouttiere | null = null;
-	/**  Les annexes d'un document (migration 0276) : elles se lisent carte
+	/**  Les annexes d'un document (migration 0278) : elles se lisent carte
 	 *   dépliée, et une carte qui en porte se déplie même sans description. */
 	export let annexesDe: (doc: Document) => Document[] = () => [];
 

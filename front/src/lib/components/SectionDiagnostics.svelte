@@ -71,7 +71,7 @@
 	let editingRapportDate = '';
 	let editingRapportSynthese = '';
 	let savingRapport = false;
-	/** La section « Pièces jointes » du rapport en correction (migration 0276). */
+	/** La section « Pièces jointes » du rapport en correction (migration 0278). */
 	let piecesRapport: PiecesFiche | null = null;
 
 	/**  Les annexes des rapports, rangées sous leur rapport — un appel pour la

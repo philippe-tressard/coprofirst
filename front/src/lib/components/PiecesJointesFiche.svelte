@@ -11,7 +11,7 @@
   document ne pouvait plus changer de fichier, ni rien porter d'autre.
 
   Arbitré avec l'utilisateur : le fichier PRINCIPAL reste, et se remplace ; la
-  fiche reçoit en plus jusqu'à dix ANNEXES (migration 0276, `utils/annexes` côté
+  fiche reçoit en plus jusqu'à dix ANNEXES (migration 0278, `utils/annexes` côté
   API). Une règle, qui n'a pas de fichier, n'a que des annexes.
 
   ## Ce qu'il réutilise, et rien d'autre

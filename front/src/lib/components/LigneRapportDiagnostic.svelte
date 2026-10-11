@@ -1,6 +1,6 @@
 <!--
   **Un rapport de diagnostic** dans sa carte de type : son titre, sa date, sa
-  synthèse dépliable, ses actions — et ses annexes (migration 0276).
+  synthèse dépliable, ses actions — et ses annexes (migration 0278).
 
   ## Pourquoi il est sorti de `SectionDiagnostics` (11/10/2026)
 

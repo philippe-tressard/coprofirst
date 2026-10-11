@@ -17,7 +17,7 @@ export interface Document {
 	contrat_id: number | null;
 	ticket_id: number | null;
 	evenement_id: number | null;
-	/** La fiche de Ma résidence qui porte cette annexe (migration 0276) — une des trois. */
+	/** La fiche de Ma résidence qui porte cette annexe (migration 0278) — une des trois. */
 	document_parent_id: number | null;
 	diagnostic_rapport_id: number | null;
 	regle_residence_id: number | null;
@@ -35,7 +35,7 @@ export interface Document {
 }
 
 /**
- *  Les FICHES de « Ma résidence » qui portent des annexes (migration 0276) — un
+ *  Les FICHES de « Ma résidence » qui portent des annexes (migration 0278) — un
  *  plan, un règlement ou un CR d'AG (`document`), un rapport de diagnostic, une
  *  règle. Les clés sont celles de `PORTEURS` (`api/app/utils/annexes.py`).
  */
