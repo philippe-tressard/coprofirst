@@ -938,6 +938,11 @@ déborde » : la mesure se fait après rendu (`scrollHeight > clientHeight`).
 - **Une seule** carte ouverte à la fois — et un seul bloc déplié, quel qu'il soit
   (règle 17 du tableau de tête, `$lib/accordeon`)
 - Chargement lazy des détails au premier clic
+- Une liste qui peut compter des dizaines de cartes se **rend par paquets** :
+  `$lib/rendu-progressif` (`aRendre`, `quandProche`) — les premières d'emblée,
+  la suite à l'approche du bas, la carte visée par un lien toujours rendue. Seul
+  le rendu change : filtres et compteurs portent sur la liste entière (#1840,
+  Affaires par `ListeTickets`)
 - Prévisualisation `.clamp-3` (3 lignes max dans une carte, §7)
 - Border-left, urgence, espacement et ombre : **portés par `.carte-liste`** (voir
   ci-dessus). Ne pas les redéfinir dans une page.
