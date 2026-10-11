@@ -50,17 +50,36 @@ sortir() { # $1 = code de sortie, $2… = la ligne qui la date
 #  erreur brute, sans date : c'est le 26/07/2026 (7 h 30 de lignes git non
 #  horodatées) et le `git fetch` de #1587. Le piège EXIT voit toutes les
 #  sorties, y compris au fond d'une fonction ; le piège ERR retient la
-#  dernière commande en échec du niveau du script, pour la nommer.
+#  dernière commande en échec et sa ligne, pour les nommer.
 #  ⚠️ Motif « CHEC inattendu » SANS accent : C27 le lit à travers SSH
 #  (`verdict_build_autodeploy`, même raison que « CHEC du build »).
 #  Un script qui pose son propre piège EXIT ne peut pas l'employer.
-journal_sortie_imprevue() { # $1 = nom du script, cité dans la ligne
+#
+#  $2 (facultatif) : une fonction appelée APRÈS la ligne, la cause en argument —
+#  pour un script qui doit aussi la dire AILLEURS que dans son journal. Né de
+#  #1826 : `maintenance.sh`, mort sous `set -e`, laissait à l'écran un battement
+#  « en cours » sans cause ; il y envoie désormais un rapport en erreur. Son
+#  échec est ignoré : le filet ne change jamais le code de sortie.
+#
+#  `errtrace` : sans lui, le piège ERR ne voit pas l'intérieur des fonctions, et
+#  une commande morte au fond de l'une d'elles se nommait « ? ». Le piège ne fait
+#  que retenir la commande ; il ne décide de rien.
+journal_sortie_imprevue() { # $1 = nom du script, cité dans la ligne ; $2 = fonction (facultative)
     JOURNAL_SORTIE_DATEE=non
+    _JOURNAL_NOM=$1
+    _JOURNAL_RAPPEL=${2:-}
     _JOURNAL_CMD=""
-    trap '_JOURNAL_CMD=$BASH_COMMAND' ERR
-    # shellcheck disable=SC2064  # le nom est figé à la pose, le reste à la sortie
-    trap "_rc=\$?; [ \"\$_rc\" -eq 0 ] || [ \"\$JOURNAL_SORTIE_DATEE\" = oui ] \
-|| log \"⚠ ÉCHEC inattendu (code \$_rc, dernière commande : \${_JOURNAL_CMD:-?}) — $1 interrompu sans ligne de sortie.\"" EXIT
+    set -o errtrace
+    trap '_JOURNAL_CMD="$BASH_COMMAND (ligne $LINENO)"' ERR
+    trap '_journal_filet $?' EXIT
+}
+
+_journal_filet() { # $1 = code de sortie du script
+    local cause
+    { [ "$1" -eq 0 ] || [ "$JOURNAL_SORTIE_DATEE" = oui ]; } && return 0
+    cause="code $1, dernière commande : ${_JOURNAL_CMD:-?}"
+    log "⚠ ÉCHEC inattendu ($cause) — $_JOURNAL_NOM interrompu sans ligne de sortie." || true
+    [ -z "$_JOURNAL_RAPPEL" ] || "$_JOURNAL_RAPPEL" "$cause" || true
 }
 
 # ── Le contrat, vérifié sur le TEXTE d'un script (PURE) ──────────────────────
@@ -132,6 +151,19 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "faute injectée : sans le filet, aucune ligne datée" 0 "$(printf '%s\n' "$sortie" | grep -c '^\[')"
     sortie=$(bash -c 'set -euo pipefail; . "$1"; journal_sortie_imprevue essai; false' _ "$ICI/lib-journal.sh" 2>&1)
     t "échec au niveau du script : la commande est nommée" 1 "$(printf '%s\n' "$sortie" | grep -c 'dernière commande : false')"
+    #  #1826 : la commande morte AU FOND d'une fonction se nomme, avec sa ligne.
+    sortie=$(bash -c 'set -euo pipefail; . "$1"; journal_sortie_imprevue essai; f() { inspect_absent; }; f' _ "$ICI/lib-journal.sh" 2>&1)
+    t "échec au fond d'une fonction : la commande et sa ligne sont nommées" 1 \
+      "$(printf '%s\n' "$sortie" | grep -cE 'dernière commande : inspect_absent \(ligne [0-9]+\)')"
+    #  #1826 : la fonction de l'appelant reçoit la cause ; le code reste le sien.
+    sortie=$(bash -c 'set -euo pipefail; . "$1"; dire() { echo "DIT: $1"; false; }; journal_sortie_imprevue essai dire; f() { return 4; }; f' _ "$ICI/lib-journal.sh" 2>&1); rc=$?
+    t "la fonction de l'appelant reçoit la cause" 1 "$(printf '%s\n' "$sortie" | grep -c '^DIT: code 4, dernière commande : ')"
+    t "…APRÈS la ligne datée" "CHEC|DIT" "$(printf '%s\n' "$sortie" | grep -oE 'CHEC|^DIT' | paste -sd'|' -)"
+    t "…et son propre échec ne change pas le code de sortie" 4 "$rc"
+    sortie=$(bash -c 'set -euo pipefail; . "$1"; dire() { echo "DIT"; }; journal_sortie_imprevue essai dire; sortir 0 "rien à faire"' _ "$ICI/lib-journal.sh" 2>&1)
+    t "sortie prévue : la fonction n'est pas appelée" 0 "$(printf '%s\n' "$sortie" | grep -c '^DIT')"
+    sortie=$(bash -c 'set -euo pipefail; . "$1"; dire() { echo "DIT"; }; journal_sortie_imprevue essai dire; true' _ "$ICI/lib-journal.sh" 2>&1)
+    t "fin normale : la fonction n'est pas appelée" "" "$sortie"
     sortie=$(bash -c 'set -euo pipefail; . "$1"; journal_sortie_imprevue essai; sortir 3 "fetch impossible"' _ "$ICI/lib-journal.sh" 2>&1); rc=$?
     t "sortir : son code" 3 "$rc"
     t "sortir : UNE ligne, la sienne (le filet se tait)" "1|1" \
@@ -157,6 +189,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "le bloc --selftest est ignoré" "" "$(contrat_journal "$tmp/st.sh")"
     #  Le contrat appliqué pour de vrai : le script dont C14 lit le battement.
     t "auto-deploy.sh respecte le contrat" "" "$(contrat_journal "$ICI/../exploitation/auto-deploy.sh")"
+    #  #1826 : la maintenance arme le filet, et lui confie son rapport d'erreur.
+    t "maintenance.sh arme le filet avec son rapport" 1 \
+      "$(grep -cE '^journal_sortie_imprevue maintenance\.sh rapport_arret_inattendu$' "$ICI/../exploitation/maintenance.sh")"
 
     rm -rf "$tmp"
     [ "$st" -eq 0 ] && echo "lib-journal : tous les cas passent."
