@@ -219,8 +219,11 @@ async def lifespan(app: FastAPI):
         id="manuel_pdf_quotidien",
     )
 
-    # Contrôle santé quotidien : WhatsApp, sauvegardes, disque (06h00)
+    # Contrôle santé quotidien (06h00) : chaque copropriété, puis la plateforme (#1814)
+    from app.utils import sante_plateforme
     from app.utils.health_monitor import run_health_check
+
+    sante_plateforme.enregistrer(scheduler)
 
     scheduler.add_job(
         contexte.pour_chaque_copropriete(run_health_check, "health_check"),
