@@ -44,6 +44,15 @@ STATUTS_NON_REJOUABLES = frozenset({STATUT_ENVOYE, STATUT_INCERTAIN, STATUT_EN_C
 TIMEOUT_ENVOI = 60
 
 
+def _motif_du_bridge(resp) -> str | None:
+    """Le champ `error` du corps JSON d'une réponse du bridge, s'il y en a un."""
+    try:
+        motif = resp.json().get("error")
+    except (ValueError, AttributeError):
+        return None
+    return str(motif) if motif else None
+
+
 def _poster_au_bridge(url: str, payload: dict, headers: dict, timeout: float = TIMEOUT_ENVOI):
     """POST vers le bridge, en distinguant l'échec établi du résultat inconnu.
 
@@ -89,7 +98,12 @@ def _poster_au_bridge(url: str, payload: dict, headers: dict, timeout: float = T
         #  de route, sans dire de quel côté de l'envoi.
         if exc.response.status_code < 500:
             raise
-        raise EnvoiIncertain(f"réponse {exc.response.status_code} du bridge") from exc
+        #  502 « refusé » (12/10/2026) : le serveur WhatsApp a rendu un accusé
+        #  d'ERREUR. Le message a été émis : il reste incertain, donc jamais
+        #  rejoué — mais l'alerte dit pourquoi, au lieu d'un code nu.
+        motif = _motif_du_bridge(exc.response)
+        raison = f"réponse {exc.response.status_code} du bridge"
+        raise EnvoiIncertain(f"{raison} — {motif}" if motif else raison) from exc
     except httpx.HTTPError as exc:
         #  Délai dépassé après émission, coupure en cours d'échange, réponse
         #  tronquée : le message a pu partir.

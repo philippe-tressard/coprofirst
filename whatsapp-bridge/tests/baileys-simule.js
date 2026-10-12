@@ -33,6 +33,7 @@ const attendre = (ms) => new Promise((ok) => setTimeout(ok, ms));
 const simule = {
   default: (config) => {
     const ev = new EventEmitter();
+    const ws = new EventEmitter();
     trace("socket-cree");
     setTimeout(() => ev.emit("connection.update", { connection: "open" }), 20);
     if (TRACE && process.env.SIMULE_SIGNAL) {
@@ -64,10 +65,21 @@ const simule = {
       groupFetchAllParticipating: async () => ({
         g1: { id: "g1", subject: "Hall", participants: [{}, {}] },
       }),
-      sendMessage: async () => {
-        const id = `M${Date.now()}`;
-        // L'accusé du serveur (statut ≥ 2) arrive après l'envoi, comme en vrai.
-        setTimeout(() => ev.emit("messages.update", [{ key: { id }, update: { status: 2 } }]), 10);
+      ws,
+      sendMessage: async (jid, contenu) => {
+        const id = `M${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
+        const texte = contenu?.text ?? contenu?.caption ?? "";
+        // 🔴 Ce que Baileys 6.7 émet VRAIMENT (`accuses.js`, 12/10/2026). Ce banc
+        // émettait un `messages.update` statut 2 « comme en vrai » : Baileys ne
+        // le fait jamais pour un groupe, et le bridge, vert ici, classait chaque
+        // envoi au groupe « accusé non observé » en production.
+        //   - l'accusé du serveur passe par `ws`, `CB:ack,class:message` ;
+        //   - aucun `messages.update` de statut ≥ 2 pour un groupe.
+        // Textes de scénario : SIMULE_SANS_ACCUSE (rien ne vient), SIMULE_ACCUSE_ERREUR.
+        if (texte.includes("SIMULE_SANS_ACCUSE")) return { key: { id } };
+        const attrs = { id, class: "message", from: jid };
+        if (texte.includes("SIMULE_ACCUSE_ERREUR")) attrs.error = "479";
+        setTimeout(() => ws.emit("CB:ack,class:message", { tag: "ack", attrs }), 10);
         return { key: { id } };
       },
     };

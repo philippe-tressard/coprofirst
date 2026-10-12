@@ -26,6 +26,7 @@ const path = require("path");
 const crypto = require("crypto");
 const fs = require("fs");
 const { creerArret, creerSuiviEcritures } = require("./arret");
+const { AccuseRefuse, brancherAccuses, creerSuiviAccuses } = require("./accuses");
 
 const PORT = parseInt(process.env.WA_PORT || "8090", 10);
 const API_KEY = process.env.WA_API_KEY || "";
@@ -149,28 +150,11 @@ function scheduleReconnect() {
   }, delay);
 }
 
-// ── ACK tracking (ghost session detection) ──────────────────────────
-const ACK_TIMEOUT_MS = 15_000;
-const pendingAcks = new Map(); // msgId → { resolve, reject, timer }
-
-function waitForAck(msgId) {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      if (pendingAcks.delete(msgId)) {
-        reject(new Error(`ACK timeout after ${ACK_TIMEOUT_MS}ms — ghost session suspected`));
-      }
-    }, ACK_TIMEOUT_MS);
-    pendingAcks.set(msgId, { resolve, reject, timer });
-  });
-}
-
-function rejectAllPendingAcks(reason) {
-  for (const [id, { reject: rej, timer }] of pendingAcks) {
-    clearTimeout(timer);
-    rej(new Error(reason));
-    pendingAcks.delete(id);
-  }
-}
+// ── Accusés du serveur (détection de session fantôme) ─────────────────
+// Quelles sources d'accusé existent, et pourquoi une seule ne suffisait pas :
+// `accuses.js`. Le délai se règle par l'environnement pour les tests seulement.
+const ACK_TIMEOUT_MS = parseInt(process.env.WA_ACK_DELAI_MS || "15000", 10);
+const accuses = creerSuiviAccuses({ delaiMs: ACK_TIMEOUT_MS });
 
 // ── Auth middleware ──────────────────────────────────────────────────
 // La clé ne se lit que dans l'EN-TÊTE (#1596). `?apikey=` était accepté :
@@ -249,17 +233,7 @@ async function startBaileysInner() {
 
   sock.ev.on("creds.update", suiviEcritures.suivre(saveCreds));
 
-  // Resolve pending ACKs when WhatsApp server acknowledges receipt
-  sock.ev.on("messages.update", (updates) => {
-    for (const { key, update } of updates) {
-      const pending = pendingAcks.get(key?.id);
-      if (pending && (update?.status ?? 0) >= 2) { // SERVER_ACK or better
-        clearTimeout(pending.timer);
-        pendingAcks.delete(key.id);
-        pending.resolve(update.status);
-      }
-    }
-  });
+  brancherAccuses(sock, accuses);
 
   sock.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect, qr } = update;
@@ -280,7 +254,7 @@ async function startBaileysInner() {
 
     if (connection === "close") {
       marquerHorsLigne();
-      rejectAllPendingAcks("Connection closed");
+      accuses.toutRejeter("Connection closed");
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       dernierCode = statusCode ?? null;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
@@ -387,8 +361,15 @@ app.post("/send", async (req, res) => {
     const msgId = sentMsg?.key?.id;
     if (msgId) {
       try {
-        await waitForAck(msgId);
+        await accuses.attendre(msgId);
       } catch (errAck) {
+        // Le serveur a RÉPONDU, et refusé : la session est vivante, rien à
+        // reconnecter — mais le message n'est pas confirmé. 502, jamais 202 :
+        // ce code dit « très probablement remis », ce qui serait faux ici.
+        if (errAck instanceof AccuseRefuse) {
+          logger.warn({ err: errAck, msgId }, "Message refusé par le serveur WhatsApp");
+          return res.status(502).json({ ok: false, envoye: true, acquitte: false, refuse: true, id: msgId, jid, error: errAck.message });
+        }
         logger.warn({ err: errAck, msgId }, "Message émis, accusé non observé — reconnexion");
         try { if (sock) sock.end(); } catch (_) {}
         marquerHorsLigne();

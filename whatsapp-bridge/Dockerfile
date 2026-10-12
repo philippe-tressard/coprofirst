@@ -18,7 +18,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY index.js arret.js ./
+COPY index.js arret.js accuses.js ./
 
 VOLUME /app/auth_state
 

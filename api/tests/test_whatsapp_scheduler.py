@@ -325,6 +325,21 @@ def test_classification_des_reponses_du_bridge(monkeypatch, code, attendue, cont
         )
 
 
+def test_refus_du_serveur_whatsapp_incertain_jamais_rejoue(monkeypatch):
+    """502 « refusé » (accusé d'erreur du serveur, 12/10/2026) : le message a été
+    émis, donc INCERTAIN — statut qui interdit le rejeu, un doublon dans le groupe
+    ne se retire pas —, et la raison porte le motif du serveur."""
+    corps = {"refuse": True, "envoye": True, "error": "refusé par le serveur WhatsApp : code 479"}
+    reponse = httpx.Response(502, json=corps, request=_requete())
+    monkeypatch.setattr(W.httpx, "Client", lambda **kw: _ClientFactice(lambda *a, **k: reponse))
+    with pytest.raises(W.EnvoiIncertain) as exc:
+        W._poster_au_bridge("http://b/send", {}, {})
+    assert "code 479" in str(exc.value)
+    statut, _ = W.verdict_envoi(lambda: W._poster_au_bridge("http://b/send", {}, {}))
+    assert statut == W.STATUT_INCERTAIN
+    assert statut in W.STATUTS_NON_REJOUABLES
+
+
 # ── La purge ne doit pas manger le verrou ─────────────────────────────────────
 
 
