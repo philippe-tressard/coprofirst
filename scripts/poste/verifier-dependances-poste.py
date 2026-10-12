@@ -18,6 +18,7 @@ compare ce qu'elle installerait à ce qui est installé :
 
 Il écrit UNE ligne :
   ALIGNE                         — le poste a exactement ce que le lot épingle ;
+                                   jamais quand rien n'a été comparé (#1863) ;
   ECART <paquet épinglé→poste>…  — les contrôles du job ne mesurent pas le lot ;
   INCONNU <motif>                — rien pour comparer : jamais lu comme un vert.
 
@@ -105,12 +106,13 @@ def installes_pip():
 
 def verdict(corps, rep):
     rep = pathlib.Path(rep)
-    ecarts, mesure = [], False
+    ecarts, mesure, reconnue = [], False, False
     for ligne in corps.splitlines():
         mots = ligne.strip().split()
         if not mots or mots[0].startswith('#'):
             continue
         if mots[:2] in (['pip', 'install'], ['pip3', 'install']) or mots[:4] == ['python', '-m', 'pip', 'install']:
+            reconnue = True
             args = mots[mots.index('install') + 1:]
             epingles = specs_pip(args)
             for i, mot in enumerate(args):
@@ -123,6 +125,7 @@ def verdict(corps, rep):
                 mesure = True
                 ecarts += ecart_pip(epingles, installes_pip())
         elif mots[:2] in (['npm', 'ci'], ['npm', 'install']):
+            reconnue = True
             lock, cache = rep / 'package-lock.json', rep / 'node_modules' / '.package-lock.json'
             if not lock.is_file():
                 return f'INCONNU {lock.name} introuvable'
@@ -133,6 +136,11 @@ def verdict(corps, rep):
                                 json.loads(cache.read_text(encoding='utf-8')))
     if ecarts:
         return 'ECART ' + ', '.join(ecarts[:8]) + (f' (+{len(ecarts) - 8})' if len(ecarts) > 8 else '')
+    #  Cas zéro (#1863) : rien comparé n'est pas « aligné ».
+    if not reconnue:
+        return 'INCONNU aucune installation reconnue dans l’étape'
+    if not mesure:
+        return 'INCONNU aucune version épinglée à comparer'
     return 'ALIGNE'
 
 
@@ -165,7 +173,15 @@ def selftest():
                                                            'node_modules/a/node_modules/b': {'version': '1.0.0'}}}), [])
     cas('npm sans node_modules → INCONNU, jamais ALIGNE',
         verdict('npm ci', pathlib.Path(__file__).parent / 'inexistant'), 'INCONNU package-lock.json introuvable')
-    cas('étape sans rien d’épinglé → ALIGNE (rien à mesurer)', verdict('pip install pip-audit', '.'), 'ALIGNE')
+    #  Cas zéro (#1863) : une étape d'où rien ne se compare n'a rien MESURÉ — jamais
+    #  ALIGNE. Une installation qui changerait de forme (`uv pip sync`, `pip
+    #  install .`) passait sinon pour alignée, le faux vert de #1415.
+    cas('installation non épinglée → INCONNU, jamais ALIGNE',
+        verdict('pip install pip-audit', '.'), 'INCONNU aucune version épinglée à comparer')
+    cas('aucune installation reconnue → INCONNU',
+        verdict('uv pip sync requirements.txt', '.'), 'INCONNU aucune installation reconnue dans l’étape')
+    cas('corps vide → INCONNU', verdict('', '.'), 'INCONNU aucune installation reconnue dans l’étape')
+    cas('commentaires seuls → INCONNU', verdict('# rien', '.'), 'INCONNU aucune installation reconnue dans l’étape')
     print('== ÉCHECS ==' if ko else '== TOUS OK ==')
     return ko
 

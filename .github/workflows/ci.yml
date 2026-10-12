@@ -627,6 +627,9 @@ jobs:
           python scripts/poste/verifier-variables-shell.py --selftest
           # Le poste a-t-il ce que le lot épingle ? Sinon le rejeu rend INCONNU (#1417).
           python scripts/poste/verifier-dependances-poste.py --selftest
+          # Les PR réorientées vers main à la suppression de dev (#1870) : leur relevé
+          # et leurs montées, lus jusque dans une description tronquée.
+          python scripts/poste/reprendre-dependabot.py --selftest
           bash scripts/poste/verifier-points-entree.sh --selftest
           # 🔒 Le résultat NORMAL de ce diagnostic est ZÉRO orphelin : sans
           # self-test, un script qui confondrait « aucun » et « je n'ai pas pu
@@ -2481,6 +2484,19 @@ jobs:
 
       # Chromium seul : les deux profils (bureau et mobile) l'emploient, et
       # installer Firefox et WebKit pour rien coûterait deux minutes par PR.
+      # 📦 Les paquets système de Playwright, gardés d'un job à l'autre (#1865).
+      #  Depuis la 1.64, `--with-deps` télécharge ~21 Mo de polices absentes de
+      #  l'image. Le 12/10/2026, un miroir Ubuntu à 28 ko/s y a passé 12 min 38 s :
+      #  le job a été ANNULÉ au plafond de 15 min, tests verts — un rouge qui ne
+      #  disait rien du code. En cache, apt n'a plus rien à télécharger. Clé : la
+      #  version de Playwright installée — une montée repart d'un cache vide, une
+      #  fois. Étape `uses:` : le rejeu du poste l'affiche sans la jouer.
+      - name: Paquets système de Playwright (cache)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/apt-playwright
+          key: apt-playwright-${{ runner.os }}-${{ hashFiles('front/node_modules/playwright-core/package.json') }}
+
       - name: Install Playwright browsers
         working-directory: front
         run: |
@@ -2506,7 +2522,17 @@ jobs:
             sudo rm -f /etc/apt/sources.list.d/google-chrome*
             ls -1 /etc/apt/sources.list.d/ || true
           fi
+          #  Les `.deb` vont dans le dossier que l'étape précédente garde (#1865).
+          #  `if` sur `/etc/apt` : le poste, qui rejoue cette commande, n'en a pas.
+          if [ -d /etc/apt/apt.conf.d ]; then
+            mkdir -p "$HOME/.cache/apt-playwright/partial"
+            conf="Dir::Cache::Archives \"$HOME/.cache/apt-playwright/\";"
+            echo "$conf" | sudo tee /etc/apt/apt.conf.d/99-cache-playwright > /dev/null
+          fi
+          debut=$(date +%s)
           npx playwright install --with-deps chromium
+          #  La mesure que #1865 demande : la durée, job après job.
+          echo "Installation de Playwright : $(( $(date +%s) - debut )) s"
 
       # 🔴 Avant les tests, pas après : un serveur emprunté les ferait passer
       # sur le code d'un autre (#1150). Voir l'en-tête du script.
