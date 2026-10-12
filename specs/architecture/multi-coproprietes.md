@@ -7,7 +7,8 @@
 > rédigé le 07/10/2026, à partir des arbitrages de l'auteur pris le même jour.
 >
 > Le **travail** vit dans les tickets : phase 1 à partir de #1718, phase 2 de #1743
-> à #1751, distribution de #1753 à #1759 et #1761. Ce document en
+> à #1751, distribution de #1753 à #1759 et #1761, registre des installations de
+> #1876 à #1884. Ce document en
 > porte les **décisions** et leurs raisons. Il se met à jour **à chaque arbitrage**,
 > daté. Toute décision qui n'y figure pas n'est pas prise.
 
@@ -28,7 +29,7 @@ Le critère qui départage les architectures : **combien de lignes de code faut-
 oublier pour qu'une fuite se produise ?** Une architecture où un seul `WHERE`
 oublié suffit n'est pas étanche, elle n'est que *disciplinée*.
 
-## 2. Les décisions prises (07 et 08/10/2026)
+## 2. Les décisions prises (07 au 12/10/2026)
 
 | # | Sujet | Décision | Conséquence directe |
 |---|---|---|---|
@@ -48,6 +49,14 @@ oublié suffit n'est pas étanche, elle n'est que *disciplinée*.
 | D14 | Mise à jour des installations (08/10/2026) | **chaque nuit, automatique, réversible seule** : sauvegarde, migrations base par base, santé, retour à l'image précédente ; migrations **compatibles sur une version** | §4.10 ; #1756, #1757 |
 | D15 | Serveurs d'une réplique (08/10/2026) | **un seul serveur par défaut**, cloud ou hébergeur — « les instances replica ne seront installées par défaut que sur un seul serveur ». La haute disponibilité à deux nœuds reste **propre au maître** | §4.10, règle 12 ; la réversibilité d'une mise à jour (D14) et la sauvegarde **hors de la machine** (§4.9) deviennent le seul filet d'une réplique |
 | D16 | PostgreSQL sur les RPi (09/10/2026) | **réplication en continu** vers le standby (un PostgreSQL en réplique, promu au basculement), plutôt que la copie à la bascule ; données sur la **carte SD**, réglages qui limitent les écritures sans céder la durabilité ; livré en **trois lots** (7a, 7b, 7c) | §8 ter ; #1759, #1781, #1782 |
+| D17 | Registre des installations (12/10/2026) | le **maître tient le registre** de toutes les installations CoproFirst ; il reste **sur les Raspberry Pi**, dans une base `plateforme` distincte de celle de la résidence, réservée à l'opérateur de plateforme | §4.11 ; il hérite de la réplication du maître (D16) ; les installations le joignent par un **nom dédié** |
+| D18 | Inscription (12/10/2026) | déclarée **automatiquement** au premier lancement ; le **maître attribue l'ID** ; sans inscription valide, l'installation tourne en **mode limité** : pas de mise à jour automatique, aucun service supplémentaire, **5 utilisateurs au plus** | §4.11 ; révise §4.10 règle 9 |
+| D19 | Bail (12/10/2026, recommandation acceptée) | l'inscription vaut par un **bail signé** par le maître, valable **30 jours**, renouvelé chaque nuit ; un bail échu ramène au mode limité, **jamais** à la lecture seule | §4.11 ; une panne du maître ne coupe aucune installation |
+| D20 | Suspension (12/10/2026, recommandation acceptée) | décision **explicite et signée** de l'opérateur : l'installation passe en **lecture seule, export ouvert** ; jamais d'arrêt sec ni d'effacement | §4.11 ; les données appartiennent aux syndicats des copropriétaires |
+| D21 | Canaux (12/10/2026, recommandation acceptée) | un canal est un **pointeur vers un tag de `main`** : `main` (le maître seul), `replica` (défaut), `special-<nom>` (épinglage ou avant-première) ; jamais de commit propre | §4.11 ; le bail porte la **version cible** |
+| D22 | IA d'une installation (12/10/2026) | **tous les paramètres de l'IA sont propres à l'installation** (clé, modèles, plafonds) ; le maître ne fournit pas l'IA | §4.11 ; la consommation remontée est **déclarative** |
+| D23 | Images (12/10/2026, recommandation acceptée) | les images restent **publiques** ; le levier est le bail, pas l'accès aux images | §4.11 ; pas de jeton de registre d'images |
+| D24 | Transfert de la maîtrise (12/10/2026) | la maîtrise se **transfère** vers une installation déjà déployée, **à l'initiative du maître en place** ; **il ne peut y avoir deux maîtres** | §4.11 ; époque de maîtrise et chaîne de clés |
 
 ## 3. Les trois architectures comparées
 
@@ -265,7 +274,11 @@ stables de main. »*
    `health-watch`, les points d'entrée et les crontabs restent dans le dépôt, mais
    ne partent pas avec une installation ; celle-ci a son déploiement standard.
 9. **Une installation n'envoie rien par défaut** — ni version, ni santé — sans
-   l'accord de son exploitant (RGPD, D5).
+   l'accord de son exploitant (RGPD, D5). **Révisée le 12/10/2026 (D18)** : une
+   installation se déclare au maître au premier lancement et lui adresse un
+   rapport chaque nuit (§4.11). L'accord devient une **condition de
+   l'inscription**, écrite (#1876) ; la refuser reste possible, au prix du mode
+   limité. Rien de ce qui part ne concerne un résident (D5).
 10. **Le canal des répliques est une porte vers toutes les installations à la fois** :
     tags protégés, images signées, seule la CI publie. Une compromission de
     `replica` les compromettrait toutes en une nuit.
@@ -286,6 +299,128 @@ stables de main. »*
     une heure creuse, et vérifie la sauvegarde **avant** de toucher à quoi que
     ce soit.
 
+### 4.11 Le registre des installations (D17 à D24)
+
+Demandé par l'auteur le 12/10/2026 : *« l'instance master (5hostachy) possède un
+onglet d'admin des futures instances déployées »* — déclaration au premier
+lancement, identifiant attribué par le maître, branche de référence, paramètres
+remontés chaque nuit, installation désactivable, *« non détournable »* ; puis :
+*« Prévoir aussi le transfert du master sur une instance déjà déployée (sous la
+responsabilité du master). Il ne peut y avoir 2 masters distincts »*. Arbitré le
+même jour.
+
+**Ce que « non détournable » peut vouloir dire sous l'AGPL.** Le code est public
+et chacun a le droit de le modifier (§7) : un exploitant peut retirer l'appel au
+maître, le plafond d'utilisateurs ou la vérification du bail, et la licence
+interdit d'ajouter une restriction qui l'en empêcherait. Aucun verrou écrit dans
+une installation ne tient contre son exploitant. Ce qui ne se détourne pas tient
+à ce que **le maître détient** : la **clé qui signe les baux** — la seule pièce
+secrète ; tout le reste doit tenir avec le code lu —, la **mise à jour
+automatique**, et la **marque** : une installation modifiée pour échapper au
+registre n'est plus CoproFirst non modifié (`MARQUE.md` §3). Le dispositif guide
+l'exploitant de bonne foi et rend le détournement **visible** ; il ne prétend pas
+l'empêcher.
+
+**Les états d'une installation**
+
+| État | Comment on y entre | Ce qu'elle peut |
+|---|---|---|
+| **Limitée** | jamais inscrite, inscription en attente de validation, ou bail échu | tout le cœur, **5 utilisateurs actifs au plus** ; aucun service du registre (§4.8) ; pas de mise à jour automatique |
+| **Active** | inscription validée par l'opérateur, bail valide | ce que son canal et ses services autorisés ouvrent |
+| **Suspendue** | décision de l'opérateur, portée par un bail signé | **lecture seule**, export ouvert à l'administrateur de chaque copropriété |
+
+Le registre garde en plus la trace des installations **résiliées** : le bail
+cesse, l'installation retombe en mode limité, et l'effacement de ses données
+revient à son exploitant — le maître n'y a aucun accès.
+
+**Les règles :**
+
+1. **Inscription automatique** au premier lancement : l'installation génère sa
+   paire de clés (Ed25519), son administrateur saisit ses coordonnées et accepte
+   les conditions, la déclaration part au maître. Le maître attribue l'**ID**,
+   unique pour toutes les installations ; la paire de clés l'attache à une
+   machine — deux installations qui présentent le même ID avec deux clés sont un
+   **clone**, signalé.
+2. **Le mode limité ne prend rien en otage.** Le plafond refuse le **sixième**
+   compte actif ; il ne désactive, ne masque ni n'efface aucun compte existant.
+   Les courriels de sécurité ne sont pas un service (§4.8) : ils restent.
+3. **Le bail**, signé par le maître, porte l'ID, l'état, le canal, la version
+   cible, les services autorisés, l'**époque de maîtrise** et son échéance
+   (30 jours). Il se renouvelle chaque nuit ; sans renouvellement depuis 3 jours,
+   l'administrateur d'installation et le maître sont alertés. Un bail illisible
+   vaut « limitée », jamais un arrêt.
+4. **Une panne du maître ne coupe personne** : il est sur deux Raspberry Pi
+   derrière une box résidentielle (D17), et 30 jours couvrent toute panne
+   vraisemblable. Un bail échu n'ôte que la croissance et les services, jamais
+   la lecture ni l'écriture.
+5. **L'installation tire, le maître ne pousse jamais** : aucun accès entrant à
+   une installation, aucune commande à distance (D5). Ses décisions — valider,
+   suspendre, changer de canal, épingler une version — voyagent dans le bail.
+6. **Les canaux** (D21) : la version cible portée par le bail permet un
+   déploiement **par vagues** (une part des installations d'abord), l'épinglage
+   et le retour à une version. Ce qu'un client a de spécifique passe par le
+   registre des services (§4.8), jamais par une branche — la règle 1 de §4.10
+   vaut pour tout canal.
+7. **Le registre n'est pas une donnée de la résidence** : base `plateforme`, rôle
+   PostgreSQL distinct, onglet réservé à l'**opérateur de plateforme** (§4.7),
+   jamais à l'administrateur de la copropriété 5Hostachy. Le maître y figure,
+   canal `main`, et ne passe jamais en mode limité.
+8. **Le point d'inscription est exposé** sur le maître, donc sur la production
+   de la résidence : requêtes signées, taille et débit plafonnés, rien de la
+   résidence derrière. Il répond sous un **nom dédié**, ce qui permet au
+   registre de déménager sans toucher aux installations.
+9. **Les installations d'essai** — CI, tests de navigateur, poste de
+   développement, workflow « Essai de mise à jour » — se déclarent comme telles :
+   elles n'appellent pas le maître et ne sont pas limitées. Ce mode n'est admis
+   que pour un hôte local ou une base jetable.
+10. **Le transfert de la maîtrise** (D24). Le maître, c'est trois choses : la base
+    `plateforme`, la **clé qui signe les baux** et le **nom dédié**. Le transfert
+    les déplace vers une installation **active** déjà déployée, **à l'initiative
+    du maître en place** — la cible ne peut pas se proclamer maître. Il se fait
+    dans une fenêtre : registre gelé en lecture seule, export vérifié, import sur
+    la cible, puis un **acte de transfert** signé par l'ancienne clé, qui désigne
+    la nouvelle et porte l'**époque n+1**, et le nom dédié repointé. L'ancien
+    maître se **rétrograde lui-même** en réplique et détruit sa clé. La
+    copropriété de la résidence n'en fait pas partie : son caisson ne bouge pas.
+11. **Jamais deux maîtres** : chaque installation retient la plus haute époque
+    reçue et **refuse** tout bail d'une époque inférieure ou d'une clé révoquée.
+    Un ancien maître qui reviendrait ne signerait plus rien d'accepté ; deux
+    installations qui se déclarent maître sont une alerte du registre. Le retour
+    arrière d'un transfert diffusé est un **nouveau transfert** (n+2), jamais la
+    réactivation de l'ancienne clé.
+
+**Ce que remonte une installation** — un **contrat de données versionné**, un seul
+schéma partagé par le maître et les installations ; un champ s'y ajoute avec sa
+finalité.
+
+| Famille | Contenu | Quand |
+|---|---|---|
+| Identité | ID, empreinte de clé, canal, version qui tourne, version cible, révision de la base, résultat de la dernière mise à jour | chaque nuit |
+| Administrateur d'installation | prénom, nom, courriel, téléphone ; contact technique et de facturation s'ils diffèrent | à l'inscription, puis quand il change |
+| Hébergement | hébergeur et **pays des données**, architecture, mémoire et disque (capacité, occupation), moteur et taille des bases, échéance du certificat TLS, erreurs 5xx sur 24 h | chaque nuit |
+| Sauvegarde | dernière sauvegarde réussie, copie hors de la machine, dernier essai de restauration | chaque nuit |
+| Posture | oui/non : documentation d'API coupée, cookie sécurisé, secret assez long, **lien vers le source présent** (AGPL §13) | chaque nuit |
+| Copropriétés | par copropriété : identifiant (préfixé par l'ID de l'installation), nom, nombre de lots, d'utilisateurs actifs et inscrits, volume stocké, services activés | chaque nuit |
+| Consommation | appels et coût de l'IA, messages de diffusion, courriels envoyés, serveurs | chaque nuit |
+
+- **Aucune donnée de résident** (D5) : des comptes, jamais un nom, un courriel ni
+  un contenu.
+- Les coordonnées de l'**administrateur d'installation** sont une donnée
+  personnelle traitée par le maître : finalité, base légale, durée et purge,
+  droits — fixées par #1876 ; rectifiables depuis l'administration de
+  l'installation.
+- La **consommation est déclarative** (D22) : signée par la clé de
+  l'installation, elle est attribuée et datée, pas prouvée. Une facturation non
+  détournable supposerait que le maître fournisse lui-même le service mesuré ;
+  le modèle économique (§9, question 6) le dira.
+
+**Le maître alerte** sur : installation muette depuis plus de 48 h, mise à jour
+revenue en arrière, sauvegarde trop ancienne ou sans copie hors de la machine,
+disque plein à plus de 80 %, certificat proche de l'échéance, retard de version,
+clone, deux maîtres déclarés. Chaque décision de l'opérateur — valider,
+suspendre, rétablir, changer de canal, résilier, transférer — s'inscrit à un
+**journal des décisions** (qui, quand, pourquoi).
+
 ## 5. Les garde-fous
 
 1. **Test d'étanchéité permanent** : deux copropriétés aux **identifiants
@@ -298,6 +433,15 @@ stables de main. »*
 4. **Hôte inconnu** : aucune copropriété résolue (§4.1, règle 2).
 5. **Journaux de l'opérateur** : un contrôle refuse l'apparition d'une donnée
    personnelle (§4.7).
+6. **Rapport sans donnée de résident** : un contrôle refuse un champ du contrat de
+   données qui en porterait une (§4.11).
+7. **Bail** : self-test de la vérification — signature, échéance, époque
+   inférieure, clé révoquée, clone ; un bail illisible rend le mode limité,
+   jamais l'arrêt.
+8. **Maître éteint** : un essai prouve qu'une installation active le reste
+   pendant toute la durée de son bail.
+9. **Transfert** : essai complet entre deux installations jetables avant tout
+   transfert réel ; après lui, l'ancienne clé est refusée partout.
 
 ## 6. Ce que le code suppose aujourd'hui (relevé le 07/10/2026)
 
@@ -362,6 +506,7 @@ elle.
 | 1 | **Mono-copro propre** : services activables (#1718, v2.113.0) ; identité de la copropriété en configuration et nom de la plateforme, CoproFirst, avec le lien vers le source (#1725, v2.114.0) ; consignes de la fiche arrivant administrables (#1727, v2.115.0) ; licence AGPL (#1726, v2.116.0) ; logo de la résidence téléversable (#1728, v2.117.0) ; politique de marque (#1736, `MARQUE.md`, marque déposée le 09/10/2026) | aucun |
 | 2 | **Contexte de copropriété** dans le processus (§4.1, §4.5, §4.6), en production avec **une seule** copro, le test d'étanchéité déjà actif sur deux copros factices. Neuf lots, §8 bis (#1743 à #1751) | phase 1 |
 | 2 bis | **Distribution** (§4.10, §8 ter) : tags et images signées, branche `replica` et promotion, déploiement standard, migrations compatibles sur une version ; le maître tire son image et passe sous PostgreSQL | phase 2 en partie (§8 ter) |
+| 2 ter | **Registre des installations** (§4.11, §8 quater) : inscription, bail, rapport nocturne, onglet du maître, canaux, mode limité et suspension, transfert de la maîtrise | phase 2 bis |
 | 3 | **Première installation CoproFirst** : hébergeur, PostgreSQL (§4.3), stockage objet (§4.4), mise à jour nocturne réversible (§4.10), outillage d'installation (créer, migrer, sauvegarder et restaurer **une** copro), supervision sans donnée personnelle | hébergeur choisi |
 | 4 | **Copropriété pilote** : une seconde résidence réelle et volontaire | phase 3 |
 | 5 | Accueil autonome des copropriétés ; facturation selon le modèle économique | modèle économique |
@@ -424,12 +569,34 @@ maître) ; DI-1 puis DI-6, qui suppriment les builds sur les RPi ; DI-2 et DI-3 
 DI-7 après la CI PostgreSQL ; DI-4 en dernier, avec la première installation
 (phase 3).
 
+## 8 quater. Le registre des installations en lots (arbitrage du 12/10/2026)
+
+Ouverts le 12/10/2026 ; le code de chaque lot reste soumis à accord, lot par lot.
+
+| Lot | Contenu | Taille | Prérequis | Ticket |
+|---|---|---|---|---|
+| R0 | **Conditions de l'inscription** et information de l'administrateur d'installation (finalité, durée, purge, droits) ; relecture juridique | S | — | #1876 |
+| R1 | **Base `plateforme` et contrat de données** versionné ; point d'inscription signé et plafonné, sous un nom dédié ; aucun effet côté installation | M | — | #1877 |
+| R2 | **Inscription et bail** côté installation, en **mode constat** : l'état est calculé et affiché, jamais appliqué ; mode essai | M | R1 | #1878 |
+| R3 | **Rapport nocturne**, joint à la mise à jour de la nuit (#1756) | S | R2 | #1879 |
+| R4 | **L'onglet « Installations » du maître** : liste, fiche, validation, canal, suspension, alertes, journal des décisions | M | R1, R3 | #1880 |
+| R5 | **Canaux et version cible** portés par le bail ; déploiement par vagues, épinglage | M | R2, R4 | #1881 |
+| R6 | **Mode limité et suspension appliqués** — seulement après plusieurs semaines de R2 sans faux positif | M | R0, R2 à R5 | #1882 |
+| R7 | **Relevé de consommation**, déclaratif | S | R3 ; modèle économique | #1883 |
+| R8 | **Transfert de la maîtrise** : acte signé, époque, chaîne de clés ; jamais deux maîtres | L | R1, R2, R5 | #1884 |
+
+**Ordre conseillé** : R0 et R1 en parallèle ; R2, R3, R4 ; R5 ; R6 seulement sur
+constat mesuré — un contrôle qui bloque se prouve d'abord en observation ; R8
+avant tout déménagement du maître ; R7 quand le modèle économique sera choisi.
+
 ## 9. Les questions encore ouvertes
 
 1. **RGPD** : vis-à-vis de chaque syndicat des copropriétaires (responsable de
    traitement), l'opérateur devient **sous-traitant**. Il faudra un contrat de
    sous-traitance, un registre, des mentions légales et une politique de
    confidentialité **par copro**, et un hébergeur conforme. À faire valider.
+   S'y ajoutent les conditions de l'inscription d'une installation et le contact
+   de son administrateur (§4.11, #1876).
 2. **Hébergeur** des installations CoproFirst : PostgreSQL géré, stockage objet,
    coffre à secrets, localisation des données. Et le **registre d'images** (#1753).
 3. ~~**Nom du produit**~~ — tranché le 07/10/2026, revu le 09/10/2026 : **CoproFirst** (D9 ; CoproConnect était déjà pris). Marque
@@ -438,7 +605,8 @@ DI-7 après la CI PostgreSQL ; DI-4 en dernier, avec la première installation
 5. ~~**Licence**~~ — AGPL-3.0-or-later (D10) depuis la v2.116.0 (#1726) ; politique
    de marque dans `MARQUE.md` (#1736), à faire relire (§7).
 6. **Modèle économique** : gratuit ou facturé. L'AGPLv3 permet de facturer
-   l'hébergement ; elle interdit seulement d'en fermer le code.
+   l'hébergement ; elle interdit seulement d'en fermer le code. Toujours ouvert
+   au 12/10/2026 ; il conditionne le relevé de consommation (#1883).
 7. ~~**La résidence actuelle**~~ — tranché le 08/10/2026 (D11) : elle **reste sur
    les Raspberry Pi**, comme **maître** du produit ; sa haute disponibilité est
    conservée.
