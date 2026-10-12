@@ -224,6 +224,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 | 20 | **Ordre du menu servi** (`pages_order`) — un fantôme rend ÉCART, une répétition FAIL (#1114) | OK · ÉCART · FAIL · INCONNU |
 | 21 | **Textes légaux servis complets** — un « À RENSEIGNER » dans la page publique rend ÉCART : à compléter dans Admin › Légal (#1585) | OK · ÉCART · INCONNU |
 | 22 | **Réplication PostgreSQL** — un primaire sur l'actif, une réplique qui reçoit le journal sur le standby ; deux primaires ou une réplique déconnectée rendent FAIL. Sans objet tant que la production est sous SQLite. Décision partagée avec C37 (`lib-replication.sh`, #1781) | OK · FAIL · INCONNU |
+| 23 | **Aucune PR ouverte vers `main` hors de `dev`** — chaque MEP supprime `dev`, et GitHub réoriente vers `main` les PR qui la visaient (Dependabot compris). Une PR réorientée rend ÉCART ; la reprendre : `python scripts/poste/reprendre-dependabot.py` (relevé et montées), puis `--fermer`, et ses montées dans un lot sur `dev`. Joué aussi en `--post-mep`, premier moment où elles apparaissent (#1870) | OK · ÉCART · INCONNU |
 
 ### Lire le verdict
 

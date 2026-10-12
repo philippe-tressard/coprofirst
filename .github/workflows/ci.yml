@@ -627,6 +627,9 @@ jobs:
           python scripts/poste/verifier-variables-shell.py --selftest
           # Le poste a-t-il ce que le lot épingle ? Sinon le rejeu rend INCONNU (#1417).
           python scripts/poste/verifier-dependances-poste.py --selftest
+          # Les PR réorientées vers main à la suppression de dev (#1870) : leur relevé
+          # et leurs montées, lus jusque dans une description tronquée.
+          python scripts/poste/reprendre-dependabot.py --selftest
           bash scripts/poste/verifier-points-entree.sh --selftest
           # 🔒 Le résultat NORMAL de ce diagnostic est ZÉRO orphelin : sans
           # self-test, un script qui confondrait « aucun » et « je n'ai pas pu
