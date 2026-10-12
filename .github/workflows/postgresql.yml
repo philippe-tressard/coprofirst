@@ -38,7 +38,11 @@ jobs:
     timeout-minutes: 60
     services:
       postgres:
-        image: postgres:17
+        #  L'étiquette de la PRODUCTION (docker-compose.yml), pas `17` flottant :
+        #  la suite juge le serveur que les nœuds font tourner. Dependabot
+        #  (`docker-compose`) monte le compose ; cette ligne suit dans la même PR,
+        #  🔒 test_images_compose_suivies.py (#1872).
+        image: postgres:17.11
         env:
           POSTGRES_USER: essai
           POSTGRES_PASSWORD: essai

@@ -22,34 +22,15 @@ Ce que le test tient, sur le texte du workflow (PyYAML vient avec
 
 from __future__ import annotations
 
-from pathlib import Path
+from tests.aides_compose import RACINE, services_construits
+from tests.aides_compose import lire_yaml as _yaml
 
-import yaml
-
-RACINE = Path(__file__).resolve().parents[2]
 WORKFLOW = RACINE / ".github" / "workflows" / "images.yml"
-COMPOSE = RACINE / "docker-compose.yml"
-
-
-def _yaml(chemin: Path) -> dict:
-    return yaml.safe_load(chemin.read_text(encoding="utf-8"))
 
 
 def _declencheurs(flux: dict) -> dict:
     #  PyYAML lit la clé `on:` comme le booléen True (YAML 1.1).
     return flux.get("on") or flux.get(True) or {}
-
-
-def services_construits() -> dict[str, tuple[str, str]]:
-    """Chaque service de `docker-compose.yml` qui se CONSTRUIT : nom → (contexte, Dockerfile)."""
-    construits = {}
-    for nom, service in _yaml(COMPOSE)["services"].items():
-        build = service.get("build")
-        if build:
-            contexte = build["context"].removeprefix("./") or "."
-            fichier = build.get("dockerfile", "Dockerfile")
-            construits[nom] = (contexte, fichier if contexte == "." else f"{contexte}/{fichier}")
-    return construits
 
 
 def services_publies() -> dict[str, tuple[str, str]]:

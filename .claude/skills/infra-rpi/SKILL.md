@@ -539,6 +539,7 @@ les deux coexistent : PostgreSQL se réplique et se promeut, SQLite sert encore
 | L'intégrité | sommes de contrôle de pages (`--data-checksums` à l'initialisation) ; `GET /admin/db/integrite` lit `pg_stat_database.checksum_failures` |
 | La sauvegarde | `backup.py` met l'**export vérifié** (`base-export.tar.gz`, P2-7) dans l'archive, réimporté dans une base jetable avant d'être déclaré réussi ; l'export hors site relit chaque table sur le poste |
 | La maintenance | pas d'arrêt de l'API : l'autovacuum compacte en ligne (`maintenance.sh` lit le moteur de `.env`) |
+| L'image `postgres:<version>` | re-tirée le dimanche sur les **deux** nœuds avec les images de base (`lib-images-base.sh`, #1872) — **sans** redémarrer le primaire ni la réplique. Le conteneur la prend à sa prochaine recréation : la bascule de 02:00 (`demarrer_conteneurs` sur le nouvel actif, la réplique reconstruite sur l'autre). `auto-deploy` ne recrée que l'application, la base n'y est que démarrée si elle manque (`up -d --no-recreate`). L'ancienne image, qu'un conteneur tient encore, se retire au passage suivant (`/var/lib/hostachy/images-base-a-retirer`). Une **mineure** arrive par Dependabot (`docker-compose`) ; une **majeure** jamais — c'est un `pg_upgrade`, un lot à elle |
 | Passer la résidence à PostgreSQL (DI-7c) | sur l'**actif**, dans une fenêtre choisie : `sudo bash /opt/5hostachy/scripts/exploitation/basculer-donnees.sh` (simulation), puis `--oui`. Site coupé : API arrêtée, export vérifié de la base SQLite (`/backups/bascule-donnees-*.tar.gz`), schéma posé, import vérifié, `DATABASE_URL` réécrit sur les **deux** `.env` (`lib-env-base.sh`), l'ancienne valeur gardée en `# RETOUR_SQLITE=` datée. Refuse sans réplique saine ; tout échec remet SQLite |
 | Revenir à SQLite (7 jours) | `sudo bash /opt/5hostachy/scripts/exploitation/retour-sqlite.sh` puis `--oui` : les écritures faites sous PostgreSQL repartent dans une base SQLite neuve (export, schéma, import) — rien n'est perdu. Au-delà de 7 jours il refuse : c'est une décision, pas un geste |
 
@@ -654,7 +655,9 @@ restées vieilles — distinction que le point 10 ne sait pas faire.
 
 **L'actif recrée l'API seule, puis le reste** (#1662, `servir_images` dans
 `auto-deploy.sh`) : il attend le 200 de `http://localhost/api/health` avant de
-recréer le front, borné par `API_PRETE_MAX_S`. Au journal, « API prête en N s »
+recréer le front, borné par `API_PRETE_MAX_S`. « Le reste », c'est
+`SERVICES_APPLICATIFS` : la base n'est que démarrée si elle manque, jamais
+recréée en pleine MEP (#1872). Au journal, « API prête en N s »
 ou « ⚠ API sans réponse 200 … le reste est recréé quand même » — la seconde ne
 bloque jamais le déploiement, elle dit qu'il faut lire `docker logs hostachy_api`.
 
