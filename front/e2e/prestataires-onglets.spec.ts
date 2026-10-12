@@ -36,9 +36,7 @@ const CONTRATS = [1, 2].map((id) => ({
 	actif: true,
 }));
 
-async function ouvrir(page: Page, baseURL: string | undefined, chemin: string) {
-	//  `/prestataires` a une garde SERVEUR qui ne regarde que la PRÉSENCE du cookie.
-	await page.context().addCookies([{ name: 'access_token', value: 'temoin', url: baseURL }]);
+async function ouvrir(page: Page, chemin: string) {
 	await simulerApi(page, (api) => {
 		if (api === '/api/prestataires') return PRESTATAIRES;
 		if (api === '/api/prestataires/contrats') return CONTRATS;
@@ -50,8 +48,8 @@ async function ouvrir(page: Page, baseURL: string | undefined, chemin: string) {
 
 const deplie = (page: Page, id: string) => page.locator(`#${id}.expanded`);
 
-test('annuaire : déplier une fiche replie l’autre', async ({ page, baseURL }) => {
-	await ouvrir(page, baseURL, '/prestataires');
+test('annuaire : déplier une fiche replie l’autre', async ({ page }) => {
+	await ouvrir(page, '/prestataires');
 	await expect(page.locator('#presta-1')).toBeVisible(); //  cas zéro
 	await page.locator('#presta-1').click();
 	await expect(deplie(page, 'presta-1')).toBeVisible();
@@ -60,8 +58,8 @@ test('annuaire : déplier une fiche replie l’autre', async ({ page, baseURL })
 	await expect(deplie(page, 'presta-1')).toHaveCount(0);
 });
 
-test('contrats : déplier un contrat replie l’autre', async ({ page, baseURL }) => {
-	await ouvrir(page, baseURL, '/prestataires/contrats');
+test('contrats : déplier un contrat replie l’autre', async ({ page }) => {
+	await ouvrir(page, '/prestataires/contrats');
 	await expect(page.locator('#contrat-11')).toBeVisible(); //  cas zéro
 	await page.locator('#contrat-11').click();
 	await expect(deplie(page, 'contrat-11')).toBeVisible();
@@ -76,9 +74,8 @@ for (const [chemin, libelle] of [
 ] as const) {
 	test(`le bouton de la page ouvre et referme la création de l’onglet (${libelle})`, async ({
 		page,
-		baseURL,
 	}) => {
-		await ouvrir(page, baseURL, chemin);
+		await ouvrir(page, chemin);
 		const boite = page.getByRole('heading', { name: libelle });
 		await expect(boite).toHaveCount(0);
 		await page.getByRole('button', { name: libelle }).click();
@@ -91,8 +88,8 @@ for (const [chemin, libelle] of [
 	});
 }
 
-test('un lien #presta venu des contrats conduit à la fiche, dépliée', async ({ page, baseURL }) => {
-	await ouvrir(page, baseURL, '/prestataires/contrats#presta-2');
+test('un lien #presta venu des contrats conduit à la fiche, dépliée', async ({ page }) => {
+	await ouvrir(page, '/prestataires/contrats#presta-2');
 	await expect(page).toHaveURL(/\/prestataires#presta-2$/);
 	await expect(deplie(page, 'presta-2')).toBeVisible();
 	await expect(deplie(page, 'presta-1')).toHaveCount(0);
@@ -104,9 +101,8 @@ for (const [chemin, carte, modifier] of [
 ] as const) {
 	test(`la correction s’ouvre dans la carte, le titre ne la replie pas (${carte})`, async ({
 		page,
-		baseURL,
 	}) => {
-		await ouvrir(page, baseURL, chemin);
+		await ouvrir(page, chemin);
 		const fiche = page.locator(`#${carte}`);
 		await fiche.getByRole('button', { name: modifier }).click();
 		const boite = fiche.getByRole('group', { name: modifier });

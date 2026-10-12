@@ -31,12 +31,21 @@
   ⚠️ C'est la forme qu'`ActionsActualite` employait déjà (`onCommenter`,
   `onModifier`, `onOptions`) : ce n'est pas une exception, c'est l'alignement sur
   le voisin.
+
+  ## ⏱ Le rendu se fait par paquets (#1840, 12/10/2026)
+
+  96 cartes rendues d'un coup coûtaient +320 ms à un téléphone moyen après
+  l'arrivée des données. Les `PREMIERS` se rendent d'emblée, la suite à
+  l'approche du bas (`$lib/rendu-progressif`) ; une carte dépliée — par un lien
+  profond — est toujours rendue. La liste reçue reste ENTIÈRE : filtres,
+  recherche et compteurs ne voient pas la différence.
 -->
 <script lang="ts">
 	import ActualiteEnListe from './ActualiteEnListe.svelte';
 	import CarteTicket from './CarteTicket.svelte';
 	import type { CorrespondanceAffaire, Ticket, TicketEvolution } from '$lib/api';
 	import { estActualite, type GestesTicket } from '$lib/tickets';
+	import { aRendre, PAQUET, PREMIERS, quandProche } from '$lib/rendu-progressif';
 
 	/**  Tout ce que la page fait quand la liste bouge — le type vit dans
 	 *   `$lib/tickets`, avec le reste du vocabulaire du ticket. */
@@ -77,9 +86,14 @@
 				: ticketEnOptions === id
 					? 'options'
 					: 'lecture';
+
+	let limite = PREMIERS;
+	/** Le dernier élément déplié : un lien profond l'ouvre, il doit être rendu. */
+	$: requis = tickets.reduce((dernier, t, i) => (expandedIds.has(t.id) ? i : dernier), -1);
+	$: rendus = tickets.slice(0, aRendre(tickets.length, limite, requis));
 </script>
 
-{#each tickets as t (t.id)}
+{#each rendus as t (t.id)}
 	<!--  🔴 Une ACTUALITÉ garde sa carte (#1091, #1092) : c'est une affaire, avec
 	      les mêmes gestes, mais elle se lit comme une information — sans numéro
 	      ni état de suivi. Les gestes passent ENTIERS, par le même objet. -->
@@ -139,3 +153,15 @@
 		/>
 	{/if}
 {/each}
+{#if rendus.length < tickets.length}
+	<!--  Le témoin de la suite : un neuf par paquet (`quandProche`). -->
+	{#key rendus.length}
+		<div class="suite-liste" aria-hidden="true" use:quandProche={() => (limite += PAQUET)}></div>
+	{/key}
+{/if}
+
+<style>
+	.suite-liste {
+		height: 1px;
+	}
+</style>

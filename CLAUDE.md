@@ -790,6 +790,12 @@ déclare dans `REPONSES_PAR_DEFAUT` (`e2e/aides.ts`), avec le type qu'elle imite
 Pourquoi — un titre figé par une exception que personne n'écoutait, et quatre
 specs verts qui en cachaient une : `standards/05` §13, #1475.
 
+🔒 **Une lecture qui ne réessaie pas ne juge pas l'instant** (#1830) :
+`count()`, `allTextContents`, `textContent()`, `innerText()`, `isVisible()`
+suivies d'un `expect` vivent dans un `expect.poll`, ou se déclarent avec leur
+raison dans `DECLAREES` (`npm run lint:e2e-lectures`) — presque toujours une
+assertion qui attend le même élément les précède.
+
 🔒 **Le serveur des tests écoute sur `127.0.0.1`, et les tests le visent là**
 (#1732, 08/10/2026). Avec `localhost`, Vite n'écoutait que sur `::1` et le
 navigateur tentait aussi `127.0.0.1` : `ERR_CONNECTION_REFUSED`, ou « Failed to

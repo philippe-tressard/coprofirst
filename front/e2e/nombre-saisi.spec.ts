@@ -13,10 +13,8 @@ import { attendreHydratation, expect, simulerApi, test } from './aides';
 
 const COMPTEUR = { id: 1, type_compteur: 'eau', label: 'Eau froide', prestataire_id: null };
 
-async function nouveauReleve(page: Page, baseURL?: string): Promise<Request[]> {
+async function nouveauReleve(page: Page): Promise<Request[]> {
 	const envois: Request[] = [];
-	//  `/prestataires` a une garde SERVEUR qui ne regarde que la PRÉSENCE du cookie.
-	await page.context().addCookies([{ name: 'access_token', value: 'temoin', url: baseURL }]);
 	await simulerApi(page, (chemin) =>
 		chemin === '/api/prestataires/compteurs-config' ? [COMPTEUR] : undefined,
 	);
@@ -38,8 +36,8 @@ async function nouveauReleve(page: Page, baseURL?: string): Promise<Request[]> {
 	return envois;
 }
 
-test('un index tapé puis effacé part vide, pas à 0', async ({ page, baseURL }) => {
-	const envois = await nouveauReleve(page, baseURL);
+test('un index tapé puis effacé part vide, pas à 0', async ({ page }) => {
+	const envois = await nouveauReleve(page);
 	const index = page.getByLabel(/Index/);
 	await index.fill('47047');
 	await index.fill('');
@@ -48,8 +46,8 @@ test('un index tapé puis effacé part vide, pas à 0', async ({ page, baseURL }
 	expect(envois[0].postDataJSON().index).toBeNull();
 });
 
-test('un index de 0 — un compteur neuf — reste 0', async ({ page, baseURL }) => {
-	const envois = await nouveauReleve(page, baseURL);
+test('un index de 0 — un compteur neuf — reste 0', async ({ page }) => {
+	const envois = await nouveauReleve(page);
 	await page.getByLabel(/Index/).fill('0');
 	await page.getByRole('button', { name: /Enregistrer/ }).click();
 	await expect.poll(() => envois.length).toBe(1);

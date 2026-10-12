@@ -11,7 +11,8 @@
 		chargeIdentite,
 		identiteDepuis,
 	} from '$lib/components/ChampsIdentiteCopropriete.svelte';
-	import { onMount } from 'svelte';
+	import { tick } from 'svelte';
+	import { browser } from '$app/environment';
 	import { afterNavigate } from '$app/navigation';
 	import { isCS, isLocataire, isProprioOuCS, quandAuthResolue } from '$lib/stores/auth';
 	import {
@@ -28,7 +29,10 @@
 	import { cibleDuHash, revelerCible } from '$lib/deepLink';
 	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
-	import SectionRegles from '$lib/components/SectionRegles.svelte';
+	import SectionRegles, {
+		lireRegles,
+		type LectureRegles,
+	} from '$lib/components/SectionRegles.svelte';
 	import CarnetEntretien from '$lib/components/CarnetEntretien.svelte';
 	import BilanCarnet from '$lib/components/BilanCarnet.svelte';
 	import FicheResidence from '$lib/components/FicheResidence.svelte';
@@ -145,41 +149,52 @@
 		if (type !== 'enter' && !loading) revelerLienProfond();
 	});
 
-	// ── Init ───────────────────────────────────────────────────────────────────
-	onMount(async () => {
+	// ── Chargement de la Fiche ─────────────────────────────────────────────────
+	//  ⏱ UNE vague, et sur la Fiche seulement (#1841). Elle se chargeait en trois
+	//  — les catégories, puis les trois rubriques par l'identifiant de leur
+	//  catégorie, puis les règles au montage de leur section : +411 ms au lieu de
+	//  +149 —, et ouverte sur le Carnet, la page lançait quand même ses huit
+	//  appels. Les rubriques se demandent désormais par CODE ; l'identifiant, qui
+	//  ne sert qu'au dépôt, arrive avec elles. Les règles partent aussi, et
+	//  `SectionRegles` prend leur lecture à son montage.
+	let ficheDemandee = false;
+	let lectureRegles: LectureRegles | null = null;
+	$: if (browser && onglet === 'fiche' && !ficheDemandee) {
+		ficheDemandee = true;
+		chargerFiche();
+	}
+
+	async function chargerFiche() {
+		lectureRegles = lireRegles();
 		try {
-			const [[copro, eCopro], [bats, eBats], [cats, eCats]] = await Promise.all([
+			const [
+				[copro, eCopro],
+				[bats, eBats],
+				[cats, eCats],
+				[p, ep],
+				[r, er],
+				[ag, eag],
+				[diag, ediag],
+			] = await Promise.all([
 				essayer<Copropriete | null>(coproprieteApi.get(), null),
 				essayer<Batiment[]>(coproprieteApi.batiments(), []),
 				essayer(documentsApi.listCategories(), []),
+				essayer<Document[]>(documentsApi.listParCode('plan_residence'), []),
+				essayer<Document[]>(documentsApi.listParCode('reglement_copropriete'), []),
+				essayer<Document[]>(documentsApi.listParCode('pv_ag'), []),
+				essayer<DiagnosticType[]>(diagnosticsApi.listTypes(), []),
 			]);
 			copropriete = copro;
 			batiments = bats;
-			//  ⚠️ Les CATÉGORIES sont la donnée la plus traître des trois : sans
-			//  elles, `catIdPlan` & consorts valent `null`, les trois appels
-			//  suivants sont SAUTÉS, et les trois listes s'affichent vides sans
-			//  qu'aucun appel n'ait échoué. Une absence parfaitement silencieuse,
-			//  produite par une erreur survenue deux lignes plus haut.
+			//  ⚠️ Sans les CATÉGORIES, `catIdPlan` & consorts valent `null` : les
+			//  listes s'affichent (elles se lisent par code), mais le dépôt d'un
+			//  document n'a plus de catégorie où ranger — d'où le bandeau.
 			eReference = messagePartiel(eCopro, eBats, eCats);
 
 			catIdPlan = cats.find((c) => c.code === 'plan_residence')?.id ?? null;
 			catIdReglement = cats.find((c) => c.code === 'reglement_copropriete')?.id ?? null;
 			catIdCrAg = cats.find((c) => c.code === 'pv_ag')?.id ?? null;
 
-			//  Une catégorie absente propage l'erreur des catégories : la liste
-			//  n'est pas vide, elle est indéterminée.
-			const [[p, ep], [r, er], [ag, eag], [diag, ediag]] = await Promise.all([
-				catIdPlan
-					? essayer<Document[]>(documentsApi.list(catIdPlan), [])
-					: Promise.resolve([[], eCats] as [Document[], string]),
-				catIdReglement
-					? essayer<Document[]>(documentsApi.list(catIdReglement), [])
-					: Promise.resolve([[], eCats] as [Document[], string]),
-				catIdCrAg
-					? essayer<Document[]>(documentsApi.list(catIdCrAg), [])
-					: Promise.resolve([[], eCats] as [Document[], string]),
-				essayer<DiagnosticType[]>(diagnosticsApi.listTypes(), []),
-			]);
 			plans = p;
 			ePlans = ep;
 			reglements = r;
@@ -188,14 +203,15 @@
 			eCrAg = eag;
 			diagnosticTypes = diag;
 			eDiagnostics = ediag;
-
-			revelerLienProfond();
 		} catch (e) {
 			toast('error', messageErreur(e, 'Erreur de chargement'));
 		} finally {
 			loading = false;
 		}
-	});
+		//  Après le rendu de la Fiche : l'élément visé doit exister.
+		await tick();
+		revelerLienProfond();
+	}
 
 	// ── Édition résidence ──────────────────────────────────────────────────────
 	function startEdit() {
@@ -230,7 +246,7 @@
       posé plus bas serait lu après ce qu'il devait qualifier (#522). -->
 <ChargementPartiel
 	erreur={eReference}
-	consequence="Les numéros de bâtiment et les listes de documents peuvent être incomplets ou absents."
+	consequence="Les numéros de bâtiment peuvent être absents, et l'ajout d'un document indisponible."
 />
 
 <!--  Le carnet est une VUE de la résidence, pas un écran à part : il partage
@@ -305,7 +321,7 @@
 		{/if}
 	</section>
 
-	<SectionRegles />
+	<SectionRegles bind:lecture={lectureRegles} />
 
 	<!-- ── Plans · Règlement · Comptes-rendus d'AG : une rubrique, trois usages ── -->
 	<RubriqueDocuments

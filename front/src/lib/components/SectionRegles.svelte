@@ -41,15 +41,34 @@
   règle puis la rouvrir) ; les fichiers choisis attendent alors l'enregistrement
   et s'attachent ensuite (`attacherApres`). Une règle qui porte des annexes se
   déplie, même sans détail.
+
+  ## Sa lecture part avec la Fiche (#1841)
+  La section n'est montée qu'une fois la Fiche chargée : ses règles partaient donc
+  en troisième vague. La page lance `lireRegles()` avec ses autres appels et la
+  lui passe (`lecture`), que la section PREND une fois — rouverte, elle relit.
+  L'appel et sa gestion d'erreur restent ici : la page ne fait que le déclencher.
 -->
-<script lang="ts">
-	import { onMount } from 'svelte';
+<script context="module" lang="ts">
 	import {
 		documents as documentsApi,
 		reglesResidence as reglesApi,
 		type Document,
 		type RegleResidenceEcrite,
 	} from '$lib/api';
+	import { essayer } from '$lib/chargement';
+
+	/** Les règles et leurs annexes ; un échec des annexes les laisse vides. */
+	export function lireRegles() {
+		return Promise.all([
+			essayer<RegleResidenceEcrite[]>(reglesApi.list(), []),
+			essayer(documentsApi.annexesParFiche('regle'), new Map<number, Document[]>()),
+		]);
+	}
+	export type LectureRegles = ReturnType<typeof lireRegles>;
+</script>
+
+<script lang="ts">
+	import { onMount } from 'svelte';
 	import { attacherApres } from '$lib/fichiers';
 	import ListeDocuments from './ListeDocuments.svelte';
 	import type { PiecesFiche } from './PiecesJointesFiche.svelte';
@@ -66,7 +85,9 @@
 	import TexteDeplie from './TexteDeplie.svelte';
 	import { basculer } from '$lib/accordeon';
 	import FormulaireDocument from './FormulaireDocument.svelte';
-	import { essayer } from '$lib/chargement';
+
+	/** La lecture lancée par la page, prise une fois (puis remise à `null`). */
+	export let lecture: LectureRegles | null = null;
 
 	/**  Le classement de la gouttière — le même mot que le règlement, l'icône de
 	 *   la section (📋) pour les distinguer. */
@@ -99,7 +120,9 @@
 	};
 
 	onMount(async () => {
-		[[regles, eRegles]] = await Promise.all([essayer(reglesApi.list(), []), chargerAnnexes()]);
+		const lue = lecture ?? lireRegles();
+		lecture = null;
+		[[regles, eRegles], [annexes]] = await lue;
 		chargement = false;
 	});
 

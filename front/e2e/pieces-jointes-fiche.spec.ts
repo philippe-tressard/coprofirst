@@ -58,7 +58,7 @@ async function editerLePlan(page: Page): Promise<string[]> {
 		(route) => {
 			const parametres = new URL(route.request().url()).searchParams;
 			const corps =
-				parametres.get('categorie_id') === '11'
+				parametres.get('categorie') === 'plan_residence'
 					? [PLAN]
 					: parametres.has('annexes_de') || parametres.get('document_parent_id') === '1'
 						? [ANNEXE]
@@ -77,6 +77,8 @@ async function editerLePlan(page: Page): Promise<string[]> {
 	await attendreHydratation(page);
 	const carte = page.locator('.carte-liste', { hasText: 'Plan de masse' });
 	const modifier = carte.getByRole('button', { name: 'Modifier' });
+	//  La carte rendue d'abord : `isVisible` jugerait l'instant (#1830).
+	await expect(carte).toBeVisible();
 	if (!(await modifier.isVisible())) await carte.getByText('Plan de masse').first().click();
 	await modifier.click();
 	return retraits;

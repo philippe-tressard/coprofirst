@@ -162,3 +162,25 @@ def test_un_import_qui_echoue_sur_une_version_retiree_se_rattrape():
         "une version retirée ne charge plus la page suivante en entier : elle "
         "resterait sur l'ancien code."
     )
+
+
+def test_le_service_worker_s_enregistre_apres_l_ouverture():
+    """Il précachait tout le build (≈ 776 Ko, 333 fichiers) dès l'hydratation (#1839).
+
+    À la première visite et après chaque MEP — les seules fois où l'on télécharge
+    vraiment —, ces requêtes disputaient le lien aux données de l'écran et aux
+    morceaux chargés au geste. L'enregistrement attend donc la fin du chargement de
+    la page, un délai, puis un moment d'inactivité. Le hors-ligne est inchangé : le
+    précache est le même, il part plus tard.
+    """
+    composant = _lire(_COMPOSANT)
+    assert "function apresOuverture(" in composant, (
+        "MajDisponible.svelte ne diffère plus l'enregistrement du service worker."
+    )
+    corps = composant[composant.index("function apresOuverture(") :]
+    corps = corps[: corps.index("\n\t}\n")]
+    for attendu in ("'load'", "requestIdleCallback", "DELAI_ENREGISTREMENT_MS"):
+        assert attendu in corps, f"apresOuverture n'attend plus {attendu}"
+    assert composant.index("apresOuverture(() =>") < composant.index(
+        "import('virtual:pwa-register')"
+    ), "l'import du module d'enregistrement n'est plus dans apresOuverture"

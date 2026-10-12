@@ -63,9 +63,7 @@ test('l’éditeur légal garde ses titres, son filet et sa source HTML', async 
 		.toBe(true);
 });
 
-test('un éditeur de description n’a ni titres ni source', async ({ page, baseURL }) => {
-	//  `/prestataires` a une garde SERVEUR qui ne regarde que la PRÉSENCE du cookie.
-	await page.context().addCookies([{ name: 'access_token', value: 'temoin', url: baseURL }]);
+test('un éditeur de description n’a ni titres ni source', async ({ page }) => {
 	await ouvrir(page, '/prestataires');
 	await page.getByRole('button', { name: 'Nouveau prestataire' }).click();
 	//  Section facultative, donc pliée : on la déplie.
@@ -76,7 +74,7 @@ test('un éditeur de description n’a ni titres ni source', async ({ page, base
 	await expect(editeur.getByRole('button', { name: 'Source HTML' })).toHaveCount(0);
 });
 
-test('l’éditeur ne se télécharge qu’à l’ouverture d’un formulaire', async ({ page, baseURL }) => {
+test('l’éditeur ne se télécharge qu’à l’ouverture d’un formulaire', async ({ page }) => {
 	//  Tiptap et ProseMirror pesaient 121 Ko compressés dans le chargement
 	//  initial de chaque écran qui CONTIENT un formulaire, même replié (04/10/2026) :
 	//  `RichEditor` les charge désormais par `import()`. Le build est tenu par
@@ -86,7 +84,6 @@ test('l’éditeur ne se télécharge qu’à l’ouverture d’un formulaire', 
 	page.on('request', (r) => {
 		if (/tiptap|prosemirror/i.test(r.url())) tiptap.push(r.url());
 	});
-	await page.context().addCookies([{ name: 'access_token', value: 'temoin', url: baseURL }]);
 	await ouvrir(page, '/prestataires');
 	await expect(page.getByRole('button', { name: 'Nouveau prestataire' })).toBeVisible();
 	expect(tiptap, 'Tiptap téléchargé à l’ouverture de l’écran').toEqual([]);

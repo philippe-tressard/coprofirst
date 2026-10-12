@@ -12,7 +12,7 @@
  *  « aucune correspondance » —, puis se rendent.
  */
 import type { Page } from '@playwright/test';
-import { expect, simulerApi, test } from './aides';
+import { expect, retenirApi, simulerApi, test } from './aides';
 
 const COMMANDE = {
 	id: 5,
@@ -35,22 +35,12 @@ const REFERENCE = ['/api/admin/utilisateurs', '/api/lots/admin/tous', '/api/lots
 /** Retient `/lots/admin/imports` jusqu'à `relacher()`, et note les chemins demandés. */
 async function retenirImports(page: Page) {
 	const demandes: string[] = [];
-	let relacher: () => void = () => {};
-	const relache = new Promise<void>((r) => (relacher = r));
 	page.on('request', (r) => demandes.push(new URL(r.url()).pathname));
 	await simulerApi(page, (chemin) =>
 		chemin === '/api/admin/commandes-acces' ? [COMMANDE] : undefined,
 	);
-	//  Déclarée APRÈS `simulerApi` : Playwright essaie les routes de la plus
-	//  récente à la plus ancienne.
-	await page.route(
-		(url) => url.pathname === '/api/lots/admin/imports',
-		async (route) => {
-			await relache;
-			await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
-		},
-	);
-	return { demandes, relacher: () => relacher() };
+	const relacher = await retenirApi(page, (chemin) => chemin === '/api/lots/admin/imports');
+	return { demandes, relacher };
 }
 
 test('Espace CS › Validations : affichées sans attendre l’Annuaire', async ({ page }) => {

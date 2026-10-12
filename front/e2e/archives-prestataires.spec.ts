@@ -42,9 +42,7 @@ const contrat = (id: number, libelle: string, archivee: boolean) => ({
 	archivee,
 });
 
-async function ouvrir(page: Page, baseURL: string | undefined, chemin: string) {
-	//  `/prestataires` a une garde SERVEUR qui ne regarde que la PRÉSENCE du cookie.
-	await page.context().addCookies([{ name: 'access_token', value: 'temoin', url: baseURL }]);
+async function ouvrir(page: Page, chemin: string) {
 	await simulerApi(page, (api) => {
 		if (api === '/api/prestataires') return [OTIS];
 		if (api === '/api/prestataires/archives') return [RANGE];
@@ -55,11 +53,8 @@ async function ouvrir(page: Page, baseURL: string | undefined, chemin: string) {
 	await page.goto(chemin);
 }
 
-test('annuaire : 📦 dans la liste, la fiche rangée aux Archives avec ↩️', async ({
-	page,
-	baseURL,
-}) => {
-	await ouvrir(page, baseURL, '/prestataires');
+test('annuaire : 📦 dans la liste, la fiche rangée aux Archives avec ↩️', async ({ page }) => {
+	await ouvrir(page, '/prestataires');
 	const carte = page.locator('#presta-1');
 	await expect(carte).toBeVisible(); //  cas zéro
 
@@ -80,11 +75,8 @@ test('annuaire : 📦 dans la liste, la fiche rangée aux Archives avec ↩️',
 	await expect(rangee.getByRole('button', { name: 'Modifier' })).toHaveCount(0);
 });
 
-test('annuaire : 📦 demande confirmation, puis envoie le geste unique', async ({
-	page,
-	baseURL,
-}) => {
-	await ouvrir(page, baseURL, '/prestataires');
+test('annuaire : 📦 demande confirmation, puis envoie le geste unique', async ({ page }) => {
+	await ouvrir(page, '/prestataires');
 	await page.locator('#presta-1').getByRole('button', { name: 'Archiver' }).click();
 
 	const boite = page.getByRole('dialog');
@@ -96,11 +88,8 @@ test('annuaire : 📦 demande confirmation, puis envoie le geste unique', async 
 	expect((await requete).postDataJSON()).toEqual({ archivee: true });
 });
 
-test('contrats : 📦 dans la liste, le contrat rangé aux Archives avec ↩️', async ({
-	page,
-	baseURL,
-}) => {
-	await ouvrir(page, baseURL, '/prestataires/contrats');
+test('contrats : 📦 dans la liste, le contrat rangé aux Archives avec ↩️', async ({ page }) => {
+	await ouvrir(page, '/prestataires/contrats');
 	const carte = page.locator('#contrat-11');
 	await expect(carte).toBeVisible(); //  cas zéro
 	const archiver = carte.getByRole('button', { name: 'Archiver' });

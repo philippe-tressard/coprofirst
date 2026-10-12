@@ -80,6 +80,10 @@ export const documents = {
 		const qs = params.toString();
 		return api.get<Document[]>(`/documents${qs ? `?${qs}` : ''}`);
 	},
+	/**  Les documents d'une rubrique, par le CODE de sa catégorie (`plan_residence`…) :
+	 *   sans attendre `listCategories` pour en connaître l'identifiant (#1841). */
+	listParCode: (code: string) =>
+		api.get<Document[]>(`/documents?categorie=${encodeURIComponent(code)}`),
 	listCategories: () =>
 		api.get<{ id: number; code: string; libelle: string }[]>('/documents/categories'),
 	/**  Corriger un document existant.
