@@ -20,13 +20,25 @@ function delaiBridgeMs() {
   return Number(m[1]);
 }
 
-test("l'image du bridge embarque arret.js (index.js le requiert au démarrage)", () => {
+// Chaque module local qu'`index.js` requiert, lu dans index.js : un module
+// oublié dans le Dockerfile, et le bridge plante au démarrage en production —
+// alors que tous les tests, lancés depuis le dépôt, le trouvent (accuses.js,
+// 12/10/2026 : ce test ne nommait qu'arret.js).
+const modulesRequis = () =>
+  [...lire(BRIDGE, "index.js").matchAll(/require\("\.\/([\w-]+)"\)/g)].map((m) => `${m[1]}.js`);
+
+test("l'image du bridge embarque chaque module local requis par index.js", () => {
   const dockerfile = lire(BRIDGE, "Dockerfile");
   const copies = dockerfile.split(/\r?\n/).filter((l) => /^COPY\s/.test(l) && !l.includes("package"));
-  assert.ok(
-    copies.some((l) => /\barret\.js\b/.test(l)),
-    `arret.js n'est copié par aucune ligne COPY : ${copies.join(" | ")}`
-  );
+  const requis = modulesRequis();
+  // Témoin : la lecture des `require` doit trouver au moins le module d'arrêt.
+  assert.ok(requis.includes("arret.js"), `modules requis lus dans index.js : ${requis.join(", ")}`);
+  for (const module of requis) {
+    assert.ok(
+      copies.some((l) => l.split(/\s+/).includes(module)),
+      `${module} n'est copié par aucune ligne COPY : ${copies.join(" | ")}`
+    );
+  }
 });
 
 test("docker-compose : stop_grace_period du bridge, strictement au-dessus du minuteur du bridge", () => {

@@ -25,7 +25,7 @@ let bridge;
 before(async () => {
   bridge = spawn(process.execPath, ["-r", "./tests/baileys-simule.js", "index.js"], {
     cwd: path.join(__dirname, ".."),
-    env: { ...process.env, WA_PORT: String(PORT), WA_API_KEY: CLE, WA_LOG_LEVEL: "silent" },
+    env: { ...process.env, WA_PORT: String(PORT), WA_API_KEY: CLE, WA_LOG_LEVEL: "silent", WA_ACK_DELAI_MS: "400" },
     stdio: "ignore",
   });
   // Attendre que le bridge écoute ET que la connexion simulée soit ouverte.
@@ -153,4 +153,32 @@ test("QR alors que connecté : 200, « Already connected »", async () => {
   const r = await appel("/qr", { headers: { "x-api-key": CLE } });
   assert.equal(r.statut, 200);
   assert.equal(r.corps.state, "open");
+});
+
+// ── L'accusé du serveur (12/10/2026) ─────────────────────────────────────
+// Chaque envoi au GROUPE de la résidence rendait 202 « accusé non observé » en
+// production, et un courriel d'alerte partait à chaque message arrivé.
+
+const envoyer = (number, text) =>
+  appel("/send", { method: "POST", headers: JSON_CLE, body: JSON.stringify({ number, text }) });
+
+test("envoi à un GROUPE : 200 — l'accusé du serveur suffit, sans accusé de destinataire", async () => {
+  const r = await envoyer("120363000000000000@g.us", "t");
+  assert.equal(r.statut, 200);
+  assert.equal(r.corps.ok, true);
+});
+
+test("accusé d'erreur du serveur : 502 « refusé », jamais 202 « probablement remis »", async () => {
+  const r = await envoyer("120363000000000000@g.us", "SIMULE_ACCUSE_ERREUR");
+  assert.equal(r.statut, 502);
+  assert.equal(r.corps.refuse, true);
+  assert.match(r.corps.error, /479/);
+});
+
+// En DERNIER : le 202 déclenche une reconnexion du socket.
+test("aucun accusé dans le délai : 202, message émis mais non acquitté", async () => {
+  const r = await envoyer("120363000000000000@g.us", "SIMULE_SANS_ACCUSE");
+  assert.equal(r.statut, 202);
+  assert.equal(r.corps.envoye, true);
+  assert.equal(r.corps.acquitte, false);
 });
