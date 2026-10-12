@@ -4,7 +4,7 @@
   La carte suit le modèle commun (`ux-patterns` §3) : repliée, toute la carte
   ouvre ; dépliée, seul le titre referme. Repliée, on lit la question, le
   verdict et l'aperçu de la réponse ; dépliée, la réponse entière, les extraits
-  et les réserves.
+  et les réserves — sous la mention de l'avis, en tête et en italique.
 
   ## 🔴 Un extrait se lit avec ce que le CODE en a vérifié
 
@@ -21,13 +21,14 @@
 	import CarteListe from '$lib/components/CarteListe.svelte';
 	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
 	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
+	import BadgeVerdict from '$lib/components/BadgeVerdict.svelte';
 	import BoutonLien from '$lib/components/BoutonLien.svelte';
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import type { QuestionReglement } from '$lib/api';
 	import { fmtDatetime } from '$lib/date';
 	import { safeHtml } from '$lib/sanitize';
-	import { isAdmin, isCS } from '$lib/stores/auth';
+	import { isCS } from '$lib/stores/auth';
 
 	export let q: QuestionReglement;
 	/** La carte est-elle dépliée ? L'état vit dans l'onglet : une seule ouverte. */
@@ -68,7 +69,8 @@
 					><IconeAction icone="book-open-check" /></button
 				>
 			{/if}
-			{#if $isAdmin}
+			<!--  Son auteur et l'administration (11/10/2026) — le serveur le dit. -->
+			{#if q.peut_supprimer}
 				<button
 					class="btn-icon-danger"
 					aria-label="Supprimer la question"
@@ -84,16 +86,7 @@
 			{/if}
 		</svelte:fragment>
 		<svelte:fragment slot="tags">
-			<!--  La teinte d'un verdict ne s'écrit qu'ici, en `class:` : une classe
-			      interpolée rendrait le fichier aveugle à `lint:css-orphelin`. -->
-			<span
-				class="badge"
-				class:badge-green={q.verdict === 'oui'}
-				class:badge-red={q.verdict === 'non'}
-				class:badge-orange={q.verdict === 'sous_conditions'}
-				class:badge-gray={q.verdict === 'non_prevu'}
-				class:badge-yellow={q.verdict === 'incertain'}>{q.verdict_libelle}</span
-			>
+			<BadgeVerdict verdict={q.verdict} libelle={q.verdict_libelle} />
 			{#if q.extraits.length}
 				<span class:alerte={verifies < q.extraits.length}
 					>{verifies}/{q.extraits.length} extrait{q.extraits.length > 1 ? 's' : ''} vérifié{verifies >
@@ -125,6 +118,18 @@
 	{:else if ouvert}
 		<!--  Le corps ne referme pas la carte : on lit, on sélectionne, on copie. -->
 		<div class="carte-corps corps lecture" role="presentation" on:click|stopPropagation>
+			<!--  La mention en TÊTE, en italique (arbitré sur maquette le 11/10/2026) :
+			      on sait ce qu'on lit avant de le lire. Ni le coût — l'exploitation
+			      se lit dans Admin › Assistant IA —, ni la date de chargement des
+			      fichiers, qui ne disait pas QUELS actes ont été lus : la provenance
+			      saisie par l'administration le dit (`provenance`). -->
+			<p class="aide mention">
+				Posée le {fmtDatetime(q.cree_le)}. Avis indicatif, qui ne se substitue pas aux actes
+				authentiques.
+				{#if q.modele && q.provenance}Rédigé par {q.modele}, d'après {q.provenance}.
+				{:else if q.modele}Rédigé par {q.modele}.
+				{:else if q.provenance}Rédigé d'après {q.provenance}.{/if}
+			</p>
 			<div class="rich-content">{@html safeHtml(q.reponse)}</div>
 
 			{#if q.extraits.length}
@@ -154,15 +159,6 @@
 				<h4 class="intertitre">Réserves</h4>
 				<div class="rich-content">{@html safeHtml(q.reserves)}</div>
 			{/if}
-
-			<p class="aide">
-				Posée le {fmtDatetime(q.cree_le)}. Avis indicatif, qui ne se substitue pas aux actes
-				authentiques.
-				{#if q.modele}Rédigé par {q.modele}{#if q.texte_charge_le}, d'après le texte chargé le {fmtDatetime(
-							q.texte_charge_le,
-						)}{/if}.{/if}
-				{#if q.cout_usd}Coût : {q.cout_usd} $.{/if}
-			</p>
 		</div>
 	{/if}
 </CarteListe>
@@ -171,6 +167,12 @@
 	/*  Le retrait de l'en-tête (`EnteteCarte`, 0,7 rem) : le corps s'aligne sur le titre. */
 	.corps {
 		padding: 0 0.7rem 0.75rem;
+	}
+	/*  La phrase grise est `.aide` (`ux-patterns` §9 bis bis) ; en tête, elle
+	    prend l'italique et sa marge passe dessous. */
+	.mention {
+		margin: 0 0 0.6rem;
+		font-style: italic;
 	}
 	.lecture {
 		font-size: var(--fs-base);

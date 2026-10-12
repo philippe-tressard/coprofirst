@@ -39,6 +39,7 @@ PORTEURS = {
     "publications.py": "auteur_id",
     "communaute.py": "auteur_id",
     "ressources.py": "publie_par_id",
+    "reglement.py": "auteur_id",
 }
 
 #: Ceux qui n'ont pas d'auteur humain, avec le motif.

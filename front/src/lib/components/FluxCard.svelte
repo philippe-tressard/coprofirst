@@ -31,6 +31,8 @@
 	import PastillesAffaire from '$lib/components/PastillesAffaire.svelte';
 	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
 	import MarqueIA from '$lib/components/MarqueIA.svelte';
+	import BadgeVerdict from '$lib/components/BadgeVerdict.svelte';
+	import { champDe } from '$lib/utils';
 	import {
 		badgeClass,
 		badgesDuFlux,
@@ -172,7 +174,12 @@
 				<PastillesAffaire {affaire} {auteur} dansLeFil />
 			{:else}
 				{#each badgesDuFlux(item) as b (b)}
-					<span class="badge {badgeClass(item.type, b)}">{b}</span>
+					<!--  Un verdict garde la teinte qu'il a dans l'onglet Règlement. -->
+					{#if item.type === 'question_reglement'}
+						<BadgeVerdict verdict={String(champDe(item.meta, 'verdict') ?? '')} libelle={b} />
+					{:else}
+						<span class="badge {badgeClass(item.type, b)}">{b}</span>
+					{/if}
 				{/each}
 				<!--  `BadgePerimetre` ne rend RIEN quand le périmètre vaut le défaut. -->
 				<BadgePerimetre perimetre={perimetreCodes} />

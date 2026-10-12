@@ -46,6 +46,18 @@ def config_site(session: Session, *cles: str) -> dict:
     return {r.cle: r.valeur for r in lignes}
 
 
+def ecrire_cle(session: Session, cle: str, valeur: str) -> ConfigSite:
+    """Pose la valeur d'une clé, créée si elle manque — sans valider la transaction.
+
+    `session.get` puis « sinon une ligne neuve » s'écrivait chez chaque écran
+    qui enregistre un réglage (logo, consignes de l'arrivant, règlement).
+    """
+    ligne = session.get(ConfigSite, cle) or ConfigSite(cle=cle, valeur="")
+    ligne.valeur = valeur
+    session.add(ligne)
+    return ligne
+
+
 def contexte_site(cfg: dict) -> dict:
     """Le bloc `residence` / `app` que tous les modèles d'e-mail attendent."""
     return {
@@ -54,4 +66,4 @@ def contexte_site(cfg: dict) -> dict:
     }
 
 
-__all__ = ["config_site", "contexte_site"]
+__all__ = ["config_site", "contexte_site", "ecrire_cle"]

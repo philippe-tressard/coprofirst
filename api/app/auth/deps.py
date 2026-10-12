@@ -89,10 +89,17 @@ def utilisateur_ou_anonyme(
 #  part n'est qu'une promesse.
 
 
-def require_proprietaire(user: Utilisateur = Depends(get_current_user)) -> Utilisateur:
-    if not user.has_role(
+def est_proprietaire_ou_conseil(user: Utilisateur) -> bool:
+    """Copropriétaire, conseil syndical ou administration — le PRÉDICAT que
+    `require_proprietaire` refuse. Le fil d'activité le demande sans lever
+    (une question au règlement, 11/10/2026) : la règle s'appelle, ne se recopie pas."""
+    return user.has_role(
         RoleUtilisateur.propriétaire, RoleUtilisateur.conseil_syndical, RoleUtilisateur.admin
-    ):
+    )
+
+
+def require_proprietaire(user: Utilisateur = Depends(get_current_user)) -> Utilisateur:
+    if not est_proprietaire_ou_conseil(user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Réservé aux propriétaires"
         )
@@ -167,6 +174,22 @@ def require_questions_reglement(
             detail="Les questions au règlement sont réservées au conseil syndical pour le moment.",
         )
     return user
+
+
+def question_reglement_visible(question, user: Utilisateur, session: Session) -> bool:
+    """Ce lecteur voit-il cette question au règlement ? — l'onglet et le fil d'activité.
+
+    Il faut d'abord passer la porte de l'onglet (`require_questions_reglement` :
+    copropriétaire ou conseil, usage ouvert aux copropriétaires), puis être son
+    AUTEUR, ou modérer : une question dit souvent ce qu'on envisage chez soi.
+    L'administration refermant l'usage, les questions d'un copropriétaire quittent
+    aussi son fil (arbitré le 11/10/2026 : « les mêmes droits de visibilité »).
+    """
+    return (
+        est_proprietaire_ou_conseil(user)
+        and peut_poser_questions_reglement(user, session)
+        and (est_moderateur(user) or est_auteur(question, user))
+    )
 
 
 def est_moderateur(user: Utilisateur) -> bool:

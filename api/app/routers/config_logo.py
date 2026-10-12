@@ -18,6 +18,7 @@ from sqlmodel import Session
 from app.auth.deps import require_admin
 from app.database import get_session
 from app.models.core import ConfigSite, Utilisateur
+from app.utils.config_site import ecrire_cle
 from app.utils.fichiers import enregistrer_fichier_recu
 from app.utils.images import carre_png
 from app.utils.stockage import stockage
@@ -61,9 +62,7 @@ def televerser_logo(
         stockage().supprimer(f"{DOSSIER}/{nom}")
         raise HTTPException(400, "Impossible de lire l'image.")
     ancien = fichier_logo(session)
-    ligne = session.get(ConfigSite, CLE_LOGO) or ConfigSite(cle=CLE_LOGO, valeur="")
-    ligne.valeur = nom
-    session.add(ligne)
+    ecrire_cle(session, CLE_LOGO, nom)
     session.commit()
     if ancien is not None:
         ancien.unlink(missing_ok=True)

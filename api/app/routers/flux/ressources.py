@@ -18,7 +18,7 @@ from app.models.core import (
 from app.utils.liens import lien_element
 from app.utils.visibility import document_visible
 
-from app.utils.documents import lien_document
+from app.utils.documents import endroit_document, lien_document
 from .commun import ContexteFlux, auteur_nom, strip_html
 from .schemas import FluxItem
 
@@ -75,7 +75,8 @@ def _collecter_documents(ctx: ContexteFlux) -> list[FluxItem]:
                 date=d.publie_le,
                 cree_le=d.publie_le,
                 titre=d.titre,
-                detail="Nouveau document",
+                #  OÙ il a été ajouté — « Nouveau document » ne le disait pas (11/10/2026).
+                detail=endroit_document(d, ctx.user),
                 icon="📄",
                 badges=[],
                 lien=lien_document(d, ctx.user, ctx.session),
@@ -95,7 +96,7 @@ def _collecter_documents(ctx: ContexteFlux) -> list[FluxItem]:
                     #  sur le seul écran Résidence — signalé à l'écran le 09/09.
                     #
                     #  Elle passe par `meta` et non par `detail` : `detail` dit ce qui
-                    #  s'est PASSÉ (« Nouveau document »), la description dit ce que le
+                    #  s'est PASSÉ (« Document ajouté dans… »), la description dit ce que le
                     #  document COUVRE. La carte affiche « libellé — extrait » depuis
                     #  #531, et se tait d'elle-même si l'un répète l'autre.
                     "description": strip_html(d.description),

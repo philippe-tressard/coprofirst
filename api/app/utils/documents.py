@@ -37,16 +37,29 @@ from sqlmodel import Session
 
 from app.models.core import ContratEntretien, Document, Utilisateur
 from app.utils.liens import lien_element, lien_ticket, page_element
+from app.utils.question_reglement.texte import CODE_CATEGORIE as CODE_TEXTE_REGLEMENT
 from app.auth.deps import est_moderateur
 
-#: Les catégories qui ont une rubrique à elles sur /residence. Un document d'une
-#: autre catégorie n'y est pas listé : lui fabriquer un lien enverrait sur une
-#: page où rien ne s'allume.
-CATEGORIES_AVEC_LIEN = {
-    "plan_residence",
-    "reglement_copropriete",
-    "pv_ag",
+#: Où un document d'une catégorie s'affiche : l'onglet, tel que le menu le nomme,
+#: et la rubrique — ce que le fil d'activité DIT sous le titre (11/10/2026).
+#: Signalé à l'écran : « Nouveau document » ne disait pas où le trouver.
+#: ⚠️ Les noms suivent `front/src/lib/pages.ts` (onglets) et les titres des
+#: rubriques de `/residence` : renommer l'un, c'est renommer l'autre.
+RUBRIQUES: dict[str, tuple[str, str]] = {
+    "plan_residence": ("Résidence › Fiche", "rubrique Plans"),
+    "reglement_copropriete": ("Résidence › Fiche", "rubrique Règlement de copropriété"),
+    "pv_ag": ("Résidence › Fiche", "rubrique Comptes-rendus d'AG"),
+    CODE_TEXTE_REGLEMENT: ("Résidence › Règlement", "parmi les textes lus par l'assistant"),
 }
+
+#: Les catégories qui ont une rubrique à elles sur la Fiche de /residence, où le
+#: document est listé avec son ancre. Un document d'une autre catégorie n'y est
+#: pas : lui fabriquer un lien enverrait sur une page où rien ne s'allume.
+CATEGORIES_AVEC_LIEN = {code for code, (onglet, _) in RUBRIQUES.items() if onglet.endswith("Fiche")}
+
+
+def _code(doc: Document) -> Optional[str]:
+    return doc.categorie.code if doc.categorie else None
 
 
 def lien_document(doc: Document, user: Utilisateur, session: Session) -> Optional[str]:
@@ -75,8 +88,32 @@ def lien_document(doc: Document, user: Utilisateur, session: Session) -> Optiona
         # Les documents d'un contrat sont listés dans la fiche de son prestataire.
         return lien_element("presta", contrat.prestataire_id) if contrat else page_element("presta")
 
-    code = doc.categorie.code if doc.categorie else None
+    code = _code(doc)
+    if code == CODE_TEXTE_REGLEMENT:
+        #  L'onglet où il est joint, sans ancre : il n'y est pas listé en carte.
+        #  `document_visible` l'a déjà réservé à l'administration.
+        return page_element("question-reglement")
     return lien_element("doc", doc.id) if code in CATEGORIES_AVEC_LIEN else None
 
 
-__all__ = ["CATEGORIES_AVEC_LIEN", "lien_document"]
+def endroit_document(doc: Document, user: Utilisateur) -> str:
+    """Ce que le fil dit sous le titre d'un document : OÙ il a été ajouté.
+
+    Suit les mêmes cas que `lien_document`, pour que la phrase et le lien ne se
+    contredisent pas. Le fil ne voit que les AJOUTS (il trie par `publie_le`) :
+    la phrase ne dit jamais « modifié ».
+    """
+    if doc.ticket_id:
+        return "Pièce jointe ajoutée à une affaire"
+    if doc.contrat_id:
+        if est_moderateur(user):
+            return "Document ajouté à la fiche d'un prestataire"
+        return "Nouveau document"
+    rubrique = RUBRIQUES.get(_code(doc) or "")
+    if rubrique is None:
+        return "Nouveau document"
+    onglet, precision = rubrique
+    return f"Document ajouté dans {onglet}, {precision}"
+
+
+__all__ = ["CATEGORIES_AVEC_LIEN", "RUBRIQUES", "endroit_document", "lien_document"]

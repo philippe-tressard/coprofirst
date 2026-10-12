@@ -8,7 +8,7 @@
  *
  *  Routes : `api/app/routers/reglement.py` — copropriétaires (si l'usage leur est
  *  ouvert), conseil et admin. Un copropriétaire ne reçoit que SES questions, sans
- *  modèle ni coût. Les FICHIERS du règlement passent par le client des documents
+ *  modèle ; le coût d'un appel n'est rendu à personne. Les FICHIERS du règlement passent par le client des documents
  *  (catégorie réservée à l'administration).
  */
 import { api } from './client';
@@ -23,6 +23,8 @@ export interface EtatReglement {
 	/** Pour l'administration seule : la catégorie où joindre les fichiers
 	 *  (`documents.uploadPour('categorie', …)`). */
 	categorie_id: number | null;
+	/** Pour l'administration seule : d'où vient le texte (« la numérisation du RCP… »). */
+	provenance: string | null;
 }
 
 /** Un extrait cité par l'assistant, et ce que le code en a vérifié. */
@@ -51,11 +53,13 @@ export interface QuestionReglement {
 	texte_id: number;
 	/** Faux : la réponse a lu une version remplacée depuis. */
 	texte_en_vigueur: boolean;
-	texte_charge_le: string | null;
+	/** D'où vient le texte lu — celle de la question, sinon l'actuelle. */
+	provenance: string | null;
 	auteur_nom: string | null;
 	modele: string | null;
-	cout_usd: string | null;
 	faq_item_id: number | null;
+	/** Son auteur et l'administration — la corbeille s'affiche d'après lui. */
+	peut_supprimer: boolean;
 	cree_le: string;
 }
 
@@ -77,4 +81,7 @@ export const reglement = {
 	publierDansLaFaq: (id: number, corps: PublicationFaq) =>
 		api.post<QuestionReglement>(`/reglement/questions/${id}/faq`, corps),
 	supprimerQuestion: (id: number) => api.delete(`/reglement/questions/${id}`),
+	/** Administration seule — rend l'état de l'onglet relu. */
+	modifierProvenance: (provenance: string) =>
+		api.put<EtatReglement>('/reglement/provenance', { provenance }),
 };

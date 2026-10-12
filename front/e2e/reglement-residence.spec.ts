@@ -7,8 +7,13 @@
  *    seulement alors — fermé, l'onglet disparaît et son adresse ramène à la Fiche ;
  *  • il y lit une phrase et le lien vers le règlement publié, jamais les fichiers
  *    que l'assistant lit, et ses questions sans l'icône de publication en FAQ ;
- *  • l'administration, seule, voit ces fichiers dans l'objet Pièces jointes
- *    standard (11/10/2026) ;
+ *  • l'administration, seule, voit ces fichiers et leur provenance ; le crayon
+ *    ouvre le formulaire standard — Provenance, Pièces jointes, Annuler et
+ *    Enregistrer (arbitré sur maquette le 11/10/2026) ;
+ *  • l'avis s'ouvre sur sa mention, en italique : la provenance du texte, jamais
+ *    son coût ni la date de chargement des fichiers ;
+ *  • la corbeille suit `peut_supprimer` (son auteur, l'administration), et la
+ *    question paraît au fil d'activité, verdict teinté, lien vers l'onglet ;
  *  • le conseil syndical publie, et ne voit pas les fichiers non plus ;
  *  • l'ancienne adresse de l'Espace CS mène ici, ancre comprise.
  *
@@ -37,9 +42,16 @@ const ETAT_LECTEUR = {
 	texte_disponible: true,
 	lien_reglement: LIEN,
 	categorie_id: null,
+	provenance: null,
 };
 /** …et à l'administration : la catégorie où joindre les fichiers, pas de lien. */
-const ETAT_ADMIN = { ...ETAT_LECTEUR, lien_reglement: null, categorie_id: 40 };
+const PROVENANCE = 'la numérisation du règlement et de ses modificatifs de 1995 et 2005';
+const ETAT_ADMIN = {
+	...ETAT_LECTEUR,
+	lien_reglement: null,
+	categorie_id: 40,
+	provenance: PROVENANCE,
+};
 
 /** Un fichier du règlement joint (`Document`, catégorie réservée à l'admin). */
 const FICHIER = {
@@ -62,7 +74,7 @@ const FICHIER = {
 	annee: null,
 };
 
-/** `QuestionReglement` — sans modèle ni coût, comme pour un copropriétaire. */
+/** `QuestionReglement` — sans modèle, comme pour un copropriétaire. */
 const QUESTION = {
 	id: 3,
 	question: 'Puis-je installer une climatisation sur mon balcon ?',
@@ -73,11 +85,11 @@ const QUESTION = {
 	extraits: [],
 	texte_id: 1,
 	texte_en_vigueur: true,
-	texte_charge_le: '2026-10-01T10:00:00',
+	provenance: PROVENANCE,
 	auteur_nom: 'Jean Dupont',
 	modele: null,
-	cout_usd: null,
 	faq_item_id: null,
+	peut_supprimer: false,
 	cree_le: '2026-10-05T09:00:00',
 };
 
@@ -124,6 +136,106 @@ test('l’administration seule voit les fichiers, dans les pièces jointes stand
 	await expect(
 		page.getByRole('link', { name: 'consulter le règlement de copropriété' }),
 	).toHaveCount(0);
+});
+
+test('l’avis s’ouvre sur sa mention en italique : la provenance, ni coût ni date de chargement', async ({
+	page,
+}) => {
+	await ouvrir(page, { compte: COPROPRIETAIRE, acces: true, adresse: '/residence/reglement' });
+	await page.getByText(QUESTION.question).click();
+	const corps = page.locator('#question-reglement-3 .carte-corps');
+	const mention = corps.locator('p').first();
+	await expect(mention).toContainText('Avis indicatif');
+	await expect(mention).toContainText(`Rédigé d'après ${PROVENANCE}.`);
+	await expect(mention).toHaveCSS('font-style', 'italic');
+	await expect(corps).not.toContainText('Coût');
+	await expect(corps).not.toContainText('texte chargé');
+});
+
+test('l’administration modifie le texte au crayon : Annuler, puis Enregistrer', async ({
+	page,
+}) => {
+	await ouvrir(page, { compte: ADMIN, acces: true, adresse: '/residence/reglement' });
+	const envois: unknown[] = [];
+	await page.route('**/api/reglement/provenance', (route) => {
+		const corps = route.request().postDataJSON() as { provenance: string };
+		envois.push(corps);
+		return route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({ ...ETAT_ADMIN, provenance: corps.provenance }),
+		});
+	});
+	await expect(page.getByText(PROVENANCE)).toBeVisible();
+	const crayon = page.getByRole('button', { name: 'Modifier le texte du règlement' });
+	const champ = page.getByLabel('Provenance');
+
+	await crayon.click();
+	await expect(champ).toHaveValue(PROVENANCE);
+	await champ.fill('Autre provenance');
+	await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+	await expect(champ).toHaveCount(0);
+	await expect(page.getByText(PROVENANCE)).toBeVisible();
+	expect(envois).toEqual([]);
+
+	await crayon.click();
+	await champ.fill('la numérisation du règlement');
+	await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+	await expect(champ).toHaveCount(0);
+	await expect(page.getByText('la numérisation du règlement', { exact: true })).toBeVisible();
+	expect(envois).toEqual([{ provenance: 'la numérisation du règlement' }]);
+});
+
+test('la corbeille suit ce que le serveur permet : l’auteur la voit', async ({ page }) => {
+	const corbeille = page.getByRole('button', { name: 'Supprimer la question' });
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return COPROPRIETAIRE;
+		if (chemin === '/api/reglement') return ETAT_LECTEUR;
+		if (chemin === '/api/reglement/questions') return [{ ...QUESTION, peut_supprimer: true }];
+	});
+	await page.goto('/residence/reglement');
+	await attendreHydratation(page);
+	await expect(corbeille).toBeVisible();
+	//  Le conseil syndical, sur la question d'un autre : pas de corbeille.
+	await ouvrir(page, { compte: MEMBRE_CS, acces: true, adresse: '/residence/reglement' });
+	await expect(page.getByText(QUESTION.question)).toBeVisible();
+	await expect(corbeille).toHaveCount(0);
+});
+
+test('la question paraît au fil d’activité, verdict teinté, et mène à l’onglet', async ({
+	page,
+}) => {
+	const maintenant = new Date().toISOString().slice(0, 19);
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return COPROPRIETAIRE;
+		if (chemin === '/api/flux')
+			return {
+				items: [
+					{
+						id: 'qr_3',
+						type: 'question_reglement',
+						date: maintenant,
+						cree_le: maintenant,
+						titre: QUESTION.question,
+						detail: 'Question au règlement — Oui, après autorisation de l’assemblée.',
+						badges: ['Oui, sous conditions'],
+						icon: '⚖️',
+						lien: '/residence/reglement#question-reglement-3',
+						meta: { question_reglement_id: 3, verdict: 'sous_conditions', auteur: 'Jean Dupont' },
+					},
+				],
+				sante: {},
+			};
+	});
+	await page.goto('/tableau-de-bord');
+	await attendreHydratation(page);
+	const carte = page.locator('.carte-liste', { hasText: QUESTION.question });
+	await expect(carte).toBeVisible();
+	await expect(carte).toContainText('RÈGL.');
+	await expect(carte.locator('.badge', { hasText: 'Oui, sous conditions' })).toHaveClass(
+		/badge-orange/,
+	);
+	await expect(carte).toContainText('✍️ Jean Dupont');
 });
 
 test('fermé, l’onglet disparaît et son adresse ramène à la Fiche', async ({ page }) => {
