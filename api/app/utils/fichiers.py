@@ -440,8 +440,8 @@ def enregistrer_televersement(file, raw_name: str, user=None) -> str:
     st = stockage()
     cle = f"{DOSSIER_PRIVE}/{nom_stocke(raw_name, extension)}"
     st.ecrire_flux(cle, file.file)
-    #  La CLÉ, que la ligne de la base garde (`fichier_cle`, #1816) — avec, le
-    #  temps d'une version, le chemin absolu (`stockage().colonnes(cle)`).
+    #  La CLÉ, que la ligne de la base garde (`fichier_cle`, #1816) —
+    #  `stockage().colonnes(cle)`.
     return cle
 
 

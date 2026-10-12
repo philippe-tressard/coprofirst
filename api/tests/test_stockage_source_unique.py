@@ -58,7 +58,7 @@ def test_aucune_racine_de_fichiers_hors_du_stockage():
             fautes[m.rel] = a
     assert not fautes, (
         "Racine des fichiers lue ou écrite en dur hors de `utils/stockage` (#1748) — "
-        "situer un fichier par `stockage()` (`chemin`, `fichier_de_url`, `cle_de_chemin`, "
+        "situer un fichier par `stockage()` (`chemin`, `fichier_de_url`, `cle_de`, "
         "`url`), la racine entière par `stockage().racine` :\n"
         + "\n".join(
             f"  app/{rel}:{ligne} — {forme}" for rel, a in fautes.items() for ligne, forme in a
@@ -119,8 +119,7 @@ def test_ecrire_lire_supprimer_et_l_adresse(tmp_path):
     assert st.url("photos/a.jpg") == "/uploads/photos/a.jpg"
     assert st.fichier_de_url("/uploads/photos/a.jpg") == (tmp_path / "photos" / "a.jpg").resolve()
     st.ecrire_flux("prive/b.pdf", io.BytesIO(b"%PDF"))
-    chemin = str(st.chemin("prive/b.pdf"))
-    assert st.cle_de_chemin(chemin) == "prive/b.pdf"
+    assert st.cle_de(SimpleNamespace(fichier_cle="prive/b.pdf")) == "prive/b.pdf"
     st.supprimer("prive/b.pdf")
     st.supprimer("photos/a.jpg")
     assert not st.existe("photos/a.jpg") and not st.existe("prive/b.pdf")
@@ -131,8 +130,7 @@ def test_un_chemin_garde_en_base_hors_de_la_racine_n_est_jamais_touche(tmp_path)
     dehors.write_bytes(b"intact")
     st = StockageDisque(tmp_path / "racine")
     (tmp_path / "racine").mkdir()
-    assert st.cle_de_chemin(str(dehors)) is None
-    st.supprimer_de(SimpleNamespace(fichier_cle=None, fichier_chemin=str(dehors)))
+    st.supprimer_de(SimpleNamespace(fichier_cle="../dehors.txt"))
     assert dehors.read_bytes() == b"intact"
     assert st.fichier_de_url("/uploads/../dehors.txt") is None
 

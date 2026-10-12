@@ -68,6 +68,13 @@ CONTRACTIONS: dict[str, tuple[str, str]] = {
         "le champ quitte le modèle, la 0272 lui donne un défaut (#1797)",
     ),
     "ticket.non_relancable_motif": ("2.130.5", "le motif du marquage retiré (#1797)"),
+    "document.fichier_chemin": (
+        "2.142.7",
+        "le fichier se situe par sa clé depuis v2.142.3 (0283) ; le chemin absolu "
+        "n'est plus ni lu ni écrit, la 0284 lui donne un défaut (#1816)",
+    ),
+    "diagnostic_rapport.fichier_chemin": ("2.142.7", "même règle que le document (#1816)"),
+    "annonce_hall.pdf_chemin": ("2.142.7", "même règle que le document (#1816)"),
 }
 
 #: Les gestes qui retirent quelque chose à l'ancien code.

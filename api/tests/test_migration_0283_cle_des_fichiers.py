@@ -65,8 +65,8 @@ def test_les_cles_se_deduisent_des_chemins_de_production():
     _jouer(moteur)  # idempotente : `start.sh` rejoue après un arrêt
     assert _lire(moteur, "SELECT id, fichier_cle FROM document ORDER BY id") == [
         (1, "prive/0a1b_reglement.pdf"),
-        #  Hors des dossiers connus, ou vide : pas de clé — la ligne se relit
-        #  par son chemin, borné (`stockage().cle_de`).
+        #  Hors des dossiers connus, ou vide : pas de clé, donc pas de fichier
+        #  depuis le second temps (0284). Aucune en production (relevé du 12/10).
         (2, None),
         (3, None),
     ]

@@ -6,11 +6,12 @@ ABSOLU écrit sur le disque du conteneur, relu à onze endroits — `os.path.isf
 chemin, et un volume monté ailleurs les rendait tous faux. Ils gardent désormais
 la clé (`fichier_cle`, `pdf_cle`), et toute lecture passe par
 `stockage().cle_de / fichier_de / supprimer_de` ; une écriture par
-`stockage().colonnes(cle)`.
+`stockage().colonnes(cle)`. Depuis le second temps (0284), le chemin n'est plus
+ni lu ni écrit : la migration 0283 a posé la clé de chaque ligne d'avant.
 
 Ce fichier refuse le retour d'un `.fichier_chemin` ou d'un `.pdf_chemin` lu ou
-écrit ailleurs, et éprouve les gestes : la clé prime, le chemin d'une ligne
-ancienne se relit borné, rien ne sort de la racine.
+écrit dans l'application, et éprouve les gestes : seule la clé situe un
+fichier, rien ne sort de la racine.
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ from types import SimpleNamespace
 from app.utils.stockage import StockageDisque
 from tests.aides_sources import modules_app
 
-#: Les colonnes de chemin absolu, en partance (second temps : `CONTRACTIONS`).
+#: Les colonnes de chemin absolu, retirées des modèles (`CONTRACTIONS`).
 COLONNES_DE_CHEMIN = {"fichier_chemin", "pdf_chemin"}
 
 #: Les modules qui ont le droit de les nommer — avec leur raison.
@@ -93,29 +94,26 @@ def _st(tmp_path) -> StockageDisque:
     return st
 
 
-def test_une_ligne_neuve_garde_la_cle_et_le_chemin(tmp_path):
+def test_une_ligne_neuve_ne_garde_que_sa_cle(tmp_path):
     st = _st(tmp_path)
-    assert st.colonnes("prive/a.pdf") == {
-        "fichier_cle": "prive/a.pdf",
-        "fichier_chemin": str(st.chemin("prive/a.pdf")),
-    }
-    assert set(st.colonnes("annonces-hall/b.pdf", "pdf")) == {"pdf_cle", "pdf_chemin"}
+    assert st.colonnes("prive/a.pdf") == {"fichier_cle": "prive/a.pdf"}
+    assert st.colonnes("annonces-hall/b.pdf", "pdf") == {"pdf_cle": "annonces-hall/b.pdf"}
 
 
-def test_la_cle_prime_sur_un_chemin_perime(tmp_path):
-    """Le volume monté ailleurs : le chemin ne mène plus nulle part, la clé si."""
+def test_la_cle_situe_le_fichier(tmp_path):
     st = _st(tmp_path)
-    doc = SimpleNamespace(fichier_cle="prive/a.pdf", fichier_chemin="/ancien/volume/prive/a.pdf")
+    doc = SimpleNamespace(fichier_cle="prive/a.pdf")
     assert st.cle_de(doc) == "prive/a.pdf"
     assert st.fichier_de(doc) == st.chemin("prive/a.pdf")
 
 
-def test_une_ligne_ancienne_se_relit_par_son_chemin_borne(tmp_path):
+def test_un_chemin_sans_cle_ne_se_relit_plus(tmp_path):
+    """Second temps (0284) : même un chemin qui mène au fichier ne le situe plus."""
     st = _st(tmp_path)
     ancienne = SimpleNamespace(fichier_cle=None, fichier_chemin=str(st.chemin("prive/a.pdf")))
-    assert st.cle_de(ancienne) == "prive/a.pdf"
-    affiche = SimpleNamespace(pdf_cle=None, pdf_chemin=str(st.chemin("prive/a.pdf")))
-    assert st.fichier_de(affiche, "pdf") == st.chemin("prive/a.pdf")
+    assert st.cle_de(ancienne) is None and st.fichier_de(ancienne) is None
+    affiche = SimpleNamespace(pdf_cle="", pdf_chemin=str(st.chemin("prive/a.pdf")))
+    assert st.fichier_de(affiche, "pdf") is None
 
 
 def test_rien_ne_sort_de_la_racine(tmp_path):
@@ -123,8 +121,8 @@ def test_rien_ne_sort_de_la_racine(tmp_path):
     dehors = tmp_path / "dehors.txt"
     dehors.write_bytes(b"intact")
     for ligne in (
-        SimpleNamespace(fichier_cle="../dehors.txt", fichier_chemin=None),
-        SimpleNamespace(fichier_cle=None, fichier_chemin=str(dehors)),
+        SimpleNamespace(fichier_cle="../dehors.txt"),
+        SimpleNamespace(fichier_cle=str(dehors)),
     ):
         assert st.fichier_de(ligne) is None
         st.supprimer_de(ligne)
@@ -133,7 +131,7 @@ def test_rien_ne_sort_de_la_racine(tmp_path):
 
 def test_un_fichier_absent_ne_se_sert_pas_et_se_supprime_sans_erreur(tmp_path):
     st = _st(tmp_path)
-    doc = SimpleNamespace(fichier_cle="prive/a.pdf", fichier_chemin="")
+    doc = SimpleNamespace(fichier_cle="prive/a.pdf")
     st.supprimer_de(doc)
     assert st.fichier_de(doc) is None
     st.supprimer_de(doc)

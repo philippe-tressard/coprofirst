@@ -49,7 +49,7 @@ def test_le_pdf_de_l_affiche_part_avec_elle(contexte):
     session, cs = contexte
     annonce = creer(session, cs)
     st = stockage()
-    cle_pdf = st.cle_de_chemin(annonce.pdf_chemin)
+    cle_pdf = st.cle_de(annonce, "pdf")
     assert cle_pdf is not None and st.existe(cle_pdf)
     _supprimer(session, annonce.id)
     assert not st.existe(cle_pdf)

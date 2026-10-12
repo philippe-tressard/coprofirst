@@ -136,43 +136,28 @@ class StockageDisque:
     def url(self, cle: str) -> str:
         return PREFIXE_URL + cle_valide(cle)
 
-    def cle_de_chemin(self, chemin: object) -> str | None:
-        """Le chemin ABSOLU qu'une ligne de la base a gardé → sa clé, ou `None` s'il sort.
-
-        Les lignes d'avant #1816 que la migration 0283 n'a pas converties : leur
-        chemin se relit ici, borné sous la racine (`cle_de`).
-        """
-        if not isinstance(chemin, str) or not chemin:
-            return None
-        reel = Path(chemin).resolve()
-        racine = self.racine.resolve()
-        if not reel.is_relative_to(racine) or reel == racine:
-            return None
-        return reel.relative_to(racine).as_posix()
-
     # ── Le fichier d'une LIGNE de la base (#1816) ─────────────────────────────
     #
     #  Le document, le rapport de diagnostic et l'affiche de hall gardent la CLÉ
     #  de leur fichier (`fichier_cle`, `pdf_cle`) : un chemin absolu n'a pas de
     #  sens dans un stockage objet, et il change si le volume est monté ailleurs.
-    #  Le chemin les accompagne encore le temps d'une version — la précédente le
-    #  relit (#1757) —, et une ligne que la migration 0283 n'a pas convertie se
-    #  relit par lui, borné. Toute lecture passe par ces trois gestes, qui
-    #  disparaîtront avec la colonne (`CONTRACTIONS`).
+    #  La migration 0283 l'a posée sur chaque ligne d'avant ; le chemin n'est plus
+    #  ni lu ni écrit (second temps, `CONTRACTIONS`). Toute lecture passe par ces
+    #  trois gestes.
 
     def colonnes(self, cle: str, prefixe: str = "fichier") -> dict[str, str]:
-        """Ce qu'une ligne garde d'un fichier qu'on vient d'écrire : `…_cle` et `…_chemin`."""
-        return {f"{prefixe}_cle": cle_valide(cle), f"{prefixe}_chemin": str(self.chemin(cle))}
+        """Ce qu'une ligne garde d'un fichier qu'on vient d'écrire : sa clé, validée."""
+        return {f"{prefixe}_cle": cle_valide(cle)}
 
     def cle_de(self, ligne: object, prefixe: str = "fichier") -> str | None:
-        """La clé du fichier d'une ligne, ou `None` — sa colonne `…_cle`, sinon son chemin."""
+        """La clé du fichier d'une ligne, ou `None` — absente, ou hors du préfixe."""
         cle = getattr(ligne, f"{prefixe}_cle", None)
-        if isinstance(cle, str) and cle:
-            try:
-                return cle_valide(cle)
-            except CleInvalide:
-                return None
-        return self.cle_de_chemin(getattr(ligne, f"{prefixe}_chemin", None))
+        if not isinstance(cle, str) or not cle:
+            return None
+        try:
+            return cle_valide(cle)
+        except CleInvalide:
+            return None
 
     def fichier_de(self, ligne: object, prefixe: str = "fichier") -> Path | None:
         """Le fichier EXISTANT d'une ligne, ou `None` — absent, ou hors du préfixe."""

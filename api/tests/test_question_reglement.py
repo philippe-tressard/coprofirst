@@ -321,7 +321,6 @@ def _document(moteur, roles: list[str], auteur_id: int, titre: str) -> int:
         doc = Document(
             titre=titre,
             fichier_nom="acte.pdf",
-            fichier_chemin="/inexistant/acte.pdf",
             categorie_id=categorie_id,
             profil_acces_override_id=profil.id,
             publie_par_id=auteur_id,

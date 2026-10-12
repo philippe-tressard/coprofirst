@@ -94,9 +94,7 @@ def test_un_sondage_vote_et_un_document_restent_et_le_resultat_ne_bouge_pas(sess
     session.commit()
     for qui in (membre, votant):
         session.add(VoteSondage(sondage_id=sondage.id, option_id=oui.id, user_id=qui.id))
-    doc = Document(
-        titre="Règlement", fichier_nom="r.pdf", fichier_chemin="/x/r.pdf", publie_par_id=membre.id
-    )
+    doc = Document(titre="Règlement", fichier_nom="r.pdf", publie_par_id=membre.id)
     session.add(doc)
     session.commit()
     sondage_id, doc_id = sondage.id, doc.id

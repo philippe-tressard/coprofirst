@@ -161,7 +161,6 @@ def residence(session):
         titre="Plan de masse",
         fichier_nom="plan.pdf",
         fichier_cle="prive/plan.pdf",
-        fichier_chemin="/tmp/plan.pdf",
         categorie_id=categorie.id,
         publie_par_id=cs.id,
     )
@@ -174,7 +173,6 @@ def residence(session):
         titre="DPE 2025",
         fichier_nom="dpe.pdf",
         fichier_cle="prive/dpe.pdf",
-        fichier_chemin="/tmp/dpe.pdf",
         publie_par_id=cs.id,
     )
     session.add(rapport)
@@ -216,7 +214,6 @@ def test_une_annexe_dont_la_fiche_a_disparu_ne_se_lit_plus(session, residence, d
     orpheline = Document(
         titre="Orpheline",
         fichier_nom="o.pdf",
-        fichier_chemin="/tmp/o.pdf",
         regle_residence_id=987654,
         publie_par_id=r["cs"].id,
     )
@@ -345,7 +342,7 @@ def test_une_fiche_garde_au_moins_un_fichier(session, residence, disque):
         documents.retirer_fichier_document(r["plan"].id, session=session, _=r["cs"])
     assert leve.value.status_code == 400
     assert disque.effaces == []
-    assert session.get(Document, r["plan"].id).fichier_chemin == "/tmp/plan.pdf"
+    assert session.get(Document, r["plan"].id).fichier_cle == "prive/plan.pdf"
 
 
 def test_seul_un_document_de_la_bibliotheque_a_un_fichier_principal(session, residence, disque):

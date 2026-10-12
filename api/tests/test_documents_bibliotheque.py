@@ -95,7 +95,6 @@ def bibliotheque():
         depot = Document(
             titre="Règlement de copropriété",
             fichier_nom="reglement.pdf",
-            fichier_chemin="/app/uploads/prive/reglement.pdf",
             categorie_id=None,
             contrat_id=None,
             publication_id=None,
@@ -104,14 +103,12 @@ def bibliotheque():
         jointe_ticket = Document(
             titre="Photo de la fuite",
             fichier_nom="fuite.jpg",
-            fichier_chemin="/app/uploads/prive/fuite.jpg",
             ticket_id=porteur_ticket.id,
             publie_par_id=admin.id,
         )
         jointe_evenement = Document(
             titre="Plan d'accès",
             fichier_nom="plan.pdf",
-            fichier_chemin="/app/uploads/prive/plan.pdf",
             evenement_id=porteur_evenement.id,
             publie_par_id=admin.id,
         )
