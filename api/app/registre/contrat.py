@@ -33,6 +33,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 #: autre est refusée avec un message qui le dit — jamais lue de travers.
 VERSION_CONTRAT = 1
 
+
 def _personnel(finalite: str, **kw):
     """Un champ qui porte une donnée personnelle — de l'administrateur, jamais d'un résident."""
     return Field(description=finalite, json_schema_extra={"personnel": True}, **kw)
@@ -143,7 +144,9 @@ class Posture(_Contrat):
     documentation_api_coupee: Optional[bool] = Field(
         default=None, description="signaler une surface exposée"
     )
-    cookie_securise: Optional[bool] = Field(default=None, description="signaler une session exposée")
+    cookie_securise: Optional[bool] = Field(
+        default=None, description="signaler une session exposée"
+    )
     secret_suffisant: Optional[bool] = Field(default=None, description="signaler un secret faible")
     lien_source_present: Optional[bool] = Field(
         default=None, description="vérifier l'obligation de l'AGPL §13"

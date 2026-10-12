@@ -36,7 +36,9 @@ EMPREINTES: dict[int, str] = {
 
 def versions() -> list[int]:
     """Les versions présentes dans le dossier, croissantes."""
-    return sorted(int(m.group(1)) for f in DOSSIER.glob("v*.md") if (m := re.fullmatch(r"v(\d+)\.md", f.name)))
+    return sorted(
+        int(m.group(1)) for f in DOSSIER.glob("v*.md") if (m := re.fullmatch(r"v(\d+)\.md", f.name))
+    )
 
 
 def texte(version: int) -> str:

@@ -178,9 +178,7 @@ def _inscrire(session: Session, demande: DemandeInscription) -> Installation:
     session.flush()
     inst.identifiant = identifiant_de(inst.id)
     session.add(inst)
-    session.add(
-        DecisionRegistre(installation_id=inst.id, geste="inscription", auteur=SYSTEME)
-    )
+    session.add(DecisionRegistre(installation_id=inst.id, geste="inscription", auteur=SYSTEME))
     _archiver_acceptation(session, inst, demande)
     _ecrire_contact(session, inst, demande)
     return inst

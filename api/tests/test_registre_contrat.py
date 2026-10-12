@@ -38,7 +38,9 @@ def test_le_contrat_n_est_pas_vide():
     assert len(list(_champs())) > 30
 
 
-@pytest.mark.parametrize("schema,nom,champ", list(_champs()), ids=lambda x: getattr(x, "__name__", x))
+@pytest.mark.parametrize(
+    "schema,nom,champ", list(_champs()), ids=lambda x: getattr(x, "__name__", x)
+)
 def test_chaque_champ_dit_sa_finalite(schema, nom, champ):
     assert (champ.description or "").strip(), f"{schema.__name__}.{nom} : finalité absente"
 

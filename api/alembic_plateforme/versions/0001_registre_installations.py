@@ -73,9 +73,7 @@ def upgrade():
         sa.Column("accepte_par", sa.String(300), nullable=False),
         sa.Column("accepte_le", sa.DateTime, nullable=False),
     )
-    op.create_index(
-        "ix_acceptation_conditions_installation_id", ACCEPTATION, ["installation_id"]
-    )
+    op.create_index("ix_acceptation_conditions_installation_id", ACCEPTATION, ["installation_id"])
 
 
 def downgrade():

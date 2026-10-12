@@ -78,7 +78,9 @@ test('Installation : une réplique en retard le dit, sur replica', async ({ page
 	await expect(carte.getByText(/s’active dans/)).toHaveCount(0);
 });
 
-test('Installation : un rôle non déclaré est « Inconnu », jamais « Référence »', async ({ page }) => {
+test('Installation : un rôle non déclaré est « Inconnu », jamais « Référence »', async ({
+	page,
+}) => {
 	const carte = await ouvrir(page, {
 		...BASE,
 		role: 'inconnu',
