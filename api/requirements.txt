@@ -1,13 +1,13 @@
-fastapi==0.142.2
+fastapi==0.143.0
 uvicorn[standard]==0.54.0
 slowapi==0.1.10
-sqlmodel==0.0.47
+sqlmodel==0.0.48
 #  Importés DIRECTEMENT par le code — pydantic ~50 fois, sqlalchemy ~250 fois,
 #  pydantic_settings par `config.py` — mais qui n'arrivaient ici que par
 #  transitivité (fastapi, sqlmodel, fastapi-mail). Une montée de l'un de ceux-là
 #  changeait donc leur version sans que ce fichier bouge (#1048, 24/09/2026).
 #  Épinglés à la version que ce fichier résolvait ce jour-là : aucun changement.
-pydantic==2.13.5
+pydantic==2.14.0
 pydantic-settings==2.15.0
 #  `EmailStr` (routers/config, routers/partage) charge `email_validator` à
 #  l'exécution, sans `import` qu'un contrôle verrait : il n'arrivait que par
@@ -42,7 +42,7 @@ python-dotenv==1.2.4
 #  licence zlib. `dnspython` (ISC) arrivait déjà par `email-validator` ; il est
 #  désormais importé directement, donc épinglé ici (#1048).
 dkimpy==1.1.8
-dnspython==2.8.0
+dnspython==2.9.0
 Pillow==12.3.0
 qrcode[pil]==8.2
 jinja2==3.1.6
