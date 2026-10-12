@@ -426,7 +426,6 @@ async def upload_document(
     # authentifié qui impose lui-même le `media_type`, l'extension d'origine
     # peut donc être conservée telle quelle.
     raw_name = file.filename or "document"
-    #  Les 16 premiers octets suffisent à toutes les signatures connues ;
     #  🔴 Validation ET écriture en un seul geste (#825) : lire seize octets,
     #  rembobiner, vérifier la signature, journaliser, refuser, nommer, copier.
     #  Ces neuf lignes étaient recopiées dans trois routeurs — une copie qui
@@ -434,14 +433,12 @@ async def upload_document(
     cle = enregistrer_televersement(file, raw_name, user)
     st = stockage()
 
-    size = st.chemin(cle).stat().st_size
-
     doc = Document(
         titre=titre,
         description=description,
         fichier_nom=file.filename,
         **st.colonnes(cle),
-        taille_octets=size,
+        taille_octets=st.chemin(cle).stat().st_size,
         mime_type=file.content_type or "application/octet-stream",
         categorie_id=categorie_id,
         contrat_id=contrat_id,
