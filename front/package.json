@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "2.141.0",
+	"version": "2.142.0",
 	"private": true,
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
@@ -110,6 +110,7 @@
 		"lint:pastilles": "node scripts/check-pastilles.mjs --selftest && node scripts/check-pastilles.mjs",
 		"lint:manuel-pastilles": "node scripts/check-manuel-pastilles.mjs",
 		"lint:chargement": "node scripts/check-chargement.mjs --selftest && node scripts/check-chargement.mjs",
+		"lint:donnees-affichees": "node scripts/check-donnees-affichees.mjs --selftest && node scripts/check-donnees-affichees.mjs",
 		"lint:etage-libelle": "node scripts/check-etage-libelle.mjs",
 		"lint:type-lot": "node scripts/check-type-lot.mjs --selftest && node scripts/check-type-lot.mjs",
 		"lint:identite-copropriete": "node scripts/check-identite-copropriete.mjs --selftest && node scripts/check-identite-copropriete.mjs",

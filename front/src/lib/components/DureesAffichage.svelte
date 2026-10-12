@@ -19,6 +19,7 @@
 	const LIBELLES = {
 		chargement: 'Ouverture du site',
 		navigation: 'Passage d’un écran à l’autre',
+		donnees: 'Données affichées',
 	} as const;
 </script>
 
@@ -77,8 +78,9 @@
 	{/if}
 	<svelte:fragment slot="pied">
 		<p>
-			Mesuré dans le navigateur de chacun, jusqu’à l’écran prêt — sans le temps qu’il passe ensuite
-			à lire ses données. Les comptes qui ont refusé la mesure d’audience n’envoient rien.
+			Mesuré dans le navigateur de chacun. « Ouverture » et « passage » s’arrêtent à l’écran prêt ;
+			« Données affichées » part du même instant et va jusqu’à ses données principales posées, sur
+			les écrans de premier niveau. Les comptes qui ont refusé la mesure d’audience n’envoient rien.
 			Conservation : 30 jours.
 		</p>
 	</svelte:fragment>

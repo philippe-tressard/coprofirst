@@ -43,7 +43,7 @@
 	import ListeSondages from '$lib/components/ListeSondages.svelte';
 	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
 	import OngletIdees from '$lib/components/OngletIdees.svelte';
-	import { trackTabView } from '$lib/telemetry';
+	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
 	import { cibleDuHash, revelerCible } from '$lib/deepLink';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	import PanneauModeration from '$lib/components/PanneauModeration.svelte';
@@ -296,6 +296,7 @@
 		sondagesLoading = false;
 		ideesLoading = false;
 		annoncesLoading = false;
+		marquerDonneesAffichees();
 
 		// ── Lien profond ────────────────────────────────────────────────────────────
 		//  L'ancre désigne un élément qui vit dans UNE rubrique précise. Sur la bonne

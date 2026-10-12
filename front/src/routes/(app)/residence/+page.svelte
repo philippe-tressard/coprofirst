@@ -13,6 +13,7 @@
 	} from '$lib/components/ChampsIdentiteCopropriete.svelte';
 	import { tick } from 'svelte';
 	import { browser } from '$app/environment';
+	import { marquerDonneesAffichees } from '$lib/telemetry';
 	import { afterNavigate } from '$app/navigation';
 	import { isCS, isLocataire, isProprioOuCS, quandAuthResolue } from '$lib/stores/auth';
 	import {
@@ -33,8 +34,7 @@
 		lireRegles,
 		type LectureRegles,
 	} from '$lib/components/SectionRegles.svelte';
-	import CarnetEntretien from '$lib/components/CarnetEntretien.svelte';
-	import BilanCarnet from '$lib/components/BilanCarnet.svelte';
+	//  ⏱ Le Carnet et son bilan attendent le passage sur leur onglet (#1844).
 	import FicheResidence from '$lib/components/FicheResidence.svelte';
 	import RubriqueDocuments from '$lib/components/RubriqueDocuments.svelte';
 	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
@@ -208,9 +208,11 @@
 		} finally {
 			loading = false;
 		}
-		//  Après le rendu de la Fiche : l'élément visé doit exister.
+		//  Après le rendu de la Fiche : l'élément visé doit exister. Ouverte sur un
+		//  autre onglet, la page n'est mesurée qu'au passage sur la Fiche.
 		await tick();
 		revelerLienProfond();
+		marquerDonneesAffichees();
 	}
 
 	// ── Édition résidence ──────────────────────────────────────────────────────
@@ -256,9 +258,17 @@
 	      l'arrivée. À côté du carnet et non dedans — le carnet est la lecture de
 	      tous les copropriétaires, le bilan celle du conseil. -->
 	{#if $isCS}
-		<BilanCarnet />
+		<ChargementDiffere charger={() => import('$lib/components/BilanCarnet.svelte')}>
+			{#snippet contenu(BilanCarnet)}
+				<BilanCarnet />
+			{/snippet}
+		</ChargementDiffere>
 	{/if}
-	<CarnetEntretien />
+	<ChargementDiffere charger={() => import('$lib/components/CarnetEntretien.svelte')}>
+		{#snippet contenu(CarnetEntretien)}
+			<CarnetEntretien />
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'reglement'}
 	{#if accesReglement === null}
 		<EtatListe chargement />

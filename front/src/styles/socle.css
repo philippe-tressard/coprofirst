@@ -102,6 +102,9 @@ body {
 	--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 	--duree-geste: 120ms;
 	--duree-apparition: 200ms;
+	/*  Avant d'annoncer une attente (`ChargementDiffere`) : en deçà, elle
+	    clignoterait — le morceau est le plus souvent déjà en cache (12/10/2026). */
+	--delai-annonce: 300ms;
 	/*  L'échelle du TEXTE (#1055, 27/09/2026). Six paliers, chacun à la valeur
 	    déjà la plus employée par les écrans. Une taille hors échelle se range
 	    au cran SUPÉRIEUR — aucun texte ne rétrécit en se normalisant —, arbitré

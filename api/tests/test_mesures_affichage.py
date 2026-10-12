@@ -9,12 +9,16 @@
 - le refus de la mesure d'audience la coupe aussi ;
 - médiane et 75ᵉ centile au RANG le plus proche, par indicateur et par page,
   les pages les plus lentes d'abord ; la purge retire ce qui dépasse la
-  conservation.
+  conservation ;
+- les indicateurs reconnus sont ceux qu'envoie le navigateur (#1846) : le
+  front et l'API ne partagent aucun fichier, la liste est tenue des deux côtés.
 """
 
 from __future__ import annotations
 
+import re
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -28,6 +32,7 @@ from app.utils.mesures_affichage import (
     ACTION_MESURE,
     CONSERVATION_JOURS,
     DUREE_MAX_MS,
+    INDICATEURS,
     centile,
     lire_mesure,
     purger_mesures,
@@ -152,3 +157,19 @@ def test_la_purge_retire_ce_qui_depasse_la_conservation():
         assert purger_mesures(s, aujourd_hui) == 1
         restantes = sorted(m.page for m in s.exec(select(MesureAffichage)).all())
     assert restantes == ["/age-0", f"/age-{CONSERVATION_JOURS}"]
+
+
+TELEMETRY_TS = Path(__file__).resolve().parents[2] / "front" / "src" / "lib" / "telemetry.ts"
+
+
+def test_les_indicateurs_sont_ceux_qu_envoie_le_navigateur():
+    """Un indicateur ajouté d'un seul côté se perd sans un mot : refusé ici,
+    ou envoyé sans que rien ne l'enregistre (#1846)."""
+    source = TELEMETRY_TS.read_text(encoding="utf-8")
+    trouve = re.search(r"const INDICATEURS = \[([^\]]*)\]", source)
+    assert trouve, "INDICATEURS introuvable dans telemetry.ts"
+    assert tuple(re.findall(r"'(\w+)'", trouve.group(1))) == INDICATEURS
+
+
+def test_une_duree_de_donnees_s_enregistre(moteur):
+    assert lire_mesure("donnees:861") == ("donnees", 861)

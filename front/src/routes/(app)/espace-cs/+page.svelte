@@ -2,12 +2,11 @@
 	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import { page } from '$app/stores';
 	import { nomAffiche } from '$lib/noms';
-	import AnnuaireConseil from '$lib/components/AnnuaireConseil.svelte';
-	import AnnuaireSyndic from '$lib/components/AnnuaireSyndic.svelte';
 	import type { Inscrit, LigneImport, LotRapproche } from '$lib/annuaire-rapprochement';
 	import type { User } from '$lib/api/types';
 	import EntetePage from '$lib/components/EntetePage.svelte';
-	import ValidationCompte from '$lib/components/ValidationCompte.svelte';
+	//  ⏱ L'onglet Annuaire et la boîte de validation attendent un geste :
+	//  chargés à leur affichage (#1844).
 	import { validerCompte } from '$lib/comptes';
 	import { messageErreur, tenter } from '$lib/erreurs';
 	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
@@ -24,13 +23,11 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
 	import { fmtDateShort } from '$lib/date';
-	import { trackTabView } from '$lib/telemetry';
+	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	import { agitPourAutrui } from '$lib/roles';
 	import { accepterCommandeAcces, refuserCommandeAcces } from '$lib/commandes-acces';
 	import EtatListe from '$lib/components/EtatListe.svelte';
-	import LienConsignes from '$lib/components/LienConsignes.svelte';
-	import ConsignesArrivant from '$lib/components/ConsignesArrivant.svelte';
 
 	$: _pc = getPageConfig($configStore, 'espace-cs', defautsDePage('espace-cs'));
 	$: _siteNom = $siteNomStore;
@@ -105,6 +102,7 @@
 			toast('error', 'Erreur de chargement');
 		} finally {
 			loading = false;
+			marquerDonneesAffichees();
 		}
 	}
 
@@ -281,15 +279,19 @@
 					      dérive. -->
 					{#if cvModal?.id === user.id}
 						<div class="pending-form">
-							<ValidationCompte
-								utilisateur={user}
-								enCours={cvSubmitting}
-								bind:nouvelArrivant={cvNewArrivant}
-								bind:batiment={cvBatiment}
-								bind:ancienResident={cvAncienResident}
-								onAnnuler={() => (cvModal = null)}
-								onValider={confirmerCSValidation}
-							/>
+							<ChargementDiffere charger={() => import('$lib/components/ValidationCompte.svelte')}>
+								{#snippet contenu(ValidationCompte)}
+									<ValidationCompte
+										utilisateur={user}
+										enCours={cvSubmitting}
+										bind:nouvelArrivant={cvNewArrivant}
+										bind:batiment={cvBatiment}
+										bind:ancienResident={cvAncienResident}
+										onAnnuler={() => (cvModal = null)}
+										onValider={confirmerCSValidation}
+									/>
+								{/snippet}
+							</ChargementDiffere>
 						</div>
 					{/if}
 				{/each}
@@ -357,37 +359,11 @@
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'annuaire'}
-	<LienConsignes />
-
-	<!--  Ce que la fiche imprime sous « Consignes de la copropriété » (#1727). -->
-	<section class="annuaire-section">
-		<div class="annuaire-section-header">
-			<h2 class="section-title">Consignes de la fiche arrivant</h2>
-		</div>
-		<ConsignesArrivant />
-	</section>
-
-	<section class="annuaire-section">
-		<div class="annuaire-section-header">
-			<h2 class="section-title">Conseil Syndical</h2>
-		</div>
-		{#if referenceLue}
-			<AnnuaireConseil {sources} />
-		{:else}
-			<EtatListe chargement />
-		{/if}
-	</section>
-
-	<section class="annuaire-section">
-		<div class="annuaire-section-header">
-			<h2 class="section-title">Syndic</h2>
-		</div>
-		{#if referenceLue}
-			<AnnuaireSyndic {sources} />
-		{:else}
-			<EtatListe chargement />
-		{/if}
-	</section>
+	<ChargementDiffere charger={() => import('$lib/components/OngletAnnuaireCS.svelte')}>
+		{#snippet contenu(OngletAnnuaireCS)}
+			<OngletAnnuaireCS {referenceLue} {sources} />
+		{/snippet}
+	</ChargementDiffere>
 {/if}
 
 <style>
@@ -445,23 +421,7 @@
 		}
 	}
 
-	/*  L'annuaire porte son style avec son balisage — `AnnuaireConseil`,
-	    `AnnuaireSyndic`, et `CarteMembre` pour ce qui s'écrit dans ses
-	    emplacements (#779, 29/09/2026). Ne restent ici que ses deux sections. */
-	/* Annuaire sections */
-	.annuaire-section {
-		margin-bottom: 2.5rem;
-		max-width: 780px;
-	}
-	.annuaire-section-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 0.75rem;
-	}
-	.section-title {
-		margin: 0;
-	} /* la charte pose `margin-bottom` (#607) */
+	/*  Les sections de l'annuaire et leur style : `OngletAnnuaireCS` (#1844). */
 	/*  🔴 Les vingt-huit règles de l'onglet « Tickets résidence » sont parties
 	    avec lui le 28/08/2026 : `.tk-*`, `.context-chip`, `.rich-content`,
 	    `.evol-form` et `.history-item` n'habillaient que ce balisage-là. Cette

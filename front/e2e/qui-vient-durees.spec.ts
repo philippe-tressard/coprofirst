@@ -4,7 +4,8 @@
  *  Le tableau de bord ne donnait que des volumes. Ces tests tiennent les deux
  *  panneaux ajoutés — chaque taux avec ses deux nombres, les durées dans le
  *  format partagé — et la mesure elle-même : le navigateur poste la durée de la
- *  première page (`chargement`) et celle d'un passage d'écran (`navigation`).
+ *  première page (`chargement`), celle d’un passage d’écran (`navigation`) et
+ *  la fin d’affichage des données d’un écran de premier niveau (`donnees`, #1846).
  */
 import {
 	attendreHydratation,
@@ -100,4 +101,36 @@ test('la première page et chaque passage d’écran postent leur durée', async
 	await expect.poll(durees).toContainEqual(expect.stringMatching(/^chargement:\d+$/));
 	await expect.poll(durees).toContainEqual(expect.stringMatching(/^navigation:\d+$/));
 	expect(recus.filter((e) => e.action === 'perf').every((e) => !/\d/.test(e.page))).toBe(true);
+});
+
+test('un écran de premier niveau poste ses données affichées, une fois (#1846)', async ({
+	page,
+}) => {
+	await simulerApi(page);
+	const recus = await lotsEnvoyes(page);
+	await page.goto('/tickets');
+	await attendreHydratation(page);
+	//  Un onglet est une navigation : il ouvre un nouvel écran à mesurer, qui
+	//  n'appelle pas la mesure — il ne doit rien produire, jamais 0.
+	await page
+		.getByRole('tablist')
+		.getByRole('link', { name: /Kanban/ })
+		.click();
+	await expect(page).toHaveURL(/kanban/);
+	await viderLaFile(page);
+
+	const mesures = () => recus.filter((e) => e.action === 'perf');
+	await expect
+		.poll(() => mesures().map((e) => e.detail))
+		.toContainEqual(expect.stringMatching(/^donnees:\d+$/));
+	const donnees = mesures().filter((e) => e.detail?.startsWith('donnees:'));
+	expect(donnees.map((e) => e.page)).toEqual(['/tickets']);
+	//  Elle part du même instant que l'ouverture, et finit après l'hydratation.
+	const valeur = (prefixe: string) =>
+		Number(
+			mesures()
+				.find((e) => e.detail?.startsWith(prefixe))
+				?.detail?.split(':')[1],
+		);
+	expect(valeur('donnees:')).toBeGreaterThanOrEqual(valeur('chargement:'));
 });

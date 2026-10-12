@@ -14,11 +14,12 @@ file de la mesure d'audience, un événement `action = ACTION_MESURE` dont
 
 - `chargement` — de l'ouverture de l'onglet à l'écran prêt (application
   hydratée), à la première page seulement ;
-- `navigation` — d'un écran au suivant, dans l'application.
+- `navigation` — d'un écran au suivant, dans l'application ;
+- `donnees` (#1846) — du même début jusqu'aux données principales de l'écran
+  affichées, que l'écran déclare (`marquerDonneesAffichees`). Les deux premiers
+  s'arrêtent à l'hydratation : ils ne voyaient que la moitié de l'attente.
 
-⚠️ Ni l'un ni l'autre ne comprend le temps qu'un écran passe ENSUITE à lire ses
-données (l'attente d'un `EtatListe`) : c'est la limite de cette mesure, dite à
-l'écran. Mesuré partout de la même façon — le LCP des navigateurs Chromium
+Mesuré partout de la même façon — le LCP des navigateurs Chromium
 n'existe pas sous Safari, et une moitié de téléphones manquerait.
 
 ## Ce qui est stocké
@@ -52,8 +53,9 @@ from app.utils.erreurs_navigateur import CONSERVATION_JOURS
 #: `front/src/lib/telemetry.ts` : le front et l'API ne partagent aucun fichier.
 ACTION_MESURE = "perf"
 
-#: Les indicateurs reconnus — ⚠️ même liste que `mesurerNavigation` côté front.
-INDICATEURS = ("chargement", "navigation")
+#: Les indicateurs reconnus — ⚠️ même liste qu'`INDICATEURS` de
+#: `front/src/lib/telemetry.ts`, que `test_mesures_affichage.py` compare.
+INDICATEURS = ("chargement", "navigation", "donnees")
 
 #: Au-delà, ce n'est plus un écran lent, c'est un onglet laissé en arrière-plan.
 DUREE_MAX_MS = 60_000

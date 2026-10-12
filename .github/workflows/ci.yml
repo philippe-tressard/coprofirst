@@ -1917,6 +1917,13 @@ jobs:
         working-directory: front
         run: npm run lint:chargement
 
+      # La télémétrie s'arrêtait à l'hydratation, la moitié de l'attente : chaque
+      # écran de premier niveau déclare ses données affichées, sans quoi il ne
+      # se mesure pas et passe pour rapide (#1846).
+      - name: Les écrans de premier niveau mesurent leurs données affichées
+        working-directory: front
+        run: npm run lint:donnees-affichees
+
       # 🔴 La Suite d'un Bogue offrait Périmètre et Diffusion, que la déclaration
       # dit inactifs et que la création éteint : `sectionsDeLaSuite` les lisait
       # sans leurs motifs (#1321, 26/09/2026).
