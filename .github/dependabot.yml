@@ -233,6 +233,38 @@ updates:
       - dependency-name: "node"
         versions: [">= 26"]
 
+  # ── Images du compose qui ne se construisent pas — ajouté le 12/10/2026 (#1872)
+  # `postgres:17.11` est déclaré par `image:` dans `docker-compose.yml`, sans
+  # Dockerfile : le bloc `docker` ci-dessus ne le lit pas, et aucune mineure
+  # (17.12…) n'était proposée. L'écosystème `docker-compose` lit les `image:` des
+  # compose du répertoire (mises à jour de version seulement : pas d'alertes de
+  # sécurité pour lui). Les correctifs republiés sous la MÊME étiquette arrivent,
+  # eux, par le re-tirage du dimanche (`maintenance.sh`, `lib-images-base.sh`).
+  # 🔒 `api/tests/test_images_compose_suivies.py` : une image du compose que ni
+  # le re-tirage ni ce bloc ne suivent fait échouer la CI.
+  #
+  # ⚠️ Une PR de mineure PostgreSQL change l'image des DEUX nœuds : le primaire
+  # la prend à la bascule, la réplique à sa recréation — même majeure, même
+  # format de données. Aligner `postgresql.yml` (la CI) dans la même PR : le test
+  # ci-dessus le refuse sinon.
+  - package-ecosystem: docker-compose
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore(deps)"
+    ignore:
+      #  ── PostgreSQL : jamais de majeure par une PR (12/10/2026, #1872) ──────
+      #  Une majeure change le FORMAT des données : l'image 18 refuse de démarrer
+      #  sur un volume initialisé en 17, et la réplique du standby avec elle. La
+      #  montée est une MIGRATION (`pg_upgrade` ou export/import, sur les deux
+      #  nœuds, la réplique reconstruite), pas un changement d'étiquette.
+      #  Cette règle ne se lève pas : la majeure suivante se fait dans un lot à
+      #  elle, qui change l'étiquette à la main.
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
+
   # ── Actions GitHub ─────────────────────────────────────────────────────────
   # Une action figée sur une version vulnérable a accès au dépôt et aux
   # secrets du workflow : elle mérite le même suivi que le code.
