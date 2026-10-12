@@ -30,9 +30,14 @@
   La carte porte donc ses trois modes ; la page ne garde que la décision (*quel
   ticket, quel mode*) et les appels d'API.
 
+  📦 Depuis le 12/10/2026 (#1860), ce qui ne s'affiche qu'une fois la carte
+  DÉPLIÉE — la fiche de lecture, le fil, les trois panneaux — vit dans
+  `CorpsCarteTicket`, chargé au geste et préchargé à l'approche de la main :
+  la page Affaires ne le télécharge plus à l'ouverture.
+
   ## L'affichage passe par le squelette de lecture
 
-  Le corps déplié n'écrit plus l'ordre de ses notions : `FicheLecture` le lit dans
+  Le corps déplié (`CorpsCarteTicket`) n'écrit plus l'ordre de ses notions : `FicheLecture` le lit dans
   la déclaration `TICKET` (`$lib/entites/ticket`). La carte affichait
   *description → photos → périmètre* ; les deux formulaires demandent
   *périmètre → description → photos → documents*. C'est R2, et elle vaut aussi
@@ -42,37 +47,16 @@
 	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
-	import { createEventDispatcher } from 'svelte';
 	import ApercuTicket from './ApercuTicket.svelte';
 	import ExtraitRecherche from './ExtraitRecherche.svelte';
 	import EnteteCarte from './EnteteCarte.svelte';
-	import EtatListe from './EtatListe.svelte';
 	import PastillesAffaire from './PastillesAffaire.svelte';
 	import ActionsTicket from './ActionsTicket.svelte';
-	import PanneauOptionsPublication from './PanneauOptionsPublication.svelte';
-	import FicheLecture from './FicheLecture.svelte';
-	import RubriqueHistorique from './RubriqueHistorique.svelte';
-	import SyntheseAffaire from './SyntheseAffaire.svelte';
-	import SyntheseFil from './SyntheseFil.svelte';
-	import type { EtatSynthese } from '$lib/api';
-	import TransfertsVerses from './TransfertsVerses.svelte';
 	import { currentUser, isAdmin, isCS } from '$lib/stores/auth';
 	import { peutCommenter as peutCommenterCe, peutEditer } from '$lib/droits';
-	import MentionFusion from './MentionFusion.svelte';
-	import { TICKET } from '$lib/entites/ticket';
-	import {
-		OPTIONS_TICKET,
-		optionsDuTicket,
-		optionsVersTicket,
-		ticketUrgent,
-		attributsNature,
-		gouttiereAffaire,
-		STATUT_TICKET_LABELS,
-	} from '$lib/tickets';
-	import { fmtDate } from '$lib/date';
+	import { ticketUrgent, attributsNature, gouttiereAffaire, type GestesTicket } from '$lib/tickets';
 	import { type CorrespondanceAffaire, type Ticket, type TicketEvolution } from '$lib/api';
 	import { nomProprietaire } from '$lib/saisi-pour';
-	import { equipLabel, intervenantAffiche } from '$lib/prestataires';
 
 	export let ticket: Ticket;
 	//  À QUI l'affaire appartient — le « Saisi pour » s'il existe, l'auteur
@@ -102,14 +86,6 @@
 	/** Le panneau d'options rapides attend-il le serveur ? */
 	export let optionsRapidesEnCours = false;
 
-	//  Le brouillon du panneau rapide : on ne touche PAS au ticket affiché tant
-	//  que le serveur n'a pas répondu — sinon l'écran montre un état enregistré
-	//  qui ne l'est pas, et le laisse faux si la requête échoue.
-	//  `confidentiel` : la clé que le panneau attend. La case 🔒 n'y est plus
-	//  rendue (en tête du Périmètre, 25/09/2026), et elle ne repart pas.
-	const optionsRapidesInitiales = () => ({ ...optionsDuTicket(ticket), confidentiel: false });
-	let optionsRapides = optionsRapidesInitiales();
-	$: if (mode === 'options') optionsRapides = optionsRapidesInitiales();
 	/** Enregistrement d'une évolution en cours — porté par la page (appel d'API). */
 	export let evolutionEnCours = false;
 	/**  L'entrée du fil en cours de CORRECTION, `null` si aucune. Portée par la
@@ -132,26 +108,17 @@
 	$: peutSuivreCeTicket =
 		!ticket.fusionnee && peutCommenterCe(ticket, $currentUser?.id, $isAdmin, $isCS);
 
-	const dispatch = createEventDispatcher<{
-		basculer: void;
-		evol_modifier: number;
-		evol_supprimer: { ticket: Ticket; evolId: number };
-		evol_corriger: unknown;
-		evol_annuler: void;
-		evoluer_ouvrir: void;
-		options_ouvrir: void;
-		options_enregistrer: unknown;
-		modifier: void;
-		supprimer: void;
-		annuler: void;
-		evoluer: unknown;
-		/** L'affaire et son fil ont changé : un transfert défait, une synthèse produite. */
-		fil_change: void;
-	}>();
+	/**  Les gestes de la page, en UN objet — le contrat d'`ActualiteEnListe`
+	 *   (`GestesTicket`). La carte les relayait en dix-sept événements, que
+	 *   `ListeTickets` réécrivait un à un : un oubli y rendait un bouton inerte
+	 *   sans un mot (`evol_supprimer`, 18/08/2026). */
+	export let gestes: GestesTicket;
 
-	//  🧾 La synthèse d'une affaire close (#1643) : lue par `SyntheseFil`.
-	let etatSynthese: EtatSynthese | null = null;
-	let filSynthese: SyntheseFil;
+	//  📦 Le corps déplié se charge au geste (#1860) : la MÊME fonction le précharge
+	//  quand la main s'approche de la carte (`onApprocher`) et le charge au
+	//  dépliage — `import()` ne télécharge qu'une fois, le second appel reprend
+	//  la même promesse.
+	const chargerCorps = () => import('$lib/components/CorpsCarteTicket.svelte');
 </script>
 
 <!--  QUAND puis QUOI, dans la colonne de gauche (maquette B, 10/10/2026) : la
@@ -162,7 +129,8 @@
 	{expanded}
 	urgent={ticketUrgent(ticket)}
 	{archive}
-	onDeplier={() => dispatch('basculer')}
+	onDeplier={() => gestes.basculer(ticket)}
+	onApprocher={chargerCorps}
 	{...attributsNature(ticket)}
 >
 	<!--  Le geste de dépliage vit dans `EnteteCarte` : le TITRE plie, avec un
@@ -170,7 +138,7 @@
 	      `role="button"` — il interceptait la sélection de texte, et obligeait
 	      chaque bouton d'action à un `stopPropagation` pour qu'un clic sur ✏️ ne
 	      déplie pas la carte au même instant. -->
-	<EnteteCarte titre={ticket.titre} basculable on:toggle={() => dispatch('basculer')}>
+	<EnteteCarte titre={ticket.titre} basculable on:toggle={() => gestes.basculer(ticket)}>
 		<svelte:fragment slot="titre-suffixe">
 			<BadgeNouveau le={ticket.cree_le} />
 		</svelte:fragment>
@@ -205,11 +173,11 @@
 				peutEditer={peutEditerCeTicket}
 				{peutAdministrer}
 				{archive}
-				on:evoluer_ouvrir
-				on:modifier
-				on:options_ouvrir
-				on:supprimer
-				on:archiver
+				on:evoluer_ouvrir={() => gestes.evoluerOuvrir(ticket)}
+				on:modifier={() => gestes.modifier(ticket)}
+				on:options_ouvrir={() => gestes.optionsOuvrir(ticket)}
+				on:supprimer={() => gestes.supprimer(ticket)}
+				on:archiver={() => gestes.archiver(ticket)}
 			/>
 		</svelte:fragment>
 		<!--  🔴 L'aperçu passe par l'EN-TÊTE (18/09/2026) : c'est ce qui permet aux
@@ -236,135 +204,24 @@
 			on:click|stopPropagation
 			on:keydown|stopPropagation
 		>
-			{#if mode === 'options'}
-				<div class="tk-formulaire">
-					<PanneauOptionsPublication
-						objet="ticket"
-						optionsRendues={OPTIONS_TICKET}
-						perimetreCible={ticket.perimetre_cible ?? []}
-						dejaEpingle={ticket.epingle ?? false}
-						enregistrement={optionsRapidesEnCours}
-						bind:options={optionsRapides}
-						on:enregistrer={() =>
-							dispatch(
-								'options_enregistrer',
-								optionsVersTicket({
-									epingle: optionsRapides.epingle,
-									urgente: optionsRapides.urgente,
-									brouillon: optionsRapides.brouillon,
-									suiviKanban: optionsRapides.suiviKanban,
-								}),
-							)}
-						on:annuler={() => dispatch('annuler')}
+			<!--  Le CONTENU seul est différé : le conteneur reste ici, et avec lui le
+			      fondu d'entrée de `.carte-corps` — pas de corps qui surgit plein. -->
+			<ChargementDiffere charger={chargerCorps}>
+				{#snippet contenu(CorpsCarteTicket)}
+					<CorpsCarteTicket
+						{ticket}
+						{evolutions}
+						{erreurSuivi}
+						{mode}
+						{optionsRapidesEnCours}
+						{evolutionEnCours}
+						{evolEnEdition}
+						{evolCorrectionEnCours}
+						peutSuivre={peutSuivreCeTicket}
+						{gestes}
 					/>
-				</div>
-			{:else if mode === 'edition'}
-				<div class="tk-formulaire">
-					<ChargementDiffere charger={() => import('$lib/components/FormulaireTicket.svelte')}>
-						{#snippet contenu(FormulaireTicket)}
-							<FormulaireTicket {ticket} on:modifie on:annule={() => dispatch('annuler')} />
-						{/snippet}
-					</ChargementDiffere>
-				</div>
-			{:else if mode === 'evolution'}
-				<div class="tk-formulaire">
-					<!--  Le MÊME montage que la fiche (`SuiteAffaire`, 01/10/2026). -->
-					<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
-						{#snippet contenu(SuiteAffaire)}
-							<SuiteAffaire
-								{ticket}
-								entrees={evolutions}
-								peutSuivre={peutSuivreCeTicket}
-								saving={evolutionEnCours}
-								on:submit={(e) => dispatch('evoluer', e.detail)}
-								on:cancel={() => dispatch('annuler')}
-							/>
-						{/snippet}
-					</ChargementDiffere>
-				</div>
-			{:else}
-				<FicheLecture
-					entite={TICKET}
-					description={ticket.description}
-					intervenant={intervenantAffiche(ticket)}
-					equipement={ticket.equipement ? equipLabel(ticket.equipement) : ''}
-					photos={ticket.photos_urls ?? []}
-					documents={ticket.fichiers_urls ?? []}
-					affairesLiees={ticket.affaires_liees}
-				>
-					<svelte:fragment slot="pied">
-						<!--  Le NUMÉRO est dans l'en-tête : pas deux fois le même fait. -->
-						<small class="tk-meta">Créé le {fmtDate(ticket.cree_le)}</small>
-					</svelte:fragment>
-				</FicheLecture>
-				<MentionFusion {ticket} />
-
-				<!--  Défaire un transfert de courriel, comme sur la fiche (#1482) : la
-				      carte n'ouvre pas la fiche, et c'était le seul endroit du geste. -->
-				<TransfertsVerses
-					ticketId={ticket.id}
-					encadre={false}
-					on:change={() => dispatch('fil_change')}
-				/>
-				<EtatListe compact erreur={erreurSuivi} />
-				<!--  🧾 La synthèse d'une affaire close (#1643), comme sur la fiche. -->
-				<SyntheseFil
-					bind:this={filSynthese}
-					bind:etat={etatSynthese}
-					{ticket}
-					{evolutions}
-					on:change={() => dispatch('fil_change')}
-				/>
-				{#if evolutions.length > 0}
-					<div class="tk-fil">
-						<!--  Le crayon par entrée : il existait dans la rubrique depuis #431,
-					      et la fiche du ticket s'en servait — mais pas cette liste-ci.
-					      Un même fil modifiable sur un écran et pas sur l'autre.
-					      ⚠️ Les états ne sont PAS proposés en correction : corriger le
-					      texte d'une entrée ne rejoue pas la transition qu'elle a
-					      enregistrée (`test_correction_pas_transition.py`). -->
-						<RubriqueHistorique
-							avecFiltre
-							{evolutions}
-							statutLabels={STATUT_TICKET_LABELS}
-							peutModifier={peutSuivreCeTicket}
-							currentUserId={$currentUser?.id}
-							estAdmin={$isAdmin}
-							avecSuppression
-							enEdition={evolEnEdition}
-							on:modifier={(e) => dispatch('evol_modifier', e.detail)}
-							on:supprimer={(e) => dispatch('evol_supprimer', { ticket, evolId: e.detail })}
-						>
-							<svelte:fragment slot="synthese" let:evol>
-								{#if etatSynthese?.synthese?.evolution_id === evol.id}
-									<SyntheseAffaire
-										synthese={etatSynthese.synthese}
-										gestes={$isCS}
-										on:change={() => filSynthese.recharger()}
-									/>
-								{/if}
-							</svelte:fragment>
-							<svelte:fragment slot="edition" let:evol>
-								{#key evolEnEdition}
-									<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
-										{#snippet contenu(SuiteAffaire)}
-											<SuiteAffaire
-												{ticket}
-												{evol}
-												entrees={evolutions}
-												peutSuivre={peutSuivreCeTicket}
-												saving={evolCorrectionEnCours}
-												on:submit={(e) => dispatch('evol_corriger', e.detail)}
-												on:cancel={() => dispatch('evol_annuler')}
-											/>
-										{/snippet}
-									</ChargementDiffere>
-								{/key}
-							</svelte:fragment>
-						</RubriqueHistorique>
-					</div>
-				{/if}
-			{/if}
+				{/snippet}
+			</ChargementDiffere>
 		</div>
 	{/if}
 </CarteListe>
@@ -386,17 +243,5 @@
 	.tk-body {
 		padding: 0.75rem 1rem 1rem;
 		border-top: 1px solid var(--color-border);
-	}
-	.tk-formulaire {
-		padding: 0.25rem 0;
-	}
-	.tk-meta {
-		color: var(--color-text-muted);
-		font-size: var(--fs-sm);
-	}
-	/*  La marge haute du fil appartient à son hôte : la rubrique ne sait pas ce
-	    qu'elle suit. C'est cette marge que la fiche du ticket avait perdue. */
-	.tk-fil {
-		margin-top: 0.9rem;
 	}
 </style>

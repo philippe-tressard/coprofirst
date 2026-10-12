@@ -61,12 +61,24 @@ export const A_LA_DEMANDE = {
 const IMPORT_DIFFERE =
 	/charger=\{\s*\(\)\s*=>\s*import\(\s*'\$lib\/components\/([^']+\.svelte)'\s*\)\s*\}/g;
 
+/**  `const chargerCorps = () => import('$lib/components/X.svelte')` : un chargeur
+ *   NOMMÉ, que la carte appelle aussi pour précharger à l'approche de la main
+ *   (`CarteTicket`, #1860). Il ne compte que si `charger={chargerCorps}` le
+ *   reçoit dans le même fichier — sinon, c'est un `import()` comme un autre. */
+const CHARGEUR_NOMME =
+	/const\s+(\w+)\s*=\s*\(\)\s*=>\s*import\(\s*'\$lib\/components\/([^']+\.svelte)'\s*\)/g;
+
 /**  Les composants que le SOURCE charge à la demande, sous leur clé de manifeste
  *   (`src/lib/components/X.svelte`). */
 export function composantsDifferes(sources) {
 	const cles = new Set();
 	for (const texte of sources) {
 		for (const m of texte.matchAll(IMPORT_DIFFERE)) cles.add(`src/lib/components/${m[1]}`);
+		for (const m of texte.matchAll(CHARGEUR_NOMME)) {
+			if (new RegExp(`charger=\\{\\s*${m[1]}\\s*\\}`).test(texte)) {
+				cles.add(`src/lib/components/${m[2]}`);
+			}
+		}
 	}
 	return [...cles].sort();
 }
@@ -161,6 +173,18 @@ function selftest() {
 	cas.push([
 		'source lu : le composant différé est trouvé',
 		composantsDifferes(["charger={() => import('$lib/components/OngletX.svelte')}"])[0] === onglet,
+	]);
+	//  Un chargeur NOMMÉ, que la carte appelle aussi pour précharger (#1860).
+	const nomme =
+		"const chargerCorps = () => import('$lib/components/CorpsX.svelte');\n" +
+		'<ChargementDiffere charger={chargerCorps}>';
+	cas.push([
+		'source lu : un chargeur nommé passé à `charger` est trouvé',
+		composantsDifferes([nomme])[0] === 'src/lib/components/CorpsX.svelte',
+	]);
+	cas.push([
+		"source lu : un chargeur nommé que `charger` ne reçoit pas n'est pas compté",
+		composantsDifferes([nomme.replace('charger={chargerCorps}', '')]).length === 0,
 	]);
 	cas.push(['composant différé : aucune faute', juger(m, lire, [onglet]).fautes.length === 0]);
 	m['.svelte-kit/generated/client-optimized/nodes/1.js'].imports.push(onglet);

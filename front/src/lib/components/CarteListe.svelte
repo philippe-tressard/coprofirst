@@ -36,6 +36,7 @@
   | `.carte-liste`, et `.a-gouttiere` dès qu'il y a une gouttière | rien : la colonne naît de `quand`, `classe` ou du créneau `gouttiere` |
   | la gouttière (`Gouttiere`) : QUAND, puis ce qui CLASSE | `quand`, `classe` ; `heure` quand le jour est l'intitulé du groupe (le fil) ; le créneau `gouttiere` (le vote d'une idée) |
   | le geste ASYMÉTRIQUE (`ux-patterns` §3) : repliée, toute la carte ouvre | `onDeplier` — absent, la carte ne se déplie pas (idée, sondage, relevé) |
+  | ce qui ANNONCE le dépliage : l'appui, le survol à la souris, le focus | `onApprocher` — précharger un corps différé (#1860) |
   | déplié, urgent, archivé | `expanded`, `urgent`, `archive` |
   | l'ancre des liens profonds | `id` |
   | — | ses classes propres (`class`) et ses attributs (`data-nature`…), transmis |
@@ -71,6 +72,18 @@
 	 *   seul son titre la replie (`EnteteCarte basculable`). Absent, la carte ne
 	 *   se déplie pas. */
 	export let onDeplier: (() => void) | null = null;
+	/**  Appelé quand la main s'APPROCHE d'une carte repliée — l'appui (avant le
+	 *   clic), le survol à la souris, le focus au clavier : la carte y précharge
+	 *   ce que son dépliage affichera (#1860), pour que le corps n'attende pas un
+	 *   aller-retour. Le survol au doigt n'existe pas : le tactile passe par l'appui. */
+	export let onApprocher: (() => unknown) | null = null;
+	//  Un préchargement qui échoue se TAIT : le dépliage, lui, le dira
+	//  (`ChargementDiffere`). Sans ce `catch`, le rejet sortirait en exception
+	//  de la page — hors ligne, au simple survol d'une carte.
+	const approcher = () => {
+		if (expanded || !onApprocher) return;
+		Promise.resolve(onApprocher()).catch(() => {});
+	};
 	let classes = '';
 	export { classes as class };
 
@@ -89,6 +102,9 @@
 	on:click={() => {
 		if (!expanded) onDeplier?.();
 	}}
+	on:pointerdown={approcher}
+	on:pointerenter={(e) => e.pointerType === 'mouse' && approcher()}
+	on:focusin={approcher}
 >
 	{#if gouttiere}
 		<Gouttiere {quand} {classe} {heure}><slot name="gouttiere" /></Gouttiere>
