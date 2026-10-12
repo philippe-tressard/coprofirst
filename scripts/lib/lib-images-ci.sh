@@ -10,7 +10,7 @@
 #  Lot DI-6 du chantier multi-copropriétés (`specs/architecture/multi-coproprietes.md`
 #  §4.10, règle 4, D12). Le workflow `images.yml` (#1753) publie, pour chaque
 #  commit de `main`, les images des quatre services sous
-#  `ghcr.io/philippe-tressard/coprofirst-<service>:sha-<commit>`. Le maître —
+#  `ghcr.io/philippe-tressard/coprofirst-<service>:sha-<commit>`. La référence —
 #  les deux RPi — exécute alors EXACTEMENT les octets que les répliques
 #  recevront à la promotion, et cesse de construire : plus de build concurrent,
 #  plus d'image périmée à la bascule, plus de cache de build de 40 Go.

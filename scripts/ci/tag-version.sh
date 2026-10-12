@@ -18,7 +18,7 @@
 #  | version illisible              | `erreur`  | le run échoue                                 |
 #
 #  « ignorer » n'est pas une erreur : un lot sans bump se déploie quand même
-#  (`mep-precheck`, point 0d), et le maître en tire l'image par `sha-<commit>`
+#  (`mep-precheck`, point 0d), et la référence en tire l'image par `sha-<commit>`
 #  (arbitrage du 08/10/2026). Il n'a simplement pas de VERSION à lui : une image
 #  étiquetée `2.119.1` doit être celle du commit qui a posé 2.119.1, pas son
 #  successeur sans numéro.

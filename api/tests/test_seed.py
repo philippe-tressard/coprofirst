@@ -161,7 +161,7 @@ def test_l_administrateur_initial_se_connecte(caplog):
 
     Le compte initial naissait avec `email_verifie=False` : la connexion le
     refusait (« vérifiez votre adresse »), et `admin@localhost` ne reçoit rien.
-    Le maître n'en souffrait pas — son administrateur date d'avant la règle —,
+    La référence n'en souffrait pas — son administrateur date d'avant la règle —,
     c'est l'essai de bout en bout de la mise à jour d'une réplique qui l'a vu.
     Ce test passe par la VRAIE route de connexion : une condition ajoutée demain
     à la connexion, que le compte initial ne remplirait pas, échouerait ici.

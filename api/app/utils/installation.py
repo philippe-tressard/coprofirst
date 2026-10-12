@@ -4,19 +4,19 @@ Lot DI-8 du chantier multi-copropriétés (`specs/architecture/multi-copropriete
 §4.10, règle 11). Exigence de l'auteur, 08/10/2026 : *« savoir si l'instance est
 le master (git => main) ou une réplique (git => replica) »*.
 
-| Rôle      | Libellé  | Branche suivie |
-|-----------|----------|----------------|
-| `maitre`  | Maître   | `main`         |
-| `replique`| Réplique | `replica`      |
-| `inconnu` | Inconnu  | —              |
+| Rôle        | Libellé   | Branche suivie |
+|-------------|-----------|----------------|
+| `reference` | Référence | `main`       |
+| `replique`  | Réplique  | `replica`      |
+| `inconnu`   | Inconnu   | —              |
 
 ## Les règles
 
 1. **Le rôle appartient à l'installation, pas à l'image** : une version promue est
-   la même image chez le maître et chez les répliques. Il se DÉCLARE dans la
+   la même image chez la référence et chez les répliques. Il se DÉCLARE dans la
    configuration (`ROLE_INSTALLATION`, lu par `Settings`), et se lit ICI seulement.
-2. **Absent ou mal écrit → « inconnu », jamais « maître »** : une réplique mal
-   configurée ne doit pas se croire le maître (`standards/04` §1).
+2. **Absent ou mal écrit → « inconnu », jamais « référence »** : une réplique mal
+   configurée ne doit pas se croire la référence (`standards/04` §1).
 3. **Le fait, pas la déclaration** : le commit qui tourne (`GIT_HASH`, posé à la
    construction de l'image) doit appartenir à l'historique de la branche suivie.
    Le dépôt public le dit (`compare`), et une réponse impossible rend « non
@@ -26,7 +26,7 @@ le master (git => main) ou une réplique (git => replica) »*.
    pas (`SERVICE_VERIF_VERSION`).
 
 ⚠️ Ne pas confondre avec le rôle d'un NŒUD dans la haute disponibilité (actif /
-standby, `.active`) : les deux Raspberry Pi sont ENSEMBLE le maître.
+standby, `.active`) : les deux Raspberry Pi sont ENSEMBLE la référence.
 🔒 `tests/test_installation.py`.
 """
 
@@ -43,10 +43,17 @@ from app.utils.plateforme import DEPOT_SOURCE
 
 #: rôle → (libellé, branche suivie). La seule écriture.
 ROLES: dict[str, tuple[str, str]] = {
-    "maitre": ("Maître", "main"),
+    "reference": ("Référence", "main"),
     "replique": ("Réplique", "replica"),
 }
 INCONNU = "inconnu"
+
+#: Les anciens noms d'un rôle, encore lus. `maitre` était celui de la référence
+#: jusqu'au 12/10/2026 (renommée à la demande de l'auteur : « ça fait
+#: esclavagiste ») ; il reste accepté tant que le `.env` des deux Raspberry Pi le
+#: porte — sinon la référence se dirait « Inconnu » au déploiement. À retirer quand
+#: les deux `.env` disent `reference`.
+ANCIENS_NOMS: dict[str, str] = {"maitre": "reference"}
 
 #: L'instant où ce processus a démarré : « en service depuis ». Une constante,
 #: posée une fois à l'import — pas un état que le processus modifie.
@@ -57,10 +64,16 @@ DEPOT = DEPOT_SOURCE.removeprefix("https://github.com/")
 
 
 def role_installation(valeur: Optional[str] = None) -> str:
-    """PURE sur sa valeur : `maitre`, `replique` ou `inconnu` (règle 2)."""
+    """PURE sur sa valeur : `reference`, `replique` ou `inconnu` (règle 2)."""
     brut = get_settings().role_installation if valeur is None else valeur
     role = (brut or "").strip().lower().replace("î", "i").replace("é", "e")
+    role = ANCIENS_NOMS.get(role, role)
     return role if role in ROLES else INCONNU
+
+
+def est_reference() -> bool:
+    """CETTE installation est-elle la référence ? La question que pose le registre (§4.11)."""
+    return role_installation() == "reference"
 
 
 def empreinte(valeur: Optional[str] = None) -> str:

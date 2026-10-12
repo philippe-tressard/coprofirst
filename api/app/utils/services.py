@@ -143,7 +143,7 @@ SERVICES: dict[str, Service] = {
         libelle="Vérification de la version",
         description=(
             "Compare la version qui tourne à la branche que suit l'installation (main pour "
-            "le maître, replica pour une réplique), sur le dépôt public, quand "
+            "la référence, replica pour une réplique), sur le dépôt public, quand "
             "Administration › Maintenance s'ouvre. Seul le commit de l'image part."
         ),
         perte="Le bloc « Installation » dit « non vérifié » : un retard ou un écart ne se voit plus.",

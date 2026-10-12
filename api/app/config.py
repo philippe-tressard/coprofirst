@@ -18,12 +18,19 @@ class Settings(BaseSettings):
     # déclenchée à la main) : la colonne « Nœud » restait vide. Vide en local.
     instance_id: str = ""
 
-    # Rôle de l'installation dans la distribution (#1761) : `maitre` ou
+    # Rôle de l'installation dans la distribution (#1761) : `reference` ou
     # `replique`. Lu par `utils/installation.role_installation` et nulle part
     # ailleurs ; vide ou mal écrit, l'installation se dit « Inconnu ».
     role_installation: str = ""
     # Le commit de l'image, posé à la construction (`GIT_HASH`, api/Dockerfile).
     git_hash: str = ""
+
+    # Le REGISTRE DES INSTALLATIONS, tenu par la référence seule (spec §4.11, R1 #1877) :
+    # sa base, DISTINCTE de celle de la résidence, et le nom DÉDIÉ sous lequel il
+    # répond. Vides → registre éteint (`app/registre/base.registre_actif`), et
+    # c'est l'état de toute réplique. Lus là-bas et nulle part ailleurs.
+    plateforme_database_url: str = ""
+    hote_registre: str = ""
 
     # Le REGISTRE des hôtes de la copropriété (#1751, P2-9) : le nom de
     # l'`ORIGIN` — le même `.env` que le front —, plus ceux qu'on déclare ici,

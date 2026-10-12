@@ -137,10 +137,10 @@ def test_la_mise_a_jour_sauvegarde_avant_de_toucher_au_service():
 # ── PostgreSQL sur une réplique (DI-4 sous PostgreSQL) ───────────────────────
 
 
-def test_le_postgresql_d_une_replique_n_est_pas_celui_du_maitre():
-    """Une réplique tient sur un serveur (D15) : ni réplication, ni port, ni IP du maître."""
+def test_le_postgresql_d_une_replique_n_est_pas_celui_de_la_reference():
+    """Une réplique tient sur un serveur (D15) : ni réplication, ni port, ni IP de la référence."""
     pg = _yaml(SURCOUCHE)["services"]["postgres"]
-    maitre = _yaml(COMPOSE)["services"]["postgres"]
+    reference = _yaml(COMPOSE)["services"]["postgres"]
     assert "image" not in pg and "build" not in pg, (
         "l'image officielle, telle que la racine la nomme"
     )
@@ -156,9 +156,9 @@ def test_le_postgresql_d_une_replique_n_est_pas_celui_du_maitre():
     lignes = [li for li in fichier.read_text(encoding="utf-8").splitlines() if li and li[0] != "#"]
     assert not [li for li in lignes if "replication" in li], lignes
     assert not re.search(r"192\.168\.", fichier.read_text(encoding="utf-8"))
-    #  Et ce que la surcouche retire existe bien chez le maître : sinon elle ne
+    #  Et ce que la surcouche retire existe bien chez la référence : sinon elle ne
     #  retire plus rien, et ce test non plus ne mesure plus rien.
-    assert any("initdb" in v for v in maitre["volumes"]) and maitre.get("ports")
+    assert any("initdb" in v for v in reference["volumes"]) and reference.get("ports")
 
 
 def _corps(texte: str, fonction: str) -> str:
@@ -168,20 +168,20 @@ def _corps(texte: str, fonction: str) -> str:
     return m.group(1)
 
 
-def test_le_moteur_se_lit_comme_chez_le_maitre():
+def test_le_moteur_se_lit_comme_chez_la_reference():
     """`moteur_de_url` est une COPIE déclarée : l'archive n'emporte pas `scripts/lib`."""
-    maitre = (RACINE / "scripts" / "lib" / "lib-replication.sh").read_text(encoding="utf-8")
+    reference = (RACINE / "scripts" / "lib" / "lib-replication.sh").read_text(encoding="utf-8")
     replique = MISE_A_JOUR.read_text(encoding="utf-8")
-    assert _corps(replique, "moteur_de_url") == _corps(maitre, "moteur_de_url"), (
+    assert _corps(replique, "moteur_de_url") == _corps(reference, "moteur_de_url"), (
         "les deux lectures du moteur ont divergé — recopier celle de lib-replication.sh"
     )
 
 
 def test_le_listing_se_lit_comme_a_l_export_hors_site():
     """`listing_contient` est une COPIE déclarée, pour la même raison (#1820)."""
-    maitre = (RACINE / "scripts" / "lib" / "lib-export-hors-site.sh").read_text(encoding="utf-8")
+    reference = (RACINE / "scripts" / "lib" / "lib-export-hors-site.sh").read_text(encoding="utf-8")
     replique = MISE_A_JOUR.read_text(encoding="utf-8")
-    assert _corps(replique, "listing_contient") == _corps(maitre, "listing_contient"), (
+    assert _corps(replique, "listing_contient") == _corps(reference, "listing_contient"), (
         "les deux lectures d'un listing d'archive ont divergé — recopier celle de "
         "lib-export-hors-site.sh"
     )
