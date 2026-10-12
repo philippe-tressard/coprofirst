@@ -137,8 +137,8 @@ async def upload_releve_photo(
     #  rembobiner, vérifier la signature, journaliser, refuser, nommer, copier.
     #  Ces neuf lignes étaient recopiées dans trois routeurs — une copie qui
     #  oublie le `seek(0)` écrit un fichier tronqué sans que rien ne le dise.
-    dest = enregistrer_televersement(file, raw_name, user)
-    r.photo_url = f"/api/prestataires/releves/{r.id}/photo/{os.path.basename(dest)}"
+    cle = enregistrer_televersement(file, raw_name, user)
+    r.photo_url = f"/api/prestataires/releves/{r.id}/photo/{os.path.basename(cle)}"
     session.add(r)
     session.commit()
     session.refresh(r)

@@ -21,6 +21,7 @@ from __future__ import annotations
 import asyncio
 import io
 import json
+from dataclasses import dataclass, field
 
 import pytest
 from fastapi import HTTPException, UploadFile
@@ -38,28 +39,29 @@ from app.models.core import (
 )
 from app.routers import diagnostics, documents, regles_residence
 from app.utils import annexes
+from app.utils.stockage import StockageDisque
 from app.utils.visibility import document_visible
 from tests.aides_base import compte
 
 
-class _Stockage:
-    """Note les chemins effacés au lieu d'effacer."""
+@dataclass(frozen=True)
+class _Stockage(StockageDisque):
+    """Le vrai stockage, sous `tmp_path`, qui note les clés effacées au lieu d'effacer."""
 
-    def __init__(self):
-        self.effaces: list[str] = []
+    effaces: list[str] = field(default_factory=list)
 
-    def supprimer_chemin(self, chemin):
-        self.effaces.append(chemin)
+    def supprimer(self, cle: str) -> None:
+        self.effaces.append(cle)
 
 
 @pytest.fixture()
 def disque(tmp_path, monkeypatch):
-    stockage = _Stockage()
+    stockage = _Stockage(tmp_path)
 
     def televerser(file, raw_name, user=None):
-        dest = tmp_path / f"{len(list(tmp_path.iterdir()))}-{raw_name}"
-        dest.write_bytes(file.file.read())
-        return str(dest)
+        cle = f"prive/{len(stockage.effaces)}-{len(list(tmp_path.rglob('*')))}-{raw_name}"
+        stockage.ecrire(cle, file.file.read())
+        return cle
 
     for module in (annexes, documents, diagnostics):
         monkeypatch.setattr(module, "stockage", lambda: stockage, raising=False)
@@ -158,6 +160,7 @@ def residence(session):
     plan = Document(
         titre="Plan de masse",
         fichier_nom="plan.pdf",
+        fichier_cle="prive/plan.pdf",
         fichier_chemin="/tmp/plan.pdf",
         categorie_id=categorie.id,
         publie_par_id=cs.id,
@@ -170,6 +173,7 @@ def residence(session):
         diagnostic_type_id=type_diag.id,
         titre="DPE 2025",
         fichier_nom="dpe.pdf",
+        fichier_cle="prive/dpe.pdf",
         fichier_chemin="/tmp/dpe.pdf",
         publie_par_id=cs.id,
     )
@@ -305,7 +309,7 @@ def test_supprimer_une_fiche_emporte_ses_annexes(session, residence, disque):
     a_plan = _deposer(session, r["cs"], document_parent_id=r["plan"].id)
     a_regle = _deposer(session, r["cs"], regle_residence_id=r["regle"].id)
     a_rapport = _deposer(session, r["cs"], diagnostic_rapport_id=r["rapport"].id)
-    chemins = {a_plan.fichier_chemin, a_regle.fichier_chemin, a_rapport.fichier_chemin}
+    cles = {a_plan.fichier_cle, a_regle.fichier_cle, a_rapport.fichier_cle}
     ids = [a_plan.id, a_regle.id, a_rapport.id]
 
     documents.delete_document(r["plan"].id, session=session, user=r["cs"])
@@ -313,7 +317,7 @@ def test_supprimer_une_fiche_emporte_ses_annexes(session, residence, disque):
     diagnostics.delete_rapport(r["rapport"].id, session=session, _=r["cs"])
 
     assert all(session.get(Document, i) is None for i in ids)
-    assert chemins <= set(disque.effaces)
+    assert cles <= set(disque.effaces)
 
 
 # ── 5. Retirer le fichier principal : la pièce suivante prend sa place ────────
@@ -323,16 +327,16 @@ def test_retirer_le_fichier_d_un_plan_promeut_la_premiere_annexe(session, reside
     r = residence
     premiere = _deposer(session, r["cs"], document_parent_id=r["plan"].id)
     seconde = _deposer(session, r["cs"], document_parent_id=r["plan"].id)
-    chemin, premiere_id = premiere.fichier_chemin, premiere.id
+    cle, premiere_id = premiere.fichier_cle, premiere.id
 
     plan = documents.retirer_fichier_document(r["plan"].id, session=session, _=r["cs"])
 
-    assert plan.fichier_chemin == chemin
+    assert plan.fichier_cle == cle
     assert plan.fichier_nom == "annexe.pdf"
     assert session.get(Document, premiere_id) is None
     assert annexes.annexes_de(session, "document", plan.id) == [seconde]
     #  Seul l'ANCIEN fichier s'efface : celui de l'annexe est désormais la fiche.
-    assert disque.effaces == ["/tmp/plan.pdf"]
+    assert disque.effaces == ["prive/plan.pdf"]
 
 
 def test_une_fiche_garde_au_moins_un_fichier(session, residence, disque):
@@ -355,8 +359,8 @@ def test_seul_un_document_de_la_bibliotheque_a_un_fichier_principal(session, res
 def test_retirer_le_fichier_d_un_rapport(session, residence, disque):
     r = residence
     annexe = _deposer(session, r["cs"], diagnostic_rapport_id=r["rapport"].id)
-    chemin = annexe.fichier_chemin
+    cle = annexe.fichier_cle
     rapport = diagnostics.retirer_fichier_rapport(r["rapport"].id, session=session, _=r["cs"])
-    assert rapport.fichier_chemin == chemin
+    assert rapport.fichier_cle == cle
     assert annexes.annexes_de(session, "diagnostic", rapport.id) == []
-    assert disque.effaces == ["/tmp/dpe.pdf"]
+    assert disque.effaces == ["prive/dpe.pdf"]

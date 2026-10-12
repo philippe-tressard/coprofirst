@@ -102,20 +102,21 @@ def test_les_routeurs_prives_n_ecrivent_plus_a_la_racine(routeur):
     )
 
 
-def test_un_fichier_prive_s_ecrit_sous_le_dossier_prive(tmp_path, monkeypatch):
+def test_un_fichier_prive_s_ecrit_sous_le_dossier_prive(disque_jetable):
     """Le comportement, pas la forme : le fichier ATTERRIT sous `prive/`."""
     import io
     from types import SimpleNamespace
 
-    from app.config import get_settings
     from app.utils.fichiers import enregistrer_televersement
-    from app.utils.stockage import DOSSIER_PRIVE
+    from app.utils.stockage import DOSSIER_PRIVE, stockage
 
-    monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
     recu = SimpleNamespace(file=io.BytesIO(b"%PDF-1.7 essai"))
-    chemin = pathlib.Path(enregistrer_televersement(recu, "pv-ag.pdf"))
+    #  La porte rend la CLÉ (#1816) ; le fichier est sous la racine du stockage.
+    cle = enregistrer_televersement(recu, "pv-ag.pdf")
+    chemin = stockage().chemin(cle)
+    assert cle.startswith(f"{DOSSIER_PRIVE}/")
     assert chemin.is_file() and chemin.read_bytes() == b"%PDF-1.7 essai"
-    assert chemin.parent == (tmp_path / DOSSIER_PRIVE).resolve()
+    assert chemin.parent == (disque_jetable / DOSSIER_PRIVE).resolve()
 
 
 def test_le_repertoire_prive_est_bien_sous_le_volume_repliqué():
@@ -326,7 +327,7 @@ def test_les_urls_de_fichiers_portent_le_nom_du_fichier():
             "c'est le nom du fichier qui manque, l'endpoint ne pourra pas le "
             "retrouver et la donnée d'origine sera perdue."
         )
-        assert "basename(dest)" in source, "le nom du fichier n'est plus injecté dans l'URL stockée"
+        assert "basename(cle)" in source, "le nom du fichier n'est plus injecté dans l'URL stockée"
 
 
 def test_l_api_entiere_est_non_cacheable():

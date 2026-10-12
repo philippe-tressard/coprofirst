@@ -96,7 +96,7 @@ def fichiers_lus(session: Session) -> list[Document]:
 
 def _lire(doc: Document) -> str:
     st = stockage()
-    cle = st.cle_de_chemin(doc.fichier_chemin)
+    cle = st.cle_de(doc)
     if cle is None or not st.existe(cle):
         raise HTTPException(400, f"Le fichier « {doc.titre} » est introuvable sur le disque.")
     return st.lire(cle).decode("utf-8", errors="replace")

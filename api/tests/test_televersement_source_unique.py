@@ -324,18 +324,16 @@ def test_une_famille_inconnue_est_refusee_et_ne_passe_pas_en_silence():
         verifier_fichier_recu(b"%PDF-1.4", "x.pdf", "application/pdf", "famille-absente")
 
 
-def test_les_trois_regles_refusent_VRAIMENT(tmp_path, monkeypatch):
+def test_les_trois_regles_refusent_VRAIMENT(disque_jetable):
     """Chacune, éprouvée séparément — sinon « type et taille contrôlés » reste
     une affirmation sans contenu.
     """
     import pytest
     from fastapi import HTTPException
 
-    from app.config import get_settings
     from app.utils.fichiers import FAMILLES, enregistrer_fichier_recu
 
-    #  Le dossier « essai » du stockage de la copropriété servie (#1748).
-    monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
+    #  Le dossier « essai » du stockage de la copropriété servie (#1748) : `disque_jetable`.
 
     #  Un PDF minimal, dont la signature est cohérente.
     pdf = b"%PDF-1.4\n%%EOF\n"
@@ -363,7 +361,7 @@ def test_les_trois_regles_refusent_VRAIMENT(tmp_path, monkeypatch):
     nom = enregistrer_fichier_recu(pdf, "Devis toiture.pdf", "application/pdf", "document", "essai")
     assert nom.endswith(".pdf")
     assert "toiture" in nom, "le radical du nom d'origine est perdu"
-    assert (tmp_path / "essai" / nom).read_bytes() == pdf
+    assert (disque_jetable / "essai" / nom).read_bytes() == pdf
 
 
 def test_aucune_exception_ne_survit_a_son_motif():

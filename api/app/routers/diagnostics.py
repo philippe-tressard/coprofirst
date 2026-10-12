@@ -1,7 +1,6 @@
 """Router diagnostics réglementaires — types + rapports avec upload."""
 
 import logging
-import os
 from datetime import datetime, date as dateclass
 from app.utils import horloge
 from typing import Optional
@@ -137,7 +136,8 @@ async def upload_rapport(
     #  rembobiner, vérifier la signature, journaliser, refuser, nommer, copier.
     #  Ces neuf lignes étaient recopiées dans trois routeurs — une copie qui
     #  oublie le `seek(0)` écrit un fichier tronqué sans que rien ne le dise.
-    dest = enregistrer_televersement(file, raw_name, user)
+    cle = enregistrer_televersement(file, raw_name, user)
+    st = stockage()
 
     parsed_date = None
     if date_rapport:
@@ -153,8 +153,8 @@ async def upload_rapport(
         # `raw_name` vaut déjà `file.filename or "rapport"` : un seul repli, en
         # amont, plutôt que deux expressions à garder d'accord.
         fichier_nom=raw_name,
-        fichier_chemin=dest,
-        taille_octets=os.path.getsize(dest),
+        **st.colonnes(cle),
+        taille_octets=st.chemin(cle).stat().st_size,
         mime_type=file.content_type or "application/octet-stream",
         publie_par_id=user.id,
         publie_le=horloge.maintenant(),
@@ -215,7 +215,7 @@ def delete_rapport(
     #  Le rapport emporte ses annexes (migration 0278, `utils/annexes`).
     supprimer_annexes(session, "diagnostic", rapport_id)
     # Supprime le fichier physique
-    stockage().supprimer_chemin(rapport.fichier_chemin)
+    stockage().supprimer_de(rapport)
     session.delete(rapport)
     session.commit()
 
@@ -228,7 +228,7 @@ def download_rapport(
 ):
     rapport = ou_404(session, DiagnosticRapport, rapport_id, "Rapport")
     return FileResponse(
-        fichier_ou_404(rapport.fichier_chemin),
+        fichier_ou_404(stockage().fichier_de(rapport)),
         filename=rapport.fichier_nom,
         media_type=rapport.mime_type,
     )

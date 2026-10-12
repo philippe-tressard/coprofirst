@@ -177,7 +177,7 @@ def images_de(ticket, session: Session) -> list[str]:
     for doc in docs:
         if not (doc.mime_type or "").startswith("image/"):
             continue
-        cle = st.cle_de_chemin(doc.fichier_chemin)
+        cle = st.cle_de(doc)
         if cle is None or not st.existe(cle):
             continue
         url = st.url(cle)
@@ -186,10 +186,10 @@ def images_de(ticket, session: Session) -> list[str]:
     return urls[:MAX_PHOTOS]
 
 
-def _supprimer_fichier(chemin: str | None) -> None:
-    """Supprime un fichier du volume uploads (jamais hors de ce volume)."""
+def _supprimer_fichier(annonce: AnnonceHall) -> None:
+    """Supprime le PDF d'une affiche du volume uploads (jamais hors de ce volume)."""
     try:
-        stockage().supprimer_chemin(chemin)
+        stockage().supprimer_de(annonce, "pdf")
     except OSError:
         pass
 
@@ -304,7 +304,6 @@ def creer_annonce_hall(
     st = stockage()
     cle_pdf = f"{DOSSIER_PDF}/{uuid.uuid4().hex}.pdf"
     st.ecrire(cle_pdf, pdf)
-    chemin = st.chemin(cle_pdf)
 
     annonce = AnnonceHall(
         titre=body.titre.strip(),
@@ -313,7 +312,7 @@ def creer_annonce_hall(
         format_demande=(body.format_demande or "auto").lower(),
         format_effectif=fmt,
         images_json=json.dumps(body.images, ensure_ascii=False),
-        pdf_chemin=str(chemin),
+        **st.colonnes(cle_pdf, "pdf"),
         pdf_nom=nom_fichier(body.titre, maintenant),
         taille_octets=len(pdf),
         ticket_id=ticket_id,
@@ -406,7 +405,7 @@ def download_pdf(
 ):
     annonce = ou_404(session, AnnonceHall, annonce_id, "Annonce")
     return FileResponse(
-        fichier_ou_404(annonce.pdf_chemin, "PDF"),
+        fichier_ou_404(stockage().fichier_de(annonce, "pdf"), "PDF"),
         media_type="application/pdf",
         filename=annonce.pdf_nom or f"annonce-{annonce_id}.pdf",
     )
@@ -470,6 +469,6 @@ def delete_annonce_hall(
     photos qu'il référence. 🔒 `test_annonce_hall_suppression.py`.
     """
     annonce = ou_404(session, AnnonceHall, annonce_id, "Annonce")
-    _supprimer_fichier(annonce.pdf_chemin)
+    _supprimer_fichier(annonce)
     session.delete(annonce)
     session.commit()

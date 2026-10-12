@@ -16,17 +16,15 @@ import pytest
 from fastapi import BackgroundTasks
 from sqlmodel import Session
 
-from app.config import get_settings
 from app.models.core import RoleUtilisateur
 from app.routers import annonces_hall
 from tests.aides_base import compte, moteur_memoire
 
 
 @pytest.fixture(name="contexte")
-def contexte_fixture(monkeypatch, tmp_path):
+def contexte_fixture(monkeypatch, disque_jetable):
     moteur = moteur_memoire(partage=True)
     monkeypatch.setattr(annonces_hall, "generer_pdf", lambda **_: b"%PDF-test")
-    monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
     with Session(moteur) as session:
         cs = compte(session, prefixe="cs", roles_json=RoleUtilisateur.conseil_syndical.value)
         yield session, cs

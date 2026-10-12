@@ -64,7 +64,7 @@ PORTEURS_A_FICHIER = frozenset({"document", "diagnostic"})
 MAX_FICHIERS_FICHE = 10
 
 #: Les colonnes qui décrivent le fichier, communes au document et au rapport.
-_COLONNES_FICHIER = ("fichier_nom", "fichier_chemin", "taille_octets", "mime_type")
+_COLONNES_FICHIER = ("fichier_nom", "fichier_cle", "fichier_chemin", "taille_octets", "mime_type")
 
 
 def porteurs_demandes(**colonnes: int | None) -> dict[str, int]:
@@ -109,7 +109,7 @@ def verifier_porteur(session: Session, porteur: str, porteur_id: int) -> None:
 def supprimer_annexes(session: Session, porteur: str, porteur_id: int) -> None:
     """Retire les annexes d'une fiche qu'on supprime — l'appelant valide la transaction."""
     for annexe in annexes_de(session, porteur, porteur_id):
-        stockage().supprimer_chemin(annexe.fichier_chemin)
+        stockage().supprimer_de(annexe)
         session.delete(annexe)
 
 
@@ -129,11 +129,13 @@ def retirer_fichier_principal(
             400,
             "Une fiche garde au moins un fichier : déposez le nouveau avant de retirer celui-ci",
         )
-    ancien = fiche.fichier_chemin
+    #  La clé de l'ancien fichier, lue AVANT que l'annexe prenne sa place.
+    ancien = stockage().cle_de(fiche)
     for colonne in _COLONNES_FICHIER:
         setattr(fiche, colonne, getattr(suivante, colonne))
     session.delete(suivante)
     session.add(fiche)
     session.commit()
     session.refresh(fiche)
-    stockage().supprimer_chemin(ancien)
+    if ancien is not None:
+        stockage().supprimer(ancien)

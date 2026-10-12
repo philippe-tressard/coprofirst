@@ -61,6 +61,7 @@ from app.models.documents import Document
 from app.models.prestataires import ContratEntretien, Prestataire
 from app.utils.dates_fr import datetime_longue_paris
 from app.utils.llm import ConfigLLM, ErreurLLM, PieceJointe, config_llm, demander
+from app.utils.stockage import stockage
 from app.utils.llm_usages import USAGE_SYNTHESE_CONTRAT
 from app.utils.perimetres import parse_json_perimetres, perimetre_label_liste
 from app.utils.synthese_format import CONSIGNE, CONSIGNE_CITATIONS, GABARIT
@@ -126,8 +127,8 @@ def texte_du_document(doc: Document) -> str:
     de texte, un format non géré, un fichier absent. L'appelant le traite comme
     « pas de document », ce qui est vrai de son point de vue.
     """
-    chemin = doc.fichier_chemin
-    if not chemin or not (doc.mime_type or "").lower().endswith("pdf"):
+    chemin = stockage().fichier_de(doc)
+    if chemin is None or not (doc.mime_type or "").lower().endswith("pdf"):
         return ""
     try:
         from pypdf import PdfReader
@@ -228,8 +229,8 @@ def piece_jointe(doc: Document) -> PieceJointe | None:
     ⚠️ On ne joint QUE ce qu'on n'a pas su lire : un PDF dont le texte s'extrait
     coûte bien moins cher en texte qu'en fichier, pour le même contenu.
     """
-    chemin = doc.fichier_chemin
-    if not chemin or not os.path.exists(chemin):
+    chemin = stockage().fichier_de(doc)
+    if chemin is None:
         return None
     if os.path.getsize(chemin) > MAX_OCTETS_DOCUMENT_JOINT:
         return None

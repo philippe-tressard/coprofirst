@@ -139,8 +139,8 @@ class StockageDisque:
     def cle_de_chemin(self, chemin: object) -> str | None:
         """Le chemin ABSOLU qu'une ligne de la base a gardé → sa clé, ou `None` s'il sort.
 
-        Les documents privés et les affiches gardent en base le chemin écrit sur le
-        disque (`Document.fichier_chemin`) : il se relit ici, borné sous la racine.
+        Les lignes d'avant #1816 que la migration 0283 n'a pas converties : leur
+        chemin se relit ici, borné sous la racine (`cle_de`).
         """
         if not isinstance(chemin, str) or not chemin:
             return None
@@ -150,9 +150,44 @@ class StockageDisque:
             return None
         return reel.relative_to(racine).as_posix()
 
-    def supprimer_chemin(self, chemin: object) -> None:
-        """Supprime le fichier d'un chemin gardé en base — jamais hors de la racine."""
-        cle = self.cle_de_chemin(chemin)
+    # ── Le fichier d'une LIGNE de la base (#1816) ─────────────────────────────
+    #
+    #  Le document, le rapport de diagnostic et l'affiche de hall gardent la CLÉ
+    #  de leur fichier (`fichier_cle`, `pdf_cle`) : un chemin absolu n'a pas de
+    #  sens dans un stockage objet, et il change si le volume est monté ailleurs.
+    #  Le chemin les accompagne encore le temps d'une version — la précédente le
+    #  relit (#1757) —, et une ligne que la migration 0283 n'a pas convertie se
+    #  relit par lui, borné. Toute lecture passe par ces trois gestes, qui
+    #  disparaîtront avec la colonne (`CONTRACTIONS`).
+
+    def colonnes(self, cle: str, prefixe: str = "fichier") -> dict[str, str]:
+        """Ce qu'une ligne garde d'un fichier qu'on vient d'écrire : `…_cle` et `…_chemin`."""
+        return {f"{prefixe}_cle": cle_valide(cle), f"{prefixe}_chemin": str(self.chemin(cle))}
+
+    def cle_de(self, ligne: object, prefixe: str = "fichier") -> str | None:
+        """La clé du fichier d'une ligne, ou `None` — sa colonne `…_cle`, sinon son chemin."""
+        cle = getattr(ligne, f"{prefixe}_cle", None)
+        if isinstance(cle, str) and cle:
+            try:
+                return cle_valide(cle)
+            except CleInvalide:
+                return None
+        return self.cle_de_chemin(getattr(ligne, f"{prefixe}_chemin", None))
+
+    def fichier_de(self, ligne: object, prefixe: str = "fichier") -> Path | None:
+        """Le fichier EXISTANT d'une ligne, ou `None` — absent, ou hors du préfixe."""
+        cle = self.cle_de(ligne, prefixe)
+        if cle is None:
+            return None
+        try:
+            chemin = self.chemin(cle)
+        except CleInvalide:
+            return None
+        return chemin if chemin.is_file() else None
+
+    def supprimer_de(self, ligne: object, prefixe: str = "fichier") -> None:
+        """Supprime le fichier d'une ligne — jamais hors de la racine."""
+        cle = self.cle_de(ligne, prefixe)
         if cle is not None:
             self.supprimer(cle)
 

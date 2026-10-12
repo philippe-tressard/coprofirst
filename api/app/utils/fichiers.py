@@ -388,7 +388,7 @@ def enregistrer_fichier_recu(
 
 
 def enregistrer_televersement(file, raw_name: str, user=None) -> str:
-    """Valide un fichier téléversé et l'écrit sur disque. Rend son chemin.
+    """Valide un fichier téléversé et l'écrit sur disque. Rend sa CLÉ (`prive/…`).
 
     ## 🔴 Pourquoi ce geste est ici et non chez les appelants (#825)
 
@@ -440,9 +440,9 @@ def enregistrer_televersement(file, raw_name: str, user=None) -> str:
     st = stockage()
     cle = f"{DOSSIER_PRIVE}/{nom_stocke(raw_name, extension)}"
     st.ecrire_flux(cle, file.file)
-    #  Le chemin ABSOLU, que la ligne de la base garde (`fichier_chemin`) et que
-    #  `stockage.cle_de_chemin` relit, borné.
-    return str(st.chemin(cle))
+    #  La CLÉ, que la ligne de la base garde (`fichier_cle`, #1816) — avec, le
+    #  temps d'une version, le chemin absolu (`stockage().colonnes(cle)`).
+    return cle
 
 
 async def lire_tableur_recu(fichier, user=None) -> bytes:

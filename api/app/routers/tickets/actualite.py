@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from app.utils import horloge
 from typing import Optional
 
@@ -47,6 +46,7 @@ from app.utils.liens import base_site, lien_ticket, nom_site
 from app.utils.noms import contexte_personne, nom_auteur
 from app.utils.perimetres import a_portee_globale, batiments_cibles, parse_json_perimetres
 from app.utils.photos import parse_photos, premiere_photo
+from app.utils.stockage import stockage
 from app.utils.visibility import hors_du_hall, reservee_au_conseil
 
 from .suite_groupe import message_suite
@@ -129,8 +129,8 @@ def _pieces(session: Session, ticket: Ticket, fichiers_urls: Optional[list[str]]
     chemins += chemins_locaux(parse_photos(ticket.fichiers_urls))
     if ticket.id is not None:
         for doc in session.exec(select(Document).where(Document.ticket_id == ticket.id)).all():
-            if doc.fichier_chemin and os.path.isfile(doc.fichier_chemin):
-                chemins.append(doc.fichier_chemin)
+            if (fichier := stockage().fichier_de(doc)) is not None:
+                chemins.append(str(fichier))
     if fichiers_urls:
         chemins += chemins_locaux(fichiers_urls)
     return chemins

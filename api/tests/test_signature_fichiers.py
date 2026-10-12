@@ -179,7 +179,7 @@ def test_le_geste_factorise_REMBOBINE_le_flux():
 
     contenu = b"%PDF-1.4 contenu de test"
     faux = SimpleNamespace(file=_io.BytesIO(contenu))
-    chemin = enregistrer_televersement(faux, "rapport.pdf")
+    chemin = stockage().chemin(enregistrer_televersement(faux, "rapport.pdf"))
     try:
         assert pathlib.Path(chemin).read_bytes() == contenu, (
             "le fichier écrit ne correspond pas à ce qui a été téléversé : "
