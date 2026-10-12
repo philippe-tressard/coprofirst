@@ -65,10 +65,23 @@
 
 {#if composant}
 	{@render contenu(composant)}
+{:else if erreur}
+	<EtatListe {erreur} titreErreur="Cette partie de l’écran n’a pas pu se charger" />
 {:else}
-	<EtatListe
-		chargement={!erreur}
-		{erreur}
-		titreErreur="Cette partie de l’écran n’a pas pu se charger"
-	/>
+	<!--  ⏱ L'attente ne s'annonce qu'au-delà de `--delai-annonce` (12/10/2026) : le morceau
+	      est le plus souvent déjà en cache, et « Chargement… » clignotait une
+	      fraction de seconde à chaque onglet. Fondu seul — rien ne bouge, donc
+	      rien à retirer sous `prefers-reduced-motion` (`emil-design-eng`). -->
+	<div class="attente-differee"><EtatListe chargement /></div>
 {/if}
+
+<style>
+	.attente-differee {
+		animation: attente-annoncee var(--duree-apparition) var(--ease-out) var(--delai-annonce) both;
+	}
+	@keyframes attente-annoncee {
+		from {
+			opacity: 0;
+		}
+	}
+</style>
