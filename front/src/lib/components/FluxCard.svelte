@@ -47,6 +47,10 @@
 	export let expanded = false;
 	/** Rendue aux Archives du fil : l'allure de toute carte archivée (`CarteListe`). */
 	export let archive = false;
+	/**  La gouttière dit l'HEURE — seulement quand un intitulé de groupe dit le
+	 *   jour (`FriseDuFil`). Le bandeau Épinglé n'en a pas : l'heure seule n'y
+	 *   situait rien, la carte y prend la date (12/10/2026). */
+	export let heure = false;
 
 	/**  🗑️ Retirer la carte du FIL — admin seulement, et sur les cartes d'ANNUAIRE
 	 *   seulement. La carte n'agit pas, elle prévient — comme pour `toggle`. */
@@ -112,8 +116,8 @@
 
 <!--  🗂️ LA CARTE DU SITE (10/10/2026, maquette B du fil, choisie à l'écran) :
       `CarteListe` porte le conteneur, le geste et les états, `EnteteCarte`
-      l'en-tête. La gouttière dit l'HEURE — le jour est l'intitulé du groupe
-      (`FriseDuFil`) — puis la RUBRIQUE (`classeFlux`), dans sa teinte. La frise
+      l'en-tête. La gouttière dit l'HEURE quand le jour est l'intitulé du groupe
+      (`FriseDuFil`), la date sinon — puis la RUBRIQUE (`classeFlux`), dans sa teinte. La frise
       (trait vertical, puces) est partie avec elle : la gouttière la remplace.
 
       🔴 Le geste devient celui du site : repliée, toute la carte ouvre ;
@@ -122,7 +126,7 @@
       le donnait pour référence de ce geste. -->
 <CarteListe
 	quand={item.date}
-	heure
+	{heure}
 	classe={classeFlux(item.type)}
 	{expanded}
 	urgent={estTicketUrgent(item)}

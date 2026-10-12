@@ -103,11 +103,25 @@ test('la carte du fil a la gouttière du site : l’heure, puis la rubrique', as
 	await expect(carte).not.toHaveClass(/expanded/);
 });
 
-test('l’épinglé a son bandeau, sans intitulé de jour', async ({ page }) => {
+/**
+ *  Sans intitulé de jour, l'heure seule ne situait rien : la gouttière de
+ *  l'épinglé dit la DATE (12/10/2026, signalé à l'écran).
+ */
+test('l’épinglé a son bandeau, sans intitulé de jour, et sa gouttière dit la date', async ({
+	page,
+}) => {
 	await accueil(page);
 	const bandeau = page.locator('.epingle-bloc');
 	await expect(bandeau.getByText('Règles du local vélos')).toBeVisible();
 	await expect(bandeau.locator('.flux-day-label')).toHaveCount(0);
+	const date = await page.evaluate(async (iso) => {
+		const { fmtDate } = await import('/src/lib/date.ts');
+		return fmtDate(iso);
+	}, ITEMS[1].date);
+	const gouttiere = await bandeau
+		.locator('.gouttiere time')
+		.evaluate((t) => t.textContent!.replace(/\s+/g, ' ').trim());
+	expect(gouttiere, 'la gouttière de l’épinglé ne dit pas le jour').toBe(date);
 	//  Et il n'est pas lu deux fois : la chronologie ne le reprend pas.
 	await expect(page.getByText('Règles du local vélos')).toHaveCount(1);
 });
