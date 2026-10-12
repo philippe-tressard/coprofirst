@@ -37,7 +37,6 @@ def reglement(session):
     doc = Document(
         titre="Règlement de copropriété",
         fichier_nom="reglement.pdf",
-        fichier_chemin="/tmp/reglement.pdf",
         categorie_id=categorie.id,
         publie_par_id=cs.id,
     )

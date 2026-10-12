@@ -47,7 +47,6 @@ def bibliotheque(session):
             Document(
                 titre=titre,
                 fichier_nom="f.pdf",
-                fichier_chemin="/tmp/f.pdf",
                 categorie_id=categorie.id,
                 publie_par_id=admin.id,
             )

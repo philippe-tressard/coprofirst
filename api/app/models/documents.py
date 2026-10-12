@@ -61,10 +61,10 @@ class Document(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     titre: str
     fichier_nom: str
-    #  La CLÉ du fichier dans le stockage (`prive/…`, #1816) ; le chemin absolu
-    #  ne sert plus qu'à la version précédente (#1757) — `stockage().cle_de`.
+    #  La CLÉ du fichier dans le stockage (`prive/…`, #1816) — `stockage().cle_de`.
+    #  L'ancien chemin absolu (`fichier_chemin`) reste en base pour la version
+    #  précédente, qui le relit (#1757), et part en second temps (`CONTRACTIONS`).
     fichier_cle: Optional[str] = None
-    fichier_chemin: str
     taille_octets: Optional[int] = None
     mime_type: str = "application/octet-stream"
     categorie_id: Optional[int] = Field(default=None, foreign_key="categorie_document.id")

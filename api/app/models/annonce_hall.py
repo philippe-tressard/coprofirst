@@ -45,7 +45,6 @@ class AnnonceHall(AssisteIAMixin, table=True):
     images_json: str = "[]"  # JSON: photos facultatives (max 2)
     #  La clé du PDF (`annonces-hall/…`, #1816) — voir `Document.fichier_cle`.
     pdf_cle: Optional[str] = None
-    pdf_chemin: str = ""  # chemin absolu, relu par la version précédente seule
     pdf_nom: str = ""  # nom proposé au téléchargement
     taille_octets: Optional[int] = None
     destinataires: str = "[]"  # JSON: emails notifiés

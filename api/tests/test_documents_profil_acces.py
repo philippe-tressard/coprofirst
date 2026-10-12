@@ -73,7 +73,6 @@ def bibliotheque(session):
         doc = Document(
             titre=code,
             fichier_nom="f.pdf",
-            fichier_chemin="/inexistant/f.pdf",
             categorie_id=categorie.id,
             publie_par_id=auteur.id,
         )

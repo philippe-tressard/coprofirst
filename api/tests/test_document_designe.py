@@ -59,7 +59,6 @@ def _document(session, titre, contrat_id):
     d = Document(
         titre=titre,
         fichier_nom="c.pdf",
-        fichier_chemin="/introuvable/c.pdf",
         mime_type="application/pdf",
         contrat_id=contrat_id,
         publie_par_id=1,

@@ -64,7 +64,7 @@ PORTEURS_A_FICHIER = frozenset({"document", "diagnostic"})
 MAX_FICHIERS_FICHE = 10
 
 #: Les colonnes qui décrivent le fichier, communes au document et au rapport.
-_COLONNES_FICHIER = ("fichier_nom", "fichier_cle", "fichier_chemin", "taille_octets", "mime_type")
+_COLONNES_FICHIER = ("fichier_nom", "fichier_cle", "taille_octets", "mime_type")
 
 
 def porteurs_demandes(**colonnes: int | None) -> dict[str, int]:

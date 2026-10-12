@@ -121,7 +121,6 @@ def _type_diagnostic(session):
         titre="Rapport 2025",
         date_rapport=date(2025, 6, 1),
         fichier_nom="dpe.pdf",
-        fichier_chemin="/prive/dpe.pdf",
         taille_octets=1234,
         mime_type="application/pdf",
         synthese="Classe C",

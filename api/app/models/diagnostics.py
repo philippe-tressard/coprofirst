@@ -44,7 +44,6 @@ class DiagnosticRapport(SQLModel, table=True):
     fichier_nom: str
     #  La clé du fichier (#1816) — voir `Document.fichier_cle`.
     fichier_cle: Optional[str] = None
-    fichier_chemin: str
     taille_octets: Optional[int] = None
     mime_type: str = "application/octet-stream"
     synthese: Optional[str] = None  # synthèse des conclusions du rapport

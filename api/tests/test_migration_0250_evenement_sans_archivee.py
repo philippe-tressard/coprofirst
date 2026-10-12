@@ -69,7 +69,6 @@ def avant():
             Document(
                 titre="Plan d'accès",
                 fichier_nom="plan.pdf",
-                fichier_chemin="/app/uploads/prive/plan.pdf",
                 evenement_id=ids[1],
                 publie_par_id=auteur.id,
             )

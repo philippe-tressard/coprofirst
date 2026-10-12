@@ -52,7 +52,7 @@ def _document(session, auteur, disque_jetable, nom, *, ticket=None, ecrire=True)
     doc = Document(
         titre=nom,
         fichier_nom=nom,
-        fichier_chemin=str(chemin),
+        fichier_cle=nom,
         publie_par_id=auteur.id,
         ticket_id=ticket.id if ticket else None,
     )
@@ -63,7 +63,7 @@ def _document(session, auteur, disque_jetable, nom, *, ticket=None, ecrire=True)
 
 
 def _document_en_attente(auteur) -> Document:
-    return Document(titre="x", fichier_nom="x", fichier_chemin="x", publie_par_id=auteur.id)
+    return Document(titre="x", fichier_nom="x", publie_par_id=auteur.id)
 
 
 @pytest.fixture()

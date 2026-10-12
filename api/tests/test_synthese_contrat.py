@@ -79,7 +79,7 @@ def _contrat(session, libelle="Ascenseur Bât. 1", **kw):
 
 def _document(session, contrat, **kw):
     kw.setdefault("titre", "Contrat")
-    kw.setdefault("fichier_chemin", "/introuvable/c.pdf")
+    kw.setdefault("fichier_cle", "prive/introuvable.pdf")
     d = Document(
         fichier_nom="c.pdf",
         mime_type="application/pdf",
@@ -167,7 +167,6 @@ def test_un_document_DÉSIGNÉ_qui_n_est_PAS_du_contrat_est_ignoré(session):
     etranger = Document(
         titre="Entretien toitures Bat 2",
         fichier_nom="toitures.pdf",
-        fichier_chemin="/x/toitures.pdf",
         mime_type="application/pdf",
         publie_par_id=1,
     )
@@ -270,12 +269,12 @@ def _pdf_sans_texte(tmp_path, nom="scan.pdf"):
     ecrivain.add_blank_page(width=595, height=842)
     with open(chemin, "wb") as f:
         ecrivain.write(f)
-    return str(chemin)
+    return nom  # la clé : `tmp_path` est la racine du stockage (`disque_jetable`)
 
 
 def test_un_pdf_sans_texte_est_JOINT_au_lieu_d_etre_abandonne(session, disque_jetable):
     c = _contrat(session)
-    _document(session, c, titre="Contrat signé", fichier_chemin=_pdf_sans_texte(disque_jetable))
+    _document(session, c, titre="Contrat signé", fichier_cle=_pdf_sans_texte(disque_jetable))
     _config(session)
     m = construire_matiere(session, c, avec_document=True)
     assert len(m.fichiers) == 1
@@ -326,7 +325,7 @@ def test_un_fichier_TROP_LOURD_n_est_pas_joint(session, disque_jetable, monkeypa
 
     monkeypatch.setattr(mod, "MAX_OCTETS_DOCUMENT_JOINT", 10)
     c = _contrat(session)
-    _document(session, c, titre="Plan", fichier_chemin=_pdf_sans_texte(disque_jetable))
+    _document(session, c, titre="Plan", fichier_cle=_pdf_sans_texte(disque_jetable))
     _config(session)
     m = construire_matiere(session, c, avec_document=True)
     assert m.fichiers == ()

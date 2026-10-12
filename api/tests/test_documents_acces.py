@@ -72,7 +72,6 @@ def _piece_jointe() -> Document:
         id=42,
         titre="Compte rendu interne",
         fichier_nom="cr.pdf",
-        fichier_chemin="/app/uploads/cr.pdf",
         ticket_id=7,
         categorie_id=None,
     )
@@ -213,7 +212,6 @@ def _document_orphelin() -> Document:
         id=99,
         titre="photo de ticket",
         fichier_nom="degat.jpg",
-        fichier_chemin="/app/uploads/degat.jpg",
         publication_id=None,
         categorie_id=None,
         contrat_id=None,
@@ -291,7 +289,6 @@ def _piece_jointe_ticket() -> Document:
         id=51,
         titre="Photo de la fuite",
         fichier_nom="fuite.jpg",
-        fichier_chemin="/app/uploads/prive/fuite.jpg",
         ticket_id=11,
         categorie_id=None,
     )
@@ -302,7 +299,6 @@ def _piece_jointe_evenement() -> Document:
         id=52,
         titre="Plan d'accès",
         fichier_nom="plan.pdf",
-        fichier_chemin="/app/uploads/prive/plan.pdf",
         evenement_id=22,
         categorie_id=None,
     )

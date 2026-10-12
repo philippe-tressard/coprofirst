@@ -154,7 +154,6 @@ def test_supprimer_un_ticket_qui_porte_un_document(contexte):
         Document(
             titre="Devis",
             fichier_nom="devis.pdf",
-            fichier_chemin="/tmp/devis.pdf",
             ticket_id=t.id,
             publie_par_id=admin.id,
         )
@@ -385,7 +384,6 @@ def test_supprimer_un_document_cite_par_un_contrat(contexte):
     doc = Document(
         titre="Contrat scanné",
         fichier_nom="c.pdf",
-        fichier_chemin="/tmp/c-546.pdf",
         publie_par_id=admin.id,
     )
     session.add(doc)
