@@ -18,7 +18,6 @@ from types import SimpleNamespace
 import pytest
 from sqlmodel import Session, select
 
-from app.config import get_settings
 from app.models.core import CategorieDocument, ProfilAccesDocument, RoleUtilisateur
 from app.utils import llm
 from app.utils.question_reglement.texte import CODE_CATEGORIE
@@ -49,9 +48,8 @@ CITATION_VRAIE = (
 
 
 @pytest.fixture(name="moteur")
-def moteur_fixture(monkeypatch, tmp_path):
+def moteur_fixture(disque_jetable):
     """La base, la catégorie des fichiers du règlement, et un disque jetable."""
-    monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
     with base_http() as moteur:
         categorie_reglement(moteur, CODE_CATEGORIE, ["syndic"])
         yield moteur

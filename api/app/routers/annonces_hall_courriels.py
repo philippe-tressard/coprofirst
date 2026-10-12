@@ -22,7 +22,6 @@ premier et gagne le doublon — et elle vit dans `syndic_puis`.
 
 from __future__ import annotations
 
-import os
 
 from fastapi import BackgroundTasks
 from sqlmodel import Session
@@ -38,6 +37,7 @@ from app.utils.destinataires import (
     syndic_puis,
 )
 from app.utils.email import send_email_group
+from app.utils.stockage import stockage
 from app.utils.liens import lien_ticket
 from app.utils.perimetres import parse_json_perimetres, perimetre_label_liste
 from app.utils.noms import contexte_personne
@@ -153,7 +153,7 @@ def _envoyer_email_annonce(
         context=ctx,
         session=session,
         bcc=auteur_bcc,
-        attachments=[annonce.pdf_chemin] if os.path.isfile(annonce.pdf_chemin) else None,
+        attachments=[str(pdf)] if (pdf := stockage().fichier_de(annonce, "pdf")) else None,
     )
     return emails
 

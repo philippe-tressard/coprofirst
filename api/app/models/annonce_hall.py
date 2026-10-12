@@ -43,7 +43,9 @@ class AnnonceHall(AssisteIAMixin, table=True):
     format_demande: str = "auto"  # auto | a4 | a5
     format_effectif: str = "a4"  # a4 | a5
     images_json: str = "[]"  # JSON: photos facultatives (max 2)
-    pdf_chemin: str = ""  # chemin du PDF dans le volume uploads
+    #  La clé du PDF (`annonces-hall/…`, #1816) — voir `Document.fichier_cle`.
+    pdf_cle: Optional[str] = None
+    pdf_chemin: str = ""  # chemin absolu, relu par la version précédente seule
     pdf_nom: str = ""  # nom proposé au téléchargement
     taille_octets: Optional[int] = None
     destinataires: str = "[]"  # JSON: emails notifiés

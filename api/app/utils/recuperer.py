@@ -35,6 +35,7 @@ où lire les droits (`standards/03` §1).
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Mapping, Optional, Type, TypeVar
 
 from fastapi import HTTPException
@@ -69,7 +70,7 @@ def ou_404(
     return objet
 
 
-def fichier_ou_404(chemin: Optional[str], libelle: str = "Fichier") -> str:
+def fichier_ou_404(chemin: Optional[str | Path], libelle: str = "Fichier") -> str | Path:
     """Le chemin d'un fichier **présent sur le disque**, ou un **404** qui le nomme.
 
     L'enregistrement existe mais son fichier a disparu du volume : la question

@@ -45,8 +45,8 @@ def _ticket(session, auteur) -> Ticket:
     return t
 
 
-def _document(session, auteur, tmp_path, nom, *, ticket=None, ecrire=True) -> Document:
-    chemin = tmp_path / nom
+def _document(session, auteur, disque_jetable, nom, *, ticket=None, ecrire=True) -> Document:
+    chemin = disque_jetable / nom
     if ecrire:
         chemin.write_bytes(b"%PDF-1.4")
     doc = Document(
@@ -74,39 +74,41 @@ def auteur(session):
 # ── supprimer_documents_de ──────────────────────────────────────────────────
 
 
-def test_les_documents_du_porteur_partent_avec_leur_fichier(session, auteur, tmp_path):
+def test_les_documents_du_porteur_partent_avec_leur_fichier(session, auteur, disque_jetable):
     t = _ticket(session, auteur)
-    doc = _document(session, auteur, tmp_path, "constat.pdf", ticket=t)
+    doc = _document(session, auteur, disque_jetable, "constat.pdf", ticket=t)
 
     supprimes = supprimer_documents_de(session, "ticket_id", t.id)
     session.commit()
 
     assert supprimes == 1
     assert session.get(Document, doc.id) is None
-    assert not (tmp_path / "constat.pdf").exists(), "un fichier sans ligne serait indestructible"
+    assert not (disque_jetable / "constat.pdf").exists(), (
+        "un fichier sans ligne serait indestructible"
+    )
 
 
-def test_les_documents_d_un_autre_porteur_restent(session, auteur, tmp_path):
+def test_les_documents_d_un_autre_porteur_restent(session, auteur, disque_jetable):
     t, autre = _ticket(session, auteur), _ticket(session, auteur)
-    _document(session, auteur, tmp_path, "a.pdf", ticket=t)
-    reste = _document(session, auteur, tmp_path, "b.pdf", ticket=autre)
-    libre = _document(session, auteur, tmp_path, "libre.pdf")
+    _document(session, auteur, disque_jetable, "a.pdf", ticket=t)
+    reste = _document(session, auteur, disque_jetable, "b.pdf", ticket=autre)
+    libre = _document(session, auteur, disque_jetable, "libre.pdf")
 
     assert supprimer_documents_de(session, "ticket_id", t.id) == 1
     session.commit()
 
     assert session.get(Document, reste.id) is not None
     assert session.get(Document, libre.id) is not None
-    assert (tmp_path / "b.pdf").exists() and (tmp_path / "libre.pdf").exists()
+    assert (disque_jetable / "b.pdf").exists() and (disque_jetable / "libre.pdf").exists()
 
 
 def test_un_porteur_sans_document_rend_zero(session, auteur):
     assert supprimer_documents_de(session, "ticket_id", _ticket(session, auteur).id) == 0
 
 
-def test_un_fichier_deja_absent_du_disque_ne_fait_pas_echouer(session, auteur, tmp_path):
+def test_un_fichier_deja_absent_du_disque_ne_fait_pas_echouer(session, auteur, disque_jetable):
     t = _ticket(session, auteur)
-    doc = _document(session, auteur, tmp_path, "perdu.pdf", ticket=t, ecrire=False)
+    doc = _document(session, auteur, disque_jetable, "perdu.pdf", ticket=t, ecrire=False)
 
     assert supprimer_documents_de(session, "ticket_id", t.id) == 1
     session.commit()
@@ -114,10 +116,10 @@ def test_un_fichier_deja_absent_du_disque_ne_fait_pas_echouer(session, auteur, t
     assert session.get(Document, doc.id) is None
 
 
-def test_plusieurs_documents_sont_comptes(session, auteur, tmp_path):
+def test_plusieurs_documents_sont_comptes(session, auteur, disque_jetable):
     t = _ticket(session, auteur)
     for nom in ("1.pdf", "2.pdf", "3.pdf"):
-        _document(session, auteur, tmp_path, nom, ticket=t)
+        _document(session, auteur, disque_jetable, nom, ticket=t)
 
     assert supprimer_documents_de(session, "ticket_id", t.id) == 3
 
@@ -127,10 +129,10 @@ def test_la_colonne_porteuse_est_un_nom_de_champ_de_document(session):
         supprimer_documents_de(session, "colonne_inconnue", 1)
 
 
-def test_supprimer_les_documents_ne_valide_pas_la_transaction(session, auteur, tmp_path):
+def test_supprimer_les_documents_ne_valide_pas_la_transaction(session, auteur, disque_jetable):
     """L'appelant peut tout annuler si une règle métier échoue ensuite."""
     t = _ticket(session, auteur)
-    doc = _document(session, auteur, tmp_path, "garde.pdf", ticket=t)
+    doc = _document(session, auteur, disque_jetable, "garde.pdf", ticket=t)
 
     supprimer_documents_de(session, "ticket_id", t.id)
     session.rollback()
@@ -216,10 +218,10 @@ def session_fk():
         yield s
 
 
-def _ticket_et_son_document(session, tmp_path):
+def _ticket_et_son_document(session, disque_jetable):
     auteur = compte(session, prefixe="fk")
     t = _ticket(session, auteur)
-    _document(session, auteur, tmp_path, "fk.pdf", ticket=t)
+    _document(session, auteur, disque_jetable, "fk.pdf", ticket=t)
     return t
 
 
@@ -240,10 +242,10 @@ def _deletes_emis(session, geste) -> list[str]:
     return tables
 
 
-def test_avec_flush_l_enfant_part_avant_le_parent(session_fk, tmp_path):
+def test_avec_flush_l_enfant_part_avant_le_parent(session_fk, disque_jetable):
     """L'ordre est celui que le module garantit : le document, puis le ticket — et la clé
     étrangère, active ici comme en production, ne refuse rien."""
-    t = _ticket_et_son_document(session_fk, tmp_path)
+    t = _ticket_et_son_document(session_fk, disque_jetable)
     ticket_id = t.id
 
     def _supprimer():

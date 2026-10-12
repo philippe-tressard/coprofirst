@@ -40,11 +40,10 @@ C'est le vrai coût de #546, et il est déjà payé : activer les clés ne crée
 le problème, il le rendra visible.
 """
 
-import os
-
 from sqlmodel import Session, select
 
 from app.models.documents import Document
+from app.utils.stockage import stockage
 
 
 def supprimer_documents_de(session: Session, colonne: str, valeur: int) -> int:
@@ -65,8 +64,7 @@ def supprimer_documents_de(session: Session, colonne: str, valeur: int) -> int:
     champ = getattr(Document, colonne)
     documents = session.exec(select(Document).where(champ == valeur)).all()
     for doc in documents:
-        if doc.fichier_chemin and os.path.exists(doc.fichier_chemin):
-            os.remove(doc.fichier_chemin)
+        stockage().supprimer_de(doc)
         session.delete(doc)
     return len(documents)
 

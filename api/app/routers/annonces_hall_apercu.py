@@ -105,10 +105,9 @@ def _annonce_previsionnelle(b: BrouillonAnnonceHall, auteur: Utilisateur) -> Ann
         perimetre_cible=perimetre_cible_json(b.perimetre_cible),
         format_effectif=fmt,
         pdf_nom=nom_fichier(b.titre, cree_le),
-        #  Le PDF n'existe pas : l'e-mail réel le joindra, l'aperçu ne peut pas le
-        #  montrer. `apercu_email` reçoit donc une pièce jointe NOMMÉE, pas un
-        #  chemin — annoncer un fichier absent vaut mieux que taire la pièce jointe.
-        pdf_chemin="",
+        #  Le PDF n'existe pas (ni clé ni chemin) : l'e-mail réel le joindra,
+        #  l'aperçu ne peut pas le montrer. `apercu_email` reçoit donc une pièce
+        #  jointe NOMMÉE — annoncer un fichier absent vaut mieux que la taire.
         auteur_id=auteur.id,
         ticket_id=b.ticket_id,
         cree_le=cree_le,

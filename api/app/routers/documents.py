@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 from datetime import date
 from typing import Optional
 
@@ -251,7 +250,9 @@ def download_document(
     if not document_visible(user, doc, session):
         raise HTTPException(403, "Accès refusé")
     return FileResponse(
-        fichier_ou_404(doc.fichier_chemin), filename=doc.fichier_nom, media_type=doc.mime_type
+        fichier_ou_404(stockage().fichier_de(doc)),
+        filename=doc.fichier_nom,
+        media_type=doc.mime_type,
     )
 
 
@@ -425,21 +426,19 @@ async def upload_document(
     # authentifié qui impose lui-même le `media_type`, l'extension d'origine
     # peut donc être conservée telle quelle.
     raw_name = file.filename or "document"
-    #  Les 16 premiers octets suffisent à toutes les signatures connues ;
     #  🔴 Validation ET écriture en un seul geste (#825) : lire seize octets,
     #  rembobiner, vérifier la signature, journaliser, refuser, nommer, copier.
     #  Ces neuf lignes étaient recopiées dans trois routeurs — une copie qui
     #  oublie le `seek(0)` écrit un fichier tronqué sans que rien ne le dise.
-    dest = enregistrer_televersement(file, raw_name, user)
-
-    size = os.path.getsize(dest)
+    cle = enregistrer_televersement(file, raw_name, user)
+    st = stockage()
 
     doc = Document(
         titre=titre,
         description=description,
         fichier_nom=file.filename,
-        fichier_chemin=dest,
-        taille_octets=size,
+        **st.colonnes(cle),
+        taille_octets=st.chemin(cle).stat().st_size,
         mime_type=file.content_type or "application/octet-stream",
         categorie_id=categorie_id,
         contrat_id=contrat_id,
@@ -495,6 +494,6 @@ def delete_document(
     #  Une fiche emporte ses annexes (migration 0276) : sans elle, elles
     #  n'auraient plus de règle de lecture (`utils/annexes`).
     supprimer_annexes(session, "document", doc_id)
-    stockage().supprimer_chemin(doc.fichier_chemin)
+    stockage().supprimer_de(doc)
     session.delete(doc)
     session.commit()

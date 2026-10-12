@@ -273,9 +273,9 @@ def _pdf_sans_texte(tmp_path, nom="scan.pdf"):
     return str(chemin)
 
 
-def test_un_pdf_sans_texte_est_JOINT_au_lieu_d_etre_abandonne(session, tmp_path):
+def test_un_pdf_sans_texte_est_JOINT_au_lieu_d_etre_abandonne(session, disque_jetable):
     c = _contrat(session)
-    _document(session, c, titre="Contrat signé", fichier_chemin=_pdf_sans_texte(tmp_path))
+    _document(session, c, titre="Contrat signé", fichier_chemin=_pdf_sans_texte(disque_jetable))
     _config(session)
     m = construire_matiere(session, c, avec_document=True)
     assert len(m.fichiers) == 1
@@ -319,14 +319,14 @@ def test_un_fichier_ABSENT_est_ecarte_avec_son_motif(session):
     assert m.ecartes == (("Fantôme", "illisible ou trop volumineux"),)
 
 
-def test_un_fichier_TROP_LOURD_n_est_pas_joint(session, tmp_path, monkeypatch):
+def test_un_fichier_TROP_LOURD_n_est_pas_joint(session, disque_jetable, monkeypatch):
     """Une requête trop lourde est refusée par le service — et le base64
     l'alourdit encore d'un tiers. Mieux vaut l'écarter en le disant."""
     import app.utils.synthese_contrat as mod
 
     monkeypatch.setattr(mod, "MAX_OCTETS_DOCUMENT_JOINT", 10)
     c = _contrat(session)
-    _document(session, c, titre="Plan", fichier_chemin=_pdf_sans_texte(tmp_path))
+    _document(session, c, titre="Plan", fichier_chemin=_pdf_sans_texte(disque_jetable))
     _config(session)
     m = construire_matiere(session, c, avec_document=True)
     assert m.fichiers == ()

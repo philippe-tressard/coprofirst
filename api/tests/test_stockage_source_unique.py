@@ -12,6 +12,7 @@ from __future__ import annotations
 import ast
 import io
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 
@@ -120,7 +121,7 @@ def test_ecrire_lire_supprimer_et_l_adresse(tmp_path):
     st.ecrire_flux("prive/b.pdf", io.BytesIO(b"%PDF"))
     chemin = str(st.chemin("prive/b.pdf"))
     assert st.cle_de_chemin(chemin) == "prive/b.pdf"
-    st.supprimer_chemin(chemin)
+    st.supprimer("prive/b.pdf")
     st.supprimer("photos/a.jpg")
     assert not st.existe("photos/a.jpg") and not st.existe("prive/b.pdf")
 
@@ -131,7 +132,7 @@ def test_un_chemin_garde_en_base_hors_de_la_racine_n_est_jamais_touche(tmp_path)
     st = StockageDisque(tmp_path / "racine")
     (tmp_path / "racine").mkdir()
     assert st.cle_de_chemin(str(dehors)) is None
-    st.supprimer_chemin(str(dehors))
+    st.supprimer_de(SimpleNamespace(fichier_cle=None, fichier_chemin=str(dehors)))
     assert dehors.read_bytes() == b"intact"
     assert st.fichier_de_url("/uploads/../dehors.txt") is None
 

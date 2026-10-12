@@ -491,8 +491,12 @@ coupant. 🔴 **Les courriels de sécurité ne sont pas un service**
   en statique et Caddy pose le `Content-Type` d'après l'extension sur disque.
 - **Un fichier se situe par `utils/stockage`, et nulle part ailleurs** (#1748) :
   `stockage()` rend le stockage de la copropriété servie — `chemin(clé)`,
-  `fichier_de_url("/uploads/…")`, `cle_de_chemin(chemin gardé en base)`,
-  `url(clé)`, `supprimer_chemin(…)` ; toute clé est bornée sous la racine. La
+  `fichier_de_url("/uploads/…")`, `url(clé)` ; toute clé est bornée sous la
+  racine. Le fichier d'une **ligne** (document, rapport, affiche) se lit par
+  `cle_de(ligne)`, `fichier_de(ligne)`, `supprimer_de(ligne)` et s'écrit par
+  `**colonnes(clé)` : la ligne garde sa CLÉ (`fichier_cle`, `pdf_cle`), jamais
+  un chemin à relire (#1816 ; le chemin absolu ne sert plus qu'à la version
+  précédente). 🔒 `test_cle_des_fichiers.py`. La
   racine (`Settings.uploads_dir`) ne se lit que par le contexte ; elle était
   écrite six fois, puis traduite en `"/app" + url` à trois endroits — un fichier
   posé hors du volume n'est ni répliqué par `bascule.sh`, ni sauvegardé par

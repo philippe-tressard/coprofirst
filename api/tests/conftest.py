@@ -110,6 +110,21 @@ def batiments() -> list[int]:
 
 
 @pytest.fixture()
+def disque_jetable(monkeypatch, tmp_path):
+    """Le stockage de la copropriété servie, posé sur `tmp_path` — rendu.
+
+    Un fichier que l'application lit ou efface vit sous SA racine : `stockage()`
+    refuse tout chemin hors d'elle (#1748, #1816). La racine se demande au
+    contexte de copropriété, qui la lit dans la configuration (#1744). Écrite
+    ici : sept fichiers de tests recopiaient la ligne.
+    """
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
+    return tmp_path
+
+
+@pytest.fixture()
 def arbre_vide():
     """Aucun périmètre configuré — l'état d'une copropriété qui n'a rien saisi.
 
