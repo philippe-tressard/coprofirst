@@ -1,0 +1,218 @@
+"""Le CONTRAT DE DONNÉES entre une installation et la référence (spec §4.11, R1 #1877).
+
+Ce qui part d'une installation vers le registre de la référence est écrit ICI, et nulle
+part ailleurs : l'installation (R2, R3) construit ses envois depuis ces schémas, la
+référence (`registre/routeur.py`) les valide avec les mêmes. Deux copies divergeraient
+au premier champ ajouté — et un champ qui part sans être écrit ici est une donnée
+qui sort sans finalité.
+
+## Les règles
+
+1. **Chaque champ dit sa FINALITÉ** (`description`) : pourquoi la référence en a
+   besoin. Un champ sans finalité n'a pas de base légale (`standards/14` §1).
+2. **Aucune donnée de résident** (D5) : des nombres, jamais un nom, un courriel ni un
+   contenu. Les seules données personnelles du contrat sont celles de
+   l'ADMINISTRATEUR de l'installation (`AdministrateurInstallation`), et elles se
+   DÉCLARENT (`personnel=True`). 🔒 `tests/test_registre_contrat.py`.
+3. **Le contrat est versionné** (`VERSION_CONTRAT`) : un champ s'AJOUTE, optionnel,
+   dans la même version ; en retirer un ou en changer le sens ouvre la suivante.
+4. **Ce qu'une installation accepte** en s'inscrivant se lit dans
+   `registre/conditions/` : elle déclare la version ET l'empreinte du texte montré
+   à son administrateur, et la référence archive ce texte (`AcceptationConditions`).
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+#: La version du contrat que ce code parle. Une installation qui en annonce une
+#: autre est refusée avec un message qui le dit — jamais lue de travers.
+VERSION_CONTRAT = 1
+
+
+def _personnel(finalite: str, **kw):
+    """Un champ qui porte une donnée personnelle — de l'administrateur, jamais d'un résident."""
+    return Field(description=finalite, json_schema_extra={"personnel": True}, **kw)
+
+
+class _Contrat(BaseModel):
+    #  Un champ inconnu est REFUSÉ : ce qui n'est pas au contrat n'entre pas,
+    #  même par erreur d'une installation plus récente.
+    model_config = ConfigDict(extra="forbid")
+
+
+class AdministrateurInstallation(_Contrat):
+    """Qui administre l'installation — le contact de la référence pour cette installation."""
+
+    prenom: str = _personnel("s'adresser à l'administrateur", min_length=1, max_length=80)
+    nom: str = _personnel("s'adresser à l'administrateur", min_length=1, max_length=80)
+    courriel: EmailStr = _personnel(
+        "le prévenir d'un incident de son installation (bail, mise à jour, sauvegarde)"
+    )
+    telephone: Optional[str] = _personnel(
+        "le joindre quand un courriel ne suffit pas — facultatif",
+        default=None,
+        max_length=30,
+    )
+
+
+class DemandeInscription(_Contrat):
+    """Ce qu'une installation envoie à la référence pour s'inscrire (R2 l'enverra)."""
+
+    version_contrat: int = Field(description="lire la demande avec le bon contrat")
+    conditions_acceptees: int = Field(
+        description="prouver que les conditions en vigueur ont été acceptées"
+    )
+    empreinte_conditions: str = Field(
+        description="prouver que le texte accepté est celui que la référence archive (SHA-256)",
+        min_length=64,
+        max_length=64,
+    )
+    cle_publique: str = Field(
+        description="vérifier les signatures de l'installation (Ed25519, base64)",
+        min_length=40,
+        max_length=60,
+    )
+    version_logicielle: str = Field(
+        description="savoir quelle version tourne, pour le canal et les vagues",
+        min_length=1,
+        max_length=40,
+    )
+    administrateur: AdministrateurInstallation = Field(
+        description="le contact de la référence pour cette installation"
+    )
+
+
+class ReponseInscription(_Contrat):
+    """Ce que la référence répond : l'identifiant qu'elle attribue, et l'état de l'inscription."""
+
+    identifiant: str = Field(description="l'identifiant unique de l'installation, attribué ici")
+    etat: str = Field(description="en_attente tant que l'opérateur n'a pas validé")
+
+
+# ── Le rapport nocturne (R3) — écrit dès R1 : c'est le contrat qu'on accepte ──
+
+
+class Identite(_Contrat):
+    identifiant: str = Field(description="rattacher le rapport à son inscription")
+    canal: str = Field(description="vérifier que l'installation suit le canal attribué")
+    version_logicielle: str = Field(description="mesurer le retard de version")
+    revision_base: Optional[str] = Field(
+        default=None, description="savoir si la dernière migration est passée"
+    )
+    derniere_mise_a_jour: Optional[str] = Field(
+        default=None, description="voir une mise à jour revenue en arrière (reussie, revenue)"
+    )
+
+
+class Hebergement(_Contrat):
+    hebergeur: Optional[str] = Field(default=None, description="savoir où l'installation tourne")
+    pays_donnees: Optional[str] = Field(
+        default=None, description="vérifier que les données restent dans l'Union européenne"
+    )
+    architecture: Optional[str] = Field(default=None, description="publier les bonnes images")
+    memoire_mo: Optional[int] = Field(default=None, description="prévenir une saturation")
+    disque_total_mo: Optional[int] = Field(default=None, description="prévenir une saturation")
+    disque_occupe_mo: Optional[int] = Field(default=None, description="prévenir une saturation")
+    moteur_base: Optional[str] = Field(default=None, description="suivre les moteurs en service")
+    taille_bases_mo: Optional[int] = Field(default=None, description="prévenir une saturation")
+    certificat_expire_le: Optional[datetime] = Field(
+        default=None, description="prévenir l'expiration du certificat TLS"
+    )
+    erreurs_5xx_24h: Optional[int] = Field(
+        default=None, description="voir une installation en difficulté"
+    )
+
+
+class Sauvegarde(_Contrat):
+    derniere_reussie_le: Optional[datetime] = Field(
+        default=None, description="voir une sauvegarde qui ne se fait plus"
+    )
+    copie_hors_machine: Optional[bool] = Field(
+        default=None, description="sur un seul serveur, la seule sauvegarde qui protège (D15)"
+    )
+    dernier_essai_restauration_le: Optional[datetime] = Field(
+        default=None, description="savoir que la sauvegarde se restaure"
+    )
+
+
+class Posture(_Contrat):
+    documentation_api_coupee: Optional[bool] = Field(
+        default=None, description="signaler une surface exposée"
+    )
+    cookie_securise: Optional[bool] = Field(
+        default=None, description="signaler une session exposée"
+    )
+    secret_suffisant: Optional[bool] = Field(default=None, description="signaler un secret faible")
+    lien_source_present: Optional[bool] = Field(
+        default=None, description="vérifier l'obligation de l'AGPL §13"
+    )
+
+
+class CoproprieteRapport(_Contrat):
+    identifiant: str = Field(description="distinguer les copropriétés d'une installation")
+    #: Le nom d'une COPROPRIÉTÉ (« Résidence des Tilleuls »), pas d'une personne.
+    nom: str = Field(description="reconnaître la copropriété dans le registre", max_length=120)
+    lots: Optional[int] = Field(default=None, description="mesurer la taille servie")
+    utilisateurs_actifs: Optional[int] = Field(
+        default=None, description="mesurer l'usage, et le plafond du mode limité"
+    )
+    utilisateurs_inscrits: Optional[int] = Field(default=None, description="mesurer l'usage")
+    volume_mo: Optional[int] = Field(default=None, description="mesurer le stockage")
+    services_actifs: list[str] = Field(
+        default_factory=list, description="savoir quels services sont employés"
+    )
+
+
+class Consommation(_Contrat):
+    appels_ia: Optional[int] = Field(default=None, description="relevé de consommation (R7)")
+    cout_ia_usd: Optional[float] = Field(default=None, description="relevé de consommation (R7)")
+    messages_diffusion: Optional[int] = Field(
+        default=None, description="relevé de consommation (R7)"
+    )
+    courriels_envoyes: Optional[int] = Field(
+        default=None, description="relevé de consommation (R7)"
+    )
+    serveurs: Optional[int] = Field(default=None, description="relevé de consommation (R7)")
+
+
+class Rapport(_Contrat):
+    """Le rapport nocturne d'une installation (envoyé par R3)."""
+
+    version_contrat: int = Field(description="lire le rapport avec le bon contrat")
+    identite: Identite = Field(description="rattacher le rapport et suivre la version")
+    hebergement: Hebergement = Field(description="prévenir les pannes d'hébergement")
+    sauvegarde: Sauvegarde = Field(description="prévenir la perte de données")
+    posture: Posture = Field(description="signaler une installation exposée")
+    coproprietes: list[CoproprieteRapport] = Field(
+        default_factory=list, description="mesurer ce que l'installation sert"
+    )
+    consommation: Consommation = Field(description="relevé de consommation (R7)")
+
+
+#: Tous les schémas du contrat — ceux que le test parcourt.
+SCHEMAS = (
+    AdministrateurInstallation,
+    DemandeInscription,
+    ReponseInscription,
+    Identite,
+    Hebergement,
+    Sauvegarde,
+    Posture,
+    CoproprieteRapport,
+    Consommation,
+    Rapport,
+)
+
+
+def canonique(corps: dict) -> bytes:
+    """La forme d'octets qu'on SIGNE : JSON trié, sans espaces, en UTF-8.
+
+    La référence vérifie la signature sur les octets REÇUS (`routeur.py`), pas sur
+    une resérialisation : cette forme sert à l'installation qui signe (R2).
+    """
+    return json.dumps(corps, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()

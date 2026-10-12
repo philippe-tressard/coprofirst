@@ -108,3 +108,9 @@ LIMITE_LECTURE_PUBLIQUE = "60/minute"
 #: 🔒 `tests/test_limite_appel_facture.py` l'exige de TOUTE route qui atteint
 #: `demander`, relevée dans le code.
 LIMITE_APPEL_FACTURE = "10/minute"
+
+#: Une installation qui **s'inscrit au registre** de la référence (`registre/routeur.py`,
+#: spec §4.11). Route publique, signée par la clé de l'installation : la limite
+#: protège le registre d'un remplissage, pas un secret. Une installation légitime
+#: s'inscrit une fois, et ne revient que pour mettre à jour son contact.
+LIMITE_INSCRIPTION_INSTALLATION = "5/hour"

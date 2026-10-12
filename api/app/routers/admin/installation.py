@@ -22,7 +22,7 @@ router = APIRouter()
 
 
 class EtatInstallation(BaseModel):
-    role: str  #: maitre · replique · inconnu
+    role: str  #: reference · replique · inconnu
     libelle: str
     branche: Optional[str] = None
     empreinte: str = ""

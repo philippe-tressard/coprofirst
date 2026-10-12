@@ -108,6 +108,10 @@ DU_PROCESSUS = {
     ("utils/pdf_rendu.py", "dernier_temoin"): (
         "diagnostic du dernier rendu PDF, lu par les tests seulement ; aucune route ne le rend"
     ),
+    ("registre/base.py", "_moteurs"): (
+        "le moteur de la base `plateforme` — celle du registre des installations, "
+        "qui ne porte aucune donnée de copropriété (§4.11)"
+    ),
     ("utils/pdf_rendu.py", "dernier_journal"): (
         "journal technique du dernier rendu PDF, lu par les tests seulement"
     ),

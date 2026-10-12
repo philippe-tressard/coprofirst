@@ -7,9 +7,9 @@ a déjà été défaite par le script — retour à l'image précédente, puis �
 sauvegarde s'il le fallait —, mais l'exploitant doit le savoir, et le savoir par
 un autre canal que l'écran qu'il ne regarde pas.
 
-Ce contrôle ne dit QUE l'échec récent. Il ne juge pas l'absence de passage : le
-maître (5Hostachy) ne fait pas de mise à jour nocturne, et sans le rôle de
-l'installation (#1761) une absence ne se distingue pas d'un maître. 🔒
+Ce contrôle ne dit QUE l'échec récent. Il ne juge pas l'absence de passage : la
+référence (5Hostachy) ne fait pas de mise à jour nocturne, et sans le rôle de
+l'installation (#1761) une absence ne se distingue pas d'une référence. 🔒
 `tests/test_sante_mise_a_jour.py`.
 """
 

@@ -782,7 +782,7 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `yargs` | `MIT` | dependencies | oui |
 | `yargs-parser` | `ISC` | dependencies | oui |
 
-## Dépendances — `api` (26 dépendances directes)
+## Dépendances — `api` (27 dépendances directes)
 
 Seules les dépendances **directes** de l'API sont figées ici : les transitives ne sont pas épinglées dans `api/requirements.txt`, et leur métadonnée de licence changerait ce document sans que le dépôt bouge. Elles sont jugées par la liste blanche à chaque passage de la CI, comme les directes.
 
@@ -791,6 +791,7 @@ Seules les dépendances **directes** de l'API sont figées ici : les transitives
 | `alembic` | `MIT` | directe | oui |
 | `apscheduler` | `MIT` | directe | oui |
 | `bcrypt` | `Apache-2.0` | directe | oui |
+| `cryptography` | `Apache-2.0 OR BSD-3-Clause` | directe | oui |
 | `dkimpy` | `BSD-like` | directe | **exception** |
 | `dnspython` | `ISC` | directe | oui |
 | `email-validator` | `Unlicense` | directe | oui |

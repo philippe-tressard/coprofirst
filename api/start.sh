@@ -60,6 +60,13 @@ else
     alembic upgrade head
 fi
 
+#  Le REGISTRE DES INSTALLATIONS (référence seule, spec §4.11) : sa base `plateforme`
+#  est une AUTRE base, migrée par sa propre chaîne. Jamais sous `set -e` : un
+#  registre en panne ne doit pas arrêter la résidence — le verdict se dit, et ses
+#  routes répondent 503 (`app/registre/migrer.py`). « eteint » partout ailleurs.
+REGISTRE=$(python -m app.registre.migrer 2>/dev/null | tail -n 1) || REGISTRE="echec: lancement"
+echo "==> Registre des installations : ${REGISTRE:-echec: verdict vide}"
+
 echo "==> Démarrage de l'API..."
 #  --no-access-log (#1300, 25/09/2026) : pas une ligne par requête avec l'adresse
 #  du client — une donnée personnelle dès que l'API lira l'adresse réelle. Les

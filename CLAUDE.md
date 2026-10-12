@@ -272,6 +272,12 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   `schemas` ⇄ `schemas_tickets`. Ne pas lui en ajouter.
 
 ### Migrations Alembic
+- **Deux chaînes, deux bases.** `alembic/` migre la base d'une copropriété ;
+  `alembic_plateforme/` migre la base `plateforme` du **registre des installations**
+  (référence seule, spec §4.11), par `python -m app.registre.migrer` — jamais par
+  `alembic upgrade head`. Ses tables ont leurs propres métadonnées
+  (`registre/modeles.registre_plateforme`) et ne vivent jamais sous `app/models/`.
+  🔒 `test_registre_inscription.py` compare la chaîne aux modèles.
 - ID séquentiel 4 chiffres : `0087`, `0088`…
 - **Jamais** modifier une migration existante — créer une nouvelle
 - **Jamais** de f-string dans `op.execute()` pour une **valeur** →
@@ -1058,7 +1064,7 @@ Instanciation 5Hostachy :
   plus le tag git `vX.Y.Z` (par `scripts/ci/tag-version.sh`, jamais à la main) et
   l'étiquette d'image `X.Y.Z`. 🔒 `test_images_publiees.py` : la matrice publie
   exactement ce que `docker-compose.yml` construit.
-- **Le maître TIRE ces images, il ne les construit plus** (#1758) : `auto-deploy.sh`
+- **La référence TIRE ces images, elle ne les construit plus** (#1758) : `auto-deploy.sh`
   et la bascule passent par `obtenir_images` (`scripts/lib/lib-images-ci.sh`), qui
   tire `sha-<commit>` et les ré-étiquette sous les noms de Compose ; tant qu'elles
   ne sont pas publiées, le journal dit « en attente des images de la CI », et au-delà
@@ -1074,7 +1080,7 @@ Instanciation 5Hostachy :
   `v*` ni déplacé ni supprimé. Ce qui ne l'est PAS — un dépôt personnel ne peut
   pas exempter GitHub Actions (`standards/08` §5 bis) : qui avance `replica` et qui
   pose un tag ; c'est une consigne. Je ne promeus **jamais** de moi-même : c'est la
-  décision de l'auteur, après rodage sur le maître (spec §9, question 8).
+  décision de l'auteur, après rodage sur la référence (spec §9, question 8).
 - **Une réplique s'installe par `deploiement/standard/`** (#1755) : la surcouche
   `compose.images.yml` (`build: !reset`, image publiée à `COPROFIRST_VERSION`)
   se pose sur le `docker-compose.yml` de la racine, qui reste la **seule**
@@ -1090,9 +1096,10 @@ Instanciation 5Hostachy :
   Ce retour arrière tient parce que `start.sh` **saute les migrations d'une base
   en avance sur le code** (`utils/revision_base`) : sans lui, l'ancienne image
   s'arrêtait en boucle sur une révision inconnue.
-- **Le rôle de l'installation** (#1761) : `ROLE_INSTALLATION` (`maitre` sur les deux RPi,
+- **Le rôle de l'installation** (#1761) : `ROLE_INSTALLATION` (`reference` — `maitre`, l'ancien nom, encore lu —
+  sur les deux RPi,
   `replique` posé d'office par `compose.images.yml`) se lit dans `utils/installation` et
-  nulle part ailleurs ; absent → « Inconnu », jamais « Maître ». Le bloc *Installation*
+  nulle part ailleurs ; absent → « Inconnu », jamais « Référence ». Le bloc *Installation*
   d'Admin › Maintenance le montre, avec l'écart au dépôt si le service *Vérification de
   la version* est activé (coupé par défaut : rien ne sort sans accord).
 - ⚠️ Un onglet PWA resté ouvert peut servir une version en cache : le bandeau de mise

@@ -521,6 +521,7 @@ jobs:
           bash scripts/exploitation/basculer-donnees.sh --selftest
           bash scripts/lib/lib-env-base.sh --selftest
           bash scripts/exploitation/retour-sqlite.sh --selftest
+          bash scripts/exploitation/creer-base-plateforme.sh --selftest
           # La commande SSH entre les nœuds et le diagnostic d'une clé d'hôte
           # non épinglée (#1598) — fichier absent, vide, entrée hachée.
           bash scripts/lib/lib-ssh-noeuds.sh        --selftest
@@ -529,7 +530,7 @@ jobs:
           bash scripts/lib/lib-modules-sources.sh   --selftest
           bash scripts/lib/lib-parite.sh            --selftest
           bash scripts/lib/lib-cache-build.sh       --selftest
-          # Le maître TIRE les images de la CI (#1758) : tirer, attendre, ou
+          # La référence TIRE les images de la CI (#1758) : tirer, attendre, ou
           # construire en secours — et tout ou rien sur les quatre images.
           bash scripts/lib/lib-images-ci.sh         --selftest
           # Les traces du poste dans le répertoire git DU clone, worktree compris (#1226).

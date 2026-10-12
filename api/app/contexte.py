@@ -88,8 +88,13 @@ NOMS_INTERNES = frozenset({"localhost", "api"})
 #: mise à jour l'appellent par IP ou par `localhost` (#1751).
 ROUTES_PLATEFORME = frozenset({"/health"})
 
+#: Le préfixe des routes du REGISTRE DES INSTALLATIONS (spec §4.11) : elles
+#: répondent sous le nom DÉDIÉ du registre, qui ne désigne aucune copropriété, et
+#: vérifient cet hôte elles-mêmes (`registre/routeur.py`).
+PREFIXE_PLATEFORME = "/plateforme/"
 
-def _hote(valeur: str) -> str:
+
+def nom_d_hote(valeur: str) -> str:
     """`Host` → le nom seul : minuscules, sans port ni crochets d'IPv6."""
     h = valeur.strip().lower()
     if h.startswith("["):
@@ -103,8 +108,8 @@ def registre() -> dict[str, tuple[Copropriete, frozenset[str]]]:
     Une entrée en phase 2 : le nom de l'`ORIGIN` et ceux de `HOTES_COPROPRIETE`.
     """
     s = get_settings()
-    hotes = {_hote(urlsplit(s.origin).netloc)} | {
-        _hote(h) for h in s.hotes_copropriete.split(",") if h.strip()
+    hotes = {nom_d_hote(urlsplit(s.origin).netloc)} | {
+        nom_d_hote(h) for h in s.hotes_copropriete.split(",") if h.strip()
     }
     seule = _unique()
     return {seule.identifiant: (seule, frozenset(hotes - {""}))}
@@ -127,7 +132,7 @@ def copropriete_de_l_hote(valeur_hote: str) -> Copropriete | None:
     les scripts des nœuds et le rendu du front l'atteignent ainsi. Avec deux
     copropriétés, ils ne désignent plus personne : il faudra un nom.
     """
-    hote = _hote(valeur_hote)
+    hote = nom_d_hote(valeur_hote)
     entrees = registre()
     for copro, hotes in entrees.values():
         if hote in hotes:
@@ -158,7 +163,11 @@ class ResolutionCopropriete:
         self.app = app
 
     async def __call__(self, scope, receive, send) -> None:
-        if scope["type"] not in ("http", "websocket") or scope["path"] in ROUTES_PLATEFORME:
+        if (
+            scope["type"] not in ("http", "websocket")
+            or scope["path"] in ROUTES_PLATEFORME
+            or scope["path"].startswith(PREFIXE_PLATEFORME)
+        ):
             await self.app(scope, receive, send)
             return
         copro = resoudre(scope)

@@ -6,12 +6,12 @@
   (git => main) ou une réplique (git => replica) ».
 
   - Le rôle vient du SERVEUR (`ROLE_INSTALLATION`), jamais d'une déduction de
-    l'écran : un rôle absent s'affiche « Inconnu », jamais « Maître ».
+    l'écran : un rôle absent s'affiche « Inconnu », jamais « Référence ».
   - L'écart se MESURE contre le dépôt, par le service « Vérification de la
     version », coupé par défaut (rien ne sort sans accord, §4.10 règle 9) ; coupé
     ou injoignable, il dit « non vérifié », jamais « à jour ».
   - Ce rôle n'est pas celui d'un nœud dans la haute disponibilité : les deux
-    Raspberry Pi sont ENSEMBLE le maître ; le nœud qui sert se lit au pied de page.
+    Raspberry Pi sont ENSEMBLE la référence ; le nœud qui sert se lit au pied de page.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -60,7 +60,7 @@
 					{#if etat.role === 'inconnu'}
 						<p class="aide">
 							<code>ROLE_INSTALLATION</code> n’est pas déclaré dans le <code>.env</code> de
-							l’installation : <code>maitre</code> ou <code>replique</code>.
+							l’installation : <code>reference</code> ou <code>replique</code>.
 						</p>
 					{/if}
 				</dd>
