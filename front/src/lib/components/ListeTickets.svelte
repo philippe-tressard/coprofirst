@@ -114,14 +114,10 @@
 			correspondance={correspondances.get(t.id) ?? null}
 		/>
 	{:else}
-		<!--  ⚠️ CHAQUE événement de la carte doit être RELAYÉ ici, et un oubli ne se voit
-	      pas : le 18/08/2026, `evol_supprimer` manquait — la corbeille s'affichait,
-	      le clic partait, et l'événement mourait dans ce composant. Bouton
-	      parfaitement inerte, sans la moindre erreur.
-
-	      Trois niveaux — page → liste → carte — et il suffit qu'un maillon se taise.
-	      C'est le prix de ce relais ; il vaut la suppression des 115 lignes recopiées
-	      qui l'ont fait naître, mais il se paie à chaque nouvel événement. -->
+		<!--  Les gestes passent ENTIERS, comme à l'actualité ci-dessus (12/10/2026,
+		      #1860) : la carte relayait dix-sept événements que ce composant
+		      réécrivait un à un — et un maillon oublié rendait un bouton inerte sans
+		      un mot (`evol_supprimer`, 18/08/2026). -->
 		<CarteTicket
 			ticket={t}
 			evolutions={evolsMap[t.id] ?? []}
@@ -133,23 +129,9 @@
 			{peutAdministrer}
 			{optionsRapidesEnCours}
 			mode={modeDe(t.id)}
-			on:basculer={() => gestes.basculer(t)}
-			on:evoluer_ouvrir={() => gestes.evoluerOuvrir(t)}
-			on:modifier={() => gestes.modifier(t)}
-			on:options_ouvrir={() => gestes.optionsOuvrir(t)}
-			on:options_enregistrer={(e) => gestes.optionsEnregistrer(t, e.detail)}
-			on:supprimer={() => gestes.supprimer(t)}
-			on:archiver={() => gestes.archiver(t)}
 			{evolEnEdition}
 			{evolCorrectionEnCours}
-			on:evoluer={(e) => gestes.evoluer(t, e.detail)}
-			on:evol_modifier={(e) => gestes.evolModifier(e.detail)}
-			on:evol_corriger={(e) => gestes.evolCorriger(t, e.detail)}
-			on:evol_supprimer={(e) => gestes.evolSupprimer(e.detail)}
-			on:evol_annuler={() => gestes.evolAnnuler()}
-			on:modifie={(e) => gestes.modifie(e.detail)}
-			on:annuler={() => gestes.annuler()}
-			on:fil_change={() => gestes.filChange(t)}
+			{gestes}
 		/>
 	{/if}
 {/each}

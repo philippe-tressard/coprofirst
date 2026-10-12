@@ -30,7 +30,8 @@ _BALISE = re.compile(r"<EvolForm\b(.*?)>", re.S)
 #: Le montage unique de la Suite d'affaire, et les écrans qui le rendent.
 _MONTAGE = "lib/components/SuiteAffaire.svelte"
 _HOTES = (
-    "lib/components/CarteTicket.svelte",
+    #  Le corps déplié de la carte de liste (`CarteTicket`), chargé au geste (#1860).
+    "lib/components/CorpsCarteTicket.svelte",
     "lib/components/HistoriqueTicket.svelte",
     "lib/components/ActualiteEnListe.svelte",
 )
