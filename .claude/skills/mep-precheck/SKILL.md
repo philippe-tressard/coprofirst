@@ -1,6 +1,6 @@
 ---
 name: mep-precheck
-description: "MEP 5Hostachy : lancer `bash scripts/poste/rejouer-ci.sh` puis `bash scripts/poste/precheck-mep.sh` (tous les points s'exécutent), lire ses verdicts, dérouler le post-check P1-P11 (dont la clôture des tickets, après vérification en production), rollback. Use when: AVANT tout `git push` sur dev ou main, avant de remettre une PR, après un merge vers main, pour diagnostiquer un déploiement qui n'a pas eu lieu ou vérifier qu'un correctif est réellement servi. L'histoire des incidents qui ont fait naître chaque contrôle est dans HISTORIQUE.md, à ouvrir seulement pour diagnostiquer."
+description: "MEP 5Hostachy : lancer `bash scripts/poste/rejouer-ci.sh` puis `bash scripts/poste/precheck-mep.sh` (tous les points s'exécutent), lire ses verdicts, dérouler le post-check P1-P12 (dont la clôture des tickets, après vérification en production, puis le retrait de la copie de travail du lot), rollback. Use when: AVANT tout `git push` sur dev ou main, avant de remettre une PR, après un merge vers main, pour diagnostiquer un déploiement qui n'a pas eu lieu ou vérifier qu'un correctif est réellement servi. L'histoire des incidents qui ont fait naître chaque contrôle est dans HISTORIQUE.md, à ouvrir seulement pour diagnostiquer."
 argument-hint: "Décrire le lot à déployer ou le point à vérifier (ex. « pré-check avant MEP v2.31.3 », « post-check après merge »)"
 ---
 
@@ -391,6 +391,7 @@ Attendre le tick, puis :
 | P9 | Parité du standby | Point 10 | HEAD identiques, **ou** noter que le standby s'alignera seul au prochain passage d'`auto-deploy` (≤ 5 min, #448) |
 | P10 | **Bilan mémoire du lot** — 🟡 priorité 3 | Relire les activités de la PR : qu'a-t-on appris qui n'est écrit nulle part ? Voir « P10 » | Chaque leçon est **écrite** (socle ou banque projet), ou explicitement écartée |
 | P11 | **Clore les tickets du lot** — après P7, jamais avant | `gh issue close <n> --comment "…"` avec la preuve observée | Chaque ticket du lot est clos **ou** dit ce qu'il attend encore |
+| P12 | **Retirer la copie de travail du lot** — en dernier | Depuis le clone principal : `bash scripts/poste/retirer-worktree.sh ../5hostachy-<lot>` — voir « P12 » | `RETIRÉE`, ou `GARDÉE` avec son motif, traité ou dit dans le compte rendu |
 
 > **⏱ Attendre la BONNE condition (constaté le 26/07/2026, en utilisant ce
 > post-check pour la première fois).** Ne pas attendre que `HEAD` change : dans
@@ -599,5 +600,19 @@ façon qui ne restaure pas un fichier mixte, les endpoints devenus orphelins, et
 drapeau `fichiers` des e-mails calculé sur l'intention plutôt que sur la pièce jointe
 réelle. Trois d'entre eux ont été soulevés **par l'utilisateur**, pas par le
 processus : c'est exactement la question 1.
+
+**P12 — retirer la copie de travail du lot (#1890, 13/10/2026).** Chaque lot
+travaille dans sa copie à soi, et aucun ne la retirait : **134** s'étaient
+accumulées en deux semaines. La copie se retire une fois la MEP vérifiée — la
+branche reste, rien ne se perd. Le script refuse ce qui perdrait quelque chose
+(modification non committée, commits sur aucune branche), retire d'abord les
+**jonctions** vers le clone principal (sinon le retrait vide ses
+`node_modules`, `standards/13` §10), et refuse le répertoire courant de
+l'appelant : sous Windows, un répertoire tenu ouvert fait échouer le retrait **à
+moitié** (`.git` parti, fichiers restés). Le lancer donc **depuis le clone
+principal**, jamais depuis la copie elle-même. `GARDÉE` sort en code 1 avec son
+motif. Le stock d'une session qui n'a pas fini proprement :
+`bash scripts/poste/retirer-worktree.sh --inactifs` (24 h par défaut ; `--voir`
+liste sans retirer).
 
 
