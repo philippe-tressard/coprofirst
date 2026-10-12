@@ -5,7 +5,7 @@ sans rien construire sur la machine. C'est l'installation d'une **réplique** :
 elle suit les versions promues sur la branche `replica`
 (`specs/architecture/multi-coproprietes.md` §4.10).
 
-> 5Hostachy, la résidence où le produit est né, en est le **maître** : ses deux
+> 5Hostachy, la résidence où le produit est né, en est la **référence** : ses deux
 > Raspberry Pi suivent `main` et portent leur propre outillage de haute
 > disponibilité (bascule, `health-watch`, crontabs — `scripts/exploitation/`,
 > `infra/points-entree/`). Cet outillage reste dans le dépôt et **ne fait pas
@@ -38,7 +38,7 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 
 | Fichier | Rôle |
 |---|---|
-| `docker-compose.yml` | les services, volumes et variables — le même que le maître |
+| `docker-compose.yml` | les services, volumes et variables — le même que la référence |
 | `deploiement/standard/compose.images.yml` | remplace chaque construction par l'image publiée |
 | `Caddyfile` | le frontal HTTP (en-têtes de sécurité, routage `/api`) |
 | `.env.example` | le gabarit de configuration, commenté |
@@ -134,7 +134,7 @@ le temps de redémarrer (crontab de l'utilisateur qui pilote Docker) :
 ## Choisir PostgreSQL plutôt que SQLite
 
 Par défaut, la base est un fichier **SQLite** : rien à installer. **PostgreSQL**
-— celui du maître depuis le 10/10/2026 — s'allume dans `.env`, **avant le
+— celui de la référence depuis le 10/10/2026 — s'allume dans `.env`, **avant le
 premier démarrage** :
 
 ```
@@ -145,7 +145,7 @@ DATABASE_URL=postgresql+psycopg://coprofirst:<POSTGRES_PASSWORD>@postgres:5432/c
 
 Le premier démarrage crée la base et y pose le schéma courant. Le serveur
 n'écoute que sur le réseau de Compose : la surcouche retire son port et le
-réglage de réplication du maître (une réplique n'a pas de second nœud).
+réglage de réplication de la référence (une réplique n'a pas de second nœud).
 
 La mise à jour nocturne le sait : sous PostgreSQL, elle **exporte** la base avant
 d'installer (`…-base.tar.gz`, à côté de l'archive des volumes, dans

@@ -6,7 +6,7 @@ name: Images
 #  Chaque commit de `main` reçoit les images de ses quatre services, construites
 #  UNE fois, pour amd64 et arm64 (les Raspberry Pi), publiées sur
 #  ghcr.io/philippe-tressard/coprofirst-<service> et étiquetées `sha-<commit>` :
-#  le canal continu, que tire le maître (DI-6, #1758). Une version bumpée reçoit
+#  le canal continu, que tire la référence (DI-6, #1758). Une version bumpée reçoit
 #  EN PLUS le tag git `vX.Y.Z`, posé ici et jamais à la main
 #  (`scripts/ci/tag-version.sh`), et l'étiquette d'image `X.Y.Z` — arbitrage du
 #  08/10/2026 : une image par commit, la version quand elle change ;
@@ -15,7 +15,7 @@ name: Images
 #
 #  Vérifier une image : gh attestation verify oci://ghcr.io/philippe-tressard/coprofirst-api:X.Y.Z --owner philippe-tressard
 #
-#  ⚠️ Aucune installation ne tire encore ces images : le maître les tirera au lot
+#  ⚠️ Aucune installation ne tire encore ces images : la référence les tirera au lot
 #  DI-6 (#1758), les répliques au lot DI-4 (#1756). Ce workflow ne change donc
 #  rien à la production.
 #

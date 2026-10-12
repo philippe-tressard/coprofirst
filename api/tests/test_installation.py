@@ -2,7 +2,7 @@
 
 Ce que ces tests tiennent, dans l'ordre des règles de `utils/installation.py` :
 le rôle se déclare et se lit à UN endroit, son absence rend « Inconnu » et jamais
-« Maître », un verdict de comparaison vient du dépôt et jamais d'une supposition,
+« Référence », un verdict de comparaison vient du dépôt et jamais d'une supposition,
 et la vérification ne part pas tant que le service est coupé (règle 9 de §4.10).
 """
 
@@ -22,8 +22,11 @@ from tests.aides_sources import modules_app
 @pytest.mark.parametrize(
     ("valeur", "attendu"),
     [
-        ("maitre", "maitre"),
-        ("Maître", "maitre"),
+        ("reference", "reference"),
+        ("Référence", "reference"),
+        #  L'ancien nom, encore porté par le `.env` des Raspberry Pi (`ANCIENS_NOMS`).
+        ("maitre", "reference"),
+        ("Référence", "reference"),
         (" replique ", "replique"),
         ("réplique", "replique"),
         ("", "inconnu"),
@@ -31,12 +34,12 @@ from tests.aides_sources import modules_app
         ("main", "inconnu"),
     ],
 )
-def test_un_role_absent_ou_mal_ecrit_est_inconnu_jamais_maitre(valeur, attendu):
+def test_un_role_absent_ou_mal_ecrit_est_inconnu_jamais_reference(valeur, attendu):
     assert installation.role_installation(valeur) == attendu
 
 
 def test_chaque_role_suit_sa_branche():
-    assert installation.ROLES["maitre"][1] == "main"
+    assert installation.ROLES["reference"][1] == "main"
     assert installation.ROLES["replique"][1] == "replica"
 
 
@@ -129,7 +132,7 @@ def test_la_route_est_reservee_a_l_operateur(moteur, role):
 
 def test_service_coupe_rien_ne_part(moteur, monkeypatch):
     """Par défaut le service est coupé : la route répond sans interroger le dépôt."""
-    monkeypatch.setattr(installation, "role_installation", lambda valeur=None: "maitre")
+    monkeypatch.setattr(installation, "role_installation", lambda valeur=None: "reference")
     appels = []
     monkeypatch.setattr(
         routeur_installation.installation,
@@ -138,7 +141,7 @@ def test_service_coupe_rien_ne_part(moteur, monkeypatch):
     )
     http, _ = client_http(moteur, RoleUtilisateur.admin, roles_json=f"admin,{ROLE_OPERATEUR}")
     corps = http.get("/admin/installation").json()
-    assert (corps["role"], corps["branche"], corps["etat"]) == ("maitre", "main", "non_verifie")
+    assert (corps["role"], corps["branche"], corps["etat"]) == ("reference", "main", "non_verifie")
     assert corps["verification_active"] is False and appels == []
 
 

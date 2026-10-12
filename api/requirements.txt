@@ -42,6 +42,10 @@ python-dotenv==1.2.4
 #  licence zlib. `dnspython` (ISC) arrivait déjà par `email-validator` ; il est
 #  désormais importé directement, donc épinglé ici (#1048).
 dkimpy==1.1.8
+#  Les signatures Ed25519 du registre des installations (`app/registre/signature`,
+#  #1877). Déjà dans l'image par `fastapi-mail`, à la même version : épinglé ici
+#  parce que le code l'importe désormais directement (#1048). Apache-2.0 ou BSD.
+cryptography==50.0.2
 dnspython==2.9.0
 Pillow==12.3.0
 qrcode[pil]==8.2

@@ -22,7 +22,7 @@ def _passage(session, statut: str, il_y_a: timedelta, erreur: str | None = None)
 
 
 def test_aucun_passage_rien_a_dire(session):
-    """Le maître ne fait pas de mise à jour nocturne : aucune ligne, aucun problème."""
+    """La référence ne fait pas de mise à jour nocturne : aucune ligne, aucun problème."""
     assert problemes_mise_a_jour(session) == []
 
 

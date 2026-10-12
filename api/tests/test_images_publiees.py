@@ -3,7 +3,7 @@
 Lot DI-1 du chantier multi-copropriétés (`specs/architecture/multi-coproprietes.md`
 §4.10, D12) : le workflow `.github/workflows/images.yml` pose le tag `vX.Y.Z` et
 publie, signées, les images de chaque service. Une installation CoproFirst —
-et le maître, au lot DI-6 — n'aura QUE ces images : un service construit par
+et la référence, au lot DI-6 — n'aura QUE ces images : un service construit par
 `docker-compose.yml` mais absent de la matrice manquerait à toutes, sans que
 rien ne le dise avant le jour de l'installation.
 
@@ -15,7 +15,7 @@ Ce que le test tient, sur le texte du workflow (PyYAML vient avec
 - le workflow ne tourne que sur `main` (ou à la main), jamais sur une PR : une PR
   d'un fork ne doit pas pouvoir publier ;
 - aucun droit par défaut, et l'écriture des paquets seulement là où elle sert ;
-- chaque commit publie sous `sha-<commit>` (le canal du maître) ; la version vient
+- chaque commit publie sous `sha-<commit>` (le canal de la référence) ; la version vient
   de `front/package.json` et le tag de `scripts/ci/tag-version.sh` ;
 - aucune étiquette flottante (`latest`) : une installation désigne une version.
 """
@@ -52,7 +52,7 @@ def test_la_publication_suit_les_services_dans_les_deux_jobs():
     publies = set(services_publies())
     assert set(flux["jobs"]["publier"]["strategy"]["matrix"]["service"]) == publies
     assert flux["jobs"]["construire"]["strategy"]["matrix"]["plateforme"] == ["amd64", "arm64"], (
-        "les Raspberry Pi sont en arm64 : sans lui, le maître ne pourrait pas tirer l'image"
+        "les Raspberry Pi sont en arm64 : sans lui, la référence ne pourrait pas tirer l'image"
     )
 
 
@@ -88,7 +88,7 @@ def test_la_version_et_le_tag_ont_une_seule_source():
 
 
 def test_chaque_commit_publie_sous_son_empreinte():
-    """Le maître tire `sha-<commit>` : aucun commit de main ne doit en manquer (arbitrage du 08/10)."""
+    """La référence tire `sha-<commit>` : aucun commit de main ne doit en manquer (arbitrage du 08/10)."""
     flux = _yaml(WORKFLOW)
     assert "if" not in flux["jobs"]["construire"], "la construction ne dépend pas d'un bump"
     assert "if" not in flux["jobs"]["publier"]
@@ -102,7 +102,7 @@ def test_aucune_etiquette_flottante():
     assert ":latest" not in texte and "type=raw,value=latest" not in texte
 
 
-# ── Le maître tire ce que la CI publie (#1758) ───────────────────────────────
+# ── La référence tire ce que la CI publie (#1758) ───────────────────────────────
 
 LIB_IMAGES_CI = RACINE / "scripts" / "lib" / "lib-images-ci.sh"
 
@@ -114,7 +114,7 @@ def _constante_shell(nom: str) -> str:
     raise AssertionError(f"{nom} introuvable dans {LIB_IMAGES_CI.name}")
 
 
-def test_le_maitre_tire_exactement_ce_que_la_ci_publie():
+def test_la_reference_tire_exactement_ce_que_la_ci_publie():
     """Un service publié mais pas tiré resterait construit ; tiré mais pas publié, introuvable."""
     assert set(_constante_shell("SERVICES_IMAGES").split()) == set(services_publies())
     assert _constante_shell("REGISTRE_IMAGES") == _yaml(WORKFLOW)["env"]["REGISTRE"]

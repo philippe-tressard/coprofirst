@@ -5,7 +5,7 @@
 #
 #  Lot DI-2 du chantier multi-copropriétés (`specs/architecture/multi-coproprietes.md`
 #  §4.10, règles 1 et 5, D11). Les répliques CoproFirst suivent `replica` ;
-#  le maître suit `main`. Une version passe de l'un à l'autre par ce geste,
+#  la référence suit `main`. Une version passe de l'un à l'autre par ce geste,
 #  décidé par l'auteur et lancé à la main (workflow « Promotion »).
 #
 #  ## Ce que le geste refuse (fonction PURE, testée par --selftest)
@@ -27,7 +27,7 @@
 #
 #  ## Ce que le geste AFFICHE, sans décider
 #
-#  Les critères de la spec — CI verte, version servie par le maître depuis N
+#  Les critères de la spec — CI verte, version servie par la référence depuis N
 #  jours sans incident, post-check vert — sont ceux de l'auteur : le geste en
 #  montre les faits mesurables (âge du tag, état des contrôles du commit,
 #  images publiées), et c'est l'auteur qui a décidé en le lançant. La durée de
@@ -94,7 +94,7 @@ resume="${GITHUB_STEP_SUMMARY:-/dev/null}"
     echo "| \`replica\` avant | \`${replica:-absente}\` |"
     if [ -n "$commit" ]; then
         jours=$(( ( $(date +%s) - $(git log -1 --format=%ct "$commit") ) / 86400 ))
-        echo "| Rodage sur le maître | $jours jour(s) depuis la fusion — durée attendue : question 8 de la spec |"
+        echo "| Rodage sur la référence | $jours jour(s) depuis la fusion — durée attendue : question 8 de la spec |"
         if [ -n "${GH_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
             ci=$(gh api "repos/${GITHUB_REPOSITORY:-}/commits/$commit/check-runs" \
                 --jq '[.check_runs[].conclusion] | group_by(.) | map("\(.[0] // "en cours") : \(length)") | join(", ")' 2>/dev/null || echo "illisible")

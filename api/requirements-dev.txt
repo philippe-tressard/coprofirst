@@ -5,9 +5,8 @@
 #  tests changeait donc d'un run à l'autre sans que le dépôt bouge.
 -r requirements.txt
 pytest==9.1.1
-#  Tire des clés RSA pour signer de vrais messages dans `test_courriel_authenticite`.
-#  Déjà dans l'image par `fastapi-mail` ; épinglé ici parce que les tests l'importent.
-cryptography==50.0.2
+#  `cryptography` — qui tire des clés RSA dans `test_courriel_authenticite` — est
+#  désormais dans `requirements.txt` : le registre des installations l'importe (#1877).
 #  Pose un sceau ARC (`dkim.arc_sign`) dans `test_courriel_authenticite` : la
 #  VÉRIFICATION n'en a pas besoin, d'où son absence de l'image. Apache 2.0.
 authres==1.2.0
