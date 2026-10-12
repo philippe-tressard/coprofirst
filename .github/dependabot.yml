@@ -144,6 +144,16 @@ updates:
       - dependency-name: "@sveltejs/vite-plugin-svelte"
         update-types: ["version-update:semver-major"]
       #
+      #  ── SvelteKit 3 : derrière la même chaîne (12/10/2026) ───────────────
+      #  `@sveltejs/kit@3` exige `@sveltejs/vite-plugin-svelte` 7, donc Vite 8 —
+      #  bloqué par la règle ci-dessus. #1855 l'a montré seul : build, pytest et
+      #  e2e rouges. C'est une migration (cookies v2, `$app/paths` sans `base`,
+      #  `load` relancées sur un lien vers la page courante, Node 22…), pas une
+      #  montée : elle se fera APRÈS Vite 8, dans un lot à elle.
+      #  LEVÉE : quand la règle Vite 8 est levée (`npm run lint:sw` vert en Vite 8).
+      - dependency-name: "@sveltejs/kit"
+        update-types: ["version-update:semver-major"]
+      #
       #  ── Tiptap 2 → 3 : LEVÉE (23/09/2026, #1161) ─────────────────────────
       #  La migration est faite (`@tiptap/*` en ^3.31) : la règle ne protégeait
       #  plus rien et aurait masqué la majeure suivante (3 → 4). Le groupe
