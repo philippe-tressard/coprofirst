@@ -22,10 +22,11 @@
   |---|---|---|
   | `fil` | le fil récent de l'accueil | rien |
   | `archives` | `ArchivesDuFil` | chaque carte a l'allure archivée (`CarteListe archive`) |
-  | `epingle` | le bandeau Épinglé | rien de plus : il n'a qu'un groupe, sans intitulé |
+  | `epingle` | le bandeau Épinglé | un seul groupe, sans intitulé : la gouttière y dit la DATE, pas l'heure |
 
   Un groupe sans intitulé (`label: null`) n'en affiche pas : c'est le cas du
-  bandeau Épinglé, qui n'a qu'un groupe.
+  bandeau Épinglé, qui n'a qu'un groupe. Ses cartes disent alors la date, et
+  non l'heure : sans intitulé, rien ne dirait le jour (12/10/2026).
 
   L'intitulé du jour (`.flux-day-label`) vit dans la charte (`composants.css`) ;
   la clé d'une carte, dans `cleFluxItem` (`$lib/flux`).
@@ -51,6 +52,7 @@
 		{#each groupe.items as item (cleFluxItem(item))}
 			<FluxCard
 				{item}
+				heure={groupe.label !== null}
 				expanded={itemDeplie === item.id}
 				archive={variante === 'archives'}
 				on:toggle={(e) => onBasculer(e.detail)}
