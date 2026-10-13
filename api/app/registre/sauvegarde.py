@@ -34,7 +34,7 @@ import tempfile
 from pathlib import Path
 
 from app.config import get_settings
-from app.registre.base import moteur, registre_actif
+from app.registre import base
 from app.registre.modeles import registre_plateforme
 from app.utils import horloge
 from app.utils.backup import garder_les_dernieres, nom_archive
@@ -68,7 +68,7 @@ def sauvegarder() -> Path:
     nom = nom_archive(horloge.maintenant(), PREFIXE)
     with tempfile.TemporaryDirectory() as travail:
         export = Path(travail) / nom
-        exporter(moteur(), export, metadata=metadata)
+        exporter(base.moteur(), export, metadata=metadata)
         verifier_archive(export, Path(travail), metadata=metadata)
         archive = destination / nom
         shutil.move(export, archive)
@@ -80,7 +80,7 @@ def sauvegarder() -> Path:
 
 def run_sauvegarde_plateforme() -> None:
     """Tâche de la plateforme : la sauvegarde du registre, ou l'alerte qui dit son échec."""
-    if not registre_actif():
+    if not base.registre_actif():
         return
     try:
         archive = sauvegarder()

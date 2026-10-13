@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     role_installation: str = ""
     # Le commit de l'image, posé à la construction (`GIT_HASH`, api/Dockerfile).
     git_hash: str = ""
+    # La version promue qu'une RÉPLIQUE installe (`deploiement/standard`, même `.env`) ;
+    # vide chez la référence. Lue par `utils/installation.version_logicielle`.
+    coprofirst_version: str = ""
 
     # Le REGISTRE DES INSTALLATIONS, tenu par la référence seule (spec §4.11, R1 #1877) :
     # sa base, DISTINCTE de celle de la résidence, et le nom DÉDIÉ sous lequel il
@@ -38,6 +41,21 @@ class Settings(BaseSettings):
     # copropriété ; elle part par le SMTP de l'installation (`MAIL_*`). Lue par
     # `utils/sante_plateforme` et nulle part ailleurs ; vide → l'alerte se journalise.
     courriel_operateur: str = ""
+
+    # La clé qui SIGNE les baux (R2 #1878, D19) — chez la référence SEULE : 32 octets
+    # bruts en base64, créée sur l'actif par `scripts/exploitation/creer-cle-baux.sh`
+    # et posée dans le `.env` des deux nœuds. La seule pièce secrète du registre :
+    # jamais dans le code, jamais sur le poste. Vide → aucun bail n'est délivré.
+    cle_signature_baux: str = ""
+
+    # CÔTÉ INSTALLATION (R2 #1878) : où joindre le registre de la référence (son nom
+    # dédié, D17), où ranger la clé et l'état d'inscription de CETTE installation —
+    # le volume `app_data`, jamais une image ni une base de copropriété —, et le mode
+    # ESSAI (CI, tests, poste), qui n'appelle jamais la référence. Lus par
+    # `app/inscription/` et nulle part ailleurs.
+    registre_url: str = "https://registre.coprofirst.fr"
+    installation_dir: str = "/app/data/installation"
+    installation_essai: bool = False
 
     # Le REGISTRE des hôtes de la copropriété (#1751, P2-9) : le nom de
     # l'`ORIGIN` — le même `.env` que le front —, plus ceux qu'on déclare ici,

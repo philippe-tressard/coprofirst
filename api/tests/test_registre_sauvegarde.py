@@ -19,22 +19,17 @@ from app.registre.modeles import IDENTIFIANT_REFERENCE, Installation
 from app.utils import backup, sante_plateforme
 from app.utils.import_copropriete import ImportRefuse
 from tests.aides_base import moteur_memoire
+from tests.aides_registre import registre_allume
 
 
 @pytest.fixture
 def registre(monkeypatch, tmp_path):
     """Une base `plateforme` migrée qui porte la référence, et le registre allumé."""
-    moteur = moteur_memoire(partage=True, schema=False)
-    migrer.migrer(moteur)
-    with Session(moteur) as session:
-        migrer.inscrire_reference(session)
-    reglages = get_settings()
-    monkeypatch.setattr(reglages, "plateforme_database_url", "postgresql+psycopg://essai")
-    monkeypatch.setattr(reglages, "hote_registre", "registre.example")
-    monkeypatch.setattr(reglages, "backup_dir", str(tmp_path / "sauvegardes"))
-    monkeypatch.setattr(base, "est_reference", lambda: True)
-    monkeypatch.setattr(sauvegarde, "moteur", lambda: moteur)
-    return moteur
+    monkeypatch.setattr(get_settings(), "backup_dir", str(tmp_path / "sauvegardes"))
+    with registre_allume(monkeypatch) as moteur:
+        with Session(moteur) as session:
+            migrer.inscrire_reference(session)
+        yield moteur
 
 
 @pytest.fixture

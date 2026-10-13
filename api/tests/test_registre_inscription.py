@@ -15,7 +15,6 @@ from alembic.migration import MigrationContext
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
-from app.config import get_settings
 from app.main import app
 from app.registre import base, conditions, migrer, signature
 from app.registre.contrat import VERSION_CONTRAT
@@ -28,33 +27,13 @@ from app.registre.modeles import (
     registre_plateforme,
 )
 from app.registre.routeur import EN_TETE_SIGNATURE, PLAFOND_EN_ATTENTE, TAILLE_MAX
-from app.utils.limiter import limiter
-from tests.aides_base import moteur_memoire
-
-HOTE = "registre.example"
-
+from tests.aides_registre import HOTE, registre_allume
 
 @pytest.fixture
 def plateforme(monkeypatch):
     """Une base `plateforme` migrée, et le registre allumé sous son nom dédié."""
-    moteur = moteur_memoire(partage=True, schema=False)
-    migrer.migrer(moteur)
-    reglages = get_settings()
-    monkeypatch.setattr(reglages, "plateforme_database_url", "postgresql+psycopg://essai")
-    monkeypatch.setattr(reglages, "hote_registre", HOTE)
-    monkeypatch.setattr(base, "est_reference", lambda: True)
-
-    def _session():
-        with Session(moteur) as s:
-            yield s
-
-    app.dependency_overrides[base.get_session_plateforme] = _session
-    limiter.reset()
-    try:
+    with registre_allume(monkeypatch) as moteur:
         yield moteur
-    finally:
-        app.dependency_overrides.clear()
-        limiter.reset()
 
 
 def _demande(cle: str, **autres) -> dict:

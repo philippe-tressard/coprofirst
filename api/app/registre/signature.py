@@ -3,7 +3,7 @@
 Le code est public (AGPL) : rien ne tient sur un secret écrit dans le code. Une
 installation prouve qu'elle est elle-même en signant ses envois avec SA clé privée,
 générée chez elle ; la référence ne reçoit que la clé publique. Plus tard (R2), la
-référence signera les baux de la même façon avec la sienne.
+référence signe les baux de la même façon avec la sienne (`registre/baux`).
 
 Une clé ou une signature mal formée n'est jamais une exception qui remonte : c'est
 une vérification qui ÉCHOUE (`verifier` rend `False`).
@@ -65,8 +65,30 @@ def empreinte(cle_b64: str) -> str:
 def generer_paire() -> tuple[Ed25519PrivateKey, str]:
     """Une paire neuve : la clé privée, et la publique en base64 (R2, et les tests)."""
     privee = Ed25519PrivateKey.generate()
-    publique = privee.public_key().public_bytes(_BRUT, _PUBLIQUE)
-    return privee, base64.b64encode(publique).decode()
+    return privee, publique_de(privee)
+
+
+def privee_de(cle_b64: str) -> Ed25519PrivateKey | None:
+    """Une clé privée Ed25519 lue de ses 32 octets bruts en base64, ou None si illisible."""
+    brut = _decoder(cle_b64.strip())
+    if brut is None or len(brut) != 32:
+        return None
+    return Ed25519PrivateKey.from_private_bytes(brut)
+
+
+def en_base64(privee: Ed25519PrivateKey) -> str:
+    """Les 32 octets bruts d'une clé privée, en base64 — la forme qu'on range."""
+    brut = privee.private_bytes(
+        serialization.Encoding.Raw,
+        serialization.PrivateFormat.Raw,
+        serialization.NoEncryption(),
+    )
+    return base64.b64encode(brut).decode()
+
+
+def publique_de(privee: Ed25519PrivateKey) -> str:
+    """La clé publique d'une clé privée, en base64."""
+    return base64.b64encode(privee.public_key().public_bytes(_BRUT, _PUBLIQUE)).decode()
 
 
 def signer(privee: Ed25519PrivateKey, message: bytes) -> str:

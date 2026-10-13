@@ -73,6 +73,9 @@ TACHES_PERMANENTES: dict[str, str] = {
     "sauvegarde_plateforme": "la sauvegarde nocturne de la base `plateforme` (#1892) — le "
     "registre des installations n'a plus de copie vérifiée : une erreur répliquée sur les "
     "deux nœuds le perd",
+    "bail_installation": "le renouvellement nocturne du bail de l'installation (#1878) — le "
+    "bail échoit en 30 jours et l'installation se constate limitée, sans que l'opérateur "
+    "soit prévenu",
 }
 
 
@@ -91,6 +94,8 @@ TACHES_DE_LA_PLATEFORME: dict[str, str] = {
     "jugé une fois, à destination de l'opérateur (#1814)",
     "sauvegarde_plateforme": "la base `plateforme` (registre des installations), qui "
     "n'appartient à aucune copropriété (§4.11, règle 7) (#1892)",
+    "bail_installation": "le bail de l'INSTALLATION auprès du registre, qui n'appartient à "
+    "aucune copropriété (§4.11) (#1878)",
 }
 
 

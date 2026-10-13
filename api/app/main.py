@@ -230,6 +230,11 @@ async def lifespan(app: FastAPI):
 
     sauvegarde_registre.enregistrer(scheduler)
 
+    # Le bail de cette installation (vers 04h20) : les répliques inscrites seules (#1878)
+    from app.inscription import client as inscription
+
+    inscription.enregistrer(scheduler)
+
     scheduler.add_job(
         contexte.pour_chaque_copropriete(run_health_check, "health_check"),
         "cron",
