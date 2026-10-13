@@ -103,7 +103,7 @@ durcissement_sshd_verdict() {
 
 #  Couper le mot de passe sans clé autorisée enferme dehors : un nœud fraîchement
 #  flashé n'a parfois QUE le mot de passe choisi dans Raspberry Pi Imager.
-#  $1 = nombre de clés publiques dans ~ptressard/.ssh/authorized_keys
+#  $1 = nombre de clés publiques dans authorized_keys du compte d'exploitation
 durcissement_sshd_peut_appliquer() {
   case "${1:-}" in
     ''|*[!0-9]*) echo "REFUS:clés autorisées illisibles — on ne coupe pas le mot de passe à l'aveugle" ;;
@@ -229,9 +229,9 @@ ufw allow 443/udp
 ufw allow from 192.168.1.0/24 to any port 22 proto tcp"
   local U_RPI2="Added user rules (see 'ufw status' for running firewall):
 ufw allow from 192.168.1.0/24 to any port 22 proto tcp comment 'SSH LAN only'
-ufw allow 80/tcp comment 'HTTP Caddy'
-ufw allow 443/tcp comment 'HTTPS'
-ufw allow 443/udp comment 'QUIC/HTTP3'"
+ufw allow 80/tcp comment 'web'
+ufw allow 443/tcp comment 'web chiffré'
+ufw allow 443/udp comment 'quic'"
   local S_ACTIF="Status: active
 Logging: on (low)
 Default: deny (incoming), allow (outgoing), deny (routed)"
