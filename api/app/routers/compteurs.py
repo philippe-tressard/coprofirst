@@ -27,7 +27,7 @@ from app.database import get_session
 from app.models.core import CompteurConfig, ReleveCompteur, Utilisateur
 from app.utils.fichiers import enregistrer_televersement, nom_lisible
 from app.utils.stockage import DOSSIER_PRIVE, stockage
-from app.utils.recuperer import fichier_ou_404, ou_404
+from app.utils.recuperer import fichier_ou_404, ou_404, present_ou_404
 
 #  Même préfixe que `prestataires.py` : les deux routeurs servent le même écran.
 logger = logging.getLogger(__name__)
@@ -274,7 +274,7 @@ def download_photo_releve(
     avait détruit la seule copie du vrai nom. Toutes les photos de relevé sont
     devenues introuvables (03/08/2026, réparé par la migration 0126).
     """
-    r = session.get(ReleveCompteur, r_id)
-    if not r or not r.photo_url:
-        raise HTTPException(404, "Relevé ou photo introuvable")
-    return _servir_fichier_prive(nom, {os.path.basename(r.photo_url)}, "Photo")
+    r = ou_404(session, ReleveCompteur, r_id, "Relevé")
+    #  `or None` : une adresse vide est une photo absente, pas un résultat.
+    photo = present_ou_404(r.photo_url or None, "Photo introuvable")
+    return _servir_fichier_prive(nom, {os.path.basename(photo)}, "Photo")
