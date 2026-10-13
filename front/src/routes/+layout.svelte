@@ -2,7 +2,7 @@
 	import '../app.css';
 	import Toast from '$lib/components/Toast.svelte';
 	import MajDisponible from '$lib/components/MajDisponible.svelte';
-	import { configStore } from '$lib/stores/pageConfig';
+	import { configStore, modeDemoStore } from '$lib/stores/pageConfig';
 	import { config as configApi } from '$lib/api';
 	import { onMount } from 'svelte';
 	import { surveillerImagesProtegees } from '$lib/imagesProtegees';
@@ -37,6 +37,7 @@
 </script>
 
 <svelte:head>
+	{#if $modeDemoStore}<meta name="robots" content="noindex, nofollow" />{/if}
 	{#if logo}
 		<link rel="icon" type="image/png" href={configApi.logoUrl(64, logo)} />
 	{:else}

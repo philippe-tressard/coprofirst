@@ -47,11 +47,15 @@ const POSE =
 /** `alias="X-Foo"`, `headers.get("X-Foo")`, `headers["X-Foo"]` côté Python. */
 const LECTURE = /(?:alias\s*=\s*|headers\.get\(\s*|headers\[\s*)["'](x-[\w-]+)["']/gi;
 
+/** `setHeaders({ … })` de SvelteKit : des en-têtes de RÉPONSE, que le serveur du
+ *  front renvoie au navigateur — rien ne part vers l'API (`X-Robots-Tag` de la
+ *  démo publique, #1906). Le contrôle ne vise que les requêtes. */
+const REPONSE = /setHeaders\(\s*\{[^}]*\}\s*\)/g;
+
 /** Les en-têtes posés par une source front, en minuscules. PURE. */
 export function posesPar(texte) {
-	return [...neutraliserCommentaires(texte).matchAll(POSE)].map((m) =>
-		(m[1] ?? m[2] ?? m[3]).toLowerCase(),
-	);
+	const requetes = neutraliserCommentaires(texte).replace(REPONSE, '');
+	return [...requetes.matchAll(POSE)].map((m) => (m[1] ?? m[2] ?? m[3]).toLowerCase());
 }
 
 /** Retire les commentaires `#` d'une source Python (assez pour ce relevé). */
@@ -178,6 +182,10 @@ process.exit(
 			["\tif (body) headers['Content-Type'] = 'application/json';", 0],
 			//  Un commentaire qui cite l'en-tête retiré.
 			["\t// on posait headers['X-Acting-As'] ici (#1534)", 0],
+			//  Un en-tête de RÉPONSE posé par SvelteKit ne part pas vers l'API (#1906)…
+			["\tif (demo) setHeaders({ 'x-robots-tag': 'noindex, nofollow' });", 0],
+			//  …mais une requête posée sur la même ligne reste vue.
+			["\tsetHeaders({ 'x-robots-tag': 'x' }); headers['X-Acting-As'] = '1';", 1],
 		],
 		ok: 'En-têtes personnalisés : chacun de ceux que pose le front est lu par une route',
 		ko: 'en-tête(s) posé(s) par le front sans route qui le lise',

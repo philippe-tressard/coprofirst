@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     # gestes du registre `utils/demo.GESTES_FERMES`. Lu par `utils/demo.est_demo` et
     # nulle part ailleurs ; vide ou mal écrit, l'installation n'est pas une démo.
     mode_demo: str = ""
+    # L'ÉDITEUR et l'adresse de CONTACT de la démo, dans ses textes légaux (#1907) :
+    # le dépôt public ne nomme personne. Lus par `app/demo/legal.py` et nulle part
+    # ailleurs ; sans éditeur, la démo se déclare éditée à titre non professionnel.
+    demo_editeur: str = ""
+    demo_contact: str = ""
     # La version promue qu'une RÉPLIQUE installe (`deploiement/standard`, même `.env`) ;
     # vide chez la référence. Lue par `utils/installation.version_logicielle`.
     coprofirst_version: str = ""

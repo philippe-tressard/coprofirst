@@ -5,7 +5,8 @@
 	import { messageErreur } from '$lib/erreurs';
 	import { setUser } from '$lib/stores/auth';
 	import { destinationApresConnexion } from '$lib/redirection';
-	import { loadSiteConfig, configStore, siteNomStore } from '$lib/stores/pageConfig';
+	import { loadSiteConfig, configStore, modeDemoStore, siteNomStore } from '$lib/stores/pageConfig';
+	import BandeauDemo from '$lib/components/BandeauDemo.svelte';
 	import LogoResidence from '$lib/components/LogoResidence.svelte';
 	import ChampMotDePasse from '$lib/components/ChampMotDePasse.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
@@ -69,6 +70,11 @@
 			{#if loginSousTitre}<p>{loginSousTitre}</p>{/if}
 		</div>
 
+		<!--  La démo publique (#1906, #1932) : le bandeau le dit, et l'on se connecte par
+		      le formulaire, avec les identifiants publiés sur la page « Démo » du site
+		      vitrine. L'inscription et le mot de passe oublié y sont fermés au serveur. -->
+		{#if $modeDemoStore}<BandeauDemo dansCarte />{/if}
+
 		{#if error}
 			<div class="alert alert-error">
 				{error}
@@ -113,11 +119,13 @@
 			</div>
 		</form>
 
-		<div class="auth-links">
-			<a href="/auth/mot-de-passe-oublie">Mot de passe oublié ?</a>
-			<span>·</span>
-			<a href="/auth/inscription">Créer un compte</a>
-		</div>
+		{#if !$modeDemoStore}
+			<div class="auth-links">
+				<a href="/auth/mot-de-passe-oublie">Mot de passe oublié ?</a>
+				<span>·</span>
+				<a href="/auth/inscription">Créer un compte</a>
+			</div>
+		{/if}
 
 		<div class="auth-legal">
 			<a href="/mentions-legales">Mentions légales</a>

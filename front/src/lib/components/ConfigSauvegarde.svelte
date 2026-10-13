@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EncartDemo from '$lib/components/EncartDemo.svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
 	/**
 	 * Réglage de la sauvegarde quotidienne — heure et rétention.
@@ -70,6 +71,7 @@
 	}
 </script>
 
+<EncartDemo />
 <section class="card config-section">
 	<!--  L'en-tête est celui du bloc voisin, à l'identique : `config-section-title`
 	      et un tracé du catalogue. Il portait un émoji 💾 et une classe `.titre`

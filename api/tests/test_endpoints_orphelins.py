@@ -37,9 +37,6 @@ ROUTEURS = RACINE / "api" / "app" / "routers"
 #: ici est une décision consciente : si la raison ne tient pas en une ligne,
 #: c'est probablement que la route doit être supprimée.
 SANS_CONSOMMATEUR_FRONT = {
-    "/demo/entrer/{personnage}": "l'entrée de la démo publique (#1903) : un LIEN des boutons "
-    "de la page d'accueil de CoproFirst (site à part) et de la page de connexion de la démo, "
-    "jamais un appel du client d'API",
     "/admin/db/checkpoint": "voie in-process obligatoire contre la corruption SQLite (CLAUDE.md, "
     "règle d'or) — appelée à la main pendant un incident, jamais par le front",
     "/acces/admin/imports/{import_id}/refuser-locataire": "pendant de `resoudre` documenté dans specs/architecture/api.md, "

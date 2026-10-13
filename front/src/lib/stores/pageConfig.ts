@@ -69,6 +69,11 @@ export const siteNomStore = derived(
 	($c) => ($c['site_nom'] ?? '').trim() || NOM_SITE_PAR_DEFAUT,
 );
 
+//  La DÉMO PUBLIQUE (#1906) : `mode_demo` est une clé CALCULÉE par le serveur
+//  (`GET /config`), jamais saisie — le bandeau, la connexion par personnage et
+//  les encarts des onglets fermés la lisent ici.
+export const modeDemoStore = derived(configStore, ($c) => $c['mode_demo'] === '1');
+
 let _configLoaded = false;
 
 /**

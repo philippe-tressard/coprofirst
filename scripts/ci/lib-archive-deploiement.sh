@@ -18,6 +18,9 @@ FICHIERS_DEPLOIEMENT=(
     .env.example
     deploiement/standard/LISEZMOI.md
     deploiement/standard/mise-a-jour.sh
+    deploiement/standard/lib-installation.sh
+    deploiement/demo/reinitialiser.sh
+    deploiement/demo/LISEZMOI.md
     deploiement/standard/postgresql/pg_hba.conf
     LICENSE
 )
