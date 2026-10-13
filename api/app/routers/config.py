@@ -355,6 +355,7 @@ def whatsapp_qr(
     if not api_url:
         raise HTTPException(400, "whatsapp_api_url non configuré.")
 
+    demo.exiger_hors_demo("WhatsApp")  # doublé par la garde du lot D1 (#1902)
     try:
         with httpx.Client(timeout=5) as client:
             resp = client.get(f"{api_url.rstrip('/')}/qr", headers=entetes_bridge())
@@ -457,6 +458,7 @@ def imap_test(
         raise HTTPException(400, "Paramètre(s) manquant(s) : " + ", ".join(manquants))
 
     dossier = cfg.get("imap_dossier") or "INBOX"
+    demo.exiger_hors_demo("Boîte de réception")  # doublé par la garde du lot D1 (#1902)
     try:
         boite = imaplib.IMAP4_SSL(cfg["imap_server"], int(cfg.get("imap_port") or 993))
     except Exception as e:

@@ -65,6 +65,7 @@ from app.utils.llm_fournisseurs import (
 )
 from app.utils import llm_journal, llm_limites
 from app.utils.llm_usages import CHAMP_COPROPRIETAIRES, USAGES, Usage, valeur_effort
+from app.utils.demo import exiger_hors_demo
 from app.utils.services import SERVICE_IA, service_actif
 
 #: 🔴 Ce module reste **la porte d'entrée unique**, même depuis que les
@@ -371,6 +372,8 @@ async def _appeler(
 ) -> Reponse:
     """L'échange avec le fournisseur, reprises comprises — sans journal ni plafond."""
     import httpx
+
+    exiger_hors_demo("Assistant IA")  # aucun appel facturé depuis la démo publique (#1902)
 
     f = cfg.fournisseur
     debut = time.monotonic()

@@ -322,9 +322,8 @@ def test_le_sommaire_vient_du_meme_endroit_que_les_pieces_jointes():
     compte : la composition est désormais **unique**, et l'aperçu avant envoi
     montre donc exactement ce qui partira.
     """
-    source = (RACINE / "api" / "app" / "utils" / "email" / "__init__.py").read_text(
-        encoding="utf-8"
-    )
+    #  Le rendu vit dans `email/rendu.py` depuis le 13/10/2026 (#1902).
+    source = (RACINE / "api" / "app" / "utils" / "email" / "rendu.py").read_text(encoding="utf-8")
 
     appels = re.findall(
         r"pieces_jointes=\[nom_lisible\(p\) for p in \(attachments or \[\]\)\]", source
@@ -347,7 +346,7 @@ def test_le_sommaire_vient_du_meme_endroit_que_les_pieces_jointes():
     #  fichier. La factorisation des deux envois a inséré `_envoyer_modele`
     #  entre les deux, et ce découpage s'est mis à mesurer autre chose.
     corps_composer = corps_de(
-        RACINE / "api" / "app" / "utils" / "email" / "__init__.py", "composer_email"
+        RACINE / "api" / "app" / "utils" / "email" / "rendu.py", "composer_email"
     )
     debut_composer = source.index(corps_composer)
     fin_composer = debut_composer + len(corps_composer)

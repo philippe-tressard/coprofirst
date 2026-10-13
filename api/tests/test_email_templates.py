@@ -211,7 +211,7 @@ def test_lobjet_rendu_tient_sur_une_ligne_et_reste_court():
     cette protection tient à la présence d'un caractère non-ASCII : elle
     disparaîtrait en silence le jour où un objet devient purement ASCII.
     """
-    from app.utils.email import _SUJET_MAX, _sujet_sur_une_ligne
+    from app.utils.email.rendu import _SUJET_MAX, _sujet_sur_une_ligne
 
     injecte = _sujet_sur_une_ligne("Fuite parking\r\nBcc: tiers@exemple.fr\n\nsuite")
     assert "\n" not in injecte and "\r" not in injecte, (
@@ -266,7 +266,7 @@ def test_lobjet_au_syndic_porte_toujours_la_reference(code):
     utilisée à l'envoi : le test traverse la même chaîne que la production, du
     code jusqu'au modèle.
     """
-    from app.utils.email import _prefixe_copro
+    from app.utils.email.rendu import _prefixe_copro
 
     assert code in SUJETS, f"{code} a disparu de EMAIL_TEMPLATES."
     prefixe = _prefixe_copro("00213")

@@ -5,6 +5,7 @@ from typing import Any, Callable
 
 import httpx
 
+from app.utils.demo import exiger_hors_demo
 from app.utils.services import SERVICE_DIFFUSION, cle_actif, service_actif
 from app.utils.whatsapp_media import image_pour_bridge, renvoi_photos
 
@@ -68,6 +69,7 @@ def _poster_au_bridge(url: str, payload: dict, headers: dict, timeout: float = T
     un résultat qu'on ne peut pas constater se rapporte INCONNU, jamais autre
     chose — ici, pas davantage KO que OK).
     """
+    exiger_hors_demo("WhatsApp")  # rien ne part de la démo publique (#1902)
     try:
         with httpx.Client(timeout=timeout) as client:
             resp = client.post(url, json=payload, headers=headers)
@@ -364,6 +366,7 @@ def get_whatsapp_status(config: dict) -> dict:
     if not api_url:
         raise ValueError("whatsapp_api_url manquant.")
 
+    exiger_hors_demo("WhatsApp")  # même une lecture d'état est un appel sortant (#1902)
     with httpx.Client(timeout=5) as client:
         resp = client.get(f"{api_url.rstrip('/')}/status", headers=entetes_bridge())
     if resp.status_code == 401:

@@ -80,7 +80,7 @@ from app.routers import (
     flux,
 )
 from app.routers import uploads, faq, signalements, annonces_hall, patrimoine
-from app.routers import manuel
+from app.routers import demo as demo_entree, manuel
 from app.registre import routeur as registre  # le registre des installations (§4.11)
 from app.routers import courriels_affaires
 from app.routers import partage
@@ -281,9 +281,14 @@ async def lifespan(app: FastAPI):
     #
     #  L'analyse statique de la CI ne suffit pas : elle voit l'appel dans le code,
     #  pas le fait qu'une condition l'ait sauté. Ce contrôle-ci lit le scheduler.
-    from app.utils.taches import enregistrer_taches_de_la_plateforme, verifier_taches_enregistrees
+    from app.utils.taches import (
+        enregistrer_taches_de_la_plateforme,
+        retirer_hors_demo,
+        verifier_taches_enregistrees,
+    )
 
     enregistrer_taches_de_la_plateforme(scheduler)  # disque, registre, bail (`utils/taches`)
+    retirer_hors_demo(scheduler)  # la démo publique : rien ne part, rien ne se purge (#1902)
     verifier_taches_enregistrees(scheduler, _logging.getLogger("taches"))
 
     yield
@@ -400,7 +405,7 @@ app.include_router(prestataires_archivage.router)
 #  Les métriques des affaires d'un prestataire (#1646), même préfixe.
 app.include_router(prestataires_metriques.router)
 #  Les routeurs sans particularité de montage : un `include_router` chacun.
-for _routeur in (sondages, idees, annonces, annonces_hall, courriels_affaires, manuel):
+for _routeur in (sondages, idees, annonces, annonces_hall, courriels_affaires, manuel, demo_entree):
     app.include_router(_routeur.router)
 app.include_router(copropriete.router)
 #  Les bâtiments et les lots — extraits le 22/09/2026 (modularité, rang 1). Même

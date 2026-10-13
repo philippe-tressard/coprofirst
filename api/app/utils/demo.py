@@ -21,8 +21,14 @@ personnage partagé. Ce module porte ce qui, dans ce mode, est FERMÉ.
    une route qui accepte une pièce jointe sans être un téléversement dédié — une
    affaire avec photo — passe par elle.
 
-Les envois sortants (courriel, WhatsApp, IA) se ferment à leurs propres portes,
-lot D2 (#1902).
+6. **Rien ne part vers l'extérieur** (lot D2, #1902) : chaque PORTE d'appel sortant
+   — moteur de courriel, bridge WhatsApp, fournisseur d'IA, boîte IMAP, dépôt
+   GitHub — refuse en démo, quelle que soit la configuration en base, qu'un
+   administrateur de démo peut réécrire. `exiger_hors_demo` est la porte des
+   appels réseau ; le moteur de courriel, lui, se ferme par `envoi_actif`.
+   Restent permis, exprès : les échanges avec le REGISTRE des installations
+   (`app/inscription/` — la démo s'y inscrit, M11) et les alertes de PLATEFORME
+   à l'opérateur (`utils/sante_plateforme`) : aucun visiteur ne les déclenche.
 """
 
 from __future__ import annotations
@@ -229,6 +235,16 @@ def famille_fermee(methode: str, chemin: str) -> Optional[Famille]:
         if m == methode and motif.match(chemin):
             return famille
     return None
+
+
+class FermeEnDemo(RuntimeError):
+    """Un appel vers l'extérieur refusé : l'installation est la démo publique (règle 6)."""
+
+
+def exiger_hors_demo(canal: str) -> None:
+    """La porte des appels réseau : lève `FermeEnDemo` en démo, avant toute connexion."""
+    if est_demo():
+        raise FermeEnDemo(f"{MESSAGE} {canal} : aucun appel ne part de la démo.")
 
 
 def reponse_refus(famille: Famille) -> JSONResponse:

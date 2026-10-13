@@ -172,7 +172,8 @@ def test_l_apercu_et_l_envoi_composent_l_email_au_meme_endroit():
         "L'aperçu appelle `_wrap_email` directement : toute règle ajoutée dans "
         "`composer_email` lui échapperait, et les deux rendus divergeraient."
     )
-    envoi = _EMAIL.read_text(encoding="utf-8")
+    #  Le PAQUET entier : le rendu vit dans `email/rendu.py` depuis le 13/10/2026 (#1902).
+    envoi = "".join(p.read_text(encoding="utf-8") for p in sorted(_EMAIL.parent.glob("*.py")))
     #  🔴 ON SUIT LA DÉLÉGATION (05/09/2026). Ce test exigeait l'appel DANS le
     #  corps de chaque fonction ; le jour où `send_email` et `send_email_group`
     #  ont été factorisées — elles étaient identiques à 68 % —, la composition
