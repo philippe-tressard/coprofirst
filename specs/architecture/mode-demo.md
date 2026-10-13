@@ -113,7 +113,13 @@ Règles :
    l'onglet *Administration › Services* les montre éteints avec la mention
    « indisponible en démonstration ».
 4. 🔒 **Un test par porte** : le mode démo posé, une configuration en base qui
-   allume tout, et un faux serveur qui échoue s'il est contacté.
+   allume tout, et un faux serveur qui échoue s'il est contacté
+   (`tests/test_mode_demo_envois.py`).
+5. **Restent permis, exprès** (13/10/2026) : les échanges avec le **registre des
+   installations** (`app/inscription/` — inscription, bail, rapport nocturne), puisque
+   la démo s'y inscrit (M11) ; et les **alertes de plateforme** à l'opérateur
+   (`utils/sante_plateforme`, disque plein), qui passent par leur propre canal SMTP et
+   qu'aucun visiteur ne déclenche.
 
 ### 4.3 Les gestes fermés
 
@@ -154,6 +160,7 @@ l'étend.
 | `courriel_reponses`, `synthese_affaires`, `whatsapp_scheduled` | coupées | IMAP, IA, WhatsApp |
 | `health_check` (06:00) | coupée | son seul effet est un courriel |
 | `telemetry_aggregation`, `manuel_pdf_*` | gardées | internes, sans envoi |
+| `bail_installation`, `sante_plateforme`, `sauvegarde_plateforme` | gardées | le registre (M11) et l'opérateur ; la dernière ne tourne que chez la référence |
 
 ## 5. L'entrée par personnage
 
@@ -166,8 +173,8 @@ l'étend.
 | Administrateur | `https://demo.coprofirst.fr/api/demo/entrer/administrateur` | gestionnaire du site |
 | (page de connexion de la démo) | `…/api/demo/entrer/locataire` | locataire |
 
-`GET`, réponse **303** vers l'accueil de l'application avec les cookies de
-session. Les deux domaines sont du **même site** (`coprofirst.fr`) : les cookies
+`GET`, réponse **303** vers `/tableau-de-bord` avec les cookies de session ;
+la route n'apparaît pas au schéma de l'API (livré en lot D3, #1903). Les deux domaines sont du **même site** (`coprofirst.fr`) : les cookies
 `samesite=strict` sont posés et relus normalement après le clic.
 
 ### 5.2 La route

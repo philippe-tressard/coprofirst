@@ -1,0 +1,212 @@
+#!/bin/bash
+# =============================================================================
+#  durcir-noeud.sh — Le durcissement système d'un nœud : sshd, ufw, fail2ban,
+#  mises à jour automatiques (#1917, #1918)
+#
+#  Usage, SUR le nœud, en root :
+#    bash durcir-noeud.sh --selftest                       # éprouve les décisions, ne touche rien
+#    sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --etat       # LECTURE SEULE
+#    sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --appliquer  # pose ce qui manque
+#
+#  Ce que le script NE fait PAS, et ne fera jamais : écrire le `.env`, poser un
+#  secret, une clé ou un jeton. Le reste de la réinstallation d'un nœud — Docker,
+#  dépôt, `.env`, base, tunnel, crons, règle sudo — est décrit, dans l'ordre, par
+#  `docs/restauration-complete.md`, qui appelle ce script à son étape 4.
+#
+#  IDEMPOTENT : chaque fichier n'est réécrit que s'il diffère, chaque règle ufw
+#  n'est ajoutée que si elle manque. Le relancer sur un nœud conforme ne change
+#  rien. Jamais de `ufw reset` : sur un nœud en service, il effacerait des
+#  règles qu'on n'a pas vues avant de les reposer.
+#
+#  ⚠️ `--appliquer` change la configuration de sshd : garder une SECONDE session
+#  SSH ouverte sur le nœud jusqu'à la fin, et vérifier qu'une NOUVELLE connexion
+#  par clé passe avant de la fermer. Le STANDBY d'abord, puis l'actif.
+#
+#  Chaque verdict porte sur la configuration EFFECTIVE (`sshd -T`, `ufw show
+#  added`, `fail2ban-client`, `apt-config dump`) et non sur un fichier posé :
+#  c'est en lisant le fichier qu'on a cru, d'avril à octobre 2026, que le mot de
+#  passe était coupé (#1918). Les décisions vivent dans `lib-durcissement.sh`.
+# =============================================================================
+set -uo pipefail
+
+REPO=$(cd "$(dirname "$0")/../.." && pwd)
+# shellcheck source=../lib/lib-durcissement.sh
+. "$REPO/scripts/lib/lib-durcissement.sh"
+
+if [ "${1:-}" = "--selftest" ]; then
+  durcissement_selftest
+  exit $?
+fi
+
+COMPTE=ptressard
+CLES_AUTORISEES=/home/$COMPTE/.ssh/authorized_keys
+#: Fichier hérité de l'ancienne procédure, présent sur un seul nœud : ses
+#: `Allowed-Origins` s'AJOUTENT aux origines de Debian, il ne restreint rien.
+APT_HERITE=/etc/apt/apt.conf.d/50unattended-upgrades-hostachy
+
+log() { printf '%s\n' "$*"; }
+
+# ── Lectures de l'état effectif (vides si impossibles : le verdict dit INCONNU) ─
+lire_sshd()         { sshd -T 2>/dev/null; }
+lire_ufw_etat()     { command -v ufw >/dev/null && ufw status verbose 2>/dev/null; }
+lire_ufw_ajoutees() { command -v ufw >/dev/null && ufw show added 2>/dev/null; }
+lire_f2b()          { command -v fail2ban-client >/dev/null && fail2ban-client get sshd "$1" 2>/dev/null; }
+compter_cles() {
+  #  Absent → 0 (un nœud neuf sans clé) ; illisible → rien (on ne sait pas).
+  [ -e "$CLES_AUTORISEES" ] || { echo 0; return; }
+  [ -r "$CLES_AUTORISEES" ] || return 0
+  grep -cE '^(ssh-|ecdsa-|sk-)' "$CLES_AUTORISEES"
+}
+
+verdict_sshd() { durcissement_sshd_verdict "$(lire_sshd)"; }
+verdict_ufw()  { durcissement_ufw_verdict "$(lire_ufw_etat)" "$(lire_ufw_ajoutees)"; }
+verdict_f2b()  { durcissement_f2b_verdict "$(lire_f2b maxretry)" "$(lire_f2b bantime)"; }
+verdict_apt()  {
+  local dump rc
+  dump=$(apt-config dump 2>/dev/null); rc=$?
+  durcissement_apt_verdict "$rc" "$dump"
+}
+
+# ── --etat ───────────────────────────────────────────────────────────────────
+#  Code de retour : 0 tout conforme · 1 un écart · 3 rien d'écarté mais un INCONNU.
+etat() {
+  local rc=0 nom v
+  log "═══ Durcissement de $(hostname) — configuration EFFECTIVE ═══"
+  [ "$(id -u)" -eq 0 ] || log "⚠️  Pas root : sshd -T, ufw et fail2ban-client ne répondent qu'à root → INCONNU."
+  for nom in sshd ufw f2b apt; do
+    v=$("verdict_$nom")
+    printf '  %-9s %s\n' "$nom" "$v"
+    case "$v" in
+      ECART:*)   rc=1 ;;
+      INCONNU:*) [ "$rc" -eq 1 ] || rc=3 ;;
+    esac
+  done
+  [ -e "$DURCISSEMENT_SSHD_HERITE" ] && log "  hérité    $DURCISSEMENT_SSHD_HERITE présent (lu APRÈS 50-cloud-init : sans effet) — --appliquer le retire"
+  [ -e "$APT_HERITE" ] && log "  hérité    $APT_HERITE présent (s'ajoute aux origines Debian, ne restreint rien)"
+  log "  clés      $(compter_cles || echo '?') clé(s) dans $CLES_AUTORISEES"
+  return "$rc"
+}
+
+# ── Écriture idempotente d'un fichier root (contenu sur l'entrée standard) ───
+#  Rend 0 si le fichier a changé, 1 s'il était déjà identique, 2 en cas d'échec.
+poser() {  # $1 chemin · $2 mode
+  local tmp; tmp=$(mktemp) || return 2
+  cat > "$tmp"
+  if [ -f "$1" ] && cmp -s "$tmp" "$1"; then rm -f "$tmp"; return 1; fi
+  install -o root -g root -m "$2" "$tmp" "$1" || { rm -f "$tmp"; return 2; }
+  rm -f "$tmp"
+}
+
+paquets() {
+  local manquants="" p
+  for p in ufw fail2ban unattended-upgrades; do
+    dpkg -s "$p" >/dev/null 2>&1 || manquants="$manquants $p"
+  done
+  [ -z "$manquants" ] && return 0
+  log "── paquets :$manquants"
+  # shellcheck disable=SC2086  # liste de paquets, coupée exprès
+  apt-get install -y $manquants >/dev/null || { log "   ÉCHEC de l'installation"; return 1; }
+}
+
+appliquer_sshd() {
+  local decision
+  log "── sshd"
+  decision=$(durcissement_sshd_peut_appliquer "$(compter_cles)")
+  if [ "$decision" != OUI ]; then
+    log "   ${decision#REFUS:} → sshd NON modifié."
+    log "   Poser d'abord la clé publique du poste dans $CLES_AUTORISEES, puis relancer."
+    return 1
+  fi
+  durcissement_sshd_contenu | poser "$DURCISSEMENT_SSHD_FICHIER" 0644
+  case $? in
+    0) log "   $DURCISSEMENT_SSHD_FICHIER posé" ;;
+    1) log "   $DURCISSEMENT_SSHD_FICHIER déjà à jour" ;;
+    *) log "   ÉCHEC d'écriture"; return 1 ;;
+  esac
+  #  `sshd -t` est le seul contrôle qui dise si la configuration est acceptable
+  #  AVANT que le rechargement ne la serve. Refusée → on retire ce qu'on a posé.
+  if ! sshd -t; then
+    rm -f "$DURCISSEMENT_SSHD_FICHIER"
+    log "   🔴 sshd -t refuse la configuration : fichier RETIRÉ, sshd non rechargé."
+    return 1
+  fi
+  if [ -e "$DURCISSEMENT_SSHD_HERITE" ]; then
+    rm -f "$DURCISSEMENT_SSHD_HERITE" && log "   $DURCISSEMENT_SSHD_HERITE retiré (remplacé)"
+    sshd -t || { log "   🔴 sshd -t refuse après le retrait — NE PAS fermer la session."; return 1; }
+  fi
+  #  `reload` garde les sessions ouvertes ; seules les nouvelles suivent la règle.
+  systemctl reload ssh 2>/dev/null || systemctl reload sshd
+  log "   effectif : $(verdict_sshd)"
+}
+
+appliquer_ufw() {
+  local regle ajoutees decision
+  log "── ufw"
+  ufw default deny incoming >/dev/null
+  ufw default allow outgoing >/dev/null
+  #  Les manquantes, dans l'ordre de DURCISSEMENT_UFW : SSH du LAN d'abord.
+  while IFS= read -r regle; do
+    [ -n "$regle" ] || continue
+    # shellcheck disable=SC2086  # la règle est une suite de mots ufw, coupée exprès
+    ufw $regle >/dev/null && log "   ajoutée : $regle"
+  done < <(durcissement_ufw_manquantes "$(lire_ufw_ajoutees)")
+  ajoutees=$(lire_ufw_ajoutees)
+  if ! grep -q '^Status: active' <<< "$(lire_ufw_etat)"; then
+    decision=$(durcissement_ufw_peut_activer "$ajoutees")
+    if [ "$decision" != OUI ]; then log "   ${decision#REFUS:} → ufw NON activé."; return 1; fi
+    ufw --force enable >/dev/null && log "   activé"
+  fi
+  [ -z "$(durcissement_ufw_ssh_trop_ouvert "$ajoutees")" ] \
+    || log "   ⚠️  règle SSH ouverte hors LAN — la retirer à la main (ufw status numbered, ufw delete N)"
+  log "   effectif : $(verdict_ufw)"
+}
+
+appliquer_f2b() {
+  log "── fail2ban"
+  durcissement_f2b_contenu | poser "$DURCISSEMENT_F2B_FICHIER" 0644
+  case $? in
+    0) log "   $DURCISSEMENT_F2B_FICHIER posé" ;;
+    1) log "   $DURCISSEMENT_F2B_FICHIER déjà à jour" ;;
+    *) log "   ÉCHEC d'écriture"; return 1 ;;
+  esac
+  systemctl enable --now fail2ban >/dev/null 2>&1
+  fail2ban-client reload >/dev/null 2>&1 || systemctl restart fail2ban
+  local i; for i in 1 2 3 4 5; do [ "$(verdict_f2b)" = CONFORME ] && break; sleep 2; done
+  log "   effectif : $(verdict_f2b)"
+}
+
+appliquer_apt() {
+  log "── mises à jour automatiques"
+  printf '%s\n' "$DURCISSEMENT_APT" | poser "$DURCISSEMENT_APT_FICHIER" 0644
+  case $? in
+    0) log "   $DURCISSEMENT_APT_FICHIER posé" ;;
+    1) log "   $DURCISSEMENT_APT_FICHIER déjà à jour" ;;
+    *) log "   ÉCHEC d'écriture"; return 1 ;;
+  esac
+  systemctl enable --now apt-daily.timer apt-daily-upgrade.timer >/dev/null 2>&1
+  log "   effectif : $(verdict_apt)"
+}
+
+appliquer() {
+  local rc=0
+  [ "$(id -u)" -eq 0 ] || { log "--appliquer s'exécute en root (sudo bash $0 --appliquer)."; exit 2; }
+  log "⚠️  sshd va être reconfiguré. Garder une SECONDE session SSH ouverte sur ce nœud,"
+  log "    et vérifier qu'une nouvelle connexion par clé passe avant de la fermer."
+  printf '    Continuer ? [oui/NON] '
+  read -r reponse
+  [ "$reponse" = oui ] || { log "Abandon."; exit 1; }
+  paquets        || rc=1
+  appliquer_sshd || rc=1
+  appliquer_ufw  || rc=1
+  appliquer_f2b  || rc=1
+  appliquer_apt  || rc=1
+  log ""
+  etat || rc=1
+  return "$rc"
+}
+
+case "${1:-}" in
+  --etat)      etat ;;
+  --appliquer) appliquer ;;
+  *)           sed -n '3,10p' "$0"; exit 2 ;;
+esac

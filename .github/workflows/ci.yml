@@ -642,6 +642,9 @@ jobs:
           # 🔒 La décision qui ÉCRIT dans /etc/sudoers.d (#1574) : son self-test
           # passait et n'était appelé par aucun job.
           bash scripts/installation/durcir-sudoers.sh --selftest
+          # Le durcissement système d'un nœud (#1917) : jugé sur la configuration
+          # SERVIE — `PasswordAuthentication no` était écrit et sans effet (#1918).
+          bash scripts/installation/durcir-noeud.sh --selftest
           # La garde d'options du banc de volumes (#1605) : une option inconnue
           # lançait le banc, qui crée et détruit des volumes. `docker` y est factice.
           bash scripts/exploitation/banc-volumes.sh --selftest
@@ -2537,6 +2540,16 @@ jobs:
           npx playwright install --with-deps chromium
           #  La mesure que #1865 demande : la durée, job après job.
           echo "Installation de Playwright : $(( $(date +%s) - debut )) s"
+          #  🔴 apt laisse dans le dossier gardé son verrou et `partial/`, à root
+          #  et illisibles : l'enregistrement du cache, en fin de job, échouait
+          #  alors (« tar … exit code 2 ») sans rendre le job rouge — le cache
+          #  n'était JAMAIS écrit, donc jamais relu (#1865, constaté le 13/10/2026,
+          #  le correctif annoncé le 12/10 n'ayant pas été livré).
+          if [ -d /etc/apt/apt.conf.d ]; then
+            sudo rm -rf "$HOME/.cache/apt-playwright/partial" "$HOME/.cache/apt-playwright/lock"
+            sudo chown -R "$(id -u):$(id -g)" "$HOME/.cache/apt-playwright"
+            echo "Paquets gardés : $(ls "$HOME/.cache/apt-playwright" | wc -l)"
+          fi
 
       # 🔴 Avant les tests, pas après : un serveur emprunté les ferait passer
       # sur le code d'un autre (#1150). Voir l'en-tête du script.

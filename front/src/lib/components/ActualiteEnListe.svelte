@@ -35,12 +35,10 @@
 	} from '$lib/api';
 	import { supprimerDocument } from '$lib/gestes-document';
 	import { promouvoirActualite } from '$lib/gestes-actualite';
-	import { currentUser, isCS } from '$lib/stores/auth';
+	import { isCS } from '$lib/stores/auth';
 	import { OPTIONS_TICKET, ticketUrgent, type GestesTicket } from '$lib/tickets';
 	import ActionsActualite from './ActionsActualite.svelte';
 	import CarteActualite from './CarteActualite.svelte';
-	import PanneauOptionsPublication from './PanneauOptionsPublication.svelte';
-	import RubriqueHistorique from './RubriqueHistorique.svelte';
 	import EtatListe from './EtatListe.svelte';
 	import { essayer, messagePartiel } from '$lib/chargement';
 
@@ -98,6 +96,11 @@
 		);
 
 	const idSi = (m: typeof mode) => (mode === m ? ticket.id : null);
+
+	//  📦 Le fil ne se charge qu'au dépliage (#1861), comme le corps d'une affaire
+	//  (#1860) : la MÊME fonction le précharge quand la main s'approche de la
+	//  carte, et le charge au dépliage — `import()` ne télécharge qu'une fois.
+	const chargerFil = () => import('$lib/components/FilActualiteEnListe.svelte');
 </script>
 
 <CarteActualite
@@ -108,6 +111,7 @@
 	onRetirerDocument={$isCS && !archive ? retirerDocument : null}
 	formulaireOuvert={mode === 'evolution' || mode === 'options' || mode === 'edition'}
 	{correspondance}
+	onApprocher={chargerFil}
 	on:toggle={() => gestes.basculer(ticket)}
 >
 	<svelte:fragment slot="actions">
@@ -146,16 +150,24 @@
 				</ChargementDiffere>
 			{/key}
 		{:else if mode === 'options'}
-			<PanneauOptionsPublication
-				optionsRendues={OPTIONS_TICKET}
-				perimetreCible={ticket.perimetre_cible ?? []}
-				dejaEpingle={ticket.epingle ?? false}
-				bind:options
-				enregistrement={optionsRapidesEnCours}
-				on:enregistrer={() =>
-					gestes.optionsEnregistrer(ticket, { epingle: options.epingle, urgente: options.urgente })}
-				on:annuler={gestes.annuler}
-			/>
+			<!--  Au geste ⚙️ seulement, comme la correction (#1861). -->
+			<ChargementDiffere charger={() => import('$lib/components/PanneauOptionsPublication.svelte')}>
+				{#snippet contenu(PanneauOptionsPublication)}
+					<PanneauOptionsPublication
+						optionsRendues={OPTIONS_TICKET}
+						perimetreCible={ticket.perimetre_cible ?? []}
+						dejaEpingle={ticket.epingle ?? false}
+						bind:options
+						enregistrement={optionsRapidesEnCours}
+						on:enregistrer={() =>
+							gestes.optionsEnregistrer(ticket, {
+								epingle: options.epingle,
+								urgente: options.urgente,
+							})}
+						on:annuler={gestes.annuler}
+					/>
+				{/snippet}
+			</ChargementDiffere>
 		{:else if mode === 'evolution'}
 			<!--  `role="presentation"` : ce conteneur n'est qu'un relais qui arrête la
 			      propagation, pour que saisir ne referme pas la carte. -->
@@ -186,45 +198,23 @@
 	<svelte:fragment slot="apres-corps">
 		<EtatListe compact erreur={messagePartiel(erreurSuivi, erreurDocuments)} />
 		{#if evolutions.length}
-			<div class="actu-fil">
-				<RubriqueHistorique
-					{evolutions}
-					peutModifier={$isCS}
-					currentUserId={$currentUser?.id}
-					estAdmin={peutAdministrer}
-					avecSuppression
-					enEdition={evolEnEdition}
-					on:modifier={(e) => gestes.evolModifier(e.detail)}
-					on:supprimer={(e) => gestes.evolSupprimer({ ticket, evolId: e.detail })}
-				>
-					<svelte:fragment slot="edition" let:evol>
-						<!--  Sa correction rouvre ses sections, comme celle d'une affaire. -->
-						<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
-							{#snippet contenu(SuiteAffaire)}
-								<SuiteAffaire
-									{ticket}
-									{evol}
-									entrees={evolutions}
-									peutSuivre
-									saving={evolCorrectionEnCours}
-									on:submit={(e) => gestes.evolCorriger(ticket, e.detail)}
-									on:cancel={gestes.evolAnnuler}
-								/>
-							{/snippet}
-						</ChargementDiffere>
-					</svelte:fragment>
-				</RubriqueHistorique>
-			</div>
+			<ChargementDiffere charger={chargerFil}>
+				{#snippet contenu(FilActualiteEnListe)}
+					<FilActualiteEnListe
+						{ticket}
+						{evolutions}
+						{peutAdministrer}
+						{evolEnEdition}
+						{evolCorrectionEnCours}
+						{gestes}
+					/>
+				{/snippet}
+			</ChargementDiffere>
 		{/if}
 	</svelte:fragment>
 </CarteActualite>
 
 <style>
-	/*  La marge qui sépare le fil de ce qu'il suit — le parent seul sait ce
-	    qu'il y a au-dessus. */
-	.actu-fil {
-		margin-top: 0.9rem;
-	}
 	.evol-form {
 		padding: 0.5rem 0;
 	}

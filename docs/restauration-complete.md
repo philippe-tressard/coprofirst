@@ -1,16 +1,24 @@
-# Restauration complète — Raspberry Pi 5
+# Réinstaller un nœud — Raspberry Pi 5
 
-> **Objectif** : reconstruire l'environnement 5Hostachy depuis zéro sur un nouveau Raspberry Pi 5 (ou après un crash complet de la carte SD).
+> **Objectif** : reconstruire de zéro **un** des deux nœuds de production (carte SD
+> morte, Raspberry remplacé, réinstallation propre) pendant que **l'autre sert le
+> site**. C'est le cas normal de la paire : le nœud réinstallé la rejoint comme
+> **standby**, avec une réplique PostgreSQL du primaire — jamais comme actif.
 >
-> **Durée estimée** : ~15 min (hors téléchargements réseau).
+> **Durée estimée** : ~45 min, dont la copie de la base (`pg_basebackup`).
 >
 > 🔴 **C'est la seule procédure d'installation.** `scripts/installation/setup-rpi5.sh`
 > l'a doublée jusqu'au 20/09/2026 et a été **supprimé** (#1029) : il datait de
-> l'époque mono-RPi, ignorait tout de la haute disponibilité, et son `.env`
-> s'arrêtait au premier `docker compose up` (`WHATSAPP_API_KEY` absente) après avoir
-> posé une base **hors du volume monté**. Une procédure d'urgence qui échoue le jour
-> où l'on en a besoin est pire que pas de procédure : celle-ci est exécutée à la
-> main, donc ce qu'elle dit se vérifie en le faisant.
+> l'époque mono-RPi et son `.env` empêchait la stack de démarrer. Un autre script de
+> réinstallation, d'avril 2026, n'a jamais été versionné et écrivait les secrets de
+> production en clair : il a été retiré du poste (#1917). Ce document n'en reprend
+> **que** le durcissement système, devenu `scripts/installation/durcir-noeud.sh`.
+>
+> 🔒 **Aucun secret ne s'écrit dans un script ni dans le dépôt.** Le `.env` se
+> **recopie depuis l'autre nœud** (étape 6) ; le jeton du tunnel se colle à l'étape 10.
+
+**Si les DEUX nœuds sont perdus**, ce document ne suffit pas : voir la section
+[Les deux nœuds perdus](#les-deux-nœuds-perdus) en fin de page.
 
 ---
 
@@ -18,36 +26,37 @@
 
 | Élément | Détail |
 |---|---|
-| **Matériel** | Raspberry Pi 5 — Raspberry Pi OS Lite 64-bit (Debian Bookworm) |
-| **Réseau** | IP fixe `192.168.1.222` (rpi1) ou `192.168.1.223` (rpi2), accès Internet |
-| **GitHub** | Repo `philippe-tressard/coprofirst` (branche `main`) |
-| **Backup .env** | Conserver une copie sécurisée du fichier `/opt/5hostachy/.env` (clés secrètes, tokens, SMTP, etc.) |
-| **Backup SQLite** | Dernier fichier `app_*.db.gz` depuis `/data/5hostachy/backups/` |
-| **Token Cloudflare** | Token du tunnel Cloudflare |
-
-> ⚠️ **Sans le `.env` et la base SQLite**, l'application sera fonctionnelle mais vide (aucun utilisateur, aucune donnée).
+| **Matériel** | Raspberry Pi 5 — **Raspberry Pi OS Lite 64 bits** (Debian 13 « trixie », comme les deux nœuds au 13/10/2026) |
+| **L'autre nœud** | En service et **actif** (`cat /opt/5hostachy/.active` y donne son propre nom) : il porte le primaire PostgreSQL et le `.env` |
+| **Réseau** | IP fixe `192.168.1.222` (rpi1) ou `192.168.1.223` (rpi2) — `infra/postgresql/pg_hba.conf` n'admet la réplication que depuis ces deux adresses |
+| **Poste** | Accès SSH par clé ed25519 aux deux nœuds (Git Bash) |
+| **GitHub** | Dépôt `philippe-tressard/coprofirst` (branche `main`) |
+| **Jeton Cloudflare** | Jeton du tunnel (gestionnaire de mots de passe, ou tableau de bord Cloudflare) |
 
 ---
 
 ## Étape 1 — Préparer le système
 
-Flasher **Raspberry Pi OS Lite 64-bit** sur la carte SD avec **Raspberry Pi Imager**.
-Activer SSH, configurer l'utilisateur `ptressard` et l'IP statique.
+Flasher **Raspberry Pi OS Lite 64 bits** avec **Raspberry Pi Imager**, et y régler :
 
-Se connecter :
+- le **nom d'hôte** : `PhT-RB5` (rpi1) ou `PhT-RB5i2` (rpi2) — **exactement**. Les
+  scripts d'exploitation déduisent le rôle du nom (`scripts/lib/lib-role.sh`) et
+  s'arrêtent sur un nom inconnu ;
+- l'utilisateur `ptressard`, et **la clé publique du poste** (« Autoriser
+  l'authentification par clé publique ») : l'étape 4 coupe le mot de passe SSH, et
+  refuse de le faire s'il n'y a aucune clé autorisée ;
+- SSH activé, puis l'IP fixe sur la box.
+
 ```bash
 ssh ptressard@192.168.1.222   # ou .223
 ```
 
 ---
 
-## Étape 2 — Installer Docker & dépendances
+## Étape 2 — Docker et dépendances
 
 ```bash
-# Mise à jour
 sudo apt-get update -qq && sudo apt-get upgrade -y -qq
-
-# Paquets système
 sudo apt-get install -y -qq \
   curl wget git ca-certificates gnupg lsb-release \
   ufw fail2ban unattended-upgrades \
@@ -57,26 +66,20 @@ sudo apt-get install -y -qq \
 curl -fsSL https://get.docker.com | sudo sh
 sudo systemctl enable --now docker
 sudo usermod -aG docker ptressard
-
-# Important : se déconnecter/reconnecter pour le groupe docker
-exit
+exit   # se reconnecter : le groupe docker n'est pris qu'à la connexion suivante
 ```
 
-Se reconnecter :
-```bash
-ssh ptressard@192.168.1.222
-docker --version    # Vérifier
-```
+Rien d'autre ne s'installe sur l'hôte : ni Node, ni PostgreSQL — tout tourne en
+conteneur, et les **images** sont tirées du registre de la CI (`lib-images-ci.sh`).
 
 ---
 
 ## Étape 3 — Cloner le dépôt
 
 ```bash
-# Clé SSH deploy
+# Clé de déploiement — sa partie publique va dans GitHub > Settings > Deploy keys
 ssh-keygen -t ed25519 -C "hostachy-rpi5-deploy" -f ~/.ssh/hostachy_deploy -N ""
 cat ~/.ssh/hostachy_deploy.pub
-# → Ajouter dans GitHub > Settings > Deploy keys
 
 cat >> ~/.ssh/config << 'EOF'
 Host github.com
@@ -86,210 +89,105 @@ EOF
 # celle que GitHub publie (docs.github.com, « GitHub's SSH key fingerprints »)
 # AVANT de répondre yes. Jamais de confiance d'office (#1598).
 
-# Cloner
-sudo mkdir -p /opt/5hostachy
-sudo chown ptressard:ptressard /opt/5hostachy
+sudo mkdir -p /opt/5hostachy && sudo chown ptressard:ptressard /opt/5hostachy
 git clone git@github.com:philippe-tressard/coprofirst.git /opt/5hostachy
-cd /opt/5hostachy
 ```
 
 ---
 
-## Étape 4 — Restaurer le `.env`
+## Étape 4 — Durcissement système
+
+sshd, ufw, fail2ban et mises à jour automatiques sont posés par **un** script,
+idempotent, qui juge la configuration **effective** (`sshd -T`, `ufw show added`,
+`fail2ban-client`, `apt-config dump`) et jamais le fichier posé :
 
 ```bash
-# Option A : depuis un backup
-scp user@backup-machine:/chemin/vers/.env /opt/5hostachy/.env
-
-# Option B : recréer depuis l'exemple
-cp /opt/5hostachy/.env.example /opt/5hostachy/.env
-nano /opt/5hostachy/.env
+sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --etat       # lecture seule
+sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --appliquer  # pose ce qui manque
 ```
 
-**Variables critiques à renseigner** :
-
-| Variable | Description |
+| | Ce qui est posé |
 |---|---|
-| `SECRET_KEY` | Clé JWT — **min 32 caractères aléatoires** (`openssl rand -hex 32`) |
-| `WHATSAPP_API_KEY` | 🔴 **Obligatoire** — `docker-compose.yml` la déclare `:?`, donc `docker compose up` **refuse de démarrer** sans elle ; le bridge refuse en plus la valeur d'exemple et toute clé de moins de 16 caractères (`openssl rand -hex 24`). Seule source de la clé : l'API la lit aussi, rien ne se saisit à l'écran (#1596) |
-| `INSTANCE_ID` | `rpi1` ou `rpi2` — identifie le nœud au pied de page et dans la colonne « Nœud » des tâches planifiées |
-| `ORIGIN` | URL complète (`https://5hostachy.fr`) — ou IP LAN si standby |
-| `COOKIE_SECURE` | `true` (prod HTTPS) |
-| `MAIL_*` | Configuration SMTP |
-| `MAINTENANCE_KEY` | Clé partagée script maintenance ↔ API (`openssl rand -hex 24`) |
+| sshd | `sshd_config.d/01-hostachy-durcissement.conf` : mot de passe et clavier interactif coupés, root refusé, X11 coupé, 3 essais |
+| ufw | entrant refusé par défaut ; SSH depuis `192.168.1.0/24` **seulement** (posée en premier), 80/tcp, 443/tcp, 443/udp |
+| fail2ban | prison `sshd` : 5 essais, 1 h |
+| apt | `20auto-upgrades` : listes et installation chaque jour, origines Debian par défaut |
 
-> ⚠️ **Ne renseignez que des variables présentes dans `.env.example`.** C'est le
-> gabarit de référence, et `api/tests/test_env_exemple_coherent.py` le confronte à
-> chaque PR aux réglages que le code lit réellement (`api/app/config.py`) et à ceux
-> que `docker-compose.yml` exige. Une variable inventée ici ne serait lue par
-> personne — c'est ce qui rendait l'ancien installeur inapplicable (#1029).
+⚠️ Garder une **seconde session SSH** ouverte jusqu'à la fin, et vérifier qu'une
+nouvelle connexion par clé passe. Puis, **depuis le poste**, la preuve par le
+comportement — la réponse doit nommer `publickey` **seul** :
 
 ```bash
-chmod 600 /opt/5hostachy/.env
+ssh -o BatchMode=yes -o PreferredAuthentications=none -o PubkeyAuthentication=no ptressard@<IP> true
 ```
+
+> 🔴 **Pourquoi `01-`** (#1918) : l'image pose `50-cloud-init.conf` avec
+> `PasswordAuthentication yes`, et sshd retient la **première** valeur lue. Le
+> `hardening.conf` d'avril, lu après lui, était sans effet sur les deux nœuds.
+
+Le script n'installe pas le noyau ni le firmware Raspberry Pi : ils sont hors des
+origines d'`unattended-upgrades`, C30 le signale, la mise à jour reste manuelle
+(skill `infra-rpi`).
 
 ---
 
-## Étape 5 — Restaurer la base SQLite
+## Étape 5 — Règle sudo
+
+La **même** règle sudo sur les deux nœuds, posée **depuis le poste**, ce nœud seul :
 
 ```bash
-# Créer les répertoires de volumes Docker
-sudo mkdir -p /var/lib/docker/volumes/5hostachy_app_data/_data
-sudo mkdir -p /var/lib/docker/volumes/5hostachy_backups/_data
-
-# Restaurer la base de données
-gunzip -c /chemin/vers/app_YYYYMMDD_HHMMSS.db.gz \
-  > /var/lib/docker/volumes/5hostachy_app_data/_data/app.db
+bash scripts/installation/durcir-sudoers.sh --noeud <IP> --etat
+bash scripts/installation/durcir-sudoers.sh --noeud <IP> --appliquer
 ```
 
-> Si aucun backup n'est disponible, l'application créera une base vide au premier démarrage (Alembic migrations s'exécutent automatiquement).
+Mode d'emploi, ordre et garde-fous : l'en-tête du script (#302, #582).
 
 ---
 
-## Étape 6 — Lancer Docker Compose
+## Étape 6 — Le `.env`, recopié de l'autre nœud
+
+Le `.env` **ne s'écrit jamais dans un script**. Il se recopie depuis le nœud en
+service, sans passer par le disque du poste :
+
+```bash
+# Depuis le poste — <PAIR> : le nœud en service ; <IP> : le nœud réinstallé
+ssh ptressard@<PAIR> 'cat /opt/5hostachy/.env' \
+  | ssh ptressard@<IP> 'umask 077 && cat > /opt/5hostachy/.env'
+```
+
+Puis, **sur le nœud réinstallé**, ajuster ce qui lui est propre et lui donner le
+rôle de standby :
 
 ```bash
 cd /opt/5hostachy
-
-# Build : `construire_images` exporte le hash Git, que le front affiche
-. scripts/lib/lib-parite.sh && construire_images
-
-# Lancement (dans le même shell : GIT_HASH étiquette les conteneurs)
-docker compose up -d
-
-# Vérifier les 4 conteneurs
-docker compose ps
+nano .env    # INSTANCE_ID=rpi1|rpi2 · PG_ECOUTE=<IP de CE nœud>
+. scripts/lib/lib-env-role.sh && env_role_appliquer .env standby <IP de CE nœud>
+chmod 600 .env && ls -l .env   # ptressard:ptressard, -rw-------
 ```
 
-Résultat attendu :
-```
-NAME                STATUS
-hostachy_caddy      Up
-hostachy_front      Up
-hostachy_api        Up
-hostachy_whatsapp   Up
-```
+`env_role_appliquer` pose `ORIGIN` sur l'IP du nœud et `COOKIE_SECURE=false` : la
+règle vit dans `scripts/lib/lib-env-role.sh` (#1077), jamais recopiée. La bascule
+la rejouera en sens inverse le jour où ce nœud prendra la main.
 
-Vérifier les logs :
-```bash
-docker compose logs --tail=30 -f
-```
-
-Tester l'accès : `http://<RPi-IP>`
+`PG_REPLICATION_PASSWORD` est **le même** sur les deux nœuds : c'est lui qui ouvre
+la copie de l'étape 9. Toute variable vient de `.env.example`, que
+`api/tests/test_env_exemple_coherent.py` confronte au code à chaque PR.
 
 ---
 
-## Étape 7 — Exécuter les migrations
+## Étape 7 — Clé inter-nœuds et épinglage
 
-Les migrations Alembic s'exécutent automatiquement au démarrage du conteneur API via `start.sh`. Vérifier :
-
-```bash
-docker compose logs api 2>&1 | grep -i "alembic" | tail -5
-# La dernière ligne « Running upgrade … -> NNNN » doit nommer la dernière révision
-# de api/alembic/versions. Jamais d'Alembic lancé DANS le conteneur en marche :
-# c'est un process tiers sur la base vivante (règle d'or, #1683).
-```
-
----
-
-## Étape 8 — Pare-feu UFW
+La bascule, le failover et la reconstruction de la réplique joignent le pair par une
+clé dédiée, chez root.
 
 ```bash
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow from 192.168.1.0/24 to any port 22 proto tcp
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw allow 443/udp
-sudo ufw --force enable
-sudo ufw status
-```
-
----
-
-## Étape 9 — Fail2ban
-
-```bash
-sudo tee /etc/fail2ban/jail.d/5hostachy.conf << 'EOF'
-[sshd]
-enabled  = true
-port     = ssh
-maxretry = 5
-bantime  = 1h
-EOF
-
-sudo systemctl enable --now fail2ban
-```
-
----
-
-## Étape 10 — Cloudflare Tunnel
-
-```bash
-# Installer cloudflared
-sudo bash /opt/5hostachy/scripts/installation/install-cloudflared.sh <VOTRE_TOKEN_TUNNEL>
-
-# Vérifier
-sudo systemctl status cloudflared
-```
-
-Le token est disponible dans **Cloudflare Zero Trust > Networks > Tunnels > ton tunnel > Ajouter un connecteur** :
-c'est la longue chaîne `eyJ…` de la commande d'installation, **pas** l'« ID du tunnel »
-(`91d1afa9-…`) affiché en haut de la page. Le script refuse l'un pour l'autre.
-
-**Changer le jeton** d'un nœud déjà installé (rotation) : ne pas relancer ce script, qui
-démarre le tunnel — sur le standby, cela enverrait du trafic vers un nœud sans conteneurs.
-Utiliser, l'**actif** d'abord (le jeton y est éprouvé auprès de Cloudflare avant d'être
-installé), puis le secours :
-
-```bash
-sudo bash /opt/5hostachy/scripts/exploitation/changer-jeton-tunnel.sh
-```
-
-> ⚠️ Ne démarrer cloudflared que sur le RPi **actif** (voir `.active`). Le standby laisse cloudflared arrêté.
-
----
-
-## Étape 11 — Points d'entrée : crons et unité systemd
-
-Les tâches cron et l'unité systemd attendues **ne sont pas recopiées ici** : elles
-vivent dans [`infra/points-entree/`](../infra/points-entree/LISEZMOI.md), seule
-source versionnée, que le point 17 du pré-check compare à l'installé. Une copie
-dans ce document divergerait au premier changement de cadence — c'est arrivé :
-cette étape ne listait que trois crons sur cinq, avec des minutes qui n'étaient
-plus les bonnes, et oubliait l'unité systemd (#1049).
-
-| Fichier du dépôt | À poser |
-|---|---|
-| `infra/points-entree/cron-root.crontab` | `sudo crontab -e` — les lignes actives, à l'identique |
-| `infra/points-entree/cron-ptressard.crontab` | `crontab -e` en `ptressard` (propriétaire du clone) |
-| `infra/points-entree/hostachy-role-guard.service` | voir ci-dessous |
-
-```bash
-sudo cp /opt/5hostachy/infra/points-entree/hostachy-role-guard.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable hostachy-role-guard.service
-```
-
-Vérifier la conformité, **depuis le poste** :
-```bash
-bash scripts/poste/verifier-points-entree.sh ptressard@<IP-du-RPi>
-```
-
----
-
-## Étape 12 — Clé SSH bascule (entre les deux RPi)
-
-La bascule automatique nécessite une clé SSH sans passphrase entre les deux machines.
-
-```bash
-# Générer sur chaque RPi (en root)
+# Sur le nœud réinstallé (en root)
 sudo ssh-keygen -t ed25519 -C "hostachy-bascule" -f /root/.ssh/id_ed25519_bascule -N ""
+sudo cat /root/.ssh/id_ed25519_bascule.pub
+# → l'ajouter à ~ptressard/.ssh/authorized_keys DU PAIR (et réciproquement :
+#   la clé publique du pair, lue chez lui, dans ~ptressard/.ssh/authorized_keys d'ici)
 
-# Copier la clé publique du rpi1 vers rpi2 et vice-versa
-sudo ssh-copy-id -i /root/.ssh/id_ed25519_bascule.pub ptressard@192.168.1.223  # depuis rpi1
-sudo ssh-copy-id -i /root/.ssh/id_ed25519_bascule.pub ptressard@192.168.1.222  # depuis rpi2
-
-# Épingler la clé d'HÔTE du pair — sur rpi1 (sur rpi2 : 192.168.1.222)
+# Épingler la clé d'HÔTE du pair — ici, sur rpi1 (sur rpi2 : 192.168.1.222)
 sudo sh -c 'ssh-keyscan -t ed25519 192.168.1.223 2>/dev/null > /root/.ssh/known_hosts_bascule'
 sudo ssh-keygen -lf /root/.ssh/known_hosts_bascule
 # …et comparer cette empreinte à celle que le pair donne de lui-même, lue SUR lui :
@@ -304,95 +202,144 @@ sudo ssh -i /root/.ssh/id_ed25519_bascule -o BatchMode=yes -o StrictHostKeyCheck
 > 🔒 **Pourquoi épingler (#1598).** La clé `id_ed25519_bascule` authentifie le
 > nœud qui se connecte, jamais celui qui répond. Les scripts d'exploitation
 > (`bascule.sh`, `health-watch.sh`, `boot-role-guard.sh`, `check-reliability.sh`,
-> `noyau-standby.sh`) n'acceptent que la clé d'hôte écrite dans
-> `/root/.ssh/known_hosts_bascule` : sans elle, ils **échouent** au lieu de
-> parler à quiconque a pris l'IP du pair — et leur journal donne la commande
-> ci-dessus. Le fichier vit chez root, hors du dépôt que le compte de
-> déploiement réécrit.
+> `noyau-standby.sh`, `reconstruire-replique.sh`) n'acceptent que la clé d'hôte
+> écrite dans `/root/.ssh/known_hosts_bascule` : sans elle, ils **échouent** au lieu
+> de parler à quiconque a pris l'IP du pair.
 >
-> ⚠️ **Un nœud réinstallé change de clé d'hôte** : la bascule s'arrête alors en
-> phase 0 (« Peer injoignable … clé d'hôte non épinglée »), et `check-reliability`
-> le signale. Refaire l'épinglage **sur l'autre nœud**, empreinte comparée.
+> ⚠️ **Un nœud réinstallé change de clé d'hôte** : refaire l'épinglage **sur le
+> pair aussi**, empreinte comparée — sinon la bascule de la nuit s'arrête en phase 0
+> (« clé d'hôte non épinglée ») et `check-reliability` le signale.
 
 ---
 
-## Étape 13 — Flag .active
+## Étape 8 — `.active` : l'actif, c'est l'autre
+
+`.active` contient le nom du nœud **actif**, sur les **deux** nœuds. Sur le nœud
+réinstallé, c'est donc le nom du pair :
 
 ```bash
-# Sur le RPi actif (celui qui a cloudflared démarré)
-echo "rpi1" > /opt/5hostachy/.active   # ou "rpi2"
+ssh ptressard@<PAIR> cat /opt/5hostachy/.active     # ex. rpi2
+echo rpi2 > /opt/5hostachy/.active                   # la MÊME valeur
+```
 
-# Sur le RPi standby
-echo "rpi2" > /opt/5hostachy/.active   # doit contenir le nom du RPi ACTIF
+C'est ce qui fait de ce nœud un standby aux yeux de `reconstruire-replique.sh`, de
+`boot-role-guard.sh` et de `health-watch.sh`.
+
+---
+
+## Étape 9 — La base : réplique du primaire
+
+🔴 **Jamais `docker compose up -d` sur ce nœud** : il démarrerait l'application à
+côté de celle du pair (split-brain), et une base **absente** serait initialisée en
+primaire **vide** — deux primaires. La base naît d'une **copie** du primaire :
+
+```bash
+sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh          # simulation : dit ce qu'il ferait
+sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh --oui    # pg_basebackup, puis démarrage en réplique
+```
+
+Le script refuse d'agir sur l'actif, sans `COMPOSE_PROFILES=postgresql` dans le
+`.env`, ou si le pair ne porte pas de primaire joignable. Il finit par
+« ✓ … est une réplique de …, en continu ».
+
+Les **images** des services applicatifs sont tirées par `auto-deploy.sh` (étape 11)
+pour le commit de `main` : elles attendent là, prêtes pour la prochaine bascule.
+Les **fichiers** (`uploads`) et l'état WhatsApp arrivent avec la bascule suivante
+(`bascule.sh` synchronise les volumes vers le standby).
+
+---
+
+## Étape 10 — Tunnel Cloudflare, installé et ARRÊTÉ
+
+```bash
+sudo bash /opt/5hostachy/scripts/installation/install-cloudflared.sh <JETON_DU_TUNNEL>
+# Le script démarre le tunnel. Sur un STANDBY, l'arrêter aussitôt : il enverrait du
+# trafic public vers un nœud sans application. La bascule le démarrera.
+sudo systemctl disable --now cloudflared
+```
+
+Le jeton est dans **Cloudflare Zero Trust > Networks > Tunnels > le tunnel >
+Ajouter un connecteur** : la longue chaîne `eyJ…` de la commande d'installation,
+**pas** l'« ID du tunnel » (`91d1afa9-…`). Le script refuse l'un pour l'autre (#1318).
+Changer le jeton d'un nœud déjà installé : `scripts/exploitation/changer-jeton-tunnel.sh`,
+l'actif d'abord.
+
+---
+
+## Étape 11 — Points d'entrée : crons et unité systemd
+
+Les tâches cron et l'unité systemd attendues **ne sont pas recopiées ici** : elles
+vivent dans [`infra/points-entree/`](../infra/points-entree/LISEZMOI.md), seule
+source versionnée, que le point 17 du pré-check compare à l'installé (#1049).
+
+| Fichier du dépôt | À poser |
+|---|---|
+| `infra/points-entree/cron-root.crontab` | `sudo crontab -e` — les lignes actives, à l'identique |
+| `infra/points-entree/cron-ptressard.crontab` | `crontab -e` en `ptressard` (propriétaire du clone) |
+| `infra/points-entree/hostachy-role-guard.service` | voir ci-dessous |
+
+```bash
+sudo cp /opt/5hostachy/infra/points-entree/hostachy-role-guard.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable hostachy-role-guard.service
+```
+
+Conformité, **depuis le poste** :
+```bash
+bash scripts/poste/verifier-points-entree.sh ptressard@<IP>
 ```
 
 ---
 
-## Étape 14 — Mises à jour automatiques Debian
+## Étape 12 — Retirer la pile de bureau (#1648)
+
+Une image **Desktop** ramène navigateurs, VNC, impression, `rpcbind`/NFS… que rien
+dans le projet n'emploie. Le contrôle **C35** le signale ; la liste des paquets
+proscrits s'écrit **une fois**, dans `scripts/lib/lib-paquets-proscrits.sh`.
 
 ```bash
-sudo apt-get install -y unattended-upgrades
-sudo tee /etc/apt/apt.conf.d/50unattended-upgrades-hostachy << 'EOF'
-Unattended-Upgrade::Allowed-Origins {
-    "${distro_id}:${distro_codename}-security";
-};
-Unattended-Upgrade::Automatic-Reboot "false";
-EOF
-sudo systemctl enable --now unattended-upgrades
-```
-
----
-
-## Étape 15 — Retirer la pile de bureau (#1648)
-
-Une image Raspberry Pi OS **Desktop** réinstallée ramène navigateurs, VNC,
-impression, `rpcbind`/NFS… (~850 paquets) que rien dans le projet n'emploie, et
-une surface d'attaque ouverte sur le LAN. Le contrôle **C35** de
-`check-reliability` le signale tant que cela dure ; la liste des paquets proscrits
-s'écrit **une fois**, dans `scripts/lib/lib-paquets-proscrits.sh`.
-
-```bash
-# Interdire d'abord le retour des paquets recommandés et la cible graphique :
 echo 'APT::Install-Recommends "0";' | sudo tee /etc/apt/apt.conf.d/99-hostachy-sans-recommends
 sudo systemctl set-default multi-user.target
-
-# Puis retirer la pile — sur le STANDBY seulement (le script refuse un nœud qui
-# porte des conteneurs hostachy). Simuler d'abord : rien n'est retiré.
-SIM=1 bash /opt/5hostachy/scripts/exploitation/alleger-noeud.sh
+# Sur le STANDBY seulement (le script refuse un nœud qui porte l'application).
+SIM=1 bash /opt/5hostachy/scripts/exploitation/alleger-noeud.sh   # simulation
 sudo bash /opt/5hostachy/scripts/exploitation/alleger-noeud.sh
 ```
 
-Le script conserve les noyaux, plymouth et l'initramfs : le démarrage reste
-inchangé. Redémarrer ensuite, puis attendre un passage de `check-reliability` :
-C35 doit dire « Pas de pile de bureau ».
+Redémarrer ensuite : c'est aussi la seule façon d'éprouver l'unité
+`hostachy-role-guard` (étape 11) sans risque, puisque ce nœud ne sert rien.
 
 ---
 
 ## Vérification finale
 
-| Test | Commande |
+| Fait à constater | Commande |
 |---|---|
-| Conteneurs actifs | `docker compose ps` |
-| API health | `curl -s http://localhost/api/health` |
-| URL publique | `curl -s https://5hostachy.fr/api/health` |
-| Logs API | `docker compose logs api --tail=20` |
-| Alembic version | `docker compose logs api 2>&1 \| grep -i alembic \| tail -5` (jamais Alembic dans le conteneur en marche, #1683) |
-| Heure conteneurs | `docker exec hostachy_api date` (doit afficher CEST) |
-| UFW actif | `sudo ufw status` |
-| Fail2ban actif | `sudo systemctl status fail2ban` |
-| Cloudflare tunnel | `sudo systemctl status cloudflared` |
+| Durcissement effectif | `sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --etat` → quatre `CONFORME` |
+| Mot de passe SSH refusé | sonde de l'étape 4, depuis le poste → `(publickey)` seul |
+| Seule la base tourne ici | `docker ps --format '{{.Names}}'` → `hostachy_postgres`, rien d'autre |
+| Réplique en continu | contrôle **C37** au passage suivant de `check-reliability` (Admin › Maintenance) |
+| Tunnel arrêté | `systemctl is-active cloudflared` → `inactive` |
 | Crons et unité systemd | `bash scripts/poste/verifier-points-entree.sh ptressard@<IP>` (depuis le poste) |
-| Flag .active | `cat /opt/5hostachy/.active` |
-| Accès web LAN | `http://192.168.1.222` |
-| Accès web public | `https://5hostachy.fr` |
+| Les deux nœuds d'accord | `cat /opt/5hostachy/.active` identique sur les deux |
+| Bascule possible | la bascule de la nuit passe (journal de `bascule.sh` sur l'actif), puis ce nœud sert le site |
+
+La vraie preuve est la **première bascule** : jusqu'à elle, ce nœud n'a rien servi.
 
 ---
 
-## Mise à jour courante (post-restauration)
+## Les deux nœuds perdus
 
-```bash
-sudo bash /opt/5hostachy/scripts/exploitation/MaJ-Hostachy.sh
-```
+Sans pair en service, il n'y a ni primaire à copier ni `.env` à recopier :
+
+- le `.env` se reconstruit à la main depuis `.env.example`, avec les secrets
+  conservés dans le gestionnaire de mots de passe — jamais depuis un fichier posé sur
+  le poste ;
+- la base se restaure depuis la **copie hors site** (`scripts/poste/export-hors-site.sh`),
+  dont l'archive porte l'**export vérifié** de la copropriété, réimporté dans une base
+  **neuve** par `python -m app.utils.export_copropriete importer` — le geste
+  qu'emploie `scripts/exploitation/basculer-donnees.sh`.
+
+⚠️ Ce chemin n'a **pas** de procédure pas à pas éprouvée sous PostgreSQL : il fait
+l'objet d'un ticket à part.
 
 ---
 
@@ -400,78 +347,30 @@ sudo bash /opt/5hostachy/scripts/exploitation/MaJ-Hostachy.sh
 
 ```
 /opt/5hostachy/                   ← Dépôt git
-├── .env                          ← Secrets (non versionné)
-├── .active                       ← "rpi1" ou "rpi2" (non versionné)
-├── docker-compose.yml
-├── Caddyfile
-├── Dockerfile.caddy              ← Image Caddy custom (tzdata)
+├── .env                          ← Secrets (non versionné, 600 ptressard)
+├── .active                       ← Nom du nœud ACTIF, identique sur les deux
+├── docker-compose.yml            ← Seule description des services
 ├── boot-role-guard.sh            ← Seul relais gardé : l'unité systemd le désigne
 ├── scripts/
-│   ├── exploitation/             ← Lancés par cron/systemd (bascule, health-watch,
-│   │                               maintenance, check-reliability, auto-deploy,
-│   │                               MaJ-Hostachy…)
-│   ├── installation/             ← install-cloudflared.sh…
+│   ├── exploitation/             ← Lancés par cron/systemd ou à la main sur un nœud
+│   ├── installation/             ← durcir-noeud.sh, durcir-sudoers.sh, install-cloudflared.sh
 │   ├── lib/                      ← Bibliothèques partagées
 │   └── poste/                    ← Lancés depuis le poste (pré-check…)
 ├── infra/points-entree/          ← Crons et unité systemd attendus (source unique)
-├── api/                          ← FastAPI + Alembic
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   ├── alembic/
-│   └── app/
-├── front/                        ← SvelteKit
-│   ├── Dockerfile                ← tzdata inclus (runner stage)
-│   ├── package.json
-│   └── src/
-├── whatsapp-bridge/              ← Passerelle WhatsApp
-│   ├── Dockerfile                ← tzdata inclus
-│   └── index.js
-└── docs/                         ← Documentation
+├── infra/postgresql/             ← pg_hba.conf, initialisation de la réplication
+└── api/ front/ whatsapp-bridge/ docs/
 
 Volumes Docker :
-  app_data  → /app/data/app.db    (base SQLite)
-  uploads   → /app/uploads/       (fichiers uploadés)
-  backups   → /backups/           (sauvegardes auto)
-  caddy_*   → config Caddy
+  pg_data   → base PostgreSQL (primaire sur l'actif, réplique sur le standby)
+  uploads   → fichiers téléversés (synchronisés vers le standby à la bascule)
+  app_data  → état de l'application hors base
+  backups   → sauvegardes de 03:00, sur l'actif
+  caddy_*   → configuration Caddy
 ```
 
 ---
 
-## Sauvegardes offsite
+## Mise à jour courante
 
-### Fichiers critiques à sauvegarder hors du RPi
-
-| Fichier | Contenu | Impact si perdu |
-|---|---|---|
-| `/opt/5hostachy/.env` | SECRET_KEY, SMTP, tokens | JWT invalides → tous les utilisateurs déconnectés |
-| `/backups/*.db.gz` | Base SQLite (comptes, lots, tickets, sondages…) | **Perte totale des données** |
-| Volume `uploads` | Photos et documents uploadés | Perte des fichiers joints |
-| Token Cloudflare | Identifiant du tunnel | Tunnel à reconfigurer dans le dashboard CF |
-
-### Copie manuelle (depuis le PC Windows)
-
-```powershell
-mkdir ~\backup-hostachy
-
-# 1. Secrets
-scp ptressard@192.168.1.222:/opt/5hostachy/.env ~\backup-hostachy\.env
-
-# 2. Base de données (dernier backup)
-scp "ptressard@192.168.1.222:/backups/*.db.gz" ~\backup-hostachy\
-
-# 3. Fichiers uploadés
-scp -r ptressard@192.168.1.222:/var/lib/docker/volumes/5hostachy_uploads/_data/ ~\backup-hostachy\uploads\
-```
-
-### Éléments déjà protégés (sur GitHub)
-
-| Élément | Raison |
-|---|---|
-| Code source, Dockerfiles, migrations | Versionné dans le dépôt |
-| Scripts (`bascule.sh`, `health-watch.sh`, `maintenance.sh`, `MaJ-Hostachy.sh`) | Versionné |
-| Configuration Docker (`docker-compose.yml`, `Caddyfile`, `Dockerfile.caddy`) | Versionné |
-| Configuration cron | Documentée dans ce guide (étape 11) |
-
-### Recommandation
-
-Stocker la `SECRET_KEY` et le token Cloudflare dans un **gestionnaire de mots de passe** (Bitwarden, 1Password, KeePass…).
+Automatique (`auto-deploy.sh`, cron utilisateur). Reprise en main, **sur l'actif
+seulement** : `sudo bash /opt/5hostachy/scripts/exploitation/MaJ-Hostachy.sh`.

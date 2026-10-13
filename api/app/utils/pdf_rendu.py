@@ -99,6 +99,20 @@ DELAI_RENDU_S = 180.0
 MAX_JOURNAL = 5_000
 
 
+#: Les seuls protocoles que le moteur a le droit d'ouvrir pendant un rendu (#1908).
+#:
+#: 🔴 Le défaut de WeasyPrint est d'ouvrir TOUT ce que le document désigne —
+#: `http(s)`, `ftp`, `file` — depuis le serveur. Une image `http://…` glissée
+#: dans un contenu rendu (le texte d'une annonce de hall, une page du manuel)
+#: aurait fait sortir une requête de l'API : SSRF vers le réseau local des RPi,
+#: ou lecture d'un fichier du conteneur par `file://`. Les documents de ce site
+#: sont AUTONOMES (images en data-URI, CSS dans `<style>`) : le data-URI est donc
+#: le seul protocole utile, et tout le reste se refuse. WeasyPrint journalise
+#: alors un avertissement et rend le document sans la ressource.
+#: 🔒 `test_pdf_hors_reseau.py` le vérifie par le comportement : un serveur
+#: local témoin ne doit recevoir aucune requête.
+PROTOCOLES_ADMIS = frozenset({"data"})
+
 #: Ce que le dernier enfant a rapporté de lui-même : `{"pid", "base_chargee"}`.
 #: Renseigné à chaque rendu, y compris quand il échoue — c'est le point de
 #: mesure de `test_pdf_hors_process.py`, et il ne dépend d'aucune configuration
@@ -165,8 +179,10 @@ def _rendre_dans_l_enfant(tube, html: str) -> None:
 
     try:
         from weasyprint import HTML
+        from weasyprint.urls import URLFetcher
 
-        pdf = HTML(string=html).write_pdf()
+        recuperateur = URLFetcher(allowed_protocols=PROTOCOLES_ADMIS)
+        pdf = HTML(string=html, url_fetcher=recuperateur).write_pdf()
     except BaseException as exc:  # noqa: BLE001 — tout est remonté au parent
         tube.send(("erreur", f"{type(exc).__name__}: {exc}", journal, temoin))
     else:
@@ -208,7 +224,8 @@ def rendre_pdf(html: str, *, delai_s: float = DELAI_RENDU_S) -> bytes:
     """Rend un document HTML autonome en PDF, dans un process séparé.
 
     Le HTML doit être **autonome** : CSS dans un `<style>`, images en data-URI.
-    Aucune requête réseau n'est effectuée au rendu.
+    Aucune requête réseau n'est effectuée au rendu : toute ressource qui n'est
+    pas un data-URI est refusée (`PROTOCOLES_ADMIS`).
 
     Lève `RenduPdfImpossible` si le rendu échoue, dépasse `delai_s`, ou si le
     process meurt en route (OOM — le risque est réel sur un RPi).

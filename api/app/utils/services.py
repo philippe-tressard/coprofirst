@@ -196,8 +196,13 @@ def service_actif(cfg: dict, code: str) -> bool:
 
     🔴 La SEULE lecture d'une clé d'activation. Seul `"1"` vaut oui — l'écran
     écrit `"1"`/`"0"`, et `normaliser_activation` ramène toute autre saisie.
+
+    En démo publique, aucun service ne s'allume, quoi que dise la base (#1902) :
+    sa configuration est réécrite par n'importe quel visiteur administrateur.
     """
-    return cfg.get(cle_actif(code)) == ACTIVE
+    from app.utils.demo import est_demo
+
+    return not est_demo() and cfg.get(cle_actif(code)) == ACTIVE
 
 
 def normaliser_activation(valeur: str) -> str:
@@ -276,6 +281,7 @@ __all__ = [
     "SERVICE_DIFFUSION",
     "SERVICE_IA",
     "SERVICE_REPONSES_COURRIEL",
+    "SERVICE_VERIF_VERSION",
     "Service",
     "cle_actif",
     "decrire",

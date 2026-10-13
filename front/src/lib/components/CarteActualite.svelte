@@ -70,6 +70,9 @@
 	export let formulaireOuvert = false;
 	/** Ce qui l'a fait trouver, quand la liste est une recherche (27/09/2026). */
 	export let correspondance: CorrespondanceAffaire | null = null;
+	/** Précharger ce que le dépliage affichera, quand la main s'approche (#1861) —
+	 *  relayé tel quel à `CarteListe`, qui en porte la règle. */
+	export let onApprocher: (() => unknown) | null = null;
 
 	const dispatch = createEventDispatcher<{ toggle: void }>();
 	const basculer = () => dispatch('toggle');
@@ -91,6 +94,7 @@
 	urgent={ticketUrgent(pub)}
 	archive={!estFil}
 	onDeplier={basculer}
+	{onApprocher}
 	{...attributsNature(pub)}
 >
 	{#if estFil && pub.epingle}
