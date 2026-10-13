@@ -88,6 +88,13 @@ def test_la_residence_est_inventee_et_nommee(s):
     assert _compte(s, Batiment) == 3
 
 
+def test_les_textes_legaux_sont_ceux_de_la_demo(s):
+    """Posés après le seed, ils remplacent ses gabarits « À RENSEIGNER » (#1907)."""
+    textes = config_site(s, "mentions_legales", "politique_confidentialite")
+    assert "Oracle" in textes["mentions_legales"]
+    assert "effacées chaque nuit" in textes["politique_confidentialite"]
+
+
 def test_chaque_batiment_a_son_noeud_de_perimetre(s):
     for bat in s.exec(select(Batiment)).all():
         assert s.exec(select(Perimetre).where(Perimetre.code == f"bat:{bat.id}")).first()

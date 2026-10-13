@@ -5,19 +5,22 @@
  *  - la connexion propose un LIEN par personnage — l'adresse d'entrée que sert la
  *    route — et ni formulaire, ni « Créer un compte », ni « Mot de passe oublié » ;
  *  - le bandeau « Démonstration » se lit sur la connexion ET dans l'application ;
+ *  - chaque boîte de formulaire rappelle que la saisie se lit par les autres
+ *    visiteurs (§9, #1907) ;
  *  - hors démo, rien de cela : le formulaire est là, aucun bandeau.
  *
  *  API simulée : les personnages viennent du serveur, jamais recopiés à l'écran.
  */
-import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
 
 const PERSONNAGES = [
 	{ code: 'resident', libelle: 'Résident', description: 'Copropriétaire qui habite son lot.' },
 	{ code: 'administrateur', libelle: 'Administrateur', description: 'Gestionnaire du site.' },
 ];
 
-async function enDemo(page: import('@playwright/test').Page, demo: boolean) {
+async function enDemo(page: import('@playwright/test').Page, demo: boolean, moi?: object) {
 	await simulerApi(page, (chemin) => {
+		if (moi && chemin === '/api/auth/me') return moi;
 		if (chemin === '/api/config') return { mode_demo: demo ? '1' : '0' };
 		if (chemin === '/api/demo/personnages') return demo ? PERSONNAGES : [];
 		return undefined;
@@ -59,3 +62,19 @@ test('en démo, le bandeau se lit aussi dans l’application', async ({ page }) 
 	await attendreHydratation(page);
 	await expect(page.getByRole('note').filter({ hasText: 'Démonstration' })).toBeVisible();
 });
+
+for (const demo of [true, false]) {
+	test(`${demo ? 'en' : 'hors'} démo, une boîte de création ${demo ? 'rappelle' : 'ne rappelle pas'} que la saisie est partagée`, async ({
+		page,
+	}) => {
+		await enDemo(page, demo, MEMBRE_CS);
+		await page.goto('/delegations');
+		await attendreHydratation(page);
+		await page.getByRole('button', { name: '+ Nouvelle délégation' }).click();
+		const boite = page.getByRole('group', { name: 'Nouvelle délégation aidant' });
+		await expect(boite).toBeVisible();
+		await expect(
+			boite.getByRole('note').filter({ hasText: 'visible des autres visiteurs' }),
+		).toHaveCount(demo ? 1 : 0);
+	});
+}

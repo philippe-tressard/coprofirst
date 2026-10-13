@@ -26,7 +26,8 @@ import sys
 from sqlmodel import select
 
 from app import contexte
-from app.demo import acces, affaires, comptes, fichiers, gouvernance, identite, patrimoine
+from app.demo import acces, affaires, comptes, fichiers, gouvernance, identite, legal
+from app.demo import patrimoine
 from app.demo import prestataires, vie_collective
 from app.models.core import Utilisateur
 from app.seed import seed
@@ -62,6 +63,7 @@ def charger(*, documents: bool = True) -> dict[str, int]:
         invalider_cache()
 
         identite.poser(session, les_comptes["administrateur"])
+        legal.poser(session)
         gouvernance.poser(session, les_comptes)
         prest = prestataires.poser(session, pat, les_comptes["conseil-syndical"].id)
         les_affaires = affaires.poser(session, pat, les_comptes, prest)
@@ -88,6 +90,10 @@ def main() -> int:
         print(str(exc), file=sys.stderr)
         return 3
     print("✅ Démo chargée : " + ", ".join(f"{n} {quoi}" for quoi, n in bilan.items()))
+    for cle in legal.manques():
+        #  Un avertissement, pas un refus : la remise à zéro de la nuit ne doit pas
+        #  laisser la démo arrêtée pour un texte. La mise en service, elle, le pose.
+        print(f"⚠️ {cle} absent du .env : les textes légaux n'ont pas de contact.", file=sys.stderr)
     return 0
 
 

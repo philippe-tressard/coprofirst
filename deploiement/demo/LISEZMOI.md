@@ -28,7 +28,14 @@ nocturne efface la base et les fichiers.
    ```
    MODE_DEMO=oui
    MAINTENANCE_KEY=<openssl rand -hex 32>
+   DEMO_EDITEUR=          # vide : « édité à titre non professionnel » (LCEN 6-III-2)
+   DEMO_CONTACT=<adresse où exercer ses droits>
    ```
+   Les mentions légales et la politique de confidentialité de la démo sont
+   **reposées à chaque remise à zéro** (`api/app/demo/legal.py`) : elles nomment
+   les hébergeurs (Oracle, Cloudflare) et prennent l'éditeur et le contact ici —
+   jamais dans le dépôt, qui est public. Sans `DEMO_CONTACT`, le chargement le
+   signale et la page n'a pas d'adresse : ne pas ouvrir la démo ainsi.
 3. Le conteneur `whatsapp-bridge` démarre avec les autres services : sans session
    WhatsApp il ne fait rien, et les portes d'envoi de l'API lui sont fermées.
 4. Charger la première fois — le script arrête l'API lui-même :
@@ -54,6 +61,15 @@ d'être installée.
 La remise à zéro **ne vide jamais le volume `app_data` en entier** : elle n'y
 supprime que le fichier de la base. L'inscription de l'installation au registre y
 vit (`INSTALLATION_DIR`).
+
+## Le registre des installations
+
+La démo **s'inscrit** comme toute réplique dès que le registre de la référence
+l'accepte (*Administration › Maintenance*) : l'inscription survit aux remises à
+zéro. D'ici là elle s'affiche « limitée — non inscrite », sans effet : le plafond de
+cinq utilisateurs n'est pas appliqué (mode constat). Le jour où il le sera (#1882),
+la démo — une vingtaine de comptes — en est exemptée sous `est_demo()` (spec §11,
+question 3).
 
 ## Quand ça échoue
 
