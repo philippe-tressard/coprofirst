@@ -101,13 +101,6 @@ _PUBLICS_ASSUMES = {
     ("auth_mot_de_passe.py", "reset_password"),
     # Liste des bâtiments : alimente le formulaire d'inscription.
     ("auth.py", "list_batiments"),
-    #  L'entrée de la DÉMO PUBLIQUE par personnage (#1903, spec `mode-demo.md` §5) :
-    #  elle ouvre une session SANS mot de passe, par conception — et seulement si
-    #  l'installation pose `MODE_DEMO=oui` ; ailleurs elle rend 404.
-    ("demo.py", "entrer"),
-    #  …et la liste de ses personnages, que la page de connexion de la démo affiche
-    #  (#1906) : vide hors démo, et sans rien de personnel (libellés du code).
-    ("demo.py", "personnages"),
     #  Le manuel utilisateur en PDF (#651). Public, comme
     #  `/manuel-utilisateur.html` que le front sert déjà sans session : un manuel
     #  qui explique comment se servir du site doit pouvoir être lu AVANT de

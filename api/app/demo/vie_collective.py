@@ -17,7 +17,7 @@ from app.models.core import Utilisateur
 
 #: Les votants, par clé de compte, et l'option choisie (son rang).
 _VOTES_BORNES = {
-    "resident": 0,
+    "user-copro": 0,
     "Jean": 0,
     "Odile": 1,
     "Luc": 0,
@@ -26,8 +26,8 @@ _VOTES_BORNES = {
     "Marcel": 1,
 }
 _VOTES_FETE = {
-    "resident": 1,
-    "conseil-syndical": 1,
+    "user-copro": 1,
+    "user-cs": 1,
     "Alice": 0,
     "Hélène": 1,
     "Inès": 1,
@@ -63,7 +63,7 @@ def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
         comptes,
         "Faut-il installer des bornes de recharge au parking ?",
         "Le conseil étudie l'équipement de quatre places. Votre avis compte.",
-        "conseil-syndical",
+        "user-cs",
         dans(10),
         ("Oui", "Non", "Sans avis"),
         _VOTES_BORNES,
@@ -73,7 +73,7 @@ def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
         comptes,
         "Quelle date pour la fête des voisins ?",
         "Le vote est clos : la fête aura lieu le samedi.",
-        "conseil-syndical",
+        "user-cs",
         il_y_a(20),
         ("Vendredi soir", "Samedi midi"),
         _VOTES_FETE,
@@ -86,12 +86,12 @@ def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
             "Alice",
             "retenue",
             30,
-            ("resident", "Odile", "Inès"),
+            ("user-copro", "Odile", "Inès"),
         ),
         (
             "Une boîte à livres dans le hall du bâtiment A",
             "Déposer et emprunter des livres librement.",
-            "resident",
+            "user-copro",
             "ouverte",
             7,
             ("Paul", "Nadia"),
@@ -102,7 +102,7 @@ def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
             "Camille",
             "ouverte",
             3,
-            ("locataire",),
+            ("user-loc",),
         ),
     ):
         idee = Idee(
@@ -138,7 +138,7 @@ def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
         (
             "Cherche place de parking à louer",
             "<p>Pour une petite voiture, à l'année.</p>",
-            "locataire",
+            "user-loc",
             "recherche",
             "parking_cave",
             None,

@@ -3,14 +3,13 @@
 ## Pourquoi une seule fonction (#1903)
 
 La pose des jetons et des cookies était écrite dans `login`, puis recopiée en
-partie dans `refresh` (`routers/auth.py`). L'entrée de la démo publique (spec
-`mode-demo.md` §5.2) en aurait été la troisième copie — c'est-à-dire la troisième
+partie dans `refresh` (`routers/auth.py`) ; l'entrée en un clic de la démo publique
+(#1903, retirée par #1932) en a été la troisième — c'est-à-dire la troisième
 occasion d'oublier un drapeau de cookie, ou de stocker le jeton de
 rafraîchissement en clair (#1389).
 
 Ce qui reste chez les appelants est ce qui les distingue : `login` éprouve un mot
-de passe, `refresh` fait tourner le jeton qu'on lui présente, l'entrée de démo
-choisit un personnage.
+de passe, `refresh` fait tourner le jeton qu'on lui présente.
 """
 
 from __future__ import annotations
