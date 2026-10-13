@@ -84,11 +84,11 @@ def _projeter(ligne: dict, colonnes: set[str]) -> dict:
     return {k: v for k, v in ligne.items() if k in colonnes}
 
 
-def _recaler_sequences(connexion) -> None:
+def _recaler_sequences(connexion, metadata=None) -> None:
     """PostgreSQL : après des identifiants écrits à la main, la séquence repart après eux."""
     if connexion.dialect.name != "postgresql":
         return
-    for t in tables():
+    for t in tables(metadata):
         cles = list(t.primary_key.columns)
         if (
             len(cles) == 1
@@ -115,7 +115,7 @@ def lignes_jsonl(octets: bytes) -> list[dict]:
     return [json.loads(li) for li in octets.decode().split("\n") if li]
 
 
-def lignes_sans_parent(connexion) -> list[str]:
+def lignes_sans_parent(connexion, metadata=None) -> list[str]:
     """Chaque clé étrangère dont des lignes désignent un parent absent : « table.col → parent (n) ».
 
     Portable — une requête par clé, sur les métadonnées des modèles —, parce que
@@ -124,7 +124,7 @@ def lignes_sans_parent(connexion) -> list[str]:
     désigne rien : elle n'est pas orpheline.
     """
     fautes = []
-    for t in tables():
+    for t in tables(metadata):
         for cle in t.foreign_key_constraints:
             parent = cle.referred_table.alias()
             designe = and_(*[parent.c[e.column.name] == e.parent for e in cle.elements])
@@ -140,17 +140,17 @@ def lignes_sans_parent(connexion) -> list[str]:
     return fautes
 
 
-def importer(archive_chemin: Path, moteur, *, fichiers: Path | None = None) -> Bilan:
+def importer(archive_chemin: Path, moteur, *, fichiers: Path | None = None, metadata=None) -> Bilan:
     """Écrit l'archive dans une base CIBLE au schéma posé et vide, puis la VÉRIFIE.
 
     Tout écart lève `ImportRefuse`, et la transaction est annulée : la base cible
-    reste vide plutôt que fausse.
+    reste vide plutôt que fausse. `metadata` : comme `export_copropriete.tables`.
     """
     with tarfile.open(archive_chemin, "r:gz") as archive:
         manifeste = json.loads(archive.extractfile("manifeste.json").read())
         if manifeste.get("format") != FORMAT:
             raise ImportRefuse(f"format {manifeste.get('format')} inconnu (attendu {FORMAT})")
-        par_nom = {t.name: t for t in tables()}
+        par_nom = {t.name: t for t in tables(metadata)}
         inconnues = sorted(set(manifeste["tables"]) - set(par_nom))
         if inconnues:
             raise ImportRefuse(f"tables absentes des modèles de ce code : {inconnues}")
@@ -161,7 +161,7 @@ def importer(archive_chemin: Path, moteur, *, fichiers: Path | None = None) -> B
             #  vérifient donc À LA FIN, par le relevé ci-dessous (DI-7c, 09/10/2026).
             differer_cles_etrangeres(connexion)
             ecrites: dict[str, tuple[list[dict], set[str]]] = {}
-            for t in tables():
+            for t in tables(metadata):
                 if t.name not in manifeste["tables"]:
                     continue
                 lignes = lignes_jsonl(archive.extractfile(f"tables/{t.name}.jsonl").read())
@@ -183,11 +183,11 @@ def importer(archive_chemin: Path, moteur, *, fichiers: Path | None = None) -> B
                 ecrites[t.name] = (lignes, communes)
                 bilan.tables += 1
                 bilan.lignes += len(lignes)
-            _recaler_sequences(connexion)
-            orphelines = lignes_sans_parent(connexion)
+            _recaler_sequences(connexion, metadata)
+            orphelines = lignes_sans_parent(connexion, metadata)
             if orphelines:
                 raise ImportRefuse("clés sans parent : " + "; ".join(orphelines))
-            relu, _ignorees, _rev = lire(connexion)
+            relu, _ignorees, _rev = lire(connexion, metadata)
             #  La base relue se compare à l'archive PROJETÉE sur les colonnes que
             #  les deux portent : une colonne retirée du modèle n'a pas été écrite,
             #  une colonne ajoutée a reçu son défaut — ni l'une ni l'autre n'est un écart.
@@ -216,7 +216,7 @@ def importer(archive_chemin: Path, moteur, *, fichiers: Path | None = None) -> B
     return bilan
 
 
-def verifier_archive(archive: Path, dossier: Path) -> Bilan:
+def verifier_archive(archive: Path, dossier: Path, metadata=None) -> Bilan:
     """Réimporte une archive dans une base NEUVE et jetable de `dossier`, puis l'efface.
 
     Une archive qui ne se restaure pas lève `ImportRefuse`. C'est la vérification
@@ -228,8 +228,8 @@ def verifier_archive(archive: Path, dossier: Path) -> Bilan:
     cible = dossier / "verification.db"
     moteur_cible = moteur_jetable(cible)
     try:
-        SQLModel.metadata.create_all(moteur_cible)
-        return importer(archive, moteur_cible)
+        (metadata or SQLModel.metadata).create_all(moteur_cible)
+        return importer(archive, moteur_cible, metadata=metadata)
     finally:
         moteur_cible.dispose()
         if cible.exists():

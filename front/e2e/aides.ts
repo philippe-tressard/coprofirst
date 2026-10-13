@@ -180,6 +180,27 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	},
 	//  `bailleur.monBail()` rend `null` sans bail — une liste vide passerait pour un bail.
 	'/api/bailleur/mon-bail': null,
+	//  `InscriptionInstallation` : la carte Installation lit `etat` et `raison` (#1878).
+	'/api/admin/installation/inscription': {
+		etat: 'limitee',
+		raison: 'installation non inscrite au registre',
+		identifiant: null,
+		canal: null,
+		version_cible: null,
+		epoque: null,
+		echeance: null,
+		renouvellement_en_retard: false,
+		inscrite_le: null,
+		dernier_renouvellement_le: null,
+		dernier_rapport_le: null,
+		derniere_erreur: null,
+		contact: null,
+		conditions_acceptees: null,
+		conditions_en_vigueur: 1,
+		peut_s_inscrire: true,
+		essai_refuse: false,
+		registre_url: 'https://registre.example',
+	},
 	//  `ConsignesArrivant` : Espace CS › Annuaire lit `consignes` (#1727).
 	'/api/admin/consignes-arrivant': { consignes: [], personnalisees: false },
 	//  `reglement.acces()` : Ma résidence le lit pour montrer l'onglet Règlement.

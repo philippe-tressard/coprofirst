@@ -111,5 +111,6 @@ def test_les_tables_du_registre_ne_sont_pas_celles_de_la_residence():
         "contact_installation",
         "decision_registre",
         "acceptation_conditions",
+        "rapport_installation",
     }
     assert not plateforme & set(SQLModel.metadata.tables)

@@ -41,13 +41,17 @@ _SUFFIXE_ARCHIVE = ".tar.gz"
 SUFFIXE_FUSEAU = "_paris"
 
 
-def nom_archive(instant: datetime) -> str:
-    """Le nom d'une archive prise à `instant` (UTC naïf) — à l'heure de Paris."""
+def nom_archive(instant: datetime, prefixe: str = PREFIXE_ARCHIVE) -> str:
+    """Le nom d'une archive prise à `instant` (UTC naïf) — à l'heure de Paris.
+
+    `prefixe` : celui de la base `plateforme` (`registre/sauvegarde`, #1892) a
+    son propre nom, la convention d'horodatage reste celle-ci.
+    """
     heure = horloge.a_paris(instant).strftime(_FORMAT_HORODATAGE)
-    return f"{PREFIXE_ARCHIVE}{heure}{SUFFIXE_FUSEAU}{_SUFFIXE_ARCHIVE}"
+    return f"{prefixe}{heure}{SUFFIXE_FUSEAU}{_SUFFIXE_ARCHIVE}"
 
 
-def horodatage_archive(nom_fichier: str) -> datetime | None:
+def horodatage_archive(nom_fichier: str, prefixe: str = PREFIXE_ARCHIVE) -> datetime | None:
     """Date de création (UTC naïf) lue dans le nom d'une archive, ou None si illisible.
 
     Deux formats coexistent pendant la rétention (#1611) : `…_HHMMSS_paris` (heure de
@@ -62,9 +66,9 @@ def horodatage_archive(nom_fichier: str) -> datetime | None:
     if not nom_fichier:
         return None
     base = os.path.basename(nom_fichier)
-    if not base.startswith(PREFIXE_ARCHIVE) or not base.endswith(_SUFFIXE_ARCHIVE):
+    if not base.startswith(prefixe) or not base.endswith(_SUFFIXE_ARCHIVE):
         return None
-    brut = base[len(PREFIXE_ARCHIVE) : -len(_SUFFIXE_ARCHIVE)]
+    brut = base[len(prefixe) : -len(_SUFFIXE_ARCHIVE)]
     paris = brut.endswith(SUFFIXE_FUSEAU)
     if paris:
         brut = brut[: -len(SUFFIXE_FUSEAU)]
@@ -208,20 +212,26 @@ def run_backup(history_id: int | None = None):
         session.commit()
 
 
+def garder_les_dernieres(motif: str, garder: int) -> list[str]:
+    """Supprime les archives de `motif` au-delà des `garder` plus récentes ; rend les retirées.
+
+    Le tri alphabétique est le tri chronologique : l'horodatage est dans le nom.
+    """
+    archives = sorted(glob.glob(motif))
+    retirees = archives[: max(0, len(archives) - garder)]
+    for chemin in retirees:
+        try:
+            os.remove(chemin)
+        except OSError:
+            pass
+    return retirees
+
+
 def _rotate_backups(session: Session):
     """Supprime les sauvegardes au-delà du nombre de versions à conserver."""
     cfg: ConfigSauvegarde | None = session.exec(select(ConfigSauvegarde)).first()
     keep = cfg.nb_versions_conservees if cfg else settings.backup_keep_versions
-
-    pattern = os.path.join(settings.backup_dir, MOTIF_ARCHIVE)
-    files = sorted(glob.glob(pattern))  # order par date (timestamp dans le nom)
-
-    to_delete = files[: max(0, len(files) - keep)]
-    for f in to_delete:
-        try:
-            os.remove(f)
-        except OSError:
-            pass
+    to_delete = garder_les_dernieres(os.path.join(settings.backup_dir, MOTIF_ARCHIVE), keep)
 
     # Marquer comme supprimées dans l'historique
     all_entries = session.exec(
