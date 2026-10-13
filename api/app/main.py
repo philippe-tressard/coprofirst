@@ -219,21 +219,8 @@ async def lifespan(app: FastAPI):
         id="manuel_pdf_quotidien",
     )
 
-    # Contrôle santé quotidien (06h00) : chaque copropriété, puis la plateforme (#1814)
-    from app.utils import sante_plateforme
+    # Contrôle santé quotidien : WhatsApp, sauvegardes, disque (06h00)
     from app.utils.health_monitor import run_health_check
-
-    sante_plateforme.enregistrer(scheduler)
-
-    # Sauvegarde de la base `plateforme` (03h30) : la référence seule, registre déclaré (#1892)
-    from app.registre import sauvegarde as sauvegarde_registre
-
-    sauvegarde_registre.enregistrer(scheduler)
-
-    # Le bail de cette installation (vers 04h20) : les répliques inscrites seules (#1878)
-    from app.inscription import client as inscription
-
-    inscription.enregistrer(scheduler)
 
     scheduler.add_job(
         contexte.pour_chaque_copropriete(run_health_check, "health_check"),
@@ -295,8 +282,9 @@ async def lifespan(app: FastAPI):
     #
     #  L'analyse statique de la CI ne suffit pas : elle voit l'appel dans le code,
     #  pas le fait qu'une condition l'ait sauté. Ce contrôle-ci lit le scheduler.
-    from app.utils.taches import verifier_taches_enregistrees
+    from app.utils.taches import enregistrer_taches_de_la_plateforme, verifier_taches_enregistrees
 
+    enregistrer_taches_de_la_plateforme(scheduler)  # disque, registre, bail (`utils/taches`)
     verifier_taches_enregistrees(scheduler, _logging.getLogger("taches"))
 
     yield

@@ -99,6 +99,20 @@ TACHES_DE_LA_PLATEFORME: dict[str, str] = {
 }
 
 
+def enregistrer_taches_de_la_plateforme(scheduler) -> None:
+    """Pose les tâches de `TACHES_DE_LA_PLATEFORME`, chacune par SON module.
+
+    `main.py` n'en appelle qu'une : il touchait son plafond de 500 lignes, et la
+    liste des tâches de la plateforme se lit ICI, à côté de leur déclaration.
+    """
+    from app.inscription import client
+    from app.registre import sauvegarde
+    from app.utils import sante_plateforme
+
+    for module in (sante_plateforme, sauvegarde, client):
+        module.enregistrer(scheduler)
+
+
 def tache_hors_enveloppe(job) -> bool:
     """Ce job travaille-t-il pour une copropriété sans passer par l'enveloppe ?"""
     return job.id not in TACHES_DE_LA_PLATEFORME and not getattr(job.func, "par_copropriete", False)
