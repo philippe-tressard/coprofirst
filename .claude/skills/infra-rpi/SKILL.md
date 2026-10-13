@@ -148,7 +148,7 @@ toucher à celui qui sert), puis le secours (tunnel laissé arrêté). Jamais
   contre `/root/.ssh/known_hosts_bascule`. Fichier absent, vide, ou nœud réinstallé
   (nouvelle clé d'hôte) → bascule arrêtée en phase 0, `check-reliability` en FAIL
   « Peer injoignable », et le message porte la commande d'épinglage. Ce n'est **pas**
-  un nœud figé : épingler (procédure `docs/restauration-complete.md`, étape 12),
+  un nœud figé : épingler (procédure `docs/restauration-complete.md`, étape 7),
   jamais repasser à `no` — `scripts-ci-ssh-noeuds.sh` le refuse en CI
 
 ## Copie hors site des sauvegardes (v2.37.0 — 04/08/2026)
@@ -778,7 +778,7 @@ pure à `--selftest`, la mesure vit dans un module de `scripts/lib/`.
 | C32 | ports TCP à l'écoute sur toutes les interfaces, hors liste blanche (celle de `docker-compose.yml`, SSH, 80, 443, 8080) ; dit si le port est aussi sur l'autre nœud | `lib-ports-ecoute.sh` |
 | C33 | copie de `.env*` laissée à côté de `.env` et `.env.example` à la racine du dépôt déployé | `lib-fichiers-parasites.sh` |
 | C34 | fichier `*.db*` autre que `app.db{,-wal,-shm}` dans le volume de données, par un **listage de répertoire** (jamais d'ouverture de la base : règle d'or) | `lib-fichiers-parasites.sh` |
-| C35 | la **pile de bureau est revenue** : paquet de la liste proscrite installé (avec ce qui l'a tiré), cible systemd redevenue `graphical.target`, `APT::Install-Recommends` ≠ 0. La liste s'écrit **une fois** (`PAQUETS_PROSCRITS`) et `scripts/exploitation/alleger-noeud.sh` la source — jamais recopiée. Retour causé par une mise à jour, un paquet recommandé ou une réinstallation depuis l'image (`docs/restauration-complete.md`, étape 15) | `lib-paquets-proscrits.sh` |
+| C35 | la **pile de bureau est revenue** : paquet de la liste proscrite installé (avec ce qui l'a tiré), cible systemd redevenue `graphical.target`, `APT::Install-Recommends` ≠ 0. La liste s'écrit **une fois** (`PAQUETS_PROSCRITS`) et `scripts/exploitation/alleger-noeud.sh` la source — jamais recopiée. Retour causé par une mise à jour, un paquet recommandé ou une réinstallation depuis l'image (`docs/restauration-complete.md`, étape 12) | `lib-paquets-proscrits.sh` |
 | C36 | le **journal d'accès de Caddy** est-il écrit (dernière ligne < 1 h) et combien d'erreurs **500/504** en 24 h ? Les 502/503 sont comptés à part : ce sont les redémarrages d'un déploiement. **Sur l'actif seulement** | `lib-journal-acces.sh` |
 
 Ces contrôles **signalent**, ils ne corrigent rien : supprimer une copie de base ou

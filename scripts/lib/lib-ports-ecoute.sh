@@ -32,7 +32,7 @@
 # =============================================================================
 
 #: La liste blanche, DÉCLARÉE — chaque entrée dit pourquoi elle est là :
-#:   22    SSH (UFW : ouvert au seul LAN, `docs/restauration-complete.md` étape 8) ;
+#:   22    SSH (UFW : ouvert au seul LAN, `docs/restauration-complete.md` étape 4, `durcir-noeud.sh`) ;
 #:   80    Caddy, publié par `docker-compose.yml` (`"80:80"`) — actif seulement ;
 #:   443   ouvert par UFW (étape 8) ; rien n'y écoute aujourd'hui, le tunnel
 #:         Cloudflare sort au lieu d'entrer — le déclarer évite de crier si Caddy

@@ -83,8 +83,8 @@ coprofirst/
 │   ├── exploitation/  # Lancés par cron/systemd sur les RPi (bascule, failover…)
 │   ├── lib/           # Modules sourcés par les précédents
 │   ├── poste/         # Développeur et CI (pré-check, rejeu CI, export hors site)
-│   └── installation/  # Durcissement sudo et tunnel — l'installation elle-même
-│                      # se fait à la main (docs/restauration-complete.md)
+│   └── installation/  # Durcissement système et sudo, tunnel — la réinstallation
+│                      # d'un nœud se suit pas à pas (docs/restauration-complete.md)
 ├── infra/             # Code déployé ailleurs (worker Cloudflare)
 ├── specs/             # Spécification d'origine — historique, le manuel fait foi
 ├── docs/              # Documentation déploiement & ops
@@ -176,7 +176,7 @@ Toute la configuration se fait via le fichier `.env` (voir [.env.example](.env.e
 |---|---|
 | [specs/](specs/) | Spécification **d'origine**, fonctionnelle et technique — **historique** : le site a évolué depuis (écrans fusionnés ou retirés), le **manuel utilisateur** ci-dessous fait foi |
 | [docs/deploy-rpi5-auto.md](docs/deploy-rpi5-auto.md) | Renvois : où se lit le déploiement automatique (`auto-deploy.sh`, `infra/points-entree/`) — plus une procédure |
-| [docs/restauration-complete.md](docs/restauration-complete.md) | Procédure de restauration complète |
+| [docs/restauration-complete.md](docs/restauration-complete.md) | Réinstaller un nœud de zéro (il rejoint la paire comme standby) |
 | [docs/redondance-rpi5.md](docs/redondance-rpi5.md) | Architecture de redondance (failover) |
 | [docs/cloudflare-worker-maintenance.md](docs/cloudflare-worker-maintenance.md) | Page de maintenance Cloudflare |
 | [docs/icones-menu.md](docs/icones-menu.md) | Renvois : où se lisent les icônes du menu (`pages.ts`, `pages-roles.ts`) — plus un inventaire |

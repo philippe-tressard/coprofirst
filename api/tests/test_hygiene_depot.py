@@ -194,7 +194,9 @@ FICHIERS_RACINE_EXPLOITATION = ("CLAUDE.md", "boot-role-guard.sh")
 #: 45 avec DI-7c (#1782), puis 42 : les trois outils lancés à la main disaient
 #: « en ptressard », ils disent « en root (sudo) » (v2.129.1). `lib-env-base.sh`,
 #: qui réécrit le `.env` du pair par SSH, reste compté.
-FICHIERS_EXPLOITATION_ATTENDUS = 42
+#: 43 avec #1917 : `scripts/installation/durcir-noeud.sh` nomme le compte dont il
+#: compte les clés autorisées avant de couper le mot de passe SSH.
+FICHIERS_EXPLOITATION_ATTENDUS = 43
 
 
 def _fichiers_avec_identifiants_exploitation() -> list[str]:
