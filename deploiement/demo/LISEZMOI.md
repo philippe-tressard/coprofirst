@@ -23,8 +23,14 @@ nocturne efface la base et les fichiers.
 ## Installer
 
 1. Installer comme une réplique (`deploiement/standard/LISEZMOI.md`), base
-   **SQLite** (le défaut).
-2. Dans `.env` :
+   **SQLite** (le défaut) — d'abord **sans** `MODE_DEMO` : une installation
+   ordinaire, avec son administrateur initial.
+2. **S'inscrire au registre** avec ce compte, qui est l'**opérateur** :
+   *Administration › Maintenance › Inscription au registre*. La démo n'a pas
+   d'opérateur — ses personnages ne le sont pas — et l'inscription, rangée dans
+   le volume `app_data`, survit aux remises à zéro : c'est le seul moment pour
+   la faire.
+3. Dans `.env` :
    ```
    MODE_DEMO=oui
    MAINTENANCE_KEY=<openssl rand -hex 32>
@@ -36,13 +42,14 @@ nocturne efface la base et les fichiers.
    les hébergeurs (Oracle, Cloudflare) et prennent l'éditeur et le contact ici —
    jamais dans le dépôt, qui est public. Sans `DEMO_CONTACT`, le chargement le
    signale et la page n'a pas d'adresse : ne pas ouvrir la démo ainsi.
-3. Le conteneur `whatsapp-bridge` démarre avec les autres services : sans session
+4. Le conteneur `whatsapp-bridge` démarre avec les autres services : sans session
    WhatsApp il ne fait rien, et les portes d'envoi de l'API lui sont fermées.
-4. Charger la première fois — le script arrête l'API lui-même :
+5. Charger la première fois — le script arrête l'API lui-même, et la base
+   ordinaire de l'étape 1 est remplacée par la résidence fictive :
    ```bash
    deploiement/demo/reinitialiser.sh
    ```
-5. Exposer le port 80 de la machine derrière un frontal HTTPS — pour la démo de
+6. Exposer le port 80 de la machine derrière un frontal HTTPS — pour la démo de
    CoproFirst, un tunnel Cloudflare vers `http://localhost:80`.
 
 ## Chaque nuit
@@ -64,10 +71,10 @@ vit (`INSTALLATION_DIR`).
 
 ## Le registre des installations
 
-La démo **s'inscrit** comme toute réplique dès que le registre de la référence
-l'accepte (*Administration › Maintenance*) : l'inscription survit aux remises à
-zéro. D'ici là elle s'affiche « limitée — non inscrite », sans effet : le plafond de
-cinq utilisateurs n'est pas appliqué (mode constat). Le jour où il le sera (#1882),
+La démo **s'inscrit** comme toute réplique, à l'installation (étape 2 ci-dessus) :
+l'inscription survit aux remises à zéro. Tant que la référence ne l'a pas validée,
+elle s'affiche « limitée », sans effet : le plafond de cinq utilisateurs n'est pas
+appliqué (mode constat). Le jour où il le sera (#1882),
 la démo — une vingtaine de comptes — en est exemptée sous `est_demo()` (spec §11,
 question 3).
 
