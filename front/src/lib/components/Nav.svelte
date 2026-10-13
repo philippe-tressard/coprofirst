@@ -109,10 +109,10 @@
 	$: _pagesOrderJson = $configStore['pages_order'];
 	$: orderedHrefs = computeOrderedHrefs(_pagesOrderJson);
 
-	//  Les outils du conseil — Prestataires, Espace CS. `$isCS` inclut l'admin ;
+	//  Les outils du conseil — Prestataires, Espace CS, Délégations. `$isCS` inclut l'admin ;
 	//  le compte technique créé à l'installation (admin seul, sans lot ni CS)
-	//  n'a pas à les voir. Prestataires ne l'excluait pas, l'Espace CS si : une
-	//  seule règle, posée ici, pour les deux.
+	//  n'a pas à les voir. Prestataires et Délégations ne l'excluaient pas,
+	//  l'Espace CS si : une seule règle, posée ici, pour les trois.
 	$: outilDuConseil = $isCS && !$isAdminOnly;
 
 	$: allNav = orderedHrefs
@@ -126,7 +126,11 @@
 			if (href === '/prestataires') return outilDuConseil;
 			if (href === '/espace-cs') return outilDuConseil;
 			if (href === '/delegations')
-				return $isCS || ($currentUser?.delegations_aidant?.length ?? 0) > 0 || statut === 'aidant';
+				return (
+					outilDuConseil ||
+					($currentUser?.delegations_aidant?.length ?? 0) > 0 ||
+					statut === 'aidant'
+				);
 			if (href === '/admin') return $isAdmin;
 			return $hasResidentRole;
 		})

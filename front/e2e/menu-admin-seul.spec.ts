@@ -5,7 +5,9 @@
  *  (admin seul — ni lot, ni conseil syndical) voyait « Prestataires » dans son
  *  menu. `Nav.svelte` le réservait à `$isCS`, qui INCLUT l'admin, quand
  *  l'Espace CS excluait déjà l'admin seul. Le manuel, lui, l'annonçait
- *  « Conseil syndical » : c'est le code qui divergeait.
+ *  « Conseil syndical » : c'est le code qui divergeait. Délégations suit la
+ *  même règle depuis le 14/10/2026 (demandé à l'écran) : ce compte n'aide ni
+ *  n'est aidé.
  *
  *  Le test lit le menu de la barre latérale, rendu sur les deux profils (masqué
  *  par le style sur mobile) : il compte des liens, pas des pixels.
@@ -23,18 +25,20 @@ const ADMIN_SEUL = {
 
 const lien = (page: Page, href: string) => page.locator(`nav.sidebar a.nav-item[href="${href}"]`);
 
-test('l’admin seul n’a ni Prestataires ni Espace CS au menu', async ({ page }) => {
+test('l’admin seul n’a ni Prestataires, ni Espace CS, ni Délégations au menu', async ({ page }) => {
 	await simulerApi(page, (chemin) => (chemin === '/api/auth/me' ? ADMIN_SEUL : undefined));
 	await page.goto('/admin');
 	//  Cas zéro : le menu est rendu, et c'est bien celui d'un admin.
 	await expect(lien(page, '/admin')).toHaveCount(1);
 	await expect(lien(page, '/prestataires')).toHaveCount(0);
 	await expect(lien(page, '/espace-cs')).toHaveCount(0);
+	await expect(lien(page, '/delegations')).toHaveCount(0);
 });
 
-test('le membre du conseil garde Prestataires et l’Espace CS', async ({ page }) => {
+test('le membre du conseil garde Prestataires, l’Espace CS et Délégations', async ({ page }) => {
 	await simulerApi(page);
 	await page.goto('/tableau-de-bord');
 	await expect(lien(page, '/prestataires')).toHaveCount(1);
 	await expect(lien(page, '/espace-cs')).toHaveCount(1);
+	await expect(lien(page, '/delegations')).toHaveCount(1);
 });
