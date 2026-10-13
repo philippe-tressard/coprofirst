@@ -22,6 +22,7 @@ from app.inscription.depot import Contact
 from app.models.core import Utilisateur
 from app.registre import conditions
 from app.utils.lecture import lire_objet
+from app.utils.services import SERVICES
 
 router = APIRouter()
 
@@ -34,6 +35,9 @@ class VueInscription(BaseModel):
     canal: Optional[str] = None
     version_cible: Optional[str] = None
     epoque: Optional[int] = None
+    #: les LIBELLÉS des services que la référence autorise (`None` : aucune
+    #: restriction) — une réplique n'allume qu'eux (`utils/services.autorise_par_la_reference`)
+    services: Optional[list[str]] = None
     echeance: Optional[datetime] = None
     renouvellement_en_retard: bool = False
     inscrite_le: Optional[str] = None
@@ -75,6 +79,11 @@ def _vue() -> VueInscription:
         etat,
         **{
             **asdict(verdict),
+            "services": (
+                [SERVICES[c].libelle for c in SERVICES if c in verdict.services]
+                if verdict.services is not None
+                else None
+            ),
             "identifiant": verdict.identifiant or etat.identifiant,
             "conditions_en_vigueur": conditions.version_en_vigueur(),
             "peut_s_inscrire": verdict.etat not in ("reference", "essai"),

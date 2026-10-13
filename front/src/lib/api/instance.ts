@@ -72,6 +72,8 @@ export interface InscriptionInstallation {
 	identifiant: string | null;
 	canal: string | null;
 	version_cible: string | null;
+	/** Les libellés des services que la référence autorise ; `null` = aucune restriction (#1880). */
+	services: string[] | null;
 	/** L'époque de la référence qui a signé le bail (D24). */
 	epoque: number | null;
 	echeance: string | null;

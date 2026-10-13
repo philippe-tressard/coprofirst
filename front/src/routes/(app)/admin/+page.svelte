@@ -7,12 +7,13 @@
 		admin as adminApi,
 		auth as authApi,
 		config as configApi,
+		instance as instanceApi,
 		type CommandeAccesEnAttente,
 		type CompteEnAttenteEnrichi,
 		type DemandeProfil,
 		type UtilisateurAdmin,
 	} from '$lib/api';
-	import { aRole } from '$lib/stores/auth';
+	import { aRole, isOperateur, quandAuthResolue } from '$lib/stores/auth';
 	import { essayer, messagePartiel, TITRE_PARAMETRAGE_ILLISIBLE } from '$lib/chargement';
 	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
 	//  Les onglets qui ENREGISTRENT ce que `/config/admin` et `/config/legal` ont lu.
@@ -59,6 +60,23 @@
 	$: demande = $page.url.searchParams.get('onglet');
 	$: onglet = demande && ONGLETS.includes(demande) ? demande : ONGLETS[0];
 	$: trackTabView(onglet);
+
+	//  L'onglet « Installations » n'a de sens que sur la RÉFÉRENCE (§4.11, R4 #1880) :
+	//  le rôle de l'installation est une donnée, que seule la page peut lire —
+	//  `masques`, pas `reserve`. Lu pour l'opérateur seulement (sa route l'exige).
+	//  ⚠️ Rien n'est masqué tant que le rôle n'est pas connu : `BarreOnglets` REDIRIGE
+	//  l'adresse d'un onglet masqué, et `/admin?onglet=installations` retombait sur le
+	//  premier onglet avant même d'avoir lu le rôle (vu par `e2e/registre-installations`).
+	let masques: string[] = [];
+	quandAuthResolue(async () => {
+		if (!get(isOperateur)) return;
+		try {
+			const etat = await instanceApi.installation();
+			masques = etat.role === 'reference' ? [] : ['installations'];
+		} catch {
+			masques = ['installations'];
+		}
+	});
 
 	//  Bâtiments (pour affichage)
 	let batimentsMap: Record<number, string> = {};
@@ -259,6 +277,7 @@
 <BarreOnglets
 	pageId="admin"
 	actif={onglet}
+	{masques}
 	comptes={{ a_traiter: comptes.length + commandes.length + demandesProfil.length }}
 />
 
@@ -292,6 +311,12 @@
 	<ChargementDiffere charger={() => import('$lib/components/OngletMaintenance.svelte')}>
 		{#snippet contenu(OngletMaintenance)}
 			<OngletMaintenance />
+		{/snippet}
+	</ChargementDiffere>
+{:else if onglet === 'installations'}
+	<ChargementDiffere charger={() => import('$lib/components/OngletInstallations.svelte')}>
+		{#snippet contenu(OngletInstallations)}
+			<OngletInstallations />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'emails'}

@@ -64,6 +64,12 @@ def role_installation(valeur: Optional[str] = None) -> str:
     return role if role in ROLES else INCONNU
 
 
+def est_replique() -> bool:
+    """CETTE installation se déclare-t-elle RÉPLIQUE ? Elle n'allume alors que les services
+    que la référence autorise (`utils/services.autorise_par_la_reference`, §4.11)."""
+    return role_installation() == "replique"
+
+
 def est_reference() -> bool:
     """CETTE installation est-elle la référence ? La question que pose le registre (§4.11)."""
     return role_installation() == "reference"

@@ -23,6 +23,7 @@ modèles Pydantic et les helpers privés vivent donc auprès des routes qu'ils s
 | `rapports_scripts` | canal machine-à-machine des scripts cron (clé partagée, sans session) |
 | `communications` | historique et modèles d'e-mail, notifications, télémétrie |
 | `acces` | commandes vigik/télécommande, audit des liens utilisateur-lot |
+| `installations` | le registre des installations, en lecture, chez la référence (R4a #1880) |
 
 ## Ce qui n'a PAS changé, volontairement
 
@@ -62,6 +63,7 @@ from . import (
     export_copropriete,
     inscription,
     installation,
+    installations,
     profils,
     rapports_scripts,
     utilisateurs,
@@ -80,6 +82,7 @@ for _sous_router in (
     exploitation.router,
     installation.router,
     inscription.router,
+    installations.router,
     export_copropriete.router,
     rapports_scripts.router,
     communications.router,

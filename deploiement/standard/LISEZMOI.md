@@ -66,7 +66,9 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    référence dans *Administration › Maintenance › Inscription au registre*
    (contact de l'administrateur, conditions à accepter) ; la clé et l'état
    d'inscription vivent dans le volume `app_data`. L'état affiché — limitée,
-   active, suspendue — n'est encore que **constaté**.
+   active, suspendue — n'est encore que **constaté**, sauf pour les **services** :
+   une réplique n'allume que ceux que la référence lui accorde dans son bail
+   (Administration › Services les grise sinon, avec la raison).
 3. Ajouter **la version à installer** dans `.env` :
    ```
    COPROFIRST_VERSION=2.119.1
@@ -178,6 +180,13 @@ Les données vivent dans des volumes Docker : `app_data` (la base SQLite),
 `whatsapp_auth`, et `backups`, où l'application range ses sauvegardes
 planifiées (Administration › Sauvegarde). Copier ces archives **hors de la
 machine** : une sauvegarde qui vit à côté de ce qu'elle protège disparaît avec.
+
+🔴 `app_data` porte aussi l'**identité** de l'installation au registre de la
+référence — sa clé et son inscription (`/app/data/installation`). Ne jamais
+l'effacer : `docker compose down -v` le supprime, et l'installation devrait se
+réinscrire sous un **nouvel** identifiant, l'ancien restant au registre jusqu'à sa
+résiliation (vécu le 13/10/2026 sur l'instance de démo). Changer de moteur de
+base ne demande pas de le toucher : seul `pg_data` est neuf.
 
 🔴 Sous SQLite, ne jamais ouvrir le fichier de la base depuis un autre processus
 tant que l'API tourne, même en lecture : arrêter l'API d'abord (`docker compose

@@ -13,7 +13,9 @@ sans réseau ni disque, cas par cas (`tests/test_inscription_constat.py`).
    époque inférieure (règle 11), bail d'une autre clé, échéance passée.
 3. **L'état vient du bail, et seulement de lui** : « active » et « suspendue » ne
    se croient que signés.
-4. **Mode constat** : ce verdict s'AFFICHE ; rien ne l'applique encore (R6 #1882).
+4. **Mode constat** : ce verdict s'AFFICHE ; rien ne l'applique encore (R6 #1882) —
+   sauf les SERVICES, avancés le 13/10/2026 : une réplique n'allume que ceux que
+   son bail cru autorise (`services`, lu par `utils/services.service_actif`).
 """
 
 from __future__ import annotations
@@ -50,6 +52,10 @@ class Constat:
     epoque: Optional[int] = None
     echeance: Optional[datetime] = None
     renouvellement_en_retard: bool = False
+    #: Les services que la référence autorise : `None` = aucune restriction (la
+    #: référence, une installation d'essai) ; sinon ceux du bail cru, et AUCUN
+    #: sans bail cru, échu, en attente, suspendu ou résilié.
+    services: Optional[frozenset[str]] = frozenset()
 
 
 def bail_valide(
@@ -115,9 +121,11 @@ def constater(
 ) -> Constat:
     """Le verdict, et sa raison en clair."""
     if reference:
-        return Constat(REFERENCE, "la référence n'est jamais limitée")
+        return Constat(REFERENCE, "la référence n'est jamais limitée", services=None)
     if essai:
-        return Constat(ESSAI, "installation d'essai : la référence n'est pas appelée")
+        return Constat(
+            ESSAI, "installation d'essai : la référence n'est pas appelée", services=None
+        )
     if etat.illisible:
         return Constat(LIMITEE, "état d'inscription illisible")
     if not etat.identifiant:
@@ -143,7 +151,7 @@ def constater(
     if bail.etat == SUSPENDUE:
         return Constat(SUSPENDUE, "suspendue par la référence", **commun)
     if bail.etat == ACTIVE:
-        return Constat(ACTIVE, "bail valide", **commun)
+        return Constat(ACTIVE, "bail valide", services=frozenset(bail.services_autorises), **commun)
     if bail.etat == "en_attente":
         return Constat(LIMITEE, "inscription en attente de validation par la référence", **commun)
     if bail.etat == "resiliee":

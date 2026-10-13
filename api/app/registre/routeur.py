@@ -40,6 +40,7 @@ from sqlmodel import Session, func, select
 from app.config import get_settings
 from app.contexte import nom_d_hote
 from app.registre import baux, conditions, rapports, signature
+from app.registre.decisions import consigner
 from app.registre.base import get_session_plateforme, registre_actif
 from app.registre.contrat import (
     EN_TETE_SIGNATURE,
@@ -73,10 +74,6 @@ TAILLE_MAX = 16 * 1024
 #: Au-delà, le registre refuse de nouvelles inscriptions jusqu'à ce que l'opérateur
 #: en ait validé ou refusé : un remplissage ne peut pas l'engorger.
 PLAFOND_EN_ATTENTE = 50
-
-
-#: L'auteur d'un geste fait par le registre lui-même, et non par l'opérateur.
-SYSTEME = "système"
 
 
 def _servi_ici(request: Request) -> None:
@@ -136,14 +133,7 @@ def _archiver_acceptation(session: Session, inst: Installation, demande: Demande
             accepte_par=f"{nom_affiche(admin.prenom, admin.nom)} <{admin.courriel}>",
         )
     )
-    session.add(
-        DecisionRegistre(
-            installation_id=inst.id,
-            geste="conditions_acceptees",
-            motif=f"conditions v{version} acceptées",
-            auteur=SYSTEME,
-        )
-    )
+    consigner(session, inst, "conditions_acceptees", f"conditions v{version} acceptées")
 
 
 def _ecrire_contact(session: Session, inst: Installation, demande: DemandeInscription) -> None:
@@ -196,7 +186,7 @@ def _inscrire(session: Session, demande: DemandeInscription) -> Installation:
     session.flush()
     inst.identifiant = identifiant_de(inst.id)
     session.add(inst)
-    session.add(DecisionRegistre(installation_id=inst.id, geste="inscription", auteur=SYSTEME))
+    consigner(session, inst, "inscription")
     _archiver_acceptation(session, inst, demande)
     _ecrire_contact(session, inst, demande)
     return inst
@@ -242,13 +232,8 @@ def _signaler_clone(session: Session, inst: Installation) -> None:
         )
     ).first()
     if deja is None:
-        session.add(
-            DecisionRegistre(
-                installation_id=inst.id,
-                geste="clone_signale",
-                motif="une autre clé a demandé le bail de cet identifiant",
-                auteur=SYSTEME,
-            )
+        consigner(
+            session, inst, "clone_signale", "une autre clé a demandé le bail de cet identifiant"
         )
         session.commit()
 

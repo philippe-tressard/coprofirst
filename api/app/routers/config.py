@@ -17,6 +17,7 @@ from app.utils.services import (
     CLES_ACTIVATION,
     SERVICE_REPONSES_COURRIEL,
     normaliser_activation,
+    refus_d_activation,
     service_actif,
 )
 from app.database import get_session
@@ -181,6 +182,9 @@ def save_config(
         if cle in _NORMALISEURS:
             valeur = _NORMALISEURS[cle](valeur)
         existing = session.get(ConfigSite, cle)
+        refus = refus_d_activation(cle, valeur, existing.valeur if existing else None)
+        if refus:
+            raise HTTPException(409, refus)
         if existing:
             existing.valeur = str(valeur)
             session.add(existing)

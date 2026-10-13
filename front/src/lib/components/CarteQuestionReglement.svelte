@@ -178,13 +178,6 @@
 		font-size: var(--fs-base);
 		line-height: 1.55;
 	}
-	.intertitre {
-		margin: 1rem 0 0.4rem;
-		font-size: var(--fs-sm);
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-		color: var(--color-text-muted);
-	}
 	.extraits {
 		list-style: none;
 		margin: 0;
