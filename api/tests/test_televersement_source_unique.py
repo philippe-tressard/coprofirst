@@ -62,6 +62,8 @@ ECRIVAINS_DU_STOCKAGE = {
     SOURCE: "les fichiers reçus, après la liste blanche, le plafond et la signature",
     "routers/annonces_hall.py": "le PDF d'affiche que l'application vient de PRODUIRE "
     "(WeasyPrint) — rien n'est reçu du client, il n'y a ni type ni signature à confronter",
+    "demo/fichiers.py": "le logo, l'illustration et les PDF de la démo publique, PRODUITS "
+    "par l'application à chaque chargement (#1904) — la démo ne reçoit aucun fichier (M10)",
 }
 
 #: Les écritures sur disque qui ne sont **pas** des téléversements, nommées une

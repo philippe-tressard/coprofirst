@@ -229,6 +229,12 @@ avec le code de la version installée : il ne peut pas être en retard sur le sc
 - 🔒 Un test charge le jeu dans une base en mémoire et vérifie que chaque écran
   principal a du contenu (au moins N affaires ouvertes, une actualité, un
   événement à venir, un sondage, un contrat, un document).
+- Livré en lot D4 (#1904) : `python -m app.demo.charger` rend **0** (chargé), **2**
+  (pas en démo) ou **3** (base non vierge — rien n'est écrit). Les PDF passent par
+  le moteur du projet (`pdf_theme.html_to_pdf`) et sont rendus **avant** toute
+  écriture : un moteur absent laisse la base vierge. Le seed tourne au milieu, entre
+  le patrimoine (qu'il lit pour l'arbre des périmètres) et le reste ; le personnage
+  « Administrateur » tient lieu d'administrateur initial.
 
 ### 6.2 Le contenu
 
