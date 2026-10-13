@@ -115,3 +115,16 @@ def test_le_conseil_et_l_administrateur_portent_leur_role():
     assert "conseil_syndical" in PERSONNAGES["conseil-syndical"].roles_json.split(",")
     assert PERSONNAGES["administrateur"].roles_json.split(",") == ["admin"]
     assert "propriétaire" not in PERSONNAGES["locataire"].roles_json.split(",")
+
+
+# ── 5. La liste des personnages, pour la page de connexion (#1906) ─────────
+
+
+def test_hors_demo_la_liste_des_personnages_est_vide(moteur):
+    assert _http().get("/demo/personnages").json() == []
+
+
+def test_en_demo_la_liste_suit_l_ordre_des_personnages(moteur, en_demo):
+    rendus = _http().get("/demo/personnages").json()
+    assert [r["code"] for r in rendus] == list(PERSONNAGES)
+    assert all(r["libelle"] and r["description"] for r in rendus)

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.auth.adresse_compte import compte_par_adresse
@@ -29,13 +30,38 @@ from app.database import get_session
 from app.demo.personnages import PERSONNAGES
 from app.utils.demo import est_demo
 from app.utils.journal_securite import journaliser_securite
-from app.utils.limiter import LIMITE_ENTREE_DEMO, limiter
+from app.utils.limiter import LIMITE_ENTREE_DEMO, LIMITE_LECTURE_PUBLIQUE, limiter
 from app.utils.recuperer import connu_ou_404
 
 router = APIRouter(prefix="/demo", tags=["demo"])
 
 #: Où arrive le visiteur : l'accueil de l'application, que la session ouvre.
 ACCUEIL = "/tableau-de-bord"
+
+
+class PersonnageRead(BaseModel):
+    """Ce que la page de connexion de la démo montre d'un personnage (#1906)."""
+
+    code: str
+    libelle: str
+    description: str
+
+
+@router.get("/personnages", response_model=list[PersonnageRead])
+@limiter.limit(LIMITE_LECTURE_PUBLIQUE)
+def personnages(request: Request):
+    """Les personnages, dans leur ordre — liste VIDE hors démo : rien à proposer.
+
+    La page de connexion les lit ici plutôt que de recopier libellés et
+    descriptions : la liste vit dans `app/demo/personnages.py`, et nulle part
+    ailleurs.
+    """
+    if not est_demo():
+        return []
+    return [
+        PersonnageRead(code=p.code, libelle=p.libelle, description=p.description)
+        for p in PERSONNAGES.values()
+    ]
 
 
 @router.get("/entrer/{personnage}", include_in_schema=False)

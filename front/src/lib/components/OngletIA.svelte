@@ -31,6 +31,7 @@
   son activation.
 -->
 <script lang="ts">
+	import EncartDemo from '$lib/components/EncartDemo.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import { onMount } from 'svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -223,6 +224,7 @@
 	}
 </script>
 
+<EncartDemo />
 <div class="card">
 	<h2 class="titre-onglet"><Icon name="zap" size={18} /> Assistant IA</h2>
 

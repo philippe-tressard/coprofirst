@@ -105,6 +105,9 @@ _PUBLICS_ASSUMES = {
     #  elle ouvre une session SANS mot de passe, par conception — et seulement si
     #  l'installation pose `MODE_DEMO=oui` ; ailleurs elle rend 404.
     ("demo.py", "entrer"),
+    #  …et la liste de ses personnages, que la page de connexion de la démo affiche
+    #  (#1906) : vide hors démo, et sans rien de personnel (libellés du code).
+    ("demo.py", "personnages"),
     #  Le manuel utilisateur en PDF (#651). Public, comme
     #  `/manuel-utilisateur.html` que le front sert déjà sans session : un manuel
     #  qui explique comment se servir du site doit pouvoir être lu AVANT de
