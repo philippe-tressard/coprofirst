@@ -312,22 +312,22 @@ installée :
 
 ## 10. Le découpage en lots
 
-| Lot | Contenu | Dépend de |
-|---|---|---|
-| **D1** — socle | `MODE_DEMO`, `est_demo()`, clé `mode_demo` de `GET /config`, garde des gestes fermés et son registre, test « toute route d'une famille fermée est déclarée » | — |
-| **D2** — zéro envoi | gardes aux portes (§4.2), courriel inscrit « non envoyé », services lus éteints, tâches hors démo, tests par porte | D1 |
-| **D3** — entrée | extraction de `ouvrir_session`, route `/api/demo/entrer/{personnage}`, limite, journal | D1 |
-| **D4** — jeu de données | générateur `app/demo/`, personnages, images et documents de démo, test de contenu, test des identités | D3 (personnages) |
-| **D5** — remise à zéro | `deploiement/demo/` (script, `LISEZMOI.md`, crontab), `--selftest` | D4 |
-| **D6** — interface | bandeau, connexion par personnage, encarts, `noindex`, manuel et README | D1, D3 |
-| **D7** — mise en service | mentions légales, installation sur la machine Oracle, adresses transmises à la page d'accueil | D1 à D6 |
+| Lot | Contenu | Dépend de | Ticket |
+|---|---|---|---|
+| **D1** — socle | `MODE_DEMO`, `est_demo()`, clé `mode_demo` de `GET /config`, garde des gestes fermés et son registre, test « toute route d'une famille fermée est déclarée » | — | #1901 |
+| **D2** — zéro envoi | gardes aux portes (§4.2), courriel inscrit « non envoyé », services lus éteints, tâches hors démo, tests par porte | D1 | #1902 |
+| **D3** — entrée | extraction de `ouvrir_session`, route `/api/demo/entrer/{personnage}`, limite, journal | D1 | #1903 |
+| **D4** — jeu de données | générateur `app/demo/`, personnages, images et documents de démo, test de contenu, test des identités | D3 (personnages) | #1904 |
+| **D5** — remise à zéro | `deploiement/demo/` (script, `LISEZMOI.md`, crontab), `--selftest` | D4 | #1905 |
+| **D6** — interface | bandeau, connexion par personnage, encarts, `noindex`, manuel et README | D1, D3 | #1906 |
+| **D7** — mise en service | mentions légales, installation sur la machine Oracle, adresses transmises à la page d'accueil | D1 à D6 | #1907 |
 
 Relevés **hors démo** faits pendant l'étude, à traiter pour eux-mêmes :
 le rendu PDF (WeasyPrint) sans `url_fetcher` restreint peut aller chercher une
-image externe ; `SERVICE_VERIF_VERSION` absent de `__all__` (`utils/services.py`),
-donc invisible du contrôle du registre ; `UPLOADS` écrit en dur dans
-`utils/backup.py` malgré la lecture unique de `uploads_dir` ; le syndic inscrit
-avec `roles_json="syndic"` (§5.3).
+image externe (#1908) ; `SERVICE_VERIF_VERSION` absent de `__all__` (`utils/services.py`),
+donc invisible du contrôle du registre (#1909) ; `UPLOADS` écrit en dur dans
+`utils/backup.py` malgré la lecture unique de `uploads_dir` (#1910) ; le syndic inscrit
+avec `roles_json="syndic"` (§5.3, #1911).
 
 ## 11. Les questions ouvertes — à arbitrer par l'auteur
 
