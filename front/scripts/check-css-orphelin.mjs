@@ -298,6 +298,7 @@ const aveugles = tous.filter((f) => {
 //  leurs badges de rôle tirés d'une table (`badge {b.cls}`). La page garde le
 //  badge d'état d'une demande, tiré de sa propre table : aucune interpolation
 //  nouvelle, une dette répartie sur deux fichiers.
+//  Carte des plafonds décroissants : #1571.
 const PLAFOND_NON_MESURES = 25;
 
 const mesures = tous.length - aveugles.length;
