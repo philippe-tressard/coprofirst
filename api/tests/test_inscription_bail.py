@@ -9,20 +9,18 @@ est réellement signé par une clé des baux, et réellement vérifié par l'ins
 from __future__ import annotations
 
 import pytest
-from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.config import get_settings
 from app.inscription import client, cles, depot
 from app.inscription.depot import Contact
-from app.main import app
 from app.models.core import RoleUtilisateur
 from app.models.roles import ROLE_OPERATEUR
 from app.registre import signature
 from app.registre.modeles import DecisionRegistre, EtatInscription, Installation
 from app.utils import installation
 from tests.aides_http import base_http, client_http
-from tests.aides_registre import HOTE, registre_allume
+from tests.aides_registre import installation_branchee
 
 CONTACT = Contact(prenom="Alix", nom="Durand", courriel="alix@example.org")
 
@@ -30,21 +28,7 @@ CONTACT = Contact(prenom="Alix", nom="Durand", courriel="alix@example.org")
 @pytest.fixture
 def registre(monkeypatch, tmp_path):
     """La référence (registre allumé, clé des baux posée) et une RÉPLIQUE qui l'appelle."""
-    ref_privee, ref_publique = signature.generer_paire()
-    reglages = get_settings()
-    monkeypatch.setattr(reglages, "cle_signature_baux", signature.en_base64(ref_privee))
-    monkeypatch.setattr(reglages, "installation_dir", str(tmp_path / "installation"))
-    monkeypatch.setattr(reglages, "registre_url", f"https://{HOTE}")
-    monkeypatch.setattr(reglages, "installation_essai", False)
-    monkeypatch.setattr(installation, "role_installation", lambda valeur=None: "replique")
-    monkeypatch.setattr(cles, "CLES_REFERENCE", {1: ref_publique})
-
-    def poster(url, content, headers, timeout):
-        chemin = url.removeprefix(f"https://{HOTE}")
-        return TestClient(app).post(chemin, content=content, headers={**headers, "host": HOTE})
-
-    monkeypatch.setattr(client.httpx, "post", poster)
-    with registre_allume(monkeypatch) as moteur:
+    with installation_branchee(monkeypatch, tmp_path) as moteur:
         yield moteur
 
 

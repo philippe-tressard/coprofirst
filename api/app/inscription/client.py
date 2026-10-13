@@ -10,6 +10,8 @@ depuis la référence ; l'installation l'appelle, sous son nom dédié
 - `renouveler` : le bail, chaque nuit (`run_renouvellement_bail`, tâche de la
   plateforme). Un bail reçu n'est RANGÉ que s'il se croit (`constat.bail_valide`).
 - Sans renouvellement depuis 3 jours, l'opérateur est alerté (D19).
+- `envoyer_rapport` : le rapport nocturne (R3, `inscription/rapport.py`), dans la
+  même tâche, après le bail — que le bail ait été renouvelé ou non.
 
 Ni la référence, ni une installation d'ESSAI n'appellent le registre (règles 7 et
 9) ; le mode essai n'est cru que pour un hôte local ou une base en mémoire.
@@ -104,7 +106,7 @@ def _poster(chemin: str, corps: dict) -> dict:
         reponse = httpx.post(url, content=octets, headers=entetes, timeout=DELAI)
     except httpx.HTTPError as exc:
         raise RegistreInjoignable(f"registre injoignable ({type(exc).__name__})") from None
-    if reponse.status_code not in (200, 201):
+    if reponse.status_code not in (200, 201, 202):
         try:
             detail = str(reponse.json().get("detail", ""))[:200]
         except ValueError:
@@ -187,8 +189,22 @@ def renouveler() -> EtatLocal:
     return etat
 
 
+def envoyer_rapport() -> EtatLocal:
+    """Le rapport nocturne (R3), signé ; sa date se range quand la référence l'accepte."""
+    from app.inscription import rapport
+
+    _appeler_permis()
+    if not depot.lire().identifiant:
+        raise RegistreInjoignable("installation non inscrite")
+    _poster("/plateforme/rapports", rapport.construire().model_dump(mode="json"))
+    etat = depot.lire()
+    etat.dernier_rapport_le = horloge.maintenant().isoformat(timespec="seconds")
+    depot.ecrire(etat)
+    return etat
+
+
 def run_renouvellement_bail() -> None:
-    """Tâche de la plateforme : renouveler le bail ; alerter l'opérateur après 3 jours."""
+    """Tâche de la plateforme : le bail puis le rapport ; alerter l'opérateur après 3 jours."""
     if installation.est_reference() or essai_admis() or not depot.lire().identifiant:
         return
     try:
@@ -196,6 +212,11 @@ def run_renouvellement_bail() -> None:
         logger.info("inscription : bail renouvelé")
     except RegistreInjoignable as exc:
         logger.warning("inscription : bail non renouvelé (%s)", exc)
+    try:
+        envoyer_rapport()
+        logger.info("inscription : rapport nocturne envoyé")
+    except RegistreInjoignable as exc:
+        logger.warning("inscription : rapport nocturne non envoyé (%s)", exc)
     verdict = constat_courant()
     if verdict.renouvellement_en_retard:
         from app.utils.sante_plateforme import alerter

@@ -111,3 +111,22 @@ class AcceptationConditions(TablePlateforme, table=True):
     #: « Prénom Nom <courriel> » de qui a validé — donnée personnelle (conditions §4).
     accepte_par: str = Field(max_length=300)
     accepte_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
+
+
+class RapportInstallation(TablePlateforme, table=True):
+    """Le rapport nocturne d'une installation (R3 #1879), reçu tel quel.
+
+    Aucune donnée de résident (D5) : le contrat le garantit (`contrat.Rapport`),
+    et le corps n'est rangé qu'après avoir été validé contre lui. Gardé
+    `rapports.CONSERVATION` — l'onglet de la référence (R4) lit le dernier, et
+    les alertes l'historique récent.
+    """
+
+    __tablename__ = "rapport_installation"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    installation_id: int = Field(foreign_key="installation.id", index=True)
+    recu_le: NaiveDatetime = Field(default_factory=horloge.maintenant, index=True)
+    version_logicielle: Optional[str] = Field(default=None, max_length=40)
+    #: le rapport, en JSON — validé contre le contrat avant d'être rangé
+    corps: str = Field(sa_type=Text)

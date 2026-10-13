@@ -40,7 +40,7 @@
 - **WhatsApp** — Notifications automatiques programmées vers le groupe de la résidence. ⚠️ Le pont passe par un client non officiel (Baileys) : WhatsApp peut déconnecter ou **bloquer le numéro** appairé ; le contrôle quotidien distingue ce cas d'une coupure ordinaire, et le courriel reste le canal de repli (conduite à tenir : `.claude/skills/infra-rpi`)
 - **Maintenance** — Le **rôle de l'installation** en tête (*Référence*, qui suit `main` ; *Réplique*,
   qui suit `replica` ; *Inconnu* s'il n'est pas déclaré), avec sa version et, si le service
-  *Vérification de la version* est activé, son écart à la branche suivie. Dessous, l'**inscription au registre** de la référence (contact de l'administrateur, conditions acceptées, bail signé renouvelé chaque nuit ; l'état — limitée, active, suspendue — n'est encore que constaté). L'**export vérifié** de la base (format neutre, empreinte
+  *Vérification de la version* est activé, son écart à la branche suivie. Dessous, l'**inscription au registre** de la référence (contact de l'administrateur, conditions acceptées, bail signé renouvelé chaque nuit, rapport nocturne fait de nombres seulement ; l'état — limitée, active, suspendue — n'est encore que constaté). L'**export vérifié** de la base (format neutre, empreinte
   par table, réimporté dans une base jetable pour prouver qu'elle se restaure ; archive
   complète dans le volume des sauvegardes). Tâches automatiques (purge tokens, archivage, logs, **images de base des
   conteneurs re-tirées chaque semaine**) + déclenchement manuel ; les **contrôles de fiabilité**

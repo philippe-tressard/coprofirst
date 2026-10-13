@@ -38,6 +38,7 @@ class VueInscription(BaseModel):
     renouvellement_en_retard: bool = False
     inscrite_le: Optional[str] = None
     dernier_renouvellement_le: Optional[str] = None
+    dernier_rapport_le: Optional[str] = None
     derniere_erreur: Optional[str] = None
     contact: Optional[Contact] = None
     conditions_acceptees: Optional[int] = None

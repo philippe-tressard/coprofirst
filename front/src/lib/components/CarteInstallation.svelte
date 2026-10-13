@@ -208,6 +208,10 @@
 						{fmtDatetime(i.dernier_renouvellement_le)}
 					</dd>
 				{/if}
+				{#if i.dernier_rapport_le}
+					<dt>Dernier rapport</dt>
+					<dd>{fmtDatetime(i.dernier_rapport_le)}</dd>
+				{/if}
 				{#if i.derniere_erreur}
 					<dt>Dernière erreur</dt>
 					<dd class="ton-alerte">{i.derniere_erreur}</dd>

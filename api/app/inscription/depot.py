@@ -8,7 +8,7 @@ copropriété.
 | Fichier | Contenu |
 |---|---|
 | `cle_privee` | la clé Ed25519 de l'installation, 32 octets en base64, droits 0600 |
-| `inscription.json` | identifiant attribué, bail signé, plus haute époque reçue, contact de l'administrateur, dernier renouvellement |
+| `inscription.json` | identifiant attribué, bail signé, plus haute époque reçue, contact de l'administrateur, dernier renouvellement, dernier rapport |
 
 Copier ce dossier copie l'IDENTITÉ de l'installation : deux machines sous une
 même clé sont indiscernables pour la référence. Deux clés sous un même
@@ -59,6 +59,7 @@ class EtatLocal(BaseModel):
     contact: Optional[Contact] = None
     inscrite_le: Optional[str] = None
     dernier_renouvellement_le: Optional[str] = None
+    dernier_rapport_le: Optional[str] = None  #: le dernier rapport nocturne accepté (R3)
     derniere_erreur: Optional[str] = None
     #: vrai quand le fichier existait mais ne se lisait pas
     illisible: bool = False

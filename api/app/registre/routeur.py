@@ -1,4 +1,5 @@
-"""Les points du registre — `POST /plateforme/inscriptions` (R1 #1877) et `/baux` (R2 #1878).
+"""Les points du registre — `POST /plateforme/inscriptions` (R1 #1877), `/baux` (R2 #1878)
+et `/rapports` (R3 #1879).
 
 Une route PUBLIQUE : une installation qui s'inscrit n'a pas de compte chez la référence.
 Ce qui la garde, dans l'ordre :
@@ -38,7 +39,7 @@ from sqlmodel import Session, func, select
 
 from app.config import get_settings
 from app.contexte import nom_d_hote
-from app.registre import baux, conditions, signature
+from app.registre import baux, conditions, rapports, signature
 from app.registre.base import get_session_plateforme, registre_actif
 from app.registre.contrat import (
     EN_TETE_SIGNATURE,
@@ -46,6 +47,7 @@ from app.registre.contrat import (
     BailSigne,
     DemandeBail,
     DemandeInscription,
+    Rapport,
     ReponseInscription,
 )
 from app.registre.modeles import (
@@ -278,3 +280,35 @@ async def renouveler_bail(request: Request, session: Session = Depends(get_sessi
         logger.warning("registre : bail non délivré (%s)", type(exc).__name__)
         raise _refus(503, "Le registre est indisponible.") from None
     return baux.delivrer(inst, cle, horloge.maintenant()).model_dump(mode="json")
+
+
+@router.post("/rapports", status_code=202, dependencies=[Depends(_servi_ici)])
+@limiter.limit(LIMITE_INSCRIPTION_INSTALLATION)
+async def recevoir_rapport(request: Request, session: Session = Depends(get_session_plateforme)):
+    """Le rapport nocturne d'une installation inscrite, signé par SA clé (R3)."""
+    corps = await request.body()
+    if len(corps) > TAILLE_MAX:
+        raise _refus(413, "Rapport trop volumineux.")
+    try:
+        rapport = Rapport.model_validate_json(corps)
+    except ValidationError:
+        raise _refus(422, "Rapport illisible : il ne suit pas le contrat de données.") from None
+    if rapport.version_contrat != VERSION_CONTRAT:
+        raise _refus(400, f"Version du contrat de données attendue : {VERSION_CONTRAT}.")
+    try:
+        inst = session.exec(
+            select(Installation).where(Installation.identifiant == rapport.identite.identifiant)
+        ).first()
+        if inst is None or not inst.cle_publique:
+            raise _refus(404, "Installation inconnue du registre.")
+        if not signature.verifier(
+            inst.cle_publique, corps, request.headers.get(EN_TETE_SIGNATURE, "")
+        ):
+            raise _refus(401, "Signature de l'installation absente ou invalide.")
+        rapports.ranger(session, inst, rapport)
+        session.commit()
+    except SQLAlchemyError as exc:
+        session.rollback()
+        logger.warning("registre : rapport non rangé (%s)", type(exc).__name__)
+        raise _refus(503, "Le registre est indisponible.") from None
+    return {"recu": True}

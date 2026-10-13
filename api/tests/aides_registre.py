@@ -46,3 +46,36 @@ def registre_allume(monkeypatch) -> Iterator:
     finally:
         app.dependency_overrides.pop(base.get_session_plateforme, None)
         limiter.reset()
+
+
+@contextmanager
+def installation_branchee(monkeypatch, dossier) -> Iterator:
+    """Le registre allumé, sa clé des baux posée, et une RÉPLIQUE qui l'appelle.
+
+    Les appels HTTP de l'installation (`inscription.client`) sont routés vers
+    l'application de test, sous le nom dédié du registre : les deux côtés parlent
+    pour de vrai, le bail est réellement signé puis vérifié. Rend le moteur de la
+    base `plateforme`.
+    """
+    from fastapi.testclient import TestClient
+
+    from app.inscription import client, cles
+    from app.registre import signature
+    from app.utils import installation
+
+    ref_privee, ref_publique = signature.generer_paire()
+    reglages = get_settings()
+    monkeypatch.setattr(reglages, "cle_signature_baux", signature.en_base64(ref_privee))
+    monkeypatch.setattr(reglages, "installation_dir", str(dossier / "installation"))
+    monkeypatch.setattr(reglages, "registre_url", f"https://{HOTE}")
+    monkeypatch.setattr(reglages, "installation_essai", False)
+    monkeypatch.setattr(installation, "role_installation", lambda valeur=None: "replique")
+    monkeypatch.setattr(cles, "CLES_REFERENCE", {1: ref_publique})
+
+    def poster(url, content, headers, timeout):
+        chemin = url.removeprefix(f"https://{HOTE}")
+        return TestClient(app).post(chemin, content=content, headers={**headers, "host": HOTE})
+
+    monkeypatch.setattr(client.httpx, "post", poster)
+    with registre_allume(monkeypatch) as moteur:
+        yield moteur

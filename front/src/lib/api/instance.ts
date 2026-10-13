@@ -78,6 +78,8 @@ export interface InscriptionInstallation {
 	renouvellement_en_retard: boolean;
 	inscrite_le: string | null;
 	dernier_renouvellement_le: string | null;
+	/** Le dernier rapport nocturne accepté par la référence (R3 #1879). */
+	dernier_rapport_le: string | null;
 	derniere_erreur: string | null;
 	contact: ContactInstallation | null;
 	conditions_acceptees: number | null;

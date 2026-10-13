@@ -192,6 +192,7 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 		renouvellement_en_retard: false,
 		inscrite_le: null,
 		dernier_renouvellement_le: null,
+		dernier_rapport_le: null,
 		derniere_erreur: null,
 		contact: null,
 		conditions_acceptees: null,
