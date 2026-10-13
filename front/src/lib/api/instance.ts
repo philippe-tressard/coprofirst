@@ -1,5 +1,6 @@
 /**
- * L'INSTANCE elle-même — son rôle dans la distribution (#1761) et l'export vérifié
+ * L'INSTANCE elle-même — son rôle dans la distribution (#1761), son inscription au
+ * registre de la référence (R2 #1878) et l'export vérifié
  * de sa base (#1749) : Admin › Maintenance, cartes `CarteInstallation` et
  * `CarteExportCopropriete`.
  *
@@ -52,6 +53,54 @@ export interface DernierExport {
 	fichiers: number;
 }
 
+/**  L'administrateur de l'installation, tel que la référence le connaît (R2 #1878). */
+export interface ContactInstallation {
+	prenom: string;
+	nom: string;
+	courriel: string;
+	telephone?: string | null;
+}
+
+/**  `GET /admin/installation/inscription` (`routers/admin/inscription.py`, R2 #1878) :
+ *   l'inscription de l'installation au registre de la référence, CONSTATÉE — rien
+ *   ne l'applique encore (R6). */
+export interface InscriptionInstallation {
+	/** `reference` | `essai` | `limitee` | `active` | `suspendue`. */
+	etat: 'reference' | 'essai' | 'limitee' | 'active' | 'suspendue';
+	/** Pourquoi cet état, en clair — chaque raison de ne pas croire un bail se nomme. */
+	raison: string;
+	identifiant: string | null;
+	canal: string | null;
+	version_cible: string | null;
+	echeance: string | null;
+	renouvellement_en_retard: boolean;
+	inscrite_le: string | null;
+	dernier_renouvellement_le: string | null;
+	derniere_erreur: string | null;
+	contact: ContactInstallation | null;
+	conditions_acceptees: number | null;
+	conditions_en_vigueur: number;
+	/** Ni la référence, ni une installation d'essai ne s'inscrivent. */
+	peut_s_inscrire: boolean;
+	/** `INSTALLATION_ESSAI` posé hors d'un hôte local : refusé. */
+	essai_refuse: boolean;
+	registre_url: string;
+}
+
+/**  `GET /admin/installation/conditions` : le texte en vigueur, tel qu'il s'archive. */
+export interface ConditionsInscription {
+	version: number;
+	empreinte: string;
+	texte: string;
+}
+
+/**  `POST /admin/installation/inscription` : le contact, et la version des
+ *   conditions MONTRÉE — refusée si elle a changé depuis. */
+export interface DemandeInscriptionInstallation extends ContactInstallation {
+	conditions_acceptees: number;
+	accepte: boolean;
+}
+
 export const instance = {
 	/** Le rôle de l'installation et l'écart de sa version — lu par `CarteInstallation` (#1761). */
 	installation: () => api.get<EtatInstallation>('/admin/installation'),
@@ -62,4 +111,13 @@ export const instance = {
 	exporterCopropriete: () => api.post<{ archive: string }>('/admin/export-copropriete'),
 	/** Le dernier export entier, lu dans son manifeste. */
 	dernierExport: () => api.get<DernierExport>('/admin/export-copropriete/dernier'),
+	/** L'inscription au registre, constatée — lu par `CarteInstallation` (R2 #1878). */
+	inscription: () => api.get<InscriptionInstallation>('/admin/installation/inscription'),
+	/** Le texte des conditions d'inscription en vigueur. */
+	conditionsInscription: () => api.get<ConditionsInscription>('/admin/installation/conditions'),
+	/** Déclare l'installation à la référence — ou rectifie son contact. */
+	inscrire: (corps: DemandeInscriptionInstallation) =>
+		api.post<InscriptionInstallation>('/admin/installation/inscription', corps),
+	/** Demande le bail maintenant, sans attendre la nuit. */
+	renouvelerBail: () => api.post<InscriptionInstallation>('/admin/installation/bail'),
 };

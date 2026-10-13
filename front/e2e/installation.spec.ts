@@ -20,10 +20,11 @@ const BASE = {
 	retard: 0,
 };
 
-async function ouvrir(page, installation) {
+async function ouvrir(page, installation, inscription?: unknown) {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;
 		if (chemin === '/api/admin/installation') return installation;
+		if (chemin === '/api/admin/installation/inscription') return inscription;
 		return undefined;
 	});
 	await page.goto('/admin?onglet=maintenance');
@@ -110,4 +111,108 @@ test('Maintenance : un administrateur qui n’est pas opérateur ne voit pas la 
 	).toBeVisible();
 	await expect(page.getByText('Installation', { exact: true })).toHaveCount(0);
 	await expect(page.getByText('Contrôles de fiabilité', { exact: true })).toHaveCount(0);
+});
+
+// ── Inscription au registre (R2 #1878) ─────────────────────────────────────
+
+const REPLIQUE = {
+	...BASE,
+	role: 'replique',
+	libelle: 'Réplique',
+	branche: 'replica',
+	verification_active: false,
+	etat: 'non_verifie',
+	detail: 'service « Vérification de la version » coupé',
+};
+
+test('Inscription : une réplique non inscrite s’inscrit en acceptant les conditions lues', async ({
+	page,
+}) => {
+	const carte = await ouvrir(page, REPLIQUE);
+	let envoye: Record<string, unknown> | null = null;
+	await page.route(
+		(url) => url.pathname === '/api/admin/installation/conditions',
+		(route) =>
+			route.fulfill({
+				json: { version: 1, empreinte: 'a'.repeat(64), texte: 'Article 1 — Engagements.' },
+			}),
+	);
+	await page.route(
+		(url) => url.pathname === '/api/admin/installation/inscription',
+		(route) => {
+			if (route.request().method() !== 'POST') return route.fallback();
+			envoye = route.request().postDataJSON();
+			return route.fulfill({
+				json: {
+					etat: 'limitee',
+					raison: 'inscription en attente de validation par la référence',
+					identifiant: 'CF-000007',
+					canal: null,
+					version_cible: null,
+					echeance: null,
+					renouvellement_en_retard: false,
+					inscrite_le: '2026-10-13T10:00:00',
+					dernier_renouvellement_le: null,
+					derniere_erreur: null,
+					contact: { prenom: 'Alix', nom: 'Exemple', courriel: 'alix@example.org' },
+					conditions_acceptees: 1,
+					conditions_en_vigueur: 1,
+					peut_s_inscrire: true,
+					essai_refuse: false,
+					registre_url: 'https://registre.example',
+				},
+			});
+		},
+	);
+	await expect(carte.getByText(/installation non inscrite au registre/)).toBeVisible();
+	await expect(carte.getByText(/Constaté seulement/)).toBeVisible();
+	await carte.getByRole('button', { name: 'Inscrire l’installation' }).click();
+
+	const enregistrer = carte.getByRole('button', { name: 'Enregistrer' });
+	await carte.locator('#ins-prenom').fill('Alix');
+	await carte.locator('#ins-nom').fill('Exemple');
+	await carte.locator('#ins-courriel').fill('alix@example.org');
+	await expect(carte.getByLabel(/Conditions d’inscription, version 1/)).toHaveValue(
+		'Article 1 — Engagements.',
+	);
+	//  Pas d'engagement sur un texte qu'on n'a pas accepté.
+	await expect(enregistrer).toBeDisabled();
+	await carte.getByLabel(/J’accepte les conditions d’inscription/).check();
+	await enregistrer.click();
+
+	await expect(carte.getByText('CF-000007')).toBeVisible();
+	await expect(carte.getByText(/en attente de validation/)).toBeVisible();
+	expect(envoye).toMatchObject({ conditions_acceptees: 1, accepte: true, prenom: 'Alix' });
+	const deborde = await page.evaluate(
+		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+	);
+	expect(deborde, 'défilement horizontal dans la carte Installation').toBe(false);
+	await carte.screenshot({ path: `test-results/inscription-${test.info().project.name}.png` });
+});
+
+test('Inscription : la référence n’est jamais limitée et ne s’inscrit pas', async ({ page }) => {
+	const carte = await ouvrir(
+		page,
+		{ ...REPLIQUE, role: 'reference', libelle: 'Référence' },
+		{
+			etat: 'reference',
+			raison: 'la référence n’est jamais limitée',
+			identifiant: null,
+			canal: null,
+			version_cible: null,
+			echeance: null,
+			renouvellement_en_retard: false,
+			inscrite_le: null,
+			dernier_renouvellement_le: null,
+			derniere_erreur: null,
+			contact: null,
+			conditions_acceptees: null,
+			conditions_en_vigueur: 1,
+			peut_s_inscrire: false,
+			essai_refuse: false,
+			registre_url: 'https://registre.example',
+		},
+	);
+	await expect(carte.getByText(/la référence n’est jamais limitée/)).toBeVisible();
+	await expect(carte.getByRole('button', { name: 'Inscrire l’installation' })).toHaveCount(0);
 });

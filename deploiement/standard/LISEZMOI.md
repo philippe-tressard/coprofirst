@@ -58,6 +58,11 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    `COURRIEL_OPERATEUR` reçoit les alertes de la plateforme (disque du serveur),
    par le SMTP de l'installation (`MAIL_*`, `MAIL_ENABLED=true`) : sans eux, elles
    ne sont que journalisées.
+   Une fois l'installation démarrée, l'**opérateur** l'inscrit au registre de la
+   référence dans *Administration › Maintenance › Inscription au registre*
+   (contact de l'administrateur, conditions à accepter) ; la clé et l'état
+   d'inscription vivent dans le volume `app_data`. L'état affiché — limitée,
+   active, suspendue — n'est encore que **constaté**.
 3. Ajouter **la version à installer** dans `.env` :
    ```
    COPROFIRST_VERSION=2.119.1
