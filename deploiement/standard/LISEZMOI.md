@@ -44,6 +44,9 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 | `.env.example` | le gabarit de configuration, commenté |
 | `deploiement/standard/LISEZMOI.md` | ce mode d'emploi |
 | `deploiement/standard/mise-a-jour.sh` | la mise à jour nocturne, réversible seule |
+| `deploiement/standard/lib-installation.sh` | les gestes communs des scripts de l'installation (journal, santé, compte rendu) |
+| `deploiement/demo/reinitialiser.sh` | la remise à zéro nocturne de la **démo publique** — sans effet ailleurs |
+| `deploiement/demo/LISEZMOI.md` | le mode d'emploi de la démo publique |
 | `deploiement/standard/postgresql/pg_hba.conf` | qui peut se connecter à PostgreSQL, s'il est choisi : l'API seule |
 | `LICENSE` | AGPL-3.0-or-later |
 
