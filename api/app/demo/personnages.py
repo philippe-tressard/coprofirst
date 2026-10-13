@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.models.roles import RoleUtilisateur, StatutUtilisateur
+from app.utils.roles_libelles import libelle_role
 
 #: Le domaine des adresses des personnages : `.invalid` est réservé (RFC 2606) —
 #: aucun courriel ne peut y être livré, même si une porte d'envoi s'ouvrait.
@@ -63,7 +64,7 @@ PERSONNAGES: dict[str, Personnage] = {
         ),
         Personnage(
             "conseil-syndical",
-            "Conseil syndical",
+            libelle_role(RoleUtilisateur.conseil_syndical),
             "Membre du conseil : il suit les affaires, publie et modère.",
             "Sophie",
             "Delmas",
