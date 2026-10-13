@@ -18,20 +18,20 @@ from app.models.core import Utilisateur
 #: Les votants, par clé de compte, et l'option choisie (son rang).
 _VOTES_BORNES = {
     "resident": 0,
-    "Jean Dupont": 0,
-    "Odile Perrin": 1,
-    "Luc Faure": 0,
-    "Paul Morel": 2,
-    "Camille Robin": 0,
-    "Marcel Roy": 1,
+    "Jean": 0,
+    "Odile": 1,
+    "Luc": 0,
+    "Paul": 2,
+    "Camille": 0,
+    "Marcel": 1,
 }
 _VOTES_FETE = {
     "resident": 1,
     "conseil-syndical": 1,
-    "Alice Mercier": 0,
-    "Hélène Caron": 1,
-    "Inès Zeller": 1,
-    "Christophe Renard": 0,
+    "Alice": 0,
+    "Hélène": 1,
+    "Inès": 1,
+    "Christophe": 0,
 }
 
 
@@ -83,10 +83,10 @@ def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
         (
             "Un composteur partagé au fond du jardin",
             "Pour réduire nos déchets et nourrir les massifs.",
-            "Alice Mercier",
+            "Alice",
             "retenue",
             30,
-            ("resident", "Odile Perrin", "Inès Zeller"),
+            ("resident", "Odile", "Inès"),
         ),
         (
             "Une boîte à livres dans le hall du bâtiment A",
@@ -94,12 +94,12 @@ def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
             "resident",
             "ouverte",
             7,
-            ("Paul Morel", "Nadia Rossi"),
+            ("Paul", "Nadia"),
         ),
         (
             "Des nichoirs dans les arbres",
             "Pour accueillir les mésanges au printemps.",
-            "Camille Robin",
+            "Camille",
             "ouverte",
             3,
             ("locataire",),
@@ -122,7 +122,7 @@ def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
         (
             "Vélo enfant 16 pouces",
             "<p>Très bon état, casque offert.</p>",
-            "Luc Faure",
+            "Luc",
             "vente",
             "divers",
             40,
@@ -130,7 +130,7 @@ def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
         (
             "Donne cartons de déménagement",
             "<p>Une vingtaine, à venir chercher.</p>",
-            "Zoé Dupré",
+            "Zoé",
             "don",
             "divers",
             None,

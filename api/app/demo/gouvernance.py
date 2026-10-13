@@ -27,9 +27,9 @@ def _membre(user: Utilisateur, genre: GenreCivilite, ordre: int, **champs) -> Me
 
 
 def poser(session: Session, comptes: dict[str, Utilisateur]) -> None:
-    session.add(_membre(comptes["Jean Dupont"], GenreCivilite.mr, 1, est_president=True))
+    session.add(_membre(comptes["Jean"], GenreCivilite.mr, 1, est_president=True))
     session.add(_membre(comptes["conseil-syndical"], GenreCivilite.mme, 2))
-    session.add(_membre(comptes["Catherine Blondel"], GenreCivilite.mme, 3))
+    session.add(_membre(comptes["Catherine"], GenreCivilite.mme, 3))
     session.add(
         MembreSyndic(
             genre=GenreCivilite.mme,

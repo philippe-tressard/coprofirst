@@ -107,6 +107,14 @@ def test_un_seul_administrateur_le_personnage(s):
     )
 
 
+def test_les_habitants_ont_des_prenoms_uniques():
+    """Ils sont la clé des comptes du jeu (`comptes.poser`)."""
+    from app.demo.comptes import HABITANTS
+
+    prenoms = [h.prenom for h in HABITANTS]
+    assert len(set(prenoms)) == len(prenoms)
+
+
 def test_toutes_les_adresses_sont_reservees(s):
     assert all(u.email.endswith(".invalid") for u in s.exec(select(Utilisateur)).all())
 
