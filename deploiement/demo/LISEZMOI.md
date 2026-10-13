@@ -72,6 +72,13 @@ vit (`INSTALLATION_DIR`).
 
 ## Le registre des installations
 
+🔴 **Jamais `docker compose down -v`** sur la démo, ni aucune reconstruction qui
+efface le volume `app_data` : il porte l'identité de l'installation au registre
+(`/app/data/installation` : sa clé privée et son état). La perdre oblige à
+résilier l'identifiant et à se réinscrire — c'est arrivé à la mise en service,
+le 13/10/2026 (CF-000002 perdu, CF-000003 inscrit). Une copie de l'identité se
+garde hors du volume, lisible du seul utilisateur qui pilote Docker.
+
 La démo **s'inscrit** comme toute réplique, à l'installation (étape 2 ci-dessus) :
 l'inscription survit aux remises à zéro. Tant que la référence ne l'a pas validée,
 elle s'affiche « limitée », sans effet : le plafond de cinq utilisateurs n'est pas
