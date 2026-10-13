@@ -23,7 +23,7 @@ from app.database import get_session
 from app.models.core import ConfigSite, Utilisateur
 from app.seed import DEFAULT_LEGAL
 from app.utils.destinataires import peut_gerer_le_site
-from app.utils import pied_de_page
+from app.utils import demo, pied_de_page
 from app.utils.config_site import config_site
 from app.utils.liens import base_site, nom_site
 from app.utils.recuperer import ou_404
@@ -121,6 +121,9 @@ _CLES_HORS_BASE = {
     #  Le nom du fichier n'est pas une donnée qu'on saisit : il est posé par le
     #  téléversement, qui contrôle le fichier (#1728).
     "site_logo": "Le logo se téléverse par POST /config/logo.",
+    #  Un réglage de l'INSTALLATION, pas de la copropriété (spec `mode-demo.md` M1) :
+    #  un administrateur de démo — n'importe quel visiteur — n'en sort pas.
+    demo.CLE_PUBLIQUE: "Le mode démo se règle dans .env (MODE_DEMO).",
 }
 
 
@@ -134,7 +137,10 @@ def get_config(session: Session = Depends(get_session)):
     (`/config/admin`).
     """
     rows = session.exec(select(ConfigSite)).all()
-    return {r.cle: r.valeur for r in rows if _est_public(r.cle)}
+    publiques = {r.cle: r.valeur for r in rows if _est_public(r.cle)}
+    #  Calculée, jamais lue en base : le front apprend ainsi qu'il sert la démo (#1901).
+    publiques[demo.CLE_PUBLIQUE] = "1" if demo.est_demo() else "0"
+    return publiques
 
 
 @router.get("/admin", response_model=Dict[str, str])

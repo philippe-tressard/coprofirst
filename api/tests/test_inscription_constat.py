@@ -136,6 +136,22 @@ def test_sans_renouvellement_depuis_trois_jours_l_alerte_est_due():
 
 
 def test_sans_cle_de_reference_dans_l_image_aucun_bail_n_est_cru():
-    """L'état de la livraison : la clé de l'époque 1 n'est pas encore versée (#1878)."""
+    """Une image sans clé de référence ne croit aucun bail (#1878)."""
     verdict = _constat(_etat(_bail()), cles={})
     assert verdict.etat == "limitee" and "inconnue" in verdict.raison
+
+
+def test_la_cle_de_l_epoque_1_est_versee_et_lisible():
+    """La clé publique créée sur la référence (#1892) est dans l'image, et c'est une
+    clé Ed25519 : une valeur tronquée ou recopiée de travers ferait croire « limitée »
+    à toutes les installations, sans un mot."""
+    import base64
+
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    from app.inscription import cles
+
+    brute = base64.b64decode(cles.CLES_REFERENCE[1], validate=True)
+    assert len(brute) == 32
+    Ed25519PublicKey.from_public_bytes(brute)
+    assert cles.CLES_REFERENCE[1] not in cles.REVOQUEES

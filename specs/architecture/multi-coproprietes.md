@@ -421,7 +421,10 @@ revient à son exploitant — la référence n'y a aucun accès.
 8. **Le point d'inscription est exposé** sur la référence, donc sur la production
    de la résidence : requêtes signées, taille et débit plafonnés, rien de la
    résidence derrière. Il répond sous un **nom dédié**, ce qui permet au
-   registre de déménager sans toucher aux installations.
+   registre de déménager sans toucher aux installations. Ce nom n'ouvre **que**
+   `/api/plateforme/` : la route du tunnel Cloudflare est restreinte à ce chemin
+   (13/10/2026, #1892), le reste rend 404 avant d'atteindre la référence — sans
+   quoi le site de la résidence y était servi.
 9. **Les installations d'essai** — CI, tests de navigateur, poste de
    développement, workflow « Essai de mise à jour » — se déclarent comme telles :
    elles n'appellent pas la référence et ne sont pas limitées. Ce mode n'est admis
@@ -629,9 +632,9 @@ Ouverts le 12/10/2026 ; le code de chaque lot reste soumis à accord, lot par lo
 | Lot | Contenu | Taille | Prérequis | Ticket |
 |---|---|---|---|---|
 | R0 | **Conditions de l'inscription** et information de l'administrateur d'installation (finalité, durée, purge, droits) ; relecture juridique. **Rédigé le 12/10/2026** en contrat d'engagements réciproques (D26, `api/app/registre/conditions/v1.md`), lu et accepté par l'auteur ; la relecture juridique reste à faire | S | — | #1876 |
-| R1 | **Base `plateforme` et contrat de données** versionné ; point d'inscription signé et plafonné, sous un nom dédié ; aucun effet côté installation. **Livré en v2.143.0**, éteint tant que le `.env` de la référence ne déclare ni sa base ni son nom (`scripts/exploitation/creer-base-plateforme.sh`) | M | — | #1877 |
-| R2 | **Inscription et bail** côté installation, en **mode constat** : l'état est calculé et affiché, jamais appliqué ; mode essai. **Codé le 13/10/2026** (arbitrages du jour : clé et état de l'installation dans le volume `app_data`, clé des baux créée sur l'actif par `creer-cle-baux.sh` et jamais sur le poste, saisie par l'opérateur dans Admin › Maintenance) : `POST /plateforme/baux` côté référence, `app/inscription/` côté installation (constat pur, bail rangé seulement s'il se croit, tâche `bail_installation`, alerte après 3 jours). Tant que la clé publique de l'époque 1 n'est pas versée dans `app/inscription/cles.py`, toute installation se constate « limitée » | M | R1 | #1878 |
-| R3 | **Rapport nocturne**, joint à la mise à jour de la nuit (#1756). **Codé le 13/10/2026** : construit depuis les schémas du contrat (`app/inscription/rapport.py`) — des nombres et des oui/non, aucune donnée de résident, une mesure impossible rend « inconnu » ; envoyé par la tâche `bail_installation`, après le bail ; reçu par `POST /plateforme/rapports`, signé par la clé que la référence connaît pour cet identifiant, et gardé **30 jours** (`rapports.CONSERVATION`, arbitré avec le lot) | S | R2 | #1879 |
+| R1 | **Base `plateforme` et contrat de données** versionné ; point d'inscription signé et plafonné, sous un nom dédié ; aucun effet côté installation. **Livré en v2.143.0** ; **allumé le 13/10/2026** (#1892) : base et rôle `plateforme` sur le primaire, répliqués, nom dédié `registre.coprofirst.fr` | M | — | #1877 |
+| R2 | **Inscription et bail** côté installation, en **mode constat** : l'état est calculé et affiché, jamais appliqué ; mode essai. **Livré en v2.144.0** (arbitrages du jour : clé et état de l'installation dans le volume `app_data`, clé des baux créée sur l'actif par `creer-cle-baux.sh` et jamais sur le poste, saisie par l'opérateur dans Admin › Maintenance) : `POST /plateforme/baux` côté référence, `app/inscription/` côté installation (constat pur, bail rangé seulement s'il se croit, tâche `bail_installation`, alerte après 3 jours). La clé de l'époque 1, créée le 13/10/2026, est versée dans `app/inscription/cles.py` par #1892 — qui corrige aussi le chemin des envois : sans le préfixe `/api` du `Caddyfile`, ils partaient au front | M | R1 | #1878 |
+| R3 | **Rapport nocturne**, joint à la mise à jour de la nuit (#1756). **Livré en v2.144.0** : construit depuis les schémas du contrat (`app/inscription/rapport.py`) — des nombres et des oui/non, aucune donnée de résident, une mesure impossible rend « inconnu » ; envoyé par la tâche `bail_installation`, après le bail ; reçu par `POST /plateforme/rapports`, signé par la clé que la référence connaît pour cet identifiant, et gardé **30 jours** (`rapports.CONSERVATION`, arbitré avec le lot) | S | R2 | #1879 |
 | R4 | **L'onglet « Installations » de la référence** : liste, fiche, validation, canal, suspension, alertes, journal des décisions | M | R1, R3 | #1880 |
 | R5 | **Canaux et version cible** portés par le bail ; déploiement par vagues, épinglage | M | R2, R4 | #1881 |
 | R6 | **Mode limité et suspension appliqués** — seulement après plusieurs semaines de R2 sans faux positif | M | R0, R2 à R5 | #1882 |

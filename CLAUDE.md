@@ -1096,8 +1096,8 @@ Instanciation 5Hostachy :
   Ce retour arrière tient parce que `start.sh` **saute les migrations d'une base
   en avance sur le code** (`utils/revision_base`) : sans lui, l'ancienne image
   s'arrêtait en boucle sur une révision inconnue.
-- **Le rôle de l'installation** (#1761) : `ROLE_INSTALLATION` (`reference` — `maitre`, l'ancien nom, encore lu —
-  sur les deux RPi,
+- **Le rôle de l'installation** (#1761) : `ROLE_INSTALLATION` (`reference` sur les deux RPi — l'ancien `maitre` n'est plus lu
+  depuis #1892,
   `replique` posé d'office par `compose.images.yml`) se lit dans `utils/installation` et
   nulle part ailleurs ; absent → « Inconnu », jamais « Référence ». Le bloc *Installation*
   d'Admin › Maintenance le montre, avec l'écart au dépôt si le service *Vérification de

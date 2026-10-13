@@ -5,18 +5,16 @@ API FastAPI v0.1
 
 import logging as _logging
 import os as _os
-import traceback as _traceback
 from contextlib import asynccontextmanager
 from app.utils import horloge
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from sqlalchemy.exc import OperationalError as _SAOperationalError
 
 from app.utils.limiter import limiter
 
@@ -47,7 +45,8 @@ _logger = _logging.getLogger("hostachy.api")
 from app.utils.reponse_utc import UTCJSONResponse
 
 from app.database import _run_migrations
-from app import contexte
+from app import contexte, erreurs_globales
+from app.utils import demo
 from app.routers import (
     auth,
     auth_mot_de_passe,
@@ -348,41 +347,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 
-# ── Gestionnaires d'erreurs globaux ──────────────────────────────────────────
-
-
-@app.exception_handler(_SAOperationalError)
-async def db_operational_error_handler(request: Request, exc: _SAOperationalError):
-    """SQLite I/O error, DB locked, pool corrompu → 503 avec log structuré.
-    Le pool est purgé ici pour que la prochaine requête reparte sur une connexion saine.
-    """
-
-    contexte.moteur().dispose()
-    _logger.error(
-        "DB OperationalError sur %s %s — pool purgé : %s",
-        request.method,
-        request.url.path,
-        exc,
-    )
-    return JSONResponse(
-        status_code=503,
-        content={"detail": "Base de données temporairement indisponible. Veuillez réessayer."},
-    )
-
-
-@app.exception_handler(Exception)
-async def unhandled_exception_handler(request: Request, exc: Exception):
-    """Filet de sécurité : toute exception non gérée → 500 loggué, jamais de crash silencieux."""
-    _logger.error(
-        "Exception non gérée sur %s %s :\n%s",
-        request.method,
-        request.url.path,
-        _traceback.format_exc(),
-    )
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Erreur interne du serveur."},
-    )
+# ── Gestionnaires d'erreurs globaux : `app/erreurs_globales.py` (#1901) ──────────
+erreurs_globales.installer(app)
 
 
 app.add_middleware(
@@ -397,6 +363,9 @@ app.add_middleware(
 #  dans le contexte de SA copropriété — base, fichiers, secret, caches (#1746,
 #  spec §4.1). Résolue à l'entrée, une fois, par l'hôte : un hôte inconnu reçoit 421
 #  avant toute autre couche, débit et CORS compris (#1751).
+#  🎭 Le mode démo (spec `mode-demo.md` §4.3) : les gestes fermés reçoivent 403
+#  avant toute route. Hors démo, la garde laisse tout passer.
+app.add_middleware(demo.GardeDemo)
 app.add_middleware(contexte.ResolutionCopropriete)
 
 # Routeurs

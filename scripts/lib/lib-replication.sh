@@ -67,8 +67,16 @@ base_postgresql_activee() {
 #  pg_flux     primaire : nombre de répliques qui rejouent son journal
 #  pg_retard   primaire : retard maximal, en octets (-1 sans réplique)
 #  pg_recepteur réplique : état de la réception (streaming attendu)
-COLLECT_REPLICATION='
+#  Une requête SQL sur la base de CE nœud → sa valeur brute, vide si illisible.
+#  Définie ICI, une fois, et pour les deux usages : appelée telle quelle par un
+#  script qui source ce module (`creer-base-plateforme.sh`), et recopiée par
+#  `declare -f` dans la collecte, qui s'exécute sur le nœud distant. Jusqu'au
+#  13/10/2026 elle n'existait QUE dans la chaîne : le script qui l'appelait
+#  rendait « pgq: command not found » et refusait à tort (#1892).
 pgq() { docker exec hostachy_postgres psql -U coprofirst -d coprofirst -Atqc "$1" 2>/dev/null; }
+
+COLLECT_REPLICATION="
+$(declare -f pgq)"'
 echo "pg_present=$(docker ps --format "{{.Names}}" 2>/dev/null | grep -cx hostachy_postgres)"
 echo "pg_recovery=$(pgq "select pg_is_in_recovery()")"
 echo "pg_flux=$(pgq "select count(*) from pg_stat_replication where replay_lsn is not null")"
@@ -243,6 +251,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
                   esac ;;
         esac
     }
+    #  AVANT l'eval, qui la redéfinirait : c'est la fonction du MODULE qu'on éprouve,
+    #  celle qu'appelle un script qui le source (#1892).
+    t "pgq, fonction du module (pas seulement de la collecte)" f pgq "select pg_is_in_recovery()"
     sortie=$(eval "$COLLECT_REPLICATION")
     t "primaire simulé : présent, f, 1, 0" "1|f|1|0" \
       bash -c "printf '%s' \"$sortie\" | sed -n 's/^pg_present=//p;s/^pg_recovery=//p;s/^pg_flux=//p;s/^pg_retard=//p' | paste -sd'|'"

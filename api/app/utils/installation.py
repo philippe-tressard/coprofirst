@@ -48,13 +48,6 @@ ROLES: dict[str, tuple[str, str]] = {
 }
 INCONNU = "inconnu"
 
-#: Les anciens noms d'un rôle, encore lus. `maitre` était celui de la référence
-#: jusqu'au 12/10/2026 (renommée à la demande de l'auteur : « ça fait
-#: esclavagiste ») ; il reste accepté tant que le `.env` des deux Raspberry Pi le
-#: porte — sinon la référence se dirait « Inconnu » au déploiement. À retirer quand
-#: les deux `.env` disent `reference`.
-ANCIENS_NOMS: dict[str, str] = {"maitre": "reference"}
-
 #: L'instant où ce processus a démarré : « en service depuis ». Une constante,
 #: posée une fois à l'import — pas un état que le processus modifie.
 DEMARREE_LE = horloge.maintenant()
@@ -67,7 +60,6 @@ def role_installation(valeur: Optional[str] = None) -> str:
     """PURE sur sa valeur : `reference`, `replique` ou `inconnu` (règle 2)."""
     brut = get_settings().role_installation if valeur is None else valeur
     role = (brut or "").strip().lower().replace("î", "i").replace("é", "e")
-    role = ANCIENS_NOMS.get(role, role)
     return role if role in ROLES else INCONNU
 
 

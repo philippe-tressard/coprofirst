@@ -16,7 +16,9 @@ qu'il remplace entre dans `REVOQUEES` — jamais une clé n'est réécrite.
 from __future__ import annotations
 
 #: époque → clé publique Ed25519 (32 octets, base64).
-CLES_REFERENCE: dict[int, str] = {}
+#: Époque 1 : créée sur rpi2 le 13/10/2026 (`creer-cle-baux.sh`), empreinte de la
+#: clé privée `520163c31d196dff` dans les deux `.env` (#1892).
+CLES_REFERENCE: dict[int, str] = {1: "XnygQF6KPY8JBvmg4fcKzMpcshlXKVaP5lhitwB53kM="}
 
 #: Les clés publiques révoquées : un bail qu'elles signent n'est jamais cru.
 REVOQUEES: frozenset[str] = frozenset()

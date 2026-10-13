@@ -94,6 +94,13 @@ def _appeler_permis() -> None:
         raise RegistreInjoignable("installation d'essai : la référence n'est pas appelée")
 
 
+#: Le préfixe sous lequel le `Caddyfile` d'une installation CoproFirst confie une
+#: requête à l'API (`handle /api/*` + `uri strip_prefix /api`). Le registre est une
+#: route de l'API : sans lui, l'envoi partait au front et rendait 404 (#1878,
+#: constaté le 13/10/2026). 🔒 `tests/aides_registre.py` le lit dans le `Caddyfile`.
+PREFIXE_API = "/api"
+
+
 def _poster(chemin: str, corps: dict) -> dict:
     """Envoie `corps`, signé ; rend la réponse JSON — ou lève avec le motif en clair."""
     octets = json.dumps(corps, ensure_ascii=False).encode()
@@ -101,7 +108,7 @@ def _poster(chemin: str, corps: dict) -> dict:
         "Content-Type": "application/json",
         EN_TETE_SIGNATURE: signature.signer(depot.cle_privee(), octets),
     }
-    url = get_settings().registre_url.rstrip("/") + chemin
+    url = get_settings().registre_url.rstrip("/") + PREFIXE_API + chemin
     try:
         reponse = httpx.post(url, content=octets, headers=entetes, timeout=DELAI)
     except httpx.HTTPError as exc:

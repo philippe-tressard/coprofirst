@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 
+import httpx
 from sqlmodel import Session
 
 from app.config import get_settings
@@ -19,9 +20,25 @@ from app.main import app
 from app.registre import base, migrer
 from app.utils.limiter import limiter
 from tests.aides_base import moteur_memoire
+from tests.aides_caddy import bloc_handle, caddyfile
 
 #: Le nom dédié du registre, dans les tests.
 HOTE = "registre.example"
+
+
+def prefixe_api_du_caddyfile() -> str:
+    """Le préfixe du client (`inscription.client.PREFIXE_API`), confronté au `Caddyfile`
+    versionné : c'est ce qu'un envoi au registre traverse réellement en production.
+    Le jour où l'un change sans l'autre, les tests du registre échouent (#1878).
+    """
+    from app.inscription.client import PREFIXE_API
+
+    bloc = bloc_handle(caddyfile(), f"{PREFIXE_API}/*")
+    assert bloc is not None and f"uri strip_prefix {PREFIXE_API}" in bloc, (
+        f"Caddyfile : aucun bloc `handle {PREFIXE_API}/*` qui retire `{PREFIXE_API}` — "
+        "les envois au registre n'atteindraient pas l'API"
+    )
+    return PREFIXE_API
 
 
 @contextmanager
@@ -72,9 +89,18 @@ def installation_branchee(monkeypatch, dossier) -> Iterator:
     monkeypatch.setattr(installation, "role_installation", lambda valeur=None: "replique")
     monkeypatch.setattr(cles, "CLES_REFERENCE", {1: ref_publique})
 
+    prefixe = prefixe_api_du_caddyfile()
+
     def poster(url, content, headers, timeout):
+        #  Comme Caddy : seul ce qui commence par le préfixe de l'API y arrive, et
+        #  sans lui. Le reste partirait au FRONT — ici, un 404 (#1878 : le client
+        #  postait sans `/api`, et l'aide, qui passait le chemin tel quel, le taisait).
         chemin = url.removeprefix(f"https://{HOTE}")
-        return TestClient(app).post(chemin, content=content, headers={**headers, "host": HOTE})
+        if not chemin.startswith(prefixe + "/"):
+            return httpx.Response(404, text="servi par le front, pas par l'API")
+        return TestClient(app).post(
+            chemin.removeprefix(prefixe), content=content, headers={**headers, "host": HOTE}
+        )
 
     monkeypatch.setattr(client.httpx, "post", poster)
     with registre_allume(monkeypatch) as moteur:
