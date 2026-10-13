@@ -23,7 +23,8 @@ nocturne efface la base et les fichiers.
 ## Installer
 
 1. Installer comme une réplique (`deploiement/standard/LISEZMOI.md`), base
-   **SQLite** (le défaut) — d'abord **sans** `MODE_DEMO` : une installation
+   **PostgreSQL** pour la démo de CoproFirst (SQLite est aussi géré par la
+   remise à zéro) — d'abord **sans** `MODE_DEMO` : une installation
    ordinaire, avec son administrateur initial.
 2. **S'inscrire au registre** avec ce compte, qui est l'**opérateur** :
    *Administration › Maintenance › Inscription au registre*. La démo n'a pas
