@@ -24,9 +24,11 @@ du manuel.
 | [`design/`](design/) | Charte graphique, principes UX, parcours utilisateurs |
 | [`architecture/`](architecture/) | Vue d'ensemble, pile technique, modèle de données, API |
 
-> 🧭 **Une exception** : [`architecture/multi-coproprietes.md`](architecture/multi-coproprietes.md)
-> n'est pas historique. Il décrit l'architecture **cible** du chantier
-> multi-copropriétés et se tient à jour à chaque arbitrage.
+> 🧭 **Deux exceptions**, qui ne sont pas historiques et se tiennent à jour à
+> chaque arbitrage : [`architecture/multi-coproprietes.md`](architecture/multi-coproprietes.md),
+> l'architecture **cible** du chantier multi-copropriétés, et
+> [`architecture/mode-demo.md`](architecture/mode-demo.md), l'installation de
+> démonstration publique.
 
 La partie qui vieillit le plus vite est la **navigation** (`web/navigation.md`,
 `mobile/navigation.md`) : l'arborescence des écrans change à chaque lot.
