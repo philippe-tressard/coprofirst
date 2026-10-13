@@ -183,13 +183,20 @@ def operations_montees(routeur, prefixe: str = ""):
     des `_IncludedRouter` opaques, et un parcours naïf n'y voit qu'UNE route. On
     descend par `original_router` en cumulant les préfixes. Elle vivait dans
     `test_routes_uniques.py` ; le test d'étanchéité en a eu besoin (#1746).
+
+    🔴 Le préfixe cumulé est celui de l'INCLUSION (`include_context.prefix`), pas
+    celui du routeur inclus : le chemin d'une route porte déjà le préfixe de son
+    routeur. Jusqu'au 13/10/2026 elle ajoutait `sous.prefix`, et rendait
+    `/auth/auth/me` pour `/auth/me` — des chemins qui n'existent pas, que le
+    balayage d'étanchéité appelait en GET et qui répondaient 404 (#1901).
     """
     for route in getattr(routeur, "routes", []):
         sous = getattr(route, "original_router", None)
+        inclusion = getattr(getattr(route, "include_context", None), "prefix", "") or ""
         if sous is None and hasattr(route, "routes") and not getattr(route, "path", None):
             sous = route
         if sous is not None and getattr(sous, "routes", None):
-            yield from operations_montees(sous, prefixe + (getattr(sous, "prefix", "") or ""))
+            yield from operations_montees(sous, prefixe + inclusion)
         elif getattr(route, "path", None):
             for methode in sorted(getattr(route, "methods", []) or []):
                 yield methode, prefixe + route.path, route

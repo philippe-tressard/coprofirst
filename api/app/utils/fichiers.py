@@ -22,6 +22,7 @@ import uuid
 
 from dataclasses import dataclass
 
+from app.utils.demo import refuser_fichier_recu
 from app.utils.stockage import DOSSIER_PRIVE, stockage
 
 #: Les fichiers qui ne doivent JAMAIS être servis en statique vivent sous
@@ -381,6 +382,7 @@ def enregistrer_fichier_recu(
     :param extension_forcee: pour une image réencodée, dont l'extension écrite
         n'est plus celle du type reçu. Le contrôle, lui, porte sur le type reçu.
     """
+    refuser_fichier_recu()  # la démo publique n'en reçoit aucun (#1901)
     extension = verifier_fichier_recu(octets, nom_origine, content_type, famille, user)
     nom = nom_stocke(nom_origine, extension_forcee or extension)
     stockage().ecrire(f"{dossier}/{nom}", octets)
@@ -421,6 +423,7 @@ def enregistrer_televersement(file, raw_name: str, user=None) -> str:
 
     from fastapi import HTTPException
 
+    refuser_fichier_recu()  # la démo publique n'en reçoit aucun (#1901)
     #  Seize octets suffisent à toutes les signatures connues. `seek(0)` remet le
     #  flux à zéro pour la copie qui suit — sans lui, le fichier écrit perd sa
     #  tête.
