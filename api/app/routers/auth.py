@@ -12,7 +12,6 @@ soi* reste ici, *décrire qui l'on est* s'en va. Le router garde le préfixe
 URL publiques sont donc rigoureusement inchangées.
 """
 
-from datetime import timedelta
 from app.utils import horloge
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, Cookie, Request
@@ -21,15 +20,13 @@ from sqlmodel import Session, select
 
 from app.utils.config_site import config_site
 from app.utils.journal_securite import journaliser_securite
-from app.utils.purge_comptes.regles import marquer_activite
 from app.auth.jwt import (
-    creer_jeton_acces,
-    create_refresh_token,
     decode_token,
     hash_password,
     verify_and_rehash,
 )
 from app.auth.adresse_compte import compte_par_adresse
+from app.auth.session_ouverte import ouvrir_session
 from app.auth.deps import get_current_user
 from app.auth.empreinte_jeton import empreinte
 from app.auth.jetons_rafraichissement import est_rejoue, remplacer, revoquer_sessions
@@ -65,9 +62,6 @@ from app.utils.verification_adresse import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
-
-
-COOKIE_OPTS = dict(httponly=True, secure=settings.cookie_secure, samesite="strict", path="/")
 
 
 @router.get("/batiments")
@@ -239,26 +233,9 @@ def login(
     if new_hash:
         user.hashed_password = new_hash  # rehash silencieux 12→10 rounds
 
-    #  La connexion remet aussi à zéro un avertissement de purge (#1580).
-    marquer_activite(user, horloge.maintenant())
-    session.add(user)
-
-    access = creer_jeton_acces(user.id, user.hashed_password)
-    refresh = create_refresh_token({"sub": str(user.id)})
-    rt = RefreshToken(
-        user_id=user.id,
-        token=empreinte(refresh),
-        expires_at=horloge.maintenant() + timedelta(days=settings.refresh_token_expire_days),
-    )
-    session.add(rt)
-    session.commit()
-
-    response.set_cookie(
-        "access_token", access, max_age=settings.access_token_expire_minutes * 60, **COOKIE_OPTS
-    )
-    response.set_cookie(
-        "refresh_token", refresh, max_age=settings.refresh_token_expire_days * 86400, **COOKIE_OPTS
-    )
+    #  Jetons, empreinte, cookies — et l'activité, qui remet à zéro un
+    #  avertissement de purge (#1580) : `auth/session_ouverte` (#1903).
+    ouvrir_session(session, user, response)
     return construire_user_read(user, session)
 
 
@@ -301,30 +278,10 @@ def refresh(
     remplacer(session, stored, maintenant)
     #  🔴 Un résident resté connecté ne repasse JAMAIS par `login` : c'est cet
     #  échange — au plus un toutes les deux heures, jamais à chaque requête — qui
-    #  dit qu'il est là. Sans lui, la purge des comptes inactifs (#1580) l'aurait
-    #  cru parti depuis sa dernière saisie de mot de passe.
-    marquer_activite(user, maintenant)
-    session.add(user)
-
-    new_refresh = create_refresh_token({"sub": str(user.id)})
-    rt = RefreshToken(
-        user_id=user.id,
-        token=empreinte(new_refresh),
-        expires_at=horloge.maintenant() + timedelta(days=settings.refresh_token_expire_days),
-    )
-    session.add(rt)
-    session.commit()
-
-    access = creer_jeton_acces(user.id, user.hashed_password)
-    response.set_cookie(
-        "access_token", access, max_age=settings.access_token_expire_minutes * 60, **COOKIE_OPTS
-    )
-    response.set_cookie(
-        "refresh_token",
-        new_refresh,
-        max_age=settings.refresh_token_expire_days * 86400,
-        **COOKIE_OPTS,
-    )
+    #  dit qu'il est là (`ouvrir_session` marque l'activité). Sans lui, la purge des
+    #  comptes inactifs (#1580) l'aurait cru parti depuis sa dernière saisie de mot
+    #  de passe.
+    ouvrir_session(session, user, response, maintenant)
     return {"message": "Token rafraîchi"}
 
 

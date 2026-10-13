@@ -173,8 +173,8 @@ l'étend.
 | Administrateur | `https://demo.coprofirst.fr/api/demo/entrer/administrateur` | gestionnaire du site |
 | (page de connexion de la démo) | `…/api/demo/entrer/locataire` | locataire |
 
-`GET`, réponse **303** vers l'accueil de l'application avec les cookies de
-session. Les deux domaines sont du **même site** (`coprofirst.fr`) : les cookies
+`GET`, réponse **303** vers `/tableau-de-bord` avec les cookies de session ;
+la route n'apparaît pas au schéma de l'API (livré en lot D3, #1903). Les deux domaines sont du **même site** (`coprofirst.fr`) : les cookies
 `samesite=strict` sont posés et relus normalement après le clic.
 
 ### 5.2 La route
