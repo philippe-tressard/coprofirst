@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  lib-conformite.sh — les contrôles de CONFORMITÉ de `check-reliability.sh`
-#                      (C20 à C25, C30, C32 à C36)
+#                      (C20 à C25, C30, C32 à C38)
 #
 #  Extrait le 20/08/2026, au fil de l'eau : `check-reliability.sh` a dépassé son
 #  plafond en recevant C23 (les en-têtes de sécurité réellement servis), et le
@@ -24,6 +24,8 @@
 #         (`lib-paquets-proscrits.sh`)
 #    C36  le journal d'accès de Caddy est-il écrit, et que dit-il des erreurs 500 ?
 #         (`lib-journal-acces.sh`)
+#    C37  la base PostgreSQL est-elle répliquée ? (`lib-replication.sh`)
+#    C38  chaque nœud refuse-t-il le mot de passe SSH ? (`lib-ssh-mot-de-passe.sh`)
 #
 #  Les contrôles restés dans `check-reliability.sh` posent l'autre question :
 #  *le service fonctionne-t-il ?* — la base, le rôle actif, le tunnel, la
@@ -232,4 +234,11 @@ conformite_verdicts() {
   #  failover promouvrait une base périmée. Sans objet tant que la production
   #  est sous SQLite. Collecte, décision et constats : `lib-replication.sh`.
   replication_verdicts
+
+  # ── C38. Chaque nœud refuse-t-il le mot de passe SSH ? (#1941) ───────────────
+  #  D'avril à octobre 2026, les deux l'acceptaient : `50-cloud-init.conf`
+  #  l'emportait sur le durcissement, et rien ne mesurait ce que sshd SERT
+  #  (#1918). Sonde par la méthode `none`, sans rien tenter ; décision dans
+  #  `lib-durcissement.sh`, sonde et constats dans `lib-ssh-mot-de-passe.sh`.
+  ssh_mot_de_passe_verdicts
 }

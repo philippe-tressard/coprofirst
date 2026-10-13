@@ -785,6 +785,29 @@ Ces contrôles **signalent**, ils ne corrigent rien : supprimer une copie de bas
 de `.env` sur un nœud, fermer `rpcbind`, mettre à jour docker restent des gestes
 root de Philippe, le standby d'abord.
 
+## C38 — chaque nœud refuse-t-il le mot de passe SSH ? (#1941, 14/10/2026)
+
+D'avril à octobre 2026, les deux nœuds l'acceptaient : `50-cloud-init.conf`
+l'emportait sur le durcissement, et ce qu'on relisait était le **fichier**, pas ce
+que sshd sert (#1918). C38 le mesure **par le comportement**, à chaque quart
+d'heure : une sonde qui ne demande que la méthode `none` (`ssh_noeud_sonde_auth_cmd`,
+`lib-ssh-noeuds.sh` — aucune clé présentée, aucun mot de passe tenté, clé d'hôte
+épinglée), à laquelle sshd répond en nommant ce qu'il accepte. Chaque nœud sonde
+son pair **et lui-même** (sa clé d'hôte lue localement), par l'adresse du LAN ;
+le pair est sondé même muet, parce qu'un nœud réinstallé depuis l'image est
+justement muet. Le jugement est celui du durcissement (`DURCISSEMENT_SSH_METHODES_PROSCRITES`,
+`lib-durcissement.sh`) ; sonde et constats : `lib-ssh-mot-de-passe.sh`.
+
+| Ce que C38 rend | Conduite |
+|---|---|
+| OK « mot de passe refusé — méthode(s) offerte(s) : … » | rien |
+| **FAIL** « le MOT DE PASSE est accepté » | `sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --etat` sur le nœud nommé, puis `--appliquer` (seconde session SSH ouverte, le standby d'abord) |
+| WARN « NON MESURÉ » | lire la cause : nœud injoignable, ou clé d'hôte non vérifiée — après une réinstallation, la clé du nœud a changé : la ré-épingler (`docs/restauration-complete.md`, étape 7), **jamais** en désarmant la vérification de clé d'hôte (`lib-ssh-noeuds.sh`) |
+
+FAIL et non WARN : c'est une porte ouverte, pas une hygiène. fail2ban ne compte
+pas la sonde en mode `normal` (mesuré) ; ne jamais en raccourcir la cadence, un
+bannissement de l'IP du pair couperait la bascule.
+
 ### Le journal d'accès de Caddy (#1588, 05/10/2026)
 
 Avant ce jour, les accès HTTP s'écrivaient sur la sortie standard du conteneur

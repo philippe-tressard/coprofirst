@@ -3,9 +3,11 @@
 #  lib-durcissement.sh — Ce que le durcissement système d'un nœud doit DIRE,
 #  et le jugement de ce qu'il dit réellement (#1917, #1918)
 #
-#  Module SOURCÉ par `scripts/installation/durcir-noeud.sh`, jamais exécuté :
-#  pas de bit x (`lib-*.sh` sont en 100644). Son self-test, `durcissement_selftest`,
-#  est lancé par `durcir-noeud.sh --selftest`, branché au job CI `test-scripts`.
+#  Module SOURCÉ par `scripts/installation/durcir-noeud.sh` (qui POSE) et par
+#  `lib-ssh-mot-de-passe.sh` (C38 de `check-reliability.sh`, qui SURVEILLE en
+#  continu, #1941), jamais exécuté : pas de bit x (`lib-*.sh` sont en 100644).
+#  Son self-test, `durcissement_selftest`, est lancé par `durcir-noeud.sh
+#  --selftest`, branché au job CI `test-scripts`.
 #
 #  ── POURQUOI ─────────────────────────────────────────────────────────────────
 #
@@ -99,6 +101,44 @@ durcissement_sshd_verdict() {
     [ "$lu" = "$voulu" ] || ecarts="$ecarts ${cle}=${lu:-absent}(voulu ${voulu})"
   done <<< "$DURCISSEMENT_SSHD"
   if [ -n "$ecarts" ]; then echo "ECART:${ecarts# }"; else echo CONFORME; fi
+}
+
+# ── sshd : ce que le nœud OFFRE réellement au client (C38, #1941) ────────────
+#  `sshd -T` dit la configuration ; il faut root, et il ne dit rien d'un `Match`
+#  qui ne s'appliquerait qu'au LAN. La sonde de `check-reliability.sh` demande la
+#  méthode `none` (`ssh_noeud_sonde_auth_cmd`) : le serveur la refuse en NOMMANT
+#  ce qu'il accepte — « Permission denied (publickey) ». C'est le comportement,
+#  vu du client, sans rien tenter.
+#: Les méthodes que coupent `PasswordAuthentication no` et
+#: `KbdInteractiveAuthentication no` (DURCISSEMENT_SSHD), sous le nom que sshd
+#: donne au client. `keyboard-interactive` porte le mot de passe par PAM.
+DURCISSEMENT_SSH_METHODES_PROSCRITES="password keyboard-interactive"
+
+#  $1 = ce qu'a écrit la sonde (stderr compris) → la liste des méthodes offertes
+#  (« publickey,password »), vide si la réponse n'en porte pas.
+durcissement_ssh_methodes_offertes() {
+  printf '%s\n' "${1:-}" | sed -n 's/.*Permission denied (\([^)]*\)).*/\1/p' | tail -n 1
+}
+
+#  $1 = code de retour de la sonde (vide : non lancée) · $2 = ce qu'elle a écrit
+durcissement_ssh_sonde_verdict() {
+  local rc=${1:-} sortie=${2:-} offertes m proscrites=""
+  #  La sonde exécute `true` : rendre 0, c'est être ENTRÉ sans s'authentifier.
+  [ "$rc" = 0 ] && { echo "ECART:connexion acceptée sans aucune authentification"; return 0; }
+  offertes=$(durcissement_ssh_methodes_offertes "$sortie")
+  if [ -z "$offertes" ]; then
+    case "$sortie" in
+      '') echo "INCONNU:aucune réponse (code ${rc:-non lancée})" ;;
+      *"Host key verification failed"*)
+          echo "INCONNU:clé d'hôte non vérifiée — rien ne dit que c'est le nœud qui a répondu" ;;
+      *)  echo "INCONNU:réponse sans liste de méthodes (code ${rc:-?}) : $(printf '%s' "$sortie" | tr '\n' ' ' | cut -c1-120)" ;;
+    esac
+    return 0
+  fi
+  for m in $DURCISSEMENT_SSH_METHODES_PROSCRITES; do
+    case ",$offertes," in *",$m,"*) proscrites="$proscrites${proscrites:+,}$m" ;; esac
+  done
+  if [ -n "$proscrites" ]; then echo "ECART:$proscrites offert (méthodes : $offertes)"; else echo CONFORME; fi
 }
 
 #  Couper le mot de passe sans clé autorisée enferme dehors : un nœud fraîchement
@@ -217,6 +257,33 @@ x11forwarding no"
     "$(durcissement_sshd_verdict "$(durcissement_sshd_contenu | grep -v '^#' | tr '[:upper:]' '[:lower:]')")"
   v "sshd : fichier lu avant 50-cloud-init" CONFORME \
     "$( [[ "${DURCISSEMENT_SSHD_FICHIER##*/}" < "50-cloud-init.conf" ]] && echo CONFORME || echo ECART)"
+  #  C38 — la sonde, telle que ssh l'écrit (rc 255 : refusé).
+  local P="compte@10.0.0.2: Permission denied"
+  v "sonde : publickey seul (les deux nœuds depuis le 14/10)" CONFORME \
+    "$(durcissement_ssh_sonde_verdict 255 "$P (publickey).")"
+  v "sonde : publickey et GSSAPI" CONFORME \
+    "$(durcissement_ssh_sonde_verdict 255 "$P (publickey,gssapi-keyex,gssapi-with-mic).")"
+  #  LA FAUTE INJECTÉE : les deux nœuds d'avril à octobre 2026 (#1918).
+  v "sonde : publickey,password (#1918)" ECART \
+    "$(durcissement_ssh_sonde_verdict 255 "$P (publickey,password).")"
+  v "sonde : mot de passe par PAM" ECART \
+    "$(durcissement_ssh_sonde_verdict 255 "$P (publickey,keyboard-interactive).")"
+  v "sonde : password en premier" ECART "$(durcissement_ssh_sonde_verdict 255 "$P (password,publickey).")"
+  v "sonde : entrée sans authentification" ECART "$(durcissement_ssh_sonde_verdict 0 "")"
+  v "sonde : bannière avant le refus" CONFORME "$(durcissement_ssh_sonde_verdict 255 "Avis : accès réservé.
+$P (publickey).")"
+  v "sonde : « passwordless » n'est pas password" CONFORME \
+    "$(durcissement_ssh_sonde_verdict 255 "$P (publickey,passwordless).")"
+  #  LE CAS ZÉRO : ni réponse ni liste → jamais CONFORME.
+  v "sonde : aucune réponse" INCONNU "$(durcissement_ssh_sonde_verdict 124 "")"
+  v "sonde : non lancée" INCONNU "$(durcissement_ssh_sonde_verdict "" "")"
+  v "sonde : nœud injoignable" INCONNU \
+    "$(durcissement_ssh_sonde_verdict 255 "ssh: connect to host 10.0.0.2 port 22: Connection timed out")"
+  v "sonde : clé d'hôte inconnue" INCONNU \
+    "$(durcissement_ssh_sonde_verdict 255 "Host key verification failed.")"
+  v "sonde : méthodes lues" "publickey,password" \
+    "$(durcissement_ssh_methodes_offertes "$P (publickey,password).")"
+
   v "sshd : 2 clés autorisées" OUI   "$(durcissement_sshd_peut_appliquer 2)"
   v "sshd : aucune clé autorisée" REFUS "$(durcissement_sshd_peut_appliquer 0)"
   v "sshd : clés illisibles" REFUS "$(durcissement_sshd_peut_appliquer "")"

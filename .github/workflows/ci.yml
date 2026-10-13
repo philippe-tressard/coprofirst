@@ -622,6 +622,10 @@ jobs:
           # C36 (#1588) : le journal d'accès de Caddy — la collecte exécutée sur un
           # journal aux formes réelles (fenêtre de 24 h jugée sur le `ts`), et le cas zéro.
           bash scripts/lib/lib-journal-acces.sh     --selftest
+          # C38 (#1941) : chaque nœud refuse-t-il le mot de passe SSH ? Le constat
+          # sur une sonde simulée — faute injectée `publickey,password`, cas zéro —
+          # et la sonde réelle, son SSH remplacé par un témoin (lib-ssh-noeuds).
+          bash scripts/lib/lib-ssh-mot-de-passe.sh  --selftest
           bash scripts/lib/lib-mises-a-jour.sh      --selftest
           bash scripts/lib/lib-notification.sh      --selftest
           bash scripts/poste/precheck-mep.sh      --selftest
