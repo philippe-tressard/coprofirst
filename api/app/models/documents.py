@@ -62,8 +62,7 @@ class Document(SQLModel, table=True):
     titre: str
     fichier_nom: str
     #  La CLÉ du fichier dans le stockage (`prive/…`, #1816) — `stockage().cle_de`.
-    #  L'ancien chemin absolu (`fichier_chemin`) reste en base pour la version
-    #  précédente, qui le relit (#1757), et part en second temps (`CONTRACTIONS`).
+    #  L'ancien chemin absolu (`fichier_chemin`) a quitté la base (0285).
     fichier_cle: Optional[str] = None
     taille_octets: Optional[int] = None
     mime_type: str = "application/octet-stream"

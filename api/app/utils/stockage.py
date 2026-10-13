@@ -141,8 +141,8 @@ class StockageDisque:
     #  Le document, le rapport de diagnostic et l'affiche de hall gardent la CLÉ
     #  de leur fichier (`fichier_cle`, `pdf_cle`) : un chemin absolu n'a pas de
     #  sens dans un stockage objet, et il change si le volume est monté ailleurs.
-    #  La migration 0283 l'a posée sur chaque ligne d'avant ; le chemin n'est plus
-    #  ni lu ni écrit (second temps, `CONTRACTIONS`). Toute lecture passe par ces
+    #  La migration 0283 l'a posée sur chaque ligne d'avant ; le chemin a quitté
+    #  la base (0285, second temps de `CONTRACTIONS`). Toute lecture passe par ces
     #  trois gestes.
 
     def colonnes(self, cle: str, prefixe: str = "fichier") -> dict[str, str]:
