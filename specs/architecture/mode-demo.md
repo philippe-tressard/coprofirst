@@ -5,7 +5,8 @@
 > `specs/`, ce document décrit **où le produit va**. Le **travail** vit dans les
 > tickets (§10) ; ce document en porte les **décisions** et leurs raisons, et se met
 > à jour **à chaque arbitrage**, daté. Toute décision qui n'y figure pas n'est pas
-> prise. Les propositions du §11 attendent l'arbitrage de l'auteur.
+> prise. Les décisions M1 à M9 et les six questions du §11 sont arbitrées le
+> 13/10/2026.
 
 ## 1. L'objectif et l'exigence
 
@@ -47,15 +48,17 @@ Résident, Conseil syndical, Administrateur — qui doivent connecter **au clic*
 sans afficher d'identifiants. Elle attend de cette spécification **les adresses
 d'entrée** (§5).
 
-## 3. Les décisions (proposées le 13/10/2026)
+## 3. Les décisions (arbitrées le 13/10/2026)
 
-| # | Sujet | Proposition | Conséquence |
+| # | Sujet | Décision | Conséquence |
 |---|---|---|---|
 | M1 | Activation | **`MODE_DEMO=oui` dans `.env`**, absent = non. Un seul lecteur, `utils/demo.est_demo()`, sur le modèle de `utils/installation.role_installation()` | §4.1 ; le réglage ne s'écrit **jamais** depuis l'interface |
 | M2 | Zéro envoi | **les portes d'envoi refusent** en mode démo — moteur de courriel, bridge WhatsApp, appel à l'IA, relève IMAP, requête GitHub —, quelle que soit la configuration en base | §4.2 ; un administrateur de démo ne peut rien rallumer |
 | M3 | Gestes fermés | **un registre unique des gestes fermés en démo** (`utils/demo.GESTES_FERMES`), appliqué par **une** garde à l'entrée des requêtes ; réponse 403 « Indisponible en démonstration » | §4.3 ; une route oubliée se voit dans un test, pas en production |
 | M4 | Entrée | **une adresse par personnage**, sans mot de passe : `/api/demo/entrer/{personnage}`, qui ouvre la session et renvoie vers l'accueil ; **404** hors mode démo | §5 |
-| M5 | Comptes | **comptes partagés** par personnage : tous les visiteurs « Résident » sont le même compte | §5.3 ; voir §11, question 1 |
+| M5 | Comptes | **comptes partagés** par personnage : tous les visiteurs « Résident » sont le même compte | §5.3 ; §11, question 1 |
+| M10 | Fichiers | **aucun téléversement** de visiteur ; le jeu de démo apporte ses images et ses documents | §4.3 ; §11, question 2 |
+| M11 | Plafond du registre | la démo **s'inscrit au registre** comme toute réplique dès qu'il l'accepte ; d'ici là, une **exception déclarée** au plafond de 5 utilisateurs (D18), lue sous `est_demo()` | §9 ; §11, question 3 |
 | M6 | Données | **un générateur** (`app/demo/`), qui fabrique la résidence fictive **avec des dates relatives à aujourd'hui** — jamais une archive figée | §6 |
 | M7 | Remise à zéro | **chaque nuit**, API arrêtée : base vidée, fichiers vidés, générateur rejoué | §7 |
 | M8 | Interface | **bandeau permanent** sur tous les écrans, connexion comprise ; page de connexion remplacée par le choix du personnage ; **pas d'indexation** | §8 |
@@ -125,7 +128,7 @@ démo ; une garde unique, posée à côté de `contexte.ResolutionCopropriete`
 | Réglages et secrets | `PUT /config`, `POST`/`DELETE /config/logo`, `PATCH /copropriete`, `/perimetres` (écriture), `PATCH /admin/modeles-email/*` et réinitialisations | l'installation ne se reconfigure pas |
 | Tests de canaux | `POST /config/smtp-test`, `/imap-test`, `/whatsapp-test`, `/llm-test`, `/llm-tarif`, `PUT /config/whatsapp-scheduled/{id}`, `GET /config/whatsapp-qr`, `/whatsapp-status` | appels sortants ; doublés par §4.2 |
 | Exploitation | `/admin/sauvegardes/*` (écriture), `/admin/maintenance/*`, `/admin/db/*`, `/admin/export-copropriete*` | charge, disque, et export de la base entière |
-| Imports | `/admin/imports/*`, `/admin/imports-vigik/*`, imports de télécommandes | fichiers déposés par le visiteur (§11, question 2) |
+| Téléversements (M10) | **la porte unique** `utils/fichiers.enregistrer_fichier_recu` refuse en démo — photos, documents, pièces jointes, logo ; et les routes d'import `/admin/imports/*`, `/admin/imports-vigik/*`, imports de télécommandes | un site public où n'importe qui dépose un fichier visible des autres héberge du contenu non modéré, même 24 h |
 | Partage par courriel | `POST /partage` (envoi vers une adresse libre) | doublé par §4.2 |
 
 🔒 Un test parcourt **toutes** les routes montées et exige que chaque route
@@ -308,7 +311,8 @@ installée :
   IP ?).
 - **Registre des installations** : sans inscription valide, une installation
   tourne en **mode limité, 5 utilisateurs au plus** (D18) ; le jeu de démo en
-  compte une vingtaine (§11, question 3).
+  compte une vingtaine : M11 — inscription dès que le registre l'accepte,
+  exception déclarée d'ici là.
 
 ## 10. Le découpage en lots
 
@@ -329,26 +333,19 @@ donc invisible du contrôle du registre (#1909) ; `UPLOADS` écrit en dur dans
 `utils/backup.py` malgré la lecture unique de `uploads_dir` (#1910) ; le syndic inscrit
 avec `roles_json="syndic"` (§5.3, #1911).
 
-## 11. Les questions ouvertes — à arbitrer par l'auteur
+## 11. Les questions — arbitrées le 13/10/2026
 
-1. **Comptes partagés ou isolés ?** *Proposition : partagés* (M5). Tout visiteur
-   « Résident » est le même compte : simple, et la démo montre la vie d'une
-   résidence où d'autres agissent. Prix : un visiteur peut archiver ce qu'un autre
-   regarde, jusqu'à la nuit. L'alternative — une copie du jeu par visiteur — est
+1. ~~**Comptes partagés ou isolés ?**~~ — **partagés** (M5). Un visiteur peut
+   défaire ce qu'un autre regarde jusqu'à la nuit ; une copie par visiteur serait
    un chantier d'un autre ordre (une base par session).
-2. **Téléversements des visiteurs ?** *Proposition : refusés en démo* (photos,
-   documents, imports), le jeu apportant ses propres images. Un site public où
-   n'importe qui dépose un fichier visible des autres est un hébergement de
-   contenu non modéré, même 24 h. L'alternative : images seulement, taille
-   réduite.
-3. **Inscription au registre des installations ?** *Proposition : la démo
-   s'inscrit comme toute réplique* (canal `replica`) dès que le registre accepte
-   les inscriptions ; d'ici là, une **exception déclarée** au plafond de 5
-   utilisateurs, lue sous `est_demo()`, plutôt qu'un jeu réduit à 5 comptes.
-4. **SQLite ou PostgreSQL ?** *Proposition : SQLite*, défaut de l'installation
-   standard, remise à zéro par suppression d'un fichier. D13 vise PostgreSQL pour
-   la référence ; rien dans la démo n'en a besoin.
-5. **Personnages** : *proposition : quatre* — résident (copropriétaire occupant),
-   locataire, conseil syndical, administrateur ; le syndic plus tard.
-6. **Fréquence de remise à zéro** : *proposition : chaque nuit*, comme l'annonce la
-   page d'accueil ; plus souvent si l'usage montre des dégradations.
+2. ~~**Téléversements des visiteurs ?**~~ — **refusés** (M10), à la porte unique
+   des fichiers reçus ; le jeu apporte ses images et ses documents.
+3. ~~**Inscription au registre ?**~~ — **la démo s'inscrit** comme toute
+   réplique dès que le registre l'accepte ; d'ici là, **exception déclarée** au
+   plafond de 5 utilisateurs, sous `est_demo()` (M11).
+4. ~~**SQLite ou PostgreSQL ?**~~ — **SQLite**, défaut de l'installation standard
+   (retenu par défaut, sans objection de l'auteur).
+5. ~~**Personnages**~~ — **quatre** : résident (copropriétaire occupant),
+   locataire, conseil syndical, administrateur. Le syndic attend #1911.
+6. ~~**Fréquence de remise à zéro**~~ — **chaque nuit** (retenu par défaut, sans
+   objection de l'auteur) ; plus souvent si l'usage montre des dégradations.
