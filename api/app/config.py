@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     role_installation: str = ""
     # Le commit de l'image, posé à la construction (`GIT_HASH`, api/Dockerfile).
     git_hash: str = ""
+    # La DÉMO PUBLIQUE de CoproFirst (spec `mode-demo.md`, #1901) : `oui` ferme les
+    # gestes du registre `utils/demo.GESTES_FERMES`. Lu par `utils/demo.est_demo` et
+    # nulle part ailleurs ; vide ou mal écrit, l'installation n'est pas une démo.
+    mode_demo: str = ""
     # La version promue qu'une RÉPLIQUE installe (`deploiement/standard`, même `.env`) ;
     # vide chez la référence. Lue par `utils/installation.version_logicielle`.
     coprofirst_version: str = ""
