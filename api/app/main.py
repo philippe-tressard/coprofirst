@@ -80,7 +80,7 @@ from app.routers import (
     flux,
 )
 from app.routers import uploads, faq, signalements, annonces_hall, patrimoine
-from app.routers import manuel
+from app.routers import demo as demo_entree, manuel
 from app.registre import routeur as registre  # le registre des installations (§4.11)
 from app.routers import courriels_affaires
 from app.routers import partage
@@ -405,7 +405,7 @@ app.include_router(prestataires_archivage.router)
 #  Les métriques des affaires d'un prestataire (#1646), même préfixe.
 app.include_router(prestataires_metriques.router)
 #  Les routeurs sans particularité de montage : un `include_router` chacun.
-for _routeur in (sondages, idees, annonces, annonces_hall, courriels_affaires, manuel):
+for _routeur in (sondages, idees, annonces, annonces_hall, courriels_affaires, manuel, demo_entree):
     app.include_router(_routeur.router)
 app.include_router(copropriete.router)
 #  Les bâtiments et les lots — extraits le 22/09/2026 (modularité, rang 1). Même
