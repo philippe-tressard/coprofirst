@@ -55,6 +55,9 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    n'est pas employé), `ORIGIN` (l'adresse publique) et la configuration SMTP.
    ⚠️ Le site ne répond qu'au nom de `ORIGIN` : un autre nom reçoit une erreur 421 (« requête mal dirigée »). Un second nom — un alias, un ancien domaine — se
    déclare dans `HOTES_COPROPRIETE`, séparé par des virgules.
+   `COURRIEL_OPERATEUR` reçoit les alertes de la plateforme (disque du serveur),
+   par le SMTP de l'installation (`MAIL_*`, `MAIL_ENABLED=true`) : sans eux, elles
+   ne sont que journalisées.
 3. Ajouter **la version à installer** dans `.env` :
    ```
    COPROFIRST_VERSION=2.119.1

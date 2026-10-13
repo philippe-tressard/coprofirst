@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     plateforme_database_url: str = ""
     hote_registre: str = ""
 
+    # L'adresse de l'OPÉRATEUR de l'installation (#1814, arbitré le 13/10/2026) : le
+    # destinataire des alertes de la PLATEFORME (le disque du serveur), qui ne lisent
+    # aucune base de copropriété (D5). Une coordonnée de l'installation, pas d'une
+    # copropriété ; elle part par le SMTP de l'installation (`MAIL_*`). Lue par
+    # `utils/sante_plateforme` et nulle part ailleurs ; vide → l'alerte se journalise.
+    courriel_operateur: str = ""
+
     # Le REGISTRE des hôtes de la copropriété (#1751, P2-9) : le nom de
     # l'`ORIGIN` — le même `.env` que le front —, plus ceux qu'on déclare ici,
     # séparés par des virgules. Lus par `app/contexte.py` et nulle part ailleurs.

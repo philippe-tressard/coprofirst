@@ -21,29 +21,30 @@ et l'écran « Relancer le contrôle » d'Admin › Maintenance le montre toujou
 Le disque quitte le contrôle des copropriétés et se juge ici, une fois, par une
 tâche de la plateforme (`TACHES_DE_LA_PLATEFORME`).
 
-🔴 **Son destinataire n'est pas décidé** (arbitrage du 12/10/2026 : « je verrai
-quand le premier cas se produira »). Tout ce qui en dépend est dans
-`destinataire_alertes_plateforme`, et nulle part ailleurs. Deux voies :
+**Son destinataire est l'opérateur de l'installation** (arbitré le 13/10/2026,
+#1814) : un RÉGLAGE de l'installation, `COURRIEL_OPERATEUR`, et non les comptes
+opérateurs des copropriétés — les trouver ferait ouvrir toutes les bases pour
+une adresse (D5). Le message part par le SMTP de l'INSTALLATION (`MAIL_*`) : le
+SMTP en base est celui d'une copropriété (D6), et aucune n'est servie ici.
 
-1. un réglage de l'INSTALLATION (une variable d'environnement lue par
-   `Settings`) — l'opérateur supervise l'installation, sa coordonnée lui
-   appartient ; c'est la recommandation de #1814 ;
-2. les comptes opérateurs de chaque copropriété (P2-8, #1750), dédoublonnés —
-   ce qui fait ouvrir toutes les bases pour une adresse (risque D5 de la spec).
-
-Tant que la décision manque, l'alerte se JOURNALISE, en `WARNING`, avec ce
-qu'il faut faire — jamais un silence. L'infrastructure surveille déjà le disque
-des nœuds de son côté (`check-reliability.sh`, point 14 du pré-check) : ce
-contrôle-ci est celui de l'APPLICATION, celui qui partira avec une installation
-sur un autre hébergeur.
+Sans adresse, ou sans SMTP de l'installation, l'alerte se JOURNALISE en
+`WARNING` avec ce qu'il faut régler — jamais un silence. L'infrastructure
+surveille déjà le disque des nœuds de son côté (`check-reliability.sh`, C9) :
+ce contrôle-ci est celui de l'APPLICATION, celui qui partira avec une
+installation sur un autre hébergeur.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import shutil
 
 from app import contexte
+from app.config import get_settings
+from app.utils import horloge
+from app.utils.dates_fr import datetime_longue
+from app.utils.plateforme import NOM_PLATEFORME
 
 logger = logging.getLogger(__name__)
 
@@ -76,25 +77,64 @@ def disque_par_la_plateforme() -> bool:
 
 
 def destinataire_alertes_plateforme() -> str | None:
-    """L'adresse de l'opérateur pour une alerte de plateforme — NON DÉCIDÉE (#1814).
+    """L'adresse de l'opérateur de l'installation (`COURRIEL_OPERATEUR`), ou None."""
+    return get_settings().courriel_operateur.strip() or None
 
-    Rend `None` tant que l'une des deux voies de l'en-tête n'est pas choisie. Le
-    jour où elle l'est, c'est cette fonction qu'on écrit, et `alerter` qui
-    envoie — rien d'autre ne bouge.
+
+def _message(problemes: list[str]) -> tuple[str, str]:
+    """Le sujet et le corps — écrits ici : les modèles en base sont ceux d'une copropriété."""
+    quand = datetime_longue(horloge.a_paris(horloge.maintenant()))
+    sujet = f"[{NOM_PLATEFORME}] Alerte de la plateforme — {len(problemes)} problème(s)"
+    lignes = "\n".join(f"• {p}" for p in problemes)
+    corps = (
+        f"Contrôle de la plateforme du {quand}.\n\n{lignes}\n\n"
+        "Ce message s'adresse à l'opérateur de l'installation (COURRIEL_OPERATEUR) : il ne "
+        "concerne aucune copropriété en particulier."
+    )
+    return sujet, corps
+
+
+def _envoyer(destinataire: str, problemes: list[str]) -> None:
+    """Le message, par le SMTP de l'INSTALLATION (`MAIL_*`) — jamais celui d'une copropriété."""
+    from fastapi_mail import FastMail, MessageSchema, MessageType
+
+    from app.utils.smtp import connexion_smtp
+
+    s = get_settings()
+    cfg = connexion_smtp({"smtp_from_name": NOM_PLATEFORME}, expediteur=s.mail_from)
+    sujet, corps = _message(problemes)
+    message = MessageSchema(
+        subject=sujet, recipients=[destinataire], body=corps, subtype=MessageType.plain
+    )
+    asyncio.run(FastMail(cfg).send_message(message))
+
+
+def alerter(problemes: list[str]) -> bool:
+    """Prévenir l'opérateur — ou dire, en toutes lettres, pourquoi on ne le peut pas.
+
+    Rend vrai si le message est parti. L'adresse n'est JAMAIS journalisée (#777).
     """
-    return None
-
-
-def alerter(problemes: list[str]) -> None:
-    """Prévenir l'opérateur — ou dire, en toutes lettres, qu'on ne le peut pas."""
-    if destinataire_alertes_plateforme() is None:
+    destinataire = destinataire_alertes_plateforme()
+    if destinataire is None or not get_settings().mail_enabled:
+        manque = "COURRIEL_OPERATEUR" if destinataire is None else "MAIL_ENABLED"
         logger.warning(
-            "Alerte de PLATEFORME non envoyée — aucun destinataire décidé (#1814, "
-            "`utils/sante_plateforme.destinataire_alertes_plateforme`) : %s",
+            "Alerte de PLATEFORME non envoyée — %s n'est pas réglé dans le .env de "
+            "l'installation : %s",
+            manque,
             " | ".join(problemes),
         )
-        return
-    raise NotImplementedError("l'envoi suit la décision du destinataire (#1814)")
+        return False
+    try:
+        _envoyer(destinataire, problemes)
+    except Exception as exc:  # noqa: BLE001 — l'échec se dit, la tâche continue
+        logger.warning(
+            "Alerte de PLATEFORME non envoyée — SMTP de l'installation en échec (%s) : %s",
+            type(exc).__name__,
+            " | ".join(problemes),
+        )
+        return False
+    logger.info("Alerte de plateforme envoyée à l'opérateur (%d problème(s)).", len(problemes))
+    return True
 
 
 def run_controle_plateforme() -> None:
