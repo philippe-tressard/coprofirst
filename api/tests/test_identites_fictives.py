@@ -60,6 +60,8 @@ SUFFIXES_DOCUMENTS = {".md", ".html", ".json", ".js", ".yml"}
 
 #: Où vivent les jeux de données : les champs de nom y portent des personnes.
 DONNEES = ("api/tests", "front/e2e")
+#: Et dans `app/` : le jeu de la démo publique (spec `mode-demo.md` §6.3).
+DEMO = "demo/"
 #: Le code hors `app/` (lu par `modules_app`) : seuls les noms en clair comptent.
 #: `api/alembic` y est depuis #1544 : la docstring d'une migration nommait deux
 #: employées du syndic, et aucun contrôle ne lisait ce dossier.
@@ -88,13 +90,13 @@ FICTIFS = frozenset(
 #: entreprises, lieux, rôles, mots d'interface.
 PAS_DES_NOMS = frozenset(
     """
-    ADMIN AMIANTE ANCIEN APPROVED ASCENSEURS ASSUREUR AULNAY AUTRE BAILLEUR BEARER BONJOUR
-    BSD CAS CLE COMPTEURS CONSEIL CONSTATE COPRO CORPS COTE CRAYON CSS DEGAT DEJA
-    DEMANDEUR DUREE ENTREE ESSAI EXTERNE FAQ GEST HTML INCONNU LICENSE LIE LOC
-    LOCATAIRE MIS MIT MIXTE MME NOM NOUVEAU NOUVEL NOUVELLE NOYAU ORPHELINE OSI
-    OTIS PARC PARTI PDF PLANS PLOMBERIE
-    PRENOM PROPRIO REGLEMENT REJEU RESIDENCE RESIDENT SANS SANSBAT SCAN SERIE
-    SERVICES SICLI SITE SONDAGE SOURCE STOCK SYNDIC TEMOIN TEST UNUSED
+    ADMIN AMIANTE ANCIEN APPROVED ASCENSEURS ASSUREUR AULNAY AUTRE BAILLEUR BEARER
+    BONJOUR BSD CABINET CAS CLE COMPTEURS CONSEIL CONSTATE COPRO CORPS COTE CRAYON CSS
+    DEGAT DEJA DEMANDEUR DUREE ENTREE ESPACES ESSAI EXTERNE FAQ GEST HTML INCENDIE
+    INCONNU LICENSE LIE LOC LOCATAIRE MIS MIT MIXTE MME NOM NOUVEAU NOUVEL NOUVELLE
+    NOYAU ORPHELINE OSI OTIS PARC PARTI PDF PLANS PLOMBERIE PRENOM PROPRIO REGLEMENT
+    REJEU RESIDENCE RESIDENT SANS SANSBAT SCAN SECURITE SERIE SERVICES SICLI SITE
+    SONDAGE SOURCE STOCK SYNDIC TEMOIN TEST UNUSED VERTS
     """.split()
 )
 
@@ -162,7 +164,9 @@ def _lu(chemin: pathlib.Path, donnees: bool) -> tuple[str, str, bool]:
 
 def _sources() -> list[tuple[str, str, bool]]:
     """(chemin relatif, texte, est-ce un jeu de données) pour toute la portée."""
-    lus = [(f"api/app/{m.rel}", m.source, False) for m in modules_app()]
+    #  `app/demo/` est le jeu de données de la démo publique (#1904) : ses champs de
+    #  nom portent des personnes, comme ceux des tests.
+    lus = [(f"api/app/{m.rel}", m.source, m.rel.startswith(DEMO)) for m in modules_app()]
     for dossier, donnees, suffixes in PORTEE:
         racine = RACINE / dossier
         assert racine.is_dir(), f"`{dossier}/` introuvable : la portée du contrôle a bougé."
