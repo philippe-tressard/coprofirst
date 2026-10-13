@@ -140,8 +140,13 @@ def register(
         StatutUtilisateur.mandataire,
         StatutUtilisateur.aidant,
     ):
+        #  🔴 Le rôle LU est `roles_json` (`has_role`) : y écrire le statut
+        #  (« syndic »…) laissait ces comptes ouvrir une affaire et voter, alors
+        #  que `role` les disait externes (#1911, arbitré le 13/10/2026 :
+        #  consulter seulement). Le statut reste porté par `statut`, que
+        #  `profil_admet` lit — le syndic garde ses PV d'AG.
         user.role = RoleUtilisateur.externe
-        user.roles_json = body.statut.value  # "syndic", "mandataire" ou "aidant"
+        user.roles_json = RoleUtilisateur.externe.value
     else:
         _STATUT_ROLES = {
             StatutUtilisateur.copropriétaire_résident: [
