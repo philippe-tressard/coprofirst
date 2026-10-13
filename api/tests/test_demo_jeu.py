@@ -1,0 +1,207 @@
+"""Le jeu de données de la démo (spec `mode-demo.md` §6, lot D4 #1904).
+
+Le jeu est chargé UNE fois, par la vraie commande (`app.demo.charger.charger`),
+dans une copropriété d'essai sur fichier — le seed compris, comme la remise à zéro
+nocturne le fera. Puis chaque écran principal doit avoir du contenu, et les dates
+doivent tomber là où la démo les annonce : du passé récent, des rendez-vous à venir.
+"""
+
+from __future__ import annotations
+
+import json
+from dataclasses import replace
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlmodel import Session, func, select
+
+from app import contexte
+from app.config import get_settings
+from app.dialecte import url_fichier
+from app.demo.charger import BaseNonVierge, charger
+from app.demo.personnages import PERSONNAGES
+from app.main import app
+from app.models.acces import Telecommande, Vigik
+from app.models.communaute import Idee, PetiteAnnonce, Sondage, VoteSondage
+from app.models.core import CategorieTicket, StatutTicket, Ticket, Utilisateur
+from app.models.copropriete import Batiment, Copropriete
+from app.models.gouvernance import AgCsInfo, MembreCS
+from app.models.perimetre import Perimetre
+from app.models.prestataires import ContratEntretien, Prestataire
+from app.models.tickets import MessageTicket, TicketEvolution
+from app.utils import horloge
+from app.utils.config_site import config_site
+from app.utils.stockage import stockage
+from tests.aides_pdf import DISPONIBLE, besoin_weasyprint
+
+
+@pytest.fixture(scope="module")
+def copro(tmp_path_factory):
+    dossier = tmp_path_factory.mktemp("demo")
+    copro = replace(
+        contexte.courante(),
+        identifiant="essai-demo",
+        url_base=url_fichier(dossier / "demo.db"),
+        racine_fichiers=dossier / "fichiers",
+        secret="d" * 40,
+    )
+    copro.racine_fichiers.mkdir()
+    with contexte.dans(copro):
+        #  Sans les PDF : WeasyPrint manque au poste ; `test_les_documents_de_la_demo`
+        #  les rend là où il est (CI).
+        bilan = charger(documents=DISPONIBLE)
+    yield copro, bilan
+    with contexte.dans(copro):
+        contexte.moteur().dispose()
+
+
+@pytest.fixture
+def s(copro):
+    with contexte.dans(copro[0]), Session(contexte.moteur()) as session:
+        yield session
+
+
+def _compte(s, modele, *conditions) -> int:
+    return s.exec(select(func.count()).select_from(modele).where(*conditions)).one()
+
+
+# ── Le chargement ────────────────────────────────────────────────────────────
+
+
+def test_le_bilan_dit_ce_qui_a_ete_pose(copro):
+    _, bilan = copro
+    assert bilan["comptes"] >= 20 and bilan["lots"] >= 30 and bilan["affaires"] >= 15
+
+
+def test_une_base_deja_peuplee_est_refusee(copro):
+    with contexte.dans(copro[0]), pytest.raises(BaseNonVierge):
+        charger(documents=False)
+
+
+# ── Les écrans ont du contenu ────────────────────────────────────────────────
+
+
+def test_la_residence_est_inventee_et_nommee(s):
+    copros = s.exec(select(Copropriete)).all()
+    assert [c.nom for c in copros] == ["Résidence Les Glycines"], "pas de « Ma Résidence » du seed"
+    assert config_site(s, "site_nom")["site_nom"] == "Résidence Les Glycines"
+    assert _compte(s, Batiment) == 3
+
+
+def test_chaque_batiment_a_son_noeud_de_perimetre(s):
+    for bat in s.exec(select(Batiment)).all():
+        assert s.exec(select(Perimetre).where(Perimetre.code == f"bat:{bat.id}")).first()
+
+
+def test_les_personnages_peuvent_entrer(s):
+    for p in PERSONNAGES.values():
+        u = s.exec(select(Utilisateur).where(Utilisateur.email == p.adresse)).one()
+        assert u.actif and u.email_verifie and u.hashed_password
+        assert u.roles_json == p.roles_json
+
+
+def test_un_seul_administrateur_le_personnage(s):
+    admins = [u for u in s.exec(select(Utilisateur)).all() if u.has_role("admin")]
+    assert [u.email for u in admins] == [PERSONNAGES["administrateur"].adresse], (
+        "le seed ne doit pas créer son administrateur initial à côté du personnage"
+    )
+
+
+def test_toutes_les_adresses_sont_reservees(s):
+    assert all(u.email.endswith(".invalid") for u in s.exec(select(Utilisateur)).all())
+
+
+def test_les_affaires_couvrent_categories_et_etats(s):
+    tickets = s.exec(select(Ticket)).all()
+    categories = {t.categorie for t in tickets}
+    assert {
+        CategorieTicket.panne,
+        CategorieTicket.etude_travaux,
+        CategorieTicket.actualite,
+    } <= categories
+    assert len(categories) >= 8
+    statuts = {t.statut for t in tickets}
+    assert {
+        StatutTicket.ouvert,
+        StatutTicket.en_cours,
+        StatutTicket.résolu,
+        StatutTicket.publie,
+    } <= statuts
+    assert _compte(s, MessageTicket) >= 2 and _compte(s, TicketEvolution) >= 10
+
+
+def test_les_dates_sont_relatives_au_jour(s):
+    maintenant = horloge.maintenant()
+    tickets = s.exec(select(Ticket)).all()
+    assert all(t.cree_le <= maintenant for t in tickets)
+    assert any(t.debut and t.debut > maintenant for t in tickets), "un rendez-vous à venir"
+    actualites = [t for t in tickets if t.categorie == CategorieTicket.actualite]
+    assert all((maintenant - t.cree_le).days < 30 for t in actualites), "non archivées"
+    clos = [t for t in tickets if t.statut == StatutTicket.résolu]
+    assert clos and all(t.ferme_le for t in clos)
+    ag = s.exec(select(AgCsInfo)).one()
+    assert ag.ag_date > horloge.aujourd_hui()
+
+
+def test_les_perimetres_des_affaires_sont_des_codes_connus(s):
+    connus = set(s.exec(select(Perimetre.code)).all())
+    for t in s.exec(select(Ticket)).all():
+        assert set(json.loads(t.perimetre_cible)) <= connus, t.titre
+
+
+def test_la_vie_collective(s):
+    sondages = s.exec(select(Sondage)).all()
+    maintenant = horloge.maintenant()
+    assert {s_.cloture_le > maintenant for s_ in sondages} == {True, False}, "un ouvert, un clos"
+    assert _compte(s, VoteSondage) >= 10
+    assert _compte(s, Idee) >= 3 and _compte(s, PetiteAnnonce) >= 3
+
+
+def test_prestataires_contrats_et_annuaire(s):
+    assert _compte(s, Prestataire) >= 4 and _compte(s, ContratEntretien) >= 4
+    copro = s.exec(select(Copropriete)).one()
+    assert copro.syndic_contrat_id, "le nom du syndic de l'annuaire suit ce contrat"
+    assert _compte(s, MembreCS) >= 3
+
+
+def test_badges_et_telecommandes_rattaches(s):
+    assert _compte(s, Vigik) >= 20
+    assert _compte(s, Telecommande) >= 3
+    assert _compte(s, Vigik, Vigik.lot_id == None) == 0  # noqa: E711
+
+
+# ── De bout en bout : l'entrée par personnage ────────────────────────────────
+
+
+def test_l_entree_de_demo_ouvre_sur_ce_jeu(copro, monkeypatch):
+    monkeypatch.setattr(get_settings(), "mode_demo", "oui")
+    #  Chaque requête est servie pour la copropriété d'essai (même geste que le test
+    #  d'étanchéité) : l'entrée doit trouver le personnage que le jeu a posé.
+    monkeypatch.setattr(contexte, "resoudre", lambda scope: copro[0])
+    entree = TestClient(app, follow_redirects=False).get("/demo/entrer/conseil-syndical")
+    assert entree.status_code == 303, entree.text
+
+
+# ── Les fichiers produits ────────────────────────────────────────────────────
+
+
+def test_le_logo_et_l_illustration_sont_ecrits(copro, s):
+    with contexte.dans(copro[0]):
+        nom = config_site(s, "site_logo")["site_logo"]
+        assert stockage().existe(f"logo/{nom}")
+        ascenseur = s.exec(select(Ticket).where(Ticket.titre.startswith("L'ascenseur"))).one()
+        (url,) = json.loads(ascenseur.photos_urls)
+        assert stockage().existe(url.removeprefix("/uploads/"))
+
+
+@besoin_weasyprint
+def test_les_documents_de_la_demo(copro, s):
+    """Deux PDF, chacun rangé dans sa catégorie et lisible sur disque."""
+    from app.models.documents import Document
+
+    documents = s.exec(select(Document)).all()
+    assert len(documents) == 2
+    with contexte.dans(copro[0]):
+        for doc in documents:
+            assert doc.categorie_id and doc.mime_type == "application/pdf"
+            assert stockage().lire(doc.fichier_cle).startswith(b"%PDF")
