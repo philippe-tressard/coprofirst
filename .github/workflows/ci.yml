@@ -535,6 +535,8 @@ jobs:
           bash scripts/lib/lib-images-ci.sh         --selftest
           # Les traces du poste dans le répertoire git DU clone, worktree compris (#1226).
           bash scripts/lib/lib-depot.selftest.sh
+          # P12 : retirer la copie d'un lot livré sans rien perdre (#1890).
+          bash scripts/poste/retirer-worktree.sh    --selftest
           # 🔒 Le verdict du point 19 : barre finale, 404, page derrière une
           # session, site injoignable, et le cas zéro. Il DÉCIDE d'une MEP sur
           # des liens de courriel — la décision se vérifie ici, la mesure se
