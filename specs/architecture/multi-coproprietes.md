@@ -59,7 +59,7 @@ oublié suffit n'est pas étanche, elle n'est que *disciplinée*.
 | D24 | Transfert du rôle de référence (12/10/2026) | le rôle de référence se **transfère** vers une installation déjà déployée, **à l'initiative de la référence en place** ; **il ne peut y avoir deux références** | §4.11 ; époque de référence et chaîne de clés |
 | D25 | Vocabulaire (12/10/2026) | **« maître » devient « référence »** — l'installation de référence, le rôle de référence —, à la demande de l'auteur : le mot évoquait l'esclavage. Dans le code, le rôle s'écrit `reference` ; `maitre`, l'ancien nom, reste lu tant que le `.env` des deux Raspberry Pi le porte (`utils/installation.ANCIENS_NOMS`) | partout : spec, contrat d'inscription, administration, code ; les citations de l'auteur restent mot pour mot |
 | D26 | Conditions d'inscription (12/10/2026) | un **contrat d'engagements réciproques** : l'exploitant d'une installation s'engage à respecter la licence, la marque et le registre ; l'exploitant de la référence, à garder CoproFirst libre et à maintenir les services standards. Accepté par l'administrateur quand il valide l'inscription, il est **archivé dans le registre, rattaché à l'ID de l'installation** — texte exact, empreinte, date, qui l'a accepté. Les engagements portent sur le **service d'inscription**, jamais sur les droits de la licence | §4.11 ; `api/app/registre/conditions/` (une version par fichier, figée par son empreinte) ; #1876 |
-| D27 | Accès à une copropriété (13/10/2026) | une installation **à une copropriété** s'ouvre par son URL, directement sur la connexion ; une installation **à plusieurs** s'ouvre par l'**URL dédiée** de la copropriété (son sous-domaine), ou par l'**aiguillage** de l'installation, qui demande le **code postal et le nom** de la copropriété puis **redirige** vers son sous-domaine. L'aiguillage ne résout rien : la règle 1 du §4.1 reste entière | §4.1 bis, §4.2 ; #1894, phase 3 |
+| D27 | Accès à une copropriété (13/10/2026) | **un seul code**, deux façons de l'héberger : une copropriété peut avoir **sa propre installation**, comme 5Hostachy, qui s'ouvre par son URL directement sur la connexion ; ou être **hébergée avec d'autres** dans une installation commune. Elle y est alors joignable par **son propre domaine** si elle en a un, sinon par une **adresse dérivée de l'URL commune et de `code-postal` + nom**, que l'hébergeur lui attribue sans frais ; l'URL commune elle-même **aiguille** (code postal, nom) puis redirige. Adresse dérivée et aiguillage ne résolvent rien eux-mêmes : la règle 1 du §4.1 reste entière | §4.1 bis, §4.2 ; #1894, phase 3 |
 
 ## 3. Les trois architectures comparées
 
@@ -118,38 +118,53 @@ déclarées et bornées :
 
 ### 4.1 bis L'accès à une copropriété (D27, 13/10/2026)
 
-| Installation | On arrive par | On aboutit à |
+**Un seul code**, deux façons de l'héberger (D13) : une copropriété peut avoir
+**sa propre installation**, comme 5Hostachy, ou être **hébergée avec d'autres**
+dans une installation commune. Une copropriété hébergée n'a pas à posséder un
+nom de domaine : l'hébergeur lui en dérive un du sien.
+
+| Hébergement | On arrive par | On aboutit à |
 |---|---|---|
-| à **une** copropriété (5Hostachy) | son URL | l'écran de connexion, directement |
-| à **plusieurs** copropriétés | l'**URL dédiée** de la copropriété — son sous-domaine | l'écran de connexion de cette copropriété |
-| à **plusieurs** copropriétés | l'**URL de l'installation** → aiguillage : code postal, puis nom de la copropriété | une **redirection** vers le sous-domaine de cette copropriété, et son écran de connexion |
+| **sa propre installation** (5Hostachy) | son URL | l'écran de connexion, directement |
+| **installation commune**, la copropriété a son domaine | son domaine (`residence.example`) | son écran de connexion |
+| **installation commune**, sans domaine propre | l'**adresse dérivée** : `75015-les-tilleuls.<domaine commun>` | son écran de connexion |
+| **installation commune**, par l'URL commune | `<domaine commun>/75015-les-tilleuls`, ou `<domaine commun>` puis aiguillage (code postal, nom) | une **redirection** vers l'adresse de la copropriété, puis son écran de connexion |
 
 Règles :
-1. **L'aiguillage redirige, il ne résout pas.** Il ne sert aucune donnée de
-   copropriété et ne pose aucun cookie de copropriété. La connexion se fait
-   toujours sur le sous-domaine de la copropriété : la règle 1 du §4.1 reste
-   entière, et le navigateur continue de séparer les copropriétés. L'hôte de
-   l'installation n'est l'hôte d'**aucune** copropriété (règle 2 du §4.1).
-2. **Code postal + nom identifient une copropriété dans l'installation**, sous la
-   forme d'un **alias** normalisé (accents, casse, espaces, ponctuation) : deux
-   « Les Tilleuls » au même code postal sont refusés dès l'inscription.
-3. **L'alias est une clé de recherche, pas une identité.** L'identifiant interne
-   et le sous-domaine ne changent pas quand le nom change : les liens déjà
-   envoyés restent valables, et l'ancien alias continue de mener à la
-   copropriété.
-4. **Pas d'énumération.** L'aiguillage exige une correspondance **exacte**, sans
+1. **L'adresse dérivée est un sous-domaine, pas un chemin.** `75015-les-tilleuls`
+   se pose **devant** le domaine commun, sans frais ni démarche pour la
+   copropriété : un enregistrement DNS générique et un certificat générique de
+   l'hébergeur les couvrent toutes. Servir la copropriété sous un **chemin** de
+   l'URL commune la ferait partager avec toutes les autres l'**origine** du
+   navigateur : stockage local, cache du service worker de la PWA, CSP. Le
+   navigateur ne les séparerait plus, et le code devrait le faire à sa place,
+   sans filet (règle 1 du §4.1).
+2. **L'URL commune redirige, elle ne résout pas.** Le chemin
+   `/75015-les-tilleuls` et l'aiguillage ne servent aucune donnée de copropriété,
+   ne posent aucun cookie de copropriété, et renvoient à l'adresse de la
+   copropriété. L'hôte commun n'est l'hôte d'**aucune** copropriété (règle 2 du
+   §4.1).
+3. **Code postal + nom identifient une copropriété dans l'installation**, sous
+   la forme d'un **alias** normalisé (accents, casse, ponctuation, espaces →
+   tiret ; jamais de `_`, interdit dans un nom d'hôte) : deux « Les Tilleuls »
+   au même code postal sont refusés dès l'inscription, et l'hébergeur leur fait
+   choisir un nom qui les distingue.
+4. **L'alias est une clé de recherche, pas une identité.** L'identifiant interne
+   ne change pas quand le nom change ; l'ancien alias **redirige** vers le
+   nouveau, et les liens déjà envoyés restent valables.
+5. **Pas d'énumération.** L'aiguillage exige une correspondance **exacte**, sans
    autocomplétion ni liste, et limite le nombre de tentatives. Un échec reçoit
    le même message dans tous les cas. Une copropriété **suspendue** n'est jamais
    une destination.
-5. **Une installation à une copropriété n'a pas d'aiguillage** : il ne sert
-   qu'à partir de deux copropriétés (phase 3).
+6. **Une installation propre à une copropriété n'a ni aiguillage ni adresse
+   dérivée** : son URL est la sienne.
 
 ### 4.2 Le registre de la plateforme
 
 La seule donnée **commune** : la liste des copropriétés et de quoi résoudre leur
 contexte (identifiant, sous-domaine, état actif ou suspendu, références vers les
-secrets), et l'**alias d'aiguillage** de chaque copropriété — code postal et nom
-normalisés, unique, anciens alias conservés (§4.1 bis). Il ne contient **aucune donnée personnelle** de résident ; les secrets
+secrets), et l'**alias** de chaque copropriété — code postal et nom normalisés,
+unique, anciens alias conservés — dont se déduit son adresse dérivée (§4.1 bis). Il ne contient **aucune donnée personnelle** de résident ; les secrets
 eux-mêmes vivent dans le coffre de l'hébergeur, pas dans le registre.
 
 ### 4.3 Les données — PostgreSQL, une base et un rôle par copropriété (D4)
@@ -540,7 +555,7 @@ elle.
 | 2 | **Contexte de copropriété** dans le processus (§4.1, §4.5, §4.6), en production avec **une seule** copro, le test d'étanchéité déjà actif sur deux copros factices. Neuf lots, §8 bis (#1743 à #1751) | phase 1 |
 | 2 bis | **Distribution** (§4.10, §8 ter) : tags et images signées, branche `replica` et promotion, déploiement standard, migrations compatibles sur une version ; la référence tire son image et passe sous PostgreSQL | phase 2 en partie (§8 ter) |
 | 2 ter | **Registre des installations** (§4.11, §8 quater) : inscription, bail, rapport nocturne, onglet de la référence, canaux, mode limité et suspension, transfert du rôle de référence | phase 2 bis |
-| 3 | **Première installation CoproFirst** : hébergeur, PostgreSQL (§4.3), stockage objet (§4.4), mise à jour nocturne réversible (§4.10), outillage d'installation (créer, migrer, sauvegarder et restaurer **une** copro), supervision sans donnée personnelle ; aiguillage de l'installation vers une copropriété (§4.1 bis, #1894) | hébergeur choisi |
+| 3 | **Première installation CoproFirst** : hébergeur, PostgreSQL (§4.3), stockage objet (§4.4), mise à jour nocturne réversible (§4.10), outillage d'installation (créer, migrer, sauvegarder et restaurer **une** copro), supervision sans donnée personnelle ; adresses dérivées et aiguillage de l'installation commune (§4.1 bis, #1894) | hébergeur choisi |
 | 4 | **Copropriété pilote** : une seconde résidence réelle et volontaire | phase 3 |
 | 5 | Accueil autonome des copropriétés ; facturation selon le modèle économique | modèle économique |
 
