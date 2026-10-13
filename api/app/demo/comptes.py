@@ -113,7 +113,11 @@ def _compte(session, pat: Patrimoine, *, prenom, nom, adresse, statut, roles, lo
 
 
 def poser(session: Session, pat: Patrimoine) -> dict[str, Utilisateur]:
-    """Rend les comptes par clé : le code du personnage, ou « Prénom Nom »."""
+    """Rend les comptes par clé : le code du personnage, ou le PRÉNOM de l'habitant.
+
+    Les prénoms sont uniques dans `HABITANTS` (🔒 `test_demo_jeu.py`) : la clé ne
+    recompose pas un nom affiché, dont la forme est une règle (`utils/noms`).
+    """
     comptes = {}
     for code, p in PERSONNAGES.items():
         comptes[code] = _compte(
@@ -130,7 +134,7 @@ def poser(session: Session, pat: Patrimoine) -> dict[str, Utilisateur]:
         statut, roles = h.profil
         if h.conseil:
             roles = (*roles, RoleUtilisateur.conseil_syndical)
-        comptes[f"{h.prenom} {h.nom}"] = _compte(
+        comptes[h.prenom] = _compte(
             session,
             pat,
             prenom=h.prenom,
