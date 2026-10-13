@@ -199,6 +199,7 @@ CATALOGUE_ICONES = "front/src/lib/icones-svg.json"
 #  Le 10/10/2026, dix-sept tracés de `lucide-static` 0.460.0 sont entrés (`undo-2`,
 #  `redo-2`,
 #  `plus`, `x`, `check`, `flag`, `save`, `mail`… — les actions au trait du site, #1819).
+#  Le 13/10/2026, `copy` (Lucide) — dupliquer un périmètre et ses enfants.
 ICONES_HORS_LUCIDE = {
     "whatsapp": "Simple Icons",
     "stairs": "absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur",

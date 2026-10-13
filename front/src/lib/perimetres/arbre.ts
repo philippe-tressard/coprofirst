@@ -1,5 +1,6 @@
 import { perimetreLabel, perimetreLabelUn } from './libelles';
 import { estRegroupement } from './teinte';
+import { slug } from '$lib/texte';
 
 /**
  * Périmètres — le rendu, sans table.
@@ -59,6 +60,12 @@ export interface Perimetre {
 	 *   deux questions. */
 	hors_copropriete: boolean;
 	utilise: boolean;
+	/**  Combien de nœuds la suppression emporterait avec lui — la confirmation
+	 *   les annonce. */
+	nb_descendants: number;
+	/**  Le serveur accepterait-il de dupliquer cette branche ? Sa règle
+	 *   (`utils/perimetres/branche.refus_duplication`) ne se recopie pas ici. */
+	dupliquable: boolean;
 }
 
 export const PREFIXE_BATIMENT = 'bat:';
@@ -131,6 +138,18 @@ export function perimetreDuBatiment(batimentId: number | null | undefined): stri
 	if (batimentId === null || batimentId === undefined) return perimetreParDefaut() ?? '';
 	const trouve = tousLesPerimetres().find((n) => n.batiment_id === batimentId && n.actif);
 	return trouve ? trouve.code : `${PREFIXE_BATIMENT}${batimentId}`;
+}
+
+/**
+ * Le code proposé pour un nœud neuf : son libellé en slug, sous le code du parent.
+ *
+ * Écrit une fois pour les deux gestes qui créent — le ＋ et la duplication — :
+ * le code est IMMUABLE après création, c'est le pire endroit pour diverger.
+ */
+export function codeSousParent(parent: string | null, libelle: string): string {
+	const code = slug(libelle);
+	if (!code) return '';
+	return parent ? `${parent}/${code}` : code;
 }
 
 /** Le code qui désigne « toute la copropriété », ou `null` sur un arbre vide. */

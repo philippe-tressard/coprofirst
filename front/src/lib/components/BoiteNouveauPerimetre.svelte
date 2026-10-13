@@ -48,17 +48,21 @@
 	/** Le code proposé d'après le libellé, quand l'utilisateur n'en saisit pas. */
 	export let codePropose = '';
 	export let enregistrement = false;
+	/**  Un champ propre à l'appelant (le bâtiment d'une copie) reste à remplir :
+	 *   il s'ajoute à la règle d'activation, il ne la remplace pas. */
+	export let incomplet = false;
 </script>
 
 <FormulaireCreation {titre} {encadre}>
 	<ChampsNouveauPerimetre bind:nouveau {codePropose} />
+	<slot />
 	<!--  🔴 La condition d'activation vit ICI, et nulle part ailleurs : un
 	      périmètre a besoin d'un libellé ET d'un code, celui-ci pouvant être
 	      proposé. Écrite deux fois, elle aurait fini par n'en exiger qu'un
 	      des deux d'un côté. -->
 	<PiedFormulaire
 		enCours={enregistrement}
-		desactive={!nouveau.libelle.trim() || !(nouveau.code || codePropose)}
+		desactive={incomplet || !nouveau.libelle.trim() || !(nouveau.code || codePropose)}
 		soumission={false}
 		on:annule={() => dispatch('annule')}
 		on:enregistre={() => dispatch('enregistre')}
