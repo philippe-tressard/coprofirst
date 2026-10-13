@@ -323,9 +323,7 @@ def test_le_sommaire_vient_du_meme_endroit_que_les_pieces_jointes():
     montre donc exactement ce qui partira.
     """
     #  Le rendu vit dans `email/rendu.py` depuis le 13/10/2026 (#1902).
-    source = (RACINE / "api" / "app" / "utils" / "email" / "rendu.py").read_text(
-        encoding="utf-8"
-    )
+    source = (RACINE / "api" / "app" / "utils" / "email" / "rendu.py").read_text(encoding="utf-8")
 
     appels = re.findall(
         r"pieces_jointes=\[nom_lisible\(p\) for p in \(attachments or \[\]\)\]", source
