@@ -299,6 +299,9 @@ export const tickets = {
 	transferts: (id: number) => api.get<TransfertVerse[]>(`/tickets/${id}/transferts`),
 	annulerTransfert: (id: number, transfertId: number) =>
 		api.post<AffaireVisee>(`/tickets/${id}/transferts/${transfertId}/annuler`, {}),
+	//  Versé au bon endroit : il quitte la liste et ne se défait plus (13/10/2026).
+	validerTransfert: (id: number, transfertId: number) =>
+		api.post<AffaireVisee>(`/tickets/${id}/transferts/${transfertId}/valider`, {}),
 	deplacerTransfert: (id: number, transfertId: number, versId: number | null) =>
 		api.post<AffaireVisee>(`/tickets/${id}/transferts/${transfertId}/deplacer`, {
 			ticket_id: versId,

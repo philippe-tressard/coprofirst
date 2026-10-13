@@ -205,3 +205,7 @@ class VersementCourriel(SQLModel, table=True):
     premier_adresse: Optional[str] = None
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     annule_le: Optional[NaiveDatetime] = None
+    #: Confirmé au bon endroit (13/10/2026) : il ne s'offre plus au geste et
+    #: quitte la liste. Colonnes simples, sans clé étrangère : 0286.
+    valide_le: Optional[NaiveDatetime] = None
+    valide_par_id: Optional[int] = None

@@ -5,6 +5,8 @@ messages (`utils/courriel_transfert`). Versé au mauvais endroit, il s'annule, s
 réaffecte ou devient une affaire neuve d'un geste : la règle et son pourquoi
 sont dans `utils/versement_transfert`, qui ne sont qu'appelés ici.
 
+Versé au BON endroit, il se valide : il quitte la liste (13/10/2026).
+
 Qui : celui qui a transféré, et l'administrateur — `auth/appartenance` :
 `peut_defaire_le_versement` le dit, `exiger_auteur_du_versement` en fait un 403.
 La liste ne rend que les transferts que le lecteur peut défaire, et elle le
@@ -73,7 +75,7 @@ def lister_transferts(
 ):
     exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
     rendus = []
-    for v in versements.versements_de(session, ticket_id):
+    for v in versements.a_proposer(session, ticket_id):
         #  La liste et le geste posent la même question (#1551).
         if not peut_defaire_le_versement(v, user, deplacer=False):
             continue
@@ -102,6 +104,21 @@ def annuler_transfert(
     exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
     v = exiger_auteur_du_versement(session, ticket_id, transfert_id, user, deplacer=False)
     ticket = versements.annuler(session, v)
+    session.commit()
+    return _visee(ticket)
+
+
+@router.post("/{ticket_id}/transferts/{transfert_id}/valider", response_model=AffaireVisee)
+def valider_transfert(
+    ticket_id: int,
+    transfert_id: int,
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(get_current_user),
+):
+    exiger_objet_autorise(session, Ticket, ticket_id, "Ticket", user, ticket_visible)
+    #  Le droit d'annuler : confirmer est le geste de celui qui a transféré.
+    v = exiger_auteur_du_versement(session, ticket_id, transfert_id, user, deplacer=False)
+    ticket = versements.valider(session, v, user)
     session.commit()
     return _visee(ticket)
 

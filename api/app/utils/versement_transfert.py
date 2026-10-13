@@ -35,6 +35,18 @@ dans l'affaire : on défait du plus récent au plus ancien, et un seul transfert
 Celui qui a transféré, et l'administrateur — `auth/appartenance.exiger_auteur_du_versement`.
 Déplacer vers une autre affaire exige en plus de modérer : on ne verse pas dans
 une affaire qu'on ne peut pas lire.
+
+## Valider (13/10/2026)
+
+> « Il manque Valider ce transfert (si c'est ok et pour faire disparaître ces
+>   boutons) »
+
+Un transfert versé au bon endroit gardait ses trois gestes jusqu'à ce qu'une
+Suite les éteigne. **Valider** le confirme : il quitte la liste
+(`a_proposer`) et ne se défait plus. Il reste EN PLACE — `versements_de` le
+compte toujours —, donc un transfert plus ancien reste bloqué sous lui : valider
+le plus récent ne rouvre pas le précédent. Même droit qu'annuler, et permis
+même quand les gestes sont éteints : c'est ce qui vide la liste.
 """
 
 from __future__ import annotations
@@ -107,10 +119,17 @@ def versements_de(session: Session, ticket_id: int) -> list[VersementCourriel]:
     return [v for v in actifs if v.affaire_creee or suites_du(session, v)]
 
 
+def a_proposer(session: Session, ticket_id: int) -> list[VersementCourriel]:
+    """Les versements que l'affaire montre encore : en place, et pas validés."""
+    return [v for v in versements_de(session, ticket_id) if v.valide_le is None]
+
+
 def motif_bloquant(session: Session, v: VersementCourriel) -> str | None:
     """Pourquoi ce versement ne se défait plus — `None` s'il se défait."""
     if v.annule_le is not None:
         return "ce transfert a déjà été annulé"
+    if v.valide_le is not None:
+        return "ce transfert a été validé"
     #  Une Suite écrite à la main n'est jamais déplacée : son identifiant dit
     #  bien qu'elle est venue après le seuil. Celles d'un transfert, si — d'où
     #  la comparaison des seuils ci-dessous, et non des identifiants.
@@ -137,7 +156,18 @@ def _exiger_defaisable(session: Session, v: VersementCourriel) -> None:
         raise HTTPException(409, f"Ce transfert ne peut plus être défait : {motif}.")
 
 
-# ── Les trois gestes ────────────────────────────────────────────────────────
+# ── Les gestes ──────────────────────────────────────────────────────────────
+
+
+def valider(session: Session, v: VersementCourriel, qui: Utilisateur) -> Ticket:
+    """Confirme le versement : il reste, et ne s'offre plus au geste."""
+    if v.annule_le is not None:
+        raise HTTPException(409, "Ce transfert a déjà été annulé.")
+    if v.valide_le is None:
+        v.valide_le = horloge.maintenant()
+        v.valide_par_id = qui.id
+        session.add(v)
+    return session.get(Ticket, v.ticket_id)
 
 
 def annuler(session: Session, v: VersementCourriel) -> Ticket:
