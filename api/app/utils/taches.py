@@ -99,6 +99,35 @@ TACHES_DE_LA_PLATEFORME: dict[str, str] = {
 }
 
 
+#: Les tâches RETIRÉES du planificateur dans la démo publique (spec `mode-demo.md`
+#: §4.4, #1902), avec leur raison. Restent : la télémétrie, le manuel, le disque et
+#: le bail du registre — internes, ou voulus par la démo (M11).
+TACHES_HORS_DEMO: dict[str, str] = {
+    "purge_comptes_inactifs": "supprime des comptes ; la remise à zéro nocturne la remplace",
+    "backup": "rien à sauvegarder : la démo se régénère chaque nuit",
+    "courriel_reponses": "relève IMAP : un appel sortant",
+    "synthese_affaires": "appel à l'IA et courriel au conseil",
+    "whatsapp_scheduled": "messages WhatsApp",
+    "health_check": "son seul effet est un courriel d'alerte",
+}
+
+
+def retirer_hors_demo(scheduler) -> list[str]:
+    """En démo, retire les tâches de `TACHES_HORS_DEMO`, rattrapages compris. Rend leurs ids."""
+    from app.utils.demo import est_demo
+
+    if not est_demo():
+        return []
+    retirees = sorted(
+        job.id
+        for job in scheduler.get_jobs()
+        if job.id in TACHES_HORS_DEMO or job.id.removesuffix("_rattrapage") in TACHES_HORS_DEMO
+    )
+    for identifiant in retirees:
+        scheduler.remove_job(identifiant)
+    return retirees
+
+
 def enregistrer_taches_de_la_plateforme(scheduler) -> None:
     """Pose les tâches de `TACHES_DE_LA_PLATEFORME`, chacune par SON module.
 
@@ -130,8 +159,12 @@ def verifier_taches_enregistrees(scheduler, logger) -> list[str]:
     `ERROR` ici ferait sonner le canal d'alerte à chaque démarrage d'une
     installation qui n'a pas encore sa configuration.
     """
+    from app.utils.demo import est_demo
+
     enregistrees = {job.id for job in scheduler.get_jobs()}
-    manquantes = sorted(set(TACHES_PERMANENTES) - enregistrees)
+    #  En démo, une tâche retirée exprès n'est pas une tâche disparue (#1902).
+    attendues = set(TACHES_PERMANENTES) - (set(TACHES_HORS_DEMO) if est_demo() else set())
+    manquantes = sorted(attendues - enregistrees)
     for identifiant in manquantes:
         logger.warning(
             "tache planifiee ABSENTE : %s — %s",

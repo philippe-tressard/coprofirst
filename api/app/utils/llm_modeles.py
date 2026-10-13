@@ -12,6 +12,7 @@ from typing import Any
 
 from sqlmodel import Session
 
+from app.utils.demo import MESSAGE, est_demo
 from app.utils.llm import config_llm
 
 logger = logging.getLogger("hostachy.llm")
@@ -41,6 +42,9 @@ async def modeles_disponibles(session: Session) -> dict[str, Any]:
     """
     import httpx
 
+    if est_demo():
+        #  Avant même la configuration : rien ne part de la démo publique (#1902).
+        return {"listable": False, "motif": MESSAGE, "modeles": []}
     #  Le catalogue est COMMUN — il dépend de la clé, pas de l'usage : le même
     #  inventaire sert à choisir le modèle de chaque bloc de l'écran.
     cfg = config_llm(session)

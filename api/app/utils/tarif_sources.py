@@ -23,6 +23,7 @@ Aucune donnée du site : un GET vers une adresse fixe, sans cookie ni clé.
 
 from __future__ import annotations
 
+from app.utils.demo import MESSAGE, est_demo
 from app.utils.plateforme import NOM_PLATEFORME
 
 DELAI_S = 20
@@ -37,6 +38,9 @@ class SourceIndisponible(Exception):
 
 async def _lire(url: str) -> str:
     import httpx
+
+    if est_demo():
+        raise SourceIndisponible(MESSAGE)  # rien ne part de la démo publique (#1902)
 
     try:
         async with httpx.AsyncClient(timeout=DELAI_S, follow_redirects=True) as client:
