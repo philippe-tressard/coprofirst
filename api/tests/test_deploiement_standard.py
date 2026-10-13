@@ -171,7 +171,8 @@ def _corps(texte: str, fonction: str) -> str:
 def test_le_moteur_se_lit_comme_chez_la_reference():
     """`moteur_de_url` est une COPIE déclarée : l'archive n'emporte pas `scripts/lib`."""
     reference = (RACINE / "scripts" / "lib" / "lib-replication.sh").read_text(encoding="utf-8")
-    replique = MISE_A_JOUR.read_text(encoding="utf-8")
+    #  Elle vit dans la bibliothèque commune de l'installation depuis #1905.
+    replique = (MISE_A_JOUR.parent / "lib-installation.sh").read_text(encoding="utf-8")
     assert _corps(replique, "moteur_de_url") == _corps(reference, "moteur_de_url"), (
         "les deux lectures du moteur ont divergé — recopier celle de lib-replication.sh"
     )
