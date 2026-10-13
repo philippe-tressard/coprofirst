@@ -38,6 +38,7 @@ from typing import Optional
 import httpx
 
 from app.config import get_settings
+from app.utils import demo
 from app.utils import horloge
 from app.utils.plateforme import DEPOT_SOURCE
 
@@ -109,6 +110,8 @@ def verdict_comparaison(statut: Optional[str], en_avance: int = 0) -> Verificati
 
 def verifier(empreinte_courante: str, branche: str, *, client=None) -> Verification:
     """Interroge le dépôt public. Toute impossibilité rend « non vérifié » (règle 3)."""
+    if demo.est_demo():
+        return Verification("non_verifie", detail=demo.MESSAGE)  # rien ne sort (#1902)
     if not empreinte_courante:
         return Verification("non_verifie", detail="image construite sans son commit (GIT_HASH)")
     url = f"https://api.github.com/repos/{DEPOT}/compare/{empreinte_courante}...{branche}"

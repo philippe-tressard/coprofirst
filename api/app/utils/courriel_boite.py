@@ -53,6 +53,7 @@ from app.utils.destinataires import est_adresse_syndic
 from app.utils.courriel_authenticite import VerificationReportee, verifier_expediteur
 from app.utils.courriel_decodage import _corps_lisible, _texte
 from app.utils.courriel_journal import journaliser_releve
+from app.utils.demo import exiger_hors_demo
 from app.utils.courriel_transfert import compte_a_l_adresse, decider_transfert
 from app.utils.courriel_relance import reponse_a_une_relance, relance_de
 from app.utils.echecs_repetes import CompteurEchecs
@@ -327,6 +328,7 @@ def relever() -> dict[str, int]:
                     "imap_plancher illisible (%s) — plancher par défaut", cfg["imap_plancher"]
                 )
 
+        exiger_hors_demo("Relève des courriels")  # (#1902)
         boite = imaplib.IMAP4_SSL(cfg.get("imap_server", ""), int(cfg.get("imap_port") or 993))
         try:
             boite.login(cfg.get("imap_username", ""), cfg.get("imap_password", ""))
