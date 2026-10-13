@@ -47,6 +47,16 @@ def test_un_releve_absent_rend_404(moteur):
     assert reponse.json()["detail"] == "Relevé introuvable"
 
 
+def test_seule_la_photo_du_releve_se_sert(moteur):
+    """La liste blanche par appartenance tient toujours : `prive/` porte aussi
+    les PV d'AG, et un nom pris dans l'URL ne sert rien (`test_uploads_prives`)."""
+    http, _ = client_http(moteur, RoleUtilisateur.admin)
+    r_id = _releve(moteur, "/api/prestataires/releves/1/photo/abc_releve.jpg")
+    reponse = http.get(f"/prestataires/releves/{r_id}/photo/pv_ag_2026.pdf")
+    assert reponse.status_code == 404
+    assert reponse.json()["detail"] == "Photo introuvable"
+
+
 def test_renommer_une_categorie_absente_rend_404(moteur):
     http, _ = client_http(moteur, RoleUtilisateur.admin)
     reponse = http.patch(

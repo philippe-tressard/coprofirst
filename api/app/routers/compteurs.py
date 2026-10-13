@@ -276,5 +276,5 @@ def download_photo_releve(
     """
     r = ou_404(session, ReleveCompteur, r_id, "Relevé")
     #  `or None` : une adresse vide est une photo absente, pas un résultat.
-    photo = present_ou_404(r.photo_url or None, "Photo introuvable")
-    return _servir_fichier_prive(nom, {os.path.basename(photo)}, "Photo")
+    present_ou_404(r.photo_url or None, "Photo introuvable")
+    return _servir_fichier_prive(nom, {os.path.basename(r.photo_url)}, "Photo")
