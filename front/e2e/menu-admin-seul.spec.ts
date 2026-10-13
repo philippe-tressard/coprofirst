@@ -35,10 +35,19 @@ test('l’admin seul n’a ni Prestataires, ni Espace CS, ni Délégations au me
 	await expect(lien(page, '/delegations')).toHaveCount(0);
 });
 
+test('l’admin seul qui ouvre l’accueil arrive sur l’administration', async ({ page }) => {
+	//  Demandé à l'écran le 14/10/2026 : son menu ne porte plus que « Admin ».
+	await simulerApi(page, (chemin) => (chemin === '/api/auth/me' ? ADMIN_SEUL : undefined));
+	await page.goto('/tableau-de-bord');
+	await expect(page).toHaveURL(/\/admin$/);
+});
+
 test('le membre du conseil garde Prestataires, l’Espace CS et Délégations', async ({ page }) => {
 	await simulerApi(page);
 	await page.goto('/tableau-de-bord');
 	await expect(lien(page, '/prestataires')).toHaveCount(1);
+	//  …et reste sur l'accueil : la redirection ne vise que l'admin seul.
+	await expect(page).toHaveURL(/\/tableau-de-bord$/);
 	await expect(lien(page, '/espace-cs')).toHaveCount(1);
 	await expect(lien(page, '/delegations')).toHaveCount(1);
 });

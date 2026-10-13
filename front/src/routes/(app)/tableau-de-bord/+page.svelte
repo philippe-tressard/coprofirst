@@ -9,7 +9,16 @@
 	import { delaiArchivageMs } from '$lib/archivage';
 	import AlerteRelanceSyndic from '$lib/components/AlerteRelanceSyndic.svelte';
 	import ArchivesDuFil from '$lib/components/ArchivesDuFil.svelte';
-	import { currentUser, isAdmin, isCS, isLocataire, isProprioOuCS } from '$lib/stores/auth';
+	import {
+		authResolue,
+		currentUser,
+		isAdmin,
+		isAdminOnly,
+		isCS,
+		isLocataire,
+		isProprioOuCS,
+	} from '$lib/stores/auth';
+	import { goto } from '$app/navigation';
 	import {
 		flux,
 		lots,
@@ -32,6 +41,12 @@
 
 	$: _pc = getPageConfig($configStore, 'tableau-de-bord', defautsDePage('tableau-de-bord'));
 	$: _siteNom = $siteNomStore;
+
+	//  L'admin seul — le compte technique créé à l'installation, sans lot ni
+	//  conseil syndical — n'a au menu que l'administration (`Nav.svelte`) :
+	//  le Kanban, le fil et les raccourcis d'un résident ne le concernent pas.
+	//  Demandé à l'écran le 14/10/2026. Le même garde que l'Espace CS, inversé.
+	$: if ($authResolue && $isAdminOnly) goto('/admin', { replaceState: true });
 
 	let data: FluxResponse | null = null;
 	let userLots: MonLot[] = [];
