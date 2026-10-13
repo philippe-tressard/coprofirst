@@ -108,6 +108,7 @@ const RACINE = new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]
  * perdrait le focus en cours de frappe. Le remède serait ici plus grave que le
  * mal, et aucune clé n'est meilleure que l'index.
  */
+//  Carte des plafonds décroissants : #1571.
 const PLAFOND = 1;
 
 /** En dessous, le repérage ne mord plus — le dépôt en porte ~200. */

@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 from app.auth.deps import get_current_user, require_cs_or_admin
 from app.database import get_session
 from app.models.core import FaqItem, Utilisateur
-from app.utils.recuperer import ou_404
+from app.utils.recuperer import ou_404, present_ou_404
 
 router = APIRouter(prefix="/faq", tags=["faq"])
 
@@ -109,8 +109,7 @@ def rename_category(
     if not body.new_name.strip():
         raise HTTPException(400, "Le nouveau nom de catégorie ne peut pas être vide")
     items = session.exec(select(FaqItem).where(FaqItem.categorie == body.old_name)).all()
-    if not items:
-        raise HTTPException(404, "Catégorie introuvable")
+    present_ou_404(items or None, "Catégorie introuvable")
     for item in items:
         item.categorie = body.new_name.strip()
         item.mis_a_jour_le = horloge.maintenant()

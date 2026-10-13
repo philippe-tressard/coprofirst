@@ -1,8 +1,9 @@
-"""WeasyPrint n'est appelé qu'à UN endroit, et sans les trois arguments à risque.
+"""WeasyPrint n'est appelé qu'à UN endroit, hors réseau, et sans deux arguments à risque.
 
 ## Ce que ce test protège
 
-Un appel unique, `HTML(string=html).write_pdf()`, sans `url_fetcher`, sans
+Un appel unique, `HTML(string=html, url_fetcher=…).write_pdf()`, AVEC un
+récupérateur restreint aux data-URI (`pdf_rendu.PROTOCOLES_ADMIS`), sans
 `stylesheets` et sans `xmp_metadata`. Il vit dans `utils/pdf_rendu.py` depuis le
 16/09/2026 — jusque-là dans `utils/pdf_theme.py`, qui délègue désormais. Ce test
 garde donc deux choses d'un seul geste : la surface d'appel du moteur, et le fait
@@ -27,6 +28,17 @@ pas par accident.
 ⚠️ La dérogation était datée (`revoirLe: 2026-09-30`) et portait sa condition de
 levée. C'est ce qui a permis de la lever en une passe, au lieu d'un « on verra » :
 une exception sans date de revue devient une porte qu'on croit fermée.
+
+## 🔴 `url_fetcher` était interdit ici, et c'était l'inverse de la sécurité (#1908)
+
+Jusqu'au 13/10/2026, ce test refusait AUSSI `url_fetcher`, en affirmant que les
+trois arguments « reconstruisent un récupérateur d'URL par défaut ». C'était vrai
+de `stylesheets` et `xmp_metadata` sous WeasyPrint ≤ 69 (ils contournaient un
+récupérateur restrictif) — faux de `url_fetcher` : c'est son ABSENCE qui donne
+le récupérateur par défaut, lequel ouvre `http(s)`, `ftp` et `file` depuis le
+serveur. Le contrôle tenait donc la porte grande ouverte en croyant la fermer.
+Il exige désormais l'argument ; ce qu'il vaut (data-URI seulement) se vérifie
+par le comportement dans `test_pdf_hors_reseau.py`.
 """
 
 from __future__ import annotations
@@ -35,8 +47,8 @@ import ast
 
 from tests.aides_sources import modules_app
 
-#: Les arguments qui reconstruisent un fetcher par défaut, d'après l'avis.
-ARGUMENTS_A_RISQUE = {"url_fetcher", "stylesheets", "xmp_metadata"}
+#: Les arguments qui contournaient un récupérateur restrictif, d'après l'avis.
+ARGUMENTS_A_RISQUE = {"stylesheets", "xmp_metadata"}
 
 
 def _appels_weasyprint():
@@ -69,11 +81,26 @@ def test_aucun_argument_a_risque_n_est_employe():
     ]
     assert not fautifs, (
         f"WeasyPrint est appelé avec un argument que l'avis GHSA-jf6q-chmf-3h3v vise : "
-        f"{fautifs}. Ces trois arguments reconstruisent un récupérateur d'URL par "
+        f"{fautifs}. Ces deux arguments reconstruisaient un récupérateur d'URL par "
         "défaut : ils ouvrent le rendu au réseau et au système de fichiers, alors que "
         "tout document de ce dépôt est AUTONOME par construction (CSS en `<style>`, "
         "images en data-URI). Si le besoin est réel, il se décide — pas par un "
         "argument ajouté en passant."
+    )
+
+
+def test_le_document_est_toujours_lu_hors_reseau():
+    """Sans `url_fetcher`, WeasyPrint prend son récupérateur par défaut : tout
+    protocole, depuis le serveur (#1908)."""
+    sans = [
+        (f, nom)
+        for f, nom, mots in _appels_weasyprint()
+        if nom == "HTML" and "url_fetcher" not in mots
+    ]
+    assert not sans, (
+        f"`HTML(...)` appelé sans `url_fetcher` : {sans}. Le moteur ouvrirait alors "
+        "toute URL du document depuis le serveur (SSRF, `file://`). Passer le "
+        "récupérateur restreint de `pdf_rendu.PROTOCOLES_ADMIS`."
     )
 
 

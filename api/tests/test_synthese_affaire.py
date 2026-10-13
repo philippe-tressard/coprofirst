@@ -337,7 +337,9 @@ _FRONT = pathlib.Path(__file__).resolve().parents[2] / "front" / "src"
 #: Les fils d'affaire qui n'ont pas à porter la synthèse — avec leur raison.
 #: Une exception qui ne sert plus fait échouer.
 _FILS_SANS_SYNTHESE = {
-    "ActualiteEnListe.svelte": "une actualité n'a pas de cycle de vie : jamais close, "
+    #  Le fil d'une actualité de la liste vit dans `FilActualiteEnListe`, chargé
+    #  au dépliage depuis le 13/10/2026 (#1861) — c'était `ActualiteEnListe`.
+    "FilActualiteEnListe.svelte": "une actualité n'a pas de cycle de vie : jamais close, "
     "jamais de synthèse (`StatutTicket.publie`)",
 }
 

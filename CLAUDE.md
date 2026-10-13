@@ -379,6 +379,8 @@ une règle neuve étend le contrôle d'elle-même).
 - Thème commun : `app/utils/pdf_theme.py` — logo, palette de la charte, data-URI (image/QR), `html_to_pdf()`.
   **Ne jamais** redéfinir une palette, un logo ou un moteur PDF ailleurs.
 - Le HTML doit être **autonome** : CSS dans `<style>`, images en data-URI (rendu hors requête HTTP).
+  Le moteur n'ouvre **que** le data-URI (`pdf_rendu.PROTOCOLES_ADMIS`, #1908) : une image `http(s)` ou
+  `file://` est refusée, jamais récupérée par le serveur. 🔒 `test_pdf_hors_reseau.py`.
 - Format de page via `@page { size: A4|A5 }`. Pas d'emoji dans les affiches — logo SVG et aplats de couleur.
 - Documents existants : fiche arrivant (`fiche_arrivant.py`), annonce de hall (`annonce_hall.py`),
   manuel utilisateur (`manuel_pdf.py`).

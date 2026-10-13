@@ -96,6 +96,7 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, resoudre };
  *  du fil) : l'émoji de rubrique et sa taille en dur (1,05 rem) partent dans
  *  la gouttière, qui écrit par l'échelle.
  */
+//  Carte des plafonds décroissants : #1571.
 const PLAFOND = { couleurs: 119, tailles: 70 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');

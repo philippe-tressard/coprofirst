@@ -57,10 +57,11 @@ SOURCE = "utils/recuperer.py"
 #: 🔴 Ce nombre ne monte JAMAIS. Il descend quand une de ces écritures devient
 #: convertible ; l'augmenter, c'est rouvrir la duplication que `ou_404` a fermée.
 #: 08/10/2026 : 11 → 6 — `connu_ou_404` (clé d'un registre, ×2) et
-#: `present_ou_404` (résultat `None`, ×3). Restent : la visibilité
-#: (`auth/appartenance`, ×2), la liste blanche d'accès des fichiers de compteurs,
-#: la photo de relevé (condition composée), le dossier IMAP, la catégorie de FAQ.
-PLAFOND_404_BRUTS = 6
+#: `present_ou_404` (résultat `None`, ×3). 13/10/2026 : 6 → 4 — la photo de
+#: relevé (condition composée, séparée en `ou_404` puis `present_ou_404`) et la
+#: catégorie de FAQ. Restent : la visibilité (`auth/appartenance`, ×2), la liste
+#: blanche d'accès des fichiers de compteurs, le dossier IMAP. Carte : #1571.
+PLAFOND_404_BRUTS = 4
 
 
 def _404_bruts() -> list[str]:
