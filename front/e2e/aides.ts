@@ -187,6 +187,7 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 		identifiant: null,
 		canal: null,
 		version_cible: null,
+		epoque: null,
 		echeance: null,
 		renouvellement_en_retard: false,
 		inscrite_le: null,

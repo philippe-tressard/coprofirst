@@ -108,13 +108,13 @@ def constater(
     *,
     maintenant: datetime,
     cle_installation: Optional[str],
-    role: str,
+    reference: bool,
     essai: bool,
     cles: dict[int, str],
     revoquees: frozenset[str] = frozenset(),
 ) -> Constat:
     """Le verdict, et sa raison en clair."""
-    if role == REFERENCE:
+    if reference:
         return Constat(REFERENCE, "la référence n'est jamais limitée")
     if essai:
         return Constat(ESSAI, "installation d'essai : la référence n'est pas appelée")

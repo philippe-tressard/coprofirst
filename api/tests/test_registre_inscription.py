@@ -29,6 +29,7 @@ from app.registre.modeles import (
 from app.registre.routeur import EN_TETE_SIGNATURE, PLAFOND_EN_ATTENTE, TAILLE_MAX
 from tests.aides_registre import HOTE, registre_allume
 
+
 @pytest.fixture
 def plateforme(monkeypatch):
     """Une base `plateforme` migrée, et le registre allumé sous son nom dédié."""

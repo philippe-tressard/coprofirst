@@ -57,7 +57,7 @@ def _constat(etat, **k):
         etat,
         maintenant=MAINTENANT,
         cle_installation=k.pop("cle_installation", INST_PUBLIQUE),
-        role=k.pop("role", "replique"),
+        reference=k.pop("reference", False),
         essai=k.pop("essai", False),
         cles=k.pop("cles", CLES),
         **k,
@@ -81,7 +81,7 @@ def test_attente_et_resiliation_rendent_limitee(etat, raison):
 
 
 def test_la_reference_et_l_essai_ne_sont_jamais_limites():
-    assert _constat(EtatLocal(), role="reference").etat == "reference"
+    assert _constat(EtatLocal(), reference=True).etat == "reference"
     assert _constat(EtatLocal(), essai=True).etat == "essai"
 
 

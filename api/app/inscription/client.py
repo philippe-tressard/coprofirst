@@ -24,6 +24,7 @@ from urllib.parse import urlsplit
 import httpx
 
 from app.config import get_settings
+from app import contexte
 from app.contexte import nom_d_hote
 from app.inscription import cles, constat, depot
 from app.inscription.depot import Contact, EtatLocal
@@ -63,7 +64,7 @@ def essai_admis() -> bool:
         return False
     hote = nom_d_hote(urlsplit(s.origin).netloc or s.origin)
     local = hote in HOTES_LOCAUX or hote.endswith((".localhost", ".test"))
-    return local or ":memory:" in s.database_url
+    return local or all(":memory:" in c.url_base for c in contexte.coproprietes())
 
 
 def cle_publique() -> str | None:
@@ -77,7 +78,7 @@ def constat_courant() -> constat.Constat:
         depot.lire(),
         maintenant=horloge.maintenant(),
         cle_installation=cle_publique(),
-        role=installation.role_installation(),
+        reference=installation.est_reference(),
         essai=essai_admis(),
         cles=cles.CLES_REFERENCE,
         revoquees=cles.REVOQUEES,

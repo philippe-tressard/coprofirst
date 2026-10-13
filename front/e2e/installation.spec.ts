@@ -154,7 +154,7 @@ test('Inscription : une réplique non inscrite s’inscrit en acceptant les cond
 					inscrite_le: '2026-10-13T10:00:00',
 					dernier_renouvellement_le: null,
 					derniere_erreur: null,
-					contact: { prenom: 'Alix', nom: 'Exemple', courriel: 'alix@example.org' },
+					contact: { prenom: 'Alix', nom: 'Durand', courriel: 'alix@example.org' },
 					conditions_acceptees: 1,
 					conditions_en_vigueur: 1,
 					peut_s_inscrire: true,
@@ -170,7 +170,7 @@ test('Inscription : une réplique non inscrite s’inscrit en acceptant les cond
 
 	const enregistrer = carte.getByRole('button', { name: 'Enregistrer' });
 	await carte.locator('#ins-prenom').fill('Alix');
-	await carte.locator('#ins-nom').fill('Exemple');
+	await carte.locator('#ins-nom').fill('Durand');
 	await carte.locator('#ins-courriel').fill('alix@example.org');
 	await expect(carte.getByLabel(/Conditions d’inscription, version 1/)).toHaveValue(
 		'Article 1 — Engagements.',

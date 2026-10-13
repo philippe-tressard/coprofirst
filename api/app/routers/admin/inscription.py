@@ -8,6 +8,7 @@ coordonnées de l'administrateur d'installation et accepte les conditions.
 La règle vit dans `app/inscription/` ; ce routeur l'assemble pour l'écran.
 """
 
+from dataclasses import asdict
 from datetime import datetime
 from typing import Optional
 
@@ -20,6 +21,7 @@ from app.inscription import client, depot
 from app.inscription.depot import Contact
 from app.models.core import Utilisateur
 from app.registre import conditions
+from app.utils.lecture import lire_objet
 
 router = APIRouter()
 
@@ -31,6 +33,7 @@ class VueInscription(BaseModel):
     identifiant: Optional[str] = None
     canal: Optional[str] = None
     version_cible: Optional[str] = None
+    epoque: Optional[int] = None
     echeance: Optional[datetime] = None
     renouvellement_en_retard: bool = False
     inscrite_le: Optional[str] = None
@@ -63,25 +66,20 @@ class DemandeInscriptionAdmin(BaseModel):
 
 
 def _vue() -> VueInscription:
+    """L'état rangé, lu tel quel ; le constat et ce qui se calcule s'y ajoutent."""
     verdict = client.constat_courant()
     etat = depot.lire()
-    return VueInscription(
-        etat=verdict.etat,
-        raison=verdict.raison,
-        identifiant=verdict.identifiant or etat.identifiant,
-        canal=verdict.canal,
-        version_cible=verdict.version_cible,
-        echeance=verdict.echeance,
-        renouvellement_en_retard=verdict.renouvellement_en_retard,
-        inscrite_le=etat.inscrite_le,
-        dernier_renouvellement_le=etat.dernier_renouvellement_le,
-        derniere_erreur=etat.derniere_erreur,
-        contact=etat.contact,
-        conditions_acceptees=etat.conditions_acceptees,
-        conditions_en_vigueur=conditions.version_en_vigueur(),
-        peut_s_inscrire=verdict.etat not in ("reference", "essai"),
-        essai_refuse=client.essai_declare() and not client.essai_admis(),
-        registre_url=get_settings().registre_url,
+    return lire_objet(
+        VueInscription,
+        etat,
+        **{
+            **asdict(verdict),
+            "identifiant": verdict.identifiant or etat.identifiant,
+            "conditions_en_vigueur": conditions.version_en_vigueur(),
+            "peut_s_inscrire": verdict.etat not in ("reference", "essai"),
+            "essai_refuse": client.essai_declare() and not client.essai_admis(),
+            "registre_url": get_settings().registre_url,
+        },
     )
 
 

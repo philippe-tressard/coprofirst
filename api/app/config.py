@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # copropriété ; elle part par le SMTP de l'installation (`MAIL_*`). Lue par
     # `utils/sante_plateforme` et nulle part ailleurs ; vide → l'alerte se journalise.
     courriel_operateur: str = ""
+    # Et l'adresse qui les EXPÉDIE : celle de l'installation, pas celle d'une
+    # copropriété (`MAIL_FROM` en est une, D6). Vide → l'alerte se journalise.
+    mail_from_plateforme: str = ""
 
     # La clé qui SIGNE les baux (R2 #1878, D19) — chez la référence SEULE : 32 octets
     # bruts en base64, créée sur l'actif par `scripts/exploitation/creer-cle-baux.sh`

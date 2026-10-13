@@ -101,7 +101,7 @@ def _envoyer(destinataire: str, problemes: list[str]) -> None:
     from app.utils.smtp import connexion_smtp
 
     s = get_settings()
-    cfg = connexion_smtp({"smtp_from_name": NOM_PLATEFORME}, expediteur=s.mail_from)
+    cfg = connexion_smtp({"smtp_from_name": NOM_PLATEFORME}, expediteur=s.mail_from_plateforme)
     sujet, corps = _message(problemes)
     message = MessageSchema(
         subject=sujet, recipients=[destinataire], body=corps, subtype=MessageType.plain
@@ -115,8 +115,15 @@ def alerter(problemes: list[str]) -> bool:
     Rend vrai si le message est parti. L'adresse n'est JAMAIS journalisée (#777).
     """
     destinataire = destinataire_alertes_plateforme()
-    if destinataire is None or not get_settings().mail_enabled:
-        manque = "COURRIEL_OPERATEUR" if destinataire is None else "MAIL_ENABLED"
+    s = get_settings()
+    if destinataire is None or not s.mail_enabled or not s.mail_from_plateforme.strip():
+        manque = (
+            "COURRIEL_OPERATEUR"
+            if destinataire is None
+            else "MAIL_ENABLED"
+            if not s.mail_enabled
+            else "MAIL_FROM_PLATEFORME"
+        )
         logger.warning(
             "Alerte de PLATEFORME non envoyée — %s n'est pas réglé dans le .env de "
             "l'installation : %s",

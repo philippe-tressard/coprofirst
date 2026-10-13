@@ -60,6 +60,7 @@ OPERATEUR = "operateur@example.com"
 def operateur(monkeypatch):
     monkeypatch.setattr(get_settings(), "courriel_operateur", OPERATEUR)
     monkeypatch.setattr(get_settings(), "mail_enabled", True)
+    monkeypatch.setattr(get_settings(), "mail_from_plateforme", "plateforme@example.com")
 
 
 def _avertissements(caplog) -> list[str]:
@@ -115,7 +116,6 @@ def test_le_message_part_par_le_smtp_de_l_installation(operateur, monkeypatch):
     async def capter(self, message, *a, **k):
         partis.append((self.config, message))
 
-    monkeypatch.setattr(get_settings(), "mail_from", "plateforme@example.com")
     monkeypatch.setattr(fastapi_mail.FastMail, "send_message", capter)
     assert sante_plateforme.alerter([ALERTE]) is True
     ((config, message),) = partis

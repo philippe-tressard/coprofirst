@@ -24,7 +24,7 @@ from app.utils import installation
 from tests.aides_http import base_http, client_http
 from tests.aides_registre import HOTE, registre_allume
 
-CONTACT = Contact(prenom="Alix", nom="Exemple", courriel="alix@example.org")
+CONTACT = Contact(prenom="Alix", nom="Durand", courriel="alix@example.org")
 
 
 @pytest.fixture
@@ -154,7 +154,7 @@ def test_l_operateur_s_inscrit_depuis_l_administration(http_operateur):
     conditions = http.get("/admin/installation/conditions").json()
     corps = {
         "prenom": "Alix",
-        "nom": "Exemple",
+        "nom": "Durand",
         "courriel": "alix@example.org",
         "conditions_acceptees": conditions["version"],
         "accepte": True,

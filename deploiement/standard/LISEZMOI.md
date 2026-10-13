@@ -56,7 +56,8 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    ⚠️ Le site ne répond qu'au nom de `ORIGIN` : un autre nom reçoit une erreur 421 (« requête mal dirigée »). Un second nom — un alias, un ancien domaine — se
    déclare dans `HOTES_COPROPRIETE`, séparé par des virgules.
    `COURRIEL_OPERATEUR` reçoit les alertes de la plateforme (disque du serveur),
-   par le SMTP de l'installation (`MAIL_*`, `MAIL_ENABLED=true`) : sans eux, elles
+   par le SMTP de l'installation (`MAIL_*`, `MAIL_ENABLED=true`), depuis
+   `MAIL_FROM_PLATEFORME` : sans eux, elles
    ne sont que journalisées.
    Une fois l'installation démarrée, l'**opérateur** l'inscrit au registre de la
    référence dans *Administration › Maintenance › Inscription au registre*
