@@ -1,10 +1,12 @@
-"""Vérification quotidienne de santé du système — WhatsApp, sauvegardes, disque."""
+"""Vérification quotidienne de santé d'une copropriété — WhatsApp, sauvegardes, base.
+
+Le disque est une donnée de la PLATEFORME : `utils/sante_plateforme` (#1814).
+"""
 
 import glob
 import json
 import logging
 import os
-import shutil
 from datetime import datetime, timedelta, timezone
 from app.utils import horloge
 
@@ -284,23 +286,6 @@ def _check_export_hors_site(session: Session) -> list[str]:
     return issues
 
 
-def _check_disk() -> list[str]:
-    """Retourne une alerte si l'espace disque est faible."""
-    issues = []
-    try:
-        usage = shutil.disk_usage("/")
-        pct_free = (usage.free / usage.total) * 100
-        if pct_free < 15:
-            free_gb = usage.free / (1024**3)
-            issues.append(
-                f"Espace disque faible : {pct_free:.1f}% libre ({free_gb:.1f} Go). "
-                f"Vérifier et nettoyer si nécessaire."
-            )
-    except Exception as exc:
-        logger.warning("Impossible de vérifier l'espace disque : %s", exc)
-    return issues
-
-
 def _check_db_integrity() -> list[str]:
     """Vérifie l'intégrité de la base SQLite (PRAGMA quick_check).
 
@@ -360,6 +345,7 @@ from app.utils.etat_taches import problemes_taches
 from app.utils.sante_mise_a_jour import problemes_mise_a_jour
 from app.utils.llm_journal import problemes_ia
 from app.utils.liens import base_site, nom_site
+from app.utils.sante_plateforme import disque_par_la_plateforme, probleme_disque
 
 
 def _en_problemes(issues: list[str]) -> list[dict]:
@@ -449,7 +435,10 @@ def collecter_problemes(session: Session) -> list[str]:
     problemes += _check_backups(session)
     problemes += _check_export_hors_site(session)
     problemes += problemes_mise_a_jour(session)
-    problemes += _check_disk()
+    #  Le disque est celui de la PLATEFORME : jugé ici tant qu'il n'y a qu'une
+    #  copropriété, par `sante_plateforme` à partir de la deuxième (#1814).
+    if not disque_par_la_plateforme():
+        problemes += probleme_disque()
     problemes += _check_reference_copro(session)
     #  Ce que l'écran « Santé des tâches planifiées » montre en rouge, et que
     #  personne ne recevait (27/09/2026). Sauf ce qu'un autre canal signale déjà :

@@ -282,8 +282,9 @@ async def lifespan(app: FastAPI):
     #
     #  L'analyse statique de la CI ne suffit pas : elle voit l'appel dans le code,
     #  pas le fait qu'une condition l'ait sauté. Ce contrôle-ci lit le scheduler.
-    from app.utils.taches import verifier_taches_enregistrees
+    from app.utils.taches import enregistrer_taches_de_la_plateforme, verifier_taches_enregistrees
 
+    enregistrer_taches_de_la_plateforme(scheduler)  # disque, registre, bail (`utils/taches`)
     verifier_taches_enregistrees(scheduler, _logging.getLogger("taches"))
 
     yield

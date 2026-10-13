@@ -13,4 +13,5 @@ ailleurs que chez la référence dont le registre est déclaré (`base.registre_
 | `base` | la base `plateforme` et l'interrupteur du registre |
 | `migrer` | ses migrations (`alembic_plateforme/`) et l'inscription de la référence |
 | `routeur` | le point d'inscription |
+| `sauvegarde` | la sauvegarde nocturne vérifiée de la base `plateforme` |
 """

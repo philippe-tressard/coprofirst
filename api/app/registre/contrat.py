@@ -33,6 +33,10 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 #: autre est refusée avec un message qui le dit — jamais lue de travers.
 VERSION_CONTRAT = 1
 
+#: L'en-tête qui porte la signature d'un envoi de l'installation (Ed25519, base64),
+#: sur les octets du corps — écrit ici : l'installation l'envoie, la référence le lit.
+EN_TETE_SIGNATURE = "X-Signature-Installation"
+
 
 def _personnel(finalite: str, **kw):
     """Un champ qui porte une donnée personnelle — de l'administrateur, jamais d'un résident."""
@@ -92,6 +96,57 @@ class ReponseInscription(_Contrat):
 
     identifiant: str = Field(description="l'identifiant unique de l'installation, attribué ici")
     etat: str = Field(description="en_attente tant que l'opérateur n'a pas validé")
+
+
+# ── Le bail (R2) — l'installation le demande chaque nuit, la référence le signe ──
+
+
+class DemandeBail(_Contrat):
+    """Ce qu'une installation envoie, signé de SA clé, pour obtenir ou renouveler son bail."""
+
+    version_contrat: int = Field(description="lire la demande avec le bon contrat")
+    identifiant: str = Field(
+        description="retrouver l'inscription, attribuée par la référence", max_length=20
+    )
+    cle_publique: str = Field(
+        description="vérifier la signature, et voir deux clés sous un même identifiant (clone)",
+        min_length=40,
+        max_length=60,
+    )
+    version_logicielle: str = Field(
+        description="savoir quelle version tourne, pour le canal et les vagues",
+        min_length=1,
+        max_length=40,
+    )
+
+
+class Bail(_Contrat):
+    """Ce que la référence ACCORDE : la seule chose qu'une installation croit d'elle (D19)."""
+
+    identifiant: str = Field(description="l'installation à qui le bail est accordé")
+    empreinte_cle: str = Field(
+        description="attacher le bail à la clé de l'installation : une copie ne s'en sert pas"
+    )
+    etat: str = Field(description="en_attente, active, suspendue ou resiliee (§4.11)")
+    canal: str = Field(description="la branche que l'installation suit (D21)")
+    version_cible: Optional[str] = Field(
+        default=None, description="la version vers laquelle la mettre à jour (R5)"
+    )
+    services_autorises: list[str] = Field(
+        default_factory=list, description="les services du registre ouverts à l'installation (R6)"
+    )
+    epoque: int = Field(description="refuser le bail d'une référence d'avant un transfert (D24)")
+    delivre_le: datetime = Field(description="dater le bail")
+    echeance: datetime = Field(
+        description="au-delà, le bail est échu : mode limité, jamais un arrêt (D19)"
+    )
+
+
+class BailSigne(_Contrat):
+    """Le bail et la signature de la référence, sur `canonique(bail)`."""
+
+    bail: Bail = Field(description="ce qui est accordé")
+    signature: str = Field(description="prouver que la référence l'a accordé (Ed25519, base64)")
 
 
 # ── Le rapport nocturne (R3) — écrit dès R1 : c'est le contrat qu'on accepte ──
@@ -199,6 +254,9 @@ SCHEMAS = (
     AdministrateurInstallation,
     DemandeInscription,
     ReponseInscription,
+    DemandeBail,
+    Bail,
+    BailSigne,
     Identite,
     Hebergement,
     Sauvegarde,
@@ -216,3 +274,9 @@ def canonique(corps: dict) -> bytes:
     une resérialisation : cette forme sert à l'installation qui signe (R2).
     """
     return json.dumps(corps, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def octets_du_bail(bail: Bail) -> bytes:
+    """Les octets SIGNÉS d'un bail — les mêmes chez la référence qui signe et chez
+    l'installation qui vérifie : la forme canonique de sa forme JSON."""
+    return canonique(bail.model_dump(mode="json"))

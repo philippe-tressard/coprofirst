@@ -82,6 +82,12 @@ def empreinte(valeur: Optional[str] = None) -> str:
     return "" if brut.strip() in ("", "dev") else brut.strip()
 
 
+def version_logicielle() -> str:
+    """Ce qui tourne, tel que le registre le lit (R2 #1878) : la version promue d'une
+    réplique (`COPROFIRST_VERSION`), sinon le commit de l'image, sinon « inconnue »."""
+    return get_settings().coprofirst_version.strip() or empreinte()[:12] or "inconnue"
+
+
 @dataclass(frozen=True)
 class Verification:
     """Ce que le dépôt dit du commit qui tourne, face à la branche suivie."""

@@ -67,6 +67,15 @@ TACHES_PERMANENTES: dict[str, str] = {
     "purge_comptes_inactifs": "la purge quotidienne des comptes inactifs (#1580) — plus "
     "aucun avertissement ni aucune suppression : la durée de conservation annoncée par la "
     "politique de confidentialité redevient fictive",
+    "sante_plateforme": "le contrôle du disque à partir de la deuxième copropriété "
+    "(#1814) — un disque plein n'est plus signalé par l'application ; seule "
+    "l'infrastructure le voit encore (`check-reliability.sh`)",
+    "sauvegarde_plateforme": "la sauvegarde nocturne de la base `plateforme` (#1892) — le "
+    "registre des installations n'a plus de copie vérifiée : une erreur répliquée sur les "
+    "deux nœuds le perd",
+    "bail_installation": "le renouvellement nocturne du bail de l'installation (#1878) — le "
+    "bail échoit en 30 jours et l'installation se constate limitée, sans que l'opérateur "
+    "soit prévenu",
 }
 
 
@@ -80,7 +89,28 @@ TACHES_PERMANENTES: dict[str, str] = {
 #: copropriété (sa sauvegarde, sa télémétrie, sa boîte de réception, ses comptes…).
 #: Le défaut va dans le sens de l'étanchéité : une tâche oubliée ici tourne PAR
 #: copropriété, jamais pour toutes à la fois.
-TACHES_DE_LA_PLATEFORME: dict[str, str] = {}
+TACHES_DE_LA_PLATEFORME: dict[str, str] = {
+    "sante_plateforme": "le disque du serveur, qui n'appartient à aucune copropriété : "
+    "jugé une fois, à destination de l'opérateur (#1814)",
+    "sauvegarde_plateforme": "la base `plateforme` (registre des installations), qui "
+    "n'appartient à aucune copropriété (§4.11, règle 7) (#1892)",
+    "bail_installation": "le bail de l'INSTALLATION auprès du registre, qui n'appartient à "
+    "aucune copropriété (§4.11) (#1878)",
+}
+
+
+def enregistrer_taches_de_la_plateforme(scheduler) -> None:
+    """Pose les tâches de `TACHES_DE_LA_PLATEFORME`, chacune par SON module.
+
+    `main.py` n'en appelle qu'une : il touchait son plafond de 500 lignes, et la
+    liste des tâches de la plateforme se lit ICI, à côté de leur déclaration.
+    """
+    from app.inscription import client
+    from app.registre import sauvegarde
+    from app.utils import sante_plateforme
+
+    for module in (sante_plateforme, sauvegarde, client):
+        module.enregistrer(scheduler)
 
 
 def tache_hors_enveloppe(job) -> bool:

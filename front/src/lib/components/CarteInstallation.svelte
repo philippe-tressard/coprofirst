@@ -12,13 +12,26 @@
     ou injoignable, il dit « non vérifié », jamais « à jour ».
   - Ce rôle n'est pas celui d'un nœud dans la haute disponibilité : les deux
     Raspberry Pi sont ENSEMBLE la référence ; le nœud qui sert se lit au pied de page.
+
+  **Inscription au registre** (R2 #1878, arbitrage du 13/10/2026 : ici, à l'opérateur) :
+  l'état de l'installation auprès de la référence — limitée, active, suspendue — et
+  sa raison, CONSTATÉS : rien ne les applique encore (R6, #1882). L'opérateur y saisit
+  le contact de l'administrateur d'installation et accepte les conditions EN VIGUEUR,
+  dont le texte se lit ici même : on ne s'engage pas sur un texte qu'on n'a pas vu.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import pkg from '../../../package.json';
 	import SectionFormulaire from './SectionFormulaire.svelte';
 	import EtatListe from './EtatListe.svelte';
-	import { instance, type EtatInstallation } from '$lib/api';
+	import EtoileRequis from './EtoileRequis.svelte';
+	import {
+		instance,
+		type ConditionsInscription,
+		type EtatInstallation,
+		type InscriptionInstallation,
+	} from '$lib/api';
+	import { toast } from '$lib/components/Toast.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import { fmtDatetime } from '$lib/date';
 	import { lienSource } from '$lib/plateforme';
@@ -26,6 +39,19 @@
 	let etat: EtatInstallation | null = null;
 	let chargement = true;
 	let erreur = '';
+
+	let inscription: InscriptionInstallation | null = null;
+	let chargementInscription = true;
+	let erreurInscription = '';
+	let conditions: ConditionsInscription | null = null;
+	let formulaireOuvert = false;
+	let envoi = false;
+	let renouvellement = false;
+	let prenom = '';
+	let nom = '';
+	let courriel = '';
+	let telephone = '';
+	let accepte = false;
 
 	onMount(async () => {
 		try {
@@ -35,7 +61,72 @@
 		} finally {
 			chargement = false;
 		}
+		try {
+			inscription = await instance.inscription();
+		} catch (e) {
+			erreurInscription = messageErreur(e);
+		} finally {
+			chargementInscription = false;
+		}
 	});
+
+	/** L'état constaté, dit en clair — `reference` et `essai` ne sont jamais limités. */
+	const LIBELLES_INSCRIPTION: Record<InscriptionInstallation['etat'], string> = {
+		reference: 'Référence',
+		essai: 'Essai',
+		limitee: 'Limitée',
+		active: 'Active',
+		suspendue: 'Suspendue',
+	};
+
+	async function ouvrirFormulaire() {
+		formulaireOuvert = !formulaireOuvert;
+		if (!formulaireOuvert) return;
+		const c = inscription?.contact;
+		prenom = c?.prenom ?? '';
+		nom = c?.nom ?? '';
+		courriel = c?.courriel ?? '';
+		telephone = c?.telephone ?? '';
+		accepte = false;
+		try {
+			conditions = await instance.conditionsInscription();
+		} catch (e) {
+			toast('error', messageErreur(e));
+		}
+	}
+
+	async function inscrire() {
+		if (!conditions) return;
+		envoi = true;
+		try {
+			inscription = await instance.inscrire({
+				prenom,
+				nom,
+				courriel,
+				telephone: telephone.trim() || null,
+				conditions_acceptees: conditions.version,
+				accepte,
+			});
+			formulaireOuvert = false;
+			toast('success', `Installation inscrite : ${inscription.identifiant ?? ''}`.trim());
+		} catch (e) {
+			toast('error', messageErreur(e));
+		} finally {
+			envoi = false;
+		}
+	}
+
+	async function renouveler() {
+		renouvellement = true;
+		try {
+			inscription = await instance.renouvelerBail();
+			toast('success', 'Bail demandé à la référence.');
+		} catch (e) {
+			toast('error', messageErreur(e));
+		} finally {
+			renouvellement = false;
+		}
+	}
 
 	/** La ligne « À jour ? », dite en clair — la mesure, ou pourquoi il n'y en a pas. */
 	function ecart(e: EtatInstallation): { texte: string; ton: 'ok' | 'alerte' | 'neutre' } {
@@ -87,6 +178,127 @@
 			</dl>
 		{/if}
 	</EtatListe>
+
+	<SectionFormulaire titre="Inscription au registre" icone="shield-check" />
+	<EtatListe chargement={chargementInscription} erreur={erreurInscription} vide={!inscription}>
+		{#if inscription}
+			{@const i = inscription}
+			<dl class="installation">
+				<dt>État</dt>
+				<dd
+					class:ton-ok={i.etat === 'active' || i.etat === 'reference'}
+					class:ton-alerte={i.etat === 'limitee' || i.etat === 'suspendue'}
+				>
+					<strong>{LIBELLES_INSCRIPTION[i.etat]}</strong> — {i.raison}
+					<p class="aide">Constaté seulement&nbsp;: rien ne limite encore l’installation.</p>
+				</dd>
+				{#if i.identifiant}
+					<dt>Identifiant</dt>
+					<dd>
+						<code>{i.identifiant}</code>{#if i.canal}&nbsp;· canal <code>{i.canal}</code>{/if}
+					</dd>
+				{/if}
+				{#if i.echeance}
+					<dt>Bail jusqu’au</dt>
+					<dd>{fmtDatetime(i.echeance)}</dd>
+				{/if}
+				{#if i.dernier_renouvellement_le}
+					<dt>Renouvelé le</dt>
+					<dd class:ton-alerte={i.renouvellement_en_retard}>
+						{fmtDatetime(i.dernier_renouvellement_le)}
+					</dd>
+				{/if}
+				{#if i.dernier_rapport_le}
+					<dt>Dernier rapport</dt>
+					<dd>{fmtDatetime(i.dernier_rapport_le)}</dd>
+				{/if}
+				{#if i.derniere_erreur}
+					<dt>Dernière erreur</dt>
+					<dd class="ton-alerte">{i.derniere_erreur}</dd>
+				{/if}
+				{#if i.contact}
+					<dt>Administrateur</dt>
+					<dd>{i.contact.prenom} {i.contact.nom} — {i.contact.courriel}</dd>
+				{/if}
+			</dl>
+			{#if i.essai_refuse}
+				<p class="aide">
+					<code>INSTALLATION_ESSAI</code> est posé mais refusé&nbsp;: il n’est admis que pour un hôte
+					local ou une base en mémoire.
+				</p>
+			{/if}
+
+			{#if i.peut_s_inscrire}
+				<div class="gestes-inscription">
+					<button
+						class="btn"
+						type="button"
+						aria-expanded={formulaireOuvert}
+						on:click={ouvrirFormulaire}
+					>
+						{i.identifiant ? 'Mettre à jour le contact' : 'Inscrire l’installation'}
+					</button>
+					{#if i.identifiant}
+						<button class="btn" type="button" on:click={renouveler} disabled={renouvellement}>
+							{renouvellement ? 'Demande…' : 'Renouveler le bail'}
+						</button>
+					{/if}
+				</div>
+
+				{#if formulaireOuvert}
+					<form class="inscription" on:submit|preventDefault={inscrire}>
+						<p class="aide">
+							Le contact de l’administrateur de l’installation part à la référence ({i.registre_url}),
+							qui l’archive avec les conditions acceptées. Aucune donnée de résident n’en fait
+							partie.
+						</p>
+						<div class="field">
+							<label for="ins-prenom">Prénom<EtoileRequis vide={!prenom.trim()} /></label>
+							<input id="ins-prenom" type="text" maxlength="80" bind:value={prenom} required />
+						</div>
+						<div class="field">
+							<label for="ins-nom">Nom<EtoileRequis vide={!nom.trim()} /></label>
+							<input id="ins-nom" type="text" maxlength="80" bind:value={nom} required />
+						</div>
+						<div class="field">
+							<label for="ins-courriel">Courriel<EtoileRequis vide={!courriel.trim()} /></label>
+							<input id="ins-courriel" type="email" bind:value={courriel} required />
+						</div>
+						<div class="field">
+							<label for="ins-telephone">Téléphone</label>
+							<input id="ins-telephone" type="tel" maxlength="30" bind:value={telephone} />
+						</div>
+						{#if conditions}
+							<textarea
+								class="conditions-texte"
+								readonly
+								rows="12"
+								aria-label="Conditions d’inscription, version {conditions.version}"
+								value={conditions.texte}></textarea>
+							<label class="case">
+								<input type="checkbox" bind:checked={accepte} />
+								<span>J’accepte les conditions d’inscription (version {conditions.version})</span>
+							</label>
+						{/if}
+						<div class="form-actions">
+							<button
+								class="btn btn-primary"
+								type="submit"
+								disabled={envoi ||
+									!accepte ||
+									!conditions ||
+									!prenom.trim() ||
+									!nom.trim() ||
+									!courriel.trim()}
+							>
+								{envoi ? 'Enregistrement…' : 'Enregistrer'}
+							</button>
+						</div>
+					</form>
+				{/if}
+			{/if}
+		{/if}
+	</EtatListe>
 </section>
 
 <style>
@@ -107,6 +319,27 @@
 	}
 	.ton-alerte {
 		color: var(--color-warning-texte);
+	}
+	.gestes-inscription {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+	}
+	.inscription {
+		margin-top: 0.75rem;
+	}
+	/*  Le texte accepté, tel quel — du TEXTE (aucun HTML à assainir), lu avant de cocher. */
+	.conditions-texte {
+		width: 100%;
+		resize: vertical;
+		font-family: inherit;
+		font-size: var(--fs-sm);
+		padding: 0.75rem;
+		margin: 0.75rem 0;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-surface);
 	}
 	@media (max-width: 480px) {
 		.installation {

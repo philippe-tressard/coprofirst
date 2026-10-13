@@ -1,4 +1,5 @@
-"""Le point d'inscription du registre — `POST /plateforme/inscriptions` (R1 #1877, §4.11).
+"""Les points du registre — `POST /plateforme/inscriptions` (R1 #1877), `/baux` (R2 #1878)
+et `/rapports` (R3 #1879).
 
 Une route PUBLIQUE : une installation qui s'inscrit n'a pas de compte chez la référence.
 Ce qui la garde, dans l'ordre :
@@ -18,6 +19,11 @@ Ce qui la garde, dans l'ordre :
    archive (`conditions`).
 
 Rien de ce que la demande contient n'est renvoyé dans un message d'erreur.
+
+Le BAIL (`POST /plateforme/baux`, R2) suit les mêmes gardes 1 à 3 : signé par la
+clé de l'installation, il rend un bail signé par la clé des baux (`registre/baux`).
+Deux clés sous un même identifiant sont un CLONE : refusé, et inscrit au journal
+des décisions.
 """
 
 from __future__ import annotations
@@ -33,11 +39,15 @@ from sqlmodel import Session, func, select
 
 from app.config import get_settings
 from app.contexte import nom_d_hote
-from app.registre import conditions, signature
+from app.registre import baux, conditions, rapports, signature
 from app.registre.base import get_session_plateforme, registre_actif
 from app.registre.contrat import (
+    EN_TETE_SIGNATURE,
     VERSION_CONTRAT,
+    BailSigne,
+    DemandeBail,
     DemandeInscription,
+    Rapport,
     ReponseInscription,
 )
 from app.registre.modeles import (
@@ -64,8 +74,6 @@ TAILLE_MAX = 16 * 1024
 #: en ait validé ou refusé : un remplissage ne peut pas l'engorger.
 PLAFOND_EN_ATTENTE = 50
 
-#: L'en-tête qui porte la signature de la demande (Ed25519, base64).
-EN_TETE_SIGNATURE = "X-Signature-Installation"
 
 #: L'auteur d'un geste fait par le registre lui-même, et non par l'opérateur.
 SYSTEME = "système"
@@ -82,27 +90,37 @@ def _refus(code: int, detail: str) -> HTTPException:
     return HTTPException(code, detail)
 
 
-async def _lire_demande(request: Request) -> tuple[bytes, DemandeInscription]:
-    """Les octets reçus, et la demande qu'ils portent — ou le refus qui dit pourquoi."""
+async def _lire_signee(request: Request, schema):
+    """La demande que portent les octets reçus, SIGNÉE par la clé qu'elle déclare.
+
+    Taille, contrat, version et signature — les gardes communes à tout envoi
+    d'une installation ; le refus dit lequel a manqué, jamais ce qu'il a lu.
+    """
     corps = await request.body()
     if len(corps) > TAILLE_MAX:
         raise _refus(413, "Demande trop volumineuse.")
     try:
-        demande = DemandeInscription.model_validate_json(corps)
+        demande = schema.model_validate_json(corps)
     except ValidationError:
         raise _refus(422, "Demande illisible : elle ne suit pas le contrat de données.") from None
     if demande.version_contrat != VERSION_CONTRAT:
         raise _refus(400, f"Version du contrat de données attendue : {VERSION_CONTRAT}.")
+    if not signature.cle_publique_valide(demande.cle_publique) or not signature.verifier(
+        demande.cle_publique, corps, request.headers.get(EN_TETE_SIGNATURE, "")
+    ):
+        raise _refus(401, "Signature de l'installation absente ou invalide.")
+    return demande
+
+
+async def _lire_demande(request: Request) -> DemandeInscription:
+    """La demande d'inscription — signée, et sur les conditions EN VIGUEUR."""
+    demande = await _lire_signee(request, DemandeInscription)
     en_vigueur = conditions.version_en_vigueur()
     if demande.conditions_acceptees != en_vigueur:
         raise _refus(400, f"Les conditions en vigueur sont celles de la version {en_vigueur}.")
     if demande.empreinte_conditions != conditions.empreinte(en_vigueur):
         raise _refus(400, "Le texte des conditions accepté n'est pas celui de la référence.")
-    if not signature.cle_publique_valide(demande.cle_publique) or not signature.verifier(
-        demande.cle_publique, corps, request.headers.get(EN_TETE_SIGNATURE, "")
-    ):
-        raise _refus(401, "Signature de l'installation absente ou invalide.")
-    return corps, demande
+    return demande
 
 
 def _archiver_acceptation(session: Session, inst: Installation, demande: DemandeInscription):
@@ -193,7 +211,7 @@ def _inscrire(session: Session, demande: DemandeInscription) -> Installation:
 @limiter.limit(LIMITE_INSCRIPTION_INSTALLATION)
 async def inscrire(request: Request, session: Session = Depends(get_session_plateforme)):
     """Inscrit une installation (201), ou retrouve celle de la même clé (200)."""
-    _, demande = await _lire_demande(request)
+    demande = await _lire_demande(request)
     try:
         inst = session.exec(
             select(Installation).where(Installation.cle_publique == demande.cle_publique)
@@ -211,3 +229,86 @@ async def inscrire(request: Request, session: Session = Depends(get_session_plat
         raise _refus(503, "Le registre est indisponible.") from None
     reponse = ReponseInscription(identifiant=inst.identifiant, etat=inst.etat.value)
     return JSONResponse(reponse.model_dump(), status_code=201 if neuve else 200)
+
+
+def _signaler_clone(session: Session, inst: Installation) -> None:
+    """Deux clés pour un identifiant : la décision s'inscrit, une fois par jour au plus."""
+    depuis = horloge.maintenant().replace(hour=0, minute=0, second=0, microsecond=0)
+    deja = session.exec(
+        select(DecisionRegistre).where(
+            DecisionRegistre.installation_id == inst.id,
+            DecisionRegistre.geste == "clone_signale",
+            DecisionRegistre.cree_le >= depuis,
+        )
+    ).first()
+    if deja is None:
+        session.add(
+            DecisionRegistre(
+                installation_id=inst.id,
+                geste="clone_signale",
+                motif="une autre clé a demandé le bail de cet identifiant",
+                auteur=SYSTEME,
+            )
+        )
+        session.commit()
+
+
+@router.post("/baux", response_model=BailSigne, dependencies=[Depends(_servi_ici)])
+@limiter.limit(LIMITE_INSCRIPTION_INSTALLATION)
+async def renouveler_bail(request: Request, session: Session = Depends(get_session_plateforme)):
+    """Délivre le bail d'une installation inscrite — signé par la clé des baux (R2)."""
+    demande = await _lire_signee(request, DemandeBail)
+    cle = baux.cle_de_signature()
+    if cle is None:
+        raise _refus(503, "Le registre ne délivre pas encore de bail.")
+    try:
+        inst = session.exec(
+            select(Installation).where(Installation.identifiant == demande.identifiant)
+        ).first()
+        if inst is None:
+            raise _refus(404, "Installation inconnue du registre.")
+        if inst.cle_publique != demande.cle_publique:
+            _signaler_clone(session, inst)
+            raise _refus(409, "Cet identifiant appartient à une autre clé.")
+        inst.version_logicielle = demande.version_logicielle
+        inst.vue_le = horloge.maintenant()
+        session.add(inst)
+        session.commit()
+        session.refresh(inst)
+    except SQLAlchemyError as exc:
+        session.rollback()
+        logger.warning("registre : bail non délivré (%s)", type(exc).__name__)
+        raise _refus(503, "Le registre est indisponible.") from None
+    return baux.delivrer(inst, cle, horloge.maintenant()).model_dump(mode="json")
+
+
+@router.post("/rapports", status_code=202, dependencies=[Depends(_servi_ici)])
+@limiter.limit(LIMITE_INSCRIPTION_INSTALLATION)
+async def recevoir_rapport(request: Request, session: Session = Depends(get_session_plateforme)):
+    """Le rapport nocturne d'une installation inscrite, signé par SA clé (R3)."""
+    corps = await request.body()
+    if len(corps) > TAILLE_MAX:
+        raise _refus(413, "Rapport trop volumineux.")
+    try:
+        rapport = Rapport.model_validate_json(corps)
+    except ValidationError:
+        raise _refus(422, "Rapport illisible : il ne suit pas le contrat de données.") from None
+    if rapport.version_contrat != VERSION_CONTRAT:
+        raise _refus(400, f"Version du contrat de données attendue : {VERSION_CONTRAT}.")
+    try:
+        inst = session.exec(
+            select(Installation).where(Installation.identifiant == rapport.identite.identifiant)
+        ).first()
+        if inst is None or not inst.cle_publique:
+            raise _refus(404, "Installation inconnue du registre.")
+        if not signature.verifier(
+            inst.cle_publique, corps, request.headers.get(EN_TETE_SIGNATURE, "")
+        ):
+            raise _refus(401, "Signature de l'installation absente ou invalide.")
+        rapports.ranger(session, inst, rapport)
+        session.commit()
+    except SQLAlchemyError as exc:
+        session.rollback()
+        logger.warning("registre : rapport non rangé (%s)", type(exc).__name__)
+        raise _refus(503, "Le registre est indisponible.") from None
+    return {"recu": True}
