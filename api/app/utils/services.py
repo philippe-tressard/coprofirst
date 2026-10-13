@@ -85,6 +85,10 @@ class Service:
     #: Son plafond, s'il en a un — dit en clair, il se règle dans son onglet.
     plafond: str = ""
     coupable: bool = True
+    #: Son onglet de réglages ne porte QUE lui : coupé, l'onglet se grise dans la
+    #: rangée de l'administration. Faux pour un onglet partagé (SMTP porte aussi
+    #: l'envoi des courriels, Maintenance la supervision) : le griser mentirait.
+    onglet_dedie: bool = False
 
 
 SERVICES: dict[str, Service] = {
@@ -102,6 +106,7 @@ SERVICES: dict[str, Service] = {
         onglet="ia",
         icone="lightbulb",
         cle_actif="llm_actif",
+        onglet_dedie=True,
         requis=(("llm_api_key", "la clé d'API"),),
         plafond="Par usage : un nombre d'appels par mois, et par heure et par personne.",
     ),
@@ -116,6 +121,7 @@ SERVICES: dict[str, Service] = {
         onglet="whatsapp",
         icone="whatsapp",
         cle_actif="whatsapp_enabled",
+        onglet_dedie=True,
         requis=(("whatsapp_api_url", "l'adresse du relais WhatsApp"),),
     ),
     SERVICE_REPONSES_COURRIEL: Service(
@@ -320,6 +326,7 @@ def decrire(session) -> list[dict]:
                 "perte": s.perte,
                 "plafond": s.plafond,
                 "onglet": s.onglet,
+                "onglet_dedie": s.onglet_dedie,
                 "icone": s.icone,
                 "coupable": s.coupable,
                 "cle_actif": s.cle_actif,

@@ -9,13 +9,15 @@
   `GET /config/services` — la forme de `llm-usages`. Ajouter un service, c'est une
   entrée du registre, pas une carte de plus dans cet écran.
 
-  ## Un interrupteur, deux rendus — déclaré (`standards/11` §14)
+  ## Un interrupteur, un seul endroit : ICI (14/10/2026)
 
-  L'activation d'un service se coche ICI et dans son onglet de réglages (IA,
-  WhatsApp, SMTP), qui la gardent : ils montrent ce qu'elle gouverne. Les deux
-  écrivent la MÊME clé, normalisée par `PUT /config`. Après une bascule, la page
-  reçoit la nouvelle valeur (`apresBascule`) pour que l'onglet de réglages,
-  rouvert, ne réenregistre pas l'ancienne.
+  L'activation d'un service se coche ici et nulle part ailleurs. Son onglet de
+  réglages (IA, WhatsApp, SMTP) en portait une seconde case, qui écrivait la même
+  clé : il ne fait plus que DIRE l'état (`EtatService`) et renvoyer ici, et la
+  rangée d'onglets grise celui d'un service coupé (`onglet_dedie`). Après une
+  bascule, la page reçoit la nouvelle valeur (`apresBascule`) : l'onglet de
+  réglages rouvert la lit, et la rangée se regrise.
+  🔒 `test_services_registre.py` refuse une clé d'activation écrite ailleurs.
 
   L'envoi des courriels est une **infrastructure** : son état se montre, il ne
   se coupe pas d'ici — il porte les courriels de sécurité (mot de passe oublié,
@@ -28,17 +30,10 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
+	import BadgeEtatService from '$lib/components/BadgeEtatService.svelte';
 
 	/**  La page tient la configuration lue au chargement : elle y reporte la bascule. */
 	export let apresBascule: (cle: string, valeur: string) => void = () => {};
-
-	//  Trois états, rendus ICI seulement : la couleur se pose par `class:` — une
-	//  classe interpolée rendrait le fichier non mesurable par `lint:css-orphelin`.
-	const LIBELLE_ETAT: Record<ServiceCopropriete['etat'], string> = {
-		actif: 'Activé',
-		coupe: 'Coupé',
-		incomplet: 'Activé, incomplet',
-	};
 
 	let services: ServiceCopropriete[] = [];
 	let chargement = true;
@@ -82,12 +77,7 @@
 		<section class="card config-section" data-service={s.code} aria-labelledby="service-{s.code}">
 			<h2 class="config-section-title" id="service-{s.code}">
 				<Icon name={s.icone} size={17} />{s.libelle}
-				<span
-					class="badge"
-					class:badge-green={s.etat === 'actif'}
-					class:badge-gray={s.etat === 'coupe'}
-					class:badge-orange={s.etat === 'incomplet'}>{LIBELLE_ETAT[s.etat]}</span
-				>
+				<BadgeEtatService etat={s.etat} />
 			</h2>
 			<p class="config-section-intro">{s.description}</p>
 			{#if s.manque.length}
@@ -129,7 +119,7 @@
 </EtatListe>
 
 <style>
-	.config-section-title .badge {
+	.config-section-title :global(.badge) {
 		margin-left: auto;
 	}
 	.manque {

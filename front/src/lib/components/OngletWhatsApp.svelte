@@ -21,6 +21,7 @@
 	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
 	import MessagesPlanifiesWhatsApp from '$lib/components/MessagesPlanifiesWhatsApp.svelte';
 	import HistoriqueEnvoisWhatsApp from '$lib/components/HistoriqueEnvoisWhatsApp.svelte';
+	import EtatService from '$lib/components/EtatService.svelte';
 
 	/** Configuration publique déjà chargée par la page (préremplit le formulaire). */
 	export let cfgPublique: Record<string, string> = {};
@@ -124,8 +125,9 @@
 	async function saveWaConfig() {
 		waSaving = true;
 		try {
+			//  L'activation n'y est pas : elle se coche dans Admin › Services, seule
+			//  case qui l'écrit — la renvoyer rétablirait un service qu'on vient de couper.
 			const payload: Record<string, string> = {
-				whatsapp_enabled: waConfig.enabled ? '1' : '0',
 				whatsapp_group_name: waConfig.group_name,
 				whatsapp_api_url: waConfig.api_url,
 				whatsapp_group_jid: waConfig.group_jid,
@@ -133,7 +135,6 @@
 			await configApi.save(payload);
 			configStore.update((c: Record<string, string>) => ({
 				...c,
-				whatsapp_enabled: waConfig.enabled ? '1' : '0',
 				whatsapp_group_name: waConfig.group_name,
 				whatsapp_api_url: waConfig.api_url,
 				whatsapp_group_jid: waConfig.group_jid,
@@ -154,17 +155,12 @@
 		Configuration WhatsApp
 	</h2>
 	<SectionFormulaire premiere icone="settings" titre="Connexion au bridge">
+		<div class="largeur-saisie">
+			<EtatService actif={waConfig.enabled}>
+				Activé, ce qui est coché « Partager sur le groupe » part au groupe WhatsApp.
+			</EtatService>
+		</div>
 		<div class="form-grid largeur-saisie">
-			<label class="field champ-double">
-				<span class="case">
-					<input type="checkbox" bind:checked={waConfig.enabled} />
-					Activer l'envoi WhatsApp
-				</span>
-				<span class="aide"
-					>Si activé, les actualités avec "Partager sur le groupe" seront envoyées au groupe
-					WhatsApp.</span
-				>
-			</label>
 			<label class="field">
 				Nom du canal
 				<input type="text" bind:value={waConfig.group_name} placeholder="Groupe WhatsApp" />
