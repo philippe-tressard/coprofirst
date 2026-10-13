@@ -46,7 +46,7 @@ from app.models.core import (
 )
 from app.utils.lecture import lire_objet
 from app.utils.perimetres import invalider_cache, parse_json_perimetres, parse_perimetres
-from app.utils.perimetres.branche import descendants, refus_duplication
+from app.utils.perimetres.branche import descendants, enfants_par_parent, refus_duplication
 from app.utils.recuperer import ou_404
 
 router = APIRouter(prefix="/perimetres", tags=["perimetres"])
@@ -240,11 +240,7 @@ def _en_lecture(noeuds: list[Perimetre], cites: set[str]) -> list[PerimetreRead]
     par_id = {n.id: n for n in noeuds}
     profondeur = _profondeurs(noeuds)
 
-    enfants: dict[Optional[int], list[Perimetre]] = {}
-    for n in noeuds:
-        enfants.setdefault(n.parent_id, []).append(n)
-    for liste in enfants.values():
-        liste.sort(key=lambda n: (n.ordre, n.code))
+    enfants = enfants_par_parent(noeuds)
 
     sortie: list[PerimetreRead] = []
     vus: set[int] = set()

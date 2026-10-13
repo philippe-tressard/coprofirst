@@ -13,17 +13,27 @@ from typing import Optional
 from app.models.perimetre import Perimetre
 
 
-def descendants(noeud: Perimetre, noeuds: list[Perimetre]) -> list[Perimetre]:
-    """Tous les descendants de `noeud`, parents avant enfants (parcours en largeur).
+def enfants_par_parent(noeuds: list[Perimetre]) -> dict[Optional[int], list[Perimetre]]:
+    """Les enfants de chaque nœud, dans l'ordre d'affichage (`ordre`, puis `code`).
 
-    Borné par `vus` : un cycle en base — écrit à la main — ne doit pas suspendre
-    la requête (`standards/04`).
+    Lu par la lecture de l'arbre ET par la branche : deux tris divergents sont
+    un tri de trop.
     """
     enfants: dict[Optional[int], list[Perimetre]] = {}
     for n in noeuds:
         enfants.setdefault(n.parent_id, []).append(n)
     for liste in enfants.values():
         liste.sort(key=lambda n: (n.ordre, n.code))
+    return enfants
+
+
+def descendants(noeud: Perimetre, noeuds: list[Perimetre]) -> list[Perimetre]:
+    """Tous les descendants de `noeud`, parents avant enfants (parcours en largeur).
+
+    Borné par `vus` : un cycle en base — écrit à la main — ne doit pas suspendre
+    la requête (`standards/04`).
+    """
+    enfants = enfants_par_parent(noeuds)
 
     sortie: list[Perimetre] = []
     vus: set[int] = {noeud.id}
