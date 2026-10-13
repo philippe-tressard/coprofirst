@@ -24,8 +24,9 @@ from tests.aides_sources import modules_app
     [
         ("reference", "reference"),
         ("Référence", "reference"),
-        #  L'ancien nom, encore porté par le `.env` des Raspberry Pi (`ANCIENS_NOMS`).
-        ("maitre", "reference"),
+        #  L'ancien nom de la référence, retiré quand les deux `.env` ont dit
+        #  `reference` (#1892, 13/10/2026) : il n'est plus lu.
+        ("maitre", "inconnu"),
         ("Référence", "reference"),
         (" replique ", "replique"),
         ("réplique", "replique"),
