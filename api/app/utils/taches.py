@@ -70,6 +70,9 @@ TACHES_PERMANENTES: dict[str, str] = {
     "sante_plateforme": "le contrôle du disque à partir de la deuxième copropriété "
     "(#1814) — un disque plein n'est plus signalé par l'application ; seule "
     "l'infrastructure le voit encore (`check-reliability.sh`)",
+    "sauvegarde_plateforme": "la sauvegarde nocturne de la base `plateforme` (#1892) — le "
+    "registre des installations n'a plus de copie vérifiée : une erreur répliquée sur les "
+    "deux nœuds le perd",
 }
 
 
@@ -86,6 +89,8 @@ TACHES_PERMANENTES: dict[str, str] = {
 TACHES_DE_LA_PLATEFORME: dict[str, str] = {
     "sante_plateforme": "le disque du serveur, qui n'appartient à aucune copropriété : "
     "jugé une fois, à destination de l'opérateur (#1814)",
+    "sauvegarde_plateforme": "la base `plateforme` (registre des installations), qui "
+    "n'appartient à aucune copropriété (§4.11, règle 7) (#1892)",
 }
 
 

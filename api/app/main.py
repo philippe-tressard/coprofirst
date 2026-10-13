@@ -225,6 +225,11 @@ async def lifespan(app: FastAPI):
 
     sante_plateforme.enregistrer(scheduler)
 
+    # Sauvegarde de la base `plateforme` (03h30) : la référence seule, registre déclaré (#1892)
+    from app.registre import sauvegarde as sauvegarde_registre
+
+    sauvegarde_registre.enregistrer(scheduler)
+
     scheduler.add_job(
         contexte.pour_chaque_copropriete(run_health_check, "health_check"),
         "cron",

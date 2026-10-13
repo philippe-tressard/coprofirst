@@ -258,6 +258,11 @@ pas les autres**. Chaque exécution est journalisée par copro.
   données **en routine**. Le mécanisme reste à concevoir.
 - **Départ d'une copropriété** : elle repart avec sa base et ses fichiers, puis
   ceux-ci sont supprimés de la plateforme.
+- **La base `plateforme`** (registre des installations, §4.11) a sa propre
+  sauvegarde, à part de celles des copropriétés : chaque nuit, chez la référence,
+  le même export vérifié par réimport, sur les métadonnées du registre
+  (`app/registre/sauvegarde.py`, tâche de la plateforme, #1892). Un échec va à
+  l'opérateur, jamais à une copropriété.
 
 ### 4.10 La distribution — une référence, une branche `replica`, N installations (D11 à D14)
 
