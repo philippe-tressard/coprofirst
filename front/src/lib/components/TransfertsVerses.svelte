@@ -12,7 +12,11 @@
   - `bloque` dit pourquoi un transfert ne se défait plus (une suite écrite
     depuis, ou un transfert suivant), et les boutons disparaissent : on ne
     propose pas un geste refusé — au plus un transfert à la fois les porte ;
-  - `peut_deplacer` : déplacer exige de modérer.
+  - `peut_deplacer` : déplacer exige de modérer ;
+  - « Valider le transfert » (13/10/2026) — « si c'est ok et pour faire
+    disparaître ces boutons » : le transfert reste versé, quitte la liste et ne
+    se défait plus. Offert même sur un transfert bloqué : c'est ce qui vide la
+    liste.
 
   🔴 Rendu sur la fiche ET dans la carte dépliée de la liste (01/10/2026). Il
   n'était que sur la fiche, « là que mène la notification » — et la carte n'a
@@ -100,6 +104,16 @@
 		if (ok) await geste(() => ticketsApi.annulerTransfert(ticketId, t.id), 'Transfert annulé');
 	}
 
+	async function valider(t: TransfertVerse) {
+		const ok = await confirmer({
+			titre: 'Valider le transfert',
+			message: `Le transfert reste dans cette ${TICKET.libelle.toLowerCase()} : il quitte cette liste et ne pourra plus être annulé ni déplacé.`,
+			libelleConfirmer: 'Valider',
+			libelleAnnuler: 'Revenir',
+		});
+		if (ok) await geste(() => ticketsApi.validerTransfert(ticketId, t.id), 'Transfert validé');
+	}
+
 	async function versAffaire(t: TransfertVerse, a: AffaireLiee) {
 		const ok = await confirmer({
 			titre: 'Déplacer le transfert',
@@ -146,8 +160,15 @@
 				</p>
 				{#if t.bloque}
 					<p class="aide">Ne peut plus être défait : {t.bloque}.</p>
-				{:else}
-					<div class="transfert-gestes">
+				{/if}
+				<div class="transfert-gestes">
+					<button
+						type="button"
+						class="btn btn-primary btn-sm"
+						disabled={enCours}
+						on:click={() => valider(t)}>Valider le transfert</button
+					>
+					{#if !t.bloque}
 						<button
 							type="button"
 							class="btn btn-outline btn-sm"
@@ -173,7 +194,9 @@
 								>
 							{/if}
 						{/if}
-					</div>
+					{/if}
+				</div>
+				{#if !t.bloque}
 					{#if deplace === t.id}
 						<div class="transfert-cible">
 							<ChoixAffaire

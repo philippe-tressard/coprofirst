@@ -301,6 +301,82 @@ def test_seul_le_transfert_le_plus_recent_se_defait(lieu):
     assert versements.motif_bloquant(session, premier) is None
 
 
+# ── Valider (13/10/2026) ──────────────────────────────────────────────────────
+
+
+def test_valider_retire_le_transfert_de_la_liste_et_eteint_les_gestes(lieu):
+    """« Il manque Valider ce transfert (si c'est ok et pour faire disparaître
+    ces boutons) » : validé, il reste versé, quitte la liste et ne se défait plus."""
+    session, ticket, syndic, cs, objet, _ = lieu
+    v = _dans_le_ticket(session, cs, ticket, syndic, objet)
+
+    versements.valider(session, v, cs)
+    session.commit()
+
+    assert (v.valide_par_id, v.valide_le is not None) == (cs.id, True)
+    assert len(_evolutions(session, ticket)) == 3, "les Suites restent versées"
+    assert versements.a_proposer(session, ticket.id) == []
+    assert versements.motif_bloquant(session, v) == "ce transfert a été validé"
+    with pytest.raises(HTTPException) as e:
+        versements.annuler(session, v)
+    assert e.value.status_code == 409
+
+
+def test_valider_le_plus_recent_ne_rouvre_pas_le_precedent(lieu):
+    """Validé, le transfert suivant reste EN PLACE : le précédent reste bloqué
+    sous lui — l'annuler rendrait le lien du fil sous un transfert maintenu."""
+    session, ticket, syndic, cs, objet, _ = lieu
+    premier = _dans_le_ticket(session, cs, ticket, syndic, objet)
+    avant = versements.etat_avant(session, ticket, premier.cle_fil)
+    second = versements.ouvrir_versement(session, cs, ticket, avant, objet, creee=False)
+    session.add(
+        TicketEvolution(
+            ticket_id=ticket.id,
+            type="commentaire",
+            contenu="J'approuve également.",
+            auteur_id=cs.id,
+            versement_id=second.id,
+        )
+    )
+    session.commit()
+
+    versements.valider(session, second, cs)
+    session.commit()
+
+    assert "annulez-le d'abord" in versements.motif_bloquant(session, premier)
+    assert [v.id for v in versements.a_proposer(session, ticket.id)] == [premier.id]
+    #  Un transfert éteint se valide aussi : c'est ce qui vide la liste.
+    versements.valider(session, premier, cs)
+    session.commit()
+    assert versements.a_proposer(session, ticket.id) == []
+
+
+def test_un_transfert_annule_ne_se_valide_pas(lieu):
+    session, ticket, syndic, cs, objet, _ = lieu
+    v = _dans_le_ticket(session, cs, ticket, syndic, objet)
+    versements.annuler(session, v)
+    session.commit()
+    with pytest.raises(HTTPException) as e:
+        versements.valider(session, v, cs)
+    assert e.value.status_code == 409
+
+
+def test_la_route_valider_prend_le_droit_d_annuler(lieu):
+    """Celui qui a transféré valide ; un autre membre du conseil reçoit 403."""
+    from app.routers.tickets.transferts import valider_transfert
+
+    session, ticket, syndic, cs, objet, comptes = lieu
+    v = _dans_le_ticket(session, cs, ticket, syndic, objet)
+    autre_cs = _compte(session, comptes, "conseil_syndical")
+
+    with pytest.raises(HTTPException) as e:
+        valider_transfert(ticket.id, v.id, session=session, user=autre_cs)
+    assert e.value.status_code == 403
+    assert valider_transfert(ticket.id, v.id, session=session, user=cs).ticket_id == ticket.id
+    session.refresh(v)
+    assert v.valide_par_id == cs.id
+
+
 # ── Qui ───────────────────────────────────────────────────────────────────────
 
 

@@ -7,7 +7,9 @@
  *  en MONTRE — API simulée, compte CS :
  *
  *  - aucun bloc quand il n'y a rien à défaire ;
- *  - un transfert bloqué dit pourquoi, et ne propose aucun geste ;
+ *  - un transfert bloqué dit pourquoi, et ne propose que « Valider » ;
+ *  - « Valider le transfert » (13/10/2026) demande confirmation, puis appelle
+ *	sa route — sur un transfert défaisable comme sur un bloqué ;
  *  - « Annuler » demande confirmation, puis appelle la bonne route ;
  *  - « Déplacer » ne propose ni l'affaire ouverte, ni une affaire close ;
  *  - le bloc est AUSSI dans la carte dépliée de la liste, et un geste y relit
@@ -101,7 +103,8 @@ test('un transfert se défait d’un geste, un transfert bloqué dit pourquoi', 
 	const [premier, second] = [bloc.locator('.transfert').nth(0), bloc.locator('.transfert').nth(1)];
 	await expect(premier).toContainText('3 suites');
 	await expect(second).toContainText('Ne peut plus être défait');
-	await expect(second.getByRole('button')).toHaveCount(0);
+	await expect(second.getByRole('button')).toHaveCount(1);
+	await expect(second.getByRole('button', { name: 'Valider le transfert' })).toBeVisible();
 
 	await bloc.screenshot({
 		path: `test-results/transferts-verses-${test.info().project.name}.png`,
@@ -123,6 +126,31 @@ test('un transfert se défait d’un geste, un transfert bloqué dit pourquoi', 
 	await expect(boite).toContainText('quitteront cette affaire');
 	await boite.getByRole('button', { name: 'Annuler le transfert' }).click();
 	await expect.poll(() => appels).toEqual(['POST /api/tickets/7/transferts/11/annuler']);
+});
+
+test('valider un transfert, défaisable ou bloqué, appelle sa route', async ({ page }) => {
+	await simuler(page, [DEFAISABLE, BLOQUE]);
+	const appels = await intercepterGestes(page);
+
+	await page.goto('/tickets/7');
+	const bloc = page.locator('section.transferts');
+	const [premier, second] = [bloc.locator('.transfert').nth(0), bloc.locator('.transfert').nth(1)];
+	await expect(premier.getByRole('button')).toHaveCount(4);
+
+	await premier.getByRole('button', { name: 'Valider le transfert' }).click();
+	const boite = page.getByRole('dialog');
+	await expect(boite).toContainText('ne pourra plus être annulé ni déplacé');
+	await boite.getByRole('button', { name: 'Valider', exact: true }).click();
+	await expect.poll(() => appels).toEqual(['POST /api/tickets/7/transferts/11/valider']);
+
+	await second.getByRole('button', { name: 'Valider le transfert' }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Valider', exact: true }).click();
+	await expect
+		.poll(() => appels)
+		.toEqual([
+			'POST /api/tickets/7/transferts/11/valider',
+			'POST /api/tickets/7/transferts/10/valider',
+		]);
 });
 
 test('la carte dépliée de la liste offre le même geste, et relit l’affaire', async ({ page }) => {
