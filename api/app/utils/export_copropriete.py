@@ -141,20 +141,25 @@ def empreinte_table(table, lignes: list[dict]) -> str:
 # ── La lecture d'une base ─────────────────────────────────────────────────────
 
 
-def tables() -> list:
-    """Les tables des modèles, dans l'ordre des clés étrangères (parents d'abord)."""
-    return list(SQLModel.metadata.sorted_tables)
+def tables(metadata=None) -> list:
+    """Les tables des modèles, dans l'ordre des clés étrangères (parents d'abord).
+
+    `metadata` : celles d'une copropriété par défaut ; la base `plateforme` passe
+    les siennes (`registre_plateforme.metadata`, #1892) — même format, même
+    vérification, autre jeu de tables.
+    """
+    return list((metadata or SQLModel.metadata).sorted_tables)
 
 
-def lire(connexion) -> tuple[dict[str, list[dict]], list[str], str | None]:
+def lire(connexion, metadata=None) -> tuple[dict[str, list[dict]], list[str], str | None]:
     """Toutes les tables (lignes neutres), les tables ignorées, la révision Alembic."""
     presentes = set(inspect(connexion).get_table_names())
     contenu = {
         t.name: [ligne_neutre(li) for li in connexion.execute(select(t)).mappings()]
-        for t in tables()
+        for t in tables(metadata)
         if t.name in presentes
     }
-    connues = {t.name for t in tables()} | {"alembic_version"}
+    connues = {t.name for t in tables(metadata)} | {"alembic_version"}
     ignorees = sorted(presentes - connues)
     revision = None
     if "alembic_version" in presentes:
@@ -162,8 +167,10 @@ def lire(connexion) -> tuple[dict[str, list[dict]], list[str], str | None]:
     return contenu, ignorees, revision
 
 
-def manifeste_de(contenu: dict[str, list[dict]], ignorees: list[str], revision) -> dict:
-    par_nom = {t.name: t for t in tables()}
+def manifeste_de(
+    contenu: dict[str, list[dict]], ignorees: list[str], revision, metadata=None
+) -> dict:
+    par_nom = {t.name: t for t in tables(metadata)}
     return {
         "format": FORMAT,
         "revision": revision,
@@ -189,11 +196,11 @@ def _ajouter(archive: tarfile.TarFile, chemin: str, donnees: bytes) -> None:
     archive.addfile(info, io.BytesIO(donnees))
 
 
-def exporter(moteur, sortie: Path, *, fichiers: Path | None = None) -> dict:
+def exporter(moteur, sortie: Path, *, fichiers: Path | None = None, metadata=None) -> dict:
     """Écrit l'archive ; rend son manifeste. Une seule transaction de lecture."""
     with moteur.connect() as connexion, connexion.begin():
-        contenu, ignorees, revision = lire(connexion)
-    manifeste = manifeste_de(contenu, ignorees, revision)
+        contenu, ignorees, revision = lire(connexion, metadata)
+    manifeste = manifeste_de(contenu, ignorees, revision, metadata)
     inventaire = []
     with tarfile.open(sortie, "w:gz") as archive:
         for nom, lignes in contenu.items():
