@@ -114,9 +114,3 @@ LIMITE_APPEL_FACTURE = "10/minute"
 #: protège le registre d'un remplissage, pas un secret. Une installation légitime
 #: s'inscrit une fois, et ne revient que pour mettre à jour son contact.
 LIMITE_INSCRIPTION_INSTALLATION = "5/hour"
-
-#: L'**entrée par personnage** de la démo publique (`routers/demo.py`, spec
-#: `mode-demo.md` §5.2) : sans secret, elle ouvre une session. Un visiteur clique
-#: une fois par rôle ; vingt par minute laissent essayer les quatre sans gêne et
-#: bornent ce qu'un robot fabriquerait de sessions.
-LIMITE_ENTREE_DEMO = "20/minute"

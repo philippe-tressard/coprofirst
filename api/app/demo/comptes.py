@@ -1,12 +1,13 @@
-"""Les comptes de la démo : les quatre personnages et les habitants de la résidence.
+"""Les comptes de la démo : les trois comptes publics et les habitants de la résidence.
 
 Noms INVENTÉS, tous déclarés dans `tests/test_identites_fictives.py` (`FICTIFS`) ;
-`app/demo/` est lu comme un jeu de données par ce contrôle. Adresses en
-`.invalid` (RFC 2606) : rien ne peut y être livré.
+`app/demo/` est lu comme un jeu de données par ce contrôle.
 
-Chaque compte est actif, son adresse vérifiée, et porte un mot de passe ALÉATOIRE
-haché qui n'est affiché nulle part : on entre par un personnage (`routers/demo.py`),
-jamais par un formulaire.
+Chaque compte est actif et son adresse vérifiée. Les **comptes publics**
+(`personnages.py`) portent leur mot de passe publié, vérifié par la règle de
+robustesse du produit avant d'être haché ; les **habitants** une adresse en
+`.invalid` (RFC 2606) et un mot de passe ALÉATOIRE affiché nulle part : ils peuplent
+la résidence, personne n'y entre. L'administrateur est celui du seed.
 """
 
 from __future__ import annotations
@@ -20,9 +21,14 @@ from sqlmodel import Session
 from app.auth.adresse_compte import normaliser_adresse
 from app.auth.jwt import hash_password
 from app.demo.patrimoine import Patrimoine
-from app.demo.personnages import DOMAINE, PERSONNAGES
+from app.demo.personnages import PERSONNAGES
 from app.models.core import TypeLien, UserLot, Utilisateur
 from app.models.roles import RoleUtilisateur, StatutUtilisateur, role_principal
+from app.utils.mots_de_passe import verifier_robustesse
+
+#: Le domaine des habitants : `.invalid` est réservé (RFC 2606) — aucun courriel ne
+#: peut y être livré, même si une porte d'envoi s'ouvrait.
+DOMAINE_HABITANTS = "demo.coprofirst.invalid"
 
 _OCCUPANT = (
     StatutUtilisateur.copropriétaire_résident,
@@ -41,8 +47,8 @@ class Habitant:
     conseil: bool = False
 
 
-#: Les habitants qui ne sont pas des personnages. Le locataire du lot B21 est le
-#: personnage « Locataire » ; son bailleur figure ici.
+#: Les habitants qui ne sont pas des comptes publics. Le locataire du lot B21 est le
+#: compte `user-loc` ; son bailleur figure ici.
 HABITANTS: tuple[Habitant, ...] = (
     Habitant(prenom="Alice", nom="Mercier", profil=_OCCUPANT, lots=("A01",)),
     Habitant(prenom="Jean", nom="Dupont", profil=_OCCUPANT, lots=("A02", "P03"), conseil=True),
@@ -62,19 +68,18 @@ HABITANTS: tuple[Habitant, ...] = (
     Habitant(prenom="Zoé", nom="Dupré", profil=_LOCATAIRE, lots=("C21",)),
 )
 
-#: Les lots des personnages (le locataire loue B21, l'administrateur n'en a pas).
+#: Les lots des comptes publics (le locataire loue B21).
 LOTS_DES_PERSONNAGES: dict[str, tuple[str, ...]] = {
-    "resident": ("A11", "P01"),
-    "locataire": ("B21",),
-    "conseil-syndical": ("A21", "P02"),
-    "administrateur": (),
+    "user-cs": ("A21", "P02"),
+    "user-copro": ("A11", "P01"),
+    "user-loc": ("B21",),
 }
 
 
 def _adresse(prenom: str, nom: str) -> str:
     brut = f"{prenom}.{nom}".replace(" ", "-")
     sans_accent = unicodedata.normalize("NFD", brut).encode("ascii", "ignore").decode()
-    return normaliser_adresse(f"{sans_accent}@{DOMAINE}")
+    return normaliser_adresse(f"{sans_accent}@{DOMAINE_HABITANTS}")
 
 
 def _lien(statut: StatutUtilisateur) -> TypeLien:
@@ -85,7 +90,10 @@ def _lien(statut: StatutUtilisateur) -> TypeLien:
     return TypeLien.propriétaire
 
 
-def _compte(session, pat: Patrimoine, *, prenom, nom, adresse, statut, roles, lots) -> Utilisateur:
+def _compte(
+    session, pat: Patrimoine, *, prenom, nom, adresse, statut, roles, lots, mot_de_passe=None
+) -> Utilisateur:
+    """`mot_de_passe` : celui d'un compte PUBLIC ; sinon un aléatoire, jamais affiché."""
     valeurs = [r.value for r in roles]
     appartement = next((pat.appartements[n] for n in lots if n in pat.appartements), None)
     habite = statut in (StatutUtilisateur.copropriétaire_résident, StatutUtilisateur.locataire)
@@ -96,7 +104,7 @@ def _compte(session, pat: Patrimoine, *, prenom, nom, adresse, statut, roles, lo
         statut=statut,
         role=role_principal(valeurs, defaut=RoleUtilisateur.résident.value),
         roles_json=",".join(valeurs),
-        hashed_password=hash_password(secrets.token_urlsafe(24)),
+        hashed_password=hash_password(mot_de_passe or secrets.token_urlsafe(24)),
         actif=True,
         email_verifie=True,
         consentement_rgpd=True,
@@ -113,13 +121,16 @@ def _compte(session, pat: Patrimoine, *, prenom, nom, adresse, statut, roles, lo
 
 
 def poser(session: Session, pat: Patrimoine) -> dict[str, Utilisateur]:
-    """Rend les comptes par clé : le code du personnage, ou le PRÉNOM de l'habitant.
+    """Rend les comptes par clé : le code du compte public, ou le PRÉNOM de l'habitant.
 
     Les prénoms sont uniques dans `HABITANTS` (🔒 `test_demo_jeu.py`) : la clé ne
     recompose pas un nom affiché, dont la forme est une règle (`utils/noms`).
     """
     comptes = {}
     for code, p in PERSONNAGES.items():
+        #  La règle du produit, comme pour tout mot de passe : un mot de passe publié
+        #  trop faible arrête le chargement plutôt que de passer en silence.
+        verifier_robustesse(p.mot_de_passe)
         comptes[code] = _compte(
             session,
             pat,
@@ -129,6 +140,7 @@ def poser(session: Session, pat: Patrimoine) -> dict[str, Utilisateur]:
             statut=p.statut,
             roles=p.roles,
             lots=LOTS_DES_PERSONNAGES[code],
+            mot_de_passe=p.mot_de_passe,
         )
     for h in HABITANTS:
         statut, roles = h.profil

@@ -10,13 +10,17 @@ nocturne efface la base et les fichiers.
 
 ## Ce que le mode démo change
 
-- **Entrée sans compte**, par un personnage partagé : `/api/demo/entrer/resident`,
-  `locataire`, `conseil-syndical`, `administrateur`.
+- **Entrée par le formulaire**, sous l'un de trois comptes partagés dont les
+  identifiants sont publiés (`api/app/demo/personnages.py`, page « Démo » du
+  site vitrine) : `user-cs`, `user-copro`, `user-loc` `@demo.coprofirst.fr`.
+  L'administrateur est celui du seed, réservé : son mot de passe change à
+  chaque remise à zéro et ne paraît que dans les journaux de l'API
+  (`docker compose logs api | grep -A3 'ADMIN INITIAL'`).
 - **Rien ne part** : ni courriel, ni message WhatsApp, ni appel à l'IA. Un
   courriel qui serait parti s'inscrit à l'historique, « démonstration : non
   envoyé ».
 - **Fermés** : l'inscription, les réglages, l'exploitation, les téléversements,
-  les changements d'identité des personnages (`utils/demo.GESTES_FERMES`).
+  les changements d'identité des comptes partagés (`utils/demo.GESTES_FERMES`).
 - **Une résidence fictive**, fabriquée à chaque remise à zéro avec des dates
   relatives au jour : elle ne vieillit pas.
 
@@ -28,7 +32,8 @@ nocturne efface la base et les fichiers.
    ordinaire, avec son administrateur initial.
 2. **S'inscrire au registre** avec ce compte, qui est l'**opérateur** :
    *Administration › Maintenance › Inscription au registre*. La démo n'a pas
-   d'opérateur — ses personnages ne le sont pas — et l'inscription, rangée dans
+   d'opérateur — ses comptes publics ne le sont pas, et son administrateur change
+   chaque nuit — et l'inscription, rangée dans
    le volume `app_data`, survit aux remises à zéro : c'est le seul moment pour
    la faire.
 3. Dans `.env` :

@@ -43,10 +43,9 @@ disciplinée. Les gardes se posent **aux portes** (§4), jamais route par route.
 | DNS | `coprofirst.fr` délégué à Cloudflare, messagerie OVH conservée |
 | Coût | nul dans les limites *Always Free* ; compte en paiement à l'usage (pour la capacité ARM), budget d'alerte au premier centime |
 
-La page d'accueil (projet `C:\Dev\CoproFirst-Site`) propose trois boutons —
-Résident, Conseil syndical, Administrateur — qui doivent connecter **au clic**,
-sans afficher d'identifiants. Elle attend de cette spécification **les adresses
-d'entrée** (§5).
+Le site vitrine (projet `C:\Dev\CoproFirst-Site`) porte une page « Démo » qui
+**publie les identifiants** des trois comptes de démonstration et renvoie au
+formulaire de connexion de `demo.coprofirst.fr` (§5, révisé le 13/10/2026).
 
 ## 3. Les décisions (arbitrées le 13/10/2026)
 
@@ -55,13 +54,13 @@ d'entrée** (§5).
 | M1 | Activation | **`MODE_DEMO=oui` dans `.env`**, absent = non. Un seul lecteur, `utils/demo.est_demo()`, sur le modèle de `utils/installation.role_installation()` | §4.1 ; le réglage ne s'écrit **jamais** depuis l'interface |
 | M2 | Zéro envoi | **les portes d'envoi refusent** en mode démo — moteur de courriel, bridge WhatsApp, appel à l'IA, relève IMAP, requête GitHub —, quelle que soit la configuration en base | §4.2 ; un administrateur de démo ne peut rien rallumer |
 | M3 | Gestes fermés | **un registre unique des gestes fermés en démo** (`utils/demo.GESTES_FERMES`), appliqué par **une** garde à l'entrée des requêtes ; réponse 403 « Indisponible en démonstration » | §4.3 ; une route oubliée se voit dans un test, pas en production |
-| M4 | Entrée | **une adresse par personnage**, sans mot de passe : `/api/demo/entrer/{personnage}`, qui ouvre la session et renvoie vers l'accueil ; **404** hors mode démo | §5 |
-| M5 | Comptes | **comptes partagés** par personnage : tous les visiteurs « Résident » sont le même compte | §5.3 ; §11, question 1 |
+| M4 | Entrée | ~~une adresse par personnage, sans mot de passe~~ — **révisé le 13/10/2026 (#1932)** : le **formulaire de connexion**, avec trois identifiants publiés sur la page « Démo » du site vitrine ; l'administrateur n'est pas public | §5 |
+| M5 | Comptes | **comptes partagés** : tous les visiteurs qui se connectent en `user-copro` sont le même compte | §5 ; §11, question 1 |
 | M10 | Fichiers | **aucun téléversement** de visiteur ; le jeu de démo apporte ses images et ses documents | §4.3 ; §11, question 2 |
 | M11 | Plafond du registre | la démo **s'inscrit au registre** comme toute réplique dès qu'il l'accepte ; d'ici là, une **exception déclarée** au plafond de 5 utilisateurs (D18), lue sous `est_demo()` | §9 ; §11, question 3 |
 | M6 | Données | **un générateur** (`app/demo/`), qui fabrique la résidence fictive **avec des dates relatives à aujourd'hui** — jamais une archive figée | §6 |
 | M7 | Remise à zéro | **chaque nuit**, API arrêtée : base vidée, fichiers vidés, générateur rejoué | §7 |
-| M8 | Interface | **bandeau permanent** sur tous les écrans, connexion comprise ; page de connexion remplacée par le choix du personnage ; **pas d'indexation** | §8 |
+| M8 | Interface | **bandeau permanent** sur tous les écrans, connexion comprise ; le formulaire de connexion reste, sans inscription ni mot de passe oublié (révisé par #1932) ; **pas d'indexation** | §8 |
 | M9 | Conformité | mentions légales et politique de confidentialité **propres à la démo** ; avertissement « ne saisissez aucune donnée réelle » ; effacement sous 24 h | §9 |
 
 ## 4. Les gardes
@@ -162,49 +161,50 @@ l'étend.
 | `telemetry_aggregation`, `manuel_pdf_*` | gardées | internes, sans envoi |
 | `bail_installation`, `sante_plateforme`, `sauvegarde_plateforme` | gardées | le registre (M11) et l'opérateur ; la dernière ne tourne que chez la référence |
 
-## 5. L'entrée par personnage
+## 5. L'entrée : le formulaire, trois comptes publiés
 
-### 5.1 Les adresses
+Révisé le 13/10/2026 par l'auteur (#1932). L'entrée en un clic par personnage
+(`/api/demo/entrer/{personnage}`, livrée par #1903) est **retirée** : on se connecte
+par le formulaire habituel, avec des identifiants publiés.
 
-| Bouton de la page d'accueil | Adresse | Personnage |
+### 5.1 Les comptes publics
+
+| Identifiant | Mot de passe | Qui |
 |---|---|---|
-| Résident | `https://demo.coprofirst.fr/api/demo/entrer/resident` | copropriétaire occupant |
-| Conseil syndical | `https://demo.coprofirst.fr/api/demo/entrer/conseil-syndical` | copropriétaire, membre du conseil syndical |
-| Administrateur | `https://demo.coprofirst.fr/api/demo/entrer/administrateur` | gestionnaire du site |
-| (page de connexion de la démo) | `…/api/demo/entrer/locataire` | locataire |
+| `user-cs@demo.coprofirst.fr` | `PSWD-user-cs1` | copropriétaire résident, membre du conseil syndical |
+| `user-copro@demo.coprofirst.fr` | `PSWD-user-copro1` | copropriétaire résident |
+| `user-loc@demo.coprofirst.fr` | `PSWD-user-loc1` | locataire |
 
-`GET`, réponse **303** vers `/tableau-de-bord` avec les cookies de session ;
-la route n'apparaît pas au schéma de l'API (livré en lot D3, #1903). Les deux domaines sont du **même site** (`coprofirst.fr`) : les cookies
-`samesite=strict` sont posés et relus normalement après le clic.
+- Ils vivent dans `app/demo/personnages.py`, et le générateur (§6) les crée :
+  `actif`, adresse vérifiée, **mot de passe publié** — public et versionné, exprès,
+  et seulement en démo : le générateur refuse ailleurs. Chacun passe par la règle
+  de robustesse du produit (`verifier_robustesse`) avant d'être haché.
+  🔒 `test_demo_comptes_publics.py`.
+- `demo.coprofirst.fr` n'a pas de serveur de courrier : rien n'y serait livré, et
+  aucune porte d'envoi n'est ouverte en démo (§4.2). Les autres habitants du jeu
+  gardent une adresse en `.invalid` (RFC 2606).
+- Un visiteur ne peut pas fermer un compte aux autres : changer de mot de passe ou
+  d'adresse est fermé en démo (§4.3), et aucun verrouillage après des échecs
+  n'existe (la limite de débit de `/auth/*` est par adresse IP).
+- La page « Démo » du site vitrine publie ces identifiants et renvoie à
+  `https://demo.coprofirst.fr/auth/connexion`.
 
-### 5.2 La route
+### 5.2 L'administrateur, réservé
 
-- `routers/demo.py`, montée **seulement** en démo ; hors démo, **404** — la route
-  n'existe pas, elle ne « refuse » pas.
-- La liste des personnages vit dans `app/demo/personnages.py` (code, statut,
-  rôles, compte) ; un code inconnu rend 404.
-- **Ouvrir une session sans mot de passe** : il n'existe pas de fonction pour cela
-  aujourd'hui — la pose des jetons et des cookies est écrite dans `login` et
-  recopiée en partie dans `refresh` (`routers/auth.py`). Le lot **extrait**
-  `ouvrir_session(session, utilisateur, response)` (jeton d'accès par
-  `creer_jeton_acces`, jeton de rafraîchissement stocké par son **empreinte**,
-  cookies `COOKIE_OPTS`, `marquer_activite`), appelée par `login`, `refresh` et
-  l'entrée de démo. Factorisation exigée (rang 1) : pas de troisième copie.
-- Limite de débit dédiée (`utils/limiter.py`, par exemple `ENTREE_DEMO` à
-  20/minute par adresse).
-- Journal de sécurité : un événement `entree_demo` (identifiant du personnage
-  seulement), déclaré dans `_NIVEAUX` et `GESTES_SENSIBLES`.
+Aucun compte du jeu n'est administrateur : le seed crée l'**administrateur
+initial** d'une installation standard (administrateur et opérateur), dont le mot
+de passe ne paraît que dans les journaux du serveur, à chaque remise à zéro.
 
-### 5.3 Les comptes des personnages
+### 5.3 Ce qui reste de l'entrée en un clic
 
-- Créés par le générateur (§6), `actif`, adresse vérifiée, adresse en
-  `@demo.coprofirst.invalid` (domaine réservé, RFC 2606 : rien ne peut y être
-  livré), **mot de passe aléatoire haché** jamais affiché — `creer_jeton_acces`
-  exige un condensé de mot de passe.
-- Le syndic, s'il devient un personnage, porte `roles_json="externe"` : le
-  parcours d'inscription écrit aujourd'hui `role=externe` mais
-  `roles_json="syndic"`, que `has_role` ne lit pas comme externe (relevé du
-  13/10/2026, ticket à part, §10).
+`auth/session_ouverte.ouvrir_session` : la pose des jetons et des cookies,
+extraite pour elle (#1903), reste la fonction unique de `login` et `refresh`.
+
+### 5.4 Le syndic
+
+S'il devient un compte de la démo, il porte `roles_json="externe"` : le parcours
+d'inscription écrit aujourd'hui `role=externe` mais `roles_json="syndic"`, que
+`has_role` ne lit pas comme externe (relevé du 13/10/2026, #1911).
 
 ## 6. Le jeu de données fictif
 
@@ -301,11 +301,9 @@ par `modeDemoStore` (`$lib/stores/pageConfig`) et rien d'autre.
   **sur la page de connexion** — pas dans le layout racine, comme prévu d'abord :
   là, la barre fixe du mobile l'aurait recouvert. Les autres pages publiques
   (inscription, mot de passe oublié) sont fermées au serveur en démo.
-- **Page de connexion** : en démo, le formulaire laisse place à un **lien** par
-  personnage (`ConnexionDemo`), avec une ligne sur ce qu'il voit — la liste vient
-  du serveur (`GET /demo/personnages`, vide hors démo), jamais recopiée à l'écran,
-  et le lien est l'adresse d'entrée du §5. « Créer un compte » et « Mot de passe
-  oublié » disparaissent.
+- **Page de connexion** : en démo, le **formulaire reste** (§5, révisé le
+  13/10/2026 — les liens par personnage de #1906 sont retirés par #1932) ;
+  « Créer un compte » et « Mot de passe oublié » disparaissent.
 - **Gestes fermés** : le serveur refuse (§4.3) ; l'écran affiche le message du
   403 par le canal d'erreur existant. Les onglets d'administration entièrement
   fermés (SMTP, IA, WhatsApp, Sauvegardes) portent l'encart `EncartDemo`.
@@ -359,6 +357,7 @@ Livrée par #1907.
 | **D5** — remise à zéro | `deploiement/demo/` (script, `LISEZMOI.md`, crontab), `--selftest` | D4 | #1905 |
 | **D6** — interface | bandeau, connexion par personnage, encarts, `noindex`, manuel et README | D1, D3 | #1906 |
 | **D7** — mise en service | mentions légales, installation sur la machine Oracle, adresses transmises à la page d'accueil | D1 à D6 | #1907 |
+| **D8** — entrée par le formulaire | trois comptes publiés (§5), administrateur du seed, retrait de l'entrée en un clic et des boutons de la connexion | D3, D4, D6 | #1932 |
 
 Relevés **hors démo** faits pendant l'étude, à traiter pour eux-mêmes :
 le rendu PDF (WeasyPrint) sans `url_fetcher` restreint peut aller chercher une

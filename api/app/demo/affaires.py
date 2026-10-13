@@ -105,7 +105,7 @@ def poser(
     session: Session, pat: Patrimoine, comptes: dict[str, Utilisateur], prest: Prestataires
 ) -> list[Ticket]:
     bat = {lettre: f"bat:{b.id}" for lettre, b in pat.batiments.items()}
-    cs = "conseil-syndical"
+    cs = "user-cs"
     p = prest.par_code
     k = prest.contrats
     affaires = [
@@ -116,7 +116,7 @@ def poser(
             description="La cabine reste bloquée portes ouvertes au 2e étage depuis ce matin.",
             categorie=C.panne,
             priorite=PrioriteTicket.haute,
-            auteur="resident",
+            auteur="user-copro",
             jours=3,
             codes=[f"{bat['A']}/ascenseur"],
             prestataire_id=p["ascenseurs"].id,
@@ -150,7 +150,7 @@ def poser(
             auteur="Camille",
             jours=2,
             codes=[f"{bat['B']}/escaliers"],
-            suites=(Suite(1, "locataire", "Même constat au 2e étage.", fil=True),),
+            suites=(Suite(1, "user-loc", "Même constat au 2e étage.", fil=True),),
         ),
         _poser(
             session,
@@ -172,7 +172,7 @@ def poser(
             description="Les visiteurs ne peuvent plus sonner chez nous depuis hier soir.",
             categorie=C.panne,
             priorite=PrioriteTicket.haute,
-            auteur="locataire",
+            auteur="user-loc",
             jours=1,
             codes=[f"{bat['B']}/hall"],
         ),
@@ -267,7 +267,7 @@ def poser(
             description="La gâche ne retient plus la porte, qui reste entrebâillée.",
             categorie=C.panne,
             priorite=PrioriteTicket.basse,
-            auteur="resident",
+            auteur="user-copro",
             jours=4,
         ),
     ]

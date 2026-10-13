@@ -19,6 +19,8 @@ from app import contexte
 from app.config import get_settings
 from app.dialecte import url_fichier
 from app.demo.charger import BaseNonVierge, charger
+from app.auth.jwt import verify_password
+from app.demo.comptes import HABITANTS
 from app.demo.personnages import PERSONNAGES
 from app.main import app
 from app.models.acces import Telecommande, Vigik
@@ -27,6 +29,7 @@ from app.models.core import CategorieTicket, StatutTicket, Ticket, Utilisateur
 from app.models.copropriete import Batiment, Copropriete
 from app.models.gouvernance import AgCsInfo, MembreCS
 from app.models.perimetre import Perimetre
+from app.models.roles import ROLE_OPERATEUR
 from app.models.prestataires import ContratEntretien, Prestataire
 from app.models.tickets import MessageTicket, TicketEvolution
 from app.utils import horloge
@@ -70,7 +73,8 @@ def _compte(s, modele, *conditions) -> int:
 
 def test_le_bilan_dit_ce_qui_a_ete_pose(copro):
     _, bilan = copro
-    assert bilan["comptes"] >= 20 and bilan["lots"] >= 30 and bilan["affaires"] >= 15
+    assert bilan["comptes"] == len(PERSONNAGES) + len(HABITANTS)
+    assert bilan["lots"] >= 30 and bilan["affaires"] >= 15
 
 
 def test_une_base_deja_peuplee_est_refusee(copro):
@@ -100,18 +104,21 @@ def test_chaque_batiment_a_son_noeud_de_perimetre(s):
         assert s.exec(select(Perimetre).where(Perimetre.code == f"bat:{bat.id}")).first()
 
 
-def test_les_personnages_peuvent_entrer(s):
+def test_les_comptes_publics_existent_avec_leurs_roles(s):
     for p in PERSONNAGES.values():
         u = s.exec(select(Utilisateur).where(Utilisateur.email == p.adresse)).one()
-        assert u.actif and u.email_verifie and u.hashed_password
+        assert u.actif and u.email_verifie
+        assert verify_password(p.mot_de_passe, u.hashed_password), p.code
         assert u.roles_json == p.roles_json
 
 
-def test_un_seul_administrateur_le_personnage(s):
+def test_l_administrateur_est_celui_du_seed(s):
+    """Réservé (D8 #1932) : ni un compte public, ni un habitant — l'administrateur
+    initial d'une installation standard, opérateur compris."""
     admins = [u for u in s.exec(select(Utilisateur)).all() if u.has_role("admin")]
-    assert [u.email for u in admins] == [PERSONNAGES["administrateur"].adresse], (
-        "le seed ne doit pas créer son administrateur initial à côté du personnage"
-    )
+    assert [u.email for u in admins] == ["admin@localhost"]
+    assert admins[0].has_role(ROLE_OPERATEUR)
+    assert config_site(s, "site_manager_user_id")["site_manager_user_id"] == str(admins[0].id)
 
 
 def test_les_habitants_ont_des_prenoms_uniques():
@@ -122,8 +129,12 @@ def test_les_habitants_ont_des_prenoms_uniques():
     assert len(set(prenoms)) == len(prenoms)
 
 
-def test_toutes_les_adresses_sont_reservees(s):
-    assert all(u.email.endswith(".invalid") for u in s.exec(select(Utilisateur)).all())
+def test_aucune_adresse_ne_peut_recevoir_de_courriel(s):
+    """Habitants en `.invalid` ; comptes publics sur un sous-domaine sans serveur de
+    courrier ; l'administrateur du seed en `localhost`."""
+    publics = {p.adresse for p in PERSONNAGES.values()}
+    for u in s.exec(select(Utilisateur)).all():
+        assert u.email.endswith(".invalid") or u.email in publics or u.email == "admin@localhost"
 
 
 def test_les_affaires_couvrent_categories_et_etats(s):
@@ -185,16 +196,22 @@ def test_badges_et_telecommandes_rattaches(s):
     assert _compte(s, Vigik, Vigik.lot_id == None) == 0  # noqa: E711
 
 
-# ── De bout en bout : l'entrée par personnage ────────────────────────────────
+# ── De bout en bout : la connexion par le formulaire ─────────────────────────
 
 
-def test_l_entree_de_demo_ouvre_sur_ce_jeu(copro, monkeypatch):
+@pytest.mark.parametrize("code", sorted(PERSONNAGES))
+def test_chaque_compte_publie_se_connecte_en_demo(copro, monkeypatch, code):
+    """Les identifiants de la page « Démo » du site vitrine ouvrent une session (#1932)."""
     monkeypatch.setattr(get_settings(), "mode_demo", "oui")
     #  Chaque requête est servie pour la copropriété d'essai (même geste que le test
-    #  d'étanchéité) : l'entrée doit trouver le personnage que le jeu a posé.
+    #  d'étanchéité) : la connexion doit trouver le compte que le jeu a posé.
     monkeypatch.setattr(contexte, "resoudre", lambda scope: copro[0])
-    entree = TestClient(app, follow_redirects=False).get("/demo/entrer/conseil-syndical")
-    assert entree.status_code == 303, entree.text
+    p = PERSONNAGES[code]
+    reponse = TestClient(app).post(
+        "/auth/login", json={"email": p.adresse, "password": p.mot_de_passe}
+    )
+    assert reponse.status_code == 200, reponse.text
+    assert "access_token" in reponse.cookies
 
 
 # ── Les fichiers produits ────────────────────────────────────────────────────

@@ -7,7 +7,6 @@
 	import { destinationApresConnexion } from '$lib/redirection';
 	import { loadSiteConfig, configStore, modeDemoStore, siteNomStore } from '$lib/stores/pageConfig';
 	import BandeauDemo from '$lib/components/BandeauDemo.svelte';
-	import ConnexionDemo from '$lib/components/ConnexionDemo.svelte';
 	import LogoResidence from '$lib/components/LogoResidence.svelte';
 	import ChampMotDePasse from '$lib/components/ChampMotDePasse.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
@@ -71,56 +70,56 @@
 			{#if loginSousTitre}<p>{loginSousTitre}</p>{/if}
 		</div>
 
-		<!--  La démo publique (#1906) : on y entre par un personnage, sans compte —
-		      l'inscription et le mot de passe oublié y sont fermés au serveur. -->
-		{#if $modeDemoStore}
-			<BandeauDemo dansCarte />
-			<ConnexionDemo />
-		{:else}
-			{#if error}
-				<div class="alert alert-error">
-					{error}
-					{#if emailNotVerified}
-						<div class="renvoi">
-							{#if resendDone}
-								<span class="text-muted-md"
-									>Un nouveau lien a été envoyé si un compte non vérifié existe pour cette adresse.</span
-								>
-							{:else}
-								<button
-									type="button"
-									class="btn btn-sm btn-outline btn-renvoi"
-									disabled={resendLoading}
-									on:click={resendVerification}
-								>
-									{resendLoading ? 'Envoi…' : 'Renvoyer le lien de vérification'}
-								</button>
-							{/if}
-						</div>
-					{/if}
-				</div>
-			{/if}
+		<!--  La démo publique (#1906, #1932) : le bandeau le dit, et l'on se connecte par
+		      le formulaire, avec les identifiants publiés sur la page « Démo » du site
+		      vitrine. L'inscription et le mot de passe oublié y sont fermés au serveur. -->
+		{#if $modeDemoStore}<BandeauDemo dansCarte />{/if}
 
-			<form on:submit|preventDefault={submit}>
-				<div class="field">
-					<label for="email">Email<EtoileRequis vide={!email} /></label>
-					<input id="email" type="email" bind:value={email} required autocomplete="email" />
-				</div>
+		{#if error}
+			<div class="alert alert-error">
+				{error}
+				{#if emailNotVerified}
+					<div class="renvoi">
+						{#if resendDone}
+							<span class="text-muted-md"
+								>Un nouveau lien a été envoyé si un compte non vérifié existe pour cette adresse.</span
+							>
+						{:else}
+							<button
+								type="button"
+								class="btn btn-sm btn-outline btn-renvoi"
+								disabled={resendLoading}
+								on:click={resendVerification}
+							>
+								{resendLoading ? 'Envoi…' : 'Renvoyer le lien de vérification'}
+							</button>
+						{/if}
+					</div>
+				{/if}
+			</div>
+		{/if}
 
-				<ChampMotDePasse
-					id="password"
-					libelle="Mot de passe"
-					bind:valeur={password}
-					autocomplete="current-password"
-				/>
+		<form on:submit|preventDefault={submit}>
+			<div class="field">
+				<label for="email">Email<EtoileRequis vide={!email} /></label>
+				<input id="email" type="email" bind:value={email} required autocomplete="email" />
+			</div>
 
-				<div class="btn-wrapper">
-					<button class="btn btn-primary" type="submit" disabled={loading}>
-						{loading ? 'Connexion…' : 'Se connecter'}
-					</button>
-				</div>
-			</form>
+			<ChampMotDePasse
+				id="password"
+				libelle="Mot de passe"
+				bind:valeur={password}
+				autocomplete="current-password"
+			/>
 
+			<div class="btn-wrapper">
+				<button class="btn btn-primary" type="submit" disabled={loading}>
+					{loading ? 'Connexion…' : 'Se connecter'}
+				</button>
+			</div>
+		</form>
+
+		{#if !$modeDemoStore}
 			<div class="auth-links">
 				<a href="/auth/mot-de-passe-oublie">Mot de passe oublié ?</a>
 				<span>·</span>

@@ -8,8 +8,9 @@
    l'installation n'est pas la démo (`MODE_DEMO`) ou si la base porte déjà un
    compte : elle ne doit jamais mêler une résidence fictive à une vraie.
 2. **Le patrimoine et les comptes AVANT le seed** : son arbre des périmètres ne crée
-   un nœud que pour les bâtiments présents, et son administrateur initial n'est pas
-   créé quand un administrateur existe — c'est le personnage « Administrateur ».
+   un nœud que pour les bâtiments présents. Aucun compte du jeu n'est administrateur :
+   le seed crée donc l'**administrateur initial** d'une installation standard
+   (administrateur et opérateur), réservé à l'exploitant (D8 #1932).
 3. **Le reste APRÈS le seed** : les affaires, contrats et badges lisent l'arbre des
    périmètres, que le seed pose.
 4. **Fabriqué, jamais rechargé d'une archive** : le jeu est produit par le code de
@@ -29,10 +30,15 @@ from app import contexte
 from app.demo import acces, affaires, comptes, fichiers, gouvernance, identite, legal
 from app.demo import patrimoine
 from app.demo import prestataires, vie_collective
-from app.models.core import Utilisateur
+from app.models.core import RoleUtilisateur, Utilisateur
 from app.seed import seed
 from app.utils.demo import est_demo
 from app.utils.perimetres import invalider_cache
+
+
+def administrateur_initial(session) -> Utilisateur:
+    """Celui que le seed vient de créer : le seul administrateur de la base."""
+    return session.exec(select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.admin)).one()
 
 
 class BaseNonVierge(RuntimeError):
@@ -62,15 +68,15 @@ def charger(*, documents: bool = True) -> dict[str, int]:
         seed()
         invalider_cache()
 
-        identite.poser(session, les_comptes["administrateur"])
+        identite.poser(session, administrateur_initial(session))
         legal.poser(session)
         gouvernance.poser(session, les_comptes)
-        prest = prestataires.poser(session, pat, les_comptes["conseil-syndical"].id)
+        prest = prestataires.poser(session, pat, les_comptes["user-cs"].id)
         les_affaires = affaires.poser(session, pat, les_comptes, prest)
         vie_collective.poser(session, les_comptes)
         acces.poser(session, pat)
         fichiers.poser_images(session, les_affaires)
-        fichiers.poser_documents(session, les_comptes["conseil-syndical"], rendus)
+        fichiers.poser_documents(session, les_comptes["user-cs"], rendus)
         session.commit()
     return {
         "comptes": len(les_comptes),

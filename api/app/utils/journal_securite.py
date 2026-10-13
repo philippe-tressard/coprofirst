@@ -94,10 +94,6 @@ _NIVEAUX: dict[str, int] = {
     "compte_purge_inactivite": logging.WARNING,
     "compte_purge_epargne": logging.WARNING,
     "compte_purge_fermeture": logging.WARNING,
-    #  Une session ouverte SANS MOT DE PASSE, par un personnage partagé de la démo
-    #  publique (`routers/demo.py`, #1903) : la cible est le compte, le détail le
-    #  code du personnage. INFO : c'est l'usage attendu de la démo, pas une alerte.
-    "entree_demo": logging.INFO,
 }
 
 
