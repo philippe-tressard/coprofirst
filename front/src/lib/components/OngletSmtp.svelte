@@ -17,6 +17,7 @@
   la page qui reste propriétaire de `siteConfig`.
 -->
 <script lang="ts">
+	import EncartDemo from '$lib/components/EncartDemo.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import Icon from '$lib/components/Icon.svelte';
 	import { config as configApi } from '$lib/api';
@@ -154,6 +155,7 @@
 	}
 </script>
 
+<EncartDemo />
 <section class="card config-section">
 	<h2 class="config-section-title">
 		<Icon name="message-square-text" size={17} />Configuration SMTP (notifications e-mail)

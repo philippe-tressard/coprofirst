@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EncartDemo from '$lib/components/EncartDemo.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	//  Onglet « WhatsApp » de l'administration — extrait de `admin/+page.svelte`
 	//  le 14/08/2026 : la page dépassait 2 200 lignes et la règle de modularité
@@ -146,6 +147,7 @@
 	}
 </script>
 
+<EncartDemo />
 <section class="card config-section">
 	<h2 class="config-section-title">
 		<Icon name="whatsapp" size={18} />

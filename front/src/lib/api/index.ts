@@ -49,6 +49,7 @@ export * from './assistant';
 export * from './services';
 export * from './instance';
 export * from './consignes';
+export * from './demo';
 
 //  ── Ce que le serveur RENVOIE (#1572) ───────────────────────────────────────────
 //

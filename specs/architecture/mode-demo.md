@@ -290,25 +290,34 @@ installée :
 
 ## 8. L'interface
 
-- **Bandeau permanent**, dans le layout racine (`routes/+layout.svelte`), donc
-  aussi sur la connexion : « Démonstration — résidence fictive. Ce que vous
-  saisissez est visible des autres visiteurs et effacé chaque nuit. Aucun
-  courriel, message WhatsApp ni appel à l'IA n'est réellement envoyé. »
-  Purement informatif (`role="note"`, rien de focalisable), placé **après** le
-  lien d'évitement ; il décale la barre fixe du mobile (`Nav.svelte`) au lieu de
-  la recouvrir. Couleurs et tailles par les jetons (`socle.css`).
-- **Page de connexion** : en démo, le formulaire laisse place à quatre boutons —
-  un par personnage, avec une ligne sur ce qu'il voit — et les liens
-  « Créer un compte » et « Mot de passe oublié » disparaissent.
+Livrée par #1906. `GET /config` porte la clé calculée `mode_demo` ; le front la lit
+par `modeDemoStore` (`$lib/stores/pageConfig`) et rien d'autre.
+
+- **Bandeau permanent** (`BandeauDemo`) : « Démonstration — résidence fictive. Ce
+  que vous saisissez est visible des autres visiteurs et effacé chaque nuit. Aucun
+  courriel, message WhatsApp ni appel à l'IA n'est réellement envoyé. » Purement
+  informatif (`role="note"`, rien de focalisable), teinte d'`EncartAvertissement`.
+  ⚠️ Il vit **dans le squelette `(app)`**, en tête de la colonne de contenu, et
+  **sur la page de connexion** — pas dans le layout racine, comme prévu d'abord :
+  là, la barre fixe du mobile l'aurait recouvert. Les autres pages publiques
+  (inscription, mot de passe oublié) sont fermées au serveur en démo.
+- **Page de connexion** : en démo, le formulaire laisse place à un **lien** par
+  personnage (`ConnexionDemo`), avec une ligne sur ce qu'il voit — la liste vient
+  du serveur (`GET /demo/personnages`, vide hors démo), jamais recopiée à l'écran,
+  et le lien est l'adresse d'entrée du §5. « Créer un compte » et « Mot de passe
+  oublié » disparaissent.
 - **Gestes fermés** : le serveur refuse (§4.3) ; l'écran affiche le message du
   403 par le canal d'erreur existant. Les onglets d'administration entièrement
-  fermés (SMTP, IA, WhatsApp, Sauvegardes) portent un encart « Indisponible en
-  démonstration » (`EncartAvertissement`).
-- **Pas d'indexation** : en démo, `X-Robots-Tag: noindex, nofollow` posé par le
-  front (`hooks.server.ts`) et un `robots.txt` qui interdit tout, servi par une
-  route SvelteKit — le `Caddyfile` et `front/static/robots.txt` restent communs à
-  toutes les installations.
-- Le **manuel** et le **README** disent ce qu'est la démo et ce qui y est fermé.
+  fermés (SMTP, IA, WhatsApp, Sauvegardes) portent l'encart `EncartDemo`.
+- **Pas d'indexation** : en démo, `X-Robots-Tag: noindex, nofollow` posé au rendu
+  serveur (`routes/+layout.server.ts`) et la balise `<meta name="robots">` dans le
+  layout racine. ⚠️ **Pas** de `robots.txt` qui interdit tout, contrairement à ce
+  que prévoyait ce paragraphe : un robot à qui l'exploration est interdite ne lit
+  jamais le `noindex`, et une page découverte par un lien externe peut alors
+  s'indexer sans contenu. `front/static/robots.txt` reste commun à toutes les
+  installations.
+- Le **manuel** (encadré « Vous visitez la démonstration ? » du guide express) et
+  le **README** disent ce qu'est la démo et ce qui y est fermé.
 
 ## 9. La conformité
 
