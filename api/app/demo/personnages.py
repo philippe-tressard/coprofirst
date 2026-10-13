@@ -66,7 +66,7 @@ PERSONNAGES: dict[str, Personnage] = {
             "Conseil syndical",
             "Membre du conseil : il suit les affaires, publie et modère.",
             "Sophie",
-            "Lambert",
+            "Delmas",
             StatutUtilisateur.copropriétaire_résident,
             (
                 RoleUtilisateur.propriétaire,
@@ -79,7 +79,7 @@ PERSONNAGES: dict[str, Personnage] = {
             "Administrateur",
             "Gestionnaire du site : comptes, contenus et administration.",
             "Marc",
-            "Roussel",
+            "Verdière",
             StatutUtilisateur.admin_technique,
             (RoleUtilisateur.admin,),
         ),

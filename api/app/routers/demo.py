@@ -30,6 +30,7 @@ from app.demo.personnages import PERSONNAGES
 from app.utils.demo import est_demo
 from app.utils.journal_securite import journaliser_securite
 from app.utils.limiter import LIMITE_ENTREE_DEMO, limiter
+from app.utils.recuperer import connu_ou_404
 
 router = APIRouter(prefix="/demo", tags=["demo"])
 
@@ -41,9 +42,9 @@ ACCUEIL = "/tableau-de-bord"
 @limiter.limit(LIMITE_ENTREE_DEMO)
 def entrer(request: Request, personnage: str, session: Session = Depends(get_session)):
     """Ouvre la session du personnage et renvoie à l'accueil (303)."""
-    if not est_demo() or personnage not in PERSONNAGES:
-        raise HTTPException(404, "Not Found")
-    user = compte_par_adresse(session, PERSONNAGES[personnage].adresse)
+    #  Hors démo, le registre est VIDE : la route ne connaît aucun personnage (règle 1).
+    choisi = connu_ou_404(PERSONNAGES if est_demo() else {}, personnage, "Not Found")
+    user = compte_par_adresse(session, choisi.adresse)
     if user is None or not user.actif:
         raise HTTPException(503, "La démonstration se prépare : réessayez dans quelques minutes.")
     reponse = RedirectResponse(ACCUEIL, status_code=303)
