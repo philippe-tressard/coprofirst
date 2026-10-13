@@ -35,6 +35,7 @@
   ce qu'annuler veut dire pour l'écran qui l'emploie.
 -->
 <script lang="ts">
+	import EncartDemo from './EncartDemo.svelte';
 	import { onMount } from 'svelte';
 	import { amenerEnVue } from '$lib/accordeon';
 
@@ -153,6 +154,7 @@
 	aria-label={titre}
 >
 	{#if encadre}<h2>{titre}</h2>{/if}
+	<EncartDemo saisie />
 	<slot />
 </div>
 

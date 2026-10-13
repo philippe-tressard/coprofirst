@@ -321,24 +321,31 @@ par `modeDemoStore` (`$lib/stores/pageConfig`) et rien d'autre.
 
 ## 9. La conformité
 
-- **Mentions légales et politique de confidentialité de la démo** : éditeur,
-  hébergeurs (Oracle Cloud Infrastructure, Paris ; Cloudflare pour le DNS et le
-  tunnel), contact. Les textes légaux sont des réglages en base (`ConfigSite`) :
-  le générateur les pose.
+Livrée par #1907.
+
+- **Mentions légales et politique de confidentialité de la démo** :
+  `app/demo/legal.py`, posées par le générateur après le seed — donc reposées à
+  chaque remise à zéro. Elles nomment les hébergeurs (Oracle France S.A.S., région
+  de Paris ; Cloudflare, Inc. pour le DNS et le tunnel). L'**éditeur** et le
+  **contact** se lisent dans `DEMO_EDITEUR` et `DEMO_CONTACT` : le dépôt public ne
+  nomme personne. Sans éditeur, la démo se déclare éditée à titre non
+  professionnel (LCEN art. 6, III, 2) ; sans contact, le chargement le signale.
 - **Données traitées** : ce que le visiteur saisit (finalité : essayer le
   produit ; conservation : jusqu'à la remise à zéro, **moins de 24 h**, sans
-  sauvegarde), l'adresse IP dans les journaux du tunnel et de Caddy (durée à
-  écrire et à appliquer), les cookies de session (strictement nécessaires : pas
-  de consentement).
-- **Avertissement à la saisie** : le bandeau le dit, et les champs libres d'une
-  création d'affaire le rappellent.
-- **Télémétrie** : les personnages sont partagés, donc la télémétrie par compte
-  ne désigne personne ; à confirmer à la lecture de ce qu'elle stocke (adresse
-  IP ?).
-- **Registre des installations** : sans inscription valide, une installation
-  tourne en **mode limité, 5 utilisateurs au plus** (D18) ; le jeu de démo en
-  compte une vingtaine : M11 — inscription dès que le registre l'accepte,
-  exception déclarée d'ici là.
+  sauvegarde) ; l'**adresse IP** n'est écrite nulle part — le journal d'accès de
+  Caddy est anonyme (#1588), uvicorn n'en tient pas (#1300), la base n'en a pas —,
+  seulement tenue en mémoire par la limitation de débit, et vue par Cloudflare ;
+  les cookies de session (strictement nécessaires : pas de consentement).
+- **Avertissement à la saisie** : le bandeau le dit, et **chaque boîte de
+  formulaire** (`FormulaireCreation`, création et correction) le rappelle
+  (`EncartDemo saisie`).
+- **Télémétrie** : rattachée aux personnages partagés, elle ne désigne personne ;
+  elle ne stocke aucune adresse IP, et s'efface avec la base chaque nuit.
+- **Registre des installations** : le plafond de 5 utilisateurs du mode limité
+  (D18) n'est **pas appliqué** (mode constat) — la démo s'affiche « limitée — non
+  inscrite », sans effet. Elle s'inscrit dès que le registre de la référence
+  l'accepte (l'inscription survit aux remises à zéro) ; l'exemption sous
+  `est_demo()` s'écrit avec l'application du plafond (R6, #1882).
 
 ## 10. Le découpage en lots
 

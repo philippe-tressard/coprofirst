@@ -1,7 +1,7 @@
 """L'identité affichée de la démo : nom, sous-titre, adresse, gestionnaire du site.
 
 Posée APRÈS le seed, qui n'écrit que les clés absentes : ces valeurs-ci priment.
-Les textes légaux de la démo viennent avec la mise en service (lot D7, #1907).
+Les textes légaux de la démo : `legal.py` (lot D7, #1907).
 """
 
 from __future__ import annotations
