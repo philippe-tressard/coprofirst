@@ -642,6 +642,9 @@ jobs:
           # 🔒 La décision qui ÉCRIT dans /etc/sudoers.d (#1574) : son self-test
           # passait et n'était appelé par aucun job.
           bash scripts/installation/durcir-sudoers.sh --selftest
+          # Le durcissement système d'un nœud (#1917) : jugé sur la configuration
+          # SERVIE — `PasswordAuthentication no` était écrit et sans effet (#1918).
+          bash scripts/installation/durcir-noeud.sh --selftest
           # La garde d'options du banc de volumes (#1605) : une option inconnue
           # lançait le banc, qui crée et détruit des volumes. `docker` y est factice.
           bash scripts/exploitation/banc-volumes.sh --selftest

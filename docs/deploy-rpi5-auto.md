@@ -15,7 +15,7 @@
 | Quel script déploie, et comment | `scripts/exploitation/auto-deploy.sh` — son en-tête : verrou, parité des images, actif qui déploie, standby qui s'aligne sans rien démarrer (#448) |
 | Quand il tourne, sous quel compte | `infra/points-entree/cron-ptressard.crontab` — seule source versionnée, comparée à l'installé par le point 17 du pré-check |
 | Les autres crons et l'unité systemd | `infra/points-entree/` et son `LISEZMOI.md` |
-| Installer un nœud neuf (clé de déploiement, clone, `.env`) | [restauration-complete.md](restauration-complete.md) |
+| Installer un nœud neuf (durcissement, clone, `.env`, réplique) | [restauration-complete.md](restauration-complete.md) |
 | Conduire une MEP, savoir si elle a eu lieu, revenir en arrière | skill `.claude/skills/mep-precheck` |
 
 ## Les trois faits à ne pas oublier

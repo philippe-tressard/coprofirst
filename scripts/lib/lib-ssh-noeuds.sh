@@ -89,7 +89,7 @@ ssh_noeud_diagnostic() { # ip [fichier, défaut SSH_NOEUDS_KNOWN_HOSTS]
     *) echo "(clé d'hôte de $ip non épinglée — $f ${v/non-epingle/sans $ip}." \
             "Une fois, en root sur CE nœud : ssh-keyscan -t ed25519 $ip > $f ;" \
             "puis comparer ssh-keygen -lf $f à l'empreinte lue SUR $ip" \
-            "(ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub) — docs/restauration-complete.md, étape 12)" ;;
+            "(ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub) — docs/restauration-complete.md, étape 7)" ;;
   esac
 }
 
