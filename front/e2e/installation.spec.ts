@@ -172,9 +172,10 @@ test('Inscription : une réplique non inscrite s’inscrit en acceptant les cond
 	await carte.locator('#ins-prenom').fill('Alix');
 	await carte.locator('#ins-nom').fill('Durand');
 	await carte.locator('#ins-courriel').fill('alix@example.org');
-	await expect(carte.getByLabel(/Conditions d’inscription, version 1/)).toHaveValue(
-		'Article 1 — Engagements.',
-	);
+	//  Le texte se LIT, mis en forme, dans une boîte qui défile (#1930) — plus une zone de saisie.
+	await expect(
+		carte.getByRole('region', { name: /Conditions d’inscription, version 1/ }),
+	).toContainText('Article 1 — Engagements.');
 	//  Pas d'engagement sur un texte qu'on n'a pas accepté.
 	await expect(enregistrer).toBeDisabled();
 	await carte.getByLabel(/J’accepte les conditions d’inscription/).check();
