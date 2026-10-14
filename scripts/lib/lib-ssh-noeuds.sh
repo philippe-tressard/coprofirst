@@ -41,15 +41,43 @@
 #  `~/.claude/CLAUDE.md` §4 — ne pas la remplacer.
 SSH_NOEUDS_CLE=/root/.ssh/id_ed25519_bascule
 SSH_NOEUDS_KNOWN_HOSTS=/root/.ssh/known_hosts_bascule
+#  Le compte d'exploitation, sur les deux nœuds — celui que C38 sonde (#1941).
+SSH_NOEUDS_COMPTE=ptressard
 
 # ── La commande, écrite UNE fois ─────────────────────────────────────────────
 #  Rendue sous forme de chaîne : les appelants l'emploient nue (`$SSH_CMD hôte
 #  cmd`) ou la passent à `rsync -e` (lib-volumes.sh). Aucun espace ni guillemet
 #  dans les chemins : le découpage en mots du shell reste sûr.
-ssh_noeud_cmd() { # [délai de connexion, défaut 10]
+ssh_noeud_cmd() { # [délai de connexion, défaut 10] [known_hosts, défaut SSH_NOEUDS_KNOWN_HOSTS]
   echo "ssh -i $SSH_NOEUDS_CLE -o BatchMode=yes -o ConnectTimeout=${1:-10}" \
-       "-o StrictHostKeyChecking=yes -o UserKnownHostsFile=$SSH_NOEUDS_KNOWN_HOSTS" \
+       "-o StrictHostKeyChecking=yes -o UserKnownHostsFile=${2:-$SSH_NOEUDS_KNOWN_HOSTS}" \
        "-o GlobalKnownHostsFile=/dev/null"
+}
+
+# ── La sonde d'authentification : quelles méthodes le nœud OFFRE-t-il ? ──────
+#  C38 (#1941). La méthode `none` est demandée, et elle seule : le serveur la
+#  refuse en listant ce qu'il accepte (« Permission denied (publickey) »). Aucune
+#  clé n'est présentée, aucun mot de passe n'est tenté — `BatchMode` interdit
+#  toute invite, `NumberOfPasswordPrompts=0` le redit. Rien de secret ne part :
+#  un hôte usurpé n'apprendrait rien, mais pourrait MENTIR (« publickey ») — d'où
+#  la même clé d'hôte épinglée que le reste. ssh retient la PREMIÈRE valeur de
+#  chaque option : celles-ci s'ajoutent, elles n'en remplacent aucune.
+ssh_noeud_sonde_auth_cmd() { # [délai] [known_hosts]
+  echo "$(ssh_noeud_cmd "${1:-10}" "${2:-}") -o PubkeyAuthentication=no" \
+       "-o PreferredAuthentications=none -o NumberOfPasswordPrompts=0"
+}
+
+#  Le nœud se sonde aussi LUI-MÊME (son pair peut être éteint). Sa propre clé
+#  d'hôte n'est pas dans `known_hosts_bascule`, qui n'épingle que le pair : on la
+#  lit dans le fichier local, que seul root écrit — l'ancre de confiance reste à
+#  root, et `StrictHostKeyChecking=yes` reste vrai. Vide si la clé est illisible :
+#  l'appelant ne sonde pas, et dit INCONNU.
+ssh_noeud_epingle_local() { # ip [clé publique d'hôte, défaut ed25519]
+  local pub=${2:-/etc/ssh/ssh_host_ed25519_key.pub} type cle
+  [ -r "$pub" ] || return 0
+  read -r type cle _ < "$pub" || true
+  [ -n "${type:-}" ] && [ -n "${cle:-}" ] && printf '%s %s %s\n' "$1" "$type" "$cle"
+  return 0
 }
 
 # ── Un outil lancé À LA MAIN qui parle au pair : root, ou rien ───────────────
@@ -113,6 +141,16 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   contient "seule référence"                   "-o GlobalKnownHostsFile=/dev/null" "$cmd"
   case "$cmd" in *"=no"*|*accept-new*) echo "FAIL  la commande ne fait confiance à personne d'office"; st=1 ;;
                  *) echo "PASS  la commande ne fait confiance à personne d'office" ;; esac
+  contient "known_hosts choisi par l'appelant" "-o UserKnownHostsFile=/tmp/kh" "$(ssh_noeud_cmd 8 /tmp/kh)"
+
+  sonde=$(ssh_noeud_sonde_auth_cmd 5)
+  contient "sonde : la méthode none, seule"    "-o PreferredAuthentications=none" "$sonde"
+  contient "sonde : aucune clé présentée"      "-o PubkeyAuthentication=no" "$sonde"
+  contient "sonde : aucune invite de mot de passe" "-o NumberOfPasswordPrompts=0" "$sonde"
+  contient "sonde : clé d'hôte toujours épinglée" "-o StrictHostKeyChecking=yes -o UserKnownHostsFile=/root/.ssh/known_hosts_bascule" "$sonde"
+  contient "sonde : jamais d'invite"           "-o BatchMode=yes" "$sonde"
+  t "sonde : aucune autre méthode tentée"      "PreferredAuthentications=none" \
+    "$(grep -o 'PreferredAuthentications=[^ ]*' <<< "$sonde" | paste -sd' ' -)"
 
   tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
   t "fichier absent → absent"                  absent "$(ssh_noeud_confiance "$tmp/rien" 10.0.0.2)"
@@ -129,11 +167,16 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "épinglée : diagnostic muet"             "" "$(ssh_noeud_diagnostic 10.0.0.2 "$tmp/kh")"
     contient "non épinglée : la commande"      "ssh-keyscan -t ed25519 10.0.0.3 > $tmp/kh" "$(ssh_noeud_diagnostic 10.0.0.3 "$tmp/kh")"
     contient "non épinglée : la cause"         "$tmp/kh sans 10.0.0.3" "$(ssh_noeud_diagnostic 10.0.0.3 "$tmp/kh")"
+    ssh_noeud_epingle_local 10.0.0.9 "$tmp/k.pub" > "$tmp/local"
+    t "épinglage local : la clé du nœud, sous son IP" ok "$(ssh_noeud_confiance "$tmp/local" 10.0.0.9)"
+    t "épinglage local : ni le commentaire ni autre chose" 3 "$(awk '{print NF}' "$tmp/local")"
   else
     echo "INCONNU  ssh-keygen absent : les cas d'épinglage ne sont pas joués"; st=2
   fi
   contient "absent : la cause"                 "$tmp/rien absent" "$(ssh_noeud_diagnostic 10.0.0.2 "$tmp/rien")"
   contient "absent : la vérification"          "/etc/ssh/ssh_host_ed25519_key.pub" "$(ssh_noeud_diagnostic 10.0.0.2 "$tmp/rien")"
+  t "épinglage local : clé illisible → rien (cas zéro)" "" "$(ssh_noeud_epingle_local 10.0.0.9 "$tmp/rien")"
+  t "épinglage local : clé vide → rien"        "" "$(ssh_noeud_epingle_local 10.0.0.9 "$tmp/vide")"
   [ $st -eq 0 ] && echo "== TOUS OK ==" || echo "== ÉCHECS (code $st) =="
   exit $st
 fi
