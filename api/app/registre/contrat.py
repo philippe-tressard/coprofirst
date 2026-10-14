@@ -162,6 +162,10 @@ class Identite(_Contrat):
     derniere_mise_a_jour: Optional[str] = Field(
         default=None, description="voir une mise à jour revenue en arrière (reussie, revenue)"
     )
+    se_declare_reference: Optional[bool] = Field(
+        default=None,
+        description="voir deux installations qui se déclarent référence (D24, R4b #1960)",
+    )
 
 
 class Hebergement(_Contrat):
