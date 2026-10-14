@@ -14,7 +14,7 @@
  *     l'attente s'annonce DEDANS ; relâché, la fiche s'y rend.
  */
 import type { Page } from '@playwright/test';
-import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreHydratation, estLeModule, expect, retenirModule, simulerApi, test } from './aides';
 
 const AFFAIRE = {
 	id: 7,
@@ -35,7 +35,7 @@ const AFFAIRE = {
 	mis_a_jour_le: '2026-09-20T10:00:00',
 };
 
-const estLeCorps = (chemin: string) => chemin.endsWith('/CorpsCarteTicket.svelte');
+const CORPS = 'CorpsCarteTicket.svelte';
 
 async function ouvrirAffaires(page: Page) {
 	await simulerApi(page, (chemin) => {
@@ -49,7 +49,7 @@ test('l’ouverture ne télécharge pas le corps ; le survol le précharge', asy
 	await ouvrirAffaires(page);
 	const demandes: string[] = [];
 	page.on('request', (r) => {
-		if (estLeCorps(new URL(r.url()).pathname)) demandes.push(r.url());
+		if (estLeModule(r.url(), CORPS)) demandes.push(r.url());
 	});
 	await page.goto('/tickets');
 	await attendreHydratation(page);
@@ -67,15 +67,7 @@ test('l’ouverture ne télécharge pas le corps ; le survol le précharge', asy
 
 test('retenu, le corps entre d’abord et annonce son attente dedans', async ({ page }) => {
 	await ouvrirAffaires(page);
-	let relacher: () => void = () => {};
-	const relache = new Promise<void>((r) => (relacher = r));
-	await page.route(
-		(url) => estLeCorps(url.pathname),
-		async (route) => {
-			await relache;
-			await route.continue();
-		},
-	);
+	const relacher = await retenirModule(page, CORPS);
 	await page.goto('/tickets');
 	await attendreHydratation(page);
 	await page.locator('.carte-liste').first().getByText(AFFAIRE.titre).click();
