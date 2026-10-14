@@ -5,7 +5,9 @@
   La carte suit le standard du site (`ux-patterns` §3) : la gouttière dit QUAND
   l'installation a donné signe de vie et ce qu'elle EST (référence ou réplique) ;
   la dernière ligne, son état — teinté, c'est le seul qui appelle un geste —,
-  sa version et ce qu'elle a accepté. Repliée, toute la carte ouvre ; dépliée,
+  sa version et ce qu'elle a accepté — et ses ALERTES (R4b #1960) : un badge
+  teinté de la plus sérieuse, et leurs noms sous l'aperçu, lisibles au doigt
+  sans survol. Repliée, toute la carte ouvre ; dépliée,
   seul le titre referme. Le corps — contact, décisions, services, rapport,
   contrat, journal — est `FicheRegistreInstallation`, chargé au premier dépliage.
 -->
@@ -20,6 +22,7 @@
 	import {
 		classeInstallation,
 		LIBELLE_ETAT_REGISTRE,
+		resumeAlertes,
 		servicesAccordes,
 	} from '$lib/registre-installations';
 
@@ -36,6 +39,7 @@
 
 	$: i = installation;
 	$: titre = i.administrateur ? `${i.identifiant} · ${i.administrateur}` : i.identifiant;
+	$: alertes = resumeAlertes(i.alertes);
 </script>
 
 <CarteListe
@@ -54,6 +58,11 @@
 							i.dernier_rapport_le,
 						)}{/if}.
 				</p>
+				{#if i.alertes.length}
+					<p class="apercu-alertes" class:grave={alertes.grave}>
+						{i.alertes.map((a) => a.libelle).join(' · ')}
+					</p>
+				{/if}
 			{/if}
 		</svelte:fragment>
 		<svelte:fragment slot="tags">
@@ -64,6 +73,11 @@
 				class:badge-red={i.etat === 'suspendue'}
 				class:badge-gray={i.etat === 'resiliee'}>{LIBELLE_ETAT_REGISTRE[i.etat]}</span
 			>
+			{#if i.alertes.length}
+				<span class="badge" class:badge-red={alertes.grave} class:badge-orange={!alertes.grave}
+					>{alertes.texte}</span
+				>
+			{/if}
 			{#if i.version_logicielle}<span class="badge badge-gray">v{i.version_logicielle}</span>{/if}
 			{#if i.conditions_acceptees}<span>Contrat v{i.conditions_acceptees}</span>{/if}
 			<span>{servicesAccordes(i.services_autorises.length)}</span>
@@ -95,5 +109,13 @@
 	.apercu {
 		margin: 0;
 		color: var(--color-text-muted);
+	}
+	.apercu-alertes {
+		margin: 0.15rem 0 0;
+		font-weight: 600;
+		color: var(--color-warning-texte);
+	}
+	.apercu-alertes.grave {
+		color: var(--color-danger);
 	}
 </style>

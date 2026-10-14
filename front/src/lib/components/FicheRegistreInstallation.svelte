@@ -3,6 +3,8 @@
   référence sait d'une installation, et ce que l'opérateur décide.
 
   Dans l'ordre du geste :
+  0. **Alertes** — ce que la référence lui reproche (R4b #1960), avant tout le reste :
+     c'est ce qui appelle la décision ; les graves partent aussi par courriel ;
   1. **Décision** — les gestes que le SERVEUR dit possibles (`gestes_possibles`) ;
      l'écran n'a pas de seconde table des transitions ;
   2. **Services accordés** — une case par service que la référence peut accorder ;
@@ -17,6 +19,7 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import type { FicheInstallation, GesteRegistre, ServiceAccordable } from '$lib/api';
@@ -57,6 +60,20 @@
 		return v === null ? 'inconnu' : `${fmtNombre(v)} Mo`;
 	}
 </script>
+
+{#if fiche.alertes.length}
+	<h4 class="intertitre">Alertes</h4>
+	<EncartAvertissement role="status">
+		<ul class="alertes">
+			{#each fiche.alertes as a (a.code)}
+				<li>
+					<strong>{a.libelle}</strong> — {a.message}{#if a.grave}
+						<span class="badge badge-red">courriel à l’opérateur</span>{/if}
+				</li>
+			{/each}
+		</ul>
+	</EncartAvertissement>
+{/if}
 
 {#if gestes.length}
 	<h4 class="intertitre">Décision</h4>
@@ -215,6 +232,13 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.35rem;
+	}
+	.alertes {
+		margin: 0;
+		padding-left: 1.1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
 	}
 	.faits {
 		display: grid;
