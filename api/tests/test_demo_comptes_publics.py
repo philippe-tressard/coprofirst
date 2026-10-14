@@ -49,3 +49,43 @@ def test_le_generateur_refuse_hors_demo(monkeypatch):
     """Les mots de passe publiés ne se posent JAMAIS sur une vraie installation."""
     monkeypatch.setattr(get_settings(), "mode_demo", "")
     assert charger.main() == 2
+
+
+# ── L'administrateur : fixe et SECRET, si le .env le donne (14/10/2026) ───────
+
+
+def test_sans_mot_de_passe_du_env_l_administrateur_garde_celui_du_seed(session, monkeypatch):
+    from app.demo import administrateur
+    from tests.aides_base import compte
+
+    monkeypatch.setattr(get_settings(), "demo_admin_mot_de_passe", "")
+    admin = compte(session, role="admin", roles_json="admin")
+    avant = admin.hashed_password
+    assert administrateur.fixer_mot_de_passe(session, admin) is False
+    assert admin.hashed_password == avant
+
+
+def test_le_mot_de_passe_du_env_est_pose_sur_l_administrateur(session, monkeypatch):
+    from app.auth.jwt import verify_password
+    from app.demo import administrateur
+    from tests.aides_base import compte
+
+    monkeypatch.setattr(get_settings(), "demo_admin_mot_de_passe", "Secret-Demo-42")
+    admin = compte(session, role="admin", roles_json="admin")
+    assert administrateur.fixer_mot_de_passe(session, admin) is True
+    assert verify_password("Secret-Demo-42", admin.hashed_password)
+
+
+def test_un_mot_de_passe_faible_arrete_avant_toute_ecriture(monkeypatch):
+    """Refusé par la règle du produit AVANT la base : la remise à zéro laisse l'API
+    arrêtée plutôt que de servir une démo à moitié chargée (code 4)."""
+    monkeypatch.setattr(get_settings(), "mode_demo", "oui")
+    monkeypatch.setattr(get_settings(), "demo_admin_mot_de_passe", "faible")
+    assert charger.main() == 4
+
+
+def test_le_mot_de_passe_de_l_administrateur_n_est_pas_dans_le_depot():
+    """Il est secret : aucun défaut écrit dans le code (les publics, eux, le sont)."""
+    from app.config import Settings
+
+    assert Settings.model_fields["demo_admin_mot_de_passe"].default == ""

@@ -13,10 +13,12 @@ nocturne efface la base et les fichiers.
 - **Entrée par le formulaire**, sous l'un de trois comptes partagés dont les
   identifiants sont publiés (`api/app/demo/personnages.py`, page « Démo » du
   site vitrine) : `user-cs`, `user-copro`, `user-loc` `@demo.coprofirst.fr`.
-  L'administrateur est celui du seed, réservé : son mot de passe change à
-  chaque remise à zéro et ne s'écrit que dans le **journal de la remise à zéro**
-  — le jeu se charge dans un conteneur ponctuel, et l'API est recréée après :
-  ses journaux ne l'ont jamais.
+  L'administrateur est celui du seed (`admin@localhost`, administrateur et
+  opérateur), réservé. Son mot de passe est **fixe et secret** si `.env` pose
+  `DEMO_ADMIN_MOT_DE_PASSE` (jamais publié, contrairement aux trois autres) ;
+  sinon il change à chaque remise à zéro et ne s'écrit que dans le **journal de
+  la remise à zéro** — le jeu se charge dans un conteneur ponctuel, et l'API est
+  recréée après : ses journaux ne l'ont jamais.
   ```bash
   grep -A3 'ADMIN INITIAL' /var/log/coprofirst-demo.log | tail -4
   ```
@@ -46,6 +48,7 @@ nocturne efface la base et les fichiers.
    MAINTENANCE_KEY=<openssl rand -hex 32>
    DEMO_EDITEUR=          # vide : « édité à titre non professionnel » (LCEN 6-III-2)
    DEMO_CONTACT=<adresse où exercer ses droits>
+   DEMO_ADMIN_MOT_DE_PASSE=<secret, règle de robustesse du produit>  # vide : aléatoire
    ```
    Les mentions légales et la politique de confidentialité de la démo sont
    **reposées à chaque remise à zéro** (`api/app/demo/legal.py`) : elles nomment
