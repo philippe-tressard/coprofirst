@@ -105,6 +105,19 @@
   check "résumé juste"                  "ok"      "$(verdict_export_base $'lot 4 4\nticket 12 12')"
   check "une table incomplète"          "écarts : lot 3/4" "$(verdict_export_base $'lot 3 4\nticket 12 12')"
   check "résumé vide → inconnue, jamais ok" "inconnue" "$(verdict_export_base '')"
+  #  #1964 : Python sous Windows écrit en CRLF. Le `\r` collé à la dernière
+  #  colonne rendait chaque table « en écart » — toute copie hors site échouait
+  #  depuis le poste, depuis le passage à PostgreSQL.
+  #  ⚠️ Le CR se fabrique À L'EXÉCUTION (`printf`) : sous Git Bash, un
+  #  `$'…\r\n…'` écrit dans un "$(…)" perd son `\r`, et ce cas passait sans en
+  #  contenir un seul. Le compte de CR ci-dessous est son cas zéro.
+  #  Sans CRLF final : une substitution le retire sous Git Bash, pas sous Linux,
+  #  et le compte différerait entre le poste et la CI.
+  crlf_juste=$(printf 'lot 4 4\r\nticket 12 12')
+  crlf_ecart=$(printf 'lot 3 4\r\nticket 12 12')
+  check "le cas d'essai porte bien son CR" "1" "$(printf '%s' "$crlf_juste" | tr -cd '\r' | wc -c | tr -d ' ')"
+  check "résumé CRLF (Python sous Windows)" "ok" "$(verdict_export_base "$crlf_juste")"
+  check "CRLF n'efface pas un vrai écart" "écarts : lot 3/4" "$(verdict_export_base "$crlf_ecart")"
 
   LISTE=$'a\nb\nc\nd\ne'
   check "rotation garde 3"          $'a\nb'       "$(echo "$LISTE" | archives_a_supprimer 3)"

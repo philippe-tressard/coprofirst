@@ -75,6 +75,10 @@ NOM_EXPORT_BASE="base-export.tar.gz"
 verdict_export_base() { # $1 = résumé
   local resume=${1:-} ecarts="" t lu annonce n=0
   while read -r t lu annonce; do
+    #  #1964 : Python sous Windows écrit en CRLF, et le `\r` restait collé à la
+    #  dernière colonne — `1\r` n'égale jamais `1`. Toute copie hors site
+    #  échouait depuis le poste, depuis le passage à PostgreSQL.
+    annonce=${annonce%$'\r'}
     [ -n "$t" ] || continue
     n=$((n + 1))
     [ "$lu" = "$annonce" ] || ecarts="${ecarts:+$ecarts, }$t $lu/$annonce"
