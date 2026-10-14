@@ -90,6 +90,14 @@ const EXCEPTIONS = {
 			'Tombe quand `Modale` posera elle-même le focus initial. Était tu par un ' +
 			'`svelte-ignore` jusqu’à #1045.',
 	},
+	'src/lib/components/TexteMarkdown.svelte::a11y_no_noninteractive_tabindex': {
+		depuis: '14/10/2026',
+		raison:
+			'une boîte qui DÉFILE (un texte de contrat, `max-height`) doit prendre le focus ' +
+			'pour se parcourir au clavier (WCAG 2.1.1, règle axe « scrollable-region-focusable ») ; ' +
+			'elle porte `role="region"` et un `aria-label`. La règle de Svelte ne connaît pas ' +
+			'ce cas (#1930).',
+	},
 };
 
 /**

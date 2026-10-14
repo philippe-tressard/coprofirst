@@ -181,6 +181,7 @@
 		"@tiptap/pm": "^3.31.4",
 		"@tiptap/starter-kit": "^3.31.4",
 		"dompurify": "^3.4.14",
+		"marked": "^18.0.14",
 		"qrcode-generator": "^2.0.4",
 		"workbox-window": "^7.4.1"
 	},

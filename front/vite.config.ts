@@ -152,6 +152,9 @@ export default defineConfig({
 			//  visite (`QRCode`, l'annuaire) : le premier e2e qui y est allé l'a
 			//  fait découvrir en plein test (#779, 01/10/2026).
 			'qrcode-generator',
+			//  Le rendu Markdown des conditions d'inscription, chargé à l'affichage
+			//  (`$lib/markdown`, #1930) : découvert en plein e2e, il rechargeait la page.
+			'marked',
 		],
 	},
 	server: {
