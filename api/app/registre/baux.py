@@ -24,6 +24,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from app.config import get_settings
 from app.registre import signature
 from app.registre.contrat import Bail, BailSigne, octets_du_bail
+from app.registre.decisions import services_de
 from app.registre.modeles import Installation
 from app.utils.valeurs import valeur
 
@@ -55,7 +56,7 @@ def delivrer(inst: Installation, cle: Ed25519PrivateKey, maintenant: datetime) -
         etat=valeur(inst.etat),
         canal=inst.canal,
         version_cible=None,  # R5 (#1881) : le déploiement par vagues
-        services_autorises=[],  # R6 (#1882) : les services du registre
+        services_autorises=services_de(inst),  # accordés par l'opérateur (R4 #1880)
         epoque=EPOQUE,
         delivre_le=delivre,
         echeance=delivre + DUREE,

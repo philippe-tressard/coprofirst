@@ -178,6 +178,18 @@ COURRIELS_DE_SECURITE = frozenset(
 )
 
 
+#: Les services qu'une RÉPLIQUE garde sans que la référence les autorise (§4.11,
+#: arbitré le 13/10/2026) : la vérification de la version ne coûte rien et sert à
+#: suivre les mises à jour. Tous les autres passent par le bail.
+SERVICES_HORS_BAIL = frozenset({SERVICE_VERIF_VERSION})
+
+#: Ce que la référence peut accorder dans un bail — la seule liste, lue par le
+#: registre (`registre/decisions.py`) comme par l'installation.
+SERVICES_AUTORISABLES = tuple(
+    code for code, s in SERVICES.items() if s.coupable and code not in SERVICES_HORS_BAIL
+)
+
+
 def service(code: str) -> Service:
     """Le service demandé — `KeyError` si personne ne l'a déclaré ici."""
     return SERVICES[code]
@@ -192,17 +204,47 @@ def cle_actif(code: str) -> str:
 
 
 def service_actif(cfg: dict, code: str) -> bool:
-    """PURE. Le service est-il activé, d'après la configuration lue ?
+    """Le service est-il activé, d'après la configuration lue ?
 
     🔴 La SEULE lecture d'une clé d'activation. Seul `"1"` vaut oui — l'écran
     écrit `"1"`/`"0"`, et `normaliser_activation` ramène toute autre saisie.
 
     En démo publique, aucun service ne s'allume, quoi que dise la base (#1902) :
     sa configuration est réécrite par n'importe quel visiteur administrateur.
+
+    🔴 Sur une RÉPLIQUE, un service que la référence n'a pas autorisé dans le bail
+    est coupé, quoi que dise la base (§4.11, part de R6 #1882 avancée le 13/10/2026).
     """
     from app.utils.demo import est_demo
 
-    return not est_demo() and cfg.get(cle_actif(code)) == ACTIVE
+    return (
+        not est_demo() and cfg.get(cle_actif(code)) == ACTIVE and autorise_par_la_reference(code)[0]
+    )
+
+
+def autorise_par_la_reference(code: str) -> tuple[bool, str]:
+    """La référence autorise-t-elle ce service ici ? `(oui, "")`, ou `(non, pourquoi)`.
+
+    La règle ne vaut que pour une installation qui se déclare RÉPLIQUE : la
+    référence ne se limite pas elle-même, une installation d'essai n'appelle
+    personne (§4.11, règles 7 et 9), et un rôle inconnu n'est pas une réplique.
+    L'autorisation se lit dans le bail CRU — signé, à jour (`inscription.constat`) ;
+    sans bail cru, aucun service.
+    """
+    if code in SERVICES_HORS_BAIL:
+        return True, ""
+    from app.utils.installation import est_replique
+
+    if not est_replique():
+        return True, ""
+    from app.inscription.client import constat_courant
+
+    constat = constat_courant()
+    if constat.services is None or code in constat.services:
+        return True, ""
+    if constat.etat == "active":
+        return False, "Non autorisé par la référence."
+    return False, f"Non autorisé par la référence : {constat.raison}."
 
 
 def normaliser_activation(valeur: str) -> str:
@@ -217,13 +259,32 @@ def normaliser_activation(valeur: str) -> str:
 #: Les clés d'activation, pour `PUT /config` qui les normalise à l'écriture.
 CLES_ACTIVATION = frozenset(s.cle_actif for s in SERVICES.values() if s.cle_actif)
 
+#: Le service que chaque clé d'activation allume — pour refuser à l'écriture ce
+#: que la référence n'autorise pas.
+SERVICE_DE_CLE = {s.cle_actif: s.code for s in SERVICES.values() if s.cle_actif}
+
+
+def refus_d_activation(cle: str, nouvelle: str, ancienne: str | None) -> str:
+    """Pourquoi `PUT /config` refuse d'écrire `nouvelle` dans `cle` — `""` s'il l'accepte.
+
+    Une réplique n'ALLUME que ce que la référence autorise : la lecture le coupe de
+    toute façon (`service_actif`), et l'écran ne doit pas laisser croire qu'il est
+    allumé. Seul le PASSAGE à « 1 » se refuse : un onglet de réglages renvoie la clé
+    telle qu'il l'a lue, et ne doit pas cesser de s'enregistrer pour un service
+    allumé avant.
+    """
+    if cle not in SERVICE_DE_CLE or nouvelle != ACTIVE or ancienne == ACTIVE:
+        return ""
+    return autorise_par_la_reference(SERVICE_DE_CLE[cle])[1]
+
+
 ETAT_ACTIF = "actif"
 ETAT_COUPE = "coupe"
 ETAT_INCOMPLET = "incomplet"
 
 
 def etat(cfg: dict, s: Service, *, infra_active: bool = False) -> tuple[str, list[str]]:
-    """PURE. L'état d'un service et ce qui lui manque pour fonctionner.
+    """L'état d'un service et ce qui lui manque pour fonctionner.
 
     Un service activé à qui manque un réglage est « incomplet » : il ne coupe
     rien, il échoue. L'écran le dit plutôt que de l'annoncer actif.
@@ -250,6 +311,7 @@ def decrire(session) -> list[dict]:
     rendu = []
     for s in SERVICES.values():
         code_etat, manque = etat(cfg, s, infra_active=smtp)
+        autorise, refus = autorise_par_la_reference(s.code) if s.coupable else (True, "")
         rendu.append(
             {
                 "code": s.code,
@@ -263,6 +325,8 @@ def decrire(session) -> list[dict]:
                 "cle_actif": s.cle_actif,
                 "etat": code_etat,
                 "manque": manque,
+                "autorise": autorise,
+                "refus": refus,
             }
         )
     return rendu
@@ -278,15 +342,20 @@ __all__ = [
     "ETAT_INCOMPLET",
     "INFRA_SMTP",
     "SERVICES",
+    "SERVICES_AUTORISABLES",
+    "SERVICES_HORS_BAIL",
+    "SERVICE_DE_CLE",
     "SERVICE_DIFFUSION",
     "SERVICE_IA",
     "SERVICE_REPONSES_COURRIEL",
     "SERVICE_VERIF_VERSION",
     "Service",
+    "autorise_par_la_reference",
     "cle_actif",
     "decrire",
     "etat",
     "normaliser_activation",
+    "refus_d_activation",
     "service",
     "service_actif",
 ]

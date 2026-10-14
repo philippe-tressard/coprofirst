@@ -36,7 +36,7 @@
 	import { stripHtml } from '$lib/utils';
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
-	import { isProprioOuCS, isLocataire, authResolue } from '$lib/stores/auth';
+	import { isProprioOuCS, isLocataire, isOperateur, authResolue } from '$lib/stores/auth';
 
 	/** L'identifiant de configuration de la page — celui de `PAGES`. */
 	export let pageId: string;
@@ -58,7 +58,8 @@
 	$: visible = (o: { reserve?: string }) =>
 		!o.reserve ||
 		(o.reserve === 'proprioOuCS' && $isProprioOuCS) ||
-		(o.reserve === 'nonLocataire' && !$isLocataire);
+		(o.reserve === 'nonLocataire' && !$isLocataire) ||
+		(o.reserve === 'operateur' && $isOperateur);
 	$: onglets = (PAGES.find((p) => p.id === pageId)?.onglets ?? []).filter(
 		(o) => !masques.includes(o.id) && visible(o),
 	);

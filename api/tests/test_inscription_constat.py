@@ -155,3 +155,18 @@ def test_la_cle_de_l_epoque_1_est_versee_et_lisible():
     assert len(brute) == 32
     Ed25519PublicKey.from_public_bytes(brute)
     assert cles.CLES_REFERENCE[1] not in cles.REVOQUEES
+
+
+def test_seul_un_bail_actif_et_cru_accorde_des_services():
+    """Les services d'une réplique viennent du bail cru — aucun sans lui (#1880)."""
+    actif = _constat(_etat(_bail(services_autorises=["assistant_ia"])))
+    assert actif.services == frozenset({"assistant_ia"})
+    assert _constat(
+        _etat(_bail(etat="suspendue", services_autorises=["assistant_ia"]))
+    ).services == (frozenset())
+    assert _constat(_etat(_bail(etat="en_attente"))).services == frozenset()
+    assert _constat(_etat(_bail(cle=INST_PRIVEE))).services == frozenset()  # signature fausse
+    assert _constat(EtatLocal()).services == frozenset()  # non inscrite
+    #  La référence et l'essai ne sont pas restreints.
+    assert _constat(EtatLocal(), reference=True).services is None
+    assert _constat(EtatLocal(), essai=True).services is None

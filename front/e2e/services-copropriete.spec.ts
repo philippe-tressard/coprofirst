@@ -25,6 +25,8 @@ function service(champs: Partial<ServiceCopropriete> & { code: string }): Servic
 		cle_actif: `${champs.code}_cle`,
 		etat: 'actif',
 		manque: [],
+		autorise: true,
+		refus: '',
 		...champs,
 	};
 }
@@ -98,4 +100,35 @@ test('Admin › Services : état, manque, bascule et infrastructure sans case', 
 	);
 	expect(deborde).toBe(false);
 	await page.screenshot({ path: test.info().outputPath('services.png'), fullPage: true });
+});
+
+test('Admin › Services : sur une réplique, un service non autorisé par la référence est grisé', async ({
+	page,
+}) => {
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return ADMIN;
+		if (chemin === '/api/config/services')
+			return [
+				service({
+					code: 'assistant_ia',
+					libelle: 'Assistant IA',
+					cle_actif: 'llm_actif',
+					etat: 'coupe',
+					autorise: false,
+					refus:
+						'Non autorisé par la référence : inscription en attente de validation par la référence.',
+				}),
+				service({
+					code: 'verification_version',
+					libelle: 'Vérification de la version',
+					etat: 'coupe',
+				}),
+			];
+		return undefined;
+	});
+	await page.goto('/admin?onglet=services');
+	const carte = (titre: string) => page.locator('section[data-service]', { hasText: titre });
+	await expect(carte('Assistant IA').getByLabel('Activé')).toBeDisabled();
+	await expect(carte('Assistant IA')).toContainText('Non autorisé par la référence');
+	await expect(carte('Vérification de la version').getByLabel('Activé')).toBeEnabled();
 });

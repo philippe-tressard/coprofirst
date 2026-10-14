@@ -1,0 +1,188 @@
+<!--
+  Administration › Installations — le REGISTRE des installations CoproFirst, vu
+  de la référence (R4 #1880, spec §4.11). Réservé à l'opérateur ; la page masque
+  l'onglet hors de la référence, et le serveur dit « éteint » ailleurs.
+
+  Une carte par installation, au standard du site (page Affaires) : recherche en
+  tête, filtre par état — le compteur sur la pastille retenue —, cartes datées par
+  leur dernier signe de vie. Une seule carte ouverte (`$lib/accordeon`) ; sa fiche
+  se charge au premier dépliage.
+
+  L'état et les appels réseau vivent ici (`svelte-patterns`, famille `Onglet<Nom>`) :
+  la fiche dispatche un geste, l'onglet demande le motif (`$lib/saisie`), appelle
+  le serveur, et range la fiche qu'il rend.
+-->
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import CarteRegistreInstallation from '$lib/components/CarteRegistreInstallation.svelte';
+	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
+	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
+	import EtatListe from '$lib/components/EtatListe.svelte';
+	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
+	import { toast } from '$lib/components/Toast.svelte';
+	import {
+		registre as registreApi,
+		type FicheInstallation,
+		type GesteRegistre,
+		type RegistreLu,
+	} from '$lib/api';
+	import { basculer } from '$lib/accordeon';
+	import { messageErreur } from '$lib/erreurs';
+	import { demander } from '$lib/saisie';
+	import { ETATS_REGISTRE, GESTES_REGISTRE } from '$lib/registre-installations';
+
+	let lu: RegistreLu | null = null;
+	let chargement = true;
+	let erreur = '';
+
+	let recherche = '';
+	let etat = '';
+	let ouvert: string | null = null;
+	let fiches: Record<string, FicheInstallation> = {};
+	let erreursFiche: Record<string, string> = {};
+	let enCours: string | null = null;
+
+	onMount(async () => {
+		try {
+			lu = await registreApi.installations();
+		} catch (e) {
+			erreur = messageErreur(e);
+		} finally {
+			chargement = false;
+		}
+	});
+
+	$: installations = lu?.installations ?? [];
+	$: mots = recherche.trim().toLowerCase();
+	$: affichees = installations.filter(
+		(i) =>
+			(!etat || i.etat === etat) &&
+			(!mots ||
+				[i.identifiant, i.administrateur ?? '', i.version_logicielle ?? '', i.canal]
+					.join(' ')
+					.toLowerCase()
+					.includes(mots)),
+	);
+
+	async function ouvrir(identifiant: string) {
+		ouvert = basculer(ouvert, identifiant);
+		if (ouvert !== identifiant || fiches[identifiant]) return;
+		try {
+			fiches = { ...fiches, [identifiant]: await registreApi.fiche(identifiant) };
+		} catch (e) {
+			erreursFiche = { ...erreursFiche, [identifiant]: messageErreur(e) };
+		}
+	}
+
+	/** Range la fiche rendue par le serveur, et son résumé dans la liste. */
+	function ranger(fiche: FicheInstallation) {
+		fiches = { ...fiches, [fiche.identifiant]: fiche };
+		if (lu) {
+			lu = {
+				...lu,
+				installations: lu.installations.map((i) =>
+					i.identifiant === fiche.identifiant ? { ...i, ...fiche } : i,
+				),
+			};
+		}
+	}
+
+	async function appliquer(
+		identifiant: string,
+		appel: () => Promise<FicheInstallation>,
+		ok: string,
+	) {
+		enCours = identifiant;
+		try {
+			ranger(await appel());
+			toast('success', ok);
+		} catch (e) {
+			toast('error', messageErreur(e));
+		} finally {
+			enCours = null;
+		}
+	}
+
+	async function geste(identifiant: string, g: GesteRegistre) {
+		const declare = GESTES_REGISTRE[g];
+		const motif = await demander({
+			titre: `${declare.libelle} ${identifiant}`,
+			message: declare.effet,
+			libelle: 'Motif',
+			placeholder: 'Ce qui motive la décision — il s’inscrit au journal.',
+			libelleValider: declare.libelle,
+			requis: true,
+		});
+		if (!motif?.trim()) return;
+		await appliquer(
+			identifiant,
+			() => registreApi.decider(identifiant, g, motif.trim()),
+			`${declare.libelle} : décision enregistrée. Elle part dans le prochain bail de ${identifiant}.`,
+		);
+	}
+
+	async function services(identifiant: string, choisis: string[]) {
+		const motif = await demander({
+			titre: `Services accordés à ${identifiant}`,
+			message: 'Ils partent dans le prochain bail de l’installation.',
+			libelle: 'Motif',
+			placeholder: 'Ce qui motive le changement — il s’inscrit au journal.',
+			libelleValider: 'Enregistrer',
+			requis: true,
+		});
+		if (!motif?.trim()) return;
+		await appliquer(
+			identifiant,
+			() => registreApi.accorderServices(identifiant, choisis, motif.trim()),
+			`Services enregistrés. Ils partent dans le prochain bail de ${identifiant}.`,
+		);
+	}
+</script>
+
+{#if lu && !lu.actif}
+	<p class="aide">
+		Le registre des installations n’est servi que par l’installation de référence, quand sa base et
+		son nom dédié sont déclarés.
+	</p>
+{:else}
+	<ReglagesListe>
+		<ChampRecherche
+			id="admin-recherche-installation"
+			bind:valeur={recherche}
+			placeholder="CF-000003, Durand, 2.144…"
+			aide="Un identifiant, un administrateur ou une version."
+		/>
+		<ChoixPastilles
+			options={ETATS_REGISTRE}
+			bind:valeur={etat}
+			tous="Toutes"
+			compte={affichees.length}
+			libelle="État"
+			libelleDevant
+		/>
+	</ReglagesListe>
+
+	<EtatListe
+		{chargement}
+		{erreur}
+		vide={affichees.length === 0}
+		titreVide="Aucune installation"
+		messageVide={installations.length
+			? 'Aucune installation ne répond à ces réglages.'
+			: 'Aucune installation ne s’est encore inscrite au registre.'}
+	>
+		{#each affichees as i (i.identifiant)}
+			<CarteRegistreInstallation
+				installation={i}
+				ouvert={ouvert === i.identifiant}
+				fiche={fiches[i.identifiant] ?? null}
+				erreurFiche={erreursFiche[i.identifiant] ?? ''}
+				accordables={lu?.services_accordables ?? []}
+				enCours={enCours === i.identifiant}
+				on:basculer={() => ouvrir(i.identifiant)}
+				on:geste={(e) => geste(i.identifiant, e.detail)}
+				on:services={(e) => services(i.identifiant, e.detail)}
+			/>
+		{/each}
+	</EtatListe>
+{/if}

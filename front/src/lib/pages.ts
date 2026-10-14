@@ -92,7 +92,7 @@ export interface OngletDef {
 	 * 🔒 `npm run lint:onglets-reserves` confronte chaque valeur ici à la
 	 * dépendance d'auth du routeur qui la justifie.
 	 */
-	reserve?: 'proprioOuCS' | 'nonLocataire';
+	reserve?: 'proprioOuCS' | 'nonLocataire' | 'operateur';
 }
 
 /** Un sous-onglet : une URL et rien d'autre. Son libellé vit dans l'écran, qui

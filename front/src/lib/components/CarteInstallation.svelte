@@ -190,13 +190,20 @@
 					class:ton-alerte={i.etat === 'limitee' || i.etat === 'suspendue'}
 				>
 					<strong>{LIBELLES_INSCRIPTION[i.etat]}</strong> — {i.raison}
-					<p class="aide">Constaté seulement&nbsp;: rien ne limite encore l’installation.</p>
+					<p class="aide">
+						Constaté seulement — sauf les services&nbsp;: une réplique n’allume que ceux que la
+						référence autorise.
+					</p>
 				</dd>
 				{#if i.identifiant}
 					<dt>Identifiant</dt>
 					<dd>
 						<code>{i.identifiant}</code>{#if i.canal}&nbsp;· canal <code>{i.canal}</code>{/if}
 					</dd>
+				{/if}
+				{#if i.services}
+					<dt>Services autorisés</dt>
+					<dd>{i.services.length ? i.services.join(', ') : 'aucun'}</dd>
 				{/if}
 				{#if i.echeance}
 					<dt>Bail jusqu’au</dt>

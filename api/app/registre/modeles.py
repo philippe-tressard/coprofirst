@@ -59,6 +59,9 @@ class Installation(TablePlateforme, table=True):
     canal: str = Field(default="replica", max_length=60)
     version_logicielle: Optional[str] = Field(default=None, max_length=40)
     conditions_acceptees: Optional[int] = None
+    #: Les services que la référence autorise, en JSON (`registre/decisions.py`) —
+    #: portés par le bail ; aucun tant que l'opérateur n'en a pas accordé.
+    services_autorises: str = Field(default="[]", sa_type=Text)
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     mis_a_jour_le: Optional[NaiveDatetime] = None
     #: La dernière fois que l'installation s'est adressée à la référence.

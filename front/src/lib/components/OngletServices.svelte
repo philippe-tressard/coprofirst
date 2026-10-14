@@ -109,11 +109,14 @@
 						<input
 							type="checkbox"
 							checked={s.etat !== 'coupe'}
-							disabled={enCours === s.code}
+							disabled={enCours === s.code || (!s.autorise && s.etat === 'coupe')}
 							on:change={(e) => basculer(s, e.currentTarget.checked)}
 						/>
 						Activé
 					</label>
+					{#if !s.autorise}
+						<p class="aide refus">{s.refus}</p>
+					{/if}
 				{:else}
 					<p class="aide">Ne se coupe pas d'ici.</p>
 				{/if}
@@ -153,6 +156,11 @@
 		justify-content: space-between;
 		gap: 0.75rem;
 		flex-wrap: wrap;
+	}
+	.refus {
+		margin: 0;
+		flex: 1;
+		color: var(--color-warning-texte);
 	}
 	.reglages {
 		display: inline-flex;

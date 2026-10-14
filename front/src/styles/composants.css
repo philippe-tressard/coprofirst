@@ -1323,3 +1323,15 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 		min-height: 44px;
 	}
 }
+
+/*  L'INTERTITRE d'un corps de carte déplié — « Extraits du règlement », « Journal
+    des décisions » : petites capitales grises, au-dessus d'un bloc de lecture.
+    Écrit deux fois à l'identique (question au règlement, registre des
+    installations, #1880) : il vit ici (`lint:css-duplique`). */
+.intertitre {
+	margin: 1rem 0 0.4rem;
+	font-size: var(--fs-sm);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--color-text-muted);
+}

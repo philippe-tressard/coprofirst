@@ -25,4 +25,8 @@ export interface ServiceCopropriete {
 	etat: 'actif' | 'coupe' | 'incomplet';
 	/**  Les réglages qui lui manquent pour fonctionner, nommés. */
 	manque: string[];
+	/**  La référence l'autorise-t-elle ici ? Toujours vrai hors d'une réplique (#1880). */
+	autorise: boolean;
+	/**  Pourquoi il ne s'allume pas, quand la référence ne l'autorise pas. */
+	refus: string;
 }

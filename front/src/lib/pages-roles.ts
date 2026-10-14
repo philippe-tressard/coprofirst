@@ -230,6 +230,15 @@ export const PAGES_ROLES: PageDef[] = [
 				groupe: '⚙️ Configuration',
 				descriptif: 'Les tâches automatiques, leur historique et leur déclenchement manuel.',
 			},
+			{
+				id: 'installations',
+				route: '/admin?onglet=installations',
+				label: 'Installations',
+				groupe: '⚙️ Configuration',
+				descriptif:
+					'Les installations CoproFirst inscrites au registre de la référence : leur état, leur contrat, leurs services.',
+				reserve: 'operateur',
+			},
 		],
 	},
 	{

@@ -44,6 +44,20 @@ ROUTES_A_EFFET = {
     "constaté (#1878)",
 }
 
+#: Les routes de l'opérateur qui lisent un OBJET du registre (base `plateforme`), et
+#: pourquoi elles ne sont pas appelées ici : leur chemin porte l'identifiant d'une
+#: installation, et le registre est éteint dans ce test. Ce qu'elles rendent ne vient
+#: d'aucune copropriété — le contact est celui de l'administrateur d'INSTALLATION, que
+#: le contrat d'inscription destine à l'opérateur ; `test_registre_installations_admin.py`
+#: les éprouve, registre allumé.
+ROUTES_DU_REGISTRE = {
+    ("GET", "/admin/installations/{identifiant}"): "la fiche d'une installation (R4 #1880)",
+    ("POST", "/admin/installations/{identifiant}/decisions"): "valider, suspendre, rétablir, "
+    "résilier une installation ; rend sa fiche (R4 #1880)",
+    ("PUT", "/admin/installations/{identifiant}/services"): "les services accordés à une "
+    "installation ; rend sa fiche (R4 #1880)",
+}
+
 #: Le cas zéro : neuf routes au 10/10/2026 (supervision technique et base).
 MINIMUM_ROUTES = 9
 
@@ -68,6 +82,7 @@ def test_le_releve_voit_les_routes_de_l_operateur():
     routes = routes_de_l_operateur()
     assert len(routes) >= MINIMUM_ROUTES, f"cas zéro : {len(routes)} route(s) de l'opérateur"
     assert set(ROUTES_A_EFFET) <= routes, "une route à effet déclarée n'est plus à l'opérateur"
+    assert set(ROUTES_DU_REGISTRE) <= routes, "une route du registre déclarée n'est plus à lui"
 
 
 def test_aucune_route_de_l_operateur_ne_rend_une_donnee_personnelle():
@@ -86,11 +101,11 @@ def test_aucune_route_de_l_operateur_ne_rend_une_donnee_personnelle():
             )
             s.commit()
         http, _ = client_http(moteur, RoleUtilisateur.admin, roles_json=f"admin,{ROLE_OPERATEUR}")
-        lues = sorted(routes_de_l_operateur() - set(ROUTES_A_EFFET))
+        lues = sorted(routes_de_l_operateur() - set(ROUTES_A_EFFET) - set(ROUTES_DU_REGISTRE))
         brutes = {(m, c): http.request(m, c) for m, c in lues}
     reponses = {cle: r.text for cle, r in brutes.items()}
     #  Cas zéro : chaque route lue a répondu — un refus ne prouverait rien.
-    assert len(lues) >= MINIMUM_ROUTES - len(ROUTES_A_EFFET)
+    assert len(lues) >= MINIMUM_ROUTES - len(ROUTES_A_EFFET) - len(ROUTES_DU_REGISTRE)
     assert all(r.status_code == 200 for r in brutes.values()), {
         cle: r.status_code for cle, r in brutes.items() if r.status_code != 200
     }

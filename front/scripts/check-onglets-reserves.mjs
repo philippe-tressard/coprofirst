@@ -89,6 +89,18 @@ const RESERVES = [
 	//  filtre déjà (`ticket_visible`) : ils n'ont pas de place dans cette table,
 	//  qui n'admet qu'un onglet dont la route REFUSE.
 	//
+	{
+		//  13/10/2026 (#1880) : le registre des installations, chez la référence.
+		//  La page d'administration MASQUE en plus l'onglet hors de la référence.
+		page: 'admin',
+		onglet: 'installations',
+		predicat: 'operateur',
+		routeurApi: 'api/app/routers/admin/installations.py',
+		dependance: 'require_operateur',
+		pourquoi:
+			"le registre et le contact des administrateurs d'installation ne regardent que " +
+			"l'opérateur de la plateforme (§4.11, règle 7) — jamais l'administrateur de copropriété",
+	},
 	//  ⚠️ Le Kanban d'Affaires porte pourtant `reserve: 'nonLocataire'` depuis
 	//  le 28/09/2026 (#1428) — arbitré à l'écran : un locataire ne suit pas les
 	//  dossiers. C'est un masque d'ERGONOMIE, pas une protection : ce qu'il
@@ -96,7 +108,12 @@ const RESERVES = [
 	//  l'inscrire ici avec une dépendance inventée.
 ];
 
-const pages = readFileSync(join(FRONT, 'src/lib/pages.ts'), 'utf8');
+//  Les pages vivent dans DEUX fichiers depuis le découpage de la table (`pages.ts`
+//  et `pages-roles.ts`, où sont les onglets d'administration) : lire l'un seul
+//  rendait invisible tout onglet de l'autre.
+const pages = ['src/lib/pages.ts', 'src/lib/pages-roles.ts']
+	.map((f) => readFileSync(join(FRONT, f), 'utf8'))
+	.join('\n');
 const fautes = [];
 
 for (const r of RESERVES) {
