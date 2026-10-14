@@ -71,7 +71,7 @@ if [ "${1:-}" = "--selftest" ]; then
     exit "$fail"
 fi
 
-: "${GITHUB_REPOSITORY:?GITHUB_REPOSITORY manquant}"
+DEPOT="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY manquant}"
 git fetch --quiet origin main replica 2>/dev/null || true
 replica=$(git rev-parse --verify origin/replica)
 replica_version=$(version_du_commit "$replica")
@@ -85,16 +85,16 @@ titre=""
 echo "replica : v$replica_version · dernière version : $derniere · retard : $retard version(s) · tranche : $tranche" \
     | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
 
-gh issue list --repo "$GITHUB_REPOSITORY" --label "$LABEL" --state open --limit 100 \
+gh issue list --repo "$DEPOT" --label "$LABEL" --state open --limit 100 \
     --json number,title --jq '.[] | "\(.number)\t\(.title)"' \
     | rappels_perimes "$titre" | while read -r numero; do
-        gh issue close "$numero" --repo "$GITHUB_REPOSITORY" \
+        gh issue close "$numero" --repo "$DEPOT" \
             --comment "Ce rappel ne correspond plus : \`replica\` porte v$replica_version, avec $retard version(s) de retard."
     done
 
-if [ "$(gh issue list --repo "$GITHUB_REPOSITORY" --label "$LABEL" --state all --limit 500 \
+if [ "$(gh issue list --repo "$DEPOT" --label "$LABEL" --state all --limit 500 \
         --json title --jq '.[].title' | decider_rappel "$titre")" = creer ]; then
-    gh label create "$LABEL" --repo "$GITHUB_REPOSITORY" --force \
+    gh label create "$LABEL" --repo "$DEPOT" --force \
         --color FBCA04 --description "Rappel : replica en retard sur la référence" >/dev/null
     corps=$(mktemp)
     cat > "$corps" <<CORPS
@@ -108,6 +108,6 @@ gh workflow run promotion.yml -f version=X.Y.Z
 
 ou GitHub › Actions › Promotion › Run workflow. Ce rappel se ferme de lui-même quand \`replica\` avance.
 CORPS
-    gh issue create --repo "$GITHUB_REPOSITORY" --title "$titre" --label "$LABEL" \
+    gh issue create --repo "$DEPOT" --title "$titre" --label "$LABEL" \
         --assignee "${GITHUB_REPOSITORY_OWNER:-${GITHUB_REPOSITORY%%/*}}" --body-file "$corps"
 fi

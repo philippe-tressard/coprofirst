@@ -143,11 +143,11 @@ age_jours() {  # $1 commit → jours écoulés depuis sa fusion sur `main`
 #  ne répond pas : « inconnu », qui retient aussi (jamais un « aucun » par défaut).
 lire_blocages() {
     if [ -z "${GH_TOKEN:-}" ] || [ -z "${GITHUB_REPOSITORY:-}" ]; then echo inconnu; return; fi
-    gh issue list --repo "$GITHUB_REPOSITORY" --label bloque-promotion --state open \
+    gh issue list --repo "${GITHUB_REPOSITORY:-}" --label bloque-promotion --state open \
         --json number --jq 'map("#\(.number)") | join(",")' 2>/dev/null || echo inconnu
 }
 ecrire_sorties() {  # paires clé=valeur pour les étapes suivantes du workflow
-    [ -z "${GITHUB_OUTPUT:-}" ] || printf '%s\n' "$@" >> "$GITHUB_OUTPUT"
+    printf '%s\n' "$@" >> "${GITHUB_OUTPUT:-/dev/null}"
 }
 
 resume="${GITHUB_STEP_SUMMARY:-/dev/null}"
