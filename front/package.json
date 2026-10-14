@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "2.151.0",
+	"version": "2.151.1",
 	"private": true,
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
@@ -17,6 +17,7 @@
 		"lint:en-tetes-lus": "node scripts/check-en-tetes-lus.mjs --selftest && node scripts/check-en-tetes-lus.mjs",
 		"lint:gardes-auth": "node scripts/check-gardes-auth.mjs",
 		"lint:plafond-liste": "node scripts/check-plafond-liste.mjs",
+		"lint:optimize-deps": "node scripts/check-optimize-deps.mjs --selftest && node scripts/check-optimize-deps.mjs",
 		"lint:dates": "node scripts/check-dates.mjs && node scripts/check-formats.mjs --selftest && node scripts/check-formats.mjs",
 		"lint:sw": "node scripts/check-sw-url.mjs",
 		"lint:fichiers": "node scripts/check-fichiers.mjs",

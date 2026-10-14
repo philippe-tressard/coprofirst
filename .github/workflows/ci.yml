@@ -887,6 +887,14 @@ jobs:
         working-directory: front
         run: npm run lint:fichiers
 
+      # Un paquet chargé par import() est déclaré dans optimizeDeps.include
+      # (#1956) : sinon Vite le découvre en plein e2e et recharge la page (#1421).
+      # L'étape e2e ne le voit que sur un cache NEUF — pas sur le poste de qui
+      # vient d'ajouter le paquet. Ce contrôle lit le source : il mord partout.
+      - name: Lint dépendances chargées à la demande (déclarées à Vite)
+        working-directory: front
+        run: npm run lint:optimize-deps
+
       # Les trois canaux « groupe WhatsApp / syndic / CS » étaient écrits à la
       # main dans SIX formulaires et avaient divergé : deux tracés SVG, trois
       # libellés, deux icônes — et un écran où le canal WhatsApp manquait tout

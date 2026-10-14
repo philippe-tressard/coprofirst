@@ -50,8 +50,9 @@
 			{#if !ouvert}
 				<p class="apercu">
 					{#if i.vue_le}Dernier contact le {fmtDatetime(i.vue_le)}{:else}Jamais revenue depuis son
-						inscription{/if}{#if i.dernier_rapport_le}
-						· dernier rapport le {fmtDatetime(i.dernier_rapport_le)}{/if}.
+						inscription{/if}{#if i.dernier_rapport_le}&nbsp;· dernier rapport le {fmtDatetime(
+							i.dernier_rapport_le,
+						)}{/if}.
 				</p>
 			{/if}
 		</svelte:fragment>
