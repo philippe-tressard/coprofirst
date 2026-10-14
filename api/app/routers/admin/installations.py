@@ -2,9 +2,10 @@
 
 Spec §4.11 : la référence voit les installations qui se sont déclarées à elle — leur
 état, leur canal, leur version, l'administrateur qui en répond, le contrat qu'il a
-accepté (archivé sous l'identifiant, D26), le journal des décisions et le dernier
-rapport nocturne. Les GESTES (valider, suspendre, rétablir, résilier) et les alertes
-arrivent avec eux (R4b) ; les alertes viendront ensuite.
+accepté (archivé sous l'identifiant, D26), le journal des décisions, le dernier
+rapport nocturne — et ses ALERTES (R4b #1960), calculées par `registre/alertes`
+à chaque lecture : la carte les montre toutes, le courriel de l'opérateur ne
+porte que les graves (`utils/sante_plateforme`).
 
 Les GESTES de l'opérateur — valider, suspendre, rétablir, résilier, accorder des
 services — passent par `registre/decisions.py`, qui tient les transitions et le
@@ -35,6 +36,7 @@ from sqlmodel import Session, func, select
 
 from app.auth.deps import require_operateur
 from app.models.core import Utilisateur
+from app.registre import alertes as registre_alertes
 from app.registre import base, decisions
 from app.registre.contrat import Rapport
 from app.registre.modeles import (
@@ -54,6 +56,16 @@ logger = logging.getLogger("hostachy.registre")
 router = APIRouter()
 
 
+class AlerteLue(BaseModel):
+    code: str
+    #: le nom de l'alerte (`registre/alertes.GENRES`)
+    libelle: str
+    #: ce qui a été constaté, avec sa mesure
+    message: str
+    #: grave → l'opérateur en reçoit un courriel
+    grave: bool
+
+
 class ResumeInstallation(BaseModel):
     identifiant: str
     #: en_attente · active · suspendue · resiliee
@@ -69,6 +81,8 @@ class ResumeInstallation(BaseModel):
     dernier_rapport_le: Optional[datetime] = None
     #: les services que la référence lui accorde — le bail les porte
     services_autorises: list[str] = []
+    #: ce que la référence lui reproche, dans l'ordre de la spec (R4b #1960)
+    alertes: list[AlerteLue] = []
 
 
 class ServiceAccordable(BaseModel):
@@ -139,10 +153,23 @@ class FicheInstallation(ResumeInstallation):
     services_modifiables: bool = False
 
 
+def _alertes_lues(liste: list[registre_alertes.Alerte]) -> list[AlerteLue]:
+    return [
+        AlerteLue(
+            code=a.code,
+            libelle=registre_alertes.GENRES[a.code].libelle,
+            message=a.message,
+            grave=a.grave,
+        )
+        for a in liste
+    ]
+
+
 def _resume(
     inst: Installation,
     coordonnees: Optional[ContactInstallation],
     dernier_rapport_le: Optional[datetime],
+    alertes: list[registre_alertes.Alerte],
     schema: type[ResumeInstallation] = ResumeInstallation,
     **derives,
 ) -> ResumeInstallation:
@@ -153,6 +180,7 @@ def _resume(
         administrateur=nom_affiche(coordonnees.prenom, coordonnees.nom) if coordonnees else None,
         dernier_rapport_le=dernier_rapport_le,
         services_autorises=decisions.services_de(inst),
+        alertes=_alertes_lues(alertes),
         **derives,
     )
 
@@ -186,10 +214,12 @@ def lister_installations(_: Utilisateur = Depends(require_operateur)):
                 ).group_by(RapportInstallation.installation_id)
             ).all()
         )
+        par_installation = registre_alertes.alertes_du_registre(session)
         return RegistreLu(
             actif=True,
             installations=[
-                _resume(i, contacts.get(i.id), derniers.get(i.id)) for i in installations
+                _resume(i, contacts.get(i.id), derniers.get(i.id), par_installation[i.id])
+                for i in installations
             ],
             services_accordables=_accordables(),
         )
@@ -235,6 +265,7 @@ def _fiche(session: Session, inst: Installation) -> FicheInstallation:
         inst,
         contact,
         rapport.recu_le if rapport else None,
+        registre_alertes.alertes_du_registre(session)[inst.id],
         FicheInstallation,
         contact=ContactLu.model_validate(contact) if contact else None,
         contrats=[ContratAccepte.model_validate(c) for c in contrats],

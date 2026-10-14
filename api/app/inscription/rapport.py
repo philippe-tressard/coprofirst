@@ -148,6 +148,7 @@ def construire() -> Rapport:
             identifiant=identifiant,
             canal=bail.get("canal") or "replica",
             version_logicielle=installation.version_logicielle(),
+            se_declare_reference=installation.est_reference(),
         ),
         hebergement=hebergement(),
         sauvegarde=Sauvegarde(derniere_reussie_le=derniere),
