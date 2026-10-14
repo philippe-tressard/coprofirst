@@ -24,21 +24,19 @@ from __future__ import annotations
 
 import sys
 
+from fastapi import HTTPException
 from sqlmodel import select
 
 from app import contexte
-from app.demo import acces, affaires, comptes, fichiers, gouvernance, identite, legal
+from app.demo import acces, administrateur, affaires, comptes, fichiers, gouvernance, identite
+from app.demo import legal
 from app.demo import patrimoine
 from app.demo import prestataires, vie_collective
-from app.models.core import RoleUtilisateur, Utilisateur
+from app.config import get_settings
+from app.models.core import Utilisateur
 from app.seed import seed
 from app.utils.demo import est_demo
 from app.utils.perimetres import invalider_cache
-
-
-def administrateur_initial(session) -> Utilisateur:
-    """Celui que le seed vient de créer : le seul administrateur de la base."""
-    return session.exec(select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.admin)).one()
 
 
 class BaseNonVierge(RuntimeError):
@@ -53,7 +51,9 @@ def charger(*, documents: bool = True) -> dict[str, int]:
     """
     from app.database import create_db_and_tables
 
-    #  Rendus d'abord : un moteur PDF absent arrête tout AVANT la première écriture.
+    #  Rendus et mot de passe de l'administrateur d'abord : un moteur PDF absent ou un
+    #  mot de passe trop faible arrête tout AVANT la première écriture.
+    administrateur.verifier_avant_chargement()
     rendus = fichiers.rendre_documents() if documents else []
     create_db_and_tables()
     with contexte.nouvelle_session() as session:
@@ -68,7 +68,9 @@ def charger(*, documents: bool = True) -> dict[str, int]:
         seed()
         invalider_cache()
 
-        identite.poser(session, administrateur_initial(session))
+        admin = administrateur.initial(session)
+        identite.poser(session, admin)
+        administrateur.fixer_mot_de_passe(session, admin)
         legal.poser(session)
         gouvernance.poser(session, les_comptes)
         prest = prestataires.poser(session, pat, les_comptes["user-cs"].id)
@@ -95,7 +97,15 @@ def main() -> int:
     except BaseNonVierge as exc:
         print(str(exc), file=sys.stderr)
         return 3
+    except HTTPException as exc:  # la règle de robustesse, avant toute écriture
+        print(f"DEMO_ADMIN_MOT_DE_PASSE refusé : {exc.detail}", file=sys.stderr)
+        return 4
     print("✅ Démo chargée : " + ", ".join(f"{n} {quoi}" for quoi, n in bilan.items()))
+    if get_settings().demo_admin_mot_de_passe.strip():
+        #  Le seed vient d'afficher un mot de passe temporaire : il est remplacé.
+        print(
+            "🔑 Administrateur (admin@localhost) : le mot de passe FIXE du .env remplace celui du seed."
+        )
     for cle in legal.manques():
         #  Un avertissement, pas un refus : la remise à zéro de la nuit ne doit pas
         #  laisser la démo arrêtée pour un texte. La mise en service, elle, le pose.
