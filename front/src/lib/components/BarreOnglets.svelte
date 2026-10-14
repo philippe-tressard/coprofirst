@@ -48,6 +48,9 @@
 	export let masques: readonly string[] = [];
 	/** Pastilles de compte, par identifiant d'onglet. */
 	export let comptes: Record<string, number> = {};
+	/**  Les onglets grisés : ceux d'un service coupé (Admin › Services). Ils
+	 *   restent visibles et ouvrables — c'est la page qui sait lesquels. */
+	export let eteints: readonly string[] = [];
 
 	$: defauts = defautsDePage(pageId);
 	$: _pc = getPageConfig($configStore, pageId, defauts);
@@ -110,7 +113,12 @@
 		{#if g.nom}<div class="tabs-group-label">{g.nom}</div>{/if}
 		<div class="tabs" role="tablist" aria-label={g.nom || undefined}>
 			{#each g.onglets as o (o.id)}
-				<Onglet href={o.route} actif={actif === o.id} compte={comptes[o.id] ?? null}>
+				<Onglet
+					href={o.route}
+					actif={actif === o.id}
+					compte={comptes[o.id] ?? null}
+					eteint={eteints.includes(o.id)}
+				>
 					{_pc.onglets?.[o.id]?.label ?? defauts.onglets?.[o.id]?.label ?? o.label}
 				</Onglet>
 			{/each}

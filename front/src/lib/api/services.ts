@@ -18,6 +18,8 @@ export interface ServiceCopropriete {
 	plafond: string;
 	/**  L'onglet d'administration de ses réglages détaillés. */
 	onglet: string;
+	/**  L'onglet ne règle que ce service : coupé, il se grise dans la rangée. */
+	onglet_dedie: boolean;
 	/**  Son tracé, du catalogue `$lib/icones-svg.json` (vérifié côté serveur). */
 	icone: string;
 	coupable: boolean;

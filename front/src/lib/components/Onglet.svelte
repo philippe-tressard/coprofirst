@@ -51,16 +51,33 @@
 	/**  Compte à afficher en pastille rouge. `null` ou `0` : aucune pastille —
 	     un compteur à zéro n'apprend rien et fait du bruit. */
 	export let compte: number | null = null;
+
+	/**  Le service que cet onglet règle est COUPÉ : l'onglet se grise, et reste
+	     ouvrable — on y règle un service avant de l'activer. */
+	export let eteint = false;
 </script>
 
 {#if href}
-	<a {href} class="tab-btn" class:active={actif}>
-		<slot />
+	<a
+		{href}
+		class="tab-btn"
+		class:active={actif}
+		class:eteint
+		title={eteint ? 'Service coupé — il s’active dans Services' : undefined}
+	>
+		<slot />{#if eteint}<span class="sr-only"> (service coupé)</span>{/if}
 		{#if compte}<span class="badge-count">{compte}</span>{/if}
 	</a>
 {:else}
-	<button type="button" class="tab-btn" class:active={actif} on:click>
-		<slot />
+	<button
+		type="button"
+		class="tab-btn"
+		class:active={actif}
+		class:eteint
+		title={eteint ? 'Service coupé — il s’active dans Services' : undefined}
+		on:click
+	>
+		<slot />{#if eteint}<span class="sr-only"> (service coupé)</span>{/if}
 		{#if compte}<span class="badge-count">{compte}</span>{/if}
 	</button>
 {/if}
@@ -71,6 +88,11 @@
 	    pas encore ce composant. Seule la pastille de compte vient ici, avec le
 	    balisage qu'elle habille — elle était définie dans le style scopé de
 	    `admin/+page.svelte`, donc inatteignable depuis tout autre écran. */
+	/*  Grisé, pas désactivé : l'onglet d'un service coupé s'ouvre toujours. Ouvert,
+	    il reprend sa pleine couleur — on lit ce qu'on règle. */
+	.eteint:not(.active) {
+		opacity: 0.5;
+	}
 	.badge-count {
 		background: var(--color-danger);
 		color: var(--color-surface);

@@ -20,6 +20,7 @@ function service(champs: Partial<ServiceCopropriete> & { code: string }): Servic
 		perte: 'Ce qu’on perd en le coupant.',
 		plafond: '',
 		onglet: 'ia',
+		onglet_dedie: false,
 		icone: 'settings',
 		coupable: true,
 		cle_actif: `${champs.code}_cle`,
@@ -55,6 +56,7 @@ test('Admin › Services : état, manque, bascule et infrastructure sans case', 
 					libelle: 'Diffusion sur le groupe WhatsApp',
 					icone: 'whatsapp',
 					onglet: 'whatsapp',
+					onglet_dedie: true,
 					cle_actif: 'whatsapp_enabled',
 					etat: whatsapp,
 					manque: whatsapp === 'incomplet' ? ['l’adresse du relais WhatsApp'] : [],
@@ -88,12 +90,21 @@ test('Admin › Services : état, manque, bascule et infrastructure sans case', 
 		'/admin?onglet=whatsapp',
 	);
 
+	//  L'onglet de réglages d'un service dédié se grise quand il est coupé — pas avant.
+	const ongletWhatsApp = page.locator('a.tab-btn[href="/admin?onglet=whatsapp"]');
+	await expect(ongletWhatsApp).not.toHaveClass(/eteint/);
+
 	//  Couper : la clé d'activation part à `PUT /config`, puis l'état se relit.
 	whatsapp = 'coupe';
 	await carte('WhatsApp').getByLabel('Activé').uncheck();
 	await expect.poll(() => ecrits).toEqual([{ whatsapp_enabled: '0' }]);
 	await expect(carte('WhatsApp').locator('.badge')).toHaveText('Coupé');
 	await expect(carte('WhatsApp').getByLabel('Activé')).not.toBeChecked();
+	await expect(ongletWhatsApp).toHaveClass(/eteint/);
+	//  Grisé, pas fermé : il s'ouvre, dit l'état, et ne porte AUCUNE case d'activation.
+	await ongletWhatsApp.click();
+	await expect(page.locator('.etat-service .badge')).toHaveText('Coupé');
+	await expect(page.getByLabel(/Activer l'envoi WhatsApp/)).toHaveCount(0);
 
 	const deborde = await page.evaluate(
 		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
