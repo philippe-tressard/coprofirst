@@ -71,7 +71,7 @@
   # Le nom vient du nœud distant et repart dans une commande exécutée là-bas.
   #  🔴 Jusqu'au 14/10/2026 (#1896), un échec ici posait `st=1` — une variable
   #  que le bilan ne lit pas : la liste blanche pouvait céder sous un « TOUS OK ».
-  tn() { local r=refuse; nom_valide "$2" && r=ok
+  tn() { local r=refuse; nom_valide "$2" ${4:+"$4"} && r=ok
          [ "$r" = "$3" ] && echo "PASS  $1" || { echo "FAIL  $1 : attendu=$3 obtenu=$r"; st_fail=1; }; }
   tn "nom d'archive normal"      "hostachy_backup_2026-08-09_030000.tar.gz" ok
   tn "nom vide"                  ""                                          refuse
@@ -80,6 +80,13 @@
   tn "sous-répertoire"           "hostachy_backup_a/b.tar.gz"                refuse
   tn "la base elle-même"         "app.db"                                    refuse
   tn "substitution de commande"  'hostachy_backup_$(id).tar.gz'              refuse
+  #  Le registre des installations (#1896) : son préfixe, et lui seul, dans sa série.
+  tn "archive du registre"       "plateforme_backup_20261014_033000_paris.tar.gz" ok "$PREFIXE_PLATEFORME"
+  tn "résidence prise pour le registre" "hostachy_backup_20261014_030000_paris.tar.gz" refuse "$PREFIXE_PLATEFORME"
+  tn "registre pris pour la résidence"  "plateforme_backup_20261014_033000_paris.tar.gz" refuse
+  tn "registre : remontée"       "plateforme_backup_../x.tar.gz"             refuse "$PREFIXE_PLATEFORME"
+  tn "préfixe inconnu refusé"    "x_backup_1.tar.gz"                         refuse "x_backup_"
+  tn "préfixe-motif refusé"      "a.tar.gz"                                  refuse ".*"
 
   check "archive saine"             "succes"      "$(verdict_archive 1024 oui oui ok | cut -d'|' -f1)"
   check "archive vide"              "erreur"      "$(verdict_archive 0 oui oui ok | cut -d'|' -f1)"

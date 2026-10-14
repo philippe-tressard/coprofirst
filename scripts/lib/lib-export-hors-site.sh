@@ -89,10 +89,20 @@ verdict_export_base() { # $1 = résumé
 # liste noire. Sans cette borne, un nom fabriqué deviendrait un chemin ou une
 # commande. C'est aussi ce qui garantit qu'on ne lira jamais autre chose qu'une
 # archive de sauvegarde close — jamais `app.db`.
-nom_valide() { # $1 = nom candidat → 0 si acceptable
-  local n=${1:-}
+#
+# Deux séries, deux préfixes, et pas un de plus : celle de la résidence, à la
+# racine du volume, et celle du REGISTRE des installations (#1896), dans son
+# sous-dossier — mêmes valeurs que `registre/sauvegarde.PREFIXE` et `.dossier()`,
+# tenues par `test_sauvegarde_hors_site_plateforme.py`. Un préfixe hors de cette
+# liste est refusé : il viendrait de l'appelant, pas d'une décision.
+PREFIXE_RESIDENCE="hostachy_backup_"
+PREFIXE_PLATEFORME="plateforme_backup_"
+DOSSIER_PLATEFORME="plateforme"
+nom_valide() { # $1 = nom candidat · $2 = préfixe (défaut : la résidence) → 0 si acceptable
+  local n=${1:-} prefixe=${2:-$PREFIXE_RESIDENCE}
+  case "$prefixe" in "$PREFIXE_RESIDENCE"|"$PREFIXE_PLATEFORME") ;; *) return 1 ;; esac
   [ -n "$n" ] || return 1
-  [[ "$n" =~ ^hostachy_backup_[A-Za-z0-9._-]+\.tar\.gz$ ]] || return 1
+  [[ "$n" =~ ^${prefixe}[A-Za-z0-9._-]+\.tar\.gz$ ]] || return 1
   case "$n" in */*|*'\'*|*..*) return 1 ;; esac
   return 0
 }
@@ -199,11 +209,11 @@ jours_manquants() { # $1=jours_a_couvrir $2=date_du_jour(AAAAMMJJ) puis noms sur
   # à J-1..J-keep réclamait alors J-2 — que la rotation venait d'effacer — et
   # signalait chaque jour un « jour absent » qui n'en était pas un. La fenêtre
   # commence au jour le plus récent qu'on puisse détenir.
-  case "$noms" in *"hostachy_backup_${aujourdhui}_"*) debut=0 ;; esac
+  case "$noms" in *"${PREFIXE_RESIDENCE}${aujourdhui}_"*) debut=0 ;; esac
   for ((i = debut; i < debut + fenetre; i++)); do
     jour=$(date -d "$aujourdhui -$i day" +%Y%m%d 2>/dev/null) || return 0
     case "$noms" in
-      *"hostachy_backup_${jour}_"*) ;;
+      *"${PREFIXE_RESIDENCE}${jour}_"*) ;;
       *) manquants="$manquants $jour" ;;
     esac
   done

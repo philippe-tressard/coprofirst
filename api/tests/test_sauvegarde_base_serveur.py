@@ -25,7 +25,8 @@ from app.models.core import HistoriqueSauvegarde, StatutSauvegarde
 from app.utils import backup, horloge
 
 RACINE = Path(__file__).resolve().parents[2]
-EXPORT_HORS_SITE = RACINE / "scripts" / "poste" / "export-hors-site.sh"
+#: La relecture vit avec les GESTES de la copie hors site depuis #1896.
+COPIE_HORS_SITE = RACINE / "scripts" / "lib" / "lib-export-hors-site-copie.sh"
 LIB_HORS_SITE = RACINE / "scripts" / "lib" / "lib-export-hors-site.sh"
 
 
@@ -72,15 +73,15 @@ def test_une_base_abimee_n_est_pas_sauvegardee(sauvegarde, monkeypatch):
 
 
 def test_le_poste_relit_l_export_avec_son_propre_code(sauvegarde):
-    """Le Python que `export-hors-site.sh` exécute, sur l'export réellement produit."""
+    """Le Python que la copie hors site exécute (`relire_export`), sur l'export réellement produit."""
     backup.run_backup()
     (archive,) = sauvegarde.glob(backup.MOTIF_ARCHIVE)
     with tarfile.open(archive) as tar:
         export = sauvegarde / "base-export.tar.gz"
         export.write_bytes(tar.extractfile(backup.NOM_EXPORT_BASE).read())
-    script = EXPORT_HORS_SITE.read_text(encoding="utf-8")
+    script = COPIE_HORS_SITE.read_text(encoding="utf-8")
     code = re.search(r"<<'PYTHON'\n(.*?)\nPYTHON\n", script, re.S)
-    assert code, "le code de relecture n'est plus dans export-hors-site.sh"
+    assert code, "le code de relecture n'est plus dans lib-export-hors-site-copie.sh"
     sortie = subprocess.run(
         [sys.executable, "-", str(export)], input=code.group(1), capture_output=True, text=True
     )

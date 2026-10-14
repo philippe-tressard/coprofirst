@@ -38,6 +38,7 @@ from app.utils.backup import PREFIXE_ARCHIVE, horodatage_archive
 
 RACINE = Path(__file__).resolve().parents[2]
 SCRIPT = RACINE / "scripts" / "poste" / "export-hors-site.sh"
+COPIE = RACINE / "scripts" / "lib" / "lib-export-hors-site-copie.sh"
 
 
 def nom_archive(quand: datetime) -> str:
@@ -235,7 +236,8 @@ def test_le_script_ne_touche_jamais_la_base_de_production():
     `sqlite3` visant app.db, ou un `docker exec … PRAGMA`, réintroduirait le
     motif qui a coûté trois incidents (05+17/06 et 17/07/2026).
     """
-    contenu = SCRIPT.read_text(encoding="utf-8")
+    #  Les gestes partagés vivent à côté depuis #1896 : la règle les couvre aussi.
+    contenu = SCRIPT.read_text(encoding="utf-8") + COPIE.read_text(encoding="utf-8")
     lignes_actives = [
         ligne
         for ligne in contenu.splitlines()

@@ -173,9 +173,16 @@ emportent base + uploads + toutes les sauvegardes d'un coup
 - Il **n'ouvre jamais `app.db`** sur un RPi : il ne lit que des `.tar.gz` clos.
   L'`integrity_check` porte sur la copie extraite **sur le poste**.
 - Vérifications avant de déclarer la copie bonne : empreinte SHA-256 identique à la
-  source, `app.db` présent dans l'archive, `PRAGMA integrity_check`. Une copie non
+  source, puis la base — sous PostgreSQL l'**export vérifié** de l'archive (chaque table
+  compte les lignes de son manifeste, `relire_export`), sous SQLite `app.db` et
+  `PRAGMA integrity_check`. Une copie non
   validée est renommée `.invalide` — elle ne doit pas se présenter comme une
   sauvegarde disponible. **Intégrité non vérifiable = échec, pas succès.**
+- Chez la référence, il copie aussi la dernière archive du **registre des installations**
+  (`plateforme/`, sous `EXPORT_DEST/plateforme`, #1896). Son verdict ne touche pas celui
+  de la copropriété : il part dans `archive_plateforme`/`integrite_plateforme`, que juge le
+  contrôle de la **plateforme** (`registre/sauvegarde.probleme_copie_hors_site`, tâche
+  `sante_plateforme`), à destination de l'opérateur.
 - Il poste son rapport sur le canal cron existant (`POST /admin/maintenance/rapport`,
   `tache=export_hors_site`) → visible dans **Admin → Maintenance**, et le contrôle de
   06:00 alerte au-delà de **7 jours** (seuil hebdomadaire assumé : le poste n'est pas

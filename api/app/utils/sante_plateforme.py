@@ -145,10 +145,19 @@ def alerter(problemes: list[str]) -> bool:
 
 
 def run_controle_plateforme() -> None:
-    """Tâche de la plateforme : le disque, une fois pour toutes les copropriétés."""
-    if not disque_par_la_plateforme():
-        return  # une seule copropriété : son contrôle de 06:00 le juge
-    problemes = probleme_disque()
+    """Tâche de la plateforme : ce qui n'appartient à aucune copropriété.
+
+    Le disque, à partir de la deuxième copropriété (avec une seule, son contrôle
+    de 06:00 le juge) ; la copie hors site du registre, chez la référence dont le
+    registre est allumé (#1896).
+    """
+    from app.registre import base
+    from app.registre.sauvegarde import probleme_copie_hors_site
+
+    if not disque_par_la_plateforme() and not base.registre_actif():
+        return  # rien qui n'appartienne qu'à la plateforme : la copropriété juge tout
+    problemes = probleme_disque() if disque_par_la_plateforme() else []
+    problemes += probleme_copie_hors_site()
     if not problemes:
         logger.info("Contrôle de la plateforme : tout est OK.")
         return
