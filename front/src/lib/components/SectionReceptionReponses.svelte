@@ -26,6 +26,7 @@
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import { essayer, TITRE_PARAMETRAGE_ILLISIBLE } from '$lib/chargement';
 	import { toast } from '$lib/components/Toast.svelte';
+	import EtatService from '$lib/components/EtatService.svelte';
 
 	/** Le serveur d'envoi, pour le bouton « Reprendre les paramètres d'envoi ». */
 	export let serveurSmtp = '';
@@ -79,8 +80,9 @@
 	async function saveImapConfig() {
 		imapSaving = true;
 		try {
+			//  L'activation n'y est pas : elle se coche dans Admin › Services, seule
+			//  case qui l'écrit — la renvoyer rétablirait un service qu'on vient de couper.
 			const payload: Record<string, string> = {
-				imap_enabled: imapConfig.enabled ? '1' : '0',
 				imap_server: imapConfig.server.trim(),
 				imap_port: String(imapConfig.port),
 				imap_username: imapConfig.username.trim(),
@@ -155,17 +157,12 @@
 				toutes les 10 minutes.
 			</p>
 		</div>
+		<div class="largeur-saisie">
+			<EtatService actif={imapConfig.enabled}>
+				Coupé, rien n'est relevé — vous pouvez régler et tester sans conséquence.
+			</EtatService>
+		</div>
 		<div class="form-grid largeur-saisie">
-			<label class="field champ-double">
-				<span class="case">
-					<input type="checkbox" bind:checked={imapConfig.enabled} />
-					Relever les réponses
-				</span>
-				<span class="aide">
-					Tant que cette case est décochée, rien n'est relevé — vous pouvez régler et tester sans
-					conséquence.
-				</span>
-			</label>
 			<label class="field">
 				Serveur IMAP
 				<input type="text" bind:value={imapConfig.server} placeholder="ssl0.ovh.net" />

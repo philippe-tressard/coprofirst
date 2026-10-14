@@ -6,19 +6,11 @@
  *  Ce qu'on tient, le module de l'onglet Contrats RETENU : l'attente est
  *  invisible d'abord, apparaît ensuite en fondu, puis l'onglet se rend.
  */
-import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreHydratation, expect, retenirModule, simulerApi, test } from './aides';
 
 test('l’attente d’un onglet chargé au geste ne clignote pas', async ({ page }) => {
 	await simulerApi(page);
-	let relacher: () => void = () => {};
-	const relache = new Promise<void>((r) => (relacher = r));
-	await page.route(
-		(url) => url.pathname.endsWith('/OngletContrats.svelte'),
-		async (route) => {
-			await relache;
-			await route.continue();
-		},
-	);
+	const relacher = await retenirModule(page, 'OngletContrats.svelte');
 	await page.goto('/prestataires');
 	await attendreHydratation(page);
 	await page

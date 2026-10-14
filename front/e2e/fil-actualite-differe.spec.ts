@@ -9,7 +9,7 @@
  *  dépliage l'affiche — rien n'est perdu en route.
  */
 import type { Page } from '@playwright/test';
-import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreHydratation, estLeModule, expect, simulerApi, test } from './aides';
 
 const ACTUALITE = {
 	id: 9,
@@ -40,7 +40,7 @@ const SUITE = {
 	cree_le: '2026-09-21T09:00:00',
 };
 
-const estLeFil = (chemin: string) => chemin.endsWith('/FilActualiteEnListe.svelte');
+const FIL = 'FilActualiteEnListe.svelte';
 
 async function ouvrirAffaires(page: Page) {
 	await simulerApi(page, (chemin) => {
@@ -56,7 +56,7 @@ test('l’ouverture ne télécharge pas le fil ; le survol le précharge ; le d�
 	await ouvrirAffaires(page);
 	const demandes: string[] = [];
 	page.on('request', (r) => {
-		if (estLeFil(new URL(r.url()).pathname)) demandes.push(r.url());
+		if (estLeModule(r.url(), FIL)) demandes.push(r.url());
 	});
 	await page.goto('/tickets');
 	await attendreHydratation(page);

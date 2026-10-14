@@ -13,9 +13,15 @@ nocturne efface la base et les fichiers.
 - **Entrée par le formulaire**, sous l'un de trois comptes partagés dont les
   identifiants sont publiés (`api/app/demo/personnages.py`, page « Démo » du
   site vitrine) : `user-cs`, `user-copro`, `user-loc` `@demo.coprofirst.fr`.
-  L'administrateur est celui du seed, réservé : son mot de passe change à
-  chaque remise à zéro et ne paraît que dans les journaux de l'API
-  (`docker compose logs api | grep -A3 'ADMIN INITIAL'`).
+  L'administrateur est celui du seed (`admin@localhost`, administrateur et
+  opérateur), réservé. Son mot de passe est **fixe et secret** si `.env` pose
+  `DEMO_ADMIN_MOT_DE_PASSE` (jamais publié, contrairement aux trois autres) ;
+  sinon il change à chaque remise à zéro et ne s'écrit que dans le **journal de
+  la remise à zéro** — le jeu se charge dans un conteneur ponctuel, et l'API est
+  recréée après : ses journaux ne l'ont jamais.
+  ```bash
+  grep -A3 'ADMIN INITIAL' /var/log/coprofirst-demo.log | tail -4
+  ```
 - **Rien ne part** : ni courriel, ni message WhatsApp, ni appel à l'IA. Un
   courriel qui serait parti s'inscrit à l'historique, « démonstration : non
   envoyé ».
@@ -42,6 +48,7 @@ nocturne efface la base et les fichiers.
    MAINTENANCE_KEY=<openssl rand -hex 32>
    DEMO_EDITEUR=          # vide : « édité à titre non professionnel » (LCEN 6-III-2)
    DEMO_CONTACT=<adresse où exercer ses droits>
+   DEMO_ADMIN_MOT_DE_PASSE=<secret, règle de robustesse du produit>  # vide : aléatoire
    ```
    Les mentions légales et la politique de confidentialité de la démo sont
    **reposées à chaque remise à zéro** (`api/app/demo/legal.py`) : elles nomment
@@ -70,6 +77,13 @@ Dans la crontab de l'utilisateur qui pilote Docker, **après** la mise à jour :
 Les deux scripts partagent un verrou : la remise à zéro attend une mise à jour qui
 déborde, au plus une heure. Le jeu est ainsi fabriqué par la version qui vient
 d'être installée.
+
+🔒 Le journal de la remise à zéro porte le mot de passe de l'administrateur : le
+créer lisible de son seul propriétaire, **avant** la première nuit.
+
+```bash
+sudo install -m 600 -o "$USER" -g "$USER" /dev/null /var/log/coprofirst-demo.log
+```
 
 La remise à zéro **ne vide jamais le volume `app_data` en entier** : elle n'y
 supprime que le fichier de la base. L'inscription de l'installation au registre y

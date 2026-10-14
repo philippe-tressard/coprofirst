@@ -88,6 +88,12 @@ const EXCEPTIONS = [];
  */
 const MUETS_DECLARES = [
 	{
+		fichier: 'src/lib/components/TexteMarkdown.svelte',
+		affecte: 'html',
+		raison:
+			'le moteur Markdown n’a pas pu se charger : le texte SOURCE reste affiché tel quel — exact, seulement moins lisible (#1930)',
+	},
+	{
 		fichier: 'src/lib/api/client.ts',
 		affecte: 'rawDetail',
 		raison: 'lit le corps d’une réponse DÉJÀ en échec ; le repli est le libellé par défaut',

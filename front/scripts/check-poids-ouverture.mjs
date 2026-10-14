@@ -53,6 +53,9 @@ const CLIENT = new URL('../.svelte-kit/output/client', import.meta.url).pathname
  *   morceau du build — les noms de morceaux sont des empreintes. */
 export const A_LA_DEMANDE = {
 	'Tiptap / ProseMirror (éditeur riche)': /ProseMirror/,
+	//  #1930 : le rendu des conditions d'inscription, chargé par `$lib/markdown` à
+	//  l'affichage du texte — jamais à l'ouverture de l'administration.
+	'marked (rendu Markdown)': /github\.com\/markedjs\/marked/,
 };
 
 /**  `charger={() => import('$lib/components/X.svelte')}` : un composant confié à
@@ -154,17 +157,25 @@ function selftest() {
 		'_a.js': { file: 'a.js', imports: [] },
 		'_ed.js': { file: 'ed.js', imports: [] },
 	};
-	const contenus = { 'n1.js': '', 'n2.js': '', 'a.js': '', 'ed.js': 'class="ProseMirror"' };
+	//  Le morceau à la demande porte la marque de CHAQUE bibliothèque déclarée.
+	const marques = 'class="ProseMirror" https://github.com/markedjs/marked';
+	const contenus = { 'n1.js': '', 'n2.js': '', 'a.js': '', 'ed.js': marques };
 	const lire = (f) => contenus[f];
 	const ok = juger(m, lire);
 	const cas = [
 		['éditeur à la demande : aucune faute', ok.fautes.length === 0 && ok.absentes.length === 0],
 	];
 	m['_a.js'].imports = ['_ed.js'];
-	cas.push(['import statique : deux écrans fautifs', juger(m, lire).fautes.length === 2]);
+	cas.push([
+		'import statique : deux écrans fautifs',
+		new Set(juger(m, lire).fautes.map(([ecran]) => ecran)).size === 2,
+	]);
 	contenus['ed.js'] = '';
-	cas.push(['marqueur introuvable : signalé', juger(m, lire).absentes.length === 1]);
-	contenus['ed.js'] = 'class="ProseMirror"';
+	cas.push([
+		'marqueur introuvable : signalé',
+		juger(m, lire).absentes.length === Object.keys(A_LA_DEMANDE).length,
+	]);
+	contenus['ed.js'] = marques;
 	m['_a.js'].imports = [];
 	const onglet = 'src/lib/components/OngletX.svelte';
 	m['.svelte-kit/generated/client-optimized/nodes/2.js'].dynamicImports.push(onglet);

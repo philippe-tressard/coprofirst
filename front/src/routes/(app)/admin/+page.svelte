@@ -15,6 +15,7 @@
 	} from '$lib/api';
 	import { aRole, isOperateur, quandAuthResolue } from '$lib/stores/auth';
 	import { essayer, messagePartiel, TITRE_PARAMETRAGE_ILLISIBLE } from '$lib/chargement';
+	import type { ServiceCopropriete } from '$lib/api';
 	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
 	//  Les onglets qui ENREGISTRENT ce que `/config/admin` et `/config/legal` ont lu.
 	//  Si la lecture a échoué, leur formulaire serait vide — et enregistré, il
@@ -176,6 +177,9 @@
 		Promise.all([loadBatiments(), loadComptes(), loadCommandes(), loadDemandesProfil()]).then(() =>
 			marquerDonneesAffichees(),
 		);
+		//  Les services, pour griser l'onglet de celui qui est coupé. Un échec ne
+		//  grise rien : l'onglet reste ouvrable, et sa ligne d'état dit le vrai.
+		essayer(configApi.services(), []).then(([liste]) => (services = liste));
 		// Paramétrage site — lu depuis `/config/admin` (require_admin) et NON depuis le
 		// store : depuis l'audit de sécurité du 26/07/2026, `/api/config` est filtré par
 		// liste blanche et n'expose plus que les clés de la coquille d'interface. Les
@@ -250,7 +254,17 @@
 	function apresBascule(cle: string, valeur: string) {
 		smtpValeurs = { ...smtpValeurs, [cle]: valeur };
 		waCfgPublique = { ...waCfgPublique, [cle]: valeur };
+		services = services.map((s) =>
+			s.cle_actif === cle ? { ...s, etat: valeur === '1' ? 'actif' : 'coupe' } : s,
+		);
 	}
+	//  L'onglet de réglages d'un service coupé se GRISE, sans se masquer : on y
+	//  règle la clé d'API ou le relais avant d'activer. Seuls les onglets qui ne
+	//  portent que leur service (`onglet_dedie`, déclaré par le registre).
+	let services: ServiceCopropriete[] = [];
+	$: ongletsEteints = services
+		.filter((s) => s.onglet_dedie && s.etat === 'coupe')
+		.map((s) => s.onglet);
 
 	import { getPageConfig, configStore, siteNomStore, loadSiteConfig } from '$lib/stores/pageConfig';
 	$: _pc = getPageConfig($configStore, 'admin', defautsDePage('admin'));
@@ -279,6 +293,7 @@
 	actif={onglet}
 	{masques}
 	comptes={{ a_traiter: comptes.length + commandes.length + demandesProfil.length }}
+	eteints={ongletsEteints}
 />
 
 {#if onglet === 'a_traiter'}

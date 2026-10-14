@@ -130,6 +130,47 @@ def test_chaque_onglet_de_reglages_existe_dans_l_administration():
     assert not absents, f"onglet de réglages inconnu : {absents}"
 
 
+#: Le SEUL écran qui écrit une clé d'activation : l'interrupteur de chaque service.
+ECRAN_INTERRUPTEUR = "OngletServices.svelte"
+
+
+def test_seul_l_onglet_services_ecrit_une_activation():
+    """Un service s'active dans Admin › Services, et nulle part ailleurs (14/10/2026).
+
+    Les onglets IA, WhatsApp et la relève des réponses portaient chacun une
+    seconde case, qui écrivait la même clé : leur « Enregistrer » rétablissait un
+    service qu'on venait de couper. Une clé posée en objet (`llm_actif: …`) ou par
+    indice (`['llm_actif'] = …`) hors de l'onglet Services est refusée ; la LIRE
+    (`lues['llm_actif'] === '1'`) reste permis — l'onglet dit l'état.
+    """
+    racine = FRONT.parent
+    fichiers = [f for f in racine.rglob("*") if f.suffix in (".svelte", ".ts")]
+    assert len(fichiers) > 100, "le front n'est plus lu"
+    assert (FRONT / "components" / ECRAN_INTERRUPTEUR).exists(), "l'interrupteur a disparu"
+    ecritures = {}
+    for f in fichiers:
+        if f.name == ECRAN_INTERRUPTEUR:
+            continue
+        texte = f.read_text(encoding="utf-8")
+        for cle in CLES_ACTIVATION:
+            motif = rf"(?<!\w)['\"]?{cle}['\"]?\s*:|\[['\"]{cle}['\"]\]\s*=(?!=)"
+            if re.search(motif, texte):
+                ecritures.setdefault(f.relative_to(racine).as_posix(), []).append(cle)
+    assert not ecritures, f"clé d'activation écrite hors d'Admin › Services : {ecritures}"
+
+
+def test_seuls_les_onglets_dedies_se_grisent():
+    """Griser l'onglet d'un service coupé n'est juste que s'il ne porte que lui :
+    SMTP porte l'envoi des courriels, Maintenance la supervision."""
+    dedies = {s.onglet for s in SERVICES.values() if s.onglet_dedie}
+    assert dedies == {"ia", "whatsapp"}
+    for s in SERVICES.values():
+        if s.onglet_dedie:
+            assert s.coupable
+            partage = [a.code for a in SERVICES.values() if a.onglet == s.onglet and a is not s]
+            assert not partage, f"onglet « {s.onglet} » déclaré dédié mais partagé : {partage}"
+
+
 def test_chaque_icone_existe_dans_le_catalogue():
     """`Icon` retombe EN SILENCE sur un point d'interrogation pour un nom inconnu,
     et `lint:icones` ne lit pas un nom venu de l'API."""

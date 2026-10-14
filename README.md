@@ -126,7 +126,8 @@ L'application est accessible sur `http://localhost`.
 > par `sha-<commit>`). Vérifier une image :
 > `gh attestation verify oci://ghcr.io/philippe-tressard/coprofirst-api:<version> --owner philippe-tressard`.
 > Les versions choisies pour les autres installations sont **promues** sur la branche
-> `replica`, avec leurs notes de version (onglet *Releases*).
+> `replica`, avec leurs notes de version (onglet *Releases*) : après 7 jours sur la
+> référence, ou sans attendre pour un correctif urgent.
 > **Installer sans construire** : [`deploiement/standard/LISEZMOI.md`](deploiement/standard/LISEZMOI.md)
 > — chaque version promue joint son archive de déploiement à ses notes de version.
 

@@ -34,7 +34,7 @@ se relit ici. La politique — liste blanche, exceptions et leurs motifs — vit
 
 Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `stairs` : absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur; `whatsapp` : Simple Icons.
 
-## Dépendances — `front` (548 paquets)
+## Dépendances — `front` (549 paquets)
 
 | Paquet | Licence | Déclaré | Admise |
 |---|---|---|---|
@@ -432,6 +432,7 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `lru-cache` | `BlueOak-1.0.0` | devDependencies | oui |
 | `lru-cache` | `ISC` | devDependencies | oui |
 | `magic-string` | `MIT` | devDependencies | oui |
+| `marked` | `MIT` | dependencies | oui |
 | `math-intrinsics` | `MIT` | devDependencies | oui |
 | `minimatch` | `BlueOak-1.0.0` | devDependencies | oui |
 | `minimatch` | `ISC` | devDependencies | oui |

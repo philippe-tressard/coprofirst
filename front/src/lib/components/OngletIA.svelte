@@ -41,6 +41,7 @@
 	import ChampSecret from '$lib/components/ChampSecret.svelte';
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
 	import BlocUsageIA from '$lib/components/BlocUsageIA.svelte';
+	import EtatService from '$lib/components/EtatService.svelte';
 	import { oublierAssistant } from '$lib/stores/assistant';
 
 	/** Valeurs lues au chargement par la page (`adminCfg`). */
@@ -167,8 +168,9 @@
 	async function enregistrer() {
 		enregistrement = true;
 		try {
+			//  L'activation n'y est pas : elle se coche dans Admin › Services, seule
+			//  case qui l'écrit — la renvoyer rétablirait un service qu'on vient de couper.
 			const charge: Record<string, string> = {
-				llm_actif: cfg.actif ? '1' : '0',
 				llm_fournisseur: cfg.fournisseur,
 				llm_base_url: cfg.base_url.trim(),
 				llm_api_version: cfg.api_version.trim(),
@@ -229,14 +231,10 @@
 	<h2 class="titre-onglet"><Icon name="zap" size={18} /> Assistant IA</h2>
 
 	<SectionFormulaire premiere titre="Commun — le service">
-		<label class="field case">
-			<input type="checkbox" bind:checked={cfg.actif} />
-			Activer l’assistant
-			<span class="aide">
-				Désactivé, aucune icône ✨ n’apparaît et aucun appel n’est facturé, quel que soit l’usage.
-				Chaque usage a en plus sa propre activation, ci-dessous.
-			</span>
-		</label>
+		<EtatService actif={cfg.actif}>
+			Coupé, aucune icône ✨ n’apparaît et aucun appel n’est facturé, quel que soit l’usage. Chaque
+			usage a en plus sa propre activation, ci-dessous.
+		</EtatService>
 
 		<ChoixPastilles
 			options={FOURNISSEURS}

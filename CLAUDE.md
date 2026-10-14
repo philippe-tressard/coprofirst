@@ -1082,7 +1082,12 @@ Instanciation 5Hostachy :
   `v*` ni déplacé ni supprimé. Ce qui ne l'est PAS — un dépôt personnel ne peut
   pas exempter GitHub Actions (`standards/08` §5 bis) : qui avance `replica` et qui
   pose un tag ; c'est une consigne. Je ne promeus **jamais** de moi-même : c'est la
-  décision de l'auteur, après rodage sur la référence (spec §9, question 8).
+  décision de l'auteur, qui choisit la version. Le geste refuse une version de
+  moins de 7 jours (`RODAGE_JOURS`, `scripts/ci/promotion.sh`), sauf `-f
+  urgence=true`, et toute promotion tant qu'une issue `bloque-promotion` est
+  ouverte, sauf urgence. Seule une **X.0.0** part seule, la nuit, à J+7 ; la nuit
+  rappelle aussi, par une issue assignée, un retard de 10, 20, 30… versions
+  (`rappel-replica.sh`). Règles et ce qui a été écarté : spec §4.10, règle 5 (#1934).
 - **Une réplique s'installe par `deploiement/standard/`** (#1755) : la surcouche
   `compose.images.yml` (`build: !reset`, image publiée à `COPROFIRST_VERSION`)
   se pose sur le `docker-compose.yml` de la racine, qui reste la **seule**
