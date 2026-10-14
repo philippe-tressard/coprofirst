@@ -17,8 +17,8 @@
 > 🔒 **Aucun secret ne s'écrit dans un script ni dans le dépôt.** Le `.env` se
 > **recopie depuis l'autre nœud** (étape 6) ; le jeton du tunnel se colle à l'étape 10.
 
-**Si les DEUX nœuds sont perdus**, ce document ne suffit pas : voir la section
-[Les deux nœuds perdus](#les-deux-nœuds-perdus) en fin de page.
+**Si les DEUX nœuds sont perdus**, le premier renaît de la copie hors site : voir la
+section [Les deux nœuds perdus](#les-deux-nœuds-perdus) en fin de page.
 
 ---
 
@@ -328,21 +328,77 @@ La vraie preuve est la **première bascule** : jusqu'à elle, ce nœud n'a rien 
 
 ## Les deux nœuds perdus
 
-Sans pair en service, il n'y a ni primaire à copier ni `.env` à recopier :
+Sans pair en service, il n'y a ni primaire à copier ni `.env` à recopier : la
+résidence renaît de la **copie hors site** du poste (`scripts/poste/export-hors-site.sh`,
+destination `C:\Backup` par défaut). Son archive `hostachy_backup_*_paris.tar.gz` porte
+l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** téléversés
+(`uploads/`). Les gestes vivent dans **un** script,
+`scripts/exploitation/restaurer-copie-hors-site.sh` (#1921) — le premier nœud renaît
+**actif**, le second le rejoint ensuite par la procédure normale.
 
-- le `.env` se reconstruit à la main depuis `.env.example`, avec les secrets
-  conservés dans le gestionnaire de mots de passe — jamais depuis un fichier posé sur
-  le poste ;
-- la base se restaure depuis la **copie hors site** (`scripts/poste/export-hors-site.sh`),
-  dont l'archive porte l'**export vérifié** de la copropriété, réimporté dans une base
-  **neuve** par `python -m app.utils.export_copropriete importer` — le geste
-  qu'emploie `scripts/exploitation/basculer-donnees.sh` ;
-- le **registre des installations** (base `plateforme`, chez la référence) a sa propre
-  copie, sous `plateforme/` dans la même destination (#1896) : son archive EST un export
-  vérifié, qui se réimporte de la même façon dans une base `plateforme` neuve.
+### Nœud A — il renaît actif
 
-⚠️ Ce chemin n'a **pas** de procédure pas à pas éprouvée sous PostgreSQL : il fait
-l'objet d'un ticket à part.
+1. **Étapes 1 à 5** telles quelles (système, Docker, clone, durcissement, sudo).
+2. **Le `.env`, reconstruit** — il n'y a plus de pair où le recopier :
+   ```bash
+   cd /opt/5hostachy && cp .env.example .env && chmod 600 .env
+   nano .env   # chaque secret depuis le gestionnaire de mots de passe — jamais d'un fichier du poste
+   . scripts/lib/lib-env-role.sh && env_role_appliquer .env actif
+   ```
+   `COMPOSE_PROFILES=postgresql` et une `DATABASE_URL` en `postgresql+psycopg://…` :
+   le script refuse sans eux. ⚠️ `SECRET_KEY` doit être **celle d'avant** si elle est
+   conservée : une nouvelle ferme toutes les sessions et invalide les liens en attente
+   (voulu, mais à savoir) ; les mots de passe des comptes, eux, sont dans la base.
+3. **`.active` nomme CE nœud** : `echo rpi1 > /opt/5hostachy/.active` (son propre nom).
+4. **L'archive, du poste vers le nœud** — la plus récente qui ne finit pas par `.invalide` :
+   ```bash
+   scp C:/Backup/hostachy_backup_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/
+   ```
+5. **Restaurer**, **avant** de poser les crons (sinon `auto-deploy` démarrerait
+   l'application sur une base vide, et le script refuse) :
+   ```bash
+   sudo bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh /tmp/hostachy_backup_….tar.gz        # dit ce qu'il ferait
+   sudo bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh /tmp/hostachy_backup_….tar.gz --oui  # exécute
+   ```
+   Il refuse si le pair sert encore (un seul nœud perdu : étapes 6 à 9), si un volume
+   de base existe déjà ici, si l'application tourne ou si `.active` nomme l'autre.
+   Puis : images du commit · base PostgreSQL **neuve** démarrée en primaire · schéma
+   courant · **import vérifié** (chaque table relue contre son empreinte) · fichiers
+   installés et inventoriés · application démarrée, qui doit répondre 200. Un échec
+   laisse l'application **arrêtée** et dit lequel ; l'import étant transactionnel, la
+   base ne porte au plus que le schéma.
+6. **Tunnel** (étape 10) — mais laissé **actif** : c'est ce nœud qui sert.
+7. **Crons et unité systemd** (étape 11), puis l'étape 12.
+8. **WhatsApp** : l'appairage n'est pas dans les sauvegardes — Admin › WhatsApp ›
+   Statut, un seul essai (voir `.claude/skills/infra-rpi`).
+9. `rm /tmp/hostachy_backup_*.tar.gz` : l'archive porte les données des résidents.
+
+### Nœud B — il rejoint la paire
+
+La procédure normale, **étapes 1 à 12**, le nœud A tenant le rôle du « pair en
+service » : `.env` recopié de A, clé inter-nœuds épinglée **dans les deux sens**
+(A a une nouvelle clé d'hôte), réplique par `reconstruire-replique.sh`.
+
+### L'épreuve — à rejouer, pas à croire
+
+Le même script, en mode `--banc`, rejoue **les mêmes gestes** sur un PostgreSQL, un
+réseau et des volumes **jetables** (`banc_restau_*`), détruits en sortie — sur le
+**standby**, sans sudo, sans toucher à rien de `5hostachy_*` :
+
+```bash
+scp C:/Backup/hostachy_backup_<…>_paris.tar.gz ptressard@<standby>:/tmp/
+ssh ptressard@<standby> 'bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh --banc /tmp/hostachy_backup_<…>_paris.tar.gz; rm /tmp/hostachy_backup_*.tar.gz'
+```
+
+Éprouvé le **14/10/2026** sur rpi2 avec l'archive du jour : 82 tables et 16 869 lignes
+importées et vérifiées, 174 fichiers à l'identique, révision 0286, en 26 s — et une
+archive altérée (une date d'une table changée) **refusée**. À rejouer après toute
+modification du script, de `lib-restauration.sh`, de l'export ou de l'import.
+
+⚠️ **Le registre des installations** (base `plateforme`, chez la référence) a sa
+propre copie, sous `plateforme/` dans la même destination (#1896), mais **aucune
+commande ne le réimporte encore** : `export_copropriete importer` ne connaît que les
+tables d'une copropriété (#1972).
 
 ---
 
