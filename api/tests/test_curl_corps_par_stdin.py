@@ -13,23 +13,11 @@ La forme sûre : `printf '%s' "$charge" | curl … --data-binary @-`.
 from __future__ import annotations
 
 import re
-import subprocess
-from pathlib import Path
 
-RACINE = Path(__file__).resolve().parents[2]
+from tests.conftest import scripts_shell_versionnes
 
 #: Une option de corps suivie d'une valeur VARIABLE (`"$…`, `$…`), hors `@-`.
 _CORPS_EN_ARGUMENT = re.compile(r"""(?<![\w-])(?:-d|--data(?:-raw|-binary|-urlencode)?)\s+"?\$""")
-
-
-def scripts_suivis() -> list[Path]:
-    """TOUS les `.sh` suivis par git — `deploiement/` compris, que
-    `conftest.scripts_shell_versionnes` ne parcourt pas : l'envoi de la réplique y vit."""
-    sortie = subprocess.run(
-        ["git", "ls-files", "*.sh"], cwd=RACINE, capture_output=True, text=True, check=True
-    ).stdout.split()
-    assert sortie, "cas zéro : aucun script lu — le relevé ne mesurerait rien"
-    return [RACINE / s for s in sortie]
 
 
 def commandes_curl(texte: str) -> list[str]:
@@ -56,7 +44,8 @@ def test_le_releve_voit_la_forme_fautive():
 
 def test_aucun_corps_curl_en_argument():
     fautes = []
-    for script in scripts_suivis():
+    #  Le relevé partagé lit `deploiement/` depuis #1965 : l'envoi de la réplique y vit.
+    for script in scripts_shell_versionnes():
         for commande in commandes_curl(script.read_text(encoding="utf-8")):
             if _CORPS_EN_ARGUMENT.search(commande):
                 fautes.append(f"{script.name} : {commande.strip()[:90]}")
