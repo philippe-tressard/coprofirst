@@ -77,11 +77,14 @@ ci_relance_e2e() {
   local sortie n
   sortie=$(cat)
   [ "${1:-0}" != 0 ] && [ "${2:-}" = oui ] || { echo non; return; }
-  printf '%s\n' "$sortie" | grep -qF "$CI_SIGNATURE_IMPORT_VITE" || { echo non; return; }
+  #  🔴 `<<<`, jamais `printf … | grep -q` (#1923) : sur une sortie de plus de
+  #  64 Ko, `grep -q` ferme le tube dès la signature, `printf` meurt en SIGPIPE,
+  #  et le `pipefail` du rejeu fait de ce succès un échec (standards/10, SIGPIPE).
+  grep -qF "$CI_SIGNATURE_IMPORT_VITE" <<< "$sortie" || { echo non; return; }
   #  Un rechargement de Vite pendant les tests a SA règle (#1421) : l'étape
   #  échoue en nommant la dépendance. La relance ne la contourne jamais.
-  printf '%s\n' "$sortie" | grep -q "optimized dependencies changed" && { echo non; return; }
-  n=$(printf '%s\n' "$sortie" | ci_tests_tombes | grep -c .)
+  grep -q "optimized dependencies changed" <<< "$sortie" && { echo non; return; }
+  n=$(ci_tests_tombes <<< "$sortie" | grep -c .)
   #  Le cas zéro : un bilan illisible (aucun test nommé) n'autorise rien.
   [ "$n" -ge 1 ] && [ "$n" -le "${3:-0}" ] && echo oui || echo non
 }
@@ -140,4 +143,20 @@ npm run build
     "$(ci_relance_e2e 1 oui 3 <<< "$b"$'\n[WebServer] optimized dependencies changed. reloading')" "non"
   #  🔴 Le cas zéro : la signature sans bilan lisible n'autorise rien.
   t "relance — aucun test nommé : non"         "$(ci_relance_e2e 1 oui 3 <<< "$CI_SIGNATURE_IMPORT_VITE")" "non"
+  #  🔴 #1923 (13/10/2026) : une VRAIE sortie d'e2e pèse plus de 64 Ko. Lue par
+  #  `printf … | grep -q`, `grep` s'arrête à la signature, `printf` prend
+  #  SIGPIPE, et sous le `pipefail` du rejeu le tube rend un échec : la relance
+  #  répondait « non » alors que tout la justifiait — un rejeu complet de plus.
+  #  Les cas ci-dessus, de dix lignes, ne pouvaient pas le voir.
+  local gros
+  #  La signature EN TÊTE, puis ~280 Ko (plus de quatre fois le tampon d'un tube) :
+  #  `grep -q` sort à la première ligne, `printf` reste bloqué — SIGPIPE certain.
+  gros="$(printf '    Error: %s: http://127.0.0.1:5392/app.js
+' "$CI_SIGNATURE_IMPORT_VITE"
+    for _ in $(seq 1 3000); do
+      printf '  ✓  1 [bureau] › e2e/a.spec.ts:3:1 › un test parmi cinq cents (1.2s)
+'; done
+    printf '%s
+' "$b")"
+  t "relance — sortie de plus de 64 Ko, sous pipefail : oui"     "$(set -o pipefail; ci_relance_e2e 1 oui 3 <<< "$gros")" "oui"
 }

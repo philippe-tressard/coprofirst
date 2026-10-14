@@ -584,6 +584,7 @@ jobs:
           # La mise à jour nocturne d'une réplique (#1756) : quelle version, et
           # revenir ou restaurer après une santé KO.
           bash deploiement/standard/mise-a-jour.sh  --selftest
+          bash deploiement/demo/reinitialiser.sh    --selftest
           bash scripts/ci/essai-mise-a-jour.sh      --selftest
           # Le jeton du tunnel : l'identifiant n'est pas un jeton (#1318, 25/09/2026).
           bash scripts/lib/lib-jeton-tunnel.sh      --selftest

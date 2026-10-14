@@ -1,8 +1,8 @@
 """Le mode démo de l'installation (spec `specs/architecture/mode-demo.md`, lot D1 #1901).
 
 Une installation standard à laquelle on ajoute `MODE_DEMO=oui` devient la démo
-publique de CoproFirst : n'importe quel visiteur y entre sans compte, par un
-personnage partagé. Ce module porte ce qui, dans ce mode, est FERMÉ.
+publique de CoproFirst : n'importe quel visiteur y entre sans créer de compte, par
+un compte partagé dont les identifiants sont publiés (#1932). Ce module porte ce qui, dans ce mode, est FERMÉ.
 
 ## Les règles
 
@@ -71,7 +71,7 @@ class Famille:
 GESTES_FERMES: tuple[Famille, ...] = (
     Famille(
         "Inscription et comptes anonymes",
-        "On entre dans la démo par un personnage, sans créer de compte.",
+        "On entre dans la démo par un compte publié, sans créer de compte.",
         (
             ("POST", "/auth/register"),
             ("POST", "/auth/renvoyer-verification"),
@@ -81,7 +81,7 @@ GESTES_FERMES: tuple[Famille, ...] = (
     ),
     Famille(
         "Identité des comptes partagés",
-        "Les personnages sont partagés entre tous les visiteurs.",
+        "Les comptes publiés sont partagés entre tous les visiteurs.",
         (
             ("PATCH", "/auth/me"),
             ("POST", "/auth/change-password"),
@@ -180,7 +180,7 @@ PERIMETRE: tuple[tuple[Optional[frozenset[str]], str], ...] = (
 OUVERTS_EXPRES: dict[tuple[str, str], str] = {
     ("POST", "/auth/login"): "la page de connexion reste servie",
     ("POST", "/auth/logout"): "un visiteur se déconnecte",
-    ("POST", "/auth/refresh"): "la session d'un personnage se renouvelle",
+    ("POST", "/auth/refresh"): "la session d'un compte publié se renouvelle",
     ("POST", "/auth/me/demande-modification"): "une demande au conseil, montrée par la démo",
     ("PATCH", "/auth/me/opt-out-telemetrie"): "le droit d'opposition reste ouvert",
     ("DELETE", "/auth/me/telemetrie"): "le droit d'effacement reste ouvert",

@@ -43,10 +43,9 @@ disciplinée. Les gardes se posent **aux portes** (§4), jamais route par route.
 | DNS | `coprofirst.fr` délégué à Cloudflare, messagerie OVH conservée |
 | Coût | nul dans les limites *Always Free* ; compte en paiement à l'usage (pour la capacité ARM), budget d'alerte au premier centime |
 
-La page d'accueil (projet `C:\Dev\CoproFirst-Site`) propose trois boutons —
-Résident, Conseil syndical, Administrateur — qui doivent connecter **au clic**,
-sans afficher d'identifiants. Elle attend de cette spécification **les adresses
-d'entrée** (§5).
+Le site vitrine (projet `C:\Dev\CoproFirst-Site`) porte une page « Démo » qui
+**publie les identifiants** des trois comptes de démonstration et renvoie au
+formulaire de connexion de `demo.coprofirst.fr` (§5, révisé le 13/10/2026).
 
 ## 3. Les décisions (arbitrées le 13/10/2026)
 
@@ -55,13 +54,13 @@ d'entrée** (§5).
 | M1 | Activation | **`MODE_DEMO=oui` dans `.env`**, absent = non. Un seul lecteur, `utils/demo.est_demo()`, sur le modèle de `utils/installation.role_installation()` | §4.1 ; le réglage ne s'écrit **jamais** depuis l'interface |
 | M2 | Zéro envoi | **les portes d'envoi refusent** en mode démo — moteur de courriel, bridge WhatsApp, appel à l'IA, relève IMAP, requête GitHub —, quelle que soit la configuration en base | §4.2 ; un administrateur de démo ne peut rien rallumer |
 | M3 | Gestes fermés | **un registre unique des gestes fermés en démo** (`utils/demo.GESTES_FERMES`), appliqué par **une** garde à l'entrée des requêtes ; réponse 403 « Indisponible en démonstration » | §4.3 ; une route oubliée se voit dans un test, pas en production |
-| M4 | Entrée | **une adresse par personnage**, sans mot de passe : `/api/demo/entrer/{personnage}`, qui ouvre la session et renvoie vers l'accueil ; **404** hors mode démo | §5 |
-| M5 | Comptes | **comptes partagés** par personnage : tous les visiteurs « Résident » sont le même compte | §5.3 ; §11, question 1 |
+| M4 | Entrée | ~~une adresse par personnage, sans mot de passe~~ — **révisé le 13/10/2026 (#1932)** : le **formulaire de connexion**, avec trois identifiants publiés sur la page « Démo » du site vitrine ; l'administrateur n'est pas public | §5 |
+| M5 | Comptes | **comptes partagés** : tous les visiteurs qui se connectent en `user-copro` sont le même compte | §5 ; §11, question 1 |
 | M10 | Fichiers | **aucun téléversement** de visiteur ; le jeu de démo apporte ses images et ses documents | §4.3 ; §11, question 2 |
 | M11 | Plafond du registre | la démo **s'inscrit au registre** comme toute réplique dès qu'il l'accepte ; d'ici là, une **exception déclarée** au plafond de 5 utilisateurs (D18), lue sous `est_demo()` | §9 ; §11, question 3 |
 | M6 | Données | **un générateur** (`app/demo/`), qui fabrique la résidence fictive **avec des dates relatives à aujourd'hui** — jamais une archive figée | §6 |
 | M7 | Remise à zéro | **chaque nuit**, API arrêtée : base vidée, fichiers vidés, générateur rejoué | §7 |
-| M8 | Interface | **bandeau permanent** sur tous les écrans, connexion comprise ; page de connexion remplacée par le choix du personnage ; **pas d'indexation** | §8 |
+| M8 | Interface | **bandeau permanent** sur tous les écrans, connexion comprise ; le formulaire de connexion reste, sans inscription ni mot de passe oublié (révisé par #1932) ; **pas d'indexation** | §8 |
 | M9 | Conformité | mentions légales et politique de confidentialité **propres à la démo** ; avertissement « ne saisissez aucune donnée réelle » ; effacement sous 24 h | §9 |
 
 ## 4. Les gardes
@@ -162,49 +161,50 @@ l'étend.
 | `telemetry_aggregation`, `manuel_pdf_*` | gardées | internes, sans envoi |
 | `bail_installation`, `sante_plateforme`, `sauvegarde_plateforme` | gardées | le registre (M11) et l'opérateur ; la dernière ne tourne que chez la référence |
 
-## 5. L'entrée par personnage
+## 5. L'entrée : le formulaire, trois comptes publiés
 
-### 5.1 Les adresses
+Révisé le 13/10/2026 par l'auteur (#1932). L'entrée en un clic par personnage
+(`/api/demo/entrer/{personnage}`, livrée par #1903) est **retirée** : on se connecte
+par le formulaire habituel, avec des identifiants publiés.
 
-| Bouton de la page d'accueil | Adresse | Personnage |
+### 5.1 Les comptes publics
+
+| Identifiant | Mot de passe | Qui |
 |---|---|---|
-| Résident | `https://demo.coprofirst.fr/api/demo/entrer/resident` | copropriétaire occupant |
-| Conseil syndical | `https://demo.coprofirst.fr/api/demo/entrer/conseil-syndical` | copropriétaire, membre du conseil syndical |
-| Administrateur | `https://demo.coprofirst.fr/api/demo/entrer/administrateur` | gestionnaire du site |
-| (page de connexion de la démo) | `…/api/demo/entrer/locataire` | locataire |
+| `user-cs@demo.coprofirst.fr` | `PSWD-user-cs1` | copropriétaire résident, membre du conseil syndical |
+| `user-copro@demo.coprofirst.fr` | `PSWD-user-copro1` | copropriétaire résident |
+| `user-loc@demo.coprofirst.fr` | `PSWD-user-loc1` | locataire |
 
-`GET`, réponse **303** vers `/tableau-de-bord` avec les cookies de session ;
-la route n'apparaît pas au schéma de l'API (livré en lot D3, #1903). Les deux domaines sont du **même site** (`coprofirst.fr`) : les cookies
-`samesite=strict` sont posés et relus normalement après le clic.
+- Ils vivent dans `app/demo/personnages.py`, et le générateur (§6) les crée :
+  `actif`, adresse vérifiée, **mot de passe publié** — public et versionné, exprès,
+  et seulement en démo : le générateur refuse ailleurs. Chacun passe par la règle
+  de robustesse du produit (`verifier_robustesse`) avant d'être haché.
+  🔒 `test_demo_comptes_publics.py`.
+- `demo.coprofirst.fr` n'a pas de serveur de courrier : rien n'y serait livré, et
+  aucune porte d'envoi n'est ouverte en démo (§4.2). Les autres habitants du jeu
+  gardent une adresse en `.invalid` (RFC 2606).
+- Un visiteur ne peut pas fermer un compte aux autres : changer de mot de passe ou
+  d'adresse est fermé en démo (§4.3), et aucun verrouillage après des échecs
+  n'existe (la limite de débit de `/auth/*` est par adresse IP).
+- La page « Démo » du site vitrine publie ces identifiants et renvoie à
+  `https://demo.coprofirst.fr/auth/connexion`.
 
-### 5.2 La route
+### 5.2 L'administrateur, réservé
 
-- `routers/demo.py`, montée **seulement** en démo ; hors démo, **404** — la route
-  n'existe pas, elle ne « refuse » pas.
-- La liste des personnages vit dans `app/demo/personnages.py` (code, statut,
-  rôles, compte) ; un code inconnu rend 404.
-- **Ouvrir une session sans mot de passe** : il n'existe pas de fonction pour cela
-  aujourd'hui — la pose des jetons et des cookies est écrite dans `login` et
-  recopiée en partie dans `refresh` (`routers/auth.py`). Le lot **extrait**
-  `ouvrir_session(session, utilisateur, response)` (jeton d'accès par
-  `creer_jeton_acces`, jeton de rafraîchissement stocké par son **empreinte**,
-  cookies `COOKIE_OPTS`, `marquer_activite`), appelée par `login`, `refresh` et
-  l'entrée de démo. Factorisation exigée (rang 1) : pas de troisième copie.
-- Limite de débit dédiée (`utils/limiter.py`, par exemple `ENTREE_DEMO` à
-  20/minute par adresse).
-- Journal de sécurité : un événement `entree_demo` (identifiant du personnage
-  seulement), déclaré dans `_NIVEAUX` et `GESTES_SENSIBLES`.
+Aucun compte du jeu n'est administrateur : le seed crée l'**administrateur
+initial** d'une installation standard (administrateur et opérateur), dont le mot
+de passe ne paraît que dans les journaux du serveur, à chaque remise à zéro.
 
-### 5.3 Les comptes des personnages
+### 5.3 Ce qui reste de l'entrée en un clic
 
-- Créés par le générateur (§6), `actif`, adresse vérifiée, adresse en
-  `@demo.coprofirst.invalid` (domaine réservé, RFC 2606 : rien ne peut y être
-  livré), **mot de passe aléatoire haché** jamais affiché — `creer_jeton_acces`
-  exige un condensé de mot de passe.
-- Le syndic, s'il devient un personnage, porte `roles_json="externe"` : le
-  parcours d'inscription écrit aujourd'hui `role=externe` mais
-  `roles_json="syndic"`, que `has_role` ne lit pas comme externe (relevé du
-  13/10/2026, ticket à part, §10).
+`auth/session_ouverte.ouvrir_session` : la pose des jetons et des cookies,
+extraite pour elle (#1903), reste la fonction unique de `login` et `refresh`.
+
+### 5.4 Le syndic
+
+S'il devient un compte de la démo, il porte `roles_json="externe"` : le parcours
+d'inscription écrit aujourd'hui `role=externe` mais `roles_json="syndic"`, que
+`has_role` ne lit pas comme externe (relevé du 13/10/2026, #1911).
 
 ## 6. Le jeu de données fictif
 
@@ -229,6 +229,12 @@ avec le code de la version installée : il ne peut pas être en retard sur le sc
 - 🔒 Un test charge le jeu dans une base en mémoire et vérifie que chaque écran
   principal a du contenu (au moins N affaires ouvertes, une actualité, un
   événement à venir, un sondage, un contrat, un document).
+- Livré en lot D4 (#1904) : `python -m app.demo.charger` rend **0** (chargé), **2**
+  (pas en démo) ou **3** (base non vierge — rien n'est écrit). Les PDF passent par
+  le moteur du projet (`pdf_theme.html_to_pdf`) et sont rendus **avant** toute
+  écriture : un moteur absent laisse la base vierge. Le seed tourne au milieu, entre
+  le patrimoine (qu'il lit pour l'arbre des périmètres) et le reste ; le personnage
+  « Administrateur » tient lieu d'administrateur initial.
 
 ### 6.2 Le contenu
 
@@ -270,8 +276,12 @@ installée :
 5. en échec : le rapport le dit, et la démo reste arrêtée plutôt que de servir une
    base à moitié chargée.
 
-- **Moteur** : SQLite, la base par défaut d'une installation standard — vider la
-  base, c'est supprimer un fichier (§11, question 4).
+- **Moteur** : PostgreSQL pour la démo de CoproFirst (§11, question 4) — vider la
+  base, c'est supprimer et recréer le schéma `public` dans le serveur qui tourne,
+  jamais le volume `pg_data`. SQLite reste géré (supprimer le fichier) : la remise
+  à zéro suit le moteur que `DATABASE_URL` désigne (`commande_vidage`). Éprouvé le
+  13/10/2026 sur la machine de démo : PostgreSQL 17, chargement, refus d'une base
+  pleine, vidage, rechargement.
 - `mise-a-jour.sh` exige `COPROFIRST_SAUVEGARDES` : en démo, un dossier local
   suffit, puisque rien n'est à préserver ; le script de remise à zéro le vide.
 - 🔒 La logique de décision (faut-il recharger, la santé est-elle bonne) s'isole en
@@ -280,46 +290,61 @@ installée :
 
 ## 8. L'interface
 
-- **Bandeau permanent**, dans le layout racine (`routes/+layout.svelte`), donc
-  aussi sur la connexion : « Démonstration — résidence fictive. Ce que vous
-  saisissez est visible des autres visiteurs et effacé chaque nuit. Aucun
-  courriel, message WhatsApp ni appel à l'IA n'est réellement envoyé. »
-  Purement informatif (`role="note"`, rien de focalisable), placé **après** le
-  lien d'évitement ; il décale la barre fixe du mobile (`Nav.svelte`) au lieu de
-  la recouvrir. Couleurs et tailles par les jetons (`socle.css`).
-- **Page de connexion** : en démo, le formulaire laisse place à quatre boutons —
-  un par personnage, avec une ligne sur ce qu'il voit — et les liens
+Livrée par #1906. `GET /config` porte la clé calculée `mode_demo` ; le front la lit
+par `modeDemoStore` (`$lib/stores/pageConfig`) et rien d'autre.
+
+- **Bandeau permanent** (`BandeauDemo`) : « Démonstration — résidence fictive. Ce
+  que vous saisissez est visible des autres visiteurs et effacé chaque nuit. Aucun
+  courriel, message WhatsApp ni appel à l'IA n'est réellement envoyé. » Purement
+  informatif (`role="note"`, rien de focalisable), teinte d'`EncartAvertissement`.
+  ⚠️ Il vit **dans le squelette `(app)`**, en tête de la colonne de contenu, et
+  **sur la page de connexion** — pas dans le layout racine, comme prévu d'abord :
+  là, la barre fixe du mobile l'aurait recouvert. Les autres pages publiques
+  (inscription, mot de passe oublié) sont fermées au serveur en démo.
+- **Page de connexion** : en démo, le **formulaire reste** (§5, révisé le
+  13/10/2026 — les liens par personnage de #1906 sont retirés par #1932) ;
   « Créer un compte » et « Mot de passe oublié » disparaissent.
 - **Gestes fermés** : le serveur refuse (§4.3) ; l'écran affiche le message du
   403 par le canal d'erreur existant. Les onglets d'administration entièrement
-  fermés (SMTP, IA, WhatsApp, Sauvegardes) portent un encart « Indisponible en
-  démonstration » (`EncartAvertissement`).
-- **Pas d'indexation** : en démo, `X-Robots-Tag: noindex, nofollow` posé par le
-  front (`hooks.server.ts`) et un `robots.txt` qui interdit tout, servi par une
-  route SvelteKit — le `Caddyfile` et `front/static/robots.txt` restent communs à
-  toutes les installations.
-- Le **manuel** et le **README** disent ce qu'est la démo et ce qui y est fermé.
+  fermés (SMTP, IA, WhatsApp, Sauvegardes) portent l'encart `EncartDemo`.
+- **Pas d'indexation** : en démo, `X-Robots-Tag: noindex, nofollow` posé au rendu
+  serveur (`routes/+layout.server.ts`) et la balise `<meta name="robots">` dans le
+  layout racine. ⚠️ **Pas** de `robots.txt` qui interdit tout, contrairement à ce
+  que prévoyait ce paragraphe : un robot à qui l'exploration est interdite ne lit
+  jamais le `noindex`, et une page découverte par un lien externe peut alors
+  s'indexer sans contenu. `front/static/robots.txt` reste commun à toutes les
+  installations.
+- Le **manuel** (encadré « Vous visitez la démonstration ? » du guide express) et
+  le **README** disent ce qu'est la démo et ce qui y est fermé.
 
 ## 9. La conformité
 
-- **Mentions légales et politique de confidentialité de la démo** : éditeur,
-  hébergeurs (Oracle Cloud Infrastructure, Paris ; Cloudflare pour le DNS et le
-  tunnel), contact. Les textes légaux sont des réglages en base (`ConfigSite`) :
-  le générateur les pose.
+Livrée par #1907.
+
+- **Mentions légales et politique de confidentialité de la démo** :
+  `app/demo/legal.py`, posées par le générateur après le seed — donc reposées à
+  chaque remise à zéro. Elles nomment les hébergeurs (Oracle France S.A.S., région
+  de Paris ; Cloudflare, Inc. pour le DNS et le tunnel). L'**éditeur** et le
+  **contact** se lisent dans `DEMO_EDITEUR` et `DEMO_CONTACT` : le dépôt public ne
+  nomme personne. Sans éditeur, la démo se déclare éditée à titre non
+  professionnel (LCEN art. 6, III, 2) ; sans contact, le chargement le signale.
 - **Données traitées** : ce que le visiteur saisit (finalité : essayer le
   produit ; conservation : jusqu'à la remise à zéro, **moins de 24 h**, sans
-  sauvegarde), l'adresse IP dans les journaux du tunnel et de Caddy (durée à
-  écrire et à appliquer), les cookies de session (strictement nécessaires : pas
-  de consentement).
-- **Avertissement à la saisie** : le bandeau le dit, et les champs libres d'une
-  création d'affaire le rappellent.
-- **Télémétrie** : les personnages sont partagés, donc la télémétrie par compte
-  ne désigne personne ; à confirmer à la lecture de ce qu'elle stocke (adresse
-  IP ?).
-- **Registre des installations** : sans inscription valide, une installation
-  tourne en **mode limité, 5 utilisateurs au plus** (D18) ; le jeu de démo en
-  compte une vingtaine : M11 — inscription dès que le registre l'accepte,
-  exception déclarée d'ici là.
+  sauvegarde) ; l'**adresse IP** n'est écrite nulle part — le journal d'accès de
+  Caddy est anonyme (#1588), uvicorn n'en tient pas (#1300), la base n'en a pas —,
+  seulement tenue en mémoire par la limitation de débit, et vue par Cloudflare ;
+  les cookies de session (strictement nécessaires : pas de consentement).
+- **Avertissement à la saisie** : le bandeau le dit, et **chaque boîte de
+  formulaire** (`FormulaireCreation`, création et correction) le rappelle
+  (`EncartDemo saisie`).
+- **Télémétrie** : rattachée aux personnages partagés, elle ne désigne personne ;
+  elle ne stocke aucune adresse IP, et s'efface avec la base chaque nuit.
+- **Registre des installations** : le plafond de 5 utilisateurs du mode limité
+  (D18) n'est **pas appliqué** (mode constat) — la démo s'affiche « limitée — non
+  inscrite », sans effet. Elle s'inscrit à l'installation, par l'opérateur de
+  l'installation ordinaire qui précède le passage en démo — ses personnages ne
+  le sont pas —, et l'inscription survit aux remises à zéro ; l'exemption sous
+  `est_demo()` s'écrit avec l'application du plafond (R6, #1882).
 
 ## 10. Le découpage en lots
 
@@ -332,6 +357,7 @@ installée :
 | **D5** — remise à zéro | `deploiement/demo/` (script, `LISEZMOI.md`, crontab), `--selftest` | D4 | #1905 |
 | **D6** — interface | bandeau, connexion par personnage, encarts, `noindex`, manuel et README | D1, D3 | #1906 |
 | **D7** — mise en service | mentions légales, installation sur la machine Oracle, adresses transmises à la page d'accueil | D1 à D6 | #1907 |
+| **D8** — entrée par le formulaire | trois comptes publiés (§5), administrateur du seed, retrait de l'entrée en un clic et des boutons de la connexion | D3, D4, D6 | #1932 |
 
 Relevés **hors démo** faits pendant l'étude, à traiter pour eux-mêmes :
 le rendu PDF (WeasyPrint) sans `url_fetcher` restreint peut aller chercher une
@@ -350,8 +376,8 @@ avec `roles_json="syndic"` (§5.3, #1911).
 3. ~~**Inscription au registre ?**~~ — **la démo s'inscrit** comme toute
    réplique dès que le registre l'accepte ; d'ici là, **exception déclarée** au
    plafond de 5 utilisateurs, sous `est_demo()` (M11).
-4. ~~**SQLite ou PostgreSQL ?**~~ — **SQLite**, défaut de l'installation standard
-   (retenu par défaut, sans objection de l'auteur).
+4. ~~**SQLite ou PostgreSQL ?**~~ — **PostgreSQL** (arbitré par l'auteur le
+   13/10/2026, au moment de l'installation) ; SQLite d'abord retenu par défaut.
 5. ~~**Personnages**~~ — **quatre** : résident (copropriétaire occupant),
    locataire, conseil syndical, administrateur. Le syndic attend #1911.
 6. ~~**Fréquence de remise à zéro**~~ — **chaque nuit** (retenu par défaut, sans

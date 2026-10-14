@@ -53,6 +53,15 @@ REGISTRE="ghcr.io/philippe-tressard"
 SERVICES="api front caddy whatsapp-bridge"
 SANTE_MAX_S=180
 
+#  Les gestes communs d'une installation (`lib-installation.sh`, #1905) : à côté de
+#  ce script dans le dépôt et dans l'archive ; depuis la copie de /tmp (plus bas),
+#  dans le dossier de l'installation qu'elle reçoit en argument.
+if [ -n "${MAJ_COPIE:-}" ]; then
+    . "${1:?dossier manquant}/deploiement/standard/lib-installation.sh"
+else
+    . "$(dirname "$0")/lib-installation.sh"
+fi
+
 # ── Décisions PURES ───────────────────────────────────────────────────────────
 
 #  $1 a ≤ $2 b, en versions X.Y.Z (comparaison numérique, pas alphabétique)
@@ -77,17 +86,7 @@ decider_cible() {
     echo mettre-a-jour
 }
 
-#  Le moteur que `.env` désigne, par l'URL de sa base → sqlite|postgresql|inconnu.
-#  🔒 COPIE DÉCLARÉE de `scripts/lib/lib-replication.sh` : l'archive d'une
-#  réplique n'emporte pas les scripts des RPi (#1755). `test_deploiement_standard`
-#  exige que les deux corps restent identiques.
-moteur_de_url() {
-    case "${1:-}" in
-        sqlite:*)                   echo sqlite ;;
-        postgresql:*|postgresql+*)  echo postgresql ;;
-        *)                          echo inconnu ;;
-    esac
-}
+#  `moteur_de_url` vit dans `lib-installation.sh` (copie déclarée de la référence).
 
 #  La ligne ENTIÈRE $2 figure-t-elle dans le listing $1 ? → oui|non
 #  🔒 COPIE DÉCLARÉE de `scripts/lib/lib-export-hors-site.sh`, pour la même
@@ -183,8 +182,6 @@ cd "$DOSSIER"
 exec 9>/tmp/coprofirst-maj.lock
 flock -n 9 || { echo "$(date '+%F %T') Une mise à jour tourne déjà — rien à faire."; exit 0; }
 
-journal() { echo "$(date '+%F %T') $*"; }
-lire_env() { sed -n "s/^$1=//p" .env 2>/dev/null | tail -1 | tr -d '"'"'"'\r'; }
 COMPOSE=(docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml)
 DEBUT=$(date +%s)
 PROJET=$(printf '%s' "${COMPOSE_PROJECT_NAME:-$(basename "$DOSSIER")}" | tr '[:upper:]' '[:lower:]')
@@ -195,38 +192,15 @@ SIGNATURE=$(lire_env COPROFIRST_SIGNATURE); SIGNATURE=${SIGNATURE:-si-possible}
 DELAI=$(lire_env COPROFIRST_DELAI_JOURS); DELAI=${DELAI:-1}
 
 rendre_compte() {  # $1 statut (succes|erreur) · $2 erreur (vide si succès) · $3 vers
-    local cle erreur corps message
-    cle=$(lire_env MAINTENANCE_KEY)
-    [ -n "$cle" ] || { journal "(MAINTENANCE_KEY absente : rien rendu à l'administration)"; return 0; }
-    #  Le message ne porte que des versions et des chemins : on retire les
-    #  guillemets plutôt que d'échapper du JSON à la main. En deux temps : un
-    #  guillemet dans une substitution elle-même entre guillemets égare
-    #  `verifier-variables-shell.py`, qui perdait alors la suite du script.
-    erreur=null
-    if [ -n "$2" ]; then
-        message=$(printf '%s' "$2" | tr -d '"\\')
-        erreur="\"$message\""
-    fi
-    corps=$(printf '{"tache":"mise_a_jour","statut":"%s","erreur":%s,"duree_secondes":%d,"details":{"de":"%s","vers":"%s"}}' \
-        "$1" "$erreur" "$(( $(date +%s) - DEBUT ))" "$COURANTE" "$3")
-    curl -fsS -m 20 -o /dev/null -X POST http://localhost/api/admin/maintenance/rapport \
-        -H "x-maintenance-key: $cle" -H "Content-Type: application/json" -d "$corps" \
-        || journal "⚠ Rapport non transmis à l'administration."
+    local details
+    details=$(printf '{"de":"%s","vers":"%s"}' "$COURANTE" "$3")
+    rendre_compte_tache mise_a_jour "$1" "$2" "$details"
 }
 
 echouer() {  # $1 message — sortie SANS avoir touché au service
     journal "⚠ $1"
     rendre_compte erreur "$1" "${CIBLE:-}"
     exit 1
-}
-
-sante() {  # → ok | ko, en sondant jusqu'à SANTE_MAX_S
-    local fin=$(( $(date +%s) + SANTE_MAX_S ))
-    while [ "$(date +%s)" -lt "$fin" ]; do
-        [ "$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://localhost/api/health || true)" = 200 ] && { echo ok; return; }
-        sleep 5
-    done
-    echo ko
 }
 
 # ── 1–2. La version à installer, et la décision ───────────────────────────────
