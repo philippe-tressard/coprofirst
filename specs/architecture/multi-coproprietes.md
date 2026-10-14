@@ -278,8 +278,8 @@ stables de main. »*
                   │
                   ▼
    main ── chaque version vX.Y.Z (tag) ──► 5Hostachy sur les RPi (canal continu)
-                  │                                  │ rodage de N jours sans incident
-                  │     promotion, décidée par l'auteur
+                  │                                  │ rodage de 7 jours sans incident
+                  │     promotion, décidée par l'auteur (X.0.0 : seule, à J+7)
                   ▼
    branche « replica » (avance rapide seulement, aucun commit propre)
                   │  images de la version : construites et signées par la CI
@@ -308,6 +308,16 @@ stables de main. »*
 5. **La promotion est une décision de l'auteur, appuyée sur des faits** (#1754) :
    CI verte, version en production sur la référence depuis N jours sans incident,
    post-check vert. Elle publie des notes de version pour exploitants tiers.
+   Arbitré le 14/10/2026 (#1934) : **N = 7** ; l'auteur promeut la version **de
+   son choix** — pas forcément la dernière, le choix est aussi commercial —, et
+   le geste refuse une version de moins de 7 jours ; un **correctif urgent** se
+   promeut sans rodage (`urgence`), signalé dans ses notes ; une issue ouverte
+   au label `bloque-promotion` **retient** tout, sauf l'urgence — c'est ainsi
+   qu'un incident sur la référence se déclare. Seule une version **X.0.0** se
+   promeut seule, la nuit, à J+7. Et un **rappel** (une issue assignée à
+   l'auteur) dit quand `replica` a 10, puis 20, 30… versions de retard. Écarté :
+   promouvoir une PR seule — la version obtenue n'aurait jamais tourné sur la
+   référence, et sa chaîne de migrations divergerait de celle de `main`.
 6. **La mise à jour nocturne revient en arrière seule** (#1756) : sauvegarde par
    copropriété, image vérifiée, migrations base par base avec arrêt au premier
    échec, contrôle de santé, et retour à l'image précédente sinon. Déploiement
@@ -666,5 +676,5 @@ avant tout déménagement de la référence ; R7 quand le modèle économique se
 7. ~~**La résidence actuelle**~~ — tranché le 08/10/2026 (D11) : elle **reste sur
    les Raspberry Pi**, comme **référence** du produit ; sa haute disponibilité est
    conservée.
-8. **Durée de rodage** avant qu'une version soit proposée à la promotion (§4.10) :
-   N jours à fixer.
+8. ~~**Durée de rodage**~~ — tranché le 14/10/2026 (#1934) : **7 jours**, sauf
+   correctif urgent ; règles complètes en §4.10, règle 5.

@@ -15,7 +15,7 @@
 #  `git archive` — les fichiers exacts de cette version, rien du poste.
 #
 #  Entrées (environnement) : VERSION, COMMIT, PRECEDENT (vide à la première
-#  promotion), GH_TOKEN. Une release déjà publiée n'est pas réécrite.
+#  promotion), MODE (`urgence`, `automatique` ou vide, #1934), GH_TOKEN. Une release déjà publiée n'est pas réécrite.
 #
 #  Test : bash scripts/ci/notes-de-version.sh --selftest
 # =============================================================================
@@ -28,10 +28,15 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib-archive-deploiement.sh"
 
 # ── La composition (PURE sur un dépôt git) ────────────────────────────────────
 #  $1 précédent (vide : première promotion) · $2 commit promu · $3 version
+#  · $4 mode de la promotion (`urgence`, `automatique` ou vide)
 composer_notes() {
-    local precedent="$1" commit="$2" version="$3" plage migrations reglages
+    local precedent="$1" commit="$2" version="$3" mode="${4:-}" plage migrations reglages
     echo "# CoproFirst $version"
     echo
+    case "$mode" in
+        urgence)     echo "> ⚡ **Correctif urgent** : promue sans les 7 jours de rodage sur la référence."; echo ;;
+        automatique) echo "> Version majeure promue automatiquement après 7 jours de rodage sur la référence."; echo ;;
+    esac
     if [ -z "$precedent" ]; then
         echo "Première version promue sur \`replica\`."
         return
@@ -82,6 +87,11 @@ if [ "${1:-}" = "--selftest" ]; then
         echo "FAIL  archive d'un commit où il manque des fichiers : acceptée"; fail=1
     else echo "PASS  archive d'un commit incomplet : refusée"; fi
     rm -rf "$SORTIE"
+    urgente=$(cd "$DEPOT" && composer_notes "$p" "$c" 2.0.1 urgence)
+    if printf '%s' "$urgente" | grep -q "Correctif urgent"; then echo "PASS  l'urgence est dite"
+    else echo "FAIL  l'urgence n'est pas dite"; fail=1; fi
+    if printf '%s' "$notes" | grep -q "Correctif urgent\|automatiquement"; then echo "FAIL  une promotion manuelle se dit urgente"; fail=1
+    else echo "PASS  une promotion manuelle ne dit rien de plus"; fi
     premiere=$(cd "$DEPOT" && composer_notes "" "$c" 1.0.0)
     if printf '%s' "$premiere" | grep -q "Première version promue"; then echo "PASS  première promotion"
     else echo "FAIL  première promotion : « $premiere »"; fail=1; fi
@@ -96,6 +106,6 @@ if gh release view "v$VERSION" >/dev/null 2>&1; then
     exit 0
 fi
 notes=$(mktemp)
-composer_notes "${PRECEDENT:-}" "$COMMIT" "$VERSION" > "$notes"
+composer_notes "${PRECEDENT:-}" "$COMMIT" "$VERSION" "${MODE:-}" > "$notes"
 archive=$(archiver_deploiement "$COMMIT" "$VERSION" "$(mktemp -d)")
 gh release create "v$VERSION" --verify-tag --title "CoproFirst $VERSION" --notes-file "$notes" "$archive"

@@ -578,9 +578,11 @@ jobs:
           # échoue, des tests rouges sont une MESURE.
           bash scripts/ci/mesure-postgresql.sh      --selftest
           # La promotion sur `replica` (#1754) : refus sans tag, hors de main, en
-          # arrière de replica ; et les notes de version des exploitants.
+          # arrière de replica, pas rodée ou retenue, la majeure de la nuit (#1934) ;
+          # les notes de version des exploitants ; le rappel de retard.
           bash scripts/ci/promotion.sh              --selftest
           bash scripts/ci/notes-de-version.sh       --selftest
+          bash scripts/ci/rappel-replica.sh         --selftest
           # La mise à jour nocturne d'une réplique (#1756) : quelle version, et
           # revenir ou restaurer après une santé KO.
           bash deploiement/standard/mise-a-jour.sh  --selftest
