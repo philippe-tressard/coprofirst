@@ -133,11 +133,16 @@ except Exception as e:
             return 0
         fi
     fi
-    http=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+    #  🔴 La charge passe par l'ENTRÉE STANDARD, jamais en argument (#1964) : sous
+    #  Windows, le curl de Git Bash réencode ses arguments dans la page de code du
+    #  système — « é » devient 0xE9, l'API refuse le corps en 400. Le rapport
+    #  perdu ainsi, le 14/10/2026, était celui d'une copie hors site en ÉCHEC.
+    #  🔒 test_curl_corps_par_stdin.py.
+    http=$(printf '%s' "$charge" | curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
         -X POST "$base/api/admin/maintenance/rapport" \
         -H "Content-Type: application/json" \
         -H "x-maintenance-key: $cle" \
-        -d "$charge" 2>/dev/null) || http="000"
+        --data-binary @- 2>/dev/null) || http="000"
     #  Le code reste LISIBLE par l'appelant qui en a besoin (`rapporter_verdicts`
     #  ne mémorise un envoi que s'il a abouti). Pas par le code de retour : cette
     #  fonction rend 0 exprès, et `maintenance.sh` tourne sous `set -e`.
@@ -173,12 +178,13 @@ battement_payload() { # $1=tâche $2=nœud [$3=details $4=erreur]
 #  chiffres ont pu bouger (#1805). Le code HTTP reste lisible dans RAPPORT_HTTP —
 #  un 404 dit qu'il n'y a rien à prolonger, et l'appelant renverra un rapport complet.
 rapport_battement() { # $1=url_base $2=clé $3=tâche $4=nœud [$5=details $6=erreur]
-    RAPPORT_HTTP=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+    #  La charge par l'entrée standard, comme `rapport_envoyer` (#1964).
+    RAPPORT_HTTP=$(battement_payload "${3:-}" "${4:-}" "${5:-}" "${6:-}" \
+        | curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
         -X POST "${1:-}/api/admin/maintenance/battement" \
         -H "Content-Type: application/json" \
         -H "x-maintenance-key: ${2:-}" \
-        -d "$(battement_payload "${3:-}" "${4:-}" "${5:-}" "${6:-}")" \
-        2>/dev/null) || RAPPORT_HTTP="000"
+        --data-binary @- 2>/dev/null) || RAPPORT_HTTP="000"
     [ "$RAPPORT_HTTP" = "200" ] || log "  ⚠ Battement ${3:-} non enregistré sur ${1:-} (HTTP $RAPPORT_HTTP)"
     return 0
 }
