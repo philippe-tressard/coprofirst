@@ -81,14 +81,38 @@ def test_le_releve_trouve_les_fonctions_ssh():
     assert "role_base_locale" not in ssh
 
 
+#: Les scripts qui joignent les nœuds depuis le POSTE, par la clé de la personne qui
+#: les lance — jamais par la clé inter-nœuds de root, illisible là. Ils posent
+#: `SSH_CMD` eux-mêmes ; chaque entrée doit encore appeler une fonction SSH et poser
+#: la variable, sinon elle ne sert plus et le test le dit.
+DEPUIS_LE_POSTE = {
+    "scripts/poste/export-hors-site.sh": "copie hors site, lancée à la main depuis le "
+    "poste : `transferer_archive` et `copier_plateforme` (#1896) lisent le volume des "
+    "sauvegardes par un conteneur jetable, sous le compte de la personne",
+}
+
+
+def _appels_ssh(code: str, ssh: set[str]) -> list[str]:
+    return sorted(f for f in ssh if re.search(rf"(^|[\s;&|(]){f}\b", code, re.M))
+
+
+def test_les_scripts_du_poste_declares_servent():
+    ssh = fonctions_ssh()
+    for chemin in DEPUIS_LE_POSTE:
+        code = _sans_commentaires((RACINE / chemin).read_text(encoding="utf-8"))
+        assert _appels_ssh(code, ssh), f"{chemin} n'appelle plus de fonction SSH : à retirer"
+        assert re.search(r"(?m)^SSH_CMD=", code), f"{chemin} ne pose plus SSH_CMD lui-même"
+
+
 def test_tout_appelant_pose_ssh_cmd():
     ssh = fonctions_ssh()
     fautes = []
     for script in scripts_shell_versionnes():
-        if "/lib/" in script.as_posix():
+        relatif = script.relative_to(RACINE).as_posix()
+        if "/lib/" in script.as_posix() or relatif in DEPUIS_LE_POSTE:
             continue
         code = _sans_commentaires(script.read_text(encoding="utf-8"))
-        appels = sorted(f for f in ssh if re.search(rf"(^|[\s;&|(]){f}\b", code, re.M))
+        appels = _appels_ssh(code, ssh)
         if appels and _POSE not in code:
             fautes.append(f"{script.relative_to(RACINE).as_posix()} : {appels}")
     assert not fautes, (
