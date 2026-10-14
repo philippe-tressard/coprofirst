@@ -6,7 +6,7 @@
  *  possibles de chaque fiche : ce module n'en tient que les mots.
  */
 import { classeDe, type ClasseGouttiere, type MarqueGouttiere } from '$lib/gouttiere';
-import type { EtatRegistre, GesteRegistre } from '$lib/api';
+import type { AlerteRegistre, EtatRegistre, GesteRegistre } from '$lib/api';
 
 /**  Les états, dans l'ordre de vie d'une inscription — filtre en pastilles (≤ 6). */
 export const ETATS_REGISTRE: readonly { val: EtatRegistre; label: string }[] = [
@@ -72,8 +72,22 @@ const LIBELLES_DECISION: Record<string, string> = {
 	services: 'Services accordés',
 };
 
+/**  Le suivi d'une alerte grave au journal (`registre/alertes`) : `alerte_signalee:muette`
+ *   — le code est suivi de l'alerte, dont le motif de la ligne porte le libellé. */
+const SUIVI_ALERTE: Record<string, string> = {
+	alerte_signalee: 'Alerte signalée à l’opérateur',
+	alerte_levee: 'Alerte levée',
+};
+
 export function libelleDecision(geste: string): string {
-	return LIBELLES_DECISION[geste] ?? geste;
+	const [suivi] = geste.split(':');
+	return LIBELLES_DECISION[geste] ?? SUIVI_ALERTE[suivi] ?? geste;
+}
+
+/**  « 1 alerte », « 3 alertes » ; grave dès qu'une l'est — c'est elle qui teinte. */
+export function resumeAlertes(alertes: AlerteRegistre[]): { texte: string; grave: boolean } {
+	const n = alertes.length;
+	return { texte: `${n} alerte${n > 1 ? 's' : ''}`, grave: alertes.some((a) => a.grave) };
 }
 
 /**  « Aucun service accordé », « 1 service accordé », « 2 services accordés ». */

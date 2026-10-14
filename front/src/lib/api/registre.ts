@@ -18,6 +18,17 @@ export type EtatRegistre = 'en_attente' | 'active' | 'suspendue' | 'resiliee';
 /**  Les gestes de l'opérateur (`registre/decisions.TRANSITIONS`). */
 export type GesteRegistre = 'valider' | 'suspendre' | 'retablir' | 'resilier';
 
+/**  Une alerte de la référence sur une installation (`registre/alertes.GENRES`, R4b
+ *   #1960) — calculée par le serveur à chaque lecture ; l'écran n'en tient pas la liste. */
+export interface AlerteRegistre {
+	code: string;
+	libelle: string;
+	/** Ce qui a été constaté, avec sa mesure. */
+	message: string;
+	/** Grave : l'opérateur en reçoit un courriel (muette, clone, deux références). */
+	grave: boolean;
+}
+
 export interface ResumeInstallation {
 	identifiant: string;
 	etat: EtatRegistre;
@@ -33,6 +44,8 @@ export interface ResumeInstallation {
 	dernier_rapport_le: string | null;
 	/** Les services que la référence lui accorde — le bail les porte. */
 	services_autorises: string[];
+	/** Ce que la référence lui reproche, dans l'ordre de la spec. */
+	alertes: AlerteRegistre[];
 }
 
 export interface ServiceAccordable {
