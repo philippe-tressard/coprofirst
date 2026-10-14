@@ -61,7 +61,8 @@ rendre_compte_tache() {
     fi
     corps=$(printf '{"tache":"%s","statut":"%s","erreur":%s,"duree_secondes":%d,"details":%s}' \
         "$1" "$2" "$erreur" "$(( $(date +%s) - DEBUT ))" "$details")
-    curl -fsS -m 20 -o /dev/null -X POST http://localhost/api/admin/maintenance/rapport \
-        -H "x-maintenance-key: $cle" -H "Content-Type: application/json" -d "$corps" \
+    #  Le corps par l'entrée standard, jamais en argument (#1964, test_curl_corps_par_stdin.py).
+    printf '%s' "$corps" | curl -fsS -m 20 -o /dev/null -X POST http://localhost/api/admin/maintenance/rapport \
+        -H "x-maintenance-key: $cle" -H "Content-Type: application/json" --data-binary @- \
         || journal "⚠ Rapport non transmis à l'administration."
 }
