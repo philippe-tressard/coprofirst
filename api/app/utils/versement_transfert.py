@@ -45,8 +45,16 @@ Un transfert versé au bon endroit gardait ses trois gestes jusqu'à ce qu'une
 Suite les éteigne. **Valider** le confirme : il quitte la liste
 (`a_proposer`) et ne se défait plus. Il reste EN PLACE — `versements_de` le
 compte toujours —, donc un transfert plus ancien reste bloqué sous lui : valider
-le plus récent ne rouvre pas le précédent. Même droit qu'annuler, et permis
-même quand les gestes sont éteints : c'est ce qui vide la liste.
+le plus récent ne rouvre pas le précédent. Même droit qu'annuler.
+
+## Réglé sans geste (14/10/2026)
+
+Un transfert que plus rien ne rouvrira — une Suite écrite depuis, ou un
+transfert suivant validé — quitte la liste de lui-même. Il y restait, sous
+« Ne peut plus être défait : … annulez-le d'abord », avec pour seul bouton
+« Valider » : un geste à faire sur ce qu'on venait de dire impossible, et une
+consigne (« annulez-le ») qu'un transfert validé refuse. Seul reste bloqué À
+L'ÉCRAN celui qu'un transfert suivant encore défaisable retient.
 """
 
 from __future__ import annotations
@@ -120,8 +128,50 @@ def versements_de(session: Session, ticket_id: int) -> list[VersementCourriel]:
 
 
 def a_proposer(session: Session, ticket_id: int) -> list[VersementCourriel]:
-    """Les versements que l'affaire montre encore : en place, et pas validés."""
-    return [v for v in versements_de(session, ticket_id) if v.valide_le is None]
+    """Les versements que l'affaire montre encore : en place, pas validés, et
+    qu'un geste pourra encore défaire — aujourd'hui, ou une fois les transferts
+    suivants annulés. Un versement que plus rien ne rouvrira est réglé : le
+    montrer n'offrait que « Valider » sous « Ne peut plus être défait »
+    (14/10/2026)."""
+    return [
+        v
+        for v in versements_de(session, ticket_id)
+        if v.valide_le is None and not _definitivement_bloque(session, v)
+    ]
+
+
+def _suite_ecrite_depuis(session: Session, v: VersementCourriel) -> bool:
+    #  Une Suite écrite à la main n'est jamais déplacée : son identifiant dit
+    #  bien qu'elle est venue après le seuil. Celles d'un transfert, si — d'où
+    #  la comparaison des seuils dans `_suivants`, et non des identifiants.
+    return (
+        session.exec(
+            select(TicketEvolution).where(
+                TicketEvolution.ticket_id == v.ticket_id,
+                TicketEvolution.id > v.seuil_evolution_id,
+                TicketEvolution.versement_id.is_(None),
+            )
+        ).first()
+        is not None
+    )
+
+
+def _suivants(session: Session, v: VersementCourriel) -> list[VersementCourriel]:
+    """Les versements en place venus après celui-ci — à défaire avant lui."""
+    return [
+        w
+        for w in versements_de(session, v.ticket_id)
+        if w.id != v.id and (v.affaire_creee or w.seuil_evolution_id > v.seuil_evolution_id)
+    ]
+
+
+def _definitivement_bloque(session: Session, v: VersementCourriel) -> bool:
+    """Aucun geste ne le rouvrira : une Suite écrite depuis ne part jamais, et un
+    transfert suivant validé ne s'annule plus. Une Suite écrite après un
+    transfert suivant l'est aussi après celui-ci : elle est vue ici."""
+    return _suite_ecrite_depuis(session, v) or any(
+        w.valide_le is not None for w in _suivants(session, v)
+    )
 
 
 def motif_bloquant(session: Session, v: VersementCourriel) -> str | None:
@@ -130,22 +180,12 @@ def motif_bloquant(session: Session, v: VersementCourriel) -> str | None:
         return "ce transfert a déjà été annulé"
     if v.valide_le is not None:
         return "ce transfert a été validé"
-    #  Une Suite écrite à la main n'est jamais déplacée : son identifiant dit
-    #  bien qu'elle est venue après le seuil. Celles d'un transfert, si — d'où
-    #  la comparaison des seuils ci-dessous, et non des identifiants.
-    ecrite = session.exec(
-        select(TicketEvolution).where(
-            TicketEvolution.ticket_id == v.ticket_id,
-            TicketEvolution.id > v.seuil_evolution_id,
-            TicketEvolution.versement_id.is_(None),
-        )
-    ).first()
-    if ecrite is not None:
+    if _suite_ecrite_depuis(session, v):
         return "une suite a été écrite dans cette affaire depuis ce transfert"
-    if any(
-        w.id != v.id and (v.affaire_creee or w.seuil_evolution_id > v.seuil_evolution_id)
-        for w in versements_de(session, v.ticket_id)
-    ):
+    suivants = _suivants(session, v)
+    if any(w.valide_le is not None for w in suivants):
+        return "un transfert suivant a été validé dans cette affaire"
+    if suivants:
         return "un transfert suivant a été versé dans cette affaire : annulez-le d'abord"
     return None
 

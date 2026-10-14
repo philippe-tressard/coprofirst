@@ -340,14 +340,34 @@ def test_valider_le_plus_recent_ne_rouvre_pas_le_precedent(lieu):
     )
     session.commit()
 
+    #  Tant que le suivant se défait, le précédent reste à l'écran, retenu.
+    assert [v.id for v in versements.a_proposer(session, ticket.id)] == [second.id, premier.id]
+
     versements.valider(session, second, cs)
     session.commit()
 
-    assert "annulez-le d'abord" in versements.motif_bloquant(session, premier)
-    assert [v.id for v in versements.a_proposer(session, ticket.id)] == [premier.id]
-    #  Un transfert éteint se valide aussi : c'est ce qui vide la liste.
-    versements.valider(session, premier, cs)
+    #  14/10/2026 : il restait à l'écran sous « annulez-le d'abord », que le
+    #  suivant validé refuse, avec « Valider » pour seul bouton.
+    assert versements.motif_bloquant(session, premier) == (
+        "un transfert suivant a été validé dans cette affaire"
+    )
+    assert versements.a_proposer(session, ticket.id) == []
+    with pytest.raises(HTTPException) as e:
+        versements.annuler(session, premier)
+    assert e.value.status_code == 409
+
+
+def test_une_suite_ecrite_depuis_regle_le_transfert_sans_geste(lieu):
+    """Aucun geste ne le rouvrira : il quitte la liste, sans « Valider » à faire."""
+    session, ticket, syndic, cs, objet, _ = lieu
+    v = _dans_le_ticket(session, cs, ticket, syndic, objet)
+    assert [w.id for w in versements.a_proposer(session, ticket.id)] == [v.id]
+
+    session.add(
+        TicketEvolution(ticket_id=ticket.id, type="commentaire", contenu="Vu", auteur_id=cs.id)
+    )
     session.commit()
+
     assert versements.a_proposer(session, ticket.id) == []
 
 

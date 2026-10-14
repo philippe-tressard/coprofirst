@@ -51,10 +51,12 @@ class RoleUtilisateur(str, Enum):
 #: ⚠️ Il vit dans `roles_json` seulement, JAMAIS dans la colonne `role` : sous
 #: PostgreSQL, c'est un type énuméré qui le refuserait, et un code antérieur
 #: qui lirait « operateur » en rôle principal ne saurait pas le lire. Hors de
-#: `PRIORITE_ROLE` (rang 0) : il ne devient jamais le rôle principal. Aucun écran
-#: ne l'accorde (`ajouter-role` prend un `RoleUtilisateur`) — la migration 0276
-#: l'a posé sur les administrateurs d'alors, le seed sur l'administrateur
-#: initial d'une installation neuve.
+#: `PRIORITE_ROLE` (rang 0) : il ne devient jamais le rôle principal. La
+#: migration 0276 l'a posé sur les administrateurs d'alors, le seed sur
+#: l'administrateur initial d'une installation neuve ; depuis, Admin ›
+#: Utilisateurs l'accorde et le retire (`ajouter-role`, `retirer-role`) — par un
+#: opérateur seulement, à un administrateur seulement, jamais à soi-même
+#: (`routers/admin/utilisateurs._exiger_geste_operateur`).
 ROLE_OPERATEUR = "operateur"
 
 
