@@ -173,7 +173,7 @@ class Utilisateur(SQLModel, table=True):
                 return True
         return False
 
-    def ajouter_role(self, role: "RoleUtilisateur") -> None:
+    def ajouter_role(self, role: "RoleUtilisateur | str") -> None:
         """Ajoute un rôle sans doublon. Met aussi à jour `role` (rôle principal)."""
         rv = str(valeur(role))
         current = self.roles
@@ -182,7 +182,7 @@ class Utilisateur(SQLModel, table=True):
         self.roles_json = ",".join(current)
         self.role = role_principal(current, defaut=rv) or self.role
 
-    def retirer_role(self, role: "RoleUtilisateur") -> None:
+    def retirer_role(self, role: "RoleUtilisateur | str") -> None:
         """Retire un rôle. Garde au minimum 'résident'."""
         rv = str(valeur(role))
         current = [r for r in self.roles if r != rv]

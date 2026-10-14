@@ -580,8 +580,8 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	}
 }
 .badge-purple {
-	background: #f3e8ff;
-	color: #6b21a8;
+	background: var(--color-violet-fond);
+	color: var(--color-violet);
 }
 /* Pastille de type du fil d'activité. Ici et pas dans un composant : elle est
    portée à la fois par les cartes du fil (FluxCard) et par le bandeau des

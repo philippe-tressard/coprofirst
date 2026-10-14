@@ -1,6 +1,8 @@
 <!--
   Les gestes de rôle d'un compte (Admin › Comptes) : donner ou retirer le
-  conseil syndical et l'administration. Le geste lui-même — la confirmation, puis
+  conseil syndical, l'administration et l'opérateur de la plateforme — ce
+  dernier proposé à un opérateur seulement, selon `gestesOperateur`
+  (`$lib/droits`), pendant écran de la règle du serveur. Le geste lui-même — la confirmation, puis
   l'appel — reste à l'onglet, qui le reçoit par `demander`.
 
   Extrait d'`OngletUtilisateurs` le 08/10/2026 (#1571) : l'onglet frôlait les
@@ -9,10 +11,13 @@
 -->
 <script lang="ts">
 	import type { UtilisateurAdmin } from '$lib/api';
-	import { aRole } from '$lib/stores/auth';
+	import { aRole, currentUser } from '$lib/stores/auth';
+	import { gestesOperateur } from '$lib/droits';
 
 	export let u: UtilisateurAdmin;
 	export let demander: (u: UtilisateurAdmin, role: string, action: 'ajouter' | 'retirer') => void;
+
+	$: operateur = gestesOperateur($currentUser, u);
 </script>
 
 {#if !u.actif}
@@ -47,12 +52,27 @@
 					+ Admin
 				</button>
 			{/if}
-		{:else}
+		{:else if operateur.retirerAdmin}
 			<button
 				class="btn btn-outline btn-sm retirer"
 				on:click={() => demander(u, 'admin', 'retirer')}
 			>
 				– Admin
+			</button>
+		{/if}
+		{#if operateur.accorder}
+			<button
+				class="btn btn-outline btn-sm ajouter-operateur"
+				on:click={() => demander(u, 'operateur', 'ajouter')}
+			>
+				+ Opérateur
+			</button>
+		{:else if operateur.retirer}
+			<button
+				class="btn btn-outline btn-sm retirer"
+				on:click={() => demander(u, 'operateur', 'retirer')}
+			>
+				– Opérateur
 			</button>
 		{/if}
 	</div>
@@ -71,6 +91,10 @@
 	.btn-outline.ajouter-admin {
 		color: #c2410c;
 		border-color: #c2410c;
+	}
+	.btn-outline.ajouter-operateur {
+		color: var(--color-violet);
+		border-color: var(--color-violet);
 	}
 	.btn-outline.retirer {
 		color: var(--color-danger);

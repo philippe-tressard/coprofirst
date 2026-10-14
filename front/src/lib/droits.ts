@@ -41,6 +41,9 @@
  * une actualité est **la parole du conseil**.
  */
 
+import type { User } from '$lib/api';
+import { aRole } from '$lib/stores/auth';
+
 /** Ce que ces fonctions savent lire d'un objet — rien de plus. */
 export interface ObjetPossede {
 	auteur_id?: number | null;
@@ -83,4 +86,27 @@ export function peutCommenter(
 	estCS: boolean,
 ): boolean {
 	return peutEditer(objet, userId, estAdmin) || estCS;
+}
+
+/**
+ * Les gestes sur le rôle **Opérateur** (Admin › Utilisateurs) — le pendant écran
+ * de `_exiger_geste_operateur` (`api/app/routers/admin/utilisateurs.py`), dans le
+ * même ordre :
+ *
+ * - seul un opérateur l'accorde ou le retire ;
+ * - il ne s'accorde qu'à un administrateur, et Admin ne se retire pas à un
+ *   opérateur — ses écrans vivent sous `/admin` ;
+ * - on ne se le retire pas soi-même : c'est ce qui garde au moins un opérateur.
+ */
+export function gestesOperateur(
+	acteur: User | null,
+	cible: User,
+): { accorder: boolean; retirer: boolean; retirerAdmin: boolean } {
+	const operateur = aRole(acteur, 'operateur');
+	const cibleOperateur = aRole(cible, 'operateur');
+	return {
+		accorder: operateur && !cibleOperateur && aRole(cible, 'admin'),
+		retirer: operateur && cibleOperateur && acteur?.id !== cible.id,
+		retirerAdmin: !cibleOperateur,
+	};
 }

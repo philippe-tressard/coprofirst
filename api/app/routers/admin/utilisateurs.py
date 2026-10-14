@@ -11,7 +11,7 @@ appelle aussi — une seule façon de supprimer un compte.
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session, select
-from app.auth.deps import require_admin, require_cs_or_admin
+from app.auth.deps import est_operateur, require_admin, require_cs_or_admin
 from app.database import get_session
 from app.utils.journal_securite import journaliser_securite
 from app.models.core import (
@@ -26,6 +26,7 @@ from app.utils.comptes import DESACTIVATION, marquer_decide
 from app.utils.porteurs_acces import ids_detenteurs
 from app.utils.etiquettes_compte import etiquettes
 from app.models.copropriete import Lot
+from app.models.roles import ROLE_OPERATEUR
 from app.utils.valeurs import valeur
 from app.utils.suppression_compte import supprimer_compte
 from app.utils.types_acces import TELECOMMANDE, VIGIK
@@ -103,7 +104,51 @@ def list_utilisateurs(
 
 
 class RoleAction(BaseModel):
-    role: str  # résident | conseil_syndical | admin
+    role: str  # résident | conseil_syndical | admin | operateur
+
+
+def _role_demande(nom: str) -> RoleUtilisateur | str:
+    """Le rôle que nomme le corps : un rôle de la copropriété, ou l'opérateur.
+
+    L'opérateur n'est pas dans `RoleUtilisateur` (`models/roles.ROLE_OPERATEUR`) :
+    il se nomme par sa chaîne, et `ajouter_role` / `retirer_role` l'écrivent dans
+    `roles_json` seulement — jamais en rôle principal.
+    """
+    if nom == ROLE_OPERATEUR:
+        return ROLE_OPERATEUR
+    try:
+        return RoleUtilisateur(nom)
+    except ValueError:
+        raise HTTPException(400, f"Rôle invalide : {nom}")
+
+
+def _exiger_geste_operateur(
+    acteur: Utilisateur, cible: Utilisateur, role: RoleUtilisateur | str, *, retrait: bool
+) -> None:
+    """Les règles du rôle Opérateur, accordé ou retiré depuis Admin › Utilisateurs.
+
+    - Seul un **opérateur** l'accorde ou le retire : l'administrateur de la
+      copropriété ne se donne pas la supervision de la plateforme (#1750, D5).
+    - Il ne se porte **qu'avec le rôle Admin** : les écrans de l'opérateur vivent
+      sous `/admin`, qu'un compte sans ce rôle n'ouvre pas. D'où les deux refus
+      symétriques — l'accorder à un non-admin, retirer Admin à un opérateur.
+    - On ne se le **retire pas soi-même** : c'est ce qui garde au moins un
+      opérateur, puisque seul un opérateur peut en nommer un autre.
+    """
+    if role == RoleUtilisateur.admin and retrait and est_operateur(cible):
+        raise HTTPException(
+            400, "Retirez d'abord le rôle Opérateur : il ne se porte pas sans le rôle Admin."
+        )
+    if role != ROLE_OPERATEUR:
+        return
+    if not est_operateur(acteur):
+        raise HTTPException(403, "Seul un opérateur de la plateforme accorde ou retire ce rôle.")
+    if retrait and acteur.id == cible.id:
+        raise HTTPException(400, "Vous ne pouvez pas vous retirer le rôle Opérateur.")
+    if not retrait and not cible.has_role(RoleUtilisateur.admin):
+        raise HTTPException(
+            400, "Le rôle Opérateur s'accorde à un administrateur : ajoutez d'abord le rôle Admin."
+        )
 
 
 @router.post("/utilisateurs/{user_id}/ajouter-role", response_model=UserRead)
@@ -117,14 +162,12 @@ def ajouter_role(
     user = ou_404(session, Utilisateur, user_id, "Utilisateur")
     if not user.actif:
         raise HTTPException(400, "Impossible de modifier un compte inactif.")
-    try:
-        role = RoleUtilisateur(body.role)
-    except ValueError:
-        raise HTTPException(400, f"Rôle invalide : {body.role}")
+    role = _role_demande(body.role)
+    _exiger_geste_operateur(admin, user, role, retrait=False)
     user.ajouter_role(role)
     #  🔴 En WARNING : c'est le geste qui donne des droits. La `Notification` part
     #  au concerné et ne dit pas QUI a agi — le journal, lui, nomme l'admin.
-    journaliser_securite("role_ajoute", acteur_id=admin.id, cible_id=user.id, detail=role.value)
+    journaliser_securite("role_ajoute", acteur_id=admin.id, cible_id=user.id, detail=valeur(role))
     sonner_systeme(
         session,
         "compte",
@@ -157,12 +200,10 @@ def retirer_role(
         raise HTTPException(
             400, "Le rôle 'Résident' est le rôle de base, il ne peut pas être retiré."
         )
-    try:
-        role = RoleUtilisateur(body.role)
-    except ValueError:
-        raise HTTPException(400, f"Rôle invalide : {body.role}")
+    role = _role_demande(body.role)
+    _exiger_geste_operateur(admin, user, role, retrait=True)
     user.retirer_role(role)
-    journaliser_securite("role_retire", acteur_id=admin.id, cible_id=user.id, detail=role.value)
+    journaliser_securite("role_retire", acteur_id=admin.id, cible_id=user.id, detail=valeur(role))
     sonner_systeme(
         session,
         "compte",
