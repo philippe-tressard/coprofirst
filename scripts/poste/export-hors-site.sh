@@ -24,12 +24,16 @@
 #       en lecture seule sur le volume des sauvegardes — ni sudo, ni règle
 #       sudoers, ni installation sur les nœuds (ni rsync ni scp : Git for
 #       Windows n'embarque pas rsync).
-#    3. La VÉRIFIE : empreinte identique à la source, gzip intact, `app.db`
-#       présent dans l'archive, et `PRAGMA integrity_check` sur la copie
-#       extraite. Vérifier la copie extraite est sans danger : c'est un
-#       fichier à nous, pas la base de production (règle d'or : interdiction
-#       d'ouvrir `app.db` de PROD depuis un process tiers, pas d'ouvrir une
-#       copie morte).
+#    3. La VÉRIFIE : empreinte identique à la source, gzip intact, puis la base :
+#       sous PostgreSQL, l'export vérifié qu'elle porte (chaque table compte les
+#       lignes que son manifeste annonce) ; sous SQLite, `app.db` et
+#       `PRAGMA integrity_check` sur la copie extraite. Vérifier la copie
+#       extraite est sans danger : c'est un fichier à nous, pas la base de
+#       production (règle d'or : interdiction d'ouvrir `app.db` de PROD depuis
+#       un process tiers, pas d'ouvrir une copie morte).
+#    3 bis. Copie de même la dernière archive du REGISTRE des installations
+#       (`plateforme/`, chez la référence seulement — #1896), sans que son
+#       verdict touche celui de la copropriété.
 #    4. Fait tourner les copies locales (N versions).
 #    5. Poste son rapport sur `POST /api/admin/maintenance/rapport`
 #       (tache=export_hors_site) — le canal cron qui existe déjà, avec sa clé
@@ -98,27 +102,9 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 #  elles s'éprouvent par `--selftest` sans les deux RPi. Ce script garde ce
 #  qui touche au réseau, au disque et à l'orchestration.
 source "$(dirname "$0")/../lib/lib-export-hors-site.sh"
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  FONCTIONS PURES — aucune E/S : ni SSH, ni écriture, ni réseau.
-#  C'est le seul moyen de tester une décision d'infra sans les deux RPi
-#  (pattern inauguré par boot-role-guard.sh, cf. CLAUDE.md § job CI test-scripts).
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-# ── Transférer UNE archive, sans jamais laisser de fichier tronqué ──────────
-# 🔴 Écrite une fois (05/09/2026) : le rattrapage recopiait ce geste. La
-# subtilité qui compte — le nom définitif n'apparaît QU'APRÈS un transfert
-# complet, sinon une rotation prendrait un fichier tronqué pour une sauvegarde.
-transferer_archive() { # $1=ip $2=nom → 0 si la copie est complète
-  local ip="$1" nom="$2" dest="$EXPORT_DEST/$2"
-  if $SSH_CMD "$EXPORT_SSH_USER@$ip" "$LIRE cat '/b/$nom'" > "$dest.partiel" 2>/dev/null; then
-    mv -f "$dest.partiel" "$dest"
-    return 0
-  fi
-  rm -f "$dest.partiel"
-  return 1
-}
+#  Les GESTES partagés par les deux séries (transfert, relecture d'un export,
+#  copie du registre) vivent à côté depuis #1896 : ce script orchestre.
+source "$(dirname "$0")/../lib/lib-export-hors-site-copie.sh"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -253,7 +239,7 @@ else
   # Flux via ssh plutôt que rsync/scp : Git for Windows n'embarque pas rsync, et
   # scp ne sait pas élever ses droits sur la source. Le geste vit dans
   # `transferer_archive`, partagé avec la passe de rattrapage.
-  if ! transferer_archive "$SOURCE_IP" "$ARCHIVE"; then
+  if ! transferer_archive "$SOURCE_IP" "$ARCHIVE" "$LOCAL"; then
     log "ERREUR: transfert interrompu."
     exit 1
   fi
@@ -301,24 +287,7 @@ if [ "$CONTIENT" = "non" ] && [ "$(listing_contient "$LISTING" "$NOM_EXPORT_BASE
   TMP=$(mktemp -d 2>/dev/null || echo "/tmp/export-hs-$$")
   mkdir -p "$TMP"
   if tar -xzf "$LOCAL" -C "$TMP" "$NOM_EXPORT_BASE" 2>/dev/null; then
-    CHEMIN_EXPORT="$TMP/$NOM_EXPORT_BASE"
-    command -v cygpath >/dev/null 2>&1 && CHEMIN_EXPORT=$(cygpath -w "$CHEMIN_EXPORT")
-    for PY in python3 python py; do
-      if command -v "$PY" >/dev/null 2>&1; then
-        RESUME=$("$PY" - "$CHEMIN_EXPORT" 2>/dev/null <<'PYTHON'
-import json, sys, tarfile
-with tarfile.open(sys.argv[1]) as archive:
-    manifeste = json.load(archive.extractfile("manifeste.json"))
-    for table, info in manifeste["tables"].items():
-        membre = archive.extractfile(f"tables/{table}.jsonl")
-        lues = sum(1 for ligne in membre if ligne.strip()) if membre else -1
-        print(table, lues, info["lignes"])
-PYTHON
-)
-        INTEGRITE=$(verdict_export_base "$RESUME")
-        break
-      fi
-    done
+    INTEGRITE=$(relire_export "$TMP/$NOM_EXPORT_BASE")
   fi
   rm -rf "$TMP"
 fi
@@ -374,7 +343,7 @@ elif LISTE_AUTRE=$($SSH_CMD "$EXPORT_SSH_USER@$AUTRE_IP" "$LIRE ls /b" 2>/dev/nu
   #  téléchargeait six archives que la rotation effaçait juste après.
   A_TIRER=$(archives_a_rattraper "$EXPORT_KEEP" "$LOCALES" "$DISTANTES")
   for nom in $A_TIRER; do
-    if transferer_archive "$AUTRE_IP" "$nom"; then
+    if transferer_archive "$AUTRE_IP" "$nom" "$EXPORT_DEST/$nom"; then
       RATTRAPEES=$((RATTRAPEES + 1))
       log "    + $nom (absent localement)"
     else
@@ -406,6 +375,11 @@ if [ -n "$MANQUANTS" ]; then
   log "  ⚠️  Jours absents de la copie hors site ($EXPORT_KEEP derniers) : $MANQUANTS"
 fi
 
+# ── 6 bis. Le registre des installations (#1896) ────────────────────────────
+# Sa propre série, sur le nœud qui sert ; son verdict ne touche pas STATUT —
+# voir `copier_plateforme`.
+copier_plateforme "$SOURCE_IP"
+
 # ── 7. Rapport à l'API (canal cron existant) ─────────────────────────────────
 # La clé est lue sur le nœud, pas recopiée sur le poste : un secret dupliqué est
 # un secret à faire tourner deux fois.
@@ -435,9 +409,12 @@ else
   #  Le laisser brut fabrique un JSON invalide que l'API rejette en 422 : c'est
   #  ce qui est arrivé à la maintenance hebdomadaire le 16/08/2026, et le compte
   #  rendu perdu aurait été précisément celui d'une sauvegarde corrompue.
-  DETAILS=$(printf '{"archive":"%s","taille_octets":%s,"integrite":"%s","empreinte_verifiee":"%s","destination":"%s","versions_conservees":%s}' \
+  #  `archive_plateforme` et `integrite_plateforme` : lus par le contrôle de la
+  #  PLATEFORME (`registre/sauvegarde.py`), jamais par celui de la copropriété.
+  DETAILS=$(printf '{"archive":"%s","taille_octets":%s,"integrite":"%s","empreinte_verifiee":"%s","destination":"%s","versions_conservees":%s,"archive_plateforme":"%s","integrite_plateforme":"%s"}' \
     "$(rapport_echapper "$ARCHIVE")" "${OCTETS:-0}" "$(rapport_echapper "${INTEGRITE:-}")" \
-    "$EMPREINTES" "$(rapport_echapper "${EXPORT_DEST:-}")" "${EXPORT_KEEP:-0}")
+    "$EMPREINTES" "$(rapport_echapper "${EXPORT_DEST:-}")" "${EXPORT_KEEP:-0}" \
+    "$(rapport_echapper "$PLATEFORME_ARCHIVE")" "$(rapport_echapper "$PLATEFORME_INTEGRITE")")
   rapport_envoyer "http://$SOURCE_IP" "$MAINTENANCE_KEY" \
     "$(rapport_payload export_hors_site "$SOURCE_NOEUD" applicative "$STATUT" \
         "$((SECONDS - T0))" "$DETAILS" \
@@ -456,8 +433,9 @@ if [ "$STATUT" = "succes" ]; then
   echo "     Archive     : $ARCHIVE"
   echo "     Taille      : $(awk -v o="${OCTETS:-0}" 'BEGIN{printf "%.1f Mo", o/1048576}')"
   echo "     Emplacement : $EXPORT_DEST"
-  echo "     Vérifiée    : empreinte identique à la source, integrity_check : ok"
+  echo "     Vérifiée    : empreinte identique à la source, $([ "$CONTIENT" = export ] && echo "export : chaque table compte ses lignes" || echo "integrity_check : ok")"
   echo "     Source      : $SOURCE_NOEUD ($SOURCE_IP)"
+  echo "     Registre    : ${PLATEFORME_ARCHIVE:-—} ($PLATEFORME_INTEGRITE)"
 else
   echo "  ❌ EXPORT ÉCHOUÉ — AUCUNE COPIE FIABLE N'A ÉTÉ PRODUITE"
   echo "     Motif : $MESSAGE"

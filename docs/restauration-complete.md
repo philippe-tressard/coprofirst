@@ -336,7 +336,10 @@ Sans pair en service, il n'y a ni primaire à copier ni `.env` à recopier :
 - la base se restaure depuis la **copie hors site** (`scripts/poste/export-hors-site.sh`),
   dont l'archive porte l'**export vérifié** de la copropriété, réimporté dans une base
   **neuve** par `python -m app.utils.export_copropriete importer` — le geste
-  qu'emploie `scripts/exploitation/basculer-donnees.sh`.
+  qu'emploie `scripts/exploitation/basculer-donnees.sh` ;
+- le **registre des installations** (base `plateforme`, chez la référence) a sa propre
+  copie, sous `plateforme/` dans la même destination (#1896) : son archive EST un export
+  vérifié, qui se réimporte de la même façon dans une base `plateforme` neuve.
 
 ⚠️ Ce chemin n'a **pas** de procédure pas à pas éprouvée sous PostgreSQL : il fait
 l'objet d'un ticket à part.

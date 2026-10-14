@@ -198,6 +198,34 @@ def _check_archive_locale() -> list[str]:
     return []
 
 
+def seuil_copie_hors_site_h() -> int:
+    """L'âge, en heures, au-delà duquel une copie hors site est périmée.
+
+    Lu là où l'écran de santé le lit déjà : deux constantes séparées divergeraient
+    au premier ajustement, et l'e-mail contredirait l'écran. Le contrôle du
+    registre (`registre/sauvegarde.probleme_copie_hors_site`) juge au même seuil.
+    """
+    from app.routers.admin import _PERIODICITE_ATTENDUE_H, _TOLERANCE_H
+
+    return _PERIODICITE_ATTENDUE_H[TachePlanifiee.export_hors_site.value] + _TOLERANCE_H
+
+
+def derniere_copie_hors_site(session: Session) -> tuple[HistoriqueMaintenance | None, dict]:
+    """Le dernier rapport d'export hors site, et ses détails lus (vides si illisibles)."""
+    derniere = session.exec(
+        select(HistoriqueMaintenance)
+        .where(HistoriqueMaintenance.tache == TachePlanifiee.export_hors_site.value)
+        .order_by(HistoriqueMaintenance.cree_le.desc())
+    ).first()
+    details: dict = {}
+    if derniere is not None and derniere.details:
+        try:
+            details = json.loads(derniere.details) or {}
+        except ValueError:
+            details = {}
+    return derniere, details
+
+
 def _check_export_hors_site(session: Session) -> list[str]:
     """Vérifie qu'une copie des sauvegardes existe HORS des deux Raspberry Pi.
 
@@ -218,19 +246,9 @@ def _check_export_hors_site(session: Session) -> list[str]:
     """
     from app.utils.backup import horodatage_archive
 
-    #  Seuil lu là où l'écran de santé le lit déjà : deux constantes séparées
-    #  divergeraient au premier ajustement, et l'e-mail contredirait l'écran.
-    from app.routers.admin import _PERIODICITE_ATTENDUE_H, _TOLERANCE_H
-
-    tache = TachePlanifiee.export_hors_site.value
-    seuil_h = _PERIODICITE_ATTENDUE_H[tache] + _TOLERANCE_H
+    seuil_h = seuil_copie_hors_site_h()
     jours = int(seuil_h / 24)
-
-    derniere = session.exec(
-        select(HistoriqueMaintenance)
-        .where(HistoriqueMaintenance.tache == tache)
-        .order_by(HistoriqueMaintenance.cree_le.desc())
-    ).first()
+    derniere, details = derniere_copie_hors_site(session)
 
     if derniere is None:
         return [
@@ -254,13 +272,6 @@ def _check_export_hors_site(session: Session) -> list[str]:
         )
 
     #  Fraîcheur de l'archive RÉELLEMENT copiée — cf. docstring, question (2).
-    details = {}
-    if derniere.details:
-        try:
-            details = json.loads(derniere.details) or {}
-        except ValueError:
-            details = {}
-
     archive = details.get("archive")
     horodatage = horodatage_archive(archive) if archive else None
     if horodatage is None:
