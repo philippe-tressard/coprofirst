@@ -23,6 +23,7 @@
 	import { fmtDatetime } from '$lib/date';
 	import { fmtNombre } from '$lib/utils';
 	import { GESTES_REGISTRE, libelleDecision } from '$lib/registre-installations';
+	import TexteMarkdown from '$lib/components/TexteMarkdown.svelte';
 
 	export let fiche: FicheInstallation;
 	export let accordables: ServiceAccordable[] = [];
@@ -180,7 +181,7 @@
 	</p>
 	<details>
 		<summary>Lire le texte archivé</summary>
-		<pre class="texte-contrat">{c.texte}</pre>
+		<TexteMarkdown texte={c.texte} libelle="Texte archivé des conditions, version {c.version}" />
 	</details>
 {:else}
 	<p class="aide">Aucun contrat archivé.</p>
@@ -232,17 +233,6 @@
 	.contrat {
 		margin: 0 0 0.3rem;
 		font-size: var(--fs-sm);
-	}
-	.texte-contrat {
-		max-height: 24rem;
-		overflow: auto;
-		margin: 0.4rem 0 0;
-		padding: 0.6rem 0.75rem;
-		background: var(--color-bg);
-		border-radius: var(--radius);
-		font-family: inherit;
-		font-size: var(--fs-sm);
-		white-space: pre-wrap;
 	}
 	.journal {
 		list-style: none;

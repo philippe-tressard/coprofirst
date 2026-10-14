@@ -35,6 +35,7 @@
 	import { messageErreur } from '$lib/erreurs';
 	import { fmtDatetime } from '$lib/date';
 	import { lienSource } from '$lib/plateforme';
+	import TexteMarkdown from '$lib/components/TexteMarkdown.svelte';
 
 	let etat: EtatInstallation | null = null;
 	let chargement = true;
@@ -276,12 +277,10 @@
 							<input id="ins-telephone" type="tel" maxlength="30" bind:value={telephone} />
 						</div>
 						{#if conditions}
-							<textarea
-								class="conditions-texte"
-								readonly
-								rows="12"
-								aria-label="Conditions d’inscription, version {conditions.version}"
-								value={conditions.texte}></textarea>
+							<TexteMarkdown
+								texte={conditions.texte}
+								libelle="Conditions d’inscription, version {conditions.version}"
+							/>
 							<label class="case">
 								<input type="checkbox" bind:checked={accepte} />
 								<span>J’accepte les conditions d’inscription (version {conditions.version})</span>
@@ -335,18 +334,6 @@
 	}
 	.inscription {
 		margin-top: 0.75rem;
-	}
-	/*  Le texte accepté, tel quel — du TEXTE (aucun HTML à assainir), lu avant de cocher. */
-	.conditions-texte {
-		width: 100%;
-		resize: vertical;
-		font-family: inherit;
-		font-size: var(--fs-sm);
-		padding: 0.75rem;
-		margin: 0.75rem 0;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		background: var(--color-surface);
 	}
 	@media (max-width: 480px) {
 		.installation {
