@@ -526,8 +526,12 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 	.form-actions {
 		flex-direction: column;
 	}
+	/*  Pleine largeur, le libellé CENTRÉ : `.btn` est un `inline-flex` aligné au
+	    début, et le libellé restait collé à gauche d'un bouton de tout l'écran
+	    (vu sur la fenêtre de saisie, 14/10/2026). */
 	.form-actions .btn {
 		width: 100%;
+		justify-content: center;
 	}
 }
 

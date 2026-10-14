@@ -136,6 +136,19 @@ test('Installations : la carte, la fiche, et un geste motivé', async ({ page })
 
 	await carte.getByRole('button', { name: /Valider/ }).click();
 	const saisie = page.getByRole('dialog');
+	//  La fenêtre de saisie garde sa marge intérieure : le champ et les boutons ne
+	//  collent pas au bord (`Saisie` sans `.modal-body` — signalé le 14/10/2026).
+	await expect(saisie.getByRole('textbox')).toBeVisible();
+	const boite = await page.locator('.modal').boundingBox();
+	for (const el of [saisie.getByRole('textbox'), saisie.getByRole('button', { name: 'Annuler' })]) {
+		const b = await el.boundingBox();
+		expect(b && boite && b.x - boite.x, 'marge gauche dans la fenêtre de saisie').toBeGreaterThan(
+			8,
+		);
+	}
+	await page.locator('.modal').screenshot({
+		path: `test-results/saisie-${test.info().project.name}.png`,
+	});
 	await saisie.getByRole('textbox').fill('inscription vérifiée');
 	await saisie.getByRole('button', { name: 'Valider' }).click();
 	await expect(carte.getByText('Active', { exact: true })).toBeVisible();

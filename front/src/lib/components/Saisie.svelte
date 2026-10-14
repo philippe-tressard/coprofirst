@@ -58,28 +58,33 @@
       ⚠️ Le clic sur le fond ne ferme pas quand même : `Modale` le déduit de
       `contientSaisie` — la présence d'un champ suffit, la prop est superflue. -->
 <Modale {titre} on:fermer={() => onReponse(null)}>
-	<p class="saisie-message">{message}</p>
-	<div class="field">
-		<label for="saisie-texte"
-			>{libelle}{#if requis}<EtoileRequis vide={!valeur} />{/if}</label
-		>
-		<!--  Ctrl/⌘+Entrée valide depuis la zone : Entrée seule y fait un retour à
+	<!--  `.modal-body` et `.modal-footer` portent la marge intérieure de la fenêtre,
+	      comme dans `Confirmation`, sa jumelle : sans eux, le message, le champ et
+	      les boutons collaient au bord (signalé à l'écran le 14/10/2026). -->
+	<div class="modal-body">
+		<p class="saisie-message">{message}</p>
+		<div class="field">
+			<label for="saisie-texte"
+				>{libelle}{#if requis}<EtoileRequis vide={!valeur} />{/if}</label
+			>
+			<!--  Ctrl/⌘+Entrée valide depuis la zone : Entrée seule y fait un retour à
 		      la ligne, et c'est la convention des zones multilignes du site.
 		      `autofocus` est VOULU, et déclaré dans `check-a11y.mjs` (#1045). -->
-		<textarea
-			id="saisie-texte"
-			rows="3"
-			autofocus
-			bind:value={valeur}
-			{placeholder}
-			required={requis}
-			on:keydown={(e) => {
-				if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) valider();
-			}}></textarea>
+			<textarea
+				id="saisie-texte"
+				rows="3"
+				autofocus
+				bind:value={valeur}
+				{placeholder}
+				required={requis}
+				on:keydown={(e) => {
+					if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) valider();
+				}}></textarea>
+		</div>
 	</div>
 	<!--  « Annuler » AVANT la validation — la norme du 18/08/2026, vérifiée par
 	      `lint:soumission`. La même main, le même ordre que `Confirmation`. -->
-	<div class="form-actions">
+	<div class="modal-footer form-actions">
 		<button type="button" class="btn btn-outline" on:click={() => onReponse(null)}>
 			{libelleAnnuler}
 		</button>
