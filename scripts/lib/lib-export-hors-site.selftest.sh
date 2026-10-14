@@ -69,8 +69,10 @@
 
   # ── Liste blanche du nom d'archive ─────────────────────────────────────────
   # Le nom vient du nœud distant et repart dans une commande exécutée là-bas.
+  #  🔴 Jusqu'au 14/10/2026 (#1896), un échec ici posait `st=1` — une variable
+  #  que le bilan ne lit pas : la liste blanche pouvait céder sous un « TOUS OK ».
   tn() { local r=refuse; nom_valide "$2" && r=ok
-         [ "$r" = "$3" ] && echo "PASS  $1" || { echo "FAIL  $1 : attendu=$3 obtenu=$r"; st=1; }; }
+         [ "$r" = "$3" ] && echo "PASS  $1" || { echo "FAIL  $1 : attendu=$3 obtenu=$r"; st_fail=1; }; }
   tn "nom d'archive normal"      "hostachy_backup_2026-08-09_030000.tar.gz" ok
   tn "nom vide"                  ""                                          refuse
   tn "chemin absolu"             "/etc/shadow"                               refuse
