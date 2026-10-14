@@ -380,7 +380,15 @@ export const perimetres = {
 	 *   source est un bâtiment : il décide qui lit, il ne se recopie pas. */
 	dupliquer: (
 		id: number,
-		data: { code: string; libelle: string; description: string; batiment_id: number | null },
+		data: {
+			code: string;
+			libelle: string;
+			description: string;
+			batiment_id: number | null;
+			/**  Le numéro d'un bâtiment que le serveur crée pour la copie (#1945),
+			 *   exclusif de `batiment_id`. */
+			nouveau_batiment: string | null;
+		},
 	) => api.post<PerimetreDTO>(`/perimetres/${id}/dupliquer`, data),
 };
 

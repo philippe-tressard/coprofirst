@@ -136,8 +136,18 @@ export function noeudPerimetre(code: string): Perimetre | undefined {
  */
 export function perimetreDuBatiment(batimentId: number | null | undefined): string {
 	if (batimentId === null || batimentId === undefined) return perimetreParDefaut() ?? '';
-	const trouve = tousLesPerimetres().find((n) => n.batiment_id === batimentId && n.actif);
+	const trouve = noeudDuBatiment(batimentId);
 	return trouve ? trouve.code : `${PREFIXE_BATIMENT}${batimentId}`;
+}
+
+/**
+ * Le nœud ACTIF qui représente ce bâtiment, ou `undefined` s'il n'en a pas —
+ * pendant de `perimetre_du_batiment` côté serveur, qui refuse la copie d'un
+ * périmètre vers un bâtiment déjà représenté (#1945). La boîte de duplication
+ * ne propose donc que les bâtiments pour lesquels elle répond `undefined`.
+ */
+export function noeudDuBatiment(batimentId: number): Perimetre | undefined {
+	return tousLesPerimetres().find((n) => n.batiment_id === batimentId && n.actif);
 }
 
 /**
