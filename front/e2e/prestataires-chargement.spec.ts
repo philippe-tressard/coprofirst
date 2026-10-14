@@ -14,7 +14,7 @@
  *     le verrou : sans session, l'écran renvoie à la connexion avec son adresse.
  */
 import type { Page } from '@playwright/test';
-import { attendreHydratation, expect, retenirApi, simulerApi, test } from './aides';
+import { attendreHydratation, expect, retenirApi, retenirModule, simulerApi, test } from './aides';
 
 const PRESTATAIRE = {
 	id: 1,
@@ -104,15 +104,7 @@ test('« Nouveau contrat » cliqué avant l’arrivée de l’onglet ouvre quand
 	//  L'onglet Contrats se charge au geste (#1844) : le bouton de l'en-tête
 	//  appelait une méthode d'un onglet pas encore monté, et le clic se perdait.
 	await simuler(page);
-	let relacher: () => void = () => {};
-	const relache = new Promise<void>((r) => (relacher = r));
-	await page.route(
-		(url) => url.pathname.endsWith('/OngletContrats.svelte'),
-		async (route) => {
-			await relache;
-			await route.continue();
-		},
-	);
+	const relacher = await retenirModule(page, 'OngletContrats.svelte');
 	await page.goto('/prestataires/contrats');
 	await page.getByRole('button', { name: 'Nouveau contrat' }).click();
 	relacher();

@@ -1,7 +1,7 @@
 /*
  *  Aides partagées des tests de navigateur.
  */
-import { test as base, expect, type Locator, type Page } from '@playwright/test';
+import { test as base, expect, type Locator, type Page, type Route } from '@playwright/test';
 
 /**
  * **Le `test` de tous les specs — une exception de la page le fait échouer.**
@@ -266,19 +266,58 @@ export async function retenirApi(
 	retenu: (chemin: string) => boolean,
 	corps: (chemin: string) => unknown = () => [],
 ): Promise<() => void> {
-	let relacher: () => void = () => {};
-	const relache = new Promise<void>((r) => (relacher = r));
-	await page.route(
+	return retenirRoute(
+		page,
 		(url) => retenu(url.pathname),
-		async (route) => {
-			await relache;
-			await route.fulfill({
+		(route) =>
+			route.fulfill({
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify(corps(new URL(route.request().url()).pathname)),
-			});
-		},
+			}),
 	);
+}
+
+/**
+ * **Le module d'un composant, reconnu à son URL — lui seul** (#1940, 14/10/2026).
+ *
+ * Sous Vite, un composant qui porte un `<style>` part en DEUX demandes au même
+ * chemin : le module, puis sa feuille (`…svelte?svelte&type=style&lang.css`).
+ * Les specs comparaient le seul chemin et comptaient donc les deux : « le survol
+ * précharge exactement une fois » réussissait quand `expect.poll` lisait entre
+ * les deux demandes, et échouait sinon — au hasard, une fois en CI (#1939).
+ * Ce prédicat était recopié dans quatre specs.
+ */
+export function estLeModule(url: URL | string, composant: string): boolean {
+	const u = typeof url === 'string' ? new URL(url) : url;
+	return u.pathname.endsWith(`/${composant}`) && !u.searchParams.has('svelte');
+}
+
+/**
+ * **Retenir le module d'un composant chargé au geste jusqu'à `relacher()`** — pour
+ * voir l'attente que l'écran annonce pendant qu'il arrive (`ChargementDiffere`).
+ * Écrit trois fois à l'identique avant #1940.
+ */
+export function retenirModule(page: Page, composant: string): Promise<() => void> {
+	return retenirRoute(
+		page,
+		(url) => estLeModule(url, composant),
+		(route) => route.continue(),
+	);
+}
+
+/** Le mécanisme commun : la requête attend `relacher()`, puis `suite` la traite. */
+async function retenirRoute(
+	page: Page,
+	retenue: (url: URL) => boolean,
+	suite: (route: Route) => Promise<void>,
+): Promise<() => void> {
+	let relacher: () => void = () => {};
+	const relache = new Promise<void>((r) => (relacher = r));
+	await page.route(retenue, async (route) => {
+		await relache;
+		await suite(route);
+	});
 	return () => relacher();
 }
 
