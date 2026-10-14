@@ -9,14 +9,16 @@
 
   - la liste ne contient que les transferts que le lecteur peut défaire —
     celui qui a transféré, ou l'administrateur ; vide, le bloc ne se rend pas ;
-  - `bloque` dit pourquoi un transfert ne se défait plus (une suite écrite
-    depuis, ou un transfert suivant), et les boutons disparaissent : on ne
-    propose pas un geste refusé — au plus un transfert à la fois les porte ;
+  - `bloque` dit pourquoi un transfert ne se défait pas ENCORE — un transfert
+    suivant, toujours défaisable, le retient —, et ses boutons disparaissent :
+    on ne propose pas un geste refusé — au plus un transfert à la fois les
+    porte. Celui que plus rien ne rouvrira (une suite écrite depuis, un
+    suivant validé) n'est pas dans la liste (14/10/2026) : il y restait sous
+    « Ne peut plus être défait », avec « Valider » pour seul bouton ;
   - `peut_deplacer` : déplacer exige de modérer ;
   - « Valider le transfert » (13/10/2026) — « si c'est ok et pour faire
     disparaître ces boutons » : le transfert reste versé, quitte la liste et ne
-    se défait plus. Offert même sur un transfert bloqué : c'est ce qui vide la
-    liste.
+    se défait plus. Offert aussi sur un transfert retenu par un suivant.
 
   🔴 Rendu sur la fiche ET dans la carte dépliée de la liste (01/10/2026). Il
   n'était que sur la fiche, « là que mène la notification » — et la carte n'a
@@ -159,7 +161,7 @@
 					{suites(t)}{t.affaire_creee ? ` · ${TICKET.libelle.toLowerCase()} créée` : ''}
 				</p>
 				{#if t.bloque}
-					<p class="aide">Ne peut plus être défait : {t.bloque}.</p>
+					<p class="aide">Ne se défait pas encore : {t.bloque}.</p>
 				{/if}
 				<div class="transfert-gestes">
 					<button

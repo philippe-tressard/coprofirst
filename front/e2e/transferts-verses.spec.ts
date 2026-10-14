@@ -7,7 +7,8 @@
  *  en MONTRE — API simulée, compte CS :
  *
  *  - aucun bloc quand il n'y a rien à défaire ;
- *  - un transfert bloqué dit pourquoi, et ne propose que « Valider » ;
+ *  - un transfert retenu par un suivant dit pourquoi, et ne propose que
+ *    « Valider » — celui que plus rien ne rouvrira n'est pas servi (14/10/2026) ;
  *  - « Valider le transfert » (13/10/2026) demande confirmation, puis appelle
  *	sa route — sur un transfert défaisable comme sur un bloqué ;
  *  - « Annuler » demande confirmation, puis appelle la bonne route ;
@@ -51,7 +52,7 @@ const BLOQUE = {
 	...DEFAISABLE,
 	id: 10,
 	suites: 1,
-	bloque: "une suite a été écrite par quelqu'un d'autre depuis ce transfert",
+	bloque: "un transfert suivant a été versé dans cette affaire : annulez-le d'abord",
 };
 const CHOIX = [
 	{ id: 7, numero: 'TK-109008', titre: 'Portillon bloqué', statut: 'en_cours' },
@@ -102,7 +103,7 @@ test('un transfert se défait d’un geste, un transfert bloqué dit pourquoi', 
 	await expect(bloc.getByText('Transferts de courriel')).toBeVisible();
 	const [premier, second] = [bloc.locator('.transfert').nth(0), bloc.locator('.transfert').nth(1)];
 	await expect(premier).toContainText('3 suites');
-	await expect(second).toContainText('Ne peut plus être défait');
+	await expect(second).toContainText('Ne se défait pas encore');
 	await expect(second.getByRole('button')).toHaveCount(1);
 	await expect(second.getByRole('button', { name: 'Valider le transfert' })).toBeVisible();
 
