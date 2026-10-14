@@ -67,6 +67,11 @@ body {
 	--color-warning-fond: #fdf3e0;
 	--color-warning-bordure: #dfcba5;
 	--color-warning-texte: #7b5815;
+	/*  Une teinte de CATÉGORIE, pas d'état : le violet de `.badge-purple` (rôle
+	    Opérateur, statut Locataire) et du geste qui accorde l'Opérateur. */
+	--color-violet: #6b21a8;
+	--color-violet-fond: #f3e8ff;
+
 	/* Texte */
 	--color-text: #1a1a2e;
 	--color-text-muted: #5a6070;

@@ -97,7 +97,7 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, resoudre };
  *  la gouttière, qui écrit par l'échelle.
  */
 //  Carte des plafonds décroissants : #1571.
-const PLAFOND = { couleurs: 119, tailles: 70 };
+const PLAFOND = { couleurs: 117, tailles: 70 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
