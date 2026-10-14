@@ -19,10 +19,13 @@ Trois refus serveur, et ils ne sont pas décoratifs :
 2. **Pas de cycle de parenté.** Une boucle rendrait la remontée d'arbre infinie ;
    les lecteurs s'en protègent déjà, mais accepter la donnée serait accepter
    d'écrire un état que rien ne peut interpréter.
-3. **Pas de suppression d'un nœud cité par un contenu.** On propose de le
-   désactiver : il disparaît de la saisie, et les contenus publiés gardent leur
-   libellé et leur visibilité. C'est le mécanisme retenu pour « la cave relève d'un
-   bâtiment » sans migrer une seule ligne.
+3. **Pas de suppression d'un nœud cité par un contenu** — ni d'une branche dont
+   un nœud l'est. On propose de le désactiver : il disparaît de la saisie, et les
+   contenus publiés gardent leur libellé et leur visibilité. C'est le mécanisme
+   retenu pour « la cave relève d'un bâtiment » sans migrer une seule ligne.
+
+Une branche — un nœud et ses descendants — se duplique ou se supprime d'un bloc
+(13/10/2026) ; ses règles vivent dans `utils/perimetres/branche.py`.
 """
 
 from app.utils import horloge
@@ -43,6 +46,7 @@ from app.models.core import (
 )
 from app.utils.lecture import lire_objet
 from app.utils.perimetres import invalider_cache, parse_json_perimetres, parse_perimetres
+from app.utils.perimetres.branche import descendants, enfants_par_parent, refus_duplication
 from app.utils.recuperer import ou_404
 
 router = APIRouter(prefix="/perimetres", tags=["perimetres"])
@@ -83,6 +87,12 @@ class PerimetreRead(BaseModel):
     #: Vrai si un contenu cite ce code : l'écran propose alors de désactiver plutôt
     #: que de supprimer, et dit pourquoi.
     utilise: bool
+    #: Combien de nœuds la suppression emporterait avec lui — ce que la
+    #: confirmation annonce.
+    nb_descendants: int = 0
+    #: Le serveur accepterait-il de dupliquer cette branche ? Lu sur la même règle
+    #: que le geste qui refuse (`refus_duplication`), jamais recopié à l'écran.
+    dupliquable: bool = False
 
 
 class PerimetreCreate(BaseModel):
@@ -194,7 +204,12 @@ def _concerne_tous(noeud: Perimetre, par_id: dict[int, Perimetre]) -> bool:
 
 
 def _lu(
-    noeud: Perimetre, cites: set[str], parent: Optional[str], profondeur: int, concerne_tous: bool
+    noeud: Perimetre,
+    cites: set[str],
+    parent: Optional[str],
+    profondeur: int,
+    concerne_tous: bool,
+    branche: list[Perimetre],
 ) -> PerimetreRead:
     """Un nœud lu sur le modèle, avec ce que l'arbre seul sait dire.
 
@@ -211,6 +226,8 @@ def _lu(
         libelle_court=noeud.libelle_court or noeud.libelle,
         description=noeud.description or "",
         utilise=noeud.code.lower() in cites,
+        nb_descendants=len(branche),
+        dupliquable=refus_duplication(branche) is None,
     )
 
 
@@ -223,11 +240,7 @@ def _en_lecture(noeuds: list[Perimetre], cites: set[str]) -> list[PerimetreRead]
     par_id = {n.id: n for n in noeuds}
     profondeur = _profondeurs(noeuds)
 
-    enfants: dict[Optional[int], list[Perimetre]] = {}
-    for n in noeuds:
-        enfants.setdefault(n.parent_id, []).append(n)
-    for liste in enfants.values():
-        liste.sort(key=lambda n: (n.ordre, n.code))
+    enfants = enfants_par_parent(noeuds)
 
     sortie: list[PerimetreRead] = []
     vus: set[int] = set()
@@ -240,7 +253,12 @@ def _en_lecture(noeuds: list[Perimetre], cites: set[str]) -> list[PerimetreRead]
             parent = par_id[noeud.parent_id].code if noeud.parent_id in par_id else None
             sortie.append(
                 _lu(
-                    noeud, cites, parent, profondeur.get(noeud.id, 0), _concerne_tous(noeud, par_id)
+                    noeud,
+                    cites,
+                    parent,
+                    profondeur.get(noeud.id, 0),
+                    _concerne_tous(noeud, par_id),
+                    descendants(noeud, noeuds),
                 )
             )
             descendre(noeud.id)
@@ -250,7 +268,9 @@ def _en_lecture(noeuds: list[Perimetre], cites: set[str]) -> list[PerimetreRead]
     #  rend quand même, sinon l'écran ne permettrait pas de le réparer.
     for noeud in noeuds:
         if noeud.id not in vus:
-            sortie.append(_lu(noeud, cites, None, 0, noeud.portee_globale))
+            sortie.append(
+                _lu(noeud, cites, None, 0, noeud.portee_globale, descendants(noeud, noeuds))
+            )
     return sortie
 
 
@@ -371,28 +391,41 @@ def modifier_perimetre(
 @router.delete("/{perimetre_id}", status_code=204)
 def supprimer_perimetre(
     perimetre_id: int,
+    avec_descendants: bool = False,
     session: Session = Depends(get_session),
     admin: Utilisateur = Depends(require_admin),
 ):
-    """Supprime un nœud jamais utilisé. Refuse sinon, et dit quoi faire à la place."""
+    """Supprime un nœud — et sa branche si `avec_descendants`, que l'écran ne pose
+    qu'après une confirmation qui les compte.
+
+    🔴 Le drapeau est EXPLICITE : un client resté en cache, qui ignore la
+    cascade, rencontre le refus d'avant au lieu d'emporter une branche en silence.
+    Refusé dès qu'UN nœud de la branche est cité par un contenu : on désactive.
+    """
     noeud = _noeud(session, perimetre_id)
+    branche = descendants(noeud, list(session.exec(select(Perimetre)).all()))
 
-    if noeud.code.lower() in _codes_cites(session):
+    if branche and not avec_descendants:
         raise HTTPException(
             409,
-            f"« {noeud.libelle} » est utilisé par des contenus déjà publiés. "
-            "Désactivez-le : il disparaîtra de la saisie, et ces contenus garderont "
-            "leur libellé et leur visibilité.",
+            f"« {noeud.libelle} » contient {len(branche)} sous-périmètre(s). "
+            "Confirmez leur suppression, ou déplacez-les d'abord.",
         )
 
-    enfants = session.exec(select(Perimetre).where(Perimetre.parent_id == noeud.id)).all()
-    if enfants:
-        raise HTTPException(
-            409,
-            f"« {noeud.libelle} » contient {len(enfants)} sous-périmètre(s). "
-            "Déplacez-les ou supprimez-les d'abord.",
-        )
+    cites = _codes_cites(session)
+    for n in (noeud, *branche):
+        if n.code.lower() in cites:
+            raise HTTPException(
+                409,
+                f"« {n.libelle} » est utilisé par des contenus déjà publiés. "
+                "Désactivez-le : il disparaîtra de la saisie, et ces contenus garderont "
+                "leur libellé et leur visibilité.",
+            )
 
-    session.delete(noeud)
+    #  Les enfants avant leurs parents : la clé `parent_id` ne doit jamais
+    #  désigner une ligne déjà retirée.
+    for n in (*reversed(branche), noeud):
+        session.delete(n)
+        session.flush()
     session.commit()
     invalider_cache()

@@ -372,7 +372,16 @@ export const perimetres = {
 		api.post<PerimetreDTO>('/perimetres', data),
 	update: (id: number, data: EcriturePerimetre) =>
 		api.patch<PerimetreDTO>(`/perimetres/${id}`, data),
-	remove: (id: number) => api.delete(`/perimetres/${id}`),
+	/**  `avecDescendants` : la branche entière, après une confirmation qui la
+	 *   compte. Sans lui, le serveur refuse un nœud qui a des enfants. */
+	remove: (id: number, avecDescendants = false) =>
+		api.delete(`/perimetres/${id}${avecDescendants ? '?avec_descendants=true' : ''}`),
+	/**  Copie le nœud et toute sa descendance. `batiment_id` est exigé quand la
+	 *   source est un bâtiment : il décide qui lit, il ne se recopie pas. */
+	dupliquer: (
+		id: number,
+		data: { code: string; libelle: string; description: string; batiment_id: number | null },
+	) => api.post<PerimetreDTO>(`/perimetres/${id}/dupliquer`, data),
 };
 
 export const reglesResidence = {

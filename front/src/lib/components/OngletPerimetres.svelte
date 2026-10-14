@@ -1,6 +1,7 @@
 <script lang="ts">
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import BoiteNouveauPerimetre from '$lib/components/BoiteNouveauPerimetre.svelte';
+	import BoiteDuplicationPerimetre from '$lib/components/BoiteDuplicationPerimetre.svelte';
 	import ChampsPerimetre from '$lib/components/ChampsPerimetre.svelte';
 	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
 	import { onMount } from 'svelte';
@@ -9,8 +10,7 @@
 	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
 	import Icon from '$lib/components/Icon.svelte';
 	import { perimetresStore, rechargerPerimetres } from '$lib/stores/perimetres';
-	import { type Perimetre } from '$lib/perimetres';
-	import { slug } from '$lib/texte';
+	import { codeSousParent, type Perimetre } from '$lib/perimetres';
 	import { siteNomStore } from '$lib/stores/pageConfig';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
@@ -26,16 +26,17 @@
 		ouvert = ouvert === code ? null : code;
 	}
 
-	/**  Le nœud est-il déplié ? Il l'est aussi quand on le corrige ou qu'on crée
-	 *   un sous-périmètre sous lui : la boîte vit DANS son corps, et replier
-	 *   emporterait ce qu'on est en train de saisir. */
+	/**  Le nœud est-il déplié ? Il l'est aussi quand on le corrige, qu'on crée
+	 *   un sous-périmètre sous lui ou qu'on le duplique : la boîte vit DANS son
+	 *   corps, et replier emporterait ce qu'on est en train de saisir. */
 	function estDeplie(
 		code: string,
 		ouvertCode: string | null,
 		e: Perimetre | null,
 		c: { parent: string | null } | null,
+		d: Perimetre | null,
 	) {
-		return ouvertCode === code || e?.code === code || c?.parent === code;
+		return ouvertCode === code || e?.code === code || c?.parent === code || d?.code === code;
 	}
 
 	/*  🔴 `rechargerPerimetres` avalait son échec : l'arborescence restait vide et
@@ -73,6 +74,7 @@
 		//  🔴 Un seul geste à la fois : ouvrir la correction referme une création
 		//  en cours, sinon les deux boîtes se disputeraient le corps du nœud.
 		creation = null;
+		duplique = null;
 		edite = n;
 		form = {
 			libelle: n.libelle,
@@ -123,6 +125,7 @@
 
 	function creer(parent: string | null) {
 		edite = null;
+		duplique = null;
 		creation = { parent };
 		nouveau = { code: '', libelle: '', description: '' };
 	}
@@ -130,12 +133,7 @@
 	//  Le code est proposé à partir du libellé et du parent, mais reste modifiable :
 	//  il est IMMUABLE après création (il est stocké dans les contenus publiés), donc
 	//  c'est le seul moment où on peut le choisir.
-	$: codePropose = (() => {
-		if (!creation) return '';
-		const code = slug(nouveau.libelle);
-		if (!code) return '';
-		return creation.parent ? `${creation.parent}/${code}` : code;
-	})();
+	$: codePropose = creation ? codeSousParent(creation.parent, nouveau.libelle) : '';
 
 	async function enregistrerNouveau() {
 		enregistrement = true;
@@ -156,15 +154,31 @@
 		enregistrement = false;
 	}
 
+	// ── Duplication — le nœud et sa branche (13/10/2026) ─────────────────────
+	let duplique: Perimetre | null = null;
+
+	function dupliquer(n: Perimetre) {
+		edite = null;
+		creation = null;
+		duplique = n;
+	}
+
 	async function supprimer(n: Perimetre) {
-		//  ⚠️ Le serveur refuse la suppression d'un nœud cité par un contenu et dit
-		//  quoi faire à la place : `messageErreur` relaie son message tel quel, le
-		//  repli ne sert que s'il n'a pas répondu du tout.
+		//  ⚠️ Le serveur refuse la suppression d'une branche dont un nœud est cité
+		//  par un contenu, et dit quoi faire à la place : `messageErreur` relaie son
+		//  message tel quel, le repli ne sert que s'il n'a pas répondu du tout.
+		//  Un nœud qui a des enfants les emporte : la confirmation les COMPTE, et
+		//  c'est elle seule qui autorise la cascade (`avec_descendants`).
+		const enfants = n.nb_descendants;
 		await confirmerPuis(
-			SUPPRESSION(`Le périmètre « ${n.libelle} »`),
+			SUPPRESSION(
+				enfants
+					? `Le périmètre « ${n.libelle} » et ses ${enfants} sous-périmètre(s), qui seront supprimés avec lui.`
+					: `Le périmètre « ${n.libelle} »`,
+			),
 			'Périmètre supprimé',
 			async () => {
-				await perimetresApi.remove(n.id);
+				await perimetresApi.remove(n.id, enfants > 0);
 				await rechargerPerimetres();
 			},
 			'Suppression impossible',
@@ -230,7 +244,7 @@
 {:else}
 	<div class="ref-list">
 		{#each noeuds as n (n.code)}
-			{@const deplie = estDeplie(n.code, ouvert, edite, creation)}
+			{@const deplie = estDeplie(n.code, ouvert, edite, creation, duplique)}
 			<div class="ref-item" class:expanded={deplie} class:inactif={!n.actif}>
 				<div
 					class="ref-tete"
@@ -328,6 +342,12 @@
 								on:annule={() => (creation = null)}
 								on:enregistre={enregistrerNouveau}
 							/>
+						{:else if duplique?.code === n.code}
+							<BoiteDuplicationPerimetre
+								source={n}
+								on:annule={() => (duplique = null)}
+								on:fini={() => (duplique = null)}
+							/>
 						{:else}
 							{#if n.description}<p class="ref-desc">{n.description}</p>{/if}
 							<div class="ref-actions">
@@ -347,6 +367,15 @@
 									aria-pressed={creation?.parent === n.code}
 									on:click={() => creer(n.code)}><IconeAction icone="plus" /></button
 								>
+								{#if n.dupliquable}
+									<button
+										class="btn-icon"
+										aria-label="Dupliquer avec ses sous-périmètres"
+										title="Dupliquer avec ses sous-périmètres"
+										aria-pressed={duplique?.code === n.code}
+										on:click={() => dupliquer(n)}><IconeAction icone="copy" /></button
+									>
+								{/if}
 								<button
 									class="btn-icon"
 									aria-label="Monter"

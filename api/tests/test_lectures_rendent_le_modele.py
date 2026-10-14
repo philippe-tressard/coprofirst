@@ -337,6 +337,10 @@ _NOEUD = {
     "privatif": False,
     "hors_copropriete": False,
     "utilise": False,
+    #  Ajoutés le 13/10/2026 (dupliquer, supprimer une branche) : lus sur
+    #  `utils/perimetres/branche`, pas sur une colonne.
+    "nb_descendants": 0,
+    "dupliquable": False,
 }
 ATTENDU_PERIMETRES = [
     {
@@ -350,6 +354,8 @@ ATTENDU_PERIMETRES = [
         "portee_globale": True,
         "concerne_tous": True,
         "selectionnable": False,
+        #  Sa branche porte un bâtiment (Bat-A) : elle ne se duplique pas d'un bloc.
+        "nb_descendants": 1,
     },
     {
         **_NOEUD,
