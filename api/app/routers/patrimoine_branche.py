@@ -13,6 +13,13 @@ recopier. Les règles de la branche vivent dans `utils/perimetres/branche.py`.
 ciblé (`batiments_cibles`) : une copie de « Bâtiment 1 » qui le garderait ferait
 lire aux résidents du bâtiment 1 ce qui est publié pour le nouveau. Quand la
 source est un bâtiment, la copie en exige un autre ; sinon elle n'en porte pas.
+
+**…et elle peut le créer** (#1945, arbitré le 14/10/2026) : aucun écran ne crée
+de bâtiment, donc « Bâtiment 1 → Bâtiment 5 » n'aboutissait jamais. La copie
+reçoit soit un bâtiment existant qui n'a pas encore de périmètre, soit le
+numéro d'un bâtiment NEUF — créé dans la même transaction, avec la copropriété
+et les caractéristiques du bâtiment copié, sans aucun lot (un lot est un bien,
+il ne se recopie pas).
 """
 
 from typing import Optional
@@ -27,7 +34,7 @@ from app.models.core import Batiment, Utilisateur
 from app.models.perimetre import Perimetre
 from app.routers.patrimoine import PerimetreRead, _noeud, _un
 from app.utils import horloge
-from app.utils.perimetres import invalider_cache
+from app.utils.perimetres import invalider_cache, perimetre_du_batiment
 from app.utils.perimetres.branche import (
     CHAMPS_RECOPIES,
     codes_de_la_copie,
@@ -45,23 +52,69 @@ class PerimetreDuplication(BaseModel):
     libelle: str
     description: str = ""
     batiment_id: Optional[int] = None
+    #: Le NUMÉRO d'un bâtiment à créer pour la copie (« 5 », « E ») — l'autre
+    #: façon de répondre, exclusive de `batiment_id`.
+    nouveau_batiment: Optional[str] = None
 
 
-def _verifier_batiment(session: Session, source: Perimetre, batiment_id: Optional[int]) -> None:
-    """Le bâtiment de la copie : exigé si la source en a un, refusé sinon."""
+#: Ce que le bâtiment créé reprend du bâtiment copié : sa description physique.
+#: Ni l'identifiant, ni le numéro (saisi), ni les lots.
+CARACTERISTIQUES_BATIMENT = (
+    "copropriete_id",
+    "nb_etages",
+    "sous_sol",
+    "specificites",
+    "nb_appartements",
+    "nb_caves",
+    "nb_parkings",
+    "nb_locaux_commerciaux",
+)
+
+
+def _verifier_batiment(
+    session: Session, source: Perimetre, body: PerimetreDuplication
+) -> Optional[str]:
+    """Le bâtiment de la copie : exigé si la source en a un, refusé sinon.
+
+    Rend le numéro du bâtiment à créer, ou `None` quand la copie en reprend un
+    qui existe. Ne crée RIEN : la création attend que la copie entière soit
+    acceptée — un code pris ne doit pas laisser un bâtiment orphelin.
+    """
+    numero = (body.nouveau_batiment or "").strip() or None
     if source.batiment_id is None:
-        if batiment_id is not None:
+        if body.batiment_id is not None or numero is not None:
             raise HTTPException(422, "Ce périmètre n'est pas un bâtiment : sa copie non plus.")
-        return
-    if batiment_id is None:
+        return None
+    if body.batiment_id is not None and numero is not None:
+        raise HTTPException(422, "Un bâtiment existant ou un nouveau : l'un ou l'autre.")
+    if numero is not None:
+        existants = session.exec(select(Batiment.numero)).all()
+        if numero.casefold() in {n.strip().casefold() for n in existants}:
+            raise HTTPException(422, f"Le bâtiment « {numero} » existe déjà.")
+        return numero
+    if body.batiment_id is None:
         raise HTTPException(422, "Choisissez le bâtiment que représente la copie.")
-    if session.get(Batiment, batiment_id) is None:
+    if session.get(Batiment, body.batiment_id) is None:
         raise HTTPException(422, "Bâtiment inconnu.")
-    deja = session.exec(
-        select(Perimetre).where(Perimetre.batiment_id == batiment_id, Perimetre.actif == True)  # noqa: E712
-    ).first()
+    #  La question « ce bâtiment a-t-il son périmètre ? » est celle de l'arbre —
+    #  et celle que la boîte pose pour ne proposer que les bâtiments libres.
+    deja = perimetre_du_batiment(body.batiment_id)
     if deja:
         raise HTTPException(422, f"Ce bâtiment a déjà son périmètre : « {deja.libelle} ».")
+    return None
+
+
+def _creer_batiment(session: Session, source: Perimetre, numero: str) -> int:
+    """Le bâtiment neuf de la copie, à l'image de celui de la source."""
+    modele = session.get(Batiment, source.batiment_id)
+    if modele is None:
+        raise HTTPException(422, "Le bâtiment du périmètre copié n'existe plus.")
+    batiment = Batiment(
+        numero=numero, **{champ: getattr(modele, champ) for champ in CARACTERISTIQUES_BATIMENT}
+    )
+    session.add(batiment)
+    session.flush()
+    return batiment.id
 
 
 @router.post("/{perimetre_id}/dupliquer", response_model=PerimetreRead, status_code=201)
@@ -82,7 +135,7 @@ def dupliquer_perimetre(
     libelle = body.libelle.strip()
     if not code or not libelle:
         raise HTTPException(422, "Le libellé et le code sont obligatoires.")
-    _verifier_batiment(session, source, body.batiment_id)
+    numero_neuf = _verifier_batiment(session, source, body)
 
     codes = codes_de_la_copie(source, branche, code)
     existants = {n.code for n in tous}
@@ -90,6 +143,7 @@ def dupliquer_perimetre(
     if pris:
         raise HTTPException(422, f"Le code « {pris[0]} » est déjà utilisé.")
 
+    batiment_id = _creer_batiment(session, source, numero_neuf) if numero_neuf else body.batiment_id
     maintenant = horloge.maintenant()
     freres = [n.ordre for n in tous if n.parent_id == source.parent_id]
     copies: dict[int, Perimetre] = {}
@@ -108,7 +162,7 @@ def dupliquer_perimetre(
             copie.libelle = libelle
             copie.libelle_court = None
             copie.description = body.description
-            copie.batiment_id = body.batiment_id
+            copie.batiment_id = batiment_id
             copie.ordre = max(freres, default=0) + 1
         session.add(copie)
         session.flush()

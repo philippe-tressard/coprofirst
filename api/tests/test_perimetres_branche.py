@@ -93,6 +93,87 @@ def test_la_copie_d_un_batiment_ne_garde_jamais_son_batiment(batiments):
             assert refus.value.status_code == 422 and motif in refus.value.detail
 
 
+def test_la_copie_d_un_batiment_peut_creer_son_batiment(batiments):
+    """#1945 : aucun écran ne crée de bâtiment — la copie le crée, en un geste.
+
+    Il prend le numéro saisi, la copropriété et les caractéristiques du bâtiment
+    copié ; aucun lot ne le suit (un lot est un bien, il ne se duplique pas).
+    """
+    with Session(engine) as session:
+        admin = compte(session, prefixe="admin")
+        source = _noeud(session, f"bat:{batiments[0]}")
+        modele = session.get(Batiment, source.batiment_id)
+        modele.nb_etages, modele.sous_sol, modele.nb_appartements = 7, True, 21
+        session.add(modele)
+        session.commit()
+        avant = {b.id for b in session.exec(select(Batiment)).all()}
+
+        dupliquer_perimetre(
+            source.id,
+            PerimetreDuplication(code="bat:cinq", libelle="Bâtiment 5", nouveau_batiment=" 5 "),
+            session,
+            admin,
+        )
+
+        cree = [b for b in session.exec(select(Batiment)).all() if b.id not in avant]
+        assert len(cree) == 1
+        b = cree[0]
+        assert (b.numero, b.copropriete_id) == ("5", modele.copropriete_id)
+        assert (b.nb_etages, b.sous_sol, b.nb_appartements) == (7, True, 21)
+        assert not b.lots
+        assert _noeud(session, "bat:cinq").batiment_id == b.id
+
+
+def test_le_batiment_cree_par_une_copie_est_refuse_s_il_est_ambigu(batiments):
+    """Un numéro déjà pris, deux choix à la fois, ou un bâtiment pour une copie
+    qui n'en est pas un : refusés, et rien n'est créé."""
+    with Session(engine) as session:
+        admin = compte(session, prefixe="admin")
+        source = _noeud(session, f"bat:{batiments[0]}")
+        pris = session.get(Batiment, batiments[1]).numero
+        espace = _enfants(session, _noeud(session, f"bat:{batiments[2]}"))[0]
+        #  Un espace qui a lui-même un enfant : dupliquable, mais pas un bâtiment.
+        session.add(Perimetre(code=f"{espace.code}/porte", libelle="Porte", parent_id=espace.id))
+        session.commit()
+        avant = len(session.exec(select(Batiment)).all())
+        for noeud, extra, motif in (
+            (source, {"nouveau_batiment": f" {pris.lower()} "}, "existe déjà"),
+            (source, {"nouveau_batiment": "  "}, "Choisissez le bâtiment"),
+            (source, {"nouveau_batiment": "9", "batiment_id": batiments[1]}, "l'un ou l'autre"),
+            (espace, {"nouveau_batiment": "9"}, "pas un bâtiment"),
+        ):
+            with pytest.raises(HTTPException) as refus:
+                dupliquer_perimetre(
+                    noeud.id,
+                    PerimetreDuplication(code="bat:x", libelle="X", **extra),
+                    session,
+                    admin,
+                )
+            assert refus.value.status_code == 422 and motif in refus.value.detail, extra
+        assert len(session.exec(select(Batiment)).all()) == avant
+
+
+def test_une_copie_refusee_ne_laisse_aucun_batiment(batiments):
+    """Le bâtiment se crée APRÈS les contrôles de la copie : un code pris ne doit
+    pas laisser derrière lui un bâtiment orphelin dans la fiche."""
+    with Session(engine) as session:
+        admin = compte(session, prefixe="admin")
+        source = _noeud(session, f"bat:{batiments[0]}")
+        avant = len(session.exec(select(Batiment)).all())
+        with pytest.raises(HTTPException):
+            dupliquer_perimetre(
+                source.id,
+                PerimetreDuplication(
+                    code=f"bat:{batiments[1]}", libelle="Doublon", nouveau_batiment="42"
+                ),
+                session,
+                admin,
+            )
+        #  Lu dans la MÊME session, sans rollback : un bâtiment ajouté avant le
+        #  refus y serait visible (flush) — c'est ce que ce test doit voir.
+        assert len(session.exec(select(Batiment)).all()) == avant
+
+
 def test_une_branche_qui_contient_des_batiments_ne_se_duplique_pas(batiments):
     with Session(engine) as session:
         admin = compte(session, prefixe="admin")
