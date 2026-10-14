@@ -103,6 +103,13 @@ AJUSTEMENTS_DECLARES: dict[tuple[str, str], str] = {
     ("lib-env-base.sh", "cat > /opt/5hostachy/.env.tmp"): (
         "DATABASE_URL du pair, réécrit en 600 (bascule des données DI-7c et son retour)"
     ),
+    #  Vue le 14/10/2026 seulement (#1965) : `deploiement/` échappait au relevé.
+    #  La mise à jour nocturne d'une RÉPLIQUE (#1756) pose UNE ligne, la version
+    #  d'image à servir, après avoir gardé le `.env` d'avant dans `.precedent` pour
+    #  le retour arrière.
+    ("mise-a-jour.sh", 'echo "COPROFIRST_VERSION=$CIBLE" >> .env'): (
+        "version d'image cible d'une réplique, l'ancien .env gardé pour le retour arrière"
+    ),
 }
 
 

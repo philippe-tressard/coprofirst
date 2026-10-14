@@ -167,14 +167,25 @@ def racine_depot():
 def scripts_shell_versionnes() -> list:
     """Tous les `.sh` du dépôt, où qu'ils soient rangés — plus les hooks git.
 
-    Les scripts d'exploitation (cron) sont restés à la racine : leurs chemins
-    absolus vivent dans des crontabs non versionnés, que ce dépôt ne peut pas
-    mettre à jour tout seul. Cette fonction ne fait aucune hypothèse là-dessus,
-    et c'est le but : elle survivra au jour où ils bougeront.
+    Ce que git suit ou suivrait (`--others --exclude-standard` : un script neuf
+    est contrôlé avant son premier commit), donc ni `node_modules` ni un fichier
+    ignoré. 🔴 Jusqu'au 14/10/2026 (#1965), la liste se lisait par trois motifs
+    — racine, `scripts/**`, `.githooks/` — et huit scripts y échappaient, dont
+    ceux que chaque réplique exécute (`deploiement/standard/`) et `api/start.sh`.
+    La docstring promettait déjà « où qu'ils soient rangés ».
+    🔒 `test_releve_scripts_complet.py`.
     """
+    import subprocess
+
     racine = racine_depot()
-    trouves = list(racine.glob("*.sh"))
-    trouves += list(racine.glob("scripts/**/*.sh"))
+    suivis = subprocess.run(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.sh"],
+        cwd=racine,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+    trouves = [racine / s for s in suivis if (racine / s).is_file()]
     trouves += [p for p in racine.glob(".githooks/*") if p.is_file()]
     return sorted(set(trouves))
 

@@ -57,6 +57,13 @@ EXCEPTIONS_JUSTIFIEES = {
         "$TMP/app.db",
     ): "copie extraite d'une archive .tar.gz sur le POSTE, jamais la base de "
     "production — aucun process ne la tient ouverte",
+    #  Vue le 14/10/2026 seulement (#1965) : `deploiement/` échappait au relevé.
+    (
+        "mise-a-jour.sh",
+        "'app_data/app.db",  # l'apostrophe ouvrante fait partie de la cible lue
+    ): "mise à jour nocturne d'une RÉPLIQUE sous SQLite : intégrité de la COPIE extraite "
+    "de la sauvegarde, dans /tmp d'un conteneur jetable, API arrêtée juste avant "
+    "(`compose stop api`) — jamais le fichier du volume",
 }
 
 #: Une invocation de sqlite3 sur un fichier .db (pas une simple mention du mot).
