@@ -524,6 +524,7 @@ jobs:
           bash scripts/exploitation/creer-base-plateforme.sh --selftest
           bash scripts/exploitation/creer-cle-baux.sh --selftest
           bash scripts/exploitation/restaurer-copie-hors-site.sh --selftest
+          bash scripts/lib/lib-restauration.sh --selftest
           # La commande SSH entre les nœuds et le diagnostic d'une clé d'hôte
           # non épinglée (#1598) — fichier absent, vide, entrée hachée.
           bash scripts/lib/lib-ssh-noeuds.sh        --selftest
