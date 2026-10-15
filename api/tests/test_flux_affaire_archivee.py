@@ -65,3 +65,23 @@ def test_une_affaire_resolue_recemment_reste_au_fil(session):  # noqa: F811
     resolue = _affaire(session, cs, "Porte du hall réparée")
     _suite(session, cs, resolue.id, type="etat", nouveau_statut="résolu")
     assert resolue.titre in _titres_du_fil(session, cs)
+
+
+def test_une_affaire_absorbee_par_une_fusion_quitte_le_fil(session):  # noqa: F811
+    """Fermée avec sa principale (#1704), une absorbée n'attend pas ses trente jours :
+    c'est la principale qui la raconte, et le fil dirait « Résolu » deux fois."""
+    cs = _compte(session, role=RoleUtilisateur.conseil_syndical)
+    principale = _affaire(session, cs, "Ascenseur en panne")
+    absorbee = _affaire(session, cs, "Ascenseur bloqué au 3e")
+    for affaire in (principale, absorbee):
+        _suite(session, cs, affaire.id, type="etat", nouveau_statut="résolu")
+    assert {principale.titre, absorbee.titre} <= _titres_du_fil(session, cs), "cas zéro"
+
+    ticket = session.get(Ticket, absorbee.id)
+    ticket.fusionnee_dans_id = principale.id
+    session.add(ticket)
+    session.commit()
+
+    titres = _titres_du_fil(session, cs)
+    assert absorbee.titre not in titres, "une affaire absorbée reste au fil"
+    assert principale.titre in titres
