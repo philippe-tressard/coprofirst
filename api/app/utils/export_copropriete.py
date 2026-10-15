@@ -259,7 +259,7 @@ _USAGE = (
 if __name__ == "__main__":
     import sys
 
-    from app.utils.import_copropriete import ImportRefuse, importer, verifier_archive
+    from app.utils.import_copropriete import ImportRefuse, importer, resume, verifier_archive
 
     from sqlmodel import create_engine
 
@@ -298,12 +298,4 @@ if __name__ == "__main__":
         )
     except ImportRefuse as _refus:
         sys.exit(f"IMPORT REFUSÉ : {_refus}")
-    print(
-        f"Importé et vérifié : {_bilan.tables} tables, {_bilan.lignes} lignes, {_bilan.fichiers} fichiers."
-    )
-    if _bilan.colonnes_ecartees:
-        print(f"Colonnes retirées du modèle, écartées : {', '.join(_bilan.colonnes_ecartees)}.")
-    if _bilan.colonnes_par_defaut:
-        print(
-            f"Colonnes absentes de l'archive, à leur défaut : {', '.join(_bilan.colonnes_par_defaut)}."
-        )
+    print("\n".join(resume(_bilan)))

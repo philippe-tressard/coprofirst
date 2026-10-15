@@ -140,11 +140,23 @@ def lignes_sans_parent(connexion, metadata=None) -> list[str]:
     return fautes
 
 
-def importer(archive_chemin: Path, moteur, *, fichiers: Path | None = None, metadata=None) -> Bilan:
+def importer(
+    archive_chemin: Path,
+    moteur,
+    *,
+    fichiers: Path | None = None,
+    metadata=None,
+    cles_differees: bool = True,
+) -> Bilan:
     """Écrit l'archive dans une base CIBLE au schéma posé et vide, puis la VÉRIFIE.
 
     Tout écart lève `ImportRefuse`, et la transaction est annulée : la base cible
     reste vide plutôt que fausse. `metadata` : comme `export_copropriete.tables`.
+
+    `cles_differees=False` : les clés se vérifient ligne à ligne, dans l'ordre des
+    tables (parents d'abord) — pour des tables SANS cycle, sous un rôle qui n'est
+    pas superutilisateur : celui du registre (#1972), à qui PostgreSQL refuserait
+    `differer_cles_etrangeres`.
     """
     with tarfile.open(archive_chemin, "r:gz") as archive:
         manifeste = json.loads(archive.extractfile("manifeste.json").read())
@@ -159,7 +171,8 @@ def importer(archive_chemin: Path, moteur, *, fichiers: Path | None = None, meta
             #  Huit tables se citent en cycle (copropriété, bâtiment, lot…) : aucun
             #  ordre d'écriture ne satisfait leurs clés ligne à ligne. Elles se
             #  vérifient donc À LA FIN, par le relevé ci-dessous (DI-7c, 09/10/2026).
-            differer_cles_etrangeres(connexion)
+            if cles_differees:
+                differer_cles_etrangeres(connexion)
             ecrites: dict[str, tuple[list[dict], set[str]]] = {}
             for t in tables(metadata):
                 if t.name not in manifeste["tables"]:
@@ -214,6 +227,24 @@ def importer(archive_chemin: Path, moteur, *, fichiers: Path | None = None, meta
                 cible.write_bytes(donnees)
                 bilan.fichiers += 1
     return bilan
+
+
+def resume(bilan: Bilan) -> list[str]:
+    """Ce que dit une ligne de commande après un import réussi — la même pour toutes (#1972)."""
+    lignes = [
+        f"Importé et vérifié : {bilan.tables} tables, {bilan.lignes} lignes, "
+        f"{bilan.fichiers} fichiers."
+    ]
+    if bilan.colonnes_ecartees:
+        lignes.append(
+            f"Colonnes retirées du modèle, écartées : {', '.join(bilan.colonnes_ecartees)}."
+        )
+    if bilan.colonnes_par_defaut:
+        lignes.append(
+            "Colonnes absentes de l'archive, à leur défaut : "
+            f"{', '.join(bilan.colonnes_par_defaut)}."
+        )
+    return lignes
 
 
 def verifier_archive(archive: Path, dossier: Path, metadata=None) -> Bilan:
