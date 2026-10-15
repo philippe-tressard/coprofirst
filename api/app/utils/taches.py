@@ -119,6 +119,18 @@ TACHES_HORS_DEMO: dict[str, str] = {
 }
 
 
+def coupee_hors_demo(tache: str) -> bool:
+    """Cette tâche est-elle coupée ICI parce que l'installation est la démo ?
+
+    La question que le rapport nocturne pose pour la sauvegarde (#1982) : elle se
+    lit dans `TACHES_HORS_DEMO`, la table que `retirer_hors_demo` applique — jamais
+    une seconde règle « démo → pas de sauvegarde » écrite à côté.
+    """
+    from app.utils.demo import est_demo
+
+    return est_demo() and tache in TACHES_HORS_DEMO
+
+
 def retirer_hors_demo(scheduler) -> list[str]:
     """En démo, retire les tâches de `TACHES_HORS_DEMO`, rattrapages compris. Rend leurs ids."""
     from app.utils.demo import est_demo

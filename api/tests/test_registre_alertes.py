@@ -129,9 +129,13 @@ def test_jamais_revenue_depuis_son_inscription_est_muette():
     assert "muette" in _codes(inst=inst)
 
 
-def test_mise_a_jour_revenue_en_arriere():
-    assert "mise_a_jour_revenue" in _codes(rapport=_rapport(maj="revenue"))
-    assert "mise_a_jour_revenue" not in _codes(rapport=_rapport(maj="reussie"))
+@pytest.mark.parametrize(
+    "issue, revenue",
+    [("revenue", True), ("restauree", True), ("reussie", False), ("echouee", False)],
+)
+def test_mise_a_jour_revenue_en_arriere(issue, revenue):
+    """Revenue à l'image d'avant, ou à la sauvegarde d'avant : un retour (#1981)."""
+    assert ("mise_a_jour_revenue" in _codes(rapport=_rapport(maj=issue))) is revenue
 
 
 def test_sauvegarde_trop_ancienne_ou_inconnue():
@@ -141,6 +145,20 @@ def test_sauvegarde_trop_ancienne_ou_inconnue():
     #  c'est une sauvegarde qui manque, et elle se dit.
     absente = Sauvegarde(derniere_reussie_le=None)
     assert "sauvegarde_ancienne" in _codes(rapport=_rapport(sauvegarde=absente))
+
+
+def test_une_sauvegarde_non_attendue_ne_fait_pas_alerte():
+    """#1982 : la démo se régénère chaque nuit, sa sauvegarde est coupée EXPRÈS
+    (`utils/taches.TACHES_HORS_DEMO`) — l'installation le DÉCLARE, la référence se tait.
+    Sans déclaration (réplique d'avant), le comportement ne change pas."""
+    sans = Sauvegarde(derniere_reussie_le=None, copie_hors_machine=False, attendue=False)
+    assert {"sauvegarde_ancienne", "sans_copie_hors_machine"}.isdisjoint(
+        _codes(rapport=_rapport(sauvegarde=sans))
+    )
+    muette = Sauvegarde(derniere_reussie_le=None, copie_hors_machine=False)
+    assert {"sauvegarde_ancienne", "sans_copie_hors_machine"} <= _codes(
+        rapport=_rapport(sauvegarde=muette)
+    )
 
 
 def test_sauvegarde_sans_copie_hors_de_la_machine():

@@ -17,6 +17,11 @@ graves seulement — muette, clone, deux références (`GENRES`, `grave`).
    mesurer (`inscription/rapport.py`), et l'écran le montre « inconnu ». Une seule
    exception, voulue : une sauvegarde `None` dit qu'une copropriété n'a **pas** de
    sauvegarde lisible — elle manque, et cela se dit.
+2 bis. **Une sauvegarde que l'installation déclare NON ATTENDUE n'alerte pas** (#1982) :
+   la démo se régénère chaque nuit et sa sauvegarde est coupée exprès
+   (`utils/taches.TACHES_HORS_DEMO`). C'est l'installation qui le dit
+   (`Sauvegarde.attendue`) : la référence ne sait pas qu'une installation est la
+   démo, et n'a pas à le deviner. Sans déclaration, rien ne change.
 3. **Ni la référence ni une installation résiliée n'alertent** : la référence ne se
    rapporte pas à elle-même (ses nœuds ont `check-reliability.sh`), et une
    résiliation a rendu l'installation à son exploitant.
@@ -66,6 +71,9 @@ RETARD_MINEURES = 10
 #: Un clone signalé reste une alerte une semaine — il se signale une fois par jour au
 #: plus (`routeur._signaler_clone`), donc une semaine sans signalement le lève.
 CLONE_RECENT = timedelta(days=7)
+
+#: Les issues d'une mise à jour nocturne qui sont un retour en arrière (`ISSUES_MISE_A_JOUR`).
+MISES_A_JOUR_REVENUES = frozenset({"revenue", "restauree"})
 
 #: Les gestes du journal qui portent le suivi d'une alerte grave.
 SIGNALEE, LEVEE = "alerte_signalee:", "alerte_levee:"
@@ -135,6 +143,19 @@ def _en_retard(version: tuple[int, int, int], tete: tuple[int, int, int]) -> boo
     )
 
 
+def _alertes_de_sauvegarde(sauv, maintenant: datetime) -> dict[str, str]:
+    """Les deux alertes d'une sauvegarde ATTENDUE (règles 2 et 2 bis)."""
+    trouvees: dict[str, str] = {}
+    if sauv.derniere_reussie_le is None:
+        trouvees["sauvegarde_ancienne"] = "Aucune sauvegarde réussie déclarée."
+    elif maintenant - _naif(sauv.derniere_reussie_le) > SAUVEGARDE_MAX:
+        jours = (maintenant - _naif(sauv.derniere_reussie_le)).days
+        trouvees["sauvegarde_ancienne"] = f"Dernière sauvegarde réussie il y a {jours} jour(s)."
+    if sauv.copie_hors_machine is False:
+        trouvees["sans_copie_hors_machine"] = "La sauvegarde ne quitte pas la machine."
+    return trouvees
+
+
 def evaluer(
     inst: Installation,
     rapport: Optional[Rapport],
@@ -158,17 +179,14 @@ def evaluer(
 
     if rapport is not None:
         ident, heb, sauv = rapport.identite, rapport.hebergement, rapport.sauvegarde
-        if ident.derniere_mise_a_jour == "revenue":
+        if ident.derniere_mise_a_jour in MISES_A_JOUR_REVENUES:
             trouvees["mise_a_jour_revenue"] = (
-                "La dernière mise à jour est revenue à la version précédente."
+                "La dernière mise à jour a restauré la sauvegarde d'avant."
+                if ident.derniere_mise_a_jour == "restauree"
+                else "La dernière mise à jour est revenue à la version précédente."
             )
-        if sauv.derniere_reussie_le is None:
-            trouvees["sauvegarde_ancienne"] = "Aucune sauvegarde réussie déclarée."
-        elif maintenant - _naif(sauv.derniere_reussie_le) > SAUVEGARDE_MAX:
-            jours = (maintenant - _naif(sauv.derniere_reussie_le)).days
-            trouvees["sauvegarde_ancienne"] = f"Dernière sauvegarde réussie il y a {jours} jour(s)."
-        if sauv.copie_hors_machine is False:
-            trouvees["sans_copie_hors_machine"] = "La sauvegarde ne quitte pas la machine."
+        if sauv.attendue is not False:  # règle 2 bis
+            trouvees.update(_alertes_de_sauvegarde(sauv, maintenant))
         if heb.disque_total_mo and heb.disque_occupe_mo is not None:
             pct = heb.disque_occupe_mo * 100 / heb.disque_total_mo
             if pct > DISQUE_PLEIN_PCT:
