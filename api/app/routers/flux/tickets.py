@@ -24,6 +24,7 @@ from sqlmodel import select
 from app.models.core import STATUTS_TICKET_ACTIFS, Ticket, TicketEvolution, Utilisateur
 from app.utils.nature_affaire import ACTUALITE
 from app.utils.dates_fr import duree_jhm
+from app.utils.affaire_absorbee import pas_absorbee
 from app.utils.archivage import est_archivable, seuil_archivage_jours
 from app.utils.photos import parse_photos
 from app.utils.recuperer import precharger
@@ -146,6 +147,9 @@ def _evolutions(ctx: ContexteFlux, type_evolution: str):
             #  Une actualité a sa rubrique (`publications`) : ici, elle
             #  paraîtrait une seconde fois, sous une autre forme (#1091).
             Ticket.categorie != ACTUALITE,
+            #  Une affaire ABSORBÉE par une fusion (#1704) est racontée par sa
+            #  principale : elle y dirait « Résolu » une seconde fois.
+            pas_absorbee(),
         )
         .order_by(TicketEvolution.cree_le.desc())
     ).all()
@@ -275,7 +279,7 @@ def collecter(ctx: ContexteFlux) -> list[FluxItem]:
     # ── Tickets récemment créés, sans aucune évolution ───────────────────────
     for tk in ctx.session.exec(
         select(Ticket)
-        .where(Ticket.cree_le >= ctx.since, Ticket.categorie != ACTUALITE)
+        .where(Ticket.cree_le >= ctx.since, Ticket.categorie != ACTUALITE, pas_absorbee())
         .order_by(Ticket.cree_le.desc())
     ).all():
         if tk.id in vus or not ticket_visible(tk, ctx.user):
