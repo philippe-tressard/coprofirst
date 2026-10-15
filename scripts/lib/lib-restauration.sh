@@ -28,15 +28,25 @@
 #  Une archive de l'époque SQLite (`app.db`) n'est PAS prise en charge : la
 #  résidence est servie par PostgreSQL depuis le 10/10/2026 (DI-7).
 #
+#  Le REGISTRE des installations (base `plateforme`, chez la référence) a sa
+#  propre archive, dans `plateforme/` de la copie hors site : `restauration_poser_registre`
+#  crée son rôle et sa base, puis la restaure (#1972). Il exige en plus
+#  `PLATEFORME_DATABASE_URL` dans l'environnement de `lancer_base`.
+#
 #  Ce que ce module NE fait PAS : le `.env` (il se reconstruit à la main, depuis
 #  `.env.example` et le gestionnaire de mots de passe), l'état WhatsApp (absent
-#  des sauvegardes : on ré-appaire), le registre des installations (#1972).
+#  des sauvegardes : on ré-appaire).
 #
 #  Test : bash lib-restauration.sh --selftest   (aucun effet de bord)
 # =============================================================================
 
+# shellcheck source=lib-plateforme.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib-plateforme.sh"
+
 #: Le membre de l'archive qui porte la base — écrit par `backup.NOM_EXPORT_BASE`.
 RESTAURATION_EXPORT=base-export.tar.gz
+#: L'archive du registre, copiée par l'appelant dans le dossier monté sur /restauration.
+RESTAURATION_REGISTRE=registre.tar.gz
 
 # ── PURE : que contient l'archive ? ───────────────────────────────────────────
 #  stdin : la liste des membres (`tar -tzf`) → postgresql | sqlite | illisible
@@ -130,6 +140,31 @@ print(f"FICHIERS {len(vu)}")
 #  reprises par `api/start.sh` au démarrage (`chown -R app:app /app/uploads`).
 restauration_installer_fichiers() {
     lancer_fichiers python -c "$RESTAURATION_PY_FICHIERS"
+}
+
+# ── Geste 4 (référence seulement) : le registre des installations (#1972) ─────
+#  $1 commande psql et $2 commande de requête, qui visent le PostgreSQL restauré
+#  (l'appelant les définit : `plateforme_psql_ref`/`pgq` en vrai, le conteneur
+#  jetable au banc). Le rôle et la base de `PLATEFORME_DATABASE_URL`, puis la
+#  restauration — AVANT que l'application démarre : son démarrage inscrirait la
+#  référence, et la base ne serait plus neuve (`registre/sauvegarde.restaurer`).
+#  → 0, ou 1 avec la raison.
+restauration_poser_registre() {
+    local url="${PLATEFORME_DATABASE_URL:-}" util base mdp existants decision raison
+    util=$(plateforme_url_partie "$url" u); base=$(plateforme_url_partie "$url" b)
+    mdp=$(plateforme_url_partie "$url" m)
+    existants=$(plateforme_existants "$2" "$util" "$base")
+    # shellcheck disable=SC2086 # deux mots voulus : rôle et base
+    decision=$(decider_creation oui oui "$util" "$base" "$([ -n "$mdp" ] && echo oui || echo non)" $existants)
+    case "$decision" in
+        CREER)     # shellcheck disable=SC2086
+                   raison=$(plateforme_creer "$1" "$util" "$base" "$mdp" $existants) \
+                       || { echo "registre : $raison"; return 1; } ;;
+        DEJA_FAIT) ;;  # la restauration vérifie, elle, que la base est NEUVE
+        *)         echo "registre : ${decision#REFUS:}"; return 1 ;;
+    esac
+    lancer_base python -m app.registre.sauvegarde restaurer \
+        "/restauration/$RESTAURATION_REGISTRE" env:PLATEFORME_DATABASE_URL
 }
 
 # ── Self-test (aucun effet de bord) ───────────────────────────────────────────

@@ -8,10 +8,14 @@ produira, et sa vérification par réimport est réellement jouée.
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import tarfile
+from pathlib import Path
 
 import pytest
-from sqlmodel import Session
+from sqlalchemy import text
+from sqlmodel import Session, select
 
 from app.config import get_settings
 from app.registre import base, migrer, sauvegarde
@@ -93,15 +97,45 @@ def test_eteinte_hors_de_la_reference(registre, alertes, monkeypatch):
     assert not sauvegarde.dossier().exists() and not alertes
 
 
-def test_la_restauration_rend_le_registre(registre, tmp_path):
-    """L'archive se réimporte, avec les métadonnées du registre, dans une base neuve."""
-    from app.registre.modeles import registre_plateforme
-    from app.utils.import_copropriete import importer
-
+def test_la_restauration_rend_le_registre(registre):
+    """L'archive se réimporte dans une base NEUVE, marquée à la tête de sa chaîne (#1972)."""
     archive = sauvegarde.sauvegarder()
     cible = moteur_memoire(partage=True, schema=False)
-    registre_plateforme.metadata.create_all(cible)
-    bilan = importer(archive, cible, metadata=registre_plateforme.metadata)
+    bilan = sauvegarde.restaurer(archive, cible)
     assert bilan.lignes >= 1
     with Session(cible) as session:
         assert session.get(Installation, 1).identifiant == IDENTIFIANT_REFERENCE
+        tete = session.exec(text("select version_num from alembic_version")).one()
+        assert tete[0], "la base restaurée n'est pas marquée par sa chaîne de migrations"
+
+
+def test_une_base_qui_n_est_pas_neuve_est_refusee_avant_tout_geste(registre):
+    """La base du registre DÉJÀ démarrée porte la référence : y importer doublerait les
+    lignes, et l'erreur d'intégrité ne dirait pas pourquoi. Refus, base intacte."""
+    archive = sauvegarde.sauvegarder()
+    with pytest.raises(ImportRefuse, match="pas neuve"):
+        sauvegarde.restaurer(archive, registre)
+    with Session(registre) as session:
+        assert len(session.exec(select(Installation)).all()) == 1
+
+
+def _commande(archive: Path, base_neuve: Path) -> subprocess.CompletedProcess:
+    url = "sqlite" + ":///" + base_neuve.as_posix()  # une base JETABLE du test
+    return subprocess.run(
+        [sys.executable, "-m", "app.registre.sauvegarde", "restaurer", str(archive), url],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+    )
+
+
+@pytest.mark.sqlite_seulement("la commande s'éprouve sur un fichier jetable du test")
+def test_la_commande_restaure_une_base_neuve_puis_refuse_de_recommencer(registre, tmp_path):
+    """`python -m app.registre.sauvegarde restaurer` — le geste de la procédure (#1972)."""
+    archive = sauvegarde.sauvegarder()
+    base_neuve = tmp_path / "plateforme.db"
+    sortie = _commande(archive, base_neuve)
+    assert sortie.returncode == 0, sortie.stderr[-600:]
+    assert "Registre restauré et vérifié" in sortie.stdout
+    relance = _commande(archive, base_neuve)
+    assert relance.returncode != 0 and "RESTAURATION REFUSÉE" in relance.stderr
