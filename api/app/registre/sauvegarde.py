@@ -161,3 +161,60 @@ def probleme_copie_hors_site() -> list[str]:
             f"jours ({nom}) — seuil : {seuil_h // 24} jours."
         )
     return problemes
+
+
+def restaurer(archive: Path, cible):
+    """Réimporte une archive du registre dans une base `plateforme` NEUVE (#1972).
+
+    Les deux nœuds perdus : la copie hors site rend l'archive, et rien ne savait
+    la réimporter — `export_copropriete importer` ne connaît que les tables d'une
+    copropriété. Même règle que `schema_initial` : une base est neuve si elle n'a
+    AUCUNE table ; sinon refus, avant tout geste. Puis la chaîne de migrations de
+    la plateforme (`alembic_plateforme`, qui la marque à sa tête), puis l'import
+    vérifié — transactionnel : un écart laisse la base au schéma seul.
+
+    ⚠️ À faire AVANT que l'API démarre sur cette base : son démarrage y inscrit la
+    référence (`migrer.preparer`), et la base ne serait plus neuve.
+    Rend le `Bilan` de l'import ; lève `ImportRefuse`.
+    """
+    from sqlalchemy import inspect
+
+    from app.registre import migrer
+    from app.utils.import_copropriete import ImportRefuse, importer
+
+    with cible.connect() as connexion:
+        deja = inspect(connexion).get_table_names()
+    if deja:
+        raise ImportRefuse(
+            f"la base cible n'est pas neuve ({len(deja)} table(s), dont {sorted(deja)[0]}) : "
+            "le registre ne se restaure que dans une base `plateforme` vide"
+        )
+    migrer.migrer(cible)
+    #  Clés NON différées : ses tables n'ont pas de cycle (toutes visent
+    #  `installation`), et son rôle n'est pas superutilisateur — PostgreSQL lui
+    #  refuserait le report (`dialecte.differer_cles_etrangeres`).
+    return importer(archive, cible, metadata=registre_plateforme.metadata, cles_differees=False)
+
+
+if __name__ == "__main__":
+    import sys
+
+    from sqlmodel import create_engine
+
+    from app.utils.export_copropriete import adresse
+    from app.utils.import_copropriete import ImportRefuse, resume
+
+    if len(sys.argv) != 4 or sys.argv[1] != "restaurer":
+        sys.exit(
+            "usage : python -m app.registre.sauvegarde restaurer <archive> <url-cible>\n"
+            "        (l'URL peut s'écrire env:NOM — PLATEFORME_DATABASE_URL, lue dans "
+            "l'environnement)"
+        )
+    _cible = create_engine(adresse(sys.argv[3]))
+    try:
+        _bilan = restaurer(Path(sys.argv[2]), _cible)
+    except ImportRefuse as _refus:
+        sys.exit(f"RESTAURATION REFUSÉE : {_refus}")
+    finally:
+        _cible.dispose()
+    print("\n".join(resume(_bilan)))

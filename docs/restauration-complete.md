@@ -350,9 +350,11 @@ l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** té
    conservée : une nouvelle ferme toutes les sessions et invalide les liens en attente
    (voulu, mais à savoir) ; les mots de passe des comptes, eux, sont dans la base.
 3. **`.active` nomme CE nœud** : `echo rpi1 > /opt/5hostachy/.active` (son propre nom).
-4. **L'archive, du poste vers le nœud** — la plus récente qui ne finit pas par `.invalide` :
+4. **L'archive, du poste vers le nœud** — la plus récente qui ne finit pas par `.invalide` ;
+   chez la **référence**, celle du registre aussi (`C:\Backup\plateforme\`) :
    ```bash
    scp C:/Backup/hostachy_backup_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/
+   scp C:/Backup/plateforme/plateforme_backup_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/
    ```
 5. **Restaurer**, **avant** de poser les crons (sinon `auto-deploy` démarrerait
    l'application sur une base vide, et le script refuse) :
@@ -360,6 +362,12 @@ l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** té
    sudo bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh /tmp/hostachy_backup_….tar.gz        # dit ce qu'il ferait
    sudo bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh /tmp/hostachy_backup_….tar.gz --oui  # exécute
    ```
+   Chez la **référence** (`PLATEFORME_DATABASE_URL` dans le `.env`), ajouter
+   `--registre /tmp/plateforme_backup_….tar.gz` : le rôle et la base du registre sont
+   créés, puis l'archive y est restaurée et vérifiée (`python -m app.registre.sauvegarde
+   restaurer`), **avant** que l'application démarre — son démarrage y inscrirait la
+   référence, et la base ne serait plus neuve. Sans cette option, le script **refuse** :
+   le registre renaîtrait vide.
    Il refuse si le pair sert encore (un seul nœud perdu : étapes 6 à 9), si un volume
    de base existe déjà ici, si l'application tourne ou si `.active` nomme l'autre.
    Puis : images du commit · base PostgreSQL **neuve** démarrée en primaire · schéma
@@ -371,7 +379,8 @@ l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** té
 7. **Crons et unité systemd** (étape 11), puis l'étape 12.
 8. **WhatsApp** : l'appairage n'est pas dans les sauvegardes — Admin › WhatsApp ›
    Statut, un seul essai (voir `.claude/skills/infra-rpi`).
-9. `rm /tmp/hostachy_backup_*.tar.gz` : l'archive porte les données des résidents.
+9. `rm /tmp/hostachy_backup_*.tar.gz /tmp/plateforme_backup_*.tar.gz` : l'archive porte
+   les données des résidents, celle du registre les contacts des installations.
 
 ### Nœud B — il rejoint la paire
 
@@ -395,10 +404,9 @@ importées et vérifiées, 174 fichiers à l'identique, révision 0286, en 26 s 
 archive altérée (une date d'une table changée) **refusée**. À rejouer après toute
 modification du script, de `lib-restauration.sh`, de l'export ou de l'import.
 
-⚠️ **Le registre des installations** (base `plateforme`, chez la référence) a sa
-propre copie, sous `plateforme/` dans la même destination (#1896), mais **aucune
-commande ne le réimporte encore** : `export_copropriete importer` ne connaît que les
-tables d'une copropriété (#1972).
+**Le registre** s'éprouve dans le même passage : ajouter
+`--registre /tmp/plateforme_backup_<…>_paris.tar.gz` (copiée elle aussi, et effacée en
+sortie) — sa base est créée sur le PostgreSQL jetable, puis restaurée et vérifiée (#1972).
 
 ---
 
