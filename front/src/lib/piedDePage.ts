@@ -9,9 +9,10 @@
  * élément ajouté plus tard à `ELEMENTS_PIED` paraît donc d'office, au lieu de
  * rester invisible parce qu'aucune instance ne l'avait coché.
  *
- * ## 🔴 Trois éléments ne se masquent pas
+ * ## 🔴 Quatre éléments ne se masquent pas
  *
- * Ils sont `verrouille`, avec leur raison : `lireMasques` les écarte de la
+ * La marque, et les trois liens que la loi ou la licence imposent. Ils sont
+ * `verrouille`, avec leur raison : `lireMasques` les écarte de la
  * valeur lue, quelle que soit la configuration en base (une saisie directe par
  * l'API compte aussi). Le pied de page n'a donc pas à les tester un par un.
  * Le composant d'affichage est `PiedDePage.svelte`, celui du réglage est
@@ -27,20 +28,37 @@
  *
  * ## L'ordre et le préfixe du nom (arbitrés à l'écran, 09/10/2026)
  *
- * - **Tous les éléments se réordonnent**, verrouillés compris : la loi et la
- *   licence imposent qu'ils SOIENT là, pas où. L'ordre se stocke en entier
+ * - **Les éléments se réordonnent dans leur place** (ci-dessous), verrouillés
+ *   compris : la loi et la licence imposent qu'ils SOIENT là, pas où. La
+ *   marque seule ne bouge pas. L'ordre se stocke en entier
  *   (`pied_de_page_ordre`) ; un code inconnu s'ignore, un élément absent de la
  *   valeur — ajouté plus tard — se range en fin.
  * - **Un préfixe devant le nom** (`pied_de_page_prefixe_nom`) : « Résidence »
  *   donne « Résidence 5Hostachy », sans séparateur, et le nom du site reste
  *   « 5Hostachy » partout ailleurs (menu, courriels).
+ *
+ * ## La carte : trois places (maquette A, arbitrée le 15/10/2026)
+ *
+ * Le pied de page est une carte, sur le modèle de celui de coprofirst.fr :
+ * - **la marque** — le logo et le nom de la résidence, en gras. Elle ne se
+ *   masque ni ne se déplace : « la partie non négociable » ;
+ * - **les mentions**, en petit sous le nom (année, texte libre, version, serveur) ;
+ * - **les liens**, à droite (code source, mentions légales, confidentialité).
+ *
+ * Chaque élément déclare sa `place`. L'ordre réglé vaut À L'INTÉRIEUR d'une
+ * place : il se stocke toujours en entier, si bien qu'un ordre enregistré avant
+ * la carte se lit sans migration — chaque place y garde son ordre relatif.
  */
 import { NOM_PLATEFORME } from '$lib/plateforme';
+
+/** Où l'élément se rend dans la carte. */
+export type PlacePied = 'marque' | 'mention' | 'lien';
 
 export interface ElementPied {
 	code: string;
 	/** Le nom de l'élément dans le réglage de l'administration. */
 	libelle: string;
+	place: PlacePied;
 	/** Pourquoi l'élément ne se masque pas. S'il est absent, il se masque. */
 	verrouille?: string;
 }
@@ -48,28 +66,50 @@ export interface ElementPied {
 /** Les éléments du pied de page, dans leur ordre PAR DÉFAUT — que
  *  `pied_de_page_ordre` remplace. */
 export const ELEMENTS_PIED: readonly ElementPied[] = [
-	{ code: 'annee', libelle: '© Année' },
-	{ code: 'residence', libelle: 'Nom de la résidence' },
-	{ code: 'texte', libelle: 'Texte libre' },
-	{ code: 'version', libelle: 'Version' },
-	{ code: 'serveur', libelle: 'Serveur (RPi)' },
+	{
+		code: 'residence',
+		libelle: 'Logo et nom de la résidence',
+		place: 'marque',
+		verrouille: 'ils signent le pied de page',
+	},
+	{ code: 'annee', libelle: '© Année', place: 'mention' },
+	{ code: 'texte', libelle: 'Texte libre', place: 'mention' },
+	{ code: 'version', libelle: 'Version', place: 'mention' },
+	{ code: 'serveur', libelle: 'Serveur (RPi)', place: 'mention' },
 	{
 		code: 'source',
 		libelle: `${NOM_PLATEFORME} (code source)`,
+		place: 'lien',
 		verrouille:
 			'la licence AGPL impose d’offrir le code source de la version en service à qui utilise le site',
 	},
 	{
 		code: 'mentions',
 		libelle: 'Mentions légales',
+		place: 'lien',
 		verrouille: 'elles doivent rester accessibles depuis chaque page (LCEN, art. 6)',
 	},
 	{
 		code: 'confidentialite',
-		libelle: 'Politique de confidentialité',
+		libelle: 'Confidentialité',
+		place: 'lien',
 		verrouille: 'l’information des personnes doit rester accessible (RGPD, art. 13)',
 	},
 ];
+
+/** Les places qui se règlent dans l'administration, avec leur intitulé — la
+ *  marque n'en est pas : elle ne bouge pas. */
+export const PLACES_REGLABLES: readonly { place: PlacePied; titre: string }[] = [
+	{ place: 'mention', titre: 'Sous le nom' },
+	{ place: 'lien', titre: 'Liens, à droite' },
+];
+
+const PLACE = new Map(ELEMENTS_PIED.map((e) => [e.code, e.place]));
+
+/** Les codes d'`ordre` qui se rendent à `place`, dans cet ordre. */
+export function dansLaPlace(ordre: readonly string[], place: PlacePied): string[] {
+	return ordre.filter((c) => PLACE.get(c) === place);
+}
 
 /** La clé de configuration — publique : le pied de page la lit dans `/config`. */
 export const CLE_PIED_MASQUES = 'pied_de_page_masques';
@@ -176,11 +216,14 @@ export function elementsAffiches(r: ReglagePied): string[] {
 	);
 }
 
-/** L'ordre, l'élément `code` monté (-1) ou descendu (+1) d'un cran ; inchangé en bout de liste. */
+/** L'ordre, l'élément `code` échangé avec son voisin DE MÊME PLACE, avant (-1)
+ *  ou après (+1) ; inchangé en bout de place. */
 export function deplacer(ordre: readonly string[], code: string, sens: -1 | 1): string[] {
+	const place = PLACE.get(code);
 	const i = ordre.indexOf(code);
-	const j = i + sens;
-	if (i < 0 || j < 0 || j >= ordre.length) return [...ordre];
+	let j = i + sens;
+	while (j >= 0 && j < ordre.length && PLACE.get(ordre[j]) !== place) j += sens;
+	if (i < 0 || place === undefined || j < 0 || j >= ordre.length) return [...ordre];
 	const suite = [...ordre];
 	[suite[i], suite[j]] = [suite[j], suite[i]];
 	return suite;
