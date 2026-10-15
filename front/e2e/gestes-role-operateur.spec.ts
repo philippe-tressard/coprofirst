@@ -1,13 +1,13 @@
 /*
- *  **Accorder ou retirer le rôle Opérateur** dans Admin › Utilisateurs (#1750).
+ *  **Accorder ou retirer les rôles Opérateur et Admin** dans Admin › Utilisateurs.
  *
  *  L'écran propose ce que le serveur accepte, ni plus ni moins —
- *  `gestesOperateur` (`$lib/droits`) contre `_exiger_geste_operateur`
- *  (`api/app/routers/admin/utilisateurs.py`, éprouvé par
- *  `api/tests/test_role_operateur_attribution.py`) :
- *  un opérateur l'accorde à un admin, le retire à un autre opérateur, jamais à
- *  lui-même ; « – Admin » se tait chez un opérateur ; un admin qui n'est pas
- *  opérateur ne voit aucun des deux gestes.
+ *  `gestesAdminOperateur` (`$lib/droits`) contre `_exiger_geste_operateur` et
+ *  `_exiger_un_autre_titulaire` (`api/app/routers/admin/utilisateurs.py`,
+ *  éprouvés par `api/tests/test_role_operateur_attribution.py`) :
+ *  tout admin accorde Opérateur à un admin, lui-même compris ; « – Admin » se
+ *  tait chez un opérateur ; Admin et Opérateur se retirent, à soi-même compris,
+ *  sauf à leur dernier titulaire actif.
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
@@ -36,10 +36,13 @@ const COMPTES = [
 	ligne(33, 'Chloe', ['propriétaire', 'résident']),
 ];
 
-async function ouvrir(page: Page, moi: typeof OPERATEUR) {
+/** Moi, seul administrateur et seul opérateur : rien ne se retire. */
+const SEUL_TITULAIRE = [ligne(OPERATEUR.id, 'Moi', OPERATEUR.roles), COMPTES[3]];
+
+async function ouvrir(page: Page, moi: typeof OPERATEUR, comptes = COMPTES) {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return moi;
-		if (chemin === '/api/admin/utilisateurs') return COMPTES;
+		if (chemin === '/api/admin/utilisateurs') return comptes;
 	});
 	await page.goto('/admin?onglet=utilisateurs');
 	await attendreHydratation(page);
@@ -48,7 +51,7 @@ async function ouvrir(page: Page, moi: typeof OPERATEUR) {
 const rangee = (page: Page, prenom: string) =>
 	page.locator('table tbody tr').filter({ hasText: `${prenom} DURAND` });
 
-test('un opérateur accorde le rôle à un admin, le retire à un autre, jamais à lui-même', async ({
+test('le rôle Opérateur s’accorde à un admin et se retire, à soi-même compris', async ({
 	page,
 }) => {
 	await ouvrir(page, OPERATEUR);
@@ -65,8 +68,18 @@ test('un opérateur accorde le rôle à un admin, le retire à un autre, jamais 
 
 	//  Pas admin : le rôle ne s'accorde pas.
 	await expect(rangee(page, 'Chloe').getByRole('button', { name: /Opérateur/ })).toHaveCount(0);
-	//  Soi-même : on ne se le retire pas.
-	await expect(rangee(page, 'Moi').getByRole('button', { name: /Opérateur/ })).toHaveCount(0);
+	//  Soi-même : un autre opérateur reste, le geste est offert.
+	await expect(rangee(page, 'Moi').getByRole('button', { name: '– Opérateur' })).toBeVisible();
+});
+
+test('le dernier administrateur et le dernier opérateur ne se retirent pas le rôle', async ({
+	page,
+}) => {
+	await ouvrir(page, OPERATEUR, SEUL_TITULAIRE);
+	await expect(page.locator('table tbody tr')).toHaveCount(2);
+	const moi = rangee(page, 'Moi');
+	await expect(moi.getByRole('button', { name: '– Opérateur' })).toHaveCount(0);
+	await expect(moi.getByRole('button', { name: '– Admin' })).toHaveCount(0);
 });
 
 test('le geste demande confirmation et nomme le rôle', async ({ page }) => {
@@ -78,8 +91,14 @@ test('le geste demande confirmation et nomme le rôle', async ({ page }) => {
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
-test('un admin qui n’est pas opérateur ne voit aucun geste sur ce rôle', async ({ page }) => {
-	await ouvrir(page, ADMIN_SEUL);
+test('un admin qui n’est pas opérateur accorde le rôle, à lui-même compris', async ({ page }) => {
+	await ouvrir(page, ADMIN_SEUL, [
+		ligne(ADMIN_SEUL.id, 'Moi', ADMIN_SEUL.roles),
+		...COMPTES.slice(1),
+	]);
 	await expect(page.locator('table tbody tr')).toHaveCount(4);
-	await expect(page.getByRole('button', { name: /Opérateur/ })).toHaveCount(0);
+	await expect(rangee(page, 'Moi').getByRole('button', { name: '+ Opérateur' })).toBeVisible();
+	await expect(rangee(page, 'Alice').getByRole('button', { name: '+ Opérateur' })).toBeVisible();
+	//  Bruno est le seul opérateur : il le reste.
+	await expect(rangee(page, 'Bruno').getByRole('button', { name: /Opérateur/ })).toHaveCount(0);
 });

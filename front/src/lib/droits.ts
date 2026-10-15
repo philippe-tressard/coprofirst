@@ -88,25 +88,40 @@ export function peutCommenter(
 	return peutEditer(objet, userId, estAdmin) || estCS;
 }
 
+/** Combien de comptes ACTIFS portent les rôles qui ne restent jamais vacants. */
+export interface Titulaires {
+	admin: number;
+	operateur: number;
+}
+
+/** Le décompte que `gestesAdminOperateur` attend, lu dans la liste des comptes. */
+export function compterTitulaires(comptes: (User & { actif?: boolean })[]): Titulaires {
+	const actifs = comptes.filter((c) => c.actif !== false);
+	return {
+		admin: actifs.filter((c) => aRole(c, 'admin')).length,
+		operateur: actifs.filter((c) => aRole(c, 'operateur')).length,
+	};
+}
+
 /**
- * Les gestes sur le rôle **Opérateur** (Admin › Utilisateurs) — le pendant écran
- * de `_exiger_geste_operateur` (`api/app/routers/admin/utilisateurs.py`), dans le
- * même ordre :
+ * Les gestes sur les rôles **Admin** et **Opérateur** (Admin › Utilisateurs) —
+ * le pendant écran de `_exiger_geste_operateur` et `_exiger_un_autre_titulaire`
+ * (`api/app/routers/admin/utilisateurs.py`), dans le même ordre :
  *
- * - seul un opérateur l'accorde ou le retire ;
- * - il ne s'accorde qu'à un administrateur, et Admin ne se retire pas à un
- *   opérateur — ses écrans vivent sous `/admin` ;
- * - on ne se le retire pas soi-même : c'est ce qui garde au moins un opérateur.
+ * - Opérateur ne s'accorde qu'à un administrateur, et Admin ne se retire pas à
+ *   un opérateur — ses écrans vivent sous `/admin` ;
+ * - tout administrateur l'accorde ou le retire, à lui-même compris (15/10/2026) ;
+ * - Admin et Opérateur se retirent, à soi-même compris, sauf à leur dernier
+ *   titulaire actif.
  */
-export function gestesOperateur(
-	acteur: User | null,
+export function gestesAdminOperateur(
 	cible: User,
+	titulaires: Titulaires,
 ): { accorder: boolean; retirer: boolean; retirerAdmin: boolean } {
-	const operateur = aRole(acteur, 'operateur');
 	const cibleOperateur = aRole(cible, 'operateur');
 	return {
-		accorder: operateur && !cibleOperateur && aRole(cible, 'admin'),
-		retirer: operateur && cibleOperateur && acteur?.id !== cible.id,
-		retirerAdmin: !cibleOperateur,
+		accorder: !cibleOperateur && aRole(cible, 'admin'),
+		retirer: cibleOperateur && titulaires.operateur > 1,
+		retirerAdmin: !cibleOperateur && titulaires.admin > 1,
 	};
 }

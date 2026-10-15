@@ -1,9 +1,10 @@
 <!--
   Les gestes de rôle d'un compte (Admin › Comptes) : donner ou retirer le
-  conseil syndical, l'administration et l'opérateur de la plateforme — ce
-  dernier proposé à un opérateur seulement, selon `gestesOperateur`
-  (`$lib/droits`), pendant écran de la règle du serveur. Le geste lui-même — la confirmation, puis
-  l'appel — reste à l'onglet, qui le reçoit par `demander`.
+  conseil syndical, l'administration et l'opérateur de la plateforme — ces deux
+  derniers selon `gestesAdminOperateur` (`$lib/droits`), pendant écran de la
+  règle du serveur : jamais retirés à leur dernier titulaire actif, que l'onglet
+  compte (`titulaires`). Le geste lui-même — la confirmation, puis l'appel —
+  reste à l'onglet, qui le reçoit par `demander`.
 
   Extrait d'`OngletUtilisateurs` le 08/10/2026 (#1571) : l'onglet frôlait les
   500 lignes, et ses styles en ligne ne pouvaient passer en classes sans le faire
@@ -11,13 +12,14 @@
 -->
 <script lang="ts">
 	import type { UtilisateurAdmin } from '$lib/api';
-	import { aRole, currentUser } from '$lib/stores/auth';
-	import { gestesOperateur } from '$lib/droits';
+	import { aRole } from '$lib/stores/auth';
+	import { gestesAdminOperateur, type Titulaires } from '$lib/droits';
 
 	export let u: UtilisateurAdmin;
+	export let titulaires: Titulaires;
 	export let demander: (u: UtilisateurAdmin, role: string, action: 'ajouter' | 'retirer') => void;
 
-	$: operateur = gestesOperateur($currentUser, u);
+	$: operateur = gestesAdminOperateur(u, titulaires);
 </script>
 
 {#if !u.actif}

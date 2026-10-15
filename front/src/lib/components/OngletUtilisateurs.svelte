@@ -26,7 +26,8 @@
 	import { fmtDate } from '$lib/date';
 	import { comparerParNom, nomAffiche } from '$lib/noms';
 	import { badgeStatut, badgesDeRoles, libelleRole, LIBELLES_STATUT_ABREGE } from '$lib/roles';
-	import { aRole } from '$lib/stores/auth';
+	import { aRole, currentUser, setUser } from '$lib/stores/auth';
+	import { compterTitulaires } from '$lib/droits';
 	import GestesRolesCompte from '$lib/components/GestesRolesCompte.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import FiltresUtilisateurs from '$lib/components/FiltresUtilisateurs.svelte';
@@ -46,6 +47,9 @@
 	export let batimentsMap: Record<number, string> = {};
 	/** Relit la liste (la page la charge : l'onglet Site en lit aussi les comptes). */
 	export let recharger: () => unknown = () => {};
+
+	$: titulaires = compterTitulaires(utilisateurs);
+	$: pourSoi = roleEnCours?.user.id === $currentUser?.id;
 
 	let userSearch = '';
 	let userStatutFilter = '';
@@ -96,6 +100,11 @@
 				`Rôle ${libelleRole(role)} ${action === 'ajouter' ? 'ajouté à' : 'retiré de'} ${nomAffiche(user)}.`,
 			);
 			utilisateurs = utilisateurs.map((u) => (u.id === user.id ? { ...u, ...updated } : u));
+			//  Un rôle qu'on se retire à soi-même vaut aussitôt : sans Admin, la garde
+			//  d'`admin/+layout.svelte` ramène au tableau de bord.
+			if ($currentUser && user.id === $currentUser.id) {
+				setUser({ ...$currentUser, role: updated.role, roles: updated.roles });
+			}
 		} catch (e) {
 			toast('error', messageErreur(e));
 		} finally {
@@ -281,7 +290,7 @@
 								</div>
 							</td>
 							<td>
-								<GestesRolesCompte {u} demander={demanderRole} />
+								<GestesRolesCompte {u} {titulaires} demander={demanderRole} />
 							</td>
 							<td>
 								<div class="action-row">
@@ -364,9 +373,13 @@
 			{roleEnCours.action === 'ajouter' ? 'Ajouter' : 'Retirer'} le rôle
 			<strong>{libelleRole(roleEnCours.role)}</strong>
 			{roleEnCours.action === 'ajouter' ? 'à' : 'de'}
-			<strong>{nomAffiche(roleEnCours.user)}</strong> ?
+			<strong>{pourSoi ? 'votre compte' : nomAffiche(roleEnCours.user)}</strong> ?
 			<br />
-			<span class="text-muted-sm"> Cette personne recevra une notification. </span>
+			{#if pourSoi && roleEnCours.action === 'retirer' && roleEnCours.role === 'admin'}
+				<span class="text-muted-sm"> Vous perdrez aussitôt l'accès à l'administration. </span>
+			{:else if !pourSoi}
+				<span class="text-muted-sm"> Cette personne recevra une notification. </span>
+			{/if}
 		</p>
 		<div class="modal-footer">
 			<button class="btn btn-outline" on:click={() => (roleEnCours = null)}>Annuler</button>

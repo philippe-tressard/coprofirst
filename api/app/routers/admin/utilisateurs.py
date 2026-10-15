@@ -130,32 +130,58 @@ def _role_demande(nom: str) -> RoleUtilisateur | str:
         raise HTTPException(400, f"Rôle invalide : {nom}")
 
 
+#: Les rôles qui ne restent jamais VACANTS : sans administrateur, plus personne
+#: ne gère les comptes ; sans opérateur, plus personne ne supervise l'installation.
+#: Chacun se retire — à soi-même compris —, sauf à son dernier titulaire actif.
+ROLES_JAMAIS_VACANTS = (RoleUtilisateur.admin.value, ROLE_OPERATEUR)
+
+
 def _exiger_geste_operateur(
-    acteur: Utilisateur, cible: Utilisateur, role: RoleUtilisateur | str, *, retrait: bool
+    cible: Utilisateur, role: RoleUtilisateur | str, *, retrait: bool
 ) -> None:
     """Les règles du rôle Opérateur, accordé ou retiré depuis Admin › Utilisateurs.
 
-    - Seul un **opérateur** l'accorde ou le retire : l'administrateur de la
-      copropriété ne se donne pas la supervision de la plateforme (#1750, D5).
-    - Il ne se porte **qu'avec le rôle Admin** : les écrans de l'opérateur vivent
-      sous `/admin`, qu'un compte sans ce rôle n'ouvre pas. D'où les deux refus
-      symétriques — l'accorder à un non-admin, retirer Admin à un opérateur.
-    - On ne se le **retire pas soi-même** : c'est ce qui garde au moins un
-      opérateur, puisque seul un opérateur peut en nommer un autre.
+    Il ne se porte **qu'avec le rôle Admin** : les écrans de l'opérateur vivent
+    sous `/admin`, qu'un compte sans ce rôle n'ouvre pas. D'où les deux refus
+    symétriques — l'accorder à un non-admin, retirer Admin à un opérateur.
+
+    Tout administrateur l'accorde ou le retire, à lui-même compris (arbitrage du
+    15/10/2026) : la règle « seul un opérateur l'accorde » (#1750) est levée. Le
+    mode démo, lui, refuse toute écriture sur `/admin/utilisateurs/` — son
+    administrateur publié ne se donne donc pas ce rôle (#1985).
     """
     if role == RoleUtilisateur.admin and retrait and est_operateur(cible):
         raise HTTPException(
             400, "Retirez d'abord le rôle Opérateur : il ne se porte pas sans le rôle Admin."
         )
-    if role != ROLE_OPERATEUR:
-        return
-    if not est_operateur(acteur):
-        raise HTTPException(403, "Seul un opérateur de la plateforme accorde ou retire ce rôle.")
-    if retrait and acteur.id == cible.id:
-        raise HTTPException(400, "Vous ne pouvez pas vous retirer le rôle Opérateur.")
-    if not retrait and not cible.has_role(RoleUtilisateur.admin):
+    if role == ROLE_OPERATEUR and not retrait and not cible.has_role(RoleUtilisateur.admin):
         raise HTTPException(
             400, "Le rôle Opérateur s'accorde à un administrateur : ajoutez d'abord le rôle Admin."
+        )
+
+
+def _exiger_un_autre_titulaire(
+    session: Session, cible: Utilisateur, role: RoleUtilisateur | str
+) -> None:
+    """Refuse de retirer un rôle de `ROLES_JAMAIS_VACANTS` à son dernier titulaire actif.
+
+    Lu en Python, par `has_role` : un `roles_json` vide retombe sur la colonne
+    `role`, qu'un filtre SQL sur la chaîne ne verrait pas.
+    """
+    nom = valeur(role)
+    if nom not in ROLES_JAMAIS_VACANTS:
+        return
+    autres = session.exec(
+        select(Utilisateur).where(
+            Utilisateur.actif == True,  # noqa: E712
+            Utilisateur.id != cible.id,
+        )
+    ).all()
+    if not any(u.has_role(nom) for u in autres):
+        raise HTTPException(
+            400,
+            f"Il ne resterait plus aucun compte {libelle_role(role)} : "
+            "accordez d'abord ce rôle à un autre compte.",
         )
 
 
@@ -171,7 +197,7 @@ def ajouter_role(
     if not user.actif:
         raise HTTPException(400, "Impossible de modifier un compte inactif.")
     role = _role_demande(body.role)
-    _exiger_geste_operateur(admin, user, role, retrait=False)
+    _exiger_geste_operateur(user, role, retrait=False)
     user.ajouter_role(role)
     #  🔴 En WARNING : c'est le geste qui donne des droits. La `Notification` part
     #  au concerné et ne dit pas QUI a agi — le journal, lui, nomme l'admin.
@@ -200,16 +226,19 @@ def retirer_role(
     session: Session = Depends(get_session),
     admin: Utilisateur = Depends(require_admin),
 ):
-    """Retirer un rôle d'un utilisateur (le rôle 'résident' ne peut pas être retiré)."""
-    if admin.id == user_id and body.role == RoleUtilisateur.admin.value:
-        raise HTTPException(400, "Vous ne pouvez pas vous retirer le rôle admin.")
+    """Retirer un rôle d'un utilisateur (le rôle 'résident' ne peut pas être retiré).
+
+    À soi-même compris : Admin et Opérateur se quittent, sauf par leur dernier
+    titulaire actif (`_exiger_un_autre_titulaire`).
+    """
     user = ou_404(session, Utilisateur, user_id, "Utilisateur")
     if body.role == RoleUtilisateur.résident.value:
         raise HTTPException(
             400, "Le rôle 'Résident' est le rôle de base, il ne peut pas être retiré."
         )
     role = _role_demande(body.role)
-    _exiger_geste_operateur(admin, user, role, retrait=True)
+    _exiger_geste_operateur(user, role, retrait=True)
+    _exiger_un_autre_titulaire(session, user, role)
     user.retirer_role(role)
     journaliser_securite("role_retire", acteur_id=admin.id, cible_id=user.id, detail=valeur(role))
     sonner_systeme(
