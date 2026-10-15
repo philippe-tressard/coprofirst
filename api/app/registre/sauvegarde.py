@@ -190,7 +190,10 @@ def restaurer(archive: Path, cible):
             "le registre ne se restaure que dans une base `plateforme` vide"
         )
     migrer.migrer(cible)
-    return importer(archive, cible, metadata=registre_plateforme.metadata)
+    #  Clés NON différées : ses tables n'ont pas de cycle (toutes visent
+    #  `installation`), et son rôle n'est pas superutilisateur — PostgreSQL lui
+    #  refuserait le report (`dialecte.differer_cles_etrangeres`).
+    return importer(archive, cible, metadata=registre_plateforme.metadata, cles_differees=False)
 
 
 if __name__ == "__main__":
@@ -199,7 +202,7 @@ if __name__ == "__main__":
     from sqlmodel import create_engine
 
     from app.utils.export_copropriete import adresse
-    from app.utils.import_copropriete import ImportRefuse
+    from app.utils.import_copropriete import ImportRefuse, resume
 
     if len(sys.argv) != 4 or sys.argv[1] != "restaurer":
         sys.exit(
@@ -214,4 +217,4 @@ if __name__ == "__main__":
         sys.exit(f"RESTAURATION REFUSÉE : {_refus}")
     finally:
         _cible.dispose()
-    print(f"Registre restauré et vérifié : {_bilan.tables} tables, {_bilan.lignes} lignes.")
+    print("\n".join(resume(_bilan)))
