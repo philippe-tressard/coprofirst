@@ -131,6 +131,43 @@ def test_une_date_illisible_n_est_pas_devinee(ecrit):
     assert date_citee(ecrit) is None
 
 
+@pytest.mark.parametrize(
+    "ligne, utc",
+    [
+        #  🔴 Le cas vécu (15/10/2026, TK-749553) : un fil relayé par Orange,
+        #  transféré depuis iCloud. La Suite nommait son auteur « CEST, … ».
+        ("Le 15/10/2026 11:40 CEST, Jean Dupont <", datetime(2026, 10, 15, 9, 40)),
+        ("Le 15 oct. 2026 à 11:40, CEST, Jean Dupont <", datetime(2026, 10, 15, 9, 40)),
+        ("Le 15 oct. 2026 à 11:40 UTC+2 / CEST, Jean Dupont <", datetime(2026, 10, 15, 9, 40)),
+        ("Le 15 oct. 2026 à 11:40 (CEST), Jean Dupont <", datetime(2026, 10, 15, 9, 40)),
+        ("Le 15 déc. 2026 à 11:40 CET, Jean Dupont <", datetime(2026, 12, 15, 10, 40)),
+        #  « UTC » sans décalage : l'heure est déjà universelle, pas celle de Paris.
+        ("Le 15/10/2026 09:40 UTC, Jean Dupont <", datetime(2026, 10, 15, 9, 40)),
+        ("On Thu, Oct 15, 2026 at 9:40 AM GMT, Jean Dupont <", datetime(2026, 10, 15, 9, 40)),
+        #  Un fuseau numérique suivi du nom (Yahoo) : inchangé.
+        ("Le 15 oct. 2026 à 11:40:12 UTC+2, Jean Dupont <", datetime(2026, 10, 15, 9, 40, 12)),
+    ],
+)
+def test_le_fuseau_nomme_d_un_en_tete_a_ecrit_n_est_pas_le_nom(ligne, utc):
+    fil = FIL.replace("Le sam. 26 sept. 2026, 08:58, Jean Dupont <", ligne)
+    _s, _j, premier = _messages(fil)
+    assert (premier.nom, premier.adresse) == ("Jean Dupont", "jean.dupont@exemple.test")
+    assert premier.envoye_le == utc
+
+
+@pytest.mark.parametrize(
+    "ecrit, utc",
+    [
+        ("15/10/2026 11:40 CEST", datetime(2026, 10, 15, 9, 40)),
+        ("15/10/2026 09:40 UTC", datetime(2026, 10, 15, 9, 40)),
+        ("Thu, 15 Oct 2026 09:40:00 GMT", datetime(2026, 10, 15, 9, 40)),
+        ("Thu, 15 Oct 2026 11:40:00 +0200 (CEST)", datetime(2026, 10, 15, 9, 40)),
+    ],
+)
+def test_une_date_au_fuseau_nomme_se_lit(ecrit, utc):
+    assert date_citee(ecrit) == utc
+
+
 def test_un_message_sans_date_lisible_refuse_TOUT_le_fil():
     """Verser la moitié d'un fil écrirait un historique faux qui a l'air juste."""
     fil = FIL.replace("Envoyé : mardi 29 septembre 2026 08:43", "Envoyé : hier soir")
