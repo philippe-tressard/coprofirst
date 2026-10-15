@@ -277,26 +277,28 @@ dans_etape() {             # $1 = rép, puis la commande
   )
 }
 
-#  ── Relance des e2e tombés sur l'import dynamique de Vite (#1809) ───────────
+#  ── Relance des e2e tombés sur une cause propre au poste (#1809, #1989) ─────
 #  La règle est `ci_relance_e2e` (lib-ci-e2e.sh) : une seule relance, des seuls
 #  tests tombés, nommée sur la ligne de l'étape et JOURNALISÉE — date, lot,
-#  charge, workers, tests —, pour qu'on mesure enfin la cause. Sortie vide :
-#  pas de relance, ou relance rouge (sa sortie s'ajoute alors à celle de l'étape).
+#  charge, workers, tests, cause (`ci_cause_relance`) —, pour qu'on la mesure.
+#  Sortie vide : pas de relance, ou relance rouge (sa sortie s'ajoute alors à
+#  celle de l'étape).
 PLAFOND_RELANCE_E2E=3
 JOURNAL_RELANCES="$(dirname "$VERROU_REJEU")/rejeu-e2e-relances.log"
-relancer_si_import_vite() { # $1 = rép, $2 = code, $3 = corps → détail à rapporter, ou vide
-  local tombes
+relancer_si_cause_poste() { # $1 = rép, $2 = code, $3 = corps → détail à rapporter, ou vide
+  local tombes cause
   [ "$(ci_relance_e2e "$2" "$(printf '%s\n' "$3" | ci_sert_par_vite)" "$PLAFOND_RELANCE_E2E" \
        < "$TMP/sortie")" = oui ] || return 0
   tombes=$(ci_tests_tombes < "$TMP/sortie")
+  cause=$(ci_cause_relance < "$TMP/sortie")
   if dans_etape "$1" npx playwright test --last-failed > "$TMP/relance" 2>&1 \
      && ! grep -q "optimized dependencies changed" "$TMP/relance"; then
-    printf '%s\t%s\tcharge=%s\tworkers=%s\t%s\n' "$(date '+%F %T')" "$SHA_COURT" \
+    printf '%s\t%s\tcharge=%s\tworkers=%s\t%s\tcause=%s\n' "$(date '+%F %T')" "$SHA_COURT" \
       "${CHARGE:-?}" "${E2E_WORKERS:-défaut}" "$(printf '%s' "$tombes" | paste -sd '|' -)" \
-      >> "$JOURNAL_RELANCES"
-    echo "relancé, vert : $(printf '%s' "$tombes" | paste -sd ';' -) — import dynamique de Vite (#1809)"
+      "$cause" >> "$JOURNAL_RELANCES"
+    echo "relancé, vert : $(printf '%s' "$tombes" | paste -sd ';' -) — $cause"
   else
-    { echo; echo "── Relance (#1809), rouge elle aussi ──"; cat "$TMP/relance"; } >> "$TMP/sortie"
+    { echo; echo "── Relance ($cause), rouge elle aussi ──"; cat "$TMP/relance"; } >> "$TMP/sortie"
   fi
 }
 
@@ -331,7 +333,7 @@ executer() {               # $1 = job, $2 = étape, $3 = rép, corps dans $TMP/c
   dans_etape "$3" bash -e "$TMP/etape.sh" > "$TMP/sortie" 2>&1
   code=$?
   sortie=$(ci_requalifier "$code" < "$TMP/sortie")
-  relance=$(relancer_si_import_vite "$3" "$code" "$corps")
+  relance=$(relancer_si_cause_poste "$3" "$code" "$corps")
   [ -n "$relance" ] && { sortie=OK; NB_RELANCES=$((NB_RELANCES + $(ci_tests_tombes < "$TMP/sortie" | grep -c .))); }
   duree=$(( $(date +%s) - t0 ))
   case "$sortie" in
@@ -400,7 +402,7 @@ echo "────────────────────────�
 printf "%d étape(s) rejouée(s) sur %d extraite(s) — OK=%d ÉCHEC=%d INCONNU=%d (préparation=%d)\n" \
        "$REJOUEES" "$ECRIT" "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_PREP"
 [ "$NB_SAUTS" -gt 0 ] && echo "· $NB_SAUTS test(s) sauté(s) ici, que seule la CI GitHub joue — le détail est sur la ligne de leur étape (#1734)."
-[ "$NB_RELANCES" -gt 0 ] && echo "· $NB_RELANCES test(s) e2e relancé(s) après l'import dynamique de Vite (#1809) — journal : $JOURNAL_RELANCES"
+[ "$NB_RELANCES" -gt 0 ] && echo "· $NB_RELANCES test(s) e2e relancé(s) sur une cause propre au poste (#1809, #1989) — journal : $JOURNAL_RELANCES"
 
 if [ "$REJOUEES" -eq 0 ]; then
   echo "? Aucune étape rejouée — ce n'est pas un succès, c'est une absence de mesure."
