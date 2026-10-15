@@ -15,7 +15,7 @@ protégeait. Un compte créé mais jamais endossé ne donne que l'air.
 
 L'API ne PEUT PAS poser `USER` dans son Dockerfile : ses trois volumes sont
 écrits par root sur les deux nœuds, et un conteneur qui démarrerait directement
-en `app` ne pourrait plus ouvrir `app.db`. Elle bascule donc dans `start.sh`,
+en `app` ne pourrait plus y écrire. Elle bascule donc dans `start.sh`,
 après avoir repris les propriétés.
 
 Exiger le mot `USER` aurait donc refusé la seule solution qui marche, et poussé
@@ -57,11 +57,9 @@ def test_l_api_bascule_hors_de_root_avant_d_ecrire():
 
     1. l'utilisateur existe (`useradd`) ;
     2. `start.sh` reprend les propriétés des volumes — sans quoi le processus
-       non-root ne pourrait pas ouvrir `app.db`, écrit par root jusqu'ici ;
-    3. il se relance en `app` **avant** Alembic. Migrer en root créerait un WAL
-       et un SHM que le processus applicatif ne pourrait plus rouvrir au
-       redémarrage suivant : la panne serait différée d'un cycle, donc invisible
-       au déploiement qui l'a causée.
+       non-root ne pourrait pas écrire dans des volumes écrits par root ;
+    3. il se relance en `app` **avant** Alembic : ce qui s'exécute ensuite ne
+       tourne jamais en root.
     """
     dockerfile = _lire("api/Dockerfile")
     assert re.search(r"\buseradd\b.*\bapp\b", dockerfile), (
@@ -71,7 +69,7 @@ def test_l_api_bascule_hors_de_root_avant_d_ecrire():
     start = _lire("api/start.sh")
     assert "chown -R app:app" in start, (
         "start.sh ne reprend plus les propriétés des volumes : un conteneur "
-        "non-root ne pourra pas ouvrir `app.db`, écrit par root."
+        "non-root ne pourra pas écrire dans ses volumes, écrits par root."
     )
     bascule = re.search(r"^\s*exec setpriv .*--reuid=app\b.*$", start, re.M)
     assert bascule, (
@@ -80,7 +78,5 @@ def test_l_api_bascule_hors_de_root_avant_d_ecrire():
     alembic = re.search(r"^\s*alembic upgrade head\s*$", start, re.M)
     assert alembic, "start.sh ne lance plus les migrations"
     assert bascule.start() < alembic.start(), (
-        "les migrations tournent AVANT la bascule : Alembic écrirait `app.db`, "
-        "son WAL et son SHM en root, et le processus applicatif ne pourrait plus "
-        "les rouvrir au redémarrage suivant."
+        "les migrations tournent AVANT la bascule : elles s'exécuteraient en root."
     )

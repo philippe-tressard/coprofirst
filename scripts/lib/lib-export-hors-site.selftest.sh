@@ -55,17 +55,19 @@
   check "jour présent, veille absente" "20260928" "$(printf '%s' 'hostachy_backup_20260929_020000.tar.gz' | jours_manquants 2 20260929)"
 
   # Le faux négatif du 04/08/2026 : `tar | grep -q` sous pipefail rendait
-  # « absent » sur une archive contenant app.db. Le listing est désormais
+  # « absent » sur une archive contenant la base. Le listing est désormais
   # analysé hors de tout tube, et ces cas verrouillent l'analyse.
-  LISTING_OK=$'app.db\nuploads/\nuploads/doc.pdf'
-  check "app.db en tête de listing"  "oui"        "$(listing_contient "$LISTING_OK" app.db)"
-  check "app.db seul"                "oui"        "$(listing_contient 'app.db' app.db)"
-  check "listing sans base"          "non"        "$(listing_contient $'uploads/\nuploads/doc.pdf' app.db)"
-  check "listing vide"               "non"        "$(listing_contient '' app.db)"
-  # Le piège de la sous-chaîne : un fichier nommé app.db DANS uploads n'est pas
-  # la base. Une comparaison naïve l'accepterait.
-  check "uploads/app.db ne compte pas" "non"      "$(listing_contient $'uploads/app.db\nuploads/x' app.db)"
-  check "suffixe app.db2 ne compte pas" "non"     "$(listing_contient 'app.db2' app.db)"
+  E="$NOM_EXPORT_BASE"
+  LISTING_OK="$E"$'\nuploads/\nuploads/doc.pdf'
+  check "export en tête de listing"  "oui"        "$(listing_contient "$LISTING_OK" "$E")"
+  check "export seul"                "oui"        "$(listing_contient "$E" "$E")"
+  check "export repéré en fin de listing" "oui"   "$(listing_contient $'uploads/\nbase-export.tar.gz' "$E")"
+  check "listing sans base"          "non"        "$(listing_contient $'uploads/\nuploads/doc.pdf' "$E")"
+  check "listing vide"               "non"        "$(listing_contient '' "$E")"
+  # Le piège de la sous-chaîne : un fichier homonyme DANS uploads n'est pas la
+  # base. Une comparaison naïve l'accepterait.
+  check "uploads/base-export… ne compte pas" "non" "$(listing_contient "uploads/$E" "$E")"
+  check "suffixe ne compte pas"      "non"        "$(listing_contient "${E}2" "$E")"
 
   # ── Liste blanche du nom d'archive ─────────────────────────────────────────
   # Le nom vient du nœud distant et repart dans une commande exécutée là-bas.
@@ -78,7 +80,7 @@
   tn "chemin absolu"             "/etc/shadow"                               refuse
   tn "remontée de répertoire"    "hostachy_backup_../../etc/shadow.tar.gz"   refuse
   tn "sous-répertoire"           "hostachy_backup_a/b.tar.gz"                refuse
-  tn "la base elle-même"         "app.db"                                    refuse
+  tn "l'export seul, hors archive" "base-export.tar.gz"                       refuse
   tn "substitution de commande"  'hostachy_backup_$(id).tar.gz'              refuse
   #  Le registre des installations (#1896) : son préfixe, et lui seul, dans sa série.
   tn "archive du registre"       "plateforme_backup_20261014_033000_paris.tar.gz" ok "$PREFIXE_PLATEFORME"
@@ -91,23 +93,18 @@
   check "archive saine"             "succes"      "$(verdict_archive 1024 oui oui ok | cut -d'|' -f1)"
   check "archive vide"              "erreur"      "$(verdict_archive 0 oui oui ok | cut -d'|' -f1)"
   check "empreinte différente"      "erreur"      "$(verdict_archive 1024 non oui ok | cut -d'|' -f1)"
-  check "app.db absent"             "erreur"      "$(verdict_archive 1024 oui non ok | cut -d'|' -f1)"
-  check "base corrompue"            "erreur"      "$(verdict_archive 1024 oui oui 'malformed' | cut -d'|' -f1)"
+  check "export absent"             "erreur"      "$(verdict_archive 1024 oui non ok | cut -d'|' -f1)"
+  check "export aux lignes manquantes" "erreur"   "$(verdict_archive 1024 oui oui 'écarts : lot 3/4' | cut -d'|' -f1)"
   # Le cas qui a coûté l'incident du 26/07 ailleurs : l'absence de contrôle
   # lue comme un succès. Ici, ne pas savoir vaut échec.
   check "intégrité non vérifiable"  "erreur"      "$(verdict_archive 1024 oui oui inconnue | cut -d'|' -f1)"
-  #  Base serveur (PostgreSQL, DI-7b) : l'export vérifié remplace app.db.
-  check "export présent, lignes justes" "succes"  "$(verdict_archive 1024 oui export ok | cut -d'|' -f1)"
-  check "export aux lignes manquantes"  "erreur"  "$(verdict_archive 1024 oui export 'écarts : lot 3/4' | cut -d'|' -f1)"
-  check "export non vérifié"            "erreur"  "$(verdict_archive 1024 oui export inconnue | cut -d'|' -f1)"
-  check "export repéré dans le listing" "oui"     "$(listing_contient $'uploads/\nbase-export.tar.gz' "$NOM_EXPORT_BASE")"
-  check "uploads/base-export… ne compte pas" "non" "$(listing_contient 'uploads/base-export.tar.gz' "$NOM_EXPORT_BASE")"
+  check "contenu non dit → erreur"  "erreur"      "$(verdict_archive 1024 oui '' ok | cut -d'|' -f1)"
   check "résumé juste"                  "ok"      "$(verdict_export_base $'lot 4 4\nticket 12 12')"
   check "une table incomplète"          "écarts : lot 3/4" "$(verdict_export_base $'lot 3 4\nticket 12 12')"
   check "résumé vide → inconnue, jamais ok" "inconnue" "$(verdict_export_base '')"
   #  #1964 : Python sous Windows écrit en CRLF. Le `\r` collé à la dernière
   #  colonne rendait chaque table « en écart » — toute copie hors site échouait
-  #  depuis le poste, depuis le passage à PostgreSQL.
+  #  depuis le poste.
   #  ⚠️ Le CR se fabrique À L'EXÉCUTION (`printf`) : sous Git Bash, un
   #  `$'…\r\n…'` écrit dans un "$(…)" perd son `\r`, et ce cas passait sans en
   #  contenir un seul. Le compte de CR ci-dessous est son cas zéro.

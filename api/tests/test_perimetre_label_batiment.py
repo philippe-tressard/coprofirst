@@ -72,7 +72,7 @@ def arbre_deux_batiments():
     codes = []
     with Session(engine) as session:
         #  Par VAGUES : `perimetre` s'auto-référence, un DELETE global viole la
-        #  clé sur les enfants dès que `foreign_keys=ON` (#546).
+        #  clé sur les enfants dès que les clés sont vérifiées (#546).
         vider_perimetres(session)
         #  🔴 Les bâtiments sont MONTÉS, pas supposés. `Perimetre.batiment_id`
         #  est une clé étrangère : la fixture posait `batiment_id=3` sur un
@@ -126,7 +126,7 @@ def arbre_deux_batiments():
     yield codes
     with Session(engine) as session:
         #  Par VAGUES : `perimetre` s'auto-référence, un DELETE global viole la
-        #  clé sur les enfants dès que `foreign_keys=ON` (#546).
+        #  clé sur les enfants dès que les clés sont vérifiées (#546).
         vider_perimetres(session)
     P.invalider_cache()
 
@@ -164,7 +164,7 @@ def arbre_du_ticket():
     suffixe = uuid.uuid4().hex[:6]
     with Session(engine) as session:
         #  Par VAGUES : `perimetre` s'auto-référence, un DELETE global viole la
-        #  clé sur les enfants dès que `foreign_keys=ON` (#546).
+        #  clé sur les enfants dès que les clés sont vérifiées (#546).
         vider_perimetres(session)
 
         #  Un REGROUPEMENT : racine, non sélectionnable. Il ne doit jamais préfixer
@@ -271,7 +271,7 @@ def arbre_du_ticket():
     yield codes
     with Session(engine) as session:
         #  Par VAGUES : `perimetre` s'auto-référence, un DELETE global viole la
-        #  clé sur les enfants dès que `foreign_keys=ON` (#546).
+        #  clé sur les enfants dès que les clés sont vérifiées (#546).
         vider_perimetres(session)
     P.invalider_cache()
 

@@ -145,8 +145,8 @@ def _check_archive_locale() -> list[str]:
     """Vérifie qu'une archive RÉELLE et récente existe sur ce nœud.
 
     POURQUOI ce contrôle s'ajoute à celui de l'historique (04/08/2026) :
-    `historique_sauvegarde` vit dans `app.db`, que `bascule.sh` réplique sur le
-    peer — mais le volume Docker `backups`, lui, n'est jamais répliqué. Une
+    `historique_sauvegarde` vit dans la base, répliquée sur le pair — mais le
+    volume Docker `backups`, lui, n'est jamais répliqué. Une
     ligne « réussie » ne prouvait donc PAS qu'un fichier existe : elle prouvait
     qu'une ligne a été écrite. Volume vidé, disque plein, archive tronquée,
     rotation trop agressive — le contrôle restait vert dans tous ces cas.
@@ -297,20 +297,16 @@ def _check_export_hors_site(session: Session) -> list[str]:
 
     if details.get("integrite") and details["integrite"] != "ok":
         issues.append(
-            f"La copie hors site n'a pas passé le contrôle d'intégrité "
-            f"(integrity_check : {details['integrite']})."
+            f"La copie hors site n'a pas passé le contrôle d'intégrité ({details['integrite']})."
         )
 
     return issues
 
 
 def _check_db_integrity() -> list[str]:
-    """Vérifie l'intégrité de la base SQLite (PRAGMA quick_check).
+    """Vérifie l'intégrité de la base (`dialecte.verifier_integrite`).
 
-    Exécuté DANS le process API (même connexion que l'app) → aucun accès
-    multi-process. Détecte tôt une corruption (ex. telemetry_event 17/06/2026,
-    découverte seulement par l'échec du job d'agrégation) au lieu d'attendre
-    un signalement utilisateur.
+    Détecte tôt une page abîmée au lieu d'attendre un signalement utilisateur.
     """
     from app.dialecte import verifier_integrite
 
@@ -320,15 +316,12 @@ def _check_db_integrity() -> list[str]:
             verdict = verifier_integrite(conn)
         if verdict != "ok":
             issues.append(
-                f"Intégrité base CORROMPUE (contrôle du moteur : « {verdict} »). "
-                f"Récupération requise (.recover) — voir CLAUDE.md → corruption DB."
+                f"Intégrité de la base en défaut (« {verdict} »). "
+                f"Restauration à envisager — voir la skill infra-rpi."
             )
     except Exception as exc:
-        # quick_check lui-même peut lever si la corruption est sévère
-        issues.append(
-            f"Intégrité base : quick_check a échoué ({exc}). "
-            f"Base probablement corrompue — récupération requise (.recover)."
-        )
+        # Un contrôle qui ne peut pas s'exécuter n'est jamais vert (standards/04 §1)
+        issues.append(f"Intégrité de la base : le contrôle a échoué ({exc}).")
     return issues
 
 

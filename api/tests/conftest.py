@@ -2,8 +2,15 @@
 
 L'import de `app.config` exige un SECRET_KEY ≥ 32 caractères et `app.database`
 instancie un engine depuis `database_url`. On fournit des valeurs neutres pour
-que les tests s'exécutent sans .env ni base réelle (aucun test ici ne se
-connecte à la base : ils lisent les templates et la chaîne de migrations).
+que les tests s'exécutent sans .env.
+
+La base est un serveur PostgreSQL (`TESTS_BASE_URL`). Le moteur de
+l'APPLICATION (`app.database.engine`, `contexte.moteur()`) y reçoit un schéma
+propre à ce processus, retiré à la fin de la session : deux tranches de la
+suite, lancées en parallèle sur le même serveur, ne se voient pas. Chaque base
+de test (`aides_base.moteur_de_test`) a, elle, son schéma à elle.
+Sans `TESTS_BASE_URL`, l'adresse ne mène nulle part : les tests qui ne touchent
+pas la base tournent, les autres échouent en le disant.
 """
 
 import itertools
@@ -11,8 +18,21 @@ import os
 import tempfile
 
 os.environ.setdefault("SECRET_KEY", "x" * 40)
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+_URL_TESTS = os.environ.get("TESTS_BASE_URL")
+_SCHEMA_DU_PROCESSUS = None
+if "DATABASE_URL" not in os.environ:
+    if _URL_TESTS:
+        from app.dialecte import poser_schema, url_dans_schema
+
+        _SCHEMA_DU_PROCESSUS = poser_schema(_URL_TESTS)
+        os.environ["DATABASE_URL"] = url_dans_schema(
+            _URL_TESTS, _SCHEMA_DU_PROCESSUS
+        ).render_as_string(hide_password=False)
+    else:
+        os.environ["DATABASE_URL"] = "postgresql+psycopg://essai@127.0.0.1:1/sans-serveur"
 os.environ.setdefault("ENABLE_API_DOCS", "false")
+#  Pas de cache du manuel PDF : il s'écrirait sous `/app/data` du poste.
+os.environ.setdefault("CACHE_MANUEL_DIR", "")
 #  Le client de test se présente sous l'hôte `testserver` : il se déclare au
 #  registre comme un nom de l'installation (#1751), sans quoi tout rendrait 421.
 os.environ.setdefault("HOTES_COPROPRIETE", "testserver")
@@ -28,10 +48,9 @@ import pytest  # noqa: E402  (après les variables d'environnement, par construc
 
 # ── Intégrité référentielle : la règle est celle de l'APPLICATION ────────────
 #
-#  Les clés étrangères sont actives en production comme ici : `app/database.py`
-#  les pose sur son moteur (`activer_cles_etrangeres`, depuis le 30/08/2026, #546),
-#  et `test_integrite_referentielle.py` vérifie qu'elles le sont. Ce fichier n'en
-#  garde aucune copie — ni écouteur, ni porte pour les désactiver (#1496).
+#  Les clés étrangères sont vérifiées sur le moteur de l'application comme en
+#  production ; une base de test les suspend sauf `cles_etrangeres=True`
+#  (`aides_base.moteur_de_test`). Ce fichier n'en garde aucune autre règle (#1496).
 
 
 # ── Patrimoine de test ────────────────────────────────────────────────────────
@@ -56,7 +75,7 @@ from tests.aides_purge import delier_references, vider_patrimoine  # noqa: E402,
 
 @pytest.fixture()
 def session():
-    """Une base SQLite en mémoire, schéma posé, propre à chaque test (#1495).
+    """Une base de test, schéma posé, propre à chaque test (#1495).
 
     Elle était recopiée dans trente-quatre fichiers. Un test qui a besoin d'une
     AUTRE session (la base de l'application, un `TestClient`) définit la sienne
@@ -64,9 +83,9 @@ def session():
     """
     from sqlmodel import Session
 
-    from tests.aides_base import moteur_memoire
+    from tests.aides_base import moteur_de_test
 
-    with Session(moteur_memoire()) as s:
+    with Session(moteur_de_test()) as s:
         yield s
 
 
@@ -271,45 +290,30 @@ def utilisateur():
         session.commit()
 
 
-def pytest_collection_modifyitems(config, items):
-    """Sur PostgreSQL, les tests des migrations HISTORIQUES sont sautés, et le disent (#1747).
-
-    Elles sont écrites pour SQLite (`DATETIME`, mode `batch`, `PRAGMA`) et ne
-    s'exécutent jamais sur PostgreSQL : une base y naît du schéma initial (spec
-    §4.3). Une migration POSTÉRIEURE à l'historique, elle, doit passer sur les
-    deux — son test n'est pas sauté. La tête est jugée de même par
-    `test_migration_de_tete`.
-    """
-    import re
-
-    if not os.environ.get("TESTS_BASE_URL"):
-        return
-    from tests.aides_migrations import DERNIERE_HISTORIQUE, VERSIONS
-
-    for item in items:
-        marque = item.get_closest_marker("sqlite_seulement")
-        if marque:
-            assert marque.args, f"{item.nodeid} : `sqlite_seulement` exige sa raison"
-            item.add_marker(pytest.mark.skip(reason=f"propre à SQLite — {marque.args[0]}"))
-
-    tete = max(int(p.name[:4]) for p in VERSIONS.glob("[0-9][0-9][0-9][0-9]_*.py"))
-    saut = pytest.mark.skip(
-        reason="migration historique écrite pour SQLite — sur PostgreSQL, le schéma initial (#1747)"
-    )
-    for item in items:
-        numero = re.match(r"test_migration_(\d{4})_", item.path.name)
-        de_tete = item.path.name == "test_migration_de_tete.py" and tete <= DERNIERE_HISTORIQUE
-        if de_tete or (numero and int(numero.group(1)) <= DERNIERE_HISTORIQUE):
-            item.add_marker(saut)
-
-
 @pytest.fixture(autouse=True)
-def _retirer_schemas_postgresql():
-    """Sur PostgreSQL, les schémas d'un test partent avec lui (`tests/aides_base`)."""
+def _retirer_schemas_du_test():
+    """Les schémas d'un test partent avec lui (`tests/aides_base`)."""
     yield
-    from tests.aides_base import retirer_schemas_postgresql
+    from tests.aides_base import retirer_schemas_du_test
 
-    retirer_schemas_postgresql()
+    retirer_schemas_du_test()
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Le schéma du moteur de l'application part avec la session."""
+    import sys
+
+    if _SCHEMA_DU_PROCESSUS is None:
+        return
+    base = sys.modules.get("app.database")
+    if base is not None:
+        base.engine.dispose()
+    from app.dialecte import retirer_schema
+
+    try:
+        retirer_schema(_URL_TESTS, _SCHEMA_DU_PROCESSUS)
+    except Exception as exc:  # noqa: BLE001 — un retrait manqué ne change pas le verdict
+        print(f"schéma {_SCHEMA_DU_PROCESSUS} non retiré : {exc}")
 
 
 def pytest_runtest_logreport(report):

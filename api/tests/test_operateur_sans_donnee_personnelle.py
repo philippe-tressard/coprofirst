@@ -36,8 +36,6 @@ TEMOIN = "Personnelzq"
 #: Les routes de l'opérateur qui ont un EFFET, et pourquoi elles ne sont pas appelées.
 ROUTES_A_EFFET = {
     ("POST", "/admin/maintenance/lancer"): "lance la maintenance ; rend un identifiant de trace",
-    ("POST", "/admin/db/checkpoint"): "vide le journal de la base ; rend un compte de pages",
-    ("POST", "/admin/db/purger-orphelins"): "simule ou purge ; rend des comptes de lignes",
     ("POST", "/admin/installation/inscription"): "envoie à la référence le contact de "
     "l'administrateur d'INSTALLATION (pas d'un résident) ; rend l'état constaté (#1878)",
     ("POST", "/admin/installation/bail"): "demande le bail à la référence ; rend l'état "

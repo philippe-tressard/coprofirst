@@ -18,26 +18,22 @@ aucune raison d'ordonner les deux suppressions, et elle a émis :
 
     DELETE FROM ticket WHERE ticket.id = ?      ← en PREMIER
 
-d'où `FOREIGN KEY constraint failed`, **alors que le document était bien marqué
+d'où une violation de clé étrangère, **alors que le document était bien marqué
 pour suppression**. Tracé sur le SQL réellement émis, pas déduit.
 
 Le `flush()` force l'émission des DELETE enfants avant celui du parent. Il n'est
-donc pas défensif : sans lui, la suppression échoue sous `foreign_keys=ON`.
+donc pas défensif : sans lui, la suppression échoue avec les clés vérifiées.
 
 ⚠️ Relevé automatique du 30/08/2026 : **13 relations** du schéma sont dans ce cas
 — une FK vers une table que le code supprime, sans `Relationship` pour l'ordonner.
 Toutes celles qui ne sont pas encore éprouvées par un test le sont dans #546.
 
-## Ce que le régime actuel cache
+## Ce que des clés non vérifiées cacheraient
 
-Jusqu'au 30/08/2026, la production tournait à `foreign_keys=OFF` (l'application
-les active depuis, `app/database.py`). Ces suppressions **réussissaient** donc —
-en laissant des lignes orphelines qui pointent vers un parent
-disparu. Quand la colonne est `NOT NULL` (l'historique d'un événement), ces
-lignes sont même irrécupérables : on ne peut pas les rattacher ailleurs.
-
-C'est le vrai coût de #546, et il est déjà payé : activer les clés ne créera pas
-le problème, il le rendra visible.
+Ces suppressions **réussiraient** — en laissant des lignes orphelines qui
+pointent vers un parent disparu. Quand la colonne est `NOT NULL` (l'historique
+d'un événement), ces lignes seraient même irrécupérables : on ne peut pas les
+rattacher ailleurs.
 """
 
 from sqlmodel import Session, select

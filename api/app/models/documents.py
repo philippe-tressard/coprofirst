@@ -77,9 +77,8 @@ class Document(SQLModel, table=True):
     #  règlement ou un CR d'AG (`document_parent_id`), un rapport de diagnostic,
     #  une règle. Une annexe n'a pas de catégorie : elle se lit comme sa fiche
     #  (`utils/visibility/documents`), et ses gestes vivent dans `utils/annexes`.
-    #  ⚠️ Sans `foreign_key` : posées par un `add_column`, que SQLite refuse
-    #  d'accompagner d'une contrainte (`CLAUDE.md`, « Migrations Alembic ») — la
-    #  déclarer ici ferait diverger une base neuve d'une base migrée.
+    #  ⚠️ Sans `foreign_key` : la base de production porte la colonne sans
+    #  contrainte — la déclarer ici ferait diverger une base neuve de celle-là.
     document_parent_id: Optional[int] = None
     diagnostic_rapport_id: Optional[int] = None
     regle_residence_id: Optional[int] = None

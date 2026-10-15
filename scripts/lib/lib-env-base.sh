@@ -1,16 +1,15 @@
 #!/bin/bash
 # =============================================================================
-#  lib-env-base.sh — Une ligne du `.env` des DEUX nœuds : `DATABASE_URL` (la base
-#  servie, DI-7c, #1782) et `CLE_SIGNATURE_BAUX` (R2, #1878) — module à sourcer
+#  lib-env-base.sh — Une ligne du `.env` des DEUX nœuds, réécrite sans que sa
+#  valeur passe par une ligne de commande — `CLE_SIGNATURE_BAUX` (R2, #1878,
+#  `creer-cle-baux.sh`) — module à sourcer
 #
-#  Un AJUSTEMENT du `.env`, jamais sa régénération : une seule ligne change, et
-#  l'ancienne valeur peut y rester en commentaire, datée (`# RETOUR_SQLITE=`).
-#  Deux scripts s'en servent dans les deux sens — `basculer-donnees.sh` (SQLite →
-#  PostgreSQL) et `retour-sqlite.sh` (l'inverse) — : la réécriture s'écrit ICI.
+#  Un AJUSTEMENT du `.env`, jamais sa régénération : une seule ligne change, une
+#  ligne de commentaire peut la précéder, et les lignes d'un motif peuvent partir.
 #
-#  🔴 L'URL d'une base serveur porte son mot de passe : elle ne passe jamais par
-#  une ligne de commande (lisible par `ps`). `awk` la lit dans l'environnement,
-#  le `.env` du pair voyage par l'entrée standard de SSH, et y est réécrit en 600.
+#  🔴 La valeur est un SECRET : elle ne passe jamais par une ligne de commande
+#  (lisible par `ps`). `awk` la lit dans l'environnement, le `.env` du pair
+#  voyage par l'entrée standard de SSH, et y est réécrit en 600.
 #
 #  Test : bash lib-env-base.sh --selftest   (aucun effet de bord)
 # =============================================================================
@@ -19,8 +18,7 @@
 #  $1 texte · $2 clé · $3 valeur · $4 ligne qui la précède (commentaire, vide
 #  sinon) · $5 motif (ERE) des lignes à retirer (vide sinon)
 #  Une seule ligne `clé=` ; la ligne qui la précède, une fois ; les lignes du motif
-#  partent. Généralisée le 13/10/2026 pour la clé des baux (R2 #1878) : même
-#  transport, même secret qui ne passe jamais par une ligne de commande.
+#  partent.
 reecrire_cle_env() {
     printf '%s\n' "$1" | CLE_ENV="$2" VALEUR_ENV="$3" LIGNE_AVANT="$4" A_RETIRER="$5" awk '
         BEGIN { cle = ENVIRON["CLE_ENV"] "="; val = ENVIRON["VALEUR_ENV"]
@@ -54,33 +52,23 @@ cle_env_pair_presente() {
     [ "$n" -gt 0 ] && echo oui || echo non
 }
 
-# ── DATABASE_URL : la base servie (DI-7c) ─────────────────────────────────────
-#  La ligne de retour (`# RETOUR_SQLITE=…`) précède la nouvelle URL ; une
-#  ancienne ligne de retour part toujours.
-MOTIF_RETOUR_SQLITE='^# RETOUR_SQLITE='
-reecrire_database_url() { reecrire_cle_env "$1" DATABASE_URL "$2" "$3" "$MOTIF_RETOUR_SQLITE"; }
-ecrire_database_url_local() { ecrire_cle_env_local DATABASE_URL "$1" "$2" "$MOTIF_RETOUR_SQLITE"; }
-ecrire_database_url_pair() { ecrire_cle_env_pair DATABASE_URL "$1" "$2" "$MOTIF_RETOUR_SQLITE"; }
-
 if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     st=0
     t() { [ "$3" = "$2" ] && echo "PASS  $1 → $3" || { echo "FAIL  $1  attendu=$2 obtenu=$3"; st=1; }; }
     compte() { printf '%s\n' "$1" | grep -cE "$2"; }
-    env_av=$'A=1\nDATABASE_URL=sqlite:////app/data/app.db\nB=2'
-    apres=$(reecrire_database_url "$env_av" "postgresql+psycopg://u:p@postgres:5432/b" "# RETOUR_SQLITE=sqlite:////app/data/app.db (bascule du 2026-10-09)")
-    t "une seule ligne DATABASE_URL"        1 "$(compte "$apres" '^DATABASE_URL=')"
-    t "elle désigne PostgreSQL"             1 "$(compte "$apres" '^DATABASE_URL=postgresql\+psycopg://')"
-    t "la ligne de retour est posée"        1 "$(compte "$apres" '^# RETOUR_SQLITE=sqlite:')"
+    env_av=$'A=1\nCLE_X=ancienne\n# ANCIEN_X=vieux\nB=2'
+    apres=$(reecrire_cle_env "$env_av" CLE_X "nouvelle" "# ANCIEN_X=ancienne (2026-10-15)" '^# ANCIEN_X=')
+    t "une seule ligne CLE_X"               1 "$(compte "$apres" '^CLE_X=')"
+    t "elle porte la nouvelle valeur"       1 "$(compte "$apres" '^CLE_X=nouvelle$')"
+    t "la ligne qui la précède est posée, une fois" 1 "$(compte "$apres" '^# ANCIEN_X=ancienne')"
+    t "les lignes du motif partent"         0 "$(compte "$apres" '^# ANCIEN_X=vieux')"
     t "les autres clés restent"             2 "$(compte "$apres" '^(A=1|B=2)$')"
-    retour=$(reecrire_database_url "$apres" "sqlite:////app/data/app.db" "")
-    t "retour : la ligne de retour part"    0 "$(compte "$retour" '^# RETOUR_SQLITE=')"
-    t "retour : SQLite de nouveau"          1 "$(compte "$retour" '^DATABASE_URL=sqlite:')"
-    t "un .env sans DATABASE_URL la reçoit" 1 "$(compte "$(reecrire_database_url 'A=1' 'sqlite://x' '')" '^DATABASE_URL=')"
-    t "un mot de passe à caractères spéciaux passe intact" 1 \
-      "$(compte "$(reecrire_database_url "$env_av" 'postgresql://u:a&b/c\d@h/b' '')" '^DATABASE_URL=postgresql://u:a&b/c\\d@h/b$')"
+    t "un .env sans la clé la reçoit"       1 "$(compte "$(reecrire_cle_env 'A=1' CLE_X 'v' '')" '^CLE_X=')"
+    t "un secret à caractères spéciaux passe intact" 1 \
+      "$(compte "$(reecrire_cle_env "$env_av" CLE_X 'u:a&b/c\d@h' '')" '^CLE_X=u:a&b/c\\d@h$')"
     cle=$(reecrire_cle_env "$env_av" CLE_SIGNATURE_BAUX "abc+/=" "")
     t "une clé neuve s'ajoute"              1 "$(compte "$cle" '^CLE_SIGNATURE_BAUX=abc\+/=$')"
-    t "et ne touche pas DATABASE_URL"       1 "$(compte "$cle" '^DATABASE_URL=sqlite:')"
+    t "et ne touche pas les autres"         1 "$(compte "$cle" '^CLE_X=ancienne$')"
     t "une clé présente se réécrit, une fois" 1       "$(compte "$(reecrire_cle_env "$cle" CLE_SIGNATURE_BAUX "xyz" "")" '^CLE_SIGNATURE_BAUX=')"
     [ "$st" -eq 0 ] && echo "lib-env-base : tous les cas passent."
     exit "$st"

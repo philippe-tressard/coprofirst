@@ -1,7 +1,6 @@
 """Tâches de maintenance exécutables directement depuis l'API."""
 
 import json
-import os
 from datetime import timedelta
 from app.utils import horloge
 
@@ -14,7 +13,7 @@ from app.utils.declenchement import AUTOMATIQUE
 from app.utils.llm_journal import limite_conservation
 from app.utils.courriel_journal import CONSERVATION_RELEVES_JOURS
 from app import contexte
-from app.dialecte import chemin_fichier, compacter
+from app.dialecte import compacter, taille_base
 from app.models.core import (
     HistoriqueMaintenance,
     WhatsAppLog,
@@ -41,9 +40,7 @@ def purger() -> tuple[dict[str, int], list[str]]:
 
     Deux appelants, une écriture : `run_maintenance` (déclenchement manuel) et
     `POST /admin/maintenance/purges`, que `maintenance.sh` appelle chaque
-    dimanche. Le script les faisait lui-même par `docker exec … python`, API en
-    marche — un process tiers qui ouvre `app.db`, ce que la règle d'or
-    interdit. Une étape en échec n'arrête pas les suivantes : elle s'inscrit
+    dimanche. Une étape en échec n'arrête pas les suivantes : elle s'inscrit
     dans `erreurs`, et le compte de ce qui a réussi reste juste.
     """
     #  UTC NAÏF, la forme des dates en base — et des `datetime`, jamais leur
@@ -75,8 +72,7 @@ def purger() -> tuple[dict[str, int], list[str]]:
     except Exception as exc:
         erreurs.append(f"purge tokens: {exc}")
 
-    #  `TRUE`, jamais `1` : PostgreSQL ne compare pas un booléen à un entier, et
-    #  SQLite comprend `TRUE` depuis 3.23 (#1747).
+    #  `TRUE`, jamais `1` : PostgreSQL ne compare pas un booléen à un entier.
     etapes = (
         (
             "prt",
@@ -192,12 +188,11 @@ def run_maintenance(history_id: int | None = None) -> None:
         except Exception as exc:
             erreurs.append(f"VACUUM: {exc}")
 
-        # Taille DB après VACUUM
+        # Taille de la base après compactage — inconnue (None) si la lecture échoue
         taille_db: int | None = None
         try:
-            db_path = chemin_fichier(contexte.moteur().url)
-            if db_path and os.path.exists(db_path):
-                taille_db = os.path.getsize(db_path)
+            with contexte.moteur().connect() as conn:
+                taille_db = taille_base(conn)
         except Exception:
             pass
 

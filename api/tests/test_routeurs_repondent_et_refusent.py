@@ -47,12 +47,12 @@ from app.models.core import (
 )
 from app.models.telemetrie import DerniereVisite, PresenceMensuelle, TelemetryEvent
 from app.utils.limiter import limiter
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 
 
 @pytest.fixture(name="moteur")
 def moteur_fixture():
-    moteur = moteur_memoire(partage=True)
+    moteur = moteur_de_test()
 
     def _session():
         with Session(moteur) as s:

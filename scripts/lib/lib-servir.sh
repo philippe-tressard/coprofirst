@@ -20,7 +20,7 @@
 #  ## La base n'est JAMAIS recréée (#1872)
 #  `up -d` recrée un conteneur dont l'image étiquetée a changé, et la
 #  maintenance du dimanche re-tire `postgres:<version>`. L'application est
-#  recréée par sa liste ; la base, si elle est gérée ici, n'est que DÉMARRÉE si
+#  recréée par sa liste ; la base n'est que DÉMARRÉE si
 #  elle manque (`--no-recreate`). Sa nouvelle image est prise à la bascule.
 #
 #  ## Le rôle RELU avant chaque démarrage (#1997)
@@ -42,8 +42,6 @@ source "$_LIB_SERVIR/lib-parite.sh"         # demarrer_conteneurs — la seule p
 source "$_LIB_SERVIR/lib-sonde.sh"          # http_code, attendre_200
 # shellcheck source=lib-applicatifs.sh
 source "$_LIB_SERVIR/lib-applicatifs.sh"    # SERVICES_APPLICATIFS, SERVICE_BASE
-# shellcheck source=lib-replication.sh
-source "$_LIB_SERVIR/lib-replication.sh"    # base_postgresql_activee
 
 API_PRETE_MAX_S=${API_PRETE_MAX_S:-120}
 
@@ -63,30 +61,27 @@ servir_images() {
     "$garde" || return 1
     # shellcheck disable=SC2086  # une liste de services, découpée exprès
     demarrer_conteneurs "$@" $SERVICES_APPLICATIFS || return 2
-    base_postgresql_activee "$REPO" || return 0
     "$garde" || return 1
     demarrer_conteneurs --no-recreate "$SERVICE_BASE" || return 2
 }
 
 # ── Autotest (job CI `test-scripts`) ──────────────────────────────────────────
-#  `servir_images` jouée sur un docker, une sonde et un `.env` SIMULÉS : la trace
+#  `servir_images` jouée sur un docker, et une sonde SIMULÉS : la trace
 #  dit dans quel ordre les gestes ont eu lieu, et lesquels n'ont pas eu lieu.
 if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     fail=0
     ICI="$_LIB_SERVIR/$(basename "${BASH_SOURCE[0]}")"
-    #  $1 libellé · $2 trace attendue · $3 code HTTP de la sonde · $4 profils du .env
-    #  $5 la garde (corps de fonction) · $6 options de servir_images
+    #  $1 libellé · $2 trace attendue · $3 code HTTP de la sonde
+    #  $4 la garde (corps de fonction) · $5 options de servir_images
     s() {
         local d r; d=$(mktemp -d)
-        local configuration="$d/.env"   # le `.env` d'essai, jamais celui du dépôt
-        printf 'COMPOSE_PROFILES=%s\n' "$4" > "$configuration"
         r=$(cd "$d" && TR="$d/trace" REPO="$d" bash -c "source '$ICI'
               docker() { echo \"docker \$*\" >> \"\$TR\"; }
               http_code() { echo sonde >> \"\$TR\"; echo $3; }
               log() { echo \"log \$*\" >> \"\$TR\"; }
               sleep() { :; }
-              garde() { $5; }
-              SERVIR_GARDE=garde API_PRETE_MAX_S=1 servir_images $6 >/dev/null; echo \"rendu \$?\" >> \"\$TR\"
+              garde() { $4; }
+              SERVIR_GARDE=garde API_PRETE_MAX_S=1 servir_images $5 >/dev/null; echo \"rendu \$?\" >> \"\$TR\"
               grep -oE '^(docker compose [u]p -d.*|sonde|log (⛔|⚠ )?API|rendu [0-9])' \"\$TR\" | sed 's/^docker compose [u]p -d/UP/' | uniq | paste -sd'>' -")
         rm -rf "$d"
         if [ "$r" = "$2" ]; then echo "PASS  $1"
@@ -96,33 +91,28 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     app="UP $SERVICES_APPLICATIFS"
     base="UP --no-recreate $SERVICE_BASE"
     s "API prête : le reste n'est recréé qu'après son 200, la base seulement démarrée" \
-      "UP api>sonde>log API>$app>$base>rendu 0" 200 postgresql true
+      "UP api>sonde>log API>$app>$base>rendu 0" 200 true
     #  🔴 Une API qui ne répond jamais ne bloque pas le déploiement.
     s "API muette : attente bornée, dite, puis le reste" \
-      "UP api>sonde>log ⚠ API>$app>$base>rendu 0" 000 postgresql true
-    #  Sous SQLite (profil éteint), la base n'est jamais nommée : la nommer
-    #  allumerait son profil.
-    s "base non gérée ici : jamais nommée" \
-      "UP api>sonde>log API>$app>rendu 0" 200 "" true
+      "UP api>sonde>log ⚠ API>$app>$base>rendu 0" 000 true
     #  MaJ-Hostachy --nocache : l'option va à l'application, jamais à la base.
     s "--force-recreate : l'application seulement" \
       "UP --force-recreate api>sonde>log API>UP --force-recreate $SERVICES_APPLICATIFS>$base>rendu 0" \
-      200 postgresql true --force-recreate
+      200 true --force-recreate
     #  🔴 #1997 : le rôle a changé AVANT le passage — rien ne démarre.
     s "rôle perdu avant de servir : RIEN ne démarre" \
-      "rendu 1" 200 postgresql false
+      "rendu 1" 200 false
     #  🔴 #1997 : le failover rétrograde le nœud PENDANT que l'API redémarre —
     #  ni le reste de l'application, ni surtout la base ne repartent derrière.
     s "rôle perdu après l'API : ni le reste, ni la BASE" \
-      "UP api>sonde>log API>rendu 1" 200 postgresql \
+      "UP api>sonde>log API>rendu 1" 200 \
       '! grep -qs "up -d api" "$TR"'
     #  …et perdu juste avant la base : elle ne démarre pas.
     s "rôle perdu avant la base : la base ne démarre pas" \
-      "UP api>sonde>log API>$app>rendu 1" 200 postgresql \
+      "UP api>sonde>log API>$app>rendu 1" 200 \
       '! grep -qs "up -d $SERVICES_APPLICATIFS" "$TR"'
     #  Un démarrage en échec se DIT (2), il ne passe pas pour un rôle perdu (1).
-    d=$(mktemp -d); configuration="$d/.env"
-    printf 'COMPOSE_PROFILES=postgresql\n' > "$configuration"
+    d=$(mktemp -d)
     r=$(cd "$d" && REPO="$d" bash -c "source '$ICI'
           docker() { [ \"\$4\" = api ] && return 1; return 0; }
           http_code() { echo 200; }; log() { :; }; sleep() { :; }

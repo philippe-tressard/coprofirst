@@ -9,15 +9,10 @@ set -e
 #
 #  ⚠️ POURQUOI LA BASCULE EST ICI ET PAS UN `USER` DANS LE DOCKERFILE : les trois
 #  volumes sont déjà écrits par root sur les deux nœuds. Un conteneur qui
-#  démarrerait directement en `app` ne pourrait plus ouvrir `app.db` — l'API
-#  tomberait au premier déploiement, sur les deux nœuds, et la seule issue serait
-#  un `chown` manuel sur une base de production. Ce script garde donc root le
-#  temps de reprendre les propriétés, PUIS se relance en `app`.
-#
-#  ⚠️ Et il se relance AVANT les migrations : Alembic écrit `app.db`, son WAL et
-#  son SHM. Les créer en root laisserait des fichiers que le processus applicatif
-#  ne pourrait plus rouvrir au redémarrage suivant — la panne serait différée
-#  d'un cycle, c'est-à-dire invisible au déploiement qui l'a causée.
+#  démarrerait directement en `app` ne pourrait plus y écrire — l'API tomberait
+#  au premier déploiement, sur les deux nœuds, et la seule issue serait un
+#  `chown` manuel en production. Ce script garde donc root le temps de reprendre
+#  les propriétés, PUIS se relance en `app`.
 #
 #  `setpriv` vient de l'image de base (`util-linux`) : aucune dépendance ajoutée.
 if [ "$(id -u)" = "0" ]; then
@@ -27,10 +22,10 @@ if [ "$(id -u)" = "0" ]; then
     exec setpriv --reuid=app --regid=app --init-groups "$0" "$@"
 fi
 
-#  Une base SERVEUR (PostgreSQL, DI-7) peut démarrer après l'API : on l'attend,
-#  et on s'arrête si elle ne répond pas — jamais de migration sur une base qu'on
-#  n'a pas pu lire (`app/utils/attendre_base`, #1759). Une base-fichier répond
-#  d'emblée. Affecté AVANT d'être affiché, pour que `set -e` compte l'échec.
+#  Le serveur de base peut démarrer après l'API : on l'attend, et on s'arrête
+#  s'il ne répond pas — jamais de migration sur une base qu'on n'a pas pu lire
+#  (`app/utils/attendre_base`, #1759). Affecté AVANT d'être affiché, pour que
+#  `set -e` compte l'échec.
 JOIGNABLE=$(python -m app.utils.attendre_base)
 echo "==> Base : $JOIGNABLE"
 
@@ -43,15 +38,14 @@ ETAT_BASE=$(python -m app.utils.revision_base 2>/dev/null || echo inconnu)
 if [ "$ETAT_BASE" = "en_avance" ]; then
     echo "==> ⚠ Base EN AVANCE sur ce code (retour à une version précédente) — migrations ignorées."
 else
-    #  Une base NEUVE reçoit le schéma courant d'un coup, marqué à la tête :
-    #  l'historique écrit pour SQLite ne se rejoue pas sur une base vierge
+    #  Une base NEUVE reçoit le schéma courant d'un coup, marqué à la tête
     #  (#1747, spec §4.3). Une base qui a des tables n'est pas touchée.
     #  Affecté AVANT d'être affiché : sous `set -e`, un échec dans `$(…)` passé à
     #  `echo` serait ignoré, et le conteneur démarrerait sur une base sans schéma.
     SCHEMA_INITIAL=$(python -m app.utils.schema_initial)
     echo "==> Schéma initial d'une base neuve : $SCHEMA_INITIAL"
-    #  « inconnu » : la base n'a pas pu être lue. La migrer quand même rejouerait
-    #  l'historique sur une base peut-être vide — on s'arrête, Docker relance.
+    #  « inconnu » : la base n'a pas pu être lue. La migrer quand même marquerait
+    #  une base peut-être vide sans lui poser de schéma — on s'arrête, Docker relance.
     if [ "$SCHEMA_INITIAL" = "inconnu" ]; then
         echo "==> ✗ Base illisible au moment de poser le schéma — arrêt, sans migrer."
         exit 1

@@ -1,4 +1,4 @@
-"""Les endpoints DELETE tiennent-ils sous `foreign_keys=ON` ? (#546, étape 3)
+"""Les endpoints DELETE tiennent-ils avec les clés vérifiées ? (#546, étape 3)
 
 ## Pourquoi ce fichier
 
@@ -18,12 +18,12 @@ sans exercer ce qu'on croit exercer.
 ## Ce que ces tests sont, et pourquoi ils SONT l'étape 3
 
 Le ticket demandait de « décider l'`ON DELETE` par relation ». Cette décision n'a
-pas à être devinée : elle se **constate**. La suite tourne déjà sous
-`foreign_keys=ON` ; il suffit donc d'appeler la suppression avec ses enfants en
+pas à être devinée : elle se **constate**. La base vérifie les clés ; il suffit
+donc d'appeler la suppression avec ses enfants en
 place.
 
   • le test passe   ⇒ la suppression est sûre, la question est close ;
-  • le test échoue  ⇒ SQLite **nomme la contrainte**, c'est-à-dire précisément la
+  • le test échoue  ⇒ la base **nomme la contrainte**, c'est-à-dire précisément la
     relation dont il fallait décider.
 
 ⚠️ Chaque cas monte **tous** les enfants que les métadonnées déclarent, y compris
@@ -241,7 +241,7 @@ def test_supprimer_une_idee_avec_ses_votes(contexte):
 #
 #  ⚠️ Le test SUIT le geste, il ne disparaît pas avec la route. La question
 #  qu'il pose — *`user_vigik.vigik_id` est NOT NULL et sans `Relationship` :
-#  la suppression tient-elle sous `foreign_keys=ON` ?* — ne dépend pas de qui
+#  la suppression tient-elle avec les clés vérifiées ?* — ne dépend pas de qui
 #  appuie sur le bouton. La supprimer aurait rendu au relevé de l'étape 3 deux
 #  lignes non couvertes, sans que rien ne le dise.
 

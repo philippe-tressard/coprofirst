@@ -81,19 +81,6 @@ _SEQUENCE = re.compile(r"(?<!\\)(?:\\\\)*\\u([0-9a-fA-F]{4})")
 #: vivants, avec la même preuve d'équivalence par AST.
 _EMOJI = re.compile(r"(?<!\\)(?:\\\\)*\\U000([0-9a-fA-F]{5})")
 
-#: 🔴 `api/alembic/` EN EST EXCLU, et c'est la seule exception du fichier.
-#:
-#: Une migration déjà appliquée ne se réécrit jamais (`CLAUDE.md`). Le job Ruff
-#: porte déjà la même exclusion, avec le même motif : *« les corriger pour
-#: satisfaire un linter réécrirait l'historique du schéma — le remède serait pire
-#: que le défaut »*. Les emoji y sont d'ailleurs le cas le moins grave : ils se
-#: lisent comme « un emoji », là où une lettre échappée casse le mot lui-même.
-#:
-#: ⚠️ L'exclusion est VÉRIFIÉE, pas supposée : `test_l_exclusion_alembic_sert_encore`
-#: échoue si ces migrations cessaient d'en porter — une exception qui ne sert plus
-#: fait croire la règle plus poreuse qu'elle ne l'est.
-SANS_EMOJI = ("api/alembic",)
-
 
 def _visible(point: str) -> bool:
     """Un caractère imprimable, qui a donc sa place en clair dans le source."""
@@ -121,16 +108,14 @@ def lignes_fautives(texte: str, court: str = "<texte>") -> list[str]:
     payé l'inverse : « je testais la décision, pas le tuyau qui la nourrit ».
     """
     trouves = []
-    emoji = not any(court.startswith(a) for a in SANS_EMOJI)
     for ligne_no, ligne in enumerate(texte.splitlines(), 1):
         for m in _SEQUENCE.finditer(ligne):
             if _visible(m.group(1)):
                 c = chr(int(m.group(1), 16))
                 trouves.append(f"  {court}:{ligne_no} — la lettre « {c} » écrite en séquence")
-        if emoji:
-            for m in _EMOJI.finditer(ligne):
-                c = chr(int(m.group(1), 16))
-                trouves.append(f"  {court}:{ligne_no} — l'emoji « {c} » écrit en séquence")
+        for m in _EMOJI.finditer(ligne):
+            c = chr(int(m.group(1), 16))
+            trouves.append(f"  {court}:{ligne_no} — l'emoji « {c} » écrit en séquence")
     return trouves
 
 
@@ -174,25 +159,7 @@ def test_le_controle_regarde_bien_quelque_chose():
     assert lignes_fautives("un antislash " + BS + BS + "u2014 littéral") == []
     assert lignes_fautives("Article" + BS + "u00a0: 3") == []
     assert lignes_fautives("Date " + BS + "U0001f4c5") != []
-    assert lignes_fautives("Date " + BS + "U0001f4c5", "api/alembic/versions/x.py") == []
-
-
-def test_l_exclusion_alembic_sert_encore():
-    """Une exception qui ne correspond plus à rien se retire.
-
-    Le jour où plus aucune migration ne porterait d'emoji échappé, cette
-    exclusion ferait croire la règle plus poreuse qu'elle ne l'est — et
-    couvrirait autre chose sans qu'on s'en aperçoive.
-    """
-    porteuses = [
-        f.relative_to(RACINE).as_posix()
-        for f in (RACINE / "api" / "alembic").rglob("*.py")
-        if _EMOJI.search(f.read_text(encoding="utf-8", errors="replace"))
-    ]
-    assert porteuses, (
-        "plus aucune migration ne porte d'emoji échappé : retirer `SANS_EMOJI`, "
-        "l'exclusion ne protège plus rien."
-    )
+    assert lignes_fautives("Date " + BS + "U0001f4c5", "api/alembic/versions/x.py") != []
 
 
 def test_les_invisibles_restent_autorises():

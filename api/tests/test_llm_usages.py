@@ -31,8 +31,6 @@ from app.utils.llm_usages import (
     decrire,
 )
 from app.utils.synthese_format import CONSIGNE
-from tests.aides_migrations import charger_migration, chemin_migration
-from tests.aides_tables_supprimees import tables_supprimees
 
 
 def _poser(session, **valeurs):
@@ -192,52 +190,3 @@ def test_le_catalogue_des_modeles_n_exige_pas_de_modele(session):
     circulaire."""
     _poser(session, llm_api_key="sk-x")
     config_llm(session).verifier(exiger_actif=False, exiger_modele=False)
-
-
-# ── 4. Les migrations et la marque `assiste_ia` ─────────────────────────────
-
-_MIGRATION = "0194_assistant_ia_par_usage.py"
-
-
-def _module():
-    return charger_migration(_MIGRATION)
-
-
-#: Migrations qui posent `assiste_ia` sur UNE table, après la 0194.
-_MIGRATIONS_TARDIVES = ("0220_*.py", "0225_*.py")
-
-
-def test_la_migration_couvre_TOUTES_les_tables_qui_portent_la_marque():
-    """Le mixin est hérité par les modèles porteurs ; les migrations doivent
-    poser la colonne sur tous, ni plus ni moins — comparé au CODE, pas à une liste.
-
-    La 0194 en a posé neuf. Une table qui reçoit la marque plus tard a sa PROPRE
-    migration — une migration appliquée ne se modifie jamais : l'annonce de hall
-    (0220, #1089). Elles se déclarent dans `_MIGRATIONS_TARDIVES`."""
-    from app.utils.assiste_ia import AssisteIAMixin
-
-    import app.models.core  # noqa: F401 — charge les tables dans la metadata
-    import app.models.communaute  # noqa: F401
-    import app.models.evenement  # noqa: F401
-
-    def descendants(cls):
-        for sous in cls.__subclasses__():
-            yield sous
-            yield from descendants(sous)
-
-    #  Seules les TABLES comptent : les mixins intermédiaires (`EvolutionMixin`)
-    #  ne sont pas `table=True` et n'ont rien à recevoir.
-    attendues = {
-        m.__tablename__
-        for m in descendants(AssisteIAMixin)
-        if getattr(m, "__table__", None) is not None
-    }
-    assert len(attendues) >= 9, attendues
-    posees = set(_module().TABLES_ASSISTE_IA)
-    for motif in _MIGRATIONS_TARDIVES:
-        chemin = chemin_migration(motif)
-        tardive = charger_migration(motif)
-        assert tardive.COLONNE == "assiste_ia", chemin.name
-        posees.add(tardive.TABLE)
-    #  Une table supprimée depuis (#1177) reste dans la liste de la 0194, appliquée.
-    assert posees - tables_supprimees() == attendues

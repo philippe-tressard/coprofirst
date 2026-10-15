@@ -60,7 +60,7 @@ def _classeur(lignes: list[list]) -> bytes:
 #:  classeur, fabrique d'une ligne ABSENTE du classeur, statut « en attente »).
 #:
 #:  ⚠️ La ligne témoin est absente du classeur À DESSEIN. Reprendre une ligne
-#:  qu'il contient ne prouverait rien : SQLite réattribue le rowid libéré, et une
+#:  qu'il contient ne prouverait rien : l'identifiant libéré peut revenir, et une
 #:  purge suivie d'un réimport rend exactement le même identifiant qu'une purge
 #:  qui n'aurait rien fait.
 #:
@@ -150,9 +150,8 @@ def test_remplacer_efface_BIEN_le_non_traite(
 
     module.importer_depuis_bytes(_classeur(lignes), session, True)
 
-    #  ⚠️ Le DÉCOMPTE tranche, pas l'identifiant : SQLite réattribue le rowid
-    #  libéré par la suppression, si bien que la ligne issue du classeur reprend
-    #  celui du témoin. Comparer les `id` ferait échouer une purge correcte.
+    #  ⚠️ Le DÉCOMPTE tranche, pas l'identifiant : un identifiant ne dit pas
+    #  si la ligne a été remplacée. Comparer les `id` jugerait à côté.
     #  Avant : 1 témoin. Après : 1 ligne, celle du classeur. Sans purge : 2.
     restantes = session.exec(select(modele)).all()
     assert len(restantes) == 1, (

@@ -3,7 +3,7 @@
 ## L'incident (19/08/2026, trouvé par le point 6 du pré-check)
 
 ```
-sqlite3.IntegrityError: UNIQUE constraint failed: refresh_token.token
+IntegrityError: UNIQUE constraint failed: refresh_token.token
 POST /auth/refresh HTTP/1.1" 500 Internal Server Error
 ```
 

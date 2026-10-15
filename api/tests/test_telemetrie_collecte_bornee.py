@@ -5,7 +5,7 @@
 La route est publique — `sendBeacon`, visiteurs anonymes compris — et elle
 écrit en base. Elle acceptait 60 appels par minute et par adresse, 50
 événements par appel, un `detail` de 500 caractères : **3 000 lignes et
-~1,5 Mo par minute et par adresse**, en SQLite sur un Raspberry Pi, gardées
+~1,5 Mo par minute et par adresse**, sur un Raspberry Pi, gardées
 30 jours. Rien ne plafonnait la journée.
 
 ## Ce que ces tests tiennent
@@ -33,7 +33,7 @@ from app.main import app
 from app.models.telemetrie import TelemetryEvent
 from app.utils import limiter as module_limiter
 from app.utils.limiter import limiter
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 from tests.aides_sources import module_app
 
 ROUTE = "/telemetry/collect"
@@ -41,7 +41,7 @@ ROUTE = "/telemetry/collect"
 
 @pytest.fixture(name="moteur")
 def moteur_fixture():
-    moteur = moteur_memoire(partage=True)
+    moteur = moteur_de_test()
 
     def _session():
         with Session(moteur) as s:

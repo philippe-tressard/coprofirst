@@ -8,8 +8,6 @@ Ce que ces tests tiennent :
 - `verifier_restauration` dit qu'une base se restaure ;
 - une valeur sans forme neutre lève, au lieu d'une empreinte fausse.
 
-Sous le workflow « PostgreSQL », `moteur_memoire` rend des bases PostgreSQL : le même
-aller-retour y prouve que le format ne doit rien à SQLite (D4).
 """
 
 from __future__ import annotations
@@ -25,11 +23,11 @@ from sqlmodel import Session, select
 from app.models.core import ConfigSite, FaqItem, RoleUtilisateur, Utilisateur
 from app.utils import export_copropriete as ex
 from app.utils import import_copropriete as im
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import adresse_de_test, compte, moteur_de_test
 
 
-def _base_peuplee(*, partage: bool = False):
-    moteur = moteur_memoire(partage=partage)
+def _base_peuplee():
+    moteur = moteur_de_test()
     with Session(moteur) as s:
         compte(s, prenom="Élodie", nom="D'Aubigné", role=RoleUtilisateur.conseil_syndical)
         compte(s, prenom="Zoé", nom="Martin", actif=False)
@@ -53,7 +51,7 @@ def test_l_aller_retour_rend_le_meme_contenu(tmp_path):
     assert manifeste["tables"]["utilisateur"]["lignes"] == 2
     assert manifeste["tables"]["config_site"]["lignes"] == 2
 
-    cible = moteur_memoire()
+    cible = moteur_de_test()
     bilan = im.importer(archive, cible)
     assert bilan.ecarts == [] and bilan.lignes >= 5
 
@@ -89,7 +87,7 @@ def test_une_archive_alteree_est_refusee_et_la_cible_reste_vide(tmp_path):
     alteree = tmp_path / "alteree.tar.gz"
     _alterer(archive, alteree, "faq_item", lambda d: d.replace("sous-sol".encode(), b"grenier"))
 
-    cible = moteur_memoire()
+    cible = moteur_de_test()
     with pytest.raises(im.ImportRefuse, match="faq_item"):
         im.importer(alteree, cible)
     with Session(cible) as s:
@@ -103,7 +101,7 @@ def test_une_ligne_perdue_est_refusee(tmp_path):
     amputee = tmp_path / "amputee.tar.gz"
     _alterer(archive, amputee, "config_site", lambda d: d.split(b"\n", 1)[1])
     with pytest.raises(im.ImportRefuse, match="config_site : 1 ligne"):
-        im.importer(amputee, moteur_memoire())
+        im.importer(amputee, moteur_de_test())
 
 
 def test_les_fichiers_voyagent_avec_leur_empreinte(tmp_path):
@@ -115,7 +113,7 @@ def test_les_fichiers_voyagent_avec_leur_empreinte(tmp_path):
     assert [f["chemin"] for f in manifeste["fichiers"]] == ["photos/fuite.jpg"]
 
     restaures = tmp_path / "restaures"
-    bilan = im.importer(archive, moteur_memoire(), fichiers=restaures)
+    bilan = im.importer(archive, moteur_de_test(), fichiers=restaures)
     assert bilan.fichiers == 1
     assert (restaures / "photos" / "fuite.jpg").read_bytes() == b"\xff\xd8\xff photo"
 
@@ -156,7 +154,7 @@ def http_admin(monkeypatch, tmp_path):
 
     #  Partagée : le client de test lit depuis un autre fil, et une base en mémoire
     #  non partagée y serait vide.
-    monkeypatch.setattr(app.database, "engine", _base_peuplee(partage=True))
+    monkeypatch.setattr(app.database, "engine", _base_peuplee())
 
     #  La sauvegarde et la racine des fichiers : celle-ci se demande au contexte
     #  de copropriété (#1744), qui relit les réglages à chaque appel.
@@ -234,13 +232,19 @@ def test_l_import_en_ligne_de_commande_verifie_et_le_dit(tmp_path):
     """Le geste de DI-7 : une archive, une base cible neuve, et un verdict lisible."""
     archive = tmp_path / "e.tar.gz"
     ex.exporter(_base_peuplee(), archive)
-    r = _ligne_de_commande("importer", str(archive), f"sqlite:///{(tmp_path / 'c.db').as_posix()}")
-    assert r.returncode == 0, r.stderr[-500:]
-    assert "Importé et vérifié" in r.stdout
-    alteree = tmp_path / "alteree.tar.gz"
-    _alterer(archive, alteree, "faq_item", lambda d: d.replace("sous-sol".encode(), b"grenier"))
-    r = _ligne_de_commande("importer", str(alteree), f"sqlite:///{(tmp_path / 'd.db').as_posix()}")
-    assert r.returncode != 0 and "IMPORT REFUSÉ" in r.stderr
+    cible, retirer = adresse_de_test()
+    autre, retirer_autre = adresse_de_test()
+    try:
+        r = _ligne_de_commande("importer", str(archive), cible)
+        assert r.returncode == 0, r.stderr[-500:]
+        assert "Importé et vérifié" in r.stdout
+        alteree = tmp_path / "alteree.tar.gz"
+        _alterer(archive, alteree, "faq_item", lambda d: d.replace("sous-sol".encode(), b"grenier"))
+        r = _ligne_de_commande("importer", str(alteree), autre)
+        assert r.returncode != 0 and "IMPORT REFUSÉ" in r.stderr
+    finally:
+        retirer()
+        retirer_autre()
 
 
 def test_verifier_une_archive_en_ligne_de_commande(tmp_path):
@@ -265,7 +269,7 @@ def test_verifier_une_archive_en_ligne_de_commande(tmp_path):
 #  tables se citent en cycle, `sorted_tables` les range sans ordre valable, et
 #  PostgreSQL vérifie chaque clé ligne à ligne. Ces tests-ci ne l'avaient pas
 #  vu : leur cible avait les clés DÉSACTIVÉES (le régime par défaut de
-#  `moteur_memoire`). Ici, la cible les vérifie, comme la production.
+#  `moteur_de_test`). Ici, la cible les vérifie, comme la production.
 
 
 def _copropriete_et_batiment(moteur, *, copropriete_id=None):
@@ -292,7 +296,7 @@ def test_des_tables_en_cycle_s_importent_clefs_actives(tmp_path):
         "plus la panne du 09/10/2026"
     )
 
-    cible = moteur_memoire(cles_etrangeres=True)
+    cible = moteur_de_test(cles_etrangeres=True)
     bilan = im.importer(archive, cible)
     assert bilan.ecarts == []
     with cible.connect() as c:
@@ -305,7 +309,7 @@ def test_une_ligne_sans_parent_est_refusee_et_la_cible_reste_vide(tmp_path):
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
 
-    cible = moteur_memoire(cles_etrangeres=True)
+    cible = moteur_de_test(cles_etrangeres=True)
     with pytest.raises(im.ImportRefuse, match=r"batiment\.copropriete_id → copropriete \(1\)"):
         im.importer(archive, cible)
     with Session(cible) as s:
@@ -322,7 +326,7 @@ def test_un_separateur_unicode_dans_un_texte_ne_coupe_pas_la_ligne(tmp_path):
     archive = tmp_path / "export.tar.gz"
     ex.exporter(source, archive)
 
-    cible = moteur_memoire(cles_etrangeres=True)
+    cible = moteur_de_test(cles_etrangeres=True)
     assert im.importer(archive, cible).ecarts == []
     with Session(cible) as s:
         relu = s.exec(select(FaqItem).where(FaqItem.question == "Séparateurs ?")).one()
@@ -363,7 +367,7 @@ def test_une_colonne_retiree_du_modele_est_ecartee_et_nommee(tmp_path):
     ancienne = tmp_path / "ancienne.tar.gz"
     _autre_version(archive, ancienne, "faq_item", lambda li: {**li, "retiree_depuis": "x"})
 
-    cible = moteur_memoire(cles_etrangeres=True)
+    cible = moteur_de_test(cles_etrangeres=True)
     bilan = im.importer(ancienne, cible)
     assert bilan.ecarts == []
     assert bilan.colonnes_ecartees == ["faq_item.retiree_depuis"]
@@ -380,7 +384,7 @@ def test_une_colonne_absente_de_l_archive_recoit_son_defaut(tmp_path):
         archive, ancienne, "faq_item", lambda li: {k: v for k, v in li.items() if k != "ordre"}
     )
 
-    cible = moteur_memoire(cles_etrangeres=True)
+    cible = moteur_de_test(cles_etrangeres=True)
     bilan = im.importer(ancienne, cible)
     assert bilan.ecarts == []
     assert bilan.colonnes_par_defaut == ["faq_item.ordre"]
@@ -396,4 +400,4 @@ def test_une_archive_alteree_reste_refusee_avant_toute_ecriture(tmp_path):
     alteree = tmp_path / "alteree.tar.gz"
     _alterer(archive, alteree, "faq_item", lambda d: d.replace(b'"ordre":0', b'"ordre":7'))
     with pytest.raises(im.ImportRefuse, match="faq_item : contenu différent du manifeste"):
-        im.importer(alteree, moteur_memoire())
+        im.importer(alteree, moteur_de_test())

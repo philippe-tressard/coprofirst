@@ -110,19 +110,20 @@ def test_un_disque_INUTILISABLE_ne_coute_pas_le_document(moteur, tmp_path):
     assert _generer(bloque / "cache") == b"%PDF-x"
 
 
-def test_le_dossier_vit_a_cote_de_la_base_et_HORS_des_uploads(monkeypatch):
+def test_le_dossier_vit_dans_app_data_et_HORS_des_uploads(monkeypatch):
     """`uploads` est servi en statique : un PDF posé là serait public."""
-    from app.config import get_settings
+    from app.config import Settings, get_settings
+
+    defaut = Settings.model_fields["cache_manuel_dir"].default
+    assert defaut == "/app/data/cache-manuel-pdf"
+    assert not defaut.startswith(Settings.model_fields["uploads_dir"].default)
 
     reglages = get_settings()
-    monkeypatch.setattr(reglages, "database_url", "sqlite:////app/data/app.db")
-    monkeypatch.setattr(reglages, "uploads_dir", "/app/uploads")
-    dossier = cache.dossier_par_defaut()
+    monkeypatch.setattr(reglages, "cache_manuel_dir", defaut)
     # `as_posix` : sur un poste Windows, `str` rend « \app\data\… » (rejeu local).
-    assert dossier.as_posix() == "/app/data/cache-manuel-pdf"
-    assert not dossier.as_posix().startswith(reglages.uploads_dir)
+    assert cache.dossier_par_defaut().as_posix() == defaut
 
-    monkeypatch.setattr(reglages, "database_url", "sqlite:///:memory:")
+    monkeypatch.setattr(reglages, "cache_manuel_dir", "")
     assert cache.dossier_par_defaut() is None
 
 

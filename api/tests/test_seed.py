@@ -18,12 +18,8 @@ Les deux propriétés vérifiées ici sont celles dont tout le reste dépend :
    démarrage, et c'est exactement ce que `_poser_les_absents` garantit.
 """
 
-import tempfile
-import uuid
-from pathlib import Path
-
 import pytest
-from sqlmodel import Session, SQLModel, create_engine, func, select
+from sqlmodel import Session, func, select
 
 from app.models.core import (
     CategorieDocument,
@@ -44,17 +40,15 @@ from app.seed import (
     FAQ_INITIALE,
     PROFILS,
 )
+from tests.aides_base import moteur_de_test
 
 
 @pytest.fixture
 def base():
-    """Base SQLite jetable, sur fichier : le seed ouvre sa propre session."""
-    chemin = Path(tempfile.gettempdir()) / f"hostachy-seed-{uuid.uuid4().hex}.db"
-    moteur = create_engine(f"sqlite:///{chemin.as_posix()}")
-    SQLModel.metadata.create_all(moteur)
+    """Base jetable : le seed ouvre sa propre session."""
+    moteur = moteur_de_test()
     yield moteur
     moteur.dispose()
-    chemin.unlink(missing_ok=True)
 
 
 def _semer(moteur) -> None:

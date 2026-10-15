@@ -38,10 +38,9 @@ nocturne efface la base et les fichiers.
 
 ## Installer
 
-1. Installer comme une réplique (`deploiement/standard/LISEZMOI.md`), base
-   **PostgreSQL** pour la démo de CoproFirst (SQLite est aussi géré par la
-   remise à zéro) — d'abord **sans** `MODE_DEMO` : une installation
-   ordinaire, avec son administrateur initial.
+1. Installer comme une réplique (`deploiement/standard/LISEZMOI.md`) — d'abord
+   **sans** `MODE_DEMO` : une installation ordinaire, avec son administrateur
+   initial.
 2. **S'inscrire au registre** avec le compte **opérateur** (`operateur@localhost`) :
    *Administration › Maintenance › Inscription au registre*. L'inscription,
    rangée dans le volume `app_data`, survit aux remises à zéro ; l'opérateur, lui,
@@ -91,9 +90,10 @@ créer lisible de son seul propriétaire, **avant** la première nuit.
 sudo install -m 600 -o "$USER" -g "$USER" /dev/null /var/log/coprofirst-demo.log
 ```
 
-La remise à zéro **ne vide jamais le volume `app_data` en entier** : elle n'y
-supprime que le fichier de la base. L'inscription de l'installation au registre y
-vit (`INSTALLATION_DIR`).
+La remise à zéro **ne touche jamais au volume `app_data`** : l'inscription de
+l'installation au registre y vit (`INSTALLATION_DIR`). Elle vide la base en
+recréant son schéma `public`, dans le serveur qui tourne — jamais le volume
+`pg_data`.
 
 ## Le registre des installations
 

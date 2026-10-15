@@ -145,8 +145,6 @@ def upgrade():
         TABLE,
         sa.Column("id", sa.Integer, primary_key=True),
         sa.Column("nom", sa.String, nullable=False),
-        #  La clé étrangère s'écrit ICI, dans `create_table` d'une table NEUVE :
-        #  c'est dans un `add_column` qu'elle est refusée (`test_migrations.py`).
         sa.Column("batiment_id", sa.Integer, sa.ForeignKey("batiment.id"), nullable=True),
         sa.Column("cree_le", sa.DateTime, nullable=False),
         sa.Column("mis_a_jour_le", sa.DateTime, nullable=True),
@@ -158,13 +156,11 @@ def downgrade():
 ```
 
 **Règles migration :** `CLAUDE.md` → « Migrations Alembic » (liaison des
-valeurs, identifiants depuis une constante, jamais de `foreign_key` dans un
-`add_column`) et `standards/06-donnees-et-integrite.md` §3 pour le générique — seules copies
+valeurs, identifiants depuis une constante, ajouter puis retirer) et
+`standards/06-donnees-et-integrite.md` §3 pour le générique — seules copies
 (claude-config#122). Ce qui n'est écrit que là :
 - tester l'existence d'une colonne avant `add_column` par
-  `sa.inspect(conn).get_columns(TABLE)` — **pas** par un `PRAGMA table_info` en
-  f-string, qui compterait contre le plafond de `test_migrations.py`.
-- BDD = **SQLite** — pas de `ALTER TYPE`, pas de `CREATE TYPE`
+  `sa.inspect(conn).get_columns(TABLE)`, jamais par une requête en f-string.
 - **Jamais** modifier une migration existante : en créer une nouvelle.
 - Une colonne ajoutée est **nullable ou porte un `server_default`** : l'image
   précédente doit pouvoir insérer sans la connaître. Retirer ou renommer se fait
@@ -336,7 +332,7 @@ Côté front, les familles équivalentes (composants `Section*`, `Onglet*`,
 - [ ] Modèle dans `app/models/<domaine>.py`, importé par `models/__init__.py` — jamais `core.py`
 - [ ] Pas de colonne `actif` : l'archivage se déclare dans `utils/archivage.REGLES`
 - [ ] Schémas dans `schemas_<domaine>.py` s'ils sont partagés, à côté du routeur sinon
-- [ ] Migration `NNNN_slug.py` au bon numéro ; aucune `foreign_key` dans un `add_column` ; colonne neuve nullable ou avec `server_default`
+- [ ] Migration `NNNN_slug.py` au bon numéro ; colonne neuve nullable ou avec `server_default`
 - [ ] Routeur monté (`main.py` ou `__init__.py` du paquet), routes fixes avant routes à paramètre
 - [ ] `ou_404` et `model_dump()` — ni `session.get` + 404, ni `.dict()`
 - [ ] Client dans le module de domaine de `front/src/lib/api/`, type dans `types.ts`

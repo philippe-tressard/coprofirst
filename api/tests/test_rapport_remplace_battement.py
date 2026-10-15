@@ -18,13 +18,13 @@ from sqlmodel import Session, select
 from app.models.core import HistoriqueMaintenance
 from app.routers.admin.rapports_scripts import RapportMaintenance, enregistrer_rapport
 from app.utils.sante_taches import sans_battements_remplaces
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 
 DEBUT = datetime(2026, 9, 27, 3, 0, 1)
 
 
 def _session() -> Session:
-    return Session(moteur_memoire())
+    return Session(moteur_de_test())
 
 
 def _rapport(**kwargs) -> RapportMaintenance:

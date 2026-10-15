@@ -8,7 +8,6 @@ stack :
 
 | Ce qu'il écrivait | Le réel |
 |---|---|
-| `DATABASE_URL=sqlite:////data/db/app.db` | le volume est `app_data:/app/data` → **base hors volume, perdue à la recréation** |
 | `MAIL_TLS`, `APP_ENV`, `PI_IP`, `DOMAIN` | aucun champ correspondant dans `Settings` |
 | — | **`WHATSAPP_API_KEY` absente**, et `docker-compose.yml` la rend obligatoire (`:?`) → `docker compose up` **refuse de démarrer** |
 
@@ -29,8 +28,8 @@ compare.
 3. tout réglage de `Settings` est **visible** de l'exploitant, ou déclaré hors
    gabarit avec sa raison — `INSTANCE_ID` ne l'était nulle part, et le pied de
    page restait muet sur le nœud servant ;
-4. la valeur d'exemple de `DATABASE_URL` est **celle du code**, donc dans le
-   volume monté ;
+4. `DATABASE_URL` désigne le service `postgres` de compose, avec **sa** base et
+   **son** utilisateur — et son mot de passe, que le gabarit déclare ;
 5. aucun script versionné ne **regénère** un `.env` ou un `Caddyfile` — c'est le
    geste exact qui a produit l'incident, et rien n'empêchait de le réintroduire ;
 6. les deux réglages qui dépendent du **rôle** du nœud (`ORIGIN`,
@@ -49,6 +48,8 @@ couvrir (`standards/05` §2).
 import re
 from pathlib import Path
 
+import yaml
+
 from tests.aides_sources import modules_app
 from tests.conftest import scripts_shell_versionnes
 
@@ -65,6 +66,8 @@ HORS_GABARIT = {
     "uploads_dir": "chemin INTERNE au conteneur, fixé par le volume "
     "`uploads:/app/uploads` — le déclarer dans .env laisserait croire qu'on peut "
     "le déplacer sans toucher au volume",
+    "cache_manuel_dir": "chemin INTERNE au conteneur, dans le volume `app_data:/app/data` "
+    "— le déplacer hors du volume perdrait le cache à chaque recréation",
     "git_hash": "posé par la CONSTRUCTION de l'image (`ARG GIT_HASH`, api/Dockerfile) : "
     "c'est le commit qu'elle contient, pas un réglage d'exploitant (#1761)",
     "wa_photo_budget_ko": "posé par l'ancre `x-budget-photo-whatsapp` de "
@@ -222,31 +225,29 @@ def test_les_exceptions_servent_encore():
     )
 
 
-def test_la_base_de_l_exemple_est_celle_du_code_et_dans_le_volume():
-    """`DATABASE_URL` hors du volume monté = base perdue à la recréation.
+def test_la_base_de_l_exemple_est_le_service_postgres_du_compose():
+    """`DATABASE_URL` du gabarit vise le serveur que compose démarre, tel qu'il s'initialise.
 
-    L'installeur écrivait `sqlite:////data/db/app.db` quand le volume est
-    `app_data:/app/data`. Rien ne l'aurait signalé : la stack démarre, la base se
-    crée, et elle disparaît au premier `docker compose down -v`.
+    Une base, un utilisateur ou un hôte qui ne seraient pas ceux du service
+    `postgres` : la stack démarre, et l'API ne se connecte jamais.
     """
-    exemple = re.search(r"(?m)^DATABASE_URL=(.+)$", EXEMPLE.read_text(encoding="utf-8"))
+    gabarit = EXEMPLE.read_text(encoding="utf-8")
+    exemple = re.search(r"(?m)^DATABASE_URL=(.+)$", gabarit)
     assert exemple, ".env.example ne déclare plus DATABASE_URL"
-    #  Le défaut est LU sur la classe, pas dans le texte : il se compose par
-    #  `dialecte.url_fichier` depuis #1747, et une regex sur le littéral ne le
-    #  voyait plus.
-    from app.config import Settings
-
-    defaut = Settings.model_fields["database_url"].default
-    assert defaut, "config.py ne déclare plus de défaut pour database_url"
-    assert exemple.group(1).strip() == defaut, (
-        f"DATABASE_URL du gabarit ({exemple.group(1).strip()}) diffère du défaut du "
-        f"code ({defaut}) : l'un des deux pointe hors du volume "
-        f"`app_data:/app/data`"
+    pg = yaml.safe_load(COMPOSE_TXT)["services"]["postgres"]
+    env = dict(e.split("=", 1) for e in pg["environment"])
+    attendu = re.compile(
+        rf"^postgresql\+psycopg://{env['POSTGRES_USER']}:<POSTGRES_PASSWORD>"
+        rf"@postgres:5432/{env['POSTGRES_DB']}$"
     )
-    chemin = defaut.split("////")[-1]
-    assert chemin.startswith("app/data/"), (
-        f"la base est déclarée en `{chemin}`, hors du volume monté par "
-        f"docker-compose.yml (`app_data:/app/data`) : elle serait perdue à la recréation"
+    assert attendu.match(exemple.group(1).strip()), (
+        f"DATABASE_URL du gabarit ({exemple.group(1).strip()}) ne désigne pas le service "
+        f"`postgres` de docker-compose.yml (utilisateur {env['POSTGRES_USER']}, base "
+        f"{env['POSTGRES_DB']}, mot de passe POSTGRES_PASSWORD)"
+    )
+    assert "POSTGRES_PASSWORD" in _cles_du_gabarit(), (
+        "le mot de passe de la base n'a pas sa ligne dans le gabarit : sans lui, "
+        "l'image refuse d'initialiser la base"
     )
 
 

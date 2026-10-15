@@ -5,8 +5,8 @@
 #  POURQUOI ce script existe (constat du 04/08/2026) :
 #    Les sauvegardes de 03:00 sont produites par APScheduler DANS le conteneur
 #    API, donc uniquement sur le nœud ACTIF, dans le volume Docker `backups`
-#    que `bascule.sh` ne réplique PAS (il ne synchronise que uploads, app_data
-#    et whatsapp_auth). Le rôle alternant chaque nuit, chaque RPi n'accumulait
+#    que `bascule.sh` ne réplique PAS (il ne synchronise que uploads et
+#    whatsapp_auth). Le rôle alternant chaque nuit, chaque RPi n'accumulait
 #    qu'un jour sur deux, et `_rotate_backups()` ne voit que les fichiers
 #    LOCAUX : les 7 versions conservées couvraient ~14 jours À TROUS, et aucun
 #    nœud n'avait la sauvegarde de la veille.
@@ -24,13 +24,10 @@
 #       en lecture seule sur le volume des sauvegardes — ni sudo, ni règle
 #       sudoers, ni installation sur les nœuds (ni rsync ni scp : Git for
 #       Windows n'embarque pas rsync).
-#    3. La VÉRIFIE : empreinte identique à la source, gzip intact, puis la base :
-#       sous PostgreSQL, l'export vérifié qu'elle porte (chaque table compte les
-#       lignes que son manifeste annonce) ; sous SQLite, `app.db` et
-#       `PRAGMA integrity_check` sur la copie extraite. Vérifier la copie
-#       extraite est sans danger : c'est un fichier à nous, pas la base de
-#       production (règle d'or : interdiction d'ouvrir `app.db` de PROD depuis
-#       un process tiers, pas d'ouvrir une copie morte).
+#    3. La VÉRIFIE : empreinte identique à la source, gzip intact, puis l'export
+#       vérifié de la base qu'elle porte (chaque table compte les lignes que son
+#       manifeste annonce), relu sur le poste — une copie à nous, jamais la base
+#       de production.
 #    3 bis. Copie de même la dernière archive du REGISTRE des installations
 #       (`plateforme/`, chez la référence seulement — #1896), sans que son
 #       verdict touche celui de la copropriété.
@@ -40,8 +37,8 @@
 #       `x-maintenance-key`. Aucun second canal, aucune seconde table.
 #
 #  CE QU'IL NE FAIT PAS — et c'est délibéré :
-#    Il n'ouvre JAMAIS `app.db` sur le RPi, ni en lecture. Il ne lit que des
-#    fichiers `.tar.gz` déjà clos. Cf. CLAUDE.md « Règle d'or anti-corruption ».
+#    Il ne touche JAMAIS la base de production, ni en lecture. Il ne lit que des
+#    fichiers `.tar.gz` déjà clos.
 #
 #  ⚠ PORTÉE DE CETTE PROTECTION : le poste est au MÊME DOMICILE que les deux
 #    RPi. Cette copie protège de la perte d'un nœud, d'un `docker volume rm`
@@ -191,7 +188,7 @@ SSH_CIBLE="$EXPORT_SSH_USER@$SOURCE_IP"
 # Aucun privilège n'est élargi : l'appartenance au groupe `docker` équivaut déjà à
 # root, elle est antérieure et nécessaire au modèle de déploiement. On en RETIRE
 # une (la règle sudoers devient inutile). Le montage est `:ro` et ne porte que le
-# volume des sauvegardes : ni `app_data`, ni `app.db` — cf. la règle d'or.
+# volume des sauvegardes.
 LIRE="docker run --rm -v 5hostachy_backups:/b:ro alpine"
 
 # On établit d'abord qu'on a PU regarder. Sans cette étape, une panne d'accès rend
@@ -251,39 +248,13 @@ EMPREINTES="non"; [ -n "$SHA_SRC" ] && [ "$SHA_SRC" = "$SHA_DST" ] && EMPREINTES
 
 # ── 3. Vérifier la copie (sur le POSTE — jamais sur la base de production) ───
 LISTING=$(tar -tzf "$LOCAL" 2>/dev/null || true)
-CONTIENT=$(listing_contient "$LISTING" app.db)
+CONTIENT=$(listing_contient "$LISTING" "$NOM_EXPORT_BASE")
 
+# L'archive porte l'export vérifié de la base (DI-7b). On le relit ici, sans
+# rien du projet : chaque table doit compter les lignes que le manifeste annonce.
+# Sa restauration, elle, a été éprouvée au nœud avant que la sauvegarde se dise
+# réussie (`backup.py`).
 if [ "$CONTIENT" = "oui" ]; then
-  TMP=$(mktemp -d 2>/dev/null || echo "/tmp/export-hs-$$")
-  mkdir -p "$TMP"
-  if tar -xzf "$LOCAL" -C "$TMP" app.db 2>/dev/null; then
-    # Ordre de préférence : sqlite3 s'il existe, sinon le module stdlib de
-    # Python (présent sur ce poste de dev bien plus sûrement que la CLI).
-    if command -v sqlite3 >/dev/null 2>&1; then
-      INTEGRITE=$(sqlite3 "$TMP/app.db" "PRAGMA integrity_check;" 2>&1 | head -1)
-    else
-      # Python est un binaire Windows NATIF : il ne sait pas ouvrir un chemin
-      # MSYS (`/c/…`). Sans cette conversion, il rend FileNotFoundError et
-      # l'intégrité resterait « inconnue » — donc un échec — sur une archive
-      # pourtant saine. Vérifié le 04/08/2026.
-      CHEMIN_DB="$TMP/app.db"
-      command -v cygpath >/dev/null 2>&1 && CHEMIN_DB=$(cygpath -w "$TMP/app.db")
-      for PY in python3 python py; do
-        if command -v "$PY" >/dev/null 2>&1; then
-          INTEGRITE=$("$PY" -c "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); print(c.execute('PRAGMA integrity_check').fetchone()[0]); c.close()" "$CHEMIN_DB" 2>&1 | head -1)
-          break
-        fi
-      done
-    fi
-  fi
-  rm -rf "$TMP"
-fi
-# Une base SERVEUR (PostgreSQL, DI-7b) : l'archive porte son export vérifié au
-# lieu d'app.db. On le relit ici, sans rien du projet : chaque table doit compter
-# les lignes que le manifeste annonce. Sa restauration, elle, a été éprouvée au
-# nœud avant que la sauvegarde se dise réussie (`backup.py`).
-if [ "$CONTIENT" = "non" ] && [ "$(listing_contient "$LISTING" "$NOM_EXPORT_BASE")" = "oui" ]; then
-  CONTIENT="export"
   TMP=$(mktemp -d 2>/dev/null || echo "/tmp/export-hs-$$")
   mkdir -p "$TMP"
   if tar -xzf "$LOCAL" -C "$TMP" "$NOM_EXPORT_BASE" 2>/dev/null; then
@@ -404,8 +375,8 @@ else
   #  ⚠ Sourcé AVANT de construire DETAILS : `rapport_echapper` y est utilisé.
   source "$SCRIPT_DIR/scripts/lib/lib-rapport.sh"
 
-  #  `integrite` est un MESSAGE renvoyé par SQLite ou Python en cas de base
-  #  corrompue — donc du texte libre, qui peut porter tabulations et guillemets.
+  #  `integrite` est un MESSAGE (les écarts de l'export, par table) — donc du
+  #  texte libre, qui peut porter tabulations et guillemets.
   #  Le laisser brut fabrique un JSON invalide que l'API rejette en 422 : c'est
   #  ce qui est arrivé à la maintenance hebdomadaire le 16/08/2026, et le compte
   #  rendu perdu aurait été précisément celui d'une sauvegarde corrompue.
@@ -433,7 +404,7 @@ if [ "$STATUT" = "succes" ]; then
   echo "     Archive     : $ARCHIVE"
   echo "     Taille      : $(awk -v o="${OCTETS:-0}" 'BEGIN{printf "%.1f Mo", o/1048576}')"
   echo "     Emplacement : $EXPORT_DEST"
-  echo "     Vérifiée    : empreinte identique à la source, $([ "$CONTIENT" = export ] && echo "export : chaque table compte ses lignes" || echo "integrity_check : ok")"
+  echo "     Vérifiée    : empreinte identique à la source, export : chaque table compte ses lignes"
   echo "     Source      : $SOURCE_NOEUD ($SOURCE_IP)"
   echo "     Registre    : ${PLATEFORME_ARCHIVE:-—} ($PLATEFORME_INTEGRITE)"
 else

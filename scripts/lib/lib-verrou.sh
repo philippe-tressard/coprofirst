@@ -49,17 +49,6 @@ verrou_poser() {
   log "  → Lock bascule posé sur les DEUX nœuds (libération garantie à la sortie)."
 }
 
-#  Une opération LONGUE (la bascule des données, DI-7c : export puis import,
-#  plusieurs minutes) rafraîchit son verrou entre deux étapes : passé
-#  `VERROU_STALE_S`, health-watch le croirait orphelin et l'effacerait, et
-#  rebasculerait un site qu'on a coupé exprès. Sans `run` : un pair injoignable
-#  à cet instant ne doit pas interrompre l'opération — le verrou local suffit à
-#  ce nœud, et celui du pair n'a que quelques minutes.
-verrou_prolonger() {
-  touch "$REPO/.bascule-lock" 2>/dev/null || true
-  $SSH_CMD ptressard@"$PEER_IP" "touch /opt/5hostachy/.bascule-lock" 2>/dev/null || true
-}
-
 #  ── La PÉREMPTION du verrou — une seule définition, trois lecteurs ──────────
 #
 #  🔴 Elle était écrite TROIS fois, avec trois seuils, et le quatrième lecteur

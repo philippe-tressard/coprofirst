@@ -11,14 +11,12 @@
 #
 #   1. décider (fonction PURE `decider_remise`) : seulement si `.env` pose
 #      `MODE_DEMO` — sur une installation ordinaire, ce script ne fait RIEN —,
-#      et seulement pour un moteur connu, SQLite ou PostgreSQL (§11, question 4) ;
-#   2. arrêter l'API (règle d'or : aucun processus tiers sur une base ouverte) ;
-#   3. vider la base (fonction PURE `commande_vidage`) et le volume des fichiers :
-#      - SQLite : supprimer le FICHIER de la base et son journal WAL — jamais le
-#        volume `app_data` entier : l'inscription de l'installation au registre y
-#        vit (`INSTALLATION_DIR`), et la démo la perdrait chaque nuit ;
-#      - PostgreSQL : supprimer et recréer le SCHÉMA `public`, dans le serveur qui
-#        tourne — jamais le volume `pg_data`, jamais la base elle-même ;
+#      et seulement si `DATABASE_URL` désigne PostgreSQL (§11, question 4) ;
+#   2. arrêter l'API : aucun écrivain pendant le vidage ;
+#   3. vider la base (`VIDAGE`) et le volume des fichiers : supprimer et recréer
+#      le SCHÉMA `public`, dans le serveur qui tourne — jamais le volume
+#      `pg_data`, jamais la base elle-même, jamais le volume `app_data` :
+#      l'inscription de l'installation au registre y vit (`INSTALLATION_DIR`) ;
 #   4. poser le schéma puis charger le jeu, dans un conteneur ponctuel ;
 #   5. redémarrer, sonder `/api/health`, rendre compte (`remise_a_zero_demo`) ;
 #   6. en échec du chargement, l'API RESTE ARRÊTÉE (fonction PURE
@@ -45,31 +43,15 @@ est_oui() {  # $1 valeur brute → oui|non
     esac
 }
 
-#  $1 MODE_DEMO brut · $2 moteur (sqlite|postgresql|inconnu)
-#  → remettre | pas-demo | moteur-non-gere
+#  $1 MODE_DEMO brut · $2 moteur (postgresql|inconnu) → remettre | pas-demo | moteur-non-gere
 decider_remise() {
     if [ "$(est_oui "$1")" != oui ]; then echo pas-demo; return; fi
-    case "${2:-}" in
-        sqlite|postgresql) echo remettre ;;
-        *)                 echo moteur-non-gere ;;
-    esac
+    if [ "${2:-}" = postgresql ]; then echo remettre; else echo moteur-non-gere; fi
 }
 
-#  Ce qui vide la base, selon le moteur : `$1` moteur · `$2` chemin du fichier
-#  SQLite (vu du conteneur de l'API). Rend `<service> <commande sh>` : le service
-#  Compose où la jouer, puis la commande. PostgreSQL se vide dans SON conteneur,
-#  qui tourne, par le superutilisateur de l'image (`POSTGRES_USER`).
-commande_vidage() {
-    case "$1" in
-        sqlite) printf "api rm -f '%s' '%s-wal' '%s-shm'\n" "$2" "$2" "$2" ;;
-        postgresql) printf '%s\n' 'postgres psql -v ON_ERROR_STOP=1 -U coprofirst -d coprofirst -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"' ;;
-    esac
-}
-
-#  Le chemin du fichier de la base, vu du conteneur, depuis son URL SQLite.
-chemin_sqlite() {  # $1 sqlite:////app/data/app.db → /app/data/app.db
-    printf '%s\n' "${1#sqlite:///}"
-}
+#  Ce qui vide la base : dans le conteneur `postgres`, qui tourne, par le
+#  superutilisateur de l'image (`POSTGRES_USER`).
+VIDAGE='psql -v ON_ERROR_STOP=1 -U coprofirst -d coprofirst -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"'
 
 #  $1 code de sortie du chargement · $2 santé après le redémarrage (ok|ko|vide)
 #  → reussie | refusee | chargement-echoue | sante-ko
@@ -90,23 +72,13 @@ if [ "${1:-}" = "--selftest" ]; then
         if [ "$got" = "$voulu" ]; then echo "PASS  $lib"; else echo "FAIL  $lib — « $got »"; fail=1; fi
     }
     echo "== self-test : faut-il remettre à zéro =="
-    attendu "MODE_DEMO=oui, SQLite → remettre"           remettre        decider_remise oui sqlite
-    attendu "MODE_DEMO=OUI (casse) → remettre"           remettre        decider_remise OUI sqlite
-    attendu "MODE_DEMO absent → rien (pas une démo)"     pas-demo        decider_remise "" sqlite
-    attendu "MODE_DEMO=non → rien"                       pas-demo        decider_remise non sqlite
-    attendu "MODE_DEMO mal écrit → rien, jamais vider"   pas-demo        decider_remise ouii sqlite
     attendu "MODE_DEMO=oui, PostgreSQL → remettre"       remettre        decider_remise oui postgresql
-    attendu "moteur inconnu → non géré, jamais SQLite"   moteur-non-gere decider_remise oui inconnu
-    echo "== self-test : le fichier de la base =="
-    attendu "URL SQLite absolue"                         /app/data/app.db chemin_sqlite "sqlite:////app/data/app.db"
-    echo "== self-test : vider la base =="
-    attendu "SQLite : le fichier et son journal, par l'API" \
-        "api rm -f '/app/data/app.db' '/app/data/app.db-wal' '/app/data/app.db-shm'" \
-        commande_vidage sqlite /app/data/app.db
-    attendu "PostgreSQL : le schéma, dans son conteneur" \
-        'postgres psql -v ON_ERROR_STOP=1 -U coprofirst -d coprofirst -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"' \
-        commande_vidage postgresql ""
-    attendu "moteur inconnu : rien à jouer"              ""              commande_vidage inconnu ""
+    attendu "MODE_DEMO=OUI (casse) → remettre"           remettre        decider_remise OUI postgresql
+    attendu "MODE_DEMO absent → rien (pas une démo)"     pas-demo        decider_remise "" postgresql
+    attendu "MODE_DEMO=non → rien"                       pas-demo        decider_remise non postgresql
+    attendu "MODE_DEMO mal écrit → rien, jamais vider"   pas-demo        decider_remise ouii postgresql
+    attendu "moteur inconnu → non géré, jamais vider"    moteur-non-gere decider_remise oui inconnu
+    attendu "MODE_DEMO absent, moteur inconnu → rien"    pas-demo        decider_remise "" inconnu
     echo "== self-test : l'issue =="
     attendu "chargée, santé OK → réussie"                reussie           decider_issue 0 ok
     attendu "chargée, santé KO → santé KO"               sante-ko          decider_issue 0 ko
@@ -128,26 +100,19 @@ URL=$(lire_env DATABASE_URL)
 case "$(decider_remise "$(lire_env MODE_DEMO)" "$(moteur_de_url "$URL")")" in
     pas-demo) journal "MODE_DEMO n'est pas posé : ce n'est pas la démo, rien n'est remis à zéro."; exit 0 ;;
     moteur-non-gere)
-        journal "⚠ La remise à zéro ne connaît que SQLite et PostgreSQL (DATABASE_URL : $(moteur_de_url "$URL"))."
+        journal "⚠ La remise à zéro ne connaît que PostgreSQL (DATABASE_URL : $(moteur_de_url "$URL"))."
         rendre_compte_tache remise_a_zero_demo erreur "moteur de base non géré" "{}"
         exit 1 ;;
 esac
 
 COMPOSE=(docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml)
 PONCTUEL=("${COMPOSE[@]}" run --rm --no-deps -T --entrypoint sh api -c)
-MOTEUR=$(moteur_de_url "$URL")
-BASE=$(chemin_sqlite "$URL")
 UPLOADS=$(lire_env UPLOADS_DIR); UPLOADS=${UPLOADS:-/app/uploads}
-read -r SERVICE_VIDAGE VIDAGE <<<"$(commande_vidage "$MOTEUR" "$BASE")"
 
-journal "Remise à zéro de la démo : base $MOTEUR, fichiers $UPLOADS."
+journal "Remise à zéro de la démo : base PostgreSQL, fichiers $UPLOADS."
 "${COMPOSE[@]}" stop api >/dev/null
-if [ "$SERVICE_VIDAGE" = postgres ]; then
-    "${COMPOSE[@]}" exec -T postgres sh -c "$VIDAGE" >/dev/null
-    "${PONCTUEL[@]}" "find '$UPLOADS' -mindepth 1 -delete"
-else
-    "${PONCTUEL[@]}" "$VIDAGE && find '$UPLOADS' -mindepth 1 -delete"
-fi
+"${COMPOSE[@]}" exec -T postgres sh -c "$VIDAGE" >/dev/null
+"${PONCTUEL[@]}" "find '$UPLOADS' -mindepth 1 -delete"
 if "${PONCTUEL[@]}" "python -m app.utils.schema_initial && python -m app.demo.charger"; then
     CODE=0
 else

@@ -41,7 +41,7 @@ de la confiance.
 1. **Un contrôle qui ne peut pas s'exécuter renvoie INCONNU, jamais OK.**
    `sudo` en SSH non interactif échoue en demandant un mot de passe ; `… | grep -c`
    sur cette sortie vide affiche `0`, c'est-à-dire « aucun problème ». Le 26/07 j'ai
-   annoncé « 0 inode fantôme » sur cette base : c'était un faux vert. Toute commande
+   annoncé un tel « 0 » : c'était un faux vert. Toute commande
    du pré-check doit soit fonctionner sans `sudo`, soit signaler explicitement son
    échec. **Ne jamais déduire un vert d'une sortie vide.**
 2. **Ce qui est critique en continu ne doit pas être vérifié seulement en MEP.**
@@ -207,7 +207,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 | 1 | Site public répond | OK · FAIL · INCONNU |
 | 2 | Rôle actif cohérent **et conforme au réel** | OK · FAIL |
 | 3 | Standby sans conteneur (pas de split-brain) | OK · FAIL |
-| 4 | Base saine — WAL présent, 0 `disk I/O error`, **sans ouvrir `app.db`** | OK · FAIL |
+| 4 | Le `.env` de l'actif désigne PostgreSQL (`base_configuree`) — la santé de la base est le point 22 | OK · FAIL · INCONNU |
 | 5 | Bridge WhatsApp connecté | OK · FAIL |
 | 6 | Aucune ERROR/CRITICAL (1 h), **hors celle que ce lot corrige** | OK · FAIL · INCONNU |
 | 7 | Scripts cron exécutables | OK · FAIL |
@@ -223,7 +223,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 | 19 | **Liens des courriels servis par la production** | OK · ÉCART · FAIL · INCONNU |
 | 20 | **Ordre du menu servi** (`pages_order`) — un fantôme rend ÉCART, une répétition FAIL (#1114) | OK · ÉCART · FAIL · INCONNU |
 | 21 | **Textes légaux servis complets** — un « À RENSEIGNER » dans la page publique rend ÉCART : à compléter dans Admin › Légal (#1585) | OK · ÉCART · INCONNU |
-| 22 | **Réplication PostgreSQL** — un primaire sur l'actif, une réplique qui reçoit le journal sur le standby ; deux primaires ou une réplique déconnectée rendent FAIL. Sans objet tant que la production est sous SQLite. Décision partagée avec C37 (`lib-replication.sh`, #1781) | OK · FAIL · INCONNU |
+| 22 | **Réplication PostgreSQL** — un primaire sur l'actif, une réplique qui reçoit le journal sur le standby ; deux primaires ou une réplique déconnectée rendent FAIL. Décision partagée avec C37 (`lib-replication.sh`, #1781) | OK · FAIL · INCONNU |
 | 23 | **Aucune PR ouverte vers `main` hors de `dev`** — chaque MEP supprime `dev`, et GitHub réoriente vers `main` les PR qui la visaient (Dependabot compris). Une PR réorientée rend ÉCART ; la reprendre : `python scripts/poste/reprendre-dependabot.py` (relevé et montées), puis `--fermer`, et ses montées dans un lot sur `dev`. Joué aussi en `--post-mep`, premier moment où elles apparaissent (#1870) | OK · ÉCART · INCONNU |
 
 ### Lire le verdict
@@ -360,7 +360,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 - **Point 9 est INCONNU par construction** : l'historique des e-mails s'interroge
   in-process (`GET /admin/emails/historique`) et exige une session admin. Le
   vérifier à la main dans **Admin → E-mails → Historique**, filtre `erreur`,
-  7 jours. Repli quand le standby est au repos : voir `HISTORIQUE.md`.
+  7 jours. Repli sans interface : voir `HISTORIQUE.md`.
 
 ### Avant même le script — l'étape 0 bis
 
@@ -546,14 +546,11 @@ qu'un relecteur voie ce qui a été découvert sans être traité.
 
 **Rollback si P1–P6 échoue :** le retour arrière classique est de ramener l'actif
 au commit précédent (`git reset --hard <commit-précédent>`), puis `docker compose
-build && docker compose up -d` — aucune ouverture de `app.db` : ce n'est pas une
-violation de la règle d'or.
+build && docker compose up -d`.
 
 Ce retour au code précédent tient **sans restaurer la base** parce que les
 migrations sont compatibles sur une version (#1757, `test_migrations_compatibles.py`) :
-l'ancien code lit et écrit le schéma que la version fautive a migré. Une migration
-historique (jusqu'à 0271) n'offre pas cette garantie — si le lot fautif en est une,
-la restauration de la sauvegarde reste le seul retour sûr.
+l'ancien code lit et écrit le schéma que la version fautive a migré.
 
 🔴 **Mais ce geste ne se lance pas de sa propre initiative.** Le hook global
 `garde-git-destructif.py` le **refuse** depuis l'outil Bash — y compris glissé dans

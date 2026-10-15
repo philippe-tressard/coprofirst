@@ -49,7 +49,6 @@ def test_l_archive_porte_l_export_et_se_dit_reussie(sauvegarde):
     (archive,) = sauvegarde.glob(backup.MOTIF_ARCHIVE)
     with tarfile.open(archive) as tar:
         assert backup.NOM_EXPORT_BASE in tar.getnames()
-        assert "app.db" not in tar.getnames()
 
 
 def test_un_export_qui_ne_se_restaure_pas_fait_echouer_la_sauvegarde(sauvegarde, monkeypatch):

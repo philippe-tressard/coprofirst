@@ -24,7 +24,7 @@
 #  n'est écrite ici (volet « geste » de #1591, hors de ce lot).
 #
 #  Lecture seule : `apt list`, `apt-get -s` (SIMULATION, sans verrou ni écriture)
-#  et `dpkg-query`. Rien ne touche à `app.db` ni au volume.
+#  et `dpkg-query`. Rien ne touche à la base ni aux volumes.
 #
 #  SOURCÉ (mode 100644) par `lib-mises-a-jour.sh`, qui reprend `COLLECT_PAQUETS`
 #  dans `COLLECT_MAJ` et appelle `paquets_verdicts` depuis `mises_a_jour_verdicts`

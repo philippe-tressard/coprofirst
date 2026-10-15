@@ -73,7 +73,7 @@ def test_le_releve_voit_chaque_forme():
         'b = Path("/app") / url\n'
         'c = "/app/uploads"\n'
         "d = contexte.courante().racine_fichiers\n"
-        'e = "/app/data/app.db"\n'
+        'e = "/app/data/installation"\n'
     )
     assert acces_a_la_racine(ast.parse(source), lit_la_racine=True) == [
         (2, "'/app'"),

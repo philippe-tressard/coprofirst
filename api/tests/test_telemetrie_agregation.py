@@ -34,7 +34,7 @@ from app.models.core import (
 from app.models.telemetrie import DerniereVisite
 from app.utils import horloge, telemetry_aggregation
 from app.utils.telemetrie_tableau import non_distingue_jusqu_au
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 
 MAINTENANT = datetime(2026, 10, 1, 12, 0, 0)
 
@@ -45,7 +45,7 @@ def _utc(jour: int, heure: int = 10, mois: int = 9) -> datetime:
 
 @pytest.fixture()
 def jeu(monkeypatch):
-    moteur = moteur_memoire(partage=True)
+    moteur = moteur_de_test()
     monkeypatch.setattr("app.database.engine", moteur)
     monkeypatch.setattr(horloge, "maintenant", lambda: MAINTENANT)
     with Session(moteur) as s:

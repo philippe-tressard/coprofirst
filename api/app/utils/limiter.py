@@ -84,7 +84,7 @@ LIMITE_PREFERENCE = "10/minute"
 #:
 #: 🔴 Elle s'appelait `LIMITE_JOURNAL` et valait `60/minute`, sans plafond
 #: journalier : avec 50 événements par appel, 3 000 lignes par minute et par
-#: adresse, en SQLite sur un Raspberry Pi (#1597, 02/10/2026). Le client du
+#: adresse, sur un Raspberry Pi (#1597, 02/10/2026). Le client du
 #: site envoie un lot toutes les 30 secondes au plus, plus un au changement
 #: d'onglet : 10 par minute reste hors d'atteinte d'une visite, et 500 par jour
 #: couvre plus de quatre heures d'usage continu. Au-delà, ce n'est pas le site

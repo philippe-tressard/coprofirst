@@ -8,7 +8,7 @@ récupérateur restreint aux data-URI (`pdf_rendu.PROTOCOLES_ADMIS`), sans
 16/09/2026 — jusque-là dans `utils/pdf_theme.py`, qui délègue désormais. Ce test
 garde donc deux choses d'un seul geste : la surface d'appel du moteur, et le fait
 que le rendu s'exécute **hors du process de l'API**, dans un enfant `spawn` qui
-n'hérite pas des descripteurs d'`app.db`.
+n'hérite pas des connexions de l'API.
 
 ## 🔴 Ce qu'il protégeait EN PLUS, et qui n'existe plus (18/09/2026)
 

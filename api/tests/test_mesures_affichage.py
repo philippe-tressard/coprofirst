@@ -38,7 +38,7 @@ from app.utils.mesures_affichage import (
     purger_mesures,
     synthese_mesures,
 )
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 from tests.aides_http import base_http, client_http
 
 ROUTE = "/telemetry/collect"
@@ -103,7 +103,7 @@ def test_le_centile_est_une_valeur_mesuree_au_rang_le_plus_proche():
 
 
 def test_la_synthese_classe_les_pages_les_plus_lentes_d_abord():
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     jour = horloge.aujourd_hui().isoformat()
     with Session(moteur) as s:
         for page, indicateur, durees in [
@@ -141,7 +141,7 @@ def test_le_tableau_de_bord_rend_les_durees_sans_les_compter_en_vues(moteur, sco
 
 
 def test_la_purge_retire_ce_qui_depasse_la_conservation():
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     aujourd_hui = horloge.aujourd_hui()
     with Session(moteur) as s:
         for age in (0, CONSERVATION_JOURS, CONSERVATION_JOURS + 1):

@@ -67,13 +67,10 @@ CHAMPS = ("saisi_pour_user_id", "saisi_pour_nom", "saisi_pour_email")
 class SaisiPourMixin(SQLModel):
     """Les trois colonnes, héritées plutôt que recopiées.
 
-    ⚠️ **`saisi_pour_user_id` ne déclare PAS `foreign_key` ici**, et c'est une
-    contrainte de SQLite, pas un oubli : une migration ne peut pas ajouter une
-    colonne *avec* sa contrainte (`ALTER TABLE` la refuse, la migration crashe
-    après avoir posé la colonne — c'est arrivé deux fois, 0117 et 0165). Si le
-    modèle la déclarait quand même, une base **neuve** (`create_all`) et une base
-    **migrée** porteraient deux schémas différents, et rien ne le dirait.
-    `api/tests/test_migrations.py` refuse les deux.
+    ⚠️ **`saisi_pour_user_id` ne déclare PAS `foreign_key` ici**, et ce n'est
+    pas un oubli : la base de production porte la colonne sans contrainte. Si le
+    modèle la déclarait, une base **neuve** (`create_all`) et la base de
+    production porteraient deux schémas différents, et rien ne le dirait.
 
     `Ticket` **redéclare** ce champ avec sa clé étrangère : sa colonne existe en
     base depuis l'origine, avec la contrainte. Le mixin décrit donc le socle, et

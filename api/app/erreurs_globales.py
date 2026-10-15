@@ -20,7 +20,7 @@ _logger = logging.getLogger("hostachy.api")
 
 
 async def erreur_de_base(request: Request, exc: OperationalError):
-    """SQLite I/O error, DB locked, pool corrompu → 503 avec log structuré.
+    """Serveur de base injoignable, connexion coupée → 503 avec log structuré.
     Le pool est purgé ici pour que la prochaine requête reparte sur une connexion saine.
     """
 

@@ -61,8 +61,8 @@ def bibliotheque():
 
         #  🔴 Les PORTEURS sont montés, pas inventés. La fixture écrivait
         #  `ticket_id=11` et `evenement_id=22` — deux identifiants tirés au
-        #  hasard, sur des lignes qui n'existaient pas. Tant que SQLite ne
-        #  vérifiait pas ses clés, la pièce jointe pointait dans le vide et le
+        #  hasard, sur des lignes qui n'existaient pas. Tant que les clés
+        #  n'étaient pas vérifiées, la pièce jointe pointait dans le vide et le
         #  test passait quand même (#546).
         #
         #  ⚠️ Et ce n'est pas qu'une question de propreté : ce fichier éprouve

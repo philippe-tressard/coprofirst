@@ -247,24 +247,17 @@ def resume(bilan: Bilan) -> list[str]:
     return lignes
 
 
-def verifier_archive(archive: Path, dossier: Path, metadata=None) -> Bilan:
-    """Réimporte une archive dans une base NEUVE et jetable de `dossier`, puis l'efface.
+def verifier_archive(archive: Path, url_hote, metadata=None) -> Bilan:
+    """Réimporte une archive dans une base NEUVE et jetable du serveur `url_hote`, puis la retire.
 
-    Une archive qui ne se restaure pas lève `ImportRefuse`. C'est la vérification
-    d'une sauvegarde quel que soit le moteur qui l'a produite : la mise à jour
-    nocturne d'une réplique sous PostgreSQL (DI-4) n'a pas d'`app.db` à éprouver.
+    La base jetable est un schéma neuf du même serveur (`dialecte.base_jetable`),
+    jamais la base qui sert. Une archive qui ne se restaure pas lève `ImportRefuse`.
     """
-    from app.dialecte import moteur_jetable
+    from app.dialecte import base_jetable
 
-    cible = dossier / "verification.db"
-    moteur_cible = moteur_jetable(cible)
-    try:
+    with base_jetable(url_hote) as moteur_cible:
         (metadata or SQLModel.metadata).create_all(moteur_cible)
         return importer(archive, moteur_cible, metadata=metadata)
-    finally:
-        moteur_cible.dispose()
-        if cible.exists():
-            os.remove(cible)
 
 
 def verifier_restauration(moteur_source, dossier: Path) -> tuple[dict, Bilan]:
@@ -276,7 +269,7 @@ def verifier_restauration(moteur_source, dossier: Path) -> tuple[dict, Bilan]:
     archive = dossier / "verification.tar.gz"
     try:
         manifeste = exporter(moteur_source, archive)
-        bilan = verifier_archive(archive, dossier)
+        bilan = verifier_archive(archive, moteur_source.url)
     finally:
         if archive.exists():
             os.remove(archive)

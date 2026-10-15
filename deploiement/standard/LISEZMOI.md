@@ -47,7 +47,7 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 | `deploiement/standard/lib-installation.sh` | les gestes communs des scripts de l'installation (journal, santé, compte rendu) |
 | `deploiement/demo/reinitialiser.sh` | la remise à zéro nocturne de la **démo publique** — sans effet ailleurs |
 | `deploiement/demo/LISEZMOI.md` | le mode d'emploi de la démo publique |
-| `deploiement/standard/postgresql/pg_hba.conf` | qui peut se connecter à PostgreSQL, s'il est choisi : l'API seule |
+| `deploiement/standard/postgresql/pg_hba.conf` | qui peut se connecter à PostgreSQL : l'API seule |
 | `LICENSE` | AGPL-3.0-or-later |
 
 ## Installer
@@ -55,7 +55,9 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 1. Décompresser l'archive dans un dossier dédié, par exemple `/opt/coprofirst`.
 2. `cp .env.example .env`, puis renseigner au moins `SECRET_KEY` (32 caractères
    au minimum), `WHATSAPP_API_KEY` (16 au minimum, même si le service WhatsApp
-   n'est pas employé), `ORIGIN` (l'adresse publique) et la configuration SMTP.
+   n'est pas employé), `ORIGIN` (l'adresse publique), la configuration SMTP, et
+   la base : `POSTGRES_PASSWORD` (`openssl rand -hex 32`), recopié dans
+   `DATABASE_URL` à la place de `<POSTGRES_PASSWORD>`.
    ⚠️ Le site ne répond qu'au nom de `ORIGIN` : un autre nom reçoit une erreur 421 (« requête mal dirigée »). Un second nom — un alias, un ancien domaine — se
    déclare dans `HOTES_COPROPRIETE`, séparé par des virgules.
    `COURRIEL_OPERATEUR` reçoit les alertes de la plateforme (disque du serveur),
@@ -148,39 +150,24 @@ le temps de redémarrer (crontab de l'utilisateur qui pilote Docker) :
 30 4 * * * /opt/coprofirst/deploiement/standard/mise-a-jour.sh >> /var/log/coprofirst-maj.log 2>&1
 ```
 
-## Choisir PostgreSQL plutôt que SQLite
+## La base de données
 
-Par défaut, la base est un fichier **SQLite** : rien à installer. **PostgreSQL**
-— celui de la référence depuis le 10/10/2026 — s'allume dans `.env`, **avant le
-premier démarrage** :
+La base est **PostgreSQL**, le service `postgres` de la pile : l'API attend qu'il
+réponde pour démarrer. Le premier démarrage crée la base et y pose le schéma
+courant. Le serveur n'écoute que sur le réseau de Compose : la surcouche retire
+son port et le réglage de réplication de la référence (une réplique n'a pas de
+second nœud).
 
-```
-COMPOSE_PROFILES=postgresql
-POSTGRES_PASSWORD=<openssl rand -hex 32>
-DATABASE_URL=postgresql+psycopg://coprofirst:<POSTGRES_PASSWORD>@postgres:5432/coprofirst
-```
-
-Le premier démarrage crée la base et y pose le schéma courant. Le serveur
-n'écoute que sur le réseau de Compose : la surcouche retire son port et le
-réglage de réplication de la référence (une réplique n'a pas de second nœud).
-
-La mise à jour nocturne le sait : sous PostgreSQL, elle **exporte** la base avant
-d'installer (`…-base.tar.gz`, à côté de l'archive des volumes, dans
-`COPROFIRST_SAUVEGARDES`), la **réimporte dans une base jetable** pour la déclarer
-bonne, et, si la version précédente elle-même ne repart pas, la restaure.
-
-Passer une installation **existante** de SQLite à PostgreSQL est une opération,
-pas un réglage : l'API arrêtée, exporter la base
-(`docker compose … run --rm --no-deps --entrypoint python api -m app.utils.export_copropriete exporter sqlite:////app/data/app.db /backups/vers-postgresql.tar.gz`),
-allumer le profil comme ci-dessus, poser le schéma (`… -m app.utils.schema_initial`),
-importer (`… -m app.utils.export_copropriete importer /backups/vers-postgresql.tar.gz env:DATABASE_URL`),
-puis démarrer. L'import vérifie chaque table et refuse au moindre écart.
+La mise à jour nocturne **exporte** la base avant d'installer (`…-base.tar.gz`, à
+côté de l'archive des volumes, dans `COPROFIRST_SAUVEGARDES`), la **réimporte dans
+une base jetable** pour la déclarer bonne, et, si la version précédente elle-même
+ne repart pas, la restaure.
 
 ## Sauvegarder
 
-Les données vivent dans des volumes Docker : `app_data` (la base SQLite),
-`pg_data` (la base PostgreSQL, si elle est choisie), `uploads` (les fichiers),
-`whatsapp_auth`, et `backups`, où l'application range ses sauvegardes
+Les données vivent dans des volumes Docker : `pg_data` (la base), `app_data`
+(l'identité de l'installation), `uploads` (les fichiers), `whatsapp_auth`, et
+`backups`, où l'application range ses sauvegardes
 planifiées (Administration › Sauvegarde). Copier ces archives **hors de la
 machine** : une sauvegarde qui vit à côté de ce qu'elle protège disparaît avec.
 
@@ -188,10 +175,7 @@ machine** : une sauvegarde qui vit à côté de ce qu'elle protège disparaît a
 référence — sa clé et son inscription (`/app/data/installation`). Ne jamais
 l'effacer : `docker compose down -v` le supprime, et l'installation devrait se
 réinscrire sous un **nouvel** identifiant, l'ancien restant au registre jusqu'à sa
-résiliation (vécu le 13/10/2026 sur l'instance de démo). Changer de moteur de
-base ne demande pas de le toucher : seul `pg_data` est neuf.
+résiliation (vécu le 13/10/2026 sur l'instance de démo).
 
-🔴 Sous SQLite, ne jamais ouvrir le fichier de la base depuis un autre processus
-tant que l'API tourne, même en lecture : arrêter l'API d'abord (`docker compose
-stop api`). Sous PostgreSQL, ne jamais copier le volume `pg_data` d'un serveur
-qui tourne : passer par l'export, comme la mise à jour.
+🔴 Ne jamais copier le volume `pg_data` d'un serveur qui tourne : passer par
+l'export, comme la mise à jour.

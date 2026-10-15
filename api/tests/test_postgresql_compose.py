@@ -1,9 +1,8 @@
-"""Le service PostgreSQL du compose : éteint par défaut, fermé, sans secret connu (#1759, DI-7).
+"""Le service PostgreSQL du compose : la base de la pile, fermée, sans secret connu (#1759, DI-7).
 
-Tant que la bascule des données (DI-7c) n'est pas faite, la production reste sous
-SQLite : le service n'existe que si `.env` allume son profil. Ces contrôles
-tiennent ce qui ferait du mal le jour où il s'allume — un port ouvert, un mot de
-passe par défaut, des réglages qui useraient la carte SD ou céderaient la
+PostgreSQL est le seul moteur : le service démarre avec la pile, et l'API attend
+elle-même qu'il réponde (`start.sh`). Ces contrôles tiennent ce qui ferait du mal — un port ouvert, un
+mot de passe par défaut, des réglages qui useraient la carte SD ou céderaient la
 durabilité.
 """
 
@@ -24,11 +23,18 @@ def _reglages() -> dict[str, str]:
     return dict(commande[i + 1].split("=", 1) for i, m in enumerate(commande) if m == "-c")
 
 
-def test_le_service_est_eteint_par_defaut():
-    assert PG.get("profiles") == ["postgresql"], (
-        "sans profil, `docker compose up -d` démarrerait PostgreSQL sur la production "
-        "avant la bascule des données"
+def test_le_service_fait_partie_de_la_pile_sans_que_l_api_le_demarre():
+    assert "profiles" not in PG, (
+        "PostgreSQL est la base de l'application : derrière un profil, `docker compose "
+        "up -d` démarrerait une API sans base"
     )
+    #  🔴 Un `depends_on` ferait démarrer la base par `up -d api` — une base VIDE
+    #  sur un nœud sans réplique (CLAUDE.md, règle d'or). L'API attend la base
+    #  dans `start.sh` (`utils/attendre_base`), sans jamais la démarrer.
+    assert "postgres" not in COMPOSE["services"]["api"].get("depends_on", {}), (
+        "`up -d api` démarrerait la base si elle est arrêtée"
+    )
+    assert "attendre_base" in (RACINE / "api" / "start.sh").read_text(encoding="utf-8")
 
 
 def test_le_port_n_est_lie_qu_a_l_ip_du_lan_ou_a_la_boucle_locale():
@@ -93,7 +99,7 @@ def test_les_donnees_vivent_dans_un_volume_nomme():
 
 def test_les_reglages_menagent_la_carte_sans_ceder_la_durabilite():
     reglages = _reglages()
-    #  Moins d'écritures : points de contrôle espacés, WAL compressé.
+    #  Moins d'écritures : points de contrôle espacés, journal compressé.
     assert reglages["checkpoint_timeout"] == "15min"
     assert reglages["wal_compression"] == "on"
     #  La réplication en continu vers le standby (DI-7b) en a besoin.

@@ -326,7 +326,7 @@ def _poser(session: Session, connus: dict[str, int], entree: dict, parent_id: in
     """Pose un nœud s'il est absent, et renvoie son identifiant dans tous les cas.
 
     Le `flush` est nécessaire et non décoratif : les enfants ont besoin de l'`id`
-    du parent, que SQLite n'attribue qu'à l'écriture.
+    du parent, que la base n'attribue qu'à l'écriture.
     """
     code = entree["code"]
     if code in connus:

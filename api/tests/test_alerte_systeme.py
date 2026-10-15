@@ -101,13 +101,13 @@ def test_le_sujet_porte_le_nombre_et_la_residence():
 
 
 def _base_jetable():
-    """Base SQLite en mémoire — le contrôle n'y lit que `ConfigSite`."""
+    """Base de test jetable — le contrôle n'y lit que `ConfigSite`."""
     from sqlmodel import Session
 
     from app.models.core import ConfigSite
-    from tests.aides_base import moteur_memoire
+    from tests.aides_base import moteur_de_test
 
-    return Session(moteur_memoire()), ConfigSite
+    return Session(moteur_de_test()), ConfigSite
 
 
 @pytest.mark.parametrize("valeur", ["", "   ", None])

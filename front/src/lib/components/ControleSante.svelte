@@ -54,10 +54,9 @@
 </script>
 
 <!--  🔴 Le titre passe par `SectionFormulaire` (12/09/2026, signalé à l'écran) :
-      les trois blocs de cet onglet titraient de trois façons — un `<h3>` nu ici,
-      un `<h3 class="config-section-title">` dans `ConfigSauvegarde`, et le
-      composant partagé dans `IntegriteReferentielle`. Trois blocs voisins, trois
-      typographies, aucun filet entre eux.
+      les blocs de cet onglet titraient chacun à sa façon — un `<h3>` nu ici,
+      un `<h3 class="config-section-title">` dans `ConfigSauvegarde`. Des blocs
+      voisins, des typographies différentes, aucun filet entre eux.
 
       C'est la règle la plus déployée qui l'emporte : `SectionFormulaire` porte
       l'intitulé, le filet et l'espacement pour tout le site. -->

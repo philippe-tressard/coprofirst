@@ -164,10 +164,8 @@ jobs:
         # (CLAUDE.md). Les corriger pour satisfaire un linter réécrirait
         # l'historique du schéma — le remède serait pire que le défaut.
         # S608 (SQL construit par chaînes) sur `app/` SEULEMENT, depuis le
-        # 19/09/2026 (#1032). Deux occurrences existaient, toutes deux
-        # légitimes — `diagnostic_cles.py` interpole un nom de table, ce que
-        # SQLite ne sait pas lier — et aucune n'était DÉCLARÉE : elles portent
-        # maintenant un `noqa: S608` avec leur raison.
+        # 19/09/2026 (#1032). Une interpolation légitime — un nom de table,
+        # qu'aucun pilote ne sait lier — se DÉCLARE : `noqa: S608` et sa raison.
         #
         # 🔴 PAS sur `alembic/`, et ce n'est pas un oubli : 23 migrations y
         # construisent du SQL par f-string, et **une migration appliquée ne se
@@ -250,11 +248,27 @@ jobs:
         # déclaré dans l'en-tête de `scripts/ci/clones_python.py`.
         run: python scripts/ci/clones_python.py
 
-  # ── Backend: tests préventifs (templates email + migrations) ─
+  # ── Backend: la suite pytest, sur PostgreSQL ─
   test-backend:
     name: Tests Python (pytest)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17.11 # celle de la production (test_images_compose_suivies.py)
+        env:
+          POSTGRES_USER: essai
+          POSTGRES_PASSWORD: essai
+          POSTGRES_DB: essai
+          POSTGRES_INITDB_ARGS: --data-checksums
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U essai" --health-interval 5s --health-timeout 5s --health-retries 10
+    #  Au niveau du JOB : `rejouer-ci.sh` ne lit que l'`env:` des étapes, et le
+    #  poste garde la base qu'il désigne lui-même.
+    env:
+      TESTS_BASE_URL: postgresql+psycopg://essai:essai@localhost:5432/essai
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -263,27 +277,13 @@ jobs:
         with:
           python-version: "3.12" # aligné sur l'image de prod (conteneur API)
 
-      # WeasyPrint a besoin de pango/cairo pour RENDRE un document ; sans elles,
-      # `import weasyprint` échoue et les tests de rendu s'abstiendraient — donc
-      # ne diraient rien. C'est le seul endroit où le rendu des documents
-      # imprimables est réellement exercé (cf. api/tests/test_documents_pdf.py,
-      # qui échoue exprès si ces bibliothèques manquent en intégration continue).
-      #  ⚠️ N'INSTALLE RIEN dans le cas normal, et c'est pour cela qu'on regarde
-      #  avant d'agir. Les cinq bibliothèques sont déjà présentes sur
-      #  `ubuntu-latest` — vérifié le 19/08/2026 dans les journaux du job :
-      #  « 0 upgraded, 0 newly installed, 0 to remove ». L'étape ne servait donc
-      #  qu'à exécuter `apt-get update`, qui contacte les miroirs Debian :
-      #  6 secondes d'habitude, **plus de dix minutes ce jour-là**, pendant que
-      #  pytest attendait son tour sans avoir démarré.
-      #
-      #  🔴 Ne PAS supprimer l'étape pour autant. Quatre fichiers de tests rendent
-      #  de vrais PDF (`test_documents_pdf`, `test_fiche_arrivant_batiments`,
-      #  `test_icones_svg`, `test_pieces_jointes`) : le jour où GitHub change son
-      #  image, ils échoueraient sur un défaut de bibliothèque système, avec un
-      #  message que personne ne relierait à la CI. S'appuyer sur une
-      #  préinstallation sans la vérifier est la dépendance implicite que
-      #  `standards/04` interdit — on la rend explicite, et on ne paie
-      #  l'installation que si elle manque réellement.
+      # WeasyPrint a besoin de pango/cairo pour RENDRE un document : sans elles,
+      # les tests de rendu (`test_documents_pdf`, qui échoue exprès si elles
+      # manquent en CI) ne diraient rien. ⚠️ N'INSTALLE RIEN dans le cas normal :
+      # `ubuntu-latest` les porte déjà (19/08/2026), et `apt-get update` seul a
+      # pris plus de dix minutes ce jour-là. 🔴 L'étape reste pour autant : le
+      # jour où l'image change, elle rend la dépendance explicite (`standards/04`)
+      # au lieu d'un échec de rendu que personne ne relierait à la CI.
       - name: Bibliothèques système pour le rendu PDF
         run: bash scripts/ci/bibliotheques-pdf.sh
 
@@ -303,12 +303,16 @@ jobs:
           python scripts/ci/licences_tierces.py --selftest
           python scripts/ci/licences_tierces.py
 
+      #  Vers `main` (PR et push), la suite tourne dans « Suite pytest sur
+      #  PostgreSQL » (`postgresql.yml`), check requis lui aussi : la jouer ici
+      #  la jouerait deux fois. Ici : les PR vers `dev`, et le lancement à la main.
+      #  🔒 test_suite_postgresql_une_fois.py tient les deux déclencheurs ensemble.
       - name: Run pytest
+        if: github.base_ref == 'dev' || github.event_name == 'workflow_dispatch'
         working-directory: api
-        run: pytest tests/ -q
+        run: bash ../scripts/ci/mesure-postgresql.sh
         env:
           SECRET_KEY: "ci-secret-key-placeholder-0123456789abcdef"
-          DATABASE_URL: "sqlite:///:memory:"
 
   # ── Infra: syntaxe, self-tests et modes des scripts d'exploitation ─
   # Ajouté après l'incident du 30/07/2026. Les scripts d'infra (bascule,
@@ -518,9 +522,7 @@ jobs:
           bash scripts/lib/lib-replication.sh       --selftest
           bash scripts/lib/lib-promotion.sh         --selftest
           bash scripts/exploitation/reconstruire-replique.sh --selftest
-          bash scripts/exploitation/basculer-donnees.sh --selftest
           bash scripts/lib/lib-env-base.sh --selftest
-          bash scripts/exploitation/retour-sqlite.sh --selftest
           bash scripts/exploitation/creer-base-plateforme.sh --selftest
           bash scripts/exploitation/creer-cle-baux.sh --selftest
           bash scripts/exploitation/restaurer-copie-hors-site.sh --selftest
@@ -653,10 +655,6 @@ jobs:
           # et leurs montées, lus jusque dans une description tronquée.
           python scripts/poste/reprendre-dependabot.py --selftest
           bash scripts/poste/verifier-points-entree.sh --selftest
-          # 🔒 Le résultat NORMAL de ce diagnostic est ZÉRO orphelin : sans
-          # self-test, un script qui confondrait « aucun » et « je n'ai pas pu
-          # demander » rendrait le même message dans les deux cas (#546).
-          bash scripts/poste/diagnostic-cles-etrangeres.sh --selftest
           # 🔒 La décision qui ÉCRIT dans /etc/sudoers.d (#1574) : son self-test
           # passait et n'était appelé par aucun job.
           bash scripts/installation/durcir-sudoers.sh --selftest

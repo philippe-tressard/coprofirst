@@ -19,7 +19,7 @@ from app.config import get_settings
 from app.main import app
 from app.registre import base, migrer
 from app.utils.limiter import limiter
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 from tests.aides_caddy import bloc_handle, caddyfile
 
 #: Le nom dédié du registre, dans les tests.
@@ -44,7 +44,7 @@ def prefixe_api_du_caddyfile() -> str:
 @contextmanager
 def registre_allume(monkeypatch) -> Iterator:
     """Rend le moteur de la base `plateforme`, migrée ; tout est défait en sortie."""
-    moteur = moteur_memoire(partage=True, schema=False)
+    moteur = moteur_de_test(schema=False)
     migrer.migrer(moteur)
     reglages = get_settings()
     monkeypatch.setattr(reglages, "plateforme_database_url", "postgresql+psycopg://essai")

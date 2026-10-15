@@ -85,21 +85,24 @@ services:
     environment:
       - TZ=Europe/Paris
       - *budget_photo_whatsapp
+    #  🔴 PAS de `depends_on: postgres` : `up -d api` démarrerait alors la base
+    #  si elle est arrêtée — une base VIDE sur un nœud sans réplique (CLAUDE.md,
+    #  règle d'or). L'API attend la base elle-même (`start.sh`, `attendre_base`).
     volumes:
+      #  `app_data` : l'identité de l'installation au registre et le cache du
+      #  manuel PDF — jamais la base.
       - app_data:/app/data
       - uploads:/app/uploads
       - backups:/backups
     networks:
       - hostachy
 
-  #  🐘 PostgreSQL — DI-7 (#1759), chantier multi-copropriétés (D4, D13 : un seul
-  #  moteur partout). ÉTEINT PAR DÉFAUT : le profil `postgresql` ne démarre que
-  #  si `.env` le demande (`COMPOSE_PROFILES=postgresql`), et l'API ne s'y branche
-  #  que si `DATABASE_URL` le désigne. Tant que la bascule des données (DI-7c)
-  #  n'est pas faite, la production reste sous SQLite et ce service n'existe pas.
+  #  🐘 PostgreSQL — la base de l'application (DI-7 #1759, D4, D13 : un seul
+  #  moteur partout). Il fait partie de la pile : `docker compose up -d` le
+  #  démarre, et l'API s'y branche par `DATABASE_URL`.
   #
   #  Réglages DOUX POUR LA CARTE SD (arbitrage du 09/10/2026) : points de contrôle
-  #  espacés (`checkpoint_timeout`, `max_wal_size`) et WAL compressé — moins
+  #  espacés (`checkpoint_timeout`, `max_wal_size`) et journal compressé — moins
   #  d'écritures, sans rien céder sur la durabilité (`fsync` et
   #  `synchronous_commit` restent à leur défaut, ACTIFS). `wal_level=replica` et
   #  `max_wal_senders` préparent la réplication en continu vers le standby (DI-7b).
@@ -118,7 +121,6 @@ services:
   postgres:
     image: postgres:17.11
     container_name: hostachy_postgres
-    profiles: ["postgresql"]
     restart: unless-stopped
     stop_grace_period: 60s
     shm_size: 256mb

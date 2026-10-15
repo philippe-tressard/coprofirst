@@ -1,21 +1,18 @@
-"""L'intégrité se MESURE sur les deux moteurs, jamais ne se déclare (#1781, DI-7b).
+"""L'intégrité se MESURE, jamais ne se déclare (#1781, DI-7b).
 
-`dialecte.verifier_integrite` rendait « non mesurée » sous PostgreSQL : le
-contrôle de 06:00 l'aurait envoyé chaque matin comme « base CORROMPUE », et la
-sauvegarde aurait refusé de tourner. Sous PostgreSQL, il lit les sommes de
-contrôle de pages (posées à l'initialisation, docker-compose.yml) ; ce test
-tourne sur SQLite dans la CI, et sur PostgreSQL dans le workflow « PostgreSQL »,
-dont la base est initialisée comme en production.
+`dialecte.verifier_integrite` lit les sommes de contrôle de pages (posées à
+l'initialisation, docker-compose.yml) ; la base de la suite est initialisée
+comme en production.
 """
 
 from __future__ import annotations
 
 from app import dialecte
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 
 
 def test_une_base_saine_rend_ok_sur_le_moteur_de_la_suite():
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     with moteur.connect() as conn:
         assert dialecte.verifier_integrite(conn) == "ok"
 

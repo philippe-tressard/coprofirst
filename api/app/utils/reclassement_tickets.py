@@ -8,10 +8,8 @@ application. »*
 
 Deux raisons, et la seconde est la vraie.
 
-1. **Je ne peux pas lire la base.** Ouvrir `app.db` depuis un process tiers
-   pendant que l'API tourne est l'interdit numéro un du projet — trois
-   corruptions et une perte de données l'ont établi. Le relevé passe donc par
-   l'API, in-process, comme tout le reste.
+1. **Je ne lis pas la base de production.** Le relevé passe par l'API, qui
+   applique les droits, comme tout le reste.
 
 2. **Une reclassification automatique est un pari sur du texte libre.** Ces
    mots-clés lisent un titre et une description écrits par des humains ; ils se

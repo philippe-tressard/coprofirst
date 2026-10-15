@@ -1,7 +1,7 @@
 # Modèle de données
 
 > Entités principales déduite de la description du projet (personas, cas d'utilisation, arborescence).  
-> ORM : SQLModel (SQLAlchemy + Pydantic). Migrations : Alembic (migrations idempotentes — chaque script vérifie l'existence des tables/colonnes avant création). Base : SQLite → PostgreSQL si besoin.  
+> ORM : SQLModel (SQLAlchemy + Pydantic). Migrations : Alembic (migrations idempotentes — chaque script vérifie l'existence des tables/colonnes avant création). Base : PostgreSQL.  
 > **Note d'implémentation :** Alembic est la seule source de vérité pour la structure des tables. `SQLModel.metadata.create_all()` n'est pas appelé au démarrage — toutes les modifications de schéma passent par un fichier de migration versionnée.
 
 ---
@@ -275,7 +275,7 @@ Les deux axes restent distincts.
 | notes | text | Nullable — consignes d'accès, horaires prestataire, etc. |
 ### ConfigSauvegarde  *(paramètres de la sauvegarde périodique)*
 
-> Une seule ligne dans la base (configuration globale). Gérée par l'admin uniquement (EF-WEB-015). La sauvegarde produit un export horodaté de la base SQLite + les fichiers uploadés (documents, pièces jointes).
+> Une seule ligne dans la base (configuration globale). Gérée par l'admin uniquement (EF-WEB-015). La sauvegarde produit un export horodaté de la base + les fichiers uploadés (documents, pièces jointes).
 
 | Champ | Type | Description |
 |-------|------|-------------|

@@ -340,34 +340,11 @@ def test_les_migrations_disent_la_meme_chose_que_le_seed():
         #  conseil syndical à chaque réglage.
         "REMPLACEMENTS_LIBELLE": ("le libellé", LIBELLES),
     }
-    vues = 0
-    supplantees_vues: set[str] = set()
+    migrations = sorted(VERSIONS.glob("*.py"))
+    #  Cas zéro de la PORTÉE : un dossier vide rendrait ce contrôle vert sans rien lire.
+    assert migrations, "aucune migration lue — le balayage a perdu sa portée"
 
-    #  ── Les migrations SUPPLANTÉES, et par qui ─────────────────────────────
-    #
-    #  🔴 Ce test prévient qu'« une seconde migration peut invalider le fragment
-    #  de la première : c'est voulu, la revue doit être consciente ». Voici cette
-    #  revue, écrite plutôt que subie — une ligne par cascade, avec sa raison.
-    #
-    #  ⚠️ Chaque entrée dit ce qui l'a remplacée. Sans cela, la liste deviendrait
-    #  un silencieux « ignorer ces migrations », et la propriété que ce test
-    #  défend — seed et base envoient le MÊME message — cesserait de valoir pour
-    #  elles sans que personne ne s'en aperçoive.
-    SUPPLANTEES = {
-        "0136_reference_copro_obligatoire.py": (
-            "0203 : même cause que 0135 — cette migration a ajouté le préfixe de "
-            "copropriété DEVANT « Ticket # », et c'est ce mot qui a changé (#1101). "
-            "Le préfixe lui-même est intact, et `test_aucun_objet_ne_recompose_la_"
-            "reference_a_la_main` continue de le vérifier."
-        ),
-        "0135_objet_email_nomme.py": (
-            "0203 : les objets de courriel disent « Affaire » et non plus "
-            "« Ticket » (#1101). Les fragments de 0135 restent justes pour les "
-            "bases qui ne les ont pas encore reçus — 0203 s'applique après."
-        ),
-    }
-
-    for chemin in sorted(VERSIONS.glob("*.py")):
+    for chemin in migrations:
         source = chemin.read_text(encoding="utf-8")
         if "REMPLACEMENTS" not in source:
             continue
@@ -382,15 +359,11 @@ def test_les_migrations_disent_la_meme_chose_que_le_seed():
         #  exige (`standards/04`).
         if "modele_email" not in source:
             continue
-        if chemin.name in SUPPLANTEES:
-            supplantees_vues.add(chemin.name)
-            continue
         migration = charger_migration(chemin.name)
         for attribut, (quoi, textes) in CHAMPS.items():
             remplacements = getattr(migration, attribut, None)
             if not remplacements:
                 continue
-            vues += 1
             for code, ancien, nouveau in remplacements:
                 assert code in textes, (
                     f"{chemin.name} met à jour « {code} », absent de EMAIL_TEMPLATES."
@@ -408,21 +381,6 @@ def test_les_migrations_disent_la_meme_chose_que_le_seed():
                     f"{chemin.name} remplace {ancien!r} par un fragment qui le contient "
                     f"({code}) : rejouer la migration l'appliquerait une fois de plus."
                 )
-
-    #  ⚠️ Une cascade déclarée qui ne se produit plus doit PARTIR : sinon elle
-    #  dispense silencieusement une migration bien réelle.
-    manquantes = set(SUPPLANTEES) - supplantees_vues
-    assert not manquantes, (
-        f"Migration(s) déclarée(s) supplantée(s) et introuvable(s) : {sorted(manquantes)}. "
-        "Retirer l'entrée — elle couvrirait la suivante qui porterait ce nom."
-    )
-
-    #  Cas zéro : si le balayage ne trouve plus rien, il ne vérifie plus rien —
-    #  et resterait vert (`standards/04` §2).
-    assert vues >= 3, (
-        f"Seulement {vues} jeu(x) de remplacements trouvé(s) : le balayage "
-        "ne vérifie plus la correspondance seed ↔ migration."
-    )
 
 
 def test_aucun_objet_ne_recompose_la_reference_a_la_main():

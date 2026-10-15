@@ -15,7 +15,7 @@ import { api } from './client';
  *
  *  ⚠️ Le type vit ICI et non dans l'écran qui l'affiche (#806) : c'est une
  *  réponse d'API, et il était déclaré à l'identique dans `mon-lot` et dans le
- *  composant qui rend le tableau. Même raison que `ReleveOrphelins` (#801).
+ *  composant qui rend le tableau.
  */
 export interface ObjetRemis {
 	id: number;

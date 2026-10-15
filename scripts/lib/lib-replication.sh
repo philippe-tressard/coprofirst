@@ -11,12 +11,12 @@
 #      une base périmée sans que rien ne l'ait dit ;
 #    • un actif qui porterait une réplique (rôles inversés après un incident).
 #
-#  Tant que PostgreSQL n'est activé sur AUCUN nœud (avant DI-7c), le contrôle
-#  le dit et s'arrête : sans objet, pas un faux vert ni un faux rouge.
+#  Aucune base sur AUCUN des deux nœuds est un échec : l'application n'a pas
+#  d'autre base que PostgreSQL.
 #
 #  Collecte, décision PURE et constats vivent ensemble, comme C31 et C36.
 #  La collecte ne lit la base QUE par `docker exec hostachy_postgres psql` :
-#  PostgreSQL sert ses lecteurs, il n'y a pas ici de règle d'or SQLite.
+#  PostgreSQL sert ses lecteurs.
 #
 #  Test : bash lib-replication.sh --selftest   (aucun effet de bord)
 # =============================================================================
@@ -25,40 +25,47 @@
 REPLICATION_RETARD_MAX=67108864   # 64 Mio
 
 # ── PURE : le moteur que `.env` désigne — par l'URL de sa base ───────────────
-#  Les scripts qui touchent la base (maintenance, bascule) choisissent leur chemin
-#  par CE QUI EST CONFIGURÉ, jamais par une supposition. → sqlite|postgresql|inconnu
+#  → postgresql|inconnu. `deploiement/standard/lib-installation.sh` en porte une
+#  COPIE DÉCLARÉE (`test_deploiement_standard` exige deux corps identiques).
 moteur_de_url() {
     case "${1:-}" in
-        sqlite:*)                   echo sqlite ;;
         postgresql:*|postgresql+*)  echo postgresql ;;
         *)                          echo inconnu ;;
     esac
 }
 
-#  Le moteur du `.env` de ce dépôt ($1 = chemin du dépôt).
-moteur_configure() {
-    moteur_de_url "$(grep -m1 '^DATABASE_URL=' "$1/.env" 2>/dev/null | cut -d= -f2-)"
+
+# ── PURE : `.env` désigne-t-il la base de l'application ? ────────────────────
+#  Les scripts qui touchent la base, la promeuvent ou la restaurent posent CETTE
+#  question avant tout geste : une URL qui ne désigne pas PostgreSQL est une
+#  configuration que l'application ne sait pas servir — on REFUSE, on ne devine pas.
+#  $1 DATABASE_URL → OK | REFUS:<raison>
+verdict_base_configuree() {
+    [ "$(moteur_de_url "${1:-}")" = postgresql ] \
+        || { echo "REFUS:DATABASE_URL ne désigne pas PostgreSQL dans .env"; return; }
+    echo OK
 }
 
-# ── PURE : une base PostgreSQL est-elle GÉRÉE ici — le profil est-il allumé ? ──
-#  DEUX questions distinctes, et les confondre a failli coûter l'essai réel :
-#    • `moteur_configure` — sur quelle base L'APPLICATION écrit-elle ? (sauvegarde,
-#      maintenance, intégrité) ;
-#    • `base_postgresql_activee` — un PostgreSQL tourne-t-il, avec sa réplique, à
-#      basculer et à promouvoir ? (bascule, failover, garde au démarrage).
-#  Pendant l'essai de la réplication (DI-7b), l'application reste sous SQLite ET
-#  PostgreSQL tourne : la bascule copie `app.db` ET promeut la réplique.
-#  $1 = valeur de COMPOSE_PROFILES → oui|non
-profil_postgresql() {
-    case ",$(printf '%s' "${1:-}" | tr -d '"[:space:]' | tr -d "'")," in
-        *,postgresql,*) echo oui ;;
-        *)              echo non ;;
+#  Une clé d'un fichier `.env`, sans guillemets ni retour chariot.
+#  $1 = le fichier · $2 = clé
+cle_env_fichier() {
+    grep -m1 "^$2=" "$1" 2>/dev/null | cut -d= -f2- | tr -d "\"'\r"
+}
+
+#  Le verdict d'un fichier `.env` ($1, en général `$REPO/.env`). L'URL porte un
+#  mot de passe : elle ne sort jamais de cette fonction, seul le verdict en sort.
+base_configuree() {
+    verdict_base_configuree "$(cle_env_fichier "$1" DATABASE_URL)"
+}
+
+#  Point 4 du pré-check : le verdict relevé sur l'actif → OK | FAIL | INCONNU
+#  (rien de relevé : SSH muet, jamais un vert).
+verdict_precheck_base() {
+    case "${1:-}" in
+        OK)      echo OK ;;
+        REFUS:*) echo FAIL ;;
+        *)       echo INCONNU ;;
     esac
-}
-
-#  $1 = chemin du dépôt → code 0 si le profil `postgresql` est allumé dans son `.env`.
-base_postgresql_activee() {
-    [ "$(profil_postgresql "$(grep -m1 '^COMPOSE_PROFILES=' "$1/.env" 2>/dev/null | cut -d= -f2-)")" = oui ]
 }
 
 # ── Collecte (insérée dans COLLECT : SANS apostrophe) ────────────────────────
@@ -107,43 +114,24 @@ verdict_noeud_replication() {
 
 # ── PURE : les deux nœuds → la réplication est-elle activée, et cohérente ? ──
 #  $1 pg_present actif · $2 pg_present standby · $3 recovery actif · $4 recovery standby
-#  → SANS_OBJET | PARTIELLE | DEUX_PRIMAIRES | NOEUDS
+#  → AUCUNE | PARTIELLE | DEUX_PRIMAIRES | NOEUDS
 verdict_paire_replication() {
     local pa=$1 ps=$2 ra=$3 rs=$4
-    [ "$pa" = 1 ] || [ "$ps" = 1 ] || { echo SANS_OBJET; return; }
+    [ "$pa" = 1 ] || [ "$ps" = 1 ] || { echo AUCUNE; return; }
     [ "$pa" = 1 ] && [ "$ps" = 1 ] && [ "$ra" = f ] && [ "$rs" = f ] && { echo DEUX_PRIMAIRES; return; }
     [ "$pa" = 1 ] && [ "$ps" = 1 ] || { echo PARTIELLE; return; }
     echo NOEUDS
 }
 
-# ── PURE : point 4 du pré-check — la base SQLite de l'actif est-elle saine ? ──
-#  $1 moteur de l'actif (moteur_configure) · $2 fichiers WAL+SHM présents ·
-#  $3 lignes « disk I/O error » de l'API sur 1 h → OK|FAIL|INCONNU|SANS_OBJET
-#  Sous PostgreSQL l'API n'ouvre plus la base-fichier : WAL et SHM ABSENTS sont
-#  alors la norme, et ce point rendait FAIL sur une base saine (10/10/2026,
-#  première MEP après la bascule des données). La santé de la base y est le point 22.
-verdict_base_sqlite_saine() {
-    case "${1:-}" in
-        postgresql) echo SANS_OBJET; return ;;
-        sqlite) ;;
-        *) echo INCONNU; return ;;
-    esac
-    case "${2:-}" in ''|*[!0-9]*) echo INCONNU; return ;; esac
-    [ "$2" -lt 2 ] && { echo FAIL; return; }   # WAL/SHM déliés = signature de corruption
-    case "${3:-}" in ''|*[!0-9]*) echo INCONNU; return ;; esac
-    [ "$3" -eq 0 ] && echo OK || echo FAIL
-}
-
 # ── PURE : le point 22 du pré-check de MEP ───────────────────────────────────
 #  Les champs collectés sur l'actif puis sur le standby (mêmes noms que C37) :
 #  $1-$5 actif (present recovery flux retard recepteur) · $6-$10 standby (idem)
-#  → OK | FAIL | INCONNU   (et SANS_OBJET, rendu OK par l'appelant)
+#  → OK | FAIL | INCONNU
 verdict_precheck_replication() {
     local pa=$1 ra=$2 fa=$3 da=$4 ca=$5 ps=$6 rs=$7 fs=$8 ds=$9 cs=${10} va vs
     [ -n "$pa" ] && [ -n "$ps" ] || { echo INCONNU; return; }
     case "$(verdict_paire_replication "$pa" "$ps" "$ra" "$rs")" in
-        SANS_OBJET) echo SANS_OBJET; return ;;
-        DEUX_PRIMAIRES|PARTIELLE) echo FAIL; return ;;
+        AUCUNE|DEUX_PRIMAIRES|PARTIELLE) echo FAIL; return ;;
     esac
     va=$(verdict_noeud_replication actif "$pa" "$ra" "$fa" "$da" "$ca" "$REPLICATION_RETARD_MAX")
     vs=$(verdict_noeud_replication standby "$ps" "$rs" "$fs" "$ds" "$cs" "$REPLICATION_RETARD_MAX")
@@ -159,13 +147,11 @@ replication_verdicts() {
     local actif standby A Sb pa ps ra rs n role v p
     if [ "${S_active:-}" = "$SELF" ]; then actif=$SELF; standby=$PEER; A=S; Sb=P
     else actif=$PEER; standby=$SELF; A=P; Sb=S; fi
-    if [ "${PEER_OK:-1}" -ne 0 ]; then
-        #  Pair muet : la paire ne se juge pas ; ce nœud seul, s'il porte la base.
-        [ "${S_pg_present:-0}" = 1 ] || { ok "Réplication PostgreSQL : sans objet sur $SELF (base non activée ; pair muet)"; return; }
-    else
+    #  Pair muet : la paire ne se juge pas ; ce nœud seul, par la boucle ci-dessous.
+    if [ "${PEER_OK:-1}" -eq 0 ]; then
         eval "pa=\${${A}_pg_present:-0} ps=\${${Sb}_pg_present:-0} ra=\${${A}_pg_recovery:-} rs=\${${Sb}_pg_recovery:-}"
         case "$(verdict_paire_replication "$pa" "$ps" "$ra" "$rs")" in
-            SANS_OBJET)     ok   "Réplication PostgreSQL : sans objet (base non activée sur les deux nœuds — la production est sous SQLite)"; return ;;
+            AUCUNE)         fail "AUCUNE base PostgreSQL sur $actif ni sur $standby — l'application n'a pas de base : docker ps ; docker logs hostachy_postgres --tail 30"; return ;;
             DEUX_PRIMAIRES) fail "DEUX PRIMAIRES PostgreSQL ($actif et $standby) : les données divergent — isoler $standby (docker compose stop postgres) puis le reconstruire en réplique (sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh --oui)"; return ;;
             PARTIELLE)      warn "Réplication PostgreSQL PARTIELLE : la base tourne sur $([ "$pa" = 1 ] && echo "$actif" || echo "$standby") seulement — l'autre nœud n'a pas de base ; reconstruire la réplique sur le standby" ;;
         esac
@@ -203,33 +189,35 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "standby réplique déconnectée"              DECONNECTEE   verdict_noeud_replication standby 1 t "" "" "" "$M"
     t "standby qui s'est PROMU"                   INVERSE       verdict_noeud_replication standby 1 f 0 -1 "" "$M"
     t "conteneur arrêté"                          ABSENT        verdict_noeud_replication standby 0 "" "" "" "" "$M"
-    t "point 4, SQLite sain"                      OK            verdict_base_sqlite_saine sqlite 2 0
-    t "point 4, WAL délié"                        FAIL          verdict_base_sqlite_saine sqlite 0 0
-    t "point 4, disk I/O error"                   FAIL          verdict_base_sqlite_saine sqlite 2 3
-    t "point 4, sous PostgreSQL"                  SANS_OBJET    verdict_base_sqlite_saine postgresql 0 0
-    t "point 4, moteur illisible → jamais OK"     INCONNU       verdict_base_sqlite_saine inconnu 2 0
-    t "point 4, relevé vide → jamais OK"          INCONNU       verdict_base_sqlite_saine sqlite "" 0
     t "psql illisible → INCONNU, jamais OK"       ILLISIBLE     verdict_noeud_replication actif 1 "" "" "" "" "$M"
     t "compte illisible → INCONNU"                ILLISIBLE     verdict_noeud_replication actif 1 f x 0 "" "$M"
     echo "== la paire =="
-    t "aucune base (production sous SQLite)"      SANS_OBJET     verdict_paire_replication 0 0 "" ""
+    t "aucune base sur les deux nœuds"            AUCUNE         verdict_paire_replication 0 0 "" ""
     t "deux primaires"                            DEUX_PRIMAIRES verdict_paire_replication 1 1 f f
     t "base sur un seul nœud"                     PARTIELLE      verdict_paire_replication 1 0 f ""
     t "primaire + réplique"                       NOEUDS         verdict_paire_replication 1 1 f t
     echo "== le moteur configuré =="
-    t "SQLite (production avant DI-7c)"   sqlite     moteur_de_url "sqlite:////app/data/app.db"
+    t "une autre URL → inconnu"           inconnu    moteur_de_url "mysql://u:p@h/b"
     t "PostgreSQL par psycopg"            postgresql moteur_de_url "postgresql+psycopg://u:p@postgres:5432/coprofirst"
     t "PostgreSQL sans pilote nommé"      postgresql moteur_de_url "postgresql://u:p@h/b"
     t "variable absente → inconnu"        inconnu    moteur_de_url ""
-    echo "== le profil PostgreSQL =="
-    t "profil seul"                       oui profil_postgresql "postgresql"
-    t "parmi d'autres"                    oui profil_postgresql "outils,postgresql"
-    t "entre guillemets"                  oui profil_postgresql '"postgresql"'
-    t "absent"                            non profil_postgresql ""
-    t "un autre profil seulement"         non profil_postgresql "outils"
-    t "un nom qui le contient sans l'être" non profil_postgresql "postgresql-essai"
+
+    echo "== la base configurée =="
+    prefixe() { local r; r=$("$@"); echo "${r%%:*}"; }   # REFUS:<raison> → REFUS
+    U="postgresql+psycopg://u:p@postgres:5432/coprofirst"
+    t "URL PostgreSQL"                    OK    verdict_base_configuree "$U"
+    t "URL d'un autre moteur → refus"     REFUS prefixe verdict_base_configuree "mysql://u:p@h/b"
+    t "URL absente → refus, jamais OK"    REFUS prefixe verdict_base_configuree ""
+    st_env=$(mktemp -d)
+    printf 'A=1\r\nDATABASE_URL="%s"\r\n' "$U" > "$st_env/env"
+    t "fichier réel, guillemets et CRLF"  OK    base_configuree "$st_env/env"
+    t "fichier absent → refus"            REFUS prefixe base_configuree "$st_env/absent"
+    rm -rf "$st_env"
+    t "point 4 : configuration juste"     OK      verdict_precheck_base OK
+    t "point 4 : refus → FAIL"            FAIL    verdict_precheck_base "REFUS:URL d'un autre moteur"
+    t "point 4 : rien relevé → INCONNU"   INCONNU verdict_precheck_base ""
     echo "== le point 22 du pré-check =="
-    t "aucune base : sans objet"              SANS_OBJET verdict_precheck_replication 0 "" "" "" "" 0 "" "" "" ""
+    t "aucune base : échec, jamais OK"        FAIL       verdict_precheck_replication 0 "" "" "" "" 0 "" "" "" ""
     t "primaire + réplique saines"            OK         verdict_precheck_replication 1 f 1 0 "" 1 t "" "" streaming
     t "réplique déconnectée"                  FAIL       verdict_precheck_replication 1 f 0 -1 "" 1 t "" "" ""
     t "deux primaires"                        FAIL       verdict_precheck_replication 1 f 0 -1 "" 1 f 0 -1 ""
@@ -262,7 +250,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     ok() { echo "[ OK ] $*"; }; warn() { echo "[WARN] $*"; }; fail() { echo "[FAIL] $*"; }
     SELF=rpi2 PEER=rpi1 PEER_OK=0 S_active=rpi2
     S_pg_present=0 P_pg_present=0
-    t "aucune base : un seul constat, sans objet" "1|0" bash -c "$(declare -f replication_verdicts verdict_paire_replication verdict_noeud_replication ok warn fail); SELF=$SELF PEER=$PEER PEER_OK=0 S_active=$S_active S_pg_present=0 P_pg_present=0; REPLICATION_RETARD_MAX=$M; r=\$(replication_verdicts); printf '%s|%s' \"\$(grep -c '^\[ OK \]' <<< \"\$r\")\" \"\$(grep -c '^\[FAIL\]' <<< \"\$r\")\""
+    t "aucune base : un seul constat, en échec" "0|1" bash -c "$(declare -f replication_verdicts verdict_paire_replication verdict_noeud_replication ok warn fail); SELF=$SELF PEER=$PEER PEER_OK=0 S_active=$S_active S_pg_present=0 P_pg_present=0; REPLICATION_RETARD_MAX=$M; r=\$(replication_verdicts); printf '%s|%s' \"\$(grep -c '^\[ OK \]' <<< \"\$r\")\" \"\$(grep -c '^\[FAIL\]' <<< \"\$r\")\""
     t "primaire + réplique saines : deux OK" "2|0" bash -c "$(declare -f replication_verdicts verdict_paire_replication verdict_noeud_replication ok warn fail); SELF=rpi2 PEER=rpi1 PEER_OK=0 S_active=rpi2 S_pg_present=1 S_pg_recovery=f S_pg_flux=1 S_pg_retard=0 P_pg_present=1 P_pg_recovery=t P_pg_recepteur=streaming; REPLICATION_RETARD_MAX=$M; r=\$(replication_verdicts); printf '%s|%s' \"\$(grep -c '^\[ OK \]' <<< \"\$r\")\" \"\$(grep -c '^\[FAIL\]' <<< \"\$r\")\""
     t "faute injectée : deux primaires → un FAIL" "0|1" bash -c "$(declare -f replication_verdicts verdict_paire_replication verdict_noeud_replication ok warn fail); SELF=rpi2 PEER=rpi1 PEER_OK=0 S_active=rpi2 S_pg_present=1 S_pg_recovery=f P_pg_present=1 P_pg_recovery=f; REPLICATION_RETARD_MAX=$M; r=\$(replication_verdicts); printf '%s|%s' \"\$(grep -c '^\[ OK \]' <<< \"\$r\")\" \"\$(grep -c '^\[FAIL\]' <<< \"\$r\")\""
     t "faute injectée : réplique déconnectée → un FAIL" "1|1" bash -c "$(declare -f replication_verdicts verdict_paire_replication verdict_noeud_replication ok warn fail); SELF=rpi2 PEER=rpi1 PEER_OK=0 S_active=rpi2 S_pg_present=1 S_pg_recovery=f S_pg_flux=1 S_pg_retard=0 P_pg_present=1 P_pg_recovery=t P_pg_recepteur=; REPLICATION_RETARD_MAX=$M; r=\$(replication_verdicts); printf '%s|%s' \"\$(grep -c '^\[ OK \]' <<< \"\$r\")\" \"\$(grep -c '^\[FAIL\]' <<< \"\$r\")\""

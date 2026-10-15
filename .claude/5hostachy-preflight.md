@@ -24,8 +24,9 @@ une action concrète, et non à une intention.
 └───────────────────────────────────────────────────────────────────────────┘
 
 UN SEUL INTERDIT RAPPELÉ ICI — le seul dont la violation est IRRÉVERSIBLE :
-  • Ne jamais ouvrir app.db depuis un process tiers tant que l'API tourne, même
-    en lecture. Passer par POST /admin/db/checkpoint, GET /admin/db/integrite.
+  • Jamais deux primaires PostgreSQL, ni une base absente démarrée sur un nœud
+    qui prend la main (elle naîtrait primaire VIDE) : passer par lib-promotion.sh
+    et reconstruire-replique.sh. Jamais `docker volume rm 5hostachy_pg_data`.
 
 Les autres règles (INCONNU jamais OK, français exclusif, bump de version, PR
 dev→main) sont dans CLAUDE.md, déjà en contexte. Les recopier ici ne les a pas

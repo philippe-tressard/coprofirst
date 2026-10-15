@@ -50,7 +50,7 @@ export interface AccesPorteur {
  *  (`AccesAdminOut`, `routers/acces/parc.py`, qui dérive d'`AccesOut`).
  *
  *  ⚠️ Le type vit ici parce que c'est une réponse d'API (même raison que
- *  `ObjetRemis` et `ReleveOrphelins`). Il ne décrit PAS la table : `user_id` et
+ *  `ObjetRemis`). Il ne décrit PAS la table : `user_id` et
  *  `lot_id` y sont résolus en nom et en libellé côté serveur, une fois, plutôt
  *  que par un rapprochement que chaque écran referait à sa façon.
  */

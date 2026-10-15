@@ -46,7 +46,7 @@ def test_une_reponse_a_une_relance_est_conservee_pour_etre_RELUE(scene):
     """
     session, ticket, syndic, cs = scene
     #  ⚠️ Les tests voisins créent aussi des relances sans purger leurs réponses,
-    #  et SQLite recycle les identifiants : sans ce nettoyage, on compterait les
+    #  dans la même base : sans ce nettoyage, on compterait les
     #  leurs. L'isolation appartient au test, pas à la chance.
     for vieille in session.exec(select(ReponseRelance)).all():
         purger_ligne(session, ReponseRelance, vieille.id)

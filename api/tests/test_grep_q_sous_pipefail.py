@@ -6,7 +6,7 @@
 
 Deux fois dans ce dépôt, chaque fois sur la vérification d'une sauvegarde :
 l'export hors site le 04/08/2026 (une archive saine écartée), puis la mise à jour
-nocturne d'une réplique le 10/10/2026 (la sauvegarde SQLite jugée invalide, la
+nocturne d'une réplique le 10/10/2026 (une sauvegarde saine jugée invalide, la
 mise à jour refusée). La règle était écrite dans le socle (`standards/10` §5.2)
 depuis la première fois : seul un contrôle tient.
 
@@ -37,7 +37,6 @@ PRODUCTEURS_EN_FLUX = {
     "journalctl",
     "git",
     "ssh",
-    "sqlite3",
     "psql",
     "awk",
     "sed",
@@ -90,14 +89,14 @@ def _scripts_sous_pipefail() -> list[Path]:
 
 def test_le_controle_reconnait_le_defaut():
     """Témoin : les deux écritures fautives de l'histoire du dépôt sont vues."""
-    assert fautes("tar -tzf \"$f\" | grep -qx './app_data/app.db' && echo oui")
-    assert fautes("if tar -tzf x | grep -q app.db; then :; fi")
+    assert fautes("tar -tzf \"$f\" | grep -qx './base-export.tar.gz' && echo oui")
+    assert fautes("if tar -tzf x | grep -q base-export.tar.gz; then :; fi")
     assert fautes('VOLUMES=$(ls "$S"/*.tar.gz | grep -v base | grep -q . && echo oui)')
     #  …et pas ce qui est sûr.
     assert not fautes("printf '%s' \"$v\" | grep -qE '^[0-9]+$'")
     assert not fautes('grep -qF -- "$motif" <<<"$out"')
     assert not fautes('liste=$(tar -tzf "$f")  # puis listing_contient')
-    assert not fautes("# tar -tzf x | grep -q app.db  — l'exemple d'un commentaire")
+    assert not fautes("# tar -tzf x | grep -q base-export  — l'exemple d'un commentaire")
 
 
 def test_aucun_script_sous_pipefail_ne_coupe_un_flux():

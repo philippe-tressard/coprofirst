@@ -1,10 +1,8 @@
 """Les purges hebdomadaires s'exécutent DANS l'API, derrière la clé (#1232).
 
-`maintenance.sh` purgeait cinq tables chaque dimanche par `docker exec
-hostachy_api python -c "from app.database import engine …"`, API en marche :
-un process tiers qui ouvre `app.db`, la règle d'or enfreinte. Il appelle
-désormais `POST /admin/maintenance/purges`, qui passe par `utils.maintenance.
-purger` — la même fonction que la maintenance lancée depuis l'administration.
+`maintenance.sh` purge chaque dimanche par `POST /admin/maintenance/purges`, qui
+passe par `utils.maintenance.purger` — la même fonction que la maintenance
+lancée depuis l'administration.
 
 Ce que ces tests verrouillent :
 1. sans clé, ou avec une mauvaise, la route refuse — et ne purge rien ;
@@ -27,7 +25,7 @@ from app.config import get_settings
 from app.main import app
 from app.models.core import RoleUtilisateur
 from app.models.jetons import EmailVerificationToken, RefreshToken
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 
 CLE = "cle-de-test-des-purges"
 ROUTE = "/admin/maintenance/purges"
@@ -35,7 +33,7 @@ ROUTE = "/admin/maintenance/purges"
 
 @pytest.fixture(name="moteur")
 def moteur_fixture(monkeypatch):
-    moteur = moteur_memoire(partage=True)
+    moteur = moteur_de_test()
     #  `purger` demande le moteur au contexte de copropriété (#1744), qui le lit
     #  dans `app.database` : c'est lui qu'on remplace, pas une dépendance
     #  FastAPI — la fonction sert aussi hors requête.

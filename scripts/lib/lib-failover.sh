@@ -41,9 +41,9 @@ _LIB_FAILOVER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib-verrou.sh
 source "$_LIB_FAILOVER/lib-verrou.sh"         # etat_deploiement, VERROU_STALE_S
 # shellcheck source=lib-applicatifs.sh
-source "$_LIB_FAILOVER/lib-applicatifs.sh"    # SERVICES_APPLICATIFS, services_du_noeud
+source "$_LIB_FAILOVER/lib-applicatifs.sh"    # SERVICES_APPLICATIFS, SERVICES_DU_NOEUD
 # shellcheck source=lib-promotion.sh
-source "$_LIB_FAILOVER/lib-promotion.sh"      # decider_prise_de_main, decider_demarrage
+source "$_LIB_FAILOVER/lib-promotion.sh"      # decider_prise_de_main
 
 #  Combien de temps l'isolement attend qu'un déploiement en cours chez l'ancien
 #  actif se termine (s). Un déploiement complet dure ~3 min 30 (15/10/2026 :
@@ -133,17 +133,17 @@ bilan_isolement() {  # $1 sortie · $2 code de sortie de ssh
 }
 
 #  PURE : l'isolement a-t-il échoué de telle façon qu'il faille renoncer ?
-#  $1 sonde LAN de l'actif (ok|autre) · $2 bilan de l'isolement · $3 base gérée (oui|non)
+#  $1 sonde LAN de l'actif (ok|autre) · $2 bilan de l'isolement
 #  → poursuivre | abandon:<raison>
 #  Un actif MORT (LAN KO) injoignable, c'est le cas nominal du failover : il ne
 #  sert rien, boot-role-guard le retirera à son retour. Un actif VIVANT (LAN OK)
 #  qu'on n'a pas pu isoler sert encore sa base : promouvoir la nôtre ferait deux
-#  primaires. Sans base gérée ici, il n'y a pas de second primaire à craindre.
+#  primaires.
 decider_apres_isolement() {
     case "${2:-}" in
         isole|isole-sans-verrou|sans-objet) echo poursuivre; return ;;
     esac
-    if [ "${1:-}" = ok ] && [ "${3:-}" = oui ]; then
+    if [ "${1:-}" = ok ]; then
         echo "abandon:l'ancien actif sert en LAN mais n'a pas pu être isolé — promouvoir ici ferait deux primaires"
     else
         echo poursuivre
@@ -151,64 +151,45 @@ decider_apres_isolement() {
 }
 
 #  Prendre la main : DÉCIDER, puis ISOLER, puis PROMOUVOIR (#2000).
-#  $1 base gérée ici (oui|non) · $2 moteur de l'application · $3 sonde LAN de l'actif
+#  $1 sonde LAN de l'actif
 #  Gestes fournis par l'appelant : `role_base_locale`, `isoler_ancien_actif`
 #  (écrit son bilan), `promouvoir_local`. Pose :
 #    PRISE       décision sur la base (PROMOUVOIR|GARDER|ABSTENIR:…)
 #    ISOLEMENT   non-tente | sans-objet | isole | isole-sans-verrou | injoignable
 #    A_DEMARRER  la liste des services à démarrer (jamais vide si l'on poursuit)
 #    RENONCEMENT la raison, si l'on renonce
-#  Rend 0 si l'on démarre, 1 si l'on renonce.
+#  Rend 0 si l'on démarre, 1 si l'on renonce. Une base qu'on ne peut pas prendre
+#  ne démarre JAMAIS — elle s'initialiserait en primaire VIDE —, et l'application
+#  n'a pas d'autre base : on ne démarre RIEN.
 prendre_la_main() {
-    local geree="${1:-non}" moteur="${2:-}" lan="${3:-}" suite
-    PRISE=GARDER; ISOLEMENT=non-tente; A_DEMARRER=""; RENONCEMENT=""
-    if [ "$geree" = oui ]; then
-        PRISE=$(decider_prise_de_main "$(role_base_locale)")
-        #  🔴 Décidé AVANT tout geste : on ne prend pas, on ne touche à rien.
-        if [ "$(decider_demarrage "$PRISE" "$moteur")" = RIEN ]; then
-            RENONCEMENT=${PRISE#ABSTENIR:}; return 1
-        fi
-    fi
+    local lan="${1:-}" suite
+    ISOLEMENT=non-tente; A_DEMARRER=""; RENONCEMENT=""
+    PRISE=$(decider_prise_de_main "$(role_base_locale)")
+    #  🔴 Décidé AVANT tout geste : on ne prend pas, on ne touche à rien.
+    case "$PRISE" in ABSTENIR:*) RENONCEMENT=${PRISE#ABSTENIR:}; return 1 ;; esac
     ISOLEMENT=$(isoler_ancien_actif)
-    suite=$(decider_apres_isolement "$lan" "$ISOLEMENT" "$geree")
+    suite=$(decider_apres_isolement "$lan" "$ISOLEMENT")
     if [ "$suite" != poursuivre ]; then
         RENONCEMENT=${suite#abandon:}; return 1
     fi
     if [ "$PRISE" = PROMOUVOIR ] && ! promouvoir_local; then
-        PRISE="ABSTENIR:la promotion de la réplique locale a échoué"
+        RENONCEMENT="la promotion de la réplique locale a échoué"
+        PRISE="ABSTENIR:$RENONCEMENT"; return 1
     fi
-    case "$(decider_demarrage "$PRISE" "$moteur")" in
-        TOUT)        A_DEMARRER=$(services_du_noeud "$geree") ;;
-        APPLICATION) A_DEMARRER=$SERVICES_APPLICATIFS ;;
-        *)           RENONCEMENT=${PRISE#ABSTENIR:}; return 1 ;;
-    esac
+    A_DEMARRER=$SERVICES_DU_NOEUD
     return 0
 }
 
 # ── 4. Que conseiller après un failover ? (PURE) ─────────────────────────────
-#  $1 base gérée ici (oui|non) · $2 l'ancien actif · $3 bilan de l'isolement
-#  Sous PostgreSQL, l'ancien actif ne se resynchronise pas par une bascule :
-#  `phases_base_postgresql` exige une réplique saine chez le pair, que le
-#  failover vient d'arrêter. Le geste est la reconstruction (#2000).
+#  $1 l'ancien actif · $2 bilan de l'isolement
+#  L'ancien actif ne se resynchronise pas par une bascule : `phases_base_postgresql`
+#  exige une réplique saine chez le pair, que le failover vient d'arrêter. Le
+#  geste est la reconstruction (#2000).
 conseil_apres_failover() {
-    local ancien="${2:-ancien actif}"
-    if [ "${1:-}" = oui ]; then
-        printf '%s\n' \
-            "La base est la réplique promue de ce nœud : $ancien n'a plus de réplique" \
-            "à jour, et ses écritures depuis la promotion sont perdues." \
-            "" \
-            "Action recommandée dès que $ancien est de retour, SUR $ancien :" \
-            "  sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh        (simulation)" \
-            "  sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh --oui" \
-            "Jamais de « docker compose up » sur $ancien : sa base redémarrerait en second primaire."
-    else
-        printf '%s\n' \
-            "La base de données est celle de ce nœud au moment du failover (sans sync depuis $ancien)." \
-            "" \
-            "Action recommandée dès que $ancien est de retour :" \
-            "  Vérifier les données et relancer une bascule manuelle."
-    fi
-    case "${3:-}" in
+    local ancien="${1:-ancien actif}"
+    printf '%s
+'         "La base est la réplique promue de ce nœud : $ancien n'a plus de réplique"         "à jour, et ses écritures depuis la promotion sont perdues."         ""         "Action recommandée dès que $ancien est de retour, SUR $ancien :"         "  sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh        (simulation)"         "  sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh --oui"         "Jamais de « docker compose up » sur $ancien : sa base redémarrerait en second primaire."
+    case "${2:-}" in
         injoignable) printf '%s\n' "" \
             "⚠ $ancien n'a PAS pu être isolé (injoignable) : son .active le désigne encore actif." \
             "boot-role-guard le retirera à son redémarrage ; sinon, sur $ancien :" \
@@ -303,41 +284,35 @@ isole-sans-verrou" 0)"
 
     echo "== prendre_la_main : décider, PUIS isoler, PUIS promouvoir (#2000) =="
     #  Gestes simulés : la trace dit lesquels ont eu lieu, et dans quel ordre.
-    pm() {  # $1 libellé · $2 trace attendue · $3 rendu attendu · $4 rôle de la base · $5 bilan d'isolement · $6 promotion (0|1) · $7 géré · $8 moteur · $9 LAN
+    pm() {  # $1 libellé · $2 trace attendue · $3 rendu attendu · $4 rôle de la base · $5 bilan d'isolement · $6 promotion (0|1) · $7 LAN
         local T; T=$(mktemp)
         _ROLE=$4; _ISOL=$5; _PROMO=$6   # lus par les gestes simulés, à l'appel
         role_base_locale()    { echo "$_ROLE"; }
         isoler_ancien_actif() { echo isoler >> "$T"; echo "$_ISOL"; }
         promouvoir_local()    { echo promouvoir >> "$T"; return "$_PROMO"; }
-        local rc=0; prendre_la_main "$7" "$8" "$9" || rc=$?
+        local rc=0; prendre_la_main "$7" || rc=$?
         ok_ko "$1" "$2" "$(paste -sd'>' "$T")"
         ok_ko "$1 — démarrage" "$3" "$([ $rc -eq 0 ] && echo "$A_DEMARRER" || echo RENONCE)"
         rm -f "$T"
     }
     tout="$SERVICES_APPLICATIFS $SERVICE_BASE"
-    pm "réplique saine : isoler puis promouvoir"     "isoler>promouvoir" "$tout"  replique_ok isole       0 oui postgresql ok
-    pm "réplique déconnectée : on promeut, et on le dit" "isoler>promouvoir" "$tout" replique_ko isole   0 oui postgresql ko
+    pm "réplique saine : isoler puis promouvoir"     "isoler>promouvoir" "$tout"  replique_ok isole       0 ok
+    pm "réplique déconnectée : on promeut, et on le dit" "isoler>promouvoir" "$tout" replique_ko isole   0 ko
     #  🔴 LE CAS DU TICKET : base locale illisible ⇒ l'ancien actif n'est PAS touché.
-    pm "réplique ILLISIBLE : l'ancien actif n'est pas touché" "" RENONCE illisible isole 0 oui postgresql ok
-    pm "base ABSENTE : rien n'est touché"            ""                  RENONCE  absente     isole       0 oui postgresql ko
+    pm "réplique ILLISIBLE : l'ancien actif n'est pas touché" "" RENONCE illisible isole 0 ok
+    pm "base ABSENTE : rien n'est touché"            ""                  RENONCE  absente     isole       0 ko
     #  🔴 L'actif vit en LAN mais ne s'isole pas : promouvoir ferait deux primaires.
-    pm "actif VIVANT non isolé : pas de promotion"   "isoler"            RENONCE  replique_ok injoignable 0 oui postgresql ok
-    pm "actif MORT non isolé : on prend la main"     "isoler>promouvoir" "$tout"  replique_ok injoignable 0 oui postgresql ko
-    pm "promotion en échec : rien ne démarre"        "isoler>promouvoir" RENONCE  replique_ok isole       1 oui postgresql ko
-    pm "essai (application sous SQLite), base illisible : l'application seule" \
-                                                     "isoler"            "$SERVICES_APPLICATIFS" illisible isole 0 oui sqlite ko
-    pm "base non gérée ici (SQLite) : l'application, jamais la base" \
-                                                     "isoler"            "$SERVICES_APPLICATIFS" "" isole 0 non sqlite ko
-    pm "SQLite, actif vivant injoignable : pas de second primaire à craindre" \
-                                                     "isoler"            "$SERVICES_APPLICATIFS" "" injoignable 0 non sqlite ok
+    pm "actif VIVANT non isolé : pas de promotion"   "isoler"            RENONCE  replique_ok injoignable 0 ok
+    pm "actif MORT non isolé : on prend la main"     "isoler>promouvoir" "$tout"  replique_ok injoignable 0 ko
+    pm "déjà primaire : isoler, sans promouvoir"     "isoler"            "$tout"  primaire    isole       0 ko
+    pm "promotion en échec : rien ne démarre"        "isoler>promouvoir" RENONCE  replique_ok isole       1 ko
     unset -f role_base_locale isoler_ancien_actif promouvoir_local
 
     echo "== conseil_apres_failover =="
-    c=$(conseil_apres_failover oui rpi2 isole)
-    case "$c" in *reconstruire-replique.sh*--oui*) echo "PASS  PostgreSQL : nomme reconstruire-replique.sh" ;; *) echo "FAIL  PostgreSQL : $c"; fail=1 ;; esac
-    case "$c" in *"bascule manuelle"*) echo "FAIL  PostgreSQL : conseille encore une bascule"; fail=1 ;; *) echo "PASS  PostgreSQL : ne conseille plus la bascule (impossible sans réplique)" ;; esac
-    case "$(conseil_apres_failover non rpi2 isole)" in *"bascule manuelle"*) echo "PASS  SQLite : bascule manuelle" ;; *) echo "FAIL  SQLite"; fail=1 ;; esac
-    case "$(conseil_apres_failover oui rpi2 injoignable)" in *"PAS pu être isolé"*) echo "PASS  ancien actif non isolé : dit" ;; *) echo "FAIL  injoignable non dit"; fail=1 ;; esac
+    c=$(conseil_apres_failover rpi2 isole)
+    case "$c" in *reconstruire-replique.sh*--oui*) echo "PASS  nomme reconstruire-replique.sh" ;; *) echo "FAIL  $c"; fail=1 ;; esac
+    case "$c" in *"bascule manuelle"*) echo "FAIL  conseille une bascule"; fail=1 ;; *) echo "PASS  ne conseille pas la bascule (impossible sans réplique)" ;; esac
+    case "$(conseil_apres_failover rpi2 injoignable)" in *"PAS pu être isolé"*) echo "PASS  ancien actif non isolé : dit" ;; *) echo "FAIL  injoignable non dit"; fail=1 ;; esac
 
     [ $fail -eq 0 ] && echo "== lib-failover : TOUS OK ==" || echo "== lib-failover : ÉCHECS =="
     exit $fail

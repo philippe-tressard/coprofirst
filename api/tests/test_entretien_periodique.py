@@ -13,7 +13,6 @@ Les visites converties du calendrier n'avaient pas de contrat : la migration
 """
 
 from datetime import datetime
-from types import SimpleNamespace
 
 import pytest
 
@@ -23,7 +22,6 @@ from app.models.prestataires import ContratEntretien, Prestataire
 from app.routers.tickets.entretien_periodique import lister_entretiens_periodiques
 from app.utils import horloge
 from tests.aides_base import compte
-from tests.aides_migrations import charger_migration
 
 #: Le jour de la lecture : le 10 octobre 2026, midi à Paris.
 AUJOURD_HUI = datetime(2026, 10, 10, 10, 0, 0)
@@ -143,57 +141,3 @@ def _evenement(session, auteur, type_: str) -> Evenement:
     session.commit()
     session.refresh(e)
     return e
-
-
-def test_la_migration_rend_leur_contrat_aux_visites_du_calendrier(session, conseil, monkeypatch):
-    migration = charger_migration("0273")
-    contrats = []
-    for prestataire_id, libelle, frequence in (
-        (4, "Entretien toitures", "fois_par_an"),
-        (4, "Gouttières", "fois_par_an"),
-        (11, "Porte de parking", "fois_par_an"),
-        (12, "Sans rythme", None),
-    ):
-        c = ContratEntretien(
-            copropriete_id=1,
-            prestataire_id=prestataire_id,
-            libelle=libelle,
-            frequence_type=frequence,
-            frequence_valeur=2 if frequence else None,
-        )
-        session.add(c)
-        contrats.append(c)
-    session.commit()
-    recurrent = _evenement(session, conseil, "maintenance_recurrente").id
-    ponctuel = _evenement(session, conseil, "maintenance").id
-    cas = {
-        #  Le titre nomme le contrat parmi deux du même prestataire.
-        "par-titre": {"prestataire_id": 4, "titre": "Toitures — Entretien toitures"},
-        #  Un seul contrat en cours : il est retenu sans que le titre le nomme.
-        "seul": {"prestataire_id": 11, "titre": "Maintenance porte"},
-        #  Deux contrats, aucun nommé : pas de devinette.
-        "ambigu": {"prestataire_id": 4, "titre": "Visite"},
-        #  Un contrat sans fréquence laisserait la visite sans rythme.
-        "sans-rythme": {"prestataire_id": 12, "titre": "Sans rythme"},
-    }
-    tickets = {
-        nom: _affaire(session, conseil, f"TK-{nom}", promu_depuis_evenement_id=recurrent, **c)
-        for nom, c in cas.items()
-    }
-    tickets["ponctuel"] = _affaire(
-        session, conseil, "TK-ponctuel", prestataire_id=11, promu_depuis_evenement_id=ponctuel
-    )
-
-    monkeypatch.setattr(migration, "op", SimpleNamespace(get_bind=session.connection))
-    migration.upgrade()
-    migration.upgrade()  # idempotente
-    session.expire_all()
-
-    rattaches = {nom: session.get(Ticket, t.id).contrat_id for nom, t in tickets.items()}
-    assert rattaches == {
-        "par-titre": contrats[0].id,
-        "seul": contrats[2].id,
-        "ambigu": None,
-        "sans-rythme": None,
-        "ponctuel": None,
-    }

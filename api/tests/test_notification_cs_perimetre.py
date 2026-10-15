@@ -46,7 +46,7 @@ def _vider(session: Session) -> None:
     (conftest) — celle-là même que la conftest dit avoir factorisée « parce
     qu'une fixture recopiée diverge comme n'importe quel autre code ». La copie
     avait effectivement divergé : elle effaçait `Perimetre` sans passer par les
-    vagues feuilles-vers-racine, ce que `foreign_keys=ON` refuse (#546).
+    vagues feuilles-vers-racine, ce que la vérification des clés refuse (#546).
 
     Les comptes partent par `purger`, qui LIT les métadonnées : les supprimer
     directement laissait leurs publications et leurs tickets pointer vers un

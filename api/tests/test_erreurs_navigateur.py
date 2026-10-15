@@ -30,7 +30,7 @@ from app.utils.erreurs_navigateur import (
     purger_erreurs,
     synthese_erreurs,
 )
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 from tests.aides_http import base_http, client_http
 
 ROUTE = "/telemetry/collect"
@@ -98,7 +98,7 @@ def test_le_tableau_de_bord_rend_les_erreurs_sans_les_compter_en_vues(moteur, sc
 
 def test_la_synthese_additionne_les_lignes_en_double():
     """Deux collectes simultanées peuvent créer deux lignes pour le même couple."""
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     instant = horloge.maintenant()
     jour = horloge.jour_civil(instant).isoformat()
     with Session(moteur) as s:
@@ -119,7 +119,7 @@ def test_la_synthese_additionne_les_lignes_en_double():
 
 
 def test_la_purge_retire_ce_qui_depasse_la_conservation():
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     aujourd_hui = horloge.aujourd_hui()
     instant = horloge.maintenant()
     with Session(moteur) as s:

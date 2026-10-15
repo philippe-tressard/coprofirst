@@ -2,15 +2,10 @@
 
 ## Pourquoi
 
-Spec multi-copropriétés §4.3 : une base PostgreSQL repart d'une migration
-initiale qui pose le schéma actuel, plutôt que de rejouer un historique écrit
-pour SQLite — 272 migrations, dont une cinquantaine en mode `batch`, et
-plusieurs qui ajoutent une colonne sans vérifier qu'elle manque (mémoire du
-projet « migrations non idempotentes »). Rejouées sur une base vierge, elles
-n'arrivent pas au bout.
-
-La même règle vaut pour une base-FICHIER neuve, celle d'une réplique qu'on
-installe (`deploiement/standard/`) : elle n'a pas plus de passé à rattraper.
+Spec multi-copropriétés §4.3 : une base neuve — celle d'une réplique qu'on
+installe (`deploiement/standard/`), d'un test — reçoit le schéma actuel d'un
+coup. La chaîne Alembic part d'une migration de base vide (`0286`) : elle ne
+décrit que ce qui change APRÈS elle, jamais comment on y est arrivé.
 
 ## Ce que fait `poser_si_neuve`
 
@@ -21,15 +16,13 @@ installe (`deploiement/standard/`) : elle n'a pas plus de passé à rattraper.
 | ne se lit pas                         | `inconnu`   | rien — on ne devine pas                 |
 
 « Marquée à la tête » : `alembic_version` reçoit la révision de tête, sans en
-exécuter aucune. Les migrations SUIVANTES s'appliquent ensuite normalement — et
-elles doivent donc valoir pour les deux moteurs (règle 12 de la spec).
+exécuter aucune. Les migrations SUIVANTES s'appliquent ensuite normalement.
 
 ⚠️ Une base qui a des tables sans `alembic_version` n'est PAS neuve : la
 marquer à la tête lui ferait sauter des migrations dont elle a besoin.
 
 Lancé par `start.sh`, avant `alembic upgrade head`, par le seul processus du
-conteneur : ce n'est pas l'ouverture par un tiers que la règle d'or interdit.
-🔒 `tests/test_schema_initial.py`, et sur PostgreSQL par le workflow « PostgreSQL ».
+conteneur. 🔒 `tests/test_schema_initial.py`.
 """
 
 from __future__ import annotations

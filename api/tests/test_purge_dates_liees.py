@@ -3,10 +3,9 @@
 ## Le défaut (reproduit le 25/09/2026)
 
 `utils/maintenance.purger()` passait ses seuils en `datetime.isoformat()` à des
-`DELETE … WHERE col < :seuil` écrits en `text()`. SQLAlchemy stocke un
-`DateTime` dans SQLite avec une ESPACE comme séparateur ; `isoformat()` en met
-un `T`. SQLite compare des chaînes, et `' '` (0x20) < `'T'` (0x54) : le jour du
-seuil, toute ligne était « antérieure », quelle que soit son heure.
+`DELETE … WHERE col < :seuil` écrits en `text()` : le seuil partait en TEXTE,
+comparé à un horodatage, et le jour du seuil, toute ligne était
+« antérieure », quelle que soit son heure.
 
 Un jeton de session qui expire dans six heures était donc effacé par la purge
 du dimanche — le résident perdait sa session, ou son lien de réinitialisation.
@@ -134,8 +133,8 @@ def test_aucune_date_passee_en_chaine_iso_a_une_requete():
         f"{m.chemin.relative_to(_APP)}:{n}" for m in fichiers for n in isoformat_lies(m.source)
     ]
     assert not fautifs, (
-        "`.isoformat()` passé comme valeur à une requête SQL : SQLite compare alors "
-        "« 2026-09-25T12:00 » à « 2026-09-25 18:00 » et se trompe d'un jour. Lier "
+        "`.isoformat()` passé comme valeur à une requête SQL : la base compare alors "
+        "du texte à un horodatage, et se trompe ou refuse. Lier "
         "le `datetime` lui-même (UTC naïf, `horloge.maintenant()`) :\n" + "\n".join(fautifs)
     )
 

@@ -14,7 +14,7 @@ from app.utils.declenchement import AUTOMATIQUE
 from app.config import get_settings
 from app import contexte
 from app.utils.stockage import stockage
-from app.dialecte import chemin_fichier, point_de_controle, verifier_integrite
+from app.dialecte import verifier_integrite
 from app.models.core import ConfigSauvegarde, HistoriqueSauvegarde, StatutSauvegarde
 
 from app.utils.noeud import noeud_courant
@@ -95,11 +95,7 @@ def _integrite() -> str:
 
 
 def _annuler(session: Session, entry: HistoriqueSauvegarde, verdict: str) -> None:
-    """Ne jamais écraser les sauvegardes saines (rotation) par celle d'une base abîmée.
-
-    Cf. corruption telemetry_event du 17/06/2026 : le backup de 01:00 contenait
-    déjà la table malformée, devenu inutilisable.
-    """
+    """Ne jamais écraser les sauvegardes saines (rotation) par celle d'une base abîmée."""
     entry.statut = StatutSauvegarde.echouee
     entry.message_erreur = (
         f"Sauvegarde annulée — base corrompue ({verdict}). "
@@ -110,7 +106,7 @@ def _annuler(session: Session, entry: HistoriqueSauvegarde, verdict: str) -> Non
     session.commit()
 
 
-def _exporter_et_verifier(export: Path, dossier: Path) -> None:
+def _exporter_et_verifier(export: Path) -> None:
     """Exporte la base, puis la RÉIMPORTE dans une base jetable : un écart lève.
 
     `ImportRefuse` (compte ou empreinte d'une table) fait échouer la sauvegarde —
@@ -119,8 +115,9 @@ def _exporter_et_verifier(export: Path, dossier: Path) -> None:
     from app.utils.export_copropriete import exporter
     from app.utils.import_copropriete import verifier_archive
 
-    exporter(contexte.moteur(), export)
-    verifier_archive(export, dossier)
+    moteur = contexte.moteur()
+    exporter(moteur, export)
+    verifier_archive(export, moteur.url)
 
 
 def _reussie(session: Session, entry: HistoriqueSauvegarde, nom: str, chemin: str) -> None:
@@ -137,9 +134,10 @@ def _reussie(session: Session, entry: HistoriqueSauvegarde, nom: str, chemin: st
 def run_backup(history_id: int | None = None):
     """
     Lance une sauvegarde : la base + le répertoire uploads → .tar.gz.
-    Base-fichier : `app.db`, après point de contrôle et `quick_check`. Base
-    serveur : son export vérifié (`base-export.tar.gz`), après le contrôle des
-    sommes de pages.
+    La base y entre par son export vérifié (`base-export.tar.gz`) — format
+    neutre, réimporté dans une base jetable AVANT d'être déclaré bon —, après le
+    contrôle des sommes de pages : une base abîmée n'écrase jamais, par la
+    rotation, les sauvegardes saines.
     Met à jour l'entrée HistoriqueSauvegarde correspondante.
     """
     with contexte.nouvelle_session() as session:
@@ -157,49 +155,17 @@ def run_backup(history_id: int | None = None):
             filename = nom_archive(horloge.maintenant())
             dest = os.path.join(settings.backup_dir, filename)
 
-            fichier = chemin_fichier(contexte.courante().url_base)
-            db_path = str(fichier) if fichier else ""
-
-            #  🔴 Une base SERVEUR (PostgreSQL, DI-7b, #1781) n'a pas de fichier à
-            #  copier : sans cette branche, l'archive partait SANS la base et
-            #  marquée « réussie ». Elle reçoit l'EXPORT vérifié (P2-7) — format
-            #  neutre, réimporté dans une base jetable AVANT d'être déclaré bon.
-            if fichier is None:
-                verdict = _integrite()
-                if verdict != "ok":
-                    _annuler(session, entry, verdict)
-                    return
-                with tempfile.TemporaryDirectory() as dossier:
-                    export = Path(dossier) / NOM_EXPORT_BASE
-                    _exporter_et_verifier(export, Path(dossier))
-                    with tarfile.open(dest, "w:gz") as tar:
-                        tar.add(export, arcname=NOM_EXPORT_BASE)
-                        if (uploads := stockage().racine).exists():
-                            tar.add(uploads, arcname="uploads")
-                _reussie(session, entry, filename, dest)
+            verdict = _integrite()
+            if verdict != "ok":
+                _annuler(session, entry, verdict)
                 return
-
-            # WAL checkpoint avant copie : garantit que app.db contient
-            # toutes les transactions committées (le WAL peut être en avance)
-            if os.path.exists(db_path):
-                with contexte.moteur().connect() as _conn:
-                    point_de_controle(_conn, "FULL")
-
-                # Validation d'intégrité AVANT de sauvegarder : ne jamais écraser
-                # les backups sains (rotation) par un snapshot d'une base corrompue.
-                # Cf. corruption telemetry_event du 17/06/2026 : le backup de 01:00
-                # contenait déjà la table malformée, devenu inutilisable.
-                verdict = _integrite()
-                if verdict != "ok":
-                    _annuler(session, entry, verdict)
-                    return
-
-            with tarfile.open(dest, "w:gz") as tar:
-                if os.path.exists(db_path):
-                    tar.add(db_path, arcname="app.db")
-                if (uploads := stockage().racine).exists():
-                    tar.add(uploads, arcname="uploads")
-
+            with tempfile.TemporaryDirectory() as dossier:
+                export = Path(dossier) / NOM_EXPORT_BASE
+                _exporter_et_verifier(export)
+                with tarfile.open(dest, "w:gz") as tar:
+                    tar.add(export, arcname=NOM_EXPORT_BASE)
+                    if (uploads := stockage().racine).exists():
+                        tar.add(uploads, arcname="uploads")
             _reussie(session, entry, filename, dest)
             return
 

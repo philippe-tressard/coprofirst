@@ -12,7 +12,7 @@ Les références canoniques sont dans `.claude/skills/` (voir le tableau ci-dess
 
 ## Stack
 
-- **Backend** : FastAPI + SQLModel + Alembic (`api/`) — **PostgreSQL 17 en production depuis le 10/10/2026** (DI-7, répliqué vers le standby) ; SQLite WAL pour une installation simple, les tests et le retour arrière de 7 jours (`retour-sqlite.sh`)
+- **Backend** : FastAPI + SQLModel + Alembic (`api/`) — **PostgreSQL 17**, seul moteur : en production (DI-7, répliqué vers le standby), sur une réplique, et pour les tests (CI et poste, `TESTS_BASE_URL`)
 - **Documents imprimables** : HTML/CSS → PDF via WeasyPrint (libs système dans `api/Dockerfile`)
 - **Frontend** : SvelteKit v2 + TypeScript strict + Vite + PWA (`front/`)
 - **Infra** : Docker Compose + Caddy + Raspberry Pi 5
@@ -47,25 +47,12 @@ socle `~/.claude/standards/`. Ce fichier-ci ne contient que leur **instanciation
 
 ---
 
-## 🚨 Règle d'or anti-corruption DB — ne dépend d'aucun chargement à la demande
+## 🚨 Règle d'or des données (PostgreSQL) — ne dépend d'aucun chargement à la demande
 
-**Ne JAMAIS ouvrir `app.db` depuis un process tiers tant que l'API tourne — même en
-lecture seule.** `docker exec … PRAGMA` et `sqlite3` hôte sont **interdits** : le
-process tiers se croit dernière connexion, `unlink` le WAL sous le pool SQLAlchemy,
-et l'API écrit ensuite dans des inodes orphelins → `disk I/O error`, 503, puis
-**perte des données** au prochain arrêt. À chaud, passer par les endpoints
-in-process : `POST /admin/db/checkpoint`, `GET /admin/db/integrite`. VACUUM, copie ou
-swap de fichier → **stopper l'API d'abord** (0 writer).
-
-Signature de diagnostic, conduite à tenir et historique des trois incidents :
-`.claude/skills/infra-rpi`.
-
-### …et sous PostgreSQL (DI-7b, #1781) — la règle change de forme, pas de rang
-
-La règle ci-dessus vaut tant que `.env` désigne SQLite. Sous PostgreSQL, lire la
-base depuis un autre processus redevient permis : le serveur sert ses lecteurs
-(`docker exec hostachy_postgres psql`, C37, la sauvegarde). Les gestes qui
-détruisent sont **autres**, et ils sont interdits au même rang :
+La base est un PostgreSQL par nœud : un **primaire** sur l'actif, une **réplique**
+en flux sur le standby (DI-7b, #1781). La lire depuis un autre processus est permis :
+le serveur sert ses lecteurs (`docker exec hostachy_postgres psql`, C37, la
+sauvegarde). Les gestes qui détruisent sont **interdits** :
 
 - **Jamais deux primaires.** Un ancien primaire ne se relance JAMAIS tel quel après
   une promotion : il s'isole, puis se reconstruit en réplique
@@ -77,7 +64,7 @@ détruisent sont **autres**, et ils sont interdits au même rang :
 - **Jamais `docker compose up|stop|down` sans liste de services** : sur le
   standby il arrêterait la réplique, sur un nœud rétrogradé il relancerait un
   primaire (15/10/2026, #1997). `$SERVICES_APPLICATIFS`, `$SERVICE_BASE`,
-  `services_du_noeud` (`lib-applicatifs.sh`). 🔒 `test_applicatifs_source_unique.py`.
+  `$SERVICES_DU_NOEUD` (`lib-applicatifs.sh`). 🔒 `test_applicatifs_source_unique.py`.
 - **Un nœud ne sert que sur un rôle relu à l'instant** : `servir_images`
   (`lib-servir.sh`, auto-deploy et `MaJ-Hostachy.sh`) relit `.active` avant chaque
   démarrage, et le failover isole l'ancien actif sous son verrou de déploiement,
@@ -87,15 +74,14 @@ détruisent sont **autres**, et ils sont interdits au même rang :
 🔒 C37 (`lib-replication.sh`) et le point 22 du pré-check disent deux primaires, une
 réplique absente, déconnectée ou en retard. Conduite à tenir : `.claude/skills/infra-rpi`.
 
-**Exporter la base pendant que l'API tourne** (#1749) : par l'administration —
-`POST /admin/export-copropriete` (archive complète) et `…/verifier` (réimport dans une
-base jetable) —, qui lisent dans le processus de l'API, en une transaction. Jamais par
-`python -m app.utils.export_copropriete` dans le conteneur : cette commande ne sert qu'à
-**importer** une archive dans une base CIBLE neuve (DI-7).
+**Exporter la base** (#1749) : par l'administration — `POST /admin/export-copropriete`
+(archive complète) et `…/verifier` (réimport dans une base jetable) —, qui lisent dans
+le processus de l'API, en une transaction. `python -m app.utils.export_copropriete`
+dans le conteneur ne sert qu'à **importer** une archive dans une base CIBLE neuve.
 
-> 📖 `standards/06-donnees-et-integrite.md` §1 — le principe généralisé à **tout état
-> multi-fichiers qu'un processus tient ouvert**, pas seulement une base : il s'est
-> reproduit à l'identique sur l'état d'authentification WhatsApp (24/07/2026).
+> 📖 `standards/06-donnees-et-integrite.md` §1 — un état multi-fichiers qu'un
+> processus tient ouvert ne se copie pas à chaud : c'est la règle de l'état
+> d'authentification WhatsApp (24/07/2026, `.claude/skills/infra-rpi`).
 
 ---
 
@@ -288,22 +274,9 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
 - **Jamais** modifier une migration existante — créer une nouvelle
 - **Jamais** de f-string dans `op.execute()` pour une **valeur** →
   `text(...).bindparams(...)`. Un **identifiant** (nom de table ou de colonne)
-  ne peut pas se lier en SQLite : il s'interpole depuis une constante du fichier,
-  et on l'écrit en commentaire. Cette nuance manquait, et la règle en « jamais »
-  était donc fausse treize fois sur quarante — une consigne qu'on ne peut pas
-  suivre à la lettre est une consigne qu'on cesse de lire.
-  🔒 `test_migrations.py` refuse la **28ᵉ** f-string non liée ; les 27 existantes
-  sont **figées** dans le test — une migration appliquée ne se modifie jamais,
-  donc c'est de l'historique et non un retard à résorber. Ruff `S608` couvre le
-  code vivant (`api/app/`), pas `alembic/`, pour la même raison.
-- SQLite : pas de `ALTER TYPE`, pas de `CREATE TYPE`, et **pas de `ForeignKey`
-  dans un `add_column`** — SQLite refuse d'altérer les contraintes d'une table
-  existante, la migration crashe *après* avoir ajouté la colonne, et `start.sh`
-  (`set -e`) arrête le conteneur. C'est arrivé **deux fois** (0117 le 25/07/2026,
-  0165 le 01/09) sans que personne le voie : le redémarrage suivant passe grâce à
-  la garde d'idempotence. Poser une colonne simple, et ne pas déclarer
-  `foreign_key` dans le modèle non plus — sinon base neuve et base migrée
-  divergent. `api/tests/test_migrations.py` le refuse.
+  ne se lie pas : il s'interpole depuis une constante du fichier, et on l'écrit
+  en commentaire. 🔒 `test_migrations.py` refuse une f-string non liée ; Ruff
+  `S608` couvre le code vivant (`api/app/`).
 - `start.sh` a `set -e` : une migration qui crash = conteneur bloqué
 - 🔴 **Une migration reste compatible avec la version précédente du code** (#1757,
   08/10/2026) : revenir en arrière doit n'être qu'un changement d'image, sans
@@ -312,8 +285,8 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   une colonne, renommer, passer à `nullable=False` est un **second temps**, annoncé
   dans `CONTRACTIONS` par le lot où le code cesse d'en dépendre, et fait dans une
   version ultérieure. Pas de SQL brut qui retire ou renomme. 🔒
-  `test_migrations_compatibles.py` (l'historique, jusqu'à 0271, n'est pas jugé ; il
-  vérifie aussi qu'aucun modèle ne déclare plus ce qui est retiré).
+  `test_migrations_compatibles.py` (il vérifie aussi qu'aucun modèle ne déclare plus
+  ce qui est retiré).
 
 ### Dépendances d'auth
 | Dependency | Usage |
@@ -391,8 +364,8 @@ une règle neuve étend le contrôle d'elle-même).
 - Documents existants : fiche arrivant (`fiche_arrivant.py`), annonce de hall (`annonce_hall.py`),
   manuel utilisateur (`manuel_pdf.py`).
 - 🔴 **Le rendu s'exécute hors du process de l'API** (`app/utils/pdf_rendu.py`, 16/09/2026),
-  dans un enfant `spawn` — **jamais `fork`**, qui hériterait des descripteurs de `app.db`
-  et ramènerait la règle d'or ci-dessus. Un WeasyPrint qui plante ou épuise la mémoire
+  dans un enfant `spawn` — **jamais `fork`**, qui hériterait des connexions à la base
+  ouvertes par l'API. Un WeasyPrint qui plante ou épuise la mémoire
   du RPi n'emporte donc plus l'API. Coût assumé : +1,5 à 2 s par document.
   `api/tests/test_weasyprint_appel_unique.py` refuse tout appel au moteur ailleurs que
   dans ce module — c'est ce qui empêche le rendu de retomber dans le process, en silence.
@@ -736,21 +709,15 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   en base, ou se déclare dans `DU_PROCESSUS` avec sa raison s'il ne porte aucune
   donnée de copropriété. Un état de copropriété passe par `contexte.etat(nom)`,
   la seule porte (`PAR_COPROPRIETE`) ; `A_INDEXER` est soldée depuis #1744.
-- 🐘 **La suite passe sur PostgreSQL, et c'est un check REQUIS** (#1747, D4) :
-  `tests/aides_base.moteur_memoire` bascule sur PostgreSQL quand `TESTS_BASE_URL`
-  est posé — un schéma neuf par test, retiré à sa fin, clés désactivées sauf
-  `cles_etrangeres=True` comme en mémoire —, et le workflow `postgresql.yml` rejoue
-  toute la suite (`scripts/ci/mesure-postgresql.sh`, en tranches). Une comparaison
-  qui ne tient que sous SQLite — un horodatage contre du texte, un booléen contre
-  `1` — y échoue. Ce qui ne vaut QUE pour SQLite se déclare
-  `@pytest.mark.sqlite_seulement("pourquoi")` ; les migrations historiques (≤
-  `DERNIERE_HISTORIQUE`, `tests/aides_migrations.py`) n'y sont pas rejouées, une
-  base PostgreSQL naissant du schéma initial. En local : `TESTS_BASE_URL=postgresql+psycopg://…`.
-- 🔒 **Ce qui ne vaut que pour SQLite vit dans `app/dialecte.py`** (#1747) : `PRAGMA`,
-  URL de base-fichier, journal WAL, intégrité, compactage, clés étrangères, format
-  SQL d'une date (`dialecte.jour`, `dialecte.mois`). `test_adherence_sqlite.py` le
-  refuse partout ailleurs dans `app/`, sur l'AST. Une base NEUVE reçoit le schéma
-  courant d'un coup, marqué à la tête (`utils/schema_initial`, appelé par `start.sh`).
+- 🐘 **La suite passe sur PostgreSQL, partout** (#1747, D4, check REQUIS) : chaque
+  test reçoit un schéma neuf sur le PostgreSQL que désigne `TESTS_BASE_URL`, retiré
+  à sa fin (`tests/aides_base`). En local, le PostgreSQL 17 du poste :
+  `TESTS_BASE_URL=postgresql+psycopg://…`.
+- **Ce qui s'écrit dans la langue du moteur vit dans `app/dialecte.py`** :
+  intégrité, compactage, format SQL d'une date (`dialecte.jour`, `dialecte.mois`),
+  base jetable — derrière un nom qui dit la question posée. Une base NEUVE reçoit le
+  schéma courant d'un coup, marqué à la tête (`utils/schema_initial`, appelé par
+  `start.sh`).
 - 🔒 `test_routeurs_nommes_par_un_test.py` : un routeur de `app/routers/` que
   **aucun** fichier de `tests/` ne nomme est refusé (#1569).
 - 🔒 **Clones Python** (#1564) : `scripts/ci/clones_python.py` (job `lint-backend`,
@@ -924,9 +891,9 @@ les minutes y sont **décalées** exprès, et une cadence recopiée dans cette t
 | Cron root (identique sur les 2 nœuds) | Rôle |
 |---|---|
 | `bascule.sh` (quotidien, de nuit) | bascule active/standby, puis le nouveau standby pose sa **révision** de noyau et redémarre (`noyau-standby.sh`, #1395) — une nouvelle **série** reste manuelle, C30 la signale avec la commande |
-| `maintenance.sh` (hebdomadaire) | purges **demandées à l'API** (`POST /admin/maintenance/purges` — jamais `docker exec … python`, #1232), VACUUM API arrêtée ; sur les **deux** nœuds, images de base re-tirées — les `FROM` des Dockerfile **et** les `image:` du compose, PostgreSQL compris (#1379, #1872) : tirer ne redémarre rien, la base prend sa nouvelle image à la bascule, et `auto-deploy` ne la recrée jamais (`--no-recreate`) — et rotation des logs |
+| `maintenance.sh` (hebdomadaire) | purges **demandées à l'API** (`POST /admin/maintenance/purges` — jamais `docker exec … python`, #1232) ; sur les **deux** nœuds, images de base re-tirées — les `FROM` des Dockerfile **et** les `image:` du compose, PostgreSQL compris (#1379, #1872) : tirer ne redémarre rien, la base prend sa nouvelle image à la bascule, et `auto-deploy` ne la recrée jamais (`--no-recreate`) — et rotation des logs |
 | `health-watch.sh` (toutes les quelques minutes) | failover automatique si le site est HS — et une ligne datée à **chaque** sonde, site OK compris : son battement, que **C31** mesure sur les deux nœuds (#1586). Il se taisait quand tout allait bien, donc rien ne distinguait ce calme d'un failover mort |
-| `check-reliability.sh` (quart d'heure) | contrôles de fiabilité numérotés (C8 retiré le 17/07/2026 : il causait les pertes qu'il devait prévenir) + alerte e-mail sur `FAIL`, digest quotidien sur `WARN` — chaque fait envoyé **une fois**, par le nœud qu'il concerne (#1402) —, et constats en cours dans **Admin › Maintenance** (rapport sur changement, **battement à chaque passage** qui dit « dernier contrôle » et rafraîchit les chiffres des constats (#1805), et chaque constat affiché **une fois** — sous le nœud qu'il nomme, ou sous « Les deux nœuds » par l'actif, #1396). ⚠️ La moitié vit dans les modules de `scripts/lib/`, et greper « C25 » dans le script ne le trouve pas. **Où vit chacun** : `grep -rn "── C[0-9]" scripts/` — cette ligne en tenait la liste, et elle plaçait C27 dans le mauvais module (23/09/2026) |
+| `check-reliability.sh` (quart d'heure) | contrôles de fiabilité numérotés + alerte e-mail sur `FAIL`, digest quotidien sur `WARN` — chaque fait envoyé **une fois**, par le nœud qu'il concerne (#1402) —, et constats en cours dans **Admin › Maintenance** (rapport sur changement, **battement à chaque passage** qui dit « dernier contrôle » et rafraîchit les chiffres des constats (#1805), et chaque constat affiché **une fois** — sous le nœud qu'il nomme, ou sous « Les deux nœuds » par l'actif, #1396). ⚠️ La moitié vit dans les modules de `scripts/lib/`, et greper « C25 » dans le script ne le trouve pas. **Où vit chacun** : `grep -rn "── C[0-9]" scripts/` — cette ligne en tenait la liste, et elle plaçait C27 dans le mauvais module (23/09/2026) |
 
 **Les tâches de l'API**, elles, tournent **dans le process** et se déclarent dans
 `app/utils/taches.TACHES_PERMANENTES` — avec, pour chacune, **ce qu'on perd** si
@@ -950,9 +917,9 @@ http://<actif>/api/health`. S'il répond 200, la panne est sur le **chemin** pub
 stack.
 
 Toute intervention infra — bascule, base, WhatsApp, incident, coupure de courant,
-panne réseau — commence par charger `.claude/skills/infra-rpi` : protections DB,
-conduite à tenir en cas de corruption, panne de chemin ≠ panne de nœud, monitoring
-APScheduler, bridge WhatsApp, sync DB manuelle et risques connus.
+panne réseau — commence par charger `.claude/skills/infra-rpi` : règle d'or des
+données (primaire, réplique, promotion), panne de chemin ≠ panne de nœud, monitoring
+APScheduler, bridge WhatsApp et risques connus.
 
 > 📖 `standards/04-fiabilite-des-controles.md` §10 — le réflexe ci-dessus généralisé :
 > **deux sondes indépendantes avant toute décision destructive**, pour distinguer la

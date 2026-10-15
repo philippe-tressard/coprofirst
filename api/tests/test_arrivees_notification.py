@@ -37,7 +37,7 @@ from app.utils.arrivees_notification import (
 )
 from app.utils.email import composer_email
 from app.utils.whatsapp_message import construire_message
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 
 SITE = "https://residence.exemple"
 
@@ -147,7 +147,7 @@ def test_le_message_whatsapp_etiquette_son_lien():
 
 
 def test_la_synthese_rapporte_les_arrivees_aux_envois():
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     maintenant = horloge.maintenant()
     with Session(moteur) as s:
         a, b = compte(s).id, compte(s).id
@@ -236,7 +236,7 @@ def test_le_filtre_de_la_lecture_ecarte_les_arrivees_d_un_compte():
     """« Sans le gestionnaire du site » : ses arrivées sortent, celles des autres restent."""
     from sqlalchemy import or_
 
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     with Session(moteur) as s:
         gestionnaire, autre = compte(s).id, compte(s).id
         for user_id in (gestionnaire, autre, None):

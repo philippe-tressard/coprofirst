@@ -96,10 +96,9 @@ class Evenement(SaisiPourMixin, AssisteIAMixin, table=True):
     #
     #  ⚠️ Nullable, et ça le reste : les visites créées AVANT le 01/09/2026 n'en
     #  ont pas, et un événement de maintenance saisi à la main n'a pas de contrat.
-    #  ⚠️ PAS de `foreign_key=` : SQLite ne sait pas ajouter une contrainte à une
-    #  table existante, et la migration 0165 a crashé en production pour l'avoir
-    #  tenté. Une base neuve et une base migrée doivent porter le même schéma —
-    #  le déclarer ici et pas là ferait diverger les deux en silence.
+    #  ⚠️ PAS de `foreign_key=` : la base de production porte la colonne sans
+    #  contrainte. Une base neuve et elle doivent porter le même schéma — le
+    #  déclarer ici ferait diverger les deux en silence.
     contrat_id: Optional[int] = Field(default=None)
     frequence_type: Optional[str] = Field(default=None)  # "semaines", "mois", "fois_par_an"
     frequence_valeur: Optional[int] = Field(default=None)

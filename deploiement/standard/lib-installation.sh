@@ -22,13 +22,12 @@ journal() { echo "$(date '+%F %T') $*"; }
 
 lire_env() { sed -n "s/^$1=//p" .env 2>/dev/null | tail -1 | tr -d '"'"'"'\r'; }
 
-#  Le moteur que `.env` désigne, par l'URL de sa base → sqlite|postgresql|inconnu.
+#  Le moteur que `.env` désigne, par l'URL de sa base → postgresql|inconnu.
 #  🔒 COPIE DÉCLARÉE de `scripts/lib/lib-replication.sh` : l'archive d'une
 #  réplique n'emporte pas les scripts des RPi (#1755). `test_deploiement_standard`
 #  exige que les deux corps restent identiques.
 moteur_de_url() {
     case "${1:-}" in
-        sqlite:*)                   echo sqlite ;;
         postgresql:*|postgresql+*)  echo postgresql ;;
         *)                          echo inconnu ;;
     esac

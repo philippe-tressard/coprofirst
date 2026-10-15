@@ -28,14 +28,14 @@ from app.models.core import HistoriqueMaintenance, TachePlanifiee
 from app.registre.contrat import ISSUES_MISE_A_JOUR
 from app.utils import horloge
 from app.utils.backup import nom_archive
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 
 SCRIPT_MAJ = Path(__file__).resolve().parents[2] / "deploiement" / "standard" / "mise-a-jour.sh"
 
 
 @pytest.fixture
 def base(monkeypatch):
-    moteur = moteur_memoire(partage=True)
+    moteur = moteur_de_test()
     monkeypatch.setattr(contexte, "moteur", lambda: moteur)
     monkeypatch.setattr(contexte, "nouvelle_session", lambda: Session(moteur))
     return moteur

@@ -182,9 +182,8 @@ def _portee_mois(session: Session, lecture: Lecture) -> dict:
 def _minuit_il_y_a(lecture: Lecture, jours: int) -> datetime:
     """Minuit, il y a `jours` jours de Paris — une DATE, comparée à `cree_le` (#1747).
 
-    C'était le texte « AAAA-MM-JJ » : SQLite comparait des chaînes, et
-    « 2026-09-09 » précède toute heure de ce jour ; PostgreSQL refuse de comparer
-    un horodatage à du texte. Le minuit naïf garde exactement la même borne.
+    Jamais le texte « AAAA-MM-JJ » : le serveur refuse de comparer un
+    horodatage à du texte. Le minuit naïf donne exactement la borne voulue.
     """
     return datetime.combine((lecture.now_paris - timedelta(days=jours)).date(), time.min)
 

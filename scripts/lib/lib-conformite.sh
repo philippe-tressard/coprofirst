@@ -231,8 +231,8 @@ conformite_verdicts() {
   # ── C37. La base PostgreSQL est-elle répliquée vers le standby ? (#1781) ─────
   #  Sous PostgreSQL (D16), un primaire sur l'actif, une réplique en continu sur
   #  le standby. Deux primaires, une réplique déconnectée ou en retard : le
-  #  failover promouvrait une base périmée. Sans objet tant que la production
-  #  est sous SQLite. Collecte, décision et constats : `lib-replication.sh`.
+  #  failover promouvrait une base périmée ; aucune base nulle part est un
+  #  échec. Collecte, décision et constats : `lib-replication.sh`.
   replication_verdicts
 
   # ── C38. Chaque nœud refuse-t-il le mot de passe SSH ? (#1941) ───────────────

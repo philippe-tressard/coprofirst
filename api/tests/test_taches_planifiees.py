@@ -193,12 +193,8 @@ def test_telemetrie_nest_pas_dupliquee_dans_la_table_maintenance():
 def test_retention_bornee_et_purgee_in_process():
     """Seuls les 10 derniers rapports sont conservés, et la purge est in-process.
 
-    Elle était faite par `maintenance.sh` via
-    `docker exec hostachy_api python -c "…engine…"` : un process DISTINCT
-    d'uvicorn ouvrant `app.db` pendant que l'API tourne. C'est le motif que la
-    règle d'or anti-corruption interdit — un process tiers qui referme la base
-    se croit dernière connexion et peut unlinker le WAL sous le pool. Purger une
-    dizaine de lignes ne justifiait pas ce risque.
+    Elle se fait dans l'API, par la route que `maintenance.sh` appelle — jamais
+    par un process tiers entré dans le conteneur.
 
     La limite d'affichage est bornée par la même constante : afficher plus que
     ce qu'on conserve n'aurait aucun sens.

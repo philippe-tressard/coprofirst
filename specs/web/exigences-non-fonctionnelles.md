@@ -133,7 +133,7 @@ que la spec elle-même avait légitimée.
 > La directive NIS2 ne s'applique pas directement à une copropriété privée, mais l'auto-hébergement sur un réseau local exposé impose les bonnes pratiques correspondantes.
 
 - **Mises à jour de sécurité** : le Raspberry Pi, Docker Engine et les images de conteneurs doivent être mis à jour au minimum mensuellement (Watchtower optionnel, cron manuel sinon).
-- **Cloisonnement réseau** : le RPi n'expose que les ports 80 et 443 (HTTP/HTTPS). L'accès SSH (port 22) est restreint au réseau local `192.168.1.0/24` via UFW — toute connexion SSH depuis l'extérieur est bloquée. L'interface d'administration Docker et la base SQLite ne sont jamais exposées.
+- **Cloisonnement réseau** : le RPi n'expose que les ports 80 et 443 (HTTP/HTTPS). L'accès SSH (port 22) est restreint au réseau local `192.168.1.0/24` via UFW — toute connexion SSH depuis l'extérieur est bloquée. L'interface d'administration Docker et la base PostgreSQL ne sont jamais exposées (la réplication n'écoute que sur le LAN, depuis l'autre nœud).
 - **Sauvegardes testées** : la procédure de restauration depuis backup doit être testée au minimum une fois par trimestre.
 - **Gestion des incidents** : en cas de compromission constatée (accès non autorisé, fuite de données), le conseil syndical dispose d'une procédure écrite de notification aux résidents et à la CNIL (Art. 33-34 RGPD).
 - **Authentification** : MFA recommandé pour les comptes `admin` et `conseil_syndical` (ANSSI, CERTFR-2021-AVI).

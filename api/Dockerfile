@@ -12,7 +12,6 @@ ENV GIT_HASH=$GIT_HASH
 # libpango/libcairo/libharfbuzz(+subset) + polices : rendu PDF WeasyPrint
 # (fiche arrivant, annonces de hall). Aucune compilation : install rapide sur ARM64.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libsqlite3-dev \
     curl \
     libpango-1.0-0 \
     libpangoft2-1.0-0 \
@@ -41,7 +40,7 @@ COPY . .
 #
 #  ⚠️ `USER app` n'est PAS posé ici, et c'est délibéré : les trois volumes sont
 #  déjà écrits par root sur les deux nœuds, et un conteneur non-root ne pourrait
-#  plus ouvrir `app.db` — l'API tomberait au premier déploiement. `start.sh`
+#  plus y écrire — l'API tomberait au premier déploiement. `start.sh`
 #  garde donc root le temps de reprendre les propriétés, puis LAISSE root
 #  (`setpriv`, présent dans l'image de base). La migration se fait ainsi toute
 #  seule, sur les deux nœuds, sans geste manuel sur une base en production.

@@ -2,14 +2,12 @@
 # =============================================================================
 #  mesure-postgresql.sh — La suite pytest sur PostgreSQL (#1747)
 #
-#  Lancé par le workflow « PostgreSQL », dans `api/`, avec `TESTS_BASE_URL`. Il
-#  rejoue TOUTE la suite sur le moteur cible (D4), en tranches parallèles, et
-#  écrit le bilan au résumé du run — tests verts, en échec, en erreur, et les
-#  fichiers qui échouent.
-#
-#  Premier temps du lot : INFORMATIF, il ne rougissait que si la mesure
-#  n'avait pas pu se faire. Second temps : la suite y est verte, il est REQUIS —
-#  un test qui échoue sur PostgreSQL bloque la fusion, comme sur SQLite.
+#  Lancé dans `api/`, avec `TESTS_BASE_URL`, par les deux jobs qui jouent la
+#  suite — « Tests Python (pytest) » (`ci.yml`, vers `dev`) et « Suite pytest sur
+#  PostgreSQL » (`postgresql.yml`, vers `main`) — et par le rejeu du poste. Il
+#  rejoue TOUTE la suite, en tranches parallèles, et écrit le bilan au résumé du
+#  run — tests verts, en échec, en erreur, et les fichiers qui échouent. Un test
+#  qui échoue bloque la fusion.
 #
 #  Code de sortie (fonction PURE `issue_suite`, testée par --selftest) :
 #    toutes les tranches à 0 → 0 ;
@@ -49,7 +47,7 @@ if [ "${1:-}" = "--selftest" ]; then
     exit "$fail"
 fi
 
-[ -n "${TESTS_BASE_URL:-}" ] || { echo "::error::TESTS_BASE_URL absent : la suite tournerait sur SQLite, et ne mesurerait rien."; exit 3; }
+[ -n "${TESTS_BASE_URL:-}" ] || { echo "::error::TESTS_BASE_URL absent : la suite ne peut pas tourner."; exit 3; }
 
 TRANCHES=${TRANCHES:-4}
 dossier=$(mktemp -d)

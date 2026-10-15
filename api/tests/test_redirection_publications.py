@@ -28,7 +28,7 @@ from sqlmodel import Session
 from app.database import get_session
 from app.main import app
 from app.models.core import RoleUtilisateur, Ticket
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 
 #: (préfixe d'URL, champ de l'affaire qui garde l'ancien numéro, module du routeur,
 #:  seule route qui doit y rester)
@@ -40,7 +40,7 @@ REDIRECTIONS = (
 
 @pytest.fixture(name="session")
 def session_fixture():
-    with Session(moteur_memoire(partage=True)) as session:
+    with Session(moteur_de_test()) as session:
         yield session
 
 

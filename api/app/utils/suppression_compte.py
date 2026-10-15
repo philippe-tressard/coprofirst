@@ -215,10 +215,9 @@ def supprimer_compte(session: Session, user_id: int) -> dict[str, int]:
     #
     #  Le modèle compte plus de cinquante références à `utilisateur`, dont une
     #  majorité obligatoires. Vingt-six tables n'étaient nettoyées nulle part —
-    #  publications, tickets, messages, idées, sondages, signalements… La
-    #  suppression réussissait quand même, parce que SQLite tournait avec
-    #  `foreign_keys=OFF`, et laissait en base des lignes pointant vers un compte
-    #  disparu.
+    #  publications, tickets, messages, idées, sondages, signalements… Faute de
+    #  clés vérifiées, la suppression réussissait quand même, et laissait en base
+    #  des lignes pointant vers un compte disparu.
     #
     #  ⚠️ Une liste tenue à la main ne peut pas suivre : c'est bien ce qui s'est
     #  passé. `purger` LIT les métadonnées au lieu de les réciter.

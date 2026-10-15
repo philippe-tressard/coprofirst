@@ -250,24 +250,6 @@ export const admin = {
 	comptesEnAttenteEnrichis: () =>
 		api.get<CompteEnAttenteEnrichi[]>('/admin/comptes-en-attente/enrichis'),
 
-	//  ── Intégrité de la base (`IntegriteReferentielle`) ────────────────────────
-	clesEtrangeres: () => api.get<ReleveOrphelins>('/admin/db/cles-etrangeres'),
-	/**  Ce qui PARTIRAIT — l'endpoint ne supprime rien sans `confirmer=true`. */
-	simulerPurgeOrphelins: () =>
-		api.post<{ seraient_supprimees?: number; seraient_deliees?: number }>(
-			'/admin/db/purger-orphelins',
-		),
-	/**
-	 *  🔴 La purge RÉELLE, et elle est irréversible.
-	 *
-	 *  Deux méthodes plutôt qu'un drapeau `confirmer: boolean`, délibérément :
-	 *  une signature où un booléen décide entre « compter » et « détruire » se
-	 *  lit mal sur la ligne d'appel, et un défaut de valeur y devient une
-	 *  destruction par omission. Ici, le nom dit ce qui se passe.
-	 */
-	purgerOrphelins: () =>
-		api.post<{ supprimees: number; deliees: number }>('/admin/db/purger-orphelins?confirmer=true'),
-
 	/** L'état des tâches planifiées — lu par `TachesPlanifiees`. */
 	santeMaintenance: () => api.get<SanteMaintenance>('/admin/maintenance/sante'),
 
@@ -448,23 +430,6 @@ export const config = {
 		postFormData<{ site_logo: string }>('/config/logo', { file: fichier }),
 	supprimerLogo: () => api.delete<{ site_logo: null }>('/config/logo'),
 };
-
-/**
- *  Le relevé des lignes qui référencent un parent disparu — `admin.clesEtrangeres`.
- *
- *  ⚠️ `inconnu` n'est PAS `ok: false` : « je n'ai pas pu mesurer » et « rien à
- *  signaler » sont deux réponses différentes, et l'écran doit les distinguer
- *  (`standards/04` — un contrôle qui ne peut pas s'exécuter rend INCONNU).
- *  Le type vivait dans `IntegriteReferentielle.svelte` ; il décrit une réponse
- *  d'API, donc sa place est ici, avec la méthode qui la rend (#801).
- */
-export interface ReleveOrphelins {
-	ok: boolean;
-	inconnu: boolean;
-	orphelins?: number;
-	par_relation?: { table: string; colonne: string; table_parente: string; lignes: number }[];
-	erreur?: string;
-}
 
 /**
  *  Un compte rendu des contrôles de fiabilité (`check-reliability.sh`).

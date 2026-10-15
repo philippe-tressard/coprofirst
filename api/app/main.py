@@ -24,7 +24,7 @@ from app.utils.limiter import limiter
 #  `uvicorn.error`). Un `logging.getLogger(__name__)` applicatif remonte au logger
 #  RACINE, qui n'a aucun destinataire : Python se rabat alors sur son handler de
 #  dernier recours, lequel n'émet qu'à partir de WARNING. Conséquence : tous les
-#  `info` du produit — relève des réponses, checkpoint WAL, sauvegardes
+#  `info` du produit — relève des réponses, sauvegardes
 #  orphelines, envois d'e-mails — n'étaient écrits NULLE PART.
 #
 #  On l'a payé deux fois sur le même sujet : #747 a ajouté un battement à la
@@ -44,7 +44,6 @@ _logger = _logging.getLogger("hostachy.api")
 
 from app.utils.reponse_utc import UTCJSONResponse
 
-from app.database import _run_migrations
 from app import contexte, erreurs_globales
 from app.utils import demo
 from app.routers import (
@@ -95,8 +94,6 @@ from app.utils.plateforme import NOM_PLATEFORME
 async def lifespan(app: FastAPI):
     # Initialisation au démarrage
     # Note : la création des tables est gérée par Alembic (start.sh)
-    # _run_migrations() gère uniquement les migrations manuelles SQLite (ALTER TABLE)
-    _run_migrations()
     seed()
 
     # Purge des refresh tokens — les échangés restent jusqu'à leur expiration,
@@ -295,19 +292,6 @@ async def lifespan(app: FastAPI):
     yield
     # Nettoyage à l'arrêt
     scheduler.shutdown()
-
-    # WAL checkpoint au shutdown : vide le fichier .db-wal avant que Docker tue le process.
-    # Sans ça, si un job APScheduler est interrompu par SIGTERM, le WAL reste dans un état
-    # intermédiaire → "database disk image is malformed" au prochain démarrage.
-    try:
-        from app.dialecte import point_de_controle
-
-        with contexte.moteur().connect() as _conn:
-            point_de_controle(_conn)
-            _conn.commit()
-        _logger.info("WAL checkpoint effectué au shutdown.")
-    except Exception as _e:
-        _logger.warning("WAL checkpoint échoué au shutdown (non bloquant) : %s", _e)
 
 
 import os as _os

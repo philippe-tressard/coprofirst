@@ -30,8 +30,8 @@ on la CHERCHE.
 
 ## Ce que la base contenait (mesuré le 02/10/2026)
 
-Sur la sauvegarde hors site du 30/09/2026 (archive close, lue sur le poste —
-jamais `app.db` à chaud) : 27 comptes, **aucune** adresse hors de la forme
+Sur la sauvegarde hors site du 30/09/2026 (archive close, lue sur le poste) :
+27 comptes, **aucune** adresse hors de la forme
 normalisée, aucun couple de comptes qui ne diffèrent que par la casse. Aucune
 migration de normalisation n'a donc été écrite : il n'y avait rien à migrer, et
 les écritures passent toutes par cette forme depuis ce lot.

@@ -48,8 +48,8 @@ def purger_ligne(session, modele, ligne_id) -> int:
 
     🔴 Le pendant de `purger_referentiellement` pour un démontage ciblé. Les
     fixtures écrivaient `session.delete(session.get(Modele, id))` — vingt et une
-    fois — ce qui supprime la ligne SANS ce qui la référence. Tant que SQLite ne
-    vérifiait rien, ces purges « marchaient » ; sous `foreign_keys=ON` elles
+    fois — ce qui supprime la ligne SANS ce qui la référence. Tant que les clés
+    n'étaient pas vérifiées, ces purges « marchaient » ; avec elles, elles
     refusent, et c'est le bon comportement (#546).
 
     ⚠️ Une fixture ne doit pas énumérer les dépendances : `purge_referentielle`
@@ -109,8 +109,8 @@ def vider_perimetres(session) -> None:
 
     🔴 `session.exec(delete(Perimetre))` ne marche pas : la table se référence
     elle-même, et supprimer tous les nœuds d'un coup viole la clé sur les enfants
-    dès que `foreign_keys=ON`. Quatre fixtures l'écrivaient ainsi (#546), et rien
-    ne le signalait tant que SQLite ne vérifiait rien.
+    dès que les clés sont vérifiées. Quatre fixtures l'écrivaient ainsi (#546), et
+    rien ne le signalait tant qu'elles ne l'étaient pas.
 
     On efface PAR VAGUES, des feuilles vers la racine : à chaque tour, les nœuds
     dont plus personne n'est l'enfant. C'est la seule façon correcte sans
@@ -151,6 +151,7 @@ def vider_patrimoine(session, modeles_sup=()) -> None:
     from sqlmodel import select
 
     from app.models.core import Batiment, ConfigSite, Copropriete
+    from app.models.perimetre import Perimetre
     from app.seed.patrimoine import CLE_SEMEE
 
     marqueur = session.get(ConfigSite, CLE_SEMEE)
@@ -193,14 +194,35 @@ def vider_patrimoine(session, modeles_sup=()) -> None:
     for ligne in session.exec(select(Copropriete)).all():
         session.delete(ligne)
     session.commit()
+    realigner_identifiants(session, Copropriete, Batiment, Perimetre)
+
+
+def realigner_identifiants(session, *modeles) -> None:
+    """Le prochain identifiant de chaque table repart du plus grand présent, plus un.
+
+    Une table vidée rend donc à nouveau 1 — le patrimoine de test monté après une
+    purge porte les mêmes identifiants à chaque test (`bat:1`, « Bâtiment 1 »),
+    quel que soit l'ordre des fichiers. Une séquence du serveur, elle, ne revient
+    jamais en arrière seule.
+    """
+    from sqlalchemy import text
+
+    for modele in modeles:
+        table = modele.__tablename__  # identifiant lu dans les métadonnées, jamais une entrée
+        session.exec(
+            text(
+                f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), "  # noqa: S608
+                f"coalesce((SELECT max(id) FROM {table}), 0) + 1, false)"
+            )
+        )
+    session.commit()
 
 
 def monter_batiments(session, numeros=("1", "2", "3", "4")) -> list:
     """Monte une copropriété et ses bâtiments. Rend leurs identifiants, dans l'ordre.
 
     🔴 Les fixtures posaient des `Perimetre(batiment_id=3)` sur des bâtiments
-    qui n'existaient pas — neuf violations de clé étrangère sous
-    `foreign_keys=ON` (#546). Elles ne pouvaient pas faire autrement sans
+    qui n'existaient pas — neuf violations de clé étrangère (#546). Elles ne pouvaient pas faire autrement sans
     recopier le montage, qui vit dans la fixture `batiments` de la conftest et
     n'est pas atteignable depuis un test.
 
@@ -245,20 +267,17 @@ def etat_invalide(session):
     🔴 Trois tests du dépôt éprouvent la ROBUSTESSE face à une donnée que la base
     ne devrait pas contenir : un `parent_id` qui ne pointe sur rien, une affiche
     dont la publication a disparu. C'est leur objet — vérifier que la remontée
-    s'arrête sans lever, que l'écran ne rend pas 500. Sous `foreign_keys=ON` ces
-    lignes deviennent impossibles à créer, et les tests tombaient au montage.
+    s'arrête sans lever, que l'écran ne rend pas 500. Avec les clés vérifiées, ces
+    lignes deviennent impossibles à créer, et les tests tomberaient au montage.
 
-    ⚠️ **La tentation était de les supprimer**, et c'eût été le pire choix : on
-    aurait retiré les contrôles qui protègent d'une corruption au moment même où
-    l'on active le mécanisme censé la prévenir. La production a tourné à
-    `foreign_keys=OFF` jusqu'au 30/08/2026, les bases existantes portent peut-être
-    déjà de telles lignes, et le PRAGMA ne relit pas l'existant : le code doit
-    survivre à ce qu'il rencontrera.
+    ⚠️ **La tentation était de les supprimer**, et c'eût été le pire choix : une
+    colonne sans clé étrangère (`ticket_id` d'une affiche…) peut porter une telle
+    ligne en production, et le code doit survivre à ce qu'il rencontrera.
 
     ⚠️ **C'est une porte, donc elle se voit.** Le nom la nomme, l'appel est
-    local, et le PRAGMA est rétabli même si le bloc lève. Une suspension globale
-    — un interrupteur de session, un réglage de conftest — aurait désarmé la
-    vérification partout sans que personne ne le remarque.
+    local, et la suspension ne dure que la transaction du bloc. Une suspension
+    globale — un interrupteur de session, un réglage de conftest — aurait
+    désarmé la vérification partout sans que personne ne le remarque.
 
     ⚠️ Sans effet quand les clés ne sont pas actives (le régime par défaut de la
     suite) : le bloc s'exécute alors exactement comme avant.
@@ -269,26 +288,15 @@ def etat_invalide(session):
 
     @contextmanager
     def _porte():
-        #  On ne peut pas suspendre les clés au milieu d'une transaction : SQLite
-        #  ignore le PRAGMA tant qu'une transaction est ouverte, en silence.
+        #  La suspension vaut pour la TRANSACTION qui s'ouvre ici (`SET LOCAL`) :
+        #  le `commit` du bloc la referme, et la connexion suivante retrouve le
+        #  régime qu'elle avait — un helper qui laisserait l'environnement
+        #  autrement qu'il l'a trouvé déplacerait le défaut au lieu de le traiter.
         session.commit()
-        #  🔴 On RELIT l'état avant de le changer, et c'est ce qui manquait au
-        #  premier jet : le `finally` reposait `ON` en dur. La suite tourne à
-        #  `OFF` par défaut et partage UNE connexion (`sqlite:///:memory:`,
-        #  `SingletonThreadPool`) — cette porte activait donc les clés pour tous
-        #  les tests suivants, et un fichier sans rapport échouait selon l'ordre
-        #  alphabétique. Un helper qui laisse l'environnement autrement qu'il
-        #  l'a trouvé est un helper qui déplace le défaut au lieu de le traiter.
-        #  ⚠️ `.one()` rend une `Row`, qui n'est PAS une `tuple` au sens de
-        #  `isinstance` — mon premier jet testait le type et gardait la Row,
-        #  toujours vraie : la porte reposait donc `ON` dans tous les cas, et le
-        #  défaut qu'elle venait de corriger revenait à l'identique.
-        actif = session.exec(text("PRAGMA foreign_keys")).one()[0]
-        session.exec(text("PRAGMA foreign_keys=OFF"))
+        session.exec(text("SET LOCAL session_replication_role = replica"))
         try:
             yield
         finally:
             session.commit()
-            session.exec(text(f"PRAGMA foreign_keys={'ON' if actif else 'OFF'}"))
 
     return _porte()

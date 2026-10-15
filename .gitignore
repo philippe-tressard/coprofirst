@@ -12,10 +12,8 @@ env/
 !env.example
 !_template.env
 
-# Base de donnees SQLite (donnees locales, ne pas versionner)
+# Fichiers de donnees locaux (ne pas versionner)
 *.db
-*.sqlite
-*.sqlite3
 
 # Secrets & config locaux
 .env

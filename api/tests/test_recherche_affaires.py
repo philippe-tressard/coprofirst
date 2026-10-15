@@ -43,7 +43,7 @@ from app.utils import mes_batiments
 from app.utils import perimetres as P
 from app.utils.noms import nom_affiche
 from app.utils.visibility import ticket_visible
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 from tests.aides_purge import purger_ligne
 
 
@@ -212,7 +212,7 @@ def test_la_route_n_est_pas_avalee_par_la_fiche():
     from app.database import get_session
     from app.routers.tickets import router
 
-    moteur = moteur_memoire(partage=True)
+    moteur = moteur_de_test()
     mot = _mot()
     with Session(moteur) as session:
         auteur = _utilisateur(session, "résident", None)

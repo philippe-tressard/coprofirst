@@ -31,8 +31,7 @@ précédente, même validée). Ce champ n'est pas dans la liste du ticket ; il e
 ce qui rend la règle de remplacement écrivable sans deviner.
 
 Colonnes simples pour `evolution_id`, `ticket_id` restant une vraie clé
-étrangère : les deux tables sont NEUVES (0255), SQLite accepte la contrainte à
-la création.
+étrangère : les deux tables sont nées avec elle.
 """
 
 from __future__ import annotations

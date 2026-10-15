@@ -1,6 +1,6 @@
 ---
 name: security-audit
-description: "Run a complete OWASP Top 10 security audit on the 5Hostachy project (FastAPI + SvelteKit + SQLite). Use when: checking for vulnerabilities, reviewing security posture, before a release, after adding auth/upload/API features."
+description: "Run a complete OWASP Top 10 security audit on the 5Hostachy project (FastAPI + SvelteKit + PostgreSQL). Use when: checking for vulnerabilities, reviewing security posture, before a release, after adding auth/upload/API features."
 argument-hint: "Optional: scope the audit (e.g. 'auth only', 'uploads', 'full')"
 ---
 
@@ -10,7 +10,7 @@ Audit de sécurité complet du projet. Exécuter chaque vérification dans l'ord
 
 ## Stack technique
 
-- **Backend** : FastAPI + SQLModel + SQLite
+- **Backend** : FastAPI + SQLModel + PostgreSQL
 - **Frontend** : SvelteKit (SSR + CSR)
 - **Auth** : JWT en cookie HTTP-only (bcrypt)
 - **Déploiement** : Docker sur Raspberry Pi 5, Caddy reverse proxy

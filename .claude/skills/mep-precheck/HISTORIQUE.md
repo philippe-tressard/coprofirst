@@ -20,7 +20,7 @@ Déroulé réel, après **coupure d'électricité** (confirmé : rpi2 a redémar
 côté rpi1, mais perte de la connectivité externe, d'où `github` injoignable et
 `Email KO`) :
 1. 02:00 — bascule rpi2 → rpi1 réussie ; les 2 flags disent `rpi1`.
-2. Coupure ; rpi1 cesse de servir (dernier checkpoint de sa base à 04:53).
+2. Coupure ; rpi1 cesse de servir (dernière écriture en base à 04:53).
 3. 06:53 — rpi2, encore debout, voit le site HS, tente un failover, **échoue**
    (réseau) mais a déjà écrit `.active=rpi2`. Les 2 nœuds se croient actifs.
 4. 06:57→07:42 — `health-watch.sh` ne bascule que s'il se croit **standby** (« je
@@ -58,33 +58,8 @@ premier n'est pas muet.
 alimentation : la redondance ne protège **pas** contre une coupure électrique, elle
 protège contre la panne d'un nœud. Après tout événement électrique, contrôler dans
 l'ordre : point 2 (les 2 flags), point 3 (split-brain), `uptime` sur les 2 pour
-savoir qui a redémarré, puis point 4 (la base a-t-elle été fermée proprement —
-`app.db-wal` présent, `quick_check` via `GET /admin/db/integrite`).
-
-> ### 🚨 Points 4 et 9 — ce pré-check contenait lui-même l'opération interdite
-> Jusqu'au 17/07/2026, le point 4 disait `PRAGMA integrity_check` et le point 9 fournissait une
-> commande `docker exec -w /app hostachy_api python3 -c "from app.database import engine …"`.
-> **Exécuter ces commandes pendant que l'API tourne casse la base** (unlink du WAL sous le pool
-> → `disk I/O error` → pertes de données). C'est exactement ce qui s'est produit le 17/07.
-> Le pré-check ne doit **jamais** ouvrir `app.db`. Cf. « Règle d'or anti-corruption DB ».
-
-**Point 4 — méthode sans `sudo` (26/07/2026).** Les commandes ci-dessous utilisaient
-`sudo`, qui échoue en SSH non interactif (« a terminal is required to read the
-password ») ; le `grep -c` qui suit renvoie alors `0` et on croit le contrôle vert.
-Passer par un conteneur jetable, qui lit le volume **sans `sudo` et sans ouvrir la
-base** (`ls`/`stat` n'ouvrent pas un fichier SQLite) :
-```bash
-docker run --rm -v 5hostachy_app_data:/data:ro python:3.12-slim \
-  ls -la /data/app.db /data/app.db-wal /data/app.db-shm
-docker logs hostachy_api --since 1h 2>&1 | grep -c 'disk I/O error'   # 0
-```
-Le signal **décisif** est la **présence** de `app.db-wal` et `app.db-shm` sur le
-disque : dans le scénario de corruption, ils sont *unlinkés* tout en restant ouverts
-par uvicorn. Un `mtime` de `app.db` figé n'est **pas** à lui seul une alerte — sans
-trafic il n'y a rien à checkpointer ; croiser avec le `mtime` du WAL (s'il ne bouge
-pas non plus, il n'y a simplement pas d'écriture). Intégrité réelle : contrôlée
-in-process par `backup.py` (03:00) et `health_monitor.py` (06:00), ou à la demande
-via `GET /admin/db/integrite`.
+savoir qui a redémarré, puis point 22 (un seul primaire, une réplique qui reçoit)
+et l'intégrité de la base (`GET /admin/db/integrite`).
 
 **Point 5 — méthode sans token (26/07/2026) :** `GET /status` du bridge répond
 `{"error":"Unauthorized"}` sans clé d'API — le pré-check ne doit pas exiger un
@@ -98,25 +73,8 @@ Vert si le dernier `WhatsApp connected ✓` est **postérieur** au dernier
 reconnexion sont le **fonctionnement normal** du backoff v2.20.x, pas une panne — ne
 pas confondre avec la boucle morte du 24/07 (fermetures sans jamais de reconnexion).
 
-**Point 4 — comment vérifier sans ouvrir la base** (sur le RPi actif) :
-```bash
-DB_DIR=$(docker volume inspect 5hostachy_app_data --format '{{.Mountpoint}}')
-sudo stat -c '%n mtime=%y' $DB_DIR/app.db     # doit AVOIR BOUGÉ depuis le dernier checkpoint
-                                              # (backup 03:00 / redémarrage) — figé = ALERTE
-sudo lsof -p $(docker inspect hostachy_api --format '{{.State.Pid}}') | grep -c deleted   # 0
-docker logs hostachy_api --since 1h 2>&1 | grep -c 'disk I/O error'                       # 0
-```
-L'intégrité elle-même est déjà contrôlée **in-process** et alerte par email en cas de problème :
-`backup.py` (03:00, backup annulé si KO) et `health_monitor.py` (06:00). Vérification à la demande :
-`GET /admin/db/integrite` (in-process, session admin). **Jamais `docker exec` ni `sqlite3` hôte.**
-
-**Point 9 — comment vérifier sans ouvrir la base** : interface **Admin → Emails → Historique**,
-filtrer `statut = erreur` sur 7 jours (l'endpoint `GET /admin/emails/historique` s'exécute
-in-process). Si l'API est arrêtée et la base au repos (0 writer), `sqlite3` hôte redevient sûr :
-```bash
-sudo sqlite3 "$DB_DIR/app.db" "SELECT code, COUNT(*), MAX(cree_le) FROM historique_email \
-  WHERE statut='erreur' AND cree_le >= datetime('now','-7 days') GROUP BY code;"
-```
+**Point 9 — comment vérifier** : interface **Admin → Emails → Historique**,
+filtrer `statut = erreur` sur 7 jours (`GET /admin/emails/historique`).
 
 **Point 7 — pourquoi :** un script peut perdre son bit d'exécution sans prévenir (ex. `auto-deploy.sh` le 21/04 → `Permission denied` silencieux dans le cron pendant des semaines, empêchant le déploiement automatique de v2.18.11). Vérifier en particulier `auto-deploy.sh`, `bascule.sh`, `health-watch.sh`, `maintenance.sh`, `MaJ-Hostachy.sh`, `check-reliability.sh`, `boot-role-guard.sh`. Si un bit `x` manque : `chmod +x <script>` sur le(s) RPi concerné(s). (`check-stack.sh` n'y figure plus depuis le 06/08/2026 : il n'est plus dans aucun cron — voir le point 8.)
 
@@ -193,30 +151,20 @@ le test qui suit devient inexploitable. Reproduit le 05/08/2026 dans un contrôl
 sont apparus « illisibles » alors qu'ils étaient simplement sans erreur.
 
 **Point 9 — pourquoi :** les emails partent en `BackgroundTask` et échouent **silencieusement** — l'erreur n'apparaît que dans la table `historique_email`, jamais dans les logs API ni à l'écran. La même cause racine (un template Jinja2 référence une variable absente du contexte du point d'appel → `UndefinedError`) s'est produite deux fois en 12 jours : `reinitialisation_mdp` le 03/06 (`destinataire.prenom` manquant) puis `ticket_statut_change` le 15/06 (même variable). Dans les deux cas, découvert seulement après un signalement utilisateur « je ne reçois pas mes mails ». Comme le point 8, ce point lit **le symptôme** quelle qu'en soit la cause (contexte template, SMTP HS, adresse invalide, domaine `.local` filtré…). Si une ligne `erreur` apparaît → ouvrir le template et le contexte du point d'appel (`send_email(code=...)`), vérifier que toute variable `{{ x.y }}` du template est fournie ; aligner sur un template voisin qui fonctionne (ex. `verification_email`).
-**Repli quand l'UI n'est pas accessible (26/07/2026)** — si le **standby** n'a aucun
-conteneur, sa base est au repos : `sqlite3`/Python y sont sûrs (règle d'or). On lit
-l'historique sur une **copie**, sans jamais ouvrir l'original, ce qui donne l'état
-jusqu'à la dernière bascule (angle mort : les écritures postérieures sur l'actif) :
+**Repli quand l'UI n'est pas accessible** — lire la table sur le **primaire** (le
+nœud actif) : un autre processus peut lire la base PostgreSQL.
 ```bash
-ssh <standby> "cat > /tmp/m.py" <<'PY'
-import sqlite3, shutil
-shutil.copy("/data/app.db", "/tmp/m.db")
-c = sqlite3.connect("/tmp/m.db")
-print(c.execute("SELECT code, COUNT(*), MAX(cree_le) FROM historique_email "
-                "WHERE statut='erreur' GROUP BY code").fetchall())
-PY
-ssh <standby> "docker run --rm -v 5hostachy_app_data:/data:ro -v /tmp/m.py:/m.py:ro \
-  python:3.12-slim python /m.py; rm -f /tmp/m.py"
+ssh <actif> "docker exec hostachy_postgres psql -U coprofirst -d coprofirst -Atc \
+  \"SELECT code, COUNT(*), MAX(cree_le) FROM historique_email WHERE statut='erreur' \
+     AND cree_le >= now() - interval '7 days' GROUP BY code\""
 ```
-Référence au 26/07 : 7 erreurs sur tout l'historique, toutes antérieures au 15/06 et
-correspondant aux deux incidents déjà corrigés. Toute nouvelle ligne est donc un
-signal fort.
+Toute ligne est un signal fort.
 
 **Point 10 — pourquoi :** `auto-deploy.sh` ne tourne que sur le RPi **actif** (il fait `docker compose up -d` → l'exécuter sur le standby créerait un split-brain). Le code du standby ne suit donc jamais `main` : il dérive derrière la DB. Le 16/06/2026, l'actif (rpi2) avait appliqué la migration `0111` ; la bascule nocturne a poussé cette DB vers rpi1 dont le code était resté à `0110` → `alembic upgrade head` au démarrage = `Can't locate revision identified by '0111'` → `start.sh` (`set -e`) → API en crash-loop → timeout phase 5 → bascule annulée. Correctif pérenne : `bascule.sh` phase 0 resynchronise le code du peer sur le commit de l'actif (`git reset --hard` + rebuild) **avant** toute opération destructive, et avorte proprement (prod intacte) si la resync échoue. Ce point 10 est le garde-fou amont : si les 2 HEAD diffèrent avant une MEP → resynchroniser le standby (`ssh <standby> 'cd /opt/5hostachy && git fetch origin main && git reset --hard origin/main && docker compose build'`, **sans** `up -d`).
 
 **Point 11 — pourquoi :** `auto-deploy.sh` est le **seul cron utilisateur** (`ptressard`) ; tous les autres crons tournent en root. Or `/var/log` est `root:root` : si `hostachy-deploy.log` devient root-owned, la redirection `>> /var/log/hostachy-deploy.log` du cron user échoue en `Permission denied` et **cron n'exécute même pas le script** → l'actif cesse de se déployer **silencieusement**. Découvert le 15/07/2026 : rpi1 bloqué à v2.20.7 malgré 3 merges, chaque MEP exigeant un `bash auto-deploy.sh` manuel — invisible au point 8 (aucun log produit = angle mort). Cause structurelle : `maintenance.sh` (root, dimanche) faisait `mv .tmp log` → repassait le log root-owned **chaque semaine**, cassant le cron user de façon permanente après la 1ʳᵉ rotation. Corrigé (v2.20.10) : `chown 1000:1000` du log après rotation dans `maintenance.sh` (self-healing sur les 2 RPi) + contrôle automatisé **C13** dans `check-reliability.sh` (cron */15). Au pré-check : si le log est root-owned → `sudo chown ptressard:ptressard /var/log/hostachy-deploy.log` ; si HEAD actif ≠ `origin/main` alors que `dev` est mergé → auto-deploy ne tourne pas, diagnostiquer (ownership du log en premier) **avant** MEP.
 
-**Point 12 — pourquoi :** le point 10 vérifie que le **git** du RPi est à jour, mais **la parité de HEAD ne garantit PAS que l'image Docker en cours a été construite depuis ce commit**. Le 18/07/2026, après la bascule nocturne rpi1 → rpi2, rpi2 était à jour côté git (`1211767`) mais son **image API datait du 16/07** (rebuild sauté par `bascule.sh` phase 0, qui ne rebuildait que si les HEAD différaient) → le conteneur servait l'ancien `flux.py` sans le filtre `_is_archived` (fix v2.20.16) → le bug de la publication épinglée résolue **réapparaissait** au tableau de bord. Diagnostic (lecture seule, **ne touche pas `app.db`**) : `docker inspect hostachy_api --format '{{.Created}}'` antérieur au dernier commit servi = image périmée ; confirmer avec `docker exec hostachy_api grep -c <marqueur> /app/...` vs le même `grep` sur `/opt/5hostachy/...` (disque). Remédiation (réversible, cycle standard, **pas** une violation de la règle d'or) : `cd /opt/5hostachy && docker compose build <svc> && docker compose up -d <svc>`. Correctif pérenne (v2.20.19) : `bascule.sh` phase 0 rebuild **toujours** l'image du peer, même à git égal (cache Docker → quasi instantané si rien n'a changé). Cf. [[project_bascule_image_stale]].
+**Point 12 — pourquoi :** le point 10 vérifie que le **git** du RPi est à jour, mais **la parité de HEAD ne garantit PAS que l'image Docker en cours a été construite depuis ce commit**. Le 18/07/2026, après la bascule nocturne rpi1 → rpi2, rpi2 était à jour côté git (`1211767`) mais son **image API datait du 16/07** (rebuild sauté par `bascule.sh` phase 0, qui ne rebuildait que si les HEAD différaient) → le conteneur servait l'ancien `flux.py` sans le filtre `_is_archived` (fix v2.20.16) → le bug de la publication épinglée résolue **réapparaissait** au tableau de bord. Diagnostic (lecture seule) : `docker inspect hostachy_api --format '{{.Created}}'` antérieur au dernier commit servi = image périmée ; confirmer avec `docker exec hostachy_api grep -c <marqueur> /app/...` vs le même `grep` sur `/opt/5hostachy/...` (disque). Remédiation (réversible, cycle standard) : `cd /opt/5hostachy && docker compose build <svc> && docker compose up -d <svc>`. Correctif pérenne (v2.20.19) : `bascule.sh` phase 0 rebuild **toujours** l'image du peer, même à git égal (cache Docker → quasi instantané si rien n'a changé). Cf. [[project_bascule_image_stale]].
 ⚠ **Faux positif à écarter d'abord (26/07/2026) :** une image antérieure au commit HEAD
 n'est une anomalie que si ce commit **touche ce service**. Ce jour-là l'image API
 précédait le HEAD de 10 min, mais le commit ne modifiait que `front/` — rien
@@ -341,7 +289,7 @@ Colonne clé : **qui** a détecté.
 | `.active` incohérent → failover neutralisé, site HS ~50 min | Pré-check (manuel, 7 h après le début) | Contrôle ponctuel pour un invariant permanent, et libellé trop vague → **point 2** réécrit, + à automatiser |
 | `auto-deploy` de rpi1 franchissant l'anti-split-brain 7 h 30 | Lecture de log a posteriori | Aucune détection de battement manquant → **point 8** étendu |
 | Aucune alerte pendant la panne (`Email KO`) | Lecture de log | Alerting mono-canal, qui tombe avec le réseau → **point 13** |
-| Faux vert « 0 inode fantôme » (sudo muet en SSH) | Demande de vérification | **Le pré-check lui-même** était en cause → **règle 1** + point 4 sans `sudo` |
+| Faux vert : un `grep -c` à `0` sur une sortie vide (sudo muet en SSH) | Demande de vérification | **Le pré-check lui-même** était en cause → **règle 1** |
 | Faux positif « image API périmée » | Vérification avant d'alarmer | Point 12 ne bornait pas le périmètre → **règle 3** + point 12 corrigé |
 | Point 12 en FAIL après une MEP du seul front (04/10/2026, #1658 puis v2.102.1) | Le « borné au périmètre » ci-dessus n'avait jamais été écrit dans le code : il comparait le conteneur de l'API au dernier commit du DÉPÔT | `verdict_image_service` (`lib-images-servies.sh`) : chaque conteneur face au dernier commit de SON répertoire, auto-testé |
 | Version périmée servie à un onglet resté ouvert (footer bloqué en v2.22.8 après la MEP v2.23.0) | **L'utilisateur, en lisant le footer** | Le cache d'une PWA n'était surveillé par rien, et P3 lit « la version servie » sur le serveur, pas chez le client → bandeau de mise à jour (v2.24.0) + `test_pwa_maj.py` |

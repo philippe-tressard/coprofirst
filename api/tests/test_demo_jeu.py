@@ -17,7 +17,7 @@ from sqlmodel import Session, func, select
 
 from app import contexte
 from app.config import get_settings
-from app.dialecte import url_fichier
+
 from app.demo.charger import BaseNonVierge, charger
 from app.auth.jwt import verify_password
 from app.demo.comptes import HABITANTS
@@ -35,16 +35,18 @@ from app.models.tickets import MessageTicket, TicketEvolution
 from app.utils import horloge
 from app.utils.config_site import config_site
 from app.utils.stockage import stockage
+from tests.aides_base import adresse_de_test
 from tests.aides_pdf import DISPONIBLE, besoin_weasyprint
 
 
 @pytest.fixture(scope="module")
 def copro(tmp_path_factory):
     dossier = tmp_path_factory.mktemp("demo")
+    adresse, retirer = adresse_de_test()
     copro = replace(
         contexte.courante(),
         identifiant="essai-demo",
-        url_base=url_fichier(dossier / "demo.db"),
+        url_base=adresse,
         racine_fichiers=dossier / "fichiers",
         secret="d" * 40,
     )
@@ -56,6 +58,7 @@ def copro(tmp_path_factory):
     yield copro, bilan
     with contexte.dans(copro):
         contexte.moteur().dispose()
+    retirer()
 
 
 @pytest.fixture

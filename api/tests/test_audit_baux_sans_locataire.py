@@ -50,12 +50,12 @@ from app.models.core import (
     StatutUtilisateur,
     Utilisateur,
 )
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 
 
 @pytest.fixture(name="session")
 def session_fixture():
-    moteur = moteur_memoire(partage=True)
+    moteur = moteur_de_test()
     with Session(moteur) as session:
         yield session
 

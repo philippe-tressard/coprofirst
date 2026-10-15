@@ -231,14 +231,14 @@ def exporter(moteur, sortie: Path, *, fichiers: Path | None = None, metadata=Non
 #
 #     python -m app.utils.export_copropriete importer <archive> <url-cible> [<dossier-fichiers>]
 #
-#  Pour le passage à PostgreSQL (DI-7, #1759) : la cible est une base NEUVE, au
-#  schéma posé. 🔴 Jamais la base qui sert : l'export, lui, ne se lance que par
-#  l'administration, dans le processus de l'API (règle d'or).
+#  La cible est une base NEUVE, au schéma posé (une restauration). 🔴 Jamais la
+#  base qui sert : l'export, lui, se lance par l'administration, dans le
+#  processus de l'API.
 def adresse(argument: str) -> str:
     """L'URL d'une base, en clair ou lue dans l'environnement (`env:NOM`).
 
     `env:` garde le mot de passe d'une base serveur hors de la ligne de commande —
-    donc hors de `ps` et des journaux (DI-7c, `scripts/exploitation/basculer-donnees.sh`).
+    donc hors de `ps` et des journaux.
     """
     if argument.startswith("env:"):
         nom = argument.removeprefix("env:")
@@ -268,19 +268,18 @@ if __name__ == "__main__":
         sys.exit(_USAGE)
     if sys.argv[1] == "verifier":
         #  La sauvegarde d'une réplique, avant sa mise à jour (DI-4) : réimportée
-        #  dans une base jetable, à côté, jamais dans la base qui sert.
-        import tempfile
+        #  dans une base jetable du même serveur, jamais dans la base qui sert.
+        from app import contexte
 
         try:
-            with tempfile.TemporaryDirectory() as _dossier:
-                _bilan = verifier_archive(Path(sys.argv[2]), Path(_dossier))
+            _bilan = verifier_archive(Path(sys.argv[2]), contexte.courante().url_base)
         except ImportRefuse as _refus:
             sys.exit(f"ARCHIVE REFUSÉE : {_refus}")
         print(f"Archive vérifiée : {_bilan.tables} tables, {_bilan.lignes} lignes.")
         sys.exit(0)
     if sys.argv[1] == "exporter":
-        #  🔴 La base SOURCE doit être au repos : l'appelant arrête l'API avant
-        #  (règle d'or, CLAUDE.md). Cette commande lit, elle ne fige rien.
+        #  🔴 La base SOURCE doit être au repos : l'appelant arrête l'API avant.
+        #  Cette commande lit, elle ne fige rien.
         _source = create_engine(adresse(sys.argv[2]))
         _manifeste = exporter(_source, Path(sys.argv[3]))
         _source.dispose()

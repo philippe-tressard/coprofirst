@@ -31,14 +31,13 @@ capacité à en servir. C'était un raisonnement sur un silence
 compris la fiche arrivant et l'annonce de hall qui se rendaient en moins d'une
 seconde. C'est le prix de l'isolation, accepté en connaissance de cause.
 
-## 🔴 SPAWN, JAMAIS FORK — et c'est la règle d'or anti-corruption
+## 🔴 SPAWN, JAMAIS FORK
 
 Le défaut de Python 3.12 sous Linux est `fork` (vérifié sur l'image :
 `mp.get_start_method()` → `fork`). Un enfant **forké** hérite des descripteurs
-de fichier ouverts du parent, **y compris ceux de `app.db`** tenus par le pool
-SQLAlchemy. Quand il se termine, SQLite peut s'y croire dernière connexion et
-supprimer `app.db-wal` sous l'API vivante : l'incident du 17/07/2026, ~12 h
-d'écritures perdues, mais déclenché depuis l'intérieur.
+ouverts du parent, **y compris les connexions** que tient le pool SQLAlchemy :
+en se terminant, il peut fermer côté serveur une session que l'API croit encore
+ouverte — SQLAlchemy interdit de partager un pool à travers un `fork`.
 
 `spawn` démarre un interpréteur neuf qui ne partage **aucun** descripteur. Le
 prix est un import à payer (`import weasyprint` : 0,59 s mesuré sur le RPi).
