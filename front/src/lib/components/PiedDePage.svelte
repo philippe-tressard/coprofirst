@@ -44,7 +44,7 @@
 
 <footer class="app-footer" class:container={!apercu} class:apercu>
 	<div class="carte-pied">
-		<div class="marque">
+		<div class="marque-pied">
 			<LogoResidence taille={32} />
 			<div class="identite">
 				{#if siteUrl}
@@ -109,7 +109,7 @@
 		border: 1px solid var(--color-border);
 		border-radius: calc(var(--radius) * 2);
 	}
-	.marque {
+	.marque-pied {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
