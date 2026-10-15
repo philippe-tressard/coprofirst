@@ -147,6 +147,20 @@ def test_sauvegarde_trop_ancienne_ou_inconnue():
     assert "sauvegarde_ancienne" in _codes(rapport=_rapport(sauvegarde=absente))
 
 
+def test_une_sauvegarde_non_attendue_ne_fait_pas_alerte():
+    """#1982 : la démo se régénère chaque nuit, sa sauvegarde est coupée EXPRÈS
+    (`utils/taches.TACHES_HORS_DEMO`) — l'installation le DÉCLARE, la référence se tait.
+    Sans déclaration (réplique d'avant), le comportement ne change pas."""
+    sans = Sauvegarde(derniere_reussie_le=None, copie_hors_machine=False, attendue=False)
+    assert {"sauvegarde_ancienne", "sans_copie_hors_machine"}.isdisjoint(
+        _codes(rapport=_rapport(sauvegarde=sans))
+    )
+    muette = Sauvegarde(derniere_reussie_le=None, copie_hors_machine=False)
+    assert {"sauvegarde_ancienne", "sans_copie_hors_machine"} <= _codes(
+        rapport=_rapport(sauvegarde=muette)
+    )
+
+
 def test_sauvegarde_sans_copie_hors_de_la_machine():
     seule = Sauvegarde(
         derniere_reussie_le=MAINTENANT - timedelta(hours=2), copie_hors_machine=False

@@ -203,6 +203,10 @@ class Sauvegarde(_Contrat):
     dernier_essai_restauration_le: Optional[datetime] = Field(
         default=None, description="savoir que la sauvegarde se restaure"
     )
+    attendue: Optional[bool] = Field(
+        default=None,
+        description="ne pas alerter sur une sauvegarde coupée exprès (démo régénérée, #1982)",
+    )
 
 
 class Posture(_Contrat):

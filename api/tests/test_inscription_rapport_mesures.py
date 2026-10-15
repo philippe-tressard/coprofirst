@@ -166,3 +166,15 @@ def test_un_certificat_injoignable_reste_inconnu(monkeypatch, base):
 
     monkeypatch.setattr(rapport, "_certificat_servi", injoignable)
     assert rapport.construire().hebergement.certificat_expire_le is None
+
+
+# ── La sauvegarde est-elle attendue ici ? (#1982) ────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "demo, attendue", [("oui", False), ("", True)], ids=["démo", "installation"]
+)
+def test_le_rapport_dit_si_la_sauvegarde_est_attendue(monkeypatch, base, demo, attendue):
+    """La règle se lit dans `TACHES_HORS_DEMO` (la tâche `backup` coupée), pas à côté."""
+    monkeypatch.setattr(get_settings(), "mode_demo", demo)
+    assert rapport.construire().sauvegarde.attendue is attendue
