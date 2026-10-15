@@ -33,6 +33,11 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 #: autre est refusée avec un message qui le dit — jamais lue de travers.
 VERSION_CONTRAT = 1
 
+#: L'issue d'une mise à jour nocturne, telle que `deploiement/standard/mise-a-jour.sh`
+#: la nomme (#1981) : rien touché, réussie, revenue à la version précédente, ou
+#: sauvegarde restaurée. Les deux dernières sont un retour en arrière (alerte).
+ISSUES_MISE_A_JOUR = ("echouee", "reussie", "revenue", "restauree")
+
 #: L'en-tête qui porte la signature d'un envoi de l'installation (Ed25519, base64),
 #: sur les octets du corps — écrit ici : l'installation l'envoie, la référence le lit.
 EN_TETE_SIGNATURE = "X-Signature-Installation"
@@ -160,7 +165,8 @@ class Identite(_Contrat):
         default=None, description="savoir si la dernière migration est passée"
     )
     derniere_mise_a_jour: Optional[str] = Field(
-        default=None, description="voir une mise à jour revenue en arrière (reussie, revenue)"
+        default=None,
+        description="voir une mise à jour revenue en arrière (`ISSUES_MISE_A_JOUR`)",
     )
     se_declare_reference: Optional[bool] = Field(
         default=None,

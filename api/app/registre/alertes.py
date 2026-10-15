@@ -67,6 +67,9 @@ RETARD_MINEURES = 10
 #: plus (`routeur._signaler_clone`), donc une semaine sans signalement le lève.
 CLONE_RECENT = timedelta(days=7)
 
+#: Les issues d'une mise à jour nocturne qui sont un retour en arrière (`ISSUES_MISE_A_JOUR`).
+MISES_A_JOUR_REVENUES = frozenset({"revenue", "restauree"})
+
 #: Les gestes du journal qui portent le suivi d'une alerte grave.
 SIGNALEE, LEVEE = "alerte_signalee:", "alerte_levee:"
 
@@ -158,9 +161,11 @@ def evaluer(
 
     if rapport is not None:
         ident, heb, sauv = rapport.identite, rapport.hebergement, rapport.sauvegarde
-        if ident.derniere_mise_a_jour == "revenue":
+        if ident.derniere_mise_a_jour in MISES_A_JOUR_REVENUES:
             trouvees["mise_a_jour_revenue"] = (
-                "La dernière mise à jour est revenue à la version précédente."
+                "La dernière mise à jour a restauré la sauvegarde d'avant."
+                if ident.derniere_mise_a_jour == "restauree"
+                else "La dernière mise à jour est revenue à la version précédente."
             )
         if sauv.derniere_reussie_le is None:
             trouvees["sauvegarde_ancienne"] = "Aucune sauvegarde réussie déclarée."

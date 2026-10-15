@@ -129,9 +129,13 @@ def test_jamais_revenue_depuis_son_inscription_est_muette():
     assert "muette" in _codes(inst=inst)
 
 
-def test_mise_a_jour_revenue_en_arriere():
-    assert "mise_a_jour_revenue" in _codes(rapport=_rapport(maj="revenue"))
-    assert "mise_a_jour_revenue" not in _codes(rapport=_rapport(maj="reussie"))
+@pytest.mark.parametrize(
+    "issue, revenue",
+    [("revenue", True), ("restauree", True), ("reussie", False), ("echouee", False)],
+)
+def test_mise_a_jour_revenue_en_arriere(issue, revenue):
+    """Revenue à l'image d'avant, ou à la sauvegarde d'avant : un retour (#1981)."""
+    assert ("mise_a_jour_revenue" in _codes(rapport=_rapport(maj=issue))) is revenue
 
 
 def test_sauvegarde_trop_ancienne_ou_inconnue():

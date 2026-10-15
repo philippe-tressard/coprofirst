@@ -16,12 +16,18 @@ absente d'une sauvegarde qu'on n'a pas su lire.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import platform
 import shutil
-from datetime import datetime
+import socket
+import ssl
+from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import urlsplit
+
+from cryptography import x509
 
 from sqlmodel import func, select
 
@@ -29,6 +35,7 @@ from app import contexte
 from app.config import get_settings
 from app.inscription import depot
 from app.registre.contrat import (
+    ISSUES_MISE_A_JOUR,
     VERSION_CONTRAT,
     Consommation,
     CoproprieteRapport,
@@ -76,9 +83,44 @@ def _documentation_coupee() -> bool:
     return app.openapi_url is None
 
 
+def _certificat_servi(hote: str, port: int) -> bytes:
+    """Le certificat que le public reçoit, en DER — lu, jamais VÉRIFIÉ.
+
+    Sans vérification, et c'est voulu : un certificat expiré ou mal chaîné est
+    précisément ce que la référence doit apprendre, et une vérification le
+    refuserait avant d'en lire l'échéance. Rien n'est envoyé sur la connexion
+    qu'une poignée de main TLS : aucune donnée ne la traverse.
+    """
+    contexte_tls = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    contexte_tls.check_hostname = False
+    contexte_tls.verify_mode = ssl.CERT_NONE
+    with socket.create_connection((hote, port), timeout=5) as brut:
+        with contexte_tls.wrap_socket(brut, server_hostname=hote) as tls:
+            der = tls.getpeercert(binary_form=True)
+    if not der:
+        raise ValueError("aucun certificat présenté")
+    return der
+
+
+def echeance_certificat(der: bytes) -> datetime:
+    """L'échéance d'un certificat, en UTC naïf comme la base — même expiré."""
+    fin = x509.load_der_x509_certificate(der).not_valid_after_utc
+    return fin.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+def _certificat_expire_le() -> Optional[datetime]:
+    """L'échéance du certificat de l'ORIGIN de l'installation (#1981) — `None` sans
+    HTTPS : une installation servie par une adresse locale n'a pas de certificat."""
+    url = urlsplit(get_settings().origin)
+    if url.scheme != "https" or not url.hostname:
+        return None
+    return echeance_certificat(_certificat_servi(url.hostname, url.port or 443))
+
+
 def hebergement() -> Hebergement:
     disque = _mesure(_disque)
     return Hebergement(
+        certificat_expire_le=_mesure(_certificat_expire_le),
         architecture=platform.machine() or None,
         memoire_mo=_mesure(_memoire_mo),
         disque_total_mo=disque[0] if disque else None,
@@ -97,12 +139,41 @@ def posture() -> Posture:
     )
 
 
-def _copropriete(identifiant_installation: str) -> tuple[CoproprieteRapport, Optional[datetime]]:
+def _issue_mise_a_jour(session) -> Optional[str]:
+    """L'issue de la DERNIÈRE mise à jour nocturne, telle que le script l'a nommée —
+    `None` sans mise à jour (la référence n'en fait pas), ou d'un script d'avant #1981."""
+    from app.models.core import HistoriqueMaintenance, TachePlanifiee
+
+    derniere = session.exec(
+        select(HistoriqueMaintenance)
+        .where(HistoriqueMaintenance.tache == TachePlanifiee.mise_a_jour.value)
+        .order_by(HistoriqueMaintenance.cree_le.desc())
+    ).first()
+    try:
+        issue = (json.loads(derniere.details or "{}") or {}).get("issue") if derniere else None
+    except ValueError:
+        return None
+    return issue if issue in ISSUES_MISE_A_JOUR else None
+
+
+#: Une installation à plusieurs copropriétés dit l'issue la plus grave.
+_GRAVITE_ISSUE = {issue: rang for rang, issue in enumerate(ISSUES_MISE_A_JOUR)}
+
+
+def _la_plus_grave(issues) -> Optional[str]:
+    lues = [i for i in issues if i is not None]
+    return max(lues, key=lambda i: (i != "reussie", _GRAVITE_ISSUE[i])) if lues else None
+
+
+def _copropriete(
+    identifiant_installation: str,
+) -> tuple[CoproprieteRapport, Optional[datetime], Optional[bool], Optional[str]]:
     """Les NOMBRES d'une copropriété — dans son contexte, sans lire une donnée de résident."""
     from app.models.copropriete import Lot
     from app.models.core import Utilisateur
     from app.utils.backup import derniere_sauvegarde_reussie
     from app.utils.config_site import config_site
+    from app.utils.health_monitor import copie_hors_site_a_jour
     from app.utils.liens import nom_site
     from app.utils.services import SERVICES, service_actif
 
@@ -125,7 +196,12 @@ def _copropriete(identifiant_installation: str) -> tuple[CoproprieteRapport, Opt
             volume_mo=_mesure(_volume_mo, stockage().racine),
             services_actifs=sorted(c for c in coupables if service_actif(cfg, c)),
         )
-        return rendu, _mesure(derniere_sauvegarde_reussie, session)
+        return (
+            rendu,
+            _mesure(derniere_sauvegarde_reussie, session),
+            _mesure(copie_hors_site_a_jour, session),
+            _mesure(_issue_mise_a_jour, session),
+        )
 
 
 def construire() -> Rapport:
@@ -133,25 +209,29 @@ def construire() -> Rapport:
     etat = depot.lire()
     identifiant = etat.identifiant or ""
     bail = (etat.bail or {}).get("bail") or {}
-    coproprietes, sauvegardes = [], []
+    coproprietes, sauvegardes, copies, issues = [], [], [], []
     for copro in contexte.coproprietes():
         with contexte.dans(copro):
-            rendu, sauvee = _copropriete(identifiant)
+            rendu, sauvee, copie, issue = _copropriete(identifiant)
         coproprietes.append(rendu)
         sauvegardes.append(sauvee)
+        copies.append(copie)
+        issues.append(issue)
     #  La sauvegarde de l'INSTALLATION est celle de sa copropriété la moins à jour :
-    #  une seule qui manque, et il en manque une.
+    #  une seule qui manque, et il en manque une. La copie hors de la machine aussi.
     derniere = None if (not sauvegardes or None in sauvegardes) else min(sauvegardes)
+    hors_machine = None if (not copies or None in copies) else all(copies)
     return Rapport(
         version_contrat=VERSION_CONTRAT,
         identite=Identite(
             identifiant=identifiant,
             canal=bail.get("canal") or "replica",
             version_logicielle=installation.version_logicielle(),
+            derniere_mise_a_jour=_la_plus_grave(issues),
             se_declare_reference=installation.est_reference(),
         ),
         hebergement=hebergement(),
-        sauvegarde=Sauvegarde(derniere_reussie_le=derniere),
+        sauvegarde=Sauvegarde(derniere_reussie_le=derniere, copie_hors_machine=hors_machine),
         posture=posture(),
         coproprietes=coproprietes,
         consommation=Consommation(),  # R7 (#1883) : quand le modèle économique sera choisi

@@ -191,15 +191,17 @@ SAUVEGARDES=$(lire_env COPROFIRST_SAUVEGARDES)
 SIGNATURE=$(lire_env COPROFIRST_SIGNATURE); SIGNATURE=${SIGNATURE:-si-possible}
 DELAI=$(lire_env COPROFIRST_DELAI_JOURS); DELAI=${DELAI:-1}
 
-rendre_compte() {  # $1 statut (succes|erreur) · $2 erreur (vide si succès) · $3 vers
+rendre_compte() {  # $1 statut (succes|erreur) · $2 erreur (vide si succès) · $3 vers · $4 issue
+    #  L'issue est un mot du contrat (`registre/contrat.ISSUES_MISE_A_JOUR`) : le
+    #  rapport nocturne la transmet à la référence, qui alerte sur un retour (#1981).
     local details
-    details=$(printf '{"de":"%s","vers":"%s"}' "$COURANTE" "$3")
+    details=$(printf '{"de":"%s","vers":"%s","issue":"%s"}' "$COURANTE" "$3" "$4")
     rendre_compte_tache mise_a_jour "$1" "$2" "$details"
 }
 
 echouer() {  # $1 message — sortie SANS avoir touché au service
     journal "⚠ $1"
-    rendre_compte erreur "$1" "${CIBLE:-}"
+    rendre_compte erreur "$1" "${CIBLE:-}" "echouee"
     exit 1
 }
 
@@ -308,10 +310,10 @@ fi
 case "$(decider_issue "$NEUVE" "$RETOUR")" in
     reussie)
         journal "Mise à jour réussie : $CIBLE (en $(( $(date +%s) - DEBUT )) s)."
-        rendre_compte succes "" "$CIBLE" ;;
+        rendre_compte succes "" "$CIBLE" "reussie" ;;
     revenue)
         journal "⚠ Revenue en $COURANTE : la base garde les migrations de $CIBLE, compatibles."
-        rendre_compte erreur "santé KO après la mise à jour vers $CIBLE — revenue en $COURANTE" "$CIBLE"
+        rendre_compte erreur "santé KO après la mise à jour vers $CIBLE — revenue en $COURANTE" "$CIBLE" "revenue"
         exit 1 ;;
     restaurer)
         journal "🔴 Santé KO aussi en $COURANTE — restauration de $ARCHIVE."
@@ -329,7 +331,7 @@ case "$(decider_issue "$NEUVE" "$RETOUR")" in
         fi
         "${COMPOSE[@]}" up -d >/dev/null 2>&1 || true
         journal "Restauration terminée — santé : $(sante)."
-        rendre_compte erreur "santé KO en $CIBLE puis en $COURANTE — sauvegarde $ARCHIVE restaurée" "$CIBLE"
+        rendre_compte erreur "santé KO en $CIBLE puis en $COURANTE — sauvegarde $ARCHIVE restaurée" "$CIBLE" "restauree"
         exit 1 ;;
 esac
 rm -rf "$TRAVAIL"
