@@ -6,7 +6,8 @@
   0. **Alertes** — ce que la référence lui reproche (R4b #1960), avant tout le reste :
      c'est ce qui appelle la décision ; les graves partent aussi par courriel ;
   1. **Décision** — les gestes que le SERVEUR dit possibles (`gestes_possibles`) ;
-     l'écran n'a pas de seconde table des transitions ;
+     l'écran n'a pas de seconde table des transitions — « Supprimer » compris, offert
+     à une installation résiliée seulement ;
   2. **Services accordés** — une case par service que la référence peut accorder ;
   3. **Administrateur d'installation** — le contact qu'il a déclaré ;
   4. **Dernier rapport nocturne** — des nombres et des oui/non, rien d'un résident ;
@@ -93,8 +94,14 @@
 		{/each}
 	</div>
 	<p class="aide">
-		Un motif est demandé, et s’inscrit au journal. La décision part dans le bail au prochain
-		renouvellement de l’installation — chaque nuit, ou quand son administrateur le demande.
+		Un motif est demandé, et s’inscrit au journal.
+		{#if gestes.includes('supprimer')}
+			Supprimer retire l’installation de la liste ; seul le contrat accepté reste archivé, cinq ans
+			après la résiliation.
+		{:else}
+			La décision part dans le bail au prochain renouvellement de l’installation — chaque nuit, ou
+			quand son administrateur le demande.
+		{/if}
 	</p>
 {/if}
 

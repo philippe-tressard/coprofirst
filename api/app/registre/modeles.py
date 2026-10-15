@@ -66,6 +66,10 @@ class Installation(TablePlateforme, table=True):
     mis_a_jour_le: Optional[NaiveDatetime] = None
     #: La dernière fois que l'installation s'est adressée à la référence.
     vue_le: Optional[NaiveDatetime] = None
+    #: Supprimée par l'opérateur après sa résiliation (`registre/conservation`) : hors
+    #: de la liste, ses coordonnées et ses rapports effacés. La LIGNE reste — son
+    #: numéro fait l'identifiant, qui ne se réattribue jamais.
+    effacee_le: Optional[NaiveDatetime] = None
 
 
 class ContactInstallation(TablePlateforme, table=True):

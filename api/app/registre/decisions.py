@@ -17,6 +17,9 @@ que le bail portera à son prochain renouvellement : la référence ne pousse ja
    canal `main`, et aucun geste ne la touche.
 4. **Les services accordés** sont ceux de `utils/services.SERVICES_AUTORISABLES`, et
    eux seuls — la même liste que l'installation lit.
+5. **Supprimer ne s'offre qu'à une installation résiliée**, une fois (`supprimable`) :
+   ce que le geste efface, et ce qu'il garde jusqu'à l'échéance des conditions,
+   vit dans `registre/conservation.py`.
 """
 
 from __future__ import annotations
@@ -51,6 +54,10 @@ TRANSITIONS: dict[str, tuple[frozenset[EtatInscription], EtatInscription]] = {
 #: Le geste qui accorde ou retire des services — il ne change pas l'état.
 GESTE_SERVICES = "services"
 
+#: Le geste qui retire une installation résiliée de la liste (`registre/conservation`)
+#: — il ne change pas l'état non plus : elle reste résiliée.
+GESTE_SUPPRIMER = "supprimer"
+
 
 class DecisionRefusee(ValueError):
     """Le geste ne s'applique pas : le message dit pourquoi, en clair."""
@@ -79,7 +86,7 @@ def services_de(inst: Installation) -> list[str]:
     return [code for code in SERVICES_AUTORISABLES if code in lus]
 
 
-def _exiger_motif(motif: str) -> str:
+def exiger_motif(motif: str) -> str:
     motif = (motif or "").strip()
     if not motif:
         raise DecisionRefusee("Un motif est requis : le journal dit pourquoi.")
@@ -91,11 +98,17 @@ def decidable(inst: Installation) -> bool:
     return inst.identifiant != IDENTIFIANT_REFERENCE
 
 
+def supprimable(inst: Installation) -> bool:
+    """L'opérateur peut-il la supprimer ? Résiliée, pas la référence, pas déjà supprimée."""
+    return decidable(inst) and inst.etat == EtatInscription.resiliee and inst.effacee_le is None
+
+
 def gestes_possibles(inst: Installation) -> list[str]:
-    """Les gestes de `TRANSITIONS` qui s'appliquent à `inst` aujourd'hui — l'écran les lit."""
+    """Les gestes qui s'appliquent à `inst` aujourd'hui — l'écran les lit."""
     if not decidable(inst):
         return []
-    return [geste for geste, (depart, _) in TRANSITIONS.items() if inst.etat in depart]
+    gestes = [geste for geste, (depart, _) in TRANSITIONS.items() if inst.etat in depart]
+    return gestes + [GESTE_SUPPRIMER] if supprimable(inst) else gestes
 
 
 def _exiger_pas_la_reference(inst: Installation) -> None:
@@ -110,7 +123,7 @@ def decider(
     if geste not in TRANSITIONS:
         raise DecisionRefusee(f"Geste inconnu : {geste}")
     _exiger_pas_la_reference(inst)
-    motif = _exiger_motif(motif)
+    motif = exiger_motif(motif)
     depart, arrivee = TRANSITIONS[geste]
     if inst.etat not in depart:
         raise DecisionRefusee(
@@ -127,7 +140,7 @@ def accorder_services(
 ) -> DecisionRegistre:
     """Fixe les services accordés à `inst` — ceux du registre seulement — et l'inscrit."""
     _exiger_pas_la_reference(inst)
-    motif = _exiger_motif(motif)
+    motif = exiger_motif(motif)
     inconnus = sorted(set(services) - set(SERVICES_AUTORISABLES))
     if inconnus:
         raise DecisionRefusee(f"Service(s) que la référence n'accorde pas : {', '.join(inconnus)}")

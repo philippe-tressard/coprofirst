@@ -10,7 +10,8 @@ porte que les graves (`utils/sante_plateforme`).
 Les GESTES de l'opérateur — valider, suspendre, rétablir, résilier, accorder des
 services — passent par `registre/decisions.py`, qui tient les transitions et le
 journal ; ils voyagent dans le bail au prochain renouvellement (la référence ne
-pousse jamais, règle 5).
+pousse jamais, règle 5). SUPPRIMER une installation résiliée passe par
+`registre/conservation.py` : elle quitte la liste, et sa fiche répond 404.
 
 Réservé à l'OPÉRATEUR de la plateforme (§4.7, règle 7 de §4.11), jamais à
 l'administrateur de la copropriété. Ce qu'il lit vient de la base `plateforme` —
@@ -37,7 +38,7 @@ from sqlmodel import Session, func, select
 from app.auth.deps import require_operateur
 from app.models.core import Utilisateur
 from app.registre import alertes as registre_alertes
-from app.registre import base, decisions
+from app.registre import base, conservation, decisions
 from app.registre.contrat import Rapport
 from app.registre.modeles import (
     AcceptationConditions,
@@ -100,6 +101,10 @@ class RegistreLu(BaseModel):
 
 class DemandeDecision(BaseModel):
     geste: Literal["valider", "suspendre", "retablir", "resilier"]
+    motif: str = Field(min_length=1, max_length=400)
+
+
+class DemandeSuppression(BaseModel):
     motif: str = Field(min_length=1, max_length=400)
 
 
@@ -205,7 +210,11 @@ def lister_installations(_: Utilisateur = Depends(require_operateur)):
     if not base.registre_actif():
         return RegistreLu(actif=False, installations=[], services_accordables=_accordables())
     with Session(base.moteur()) as session:
-        installations = session.exec(select(Installation).order_by(Installation.identifiant)).all()
+        installations = session.exec(
+            select(Installation)
+            .where(Installation.effacee_le.is_(None))
+            .order_by(Installation.identifiant)
+        ).all()
         contacts = {c.installation_id: c for c in session.exec(select(ContactInstallation)).all()}
         derniers = dict(
             session.exec(
@@ -234,9 +243,13 @@ def _session_registre() -> Iterator[Session]:
 
 
 def _installation(session: Session, identifiant: str) -> Installation:
-    """L'installation de cet identifiant, ou 404."""
+    """L'installation de cet identifiant, ou 404 — une installation supprimée aussi."""
     return present_ou_404(
-        session.exec(select(Installation).where(Installation.identifiant == identifiant)).first(),
+        session.exec(
+            select(Installation).where(
+                Installation.identifiant == identifiant, Installation.effacee_le.is_(None)
+            )
+        ).first(),
         "Installation inconnue",
     )
 
@@ -276,13 +289,18 @@ def _fiche(session: Session, inst: Installation) -> FicheInstallation:
     )
 
 
-def _appliquer(session: Session, inst: Installation, geste) -> FicheInstallation:
-    """Applique un geste de l'opérateur ; un refus des règles devient un 409 qui le dit."""
+def _executer(session: Session, geste) -> None:
+    """Exécute un geste de l'opérateur et l'enregistre ; un refus des règles devient un 409."""
     try:
         geste()
     except decisions.DecisionRefusee as exc:
         raise HTTPException(409, str(exc)) from None
     session.commit()
+
+
+def _appliquer(session: Session, inst: Installation, geste) -> FicheInstallation:
+    """Applique un geste de l'opérateur, et rend la fiche qu'il laisse."""
+    _executer(session, geste)
     session.refresh(inst)
     return _fiche(session, inst)
 
@@ -321,3 +339,14 @@ def accorder_services(
             inst,
             lambda: decisions.accorder_services(session, inst, body.services, body.motif, auteur),
         )
+
+
+@router.post("/installations/{identifiant}/suppression", status_code=204)
+def supprimer_installation(
+    identifiant: str, body: DemandeSuppression, user: Utilisateur = Depends(require_operateur)
+):
+    """Supprime une installation résiliée — motivé, inscrit au journal (`conservation`)."""
+    with _session_registre() as session:
+        inst = _installation(session, identifiant)
+        auteur = decisions.auteur_de(user.id)
+        _executer(session, lambda: conservation.supprimer(session, inst, body.motif, auteur))

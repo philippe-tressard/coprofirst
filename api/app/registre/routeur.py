@@ -158,6 +158,10 @@ def _reinscrire(session: Session, inst: Installation, demande: DemandeInscriptio
     if deja is None:
         _archiver_acceptation(session, inst, demande)
     _ecrire_contact(session, inst, demande)
+    if inst.effacee_le is not None:
+        #  Supprimée après sa résiliation, elle revient : l'opérateur la revoit, résiliée.
+        inst.effacee_le = None
+        consigner(session, inst, "retour_apres_suppression")
     inst.version_logicielle = demande.version_logicielle
     inst.conditions_acceptees = demande.conditions_acceptees
     inst.vue_le = inst.mis_a_jour_le = horloge.maintenant()

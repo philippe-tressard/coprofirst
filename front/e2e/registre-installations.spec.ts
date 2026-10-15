@@ -7,6 +7,7 @@
  *  - dépliée, la fiche : gestes possibles (dits par le serveur), services, contact,
  *    contrat archivé, journal ;
  *  - un geste demande un MOTIF, part au serveur, et la fiche rendue s'affiche ;
+ *  - une installation RÉSILIÉE se supprime : motif, appel, et la carte quitte la liste ;
  *  - côté réplique, Admin › Services grise un service que la référence n'autorise pas ;
  *  - ses ALERTES (R4b #1960) : badge teinté de la plus sérieuse et noms sur la carte
  *    repliée, liste en tête de la fiche, les graves dites « courriel à l'opérateur ».
@@ -116,6 +117,7 @@ async function ouvrir(
 	page,
 	role: 'reference' | 'replique' = 'reference',
 	alertes: typeof ALERTES = [],
+	champsFiche: Partial<FicheInstallation> = {},
 ) {
 	const ecrits: { methode: string; chemin: string; corps: unknown }[] = [];
 	page.on('request', (r) => {
@@ -134,7 +136,7 @@ async function ouvrir(
 					i.identifiant === 'CF-000003' ? { ...i, alertes } : i,
 				),
 			};
-		if (chemin === '/api/admin/installations/CF-000003') return fiche({ alertes });
+		if (chemin === '/api/admin/installations/CF-000003') return fiche({ alertes, ...champsFiche });
 		if (chemin === '/api/admin/installations/CF-000003/decisions')
 			return fiche({ etat: 'active', gestes_possibles: ['suspendre', 'resilier'] });
 		return undefined;
@@ -231,4 +233,30 @@ test('Installations : les alertes se lisent sur la carte et en tête de la fiche
 		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
 	);
 	expect(deborde, 'défilement horizontal dans l’onglet Installations').toBe(false);
+});
+
+test('Installations : une installation résiliée se supprime, et quitte la liste', async ({
+	page,
+}) => {
+	const ecrits = await ouvrir(page, 'reference', [], {
+		etat: 'resiliee',
+		gestes_possibles: ['supprimer'],
+	});
+	const carte = page.locator('#installation-CF-000003');
+	await carte.getByRole('button', { name: /CF-000003/ }).click();
+	await expect(carte.getByText(/seul le contrat accepté reste archivé/)).toBeVisible();
+	await carte.getByRole('button', { name: /Supprimer/ }).click();
+	const saisie = page.getByRole('dialog');
+	await expect(saisie.getByText(/reste archivé cinq ans/)).toBeVisible();
+	await saisie.getByRole('textbox').fill('installation d’essai');
+	await saisie.getByRole('button', { name: 'Supprimer' }).click();
+	await expect(carte).toHaveCount(0);
+	await expect(page.locator('#installation-CF-000000')).toBeVisible();
+	expect(ecrits).toEqual([
+		{
+			methode: 'POST',
+			chemin: '/api/admin/installations/CF-000003/suppression',
+			corps: { motif: 'installation d’essai' },
+		},
+	]);
 });

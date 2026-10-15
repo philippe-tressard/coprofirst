@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pytest
 
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.config import get_settings
 from app.inscription import client
@@ -210,3 +210,64 @@ def test_la_carte_et_la_fiche_portent_les_alertes_de_l_installation(operateur):
     assert alerte["code"] == "muette" and alerte["grave"] is True
     assert alerte["libelle"] == "Installation muette"
     assert http.get(f"/admin/installations/{REPLIQUE}").json()["alertes"] == [alerte]
+
+
+def _supprimer(http, motif: str = "essai terminé"):
+    return http.post(f"/admin/installations/{REPLIQUE}/suppression", json={"motif": motif})
+
+
+def test_seule_une_installation_resiliee_se_supprime(operateur):
+    http, _ = operateur
+    assert (
+        "supprimer" not in http.get(f"/admin/installations/{REPLIQUE}").json()["gestes_possibles"]
+    )
+    assert _supprimer(http).status_code == 409
+    assert (
+        http.post("/admin/installations/CF-000000/suppression", json={"motif": "x"}).status_code
+        == 409
+    )
+    _decider(http, "resilier", "fin de l'essai")
+    assert http.get(f"/admin/installations/{REPLIQUE}").json()["gestes_possibles"] == ["supprimer"]
+    assert _supprimer(http, "").status_code == 422
+
+
+def test_supprimer_efface_ce_qui_peut_l_etre_et_garde_le_contrat(operateur):
+    """Coordonnées et rapports effacés, contrat archivé gardé, ligne et journal aussi."""
+    from app.registre import base
+    from app.registre.modeles import (
+        AcceptationConditions,
+        ContactInstallation,
+        DecisionRegistre,
+        Installation,
+    )
+
+    http, _ = operateur
+    _decider(http, "resilier", "fin de l'essai")
+    assert _supprimer(http).status_code == 204
+    restantes = [i["identifiant"] for i in http.get("/admin/installations").json()["installations"]]
+    assert REPLIQUE not in restantes and "CF-000000" in restantes
+    assert http.get(f"/admin/installations/{REPLIQUE}").status_code == 404
+    assert _supprimer(http).status_code == 404
+    with Session(base.moteur()) as s:
+        inst = s.exec(select(Installation).where(Installation.identifiant == REPLIQUE)).one()
+        assert inst.effacee_le is not None and inst.services_autorises == "[]"
+
+        def lignes(modele):
+            return s.exec(
+                select(modele).where(modele.installation_id == inst.id).order_by(modele.id)
+            ).all()
+
+        assert lignes(ContactInstallation) == []
+        assert len(lignes(AcceptationConditions)) == 1
+        assert lignes(DecisionRegistre)[-1].geste == "supprimer"
+
+
+def test_la_meme_cle_qui_revient_retrouve_son_identifiant(operateur):
+    """Le numéro ne se réattribue pas : la réplique supprimée qui revient est revue, résiliée."""
+    http, _ = operateur
+    _decider(http, "resilier", "fin de l'essai")
+    _supprimer(http)
+    client.inscrire(CONTACT)
+    fiche = http.get(f"/admin/installations/{REPLIQUE}").json()
+    assert fiche["etat"] == "resiliee" and fiche["contact"]["courriel"] == CONTACT.courriel
+    assert fiche["decisions"][0]["geste"] == "retour_apres_suppression"
