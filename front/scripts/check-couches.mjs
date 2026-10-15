@@ -21,7 +21,8 @@
  *
  *   1. écrire `body.style.overflow` ;
  *   2. traiter `Escape` dans un écouteur de `<svelte:window>` — Échap ne ferme
- *      que la couche du DESSUS, et seule la pile du module la connaît.
+ *      que la couche du DESSUS, et seule la pile du module la connaît. Une
+ *      bulle qui ne fige pas la page y entre par `poserEchap` (`Infobulle`).
  *      Un `on:keydown` posé sur un champ (annuler une saisie) reste permis :
  *      il ne s'entend que là où l'on tape.
  *
@@ -78,7 +79,11 @@ for (const f of tous) {
 	if (/body\.style\.overflow/.test(source)) {
 		ecarts.push(`${rel(f)} : écrit \`body.style.overflow\` — passer par poserCouche()`);
 	}
-	if (/<svelte:window[^>]*on:keydown/.test(source) && /['"`]Escape['"`]/.test(source)) {
+	//  La balise entière, jusqu'à `/>` : `[^>]*` s'arrêtait au `=>` du premier
+	//  gestionnaire, et un `on:keydown` posé après lui passait (`PastilleLecture`,
+	//  jusqu'au 15/10/2026).
+	const fenetre = (source.match(/<svelte:window\b[\s\S]*?\/>/g) ?? []).join(' ');
+	if (/on:keydown/.test(fenetre) && /['"`]Escape['"`]/.test(source)) {
 		ecarts.push(
 			`${rel(f)} : traite Échap sur <svelte:window> — passer par poserCouche(fermer), ` +
 				'qui ne ferme que la couche du dessus',

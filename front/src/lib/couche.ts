@@ -26,6 +26,33 @@ function surTouche(e: KeyboardEvent) {
 }
 
 /**
+ * Pose une réponse à Échap SEULE, sans toucher au défilement : une bulle ancrée
+ * (`Infobulle`) se ferme à Échap sans figer la page. Elle entre dans la même
+ * pile que les couches — ouverte dans une modale, Échap ferme la bulle, pas la
+ * modale sous elle (15/10/2026).
+ *
+ * @returns la fonction qui la retire — idempotente, à appeler à la fermeture
+ *          ET au démontage.
+ */
+export function poserEchap(surEchap: () => void): () => void {
+	if (typeof window === 'undefined') return () => {};
+
+	if (pileEchap.length === 0) window.addEventListener('keydown', surTouche);
+	pileEchap.push(surEchap);
+
+	let retiree = false;
+	return () => {
+		if (retiree) return;
+		retiree = true;
+		//  Retirée par identité, pas par position : une couche du dessous peut se
+		//  démonter la première (navigation), et la pile doit rester juste.
+		const i = pileEchap.lastIndexOf(surEchap);
+		if (i >= 0) pileEchap.splice(i, 1);
+		if (pileEchap.length === 0) window.removeEventListener('keydown', surTouche);
+	};
+}
+
+/**
  * Pose une couche : bloque le défilement du fond et fait de `surEchap` la
  * réponse à Échap tant que la couche est au-dessus.
  *
@@ -37,8 +64,7 @@ export function poserCouche(surEchap: () => void): () => void {
 
 	verrous += 1;
 	document.body.style.overflow = 'hidden';
-	if (pileEchap.length === 0) window.addEventListener('keydown', surTouche);
-	pileEchap.push(surEchap);
+	const retirerEchap = poserEchap(surEchap);
 
 	let retiree = false;
 	return () => {
@@ -46,10 +72,6 @@ export function poserCouche(surEchap: () => void): () => void {
 		retiree = true;
 		verrous = Math.max(0, verrous - 1);
 		if (verrous === 0) document.body.style.overflow = '';
-		//  Retirée par identité, pas par position : une couche du dessous peut se
-		//  démonter la première (navigation), et la pile doit rester juste.
-		const i = pileEchap.lastIndexOf(surEchap);
-		if (i >= 0) pileEchap.splice(i, 1);
-		if (pileEchap.length === 0) window.removeEventListener('keydown', surTouche);
+		retirerEchap();
 	};
 }

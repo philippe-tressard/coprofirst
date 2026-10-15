@@ -6,7 +6,7 @@
  *  possibles de chaque fiche : ce module n'en tient que les mots.
  */
 import { classeDe, type ClasseGouttiere, type MarqueGouttiere } from '$lib/gouttiere';
-import type { AlerteRegistre, EtatRegistre, GesteRegistre } from '$lib/api';
+import type { AlerteRegistre, EtatRegistre, GesteRegistre, RapportInstallation } from '$lib/api';
 
 /**  Les états, dans l'ordre de vie d'une inscription — filtre en pastilles (≤ 6). */
 export const ETATS_REGISTRE: readonly { val: EtatRegistre; label: string }[] = [
@@ -121,4 +121,76 @@ const MARQUES_CANAL: Record<string, MarqueGouttiere> = {
 /**  La gouttière d'une installation : son rôle, lu sur le canal qu'elle suit. */
 export function classeInstallation(canal: string): ClasseGouttiere | null {
 	return classeDe(CANAUX, MARQUES_CANAL, canal);
+}
+
+/**  Un point de CONFORMITÉ du rapport nocturne : la phrase qui dit le FAIT dans
+ *   chacun des trois états, et ce que le point vérifie.
+ *
+ *   🔴 Le fait change avec l'état, jamais la coche seule : « Documentation d’API
+ *   publiée ✓ » se lirait « elle est publiée, et c'est bien » — l'inverse de la
+ *   vérité. Le champ du contrat, lui, ne bouge pas (`documentation_api_coupee`,
+ *   contrat versionné du registre) : seul l'écran le dit autrement. */
+export interface PointConformite {
+	/** Le fait quand le point est conforme… */
+	conforme: string;
+	/** … quand il est à corriger… */
+	aCorriger: string;
+	/** … et le seul nom quand la mesure n'a pas pu se faire. */
+	inconnu: string;
+	/** Ce que le point vérifie, et pourquoi il compte — la bulle de la coche. */
+	explication: string;
+}
+
+type ClePosture = keyof RapportInstallation['posture'];
+
+/**  La posture, dans l'ordre de la ligne. Chaque champ du contrat vaut `true`
+ *   quand le point est SAIN — `documentation_api_coupee` compris. */
+export const POSTURE: Record<ClePosture, PointConformite> = {
+	documentation_api_coupee: {
+		conforme: 'Documentation d’API non publiée',
+		aCorriger: 'Documentation d’API publiée',
+		inconnu: 'Documentation d’API',
+		explication:
+			'/docs, /redoc et /openapi.json décrivent chaque route de l’API : une installation en service ne les sert pas (ENABLE_API_DOCS reste à false).',
+	},
+	cookie_securise: {
+		conforme: 'Cookie de session sécurisé',
+		aCorriger: 'Cookie de session non sécurisé',
+		inconnu: 'Cookie de session',
+		explication:
+			'Le cookie de session porte le drapeau Secure : il ne voyage que sur une connexion chiffrée (HTTPS). COOKIE_SECURE ne se coupe que pour un essai en local.',
+	},
+	secret_suffisant: {
+		conforme: 'Clé secrète assez longue',
+		aCorriger: 'Clé secrète trop courte',
+		inconnu: 'Clé secrète',
+		explication:
+			'La clé qui signe les sessions de chaque copropriété fait au moins 32 caractères : plus courte, elle cède à une recherche exhaustive.',
+	},
+	lien_source_present: {
+		conforme: 'Lien vers le code source présent',
+		aCorriger: 'Lien vers le code source absent',
+		inconnu: 'Lien vers le code source',
+		explication:
+			'La licence AGPL (§13) oblige à offrir le code source à qui utilise l’application : un lien doit y mener depuis ses pages.',
+	},
+};
+
+export const COPIE_HORS_MACHINE: PointConformite = {
+	conforme: 'Copie hors machine',
+	aCorriger: 'Aucune copie hors machine',
+	inconnu: 'Copie hors machine',
+	explication:
+		'Sur un seul serveur, seule une copie de la sauvegarde posée ailleurs survit à la perte du disque ou de la machine.',
+};
+
+/**  Les points de la posture d'un rapport, dans l'ordre de `POSTURE`. */
+export function pointsPosture(
+	posture: RapportInstallation['posture'],
+): { cle: ClePosture; point: PointConformite; conforme: boolean | null }[] {
+	return (Object.keys(POSTURE) as ClePosture[]).map((cle) => ({
+		cle,
+		point: POSTURE[cle],
+		conforme: posture[cle],
+	}));
 }
