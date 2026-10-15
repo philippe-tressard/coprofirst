@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { nombreOuNull } from '$lib/utils';
 	import { confirmer } from '$lib/confirmation';
@@ -291,8 +292,8 @@
 							{:else}—{/if}
 						</td>
 						<td
-							><span class="badge {statutBadge[imp.statut] ?? 'badge-gray'}"
-								>{statutLabel[imp.statut] ?? imp.statut}</span
+							><Badge teinte={statutBadge[imp.statut] ?? 'badge-gray'}
+								>{statutLabel[imp.statut] ?? imp.statut}</Badge
 							></td
 						>
 						<td>

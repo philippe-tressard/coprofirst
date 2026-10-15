@@ -125,6 +125,10 @@ const TAILLE_LIBRE = {
 	'not-entete': 'liste des avis (NotationsPrestataire sans `resume`), dans le corps',
 	'not-date': 'liste des avis (NotationsPrestataire sans `resume`), dans le corps',
 	'not-commentaire': 'liste des avis (NotationsPrestataire sans `resume`), dans le corps',
+	//  `Badge` (#1571) se rend dans la ligne SANS `compact` : le cran `--fs-2xs`
+	//  ne sert qu'aux listes denses hors carte (Accès, baux). Le contrôle lit le
+	//  composant entier, comme pour `NotationsPrestataire`.
+	compact: 'cran `--fs-2xs` de `Badge`, réservé aux listes denses hors carte (Accès, baux)',
 };
 
 /** Le fragment du slot `tags`, ou la chaîne vide. */

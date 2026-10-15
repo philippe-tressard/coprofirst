@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import Icon from '$lib/components/Icon.svelte';
 	//  Extrait de `admin/+page.svelte` (2577 lignes, cinq fois le plafond de
@@ -271,12 +272,12 @@
 								{/if}
 							</td>
 							<td>
-								<span
-									class="badge {CLASSE_STATUT[t.statut] ?? 'badge-red'}"
+								<Badge
+									teinte={CLASSE_STATUT[t.statut] ?? 'badge-red'}
 									title={AIDE_STATUT[t.statut] ?? ''}
 								>
 									{LIBELLE_STATUT[t.statut] ?? t.statut}
-								</span>
+								</Badge>
 								{#if t.noeud_en_retard}
 									<!-- La dernière exécution est saine, mais un nœud décroche. L'ancien
 									     écran le disait en remplaçant l'état ET la date par ceux du
@@ -318,12 +319,12 @@
 									<td></td>
 									<td class="muted">↳ {n.noeud.toUpperCase()}</td>
 									<td>
-										<span
-											class="badge {CLASSE_STATUT[n.statut] ?? 'badge-red'}"
+										<Badge
+											teinte={CLASSE_STATUT[n.statut] ?? 'badge-red'}
 											title={AIDE_STATUT[n.statut] ?? ''}
 										>
 											{LIBELLE_STATUT[n.statut] ?? n.statut}
-										</span>
+										</Badge>
 									</td>
 									<td class="muted">{n.derniere ? fmtDatetime(n.derniere) : '—'}</td>
 								</tr>

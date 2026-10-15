@@ -60,6 +60,7 @@
   la duplication que la table supprime. Le sujet est le CONTRÔLE, pas ce code.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { confirmer, SUPPRESSION } from '$lib/confirmation';
 	import { createEventDispatcher } from 'svelte';
@@ -303,9 +304,9 @@
 							<td class="cellule-quantite">{objet.quantite}</td>
 							<td>{objet.reference ?? '—'}</td>
 							<td>
-								<span class="badge {statutObjetBadge[objet.statut] ?? 'badge-gray'}">
+								<Badge teinte={statutObjetBadge[objet.statut] ?? 'badge-gray'}>
 									{statutObjetLabel[objet.statut] ?? objet.statut}
-								</span>
+								</Badge>
 							</td>
 							<td>{fmtDate(objet.remis_le)}</td>
 							<td>{fmtDate(objet.rendu_le)}</td>

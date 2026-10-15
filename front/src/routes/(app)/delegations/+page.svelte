@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import { confirmer } from '$lib/confirmation';
 	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
 	import { nomAffiche } from '$lib/noms';
@@ -165,7 +166,7 @@
 							</div>
 						</div>
 						<div class="deleg-meta">
-							<span class="badge {statutBadge(d.statut)}">{statutLabel(d.statut)}</span>
+							<Badge teinte={statutBadge(d.statut)}>{statutLabel(d.statut)}</Badge>
 							<span class="deleg-date"
 								>Du {fmt(d.date_debut)}{d.date_fin ? ` au ${fmt(d.date_fin)}` : ' — illimité'}</span
 							>

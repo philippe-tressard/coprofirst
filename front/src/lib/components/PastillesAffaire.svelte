@@ -26,6 +26,7 @@
   🔒 `npm run lint:pastilles` exige que les trois cartes passent par ici.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
 	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
@@ -63,15 +64,15 @@
 		>{categorieTicketEmoji(affaire.categorie)}</span
 	>
 	{#if etat}
-		<span class="badge {STATUT_TICKET_BADGE[etat] ?? 'badge-gray'}">
+		<Badge teinte={STATUT_TICKET_BADGE[etat] ?? 'badge-gray'}>
 			{STATUT_TICKET_LABELS[etat] ?? etat}
-		</span>
+		</Badge>
 	{/if}
 	<BadgePerimetre perimetre={affaire.perimetre_cible} />
 	<PastilleLecture ticket={affaire} />
 	{#if ticketUrgent(affaire)}
-		<span class="badge {BADGE_PRIORITE[affaire.priorite] ?? 'badge-gray'}"
-			>{PRIORITE_BREVE[affaire.priorite]}</span
+		<Badge teinte={BADGE_PRIORITE[affaire.priorite] ?? 'badge-gray'}
+			>{PRIORITE_BREVE[affaire.priorite]}</Badge
 		>
 	{/if}
 	{#each marqueurs as opt (opt.cle)}

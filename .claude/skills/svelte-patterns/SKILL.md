@@ -259,6 +259,7 @@ s'écrit pas ici :
 | un mot de passe | `ChampMotDePasse` (bascule, jauge, « Verr. Maj. ») | idem |
 | les actions d'une carte d'actualité | `ActionsActualite` | idem |
 | le tableau des tâches planifiées | `TachesPlanifiees` (prévu **et** arrivé, ensemble) | idem |
+| le **badge** d'un état dont la teinte vient d'une table | `Badge` (`teinte`, `compact`) — la teinte en `class:`, jamais une classe interpolée ; les teintes concordent avec les `.badge-*` des feuilles (`npm run lint:badge`, #1571) | `Badge.svelte` |
 | un **état** (libellé, classe de pastille, aide) qui se décline par clé | `$lib/table-statuts.ts` — une table, ses colonnes s'en déduisent | l'en-tête du module |
 | le **type d'un accès** (Vigik, télécommande) | `$lib/types-acces.ts` | idem |
 

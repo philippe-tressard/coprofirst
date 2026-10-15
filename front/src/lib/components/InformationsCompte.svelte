@@ -8,6 +8,7 @@
   déborder. Le bloc lit le compte dans le store, comme la page le faisait.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import type { MonLot } from '$lib/api';
 	import { currentUser } from '$lib/stores/auth';
 	import { badgesDeRoles, LIBELLES_STATUT } from '$lib/roles';
@@ -49,7 +50,7 @@
 	<dt>Rôle(s)</dt>
 	<dd class="roles-compte">
 		{#each badgesDeRoles($currentUser?.roles?.length ? $currentUser.roles : [$currentUser?.role ?? 'résident']) as b (b.label)}
-			<span class="badge {b.cls}">{b.label}</span>
+			<Badge teinte={b.cls}>{b.label}</Badge>
 		{/each}
 	</dd>
 

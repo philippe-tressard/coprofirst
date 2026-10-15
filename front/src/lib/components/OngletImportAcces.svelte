@@ -18,6 +18,7 @@
   « Vigik », ni « télécommande », ni un chemin d'API.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { champDe, nombreOuNull } from '$lib/utils';
 	import { onMount } from 'svelte';
@@ -283,8 +284,8 @@
 							{:else}—{/if}
 						</td>
 						<td>
-							<span class="badge {STATUT_BADGE[imp.statut] ?? 'badge-gray'}"
-								>{STATUT_LABEL[imp.statut] ?? imp.statut}</span
+							<Badge teinte={STATUT_BADGE[imp.statut] ?? 'badge-gray'}
+								>{STATUT_LABEL[imp.statut] ?? imp.statut}</Badge
 							>
 							{#each modele.decorationsStatut(imp) as d (d.titre)}
 								<span title={d.titre} class="icone-diff">{d.icone}</span>
