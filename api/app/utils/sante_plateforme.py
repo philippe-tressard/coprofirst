@@ -40,6 +40,8 @@ import asyncio
 import logging
 import shutil
 
+from sqlmodel import Session
+
 from app import contexte
 from app.config import get_settings
 from app.utils import horloge
@@ -148,20 +150,29 @@ def run_controle_plateforme() -> None:
     """Tâche de la plateforme : ce qui n'appartient à aucune copropriété.
 
     Le disque, à partir de la deuxième copropriété (avec une seule, son contrôle
-    de 06:00 le juge) ; la copie hors site du registre, chez la référence dont le
-    registre est allumé (#1896).
+    de 06:00 le juge) ; chez la référence dont le registre est allumé, la copie
+    hors site du registre (#1896) et les alertes GRAVES de ses installations —
+    une fois par fait, marquées au journal seulement si le courriel est parti
+    (`registre/alertes`, #1960).
     """
-    from app.registre import base
+    from app.registre import alertes, base
     from app.registre.sauvegarde import probleme_copie_hors_site
 
     if not disque_par_la_plateforme() and not base.registre_actif():
         return  # rien qui n'appartienne qu'à la plateforme : la copropriété juge tout
     problemes = probleme_disque() if disque_par_la_plateforme() else []
     problemes += probleme_copie_hors_site()
+    graves: list = []
+    if base.registre_actif():
+        with Session(base.moteur()) as session:
+            graves = alertes.graves_a_signaler(session)
+        problemes += [g.ligne for g in graves]
     if not problemes:
         logger.info("Contrôle de la plateforme : tout est OK.")
         return
-    alerter(problemes)
+    if alerter(problemes) and graves:
+        with Session(base.moteur()) as session:
+            alertes.marquer_signalees(session, graves)
 
 
 def enregistrer(scheduler) -> None:
