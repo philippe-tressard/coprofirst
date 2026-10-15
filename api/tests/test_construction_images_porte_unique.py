@@ -43,16 +43,9 @@ UP = re.compile(
 #: Scripts qui écrivent un `up` eux-mêmes, parce qu'ils exportent le commit DANS
 #: LEUR PROPRE SHELL avant : (marque à trouver dans le code, raison). Une entrée
 #: dont le script n'écrit plus de `up`, ou ne porte plus la marque, échoue.
-EXPORTEURS = {
-    "scripts/exploitation/auto-deploy.sh": (
-        "exporter_git_hash",
-        "exporte GIT_HASH en tête de déploiement, avant tout `up`",
-    ),
-    "scripts/exploitation/MaJ-Hostachy.sh": (
-        "construire_images",
-        "`construire_images` exporte GIT_HASH dans ce shell, avant ses `up`",
-    ),
-}
+#: Vide depuis #1997/#1999 : `auto-deploy.sh` et `MaJ-Hostachy.sh` servent par
+#: `servir_images` (`lib-servir.sh`), qui passe par la porte.
+EXPORTEURS: dict[str, tuple[str, str]] = {}
 
 #: Lignes qui NOMMENT un `up` à un humain (message, consigne d'alerte) sans le
 #: lancer : `{script: nombre de lignes}`. Elles ne lancent rien ; le compte exact

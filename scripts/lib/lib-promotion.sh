@@ -73,6 +73,24 @@ decider_demarrage() {
     esac
 }
 
+# ── PURE : un nœud se RETIRE — que fait-on de SA base ? (#2000) ──────────────
+#  $1 rôle de la base locale · → RECONSTRUIRE:<raison> | GARDER | ATTENDRE
+#  `boot-role-guard` ne reconstruisait qu'un ancien primaire EN MARCHE. Or le
+#  failover ARRÊTE la base de l'ancien actif (`docker compose stop`, et
+#  `restart: unless-stopped` la laisse arrêtée au redémarrage) : elle se lit
+#  `absente`, rien ne la reconstruisait, et le nouvel actif servait sans
+#  réplique jusqu'à une intervention (15/10/2026, réparé à la main à 20:50).
+#  `illisible` peut être une base qui démarre : on ATTEND (l'appelant borne),
+#  on ne reconstruit pas ce qu'on n'a pas lu.
+decider_base_au_retrait() {
+    case "${1:-}" in
+        primaire)                echo "RECONSTRUIRE:ancien primaire — le relancer ferait deux primaires" ;;
+        absente)                 echo "RECONSTRUIRE:base arrêtée ou absente — l'actif servirait sans réplique" ;;
+        replique_ok|replique_ko) echo GARDER ;;
+        *)                       echo ATTENDRE ;;
+    esac
+}
+
 # ── PURE : la réplique a-t-elle rejoué tout le journal du primaire ? ──────────
 #  $1 position du primaire, $2 position rejouée par la réplique (octets)
 #  → oui | non | inconnu
@@ -186,6 +204,13 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "AUCUNE base → abstention"           ABSTENIR   decider_prise_de_main absente
     t "illisible → abstention"             ABSTENIR   decider_prise_de_main illisible
     t "rien lu → abstention"               ABSTENIR   decider_prise_de_main ""
+    echo "== un nœud se retire : que faire de sa base (#2000) =="
+    t "ancien primaire relancé par Docker"     RECONSTRUIRE decider_base_au_retrait primaire
+    t "base ARRÊTÉE par le failover (15/10)"   RECONSTRUIRE decider_base_au_retrait absente
+    t "réplique qui reçoit : rien à faire"     GARDER       decider_base_au_retrait replique_ok
+    t "réplique déconnectée : elle se rattrape" GARDER      decider_base_au_retrait replique_ko
+    t "illisible (elle démarre ?) → attendre"  ATTENDRE     decider_base_au_retrait illisible
+    t "rien lu → attendre, jamais effacer"     ATTENDRE     decider_base_au_retrait ""
     echo "== que démarrer en prenant la main =="
     t "réplique promue"                        TOUT        decider_demarrage PROMOUVOIR sqlite
     t "déjà primaire"                          TOUT        decider_demarrage GARDER postgresql

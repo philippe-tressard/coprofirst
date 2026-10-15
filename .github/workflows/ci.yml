@@ -559,7 +559,12 @@ jobs:
           # est le journal du lendemain. La forme, elle, se contrôle ici (#582).
           bash scripts/lib/lib-volumes.sh           --selftest
           bash scripts/exploitation/boot-role-guard.sh   --selftest
+          # Le failover (#1997, #2000) : décider, PUIS isoler l'ancien actif sous
+          # son verrou de déploiement, PUIS promouvoir — `health-watch.sh
+          # --selftest` relaie `lib-failover.sh --selftest`, qui exécute la sonde
+          # et l'isolement sur un vrai verrou (`flock`).
           bash scripts/exploitation/health-watch.sh      --selftest
+          bash scripts/lib/lib-failover.sh          --selftest
           # C31 (#1586) : health-watch écrit son battement AVANT de décider, la
           # collecte le lit, et un silence rend FAIL sur le nœud qu'il concerne.
           bash scripts/lib/lib-health-watch.sh      --selftest
@@ -596,6 +601,10 @@ jobs:
           # L'attente bornée d'un 200 (#1662) : auto-deploy recrée l'API seule,
           # attend son 200, puis le reste — jamais sans fin.
           bash scripts/lib/lib-sonde.sh             --selftest
+          # Servir sur l'actif (#1997, #1999) : le rôle relu avant CHAQUE
+          # démarrage, la base jamais recréée — le geste d'auto-deploy et de
+          # MaJ-Hostachy.
+          bash scripts/lib/lib-servir.sh            --selftest
           bash scripts/exploitation/auto-deploy.sh       --selftest
           bash scripts/exploitation/check-reliability.sh --selftest
           bash scripts/exploitation/alleger-noeud.sh     --selftest

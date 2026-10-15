@@ -251,7 +251,7 @@ mises_a_jour_verdicts() {
             SANS_OBJET) ;;
             REVENUS)  ok   "Conteneurs hors 5Hostachy revenus sur $n après son redémarrage de noyau : ${e_att//,/, }" ;;
             EN_COURS) warn "Redémarrage de noyau de $n il y a ${e_age} s : ${e_man//,/, } pas encore revenu(s) — revérifié au prochain passage (#1395)" ;;
-            ABSENTS)  fail "Conteneur(s) ${e_man//,/, } NON revenu(s) sur $n, $(( e_age / 60 )) min après son redémarrage de noyau (#1395) — un autre projet est à l'arrêt : 'docker ps -a' sur $n, puis 'docker compose up -d' dans son répertoire" ;;
+            ABSENTS)  fail "Conteneur(s) ${e_man//,/, } NON revenu(s) sur $n, $(( e_age / 60 )) min après son redémarrage de noyau (#1395) — un autre projet est à l'arrêt : 'docker ps -a' sur $n, puis 'docker compose up -d <ses services>' dans son répertoire" ;;
             *)        warn "Retour des conteneurs hors 5Hostachy sur $n INCONNU (relevé de '${e_age:-vide}' s, docker lu='${e_lu:-non}') — ni vert ni rouge" ;;
         esac
         case "$(decision_noyau_candidat "$actif" "$cand")" in
