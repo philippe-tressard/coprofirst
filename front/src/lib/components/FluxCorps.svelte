@@ -21,6 +21,7 @@
 	import { STATUT_TICKET_BADGE, statutTicketLabel } from '$lib/tickets';
 	import { safeHtml } from '$lib/sanitize';
 	import PiecesJointes from './PiecesJointes.svelte';
+	import FluxRubriquesAffaire from './FluxRubriquesAffaire.svelte';
 
 	export let item: FluxItem;
 	/**  L'adresse de l'écran d'origine — calculée par la carte, qui connaît déjà
@@ -42,6 +43,9 @@
 	$: classeStatut = STATUT_TICKET_BADGE[String(item.meta?.statut ?? '')] ?? 'badge-gray';
 	$: photos = (item.meta?.photos_urls as string[] | undefined) ?? [];
 	$: fichiers = (item.meta?.fichiers_urls as string[] | undefined) ?? [];
+	//  Une AFFAIRE a son corps propre, en rubriques (maquette A, 15/10/2026) :
+	//  le serveur pose `demande` sur ses seules cartes (`flux/tickets._meta_ticket`).
+	$: estAffaire = !!item.meta?.demande;
 </script>
 
 <div class="flux-body" role="presentation" on:click|stopPropagation>
@@ -63,7 +67,9 @@
 	<!--  ⚠️ L'auteur n'est PLUS répété ici : il est en rangée de l'en-tête, visible
 	      replié comme déplié (11/09/2026). C'est le même défaut que le périmètre
 	      ci-dessus, corrigé le 18/08 — une méta visible repliée ne se redit pas. -->
-	{#if item.meta?.statut}
+	<!--  L'état d'une affaire est déjà dans sa ligne de pastilles, pliée comme
+	      dépliée : « État : Résolu » le redisait juste dessous (TK-109008). -->
+	{#if item.meta?.statut && !estAffaire}
 		<p class="flux-meta-line">
 			État :
 			<Badge teinte={classeStatut}>{statutTicketLabel(String(item.meta.statut))}</Badge>
@@ -84,36 +90,40 @@
 		      immédiatement divergé la première fois : le calendrier a eu son
 		      Historique le 18/08/2026, le fil a su le fournir, et RIEN ne
 		      s'affichait. La donnée décide, pas une énumération de types. -->
-	{#if item.meta?.evol_contenu}
-		<div class="flux-reaction">
-			<span class="flux-reaction-icon">💬</span>
-			<div class="flux-reaction-body">
-				{#if item.meta?.evol_auteur}<span class="flux-reaction-auteur">{item.meta.evol_auteur}</span
-					>{/if}
-				<p class="flux-reaction-text">{item.meta.evol_contenu}</p>
+	{#if estAffaire}
+		<!--  Une affaire : ses rubriques, chacune avec SES pièces (15/10/2026). -->
+		<FluxRubriquesAffaire {item} />
+	{:else}
+		{#if item.meta?.evol_contenu}
+			<div class="flux-reaction">
+				<span class="flux-reaction-icon">💬</span>
+				<div class="flux-reaction-body">
+					{#if item.meta?.evol_auteur}<span class="flux-reaction-auteur"
+							>{item.meta.evol_auteur}</span
+						>{/if}
+					<p class="flux-reaction-text">{item.meta.evol_contenu}</p>
+				</div>
 			</div>
-		</div>
-	{/if}
-	<!--  Le texte d'origine, en dessous : il rappelle DE QUOI il s'agit. -->
-	{#if item.meta?.full_html}
-		<div class="flux-full-content rich-content">
-			{@html safeHtml(String(item.meta.full_html))}
-		</div>
-	{:else if item.meta?.description}
-		<p class="flux-full-content">{item.meta.description}</p>
-	{:else if item.detail}
-		<p class="flux-full-content">{item.detail}</p>
-	{/if}
-	{#if photos.length || fichiers.length}
-		<!-- Les pièces jointes de devis sont des PDF : elles étaient
-			     rendues en <img>, donc en image cassée. Le composant
-			     distingue image et document, une fois pour toutes. -->
-		<!-- Format « grand » : la carte est dépliée, l'utilisateur a
-			     demandé à voir. Une vignette de 72 px lui imposerait un
-			     clic de plus pour ce qu'il vient d'ouvrir. -->
-		<div class="flux-photos">
-			<PiecesJointes urls={[...photos, ...fichiers]} format="grand" />
-		</div>
+		{/if}
+		<!--  Le texte d'origine, en dessous : il rappelle DE QUOI il s'agit. -->
+		{#if item.meta?.full_html}
+			<div class="flux-full-content rich-content">
+				{@html safeHtml(String(item.meta.full_html))}
+			</div>
+		{:else if item.meta?.description}
+			<p class="flux-full-content">{item.meta.description}</p>
+		{:else if item.detail}
+			<p class="flux-full-content">{item.detail}</p>
+		{/if}
+		{#if photos.length || fichiers.length}
+			<!-- Les pièces jointes de devis sont des PDF : le composant
+			     distingue image et document, une fois pour toutes.
+			     Format « grand » : la carte est dépliée, l'utilisateur a
+			     demandé à voir. -->
+			<div class="flux-photos">
+				<PiecesJointes urls={[...photos, ...fichiers]} format="grand" />
+			</div>
+		{/if}
 	{/if}
 	{#if lien}
 		<a href={lien} class="flux-link">{typeVoirLabel(item)}</a>
