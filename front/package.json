@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "2.157.0",
+	"version": "2.158.0",
 	"private": true,
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
