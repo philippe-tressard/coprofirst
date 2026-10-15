@@ -161,6 +161,31 @@ def test_le_titre_et_la_cle_du_fil_oublient_les_prefixes_et_le_repere():
     assert cle_du_fil("RE: Info") is None, "un objet trop court ne reconnaît aucun fil"
 
 
+@pytest.mark.parametrize(
+    "objet",
+    [
+        #  Le cas vécu (15/10/2026) : la réponse d'un copropriétaire, par Apple
+        #  Mail en français, a ouvert une SECONDE affaire (TK-973074) au lieu de
+        #  rejoindre celle de son fil (TK-749553).
+        "Rép. : Rendez-vous avec Conseil Syndical",
+        "Rép.: Rendez-vous avec Conseil Syndical",
+        "Rep: Rendez-vous avec Conseil Syndical",
+        "Réponse : Rendez-vous avec Conseil Syndical",
+        "TR : Rép. : Rendez-vous avec Conseil Syndical",
+        "RE : Rendez-vous avec Conseil Syndical",
+    ],
+)
+def test_une_reponse_en_francais_rejoint_son_fil(objet):
+    assert cle_du_fil(objet) == cle_du_fil("Rendez-vous avec Conseil Syndical")
+    assert titre_du_fil(objet) == "Rendez-vous avec Conseil Syndical"
+
+
+def test_un_mot_qui_commence_comme_un_prefixe_reste_dans_le_titre():
+    """« Réparation », « Repas », « Report » ne sont pas des préfixes de réponse."""
+    for objet in ("Réparation de la porte du hall", "Repas des voisins", "Report de l'AG"):
+        assert titre_du_fil(objet) == objet
+
+
 def test_l_empreinte_reconnait_un_message_cite_autrement():
     """Deux transferts du même fil ne coupent pas les lignes aux mêmes endroits."""
     _s, _j, premier = _messages()

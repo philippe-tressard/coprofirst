@@ -24,6 +24,7 @@ from sqlmodel import select
 from app.models.core import STATUTS_TICKET_ACTIFS, Ticket, TicketEvolution, Utilisateur
 from app.utils.nature_affaire import ACTUALITE
 from app.utils.dates_fr import duree_jhm
+from app.utils.archivage import est_archivable, seuil_archivage_jours
 from app.utils.photos import parse_photos
 from app.utils.recuperer import precharger
 from app.utils.visibility import ticket_visible
@@ -287,6 +288,16 @@ def collecter(ctx: ContexteFlux) -> list[FluxItem]:
         tid, date = candidate[0], candidate[1]
         if tid not in retenues or date > retenues[tid][1]:
             retenues[tid] = candidate
+    #  🔴 Ce qui s'archive se retire du fil (#flux, 31/08/2026) — la règle de la
+    #  liste des affaires, la même que la rubrique des actualités. Elle manquait
+    #  ici : une affaire archivée par le conseil restait au fil (15/10/2026,
+    #  TK-973074). Une affaire résolue y reste, elle, ses trente jours.
+    seuil_jours = seuil_archivage_jours(ctx.session)
+    retenues = {
+        tid: c
+        for tid, c in retenues.items()
+        if not est_archivable("ticket", c[3], seuil_jours=seuil_jours)
+    }
     #  Les personnes que les cartes nomment, lues d'un coup ; la liste les retient
     #  le temps de la fabrication (`recuperer.precharger`).
     _personnes = precharger(
