@@ -313,7 +313,13 @@ def messages_du_fil(transfert: Transfert) -> list[MessageDuFil]:
 # ── Reconnaître un fil, et un message déjà versé ──────────────────────────────
 
 #: « RE: », « TR : », « Fwd: », « AW: »… en tête d'objet, éventuellement répétés.
-_PREFIXES = re.compile(r"^\s*((re|tr|fwd?|fw|transf\.?|réf|aw|wg)\s*(\[\d+\])?\s*:\s*)+", re.I)
+#: 🔴 « Rép. : » (Apple Mail et Outlook en français) et « Réponse : » manquaient
+#: (15/10/2026) : la réponse d'un copropriétaire avait une autre clé de fil, et
+#: ouvrait une SECONDE affaire au lieu de rejoindre la sienne. Le « : » est exigé,
+#: donc « Réparation », « Repas » ou « Report » restent dans le titre.
+_PREFIXES = re.compile(
+    r"^\s*((re|r[ée]p\.?|r[ée]ponse|tr|fwd?|fw|transf\.?|réf|aw|wg)\s*(\[\d+\])?\s*:\s*)+", re.I
+)
 #: Le repère d'une affaire écrit par le conseil (« TK-109008 », « Affaire #TK-… »).
 _REPERE = re.compile(r"(?:affaire|ticket)?\s*#?\s*\bTK-[0-9A-Za-z]{4,12}\b", re.I)
 _REPERE_SEUL = re.compile(r"#?\s*\b(TK-[0-9A-Za-z]{4,12})\b", re.I)
