@@ -226,6 +226,13 @@ def derniere_copie_hors_site(session: Session) -> tuple[HistoriqueMaintenance | 
     return derniere, details
 
 
+def copie_hors_site_a_jour(session: Session) -> bool:
+    """Oui si la copie hors site est là, réussie, fraîche et saine — le jugement de
+    l'écran de santé, sans un mot de plus : le rapport nocturne (#1981) le transmet
+    tel quel à la référence, qui n'en a pas de second."""
+    return not _check_export_hors_site(session)
+
+
 def _check_export_hors_site(session: Session) -> list[str]:
     """Vérifie qu'une copie des sauvegardes existe HORS des deux Raspberry Pi.
 
