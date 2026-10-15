@@ -155,7 +155,7 @@ l'étend.
 | Tâche | En démo | Raison |
 |---|---|---|
 | `purge_comptes_inactifs` | coupée | supprime des comptes ; la remise à zéro la remplace |
-| `backup`, `backup_rattrapage` | coupées | rien à sauvegarder : la démo se régénère |
+| `backup`, `backup_rattrapage` | coupées | rien à sauvegarder : la démo se régénère — son rapport nocturne le déclare (`Sauvegarde.attendue`), et la référence ne s'en alarme pas (#1982) |
 | `courriel_reponses`, `synthese_affaires`, `whatsapp_scheduled` | coupées | IMAP, IA, WhatsApp |
 | `health_check` (06:00) | coupée | son seul effet est un courriel |
 | `telemetry_aggregation`, `manuel_pdf_*` | gardées | internes, sans envoi |
