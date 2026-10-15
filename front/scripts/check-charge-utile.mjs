@@ -59,7 +59,9 @@ const RELAIS = [
 		nom: 'ticket — liste',
 		source: 'src/lib/components/EvolForm.svelte',
 		emission: "dispatch('submit'",
-		relais: 'src/routes/(app)/tickets/+page.svelte',
+		//  Les gestes de la liste vivent dans `$lib/affaires-en-liste` (15/10/2026),
+		//  que la page Affaires et le lien direct d'une affaire emploient.
+		relais: 'src/lib/affaires-en-liste.ts',
 		appel: 'ticketsApi.addEvolution(',
 		absents: {},
 	},

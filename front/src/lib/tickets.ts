@@ -411,31 +411,25 @@ export function optionsVersTicket(options: {
     quelqu'un dedans n'avait aucun moyen de dire les deux.
     ══════════════════════════════════════════════════════════════════════════ */
 
-/*  ── La PRIORITÉ, et ses deux longueurs ─────────────────────────────────────
+/*  ── La PRIORITÉ ───────────────────────────────────────────────────────────
     🔴 Son vocabulaire vivait dans un ÉCRAN (`tickets/[id]`), en table locale —
     du spécifique, alors que tous les autres états du produit vivent ici. Et la
     carte du ticket en donnait un SECOND rendu, écrit à la main : « ⚡ Urgente »
     là où la fiche dit « Priorité haute ». Deux rendus du même état, aucun qui
     se voie depuis l'autre.
 
-    Ils ne sont PAS fondus en un seul : une carte est dense et ne montre que ce
-    qui presse, une fiche décrit. C'est la même distinction que `LIBELLES_STATUT`
-    / `LIBELLES_STATUT_ABREGE` dans `$lib/roles` — et elle se DÉCLARE ici, au
-    lieu de se découvrir en comparant deux écrans.
-
-    ⚠️ `normale` ne s'affiche NULLE PART : les deux écrans la taisent, chacun à
-    sa façon (`!== 'normale'` sur la fiche, `=== 'haute'` sur la carte). Son
-    libellé existe quand même, pour que la table couvre l'énumération du
-    serveur — `PrioriteTicket` (`api/app/models/tickets.py`).                  */
+    ✂️ La forme LONGUE est partie le 15/10/2026 avec la fiche : le lien d'une
+    affaire rend désormais la carte, et « Priorité haute » n'avait plus aucun
+    lecteur. Reste la forme brève, et la teinte. `normale` et `basse` ne
+    s'affichent nulle part — la carte ne montre que ce qui presse — et gardent
+    leur ligne pour que la table couvre l'énumération du serveur —
+    `PrioriteTicket` (`api/app/models/tickets.py`).                           */
 const PRIORITE = parAttribut({
-	basse: { libelle: 'Priorité basse', bref: '', badge: 'badge-gray' },
-	normale: { libelle: 'Priorité normale', bref: '', badge: 'badge-gray' },
+	basse: { bref: '', badge: 'badge-gray' },
+	normale: { bref: '', badge: 'badge-gray' },
 	//  Le glyphe est LU dans la table des options : il n'y est écrit qu'une fois.
-	haute: { libelle: 'Priorité haute', bref: `${GLYPHE_URGENCE} Urgente`, badge: 'badge-orange' },
+	haute: { bref: `${GLYPHE_URGENCE} Urgente`, badge: 'badge-orange' },
 });
-
-/** « Priorité haute » — la forme longue, pour une fiche. */
-export const LIBELLE_PRIORITE: Record<string, string> = PRIORITE.libelle;
 
 /** « ⚡ Urgente » — la forme brève, pour une carte. **Vide** quand il n'y a rien
  *  à signaler : c'est ce qui permet à la carte de ne rien afficher sans reposer
