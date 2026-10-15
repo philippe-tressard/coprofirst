@@ -45,7 +45,7 @@ from app.registre.contrat import (
     Rapport,
     Sauvegarde,
 )
-from app.utils import installation
+from app.utils import installation, taches
 from app.utils.plateforme import DEPOT_SOURCE
 from app.utils.stockage import stockage
 
@@ -231,7 +231,11 @@ def construire() -> Rapport:
             se_declare_reference=installation.est_reference(),
         ),
         hebergement=hebergement(),
-        sauvegarde=Sauvegarde(derniere_reussie_le=derniere, copie_hors_machine=hors_machine),
+        sauvegarde=Sauvegarde(
+            derniere_reussie_le=derniere,
+            copie_hors_machine=hors_machine,
+            attendue=not taches.coupee_hors_demo("backup"),
+        ),
         posture=posture(),
         coproprietes=coproprietes,
         consommation=Consommation(),  # R7 (#1883) : quand le modèle économique sera choisi
