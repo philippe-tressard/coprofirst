@@ -22,6 +22,7 @@
   ouvert. Les listes arrivent donc liées, et les gestes qui les vident vivent ici.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import { nomAffiche } from '$lib/noms';
 	import {
 		admin as adminApi,
@@ -218,14 +219,14 @@
 								{/if}
 							</td>
 							<td
-								><span class="badge {badgeStatut(u.statut)} pastille-xs"
-									>{LIBELLES_STATUT_ABREGE[u.statut] ?? u.statut}</span
+								><Badge teinte={badgeStatut(u.statut)}
+									>{LIBELLES_STATUT_ABREGE[u.statut] ?? u.statut}</Badge
 								></td
 							>
 							<td>
 								<div class="liste-roles">
 									{#each u.roles?.length ? u.roles : [u.role] as r (r)}
-										<span class="badge {badgeRole(r)} pastille-xs">{libelleRole(r)}</span>
+										<Badge teinte={badgeRole(r)}>{libelleRole(r)}</Badge>
 									{/each}
 								</div>
 							</td>
@@ -437,9 +438,6 @@
 		font-size: var(--fs-xs);
 		color: var(--color-text-muted);
 		margin-top: 0.15rem;
-	}
-	.pastille-xs {
-		font-size: var(--fs-xs);
 	}
 	.liste-roles {
 		display: flex;

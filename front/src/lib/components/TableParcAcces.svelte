@@ -20,6 +20,7 @@
   et la règle vivrait alors à deux endroits.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
@@ -92,7 +93,7 @@
 						</BadgePerimetre>
 					</td>
 					<td>
-						<span class="badge {statutAccesBadge(a.statut)}">{statutAccesLabel(a.statut)}</span>
+						<Badge teinte={statutAccesBadge(a.statut)}>{statutAccesLabel(a.statut)}</Badge>
 					</td>
 					<!--  Crayon puis corbeille, au trait — l'ordre arrêté par la carte de ticket. La
 					      corbeille n'apparaît que pour l'admin : l'écran dit alors

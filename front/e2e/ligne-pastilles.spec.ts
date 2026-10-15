@@ -185,3 +185,27 @@ for (const [route, carte, auteur] of [
 		else expect(ligne).not.toContain('✍️');
 	});
 }
+
+/*
+ *  **La teinte d'un badge tiré d'une table est posée par `Badge`** (#1571,
+ *  15/10/2026) : trente `class="badge {…}"` y sont passés, en `class:`. Le
+ *  contrôle `lint:badge` lit le source ; ce test lit le RENDU — l'état « Chez le
+ *  syndic » doit porter `badge-orange`, et le même fond qu'un témoin des
+ *  feuilles communes. Sans teinte posée, il retomberait sur la base `.badge`.
+ */
+test('le badge d’état porte la teinte de sa table', async ({ page }) => {
+	await simuler(page);
+	await page.goto('/tickets');
+	const etat = page.locator('.carte-liste .ec-tags .badge', { hasText: 'Chez le syndic' }).first();
+	await expect(etat).toHaveClass(/\bbadge-orange\b/);
+	const fonds = await etat.evaluate((el) => {
+		const temoin = document.createElement('span');
+		temoin.className = 'badge badge-orange';
+		document.body.append(temoin);
+		const attendu = getComputedStyle(temoin).backgroundColor;
+		temoin.remove();
+		return { obtenu: getComputedStyle(el).backgroundColor, attendu };
+	});
+	expect(fonds.attendu, 'cas zéro : le témoin n’a pas de fond').not.toBe('rgba(0, 0, 0, 0)');
+	expect(fonds.obtenu).toBe(fonds.attendu);
+});

@@ -29,6 +29,7 @@
   l'autre.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import MarqueIA from '$lib/components/MarqueIA.svelte';
@@ -108,8 +109,8 @@
 				<BadgeNouveau le={idee.cree_le} />
 			</svelte:fragment>
 			<svelte:fragment slot="tags">
-				<span class="badge {statutClass(idee.statut)}"
-					>{STATUT_IDEE_LABELS[idee.statut] ?? idee.statut}</span
+				<Badge teinte={statutClass(idee.statut)}
+					>{STATUT_IDEE_LABELS[idee.statut] ?? idee.statut}</Badge
 				>
 				<!--  État · 🔹 · qui la lit · ✨ — l'ordre de la carte d'affaire (#1373).
 				      🔴 PAS D'AUTEUR : arbitré le 27/09/2026, une idée reste anonyme

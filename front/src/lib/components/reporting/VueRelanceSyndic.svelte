@@ -9,6 +9,7 @@
   « Rafraîchir » doit savoir quoi recharger.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import { confirmer } from '$lib/confirmation';
 	import { onMount } from 'svelte';
@@ -216,8 +217,8 @@
 						</div>
 					</div>
 					<div class="relance-item-meta">
-						<span class="badge {TK_STATUT_BADGE[t.statut] ?? 'badge-gray'}"
-							>{TK_STATUT_LABELS[t.statut] ?? t.statut}</span
+						<Badge teinte={TK_STATUT_BADGE[t.statut] ?? 'badge-gray'}
+							>{TK_STATUT_LABELS[t.statut] ?? t.statut}</Badge
 						>
 						<span class="badge badge-gray">{categorieTicketLabel(t.categorie)}</span>
 					</div>
