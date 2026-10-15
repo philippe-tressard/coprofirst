@@ -44,6 +44,7 @@
   répété.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import type { AccesBail } from '$lib/api';
 	import { statutAccesBadge, statutAccesLabel, typeAccesLabel } from '$lib/types-acces';
 	import { isLocataire } from '$lib/stores/auth';
@@ -73,8 +74,7 @@
 							<td class="texte-code">{a.code}</td>
 							<td>{typeAccesLabel(a.type)}</td>
 							<td
-								><span class="badge {statutAccesBadge(a.statut)}">{statutAccesLabel(a.statut)}</span
-								></td
+								><Badge teinte={statutAccesBadge(a.statut)}>{statutAccesLabel(a.statut)}</Badge></td
 							>
 						</tr>
 					{/each}

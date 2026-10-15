@@ -2051,6 +2051,13 @@ jobs:
         working-directory: front
         run: npm run lint:type-lot
 
+      # La teinte d'un badge tirée d'une TABLE passe par `Badge` (#1571) : une
+      # classe interpolée rendait l'écran aveugle à `lint:css-orphelin` (25
+      # fichiers). Teintes du composant, des feuilles et du code concordent.
+      - name: Badge de teinte rendu par son composant
+        working-directory: front
+        run: npm run lint:badge
+
       # Nom, adresse, décomptes de lots, année et immatriculation de la
       # copropriété : saisis par `ChampsIdentiteCopropriete` seul (#779,
       # 01/10/2026). La copie de la page Résidence ne savait pas effacer un

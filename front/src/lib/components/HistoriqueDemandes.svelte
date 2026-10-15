@@ -22,6 +22,7 @@
   vocabulaire divergeraient au premier libellé ajusté.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import type { MaDemandeProfil } from '$lib/api';
 	import { fmtDateShort as fmtDate } from '$lib/date';
 	import { STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LABEL } from '$lib/demandes';
@@ -52,8 +53,8 @@
 								{#if d.batiment_nom_souhaite}{d.batiment_nom_souhaite}{/if}
 							</td>
 							<td
-								><span class="badge {STATUT_DEMANDE_BADGE[d.statut_demande] ?? 'badge-gray'}"
-									>{STATUT_DEMANDE_LABEL[d.statut_demande] ?? d.statut_demande}</span
+								><Badge teinte={STATUT_DEMANDE_BADGE[d.statut_demande] ?? 'badge-gray'}
+									>{STATUT_DEMANDE_LABEL[d.statut_demande] ?? d.statut_demande}</Badge
 								></td
 							>
 							<td class="hd-motif">{d.motif_refus ?? '—'}</td>

@@ -99,10 +99,9 @@ export const TOLERANCES = {
 		'même raison — la cellule suit l’en-tête, sinon la colonne se décale',
 
 	//  ── Boutons ──────────────────────────────────────────────────────────────
-	//  Suivie du balisage le 30/09/2026 (#779) : l'onglet Utilisateurs a quitté
-	//  la page d'administration pour `OngletUtilisateurs`.
-	'lib/components/OngletUtilisateurs.svelte::btn-sm':
-		'boutons plus denses dans les tableaux de configuration',
+	//  `OngletUtilisateurs::btn-sm` retirée le 15/10/2026 (#1571) : la règle ne
+	//  visait plus aucun bouton de l'écran — morte, invisible tant qu'un badge
+	//  interpolé aveuglait le fichier.
 	//  ⚠️ La clé a suivi le BALISAGE le 07/09/2026 : la barre d'actions d'un membre
 	//  est devenue `ActionsMembre.svelte` (le trio « enregistrer · modifier ·
 	//  supprimer » était écrit deux fois dans la page, et le crayon du bandeau une

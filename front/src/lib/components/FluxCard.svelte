@@ -17,6 +17,7 @@
   épinglé et chronologie. Une carte se rend de la même façon partout.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
 	import { createEventDispatcher } from 'svelte';
@@ -182,7 +183,7 @@
 					{#if item.type === 'question_reglement'}
 						<BadgeVerdict verdict={String(champDe(item.meta, 'verdict') ?? '')} libelle={b} />
 					{:else}
-						<span class="badge {badgeClass(item.type, b)}">{b}</span>
+						<Badge teinte={badgeClass(item.type, b)}>{b}</Badge>
 					{/if}
 				{/each}
 				<!--  `BadgePerimetre` ne rend RIEN quand le périmètre vaut le défaut. -->

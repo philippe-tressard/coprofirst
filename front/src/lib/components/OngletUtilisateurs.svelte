@@ -13,6 +13,7 @@
   l'onglet Site en lit aussi les gestionnaires possibles.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import { admin as adminApi, type UtilisateurAdmin } from '$lib/api';
@@ -246,9 +247,9 @@
 							</td>
 							<td class="text-muted-md">{u.email}</td>
 							<td>
-								<span class="badge {badgeStatut(u.statut)} statut-compte">
+								<Badge teinte={badgeStatut(u.statut)}>
 									{LIBELLES_STATUT_ABREGE[u.statut] ?? u.statut ?? '—'}
-								</span>
+								</Badge>
 							</td>
 							<td>
 								<span class="badge badge-gray">{userBatimentLabel(u)}</span>
@@ -275,7 +276,7 @@
 							<td>
 								<div class="liste-badges">
 									{#each badgesDeRoles(u.roles?.length ? u.roles : [u.role]) as d (d.label)}
-										<span class="badge {d.cls}">{d.label}</span>
+										<Badge teinte={d.cls}>{d.label}</Badge>
 									{/each}
 								</div>
 							</td>
@@ -403,10 +404,6 @@
 {/if}
 
 <style>
-	.btn-sm {
-		padding: 0.3rem 0.7rem;
-		font-size: var(--fs-sm);
-	}
 	.row-cs td {
 		background: #eff6ff;
 	}
@@ -465,9 +462,6 @@
 		font-size: var(--fs-xs);
 		color: var(--color-text-muted);
 		margin-top: 0.15rem;
-	}
-	.statut-compte {
-		font-size: var(--fs-xs);
 	}
 	.liste-badges {
 		display: flex;

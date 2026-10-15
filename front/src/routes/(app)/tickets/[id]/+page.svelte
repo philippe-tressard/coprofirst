@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import { etatAffiche } from '$lib/suivi-actualite';
 	import { confirmer, SUPPRESSION } from '$lib/confirmation';
 	import { estAbsent, messageErreur } from '$lib/erreurs';
@@ -287,10 +288,10 @@
 			<svelte:fragment slot="workflow">
 				{#if !estActualite(ticket)}
 					<div class="ticket-meta">
-						<span class="badge {statutBadge}">{statutLabel}</span>
+						<Badge teinte={statutBadge}>{statutLabel}</Badge>
 						{#if ticket.priorite && ticket.priorite !== 'normale'}
-							<span class="badge {BADGE_PRIORITE[ticket.priorite] ?? 'badge-gray'}"
-								>{LIBELLE_PRIORITE[ticket.priorite] ?? ticket.priorite}</span
+							<Badge teinte={BADGE_PRIORITE[ticket.priorite] ?? 'badge-gray'}
+								>{LIBELLE_PRIORITE[ticket.priorite] ?? ticket.priorite}</Badge
 							>
 						{/if}
 					</div>
@@ -301,7 +302,9 @@
 							<div class="status-boutons">
 								{#each STATUTS_TICKET as s (s.value)}
 									<button
-										class="btn btn-sm {ticket.statut === s.value ? 'btn-primary' : 'btn-outline'}"
+										class="btn btn-sm"
+										class:btn-primary={ticket.statut === s.value}
+										class:btn-outline={ticket.statut !== s.value}
 										disabled={updatingStatus || ticket.statut === s.value}
 										on:click={() => updateStatus(s.value)}>{s.label}</button
 									>
@@ -311,8 +314,8 @@
 					{/if}
 				{:else if suiviActu}
 					<div class="ticket-meta">
-						<span class="badge {STATUT_TICKET_BADGE[suiviActu] ?? 'badge-gray'}"
-							>{STATUT_LABELS[suiviActu] ?? suiviActu}</span
+						<Badge teinte={STATUT_TICKET_BADGE[suiviActu] ?? 'badge-gray'}
+							>{STATUT_LABELS[suiviActu] ?? suiviActu}</Badge
 						>
 					</div>
 				{/if}
@@ -439,10 +442,6 @@
 	    sélecteurs inutilisés pour TOUT le fichier. Trouvée en neutralisant
 	    temporairement les interpolations du front pour mesurer ce que
 	    l'aveuglement masquait. */
-	.evol-form {
-		padding: 0.75rem;
-		margin-top: 0.75rem;
-	}
 
 	.zone-suppression {
 		margin-top: 2rem;
