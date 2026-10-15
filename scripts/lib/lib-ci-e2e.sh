@@ -70,9 +70,25 @@ ci_sert_par_vite() {
 #  l'étape et JOURNALISÉE (date, charge, tests) : c'est la mesure qui manquait
 #  pour trouver la cause. Un vrai défaut retombe à la relance. La CI GitHub,
 #  elle, garde `retries: 0`. (PURE)
+#
+#  🔴 Une SECONDE cause, de la même famille (#1989, 15/10/2026) : la pile réseau
+#  de Windows à court de tampons, au `goto` — `net::ERR_NO_BUFFER_SPACE`
+#  (WSAENOBUFS), 1 échec sur 560, vert seul trois fois de suite, jamais vu par la
+#  CI GitHub (Linux). Mêmes conditions, même journal, même plafond : chaque cause
+#  se NOMME (`ci_cause_relance`), sur la ligne de l'étape et dans le journal —
+#  c'est cette mesure qui dira s'il faut tarir la source (le proxy de Vite).
 #    $1 = code de l'étape · $2 = sert par Vite oui|non · $3 = plafond de tests
 #    sortie Playwright sur stdin → oui | non
 CI_SIGNATURE_IMPORT_VITE='Failed to fetch dynamically imported module'
+CI_SIGNATURE_TAMPONS='net::ERR_NO_BUFFER_SPACE'
+#  La cause propre au poste que porte une sortie d'e2e, nommée — ou vide. (PURE)
+ci_cause_relance() {
+  local sortie
+  sortie=$(cat)
+  if grep -qF "$CI_SIGNATURE_IMPORT_VITE" <<< "$sortie"; then echo "import dynamique de Vite (#1809)"
+  elif grep -qF "$CI_SIGNATURE_TAMPONS" <<< "$sortie"; then echo "tampons réseau de Windows (#1989)"
+  fi
+}
 ci_relance_e2e() {
   local sortie n
   sortie=$(cat)
@@ -80,7 +96,7 @@ ci_relance_e2e() {
   #  🔴 `<<<`, jamais `printf … | grep -q` (#1923) : sur une sortie de plus de
   #  64 Ko, `grep -q` ferme le tube dès la signature, `printf` meurt en SIGPIPE,
   #  et le `pipefail` du rejeu fait de ce succès un échec (standards/10, SIGPIPE).
-  grep -qF "$CI_SIGNATURE_IMPORT_VITE" <<< "$sortie" || { echo non; return; }
+  [ -n "$(ci_cause_relance <<< "$sortie")" ] || { echo non; return; }
   #  Un rechargement de Vite pendant les tests a SA règle (#1421) : l'étape
   #  échoue en nommant la dépendance. La relance ne la contourne jamais.
   grep -q "optimized dependencies changed" <<< "$sortie" && { echo non; return; }
@@ -141,6 +157,13 @@ npm run build
     "$(ci_relance_e2e 1 oui 3 <<< "${b//Failed to fetch dynamically imported module/expect(received).toBe}")" "non"
   t "relance — Vite a rechargé (#1421) : non" \
     "$(ci_relance_e2e 1 oui 3 <<< "$b"$'\n[WebServer] optimized dependencies changed. reloading')" "non"
+  #  #1989 — la pile réseau de Windows à court de tampons, au `goto` : propre au
+  #  poste comme l'import de Vite, même relance, même journal, même plafond.
+  local w="${b//TypeError: Failed to fetch dynamically imported module: /page.goto: net::ERR_NO_BUFFER_SPACE at }"
+  t "relance — tampons de Windows, un test : oui" "$(ci_relance_e2e 1 oui 3 <<< "$w")" "oui"
+  t "cause — import de Vite"                    "$(ci_cause_relance <<< "$b")" "import dynamique de Vite (#1809)"
+  t "cause — tampons réseau de Windows"         "$(ci_cause_relance <<< "$w")" "tampons réseau de Windows (#1989)"
+  t "cause — échec ordinaire : aucune"          "$(ci_cause_relance <<< "expect(received).toBe")" ""
   #  🔴 Le cas zéro : la signature sans bilan lisible n'autorise rien.
   t "relance — aucun test nommé : non"         "$(ci_relance_e2e 1 oui 3 <<< "$CI_SIGNATURE_IMPORT_VITE")" "non"
   #  🔴 #1923 (13/10/2026) : une VRAIE sortie d'e2e pèse plus de 64 Ko. Lue par
