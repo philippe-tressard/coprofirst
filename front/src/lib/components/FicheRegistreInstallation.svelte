@@ -10,7 +10,8 @@
      à une installation résiliée seulement ;
   2. **Services accordés** — une case par service que la référence peut accorder ;
   3. **Administrateur d'installation** — le contact qu'il a déclaré ;
-  4. **Dernier rapport nocturne** — des nombres et des oui/non, rien d'un résident ;
+  4. **Dernier rapport nocturne** — des nombres et des coches de conformité
+     (`CocheConformite` : conforme, à corriger, inconnu), rien d'un résident ;
   5. **Contrat accepté** — le texte EXACT archivé sous l'identifiant (D26) ;
   6. **Journal des décisions** — qui, quand, quoi, pourquoi.
 
@@ -20,13 +21,19 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import CocheConformite from '$lib/components/CocheConformite.svelte';
 	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import type { FicheInstallation, GesteRegistre, ServiceAccordable } from '$lib/api';
 	import { fmtDatetime } from '$lib/date';
 	import { fmtNombre } from '$lib/utils';
-	import { GESTES_REGISTRE, libelleDecision } from '$lib/registre-installations';
+	import {
+		COPIE_HORS_MACHINE,
+		GESTES_REGISTRE,
+		libelleDecision,
+		pointsPosture,
+	} from '$lib/registre-installations';
 	import TexteMarkdown from '$lib/components/TexteMarkdown.svelte';
 
 	export let fiche: FicheInstallation;
@@ -50,11 +57,6 @@
 
 	function basculerService(code: string, coche: boolean) {
 		choisis = coche ? [...choisis, code] : choisis.filter((c) => c !== code);
-	}
-
-	/** Un oui/non mesuré, ou « inconnu » quand la mesure n'a pas pu se faire. */
-	function ouiNon(v: boolean | null): string {
-		return v === null ? 'inconnu' : v ? 'oui' : 'non';
 	}
 
 	function mo(v: number | null): string {
@@ -174,16 +176,22 @@
 		<dd>{r.hebergement.moteur_base ?? 'inconnu'} · {mo(r.hebergement.taille_bases_mo)}</dd>
 		<dt>Sauvegarde</dt>
 		<dd>
-			{r.sauvegarde.derniere_reussie_le
-				? fmtDatetime(r.sauvegarde.derniere_reussie_le)
-				: 'aucune connue'} · copie hors machine : {ouiNon(r.sauvegarde.copie_hors_machine)}
+			<span class="conformites">
+				<span>
+					{r.sauvegarde.derniere_reussie_le
+						? fmtDatetime(r.sauvegarde.derniere_reussie_le)
+						: 'aucune connue'}
+				</span>
+				<CocheConformite point={COPIE_HORS_MACHINE} conforme={r.sauvegarde.copie_hors_machine} />
+			</span>
 		</dd>
 		<dt>Posture</dt>
 		<dd>
-			documentation d’API coupée : {ouiNon(r.posture.documentation_api_coupee)} · cookie sécurisé :
-			{ouiNon(r.posture.cookie_securise)} · lien vers le source : {ouiNon(
-				r.posture.lien_source_present,
-			)}
+			<ul class="conformites">
+				{#each pointsPosture(r.posture) as p (p.cle)}
+					<li><CocheConformite point={p.point} conforme={p.conforme} /></li>
+				{/each}
+			</ul>
 		</dd>
 		{#each r.coproprietes as c (c.identifiant)}
 			<dt>Copropriété</dt>
@@ -260,6 +268,17 @@
 	.faits dd {
 		margin: 0;
 		overflow-wrap: anywhere;
+	}
+	/*  Les points de conformité se suivent et passent à la ligne entiers : une
+	    coche ne se sépare jamais de son fait. */
+	.conformites {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.3rem 1rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 	.contrat {
 		margin: 0 0 0.3rem;

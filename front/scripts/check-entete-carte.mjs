@@ -117,7 +117,8 @@ export function verdictCarte(source) {
  *   Une entrée qui ne sert plus fait échouer. */
 const TAILLE_LIBRE = {
 	'pa-cat': 'pictogramme de catégorie en tête de ligne (PastillesAffaire) — un émoji, pas du texte',
-	'pastille-lecture-bulle': 'la bulle ouverte au toucher, posée SOUS la ligne',
+	'infobulle-bulle':
+		'la bulle de PastilleLecture (Infobulle), ouverte au toucher, posée SOUS la ligne',
 	//  `NotationsPrestataire` a deux modes : `resume` (le badge ★, dans la ligne)
 	//  et la liste des avis, rendue dans le CORPS de la carte. Le contrôle lit le
 	//  composant entier ; ces trois classes n'appartiennent qu'au second mode.

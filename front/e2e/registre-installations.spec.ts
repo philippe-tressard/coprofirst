@@ -10,11 +10,13 @@
  *  - une installation RÉSILIÉE se supprime : motif, appel, et la carte quitte la liste ;
  *  - côté réplique, Admin › Services grise un service que la référence n'autorise pas ;
  *  - ses ALERTES (R4b #1960) : badge teinté de la plus sérieuse et noms sur la carte
- *    repliée, liste en tête de la fiche, les graves dites « courriel à l'opérateur ».
+ *    repliée, liste en tête de la fiche, les graves dites « courriel à l'opérateur » ;
+ *  - le DERNIER RAPPORT : chaque point de conformité en coche — conforme, à corriger,
+ *    inconnu (jamais ✓) —, une phrase qui dit le fait, l'explication au clavier.
  *  Sur bureau et sur téléphone, sans défilement horizontal.
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
-import type { FicheInstallation, RegistreLu } from '../src/lib/api';
+import type { FicheInstallation, RapportInstallation, RegistreLu } from '../src/lib/api';
 
 const OPERATEUR = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
 
@@ -259,4 +261,124 @@ test('Installations : une installation résiliée se supprime, et quitte la list
 			corps: { motif: 'installation d’essai' },
 		},
 	]);
+});
+
+/**  Un rapport nocturne : chaque point de conformité dans un état choisi. */
+function rapport(
+	posture: RapportInstallation['posture'],
+	copie_hors_machine: boolean | null,
+): RapportInstallation {
+	return {
+		identite: { version_logicielle: '2.156.0', revision_base: null, derniere_mise_a_jour: null },
+		hebergement: {
+			hebergeur: null,
+			pays_donnees: 'FR',
+			architecture: 'aarch64',
+			memoire_mo: 8000,
+			disque_total_mo: 100000,
+			disque_occupe_mo: 20000,
+			moteur_base: 'postgresql',
+			taille_bases_mo: 40,
+			certificat_expire_le: null,
+		},
+		sauvegarde: {
+			derniere_reussie_le: '2026-10-15T02:00:00',
+			copie_hors_machine,
+			dernier_essai_restauration_le: null,
+		},
+		posture,
+		coproprietes: [],
+	};
+}
+
+test('Installations : la posture se lit en coches — conforme, à corriger, inconnu', async ({
+	page,
+}) => {
+	await ouvrir(page, 'reference', [], {
+		dernier_rapport_le: '2026-10-15T03:00:00',
+		dernier_rapport: rapport(
+			{
+				documentation_api_coupee: true,
+				cookie_securise: false,
+				secret_suffisant: null,
+				lien_source_present: true,
+			},
+			null,
+		),
+	});
+	const carte = page.locator('#installation-CF-000003');
+	await carte.getByRole('button', { name: /CF-000003/ }).click();
+
+	//  🔴 L'état SAIN de la documentation d'API se dit « non publiée » : « coupée :
+	//  oui » se lisait comme une panne, et « publiée ✓ » dirait l'inverse du fait.
+	const doc = carte.getByRole('button', { name: 'Documentation d’API non publiée — Conforme' });
+	await expect(doc).toBeVisible();
+	await expect(doc.locator('[data-etat]')).toHaveAttribute('data-etat', 'conforme');
+	await expect(carte.getByText(/coupée/)).toHaveCount(0);
+
+	const cookie = carte.getByRole('button', { name: 'Cookie de session non sécurisé — À corriger' });
+	await expect(cookie.locator('[data-etat]')).toHaveAttribute('data-etat', 'a-corriger');
+
+	//  INCONNU n'est jamais ✓ : la mesure qui n'a pas pu se faire n'atteste rien.
+	for (const nom of ['Clé secrète — Inconnu', 'Copie hors machine — Inconnu']) {
+		const inconnu = carte.getByRole('button', { name: nom });
+		await expect(inconnu.locator('[data-etat]')).toHaveAttribute('data-etat', 'inconnu');
+		await expect(inconnu.locator('svg')).toHaveCount(0);
+	}
+
+	//  L'explication s'ouvre au CLAVIER (et au toucher) — pas seulement au survol.
+	//  ⚠️ La capture d'un élément fait DÉFILER la page, et la bulle se ferme au
+	//  défilement (`ux-patterns` §17) : la carte se prend avant, la bulle ensuite,
+	//  sur l'écran tel qu'il est.
+	await carte.screenshot({ path: `test-results/registre-posture-${test.info().project.name}.png` });
+	const bulle = page.locator(`#${await doc.getAttribute('aria-controls')}`);
+	await expect(bulle).toBeHidden();
+	await doc.focus();
+	await page.keyboard.press('Enter');
+	await expect(doc).toHaveAttribute('aria-expanded', 'true');
+	await expect(bulle).toBeVisible();
+	await expect(bulle).toContainText('/docs, /redoc et /openapi.json');
+	await bulle.evaluate((e) => Promise.all(e.getAnimations().map((a) => a.finished)));
+	await page.screenshot({ path: `test-results/registre-bulle-${test.info().project.name}.png` });
+	await page.keyboard.press('Escape');
+	await expect(bulle).toBeHidden();
+	await expect(doc).toBeFocused();
+
+	//  Une bulle ouverte ne déborde pas de l'écran, même pour le dernier point.
+	const dernier = carte.getByRole('button', { name: /Lien vers le code source/ });
+	await dernier.click();
+	const sienne = page.locator(`#${await dernier.getAttribute('aria-controls')}`);
+	await expect(sienne).toBeVisible();
+	const deborde = await page.evaluate(
+		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+	);
+	expect(deborde, 'défilement horizontal avec une bulle ouverte').toBe(false);
+	//  Un clic ailleurs la ferme — par la souris, sans défiler : un `click()` de
+	//  Playwright ferait défiler, et la bulle se fermerait pour une autre raison.
+	const ailleurs = await carte.locator('dt', { hasText: 'Posture' }).boundingBox();
+	if (!ailleurs) throw new Error('libellé « Posture » introuvable');
+	await page.mouse.click(ailleurs.x + 4, ailleurs.y + ailleurs.height / 2);
+	await expect(sienne).toBeHidden();
+});
+
+test('Installations : une documentation d’API publiée est à corriger', async ({ page }) => {
+	await ouvrir(page, 'reference', [], {
+		dernier_rapport_le: '2026-10-15T03:00:00',
+		dernier_rapport: rapport(
+			{
+				documentation_api_coupee: false,
+				cookie_securise: true,
+				secret_suffisant: true,
+				lien_source_present: true,
+			},
+			true,
+		),
+	});
+	const carte = page.locator('#installation-CF-000003');
+	await carte.getByRole('button', { name: /CF-000003/ }).click();
+	const doc = carte.getByRole('button', { name: 'Documentation d’API publiée — À corriger' });
+	await expect(doc.locator('[data-etat]')).toHaveAttribute('data-etat', 'a-corriger');
+	await expect(
+		carte.getByRole('button', { name: 'Copie hors machine — Conforme' }).locator('[data-etat]'),
+	).toHaveAttribute('data-etat', 'conforme');
 });
