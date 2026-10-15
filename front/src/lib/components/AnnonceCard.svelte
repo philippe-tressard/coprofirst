@@ -32,6 +32,7 @@
   `$lib/annonces.ts` : la carte le rend, l'onglet en fait ses filtres.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import type { PetiteAnnonce } from '$lib/api';
 	import CarteListe from '$lib/components/CarteListe.svelte';
 	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
@@ -123,8 +124,8 @@
 		</svelte:fragment>
 
 		<svelte:fragment slot="tags">
-			<span class="badge {statutAnnonceClass(annonce.statut)}"
-				>{statutAnnonceLabel(annonce.statut)}</span
+			<Badge teinte={statutAnnonceClass(annonce.statut)}
+				>{statutAnnonceLabel(annonce.statut)}</Badge
 			>
 			<span class="badge badge-gray">{categorieAnnonceLabel(annonce.categorie)}</span>
 			<!--  🔹 puis QUI LA LIT — l'ordre de la carte d'affaire (#1373). La

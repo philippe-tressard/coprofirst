@@ -222,7 +222,13 @@ const tous = fichiersSvelte('src');
  *  `lint:client-appele`.
  */
 function sansCommentaires(source) {
-	return source.replace(/<!--[\s\S]*?-->/g, '').replace(/^\s*(\/\/|\*|\/\*).*$/gm, '');
+	//  Les blocs `/* … */` ENTIERS aussi (15/10/2026) : une ligne de suite qui ne
+	//  commence pas par `*` passait pour du code — `mon-lot` restait compté aveugle
+	//  pour un commentaire de sa `<style>` qui cite l'ancienne interpolation.
+	return source
+		.replace(/<!--[\s\S]*?-->/g, '')
+		.replace(/\/\*[\s\S]*?\*\//g, '')
+		.replace(/^\s*(\/\/|\*|\/\*).*$/gm, '');
 }
 
 /**
@@ -298,8 +304,17 @@ const aveugles = tous.filter((f) => {
 //  leurs badges de rôle tirés d'une table (`badge {b.cls}`). La page garde le
 //  badge d'état d'une demande, tiré de sa propre table : aucune interpolation
 //  nouvelle, une dette répartie sur deux fichiers.
+//  ✅ 1 le 15/10/2026 (#1571) : les trente classes tirées d'une TABLE de teintes
+//  passent par `Badge` (`$lib/components/Badge.svelte`), qui pose la teinte en
+//  `class:` — le « composant de pastille commun » annoncé au 08/10. Aucun `.badge`
+//  stylé dans une page ne s'y perdait (relevé avant conversion). Rendus
+//  mesurables, les écrans ont livré cinq sélecteurs morts, retirés : `.pastille-xs`
+//  et `.statut-compte` (la taille de base du badge), `.btn-sm` (Utilisateurs),
+//  `.commande-row:last-child` (Accès), `.evol-form` (fiche d'affaire). `mon-lot`
+//  n'était plus compté que pour un commentaire : le relevé saute désormais les
+//  blocs `/* … */`. Reste `LiensGuide`, dont la classe vient de son APPELANT.
 //  Carte des plafonds décroissants : #1571.
-const PLAFOND_NON_MESURES = 25;
+const PLAFOND_NON_MESURES = 1;
 
 const mesures = tous.length - aveugles.length;
 
@@ -319,10 +334,10 @@ if (aveugles.length !== PLAFOND_NON_MESURES) {
 				'  Deux issues :',
 				'    • la classe calculée est LOCALE et ses valeurs sont connues',
 				'      -> `class:ma-classe={condition}`, que Svelte sait résoudre ;',
-				"    • elle vient d'une TABLE vers des classes globales (`badge {STATUT[…]}`)",
-				"      -> ne pas convertir : l'éclater en `class:` recopierait la table dans",
-				'      le balisage. Le fichier reste non mesuré, et il faut alors MONTER le',
-				'      plafond en le justifiant ici — ce qui doit rester exceptionnel.',
+				"    • c'est la teinte d'un badge tirée d'une TABLE (`badge {STATUT[…]}`)",
+				"      -> `<Badge teinte={STATUT[…]}>` (`$lib/components/Badge.svelte`) ;",
+				"    • elle vient de l'APPELANT (une prop `classe`) : monter le plafond en le",
+				'      justifiant ici — ce qui doit rester exceptionnel.',
 				'',
 			].join('\n'),
 		);
@@ -351,5 +366,5 @@ console.log(
 );
 console.log(
 	`  ⚠️ portée réelle des composants : ${mesures}/${tous.length} fichiers mesurés — ` +
-		`${aveugles.length} portent une classe interpolée (plafond ${PLAFOND_NON_MESURES}, #810).`,
+		`${aveugles.length} portent une classe interpolée (plafond ${PLAFOND_NON_MESURES}, #1571).`,
 );

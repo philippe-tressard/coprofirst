@@ -51,6 +51,7 @@
   parle pas du tableau mais de la place qu'il occupe dans l'écran.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import { statutAccesBadge, statutAccesLabel } from '$lib/types-acces';
 
@@ -84,8 +85,8 @@
 						<tr>
 							<td class="mes-acces-code">{item.code}</td>
 							<td
-								><span class="badge {statutAccesBadge(item.statut)}"
-									>{statutAccesLabel(item.statut)}</span
+								><Badge teinte={statutAccesBadge(item.statut)}
+									>{statutAccesLabel(item.statut)}</Badge
 								></td
 							>
 							<!--  🔹 Le MÊME composant que l'écran du conseil syndical : ce que

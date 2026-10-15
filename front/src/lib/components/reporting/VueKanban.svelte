@@ -16,6 +16,7 @@
   haut. Le nom ne décrit donc plus le contenu mais l'usage (#603).
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import { safeDescription } from '$lib/sanitize';
 	import { fmtDate, daysSince } from '$lib/date';
 	import { REPORT_KANBAN_COLS, KANBAN_COLORS, type ReportDossier } from '$lib/reporting';
@@ -58,7 +59,7 @@
 {#each reportKanbanByCol as col (col.col)}
 	<section class="report-card carte-espacee">
 		<h3>
-			<span class="badge {col.badge}">{col.label}</span> — {col.items.length} dossier{col.items
+			<Badge teinte={col.badge}>{col.label}</Badge> — {col.items.length} dossier{col.items
 				.length > 1
 				? 's'
 				: ''}

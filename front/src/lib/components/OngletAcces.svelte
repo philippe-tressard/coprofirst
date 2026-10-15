@@ -33,6 +33,7 @@
   `ouvrirDeclaration`, que l'écran hôte lie à ses boutons.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import { statutAccesBadge, statutAccesLabel } from '$lib/types-acces';
 	import FormulairesAcces from '$lib/components/FormulairesAcces.svelte';
 	import {
@@ -299,8 +300,8 @@
 							</div>
 							<div class="etat-locataire">
 								{#if items.length > 0}
-									<span class="badge badge-yellow pastille-xxs"
-										>{items.length} accès confié{items.length > 1 ? 's' : ''}</span
+									<Badge teinte="badge-yellow" compact
+										>{items.length} accès confié{items.length > 1 ? 's' : ''}</Badge
 									>
 									<button
 										class="btn btn-sm btn-outline"
@@ -308,7 +309,7 @@
 										>↩ Tout récupérer</button
 									>
 								{:else}
-									<span class="badge badge-gray pastille-xxs">Aucun accès confié</span>
+									<Badge teinte="badge-gray" compact>Aucun accès confié</Badge>
 								{/if}
 							</div>
 						</div>
@@ -317,15 +318,14 @@
 								{#each items as item (item.id ?? item.code)}
 									<div class="lar-item">
 										<span class="code-acces">{item.code}</span>
-										<span
-											class="badge {item.typeAcces === 'vigik'
+										<Badge teinte={item.typeAcces === 'vigik'
 												? 'badge-blue'
-												: 'badge-purple'} pastille-xxs"
+												: 'badge-purple'} compact
 										>
 											{item.typeAcces === 'vigik' ? '🏷️ Vigik' : '📡 TC'}
-										</span>
-										<span class="badge {statutAccesBadge(item.statut)} pastille-xxs"
-											>{statutAccesLabel(item.statut)}</span
+										</Badge>
+										<Badge teinte={statutAccesBadge(item.statut)} compact
+											>{statutAccesLabel(item.statut)}</Badge
 										>
 									</div>
 								{/each}
@@ -359,9 +359,6 @@
 	/*  Seul `margin: 0` differe : la charte pose `margin-bottom` (#607, 28/08/2026). */
 	.section-title {
 		margin: 0;
-	}
-	.commande-row:last-child {
-		border-bottom: none;
 	}
 	/* Vue locataire bailleur */
 	.locataire-acces-row {
@@ -417,9 +414,6 @@
 		align-items: center;
 		gap: 0.5rem;
 		flex-wrap: wrap;
-	}
-	.pastille-xxs {
-		font-size: var(--fs-2xs);
 	}
 	.code-acces {
 		font-family: monospace;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	/**
 	 * Le badge « état d'un bail » — **une seule écriture**.
 	 *
@@ -30,12 +31,7 @@
 
 <!--  Repli gris + valeur brute : un état inconnu doit se VOIR, pas s'effacer.
       C'est la même règle que `libelleRole()` côté `$lib/roles`.  -->
-<span class="badge {BADGE_STATUT_BAIL[statut ?? ''] ?? 'badge-gray'}" class:compact>
+<Badge {compact} teinte={BADGE_STATUT_BAIL[statut ?? ''] ?? 'badge-gray'}>
 	{LIBELLE_STATUT_BAIL[statut ?? ''] ?? statut ?? '—'}
-</span>
+</Badge>
 
-<style>
-	.compact {
-		font-size: var(--fs-2xs);
-	}
-</style>

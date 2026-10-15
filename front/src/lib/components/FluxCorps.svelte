@@ -14,6 +14,7 @@
   s'afficherait deux fois sur toute carte ouverte.
 -->
 <script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
 	import type { FluxItem } from '$lib/api';
 	import { fmtDatetimeShort } from '$lib/date';
 	import { typeVoirLabel } from '$lib/flux';
@@ -65,7 +66,7 @@
 	{#if item.meta?.statut}
 		<p class="flux-meta-line">
 			État :
-			<span class="badge {classeStatut}">{statutTicketLabel(String(item.meta.statut))}</span>
+			<Badge teinte={classeStatut}>{statutTicketLabel(String(item.meta.statut))}</Badge>
 		</p>
 	{/if}
 	<!--  🔴 LA DERNIÈRE MISE À JOUR D'ABORD, le texte d'origine ensuite
