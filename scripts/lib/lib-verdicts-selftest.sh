@@ -487,7 +487,7 @@ verdicts_selftest() {
   #  #1587 : ces sorties sont DATÉES, donc C14 les voit vivantes ; C27 dit
   #  qu'elles n'ont rien déployé. Sans ces cas, elles rendraient OK.
   ba "fetch en echec (#1587)" REPORTE "[2026-09-29 16:48:01] ⚠ git fetch impossible (fatal: Could not read from remote repository.) — déploiement reporté au prochain passage."
-  ba "sortie imprevue (#1587)" INTERROMPU "[2026-10-02 09:10:30] ⚠ ÉCHEC inattendu (code 1, dernière commande : docker compose up -d) — auto-deploy interrompu sans ligne de sortie."
+  ba "sortie imprevue (#1587)" INTERROMPU "[2026-10-02 09:10:30] ⚠ ÉCHEC inattendu (code 1, dernière commande : docker compose up -d api) — auto-deploy interrompu sans ligne de sortie."
 
   return $st_fail
 }

@@ -33,7 +33,7 @@ ci-dessous est également résumée dans `CLAUDE.md` et dans
 - `stop_grace_period: 30s` sur le service API → Docker attend 30s avant SIGKILL
 - `PRAGMA wal_checkpoint(TRUNCATE)` dans le lifespan shutdown → WAL vidé proprement à chaque arrêt
 - `bascule.sh` phase 3 : WAL checkpoint avant rsync DB vers le peer
-- `MaJ-Hostachy.sh` : bloque si lancé sur le RPi standby
+- `MaJ-Hostachy.sh` : bloque si lancé sur le RPi standby ; en root (`sudo bash`), il pose le verrou de bascule sur les DEUX nœuds et prend celui du déploiement (#1999)
 - `synchronous=FULL` (v2.20.3) : chaque commit fsync'd intégralement (anti torn-write)
 - `health_check` 06:00 + chaque backup : `PRAGMA quick_check` → alerte / backup annulé si corrompu
 - `maintenance.sh` VACUUM : **API stoppée** (base au repos, 0 writer) puis `sqlite3` hôte
@@ -542,6 +542,8 @@ les deux coexistent : PostgreSQL se réplique et se promeut, SQLite sert encore
 | Le rôle de la base d'un nœud ? | `docker exec hostachy_postgres psql -U coprofirst -d coprofirst -Atc "select pg_is_in_recovery()"` — `t` réplique, `f` primaire |
 | Refaire la réplique du standby | `sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh` (simulation), puis `--oui` — efface la base LOCALE et la copie du primaire (`pg_basebackup -R`) ; refuse sur l'actif, sans primaire joignable |
 | Changer d'actif | la bascule promeut la réplique du pair (phases 3-4), le failover et `boot-role-guard` aussi ; l'ancien primaire est reconstruit en réplique — tout passe par `lib-promotion.sh` |
+| Le failover (#1997, #2000) | `lib-failover.sh` : s'abstient tant que l'actif **se redéploie** (son verrou d'auto-deploy, borné à 15 min) ; DÉCIDE de la base locale avant tout geste (illisible ou absente : l'ancien actif n'est pas touché) ; ISOLE l'ancien actif en un appel, sous son verrou de déploiement (attente 5 min), `.active` réécrit avant l'arrêt de l'application, de la base et du tunnel ; renonce si l'actif sert en LAN sans pouvoir être isolé (deux primaires sinon) ; PUIS promeut. Le courriel nomme `reconstruire-replique.sh` sur l'ancien actif |
+| L'ancien actif après un failover | sa base est ARRÊTÉE : `boot-role-guard` la reconstruit à son redémarrage (`decider_base_au_retrait`, primaire OU absente) ; sans redémarrage, C37 dit FAIL et le geste est `sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh --oui` sur lui |
 | Deux primaires (C37 FAIL) | isoler celui qui ne sert PAS (`docker compose stop postgres` sur le standby), puis `reconstruire-replique.sh --oui` sur lui ; ses écritures depuis la promotion sont perdues — c'est le prix, et C37 le dit |
 | L'intégrité | sommes de contrôle de pages (`--data-checksums` à l'initialisation) ; `GET /admin/db/integrite` lit `pg_stat_database.checksum_failures` |
 | La sauvegarde | `backup.py` met l'**export vérifié** (`base-export.tar.gz`, P2-7) dans l'archive, réimporté dans une base jetable avant d'être déclaré réussi ; l'export hors site relit chaque table sur le poste |
@@ -662,10 +664,14 @@ plus trompeur, la parité **git** devenant verte alors que les **images** sont
 restées vieilles — distinction que le point 10 ne sait pas faire.
 
 **L'actif recrée l'API seule, puis le reste** (#1662, `servir_images` dans
-`auto-deploy.sh`) : il attend le 200 de `http://localhost/api/health` avant de
-recréer le front, borné par `API_PRETE_MAX_S`. « Le reste », c'est
-`SERVICES_APPLICATIFS` : la base n'est que démarrée si elle manque, jamais
-recréée en pleine MEP (#1872). Au journal, « API prête en N s »
+`lib-servir.sh`, partagé avec `MaJ-Hostachy.sh` depuis #1999) : il attend le 200
+de `http://localhost/api/health` avant de recréer le front, borné par
+`API_PRETE_MAX_S`. « Le reste », c'est `SERVICES_APPLICATIFS` : la base n'est que
+démarrée si elle manque, jamais recréée en pleine MEP (#1872). 🔴 **Le rôle est
+RELU avant chaque démarrage** (#1997) : rétrogradé pendant le tirage des images,
+le nœud écrit « ⛔ Rôle changé pendant le passage » et ne relance ni
+l'application ni la base — le 15/10/2026, faute de cette relecture, un
+déploiement a relancé un primaire sur l'ancien actif. Au journal, « API prête en N s »
 ou « ⚠ API sans réponse 200 … le reste est recréé quand même » — la seconde ne
 bloque jamais le déploiement, elle dit qu'il faut lire `docker logs hostachy_api`.
 

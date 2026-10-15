@@ -74,8 +74,14 @@ détruisent sont **autres**, et ils sont interdits au même rang :
   l'initialiserait en primaire VIDE. Un `docker compose up -d` complet sur un standby
   sans réplique fait exactement cela — passer par `lib-promotion.sh`
   (`decider_prise_de_main`), comme la bascule, le failover et la garde au démarrage.
-- **Jamais `docker compose stop` sans liste sur le standby** : il arrêterait la
-  réplique. `docker compose stop $SERVICES_APPLICATIFS` (`lib-applicatifs.sh`).
+- **Jamais `docker compose up|stop|down` sans liste de services** : sur le
+  standby il arrêterait la réplique, sur un nœud rétrogradé il relancerait un
+  primaire (15/10/2026, #1997). `$SERVICES_APPLICATIFS`, `$SERVICE_BASE`,
+  `services_du_noeud` (`lib-applicatifs.sh`). 🔒 `test_applicatifs_source_unique.py`.
+- **Un nœud ne sert que sur un rôle relu à l'instant** : `servir_images`
+  (`lib-servir.sh`, auto-deploy et `MaJ-Hostachy.sh`) relit `.active` avant chaque
+  démarrage, et le failover isole l'ancien actif sous son verrou de déploiement,
+  `.active` réécrit dans le même appel (`lib-failover.sh`, #1997 #2000).
 - **Jamais `docker volume rm 5hostachy_pg_data`**, ni une écriture sur la réplique.
 
 🔒 C37 (`lib-replication.sh`) et le point 22 du pré-check disent deux primaires, une
@@ -1006,8 +1012,9 @@ d'urgence : `ALLOW_STALE=1 git commit …`.
   légitimement — le code est à jour, l'image ne l'est pas. Attendre la ligne
   `Déployé: <sha>` dans `/var/log/hostachy-deploy.log` **sur l'actif**, puis
   post-check. Ne jamais conclure sur le seul `git log` du nœud.
-  Reprise en main : `scripts/exploitation/MaJ-Hostachy.sh` sur le **RPi actif**
-  uniquement (le script bloque sur le standby)
+  Reprise en main : `sudo bash scripts/exploitation/MaJ-Hostachy.sh` sur le **RPi
+  actif** uniquement (le script bloque sur le standby, et pose le verrou de bascule
+  sur les deux nœuds — d'où root, #1999)
 - **Session cloud** (claude.ai/code) : aucun SSH vers les RPi, et le site public
   est hors de la politique réseau de la session. 🔴 **La MEP s'y enchaîne SANS
   validation intermédiaire** (arbitré le 25/09/2026) : PR du lot vers `dev` →

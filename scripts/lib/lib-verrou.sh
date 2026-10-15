@@ -110,6 +110,56 @@ verrou_recent() {  # $1 = mtime · $2 = maintenant · $3 = seuil (s) → oui/non
   [ "$age" -lt "$seuil" ] && echo oui || echo non
 }
 
+#  ── Le verrou de DÉPLOIEMENT — `.auto-deploy.lock`, tenu par auto-deploy ────
+#
+#  `auto-deploy.sh` le tient (flock exclusif) de son lancement à sa fin, sur
+#  chaque nœud. Trois lecteurs le sondent : C1 (`lib-collecte.sh`, pour ne pas
+#  crier au loup pendant un redémarrage de l'API), le FAILOVER (`lib-failover.sh`,
+#  #1997 : on ne bascule pas sous un nœud qui se redéploie) et l'ISOLEMENT de
+#  l'ancien actif, qui le prend pour ne jamais arrêter un nœud au milieu d'un
+#  déploiement qui le relancerait derrière lui.
+#
+#  La sonde, UNE fois : un verrou PARTAGÉ pris et relâché aussitôt, qui échoue
+#  face à l'exclusif du déploiement et ne bloque pas un déploiement qui
+#  démarrerait pile ici. Elle s'insère dans une chaîne simple-quotée (la
+#  collecte) : AUCUNE apostrophe, et `$R` désigne le dépôt chez le nœud sondé.
+#  Elle pose `DEP=oui|non`.
+SONDE_DEPLOIEMENT='DEP=non; if command -v flock >/dev/null 2>&1 && [ -f $R/.auto-deploy.lock ]; then ( flock -n -s 9 ) 9<>$R/.auto-deploy.lock 2>/dev/null || DEP=oui; fi'
+
+#  Le DÉBUT du déploiement en cours : `exec 9>` réécrit le fichier du verrou à
+#  CHAQUE lancement, même celui qui trouve le verrou pris — son âge ne dit donc
+#  rien. Le détenteur marque son début ici, une fois le verrou acquis.
+DEBUT_DEPLOIEMENT=.auto-deploy.debut
+
+#  Marquer le début (auto-deploy, MaJ-Hostachy). Lancé en root, un fichier CRÉÉ
+#  prend le propriétaire du dépôt : le cron `ptressard` doit pouvoir le réécrire.
+marquer_debut_deploiement() {  # $1 = dépôt
+  touch "$1/$DEBUT_DEPLOIEMENT" 2>/dev/null || return 0
+  [ "$(id -u)" -eq 0 ] && chown --reference="$1" "$1/$DEBUT_DEPLOIEMENT" 2>/dev/null
+  return 0
+}
+
+#  La commande envoyée au pair : `libre`, ou `tenu <mtime du début>`.
+#  $1 = le dépôt chez le nœud sondé (paramétré pour que l'autotest l'EXÉCUTE).
+etat_deploiement_sh() {
+  printf 'R=%s; %s; [ "$DEP" = oui ] && echo "tenu $(stat -c %%Y $R/%s 2>/dev/null)" || echo libre' \
+    "${1:-/opt/5hostachy}" "$SONDE_DEPLOIEMENT" "$DEBUT_DEPLOIEMENT"
+}
+
+#  PURE : ce que dit la sonde du pair → libre | en-cours | bloque | inconnu
+#  $1 sortie de ETAT_DEPLOIEMENT_SH (vide = pair injoignable) · $2 maintenant
+#  `bloque` : le verrou est tenu depuis plus que `VERROU_STALE_S` — un
+#  déploiement qui ne finit pas ne doit pas interdire le failover pour toujours.
+#  Début illisible : `verrou_recent` rend « oui » (on s'abstient), comme pour
+#  `.bascule-lock` — le verrou est un fait, seul son âge manque.
+etat_deploiement() {
+  case "${1:-}" in
+    libre) echo libre ;;
+    tenu*) [ "$(verrou_recent "${1#tenu }" "${2:-0}" "$VERROU_STALE_S")" = oui ] && echo en-cours || echo bloque ;;
+    *)     echo inconnu ;;
+  esac
+}
+
 #  ── C12 — une bascule a-t-elle été TUÉE ? ───────────────────────────────────
 #
 #  Reçu de `check-reliability.sh` le 12/09/2026 : ce contrôle porte sur le verrou,

@@ -23,8 +23,9 @@
 - **Fusionner vers `main` n'est pas déployer.** `auto-deploy.sh` fait le `git pull`
   puis le build ; la MEP n'est faite qu'à la ligne `Déployé: <sha>` dans
   `/var/log/hostachy-deploy.log` **sur l'actif**.
-- **Reprise en main** : `scripts/exploitation/MaJ-Hostachy.sh`, sur le RPi
-  **actif** uniquement (le script bloque sur le standby).
+- **Reprise en main** : `sudo bash scripts/exploitation/MaJ-Hostachy.sh`, sur le RPi
+  **actif** uniquement (le script bloque sur le standby, et pose le verrou de
+  bascule sur les deux nœuds).
 - **Un clone qui refuse le `git pull`** (modifications locales sur un nœud) est une
   anomalie à **comprendre** — `git status`, `git diff` — et non à écraser. Aucun
   `git reset --hard`, `git clean -f` ni `git checkout -- .` sans l'accord de
