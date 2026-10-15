@@ -6,6 +6,7 @@
  * archivé sous l'identifiant, journal des décisions, dernier rapport nocturne), et
  * les gestes — valider, suspendre, rétablir, résilier, accorder des services. Un
  * geste voyage dans le bail : l'installation le lit à son prochain renouvellement.
+ * Supprimer une installation résiliée la retire de la liste (`registre/conservation`).
  *
  * À part d'`instance.ts`, qui parle de CETTE installation : ici, ce sont les AUTRES.
  */
@@ -15,8 +16,11 @@ import { api } from './client';
 /**  `en_attente` · `active` · `suspendue` · `resiliee` — l'état au registre. */
 export type EtatRegistre = 'en_attente' | 'active' | 'suspendue' | 'resiliee';
 
-/**  Les gestes de l'opérateur (`registre/decisions.TRANSITIONS`). */
-export type GesteRegistre = 'valider' | 'suspendre' | 'retablir' | 'resilier';
+/**  Les décisions de l'opérateur (`registre/decisions.TRANSITIONS`). */
+export type DecisionInscription = 'valider' | 'suspendre' | 'retablir' | 'resilier';
+
+/**  Les gestes qu'une fiche peut offrir : les décisions, et supprimer une résiliée. */
+export type GesteRegistre = DecisionInscription | 'supprimer';
 
 /**  Une alerte de la référence sur une installation (`registre/alertes.GENRES`, R4b
  *   #1960) — calculée par le serveur à chaque lecture ; l'écran n'en tient pas la liste. */
@@ -137,7 +141,7 @@ export const registre = {
 	installations: () => api.get<RegistreLu>('/admin/installations'),
 	fiche: (identifiant: string) =>
 		api.get<FicheInstallation>(`/admin/installations/${encodeURIComponent(identifiant)}`),
-	decider: (identifiant: string, geste: GesteRegistre, motif: string) =>
+	decider: (identifiant: string, geste: DecisionInscription, motif: string) =>
 		api.post<FicheInstallation>(
 			`/admin/installations/${encodeURIComponent(identifiant)}/decisions`,
 			{ geste, motif },
@@ -145,6 +149,11 @@ export const registre = {
 	accorderServices: (identifiant: string, services: string[], motif: string) =>
 		api.put<FicheInstallation>(`/admin/installations/${encodeURIComponent(identifiant)}/services`, {
 			services,
+			motif,
+		}),
+	/** Résiliée seulement : la ligne quitte la liste, sa fiche répond 404 ensuite. */
+	supprimer: (identifiant: string, motif: string) =>
+		api.post<void>(`/admin/installations/${encodeURIComponent(identifiant)}/suppression`, {
 			motif,
 		}),
 };

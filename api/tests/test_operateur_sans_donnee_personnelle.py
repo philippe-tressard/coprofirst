@@ -56,6 +56,8 @@ ROUTES_DU_REGISTRE = {
     "résilier une installation ; rend sa fiche (R4 #1880)",
     ("PUT", "/admin/installations/{identifiant}/services"): "les services accordés à une "
     "installation ; rend sa fiche (R4 #1880)",
+    ("POST", "/admin/installations/{identifiant}/suppression"): "supprimer une installation "
+    "résiliée ; ne rend rien (204, #1980)",
 }
 
 #: Le cas zéro : neuf routes au 10/10/2026 (supervision technique et base).

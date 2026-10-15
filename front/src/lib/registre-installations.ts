@@ -57,6 +57,13 @@ export const GESTES_REGISTRE: Record<GesteRegistre, GesteDeclare> = {
 			"Définitif : l'installation retombe en mode limité, et l'effacement de ses données revient à son exploitant.",
 		definitif: true,
 	},
+	supprimer: {
+		libelle: 'Supprimer',
+		icone: 'trash-2',
+		effet:
+			"Définitif : l'installation quitte la liste ; ses coordonnées et ses rapports sont effacés. Le contrat accepté reste archivé cinq ans après la résiliation, puis s'efface de lui-même.",
+		definitif: true,
+	},
 };
 
 /**  Ce que dit une ligne du journal (`DecisionRegistre.geste`) — un code inconnu
@@ -70,6 +77,10 @@ const LIBELLES_DECISION: Record<string, string> = {
 	retablir: 'Rétablie',
 	resilier: 'Résiliée',
 	services: 'Services accordés',
+	supprimer: 'Supprimée',
+	retour_apres_suppression: 'Revenue après sa suppression',
+	coordonnees_effacees: 'Coordonnées effacées',
+	contrat_efface: 'Contrat archivé effacé',
 };
 
 /**  Le suivi d'une alerte grave au journal (`registre/alertes`) : `alerte_signalee:muette`

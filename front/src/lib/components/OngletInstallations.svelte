@@ -103,6 +103,30 @@
 		}
 	}
 
+	/** Supprimée : la carte quitte la liste, comme au prochain chargement. */
+	function retirer(identifiant: string) {
+		ouvert = null;
+		if (lu) {
+			lu = {
+				...lu,
+				installations: lu.installations.filter((i) => i.identifiant !== identifiant),
+			};
+		}
+	}
+
+	async function supprimer(identifiant: string, motif: string) {
+		enCours = identifiant;
+		try {
+			await registreApi.supprimer(identifiant, motif);
+			retirer(identifiant);
+			toast('success', `${identifiant} supprimée. Son contrat reste archivé jusqu’à son échéance.`);
+		} catch (e) {
+			toast('error', messageErreur(e));
+		} finally {
+			enCours = null;
+		}
+	}
+
 	async function geste(identifiant: string, g: GesteRegistre) {
 		const declare = GESTES_REGISTRE[g];
 		const motif = await demander({
@@ -114,6 +138,7 @@
 			requis: true,
 		});
 		if (!motif?.trim()) return;
+		if (g === 'supprimer') return supprimer(identifiant, motif.trim());
 		await appliquer(
 			identifiant,
 			() => registreApi.decider(identifiant, g, motif.trim()),

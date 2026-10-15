@@ -14,4 +14,5 @@ ailleurs que chez la référence dont le registre est déclaré (`base.registre_
 | `migrer` | ses migrations (`alembic_plateforme/`) et l'inscription de la référence |
 | `routeur` | le point d'inscription |
 | `sauvegarde` | la sauvegarde nocturne vérifiée de la base `plateforme` |
+| `conservation` | supprimer une installation résiliée, et les échéances des conditions (§4) |
 """

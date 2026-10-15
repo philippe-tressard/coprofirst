@@ -136,6 +136,7 @@ GESTES_FERMES: tuple[Famille, ...] = (
             ("POST", "/admin/db/purger-orphelins"),
             ("POST", "/admin/installations/{identifiant}/decisions"),
             ("PUT", "/admin/installations/{identifiant}/services"),
+            ("POST", "/admin/installations/{identifiant}/suppression"),
             ("POST", "/admin/export-copropriete"),
             ("POST", "/admin/export-copropriete/verifier"),
             ("GET", "/admin/export-copropriete/dernier"),
