@@ -37,8 +37,14 @@ test('L’aperçu de la Diffusion nomme le membre écarté et son motif', async 
 		.first()
 		.click();
 	await page.getByLabel(/Titre/).first().fill('Fuite au sous-sol');
-	await page.getByLabel(/Description/).first().fill('Une fuite sous la colonne.');
-	await page.getByRole('button', { name: /^Créer|^Enregistrer|^Signaler/ }).first().click();
+	await page
+		.getByLabel(/Description/)
+		.first()
+		.fill('Une fuite sous la colonne.');
+	await page
+		.getByRole('button', { name: /^Créer|^Enregistrer|^Signaler/ })
+		.first()
+		.click();
 
 	const ecartes = page.locator('.apercu-ecartes');
 	await expect(ecartes).toContainText('Ne recevront rien');

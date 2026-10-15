@@ -33,6 +33,7 @@
 	import Modale from '$lib/components/Modale.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
 	import type { ApercuDiffusion } from '$lib/api';
 
 	export let apercu: ApercuDiffusion | null = null;
@@ -98,17 +99,18 @@
 				      écartait ensuite, sans un mot. -->
 				{#if canal.ecartes?.length}
 					<div class="apercu-ecartes">
-						<strong>Ne recevront rien :</strong>
-						<ul>
-							{#each canal.ecartes as ecarte, i (i)}
-								<li>{ecarte.qui} — {ecarte.motif}</li>
-							{/each}
-						</ul>
+						<EncartAvertissement role="note">
+							<strong>Ne recevront rien :</strong>
+							<ul>
+								{#each canal.ecartes as ecarte, i (i)}
+									<li>{ecarte.qui} — {ecarte.motif}</li>
+								{/each}
+							</ul>
+						</EncartAvertissement>
 					</div>
 				{/if}
 
 				{#if canal.actif}
-
 					{#if canal.canal === 'email'}
 						{#if canal.sujet}
 							<p class="apercu-sujet"><strong>Objet :</strong> {canal.sujet}</p>
@@ -274,12 +276,6 @@
 		margin: 0;
 	}
 	.apercu-ecartes {
-		font-size: var(--fs-md);
-		color: var(--color-warning-texte);
-		background: var(--color-warning-fond);
-		border: 1px solid var(--color-warning-bordure);
-		border-radius: 6px;
-		padding: 0.45rem 0.6rem;
 		margin: 0 0 0.5rem;
 	}
 	.apercu-ecartes ul {
