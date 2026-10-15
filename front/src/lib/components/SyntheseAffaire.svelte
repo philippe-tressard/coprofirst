@@ -160,8 +160,41 @@
 </script>
 
 <section class="synthese" aria-label="Synthèse de l'affaire">
+	<!--  L'EN-TÊTE porte l'intitulé, la validation et les gestes de l'objet —
+	      crayon puis corbeille, à droite, comme l'en-tête d'une carte (maquette A,
+	      15/10/2026). Ils étaient sous les graphiques, loin de ce qu'ils touchent. -->
 	<div class="tete">
-		<h3 class="titre">🧾 Synthèse de l'affaire</h3>
+		<h4 class="intertitre titre">🧾 La synthèse</h4>
+		{#if synthese.statut === 'validee' && synthese.validee_le}
+			<span class="validee"
+				>Validée le {fmtDatetime(synthese.validee_le)}{synthese.validee_par_nom
+					? ` par ${synthese.validee_par_nom}`
+					: ''}</span
+			>
+		{/if}
+		{#if gestes}
+			<!--  Le mode se lit sur l'icône qui a ouvert le formulaire (`aria-pressed`,
+			      ux-patterns §13 bis). La corbeille en dernier, irréversible. -->
+			<span class="actions">
+				<button
+					type="button"
+					class="btn-icon btn-icon-edit"
+					aria-pressed={edition}
+					aria-label="Modifier la synthèse"
+					title="Modifier"
+					disabled={enCours || !!proposition}
+					on:click={ouvrirEdition}><IconeAction icone="pencil" /></button
+				>
+				<button
+					type="button"
+					class="btn-icon-danger"
+					aria-label="Supprimer la synthèse"
+					title="Supprimer la synthèse"
+					disabled={enCours || edition || !!proposition}
+					on:click={supprimer}><IconeAction icone="trash-2" /></button
+				>
+			</span>
+		{/if}
 	</div>
 	{#if synthese.assiste_ia}
 		<!--  Le préambule choisi par l'utilisateur le 03/10/2026, parmi quatre : il
@@ -184,41 +217,9 @@
 		</EncartAvertissement>
 	{/if}
 
-	{#if m}
-		<!--  Chaque bloc a son sous-titre, d'après la maquette arbitrée le
-		      03/10/2026 — sans son repère de travail (M1…M5). -->
-		{#if m.recidive}
-			<section class="bloc">
-				<h4 class="bloc-titre">La récidive — le même équipement, déjà réparé</h4>
-				<SyntheseRecidive metriques={m} />
-			</section>
-		{/if}
-		<section class="bloc">
-			<h4 class="bloc-titre">Les chiffres — durée, étapes, suites et relances</h4>
-			<SyntheseTuiles metriques={m} />
-		</section>
-		<section class="bloc">
-			<h4 class="bloc-titre">La frise — jours ouvrés passés à chaque étape</h4>
-			<SyntheseFrise metriques={m} />
-		</section>
-		<section class="bloc">
-			<h4 class="bloc-titre">La chronologie — états datés, relances et réouverture</h4>
-			<SyntheseChronologie metriques={m} />
-		</section>
-		{#if m.comparaison}
-			<section class="bloc">
-				<h4 class="bloc-titre">
-					Face à la moyenne — les affaires de même catégorie sur l'exercice
-				</h4>
-				<SyntheseMoyenne metriques={m} />
-			</section>
-		{/if}
-		<section class="bloc">
-			<h4 class="bloc-titre">Le rythme — suites par semaine, semaines muettes</h4>
-			<SyntheseRythme metriques={m} />
-		</section>
-	{/if}
-
+	<!--  🔴 LE TEXTE D'ABORD, puis les chiffres (maquette A, 15/10/2026) : on lit ce
+	      qui s'est passé avant de le mesurer. La maquette du 03/10 mettait les
+	      graphiques en tête — c'est la lecture dans une carte qui l'a renversée. -->
 	{#if edition}
 		<FormulaireCreation titre="Modifier la synthèse" encadre={false}>
 			<form class="edition" on:submit|preventDefault={enregistrer}>
@@ -245,22 +246,62 @@
 				<PiedFormulaire {enCours} on:annule={() => (edition = false)} />
 			</form>
 		</FormulaireCreation>
-	{:else}
-		{#if synthese.synthese}
+	{:else if synthese.synthese}
+		<section class="bloc">
+			<h5 class="bloc-titre">La synthèse — ce qui s'est passé</h5>
+			<div class="rich-content texte">{@html safeDescription(synthese.synthese)}</div>
+		</section>
+	{/if}
+
+	{#if m}
+		<!--  Chaque bloc a son sous-titre, d'après la maquette arbitrée le
+		      03/10/2026 — sans son repère de travail (M1…M5). -->
+		<section class="bloc">
+			<h5 class="bloc-titre">Les chiffres — durée, étapes, suites et relances</h5>
+			<SyntheseTuiles metriques={m} />
+		</section>
+		<section class="bloc">
+			<h5 class="bloc-titre">La frise — jours ouvrés passés à chaque étape</h5>
+			<SyntheseFrise metriques={m} />
+		</section>
+		{#if m.comparaison}
 			<section class="bloc">
-				<h4 class="bloc-titre">La synthèse — ce qui s'est passé</h4>
-				<div class="rich-content texte">{@html safeDescription(synthese.synthese)}</div>
+				<h5 class="bloc-titre">
+					Face à la moyenne — les affaires de même catégorie sur l'exercice
+				</h5>
+				<SyntheseMoyenne metriques={m} />
 			</section>
 		{/if}
+		<section class="bloc">
+			<h5 class="bloc-titre">Le rythme — suites par semaine, semaines muettes</h5>
+			<SyntheseRythme metriques={m} />
+		</section>
+		<!--  La chronologie redit la frise date par date, la récidive ne concerne
+		      qu'un équipement déjà réparé : PLIÉES (maquette A, 15/10/2026). Un
+		      `<details>` : l'accordéon du site le ferme quand un autre s'ouvre. -->
+		<details class="bloc plies">
+			<summary class="bloc-titre">
+				{m.recidive ? 'La récidive et la chronologie' : 'La chronologie'}
+			</summary>
+			{#if m.recidive}
+				<h5 class="bloc-titre">La récidive — le même équipement, déjà réparé</h5>
+				<SyntheseRecidive metriques={m} />
+			{/if}
+			<h5 class="bloc-titre">La chronologie — états datés, relances et réouverture</h5>
+			<SyntheseChronologie metriques={m} />
+		</details>
+	{/if}
+
+	{#if !edition}
 		{#if synthese.difficultes}
 			<section class="bloc">
-				<h4 class="bloc-titre">Les difficultés — ce qui a ralenti l'affaire</h4>
+				<h5 class="bloc-titre">Les difficultés — ce qui a ralenti l'affaire</h5>
 				<div class="rich-content texte">{@html safeDescription(synthese.difficultes)}</div>
 			</section>
 		{/if}
 		{#if synthese.amelioration}
 			<section class="bloc">
-				<h4 class="bloc-titre">L'amélioration suggérée — pour la prochaine affaire</h4>
+				<h5 class="bloc-titre">L'amélioration suggérée — pour la prochaine affaire</h5>
 				<div class="rich-content texte">{@html safeDescription(synthese.amelioration)}</div>
 			</section>
 		{/if}
@@ -268,14 +309,14 @@
 
 	{#if proposition}
 		<section class="bloc proposition" aria-label="Proposition de l'assistant">
-			<h4 class="bloc-titre">Proposition de l’assistant — à appliquer ou annuler</h4>
+			<h5 class="bloc-titre">Proposition de l’assistant — à appliquer ou annuler</h5>
 			<div class="rich-content texte">{@html safeDescription(proposition.synthese)}</div>
 			{#if proposition.difficultes}
-				<h5 class="proposition-titre">Difficultés</h5>
+				<h6 class="proposition-titre">Difficultés</h6>
 				<div class="rich-content texte">{@html safeDescription(proposition.difficultes)}</div>
 			{/if}
 			{#if proposition.amelioration}
-				<h5 class="proposition-titre">Amélioration suggérée</h5>
+				<h6 class="proposition-titre">Amélioration suggérée</h6>
 				<div class="rich-content texte">{@html safeDescription(proposition.amelioration)}</div>
 			{/if}
 			<!--  Le motif de l'assistant des descriptions (`AssistantDescription`) : deux
@@ -294,57 +335,27 @@
 		</section>
 	{/if}
 
-	{#if synthese.statut === 'validee' && synthese.validee_le}
-		<p class="aide">
-			Validée le {fmtDatetime(synthese.validee_le)}{synthese.validee_par_nom
-				? ` par ${synthese.validee_par_nom}`
-				: ''}.
-		</p>
-	{/if}
-
-	{#if gestes}
-		<!--  Le mode se lit sur l'icône qui a ouvert le formulaire (`aria-pressed`,
-		      ux-patterns §13 bis) : la rangée reste, les autres gestes attendent.
-		      Relancer, Recommencer et Valider sont ceux d'un BROUILLON ; Modifier et
-		      Supprimer valent à tout état — la corbeille en dernier, irréversible. -->
+	{#if gestes && brouillon}
+		<!--  Les gestes d'un BROUILLON : relancer, recommencer, valider. -->
 		<div class="gestes">
 			<button
 				type="button"
-				class="btn-icon btn-icon-edit"
-				aria-pressed={edition}
-				aria-label="Modifier la synthèse"
-				title="Modifier"
-				disabled={enCours || !!proposition}
-				on:click={ouvrirEdition}><IconeAction icone="pencil" /></button
+				class="btn btn-outline btn-sm"
+				disabled={enCours || edition || !!proposition}
+				on:click={relancer}>✨ Relancer</button
 			>
-			{#if brouillon}
-				<button
-					type="button"
-					class="btn btn-outline btn-sm"
-					disabled={enCours || edition || !!proposition}
-					on:click={relancer}>✨ Relancer</button
-				>
-				<button
-					type="button"
-					class="btn btn-outline btn-sm"
-					disabled={enCours || edition || !!proposition}
-					on:click={recommencer}>↺ Recommencer</button
-				>
-				<button
-					type="button"
-					class="btn btn-primary btn-sm"
-					disabled={enCours || edition || vide || !!proposition}
-					title={vide ? 'Rédigez la synthèse avant de la valider' : undefined}
-					on:click={valider}>✅ Valider</button
-				>
-			{/if}
 			<button
 				type="button"
-				class="btn-icon-danger"
-				aria-label="Supprimer la synthèse"
-				title="Supprimer la synthèse"
+				class="btn btn-outline btn-sm"
 				disabled={enCours || edition || !!proposition}
-				on:click={supprimer}><IconeAction icone="trash-2" /></button
+				on:click={recommencer}>↺ Recommencer</button
+			>
+			<button
+				type="button"
+				class="btn btn-primary btn-sm"
+				disabled={enCours || edition || vide || !!proposition}
+				title={vide ? 'Rédigez la synthèse avant de la valider' : undefined}
+				on:click={valider}>✅ Valider</button
 			>
 		</div>
 	{/if}
@@ -359,14 +370,24 @@
 	}
 	.tete {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5rem;
 	}
 	.titre {
+		flex: 1;
 		margin: 0;
-		font-size: var(--fs-base);
-		font-weight: 600;
-		color: var(--color-text);
+	}
+	.validee {
+		font-size: var(--fs-xs);
+		color: var(--color-text-muted);
+	}
+	.actions {
+		display: flex;
+		gap: 0.3rem;
+	}
+	.plies summary {
+		cursor: pointer;
 	}
 	/*  Un bloc par graphique et par texte : le cadre et le sous-titre de la
 	    maquette (03/10/2026). */

@@ -12,9 +12,11 @@
   la Suite y paraissait vide — trouvé à l'écran par l'utilisateur, pas par un
   contrôle.
 
-  La Suite elle-même se rend par l'hôte, dans le créneau `synthese` de
-  `RubriqueHistorique`, avec `etat` que ce composant tient (`bind:etat`) ; un
-  geste sur elle appelle `recharger()`.
+  🧾 Il rend AUSSI la synthèse elle-même, en bloc au-dessus du fil (15/10/2026,
+  maquette A de la carte dépliée). Elle se rendait dans le créneau `synthese` de
+  `RubriqueHistorique`, à la date de sa Suite — câblé deux fois, à l'identique,
+  par la carte et par la fiche. Le fil ne raconte plus cette Suite sans texte
+  (`entreesDuFil`) : elle est la conclusion de l'affaire, pas une étape.
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
@@ -23,13 +25,14 @@
 	import { isCS } from '$lib/stores/auth';
 	import { estTicketClos } from '$lib/tickets';
 	import EtatListe from './EtatListe.svelte';
+	import SyntheseAffaire from './SyntheseAffaire.svelte';
 	import { toast } from './Toast.svelte';
 
 	export let ticket: Pick<Ticket, 'id' | 'statut'> | null;
 	/** Le fil : relu à chaque écriture, il fait relire la synthèse avec lui. */
 	export let evolutions: unknown[] = [];
-	/** L'état lu — l'hôte en rend la Suite (`bind:etat`). */
-	export let etat: EtatSynthese | null = null;
+	/** L'état lu : la synthèse lisible, et ce que le conseil peut en faire. */
+	let etat: EtatSynthese | null = null;
 
 	const dispatch = createEventDispatcher<{ change: void }>();
 
@@ -39,7 +42,7 @@
 	$: if (cle) recharger();
 	$: if (!cle) etat = null;
 
-	export async function recharger() {
+	async function recharger() {
 		if (!ticket) return;
 		erreur = '';
 		try {
@@ -74,9 +77,11 @@
 	</div>
 {:else if $isCS && etat?.en_attente}
 	<p class="aide">
-		🧾 La synthèse de l’affaire est en préparation : elle paraîtra dans le fil sous quarante
-		minutes.
+		🧾 La synthèse de l’affaire est en préparation : elle paraîtra ici sous quarante minutes.
 	</p>
+{/if}
+{#if etat?.synthese}
+	<SyntheseAffaire synthese={etat.synthese} gestes={$isCS} on:change={recharger} />
 {/if}
 
 <style>

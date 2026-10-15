@@ -25,20 +25,22 @@
 	import PanneauOptionsPublication from './PanneauOptionsPublication.svelte';
 	import FicheLecture from './FicheLecture.svelte';
 	import RubriqueHistorique from './RubriqueHistorique.svelte';
-	import SyntheseAffaire from './SyntheseAffaire.svelte';
 	import SyntheseFil from './SyntheseFil.svelte';
 	import TransfertsVerses from './TransfertsVerses.svelte';
 	import MentionFusion from './MentionFusion.svelte';
-	import type { EtatSynthese, Ticket, TicketEvolution } from '$lib/api';
-	import { currentUser, isAdmin, isCS } from '$lib/stores/auth';
+	import type { Ticket, TicketEvolution } from '$lib/api';
+	import { currentUser, isAdmin } from '$lib/stores/auth';
 	import { TICKET } from '$lib/entites/ticket';
 	import {
 		OPTIONS_TICKET,
 		optionsDuTicket,
 		optionsVersTicket,
 		STATUT_TICKET_LABELS,
+		estTicketClos,
+		statutTicketLabel,
 		type GestesTicket,
 	} from '$lib/tickets';
+	import { entreesDuFil } from '$lib/evolutions';
 	import { fmtDate } from '$lib/date';
 	import { equipLabel, intervenantAffiche } from '$lib/prestataires';
 
@@ -65,9 +67,15 @@
 	let optionsRapides = optionsRapidesInitiales();
 	$: if (mode === 'options') optionsRapides = optionsRapidesInitiales();
 
-	//  🧾 La synthèse d'une affaire close (#1643) : lue par `SyntheseFil`.
-	let etatSynthese: EtatSynthese | null = null;
-	let filSynthese: SyntheseFil;
+	//  « La suite · n » compte ce que le fil raconte — la même liste que lui.
+	$: suites = entreesDuFil(evolutions);
+	//  La clôture se lit dans le fil : la dernière transition vers un état clos.
+	//  Le modèle n'en garde pas la date (pas de `statut_change_le` sur l'affaire).
+	$: cloture = estTicketClos(ticket.statut)
+		? suites
+				.filter((e) => e.type === 'etat' && e.nouveau_statut === ticket.statut)
+				.sort((a, b) => b.cree_le.localeCompare(a.cree_le))[0]
+		: undefined;
 </script>
 
 {#if mode === 'options'}
@@ -121,6 +129,12 @@
 		</ChargementDiffere>
 	</div>
 {:else}
+	<!--  Trois rubriques titrées (maquette A, arbitrée le 15/10/2026) : la DEMANDE,
+	      sa SYNTHÈSE quand l'affaire est close, la SUITE. L'ordre des sections de
+	      la demande reste celui du cadre (R2, `FicheLecture`) : la maquette rangeait
+	      intervenant et équipement dans un bloc « Autour » sous la description, ce
+	      que l'ordre des sections ne permet pas. -->
+	<h4 class="intertitre">La demande</h4>
 	<FicheLecture
 		entite={TICKET}
 		description={ticket.description}
@@ -129,12 +143,7 @@
 		photos={ticket.photos_urls ?? []}
 		documents={ticket.fichiers_urls ?? []}
 		affairesLiees={ticket.affaires_liees}
-	>
-		<svelte:fragment slot="pied">
-			<!--  Le NUMÉRO est dans l'en-tête : pas deux fois le même fait. -->
-			<small class="tk-meta">Créé le {fmtDate(ticket.cree_le)}</small>
-		</svelte:fragment>
-	</FicheLecture>
+	/>
 	<MentionFusion {ticket} />
 
 	<!--  Défaire un transfert de courriel, comme sur la fiche (#1482) : la
@@ -145,63 +154,56 @@
 		on:change={() => gestes.filChange(ticket)}
 	/>
 	<EtatListe compact erreur={erreurSuivi} />
-	<!--  🧾 La synthèse d'une affaire close (#1643), comme sur la fiche. -->
-	<SyntheseFil
-		bind:this={filSynthese}
-		bind:etat={etatSynthese}
-		{ticket}
-		{evolutions}
-		on:change={() => gestes.filChange(ticket)}
-	/>
-	{#if evolutions.length > 0}
-		<div class="tk-fil">
-			<!--  Le crayon par entrée : il existait dans la rubrique depuis #431,
-			      et la fiche du ticket s'en servait — mais pas cette liste-ci.
-			      Un même fil modifiable sur un écran et pas sur l'autre.
-			      ⚠️ Les états ne sont PAS proposés en correction : corriger le
-			      texte d'une entrée ne rejoue pas la transition qu'elle a
-			      enregistrée (`test_correction_pas_transition.py`). -->
-			<RubriqueHistorique
-				avecFiltre
-				{evolutions}
-				statutLabels={STATUT_TICKET_LABELS}
-				peutModifier={peutSuivre}
-				currentUserId={$currentUser?.id}
-				estAdmin={$isAdmin}
-				avecSuppression
-				enEdition={evolEnEdition}
-				on:modifier={(e) => gestes.evolModifier(e.detail)}
-				on:supprimer={(e) => gestes.evolSupprimer({ ticket, evolId: e.detail })}
-			>
-				<svelte:fragment slot="synthese" let:evol>
-					{#if etatSynthese?.synthese?.evolution_id === evol.id}
-						<SyntheseAffaire
-							synthese={etatSynthese.synthese}
-							gestes={$isCS}
-							on:change={() => filSynthese.recharger()}
-						/>
-					{/if}
-				</svelte:fragment>
-				<svelte:fragment slot="edition" let:evol>
-					{#key evolEnEdition}
-						<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
-							{#snippet contenu(SuiteAffaire)}
-								<SuiteAffaire
-									{ticket}
-									{evol}
-									entrees={evolutions}
-									{peutSuivre}
-									saving={evolCorrectionEnCours}
-									on:submit={(e) => gestes.evolCorriger(ticket, e.detail)}
-									on:cancel={() => gestes.evolAnnuler()}
-								/>
-							{/snippet}
-						</ChargementDiffere>
-					{/key}
-				</svelte:fragment>
-			</RubriqueHistorique>
-		</div>
+	<!--  🧾 La synthèse d'une affaire close (#1643), en bloc — comme sur la fiche. -->
+	<SyntheseFil {ticket} {evolutions} on:change={() => gestes.filChange(ticket)} />
+	{#if suites.length > 0}
+		<h4 class="intertitre">La suite · {suites.length}</h4>
+		<!--  Le crayon par entrée : il existait dans la rubrique depuis #431,
+		      et la fiche du ticket s'en servait — mais pas cette liste-ci.
+		      Un même fil modifiable sur un écran et pas sur l'autre.
+		      ⚠️ Les états ne sont PAS proposés en correction : corriger le
+		      texte d'une entrée ne rejoue pas la transition qu'elle a
+		      enregistrée (`test_correction_pas_transition.py`).
+		      Trois entrées, puis « plus anciennes » : la carte se lit d'un regard. -->
+		<RubriqueHistorique
+			avecFiltre
+			{evolutions}
+			seuil={4}
+			apercu={3}
+			statutLabels={STATUT_TICKET_LABELS}
+			peutModifier={peutSuivre}
+			currentUserId={$currentUser?.id}
+			estAdmin={$isAdmin}
+			avecSuppression
+			enEdition={evolEnEdition}
+			on:modifier={(e) => gestes.evolModifier(e.detail)}
+			on:supprimer={(e) => gestes.evolSupprimer({ ticket, evolId: e.detail })}
+		>
+			<svelte:fragment slot="edition" let:evol>
+				{#key evolEnEdition}
+					<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+						{#snippet contenu(SuiteAffaire)}
+							<SuiteAffaire
+								{ticket}
+								{evol}
+								entrees={evolutions}
+								{peutSuivre}
+								saving={evolCorrectionEnCours}
+								on:submit={(e) => gestes.evolCorriger(ticket, e.detail)}
+								on:cancel={() => gestes.evolAnnuler()}
+							/>
+						{/snippet}
+					</ChargementDiffere>
+				{/key}
+			</svelte:fragment>
+		</RubriqueHistorique>
 	{/if}
+	<!--  Le NUMÉRO est dans l'en-tête : pas deux fois le même fait. -->
+	<p class="tk-meta">
+		Créée le {fmtDate(ticket.cree_le)}{cloture
+			? ` · ${statutTicketLabel(ticket.statut)} le ${fmtDate(cloture.cree_le)}`
+			: ''}
+	</p>
 {/if}
 
 <style>
@@ -209,12 +211,8 @@
 		padding: 0.25rem 0;
 	}
 	.tk-meta {
+		margin: 0.9rem 0 0;
 		color: var(--color-text-muted);
 		font-size: var(--fs-sm);
-	}
-	/*  La marge haute du fil appartient à son hôte : la rubrique ne sait pas ce
-	    qu'elle suit. C'est cette marge que la fiche du ticket avait perdue. */
-	.tk-fil {
-		margin-top: 0.9rem;
 	}
 </style>

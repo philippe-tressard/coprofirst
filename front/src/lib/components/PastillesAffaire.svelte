@@ -78,6 +78,13 @@
 	{#each marqueurs as opt (opt.cle)}
 		<span class="badge badge-gray" title={opt.aide}>{opt.glyphe} {opt.etat}</span>
 	{/each}
+	<!--  🧾 Une synthèse VALIDÉE l'accompagne (maquette A, 15/10/2026) : la carte
+	      repliée le dit, comme un marqueur. Le serveur en décide (`synthese_validee`). -->
+	{#if affaire.synthese_validee}
+		<span class="badge badge-gray" title="Une synthèse validée accompagne cette affaire"
+			>🧾 Synthèse</span
+		>
+	{/if}
 	<span>#{affaire.numero}</span>
 	<AuteurCarte nom={auteur} />
 	<MarqueIA assiste={affaire.assiste_ia} />

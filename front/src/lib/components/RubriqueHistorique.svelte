@@ -46,11 +46,13 @@
 	import { createEventDispatcher } from 'svelte';
 	import type { TicketEvolution } from '$lib/api/types';
 	import PiecesJointes from './PiecesJointes.svelte';
+	import IconeAction from './IconeAction.svelte';
 	import { safeDescription } from '$lib/sanitize';
-	import { fmtDatetime } from '$lib/date';
+	import { fmtDate, fmtDatetime } from '$lib/date';
 	import { perimetreLabel } from '$lib/perimetres';
-	import { evolutionIcone } from '$lib/evolutions';
+	import { entreesDuFil, evolutionIcone } from '$lib/evolutions';
 	import { peutEditer } from '$lib/droits';
+	import { confirmer } from '$lib/confirmation';
 
 	export let evolutions: TicketEvolution[] = [];
 	/** Libellés du workflow — `STATUT_TICKET_LABELS` et rien d'autre (#415). */
@@ -169,10 +171,24 @@
 		return peutEditer(evol, currentUserId, estAdmin);
 	}
 
+	/**  Effacer se CONFIRME (15/10/2026, maquette A de la carte dépliée) : le geste
+	 *   partait au premier clic, sur une corbeille voisine du crayon. La question
+	 *   vit ici, une fois, et non chez les deux hôtes qui écoutent `supprimer`. */
+	async function effacer(evol: TicketEvolution) {
+		const ok = await confirmer({
+			titre: 'Supprimer cette entrée',
+			message: `L’entrée du ${fmtDate(evol.cree_le)} disparaît du fil. L’état de l’affaire ne change pas.`,
+			libelleConfirmer: 'Supprimer',
+			danger: true,
+		});
+		if (ok) dispatch('supprimer', evol.id);
+	}
+
 	let deplie = false;
 
 	//  Le plus récent en premier : on vient lire ce qui vient d'arriver.
-	$: triees = [...evolutions].sort(
+	//  Sans la Suite de synthèse : elle a son bloc au-dessus du fil (`SyntheseFil`).
+	$: triees = entreesDuFil(evolutions).sort(
 		(a, b) => new Date(b.cree_le).getTime() - new Date(a.cree_le).getTime(),
 	);
 	//  Ce qui compte comme une avancée, et pourquoi le filtre ne s'affiche pas
@@ -218,7 +234,6 @@
 				class:evol-commentaire={evol.type === 'commentaire'}
 				class:evol-etat={evol.type === 'etat'}
 				class:evol-reponse={evol.type === 'reponse'}
-				class:evol-synthese={evol.type === 'synthese'}
 			>
 				<!--  🔴 L'icône vient de `$lib/evolutions`, plus d'une chaîne écrite ici.
 				      Elle valait 📝 pour un commentaire alors que le bouton qui le crée
@@ -233,8 +248,7 @@
 						      ligne en `space-between`, elle se répartissait au milieu. -->
 						<span class="evol-qui">
 							<span class="evol-meta"
-								>{fmtDatetime(evol.cree_le)}{#if evol.auteur_nom}
-									· {evol.auteur_nom}{/if}</span
+								>{fmtDatetime(evol.cree_le)}{evol.auteur_nom ? ` · ${evol.auteur_nom}` : ''}</span
 							>
 							<MarqueIA assiste={evol.assiste_ia} />
 						</span>
@@ -256,20 +270,21 @@
 									      le mot. Le sens vit dans `title` et `aria-label`. -->
 									<button
 										type="button"
-										class="btn-icon evol-modifier"
+										class="btn-icon btn-icon-edit"
 										aria-label="Modifier cette entrée"
 										title="Modifier"
-										on:click={() => dispatch('modifier', evol.id)}>&#x270F;&#xFE0F;</button
+										on:click={() => dispatch('modifier', evol.id)}
+										><IconeAction icone="pencil" /></button
 									>
 								{/if}
 								{#if peutEffacer(evol)}
 									<!--  La corbeille EN DERNIER parce qu'elle est irréversible. -->
 									<button
 										type="button"
-										class="btn-icon-danger evol-modifier"
+										class="btn-icon-danger"
 										aria-label="Supprimer cette entrée"
 										title="Supprimer cette entrée"
-										on:click={() => dispatch('supprimer', evol.id)}>&#x1F5D1;&#xFE0F;</button
+										on:click={() => effacer(evol)}><IconeAction icone="trash-2" /></button
 									>
 								{/if}
 							</span>
@@ -297,11 +312,7 @@
 						</span>
 					{/if}
 
-					{#if evol.type === 'synthese'}
-						<!--  La synthèse d'une affaire close (#1643) : sans texte dans la Suite,
-						      l'hôte la rend — la rubrique ne connaît pas l'entité. -->
-						<slot name="synthese" {evol} />
-					{:else if enEdition === evol.id}
+					{#if enEdition === evol.id}
 						<!--  Le formulaire de correction vient de l'écran hôte. -->
 						<div class="evol-edition"><slot name="edition" {evol} /></div>
 					{:else}
@@ -329,7 +340,7 @@
 		{#if replie}
 			<hr class="evol-sep" />
 			<button type="button" class="evol-more" on:click={() => (deplie = true)}>
-				Voir les {triees.length - apercu} entrées plus anciennes
+				Voir les {filtrees.length - apercu} entrées plus anciennes
 			</button>
 		{/if}
 	</div>
@@ -439,17 +450,6 @@
 		padding: 0.75rem;
 		background: var(--color-bg);
 	}
-	.evol-modifier {
-		border: 1px solid var(--color-border);
-		background: var(--color-bg-alt);
-		color: var(--color-text);
-		cursor: pointer;
-		padding: 0.15rem 0.4rem;
-		font-size: var(--fs-xs);
-		flex-shrink: 0;
-		border-radius: 5px;
-		line-height: 1.4;
-	}
 	/*  Les teintes de fond disent le TYPE d'entrée sans lire un badge. */
 	.evol-etat {
 		background: #f0f9ff;
@@ -459,9 +459,6 @@
 	}
 	.evol-commentaire {
 		background: #fafafa;
-	}
-	.evol-synthese {
-		background: var(--color-surface);
 	}
 
 	.evol-more {
