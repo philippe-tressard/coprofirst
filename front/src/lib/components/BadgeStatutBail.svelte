@@ -34,4 +34,3 @@
 <Badge {compact} teinte={BADGE_STATUT_BAIL[statut ?? ''] ?? 'badge-gray'}>
 	{LIBELLE_STATUT_BAIL[statut ?? ''] ?? statut ?? '—'}
 </Badge>
-

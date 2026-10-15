@@ -59,8 +59,8 @@
 {#each reportKanbanByCol as col (col.col)}
 	<section class="report-card carte-espacee">
 		<h3>
-			<Badge teinte={col.badge}>{col.label}</Badge> — {col.items.length} dossier{col.items
-				.length > 1
+			<Badge teinte={col.badge}>{col.label}</Badge> — {col.items.length} dossier{col.items.length >
+			1
 				? 's'
 				: ''}
 		</h3>

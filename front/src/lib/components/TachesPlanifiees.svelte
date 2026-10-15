@@ -272,7 +272,8 @@
 								{/if}
 							</td>
 							<td>
-								<Badge teinte={CLASSE_STATUT[t.statut] ?? 'badge-red'}
+								<Badge
+									teinte={CLASSE_STATUT[t.statut] ?? 'badge-red'}
 									title={AIDE_STATUT[t.statut] ?? ''}
 								>
 									{LIBELLE_STATUT[t.statut] ?? t.statut}
@@ -318,7 +319,8 @@
 									<td></td>
 									<td class="muted">↳ {n.noeud.toUpperCase()}</td>
 									<td>
-										<Badge teinte={CLASSE_STATUT[n.statut] ?? 'badge-red'}
+										<Badge
+											teinte={CLASSE_STATUT[n.statut] ?? 'badge-red'}
 											title={AIDE_STATUT[n.statut] ?? ''}
 										>
 											{LIBELLE_STATUT[n.statut] ?? n.statut}

@@ -318,9 +318,9 @@
 								{#each items as item (item.id ?? item.code)}
 									<div class="lar-item">
 										<span class="code-acces">{item.code}</span>
-										<Badge teinte={item.typeAcces === 'vigik'
-												? 'badge-blue'
-												: 'badge-purple'} compact
+										<Badge
+											teinte={item.typeAcces === 'vigik' ? 'badge-blue' : 'badge-purple'}
+											compact
 										>
 											{item.typeAcces === 'vigik' ? '🏷️ Vigik' : '📡 TC'}
 										</Badge>

@@ -36,7 +36,8 @@ const HORS_BADGE = {
 /**  Teintes écrites dans le code sans règle CSS — chacune avec son ticket. Une
  *   entrée qui ne sert plus fait échouer le contrôle. */
 const SANS_REGLE = {
-	'badge-teal': '#1986 — rôles Propriétaire et copropriétaire occupant, sans teinte depuis la v1.0.0',
+	'badge-teal':
+		'#1986 — rôles Propriétaire et copropriétaire occupant, sans teinte depuis la v1.0.0',
 };
 
 const INTERPOLEE = /class="badge\b[^"]*\{/;
@@ -60,12 +61,19 @@ export function teintesEcrites(source) {
 export function ecartsTeintes(feuilles, composant, ecrites) {
 	const attendues = feuilles.filter((t) => !(t in HORS_BADGE));
 	const ecarts = [];
-	for (const t of attendues) if (!composant.includes(t)) ecarts.push(`${t} : teinte des feuilles que \`Badge\` ne pose pas`);
-	for (const t of composant) if (!attendues.includes(t)) ecarts.push(`${t} : posée par \`Badge\` sans règle dans les feuilles`);
+	for (const t of attendues)
+		if (!composant.includes(t)) ecarts.push(`${t} : teinte des feuilles que \`Badge\` ne pose pas`);
+	for (const t of composant)
+		if (!attendues.includes(t))
+			ecarts.push(`${t} : posée par \`Badge\` sans règle dans les feuilles`);
 	const connues = new Set([...feuilles, ...Object.keys(SANS_REGLE)]);
-	for (const t of new Set(ecrites)) if (!connues.has(t)) ecarts.push(`${t} : écrite dans le code, définie nulle part`);
+	for (const t of new Set(ecrites))
+		if (!connues.has(t)) ecarts.push(`${t} : écrite dans le code, définie nulle part`);
 	for (const t of Object.keys(SANS_REGLE)) {
-		if (feuilles.includes(t)) ecarts.push(`${t} : déclarée sans règle, mais les feuilles la définissent — retirer l'exception`);
+		if (feuilles.includes(t))
+			ecarts.push(
+				`${t} : déclarée sans règle, mais les feuilles la définissent — retirer l'exception`,
+			);
 		else if (!ecrites.includes(t)) ecarts.push(`${t} : exception qui ne sert plus — la retirer`);
 	}
 	return ecarts;
@@ -73,7 +81,9 @@ export function ecartsTeintes(feuilles, composant, ecrites) {
 
 function concordance() {
 	const feuilles = teintesDesFeuilles(
-		fichiersSources('src/styles', ['.css']).map((f) => readFileSync(f, 'utf8')).join('\n'),
+		fichiersSources('src/styles', ['.css'])
+			.map((f) => readFileSync(f, 'utf8'))
+			.join('\n'),
 	);
 	if (!feuilles.length) return ['aucune teinte `.badge-*` lue sous src/styles : contrôle INCONNU'];
 	if (!existsSync(BADGE)) return [`${BADGE} absent : la source unique manque`];
@@ -87,13 +97,33 @@ function concordance() {
 function selftestConcordance() {
 	const F = ['badge-blue', 'badge-gray', 'badge-perimetre'];
 	const cas = [
-		['tout concorde', ecartsTeintes(F, ['badge-blue', 'badge-gray'], ['badge-blue', 'badge-teal']).length, 0],
+		[
+			'tout concorde',
+			ecartsTeintes(F, ['badge-blue', 'badge-gray'], ['badge-blue', 'badge-teal']).length,
+			0,
+		],
 		['teinte oubliée par le composant', ecartsTeintes(F, ['badge-blue'], ['badge-teal']).length, 1],
-		['teinte du composant sans règle', ecartsTeintes(F, ['badge-blue', 'badge-gray', 'badge-rose'], ['badge-teal']).length, 1],
-		['teinte écrite, définie nulle part', ecartsTeintes(F, ['badge-blue', 'badge-gray'], ['badge-rose', 'badge-teal']).length, 1],
+		[
+			'teinte du composant sans règle',
+			ecartsTeintes(F, ['badge-blue', 'badge-gray', 'badge-rose'], ['badge-teal']).length,
+			1,
+		],
+		[
+			'teinte écrite, définie nulle part',
+			ecartsTeintes(F, ['badge-blue', 'badge-gray'], ['badge-rose', 'badge-teal']).length,
+			1,
+		],
 		['exception qui ne sert plus', ecartsTeintes(F, ['badge-blue', 'badge-gray'], []).length, 1],
-		['lecture des feuilles', teintesDesFeuilles('.badge {\n}\n.badge-blue {\n}\n.badge-red,\n.x {}').join(), 'badge-blue,badge-red'],
-		['un commentaire ne compte pas', teintesEcrites("// 'badge-rose'\nconst t = 'badge-blue';").join(), 'badge-blue'],
+		[
+			'lecture des feuilles',
+			teintesDesFeuilles('.badge {\n}\n.badge-blue {\n}\n.badge-red,\n.x {}').join(),
+			'badge-blue,badge-red',
+		],
+		[
+			'un commentaire ne compte pas',
+			teintesEcrites("// 'badge-rose'\nconst t = 'badge-blue';").join(),
+			'badge-blue',
+		],
 	];
 	let ko = 0;
 	for (const [quoi, obtenu, attendu] of cas) {
@@ -120,7 +150,8 @@ let code = controler({
 	],
 	ok: 'Badges : aucune teinte interpolée hors de `Badge`',
 	ko: 'classe(s) `badge` interpolée(s) — l’écran devient aveugle à `lint:css-orphelin`',
-	conseil: "Employer `<Badge teinte={…}>` (`$lib/components/Badge.svelte`) ; `petit` pour le cran `--fs-2xs`.",
+	conseil:
+		'Employer `<Badge teinte={…}>` (`$lib/components/Badge.svelte`) ; `petit` pour le cran `--fs-2xs`.',
 });
 if (process.argv.includes('--selftest')) {
 	code = selftestConcordance() || code;

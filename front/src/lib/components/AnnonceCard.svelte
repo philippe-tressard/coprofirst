@@ -124,8 +124,7 @@
 		</svelte:fragment>
 
 		<svelte:fragment slot="tags">
-			<Badge teinte={statutAnnonceClass(annonce.statut)}
-				>{statutAnnonceLabel(annonce.statut)}</Badge
+			<Badge teinte={statutAnnonceClass(annonce.statut)}>{statutAnnonceLabel(annonce.statut)}</Badge
 			>
 			<span class="badge badge-gray">{categorieAnnonceLabel(annonce.categorie)}</span>
 			<!--  🔹 puis QUI LA LIT — l'ordre de la carte d'affaire (#1373). La

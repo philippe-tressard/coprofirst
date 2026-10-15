@@ -335,7 +335,7 @@ if (aveugles.length !== PLAFOND_NON_MESURES) {
 				'    • la classe calculée est LOCALE et ses valeurs sont connues',
 				'      -> `class:ma-classe={condition}`, que Svelte sait résoudre ;',
 				"    • c'est la teinte d'un badge tirée d'une TABLE (`badge {STATUT[…]}`)",
-				"      -> `<Badge teinte={STATUT[…]}>` (`$lib/components/Badge.svelte`) ;",
+				'      -> `<Badge teinte={STATUT[…]}>` (`$lib/components/Badge.svelte`) ;',
 				"    • elle vient de l'APPELANT (une prop `classe`) : monter le plafond en le",
 				'      justifiant ici — ce qui doit rester exceptionnel.',
 				'',

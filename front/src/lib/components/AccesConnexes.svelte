@@ -74,8 +74,7 @@
 							<td class="texte-code">{a.code}</td>
 							<td>{typeAccesLabel(a.type)}</td>
 							<td
-								><Badge teinte={statutAccesBadge(a.statut)}>{statutAccesLabel(a.statut)}</Badge
-								></td
+								><Badge teinte={statutAccesBadge(a.statut)}>{statutAccesLabel(a.statut)}</Badge></td
 							>
 						</tr>
 					{/each}
