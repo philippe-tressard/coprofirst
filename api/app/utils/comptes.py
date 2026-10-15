@@ -20,10 +20,10 @@ définition reste unique, et donc corrigible en un seul endroit.
 from datetime import datetime
 from app.utils import horloge
 
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from sqlmodel import Session, func, select
 
-from app.models.core import Utilisateur
+from app.models.core import StatutUtilisateur, Utilisateur
 
 
 def condition_compte_en_attente():
@@ -103,3 +103,25 @@ def marquer_decide(
         user.fermeture_compte, user.compte_ferme_le = None, None
     elif user.fermeture_compte != fermeture or user.compte_ferme_le is None:
         user.fermeture_compte, user.compte_ferme_le = fermeture, instant
+
+
+def est_compte_technique(user: Utilisateur) -> bool:
+    """La même question sur un compte déjà lu — voir la clause ci-dessous (#1985)."""
+    return user.statut == StatutUtilisateur.admin_technique
+
+
+def condition_hors_comptes_techniques():
+    """Clause SQL « ce compte n'est pas un compte technique » (#1985).
+
+    Les comptes `admin_technique` — l'administrateur et l'opérateur que le seed
+    crée — n'habitent pas la résidence : ils n'ont rien à faire dans un choix de
+    personne (« Saisi pour », délégation, porteur de badge, locataire d'un bail).
+    Sur la démo publique, ils s'y montraient aux visiteurs, adresse comprise.
+
+    `statut` est nullable : un `!=` seul écarterait aussi les comptes sans statut,
+    que SQL compare à NULL.
+    """
+    return or_(
+        Utilisateur.statut.is_(None),  # type: ignore[union-attr]
+        Utilisateur.statut != StatutUtilisateur.admin_technique,
+    )

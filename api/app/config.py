@@ -33,9 +33,11 @@ class Settings(BaseSettings):
     # ailleurs ; sans éditeur, la démo se déclare éditée à titre non professionnel.
     demo_editeur: str = ""
     demo_contact: str = ""
-    # Le mot de passe FIXE et SECRET de l'administrateur de la démo (#1932, 14/10/2026) :
-    # vide → aléatoire, journalisé par la remise à zéro. Lu par `app/demo/administrateur.py`.
+    # Les mots de passe FIXES des deux comptes techniques de la démo (#1932, #1985) :
+    # l'administrateur (publiable par l'auteur) et l'opérateur (SECRET, jamais publié) ;
+    # vide → aléatoire, journalisé par la remise à zéro. Lus par `app/demo/administrateur.py`.
     demo_admin_mot_de_passe: str = ""
+    demo_operateur_mot_de_passe: str = ""
     # La version promue qu'une RÉPLIQUE installe (`deploiement/standard`, même `.env`) ;
     # vide chez la référence. Lue par `utils/installation.version_logicielle`.
     coprofirst_version: str = ""

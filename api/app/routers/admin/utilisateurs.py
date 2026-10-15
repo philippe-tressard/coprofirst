@@ -22,7 +22,7 @@ from app.models.core import (
     Utilisateur,
 )
 from app.schemas import UserRead
-from app.utils.comptes import DESACTIVATION, marquer_decide
+from app.utils.comptes import DESACTIVATION, condition_hors_comptes_techniques, marquer_decide
 from app.utils.porteurs_acces import ids_detenteurs
 from app.utils.etiquettes_compte import etiquettes
 from app.models.copropriete import Lot
@@ -49,10 +49,18 @@ router = APIRouter()
 @router.get("/utilisateurs")
 def list_utilisateurs(
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    appelant: Utilisateur = Depends(require_cs_or_admin),
 ):
-    """Liste tous les utilisateurs avec leurs rôles cumulés (CS et admin) + tags de liaison."""
-    users = session.exec(select(Utilisateur).order_by(Utilisateur.cree_le.desc())).all()
+    """Liste les utilisateurs avec leurs rôles cumulés (CS et admin) + tags de liaison.
+
+    Le conseil syndical ne reçoit pas les comptes techniques (#1985) : cette liste
+    alimente ses choix de personne, où ils n'ont rien à faire. L'administration
+    les garde, pour les gérer.
+    """
+    requete = select(Utilisateur).order_by(Utilisateur.cree_le.desc())
+    if not appelant.has_role(RoleUtilisateur.admin):
+        requete = requete.where(condition_hors_comptes_techniques())
+    users = session.exec(requete).all()
 
     # Batch : user_ids ayant au moins 1 lot lié
     loti_ids = set(

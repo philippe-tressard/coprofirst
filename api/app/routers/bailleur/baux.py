@@ -24,6 +24,7 @@ from app.models.core import (
     StatutUtilisateur,
     Utilisateur,
 )
+from app.utils.comptes import condition_hors_comptes_techniques, est_compte_technique
 from app.utils.recuperer import ou_404
 from pydantic import BaseModel
 
@@ -247,20 +248,24 @@ def search_locataire(
     user: Utilisateur = Depends(require_proprietaire),
     session: Session = Depends(get_session),
 ):
-    """Chercher un utilisateur inscrit par email ou nom/prénom pour l'associer à un bail."""
+    """Chercher un utilisateur inscrit par email ou nom/prénom pour l'associer à un bail.
+
+    Jamais un compte technique (#1985) : il n'est le locataire de personne.
+    """
     q = q.strip()
     if not q:
         return []
     if "@" in q:
         # Recherche exacte par email
         trouve = compte_par_adresse(session, q)
-        results = [trouve] if trouve else []
+        results = [trouve] if trouve and not est_compte_technique(trouve) else []
     else:
         # Recherche partielle insensible à la casse par nom ou prénom
         pattern = f"%{q.lower()}%"
         results = session.exec(
             select(Utilisateur)
             .where((Utilisateur.nom.ilike(pattern)) | (Utilisateur.prenom.ilike(pattern)))
+            .where(condition_hors_comptes_techniques())
             .limit(10)
         ).all()
     return [LocataireInfo.model_validate(u) for u in results]

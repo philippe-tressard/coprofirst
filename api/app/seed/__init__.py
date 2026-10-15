@@ -132,11 +132,44 @@ def _copropriete_par_defaut(session: Session) -> None:
         session.add(Batiment(copropriete_id=copro.id, numero=numero, nb_etages=5))
 
 
-def _admin_initial(session: Session) -> None:
-    """Administrateur de premier démarrage, mot de passe aléatoire dans les logs.
+#: Les deux comptes techniques d'une installation neuve (#1985) : l'administrateur
+#: de la copropriété, et l'opérateur de l'installation — administrateur AUSSI, car
+#: ses écrans vivent sous `/admin` et le rôle ne se porte pas sans lui (#1750).
+#: Séparés pour qu'on puisse confier le premier sans livrer le second : l'opérateur
+#: tient l'inscription au registre (contrat, bail), la santé et la base.
+ADRESSE_ADMIN_INITIAL = "admin@localhost"
+ADRESSE_OPERATEUR_INITIAL = "operateur@localhost"
 
-    Le mot de passe n'est **jamais** écrit en dur : il est tiré au sort et affiché
-    une seule fois, au premier lancement, pour être changé immédiatement.
+
+def _compte_technique(nom: str, adresse: str, roles_json: str, mot_de_passe: str) -> Utilisateur:
+    return Utilisateur(
+        nom=nom,
+        prenom="Site",
+        email=adresse,
+        hashed_password=hash_password(mot_de_passe),
+        statut=StatutUtilisateur.admin_technique,
+        role=RoleUtilisateur.admin,
+        roles_json=roles_json,
+        actif=True,
+        #  Son adresse ne reçoit rien : sans ce drapeau, la connexion le refuse
+        #  (« vérifiez votre adresse ») et une installation neuve reste sans
+        #  administrateur. Trouvé par l'essai de bout en bout de DI-4 (10/10/2026).
+        email_verifie=True,
+        consentement_rgpd=True,
+    )
+
+
+def _admin_initial(session: Session) -> None:
+    """Administrateur et opérateur de premier démarrage, mots de passe dans les logs.
+
+    Les mots de passe ne sont **jamais** écrits en dur : ils sont tirés au sort et
+    affichés une seule fois, au premier lancement, pour être changés immédiatement.
+    Une base qui a déjà un administrateur n'en reçoit aucun : le seed n'insère
+    que ce qui manque, et une installation en service garde ses comptes.
+
+    ⚠️ Les deux libellés du journal sont lus par des outils : « Mot de passe
+    temporaire » est celui de l'ADMINISTRATEUR (`scripts/ci/essai-mise-a-jour.sh`,
+    `test_seed.py`) ; l'opérateur a le sien, qu'aucun `sed` ne confond avec lui.
     """
     if session.exec(select(Utilisateur).where(Utilisateur.role == RoleUtilisateur.admin)).first():
         return
@@ -145,32 +178,27 @@ def _admin_initial(session: Session) -> None:
     import secrets
 
     mot_de_passe = secrets.token_urlsafe(16)
+    mot_de_passe_operateur = secrets.token_urlsafe(16)
     session.add(
-        Utilisateur(
-            nom="Admin",
-            prenom="Site",
-            email="admin@localhost",
-            hashed_password=hash_password(mot_de_passe),
-            statut=StatutUtilisateur.admin_technique,
-            role=RoleUtilisateur.admin,
-            #  Administrateur de la copropriété ET opérateur de l'installation
-            #  (#1750) : qui installe une réplique la supervise.
-            roles_json=f"{RoleUtilisateur.admin.value},{ROLE_OPERATEUR}",
-            actif=True,
-            #  Son adresse ne reçoit rien : sans ce drapeau, la connexion le refuse
-            #  (« vérifiez votre adresse ») et une installation neuve reste sans
-            #  administrateur. Trouvé par l'essai de bout en bout de DI-4 (10/10/2026).
-            email_verifie=True,
-            consentement_rgpd=True,
+        _compte_technique("Admin", ADRESSE_ADMIN_INITIAL, RoleUtilisateur.admin.value, mot_de_passe)
+    )
+    session.add(
+        _compte_technique(
+            "Opérateur",
+            ADRESSE_OPERATEUR_INITIAL,
+            f"{RoleUtilisateur.admin.value},{ROLE_OPERATEUR}",
+            mot_de_passe_operateur,
         )
     )
     logging.getLogger("app.seed").warning(
         "\n"
         + "=" * 60
         + "\n  ADMIN INITIAL CRÉÉ"
-        + "\n  Email : admin@localhost"
+        + f"\n  Email : {ADRESSE_ADMIN_INITIAL}"
         + f"\n  Mot de passe temporaire : {mot_de_passe}"
-        + "\n  ⚠ Changez-le immédiatement après la 1ʳᵉ connexion."
+        + f"\n  Opérateur (supervision, registre) : {ADRESSE_OPERATEUR_INITIAL}"
+        + f"\n  Mot de passe de l'opérateur : {mot_de_passe_operateur}"
+        + "\n  ⚠ Changez-les immédiatement après la 1ʳᵉ connexion."
         + "\n"
         + "=" * 60
     )
