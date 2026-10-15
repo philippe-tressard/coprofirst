@@ -875,12 +875,14 @@ saut annoncé n'est pas une mesure : ces tests-là, **seule la CI de la PR** les
 joue. Mécanisme : le crochet de `api/tests/conftest.py` (`tests/aides_rejeu.py`)
 et `ci_resumer_sauts`.
 
-🔒 **Un e2e tombé sur « Failed to fetch dynamically imported module » est relancé
-une fois, et cela se dit** (#1809). Quatre rejeux le 10/10/2026 sont tombés sur un
+🔒 **Un e2e tombé sur une cause propre au POSTE est relancé une fois, et cela se
+dit** — « Failed to fetch dynamically imported module » (#1809), et les tampons
+réseau de Windows épuisés au `goto`, `net::ERR_NO_BUFFER_SPACE` (#1989) ; la liste
+fait foi dans `ci_cause_relance`, et chaque relance y nomme sa cause. Quatre rejeux le 10/10/2026 sont tombés sur un
 seul test, un autre à chaque passage, que la CI GitHub n'a jamais vu. Le rejeu
 relance alors les seuls tests tombés : vert, l'étape reste OK et sa ligne les
 nomme, le point 16 les reprend (`RELANCES=`) et chaque relance s'inscrit dans
-`rejeu-e2e-relances.log` (répertoire git commun, avec la charge) — la mesure qui
+`rejeu-e2e-relances.log` (répertoire git commun, avec la charge et la cause) — la mesure qui
 manque pour trouver la cause. Conditions et plafond : `ci_relance_e2e`
 (`lib-ci-e2e.sh`) ; un rechargement de Vite (#1421) n'y ouvre jamais droit.
 
