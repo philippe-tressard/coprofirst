@@ -22,7 +22,7 @@ from sqlmodel import Session, select
 from app.utils.config_site import config_site
 from app.config import get_settings
 from app.utils.demo import est_demo
-from app.utils.preferences_mail import mail_autorise
+from app.utils.preferences_mail import mail_autorise, trier_destinataires
 from app.models.core import HistoriqueEmail, ModeleEmail, Utilisateur
 
 #  La configuration du canal SMTP est un sujet distinct de la composition
@@ -308,18 +308,6 @@ async def send_email(
             session.close()
 
 
-def _check_pref(
-    user_id: int | None, session: Session, batiments_concernes: set[int] | None = None
-) -> bool:
-    """L'utilisateur veut-il cet e-mail ? — délègue à la décision unique."""
-    if not user_id:
-        return True
-    user = session.get(Utilisateur, user_id)
-    if not user:
-        return True
-    return mail_autorise(user, batiments_concernes)
-
-
 async def send_email_group(
     code: str,
     to_recipients: list[tuple[int | None, str]],
@@ -346,14 +334,10 @@ async def send_email_group(
             _tracer_demo(session, code, ", ".join(e for _uid, e in to_recipients))
             return
 
-        to_emails = [
-            email for uid, email in to_recipients if _check_pref(uid, session, batiments_concernes)
-        ]
-        cc_emails = [
-            email
-            for uid, email in (cc_recipients or [])
-            if _check_pref(uid, session, batiments_concernes)
-        ]
+        #  La préférence de chacun — sauf du destinataire DÉSIGNÉ par la
+        #  Diffusion (#2006). Même fonction que l'aperçu : `trier_destinataires`.
+        to_emails, _ = trier_destinataires(session, to_recipients, batiments_concernes)
+        cc_emails, _ = trier_destinataires(session, cc_recipients or [], batiments_concernes)
         #  Personne ne veut de ce message : ce n'est pas un echec, c'est la
         #  preference de chacun qui a ete respectee.
         if not to_emails and not cc_emails:

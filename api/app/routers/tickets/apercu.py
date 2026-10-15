@@ -64,6 +64,8 @@ from app.utils.apercu_diffusion import (
 from app.utils.photos import photos_internes, photos_json, premiere_image
 
 from .actualite import contexte_actualite
+from app.utils.destinataires import ecartes_syndic_cs
+
 from .courriels import contexte_ticket_syndic, destinataires_syndic_cs
 from .suite_groupe import message_suite
 from app.utils.liens import base_site
@@ -252,6 +254,9 @@ def apercu_diffusion(
                 destinataires=destinataires,
                 pieces_jointes=pieces,
                 copie_auteur=copie,
+                ecartes=ecartes_syndic_cs(
+                    session, syndic=brouillon.destinataire_syndic, cs=brouillon.destinataire_cs
+                ),
             )
         )
 

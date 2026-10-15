@@ -91,6 +91,23 @@
 						<strong>À :</strong>
 						{canal.destinataires.join(' · ')}
 					</p>
+				{/if}
+
+				<!--  Ceux que le canal visait et qui ne recevront rien, avec le motif
+				      (#2006) : l'aperçu annonçait deux membres du conseil que l'envoi
+				      écartait ensuite, sans un mot. -->
+				{#if canal.ecartes?.length}
+					<div class="apercu-ecartes">
+						<strong>Ne recevront rien :</strong>
+						<ul>
+							{#each canal.ecartes as ecarte, i (i)}
+								<li>{ecarte.qui} — {ecarte.motif}</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+
+				{#if canal.actif}
 
 					{#if canal.canal === 'email'}
 						{#if canal.sujet}
@@ -255,6 +272,19 @@
 		border-radius: 6px;
 		padding: 0.6rem 0.7rem;
 		margin: 0;
+	}
+	.apercu-ecartes {
+		font-size: var(--fs-md);
+		color: var(--color-warning-texte);
+		background: var(--color-warning-fond);
+		border: 1px solid var(--color-warning-bordure);
+		border-radius: 6px;
+		padding: 0.45rem 0.6rem;
+		margin: 0 0 0.5rem;
+	}
+	.apercu-ecartes ul {
+		margin: 0.2rem 0 0;
+		padding-left: 1.2rem;
 	}
 	.apercu-avertissement {
 		font-size: var(--fs-md);

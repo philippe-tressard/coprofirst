@@ -25,6 +25,7 @@ Ce module ne recompose donc **rien** : il appelle les fonctions de l'envoi.
 | l'e-mail | `_contexte_rendu` + `composer_email` | `send_email` / `send_email_group` |
 | le message WhatsApp | `construire_message` | `envoyer_whatsapp` |
 | les destinataires | `destinataires_syndic_cs` | l'envoi réel |
+| qui est écarté, et pourquoi | `trier_destinataires` + `ecartes_*` | `send_email_group` |
 
 ## Ce que l'appelant fournit, et pourquoi c'est LUI qui le fournit
 
@@ -54,6 +55,13 @@ from sqlmodel import Session, select
 from app.models.core import ModeleEmail
 
 
+class ApercuEcarte(BaseModel):
+    """Quelqu'un que le canal visait et qui ne recevra rien — avec le motif (#2006)."""
+
+    qui: str
+    motif: str
+
+
 class ApercuCanal(BaseModel):
     """Un canal, tel qu'il partira — ou la raison pour laquelle il ne partira pas."""
 
@@ -64,6 +72,9 @@ class ApercuCanal(BaseModel):
     #  dire AVANT l'envoi, pas laisser croire à une diffusion qui n'aura pas lieu.
     inactif_motif: Optional[str] = None
     destinataires: list[str] = []
+    #  🔴 Ceux qu'on croirait servis et qui ne le seront pas (#2006) : l'aperçu
+    #  annonçait deux membres du CS que leur préférence écartait à l'envoi.
+    ecartes: list[ApercuEcarte] = []
     sujet: Optional[str] = None
     corps_html: Optional[str] = None
     texte: Optional[str] = None
@@ -97,6 +108,7 @@ def apercu_email(
     destinataires: list[tuple[int | None, str]],
     pieces_jointes: Optional[list[str]] = None,
     copie_auteur: Optional[str] = None,
+    ecartes: Optional[list[tuple[str, str]]] = None,
 ) -> ApercuCanal:
     """L'e-mail tel qu'il sera composé — ou pourquoi il ne partira pas.
 
@@ -104,13 +116,23 @@ def apercu_email(
     sans destinataire, le gabarit n'a aucune importance. Annoncer « modèle
     inactif » à quelqu'un dont le vrai problème est l'absence d'adresse
     l'enverrait corriger la mauvaise chose.
+
+    `ecartes` porte ce que la SÉLECTION a laissé de côté (`ecartes_syndic_cs`…) ;
+    la préférence de chacun s'y ajoute ici, par la fonction même de l'envoi.
     """
-    if not destinataires:
+    from app.utils.preferences_mail import trier_destinataires
+
+    retenus, par_preference = trier_destinataires(session, destinataires)
+    tous_ecartes = [
+        ApercuEcarte(qui=qui, motif=motif) for qui, motif in [*(ecartes or []), *par_preference]
+    ]
+    if not retenus:
         return ApercuCanal(
             canal="email",
             actif=False,
             inactif_motif="Aucun destinataire joignable : le syndic ou le conseil "
             "syndical n'a pas d'adresse renseignée.",
+            ecartes=tous_ecartes,
         )
 
     modele = session.exec(select(ModeleEmail).where(ModeleEmail.code == code_modele)).first()
@@ -142,7 +164,7 @@ def apercu_email(
     #  ⚠️ Nommée « (copie) » : elle part en copie CACHÉE, donc les autres
     #  destinataires ne la verront pas. L'auteur, lui, doit savoir qu'il l'a
     #  demandée.
-    adresses = [e for _, e in destinataires]
+    adresses = list(retenus)
     if copie_auteur and copie_auteur.lower() not in {e.lower() for e in adresses}:
         adresses.append(f"{copie_auteur} (copie)")
 
@@ -150,6 +172,7 @@ def apercu_email(
         canal="email",
         actif=True,
         destinataires=adresses,
+        ecartes=tous_ecartes,
         sujet=sujet,
         corps_html=html,
     )
