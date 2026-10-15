@@ -181,3 +181,35 @@ def test_l_administrateur_initial_se_connecte(caplog):
         http, _ = client_http(moteur, None)
         r = http.post("/auth/login", json={"email": "admin@localhost", "password": trouve.group(1)})
         assert r.status_code == 200, r.text
+
+
+def test_l_operateur_initial_est_un_compte_a_part(caplog):
+    """Deux comptes techniques depuis #1985 : l'administrateur se confie (la démo
+    peut le publier) sans livrer l'opérateur, qui tient le registre, la santé et la
+    base. L'opérateur est AUSSI administrateur : ses écrans vivent sous `/admin`
+    (#1750). Ce test passe par la vraie route de connexion, comme le précédent.
+    """
+    import logging
+    import re
+
+    import app.seed as module_seed
+    from tests.aides_http import base_http, client_http
+
+    with base_http() as moteur:
+        with caplog.at_level(logging.WARNING, logger="app.seed"), Session(moteur) as session:
+            module_seed._admin_initial(session)
+            session.commit()
+            techniques = session.exec(select(Utilisateur)).all()
+        assert sorted(u.email for u in techniques) == ["admin@localhost", "operateur@localhost"]
+        assert {u.email: u.has_role("operateur") for u in techniques} == {
+            "admin@localhost": False,
+            "operateur@localhost": True,
+        }
+        assert all(u.has_role("admin") for u in techniques)
+        trouve = re.search(r"Mot de passe de l'opérateur : (\S+)", caplog.text)
+        assert trouve, "le mot de passe de l'opérateur n'est pas journalisé"
+        http, _ = client_http(moteur, None)
+        r = http.post(
+            "/auth/login", json={"email": "operateur@localhost", "password": trouve.group(1)}
+        )
+        assert r.status_code == 200, r.text

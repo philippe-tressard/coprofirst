@@ -54,7 +54,7 @@ formulaire de connexion de `demo.coprofirst.fr` (§5, révisé le 13/10/2026).
 | M1 | Activation | **`MODE_DEMO=oui` dans `.env`**, absent = non. Un seul lecteur, `utils/demo.est_demo()`, sur le modèle de `utils/installation.role_installation()` | §4.1 ; le réglage ne s'écrit **jamais** depuis l'interface |
 | M2 | Zéro envoi | **les portes d'envoi refusent** en mode démo — moteur de courriel, bridge WhatsApp, appel à l'IA, relève IMAP, requête GitHub —, quelle que soit la configuration en base | §4.2 ; un administrateur de démo ne peut rien rallumer |
 | M3 | Gestes fermés | **un registre unique des gestes fermés en démo** (`utils/demo.GESTES_FERMES`), appliqué par **une** garde à l'entrée des requêtes ; réponse 403 « Indisponible en démonstration » | §4.3 ; une route oubliée se voit dans un test, pas en production |
-| M4 | Entrée | ~~une adresse par personnage, sans mot de passe~~ — **révisé le 13/10/2026 (#1932)** : le **formulaire de connexion**, avec trois identifiants publiés sur la page « Démo » du site vitrine ; l'administrateur n'est pas public | §5 |
+| M4 | Entrée | ~~une adresse par personnage, sans mot de passe~~ — **révisé le 13/10/2026 (#1932)** : le **formulaire de connexion**, avec trois identifiants publiés sur la page « Démo » du site vitrine ; l'administrateur n'est pas public — **révisé le 15/10/2026 (#1985)** : il est séparé de l'opérateur, et l'auteur **peut** le publier ; l'opérateur ne l'est jamais | §5 |
 | M5 | Comptes | **comptes partagés** : tous les visiteurs qui se connectent en `user-copro` sont le même compte | §5 ; §11, question 1 |
 | M10 | Fichiers | **aucun téléversement** de visiteur ; le jeu de démo apporte ses images et ses documents | §4.3 ; §11, question 2 |
 | M11 | Plafond du registre | la démo **s'inscrit au registre** comme toute réplique dès qu'il l'accepte ; d'ici là, une **exception déclarée** au plafond de 5 utilisateurs (D18), lue sous `est_demo()` | §9 ; §11, question 3 |
@@ -189,11 +189,34 @@ par le formulaire habituel, avec des identifiants publiés.
 - La page « Démo » du site vitrine publie ces identifiants et renvoie à
   `https://demo.coprofirst.fr/auth/connexion`.
 
-### 5.2 L'administrateur, réservé
+### 5.2 L'administrateur et l'opérateur
 
-Aucun compte du jeu n'est administrateur : le seed crée l'**administrateur
-initial** d'une installation standard (administrateur et opérateur), dont le mot
-de passe ne paraît que dans les journaux du serveur, à chaque remise à zéro.
+Aucun compte du jeu n'est administrateur : le seed crée les **deux comptes
+techniques** d'une installation standard (#1985, 15/10/2026), dont les mots de
+passe ne paraissent que dans les journaux du serveur, à chaque remise à zéro —
+sauf si le `.env` du serveur les fixe :
+
+| Compte | Rôles | En démo | Mot de passe fixe |
+|---|---|---|---|
+| `admin@localhost` | admin | **publiable** par l'auteur | `DEMO_ADMIN_MOT_DE_PASSE` |
+| `operateur@localhost` | admin + opérateur | **jamais publié** | `DEMO_OPERATEUR_MOT_DE_PASSE` |
+
+Pourquoi deux : jusqu'au 15/10, un seul compte portait les deux rôles, et le
+publier aurait livré l'opérateur — dont les routes du registre
+(`POST /admin/installation/inscription`, `/bail`) restent **ouvertes** en démo
+(M11) : un visiteur aurait accepté le contrat au nom de l'auteur ou réécrit le
+bail. L'opérateur reste administrateur, car ses écrans vivent sous `/admin`
+(#1750).
+
+Vérifié avant de séparer (#1985) : ce qu'un administrateur lit en démo ne contient
+aucune donnée réelle de visiteur (§9) ; un administrateur seul ne prend pas la
+main sur l'opérateur (rôles, suppression, modification de compte et
+réinitialisation de mot de passe sont fermés, §4.3) ; la délégation n'élève pas
+(l'aidant n'hérite que du statut, `utils/statuts_lus`).
+
+Les comptes techniques ne se montrent **à aucun visiteur** dans un choix de
+personne : `GET /admin/utilisateurs` les tait au conseil syndical, et
+`GET /bailleur/search-locataire` à tous (`utils/comptes.condition_hors_comptes_techniques`).
 
 ### 5.3 Ce qui reste de l'entrée en un clic
 
@@ -234,7 +257,8 @@ avec le code de la version installée : il ne peut pas être en retard sur le sc
   le moteur du projet (`pdf_theme.html_to_pdf`) et sont rendus **avant** toute
   écriture : un moteur absent laisse la base vierge. Le seed tourne au milieu, entre
   le patrimoine (qu'il lit pour l'arbre des périmètres) et le reste ; le personnage
-  « Administrateur » tient lieu d'administrateur initial.
+  « Administrateur » tient lieu d'administrateur initial ; le seed crée aussi
+  l'opérateur (§5.2).
 
 ### 6.2 Le contenu
 

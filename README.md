@@ -131,13 +131,13 @@ L'application est accessible sur `http://localhost`.
 > **Installer sans construire** : [`deploiement/standard/LISEZMOI.md`](deploiement/standard/LISEZMOI.md)
 > — chaque version promue joint son archive de déploiement à ses notes de version.
 
-Au premier lancement, un compte admin est créé avec un **mot de passe aléatoire** affiché dans les logs :
+Au premier lancement, deux comptes sont créés avec un **mot de passe aléatoire** affiché dans les logs : l'**administrateur** de la copropriété (`admin@localhost`) et l'**opérateur** de l'installation (`operateur@localhost`, administrateur aussi — supervision, santé, inscription au registre). Séparés pour confier le premier sans livrer le second.
 
 ```bash
-docker compose logs api | grep "ADMIN INITIAL"
+docker compose logs api | grep -A5 "ADMIN INITIAL"
 ```
 
-> **Changez immédiatement le mot de passe** après la première connexion.
+> **Changez immédiatement les mots de passe** après la première connexion.
 
 ### Développement local (sans Docker)
 

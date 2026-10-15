@@ -81,12 +81,15 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    ```bash
    docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml up -d
    ```
-6. Le premier lancement crée un compte administrateur dont le mot de passe
-   s'affiche une fois dans les journaux :
+6. Le premier lancement crée deux comptes, dont les mots de passe s'affichent
+   une fois dans les journaux : l'**administrateur** de la copropriété
+   (`admin@localhost`), à confier à qui la gère, et l'**opérateur** de
+   l'installation (`operateur@localhost`, administrateur aussi), qui garde la
+   supervision et l'inscription au registre :
    ```bash
-   docker compose logs api | grep "ADMIN INITIAL"
+   docker compose logs api | grep -A5 "ADMIN INITIAL"
    ```
-   Le changer dès la première connexion, puis régler l'identité de la résidence
+   Les changer dès la première connexion, puis régler l'identité de la résidence
    (nom, adresse, logo) dans l'administration. *Administration › Maintenance* dit
    « Réplique — suit replica » : la surcouche pose ce rôle d'office. Pour y voir si
    la version est à jour, activer le service *Vérification de la version*.

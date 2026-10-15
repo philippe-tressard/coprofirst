@@ -9,8 +9,9 @@
    compte : elle ne doit jamais mêler une résidence fictive à une vraie.
 2. **Le patrimoine et les comptes AVANT le seed** : son arbre des périmètres ne crée
    un nœud que pour les bâtiments présents. Aucun compte du jeu n'est administrateur :
-   le seed crée donc l'**administrateur initial** d'une installation standard
-   (administrateur et opérateur), réservé à l'exploitant (D8 #1932).
+   le seed crée les deux comptes techniques d'une installation standard —
+   l'administrateur (admin seul), que l'auteur peut confier aux visiteurs, et
+   l'opérateur (admin + opérateur), réservé à l'exploitant (D8 #1932, #1985).
 3. **Le reste APRÈS le seed** : les affaires, contrats et badges lisent l'arbre des
    périmètres, que le seed pose.
 4. **Fabriqué, jamais rechargé d'une archive** : le jeu est produit par le code de
@@ -51,8 +52,8 @@ def charger(*, documents: bool = True) -> dict[str, int]:
     """
     from app.database import create_db_and_tables
 
-    #  Rendus et mot de passe de l'administrateur d'abord : un moteur PDF absent ou un
-    #  mot de passe trop faible arrête tout AVANT la première écriture.
+    #  Rendus et mots de passe des comptes techniques d'abord : un moteur PDF absent ou
+    #  un mot de passe trop faible arrête tout AVANT la première écriture.
     administrateur.verifier_avant_chargement()
     rendus = fichiers.rendre_documents() if documents else []
     create_db_and_tables()
@@ -71,6 +72,7 @@ def charger(*, documents: bool = True) -> dict[str, int]:
         admin = administrateur.initial(session)
         identite.poser(session, admin)
         administrateur.fixer_mot_de_passe(session, admin)
+        administrateur.fixer_mot_de_passe(session, administrateur.operateur(session))
         legal.poser(session)
         gouvernance.poser(session, les_comptes)
         prest = prestataires.poser(session, pat, les_comptes["user-cs"].id)
@@ -98,14 +100,17 @@ def main() -> int:
         print(str(exc), file=sys.stderr)
         return 3
     except HTTPException as exc:  # la règle de robustesse, avant toute écriture
-        print(f"DEMO_ADMIN_MOT_DE_PASSE refusé : {exc.detail}", file=sys.stderr)
+        print(f"Mot de passe du .env refusé : {exc.detail}", file=sys.stderr)
         return 4
     print("✅ Démo chargée : " + ", ".join(f"{n} {quoi}" for quoi, n in bilan.items()))
-    if get_settings().demo_admin_mot_de_passe.strip():
-        #  Le seed vient d'afficher un mot de passe temporaire : il est remplacé.
-        print(
-            "🔑 Administrateur (admin@localhost) : le mot de passe FIXE du .env remplace celui du seed."
-        )
+    reglages = get_settings()
+    for quoi, fixe in (
+        ("Administrateur (admin@localhost)", reglages.demo_admin_mot_de_passe),
+        ("Opérateur (operateur@localhost)", reglages.demo_operateur_mot_de_passe),
+    ):
+        if fixe.strip():
+            #  Le seed vient d'afficher un mot de passe temporaire : il est remplacé.
+            print(f"🔑 {quoi} : le mot de passe FIXE du .env remplace celui du seed.")
     for cle in legal.manques():
         #  Un avertissement, pas un refus : la remise à zéro de la nuit ne doit pas
         #  laisser la démo arrêtée pour un texte. La mise en service, elle, le pose.

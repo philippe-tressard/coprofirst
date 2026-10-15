@@ -13,14 +13,20 @@ nocturne efface la base et les fichiers.
 - **Entrée par le formulaire**, sous l'un de trois comptes partagés dont les
   identifiants sont publiés (`api/app/demo/personnages.py`, page « Démo » du
   site vitrine) : `user-cs`, `user-copro`, `user-loc` `@demo.coprofirst.fr`.
-  L'administrateur est celui du seed (`admin@localhost`, administrateur et
-  opérateur), réservé. Son mot de passe est **fixe et secret** si `.env` pose
-  `DEMO_ADMIN_MOT_DE_PASSE` (jamais publié, contrairement aux trois autres) ;
-  sinon il change à chaque remise à zéro et ne s'écrit que dans le **journal de
-  la remise à zéro** — le jeu se charge dans un conteneur ponctuel, et l'API est
-  recréée après : ses journaux ne l'ont jamais.
+  Les deux comptes techniques sont ceux du seed (#1985) :
+  - l'**administrateur** (`admin@localhost`, admin seul) — l'auteur **peut** le
+    confier aux visiteurs : les gestes qui reconfigurent l'installation sont
+    fermés, et il n'atteint ni le registre, ni la santé, ni la base ;
+  - l'**opérateur** (`operateur@localhost`, admin + opérateur) — **jamais
+    publié** : il tient l'inscription au registre (contrat, bail), dont les
+    routes restent ouvertes en démo.
+
+  Leurs mots de passe sont **fixes** si `.env` pose `DEMO_ADMIN_MOT_DE_PASSE` et
+  `DEMO_OPERATEUR_MOT_DE_PASSE` ; sinon ils changent à chaque remise à zéro et ne
+  s'écrivent que dans le **journal de la remise à zéro** — le jeu se charge dans
+  un conteneur ponctuel, et l'API est recréée après : ses journaux ne les ont jamais.
   ```bash
-  grep -A3 'ADMIN INITIAL' /var/log/coprofirst-demo.log | tail -4
+  grep -A5 'ADMIN INITIAL' /var/log/coprofirst-demo.log | tail -6
   ```
 - **Rien ne part** : ni courriel, ni message WhatsApp, ni appel à l'IA. Un
   courriel qui serait parti s'inscrit à l'historique, « démonstration : non
@@ -36,19 +42,19 @@ nocturne efface la base et les fichiers.
    **PostgreSQL** pour la démo de CoproFirst (SQLite est aussi géré par la
    remise à zéro) — d'abord **sans** `MODE_DEMO` : une installation
    ordinaire, avec son administrateur initial.
-2. **S'inscrire au registre** avec ce compte, qui est l'**opérateur** :
-   *Administration › Maintenance › Inscription au registre*. La démo n'a pas
-   d'opérateur — ses comptes publics ne le sont pas, et son administrateur change
-   chaque nuit — et l'inscription, rangée dans
-   le volume `app_data`, survit aux remises à zéro : c'est le seul moment pour
-   la faire.
+2. **S'inscrire au registre** avec le compte **opérateur** (`operateur@localhost`) :
+   *Administration › Maintenance › Inscription au registre*. L'inscription,
+   rangée dans le volume `app_data`, survit aux remises à zéro ; l'opérateur, lui,
+   est recréé chaque nuit — avec le mot de passe de `DEMO_OPERATEUR_MOT_DE_PASSE`
+   s'il est posé.
 3. Dans `.env` :
    ```
    MODE_DEMO=oui
    MAINTENANCE_KEY=<openssl rand -hex 32>
    DEMO_EDITEUR=          # vide : « édité à titre non professionnel » (LCEN 6-III-2)
    DEMO_CONTACT=<adresse où exercer ses droits>
-   DEMO_ADMIN_MOT_DE_PASSE=<secret, règle de robustesse du produit>  # vide : aléatoire
+   DEMO_ADMIN_MOT_DE_PASSE=<publiable, règle de robustesse du produit>  # vide : aléatoire
+   DEMO_OPERATEUR_MOT_DE_PASSE=<SECRET, règle de robustesse du produit>  # vide : aléatoire
    ```
    Les mentions légales et la politique de confidentialité de la démo sont
    **reposées à chaque remise à zéro** (`api/app/demo/legal.py`) : elles nomment
@@ -78,7 +84,7 @@ Les deux scripts partagent un verrou : la remise à zéro attend une mise à jou
 déborde, au plus une heure. Le jeu est ainsi fabriqué par la version qui vient
 d'être installée.
 
-🔒 Le journal de la remise à zéro porte le mot de passe de l'administrateur : le
+🔒 Le journal de la remise à zéro porte les mots de passe des comptes techniques : le
 créer lisible de son seul propriétaire, **avant** la première nuit.
 
 ```bash

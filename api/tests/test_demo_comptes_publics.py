@@ -51,41 +51,57 @@ def test_le_generateur_refuse_hors_demo(monkeypatch):
     assert charger.main() == 2
 
 
-# ── L'administrateur : fixe et SECRET, si le .env le donne (14/10/2026) ───────
+# ── Les comptes techniques : fixes si le .env le donne (14/10/2026, #1985) ───
+
+#: Adresse du compte → réglage du `.env` qui fixe son mot de passe.
+TECHNIQUES = {
+    "admin@localhost": "demo_admin_mot_de_passe",
+    "operateur@localhost": "demo_operateur_mot_de_passe",
+}
 
 
-def test_sans_mot_de_passe_du_env_l_administrateur_garde_celui_du_seed(session, monkeypatch):
+@pytest.mark.parametrize("adresse,reglage", sorted(TECHNIQUES.items()))
+def test_sans_mot_de_passe_du_env_le_compte_garde_celui_du_seed(
+    session, monkeypatch, adresse, reglage
+):
     from app.demo import administrateur
     from tests.aides_base import compte
 
-    monkeypatch.setattr(get_settings(), "demo_admin_mot_de_passe", "")
-    admin = compte(session, role="admin", roles_json="admin")
-    avant = admin.hashed_password
-    assert administrateur.fixer_mot_de_passe(session, admin) is False
-    assert admin.hashed_password == avant
+    monkeypatch.setattr(get_settings(), reglage, "")
+    technique = compte(session, email=adresse, role="admin", roles_json="admin")
+    avant = technique.hashed_password
+    assert administrateur.fixer_mot_de_passe(session, technique) is False
+    assert technique.hashed_password == avant
 
 
-def test_le_mot_de_passe_du_env_est_pose_sur_l_administrateur(session, monkeypatch):
+@pytest.mark.parametrize("adresse,reglage", sorted(TECHNIQUES.items()))
+def test_le_mot_de_passe_du_env_est_pose_sur_son_compte(session, monkeypatch, adresse, reglage):
+    """Chacun le sien : celui de l'administrateur ne déverrouille pas l'opérateur."""
     from app.auth.jwt import verify_password
     from app.demo import administrateur
     from tests.aides_base import compte
 
-    monkeypatch.setattr(get_settings(), "demo_admin_mot_de_passe", "Secret-Demo-42")
-    admin = compte(session, role="admin", roles_json="admin")
-    assert administrateur.fixer_mot_de_passe(session, admin) is True
-    assert verify_password("Secret-Demo-42", admin.hashed_password)
+    for autre in TECHNIQUES.values():
+        monkeypatch.setattr(get_settings(), autre, "")
+    monkeypatch.setattr(get_settings(), reglage, "Secret-Demo-42")
+    comptes = {a: compte(session, email=a, role="admin", roles_json="admin") for a in TECHNIQUES}
+    poses = {a: administrateur.fixer_mot_de_passe(session, c) for a, c in comptes.items()}
+    assert poses == {a: a == adresse for a in TECHNIQUES}
+    assert verify_password("Secret-Demo-42", comptes[adresse].hashed_password)
 
 
-def test_un_mot_de_passe_faible_arrete_avant_toute_ecriture(monkeypatch):
+@pytest.mark.parametrize("reglage", sorted(TECHNIQUES.values()))
+def test_un_mot_de_passe_faible_arrete_avant_toute_ecriture(monkeypatch, reglage):
     """Refusé par la règle du produit AVANT la base : la remise à zéro laisse l'API
     arrêtée plutôt que de servir une démo à moitié chargée (code 4)."""
     monkeypatch.setattr(get_settings(), "mode_demo", "oui")
-    monkeypatch.setattr(get_settings(), "demo_admin_mot_de_passe", "faible")
+    monkeypatch.setattr(get_settings(), reglage, "faible")
     assert charger.main() == 4
 
 
-def test_le_mot_de_passe_de_l_administrateur_n_est_pas_dans_le_depot():
-    """Il est secret : aucun défaut écrit dans le code (les publics, eux, le sont)."""
+@pytest.mark.parametrize("reglage", sorted(TECHNIQUES.values()))
+def test_aucun_mot_de_passe_technique_dans_le_depot(reglage):
+    """Fixés par le .env du serveur seulement : aucun défaut écrit dans le code."""
     from app.config import Settings
 
-    assert Settings.model_fields["demo_admin_mot_de_passe"].default == ""
+    assert Settings.model_fields[reglage].default == ""

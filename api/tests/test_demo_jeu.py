@@ -112,13 +112,16 @@ def test_les_comptes_publics_existent_avec_leurs_roles(s):
         assert u.roles_json == p.roles_json
 
 
-def test_l_administrateur_est_celui_du_seed(s):
-    """Réservé (D8 #1932) : ni un compte public, ni un habitant — l'administrateur
-    initial d'une installation standard, opérateur compris."""
-    admins = [u for u in s.exec(select(Utilisateur)).all() if u.has_role("admin")]
-    assert [u.email for u in admins] == ["admin@localhost"]
-    assert admins[0].has_role(ROLE_OPERATEUR)
-    assert config_site(s, "site_manager_user_id")["site_manager_user_id"] == str(admins[0].id)
+def test_les_administrateurs_sont_ceux_du_seed(s):
+    """Ni un compte public, ni un habitant (D8 #1932) : les deux comptes techniques
+    d'une installation standard (#1985). L'administrateur, que l'auteur peut confier
+    aux visiteurs, n'est PAS opérateur ; c'est lui le gestionnaire du site."""
+    admins = {u.email: u for u in s.exec(select(Utilisateur)).all() if u.has_role("admin")}
+    assert sorted(admins) == ["admin@localhost", "operateur@localhost"]
+    assert not admins["admin@localhost"].has_role(ROLE_OPERATEUR)
+    assert admins["operateur@localhost"].has_role(ROLE_OPERATEUR)
+    gestionnaire = config_site(s, "site_manager_user_id")["site_manager_user_id"]
+    assert gestionnaire == str(admins["admin@localhost"].id)
 
 
 def test_les_habitants_ont_des_prenoms_uniques():
@@ -131,10 +134,10 @@ def test_les_habitants_ont_des_prenoms_uniques():
 
 def test_aucune_adresse_ne_peut_recevoir_de_courriel(s):
     """Habitants en `.invalid` ; comptes publics sur un sous-domaine sans serveur de
-    courrier ; l'administrateur du seed en `localhost`."""
+    courrier ; les comptes techniques du seed en `localhost`."""
     publics = {p.adresse for p in PERSONNAGES.values()}
     for u in s.exec(select(Utilisateur)).all():
-        assert u.email.endswith(".invalid") or u.email in publics or u.email == "admin@localhost"
+        assert u.email.endswith((".invalid", "@localhost")) or u.email in publics
 
 
 def test_les_affaires_couvrent_categories_et_etats(s):
