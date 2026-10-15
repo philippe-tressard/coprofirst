@@ -184,3 +184,29 @@ def test_une_replique_ne_peut_pas_allumer_un_service_non_autorise(monkeypatch, t
         assert services[SERVICE_IA]["autorise"] is False
         assert "Non autorisé par la référence" in services[SERVICE_IA]["refus"]
         assert services[SERVICE_VERIF_VERSION]["autorise"] is True
+
+
+def test_la_carte_et_la_fiche_portent_les_alertes_de_l_installation(operateur):
+    """R4b #1960 : une installation muette le dit dans la liste ET dans la fiche."""
+    from datetime import timedelta
+
+    from sqlmodel import select
+
+    from app.registre import base
+    from app.registre.modeles import Installation
+    from app.utils import horloge
+
+    http, _ = operateur
+    sain = {i["identifiant"]: i for i in http.get("/admin/installations").json()["installations"]}
+    assert sain[REPLIQUE]["alertes"] == [] and sain["CF-000000"]["alertes"] == []
+
+    with Session(base.moteur()) as s:
+        inst = s.exec(select(Installation).where(Installation.identifiant == REPLIQUE)).one()
+        inst.vue_le = horloge.maintenant() - timedelta(days=3)
+        s.add(inst)
+        s.commit()
+    liste = {i["identifiant"]: i for i in http.get("/admin/installations").json()["installations"]}
+    (alerte,) = liste[REPLIQUE]["alertes"]
+    assert alerte["code"] == "muette" and alerte["grave"] is True
+    assert alerte["libelle"] == "Installation muette"
+    assert http.get(f"/admin/installations/{REPLIQUE}").json()["alertes"] == [alerte]
