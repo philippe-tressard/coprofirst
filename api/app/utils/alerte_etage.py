@@ -21,29 +21,13 @@ stockage, et elle dit exactement ce qu'on veut dire — une alerte par valeur ne
 from __future__ import annotations
 
 from fastapi import BackgroundTasks
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from app.models.core import Lot, UserLot, Utilisateur
+from app.models.core import Utilisateur
 from app.utils.etages import divergence_etage, etage_label
 from app.utils.liens import base_site, nom_site
+from app.utils.lots_rattaches import lots_de
 from app.utils.noms import contexte_personne
-
-
-def lots_de(session: Session, user: Utilisateur) -> list[Lot]:
-    """Les lots ACTIVEMENT rattachés à ce compte.
-
-    ⚠️ Pas de repli « tous les lots » pour un compte d'administration, à la
-    différence de `GET /lots/mes-lots` : ce repli sert à *consulter* le patrimoine,
-    et l'appliquer ici comparerait l'étage d'un administrateur à un lot qui n'est
-    pas le sien.
-    """
-    rattachements = session.exec(
-        select(UserLot).where(UserLot.user_id == user.id, UserLot.actif == True)  # noqa: E712
-    ).all()
-    ids = [ul.lot_id for ul in rattachements]
-    if not ids:
-        return []
-    return list(session.exec(select(Lot).where(Lot.id.in_(ids))).all())
 
 
 def alerter_divergence_etage(
