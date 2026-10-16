@@ -48,6 +48,7 @@ export * from './reglement';
 export * from './assistant';
 export * from './services';
 export * from './instance';
+export * from './conservation';
 export * from './registre';
 export * from './consignes';
 

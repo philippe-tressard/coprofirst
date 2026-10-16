@@ -10,6 +10,7 @@
 <script lang="ts">
 	import CarteInstallation from '$lib/components/CarteInstallation.svelte';
 	import ControleSante from '$lib/components/ControleSante.svelte';
+	import CarteConservationAffaires from '$lib/components/CarteConservationAffaires.svelte';
 	import CarteExportCopropriete from '$lib/components/CarteExportCopropriete.svelte';
 	import ControlesFiabilite from '$lib/components/ControlesFiabilite.svelte';
 	import ConsommationIA from '$lib/components/ConsommationIA.svelte';
@@ -54,6 +55,7 @@
 	<ControleSante />
 {/if}
 <CarteExportCopropriete />
+<CarteConservationAffaires />
 
 <style>
 	.intro-maintenance {
