@@ -80,6 +80,11 @@ body {
 	--color-border: #d0d8e4;
 	--color-bg: #f2efe9; /* Pierre de taille */
 	--color-surface: #ffffff;
+	/*  Un fond NEUTRE posé sur la surface blanche — l'encart d'une rubrique qui
+	    n'a pas d'état à dire (« La demande », maquette G du 16/10/2026). Le
+	    `--color-bg` de la page est trop chaud pour un bloc dans une carte. */
+	--color-neutre-fond: #f7f8fa;
+	--color-neutre-bordure: #e3e8ef;
 	/* Utilitaires */
 	--radius: 0.5rem;
 	--shadow-sm: 0 1px 3px rgba(30, 58, 95, 0.1);

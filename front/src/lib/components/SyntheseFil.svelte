@@ -20,17 +20,28 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { syntheses, type EtatSynthese, type Ticket } from '$lib/api';
+	import {
+		syntheses,
+		type EtatSynthese,
+		type SyntheseAffaire as SyntheseLue,
+		type Ticket,
+	} from '$lib/api';
+	import { fmtDate } from '$lib/date';
 	import { messageErreur } from '$lib/erreurs';
 	import { isCS } from '$lib/stores/auth';
+	import { fmtJours } from '$lib/synthese';
 	import { estTicketClos } from '$lib/tickets';
 	import EtatListe from './EtatListe.svelte';
+	import RubriqueEtape from './RubriqueEtape.svelte';
 	import SyntheseAffaire from './SyntheseAffaire.svelte';
 	import { toast } from './Toast.svelte';
 
 	export let ticket: Pick<Ticket, 'id' | 'statut'> | null;
 	/** Le fil : relu à chaque écriture, il fait relire la synthèse avec lui. */
 	export let evolutions: unknown[] = [];
+	/** La rubrique est-elle dépliée ? L'accordéon est tenu par la carte. */
+	export let ouverte = false;
+	export let onBasculer: () => void;
 	/** L'état lu : la synthèse lisible, et ce que le conseil peut en faire. */
 	let etat: EtatSynthese | null = null;
 
@@ -53,6 +64,27 @@
 		}
 	}
 
+	$: produisible = $isCS && !!etat?.produisible;
+	$: enAttente = $isCS && !produisible && !!etat?.en_attente;
+	$: visible = !!etat?.synthese || produisible || enAttente;
+	$: resume = resumeSynthese(etat?.synthese ?? null, produisible, enAttente);
+
+	/** PURE. La ligne de la rubrique pliée : l'état, jamais l'invitation. */
+	function resumeSynthese(s: SyntheseLue | null, aProduire: boolean, attendue: boolean): string {
+		if (s?.statut === 'validee') {
+			const duree = s.metriques?.duree_totale;
+			return [
+				s.validee_le ? `Validée le ${fmtDate(s.validee_le)}` : 'Validée',
+				duree != null ? `affaire close en ${fmtJours(duree)}` : '',
+			]
+				.filter(Boolean)
+				.join(' · ');
+		}
+		if (s) return 'Brouillon à relire, puis valider';
+		if (attendue) return 'En préparation';
+		return aProduire ? 'À produire' : '';
+	}
+
 	async function produire() {
 		if (!ticket) return;
 		enCours = true;
@@ -69,25 +101,36 @@
 </script>
 
 <EtatListe compact {erreur} />
-{#if $isCS && etat?.produisible}
-	<div class="synthese-fil">
-		<button class="btn btn-outline btn-sm" disabled={enCours} on:click={produire}
-			>{enCours ? 'Rédaction…' : '🧾 Produire la synthèse'}</button
-		>
-	</div>
-{:else if $isCS && etat?.en_attente}
-	<p class="aide">
-		🧾 La synthèse de l’affaire est en préparation : elle paraîtra ici sous quarante minutes.
-	</p>
-{/if}
-{#if etat?.synthese}
-	<SyntheseAffaire synthese={etat.synthese} gestes={$isCS} on:change={recharger} />
+<!--  🧾 La DERNIÈRE rubrique de la carte (maquette G, 16/10/2026) : la conclusion
+      de l'affaire se lit après ce qui s'y est passé. Pliée, elle dit son état
+      sur une ligne — validée et en combien de jours, ou ce qui reste à faire. -->
+{#if visible}
+	<RubriqueEtape titre="La synthèse" icone="file-text" ton="succes" {resume} {ouverte} {onBasculer}>
+		{#if produisible}
+			<div class="synthese-fil">
+				<button class="btn btn-outline btn-sm" disabled={enCours} on:click={produire}
+					>{enCours ? 'Rédaction…' : 'Produire la synthèse'}</button
+				>
+			</div>
+		{:else if enAttente}
+			<p class="aide">
+				La synthèse de l’affaire est en préparation : elle paraîtra ici sous quarante minutes.
+			</p>
+		{/if}
+		{#if etat?.synthese}
+			<SyntheseAffaire
+				synthese={etat.synthese}
+				gestes={$isCS}
+				titre={false}
+				on:change={recharger}
+			/>
+		{/if}
+	</RubriqueEtape>
 {/if}
 
 <style>
 	.synthese-fil {
 		display: flex;
 		justify-content: flex-end;
-		margin-bottom: 0.5rem;
 	}
 </style>
