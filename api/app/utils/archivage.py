@@ -32,8 +32,10 @@ pour la même chose, celle qu'on pose et celle qui arrive, libres de se
 contredire. C'est l'arbitrage déjà pris pour les annonces (`StatutAnnonce`) et
 les actualités ; il vaut ici pour les sept.
 
-Il ne supprime rien non plus. La purge des actualités annulées est une notion
-distincte, avec son propre délai : voir `PURGE_ANNULE_HEURES`.
+Il ne supprime rien non plus — et rien ne supprime une affaire d'office : seul
+l'administrateur le fait, depuis les Archives. La purge des actualités annulées
+à 48 h (`PURGE_ANNULE_HEURES`) est partie avec le module Publications (#1177,
+30/09/2026) ; sa constante, que plus rien ne lisait, a été retirée le 16/10/2026.
 
 ## Test : `api/tests/test_archivage.py`
 
@@ -57,16 +59,6 @@ from app.utils.valeurs import valeur
 #: champ, mais valable pour tous les types d'écran… 30 j »*. Surchargeable en
 #: configuration (`archivage_delai_jours`), et par ce seul réglage.
 ARCHIVAGE_DELAI_JOURS = 30
-
-#: ⚠️ **Rien à voir avec l'archivage, et c'est pourquoi il est nommé
-#: autrement.** Une actualité *annulée* est SUPPRIMÉE au bout de ce délai —
-#: elle ne part pas aux archives, elle disparaît. Cette valeur portait le nom
-#: `ARCHIVAGE_DELAI_HEURES` et servait aux DEUX usages : c'est une des raisons
-#: pour lesquelles le site comptait « trois délais » là où il en fallait un.
-#: Les rendre indépendants était indispensable AVANT d'unifier l'autre — sinon
-#: porter le délai d'archivage à 30 jours aurait retardé d'un mois une
-#: **suppression** de données.
-PURGE_ANNULE_HEURES = 48
 
 
 @dataclass(frozen=True)
