@@ -71,6 +71,14 @@ body {
 	    Opérateur, statut Locataire) et du geste qui accorde l'Opérateur. */
 	--color-violet: #6b21a8;
 	--color-violet-fond: #f3e8ff;
+	/*  Une autre teinte de catégorie : la sarcelle de `.badge-teal` (rôle
+	    Propriétaire, ancien copropriétaire occupant). Sans règle depuis la
+	    v1.0.0, le badge se rendait sans fond ni couleur (#1986, arbitré le
+	    16/10/2026). Ni le vert d'un succès — que porte, juste à côté, le
+	    statut « Copro. résident » —, ni le bleu du conseil syndical : une
+	    teinte à 187°, entre les deux. 5,85 sur son fond. */
+	--color-sarcelle: #0b6470;
+	--color-sarcelle-fond: #ddf1f4;
 
 	/* Texte */
 	--color-text: #1a1a2e;
