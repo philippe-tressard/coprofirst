@@ -15,7 +15,7 @@
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { isAdmin, isCS } from '$lib/stores/auth';
+	import { isAdmin } from '$lib/stores/auth';
 	import { tickets as ticketsApi, ApiError, type Ticket, type TicketMessage } from '$lib/api';
 	import { affairesEnListe } from '$lib/affaires-en-liste';
 	import { estArchive } from '$lib/recherche-affaires';
@@ -145,24 +145,6 @@
 			peutAdministrer={$isAdmin}
 			{gestes}
 		/>
-		<!--  Deux faits que la carte ne porte pas encore, et que la fiche montrait :
-		      qui a saisi l'affaire POUR qui (avec l'adresse d'une personne sans
-		      compte), et l'envoi au syndic. Ils resteront ici tant que le corps de
-		      la carte ne les rend pas — les retirer serait une perte pour le
-		      conseil, la phrase « Saisi par … pour … » étant la seule du site qui
-		      distingue les deux rôles. -->
-		{#if ticket.saisi_pour_affichage && $isCS}
-			<p class="ticket-saisi-pour">
-				👤 Saisi par <strong>{ticket.auteur_nom ?? 'inconnu'}</strong> pour
-				<strong>{ticket.saisi_pour_affichage}</strong>
-				{#if ticket.saisi_pour_email}
-					· <a href="mailto:{ticket.saisi_pour_email}">{ticket.saisi_pour_email}</a>
-				{/if}
-			</p>
-		{/if}
-		{#if ticket.destinataire_syndic}
-			<p class="ticket-envoi">📧 Envoyé au syndic</p>
-		{/if}
 	</div>
 
 	<!--  LE FIL DES MESSAGES — à ne pas confondre avec le fil de la carte, au-dessus :
@@ -188,18 +170,5 @@
 	    messages — `.colonne-lecture` (`normes.css`), posée sur chaque bloc. */
 	.affaire-seule {
 		margin-bottom: 1rem;
-	}
-	.ticket-envoi {
-		font-size: var(--fs-sm);
-		color: var(--color-text-muted);
-		margin-top: 0.5rem;
-	}
-	.ticket-saisi-pour {
-		font-size: var(--fs-md);
-		color: var(--color-text-muted);
-		margin: 0.5rem 0;
-		padding: 0.5rem 0.75rem;
-		background: var(--color-bg-muted, #f5f5f5);
-		border-radius: var(--radius);
 	}
 </style>

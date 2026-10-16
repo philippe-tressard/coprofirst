@@ -29,7 +29,7 @@
 	import TransfertsVerses from './TransfertsVerses.svelte';
 	import MentionFusion from './MentionFusion.svelte';
 	import type { Ticket, TicketEvolution } from '$lib/api';
-	import { currentUser, isAdmin } from '$lib/stores/auth';
+	import { currentUser, isAdmin, isCS } from '$lib/stores/auth';
 	import { TICKET } from '$lib/entites/ticket';
 	import {
 		OPTIONS_TICKET,
@@ -143,7 +143,29 @@
 		photos={ticket.photos_urls ?? []}
 		documents={ticket.fichiers_urls ?? []}
 		affairesLiees={ticket.affaires_liees}
-	/>
+	>
+		<!--  Qui l'a saisie POUR qui — le conseil seul le lit, avec l'adresse d'une
+		      personne sans compte. La seule phrase du site qui nomme les deux rôles :
+		      y substituer le propriétaire dirait « saisi par lui-même ». Elle ne
+		      vivait que sur la fiche du lien direct, que la carte remplace
+		      (15/10/2026). -->
+		<svelte:fragment slot="specifiques">
+			{#if ticket.saisi_pour_affichage && $isCS}
+				<p class="tk-saisi-pour">
+					👤 Saisi par <strong>{ticket.auteur_nom ?? 'inconnu'}</strong> pour
+					<strong>{ticket.saisi_pour_affichage}</strong>
+					{#if ticket.saisi_pour_email}
+						· <a href="mailto:{ticket.saisi_pour_email}">{ticket.saisi_pour_email}</a>
+					{/if}
+				</p>
+			{/if}
+		</svelte:fragment>
+		<svelte:fragment slot="pied">
+			{#if ticket.destinataire_syndic}
+				<p class="tk-envoi">📧 Envoyé au syndic</p>
+			{/if}
+		</svelte:fragment>
+	</FicheLecture>
 	<MentionFusion {ticket} />
 
 	<!--  Défaire un transfert de courriel, comme sur la fiche (#1482) : la
@@ -209,6 +231,19 @@
 <style>
 	.tk-formulaire {
 		padding: 0.25rem 0;
+	}
+	.tk-saisi-pour {
+		font-size: var(--fs-md);
+		color: var(--color-text-muted);
+		margin: 0.5rem 0;
+		padding: 0.5rem 0.75rem;
+		background: var(--color-bg-muted, #f5f5f5);
+		border-radius: var(--radius);
+	}
+	.tk-envoi {
+		font-size: var(--fs-sm);
+		color: var(--color-text-muted);
+		margin-top: 0.5rem;
 	}
 	.tk-meta {
 		margin: 0.9rem 0 0;

@@ -80,7 +80,7 @@ if (tous.length < 50) {
  * Les composants qui interceptent eux-mêmes, indexés par leur nom de balise.
  *
  * 🔴 SANS CELA, LE CONTRÔLE ACCUSE LES RELAIS. `CarteTicket` et
- * `HistoriqueTicket` passent `demanderApercu` à `EvolForm`, qui porte le
+ * `HistoriqueTicket` (retiré le 15/10/2026) passaient `demanderApercu` à `EvolForm`, qui porte le
  * formulaire ET l'interception : ils ont raison de ne pas intercepter
  * eux-mêmes, et le contrôle les refusait.
  *

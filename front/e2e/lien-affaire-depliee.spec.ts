@@ -10,6 +10,8 @@
  *  Ce test vérifie ce que l'écran MONTRE — API simulée, compte témoin :
  *  - une seule carte, dépliée d'emblée, et son corps (le fil de la carte) ;
  *  - aucun reste de la fiche (« Changer le statut ») ;
+ *  - « Saisi par … pour … » (au conseil) et l'envoi au syndic sont DANS la
+ *    carte — ils ne vivaient que sur la fiche ;
  *  - le titre plie la carte, comme dans la liste ;
  *  - le fil des messages reste sous la carte, avec son « Répondre ».
  */
@@ -30,6 +32,8 @@ const AFFAIRE = {
 	perimetre_cible: [],
 	photos_urls: [],
 	fichiers_urls: [],
+	saisi_pour_affichage: 'Mme Durand',
+	destinataire_syndic: true,
 };
 const SUITE = {
 	id: 31,
@@ -57,6 +61,9 @@ test('une seule carte, dépliée, sans les restes de la fiche', async ({ page })
 	await expect(cartes.first()).toHaveClass(/(^|\s)expanded(\s|$)/);
 	await expect(cartes.first().locator('.carte-corps')).toContainText('Devis demandé au serrurier.');
 	await expect(page.getByText('Changer le statut')).toHaveCount(0);
+	const corps = cartes.first().locator('.carte-corps');
+	await expect(corps).toContainText('Saisi par CS Témoin pour Mme Durand');
+	await expect(corps).toContainText('Envoyé au syndic');
 	await page.screenshot({
 		path: `test-results/lien-affaire-depliee-${test.info().project.name}.png`,
 		fullPage: true,

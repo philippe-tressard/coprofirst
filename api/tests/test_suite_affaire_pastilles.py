@@ -1,7 +1,8 @@
 """Toute Suite d'AFFAIRE s'ouvre avec les pastilles d'état en tête (#1094).
 
-Deux écrans ouvrent une Suite sur une affaire : la carte (`CarteTicket`) et la
-fiche (`HistoriqueTicket`). La carte passait `statutOptions`, la fiche non : le
+Deux écrans ouvraient une Suite sur une affaire : la carte (`CarteTicket`) et la
+fiche (`HistoriqueTicket`, retirée le 15/10/2026 : le lien d'une affaire rend sa
+carte). La carte passait `statutOptions`, la fiche non : le
 même geste montrait les pastilles ici et pas là (23/09/2026). La forme est celle
 qu'a imposée #426 — on touche une pastille pour faire avancer, on n'y touche
 pas pour une simple parole.
@@ -10,7 +11,7 @@ Ce test lit chaque `<EvolForm … entite={TICKET} …>` du front qui n'est pas u
 CORRECTION (`editMode`) et exige `statutOptions`.
 
 Depuis le 01/10/2026 (#1520), la Suite ET sa correction passent par UN montage,
-`SuiteAffaire` : la carte, la fiche et l'actualité le rendent, et c'est lui qui
+`SuiteAffaire` : la carte et l'actualité le rendent, et c'est lui qui
 porte les pastilles. Le test l'exige de lui, et exige des hôtes qu'ils le rendent.
 """
 
@@ -32,7 +33,6 @@ _MONTAGE = "lib/components/SuiteAffaire.svelte"
 _HOTES = (
     #  Le corps déplié de la carte de liste (`CarteTicket`), chargé au geste (#1860).
     "lib/components/CorpsCarteTicket.svelte",
-    "lib/components/HistoriqueTicket.svelte",
     "lib/components/ActualiteEnListe.svelte",
 )
 

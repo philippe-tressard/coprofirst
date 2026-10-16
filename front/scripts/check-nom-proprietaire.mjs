@@ -42,8 +42,8 @@
  *   nomme, et le dit. Chacune échoue si elle cesse de servir : une exception
  *   qui ne sert plus est un oubli qui ressemble à une décision.
  *
- * ⚠️ Une exception porte sur une **ligne**, jamais sur un fichier entier. Le
- * fichier `tickets/[id]` le prouve : il contient à la fois la seule phrase du
+ * ⚠️ Une exception porte sur une **ligne**, jamais sur un fichier entier. La
+ * fiche `tickets/[id]` (rendue par la carte depuis le 15/10/2026) l'a prouvé : il contient à la fois la seule phrase du
  * site qui nomme légitimement l'auteur (« Saisi par … pour … ») et, soixante
  * lignes plus bas, une case de copie qui affichait le mauvais nom. Exempter le
  * fichier aurait couvert la seconde en autorisant la première.
@@ -68,12 +68,9 @@ const TYPES = join(SOURCE, 'lib', 'api', 'types.ts');
  * l'événement, devenu une affaire (#1092). Le contrôle échoue si un fichier de
  * la liste n'existe plus, pour qu'on l'en retire.
  */
-const PORTEURS_NON_TYPES = [
-	//  `let ticket: any = null` — la fiche d'un ticket, dont le type est le
-	//  seul du lot à n'avoir jamais été posé. Sans cette ligne, l'écran le plus
-	//  détaillé d'une affaire serait le seul à n'être pas contrôlé.
-	'routes/(app)/tickets/[id]/+page.svelte',
-];
+//  La fiche d'un ticket (`let ticket: any`) y figurait ; elle est partie le
+//  15/10/2026 — le lien d'une affaire rend sa carte, typée.
+const PORTEURS_NON_TYPES = [];
 
 /**
  * Où `auteur_nom` est bien ce qu'il faut dire — chacune avec sa raison.
@@ -84,10 +81,11 @@ const PORTEURS_NON_TYPES = [
  */
 const EXCEPTIONS = [
 	{
-		fichier: 'routes/(app)/tickets/[id]/+page.svelte',
+		fichier: 'lib/components/CorpsCarteTicket.svelte',
 		//  « 👤 Saisi par <auteur> pour <propriétaire> » — la phrase NOMME les
 		//  deux rôles, et c'est le seul endroit du site qui les distingue à
 		//  l'écran. Y substituer le propriétaire dirait « saisi par lui-même ».
+		//  Elle vivait sur la fiche du lien direct, que la carte remplace (15/10/2026).
 		ligneContient: 'Saisi par',
 		raison: 'la phrase « Saisi par … pour … » nomme explicitement les deux rôles',
 	},
