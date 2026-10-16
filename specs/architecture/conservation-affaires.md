@@ -1,7 +1,8 @@
 # Conservation des affaires — spécification (#2014)
 
-> **État** : spécification arbitrée le 16/10/2026 sur le feu vert de Philippe. Aucun
-> code n'est écrit. Les arbitrages pris sont datés, ceux de la relecture au §9.
+> **État** : spécification arbitrée le 16/10/2026 sur le feu vert de Philippe. Le lot
+> **L1** (constat seul) est livré avec elle ; L2 et L3 restent à faire. Les arbitrages
+> sont datés, ceux de la relecture au §9.
 
 ## 1. Pourquoi
 
@@ -147,9 +148,10 @@ sur le PC, alors que la copie ordinaire n'en garde que `EXPORT_KEEP` (2).
 
 Le retrait est **irréversible** sur le serveur : il se livre en deux temps.
 
-1. **Constat seul** : la tâche calcule les échéances et l'écran les montre
-   (« 12 affaires, 31 fichiers, 4 Mo à la fin de l'exercice 2027 »), sans rien
-   toucher.
+1. **Constat seul** (livré en L1) : les échéances se calculent **à la lecture**
+   (`GET /admin/conservation-affaires`, `utils/conservation_affaires.constat`) et
+   l'écran les montre (« 12 affaires, 31 fichiers, 4 Mo à la fin de l'exercice
+   2027 »), sans rien toucher.
 2. **Application**, par une case de l'administrateur dans Admin › Maintenance,
    coupée à la livraison. Elle se déclare dans le registre des services
    (`utils/services.SERVICES`), avec ce qu'on perd en la coupant : les durées
@@ -170,8 +172,8 @@ Le retrait est **irréversible** sur le serveur : il se livre en deux temps.
 
 | Lot | Contenu | Effet en production |
 |---|---|---|
-| **L1** | `DUREES`, calcul des échéances, colonne `conservee_le`, tâche en **constat seul**, bloc Maintenance | aucun : on voit ce qui partira |
-| **L2** | archive et sommaire, retrait des pièces jointes, détachement des auteurs, case d'application (coupée), politique de confidentialité, manuel | aucun tant que la case est coupée |
+| **L1** ✅ | `DUREES`, calcul des échéances, route de constat (admin), carte **Conservation des affaires** d'Admin › Maintenance | aucun : on voit ce qui partira |
+| **L2** | colonne `conservee_le`, tâche nocturne, archive et sommaire, retrait des pièces jointes, détachement des auteurs, case d'application (coupée), politique de confidentialité | aucun tant que la case est coupée |
 | **L3** | copie sur le PC sans rotation, accusé de copie, retrait différé côté serveur, contrôle d'âge | le PC reçoit les archives |
 
 **Garde-fous** : chaque catégorie a sa durée ; les bornes d'exercice

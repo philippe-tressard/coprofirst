@@ -24,6 +24,7 @@ modèles Pydantic et les helpers privés vivent donc auprès des routes qu'ils s
 | `communications` | historique et modèles d'e-mail, notifications, télémétrie |
 | `acces` | commandes vigik/télécommande, audit des liens utilisateur-lot |
 | `installations` | le registre des installations, en lecture, chez la référence (R4a #1880) |
+| `conservation_affaires` | le constat de la conservation des affaires : ce qui partira, et quand (#2014) |
 
 ## Ce qui n'a PAS changé, volontairement
 
@@ -59,6 +60,7 @@ from . import (
     arrivants,
     communications,
     comptes,
+    conservation_affaires,
     exploitation,
     export_copropriete,
     inscription,
@@ -84,6 +86,7 @@ for _sous_router in (
     inscription.router,
     installations.router,
     export_copropriete.router,
+    conservation_affaires.router,
     rapports_scripts.router,
     communications.router,
     acces.router,
