@@ -59,7 +59,10 @@ from app.seed import EMAIL_TEMPLATES
 #: ⬇️ Mise à jour le 05/10/2026 : `ticket_syndic` et `ticket_copie_auteur` portent le
 #: bloc des affaires liées sous leur historique — migration **0266**. Les autres
 #: modèles sont inchangés (vérifié : seuls ces deux corps diffèrent de HEAD).
-EMPREINTE = "fe58557e6735da3989879646a156a07ee3cb16e0dcef1ef9c10dddc9f1cefa20"
+#: ⬇️ Mise à jour le 16/10/2026 (#2035) : `relance_syndic` dit le « Point de situation »
+#: (résumé de l'assistant) et numérote la relance qui part — migration **0288**.
+#: Seul ce corps diffère.
+EMPREINTE = "ebecdc7457be3ae30c1faa68990a4ddb8b7c6bcb1c5199abf71723445e2ff5c8"
 NOMBRE_ATTENDU = 34  # + ticket_partage, lien_partage (#1357), adresse_changement_avis (#1549),
 #  synthese_a_valider (#1643), ticket_copie_auteur, publication_copie_auteur,
 #  compte_inactif_avertissement (#1580) — AJOUTÉS, donc posés par le seed : aucune migration.
