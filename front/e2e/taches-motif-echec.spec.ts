@@ -25,7 +25,11 @@ const tache = (nom: string) => ({
 	statut_en_retard: null,
 });
 
-const SANTE = { taches: [tache('backup'), tache('maintenance')], anomalies_recentes: [] };
+const SANTE = {
+	taches: [tache('backup'), tache('maintenance')],
+	anomalies_recentes: [],
+	anomalies_fenetre_jours: 7,
+};
 
 /** Une ligne `historique_sauvegarde`, telle que `GET /admin/sauvegardes/historique` la rend. */
 const SAUVEGARDE_ECHOUEE = {

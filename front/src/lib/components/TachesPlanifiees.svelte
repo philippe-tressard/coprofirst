@@ -112,6 +112,11 @@
 		telemetrie:
 			'Automatique chaque nuit à 2 h. Agrège les événements bruts en données ' +
 			'journalières puis mensuelles, et purge les données expirées.',
+		//  Pas de sous-ligne par nœud : le poste l'exécute, et le nœud nommé est
+		//  celui d'où vient l'archive du jour (`_TACHES_HORS_DES_NOEUDS`).
+		export_hors_site:
+			'Lancée depuis le poste, pas par un nœud. Le nœud affiché est celui d’où vient ' +
+			'l’archive du jour ; les archives de l’autre nœud sont rattrapées au même passage.',
 	};
 
 	let historiques: Record<string, ExecutionTache[]> = {};
@@ -200,8 +205,9 @@
 		<strong>dernière exécution réelle</strong>
 		— quel que soit le nœud qui l'a faite. En dessous,
 		<strong>une sous-ligne par nœud ayant rendu compte</strong> : un nœud sain ne compense pas un
-		nœud muet, et l'on voit lequel décroche sans avoir à cliquer. Sans ce contrôle, une absence de
-		ligne se lirait comme « tout va bien ».
+		nœud muet, et l'on voit lequel décroche sans avoir à cliquer. La copie hors site n'en a pas :
+		c'est le poste qui l'exécute, pas un nœud. Sans ce contrôle, une absence de ligne se lirait
+		comme « tout va bien ».
 		<br />
 		⚠️ Une tâche qui n'affiche <strong>qu'une seule</strong> sous-ligne n'a été rapportée que par ce nœud-là.
 		Selon la tâche, c'est normal (elle ne tourne que sur l'actif) ou c'est le signe que l'autre nœud ne
@@ -387,7 +393,8 @@
 		</div>
 		{#if sante.anomalies_recentes.length > 0}
 			<p class="muted bilan-anomalies">
-				<strong>{sante.anomalies_recentes.length}</strong> exécution(s) en échec récemment.
+				<strong>{sante.anomalies_recentes.length}</strong> exécution(s) en échec ces
+				{sante.anomalies_fenetre_jours} derniers jours.
 			</p>
 		{/if}
 	{/if}

@@ -44,8 +44,11 @@ from types import SimpleNamespace
 import pytest
 
 from app.utils.sante_taches import (
+    _PERIODICITE_ATTENDUE_H,
     _PERIODICITE_PAR_NOEUD_H,
     _PERIODICITE_SAUVEGARDE_H,
+    _TACHES_HORS_DES_NOEUDS,
+    _entree_sante,
     _sante_par_noeud,
 )
 
@@ -300,3 +303,46 @@ def test_le_rapport_perdu_est_PLUS_GRAVE_qu_une_erreur():
     )
     assert res["pire"]["noeud"] == "rpi1"
     assert res["pire"]["statut"] == "rapport_perdu"
+
+
+#  ── Fausse alerte n° 3 : la copie hors site n'a pas de nœud exécutant ───────
+
+
+def _copie(lignes):
+    tache = "export_hors_site"
+    periode = _PERIODICITE_ATTENDUE_H[tache]
+    return _entree_sante(
+        tache, periode, _sante_par_noeud(tache, lignes, periode, "erreur", MAINTENANT)
+    )
+
+
+def test_la_copie_hors_site_ne_juge_pas_le_noeud_qui_n_a_pas_servi():
+    """🔴 Le cas exact du 16/10/2026 : « RPI2 — Exécution manquante ».
+
+    Le poste copie l'archive du nœud qui sert, puis rattrape celles de l'autre.
+    Deux copies de suite sur le même actif laissaient le dernier rapport « de
+    rpi2 » vieux de neuf jours, et rpi2 passait rouge — ses archives copiées.
+    """
+    entree = _copie([ligne("rpi1", 2), ligne("rpi1", 6), ligne("rpi2", 9)])
+    assert entree["statut"] == "ok"
+    assert entree["noeud"] == "rpi1", "le nœud source de la dernière copie reste nommé"
+    assert entree["noeuds"] == [], "une sous-ligne par nœud pour une tâche du POSTE"
+    assert entree["noeud_en_retard"] is None, "RPI2 en retard : la fausse alerte revient"
+
+
+def test_la_copie_hors_site_vraiment_absente_reste_signalee():
+    """Supprimer le jugement par nœud ne doit pas taire le seul qui compte."""
+    entree = _copie([ligne("rpi1", 9), ligne("rpi2", 12)])
+    assert entree["statut"] == "manquante"
+
+
+def test_seule_la_copie_hors_site_est_hors_des_noeuds():
+    """Cas zéro et garde : la déclaration sert, et ne s'étend pas en silence.
+
+    Une tâche de plus dans cette table perdrait ses sous-lignes — donc la
+    protection de #331 (un nœud sain ne compense pas un nœud muet).
+    """
+    assert _TACHES_HORS_DES_NOEUDS == {"export_hors_site"}
+    #  Témoin : une tâche d'un NŒUD garde ses sous-lignes, rpi2 muet compris.
+    res = _grouper([ligne("rpi1", 0), ligne("rpi2", 8)], tache="maintenance", periode_h=168)
+    assert {d["noeud"]: d["statut"] for d in res["detail"]} == {"rpi1": "ok", "rpi2": "manquante"}
