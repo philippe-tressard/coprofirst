@@ -287,6 +287,7 @@ def ticket_read(
         #  Le délai du site, lu une fois par liste et non une fois par affaire.
         archivee=est_archivable("ticket", ticket, seuil_jours=groupe.seuil_jours),
         relance_count=groupe.relances[ticket.id],
+        synthese_validee=ticket.id in groupe.syntheses_validees,
         natures=natures(ticket),
         perime_le=perime_le(ticket, "ticket"),
         prestataire_nom=nom_prestataire(session, ticket.prestataire_id),

@@ -31,6 +31,7 @@ from sqlmodel import Session, func, select
 
 from app.models.core import Batiment, Ticket, TicketEvolution, Utilisateur
 from app.models.prestataires import ContratEntretien, Prestataire
+from app.models.synthese import VALIDEE, SyntheseAffaire
 from app.utils.affaires_liees import index_des_liens
 from app.utils.archivage import seuil_archivage_jours
 from app.utils.photos import parse_photos
@@ -51,6 +52,8 @@ class LectureGroupee:
     #: Les pièces de l'entrée de fil la plus RÉCENTE qui en porte (#464).
     pieces_du_fil: dict[int, list[str]]
     seuil_jours: int
+    #: Les affaires qu'accompagne une synthèse VALIDÉE (#1643).
+    syntheses_validees: frozenset[int]
     #: Lignes préchargées pour `session.get` : la carte d'identité de la
     #: session ne les retient que faiblement (`recuperer.precharger`).
     retenues: tuple
@@ -92,6 +95,21 @@ def pieces_du_fil(session: Session, ids) -> dict[int, list[str]]:
     return pieces
 
 
+def syntheses_validees(session: Session, ids) -> frozenset[int]:
+    """Les affaires qu'accompagne une synthèse validée — la pastille ✨ de la carte.
+
+    Validée seulement : un brouillon ne se lit que du conseil, et la pastille
+    parle à tous ceux qui lisent l'affaire (`synthese_affaire.lisible`).
+    """
+    return frozenset(
+        session.exec(
+            select(SyntheseAffaire.ticket_id).where(
+                SyntheseAffaire.ticket_id.in_(ids), SyntheseAffaire.statut == VALIDEE
+            )
+        ).all()
+    )
+
+
 def lecture_groupee(session: Session, tickets: list[Ticket]) -> LectureGroupee:
     """Tout ce que `ticket_read` lit autour de ces affaires, en un nombre fixe de requêtes."""
     ids = [t.id for t in tickets]
@@ -115,5 +133,6 @@ def lecture_groupee(session: Session, tickets: list[Ticket]) -> LectureGroupee:
         relances=relances_par_affaire(session, ids),
         pieces_du_fil=pieces_du_fil(session, ids),
         seuil_jours=seuil_archivage_jours(session),
+        syntheses_validees=syntheses_validees(session, ids),
         retenues=retenues,
     )

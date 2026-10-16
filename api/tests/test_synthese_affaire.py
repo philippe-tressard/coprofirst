@@ -30,6 +30,7 @@ from app.models.core import RoleUtilisateur, StatutUtilisateur, Ticket, TicketEv
 from app.models.synthese import ANNULEE, BROUILLON, VALIDEE, SyntheseAffaire, TentativeSynthese
 from app.routers.tickets import evolutions
 from app.routers.tickets import synthese as routes
+from app.routers.tickets.commun import ticket_read
 from app.routers.tickets.synthese_schemas import SyntheseModification
 from app.utils import horloge, llm
 from app.utils.carnet_entretien import construire_carnet
@@ -244,6 +245,24 @@ def test_un_brouillon_est_invisible_d_un_lecteur_ordinaire(session, envois, assi
     lue = routes.lire_synthese(ticket.id, session=session, user=resident).synthese
     assert lue.synthese == "<p>Récit</p>" and lue.metriques["duree_totale"] >= 0
     assert construire_carnet(session, lecteur=cs)[0]["synthese"]["statut"] == VALIDEE
+
+
+def test_la_carte_dit_la_synthese_validee_seulement(session, envois, assistant):
+    """🧾 La pastille « Synthèse » de la carte repliée (maquette A, 15/10/2026).
+
+    Validée seulement : un brouillon ne se lit que du conseil, et la pastille
+    parle à tous ceux qui lisent l'affaire.
+    """
+    resident, cs = _personnes(session)
+    ticket = _close(session, resident)
+    _produite(session, ticket)
+
+    def pastille():
+        return ticket_read(ticket, session, resident).synthese_validee
+
+    assert not pastille()
+    routes.valider_synthese(ticket.id, session=session, user=cs)
+    assert pastille()
 
 
 def test_une_synthese_validee_se_corrige_et_se_supprime(session, envois, assistant):

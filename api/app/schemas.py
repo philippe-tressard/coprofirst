@@ -210,6 +210,9 @@ class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant):
     relance_count: int = 0
     #: Règle du SITE (`utils/archivage`, #515) — l'écran en appliquait une autre.
     archivee: bool = False
+    #: ✨ Une synthèse VALIDÉE l'accompagne (#1643) : la carte repliée le dit.
+    #: Validée seulement — lue alors par qui lit l'affaire (`synthese_affaire.lisible`).
+    synthese_validee: bool = False
     confidentiel: bool = False
     #  📌 Épinglé — RELU, contrairement à `partager_whatsapp` juste en dessous :
     #  c'est un ÉTAT du ticket, pas un acte. L'écran doit pouvoir le reprendre.

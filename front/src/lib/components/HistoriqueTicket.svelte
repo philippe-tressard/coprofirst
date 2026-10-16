@@ -40,9 +40,8 @@
 	import RubriqueHistorique from './RubriqueHistorique.svelte';
 	import EtatListe from './EtatListe.svelte';
 	import { TITRE_HISTORIQUE } from '$lib/archives';
-	import SyntheseAffaire from './SyntheseAffaire.svelte';
 	import SyntheseFil from './SyntheseFil.svelte';
-	import type { EtatSynthese, Ticket } from '$lib/api';
+	import type { Ticket } from '$lib/api';
 	import { tickets as ticketsApi, type TicketEvolution } from '$lib/api';
 	import { messageErreur } from '$lib/erreurs';
 	import { toast } from './Toast.svelte';
@@ -67,11 +66,6 @@
 	let enEdition: number | null = null;
 	let enregistre = false;
 	let corrige = false;
-
-	//  🧾 La synthèse d'une affaire close (#1643) : `SyntheseFil` la lit et offre
-	//  « Produire » ; la Suite se rend ici, dans le créneau `synthese`.
-	let etatSynthese: EtatSynthese | null = null;
-	let filSynthese: SyntheseFil;
 
 	async function ajouter(e: CustomEvent<ChargeUtileEvolution>) {
 		enregistre = true;
@@ -124,13 +118,9 @@
 
 <div class="bloc-historique colonne-lecture">
 	<EtatListe compact erreur={erreurSuivi} />
-	<SyntheseFil
-		bind:this={filSynthese}
-		bind:etat={etatSynthese}
-		{ticket}
-		{evolutions}
-		on:change={() => dispatch('change')}
-	/>
+	<!--  🧾 La synthèse d'une affaire close (#1643) : lue, offerte et RENDUE par
+	      `SyntheseFil`, en bloc au-dessus du fil — comme sur la carte. -->
+	<SyntheseFil {ticket} {evolutions} on:change={() => dispatch('change')} />
 	<RubriqueHistorique
 		avecFiltre
 		{evolutions}
@@ -155,16 +145,6 @@
 					      l'écart est arrivé (19/08/2026). -->
 					{ouvert ? '✕ Annuler' : `${evolutionIcone('commentaire')} ${SUITE.libelle}`}
 				</button>
-			{/if}
-		</svelte:fragment>
-
-		<svelte:fragment slot="synthese" let:evol>
-			{#if etatSynthese?.synthese && etatSynthese.synthese.evolution_id === evol.id}
-				<SyntheseAffaire
-					synthese={etatSynthese.synthese}
-					gestes={$isCS}
-					on:change={() => filSynthese.recharger()}
-				/>
 			{/if}
 		</svelte:fragment>
 
