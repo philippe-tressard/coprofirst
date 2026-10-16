@@ -19,6 +19,7 @@
   pliée de la ligne, en lecture) : une entité, un rendu.
 -->
 <script lang="ts">
+	import Icon from '$lib/components/Icon.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { syntheses, type PropositionSynthese, type SyntheseAffaire } from '$lib/api';
@@ -42,6 +43,11 @@
 	export let synthese: SyntheseAffaire;
 	/** Le conseil : les gestes d'un brouillon. Le serveur refait le contrôle. */
 	export let gestes = false;
+	/** L'intitulé « La synthèse ». Absent dans la carte d'une affaire, où l'encart
+	    de sa rubrique le porte déjà (`RubriqueEtape`, maquette G du 16/10/2026) :
+	    il s'y lisait deux fois, puis une troisième dans « La synthèse — ce qui
+	    s'est passé ». */
+	export let titre = true;
 
 	const dispatch = createEventDispatcher<{ change: SyntheseAffaire }>();
 
@@ -162,40 +168,49 @@
 <section class="synthese" aria-label="Synthèse de l'affaire">
 	<!--  L'EN-TÊTE porte l'intitulé, la validation et les gestes de l'objet —
 	      crayon puis corbeille, à droite, comme l'en-tête d'une carte (maquette A,
-	      15/10/2026). Ils étaient sous les graphiques, loin de ce qu'ils touchent. -->
-	<div class="tete">
-		<h4 class="intertitre titre">🧾 La synthèse</h4>
-		{#if synthese.statut === 'validee' && synthese.validee_le}
-			<span class="validee"
-				>Validée le {fmtDatetime(synthese.validee_le)}{synthese.validee_par_nom
-					? ` par ${synthese.validee_par_nom}`
-					: ''}</span
-			>
-		{/if}
-		{#if gestes}
-			<!--  Le mode se lit sur l'icône qui a ouvert le formulaire (`aria-pressed`,
+	      15/10/2026). Ils étaient sous les graphiques, loin de ce qu'ils touchent.
+	      Dans la carte d'une affaire, l'intitulé est celui de l'encart : il ne
+	      reste ici que la validation et les gestes, en tête du contenu déplié
+	      (maquette G, 16/10/2026). -->
+	{#if titre || gestes || synthese.validee_le}
+		<div class="tete">
+			{#if titre}
+				<h4 class="intertitre titre"><Icon name="file-text" size={15} />La synthèse</h4>
+			{:else}
+				<span class="titre"></span>
+			{/if}
+			{#if synthese.statut === 'validee' && synthese.validee_le}
+				<span class="validee"
+					>Validée le {fmtDatetime(synthese.validee_le)}{synthese.validee_par_nom
+						? ` par ${synthese.validee_par_nom}`
+						: ''}</span
+				>
+			{/if}
+			{#if gestes}
+				<!--  Le mode se lit sur l'icône qui a ouvert le formulaire (`aria-pressed`,
 			      ux-patterns §13 bis). La corbeille en dernier, irréversible. -->
-			<span class="actions">
-				<button
-					type="button"
-					class="btn-icon btn-icon-edit"
-					aria-pressed={edition}
-					aria-label="Modifier la synthèse"
-					title="Modifier"
-					disabled={enCours || !!proposition}
-					on:click={ouvrirEdition}><IconeAction icone="pencil" /></button
-				>
-				<button
-					type="button"
-					class="btn-icon-danger"
-					aria-label="Supprimer la synthèse"
-					title="Supprimer la synthèse"
-					disabled={enCours || edition || !!proposition}
-					on:click={supprimer}><IconeAction icone="trash-2" /></button
-				>
-			</span>
-		{/if}
-	</div>
+				<span class="actions">
+					<button
+						type="button"
+						class="btn-icon btn-icon-edit"
+						aria-pressed={edition}
+						aria-label="Modifier la synthèse"
+						title="Modifier"
+						disabled={enCours || !!proposition}
+						on:click={ouvrirEdition}><IconeAction icone="pencil" /></button
+					>
+					<button
+						type="button"
+						class="btn-icon-danger"
+						aria-label="Supprimer la synthèse"
+						title="Supprimer la synthèse"
+						disabled={enCours || edition || !!proposition}
+						on:click={supprimer}><IconeAction icone="trash-2" /></button
+					>
+				</span>
+			{/if}
+		</div>
+	{/if}
 	{#if synthese.assiste_ia}
 		<!--  Le préambule choisi par l'utilisateur le 03/10/2026, parmi quatre : il
 		      remplace la seule marque ✨, trop discrète pour un texte qui sera lu
@@ -248,7 +263,7 @@
 		</FormulaireCreation>
 	{:else if synthese.synthese}
 		<section class="bloc">
-			<h5 class="bloc-titre">La synthèse — ce qui s'est passé</h5>
+			<h5 class="bloc-titre">Ce qui s'est passé</h5>
 			<div class="rich-content texte">{@html safeDescription(synthese.synthese)}</div>
 		</section>
 	{/if}
@@ -377,6 +392,11 @@
 	.titre {
 		flex: 1;
 		margin: 0;
+	}
+	h4.titre {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
 	}
 	.validee {
 		font-size: var(--fs-xs);

@@ -12,7 +12,7 @@
  *  active, et la pastille choisie part dans le `PATCH`.
  */
 import type { Page } from '@playwright/test';
-import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreHydratation, deplierEtape, expect, simulerApi, test } from './aides';
 
 const AFFAIRE = {
 	id: 7,
@@ -67,6 +67,7 @@ async function ouvrirLaCorrection(page: Page): Promise<unknown[]> {
 	);
 	await page.goto('/tickets/7');
 	await attendreHydratation(page);
+	await deplierEtape(page, 'La suite');
 	await page.getByRole('button', { name: 'Modifier cette entrée' }).click();
 	return envois;
 }
