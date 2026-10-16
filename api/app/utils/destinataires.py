@@ -27,7 +27,9 @@ from app.models.core import (
     RoleUtilisateur,
     Utilisateur,
 )
+from app.utils.noms import nom_affiche
 from app.utils.perimetres import a_portee_globale, batiments_cibles
+from app.utils.preferences_mail import Designe, Ecarte
 
 
 def site_manager_user_id(session: Session) -> Optional[int]:
@@ -78,9 +80,23 @@ def membres_cs_notifiables(
     `batiment_ids` à None → tous les membres du CS. Sinon, membres rattachés à
     l'un des bâtiments, plus le gestionnaire du site.
     """
+    return _cs_du_perimetre(session, batiment_ids)[0]
+
+
+def cs_du_perimetre_ecartes(
+    session: Session, batiment_ids: Optional[set[int]] = None
+) -> list[Ecarte]:
+    """Les membres du CS de ce périmètre que le courriel n'atteindra pas — l'aperçu les nomme."""
+    return _cs_du_perimetre(session, batiment_ids)[1]
+
+
+def _cs_du_perimetre(
+    session: Session, batiment_ids: Optional[set[int]]
+) -> tuple[list[tuple[int, str]], list[Ecarte]]:
+    """(joignables, écartés) — UNE sélection, que l'envoi et l'aperçu se partagent (#2006)."""
     manager_id = site_manager_user_id(session)
 
-    stmt = select(MembreCS).where(MembreCS.user_id != None)  # noqa: E711
+    stmt = select(MembreCS).order_by(MembreCS.ordre, MembreCS.id)
     if batiment_ids:
         filtres = MembreCS.batiment_id.in_(batiment_ids)  # type: ignore[union-attr]
         if manager_id is not None:
@@ -89,17 +105,42 @@ def membres_cs_notifiables(
     membres = session.exec(stmt).all()
 
     destinataires: list[tuple[int, str]] = []
+    ecartes: list[Ecarte] = []
     vus: set[str] = set()
     for membre in membres:
-        user = session.get(Utilisateur, membre.user_id)
-        if not user or not user.actif or not user.email:
+        user = session.get(Utilisateur, membre.user_id) if membre.user_id else None
+        motif = motif_injoignable(user)
+        if motif:
+            ecartes.append(Ecarte(nom_affiche(membre.prenom, membre.nom), motif))
             continue
         email = user.email.strip()
-        if not email or email.lower() in vus:
+        if email.lower() in vus:
             continue
         vus.add(email.lower())
         destinataires.append((user.id, email))
-    return destinataires
+    return destinataires, ecartes
+
+
+# ── Qui le courriel n'atteindra pas — et pourquoi (#2006) ─────────────────────
+#
+# Les sélections du conseil écartaient en silence un membre sans compte, au compte
+# désactivé ou sans adresse. L'aperçu de la Diffusion le dit désormais, avec le
+# motif : la même lecture que la sélection, jamais une seconde.
+
+MOTIF_SANS_COMPTE = "n'a pas de compte sur le site"
+MOTIF_DESACTIVE = "compte désactivé"
+MOTIF_SANS_ADRESSE = "pas d'adresse renseignée"
+
+
+def motif_injoignable(user: Optional[Utilisateur]) -> Optional[str]:
+    """Pourquoi ce compte ne peut pas recevoir de courriel — ou None s'il le peut."""
+    if user is None:
+        return MOTIF_SANS_COMPTE
+    if not user.actif:
+        return MOTIF_DESACTIVE
+    if not (user.email or "").strip():
+        return MOTIF_SANS_ADRESSE
+    return None
 
 
 # ── Interlocuteurs chez le syndic ────────────────────────────────────────────
@@ -224,17 +265,42 @@ def membres_cs_avec_email(session: Session) -> list[tuple[int, str]]:
     sondages, calendrier, tickets), l'autre vise le périmètre (nouvel arrivant,
     annonces de hall).
     """
-    return [
-        (uid, email)
-        for uid, email in session.exec(
-            select(Utilisateur.id, Utilisateur.email).where(
-                Utilisateur.actif == True,  # noqa: E712
-                Utilisateur.email.isnot(None),
-                Utilisateur.roles_json.contains("conseil_syndical"),
-            )
+    return [(u.id, u.email) for u in _cs_par_role(session) if motif_injoignable(u) is None]
+
+
+def ecartes_syndic_cs(session: Session, *, syndic: bool, cs: bool) -> list[Ecarte]:
+    """Ceux que `destinataires_syndic_cs` n'atteindra pas, avec le motif — pour l'aperçu."""
+    ecartes = ecartes_du_syndic(session) if syndic else []
+    if cs:
+        ecartes += [
+            Ecarte(nom_affiche(u.prenom, u.nom), motif)
+            for u in _cs_par_role(session)
+            if (motif := motif_injoignable(u))
+        ]
+    return ecartes
+
+
+def ecartes_du_syndic(session: Session) -> list[Ecarte]:
+    """Le syndic coché, mais sans gestionnaire principal ou sans adresse."""
+    principal = syndic_principal(session)
+    if principal is None:
+        return [Ecarte("Syndic", "aucun gestionnaire principal désigné")]
+    if not (principal.email or "").strip():
+        return [
+            Ecarte(f"{nom_affiche(principal.prenom, principal.nom)} (syndic)", MOTIF_SANS_ADRESSE)
+        ]
+    return []
+
+
+def _cs_par_role(session: Session) -> list[Utilisateur]:
+    """Les comptes au rôle `conseil_syndical`, joignables ou non."""
+    return list(
+        session.exec(
+            select(Utilisateur)
+            .where(Utilisateur.roles_json.contains("conseil_syndical"))
+            .order_by(Utilisateur.id)
         ).all()
-        if email
-    ]
+    )
 
 
 def membres_cs_ou_admin(session: Session) -> list[Utilisateur]:
@@ -338,6 +404,9 @@ def syndic_puis(
     du CS reste à l'appelant : c'est ce qui a permis à l'annonce de hall de
     recevoir le canal « syndic » (#480) sans écrire une cinquième copie du bloc.
 
+    🔴 Chacun est rendu **désigné** (`Designe`, #2006) : la case de la Diffusion
+    l'a choisi, et sa préférence de courriel ne l'écarte pas.
+
     ⚠️ Le bloc a déjà existé en **quatre exemplaires identiques** jusqu'au
     31/08/2026 — et celui des tickets affirmait, en toutes lettres, être « le
     seul endroit où cette règle s'écrit ».
@@ -348,12 +417,12 @@ def syndic_puis(
     if syndic:
         principal = syndic_principal(session)
         if principal and principal.email:
-            destinataires.append((principal.user_id, principal.email))
+            destinataires.append(Designe(principal.user_id, principal.email))
             vus.add(principal.email.lower())
 
     for uid, email in membres:
         if email and email.lower() not in vus:
-            destinataires.append((uid, email))
+            destinataires.append(Designe(uid, email))
             vus.add(email.lower())
 
     return destinataires

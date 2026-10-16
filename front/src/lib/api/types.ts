@@ -341,6 +341,8 @@ export interface ApercuCanal {
 	actif: boolean;
 	inactif_motif?: string | null;
 	destinataires: string[];
+	/** Ceux que le canal visait et qui ne recevront rien, avec le motif (#2006). */
+	ecartes: { qui: string; motif: string }[];
 	sujet?: string | null;
 	corps_html?: string | null;
 	texte?: string | null;

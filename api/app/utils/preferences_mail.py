@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Iterable, Optional
+from typing import Iterable, NamedTuple, Optional
 
 logger = logging.getLogger("hostachy.preferences_mail")
 
@@ -97,6 +97,60 @@ def mail_autorise(utilisateur, batiments_concernes: Optional[Iterable[int]] = No
     logique : il concerne tout le monde, donc aussi le destinataire.
     """
     return _autorise(utilisateur, batiments_concernes, MON_BATIMENT, AUTRES_BATIMENTS)
+
+
+class Designe(NamedTuple):
+    """Un destinataire DÉSIGNÉ par la Diffusion — la case « syndic » ou « conseil syndical ».
+
+    🔴 La préférence ne s'applique pas à lui (#2006, arbitré le 15/10/2026). Elle
+    règle ce qu'un RÉSIDENT reçoit de la vie de la résidence ; un courriel que
+    l'auteur adresse au conseil s'adresse à son mandat. Deux membres du CS aux
+    cases décochées — par une migration, pas par leur profil — ne recevaient
+    plus les affaires qu'on leur transmettait, et l'aperçu les annonçait.
+
+    Un tuple nommé, donc encore un `(user_id, email)` pour tout ce qui le
+    déplie : la désignation voyage AVEC le destinataire, depuis sa seule source
+    (`destinataires.syndic_puis`), au lieu d'un paramètre que chaque envoi
+    devrait penser à passer.
+    """
+
+    user_id: Optional[int]
+    email: str
+
+
+class Ecarte(NamedTuple):
+    """Un destinataire qui ne recevra pas le courriel, et pourquoi — l'aperçu le nomme."""
+
+    qui: str
+    motif: str
+
+
+MOTIF_PREFERENCE = "a coupé ces courriels dans son profil"
+
+
+def trier_destinataires(
+    session, destinataires: Iterable[tuple[Optional[int], str]], batiments_concernes=None
+) -> tuple[list[str], list[Ecarte]]:
+    """(adresses retenues, écartés) — l'envoi groupé ET l'aperçu appellent CETTE fonction.
+
+    Un aperçu qui relirait les préférences à sa façon annoncerait un jour qui ne
+    reçoit rien : c'est ce qu'il faisait, il ne les lisait pas du tout (#2006).
+    Un destinataire sans compte ou désigné (`Designe`) est toujours retenu.
+    """
+    from app.models.core import Utilisateur
+    from app.utils.noms import nom_affiche
+
+    retenus: list[str] = []
+    ecartes: list[Ecarte] = []
+    for destinataire in destinataires:
+        user_id, email = destinataire
+        designe = isinstance(destinataire, Designe)
+        user = session.get(Utilisateur, user_id) if user_id and not designe else None
+        if user is not None and not mail_autorise(user, batiments_concernes):
+            ecartes.append(Ecarte(nom_affiche(user.prenom, user.nom), MOTIF_PREFERENCE))
+        else:
+            retenus.append(email)
+    return retenus, ecartes
 
 
 def cloche_autorisee(utilisateur, batiments_concernes: Optional[Iterable[int]] = None) -> bool:

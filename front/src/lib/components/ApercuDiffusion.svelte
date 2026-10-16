@@ -33,6 +33,7 @@
 	import Modale from '$lib/components/Modale.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
 	import type { ApercuDiffusion } from '$lib/api';
 
 	export let apercu: ApercuDiffusion | null = null;
@@ -91,7 +92,25 @@
 						<strong>À :</strong>
 						{canal.destinataires.join(' · ')}
 					</p>
+				{/if}
 
+				<!--  Ceux que le canal visait et qui ne recevront rien, avec le motif
+				      (#2006) : l'aperçu annonçait deux membres du conseil que l'envoi
+				      écartait ensuite, sans un mot. -->
+				{#if canal.ecartes?.length}
+					<div class="apercu-ecartes">
+						<EncartAvertissement role="note">
+							<strong>Ne recevront rien :</strong>
+							<ul>
+								{#each canal.ecartes as ecarte, i (i)}
+									<li>{ecarte.qui} — {ecarte.motif}</li>
+								{/each}
+							</ul>
+						</EncartAvertissement>
+					</div>
+				{/if}
+
+				{#if canal.actif}
 					{#if canal.canal === 'email'}
 						{#if canal.sujet}
 							<p class="apercu-sujet"><strong>Objet :</strong> {canal.sujet}</p>
@@ -255,6 +274,13 @@
 		border-radius: 6px;
 		padding: 0.6rem 0.7rem;
 		margin: 0;
+	}
+	.apercu-ecartes {
+		margin: 0 0 0.5rem;
+	}
+	.apercu-ecartes ul {
+		margin: 0.2rem 0 0;
+		padding-left: 1.2rem;
 	}
 	.apercu-avertissement {
 		font-size: var(--fs-md);

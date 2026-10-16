@@ -23,6 +23,8 @@ premier et gagne le doublon — et elle vit dans `syndic_puis`.
 from __future__ import annotations
 
 
+from typing import Optional
+
 from fastapi import BackgroundTasks
 from sqlmodel import Session
 
@@ -33,6 +35,8 @@ from app.utils.annonce_hall import APERCU_MAX, date_longue, format_libelle, text
 from app.utils.copie_auteur import copie_demandee
 from app.utils.destinataires import (
     batiments_du_perimetre,
+    cs_du_perimetre_ecartes,
+    ecartes_du_syndic,
     membres_cs_notifiables,
     syndic_puis,
 )
@@ -40,6 +44,7 @@ from app.utils.email import send_email_group
 from app.utils.stockage import stockage
 from app.utils.liens import lien_ticket
 from app.utils.perimetres import parse_json_perimetres, perimetre_label_liste
+from app.utils.preferences_mail import Ecarte
 from app.utils.noms import contexte_personne
 from app.utils.diffusion import config_diffusion, diffuser
 
@@ -107,12 +112,26 @@ def destinataires_annonce(
     La déduplication, elle, est commune — `syndic_puis` : le syndic passe en
     premier et gagne le doublon (#480).
     """
-    perimetres = parse_json_perimetres(annonce.perimetre_cible)
     return syndic_puis(
         session,
         syndic=syndic,
-        membres=membres_cs_notifiables(session, batiments_du_perimetre(perimetres)) if cs else [],
+        membres=membres_cs_notifiables(session, _batiments_de(annonce)) if cs else [],
     )
+
+
+def _batiments_de(annonce: AnnonceHall) -> Optional[set[int]]:
+    """Les bâtiments visés par l'affiche — None : tout le conseil."""
+    return batiments_du_perimetre(parse_json_perimetres(annonce.perimetre_cible))
+
+
+def ecartes_annonce(
+    annonce: AnnonceHall, session: Session, *, syndic: bool, cs: bool
+) -> list[Ecarte]:
+    """Ceux que `destinataires_annonce` n'atteindra pas, et pourquoi — pour l'aperçu (#2006)."""
+    return [
+        *(ecartes_du_syndic(session) if syndic else []),
+        *(cs_du_perimetre_ecartes(session, _batiments_de(annonce)) if cs else []),
+    ]
 
 
 def _envoyer_email_annonce(
