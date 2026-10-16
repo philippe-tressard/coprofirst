@@ -180,8 +180,13 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	'/api/telemetry/dashboard': TABLEAU_TELEMETRIE_VIDE,
 	//  `FluxResponse` : `RaccourcisRapides` lit `sante.tickets_ouverts`.
 	'/api/flux': { items: [], sante: {} },
-	//  `santeMaintenance` : `TachesPlanifiees` lit `taches` et `anomalies_recentes`.
-	'/api/admin/maintenance/sante': { taches: [], anomalies_recentes: [] },
+	//  `santeMaintenance` : `TachesPlanifiees` lit `taches`, `anomalies_recentes`
+	//  et la fenêtre qui les borne.
+	'/api/admin/maintenance/sante': {
+		taches: [],
+		anomalies_recentes: [],
+		anomalies_fenetre_jours: 7,
+	},
 	//  `ConsommationIA`.
 	'/api/config/llm-consommation': { mois: [], limites: [], mois_courant: '' },
 	//  `ServiceCopropriete[]` : l'administration grise l'onglet d'un service coupé.

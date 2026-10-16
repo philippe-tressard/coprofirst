@@ -71,6 +71,7 @@ const SANTE = {
 		},
 	],
 	anomalies_recentes: [],
+	anomalies_fenetre_jours: 7,
 };
 
 test('Maintenance : les constats de check-reliability, nœud par nœud', async ({ page }) => {

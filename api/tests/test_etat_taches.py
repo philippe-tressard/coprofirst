@@ -22,13 +22,16 @@ import pytest
 
 from app.models.core import (
     HistoriqueMaintenance,
+    RoleUtilisateur,
     HistoriqueSauvegarde,
     HistoriqueTelemetrie,
     StatutSauvegarde,
 )
 from app.utils import horloge
-from app.utils.etat_taches import etat_des_taches, problemes_taches
-from app.utils.sante_taches import _PERIODICITE_ATTENDUE_H
+from app.models.roles import ROLE_OPERATEUR
+from app.utils.etat_taches import anomalies_recentes, etat_des_taches, problemes_taches
+from app.utils.sante_taches import FENETRE_ANOMALIES_J, _PERIODICITE_ATTENDUE_H
+from tests.aides_http import base_http, client_http
 
 TACHES_ATTENDUES = [*_PERIODICITE_ATTENDUE_H, "backup", "telemetrie"]
 
@@ -221,3 +224,31 @@ def test_sans_anomalie_le_courriel_n_ajoute_aucune_ligne(session, maintenant):
     session.commit()
 
     assert problemes_taches(session) == []
+
+
+#  ── « En échec récemment » : une fenêtre, pas les dix derniers de tous les temps ──
+
+
+def test_les_echecs_recents_sont_bornes_dans_le_temps(session, maintenant):
+    """🔴 Les deux échecs `reliability` du 15/10/2026 (#1997) ne restent pas « récents ».
+
+    La requête prenait les dix dernières lignes en erreur, sans date : sur une
+    infrastructure saine, un échec réglé restait affiché des mois.
+    """
+    fenetre = timedelta(days=FENETRE_ANOMALIES_J)
+    _ligne(session, "reliability", "rpi1", statut="erreur", il_y_a=fenetre + timedelta(hours=1))
+    _ligne(session, "bascule", "rpi2", statut="erreur", il_y_a=fenetre - timedelta(hours=1))
+    _ligne(session, "maintenance", "rpi1", il_y_a=timedelta(hours=1))  # un succès : jamais
+
+    assert [(a.tache, a.noeud) for a in anomalies_recentes(session, maintenant)] == [
+        ("bascule", "rpi2")
+    ]
+
+
+def test_l_ecran_recoit_la_fenetre_qu_il_affiche():
+    """Le libellé dit « ces N derniers jours » : N vient de l'API, jamais recopié."""
+    with base_http() as moteur:
+        http, _ = client_http(moteur, RoleUtilisateur.admin, roles_json=ROLE_OPERATEUR)
+        reponse = http.get("/admin/maintenance/sante")
+    assert reponse.status_code == 200
+    assert reponse.json()["anomalies_fenetre_jours"] == FENETRE_ANOMALIES_J

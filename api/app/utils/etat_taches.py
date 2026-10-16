@@ -10,7 +10,7 @@ La DÉCISION reste dans `sante_taches.py` (pure, testable sans base). Ce module
 ne fait que lire les trois tables et assembler.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlmodel import Session, select
 
@@ -22,6 +22,7 @@ from app.models.core import (
 )
 from app.utils import horloge
 from app.utils.sante_taches import (
+    FENETRE_ANOMALIES_J,
     _LIGNES_REMONTEES,
     _PERIODICITE_ATTENDUE_H,
     _PERIODICITE_SAUVEGARDE_H,
@@ -87,6 +88,25 @@ def etat_des_taches(session: Session, maintenant: datetime) -> list[dict]:
         )
     )
     return etat
+
+
+def anomalies_recentes(session: Session, maintenant: datetime) -> list[HistoriqueMaintenance]:
+    """Les exécutions en échec des `FENETRE_ANOMALIES_J` derniers jours, la plus récente d'abord.
+
+    🔴 BORNÉES DANS LE TEMPS : la requête prenait les dix dernières lignes en
+    erreur, sans date. Un échec réglé restait alors « récent » à l'écran tant que
+    dix autres ne l'avaient pas poussé dehors — sur une infrastructure saine, des
+    mois. Le plafond de dix reste : il borne ce que l'écran affiche, pas ce qu'il
+    juge récent.
+    """
+    depuis = maintenant - timedelta(days=FENETRE_ANOMALIES_J)
+    return session.exec(
+        select(HistoriqueMaintenance)
+        .where(HistoriqueMaintenance.statut == "erreur")
+        .where(HistoriqueMaintenance.cree_le >= depuis)
+        .order_by(HistoriqueMaintenance.cree_le.desc())
+        .limit(10)
+    ).all()
 
 
 def problemes_taches(session: Session) -> list[str]:

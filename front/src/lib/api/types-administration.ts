@@ -371,6 +371,9 @@ export interface SanteMaintenance {
 		cree_le: string;
 		erreur: string | null;
 	}[];
+	/** La fenêtre de « récemment », en jours : seuls les échecs de cette fenêtre
+	 *  sont rendus (`FENETRE_ANOMALIES_J`, `sante_taches.py`). */
+	anomalies_fenetre_jours: number;
 	genere_le: string;
 }
 

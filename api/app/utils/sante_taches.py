@@ -84,6 +84,31 @@ _PERIODICITE_PAR_NOEUD_H = {
 
 _TOLERANCE_H = 6  # marge avant de déclarer un retard
 
+#: 🔴 Les tâches qu'AUCUN nœud n'exécute : pas de sous-ligne par nœud.
+#:
+#: La copie hors site est lancée depuis le POSTE (`scripts/poste/export-hors-site.sh`).
+#: Le `noeud` de son rapport est la SOURCE de l'archive du jour — le nœud qui
+#: sert —, pas un exécutant : le même passage rattrape ensuite les archives de
+#: l'autre nœud (§4 du script). Juger chaque nœud sur 7 j + 6 h mettait donc
+#: « Exécution manquante » sur celui qui n'avait pas servi lors des deux
+#: dernières copies, alors que ses archives étaient copiées — constaté le
+#: 16/10/2026 : RPI2 rouge, dernier rapport le 07/10, copie à jour le 14/10.
+#:
+#: Attribuer le rapport aux deux nœuds quand le rattrapage réussit a été écarté :
+#: le standby ne produit d'archive que les nuits où il était actif, et un
+#: rattrapage « réussi » sans rien à rattraper n'atteste rien de lui. La seule
+#: question juste est celle de la synthèse : la copie a-t-elle eu lieu ?
+#: La fraîcheur de l'archive copiée, elle, est jugée par `_check_export_hors_site`.
+_TACHES_HORS_DES_NOEUDS = frozenset({"export_hors_site"})
+
+#: Ce que l'écran appelle « en échec récemment » : les échecs des N derniers
+#: jours, pas les dix derniers de tous les temps. Sans borne, les deux échecs
+#: de `reliability` du 15/10/2026 (#1997) seraient restés « récents » jusqu'à
+#: ce que dix autres les poussent dehors. Une semaine : le rythme des plus
+#: lentes des tâches (maintenance, copie hors site), dont un échec doit rester
+#: visible jusqu'au passage suivant. L'API rend la valeur, l'écran la dit.
+FENETRE_ANOMALIES_J = 7
+
 
 #  Gravité croissante : sert à choisir l'état d'une tâche qui s'exécute sur les
 #  DEUX nœuds. C'est toujours le PIRE qui doit remonter — un nœud sain ne
@@ -262,7 +287,9 @@ def _sante_par_noeud(
     par_noeud: dict = {}
     for ligne in lignes:
         cle = getattr(ligne, "noeud", None)
-        if not cle:
+        #  Une tâche que le poste exécute n'a pas de nœud à juger : son `noeud`
+        #  dit d'où vient l'archive, pas qui l'a copiée.
+        if not cle or tache in _TACHES_HORS_DES_NOEUDS:
             continue
         if cle not in par_noeud:
             par_noeud[cle] = ligne
