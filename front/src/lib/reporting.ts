@@ -76,11 +76,15 @@ export const REPORT_VUES = [
 	'tickets',
 	'prestataires',
 	'renouvellements',
-	'relance',
 	//  Les visites d'entretien périodique — sorties de la relance (10/10/2026).
 	'periodique',
 ] as const;
 export type ReportVue = (typeof REPORT_VUES)[number];
+
+/**  `?vue=relance` — l'adresse de la relance syndic (`HREF_RELANCE_SYNDIC`, l'alerte
+ *   du tableau de bord). La vue « Relance syndic » est devenue le mode « Relancer
+ *   le syndic » du Suivi des affaires (#2035) : l'adresse y mène, en ce mode. */
+export const VUE_RELANCE = 'relance';
 
 /* ── Renouvellements : calculs ────────────────────────────────────────────
    L'année de référence est une FONCTION, pas une constante. Elle était figée au

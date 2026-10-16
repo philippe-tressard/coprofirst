@@ -1,7 +1,8 @@
 /**
- * Le SUIVI DES AFFAIRES du Reporting CS (16/10/2026, maquette D2) — toutes les
- * affaires ni résolues ni annulées, leur nombre, leur répartition, la synthèse
- * de l'assistant et le PDF.
+ * Le SUIVI DES AFFAIRES du Reporting CS (16/10/2026, maquette D2) — les
+ * affaires que la relance du syndic retient, leur nombre, leur répartition, le
+ * résumé de chacune par l'assistant et le PDF ; et, en mode « Relancer le
+ * syndic », ce qu'il faut pour composer la relance (#2035).
  *
  * `routers/suivi_affaires.py` ; la règle d'entrée et l'ancienneté vivent au
  * serveur (`utils/suivi_affaires`), l'écran n'en recalcule rien.
@@ -24,6 +25,18 @@ export interface AffaireOuverte {
 	age_jours: number;
 	/** `ancienne` (> 90 j), `moyenne` (> 30 j), `recente` — les seuils restent au serveur. */
 	anciennete: 'ancienne' | 'moyenne' | 'recente';
+	/** Les codes du périmètre — `BadgePerimetre` tait celui par défaut. */
+	perimetre_cible: string[];
+	/** Depuis la dernière avancée — le repère de la relance. */
+	jours_sans_avancee: number;
+	/** Au-delà du délai de relance : cochée d'office. */
+	a_relancer: boolean;
+	/** Les jours (AAAA-MM-JJ) des relances déjà envoyées, la plus ancienne en tête. */
+	relances: string[];
+	/** Ce qui s'affiche sous le titre : le résumé de l'assistant, sinon le descriptif — du TEXTE. */
+	apercu: string;
+	/** L'aperçu est-il le résumé de l'assistant ? */
+	apercu_ia: boolean;
 }
 
 export interface RepartitionCategorie {
@@ -41,19 +54,17 @@ export interface SuiviAffaires {
 	par_categorie: RepartitionCategorie[];
 	/** La plus ancienne en tête. */
 	affaires: AffaireOuverte[];
+	/** Le délai de relance réglé, en jours. */
+	delai_jours: number;
 	/** Le ✨ a-t-il un sens ? — l'assistant est réglé et l'usage activé. */
-	synthese_disponible: boolean;
-}
-
-/** Du TEXTE : un résumé et quelques points, affichés tels quels. */
-export interface SyntheseAffaires {
-	resume: string;
-	points: string[];
+	resumes_disponibles: boolean;
 }
 
 export const suiviAffaires = {
 	lire: () => api.get<SuiviAffaires>('/suivi-affaires'),
-	synthese: () => api.post<SyntheseAffaires>('/suivi-affaires/synthese'),
-	/** Le PDF — avec la synthèse affichée, si l'écran en a une. */
-	pdf: (synthese: SyntheseAffaires | null) => api.postFichier('/suivi-affaires/pdf', { synthese }),
+	/**  Fait rédiger le résumé de chaque affaire, gardé au serveur : l'écran les
+	 *   relit par `lire`. La synthèse d'ensemble de #2034 n'existe plus (#2035). */
+	resumer: () => api.post<{ rediges: number }>('/suivi-affaires/resumes'),
+	/** Le PDF du relevé, rendu par le serveur. */
+	pdf: () => api.postFichier('/suivi-affaires/pdf', {}),
 };

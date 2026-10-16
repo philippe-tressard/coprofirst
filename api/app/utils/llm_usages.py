@@ -237,23 +237,28 @@ USAGES: dict[str, Usage] = {
         delai_min_s=120,
         ouvrable_aux_coproprietaires=True,
     ),
-    #  16/10/2026 : le ✨ du rapport « Suivi des affaires » (Reporting CS). Il
-    #  part du relevé des affaires non closes — catégorie, titre, dates, état,
-    #  descriptif ; jamais un nom — et rend un résumé et quelques points, en
-    #  TEXTE, que le PDF reprend (`utils/suivi_affaires`).
+    #  16/10/2026 : le ✨ du rapport « Suivi des affaires » (Reporting CS). Né
+    #  synthèse d'ensemble (#2034), il rédige depuis #2035 le RÉSUMÉ de chaque
+    #  affaire en cours, à partir de toute sa matière — fil daté compris, par
+    #  rôles, jamais un nom —, gardé sur l'affaire (`utils/suivi_affaires`). Le
+    #  code garde son nom de naissance : les réglages sont déjà en base sous lui.
     USAGE_SYNTHESE_AFFAIRES_EN_COURS: Usage(
         code=USAGE_SYNTHESE_AFFAIRES_EN_COURS,
-        libelle="Synthèse des affaires en cours",
+        libelle="Résumé des affaires en cours",
         description=(
-            "Espace CS › Reporting › Suivi des affaires : l'icône ✨ rédige la synthèse "
-            "des affaires ni résolues ni annulées — ce qui presse, ce qui attend une "
-            "décision, ce qui traîne, ce qui semble lié. Elle s'affiche à l'écran et "
-            "part dans le PDF exporté. Seuls la catégorie, le titre, les dates, l'état "
-            "et le descriptif de chaque affaire sont transmis, jamais le nom de "
-            "l'auteur. Réservé au conseil syndical et à l'administration."
+            "Espace CS › Reporting › Suivi des affaires : « ✨ Résumer les affaires » "
+            "rédige, pour chaque affaire ni résolue ni annulée, une ou deux phrases — où "
+            "elle en est, ce qu'elle attend et de qui. Le résumé s'affiche sous son titre, "
+            "part dans le PDF et dans le courriel de relance du syndic. Sont transmis le "
+            "numéro, la catégorie, le périmètre, le titre, les dates, l'état, la "
+            "description et le fil daté de chaque affaire, chaque personne désignée par "
+            "son rôle ; jamais un nom, une pièce jointe ni un message interne au conseil. "
+            "Réservé au conseil syndical et à l'administration."
         ),
         prompt_defaut=CONSIGNE_AFFAIRES_EN_COURS,
-        max_jetons_defaut=4_000,
+        #  #2035 : un résumé par affaire, et le fil de chacune en entrée.
+        max_jetons_defaut=8_000,
+        delai_min_s=120,
     ),
 }
 

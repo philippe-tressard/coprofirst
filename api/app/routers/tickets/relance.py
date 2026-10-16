@@ -22,14 +22,13 @@ from app.models.core import (
     TicketEvolution,
     Utilisateur,
 )
-from app.schemas import TicketRead
 from app.utils.dates_fr import date_courte, formule_anciennete, mois_ecoules
 from app.models.courriel import RelanceCourriel
 from app.utils.courriel_entrant import nouveau_jeton
 from app.utils.destinataires import formule_appel, interlocuteurs_syndic
 from app.utils.perimetres import perimetre_label_json
 from app.utils.preferences_mail import Designe
-from app.utils.relance_syndic import conditions_relancable, delai_relance_jours, ids_relancables
+from app.utils.relance_syndic import ids_relancables
 
 from .commun import (
     STATUT_LABELS,
@@ -37,9 +36,8 @@ from .commun import (
     destinataires_syndic_cs,
     libelle_evolution,
     syndic_principal,
-    ticket_read,
 )
-from .lecture_groupee import lecture_groupee, relances_par_affaire
+from .lecture_groupee import relances_par_affaire
 from app.utils.noms import nom_affiche
 from app.utils.liens import nom_site
 from app.utils.recuperer import ou_404
@@ -51,30 +49,10 @@ class RelanceSyndicRequest(BaseModel):
     ticket_ids: list[int]
 
 
-class RelanceSyndicResponse(BaseModel):
-    delai_jours: int
-    tickets: list[TicketRead]
-
-
-@router.get("/relance-syndic", response_model=RelanceSyndicResponse)
-def list_relance_syndic(
-    session: Session = Depends(get_session),
-    _user: Utilisateur = Depends(require_cs_or_admin),
-):
-    """Tickets ouverts susceptibles de relance syndic.
-
-    Toutes les affaires, sauf résolues, annulées, supprimées ou archivées — la
-    règle vit dans `utils/relance_syndic`. Le frontend distingue les éligibles
-    (passé le délai, cochées d'office) des candidates.
-    """
-    tickets = session.exec(
-        select(Ticket).where(*conditions_relancable()).order_by(Ticket.mis_a_jour_le)
-    ).all()
-    groupe = lecture_groupee(session, tickets)  # une lecture pour la liste (#1838)
-    return RelanceSyndicResponse(
-        delai_jours=delai_relance_jours(session),
-        tickets=[ticket_read(t, session, groupe=groupe) for t in tickets],
-    )
+#  🔴 La LISTE des affaires à relancer n'a plus de route ici depuis #2035 : elle
+#  est celle du Suivi des affaires (`GET /suivi-affaires`, mode « Relancer le
+#  syndic »), qui lit la même règle (`utils/relance_syndic`). Deux routes pour une
+#  liste, c'était deux écrans pour une liste — et ils comptaient différemment.
 
 
 def _contexte_ticket(session: Session, ticket: Ticket) -> dict:
@@ -100,6 +78,8 @@ def _contexte_ticket(session: Session, ticket: Ticket) -> dict:
         #  fil d'activité afficherait « Copropriété entière ». Cf. utils/perimetres.
         "perimetre": perimetre_label_json(ticket.perimetre_cible),
         "description": ticket.description,
+        #  Le résumé de l'assistant, montré dans l'aperçu avant l'envoi (#2035).
+        "resume": (ticket.resume_ia or "").strip(),
         # La relance qui vient d'être enregistrée ne se compte pas elle-même.
         "relance_count": relances_par_affaire(session, [ticket.id])[ticket.id] - 1,
         "historique": historique,

@@ -2,31 +2,40 @@
 
 ## Qui entre au rapport
 
-Toute affaire dont l'état est ACTIF (`STATUTS_TICKET_ACTIFS` : ni résolue, ni
-annulée, ni actualité sans cycle), que le conseil syndical voit
-(`ticket_visible`). Plus seulement celles « suivies au kanban » : l'ancienne vue
-« Suivi des dossiers » ne montrait que celles-là, et le conseil voulait le compte
-de TOUTES les affaires ouvertes (demande du 16/10/2026).
+Les affaires que la **relance du syndic** retient (`utils/relance_syndic`) : ni
+résolues, ni annulées, ni 📦 archivées, ni absorbées par une fusion, ni visites
+d'entretien périodique — et que le conseil syndical voit (`ticket_visible`).
 
-## L'ancienneté
+🔴 Jusqu'au 16/10/2026 (#2035), ce rapport prenait tous les états ACTIFS : il
+comptait 29 affaires quand la relance en comptait 24, sur le même écran. Les deux
+modes — Suivre et Relancer le syndic — lisent désormais la MÊME liste.
 
-Comptée en jours civils de Paris, de l'ouverture à aujourd'hui. Ses deux seuils
-— 30 et 90 jours — colorent la pastille d'âge à l'écran comme au PDF : ils
-vivent ici, et l'écran reçoit la tranche (`anciennete`), jamais les seuils.
+## L'ancienneté, et la relance
+
+L'**âge** se compte de l'ouverture à aujourd'hui ; ses deux seuils — 30 et 90
+jours — colorent la pastille, à l'écran comme au PDF : ils vivent ici, et
+l'écran reçoit la tranche (`anciennete`), jamais les seuils.
+
+Les **jours sans avancée** se comptent depuis `mis_a_jour_le` — le repère de la
+relance (`envoyer_relance_syndic` le pose) ; au-delà du délai réglé, l'affaire
+est `a_relancer`. En jours civils de Paris, l'un comme l'autre.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+from typing import Optional
 
 from sqlmodel import Session, select
 
 from app.models.core import Utilisateur
-from app.models.tickets import STATUTS_TICKET_ACTIFS, Ticket
+from app.models.tickets import Ticket
 from app.utils import horloge
 from app.utils.annonce_hall import texte_brut
 from app.utils.categories_ticket import libelle_categorie
+from app.utils.perimetres import est_perimetre_par_defaut, parse_json_perimetres, perimetre_label
+from app.utils.relance_syndic import conditions_relancable, delai_relance_jours, relances_envoyees
 from app.utils.valeurs import valeur
 from app.utils.visibility import ticket_visible
 
@@ -34,7 +43,7 @@ from app.utils.visibility import ticket_visible
 SEUIL_MOYENNE_JOURS = 30
 SEUIL_ANCIENNE_JOURS = 90
 
-#: Le descriptif transmis — l'écran et le PDF le coupent à dix lignes ; au-delà
+#: Le descriptif transmis — l'écran et le PDF le coupent à cinq lignes ; au-delà
 #: de ce plafond, le texte ne serait de toute façon pas lu.
 MAX_CARACTERES_DESCRIPTIF = 2_000
 
@@ -61,6 +70,29 @@ class AffaireOuverte:
     ouverte_le: date
     age_jours: int
     anciennete: str
+    jours_sans_avancee: int = 0
+    a_relancer: bool = False
+    #: Les jours des relances déjà envoyées au syndic, la plus ancienne en tête.
+    relances: list[date] = field(default_factory=list)
+    #: Le résumé de l'assistant (#2035), ou `None` s'il n'a jamais été rédigé.
+    resume: Optional[str] = None
+    #: Les codes du périmètre (le badge de l'écran les lit) et son libellé — vide
+    #: pour le périmètre par défaut, qui ne s'affiche pas (règle 4, #2035).
+    perimetre_cible: list[str] = field(default_factory=list)
+    perimetre: str = ""
+
+    @property
+    def apercu(self) -> str:
+        """Ce qui s'affiche sous le titre — le résumé, sinon le descriptif.
+
+        Écrit ICI pour l'écran, le PDF et le courriel de relance : trois rendus,
+        une seule règle.
+        """
+        return self.resume or self.descriptif
+
+    @property
+    def apercu_ia(self) -> bool:
+        return bool(self.resume)
 
 
 @dataclass(frozen=True)
@@ -74,6 +106,8 @@ class Categorie:
 class Releve:
     jour: date
     affaires: list[AffaireOuverte] = field(default_factory=list)
+    #: Le délai de relance réglé par l'administrateur, en jours.
+    delai_jours: int = 30
 
     @property
     def total(self) -> int:
@@ -96,11 +130,21 @@ class Releve:
         return sorted(comptes.values(), key=lambda c: (-c.nombre, c.libelle))
 
 
-def lire_affaire(ticket: Ticket, jour: date, libelles_statut: dict[str, str]) -> AffaireOuverte:
+def lire_affaire(
+    ticket: Ticket,
+    jour: date,
+    libelles_statut: dict[str, str],
+    *,
+    delai_jours: int = 30,
+    relances: Optional[list] = None,
+) -> AffaireOuverte:
     """PURE. Ce que le rapport montre d'une affaire."""
     ouverte_le = horloge.jour_civil(ticket.cree_le)
     age = max((jour - ouverte_le).days, 0)
+    avancee = horloge.jour_civil(ticket.mis_a_jour_le or ticket.cree_le)
+    sans_avancee = max((jour - avancee).days, 0)
     statut = valeur(ticket.statut)
+    codes = parse_json_perimetres(ticket.perimetre_cible)
     return AffaireOuverte(
         id=ticket.id,
         numero=ticket.numero,
@@ -113,6 +157,12 @@ def lire_affaire(ticket: Ticket, jour: date, libelles_statut: dict[str, str]) ->
         ouverte_le=ouverte_le,
         age_jours=age,
         anciennete=tranche(age),
+        jours_sans_avancee=sans_avancee,
+        a_relancer=sans_avancee >= delai_jours,
+        relances=[horloge.jour_civil(r) for r in (relances or [])],
+        resume=(ticket.resume_ia or "").strip() or None,
+        perimetre_cible=codes,
+        perimetre="" if est_perimetre_par_defaut(codes) else perimetre_label(codes),
     )
 
 
@@ -122,13 +172,21 @@ def releve(session: Session, user: Utilisateur) -> Releve:
     #  l'écran vivent dans le paquet des routeurs de tickets.
     from app.routers.tickets.commun import STATUT_LABELS
 
-    tickets = session.exec(
-        select(Ticket)
-        .where(Ticket.statut.in_(STATUTS_TICKET_ACTIFS))  # type: ignore[union-attr]
-        .order_by(Ticket.cree_le, Ticket.id)
-    ).all()
+    tickets = [
+        t
+        for t in session.exec(
+            select(Ticket).where(*conditions_relancable()).order_by(Ticket.cree_le, Ticket.id)
+        ).all()
+        if ticket_visible(t, user)
+    ]
     jour = horloge.aujourd_hui()
+    delai = delai_relance_jours(session)
+    relances = relances_envoyees(session, [t.id for t in tickets])
     return Releve(
         jour=jour,
-        affaires=[lire_affaire(t, jour, STATUT_LABELS) for t in tickets if ticket_visible(t, user)],
+        delai_jours=delai,
+        affaires=[
+            lire_affaire(t, jour, STATUT_LABELS, delai_jours=delai, relances=relances.get(t.id))
+            for t in tickets
+        ],
     )

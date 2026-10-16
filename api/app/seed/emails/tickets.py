@@ -303,7 +303,9 @@ MODELES = [
         "{{ item.numero }} — {{ item.titre }}"
         "{% if item.relance_count > 0 %}"
         ' <span style="background:#DC2626;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:8px">'
-        "Relance n°{{ item.relance_count }}</span>"
+        #  `relance_count` compte les relances PRÉCÉDENTES : celle qui part est la
+        #  suivante. Le modèle disait « n°1 » à la deuxième (#2035, migration 0288).
+        "Relance n°{{ item.relance_count + 1 }}</span>"
         "{% else %}"
         ' <span style="background:#F59E0B;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:8px">'
         "1ère relance</span>"
@@ -313,8 +315,15 @@ MODELES = [
         "Catégorie : {{ item.categorie | capitalize }} · Priorité : {{ item.priorite | capitalize }}"
         "{% if item.perimetre %} · Périmètre : {{ item.perimetre }}{% endif %}"
         "</p>"
+        #  Le résumé de l'assistant, quand le conseil l'a fait rédiger depuis le
+        #  Suivi des affaires — sinon la description (#2035, migration 0288).
+        "{% if item.resume %}"
+        '<p style="margin:0 0 10px;font-size:13px;font-weight:600;color:#374151">Point de situation :</p>'
+        '<div style="font-size:13px;color:#1A1A2E;white-space:pre-line">{{ item.resume | e }}</div>'
+        "{% else %}"
         '<p style="margin:0 0 10px;font-size:13px;font-weight:600;color:#374151">Description :</p>'
         '<div style="font-size:13px;color:#1A1A2E;white-space:pre-line">{{ item.description }}</div>'
+        "{% endif %}"
         '<p style="margin:12px 0 6px;font-size:13px;font-weight:600;color:#374151">Historique :</p>'
         '<ul style="margin:0;padding-left:1.2em;font-size:12px;color:#374151">'
         "{% for h in item.historique %}"

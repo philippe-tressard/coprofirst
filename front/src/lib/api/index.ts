@@ -13,7 +13,6 @@ import type {
 	EpinglesCompte,
 	FluxResponse,
 	Notification,
-	RelanceSyndicResponse,
 	ReponseRelance,
 	SourceAffiche,
 	Ticket,
@@ -309,7 +308,8 @@ export const tickets = {
 		api.post<AffaireVisee>(`/tickets/${id}/transferts/${transfertId}/deplacer`, {
 			ticket_id: versId,
 		}),
-	relanceSyndicList: () => api.get<RelanceSyndicResponse>('/tickets/relance-syndic'),
+	//  La LISTE à relancer est celle du Suivi des affaires (`suiviAffaires.lire`,
+	//  mode « Relancer le syndic ») depuis #2035 : une liste, une route.
 	//  Les réponses du syndic aux relances groupées : conservées et relues ici,
 	//  parce qu'une notification se lit une fois puis descend dans la pile.
 	relanceReponses: () =>

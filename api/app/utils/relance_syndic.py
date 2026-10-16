@@ -17,7 +17,10 @@ avec chacune son délai par défaut — et le compteur ne retenait que les affai
 déjà adressées au syndic. Aucune n'excluait une affaire 📦 archivée par le
 conseil, ni une affaire absorbée par une fusion (close avec sa principale).
 
-La liste, le compteur, l'envoi et les réponses du syndic la lisent ici.
+La liste, le compteur, l'envoi et les réponses du syndic la lisent ici — et le
+**Suivi des affaires** du reporting, qui porte la relance depuis #2035 : un seul
+écran, deux modes, une seule liste (il en comptait cinq de plus : les visites
+périodiques et les affaires archivées).
 Une affaire SUPPRIMÉE n'existe plus en base : aucune requête ne la ramène.
 """
 
@@ -26,7 +29,7 @@ from __future__ import annotations
 from sqlalchemy import not_
 from sqlmodel import Session, col, select
 
-from app.models.core import STATUTS_TICKET_ACTIFS, ConfigSite, Ticket
+from app.models.core import STATUTS_TICKET_ACTIFS, ConfigSite, Ticket, TicketEvolution
 from app.utils.affaire_absorbee import pas_absorbee
 from app.utils.entretien_periodique import condition_periodique
 
@@ -52,6 +55,24 @@ def conditions_relancable() -> tuple:
         pas_absorbee(),
         not_(condition_periodique()),
     )
+
+
+def relances_envoyees(session: Session, ids) -> dict[int, list]:
+    """Par affaire, les instants des relances déjà envoyées au syndic, la plus ancienne en tête.
+
+    Une affaire jamais relancée n'a pas de clé. Leur NOMBRE se lit par
+    `routers/tickets/lecture_groupee.relances_par_affaire`, qui compte en base.
+    """
+    dates: dict[int, list] = {}
+    if not ids:
+        return dates
+    for ticket_id, instant in session.exec(
+        select(TicketEvolution.ticket_id, TicketEvolution.cree_le)
+        .where(col(TicketEvolution.ticket_id).in_(ids), TicketEvolution.type == "relance")
+        .order_by(TicketEvolution.cree_le)
+    ).all():
+        dates.setdefault(ticket_id, []).append(instant)
+    return dates
 
 
 def ids_relancables(session: Session, ids: set[int]) -> set[int]:
