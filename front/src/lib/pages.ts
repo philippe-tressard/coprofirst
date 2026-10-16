@@ -93,6 +93,12 @@ export interface OngletDef {
 	 * dépendance d'auth du routeur qui la justifie.
 	 */
 	reserve?: 'proprioOuCS' | 'nonLocataire' | 'operateur';
+	/**
+	 * Sur une page `reserveeAdmin`, l'onglet que l'**opérateur** de la plateforme
+	 * ouvre aussi quand il n'est pas administrateur — sa supervision, et rien
+	 * d'autre (#2029). La règle se lit dans `$lib/onglets-ouverts`.
+	 */
+	ouvertOperateur?: true;
 }
 
 /** Un sous-onglet : une URL et rien d'autre. Son libellé vit dans l'écran, qui
@@ -116,6 +122,11 @@ export interface PageDef {
 	icone: string;
 	descriptif: string;
 	onglets?: OngletDef[];
+	/**
+	 * Page de l'administration : un compte qui n'est pas administrateur n'y voit
+	 * que les onglets `ouvertOperateur` — l'opérateur seul l'ouvre ainsi (#2029).
+	 */
+	reserveeAdmin?: true;
 }
 
 /** Toutes les pages, dans l'ordre de navigation par défaut. */

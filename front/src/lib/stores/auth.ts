@@ -1,6 +1,7 @@
 import { onMount } from 'svelte';
 import { writable, derived } from 'svelte/store';
 import type { User } from '$lib/api';
+import type { DroitsOnglet } from '$lib/onglets-ouverts';
 import {
 	estBailleur,
 	estCoproprietaire,
@@ -47,6 +48,13 @@ export const isCS = derived(currentUser, ($u) => aRole($u, 'conseil_syndical', '
  * (`require_operateur`) : ce dérivé n'en est que le reflet.
  */
 export const isOperateur = derived(currentUser, ($u) => aRole($u, 'operateur'));
+
+/**
+ * Qui ouvre l'administration (`/admin`) : l'administrateur, et l'opérateur qui
+ * ne l'est pas — réduite alors à sa supervision (`$lib/onglets-ouverts`, #2029).
+ * Le menu et la garde d'`admin/+layout.svelte` posent cette question-ci.
+ */
+export const ouvreAdministration = derived(currentUser, ($u) => aRole($u, 'admin', 'operateur'));
 
 //  🔴 Ces trois dérivées recomposaient la cascade `roles ?? [role]` à la main,
 //  DEUX LIGNES sous `aRole` qui la porte (#1041). Le fichier qui définit la règle
@@ -112,6 +120,17 @@ export const isResident = derived(currentUser, estResident);
 export const isCoproprietaire = derived(currentUser, estCoproprietaire);
 /** Syndic ou mandataire — il gère, il n'habite pas. */
 export const isGestionnaire = derived(currentUser, estGestionnaire);
+
+/** Ce que l'utilisateur courant est, pour juger d'un onglet (`ongletsOuverts`). */
+export const droitsOnglet = derived(
+	[isAdmin, isOperateur, isProprioOuCS, isLocataire],
+	([administrateur, operateur, proprioOuCS, locataire]): DroitsOnglet => ({
+		administrateur,
+		operateur,
+		proprioOuCS,
+		locataire,
+	}),
+);
 
 /**
  * L'état d'authentification est-il RÉSOLU ?

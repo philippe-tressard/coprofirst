@@ -108,8 +108,9 @@ export function compterTitulaires(comptes: (User & { actif?: boolean })[]): Titu
  * le pendant écran de `_exiger_geste_operateur` et `_exiger_un_autre_titulaire`
  * (`api/app/routers/admin/utilisateurs.py`), dans le même ordre :
  *
- * - Opérateur ne s'accorde qu'à un administrateur, et Admin ne se retire pas à
- *   un opérateur — ses écrans vivent sous `/admin` ;
+ * - Opérateur ne s'accorde qu'à un administrateur, mais se garde sans lui :
+ *   Admin se retire à un opérateur, qui n'ouvre plus de `/admin` que sa
+ *   supervision (16/10/2026, #2029) ;
  * - tout administrateur l'accorde ou le retire, à lui-même compris (15/10/2026) ;
  * - Admin et Opérateur se retirent, à soi-même compris, sauf à leur dernier
  *   titulaire actif.
@@ -122,6 +123,6 @@ export function gestesAdminOperateur(
 	return {
 		accorder: !cibleOperateur && aRole(cible, 'admin'),
 		retirer: cibleOperateur && titulaires.operateur > 1,
-		retirerAdmin: !cibleOperateur && titulaires.admin > 1,
+		retirerAdmin: titulaires.admin > 1,
 	};
 }

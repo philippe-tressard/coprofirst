@@ -11,7 +11,7 @@ appelle aussi — une seule façon de supprimer un compte.
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session, select
-from app.auth.deps import est_operateur, require_admin, require_cs_or_admin
+from app.auth.deps import require_admin, require_cs_or_admin
 from app.database import get_session
 from app.utils.journal_securite import journaliser_securite
 from app.models.core import (
@@ -141,19 +141,18 @@ def _exiger_geste_operateur(
 ) -> None:
     """Les règles du rôle Opérateur, accordé ou retiré depuis Admin › Utilisateurs.
 
-    Il ne se porte **qu'avec le rôle Admin** : les écrans de l'opérateur vivent
-    sous `/admin`, qu'un compte sans ce rôle n'ouvre pas. D'où les deux refus
-    symétriques — l'accorder à un non-admin, retirer Admin à un opérateur.
+    Il s'**accorde** à un administrateur : c'est parmi eux qu'on choisit qui
+    supervise l'installation. Il se **garde** ensuite sans lui : un opérateur
+    qui se retire — ou à qui l'on retire — le rôle Admin ouvre encore ses écrans
+    de supervision, et eux seuls (arbitrage du 16/10/2026, #2029, spec §4.7).
+    Ce refus-là, « retirer Admin à un opérateur », a existé de #1750 à v2.167.0 :
+    il interdisait de quitter l'administration sans quitter la supervision.
 
     Tout administrateur l'accorde ou le retire, à lui-même compris (arbitrage du
     15/10/2026) : la règle « seul un opérateur l'accorde » (#1750) est levée. Le
     mode démo, lui, refuse toute écriture sur `/admin/utilisateurs/` — son
     administrateur publié ne se donne donc pas ce rôle (#1985).
     """
-    if role == RoleUtilisateur.admin and retrait and est_operateur(cible):
-        raise HTTPException(
-            400, "Retirez d'abord le rôle Opérateur : il ne se porte pas sans le rôle Admin."
-        )
     if role == ROLE_OPERATEUR and not retrait and not cible.has_role(RoleUtilisateur.admin):
         raise HTTPException(
             400, "Le rôle Opérateur s'accorde à un administrateur : ajoutez d'abord le rôle Admin."

@@ -15,14 +15,15 @@
 	import ControlesFiabilite from '$lib/components/ControlesFiabilite.svelte';
 	import ConsommationIA from '$lib/components/ConsommationIA.svelte';
 	import TachesPlanifiees from '$lib/components/TachesPlanifiees.svelte';
-	import { isOperateur } from '$lib/stores/auth';
+	import { isAdmin, isOperateur } from '$lib/stores/auth';
 </script>
 
 <!--  🏢 La supervision technique (installation, tâches, contrôles, base, santé)
       est à l'OPÉRATEUR de la plateforme (#1750, arbitrage du 10/10/2026) : le
       serveur la refuse à l'administrateur de copropriété qui ne l'est pas. Ce
       qui reste à l'administrateur — la consommation de l'IA, l'export de sa
-      copropriété — porte des données de la résidence, que l'opérateur ne lit pas. -->
+      copropriété — porte des données de la résidence, que l'opérateur ne lit pas :
+      l'opérateur qui n'est pas administrateur ne les voit donc pas (#2029). -->
 {#if $isOperateur}
 	<p class="muted intro-maintenance">
 		Exécution des tâches planifiées sur les <strong>deux</strong> Raspberry&nbsp;Pi. Le nœud actif assure
@@ -50,11 +51,15 @@
 	<TachesPlanifiees />
 	<ControlesFiabilite />
 {/if}
-<ConsommationIA />
+{#if $isAdmin}
+	<ConsommationIA />
+{/if}
 {#if $isOperateur}
 	<ControleSante />
 {/if}
-<CarteExportCopropriete />
+{#if $isAdmin}
+	<CarteExportCopropriete />
+{/if}
 <CarteConservationAffaires />
 
 <style>

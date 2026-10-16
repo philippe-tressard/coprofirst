@@ -183,11 +183,17 @@ class Utilisateur(SQLModel, table=True):
         self.role = role_principal(current, defaut=rv) or self.role
 
     def retirer_role(self, role: "RoleUtilisateur | str") -> None:
-        """Retire un rôle. Garde au minimum 'résident'."""
+        """Retire un rôle. Garde au minimum 'résident'.
+
+        « Au minimum » compte les rôles DE la copropriété (rang > 0) : un compte
+        qui ne garde que `operateur` — Admin retiré à un opérateur, #2029 — reçoit
+        `résident`, sans quoi son rôle principal resterait celui qu'il vient de
+        perdre (`role_principal` ne classe pas l'opérateur).
+        """
         rv = str(valeur(role))
         current = [r for r in self.roles if r != rv]
-        if not current:
-            current = [RoleUtilisateur.résident.value]
+        if not any(rang_role(r) for r in current):
+            current.append(RoleUtilisateur.résident.value)
         self.roles_json = ",".join(current)
         self.role = role_principal(current, defaut=RoleUtilisateur.résident.value) or self.role
 

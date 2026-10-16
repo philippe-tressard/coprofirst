@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { currentUser, isCS, isAdmin, hasResidentRole, isAdminOnly } from '$lib/stores/auth';
+	import {
+		currentUser,
+		isCS,
+		ouvreAdministration,
+		hasResidentRole,
+		isAdminOnly,
+	} from '$lib/stores/auth';
 	import { locale, NAV_LABELS } from '$lib/stores/locale';
 	import { auth as authApi } from '$lib/api';
 	import { CHEMIN_CONNEXION } from '$lib/redirection';
@@ -131,7 +137,7 @@
 					($currentUser?.delegations_aidant?.length ?? 0) > 0 ||
 					statut === 'aidant'
 				);
-			if (href === '/admin') return $isAdmin;
+			if (href === '/admin') return $ouvreAdministration;
 			return $hasResidentRole;
 		})
 		.map((href) => navItem(href, $configStore));

@@ -89,6 +89,7 @@ export const PAGES_ROLES: PageDef[] = [
 		titre: 'Paramétrage',
 		navLabel: 'Admin',
 		icone: 'sliders-horizontal',
+		reserveeAdmin: true,
 		descriptif:
 			'Administration de la plateforme, réservée aux admins : ce qui attend un geste, les utilisateurs et leur activité, la configuration du site et ses référentiels.',
 		//  Les onglets de l'administration — déclarés ici depuis le 01/10/2026 pour
@@ -229,6 +230,7 @@ export const PAGES_ROLES: PageDef[] = [
 				label: 'Maintenance',
 				groupe: '⚙️ Configuration',
 				descriptif: 'Les tâches automatiques, leur historique et leur déclenchement manuel.',
+				ouvertOperateur: true,
 			},
 			{
 				id: 'installations',
@@ -238,6 +240,7 @@ export const PAGES_ROLES: PageDef[] = [
 				descriptif:
 					'Les installations CoproFirst inscrites au registre de la référence : leur état, leur contrat, leurs services.',
 				reserve: 'operateur',
+				ouvertOperateur: true,
 			},
 		],
 	},

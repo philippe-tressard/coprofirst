@@ -13,7 +13,8 @@
 		type DemandeProfil,
 		type UtilisateurAdmin,
 	} from '$lib/api';
-	import { aRole, isOperateur, quandAuthResolue } from '$lib/stores/auth';
+	import { aRole, droitsOnglet, isAdmin, isOperateur, quandAuthResolue } from '$lib/stores/auth';
+	import { ongletsOuverts } from '$lib/onglets-ouverts';
 	import { essayer, messagePartiel, TITRE_PARAMETRAGE_ILLISIBLE } from '$lib/chargement';
 	import type { ServiceCopropriete } from '$lib/api';
 	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
@@ -32,7 +33,7 @@
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import { defautsDePage, PAGES } from '$lib/pages';
+	import { defautsDePage } from '$lib/pages';
 	import { page } from '$app/stores';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	import EntetePage from '$lib/components/EntetePage.svelte';
@@ -56,10 +57,11 @@
 	//
 	//  L'onglet actif SE LIT dans l'adresse (`?onglet=`, « sauf admin ») : chaque
 	//  onglet est un lien, qui se copie et que le bouton Précédent rejoue. Une clé
-	//  inconnue ouvre le premier onglet.
-	const ONGLETS: string[] = (PAGES.find((p) => p.id === 'admin')?.onglets ?? []).map((o) => o.id);
+	//  inconnue ouvre le premier onglet — le premier OUVERT : l'opérateur qui
+	//  n'est pas administrateur n'en a que deux (#2029).
+	$: ouverts = ongletsOuverts('admin', $droitsOnglet).map((o) => o.id);
 	$: demande = $page.url.searchParams.get('onglet');
-	$: onglet = demande && ONGLETS.includes(demande) ? demande : ONGLETS[0];
+	$: onglet = demande && ouverts.includes(demande) ? demande : ouverts[0];
 	$: trackTabView(onglet);
 
 	//  L'onglet « Installations » n'a de sens que sur la RÉFÉRENCE (§4.11, R4 #1880) :
@@ -136,7 +138,7 @@
 	//  rechargement sur `?onglet=utilisateurs`, l'écran restait sur « Chargement… »
 	//  pour toujours, et l'onglet Site n'avait aucun gestionnaire à proposer.
 	let listeDemandee = false;
-	$: if ((onglet === 'utilisateurs' || onglet === 'site') && !listeDemandee) {
+	$: if ($isAdmin && (onglet === 'utilisateurs' || onglet === 'site') && !listeDemandee) {
 		listeDemandee = true;
 		loadUtilisateurs();
 	}
@@ -169,6 +171,9 @@
 
 	//  Montage
 	onMount(async () => {
+		//  L'opérateur qui n'est pas administrateur ne lit rien de la résidence
+		//  (#2029) : ses deux onglets chargent ce qu'ils montrent.
+		if (!get(isAdmin)) return marquerDonneesAffichees();
 		//  🔴 Les files de « À traiter » partent D'ABORD, sans attendre le
 		//  paramétrage (#1842). Elles venaient après trois lectures en série
 		//  (coquille, `/config/admin`, `/config/legal`) qui ne servent qu'aux
