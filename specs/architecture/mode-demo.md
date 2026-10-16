@@ -268,11 +268,16 @@ avec le code de la version installée : il ne peut pas être en retard sur le sc
 | Patrimoine | 2 à 3 bâtiments, une trentaine de lots, l'arbre des périmètres |
 | Annuaire | une vingtaine de résidents, le conseil syndical, un syndic fictif |
 | Affaires | une quinzaine, toutes catégories et tous statuts, avec suites, photos et échanges |
-| Actualités, calendrier | des actualités récentes, une AG et des interventions à venir |
+| Actualités, calendrier | des actualités récentes, une AG et des interventions à venir — dont une coupure à venir sur le bâtiment du compte `user-loc` (#2027) |
 | Vie collective | sondages (ouverts et clos), idées, petites annonces |
 | Prestataires, contrats | quelques prestataires, des contrats d'entretien actifs — le carnet d'entretien s'en déduit |
-| Accès | badges et télécommandes rattachés aux lots |
+| Accès | badges et télécommandes rattachés aux lots ; un bail sur le lot de `user-loc`, qui lui confie un badge (#2027) |
 | Documents | règlement de copropriété et procès-verbal **rédigés pour la démo** |
+
+Ce que le site vitrine promet à chaque compte public se lit dans ses écrans : 🔒
+`test_demo_jeu.py` le vérifie par les routes, avec la session du compte —
+pour `user-loc`, un badge confié par son bail et une coupure à venir dans son
+bâtiment.
 
 ### 6.3 Ce qui est interdit dans le jeu
 

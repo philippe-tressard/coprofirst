@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
+from datetime import datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -19,7 +20,7 @@ from app import contexte
 from app.config import get_settings
 
 from app.demo.charger import BaseNonVierge, charger
-from app.auth.jwt import verify_password
+from app.auth.jwt import creer_jeton_acces, verify_password
 from app.demo.comptes import HABITANTS
 from app.demo.personnages import PERSONNAGES
 from app.main import app
@@ -200,6 +201,52 @@ def test_badges_et_telecommandes_rattaches(s):
     assert _compte(s, Vigik) >= 20
     assert _compte(s, Telecommande) >= 3
     assert _compte(s, Vigik, Vigik.lot_id == None) == 0  # noqa: E711
+
+
+# ── Ce que le site vitrine promet au compte Locataire (#2027) ───────────────
+#
+#  La page « Démo » de `coprofirst-site` annonce au locataire « les badges que
+#  votre bailleur vous confie » et « coupures, pannes et travaux de votre
+#  bâtiment ». Ces deux tests gardent ces phrases vraies : ils lisent ce que ses
+#  écrans lisent, par les routes, avec sa session.
+
+
+def _session_de(copro, monkeypatch, code: str) -> TestClient:
+    """Un client connecté comme ce compte public — le jeton par la porte d'émission."""
+    monkeypatch.setattr(contexte, "resoudre", lambda scope: copro[0])
+    with contexte.dans(copro[0]), Session(contexte.moteur()) as s:
+        u = s.exec(select(Utilisateur).where(Utilisateur.email == PERSONNAGES[code].adresse)).one()
+        jeton = creer_jeton_acces(u.id, u.hashed_password)
+    http = TestClient(app)
+    http.cookies.set("access_token", jeton)
+    return http
+
+
+def test_le_locataire_porte_un_badge_confie_par_son_bail(copro, monkeypatch):
+    http = _session_de(copro, monkeypatch, "user-loc")
+    bail = http.get("/bailleur/mon-bail").json()
+    assert bail and bail["acces"], "un bail en cours, et au moins un badge confié"
+    assert bail["bailleur_prenom"] in {h.prenom for h in HABITANTS}, "un habitant, pas un public"
+    portes = {v["code"] for v in http.get("/acces/mes-vigiks").json()}
+    assert {a["code"] for a in bail["acces"]} <= portes, "l'onglet Badges les montre"
+
+
+def test_le_locataire_lit_une_coupure_a_venir_dans_son_batiment(copro, monkeypatch, s):
+    loc = s.exec(
+        select(Utilisateur).where(Utilisateur.email == PERSONNAGES["user-loc"].adresse)
+    ).one()
+    son_batiment = f"bat:{loc.batiment_id}"
+    http = _session_de(copro, monkeypatch, "user-loc")
+    maintenant = horloge.maintenant()
+    a_venir = [
+        t
+        for t in http.get("/tickets").json()
+        if t["categorie"] == CategorieTicket.actualite.value
+        and t["debut"]
+        and datetime.fromisoformat(t["debut"]).replace(tzinfo=None) > maintenant
+        and any(c.split("/")[0] == son_batiment for c in t["perimetre_cible"] or [])
+    ]
+    assert a_venir, "une actualité datée, ciblée sur son bâtiment, qu'il lit"
 
 
 # ── De bout en bout : la connexion par le formulaire ─────────────────────────

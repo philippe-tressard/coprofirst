@@ -13,7 +13,7 @@
    l'administrateur (admin seul), que l'auteur peut confier aux visiteurs, et
    l'opérateur (admin + opérateur), réservé à l'exploitant (D8 #1932, #1985).
 3. **Le reste APRÈS le seed** : les affaires, contrats et badges lisent l'arbre des
-   périmètres, que le seed pose.
+   périmètres, que le seed pose ; le bail vient après les badges, qu'il confie.
 4. **Fabriqué, jamais rechargé d'une archive** : le jeu est produit par le code de
    la version installée, avec des dates relatives au jour — il ne peut ni vieillir
    ni être en retard sur le schéma.
@@ -29,7 +29,7 @@ from fastapi import HTTPException
 from sqlmodel import select
 
 from app import contexte
-from app.demo import acces, administrateur, affaires, comptes, fichiers, gouvernance, identite
+from app.demo import acces, administrateur, affaires, baux, comptes, fichiers, gouvernance, identite
 from app.demo import legal
 from app.demo import patrimoine
 from app.demo import prestataires, vie_collective
@@ -79,6 +79,7 @@ def charger(*, documents: bool = True) -> dict[str, int]:
         les_affaires = affaires.poser(session, pat, les_comptes, prest)
         vie_collective.poser(session, les_comptes)
         acces.poser(session, pat)
+        baux.poser(session, pat, les_comptes)
         fichiers.poser_images(session, les_affaires)
         fichiers.poser_documents(session, les_comptes["user-cs"], rendus)
         session.commit()
