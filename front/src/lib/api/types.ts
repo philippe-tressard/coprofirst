@@ -188,6 +188,9 @@ export interface Ticket extends PorteSaisiPourLu {
 	     plus : deux règles pour la même notion trancheraient différemment, et un
 	     ticket apparaîtrait dans la liste sans être dans les Archives. */
 	archivee?: boolean;
+	/**  ✨ Une synthèse VALIDÉE l'accompagne (#1643) — la pastille de la carte repliée.
+	     Calculé par le serveur (`lecture_groupee.syntheses_validees`). */
+	synthese_validee?: boolean;
 	/** 🔒 Réservé à l'auteur, à la personne concernée et au conseil syndical.
 	     Le contrepoids de l'ouverture en lecture par périmètre (#710).
 

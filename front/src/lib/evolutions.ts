@@ -77,6 +77,17 @@ export function evolutionIcone(type: string | undefined | null): string {
 }
 
 /**
+ * Les entrées que le FIL raconte — toutes, sauf la Suite de synthèse (#1643).
+ *
+ * Elle n'a aucun texte (il vit dans sa table) : `SyntheseFil` la rend en bloc
+ * au-dessus du fil, sur la carte comme sur la fiche (15/10/2026). Le fil et son
+ * compte (« La suite · n ») lisent la même liste, d'ici.
+ */
+export function entreesDuFil<T extends { type: string }>(evolutions: readonly T[]): T[] {
+	return evolutions.filter((e) => e.type !== 'synthese');
+}
+
+/**
  * **La charge utile qu'un formulaire d'évolution émet** — le contrat entre
  * `EvolForm` et ceux qui la relaient à l'API.
  *

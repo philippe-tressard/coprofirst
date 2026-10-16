@@ -16,9 +16,10 @@
  *  - le bloc est AUSSI dans la carte dépliée de la liste, et un geste y relit
  *    l'affaire (01/10/2026 : il n'était que sur la fiche, que la carte n'ouvre
  *    pas — TK-109008 ne se défaisait qu'en retrouvant la notification) ;
- *  - la fiche n'a qu'un bord droit : la barre « Répondre » s'étalait jusqu'au
- *    bord de l'écran, sa largeur posée par la page sur une classe que
- *    l'extraction du fil avait emportée.
+ *  - le lien direct n'a qu'un bord droit : la barre « Répondre » s'étalait
+ *    jusqu'au bord de l'écran, sa largeur posée par la page sur une classe que
+ *    l'extraction du fil avait emportée. Depuis le 15/10/2026 le lien rend la
+ *    CARTE dépliée — transferts et fil compris — et le fil des messages dessous.
  */
 import type { Page } from '@playwright/test';
 import { expect, simulerApi, test } from './aides';
@@ -90,7 +91,7 @@ async function simuler(page: Page, transferts: unknown[]) {
 test('rien à défaire : aucun bloc', async ({ page }) => {
 	await simuler(page, []);
 	await page.goto('/tickets/7');
-	await expect(page.locator('h1', { hasText: 'Portillon bloqué' })).toBeVisible();
+	await expect(page.locator('.carte-liste', { hasText: 'Portillon bloqué' })).toBeVisible();
 	await expect(page.getByText('Transferts de courriel')).toHaveCount(0);
 });
 
@@ -183,14 +184,12 @@ test('la carte dépliée de la liste offre le même geste, et relit l’affaire'
 		.toEqual(['/api/tickets/7', '/api/tickets/7/evolutions']);
 });
 
-test('la fiche n’a qu’un bord droit — la barre « Répondre » comprise', async ({ page }) => {
+test('le lien direct n’a qu’un bord droit — la barre « Répondre » comprise', async ({ page }) => {
 	await simuler(page, [DEFAISABLE]);
 	await page.goto('/tickets/7');
 	const blocs = {
-		'en-tête': page.locator('.ticket-header'),
+		carte: page.locator('.affaire-seule .carte-liste'),
 		Répondre: page.locator('.carte-repondre'),
-		transferts: page.locator('section.transferts'),
-		Historique: page.locator('.bloc-historique'),
 	};
 	const bords: Record<string, number> = {};
 	for (const [nom, bloc] of Object.entries(blocs)) {
@@ -199,8 +198,8 @@ test('la fiche n’a qu’un bord droit — la barre « Répondre » comprise', 
 		const boite = await bloc.boundingBox();
 		bords[nom] = Math.round((boite?.x ?? 0) + (boite?.width ?? 0));
 	}
-	const reference = bords['en-tête'];
+	const reference = bords.carte;
 	for (const [nom, bord] of Object.entries(bords)) {
-		expect(bord, `le bloc « ${nom} » ne s’arrête pas au bord de l’en-tête`).toBe(reference);
+		expect(bord, `le bloc « ${nom} » ne s’arrête pas au bord de la carte`).toBe(reference);
 	}
 });

@@ -62,7 +62,7 @@ test('l’ouverture ne télécharge pas le corps ; le survol le précharge', asy
 
 	await titre.click();
 	await expect(page.locator('.carte-liste .carte-corps')).toContainText(AFFAIRE.description);
-	await expect(page.locator('.carte-liste .carte-corps')).toContainText('Créé le');
+	await expect(page.locator('.carte-liste .carte-corps')).toContainText('Créée le');
 });
 
 test('retenu, le corps entre d’abord et annonce son attente dedans', async ({ page }) => {

@@ -89,8 +89,10 @@ test('la récidive est dessinée : le constat, puis les autres affaires avec leu
 	page,
 }) => {
 	await ouvrir(page, { ...METRIQUES, recidive: RECIDIVE });
-	const bloc = page.locator('section.bloc', { hasText: 'La récidive' });
-	await expect(bloc).toBeVisible();
+	//  Pliée avec la chronologie (maquette A, 15/10/2026) : on l'ouvre.
+	const bloc = page.locator('details.plies');
+	await bloc.locator('summary').click();
+	await expect(bloc).toContainText('La récidive — le même équipement');
 	//  Les deux autres, plus celle-ci : la troisième.
 	await expect(bloc).toContainText('3ᵉ affaire résolue en 24 mois');
 	await expect(bloc.getByRole('link', { name: 'TK-031' })).toHaveAttribute('href', '/tickets/31');

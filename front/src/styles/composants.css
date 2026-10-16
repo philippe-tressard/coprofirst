@@ -1335,3 +1335,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	letter-spacing: 0.03em;
 	color: var(--color-text-muted);
 }
+/*  En tête de son bloc, il ne pousse rien : le rembourrage du corps suffit. */
+.intertitre:first-child {
+	margin-top: 0;
+}

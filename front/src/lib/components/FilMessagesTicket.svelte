@@ -12,7 +12,7 @@
 
   ⚠️ **À ne pas confondre avec l'HISTORIQUE.** Ce fil-ci porte les messages
   échangés (`TicketMessage`) ; l'Historique porte les évolutions du dossier
-  (`TicketEvolution`, rendu par `HistoriqueTicket`). Deux tables, deux fils, deux
+  (`TicketEvolution`, rendu par la carte — `CorpsCarteTicket`). Deux tables, deux fils, deux
   composants — les fusionner effacerait la distinction que l'écran fait exprès.
 -->
 <script lang="ts">

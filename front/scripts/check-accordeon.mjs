@@ -76,14 +76,13 @@ ls.liberer();
 
 // ── Aucun nouvel état d'ouverture en `Set` ─────────────────────────────────
 //
-//  Les trois existants sont des accordéons — le `Set` y est toujours remis à UN
+//  Les deux existants sont des accordéons — le `Set` y est toujours remis à UN
 //  élément —, mais sous une forme qui permettrait d'en mettre deux : déclarés
 //  ici, ils ne se multiplient plus. La liste ne fait que baisser ; une entrée qui
 //  ne sert plus fait échouer le contrôle.
 const EXCEPTIONS = new Set([
 	'lib/components/ListeTickets.svelte:expandedIds',
 	'lib/components/OngletDescriptifPages.svelte:expandedPages',
-	'routes/(app)/tickets/+page.svelte:expandedTickets',
 ]);
 const RE_SET_OUVERTURE =
 	/(?:let|const)\s+(\w*(?:ouvert|Ouvert|deplie|Deplie|depli|Depli|expanded|Expanded)\w*)\s*(?::[^=;]+)?=\s*new Set(?![A-Za-z])/g;

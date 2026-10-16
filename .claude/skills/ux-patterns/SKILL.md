@@ -64,6 +64,7 @@ Ce bloc n'énonce que les décisions et renvoie à la section qui les développe
 | 17 | **Un seul bloc déplié à la fois, partout** (30/09/2026, « sans exception, formulaires compris ») — cartes, années d'archives, colonnes vides du kanban, sections de formulaire, réponses, `<details>`. Deux exceptions arbitrées : une section **modifiée** reste ouverte, une carte **en correction** aussi. Une seule mécanique : `$lib/accordeon` (`basculer`, `membre`, `listeMembre`, et l'écouteur des `<details>` posé par le layout) ; le bloc ouvert voit son **haut ramené à l'écran** quand le repli d'un voisin l'en a fait sortir (`amenerEnVue`, signalé dans Admin › IA : « on se trouve à la fin de la section ouverte ») ; 🔒 `npm run lint:accordeon` refuse un état d'ouverture en `Set`, `e2e/accordeon` éprouve formulaire et `<details>` | `$lib/accordeon` |
 | 18 | **Une rangée de filtres dit combien elle montre — sur la pastille RETENUE seulement** (10/10/2026, maquette J arbitrée à l'écran parmi dix) : le nombre est la longueur de la liste affichée, en vignette `Compte` inversée ; les autres pastilles n'en portent pas. Partout, sans exception — 🔒 `npm run lint:compte-filtres` | §5 |
 | 19 | **La carte d'AFFAIRE a une gouttière** (10/10/2026, maquette B « Gouttière » arbitrée parmi cinq, https://claude.ai/artifact/TUunrVHAwxQGhHgUn9wrGW) : à gauche la **date** (jour en grand) puis la **nature** (ACTU. · CAL. · AFF.), une ligne au-dessus du titre au téléphone ; densité aérée (base d'`EnteteCarte`), actions **au trait** (`IconeAction`), dernière ligne en **capsules** dont seuls l'état, « qui la lit » et l'urgence sont teintés. Le n° 4 (« date à droite ») cède pour elle. 🔴 **Elle est devenue LE STANDARD des pages de liste similaires** (arbitré le soir même, après livraison : *« elle doit devenir un standard pour les autres pages similaires »*) : **généralisé à tout le site le même soir (#1819)** : briques `Gouttiere`, `ReglagesListe`, `IconeAction` partout, capsules ; F1 n'existe plus. 🔒 `e2e/gouttiere-nature`, `lint:actions-au-trait` | §3 |
+| 20 | **Une affaire DÉPLIÉE se lit en trois rubriques** (15/10/2026, maquette A arbitrée parmi cinq) : `.intertitre` « La demande » (la fiche, dans l'ordre du cadre — R2 l'emporte sur le bloc « Autour » de la maquette) · « 🧾 La synthèse » (texte d'abord, puis les chiffres ; chronologie et récidive pliées ; crayon et corbeille dans son en-tête) · « La suite · n » (trois entrées, puis « plus anciennes »). La Suite de synthèse quitte le fil (`entreesDuFil`) : `SyntheseFil` la rend en bloc, carte ET fiche. Repliée, la carte porte « 🧾 Synthèse » (`synthese_validee`). Une suite se supprime après **confirmation** (`RubriqueHistorique`). 🔒 `e2e/carte-affaire-close` | §3 |
 
 ### ⚠️ Les trois pièges que ces onze arbitrages ont révélés
 
@@ -1844,11 +1845,12 @@ liste réécrite — y compris dans un fichier qui importe déjà le module.
 
 | Écran | Geste |
 |---|---|
-| `/tickets`, `/espace-cs` (listes) | formulaire d'évolution — état **et** commentaire en un envoi |
-| `/tickets/[id]` (fiche) | **boutons** « Changer le statut », un clic ; le formulaire n'y sert qu'au commentaire |
+| `/tickets`, `/espace-cs` (listes), `/tickets/[id]` (lien direct) | formulaire d'évolution — état **et** commentaire en un envoi |
 
 La fiche portait **les deux**, à quelques centimètres l'une de l'autre, et elles
-ne proposaient pas les mêmes états (#415). Un geste, un endroit : quand deux
+ne proposaient pas les mêmes états (#415). Ses boutons « Changer le statut » sont
+partis le 15/10/2026 avec elle : le lien direct rend la carte (§13).
+ Un geste, un endroit : quand deux
 commandes font la même chose sur un écran, ce n'est pas une commodité, c'est une
 question posée à l'utilisateur — et deux occasions de diverger.
 
@@ -2095,16 +2097,26 @@ imaginaire.
 > mécanisme d'exception existe, l'exception se reproduit.
 
 **Pages de détail** (`tickets/[id]`, `sondages/[id]`) : elles n'ont **pas**
-d'en-tête de page — leur `<h1>` est le titre de l'objet, dans sa carte. Ne pas les
-convertir mécaniquement : ce qu'il faut y mettre est instruit dans #365.
+d'en-tête de page — leur `<h1>` est le titre de l'objet. Ne pas les convertir
+mécaniquement : ce qu'il faut y mettre est instruit dans #365.
+
+🔴 **Le lien d'une affaire rend SA CARTE, dépliée** (15/10/2026, signalé à l'écran :
+*« affichée d'une manière différente du fil d'actualité ou de la page »*).
+`/tickets/[id]` rendait une fiche à part — en-tête, boutons d'état, Historique ; il
+rend désormais `ListeTickets` sur une liste d'UNE affaire, dépliée d'office, avec
+les gestes de la liste (`$lib/affaires-en-liste`, la seule écriture des gestes, que
+la page Affaires emploie aussi). Ce qui lui reste propre : le fil de MESSAGES dessous
+(les notifications pointent `#msg-…`), et un `<h1 class="sr-only">` — le titre de la
+carte est un bouton qui la plie, pas un intitulé. Un objet, un rendu : une fiche qui
+se lit autrement que sa carte est une divergence, pas une page de détail.
+🔒 `e2e/lien-affaire-depliee.spec.ts`.
 
 **Leur colonne de lecture : `.colonne-lecture`** (`normes.css`, 720 px), posée
-sur **chaque** bloc de la fiche — en-tête, fil de messages, transferts,
-Historique —, jamais une largeur écrite par la page sur la classe d'un
-composant enfant. C'est ce qui s'était produit : la règle visait `.messages`,
+sur **chaque** bloc — la carte, le fil de messages —, jamais une largeur écrite
+par la page sur la classe d'un composant enfant. C'est ce qui s'était produit : la règle visait `.messages`,
 l'extraction de `FilMessagesTicket` l'a rendue morte, et la barre « Répondre »
 s'étalait seule jusqu'au bord de l'écran (01/10/2026, signalé à l'écran).
-🔒 `e2e/transferts-verses.spec.ts` mesure que la fiche n'a qu'un bord droit.
+🔒 `e2e/transferts-verses.spec.ts` mesure que le lien direct n'a qu'un bord droit.
 
 ## 13 bis. 🔴 LE MODE SE LIT SUR L'ICÔNE QUI L'A OUVERT
 
