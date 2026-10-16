@@ -64,6 +64,9 @@ TACHES_PERMANENTES: dict[str, str] = {
     "synthese_affaires": "la file des synthèses d'affaires closes, toutes les 10 minutes "
     "(#1643) — les affaires du carnet se closent sans synthèse, et le conseil n'est pas "
     "avisé qu'il y en a une à relire",
+    "desepinglage_affaires_closes": "le retrait horaire de l'épingle des affaires closes "
+    "depuis 24 h (`utils/desepinglage`) — une affaire résolue ou annulée reste en tête de "
+    "liste et dans le bandeau « Épinglé » jusqu'à ce que le conseil la désépingle",
     "purge_comptes_inactifs": "la purge quotidienne des comptes inactifs (#1580) — plus "
     "aucun avertissement ni aucune suppression : la durée de conservation annoncée par la "
     "politique de confidentialité redevient fictive",

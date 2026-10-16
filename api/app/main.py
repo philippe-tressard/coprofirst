@@ -258,6 +258,17 @@ async def lifespan(app: FastAPI):
         id="synthese_affaires",
     )
 
+    #  📌 Une affaire close perd son épingle 24 h après sa clôture (16/10/2026) :
+    #  toutes les heures, l'épingle tombe donc entre 24 et 25 h. Ne lève jamais.
+    from app.utils.desepinglage import desepingler_affaires_closes as _desepingler
+
+    scheduler.add_job(
+        contexte.pour_chaque_copropriete(_desepingler, "desepinglage_affaires_closes"),
+        "interval",
+        hours=1,
+        id="desepinglage_affaires_closes",
+    )
+
     #  La purge des comptes inactifs (#1580) : chaque jour à 04:30, après la
     #  sauvegarde de la nuit (03:00 par défaut). Elle avertit, puis supprime trente jours plus tard ;
     #  un passage manqué décale d'un jour, dans le sens de la conservation.
