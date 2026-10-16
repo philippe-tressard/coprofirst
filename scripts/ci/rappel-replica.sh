@@ -16,8 +16,12 @@
 #  - une issue de rappel qui ne correspond plus (replica a avancé, ou la
 #    tranche suivante est ouverte) se ferme d'elle-même.
 #
-#  Les versions se comptent sur les tags `vX.Y.Z` de `main` publiés après celui
-#  que porte `replica`.
+#  Le retard se compte en versions MINEURES (16/10/2026, décision de l'auteur) :
+#  les `X.Y` distinctes des tags `vX.Y.Z` de `main` publiés après celui que porte
+#  `replica`, celle de `replica` exclue. Un correctif (X.Y.1, X.Y.2…) ne compte
+#  pas : compter chaque tag annonçait 19 versions pour 11 mineures, et la tranche
+#  suivante tombait dès le lendemain. C'est la mesure de l'alerte du registre
+#  (`api/app/registre/alertes.py`, `RETARD_MINEURES`) : les deux disent le même écart.
 #
 #  Lancé chaque nuit par le workflow « Promotion » (déclenchement `schedule`).
 #  Test : bash scripts/ci/rappel-replica.sh --selftest
@@ -30,7 +34,13 @@ LABEL=retard-replica
 PAS=10
 
 # ── Les décisions (PURES) ─────────────────────────────────────────────────────
-tranche_retard() {  # $1 versions de retard → la tranche atteinte (0 : aucune)
+#  $1 version de replica (X.Y.Z) · entrée : les tags vX.Y.Z publiés après elle,
+#  un par ligne. Sortie : le nombre de mineures X.Y distinctes, la sienne exclue.
+mineures_de_retard() {
+    local propre="${1%.*}"
+    sed -n 's/^v\([0-9]*\.[0-9]*\)\.[0-9]*$/\1/p' | grep -vxF -- "$propre" | sort -u | grep -c . || true
+}
+tranche_retard() {  # $1 mineures de retard → la tranche atteinte (0 : aucune)
     echo $(( $1 / PAS * PAS ))
 }
 titre_rappel() {  # $1 version de replica · $2 tranche
@@ -54,6 +64,18 @@ if [ "${1:-}" = "--selftest" ]; then
         if [ "$2" = "$3" ]; then echo "PASS  $1"; else echo "FAIL  $1 — attendu « $2 », obtenu « $3 »"; fail=1; fi
     }
     echo "== self-test : rappel de retard de replica =="
+    egal "correctifs non comptés"          2  "$(printf 'v2.151.0
+v2.151.1
+v2.151.2
+v2.152.0
+' | mineures_de_retard 2.150.0)"
+    egal "correctif de la mineure de replica non compté" 1 "$(printf 'v2.150.1
+v2.151.0
+' | mineures_de_retard 2.150.0)"
+    egal "une majeure compte"              1  "$(printf 'v3.0.0
+v3.0.1
+' | mineures_de_retard 2.161.4)"
+    egal "aucun tag → 0"                   0  "$(printf '' | mineures_de_retard 2.150.0)"
     egal "0 version → aucune tranche"   0  "$(tranche_retard 0)"
     egal "9 versions → aucune tranche"  0  "$(tranche_retard 9)"
     egal "10 versions → tranche 10"     10 "$(tranche_retard 10)"
@@ -77,19 +99,19 @@ replica=$(git rev-parse --verify origin/replica)
 replica_version=$(version_du_commit "$replica")
 [ -n "$replica_version" ] || { echo "::error::replica ($replica) ne porte aucun tag de version"; exit 1; }
 derniere=$(git tag -l 'v[0-9]*' --merged origin/main --sort=-v:refname | head -n 1)
-retard=$(git tag -l 'v[0-9]*' --merged origin/main --contains "$replica" | grep -cvxF "v$replica_version" || true)
+retard=$(git tag -l 'v[0-9]*' --merged origin/main --contains "$replica" | grep -vxF "v$replica_version"     | mineures_de_retard "$replica_version")
 tranche=$(tranche_retard "$retard")
 titre=""
 [ "$tranche" -gt 0 ] && titre=$(titre_rappel "$replica_version" "$tranche")
 
-echo "replica : v$replica_version · dernière version : $derniere · retard : $retard version(s) · tranche : $tranche" \
+echo "replica : v$replica_version · dernière version : $derniere · retard : $retard mineure(s) · tranche : $tranche" \
     | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
 
 gh issue list --repo "$DEPOT" --label "$LABEL" --state open --limit 100 \
     --json number,title --jq '.[] | "\(.number)\t\(.title)"' \
     | rappels_perimes "$titre" | while read -r numero; do
         gh issue close "$numero" --repo "$DEPOT" \
-            --comment "Ce rappel ne correspond plus : \`replica\` porte v$replica_version, avec $retard version(s) de retard."
+            --comment "Ce rappel ne correspond plus : \`replica\` porte v$replica_version, avec $retard mineure(s) de retard."
     done
 
 if [ "$(gh issue list --repo "$DEPOT" --label "$LABEL" --state all --limit 500 \
@@ -98,9 +120,9 @@ if [ "$(gh issue list --repo "$DEPOT" --label "$LABEL" --state all --limit 500 \
         --color FBCA04 --description "Rappel : replica en retard sur la référence" >/dev/null
     corps=$(mktemp)
     cat > "$corps" <<CORPS
-Les répliques sont sur **v$replica_version**, la référence sur **$derniere** : **$retard versions** d'écart.
+Les répliques sont sur **v$replica_version**, la référence sur **$derniere** : **$retard versions mineures** d'écart (les correctifs X.Y.1, X.Y.2… ne comptent pas).
 
-Rien n'oblige à promouvoir — ce rappel n'est qu'un rappel, et le prochain ne viendra qu'à $(( tranche + PAS )) versions. Pour promouvoir une version rodée (7 jours sur la référence) :
+Rien n'oblige à promouvoir — ce rappel n'est qu'un rappel, et le prochain ne viendra qu'à $(( tranche + PAS )) mineures. Pour promouvoir une version rodée (7 jours sur la référence) :
 
 \`\`\`bash
 gh workflow run promotion.yml -f version=X.Y.Z
