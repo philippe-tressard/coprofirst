@@ -31,7 +31,7 @@ dans le routeur. Ici, on ne fait que désigner et lire.
 | archivés | c'est la demande : ce qui a quitté le fil a cessé d'être d'actualité |
 | **confidentiels** | une affiche de hall est lue par **tout le monde**, y compris des gens qui n'ont pas accès à l'objet. Reprendre un ticket refermé sur son auteur et le CS le publierait au mur — c'est le pire sens de l'erreur, et rien à l'écran ne le rattraperait |
 | **réservés au conseil syndical** (🛡️) | même raison, autre mécanisme : la restriction passe par `public_cible`, pas par `confidentiel`. Confirmé à l'écran le 10/09/2026 — *« les publications confidentielles ne sont bien sûr pas affichées, ou celles qui sont réservées au Conseil Syndical »*. Les deux notions coexistent depuis #347 et se combinent en ET : n'en filtrer qu'une laissait l'autre passer |
-| tickets **annulés** | ils disparaissent du fil et sont purgés ; les proposer serait proposer ce qui n'existera plus demain |
+| tickets **annulés** | ils partent aux Archives sur-le-champ (`utils/archivage`) : une affaire abandonnée n'a rien à annoncer au hall |
 | **réservés au périmètre** (🔒) | un hall se lit sans badge d'accès : ce que l'Accès referme sur un bâtiment n'y va pas |
 
 ## Une famille depuis le 23/09/2026 (#1091 lot 4, #1092 lot 5)

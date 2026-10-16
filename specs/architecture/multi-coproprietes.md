@@ -315,7 +315,7 @@ stables de main. »*
    au label `bloque-promotion` **retient** tout, sauf l'urgence — c'est ainsi
    qu'un incident sur la référence se déclare. Seule une version **X.0.0** se
    promeut seule, la nuit, à J+7. Et un **rappel** (une issue assignée à
-   l'auteur) dit quand `replica` a 10, puis 20, 30… versions de retard. Écarté :
+   l'auteur) dit quand `replica` a 10, puis 20, 30… versions **mineures** de retard (un correctif ne compte pas). Écarté :
    promouvoir une PR seule — la version obtenue n'aurait jamais tourné sur la
    référence, et sa chaîne de migrations divergerait de celle de `main`.
 6. **La mise à jour nocturne revient en arrière seule** (#1756) : sauvegarde par
