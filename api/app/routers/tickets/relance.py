@@ -28,6 +28,7 @@ from app.models.courriel import RelanceCourriel
 from app.utils.courriel_entrant import nouveau_jeton
 from app.utils.destinataires import formule_appel, interlocuteurs_syndic
 from app.utils.perimetres import perimetre_label_json
+from app.utils.preferences_mail import Designe
 from app.utils.relance_syndic import conditions_relancable, delai_relance_jours, ids_relancables
 
 from .commun import (
@@ -278,7 +279,8 @@ def envoyer_relance_syndic(
     )
     session.add(relance)
 
-    to_recipients = [(principal.user_id, principal.email)]
+    #  Désigné : la relance s'adresse au syndic, sa préférence ne l'écarte pas (#2006).
+    to_recipients = [Designe(principal.user_id, principal.email)]
     #  Le CS passe en copie, sans le syndic qui est déjà destinataire principal.
     cc_recipients = destinataires_syndic_cs(
         session, syndic=False, cs=True, deja_vus={principal.email.lower()}

@@ -55,6 +55,7 @@ from app.utils.recuperer import ou_404
 from .annonces_hall_courriels import (
     contexte_annonce_hall,
     destinataires_annonce,
+    ecartes_annonce,
     lien_affiche,
 )
 
@@ -153,6 +154,9 @@ def apercu_diffusion_annonce(
                 #  annoncer un destinataire de moins que ce qui part.
                 copie_auteur=(
                     adresse_copie(session, None, user) if brouillon.envoyer_auteur else None
+                ),
+                ecartes=ecartes_annonce(
+                    annonce, session, syndic=brouillon.envoyer_syndic, cs=brouillon.envoyer_cs
                 ),
             )
         )
