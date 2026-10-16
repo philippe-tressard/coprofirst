@@ -29,6 +29,7 @@ qui a l'air juste.
 |---|---|
 | Outlook, Orange, Apple (transfert) | bloc « De : … / Envoyé : … (ou Date :) / Objet : … » |
 | Gmail, Apple (réponse) | « Le sam. 26 sept. 2026, 08:58, Nom <adresse> a écrit : » |
+| Orange (réponse) | « Le 15/10/2026 11:40 CEST, Nom <adresse> a écrit : » |
 | en anglais | « From: … / Sent: … », « On …, Name <addr> wrote: » |
 
 Les chevrons (« > ») sont retirés avant tout : la profondeur de citation ne dit
@@ -113,6 +114,15 @@ _NUMERIQUE = re.compile(r"\b(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})\b")
 _HEURE = re.compile(r"\b(\d{1,2})\s*(?:h|:)\s*(\d{2})(?::(\d{2}))?(?:\s*([ap]m)\b)?", re.I)
 #: « UTC+2 », « GMT+02:00 », « +0200 ». Sans fuseau : l'heure de Paris.
 _FUSEAU = re.compile(r"(?:UTC|GMT)\s*([+-])(\d{1,2})(?::?(\d{2}))?|\s([+-])(\d{2})(\d{2})\b")
+#: « CEST », « (CET) », « UTC » seul : un fuseau NOMMÉ. CET et CEST sont l'heure de
+#: Paris, qu'on suppose déjà ; UTC et GMT seuls disent une heure universelle.
+#: 🔴 Absent jusqu'au 15/10/2026 : « Le 15/10/2026 11:40 CEST, Nom <…> a écrit »
+#: (Orange) nommait l'auteur « CEST, Nom » dans la Suite (TK-749553).
+_FUSEAU_NOMME = re.compile(r"\(?\b(UTC|GMT|CEST|CET)\b\)?")
+_UNIVERSELS = {"UTC", "GMT"}
+#: Ce qui suit l'heure d'un « … a écrit » : un ou plusieurs fuseaux, quelle que
+#: soit la ponctuation entre eux (« UTC+2 / CEST », « , CEST »).
+_FUSEAUX_A_LA_SUITE = re.compile(rf"(?:[\s,/()]*(?:{_FUSEAU.pattern}|{_FUSEAU_NOMME.pattern}))+")
 
 
 def _sans_accent(texte: str) -> str:
@@ -164,6 +174,9 @@ def date_citee(texte: str) -> datetime | None:
         return None
     f = _FUSEAU.search(texte, h.end())
     if f is None:
+        nomme = _FUSEAU_NOMME.search(texte, h.end())
+        if nomme and nomme[1] in _UNIVERSELS:
+            return locale
         return locale.replace(tzinfo=TZ_PARIS).astimezone(timezone.utc).replace(tzinfo=None)
     signe, heures, minutes = (f[1], f[2], f[3]) if f[1] else (f[4], f[5], f[6])
     decalage = timedelta(hours=int(heures), minutes=int(minutes or 0))
@@ -243,11 +256,13 @@ def _a_ecrit(lignes: list[str], i: int) -> tuple[dict, int] | None:
     h = _HEURE.search(phrase, trouve[3]) if trouve else None
     if h is None:
         return None
-    #  « … 08:43:12 UTC+2, Nom a écrit » (Yahoo) : le fuseau n'est pas le nom.
-    reste = phrase[h.end() :].lstrip()
-    f = _FUSEAU.match(reste)
-    qui = (reste[f.end() :] if f else reste).strip(" ,")
-    return {"de": qui, "date": phrase[: h.end()] + (f[0] if f else "")}, fin + 1
+    #  « … 08:43:12 UTC+2, Nom a écrit » (Yahoo), « … 11:40 CEST, Nom » (Orange) :
+    #  le fuseau n'est pas le nom.
+    reste = phrase[h.end() :]
+    f = _FUSEAUX_A_LA_SUITE.match(reste)
+    fuseau = f[0] if f else ""
+    qui = reste[len(fuseau) :].strip(" ,")
+    return {"de": qui, "date": phrase[: h.end()] + fuseau}, fin + 1
 
 
 def _en_tete(lignes: list[str], i: int) -> tuple[dict, int] | None:
