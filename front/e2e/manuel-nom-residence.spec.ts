@@ -27,7 +27,7 @@ test('le manuel dit « Résidence 5Hostachy », comme le pied de page des écran
 	await simulerApi(page, (chemin) => (chemin === '/api/config' ? CONFIG : undefined));
 
 	await page.goto('/tableau-de-bord');
-	const pied = page.locator('footer.app-footer > .element').first();
+	const pied = page.locator('footer.app-footer .nom');
 	await expect(pied).toHaveText(/^Résidence\s5Hostachy$/);
 	const residence = (await pied.textContent())!.replace(/\u00a0/g, ' ').trim();
 

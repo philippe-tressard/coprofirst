@@ -1,11 +1,14 @@
 <!--
   Le réglage du PIED DE PAGE, dans Admin › Site.
 
-  Une liste, dans l'ordre d'affichage : chaque élément monte ou descend (↑ ↓),
-  les facultatifs s'affichent ou se masquent (leur pastille), les trois que la
-  loi ou la licence imposent restent — mais se déplacent comme les autres
-  (arbitré à l'écran, 09/10/2026). Dessous, l'année de création, le préfixe du
-  nom et le texte libre. La règle vit dans `$lib/piedDePage`.
+  La marque — logo et nom de la résidence — est fixe, au cadenas : elle signe
+  la carte (maquette A, 15/10/2026). Puis une liste par place de la carte,
+  « Sous le nom » et « Liens, à droite », chacune dans son ordre d'affichage :
+  chaque élément monte ou descend (↑ ↓) dans sa place, les facultatifs
+  s'affichent ou se masquent (leur pastille), les trois que la loi ou la
+  licence imposent restent — mais se déplacent comme les autres (arbitré à
+  l'écran, 09/10/2026). Dessous, l'année de création, le préfixe du nom et le
+  texte libre. La règle vit dans `$lib/piedDePage`.
 
   L'aperçu est le VRAI composant du squelette : il ne peut pas montrer autre
   chose que le site.
@@ -22,8 +25,10 @@
 	import Pastille from '$lib/components/Pastille.svelte';
 	import PiedDePage from '$lib/components/PiedDePage.svelte';
 	import {
+		dansLaPlace,
 		deplacer,
 		ELEMENTS_PIED,
+		PLACES_REGLABLES,
 		PREFIXE_NOM_MAX,
 		TEXTE_PIED_MAX,
 		type ReglagePied,
@@ -35,6 +40,8 @@
 	export let saveSiteConfig: () => void;
 
 	const parCode = new Map(ELEMENTS_PIED.map((e) => [e.code, e]));
+	/** La marque ne se règle pas ici : elle se montre, au cadenas. */
+	const marque = ELEMENTS_PIED.find((e) => e.place === 'marque');
 
 	/** Affiche ou masque un élément — l'aperçu suit aussitôt. */
 	function basculer(code: string) {
@@ -52,49 +59,60 @@
 <section class="card config-section">
 	<h2 class="config-section-title"><Icon name="pencil" size={17} />Pied de page</h2>
 	<div class="largeur-saisie">
-		<LibelleGroupe titre="Éléments, dans l’ordre" id="pied-elements">
-			<ol class="liste-pied">
-				{#each reglage.ordre as code, i (code)}
-					{@const e = parCode.get(code)}
-					{#if e}
-						<li>
-							<button
-								type="button"
-								class="btn-icon deplacer"
-								aria-label="Monter « {e.libelle} »"
-								title="Monter"
-								disabled={i === 0}
-								on:click={() => bouger(code, -1)}><IconeAction icone="arrow-up" /></button
-							>
-							<button
-								type="button"
-								class="btn-icon deplacer"
-								aria-label="Descendre « {e.libelle} »"
-								title="Descendre"
-								disabled={i === reglage.ordre.length - 1}
-								on:click={() => bouger(code, 1)}><IconeAction icone="arrow-down" /></button
-							>
-							{#if e.verrouille}
-								<span class="fixe" title="Toujours affiché : {e.verrouille}"
-									><Icon name="lock" size={13} />{e.libelle}</span
-								>
-							{:else}
-								<Pastille
-									petite
-									bascule
-									active={!reglage.masques.includes(code)}
-									on:click={() => basculer(code)}>{e.libelle}</Pastille
-								>
+		<div class="groupes-pied">
+			{#if marque}
+				<p class="fixe" title="Toujours affichés : {marque.verrouille}">
+					<Icon name="lock" size={13} />{marque.libelle}
+				</p>
+			{/if}
+			{#each PLACES_REGLABLES as { place, titre } (place)}
+				{@const codes = dansLaPlace(reglage.ordre, place)}
+				<LibelleGroupe {titre} id="pied-{place}">
+					<ol class="liste-pied">
+						{#each codes as code, i (code)}
+							{@const e = parCode.get(code)}
+							{#if e}
+								<li>
+									<button
+										type="button"
+										class="btn-icon deplacer"
+										aria-label="Monter « {e.libelle} »"
+										title="Monter"
+										disabled={i === 0}
+										on:click={() => bouger(code, -1)}><IconeAction icone="arrow-up" /></button
+									>
+									<button
+										type="button"
+										class="btn-icon deplacer"
+										aria-label="Descendre « {e.libelle} »"
+										title="Descendre"
+										disabled={i === codes.length - 1}
+										on:click={() => bouger(code, 1)}><IconeAction icone="arrow-down" /></button
+									>
+									{#if e.verrouille}
+										<span class="fixe" title="Toujours affiché : {e.verrouille}"
+											><Icon name="lock" size={13} />{e.libelle}</span
+										>
+									{:else}
+										<Pastille
+											petite
+											bascule
+											active={!reglage.masques.includes(code)}
+											on:click={() => basculer(code)}>{e.libelle}</Pastille
+										>
+									{/if}
+								</li>
 							{/if}
-						</li>
-					{/if}
-				{/each}
-			</ol>
-		</LibelleGroupe>
+						{/each}
+					</ol>
+				</LibelleGroupe>
+			{/each}
+		</div>
 		<p class="aide">
 			Une pastille pleine est affichée, une pastille vide masquée. Les éléments au cadenas restent
-			toujours : la licence du logiciel et la loi imposent qu’ils soient accessibles depuis chaque
-			page — ils se déplacent comme les autres.
+			toujours : le logo et le nom signent le pied de page, la licence du logiciel et la loi
+			imposent que les trois liens soient accessibles depuis chaque page — ils se déplacent comme
+			les autres. Le logo et le nom se règlent plus haut, dans l’identité du site.
 		</p>
 		<div class="champs-pied">
 			<label class="field">
@@ -115,12 +133,12 @@
 					type="text"
 					bind:value={reglage.texte}
 					maxlength={TEXTE_PIED_MAX}
-					placeholder="Un texte court, placé dans la liste comme les autres éléments"
+					placeholder="Un texte court, placé sous le nom comme les autres mentions"
 				/>
 			</label>
 		</div>
 		<div class="apercu-pied" role="group" aria-label="Aperçu du pied de page">
-			<PiedDePage {reglage} />
+			<PiedDePage {reglage} apercu />
 		</div>
 	</div>
 	<div class="form-actions largeur-saisie">
@@ -146,6 +164,13 @@
 	.deplacer:disabled {
 		opacity: 0.25;
 		cursor: not-allowed;
+	}
+	.groupes-pied {
+		display: grid;
+		gap: 0.75rem;
+	}
+	.groupes-pied > .fixe {
+		margin: 0;
 	}
 	.fixe {
 		display: inline-flex;
