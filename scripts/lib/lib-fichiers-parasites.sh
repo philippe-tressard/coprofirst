@@ -236,8 +236,10 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "collecte : sans docker → VIDE" "db_volume=" eval 'PATH=/nonexistent "$BASH" -c "$(collecte_db_volume)"'
     t "collecte : le fragment est du shell valide" oui eval 'bash -n <<<"$(collecte_db_volume)" && echo oui'
     t "collecte : aucune apostrophe dans le fragment" 0 eval 'collecte_db_volume | grep -c "$(printf "\047")"'
-    t "le volume désigné est celui de l'API dans le compose" 1 eval 'grep -cE "^ +- ${VOLUME_DONNEES#5hostachy_}:/app/data$" "$ICI/../../docker-compose.yml"'
-    t "l'image du listage est l'image de base de l'API" 1 eval 'grep -cx "FROM $IMAGE_LISTAGE" "$ICI/../../api/Dockerfile"'
+    #  Les deux fichiers sont versionnés en CRLF : le retour chariot part avant
+    #  l'ancrage, sinon `$` échoue sous Linux (la CI) et passe sous Git Bash.
+    t "le volume désigné est celui de l'API dans le compose" 1 eval 'tr -d "\r" < "$ICI/../../docker-compose.yml" | grep -cE "^ +- ${VOLUME_DONNEES#5hostachy_}:/app/data$"'
+    t "l'image du listage est l'image de base de l'API" 1 eval 'tr -d "\r" < "$ICI/../../api/Dockerfile" | grep -cx "FROM $IMAGE_LISTAGE"'
     rm -f "$TRACE"
 
     echo "== les constats, sur les DEUX nœuds =="
