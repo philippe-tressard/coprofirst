@@ -17,7 +17,8 @@
  *     rendrait un badge sans couleur, sans un mot ;
  *  3. une teinte écrite dans le code (`'badge-xxx'`) existe dans les feuilles, ou
  *     se déclare dans `SANS_REGLE` avec son ticket — c'est ainsi qu'est apparue
- *     `badge-teal`, sans règle depuis la v1.0.0 (#1986).
+ *     `badge-teal`, sans règle depuis la v1.0.0 : teintée le 16/10/2026 (#1986),
+ *     la liste est vide et le reste.
  *
  *  Lancer : node scripts/check-badge.mjs [--selftest]
  */
@@ -35,10 +36,7 @@ const HORS_BADGE = {
 
 /**  Teintes écrites dans le code sans règle CSS — chacune avec son ticket. Une
  *   entrée qui ne sert plus fait échouer le contrôle. */
-const SANS_REGLE = {
-	'badge-teal':
-		'#1986 — rôles Propriétaire et copropriétaire occupant, sans teinte depuis la v1.0.0',
-};
+const SANS_REGLE = {};
 
 const INTERPOLEE = /class="badge\b[^"]*\{/;
 
@@ -58,7 +56,7 @@ export function teintesEcrites(source) {
 }
 
 /** Les écarts entre feuilles, composant et code. PURE. */
-export function ecartsTeintes(feuilles, composant, ecrites) {
+export function ecartsTeintes(feuilles, composant, ecrites, sansRegle = SANS_REGLE) {
 	const attendues = feuilles.filter((t) => !(t in HORS_BADGE));
 	const ecarts = [];
 	for (const t of attendues)
@@ -66,10 +64,10 @@ export function ecartsTeintes(feuilles, composant, ecrites) {
 	for (const t of composant)
 		if (!attendues.includes(t))
 			ecarts.push(`${t} : posée par \`Badge\` sans règle dans les feuilles`);
-	const connues = new Set([...feuilles, ...Object.keys(SANS_REGLE)]);
+	const connues = new Set([...feuilles, ...Object.keys(sansRegle)]);
 	for (const t of new Set(ecrites))
 		if (!connues.has(t)) ecarts.push(`${t} : écrite dans le code, définie nulle part`);
-	for (const t of Object.keys(SANS_REGLE)) {
+	for (const t of Object.keys(sansRegle)) {
 		if (feuilles.includes(t))
 			ecarts.push(
 				`${t} : déclarée sans règle, mais les feuilles la définissent — retirer l'exception`,
@@ -96,24 +94,27 @@ function concordance() {
 
 function selftestConcordance() {
 	const F = ['badge-blue', 'badge-gray', 'badge-perimetre'];
+	//  Une exception témoin : la liste réelle est vide, le mécanisme doit servir.
+	const E = { 'badge-teal': '#témoin' };
+	const ecarts = (f, c, e, x = E) => ecartsTeintes(f, c, e, x);
 	const cas = [
 		[
 			'tout concorde',
-			ecartsTeintes(F, ['badge-blue', 'badge-gray'], ['badge-blue', 'badge-teal']).length,
+			ecarts(F, ['badge-blue', 'badge-gray'], ['badge-blue', 'badge-teal']).length,
 			0,
 		],
-		['teinte oubliée par le composant', ecartsTeintes(F, ['badge-blue'], ['badge-teal']).length, 1],
+		['teinte oubliée par le composant', ecarts(F, ['badge-blue'], ['badge-teal']).length, 1],
 		[
 			'teinte du composant sans règle',
-			ecartsTeintes(F, ['badge-blue', 'badge-gray', 'badge-rose'], ['badge-teal']).length,
+			ecarts(F, ['badge-blue', 'badge-gray', 'badge-rose'], ['badge-teal']).length,
 			1,
 		],
 		[
 			'teinte écrite, définie nulle part',
-			ecartsTeintes(F, ['badge-blue', 'badge-gray'], ['badge-rose', 'badge-teal']).length,
+			ecarts(F, ['badge-blue', 'badge-gray'], ['badge-rose', 'badge-teal']).length,
 			1,
 		],
-		['exception qui ne sert plus', ecartsTeintes(F, ['badge-blue', 'badge-gray'], []).length, 1],
+		['exception qui ne sert plus', ecarts(F, ['badge-blue', 'badge-gray'], []).length, 1],
 		[
 			'lecture des feuilles',
 			teintesDesFeuilles('.badge {\n}\n.badge-blue {\n}\n.badge-red,\n.x {}').join(),

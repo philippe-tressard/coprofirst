@@ -31,6 +31,7 @@
 	class:badge-orange={teinte === 'badge-orange'}
 	class:badge-purple={teinte === 'badge-purple'}
 	class:badge-red={teinte === 'badge-red'}
+	class:badge-teal={teinte === 'badge-teal'}
 	class:badge-yellow={teinte === 'badge-yellow'}
 	class:compact
 	{...$$restProps}><slot /></span
