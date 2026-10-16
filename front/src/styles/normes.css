@@ -324,6 +324,9 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
    10/10/2026 (#1819) : son dernier emploi, l'historique des annonces de hall,
    est devenu une carte — le standard de la page Affaires.
    `.clamp-2` : un TITRE de carte, qui doit rester sur deux lignes au plus.
+   `.clamp-10` : le descriptif d'une affaire dans un RAPPORT — le Suivi des
+   affaires du Reporting CS (16/10/2026, demandé : « limité à 10 lignes max »).
+   Son PDF tronque de même, par `line-clamp` (`utils/suivi_affaires/pdf.py`).
 
    ⚠️ `.clamp-3` existait DÉJÀ, écrit à la main dans `FluxCard` : le fil
    d'activité tronquait à trois lignes depuis toujours, et c'est lui qui a servi
@@ -335,7 +338,8 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
    notion omettaient toutes `line-clamp` — la propriété STANDARD, que les
    navigateurs non-WebKit lisent. Elles tronquaient donc par chance. */
 .clamp-3,
-.clamp-2 {
+.clamp-2,
+.clamp-10 {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
@@ -347,6 +351,10 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 .clamp-2 {
 	-webkit-line-clamp: 2;
 	line-clamp: 2;
+}
+.clamp-10 {
+	-webkit-line-clamp: 10;
+	line-clamp: 10;
 }
 
 @media (min-width: 1024px) {

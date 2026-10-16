@@ -9,55 +9,12 @@
 //  ⚠️ Aucune fonction d'ici ne touche au réseau ni au DOM. Les chargements
 //  vivent dans `OngletReporting.svelte`, la mise en forme dans les vues.
 
-//  ⚠️ `KANBAN_COLS` est importé, pas recopié : les colonnes du suivi ont UNE
-//  définition, dans `$lib/kanban`. Aucun cycle — `kanban.ts` ne connaît pas ce
-//  module.
-import { KANBAN_COLS, colonneDuTicket } from '$lib/kanban';
-import { categorieTicketLabel } from '$lib/tickets';
-import type { Ticket } from '$lib/api/types';
-import { intervenantAffiche } from '$lib/prestataires';
+//  🔴 Le « Suivi des dossiers » (affaires suivies au kanban, rangées par
+//  colonne) vivait ici — `ReportDossier`, `dossiersSuivis`, les colonnes et leurs
+//  teintes. Il est devenu le « Suivi des affaires » le 16/10/2026 : TOUTES les
+//  affaires non closes, relevées par le SERVEUR (`GET /suivi-affaires`), qui
+//  porte la règle d'entrée, l'ancienneté et l'export PDF. L'écran ne recalcule rien.
 
-//  Un DOSSIER suivi : une affaire au kanban (#1092, 23/09/2026 — c'était un événement).
-export interface ReportDossier {
-	id: number;
-	titre: string;
-	description?: string | null;
-	type: string;
-	debut: string;
-	fin?: string | null;
-	perimetre: string;
-	batiment_id?: number | null;
-	auteur_nom?: string | null;
-	cree_le: string;
-	mis_a_jour_le?: string | null;
-	statut_kanban?: string | null;
-	/**  « Otis · ↺ Mensuel · sous contrat n° C-42 » — `intervenantAffiche`, la
-	 *   forme de la fiche (#1445) ; il ne portait que le nom. */
-	intervenant?: string | null;
-}
-
-/**  Les dossiers du reporting : les affaires SUIVIES et non archivées, chacune
- *   dans la colonne que son état désigne (`colonneDuTicket` — la table du
- *   kanban, pas une copie). */
-export function dossiersSuivis(tickets: Ticket[]): ReportDossier[] {
-	return tickets
-		.filter((t) => t.suivi_kanban && !t.archivee && colonneDuTicket(t.statut))
-		.map((t) => ({
-			id: t.id,
-			titre: t.titre,
-			description: t.description,
-			type: categorieTicketLabel(t.categorie),
-			debut: t.debut ?? t.cree_le,
-			fin: t.fin ?? null,
-			perimetre: (t.perimetre_cible ?? []).join(', '),
-			batiment_id: t.batiment_id ?? null,
-			auteur_nom: t.auteur_nom ?? null,
-			cree_le: t.cree_le,
-			mis_a_jour_le: t.mis_a_jour_le ?? null,
-			statut_kanban: colonneDuTicket(t.statut),
-			intervenant: intervenantAffiche(t) || null,
-		}));
-}
 export interface ReportPrestataire {
 	id: number;
 	nom: string;
@@ -113,7 +70,9 @@ export interface DiagType {
  *   objet. Une justification qui s'appuie sur un écran voisin devient fausse
  *   quand celui-ci bouge, sans que rien ne le signale. */
 export const REPORT_VUES = [
-	'kanban',
+	//  « Suivi des affaires » — `kanban` jusqu'au 16/10/2026 : un ancien
+	//  `?vue=kanban` retombe sans bruit sur cette vue, la première.
+	'affaires',
 	'tickets',
 	'prestataires',
 	'renouvellements',
@@ -122,41 +81,6 @@ export const REPORT_VUES = [
 	'periodique',
 ] as const;
 export type ReportVue = (typeof REPORT_VUES)[number];
-
-/**  Les colonnes du kanban du REPORTING, dérivées de celles du calendrier.
- *
- *   🔴 Elles étaient recopiées, et la copie avait perdu DEUX colonnes :
- *   `fournisseur` et `termine`. Le suivi du CS ne montrait donc aucun dossier
- *   passé chez le prestataire — l'étape la plus longue de la vie d'un dossier.
- *   Personne ne pouvait le voir : une colonne absente ne laisse pas de trou à
- *   l'écran, elle ne s'affiche simplement pas.
- *
- *   ⚠️ `termine` reste EXCLU, et c'est un choix, pas un oubli : cette vue compte
- *   des dossiers EN COURS (son premier indicateur s'appelle « Dossiers en
- *   cours »). L'exclusion est écrite ici, une fois, plutôt que rejouée par une
- *   liste littérale dans chaque composant qui les parcourt.
- *
- *   `KANBAN_COLS` (`$lib/kanban`) reste l'unique arbitre des identifiants et des
- *   libellés : ajouter une colonne là-bas la fait apparaître ici. */
-export const REPORT_KANBAN_COLS = KANBAN_COLS.filter((c) => c.id !== 'termine');
-
-export const KANBAN_LABELS: Record<string, string> = Object.fromEntries(
-	KANBAN_COLS.map((c) => [c.id, c.label]),
-);
-
-/**  La classe de badge par colonne — une notion propre au reporting : les autres
- *   écrans peignent la colonne avec la couleur littérale de `KANBAN_COLS`, celui-ci
- *   passe par les badges de la charte. La table reste donc explicite, mais elle
- *   doit couvrir toutes les colonnes rendues ; le repli `badge-gray` masquerait un
- *   nouvel identifiant sans rien dire. */
-export const KANBAN_COLORS: Record<string, string> = {
-	ag: 'badge-purple',
-	cs: 'badge-blue',
-	syndic: 'badge-orange',
-	fournisseur: 'badge-yellow',
-	termine: 'badge-green',
-	annule: 'badge-gray',
-};
 
 /* ── Renouvellements : calculs ────────────────────────────────────────────
    L'année de référence est une FONCTION, pas une constante. Elle était figée au

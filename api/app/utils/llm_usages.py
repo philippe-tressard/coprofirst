@@ -39,6 +39,8 @@ from app.utils.question_reglement.format import CONSIGNE as CONSIGNE_QUESTION_RE
 from app.utils.question_reglement.format import USAGE_QUESTION_REGLEMENT
 from app.utils.reponse_courriel import CONSIGNE as CONSIGNE_REPONSE_COURRIEL
 from app.utils.reponse_courriel import USAGE_REPONSE_COURRIEL
+from app.utils.suivi_affaires.format import CONSIGNE as CONSIGNE_AFFAIRES_EN_COURS
+from app.utils.suivi_affaires.format import USAGE_SYNTHESE_AFFAIRES_EN_COURS
 from app.utils.synthese_affaire.format import CONSIGNE as CONSIGNE_SYNTHESE_AFFAIRE
 from app.utils.synthese_affaire.format import USAGE_SYNTHESE_AFFAIRE
 from app.utils.synthese_format import CONSIGNE as CONSIGNE_SYNTHESE
@@ -234,6 +236,24 @@ USAGES: dict[str, Usage] = {
         max_jetons_defaut=8_000,
         delai_min_s=120,
         ouvrable_aux_coproprietaires=True,
+    ),
+    #  16/10/2026 : le ✨ du rapport « Suivi des affaires » (Reporting CS). Il
+    #  part du relevé des affaires non closes — catégorie, titre, dates, état,
+    #  descriptif ; jamais un nom — et rend un résumé et quelques points, en
+    #  TEXTE, que le PDF reprend (`utils/suivi_affaires`).
+    USAGE_SYNTHESE_AFFAIRES_EN_COURS: Usage(
+        code=USAGE_SYNTHESE_AFFAIRES_EN_COURS,
+        libelle="Synthèse des affaires en cours",
+        description=(
+            "Espace CS › Reporting › Suivi des affaires : l'icône ✨ rédige la synthèse "
+            "des affaires ni résolues ni annulées — ce qui presse, ce qui attend une "
+            "décision, ce qui traîne, ce qui semble lié. Elle s'affiche à l'écran et "
+            "part dans le PDF exporté. Seuls la catégorie, le titre, les dates, l'état "
+            "et le descriptif de chaque affaire sont transmis, jamais le nom de "
+            "l'auteur. Réservé au conseil syndical et à l'administration."
+        ),
+        prompt_defaut=CONSIGNE_AFFAIRES_EN_COURS,
+        max_jetons_defaut=4_000,
     ),
 }
 
