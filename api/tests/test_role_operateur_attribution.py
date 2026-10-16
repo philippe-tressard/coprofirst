@@ -6,8 +6,9 @@ l'écran les emploie :
 
 - tout administrateur accorde ou retire Opérateur, à lui-même compris
   (15/10/2026 — #1750 le réservait à un opérateur) ;
-- Opérateur ne s'accorde qu'à un administrateur, et Admin ne se retire pas à un
-  opérateur : les écrans de l'opérateur vivent sous `/admin` ;
+- Opérateur ne s'accorde qu'à un administrateur, mais se garde sans lui : Admin
+  se retire à un opérateur, qui ne garde que ses écrans de supervision
+  (16/10/2026, #2029 — v2.165.0 le refusait encore) ;
 - Admin et Opérateur se retirent, à soi-même compris, sauf à leur dernier
   titulaire actif.
 """
@@ -84,17 +85,27 @@ def test_le_role_ne_s_accorde_qu_a_un_administrateur():
         assert ROLE_OPERATEUR not in _roles(moteur, cible)
 
 
-def test_admin_ne_se_retire_pas_a_un_operateur():
+def test_admin_se_retire_a_un_operateur_qui_reste_operateur():
+    """Le cas signalé (#2029) : un compte Admin + Opérateur quitte l'administration."""
     with base_http() as moteur:
         http, _ = client_http(moteur, RoleUtilisateur.admin, roles_json=OPERATEUR)
         cible = _cible(moteur, OPERATEUR)
         r = _geste(http, cible, "retirer-role", role="admin")
-        assert r.status_code == 400
-        assert "Opérateur" in r.json()["detail"]
-        assert "admin" in _roles(moteur, cible)
-        #  Dans l'ordre inverse, le geste passe.
-        assert _geste(http, cible, "retirer-role").status_code == 200
-        assert _geste(http, cible, "retirer-role", role="admin").status_code == 200
+        assert r.status_code == 200, r.text
+        assert "admin" not in _roles(moteur, cible)
+        assert ROLE_OPERATEUR in _roles(moteur, cible)
+
+
+def test_un_operateur_se_retire_admin_a_lui_meme_s_il_reste_un_autre_admin():
+    with base_http() as moteur:
+        http, moi = client_http(moteur, RoleUtilisateur.admin, roles_json=OPERATEUR)
+        _cible(moteur, "admin")
+        assert _geste(http, moi, "retirer-role", role="admin").status_code == 200
+        #  Sans rôle de la copropriété, il redevient résident — et son rôle
+        #  principal le dit : il restait `admin`, l'opérateur n'étant pas classé.
+        assert _roles(moteur, moi) == [ROLE_OPERATEUR, "résident"]
+        with Session(moteur) as s:
+            assert s.get(Utilisateur, moi).role == RoleUtilisateur.résident
 
 
 def test_le_dernier_operateur_ne_se_retire_pas_le_role():

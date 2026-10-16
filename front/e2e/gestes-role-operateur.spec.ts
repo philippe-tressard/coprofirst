@@ -5,9 +5,9 @@
  *  `gestesAdminOperateur` (`$lib/droits`) contre `_exiger_geste_operateur` et
  *  `_exiger_un_autre_titulaire` (`api/app/routers/admin/utilisateurs.py`,
  *  éprouvés par `api/tests/test_role_operateur_attribution.py`) :
- *  tout admin accorde Opérateur à un admin, lui-même compris ; « – Admin » se
- *  tait chez un opérateur ; Admin et Opérateur se retirent, à soi-même compris,
- *  sauf à leur dernier titulaire actif.
+ *  tout admin accorde Opérateur à un admin, lui-même compris ; Admin et
+ *  Opérateur se retirent, à soi-même compris — Admin à un opérateur aussi
+ *  (#2029) —, sauf à leur dernier titulaire actif.
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
@@ -63,13 +63,22 @@ test('le rôle Opérateur s’accorde à un admin et se retire, à soi-même com
 
 	const bruno = rangee(page, 'Bruno');
 	await expect(bruno.getByRole('button', { name: '– Opérateur' })).toBeVisible();
-	//  Admin ne se retire pas à un opérateur : le serveur le refuse.
-	await expect(bruno.getByRole('button', { name: '– Admin' })).toHaveCount(0);
+	//  Admin se retire à un opérateur, qui garde sa supervision (#2029).
+	await expect(bruno.getByRole('button', { name: '– Admin' })).toBeVisible();
 
 	//  Pas admin : le rôle ne s'accorde pas.
 	await expect(rangee(page, 'Chloe').getByRole('button', { name: /Opérateur/ })).toHaveCount(0);
-	//  Soi-même : un autre opérateur reste, le geste est offert.
+	//  Soi-même : un autre opérateur et un autre admin restent, les gestes sont offerts.
 	await expect(rangee(page, 'Moi').getByRole('button', { name: '– Opérateur' })).toBeVisible();
+	await expect(rangee(page, 'Moi').getByRole('button', { name: '– Admin' })).toBeVisible();
+});
+
+test('l’opérateur qui se retire Admin est prévenu qu’il garde sa supervision', async ({ page }) => {
+	await ouvrir(page, OPERATEUR);
+	await rangee(page, 'Moi').getByRole('button', { name: '– Admin' }).click();
+	const boite = page.getByRole('dialog');
+	await expect(boite).toContainText('Retirer le rôle Admin de votre compte');
+	await expect(boite).toContainText('que la supervision de la plateforme');
 });
 
 test('le dernier administrateur et le dernier opérateur ne se retirent pas le rôle', async ({

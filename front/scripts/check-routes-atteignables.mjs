@@ -173,7 +173,9 @@ const declares = [...blocAdmin.matchAll(/^\t\t\t\tid: '([a-z_]+)',/gm)].map((m) 
 //  onglet déclaré n'aurait pas de bouton, ou ne s'ouvrirait pas par l'adresse.
 const lienTable = [
 	[/<BarreOnglets[^>]*pageId="admin"/, 'rendre sa rangée par <BarreOnglets pageId="admin">'],
-	[/PAGES\.find\(\(p\) => p\.id === 'admin'\)/, 'lire ses onglets dans la table (`PAGES`)'],
+	//  Par `ongletsOuverts` depuis #2029 : la table, filtrée par les droits de
+	//  qui regarde — l'opérateur qui n'est pas administrateur n'en a que deux.
+	[/ongletsOuverts\('admin',/, 'lire ses onglets dans la table (`ongletsOuverts`)'],
 ];
 for (const [motif, attendu] of lienTable) {
 	if (!motif.test(srcAdmin)) {

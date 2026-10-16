@@ -31,12 +31,12 @@
 <script lang="ts">
 	import Onglet from '$lib/components/Onglet.svelte';
 	import { configStore, getPageConfig, defautsDePage } from '$lib/stores/pageConfig';
-	import { PAGES } from '$lib/pages';
+	import { ongletsOuverts } from '$lib/onglets-ouverts';
 	import { safeHtml } from '$lib/sanitize';
 	import { stripHtml } from '$lib/utils';
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
-	import { isProprioOuCS, isLocataire, isOperateur, authResolue } from '$lib/stores/auth';
+	import { droitsOnglet, authResolue } from '$lib/stores/auth';
 
 	/** L'identifiant de configuration de la page — celui de `PAGES`. */
 	export let pageId: string;
@@ -55,17 +55,11 @@
 	$: defauts = defautsDePage(pageId);
 	$: _pc = getPageConfig($configStore, pageId, defauts);
 	//  Deux raisons de ne pas voir un onglet, et elles ne se confondent pas :
-	//    • `reserve` — une exigence de RÔLE, déclarée avec l'onglet (`pages.ts`) ;
+	//    • le RÔLE — `reserve` sur l'onglet, `reserveeAdmin` sur la page
+	//      (`pages.ts`), jugés par `ongletsOuverts` ;
 	//    • `masques` — un masquage qui dépend des DONNÉES, que seule la page sait
 	//      (« Gestion locative » n'apparaît que si le lot a des baux).
-	$: visible = (o: { reserve?: string }) =>
-		!o.reserve ||
-		(o.reserve === 'proprioOuCS' && $isProprioOuCS) ||
-		(o.reserve === 'nonLocataire' && !$isLocataire) ||
-		(o.reserve === 'operateur' && $isOperateur);
-	$: onglets = (PAGES.find((p) => p.id === pageId)?.onglets ?? []).filter(
-		(o) => !masques.includes(o.id) && visible(o),
-	);
+	$: onglets = ongletsOuverts(pageId, $droitsOnglet).filter((o) => !masques.includes(o.id));
 	//  Les GROUPES de la rangée (`groupe` dans la table) : une rangée nommée par
 	//  groupe, dans l'ordre de la table. Une page sans groupe n'en a qu'un, sans
 	//  nom — c'est le cas de toutes, sauf l'administration (01/10/2026), qui

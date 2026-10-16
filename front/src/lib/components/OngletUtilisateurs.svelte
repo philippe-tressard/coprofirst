@@ -101,7 +101,8 @@
 			);
 			utilisateurs = utilisateurs.map((u) => (u.id === user.id ? { ...u, ...updated } : u));
 			//  Un rôle qu'on se retire à soi-même vaut aussitôt : sans Admin, la garde
-			//  d'`admin/+layout.svelte` ramène au tableau de bord.
+			//  d'`admin/+layout.svelte` ramène au tableau de bord — ou, à l'opérateur,
+			//  `BarreOnglets` ramène sur sa supervision (#2029).
 			if ($currentUser && user.id === $currentUser.id) {
 				setUser({ ...$currentUser, role: updated.role, roles: updated.roles });
 			}
@@ -376,7 +377,11 @@
 			<strong>{pourSoi ? 'votre compte' : nomAffiche(roleEnCours.user)}</strong> ?
 			<br />
 			{#if pourSoi && roleEnCours.action === 'retirer' && roleEnCours.role === 'admin'}
-				<span class="text-muted-sm"> Vous perdrez aussitôt l'accès à l'administration. </span>
+				<span class="text-muted-sm">
+					{aRole(roleEnCours.user, 'operateur')
+						? "Vous n'y garderez que la supervision de la plateforme."
+						: "Vous perdrez aussitôt l'accès à l'administration."}
+				</span>
 			{:else if !pourSoi}
 				<span class="text-muted-sm"> Cette personne recevra une notification. </span>
 			{/if}

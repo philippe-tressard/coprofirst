@@ -133,8 +133,9 @@ def _copropriete_par_defaut(session: Session) -> None:
 
 
 #: Les deux comptes techniques d'une installation neuve (#1985) : l'administrateur
-#: de la copropriété, et l'opérateur de l'installation — administrateur AUSSI, car
-#: ses écrans vivent sous `/admin` et le rôle ne se porte pas sans lui (#1750).
+#: de la copropriété, et l'opérateur de l'installation — administrateur AUSSI à sa
+#: création, car Opérateur s'accorde à un administrateur ; il peut ensuite quitter
+#: l'administration et garder sa supervision (#2029).
 #: Séparés pour qu'on puisse confier le premier sans livrer le second : l'opérateur
 #: tient l'inscription au registre (contrat, bail), la santé et la base.
 ADRESSE_ADMIN_INITIAL = "admin@localhost"
