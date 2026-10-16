@@ -284,3 +284,19 @@ export async function attacherApres(
 		toast('error', `${objet} — mais un document n’a pas pu être joint.`);
 	}
 }
+
+/**
+ * Remet un fichier PRODUIT par l'écran ou reçu du serveur au navigateur, qui le
+ * télécharge sous `nom` — l'export de télémétrie, le PDF du Suivi des affaires.
+ *
+ * Écrit une fois le 16/10/2026 : le lien éphémère `blob:` vivait dans l'export de
+ * télémétrie, et le PDF en demandait un second.
+ */
+export function enregistrerFichier(contenu: Blob, nom: string): void {
+	const url = URL.createObjectURL(contenu);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = nom;
+	a.click();
+	URL.revokeObjectURL(url);
+}

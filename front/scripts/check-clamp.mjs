@@ -37,7 +37,7 @@ import { neutraliserCommentaires } from './lib-commentaires.mjs';
 
 const RACINE = 'src';
 const SOURCE = 'styles/normes.css';
-const CLASSES = ['clamp-2', 'clamp-3'];
+const CLASSES = ['clamp-2', 'clamp-3', 'clamp-10'];
 
 const PROPRIETE = /(?:-webkit-)?line-clamp\s*:/;
 const CINQ_LIGNES = /\bclamp-5\b/;

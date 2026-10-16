@@ -43,13 +43,11 @@
 	import {
 		REPORT_VUES,
 		type ReportVue,
-		type ReportDossier,
-		dossiersSuivis,
 		type ReportPrestataire,
 		type ReportContrat,
 		type DiagType,
 	} from '$lib/reporting';
-	import VueKanban from './VueKanban.svelte';
+	import VueSuiviAffaires from './VueSuiviAffaires.svelte';
 	import VueTickets from './VueTickets.svelte';
 	import VuePrestataires from './VuePrestataires.svelte';
 	import VueRenouvellements from './VueRenouvellements.svelte';
@@ -63,27 +61,30 @@
 	export let vueInitiale: string | null = null;
 
 	let tickets: Ticket[] = [];
-	let reportView: ReportVue = 'kanban';
+	let reportView: ReportVue = 'affaires';
 	let reportingLoading = false;
 	let reportingLoaded = false;
 	let reportPrintTitle = '';
 	let reportPrestataires: ReportPrestataire[] = [];
-	let reportDossiers: ReportDossier[] = [];
 	let reportContrats: ReportContrat[] = [];
 	let reportDiagTypes: DiagType[] = [];
 	let reportNoteMoyParPrest: Map<number, { moy: number; nb: number }> = new Map();
 
-	//  Les vues AUTONOMES — « Relance syndic » et « Entretien périodique » —
+	//  Les vues AUTONOMES — « Suivi des affaires », « Relance syndic » et
+	//  « Entretien périodique » —
 	//  chargent leurs propres données ; elles rendent compte de leur état à la
 	//  barre d'outils, qui doit savoir quoi rafraîchir et si la page est vide avant
 	//  d'ouvrir la boîte d'impression. Une seule est montée à la fois : les trois
 	//  variables les servent toutes deux, chacune avec ce qu'elle a de propre.
 	const VUES_AUTONOMES: Partial<Record<ReportVue, string>> = {
+		affaires: `Aucune ${TICKET.libelle.toLowerCase()} ouverte — rien à exporter.`,
 		relance: `Aucune ${TICKET.libelle.toLowerCase()} syndic en cours — rien à imprimer.`,
 		periodique: 'Aucune visite d’entretien périodique cette année — rien à imprimer.',
 	};
 	$: autonome = reportView in VUES_AUTONOMES;
-	let vueAutonome: { recharger(): void } | null = null;
+	//  `exporterPdf` : le Suivi des affaires seul a un PDF rendu par le serveur ;
+	//  les autres vues passent par l'impression du navigateur.
+	let vueAutonome: { recharger(): void; exporterPdf?: () => Promise<void> } | null = null;
 	let autonomeChargement = false;
 	let autonomeVide = true;
 	$: occupe = autonome ? autonomeChargement : reportingLoading;
@@ -147,7 +148,7 @@
 
 	function printCurrentReporting() {
 		const titles: Record<ReportVue, string> = {
-			kanban: 'Reporting CS — Suivi des dossiers',
+			affaires: 'Reporting CS — Suivi des affaires',
 			tickets: 'Reporting CS — Analyse tickets',
 			prestataires: 'Reporting CS — Synthèse prestataires',
 			renouvellements: 'Reporting CS — Renouvellement contrats & audits',
@@ -162,7 +163,8 @@
 			toast('info', rienAImprimer);
 			return;
 		}
-		void printReporting(titles[reportView]);
+		if (vueAutonome?.exporterPdf) void vueAutonome.exporterPdf();
+		else void printReporting(titles[reportView]);
 	}
 
 	async function loadReporting(force = false) {
@@ -178,7 +180,6 @@
 			]);
 			tickets = ticketsList;
 			reportPrestataires = prestataires as ReportPrestataire[];
-			reportDossiers = dossiersSuivis(ticketsList);
 			reportContrats = contrats as ReportContrat[];
 			reportDiagTypes = diagTypes as DiagType[];
 			// Calcul note moyenne par prestataire
@@ -216,7 +217,7 @@
 	}
 
 	//  La page appelait `loadRelanceSyndic()` dès qu'un `?vue=` était présent,
-	//  quelle que soit la vue demandée : `?vue=kanban` chargeait donc les relances
+	//  quelle que soit la vue demandée : `?vue=kanban` (aujourd'hui `affaires`) chargeait donc les relances
 	//  et laissait la vue affichée VIDE. On charge ce que la vue montre — une vue
 	//  autonome se charge d'elle-même à son montage. RÉACTIF depuis le 10/10/2026 :
 	//  arrivé sur une vue autonome, passer à une autre la laissait vide.
@@ -229,8 +230,8 @@
 <div class="reporting-panel">
 	<div class="reporting-toolbar no-print">
 		<div class="reporting-switch">
-			<Pastille active={reportView === 'kanban'} on:click={() => (reportView = 'kanban')}>
-				&#x1F4CC; Suivi des dossiers
+			<Pastille active={reportView === 'affaires'} on:click={() => (reportView = 'affaires')}>
+				&#x1F4CC; Suivi des affaires
 			</Pastille>
 			<Pastille active={reportView === 'tickets'} on:click={() => (reportView = 'tickets')}>
 				&#x1F4CA; Analyse des affaires
@@ -264,8 +265,12 @@
 			>
 				<IconeAction icone="refresh-cw" />{occupe ? ' …' : ''}
 			</button>
-			<button class="btn btn-sm btn-primary" on:click={printCurrentReporting}>
-				&#x1F5A8; Imprimer / PDF
+			<button class="btn btn-sm btn-primary" on:click={printCurrentReporting} disabled={occupe}>
+				{#if reportView === 'affaires'}
+					<IconeAction icone="file-text" /> Exporter en PDF
+				{:else}
+					&#x1F5A8; Imprimer / PDF
+				{/if}
 			</button>
 		</div>
 	</div>
@@ -277,8 +282,12 @@
 
 	{#if reportingLoading}
 		<EtatListe chargement messageChargement="Chargement des reportings…" />
-	{:else if reportView === 'kanban'}
-		<VueKanban {reportDossiers} />
+	{:else if reportView === 'affaires'}
+		<VueSuiviAffaires
+			bind:this={vueAutonome}
+			bind:chargement={autonomeChargement}
+			bind:estVide={autonomeVide}
+		/>
 	{:else if reportView === 'tickets'}
 		<VueTickets {tickets} />
 	{:else if reportView === 'prestataires'}

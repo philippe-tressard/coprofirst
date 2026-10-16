@@ -85,6 +85,7 @@ from app.registre import routeur as registre  # le registre des installations (Â
 from app.routers import courriels_affaires
 from app.routers import partage
 from app.routers import assistant, config_llm, config_logo, config_services, reglement
+from app.routers import suivi_affaires
 from app.seed import seed
 from app.utils.backup import setup_scheduler
 from app.utils.plateforme import NOM_PLATEFORME
@@ -430,6 +431,7 @@ app.include_router(patrimoine_branche.router)
 #  L'assistant IA des formulaires (#985) : retravailler une description.
 app.include_router(assistant.router)
 app.include_router(reglement.router)
+app.include_router(suivi_affaires.router)
 app.include_router(registre.router)
 
 # Fichiers statiques (photos uploadÃ©es)

@@ -52,6 +52,7 @@ def test_les_usages_sont_declares_et_chacun_a_un_prompt_d_origine():
     #  Quatre depuis le 30/09/2026 : le tarif d'un modèle.
     #  Cinq depuis #1643 (03/10/2026) : la synthèse d'une affaire close.
     #  Six le même jour : la question au règlement de copropriété.
+    #  Sept le 16/10/2026 : la synthèse des affaires en cours (Reporting CS).
     assert set(USAGES) == {
         USAGE_SYNTHESE_CONTRAT,
         USAGE_DESCRIPTION,
@@ -59,6 +60,7 @@ def test_les_usages_sont_declares_et_chacun_a_un_prompt_d_origine():
         "tarif_modele",
         "synthese_affaire",
         "question_reglement",
+        "synthese_affaires_en_cours",
     }
     for u in USAGES.values():
         assert u.prompt_defaut.strip()

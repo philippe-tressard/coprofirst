@@ -218,6 +218,26 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 	return res.json() as Promise<T>;
 }
 
+/**
+ * Un POST dont la réponse est un FICHIER (le PDF du Suivi des affaires, 16/10/2026).
+ *
+ * Un lien suivi par le navigateur suffit quand l'adresse dit tout (`urlExportParc`) ;
+ * ici le corps porte ce que l'écran affiche — la synthèse de l'assistant —, qui
+ * n'a rien à faire dans une adresse. Même renouvellement de session et même
+ * masquage des 5xx que `request` : ils sont écrits une fois, au-dessus.
+ */
+async function requestFichier(path: string, body: unknown): Promise<Blob> {
+	const opts: RequestInit = {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(body),
+		credentials: 'include',
+	};
+	const res = await envoyerAvecRenouvellement(() => fetch(`${BASE}${path}`, opts), path);
+	if (!res.ok) throw await echecApi(res, 'POST', path, 'Erreur serveur');
+	return res.blob();
+}
+
 /** Construit une query string depuis un objet en filtrant les undefined/null/vide. */
 export function buildQuery(params: Record<string, string | undefined | null>): string {
 	const q = Object.entries(params)
@@ -304,4 +324,5 @@ export const api = {
 	patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
 	put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
 	delete: <T>(path: string) => request<T>('DELETE', path),
+	postFichier: (path: string, body: unknown) => requestFichier(path, body),
 };

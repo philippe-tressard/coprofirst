@@ -53,7 +53,7 @@ export const PAGES_ROLES: PageDef[] = [
 				route: '/espace-cs/reporting',
 				label: '\u{1F4CA} Reporting',
 				descriptif:
-					'Synthèses et indicateurs : kanban, tableau des affaires, prestataires, renouvellements de contrats et de diagnostics, et relance syndic.',
+					'Synthèses et indicateurs du conseil syndical, de l’état des affaires ouvertes aux échéances des contrats — à consulter ou à exporter.',
 			},
 			{
 				id: 'annonces-hall',

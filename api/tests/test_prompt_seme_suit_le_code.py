@@ -50,6 +50,7 @@ from app.utils.llm_usages import USAGES
 #: | `tarif_modele` | 0240 (30/09/2026) — le quatrième usage, semé à sa création |
 #: | `synthese_affaire` | 0255 (03/10/2026) — le cinquième usage, semé à sa création (#1643) |
 #: | `question_reglement` | 0256 (03/10/2026) — le sixième usage, semé à sa création |
+#: | `synthese_affaires_en_cours` | **aucune** (16/10/2026) — depuis la 0286, la clé absente retombe sur l'origine (`config_llm`) : un usage NEUF n'a rien à semer ; le cliquet vaut dès sa première retouche |
 EMPREINTES_SEMEES = {
     "description": "a6bca9c941ff52c7b5f90108eccf8c0d0a1dbe2ced37f9ca41d621953b84528e",
     "synthese_contrat": "35d2cc4c13b269dbfa80bb197fec7ade1b27278dc7152b4c3acbf21b2036f097",
@@ -57,6 +58,7 @@ EMPREINTES_SEMEES = {
     "tarif_modele": "28c905d1d9d27fd7120e92f663a30be9c3c4ebb70cbb2f743775d57f407c3e8d",
     "synthese_affaire": "4c3731e49d70c7ecc87be0cf738963557edc6671694c661b4c7eaf10f323407c",
     "question_reglement": "00e271b332d102aa58d6c548e06cd36dd5d8c662894d720aef2d61fea692bfe2",
+    "synthese_affaires_en_cours": "f574d808f8bb1be3eea396549b9974d53cc0daa0f1ec652436e4576383110c7e",
 }
 
 #: 🔴 Écart connu, tracé et non corrigé ici.

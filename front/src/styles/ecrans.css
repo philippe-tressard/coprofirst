@@ -314,7 +314,7 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
    ⚠️ `.pill*` était dans cette liste ; elle n'y est plus (#491, voir plus bas).
 
    Ce qui ne sert QU'À UNE vue voyage avec elle et n'est pas ici :
-   `.report-event-*` (VueKanban), `.frise-*` et `.audit-year-*`
+   `.barres` et `.synthese` (VueSuiviAffaires), `.frise-*` et `.audit-year-*`
    (VueRenouvellements), `.relance-*` (VueRelanceSyndic). */
 .kpi-row {
 	display: flex;

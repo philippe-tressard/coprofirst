@@ -22,6 +22,7 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import { currentUser, quandAuthResolue, setUser } from '$lib/stores/auth';
 	import { setTelemetryOptOut } from '$lib/telemetry';
+	import { enregistrerFichier } from '$lib/fichiers';
 
 	let optOutTelemetrie = false;
 	let savingOptOut = false;
@@ -85,13 +86,10 @@
 				try {
 					const data = await authApi.exportTelemetrie();
 					const json = JSON.stringify(data, null, 2);
-					const blob = new Blob([json], { type: 'application/json' });
-					const url = URL.createObjectURL(blob);
-					const a = document.createElement('a');
-					a.href = url;
-					a.download = 'mes-donnees-telemetrie.json';
-					a.click();
-					URL.revokeObjectURL(url);
+					enregistrerFichier(
+						new Blob([json], { type: 'application/json' }),
+						'mes-donnees-telemetrie.json',
+					);
 					toast('success', 'Export téléchargé.');
 				} catch {
 					toast('error', "Erreur lors de l'export.");
