@@ -244,7 +244,7 @@
 
 | # | Méthode | Chemin | Description | Auth |
 |---|---------|--------|-------------|------|
-| 1 | GET | `/lots/mes-lots` | Lots de l'utilisateur (admin/CS = tous) | Authentifié |
+| 1 | GET | `/lots/mes-lots` | Lots activement rattachés au compte (aucun repli par rôle — le patrimoine entier : `/lots/admin/tous`) | Authentifié |
 | 2 | GET | `/lots/admin/tous` | Tous les lots | CS/Admin |
 | 4 | GET | `/lots/commandes-acces/mes-commandes` | Commandes accès de l'utilisateur | Authentifié |
 | 5 | POST | `/lots/commandes-acces` | Créer commande d'accès | Authentifié |

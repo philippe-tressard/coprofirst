@@ -10,7 +10,6 @@ from sqlmodel import Session, select
 
 from app.utils.batiments import libelle_batiment_ou
 from app.auth.deps import (
-    est_moderateur,
     est_rattache_au_lot,
     get_current_user,
     require_cs_or_admin,
@@ -24,6 +23,7 @@ from app.utils.rattachement_locataire import (
 )
 from app.utils.valeurs import valeur
 from app.utils.lecture import lire_objet
+from app.utils.lots_rattaches import rattachements_actifs
 from app.utils.recuperer import ou_404
 from app.utils.etages import (
     ETAGE_HORS_BORNES,
@@ -33,7 +33,6 @@ from app.utils.etages import (
 )
 from app.models.core import (
     Lot,
-    UserLot,
     Utilisateur,
 )
 
@@ -96,31 +95,21 @@ def mes_lots(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
-    # Toujours privilégier les associations explicites UserLot.
-    # Évite qu'un profil CS/admin voie "tous les lots" alors qu'il attend ses lots personnels.
-    user_lots = session.exec(
-        select(UserLot).where(UserLot.user_id == user.id, UserLot.actif == True)  # noqa: E712
-    ).all()
-    user_lot_ids = [ul.lot_id for ul in user_lots]
-
-    if user_lot_ids:
-        lots = session.exec(select(Lot).where(Lot.id.in_(user_lot_ids))).all()
-    elif est_moderateur(user):
-        # Fallback pour comptes d'administration sans association propre.
-        lots = session.exec(select(Lot)).all()
-    else:
-        return []
+    #  Les lots du COMPTE, et seulement eux — un administrateur sans lot en a
+    #  zéro. Le patrimoine entier est `/lots/admin/tous` : le repli qui le
+    #  rendait ici faisait lire « mes lots » à trente lots (`utils/lots_rattaches`).
+    rattachements = rattachements_actifs(session, user)
+    lots = [lot for lot, _ in rattachements]
 
     #  Le logement de référence est désigné ICI, sur la liste entière : la règle
     #  porte sur l'ENSEMBLE des lots (« un seul logement »), donc elle ne peut pas
     #  se calculer lot par lot dans `_lot_read`.
     reference = logement_de_reference(lots)
-    liens = {ul.lot_id: valeur(ul.type_lien) for ul in user_lots}
     lectures = []
-    for lot in lots:
+    for lot, lien in rattachements:
         lecture = _lot_read(lot)
         lecture.est_logement_de_reference = reference is not None and lot.id == reference.id
-        lecture.type_lien = liens.get(lot.id)
+        lecture.type_lien = valeur(lien.type_lien)
         lectures.append(lecture)
     return lectures
 

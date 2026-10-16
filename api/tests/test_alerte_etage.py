@@ -21,7 +21,8 @@ import pytest
 from fastapi import BackgroundTasks
 
 from app.models.core import ConfigSite, Lot, TypeLien, UserLot
-from app.utils.alerte_etage import alerter_divergence_etage, lots_de
+from app.utils.alerte_etage import alerter_divergence_etage
+from app.utils.lots_rattaches import lots_de
 from app.utils.email import send_email
 from tests.aides_base import compte
 
