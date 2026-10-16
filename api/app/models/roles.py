@@ -54,9 +54,10 @@ class RoleUtilisateur(str, Enum):
 #: `PRIORITE_ROLE` (rang 0) : il ne devient jamais le rôle principal. La
 #: migration 0276 l'a posé sur les administrateurs d'alors, le seed sur
 #: l'administrateur initial d'une installation neuve ; depuis, Admin ›
-#: Utilisateurs l'accorde et le retire (`ajouter-role`, `retirer-role`) — par un
-#: opérateur seulement, à un administrateur seulement, jamais à soi-même
-#: (`routers/admin/utilisateurs._exiger_geste_operateur`).
+#: Utilisateurs l'accorde et le retire (`ajouter-role`, `retirer-role`) — par
+#: tout administrateur (15/10/2026), à un administrateur seulement, jamais à son
+#: dernier titulaire actif (`routers/admin/utilisateurs._exiger_geste_operateur`,
+#: `_exiger_un_autre_titulaire`).
 ROLE_OPERATEUR = "operateur"
 
 
