@@ -73,9 +73,7 @@ test('le rôle Opérateur s’accorde à un admin et se retire, à soi-même com
 	await expect(rangee(page, 'Moi').getByRole('button', { name: '– Admin' })).toBeVisible();
 });
 
-test('l’opérateur qui se retire Admin est prévenu qu’il garde sa supervision', async ({
-	page,
-}) => {
+test('l’opérateur qui se retire Admin est prévenu qu’il garde sa supervision', async ({ page }) => {
 	await ouvrir(page, OPERATEUR);
 	await rangee(page, 'Moi').getByRole('button', { name: '– Admin' }).click();
 	const boite = page.getByRole('dialog');

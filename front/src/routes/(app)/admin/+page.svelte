@@ -1,7 +1,6 @@
 <script lang="ts">
 	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import { messageErreur } from '$lib/erreurs';
-	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import {
 		admin as adminApi,
@@ -170,9 +169,9 @@
 	}
 
 	//  Montage
-	onMount(async () => {
-		//  L'opérateur qui n'est pas administrateur ne lit rien de la résidence
-		//  (#2029) : ses deux onglets chargent ce qu'ils montrent.
+	//  Après l'authentification : l'opérateur qui n'est pas administrateur ne lit
+	//  rien de la résidence (#2029), ses deux onglets chargent ce qu'ils montrent.
+	quandAuthResolue(async () => {
 		if (!get(isAdmin)) return marquerDonneesAffichees();
 		//  🔴 Les files de « À traiter » partent D'ABORD, sans attendre le
 		//  paramétrage (#1842). Elles venaient après trois lectures en série

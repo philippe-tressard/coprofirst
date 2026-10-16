@@ -3,7 +3,7 @@
 	import {
 		currentUser,
 		isCS,
-		ouvreAdministration,
+		isAdminOuOperateur,
 		hasResidentRole,
 		isAdminOnly,
 	} from '$lib/stores/auth';
@@ -137,7 +137,7 @@
 					($currentUser?.delegations_aidant?.length ?? 0) > 0 ||
 					statut === 'aidant'
 				);
-			if (href === '/admin') return $ouvreAdministration;
+			if (href === '/admin') return $isAdminOuOperateur;
 			return $hasResidentRole;
 		})
 		.map((href) => navItem(href, $configStore));

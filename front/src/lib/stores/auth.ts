@@ -54,7 +54,7 @@ export const isOperateur = derived(currentUser, ($u) => aRole($u, 'operateur'));
  * ne l'est pas — réduite alors à sa supervision (`$lib/onglets-ouverts`, #2029).
  * Le menu et la garde d'`admin/+layout.svelte` posent cette question-ci.
  */
-export const ouvreAdministration = derived(currentUser, ($u) => aRole($u, 'admin', 'operateur'));
+export const isAdminOuOperateur = derived(currentUser, ($u) => aRole($u, 'admin', 'operateur'));
 
 //  🔴 Ces trois dérivées recomposaient la cascade `roles ?? [role]` à la main,
 //  DEUX LIGNES sous `aRole` qui la porte (#1041). Le fichier qui définit la règle
