@@ -21,13 +21,22 @@ from functools import partial
 
 from sqlmodel import select
 
-from app.models.core import STATUTS_TICKET_ACTIFS, Ticket, TicketEvolution, Utilisateur
+from app.models.core import (
+    STATUTS_TICKET_ACTIFS,
+    STATUTS_TICKET_CLOS,
+    Ticket,
+    TicketEvolution,
+    Utilisateur,
+)
+from app.models.synthese import VALIDEE
 from app.utils.nature_affaire import ACTUALITE
 from app.utils.dates_fr import duree_jhm
 from app.utils.affaire_absorbee import pas_absorbee
 from app.utils.archivage import est_archivable, seuil_archivage_jours
 from app.utils.photos import parse_photos
 from app.utils.recuperer import precharger
+from app.utils.synthese_affaire.lecture import lisible, syntheses_courantes
+from app.utils.valeurs import valeur
 from app.utils.visibility import ticket_visible
 
 from app.utils.copie_auteur import proprietaire
@@ -38,6 +47,7 @@ from .commun import (
     pastilles_affaire,
     perimetres_de,
     pieces_de_evolution,
+    repartir_pieces,
     strip_html,
 )
 from .schemas import FluxItem
@@ -93,6 +103,33 @@ def _meta_ticket(ctx: ContexteFlux, tk) -> dict:
         "auteur": proprietaire(ctx.session, tk)[0],
         #  La ligne de pastilles de la carte d'affaire, rendue telle quelle (27/09).
         "affaire": pastilles_affaire(tk),
+        #  🔴 La DEMANDE, rubrique à part de la carte dépliée (maquette A,
+        #  15/10/2026) : sa date et SES pièces — jamais celles de la dernière
+        #  suite. Son texte reste `description`, que la carte pliée lit aussi.
+        "demande": {
+            "le": tk.cree_le.isoformat(),
+            **repartir_pieces(tk.photos_urls, tk.fichiers_urls),
+        },
+    }
+
+
+def _derniere_suite(ctx: ContexteFlux, evol) -> dict:
+    """La rubrique « Dernière mise à jour » : texte, auteur et pièces de L'ENTRÉE.
+
+    Une seule écriture pour la carte de mise à jour ET celle de résolution :
+    la seconde n'envoyait pas le texte de clôture, et la carte dépliée montrait
+    ses photos sous le texte de la demande (TK-109008, 15/10/2026).
+
+    `evol_pieces` sans repli sur l'affaire — la demande porte les siennes ;
+    `photos_urls`, avec repli, reste la vignette de la carte pliée.
+    """
+    return {
+        #  ⚠️ 400 et non 300 (#531). La carte PLIÉE affiche cet extrait sous le
+        #  libellé, sur trois lignes au plus (`clamp-3`). 300 caractères en
+        #  remplissent 2,3 : la coupure venait de la longueur, pas du gabarit.
+        "evol_contenu": strip_html(evol.contenu, 400) if evol.contenu else None,
+        "evol_auteur": auteur_nom(ctx.session, evol.auteur_id),
+        "evol_pieces": repartir_pieces(evol.fichiers_urls),
     }
 
 
@@ -124,14 +161,7 @@ def _carte_mise_a_jour(ctx: ContexteFlux, evol, tk, *, ident, detail, icon, stat
             **_meta_ticket(ctx, tk),
             "statut": statut,
             **pieces_de_evolution(evol, tk),
-            #  ⚠️ 400 et non 300 (#531). La carte PLIÉE affiche désormais cet
-            #  extrait sous le libellé, sur trois lignes au plus (`clamp-3`).
-            #  300 caractères en remplissent 2,3 : la coupure venait de la
-            #  longueur, pas du gabarit — l'extrait s'arrêtait avant que les
-            #  trois lignes soient atteintes, et le réglage visible n'était
-            #  donc pas celui qui décidait.
-            "evol_contenu": strip_html(evol.contenu, 400) if evol.contenu else None,
-            "evol_auteur": auteur_nom(ctx.session, evol.auteur_id),
+            **_derniere_suite(ctx, evol),
         },
     )
 
@@ -193,6 +223,7 @@ def _carte_resolue(ctx: ContexteFlux, evol, tk) -> FluxItem:
             #  Même règle que les trois autres cartes de ticket : une photo
             #  jointe au commentaire de clôture doit se voir.
             **pieces_de_evolution(evol, tk),
+            **_derniere_suite(ctx, evol),
         },
     )
 
@@ -313,4 +344,32 @@ def collecter(ctx: ContexteFlux) -> list[FluxItem]:
             for i in (tk.auteur_id, tk.saisi_pour_user_id, evol.auteur_id if evol else None)
         },
     )
-    return [fabrique(ctx, evol, tk) for _, _, evol, tk, fabrique in retenues.values()]
+    cartes = [fabrique(ctx, evol, tk) for _, _, evol, tk, fabrique in retenues.values()]
+    _joindre_syntheses(ctx, cartes, {tid: c[3] for tid, c in retenues.items()})
+    return cartes
+
+
+def _joindre_syntheses(ctx: ContexteFlux, cartes: list[FluxItem], tickets: dict) -> None:
+    """La synthèse d'une affaire CLOSE, rubrique de sa carte dépliée (maquette A).
+
+    🔴 Elle enrichit la carte, elle ne la date pas (arbitré le 15/10/2026) : la
+    validation arrive un ou deux jours après la clôture, et une affaire qui
+    remonterait en tête du fil se lirait comme une nouvelle panne. La Suite
+    `synthese` n'est donc pas une candidate de `collecter` — seul son texte
+    rejoint la carte déjà retenue.
+
+    La règle de lecture est celle de la fiche (`lecture.lisible`) : validée,
+    qui lit l'affaire ; brouillon, le conseil seul. Une Suite vide (assistant
+    coupé, plafond atteint) n'a rien à dire au fil.
+    """
+    closes = {tid: tk for tid, tk in tickets.items() if valeur(tk.statut) in STATUTS_TICKET_CLOS}
+    syntheses = syntheses_courantes(ctx.session, closes)
+    for carte in cartes:
+        tid = carte.meta.get("ticket_id") if carte.meta else None
+        synthese = syntheses.get(tid)
+        if not synthese or not synthese.synthese or not lisible(synthese, closes[tid], ctx.user):
+            continue
+        carte.meta["synthese"] = {
+            "texte": strip_html(synthese.synthese, 400),
+            "validee": synthese.statut == VALIDEE,
+        }

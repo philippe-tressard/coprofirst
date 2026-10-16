@@ -170,12 +170,21 @@ def pieces_de_evolution(evol, porteur) -> dict:
     vignette, les secondes la liste dépliée. Le tri passe par `est_image`, la
     même règle qu'`estImage` côté front.
     """
-    urls = parse_photos(evol.fichiers_urls)
-    if not urls:
-        return {
-            "photos_urls": parse_photos(porteur.photos_urls),
-            "fichiers_urls": parse_photos(porteur.fichiers_urls),
-        }
+    propres = repartir_pieces(evol.fichiers_urls)
+    if propres["photos_urls"] or propres["fichiers_urls"]:
+        return propres
+    return repartir_pieces(porteur.photos_urls, porteur.fichiers_urls)
+
+
+def repartir_pieces(*colonnes) -> dict:
+    """Les pièces de ces colonnes (JSON en base), réparties en photos et documents.
+
+    Le SEUL tri du fil — `pieces_de_evolution` s'en sert, et chaque rubrique d'une
+    affaire dépliée (la dernière suite, la demande) porte les SIENNES par lui
+    (15/10/2026) : la carte montrait les photos de la clôture sous le texte de la
+    demande, sans rien qui dise d'où elles venaient.
+    """
+    urls = [u for colonne in colonnes for u in parse_photos(colonne)]
     return {
         "photos_urls": [u for u in urls if est_image(u)],
         "fichiers_urls": [u for u in urls if not est_image(u)],

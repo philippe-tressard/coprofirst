@@ -51,14 +51,29 @@ def lisible(synthese: SyntheseAffaire, ticket: Ticket, user: Utilisateur) -> boo
 
 def synthese_courante(session: Session, ticket_id: int) -> Optional[SyntheseAffaire]:
     """La synthèse affichée de l'affaire — la plus récente, brouillon ou validée."""
-    return session.exec(
+    return syntheses_courantes(session, [ticket_id]).get(ticket_id)
+
+
+def syntheses_courantes(session: Session, ticket_ids: Iterable[int]) -> dict[int, SyntheseAffaire]:
+    """La synthèse affichée de chacune de ces affaires, lue en UNE requête.
+
+    Le fil d'activité la demande pour toutes ses affaires closes à la fois
+    (15/10/2026) : une lecture par carte reviendrait au coût que #1838 a retiré.
+    """
+    ids = list(ticket_ids)
+    if not ids:
+        return {}
+    courantes: dict[int, SyntheseAffaire] = {}
+    for synthese in session.exec(
         select(SyntheseAffaire)
         .where(
-            SyntheseAffaire.ticket_id == ticket_id,
+            col(SyntheseAffaire.ticket_id).in_(ids),
             col(SyntheseAffaire.statut).in_(STATUTS_AFFICHES),
         )
         .order_by(col(SyntheseAffaire.cree_le).desc())
-    ).first()
+    ).all():
+        courantes.setdefault(synthese.ticket_id, synthese)
+    return courantes
 
 
 def evolutions_lisibles(
