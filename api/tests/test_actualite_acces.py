@@ -70,8 +70,8 @@ def scene():
             session.rollback()
             #  L'affiche survit à son auteur depuis #1821 (contenu gardé, auteur
             #  délié) et `ticket_id` n'est pas une clé étrangère : elle se purge
-            #  donc nommément, sinon SQLite redonne l'identifiant de l'affaire au
-            #  test suivant, qui trouve « son » affiche déjà posée.
+            #  donc nommément, sinon un test suivant qui reçoit le même
+            #  identifiant d'affaire trouve « son » affiche déjà posée.
             for affiche in session.exec(
                 select(AnnonceHall).where(AnnonceHall.ticket_id == actu.id)
             ).all():

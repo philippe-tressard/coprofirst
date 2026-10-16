@@ -14,7 +14,6 @@ Ce que ce fichier tient :
 
 from __future__ import annotations
 
-import json
 import re
 
 import pytest
@@ -32,7 +31,6 @@ from app.utils.consignes_arrivant import (
 )
 from app.utils.fiche_arrivant import generer_fiche_arrivant
 from tests.aides_http import base_http, client_http
-from tests.aides_migrations import charger_migration
 from tests.aides_sources import modules_app
 
 
@@ -71,9 +69,6 @@ def test_temoin_le_balayage_voit_ce_qu_il_refuse():
     #  Si le motif ne trouvait rien ici, le test précédent serait vert sans rien mesurer.
     assert len(_fautes({"témoin": "Demander au syndic Cabinet Témoin. Rue Maurice Berteaux"})) == 2
     assert _fautes({"témoin": "Demander au syndic {syndic} de changer les noms."}) == []
-    #  Et la migration, qui porte le texte de la résidence, porte bien ses rues.
-    migration = charger_migration("*_consignes_arrivant_en_base")
-    assert all(r in migration.VALEUR for r in RUES_INSTANCE)
 
 
 # ── 2 et 3. Le rendu ────────────────────────────────────────────────────────
@@ -166,14 +161,3 @@ def test_une_saisie_hors_des_bornes_est_refusee(moteur, corps):
 
 
 # ── 6. La migration ─────────────────────────────────────────────────────────
-
-
-def test_la_migration_recopie_la_residence_sous_la_nouvelle_forme():
-    migration = charger_migration("*_consignes_arrivant_en_base")
-    consignes = json.loads(migration.VALEUR)
-    texte = " ".join(c["contenu"] for c in consignes)
-    assert MARQUEUR_SYNDIC in texte
-    assert "<strong>" not in texte and "**" in texte
-    #  La forme se lit par le schéma de l'écran : une saisie de la migration que
-    #  l'écran ne saurait pas relire serait une fiche qu'on ne peut plus corriger.
-    assert [Consigne(**c) for c in consignes]

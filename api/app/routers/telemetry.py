@@ -46,8 +46,8 @@ def users_active(
     _: Utilisateur = Depends(require_admin),
 ):
     """Top utilisateurs actifs sur les 30 derniers jours."""
-    #  Une DATE, comparée à `cree_le` — le texte « AAAA-MM-JJ » n'était juste que
-    #  sous SQLite, qui compare des chaînes (#1747).
+    #  Une DATE, comparée à `cree_le` — jamais le texte « AAAA-MM-JJ », que le
+    #  serveur refuse de comparer à un horodatage (#1747).
     thirty_days_ago = datetime.combine(horloge.aujourd_hui() - timedelta(days=30), time.min)
     rows = top_utilisateurs(session, thirty_days_ago)
     fiches = fiches_utilisateurs(session, rows)

@@ -4,8 +4,8 @@
 en production : `ticket_read` relisait, POUR CHAQUE affaire, son auteur, son
 bâtiment, son prestataire, son contrat, ses relances et — faute de pièce
 propre — tout son fil ; le fil construisait une carte par évolution avant d'en
-garder une par affaire. Sous PostgreSQL, chaque requête coûte ~50 ms de plus
-qu'en SQLite : N affaires, N fois ce prix.
+garder une par affaire. Chaque requête coûte un aller-retour au serveur, ~50 ms
+sur le Raspberry Pi : N affaires, N fois ce prix.
 
 ## Ce que ces tests tiennent
 

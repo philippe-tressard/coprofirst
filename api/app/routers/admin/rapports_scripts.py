@@ -25,7 +25,6 @@ from sqlmodel import Session, select
 from app.utils.declenchement import normaliser
 from app.auth.cle_maintenance import exiger_cle_maintenance
 from app.database import get_session
-from app import contexte
 from app.models.core import HistoriqueEmail, HistoriqueMaintenance
 from app.utils.sante_taches import STATUT_EN_COURS
 
@@ -242,10 +241,8 @@ def maintenance_purges(
 ):
     """Les purges hebdomadaires, exécutées DANS ce process (#1232).
 
-    `maintenance.sh` les faisait par `docker exec hostachy_api python`, API en
-    marche : un process tiers qui ouvre `app.db`, la règle d'or enfreinte chaque
-    dimanche. Il les demande désormais ici, et reçoit les comptes pour son
-    rapport. Ne rend que des nombres et des messages d'erreur techniques —
+    `maintenance.sh` les demande ici chaque dimanche, et reçoit les comptes pour
+    son rapport. Ne rend que des nombres et des messages d'erreur techniques —
     aucune donnée de copropriétaire, la portée de ce canal.
     """
     exiger_cle_maintenance(x_maintenance_key)
@@ -302,33 +299,3 @@ def emails_echecs_recents(
         "dernier": max((ligne.cree_le for ligne in lignes), default=None),
         "genere_le": horloge.maintenant(),
     }
-
-
-@router.get("/maintenance/cles-etrangeres")
-def maintenance_cles_etrangeres(
-    x_maintenance_key: Optional[str] = Header(default=None, alias="x-maintenance-key"),
-):
-    """Les lignes orphelines de la base — porte des SCRIPTS d'exploitation (#546).
-
-    Même mesure que `GET /admin/db/cles-etrangeres`, autre authentification :
-    la clé partagée que les crons lisent dans `/opt/5hostachy/.env`.
-
-    ⚠️ **Elle reste dans la borne de ce canal** — « aucune donnée de
-    copropriétaire » : noms de tables, noms de colonnes, comptes. Le `rowid`
-    que rend `PRAGMA foreign_key_check` désignerait une ligne précise ; il
-    n'est pas exposé (cf. `utils/diagnostic_cles.py`).
-
-    🔴 Pourquoi cette seconde porte plutôt qu'un « admin OU clé » sur une seule
-    route : une dépendance optionnelle et une auth conditionnelle sont la forme
-    exacte dans laquelle un contournement se glisse sans se voir. Deux portes
-    explicites, chacune avec sa serrure, et **une seule** mesure derrière.
-
-    Elle existe pour que la surveillance soit CONTINUE : des orphelins peuvent
-    réapparaître tant que les 21 endpoints DELETE non testés n'ont pas été
-    éprouvés. Ce qui est critique en continu ne se vérifie pas qu'en MEP.
-    """
-    exiger_cle_maintenance(x_maintenance_key)
-
-    from app.utils.diagnostic_cles import compter_orphelins
-
-    return compter_orphelins(contexte.moteur())

@@ -2,12 +2,10 @@
 
 ## Pourquoi
 
-Une base-fichier répond toujours : le fichier s'ouvre ou se crée. Une base
-SERVEUR (PostgreSQL, conteneur voisin) peut démarrer après l'API. Sans attente,
+Le serveur de base (conteneur voisin) peut démarrer après l'API. Sans attente,
 `utils/schema_initial` la trouvait illisible (« inconnu », il ne pose rien),
-puis `alembic upgrade head` l'atteignait une seconde plus tard — VIDE — et
-rejouait l'historique écrit pour SQLite : la migration échoue à mi-chemin, et
-le redémarrage suivant trouve des tables, donc une base « existante » cassée.
+puis `alembic upgrade head` l'atteignait une seconde plus tard — VIDE — sans
+qu'aucun schéma initial y soit posé : une base « existante » cassée.
 
 ## Ce que fait `attendre`
 
@@ -15,8 +13,7 @@ Il essaie de se connecter jusqu'à ce que la base réponde, ou jusqu'au délai.
 Délai dépassé : code 1, et `start.sh` (`set -e`) s'arrête — Docker relance le
 conteneur. On ne migre JAMAIS une base qu'on n'a pas pu lire.
 
-Lancé par le seul processus du conteneur, avant uvicorn : ce n'est pas
-l'ouverture par un tiers que la règle d'or interdit. 🔒 `tests/test_attendre_base.py`.
+Lancé par le seul processus du conteneur, avant uvicorn. 🔒 `tests/test_attendre_base.py`.
 """
 
 from __future__ import annotations

@@ -236,9 +236,9 @@ def verser(
     avant = etat_avant(session, ticket, cle if creer else None)
     #  🔴 DEUX TEMPS (#1469, 30/09/2026) : lire et mettre en forme d'abord, écrire
     #  ensuite. Chaque appel à l'assistant écrit son journal dans SA transaction
-    #  (`llm_journal.journaliser`) ; une écriture déjà en cours ici tenait le
-    #  verrou de SQLite, et le journal tombait en « database is locked » — la
-    #  consommation n'était pas comptée, et chaque appel attendait le délai.
+    #  (`llm_journal.journaliser`) ; une écriture déjà en cours ici tiendrait ses
+    #  verrous pendant tout l'appel à l'assistant, et le journal attendrait
+    #  derrière elle.
     nouveaux, deja = _a_verser(session, ticket, messages)
     prets = [(m, mettre_en_forme(session, m.texte, m.brut)) for m in nouveaux]
     if creee:

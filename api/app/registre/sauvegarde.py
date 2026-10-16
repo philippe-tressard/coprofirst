@@ -80,8 +80,9 @@ def sauvegarder() -> Path:
     nom = nom_archive(horloge.maintenant(), PREFIXE)
     with tempfile.TemporaryDirectory() as travail:
         export = Path(travail) / nom
-        exporter(base.moteur(), export, metadata=metadata)
-        verifier_archive(export, Path(travail), metadata=metadata)
+        moteur = base.moteur()
+        exporter(moteur, export, metadata=metadata)
+        verifier_archive(export, moteur.url, metadata=metadata)
         archive = destination / nom
         shutil.move(export, archive)
     garder_les_dernieres(

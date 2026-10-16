@@ -265,7 +265,7 @@ def test_une_societe_portant_le_nom_du_coproprietaire_est_appariee():
 #
 #  Il cherchait ici la chaîne « session.add(tc) » dans le fichier source, en se
 #  disant contraint : « la logique est trop couplée à la base pour être exercée
-#  ici ». Elle ne l'était pas — une base SQLite en mémoire suffit. Le contrôle
+#  ici ». Elle ne l'était pas — une base de test jetable suffit. Le contrôle
 #  statique a d'ailleurs cassé au premier renommage de variable, sans que rien
 #  ne soit cassé dans le produit : il lisait le TEXTE d'une fonction, pas son
 #  comportement (`standards/04` §14).

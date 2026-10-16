@@ -34,8 +34,8 @@ class TelemetryEvent(SQLModel, table=True):
     ⚠️ `user_id` a été retirée par la 0246 (#1545) puis RÉTABLIE par la 0247 le
     même jour : son retrait supprimait les statistiques par utilisateur sans
     l'accord de l'utilisateur du produit. Elle revient en colonne simple, SANS
-    clé étrangère — SQLite refuse d'en ajouter une à une table existante, et
-    déclarer `foreign_key` ici ferait diverger base neuve et base migrée.
+    clé étrangère, comme en production — déclarer `foreign_key` ici ferait
+    diverger une base neuve de celle-là.
     """
 
     __tablename__ = "telemetry_event"

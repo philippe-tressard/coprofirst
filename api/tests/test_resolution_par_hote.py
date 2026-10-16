@@ -59,7 +59,7 @@ def test_avec_deux_coproprietes_une_ip_ne_designe_plus_personne(origine, monkeyp
     seule = contexte.courante()
     autre = contexte.Copropriete(
         identifiant="voisine",
-        url_base="sqlite://",
+        url_base="postgresql+psycopg://voisine@127.0.0.1:1/voisine",
         racine_fichiers=seule.racine_fichiers,
         secret=seule.secret,
         expediteur=seule.expediteur,
@@ -99,7 +99,7 @@ def test_la_copropriete_resolue_est_celle_de_la_requete(origine, monkeypatch):
     seule = contexte.courante()
     autre = contexte.Copropriete(
         identifiant="voisine",
-        url_base="sqlite://",
+        url_base="postgresql+psycopg://voisine@127.0.0.1:1/voisine",
         racine_fichiers=seule.racine_fichiers,
         secret=seule.secret,
         expediteur=seule.expediteur,

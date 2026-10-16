@@ -15,20 +15,17 @@
 #    `.env.example`. Un fichier de moins d'une minute est ignoré : `env_role_appliquer`
 #    écrit `.env.tmp.<pid>` puis le renomme, et ce temporaire ne dure qu'un instant.
 #
-#  C34 (#1592) — des bases autres que `app.db{,-wal,-shm}` dans le volume de données.
-#    Cinq copies forensiques des incidents de juin 2026 (`app.db.corrupt`,
-#    `app_recovered.db`…) — ~4 Mo de données personnelles, hors de toute règle de
-#    rétention, répliquées chaque nuit sur l'autre nœud, et qu'une restauration
-#    manuelle pourrait prendre pour la bonne.
+#  C34 (#1592) — des fichiers de base (`*.db*`) dans le volume de données.
+#    La base de l'application vit dans PostgreSQL (volume `pg_data`) ; le volume
+#    de données de l'API ne porte que l'identité de l'installation et des caches.
+#    Tout fichier `*.db*` y est une copie de données personnelles hors de toute
+#    règle de rétention, qu'une restauration manuelle pourrait prendre pour la
+#    bonne.
 #
-#  🔴 RÈGLE D'OR : C34 ne lit qu'un RÉPERTOIRE. Il ne l'ouvre pas, ne le stat pas
-#  fichier par fichier, n'ouvre jamais `app.db` : un conteneur jetable, volume
-#  monté en LECTURE SEULE, sans réseau, fait un `ls -1A` — le geste de
-#  `precheck-mep.sh` (point 4, « SANS ouvrir app.db »). Le volume doit exister
-#  avant (`docker volume inspect`) : monter un volume absent le CRÉERAIT, vide, et
-#  une liste vide dirait « rien de parasite » sur une mesure qui n'en est pas une.
-#  Et le listage doit contenir `app.db` : sinon on a lu le mauvais volume, et la
-#  mesure est dite impossible.
+#  C34 ne lit qu'un RÉPERTOIRE : un conteneur jetable, volume monté en LECTURE
+#  SEULE, sans réseau, fait un `ls -1A`. Le volume doit exister avant (`docker
+#  volume inspect`) : monter un volume absent le CRÉERAIT, vide, et une liste
+#  vide dirait « rien de parasite » sur une mesure qui n'en est pas une.
 #
 #  WARN au pire, par nœud, qui le nomme. Aucun nettoyage ici : ce module MESURE.
 #
@@ -42,13 +39,11 @@
 #: Les seuls fichiers `.env*` admis à la racine du dépôt déployé. UNE liste : la
 #: collecte en tire ses `! -name`, la décision la relit.
 ENV_ADMIS="${ENV_ADMIS:-.env .env.example}"
-#: Les seuls fichiers `*.db*` admis dans le volume de données — ceux d'une base
-#: SQLite en WAL (la règle d'or de CLAUDE.md : la base, son journal, son index).
-DB_ADMIS="${DB_ADMIS:-app.db app.db-wal app.db-shm}"
-#: Le volume de données de la pile (écrit aussi dans `bascule.sh`, `maintenance.sh`
-#: et `precheck-mep.sh` : l'autotest vérifie que `bascule.sh` le désigne toujours
-#: de la même façon) et l'image du conteneur jetable (celle du point 4 du pré-check,
-#: déjà présente sur les nœuds — `--pull=never` : jamais de téléchargement ici).
+#: Le volume de données de l'API (`app_data` du compose, projet `5hostachy` :
+#: l'autotest le vérifie) et l'image du conteneur jetable — l'image de base de
+#: l'API (`FROM` de `api/Dockerfile`, l'autotest le vérifie), présente sur les
+#: deux nœuds et re-tirée chaque semaine par la maintenance — `--pull=never` :
+#: jamais de téléchargement ici.
 VOLUME_DONNEES="${VOLUME_DONNEES:-5hostachy_app_data}"
 IMAGE_LISTAGE="${IMAGE_LISTAGE:-python:3.12-slim}"
 #: Un fichier plus récent que cela (minutes) n'est pas encore une « copie laissée ».
@@ -62,8 +57,8 @@ ENV_AGE_MIN_MIN=${ENV_AGE_MIN_MIN:-1}
 #     manque. Le marqueur « ok: » distingue « aucune copie » de « mesure
 #     impossible » — cas zéro ;
 #   - db_volume : « ok: » puis les noms contenant « .db » du volume ; VIDE si
-#     docker manque, si le volume n existe pas, si le conteneur échoue (délai de
-#     20 s) ou si le listage ne contient pas app.db.
+#     docker manque, si le volume n existe pas ou si le conteneur échoue (délai
+#     de 20 s).
 collecte_env_copies() { # $1 = la racine du dépôt déployé
     local n excl=''
     for n in $ENV_ADMIS; do excl="$excl ! -name $n"; done
@@ -74,7 +69,7 @@ else\necho "env_copies="\nfi\n' \
 
 collecte_db_volume() {
     printf '%s' '
-if command -v docker >/dev/null 2>&1 && docker volume inspect '"$VOLUME_DONNEES"' >/dev/null 2>&1 && _l=$(timeout 20 docker run --rm --network none --pull=never -v '"$VOLUME_DONNEES"':/data:ro '"$IMAGE_LISTAGE"' ls -1A /data 2>/dev/null) && printf "%s\n" "$_l" | grep -qx "app.db"; then
+if command -v docker >/dev/null 2>&1 && docker volume inspect '"$VOLUME_DONNEES"' >/dev/null 2>&1 && _l=$(timeout 20 docker run --rm --network none --pull=never -v '"$VOLUME_DONNEES"':/data:ro '"$IMAGE_LISTAGE"' ls -1A /data 2>/dev/null); then
 echo "db_volume=ok:$(printf "%s\n" "$_l" | grep -F .db | paste -sd, -)"
 else
 echo "db_volume="
@@ -127,17 +122,8 @@ env_copies_decrire() {
     printf '%s' "$out"
 }
 
-#  $1 le relevé C34 → les fichiers « *.db* » qui ne sont pas dans DB_ADMIS, « a,b »
-db_parasites() {
-    local v e out=''
-    v=$(fp_valeur "${1:-}") || return 1
-    local IFS=,
-    for e in $v; do
-        case " $DB_ADMIS " in *" $e "*) continue ;; esac
-        out="$out${out:+,}$e"
-    done
-    printf '%s' "$out"
-}
+#  $1 le relevé C34 → les fichiers « *.db* » du volume, « a,b » (tous parasites)
+db_parasites() { fp_valeur "${1:-}"; }
 
 #  → OK | PARASITES | INCONNU
 verdict_db_volume() {
@@ -160,9 +146,9 @@ fichiers_parasites_verdicts() {
         esac
         # ── C34 (#1592) ──
         case "$(verdict_db_volume "$rdb")" in
-            OK)         ok   "Volume de données de $n : seuls ${DB_ADMIS// /, } y figurent" ;;
+            OK)         ok   "Volume de données de $n : aucun fichier de base" ;;
             PARASITES)  l=$(db_parasites "$rdb")
-                        warn "Fichier(s) de base hors app.db dans le volume de données de $n : ${l//,/, } — des copies d'incident (données personnelles, hors de toute rétention) répliquées à chaque bascule, qu'une restauration manuelle pourrait prendre pour la bonne : les retirer API ARRÊTÉE, le standby d'abord — jamais à chaud, jamais en les ouvrant (règle d'or, #1592)" ;;
+                        warn "Fichier(s) de base dans le volume de données de $n : ${l//,/, } — des copies de données personnelles, hors de toute rétention, qu'une restauration manuelle pourrait prendre pour la bonne : les retirer après vérification (aucun service ne les ouvre, #1592)" ;;
             *)          warn "Fichiers de base du volume de données de $n INCONNUS (docker, volume ou listage indisponible : '${rdb:-vide}') — ni vert ni rouge" ;;
         esac
     done
@@ -218,60 +204,60 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     rm -rf "$tmp"
 
     echo "== C34 : la décision =="
-    t "rpi1 le 02/10 : cinq copies forensiques + data.db" PARASITES verdict_db_volume \
-      "ok:app.db,app.db-shm,app.db-wal,app.db.before_restore,app.db.corrupt,app.db.corrupt_20260617,app.db.malformed_20260617,app_recovered.db,data.db"
-    t "la liste nomme chaque fichier, dans l'ordre" "app.db.before_restore,app_recovered.db,data.db" \
-      db_parasites "ok:app.db,app.db-shm,app.db-wal,app.db.before_restore,app_recovered.db,data.db"
-    t "la base, son WAL et son SHM seuls → OK"          OK       verdict_db_volume "ok:app.db,app.db-shm,app.db-wal"
-    t "le WAL seul (API récemment arrêtée) → OK"        OK       verdict_db_volume "ok:app.db,app.db-wal"
-    t "app.db.corrupt n'est PAS app.db"                 PARASITES verdict_db_volume "ok:app.db,app.db.corrupt"
+    t "des copies d'incident"                           PARASITES verdict_db_volume "ok:copie.db,copie.db.corrupt,recuperee.db"
+    t "la liste nomme chaque fichier, dans l'ordre" "copie.db.corrupt,recuperee.db,data.db" \
+      db_parasites "ok:copie.db.corrupt,recuperee.db,data.db"
+    t "un seul fichier de base suffit"                  PARASITES verdict_db_volume "ok:ancienne.db"
+    t "aucun fichier de base (mesuré) → OK"             OK       verdict_db_volume "ok:"
     t "relevé vide (docker, volume ou listage) → INCONNU" INCONNU verdict_db_volume ""
-    t "sans marqueur « ok: » → INCONNU, jamais OK"      INCONNU  verdict_db_volume "app.db"
+    t "sans marqueur « ok: » → INCONNU, jamais OK"      INCONNU  verdict_db_volume "copie.db"
 
     echo "== C34 : la collecte, exécutée sur un docker simulé =="
     docker() { case "$1" in
         volume) [ "$2" = inspect ] && [ "${VOL_OK:-oui}" = oui ] ;;
-        run)    echo "docker run $*" >> "$TRACE"; [ "${RUN_OK:-oui}" = oui ] && printf '%s\n' app.db app.db-shm app.db-wal app.db.corrupt data.db uploads ;;
+        run)    echo "docker run $*" >> "$TRACE"; [ "${RUN_OK:-oui}" = oui ] && printf '%s\n' installation copie.db copie.db.corrupt data.db cache-manuel-pdf ;;
     esac; }
     timeout() { shift; "$@"; }
     TRACE=$(mktemp)
     db_champ() { bash -c "$(declare -f docker timeout); TRACE=$TRACE VOL_OK=${VOL_OK:-oui} RUN_OK=${RUN_OK:-oui}; export TRACE VOL_OK RUN_OK; $(collecte_db_volume)" | sed -n 's/^db_volume=//p'; }
-    t "collecte : seuls les noms en « .db » sont relevés" "ok:app.db,app.db-shm,app.db-wal,app.db.corrupt,data.db" db_champ
+    t "collecte : seuls les noms en « .db » sont relevés" "ok:copie.db,copie.db.corrupt,data.db" db_champ
     t "collecte : le geste est UN listage, sans réseau, en lecture seule, sans téléchargement" 1 \
       eval 'grep -c -- "--network none --pull=never -v 5hostachy_app_data:/data:ro python:3.12-slim ls -1A /data" "$TRACE"'
-    t "collecte : jamais sqlite3 ni un chemin vers app.db" 0 eval 'grep -cE "sqlite|PRAGMA|/data/app" "$TRACE"'
+    t "collecte : aucun fichier ouvert, un listage seulement" 0 eval 'grep -cE "cat |head |/data/[^ ]" "$TRACE"'
     : > "$TRACE"; VOL_OK=non
     t "collecte : volume absent → VIDE, et AUCUN conteneur lancé (il créerait le volume)" "|0" \
       eval 'echo "$(db_champ)|$(grep -c "docker run" "$TRACE")"'
     VOL_OK=oui RUN_OK=non
     t "collecte : le conteneur échoue → VIDE (INCONNU)" "" db_champ
     unset VOL_OK RUN_OK
-    docker() { case "$1" in volume) return 0 ;; run) printf '%s\n' uploads other.txt ;; esac; }
-    t "collecte : listage sans app.db (mauvais volume) → VIDE, jamais « ok: »" "" db_champ
+    docker() { case "$1" in volume) return 0 ;; run) printf '%s\n' installation cache-manuel-pdf ;; esac; }
+    t "collecte : volume sans fichier de base → « ok: » vide (mesuré)" "ok:" db_champ
     unset -f docker timeout
     t "collecte : sans docker → VIDE" "db_volume=" eval 'PATH=/nonexistent "$BASH" -c "$(collecte_db_volume)"'
     t "collecte : le fragment est du shell valide" oui eval 'bash -n <<<"$(collecte_db_volume)" && echo oui'
     t "collecte : aucune apostrophe dans le fragment" 0 eval 'collecte_db_volume | grep -c "$(printf "\047")"'
-    t "le volume désigné est celui de bascule.sh" 1 eval 'grep -c "docker volume inspect $VOLUME_DONNEES " "$ICI/../exploitation/bascule.sh"'
-    t "l'image du listage est celle du point 4 du pré-check" 1 eval 'grep -c "$VOLUME_DONNEES:/data:ro $IMAGE_LISTAGE" "$ICI/../poste/precheck-mep.sh"'
+    #  Les deux fichiers sont versionnés en CRLF : le retour chariot part avant
+    #  l'ancrage, sinon `$` échoue sous Linux (la CI) et passe sous Git Bash.
+    t "le volume désigné est celui de l'API dans le compose" 1 eval 'tr -d "\r" < "$ICI/../../docker-compose.yml" | grep -cE "^ +- ${VOLUME_DONNEES#5hostachy_}:/app/data$"'
+    t "l'image du listage est l'image de base de l'API" 1 eval 'tr -d "\r" < "$ICI/../../api/Dockerfile" | grep -cx "FROM $IMAGE_LISTAGE"'
     rm -f "$TRACE"
 
     echo "== les constats, sur les DEUX nœuds =="
     ok()   { echo "OK $*"; }
     warn() { echo "WARN $*"; }
     SELF=rpi1 PEER=rpi2 PEER_OK=0
-    S_env_copies="ok:" P_env_copies="ok:" S_db_volume="ok:app.db,app.db-wal" P_db_volume="ok:app.db"
+    S_env_copies="ok:" P_env_copies="ok:" S_db_volume="ok:" P_db_volume="ok:"
     sortie=$(fichiers_parasites_verdicts)
     t "deux nœuds sains → quatre OK, aucun WARN" "4|0" eval 'echo "$(grep -c "^OK" <<< "$sortie")|$(grep -c "^WARN" <<< "$sortie")"'
     #  Les faits du 02/10/2026.
     S_env_copies="ok:.env.avant-1109:600,.env.avant-120min-20260918:660" P_env_copies="ok:.env.avant-120min-20260918:600"
-    S_db_volume="ok:app.db,app.db.corrupt,app_recovered.db,data.db"
+    S_db_volume="ok:copie.db.corrupt,recuperee.db,data.db"
     sortie=$(fichiers_parasites_verdicts)
     t "faute du ticket #1609 : WARN sur rpi1 qui nomme ses deux copies et le mode ouvert" 1 \
       eval 'grep -c "^WARN Copie(s) de .env laissée(s) à la racine du dépôt déployé de rpi1 : .env.avant-1109 (mode 600), .env.avant-120min-20260918 (mode 660, lisible hors propriétaire)" <<< "$sortie"'
     t "…et un WARN distinct sur rpi2" 1 eval 'grep -c "^WARN Copie(s) de .env .* de rpi2 : .env.avant-120min-20260918 (mode 600)" <<< "$sortie"'
     t "faute du ticket #1592 : WARN sur rpi1 qui nomme les trois fichiers" 1 \
-      eval 'grep -c "^WARN Fichier(s) de base hors app.db dans le volume de données de rpi1 : app.db.corrupt, app_recovered.db, data.db" <<< "$sortie"'
+      eval 'grep -c "^WARN Fichier(s) de base dans le volume de données de rpi1 : copie.db.corrupt, recuperee.db, data.db" <<< "$sortie"'
     t "…et rpi2, dont le volume est propre, n'a aucun WARN de volume" 0 eval 'grep -c "^WARN .*volume de données de rpi2" <<< "$sortie"'
     S_env_copies="" S_db_volume=""
     sortie=$(fichiers_parasites_verdicts)

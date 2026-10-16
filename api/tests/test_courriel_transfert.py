@@ -14,7 +14,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlmodel import select
+from sqlmodel import select, text
 
 from app.models.core import Notification, StatutTicket, Utilisateur
 from app.models.courriel import FilCourriel
@@ -281,12 +281,12 @@ def test_chaque_appel_a_l_assistant_d_un_transfert_est_JOURNALISE(monde, monkeyp
     ecriture_en_cours: list[bool] = []
 
     async def faux(session, *, usage, message, **_):
-        #  La base de test est en mémoire, sur UNE connexion : le verrou ne s'y
-        #  produit pas. On vérifie donc sa cause — une écriture en attente, ou
-        #  émise et non validée (`in_transaction` du pilote sqlite3).
-        brut = session.connection().connection.dbapi_connection
+        #  Le verrou ne se produit pas dans la base de test. On vérifie donc sa
+        #  cause — une écriture en attente, ou émise et non validée (la
+        #  transaction a reçu un identifiant : elle a écrit).
+        ecrite = session.exec(text("SELECT pg_current_xact_id_if_assigned()")).one()[0]
         ecriture_en_cours.append(
-            bool(session.new or session.dirty or session.deleted or brut.in_transaction)
+            bool(session.new or session.dirty or session.deleted or ecrite is not None)
         )
         llm_journal.journaliser(
             session, usage=usage, fournisseur="essai", modele=marque, statut="succes"

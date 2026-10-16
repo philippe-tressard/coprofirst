@@ -60,7 +60,7 @@ sudo apt-get update -qq && sudo apt-get upgrade -y -qq
 sudo apt-get install -y -qq \
   curl wget git ca-certificates gnupg lsb-release \
   ufw fail2ban unattended-upgrades \
-  cron sqlite3 rsync python3
+  cron rsync python3
 
 # Docker Engine (ARM64)
 curl -fsSL https://get.docker.com | sudo sh
@@ -238,8 +238,8 @@ sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh          
 sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh --oui    # pg_basebackup, puis démarrage en réplique
 ```
 
-Le script refuse d'agir sur l'actif, sans `COMPOSE_PROFILES=postgresql` dans le
-`.env`, ou si le pair ne porte pas de primaire joignable. Il finit par
+Le script refuse d'agir sur l'actif, si le `.env` ne désigne pas PostgreSQL
+(`DATABASE_URL`), ou si le pair ne porte pas de primaire joignable. Il finit par
 « ✓ … est une réplique de …, en continu ».
 
 Les **images** des services applicatifs sont tirées par `auto-deploy.sh` (étape 11)
@@ -345,8 +345,7 @@ l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** té
    nano .env   # chaque secret depuis le gestionnaire de mots de passe — jamais d'un fichier du poste
    . scripts/lib/lib-env-role.sh && env_role_appliquer .env actif
    ```
-   `COMPOSE_PROFILES=postgresql` et une `DATABASE_URL` en `postgresql+psycopg://…` :
-   le script refuse sans eux. ⚠️ `SECRET_KEY` doit être **celle d'avant** si elle est
+   Une `DATABASE_URL` en `postgresql+psycopg://…` : le script refuse sans elle. ⚠️ `SECRET_KEY` doit être **celle d'avant** si elle est
    conservée : une nouvelle ferme toutes les sessions et invalide les liens en attente
    (voulu, mais à savoir) ; les mots de passe des comptes, eux, sont dans la base.
 3. **`.active` nomme CE nœud** : `echo rpi1 > /opt/5hostachy/.active` (son propre nom).

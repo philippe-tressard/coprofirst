@@ -1,20 +1,20 @@
 ---
 name: infra-rpi
-description: "Infrastructure HA 5Hostachy sur 2 Raspberry Pi : serveurs et rôle actif, protections SQLite, règle d'or anti-corruption DB et sa signature de diagnostic, distinction panne de chemin public / panne de nœud, crontabs, monitoring APScheduler, bridge WhatsApp, sync DB manuelle. Use when: intervenir sur un RPi, basculer, diagnostiquer un site HS ou une corruption de base, reconnecter WhatsApp, analyser un incident ou une coupure de courant."
-argument-hint: "Décrire l'intervention ou le symptôme (ex. « site HS depuis 20 min », « reconnecter le bridge WhatsApp », « disk I/O error dans les logs »)"
+description: "Infrastructure HA 5Hostachy sur 2 Raspberry Pi : serveurs et rôle actif, règle d'or des données (PostgreSQL : primaire, réplique, promotion, reconstruction), distinction panne de chemin public / panne de nœud, crontabs, monitoring APScheduler, bridge WhatsApp. Use when: intervenir sur un RPi, basculer, diagnostiquer un site HS, deux primaires ou une réplique en retard, reconnecter WhatsApp, analyser un incident ou une coupure de courant."
+argument-hint: "Décrire l'intervention ou le symptôme (ex. « site HS depuis 20 min », « reconnecter le bridge WhatsApp », « C37 en FAIL : deux primaires »)"
 ---
 
 # Infrastructure & Monitoring — 5Hostachy
 
 Instanciation 5Hostachy de `standards/06-donnees-et-integrite.md` et
-`standards/07-observabilite-et-alertes.md`. La **règle d'or anti-corruption DB**
-ci-dessous est également résumée dans `CLAUDE.md` et dans
+`standards/07-observabilite-et-alertes.md`. La **règle d'or des données**
+(PostgreSQL) est écrite dans `CLAUDE.md` et rappelée par
 `.claude/5hostachy-preflight.md` : elle ne doit jamais dépendre de ce chargement.
+La conduite à tenir est ci-dessous.
 
 > 📖 **Le générique n'est pas recopié ici** — l'ouvrir en parallèle :
-> `standards/06-donnees-et-integrite.md` §1 (règle d'or généralisée à tout état
-> multi-fichiers tenu ouvert — elle s'est reproduite sur l'authentification WhatsApp),
-> §2 (copier une base), §6 (sauvegardes : restauration testée, et **où** elles vivent)
+> `standards/06-donnees-et-integrite.md` §1 (un état multi-fichiers tenu ouvert ne
+> se copie pas à chaud — l'authentification WhatsApp), §2 (copier une base), §6 (sauvegardes : restauration testée, et **où** elles vivent)
 > · `standards/04-fiabilite-des-controles.md` §10 (deux sondes indépendantes avant
 > toute décision destructive : panne de nœud ≠ panne de chemin) ·
 > `standards/07-observabilite-et-alertes.md` §2 (un canal qui emprunte le lien en
@@ -26,52 +26,43 @@ ci-dessous est également résumée dans `CLAUDE.md` et dans
 - RPi actif : `cat /opt/5hostachy/.active` — ⚠️ ce fichier peut disparaître, le recréer si absent
 - Conteneurs uniquement sur le RPi actif — vérifier les 2 en cas de doute (`docker ps`)
 - En cas de split-brain (conteneurs sur les 2) : stopper le standby + recréer `.active`
+- `MaJ-Hostachy.sh` refuse de tourner sur le standby ; en root (`sudo bash`), il pose le verrou de bascule sur les DEUX nœuds et prend celui du déploiement (#1999)
 - En cas de site HS : SSH sur le RPi actif → `cd /opt/5hostachy && . scripts/lib/lib-env-role.sh && env_role_appliquer .env actif && docker compose up -d`
   — le `env_role_appliquer` pose `ORIGIN` public et retire `COOKIE_SECURE` ; démarrer la stack sur un nœud resté en rôle standby sert le public avec une origine locale et un cookie sans drapeau `Secure` (« gap .env du 15/07/2026 », #1077). La règle vit dans `scripts/lib/lib-env-role.sh`, jamais recopiée.
 
-## Protections DB (v2.18.10)
-- `stop_grace_period: 30s` sur le service API → Docker attend 30s avant SIGKILL
-- `PRAGMA wal_checkpoint(TRUNCATE)` dans le lifespan shutdown → WAL vidé proprement à chaque arrêt
-- `bascule.sh` phase 3 : WAL checkpoint avant rsync DB vers le peer
-- `MaJ-Hostachy.sh` : bloque si lancé sur le RPi standby ; en root (`sudo bash`), il pose le verrou de bascule sur les DEUX nœuds et prend celui du déploiement (#1999)
-- `synchronous=FULL` (v2.20.3) : chaque commit fsync'd intégralement (anti torn-write)
-- `health_check` 06:00 + chaque backup : `PRAGMA quick_check` → alerte / backup annulé si corrompu
-- `maintenance.sh` VACUUM : **API stoppée** (base au repos, 0 writer) puis `sqlite3` hôte
+## ⚠️ Règle d'or des données — PostgreSQL : primaire, réplique, promotion (DI-7b, #1781)
 
-## ⚠️ Règle d'or anti-corruption DB (v2.20.3 · durcie 17/07/2026)
-**Ne JAMAIS OUVRIR `app.db` depuis un process tiers tant que l'API tourne — même en lecture.**
-- Checkpoint / intégrité à chaud → endpoints **in-process** : `POST /admin/db/checkpoint`,
-  `GET /admin/db/integrite` (s'exécutent dans le process uvicorn = même connexion que l'app).
-- VACUUM / copie / swap de fichier → **stopper l'API d'abord** (0 writer), comme bascule phase 3.
-- ❌ `docker exec hostachy_api python3 … PRAGMA …` et `sqlite3` hôte sont **INTERDITS** tant
-  que l'API tourne. **Sans exception de lecture seule.**
+La base est un PostgreSQL par nœud, dans le conteneur `hostachy_postgres` : un
+**primaire** sur l'actif, une **réplique** en flux sur le standby. Les interdits
+— deux primaires, une base absente démarrée sur un nœud qui prend la main,
+`docker compose stop` sans liste sur le standby, `docker volume rm` du volume de la
+base — sont écrits dans `CLAUDE.md` ; voici la conduite à tenir.
 
-**Pourquoi la lecture seule n'est PAS sûre**, et la signature en termes génériques :
-`standards/06` §1 — la seule copie du mécanisme (pool sans verrou → `unlink` du WAL
-→ inodes orphelins → perte au prochain arrêt). Ici, ce qui est propre à ce
-déploiement — dans les journaux de `hostachy_api` : `disk I/O error` (SQLITE_IOERR)
-en rafales → **503** sur toute requête authentifiée, puis à l'arrêt
-`WAL checkpoint échoué au shutdown (non bloquant)` = le WAL orphelin est abandonné.
+| Question | Où, comment |
+|---|---|
+| La réplication va-t-elle bien ? | **C37** (`check-reliability`, `lib-replication.sh`) et le **point 22** du pré-check — deux primaires, réplique absente, déconnectée, en retard, rôles inversés |
+| Le rôle de la base d'un nœud ? | `docker exec hostachy_postgres psql -U coprofirst -d coprofirst -Atc "select pg_is_in_recovery()"` — `t` réplique, `f` primaire |
+| Refaire la réplique du standby | `sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh` (simulation), puis `--oui` — efface la base LOCALE et la copie du primaire (`pg_basebackup -R`) ; refuse sur l'actif, sans primaire joignable |
+| Changer d'actif | la bascule promeut la réplique du pair (phases 3-4), le failover et `boot-role-guard` aussi ; l'ancien primaire est reconstruit en réplique — tout passe par `lib-promotion.sh` |
+| Le failover (#1997, #2000) | `lib-failover.sh` : s'abstient tant que l'actif **se redéploie** (son verrou d'auto-deploy, borné à 15 min) ; DÉCIDE de la base locale avant tout geste (illisible ou absente : l'ancien actif n'est pas touché) ; ISOLE l'ancien actif en un appel, sous son verrou de déploiement (attente 5 min), `.active` réécrit avant l'arrêt de l'application, de la base et du tunnel ; renonce si l'actif sert en LAN sans pouvoir être isolé (deux primaires sinon) ; PUIS promeut. Le courriel nomme `reconstruire-replique.sh` sur l'ancien actif |
+| L'ancien actif après un failover | sa base est ARRÊTÉE : `boot-role-guard` la reconstruit à son redémarrage (`decider_base_au_retrait`, primaire OU absente) ; sans redémarrage, C37 dit FAIL et le geste est `sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh --oui` sur lui |
+| Deux primaires (C37 FAIL) | isoler celui qui ne sert PAS (`docker compose stop postgres` sur le standby), puis `reconstruire-replique.sh --oui` sur lui ; ses écritures depuis la promotion sont perdues — c'est le prix, et C37 le dit |
+| L'intégrité | sommes de contrôle de pages (`--data-checksums` à l'initialisation) ; `GET /admin/db/integrite` lit `pg_stat_database.checksum_failures` |
+| La sauvegarde | `backup.py` met l'**export vérifié** (`base-export.tar.gz`, P2-7) dans l'archive, réimporté dans une base jetable avant d'être déclaré réussi ; l'export hors site relit chaque table sur le poste |
+| La maintenance | pas d'arrêt de l'API : l'autovacuum compacte en ligne |
+| L'image `postgres:<version>` | re-tirée le dimanche sur les **deux** nœuds avec les images de base (`lib-images-base.sh`, #1872) — **sans** redémarrer le primaire ni la réplique. Le conteneur la prend à sa prochaine recréation : la bascule de 02:00 (`demarrer_conteneurs` sur le nouvel actif, la réplique reconstruite sur l'autre). `auto-deploy` ne recrée que l'application, la base n'y est que démarrée si elle manque (`up -d --no-recreate`). L'ancienne image, qu'un conteneur tient encore, se retire au passage suivant (`/var/lib/hostachy/images-base-a-retirer`). Une **mineure** arrive par Dependabot (`docker-compose`) ; une **majeure** jamais — c'est un `pg_upgrade`, un lot à elle |
+| Les DEUX nœuds perdus (#1921) | le premier renaît actif de la copie hors site : `sudo bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh <archive>` (simulation), puis `--oui` — base **neuve** en primaire, import vérifié, fichiers inventoriés. Avant les crons ; refuse si le pair sert. Chez la référence, `--registre <plateforme_backup_*>` est exigé (#1972). L'épreuve se rejoue sans risque par `--banc <archive> [--registre <archive>]` sur le standby. Procédure entière : `docs/restauration-complete.md`, « Les deux nœuds perdus » |
 
-**Signature de diagnostic (30 s, décisive) :**
-```bash
-DB_DIR=$(docker volume inspect 5hostachy_app_data --format '{{.Mountpoint}}')
-sudo stat -c '%n mtime=%y' $DB_DIR/app.db          # figé depuis des heures = ALERTE ROUGE
-sudo ls $DB_DIR/ | grep -E 'app.db-(wal|shm)'      # absents du disque…
-sudo lsof -p $(docker inspect hostachy_api --format '{{.State.Pid}}') | grep app.db
-#   … mais tenus ouverts par uvicorn, a fortiori sur PLUSIEURS inodes = fichiers supprimés
-```
-- `app.db` dont le `mtime` ne bouge pas alors que le site écrit ⇒ **aucun checkpoint n'aboutit
-  ⇒ toutes les écritures depuis ce `mtime` sont en sursis.** Traiter comme une urgence.
-- 🚫 **Ne PAS redémarrer l'API dans cet état** : cela libère les inodes orphelins et rend la
-  perte **définitive**. Extraire d'abord les WAL orphelins (`/proc/<pid>/fd/<n>`).
-- Les trois pièges de raisonnement (intégrité verte, matériel innocenté, rafales qui
-  se résorbent) : `standards/06` §1.
+🔑 Ces outils se lancent **en root** (`sudo bash …`, depuis une session SSH
+`ptressard`) : ils joignent le pair par la clé inter-nœuds, que seul root lit, et
+`ssh_noeud_exiger_root` refuse sinon, en le disant. Lancé en ptressard le
+09/10/2026, `reconstruire-replique.sh` lisait la base du pair « illisible » et
+refusait sans dire pourquoi (#1781). Une session Claude n'a pas ce sudo : la
+commande se donne à l'utilisateur.
 
-Cause racine des corruptions `telemetry_event` des 05 et 17/06/2026 **et** de l'incident du
-17/07/2026 (login 503 + 2 publications perdues) — coupable : `check-reliability.sh` C8, qui
-faisait exactement cela toutes les 15 min (contrôle supprimé, cf. commentaire dans le script).
-Cf. [[project_db_corruption_telemetry]] et le commentaire de `admin/exploitation.py` → `/db/checkpoint`.
+⚠️ La réplication passe par le LAN : port lié à `PG_ECOUTE` (l'IP du nœud, jamais
+`0.0.0.0`), `infra/postgresql/pg_hba.conf` (scram partout, rôle `replication` depuis
+l'autre nœud seulement), `PG_REPLICATION_PASSWORD` identique sur les deux `.env`.
 
 ## ⚠️ Panne de CHEMIN public ≠ panne de NŒUD (incident du 30/07/2026)
 
@@ -81,9 +72,7 @@ Entre 00:52 et 01:46, une panne DNS/WAN a coupé le tunnel des **deux** nœuds
 
 `health-watch.sh` ne sondait que l'**URL publique**. Chaque nœud a donc conclu que
 l'autre était mort : **12 failovers croisés en 55 min**, stack arrêtée et redémarrée
-alternativement sur les deux, rôle actif déplacé 12 fois **sans synchronisation de
-base** (un failover ne sync pas la DB — [[project_freezes_recurrents_rpi2]]), et à
-trois reprises `systemctl start cloudflared` a échoué sur le nouvel actif *avant*
+alternativement sur les deux, rôle actif déplacé 12 fois, et à trois reprises `systemctl start cloudflared` a échoué sur le nouvel actif *avant*
 que l'ancien soit démoté → **cloudflared inactif sur aucun nœud**. Aucune de ces
 bascules n'a rétabli quoi que ce soit : le nœud actif servait parfaitement en LAN.
 
@@ -97,8 +86,7 @@ vient bien du nœud actif, via deux sondes indépendantes de l'URL publique :
 | OK | OK | **Failover** : le nœud actif vit mais son tunnel est cassé |
 
 La sonde LAN est `http://<actif>/api/health` (via Caddy — le port 8000 n'est **pas**
-publié, et un GET `/health` reste in-process : aucune ouverture de `app.db`). La
-sonde d'edge (`cdn-cgi/trace`) exerce DNS + TLS, c'est-à-dire exactement la chaîne
+publié). La sonde d'edge (`cdn-cgi/trace`) exerce DNS + TLS, c'est-à-dire exactement la chaîne
 dont le tunnel dépend : « pourrais-je seulement servir ? ». Logique isolée en
 fonction pure `decide_failover()` + `./health-watch.sh --selftest`, vérifiée en CI.
 
@@ -170,12 +158,11 @@ emportent base + uploads + toutes les sauvegardes d'un coup
   LAN), pas en lisant `.active` — et **s'abstient** en cas de split-brain : deux nœuds
   qui servent = deux bases divergentes, en copier une au hasard puis faire tourner la
   rotation détruirait la bonne.
-- Il **n'ouvre jamais `app.db`** sur un RPi : il ne lit que des `.tar.gz` clos.
-  L'`integrity_check` porte sur la copie extraite **sur le poste**.
+- Il ne lit que des `.tar.gz` clos, jamais la base d'un RPi ; la vérification porte
+  sur la copie extraite **sur le poste**.
 - Vérifications avant de déclarer la copie bonne : empreinte SHA-256 identique à la
-  source, puis la base — sous PostgreSQL l'**export vérifié** de l'archive (chaque table
-  compte les lignes de son manifeste, `relire_export`), sous SQLite `app.db` et
-  `PRAGMA integrity_check`. Une copie non
+  source, puis l'**export vérifié** de l'archive (chaque table compte les lignes de
+  son manifeste, `relire_export`). Une copie non
   validée est renommée `.invalide` — elle ne doit pas se présenter comme une
   sauvegarde disponible. **Intégrité non vérifiable = échec, pas succès.**
 - Chez la référence, il copie aussi la dernière archive du **registre des installations**
@@ -526,61 +513,6 @@ un build qui démarrerait pile à cet instant.
 correctif du 30/07/2026 (garde sur la sortie vide). Elle vit maintenant dans
 `scripts/lib/lib-sonde.sh`, et nulle part ailleurs.
 
-## PostgreSQL : primaire, réplique, promotion (DI-7b, #1781)
-
-Deux questions distinctes, lues dans `.env` : **PostgreSQL tourne-t-il ?**
-(`COMPOSE_PROFILES` contient `postgresql` — `base_postgresql_activee`) et **où
-l'application écrit-elle ?** (`DATABASE_URL` — `moteur_configure`). La première
-gouverne la réplique et sa promotion, la seconde la sauvegarde, la maintenance et
-la copie de la base SQLite. Entre l'essai de réplication et la bascule des données,
-les deux coexistent : PostgreSQL se réplique et se promeut, SQLite sert encore
-(v2.127.3). La règle d'or de cette forme : `CLAUDE.md`.
-
-| Question | Où, comment |
-|---|---|
-| La réplication va-t-elle bien ? | **C37** (`check-reliability`, `lib-replication.sh`) et le **point 22** du pré-check — deux primaires, réplique absente, déconnectée, en retard, rôles inversés |
-| Le rôle de la base d'un nœud ? | `docker exec hostachy_postgres psql -U coprofirst -d coprofirst -Atc "select pg_is_in_recovery()"` — `t` réplique, `f` primaire |
-| Refaire la réplique du standby | `sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh` (simulation), puis `--oui` — efface la base LOCALE et la copie du primaire (`pg_basebackup -R`) ; refuse sur l'actif, sans primaire joignable |
-| Changer d'actif | la bascule promeut la réplique du pair (phases 3-4), le failover et `boot-role-guard` aussi ; l'ancien primaire est reconstruit en réplique — tout passe par `lib-promotion.sh` |
-| Le failover (#1997, #2000) | `lib-failover.sh` : s'abstient tant que l'actif **se redéploie** (son verrou d'auto-deploy, borné à 15 min) ; DÉCIDE de la base locale avant tout geste (illisible ou absente : l'ancien actif n'est pas touché) ; ISOLE l'ancien actif en un appel, sous son verrou de déploiement (attente 5 min), `.active` réécrit avant l'arrêt de l'application, de la base et du tunnel ; renonce si l'actif sert en LAN sans pouvoir être isolé (deux primaires sinon) ; PUIS promeut. Le courriel nomme `reconstruire-replique.sh` sur l'ancien actif |
-| L'ancien actif après un failover | sa base est ARRÊTÉE : `boot-role-guard` la reconstruit à son redémarrage (`decider_base_au_retrait`, primaire OU absente) ; sans redémarrage, C37 dit FAIL et le geste est `sudo bash /opt/5hostachy/scripts/exploitation/reconstruire-replique.sh --oui` sur lui |
-| Deux primaires (C37 FAIL) | isoler celui qui ne sert PAS (`docker compose stop postgres` sur le standby), puis `reconstruire-replique.sh --oui` sur lui ; ses écritures depuis la promotion sont perdues — c'est le prix, et C37 le dit |
-| L'intégrité | sommes de contrôle de pages (`--data-checksums` à l'initialisation) ; `GET /admin/db/integrite` lit `pg_stat_database.checksum_failures` |
-| La sauvegarde | `backup.py` met l'**export vérifié** (`base-export.tar.gz`, P2-7) dans l'archive, réimporté dans une base jetable avant d'être déclaré réussi ; l'export hors site relit chaque table sur le poste |
-| La maintenance | pas d'arrêt de l'API : l'autovacuum compacte en ligne (`maintenance.sh` lit le moteur de `.env`) |
-| L'image `postgres:<version>` | re-tirée le dimanche sur les **deux** nœuds avec les images de base (`lib-images-base.sh`, #1872) — **sans** redémarrer le primaire ni la réplique. Le conteneur la prend à sa prochaine recréation : la bascule de 02:00 (`demarrer_conteneurs` sur le nouvel actif, la réplique reconstruite sur l'autre). `auto-deploy` ne recrée que l'application, la base n'y est que démarrée si elle manque (`up -d --no-recreate`). L'ancienne image, qu'un conteneur tient encore, se retire au passage suivant (`/var/lib/hostachy/images-base-a-retirer`). Une **mineure** arrive par Dependabot (`docker-compose`) ; une **majeure** jamais — c'est un `pg_upgrade`, un lot à elle |
-| Passer la résidence à PostgreSQL (DI-7c) | sur l'**actif**, dans une fenêtre choisie : `sudo bash /opt/5hostachy/scripts/exploitation/basculer-donnees.sh` (simulation), puis `--oui`. Site coupé : API arrêtée, export vérifié de la base SQLite (`/backups/bascule-donnees-*.tar.gz`), schéma posé, import vérifié, `DATABASE_URL` réécrit sur les **deux** `.env` (`lib-env-base.sh`), l'ancienne valeur gardée en `# RETOUR_SQLITE=` datée. Refuse sans réplique saine ; tout échec remet SQLite |
-| Les DEUX nœuds perdus (#1921) | le premier renaît actif de la copie hors site : `sudo bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh <archive>` (simulation), puis `--oui` — base **neuve** en primaire, import vérifié, fichiers inventoriés. Avant les crons ; refuse si le pair sert. Chez la référence, `--registre <plateforme_backup_*>` est exigé (#1972). L'épreuve se rejoue sans risque par `--banc <archive> [--registre <archive>]` sur le standby. Procédure entière : `docs/restauration-complete.md`, « Les deux nœuds perdus » |
-| Revenir à SQLite (7 jours) | `sudo bash /opt/5hostachy/scripts/exploitation/retour-sqlite.sh` puis `--oui` : les écritures faites sous PostgreSQL repartent dans une base SQLite neuve (export, schéma, import) — rien n'est perdu. Au-delà de 7 jours il refuse : c'est une décision, pas un geste |
-
-🔑 Ces trois outils se lancent **en root** (`sudo bash …`, depuis une session SSH
-`ptressard`) : ils joignent le pair par la clé inter-nœuds, que seul root lit, et
-`ssh_noeud_exiger_root` refuse sinon, en le disant. Lancé en ptressard le
-09/10/2026, `reconstruire-replique.sh` lisait la base du pair « illisible » et
-refusait sans dire pourquoi (#1781). Une session Claude n'a pas ce sudo : la
-commande se donne à l'utilisateur.
-
-⚠️ La réplication passe par le LAN : port lié à `PG_ECOUTE` (l'IP du nœud, jamais
-`0.0.0.0`), `infra/postgresql/pg_hba.conf` (scram partout, rôle `replication` depuis
-l'autre nœud seulement), `PG_REPLICATION_PASSWORD` identique sur les deux `.env`.
-
-## Sync DB manuelle (sans basculer)
-
-> SQLite seulement. Sous PostgreSQL, la réplique EST la synchronisation : voir la section précédente.
-⚠️ Copier `app.db` pendant que l'API écrit = copie potentiellement déchirée. On stoppe
-l'API le temps de la copie (≈ qq s) → fichier cohérent garanti (cf. règle d'or ci-dessus).
-```bash
-# Depuis le RPi actif — base au repos pour une copie cohérente
-DB_DIR=$(docker volume inspect 5hostachy_app_data --format '{{.Mountpoint}}')
-docker stop hostachy_api
-sqlite3 "$DB_DIR/app.db" "PRAGMA wal_checkpoint(TRUNCATE);"   # vide le WAL
-cp "$DB_DIR/app.db" /tmp/app_sync.db
-cd /opt/5hostachy && docker compose up -d api                  # API repart immédiatement
-scp /tmp/app_sync.db ptressard@<PEER_IP>:/tmp/app_sync.db
-# Sur le standby :
-docker run --rm -v 5hostachy_app_data:/data -v /tmp/app_sync.db:/tmp/app_sync.db alpine sh -c 'cp /tmp/app_sync.db /data/app.db && rm -f /data/app.db-wal /data/app.db-shm'
-```
-
 ## Éprouver l'installation d'un volume — `banc-volumes.sh`
 
 `bascule.sh` installe les volumes sur le peer par `lib-volumes.sh`. Son
@@ -588,8 +520,8 @@ docker run --rm -v 5hostachy_app_data:/data -v /tmp/app_sync.db:/tmp/app_sync.db
 `sudo`, source en lecture seule, purge avant copie — mais ne peut rien dire de
 son **effet** : il n'a ni Docker ni volume (`standards/04` §11).
 
-`scripts/exploitation/banc-volumes.sh` comble l'écart : il crée des volumes
-jetables `banc_miroir_*`, y installe un contenu par la commande réellement
+`scripts/exploitation/banc-volumes.sh` comble l'écart : il crée un volume
+jetable `banc_volume_dst`, y installe un contenu par la commande réellement
 produite, compare, puis les détruit — même après un échec. **Sur le STANDBY
 uniquement** : il refuse de démarrer si des conteneurs `hostachy` tournent.
 
@@ -791,7 +723,7 @@ pure à `--selftest`, la mesure vit dans un module de `scripts/lib/`.
 | C30, paquets | hors sécurité en attente au-delà d'un seuil, paquets « retenus » (hors noyau), **parité** des paquets de `PAQUETS_PARITE` et de la valeur effective de `Unattended-Upgrade::Mail` (`apt-config dump`, #1677) entre les deux nœuds | `lib-paquets.sh` |
 | C32 | ports TCP à l'écoute sur toutes les interfaces, hors liste blanche (celle de `docker-compose.yml`, SSH, 80, 443, 8080) ; dit si le port est aussi sur l'autre nœud | `lib-ports-ecoute.sh` |
 | C33 | copie de `.env*` laissée à côté de `.env` et `.env.example` à la racine du dépôt déployé | `lib-fichiers-parasites.sh` |
-| C34 | fichier `*.db*` autre que `app.db{,-wal,-shm}` dans le volume de données, par un **listage de répertoire** (jamais d'ouverture de la base : règle d'or) | `lib-fichiers-parasites.sh` |
+| C34 | copie de base (`*.db*`) laissée dans le volume de données, hors de toute règle de conservation, par un **listage de répertoire** | `lib-fichiers-parasites.sh` |
 | C35 | la **pile de bureau est revenue** : paquet de la liste proscrite installé (avec ce qui l'a tiré), cible systemd redevenue `graphical.target`, `APT::Install-Recommends` ≠ 0. La liste s'écrit **une fois** (`PAQUETS_PROSCRITS`) et `scripts/exploitation/alleger-noeud.sh` la source — jamais recopiée. Retour causé par une mise à jour, un paquet recommandé ou une réinstallation depuis l'image (`docs/restauration-complete.md`, étape 12) | `lib-paquets-proscrits.sh` |
 | C36 | le **journal d'accès de Caddy** est-il écrit (dernière ligne < 1 h) et combien d'erreurs **500/504** en 24 h ? Les 502/503 sont comptés à part : ce sont les redémarrages d'un déploiement. **Sur l'actif seulement** | `lib-journal-acces.sh` |
 
@@ -962,10 +894,9 @@ revenir à `state: open`. Deux causes cumulées, corrigées :
    conteneur source encore actif et en train d'écrire `creds.json` + fichiers de
    clés)** → snapshot multi-fichiers potentiellement déchiré propagé au peer à
    chaque bascule nocturne. **Corrigé** : le sync se fait désormais en Phase 2,
-   après `docker compose stop` (0 writer, comme la DB), avec vérification que
-   `creds.json` est un JSON valide avant de l'installer sur le peer. Même classe
-   de bug que la « Règle d'or anti-corruption DB » ci-dessus, appliquée à l'état
-   d'authentification WhatsApp plutôt qu'à `app.db`.
+   après `docker compose stop` (0 writer), avec vérification que
+   `creds.json` est un JSON valide avant de l'installer sur le peer
+   (`standards/06` §1 : un état multi-fichiers tenu ouvert ne se copie pas à chaud).
 2. **`whatsapp-bridge/index.js` ne supervisait pas sa propre reconnexion** :
    `setTimeout(startBaileys, 5_000)` appelait une fonction `async` sans
    `.catch()` → une reconnexion qui rejette (ex. timeout réseau) tue la chaîne

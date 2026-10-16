@@ -257,8 +257,8 @@ class IntervenantMixin(SQLModel):
       il ne sait pas si c'est la plomberie ou la toiture. C'est elle qui range
       une affaire résolue au carnet d'entretien.
 
-    Colonnes simples, **sans clé étrangère** : SQLite refuse de l'ajouter à une
-    table existante (0117, 0165 — le conteneur s'arrêtait).
+    Colonnes simples, **sans clé étrangère**, comme en production : une base
+    neuve porte le même schéma qu'elle.
     """
 
     prestataire_id: Optional[int] = None

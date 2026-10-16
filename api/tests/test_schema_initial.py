@@ -8,7 +8,6 @@ créée pour l'occasion : c'est la migration initiale de la spec §4.3.
 
 from __future__ import annotations
 
-import os
 import uuid
 from pathlib import Path
 
@@ -23,6 +22,7 @@ from sqlmodel import SQLModel
 import app.models.core  # noqa: F401 — toutes les tables, comme le module testé
 from app.utils.revision_base import ALEMBIC_INI, config_alembic
 from app.utils.schema_initial import poser_si_neuve
+from tests.aides_base import url_des_tests
 
 START = Path(__file__).resolve().parents[1] / "start.sh"
 
@@ -33,11 +33,8 @@ def _tete() -> str:
 
 @pytest.fixture
 def url_neuve(tmp_path):
-    """L'adresse d'une base VIDE : un fichier, ou une base PostgreSQL créée puis détruite."""
-    serveur = os.environ.get("TESTS_BASE_URL")
-    if not serveur:
-        yield f"sqlite:///{(tmp_path / 'neuve.db').as_posix()}"
-        return
+    """L'adresse d'une base VIDE : une base PostgreSQL créée puis détruite."""
+    serveur = url_des_tests()
     nom = f"t_{uuid.uuid4().hex[:16]}"
     admin = create_engine(serveur, isolation_level="AUTOCOMMIT", poolclass=NullPool)
     with admin.connect() as c:

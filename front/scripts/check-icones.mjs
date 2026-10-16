@@ -11,7 +11,7 @@
  * catalogue** du côté du code du front.
  *
  * Le jour où ce contrôle a été écrit, il a trouvé la faute qu'il décrit :
- * `IntegriteReferentielle.svelte` passait `icone="database"`, absent du
+ * un composant de l'administration passait `icone="database"`, absent du
  * catalogue, depuis v2.19.0. La section s'affichait avec un « ? ».
  *
  * ## Ce qu'il lit — les quatre voies par lesquelles un nom arrive à `<Icon>`

@@ -13,7 +13,6 @@
 	import CarteExportCopropriete from '$lib/components/CarteExportCopropriete.svelte';
 	import ControlesFiabilite from '$lib/components/ControlesFiabilite.svelte';
 	import ConsommationIA from '$lib/components/ConsommationIA.svelte';
-	import IntegriteReferentielle from '$lib/components/IntegriteReferentielle.svelte';
 	import TachesPlanifiees from '$lib/components/TachesPlanifiees.svelte';
 	import { isOperateur } from '$lib/stores/auth';
 </script>
@@ -52,7 +51,6 @@
 {/if}
 <ConsommationIA />
 {#if $isOperateur}
-	<IntegriteReferentielle />
 	<ControleSante />
 {/if}
 <CarteExportCopropriete />

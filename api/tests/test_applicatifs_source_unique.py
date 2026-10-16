@@ -124,7 +124,7 @@ def test_aucun_up_ni_stop_du_compose_sans_liste():
     assert not fautes, (
         "un `docker compose up|stop|down` sans liste démarre ou arrête aussi la base — "
         f"nommer les services (`$SERVICES_APPLICATIFS`, `$SERVICE_BASE`, "
-        f"`services_du_noeud`) : {fautes}"
+        f"`$SERVICES_DU_NOEUD`) : {fautes}"
     )
 
 
@@ -137,7 +137,7 @@ def test_demarrer_conteneurs_sans_liste_seulement_declare():
     attendus = {rel: nombre for rel, (nombre, _) in DEMARRAGES_SANS_LISTE.items()}
     assert vus == attendus, (
         "`demarrer_conteneurs` sans liste démarre aussi la base : passer la liste "
-        "(`services_du_noeud`), ou déclarer l'appel dans DEMARRAGES_SANS_LISTE avec "
+        "(`$SERVICES_DU_NOEUD`), ou déclarer l'appel dans DEMARRAGES_SANS_LISTE avec "
         f"sa raison — vus {vus}, déclarés {attendus}"
     )
 

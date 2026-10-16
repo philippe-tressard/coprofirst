@@ -67,21 +67,17 @@ rapport_payload() { # tache noeud portee statut duree details erreur debut fin [
         "${details:-null}" "$(rapport_echapper "$erreur")" "$cree" "$terminee"
 }
 
-# ── Taille d'un fichier, lue DEPUIS L'HÔTE (#1562) ────────────────────────────
-# Écrit `taille_db_octets` : un entier, ou `null` (valeur JSON) quand elle ne se
-# lit pas — fichier absent, répertoire, chemin vide, sortie de `stat` illisible.
-# Ne fait que `stat` : la base n'est PAS ouverte (règle d'or de CLAUDE.md), alors
-# que la lecture d'origine lançait un interpréteur dans le conteneur de l'API pour
-# un simple `getsize`. Même valeur, même repli `null`, aucun process tiers.
+# ── Un entier pour la charge utile, ou `null` (PURE) ─────────────────────────
+# Écrit `taille_db_octets` : la réponse de `psql` (`pg_database_size`) quand elle
+# est un entier, `null` (valeur JSON) sinon — réponse vide, message d'erreur,
+# retour chariot. Un zéro inventé passerait pour une mesure.
 # Code de retour toujours 0 : l'appelant tourne sous `set -e`.
-rapport_taille_fichier() { # $1=chemin → entier d'octets, ou `null`, sur stdout
-    local chemin="${1:-}" octets=""
-    if [ -n "$chemin" ] && [ -f "$chemin" ]; then
-        octets=$(stat -c%s -- "$chemin" 2>/dev/null) || octets=""
-    fi
-    case "$octets" in
+rapport_entier_ou_null() { # $1=valeur brute → entier, ou `null`, sur stdout
+    local v="${1:-}"
+    v=${v%$'\r'}
+    case "$v" in
         ''|*[!0-9]*) printf 'null' ;;
-        *)           printf '%s' "$octets" ;;
+        *)           printf '%s' "$v" ;;
     esac
     return 0
 }
@@ -157,9 +153,8 @@ except Exception as e:
 
 # ── Purges hebdomadaires, DANS l'API (#1232) ────────────────────────────────
 # `maintenance.sh` purgeait cinq tables par `docker exec hostachy_api python`,
-# API en marche : un process tiers qui ouvre `app.db`, la règle d'or enfreinte
-# chaque dimanche. Il les DEMANDE désormais à l'API, qui les fait dans son
-# process et rend les comptes.
+# API en marche : un process tiers sur la base. Il les DEMANDE désormais à l'API,
+# qui les fait dans son process et rend les comptes.
 #  PURE. La charge du battement. Avec `details` (fragment JSON déjà formé), elle
 #  porte aussi `erreur`, VIDE compris : l'API remplace alors les deux, et un
 #  `erreur` absent laisserait affiché un échec résolu (#1805).
@@ -340,23 +335,18 @@ puis \502')" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["de
     check "purges : clé absente DITE"     'compte « notifications » absent de la réponse' \
         "$(purges_lire "$REP" notifications 2>&1 >/dev/null)"
 
-    # rapport_taille_fichier — la taille de la base, lue sans l'ouvrir (#1562).
-    st_tmp=$(mktemp -d)
-    printf '0123456789' > "$st_tmp/app.db"
-    : > "$st_tmp/vide.db"
-    check "taille : fichier de 10 octets"    '10'   "$(rapport_taille_fichier "$st_tmp/app.db")"
-    check "taille : fichier vide = 0 réel"   '0'    "$(rapport_taille_fichier "$st_tmp/vide.db")"
-    check "taille : fichier absent → null"   'null' "$(rapport_taille_fichier "$st_tmp/absent.db")"
-    check "taille : répertoire → null"       'null' "$(rapport_taille_fichier "$st_tmp")"
-    check "taille : chemin vide → null"      'null' "$(rapport_taille_fichier '')"
-    check "taille : sans argument → null"    'null' "$(rapport_taille_fichier)"
-    #  Un `DB_DIR` introuvable donne `"$DB_DIR/app.db"` = `/app.db` : pas de base.
-    check "taille : racine sans base → null" 'null' "$(rapport_taille_fichier '/app.db')"
+    # rapport_entier_ou_null — la taille de la base, telle que psql la rend.
+    check "taille : un entier"               '8421376' "$(rapport_entier_ou_null 8421376)"
+    check "taille : zéro réel"               '0'    "$(rapport_entier_ou_null 0)"
+    check "taille : retour chariot retiré"   '10'   "$(rapport_entier_ou_null $'10\r')"
+    check "taille : réponse vide → null"     'null' "$(rapport_entier_ou_null '')"
+    check "taille : sans argument → null"    'null' "$(rapport_entier_ou_null)"
+    check "taille : message d'erreur → null" 'null' "$(rapport_entier_ou_null 'Error response from daemon')"
+    check "taille : négatif → null"          'null' "$(rapport_entier_ou_null -1)"
     #  Insérée telle quelle dans la charge utile, elle laisse un JSON valide.
     check "taille : insérée dans la charge utile" \
         '{"tache":"t","noeud":"","portee":"applicative","statut":"succes","tokens_supprimes":0,"taille_db_octets":10,"duree_secondes":0,"details":null,"erreur":"","cree_le":null,"terminee_le":null}' \
-        "$(rapport_payload t '' applicative succes 0 null '' '' '' 0 "$(rapport_taille_fichier "$st_tmp/app.db")")"
-    rm -rf "$st_tmp"
+        "$(rapport_payload t '' applicative succes 0 null '' '' '' 0 "$(rapport_entier_ou_null 10)")"
 
     [ $st_fail -eq 0 ] && echo "== TOUS OK ==" || echo "== ÉCHECS =="
     exit $st_fail

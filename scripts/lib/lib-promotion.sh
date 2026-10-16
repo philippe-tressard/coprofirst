@@ -3,15 +3,16 @@
 #  lib-promotion.sh — Le rôle d'une base PostgreSQL, et le geste qui le change :
 #  la PROMOTION d'une réplique en primaire (module à sourcer, DI-7b, #1781)
 #
-#  Sous PostgreSQL (D16), le standby porte une réplique en continu. Changer
-#  d'actif — bascule de nuit, failover, garde au démarrage — ne copie plus de
-#  fichier : on PROMEUT la réplique. Trois scripts le font ; la règle et les
+#  Le standby porte une réplique en continu de la base (D16). Changer d'actif —
+#  bascule de nuit, failover, garde au démarrage — se fait en PROMOUVANT cette
+#  réplique. Trois scripts le font ; la règle et les
 #  gestes s'écrivent ICI, une fois.
 #
 #  🔴 LA RÈGLE QUI PRIME : on ne démarre JAMAIS une base absente sur un nœud qui
 #  prend la main. L'image PostgreSQL initialiserait un primaire VIDE, et le site
 #  servirait une copropriété sans données. D'où `decider_prise_de_main` : une
-#  réplique se promeut, un primaire se garde, l'absence fait ABSTENIR.
+#  réplique se promeut, un primaire se garde, l'absence fait ABSTENIR — et un
+#  nœud qui s'abstient ne démarre RIEN : l'application n'a pas d'autre base.
 #
 #  🔴 Une promotion est IRRÉVERSIBLE : l'ancien primaire ne se relance pas tel
 #  quel (deux primaires, deux histoires qui divergent). Il se reconstruit en
@@ -56,20 +57,6 @@ decider_prise_de_main() {
         primaire)    echo GARDER ;;
         absente)     echo "ABSTENIR:aucune base ici — la démarrer créerait un primaire VIDE" ;;
         *)           echo "ABSTENIR:base illisible — on ne promeut pas ce qu'on n'a pas lu" ;;
-    esac
-}
-
-# ── PURE : un nœud prend la main — que DÉMARRE-t-il ? ─────────────────────────
-#  $1 décision de `decider_prise_de_main` · $2 moteur de l'APPLICATION
-#  → TOUT | APPLICATION | RIEN
-#  Quand la base ne peut pas être prise (ABSTENIR), on ne la démarre JAMAIS —
-#  elle s'initialiserait en primaire VIDE. Mais si l'application écrit ailleurs
-#  (SQLite, pendant l'essai de la réplication), elle sert quand même : on la
-#  démarre SEULE. Si elle écrit dans PostgreSQL, il n'y a rien à servir.
-decider_demarrage() {
-    case "${1%%:*}" in
-        PROMOUVOIR|GARDER) echo TOUT ;;
-        *) [ "${2:-}" = postgresql ] && echo RIEN || echo APPLICATION ;;
     esac
 }
 
@@ -132,7 +119,7 @@ attendre_rattrapage_pair() {
     return 1
 }
 
-# ── La bascule de nuit (`bascule.sh`), sous PostgreSQL ────────────────────────
+# ── La bascule de nuit (`bascule.sh`) ─────────────────────────────────────────
 #  Appelées par la bascule, qui fournit `log`, `drylog`, `DRY_RUN`, `rollback`,
 #  `PEER`, `PEER_IP`, `SSH_CMD`, `SELF` et `REPO`. Une étape qui échoue pose le
 #  libellé de son retour arrière (`trap … ERR`, global au shell) et rend 1 :
@@ -211,12 +198,6 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "réplique déconnectée : elle se rattrape" GARDER      decider_base_au_retrait replique_ko
     t "illisible (elle démarre ?) → attendre"  ATTENDRE     decider_base_au_retrait illisible
     t "rien lu → attendre, jamais effacer"     ATTENDRE     decider_base_au_retrait ""
-    echo "== que démarrer en prenant la main =="
-    t "réplique promue"                        TOUT        decider_demarrage PROMOUVOIR sqlite
-    t "déjà primaire"                          TOUT        decider_demarrage GARDER postgresql
-    t "pas de base, application sous SQLite"   APPLICATION decider_demarrage "ABSTENIR:aucune base" sqlite
-    t "pas de base, application sous PostgreSQL" RIEN      decider_demarrage "ABSTENIR:aucune base" postgresql
-    t "moteur inconnu : l'application seule"   APPLICATION decider_demarrage "ABSTENIR:x" inconnu
     echo "== rattrapage =="
     t "rejouée jusqu'au bout"              oui     decider_rattrapage 1000 1000
     t "rejouée au-delà (point final)"      oui     decider_rattrapage 1000 1040

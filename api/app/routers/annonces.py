@@ -243,7 +243,7 @@ def update_annonce(
     marquer_assiste_ia(annonce, data)
     maj.pop("assiste_ia", None)
     #  ⚠️ Le périmètre arrive en LISTE et la colonne est du TEXTE : sans cette
-    #  conversion, SQLite stockerait la repr Python d'une liste — que `json.loads`
+    #  conversion, la base stockerait la repr Python d'une liste — que `json.loads`
     #  ne relit pas, et l'annonce perdrait son périmètre à la première correction.
     #  Le formulaire de correction porte la section Workflow : un changement
     #  d'état arrivant par `PATCH` doit s'horodater comme celui du raccourci de

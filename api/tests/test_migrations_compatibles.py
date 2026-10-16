@@ -35,10 +35,6 @@ modèle ne déclare plus la table ou la colonne retirée.
 
 ## Ce que le contrôle ne juge pas
 
-- Les **migrations historiques** (jusqu'à `DERNIERE_HISTORIQUE`) : une migration
-  appliquée ne se modifie jamais. On en compte vingt-deux qui retirent ou
-  renomment en un seul temps — dont la 0250, qui retirait la colonne dans le même
-  lot que le champ du modèle : exactement ce que ce contrôle refuse désormais.
 - Le corps de `downgrade()`, qui défait par nature.
 - Le SQL brut qui retire ou renomme : il est **refusé** dans une migration neuve,
   faute de pouvoir en lire la cible — passer par `op.drop_column`,
@@ -53,7 +49,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from tests.aides_migrations import DERNIERE_HISTORIQUE, VERSIONS
+from tests.aides_migrations import VERSIONS
 
 _RACINE = Path(__file__).resolve().parents[2]
 
@@ -234,7 +230,7 @@ def migrations() -> dict[str, tuple[int, str]]:
         for p in sorted(VERSIONS.glob("*.py"))
         if _numero(p) is not None
     }
-    assert len(trouvees) > 100, f"{len(trouvees)} migration(s) lue(s) : la portée est cassée"
+    assert trouvees, "aucune migration lue : la portée est cassée"
     return trouvees
 
 
@@ -302,7 +298,7 @@ def ecarts(fichier: str, gestes: list[Geste], contractions, version: str, modele
 
 
 def _neuves() -> dict[str, str]:
-    return {nom: src for nom, (num, src) in migrations().items() if num > DERNIERE_HISTORIQUE}
+    return {nom: src for nom, (_num, src) in migrations().items()}
 
 
 def test_aucune_migration_neuve_ne_contracte_en_un_seul_temps():
@@ -326,42 +322,6 @@ def test_une_contraction_annoncee_n_est_plus_declaree_par_un_modele():
     modeles = tables_et_colonnes_des_modeles()
     encore = sorted(c for c in CONTRACTIONS if c in modeles)
     assert not encore, f"annoncées dans CONTRACTIONS mais encore déclarées : {encore}"
-
-
-def test_la_borne_historique_est_atteinte():
-    """Cas zéro de la portée : la borne doit désigner une migration qui existe."""
-    numeros = {num for num, _src in migrations().values()}
-    assert DERNIERE_HISTORIQUE in numeros, (
-        f"aucune migration n° {DERNIERE_HISTORIQUE:04d} : la borne de l'historique ne "
-        "désigne rien, et le contrôle jugerait ou ignorerait les mauvaises"
-    )
-
-
-def test_le_releve_voit_les_retraits_historiques():
-    """Le témoin : le relevé retrouve ce qu'on sait être dans l'historique.
-
-    La 0250 retire `evenement.archivee` par des constantes du module ; la 0147, deux
-    colonnes de `sondage` dans un `batch_alter_table` ; la 0070 renomme une colonne.
-    Un relevé qui ne les verrait pas rendrait le contrôle vert sur tout.
-    """
-    tout = migrations()
-
-    def cibles(nom: str) -> set[tuple[str, str | None]]:
-        return {(g.geste, g.cible) for g in gestes_contractants(tout[nom][1])}
-
-    assert ("drop_column", "evenement.archivee") in cibles("0250_evenement_sans_archivee.py")
-    sondage = cibles("0147_sondage_ciblage_standard.py")
-    assert {
-        ("drop_column", "sondage.batiments_ids"),
-        ("drop_column", "sondage.profils_autorises"),
-    } <= sondage
-    assert ("renommer_colonne", "utilisateur.sondage_interdit") in cibles(
-        "0070_rename_sondage_interdit_communaute.py"
-    )
-    historiques = sum(
-        len(gestes_contractants(src)) for num, src in tout.values() if num <= DERNIERE_HISTORIQUE
-    )
-    assert historiques >= 20, f"seulement {historiques} geste(s) relevé(s) dans l'historique"
 
 
 def test_le_releve_reconnait_chaque_forme():

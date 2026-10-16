@@ -23,10 +23,10 @@ Contrainte : Le choix des logiciels est Opensource avec des licences non copylef
   └─────────────────────────┘
        │
   ┌────┴────────────────────┐
-  │  SQLite (fichier local) │  ← base de données
+  │  PostgreSQL 17          │  ← base de données
   └─────────────────────────┘
 
-Orchestration : Docker Compose (3 services : caddy / front / api)
+Orchestration : Docker Compose (services : caddy / front / api / postgres)
 ```
 
 ---
@@ -72,12 +72,10 @@ Orchestration : Docker Compose (3 services : caddy / front / api)
 
 ## Base de données
 
-- **SGBD :** SQLite 3 (fichier `app.db` persisté dans un volume Docker)
+- **SGBD :** PostgreSQL 17 (volume Docker `pg_data`), répliqué en continu vers le second nœud
 - **ORM :** [SQLModel](https://sqlmodel.tiangolo.com/) (combine SQLAlchemy + Pydantic — aligné avec FastAPI)
 - **Migrations :** Alembic
-- **Backup :** sauvegarde périodique paramétrable depuis l'interface admin (EF-WEB-015) — fréquence quotidienne / **hebdomadaire (défaut)** / mensuelle, **3 versions historisées par défaut** (1–30 configurable), rotation automatique. Périmètre : `app.db` + répertoire fichiers uploadés. Archive `.tar.gz` dans le volume `/backups`. Cron géré par **APScheduler** (dépendance FastAPI). Restauration via l'UI avec confirmation par mot de passe admin. Notification email en cas d’échec.
-- **Évolution possible :** migration vers PostgreSQL 16 (image ARM64 disponible) si > 100 utilisateurs actifs ou besoin de concurrence élevée
-- **Justification :** SQLite est sans serveur, zéro configuration, parfaitement suffisant pour une copropriété de taille humaine (< 200 résidents, < 50 connexions simultanées).
+- **Backup :** sauvegarde périodique paramétrable depuis l'interface admin (EF-WEB-015) — fréquence quotidienne / **hebdomadaire (défaut)** / mensuelle, **3 versions historisées par défaut** (1–30 configurable), rotation automatique. Périmètre : export vérifié de la base + répertoire fichiers uploadés. Archive `.tar.gz` dans le volume `/backups`. Cron géré par **APScheduler** (dépendance FastAPI). Restauration via l'UI avec confirmation par mot de passe admin. Notification email en cas d’échec.
 
 ---
 
@@ -99,15 +97,18 @@ Orchestration : Docker Compose (3 services : caddy / front / api)
 - Fichier unique `docker-compose.yml` à la racine du projet :
 
 ```yaml
-# aperçu — 3 services
+# aperçu — les services principaux
 services:
   caddy:      # reverse proxy TLS
   front:      # SvelteKit (node:22-alpine)
   api:        # FastAPI (python:3.12-slim)
+  postgres:   # PostgreSQL 17
 volumes:
   caddy_data:
   caddy_logs: # journal d'accès anonyme de Caddy, 7 jours (#1588)
-  app_data:   # contient app.db + backups
+  app_data:   # identité au registre, cache du manuel PDF
+  backups:
+  pg_data:    # la base
 ```
 
 ### Reverse proxy
@@ -161,7 +162,6 @@ docker compose up -d
 
 | Contrainte | Impact | Mitigation |
 |---|---|---|
-| SQLite mono-écriture | Pas de concurrence d'écriture élevée | Suffisant pour l'usage cible ; migrer PostgreSQL si besoin |
 | Coupure de courant | Perte de données non persistées | Volume SSD + UPS (alimentation sans coupure) recommandé |
 | Pas de CDN | Latence légèrement plus haute si accès distant | Cloudflare Tunnel inclut un cache CDN gratuit |
 | Mises à jour manuelles | Intervention humaine requise | Watchtower ou cron `git pull` automatisable |

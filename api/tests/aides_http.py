@@ -24,7 +24,7 @@ from app.database import get_session
 from app.main import app
 from app.models.core import RoleUtilisateur
 from app.utils.limiter import limiter
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 
 
 @contextmanager
@@ -34,7 +34,7 @@ def base_http():
     Rend le moteur. Les surcharges et les plafonds de débit repartent à zéro à la
     sortie : un test qui laisserait sa base branchée ferait lire la sienne au suivant.
     """
-    moteur = moteur_memoire(partage=True)
+    moteur = moteur_de_test()
 
     def _session():
         with Session(moteur) as s:

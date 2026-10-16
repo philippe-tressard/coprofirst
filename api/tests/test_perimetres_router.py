@@ -160,7 +160,7 @@ def test_le_seed_ne_repose_pas_ce_qui_a_ete_supprime(batiments):
         #
         #  🔴 La suppression passe par le code de PRODUCTION. Le test descendait
         #  d'UN niveau — les enfants directs, puis le nœud — et laissait les
-        #  petits-enfants derrière : sous `foreign_keys=ON` la base refuse, et
+        #  petits-enfants derrière : avec les clés vérifiées la base refuse, et
         #  elle a raison (#546). `purger_ligne` lit les métadonnées et descend
         #  l'arbre entier, quelle que soit sa profondeur, qui est une donnée
         #  administrée et non une constante du test.

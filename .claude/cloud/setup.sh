@@ -56,6 +56,29 @@ else
     signaler "apt-get absent : bibliothèques PDF non installées"
 fi
 
+# ── 1 bis. PostgreSQL des tests ──────────────────────────────────────────────
+#  La suite pytest ne tourne que sur PostgreSQL (`TESTS_BASE_URL`, cf. LISEZMOI).
+#  Rôle et base `essai`, ceux du job de CI ; le paquet de la distribution suffit
+#  à la session, la CI tient la version de production.
+en_postgres() {  # $1 = requête SQL, jouée par le superutilisateur du serveur
+    if [ "$(id -u)" -eq 0 ]; then su postgres -c "psql -qtAc \"$1\""
+    else sudo -u postgres psql -qtAc "$1"; fi
+}
+if command -v apt-get >/dev/null 2>&1; then
+    if $SUDO apt-get install -y --no-install-recommends postgresql >/dev/null 2>&1 \
+        && { $SUDO service postgresql start >/dev/null 2>&1 || true; } \
+        && { [ "$(en_postgres "select 1 from pg_roles where rolname='essai'")" = 1 ] \
+             || en_postgres "create role essai login superuser password 'essai'"; } \
+        && { [ "$(en_postgres "select 1 from pg_database where datname='essai'")" = 1 ] \
+             || en_postgres "create database essai owner essai"; }; then
+        echo "✓ PostgreSQL des tests (rôle et base essai)"
+    else
+        signaler "PostgreSQL des tests non installé — la suite pytest ne peut pas tourner"
+    fi
+else
+    signaler "apt-get absent : PostgreSQL des tests non installé"
+fi
+
 # ── 2. Outils Python de la CI, puis dépendances de l'API ────────────────────
 #  `--break-system-packages` : Ubuntu 24.04 refuse sinon un pip hors venv. La
 #  VM est jetable et ne sert qu'à ce dépôt — l'isolation n'y protège rien.

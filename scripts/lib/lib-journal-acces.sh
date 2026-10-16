@@ -19,7 +19,7 @@
 #       sont les redémarrages des conteneurs d'un déploiement, pas des défauts.
 #
 #  Lecture seule : `docker exec hostachy_caddy tail` sur un fichier de LOG de
-#  Caddy — jamais `app.db` (règle d'or). Tout en WARN (digest quotidien).
+#  Caddy — jamais la base. Tout en WARN (digest quotidien).
 #
 #  SOURCÉ (mode 100644) par `lib-collecte.sh` (`COLLECT_ACCES`, repris dans
 #  COLLECT) ; `acces_caddy_verdicts` est appelé par `lib-conformite.sh`.

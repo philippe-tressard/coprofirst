@@ -28,7 +28,7 @@ import ast
 import pathlib
 import types
 
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 from tests.aides_sources import modules_app
 
 APP = pathlib.Path(__file__).resolve().parents[1] / "app"
@@ -227,7 +227,7 @@ def _base_avec_copro(nom_saisi: str | None):
     from app.models.copropriete import Copropriete
     from app.models.core import SyndicInfo
 
-    session = Session(moteur_memoire())
+    session = Session(moteur_de_test())
     copro = Copropriete(nom="Résidence d'essai", adresse="1 rue d'essai")
     session.add(copro)
     if nom_saisi is not None:

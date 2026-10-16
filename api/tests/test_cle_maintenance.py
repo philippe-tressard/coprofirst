@@ -14,7 +14,7 @@ Il refuse un `==` ou un `!=` dont un opérande est un **réglage** secret :
 `secret`, `password` ou `token`. Il ne voit pas un secret déjà copié dans une
 variable locale, ni un secret lu dans la configuration du site
 (`config.get("…")`). Un jeton cherché en base par `WHERE token = :x` n'est pas
-concerné : la comparaison a lieu dans SQLite, derrière une recherche par index.
+concerné : la comparaison a lieu dans la base, derrière une recherche par index.
 """
 
 from __future__ import annotations

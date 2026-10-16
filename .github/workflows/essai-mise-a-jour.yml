@@ -4,7 +4,7 @@ name: Essai de mise à jour
 #  (`specs/architecture/multi-coproprietes.md` §4.10, D15).
 #
 #  Éprouve la mise à jour nocturne d'une réplique DE BOUT EN BOUT, sur une
-#  machine jetable (ce runner), sous SQLite ET sous PostgreSQL : installation de
+#  machine jetable (ce runner), sous PostgreSQL : installation de
 #  <de> selon le mode d'emploi, mise à jour vers <vers> par `mise-a-jour.sh`,
 #  puis verdict (`scripts/ci/essai-mise-a-jour.sh`). Rien n'est promu :
 #  `replica` n'est pas lue, la cible est imposée.
@@ -38,13 +38,9 @@ permissions:
 
 jobs:
   essai:
-    name: ${{ inputs.de }} → ${{ inputs.vers }} (${{ matrix.moteur }})
+    name: ${{ inputs.de }} → ${{ inputs.vers }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        moteur: [sqlite, postgresql]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -58,7 +54,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DE: ${{ inputs.de }}
           VERS: ${{ inputs.vers }}
-          MOTEUR: ${{ matrix.moteur }}
         run: |
           case "$DE$VERS" in *[!0-9.]*) echo "::error::versions attendues en X.Y.Z"; exit 1 ;; esac
-          bash scripts/ci/essai-mise-a-jour.sh "$DE" "$VERS" "$MOTEUR"
+          bash scripts/ci/essai-mise-a-jour.sh "$DE" "$VERS"

@@ -6,8 +6,8 @@
 #
 #  ## Le fait
 #
-#  `bascule.sh` installe trois fois du contenu dans un volume du peer — uploads,
-#  état d'authentification WhatsApp, base. La cible est à chaque fois le point de
+#  `bascule.sh` installe deux fois du contenu dans un volume du peer — uploads,
+#  état d'authentification WhatsApp. La cible est à chaque fois le point de
 #  montage d'un volume Docker, que seul root peut écrire. Le geste employé était :
 #
 #      ssh peer 'sudo rsync -a /tmp/… $(docker volume inspect … )/'
@@ -27,7 +27,7 @@
 #  elle est antérieure et nécessaire au modèle de déploiement. Ce module ne
 #  prétend donc pas supprimer le pouvoir root du compte — il supprime **une
 #  seconde voie**, qui restait ouverte sans que rien ne l'utilise pour autre chose
-#  que ces trois copies. Prétendre l'inverse serait un faux vert.
+#  que ces copies. Prétendre l'inverse serait un faux vert.
 #
 #  Même canal que `durcir-sudoers.sh`, qui écrit dans `/etc/sudoers.d` ainsi
 #  depuis le 27/08/2026, et que la conversion de v2.46.11.
@@ -44,42 +44,21 @@
 #  uid:gid, mtime, taille, liens symboliques et noms à espaces identiques,
 #  contenus identiques octet à octet.
 #
-#  ## `--delete` : le mode « miroir », et pourquoi ce n'est pas une seconde fonction
+#  ## Un ajout, jamais une purge
 #
-#  La phase 4 (base) a besoin de `--delete` pour retirer les `app.db-wal` /
-#  `app.db-shm` résiduels du peer — c'est la règle d'or anti-corruption : un WAL
-#  orphelin laissé à côté d'une base fraîche est exactement ce qu'on ne veut pas
-#  faire démarrer. Le geste équivalent est `find /dst -mindepth 1 -delete` puis
-#  la même copie.
-#
-#  Ce mode est un ARGUMENT de `cmd_installer_volume`, et non une fonction
-#  jumelle : deux fonctions qui ne diffèrent que par un préambule divergent au
-#  premier correctif appliqué d'un seul côté — c'est le motif de tout ce
-#  chantier (`standards/02` §1), et il vaut aussi pour son propre correctif.
-#
-#  🔴 UNE GARDE QUE `rsync --delete` N'AVAIT PAS. La commande vide la
-#  destination : si la source était vide — rsync interrompu, temporaire nettoyé
-#  par un tiers — elle effacerait la base du peer et n'y remettrait rien, et
-#  `rsync -a --delete` d'une source vide faisait exactement cela, en silence.
-#  Le mode miroir refuse donc de commencer sur une source vide (`find /src …
-#  | grep -q .`), ce qui fait échouer la phase, donc déclenche le rollback, donc
-#  laisse le site sur un nœud dont la base est intacte.
-#
-#  ⚠️ Ce que ce mode ne reproduit PAS de `rsync --delete` : rsync supprime au fil
-#  du transfert, ici on supprime AVANT de copier. Une copie interrompue au milieu
-#  laisse donc le volume du peer incomplet. C'est sans conséquence dans la
-#  séquence de bascule — l'échec déclenche le rollback, le site reste sur l'actif
-#  dont la base n'a pas bougé, et la bascule suivante réécrit tout — mais cela se
-#  dit, parce qu'un appelant hors bascule n'aurait pas ce filet.
+#  La copie ne retire rien de la cible : c'est `cp -a`, l'équivalent de `rsync -a`
+#  sans `--delete`. Une commande qui vide la destination effacerait le volume du
+#  peer sur une source vide (rsync interrompu, temporaire nettoyé par un tiers) ;
+#  aucun appelant n'en a besoin, aucune n'est donc écrite.
 #
 #  ## Ordre de conversion imposé par #582
 #
 #  Un appel à la fois, en observant une bascule entre chaque : uploads (fait et
-#  observé le 28/08/2026), authentification WhatsApp (observée le 30/08/2026,
-#  `→ WhatsApp auth synchronisé (conteneur jetable, sans sudo ; creds.json: 1883
-#  octets, JSON valide)`), puis la base — convertie le 30/08/2026, à observer.
-#  La règle sudo ne se retire qu'une fois cette dernière bascule CONSTATÉE, pas
-#  à la conversion, et se vérifie par `durcir-sudoers.sh --etat`.
+#  observé le 28/08/2026), puis authentification WhatsApp (observée le
+#  30/08/2026, `→ WhatsApp auth synchronisé (conteneur jetable, sans sudo ;
+#  creds.json: 1883 octets, JSON valide)`). La règle sudo ne s'est retirée
+#  qu'une fois la dernière bascule CONSTATÉE, et se vérifie par
+#  `durcir-sudoers.sh --etat`.
 #
 #  Test : bash scripts/lib/lib-volumes.sh --selftest
 # =============================================================================
@@ -93,32 +72,17 @@
 #
 #   $1  nom du volume Docker cible          ex. 5hostachy_uploads
 #   $2  répertoire temporaire source        ex. /tmp/sync_uploads
-#   $3  mode : `ajout` (défaut) ou `miroir` — cf. l'en-tête pour `miroir`
 #
-# Rend une chaîne vide si un argument manque OU si le mode est inconnu :
-# l'appelant doit traiter le cas comme INCONNU et s'abstenir, jamais construire
-# une commande tronquée — `rm -rf ""` et un montage sur `/` sont exactement ce
-# qu'on ne veut pas produire. Un mode mal orthographié ne doit surtout pas
-# retomber silencieusement sur `ajout` : la phase 4 laisserait alors les WAL/SHM
-# résiduels du peer en place, et rien ne le dirait.
+# Rend une chaîne vide si un argument manque : l'appelant doit traiter le cas
+# comme INCONNU et s'abstenir, jamais construire une commande tronquée —
+# `rm -rf ""` et un montage sur `/` sont exactement ce qu'on ne veut pas produire.
 cmd_installer_volume() {
-    local volume="${1:-}" source="${2:-}" mode="${3:-ajout}" prelude=''
+    local volume="${1:-}" source="${2:-}"
     [ -n "$volume" ] || return 1
     [ -n "$source" ] || return 1
-    case "$mode" in
-        ajout)  prelude='' ;;
-        #  Vider la cible AVANT de copier. `find … -mindepth 1 -delete` plutôt
-        #  qu'un glob : `rm -rf /dst/*` rate les fichiers cachés, et une chaîne
-        #  contenant `*` serait développée par le `eval` de `run` avant même de
-        #  partir en SSH.
-        #  La garde de source non vide passe en premier : sans elle, la
-        #  destination serait vidée pour rien (cf. en-tête).
-        miroir) prelude='find /src -mindepth 1 -maxdepth 1 | grep -q . && find /dst -mindepth 1 -delete && ' ;;
-        *)      return 1 ;;
-    esac
     #  La source est montée en LECTURE SEULE : le conteneur n'a aucune raison
     #  d'écrire dans /tmp, et le lui interdire est gratuit.
-    printf '%s' "docker run --rm -v ${volume}:/dst -v ${source}:/src:ro alpine sh -c \"${prelude}cp -a /src/. /dst/\" && rm -rf ${source}"
+    printf '%s' "docker run --rm -v ${volume}:/dst -v ${source}:/src:ro alpine sh -c \"cp -a /src/. /dst/\" && rm -rf ${source}"
 }
 
 # Transférer un volume local vers le volume homonyme du peer, en deux temps :
@@ -126,9 +90,8 @@ cmd_installer_volume() {
 # installation dans le volume par conteneur jetable.
 #
 # Cet enchaînement était écrit DEUX FOIS à l'identique dans `bascule.sh`, phases
-# 1 et 2 — et une troisième était en vue, la phase 4 le fera le jour où
-# `--delete` sera couvert. Une copie diverge : c'est le motif de tout ce
-# chantier, et il valait aussi pour son propre correctif.
+# 1 et 2. Une copie diverge : c'est le motif de tout ce chantier, et il valait
+# aussi pour son propre correctif.
 #
 # ⚠️ CETTE FONCTION N'EST PAS PURE, contrairement à `cmd_installer_volume` : elle
 # EXÉCUTE. Elle s'appuie sur `run`, `$SSH_CMD` et `$PEER_IP`, définis par
@@ -137,10 +100,9 @@ cmd_installer_volume() {
 # bruyamment plutôt que de lancer une commande tronquée sur la production.
 #
 #  $1  point de montage local     $2  nom du volume     $3  temporaire du peer
-#  $4  mode d'installation : `ajout` (défaut) ou `miroir`
 transferer_volume_vers_peer() {
     pousser_vers_temporaire_peer "$1" "$3" || return $?
-    installer_volume_peer "$2" "$3" "${4:-ajout}"
+    installer_volume_peer "$2" "$3"
 }
 
 # Le contexte que les deux gestes ci-dessous empruntent à `bascule.sh`.
@@ -175,21 +137,17 @@ pousser_vers_temporaire_peer() {
 
 # 2ᵉ temps — installer le temporaire du peer dans son volume, sans sudo.
 #
-# Séparé du 1er temps parce que la phase 4 s'intercale entre les deux : elle
-# lance `PRAGMA integrity_check` sur la base poussée AVANT de l'installer, et
-# renonce si elle est corrompue. Une phase qui doit s'intercaler ne peut pas
-# appeler l'enchaînement complet — sans cette séparation elle réécrivait le
-# `docker run` à la main, et c'est très exactement la duplication que ce module
-# existe pour empêcher.
+# Séparé du 1er temps : deux gestes, deux privilèges — pousser n'en demande
+# aucun, installer passe par un conteneur jetable. Chacun s'éprouve seul.
 #
-#  $1  nom du volume     $2  temporaire du peer     $3  mode (`ajout`|`miroir`)
+#  $1  nom du volume     $2  temporaire du peer
 installer_volume_peer() {
-    local volume="$1" tmp="$2" mode="${3:-ajout}" cmd
+    local volume="$1" tmp="$2" cmd
     _contexte_peer_present installer_volume_peer || return $?
-    #  Cas zéro : argument manquant ou mode inconnu → aucune commande. On
-    #  s'abstient, on ne devine pas.
-    cmd=$(cmd_installer_volume "$volume" "$tmp" "$mode") || {
-        echo "installer_volume_peer : volume/temporaire/mode invalides ($volume, $tmp, $mode) — abandon." >&2
+    #  Cas zéro : argument manquant → aucune commande. On s'abstient, on ne
+    #  devine pas.
+    cmd=$(cmd_installer_volume "$volume" "$tmp") || {
+        echo "installer_volume_peer : volume ou temporaire invalide ($volume, $tmp) — abandon." >&2
         return 1
     }
     run "$SSH_CMD ptressard@$PEER_IP '$cmd'"
@@ -204,12 +162,12 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         if [ "$3" = "$2" ]; then echo "PASS  $1"
         else echo "FAIL  $1"; echo "      attendu : $2"; echo "      obtenu  : $3"; fail=1; fi
     }
-    contient() { # description motif [mode]
-        local cmd; cmd=$(cmd_installer_volume 5hostachy_uploads /tmp/sync_uploads "${3:-ajout}")
+    contient() { # description motif
+        local cmd; cmd=$(cmd_installer_volume 5hostachy_uploads /tmp/sync_uploads)
         case "$cmd" in *"$2"*) echo "PASS  $1" ;; *) echo "FAIL  $1 — absent : $2"; fail=1 ;; esac
     }
-    absent() { # description motif [mode]
-        local cmd; cmd=$(cmd_installer_volume 5hostachy_uploads /tmp/sync_uploads "${3:-ajout}")
+    absent() { # description motif
+        local cmd; cmd=$(cmd_installer_volume 5hostachy_uploads /tmp/sync_uploads)
         case "$cmd" in *"$2"*) echo "FAIL  $1 — présent : $2"; fail=1 ;; *) echo "PASS  $1" ;; esac
     }
 
@@ -229,42 +187,14 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     #  CONTENU. Le volume du peer recevrait un sous-répertoire, les uploads
     #  seraient introuvables, et la bascule n'aurait rien à signaler.
     absent   "pas de copie du répertoire au lieu du contenu" "cp -a /src/ /dst/"
-    #  Le mode par défaut n'efface RIEN : c'est ce qui distingue les phases 1 et
-    #  2 de la phase 4, et une inversion silencieuse viderait un volume.
+    #  La copie n'efface RIEN de la cible : une purge sur une source vide
+    #  viderait un volume du peer.
     #  ⚠️ Aucun accent grave dans les libellés : entre guillemets doubles, bash y
     #  ouvre une substitution de commande. Le test passait, son nom était vide,
     #  et « ajout: command not found » s'imprimait au milieu du relevé — même
     #  piège que le heredoc de `lib-sudoers.sh` (12/08/2026).
-    absent   "mode ajout : aucune suppression"             "find /dst"
-
-    echo "-- mode miroir (phase 4, base) : ce que faisait \`--delete\` --"
-    contient "la cible est vidée avant la copie"  "find /dst -mindepth 1 -delete" miroir
-    #  🔴 La garde que `rsync -a --delete` n'avait pas : une source vide vidait
-    #  la base du peer sans rien y remettre, en silence.
-    contient "refus de vider sur une source vide" "find /src -mindepth 1 -maxdepth 1 | grep -q ." miroir
-    contient "puis la même copie qu'en mode ajout" "cp -a /src/. /dst/" miroir
-    absent   "toujours aucun sudo en mode miroir" "sudo" miroir
-    #  ⚠️ `rm -rf /dst/*` raterait les fichiers cachés — et le `*` serait
-    #  développé par le `eval` de `run` AVANT de partir en SSH, donc sur le nœud
-    #  actif et non sur le peer.
-    absent   "pas de glob dans la suppression"    "/dst/*" miroir
-    #  L'ORDRE compte : la garde d'abord, la suppression ensuite. Inversés, on
-    #  viderait la cible avant de découvrir que la source est vide.
-    case "$(cmd_installer_volume v /tmp/s miroir)" in
-        *"grep -q . && find /dst -mindepth 1 -delete && cp -a"*)
-            echo "PASS  l'ordre est : garde, purge, copie" ;;
-        *) echo "FAIL  l'ordre garde/purge/copie n'est pas celui attendu"; fail=1 ;;
-    esac
-    #  🔴 CAS ZÉRO DU MODE : un mode mal orthographié ne doit PAS retomber sur
-    #  `ajout`. La phase 4 laisserait alors les WAL/SHM résiduels du peer en
-    #  place — le défaut exact que ce mode existe pour supprimer — et la
-    #  commande produite serait parfaitement valide, donc muette.
-    check "mode inconnu → aucune commande" "" "$(cmd_installer_volume v /tmp/s supprimer || true)"
-    if cmd_installer_volume v /tmp/s miroirr >/dev/null 2>&1; then
-        echo "FAIL  un mode inconnu doit rendre un code d'erreur"; fail=1
-    else
-        echo "PASS  un mode inconnu rend un code d'erreur"
-    fi
+    absent   "aucune suppression dans la cible"            "find /dst"
+    absent   "aucun rm dans la cible"                      "rm -rf /dst"
 
     #  Cas zéro : un argument manquant ne doit pas produire une commande
     #  tronquée. `rm -rf ""` et un montage `-v :/src` sont exactement les deux
@@ -281,8 +211,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         echo "PASS  un argument manquant rend un code d'erreur"
     fi
 
-    #  Le nom du volume et le temporaire ne sont pas codés en dur : les deux
-    #  conversions restantes (WhatsApp auth, base) passeront par la même fonction.
+    #  Le nom du volume et le temporaire ne sont pas codés en dur : uploads et
+    #  WhatsApp auth passent par la même fonction.
     check "la fonction sert un autre volume" \
         "docker run --rm -v 5hostachy_whatsapp_auth:/dst -v /tmp/sync_wa_auth:/src:ro alpine sh -c \"cp -a /src/. /dst/\" && rm -rf /tmp/sync_wa_auth" \
         "$(cmd_installer_volume 5hostachy_whatsapp_auth /tmp/sync_wa_auth)"
@@ -300,25 +230,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     #  On compte donc les APPELS restants dans `bascule.sh`, en excluant les
     #  commentaires. `APPELS_SUDO_ATTENDUS` descend à chaque étape convertie :
     #
-    #      3 → étape 0 (avant #582)
-    #      2 → étape 1/3, uploads          — observée le 29/08/2026 02:02
-    #      1 → étape 2/3, WhatsApp auth    — observée le 30/08/2026 02:02
-    #      0 → étape 3/3, base (`--delete`) — convertie le 30/08/2026
-    #
-    #  ⚠️ Ce chiffre ne se baisse QUE lorsqu'un appel est réellement converti.
-    #  Le baisser pour faire passer le test rendrait ce contrôle mensonger, ce
-    #  qui est pire que son absence.
-    #
-    #  ✅ TERMINÉ le 31/08/2026 — et « zéro appel » ne l'a jamais suffi à lui
-    #  seul. « Zéro appel dans le code » et « zéro appel exécuté » sont deux
-    #  faits différents : la phase 4 ne tourne qu'à 02:00. La règle sudo est
-    #  restée en place jusqu'à ce que le journal montre la ligne attendue —
-    #  chemin de repli conservé pour la seule phase non éprouvée, et la plus
-    #  délicate des trois (c'est elle qui porte le `--delete` sur la base) :
-    #
-    #      [2026-08-31 02:02:26]   → DB installée dans le volume peer
-    #                                (conteneur jetable, sans sudo).
-    #      [2026-08-31 02:02:53] ===== Bascule terminée =====
+    #  ✅ À ZÉRO depuis le 31/08/2026 — et « zéro appel dans le code » n'a jamais
+    #  suffi : la règle sudo est restée en place jusqu'à ce que le journal d'une
+    #  bascule réelle montre l'installation sans sudo.
     #
     #  ⚠️ Ce compteur RESTE à zéro et reste utile : il refuse le retour d'un
     #  `sudo rsync` dans `bascule.sh`, que plus rien n'autoriserait côté sudoers
@@ -354,9 +268,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
             fail=1
         fi
 
-        #  Chaque phase convertie doit passer par ce module. Trois aujourd'hui :
-        #  uploads et WhatsApp auth par l'enchaînement complet, la base par les
-        #  deux temps séparés (elle vérifie l'intégrité entre les deux).
+        #  Chaque phase qui installe un volume passe par ce module : uploads et
+        #  WhatsApp auth, par l'enchaînement complet.
         #
         #  ⚠️ On compte l'ENSEMBLE des points d'entrée, pas `transferer_…` seul :
         #  la première version de ce contrôle comptait un seul nom et a échoué
@@ -364,17 +277,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         #  — le jour où le code s'est AMÉLIORÉ. Découper `transferer_…` en deux
         #  temps l'aurait fait échouer une seconde fois, pour la même raison.
         appels=$(grep -cE '^ *(transferer_volume_vers_peer|installer_volume_peer) ' "$bascule" || true)
-        check "phases installées via lib-volumes" "3" "$appels"
-
-        #  Et la phase 4 doit demander le mode `miroir` — en mode `ajout`, les
-        #  `app.db-wal` / `app.db-shm` résiduels du peer survivraient à côté
-        #  d'une base fraîche. La commande produite resterait valide : rien,
-        #  hors ce contrôle, ne dirait que la purge n'a pas eu lieu.
-        if grep -q '^ *installer_volume_peer 5hostachy_app_data /tmp/sync_app_data miroir$' "$bascule"; then
-            echo "PASS  la base est installée en mode miroir (WAL/SHM du peer purgés)"
-        else
-            echo "FAIL  la phase 4 n'installe pas la base en mode miroir"; fail=1
-        fi
+        check "phases installées via lib-volumes" "2" "$appels"
     fi
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -406,7 +309,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     esac
 
     # ─────────────────────────────────────────────────────────────────────────
-    #  Les deux temps séparés — ce dont la phase 4 se sert
+    #  Les deux temps séparés
     # ─────────────────────────────────────────────────────────────────────────
     #  Le garde de contexte est écrit UNE fois et partagé : on vérifie donc qu'il
     #  protège bien les deux points d'entrée, et pas seulement celui par lequel
@@ -420,8 +323,6 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     done
 
     #  🔴 Le 1er temps ne doit RIEN installer, et le 2ᵉ ne doit RIEN pousser.
-    #  Si l'un faisait le travail de l'autre, la phase 4 vérifierait l'intégrité
-    #  d'une base DÉJÀ installée dans le volume du peer — c'est-à-dire trop tard.
     sortie=$(bash -c 'source '"${BASH_SOURCE[0]}"'; run() { echo "RUN:$*"; }; SSH_CMD="ssh"; PEER_IP="10.0.0.1"; pousser_vers_temporaire_peer /mnt/s /tmp/t' 2>&1)
     case "$sortie" in
         *"docker run"*) echo "FAIL  le 1er temps installe déjà : $sortie"; fail=1 ;;
@@ -430,23 +331,23 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         *) echo "FAIL  1er temps inattendu : $sortie"; fail=1 ;;
     esac
 
-    sortie=$(bash -c 'source '"${BASH_SOURCE[0]}"'; run() { echo "RUN:$*"; }; SSH_CMD="ssh"; PEER_IP="10.0.0.1"; installer_volume_peer 5hostachy_app_data /tmp/t miroir' 2>&1)
+    sortie=$(bash -c 'source '"${BASH_SOURCE[0]}"'; run() { echo "RUN:$*"; }; SSH_CMD="ssh"; PEER_IP="10.0.0.1"; installer_volume_peer 5hostachy_uploads /tmp/t' 2>&1)
     case "$sortie" in
         *"RUN:rsync"*) echo "FAIL  le 2e temps pousse encore : $sortie"; fail=1 ;;
-        *"RUN:ssh ptressard@10.0.0.1 'docker run"*"find /dst -mindepth 1 -delete"*)
-            echo "PASS  2e temps : installe en miroir, et rien d'autre" ;;
+        *"RUN:ssh ptressard@10.0.0.1 'docker run --rm -v 5hostachy_uploads:/dst -v /tmp/t:/src:ro"*)
+            echo "PASS  2e temps : installe, et rien d'autre" ;;
         *) echo "FAIL  2e temps inattendu : $sortie"; fail=1 ;;
     esac
 
-    #  Cas zéro des deux temps : un mode inconnu ne doit rien lancer du tout.
+    #  Cas zéro des deux temps : un argument manquant ne doit rien lancer du tout.
     #  Sans ce refus, `cmd_installer_volume` rendrait une chaîne vide et
     #  `run "ssh peer ''"` ouvrirait un shell distant sans commande — vert au
-    #  journal, et la base jamais installée.
-    sortie=$(bash -c 'source '"${BASH_SOURCE[0]}"'; run() { echo "RUN:$*"; }; SSH_CMD="ssh"; PEER_IP="10.0.0.1"; installer_volume_peer v /tmp/t supprimer' 2>&1; echo "code=$?")
+    #  journal, et le volume jamais installé.
+    sortie=$(bash -c 'source '"${BASH_SOURCE[0]}"'; run() { echo "RUN:$*"; }; SSH_CMD="ssh"; PEER_IP="10.0.0.1"; installer_volume_peer v ""' 2>&1; echo "code=$?")
     case "$sortie" in
-        *"RUN:"*) echo "FAIL  mode inconnu : une commande a été lancée — $sortie"; fail=1 ;;
-        *"code=1"*) echo "PASS  mode inconnu → aucune commande lancée, code 1" ;;
-        *) echo "FAIL  mode inconnu inattendu : $sortie"; fail=1 ;;
+        *"RUN:"*) echo "FAIL  temporaire absent : une commande a été lancée — $sortie"; fail=1 ;;
+        *"code=1"*) echo "PASS  temporaire absent → aucune commande lancée, code 1" ;;
+        *) echo "FAIL  temporaire absent inattendu : $sortie"; fail=1 ;;
     esac
 
     [ $fail -eq 0 ] && echo "== TOUS OK ==" || echo "== ÉCHECS =="

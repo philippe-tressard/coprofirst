@@ -111,7 +111,7 @@
   - **[Admin] Téléchargement** : chaque sauvegarde réussie est téléchargeable depuis l'interface (archive `.tar.gz`).
   - **[Admin] Restauration** : l'admin peut initier une restauration à partir d'une version historisée. Action précédée d'un avertissement explicite (texte : « Cette action remplace toutes les données actuelles. Cette opération est irréversible. ») et d'une confirmation par saisie de mot de passe admin.
   - **Notification d'échec** : si une sauvegarde automatique échoue, l'admin reçoit un email d'alerte (code `sauvegarde_echec`) et une alerte visible dans le tableau de bord CS au prochain chargement.
-  - Le périmètre de la sauvegarde couvre : fichier `app.db` + répertoire des fichiers uploadés. Les templates et logs applicatifs ne font pas partie de la sauvegarde (ils sont dans l'image Docker).
+  - Le périmètre de la sauvegarde couvre : export vérifié de la base + répertoire des fichiers uploadés. Les templates et logs applicatifs ne font pas partie de la sauvegarde (ils sont dans l'image Docker).
   - Les sauvegardes sont stockées dans le volume Docker dédié (`/backups`) — monté de préférence sur un support distinct du stockage principal (clé USB, NAS).
 
 ---

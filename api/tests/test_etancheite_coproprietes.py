@@ -45,14 +45,14 @@ from sqlmodel import Session, select
 from app import contexte
 from app.auth.deps import get_current_user
 from app.auth.jwt import creer_jeton_acces
-from app.dialecte import url_fichier
+
 from app.main import app
 from app.models.copropriete import Copropriete
 from app.models.core import RoleUtilisateur, Utilisateur
 from app.models.tickets import Ticket
 from app.seed import seed
 from app.utils.limiter import limiter
-from tests.aides_base import compte
+from tests.aides_base import adresse_de_test, compte
 from tests.aides_sources import operations_montees
 
 #: Le témoin planté dans A : un mot qu'aucun libellé de l'application ne contient.
@@ -72,12 +72,12 @@ MINIMUM_REPONSES_200 = 40
 MINIMUM_LECTURES_B = 3
 
 
-def _copropriete(base: contexte.Copropriete, nom: str, dossier) -> contexte.Copropriete:
+def _copropriete(base: contexte.Copropriete, nom: str, dossier, adresse) -> contexte.Copropriete:
     (dossier / nom).mkdir()
     return replace(
         base,
         identifiant=f"essai-{nom}",
-        url_base=url_fichier(dossier / f"{nom}.db"),
+        url_base=adresse,
         racine_fichiers=dossier / nom,
         secret=nom * 40,
     )
@@ -89,8 +89,11 @@ def deux(tmp_path_factory):
     dossier = tmp_path_factory.mktemp("etancheite")
     base = contexte.courante()
     coproprietes = {}
+    retraits = []
     for nom, marque in (("a", MARQUE_A), ("b", MARQUE_B)):
-        copro = _copropriete(base, nom, dossier)
+        adresse, retirer = adresse_de_test()
+        retraits.append(retirer)
+        copro = _copropriete(base, nom, dossier, adresse)
         with contexte.dans(copro):
             seed()
             with Session(contexte.moteur()) as s:
@@ -123,6 +126,8 @@ def deux(tmp_path_factory):
     for copro, _jeton, _id in coproprietes.values():
         with contexte.dans(copro):
             contexte.moteur().dispose()
+    for retirer in retraits:
+        retirer()
 
 
 @pytest.fixture()

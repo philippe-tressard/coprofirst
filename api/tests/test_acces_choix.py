@@ -117,13 +117,13 @@ def arbre_dessai():
         for ligne in s.exec(select(ConfigSite)).all():
             s.delete(ligne)
         #  ⚠️ Les ENFANTS d'abord : `perimetre.parent_id` est une clé étrangère, et
-        #  la suite active `foreign_keys=ON` (conftest). Un balayage dans l'ordre
+        #  la suite vérifie les clés. Un balayage dans l'ordre
         #  des identifiants échouait donc au premier parent — et le nettoyage
         #  raté laissait l'arbre en place pour les fichiers suivants, qui
         #  échouaient pour une raison qui ne les regardait pas.
         #  ⚠️ Un `commit` par ligne, des ENFANTS vers les parents :
         #  `perimetre.parent_id` est une clé étrangère, la suite active
-        #  `foreign_keys=ON` (conftest), et SQLAlchemy ne connaît pas l'ordre à
+        #  la vérification des clés, et SQLAlchemy ne connaît pas l'ordre à
         #  suivre — la relation n'est pas cartographiée, seule la colonne l'est.
         #  Un lot unique se faisait donc réordonner et échouait sur le premier
         #  parent ; le nettoyage raté laissait l'arbre en place, et les fichiers

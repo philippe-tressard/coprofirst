@@ -1,8 +1,8 @@
 """`start.sh` attend la base et ne migre jamais une base qu'il n'a pas pu lire (#1759, DI-7).
 
-Une base SERVEUR peut démarrer après l'API ; la migrer pendant qu'elle est
-injoignable laissait `alembic upgrade head` rejouer l'historique écrit pour
-SQLite sur une base vide, une seconde plus tard.
+Le serveur de base peut démarrer après l'API ; la migrer pendant qu'il est
+injoignable laissait `alembic upgrade head` atteindre une base vide, une seconde
+plus tard, sans schéma posé.
 """
 
 from __future__ import annotations
@@ -10,12 +10,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.utils.attendre_base import attendre
+from tests.aides_base import url_des_tests
 
 START = Path(__file__).resolve().parents[1] / "start.sh"
 
 
-def test_une_base_fichier_repond_d_emblee(tmp_path):
-    assert attendre(f"sqlite:///{(tmp_path / 'base.db').as_posix()}", delai=1) is True
+def test_une_base_qui_repond_rend_vrai():
+    assert attendre(url_des_tests(), delai=5) is True
 
 
 def test_une_base_injoignable_rend_faux_au_bout_du_delai():

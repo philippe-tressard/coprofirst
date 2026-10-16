@@ -175,7 +175,7 @@ def monde(scene, monkeypatch):
     ).all()
     for t in [*crees, ticket]:
         #  Les VERSEMENTS aussi (#1747) : laissés en place, ils pointaient vers un
-        #  identifiant d'affaire que SQLite réattribue — une affaire neuve d'un test
+        #  identifiant d'affaire qu'une base neuve réattribue — une affaire d'un test
         #  suivant en héritait (« 9 versements » au lieu d'un, selon l'ordre).
         for modele in (TicketEvolution, MessageVerse, VersementCourriel, FilCourriel):
             for ligne in session.exec(select(modele).where(modele.ticket_id == t.id)).all():

@@ -3,8 +3,8 @@
 POURQUOI CE TEST — constat du 04/08/2026 sur la production :
 
 `_check_backups()` déclarait les sauvegardes saines en lisant `historique_sauvegarde`.
-Or cette table vit dans `app.db`, que `bascule.sh` réplique sur le peer — alors que
-le volume Docker `backups`, lui, n'est jamais répliqué. La ligne « réussie » ne
+Or cette table vit dans la base, répliquée sur le peer — alors que le volume
+Docker `backups`, lui, n'est jamais répliqué. La ligne « réussie » ne
 prouvait donc pas qu'une archive existe : elle prouvait qu'une ligne avait été
 écrite. Volume vidé, disque plein, archive tronquée : le contrôle restait vert.
 C'est « vérifier l'artefact déclaré plutôt que le fait » de
@@ -187,13 +187,13 @@ def test_export_en_echec_est_signale(session):
 
 
 def test_integrite_non_ok_est_signalee(session):
-    enregistrer_export(session, integrite="malformed database")
+    enregistrer_export(session, integrite="écarts : lot 3/4")
     anomalies = health_monitor._check_export_hors_site(session)
     assert any("intégrité" in a for a in anomalies)
 
 
 def test_integrite_non_verifiee_est_signalee(session):
-    """Le script rend « inconnue » quand ni sqlite3 ni python n'ont pu vérifier.
+    """Le script rend « inconnue » quand l'export n'a pas pu être relu.
     Ce n'est pas « ok » : ça doit remonter."""
     enregistrer_export(session, integrite="inconnue")
     anomalies = health_monitor._check_export_hors_site(session)
@@ -230,11 +230,12 @@ def test_le_script_remonte_les_cles_que_le_controle_relit():
 
 
 def test_le_script_ne_touche_jamais_la_base_de_production():
-    """Règle d'or anti-corruption : aucun accès à app.db sur un RPi.
+    """Le script ne lit que des archives closes, jamais la base de production.
 
-    Le script n'a le droit de lire que des archives closes. Une commande
-    `sqlite3` visant app.db, ou un `docker exec … PRAGMA`, réintroduirait le
-    motif qui a coûté trois incidents (05+17/06 et 17/07/2026).
+    Il tourne sur le POSTE, par la clé de la personne qui le lance : un `docker
+    exec` sur un nœud (le conteneur de la base, ou celui de l'API) lui ouvrirait
+    la production. Il ne lit que le volume des sauvegardes, par un conteneur
+    jetable monté en lecture seule.
     """
     #  Les gestes partagés vivent à côté depuis #1896 : la règle les couvre aussi.
     contenu = SCRIPT.read_text(encoding="utf-8") + COPIE.read_text(encoding="utf-8")
@@ -243,14 +244,11 @@ def test_le_script_ne_touche_jamais_la_base_de_production():
         for ligne in contenu.splitlines()
         if ligne.strip() and not ligne.strip().startswith("#")
     ]
-    # On ne cherche pas le MOT « sqlite3 » (il apparaît légitimement dans un
-    # message et dans un `command -v`), mais une INVOCATION sur un fichier .db :
-    # c'est cela, et cela seul, qui ouvrirait une base.
-    ouverture_base = re.compile(r'sqlite3\s+"?\$?[^\s"]*\.db')
+    #  Cas zéro : le relevé lit bien les deux fichiers — le geste de lecture du
+    #  volume des sauvegardes doit y être, sinon ce test ne regarde rien.
+    assert any("5hostachy_backups:/b:ro" in ligne for ligne in lignes_actives)
     for ligne in lignes_actives:
-        assert "app.db-wal" not in ligne
-        assert "docker exec" not in ligne, "aucun docker exec sur les nœuds"
-        for invocation in ouverture_base.finditer(ligne):
-            assert "$TMP" in invocation.group(0), (
-                f"sqlite3 ouvre une base hors de la copie locale : {ligne.strip()}"
-            )
+        assert "docker exec" not in ligne, f"aucun docker exec sur les nœuds : {ligne.strip()}"
+        assert not re.search(r"-v\s+\S*(pg_data|app_data)", ligne), (
+            f"un volume de données monté depuis le poste : {ligne.strip()}"
+        )

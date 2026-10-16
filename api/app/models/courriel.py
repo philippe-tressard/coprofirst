@@ -118,7 +118,7 @@ class CourrielReleve(SQLModel, table=True):
     #: Pourquoi — écrit pour un humain, jamais vide.
     motif: str
     #: L'affaire visée, sans clé étrangère : la ligne doit survivre à une
-    #: affaire supprimée, et SQLite ne s'en passerait pas proprement (0117).
+    #: affaire supprimée.
     ticket_id: Optional[int] = Field(default=None, index=True)
     affaire: Optional[str] = None
 

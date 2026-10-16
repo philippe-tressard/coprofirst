@@ -5,9 +5,9 @@
 `supprimer_utilisateur` nettoyait **onze** familles de dépendances, énumérées à la
 main. Le modèle en compte **cinquante-six**, dont trente-sept en `NOT NULL`.
 Vingt-six tables n'étaient donc pas nettoyées : publications, tickets, messages,
-idées, sondages, signalements, documents… La suppression réussissait quand même,
-parce que SQLite tournait avec `foreign_keys=OFF` — et elle laissait en base des
-lignes pointant vers un compte qui n'existe plus.
+idées, sondages, signalements, documents… Faute de clés vérifiées, la
+suppression réussissait quand même — et elle laissait en base des lignes
+pointant vers un compte qui n'existe plus.
 
 🔴 **Une liste tenue à la main ne peut pas suivre.** Chaque nouvelle table qui
 référence un utilisateur devait être ajoutée ici ; vingt-six l'ont été dans le

@@ -323,7 +323,7 @@ def verifier_acces(request: Request, _: Utilisateur = Depends(get_current_user))
     Il s'appuie volontairement sur `get_current_user`, la dépendance d'authentification
     commune, et non sur une vérification allégée maison. Une seconde façon de valider
     une session serait une seconde sémantique à maintenir — et à faire diverger. Le
-    coût dominant est le trajet HTTP interne, pas la lecture SQLite qu'elle effectue :
+    coût dominant est le trajet HTTP interne, pas la lecture en base qu'elle effectue :
     l'économiser ne rapporterait presque rien et laisserait un compte désactivé
     conserver l'accès jusqu'à l'expiration de son jeton (120 min).
     """

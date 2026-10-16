@@ -20,15 +20,16 @@ elles sont visibles de tous les utilisateurs de l'environnement (socle 03).
 
 ```
 SECRET_KEY=cloud-dev-placeholder-0123456789abcdef0123
-DATABASE_URL=sqlite:///:memory:
+DATABASE_URL=postgresql+psycopg://essai:essai@localhost:5432/essai
+TESTS_BASE_URL=postgresql+psycopg://essai:essai@localhost:5432/essai
 ENABLE_API_DOCS=false
 MAIL_ENABLED=false
 UPLOADS_DIR=/tmp/hostachy-uploads
 ```
 
-`DATABASE_URL` reste en mémoire, comme dans le job pytest : `api/tests/conftest.py`
-ne pose qu'une valeur **par défaut**, donc une base fichier déclarée ici deviendrait
-aussi celle des tests.
+Les deux URL désignent le PostgreSQL que `setup.sh` installe dans la VM — rôle et
+base `essai`, ceux du job de CI : la suite pytest ne tourne que sur PostgreSQL, et
+chaque test y reçoit un schéma neuf.
 
 **Script de setup** — il ne fait que retrouver le dépôt et appeler `setup.sh` :
 

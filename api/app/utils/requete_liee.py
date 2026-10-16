@@ -1,15 +1,12 @@
 """Une requête `text()` dont les dates se comparent comme la base les stocke (#1298).
 
 `text()` ne connaît pas le type des colonnes : un paramètre lié y part tel quel.
-Or SQLAlchemy stocke un `DateTime` dans SQLite sous la forme
-`2026-09-25 18:00:00.000000` — une ESPACE avant l'heure — et SQLite compare des
-chaînes. Un seuil passé en `datetime.isoformat()` (`2026-09-25T12:00:00`) porte
-un `T`, qui se classe après l'espace : le jour du seuil, toute ligne paraissait
-« antérieure », quelle que soit son heure. La purge du dimanche effaçait ainsi
-des jetons de session encore valides.
+Un seuil passé en `datetime.isoformat()` part donc en TEXTE, comparé à un
+horodatage — ce que le serveur refuse, ou qu'il interprète à sa façon. Le jour du
+seuil, une purge avait ainsi effacé des jetons de session encore valides.
 
-Ici, un `datetime` est lié avec le type `DateTime` : SQLAlchemy le sérialise
-alors exactement comme il l'écrit en base. Les dates passées doivent être en
+Ici, un `datetime` est lié avec le type `DateTime` : SQLAlchemy l'envoie comme
+l'horodatage qu'il écrit en base. Les dates passées doivent être en
 UTC NAÏF (`horloge.maintenant()`), la forme de toutes les dates stockées.
 
 🔒 `tests/test_purge_dates_liees.py` refuse un `.isoformat()` passé comme

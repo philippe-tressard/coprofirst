@@ -42,17 +42,17 @@ decider_source() { # $1=code_rpi1 $2=code_rpi2 → rpi1|rpi2|split-brain|aucun
   echo "aucun"
 }
 
-# ── L'archive contient-elle bien la base ? ───────────────────────────────────
+# ── L'archive contient-elle bien l'export de la base ? ───────────────────────
 # Prend le LISTING déjà produit, et ne fait aucune E/S — parce que la version
 # « en ligne » de ce test était fausse de deux façons (04/08/2026) :
-#   • `tar -tzf … | grep -qx app.db` : `grep -q` sort dès le premier match et
+#   • `tar -tzf … | grep -qx <entrée>` : `grep -q` sort dès le premier match et
 #     ferme le tube ; `tar` meurt alors en SIGPIPE, et `set -o pipefail` propage
 #     cet échec. Le test rendait donc « absent » sur une archive qui contenait
-#     app.db — un faux négatif silencieux sur le contrôle le plus important ;
-#   • une comparaison par sous-chaîne ferait passer `uploads/app.db` pour la
-#     base. Le nom doit correspondre à la ligne ENTIÈRE.
-# Une seule question pour toute entrée cherchée — la base, ou l'export de la base
-# ci-dessous. `deploiement/standard/mise-a-jour.sh` en porte une COPIE DÉCLARÉE
+#     l'entrée — un faux négatif silencieux sur le contrôle le plus important ;
+#   • une comparaison par sous-chaîne ferait passer `uploads/<entrée>` pour
+#     l'entrée. Le nom doit correspondre à la ligne ENTIÈRE.
+# Une seule question pour toute entrée cherchée.
+# `deploiement/standard/mise-a-jour.sh` en porte une COPIE DÉCLARÉE
 # (l'archive d'une réplique n'emporte pas `scripts/lib`) : le même tube y était
 # revenu le 10/10/2026 (#1820). `test_deploiement_standard.py` exige deux corps
 # identiques.
@@ -63,8 +63,8 @@ listing_contient() { # $1=listing tar · $2=entrée exacte → oui|non
   esac
 }
 
-# ── …ou l'EXPORT vérifié d'une base serveur ? (PostgreSQL, DI-7b, #1781) ──────
-# Une base serveur n'a pas de fichier : `api/app/utils/backup.py` met dans
+# ── L'EXPORT vérifié de la base (DI-7b, #1781) ───────────────────────────────
+# La base PostgreSQL n'a pas de fichier : `api/app/utils/backup.py` met dans
 # l'archive son export vérifié (P2-7), sous ce nom — même valeur que
 # `backup.NOM_EXPORT_BASE`, tenue par `test_sauvegarde_base_serveur.py`.
 NOM_EXPORT_BASE="base-export.tar.gz"
@@ -77,7 +77,7 @@ verdict_export_base() { # $1 = résumé
   while read -r t lu annonce; do
     #  #1964 : Python sous Windows écrit en CRLF, et le `\r` restait collé à la
     #  dernière colonne — `1\r` n'égale jamais `1`. Toute copie hors site
-    #  échouait depuis le poste, depuis le passage à PostgreSQL.
+    #  échouait depuis le poste.
     annonce=${annonce%$'\r'}
     [ -n "$t" ] || continue
     n=$((n + 1))
@@ -92,7 +92,7 @@ verdict_export_base() { # $1 = résumé
 # il est validé en LISTE BLANCHE ancrée (standards/03-securite.md §2), jamais par
 # liste noire. Sans cette borne, un nom fabriqué deviendrait un chemin ou une
 # commande. C'est aussi ce qui garantit qu'on ne lira jamais autre chose qu'une
-# archive de sauvegarde close — jamais `app.db`.
+# archive de sauvegarde close.
 #
 # Deux séries, deux préfixes, et pas un de plus : celle de la résidence, à la
 # racine du volume, et celle du REGISTRE des installations (#1896), dans son
@@ -116,10 +116,9 @@ nom_valide() { # $1 = nom candidat · $2 = préfixe (défaut : la résidence) �
 # n'est PAS déclarée saine : elle renvoie `erreur`, jamais `succes` — un
 # contrôle qui ne peut pas s'exécuter rend INCONNU (standards/04 §1), et une
 # sauvegarde qu'on croit bonne à tort est pire que pas de sauvegarde du tout.
-# `contient_db` : « oui » (app.db, base-fichier), « export » (base serveur,
-# DI-7b) ou « non ». L'intégrité vient de `PRAGMA integrity_check` pour l'une,
-# de `verdict_export_base` pour l'autre ; la règle est la même : « ok » ou rien.
-verdict_archive() { # $1=octets $2=empreintes_identiques $3=contient_db $4=integrite → statut|message
+# `contient_export` : « oui » ou « non ». L'intégrité vient de
+# `verdict_export_base` : « ok » ou rien.
+verdict_archive() { # $1=octets $2=empreintes_identiques $3=contient_export $4=integrite → statut|message
   local octets="${1:-0}" empreintes="${2:-non}" contient="${3:-non}" integrite="${4:-inconnue}"
   if [ "${octets:-0}" -le 0 ] 2>/dev/null || [ -z "$octets" ]; then
     echo "erreur|Archive vide ou absente après transfert."; return 0
@@ -127,20 +126,16 @@ verdict_archive() { # $1=octets $2=empreintes_identiques $3=contient_db $4=integ
   if [ "$empreintes" != "oui" ]; then
     echo "erreur|Empreinte SHA-256 différente de la source — transfert tronqué ou altéré."; return 0
   fi
-  if [ "$contient" != "oui" ] && [ "$contient" != "export" ]; then
-    echo "erreur|L'archive ne contient ni app.db ni $NOM_EXPORT_BASE — sauvegarde inexploitable."; return 0
+  if [ "$contient" != "oui" ]; then
+    echo "erreur|L'archive ne contient pas $NOM_EXPORT_BASE — sauvegarde inexploitable."; return 0
   fi
   if [ "$integrite" = "inconnue" ]; then
-    echo "erreur|Intégrité NON vérifiée (ni sqlite3 ni python disponibles) — copie non validée."; return 0
+    echo "erreur|Intégrité NON vérifiée (export illisible, ou python indisponible) — copie non validée."; return 0
   fi
   if [ "$integrite" != "ok" ]; then
-    echo "erreur|Base corrompue dans l'archive ($([ "$contient" = export ] && echo "export" || echo "integrity_check") : $integrite)."; return 0
+    echo "erreur|Export incohérent dans l'archive : $integrite."; return 0
   fi
-  if [ "$contient" = export ]; then
-    echo "succes|Copie hors site vérifiée ($octets octets, export : chaque table compte ses lignes annoncées)."
-  else
-    echo "succes|Copie hors site vérifiée ($octets octets, integrity_check : ok)."
-  fi
+  echo "succes|Copie hors site vérifiée ($octets octets, export : chaque table compte ses lignes annoncées)."
 }
 
 # ── Quelles copies locales supprimer ? ───────────────────────────────────────

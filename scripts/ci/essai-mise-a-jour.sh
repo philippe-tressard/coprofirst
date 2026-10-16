@@ -7,18 +7,18 @@
 #  un runner GitHub : jamais sur les RPi, dont les noms de conteneurs sont ceux
 #  de la production. Rien n'est promu, `replica` n'est pas lue.
 #
-#    bash scripts/ci/essai-mise-a-jour.sh <de X.Y.Z> <vers X.Y.Z> <sqlite|postgresql>
+#    bash scripts/ci/essai-mise-a-jour.sh <de X.Y.Z> <vers X.Y.Z>
 #
 #  Le déroulé, celui d'un exploitant :
 #    1. l'archive de déploiement des DEUX versions, tirée de leurs tags
 #       (`lib-archive-deploiement.sh`, la fabrication de la release) ;
-#    2. l'installation de <de> selon le mode d'emploi, base choisie ;
+#    2. l'installation de <de> selon le mode d'emploi, sa base PostgreSQL ;
 #    3. un témoin : le compte administrateur initial, qui se connecte ;
 #    4. `mise-a-jour.sh` de l'INSTALLATION (celui de <de>), cible imposée par
 #       `COPROFIRST_ESSAI_CIBLE` et archive par `COPROFIRST_ESSAI_ARCHIVE` ;
 #    5. le verdict (fonction PURE `verdict_essai`) : journal « réussie », version
-#       posée dans `.env` ET servie par le site, sauvegarde présente — et l'export
-#       de la base sous PostgreSQL —, et le témoin qui se connecte toujours.
+#       posée dans `.env` ET servie par le site, sauvegarde des volumes et
+#       export de la base présents, et le témoin qui se connecte toujours.
 #
 #  ⚠️ <de> doit porter cet outillage (archive avec `postgresql/pg_hba.conf`,
 #  commande `verifier`) : la première version qui le permet est celle de ce lot.
@@ -28,18 +28,18 @@
 set -euo pipefail
 
 # ── PURE : l'essai a-t-il réussi ? ────────────────────────────────────────────
-#  $1 moteur · $2 « réussie » au journal (oui|non) · $3 version de .env ·
-#  $4 version servie · $5 version attendue · $6 archive des volumes (oui|non) ·
-#  $7 export de la base (oui|non) · $8 le témoin se connecte (oui|non)
+#  $1 « réussie » au journal (oui|non) · $2 version de .env · $3 version
+#  servie · $4 version attendue · $5 archive des volumes (oui|non) · $6 export
+#  de la base (oui|non) · $7 le témoin se connecte (oui|non)
 #  → OK | ECHEC:<raisons>
 verdict_essai() {
     local fautes=()
-    [ "$2" = oui ] || fautes+=("le journal ne dit pas « Mise à jour réussie »")
-    [ "$3" = "$5" ] || fautes+=(".env porte ${3:-rien}, attendu $5")
-    [ "$4" = "$5" ] || fautes+=("le site sert ${4:-rien}, attendu $5")
-    [ "$6" = oui ] || fautes+=("pas d'archive des volumes")
-    if [ "$1" = postgresql ] && [ "$7" != oui ]; then fautes+=("pas d'export de la base PostgreSQL"); fi
-    [ "$8" = oui ] || fautes+=("le compte témoin ne se connecte plus")
+    [ "$1" = oui ] || fautes+=("le journal ne dit pas « Mise à jour réussie »")
+    [ "$2" = "$4" ] || fautes+=(".env porte ${2:-rien}, attendu $4")
+    [ "$3" = "$4" ] || fautes+=("le site sert ${3:-rien}, attendu $4")
+    [ "$5" = oui ] || fautes+=("pas d'archive des volumes")
+    [ "$6" = oui ] || fautes+=("pas d'export de la base")
+    [ "$7" = oui ] || fautes+=("le compte témoin ne se connecte plus")
     if [ ${#fautes[@]} -eq 0 ]; then echo OK; else local IFS=';'; echo "ECHEC:${fautes[*]}"; fi
 }
 
@@ -47,20 +47,19 @@ if [ "${1:-}" = "--selftest" ]; then
     st=0
     t() { local r; r=$(verdict_essai "${@:3}"); r=${r%%:*}
           [ "$r" = "$2" ] && echo "PASS  $1 → $r" || { echo "FAIL  $1  attendu=$2 obtenu=$r"; st=1; }; }
-    t "SQLite, tout est là"                 OK     sqlite     oui 2.1.0 2.1.0 2.1.0 oui non oui
-    t "PostgreSQL, tout est là"             OK     postgresql oui 2.1.0 2.1.0 2.1.0 oui oui oui
-    t "PostgreSQL sans export de la base"   ECHEC  postgresql oui 2.1.0 2.1.0 2.1.0 oui non oui
-    t "le site sert l'ancienne version"     ECHEC  sqlite     oui 2.1.0 2.0.0 2.1.0 oui non oui
-    t "version servie illisible"            ECHEC  sqlite     oui 2.1.0 ""    2.1.0 oui non oui
-    t "revenue en arrière"                  ECHEC  sqlite     non 2.0.0 2.0.0 2.1.0 oui non oui
-    t "le témoin a disparu"                 ECHEC  postgresql oui 2.1.0 2.1.0 2.1.0 oui oui non
+    t "tout est là"                         OK     oui 2.1.0 2.1.0 2.1.0 oui oui oui
+    t "sans export de la base"              ECHEC  oui 2.1.0 2.1.0 2.1.0 oui non oui
+    t "sans archive des volumes"            ECHEC  oui 2.1.0 2.1.0 2.1.0 non oui oui
+    t "le site sert l'ancienne version"     ECHEC  oui 2.1.0 2.0.0 2.1.0 oui oui oui
+    t "version servie illisible"            ECHEC  oui 2.1.0 ""    2.1.0 oui oui oui
+    t "revenue en arrière"                  ECHEC  non 2.0.0 2.0.0 2.1.0 oui oui oui
+    t "le témoin a disparu"                 ECHEC  oui 2.1.0 2.1.0 2.1.0 oui oui non
     [ "$st" -eq 0 ] && echo "essai-mise-a-jour : tous les cas passent."
     exit "$st"
 fi
 
 DE="${1:?version de départ manquante}"
 VERS="${2:?version cible manquante}"
-MOTEUR="${3:?moteur manquant (sqlite|postgresql)}"
 RACINE=$(git rev-parse --show-toplevel)
 # shellcheck source=lib-archive-deploiement.sh
 source "$RACINE/scripts/ci/lib-archive-deploiement.sh"
@@ -73,7 +72,7 @@ echo "== 1. Archives de $DE et $VERS"
 ARCHIVE_DE=$(archiver_deploiement "v$DE" "$DE" "$TRAVAIL")
 ARCHIVE_VERS=$(archiver_deploiement "v$VERS" "$VERS" "$TRAVAIL")
 
-echo "== 2. Installation de $DE ($MOTEUR)"
+echo "== 2. Installation de $DE"
 tar -xzf "$ARCHIVE_DE" -C "$INST" --strip-components=1
 cd "$INST"
 cp .env.example .env
@@ -86,12 +85,12 @@ poser COPROFIRST_VERSION "$DE"
 poser COPROFIRST_SAUVEGARDES "$SAUV"
 poser COPROFIRST_DELAI_JOURS 0
 poser MAINTENANCE_KEY "$(openssl rand -hex 24)"
-if [ "$MOTEUR" = postgresql ]; then
-    MDP=$(openssl rand -hex 32)
-    poser COMPOSE_PROFILES postgresql
-    poser POSTGRES_PASSWORD "$MDP"
-    poser DATABASE_URL "postgresql+psycopg://coprofirst:$MDP@postgres:5432/coprofirst"
-fi
+MDP=$(openssl rand -hex 32)
+#  Une <de> qui portait PostgreSQL derrière un profil ne le démarre que par lui ;
+#  sans profil, la variable n'allume rien de plus.
+poser COMPOSE_PROFILES postgresql
+poser POSTGRES_PASSWORD "$MDP"
+poser DATABASE_URL "postgresql+psycopg://coprofirst:$MDP@postgres:5432/coprofirst"
 COMPOSE=(docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml)
 "${COMPOSE[@]}" up -d --quiet-pull
 attendre_sante() {
@@ -134,7 +133,7 @@ VOLUMES=$(ls "$SAUV"/coprofirst_*_vers_"$VERS"_*.tar.gz 2>/dev/null | grep -v --
 BASE=$(ls "$SAUV"/*-base.tar.gz >/dev/null 2>&1 && echo oui || echo non)
 TEMOIN=$(se_connecte)
 ls -la "$SAUV"
-VERDICT=$(verdict_essai "$MOTEUR" "$REUSSIE" "$ENV_VERSION" "$SERVIE" "$VERS" "$VOLUMES" "$BASE" "$TEMOIN")
-echo "Essai $DE → $VERS ($MOTEUR) : $VERDICT"
+VERDICT=$(verdict_essai "$REUSSIE" "$ENV_VERSION" "$SERVIE" "$VERS" "$VOLUMES" "$BASE" "$TEMOIN")
+echo "Essai $DE → $VERS : $VERDICT"
 "${COMPOSE[@]}" down -v >/dev/null 2>&1 || true
 [ "$VERDICT" = OK ] || { echo "::error::$VERDICT"; exit 1; }

@@ -120,7 +120,7 @@ copier_plateforme() { # $1=ip du nœud source
   empreintes="non"; [ -n "$sha_src" ] && [ "$sha_src" = "$sha_dst" ] && empreintes="oui"
   #  L'archive du registre EST l'export : la même relecture, la même règle de
   #  verdict que la résidence — « ok » ou rien.
-  verdict=$(verdict_archive "$octets" "$empreintes" export "$(relire_export "$local_")")
+  verdict=$(verdict_archive "$octets" "$empreintes" oui "$(relire_export "$local_")")
   if [ "${verdict%%|*}" != "succes" ]; then
     PLATEFORME_INTEGRITE="${verdict#*|}"
     mv -f "$local_" "$local_.invalide" 2>/dev/null || true

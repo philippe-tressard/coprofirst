@@ -37,6 +37,8 @@
 #  Vite, relance) vit à côté, depuis #1809.
 # shellcheck source=lib-ci-e2e.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib-ci-e2e.sh"
+# shellcheck source=lib-ci-base.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-ci-base.sh"
 
 # ── Extraction ───────────────────────────────────────────────────────────────
 #  Le parseur ne prétend PAS lire YAML : il lit la forme que ce fichier-ci a, et
@@ -386,6 +388,7 @@ YAML
     "$(ci_dependances_etat '')" "dépendances du poste non vérifiables : vérificateur muet"
 
   ci_e2e_cas   # workers, node_modules, Vite, relance (#1809) : lib-ci-e2e.sh
+  ci_base_cas  # pytest et sa base PostgreSQL : lib-ci-base.sh
   #  #1734 : un saut se NOMME, il ne se tait pas ; aucun saut, aucune mention.
   t "sauts — aucun : rien à dire"    "$(printf '' | ci_resumer_sauts)" ""
   t "sauts — regroupés par raison, le plus fréquent d'abord"     "$(printf 'a::t1	WeasyPrint absent

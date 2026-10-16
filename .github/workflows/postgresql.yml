@@ -1,16 +1,16 @@
 name: PostgreSQL
 
-#  Lot P2-5 (#1747) — chantier multi-copropriétés, D4 (« passer à PostgreSQL »).
+#  Lot P2-5 (#1747) — chantier multi-copropriétés, D4 : PostgreSQL, seul moteur.
 #
-#  Rejoue TOUTE la suite pytest sur PostgreSQL : `tests/aides_base.moteur_memoire`
-#  y bascule quand `TESTS_BASE_URL` est posé, un schéma neuf par base de test.
-#  La production reste sur SQLite ; ce workflow garde le code prêt pour l'autre.
+#  Rejoue TOUTE la suite pytest sur PostgreSQL (`TESTS_BASE_URL`, un schéma neuf
+#  par base de test, `tests/aides_base`) pour ce qui vise `main` — PR et push.
+#  Les PR vers `dev` la jouent dans « Tests Python (pytest) » (`ci.yml`), par le
+#  même script : chaque événement la joue UNE fois (🔒
+#  test_suite_postgresql_une_fois.py). Les deux noms de job sont des checks
+#  REQUIS de `main` : ni l'un ni l'autre ne se renomme sans la protection.
 #
-#  🔒 REQUIS depuis le second temps de P2-5 : la suite y est verte, et un test
-#  qui casse sur PostgreSQL bloque la fusion comme sur SQLite. Le premier temps
-#  du lot était INFORMATIF — il mesurait l'écart sans rougir. Un job qui
-#  n'a pas pu rejouer la suite (pytest interrompu, base injoignable) rend
-#  toujours l'échec : INCONNU, jamais OK (`standards/04` §1).
+#  Un job qui n'a pas pu rejouer la suite (pytest interrompu, base injoignable)
+#  rend toujours l'échec : INCONNU, jamais OK (`standards/04` §1).
 #
 #  La suite tourne en tranches parallèles (`TRANCHES`) : un schéma par test,
 #  donc ~300 tables posées à chaque fois, et les quatre cœurs de l'exécuteur.

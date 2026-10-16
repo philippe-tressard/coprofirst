@@ -22,10 +22,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from alembic.migration import MigrationContext
-from alembic.operations import Operations
 from fastapi import HTTPException
-from sqlalchemy import text
 from sqlmodel import Session, select
 
 from app.models.core import (
@@ -35,15 +32,12 @@ from app.models.core import (
     ProfilAccesDocument,
     RoleUtilisateur,
 )
-from app.seed.contenus_legaux import ASSISTANT_DEUX_AUTOMATIQUES, QUESTION_REGLEMENT
 from app.utils.description_format import ReponseIllisible
 from app.utils.question_reglement.extraits import verifier
 from app.utils.question_reglement.format import lire_reponse
 from app.utils.question_reglement.documents import CODE_REGLEMENT_PUBLIE
 from app.utils.question_reglement.texte import CODE_CATEGORIE, preparer
-from tests.aides_base import moteur_memoire
 from tests.aides_http import client_http
-from tests.aides_migrations import charger_migration
 from tests.aides_reglement import TEXTE, categorie_reglement, joindre
 from tests.aides_reglement import client_admin, client_cs
 from tests.aides_reglement import assistant, moteur_fixture  # noqa: F401
@@ -279,33 +273,6 @@ def test_une_reponse_relue_se_publie_une_fois_dans_la_faq(moteur, assistant):
     assert http.post(f"/reglement/questions/{q['id']}/faq", json=corps).status_code == 409
 
 
-# ── La politique de confidentialité (migration 0256) ───────────────────────
-
-
-def _politique_apres(
-    sens: list[str], depart: str, migration: str = "0256_questions_reglement"
-) -> str:
-    m = moteur_memoire(schema=False)
-    with m.begin() as conn:
-        conn.execute(text("CREATE TABLE config_site (cle VARCHAR PRIMARY KEY, valeur VARCHAR)"))
-        conn.execute(
-            text("INSERT INTO config_site VALUES ('politique_confidentialite', :v)"), {"v": depart}
-        )
-    for s in sens:
-        with m.begin() as conn:
-            with Operations.context(MigrationContext.configure(conn)):
-                getattr(charger_migration(migration), s)()
-    with m.connect() as conn:
-        return conn.execute(text("SELECT valeur FROM config_site")).scalar()
-
-
-def test_la_politique_servie_nomme_la_transmission_une_seule_fois():
-    depart = "<li>Assistant. " + ASSISTANT_DEUX_AUTOMATIQUES + "</li>"
-    deux_fois = _politique_apres(["upgrade", "upgrade"], depart)
-    assert deux_fois.count(QUESTION_REGLEMENT) == 1
-    assert _politique_apres(["upgrade", "downgrade"], depart) == depart
-
-
 # ── Le lien vers le règlement publié (11/10/2026) ──────────────────────────
 
 
@@ -359,14 +326,3 @@ def test_l_ouverture_aux_coproprietaires_se_lit_dans_la_configuration_de_l_usage
     #  Seul cet usage porte la case : l'écran ne la montre nulle part ailleurs.
     ouvrables = [u.code for u in USAGES.values() if CHAMP_COPROPRIETAIRES in champs(u)]
     assert ouvrables == [USAGE_QUESTION_REGLEMENT]
-
-
-def test_la_politique_servie_dit_que_les_coproprietaires_interrogent_le_reglement():
-    """La 0279 remplace le paragraphe de la 0256 — une fois, et se défait."""
-    migration = "0279_politique_reglement_coproprietaires"
-    avant = charger_migration(migration).AVANT
-    depart = "<li>Assistant. " + avant + ASSISTANT_DEUX_AUTOMATIQUES + "</li>"
-    deux_fois = _politique_apres(["upgrade", "upgrade"], depart, migration)
-    assert deux_fois.count(QUESTION_REGLEMENT) == 1 and avant not in deux_fois
-    assert "copropriétaire" in QUESTION_REGLEMENT
-    assert _politique_apres(["upgrade", "downgrade"], depart, migration) == depart

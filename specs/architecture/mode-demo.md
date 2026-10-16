@@ -291,7 +291,7 @@ pilote Docker, **après** la mise à jour nocturne (`mise-a-jour.sh`, 04:30) —
 exemple à 05:15 —, pour que le jeu soit fabriqué par la version qui vient d'être
 installée :
 
-1. arrêter l'API (règle d'or : aucun processus tiers sur une base ouverte) ;
+1. arrêter l'API (aucune écriture pendant la remise à zéro) ;
 2. vider la base et le volume `uploads` ;
 3. poser le schéma (`utils/schema_initial`), puis `python -m app.demo.charger`
    (le seed, puis le jeu), en conteneur ponctuel (`run --rm --no-deps`) ;
@@ -302,8 +302,7 @@ installée :
 
 - **Moteur** : PostgreSQL pour la démo de CoproFirst (§11, question 4) — vider la
   base, c'est supprimer et recréer le schéma `public` dans le serveur qui tourne,
-  jamais le volume `pg_data`. SQLite reste géré (supprimer le fichier) : la remise
-  à zéro suit le moteur que `DATABASE_URL` désigne (`commande_vidage`). Éprouvé le
+  jamais le volume `pg_data` (`commande_vidage`). Éprouvé le
   13/10/2026 sur la machine de démo : PostgreSQL 17, chargement, refus d'une base
   pleine, vidage, rechargement.
 - `mise-a-jour.sh` exige `COPROFIRST_SAUVEGARDES` : en démo, un dossier local
@@ -400,8 +399,8 @@ avec `roles_json="syndic"` (§5.3, #1911).
 3. ~~**Inscription au registre ?**~~ — **la démo s'inscrit** comme toute
    réplique dès que le registre l'accepte ; d'ici là, **exception déclarée** au
    plafond de 5 utilisateurs, sous `est_demo()` (M11).
-4. ~~**SQLite ou PostgreSQL ?**~~ — **PostgreSQL** (arbitré par l'auteur le
-   13/10/2026, au moment de l'installation) ; SQLite d'abord retenu par défaut.
+4. ~~**Moteur de la base ?**~~ — **PostgreSQL** (arbitré par l'auteur le
+   13/10/2026, au moment de l'installation).
 5. ~~**Personnages**~~ — **quatre** : résident (copropriétaire occupant),
    locataire, conseil syndical, administrateur. Le syndic attend #1911.
 6. ~~**Fréquence de remise à zéro**~~ — **chaque nuit** (retenu par défaut, sans

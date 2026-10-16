@@ -152,7 +152,6 @@ _AUTHENTIFIES_PAR_CLE = {
     ("rapports_scripts.py", "maintenance_rapport"),
     ("rapports_scripts.py", "maintenance_dernier_rapport"),
     ("rapports_scripts.py", "emails_echecs_recents"),
-    ("rapports_scripts.py", "maintenance_cles_etrangeres"),
     #  Les purges hebdomadaires, rapatriées de `maintenance.sh` (#1232).
     ("rapports_scripts.py", "maintenance_purges"),
     #  Le battement des contrôles de fiabilité (#1396) : une date, rien d'autre.

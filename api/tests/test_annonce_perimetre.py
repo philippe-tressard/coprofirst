@@ -8,7 +8,7 @@ la frontière, dans `routers/annonces.py`, et elle a un mode d'échec silencieux
 
     setattr(annonce, "perimetre_cible", ["bat:1"])   # une LISTE sur une colonne TEXTE
 
-SQLite ne refuse pas — il enregistre la *repr* Python de la liste,
+La base ne refuse pas — elle enregistre la *repr* Python de la liste,
 `"['bat:1']"`, avec des apostrophes simples. `json.loads` ne la relit pas, la
 lecture retombe sur le défaut, et **l'annonce perd son périmètre à la première
 correction**. Rien ne lève, rien ne se voit à l'enregistrement : l'écran affiche

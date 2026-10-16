@@ -13,14 +13,12 @@ nom, donc un rendu neuf ; seul un PDF identique au caractère près est resservi
 
 ## Où il vit, et pourquoi pas ailleurs
 
-Dans le volume `app_data`, à côté de la base (`/app/data/cache-manuel-pdf`) :
+Dans le volume `app_data` (`CACHE_MANUEL_DIR`, `/app/data/cache-manuel-pdf`) :
 
 - pas dans le volume `uploads` : il est servi en statique, un PDF posé là
   serait public ;
-- la sauvegarde ne prend que `app.db` et `uploads` — un cache n'a rien à y
-  faire, et il n'y entre pas ;
-- la bascule recopie `app_data` en entier : le cache suit, et l'affichage reste
-  instantané sur le pair aussi.
+- la sauvegarde ne prend que la base et `uploads` — un cache n'a rien à y
+  faire, et il n'y entre pas.
 
 Aucune fonction d'ici ne lève : un disque plein ou en lecture seule coûte le
 cache de demain, jamais le document d'aujourd'hui.
@@ -34,17 +32,13 @@ from pathlib import Path
 
 _logger = logging.getLogger("hostachy.manuel")
 
-NOM_DOSSIER = "cache-manuel-pdf"
-
 
 def dossier_par_defaut() -> Path | None:
-    """Le dossier du cache, à côté de la base ; `None` pour une base en mémoire."""
-    from app import contexte
+    """Le dossier du cache ; `None` quand `CACHE_MANUEL_DIR` est vide (pas de cache)."""
+    from app.config import get_settings
 
-    from app.dialecte import chemin_fichier
-
-    fichier = chemin_fichier(contexte.courante().url_base)
-    return fichier.parent / NOM_DOSSIER if fichier else None
+    dossier = get_settings().cache_manuel_dir
+    return Path(dossier) if dossier else None
 
 
 def _fichier(dossier: Path, cle: tuple[str, ...]) -> Path:

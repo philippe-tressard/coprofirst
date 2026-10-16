@@ -188,6 +188,11 @@ MOTIF_NODE_MODULES=$(ci_node_modules_etat "$(genre_node_modules)")
   echo "  (rmdir retire le LIEN, jamais le node_modules partagé.)"
 }
 
+#  ── La base PostgreSQL des tests — la règle : `ci_base_tests_etat` ─────────
+#  Posée ici si personne ne l'a posée ; l'`env:` d'un job de ci.yml la remplace
+#  le temps de son étape, comme sur GitHub. Sondée à la première étape pytest.
+export TESTS_BASE_URL="${TESTS_BASE_URL:-$CI_BASE_TESTS_DEFAUT}"
+
 FILTRE="$*"
 SHA=$(git rev-parse HEAD 2>/dev/null)
 SHA_COURT=$(git rev-parse --short HEAD 2>/dev/null)
@@ -319,6 +324,12 @@ executer() {               # $1 = job, $2 = étape, $3 = rép, corps dans $TMP/c
   if [ -s "$TMP/deps-$1" ]; then
     rapporter INCONNU "$1" "$2" "ne mesure pas le lot : dépendances du poste (ligne ENV)"
     return
+  fi
+  #  pytest exige sa base : sondée avec l'`env:` du job, avant l'étape.
+  if [ "$(printf '%s\n' "$corps" | ci_lance_pytest)" = oui ]; then
+    local motif_base
+    motif_base=$(ci_base_tests_etat "$(dans_etape "$3" ci_sonder_base_tests)")
+    [ -n "$motif_base" ] && { rapporter INCONNU "$1" "$2" "$motif_base"; return; }
   fi
   #  Les tests de navigateur, et eux seuls, servent l'application par Vite.
   if [ -n "$MOTIF_NODE_MODULES" ] && [ "$(printf '%s

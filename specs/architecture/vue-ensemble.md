@@ -18,10 +18,10 @@
   └─────────────────────────────┘
          │
   ┌──────┴──────────────────────┐
-  │  SQLite (fichier app.db)    │  ← base de données locale
+  │  PostgreSQL 17              │  ← base de données, répliquée vers le second nœud
   └─────────────────────────────┘
 
-Orchestration : Docker Compose — 3 services (caddy / front / api)
+Orchestration : Docker Compose — services caddy / front / api / postgres
 Matériel      : Raspberry Pi 5 — 8 Go RAM, ARM64
 ```
 
@@ -32,7 +32,7 @@ Matériel      : Raspberry Pi 5 — 8 Go RAM, ARM64
 | Reverse proxy   | Caddy 2                        | TLS automatique, HTTP/3, compression Brotli, routage        |
 | Front-end       | SvelteKit v2 + TypeScript      | SSR + SPA + PWA (service worker, manifest, hors-ligne)      |
 | API back-end    | FastAPI (Python 3.12)          | API REST + WebSocket, authentification JWT, OpenAPI auto    |
-| Base de données | SQLite 3 + SQLModel + Alembic  | Stockage local, migrations, backup journalier               |
+| Base de données | PostgreSQL 17 + SQLModel + Alembic | Réplique en continu, migrations, sauvegarde vérifiée     |
 | Hébergement     | Raspberry Pi 5 (ARM64, 8 Go)  | Auto-hébergé dans la résidence ou accessible via tunnel     |
 | Accès externe   | Cloudflare Tunnel (optionnel)  | Exposition sécurisée sans ouverture de port                 |
 
@@ -57,7 +57,7 @@ Matériel      : Raspberry Pi 5 — 8 Go RAM, ARM64
 
 | Décision | Justification |
 |----------|---------------|
-| SQLite plutôt que PostgreSQL | Zéro config, sans serveur, suffisant pour < 200 résidents / < 50 connexions simultanées |
+| PostgreSQL | Réplication en continu vers le second nœud, une base par copropriété (`multi-coproprietes.md`, D4) |
 | PWA plutôt qu'app native | Une seule codebase, aucun App Store, adapté à une audience fermée et identifiée |
 | SvelteKit | Bundle < 150 Ko gzippé, SSR natif, PWA sans surcoût, tourne en Node Alpine ARM64 |
 | FastAPI | Démarre en < 1 s, < 50 Mo RAM au repos, OpenAPI auto-généré |

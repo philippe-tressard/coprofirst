@@ -6,9 +6,8 @@
 #  POURQUOI ce module existe :
 #    Les deux nœuds perdus (sinistre, rançongiciel, `docker volume rm` sur les
 #    deux), il n'y a ni pair ni primaire à copier : la résidence renaît de
-#    l'archive que `scripts/poste/export-hors-site.sh` a tirée sur le poste. Aucun
-#    geste de ce chemin n'était écrit sous PostgreSQL, et un geste qu'on n'écrit
-#    qu'au jour du sinistre ne s'est jamais exécuté.
+#    l'archive que `scripts/poste/export-hors-site.sh` a tirée sur le poste. Un
+#    geste qu'on n'écrit qu'au jour du sinistre ne s'est jamais exécuté.
 #
 #    Les gestes vivent ICI, et deux appelants les emploient À L'IDENTIQUE :
 #      - `restaurer-copie-hors-site.sh`         — le vrai, sur le nœud qui renaît ;
@@ -22,11 +21,10 @@
 #      lancer_fichiers : en root, le volume des fichiers sur /app/uploads,
 #                        l'archive montée sur /restauration/archive.tar.gz.
 #
-#  L'archive est celle de `utils/backup.py` sous PostgreSQL :
+#  L'archive est celle de `utils/backup.py` :
 #    base-export.tar.gz   l'export vérifié (format neutre, `export_copropriete`) ;
 #    uploads/…            les fichiers téléversés.
-#  Une archive de l'époque SQLite (`app.db`) n'est PAS prise en charge : la
-#  résidence est servie par PostgreSQL depuis le 10/10/2026 (DI-7).
+#  Une archive sans cet export n'est pas prise en charge.
 #
 #  Le REGISTRE des installations (base `plateforme`, chez la référence) a sa
 #  propre archive, dans `plateforme/` de la copie hors site : `restauration_poser_registre`
@@ -49,35 +47,29 @@ RESTAURATION_EXPORT=base-export.tar.gz
 RESTAURATION_REGISTRE=registre.tar.gz
 
 # ── PURE : que contient l'archive ? ───────────────────────────────────────────
-#  stdin : la liste des membres (`tar -tzf`) → postgresql | sqlite | illisible
+#  stdin : la liste des membres (`tar -tzf`) → postgresql | illisible
 nature_archive() {
     local membres
     membres=$(cat)
     if grep -qx "$RESTAURATION_EXPORT" <<< "$membres"; then echo postgresql
-    elif grep -qx "app.db" <<< "$membres"; then echo sqlite
     else echo illisible; fi
 }
 
 # ── PURE : peut-on faire renaître la résidence de cette archive, ICI ? ────────
-#  $1 nature de l'archive (postgresql|sqlite|illisible)
+#  $1 nature de l'archive (postgresql|illisible)
 #  $2 le pair sert-il en LAN (oui|non) — `/api/health` à 200
-#  $3 profil postgresql (oui|non) · $4 moteur de l'application (postgresql|…)
-#  $5 conteneurs applicatifs ici (nombre) · $6 volume de base ici (oui|non)
-#  $7 `.active` nomme ce nœud (oui|non) · $8 crons d'exploitation posés (oui|non)
+#  $3 verdict du `.env` (`base_configuree`, lib-replication : OK|REFUS:<raison>)
+#  $4 conteneurs applicatifs ici (nombre) · $5 volume de base ici (oui|non)
+#  $6 `.active` nomme ce nœud (oui|non) · $7 crons d'exploitation posés (oui|non)
 #  → RESTAURER | REFUS:<raison>
 decider_restauration() {
-    case "$1" in
-        postgresql) ;;
-        sqlite) echo "REFUS:archive de l'époque SQLite (app.db) — cette procédure ne restaure que l'export vérifié"; return ;;
-        *) echo "REFUS:archive illisible ou sans $RESTAURATION_EXPORT"; return ;;
-    esac
+    [ "$1" = postgresql ] || { echo "REFUS:archive illisible ou sans $RESTAURATION_EXPORT"; return; }
     [ "$2" = non ] || { echo "REFUS:le pair SERT encore — un seul nœud est perdu : docs/restauration-complete.md, étapes 6 à 9"; return; }
-    [ "$3" = oui ] || { echo "REFUS:PostgreSQL n'est pas activé (COMPOSE_PROFILES) dans .env"; return; }
-    [ "$4" = postgresql ] || { echo "REFUS:DATABASE_URL ne désigne pas PostgreSQL dans .env"; return; }
-    [ "$5" = 0 ] || { echo "REFUS:l'application tourne déjà ici ($5 conteneur(s))"; return; }
-    [ "$6" = non ] || { echo "REFUS:un volume de base existe déjà ici — ce nœud n'est pas neuf, rien n'est écrasé"; return; }
-    [ "$7" = oui ] || { echo "REFUS:.active doit nommer CE nœud — c'est lui qui va servir"; return; }
-    [ "$8" = non ] || { echo "REFUS:crons d'exploitation déjà posés — auto-deploy démarrerait l'application sur une base vide : les poser APRÈS (étape 11)"; return; }
+    [ "$3" = OK ] || { local r=${3#REFUS:}; echo "REFUS:${r:-configuration de la base illisible dans .env}"; return; }
+    [ "$4" = 0 ] || { echo "REFUS:l'application tourne déjà ici ($4 conteneur(s))"; return; }
+    [ "$5" = non ] || { echo "REFUS:un volume de base existe déjà ici — ce nœud n'est pas neuf, rien n'est écrasé"; return; }
+    [ "$6" = oui ] || { echo "REFUS:.active doit nommer CE nœud — c'est lui qui va servir"; return; }
+    [ "$7" = non ] || { echo "REFUS:crons d'exploitation déjà posés — auto-deploy démarrerait l'application sur une base vide : les poser APRÈS (étape 11)"; return; }
     echo RESTAURER
 }
 
@@ -99,9 +91,8 @@ restauration_extraire_export() {
 }
 
 # ── Geste 2 : poser le schéma courant, puis IMPORTER en vérifiant ─────────────
-#  Les gestes de `basculer-donnees.sh` (étapes 4 et 5), dans le même ordre : le
-#  schéma marqué à la tête d'abord, sinon l'import créerait des tables qu'Alembic
-#  ne connaîtrait pas. L'import relit la base et refuse un écart d'empreinte —
+#  Le schéma marqué à la tête d'abord, sinon l'import créerait des tables
+#  qu'Alembic ne connaîtrait pas. L'import relit la base et refuse un écart d'empreinte —
 #  sa transaction est alors annulée, la base reste au schéma seul.
 restauration_poser_base() {
     local schema
@@ -175,23 +166,22 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     n() { local r; r=$(printf '%b' "$2" | nature_archive)
           [ "$r" = "$3" ] && echo "PASS  $1 → $r" || { echo "FAIL  $1  attendu=$3 obtenu=$r"; st=1; }; }
     n "archive PostgreSQL"                  "base-export.tar.gz\nuploads/\nuploads/a.jpg\n" postgresql
-    n "archive SQLite"                      "app.db\nuploads/\n"                             sqlite
+    n "archive sans export"                 "uploads/\nuploads/a.jpg\n"                     illisible
     n "archive vide (cas zéro)"             ""                                              illisible
     n "nom voisin, pas l'export"            "x/base-export.tar.gz\n"                         illisible
-    t "tout est prêt"                       RESTAURER decider_restauration postgresql non oui postgresql 0 non oui non
-    t "archive SQLite"                      REFUS     decider_restauration sqlite     non oui postgresql 0 non oui non
-    t "archive illisible"                   REFUS     decider_restauration illisible  non oui postgresql 0 non oui non
-    t "le pair sert : un seul nœud perdu"   REFUS     decider_restauration postgresql oui oui postgresql 0 non oui non
-    t "pair non mesuré"                     REFUS     decider_restauration postgresql inconnu oui postgresql 0 non oui non
-    t "profil éteint"                       REFUS     decider_restauration postgresql non non postgresql 0 non oui non
-    t "application sous SQLite"             REFUS     decider_restauration postgresql non oui sqlite     0 non oui non
-    t "application qui tourne"              REFUS     decider_restauration postgresql non oui postgresql 2 non oui non
-    t "volume de base présent"              REFUS     decider_restauration postgresql non oui postgresql 0 oui oui non
-    t ".active nomme l'autre"               REFUS     decider_restauration postgresql non oui postgresql 0 non non non
-    t "crons déjà posés"                    REFUS     decider_restauration postgresql non oui postgresql 0 non oui oui
+    t "tout est prêt"                       RESTAURER decider_restauration postgresql non OK 0 non oui non
+    t "archive illisible"                   REFUS     decider_restauration illisible  non OK 0 non oui non
+    t "le pair sert : un seul nœud perdu"   REFUS     decider_restauration postgresql oui OK 0 non oui non
+    t "pair non mesuré"                     REFUS     decider_restauration postgresql inconnu OK 0 non oui non
+    t ".env sans base PostgreSQL"           REFUS     decider_restauration postgresql non "REFUS:profil éteint" 0 non oui non
+    t "verdict du .env absent"              REFUS     decider_restauration postgresql non "" 0 non oui non
+    t "application qui tourne"              REFUS     decider_restauration postgresql non OK 2 non oui non
+    t "volume de base présent"              REFUS     decider_restauration postgresql non OK 0 oui oui non
+    t ".active nomme l'autre"               REFUS     decider_restauration postgresql non OK 0 non non non
+    t "crons déjà posés"                    REFUS     decider_restauration postgresql non OK 0 non oui oui
     t "banc sur le standby"                 EPROUVER  decider_banc postgresql 0
     t "banc sur l'actif"                    REFUS     decider_banc postgresql 3
-    t "banc, archive SQLite"                REFUS     decider_banc sqlite 0
+    t "banc, archive illisible"             REFUS     decider_banc illisible 0
     [ "$st" -eq 0 ] && echo "lib-restauration : tous les cas passent."
     exit "$st"
 fi

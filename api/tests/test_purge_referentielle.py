@@ -7,53 +7,38 @@ main. Le modèle en compte **cinquante-six**, dont trente-sept obligatoires : le
 publications, tickets, messages, idées, sondages et signalements d'un compte
 supprimé restaient en base, à pointer vers un identifiant disparu.
 
-Personne ne pouvait le voir : SQLite tournait alors avec `foreign_keys=OFF` (activées
-depuis le 30/08/2026, `app/database.py`), et la suppression réussissait.
+## Ce que ce test fait
 
-## Ce que ce test fait, et ce qu'il ne prouve pas
-
-Il monte un moteur **dédié**, avec les clés étrangères **actives**, sur la vraie
+Il monte un moteur **dédié**, avec les clés étrangères **vérifiées**, sur la vraie
 déclaration des modèles. Il n'exerce donc pas l'application — mais il n'exerce pas
 non plus une maquette : c'est le schéma réel qui refuse ou accepte.
 
-⚠️ Il **ne prouve pas** que l'application est indemne d'orphelins. Elle tourne
-encore sans le PRAGMA, et l'activer demande de reprendre 40 tests dont les
-fixtures s'appuient sur son absence. C'est écrit dans `database.py`, et #546 reste
-ouvert pour cela.
-
-Ce qu'il verrouille, c'est la seule chose qui compte pour la suite : **une purge
-qui laisserait un orphelin échouerait ici**, et `PRAGMA foreign_key_check` le dit
-sans qu'on ait à énumérer les tables.
+Ce qu'il verrouille : **une purge qui laisserait un orphelin échouerait ici**, au
+`commit`, sans qu'on ait à énumérer les tables.
 """
 
 import pytest
-from sqlalchemy import text
-from sqlmodel import Session, SQLModel, create_engine, select
+from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session, select
 
-from app.database import activer_cles_etrangeres
 from app.models.communaute import PetiteAnnonce
 from app.models.core import Utilisateur
 from app.utils.purge_referentielle import purger, references_entrantes
+from tests.aides_base import moteur_de_test
 
 
 @pytest.fixture()
-def base_stricte(tmp_path):
-    """Un moteur à part, clés étrangères ACTIVES, sur le schéma réel."""
-    moteur = create_engine(f"sqlite:///{tmp_path / 'strict.db'}")
-    activer_cles_etrangeres(moteur)
-    SQLModel.metadata.create_all(moteur)
-    with Session(moteur) as session:
+def base_stricte():
+    """Un moteur à part, clés étrangères VÉRIFIÉES, sur le schéma réel."""
+    with Session(moteur_de_test(cles_etrangeres=True)) as session:
         yield session
 
 
-def _compte_violations(session) -> int:
-    return len(session.exec(text("PRAGMA foreign_key_check")).all())
-
-
-def test_les_cles_sont_bien_actives_sur_cette_base(base_stricte):
+def test_les_cles_sont_bien_verifiees_sur_cette_base(base_stricte):
     """Cas zéro du test lui-même : sans cela, tout ce qui suit passerait à vide."""
-    actif = base_stricte.exec(text("PRAGMA foreign_keys")).one()[0]
-    assert actif == 1, "les clés étrangères ne sont pas actives — ce test ne prouverait rien"
+    base_stricte.add(PetiteAnnonce(titre="Orpheline", description="…", auteur_id=99999))
+    with pytest.raises(IntegrityError):
+        base_stricte.commit()
 
 
 def test_les_references_sont_lues_dans_les_metadonnees_pas_recitees():
@@ -97,7 +82,6 @@ def test_supprimer_un_compte_emporte_son_contenu_et_ne_laisse_aucun_orphelin(bas
     assert base_stricte.exec(select(PetiteAnnonce)).all() == []
     assert base_stricte.exec(select(Utilisateur)).all() == []
     assert comptes.get("petite_annonce") == 1
-    assert _compte_violations(base_stricte) == 0
 
 
 def test_une_reference_NULLABLE_est_deliee_et_sa_ligne_reste(base_stricte):
@@ -129,7 +113,6 @@ def test_une_reference_NULLABLE_est_deliee_et_sa_ligne_reste(base_stricte):
     restantes = base_stricte.exec(select(DemandeModificationProfil)).all()
     assert len(restantes) == 1, "la demande devait SURVIVRE à la suppression de son traiteur"
     assert restantes[0].traite_par_id is None
-    assert _compte_violations(base_stricte) == 0
 
 
 def test_la_purge_descend_sur_plusieurs_etages(base_stricte):
@@ -164,7 +147,6 @@ def test_la_purge_descend_sur_plusieurs_etages(base_stricte):
         "l'objet remis part avec le bail : il n'existe pas sans lui"
     )
     assert base_stricte.exec(select(Utilisateur)).all() != [], "l'autre compte devait rester"
-    assert _compte_violations(base_stricte) == 0
 
 
 def test_purger_une_ligne_inexistante_ne_fait_rien_et_ne_leve_pas(base_stricte):
@@ -172,4 +154,3 @@ def test_purger_une_ligne_inexistante_ne_fait_rien_et_ne_leve_pas(base_stricte):
     comptes = purger(base_stricte, "utilisateur", 99999)
     base_stricte.commit()
     assert comptes.get("utilisateur") == 1  # le DELETE porte sur zéro ligne, sans erreur
-    assert _compte_violations(base_stricte) == 0

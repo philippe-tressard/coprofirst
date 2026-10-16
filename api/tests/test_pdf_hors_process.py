@@ -17,8 +17,8 @@ toutes trois peuvent être défaites par une modification d'apparence anodine :
 
 1. **le rendu a lieu ailleurs** — sinon l'isolation n'existe plus, en silence ;
 2. **l'enfant est `spawn` et pas `fork`** — un enfant forké hérite des
-   descripteurs de `app.db` et peut `unlink` le WAL sous l'API vivante (la règle
-   d'or, et l'incident du 17/07/2026) ;
+   connexions du pool de l'API, et peut fermer côté serveur une session qu'elle
+   croit encore ouverte ;
 3. **le journal de l'enfant remonte** — sans quoi `test_documents_pdf.py`
    ::`test_la_fiche_avec_ses_icones_se_rend_en_pdf` lirait un `caplog` vide et
    deviendrait vert pour toujours. Ce test-ci protège donc un autre test.
@@ -77,11 +77,11 @@ def test_l_enfant_n_herite_pas_de_la_base_donc_ce_n_est_pas_un_fork():
 
     On charge délibérément `app.database` **ici**, dans le parent, avant de
     rendre. Un enfant forké hériterait de tout `sys.modules`, donc de ce module
-    et des descripteurs de `app.db` qu'il tient. Un enfant `spawn` démarre d'un
-    interpréteur neuf et ne l'a pas.
+    et des connexions qu'il tient. Un enfant `spawn` démarre d'un interpréteur
+    neuf et ne l'a pas.
 
-    C'est la formulation comportementale de la règle d'or : on n'affirme pas que
-    le code demande `spawn`, on constate que l'enfant n'a pas la base.
+    On n'affirme pas que le code demande `spawn`, on constate que l'enfant n'a
+    pas la base.
     """
     import app.database  # noqa: F401 — l'import EST le dispositif du test
 
@@ -94,7 +94,7 @@ def test_l_enfant_n_herite_pas_de_la_base_donc_ce_n_est_pas_un_fork():
     assert temoin, "témoin de rendu absent — voir le test précédent"
     assert temoin["base_chargee"] is False, (
         "le process de rendu a la base en mémoire : c'est un fork, et il tient "
-        f"donc les descripteurs de app.db ({temoin!r})"
+        f"donc les connexions de l'API ({temoin!r})"
     )
 
 

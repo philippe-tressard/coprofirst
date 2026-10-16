@@ -33,7 +33,7 @@ from app.utils.gestes_formulaire import (
     purger_gestes,
     synthese_gestes,
 )
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 from tests.aides_http import base_http, client_http
 
 ROUTE = "/telemetry/collect"
@@ -91,7 +91,7 @@ def test_un_detail_qui_n_est_pas_un_identifiant_de_geste_ne_s_enregistre_pas(mot
 
 
 def test_la_synthese_rend_le_taux_par_geste():
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     jour = horloge.aujourd_hui().isoformat()
     with Session(moteur) as s:
         #  Deux lignes pour un même couple (deux collectes simultanées) : additionnées.
@@ -111,7 +111,7 @@ def test_la_synthese_rend_le_taux_par_geste():
 
 
 def test_la_purge_retire_ce_qui_depasse_la_conservation():
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     aujourd_hui = horloge.aujourd_hui()
     with Session(moteur) as s:
         for age in (0, CONSERVATION_JOURS, CONSERVATION_JOURS + 1):

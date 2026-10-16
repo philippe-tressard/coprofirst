@@ -73,7 +73,7 @@ def test_le_releve_trouve_les_fonctions_ssh():
         "role_base_pair",
         "verrou_poser",
         "phases_base_postgresql",
-        "ecrire_database_url_pair",
+        "ecrire_cle_env_pair",
     ):
         assert attendue in ssh, (
             f"{attendue} devrait dépendre de SSH_CMD — le relevé ne mesure plus rien"

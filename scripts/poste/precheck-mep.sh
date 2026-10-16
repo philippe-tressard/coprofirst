@@ -19,7 +19,8 @@
 #   - une sortie vide n'est pas un vert ;
 #   - jamais `$(grep -c … || echo 0)` : `grep -c` écrit déjà 0 ET sort en 1, le
 #     `||` ajoute une seconde valeur et le test devient inexploitable ;
-#   - jamais `docker exec` ni `sqlite3` sur app.db pendant que l'API tourne.
+#   - la base ne se lit que par `psql` dans le conteneur de PostgreSQL, et
+#     l'URL de la base (son mot de passe) ne quitte jamais le nœud.
 #
 #  Usage : bash scripts/poste/precheck-mep.sh   # déroule tous les points
 #          bash scripts/poste/precheck-mep.sh --post-mep # APRÈS la fusion : la production seule (#1282)
@@ -133,23 +134,17 @@ if [ -n "$MODE_POST_MEP" ]; then
   precheck_points_post
 fi
 
-# 4 — DB saine, sans ouvrir la base ni sudo. Sous PostgreSQL : sans objet, c'est
-#     le point 22 (décision : `verdict_base_sqlite_saine`, lib-replication).
+# 4 — Le `.env` de l'actif désigne la base PostgreSQL. Jugé SUR
+#     le nœud : seul le verdict revient, jamais l'URL (`base_configuree`,
+#     lib-replication). La santé de la base elle-même est le point 22.
 . "$RACINE_DEPOT/scripts/lib/lib-replication.sh"
-MOTEUR4=$(sur "$ACTIF" "$(declare -f moteur_de_url moteur_configure); moteur_configure /opt/5hostachy")
-WAL=$(sur "$ACTIF" 'docker run --rm -v 5hostachy_app_data:/data:ro python:3.12-slim \
-      ls /data/app.db-wal /data/app.db-shm 2>/dev/null | wc -l')
-IO=$(sur "$ACTIF" 'docker logs hostachy_api --since 1h 2>&1 | grep -c "disk I/O error"; true')
-V4=$(verdict_base_sqlite_saine "${MOTEUR4:-}" "${WAL:-}" "${IO:-}")
-case "$V4" in
-  SANS_OBJET) rapporter 4 OK "Base saine" "sans objet — l'application est sous PostgreSQL (point 22)" ;;
-  *) rapporter 4 "$V4" "Base saine (WAL présent, 0 disk I/O error)" "moteur=${MOTEUR4:-?}  wal+shm=${WAL:-?}  io=${IO:-?}" ;;
-esac
+CONF4=$(sur "$ACTIF" "$(declare -f moteur_de_url verdict_base_configuree cle_env_fichier base_configuree); base_configuree /opt/5hostachy/.env")
+rapporter 4 "$(verdict_precheck_base "${CONF4:-}")" "Base configurée (.env de l'actif)" "${CONF4:-?}"
 
 # 22 — Réplication PostgreSQL (DI-7b, #1781) : un primaire sur l'actif, une
-#      réplique qui reçoit le journal sur le standby. Sans objet tant que la
-#      production est sous SQLite. Collecte et décision : `lib-replication.sh`,
-#      les mêmes que C37 — un pré-check qui jugerait autrement divergerait.
+#      réplique qui reçoit le journal sur le standby. Aucune base nulle part est
+#      un échec. Collecte et décision : `lib-replication.sh`, les mêmes que C37 —
+#      un pré-check qui jugerait autrement divergerait.
 #  (lib-replication.sh est chargé au point 4.)
 #  Séparés par « | » : `read` fusionne les blancs consécutifs (tabulation
 #  comprise), et un champ vide décalerait les suivants.
@@ -164,10 +159,7 @@ champs_replication() {  # $1 = nœud → « present|recovery|flux|retard|recepte
 IFS='|' read -r RA1 RA2 RA3 RA4 RA5 <<< "$(champs_replication "$ACTIF")"
 IFS='|' read -r RS1 RS2 RS3 RS4 RS5 <<< "$(champs_replication "$STANDBY")"
 V22=$(verdict_precheck_replication "${RA1:-}" "${RA2:-}" "${RA3:-}" "${RA4:-}" "${RA5:-}"                                    "${RS1:-}" "${RS2:-}" "${RS3:-}" "${RS4:-}" "${RS5:-}")
-case "$V22" in
-  SANS_OBJET) rapporter 22 OK "Réplication PostgreSQL" "sans objet — la production est sous SQLite" ;;
-  *) rapporter 22 "$V22" "Réplication PostgreSQL"        "actif: base=${RA1:-?} réplique=${RA2:-?} flux=${RA3:-?} retard=${RA4:-?}o · standby: base=${RS1:-?} réplique=${RS2:-?} réception=${RS5:-?}" ;;
-esac
+rapporter 22 "$V22" "Réplication PostgreSQL" "actif: base=${RA1:-?} réplique=${RA2:-?} flux=${RA3:-?} retard=${RA4:-?}o · standby: base=${RS1:-?} réplique=${RS2:-?} réception=${RS5:-?}"
 
 # 5 — WhatsApp : le bridge tourne-t-il, ET sa dernière connexion est-elle
 #     postérieure à la dernière fermeture ?

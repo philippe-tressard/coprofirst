@@ -3,7 +3,7 @@
 ## Le défaut (audit du 30/09/2026)
 
 Six relectures de `api/tests/` ont trouvé les mêmes aides réécrites d'un fichier
-à l'autre : le balayage de `app/` (68 fichiers), la base en mémoire (34), la
+à l'autre : le balayage de `app/` (68 fichiers), la base de test (34), la
 fabrique de compte (48 — avec un champ qui n'existe pas), des aides importées
 depuis un AUTRE fichier de tests (11), la portée des scripts shell refaite à la
 main. Chaque copie avait déjà divergé : seuils de cas zéro différents, portée
@@ -42,17 +42,17 @@ MOTIFS = (
         "`aides_sources.modules_app(sous_dossier)` — cas zéro et cache compris",
     ),
     Motif(
-        "base SQLite en mémoire",
-        re.compile(r"create_engine\(\s*[\"']sqlite://[\"']"),
+        "schéma de test posé à la main",
+        re.compile(r"\bschema_jetable\(|CREATE SCHEMA"),
         "aides_base.py",
-        "la fixture `session` (conftest), ou `aides_base.moteur_memoire(partage=…)`",
+        "la fixture `session` (conftest), ou `aides_base.moteur_de_test()`",
     ),
     Motif(
-        "fixture session qui refait la base en mémoire",
+        "fixture session qui refait la base de test",
         #  Une fixture `session` locale qui ne dépend pas de celle du conftest et
-        #  rouvre `Session(moteur_memoire(…))` : la même base, écrite à côté (#1604).
+        #  rouvre `Session(moteur_de_test(…))` : la même base, écrite à côté (#1604).
         re.compile(
-            r"def session\((?![^)]*\bsession\b)[^)]*\):(?:(?!\n\S)[\s\S])*?Session\(moteur_memoire\("
+            r"def session\((?![^)]*\bsession\b)[^)]*\):(?:(?!\n\S)[\s\S])*?Session\(moteur_de_test\("
         ),
         "conftest.py",
         "`def session(session): …` — la locale AJOUTE ses données à celle du conftest",
@@ -106,9 +106,6 @@ EXCEPTIONS: dict[tuple[str, str], str] = {
         "son second `rglob` lit `alembic/`, que `aides_sources` ne couvre pas : "
         "une migration importe aussi des modules tiers"
     ),
-    ("balayage de app/", "test_echappements_source.py"): (
-        "il lit `alembic/` pour prouver que l'exclusion des migrations sert encore"
-    ),
     ("balayage de app/", "test_python_sans_avertissement_de_syntaxe.py"): (
         "il COMPILE chaque fichier de `app/`, `tests/`, `alembic/` et `scripts/` : "
         "`aides_sources` ne lit que `app/`, et ne compile rien"
@@ -154,9 +151,9 @@ def test_le_controle_voit_ses_motifs():
 def test_le_controle_sait_REFUSER():
     forges = {
         "balayage de app/": 'for p in APP.rglob("*.py"):',
-        "base SQLite en mémoire": 'moteur = create_engine("sqlite://")',
-        "fixture session qui refait la base en mémoire": (
-            "def session():\n    with Session(moteur_memoire()) as s:\n        yield s\n"
+        "schéma de test posé à la main": "moteur, retirer = schema_jetable(url)",
+        "fixture session qui refait la base de test": (
+            "def session():\n    with Session(moteur_de_test()) as s:\n        yield s\n"
         ),
         "champ inexistant d'Utilisateur": 'Utilisateur(mot_de_passe_hash="x")',
         "aide importée depuis un fichier de tests": "from tests.test_autre import _aide",

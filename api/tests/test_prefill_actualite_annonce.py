@@ -55,7 +55,7 @@ def scene(batiments):
 
     with Session(engine) as session:
         #  ⚠️ `auteur_id` est NOT NULL et porte une clé étrangère : le `conftest`
-        #  active `foreign_keys=ON` (#546), donc un auteur inventé ferait échouer
+        #  vérifie les clés (#546), donc un auteur inventé ferait échouer
         #  l'insertion — pas le test, ce qui est plus difficile à lire.
         auteur = compte(
             session, prefixe="cs", prenom="C", nom="CONSEIL", roles_json="conseil_syndical"

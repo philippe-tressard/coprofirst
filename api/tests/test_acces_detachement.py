@@ -11,7 +11,7 @@ sur les DEUX types.
    « en attente » sinon — la ligne n'est jamais effacée ;
 3. sans ligne d'import, rien ne se passe ;
 4. une autre ligne d'import n'est jamais touchée ;
-5. **l'ordre** : sous `foreign_keys=ON`, supprimer le badge APRÈS le détachement
+5. **l'ordre** : avec les clés vérifiées, supprimer le badge APRÈS le détachement
    réussit, alors que sans lui la clé étrangère refuse — le témoin sans lequel le
    « réussit » ne prouverait rien.
 """
@@ -25,7 +25,7 @@ from sqlmodel import Session
 from app.models.core import StatutImport
 from app.utils.acces_detachement import detacher_acces
 from tests.aides_badges import TYPES, _badge, _compte, _ligne, _lot
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 
 
 def _lier(session, type_acces, ligne, badge) -> None:
@@ -113,7 +113,7 @@ def test_la_ligne_d_un_autre_badge_n_est_pas_touchee(session, type_acces):
 @pytest.fixture()
 def session_fk():
     """La règle de l'APPLICATION : clés étrangères actives, comme en production."""
-    with Session(moteur_memoire(cles_etrangeres=True)) as s:
+    with Session(moteur_de_test(cles_etrangeres=True)) as s:
         yield s
 
 

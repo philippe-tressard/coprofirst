@@ -5,10 +5,9 @@ Une migration avec un mauvais `down_revision` crée plusieurs *heads* : en prod,
 bloqué au démarrage. Ce test attrape ces erreurs structurelles avant la MEP
 (la cause des fix « migration 0094/0105 » de l'historique).
 
-Note : on ne teste pas `upgrade head` depuis une base vierge car le schéma de
-base est créé par `SQLModel.create_all` puis ajusté par des migrations
-incrémentales (non rejouables seules sur une base vide / déjà au schéma final).
-La validation porte donc sur la cohérence du graphe de révisions.
+Une base neuve reçoit le schéma courant d'un coup (`utils/schema_initial`) ;
+la chaîne ne décrit que ce qui change après sa migration de base. La
+validation porte donc sur la cohérence du graphe de révisions.
 """
 
 from pathlib import Path
@@ -84,142 +83,32 @@ def test_les_migrations_qui_lisent_le_seed_y_trouvent_leur_modele():
     )
 
 
-def test_aucune_cle_etrangere_dans_un_add_column():
-    """🔴 SQLite ne sait pas ajouter une contrainte à une table existante.
-
-    ## Ce qui s'est passé (01/09/2026, migration 0165)
-
-        NotImplementedError: No support for ALTER of constraints in SQLite
-        dialect. Please refer to the batch mode feature…
-
-    `op.add_column(..., sa.ForeignKey(...))` **crashe en production**. Et il
-    crashe APRÈS avoir exécuté le `ADD COLUMN` : la colonne existe, sans sa
-    contrainte, et la révision n'est pas marquée. `start.sh` a `set -e`, donc le
-    conteneur s'arrête — le déploiement n'a tenu que parce que la migration
-    portait une garde d'idempotence, que le second passage a vue.
-
-    🔴 **Et ce n'était pas la première fois.** Ce test, écrit pour 0165, a
-    immédiatement trouvé la migration **0117** (25/07/2026), qui portait le même
-    défaut depuis cinq semaines. Elle avait crashé de la même façon, et personne
-    ne l'avait su : même redémarrage, même garde d'idempotence, même silence.
-    Deux occurrences, aucune vue — c'est la définition d'un défaut qu'aucun
-    contrôle ne regarde.
-
-    ⚠️ **Le mode batch n'est pas le remède** : il recopie la table entière, ce
-    qui est disproportionné pour un champ dont la contrainte n'apporte rien. Une
-    colonne entière non contrainte suffit — et le modèle SQLModel ne doit pas
-    déclarer `foreign_key` non plus, sinon une base neuve (`create_all`) et une
-    base migrée portent deux schémas différents.
-
-    ⚠️ L'analyse passe par l'**arbre syntaxique**, pas par une recherche de
-    texte : la première écriture de ce test lisait le source brut, et s'est
-    accusée elle-même dès qu'un commentaire a expliqué le défaut en le nommant
-    (`standards/04` §29 — neutraliser les commentaires, là où ils existent).
-    """
-    import ast
-
-    fautives: list[str] = []
-    for chemin in sorted((_API_DIR / "alembic" / "versions").glob("*.py")):
-        arbre = ast.parse(chemin.read_text(encoding="utf-8"))
-        for noeud in ast.walk(arbre):
-            if not isinstance(noeud, ast.Call):
-                continue
-            if getattr(noeud.func, "attr", None) != "add_column":
-                continue
-            #  Un `ForeignKey(...)` n'importe où DANS l'appel — il est imbriqué
-            #  dans le `sa.Column(...)`, pas au premier niveau.
-            for inner in ast.walk(noeud):
-                nom = getattr(inner.func, "attr", None) if isinstance(inner, ast.Call) else None
-                nom = nom or (
-                    getattr(inner.func, "id", None) if isinstance(inner, ast.Call) else None
-                )
-                if nom == "ForeignKey":
-                    fautives.append(f"{chemin.name}:{noeud.lineno}")
-                    break
-
-    assert not fautives, (
-        "Clé étrangère posée dans un `add_column` — SQLite refuse d'ajouter une "
-        "contrainte à une table existante, et le conteneur s'arrête au "
-        "démarrage :\n  " + "\n  ".join(fautives) + "\n\n"
-        "  Poser une colonne entière simple, et ne pas déclarer la clé dans le "
-        "modèle non plus : une base neuve et une base migrée doivent porter le "
-        "même schéma."
-    )
-
-
 # ─────────────────────────────────────────────────────────────────────────────
-#  🔴 Aucune f-string dans un `execute()` de migration — sauf les 27 d'avant
-#
-#  CLAUDE.md dit « **jamais** de f-string dans `op.execute()` →
-#  `text(...).bindparams(...)` ». La règle n'avait **aucun** garde-fou, et
-#  l'écart continuait : au 19/09/2026, **40** appels `execute` portaient une
-#  f-string sur 26 migrations, dont **27 sans `bindparams`** — et trois d'entre
-#  elles (0193, 0194, 0196) datent du même mois que ce relevé (#1032).
+#  🔴 Aucune f-string dans un `execute()` de migration (#1032)
 #
 #  ⚠️ Un `grep 'op.execute(f"'` en rend **zéro** : la f-string est presque
 #  toujours à la ligne suivante de l'appel. C'est pourquoi ce contrôle lit
-#  l'arbre syntaxique et non le texte — et c'est pourquoi personne ne l'avait vu.
-#
-#  ## Pourquoi la liste est FIGÉE et non décroissante
-#
-#  Une dette se résorbe par un plafond qui baisse (`standards/05` §2). Pas
-#  celle-ci : **une migration appliquée ne se modifie jamais**. Ces 27 lignes
-#  sont de l'HISTORIQUE, pas un retard — les corriger réécrirait le schéma déjà
-#  déployé. La liste ne bougera donc plus, sauf pour retirer une entrée dont le
-#  fichier disparaîtrait, ce que le dernier test vérifie.
-#
-#  ## La règle réelle, celle qu'on peut tenir
+#  l'arbre syntaxique et non le texte.
 #
 #  | Ce qu'on interpole | Verdict |
 #  |---|---|
 #  | une **valeur** (contenu, identifiant de ligne, date) | jamais — `bindparams` |
-#  | un **identifiant** (nom de table ou de colonne) depuis une constante du fichier | toléré : SQLite n'accepte pas de paramètre à cette place |
-#
-#  Le second cas est celui des treize f-strings qui lient déjà leurs valeurs. Il
-#  n'était écrit nulle part avant ce lot — or une dérogation non écrite n'est pas
-#  une dérogation, c'est un oubli qui ressemble à une décision.
+#  | un **identifiant** (nom de table ou de colonne) depuis une constante du fichier | toléré : un identifiant ne se lie pas |
 # ─────────────────────────────────────────────────────────────────────────────
 
-#: Les 27 appels `execute(f"…")` sans `bindparams` présents au 19/09/2026,
-#: `fichier:ligne`. Figée : voir ci-dessus.
-FSTRINGS_HISTORIQUES = {
-    "0065_whatsapp_scheduled.py:52",
-    "0074_update_berteaux_message.py:40",
-    "0074_update_berteaux_message.py:44",
-    "0074_update_berteaux_message.py:51",
-    "0074_update_berteaux_message.py:55",
-    "0102_publication_syndic_contenu_complet.py:38",
-    "0102_publication_syndic_contenu_complet.py:44",
-    "0103_publication_syndic_lien_ancre.py:38",
-    "0103_publication_syndic_lien_ancre.py:44",
-    "0105_fichiers_urls_email_externe.py:13",
-    "0109_publication_syndic_commentaire.py:138",
-    "0109_publication_syndic_commentaire.py:145",
-    "0110_ticket_syndic_commentaire.py:177",
-    "0110_ticket_syndic_commentaire.py:184",
-    "0122_execution_taches_planifiees.py:47",
-    "0124_documents_prives_hors_tronc_servi.py:87",
-    "0124_documents_prives_hors_tronc_servi.py:110",
-    "0130_intention_modele_email.py:43",
-    "0134_publication_photos_urls.py:31",
-    "0143_libelle_long_des_batiments.py:106",
-    "0152_annonce_workflow.py:95",
-    "0160_cr_ag_perimetre_cible.py:94",
-    "0190_acces_perimetre_cible.py:110",
-    "0190_acces_perimetre_cible.py:144",
-    "0193_saisi_pour_publication_evenement.py:63",
-    "0194_assistant_ia_par_usage.py:75",
-    "0196_declenchement_un_vocabulaire.py:78",
-}
 
-
-def _fstrings_sans_bindparams() -> set[str]:
+def _fstrings_sans_bindparams(sources: dict[str, str] | None = None) -> set[str]:
     """Les `execute(...)` de migration qui interpolent sans lier, par AST."""
     import ast
 
+    if sources is None:
+        sources = {
+            f.name: f.read_text(encoding="utf-8")
+            for f in sorted((_API_DIR / "alembic" / "versions").glob("*.py"))
+        }
     trouves = set()
-    for fichier in sorted((_API_DIR / "alembic" / "versions").glob("*.py")):
-        arbre = ast.parse(fichier.read_text(encoding="utf-8"))
+    for nom, source in sources.items():
+        arbre = ast.parse(source)
         for noeud in ast.walk(arbre):
             if not isinstance(noeud, ast.Call):
                 continue
@@ -229,47 +118,35 @@ def _fstrings_sans_bindparams() -> set[str]:
                 continue
             if "bindparams" in ast.unparse(noeud):
                 continue
-            trouves.add(f"{fichier.name}:{noeud.lineno}")
+            trouves.add(f"{nom}:{noeud.lineno}")
     return trouves
 
 
 def test_le_controle_voit_bien_les_migrations():
     """Cas zéro de la portée : un glob vide se lirait comme « aucun écart »."""
     versions = list((_API_DIR / "alembic" / "versions").glob("*.py"))
-    assert len(versions) > 100, (
-        f"seulement {len(versions)} migration(s) vue(s) — le contrôle a perdu sa "
-        "portée, et rendrait un vert parfait sur un répertoire vide"
-    )
+    assert versions, "aucune migration vue — le contrôle a perdu sa portée"
 
 
-def test_aucune_NOUVELLE_fstring_sans_bindparams():
-    """La 28e est refusee. Les 27 d'avant sont de l'historique, pas un retard."""
-    nouvelles = sorted(_fstrings_sans_bindparams() - FSTRINGS_HISTORIQUES)
+def test_le_controle_sait_REFUSER():
+    """Le témoin : une f-string non liée, forgée, est vue — même à la ligne suivante."""
+    forge = 'from alembic import op\nop.execute(\n    f"DELETE FROM t WHERE id = {x}"\n)\n'
+    assert _fstrings_sans_bindparams({"forge.py": forge}) == {"forge.py:2"}
+    lie = 'op.execute(text(f"DELETE FROM {TABLE} WHERE id = :x").bindparams(x=1))\n'
+    assert _fstrings_sans_bindparams({"lie.py": lie}) == set()
+
+
+def test_aucune_fstring_sans_bindparams():
+    fautives = sorted(_fstrings_sans_bindparams())
     saut = chr(10) + "  "
-    assert not nouvelles, (
-        "Ces `execute()` interpolent une f-string sans lier de parametre :"
+    assert not fautives, (
+        "Ces `execute()` interpolent une f-string sans lier de paramètre :"
         + saut
-        + saut.join(nouvelles)
+        + saut.join(fautives)
         + chr(10) * 2
         + "Une VALEUR se lie : text('... :x ...').bindparams(x=valeur)."
         + chr(10)
-        + "Un IDENTIFIANT (nom de table ou de colonne) ne peut pas se lier en "
-        + "SQLite : le prendre dans une constante du fichier, et ecrire en "
-        + "commentaire que c'est un identifiant."
-        + chr(10)
-        + "Ne PAS ajouter la ligne a FSTRINGS_HISTORIQUES : cette liste est "
-        + "l'etat du 19/09/2026, pas une tolerance ouverte."
-    )
-
-
-def test_aucune_entree_historique_ne_survit_a_son_fichier():
-    """Une exception qui ne correspond plus a rien finit par couvrir autre chose."""
-    perimees = sorted(FSTRINGS_HISTORIQUES - _fstrings_sans_bindparams())
-    saut = chr(10) + "  "
-    assert not perimees, (
-        "Ces entrees de FSTRINGS_HISTORIQUES ne correspondent plus a rien :"
-        + saut
-        + saut.join(perimees)
-        + chr(10) * 2
-        + "La migration a ete supprimee, ou sa ligne a bouge. Les retirer."
+        + "Un IDENTIFIANT (nom de table ou de colonne) ne se lie pas : le prendre "
+        + "dans une constante du fichier, et écrire en commentaire que c'est un "
+        + "identifiant."
     )

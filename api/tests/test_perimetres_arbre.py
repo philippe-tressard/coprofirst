@@ -311,7 +311,7 @@ def test_cycle_de_parente_ne_suspend_pas_et_refuse(batiments):
 def test_parent_orphelin_ne_suspend_pas_et_refuse(batiments):
     """Un `parent_id` qui ne pointe sur rien arrête la remontée sans lever."""
     #  🔴 L'état corrompu est le SUJET de ce test : il faut donc le fabriquer,
-    #  et sous `foreign_keys=ON` la base le refuse (#546). La porte est locale et
+    #  et avec les clés vérifiées la base le refuse (#546). La porte est locale et
     #  nommée — supprimer le test aurait retiré le contrôle qui protège d'une
     #  corruption au moment même où l'on active le mécanisme censé la prévenir.
     with Session(engine) as session, etat_invalide(session):

@@ -213,9 +213,9 @@ def _lu(**champs):
 
     from app.models.core import Ticket
     from app.routers.tickets.commun import ticket_read
-    from tests.aides_base import compte, moteur_memoire
+    from tests.aides_base import compte, moteur_de_test
 
-    with Session(moteur_memoire()) as s:
+    with Session(moteur_de_test()) as s:
         compte(s, prefixe="a", id=1, prenom="A", nom="B")
         t = Ticket(
             id=1,

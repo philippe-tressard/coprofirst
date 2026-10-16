@@ -22,7 +22,7 @@ from app.registre import base, migrer, sauvegarde
 from app.registre.modeles import IDENTIFIANT_REFERENCE, Installation
 from app.utils import backup, sante_plateforme
 from app.utils.import_copropriete import ImportRefuse
-from tests.aides_base import moteur_memoire
+from tests.aides_base import adresse_de_test, moteur_de_test
 from tests.aides_registre import registre_allume
 
 
@@ -100,7 +100,7 @@ def test_eteinte_hors_de_la_reference(registre, alertes, monkeypatch):
 def test_la_restauration_rend_le_registre(registre):
     """L'archive se réimporte dans une base NEUVE, marquée à la tête de sa chaîne (#1972)."""
     archive = sauvegarde.sauvegarder()
-    cible = moteur_memoire(partage=True, schema=False)
+    cible = moteur_de_test(schema=False)
     bilan = sauvegarde.restaurer(archive, cible)
     assert bilan.lignes >= 1
     with Session(cible) as session:
@@ -122,8 +122,8 @@ def test_une_base_qui_n_est_pas_neuve_est_refusee_avant_tout_geste(registre):
 def test_la_restauration_ne_differe_pas_les_cles(registre, monkeypatch):
     """Sous PostgreSQL, différer les clés exige un SUPERUTILISATEUR — et le rôle du
     registre ne l'est pas : l'import serait refusé (« permission denied to set
-    parameter »). Ni SQLite ni la suite PostgreSQL de la CI (rôle superutilisateur)
-    ne le montrent : le refus est donc simulé. Les tables du registre n'ont pas de
+    parameter »). La suite de la CI (rôle superutilisateur) ne le montre pas :
+    le refus est donc simulé. Les tables du registre n'ont pas de
     cycle — toutes leurs clés visent `installation` —, l'ordre des tables suffit."""
     import app.utils.import_copropriete as import_copropriete
 
@@ -133,7 +133,7 @@ def test_la_restauration_ne_differe_pas_les_cles(registre, monkeypatch):
         raise RuntimeError("permission denied to set parameter session_replication_role")
 
     monkeypatch.setattr(import_copropriete, "differer_cles_etrangeres", refus)
-    bilan = sauvegarde.restaurer(archive, moteur_memoire(partage=True, schema=False))
+    bilan = sauvegarde.restaurer(archive, moteur_de_test(schema=False))
     assert bilan.lignes >= 1
 
 
@@ -142,13 +142,12 @@ def test_une_archive_de_la_residence_n_est_pas_un_registre(registre, tmp_path, m
     from app.utils import export_copropriete
 
     archive_residence = tmp_path / "residence.tar.gz"
-    export_copropriete.exporter(moteur_memoire(), archive_residence)
+    export_copropriete.exporter(moteur_de_test(), archive_residence)
     with pytest.raises(ImportRefuse, match="tables absentes"):
-        sauvegarde.restaurer(archive_residence, moteur_memoire(partage=True, schema=False))
+        sauvegarde.restaurer(archive_residence, moteur_de_test(schema=False))
 
 
-def _commande(archive: Path, base_neuve: Path) -> subprocess.CompletedProcess:
-    url = "sqlite" + ":///" + base_neuve.as_posix()  # une base JETABLE du test
+def _commande(archive: Path, url: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, "-m", "app.registre.sauvegarde", "restaurer", str(archive), url],
         cwd=Path(__file__).resolve().parents[1],
@@ -157,13 +156,15 @@ def _commande(archive: Path, base_neuve: Path) -> subprocess.CompletedProcess:
     )
 
 
-@pytest.mark.sqlite_seulement("la commande s'éprouve sur un fichier jetable du test")
-def test_la_commande_restaure_une_base_neuve_puis_refuse_de_recommencer(registre, tmp_path):
+def test_la_commande_restaure_une_base_neuve_puis_refuse_de_recommencer(registre):
     """`python -m app.registre.sauvegarde restaurer` — le geste de la procédure (#1972)."""
     archive = sauvegarde.sauvegarder()
-    base_neuve = tmp_path / "plateforme.db"
-    sortie = _commande(archive, base_neuve)
-    assert sortie.returncode == 0, sortie.stderr[-600:]
-    assert "Importé et vérifié" in sortie.stdout
-    relance = _commande(archive, base_neuve)
-    assert relance.returncode != 0 and "RESTAURATION REFUSÉE" in relance.stderr
+    base_neuve, retirer = adresse_de_test()  # une base JETABLE du test
+    try:
+        sortie = _commande(archive, base_neuve)
+        assert sortie.returncode == 0, sortie.stderr[-600:]
+        assert "Importé et vérifié" in sortie.stdout
+        relance = _commande(archive, base_neuve)
+        assert relance.returncode != 0 and "RESTAURATION REFUSÉE" in relance.stderr
+    finally:
+        retirer()

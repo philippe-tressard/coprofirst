@@ -13,7 +13,7 @@ from sqlmodel import Session, select
 from app.models.telemetrie import DerniereVisite, PresenceMensuelle, TelemetryEvent
 from app.routers.admin.utilisateurs import supprimer_utilisateur
 from app.utils.telemetrie_compte import effacer_telemetrie
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 
 
 def _trois_tables(s: Session, user_id: int) -> None:
@@ -31,7 +31,7 @@ def _restants(s: Session) -> set[tuple[str, int]]:
 
 
 def test_l_effacement_porte_sur_les_trois_tables_et_sur_ce_compte_seul():
-    with Session(moteur_memoire()) as s:
+    with Session(moteur_de_test()) as s:
         moi, autre = compte(s).id, compte(s).id
         _trois_tables(s, moi)
         _trois_tables(s, autre)
@@ -42,7 +42,7 @@ def test_l_effacement_porte_sur_les_trois_tables_et_sur_ce_compte_seul():
 
 
 def test_supprimer_un_compte_efface_aussi_sa_presence_et_sa_derniere_visite():
-    with Session(moteur_memoire()) as s:
+    with Session(moteur_de_test()) as s:
         admin = compte(s, roles_json="admin")
         partant = compte(s).id
         _trois_tables(s, partant)

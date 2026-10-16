@@ -113,7 +113,7 @@ def conseil(batiments):
 
         for membre in membres:
             session.delete(membre)
-        #  ⚠️ Les notifications AVANT les comptes : `foreign_keys=ON` est actif
+        #  ⚠️ Les notifications AVANT les comptes : les clés sont vérifiées
         #  dans les tests (#546), et supprimer un compte qui en porte encore fait
         #  échouer le nettoyage — pas le test, ce qui le rend difficile à lire.
         for notif in session.exec(

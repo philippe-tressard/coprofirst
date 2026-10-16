@@ -22,7 +22,7 @@ from app.registre import rapports, signature
 from app.registre.contrat import Rapport
 from app.registre.modeles import Installation, RapportInstallation
 from app.utils import horloge
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 from tests.aides_registre import installation_branchee
 
 TEMOINS = ("Alix", "Durand", "temoin-rapport")
@@ -31,7 +31,7 @@ TEMOINS = ("Alix", "Durand", "temoin-rapport")
 @pytest.fixture
 def copropriete(monkeypatch, disque_jetable):
     """La base de LA copropriété servie, semée de résidents témoins et de deux lots."""
-    moteur = moteur_memoire(partage=True)
+    moteur = moteur_de_test()
     with Session(moteur) as s:
         for _ in range(3):
             compte(s, prefixe=TEMOINS[2], prenom=TEMOINS[0], nom=TEMOINS[1])

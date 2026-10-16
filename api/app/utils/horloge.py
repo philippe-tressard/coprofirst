@@ -14,7 +14,7 @@ Le ticket proposait `datetime.now(timezone.utc)`. Ce n'est **pas** un
 remplacement : `utcnow()` rend une date **naïve** (sans fuseau), `now(utc)` une
 date **consciente**, et Python refuse de comparer les deux (`TypeError`).
 
-Or tout ce que la base rend est naïf — SQLite ne stocke pas de fuseau —, et le
+Or tout ce que la base rend est naïf — ses colonnes sont sans fuseau —, et le
 dépôt entier tient cette convention : `whatsapp_scheduler`,
 `telemetry_aggregation`, `courriel_boite` et `telemetry` ramènent explicitement
 leurs dates à l'UTC naïf par `.replace(tzinfo=None)`. Passer d'un coup à des

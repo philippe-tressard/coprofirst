@@ -37,8 +37,8 @@ ROUTEURS = RACINE / "api" / "app" / "routers"
 #: ici est une décision consciente : si la raison ne tient pas en une ligne,
 #: c'est probablement que la route doit être supprimée.
 SANS_CONSOMMATEUR_FRONT = {
-    "/admin/db/checkpoint": "voie in-process obligatoire contre la corruption SQLite (CLAUDE.md, "
-    "règle d'or) — appelée à la main pendant un incident, jamais par le front",
+    "/admin/db/integrite": "appelée à la main pendant un incident (skill infra-rpi) ; "
+    "l'écran lit la même mesure par le contrôle de santé (`health_monitor`)",
     "/acces/admin/imports/{import_id}/refuser-locataire": "pendant de `resoudre` documenté dans specs/architecture/api.md, "
     "conservé pour l'exploitation manuelle des imports Vigik",
     "/prestataires/releves/{r_id}/photo/{nom}": "idem, pour `releve_compteur.photo_url` — le GET passait auparavant par "
@@ -69,8 +69,8 @@ def _routes() -> list[tuple[str, str, str]]:
     Le préfixe **s'hérite du paquet**. Dans un paquet découpé, les sous-modules
     déclarent `APIRouter()` nu et c'est l'`__init__.py` qui porte
     `APIRouter(prefix="/admin")` — le montage réel donne donc `/admin/...`. Un
-    détecteur qui lit chaque fichier isolément reconstruirait `/db/checkpoint` et
-    conclurait que `/admin/db/checkpoint` n'existe plus. C'est exactement le
+    détecteur qui lit chaque fichier isolément reconstruirait `/db/integrite` et
+    conclurait que `/admin/db/integrite` n'existe plus. C'est exactement le
     message d'erreur qu'a produit ce test au moment du découpage.
     """
     trouvees: list[tuple[str, str, str]] = []

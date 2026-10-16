@@ -1,9 +1,8 @@
 """Remplacer un texte livré en base — une règle, plus quinze copies (24/09/2026).
 
 `_remplacer` était recopié dans quinze migrations, chacune avec sa requête SQL
-écrite à la main. Une migration appliquée ne se modifie jamais : les quinze
-sont FIGÉES ici, et la seizième est refusée — elle appelle
-`utils/textes_livres.remplacer_si_intact`.
+écrite à la main. Une migration qui remplace un texte appelle
+`utils/textes_livres.remplacer_si_intact` : une copie est refusée.
 """
 
 from __future__ import annotations
@@ -13,47 +12,25 @@ import pathlib
 import sqlalchemy as sa
 
 from app.utils.textes_livres import remplacer_passage, remplacer_si_intact
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 
 _VERSIONS = pathlib.Path(__file__).resolve().parents[1] / "alembic" / "versions"
 
-#: Les copies d'avant le 24/09/2026 — de l'historique, pas un retard à résorber.
-COPIES_FIGEES = frozenset(
-    {
-        "0121_relance_syndic_preambule.py",
-        "0128_liens_morts_modeles_email.py",
-        "0131_relance_syndic_signature.py",
-        "0133_relance_syndic_interlocuteurs.py",
-        "0135_objet_email_nomme.py",
-        "0136_reference_copro_obligatoire.py",
-        "0162_ticket_syndic_perimetre.py",
-        "0164_annonce_hall_lien_actualite.py",
-        "0184_calendrier_suivi_annonce_ses_pieces.py",
-        "0185_document_publie_description_et_lien.py",
-        "0192_nom_affiche_dans_les_courriels.py",
-        "0195_faq_locataire_corrigee.py",
-        "0198_faq_ecrans_renommes.py",
-        "0201_faq_dit_affaire.py",
-        "0203_les_courriels_disent_affaire.py",
-    }
-)
+
+def _copies(sources: dict[str, str]) -> set[str]:
+    return {nom for nom, texte in sources.items() if "def _remplacer" in texte}
 
 
-def test_aucune_nouvelle_copie_de_remplacer():
-    copies = {
-        f.name for f in _VERSIONS.glob("*.py") if "def _remplacer" in f.read_text(encoding="utf-8")
-    }
-    assert copies, (
-        "cas zéro : aucune copie trouvée — le motif a dérivé, ce contrôle ne mesure plus rien"
-    )
-    assert copies <= COPIES_FIGEES, (
-        f"copie nouvelle de `_remplacer` : {sorted(copies - COPIES_FIGEES)}"
-    )
-    assert COPIES_FIGEES <= copies, f"copie figée disparue : {sorted(COPIES_FIGEES - copies)}"
+def test_aucune_copie_de_remplacer():
+    migrations = {f.name: f.read_text(encoding="utf-8") for f in _VERSIONS.glob("*.py")}
+    assert migrations, "cas zéro : aucune migration lue — ce contrôle ne mesure plus rien"
+    assert not _copies(migrations), f"copie de `_remplacer` : {sorted(_copies(migrations))}"
+    #  Le témoin : une copie forgée est vue.
+    assert _copies({"forge.py": "def _remplacer(conn):\n    pass\n"}) == {"forge.py"}
 
 
 def test_seul_le_texte_intact_est_remplace():
-    moteur = moteur_memoire(schema=False)
+    moteur = moteur_de_test(schema=False)
     with moteur.begin() as conn:
         conn.execute(sa.text("CREATE TABLE faq_item (question TEXT, reponse TEXT)"))
         conn.execute(
@@ -68,7 +45,7 @@ def test_seul_le_texte_intact_est_remplace():
 
 
 def test_un_passage_n_est_remplace_que_s_il_figure_tel_quel():
-    moteur = moteur_memoire(schema=False)
+    moteur = moteur_de_test(schema=False)
     with moteur.begin() as conn:
         conn.execute(sa.text("CREATE TABLE config_site (cle TEXT, valeur TEXT)"))
         conn.execute(

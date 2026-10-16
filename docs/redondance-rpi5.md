@@ -11,7 +11,7 @@
 ```
 RPi5 #1 — PhT-RB5 (192.168.1.222)      RPi5 #2 — PhT-RB5i2 (192.168.1.223)
 ├── Docker Compose (actif J, J+2…)      ├── Docker Compose (actif J+1, J+3…)
-├── SQLite app.db                        ├── SQLite app.db (synchro via rsync à la bascule)
+├── PostgreSQL primaire                  ├── PostgreSQL réplique (en continu, promue à la bascule)
 ├── uploads/                             ├── uploads/ (rsync à chaud toutes les nuits)
 ├── cloudflared (tunnel Cloudflare)      └── cloudflared (tunnel Cloudflare)
 └── .active = "rpi1"                         .active = "rpi2"
@@ -36,7 +36,7 @@ le point 17 du pré-check. Ce tableau en recopiait une partie, et elle avait dé
 | `bascule.sh` | Bascule quotidienne rpi1 ↔ rpi2 | cron root, sur chaque RPi |
 | `health-watch.sh` | Surveillance et failover automatique | cron root, sur chaque RPi |
 | `check-reliability.sh` | Contrôles de fiabilité, alerte e-mail sur `FAIL` | cron root, sur chaque RPi |
-| `maintenance.sh` | Purges, VACUUM API arrêtée, rotation des logs | cron root, sur chaque RPi |
+| `maintenance.sh` | Purges, rotation des logs | cron root, sur chaque RPi |
 | `auto-deploy.sh` | Déploiement (actif) ou alignement du code et des images (standby) | cron `ptressard`, sur chaque RPi |
 | `boot-role-guard.sh` | Garde-fou anti-split-brain au démarrage | unité `hostachy-role-guard.service` |
 | `MaJ-Hostachy.sh` | Reprise en main d'une mise en production — le même geste qu'auto-deploy, verrous posés sur les deux nœuds | Manuel, `sudo`, sur l'actif |
@@ -55,11 +55,11 @@ Tourne à 02h00 sur chaque RPi. Le RPi qui n'est **pas** actif (flag `.active`) 
 | 0 | Pre-flight : peer joignable, espace disque, lock bascule posé |
 | 1 | Sync uploads + WhatsApp auth à chaud (prod reste UP) |
 | 2 | Arrêt cloudflared local + conteneurs locaux |
-| 3 | WAL checkpoint SQLite + integrity check DB locale |
-| 4 | Rsync DB → peer + integrity check sur peer |
+| 3 | La réplique du pair rattrape le primaire local, qui s'arrête |
+| 4 | La réplique du pair est **promue** primaire |
 | 5 | Démarrage conteneurs peer + health check API (60s max) |
 | 6 | Démarrage cloudflared peer + vérification URL publique (90s max) |
-| 7 | Mise à jour flags `.active` |
+| 7 | Mise à jour flags `.active` ; l'ancien primaire est reconstruit en réplique (`reconstruire-replique.sh`) |
 
 ### Rollback automatique
 
@@ -109,19 +109,18 @@ tail -f /var/log/hostachy-health-watch.log
 
 ---
 
-## Sous PostgreSQL : la réplique en continu (DI-7b, #1781)
+## La base : une réplique en continu (DI-7b, #1781)
 
-Quand `.env` désigne PostgreSQL (après la bascule des données, DI-7c), la base ne se
-copie plus à la bascule : le standby porte une **réplique en continu** du primaire
-(port lié à l'IP du LAN, `infra/postgresql/pg_hba.conf`).
+La base ne se copie pas à la bascule : le standby porte une **réplique en continu**
+du primaire PostgreSQL (port lié à l'IP du LAN, `infra/postgresql/pg_hba.conf`).
 
-| Geste | SQLite | PostgreSQL |
-|---|---|---|
-| Bascule, phases 3-4 | `wal_checkpoint`, `integrity_check`, copie `app.db` vers le pair | la réplique du pair rattrape, le primaire local s'arrête, le pair est **promu** |
-| Bascule, phase 7 | — | l'ancien primaire est reconstruit en réplique (`reconstruire-replique.sh`) |
-| Failover (`health-watch.sh`) | base du standby = dernière copie de la nuit | l'ancien actif est isolé, la réplique **promue** — à jour, au retard près |
-| Retour d'un nœud (`boot-role-guard.sh`) | arrêt de ses conteneurs | sa base, si elle est encore primaire, est isolée puis reconstruite en réplique |
-| Surveillance | point 4 (WAL d'`app.db`) | **C37** et le point 22 : rôle, réplication, retard |
+| Geste | Ce qui arrive à la base |
+|---|---|
+| Bascule, phases 3-4 | la réplique du pair rattrape, le primaire local s'arrête, le pair est **promu** |
+| Bascule, phase 7 | l'ancien primaire est reconstruit en réplique (`reconstruire-replique.sh`) |
+| Failover (`health-watch.sh`) | l'ancien actif est isolé, la réplique **promue** — à jour, au retard près |
+| Retour d'un nœud (`boot-role-guard.sh`) | sa base, si elle est encore primaire, est isolée puis reconstruite en réplique |
+| Surveillance | **C37** et le point 22 : rôle, réplication, retard |
 
 Le standby porte donc **un conteneur** (`hostachy_postgres`) : les comptes « le standby
 n'en porte aucun » ne comptent que ceux de l'application (`lib-applicatifs.sh`).
@@ -145,6 +144,11 @@ cat /opt/5hostachy/.active          # sur rpi1 ou rpi2
 ```
 
 ### 2. Si le RPi actif est injoignable → basculer sur le standby
+
+⚠️ La base du standby est une **réplique** : elle ne sert qu'une fois **promue**
+(`lib-promotion.sh`, comme le failover de `health-watch.sh`), et ne se démarre jamais
+vide à la place — règle d'or des données, `CLAUDE.md`. Vérifier son rôle avant tout
+geste (`.claude/skills/infra-rpi`, « Le rôle de la base d'un nœud »).
 
 ```bash
 ssh ptressard@192.168.1.222         # ou .223 selon lequel répond
@@ -170,7 +174,7 @@ curl -s https://5hostachy.fr/api/health
 
 ### 4. Après retour du RPi défaillant
 
-La bascule automatique reprendra le soir à 02h00 si les deux RPi sont joignables. Vérifier que les données ne divergent pas (la DB du failover est celle du standby au moment du failover — pas de perte si le RPi actif était gelé depuis peu).
+La bascule automatique reprendra le soir à 02h00 si les deux RPi sont joignables. Le nœud revenu ne se relance jamais en primaire : sa base est isolée puis reconstruite en réplique (`boot-role-guard.sh`, `reconstruire-replique.sh`) ; **C37** signale deux primaires.
 
 ---
 

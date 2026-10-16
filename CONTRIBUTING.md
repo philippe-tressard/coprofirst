@@ -17,7 +17,7 @@ l'intégration continue exécute, et les contrôles qu'elles rejouent sont les m
 | Python | 3.12 | `api/Dockerfile` (`python:3.12-slim`) |
 | Node.js | 22 | `front/Dockerfile` (`node:22-alpine`) |
 | Docker et Docker Compose | — | `docker-compose.yml` |
-| SQLite | 3 (fourni par l'image) | mode WAL, `api/app/database.py` |
+| PostgreSQL | 17 | `docker-compose.yml` (image `postgres`) — un serveur sur le poste pour les tests, désigné par `TESTS_BASE_URL` |
 
 Les versions ne sont pas recopiées ailleurs : ce tableau nomme le fichier qui
 décide, pour qu'une montée de version ne laisse pas une documentation fausse
@@ -54,6 +54,8 @@ hook versionné n'est **pas** un hook actif.
 cd api && python -m venv .venv && .venv/Scripts/activate  # ou source .venv/bin/activate
 pip install -r requirements.txt && uvicorn app.main:app --reload
 ```
+
+`DATABASE_URL` désigne alors un PostgreSQL joignable depuis le poste.
 
 ```bash
 cd front && npm install && npm run dev

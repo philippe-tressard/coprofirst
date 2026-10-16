@@ -49,9 +49,8 @@ avaient `None` — deux comportements pour « aucune pièce jointe ».
 
 ## ⚠️ `auteur_id` GARDE sa clé étrangère ici — et ce n'est pas une inconséquence
 
-`SaisiPourMixin` s'en prive, parce que deux de ses trois tables reçoivent la
-colonne **par migration** et que SQLite refuse d'ajouter une colonne contrainte.
-Ici, les trois tables portent `auteur_id` **depuis leur création**, avec la
+`SaisiPourMixin` s'en prive, parce que deux de ses trois tables portent la
+colonne sans contrainte en production. Ici, les trois tables portent `auteur_id` **depuis leur création**, avec la
 contrainte : une base neuve et une base migrée décrivent donc la même chose, et
 il n'y a aucune migration à écrire.
 

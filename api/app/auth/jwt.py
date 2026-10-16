@@ -95,7 +95,7 @@ def create_refresh_token(data: dict) -> str:
     utilisateur dans la même seconde produisaient donc deux jetons **identiques
     octet pour octet**, et la colonne `refresh_token.token` étant UNIQUE :
 
-        sqlite3.IntegrityError: UNIQUE constraint failed: refresh_token.token
+        IntegrityError: UNIQUE constraint failed: refresh_token.token
         POST /auth/refresh → 500
 
     Ce n'était pas un cas de bord. Quand une page charge, plusieurs appels

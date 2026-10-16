@@ -2,8 +2,6 @@ from functools import lru_cache
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
-from app.dialecte import url_fichier
-
 _INSECURE_KEY_DEFAULTS = {
     "dev-secret-key-change-in-production",
     "changez-cette-valeur-secrete-en-production-min-32-chars",
@@ -74,6 +72,10 @@ class Settings(BaseSettings):
     installation_dir: str = "/app/data/installation"
     installation_essai: bool = False
 
+    # Le cache du manuel PDF (`utils/manuel_pdf_cache`) : dans le volume `app_data`,
+    # jamais sous `uploads`, servi en statique. Vide : pas de cache (les tests).
+    cache_manuel_dir: str = "/app/data/cache-manuel-pdf"
+
     # Le REGISTRE des hôtes de la copropriété (#1751, P2-9) : le nom de
     # l'`ORIGIN` — le même `.env` que le front —, plus ceux qu'on déclare ici,
     # séparés par des virgules. Lus par `app/contexte.py` et nulle part ailleurs.
@@ -100,8 +102,18 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
     algorithm: str = "HS256"
 
-    # Base de données
-    database_url: str = url_fichier("/app/data/app.db")
+    # Base de données — un serveur PostgreSQL, et rien d'autre
+    database_url: str
+
+    @field_validator("database_url")
+    @classmethod
+    def database_url_postgresql(cls, v: str) -> str:
+        if not v.startswith("postgresql"):
+            raise ValueError(
+                "DATABASE_URL doit désigner un serveur PostgreSQL "
+                "(postgresql+psycopg://utilisateur:mot-de-passe@hôte:5432/base)."
+            )
+        return v
 
     # Email
     mail_enabled: bool = False

@@ -25,7 +25,7 @@ from app.utils.suppression_liee import (
     supprimer_documents_de,
     supprimer_lignes_liees,
 )
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 
 _numero = [0]
 
@@ -214,7 +214,7 @@ def test_des_enfants_a_supprimer_declenchent_l_emission(session, auteur):
 
 @pytest.fixture()
 def session_fk():
-    with Session(moteur_memoire(cles_etrangeres=True)) as s:
+    with Session(moteur_de_test(cles_etrangeres=True)) as s:
         yield s
 
 

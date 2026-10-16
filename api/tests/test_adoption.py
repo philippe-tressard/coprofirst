@@ -17,7 +17,7 @@ from app.models.copropriete import Batiment
 from app.models.core import PresenceMensuelle, RoleUtilisateur, StatutUtilisateur, TelemetryEvent
 from app.utils import horloge
 from app.utils.adoption import SANS_BATIMENT, Fenetre, adoption
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 
 JOURS = 30
 
@@ -62,7 +62,7 @@ def _jeu(s: Session) -> None:
 
 
 def _resultat(fenetre: Fenetre | None = None, exclure: str | None = None) -> dict:
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     with Session(moteur) as s:
         ids = _jeu(s)
         exclus = {ids[exclure]} if exclure else set()
@@ -122,7 +122,7 @@ def test_ventilation_par_batiment_et_sans_batiment():
 
 
 def test_aucun_compte_ne_divise_pas_par_zero():
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     with Session(moteur) as s:
         r = adoption(s, _fenetre_mois())
     assert (

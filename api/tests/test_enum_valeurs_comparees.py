@@ -1,15 +1,13 @@
 """Une colonne d'énumération ne se compare qu'à l'une de SES valeurs (DI-7c, 10/10/2026).
 
 Le fil d'accueil filtrait `PetiteAnnonce.statut != "archive"` — or `archive`
-n'est PAS une valeur de `StatutAnnonce` (l'archivage se calcule). Sous SQLite,
-l'énumération est un texte : le filtre ne filtrait rien, sans un mot. Sous
-PostgreSQL, c'est un TYPE, qui refuse la valeur : `GET /flux` est tombé en 500
-dès la bascule des données, et l'accueil de tous les résidents avec lui.
+n'est PAS une valeur de `StatutAnnonce` (l'archivage se calcule). L'énumération
+est un TYPE, qui refuse la valeur : `GET /flux` est tombé en 500, et l'accueil
+de tous les résidents avec lui.
 
 Ce contrôle lit `app/` sur l'AST : une comparaison (`==`, `!=`, `in_`,
 `notin_`) entre `Modele.colonne` d'énumération et un littéral hors de ses
-valeurs est refusée — sous SQLite comme sous PostgreSQL, elle ne peut pas être
-juste.
+valeurs est refusée — elle ne peut pas être juste.
 """
 
 from __future__ import annotations
@@ -102,5 +100,5 @@ def test_aucune_enumeration_comparee_a_une_valeur_qui_n_en_est_pas():
     ]
     assert not fautes, (
         "une colonne d'énumération comparée à une valeur qui n'en fait pas partie — "
-        "toujours faux sous SQLite, refusé (500) sous PostgreSQL :\n" + "\n".join(fautes)
+        "refusé par la base (500) :\n" + "\n".join(fautes)
     )

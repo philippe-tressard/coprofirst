@@ -33,7 +33,7 @@ from app.utils.retour_comptes import (
     noter_visites,
     retour_comptes,
 )
-from tests.aides_base import compte, moteur_memoire
+from tests.aides_base import compte, moteur_de_test
 
 
 def _il_y_a(jours: int) -> datetime:
@@ -74,7 +74,7 @@ def _jeu(s: Session) -> dict[str, int]:
 
 
 def _resultat() -> tuple[dict, dict[str, int]]:
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     with Session(moteur) as s:
         ids = _jeu(s)
         return retour_comptes(s), ids
@@ -136,7 +136,7 @@ def test_un_arrivant_n_est_pas_un_dormant():
 
 
 def test_aucun_compte_rien_a_dire():
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     with Session(moteur) as s:
         r = retour_comptes(s)
     assert r["dormants"] == [{"seuil": 60, "nombre": 0}, {"seuil": 90, "nombre": 0}]
@@ -145,7 +145,7 @@ def test_aucun_compte_rien_a_dire():
 
 
 def test_noter_une_visite_garde_le_jour_le_plus_recent_et_ignore_le_refus():
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     with Session(moteur) as s:
         venu = compte(s).id
         refus = compte(s, opt_out_telemetrie=True).id

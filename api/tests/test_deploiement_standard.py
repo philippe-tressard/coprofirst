@@ -124,8 +124,7 @@ def test_la_mise_a_jour_sauvegarde_avant_de_toucher_au_service():
     ordre = [
         "pull --quiet",  # images tirées, service intact
         "stop api",  # premier geste qui coupe
-        "export_copropriete verifier",  # la sauvegarde est réimportée à côté (PostgreSQL)…
-        "integrity_check",  # … ou vérifiée en place (SQLite)…
+        "export_copropriete verifier",  # la base exportée, réimportée à côté…
         'sed -i "s/^COPROFIRST_VERSION=',  # … avant de poser la version
         "up -d --remove-orphans",
     ]
@@ -175,14 +174,4 @@ def test_le_moteur_se_lit_comme_chez_la_reference():
     replique = (MISE_A_JOUR.parent / "lib-installation.sh").read_text(encoding="utf-8")
     assert _corps(replique, "moteur_de_url") == _corps(reference, "moteur_de_url"), (
         "les deux lectures du moteur ont divergé — recopier celle de lib-replication.sh"
-    )
-
-
-def test_le_listing_se_lit_comme_a_l_export_hors_site():
-    """`listing_contient` est une COPIE déclarée, pour la même raison (#1820)."""
-    reference = (RACINE / "scripts" / "lib" / "lib-export-hors-site.sh").read_text(encoding="utf-8")
-    replique = MISE_A_JOUR.read_text(encoding="utf-8")
-    assert _corps(replique, "listing_contient") == _corps(reference, "listing_contient"), (
-        "les deux lectures d'un listing d'archive ont divergé — recopier celle de "
-        "lib-export-hors-site.sh"
     )

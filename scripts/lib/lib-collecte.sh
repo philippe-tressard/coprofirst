@@ -129,9 +129,9 @@ echo "deploy_dernier=$(tail -40 /var/log/hostachy-deploy.log 2>/dev/null | grep 
 echo "reliability_last=$(tail -3000 /var/log/hostachy-reliability.log 2>/dev/null | grep -oE "check-reliability \([0-9-]{10} [0-9:]{8}\)" | tail -1 | tr -d "()" | cut -d" " -f2-)"
 echo "buildcache=$(docker system df --format "{{.Type}}|{{.Size}}" 2>/dev/null | grep -i "^Build Cache" | cut -d"|" -f2 | tr -d " ")"
 # Date du dernier rapport de maintenance EN BASE, pour ce nœud — la seconde sonde
-# de C19. Lue par l'\''API in-process (jamais en ouvrant app.db : règle d'\''or), donc
-# elle ne répond que sur l'\''ACTIF. Sur le standby la chaîne est vide, et C19 le
-# traduit en INCONNU au lieu de conclure à une divergence.
+# de C19. Lue par l'\''API in-process, donc elle ne répond que sur l'\''ACTIF.
+# Sur le standby la chaîne est vide, et C19 le traduit en INCONNU au lieu de
+# conclure à une divergence.
 # $R reste DANS les quotes : il appartient au snippet (défini plus haut), pas au
 # shell qui assemble. Seules les CONSTANTES du script (LOG_WARN_MB, MAINT_LOG)
 # justifient une sortie de quotes : elles ne vivent que côté assembleur.

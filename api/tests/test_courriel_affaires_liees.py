@@ -19,7 +19,6 @@ from __future__ import annotations
 import uuid
 from datetime import timedelta
 
-import sqlalchemy as sa
 from sqlmodel import Session
 
 from app.models.affaires_liees import AffaireLiee
@@ -33,8 +32,7 @@ from app.routers.tickets.historique_courriel import (
 from app.seed.emails.tickets import MODELES
 from app.utils import horloge
 from app.utils.email import _contexte_rendu, composer_email
-from tests.aides_base import compte, moteur_memoire
-from tests.aides_migrations import charger_migration
+from tests.aides_base import compte, moteur_de_test
 
 
 def _affaire(session, auteur, titre, *, cree_le, confidentiel=False) -> Ticket:
@@ -71,7 +69,7 @@ def _rendre(session, code, sujet, corps, ctx) -> str:
 
 def _monde():
     """Une affaire, et trois autres posées dans le désordre de leur création."""
-    session = Session(moteur_memoire())
+    session = Session(moteur_de_test())
     cs = compte(session, prefixe="cs", roles_json="conseil_syndical")
     maintenant = horloge.maintenant()
     jour = timedelta(days=1)
@@ -146,7 +144,7 @@ def test_le_courriel_rendu_place_les_liees_apres_l_historique():
 
 
 def test_sans_lien_rien_ne_change():
-    session = Session(moteur_memoire())
+    session = Session(moteur_de_test())
     cs = compte(session, prefixe="cs", roles_json="conseil_syndical")
     seule = _affaire(session, cs, "Seule", cree_le=horloge.maintenant())
     ctx = contexte_ticket_syndic(seule, cs, session, pieces_jointes=[])
@@ -154,32 +152,6 @@ def test_sans_lien_rien_ne_change():
     html = _rendre(session, code, sujet, corps, ctx)
     assert ctx["affaires_liees"] == []
     assert "Affaires liées" not in html
-
-
-def test_la_migration_donne_aux_bases_existantes_le_texte_du_seed():
-    """Une base qui porte l'ANCIEN corps reçoit exactement celui du seed — et rejouer ne double rien."""
-    from app.seed.emails.tickets import _AFFAIRES_LIEES
-
-    migration = charger_migration("0266")
-    moteur = moteur_memoire(schema=False)
-    with moteur.begin() as conn:
-        conn.execute(sa.text("CREATE TABLE modele_email (code TEXT, corps_html TEXT)"))
-        for code, _l, _s, corps, _d in MODELES:
-            if code in ("ticket_syndic", "ticket_copie_auteur"):
-                assert _AFFAIRES_LIEES in corps
-                conn.execute(
-                    sa.text("INSERT INTO modele_email VALUES (:c, :b)"),
-                    {"c": code, "b": corps.replace(_AFFAIRES_LIEES, "")},
-                )
-        migration.op = type("Op", (), {"get_bind": staticmethod(lambda: conn)})
-        for _ in range(2):  # le second passage ne doit RIEN changer
-            migration.upgrade()
-        servis = dict(conn.execute(sa.text("SELECT code, corps_html FROM modele_email")).all())
-        attendus = {m[0]: m[3] for m in MODELES if m[0] in servis}
-        assert servis == attendus
-        migration.downgrade()
-        retour = dict(conn.execute(sa.text("SELECT code, corps_html FROM modele_email")).all())
-        assert all(_AFFAIRES_LIEES not in corps for corps in retour.values())
 
 
 def test_historique_courriel_les_liees_montrables_et_l_ordre_des_lignes():

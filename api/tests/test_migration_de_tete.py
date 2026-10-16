@@ -30,7 +30,7 @@ from alembic.operations import Operations
 from alembic.script import ScriptDirectory
 
 from tests import aides_migrations
-from tests.aides_base import moteur_memoire
+from tests.aides_base import moteur_de_test
 
 
 def _tete() -> str:
@@ -44,7 +44,7 @@ def _tete() -> str:
 def _rejouer(revision: str) -> None:
     """Défait la migration, la rejoue, la rejoue encore — chaque pas dans sa transaction."""
     migration = aides_migrations.charger_migration(revision)
-    moteur = moteur_memoire()
+    moteur = moteur_de_test()
     for pas in (migration.downgrade, migration.upgrade, migration.upgrade):
         with moteur.begin() as conn:
             with Operations.context(MigrationContext.configure(conn)):
@@ -64,7 +64,7 @@ def test_la_tete_trouvee_est_la_derniere_migration():
     """
     tete = _tete()
     fichiers = sorted(aides_migrations.VERSIONS.glob("[0-9][0-9][0-9][0-9]_*.py"))
-    assert len(fichiers) > 200, "le dossier des migrations ne rend presque rien"
+    assert fichiers, "le dossier des migrations ne rend rien"
     assert tete == fichiers[-1].name[:4], (
         f"la tête du graphe ({tete}) n'est pas la dernière migration ({fichiers[-1].name})"
     )
@@ -85,9 +85,7 @@ def downgrade():
 
 #: L'une explose ; l'autre ajoute sa colonne sans garde — sa première exécution
 #: passe, la seconde lève, comme au redémarrage après une migration interrompue.
-#: Le message dépend du moteur : « duplicate column » sous SQLite, « already
-#: exists » sous PostgreSQL. La suite PostgreSQL ne jouait pas ce test tant que la
-#: tête était historique (`conftest`) : la 0272 l'y a fait entrer (#1797).
+#: Le message dépend de la langue du serveur : « already exists » ou « existe déjà ».
 FORGEES = {
     "explose": 'raise RuntimeError("migration forgée")',
     "non idempotente": 'op.add_column("utilisateur", sa.Column("forgee", sa.Integer()))',
@@ -103,5 +101,5 @@ def test_le_controle_sait_ECHOUER(corps, tmp_path, monkeypatch):
     monkeypatch.setattr(aides_migrations, "VERSIONS", versions)
 
     assert _tete() == "9999", "le graphe forgé n'est pas celui que le test lit"
-    with pytest.raises(Exception, match="migration forgée|duplicate column|already exists"):
+    with pytest.raises(Exception, match="migration forgée|already exists|existe déjà"):
         test_la_migration_de_tete_se_defait_et_se_rejoue()
