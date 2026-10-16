@@ -68,6 +68,21 @@ export async function attendreHydratation(page: Page): Promise<void> {
 	}
 }
 
+/**
+ * **Déplier une étape d'une affaire dépliée** — « La suite », « La synthèse »
+ * (`RubriqueEtape`, maquette G du 16/10/2026).
+ *
+ * Une carte d'affaire s'ouvre sur sa DEMANDE seule : la suite et la synthèse
+ * sont pliées, et une seule étape s'ouvre à la fois. Un test qui touche à une
+ * entrée du fil l'ouvre d'abord — écrit ici une fois, parce que trois specs le
+ * font et qu'un sélecteur recopié divergerait au premier renommage.
+ */
+export async function deplierEtape(page: Page, titre: string): Promise<void> {
+	const tete = page.locator('.encart-tete', { hasText: titre }).first();
+	await tete.click();
+	await expect(tete).toHaveAttribute('aria-expanded', 'true');
+}
+
 /** Le type de l'annotation que lit `rapport-hydratation.ts` — écrit une fois. */
 export const TYPE_HYDRATATION = 'hydratation-ms';
 

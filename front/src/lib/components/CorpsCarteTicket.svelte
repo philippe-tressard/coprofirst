@@ -165,6 +165,15 @@
 	      demande d'abord, les autres pliées sur une ligne qui dit l'essentiel.
 	      L'ordre des sections de la demande reste celui du cadre (R2,
 	      `FicheLecture`). -->
+	<!--  Défaire un transfert de courriel, comme sur la fiche (#1482) : la carte
+	      n'ouvre pas la fiche, et c'était le seul endroit du geste. AU-DESSUS des
+	      étapes, jamais dans une étape pliée : c'est un geste en ATTENTE, qui ne
+	      doit pas se cacher derrière un clic (16/10/2026). Vide, il ne rend rien. -->
+	<TransfertsVerses
+		ticketId={ticket.id}
+		encadre={false}
+		on:change={() => gestes.filChange(ticket)}
+	/>
 	<RubriqueEtape
 		titre="La demande"
 		icone="inbox"
@@ -217,14 +226,6 @@
 			ouverte={ouverte === 'suite'}
 			onBasculer={() => (ouverte = basculer(ouverte, 'suite'))}
 		>
-			<!--  Défaire un transfert de courriel, comme sur la fiche (#1482) : la
-		      carte n'ouvre pas la fiche, et c'était le seul endroit du geste. Un
-		      transfert versé est fait de suites : il se lit avec elles. -->
-			<TransfertsVerses
-				ticketId={ticket.id}
-				encadre={false}
-				on:change={() => gestes.filChange(ticket)}
-			/>
 			<!--  Le crayon par entrée : il existait dans la rubrique depuis #431,
 		      et la fiche du ticket s'en servait — mais pas cette liste-ci.
 		      Un même fil modifiable sur un écran et pas sur l'autre.

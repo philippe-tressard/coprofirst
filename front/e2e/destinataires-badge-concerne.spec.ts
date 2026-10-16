@@ -6,7 +6,7 @@
  *  vide valait « Tous » pour le badge.
  */
 import type { Page } from '@playwright/test';
-import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreHydratation, deplierEtape, expect, simulerApi, test } from './aides';
 
 const AFFAIRE = {
 	id: 8,
@@ -56,6 +56,7 @@ test('Suite d’une Nuisance : la pastille « Résident concerné » et le badge
 	});
 	await page.goto('/tickets/8');
 	await attendreHydratation(page);
+	await deplierEtape(page, 'La suite');
 	await page.getByRole('button', { name: 'Modifier cette entrée' }).click();
 	const destinataires = section(page);
 	await expect(destinataires.locator('button', { hasText: /Résident concerné/ })).toHaveClass(
