@@ -110,11 +110,10 @@ router.include_router(mise_a_jour.router)
 
 #  Surface publique conservée pour les importateurs externes.
 from .commun import STATUT_LABELS  # noqa: E402  (après le montage, pour la lisibilité)
-from .relance import RelanceSyndicRequest, RelanceSyndicResponse  # noqa: E402
+from .relance import RelanceSyndicRequest  # noqa: E402
 
 __all__ = [
     "router",
     "STATUT_LABELS",
     "RelanceSyndicRequest",
-    "RelanceSyndicResponse",
 ]

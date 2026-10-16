@@ -1,29 +1,28 @@
 """Le PDF du rapport « Suivi des affaires » — maquette D2 (16/10/2026).
 
 En tête, le nombre d'affaires non fermées et celles de plus de 90 jours, à côté
-de la répartition par catégorie en barres ; puis la synthèse de l'assistant si
-le conseil l'a demandée ; puis le tableau : âge, date d'ouverture, affaire (titre
-et descriptif coupé à dix lignes), catégorie. Le même ordre qu'à l'écran.
+de la répartition par catégorie en barres ; puis le tableau : âge, date
+d'ouverture, affaire (titre, périmètre quand ce n'est pas celui par défaut, et
+l'aperçu — le résumé de l'assistant, sinon le descriptif — coupé à cinq lignes),
+catégorie. Le même ordre qu'à l'écran.
 
 Le thème — logo, palette, page, moteur — vient de `pdf_theme`, jamais d'ici.
-Tout texte est ÉCHAPPÉ : titres et descriptifs viennent des résidents, la
-synthèse d'un modèle.
+Tout texte est ÉCHAPPÉ : titres et descriptifs viennent des résidents, les
+résumés d'un modèle. La synthèse d'ensemble de #2034 n'existe plus (#2035).
 """
 
 from __future__ import annotations
 
 from html import escape
-from typing import Optional
 
 from app.utils.dates_fr import date_courte
 from app.utils.pdf_theme import FONT_SANS, PALETTE_CSS, html_to_pdf, logo_html, regle_page
 from app.utils.suivi_affaires.releve import Releve
-from app.utils.suivi_affaires.synthese import Synthese
 
 TITRE = "Suivi des affaires"
 
-#: Le descriptif s'arrête à dix lignes — `line-clamp`, que WeasyPrint applique.
-LIGNES_DESCRIPTIF = 10
+#: L'aperçu s'arrête à cinq lignes — `line-clamp`, que WeasyPrint applique (#2035).
+LIGNES_APERCU = 5
 
 _CSS = f"""
 {PALETTE_CSS}
@@ -42,7 +41,7 @@ h1 {{ color: var(--navy); font-size: 15pt; margin: 0 0 8pt; }}
 .chiffre.alerte .v {{ color: #c0392b; }}
 .chiffre .l {{ font-size: 8pt; color: var(--muted); }}
 .repartition {{ flex: 1; border: 1px solid var(--border); border-radius: 5pt; padding: 6pt 9pt; }}
-.repartition h2, .synthese h2 {{ font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em;
+.repartition h2 {{ font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em;
   color: var(--muted); margin: 0 0 5pt; }}
 .barres {{ width: 100%; border-collapse: collapse; }}
 .barres td {{ padding: 2pt 0; border: 0; vertical-align: middle; font-size: 8.5pt; }}
@@ -50,10 +49,6 @@ h1 {{ color: var(--navy); font-size: 15pt; margin: 0 0 8pt; }}
 .barres .nb {{ text-align: right; font-weight: 700; width: 1%; padding-left: 6pt; }}
 .piste {{ background: #f7f8fa; border-radius: 2pt; height: 7pt; }}
 .barre {{ background: var(--navy); border-radius: 2pt; height: 7pt; }}
-.synthese {{ border: 1px solid #dcd0f0; background: #faf7ff; border-radius: 5pt;
-  padding: 6pt 9pt; margin-bottom: 10pt; }}
-.synthese p {{ margin: 0 0 4pt; }}
-.synthese ul {{ margin: 0; padding-left: 14pt; }}
 table.affaires {{ width: 100%; border-collapse: collapse; }}
 .affaires th {{ text-align: left; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em;
   color: var(--muted); border-bottom: 1.5pt solid var(--border); padding: 3pt 4pt; }}
@@ -61,7 +56,8 @@ table.affaires {{ width: 100%; border-collapse: collapse; }}
 .affaires tr {{ break-inside: avoid; }}
 .affaires thead {{ display: table-header-group; }}
 .titre {{ font-weight: 700; display: block; margin-bottom: 2pt; }}
-.descriptif {{ color: var(--ink); font-size: 8.5pt; line-clamp: {LIGNES_DESCRIPTIF}; }}
+.perimetre {{ display: block; color: var(--muted); font-size: 8pt; margin-bottom: 2pt; }}
+.descriptif {{ color: var(--ink); font-size: 8.5pt; line-clamp: {LIGNES_APERCU}; }}
 .date, .categorie {{ white-space: nowrap; color: var(--muted); font-size: 8.5pt; }}
 .age {{ font-weight: 700; font-size: 8pt; border-radius: 3pt; padding: 1pt 4pt; white-space: nowrap; }}
 .age.ancienne {{ background: #fdedec; color: #c0392b; }}
@@ -85,16 +81,6 @@ def _repartition(r: Releve) -> str:
     return f'<div class="repartition"><h2>Par catégorie</h2><table class="barres">{lignes}</table></div>'
 
 
-def _synthese(s: Optional[Synthese]) -> str:
-    if s is None:
-        return ""
-    points = "".join(f"<li>{escape(p)}</li>" for p in s.points)
-    return (
-        '<div class="synthese"><h2>Synthèse de l\'assistant</h2>'
-        f"<p>{escape(s.resume)}</p>{f'<ul>{points}</ul>' if points else ''}</div>"
-    )
-
-
 def _tableau(r: Releve) -> str:
     if not r.affaires:
         return '<p class="vide">Aucune affaire ouverte.</p>'
@@ -103,7 +89,12 @@ def _tableau(r: Releve) -> str:
         f'<td><span class="age {a.anciennete}">{a.age_jours} j</span></td>'
         f'<td class="date">{date_courte(a.ouverte_le)}</td>'
         f'<td><span class="titre">{escape(a.titre)}</span>'
-        + (f'<div class="descriptif">{escape(a.descriptif)}</div>' if a.descriptif else "")
+        + (
+            f'<span class="perimetre">Périmètre : {escape(a.perimetre)}</span>'
+            if a.perimetre
+            else ""
+        )
+        + (f'<div class="descriptif">{escape(a.apercu)}</div>' if a.apercu else "")
         + f'</td><td class="categorie">{escape(a.libelle_categorie)}</td>'
         "</tr>"
         for a in r.affaires
@@ -114,9 +105,7 @@ def _tableau(r: Releve) -> str:
     )
 
 
-def html_rapport(
-    r: Releve, synthese: Optional[Synthese], *, site_nom: str, logo_png: bytes | None
-) -> str:
+def html_rapport(r: Releve, *, site_nom: str, logo_png: bytes | None) -> str:
     """PURE. Le document HTML autonome du rapport."""
     pluriel = "s" if r.total > 1 else ""
     return (
@@ -131,11 +120,9 @@ def html_rapport(
         f'<div class="chiffre alerte"><div class="v">{r.anciennes}</div>'
         '<div class="l">de plus de 90 jours</div></div>'
         f"</div>{_repartition(r)}</div>"
-        f"{_synthese(synthese)}{_tableau(r)}</body></html>"
+        f"{_tableau(r)}</body></html>"
     )
 
 
-def generer_pdf(
-    r: Releve, synthese: Optional[Synthese], *, site_nom: str, logo_png: bytes | None
-) -> bytes:
-    return html_to_pdf(html_rapport(r, synthese, site_nom=site_nom, logo_png=logo_png))
+def generer_pdf(r: Releve, *, site_nom: str, logo_png: bytes | None) -> bytes:
+    return html_to_pdf(html_rapport(r, site_nom=site_nom, logo_png=logo_png))

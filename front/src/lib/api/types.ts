@@ -271,11 +271,6 @@ export interface ReponseRelance {
 	tickets: string[];
 }
 
-export interface RelanceSyndicResponse {
-	delai_jours: number;
-	tickets: Ticket[];
-}
-
 /** Message d'un fil de ticket. Vit ici, pas dans la page : le client TypeScript
  *  est la source unique des types d'API (cf. CLAUDE.md, checklist backend). */
 export interface TicketMessage {

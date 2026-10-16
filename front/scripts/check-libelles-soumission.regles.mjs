@@ -94,15 +94,6 @@ export const EXCEPTIONS = {
 	'lib/components/FormulaireAnnonceHall.svelte':
 		'affiche de hall — « Générer une affiche » : on produit un document, on ne ' +
 		"crée pas un objet (et l'écran n'envoie plus d'e-mail depuis le 18/08/2026)",
-	//  Relance syndic : ce n'est pas un formulaire de création mais une ACTION de
-	//  masse sur une sélection, et son libellé porte le compte — « Envoyer la
-	//  relance (3 tickets) ». Le remplacer par « Enregistrer » ferait disparaître
-	//  ce que le bouton va réellement faire, et à combien de tickets.
-	//  Repéré par ce contrôle en extrayant le reporting (#453) : la rangée est
-	//  passée à `.form-actions`, ce qui l'a rendue visible ici.
-	'lib/components/reporting/VueRelanceSyndic.svelte':
-		'envoi groupé de relances — « Envoyer la relance (N tickets) » agit sur une ' +
-		'sélection existante, il ne crée aucun objet',
 
 	//  ── RESTE À TRAITER — révélé par l'élargissement de portée (#416) ───────
 	//  Ces écarts sont réels et connus. Ils ne sont PAS corrigés dans #416, dont

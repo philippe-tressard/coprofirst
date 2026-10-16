@@ -278,7 +278,24 @@ def construire_message(
     tete.append("Métriques calculées (jours ouvrés, 9 h–17 h, hors week-ends et jours fériés) :")
     tete += _lignes_metriques(met, libelles)
     tete += _lignes_recidive(met.get(r.CLE))
+    fil = fil_date(session, ticket, libelles, est_syndic)
+    return "\n".join([*tete, "", "Fil daté :", fil[:MAX_CARACTERES_FIL] or "(vide)"])
 
+
+def fil_date(
+    session: Session,
+    ticket: Ticket,
+    libelles: dict[str, str],
+    est_syndic: Optional[Callable[[int], bool]] = None,
+) -> str:
+    """Le fil d'une affaire, une ligne datée par entrée, la plus ancienne en tête.
+
+    États, relances, Suites et messages NON internes ; chaque personne par son
+    rôle, jamais son nom. Lu par la synthèse d'une affaire close et par le
+    résumé de chaque affaire en cours du Suivi des affaires (#2035) — une seule
+    écriture de ce que l'assistant a le droit de lire d'un fil.
+    """
+    est_syndic = est_syndic or reconnaisseur_syndic(session)
     entrees: list[tuple[datetime, str]] = []
     for e in _evolutions(session, ticket.id):
         qui = _role(ou_rien(session, Utilisateur, e.auteur_id), ticket, est_syndic)
@@ -306,13 +323,13 @@ def construire_message(
         qui = _role(ou_rien(session, Utilisateur, msg.auteur_id), ticket, est_syndic)
         entrees.append((msg.cree_le, f"Message ({qui}) : {_texte(msg.contenu)}"))
     entrees.sort(key=lambda x: x[0])
-    fil = "\n".join(f"- {date_courte(horloge.jour_civil(q))} — {t}" for q, t in entrees)
-    return "\n".join([*tete, "", "Fil daté :", fil[:MAX_CARACTERES_FIL] or "(vide)"])
+    return "\n".join(f"- {date_courte(horloge.jour_civil(q))} — {t}" for q, t in entrees)
 
 
 __all__ = [
     "construire_message",
     "faits_de",
+    "fil_date",
     "metriques_de",
     "mois_debut_exercice",
     "reconnaisseur_syndic",

@@ -319,6 +319,11 @@ class Ticket(SaisiPourMixin, AssisteIAMixin, IntervenantMixin, table=True):
     epingle: bool = False
     #  Paraît-il au kanban ? SI, jamais OÙ — `utils/kanban_tickets.py` (#833).
     suivi_kanban: bool = False
+    #  ✨ Le résumé de l'assistant (cinq lignes au plus), montré au Suivi des
+    #  affaires et dans la relance du syndic (#2035, migration 0287). Son écriture
+    #  ne touche PAS `mis_a_jour_le` : c'est la dernière avancée, qui date la relance.
+    resume_ia: Optional[str] = None
+    resume_ia_le: Optional[NaiveDatetime] = None
     #  🔁 Le suivi d'une ACTUALITÉ (10/10/2026) : `None` = sans suivi ; sinon
     #  « ouvert », « résolu » ou « annulé ». Un REPÈRE, distinct de `statut` qui
     #  reste `publie` : l'actualité sort ainsi, par construction, du kanban, des
