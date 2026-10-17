@@ -1,0 +1,27 @@
+# =============================================================================
+#  Installation COMMUNE à plusieurs copropriétés — la surcouche (#2053)
+#
+#  Se pose APRÈS celle des images, sur une installation commune seulement :
+#
+#      docker compose -f docker-compose.yml \
+#          -f deploiement/standard/compose.images.yml \
+#          -f deploiement/standard/commune/compose.commune.yml up -d
+#
+#  Elle ne dit qu'une chose : le front ne connaît pas UNE adresse, il sert celle
+#  que le visiteur a demandée. Le reste — déclaration, garde des pages, gestes de
+#  l'hébergeur — est dans `LISEZMOI.md`, à côté.
+# =============================================================================
+
+services:
+  front:
+    environment:
+      #  `ORIGIN` fige l'adresse de chaque page rendue par le serveur (`url.origin`,
+      #  `url.host`) : à plusieurs copropriétés, toutes auraient celle de l'hôte
+      #  commun, et le rendu demanderait sa configuration pour personne (421).
+      #  Vide, adapter-node lit l'hôte dans la requête — celui que Caddy transmet tel
+      #  quel, le même que l'API lit pour résoudre la copropriété (§4.1).
+      - ORIGIN=
+      - HOST_HEADER=host
+      #  Le schéma vient du proxy de confiance (tunnel, `trusted_proxies` du
+      #  Caddyfile) ; sans l'en-tête, adapter-node suppose `https`.
+      - PROTOCOL_HEADER=x-forwarded-proto

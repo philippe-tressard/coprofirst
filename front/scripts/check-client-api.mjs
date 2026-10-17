@@ -125,8 +125,9 @@ const FETCH_API =
 const ROUTE = /[`'"]\/api(?=[/`'"?])/;
 
 /**
- * Les deux `fetch()` directs qui ne PEUVENT pas passer par le client, avec leur
- * raison. Le contrôle échoue si l'une de ces entrées cesse de servir.
+ * Le `fetch()` direct qui ne PEUT pas passer par le client, avec sa raison.
+ * `src/lib/server/config-site.ts` en était un second jusqu'au 17/10/2026 : il lit
+ * l'API par `node:http`, pour porter l'hôte de la page (#2053). Le contrôle échoue si l'une de ces entrées cesse de servir.
  *
  * ⚠️ La route que ces fichiers écrivent (`ROUTE`) y est admise pour la même
  * raison : `telemetry.ts` nomme `/api/telemetry/collect` pour `sendBeacon`.
@@ -135,10 +136,6 @@ const FETCH_LEGITIMES = {
 	'src/lib/telemetry.ts':
 		'repli de `navigator.sendBeacon` — un envoi `keepalive` au déchargement de ' +
 		'la page, que le client (avec son renouvellement de session sur 401) ne peut pas porter',
-	'src/lib/server/config-site.ts':
-		'rendu SSR : le `fetch` de SvelteKit, sur une base ABSOLUE — le client ' +
-		"vise `/api`, relatif, qui n'existe pas côté serveur. Lu par le layout racine " +
-		"et le manifeste de l'application installée (#1725)",
 };
 
 function fichiers(dir, acc = []) {

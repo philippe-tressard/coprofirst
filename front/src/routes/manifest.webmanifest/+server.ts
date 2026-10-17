@@ -16,8 +16,8 @@ import { lireConfigServeur } from '$lib/server/config-site';
  * ⚠️ `Cache-Control: no-cache`, comme le pose Caddy sur cette adresse : un nom
  * changé doit atteindre le navigateur à sa prochaine visite.
  */
-export const GET: RequestHandler = async ({ fetch }) => {
-	const cfg = await lireConfigServeur(fetch);
+export const GET: RequestHandler = async ({ url }) => {
+	const cfg = await lireConfigServeur(url.host);
 	const nom = (cfg['site_nom'] ?? '').trim() || NOM_SITE_PAR_DEFAUT;
 	//  Les icônes (#1728) : le logo de la résidence s'il a été téléversé,
 	//  redimensionné par l'API ; sinon les icônes neutres du dossier statique.
