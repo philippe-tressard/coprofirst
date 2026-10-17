@@ -117,6 +117,13 @@ def _certificat_expire_le() -> Optional[datetime]:
     return echeance_certificat(_certificat_servi(url.hostname, url.port or 443))
 
 
+def _moteur_de_base() -> str:
+    """Le moteur des bases de l'installation — lu sur la première copropriété : hors
+    requête, une installation commune n'en sert aucune par défaut (#2053)."""
+    with contexte.dans(contexte.coproprietes()[0]):
+        return contexte.moteur().dialect.name
+
+
 def hebergement() -> Hebergement:
     disque = _mesure(_disque)
     return Hebergement(
@@ -125,7 +132,7 @@ def hebergement() -> Hebergement:
         memoire_mo=_mesure(_memoire_mo),
         disque_total_mo=disque[0] if disque else None,
         disque_occupe_mo=disque[1] if disque else None,
-        moteur_base=_mesure(lambda: contexte.moteur().dialect.name),
+        moteur_base=_mesure(_moteur_de_base),
     )
 
 

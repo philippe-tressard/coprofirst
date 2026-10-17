@@ -366,3 +366,12 @@ def test_une_tache_tourne_pour_chacune_et_saute_la_base_injoignable(commune):
 def test_hors_requete_aucune_copropriete_n_est_devinee(commune):
     with pytest.raises(contexte.HorsCopropriete):
         contexte.courante()
+
+
+def test_les_mesures_de_l_installation_ne_supposent_aucune_copropriete(commune):
+    """Le rapport nocturne mesure l'installation hors requête : il nomme ses
+    copropriétés une à une, il ne s'en remet pas à une « courante » (#2053)."""
+    from app.inscription import rapport
+
+    assert rapport.hebergement().moteur_base == "postgresql"
+    assert rapport.posture().secret_suffisant is True
