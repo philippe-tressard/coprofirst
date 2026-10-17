@@ -17,7 +17,7 @@ from app.inscription.depot import Contact
 from app.models.core import RoleUtilisateur
 from app.models.roles import ROLE_OPERATEUR
 from app.registre import signature
-from app.registre.modeles import DecisionRegistre, EtatInscription, Installation
+from app.registre.modeles import DecisionRegistre, EtatInscription
 from app.utils import installation
 from tests.aides_http import base_http, client_http
 from tests.aides_registre import installation_branchee, modifier_inscrite
