@@ -43,7 +43,21 @@ def prefixe_api_du_caddyfile() -> str:
 
 @contextmanager
 def registre_allume(monkeypatch) -> Iterator:
-    """Rend le moteur de la base `plateforme`, migrée ; tout est défait en sortie."""
+    """Rend le moteur de la base `plateforme`, migrée ; tout est défait en sortie.
+
+    🔴 Sous le rôle de la PRODUCTION : celui du registre n'est pas superutilisateur,
+    et PostgreSQL lui refuse de différer les clés (`dialecte.differer_cles_etrangeres`).
+    La suite tourne en superutilisateur et ne le montrerait pas : le refus est donc
+    simulé pour TOUT test du registre. #1972 ne le simulait que pour la restauration,
+    et l'épreuve de la sauvegarde nocturne a échoué en production pendant que ses
+    tests restaient verts (17/10/2026).
+    """
+    import app.utils.import_copropriete as import_copropriete
+
+    def refus(_connexion):
+        raise RuntimeError("permission denied to set parameter session_replication_role")
+
+    monkeypatch.setattr(import_copropriete, "differer_cles_etrangeres", refus)
     moteur = moteur_de_test(schema=False)
     migrer.migrer(moteur)
     reglages = get_settings()
