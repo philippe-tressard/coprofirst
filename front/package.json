@@ -141,6 +141,7 @@
 		"lint:section-nommee": "node scripts/check-section-nommee.mjs --selftest && node scripts/check-section-nommee.mjs",
 		"lint:bouton-icone": "node scripts/lib-balises.mjs --selftest && node scripts/check-bouton-icone.mjs --selftest && node scripts/check-bouton-icone.mjs",
 		"lint:actions-au-trait": "node scripts/check-actions-au-trait.mjs --selftest && node scripts/check-actions-au-trait.mjs",
+		"lint:geste-ia": "node scripts/check-geste-ia.mjs --selftest && node scripts/check-geste-ia.mjs",
 		"lint:tables-statuts": "node scripts/check-tables-statuts.mjs",
 		"lint:statuts-acces": "node scripts/check-statuts-acces.mjs --selftest && node scripts/check-statuts-acces.mjs",
 		"lint:lock": "node scripts/check-lock-coherent.mjs && node scripts/check-licence-manifestes.mjs --selftest && node scripts/check-licence-manifestes.mjs",

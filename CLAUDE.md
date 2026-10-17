@@ -603,6 +603,9 @@ coupant. 🔴 **Les courriels de sécurité ne sont pas un service**
       10/10/2026 (#1819) : une liste en cartes prend `Gouttiere` (date, puis ce qui
       classe) et `ReglagesListe` (recherche en tête) — `ux-patterns` §3.
       `npm run lint:actions-au-trait`
+- [ ] Bouton qui LANCE l'assistant IA : `<IconeIA {enCours} />` — ✨ au repos, ⏳ qui
+      clignote pendant l'appel —, le bouton portant `aria-busy={enCours}`. ✨ ne se
+      dit que de l'IA (`ux-patterns`, arbitrage n° 21 ; `npm run lint:geste-ia`)
 - [ ] Badge dont la teinte vient d'une TABLE (état, rôle, import…) : `<Badge teinte={…}>`,
       jamais `class="badge {…}"` — une classe interpolée rend l'écran aveugle à
       `lint:css-orphelin` (25 fichiers l'étaient, #1571). `npm run lint:badge`

@@ -19,6 +19,7 @@
   (`entreesDuFil`) : elle est la conclusion de l'affaire, pas une étape.
 -->
 <script lang="ts">
+	import IconeIA from '$lib/components/IconeIA.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import {
 		syntheses,
@@ -108,8 +109,13 @@
 	<RubriqueEtape titre="La synthèse" icone="file-text" ton="succes" {resume} {ouverte} {onBasculer}>
 		{#if produisible}
 			<div class="synthese-fil">
-				<button class="btn btn-outline btn-sm" disabled={enCours} on:click={produire}
-					>{enCours ? 'Rédaction…' : 'Produire la synthèse'}</button
+				<button
+					class="btn btn-outline btn-sm"
+					disabled={enCours}
+					aria-busy={enCours}
+					on:click={produire}
+					><IconeIA {enCours} />
+					{enCours ? 'Rédaction…' : 'Produire la synthèse'}</button
 				>
 			</div>
 		{:else if enAttente}

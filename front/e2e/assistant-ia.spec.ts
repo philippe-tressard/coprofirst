@@ -271,3 +271,85 @@ test('Assistant IA : les limites se comptent en appels, et le 1er essai en chiff
 	await bloc.locator('summary').click();
 	await bloc.screenshot({ path: `test-results/limites-ia-${test.info().project.name}.png` });
 });
+
+test('Assistant IA : pendant l’appel, ✨ devient ⏳ qui clignote, et le bouton le dit', async ({
+	page,
+}) => {
+	//  Demandé le 17/10/2026 : « cet icone ✨ qui se transforme en ⏳ quand le
+	//  traitement est en cours ; standardise partout le principe […] le faire
+	//  clignoter ». Le tarif d'un modèle est l'un des huit gestes qui passent par
+	//  `IconeIA` (`npm run lint:geste-ia`) : ce qu'il montre, tous le montrent.
+	let liberer: () => void = () => {};
+	const reponse = new Promise<void>((r) => (liberer = r));
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return ADMIN;
+		if (chemin === '/api/config/admin') return CONFIG;
+		if (chemin === '/api/config/llm-usages') return USAGES;
+		return undefined;
+	});
+	//  Posé APRÈS `simulerApi` : Playwright essaie la dernière route en premier.
+	//  La réponse attend que le test l'ait vue « en cours ».
+	await page.route(
+		(url) => url.pathname === '/api/config/llm-tarif',
+		async (route) => {
+			await reponse;
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({ prix_entree: '0.2', prix_sortie: '1.2', prix_cache: null }),
+			});
+		},
+	);
+	await page.goto('/admin?onglet=ia');
+	const bloc = page.locator('details.bloc-usage', { hasText: 'Rédaction d’une description' });
+	await bloc.locator('summary').click();
+	const bouton = bloc.getByRole('button', {
+		name: 'Chercher et enregistrer le tarif de ce modèle',
+	});
+	const icone = bouton.locator('.icone-ia');
+	await expect(icone).not.toHaveClass(/en-cours/);
+	await bouton.click();
+
+	await expect(bouton).toHaveAttribute('aria-busy', 'true');
+	await expect(icone).toHaveClass(/en-cours/);
+	//  Svelte préfixe le nom de l'animation par la portée du composant.
+	await expect(icone).toHaveCSS('animation-name', /clignote-ia$/);
+	//  Bleu Seine (`--color-primary`), pas le gris d'une action au repos.
+	await expect(icone.locator('.icone-action')).toHaveCSS('color', 'rgb(30, 58, 95)');
+	//  Désactivé pour qu'on ne clique pas deux fois, mais pas à demi-teinte.
+	await expect(bouton).toBeDisabled();
+	await expect(bouton).toHaveCSS('opacity', '1');
+	await bouton.screenshot({
+		path: `test-results/geste-ia-en-cours-${test.info().project.name}.png`,
+	});
+
+	liberer();
+	await expect(bouton).toHaveAttribute('aria-busy', 'false');
+	await expect(icone).not.toHaveClass(/en-cours/);
+});
+
+test('Assistant IA : mouvement réduit, le ⏳ reste mais ne clignote pas', async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return ADMIN;
+		if (chemin === '/api/config/admin') return CONFIG;
+		if (chemin === '/api/config/llm-usages') return USAGES;
+		return undefined;
+	});
+	//  Une réponse qui n'arrive jamais : le test lit l'état d'attente.
+	await page.route(
+		(url) => url.pathname === '/api/config/llm-tarif',
+		() => new Promise(() => {}),
+	);
+	await page.goto('/admin?onglet=ia');
+	const bloc = page.locator('details.bloc-usage', { hasText: 'Rédaction d’une description' });
+	await bloc.locator('summary').click();
+	const bouton = bloc.getByRole('button', {
+		name: 'Chercher et enregistrer le tarif de ce modèle',
+	});
+	await bouton.click();
+
+	const icone = bouton.locator('.icone-ia');
+	await expect(icone).toHaveClass(/en-cours/);
+	await expect(icone).toHaveCSS('animation-name', 'none');
+});

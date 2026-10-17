@@ -21,9 +21,9 @@ import { join, sep } from 'node:path';
 const ATTENTES = {
 	'styles/composants.css': ['spin', 'le spinner : un chargement en cours'],
 	'routes/(app)/tableau-de-bord/+page.svelte': ['shimmer', 'le squelette pendant le chargement'],
-	'lib/components/BoutonAssistant.svelte': [
-		'pulse-etincelle',
-		'l’assistant IA travaille : un appel de plusieurs secondes',
+	'lib/components/IconeIA.svelte': [
+		'clignote-ia',
+		'l’assistant IA travaille : le ⏳ d’un appel de plusieurs secondes (17/10/2026)',
 	],
 };
 

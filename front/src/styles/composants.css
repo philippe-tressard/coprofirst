@@ -45,6 +45,13 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	opacity: 0.5;
 	cursor: not-allowed;
 }
+/*  Un bouton qui TRAVAILLE n'est pas indisponible (17/10/2026) : désactivé pour
+    qu'on ne clique pas deux fois, il garde sa pleine couleur — à demi-teinte, le
+    ⏳ d'un appel à l'assistant (`IconeIA`) se lisait comme un geste refusé. */
+.btn:disabled[aria-busy='true'] {
+	opacity: 1;
+	cursor: progress;
+}
 
 .btn-primary {
 	background: var(--color-primary);

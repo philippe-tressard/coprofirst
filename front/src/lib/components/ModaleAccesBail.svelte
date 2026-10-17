@@ -246,8 +246,10 @@
 				cohérence sont appliquées automatiquement (ex. pas de Vigik pour un bail parking seul).
 			</p>
 			<div class="acces-presets">
+				<!--  Pas de ✨ : la présélection est une RÈGLE (le type du bail), pas
+				      l'assistant — ✨ ne se dit que de l'IA, sur tout le site (`IconeIA`). -->
 				<button class="btn btn-sm" on:click={preselectionRecommandee}
-					>✨ Préselection recommandée</button
+					>Présélection recommandée</button
 				>
 				<button class="btn btn-sm btn-outline" on:click={clearSelection}>Effacer</button>
 			</div>

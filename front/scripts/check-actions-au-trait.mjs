@@ -41,10 +41,9 @@ const RACINE = fileURLToPath(new URL('../src', import.meta.url)).replaceAll('\\'
  * échoue si l'une cesse de servir. Une exception non écrite n'est pas une
  * exception.
  */
-const EXCEPTIONS = Object.assign(Object.create(null), {
-	'src/lib/components/BoutonAssistant.svelte':
-		"✨ est la MARQUE de l'IA sur tout le site (`MarqueIA`), pas le dessin d'une action : l'étincelle qui tourne pendant la génération dit qui écrit.",
-});
+//  `BoutonAssistant` en était une (son ✨ émoji qui pulsait) jusqu'au 17/10/2026 :
+//  tout geste qui lance l'assistant se dessine désormais par `IconeIA`, au trait.
+const EXCEPTIONS = Object.assign(Object.create(null), {});
 
 const EMOJI = /\p{Extended_Pictographic}/u;
 

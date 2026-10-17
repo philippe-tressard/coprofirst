@@ -21,6 +21,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
+	import IconeIA from '$lib/components/IconeIA.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { syntheses, type PropositionSynthese, type SyntheseAffaire } from '$lib/api';
 	import { confirmer } from '$lib/confirmation';
@@ -87,9 +88,15 @@
 	//  relu reste en place, la rédaction neuve s'affiche à part, et le conseil
 	//  l'applique ou l'annule. Les métriques, recalculées, valent tout de suite.
 	let proposition: PropositionSynthese | null = null;
+	/** Le geste qui a sollicité l'assistant : SON ✨ devient ⏳ (`IconeIA`). */
+	let sollicite: 'relancer' | 'recommencer' | null = null;
 
-	async function proposer(appel: () => Promise<PropositionSynthese>) {
+	async function proposer(
+		geste: 'relancer' | 'recommencer',
+		appel: () => Promise<PropositionSynthese>,
+	) {
 		enCours = true;
+		sollicite = geste;
 		try {
 			proposition = await appel();
 			synthese = proposition.actuelle;
@@ -98,6 +105,7 @@
 			toast('error', messageErreur(e));
 		} finally {
 			enCours = false;
+			sollicite = null;
 		}
 	}
 
@@ -121,7 +129,7 @@
 			libelleValider: 'Relancer',
 		});
 		if (complement === null) return;
-		await proposer(() => syntheses.relancer(synthese.ticket_id, complement));
+		await proposer('relancer', () => syntheses.relancer(synthese.ticket_id, complement));
 	}
 
 	async function recommencer() {
@@ -131,7 +139,7 @@
 				"L'assistant propose une nouvelle rédaction, sans consigne complémentaire — appliquée, celle-ci est effacée. Les rédactions précédentes restent dans l'historique.",
 			libelleConfirmer: 'Recommencer',
 		});
-		if (ok) await proposer(() => syntheses.recommencer(synthese.ticket_id));
+		if (ok) await proposer('recommencer', () => syntheses.recommencer(synthese.ticket_id));
 	}
 
 	async function supprimer() {
@@ -357,13 +365,15 @@
 				type="button"
 				class="btn btn-outline btn-sm"
 				disabled={enCours || edition || !!proposition}
-				on:click={relancer}>✨ Relancer</button
+				aria-busy={sollicite === 'relancer'}
+				on:click={relancer}><IconeIA enCours={sollicite === 'relancer'} /> Relancer</button
 			>
 			<button
 				type="button"
 				class="btn btn-outline btn-sm"
 				disabled={enCours || edition || !!proposition}
-				on:click={recommencer}>↺ Recommencer</button
+				aria-busy={sollicite === 'recommencer'}
+				on:click={recommencer}><IconeIA enCours={sollicite === 'recommencer'} /> Recommencer</button
 			>
 			<button
 				type="button"

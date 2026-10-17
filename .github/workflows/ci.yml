@@ -2302,6 +2302,14 @@ jobs:
         working-directory: front
         run: npm run lint:actions-au-trait
 
+      # ✨ PUIS ⏳ QUI CLIGNOTE (17/10/2026) — huit gestes lancaient l'assistant
+      # IA et disaient l'attente de cinq facons, dont aucune pour deux d'entre
+      # eux. Le dessin passe par `IconeIA` seul, le bouton porte `aria-busy`, et
+      # un bouton qui n'appelle pas l'assistant ne prend pas sa marque.
+      - name: Un geste IA se dessine par IconeIA (etincelle puis sablier qui clignote)
+        working-directory: front
+        run: npm run lint:geste-ia
+
       # 🔴 DIX FICHIERS ÉNUMÉRAIENT LE MÊME ENSEMBLE D'ÉTATS DEUX OU TROIS FOIS
       # (15/09/2026, #779) — un libellé ici, une pastille là, un abrégé plus bas.
       #
