@@ -249,6 +249,11 @@ def _configuration_par_defaut(session: Session) -> None:
         "cle",
         [{"cle": cle, "valeur": valeur} for cle, valeur in CONFIG_SITE_PAR_DEFAUT.items()],
     )
+    #  Le SMTP de la copropriété vit dans SA base (#2058) : l'amorce y recopie une
+    #  fois ce que le repli sur `MAIL_*` produisait, puis la base décide seule.
+    from app.utils.smtp import amorcer
+
+    amorcer(session)
 
 
 def _modeles_email(session: Session) -> None:

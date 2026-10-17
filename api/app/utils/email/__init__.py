@@ -20,7 +20,6 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.utils.config_site import config_site
-from app.config import get_settings
 from app.utils.demo import est_demo
 from app.utils.preferences_mail import mail_autorise, trier_destinataires
 from app.models.core import HistoriqueEmail, ModeleEmail, Utilisateur
@@ -39,7 +38,6 @@ from .gabarit import INTENTIONS, _wrap_email  # noqa: F401  (ré-export : admin/
 from .pieces_jointes import _preparer_pieces_jointes
 
 
-settings = get_settings()
 
 logger = logging.getLogger("email")
 
@@ -217,19 +215,17 @@ async def _envoyer_modele(
 
 
 def envoi_actif(session: Session) -> bool:
-    """L'envoi est-il actif ? La configuration prime sur le réglage.
+    """L'envoi est-il actif ? La case de la copropriété, en base, et elle seule (#2058).
 
-    Écrit une fois : `smtp_enabled` absent de la base signifie « pas encore
-    configuré », et c'est alors `settings.mail_enabled` qui tranche — subtilité
-    que les deux chemins portaient chacun de leur côté.
+    `smtp_enabled` absent laissait `MAIL_ENABLED` trancher : la base de chaque
+    copropriété a reçu cette valeur par `smtp.amorcer`. Absente encore — une
+    copropriété d'installation commune que son administrateur n'a pas réglée —,
+    rien ne part.
     """
     if est_demo():
         #  La démo publique : rien ne part, quoi que dise la base (#1902).
         return False
-    smtp_cfg = _get_smtp_config(session)
-    if smtp_cfg.get("smtp_enabled") is not None:
-        return smtp_cfg["smtp_enabled"] == "1"
-    return bool(settings.mail_enabled)
+    return _get_smtp_config(session).get("smtp_enabled") == "1"
 
 
 def _tracer_demo(session: Session, code: str, destinataires: str) -> None:

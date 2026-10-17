@@ -100,10 +100,12 @@ def _envoyer(destinataire: str, problemes: list[str]) -> None:
     """Le message, par le SMTP de l'INSTALLATION (`MAIL_*`) — jamais celui d'une copropriété."""
     from fastapi_mail import FastMail, MessageSchema, MessageType
 
-    from app.utils.smtp import connexion_smtp
+    from app.utils.smtp import connexion_smtp_installation
 
     s = get_settings()
-    cfg = connexion_smtp({"smtp_from_name": NOM_PLATEFORME}, expediteur=s.mail_from_plateforme)
+    cfg = connexion_smtp_installation(
+        expediteur=s.mail_from_plateforme, nom_expediteur=NOM_PLATEFORME
+    )
     sujet, corps = _message(problemes)
     message = MessageSchema(
         subject=sujet, recipients=[destinataire], body=corps, subtype=MessageType.plain

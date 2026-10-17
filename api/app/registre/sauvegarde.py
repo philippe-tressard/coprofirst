@@ -117,8 +117,8 @@ def run_sauvegarde_plateforme() -> None:
 def enregistrer(scheduler) -> None:
     """Pose la tâche dans le planificateur — appelé par `main.py`, à 03:30.
 
-    Après la sauvegarde de la résidence (03:00, `BACKUP_HOUR`) : les deux ne se
-    disputent pas le disque du nœud.
+    Après la sauvegarde de la résidence (03:00 par défaut, réglée en base) : les deux
+    ne se disputent pas le disque du nœud.
     """
     scheduler.add_job(
         run_sauvegarde_plateforme, "cron", hour=3, minute=30, id="sauvegarde_plateforme"

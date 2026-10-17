@@ -8,6 +8,21 @@ Le découpage n'est pas qu'arithmétique. **Configurer un canal** et **composer
 un message** sont deux sujets : le premier tient en trois éléments et ne change
 que lorsque l'hébergeur change ; le second occupe six cents lignes de gabarits,
 de rendu Jinja et de pièces jointes.
+
+## Deux SMTP, deux niveaux, une source chacun (#2058, 17/10/2026)
+
+| SMTP | Niveau | Source | Lu par |
+|---|---|---|---|
+| celui d'une COPROPRIÉTÉ — ses courriels, de sécurité compris | la copropriété | sa **base** (`ConfigSite`, écran Admin) | `connexion_smtp` |
+| celui de l'INSTALLATION — les alertes à l'opérateur (`sante_plateforme`) | l'installation | le **`.env`** (`MAIL_*`) | `connexion_smtp_installation` |
+
+`connexion_smtp` retombait champ par champ sur `MAIL_*` : une configuration à moitié
+en base, à moitié dans le `.env`, sans que l'écran le montre. `MAIL_*` n'est plus,
+pour une copropriété, qu'une **amorce** : `amorcer` recopie une fois, dans sa base, la
+configuration que le repli produisait (rien ne change au premier démarrage), puis la
+base décide seule. Sur une installation commune, seule l'adresse d'expédition
+déclarée amorce : les identifiants SMTP de l'hébergeur n'entrent jamais dans la base
+d'une copropriété, dont l'administrateur les lirait.
 """
 
 from sqlmodel import Session, select
@@ -53,7 +68,7 @@ def adresse_expedition(smtp_cfg: dict, genre: str) -> str:
     """
     from app.seed.emails import EXPEDITEUR_AFFAIRE, EXPEDITEUR_REPONSE
 
-    defaut = smtp_cfg.get("smtp_from") or contexte.courante().expediteur
+    defaut = smtp_cfg.get("smtp_from") or ""
     if genre not in (EXPEDITEUR_REPONSE, EXPEDITEUR_AFFAIRE):
         return defaut
     reponse = (smtp_cfg.get("smtp_from_reponse") or "").strip() or defaut
@@ -111,8 +126,92 @@ def adresses_a_tester(smtp_cfg: dict) -> list[str]:
     return vues
 
 
+#: La clé qui dit que la base d'une copropriété a reçu son amorce (#2058) : posée une
+#: fois, elle n'est jamais relue pour décider d'un envoi.
+CLE_AMORCE = "smtp_amorce_le"
+
+
+def _amorce(s) -> dict[str, str]:
+    """Ce que le repli d'avant #2058 produisait, champ par champ — l'amorce d'une base."""
+    copro = contexte.courante()
+    expedition = {"smtp_from": copro.expediteur, "smtp_from_name": copro.nom_expediteur}
+    if contexte.est_commune():
+        return expedition
+    return expedition | {
+        "smtp_enabled": "1" if s.mail_enabled else "0",
+        "smtp_server": s.mail_server,
+        "smtp_port": str(s.mail_port),
+        "smtp_username": s.mail_username,
+        "smtp_password": s.mail_password,
+        "smtp_starttls": "1" if s.mail_starttls else "0",
+        "smtp_ssl_tls": "1" if s.mail_ssl_tls else "0",
+    }
+
+
+#: Les booléens se reprennent sur leur ABSENCE seulement : « 0 » est une case décochée,
+#: pas un champ vide — l'ancien repli le traitait déjà ainsi.
+_PRIS_SUR_ABSENCE = {"smtp_enabled", "smtp_starttls", "smtp_ssl_tls"}
+
+
+def amorcer(session: Session) -> int:
+    """Une fois par base : recopie l'amorce dans chaque clé que le repli remplissait.
+
+    Rend le nombre de clés écrites ; ne valide pas la transaction (le seed le fait).
+    Une clé déjà renseignée n'est jamais touchée.
+    """
+    from app.utils.config_site import ecrire_cle
+
+    if session.get(ConfigSite, CLE_AMORCE) is not None:
+        return 0
+    actuel = _get_smtp_config(session)
+    ecrites = 0
+    for cle, valeur in _amorce(get_settings()).items():
+        deja = actuel.get(cle)
+        manque = deja is None if cle in _PRIS_SUR_ABSENCE else not deja
+        if manque and valeur:
+            ecrire_cle(session, cle, valeur)
+            ecrites += 1
+    from app.utils import horloge
+
+    ecrire_cle(session, CLE_AMORCE, horloge.maintenant().isoformat(timespec="seconds"))
+    return ecrites
+
+
+def _connexion(*, server, port, username, password, starttls, ssl_tls, expediteur, nom_expediteur):
+    """La SEULE construction d'une connexion — les deux niveaux la partagent."""
+    from fastapi_mail import ConnectionConfig
+
+    return ConnectionConfig(
+        MAIL_USERNAME=username,
+        MAIL_PASSWORD=password,
+        MAIL_FROM=expediteur,
+        MAIL_FROM_NAME=nom_expediteur,
+        MAIL_PORT=int(port),
+        MAIL_SERVER=server,
+        MAIL_STARTTLS=starttls,
+        MAIL_SSL_TLS=ssl_tls,
+        USE_CREDENTIALS=bool(username),
+    )
+
+
+def connexion_smtp_installation(*, expediteur: str, nom_expediteur: str):
+    """Le SMTP de l'INSTALLATION (`MAIL_*` du `.env`) — les alertes de la plateforme,
+    jamais un courriel de copropriété (#2058)."""
+    s = get_settings()
+    return _connexion(
+        server=s.mail_server,
+        port=s.mail_port,
+        username=s.mail_username,
+        password=s.mail_password,
+        starttls=s.mail_starttls,
+        ssl_tls=s.mail_ssl_tls,
+        expediteur=expediteur,
+        nom_expediteur=nom_expediteur,
+    )
+
+
 def connexion_smtp(smtp_cfg: dict, *, expediteur: str | None = None):
-    """La connexion SMTP effective : configuration en base, sinon le `.env`.
+    """La connexion SMTP d'une copropriété : sa configuration en BASE, et elle seule (#2058).
 
     Ces dix-sept lignes étaient écrites **trois fois** — deux dans ce module
     (envoi simple et envoi groupé) et une dans `routers/config.py` pour l'e-mail
@@ -121,34 +220,19 @@ def connexion_smtp(smtp_cfg: dict, *, expediteur: str | None = None):
     exactement la même construction que les envois réels. Trois écritures, c'est
     trois occasions de tester autre chose que ce qui part vraiment.
 
-    Le repli est champ par champ, et non « bloc en base OU bloc du .env » : une
-    configuration partielle en base (seulement le serveur, par exemple) hérite du
-    reste de l'environnement.
+    Elle retombait champ par champ sur `MAIL_*` jusqu'au 17/10/2026 : la base de
+    chaque copropriété a reçu, par `amorcer`, la valeur que ce repli produisait. Un
+    champ vide reste vide — et l'écran le montre.
     """
-    from fastapi_mail import ConnectionConfig
-
-    settings = get_settings()
-    #  `in` et non `.get()` pour les deux booléens : une case décochée vaut « 0 »
-    #  en base, ce qu'un `or` traiterait comme absent et remplacerait par la
-    #  valeur du .env — l'utilisateur ne pourrait alors jamais désactiver STARTTLS.
-    starttls = (
-        smtp_cfg["smtp_starttls"] == "1" if "smtp_starttls" in smtp_cfg else settings.mail_starttls
-    )
-    ssl_tls = (
-        smtp_cfg["smtp_ssl_tls"] == "1" if "smtp_ssl_tls" in smtp_cfg else settings.mail_ssl_tls
-    )
-    username = smtp_cfg.get("smtp_username") or settings.mail_username
-
-    return ConnectionConfig(
-        MAIL_USERNAME=username,
-        MAIL_PASSWORD=smtp_cfg.get("smtp_password") or settings.mail_password,
+    return _connexion(
+        server=smtp_cfg.get("smtp_server") or "",
+        port=smtp_cfg.get("smtp_port") or 587,
+        username=smtp_cfg.get("smtp_username") or "",
+        password=smtp_cfg.get("smtp_password") or "",
+        starttls=smtp_cfg.get("smtp_starttls") == "1",
+        ssl_tls=smtp_cfg.get("smtp_ssl_tls") == "1",
         #  L'expéditeur peut être imposé par l'appelant : c'est l'INTENTION du
         #  modèle qui le décide, pas la connexion (voir `adresse_expedition`).
-        MAIL_FROM=expediteur or smtp_cfg.get("smtp_from") or contexte.courante().expediteur,
-        MAIL_FROM_NAME=smtp_cfg.get("smtp_from_name") or contexte.courante().nom_expediteur,
-        MAIL_PORT=int(smtp_cfg.get("smtp_port") or settings.mail_port),
-        MAIL_SERVER=smtp_cfg.get("smtp_server") or settings.mail_server,
-        MAIL_STARTTLS=starttls,
-        MAIL_SSL_TLS=ssl_tls,
-        USE_CREDENTIALS=bool(username),
+        expediteur=expediteur or smtp_cfg.get("smtp_from") or "",
+        nom_expediteur=smtp_cfg.get("smtp_from_name") or "",
     )

@@ -57,13 +57,13 @@ def test_les_envois_passent_par_le_helper_partage():
     )
 
 
-def test_le_repli_sur_le_env_reste_champ_par_champ():
-    """Une configuration partielle en base doit hériter du reste du `.env`.
+def test_la_connexion_d_une_copropriete_ne_lit_que_sa_base():
+    """Plus de repli sur le `.env` (#2058, 17/10/2026) : chaque clé se lit en base.
 
-    Le piège serait de remplacer le repli champ par champ par un « bloc en base
-    OU bloc du .env » : renseigner le seul serveur en base ferait alors perdre
-    d'un coup identifiants, port et expéditeur. Le contrôle vise le FAIT — chaque
-    clé porte son propre repli.
+    Le repli champ par champ faisait d'une configuration à moitié en base et à moitié
+    dans `MAIL_*` la règle, sans que l'écran le montre. L'amorce (`smtp.amorcer`) a
+    recopié dans chaque base ce qu'il produisait ; `connexion_smtp` ne lit plus que
+    la base — `tests/test_reglages_un_seul_niveau.py` en éprouve le comportement.
     """
     source = (_APP / "utils" / "smtp.py").read_text(encoding="utf-8")
     arbre = ast.parse(source)
@@ -81,14 +81,8 @@ def test_le_repli_sur_le_env_reste_champ_par_champ():
         "smtp_starttls",
         "smtp_ssl_tls",
     ):
-        assert cle in corps, f"`{cle}` n'a plus de repli propre dans connexion_smtp"
-
-    #  Les deux booléens se testent par présence de clé et NON par `or` : une case
-    #  décochée vaut « 0 » en base, qu'un `or` remplacerait par la valeur du .env.
-    #  L'utilisateur ne pourrait alors jamais désactiver STARTTLS.
+        assert cle in corps, f"`{cle}` n'est plus lu par connexion_smtp"
+    assert "settings" not in corps, "connexion_smtp relit le .env : deux sources (#2058)"
+    #  Une case décochée vaut « 0 » : le booléen se lit par égalité à « 1 ».
     for booleen in ("smtp_starttls", "smtp_ssl_tls"):
-        assert f"'{booleen}' in smtp_cfg" in corps or f'"{booleen}" in smtp_cfg' in corps, (
-            f"`{booleen}` doit être lu par présence de clé, pas par `or` : sinon "
-            "une case décochée (« 0 ») retombe sur la valeur du .env et ne peut "
-            "plus jamais être désactivée."
-        )
+        assert f"smtp_cfg.get('{booleen}') == '1'" in corps, booleen

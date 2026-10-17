@@ -780,8 +780,9 @@ site est ignoré par Caddy (éprouvé en 2.11), et l'ancien portait les adresses
 ici. Le tableau qui occupait cette place en citait **quatre sur six** : le
 préchauffage du manuel PDF (au démarrage puis chaque nuit) et la relève des
 courriels (toutes les 10 min) n'y figuraient pas — et il donnait `backup` à 03:00
-alors que l'heure est **configurable** (`cfg.heure_execution`, repli
-`settings.backup_hour`). Trois erreurs dans quatre lignes (#1051).
+alors que l'heure est **configurable** (`cfg.heure_execution`). Trois erreurs dans
+quatre lignes (#1051). Depuis #2058, la tâche `backup` passe chaque heure et ne
+sauvegarde qu'à l'heure de la copropriété, lue en base — `BACKUP_HOUR` n'est plus lu.
 
 Ce qu'il faut savoir et qui ne se lit pas dans le code : **quel job alerte**.
 `health_check` (06:00) est le seul à envoyer un courriel de lui-même — WhatsApp
