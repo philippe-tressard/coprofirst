@@ -88,6 +88,12 @@
 		<label class="field">
 			<span>Nom de la résidence<EtoileRequis vide={!valeurs.nom} /></span>
 			<input bind:value={valeurs.nom} required />
+			<!--  Le seul champ du nom (#2056) : il venait d’avoir un jumeau sous le même
+			      libellé dans Paramétrage site, et c’était celui-là que tout le site lisait. -->
+			<span class="aide"
+				>Affiché sur la page de connexion, dans le menu, en tête des courriels et sous l’icône de
+				l’application installée sur le téléphone.</span
+			>
 		</label>
 		<label class="field">
 			<span>Adresse</span>

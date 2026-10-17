@@ -28,7 +28,13 @@
 	} from '$lib/api';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { cibleDuHash, revelerCible } from '$lib/deepLink';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+		nomResidenceEnregistre,
+	} from '$lib/stores/pageConfig';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	import SectionRegles, {
 		lireRegles,
@@ -226,6 +232,7 @@
 		saving = true;
 		await tenter(async () => {
 			copropriete = await coproprieteApi.update(chargeIdentite(identite));
+			nomResidenceEnregistre(copropriete.nom);
 			editing = false;
 		}, 'Résidence mise à jour');
 		saving = false;

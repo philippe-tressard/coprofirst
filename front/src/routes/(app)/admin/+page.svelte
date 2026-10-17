@@ -36,7 +36,12 @@
 	import { page } from '$app/stores';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	import EntetePage from '$lib/components/EntetePage.svelte';
-	import { CONFIG_SITE_DEFAUT, ecrireConfigSite, lireConfigSite } from '$lib/configSite';
+	import {
+		CONFIG_SITE_DEFAUT,
+		ecrireConfigSite,
+		lireConfigSite,
+		type SectionSite,
+	} from '$lib/configSite';
 	import { IMPORT_TELECOMMANDES, IMPORT_VIGIK } from '$lib/imports-acces';
 	import OngletATraiter from '$lib/components/OngletATraiter.svelte';
 	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
@@ -226,14 +231,17 @@
 	let parametrageLu = false;
 	//  Le constat et les champs des textes légaux, pour l'onglet « Pages légales ».
 	let textesLegaux: TextesLegauxSource | null = null;
-	async function saveSiteConfig() {
+	//  🔴 Une SECTION à la fois (#2057) : chaque bouton n'envoie que les clés de
+	//  sa section — quatre boutons en renvoyaient vingt, et un onglet resté ouvert
+	//  réécrivait ce qu'un autre venait de changer.
+	async function saveSiteConfig(section: SectionSite) {
 		siteSaving = true;
 		try {
 			//  🔴 Le MÊME payload part à l'API et rafraîchit le store. Les deux étaient
 			//  écrits séparément, et le second oubliait quatre réglages : après
 			//  sauvegarde, le store gardait leurs anciennes valeurs jusqu'au
 			//  rechargement de la page (#515).
-			const payload = ecrireConfigSite(siteConfig);
+			const payload = ecrireConfigSite(siteConfig, section);
 			await configApi.save(payload);
 			configStore.update((c: Record<string, string>) => ({ ...c, ...payload }));
 			toast('success', 'Paramètres sauvegardés.');
@@ -378,7 +386,7 @@
 				<OngletLegal
 					bind:siteConfig
 					{siteSaving}
-					{saveSiteConfig}
+					saveSiteConfig={() => saveSiteConfig('legal')}
 					constat={source.etat}
 					champs={source.champs}
 				/>
@@ -392,7 +400,7 @@
 				cfgPublique={waCfgPublique}
 				bind:footer={siteConfig.whatsapp_footer}
 				footerSaving={siteSaving}
-				onSaveFooter={saveSiteConfig}
+				onSaveFooter={() => saveSiteConfig('pied_whatsapp')}
 			/>
 		{/snippet}
 	</ChargementDiffere>

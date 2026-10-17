@@ -68,6 +68,7 @@
 		hors_copropriete: false,
 		ordre: 0,
 		actif: true,
+		acces_fixes: [] as string[],
 	};
 
 	function editer(n: Perimetre) {
@@ -87,6 +88,7 @@
 			hors_copropriete: n.hors_copropriete,
 			ordre: n.ordre,
 			actif: n.actif,
+			acces_fixes: [...(n.acces_fixes ?? [])],
 		};
 	}
 
@@ -109,6 +111,7 @@
 					hors_copropriete: form.hors_copropriete,
 					ordre: Number(form.ordre) || 0,
 					actif: form.actif,
+					acces_fixes: form.acces_fixes,
 				});
 				await rechargerPerimetres();
 				edite = null;

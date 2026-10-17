@@ -6,7 +6,7 @@
 	import KanbanTableauBord from '$lib/components/KanbanTableauBord.svelte';
 	import UrgencesAccueil from '$lib/components/UrgencesAccueil.svelte';
 	import { salutation } from '$lib/date';
-	import { delaiArchivageMs } from '$lib/archivage';
+	import { seuilRecentMs } from '$lib/archivage';
 	import AlerteRelanceSyndic from '$lib/components/AlerteRelanceSyndic.svelte';
 	import ArchivesDuFil from '$lib/components/ArchivesDuFil.svelte';
 	import {
@@ -139,7 +139,7 @@
 	//  🔴 UN SEUL délai, pour tout le site (#513 puis #515) — voir `$lib/archivage`.
 	//  `PLAFOND_CHARGEMENT` est une borne de CHARGEMENT, pas un second seuil de
 	//  visibilité : les Archives couvrent tout l'intervalle.
-	$: SEUIL_RECENT = delaiArchivageMs($configStore);
+	$: SEUIL_RECENT = seuilRecentMs(data?.delai_recent_jours);
 	const PLAFOND_CHARGEMENT = 377 * 86400000;
 
 	let recentItems: FluxItem[] = [];

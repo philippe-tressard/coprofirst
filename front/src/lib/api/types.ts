@@ -421,6 +421,8 @@ export interface FluxSante {
 export interface FluxResponse {
 	items: FluxItem[];
 	sante: FluxSante;
+	/**  Le délai d'archivage du site, en jours : le seuil « récent » de l'accueil (#2060). */
+	delai_recent_jours: number;
 }
 export interface EpinglesCompte {
 	total: number;

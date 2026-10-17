@@ -341,6 +341,8 @@ _NOEUD = {
     #  `utils/perimetres/branche`, pas sur une colonne.
     "nb_descendants": 0,
     "dupliquable": False,
+    #  Ajouté le 17/10/2026 (#2060) : lu dans la configuration des accès fixes.
+    "acces_fixes": [],
 }
 ATTENDU_PERIMETRES = [
     {

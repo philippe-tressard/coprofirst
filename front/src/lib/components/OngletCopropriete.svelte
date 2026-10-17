@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte';
 	import { config as configApi, copropriete as coproprieteApi, type Copropriete } from '$lib/api';
 	import { toast } from '$lib/components/Toast.svelte';
-	import { siteNomStore } from '$lib/stores/pageConfig';
+	import { nomResidenceEnregistre, siteNomStore } from '$lib/stores/pageConfig';
 	import Icon from '$lib/components/Icon.svelte';
 	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
 	import SectionContratReference from '$lib/components/SectionContratReference.svelte';
@@ -84,7 +84,9 @@
 			//  désigné change tout ce que les deux sections affichent. Garder
 			//  l'ancien affichage montrerait l'assureur précédent sous le nouveau
 			//  choix, jusqu'au prochain rechargement de page.
-			fiche = await coproprieteApi.update(payload);
+			const lue = await coproprieteApi.update(payload);
+			fiche = lue;
+			nomResidenceEnregistre(lue.nom);
 			//  ⚠️ DEUX destinations pour un seul bouton : la fiche est une entité, la
 			//  référence chez le syndic une clé de configuration. L'écran ne le montre
 			//  pas — ce serait exposer notre découpage —, mais il enregistre les deux

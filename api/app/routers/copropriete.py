@@ -17,7 +17,9 @@ from app.models.core import (
     Utilisateur,
 )
 
+from app.utils.config_site import config_site, ecrire_cle
 from app.utils.destinataires import syndic_principal
+from app.utils.liens import nom_site
 from app.utils.document_contrat import id_document_designe
 from app.utils.echeance_contrat import echeance_du_contrat
 from app.utils.lecture import lire_objet
@@ -310,6 +312,11 @@ def copropriete_lue(session: Session, copro: Copropriete) -> CoproprieteRead:
     supprime.
     """
     lue = CoproprieteRead.model_validate(copro)
+    #  🔴 Le nom de la résidence a UNE source (#2056) : `site_nom`, celui que
+    #  l'en-tête, la connexion, les courriels et les documents affichent. La
+    #  colonne `copropriete.nom` n'est plus lue — elle portait un second nom, saisi
+    #  dans un autre onglet sous le même libellé, que seule la fiche montrait.
+    lue.nom = nom_site(config_site(session).get("site_nom"))
     #  🔴 On EFFACE d'abord, on remplit ensuite.
     #
     #  `from_attributes=True` recopie les colonnes `assurance_*` conservées :
@@ -378,6 +385,11 @@ def update_copropriete(
     #  modifié que le nom du syndic. Le défaut a vécu des semaines, personne
     #  n'ayant retouché l'échéance (13/08/2026).
 
+    #  Le nom s'écrit là où il se lit (#2056) — jamais dans la colonne, que plus
+    #  rien ne lit. Vide, il ne s'écrit pas : la fiche garderait le repli neutre.
+    nom = (donnees.pop("nom", None) or "").strip()
+    if nom:
+        ecrire_cle(session, "site_nom", nom)
     for k, v in donnees.items():
         setattr(copro, k, v)
     session.add(copro)

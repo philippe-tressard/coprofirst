@@ -60,8 +60,9 @@ from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from app.models.core import ConfigSite
+from app.utils.config_site import ecrire_cle
 from app.utils.perimetres import arbre, code_par_defaut
-from app.utils.types_acces import TypeAcces
+from app.utils.types_acces import TYPES_ACCES, TypeAcces
 
 
 def cle_config(type_acces: TypeAcces) -> str:
@@ -91,6 +92,39 @@ def _codes_configures(session: Session, cle: str) -> list[str]:
     if not isinstance(codes, list):
         return []
     return [str(c) for c in codes if c]
+
+
+def types_fixes_par_code(session: Session) -> dict[str, list[str]]:
+    """{code de périmètre: [clés des types d'accès qui l'ouvrent d'office]}.
+
+    Ce que l'écran des périmètres coche (#2060) : les deux listes de la
+    configuration lues à l'envers, nœud par nœud.
+    """
+    par_code: dict[str, list[str]] = {}
+    for type_acces in TYPES_ACCES.values():
+        for code in _codes_configures(session, cle_config(type_acces)):
+            par_code.setdefault(code, []).append(type_acces.cle)
+    return par_code
+
+
+def fixer_acces(session: Session, code: str, types: list[str]) -> None:
+    """Ce périmètre est un accès fixe des `types` cités, et de ceux-là seuls (#2060).
+
+    🔴 Les clés `acces_fixes_*` étaient lues ici sans qu'aucun écran ne les écrive :
+    un portillon ne s'ajoutait que par un `PUT /config` composé à la main. Elles
+    se règlent désormais sur le périmètre qu'elles nomment, et la liste se
+    compose ICI — `PUT /config` les refuse. Sans valider la transaction.
+    """
+    inconnus = set(types) - TYPES_ACCES.keys()
+    if inconnus:
+        raise HTTPException(422, f"Type d'accès inconnu : {', '.join(sorted(inconnus))}.")
+    for type_acces in TYPES_ACCES.values():
+        codes = _codes_configures(session, cle_config(type_acces))
+        voulu = type_acces.cle in types
+        if voulu == (code in codes):
+            continue
+        codes = codes + [code] if voulu else [c for c in codes if c != code]
+        ecrire_cle(session, cle_config(type_acces), json.dumps(codes, ensure_ascii=False))
 
 
 def _codes_batiments() -> list[str]:

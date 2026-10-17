@@ -18,6 +18,22 @@
  *
  * Une seule fonction produit désormais le payload, et les deux appels l'utilisent.
  *
+ * ## Une section, ses clés — et rien d'autre (#2057)
+ *
+ * 🔴 Cette fonction renvoyait **vingt clés** à chaque appel, et quatre boutons
+ * l'appelaient : Paramètres généraux, Pied de page, Pages légales et le pied des
+ * messages WhatsApp. `email_footer` et `reference_copro` y partaient en plus de
+ * leur propre onglet (SMTP, Fiche copropriété) : un onglet resté ouvert
+ * réécrivait en silence ce qu'un autre venait de changer.
+ *
+ * Chaque section a désormais son écrivain (`ECRIVAINS`), et une clé n'appartient
+ * qu'à une section — la même partition que la liste blanche de l'API
+ * (`api/app/utils/reglages.PAR_ONGLET`), que `test_reglages_liste_blanche.py`
+ * confronte à ce fichier.
+ *
+ * Le nom de la résidence n'est plus ici (#2056) : il se saisit dans la Fiche
+ * copropriété, seule source.
+ *
  * ⚠️ Ce module ne connaît **que** l'onglet « Site ». Les pages
  * (`page_config_*`), WhatsApp et les mentions légales ont leurs propres chemins,
  * et `mentions_legales` / `politique_confidentialite` se lisent par un endpoint
@@ -28,7 +44,6 @@ import { delaiArchivageJours } from '$lib/archivage';
 import { ecrireReglagePied, lireReglagePied, type ReglagePied } from '$lib/piedDePage';
 
 export interface ConfigSite {
-	nom: string;
 	url: string;
 	email_admin: string;
 	login_sous_titre: string;
@@ -42,7 +57,9 @@ export interface ConfigSite {
 	notify_new_user_created_email: boolean;
 	site_manager_user_id: string;
 	whatsapp_footer: string;
+	/** Lu ici pour être LIÉ à l'onglet SMTP, seul à l'écrire. */
 	email_footer: string;
+	/** Lu ici pour être LIÉ à la Fiche copropriété, seule à l'écrire. */
 	reference_copro: string;
 	/** Le pied de page : éléments masqués, année de création, texte libre (`$lib/piedDePage`). */
 	pied_de_page: ReglagePied;
@@ -60,7 +77,6 @@ export const NOM_SITE_PAR_DEFAUT = 'Ma Résidence';
 
 /** L'état initial du formulaire, avant tout chargement. */
 export const CONFIG_SITE_DEFAUT: ConfigSite = {
-	nom: NOM_SITE_PAR_DEFAUT,
 	url: '',
 	email_admin: '',
 	login_sous_titre: 'Votre espace numérique de résidence',
@@ -84,7 +100,6 @@ export function lireConfigSite(
 	legal: { mentions_legales?: string; politique_confidentialite?: string } = {},
 ): ConfigSite {
 	return {
-		nom: cfg['site_nom'] ?? CONFIG_SITE_DEFAUT.nom,
 		url: cfg['site_url'] ?? '',
 		email_admin: cfg['site_email'] ?? '',
 		login_sous_titre: cfg['login_sous_titre'] ?? CONFIG_SITE_DEFAUT.login_sous_titre,
@@ -105,22 +120,21 @@ export function lireConfigSite(
 	};
 }
 
+/** Les sections du paramétrage qui s'enregistrent chacune par son bouton. */
+export type SectionSite = 'generaux' | 'pied_de_page' | 'legal' | 'pied_whatsapp';
+
 /**
- * Formulaire → configuration stockée.
+ * Formulaire → configuration stockée, SECTION PAR SECTION (#2057).
  *
  * 🔴 **Un seul producteur, deux consommateurs** : l'appel d'enregistrement et la
  * mise à jour du store. C'est ce partage qui empêche le store de conserver des
  * valeurs périmées — le défaut que ce module a mis au jour.
  */
-export function ecrireConfigSite(c: ConfigSite): Record<string, string> {
-	return {
-		site_nom: c.nom,
+const ECRIVAINS: Record<SectionSite, (c: ConfigSite) => Record<string, string>> = {
+	generaux: (c) => ({
 		site_url: c.url,
 		site_email: c.email_admin,
 		login_sous_titre: c.login_sous_titre,
-		mentions_legales: c.mentions_legales,
-		politique_confidentialite: c.politique_confidentialite,
-		contact_donnees_personnelles: c.contact_donnees,
 		archivage_delai_jours: String(
 			c.archivage_delai_jours || CONFIG_SITE_DEFAUT.archivage_delai_jours,
 		),
@@ -128,9 +142,19 @@ export function ecrireConfigSite(c: ConfigSite): Record<string, string> {
 		notify_ticket_bug_email: c.notify_ticket_bug_email ? '1' : '0',
 		notify_new_user_created_email: c.notify_new_user_created_email ? '1' : '0',
 		site_manager_user_id: c.site_manager_user_id || '',
+	}),
+	pied_de_page: (c) => ecrireReglagePied(c.pied_de_page),
+	legal: (c) => ({
+		mentions_legales: c.mentions_legales,
+		politique_confidentialite: c.politique_confidentialite,
+		//  L'adresse des droits sur les données, nommée par les textes légaux (#2065).
+		contact_donnees_personnelles: c.contact_donnees,
+	}),
+	pied_whatsapp: (c) => ({
 		whatsapp_footer: c.whatsapp_footer,
-		email_footer: c.email_footer,
-		reference_copro: c.reference_copro,
-		...ecrireReglagePied(c.pied_de_page),
-	};
+	}),
+};
+
+export function ecrireConfigSite(c: ConfigSite, section: SectionSite): Record<string, string> {
+	return ECRIVAINS[section](c);
 }

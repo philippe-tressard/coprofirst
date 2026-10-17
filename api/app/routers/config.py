@@ -60,7 +60,6 @@ _LEGAL_KEYS = {*TEXTES, CLE_RELECTURE}
 _PUBLIC_KEYS = {
     "site_nom",  # titre de l'onglet et en-tête, écran de connexion inclus
     "site_url",  # liens des pages légales
-    "site_icone",  # icône de la barre de navigation et de l'écran de connexion
     "site_logo",  # nom du logo téléversé (#1728) : sa présence, et l'invalidation du cache
     "login_sous_titre",  # sous-titre de l'écran de connexion
     "pages_order",  # ordre des entrées de navigation

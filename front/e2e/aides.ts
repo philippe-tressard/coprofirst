@@ -179,7 +179,7 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	//  `TableauTelemetrie` : l'onglet Télémétrie lit `adoption.par_profil`…
 	'/api/telemetry/dashboard': TABLEAU_TELEMETRIE_VIDE,
 	//  `FluxResponse` : `RaccourcisRapides` lit `sante.tickets_ouverts`.
-	'/api/flux': { items: [], sante: {} },
+	'/api/flux': { items: [], sante: {}, delai_recent_jours: 30 },
 	//  `santeMaintenance` : `TachesPlanifiees` lit `taches`, `anomalies_recentes`
 	//  et la fenêtre qui les borne.
 	'/api/admin/maintenance/sante': {

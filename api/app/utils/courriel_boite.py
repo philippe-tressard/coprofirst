@@ -60,7 +60,6 @@ from app.utils.echecs_repetes import CompteurEchecs
 from app.utils.courriel_ingestion import (
     ACCEPTE,
     IGNORE,
-    PLANCHER_PAR_DEFAUT,
     REFUSE,
     RELANCE,
     examiner,
@@ -69,6 +68,7 @@ from app.utils.cloche import sonner_systeme
 from app.utils.reponse_courriel import date_d_envoi, suite_de_reponse
 from app.utils.services import SERVICE_REPONSES_COURRIEL, cle_actif, service_actif
 from app.utils.valeurs import valeur
+from app.utils.config_site import ecrire_cle
 
 logger = logging.getLogger(__name__)
 
@@ -294,6 +294,28 @@ _RIEN_A_AJOUTER = (
 )
 
 
+def plancher_de_releve(session: Session, cfg: dict) -> datetime:
+    """La date avant laquelle un message relevé est ignoré.
+
+    🔴 Son défaut était une date écrite dans le code, le 02/09/2026 — celle de la
+    mise en service de 5Hostachy (#2060). Pour toute autre copropriété, la première
+    relève aurait rejoué des mois d'archives dans ses affaires. Absente, la relève
+    commence **aujourd'hui**, et la date est posée en base : l'écran la montre, et
+    elle ne bouge plus d'une relève à l'autre. (La migration 0297 a posé l'ancienne
+    date chez les installations qui relevaient déjà.)
+    """
+    valeur_lue = cfg.get("imap_plancher") or ""
+    if valeur_lue:
+        try:
+            return datetime.fromisoformat(valeur_lue)
+        except ValueError:
+            logger.warning("imap_plancher illisible (%s) — reposé à aujourd'hui", valeur_lue)
+    jour = horloge.aujourd_hui().isoformat()
+    ecrire_cle(session, "imap_plancher", jour)
+    session.commit()
+    return datetime.fromisoformat(jour)
+
+
 def relever() -> dict[str, int]:
     """Relève la boîte et traite ce qui s'y trouve. Rend le compte par décision.
 
@@ -319,14 +341,7 @@ def relever() -> dict[str, int]:
             logger.info("Réponses par courriel : relève DÉSACTIVÉE (imap_enabled≠1)")
             return comptes
 
-        plancher = PLANCHER_PAR_DEFAUT
-        if cfg.get("imap_plancher"):
-            try:
-                plancher = datetime.fromisoformat(cfg["imap_plancher"])
-            except ValueError:
-                logger.warning(
-                    "imap_plancher illisible (%s) — plancher par défaut", cfg["imap_plancher"]
-                )
+        plancher = plancher_de_releve(session, cfg)
 
         exiger_hors_demo("Relève des courriels")  # (#1902)
         boite = imaplib.IMAP4_SSL(cfg.get("imap_server", ""), int(cfg.get("imap_port") or 993))

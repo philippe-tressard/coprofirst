@@ -20,7 +20,7 @@
 	import { GLYPHE_URGENCE } from '$lib/options-publication';
 	import { nomAffiche } from '$lib/noms';
 	import Icon from '$lib/components/Icon.svelte';
-	import { NOM_SITE_PAR_DEFAUT, type ConfigSite } from '$lib/configSite';
+	import type { ConfigSite, SectionSite } from '$lib/configSite';
 	import ChampLogo from '$lib/components/ChampLogo.svelte';
 	import ReglagePiedDePage from '$lib/components/ReglagePiedDePage.svelte';
 
@@ -28,20 +28,19 @@
 	export let siteConfig: ConfigSite;
 	export let siteSaving = false;
 	export let siteManagerUsers: UtilisateurAdmin[] = [];
-	export let saveSiteConfig: () => void;
+	/** Enregistre UNE section — ses clés seules (#2057). */
+	export let saveSiteConfig: (section: SectionSite) => void;
 </script>
 
 <section class="card config-section">
 	<h2 class="config-section-title"><Icon name="settings" size={17} />Paramètres généraux</h2>
 	<div class="form-grid largeur-saisie">
-		<label class="field">
-			Nom de la résidence
-			<input type="text" bind:value={siteConfig.nom} placeholder={NOM_SITE_PAR_DEFAUT} />
-			<span class="aide"
-				>Affiché sur la page de connexion, dans le menu, en tête des courriels et sous l’icône de
-				l’application installée sur le téléphone.</span
-			>
-		</label>
+		<!--  Le nom de la résidence ne se saisit plus ici (#2056) : une seule source,
+		      la Fiche copropriété. Ce renvoi évite de le chercher à son ancienne place. -->
+		<p class="aide">
+			Le <strong>nom de la résidence</strong> se saisit dans
+			<a href="/admin?onglet=copropriete">Fiche copropriété</a>.
+		</p>
 		<ChampLogo />
 		<label class="field">
 			URL publique
@@ -138,13 +137,21 @@
 		</label>
 	</div>
 	<div class="form-actions largeur-saisie">
-		<button class="btn btn-primary" on:click={saveSiteConfig} disabled={siteSaving}>
+		<button
+			class="btn btn-primary"
+			on:click={() => saveSiteConfig('generaux')}
+			disabled={siteSaving}
+		>
 			{siteSaving ? 'Enregistrement…' : 'Enregistrer'}
 		</button>
 	</div>
 </section>
 
-<ReglagePiedDePage bind:reglage={siteConfig.pied_de_page} {siteSaving} {saveSiteConfig} />
+<ReglagePiedDePage
+	bind:reglage={siteConfig.pied_de_page}
+	{siteSaving}
+	saveSiteConfig={() => saveSiteConfig('pied_de_page')}
+/>
 
 <style>
 </style>
