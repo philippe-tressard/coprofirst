@@ -56,6 +56,8 @@ EXCEPTIONS: dict[str, str] = {
     #  clés à charger — il n'y avait donc pas de cas légitime à excuser.
     #  Si l'un apparaît, il s'écrit ici AVEC son motif : une exception non écrite
     #  n'est pas une exception, c'est un oubli qui ressemble à une décision.
+    "demarrage.py": "le CONSTAT d'écart au démarrage (#2058) : l'ancienne valeur se compare "
+    "à l'adresse servie et se journalise, elle ne fait jamais un lien",
 }
 
 #: Une lecture de VALEUR — `get("site_url")` ou `cfg["site_url"]`. Un ensemble de
@@ -234,3 +236,47 @@ def test_l_ecran_lit_l_adresse_derivee_et_ne_peut_pas_l_ecrire(session, monkeypa
     with pytest.raises(HTTPException) as refus:
         routeur.save_config({"site_url": "https://ailleurs.exemple"}, user=None, session=session)
     assert refus.value.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "origine",
+    ["http://192.168.1.223", "http://localhost", "http://api:8000", "http://[::1]", ""],
+)
+def test_l_origin_d_un_standby_ne_fait_jamais_un_lien(monkeypatch, origine):
+    """Condition de l'arbitrage (17/10/2026) : sur le standby, `ORIGIN` est l'IP locale
+    du nœud — elle ne doit jamais partir dans un courriel. Le défaut la remplace."""
+    from tests.aides_adresse import poser_adresse_du_site
+
+    poser_adresse_du_site(monkeypatch, origine)
+    assert adresse_du_site() == DEFAUT_SITE
+
+
+def test_un_ecart_avec_l_ancienne_valeur_se_dit_au_demarrage(session, monkeypatch, caplog):
+    """La base garde une autre `site_url` : un WARNING (jamais ERROR, point 6 du
+    pré-check) ; la même valeur, à la barre près, ne dit rien (cas zéro)."""
+    import logging
+
+    from sqlmodel import SQLModel
+
+    from app import demarrage
+    from app.database import engine
+    from app.models.core import ConfigSite
+    from tests.aides_adresse import poser_adresse_du_site
+
+    SQLModel.metadata.create_all(engine)
+    poser_adresse_du_site(monkeypatch, "https://5hostachy.fr")
+    with contexte.nouvelle_session() as s:
+        ligne = s.get(ConfigSite, "site_url") or ConfigSite(cle="site_url", valeur="")
+        ligne.valeur = "https://5hostachy.fr/"
+        s.add(ligne)
+        s.commit()
+        assert demarrage.ecart_d_adresse() is None
+        ligne.valeur = "https://ancien.exemple"
+        s.add(ligne)
+        s.commit()
+    assert demarrage.ecart_d_adresse() == "https://ancien.exemple"
+    with caplog.at_level(logging.WARNING, logger="hostachy.api"):
+        monkeypatch.setattr("app.seed.seed", lambda: None)
+        demarrage.preparer_la_copropriete()
+    ecarts = [r for r in caplog.records if "la base garde" in r.getMessage()]
+    assert [r.levelname for r in ecarts] == ["WARNING"]

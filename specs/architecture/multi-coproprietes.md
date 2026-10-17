@@ -255,8 +255,8 @@ Stockage objet, **un préfixe ou un compartiment par copropriété**, avec des d
 d'accès qui l'imposent. Un chemin de fichier ne se construit **jamais** à partir
 d'une donnée de la requête.
 
-**Le service de `/uploads/*` sur une installation commune — arbitré le 17/10/2026
-(#2053), option B : l'API le sert.** `installation_commune/fichiers` : une session de
+**Le service de `/uploads/*` sur une installation commune — tranché par l'auteur le
+17/10/2026 (#2053), option B : l'API le sert.** `installation_commune/fichiers` : une session de
 la copropriété que l'hôte désigne, la clé bornée sous SA racine, les dossiers que le
 `Caddyfile` refuse refusés de même (`stockage.JAMAIS_SERVIS`, une liste),
 `Cache-Control: private, no-store` ; Caddy relaie (`commune/fichiers.caddy`).
@@ -336,7 +336,7 @@ base porte les choix de chaque COPROPRIÉTÉ — jamais les deux pour un même r
 | SMTP de l'installation (alertes à l'opérateur) | installation | `MAIL_*` (`connexion_smtp_installation`) |
 | heure et versions conservées de la sauvegarde | copropriété | sa base ; la tâche passe chaque heure et relit l'heure (effet immédiat) ; `BACKUP_HOUR` retiré |
 | versions conservées de la base `plateforme` | installation | `BACKUP_KEEP_VERSIONS` |
-| adresse publique (`site_url` ⇄ `ORIGIN`) | installation | **dérivée** (arbitrage du 17/10/2026, option A) : `liens.adresse_du_site()` — l'`ORIGIN` d'une installation propre, le domaine ou l'adresse dérivée de la copropriété dans une installation commune (`Copropriete.adresse`). `site_url` ne se lit plus en base, ne s'écrit plus (`PUT /config` la refuse) ; l'écran Admin la montre en lecture seule |
+| adresse publique (`site_url` ⇄ `ORIGIN`) | installation | **dérivée** (option A, choisie par l'auteur le 17/10/2026 et arbitrée par la coordination sur délégation de Philippe du 17/10/2026, sous trois conditions : jamais l'`ORIGIN` d'un nœud en standby — une adresse qui n'est pas un domaine rend le défaut, et le journalise une fois (`liens.est_adresse_publique`) ; une base dont l'ancienne `site_url` diffère le dit une fois au démarrage, en WARNING (`demarrage.ecart_d_adresse`) ; le lien d'un vrai courriel se regarde au post-check) : `liens.adresse_du_site()` — l'`ORIGIN` d'une installation propre, le domaine ou l'adresse dérivée de la copropriété dans une installation commune (`Copropriete.adresse`). `site_url` ne se lit plus en base, ne s'écrit plus (`PUT /config` la refuse) ; l'écran Admin la montre en lecture seule |
 
 🔒 `test_reglages_un_seul_niveau.py` : un réglage de `Settings` qui a un jumeau en
 base n'est lu que par ses lecteurs déclarés.

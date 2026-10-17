@@ -60,14 +60,40 @@ def _sauvegardes_orphelines() -> None:
             )
 
 
+def ecart_d_adresse() -> str | None:
+    """L'ancienne `site_url` gardée en base, si elle diffère de l'adresse servie — ou None.
+
+    Depuis #2058 l'adresse est dérivée (`liens.adresse_du_site`) et la clé n'est plus
+    lue pour un lien. Une base qui en garde une autre le DIT, une fois par démarrage
+    (condition de l'arbitrage du 17/10/2026) : c'est l'écart que la dérivation a
+    effacé, et qu'un exploitant doit pouvoir constater.
+    """
+    from app.models.core import ConfigSite
+    from app.utils.liens import adresse_du_site, base_site
+
+    with contexte.nouvelle_session() as session:
+        ligne = session.get(ConfigSite, "site_url")
+    ancienne = base_site(ligne.valeur) if ligne and (ligne.valeur or "").strip() else None
+    return ancienne if ancienne and ancienne != adresse_du_site() else None
+
+
 def preparer_la_copropriete() -> None:
     """Les données de démarrage absentes, les jetons échus, les sauvegardes orphelines
     — dans la base de la copropriété servie."""
     from app.seed import seed
+    from app.utils.liens import adresse_du_site
 
     seed()
     _purger_les_jetons()
     _sauvegardes_orphelines()
+    if ancienne := ecart_d_adresse():
+        #  WARNING, jamais ERROR : le point 6 du pré-check compte les erreurs.
+        logger.warning(
+            "Adresse du site : la base garde %s, l'installation sert %s — seule la "
+            "seconde fait les liens depuis #2058.",
+            ancienne,
+            adresse_du_site(),
+        )
 
 
 def preparer_les_coproprietes() -> None:

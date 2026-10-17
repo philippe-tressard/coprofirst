@@ -29,6 +29,8 @@ réelle, un onglet réellement déclaré, et un onglet qui rend bien cette ancre
 
 from __future__ import annotations
 
+import logging
+
 #: L'adresse publique du site, telle qu'on peut la CONCATÉNER.
 #:
 #: 🔴 Signalé à l'écran le 11/09/2026 : un e-mail de ticket portait
@@ -95,10 +97,46 @@ def adresse_du_site() -> str:
     CONTEXTE — l'`ORIGIN` d'une installation propre, le domaine ou l'adresse dérivée
     de la copropriété dans une installation commune (`contexte.Copropriete.adresse`).
     🔒 `tests/test_base_site.py` refuse une lecture de `site_url` en base.
+
+    ⚠️ **Jamais l'`ORIGIN` d'un nœud en standby** (condition de l'arbitrage) : sur le
+    standby, `env_role_appliquer` y écrit l'IP LOCALE du nœud. Une adresse qui n'est
+    pas un nom de domaine public — IP, `localhost`, nom interne — n'est donc jamais
+    rendue : le défaut, manifestement faux, la remplace, et cela se journalise une
+    fois (WARNING, pas ERROR : le point 6 du pré-check compte les erreurs).
     """
     from app import contexte
 
-    return base_site(contexte.courante().adresse)
+    adresse = contexte.courante().adresse
+    if est_adresse_publique(adresse):
+        return base_site(adresse)
+    vue = contexte.etat("adresse_non_publique")
+    if not vue:
+        vue["journalisee"] = True
+        logging.getLogger("hostachy.api").warning(
+            "Adresse du site non publique (%s) : les liens prennent %s — ORIGIN est-il "
+            "celui d'un nœud en standby ?",
+            adresse or "vide",
+            DEFAUT_SITE,
+        )
+    return DEFAUT_SITE
+
+
+def est_adresse_publique(adresse: str | None) -> bool:
+    """L'adresse nomme-t-elle un DOMAINE ? Ni IP, ni `localhost`, ni nom interne sans
+    point — ce qu'est l'`ORIGIN` d'un nœud en standby ou d'un poste de développement."""
+    from ipaddress import ip_address
+    from urllib.parse import urlsplit
+
+    from app.contexte import NOMS_INTERNES, nom_d_hote
+
+    hote = nom_d_hote(urlsplit((adresse or "").strip()).netloc)
+    if not hote or hote in NOMS_INTERNES or "." not in hote:
+        return False
+    try:
+        ip_address(hote)
+    except ValueError:
+        return True
+    return False
 
 
 def nom_site(*valeurs: str | None) -> str:
