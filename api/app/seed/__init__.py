@@ -344,4 +344,9 @@ def seed() -> None:
 
 
 if __name__ == "__main__":
-    seed()
+    import sys
+
+    from app.utils import commande
+
+    #  Sur une installation commune, la copropriété se nomme (#2053).
+    sys.exit(commande.lancer(lambda _arguments: seed()))
