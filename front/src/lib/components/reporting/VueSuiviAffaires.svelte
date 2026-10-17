@@ -14,6 +14,8 @@
   - **Suivi entretiens périodiques** — les affaires d'entretien périodique non
     closes, sous le bilan des visites de l'année (`BilanVisites`) ; l'état de
     chaque visite à la place de la catégorie, et pas de résumé de l'assistant.
+    Les visites déjà réalisées se listent avant le point (`VisitesRealisees`) :
+    le tableau, qui ne garde que les non closes, ne les montre plus.
     Il remplace la vue « Entretien périodique » du reporting (`?vue=periodique`
     y mène).
   - **Relancer le syndic** — la liste du Suivi affaires, avec de quoi composer
@@ -51,6 +53,7 @@
 		type CrAffaire,
 		type ModeReleve,
 		type SuiviAffaires,
+		type VisitePeriodique,
 	} from '$lib/api';
 	import { enregistrerFichier } from '$lib/fichiers';
 	import { teinteBatiment, teinteCategorie } from '$lib/repartition';
@@ -65,6 +68,7 @@
 	import CrGlobal from './CrGlobal.svelte';
 	import BarresCroisees from './BarresCroisees.svelte';
 	import BilanVisites from './BilanVisites.svelte';
+	import VisitesRealisees from './VisitesRealisees.svelte';
 
 	const MODES = [
 		{ valeur: 'suivi', libelle: 'Suivi affaires' },
@@ -80,6 +84,8 @@
 	$: entretien = releve === 'entretien';
 
 	let suivi: SuiviAffaires | null = null;
+	/** Les visites de l'année, lues par le bilan — le mode entretien les liste. */
+	let visites: VisitePeriodique[] = [];
 	let enCours = false;
 	let erreur = '';
 	let redaction = false;
@@ -186,7 +192,7 @@
 </div>
 
 {#if entretien}
-	<BilanVisites />
+	<BilanVisites bind:visites />
 {/if}
 
 {#if enCours || erreur || !suivi || suivi.total === 0}
@@ -200,6 +206,9 @@
 			? 'Toutes les visites d’entretien sont faites ou annulées.'
 			: 'Toutes les affaires sont résolues ou annulées.'}
 	/>
+	{#if entretien && !enCours}
+		<VisitesRealisees {visites} />
+	{/if}
 {:else}
 	<div class="tete">
 		<div class="chiffres">
@@ -226,6 +235,9 @@
 	{#if mode === 'relance'}
 		<RelanceSyndic {suivi} onEnvoyee={relire} />
 	{:else}
+		{#if entretien}
+			<VisitesRealisees {visites} />
+		{/if}
 		{#key releve}
 			<PointConseil mode={releve} bind:compteRendu />
 		{/key}

@@ -4,14 +4,34 @@
  * Compatible SSR (pas de dépendance DOM).
  */
 export function stripHtml(html: string): string {
-	return html
-		.replace(/<[^>]*>/g, '')
-		.replace(/&nbsp;/g, ' ')
-		.replace(/&amp;/g, '&')
-		.replace(/&lt;/g, '<')
-		.replace(/&gt;/g, '>')
-		.replace(/&quot;/g, '"')
-		.trim();
+	return decoderEntites(html.replace(/<[^>]*>/g, '')).trim();
+}
+
+/** Les entités nommées que produit l'éditeur ; les numériques se décodent toutes. */
+const ENTITES: Record<string, string> = {
+	nbsp: ' ',
+	amp: '&',
+	lt: '<',
+	gt: '>',
+	quot: '"',
+	apos: "'",
+};
+
+/**
+ * Décode les entités HTML d'un texte, en UNE passe — pendant de `html.unescape`
+ * côté serveur (`texte_brut`). Les cinq remplacements en série d'avant laissaient
+ * les numériques : l'apostrophe de l'éditeur, `&#x27;`, s'affichait en clair
+ * (17/10/2026). Une passe unique ne décode pas deux fois (`&amp;lt;` → `&lt;`).
+ */
+function decoderEntites(texte: string): string {
+	return texte.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entite, corps: string) => {
+		if (corps[0] !== '#') return ENTITES[corps.toLowerCase()] ?? entite;
+		const code =
+			corps[1] === 'x' || corps[1] === 'X'
+				? parseInt(corps.slice(2), 16)
+				: parseInt(corps.slice(1), 10);
+		return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : entite;
+	});
 }
 
 /**

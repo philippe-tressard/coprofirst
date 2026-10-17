@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from app.utils import horloge
-from html import escape
+from html import escape, unescape
 
 # `date_longue` vit désormais dans `dates_fr` (source unique, partagée avec la
 # fiche arrivant et les e-mails) ; réimportée ici car le routeur `annonces_hall`
@@ -193,15 +193,15 @@ APERCU_MAX = 180
 
 
 def texte_brut(html: str) -> str:
-    """HTML riche → texte brut (pendant serveur de `stripHtml` côté front)."""
-    txt = re.sub(r"<[^>]*>", " ", html or "")
-    txt = (
-        txt.replace("&nbsp;", " ")
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", '"')
-    )
+    """HTML riche → texte brut (pendant serveur de `stripHtml` côté front).
+
+    TOUTES les entités se décodent, en une passe : la liste des cinq nommées
+    qu'on remplaçait laissait les numériques — l'éditeur écrit l'apostrophe
+    `&#x27;`, et « L&#x27;Art des toits » s'affichait au Suivi des entretiens
+    (17/10/2026). Une passe unique ne décode pas deux fois (`&amp;lt;` reste
+    `&lt;`). Le texte rendu est du TEXTE : chaque rendu l'échappe à nouveau.
+    """
+    txt = unescape(re.sub(r"<[^>]*>", " ", html or ""))
     return re.sub(r"\s+", " ", txt).strip()
 
 

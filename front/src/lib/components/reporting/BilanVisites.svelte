@@ -6,6 +6,9 @@
   Repris de l'ancienne vue « Entretien périodique », retirée : les compteurs de
   chaque état, lus sur `GET /tickets/entretiens-periodiques`, que le serveur
   calcule (`utils/entretien_periodique`).
+
+  Les visites lues remontent au parent (`bind:visites`) : la section « Visites
+  réalisées » (`VisitesRealisees`) les liste sans un second appel.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -14,7 +17,8 @@
 	import { COMPTEURS_VISITE } from '$lib/entretien-periodique';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 
-	let visites: VisitePeriodique[] = [];
+	/** Lu par le parent (`bind:visites`) — ne pas écrire depuis l'extérieur. */
+	export let visites: VisitePeriodique[] = [];
 	let exercice = new Date().getFullYear();
 	let chargement = true;
 	let erreur = '';
