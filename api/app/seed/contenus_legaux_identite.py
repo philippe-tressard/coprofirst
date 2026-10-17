@@ -18,6 +18,18 @@ juriste avant toute copropriété pilote. Notamment :
 Séparé de `contenus_legaux.py`, qui atteint 500 lignes (modularité, rang 1).
 """
 
+from app.utils.plateforme import NOM_PLATEFORME
+
+#: 🔴 La marque du MODÈLE, en tête des deux textes (#2065, condition de la
+#: coordination du 17/10/2026) : la relecture par un juriste se SIGNALE, jamais ne
+#: s'affirme. Le syndicat la retire s'il le décide, en relisant : le constat de
+#: relecture ne l'exige pas — l'exiger effacerait le signal de la page publique.
+MARQUE_MODELE = (
+    f"<p><em>Modèle de texte fourni avec le logiciel {NOM_PLATEFORME}, à faire relire par "
+    "un juriste : le syndicat des copropriétaires le relit, le complète et l'adapte avant "
+    "de s'y engager.</em></p>"
+)
+
 #: Le syndicat, nommé comme une personne morale : la copropriété EST le syndicat
 #: de ses copropriétaires — le conseil syndical n'a pas la personnalité juridique.
 SYNDICAT = (

@@ -26,6 +26,7 @@ cherche qui contacter. La nôtre a vécu ainsi jusqu'à ce qu'un lecteur le voie
 from app.seed.contenus_legaux_identite import (
     DESTINATAIRES,
     HEBERGEMENT,
+    MARQUE_MODELE,
     MENTIONS_CONTACT,
     MENTIONS_IDENTITE,
     RESPONSABLE_TRAITEMENT,
@@ -332,7 +333,8 @@ PARAGRAPHE_LICENCE = (
 
 DEFAULT_LEGAL = {
     "mentions_legales": (
-        MENTIONS_IDENTITE
+        MARQUE_MODELE
+        + MENTIONS_IDENTITE
         + "<h2>Propriété intellectuelle</h2>"
         + PARAGRAPHE_LICENCE
         + "<p>Les contenus publiés dans l'application restent la propriété de leurs auteurs respectifs.</p>"
@@ -341,7 +343,9 @@ DEFAULT_LEGAL = {
         "des erreurs ou omissions dans les informations diffusées.</p>" + MENTIONS_CONTACT
     ),
     "politique_confidentialite": (
-        RESPONSABLE_TRAITEMENT + "<h2>2. Données collectées</h2><ul><li><strong>Données "
+        MARQUE_MODELE
+        + RESPONSABLE_TRAITEMENT
+        + "<h2>2. Données collectées</h2><ul><li><strong>Données "
         "d'identification\xa0:</strong> nom, prénom, adresse e-mail, téléphone "
         "(facultatif).</li><li><strong>Données de résidence\xa0:</strong> lot(s) associé(s), bâtiment, "
         "tantièmes.</li><li><strong>Données d'usage\xa0:</strong> tickets soumis, messages échangés, "

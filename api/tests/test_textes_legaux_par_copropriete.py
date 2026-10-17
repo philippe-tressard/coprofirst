@@ -132,6 +132,18 @@ def test_la_politique_dit_que_le_syndicat_est_responsable_et_l_operateur_sous_tr
     )
 
 
+def test_chaque_texte_se_declare_modele_a_faire_relire_par_un_juriste(http, trois):
+    """La relecture par un juriste se SIGNALE sur la page publique, jamais ne s'affirme."""
+    for cle, texte in http.get("/config/legal", headers={ENTETE: "a"}).json().items():
+        assert "à faire relire par un juriste" in _texte_nu(texte), f"{cle} ne se dit pas modèle"
+
+
+def test_aucun_texte_ne_nomme_la_residence_de_reference():
+    """Le gabarit sert toutes les copropriétés : il ne nomme jamais la référence."""
+    gabarit = DEFAULT_LEGAL["mentions_legales"] + DEFAULT_LEGAL["politique_confidentialite"]
+    assert "hostachy" not in gabarit.lower()
+
+
 # ── 3. Le constat ─────────────────────────────────────────────────────────────
 
 
