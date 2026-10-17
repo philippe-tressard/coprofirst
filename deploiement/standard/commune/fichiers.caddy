@@ -1,0 +1,25 @@
+# ── Les fichiers /uploads/* d'une INSTALLATION COMMUNE (#2053) ────────────────
+#
+# À importer dans le bloc de site du Caddyfile, AVANT les blocs `handle /uploads/…`
+# — Caddy applique le premier `handle` qui correspond :
+#
+#     import commune/fichiers.caddy
+#
+# Sur une installation propre à une copropriété (5Hostachy), Caddy sert le volume
+# lui-même, après `forward_auth`. Il ne sert qu'UNE racine : à plusieurs
+# copropriétés, il servirait les fichiers de toutes à chacune. Ici, il RELAIE à
+# l'API (`api/app/installation_commune/fichiers.py`), qui sert le fichier de la
+# copropriété que l'hôte désigne, à une session de cette copropriété — et refuse,
+# comme le Caddyfile, `prive/` et `annonces-hall/` (arbitrage du 17/10/2026, spec
+# §4.4).
+#
+# ⚠️ Sur une installation propre, NE PAS l'importer : la route y répond 404.
+
+handle /uploads/* {
+	# Le même en-tête que le bloc d'origine : aucun cache partagé ne garde un
+	# fichier dont l'accès dépend d'un cookie (incident du 03/08/2026).
+	header Cache-Control "private, no-store"
+	reverse_proxy api:8000 {
+		header_up X-Forwarded-For {client_ip}
+	}
+}

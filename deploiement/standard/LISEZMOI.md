@@ -52,6 +52,7 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 | `deploiement/standard/commune/LISEZMOI.md` | une installation **commune** à plusieurs copropriétés : adresses, déclaration, nom de domaine |
 | `deploiement/standard/commune/coproprietes.exemple.json` | le gabarit de la déclaration des copropriétés d'une installation commune |
 | `deploiement/standard/commune/garde-des-pages.caddy` | la garde des pages d'une installation commune, à importer dans le `Caddyfile` |
+| `deploiement/standard/commune/fichiers.caddy` | les fichiers `/uploads/*` d'une installation commune, relayés à l'API, à importer dans le `Caddyfile` |
 | `deploiement/standard/commune/compose.commune.yml` | la surcouche d'une installation commune : le front sert l'hôte demandé |
 | `deploiement/standard/commune/creer-copropriete.sh` | ajouter une copropriété à une installation commune : base, rôle, secret, dossier, déclaration |
 | `LICENSE` | AGPL-3.0-or-later |

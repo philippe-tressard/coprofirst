@@ -26,6 +26,15 @@ from tests.aides_base import adresse_de_test
 from tests.aides_installation_commune import ENVIRONNEMENT, installation_commune
 
 
+@pytest.fixture(autouse=True)
+def _volume_du_conteneur(monkeypatch):
+    """La racine du volume `uploads` telle que le conteneur (Linux) la voit : la
+    déclaration exige un chemin absolu à sa façon, quel que soit le poste."""
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "uploads_dir", "/app/uploads")
+
+
 def _args(identifiant="peupliers", code_postal="33000", appellation="Les Peupliers", **autres):
     return Namespace(
         identifiant=identifiant,

@@ -239,7 +239,7 @@ class ResolutionCopropriete:
             await reponse(scope, receive, send)
             return
         with dans(copro):
-            from starlette.concurrency import run_in_threadpool
+            from fastapi.concurrency import run_in_threadpool
 
             from app.installation_commune.bases_pretes import INDISPONIBLE, base_prete
 
@@ -354,6 +354,12 @@ def dossier_des_sauvegardes() -> Path:
     if not est_commune():
         return racine
     return racine / "coproprietes" / courante().identifiant
+
+
+def racine_proposee(identifiant: str) -> Path:
+    """La racine des fichiers d'une copropriété qu'on CRÉE dans une installation commune :
+    un dossier à son nom sous le volume `uploads` (`installation_commune/creer`, #2053)."""
+    return Path(get_settings().uploads_dir) / identifiant
 
 
 def par_identifiant(identifiant: str) -> Copropriete:

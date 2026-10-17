@@ -93,7 +93,10 @@ silence : un rôle, une base ou une variable déjà là arrêtent tout.
    Une déclaration invalide **ne sert rien** (503) : l'API ne se replie jamais sur
    la copropriété de sa configuration, qu'elle servirait alors à tous les hôtes.
 4. Importer la garde des pages dans le `Caddyfile`, en tête du dernier `handle`
-   (le mode d'emploi est en tête de `garde-des-pages.caddy`).
+   (le mode d'emploi est en tête de `garde-des-pages.caddy`), et **les fichiers**
+   (`import commune/fichiers.caddy`) dans le bloc de site, AVANT les blocs
+   `handle /uploads/…` : sur une installation commune, c'est l'API qui sert les
+   fichiers de chaque copropriété, à une session de cette copropriété.
 
 Le fichier est relu quand il change. Une copropriété **neuve** demande pourtant de
 recréer l'API, qui ne lit son environnement — l'URL de la base, le secret —
@@ -107,6 +110,8 @@ qu'au démarrage : c'est ce que fait `creer-copropriete.sh`, dans le bon ordre.
 | **Une base qui n'est pas prête** | son hôte seul reçoit 503 (« momentanément indisponible ») ; ses tâches planifiées sont sautées ; elle est relue toutes les 30 s — réparée, elle est servie sans redémarrage |
 | **Santé** (`/api/health`) | 200 `ok` si toutes sont servies, 200 `degrade` si l'une ne l'est pas, 503 si aucune — ni nom ni nombre : la route répond à tout hôte |
 | **Commandes** | `python -m app.seed`, `app.demo.charger`, `export_copropriete verifier` exigent `--copropriete <identifiant>` et refusent sans lui ; aucune ne se replie sur la copropriété de la configuration |
+| **Fichiers** (`/uploads/*`) | servis par l'API depuis la racine de la copropriété que l'hôte désigne, à une session de celle-ci ; `prive/` et `annonces-hall/` jamais en direct, comme sur une installation propre |
+| **Adresse publique** | celle de la copropriété — son domaine, ou son adresse dérivée — pour les liens de ses courriels et ses pages légales ; elle ne se saisit pas (#2058) |
 | **Courriels** | chaque copropriété règle son SMTP dans **Admin › Configuration** ; seule son adresse d'expédition déclarée amorce sa base. Les `MAIL_*` du `.env` sont le SMTP de l'**installation** (alertes à l'opérateur), jamais recopiés chez une copropriété (#2058) |
 | **Sauvegardes** | archives et exports sous `BACKUP_DIR/coproprietes/<identifiant>/` : une copropriété ne voit ni ne fait tourner celles d'une autre ; heure et nombre de versions se règlent dans sa **Maintenance**, effet dès l'heure suivante |
 | **Mise à jour nocturne** | `mise-a-jour.sh` exporte et vérifie **chaque** base avant de rien changer, et les restaure toutes si la santé reste KO ; une déclaration invalide la refuse. Son rapport reste au journal : il n'appartient à aucune copropriété |

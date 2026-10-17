@@ -60,6 +60,7 @@ oublié suffit n'est pas étanche, elle n'est que *disciplinée*.
 | D25 | Vocabulaire (12/10/2026) | **« maître » devient « référence »** — l'installation de référence, le rôle de référence —, à la demande de l'auteur : le mot évoquait l'esclavage. Dans le code, le rôle s'écrit `reference` ; `maitre`, l'ancien nom, reste lu tant que le `.env` des deux Raspberry Pi le porte (`utils/installation.ANCIENS_NOMS`) | partout : spec, contrat d'inscription, administration, code ; les citations de l'auteur restent mot pour mot |
 | D26 | Conditions d'inscription (12/10/2026) | un **contrat d'engagements réciproques** : l'exploitant d'une installation s'engage à respecter la licence, la marque et le registre ; l'exploitant de la référence, à garder CoproFirst libre et à maintenir les services standards. Accepté par l'administrateur quand il valide l'inscription, il est **archivé dans le registre, rattaché à l'ID de l'installation** — texte exact, empreinte, date, qui l'a accepté. Les engagements portent sur le **service d'inscription**, jamais sur les droits de la licence | §4.11 ; `api/app/registre/conditions/` (une version par fichier, figée par son empreinte) ; #1876 |
 | D27 | Accès à une copropriété (13/10/2026) | **un seul code**, deux façons de l'héberger : une copropriété peut avoir **sa propre installation**, comme 5Hostachy, qui s'ouvre par son URL directement sur la connexion ; ou être **hébergée avec d'autres** dans une installation commune. Elle y est alors joignable par **son propre domaine** si elle en a un, sinon par une **adresse dérivée de l'URL commune et de `code-postal` + nom**, que l'hébergeur lui attribue sans frais ; l'URL commune elle-même **aiguille** (code postal, nom) puis redirige. Adresse dérivée et aiguillage ne résolvent rien eux-mêmes : la règle 1 du §4.1 reste entière | §4.1 bis, §4.2 ; #1894 — premier lot livré le 17/10/2026 |
+| D28 | Servir réellement plusieurs copropriétés (17/10/2026, arbitrages de l'auteur) | sur une installation commune, **l'API sert `/uploads/*`** de la copropriété que l'hôte désigne (option B ; Caddy relaie) ; **l'adresse publique est dérivée** de l'installation, jamais saisie (option A) ; chaque réglage a **un niveau et une source** : la base pour les choix d'une copropriété, l'environnement pour l'installation | §4.1 bis, §4.4, §4.8 bis ; #2053, #2058 |
 
 ## 3. Les trois architectures comparées
 
@@ -212,9 +213,11 @@ Arbitrages du jour, pris dans le lot :
   injoignable, la copropriété choisie par le seul `Host` — vit dans
   `test_etancheite_coproprietes.py`.
 
-En attente d'un arbitrage de l'auteur, posé le 17/10/2026 : le **service de
-`/uploads/*`** par copropriété (§4.4) et la source de l'**adresse publique** (§4.8 bis).
-Reste ensuite l'exploitation — DNS et certificat génériques, gestes de l'hébergeur.
+- **`/uploads/*` servi par l'API** sur une installation commune (arbitrage de
+  l'auteur, 17/10/2026, option B — §4.4) ; **l'adresse publique est dérivée**
+  (option A — §4.8 bis).
+
+Reste l'exploitation — DNS et certificat génériques, gestes de l'hébergeur.
 
 ### 4.2 Le registre de la plateforme
 
@@ -252,12 +255,15 @@ Stockage objet, **un préfixe ou un compartiment par copropriété**, avec des d
 d'accès qui l'imposent. Un chemin de fichier ne se construit **jamais** à partir
 d'une donnée de la requête.
 
-**Le service de `/uploads/*` sur une installation commune** — question posée à
-l'auteur le 17/10/2026 (#2053), deux options : (A) Caddy sert toujours, la racine de
-la copropriété lui est rendue en en-tête par `/auth/verifier-acces` ; (B) l'API sert
-les fichiers de la copropriété résolue par l'hôte, Caddy relaie. Recommandation : B,
-l'étanchéité ne reposant alors sur aucun contrat d'en-tête. Les Raspberry Pi gardent
-le service par Caddy dans les deux cas.
+**Le service de `/uploads/*` sur une installation commune — arbitré le 17/10/2026
+(#2053), option B : l'API le sert.** `installation_commune/fichiers` : une session de
+la copropriété que l'hôte désigne, la clé bornée sous SA racine, les dossiers que le
+`Caddyfile` refuse refusés de même (`stockage.JAMAIS_SERVIS`, une liste),
+`Cache-Control: private, no-store` ; Caddy relaie (`commune/fichiers.caddy`).
+Écartée, l'option A — Caddy servant une racine que l'API lui rendrait en en-tête :
+l'étanchéité aurait reposé sur un contrat d'en-tête entre deux processus. Sur une
+installation propre (les Raspberry Pi), Caddy garde le service et la route rend 404.
+C'est aussi le chemin du stockage objet de la phase 3 : l'API sert déjà le fichier.
 
 ### 4.5 La mémoire du processus — le point faible de B
 
@@ -330,7 +336,7 @@ base porte les choix de chaque COPROPRIÉTÉ — jamais les deux pour un même r
 | SMTP de l'installation (alertes à l'opérateur) | installation | `MAIL_*` (`connexion_smtp_installation`) |
 | heure et versions conservées de la sauvegarde | copropriété | sa base ; la tâche passe chaque heure et relit l'heure (effet immédiat) ; `BACKUP_HOUR` retiré |
 | versions conservées de la base `plateforme` | installation | `BACKUP_KEEP_VERSIONS` |
-| adresse publique (`site_url` ⇄ `ORIGIN`) | — | **question posée à l'auteur le 17/10/2026** : la dériver (d'`ORIGIN`, ou de l'adresse de la copropriété dans une installation commune), ou garder les deux sous un contrôle d'écart. Recommandation : la dériver |
+| adresse publique (`site_url` ⇄ `ORIGIN`) | installation | **dérivée** (arbitrage du 17/10/2026, option A) : `liens.adresse_du_site()` — l'`ORIGIN` d'une installation propre, le domaine ou l'adresse dérivée de la copropriété dans une installation commune (`Copropriete.adresse`). `site_url` ne se lit plus en base, ne s'écrit plus (`PUT /config` la refuse) ; l'écran Admin la montre en lecture seule |
 
 🔒 `test_reglages_un_seul_niveau.py` : un réglage de `Settings` qui a un jumeau en
 base n'est lu que par ses lecteurs déclarés.

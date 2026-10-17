@@ -32,11 +32,10 @@ import os
 import sys
 from pathlib import Path
 
+from app import contexte
 from app.config import get_settings
+from app.utils.stockage import stockage
 from app.installation_commune.declaration import DeclarationInvalide, lire
-
-#: Le dossier des fichiers de chaque copropriété, sous le volume `uploads`.
-RACINE_DES_FICHIERS = "/app/uploads"
 
 
 def noms_derives(identifiant: str) -> dict[str, str]:
@@ -51,7 +50,7 @@ def noms_derives(identifiant: str) -> dict[str, str]:
         "BASE": f"copro_{souligne}",
         "VAR_BASE": f"{souligne.upper()}_DATABASE_URL",
         "VAR_SECRET": f"{souligne.upper()}_SECRET_KEY",
-        "RACINE": f"{RACINE_DES_FICHIERS}/{identifiant}",
+        "RACINE": contexte.racine_proposee(identifiant).as_posix(),
     }
 
 
@@ -110,13 +109,13 @@ def ajouter(chemin: Path, nouvelle: dict, environnement, preparer, semer) -> str
     if verdict not in PRETES:
         raise DeclarationInvalide(f"Base de {nouvelle['identifiant']} non préparée : {verdict}.")
     semer(e.copropriete)
-    e.copropriete.racine_fichiers.mkdir(parents=True, exist_ok=True)
+    with contexte.dans(e.copropriete):
+        stockage().racine.mkdir(parents=True, exist_ok=True)
     _ecrire_d_un_coup(chemin, texte)
     return projetee.adresse(e)
 
 
 def _semer(copro) -> None:
-    from app import contexte
     from app.seed import seed
 
     with contexte.dans(copro):

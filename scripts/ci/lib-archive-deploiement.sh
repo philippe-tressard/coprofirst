@@ -26,6 +26,7 @@ FICHIERS_DEPLOIEMENT=(
     deploiement/standard/commune/LISEZMOI.md
     deploiement/standard/commune/coproprietes.exemple.json
     deploiement/standard/commune/garde-des-pages.caddy
+    deploiement/standard/commune/fichiers.caddy
     deploiement/standard/commune/compose.commune.yml
     deploiement/standard/commune/creer-copropriete.sh
     LICENSE
