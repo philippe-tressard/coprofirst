@@ -302,6 +302,22 @@ def poser(
         _poser(
             session,
             comptes,
+            titre="Coupure d'électricité des parties communes au bâtiment B",
+            description=(
+                "Remplacement du tableau électrique des parties communes : éclairage, "
+                "interphone et ascenseur coupés de 9 h à 11 h. Les logements restent alimentés."
+            ),
+            categorie=C.actualite,
+            statut=S.publie,
+            auteur=cs,
+            jours=1,
+            codes=[bat["B"]],
+            debut=dans(6, 9),
+            fin=dans(6, 11),
+        ),
+        _poser(
+            session,
+            comptes,
             titre="Assemblée générale annuelle",
             description="L'AG se tiendra dans la salle commune ; le ravalement est à l'ordre du jour.",
             categorie=C.actualite,
