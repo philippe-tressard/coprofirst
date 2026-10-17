@@ -119,20 +119,13 @@ def test_une_base_qui_n_est_pas_neuve_est_refusee_avant_tout_geste(registre):
         assert len(session.exec(select(Installation)).all()) == 1
 
 
-def test_la_restauration_ne_differe_pas_les_cles(registre, monkeypatch):
-    """Sous PostgreSQL, différer les clés exige un SUPERUTILISATEUR — et le rôle du
-    registre ne l'est pas : l'import serait refusé (« permission denied to set
-    parameter »). La suite de la CI (rôle superutilisateur) ne le montre pas :
-    le refus est donc simulé. Les tables du registre n'ont pas de
-    cycle — toutes leurs clés visent `installation` —, l'ordre des tables suffit."""
-    import app.utils.import_copropriete as import_copropriete
-
-    archive = sauvegarde.sauvegarder()  # sa propre épreuve, jetable, peut différer
-
-    def refus(_connexion):
-        raise RuntimeError("permission denied to set parameter session_replication_role")
-
-    monkeypatch.setattr(import_copropriete, "differer_cles_etrangeres", refus)
+def test_ni_l_epreuve_ni_la_restauration_ne_different_les_cles(registre, alertes):
+    """Le rôle du registre ne peut pas différer les clés (refus simulé par `registre_allume`) :
+    la sauvegarde nocturne ET la restauration passent sans. C'est l'épreuve qui
+    échouait en production (17/10/2026) — `run_sauvegarde_plateforme` alertait."""
+    sauvegarde.run_sauvegarde_plateforme()
+    assert not alertes
+    (archive,) = sauvegarde.dossier().glob("plateforme_backup_*.tar.gz")
     bilan = sauvegarde.restaurer(archive, moteur_de_test(schema=False))
     assert bilan.lignes >= 1
 
