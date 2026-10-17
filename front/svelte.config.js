@@ -1,5 +1,13 @@
 import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+
+//  Le condensat du garde de démarrage (#1993), calculé sur le fichier que
+//  `hooks.server.ts` injecte tel quel : le modifier suffit, rien ne se recopie.
+const GARDE_DEMARRAGE = `sha256-${createHash('sha256')
+	.update(readFileSync(new URL('./src/garde-demarrage.js', import.meta.url), 'utf8'))
+	.digest('base64')}`;
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -38,7 +46,7 @@ const config = {
 		csp: {
 			mode: 'hash',
 			directives: {
-				'script-src': ['self'],
+				'script-src': ['self', GARDE_DEMARRAGE],
 			},
 		},
 	},

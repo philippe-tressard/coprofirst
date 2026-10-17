@@ -184,3 +184,59 @@ def test_le_service_worker_s_enregistre_apres_l_ouverture():
     assert composant.index("apresOuverture(() =>") < composant.index(
         "import('virtual:pwa-register')"
     ), "l'import du module d'enregistrement n'est plus dans apresOuverture"
+
+
+_FRONT = _RACINE / "front"
+_GARDE = _FRONT / "src" / "garde-demarrage.js"
+
+
+def test_une_page_qui_ne_se_dessine_pas_est_gardee():
+    """Le garde de démarrage est branché, de bout en bout (#1993, 17/10/2026).
+
+    Une page restée blanche au premier chargement après une MEP ne disait rien :
+    le bandeau de mise à jour vit DANS l'application, qui ne démarrait pas. Le
+    garde est un script inline, premier de `<head>` — quatre pièces, dont aucune
+    ne se voit sans rouvrir son fichier, et dont chacune, absente, le désarme en
+    silence :
+
+    1. le repère de `app.html`, AVANT `%sveltekit.head%` (donc avant les feuilles) ;
+    2. son remplacement par `hooks.server.ts`, avec le contenu du fichier ;
+    3. le condensat de ce même fichier dans la CSP (`svelte.config.js`) — sans
+       lui, le navigateur refuse le script ;
+    4. le marqueur « démarrée », posé par le layout racine et lu par le garde
+       sous le même nom — sans lui, toute page saine dirait « pas fini de se
+       charger ».
+
+    Le comportement, lui, est éprouvé dans un navigateur : `e2e/garde-demarrage.spec.ts`.
+    """
+    garde = _lire(_GARDE)
+    app_html = _lire(_FRONT / "src" / "app.html")
+    assert "<!-- garde-demarrage" in app_html, "app.html : le repère du garde a disparu"
+    assert app_html.index("<!-- garde-demarrage") < app_html.index("%sveltekit.head%"), (
+        "app.html : le garde doit précéder %sveltekit.head%, qui porte les feuilles de style "
+        "— placé après, il attendrait la feuille même qu'il doit surveiller."
+    )
+
+    hooks = _lire(_FRONT / "src" / "hooks.server.ts")
+    assert "garde-demarrage.js?raw" in hooks and "transformPageChunk" in hooks, (
+        "hooks.server.ts n'injecte plus le garde de démarrage dans la page."
+    )
+
+    config = _lire(_FRONT / "svelte.config.js")
+    assert "src/garde-demarrage.js" in config and "GARDE_DEMARRAGE" in config, (
+        "svelte.config.js ne calcule plus le condensat du garde : la CSP le bloquerait."
+    )
+    assert re.search(r"'script-src':\s*\[[^\]]*GARDE_DEMARRAGE", config), (
+        "le condensat du garde n'est plus dans `script-src`."
+    )
+
+    module = _lire(_FRONT / "src" / "lib" / "garde-demarrage.ts")
+    nom = re.search(r"ATTRIBUT_DEMARRAGE = '([^']+)'", module).group(1)
+    valeur = re.search(r"VALEUR_DEMARREE = '([^']+)'", module).group(1)
+    assert f"getAttribute('{nom}') === '{valeur}'" in garde, (
+        f'le garde ne lit plus `{nom}="{valeur}"` : le nom posé par l\'application et '
+        "celui qu'il lit ont divergé — il prendrait toute page pour une page qui ne démarre pas."
+    )
+    assert "signalerDemarrage" in _lire(_LAYOUT_RACINE), (
+        "le layout racine ne signale plus le démarrage de l'application au garde."
+    )

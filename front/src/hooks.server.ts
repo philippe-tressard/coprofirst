@@ -1,4 +1,11 @@
 import type { Handle } from '@sveltejs/kit';
+import garde from './garde-demarrage.js?raw';
+
+//  Le garde de démarrage (#1993) prend la place de son repère dans `app.html` :
+//  premier script de la page, avant les feuilles de style. Injecté TEL QUEL — la
+//  CSP l'admet par le condensat de ce même fichier, calculé dans `svelte.config.js`.
+const REPERE_GARDE = /<!-- garde-demarrage .*?-->/;
+const SCRIPT_GARDE = `<script>${garde}</script>`;
 
 export const handle: Handle = async ({ event, resolve }) => {
 	//  L'authentification est portée par des cookies `HttpOnly` que ce hook
@@ -21,5 +28,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	//
 	//  ⚠️ Un commentaire qui décrit une protection inexistante est pire qu'un
 	//  silence : il se lit comme une garantie (#1083, 22/09/2026).
-	return resolve(event);
+	return resolve(event, {
+		transformPageChunk: ({ html }) => html.replace(REPERE_GARDE, () => SCRIPT_GARDE),
+	});
 };
