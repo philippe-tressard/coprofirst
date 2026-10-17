@@ -22,16 +22,18 @@ from app.utils.services import (
 )
 from app.database import get_session
 from app.models.core import ConfigSite, Utilisateur
-from app.seed import DEFAULT_LEGAL
 from app.utils.destinataires import peut_gerer_le_site
 from app.utils import demo, pied_de_page, reglages
 from app.utils.config_site import config_site
 from app.utils.liens import base_site, nom_site
 from app.utils.recuperer import ou_404
+from app.utils.textes_legaux.relecture import CLE_RELECTURE, TEXTES
 
 router = APIRouter(prefix="/config", tags=["config"])
 
-_LEGAL_KEYS = {"mentions_legales", "politique_confidentialite"}
+#  Les textes légaux ont leurs routes (`routers/textes_legaux.py`), et leur relecture
+#  son geste : aucun ne passe par `/config/admin`.
+_LEGAL_KEYS = {*TEXTES, CLE_RELECTURE}
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  LISTE BLANCHE des clés exposables SANS authentification.
@@ -58,7 +60,6 @@ _LEGAL_KEYS = {"mentions_legales", "politique_confidentialite"}
 _PUBLIC_KEYS = {
     "site_nom",  # titre de l'onglet et en-tête, écran de connexion inclus
     "site_url",  # liens des pages légales
-    "site_icone",  # icône de la barre de navigation et de l'écran de connexion
     "site_logo",  # nom du logo téléversé (#1728) : sa présence, et l'invalidation du cache
     "login_sous_titre",  # sous-titre de l'écran de connexion
     "pages_order",  # ordre des entrées de navigation
@@ -140,16 +141,6 @@ def get_config_admin(
     """Retourne toutes les clés de configuration, y compris les clés privées (admin uniquement)."""
     rows = session.exec(select(ConfigSite)).all()
     return {r.cle: _valeur_pour_admin(r.cle, r.valeur) for r in rows if r.cle not in _LEGAL_KEYS}
-
-
-@router.get("/legal", response_model=Dict[str, str])
-def get_legal_config(session: Session = Depends(get_session)):
-    """Retourne uniquement les contenus des pages légales (public).
-    Si une clé est absente de la BDD, renvoie le contenu par défaut."""
-    rows = session.exec(select(ConfigSite).where(ConfigSite.cle.in_(_LEGAL_KEYS))).all()
-    result = {k: DEFAULT_LEGAL[k] for k in _LEGAL_KEYS if k in DEFAULT_LEGAL}
-    result.update({r.cle: r.valeur for r in rows if r.valeur})
-    return result
 
 
 @router.put("")

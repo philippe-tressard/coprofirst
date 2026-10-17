@@ -40,6 +40,7 @@ export * from './bailleur';
 export * from './acces';
 export * from './prestataires';
 export * from './administration';
+export * from './textes-legaux';
 export * from './courriels';
 export * from './telemetrie';
 export * from './synthese';

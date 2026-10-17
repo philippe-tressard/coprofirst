@@ -351,6 +351,10 @@ fi
 # voir `copier_plateforme`.
 copier_plateforme "$SOURCE_IP"
 
+# ── 6 ter. Les archives d'affaires échues (#2014) ───────────────────────────
+# Toutes, sans rotation ; l'accusé part avec le rapport, qui a la clé.
+copier_archives_affaires "$SOURCE_IP"
+
 # ── 7. Rapport à l'API (canal cron existant) ─────────────────────────────────
 # La clé est lue sur le nœud, pas recopiée sur le poste : un secret dupliqué est
 # un secret à faire tourner deux fois.
@@ -391,6 +395,7 @@ else
         "$((SECONDS - T0))" "$DETAILS" \
         "$([ "$STATUT" = "succes" ] || printf '%s' "$MESSAGE")" "$DEBUT" "$FIN")" \
     "Rapport"
+  accuser_archives_affaires "http://$SOURCE_IP" "$MAINTENANCE_KEY"
 fi
 
 # ── 8. Résumé lisible ────────────────────────────────────────────────────────
@@ -407,6 +412,7 @@ if [ "$STATUT" = "succes" ]; then
   echo "     Vérifiée    : empreinte identique à la source, export : chaque table compte ses lignes"
   echo "     Source      : $SOURCE_NOEUD ($SOURCE_IP)"
   echo "     Registre    : ${PLATEFORME_ARCHIVE:-—} ($PLATEFORME_INTEGRITE)"
+  echo "     Affaires    : $AFFAIRES_RESUME (archives conservées sans rotation)"
 else
   echo "  ❌ EXPORT ÉCHOUÉ — AUCUNE COPIE FIABLE N'A ÉTÉ PRODUITE"
   echo "     Motif : $MESSAGE"

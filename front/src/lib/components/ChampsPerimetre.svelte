@@ -16,6 +16,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
 	import { ICONES_PERIMETRE } from '$lib/perimetres';
+	import { TYPES_ACCES } from '$lib/types-acces';
 
 	/** L'objet de saisie, lié dans les deux sens : l'onglet porte son cycle de vie. */
 	export let form: {
@@ -29,6 +30,7 @@
 		hors_copropriete: boolean;
 		ordre: number;
 		actif: boolean;
+		acces_fixes: string[];
 	};
 	/**  Le code du nœud — **immuable** : il est enregistré dans les contenus déjà
 	 *   publiés. C'est pourquoi ce composant ne sert QUE l'édition ; la création
@@ -40,6 +42,12 @@
 	 *   ci-dessous ne dit que ce qui est décidé ICI ; sans cette distinction, un
 	 *   nœud hérité affichait une case décochée qui semblait le contredire. */
 	export let concerneTousHerite = false;
+
+	function basculerAcces(type: string, coche: boolean) {
+		form.acces_fixes = coche
+			? [...form.acces_fixes, type]
+			: form.acces_fixes.filter((t) => t !== type);
+	}
 </script>
 
 <p class="modal-code">
@@ -122,6 +130,27 @@
 		filtre. Sans effet sur qui le voit.
 	</span>
 </label>
+
+<!--  🔴 Réglés ICI depuis le 17/10/2026 (#2060) : ces accès étaient lus par le
+      serveur (`utils/acces_choix`) sans qu'aucun écran ne les écrive. Un portillon
+      se coche là où il est décrit ; la liste se compose sur le serveur. -->
+<div class="field" role="group" aria-label="Accès fixes">
+	Accès fixes
+	{#each TYPES_ACCES as t (t.val)}
+		<label class="field-check">
+			<input
+				type="checkbox"
+				checked={form.acces_fixes.includes(t.val)}
+				on:change={(e) => basculerAcces(t.val, e.currentTarget.checked)}
+			/>
+			{t.label}
+		</label>
+	{/each}
+	<span class="aide">
+		Ce périmètre s’ouvre avec tout accès du type coché, sans dépendre d’aucun lot — un portillon, un
+		portail. Il est alors proposé, et accepté, pour chacun.
+	</span>
+</div>
 
 <label class="field-check">
 	<input type="checkbox" bind:checked={form.actif} />

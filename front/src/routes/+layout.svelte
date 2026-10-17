@@ -7,6 +7,7 @@
 	import { onMount } from 'svelte';
 	import { surveillerImagesProtegees } from '$lib/imagesProtegees';
 	import { unSeulDetailsOuvert } from '$lib/accordeon';
+	import { signalerDemarrage } from '$lib/garde-demarrage';
 
 	export let data;
 
@@ -29,6 +30,11 @@
 	//  autres, partout. Ici pour la même raison — un écouteur global, posé une
 	//  fois ; les composants n'ont rien à écrire (`$lib/accordeon`).
 	onMount(unSeulDetailsOuvert);
+
+	//  L'application a démarré (#1993) : le garde de `app.html` cesse de
+	//  surveiller. Sans ce marqueur, il dirait « pas fini de se charger » à une
+	//  page qui marche — c'est ici, à la racine, que toutes les pages passent.
+	onMount(signalerDemarrage);
 
 	//  L'icône de l'onglet (#1728) : le logo de la résidence s'il a été
 	//  téléversé, sinon le logo neutre. Elle vivait dans `app.html`, figée au

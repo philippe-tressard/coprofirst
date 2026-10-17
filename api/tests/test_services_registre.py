@@ -83,6 +83,7 @@ def test_le_temoin_le_registre_porte_chaque_cle():
             "whatsapp_enabled",
             "imap_enabled",
             "verification_version_active",
+            "conservation_affaires_active",
         }
     )
 

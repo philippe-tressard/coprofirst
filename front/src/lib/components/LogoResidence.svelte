@@ -1,5 +1,9 @@
 <!--
-  La marque de la résidence — son logo téléversé, sinon l'icône du catalogue (#1728).
+  La marque de la résidence — son logo téléversé, sinon l'icône neutre du bâtiment (#1728).
+
+  🔴 L'icône du catalogue (`site_icone`) est RETIRÉE le 17/10/2026 (#2060, arbitré) :
+  aucun écran ne la choisissait plus, et un réglage lu sans écran ne se règle que
+  par un appel d'API écrit à la main. L'identité visuelle passe par le logo seul.
 
   Arbitré le 08/10/2026 : un logo téléversé REMPLACE l'icône choisie dans le
   catalogue (`site_icone`) partout où celle-ci s'affichait — la barre de
@@ -20,7 +24,7 @@
 	export let taille: number;
 
 	$: logo = $configStore['site_logo'] ?? '';
-	$: icone = $configStore['site_icone'] ?? 'building-2';
+	const ICONE_NEUTRE = 'building-2';
 </script>
 
 {#if logo}
@@ -33,7 +37,7 @@
 		alt=""
 	/>
 {:else}
-	<Icon name={icone} size={taille} />
+	<Icon name={ICONE_NEUTRE} size={taille} />
 {/if}
 
 <style>

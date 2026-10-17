@@ -63,6 +63,15 @@ export { defautsDePage, configDepuisPage } from '$lib/pages';
 
 export const configStore = writable<Record<string, string>>({});
 
+/**
+ * Le nom de la résidence vient d'être enregistré par la fiche (#2056) : l'en-tête,
+ * l'onglet du navigateur et le menu le reprennent sans attendre un rechargement.
+ * Le nom n'a qu'une source, `site_nom`, que la fiche écrit et relit.
+ */
+export function nomResidenceEnregistre(nom: string): void {
+	configStore.update((c) => ({ ...c, site_nom: nom }));
+}
+
 // Nom du site réactif — le repli neutre vient de `$lib/configSite` (#1725)
 export const siteNomStore = derived(
 	configStore,

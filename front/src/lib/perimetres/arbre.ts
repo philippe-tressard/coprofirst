@@ -66,6 +66,9 @@ export interface Perimetre {
 	/**  Le serveur accepterait-il de dupliquer cette branche ? Sa règle
 	 *   (`utils/perimetres/branche.refus_duplication`) ne se recopie pas ici. */
 	dupliquable: boolean;
+	/**  Les types d'accès (`$lib/types-acces`) qui ouvrent ce nœud d'office, sans
+	 *   dépendre d'aucun lot — un portillon, un portail (#2060). */
+	acces_fixes: string[];
 }
 
 export const PREFIXE_BATIMENT = 'bat:';

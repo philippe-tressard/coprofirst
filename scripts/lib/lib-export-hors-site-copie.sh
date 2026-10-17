@@ -28,9 +28,11 @@
 # complet, sinon une rotation prendrait un fichier tronqué pour une sauvegarde.
 # Le chemin distant est RELATIF au volume (`nom` ou `plateforme/nom`) ; il a été
 # validé par `nom_valide` avant d'arriver ici.
-transferer_archive() { # $1=ip $2=chemin relatif au volume $3=destination locale → 0 si complète
-  local ip="$1" relatif="$2" dest="$3"
-  if $SSH_CMD "$EXPORT_SSH_USER@$ip" "$LIRE cat '/b/$relatif'" > "$dest.partiel" 2>/dev/null; then
+# `$4`/`$5` : la lecture d'un AUTRE volume — celui des fichiers pour les archives
+# d'affaires (#2014) ; par défaut, celui des sauvegardes.
+transferer_archive() { # $1=ip $2=relatif $3=destination [$4=lecture $5=montage] → 0 si complète
+  local ip="$1" relatif="$2" dest="$3" lire="${4:-$LIRE}" montage="${5:-/b}"
+  if $SSH_CMD "$EXPORT_SSH_USER@$ip" "$lire cat '$montage/$relatif'" > "$dest.partiel" 2>/dev/null; then
     mv -f "$dest.partiel" "$dest"
     return 0
   fi
@@ -132,4 +134,75 @@ copier_plateforme() { # $1=ip du nœud source
     [ -n "$n" ] && rm -f "$dest/$n"
   done < <(ls -1 "$dest"/"$PREFIXE_PLATEFORME"*.tar.gz 2>/dev/null | xargs -r -n1 basename | sort | archives_a_supprimer "$EXPORT_KEEP")
   log "  Registre : $nom copiée et vérifiée ($octets octets)."
+}
+
+# ── Les archives d'affaires échues (#2014, lot L3) ──────────────────────────
+# L'API les range dans le volume des FICHIERS, sous `$DOSSIER_AFFAIRES`. Le poste
+# les tire TOUTES — aucune rotation : c'est l'archive hors ligne de la
+# conservation, arbitrée le 16/10/2026 — dans `$EXPORT_DEST/archives-affaires/`,
+# rangée à part des sauvegardes tournantes.
+#
+# ⚠️ Comme le registre, cette passe ne fait JAMAIS échouer l'export. Une archive
+# qu'on n'a pas su copier n'est simplement pas accusée : le serveur la garde, et
+# son contrôle d'âge (`conservation_copie.archives_en_retard`) le dit au-delà de
+# 30 jours.
+#
+# Pose AFFAIRES_COPIEES (lignes « nom empreinte » des copies VÉRIFIÉES, présentes
+# sur le PC et toujours annoncées par le serveur) et AFFAIRES_RESUME.
+LIRE_FICHIERS="docker run --rm -v 5hostachy_uploads:/u:ro alpine"
+copier_archives_affaires() { # $1=ip du nœud source
+  local ip="$1" liste n dest local_ sha_src sha_dst neuves=0 echecs=0 copiees
+  AFFAIRES_COPIEES=""
+  AFFAIRES_RESUME="aucune archive"
+  if ! liste=$($SSH_CMD "$EXPORT_SSH_USER@$ip" \
+      "$LIRE_FICHIERS sh -c 'ls -1 /u/$DOSSIER_AFFAIRES 2>/dev/null || true'" 2>/dev/null); then
+    AFFAIRES_RESUME="INCONNU : lecture du volume des fichiers impossible"
+    log "  ! Archives d'affaires : lecture impossible — copie INCONNUE."
+    return 0
+  fi
+  dest="$EXPORT_DEST/archives-affaires"
+  for n in $(printf '%s\n' "$liste" | tr -d '\r'); do
+    nom_archive_affaires_valide "$n" || continue
+    mkdir -p "$dest" || { AFFAIRES_RESUME="destination inaccessible"; return 0; }
+    local_="$dest/$n"
+    sha_src=$($SSH_CMD "$EXPORT_SSH_USER@$ip" \
+      "$LIRE_FICHIERS sha256sum '/u/$DOSSIER_AFFAIRES/$n'" 2>/dev/null | awk '{print $1}')
+    if ! { [ -f "$local_" ] && [ "$(sha256sum "$local_" | awk '{print $1}')" = "$sha_src" ]; }; then
+      if ! transferer_archive "$ip" "$DOSSIER_AFFAIRES/$n" "$local_" "$LIRE_FICHIERS" /u; then
+        echecs=$((echecs + 1))
+        log "  ! Archive d'affaires $n : transfert interrompu."
+        continue
+      fi
+      neuves=$((neuves + 1))
+    fi
+    sha_dst=$(sha256sum "$local_" 2>/dev/null | awk '{print $1}')
+    if [ -z "$sha_src" ] || [ "$sha_src" != "$sha_dst" ]; then
+      mv -f "$local_" "$local_.invalide" 2>/dev/null || true
+      echecs=$((echecs + 1))
+      log "  ! Archive d'affaires $n : empreinte différente — écartée."
+      continue
+    fi
+    AFFAIRES_COPIEES="$AFFAIRES_COPIEES$n $sha_dst"$'\n'
+  done
+  copiees=$(printf '%s' "$AFFAIRES_COPIEES" | grep -c . || true)
+  AFFAIRES_RESUME="$copiees copiée(s), dont $neuves nouvelle(s), $echecs en échec"
+  log "  Archives d'affaires : $AFFAIRES_RESUME — aucune rotation."
+}
+
+# L'accusé : le serveur note « copiée le » chaque archive dont il reconnaît
+# l'empreinte, et retirera sa copie 30 jours plus tard. Corps par l'entrée
+# standard, comme `rapport_envoyer` (#1964).
+accuser_archives_affaires() { # $1=url de base $2=clé
+  local http
+  [ -n "$AFFAIRES_COPIEES" ] || return 0
+  http=$(printf '%s' "$AFFAIRES_COPIEES" | charge_accuse_affaires \
+    | curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+        -X POST "$1/api/admin/maintenance/archives-affaires/copiees" \
+        -H "Content-Type: application/json" -H "x-maintenance-key: $2" \
+        --data-binary @- 2>/dev/null) || http="000"
+  if [ "$http" = "200" ]; then
+    log "  → Copie des archives d'affaires accusée (HTTP $http)"
+  else
+    log "  ⚠ Accusé des archives d'affaires non enregistré (HTTP $http) — le serveur les garde."
+  fi
 }

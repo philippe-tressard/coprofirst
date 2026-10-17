@@ -338,6 +338,13 @@ class Ticket(SaisiPourMixin, AssisteIAMixin, IntervenantMixin, table=True):
     #  fil s'y poursuit, elle sort du carnet. Sans clé étrangère, comme ses
     #  voisines ajoutées par migration. Règles : `utils/fusion_affaires`.
     fusionnee_dans_id: Optional[int] = None
+    #  🗄️ La CONSERVATION (#2014, migration 0295) : le jour où l'affaire, échue,
+    #  a perdu ses pièces jointes (archivées) et ses auteurs. `None` = intacte ;
+    #  posée, l'affaire n'est jamais retraitée. Règles : `utils/conservation_affaires`.
+    conservee_le: Optional[NaiveDatetime] = None
+    #  Ce que l'auteur détaché ÉTAIT à l'échéance — « resident » ou « conseil » —,
+    #  rendu « Un résident » ou « Le conseil syndical » (`utils/noms.nom_auteur`).
+    auteur_qualite: Optional[str] = None
 
     auteur: Optional["Utilisateur"] = Relationship(
         back_populates="tickets", sa_relationship_kwargs={"foreign_keys": "[Ticket.auteur_id]"}
@@ -359,6 +366,7 @@ class MessageTicket(SQLModel, table=True):
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     interne: bool = False  # True = visible CS seulement
     fichiers_urls: str = "[]"  # JSON array d'URLs de fichiers joints
+    auteur_qualite: Optional[str] = None  # l'auteur détaché par la conservation (#2014)
 
     ticket: Optional[Ticket] = Relationship(back_populates="messages")
 
@@ -378,6 +386,7 @@ class TicketEvolution(EvolutionMixin, table=True):
     #  Le transfert de courriel qui l'a versée (#1482) — ce qui permet de
     #  défaire ce transfert d'un geste. Colonne simple (0239).
     versement_id: Optional[int] = Field(default=None, index=True)
+    auteur_qualite: Optional[str] = None  # l'auteur détaché par la conservation (#2014)
 
     ticket: Optional[Ticket] = Relationship(back_populates="evolutions")
     auteur: Optional["Utilisateur"] = Relationship()

@@ -13,6 +13,7 @@ import type { ConsommationIA, UsageIA } from './assistant';
 import type { ServiceCopropriete } from './services';
 import type { FiltreGestionnaire, PorteeTelemetrie, TableauTelemetrie } from './telemetrie';
 import type { User } from './types';
+import type { ConstatTextesLegaux, TextesLegauxSource } from './textes-legaux';
 import type {
 	AccueilArrivantResultat,
 	Accuse,
@@ -369,6 +370,12 @@ export const config = {
 	 *   client n'offrait rien (12/09/2026, #932). */
 	legal: (): Promise<Record<string, string>> => api.get<Record<string, string>>('/config/legal'),
 	save: (data: Record<string, string>): Promise<void> => api.put('/config', data),
+	/**  Les textes légaux tels que l'administration les édite : la source, et non le
+	 *   rendu de `legal()`, qui figerait les noms d'aujourd'hui à la place des champs
+	 *   (#2065). Réservé à l'administrateur. */
+	textesLegaux: () => api.get<TextesLegauxSource>('/config/textes-legaux'),
+	/**  « J'ai relu ces textes » : refusé (409) tant que l'un dit « À RENSEIGNER ». */
+	declarerRelus: () => api.post<ConstatTextesLegaux>('/config/textes-legaux/relecture', {}),
 
 	//  ── Réglages d'administration et bancs d'essai (#801) ──────────────────────
 	//

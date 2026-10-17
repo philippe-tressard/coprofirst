@@ -35,11 +35,10 @@
  * protège, et surtout **le réglage de l'administration gouverne enfin le
  * calendrier** — ce qu'il n'avait jamais fait, la clé n'étant pas publique.
  *
- * ⚠️ **Le tableau de bord, lui, appelle encore `delaiArchivageMs`** pour son seuil
- * « récent ». Il reste donc sur le défaut en dur, pour la même raison qu'avant : la
- * clé n'est pas publiée, et la publier serait exposer un réglage de plus sur un
- * endpoint anonyme pour un confort d'affichage. Sa sortie est la même que celle du
- * calendrier — lire ce que l'API envoie — et elle n'est pas encore faite.
+ * Le tableau de bord a suivi le 17/10/2026 (#2060) : son seuil « récent » est le
+ * délai que l'API envoie avec le fil (`FluxResponse.delai_recent_jours`). Il
+ * restait au défaut en dur, la clé n'étant pas publique — et la publier aurait
+ * exposé un réglage de plus sur un endpoint anonyme pour un confort d'affichage.
  *
  * ⚠️ `DELAI_ARCHIVAGE_JOURS` est une **copie** de `ARCHIVAGE_DELAI_JOURS`
  * (`api/app/utils/archivage.py`). Les contextes de build sont `./api` et
@@ -65,7 +64,8 @@ export function delaiArchivageJours(config: Record<string, string> | null | unde
 	return DELAI_ARCHIVAGE_JOURS;
 }
 
-/** Le même délai en millisecondes — ce que manipulent les comparaisons de dates. */
-export function delaiArchivageMs(config: Record<string, string> | null | undefined): number {
-	return delaiArchivageJours(config) * 86_400_000;
+/** Le seuil « récent » de l'accueil, en millisecondes : le délai que l'API envoie
+ *  avec le fil (#2060) — le défaut tant que le fil n'est pas arrivé. */
+export function seuilRecentMs(jours: number | null | undefined): number {
+	return (jours && jours > 0 ? jours : DELAI_ARCHIVAGE_JOURS) * 86_400_000;
 }

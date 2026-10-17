@@ -189,7 +189,7 @@ def evol_read(
     return lire_objet(
         TicketEvolutionRead,
         e,
-        auteur_nom=nom_auteur(auteur),
+        auteur_nom=nom_auteur(auteur, e.auteur_qualite),
         #  `None` — et non `[]` — quand l'entrée ne parle pas du périmètre : le
         #  front distingue « n'en parle pas » de « plus aucun périmètre » (#497).
         #
@@ -269,7 +269,7 @@ def ticket_read(
     return lire_objet(
         TicketRead,
         ticket,
-        auteur_nom=nom_auteur(auteur),
+        auteur_nom=nom_auteur(auteur, ticket.auteur_qualite),
         auteur_batiment_nom=libelle_batiment_ou(batiment, None),
         #  Les pièces de l'affaire, sinon celles de la dernière entrée du fil qui
         #  en porte (#464) — `lecture_groupee.pieces_du_fil` dit pourquoi.

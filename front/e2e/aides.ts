@@ -179,7 +179,7 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	//  `TableauTelemetrie` : l'onglet Télémétrie lit `adoption.par_profil`…
 	'/api/telemetry/dashboard': TABLEAU_TELEMETRIE_VIDE,
 	//  `FluxResponse` : `RaccourcisRapides` lit `sante.tickets_ouverts`.
-	'/api/flux': { items: [], sante: {} },
+	'/api/flux': { items: [], sante: {}, delai_recent_jours: 30 },
 	//  `santeMaintenance` : `TachesPlanifiees` lit `taches`, `anomalies_recentes`
 	//  et la fenêtre qui les borne.
 	'/api/admin/maintenance/sante': {
@@ -191,6 +191,14 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	//  affaires (#2041) — sans point ouvert, et un annuaire vide.
 	'/api/points-conseil/courant': { compte_rendu: null, reprise: null },
 	'/api/points-conseil/participants': { conseil: [], syndic: [], lieux: [], moyens: [] },
+	//  `TextesLegauxSource` : l'administration lit la source des textes légaux et
+	//  leur constat (#2065) — relus, rien à signaler.
+	'/api/config/textes-legaux': {
+		textes: { mentions_legales: '', politique_confidentialite: '' },
+		champs: [],
+		contact: '',
+		etat: { a_relire: false, textes: [] },
+	},
 	//  `ConsommationIA`.
 	'/api/config/llm-consommation': { mois: [], limites: [], mois_courant: '' },
 	//  `ServiceCopropriete[]` : l'administration grise l'onglet d'un service coupé.

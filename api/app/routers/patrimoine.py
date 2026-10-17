@@ -45,6 +45,7 @@ from app.models.core import (
     Utilisateur,
 )
 from app.utils.lecture import lire_objet
+from app.utils.acces_choix import fixer_acces, types_fixes_par_code
 from app.utils.perimetres import invalider_cache, parse_json_perimetres, parse_perimetres
 from app.utils.perimetres.branche import descendants, enfants_par_parent, refus_duplication
 from app.utils.recuperer import ou_404
@@ -93,6 +94,9 @@ class PerimetreRead(BaseModel):
     #: Le serveur accepterait-il de dupliquer cette branche ? Lu sur la même règle
     #: que le geste qui refuse (`refus_duplication`), jamais recopié à l'écran.
     dupliquable: bool = False
+    #: Les types d'accès (`types_acces.TYPES_ACCES`) qui ouvrent ce nœud d'office,
+    #: sans dépendre d'aucun lot — un portillon, un portail (#2060).
+    acces_fixes: list[str] = []
 
 
 class PerimetreCreate(BaseModel):
@@ -125,6 +129,8 @@ class PerimetreUpdate(BaseModel):
     hors_copropriete: Optional[bool] = None
     ordre: Optional[int] = None
     actif: Optional[bool] = None
+    #: Remplace la liste des types d'accès fixes de ce nœud (#2060).
+    acces_fixes: Optional[list[str]] = None
 
 
 # ── Aides internes ────────────────────────────────────────────────────────────
@@ -210,6 +216,7 @@ def _lu(
     profondeur: int,
     concerne_tous: bool,
     branche: list[Perimetre],
+    fixes: dict[str, list[str]],
 ) -> PerimetreRead:
     """Un nœud lu sur le modèle, avec ce que l'arbre seul sait dire.
 
@@ -228,15 +235,19 @@ def _lu(
         utilise=noeud.code.lower() in cites,
         nb_descendants=len(branche),
         dupliquable=refus_duplication(branche) is None,
+        acces_fixes=fixes.get(noeud.code, []),
     )
 
 
-def _en_lecture(noeuds: list[Perimetre], cites: set[str]) -> list[PerimetreRead]:
+def _en_lecture(
+    noeuds: list[Perimetre], cites: set[str], fixes: Optional[dict[str, list[str]]] = None
+) -> list[PerimetreRead]:
     """L'arborescence à plat, en ordre d'affichage (parcours en profondeur).
 
     L'ordre est calculé ici plutôt que côté front : c'est la même question pour
     toutes les rubriques, et deux tris divergents sont un tri de trop.
     """
+    fixes = fixes or {}
     par_id = {n.id: n for n in noeuds}
     profondeur = _profondeurs(noeuds)
 
@@ -259,6 +270,7 @@ def _en_lecture(noeuds: list[Perimetre], cites: set[str]) -> list[PerimetreRead]
                     profondeur.get(noeud.id, 0),
                     _concerne_tous(noeud, par_id),
                     descendants(noeud, noeuds),
+                    fixes,
                 )
             )
             descendre(noeud.id)
@@ -269,7 +281,15 @@ def _en_lecture(noeuds: list[Perimetre], cites: set[str]) -> list[PerimetreRead]
     for noeud in noeuds:
         if noeud.id not in vus:
             sortie.append(
-                _lu(noeud, cites, None, 0, noeud.portee_globale, descendants(noeud, noeuds))
+                _lu(
+                    noeud,
+                    cites,
+                    None,
+                    0,
+                    noeud.portee_globale,
+                    descendants(noeud, noeuds),
+                    fixes,
+                )
             )
     return sortie
 
@@ -281,7 +301,7 @@ def _un(session: Session, noeud: Perimetre) -> PerimetreRead:
     toujours à zéro : ces deux valeurs ne se déduisent pas d'une ligne seule.
     """
     tous = list(session.exec(select(Perimetre)).all())
-    for lu in _en_lecture(tous, _codes_cites(session)):
+    for lu in _en_lecture(tous, _codes_cites(session), types_fixes_par_code(session)):
         if lu.id == noeud.id:
             return lu
     raise HTTPException(500, "Périmètre introuvable après écriture.")
@@ -322,7 +342,7 @@ def lister_perimetres(
     user: Utilisateur = Depends(get_current_user),
 ):
     noeuds = session.exec(select(Perimetre)).all()
-    return _en_lecture(list(noeuds), _codes_cites(session))
+    return _en_lecture(list(noeuds), _codes_cites(session), types_fixes_par_code(session))
 
 
 # ── Écriture (administration) ─────────────────────────────────────────────────
@@ -376,6 +396,8 @@ def modifier_perimetre(
         parent_id = _resoudre_parent(session, donnees.pop("parent"))
         _refuser_cycle(session, noeud.id, parent_id)
         noeud.parent_id = parent_id
+    if "acces_fixes" in donnees:
+        fixer_acces(session, noeud.code, donnees.pop("acces_fixes") or [])
 
     for champ, valeur in donnees.items():
         setattr(noeud, champ, valeur)

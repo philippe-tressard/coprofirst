@@ -23,31 +23,34 @@ import re
 from app.utils import demo, pied_de_page, whatsapp
 from app.utils.llm_usages import USAGES, champs
 from app.utils.services import CLES_ACTIVATION
+from app.utils.textes_legaux.identite import CLE_CONTACT
 
 #: Les clés écrites par l'administration, par onglet — celui qui les écrit
 #: aujourd'hui, pas celui de la réorganisation à venir (#2062).
+#:
+#: 🔴 **Une clé n'appartient qu'à UN onglet** (#2057) : quatre boutons renvoyaient
+#: la même vingtaine de clés, et `email_footer` comme `reference_copro` avaient
+#: deux écrans d'écriture — le dernier enregistré l'emportait, en silence.
+#: `test_reglages_liste_blanche` vérifie la partition, et que chaque charge du
+#: front ne porte que les clés d'un seul onglet.
 PAR_ONGLET: dict[str, frozenset[str]] = {
-    #  `ecrireConfigSite` (front `configSite.ts`) : Paramétrage site, Pied de page,
-    #  Pages légales et pied des messages WhatsApp partagent son enregistrement (#2057).
+    #  Paramétrage site › Paramètres généraux (`configSite.ECRIVAINS.generaux`).
     "site": frozenset(
         {
-            "site_nom",
             "site_url",
             "site_email",
             "site_manager_user_id",
             "login_sous_titre",
-            "mentions_legales",
-            "politique_confidentialite",
             "archivage_delai_jours",
             "relance_syndic_delai_jours",
             "notify_ticket_bug_email",
             "notify_new_user_created_email",
-            "whatsapp_footer",
-            "email_footer",
-            "reference_copro",
         }
-    )
-    | pied_de_page.CLES_PUBLIQUES,
+    ),
+    #  Paramétrage site › Pied de page.
+    "pied_de_page": pied_de_page.CLES_PUBLIQUES,
+    #  + l'adresse des droits sur les données, que nomment les textes légaux (#2065).
+    "legal": frozenset({"mentions_legales", "politique_confidentialite", CLE_CONTACT}),
     "copropriete": frozenset({"reference_copro"}),
     "pages": frozenset({"pages_order"}),  # + `page_config_<page>`, voir PREFIXES
     "services": CLES_ACTIVATION,
@@ -80,9 +83,10 @@ PAR_ONGLET: dict[str, frozenset[str]] = {
     ),
     #  Les clés du canal se lisent dans `utils/whatsapp.CLES_CONFIG`, leur seule
     #  énumération (`test_canaux_notification.py`) : son activation est aux Services,
-    #  son pied et l'identité du site à l'onglet « site ».
+    #  l'identité du site à la Fiche et au paramétrage. Son pied, lui, s'écrit ICI
+    #  depuis #2057 — il partait avec l'enregistrement global du site.
     "whatsapp": frozenset({"whatsapp_group_name"})
-    | (whatsapp.CLES_CONFIG - CLES_ACTIVATION - {"whatsapp_footer", "site_url", "site_nom"}),
+    | (whatsapp.CLES_CONFIG - CLES_ACTIVATION - {"site_url", "site_nom"}),
     "ia": frozenset(
         {
             "llm_fournisseur",
@@ -96,9 +100,6 @@ PAR_ONGLET: dict[str, frozenset[str]] = {
     #  Les réglages de chaque usage, lus sur le registre des usages : l'écran
     #  renvoie exactement ces clés (`GET /config/llm-usages`, champ `cles`).
     | frozenset(u.cle(c) for u in USAGES.values() for c in champs(u)),
-    #  ⚠️ Lus par le serveur, sans écran (#2060) : `PUT /config` reste leur seule
-    #  porte tant qu'ils n'ont pas d'onglet. Les refuser les rendrait irréglables.
-    "sans_ecran": frozenset({"acces_fixes_vigik", "acces_fixes_telecommande", "site_icone"}),
 }
 
 #: Les familles dont le dernier segment est une donnée : `page_config_<page>`,
@@ -119,12 +120,31 @@ REFUSEES: dict[str, str] = {
     "consignes_arrivant": "Les consignes aux arrivants se modifient par PUT /admin/arrivants/consignes.",
     "reglement_provenance": "La provenance du règlement se modifie par PUT /reglement/provenance.",
     "whatsapp_community_url": "Le lien de la communauté WhatsApp se modifie dans l'annuaire du CS.",
+    #  Une seule source pour le nom de la résidence (#2056) : la Fiche copropriété.
+    "site_nom": "Le nom de la résidence se modifie dans la Fiche copropriété (PATCH /copropriete).",
+    #  Réglés périmètre par périmètre (#2060) : la liste se compose sur le serveur.
+    "acces_fixes_vigik": "Les accès fixes se cochent sur chaque périmètre (PATCH /perimetres/{id}).",
+    "acces_fixes_telecommande": "Les accès fixes se cochent sur chaque périmètre (PATCH /perimetres/{id}).",
 }
 
 #: Le premier essai d'un usage de l'IA : le serveur seul l'écrit (`llm_limites`).
 RESERVEES_AU_SERVEUR = frozenset(u.cle("reference") for u in USAGES.values())
 
 ECRIVABLES: frozenset[str] = frozenset().union(*PAR_ONGLET.values())
+
+#: Les onglets qui écrivent une famille par préfixe.
+ONGLET_DES_PREFIXES = {"page_config_": "pages"}
+
+
+def onglet_de(cle: str) -> str | None:
+    """PURE. L'onglet qui écrit cette clé — `None` si aucun."""
+    for onglet, cles in PAR_ONGLET.items():
+        if cle in cles:
+            return onglet
+    for prefixe, onglet in ONGLET_DES_PREFIXES.items():
+        if cle.startswith(prefixe) and PREFIXES[prefixe].fullmatch(cle):
+            return onglet
+    return None
 
 
 def est_ecrivable(cle: str) -> bool:
@@ -154,5 +174,6 @@ __all__ = [
     "REFUSEES",
     "RESERVEES_AU_SERVEUR",
     "est_ecrivable",
+    "onglet_de",
     "refus_d_ecriture",
 ]

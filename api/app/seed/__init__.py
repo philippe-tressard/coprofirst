@@ -59,6 +59,7 @@ from app.seed.emails import EMAIL_TEMPLATES, INTENTIONS_PAR_MODELE
 from app.seed.faq import FAQ_COMPLEMENTAIRE, FAQ_INITIALE
 from app.seed.patrimoine import poser_arborescence
 from app.utils.liens import NOM_SITE_PAR_DEFAUT
+from app.utils.textes_legaux.identite import COPROPRIETE_EXEMPLE
 from app.utils.whatsapp_message import PIED_WHATSAPP_PAR_DEFAUT
 from app.seed.profils_documents import CATEGORIES, PROFILS
 
@@ -121,8 +122,8 @@ def _copropriete_par_defaut(session: Session) -> None:
     if session.exec(select(Copropriete)).first():
         return
     copro = Copropriete(
-        nom="Ma Résidence",
-        adresse="1 rue Exemple, 75000 Paris",
+        nom=COPROPRIETE_EXEMPLE["nom"],
+        adresse=COPROPRIETE_EXEMPLE["adresse"],
         annee_construction=2000,
         nb_lots_total=48,
     )

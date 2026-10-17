@@ -1,6 +1,6 @@
 <!--
   **Conservation des affaires** (#2014), dans Administration › Maintenance — le
-  CONSTAT de ce qui partira, et quand (lot L1).
+  CONSTAT de ce qui partira, et quand (lot L1), et ce qui est parti (L2, L3).
 
   Une affaire close est gardée un nombre d'exercices complets selon sa catégorie
   (10 pour les travaux et sinistres, 5 pour les pannes et l'entretien, 2 pour les
@@ -8,8 +8,10 @@
   archivées sur le PC, et ses auteurs, et gardera son texte. La règle vit au
   serveur (`utils/conservation_affaires`) ; cet écran ne recalcule rien.
 
-  Rien n'est retiré tant que le lot suivant n'est pas livré et que
-  l'administrateur n'a pas coché la case qui l'applique : l'écran le dit.
+  Rien n'est retiré tant que l'administrateur n'a pas coché « Conservation des
+  affaires » dans Administration › Services (lot L2) — la case ne se coche que
+  là, l'écran le dit et y renvoie. Les archives produites sont listées avec leur
+  copie sur le PC (lot L3) : le serveur retire la sienne 30 jours après.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -17,8 +19,9 @@
 	import SectionFormulaire from './SectionFormulaire.svelte';
 	import { conservation, type ConstatConservation } from '$lib/api';
 	import { messageErreur } from '$lib/erreurs';
-	import { fmtDate } from '$lib/date';
+	import { fmtDate, fmtDatetime } from '$lib/date';
 	import { fmtNombre, fmtOctets } from '$lib/utils';
+	import { LIBELLE_TACHE } from '$lib/taches';
 
 	let constat: ConstatConservation | null = null;
 	let chargement = true;
@@ -35,6 +38,7 @@
 	});
 
 	$: echeances = constat?.echeances ?? [];
+	$: archives = constat?.archives ?? [];
 
 	/** « (1 absente du disque) » — une référence en base sans fichier, dite et non pesée. */
 	function absentes(n: number): string {
@@ -45,16 +49,23 @@
 </script>
 
 <section class="card config-section" id="conservation-affaires">
-	<SectionFormulaire titre="Conservation des affaires" icone="archive" />
+	<SectionFormulaire titre={LIBELLE_TACHE.conservation_affaires} icone="archive" />
 	<p class="muted">
 		Une affaire close est gardée un nombre d’exercices complets selon sa catégorie. À l’échéance,
 		elle perdra ses pièces jointes, archivées sur le PC, et ses auteurs&nbsp;; son texte restera, et
 		le carnet d’entretien avec lui.
 	</p>
-	{#if constat && !constat.application_active}
+	{#if constat}
 		<p class="aide">
-			Constat seul&nbsp;: rien n’est archivé ni retiré pour l’instant. L’exercice
-			{constat.mois_debut_exercice
+			{#if constat.application_active}
+				Appliquée chaque nuit&nbsp;: une affaire échue perd ses pièces jointes, archivées puis
+				copiées sur le PC par la sauvegarde hors site, et ses auteurs.
+			{:else}
+				Constat seul&nbsp;: rien n’est archivé ni retiré tant que «&nbsp;Conservation des
+				affaires&nbsp;» n’est pas activée dans
+				<a href="/admin?onglet=services">Administration › Services</a>.
+			{/if}
+			L’exercice {constat.mois_debut_exercice
 				? 'suit le mois de début de la fiche copropriété'
 				: 'est l’année civile'}.
 		</p>
@@ -104,6 +115,53 @@
 			{/each}
 		</ul>
 	</EtatListe>
+
+	{#if archives.length}
+		<SectionFormulaire titre="Archives produites" icone="archive" />
+		<p class="aide">
+			Le serveur garde une archive {constat?.delai_retrait_jours} jours après sa copie sur le PC, puis
+			la retire&nbsp;; le PC les garde toutes.
+		</p>
+		<div class="table-wrap">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Archive</th>
+						<th class="nombre">Affaires</th>
+						<th class="nombre">Pièces jointes</th>
+						<th>Produite le</th>
+						<th>Sur le PC</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each archives as a (a.id)}
+						<tr>
+							<td>
+								{a.libelle} · {a.exercice}
+								{#if !a.retiree_le}
+									<a class="telecharger" href={conservation.archiveUrl(a.id)} download={a.nom}
+										>Télécharger</a
+									>
+								{/if}
+							</td>
+							<td class="nombre">{fmtNombre(a.affaires)}</td>
+							<td class="nombre">{fmtNombre(a.fichiers)} · {fmtOctets(a.octets)}</td>
+							<td>{fmtDatetime(a.cree_le)}</td>
+							<td>
+								{#if a.copiee_le}
+									Copiée le {fmtDate(a.copiee_le)}{#if a.retiree_le}<span class="muted">
+											· retirée du serveur</span
+										>{/if}
+								{:else}
+									<span class="muted">En attente de la sauvegarde hors site</span>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/if}
 </section>
 
 <style>
@@ -113,5 +171,8 @@
 	}
 	.fondements {
 		padding-left: 1.1rem;
+	}
+	.telecharger {
+		margin-left: 0.4rem;
 	}
 </style>

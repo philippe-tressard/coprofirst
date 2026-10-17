@@ -238,10 +238,10 @@ def setup_scheduler():
     with contexte.nouvelle_session() as session:
         cfg: ConfigSauvegarde | None = session.exec(select(ConfigSauvegarde)).first()
 
-    # Si la config existe et est désactivée, on ne programme rien
-    if cfg is not None and not cfg.active:
-        scheduler.start()
-        return scheduler
+    #  🔴 La sauvegarde ne se coupe PAS (#2060, 17/10/2026). `config_sauvegarde.active`
+    #  la coupait sans qu'aucun écran ne montre l'interrupteur : une ligne posée à la
+    #  main, une restauration, et plus rien n'était sauvegardé sans que rien ne le
+    #  dise. La colonne reste en base, plus lue.
 
     hour = cfg.heure_execution if cfg else settings.backup_hour
 

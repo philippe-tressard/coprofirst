@@ -30,6 +30,7 @@
 	import SyntheseFil from './SyntheseFil.svelte';
 	import TransfertsVerses from './TransfertsVerses.svelte';
 	import MentionFusion from './MentionFusion.svelte';
+	import MentionConservation from './MentionConservation.svelte';
 	import type { Ticket, TicketEvolution } from '$lib/api';
 	import { currentUser, isAdmin, isCS } from '$lib/stores/auth';
 	import { TICKET } from '$lib/entites/ticket';
@@ -175,6 +176,7 @@
 		encadre={false}
 		on:change={() => gestes.filChange(ticket)}
 	/>
+	<MentionConservation {ticket} />
 	<RubriqueEtape
 		titre="La demande"
 		icone="inbox"

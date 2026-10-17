@@ -48,6 +48,11 @@ class FluxSante(BaseModel):
 class FluxResponse(BaseModel):
     items: list[FluxItem] = []
     sante: FluxSante = FluxSante()
+    #: 🔴 Le délai d'archivage du site, en jours (#2060) : ce qui sépare « récent »
+    #: d'« plus ancien » à l'accueil. L'écran le lisait dans la configuration
+    #: publique, où la clé n'est pas — il restait à 30 jours quel que soit le
+    #: réglage. Envoyé avec le fil, aux seuls connectés.
+    delai_recent_jours: int
 
 
 class EpinglesCompte(BaseModel):

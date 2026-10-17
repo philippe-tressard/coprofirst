@@ -114,7 +114,9 @@ _PUBLICS_ASSUMES = {
     # Coquille d'interface et pages légales, filtrées par LISTE BLANCHE
     # (cf. `_PUBLIC_KEYS` dans routers/config.py) — vérifié plus bas.
     ("config.py", "get_config"),
-    ("config.py", "get_legal_config"),
+    #  Les pages légales, lisibles sans compte (LCEN) : le texte rendu de la
+    #  copropriété servie ; leur source et leur relecture restent à l'admin (#2065).
+    ("textes_legaux.py", "textes_publics"),
     #  Le logo de la résidence (#1728) : il s'affiche AVANT toute connexion —
     #  écran de connexion, onglet du navigateur, icône de l'application
     #  installée, courriels. Une image, aucune donnée de résident, des tailles
@@ -168,6 +170,8 @@ _AUTHENTIFIES_PAR_CLE = {
     #  La version cible du bail, que suit la mise à jour nocturne d'une réplique
     #  (R5 #1881) : un état et une version, rien de la copropriété.
     ("rapports_scripts.py", "maintenance_bail"),
+    #  L'accusé de copie des archives d'affaires (#2014) : des noms et des empreintes.
+    ("rapports_scripts.py", "maintenance_archives_affaires_copiees"),
 }
 
 #: Le nom de la porte. Il est lu, pas supposé : le module d'authentification par

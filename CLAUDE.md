@@ -435,8 +435,12 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   `utils/reglages` (par onglet, familles lues sur leurs registres) ; une clé
   inconnue, réservée au serveur (`llm_<usage>_reference`) ou qui a sa route
   dédiée est refusée, et la requête n'écrit rien (#2055). Une clé neuve d'un
-  écran s'y ajoute. 🔒 `test_reglages_liste_blanche.py` lit aussi les charges
-  du front : un écran qui enverrait une clé non déclarée échoue en CI.
+  écran s'y ajoute. **Une clé n'appartient qu'à UN onglet, et un bouton
+  n'enregistre que son onglet** (#2057) : le paramétrage du site s'écrit section
+  par section (`configSite.ECRIVAINS`). Le nom de la résidence n'a qu'une source,
+  `site_nom`, saisie dans la Fiche copropriété (#2056). 🔒
+  `test_reglages_liste_blanche.py` lit aussi les charges du front : une clé non
+  déclarée, ou une charge qui écrit deux onglets, échoue en CI.
 - **Un jeton se stocke par son empreinte, jamais en clair** — rafraîchissement,
   mot de passe oublié, vérification d'adresse : `auth/empreinte_jeton.empreinte`
   (HMAC avec `SECRET_KEY`) à l'écriture ET à la recherche ; le brut ne vit que

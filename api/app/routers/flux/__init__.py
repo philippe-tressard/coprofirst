@@ -76,6 +76,7 @@ from sqlmodel import Session, select
 from app.auth.deps import get_current_user, require_admin
 from app.database import get_session
 from app.models.core import FluxMasque, Utilisateur
+from app.utils.archivage import seuil_archivage_jours
 
 from . import (
     annuaire,
@@ -149,7 +150,11 @@ def get_flux(
 
     items.sort(key=lambda x: x.date, reverse=True)
 
-    return FluxResponse(items=items, sante=sante.calculer(ctx))
+    return FluxResponse(
+        items=items,
+        sante=sante.calculer(ctx),
+        delai_recent_jours=seuil_archivage_jours(session),
+    )
 
 
 @router.delete("/{item_id}", status_code=204)

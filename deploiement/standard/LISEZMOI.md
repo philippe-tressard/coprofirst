@@ -67,6 +67,11 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
    par le SMTP de l'installation (`MAIL_*`, `MAIL_ENABLED=true`), depuis
    `MAIL_FROM_PLATEFORME` : sans eux, elles
    ne sont que journalisées.
+   `OPERATEUR_NOM`, `OPERATEUR_ADRESSE`, `OPERATEUR_CONTACT`, `HEBERGEUR` et
+   `HEBERGEUR_PAYS` sont nommés par les **textes légaux de chaque copropriété** :
+   l'opérateur y est le sous-traitant du syndicat (RGPD art. 28 — modèle de
+   contrat : `docs/contrat-sous-traitance-modele.md`). Vides, ces pages disent
+   « À RENSEIGNER », et l'onglet *Pages légales* de chaque copropriété le signale.
    Une fois l'installation démarrée, l'**opérateur** l'inscrit au registre de la
    référence dans *Administration › Maintenance › Inscription au registre*
    (contact de l'administrateur, conditions à accepter) ; la clé et l'état

@@ -222,6 +222,9 @@ class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant):
     #  🔁 Le suivi d'une actualité : `None` (sans suivi), « ouvert », « résolu »
     #  ou « annulé » — un état, donc relu (`utils/suivi_actualite`).
     suivi_actualite: Optional[str] = None
+    #  🗄️ Conservée (#2014) : le jour où, échue, l'affaire a perdu ses pièces jointes
+    #  (archivées hors ligne) et ses auteurs. L'écran le dit en bandeau.
+    conservee_le: Optional[datetime] = None
     #  Section « Quand » (#1092) — RELUE depuis le 23/09/2026 : acceptée en
     #  entrée depuis la 0200, elle n'était jamais rendue. Le calendrier et le
     #  filtre « Événement » n'avaient rien à lire, et une édition l'effaçait.

@@ -2,7 +2,7 @@
  *  **Admin : les files de « À traiter » n'attendent pas le paramétrage (#1842).**
  *
  *  L'onglet par défaut de l'administration lisait, EN SÉRIE, la configuration
- *  de la coquille, `/config/admin` puis `/config/legal` — trois lectures qui ne
+ *  de la coquille, `/config/admin` puis `/config/textes-legaux` — trois lectures qui ne
  *  servent qu'aux onglets de réglage — avant de demander ses propres listes :
  *  +225 ms à chaque ouverture. Ce test RETIENT les deux lectures de paramétrage
  *  et vérifie que les files s'affichent quand même.
@@ -20,7 +20,7 @@ const COMMANDES = [
 	{ id: 1, user_id: 7, type: 'badge', lot_id: 12, cree_le: '2026-10-11T10:00:00' },
 ];
 
-/** Retient `/config/admin` et `/config/legal` jusqu'à `relacher()`. */
+/** Retient `/config/admin` et `/config/textes-legaux` jusqu'à `relacher()`. */
 async function retenirParametrage(page: Page) {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;
@@ -29,10 +29,15 @@ async function retenirParametrage(page: Page) {
 	});
 	return retenirApi(
 		page,
-		(chemin) => chemin === '/api/config/admin' || chemin === '/api/config/legal',
+		(chemin) => chemin === '/api/config/admin' || chemin === '/api/config/textes-legaux',
 		(chemin) =>
-			chemin.endsWith('/legal')
-				? { mentions_legales: '<p>Mentions lues</p>' }
+			chemin.endsWith('/textes-legaux')
+				? {
+						textes: { mentions_legales: '<p>Mentions lues</p>', politique_confidentialite: '' },
+						champs: [],
+						contact: '',
+						etat: { a_relire: false, textes: [] },
+					}
 				: { site_nom: 'Résidence témoin' },
 	);
 }

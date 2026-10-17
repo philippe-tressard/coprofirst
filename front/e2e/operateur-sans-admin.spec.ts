@@ -26,7 +26,7 @@ const RESERVEES_ADMIN = [
 	'/api/admin/comptes-en-attente/enrichis',
 	'/api/admin/utilisateurs',
 	'/api/config/admin',
-	'/api/config/legal',
+	'/api/config/textes-legaux',
 	'/api/config/llm-consommation',
 	'/api/admin/export-copropriete/dernier',
 ];

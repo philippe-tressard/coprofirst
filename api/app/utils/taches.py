@@ -88,6 +88,10 @@ TACHES_PERMANENTES: dict[str, str] = {
     "conditions d'inscription (§4) redeviennent fictives",
     "canaux_registre": "l'avancée du canal `replica` dans le registre (#1881) — les baux "
     "portent alors une version cible figée, et aucune réplique ne reçoit la version promue",
+    "conservation_affaires": "l'archivage, à leur échéance, des pièces jointes des affaires "
+    "closes et le détachement de leurs auteurs (#2014), puis le retrait du serveur des "
+    "archives copiées sur le PC depuis 30 jours — les durées de conservation redeviennent "
+    "fictives, et les archives s'accumulent sur les deux nœuds",
 }
 
 

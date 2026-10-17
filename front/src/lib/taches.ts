@@ -30,6 +30,7 @@ export const LIBELLE_TACHE: Record<string, string> = {
 	export_hors_site: 'Copie hors site (manuelle)',
 	mise_a_jour: 'Mise à jour de la version',
 	remise_a_zero_demo: 'Remise à zéro de la démo',
+	conservation_affaires: 'Conservation des affaires',
 };
 
 //  Libellé du BOUTON qui lance une tâche à la main — quand il diffère du nom de

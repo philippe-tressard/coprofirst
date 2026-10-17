@@ -86,6 +86,7 @@ from app.installation_commune import routeur as aiguillage  # l'hôte commun (#1
 from app.routers import courriels_affaires
 from app.routers import partage
 from app.routers import assistant, config_llm, config_logo, config_services, reglement
+from app.routers import textes_legaux
 from app.routers import suivi_affaires
 from app.routers import points_conseil, points_conseil_validation
 from app.seed import seed
@@ -298,6 +299,10 @@ async def lifespan(app: FastAPI):
         id="purge_comptes_inactifs",
     )
 
+    from app.utils.conservation_application import enregistrer as _conservation_affaires
+
+    _conservation_affaires(scheduler)  # 04:45, après la purge des comptes (#2014)
+
     #  🔴 Ce qui tourne VRAIMENT est comparé à ce qui est déclaré (#1047). Un
     #  `add_job` supprimé par mégarde — refactor, fusion, condition mal placée —
     #  laissait jusqu'ici l'application démarrer normalement : la sauvegarde ne se
@@ -433,6 +438,7 @@ app.include_router(config.router)
 app.include_router(config_llm.router)
 app.include_router(config_services.router)
 app.include_router(config_logo.router)
+app.include_router(textes_legaux.router)
 app.include_router(diagnostics.router)
 app.include_router(regles_residence.router)
 app.include_router(delegations.router)

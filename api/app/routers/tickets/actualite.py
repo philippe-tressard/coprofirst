@@ -115,7 +115,7 @@ def _historique(session: Session, ticket: Ticket, *, sauf_derniere: bool) -> lis
         auteur = ou_rien(session, Utilisateur, e.auteur_id)
         lignes.append(
             {
-                "auteur_nom": nom_auteur(auteur),
+                "auteur_nom": nom_auteur(auteur, e.auteur_qualite),
                 "date": _fmt_paris(e.cree_le),
                 "contenu": e.contenu,
             }

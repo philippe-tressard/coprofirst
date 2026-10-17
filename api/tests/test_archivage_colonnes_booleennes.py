@@ -60,14 +60,16 @@ REFERENTIELS = {
     ),
     ("ModeleEmail", "actif"): (
         "référentiel : un modèle de courriel désactivé — l'envoi correspondant est coupé, "
-        "ce n'est pas un objet qu'on archive"
+        "ce n'est pas un objet qu'on archive ; sans effet sur un modèle non "
+        "désactivable (#2054)"
     ),
     ("Perimetre", "actif"): (
         "référentiel : un nœud de l'arbre des périmètres retiré des choix ; "
         "le contenu qui le cite garde son code"
     ),
     ("ConfigSauvegarde", "active"): (
-        "interrupteur de la sauvegarde planifiée : une configuration, pas un objet"
+        "ancien interrupteur de la sauvegarde planifiée, plus lu depuis #2060 (la "
+        "sauvegarde ne se coupe plus) : la colonne attend son retrait en second temps"
     ),
 }
 

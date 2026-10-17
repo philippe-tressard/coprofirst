@@ -80,9 +80,10 @@ def perimetres_de(obj) -> list[str]:
 # ── Résumés, auteurs, marqueurs ──────────────────────────────────────────────
 
 
-def auteur_nom(session: Session, uid: Optional[int]) -> str:
-    #  Sans compte (supprimé, #1688/#1821) : « Ancien résident », jamais rien.
-    return nom_auteur(session.get(Utilisateur, uid) if uid else None)
+def auteur_nom(session: Session, uid: Optional[int], qualite: Optional[str] = None) -> str:
+    #  Sans compte (supprimé, #1688/#1821) : « Ancien résident », jamais rien ;
+    #  détaché d'une affaire conservée (#2014) : sa qualité.
+    return nom_auteur(session.get(Utilisateur, uid) if uid else None, qualite)
 
 
 def strip_html(text: Optional[str], max_len: int = 120) -> Optional[str]:

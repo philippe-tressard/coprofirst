@@ -218,3 +218,30 @@ jours_manquants() { # $1=jours_a_couvrir $2=date_du_jour(AAAAMMJJ) puis noms sur
   done
   echo "${manquants# }"
 }
+
+# ── Les archives d'affaires échues (#2014, lot L3) ──────────────────────────
+# L'API range dans le volume des FICHIERS (`prive/archives-affaires/`) une archive
+# par exercice et par type d'affaires échues. Le poste les tire TOUTES et n'en
+# efface aucune : c'est l'archive hors ligne de la conservation (§6 de
+# `specs/architecture/conservation-affaires.md`). Le serveur retire sa copie
+# 30 jours après l'accusé que ce script lui envoie.
+DOSSIER_AFFAIRES="prive/archives-affaires"
+
+# PURE. La liste blanche du nom — la même que l'API (`conservation_archive.MOTIF_NOM`) :
+# il vient d'une machine distante et repart dans une commande.
+nom_archive_affaires_valide() { # $1 = nom candidat → 0 si acceptable
+  [[ "${1:-}" =~ ^affaires-[a-z0-9]+(-[a-z0-9]+)*\.zip$ ]]
+}
+
+# PURE. La charge de l'accusé : `{"copies":{"<nom>":"<empreinte>",…}}`, à partir de
+# lignes « nom empreinte » sur l'entrée standard. Un nom hors liste blanche ou une
+# empreinte qui n'est pas un SHA-256 n'y entre pas — rien d'autre ne l'échappe.
+charge_accuse_affaires() {
+  local nom sha corps=""
+  while read -r nom sha; do
+    nom_archive_affaires_valide "$nom" || continue
+    [[ "$sha" =~ ^[0-9a-f]{64}$ ]] || continue
+    corps="$corps${corps:+,}\"$nom\":\"$sha\""
+  done
+  printf '{"copies":{%s}}' "$corps"
+}
