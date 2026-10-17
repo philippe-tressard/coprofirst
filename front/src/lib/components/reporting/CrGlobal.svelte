@@ -47,12 +47,13 @@
 	{#each groupes as g (g.nature)}
 		<p class="presents">
 			<span class="groupe">{g.libelle} :</span>
+			<!--  L'espace de tête vit DANS l'expression : un blanc en tête de balise se
+			      perd au formatage, et « Paul Bernard(Gestionnaire) » se lisait collé
+			      (17/10/2026). -->
 			{#each g.presents as p, i (p.id)}{i ? ' · ' : ''}{nomPresent(p)}{#if precisionPresent(p)}<span
-						class="precision"
-					>
-						({precisionPresent(p)})</span
-					>{/if}{#if p.telephone || p.email}<span class="precision">
-						— {[p.telephone, p.email].filter(Boolean).join(', ')}</span
+						class="precision">{` (${precisionPresent(p)})`}</span
+					>{/if}{#if p.telephone || p.email}<span class="precision"
+						>{` — ${[p.telephone, p.email].filter(Boolean).join(', ')}`}</span
 					>{/if}{/each}
 		</p>
 	{:else}

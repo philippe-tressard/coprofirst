@@ -176,4 +176,6 @@ test('ouvrir un point, puis saisir le compte rendu d’une affaire', async ({ pa
 	const global = page.getByRole('region', { name: 'Compte rendu du point' });
 	await expect(global).toContainText('Les affaires abordées · 1');
 	await expect(global).toContainText('Le syndic relance l’entreprise.');
+	//  L'espace avant la précision d'un présent (v2.174.1) : « Durand(Étanchéité… » se lisait collé.
+	await expect(global).toContainText('Jean Durand (Étanchéité Sud)');
 });
