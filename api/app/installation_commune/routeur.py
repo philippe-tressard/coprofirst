@@ -20,7 +20,10 @@ Ce qu'elles garantissent (règles 2, 5 et 6) :
 - tout échec — alias inconnu, copropriété suspendue, saisie malformée, corps
   illisible — reçoit la MÊME réponse (`ECHEC`) ;
 - une installation propre à une copropriété répond 404 partout, comme à une route
-  inconnue : ni aiguillage, ni adresse dérivée.
+  inconnue : ni aiguillage, ni adresse dérivée — SAUF la question de l'écran de
+  connexion (`GET`), qui rend `{"hote_commun": false}` : l'écran la pose à chaque
+  visite, et un 404 à chaque chargement salissait les journaux et la télémétrie des
+  erreurs de la référence (constat de production du 18/10/2026).
 """
 
 from __future__ import annotations
@@ -82,7 +85,13 @@ def alias_demande(corps: bytes) -> str | None:
 
 @router.get("")
 def hote_commun(request: Request) -> dict[str, bool]:
-    _sur_l_hote_commun(request)
+    """L'écran de connexion est-il celui de l'hôte commun ? Une réponse, jamais une erreur :
+    `false` ailleurs — sous l'adresse d'une copropriété comme sur une installation propre.
+    Elle ne dit rien de plus que l'hôte que le visiteur a lui-même demandé."""
+    try:
+        _sur_l_hote_commun(request)
+    except HTTPException:
+        return {"hote_commun": False}
     return {"hote_commun": True}
 
 

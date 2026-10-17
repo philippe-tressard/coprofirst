@@ -23,9 +23,13 @@
 	let echec = '';
 
 	onMount(async () => {
+		let commun = false;
 		try {
-			await aiguillage.etat();
+			commun = (await aiguillage.etat()).hote_commun === true;
 		} catch {
+			commun = false;
+		}
+		if (!commun) {
 			goto(CHEMIN_CONNEXION, { replaceState: true });
 			return;
 		}

@@ -78,7 +78,7 @@ test('ailleurs que sur l’hôte commun, la connexion reste celle de la copropri
 	await simulerApi(page);
 	await page.route(
 		(url) => url.pathname === '/api/plateforme/aiguillage',
-		(route) => route.fulfill({ status: 404, json: { detail: 'Not Found' } }),
+		(route) => route.fulfill({ json: { hote_commun: false } }),
 	);
 	await page.goto('/auth/connexion');
 	await attendreHydratation(page);

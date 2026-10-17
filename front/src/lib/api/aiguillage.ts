@@ -5,7 +5,8 @@
  * renvoie le navigateur à son adresse.
  *
  * Ailleurs — sous l'adresse d'une copropriété, ou sur une installation propre à
- * une copropriété —, ces routes répondent 404 : l'écran de connexion reste le sien.
+ * une copropriété —, `etat` répond `{ hote_commun: false }` (jamais une erreur :
+ * l'écran de connexion le demande à chaque visite) et `aller` répond 404.
  */
 
 import { api } from './client';
@@ -14,7 +15,7 @@ import { api } from './client';
 export type DemandeAiguillage = { code_postal: string; nom: string } | { alias: string };
 
 export const aiguillage = {
-	/** `{ hote_commun: true }` sur l'hôte commun ; 404 partout ailleurs. */
+	/** `{ hote_commun: true }` sur l'hôte commun ; `false` partout ailleurs. */
 	etat: () => api.get<{ hote_commun: boolean }>('/plateforme/aiguillage'),
 	/** L'adresse de la copropriété ; 404 (toujours le même message) si aucune ne correspond. */
 	aller: (demande: DemandeAiguillage) =>

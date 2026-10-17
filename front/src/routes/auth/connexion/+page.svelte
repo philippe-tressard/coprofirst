@@ -15,7 +15,8 @@
 
 	//  L'hôte COMMUN d'une installation à plusieurs copropriétés (#1894) : l'écran
 	//  demande d'abord laquelle, puis y renvoie. Partout ailleurs la route répond
-	//  404, et le formulaire reste celui de la copropriété — un échec le laisse aussi.
+	//  `hote_commun: false`, et le formulaire reste celui de la copropriété — un
+	//  échec le laisse aussi.
 	let hoteCommun = false;
 
 	onMount(async () => {
