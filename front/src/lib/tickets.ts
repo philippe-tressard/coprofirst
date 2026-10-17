@@ -201,20 +201,6 @@ export function statutTicketLabel(statut: string | undefined | null): string {
 }
 
 /**
- * Le périmètre d'un ticket tel qu'on l'affiche : le bâtiment de son auteur, à
- * défaut le bâtiment ciblé, à défaut la résidence entière.
- *
- * L'ordre compte — un ticket saisi par un résident du bâtiment 2 concerne le
- * bâtiment 2, même quand il ne cible aucun bâtiment en particulier.
- */
-export function ticketScope(t: {
-	auteur_batiment_nom?: string | null;
-	batiment_id?: number | null;
-}): string {
-	return t.auteur_batiment_nom ?? (t.batiment_id ? `Bât. ${t.batiment_id}` : 'Résidence');
-}
-
-/**
  * Au nom de qui le conseil syndical ouvre un ticket.
  *
  * Le type vivait dans `FormulaireTicket.svelte`, d'où il n'était pas importable :

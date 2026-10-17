@@ -1,5 +1,5 @@
 <!--
-  L'onglet **Reporting** de l'espace CS : la barre des six vues, le chargement
+  L'onglet **Reporting** de l'espace CS : la barre des trois vues, le chargement
   commun de leurs données, et l'impression.
 
   POURQUOI CE COMPOSANT (#453). `espace-cs/+page.svelte` faisait 3 262 lignes et
@@ -13,13 +13,12 @@
   l'autre. Ce qui est partagé monte d'un cran — les types et les calculs dans
   `$lib/reporting.ts`, le vocabulaire de style dans `app.css`.
 
-  🔴 **Les tickets sont chargés ICI depuis le 28/08/2026.** Ils arrivaient en
-  prop de la page, avec cette raison : « l'onglet Tickets et l'analyse du
-  reporting lisent la MÊME liste ». L'onglet « Tickets résidence » a été retiré
-  (redondant avec `/tickets`), et sa disparition emporte la prémisse : il ne
-  reste qu'un consommateur, et la page n'a plus aucune raison de tenir une liste
-  qu'elle n'affiche pas. Un passe-plat gardé après la mort de son motif se lit
-  comme une contrainte encore vraie.
+  🔴 **Plus aucune liste d'affaires n'est chargée ici depuis le 17/10/2026.** Elle
+  servait la seule vue « Analyse des affaires » (volume, urgences, répartitions
+  par catégorie et par bâtiment sur 30 jours, 90 jours ou 12 mois), retirée parce
+  que le Suivi des affaires porte désormais ces répartitions, croisées. Charger
+  la liste de toutes les affaires pour une vue absente coûterait une requête à
+  chaque ouverture du Reporting, pour rien.
 
   ⚠️ La classe `print-reporting` posée sur <body> est une mutation d'état global
   (`standards/11` §12) : elle est posée ET retirée ici, sur le cycle de vie de ce
@@ -32,12 +31,7 @@
 	import Pastille from '$lib/components/Pastille.svelte';
 	import { TICKET } from '$lib/entites/ticket';
 	import { onMount, onDestroy, tick } from 'svelte';
-	import {
-		prestataires as prestApi,
-		diagnostics as diagnosticsApi,
-		tickets as ticketsApi,
-		type Ticket,
-	} from '$lib/api';
+	import { prestataires as prestApi, diagnostics as diagnosticsApi } from '$lib/api';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { fmtDatetime } from '$lib/date';
 	import {
@@ -50,7 +44,6 @@
 		type DiagType,
 	} from '$lib/reporting';
 	import VueSuiviAffaires from './VueSuiviAffaires.svelte';
-	import VueTickets from './VueTickets.svelte';
 	import VuePrestataires from './VuePrestataires.svelte';
 	import VueRenouvellements from './VueRenouvellements.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
@@ -60,7 +53,6 @@
 	/** Vue demandée par l'URL (`?vue=…`), à l'arrivée depuis le tableau de bord. */
 	export let vueInitiale: string | null = null;
 
-	let tickets: Ticket[] = [];
 	let reportView: ReportVue = 'affaires';
 	let reportingLoading = false;
 	let reportingLoaded = false;
@@ -147,7 +139,6 @@
 	function printCurrentReporting() {
 		const titles: Record<ReportVue, string> = {
 			affaires: 'Reporting CS — Suivi des affaires',
-			tickets: 'Reporting CS — Analyse tickets',
 			prestataires: 'Reporting CS — Synthèse prestataires',
 			renouvellements: 'Reporting CS — Renouvellement contrats & audits',
 		};
@@ -167,14 +158,12 @@
 		if (reportingLoaded && !force) return;
 		reportingLoading = true;
 		try {
-			const [ticketsList, prestataires, contrats, diagTypes, notations] = await Promise.all([
-				ticketsApi.list(),
+			const [prestataires, contrats, diagTypes, notations] = await Promise.all([
 				prestApi.list(),
 				prestApi.contrats(),
 				diagnosticsApi.listTypes(),
 				prestApi.notations(),
 			]);
-			tickets = ticketsList;
 			reportPrestataires = prestataires as ReportPrestataire[];
 			reportContrats = contrats as ReportContrat[];
 			reportDiagTypes = diagTypes as DiagType[];
@@ -232,9 +221,6 @@
 			<Pastille active={reportView === 'affaires'} on:click={() => (reportView = 'affaires')}>
 				&#x1F4CC; Suivi des affaires
 			</Pastille>
-			<Pastille active={reportView === 'tickets'} on:click={() => (reportView = 'tickets')}>
-				&#x1F4CA; Analyse des affaires
-			</Pastille>
 			<Pastille
 				active={reportView === 'prestataires'}
 				on:click={() => (reportView = 'prestataires')}
@@ -282,8 +268,6 @@
 			bind:estVide={autonomeVide}
 			bind:mode={modeSuivi}
 		/>
-	{:else if reportView === 'tickets'}
-		<VueTickets {tickets} />
 	{:else if reportView === 'prestataires'}
 		<VuePrestataires {reportPrestataires} />
 	{:else if reportView === 'renouvellements'}

@@ -73,7 +73,9 @@ export const REPORT_VUES = [
 	//  « Suivi des affaires » — `kanban` jusqu'au 16/10/2026 : un ancien
 	//  `?vue=kanban` retombe sans bruit sur cette vue, la première.
 	'affaires',
-	'tickets',
+	//  « Analyse des affaires » (`tickets`) a quitté la barre le 17/10/2026 :
+	//  redondante avec les répartitions du Suivi des affaires. Un ancien
+	//  `?vue=tickets` retombe sans bruit sur la première vue.
 	'prestataires',
 	'renouvellements',
 	//  « Entretien périodique » a quitté la barre le 17/10/2026 (#2043) : c'est
