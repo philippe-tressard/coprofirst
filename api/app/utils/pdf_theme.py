@@ -147,6 +147,30 @@ def logo_html(logo_png: bytes | None, size: int = 36) -> str:
     )
 
 
+# ── L'en-tête d'un rapport du conseil ────────────────────────────────────────
+
+#: L'en-tête d'un RAPPORT du Reporting CS — la marque de la résidence à gauche,
+#: une mention à droite (« Édité le », « Validé le »), un filet — et son titre.
+#: Le Suivi des affaires et le compte rendu d'un point CS / Syndic (#2042) le
+#: recopiaient à l'identique : il s'écrit ici, avec `entete_rapport`.
+CSS_ENTETE_RAPPORT = """.entete { display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 2px solid var(--navy); padding-bottom: 6pt; margin-bottom: 10pt; }
+.marque { display: flex; align-items: center; gap: 8pt; font-weight: 700; color: var(--navy); }
+.edite { color: var(--muted); font-size: 8.5pt; }
+h1 { color: var(--navy); font-size: 15pt; margin: 0 0 8pt; }
+"""
+
+
+def entete_rapport(logo_png: bytes | None, site_nom: str, mention: str) -> str:
+    """L'en-tête d'un rapport : la marque, et `mention` à droite (texte, échappé ici)."""
+    from html import escape
+
+    return (
+        f'<div class="entete"><span class="marque">{logo_html(logo_png, 28)}{escape(site_nom)}'
+        f'</span><span class="edite">{escape(mention)}</span></div>'
+    )
+
+
 # ── Icônes ───────────────────────────────────────────────────────────────────
 
 #: Catalogue des tracés, **copie octet pour octet** de `front/src/lib/icones-svg.json`.

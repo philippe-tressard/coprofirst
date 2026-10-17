@@ -265,4 +265,35 @@ MODELES = [
         + "{% endif %}",
         True,
     ),
+    #  Le compte rendu d'un point CS / Syndic à valider (#2042) : envoyé à chaque
+    #  présent joignable du conseil et du syndic, jamais à un invité, avec SON
+    #  lien. Ouvrir le lien ne valide rien (`standards/03` §5 bis) : la page
+    #  montre le CR, et seul « Je valide » valide. Les textes arrivent ÉCHAPPÉS
+    #  (`points_conseil_validation._contexte_courriel`) ; un CR « Conseil seul »
+    #  n'y figure pas.
+    (
+        "point_conseil_validation",
+        "Compte rendu d’un point CS / Syndic à valider",
+        "{{ prefixe_copro }}Compte rendu du point CS / Syndic du {{ point.date }} — à valider",
+        titre("📝 Compte rendu à valider")
+        + '<p style="margin:0 0 16px">Voici le compte rendu du point entre le conseil syndical '
+        "et le syndic auquel vous avez participé. Relisez-le, puis validez-le — ou envoyez un "
+        "commentaire si quelque chose est à corriger.</p>"
+        + encart(
+            f'<p style="margin:0 0 4px;font-size:13px;color:{GRIS}">{{{{ point.date }}}} · {{{{ point.lieu }}}}</p>'
+            f'<p style="margin:0;font-size:14px;color:{TEXTE}">Présents : {{{{ point.presents }}}}</p>'
+        )
+        + "{% for a in affaires %}"
+        + f'<p style="margin:0 0 4px;font-weight:700;color:{BLEU}">{{{{ a.numero }}}} · {{{{ a.titre }}}}</p>'
+        + f'<p style="margin:0 0 14px;color:{TEXTE}">{{{{ a.texte }}}}</p>'
+        + "{% endfor %}"
+        + "{% if non_traitees %}"
+        + f'<p style="margin:0 0 20px;font-size:13px;color:{GRIS}">Non traitées : {{{{ non_traitees }}}}</p>'
+        + "{% endif %}"
+        + bouton("{{ app.url }}/point-cs/{{ jeton }}", "Je valide ou je commente", marge="0 0 16px")
+        + f'<p style="margin:0;font-size:13px;color:{GRIS}">Sans réponse de votre part, le compte '
+        "rendu sera validé automatiquement le <strong>{{ echeance }}</strong>. Ce lien vous est "
+        "personnel.</p>",
+        True,
+    ),
 ]

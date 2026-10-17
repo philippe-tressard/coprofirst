@@ -68,10 +68,11 @@
 	/** Le point CS / Syndic du mode, et l'affaire dont le CR est en saisie. */
 	let compteRendu: CompteRenduPoint | null = null;
 	let crOuvert: number | null = null;
-	$: crs =
-		compteRendu?.point.etat === 'en_cours'
-			? new Map<number, CrAffaire>(compteRendu.abordees.map((a) => [a.affaire.id, a.cr]))
-			: null;
+	//  Les CR du point, quel que soit son état : terminé, un CR saisi se corrige
+	//  encore (#2042) ; seul un point en cours en accepte un nouveau (`ajout`).
+	$: crs = compteRendu
+		? new Map<number, CrAffaire>(compteRendu.abordees.map((a) => [a.affaire.id, a.cr]))
+		: null;
 
 	/** Lu par la barre d'outils du parent — ne pas écrire depuis l'extérieur. */
 	export let chargement = false;
@@ -202,13 +203,19 @@
 	{:else}
 		<PointConseil mode="affaires" bind:compteRendu />
 		<div class="report-card">
-			<TableauAffaires affaires={suivi.affaires} {crs} bind:ouverte={crOuvert}>
+			<TableauAffaires
+				affaires={suivi.affaires}
+				{crs}
+				ajout={compteRendu?.point.etat === 'en_cours'}
+				bind:ouverte={crOuvert}
+			>
 				<svelte:fragment slot="saisie" let:affaire let:cr>
 					{#if compteRendu}
 						<SaisieCrAffaire
 							pointId={compteRendu.point.id}
 							{affaire}
 							{cr}
+							brouillonAuto={compteRendu.point.etat === 'en_cours'}
 							onCompteRendu={(nouveau) => (compteRendu = nouveau)}
 							onFerme={() => (crOuvert = null)}
 						/>

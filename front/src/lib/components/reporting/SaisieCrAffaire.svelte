@@ -34,6 +34,9 @@
 	export let cr: CrAffaire | undefined;
 	export let onCompteRendu: (cr: CompteRenduPoint) => void;
 	export let onFerme: () => void;
+	/**  Fermer sans geste enregistre-t-il en brouillon ? Pendant le point
+	 *   seulement : terminé, un CR se corrige et s'enregistre, ou rien (#2042). */
+	export let brouillonAuto = true;
 
 	const depart = { contenu: cr?.contenu ?? '', conseilSeul: cr?.conseil_seul ?? false };
 	let contenu = depart.contenu;
@@ -75,7 +78,7 @@
 	//  saisie part en brouillon. Le composant est déjà démonté ; l'écran reçoit
 	//  le compte rendu à jour par `onCompteRendu`.
 	onDestroy(() => {
-		if (regle || !modifie) return;
+		if (regle || !modifie || !brouillonAuto) return;
 		ecrire(true).catch((e) => toast('error', messageErreur(e, 'Brouillon non enregistré')));
 	});
 </script>
@@ -83,7 +86,6 @@
 <form class="saisie-cr" on:submit|preventDefault={sauvegarder}>
 	<SectionDescription
 		premiere
-		pliable={false}
 		idPrefixe="cr-{affaire.id}"
 		idChamp="contenu"
 		titre="Compte rendu"

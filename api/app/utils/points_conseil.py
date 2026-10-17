@@ -49,7 +49,8 @@ from app.models.points_conseil import (
 )
 from app.models.tickets import Ticket
 from app.utils import horloge
-from app.utils.recuperer import ou_404
+from app.utils.recuperer import ou_404, present_ou_404
+from app.utils.syndic import nom_du_syndic
 from app.utils.suivi_affaires.releve import Releve, releve
 
 #: Le relevé de chaque mode qui porte un point. Un mode neuf s'ajoute ICI.
@@ -134,13 +135,8 @@ def present_depuis_annuaire(
         prenom=m.prenom,
         nom=m.nom,
         fonction=m.fonction,
-        entreprise=_nom_syndic(session),
+        entreprise=nom_du_syndic(session) or None,
     )
-
-
-def _nom_syndic(session: Session) -> Optional[str]:
-    info = session.exec(select(SyndicInfo)).first()
-    return (info.nom_syndic or None) if info else None
 
 
 def remplacer_presents(session: Session, point: PointConseil, presents: list[PresentPoint]) -> None:
@@ -158,6 +154,11 @@ def presents_du_point(session: Session, point_id: int) -> list[PresentPoint]:
             select(PresentPoint).where(PresentPoint.point_id == point_id).order_by(PresentPoint.id)
         ).all()
     )
+
+
+def nom_present(p: PresentPoint) -> str:
+    """Le nom d'un présent : prénom et nom, sinon l'entreprise, sinon « Invité »."""
+    return " ".join(x for x in (p.prenom, p.nom) if x) or (p.entreprise or "Invité")
 
 
 def copie_des_presents(presents: list[PresentPoint]) -> list[PresentPoint]:
@@ -179,7 +180,7 @@ class LieuPropose:
 
 
 def lieux_proposes(session: Session) -> list[LieuPropose]:
-    """La résidence, le cabinet du syndic, puis les derniers lieux saisis.
+    """La copropriété, le cabinet du syndic, puis les derniers lieux saisis.
 
     Rien n'est demandé à un service extérieur : les adresses viennent de la
     fiche copropriété et de la fiche du syndic, déjà en base.
@@ -187,10 +188,12 @@ def lieux_proposes(session: Session) -> list[LieuPropose]:
     lieux: list[LieuPropose] = []
     copro = session.exec(select(Copropriete)).first()
     if copro and (copro.adresse or "").strip():
-        lieux.append(LieuPropose("Résidence", copro.adresse.strip()))
+        lieux.append(LieuPropose("Copropriété", copro.adresse.strip()))
     info = session.exec(select(SyndicInfo)).first()
     if info and (info.adresse or "").strip():
-        lieux.append(LieuPropose(info.nom_syndic or "Cabinet du syndic", info.adresse.strip()))
+        lieux.append(
+            LieuPropose(nom_du_syndic(session) or "Cabinet du syndic", info.adresse.strip())
+        )
     deja = {lieu.adresse for lieu in lieux}
     for lieu in _derniers_lieux(session):
         if lieu not in deja:
@@ -221,9 +224,21 @@ def exiger_affaire_du_point(
     session: Session, point: PointConseil, ticket_id: int, user: Utilisateur
 ) -> Ticket:
     """L'affaire, si le relevé du mode la montre à `user` — 404 sinon, sans rien dire de plus."""
-    if ticket_id not in {a.id for a in releve_du_point(session, point, user).affaires}:
-        raise HTTPException(404, "Affaire absente de ce rapport")
+    du_rapport = {a.id for a in releve_du_point(session, point, user).affaires}
+    present_ou_404(ticket_id if ticket_id in du_rapport else None, "Affaire absente de ce rapport")
     return ou_404(session, Ticket, ticket_id, "Affaire")
+
+
+def exiger_cr_modifiable(
+    point: PointConseil, cr: Optional[CompteRenduAffaire], contenu: str
+) -> Optional[CompteRenduAffaire]:
+    """Ce qu'on peut écrire : tout, tant que le point est en cours ; ensuite, la
+    CORRECTION d'un CR déjà saisi, jamais vidé — dans le rapport seulement (#2042)."""
+    if point.etat == EN_COURS:
+        return cr
+    if cr is None or not contenu.strip():
+        raise HTTPException(409, "Ce point est terminé : seuls ses comptes rendus se corrigent")
+    return cr
 
 
 def cr_de(session: Session, point_id: int, ticket_id: int) -> Optional[CompteRenduAffaire]:
@@ -269,8 +284,13 @@ def lire_non_traitees(point: PointConseil) -> list[AffaireCitee]:
     return [AffaireCitee(int(a["id"]), str(a["numero"]), str(a["titre"])) for a in lues]
 
 
-def compte_rendu(session: Session, point: PointConseil, user: Utilisateur) -> CrGlobal:
-    """Le CR global : le point, ses présents, les affaires abordées, les non traitées."""
+def compte_rendu(session: Session, point: PointConseil, user: Optional[Utilisateur]) -> CrGlobal:
+    """Le CR global : le point, ses présents, les affaires abordées, les non traitées.
+
+    `user` ne sert qu'à un point EN COURS — ses non traitées se lisent dans le
+    relevé de qui regarde. Terminé, le point les porte figées : le porteur d'un
+    lien de validation, qui n'a pas de compte, passe `None`.
+    """
     crs = {cr.ticket_id: cr for cr in crs_du_point(session, point.id)}
     tickets = (
         session.exec(
@@ -280,7 +300,7 @@ def compte_rendu(session: Session, point: PointConseil, user: Utilisateur) -> Cr
         else []
     )
     abordees = [(AffaireCitee(t.id, t.numero, t.titre), crs[t.id]) for t in tickets]
-    if point.etat == EN_COURS:
+    if point.etat == EN_COURS and user is not None:
         non_traitees = [
             AffaireCitee(a.id, a.numero, a.titre)
             for a in releve_du_point(session, point, user).affaires

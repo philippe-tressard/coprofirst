@@ -171,6 +171,9 @@ EMPLACEMENTS: dict[str, str] = {
     #  (`OngletReglement`, `cibleDuHash`). Le fil y mène (11/10/2026), et les
     #  fichiers que l'assistant lit y sont joints — sans ancre, `page_element`.
     "question-reglement": "/residence/reglement",
+    #  Le compte rendu validé d'un point CS / Syndic (#2042) : le fil y mène, et
+    #  le Reporting du conseil le montre (`PointConseil`, ancre `point-cs-N`).
+    "point-cs": "/espace-cs/reporting",
 }
 
 

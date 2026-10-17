@@ -84,6 +84,15 @@ const {
 		icone: 'heart-handshake',
 		abrege: 'ANN.',
 	}, //  17° orange
+	//  40° ambre — ajouté le 17/10/2026 (#2042) : le compte rendu validé d'un
+	//  point CS / Syndic, une entrée par point, lue du conseil et du syndic.
+	point_conseil: {
+		libelle: 'Point CS / Syndic',
+		couleur: '#92400E',
+		fond: '#FFFBEB',
+		icone: 'users',
+		abrege: 'CS/SYN.',
+	},
 	diagnostic: {
 		libelle: 'Diagnostic',
 		couleur: '#4D7C0F',

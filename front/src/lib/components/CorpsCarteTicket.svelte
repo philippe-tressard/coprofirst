@@ -25,6 +25,7 @@
 	import PanneauOptionsPublication from './PanneauOptionsPublication.svelte';
 	import FicheLecture from './FicheLecture.svelte';
 	import RubriqueEtape from './RubriqueEtape.svelte';
+	import ComptesRendusAffaire from './ComptesRendusAffaire.svelte';
 	import RubriqueHistorique from './RubriqueHistorique.svelte';
 	import SyntheseFil from './SyntheseFil.svelte';
 	import TransfertsVerses from './TransfertsVerses.svelte';
@@ -75,7 +76,7 @@
 
 	//  🔴 L'accordéon des trois rubriques (`$lib/accordeon`) : une ouverte, la
 	//  demande d'abord. Un identifiant, jamais un `Set`.
-	let ouverte: 'demande' | 'suite' | 'synthese' | null = 'demande';
+	let ouverte: 'demande' | 'suite' | 'comptes-rendus' | 'synthese' | null = 'demande';
 
 	//  Ce que dit une rubrique PLIÉE, sur une ligne. La demande : quand, et pour
 	//  qui quand le conseil l'a saisie (lui seul le lit, comme la mention dépliée).
@@ -267,6 +268,13 @@
 			</RubriqueHistorique>
 		</RubriqueEtape>
 	{/if}
+	<!--  Les comptes rendus VALIDÉS des points CS / Syndic (#2042, maquette B4) :
+	      entre la suite et la synthèse, et seulement s'il y en a. -->
+	<ComptesRendusAffaire
+		ticketId={ticket.id}
+		ouverte={ouverte === 'comptes-rendus'}
+		onBasculer={() => (ouverte = basculer(ouverte, 'comptes-rendus'))}
+	/>
 	<!--  🧾 La synthèse d'une affaire close (#1643) — la dernière étape. -->
 	<SyntheseFil
 		{ticket}

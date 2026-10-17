@@ -16,7 +16,14 @@ from __future__ import annotations
 from html import escape
 
 from app.utils.dates_fr import date_courte
-from app.utils.pdf_theme import FONT_SANS, PALETTE_CSS, html_to_pdf, logo_html, regle_page
+from app.utils.pdf_theme import (
+    CSS_ENTETE_RAPPORT,
+    FONT_SANS,
+    PALETTE_CSS,
+    entete_rapport,
+    html_to_pdf,
+    regle_page,
+)
 from app.utils.suivi_affaires.releve import Releve
 
 TITRE = "Suivi des affaires"
@@ -28,12 +35,7 @@ _CSS = f"""
 {PALETTE_CSS}
 {regle_page()}
 body {{ font-family: {FONT_SANS}; font-size: 9.5pt; color: var(--ink); margin: 0; }}
-.entete {{ display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 2px solid var(--navy); padding-bottom: 6pt; margin-bottom: 10pt; }}
-.marque {{ display: flex; align-items: center; gap: 8pt; font-weight: 700; color: var(--navy); }}
-.edite {{ color: var(--muted); font-size: 8.5pt; }}
-h1 {{ color: var(--navy); font-size: 15pt; margin: 0 0 8pt; }}
-.tete {{ display: flex; gap: 10pt; margin-bottom: 10pt; }}
+{CSS_ENTETE_RAPPORT}.tete {{ display: flex; gap: 10pt; margin-bottom: 10pt; }}
 .chiffres {{ display: flex; flex-direction: column; gap: 6pt; }}
 .chiffre {{ border: 1px solid var(--border); border-radius: 5pt; padding: 5pt 9pt; min-width: 90pt; }}
 .chiffre.fort {{ border-color: var(--navy); background: #eef2f7; }}
@@ -111,8 +113,7 @@ def html_rapport(r: Releve, *, site_nom: str, logo_png: bytes | None) -> str:
     return (
         f"<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>{TITRE}</title>"
         f"<style>{_CSS}</style></head><body>"
-        f'<div class="entete"><span class="marque">{logo_html(logo_png, 28)}{escape(site_nom)}</span>'
-        f'<span class="edite">Édité le {date_courte(r.jour)}</span></div>'
+        f"{entete_rapport(logo_png, site_nom, f'Édité le {date_courte(r.jour)}')}"
         f"<h1>{TITRE}</h1>"
         '<div class="tete"><div class="chiffres">'
         f'<div class="chiffre fort"><div class="v">{r.total}</div>'

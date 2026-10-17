@@ -94,6 +94,12 @@ _NIVEAUX: dict[str, int] = {
     "compte_purge_inactivite": logging.WARNING,
     "compte_purge_epargne": logging.WARNING,
     "compte_purge_fermeture": logging.WARNING,
+    #  Le compte rendu d'un point CS / Syndic validé (#2042) : par le lien d'un
+    #  présent (sans compte — le jeton seul l'identifie), par le conseil, ou
+    #  d'office au bout de 7 jours. Il rend des textes lisibles à l'affaire.
+    "cr_valide_par_lien": logging.INFO,
+    "cr_valide_force": logging.INFO,
+    "cr_valide_auto": logging.INFO,
 }
 
 
