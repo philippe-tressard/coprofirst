@@ -17,6 +17,7 @@
   l'assistant peut répondre (`disponible`) : rien de sa configuration ne sort.
 -->
 <script lang="ts">
+	import IconeIA from '$lib/components/IconeIA.svelte';
 	import { onMount } from 'svelte';
 	import CarteQuestionReglement from '$lib/components/CarteQuestionReglement.svelte';
 	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
@@ -205,7 +206,9 @@
 						type="submit"
 						class="btn btn-primary"
 						disabled={envoi || !question.trim() || !etat.disponible || !etat.texte_disponible}
-						>{envoi ? 'Lecture du règlement…' : 'Poser la question'}</button
+						aria-busy={envoi}
+						><IconeIA enCours={envoi} />
+						{envoi ? 'Lecture du règlement…' : 'Poser la question'}</button
 					>
 				</div>
 				{#if envoi}

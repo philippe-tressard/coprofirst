@@ -723,7 +723,12 @@ jobs:
             while IFS= read -r hit; do
               case "$hit" in
                 *"label=com.docker.compose.project"*) ;;
-                *) echo "::error file=$f::\`docker image prune\` sans --filter label=com.docker.compose.project — le daemon de rpi2 est partagé avec List-dons, un prune nu supprime aussi ses couches"; st=1 ;;
+                #  Les images TIRÉES de la CI (#1758) n'ont pas l'étiquette de
+                #  Compose : elles se reconnaissent à l'étiquette OCI que pose
+                #  images.yml, par la constante SOURCE_IMAGES de lib-images-ci.sh
+                #  — sa valeur est confrontée au workflow par test_images_publiees.py.
+                *'label=org.opencontainers.image.source=$SOURCE_IMAGES'*) ;;
+                *) echo "::error file=$f::\`docker image prune\` sans --filter label=com.docker.compose.project (ou l'étiquette de la CI, \$SOURCE_IMAGES) — le daemon de rpi2 est partagé avec List-dons, un prune nu supprime aussi ses couches"; st=1 ;;
               esac
             done < <(grep -nE '^[^#]*docker image prune' "$f")
             grep -qE '^[^#]*docker system prune' "$f" \
@@ -2296,6 +2301,14 @@ jobs:
       - name: Un bouton d'action se dessine au trait, jamais en emoji
         working-directory: front
         run: npm run lint:actions-au-trait
+
+      # ✨ PUIS ⏳ QUI CLIGNOTE (17/10/2026) — huit gestes lancaient l'assistant
+      # IA et disaient l'attente de cinq facons, dont aucune pour deux d'entre
+      # eux. Le dessin passe par `IconeIA` seul, le bouton porte `aria-busy`, et
+      # un bouton qui n'appelle pas l'assistant ne prend pas sa marque.
+      - name: Un geste IA se dessine par IconeIA (etincelle puis sablier qui clignote)
+        working-directory: front
+        run: npm run lint:geste-ia
 
       # 🔴 DIX FICHIERS ÉNUMÉRAIENT LE MÊME ENSEMBLE D'ÉTATS DEUX OU TROIS FOIS
       # (15/09/2026, #779) — un libellé ici, une pastille là, un abrégé plus bas.

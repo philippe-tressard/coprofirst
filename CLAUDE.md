@@ -209,10 +209,11 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   `test_etancheite_coproprietes.py` : deux bases aux identifiants identiques, aucune
   réponse servie pour l'une ne porte les données de l'autre (#1746).
 - Lire un objet ou rendre 404 : `utils/recuperer.ou_404(session, Modele, id,
-  "libellé")` — jamais `session.get` suivi d'un `raise HTTPException(404)`. Les
-  404 bruts qui restent sont un **plafond décroissant**, `PLAFOND_404_BRUTS` dans
-  `api/tests/test_recuperer_source_unique.py` — la valeur se lit là, et la carte
-  des plafonds est #1571 (#1047, qui le citait, est fermé). Le 404 d'un objet
+  "libellé")` — jamais `session.get` suivi d'un `raise HTTPException(404)`, ni
+  un alias qui fabrique l'exception. Les 404 écrits à la main qui restent se
+  **déclarent un par un**, avec leur raison, dans `EXCEPTIONS` de
+  `api/tests/test_recuperer_source_unique.py` — la liste se lit là ; elle a
+  remplacé le plafond, qui comptait sans nommer (#1571). Le 404 d'un objet
   qui doit porter son parent (`sous={"bail_id": …}`) passe aussi par lui.
   Les autres questions du même module : le **fichier absent du disque** —
   `fichier_ou_404(chemin, "PDF")` —, la **ligne unique** d'une table de réglage —
@@ -602,6 +603,9 @@ coupant. 🔴 **Les courriels de sécurité ne sont pas un service**
       10/10/2026 (#1819) : une liste en cartes prend `Gouttiere` (date, puis ce qui
       classe) et `ReglagesListe` (recherche en tête) — `ux-patterns` §3.
       `npm run lint:actions-au-trait`
+- [ ] Bouton qui LANCE l'assistant IA : `<IconeIA {enCours} />` — ✨ au repos, ⏳ qui
+      clignote pendant l'appel —, le bouton portant `aria-busy={enCours}`. ✨ ne se
+      dit que de l'IA (`ux-patterns`, arbitrage n° 21 ; `npm run lint:geste-ia`)
 - [ ] Badge dont la teinte vient d'une TABLE (état, rôle, import…) : `<Badge teinte={…}>`,
       jamais `class="badge {…}"` — une classe interpolée rend l'écran aveugle à
       `lint:css-orphelin` (25 fichiers l'étaient, #1571). `npm run lint:badge`

@@ -278,7 +278,7 @@ label.field {
     un `<span>` sans classe avec son `EtoileRequis` (#1230) — garde les siennes.
     🔒 `npm run lint:champs` refuse un enfant de `label.field` que cette liste ne
     remet pas en casse et qui n'est pas du libellé. */
-label.field :is(input, select, textarea, button, div, code, .aide, .case) {
+label.field :is(input, select, textarea, button, div, code, .aide, .case, .icone-ia) {
 	text-transform: none;
 	letter-spacing: normal;
 }

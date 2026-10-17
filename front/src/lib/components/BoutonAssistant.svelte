@@ -28,13 +28,21 @@
   faire de celui-ci le seul bouton de 44 px au milieu de huit boutons de 29
   produirait un défaut visible pour corriger un défaut qui ne l'est pas. La
   barre entière se traite d'un coup, ou pas du tout (#1144).
+
+  ⚠️ Pas de `.btn-icon` ici : ce bouton vit DANS `.editeur-barre`, dont les
+  règles globales (fond, bordure, `.active`) l'habillent déjà comme ses voisins.
+  Le dessin et l'attente — ✨, puis ⏳ qui clignote — sont ceux de TOUT geste
+  qui lance l'assistant : `IconeIA` (17/10/2026). Ce bouton n'a plus de style
+  à lui ; sa pulsation d'étincelle, la seule du produit, est partie.
 -->
 <script lang="ts">
+	import IconeIA from '$lib/components/IconeIA.svelte';
+
 	/** Le panneau est-il ouvert ? Porté par l'assistant, lu ici pour `aria-expanded`. */
 	export let ouvert = false;
 	/** L'`id` du panneau que ce bouton commande — la liaison ARIA l'exige. */
 	export let commande: string;
-	/** Vrai pendant l'appel : l'icône le dit, pour que l'attente ne soit pas muette. */
+	/** Vrai pendant l'appel : ✨ devient ⏳, pour que l'attente ne soit pas muette. */
 	export let enCours = false;
 
 	export let onBasculer: () => void;
@@ -54,39 +62,5 @@
 	title={libelle}
 	on:click={onBasculer}
 >
-	<span class="etincelle" class:tourne={enCours} aria-hidden="true">✨</span>
+	<IconeIA {enCours} />
 </button>
-
-<style>
-	/*  ⚠️ Pas de `.btn-icon` ici : ce bouton vit DANS `.editeur-barre`, dont les
-	    règles globales (fond, bordure, `.active`) l'habillent déjà comme ses
-	    voisins. Lui poser une seconde peau ferait un bouton qui ne ressemble à
-	    aucun des huit autres — c'est le contraire de ce qui est demandé.
-	    Seul ce qui le DISTINGUE est écrit ici. */
-	.etincelle {
-		display: inline-block;
-		font-size: var(--fs-base);
-		line-height: 1;
-	}
-	/*  L'attente se voit : sans cela, un appel de trois secondes ne se distingue
-	    pas d'un clic qui n'a rien fait. */
-	.tourne {
-		animation: pulse-etincelle 1s ease-in-out infinite;
-	}
-	@keyframes pulse-etincelle {
-		0%,
-		100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.35;
-		}
-	}
-	/*  Respecter le réglage système : une animation qui pulse en boucle est
-	    exactement ce que `prefers-reduced-motion` demande de couper. */
-	@media (prefers-reduced-motion: reduce) {
-		.tourne {
-			animation: none;
-		}
-	}
-</style>

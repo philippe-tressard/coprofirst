@@ -43,6 +43,7 @@
 	import { safeRichContent } from '$lib/sanitize';
 	import { ENTITE_COMMENTAIRE, peutSolliciter, type ContexteAssistant } from '$lib/assistant';
 	import { toast } from '$lib/components/Toast.svelte';
+	import IconeIA from '$lib/components/IconeIA.svelte';
 
 	/** L'entité et son contexte — composés par le formulaire (`$lib/assistant`). */
 	export let contexte: ContexteAssistant;
@@ -139,6 +140,7 @@
 				aria-busy={enCours}
 				on:click={solliciter}
 			>
+				<IconeIA {enCours} />
 				{enCours ? 'L’assistant travaille…' : 'Retravailler avec l’assistant'}
 			</button>
 			<!--  🔴 « Précision » ne disait pas ce qu'on attend (signalé à l'écran le

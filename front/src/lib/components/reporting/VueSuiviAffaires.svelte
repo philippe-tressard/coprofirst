@@ -56,7 +56,7 @@
 	import { teinteBatiment, teinteCategorie } from '$lib/repartition';
 	import { toast } from '$lib/components/Toast.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
+	import IconeIA from '$lib/components/IconeIA.svelte';
 	import SelecteurMode from '$lib/components/SelecteurMode.svelte';
 	import TableauAffaires from './TableauAffaires.svelte';
 	import RelanceSyndic from './RelanceSyndic.svelte';
@@ -178,7 +178,7 @@
 			aria-busy={redaction}
 			title="L’assistant résume en une ou deux phrases chaque affaire nouvelle ou qui a évolué depuis son dernier résumé"
 		>
-			<IconeAction icone="sparkles" />
+			<IconeIA enCours={redaction} />
 			{redaction ? 'Rédaction…' : `Résumer ${aResumer} affaire${aResumer > 1 ? 's' : ''}`}
 		</button>
 	{/if}

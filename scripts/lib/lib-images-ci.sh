@@ -45,6 +45,12 @@
 #: Où la CI publie (`.github/workflows/images.yml`, `env.REGISTRE`).
 REGISTRE_IMAGES="ghcr.io/philippe-tressard"
 
+#: L'étiquette OCI que la CI pose sur chaque image publiée (`images.yml`,
+#: `org.opencontainers.image.source`). C'est elle, et non celle de Compose
+#: (`com.docker.compose.project`, posée au seul build local), qui reconnaît
+#: nos images TIRÉES — `test_images_publiees.py` la confronte au workflow.
+SOURCE_IMAGES="https://github.com/philippe-tressard/coprofirst"
+
 #: Les services publiés — ceux que `docker-compose.yml` construit
 #: (`test_images_publiees.py` tient la matrice de la CI, `test_images_ci.py` cette liste).
 SERVICES_IMAGES="api front caddy whatsapp-bridge"
@@ -90,6 +96,22 @@ tirer_images() {
         #  qu'aucune purge des images orphelines ne verrait.
         docker image rm "$ref" >/dev/null 2>&1 || true
     done
+    #  Une purge qui échoue ne fait pas échouer le tirage : les images sont prêtes.
+    purger_images_ci_orphelines >/dev/null || true
+    return 0
+}
+
+# ── Retirer les images tirées que plus rien ne désigne (17/10/2026) ──────────
+#  Chaque étiquette reposée laisse l'image précédente SANS étiquette. La purge
+#  hebdomadaire ne visait que l'étiquette de Compose, que ces images n'ont pas :
+#  420 images, 90 Go, sur CHACUN des deux nœuds en neuf jours, et rpi1 à 89 %.
+#  `prune` sans `-a` ne retire que les images sans étiquette, et jamais celle
+#  qu'un conteneur — même arrêté — emploie encore : le jeu servi reste, celui
+#  d'avant part au tirage suivant. Le filtre épargne List-dons (rpi2). Le retour
+#  arrière ne lit pas ces images : il reconstruit (`mep-precheck`, Rollback).
+#  Sortie : la dernière ligne de docker (« Total reclaimed space: … »).
+purger_images_ci_orphelines() {
+    docker image prune -f --filter "label=org.opencontainers.image.source=$SOURCE_IMAGES" 2>&1 | tail -1
 }
 
 # ── La porte : obtenir les images du commit courant ──────────────────────────
@@ -160,6 +182,22 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     if [ "$vu" = "tag 5hostachy-api:latest|tag 5hostachy-front:latest|tag 5hostachy-caddy:latest|tag 5hostachy-whatsapp-bridge:latest|" ]; then
         echo "PASS  les quatre images sont étiquetées sous leur nom de Compose"
     else echo "FAIL  étiquettes posées : « $vu »"; fail=1; fi
+
+    echo "== self-test : purge des images tirées =="
+    #  La sortie de la purge est tue : les appels se relèvent dans un fichier.
+    APPELS=$(mktemp)
+    bash -c "source '${BASH_SOURCE[0]}'
+        docker() { echo \"\$*\" >> '$APPELS'; }
+        cd / ; COMPOSE_PROJECT_NAME=5hostachy tirer_images abc"
+    vu=$(grep '^image prune' "$APPELS" || true); rm -f "$APPELS"
+    if [ "$vu" = "image prune -f --filter label=org.opencontainers.image.source=$SOURCE_IMAGES" ]; then
+        echo "PASS  le tirage purge les images orphelines, par l'étiquette de la CI seulement"
+    else echo "FAIL  purge attendue après le tirage, obtenu « $vu »"; fail=1; fi
+    vu=$(bash -c "set -euo pipefail; source '${BASH_SOURCE[0]}'
+        docker() { [ \"\$1\" = image ] && [ \"\$2\" = prune ] && return 1; return 0; }
+        cd / ; COMPOSE_PROJECT_NAME=5hostachy tirer_images abc && echo tire || echo refuse")
+    if [ "$vu" = tire ]; then echo "PASS  une purge en échec ne fait pas échouer le tirage"
+    else echo "FAIL  purge en échec → tirage « $vu »"; fail=1; fi
 
     [ $fail -eq 0 ] && echo "== TOUS OK ==" || echo "== ÉCHECS =="
     exit $fail

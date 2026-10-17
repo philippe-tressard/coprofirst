@@ -36,6 +36,7 @@
 -->
 <script lang="ts">
 	import { messageErreur } from '$lib/erreurs';
+	import IconeIA from '$lib/components/IconeIA.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
@@ -247,7 +248,7 @@
 							title="Chercher et enregistrer le tarif de ce modèle"
 							aria-busy={tarif.etat === 'encours'}
 							disabled={!modele || tarif.etat === 'encours'}
-							on:click={demanderTarif}>{tarif.etat === 'encours' ? '⏳' : '✨'}</button
+							on:click={demanderTarif}><IconeIA enCours={tarif.etat === 'encours'} /></button
 						>
 					{/if}
 				</div>
@@ -468,7 +469,6 @@
 	.ligne-choix > .btn-icon {
 		min-width: 2.75rem;
 		min-height: 2.75rem;
-		font-size: var(--fs-base);
 	}
 	.ligne-test {
 		display: flex;

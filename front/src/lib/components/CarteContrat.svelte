@@ -45,7 +45,7 @@
 	import ListeDocuments from './ListeDocuments.svelte';
 	import FormulaireContrat from './FormulaireContrat.svelte';
 	import GesteEnPlace from './GesteEnPlace.svelte';
-	import IconeAction from './IconeAction.svelte';
+	import IconeIA from './IconeIA.svelte';
 	import NoteEtoiles from './NoteEtoiles.svelte';
 
 	export let contrat: ContratEntretien;
@@ -187,8 +187,9 @@
 				aria-label="Proposer une synthèse de ce contrat"
 				title={syntheseEnCoursId === contrat.id ? 'Rédaction en cours…' : 'Proposer une synthèse'}
 				disabled={syntheseEnCoursId !== null}
+				aria-busy={syntheseEnCoursId === contrat.id}
 				on:click|stopPropagation={() => onSynthetiser(contrat)}
-				><IconeAction icone={syntheseEnCoursId === contrat.id ? 'hourglass' : 'sparkles'} /></button
+				><IconeIA enCours={syntheseEnCoursId === contrat.id} /></button
 			>
 		{/if}
 	</svelte:fragment>

@@ -13,11 +13,12 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 import httpx
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.config import get_settings
 from app.main import app
 from app.registre import base, migrer
+from app.registre.modeles import Installation
 from app.utils.limiter import limiter
 from tests.aides_base import moteur_de_test
 from tests.aides_caddy import bloc_handle, caddyfile
@@ -43,7 +44,21 @@ def prefixe_api_du_caddyfile() -> str:
 
 @contextmanager
 def registre_allume(monkeypatch) -> Iterator:
-    """Rend le moteur de la base `plateforme`, migrée ; tout est défait en sortie."""
+    """Rend le moteur de la base `plateforme`, migrée ; tout est défait en sortie.
+
+    🔴 Sous le rôle de la PRODUCTION : celui du registre n'est pas superutilisateur,
+    et PostgreSQL lui refuse de différer les clés (`dialecte.differer_cles_etrangeres`).
+    La suite tourne en superutilisateur et ne le montrerait pas : le refus est donc
+    simulé pour TOUT test du registre. #1972 ne le simulait que pour la restauration,
+    et l'épreuve de la sauvegarde nocturne a échoué en production pendant que ses
+    tests restaient verts (17/10/2026).
+    """
+    import app.utils.import_copropriete as import_copropriete
+
+    def refus(_connexion):
+        raise RuntimeError("permission denied to set parameter session_replication_role")
+
+    monkeypatch.setattr(import_copropriete, "differer_cles_etrangeres", refus)
     moteur = moteur_de_test(schema=False)
     migrer.migrer(moteur)
     reglages = get_settings()
@@ -105,3 +120,14 @@ def installation_branchee(monkeypatch, dossier) -> Iterator:
     monkeypatch.setattr(client.httpx, "post", poster)
     with registre_allume(monkeypatch) as moteur:
         yield moteur
+
+
+def modifier_inscrite(moteur, **champs) -> None:
+    """Change, À LA RÉFÉRENCE, l'installation que `installation_branchee` vient
+    d'inscrire (`CF-000001`) : son état, son identifiant, sa clé."""
+    with Session(moteur) as s:
+        inst = s.exec(select(Installation).where(Installation.identifiant == "CF-000001")).one()
+        for champ, valeur in champs.items():
+            setattr(inst, champ, valeur)
+        s.add(inst)
+        s.commit()

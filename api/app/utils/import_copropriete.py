@@ -247,17 +247,21 @@ def resume(bilan: Bilan) -> list[str]:
     return lignes
 
 
-def verifier_archive(archive: Path, url_hote, metadata=None) -> Bilan:
+def verifier_archive(
+    archive: Path, url_hote, metadata=None, *, cles_differees: bool = True
+) -> Bilan:
     """Réimporte une archive dans une base NEUVE et jetable du serveur `url_hote`, puis la retire.
 
     La base jetable est un schéma neuf du même serveur (`dialecte.base_jetable`),
     jamais la base qui sert. Une archive qui ne se restaure pas lève `ImportRefuse`.
+    `cles_differees` : comme `importer` — l'épreuve se joue sous le rôle de
+    `url_hote`, et c'est lui qui doit avoir le droit de différer.
     """
     from app.dialecte import base_jetable
 
     with base_jetable(url_hote) as moteur_cible:
         (metadata or SQLModel.metadata).create_all(moteur_cible)
-        return importer(archive, moteur_cible, metadata=metadata)
+        return importer(archive, moteur_cible, metadata=metadata, cles_differees=cles_differees)
 
 
 def verifier_restauration(moteur_source, dossier: Path) -> tuple[dict, Bilan]:

@@ -59,6 +59,14 @@ PREFIXE = "plateforme_backup_"
 #: L'identifiant de la tâche — déclaré dans `utils/taches`.
 TACHE = "sauvegarde_plateforme"
 
+#: Le registre ne diffère JAMAIS ses clés, ni à l'épreuve nocturne ni à la
+#: restauration : son rôle n'est pas superutilisateur, et PostgreSQL lui refuse
+#: `session_replication_role` (`dialecte.differer_cles_etrangeres`). Ses tables
+#: n'ont pas de cycle — toutes leurs clés visent `installation` —, l'ordre des
+#: tables suffit. #1972 ne l'avait retiré que de la restauration : l'épreuve
+#: échouait chaque nuit (« permission denied to set parameter », 17/10/2026).
+CLES_DIFFEREES = False
+
 
 def dossier() -> Path:
     """Le dossier des archives du registre, sous celui des sauvegardes."""
@@ -82,7 +90,7 @@ def sauvegarder() -> Path:
         export = Path(travail) / nom
         moteur = base.moteur()
         exporter(moteur, export, metadata=metadata)
-        verifier_archive(export, moteur.url, metadata=metadata)
+        verifier_archive(export, moteur.url, metadata=metadata, cles_differees=CLES_DIFFEREES)
         archive = destination / nom
         shutil.move(export, archive)
     garder_les_dernieres(
@@ -191,10 +199,9 @@ def restaurer(archive: Path, cible):
             "le registre ne se restaure que dans une base `plateforme` vide"
         )
     migrer.migrer(cible)
-    #  Clés NON différées : ses tables n'ont pas de cycle (toutes visent
-    #  `installation`), et son rôle n'est pas superutilisateur — PostgreSQL lui
-    #  refuserait le report (`dialecte.differer_cles_etrangeres`).
-    return importer(archive, cible, metadata=registre_plateforme.metadata, cles_differees=False)
+    return importer(
+        archive, cible, metadata=registre_plateforme.metadata, cles_differees=CLES_DIFFEREES
+    )
 
 
 if __name__ == "__main__":
