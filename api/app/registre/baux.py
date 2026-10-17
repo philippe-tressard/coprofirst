@@ -12,7 +12,13 @@ Spec `specs/architecture/multi-coproprietes.md` §4.11, règles 3 à 5 et 11.
   suspendre, changer de canal — voyagent dans le bail, que l'installation TIRE.
 
 Ce module est PUR sauf `cle_de_signature`, qui lit le réglage : `delivrer` reçoit
-l'installation et l'instant, et rend le bail signé.
+l'installation, son canal et l'instant, et rend le bail signé.
+
+🔴 **Le format du bail ne s'étend pas** (`contrat.Bail`, R5 #1881) : il refuse les
+champs inconnus, et une installation pas encore à jour REJETTERAIT un bail portant
+un champ neuf — donc plus de mise à jour automatique, donc jamais à jour. Ce que
+R5 décide (canal, vague, épinglage) voyage dans `version_cible`, déjà au contrat.
+🔒 `tests/test_registre_canaux.py` fige ses champs.
 """
 
 from __future__ import annotations
@@ -24,8 +30,9 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from app.config import get_settings
 from app.registre import signature
 from app.registre.contrat import Bail, BailSigne, octets_du_bail
+from app.registre.canaux import version_cible
 from app.registre.decisions import services_de
-from app.registre.modeles import Installation
+from app.registre.modeles import CanalDistribution, Installation
 from app.utils.valeurs import valeur
 
 #: L'ÉPOQUE de cette référence. Elle ne change que par un transfert du rôle de
@@ -43,8 +50,14 @@ def cle_de_signature() -> Ed25519PrivateKey | None:
     return signature.privee_de(get_settings().cle_signature_baux)
 
 
-def delivrer(inst: Installation, cle: Ed25519PrivateKey, maintenant: datetime) -> BailSigne:
-    """Le bail de `inst`, daté de `maintenant`, signé par `cle`."""
+def delivrer(
+    inst: Installation,
+    cle: Ed25519PrivateKey,
+    maintenant: datetime,
+    canal: CanalDistribution | None = None,
+) -> BailSigne:
+    """Le bail de `inst`, daté de `maintenant`, signé par `cle` — sa version cible
+    calculée sur `canal`, le canal qu'elle suit (`registre/canaux`)."""
     #  Des dates CONSCIENTES de leur fuseau (UTC) : les octets signés sont ceux de
     #  `model_dump(mode="json")`, et une date naïve y sortirait sans « Z » — que la
     #  réponse de l'API (`UTCJSONResponse`) ajoute ENSUITE : l'installation vérifierait
@@ -55,7 +68,7 @@ def delivrer(inst: Installation, cle: Ed25519PrivateKey, maintenant: datetime) -
         empreinte_cle=inst.empreinte_cle or "",
         etat=valeur(inst.etat),
         canal=inst.canal,
-        version_cible=None,  # R5 (#1881) : le déploiement par vagues
+        version_cible=version_cible(inst, canal, maintenant),  # R5 (#1881)
         services_autorises=services_de(inst),  # accordés par l'opérateur (R4 #1880)
         epoque=EPOQUE,
         delivre_le=delivre,

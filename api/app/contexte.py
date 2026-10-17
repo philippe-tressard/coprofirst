@@ -5,8 +5,9 @@ règle 3 : *aucune ressource ne se construit depuis la configuration globale*. L
 base, la racine des fichiers, le secret de signature et l'expéditeur des courriels
 appartiennent à UNE copropriété ; ils se demandent ici, et nulle part ailleurs.
 
-Tant qu'il n'y a qu'une copropriété (phase 2, §8 bis), le contexte les lit dans
-`settings` : le comportement est inchangé. Une requête se résout par son nom
+Une installation propre à une copropriété les lit dans `settings` ; une installation
+COMMUNE, dans la déclaration de ses copropriétés (`installation_commune/declaration`,
+#1894). Une requête se résout par son nom
 d'hôte (`resoudre`, P2-9, #1751) à l'entrée, par l'intergiciel
 `ResolutionCopropriete` ; un hôte inconnu reçoit 421.
 
@@ -94,6 +95,11 @@ ROUTES_PLATEFORME = frozenset({"/health"})
 PREFIXE_PLATEFORME = "/plateforme/"
 
 
+#: La réponse à un hôte qui ne désigne aucune copropriété — à l'entrée, et par la
+#: garde des pages d'une installation commune (`installation_commune/routeur.py`).
+HOTE_INCONNU = "Cette adresse ne désigne aucune copropriété de ce serveur."
+
+
 def nom_d_hote(valeur: str) -> str:
     """`Host` → le nom seul : minuscules, sans port ni crochets d'IPv6."""
     h = valeur.strip().lower()
@@ -105,8 +111,19 @@ def nom_d_hote(valeur: str) -> str:
 def registre() -> dict[str, tuple[Copropriete, frozenset[str]]]:
     """Le registre de la plateforme : chaque copropriété, et les hôtes qui la désignent.
 
-    Une entrée en phase 2 : le nom de l'`ORIGIN` et ceux de `HOTES_COPROPRIETE`.
+    Une installation COMMUNE (#1894) les lit dans sa déclaration : domaines propres et
+    adresse dérivée `<alias>.<hôte commun>` — l'hôte commun, lui, n'en désigne aucune.
+    Une installation propre à une copropriété : une entrée, le nom de l'`ORIGIN` et
+    ceux de `HOTES_COPROPRIETE`. Lève `DeclarationInvalide` si la déclaration ne peut
+    pas servir : jamais de repli sur la copropriété de la configuration.
     """
+    from app.installation_commune.declaration import declaration
+
+    commune = declaration()
+    if commune is not None:
+        return {
+            e.copropriete.identifiant: (e.copropriete, commune.hotes_de(e)) for e in commune.entrees
+        }
     s = get_settings()
     hotes = {nom_d_hote(urlsplit(s.origin).netloc)} | {
         nom_d_hote(h) for h in s.hotes_copropriete.split(",") if h.strip()
@@ -170,12 +187,25 @@ class ResolutionCopropriete:
         ):
             await self.app(scope, receive, send)
             return
-        copro = resoudre(scope)
+        from app.installation_commune.declaration import DeclarationInvalide
+
+        try:
+            copro = resoudre(scope)
+        except DeclarationInvalide:
+            #  La déclaration d'une installation commune ne peut pas servir
+            #  (`DeclarationInvalide`) : aucune copropriété, jamais un repli (#1894).
+            logger.exception("registre des copropriétés : declaration invalide")
+            reponse = JSONResponse(
+                {"detail": "Ce serveur est mal configuré : aucune copropriété n'est servie."},
+                status_code=503,
+            )
+            await reponse(scope, receive, send)
+            return
         if copro is None:
             #  421 « requête mal dirigée » (arbitrage du 10/10/2026, #1751), avant
             #  toute route, sans rien lire ni renvoyer de ce que l'hôte a envoyé.
             reponse = JSONResponse(
-                {"detail": "Cette adresse ne désigne aucune copropriété de ce serveur."},
+                {"detail": HOTE_INCONNU},
                 status_code=421,
             )
             await reponse(scope, receive, send)
@@ -185,8 +215,9 @@ class ResolutionCopropriete:
 
 
 def coproprietes() -> tuple[Copropriete, ...]:
-    """Toutes les copropriétés de l'installation. Une seule en phase 2."""
-    return (_unique(),)
+    """Toutes les copropriétés de l'installation : celles de sa déclaration pour une
+    installation commune (#1894), sinon la seule de sa configuration."""
+    return tuple(copro for copro, _ in registre().values())
 
 
 @contextmanager

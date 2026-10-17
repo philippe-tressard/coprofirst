@@ -84,6 +84,8 @@ export const EXCEPTIONS = {
 	'routes/auth/inscription/+page.svelte': "écran d'authentification — « Créer mon compte »",
 	'routes/auth/mot-de-passe-oublie/+page.svelte':
 		"écran d'authentification — « Envoyer le lien » ne crée aucun objet",
+	'lib/components/AiguillageCopropriete.svelte':
+		"écran d'authentification de l'hôte commun (#1894) — « Continuer » n'enregistre rien, il renvoie à l'adresse de la copropriété",
 	'routes/auth/verifier-email/+page.svelte':
 		"écran d'authentification — « Renvoyer » relance un e-mail déjà parti",
 	//  🔴 Arbitré à l'écran le 18/08/2026 : « Créer et envoyer au CS me semble

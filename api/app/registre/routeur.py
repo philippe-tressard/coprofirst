@@ -39,7 +39,7 @@ from sqlmodel import Session, func, select
 
 from app.config import get_settings
 from app.contexte import nom_d_hote
-from app.registre import baux, conditions, rapports, signature
+from app.registre import baux, canaux, conditions, rapports, signature
 from app.registre.decisions import consigner
 from app.registre.base import get_session_plateforme, registre_actif
 from app.registre.contrat import (
@@ -270,11 +270,12 @@ async def renouveler_bail(request: Request, session: Session = Depends(get_sessi
         session.add(inst)
         session.commit()
         session.refresh(inst)
+        canal = canaux.canal_de(session, inst)
     except SQLAlchemyError as exc:
         session.rollback()
         logger.warning("registre : bail non délivré (%s)", type(exc).__name__)
         raise HTTPException(503, "Le registre est indisponible.") from None
-    return baux.delivrer(inst, cle, horloge.maintenant()).model_dump(mode="json")
+    return baux.delivrer(inst, cle, horloge.maintenant(), canal).model_dump(mode="json")
 
 
 @router.post("/rapports", status_code=202, dependencies=[Depends(_servi_ici)])

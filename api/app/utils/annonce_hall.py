@@ -11,7 +11,6 @@ peut forcer un format depuis l'interface.
 from __future__ import annotations
 
 import re
-import unicodedata
 from datetime import date, datetime
 from app.utils import horloge
 from html import escape
@@ -20,6 +19,7 @@ from html import escape
 # fiche arrivant et les e-mails) ; réimportée ici car le routeur `annonces_hall`
 # l'importe historiquement depuis ce module.
 from app.utils.dates_fr import date_longue
+from app.utils.slug import en_slug
 from app.utils.pdf_theme import (
     FONT_SANS,
     FONT_SERIF,
@@ -264,9 +264,7 @@ def nom_fichier(titre: str, cree_le: date | datetime) -> str:
     Les accents sont translittérés (`août` → `aout`) : le nom traverse SMTP et
     des systèmes de fichiers variés, on le garde en ASCII.
     """
-    sans_accent = unicodedata.normalize("NFKD", texte_brut(titre))
-    sans_accent = sans_accent.encode("ascii", "ignore").decode()
-    slug = re.sub(r"[^a-zA-Z0-9]+", "-", sans_accent).strip("-").lower()[:60]
+    slug = en_slug(texte_brut(titre))[:60]
     return f"annonce-{horloge.jour_civil(cree_le):%Y%m%d}-{slug or 'hall'}.pdf"
 
 

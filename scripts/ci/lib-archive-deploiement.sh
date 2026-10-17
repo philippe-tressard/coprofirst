@@ -22,6 +22,9 @@ FICHIERS_DEPLOIEMENT=(
     deploiement/demo/reinitialiser.sh
     deploiement/demo/LISEZMOI.md
     deploiement/standard/postgresql/pg_hba.conf
+    deploiement/standard/commune/LISEZMOI.md
+    deploiement/standard/commune/coproprietes.exemple.json
+    deploiement/standard/commune/garde-des-pages.caddy
     LICENSE
 )
 

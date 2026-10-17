@@ -79,6 +79,8 @@ const LIBELLES_DECISION: Record<string, string> = {
 	services: 'Services accordés',
 	supprimer: 'Supprimée',
 	retour_apres_suppression: 'Revenue après sa suppression',
+	distribution: 'Canal et version réglés',
+	canal_avance: 'Canal avancé',
 	coordonnees_effacees: 'Coordonnées effacées',
 	contrat_efface: 'Contrat archivé effacé',
 };
@@ -111,16 +113,29 @@ export function servicesAccordes(n: number): string {
 const CANAUX = [
 	{ val: 'main', label: 'Référence' },
 	{ val: 'replica', label: 'Réplique' },
+	{ val: 'special', label: 'Canal spécial' },
 ] as const;
 
 const MARQUES_CANAL: Record<string, MarqueGouttiere> = {
 	main: ['star', 'RÉF.'],
 	replica: ['layers', 'RÉPL.'],
+	special: ['pin', 'SPÉC.'],
 };
 
-/**  La gouttière d'une installation : son rôle, lu sur le canal qu'elle suit. */
+/**  Le préfixe d'un canal spécial (`registre/canaux.MOTIF_SPECIAL`, R5 #1881). */
+export const PREFIXE_CANAL_SPECIAL = 'special-';
+
+/**  La gouttière d'une installation : son rôle, lu sur le canal qu'elle suit — un
+ *   canal spécial, quel que soit son nom, se classe sous une seule marque. */
 export function classeInstallation(canal: string): ClasseGouttiere | null {
-	return classeDe(CANAUX, MARQUES_CANAL, canal);
+	const famille = canal.startsWith(PREFIXE_CANAL_SPECIAL) ? 'special' : canal;
+	return classeDe(CANAUX, MARQUES_CANAL, famille);
+}
+
+/**  « 2.172.0 », ou ce que le prochain bail porte quand il n'y a rien à installer —
+ *   le serveur décide (`registre/canaux.version_cible`), l'écran le dit. */
+export function libelleVersionCible(version: string | null): string {
+	return version ? `v${version}` : 'aucune — pas de mise à jour automatique';
 }
 
 /**  Un point de CONFORMITÉ du rapport nocturne : la phrase qui dit le FAIT dans

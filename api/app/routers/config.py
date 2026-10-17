@@ -24,7 +24,7 @@ from app.database import get_session
 from app.models.core import ConfigSite, Utilisateur
 from app.seed import DEFAULT_LEGAL
 from app.utils.destinataires import peut_gerer_le_site
-from app.utils import demo, pied_de_page
+from app.utils import demo, pied_de_page, reglages
 from app.utils.config_site import config_site
 from app.utils.liens import base_site, nom_site
 from app.utils.recuperer import ou_404
@@ -115,18 +115,6 @@ _NORMALISEURS = {
     **{cle: normaliser_activation for cle in CLES_ACTIVATION},
 }
 
-#: 🔴 Refusées en base (#1596) : la clé du bridge n'a qu'une source, `.env` — se
-#: saisir ici en recréerait une seconde, qu'aucun contrôle ne confrontait.
-_CLES_HORS_BASE = {
-    "whatsapp_api_key": "La clé du bridge WhatsApp se définit dans .env (WHATSAPP_API_KEY).",
-    #  Le nom du fichier n'est pas une donnée qu'on saisit : il est posé par le
-    #  téléversement, qui contrôle le fichier (#1728).
-    "site_logo": "Le logo se téléverse par POST /config/logo.",
-    #  Un réglage de l'INSTALLATION, pas de la copropriété (spec `mode-demo.md` M1) :
-    #  un administrateur de démo — n'importe quel visiteur — n'en sort pas.
-    demo.CLE_PUBLIQUE: "Le mode démo se règle dans .env (MODE_DEMO).",
-}
-
 
 @router.get("", response_model=Dict[str, str])
 def get_config(session: Session = Depends(get_session)):
@@ -176,8 +164,12 @@ def save_config(
         gestionnaire.isdigit() and peut_gerer_le_site(session.get(Utilisateur, int(gestionnaire)))
     ):
         raise HTTPException(422, "Le gestionnaire du site doit être un administrateur.")
-    for cle in data.keys() & _CLES_HORS_BASE.keys():
-        raise HTTPException(422, _CLES_HORS_BASE[cle])
+    #  🔴 Liste blanche (#2055) : une clé non déclarée n'est pas écrite — et rien
+    #  ne l'est, la requête entière est refusée avant la première écriture.
+    for cle in data:
+        refus = reglages.refus_d_ecriture(cle)
+        if refus:
+            raise HTTPException(422, refus)
     for cle, valeur in data.items():
         if cle in _NORMALISEURS:
             valeur = _NORMALISEURS[cle](valeur)

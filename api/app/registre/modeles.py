@@ -57,6 +57,10 @@ class Installation(TablePlateforme, table=True):
     empreinte_cle: Optional[str] = Field(default=None, max_length=16)
     etat: EtatInscription = Field(default=EtatInscription.en_attente)
     canal: str = Field(default="replica", max_length=60)
+    #: Quand elle reçoit la version de son canal (`registre/canaux.VAGUES`, R5 #1881).
+    vague: int = Field(default=1, sa_column_kwargs={"server_default": "1"})
+    #: La version que l'opérateur lui impose — épinglage, ou ordre de revenir (R5).
+    version_epinglee: Optional[str] = Field(default=None, max_length=40)
     version_logicielle: Optional[str] = Field(default=None, max_length=40)
     conditions_acceptees: Optional[int] = None
     #: Les services que la référence autorise, en JSON (`registre/decisions.py`) —
@@ -70,6 +74,26 @@ class Installation(TablePlateforme, table=True):
     #: de la liste, ses coordonnées et ses rapports effacés. La LIGNE reste — son
     #: numéro fait l'identifiant, qui ne se réattribue jamais.
     effacee_le: Optional[NaiveDatetime] = None
+
+
+class CanalDistribution(TablePlateforme, table=True):
+    """Un CANAL : un pointeur vers une version de `main`, jamais une branche de travail (D21).
+
+    `replica` avance seul, à la lecture nocturne de sa branche (`registre/canaux`) ;
+    un canal `special-<nom>`, par l'opérateur. `main` n'a pas de ligne : c'est la
+    référence seule, qui suit `main` par son propre déploiement.
+    """
+
+    __tablename__ = "canal_distribution"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nom: str = Field(unique=True, max_length=60)
+    version: Optional[str] = Field(default=None, max_length=40)
+    #: ce que reçoit une vague dont le tour n'est pas venu
+    version_precedente: Optional[str] = Field(default=None, max_length=40)
+    #: quand `version` a changé — l'instant d'où se comptent les vagues
+    avance_le: Optional[NaiveDatetime] = None
+    cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
 
 
 class ContactInstallation(TablePlateforme, table=True):

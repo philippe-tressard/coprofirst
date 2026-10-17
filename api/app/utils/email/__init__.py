@@ -27,7 +27,7 @@ from app.models.core import HistoriqueEmail, ModeleEmail, Utilisateur
 
 #  La configuration du canal SMTP est un sujet distinct de la composition
 #  d'un message : elle vit dans `app/utils/smtp.py` depuis le 08/08/2026.
-from app.seed.emails import expediteur_du_modele
+from app.seed.emails import est_desactivable, expediteur_du_modele
 from app.utils.smtp import (  # noqa: F401  (ré-export : config.py l'importe d'ici)
     _get_smtp_config,
     adresse_expedition,
@@ -145,7 +145,8 @@ async def _envoyer_modele(
     template: ModeleEmail | None = session.exec(
         select(ModeleEmail).where(ModeleEmail.code == code)
     ).first()
-    if not template or not template.actif:
+    #  Un modèle non désactivable part même décoché (#2054) : sa case ne coupe rien.
+    if not template or (not template.actif and est_desactivable(code)):
         #  JOURNALISE DANS LES DEUX CAS depuis la factorisation : le chemin
         #  groupe abandonnait en silence, et un envoi qui n'a pas eu lieu sans
         #  trace est indistinguable d'un envoi qui n'a jamais ete demande.

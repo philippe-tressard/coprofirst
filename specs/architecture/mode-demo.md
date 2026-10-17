@@ -74,7 +74,7 @@ formulaire de connexion de `demo.coprofirst.fr` (§5, révisé le 13/10/2026).
   lecture de `mode_demo`.
 - Le front l'apprend par `GET /config` : une clé **calculée** `mode_demo`, ajoutée
   à la liste blanche publique (`routers/config.py`, `_PUBLIC_KEYS`) et **refusée en
-  écriture** (`_CLES_HORS_BASE`). Pas de variable `PUBLIC_MODE_DEMO` côté front :
+  écriture** (`utils/reglages.REFUSEES`, #2055). Pas de variable `PUBLIC_MODE_DEMO` côté front :
   ce serait une seconde source.
 - `compose.images.yml` ne la pose pas : une réplique ordinaire n'est jamais une
   démo par accident.

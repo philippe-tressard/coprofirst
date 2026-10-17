@@ -165,6 +165,9 @@ _AUTHENTIFIES_PAR_CLE = {
     ("rapports_scripts.py", "maintenance_purges"),
     #  Le battement des contrôles de fiabilité (#1396) : une date, rien d'autre.
     ("rapports_scripts.py", "maintenance_battement"),
+    #  La version cible du bail, que suit la mise à jour nocturne d'une réplique
+    #  (R5 #1881) : un état et une version, rien de la copropriété.
+    ("rapports_scripts.py", "maintenance_bail"),
 }
 
 #: Le nom de la porte. Il est lu, pas supposé : le module d'authentification par

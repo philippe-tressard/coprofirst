@@ -115,6 +115,10 @@ DU_PROCESSUS = {
     ("utils/pdf_rendu.py", "dernier_journal"): (
         "journal technique du dernier rendu PDF, lu par les tests seulement"
     ),
+    ("installation_commune/declaration.py", "_lue"): (
+        "la déclaration des copropriétés d'une installation commune, relue quand son "
+        "fichier change : elle DÉSIGNE les copropriétés, n'en porte aucune donnée (#1894)"
+    ),
 }
 
 

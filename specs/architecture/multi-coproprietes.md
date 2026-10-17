@@ -59,7 +59,7 @@ oublié suffit n'est pas étanche, elle n'est que *disciplinée*.
 | D24 | Transfert du rôle de référence (12/10/2026) | le rôle de référence se **transfère** vers une installation déjà déployée, **à l'initiative de la référence en place** ; **il ne peut y avoir deux références** | §4.11 ; époque de référence et chaîne de clés |
 | D25 | Vocabulaire (12/10/2026) | **« maître » devient « référence »** — l'installation de référence, le rôle de référence —, à la demande de l'auteur : le mot évoquait l'esclavage. Dans le code, le rôle s'écrit `reference` ; `maitre`, l'ancien nom, reste lu tant que le `.env` des deux Raspberry Pi le porte (`utils/installation.ANCIENS_NOMS`) | partout : spec, contrat d'inscription, administration, code ; les citations de l'auteur restent mot pour mot |
 | D26 | Conditions d'inscription (12/10/2026) | un **contrat d'engagements réciproques** : l'exploitant d'une installation s'engage à respecter la licence, la marque et le registre ; l'exploitant de la référence, à garder CoproFirst libre et à maintenir les services standards. Accepté par l'administrateur quand il valide l'inscription, il est **archivé dans le registre, rattaché à l'ID de l'installation** — texte exact, empreinte, date, qui l'a accepté. Les engagements portent sur le **service d'inscription**, jamais sur les droits de la licence | §4.11 ; `api/app/registre/conditions/` (une version par fichier, figée par son empreinte) ; #1876 |
-| D27 | Accès à une copropriété (13/10/2026) | **un seul code**, deux façons de l'héberger : une copropriété peut avoir **sa propre installation**, comme 5Hostachy, qui s'ouvre par son URL directement sur la connexion ; ou être **hébergée avec d'autres** dans une installation commune. Elle y est alors joignable par **son propre domaine** si elle en a un, sinon par une **adresse dérivée de l'URL commune et de `code-postal` + nom**, que l'hébergeur lui attribue sans frais ; l'URL commune elle-même **aiguille** (code postal, nom) puis redirige. Adresse dérivée et aiguillage ne résolvent rien eux-mêmes : la règle 1 du §4.1 reste entière | §4.1 bis, §4.2 ; #1894, phase 3 |
+| D27 | Accès à une copropriété (13/10/2026) | **un seul code**, deux façons de l'héberger : une copropriété peut avoir **sa propre installation**, comme 5Hostachy, qui s'ouvre par son URL directement sur la connexion ; ou être **hébergée avec d'autres** dans une installation commune. Elle y est alors joignable par **son propre domaine** si elle en a un, sinon par une **adresse dérivée de l'URL commune et de `code-postal` + nom**, que l'hébergeur lui attribue sans frais ; l'URL commune elle-même **aiguille** (code postal, nom) puis redirige. Adresse dérivée et aiguillage ne résolvent rien eux-mêmes : la règle 1 du §4.1 reste entière | §4.1 bis, §4.2 ; #1894 — premier lot livré le 17/10/2026 |
 
 ## 3. Les trois architectures comparées
 
@@ -159,6 +159,35 @@ Règles :
 6. **Une installation propre à une copropriété n'a ni aiguillage ni adresse
    dérivée** : son URL est la sienne.
 
+**Livré le 17/10/2026, premier lot (#1894)** — déclaré prioritaire ce jour-là, il lève
+le « rendez-vous » de la phase 3 pour lui seul. Arbitrages du jour : le registre des
+copropriétés est un **fichier déclaratif** de l'installation (`COPROPRIETES_FICHIER`,
+§4.2) ; l'hôte commun est celui de son **`ORIGIN`** — son URL publique, aucun domaine
+écrit dans le code ; l'aiguillage se tient sur l'**écran de connexion** de l'hôte commun.
+- `app/installation_commune/` : `alias` (forme et normalisation, `utils/slug`),
+  `declaration` (lecture tout ou rien — une déclaration invalide ne sert rien, 503,
+  jamais un repli sur la copropriété de la configuration), `routeur` (sous
+  `/plateforme/aiguillage`, hors résolution), `verifier` (avant mise en service) ;
+- `contexte.registre()` et `coproprietes()` lisent la déclaration : adresse dérivée
+  et domaines propres résolvent, l'hôte commun et les anciens alias non ;
+- l'écran de connexion de l'hôte commun demande code postal + nom ; `/<alias>`
+  passe par le même aiguillage (`LIMITE_AIGUILLAGE`, message unique `ECHEC`) ;
+- un ancien alias redirige (308, chemin compris) par la **garde des pages**, que
+  Caddy appelle en `forward_auth` sur une installation commune
+  (`deploiement/standard/commune/garde-des-pages.caddy`) ;
+- 🔒 `test_installation_commune_declaration.py`, `test_installation_commune_aiguillage.py`
+  (l'hôte commun rend 421 à toute route de copropriété, cas zéro et témoin ; un alias
+  inconnu ne redirige nulle part ; alias uniques et noms d'hôte valides).
+
+**Reste, second lot** (#2053) avant toute mise en service : migrations de
+chaque base au démarrage (`start.sh` n'en migre qu'une), `/uploads/*` par copropriété
+sous Caddy (une seule racine `/srv` aujourd'hui), configuration lue par le rendu
+serveur du front selon l'hôte (il appelle l'API par un nom interne, qui ne désigne
+plus personne à deux copropriétés ; `ORIGIN` du front unique), scripts hors requête
+qui supposent la copropriété de la configuration, outillage « créer une copropriété »
+(base, rôle, secret), sauvegarde par copropriété ; et l'exploitation — DNS et
+certificat génériques, gestes de l'hébergeur.
+
 ### 4.2 Le registre de la plateforme
 
 La seule donnée **commune** : la liste des copropriétés et de quoi résoudre leur
@@ -166,6 +195,12 @@ contexte (identifiant, sous-domaine, état actif ou suspendu, références vers 
 secrets), et l'**alias** de chaque copropriété — code postal et nom normalisés,
 unique, anciens alias conservés — dont se déduit son adresse dérivée (§4.1 bis). Il ne contient **aucune donnée personnelle** de résident ; les secrets
 eux-mêmes vivent dans le coffre de l'hébergeur, pas dans le registre.
+
+**Sa forme, arbitrée le 17/10/2026 (#1894)** : un fichier JSON de l'installation,
+monté en lecture seule et relu quand il change (`installation_commune/declaration.py`) ;
+il **nomme** les variables d'environnement qui portent la base et le secret de chaque
+copropriété, jamais leur valeur. Absent, l'installation sert la seule copropriété de
+sa configuration. Ni table ni écran avant le choix de l'hébergeur (phase 3).
 
 ### 4.3 Les données — PostgreSQL, une base et un rôle par copropriété (D4)
 
@@ -321,7 +356,10 @@ stables de main. »*
    copropriété, image vérifiée, migrations base par base avec arrêt au premier
    échec, contrôle de santé, et retour à l'image précédente sinon. Déploiement
    **échelonné** (une installation pilote d'abord) ; une installation peut
-   **épingler** sa version.
+   **épingler** sa version. **Depuis R5 (#1881)**, la mise à jour suit la
+   **version cible du bail** (§4.11, règle 6) et non plus la branche `replica` :
+   l'échelonnement et l'épinglage se décident à la référence ; l'exploitant garde
+   le refus local (`COPROFIRST_EPINGLEE=oui`).
 7. **Les migrations sont compatibles sur une version** (#1757) : une version
    ajoute, la suivante retire. L'image précédente tourne alors sur le schéma
    migré, et le retour arrière n'est qu'un changement d'image — sans quoi il
@@ -422,7 +460,26 @@ revient à son exploitant — la référence n'y a aucun accès.
    déploiement **par vagues** (une part des installations d'abord), l'épinglage
    et le retour à une version. Ce qu'un client a de spécifique passe par le
    registre des services (§4.8), jamais par une branche — la règle 1 de §4.10
-   vaut pour tout canal.
+   vaut pour tout canal. **Livré par R5 (#1881)** — `registre/canaux.py` :
+   - la référence **calcule** la version cible (fonction pure) : aucune pour une
+     installation en attente ou résiliée (D18) ; une installation **suspendue**
+     reçoit ses correctifs ; la **version épinglée** par l'opérateur prime, et une
+     version plus ancienne est l'**ordre de revenir** — le seul chemin d'un retour ;
+     sinon la version du canal, selon la **vague** (pilote dès l'avancée du canal,
+     générale à J+1, tardive à J+3 ; avant son tour, la version précédente du
+     canal) ; une cible tirée du canal ne fait jamais reculer une installation ;
+   - `replica` avance **seul** : la référence lit sa branche chaque nuit (03:50,
+     avant les baux) et ne le fait jamais reculer ; un canal `special-<nom>`
+     avance par l'opérateur ; `main` n'est le canal que de la référence ;
+   - le **format du bail ne change pas** : `Bail` refuse les champs inconnus, et un
+     champ neuf ferait rejeter le bail par toute installation pas encore à jour —
+     plus de mise à jour automatique, donc jamais à jour. La décision voyage dans
+     `version_cible`, déjà au contrat ;
+   - l'installation vérifie le bail (`POST /admin/maintenance/bail`, clé de
+     maintenance) et sa mise à jour nocturne n'installe que la version qu'il porte ;
+   - une version cible doit être **promue** : seule une release porte l'archive de
+     déploiement. L'avant-première d'une version non promue demanderait une
+     archive par tag — écartée du lot.
 7. **Le registre n'est pas une donnée de la résidence** : base `plateforme`, rôle
    PostgreSQL distinct, onglet réservé à l'**opérateur de plateforme** (§4.7),
    jamais à l'administrateur de la copropriété 5Hostachy. La référence y figure,
@@ -644,7 +701,7 @@ Ouverts le 12/10/2026 ; le code de chaque lot reste soumis à accord, lot par lo
 | R2 | **Inscription et bail** côté installation, en **mode constat** : l'état est calculé et affiché, jamais appliqué ; mode essai. **Livré en v2.144.0** (arbitrages du jour : clé et état de l'installation dans le volume `app_data`, clé des baux créée sur l'actif par `creer-cle-baux.sh` et jamais sur le poste, saisie par l'opérateur dans Admin › Maintenance) : `POST /plateforme/baux` côté référence, `app/inscription/` côté installation (constat pur, bail rangé seulement s'il se croit, tâche `bail_installation`, alerte après 3 jours). La clé de l'époque 1, créée le 13/10/2026, est versée dans `app/inscription/cles.py` par #1892 — qui corrige aussi le chemin des envois : sans le préfixe `/api` du `Caddyfile`, ils partaient au front | M | R1 | #1878 |
 | R3 | **Rapport nocturne**, joint à la mise à jour de la nuit (#1756). **Livré en v2.144.0** : construit depuis les schémas du contrat (`app/inscription/rapport.py`) — des nombres et des oui/non, aucune donnée de résident, une mesure impossible rend « inconnu » ; envoyé par la tâche `bail_installation`, après le bail ; reçu par `POST /plateforme/rapports`, signé par la clé que la référence connaît pour cet identifiant, et gardé **30 jours** (`rapports.CONSERVATION`, arbitré avec le lot) | S | R2 | #1879 |
 | R4 | **L'onglet « Installations » de la référence** : liste, fiche, validation, canal, suspension, alertes, journal des décisions. **Livré le 13/10/2026 sans les alertes ni le canal** (arbitrage du jour, un seul lot) : liste et fiche (contact, contrat archivé, journal, dernier rapport), gestes motivés et journalisés — valider, suspendre, rétablir, résilier — et **services accordés**, portés par le bail (`registre/decisions.py`) ; masqué hors de la référence. **Alertes livrées le 14/10/2026** (R4b #1960, arbitrage du jour : toutes sur la carte, un courriel à l'opérateur pour les trois graves — muette, clone, deux références —, une fois par fait, suivi au journal) : `registre/alertes.py`. Restent : le canal et l'épinglage avec R5 | M | R1, R3 | #1880 |
-| R5 | **Canaux et version cible** portés par le bail ; déploiement par vagues, épinglage | M | R2, R4 | #1881 |
+| R5 | **Canaux et version cible** portés par le bail ; déploiement par vagues, épinglage. **Livré le 17/10/2026** (§4.11, règle 6) : base `plateforme` 0005 (canaux, vague, version épinglée), `registre/canaux.py`, section « Canal et version » et canaux de l'onglet Installations, `mise-a-jour.sh` qui suit le bail | M | R2, R4 | #1881 |
 | R6 | **Mode limité et suspension appliqués** — seulement après plusieurs semaines de R2 sans faux positif. **Avancé pour les SERVICES le 13/10/2026**, à la demande de l'auteur (*« les services ne doivent pas être activables tant que l'instance référence ne l'a autorisé »*) : une **réplique** n'allume que les services de son bail cru (`utils/services.autorise_par_la_reference`) ; la vérification de la version reste permise ; référence, essai et rôle inconnu ne sont pas restreints. Le plafond de 5 utilisateurs et la lecture seule restent en constat | M | R0, R2 à R5 | #1882 |
 | R7 | **Relevé de consommation**, déclaratif | S | R3 ; modèle économique | #1883 |
 | R8 | **Transfert du rôle de référence** : acte signé, époque, chaîne de clés ; jamais deux références | L | R1, R2, R5 | #1884 |

@@ -111,7 +111,7 @@ def gestes_possibles(inst: Installation) -> list[str]:
     return gestes + [GESTE_SUPPRIMER] if supprimable(inst) else gestes
 
 
-def _exiger_pas_la_reference(inst: Installation) -> None:
+def exiger_decidable(inst: Installation) -> None:
     if not decidable(inst):
         raise DecisionRefusee("La référence ne se décide pas : elle reste active, canal main.")
 
@@ -122,7 +122,7 @@ def decider(
     """Applique un geste de `TRANSITIONS` à `inst`, et l'inscrit au journal."""
     if geste not in TRANSITIONS:
         raise DecisionRefusee(f"Geste inconnu : {geste}")
-    _exiger_pas_la_reference(inst)
+    exiger_decidable(inst)
     motif = exiger_motif(motif)
     depart, arrivee = TRANSITIONS[geste]
     if inst.etat not in depart:
@@ -139,7 +139,7 @@ def accorder_services(
     session: Session, inst: Installation, services: list[str], motif: str, auteur: str
 ) -> DecisionRegistre:
     """Fixe les services accordés à `inst` — ceux du registre seulement — et l'inscrit."""
-    _exiger_pas_la_reference(inst)
+    exiger_decidable(inst)
     motif = exiger_motif(motif)
     inconnus = sorted(set(services) - set(SERVICES_AUTORISABLES))
     if inconnus:

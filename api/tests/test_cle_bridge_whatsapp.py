@@ -168,8 +168,9 @@ def test_l_enregistrement_de_la_configuration_refuse_la_cle(session):
 #: Où chaque littéral a le droit d'apparaître, et pourquoi. Chaque entrée doit
 #: SERVIR : une exception qui ne sert plus se retire (cas zéro, `standards/04` §2).
 _LITTERAUX_PERMIS = {
-    #  Le refus de la clé à l'enregistrement : c'est lui qui la nomme.
-    "whatsapp_api_key": {"routers/config.py"},
+    #  Le refus de la clé à l'enregistrement : c'est lui qui la nomme — la liste
+    #  blanche des réglages depuis #2055 (`reglages.REFUSEES`), plus `routers/config.py`.
+    "whatsapp_api_key": {"utils/reglages.py"},
     #  L'en-tête du bridge — et celui d'Anthropic, autre service, autre clé.
     "x-api-key": {"utils/whatsapp.py", "utils/llm_fournisseurs.py"},
 }

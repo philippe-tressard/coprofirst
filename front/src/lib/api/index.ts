@@ -52,6 +52,7 @@ export * from './suivi-affaires';
 export * from './points-conseil';
 export * from './registre';
 export * from './consignes';
+export * from './aiguillage';
 
 //  ── Ce que le serveur RENVOIE (#1572) ───────────────────────────────────────────
 //

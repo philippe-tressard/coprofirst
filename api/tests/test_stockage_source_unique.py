@@ -26,8 +26,10 @@ from app.utils.stockage import (
 )
 from tests.aides_sources import chaines_du_code, modules_app
 
-#: Les deux modules qui connaissent la racine des fichiers d'une copropriété.
-LECTEURS_DE_LA_RACINE = {"contexte.py", "utils/stockage.py"}
+#: Les modules qui connaissent la racine des fichiers d'une copropriété : le contexte,
+#: le stockage, et la déclaration d'une installation commune, qui la POSE pour
+#: chacune (#1894) et vérifie qu'aucune ne la partage — elle n'y lit ni n'écrit rien.
+LECTEURS_DE_LA_RACINE = {"contexte.py", "utils/stockage.py", "installation_commune/declaration.py"}
 
 #: Une racine de conteneur écrite en dur — la forme exacte des trois traductions
 #: d'adresse qu'il y avait (`"/app" + url`, `Path("/app")`, `"/app/uploads"`).

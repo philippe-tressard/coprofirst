@@ -15,6 +15,7 @@ from app.models.core import (
     ModeleEmail,
     Utilisateur,
 )
+from app.seed.emails import est_desactivable
 from app.utils import horloge
 
 router = APIRouter()
@@ -118,7 +119,13 @@ def _modele_lu(modele: ModeleEmail) -> dict:
     sa ligne par la réponse, réaffichait après chaque enregistrement la copie
     périmée que `_variables_du_modele` a cessé de servir (#850).
     """
-    return {**modele.model_dump(), "variables_disponibles": _variables_du_modele(modele)}
+    #  `desactivable` aussi est CALCULÉ (#2054) : la colonne dit ce que la ligne a
+    #  reçu à son insertion, le code dit ce qui vaut — et c'est lui que l'envoi lit.
+    return {
+        **modele.model_dump(),
+        "variables_disponibles": _variables_du_modele(modele),
+        "desactivable": est_desactivable(modele.code),
+    }
 
 
 @router.get("/modeles-email")
@@ -184,6 +191,18 @@ def update_modele_email(
             f"Le champ « {illisible.champ} » contient du Jinja invalide : "
             f"{illisible.cause}. Le modèle n'est pas enregistré — il ne pourrait "
             "plus être envoyé, et l'échec ne se verrait que dans l'historique.",
+        )
+
+    #  🔴 Un modèle non désactivable ne se décoche pas (#2054) — mot de passe
+    #  oublié, vérification d'adresse, alerte système… L'envoi l'ignorerait de
+    #  toute façon ; le refus évite que l'écran affiche « Non » sur un courriel
+    #  qui part.
+    if "actif" in payload and not payload["actif"] and not est_desactivable(modele.code):
+        raise HTTPException(
+            422,
+            f"« {modele.libelle} » ne se désactive pas : c'est un courriel que "
+            "l'application doit toujours pouvoir envoyer (sécurité d'un compte, "
+            "message au syndic, préavis avant effacement).",
         )
 
     for key, value in payload.items():

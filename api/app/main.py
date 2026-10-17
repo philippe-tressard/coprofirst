@@ -82,6 +82,7 @@ from app.routers import uploads, faq, signalements, annonces_hall, patrimoine
 from app.routers import patrimoine_branche
 from app.routers import manuel
 from app.registre import routeur as registre  # le registre des installations (§4.11)
+from app.installation_commune import routeur as aiguillage  # l'hôte commun (#1894)
 from app.routers import courriels_affaires
 from app.routers import partage
 from app.routers import assistant, config_llm, config_logo, config_services, reglement
@@ -448,6 +449,7 @@ app.include_router(suivi_affaires.router)
 app.include_router(points_conseil.router)
 app.include_router(points_conseil_validation.router)
 app.include_router(registre.router)
+app.include_router(aiguillage.router)
 
 # Fichiers statiques (photos uploadées)
 #  La racine vient du stockage de la copropriété (`utils/stockage`, #1748), jamais

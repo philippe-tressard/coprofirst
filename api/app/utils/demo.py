@@ -134,6 +134,7 @@ GESTES_FERMES: tuple[Famille, ...] = (
             ("POST", "/admin/maintenance/purges"),
             ("POST", "/admin/installations/{identifiant}/decisions"),
             ("PUT", "/admin/installations/{identifiant}/services"),
+            ("PUT", "/admin/installations/{identifiant}/distribution"),
             ("POST", "/admin/installations/{identifiant}/suppression"),
             ("POST", "/admin/export-copropriete"),
             ("POST", "/admin/export-copropriete/verifier"),
@@ -203,6 +204,8 @@ OUVERTS_EXPRES: dict[tuple[str, str], str] = {
     ("POST", "/admin/maintenance/rapport"): "la remise à zéro nocturne rend compte (clé de "
     "maintenance, jamais un visiteur)",
     ("POST", "/admin/maintenance/battement"): "battement des scripts (clé de maintenance)",
+    ("POST", "/admin/maintenance/bail"): "le bail que lit la mise à jour nocturne (clé de "
+    "maintenance, jamais un visiteur)",
     ("GET", "/admin/installation"): "lecture, réservée à l'opérateur",
     ("GET", "/admin/installations"): "lecture du registre, réservée à l'opérateur — servi par "
     "la référence seule, il dit « éteint » en démo",

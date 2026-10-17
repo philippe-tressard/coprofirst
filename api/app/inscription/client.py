@@ -210,6 +210,21 @@ def envoyer_rapport() -> EtatLocal:
     return etat
 
 
+def constat_pour_la_mise_a_jour() -> constat.Constat:
+    """Ce que la mise à jour nocturne suit (R5 #1881) : le bail RENOUVELÉ si possible,
+    puis le constat — un renouvellement manqué laisse le bail rangé, s'il vaut encore.
+
+    La signature se vérifie ICI (`constat.bail_valide`), jamais dans le script :
+    `deploiement/standard/mise-a-jour.sh` ne lit que la version que ce constat rend.
+    """
+    if not installation.est_reference() and not essai_admis() and depot.lire().identifiant:
+        try:
+            renouveler()
+        except RegistreInjoignable as exc:
+            logger.warning("inscription : bail non renouvelé avant la mise à jour (%s)", exc)
+    return constat_courant()
+
+
 def run_renouvellement_bail() -> None:
     """Tâche de la plateforme : le bail puis le rapport ; alerter l'opérateur après 3 jours."""
     if installation.est_reference() or essai_admis() or not depot.lire().identifiant:

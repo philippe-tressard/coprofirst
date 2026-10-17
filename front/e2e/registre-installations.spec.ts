@@ -13,9 +13,11 @@
  *    repliée, liste en tête de la fiche, les graves dites « courriel à l'opérateur » ;
  *  - le DERNIER RAPPORT : chaque point de conformité en coche — conforme, à corriger,
  *    inconnu (jamais ✓) —, une phrase qui dit le fait, l'explication au clavier.
+ *  - le CANAL ET LA VERSION (R5 #1881) : la version cible que le serveur calcule, la
+ *    vague et l'épinglage réglés avec un motif, et les canaux en tête de l'onglet.
  *  Sur bureau et sur téléphone, sans défilement horizontal.
  */
-import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { boiteStable, expect, MEMBRE_CS, simulerApi, test } from './aides';
 import type { FicheInstallation, RapportInstallation, RegistreLu } from '../src/lib/api';
 
 const OPERATEUR = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
@@ -43,6 +45,9 @@ const DEMO = {
 	dernier_rapport_le: null,
 	services_autorises: [],
 	alertes: [],
+	vague: 1,
+	version_epinglee: null,
+	version_cible: null,
 };
 
 const ALERTES = [
@@ -77,6 +82,20 @@ const REGISTRE: RegistreLu = {
 		{ code: 'assistant_ia', libelle: 'Assistant IA' },
 		{ code: 'diffusion', libelle: 'Diffusion sur le groupe WhatsApp' },
 		{ code: 'reponses_courriel', libelle: 'Réponses par courriel' },
+	],
+	canaux: [
+		{
+			nom: 'replica',
+			version: '2.172.0',
+			version_precedente: '2.171.0',
+			avance_le: '2026-10-16T03:50:00',
+			modifiable: false,
+		},
+	],
+	vagues: [
+		{ code: 0, libelle: 'Pilote — dès que le canal avance' },
+		{ code: 1, libelle: 'Générale — le lendemain' },
+		{ code: 2, libelle: 'Tardive — trois jours après' },
 	],
 };
 
@@ -141,6 +160,13 @@ async function ouvrir(
 		if (chemin === '/api/admin/installations/CF-000003') return fiche({ alertes, ...champsFiche });
 		if (chemin === '/api/admin/installations/CF-000003/decisions')
 			return fiche({ etat: 'active', gestes_possibles: ['suspendre', 'resilier'] });
+		if (chemin === '/api/admin/installations/CF-000003/distribution')
+			return fiche({
+				...champsFiche,
+				vague: 0,
+				version_epinglee: '2.171.0',
+				version_cible: '2.171.0',
+			});
 		return undefined;
 	});
 	await page.goto('/admin?onglet=installations');
@@ -334,6 +360,10 @@ test('Installations : la posture se lit en coches — conforme, à corriger, inc
 	const bulle = page.locator(`#${await doc.getAttribute('aria-controls')}`);
 	await expect(bulle).toBeHidden();
 	await doc.focus();
+	//  La carte dépliée cale la page en défilant, et la bulle se ferme au défilement :
+	//  sur une fiche plus haute (la section « Canal et version », #1881), Entrée
+	//  tombait encore dans ce défilement — deux échecs sur trois. On attend l'arrêt.
+	await boiteStable(doc);
 	await page.keyboard.press('Enter');
 	await expect(doc).toHaveAttribute('aria-expanded', 'true');
 	await expect(bulle).toBeVisible();
@@ -381,4 +411,49 @@ test('Installations : une documentation d’API publiée est à corriger', async
 	await expect(
 		carte.getByRole('button', { name: 'Copie hors machine — Conforme' }).locator('[data-etat]'),
 	).toHaveAttribute('data-etat', 'conforme');
+});
+
+test('Installations : le canal et la version — la vague, l’épinglage, et la cible du bail', async ({
+	page,
+}) => {
+	const ecrits = await ouvrir(page, 'reference', [], {
+		etat: 'active',
+		version_cible: '2.172.0',
+		gestes_possibles: ['suspendre', 'resilier'],
+	});
+	//  Les canaux, en tête de l'onglet : replica et sa version, sans geste — il avance seul.
+	await page.getByRole('button', { name: /Canaux de distribution/ }).click();
+	await expect(page.getByText('v2.172.0', { exact: true })).toBeVisible();
+	await expect(page.getByText('suit la branche, chaque nuit')).toBeVisible();
+
+	const carte = page.locator('#installation-CF-000003');
+	await carte.getByRole('button', { name: /CF-000003/ }).click();
+	await expect(carte.locator('h4.intertitre', { hasText: 'Canal et version' })).toBeVisible();
+	await expect(carte.getByText('Version cible du prochain bail :')).toContainText('v2.172.0');
+
+	await carte.getByRole('radio', { name: /Pilote/ }).check({ force: true });
+	await carte.getByLabel('Version épinglée').fill('2.171.0');
+	await carte.getByRole('button', { name: 'Enregistrer' }).click();
+	const saisie = page.getByRole('dialog');
+	await saisie.getByRole('textbox').fill('régression du 2.172');
+	await saisie.getByRole('button', { name: 'Enregistrer' }).click();
+	await expect(carte.getByText('Version cible du prochain bail :')).toContainText('v2.171.0');
+	expect(ecrits).toEqual([
+		{
+			methode: 'PUT',
+			chemin: '/api/admin/installations/CF-000003/distribution',
+			corps: {
+				canal: 'replica',
+				vague: 0,
+				version_epinglee: '2.171.0',
+				motif: 'régression du 2.172',
+			},
+		},
+	]);
+
+	await carte.screenshot({ path: `test-results/registre-canal-${test.info().project.name}.png` });
+	const deborde = await page.evaluate(
+		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+	);
+	expect(deborde, 'défilement horizontal dans l’onglet Installations').toBe(false);
 });

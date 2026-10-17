@@ -17,11 +17,18 @@
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import FicheRegistreInstallation from '$lib/components/FicheRegistreInstallation.svelte';
-	import type { FicheInstallation, ResumeInstallation, ServiceAccordable } from '$lib/api';
+	import type {
+		CanalDistribution,
+		FicheInstallation,
+		ResumeInstallation,
+		ServiceAccordable,
+		VagueLue,
+	} from '$lib/api';
 	import { fmtDatetime } from '$lib/date';
 	import {
 		classeInstallation,
 		LIBELLE_ETAT_REGISTRE,
+		libelleVersionCible,
 		resumeAlertes,
 		servicesAccordes,
 	} from '$lib/registre-installations';
@@ -32,6 +39,8 @@
 	export let fiche: FicheInstallation | null = null;
 	export let erreurFiche = '';
 	export let accordables: ServiceAccordable[] = [];
+	export let canaux: CanalDistribution[] = [];
+	export let vagues: VagueLue[] = [];
 	/** Un geste est en cours sur cette installation : ses boutons attendent. */
 	export let enCours = false;
 
@@ -79,6 +88,11 @@
 				>
 			{/if}
 			{#if i.version_logicielle}<span class="badge badge-gray">v{i.version_logicielle}</span>{/if}
+			{#if i.canal !== 'main'}<span title="Version cible du prochain bail"
+					>→ {libelleVersionCible(
+						i.version_cible,
+					)}{#if i.version_epinglee}&nbsp;(épinglée){/if}</span
+				>{/if}
 			{#if i.conditions_acceptees}<span>Contrat v{i.conditions_acceptees}</span>{/if}
 			<span>{servicesAccordes(i.services_autorises.length)}</span>
 		</svelte:fragment>
@@ -88,7 +102,16 @@
 		<!--  Le corps ne referme pas la carte : on lit, on sélectionne, on copie. -->
 		<div class="carte-corps corps" role="presentation" on:click|stopPropagation>
 			{#if fiche}
-				<FicheRegistreInstallation {fiche} {accordables} {enCours} on:geste on:services />
+				<FicheRegistreInstallation
+					{fiche}
+					{accordables}
+					{canaux}
+					{vagues}
+					{enCours}
+					on:geste
+					on:services
+					on:distribution
+				/>
 			{:else}
 				<EtatListe
 					chargement={!erreurFiche}

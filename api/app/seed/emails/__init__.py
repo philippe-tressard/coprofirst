@@ -47,6 +47,25 @@ EMAIL_TEMPLATES = [
     *_EXPLOITATION,
 ]
 
+#: 🔴 Les modèles qu'aucune case ne coupe (#2054) — le cinquième élément de chaque
+#: tuple, `desactivable`, posé depuis toujours et lu par personne jusqu'au
+#: 17/10/2026. La case « Actif » d'Admin › Modèles e-mail coupait donc aussi le
+#: mot de passe oublié : plus personne ne récupérait son compte, sans un mot.
+#:
+#: Lue dans le CODE et non dans la colonne `modele_email.desactivable` : un modèle
+#: vit en base, et une ligne insérée par une ancienne migration peut dire autre
+#: chose. Les courriels de sécurité (`services.COURRIELS_DE_SECURITE`) en font
+#: partie — `test_modeles_non_desactivables` le vérifie.
+NON_DESACTIVABLES: frozenset[str] = frozenset(
+    code for code, _libelle, _sujet, _corps, desactivable in EMAIL_TEMPLATES if not desactivable
+)
+
+
+def est_desactivable(code: str) -> bool:
+    """PURE. La case « Actif » de ce modèle a-t-elle un effet ?"""
+    return code not in NON_DESACTIVABLES
+
+
 # Intention de chaque modèle : ce qui est attendu du destinataire, affiché en
 # tête du message par le gabarit commun (cf. `email.INTENTIONS`).
 #
