@@ -13,11 +13,12 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 import httpx
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.config import get_settings
 from app.main import app
 from app.registre import base, migrer
+from app.registre.modeles import Installation
 from app.utils.limiter import limiter
 from tests.aides_base import moteur_de_test
 from tests.aides_caddy import bloc_handle, caddyfile
@@ -105,3 +106,14 @@ def installation_branchee(monkeypatch, dossier) -> Iterator:
     monkeypatch.setattr(client.httpx, "post", poster)
     with registre_allume(monkeypatch) as moteur:
         yield moteur
+
+
+def modifier_inscrite(moteur, **champs) -> None:
+    """Change, À LA RÉFÉRENCE, l'installation que `installation_branchee` vient
+    d'inscrire (`CF-000001`) : son état, son identifiant, sa clé."""
+    with Session(moteur) as s:
+        inst = s.exec(select(Installation).where(Installation.identifiant == "CF-000001")).one()
+        for champ, valeur in champs.items():
+            setattr(inst, champ, valeur)
+        s.add(inst)
+        s.commit()

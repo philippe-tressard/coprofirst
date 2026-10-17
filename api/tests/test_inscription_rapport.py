@@ -23,7 +23,7 @@ from app.registre.contrat import Rapport
 from app.registre.modeles import Installation, RapportInstallation
 from app.utils import horloge
 from tests.aides_base import compte, moteur_de_test
-from tests.aides_registre import installation_branchee
+from tests.aides_registre import installation_branchee, modifier_inscrite
 
 TEMOINS = ("Alix", "Durand", "temoin-rapport")
 
@@ -90,6 +90,18 @@ def test_un_rapport_signe_d_une_autre_cle_est_refuse(registre):
         client.envoyer_rapport()
     with Session(registre) as s:
         assert s.exec(select(RapportInstallation)).all() == []
+
+
+@pytest.mark.parametrize(
+    "champs",
+    [{"identifiant": "CF-000999"}, {"cle_publique": None}],
+    ids=["identifiant-inconnu", "sans-cle"],
+)
+def test_un_rapport_d_une_installation_inconnue_rend_404(registre, champs):
+    client.inscrire(Contact(prenom="Alix", nom="Durand", courriel="alix@example.org"))
+    modifier_inscrite(registre, **champs)
+    with pytest.raises(client.RegistreInjoignable, match="404 Installation inconnue du registre"):
+        client.envoyer_rapport()
 
 
 def test_sans_inscription_aucun_rapport_ne_part(registre):

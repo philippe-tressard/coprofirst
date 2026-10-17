@@ -75,16 +75,15 @@ TAILLE_MAX = 16 * 1024
 #: en ait validé ou refusé : un remplissage ne peut pas l'engorger.
 PLAFOND_EN_ATTENTE = 50
 
+#: Le refus d'une installation que la référence ne connaît pas (bail, rapport).
+INCONNUE = "Installation inconnue du registre."
+
 
 def _servi_ici(request: Request) -> None:
     """404 hors de la référence, ou sous un autre nom que le nom dédié du registre."""
     attendu = nom_d_hote(get_settings().hote_registre)
     servi = registre_actif() and nom_d_hote(request.headers.get("host", "")) == attendu
     present_ou_404(servi or None, "Not Found")
-
-
-def _refus(code: int, detail: str) -> HTTPException:
-    return HTTPException(code, detail)
 
 
 async def _lire_signee(request: Request, schema):
@@ -95,17 +94,19 @@ async def _lire_signee(request: Request, schema):
     """
     corps = await request.body()
     if len(corps) > TAILLE_MAX:
-        raise _refus(413, "Demande trop volumineuse.")
+        raise HTTPException(413, "Demande trop volumineuse.")
     try:
         demande = schema.model_validate_json(corps)
     except ValidationError:
-        raise _refus(422, "Demande illisible : elle ne suit pas le contrat de données.") from None
+        raise HTTPException(
+            422, "Demande illisible : elle ne suit pas le contrat de données."
+        ) from None
     if demande.version_contrat != VERSION_CONTRAT:
-        raise _refus(400, f"Version du contrat de données attendue : {VERSION_CONTRAT}.")
+        raise HTTPException(400, f"Version du contrat de données attendue : {VERSION_CONTRAT}.")
     if not signature.cle_publique_valide(demande.cle_publique) or not signature.verifier(
         demande.cle_publique, corps, request.headers.get(EN_TETE_SIGNATURE, "")
     ):
-        raise _refus(401, "Signature de l'installation absente ou invalide.")
+        raise HTTPException(401, "Signature de l'installation absente ou invalide.")
     return demande
 
 
@@ -114,9 +115,11 @@ async def _lire_demande(request: Request) -> DemandeInscription:
     demande = await _lire_signee(request, DemandeInscription)
     en_vigueur = conditions.version_en_vigueur()
     if demande.conditions_acceptees != en_vigueur:
-        raise _refus(400, f"Les conditions en vigueur sont celles de la version {en_vigueur}.")
+        raise HTTPException(
+            400, f"Les conditions en vigueur sont celles de la version {en_vigueur}."
+        )
     if demande.empreinte_conditions != conditions.empreinte(en_vigueur):
-        raise _refus(400, "Le texte des conditions accepté n'est pas celui de la référence.")
+        raise HTTPException(400, "Le texte des conditions accepté n'est pas celui de la référence.")
     return demande
 
 
@@ -175,7 +178,9 @@ def _inscrire(session: Session, demande: DemandeInscription) -> Installation:
         .where(Installation.etat == EtatInscription.en_attente)
     ).one()
     if en_attente >= PLAFOND_EN_ATTENTE:
-        raise _refus(503, "Le registre n'accepte pas de nouvelle inscription pour l'instant.")
+        raise HTTPException(
+            503, "Le registre n'accepte pas de nouvelle inscription pour l'instant."
+        )
     #  Un identifiant provisoire unique, remplacé dans la même transaction par celui
     #  que donne le numéro de la ligne : `CF-000042`.
     inst = Installation(
@@ -220,7 +225,7 @@ async def inscrire(request: Request, session: Session = Depends(get_session_plat
     except SQLAlchemyError as exc:
         session.rollback()
         logger.warning("registre : inscription non enregistrée (%s)", type(exc).__name__)
-        raise _refus(503, "Le registre est indisponible.") from None
+        raise HTTPException(503, "Le registre est indisponible.") from None
     reponse = ReponseInscription(identifiant=inst.identifiant, etat=inst.etat.value)
     return JSONResponse(reponse.model_dump(), status_code=201 if neuve else 200)
 
@@ -249,16 +254,17 @@ async def renouveler_bail(request: Request, session: Session = Depends(get_sessi
     demande = await _lire_signee(request, DemandeBail)
     cle = baux.cle_de_signature()
     if cle is None:
-        raise _refus(503, "Le registre ne délivre pas encore de bail.")
+        raise HTTPException(503, "Le registre ne délivre pas encore de bail.")
     try:
-        inst = session.exec(
-            select(Installation).where(Installation.identifiant == demande.identifiant)
-        ).first()
-        if inst is None:
-            raise _refus(404, "Installation inconnue du registre.")
+        inst = present_ou_404(
+            session.exec(
+                select(Installation).where(Installation.identifiant == demande.identifiant)
+            ).first(),
+            INCONNUE,
+        )
         if inst.cle_publique != demande.cle_publique:
             _signaler_clone(session, inst)
-            raise _refus(409, "Cet identifiant appartient à une autre clé.")
+            raise HTTPException(409, "Cet identifiant appartient à une autre clé.")
         inst.version_logicielle = demande.version_logicielle
         inst.vue_le = horloge.maintenant()
         session.add(inst)
@@ -267,7 +273,7 @@ async def renouveler_bail(request: Request, session: Session = Depends(get_sessi
     except SQLAlchemyError as exc:
         session.rollback()
         logger.warning("registre : bail non délivré (%s)", type(exc).__name__)
-        raise _refus(503, "Le registre est indisponible.") from None
+        raise HTTPException(503, "Le registre est indisponible.") from None
     return baux.delivrer(inst, cle, horloge.maintenant()).model_dump(mode="json")
 
 
@@ -277,27 +283,35 @@ async def recevoir_rapport(request: Request, session: Session = Depends(get_sess
     """Le rapport nocturne d'une installation inscrite, signé par SA clé (R3)."""
     corps = await request.body()
     if len(corps) > TAILLE_MAX:
-        raise _refus(413, "Rapport trop volumineux.")
+        raise HTTPException(413, "Rapport trop volumineux.")
     try:
         rapport = Rapport.model_validate_json(corps)
     except ValidationError:
-        raise _refus(422, "Rapport illisible : il ne suit pas le contrat de données.") from None
+        raise HTTPException(
+            422, "Rapport illisible : il ne suit pas le contrat de données."
+        ) from None
     if rapport.version_contrat != VERSION_CONTRAT:
-        raise _refus(400, f"Version du contrat de données attendue : {VERSION_CONTRAT}.")
+        raise HTTPException(400, f"Version du contrat de données attendue : {VERSION_CONTRAT}.")
     try:
-        inst = session.exec(
-            select(Installation).where(Installation.identifiant == rapport.identite.identifiant)
-        ).first()
-        if inst is None or not inst.cle_publique:
-            raise _refus(404, "Installation inconnue du registre.")
+        inst = present_ou_404(
+            session.exec(
+                select(Installation).where(
+                    Installation.identifiant == rapport.identite.identifiant,
+                    #  Sans clé, elle ne peut rien signer : comme absente.
+                    Installation.cle_publique.is_not(None),
+                    Installation.cle_publique != "",
+                )
+            ).first(),
+            INCONNUE,
+        )
         if not signature.verifier(
             inst.cle_publique, corps, request.headers.get(EN_TETE_SIGNATURE, "")
         ):
-            raise _refus(401, "Signature de l'installation absente ou invalide.")
+            raise HTTPException(401, "Signature de l'installation absente ou invalide.")
         rapports.ranger(session, inst, rapport)
         session.commit()
     except SQLAlchemyError as exc:
         session.rollback()
         logger.warning("registre : rapport non rangé (%s)", type(exc).__name__)
-        raise _refus(503, "Le registre est indisponible.") from None
+        raise HTTPException(503, "Le registre est indisponible.") from None
     return {"recu": True}

@@ -20,7 +20,7 @@ from app.registre import signature
 from app.registre.modeles import DecisionRegistre, EtatInscription, Installation
 from app.utils import installation
 from tests.aides_http import base_http, client_http
-from tests.aides_registre import installation_branchee
+from tests.aides_registre import installation_branchee, modifier_inscrite
 
 CONTACT = Contact(prenom="Alix", nom="Durand", courriel="alix@example.org")
 
@@ -32,27 +32,18 @@ def registre(monkeypatch, tmp_path):
         yield moteur
 
 
-def _decider(moteur, etat: EtatInscription) -> None:
-    """Le geste de l'opérateur de la référence (l'onglet viendra avec R4)."""
-    with Session(moteur) as s:
-        inst = s.exec(select(Installation).where(Installation.identifiant == "CF-000001")).one()
-        inst.etat = etat
-        s.add(inst)
-        s.commit()
-
-
 def test_inscrite_en_attente_puis_validee_puis_suspendue(registre):
     client.inscrire(CONTACT)
     verdict = client.constat_courant()
     assert (verdict.etat, verdict.identifiant) == ("limitee", "CF-000001")
     assert "attente" in verdict.raison
 
-    _decider(registre, EtatInscription.active)
+    modifier_inscrite(registre, etat=EtatInscription.active)
     client.renouveler()
     verdict = client.constat_courant()
     assert (verdict.etat, verdict.canal, verdict.epoque) == ("active", "replica", 1)
 
-    _decider(registre, EtatInscription.suspendue)
+    modifier_inscrite(registre, etat=EtatInscription.suspendue)
     client.renouveler()
     assert client.constat_courant().etat == "suspendue"
 
@@ -74,6 +65,13 @@ def test_deux_cles_sous_un_identifiant_sont_un_clone_signale(registre):
     with Session(registre) as s:
         gestes = s.exec(select(DecisionRegistre.geste)).all()
     assert "clone_signale" in gestes
+
+
+def test_un_bail_demande_pour_une_installation_inconnue_rend_404(registre):
+    client.inscrire(CONTACT)
+    modifier_inscrite(registre, identifiant="CF-000999")
+    with pytest.raises(client.RegistreInjoignable, match="404 Installation inconnue du registre"):
+        client.renouveler()
 
 
 def test_sans_cle_des_baux_la_reference_ne_delivre_rien_et_c_est_dit(registre, monkeypatch):
