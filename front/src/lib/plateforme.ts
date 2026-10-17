@@ -25,6 +25,10 @@ export const NOM_PLATEFORME = 'CoproFirst';
  *  (#1772) : il portait celui de la résidence, et l'ancienne adresse redirige. */
 export const DEPOT_SOURCE = 'https://github.com/philippe-tressard/coprofirst';
 
+/** Le site de présentation du logiciel — « À propos de CoproFirst », en pied
+ *  de page (#2040). Le front seul le lie : l'API ne le nomme nulle part. */
+export const SITE_PLATEFORME = 'https://coprofirst.fr';
+
 /** La licence, telle qu'on l'identifie, la nomme et la lie. Le texte qui fait
  *  foi est l'officiel, en anglais (`LICENSE`). */
 export const LICENCE_SPDX = 'AGPL-3.0-or-later';

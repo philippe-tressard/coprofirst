@@ -27,6 +27,7 @@
 	import {
 		dansLaPlace,
 		deplacer,
+		ELEMENT_PIED,
 		ELEMENTS_PIED,
 		PLACES_REGLABLES,
 		PREFIXE_NOM_MAX,
@@ -39,7 +40,6 @@
 	export let siteSaving = false;
 	export let saveSiteConfig: () => void;
 
-	const parCode = new Map(ELEMENTS_PIED.map((e) => [e.code, e]));
 	/** La marque ne se règle pas ici : elle se montre, au cadenas. */
 	const marque = ELEMENTS_PIED.find((e) => e.place === 'marque');
 
@@ -70,7 +70,7 @@
 				<LibelleGroupe {titre} id="pied-{place}">
 					<ol class="liste-pied">
 						{#each codes as code, i (code)}
-							{@const e = parCode.get(code)}
+							{@const e = ELEMENT_PIED.get(code)}
 							{#if e}
 								<li>
 									<button

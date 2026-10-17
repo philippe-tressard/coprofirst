@@ -43,24 +43,39 @@
  * - **la marque** — le logo et le nom de la résidence, en gras. Elle ne se
  *   masque ni ne se déplace : « la partie non négociable » ;
  * - **les mentions**, en petit sous le nom (année, texte libre, version, serveur) ;
- * - **les liens**, à droite (code source, mentions légales, confidentialité).
+ * - **les liens**, à droite (site de présentation et code source du logiciel,
+ *   mentions légales, confidentialité). Depuis le 17/10/2026 (#2040), chaque
+ *   lien déclare sa cible ici (`lien`) : le composant les rend tous pareil.
  *
  * Chaque élément déclare sa `place`. L'ordre réglé vaut À L'INTÉRIEUR d'une
  * place : il se stocke toujours en entier, si bien qu'un ordre enregistré avant
  * la carte se lit sans migration — chaque place y garde son ordre relatif.
  */
-import { NOM_PLATEFORME } from '$lib/plateforme';
+import { lienSource, NOM_PLATEFORME, SITE_PLATEFORME } from '$lib/plateforme';
 
 /** Où l'élément se rend dans la carte. */
 export type PlacePied = 'marque' | 'mention' | 'lien';
 
+/**
+ * La cible d'un élément de la place `lien`, lue de l'empreinte du build (seul
+ * le code source en dépend). Un lien qui SORT du site s'ouvre dans un nouvel
+ * onglet, porte l'icône de sortie et une infobulle — obligatoire : « Logiciel
+ * libre » ne dit pas « code », et l'AGPL veut une offre reconnaissable (#2040).
+ */
+export type LienPied = { cible: (empreinte: string) => string } & (
+	{ externe: true; infobulle: string } | { externe?: false }
+);
+
 export interface ElementPied {
 	code: string;
-	/** Le nom de l'élément dans le réglage de l'administration. */
+	/** Le nom de l'élément — dans le réglage de l'administration, et pour un
+	 *  lien, le texte même du lien : un seul nom pour les deux écrans. */
 	libelle: string;
 	place: PlacePied;
 	/** Pourquoi l'élément ne se masque pas. S'il est absent, il se masque. */
 	verrouille?: string;
+	/** Présent pour la place `lien`, et pour elle seule. */
+	lien?: LienPied;
 }
 
 /** Les éléments du pied de page, dans leur ordre PAR DÉFAUT — que
@@ -77,25 +92,45 @@ export const ELEMENTS_PIED: readonly ElementPied[] = [
 	{ code: 'version', libelle: 'Version', place: 'mention' },
 	{ code: 'serveur', libelle: 'Serveur (RPi)', place: 'mention' },
 	{
+		code: 'site',
+		libelle: `À propos de ${NOM_PLATEFORME}`,
+		place: 'lien',
+		lien: {
+			cible: () => SITE_PLATEFORME,
+			externe: true,
+			infobulle: `Le site de présentation de ${NOM_PLATEFORME}, le logiciel qui fait tourner ce site`,
+		},
+	},
+	{
 		code: 'source',
-		libelle: `${NOM_PLATEFORME} (code source)`,
+		libelle: 'Logiciel libre',
 		place: 'lien',
 		verrouille:
 			'la licence AGPL impose d’offrir le code source de la version en service à qui utilise le site',
+		lien: {
+			cible: lienSource,
+			externe: true,
+			infobulle: 'Le code source de la version en service',
+		},
 	},
 	{
 		code: 'mentions',
 		libelle: 'Mentions légales',
 		place: 'lien',
 		verrouille: 'elles doivent rester accessibles depuis chaque page (LCEN, art. 6)',
+		lien: { cible: () => '/mentions-legales' },
 	},
 	{
 		code: 'confidentialite',
 		libelle: 'Confidentialité',
 		place: 'lien',
 		verrouille: 'l’information des personnes doit rester accessible (RGPD, art. 13)',
+		lien: { cible: () => '/politique-de-confidentialite' },
 	},
 ];
+
+/** Chaque élément, par son code — le pied de page et son réglage les lisent là. */
+export const ELEMENT_PIED = new Map(ELEMENTS_PIED.map((e) => [e.code, e]));
 
 /** Les places qui se règlent dans l'administration, avec leur intitulé — la
  *  marque n'en est pas : elle ne bouge pas. */
@@ -104,11 +139,9 @@ export const PLACES_REGLABLES: readonly { place: PlacePied; titre: string }[] = 
 	{ place: 'lien', titre: 'Liens, à droite' },
 ];
 
-const PLACE = new Map(ELEMENTS_PIED.map((e) => [e.code, e.place]));
-
 /** Les codes d'`ordre` qui se rendent à `place`, dans cet ordre. */
 export function dansLaPlace(ordre: readonly string[], place: PlacePied): string[] {
-	return ordre.filter((c) => PLACE.get(c) === place);
+	return ordre.filter((c) => ELEMENT_PIED.get(c)?.place === place);
 }
 
 /** La clé de configuration — publique : le pied de page la lit dans `/config`. */
@@ -219,10 +252,10 @@ export function elementsAffiches(r: ReglagePied): string[] {
 /** L'ordre, l'élément `code` échangé avec son voisin DE MÊME PLACE, avant (-1)
  *  ou après (+1) ; inchangé en bout de place. */
 export function deplacer(ordre: readonly string[], code: string, sens: -1 | 1): string[] {
-	const place = PLACE.get(code);
+	const place = ELEMENT_PIED.get(code)?.place;
 	const i = ordre.indexOf(code);
 	let j = i + sens;
-	while (j >= 0 && j < ordre.length && PLACE.get(ordre[j]) !== place) j += sens;
+	while (j >= 0 && j < ordre.length && ELEMENT_PIED.get(ordre[j])?.place !== place) j += sens;
 	if (i < 0 || place === undefined || j < 0 || j >= ordre.length) return [...ordre];
 	const suite = [...ordre];
 	[suite[i], suite[j]] = [suite[j], suite[i]];
