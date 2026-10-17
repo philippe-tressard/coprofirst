@@ -120,6 +120,24 @@ def test_la_reference_tire_exactement_ce_que_la_ci_publie():
     assert _constante_shell("REGISTRE_IMAGES") == _yaml(WORKFLOW)["env"]["REGISTRE"]
 
 
+def test_la_purge_reconnait_les_images_par_l_etiquette_que_la_ci_pose():
+    """Une purge par l'étiquette de Compose ne voyait AUCUNE image tirée : 90 Go par nœud (17/10/2026).
+
+    Le workflow pose `org.opencontainers.image.source=https://github.com/<dépôt>` ;
+    le dépôt se lit dans le registre (`ghcr.io/<propriétaire>`) et le préfixe des
+    paquets (`coprofirst-<service>`). Et la maintenance hebdomadaire la rejoue.
+    """
+    texte = WORKFLOW.read_text(encoding="utf-8")
+    assert "org.opencontainers.image.source=https://github.com/${{ github.repository }}" in texte
+    proprietaire = _yaml(WORKFLOW)["env"]["REGISTRE"].removeprefix("ghcr.io/")
+    assert "${{ env.REGISTRE }}/coprofirst-${{ matrix.service.nom }}" in texte
+    assert _constante_shell("SOURCE_IMAGES") == f"https://github.com/{proprietaire}/coprofirst"
+    maintenance = (RACINE / "scripts" / "exploitation" / "maintenance.sh").read_text(
+        encoding="utf-8"
+    )
+    assert "purger_images_ci_orphelines" in maintenance
+
+
 def test_auto_deploy_et_la_bascule_obtiennent_sans_construire_eux_memes():
     """La porte est `obtenir_images` : tirer, construire seulement en secours.
 
