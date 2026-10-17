@@ -17,7 +17,7 @@
  *    vague et l'épinglage réglés avec un motif, et les canaux en tête de l'onglet.
  *  Sur bureau et sur téléphone, sans défilement horizontal.
  */
-import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { boiteStable, expect, MEMBRE_CS, simulerApi, test } from './aides';
 import type { FicheInstallation, RapportInstallation, RegistreLu } from '../src/lib/api';
 
 const OPERATEUR = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
@@ -360,6 +360,10 @@ test('Installations : la posture se lit en coches — conforme, à corriger, inc
 	const bulle = page.locator(`#${await doc.getAttribute('aria-controls')}`);
 	await expect(bulle).toBeHidden();
 	await doc.focus();
+	//  La carte dépliée cale la page en défilant, et la bulle se ferme au défilement :
+	//  sur une fiche plus haute (la section « Canal et version », #1881), Entrée
+	//  tombait encore dans ce défilement — deux échecs sur trois. On attend l'arrêt.
+	await boiteStable(doc);
 	await page.keyboard.press('Enter');
 	await expect(doc).toHaveAttribute('aria-expanded', 'true');
 	await expect(bulle).toBeVisible();
