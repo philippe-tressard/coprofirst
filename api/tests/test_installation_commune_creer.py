@@ -26,23 +26,23 @@ from tests.aides_base import adresse_de_test
 from tests.aides_installation_commune import ENVIRONNEMENT, installation_commune
 
 
-def _args(identifiant="peupliers", code_postal="33000", nom="Les Peupliers", **autres):
+def _args(identifiant="peupliers", code_postal="33000", appellation="Les Peupliers", **autres):
     return Namespace(
         identifiant=identifiant,
         code_postal=code_postal,
-        nom=nom,
+        nom=appellation,
         expediteur=autres.get("expediteur", "contact@peupliers.example"),
         hote=autres.get("hote"),
     )
 
 
 def test_les_noms_derivent_de_l_identifiant_seul():
-    assert creer.noms_derives("les-peupliers") == {
-        "ROLE": "copro_les_peupliers",
-        "BASE": "copro_les_peupliers",
-        "VAR_BASE": "LES_PEUPLIERS_DATABASE_URL",
-        "VAR_SECRET": "LES_PEUPLIERS_SECRET_KEY",
-        "RACINE": "/app/uploads/les-peupliers",
+    assert creer.noms_derives("bloc-2") == {
+        "ROLE": "copro_bloc_2",
+        "BASE": "copro_bloc_2",
+        "VAR_BASE": "BLOC_2_DATABASE_URL",
+        "VAR_SECRET": "BLOC_2_SECRET_KEY",
+        "RACINE": "/app/uploads/bloc-2",
     }
 
 

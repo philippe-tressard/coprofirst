@@ -8,12 +8,11 @@ Un seul code, deux façons d'héberger une copropriété (spec
 - **une installation commune** : plusieurs copropriétés, chacune dans sa base,
   servies par les mêmes conteneurs. Ce dossier décrit cette seconde façon.
 
-> ⚠️ **Livré en deux lots.** Le premier (#1894) pose le registre des
-> copropriétés, leurs adresses et l'aiguillage. Le second — migrations de chaque
-> base au démarrage, fichiers `/uploads/*` par copropriété, configuration lue par
-> le rendu serveur selon l'hôte, outillage « créer une copropriété » — est suivi
-> dans #2053. **Avant lui, une installation commune ne se met pas en
-> service.**
+> Livré en deux lots : le premier (#1894) pose le registre des copropriétés, leurs
+> adresses et l'aiguillage ; le second (#2053) les sert réellement — une base
+> préparée par copropriété au démarrage, le rendu serveur selon l'hôte, les
+> commandes qui nomment leur copropriété, l'outillage « créer une copropriété »,
+> les sauvegardes et la mise à jour nocturne par base.
 
 ## Les adresses
 
@@ -34,6 +33,35 @@ l'hébergeur leur fait choisir un nom qui les distingue. L'hôte commun **ne ser
 aucune donnée** : toute route de copropriété y répond 421, et l'aiguillage exige la
 correspondance exacte, sans liste ni suggestion, avec un nombre de tentatives
 limité. Une copropriété **suspendue** n'est jamais une destination.
+
+## Démarrer l'installation
+
+Une installation commune se lance avec une surcouche de plus, qui fait servir au
+front l'hôte que le visiteur a demandé (son `ORIGIN` est vidé, l'hôte se lit dans la
+requête) :
+
+```bash
+docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml \
+    -f deploiement/standard/commune/compose.commune.yml up -d
+```
+
+## Ajouter une copropriété — `creer-copropriete.sh`
+
+Depuis le dossier de l'installation, une fois la déclaration posée (ci-dessous) :
+
+```bash
+bash deploiement/standard/commune/creer-copropriete.sh tilleuls \
+    --code-postal 75015 --nom "Les Tilleuls" --expediteur contact@exemple.fr
+```
+
+Il valide la copropriété contre la déclaration en service (un alias déjà pris est
+refusé avant tout geste), crée son rôle et sa base PostgreSQL — fermée aux autres
+rôles —, écrit l'URL de la base et un secret neuf dans `.env`, **recrée l'API** pour
+qu'elle les lise (quelques secondes d'interruption pour toutes les copropriétés),
+puis prépare la base, y pose l'administrateur initial — son mot de passe temporaire
+s'affiche : à transmettre à l'administrateur de la copropriété —, crée son dossier
+de fichiers et, en dernier, l'ajoute à la déclaration. Rien n'est réutilisé en
+silence : un rôle, une base ou une variable déjà là arrêtent tout.
 
 ## Déclarer les copropriétés
 
@@ -67,8 +95,21 @@ limité. Une copropriété **suspendue** n'est jamais une destination.
 4. Importer la garde des pages dans le `Caddyfile`, en tête du dernier `handle`
    (le mode d'emploi est en tête de `garde-des-pages.caddy`).
 
-Le fichier est relu quand il change : ajouter une copropriété ne demande pas de
-redémarrer l'API.
+Le fichier est relu quand il change. Une copropriété **neuve** demande pourtant de
+recréer l'API, qui ne lit son environnement — l'URL de la base, le secret —
+qu'au démarrage : c'est ce que fait `creer-copropriete.sh`, dans le bon ordre.
+
+## Ce qui vaut pour chaque copropriété
+
+| Sujet | Comportement |
+|---|---|
+| **Démarrage** | chaque base déclarée est attendue, migrée, ou reçoit le schéma si elle est neuve (`app/utils/preparer_bases`) ; une base illisible ou en échec **ne bloque pas les autres**, et sa ligne le dit dans `docker compose logs api` |
+| **Une base qui n'est pas prête** | son hôte seul reçoit 503 (« momentanément indisponible ») ; ses tâches planifiées sont sautées ; elle est relue toutes les 30 s — réparée, elle est servie sans redémarrage |
+| **Santé** (`/api/health`) | 200 `ok` si toutes sont servies, 200 `degrade` si l'une ne l'est pas, 503 si aucune — ni nom ni nombre : la route répond à tout hôte |
+| **Commandes** | `python -m app.seed`, `app.demo.charger`, `export_copropriete verifier` exigent `--copropriete <identifiant>` et refusent sans lui ; aucune ne se replie sur la copropriété de la configuration |
+| **Courriels** | chaque copropriété règle son SMTP dans **Admin › Configuration** ; seule son adresse d'expédition déclarée amorce sa base. Les `MAIL_*` du `.env` sont le SMTP de l'**installation** (alertes à l'opérateur), jamais recopiés chez une copropriété (#2058) |
+| **Sauvegardes** | archives et exports sous `BACKUP_DIR/coproprietes/<identifiant>/` : une copropriété ne voit ni ne fait tourner celles d'une autre ; heure et nombre de versions se règlent dans sa **Maintenance**, effet dès l'heure suivante |
+| **Mise à jour nocturne** | `mise-a-jour.sh` exporte et vérifie **chaque** base avant de rien changer, et les restaure toutes si la santé reste KO ; une déclaration invalide la refuse. Son rapport reste au journal : il n'appartient à aucune copropriété |
 
 ## Le nom de domaine — des gestes de l'hébergeur
 

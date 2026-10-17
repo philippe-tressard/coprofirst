@@ -179,14 +179,42 @@ copropriétés est un **fichier déclaratif** de l'installation (`COPROPRIETES_F
   (l'hôte commun rend 421 à toute route de copropriété, cas zéro et témoin ; un alias
   inconnu ne redirige nulle part ; alias uniques et noms d'hôte valides).
 
-**Reste, second lot** (#2053) avant toute mise en service : migrations de
-chaque base au démarrage (`start.sh` n'en migre qu'une), `/uploads/*` par copropriété
-sous Caddy (une seule racine `/srv` aujourd'hui), configuration lue par le rendu
-serveur du front selon l'hôte (il appelle l'API par un nom interne, qui ne désigne
-plus personne à deux copropriétés ; `ORIGIN` du front unique), scripts hors requête
-qui supposent la copropriété de la configuration, outillage « créer une copropriété »
-(base, rôle, secret), sauvegarde par copropriété ; et l'exploitation — DNS et
-certificat génériques, gestes de l'hébergeur.
+**Second lot, 17/10/2026 (#2053)** — servir réellement plusieurs copropriétés.
+Arbitrages du jour, pris dans le lot :
+- **chaque base est préparée au démarrage** (`utils/preparer_bases`, appelé par
+  `start.sh`) : la décision que `start.sh` écrivait en shell — attendre, base en
+  avance, schéma initial, migrer — vit là, une fois, pour `DATABASE_URL` ou pour
+  chaque base déclarée. Une base illisible ou en échec **ne bloque pas les autres**
+  (spec §4.3) ; l'API la refuse ensuite par la **garde des bases**
+  (`installation_commune/bases_pretes`) : 503 pour son seul hôte, ses tâches
+  sautées, relue toutes les 30 s. `/health` d'une installation commune ne rend 503
+  que si AUCUNE n'est servable (la mise à jour nocturne revient alors en arrière),
+  « degrade » sinon — ni nom ni nombre ;
+- **hors requête, aucune copropriété n'est devinée** : `contexte.courante()` lève
+  `HorsCopropriete` sur une installation commune hors de `dans()`. Le démarrage
+  (`app/demarrage`) et le rapport nocturne nomment leurs copropriétés une à une ;
+  une commande (`python -m app.seed`…) exige `--copropriete` (`utils/commande`) ;
+- **le rendu serveur du front porte l'hôte de la page** (`lib/server/config-site.ts`,
+  par `node:http` : le `fetch` de Node ignore un `Host` posé à la main) ; le front
+  d'une installation commune lit l'hôte dans la requête (`compose.commune.yml` :
+  `ORIGIN` vide, `HOST_HEADER`, `PROTOCOL_HEADER`) — sans action de formulaire, la
+  vérification CSRF de SvelteKit n'a rien à comparer ;
+- **créer une copropriété** : `deploiement/standard/commune/creer-copropriete.sh`
+  — rôle et base fermée aux autres rôles (gestes partagés avec le registre,
+  `deploiement/standard/lib-bases.sh`), secret neuf dans `.env`, API recréée, base
+  préparée et semée AVANT d'être déclarée ; une copropriété neuve demande donc une
+  recréation de l'API (son environnement), la déclaration seule se relit à chaud ;
+- **sauvegardes par copropriété** : `contexte.dossier_des_sauvegardes()` —
+  `BACKUP_DIR/coproprietes/<identifiant>/` sur une installation commune, la racine
+  sur une installation propre ; la mise à jour nocturne exporte, vérifie et, au
+  besoin, restaure chaque base ;
+- 🔒 l'essai de bout en bout — une déclaration, deux vraies bases, une troisième
+  injoignable, la copropriété choisie par le seul `Host` — vit dans
+  `test_etancheite_coproprietes.py`.
+
+En attente d'un arbitrage de l'auteur, posé le 17/10/2026 : le **service de
+`/uploads/*`** par copropriété (§4.4) et la source de l'**adresse publique** (§4.8 bis).
+Reste ensuite l'exploitation — DNS et certificat génériques, gestes de l'hébergeur.
 
 ### 4.2 Le registre de la plateforme
 
@@ -223,6 +251,13 @@ sa configuration. Ni table ni écran avant le choix de l'hébergeur (phase 3).
 Stockage objet, **un préfixe ou un compartiment par copropriété**, avec des droits
 d'accès qui l'imposent. Un chemin de fichier ne se construit **jamais** à partir
 d'une donnée de la requête.
+
+**Le service de `/uploads/*` sur une installation commune** — question posée à
+l'auteur le 17/10/2026 (#2053), deux options : (A) Caddy sert toujours, la racine de
+la copropriété lui est rendue en en-tête par `/auth/verifier-acces` ; (B) l'API sert
+les fichiers de la copropriété résolue par l'hôte, Caddy relaie. Recommandation : B,
+l'étanchéité ne reposant alors sur aucun contrat d'en-tête. Les Raspberry Pi gardent
+le service par Caddy dans les deux cas.
 
 ### 4.5 La mémoire du processus — le point faible de B
 
@@ -284,6 +319,22 @@ pas les autres**. Chaque exécution est journalisée par copro.
 - **IA** : clé, plafonds et coûts **par copro**. Le registre des usages de l'IA
   (`utils/llm_usages.py`) en est déjà la forme.
 
+### 4.8 bis Les réglages — un niveau, une source (#2058, 17/10/2026)
+
+Règle : **l'environnement porte les secrets et l'infrastructure de l'INSTALLATION, la
+base porte les choix de chaque COPROPRIÉTÉ — jamais les deux pour un même réglage.**
+
+| Réglage | Niveau | Source unique |
+|---|---|---|
+| SMTP d'une copropriété (serveur, port, identifiants, expéditeur, case « envoi actif ») | copropriété | sa base (Admin) ; `MAIL_*` ne l'**amorce** qu'une fois (`smtp.amorcer`), en reproduisant ce que l'ancien repli produisait — rien ne change au premier démarrage ; une copropriété d'installation commune n'amorce que son adresse d'expédition, jamais les identifiants de l'hébergeur |
+| SMTP de l'installation (alertes à l'opérateur) | installation | `MAIL_*` (`connexion_smtp_installation`) |
+| heure et versions conservées de la sauvegarde | copropriété | sa base ; la tâche passe chaque heure et relit l'heure (effet immédiat) ; `BACKUP_HOUR` retiré |
+| versions conservées de la base `plateforme` | installation | `BACKUP_KEEP_VERSIONS` |
+| adresse publique (`site_url` ⇄ `ORIGIN`) | — | **question posée à l'auteur le 17/10/2026** : la dériver (d'`ORIGIN`, ou de l'adresse de la copropriété dans une installation commune), ou garder les deux sous un contrôle d'écart. Recommandation : la dériver |
+
+🔒 `test_reglages_un_seul_niveau.py` : un réglage de `Settings` qui a un jumeau en
+base n'est lu que par ses lecteurs déclarés.
+
 ### 4.9 Les sauvegardes et la réversibilité
 
 - Une sauvegarde **par base**, chiffrée, **restaurable seule**, sans toucher aux
@@ -292,6 +343,11 @@ pas les autres**. Chaque exécution est journalisée par copro.
   données **en routine**. Le mécanisme reste à concevoir.
 - **Départ d'une copropriété** : elle repart avec sa base et ses fichiers, puis
   ceux-ci sont supprimés de la plateforme.
+- **Par copropriété dans une installation commune** (#2053, 17/10/2026) : archives
+  et exports sous `coproprietes/<identifiant>/` du dossier des sauvegardes
+  (`contexte.dossier_des_sauvegardes`) — un administrateur listait sinon l'export
+  d'une autre copropriété ; la mise à jour nocturne exporte et vérifie chaque base.
+  Le chiffrement qui tiendrait l'opérateur hors des données (D5) reste à concevoir.
 - **La base `plateforme`** (registre des installations, §4.11) a sa propre
   sauvegarde, à part de celles des copropriétés : chaque nuit, chez la référence,
   le même export vérifié par réimport, sur les métadonnées du registre
@@ -649,7 +705,7 @@ soumis à accord, lot par lot.
 |---|---|---|---|---|
 | P2-1 | **Contrôle de la mémoire du processus** : tout nouvel état mutable de module est refusé ; les existants sont déclarés, à indexer ou du processus (§4.5). **Livré en v2.119.1** | S | — | #1743 |
 | P2-2 | **Un seul accès aux ressources** d'une copropriété — base, fichiers, secret, expéditeur, services — par un module `contexte` qui lit `settings` tant qu'il n'y a qu'une copro ; garde-fou contre l'accès direct (§4.1, règle 3). Les états « à indexer » de P2-1 s'y soldent. **Livré le 10/10/2026** : `app/contexte.py` — `moteur()`, `nouvelle_session()`, `courante()` (URL de base, racine des fichiers, secret, expéditeur) et `etat(nom)`, le registre des états de processus indexé par la copropriété ; les six états à indexer y sont passés (plafond à zéro) ; 🔒 `test_contexte_source_unique.py` refuse `engine`, `SessionLocal` et les cinq réglages hors du contexte. Les services vivent déjà en base (E1) : ils suivent la base. Laissé exprès aux lots suivants : les racines de fichiers sont lues **une fois, au chargement** du module (P2-6 les résoudra à la requête), et le dossier des sauvegardes reste global (P2-3, §4.9) | L | P2-1 | #1744 |
-| P2-3 | **Tâches planifiées par copropriété** : une enveloppe, un journal par copro, l'échec de l'une ne bloque pas les autres (§4.6). **Livré le 10/10/2026** : `contexte.pour_chaque_copropriete(tache, id)` enveloppe les onze enregistrements (neuf permanents, deux rattrapages) ; `contexte.dans(copro)` pose la copropriété servie dans une variable de contexte ; `TACHES_DE_LA_PLATEFORME` (vide : toutes les tâches d'aujourd'hui lisent la base d'une copropriété) ; 🔒 `test_taches_planifiees_declarees.py` refuse un `add_job` nu, et le démarrage journalise `HORS COPROPRIETE`. Le disque est sorti du contrôle des copropriétés à partir de la deuxième (`utils/sante_plateforme`, tâche `sante_plateforme`, #1814) ; son destinataire est l'opérateur de l'installation, un **réglage de l'installation** (`COURRIEL_OPERATEUR`, arbitré le 13/10/2026), joint par le SMTP de l'installation (`MAIL_*`) — jamais les comptes des copropriétés (D5). Reste pour la phase 3 : le dossier des sauvegardes est commun | M | P2-2 | #1745 |
+| P2-3 | **Tâches planifiées par copropriété** : une enveloppe, un journal par copro, l'échec de l'une ne bloque pas les autres (§4.6). **Livré le 10/10/2026** : `contexte.pour_chaque_copropriete(tache, id)` enveloppe les onze enregistrements (neuf permanents, deux rattrapages) ; `contexte.dans(copro)` pose la copropriété servie dans une variable de contexte ; `TACHES_DE_LA_PLATEFORME` (vide : toutes les tâches d'aujourd'hui lisent la base d'une copropriété) ; 🔒 `test_taches_planifiees_declarees.py` refuse un `add_job` nu, et le démarrage journalise `HORS COPROPRIETE`. Le disque est sorti du contrôle des copropriétés à partir de la deuxième (`utils/sante_plateforme`, tâche `sante_plateforme`, #1814) ; son destinataire est l'opérateur de l'installation, un **réglage de l'installation** (`COURRIEL_OPERATEUR`, arbitré le 13/10/2026), joint par le SMTP de l'installation (`MAIL_*`) — jamais les comptes des copropriétés (D5). Le dossier des sauvegardes, commun, est partagé par copropriété depuis #2053 (§4.9) | M | P2-2 | #1745 |
 | P2-4 | **Test d'étanchéité** sur deux copros factices aux identifiants identiques, avec cas zéro et témoin (§5.1, §5.3). **Livré le 10/10/2026** : la copropriété d'une requête se résout à l'ENTRÉE (`contexte.ResolutionCopropriete`, intergiciel ASGI le plus extérieur ; `contexte.resoudre` rend l'unique en phase 2) ; `contexte.moteur()` sert une base par copropriété, construite par la recette unique `database.creer_moteur` ; `test_etancheite_coproprietes.py` sème deux bases (administrateur et affaire de même numéro), balaie chaque route GET pour B et refuse toute réponse qui porte le témoin de A — cas zéro (routes appelées, réponses 200, lectures de B), témoin (un cache de module indexé par `user_id` est vu, `contexte.etat` ne l'est pas), jeton de A refusé par B. Vérifié par mutation : B servi par la base de A → `/admin/utilisateurs` le dénonce. Hors de sa portée, et dit dans le test : les écritures, les fichiers (P2-6), l'hôte inconnu (P2-9) | M | P2-2 | #1746 |
 | P2-5 | **CI sur PostgreSQL** (informative, puis requise) ; SQL propre au moteur regroupé dans un module de dialecte ; schéma initial PostgreSQL préparé (§4.3). **Livré en v2.125.0** : la suite est VERTE sur PostgreSQL et le workflow devient un check requis (pilote psycopg) ; le SQL propre au moteur vit dans `app/dialecte.py` ; une base neuve reçoit le schéma d'un coup, marqué à la tête (`utils/schema_initial`, `start.sh`) | M | — | #1747 |
 | P2-6 | **Stockage des fichiers** derrière une interface, disque local puis stockage objet, préfixe par copro (§4.4). Décision à y prendre : `/uploads/*` n'est plus servi en statique par Caddy. **Arbitrage du 10/10/2026 : « Reporter »** — le service reste à Caddy (`forward_auth`) ; service par l'API ou URL signées se choisiront en phase 3, avec l'hébergeur dont ils dépendent. **Livré le 10/10/2026** : `utils/stockage` — l'interface `Stockage` et `StockageDisque`, une racine par copropriété lue au contexte à chaque appel, toute clé bornée sous elle ; les quatre racines figées au chargement (`RACINE_UPLOADS`, `REPERTOIRE_PRIVE`, `UPLOADS_ROOT`, `PDF_DIR`) et les trois traductions `"/app" + url` (pièces jointes, PDF, images d'affiche) passent par lui ; une écriture ne crée jamais la racine (volume non monté → erreur). 🔒 `test_stockage_source_unique.py`, et `test_televersement_source_unique.py` : seuls `enregistrer_fichier_recu` et les fichiers produits déclarés appellent l'écriture. Les chemins ABSOLUS gardés en base sont devenus des **clés** (#1816, migration 0283 : `document.fichier_cle`, `diagnostic_rapport.fichier_cle`, `annonce_hall.pdf_cle`) ; le chemin reste écrit le temps d'une version pour le retour arrière, son retrait est un second temps (`CONTRACTIONS`) | M | P2-2 | #1748 |
