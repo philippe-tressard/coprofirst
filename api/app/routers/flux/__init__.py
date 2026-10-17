@@ -81,6 +81,7 @@ from . import (
     annuaire,
     communaute,
     epingles,
+    points_conseil,
     prestataires,
     publications,
     reglement,
@@ -106,6 +107,7 @@ _COLLECTEURS = (
     ressources.collecter,
     reglement.collecter,
     annuaire.collecter,
+    points_conseil.collecter,
 )
 
 #  Le préfixe et le tag vivent ICI : les sous-routers déclarent des chemins nus,

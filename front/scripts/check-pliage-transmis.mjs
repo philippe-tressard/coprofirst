@@ -136,6 +136,9 @@ const HORS_CADRE = {
 	'lib/components/FormulaireDocument.svelte':
 		"le document n'est pas une entité du cadre (`ux-patterns` : Document et Utilisateur " +
 		'exemptés) : pas de déclaration, donc pas de pliage à lire (#1329)',
+	'lib/components/reporting/SaisieCrAffaire.svelte':
+		"le compte rendu d'une affaire dans un point CS / Syndic n'est pas une entité du cadre : " +
+		'sa seule section s’ouvre par le geste « Compte rendu », la plier imposerait un second clic (#2041)',
 	'lib/components/FormulaireFaq.svelte':
 		"la FAQ n'a pas de déclaration d'entité : sa Réponse, obligatoire, reste dépliée (#1329)",
 };

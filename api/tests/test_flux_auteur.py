@@ -47,6 +47,7 @@ SANS_AUTEUR = {
     "sante.py": "des mesures produites par le système, personne ne les « dépose »",
     "prestataires.py": "une échéance de contrat, pas un dépôt",
     "annuaire.py": "l'arrivée d'un résident — l'objet EST la personne",
+    "points_conseil.py": "un compte rendu validé par les présents d'une réunion, pas un dépôt",
     "epingles.py": "il reprend les cartes des autres collecteurs, avec leur meta",
     "commun.py": "le socle partagé, il ne rend aucune carte",
     "schemas.py": "des déclarations",

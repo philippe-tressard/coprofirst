@@ -67,6 +67,9 @@ TACHES_PERMANENTES: dict[str, str] = {
     "desepinglage_affaires_closes": "le retrait horaire de l'épingle des affaires closes "
     "depuis 24 h (`utils/desepinglage`) — une affaire résolue ou annulée reste en tête de "
     "liste et dans le bandeau « Épinglé » jusqu'à ce que le conseil la désépingle",
+    "validation_points_conseil": "la validation d'office, toutes les heures, du compte rendu "
+    "d'un point CS / Syndic resté 7 jours sans réponse de tous les présents (#2042) — il reste "
+    "« à valider » : ses comptes rendus ne paraissent ni dans les affaires ni au fil",
     "purge_comptes_inactifs": "la purge quotidienne des comptes inactifs (#1580) — plus "
     "aucun avertissement ni aucune suppression : la durée de conservation annoncée par la "
     "politique de confidentialité redevient fictive",

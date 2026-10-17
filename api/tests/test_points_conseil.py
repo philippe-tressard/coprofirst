@@ -128,7 +128,7 @@ def test_participants_et_lieux_proposes(moteur, cs):
     assert [m["nom"] for m in r["conseil"]] == ["Martin"]
     assert [m["nom"] for m in r["syndic"]] == ["Bernard"]
     assert [(lieu["libelle"], lieu["adresse"]) for lieu in r["lieux"]] == [
-        ("Résidence", "1 rue Test"),
+        ("Copropriété", "1 rue Test"),
         ("Cabinet Test", "2 rue Test"),
         ("Dernier lieu", "Salle municipale"),
     ]

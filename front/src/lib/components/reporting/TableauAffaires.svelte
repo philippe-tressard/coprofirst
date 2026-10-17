@@ -40,6 +40,9 @@
 	export let crs: Map<number, CrAffaire> | null = null;
 	/** L'affaire dont le compte rendu est en saisie — une à la fois. */
 	export let ouverte: number | null = null;
+	/**  Le point accepte-t-il un compte rendu NOUVEAU ? Terminé, il n'offre que
+	 *   la correction des comptes rendus saisis (#2042). */
+	export let ajout = true;
 
 	$: colonnes = relance ? 6 : 4;
 
@@ -97,7 +100,7 @@
 									>{/if}{a.apercu}
 							</p>
 						{/if}
-						{#if crs}
+						{#if crs && (ajout || crs.has(a.id))}
 							<p class="cr">
 								{#if crs.get(a.id)}
 									<Badge teinte={crs.get(a.id)?.brouillon ? 'badge-gray' : 'badge-green'} compact

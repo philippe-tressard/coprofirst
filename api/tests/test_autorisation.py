@@ -125,6 +125,15 @@ _PUBLICS_ASSUMES = {
     # refuser ; plafonnée par minute ET par jour, lot et champs bornés (#1597) —
     # tenu par `test_telemetrie_collecte_bornee.py`.
     ("telemetry_collecte.py", "collect"),
+    #  Le lien de validation du compte rendu d'un point CS / Syndic (#2042) : un
+    #  membre du syndic n'a souvent pas de compte, le JETON envoyé à son adresse
+    #  l'identifie (stocké par empreinte, un par présent, refait à chaque envoi).
+    #  Lire n'engage rien (`standards/03` §5 bis) ; seuls le clic et le
+    #  commentaire agissent. Débit plafonné, et le « Conseil seul » n'est jamais
+    #  servi — tenu par `test_points_conseil_validation.py`.
+    ("points_conseil_validation.py", "lire_par_lien"),
+    ("points_conseil_validation.py", "valider_par_lien"),
+    ("points_conseil_validation.py", "commenter_par_lien"),
     #  🔴 Les quatre routes de `rapports_scripts.py` ONT QUITTÉ CETTE LISTE le
     #  19/09/2026 (#1028). Elles n'étaient pas publiques : elles sont
     #  authentifiées par une **clé partagée**, et les ranger ici en faisait un

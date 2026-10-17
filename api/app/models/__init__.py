@@ -41,6 +41,7 @@ from app.models.synthese import SyntheseAffaire as SyntheseAffaire
 from app.models.synthese import TentativeSynthese as TentativeSynthese
 from app.models.reglement import QuestionReglement as QuestionReglement
 from app.models.reglement import TexteReglement as TexteReglement
+from app.models.points_conseil import CommentairePoint as CommentairePoint
 from app.models.points_conseil import CompteRenduAffaire as CompteRenduAffaire
 from app.models.points_conseil import PointConseil as PointConseil
 from app.models.points_conseil import PresentPoint as PresentPoint

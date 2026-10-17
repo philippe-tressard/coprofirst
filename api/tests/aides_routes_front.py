@@ -154,8 +154,11 @@ _MOTIF_IMPORT_COMPOSANT = re.compile(
 #: Un composant chargé AU GESTE : `ChargementDiffere charger={() =>
 #: import('$lib/components/OngletReglement.svelte')}`, rendu ensuite par
 #: `<OngletReglement />` dans son `{#snippet}`. Le nom est celui du fichier.
+#: ⚠️ Un sous-dossier compris (17/10/2026) : l'Espace CS charge
+#: `$lib/components/reporting/OngletReporting.svelte`, et le point CS / Syndic
+#: (#2042) y pose son ancre `point-cs-…` trois niveaux plus bas.
 _MOTIF_IMPORT_DIFFERE = re.compile(
-    r"import\(\s*['\"](\$lib/components/|\./)((\w+)\.svelte)['\"]\s*\)"
+    r"import\(\s*['\"](\$lib/components/|\./)((?:[\w-]+/)*(\w+)\.svelte)['\"]\s*\)"
 )
 
 
@@ -222,11 +225,13 @@ def contenu_deplie(fichier: pathlib.Path, _profondeur: int = 4) -> str:
 
 
 def _onglet_de_la_route(route: str) -> str | None:
-    """L'identifiant d'onglet que cette route ouvre, ou `None` si la page n'en a pas."""
-    fichier = _FRONT_SRC / "lib" / "pages.ts"
-    if not fichier.is_file():
-        return None
-    for ident, r in _MOTIF_ROUTE_ONGLET.findall(fichier.read_text(encoding="utf-8-sig")):
+    """L'identifiant d'onglet que cette route ouvre, ou `None` si la page n'en a pas.
+
+    ⚠️ Lu dans `_pages_ts()`, les DEUX fichiers de la table (17/10/2026) : les
+    onglets de l'Espace CS vivent dans `pages-roles.ts`, et le premier lien vers
+    l'un d'eux (`point-cs`, #2042) passait pour une route sans onglet.
+    """
+    for ident, r in _MOTIF_ROUTE_ONGLET.findall(_pages_ts()):
         if r == route:
             return ident
     return None

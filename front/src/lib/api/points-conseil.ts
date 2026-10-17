@@ -26,6 +26,9 @@ export interface PresentPoint {
 	fonction: string | null;
 	telephone: string | null;
 	email: string | null;
+	/** A reçu la demande de validation (#2042) — jamais un invité. */
+	destinataire: boolean;
+	valide_le: string | null;
 }
 
 /** Ce que l'écran envoie : un membre par sa fiche, un invité par ses champs. */
@@ -76,6 +79,49 @@ export interface CompteRenduPoint {
 	abordees: { affaire: AffaireCitee; cr: CrAffaire }[];
 	/** Lues dans le relevé tant que le point est en cours, figées à « Terminer ». */
 	non_traitees: AffaireCitee[];
+	/** Où en est la validation par les présents (#2042). */
+	validation: ValidationPoint;
+	commentaires: CommentairePoint[];
+}
+
+export interface ValidationPoint {
+	destinataires: number;
+	valides: number;
+	/** Un commentaire reçu depuis l'envoi : les 7 jours ne courent plus. */
+	suspendue: boolean;
+	/** Quand le CR sera validé sans réponse — `null` s'il ne l'est pas d'office. */
+	echeance: string | null;
+}
+
+export interface CommentairePoint {
+	auteur: string;
+	contenu: string;
+	cree_le: string;
+}
+
+/** Ce que le porteur d'un lien de validation lit — sans ce qui est « Conseil seul ». */
+export interface CompteRenduParLien {
+	etat: EtatPoint;
+	debut: string;
+	fin: string | null;
+	a_distance: boolean;
+	lieu: string | null;
+	presents: string[];
+	abordees: { numero: string; titre: string; contenu: string }[];
+	non_traitees: string[];
+	deja_valide: boolean;
+	echeance: string | null;
+}
+
+/** Un CR validé, dans la rubrique « Comptes rendus » d'une affaire. */
+export interface CrPublie {
+	cr_id: number;
+	point_id: number;
+	debut: string;
+	a_distance: boolean;
+	lieu: string | null;
+	contenu: string;
+	conseil_seul: boolean;
 }
 
 /** Un point d'un autre mode ouvert il y a moins de deux heures : son Qui/Quand/Où. */
@@ -139,4 +185,23 @@ export const pointsConseil = {
 		api.put<CompteRenduPoint>(`/points-conseil/${id}/affaires/${ticketId}`, corps),
 	terminer: (id: number) => api.post<CompteRenduPoint>(`/points-conseil/${id}/terminer`),
 	abandonner: (id: number) => api.delete<void>(`/points-conseil/${id}`),
+	//  ── La validation (#2042) ──
+	renvoyer: (id: number) => api.post<{ envoyes: number }>(`/points-conseil/${id}/renvoyer`),
+	valider: (id: number) => api.post<void>(`/points-conseil/${id}/valider`),
+	/** Le PDF d'un CR validé, rendu par le serveur. */
+	pdf: (id: number) => api.postFichier(`/points-conseil/${id}/pdf`, {}),
+	/** La rubrique « Comptes rendus » d'une affaire : ses CR validés. */
+	crsAffaire: (ticketId: number) => api.get<CrPublie[]>(`/points-conseil/affaires/${ticketId}`),
+	/** « Conseil seul » d'un CR publié — le conseil le rend privé, ou le rouvre. */
+	confidentialite: (crId: number, conseilSeul: boolean) =>
+		api.patch<void>(`/points-conseil/comptes-rendus/${crId}`, { conseil_seul: conseilSeul }),
+	//  ── Le lien d'un présent : sans compte, le jeton seul l'identifie ──
+	lien: (jeton: string) =>
+		api.get<CompteRenduParLien>(`/points-conseil/lien/${encodeURIComponent(jeton)}`),
+	validerParLien: (jeton: string) =>
+		api.post<CompteRenduParLien>(`/points-conseil/lien/${encodeURIComponent(jeton)}/valider`),
+	commenterParLien: (jeton: string, contenu: string) =>
+		api.post<CompteRenduParLien>(`/points-conseil/lien/${encodeURIComponent(jeton)}/commentaire`, {
+			contenu,
+		}),
 };

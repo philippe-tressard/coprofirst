@@ -12,12 +12,22 @@ porte que la forme.
 | `point_conseil` | le Quand, le Où, l'état — un point par MODE du rapport |
 | `point_conseil_present` | le Qui : membres du CS, du syndic, invités |
 | `point_conseil_cr` | le compte rendu d'UNE affaire dans ce point |
+| `point_conseil_commentaire` | ce qu'un présent répond à la demande de validation (#2042) |
 
 | `etat` | ce qu'il dit |
 |---|---|
 | `en_cours` | la réunion a lieu ; le CR se saisit |
 | `a_valider` | « Terminer le point » : les non traitées sont figées |
-| `valide` | le CR fait foi (#2042 : validation par les présents) |
+| `valide` | le CR fait foi — tous les présents l'ont validé, ou 7 jours ont passé |
+
+## La validation (#2042, arbitrée le 17/10/2026)
+
+« Terminer le point » envoie le CR aux présents du CS et du syndic qui ont une
+adresse — jamais aux invités —, chacun avec SON lien (`jeton_empreinte` : le
+jeton se stocke par son empreinte, `auth/empreinte_jeton`). Le CR est validé
+quand tous l'ont validé, ou 7 jours après `envoye_le` ; un commentaire reçu
+APRÈS l'envoi suspend ce délai, jusqu'à un nouvel envoi ou une validation du
+conseil. Les règles : `utils/points_conseil_validation`.
 
 ## 🔴 Les présents sont FIGÉS
 
@@ -79,14 +89,18 @@ class PointConseil(SQLModel, table=True):
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     mis_a_jour_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     termine_le: Optional[NaiveDatetime] = None
+    #: Le dernier envoi aux présents — il fait courir les 7 jours (#2042).
+    envoye_le: Optional[NaiveDatetime] = None
     valide_le: Optional[NaiveDatetime] = None
     valide_par_id: Optional[int] = None
 
 
-class PresentPoint(SQLModel, table=True):
-    __tablename__ = "point_conseil_present"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    point_id: int = Field(foreign_key="point_conseil.id", index=True)
+class IdentitePresent(SQLModel):
+    """Ce qu'un présent EST — porté par la table et par sa lecture (`PresentRead`).
+
+    Classe de base non-table : les deux déclaraient les mêmes huit champs.
+    """
+
     nature: str
     #: La fiche de l'annuaire, pour un membre du CS ou du syndic — sans clé
     #: étrangère : la ligne du CR survit à la fiche.
@@ -98,6 +112,27 @@ class PresentPoint(SQLModel, table=True):
     fonction: Optional[str] = None
     telephone: Optional[str] = None
     email: Optional[str] = None
+
+
+class PresentPoint(IdentitePresent, table=True):
+    __tablename__ = "point_conseil_present"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    point_id: int = Field(foreign_key="point_conseil.id", index=True)
+    #: Le lien de validation de CE présent, par son empreinte (#2042) ; `None`
+    #: pour un invité, ou un présent sans adresse : il ne reçoit rien.
+    jeton_empreinte: Optional[str] = Field(default=None, index=True)
+    #: Quand il a cliqué « Je valide » — remis à `None` à chaque nouvel envoi.
+    valide_le: Optional[NaiveDatetime] = None
+
+
+class CommentairePoint(SQLModel, table=True):
+    __tablename__ = "point_conseil_commentaire"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    point_id: int = Field(foreign_key="point_conseil.id", index=True)
+    #: Le présent qui écrit, par son lien — sans clé étrangère, comme le CR.
+    present_id: Optional[int] = None
+    contenu: str = ""
+    cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
 
 
 class CompteRenduAffaire(SQLModel, table=True):

@@ -8,7 +8,9 @@
   - Point en cours : le bandeau en deux lignes, ✏️ pour le corriger, puis
     « Terminer le point » (le CR passe à valider, les non traitées se figent)
     ou « Abandonner » (ouvert par erreur).
-  - Point à valider : le bandeau, et « Ouvrir un nouveau point ».
+  - Point à valider ou validé : le bandeau, sa validation (`ValidationPoint`,
+    #2042), et « Ouvrir un nouveau point ».
+  - L'ancre `point-cs-N` est celle du fil : il y mène, une fois le CR validé.
 
   Le compte rendu de chaque affaire se saisit dans le tableau
   (`SaisieCrAffaire`) ; ce composant tient le point et le rend à la vue par
@@ -21,6 +23,7 @@
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import FormulairePoint from './FormulairePoint.svelte';
+	import ValidationPoint from './ValidationPoint.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { confirmer } from '$lib/confirmation';
 	import { messageErreur } from '$lib/erreurs';
@@ -63,6 +66,11 @@
 		} finally {
 			chargement = false;
 		}
+	}
+
+	/** Relire le point après un geste de validation. */
+	async function relire() {
+		compteRendu = (await pointsConseil.courant(mode)).compte_rendu;
 	}
 
 	/** Ce que le formulaire propose à l'ouverture : la reprise, sinon maintenant. */
@@ -118,7 +126,8 @@
 			message:
 				(n
 					? `${n} affaire${n > 1 ? 's' : ''} sans compte rendu ${n > 1 ? 'seront listées' : 'sera listée'} comme non traitée${n > 1 ? 's' : ''}. `
-					: '') + 'Le compte rendu passera à valider et ne se modifiera plus ici.',
+					: '') +
+				'Le compte rendu part aux présents du conseil et du syndic pour validation ; sans réponse de tous, il sera validé dans 7 jours.',
 			libelleConfirmer: 'Terminer',
 		});
 		if (!ok) return;
@@ -149,7 +158,11 @@
 	onMount(charger);
 </script>
 
-<section class="report-card point" aria-labelledby="titre-point-{mode}">
+<section
+	class="report-card point"
+	id="point-cs-{point ? point.id : 'aucun'}"
+	aria-labelledby="titre-point-{mode}"
+>
 	{#if chargement || erreur || !participants}
 		<EtatListe
 			{chargement}
@@ -202,6 +215,9 @@
 				{#each compteRendu.presents as p, i (p.id)}{i ? ', ' : ''}{nomPresent(p)}{/each}
 				{#if !compteRendu.presents.length}<span class="muet">Aucun présent indiqué</span>{/if}
 			</p>
+			{#if !enSaisie}
+				<ValidationPoint {compteRendu} onChange={relire} />
+			{/if}
 			<div class="gestes">
 				{#if enSaisie}
 					<span class="muet">Ouvrez une affaire du tableau pour en saisir le compte rendu.</span>

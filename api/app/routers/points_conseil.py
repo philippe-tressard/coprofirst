@@ -12,7 +12,7 @@ conseil syndical et à l'administration. Les règles vivent dans
 | `POST /points-conseil` | ouvrir un point |
 | `PATCH /points-conseil/{id}` | corriger son Quand, son Où, son Qui |
 | `PUT /points-conseil/{id}/affaires/{ticket_id}` | écrire le CR d'une affaire (vide : le retirer) |
-| `POST /points-conseil/{id}/terminer` | terminer : le CR passe à valider |
+| `POST /points-conseil/{id}/terminer` | terminer : le CR passe à valider et part aux présents (#2042) |
 | `DELETE /points-conseil/{id}` | abandonner un point ouvert par erreur |
 """
 
@@ -30,6 +30,7 @@ from app.database import get_session
 from app.models.core import Utilisateur
 from app.models.points_conseil import (
     EN_COURS,
+    IdentitePresent,
     NATURES_PRESENT,
     PRESENT_INVITE,
     CompteRenduAffaire,
@@ -38,7 +39,9 @@ from app.models.points_conseil import (
 )
 from app.utils import horloge
 from app.utils import points_conseil as regles
+from app.utils import points_conseil_validation as validation
 from app.utils.annuaire import membres_du_conseil, membres_du_syndic
+from app.utils.lecture import lire_objet
 from app.utils.recuperer import ou_404
 
 router = APIRouter(prefix="/points-conseil", tags=["points-conseil"])
@@ -90,17 +93,11 @@ class CrEntree(BaseModel):
     conseil_seul: bool = False
 
 
-class PresentRead(BaseModel):
+class PresentRead(IdentitePresent):
     id: int
-    nature: str
-    membre_cs_id: Optional[int] = None
-    membre_syndic_id: Optional[int] = None
-    prenom: Optional[str] = None
-    nom: Optional[str] = None
-    entreprise: Optional[str] = None
-    fonction: Optional[str] = None
-    telephone: Optional[str] = None
-    email: Optional[str] = None
+    #: A reçu la demande de validation (#2042), et quand il a validé.
+    destinataire: bool = False
+    valide_le: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -147,11 +144,30 @@ class AbordeeRead(BaseModel):
     cr: CrRead
 
 
+class ValidationRead(BaseModel):
+    destinataires: int
+    valides: int
+    suspendue: bool
+    echeance: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CommentaireRead(BaseModel):
+    auteur: str
+    contenu: str
+    cree_le: datetime
+
+
 class CompteRenduRead(BaseModel):
     point: PointRead
     presents: list[PresentRead]
     abordees: list[AbordeeRead]
     non_traitees: list[AffaireCiteeRead]
+    #: Où en est la validation par les présents (#2042).
+    validation: ValidationRead
+    commentaires: list[CommentaireRead]
 
 
 class RepriseRead(BaseModel):
@@ -196,11 +212,15 @@ class ParticipantsRead(BaseModel):
 
 
 def _presents_read(presents: list[PresentPoint]) -> list[PresentRead]:
-    return [PresentRead.model_validate(p) for p in presents]
+    return [
+        lire_objet(PresentRead, p, destinataire=validation.est_destinataire(p)) for p in presents
+    ]
 
 
 def _compte_rendu_read(session: Session, point: PointConseil, user: Utilisateur):
     cr = regles.compte_rendu(session, point, user)
+    commentaires = validation.commentaires_du_point(session, point.id)
+    noms = {p.id: p for p in cr.presents}
     return CompteRenduRead(
         point=PointRead.model_validate(cr.point),
         presents=_presents_read(cr.presents),
@@ -209,6 +229,17 @@ def _compte_rendu_read(session: Session, point: PointConseil, user: Utilisateur)
             for a, c in cr.abordees
         ],
         non_traitees=[AffaireCiteeRead.model_validate(a) for a in cr.non_traitees],
+        validation=ValidationRead.model_validate(
+            validation.etat_validation(point, cr.presents, commentaires)
+        ),
+        commentaires=[
+            CommentaireRead(
+                auteur=regles.nom_present(noms[c.present_id]) if c.present_id in noms else "",
+                contenu=c.contenu,
+                cree_le=c.cree_le,
+            )
+            for c in commentaires
+        ],
     )
 
 
@@ -331,9 +362,11 @@ def ecrire_cr(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
-    point = regles.exiger_en_cours(ou_404(session, PointConseil, point_id, "Point"))
+    point = ou_404(session, PointConseil, point_id, "Point")
     regles.exiger_affaire_du_point(session, point, ticket_id, user)
-    cr = regles.cr_de(session, point.id, ticket_id)
+    cr = regles.exiger_cr_modifiable(
+        point, regles.cr_de(session, point.id, ticket_id), body.contenu
+    )
     if not body.contenu.strip():
         if cr:
             session.delete(cr)
@@ -355,13 +388,15 @@ def ecrire_cr(
 @router.post(
     "/{point_id}/terminer", response_model=CompteRenduRead, summary="Terminer le point (CS/Admin)"
 )
-def terminer(
+async def terminer(
     point_id: int,
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
+    """Le CR passe à valider, et part aux présents joignables (#2042)."""
     point = regles.terminer(session, ou_404(session, PointConseil, point_id, "Point"), user)
     session.commit()
+    await validation.envoyer_pour_validation(session, point, user)
     session.refresh(point)
     return _compte_rendu_read(session, point, user)
 
