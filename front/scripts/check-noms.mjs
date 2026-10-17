@@ -152,6 +152,56 @@ for (const chemin of fichiersSources(RACINE_SRC)) {
 		if (COMPARAISON_NOM.test(ligne)) recomposent.push(`   ${rel} : ${ligne.trim().slice(0, 100)}`);
 	}
 }
+//  ── Et l'AFFICHAGE recomposé dans un écran ─────────────────────────────────
+//
+//  🔴 Signalé à l'écran le 17/10/2026 : le Qui du point CS / Syndic rendait
+//  les noms tels que tapés (« ForT »). `nomPresent` les joignait par
+//  `[p.prenom, p.nom].filter(Boolean).join(' ')` — une forme que rien ne
+//  regardait : ce contrôle-ci ne vérifiait que la concordance des DEUX
+//  implémentations et le classement, pas qu'on s'en serve.
+//
+//  Trois formes, toutes rencontrées : le gabarit Svelte `{x.prenom} {x.nom}`,
+//  le littéral `${x.prenom} ${x.nom}`, et le tableau `[x.prenom, x.nom]`
+//  aussitôt filtré ou joint. Un tableau qui ne fait que rassembler des
+//  champs de recherche (`[c.prenom, c.nom, c.fonction, …]`) n'est pas pris.
+const COMPOSITION_NOM = new RegExp(
+	[
+		String.raw`\{[\w.?]*prenom[^}]*\}\s*\{[\w.?]*\bnom\b`,
+		String.raw`\$\{[\w.?]*prenom[^}]*\}\s*\$\{[\w.?]*\bnom\b`,
+		String.raw`\[\s*[\w.?]*prenom\s*,\s*[\w.?]*\bnom\s*\]\s*\.(filter|join)`,
+	].join('|'),
+);
+//  Cas zéro du motif : sans lui, le contrôle passe en ne trouvant jamais rien.
+for (const [texte, attendu] of [
+	['<dd>{i.contact.prenom} {i.contact.nom}</dd>', true],
+	['`${u.prenom} ${u.nom}`', true],
+	["[p.prenom, p.nom].filter(Boolean).join(' ')", true],
+	['[c.prenom, c.nom, c.fonction, c.telephone]', false],
+	['{nomAffiche(u)}', false],
+]) {
+	if (COMPOSITION_NOM.test(texte) !== attendu) {
+		echouer(`Cas zéro : le motif de composition juge mal ${JSON.stringify(texte)}.`);
+	}
+}
+const composent = [];
+for (const chemin of fichiersSources(RACINE_SRC)) {
+	const rel = relative(RACINE_SRC, chemin).split(sep).join('/');
+	if (rel === 'lib/noms.ts') continue;
+	const lignes = readFileSync(chemin, 'utf8').split(SAUT);
+	lignes.forEach((ligne, i) => {
+		const nue = ligne.trim();
+		if (nue.startsWith('//') || nue.startsWith('*')) return; // un commentaire raconte
+		if (COMPOSITION_NOM.test(ligne)) composent.push(`   ${rel}:${i + 1} : ${nue.slice(0, 100)}`);
+	});
+}
+if (composent.length) {
+	echecs.push(
+		['Ces écrans composent « Prénom NOM » à la main :', ...composent].join(SAUT) +
+			SAUT +
+			'   Emploie `nomAffiche` de $lib/noms — le nom passe en capitales.',
+	);
+}
+
 if (recomposent.length) {
 	echecs.push(
 		['Ces écrans recomposent le CLASSEMENT des personnes :', ...recomposent].join(SAUT) +

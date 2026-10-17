@@ -34,6 +34,7 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import { messageErreur } from '$lib/erreurs';
 	import { fmtDatetime } from '$lib/date';
+	import { nomAffiche } from '$lib/noms';
 	import { lienSource } from '$lib/plateforme';
 	import TexteMarkdown from '$lib/components/TexteMarkdown.svelte';
 
@@ -226,7 +227,7 @@
 				{/if}
 				{#if i.contact}
 					<dt>Administrateur</dt>
-					<dd>{i.contact.prenom} {i.contact.nom} — {i.contact.courriel}</dd>
+					<dd>{nomAffiche(i.contact)} — {i.contact.courriel}</dd>
 				{/if}
 			</dl>
 			{#if i.essai_refuse}

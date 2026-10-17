@@ -37,7 +37,14 @@ APP = Path(__file__).resolve().parents[1] / "app"
 #: ⚠️ Le préfixe est FACULTATIF : `{prenom} {nom}` s'écrit aussi sans objet
 #: porteur, et la première version du motif l'exigeait — elle laissait donc
 #: passer la forme la plus courte. Son cas zéro l'a dit tout de suite.
-_COMPOSITION = re.compile(r"\{[\w.]*prenom[^}]*\}\s*\{[\w.]*nom\b[^}]*\}")
+#:
+#: 🔴 La seconde forme — un tuple JOINT — est celle du point CS / Syndic
+#: (17/10/2026) : `" ".join(x for x in (p.prenom, p.nom) if x)`. Le motif ne
+#: connaissait que la f-string, et le compte rendu rendait les noms tels que tapés.
+_COMPOSITION = re.compile(
+    r"\{[\w.]*prenom[^}]*\}\s*\{[\w.]*nom\b[^}]*\}"
+    r"|join\([^)]*[(\[]\s*[\w.]*prenom\s*,\s*[\w.]*\bnom\s*[)\]]"
+)
 
 #: Les endroits où composer le nom à la main est JUSTE, avec leur raison.
 #:
@@ -63,6 +70,8 @@ def test_le_motif_reconnait_ce_quil_doit_reconnaitre():
     assert _COMPOSITION.search('f"{user.prenom} {user.nom} — lot {n}"')
     assert _COMPOSITION.search('{"nom": u.nom, "prenom": u.prenom}') is None
     assert _COMPOSITION.search('f"{destinataire.prenom}"') is None
+    assert _COMPOSITION.search('" ".join(x for x in (p.prenom, p.nom) if x)')
+    assert _COMPOSITION.search("nom_affiche(p.prenom, p.nom)") is None
 
 
 def test_aucune_composition_manuelle_du_nom():

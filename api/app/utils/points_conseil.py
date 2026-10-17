@@ -54,6 +54,7 @@ from app.models.points_conseil import (
 )
 from app.models.tickets import Ticket
 from app.utils import horloge
+from app.utils.noms import nom_affiche
 from app.utils.recuperer import ou_404, present_ou_404
 from app.utils.syndic import nom_du_syndic
 from app.utils.suivi_affaires.releve import Releve, releve
@@ -164,8 +165,8 @@ def presents_du_point(session: Session, point_id: int) -> list[PresentPoint]:
 
 
 def nom_present(p: PresentPoint) -> str:
-    """Le nom d'un présent : prénom et nom, sinon l'entreprise, sinon « Invité »."""
-    return " ".join(x for x in (p.prenom, p.nom) if x) or (p.entreprise or "Invité")
+    """Le nom d'un présent : « Prénom NOM » (`nom_affiche`), sinon l'entreprise, sinon « Invité »."""
+    return nom_affiche(p.prenom, p.nom) or (p.entreprise or "Invité")
 
 
 def copie_des_presents(presents: list[PresentPoint]) -> list[PresentPoint]:

@@ -37,6 +37,7 @@
 	} from '$lib/api';
 	import { fmtDatetime } from '$lib/date';
 	import { fmtNombre } from '$lib/utils';
+	import { nomAffiche } from '$lib/noms';
 	import {
 		COPIE_HORS_MACHINE,
 		GESTES_REGISTRE,
@@ -153,7 +154,7 @@
 {#if fiche.contact}
 	<dl class="faits">
 		<dt>Nom</dt>
-		<dd>{fiche.contact.prenom} {fiche.contact.nom}</dd>
+		<dd>{nomAffiche(fiche.contact)}</dd>
 		<dt>Courriel</dt>
 		<dd><a href="mailto:{fiche.contact.courriel}">{fiche.contact.courriel}</a></dd>
 		{#if fiche.contact.telephone}
