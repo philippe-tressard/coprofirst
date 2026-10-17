@@ -74,6 +74,8 @@ const RELEVE: SuiviAffaires = {
 			apercu_ia: true,
 			batiments: [],
 			etat_visite: null,
+			a_evolue: false,
+			motif_evolution: null,
 		},
 		{
 			id: 31,
@@ -95,6 +97,8 @@ const RELEVE: SuiviAffaires = {
 			apercu_ia: false,
 			batiments: [],
 			etat_visite: null,
+			a_evolue: true,
+			motif_evolution: 'nouvelle',
 		},
 		{
 			id: 40,
@@ -116,6 +120,8 @@ const RELEVE: SuiviAffaires = {
 			apercu_ia: false,
 			batiments: [],
 			etat_visite: null,
+			a_evolue: true,
+			motif_evolution: 'etat',
 		},
 	],
 };
@@ -164,6 +170,11 @@ test('le suivi montre toutes les affaires ouvertes, leur nombre et leur réparti
 	//  En mode Suivre, ni case ni colonne de relances : la maquette D2, telle quelle.
 	await expect(page.locator('table.affaires input[type=checkbox]')).toHaveCount(0);
 	await expect(lignes.nth(1).getByRole('link')).toHaveAttribute('href', '/tickets/31');
+	//  Le signal « a évolué » (#2044) : sous le titre des affaires qui ont du nouveau.
+	await expect(lignes.nth(0).locator('.evolution')).toHaveCount(0);
+	await expect(lignes.nth(1).locator('.evolution')).toContainText('Nouvelle affaire');
+	await expect(lignes.nth(2).locator('.evolution')).toContainText('Changement d’état');
+	await expect(page.getByRole('button', { name: 'Résumer 2 affaires' })).toBeVisible();
 });
 
 test('« Résumer les affaires » fait rédiger les résumés, puis les relit ; le PDF part sans synthèse', async ({
@@ -202,7 +213,7 @@ test('« Résumer les affaires » fait rédiger les résumés, puis les relit ; 
 
 	//  La synthèse d'ensemble n'existe plus (#2035).
 	await expect(page.getByText('Synthèse de l’assistant')).toHaveCount(0);
-	await page.getByRole('button', { name: /Résumer les affaires/ }).click();
+	await page.getByRole('button', { name: /Résumer \d+ affaire/ }).click();
 	const ligne = page.locator('table.affaires tbody tr').nth(1);
 	await expect(ligne.locator('.descriptif')).toContainText('Le syndic attend le devis.');
 	await expect(ligne.locator('.ia-signe')).toBeVisible();

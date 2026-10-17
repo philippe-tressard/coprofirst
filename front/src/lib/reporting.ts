@@ -91,6 +91,20 @@ export const VUE_RELANCE = 'relance';
  *   mène au mode « Suivi entretiens périodiques » du Suivi des affaires (#2043). */
 export const VUE_PERIODIQUE = 'periodique';
 
+/**  Ce que le signal « a évolué » dit sous le titre d'une affaire (#2044) — le
+ *   motif vient du serveur (`releve.evolution`) : `nouvelle`, ou le type de la
+ *   dernière entrée du fil depuis le résumé. Un type inconnu se dit « Du nouveau ». */
+const MOTIFS_EVOLUTION: Record<string, string> = {
+	nouvelle: 'Nouvelle affaire, jamais résumée',
+	commentaire: 'Nouvelle suite depuis le dernier résumé',
+	etat: 'Changement d’état depuis le dernier résumé',
+	reponse: 'Nouveau message depuis le dernier résumé',
+	relance: 'Relance envoyée depuis le dernier résumé',
+};
+export function motifEvolution(motif: string | null): string {
+	return (motif && MOTIFS_EVOLUTION[motif]) || 'Du nouveau depuis le dernier résumé';
+}
+
 /* ── Renouvellements : calculs ────────────────────────────────────────────
    L'année de référence est une FONCTION, pas une constante. Elle était figée au
    chargement de la page, qui ne vivait que le temps d'un onglet ; ce module-ci

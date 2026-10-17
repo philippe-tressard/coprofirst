@@ -42,6 +42,10 @@ export interface AffaireOuverte {
 	batiments: number[];
 	/** L'état de la visite, en mode `entretien` seulement. */
 	etat_visite: EtatVisite | null;
+	/**  Nouvelle, ou une entrée au fil depuis le dernier résumé (#2044) ; le motif
+	 *   est `nouvelle` ou le type de cette entrée (`commentaire`, `etat`…). */
+	a_evolue: boolean;
+	motif_evolution: string | null;
 }
 
 /** Une tranche d'une barre de répartition : un bâtiment, ou une catégorie. */

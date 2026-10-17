@@ -63,6 +63,8 @@ const AFFAIRE = {
 	apercu: '',
 	apercu_ia: false,
 	batiments: [],
+	a_evolue: true,
+	motif_evolution: 'nouvelle',
 };
 
 const RELEVE: SuiviAffaires = {

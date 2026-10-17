@@ -101,6 +101,8 @@
 	$: estVide = !suivi || suivi.total === 0;
 
 	$: ordreBatiments = (suivi?.par_batiment ?? []).map((b) => b.cle);
+	/** Les affaires nouvelles ou qui ont évolué depuis leur résumé — le serveur le dit (#2044). */
+	$: aResumer = (suivi?.affaires ?? []).filter((a) => a.a_evolue).length;
 
 	async function charger(m: ModeReleve) {
 		enCours = true;
@@ -166,17 +168,18 @@
 </script>
 
 <div class="mode">
-	{#if suivi?.resumes_disponibles && !entretien && suivi.total > 0}
+	<!--  « Résumer » ne paraît que s'il y a du nouveau, et ne résume que lui (#2044). -->
+	{#if suivi?.resumes_disponibles && !entretien && aResumer > 0}
 		<button
 			type="button"
 			class="btn btn-sm btn-outline"
 			on:click={resumer}
 			disabled={redaction}
 			aria-busy={redaction}
-			title="L’assistant résume chaque affaire en une ou deux phrases, à partir de toute sa matière"
+			title="L’assistant résume en une ou deux phrases chaque affaire nouvelle ou qui a évolué depuis son dernier résumé"
 		>
 			<IconeAction icone="sparkles" />
-			{redaction ? 'Rédaction…' : 'Résumer les affaires'}
+			{redaction ? 'Rédaction…' : `Résumer ${aResumer} affaire${aResumer > 1 ? 's' : ''}`}
 		</button>
 	{/if}
 	<SelecteurMode libelle="Mode du suivi des affaires" options={MODES} bind:valeur={mode} />

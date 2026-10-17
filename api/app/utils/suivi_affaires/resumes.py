@@ -80,7 +80,7 @@ async def rediger(session: Session, r: Releve, *, demandeur: int) -> dict[str, s
     N'enregistre rien : l'appelant garde les résumés par `enregistrer_resumes`.
     """
     if not r.affaires:
-        raise ErreurLLM("Aucune affaire ouverte : rien à résumer.")
+        raise ErreurLLM("Aucune affaire nouvelle ni qui ait évolué depuis son résumé.")
     cfg = config_llm(session, USAGE_SYNTHESE_AFFAIRES_EN_COURS)
     #  Le prompt de l'administrateur D'ABORD, le format du code ENSUITE.
     consigne = cfg.prompt.rstrip() + "\n\n" + FORMAT_REPONSE

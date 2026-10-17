@@ -28,6 +28,7 @@
 	import type { AffaireOuverte, CrAffaire } from '$lib/api';
 	import { etatCr } from '$lib/points-conseil';
 	import { ETATS_VISITE } from '$lib/entretien-periodique';
+	import { motifEvolution } from '$lib/reporting';
 	import { fmtDate } from '$lib/date';
 	import { categorieTicketLabel, lienTicket } from '$lib/tickets';
 
@@ -95,6 +96,14 @@
 					<td class="date">{fmtDate(a.ouverte_le)}</td>
 					<td class="affaire">
 						<a href={lienTicket(a.id)} class="titre">{a.titre}</a>
+						{#if a.a_evolue && !visites}
+							<!--  Le signal « a évolué » (#2044) : sous le titre, icône ET libellé. -->
+							<span class="evolution"
+								><Badge teinte="badge-orange" compact
+									><Icon name="bell" size={12} /> {motifEvolution(a.motif_evolution)}</Badge
+								></span
+							>
+						{/if}
 						<!--  Le périmètre — tu quand c'est celui par défaut (règle 4). -->
 						<BadgePerimetre perimetre={a.perimetre_cible} />
 						{#if a.apercu}
@@ -178,6 +187,10 @@
 		align-items: center;
 		gap: 0.4rem;
 		margin: 0.35rem 0 0;
+	}
+	.evolution {
+		display: block;
+		margin: 0.15rem 0;
 	}
 	.ia-signe {
 		color: var(--color-violet);

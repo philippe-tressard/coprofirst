@@ -21,6 +21,13 @@ avec l'état de leur visite. Le reste — ancienneté, répartitions — est le 
 Croisées (`repartition`) : la règle de ce qui se compte où vit là-bas ; ce
 module ne fait que lui passer les affaires et les libellés, lus en base.
 
+## Ce qui a évolué depuis le dernier résumé (#2044, arbitré le 17/10/2026)
+
+Une affaire « a évolué » si une ENTRÉE est arrivée à son fil (Suite, état,
+réponse, relance) après son dernier résumé (`resume_ia_le`) ; elle est
+« nouvelle » si elle n'a jamais été résumée. Une correction de champ ne compte
+pas. Le bouton « Résumer » ne paraît, et ne résume, que pour celles-là.
+
 ## L'ancienneté, et la relance
 
 L'**âge** se compte de l'ouverture à aujourd'hui ; ses deux seuils — 30 et 90
@@ -35,14 +42,14 @@ est `a_relancer`. En jours civils de Paris, l'un comme l'autre.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.models.copropriete import Batiment
 from app.models.core import Utilisateur
-from app.models.tickets import CategorieTicket, Ticket
+from app.models.tickets import CategorieTicket, Ticket, TicketEvolution
 from app.utils import horloge
 from app.utils.annonce_hall import texte_brut
 from app.utils.batiments import libelle_batiment
@@ -106,6 +113,10 @@ class AffaireOuverte:
     batiments: list[int] = field(default_factory=list)
     #: L'état de la visite, en mode `entretien` seulement (`etat_visite`).
     etat_visite: Optional[str] = None
+    #: Nouvelle, ou une entrée au fil depuis le dernier résumé (#2044) ; le motif
+    #: est `nouvelle` ou le type de cette dernière entrée.
+    a_evolue: bool = False
+    motif_evolution: Optional[str] = None
 
     @property
     def apercu(self) -> str:
@@ -162,6 +173,38 @@ class Releve:
         return repartition.par_batiment(self.affaires, *self._parametres())
 
 
+#: Le motif d'une affaire jamais résumée.
+MOTIF_NOUVELLE = "nouvelle"
+
+
+def evolution(
+    resume_le: Optional[datetime], derniere: Optional[tuple[datetime, str]]
+) -> tuple[bool, Optional[str]]:
+    """PURE. L'affaire a-t-elle évolué depuis son dernier résumé, et pourquoi ?
+
+    `derniere` : l'instant et le type de la dernière entrée de son fil.
+    """
+    if resume_le is None:
+        return True, MOTIF_NOUVELLE
+    if derniere and derniere[0] > resume_le:
+        return True, derniere[1]
+    return False, None
+
+
+def dernieres_entrees(session: Session, ids: list[int]) -> dict[int, tuple[datetime, str]]:
+    """Par affaire, l'instant et le type de la dernière entrée de son fil — une requête."""
+    dernieres: dict[int, tuple[datetime, str]] = {}
+    if not ids:
+        return dernieres
+    for ticket_id, instant, nature in session.exec(
+        select(TicketEvolution.ticket_id, TicketEvolution.cree_le, TicketEvolution.type)
+        .where(col(TicketEvolution.ticket_id).in_(ids))
+        .order_by(TicketEvolution.cree_le, TicketEvolution.id)
+    ).all():
+        dernieres[ticket_id] = (instant, valeur(nature))
+    return dernieres
+
+
 def lire_affaire(
     ticket: Ticket,
     jour: date,
@@ -170,6 +213,7 @@ def lire_affaire(
     delai_jours: int = 30,
     relances: Optional[list] = None,
     avec_visite: bool = False,
+    derniere_entree: Optional[tuple[datetime, str]] = None,
 ) -> AffaireOuverte:
     """PURE. Ce que le rapport montre d'une affaire."""
     ouverte_le = horloge.jour_civil(ticket.cree_le)
@@ -178,6 +222,7 @@ def lire_affaire(
     sans_avancee = max((jour - avancee).days, 0)
     statut = valeur(ticket.statut)
     codes = parse_json_perimetres(ticket.perimetre_cible)
+    a_evolue, motif = evolution(ticket.resume_ia_le, derniere_entree)
     return AffaireOuverte(
         id=ticket.id,
         numero=ticket.numero,
@@ -198,6 +243,8 @@ def lire_affaire(
         perimetre="" if est_perimetre_par_defaut(codes) else perimetre_label(codes),
         batiments=sorted(batiments_cibles(codes)),
         etat_visite=etat_visite(ticket, jour) if avec_visite else None,
+        a_evolue=a_evolue,
+        motif_evolution=motif,
     )
 
 
@@ -231,6 +278,7 @@ def releve(session: Session, user: Utilisateur, mode: str = MODE_AFFAIRES) -> Re
     jour = horloge.aujourd_hui()
     delai = delai_relance_jours(session)
     relances = relances_envoyees(session, [t.id for t in tickets])
+    dernieres = dernieres_entrees(session, [t.id for t in tickets])
     return Releve(
         jour=jour,
         delai_jours=delai,
@@ -244,6 +292,7 @@ def releve(session: Session, user: Utilisateur, mode: str = MODE_AFFAIRES) -> Re
                 delai_jours=delai,
                 relances=relances.get(t.id),
                 avec_visite=entretien,
+                derniere_entree=dernieres.get(t.id),
             )
             for t in tickets
         ],

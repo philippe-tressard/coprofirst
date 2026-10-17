@@ -30,6 +30,8 @@ const AFFAIRE = {
 	apercu_ia: false,
 	batiments: [],
 	etat_visite: null,
+	a_evolue: false,
+	motif_evolution: null,
 };
 
 const RELEVE: SuiviAffaires = {

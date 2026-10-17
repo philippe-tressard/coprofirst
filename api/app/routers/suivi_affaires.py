@@ -18,6 +18,7 @@ retirée le 16/10/2026 (#2035) : ce qui sert est l'état de chaque affaire.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 from typing import Optional
 
@@ -68,6 +69,9 @@ class AffaireOuverteRead(BaseModel):
     #: Les bâtiments visés (#2043) ; l'état de la visite, en mode `entretien`.
     batiments: list[int]
     etat_visite: Optional[str] = None
+    #: Nouvelle, ou une entrée au fil depuis le dernier résumé (#2044), et pourquoi.
+    a_evolue: bool
+    motif_evolution: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -154,7 +158,10 @@ async def resumer(
 ):
     """Fait rédiger le résumé de chaque affaire du relevé et le garde sur elle ;
     l'écran les relit par `GET /suivi-affaires`."""
-    r = releve(session, user)
+    #  Seules les affaires nouvelles ou qui ont évolué depuis leur dernier
+    #  résumé (#2044) : les autres gardent le leur, et l'appel coûte moins.
+    tout = releve(session, user)
+    r = replace(tout, affaires=[a for a in tout.affaires if a.a_evolue])
     try:
         par_affaire = await assistant.rediger(session, r, demandeur=user.id)
     except ErreurLLM as exc:
