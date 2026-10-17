@@ -20,7 +20,6 @@
 	import { pointsConseil, type CompteRenduParLien } from '$lib/api';
 	import { fmtDate, fmtDatetime, fmtTime } from '$lib/date';
 	import { messageErreur } from '$lib/erreurs';
-	import { lieuDuPoint } from '$lib/points-conseil';
 	import { safeHtml } from '$lib/sanitize';
 	import { getSiteNom } from '$lib/stores/pageConfig';
 
@@ -85,7 +84,7 @@
 			<EtatListe {chargement} {erreur} titreErreur="Ce lien ne mène à aucun compte rendu" />
 		{:else}
 			<p class="quand">
-				{fmtDatetime(cr.debut)}{#if cr.fin}&nbsp;→ {fmtTime(cr.fin)}{/if} · {lieuDuPoint(cr)}
+				{fmtDatetime(cr.debut)}{#if cr.fin}&nbsp;→ {fmtTime(cr.fin)}{/if} · {cr.ou}
 			</p>
 			<p class="presents">Présents : {cr.presents.join(', ') || '—'}</p>
 

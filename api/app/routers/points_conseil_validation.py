@@ -65,6 +65,8 @@ class LienRead(BaseModel):
     fin: Optional[datetime] = None
     a_distance: bool
     lieu: Optional[str] = None
+    #: Le Où tel que le CR l'écrit (`ou_du_point`).
+    ou: str
     presents: list[str]
     abordees: list[AffaireLienRead]
     non_traitees: list[str]
@@ -86,6 +88,7 @@ class CrPublieRead(BaseModel):
     debut: datetime
     a_distance: bool
     lieu: Optional[str] = None
+    ou: str
     contenu: str
     conseil_seul: bool
     cr_id: int
@@ -104,6 +107,7 @@ def _lien_read(session: Session, jeton: str) -> LienRead:
     return lire_objet(
         LienRead,
         point,
+        ou=regles.ou_du_point(point),
         presents=[regles.nom_present(p) for p in cr.presents],
         abordees=[
             AffaireLienRead(numero=a.numero, titre=a.titre, contenu=c.contenu)
@@ -225,6 +229,7 @@ def crs_de_l_affaire(
             debut=p.debut,
             a_distance=p.a_distance,
             lieu=p.lieu,
+            ou=regles.ou_du_point(p),
             contenu=c.contenu,
             conseil_seul=c.conseil_seul,
             cr_id=c.id,

@@ -2,24 +2,31 @@
   Le QUAND, le OÙ et le QUI d'un point CS / Syndic — maquette A1 (bandeau
   compact), arbitrée le 17/10/2026 (#2041). Sert l'ouverture et la correction.
 
-  - **Quand** : début (requis), fin facultative.
-  - **Où** : Sur place | À distance, et un lieu. Les lieux proposés — la
-    résidence, le cabinet du syndic, les derniers lieux — viennent de la base,
-    en liste de suggestions du champ : aucune adresse ne part à un service
-    extérieur.
-  - **Qui** : une pastille par membre du CS et du syndic (bascule), les invités
-    en pastilles, et « Ajouter un invité » (`InvitePoint`).
+  Finitions arbitrées sur maquette le 17/10/2026, après un premier usage :
+
+  - **Quand / Où** : Début (requis), Fin, Moyen et Lieu, chacun son intitulé
+    AU-DESSUS du champ, sur une même ligne — la bascule « Sur place | À
+    distance » décalait l'intitulé du lieu.
+  - **Moyen** : une liste (Sur place, Visioconférence, Téléphone, Sur place et
+    à distance), lue au serveur (`participants.moyens`) ; le Lieu ne se saisit
+    que si quelqu'un est sur place. Les lieux proposés — la copropriété, le
+    cabinet du syndic, les derniers lieux — viennent de la base, en liste de
+    suggestions : aucune adresse ne part à un service extérieur.
+  - **Qui** : une rangée par population (`GROUPES_PRESENTS`), son intitulé en
+    tête. Les invités en `PastilleRetirable` — la croix rouge des fichiers, pour
+    un même geste « retirer » —, puis « Ajouter un invité » (`InvitePoint`) :
+    autant qu'on veut.
 -->
 <script lang="ts">
 	import Pastille from '$lib/components/Pastille.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
+	import PastilleRetirable from '$lib/components/PastilleRetirable.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import InvitePoint from './InvitePoint.svelte';
-	import type { ParticipantsPoint, PointEntree, PresentEntree } from '$lib/api';
+	import type { MembrePoint, ParticipantsPoint, PointEntree, PresentEntree } from '$lib/api';
 	import { depuisChampLocal, pourChampLocal } from '$lib/date';
-	import { cleMembre, nomPresent } from '$lib/points-conseil';
+	import { GROUPES_PRESENTS, cleMembre, nomPresent } from '$lib/points-conseil';
 
 	export let idPrefixe: string;
 	export let participants: ParticipantsPoint;
@@ -31,14 +38,9 @@
 	export let onEnregistre: (entree: PointEntree) => void;
 	export let onAnnule: () => void;
 
-	const OU = [
-		{ val: 'place', label: 'Sur place' },
-		{ val: 'distance', label: 'À distance' },
-	];
-
 	let debut = pourChampLocal(initial.debut);
 	let fin = pourChampLocal(initial.fin);
-	let ou = initial.a_distance ? 'distance' : 'place';
+	let moyen = initial.moyen;
 	let lieu = initial.lieu ?? '';
 	let coches = new Set(
 		initial.presents
@@ -48,6 +50,12 @@
 	let invites: PresentEntree[] = initial.presents.filter((p) => p.nature === 'invite');
 	let inviteOuvert = false;
 
+	$: avecLieu = participants.moyens.find((m) => m.cle === moyen)?.avec_lieu ?? true;
+	$: annuaire = { cs: participants.conseil, syndic: participants.syndic } as Record<
+		string,
+		MembrePoint[]
+	>;
+
 	function basculer(cle: string) {
 		const s = new Set(coches);
 		if (s.has(cle)) s.delete(cle);
@@ -56,14 +64,16 @@
 	}
 
 	function membres(): PresentEntree[] {
-		return [
-			...participants.conseil
-				.filter((m) => coches.has(cleMembre('cs', m.id)))
-				.map((m) => ({ nature: 'cs' as const, membre_id: m.id })),
-			...participants.syndic
-				.filter((m) => coches.has(cleMembre('syndic', m.id)))
-				.map((m) => ({ nature: 'syndic' as const, membre_id: m.id })),
-		];
+		return (['cs', 'syndic'] as const).flatMap((nature) =>
+			annuaire[nature]
+				.filter((m) => coches.has(cleMembre(nature, m.id)))
+				.map((m) => ({ nature, membre_id: m.id })),
+		);
+	}
+
+	/** Ce qui précède le nom d'un invité, en gris : son entreprise, sinon « Invité ». */
+	function prefixeInvite(inv: PresentEntree): string {
+		return (inv.prenom || inv.nom) && inv.entreprise ? inv.entreprise : 'Invité';
 	}
 
 	function enregistrer() {
@@ -72,8 +82,8 @@
 		onEnregistre({
 			debut: d,
 			fin: depuisChampLocal(fin),
-			a_distance: ou === 'distance',
-			lieu: lieu.trim() || null,
+			moyen,
+			lieu: avecLieu ? lieu.trim() || null : null,
 			presents: [...membres(), ...invites],
 		});
 	}
@@ -83,7 +93,7 @@
 	{#if reprise}
 		<p class="aide reprise">{reprise}</p>
 	{/if}
-	<div class="ligne">
+	<div class="quand-ou">
 		<div class="field champ-en-ligne">
 			<label for="{idPrefixe}-debut">Début<EtoileRequis vide={!debut} /></label>
 			<input id="{idPrefixe}-debut" type="datetime-local" required bind:value={debut} />
@@ -92,88 +102,84 @@
 			<label for="{idPrefixe}-fin">Fin</label>
 			<input id="{idPrefixe}-fin" type="datetime-local" bind:value={fin} />
 		</div>
-		<ChoixPastilles
-			options={OU}
-			bind:valeur={ou}
-			tous={false}
-			libelle="Où"
-			libelleVisible
-			radio="{idPrefixe}-ou"
-			defilante={false}
-		/>
-		<div class="field champ-en-ligne lieu">
-			<label for="{idPrefixe}-lieu">{ou === 'distance' ? 'Moyen' : 'Lieu'}</label>
-			<input
-				id="{idPrefixe}-lieu"
-				type="text"
-				maxlength="120"
-				list="{idPrefixe}-lieux"
-				placeholder={ou === 'distance' ? 'Visioconférence, téléphone…' : 'Loge du gardien'}
-				bind:value={lieu}
-			/>
-			<datalist id="{idPrefixe}-lieux">
-				{#each participants.lieux as l (l.adresse)}
-					<option value={l.adresse}>{l.libelle}</option>
+		<div class="field champ-en-ligne pleine">
+			<label for="{idPrefixe}-moyen">Moyen</label>
+			<select id="{idPrefixe}-moyen" bind:value={moyen}>
+				{#each participants.moyens as m (m.cle)}
+					<option value={m.cle}>{m.libelle}</option>
 				{/each}
-			</datalist>
+			</select>
 		</div>
+		{#if avecLieu}
+			<div class="field champ-en-ligne pleine">
+				<label for="{idPrefixe}-lieu">Lieu</label>
+				<input
+					id="{idPrefixe}-lieu"
+					type="text"
+					maxlength="120"
+					list="{idPrefixe}-lieux"
+					placeholder="Loge du gardien"
+					bind:value={lieu}
+				/>
+				<datalist id="{idPrefixe}-lieux">
+					{#each participants.lieux as l (l.adresse)}
+						<option value={l.adresse}>{l.libelle}</option>
+					{/each}
+				</datalist>
+			</div>
+		{/if}
 	</div>
 
 	<div class="qui" role="group" aria-labelledby="{idPrefixe}-qui">
-		<span class="intitule" id="{idPrefixe}-qui">Qui</span>
-		{#if participants.conseil.length}
-			<span class="groupe">CS</span>
-			{#each participants.conseil as m (m.id)}
-				<Pastille
-					petite
-					bascule
-					active={coches.has(cleMembre('cs', m.id))}
-					on:click={() => basculer(cleMembre('cs', m.id))}>{nomPresent(m)}</Pastille
-				>
-			{/each}
-		{/if}
-		{#if participants.syndic.length}
-			<span class="groupe">Syndic</span>
-			{#each participants.syndic as m (m.id)}
-				<Pastille
-					petite
-					bascule
-					active={coches.has(cleMembre('syndic', m.id))}
-					on:click={() => basculer(cleMembre('syndic', m.id))}>{nomPresent(m)}</Pastille
-				>
-			{/each}
-		{/if}
-		{#if invites.length}
-			<span class="groupe">Invités</span>
-			{#each invites as inv, i (i)}
-				<span class="invite">
-					{nomPresent(inv)}{inv.entreprise && (inv.prenom || inv.nom) ? ` · ${inv.entreprise}` : ''}
-					<button
-						type="button"
-						class="btn-icon"
-						aria-label="Retirer l’invité"
-						on:click={() => (invites = invites.filter((_, j) => j !== i))}
-						><IconeAction icone="x" /></button
-					>
-				</span>
-			{/each}
-		{/if}
-		{#if !inviteOuvert}
-			<button type="button" class="btn btn-sm btn-outline" on:click={() => (inviteOuvert = true)}>
-				<IconeAction icone="plus" /> Ajouter un invité
-			</button>
+		<span class="libelle-groupe" id="{idPrefixe}-qui">Qui</span>
+		{#each GROUPES_PRESENTS as g (g.nature)}
+			<div class="population" role="group" aria-labelledby="{idPrefixe}-qui-{g.nature}">
+				<span class="nom-population" id="{idPrefixe}-qui-{g.nature}">{g.libelle}</span>
+				<div class="membres">
+					{#if g.nature === 'invite'}
+						{#each invites as inv, i (i)}
+							<PastilleRetirable
+								prefixe={prefixeInvite(inv)}
+								nom={nomPresent(inv)}
+								aideRetirer="Retirer cet invité"
+								on:click={() => (invites = invites.filter((_, j) => j !== i))}
+							/>
+						{/each}
+						{#if !inviteOuvert}
+							<button
+								type="button"
+								class="btn btn-sm btn-outline"
+								on:click={() => (inviteOuvert = true)}
+							>
+								<IconeAction icone="plus" /> Ajouter un invité
+							</button>
+						{/if}
+					{:else if annuaire[g.nature].length}
+						{#each annuaire[g.nature] as m (m.id)}
+							<Pastille
+								petite
+								bascule
+								active={coches.has(cleMembre(g.nature, m.id))}
+								on:click={() => basculer(cleMembre(g.nature, m.id))}>{nomPresent(m)}</Pastille
+							>
+						{/each}
+					{:else}
+						<span class="aide">Aucun membre dans l’annuaire.</span>
+					{/if}
+				</div>
+			</div>
+		{/each}
+		{#if inviteOuvert}
+			<InvitePoint
+				{idPrefixe}
+				onAjoute={(inv) => {
+					invites = [...invites, inv];
+					inviteOuvert = false;
+				}}
+				onAnnule={() => (inviteOuvert = false)}
+			/>
 		{/if}
 	</div>
-	{#if inviteOuvert}
-		<InvitePoint
-			{idPrefixe}
-			onAjoute={(inv) => {
-				invites = [...invites, inv];
-				inviteOuvert = false;
-			}}
-			onAnnule={() => (inviteOuvert = false)}
-		/>
-	{/if}
 
 	<PiedFormulaire petit {enCours} desactive={!debut} on:annule={onAnnule} />
 </form>
@@ -182,43 +188,61 @@
 	.point-form {
 		display: flex;
 		flex-direction: column;
-		gap: 0.6rem;
+		gap: 0.75rem;
 	}
-	.ligne {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-end;
-		gap: 0.5rem 1rem;
+	/*  Une même ligne d'intitulés : chaque champ porte le sien AU-DESSUS, et la
+	    grille aligne les cellules en haut. Au téléphone, Début et Fin côte à
+	    côte ; le moyen et le lieu, chacun sur sa ligne. */
+	.quand-ou {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 12rem)) minmax(0, 1fr);
+		align-items: start;
+		gap: 0.75rem;
 	}
-	.lieu {
-		flex: 1 1 14rem;
+	@media (max-width: 767px) {
+		.quand-ou {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.pleine {
+			grid-column: 1 / -1;
+		}
 	}
 	.qui {
 		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--color-border);
+	}
+	/*  Une rangée par population : son nom à gauche, ses pastilles à droite ; au
+	    téléphone, le nom passe au-dessus. */
+	.population {
+		display: grid;
+		grid-template-columns: 9rem minmax(0, 1fr);
+		align-items: start;
+		gap: 0.5rem;
+		padding: 0.4rem 0;
+	}
+	.population + .population {
+		border-top: 1px dashed var(--color-border);
+	}
+	.nom-population {
+		padding-top: 0.25rem;
+		font-size: var(--fs-sm);
+		color: var(--color-text-muted);
+	}
+	.membres {
+		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.35rem 0.5rem;
+		gap: 0.35rem;
+		min-width: 0;
 	}
-	.intitule {
-		font-size: var(--fs-xs);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--color-text-muted);
-		margin-right: 0.25rem;
-	}
-	.groupe {
-		font-size: var(--fs-xs);
-		color: var(--color-text-muted);
-		margin-left: 0.25rem;
-	}
-	.invite {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		font-size: var(--fs-sm);
-		padding: 0.1rem 0.25rem 0.1rem 0.6rem;
-		border: 1px dashed var(--color-border);
-		border-radius: 999px;
+	@media (max-width: 767px) {
+		.population {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 0.3rem;
+		}
 	}
 	.reprise {
 		margin: 0;

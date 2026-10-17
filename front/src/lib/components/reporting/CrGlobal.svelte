@@ -15,13 +15,7 @@
 	import { fmtDatetime, fmtTime } from '$lib/date';
 	import { safeHtml } from '$lib/sanitize';
 	import { lienTicket } from '$lib/tickets';
-	import {
-		ETATS_POINT,
-		GROUPES_PRESENTS,
-		lieuDuPoint,
-		nomPresent,
-		precisionPresent,
-	} from '$lib/points-conseil';
+	import { ETATS_POINT, GROUPES_PRESENTS, nomPresent, precisionPresent } from '$lib/points-conseil';
 
 	export let compteRendu: CompteRenduPoint;
 
@@ -40,9 +34,7 @@
 
 	<h4 class="partie">1 · Le point</h4>
 	<p class="quand">
-		{fmtDatetime(point.debut)}{#if point.fin}&nbsp;→ {fmtTime(point.fin)}{/if} · {lieuDuPoint(
-			point,
-		)}
+		{fmtDatetime(point.debut)}{#if point.fin}&nbsp;→ {fmtTime(point.fin)}{/if} · {point.ou}
 	</p>
 	{#each groupes as g (g.nature)}
 		<p class="presents">

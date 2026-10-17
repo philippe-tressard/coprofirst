@@ -21,7 +21,6 @@
 	import { pointsConseil, type CrPublie } from '$lib/api';
 	import { fmtDate, fmtDatetime } from '$lib/date';
 	import { messageErreur } from '$lib/erreurs';
-	import { lieuDuPoint } from '$lib/points-conseil';
 	import { safeHtml } from '$lib/sanitize';
 	import { isCS } from '$lib/stores/auth';
 
@@ -64,7 +63,7 @@
 			<article class="cr">
 				<p class="tete">
 					<strong>Point CS / Syndic du {fmtDatetime(cr.debut)}</strong>
-					<span class="lieu">· {lieuDuPoint(cr)}</span>
+					<span class="lieu">· {cr.ou}</span>
 					{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>Conseil seul</Badge>{/if}
 					{#if $isCS}
 						<button

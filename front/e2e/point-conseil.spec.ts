@@ -57,6 +57,12 @@ const ANNUAIRE: ParticipantsPoint = {
 	conseil: [{ id: 3, prenom: 'Reine', nom: 'Martin', fonction: null }],
 	syndic: [{ id: 7, prenom: 'Paul', nom: 'Bernard', fonction: 'Gestionnaire' }],
 	lieux: [{ libelle: 'Résidence', adresse: '1 rue Test' }],
+	moyens: [
+		{ cle: 'sur_place', libelle: 'Sur place', avec_lieu: true },
+		{ cle: 'visio', libelle: 'Visioconférence', avec_lieu: false },
+		{ cle: 'telephone', libelle: 'Téléphone', avec_lieu: false },
+		{ cle: 'hybride', libelle: 'Sur place et à distance', avec_lieu: true },
+	],
 };
 
 function compteRendu(cr: CrAffaire | null): CompteRenduPoint {
@@ -67,8 +73,10 @@ function compteRendu(cr: CrAffaire | null): CompteRenduPoint {
 			etat: 'en_cours',
 			debut: '2026-10-19T17:00:00',
 			fin: null,
+			moyen: 'sur_place',
 			a_distance: false,
 			lieu: '1 rue Test',
+			ou: 'Sur place — 1 rue Test',
 			cree_le: '2026-10-19T15:00:00',
 			termine_le: null,
 			valide_le: null,
@@ -132,14 +140,46 @@ test('ouvrir un point, puis saisir le compte rendu d’une affaire', async ({ pa
 	await page.getByRole('button', { name: 'Ouvrir un point CS / Syndic' }).click();
 	//  Le lieu proposé d'office est celui de la résidence.
 	await expect(page.getByLabel('Lieu')).toHaveValue('1 rue Test');
+	//  Les intitulés du Quand et du Où sont sur une même ligne (finition du
+	//  17/10/2026 : la bascule « Sur place | À distance » décalait celui du lieu).
+	if ((page.viewportSize()?.width ?? 0) >= 768) {
+		const hauts = await Promise.all(
+			['Début', 'Fin', 'Moyen', 'Lieu'].map(async (l) =>
+				Math.round(
+					(await page.locator('form.point-form label', { hasText: l }).first().boundingBox())?.y ??
+						-1,
+				),
+			),
+		);
+		expect(new Set(hauts).size, `hauts des intitulés : ${hauts}`).toBe(1);
+	}
+	//  Sans personne sur place, pas de lieu ; il revient avec « Sur place ».
+	await page.getByLabel('Moyen').selectOption('visio');
+	await expect(page.getByLabel('Lieu')).toHaveCount(0);
+	await page.getByLabel('Moyen').selectOption('sur_place');
+	await expect(page.getByLabel('Lieu')).toHaveValue('1 rue Test');
+
+	//  Une rangée par population, chacune nommée.
+	for (const nom of ['Conseil syndical', 'Syndic', 'Invités'])
+		await expect(page.getByRole('group', { name: nom, exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Reine Martin' }).click();
-	await page.getByRole('button', { name: 'Ajouter un invité' }).click();
-	await page.getByLabel('Prénom').fill('Jean');
-	await page.getByLabel('Entreprise').fill('Étanchéité Sud');
-	await page
-		.getByRole('group', { name: 'Ajouter un invité' })
-		.getByRole('button', { name: 'Enregistrer' })
-		.click();
+	//  Plusieurs invités, et chacun se retire par la croix des pastilles.
+	for (const [prenom, entreprise] of [
+		['Jean', 'Étanchéité Sud'],
+		['Lise', 'Ascenseurs Test'],
+	]) {
+		await page.getByRole('button', { name: 'Ajouter un invité' }).click();
+		await page.getByLabel('Prénom').fill(prenom);
+		await page.getByLabel('Entreprise').fill(entreprise);
+		await page
+			.getByRole('group', { name: 'Ajouter un invité' })
+			.getByRole('button', { name: 'Enregistrer' })
+			.click();
+	}
+	const invites = page.getByRole('group', { name: 'Invités', exact: true });
+	await expect(invites.locator('.pastille-retirable')).toHaveCount(2);
+	await invites.getByRole('button', { name: 'Retirer Lise' }).click();
+	await expect(invites.locator('.pastille-retirable')).toHaveText(['Étanchéité Sud Jean ×']);
 	await page
 		.locator('form.point-form > .form-actions')
 		.getByRole('button', { name: 'Enregistrer' })
@@ -147,8 +187,11 @@ test('ouvrir un point, puis saisir le compte rendu d’une affaire', async ({ pa
 
 	await expect.poll(() => envois.map((e) => e.quoi)).toContain('POST /api/points-conseil');
 	const ouverture = envois.find((e) => e.quoi === 'POST /api/points-conseil')?.corps as {
+		moyen: string;
+		lieu: string | null;
 		presents: { nature: string; membre_id?: number; entreprise?: string }[];
 	};
+	expect([ouverture.moyen, ouverture.lieu]).toEqual(['sur_place', '1 rue Test']);
 	expect(ouverture.presents).toEqual([
 		{ nature: 'cs', membre_id: 3 },
 		expect.objectContaining({ nature: 'invite', prenom: 'Jean', entreprise: 'Étanchéité Sud' }),

@@ -20,8 +20,8 @@
 	const CHAMPS = [
 		{ cle: 'prenom', libelle: 'Prénom', type: 'text', exemple: 'Paul' },
 		{ cle: 'nom', libelle: 'Nom', type: 'text', exemple: 'Leroy' },
-		{ cle: 'entreprise', libelle: 'Entreprise', type: 'text', exemple: 'Étanchéité Sud' },
 		{ cle: 'fonction', libelle: 'Fonction', type: 'text', exemple: 'Chef de chantier' },
+		{ cle: 'entreprise', libelle: 'Entreprise', type: 'text', exemple: 'Étanchéité Sud' },
 		{ cle: 'telephone', libelle: 'Téléphone', type: 'tel', exemple: '06 12 34 56 78' },
 		{ cle: 'email', libelle: 'Courriel', type: 'email', exemple: 'p.leroy@exemple.fr' },
 	] as const;
@@ -48,7 +48,7 @@
 <div class="invite" role="group" aria-label="Ajouter un invité">
 	<div class="grille">
 		{#each CHAMPS as c (c.cle)}
-			<div class="field">
+			<div class="field champ-en-ligne">
 				<label for="{idPrefixe}-invite-{c.cle}">{c.libelle}</label>
 				<input
 					id="{idPrefixe}-invite-{c.cle}"
@@ -76,14 +76,26 @@
 
 <style>
 	.invite {
-		margin-top: 0.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		margin-top: 0.25rem;
 		padding: 0.75rem;
-		border: 1px dashed var(--color-border);
+		border: 1px solid var(--color-primary);
 		border-radius: var(--radius);
+		background: var(--color-primary-light);
 	}
+	/*  Trois colonnes, deux rangées : Prénom · Nom · Fonction, puis Entreprise ·
+	    Téléphone · Courriel — le courriel n'est plus seul sur sa ligne. Au
+	    téléphone, deux colonnes : trois rangées pleines. */
 	.grille {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-		gap: 0.5rem 0.75rem;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.6rem 0.75rem;
+	}
+	@media (max-width: 767px) {
+		.grille {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
 	}
 </style>

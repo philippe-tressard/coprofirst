@@ -25,6 +25,7 @@ from app.models.core import RoleUtilisateur
 from app.models.gouvernance import GenreCivilite, MembreCS, MembreSyndic, SyndicInfo
 from app.models.points_conseil import PointConseil
 from app.utils import horloge
+from app.utils import points_conseil as regles
 from app.utils.points_conseil import a_reprendre
 from tests.aides_http import base_http, client_http
 from tests.aides_suivi import affaire_ouverte
@@ -59,7 +60,7 @@ def _annuaire(moteur) -> tuple[int, int]:
 
 
 def _ouvrir(http, mode="affaires", **champs):
-    corps = {"mode": mode, "debut": DEBUT, "a_distance": False, "lieu": "Loge", **champs}
+    corps = {"mode": mode, "debut": DEBUT, "moyen": "sur_place", "lieu": "Loge", **champs}
     return http.post("/points-conseil", json=corps)
 
 
@@ -241,3 +242,47 @@ def test_corriger_le_quand_le_ou_le_qui(moteur, cs):
     assert r.status_code == 200, r.text
     assert r.json()["point"]["a_distance"] and r.json()["point"]["lieu"] is None
     assert [p["nom"] for p in r.json()["presents"]] == ["Martin"]
+
+
+# ── Le moyen (#2041, liste « A » arbitrée le 17/10/2026) ───────────────────
+
+
+@pytest.mark.parametrize(
+    "moyen,lieu,ou,a_distance",
+    [
+        ("sur_place", "Loge", "Sur place — Loge", False),
+        ("visio", None, "Visioconférence", True),
+        ("telephone", None, "Téléphone", True),
+        ("hybride", "Loge", "Sur place et à distance — Loge", True),
+    ],
+)
+def test_le_moyen_dit_le_ou_et_ne_garde_un_lieu_que_sur_place(cs, moyen, lieu, ou, a_distance):
+    point = _ouvrir(cs, moyen=moyen).json()["point"]
+    assert (point["moyen"], point["lieu"], point["ou"], point["a_distance"]) == (
+        moyen,
+        lieu,
+        ou,
+        a_distance,
+    )
+
+
+def test_un_moyen_inconnu_est_refuse(cs):
+    assert _ouvrir(cs, moyen="pigeon").status_code == 422
+
+
+def test_la_liste_des_moyens_vient_du_serveur(cs):
+    moyens = cs.get("/points-conseil/participants").json()["moyens"]
+    assert [m["cle"] for m in moyens] == ["sur_place", "visio", "telephone", "hybride"]
+    assert [m["avec_lieu"] for m in moyens] == [True, False, False, True]
+
+
+def test_corriger_le_moyen_efface_le_lieu_s_il_n_y_en_a_plus(cs):
+    point = _ouvrir(cs).json()["point"]["id"]
+    r = cs.patch(f"/points-conseil/{point}", json={"moyen": "telephone"})
+    assert (r.json()["point"]["lieu"], r.json()["point"]["ou"]) == (None, "Téléphone")
+
+
+def test_un_point_d_avant_le_moyen_se_lit_par_a_distance():
+    ancien = PointConseil(debut=horloge.maintenant(), a_distance=True, lieu="Teams")
+    assert regles.ou_du_point(ancien) == "À distance — Teams"
+    assert regles.ou_du_point(PointConseil(debut=horloge.maintenant())) == "Sur place"

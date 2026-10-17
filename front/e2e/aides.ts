@@ -190,7 +190,7 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	//  `PointCourant`, `ParticipantsPoint` : le point CS / Syndic du Suivi des
 	//  affaires (#2041) — sans point ouvert, et un annuaire vide.
 	'/api/points-conseil/courant': { compte_rendu: null, reprise: null },
-	'/api/points-conseil/participants': { conseil: [], syndic: [], lieux: [] },
+	'/api/points-conseil/participants': { conseil: [], syndic: [], lieux: [], moyens: [] },
 	//  `ConsommationIA`.
 	'/api/config/llm-consommation': { mois: [], limites: [], mois_courant: '' },
 	//  `ServiceCopropriete[]` : l'administration grise l'onglet d'un service coupé.
