@@ -68,7 +68,7 @@ from app.utils.destinataires import ecartes_syndic_cs
 
 from .courriels import contexte_ticket_syndic, destinataires_syndic_cs
 from .suite_groupe import message_suite
-from app.utils.liens import base_site
+from app.utils.liens import adresse_du_site
 from app.utils.categories_ticket import ticket_urgent
 from app.utils.nature_affaire import est_actualite, statut_pour
 from app.utils.perimetres import perimetre_cible_json
@@ -266,13 +266,11 @@ def apercu_diffusion(
         #  part seul, avec le lien de la fiche pour le reste du fil — composé
         #  par la fonction même de l'envoi (28/09/2026).
         if brouillon.ticket_id is not None:
-            from app.utils.diffusion import config_diffusion
-
             suite = message_suite(
                 session,
                 ticket,
                 brouillon.commentaire,
-                site_url=base_site((config_diffusion(session) or {}).get("site_url")),
+                site_url=adresse_du_site(),
                 suite_enregistree=False,
                 fichiers_urls=brouillon.fichiers_urls,
             )

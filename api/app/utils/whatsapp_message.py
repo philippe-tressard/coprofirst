@@ -16,7 +16,7 @@ import json
 import re
 
 from app.utils.arrivees_notification import SOURCE_WHATSAPP, etiqueter_lien
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 from app.utils.perimetres import est_perimetre_par_defaut
 
 #: La signature d'un message quand la configuration n'en porte pas — **neutre**.
@@ -222,7 +222,7 @@ def construire_message(
     envoyé.
     """
     footer = config.get("whatsapp_footer", "").strip()
-    site_url = base_site(config.get("site_url"))
+    site_url = adresse_du_site()
     #  L'étiquette d'arrivée (#1634) : écrite une fois, pour les deux formes.
     lien = etiqueter_lien(lien, SOURCE_WHATSAPP, site_url) if lien else None
     if message_sans_contenu(public_cible, confidentiel):

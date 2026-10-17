@@ -49,6 +49,14 @@ PREFIXE_URL = "/uploads/"
 #: `/uploads/prive/*` ; `test_uploads_prives.py` le vérifie.
 DOSSIER_PRIVE = "prive"
 
+#: Les PDF d'affiche de hall : servis par `/annonces-hall/{id}/pdf`, réservé au CS et à
+#: l'admin — jamais en direct (le `Caddyfile` refuse `/uploads/annonces-hall/*`).
+DOSSIER_AFFICHES = "annonces-hall"
+
+#: Les dossiers qu'AUCUN service direct ne sert — Caddy (`Caddyfile`) comme l'API
+#: d'une installation commune (`installation_commune/fichiers`, #2053).
+JAMAIS_SERVIS = frozenset({DOSSIER_PRIVE, DOSSIER_AFFICHES})
+
 
 class CleInvalide(ValueError):
     """Une clé qui sortirait du préfixe de la copropriété, ou qui n'en est pas une."""

@@ -137,16 +137,15 @@ def verdict_envoi(envoi: Callable[[], Any]) -> tuple[str, str | None]:
 #: apparaître que dans les messages d'actualité. Une notion, une écriture
 #: (`standards/02-factorisation.md` §2).
 #:
-#: `site_url` fait partie de l'ensemble : `_build_message_restreint` en a besoin
-#: pour renvoyer vers l'application quand la publication est à public restreint ;
-#: `site_nom` aussi, pour la nommer (#1725 — elle s'appelait « 5Hostachy » en dur).
+#: `site_nom` en fait partie : `_build_message_restreint` nomme l'application quand
+#: la publication est à public restreint (#1725 — elle s'appelait « 5Hostachy » en
+#: dur) ; son adresse vient du contexte (`liens.adresse_du_site`, #2058).
 CLES_CONFIG = frozenset(
     {
         cle_actif(SERVICE_DIFFUSION),
         "whatsapp_api_url",
         "whatsapp_group_jid",
         "whatsapp_footer",
-        "site_url",
         "site_nom",
     }
 )

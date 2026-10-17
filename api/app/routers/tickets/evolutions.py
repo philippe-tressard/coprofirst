@@ -50,7 +50,7 @@ from .suite_sections import (
 from .courriels import envoyer_email_externe, envoyer_email_syndic_cs
 from .notifier_auteur import _notifier_auteur
 from .suite_groupe import message_suite
-from app.utils.liens import base_site
+from app.utils.liens import adresse_du_site
 from app.utils.affaires_liees import ajouter_liens
 from app.utils.fusion_affaires import fusionner, prevenir_auteurs, refuser_si_absorbee
 
@@ -384,7 +384,7 @@ def add_evolution(
                     session,
                     ticket,
                     _parole_pour_le_groupe(ticket, body),
-                    site_url=base_site(wa_config.get("site_url")),
+                    site_url=adresse_du_site(),
                     suite_enregistree=True,
                     fichiers_urls=body.fichiers_urls,
                 )

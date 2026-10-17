@@ -41,7 +41,7 @@ from .historique_courriel import (
 )
 from app.utils.noms import contexte_personne, nom_auteur
 from app.utils.recuperer import ou_rien
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 
 
 def _contexte_ticket(ticket) -> dict:
@@ -282,7 +282,7 @@ def envoyer_email_externe(
         "date_ticket": fmt_paris(ticket.cree_le),
         "date_commentaire": fmt_paris(horloge.maintenant()),
         **contexte_site(cfg),
-        "app": {"url": base_site(cfg.get("site_url"))},
+        "app": {"url": adresse_du_site()},
         "is_commentaire": is_commentaire,
         "commentaire": nouveau_message or "",
         "messages": msgs_ctx,
@@ -353,7 +353,7 @@ def _alerter_bug(
             },
             "auteur": contexte_personne(user, email=user.email),
             "residence": {"nom": nom_site(site_cfg.get("site_nom"), cfg.get("site_nom"))},
-            "app": {"url": base_site(site_cfg.get("site_url") or cfg.get("site_url"))},
+            "app": {"url": adresse_du_site()},
         },
     )
 

@@ -47,6 +47,7 @@ CONFIG = (RACINE / "api" / "app" / "config.py").read_text(encoding="utf-8")
 
 #: Place à laisser au texte du message et à l'enveloppe JSON, en octets.
 MARGE_TEXTE = 32 * 1024
+from tests.aides_adresse import poser_adresse_du_site
 
 
 def _budget_compose() -> int:
@@ -176,11 +177,10 @@ CONFIG_WA = {
     "whatsapp_enabled": "1",
     "whatsapp_api_url": "http://bridge",
     "whatsapp_group_jid": "123@g.us",
-    "site_url": "https://exemple.fr",
 }
 
 
-def test_un_corps_refuse_reemet_le_message_sans_la_photo(bridge_factice):
+def test_un_corps_refuse_reemet_le_message_sans_la_photo(bridge_factice, monkeypatch):
     """413 : le texte seul passe, et il dit où voir la photo.
 
     Le repli existait déjà — mais pour la photo ILLISIBLE sur le disque. Quand
@@ -188,6 +188,7 @@ def test_un_corps_refuse_reemet_le_message_sans_la_photo(bridge_factice):
     entier était perdu alors que le texte serait passé.
     """
     bridge_factice.codes = [413, 200]
+    poser_adresse_du_site(monkeypatch, "https://exemple.fr")
 
     wa.envoyer_whatsapp(
         "Porte des boîtes aux lettres",

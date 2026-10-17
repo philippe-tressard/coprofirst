@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import ast
 
+from tests.aides_adresse import poser_adresse_du_site
 from tests.aides_sources import module_app, modules_app
 
 SOURCE = "utils/config_site.py"
@@ -146,11 +147,11 @@ def f(session):
 
 def test_cas_zero_la_source_nomme_bien_les_deux_cles():
     """Sans quoi le motif ne reconnaîtrait plus rien, et ne refuserait plus rien."""
+    #  Depuis #2058, `site_url` ne se lit plus en base (`test_base_site.py`) : la
+    #  source ne nomme plus que `site_nom`, et le détecteur se prouve sur les
+    #  extraits forgés ci-dessus.
     source = module_app(SOURCE).source
-    assert all(cle in source for cle in COUPLE), (
-        f"`{SOURCE}` ne nomme plus les deux clés : ce contrôle ne reconnaît plus "
-        "la lecture qu'il protège."
-    )
+    assert "site_nom" in source, f"`{SOURCE}` ne nomme plus `site_nom`"
     assert len(modules_app()) > 50, "le parcours ne décrit plus `app/`"
 
 
@@ -171,7 +172,7 @@ def test_personne_ne_RECOPIE_la_lecture_du_couple():
     )
 
 
-def test_la_lecture_partagee_rend_bien_les_deux_cles(session):
+def test_la_lecture_partagee_rend_bien_les_deux_cles(session, monkeypatch):
     """Le fait, pas la forme : la fonction lit ce qu'elle promet.
 
     Un contrôle qui n'interdirait que la recopie resterait vert si la source
@@ -182,21 +183,18 @@ def test_la_lecture_partagee_rend_bien_les_deux_cles(session):
     from app.utils.config_site import config_site, contexte_site
 
     session.add(ConfigSite(cle="site_nom", valeur="Résidence 5 Hostachy"))
-    session.add(ConfigSite(cle="site_url", valeur="https://5hostachy.fr"))
     session.add(ConfigSite(cle="autre", valeur="ignorée"))
     session.commit()
 
     cfg = config_site(session)
-    assert cfg == {
-        "site_nom": "Résidence 5 Hostachy",
-        "site_url": "https://5hostachy.fr",
-    }, cfg
+    assert cfg == {"site_nom": "Résidence 5 Hostachy"}, cfg  # l'adresse : le contexte (#2058)
 
     #  Les clés supplémentaires arrivent EN PLUS, jamais à la place.
     elargi = config_site(session, "autre")
     assert elargi["autre"] == "ignorée"
     assert elargi["site_nom"] == "Résidence 5 Hostachy"
 
+    poser_adresse_du_site(monkeypatch, "https://5hostachy.fr")
     ctx = contexte_site(cfg)
     assert ctx["residence"]["nom"] == "Résidence 5 Hostachy"
     assert ctx["app"]["url"].startswith("https://5hostachy.fr")

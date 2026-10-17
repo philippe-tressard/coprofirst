@@ -16,7 +16,7 @@ import json
 
 from sqlmodel import Session, select
 from app.auth.adresse_compte import normaliser_adresse
-from app.utils.liens import base_site
+from app.utils.liens import adresse_du_site
 from app.utils.liens import nom_site
 from app.utils.noms import contexte_personne
 from app.models.core import StatutImport
@@ -467,6 +467,6 @@ def notifier_gestionnaire_appariement(
                 "pluriel_vigik": "s" if vigik > 1 else "",
             },
             "residence": {"nom": nom_site(cfg.get("site_nom"))},
-            "app": {"url": base_site(cfg.get("site_url"))},
+            "app": {"url": adresse_du_site()},
         },
     )

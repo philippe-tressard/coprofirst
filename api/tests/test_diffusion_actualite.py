@@ -18,6 +18,7 @@ from app.database import engine
 from app.models.core import RoleUtilisateur
 from app.schemas import TicketCreate, TicketUpdate
 from app.utils.perimetres import arbre
+from tests.aides_adresse import poser_adresse_du_site
 from tests.aides_base import compte
 
 
@@ -25,9 +26,8 @@ from tests.aides_base import compte
 def contexte(monkeypatch, batiments):
     affiches: list[int] = []
     #  Le canal de la résidence, allumé : la couture est le registre (#1060).
-    monkeypatch.setattr(
-        diffusion, "config_diffusion", lambda s, *a: {"site_url": "https://5hostachy.fr"}
-    )
+    monkeypatch.setattr(diffusion, "config_diffusion", lambda s, *a: {})
+    poser_adresse_du_site(monkeypatch, "https://5hostachy.fr")
     monkeypatch.setattr(
         "app.utils.destinataires.destinataires_syndic_cs",
         lambda session, syndic, cs: [("Syndic", "syndic@exemple.fr")] if (syndic or cs) else [],

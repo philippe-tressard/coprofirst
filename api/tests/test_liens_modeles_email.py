@@ -121,7 +121,7 @@ def test_les_variables_de_lien_sont_ABSOLUES_a_leur_point_d_appel():
             fautifs.append(f"{variable} → {fichier} : le fichier a disparu")
             continue
         src = f.read_text(encoding="utf-8")
-        if "base_site(" not in src and "_site_url(" not in src:
+        if "adresse_du_site(" not in src:
             fautifs.append(
                 f"{variable} → {fichier} : aucune base de site n'y est construite, "
                 "le lien partirait en chemin nu"

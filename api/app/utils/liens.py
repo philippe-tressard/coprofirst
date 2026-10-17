@@ -85,6 +85,22 @@ def base_site(valeur: str | None) -> str:
     return propre or DEFAUT_SITE
 
 
+def adresse_du_site() -> str:
+    """L'adresse publique de la copropriété servie, prête à recevoir un chemin (#2058).
+
+    Elle n'est plus un RÉGLAGE : `site_url` en base doublait `ORIGIN`, le nom que
+    l'API sert — deux vérités sur l'URL du site, et trois défauts différents
+    (`https://example.com/` au seed, `https://localhost` ici, `http://localhost`
+    dans `Settings`). Arbitré le 17/10/2026 (option A) : l'adresse est celle du
+    CONTEXTE — l'`ORIGIN` d'une installation propre, le domaine ou l'adresse dérivée
+    de la copropriété dans une installation commune (`contexte.Copropriete.adresse`).
+    🔒 `tests/test_base_site.py` refuse une lecture de `site_url` en base.
+    """
+    from app import contexte
+
+    return base_site(contexte.courante().adresse)
+
+
 def nom_site(*valeurs: str | None) -> str:
     """Le nom du site : la première valeur renseignée, sinon un repli neutre.
 

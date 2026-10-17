@@ -34,7 +34,7 @@ from .commun import (
     SondageUpdate,
 )
 from app.utils.communaute import exiger_acces
-from app.utils.liens import base_site, nom_site, lien_sondage
+from app.utils.liens import adresse_du_site, nom_site, lien_sondage
 from app.utils.noms import contexte_personne
 from app.utils.assiste_ia import marquer as marquer_assiste_ia
 from app.utils.recuperer import ou_404
@@ -269,7 +269,7 @@ def create_sondage(
                 },
                 "auteur": contexte_personne(user),
                 "residence": {"nom": nom_site(cfg_map.get("site_nom"))},
-                "app": {"url": base_site(cfg_map.get("site_url"))},
+                "app": {"url": adresse_du_site()},
                 "reference_copro": cfg_map.get("reference_copro", ""),
                 # Un sondage n'a pas de pièce jointe, mais le modèle
                 # `publication_syndic` teste `fichiers` : Jinja évalue un

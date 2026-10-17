@@ -31,17 +31,18 @@ from __future__ import annotations
 from sqlmodel import Session, select
 
 from app.models.core import ConfigSite
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 
 
 def config_site(session: Session, *cles: str) -> dict:
-    """Valeurs de `ConfigSite`, avec `site_nom` et `site_url` toujours incluses.
+    """Valeurs de `ConfigSite`, avec `site_nom` toujours inclus — l'adresse du site,
+    elle, ne se lit plus en base : `liens.adresse_du_site()` (#2058).
 
     Ces deux clés alimentent le pied de chaque e-mail : les demander partout
     évitait déjà de les oublier, mais au prix de quatre requêtes écrites à la
     main. Une seule écriture ici.
     """
-    voulues = {"site_nom", "site_url"} | set(cles)
+    voulues = {"site_nom"} | set(cles)
     lignes = session.exec(select(ConfigSite).where(ConfigSite.cle.in_(voulues))).all()
     return {r.cle: r.valeur for r in lignes}
 
@@ -62,7 +63,7 @@ def contexte_site(cfg: dict) -> dict:
     """Le bloc `residence` / `app` que tous les modèles d'e-mail attendent."""
     return {
         "residence": {"nom": nom_site(cfg.get("site_nom"))},
-        "app": {"url": base_site(cfg.get("site_url"))},
+        "app": {"url": adresse_du_site()},
     }
 
 

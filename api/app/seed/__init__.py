@@ -82,7 +82,6 @@ __all__ = [
 #: figurent déjà dans l'en-tête de chaque courriel.
 CONFIG_SITE_PAR_DEFAUT: dict[str, str] = {
     "site_nom": NOM_SITE_PAR_DEFAUT,
-    "site_url": "https://example.com/",
     "site_email": "admin@example.com",
     "site_manager_user_id": "",
     "login_sous_titre": "Votre espace numérique de résidence",

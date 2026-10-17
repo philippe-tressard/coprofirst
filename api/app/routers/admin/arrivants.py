@@ -46,7 +46,7 @@ from app.utils.ticket_arrivant import creer_ticket_arrivant
 from app.utils.recuperer import ou_404
 from app.utils.cloche import sonner_systeme
 from app.utils.config_site import config_site
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 from app.utils.logo import logo_televerse_png
 
 router = APIRouter()
@@ -360,7 +360,7 @@ def get_fiche_arrivant(
             "membres": syndic_membres,
         },
         site_nom=nom_site(site.get("site_nom")),
-        site_url=base_site(site.get("site_url")),
+        site_url=adresse_du_site(),
         logo_png=logo_televerse_png(session),
         whatsapp_url=whatsapp_url,
         #  Éditables par le CS, rendues échappées ; le syndic y est NOMMÉ par le

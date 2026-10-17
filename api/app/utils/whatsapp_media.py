@@ -27,7 +27,7 @@ import logging
 from app.config import get_settings
 from app.utils.fichiers import chemins_locaux
 from app.utils.images import reduire_sous_budget
-from app.utils.liens import base_site
+from app.utils.liens import adresse_du_site
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ def renvoi_photos(config: dict, cible: str | None = None) -> str:
     Rend une chaîne vide si le site n'a pas d'adresse configurée — une phrase qui
     renverrait vers nulle part vaut moins que pas de phrase.
     """
-    lien = base_site(config.get("site_url")).rstrip("/")
+    lien = adresse_du_site().rstrip("/")
     if not lien:
         return ""
     return f"\n\n📷 Photos à voir sur le site : {cible or lien + '/'}"

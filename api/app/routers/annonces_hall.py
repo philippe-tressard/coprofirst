@@ -60,19 +60,19 @@ from app.routers.annonces_hall_sources import router as _router_sources  # noqa:
 
 router.include_router(_router_sources)
 
-from app.utils.stockage import cle_de_url, stockage
+from app.utils.stockage import DOSSIER_AFFICHES, cle_de_url, stockage
 
 #  🔴 La racine venait d'un chemin écrit en dur, ici comme à cinq autres
 #  endroits (#1026). Les affiches s'écrivent dans le stockage de la copropriété
 #  (`utils/stockage`, #1748), sous ce dossier : un fichier écrit hors du volume
 #  n'est ni répliqué vers le standby par `bascule.sh`, ni sauvegardé par
 #  `backup.py` — il est perdu à la première bascule, sans aucun signal.
-DOSSIER_PDF = "annonces-hall"
+DOSSIER_PDF = DOSSIER_AFFICHES
 
 
 #  Les schémas vivent dans `annonces_hall_schemas` (02/09/2026, plafond de
 #  modularité) : ce qui DÉCLARE part, ce qui DÉCIDE reste.
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 from app.utils.logo import logo_televerse_png
 from app.utils.recuperer import fichier_ou_404, ou_404, ou_rien
 from app.routers.annonces_hall_schemas import (  # noqa: E402
@@ -120,7 +120,7 @@ def _html_params(
         "perimetre_label": perimetre_label_liste(body.perimetre_cible),
         "format_effectif": format_effectif,
         "site_nom": nom_site(cfg.get("site_nom")),
-        "site_url": base_site(cfg.get("site_url")),
+        "site_url": adresse_du_site(),
         "logo_png": logo_televerse_png(session),
         "images": body.images,
         "date_affichage": date_affichage,

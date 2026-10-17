@@ -44,7 +44,12 @@
 		<ChampLogo />
 		<label class="field">
 			URL publique
-			<input type="url" bind:value={siteConfig.url} placeholder="https://..." />
+			<!--  Dérivée, jamais saisie (#2058) : l'adresse de l'installation. -->
+			<input type="url" value={siteConfig.url} readonly />
+			<span class="aide"
+				>L’adresse de l’installation, celle des liens des courriels et des pages légales&nbsp;: elle
+				ne se règle pas ici.</span
+			>
 		</label>
 		<label class="field champ-double">
 			E-mail administrateur

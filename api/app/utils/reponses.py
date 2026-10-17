@@ -20,14 +20,13 @@ from sqlmodel import Session
 from app.utils.batiments import libelle_batiment_ou
 from app.models.core import (
     Batiment,
-    ConfigSite,
     RoleUtilisateur,
     Utilisateur,
 )
 from app.utils.noms import ANCIEN_RESIDENT, nom_affiche
 from app.utils.recuperer import ou_rien
 from app.utils.roles_libelles import libelle_role, libelle_statut_court
-from app.utils.liens import base_site
+from app.utils.liens import adresse_du_site
 from app.auth.deps import est_moderateur
 from app.utils.cloche import sonner
 from app.utils.valeurs import valeur
@@ -104,19 +103,6 @@ def tri_reponses(reponses: list[dict]) -> list[dict]:
 #  (`utils/preferences_mail.py`).
 
 
-def _site_url(session: Session) -> str:
-    """L'adresse du site, normalisée par `base_site` et par rien d'autre.
-
-    ⚠️ Cette fonction écrivait son propre `rstrip("/")` — la 23ᵉ copie de la même
-    règle. Elle échappait au contrôle parce qu'elle lit la ligne par
-    `session.get(ConfigSite, …)` et non par `cfg.get("site_url")` : la forme
-    différait, la notion était la même. C'est pourquoi le contrôle vise DEUX
-    formes de lecture (`test_base_site.py`).
-    """
-    row = session.get(ConfigSite, "site_url")
-    return base_site(row.valeur if row else None)
-
-
 def notifier_nouvelle_reponse(
     session: Session,
     background_tasks: BackgroundTasks,
@@ -162,7 +148,7 @@ def notifier_nouvelle_reponse(
                 "rubrique_label": rubrique_label,
                 "sujet": sujet,
                 "extrait": extrait[:300],
-                "lien": f"{_site_url(session)}{lien_path}",
+                "lien": f"{adresse_du_site()}{lien_path}",
             }
         }
         background_tasks.add_task(
@@ -193,7 +179,7 @@ def notifier_votants_idee(
     Cloche et courriel, chacun selon le profil (`utils/preferences_mail`). On
     ne notifie qu'une fois chaque votant et jamais l'auteur de l'action.
     """
-    site_url = _site_url(session)
+    site_url = adresse_du_site()
     for uid in {u for u in votant_ids if u and u != exclure_id}:
         dest = session.get(Utilisateur, uid)
         if not dest:

@@ -25,7 +25,7 @@ from sqlmodel import Session
 
 from app.models.core import Utilisateur
 from app.utils.etages import divergence_etage, etage_label
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 from app.utils.lots_rattaches import lots_de
 from app.utils.noms import contexte_personne
 
@@ -67,6 +67,6 @@ def alerter_divergence_etage(
                 "lot": etage_label(lot),
             },
             "residence": {"nom": nom_site(cfg.get("site_nom"))},
-            "app": {"url": base_site(cfg.get("site_url"))},
+            "app": {"url": adresse_du_site()},
         },
     )

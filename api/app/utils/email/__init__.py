@@ -38,7 +38,6 @@ from .gabarit import INTENTIONS, _wrap_email  # noqa: F401  (ré-export : admin/
 from .pieces_jointes import _preparer_pieces_jointes
 
 
-
 logger = logging.getLogger("email")
 
 

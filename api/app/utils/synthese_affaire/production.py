@@ -305,7 +305,7 @@ async def envoyer_avis(session: Optional[Session], synthese_id: int) -> bool:
     from app.utils.config_site import config_site
     from app.utils.destinataires import gestionnaire_puis_cs
     from app.utils.email import send_email_group
-    from app.utils.liens import base_site, nom_site
+    from app.utils.liens import adresse_du_site, nom_site
 
     propre = session is None
     session = session or contexte.nouvelle_session()
@@ -320,7 +320,7 @@ async def envoyer_avis(session: Optional[Session], synthese_id: int) -> bool:
         session.commit()
         if ticket is None or not destinataires:
             return False
-        cfg = config_site(session, "site_nom", "site_url")
+        cfg = config_site(session, "site_nom")
         await send_email_group(
             code="synthese_a_valider",
             to_recipients=destinataires,
@@ -329,7 +329,7 @@ async def envoyer_avis(session: Optional[Session], synthese_id: int) -> bool:
                 "issue": "résolue" if valeur(ticket.statut) == "résolu" else "annulée",
                 "synthese": {"vide": not synthese.synthese, "evolution_id": synthese.evolution_id},
                 "residence": {"nom": nom_site(cfg.get("site_nom"))},
-                "app": {"url": base_site(cfg.get("site_url"))},
+                "app": {"url": adresse_du_site()},
             },
             session=session,
         )
