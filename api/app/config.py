@@ -74,6 +74,17 @@ class Settings(BaseSettings):
     # copropriété (`MAIL_FROM` en est une, D6). Vide → l'alerte se journalise.
     mail_from_plateforme: str = ""
 
+    # L'IDENTITÉ PUBLIQUE de l'opérateur et de son hébergeur (#2065) : les textes
+    # légaux de CHAQUE copropriété servie les nomment — l'opérateur est leur
+    # sous-traitant (RGPD art. 28), l'hébergeur celui que la LCEN impose de citer.
+    # Des réglages de l'installation, pas d'une copropriété (D5). Lus par
+    # `utils/textes_legaux/identite` et nulle part ailleurs ; vides → « À RENSEIGNER ».
+    operateur_nom: str = ""
+    operateur_adresse: str = ""
+    operateur_contact: str = ""
+    hebergeur: str = ""
+    hebergeur_pays: str = ""
+
     # La clé qui SIGNE les baux (R2 #1878, D19) — chez la référence SEULE : 32 octets
     # bruts en base64, créée sur l'actif par `scripts/exploitation/creer-cle-baux.sh`
     # et posée dans le `.env` des deux nœuds. La seule pièce secrète du registre :

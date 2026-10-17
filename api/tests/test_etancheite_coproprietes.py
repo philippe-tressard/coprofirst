@@ -35,7 +35,6 @@ dans le cache de l'utilisateur n° 12 de B.
 from __future__ import annotations
 
 import re
-from dataclasses import replace
 
 import pytest
 from fastapi import Depends, FastAPI
@@ -50,15 +49,14 @@ from app.main import app
 from app.models.copropriete import Copropriete
 from app.models.core import RoleUtilisateur, Utilisateur
 from app.models.tickets import Ticket
-from app.seed import seed
 from app.utils.limiter import limiter
-from tests.aides_base import adresse_de_test, compte
+from tests.aides_base import compte
+from tests.aides_coproprietes import ENTETE, client_par_entete, coproprietes_semees
 from tests.aides_sources import operations_montees
 
 #: Le témoin planté dans A : un mot qu'aucun libellé de l'application ne contient.
 MARQUE_A = "Fuitezq"
 MARQUE_B = "Temoinb"
-ENTETE = "x-copropriete-essai"
 
 #: Les routes GET que le balayage n'appelle pas, avec leur raison.
 ROUTES_ECARTEES = {
@@ -72,77 +70,47 @@ MINIMUM_REPONSES_200 = 40
 MINIMUM_LECTURES_B = 3
 
 
-def _copropriete(base: contexte.Copropriete, nom: str, dossier, adresse) -> contexte.Copropriete:
-    (dossier / nom).mkdir()
-    return replace(
-        base,
-        identifiant=f"essai-{nom}",
-        url_base=adresse,
-        racine_fichiers=dossier / nom,
-        secret=nom * 40,
-    )
-
-
 @pytest.fixture(scope="module")
 def deux(tmp_path_factory):
-    """Deux copropriétés semées, aux identifiants identiques. Rend `{nom: (copro, jeton)}`."""
+    """Deux copropriétés semées, aux identifiants identiques. Rend `{nom: (copro, jeton, id)}`."""
+
+    def preparer(nom: str, s: Session):
+        marque = MARQUE_A if nom == "a" else MARQUE_B
+        admin = compte(
+            s,
+            prefixe=marque.lower(),
+            prenom=marque,
+            nom=f"{marque} Gestionnaire",
+            role=RoleUtilisateur.admin,
+            roles_json="admin",
+        )
+        ident = admin.id
+        jeton = creer_jeton_acces(ident, admin.hashed_password)
+        #  Le témoin aussi dans la fiche de la copropriété et dans une
+        #  affaire n° 1 : plus de tables marquées, plus de routes qui lisent.
+        for fiche in s.exec(select(Copropriete)).all():
+            fiche.nom = f"Residence {marque}"
+            s.add(fiche)
+        s.add(
+            Ticket(
+                numero=f"TK-{nom}-1",
+                titre=f"Affaire {marque}",
+                description=f"Description {marque}",
+                auteur_id=ident,
+            )
+        )
+        s.commit()
+        return jeton, ident
+
     dossier = tmp_path_factory.mktemp("etancheite")
-    base = contexte.courante()
-    coproprietes = {}
-    retraits = []
-    for nom, marque in (("a", MARQUE_A), ("b", MARQUE_B)):
-        adresse, retirer = adresse_de_test()
-        retraits.append(retirer)
-        copro = _copropriete(base, nom, dossier, adresse)
-        with contexte.dans(copro):
-            seed()
-            with Session(contexte.moteur()) as s:
-                admin = compte(
-                    s,
-                    prefixe=marque.lower(),
-                    prenom=marque,
-                    nom=f"{marque} Gestionnaire",
-                    role=RoleUtilisateur.admin,
-                    roles_json="admin",
-                )
-                ident = admin.id
-                jeton = creer_jeton_acces(ident, admin.hashed_password)
-                #  Le témoin aussi dans la fiche de la copropriété et dans une
-                #  affaire n° 1 : plus de tables marquées, plus de routes qui lisent.
-                for fiche in s.exec(select(Copropriete)).all():
-                    fiche.nom = f"Residence {marque}"
-                    s.add(fiche)
-                s.add(
-                    Ticket(
-                        numero=f"TK-{nom}-1",
-                        titre=f"Affaire {marque}",
-                        description=f"Description {marque}",
-                        auteur_id=ident,
-                    )
-                )
-                s.commit()
-        coproprietes[nom] = (copro, jeton, ident)
-    yield coproprietes
-    for copro, _jeton, _id in coproprietes.values():
-        with contexte.dans(copro):
-            contexte.moteur().dispose()
-    for retirer in retraits:
-        retirer()
+    with coproprietes_semees(dossier, ("a", "b"), preparer) as semees:
+        yield {nom: (copro, *rendu) for nom, (copro, rendu) in semees.items()}
 
 
 @pytest.fixture()
 def http(deux, monkeypatch):
     """Un client dont chaque requête est servie pour la copropriété de son en-tête."""
-    par_nom = {nom: copro for nom, (copro, _j, _i) in deux.items()}
-
-    def resoudre(scope):
-        entetes = dict(scope.get("headers") or [])
-        return par_nom[entetes[ENTETE.encode()].decode()]
-
-    monkeypatch.setattr(contexte, "resoudre", resoudre)
-    monkeypatch.setattr(contexte, "coproprietes", lambda: tuple(par_nom.values()))
-    limiter.reset()
-    yield TestClient(app, raise_server_exceptions=False)
+    yield client_par_entete(monkeypatch, {nom: copro for nom, (copro, _j, _i) in deux.items()})
     limiter.reset()
 
 

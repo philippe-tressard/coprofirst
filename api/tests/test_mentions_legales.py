@@ -48,6 +48,14 @@ from __future__ import annotations
 import re
 
 from app.seed.contenus_legaux import DEFAULT_LEGAL
+from app.utils.textes_legaux.champs import rendre
+from app.utils.textes_legaux.identite import IdentiteLegale
+
+
+def _sans_identite(cle: str) -> str:
+    """Le gabarit tel qu'une copropriété qui n'a rien renseigné le publie (#2065) :
+    ses champs se rendent « À RENSEIGNER »."""
+    return rendre(DEFAULT_LEGAL[cle], IdentiteLegale())
 
 
 def _texte_nu(html: str) -> str:
@@ -60,7 +68,7 @@ def test_le_gabarit_du_seed_se_declare_comme_gabarit():
     Les trois rubriques que la LCEN impose doivent porter la marque, sans quoi la
     page publique paraîtrait complète en n'identifiant personne.
     """
-    texte = _texte_nu(DEFAULT_LEGAL["mentions_legales"])
+    texte = _texte_nu(_sans_identite("mentions_legales"))
     assert texte.count("À RENSEIGNER") >= 3, (
         "le gabarit ne se signale pas sur les trois rubriques obligatoires "
         "(éditeur, directeur de la publication, hébergeur) :\n" + texte[:400]
@@ -99,7 +107,7 @@ def test_le_seed_n_affirme_plus_qu_aucune_donnee_ne_sort_de_l_UE():
 
 def test_la_politique_du_seed_reste_un_gabarit_declare():
     """Le seed porte le PRODUIT : il ne nomme aucun responsable, et le dit."""
-    politique = DEFAULT_LEGAL["politique_confidentialite"]
+    politique = _sans_identite("politique_confidentialite")
     assert politique.count("À RENSEIGNER") >= 3, (
         "le gabarit de la politique ne se signale pas sur le responsable du "
         "traitement, l'hébergement et l'acheminement"

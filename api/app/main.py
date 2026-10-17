@@ -86,6 +86,7 @@ from app.installation_commune import routeur as aiguillage  # l'hôte commun (#1
 from app.routers import courriels_affaires
 from app.routers import partage
 from app.routers import assistant, config_llm, config_logo, config_services, reglement
+from app.routers import textes_legaux
 from app.routers import suivi_affaires
 from app.routers import points_conseil, points_conseil_validation
 from app.seed import seed
@@ -437,6 +438,7 @@ app.include_router(config.router)
 app.include_router(config_llm.router)
 app.include_router(config_services.router)
 app.include_router(config_logo.router)
+app.include_router(textes_legaux.router)
 app.include_router(diagnostics.router)
 app.include_router(regles_residence.router)
 app.include_router(delegations.router)

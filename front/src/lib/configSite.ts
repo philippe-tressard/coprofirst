@@ -21,7 +21,8 @@
  * ⚠️ Ce module ne connaît **que** l'onglet « Site ». Les pages
  * (`page_config_*`), WhatsApp et les mentions légales ont leurs propres chemins,
  * et `mentions_legales` / `politique_confidentialite` se lisent par un endpoint
- * séparé (`/config/legal`) — c'est pourquoi `lireConfigSite` les reçoit à part.
+ * séparé (`/config/textes-legaux`, leur SOURCE, champs compris — jamais le rendu
+ * public de `/config/legal`, #2065) — c'est pourquoi `lireConfigSite` les reçoit à part.
  */
 import { delaiArchivageJours } from '$lib/archivage';
 import { ecrireReglagePied, lireReglagePied, type ReglagePied } from '$lib/piedDePage';
@@ -33,6 +34,8 @@ export interface ConfigSite {
 	login_sous_titre: string;
 	mentions_legales: string;
 	politique_confidentialite: string;
+	/** L'adresse où exercer ses droits sur ses données, nommée par les textes légaux (#2065). */
+	contact_donnees: string;
 	archivage_delai_jours: number;
 	relance_syndic_delai_jours: number;
 	notify_ticket_bug_email: boolean;
@@ -63,6 +66,7 @@ export const CONFIG_SITE_DEFAUT: ConfigSite = {
 	login_sous_titre: 'Votre espace numérique de résidence',
 	mentions_legales: '',
 	politique_confidentialite: '',
+	contact_donnees: '',
 	archivage_delai_jours: 30,
 	relance_syndic_delai_jours: 30,
 	notify_ticket_bug_email: false,
@@ -86,6 +90,7 @@ export function lireConfigSite(
 		login_sous_titre: cfg['login_sous_titre'] ?? CONFIG_SITE_DEFAUT.login_sous_titre,
 		mentions_legales: legal.mentions_legales ?? '',
 		politique_confidentialite: legal.politique_confidentialite ?? '',
+		contact_donnees: cfg['contact_donnees_personnelles'] ?? '',
 		//  Le réglage unique et son repli vivent dans `$lib/archivage` : les
 		//  recopier ici rouvrirait exactement la divergence que #515 referme.
 		archivage_delai_jours: delaiArchivageJours(cfg),
@@ -115,6 +120,7 @@ export function ecrireConfigSite(c: ConfigSite): Record<string, string> {
 		login_sous_titre: c.login_sous_titre,
 		mentions_legales: c.mentions_legales,
 		politique_confidentialite: c.politique_confidentialite,
+		contact_donnees_personnelles: c.contact_donnees,
 		archivage_delai_jours: String(
 			c.archivage_delai_jours || CONFIG_SITE_DEFAUT.archivage_delai_jours,
 		),

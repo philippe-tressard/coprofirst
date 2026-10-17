@@ -29,7 +29,7 @@ async function enEchec(page: Page, chemin: string, status = 500) {
 }
 
 for (const [lecture, onglet] of [
-	['/api/config/legal', 'legal'],
+	['/api/config/textes-legaux', 'legal'],
 	['/api/config/admin', 'smtp'],
 ] as const) {
 	test(`Admin : ${lecture} illisible — l’onglet ${onglet} le dit et n’offre rien à enregistrer`, async ({

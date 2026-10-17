@@ -23,6 +23,13 @@ se rend, elle a l'air finie, et personne ne la lit jusqu'à ce que quelqu'un
 cherche qui contacter. La nôtre a vécu ainsi jusqu'à ce qu'un lecteur le voie.
 """
 
+from app.seed.contenus_legaux_identite import (
+    DESTINATAIRES,
+    HEBERGEMENT,
+    MENTIONS_CONTACT,
+    MENTIONS_IDENTITE,
+    RESPONSABLE_TRAITEMENT,
+)
 from app.utils.courriel_journal import CONSERVATION_RELEVES_JOURS
 from app.utils.plateforme import LICENCE_NOM, LICENCE_SPDX, LICENCE_URL, NOM_PLATEFORME
 from app.utils.purge_comptes.regles import (
@@ -325,31 +332,16 @@ PARAGRAPHE_LICENCE = (
 
 DEFAULT_LEGAL = {
     "mentions_legales": (
-        "<h2>Éditeur du service</h2>"
-        "<p><strong>À RENSEIGNER</strong> — nom de l'éditeur (personne physique ou "
-        "syndicat des copropriétaires), et adresse si l'éditeur est professionnel.<br>"
-        "Cette page est PUBLIQUE et la loi impose d'identifier l'éditeur : tant que "
-        "cette mention n'est pas remplacée depuis <em>Admin → Légal</em>, le site ne "
-        "satisfait pas à cette obligation.</p>"
-        "<h2>Directeur de la publication</h2>"
-        "<p><strong>À RENSEIGNER</strong> — nom de la personne responsable du contenu publié.</p>"
-        "<h2>Hébergeur</h2>"
-        "<p><strong>À RENSEIGNER</strong> — nom et coordonnées de l'hébergeur, ou mention "
-        "de l'auto-hébergement et des intermédiaires techniques éventuels (DNS, proxy).</p>"
-        "<h2>Propriété intellectuelle</h2>"
+        MENTIONS_IDENTITE
+        + "<h2>Propriété intellectuelle</h2>"
         + PARAGRAPHE_LICENCE
         + "<p>Les contenus publiés dans l'application restent la propriété de leurs auteurs respectifs.</p>"
         "<h2>Responsabilité</h2>"
         "<p>L'éditeur s'efforce de fournir des informations exactes et à jour. Il ne saurait être tenu responsable "
-        "des erreurs ou omissions dans les informations diffusées.</p>"
-        "<h2>Contact</h2>"
-        "<p>Pour toute question, contactez l'administrateur via la messagerie interne.</p>"
+        "des erreurs ou omissions dans les informations diffusées.</p>" + MENTIONS_CONTACT
     ),
     "politique_confidentialite": (
-        "<h2>1. Responsable du traitement</h2><p>Le responsable du traitement est <strong>À "
-        "RENSEIGNER</strong> — nom de l'éditeur et adresse à laquelle exercer ses droits. Cette "
-        "adresse doit être joignable <em>sans compte</em> : un droit d'effacement s'exerce souvent "
-        "après la suppression du compte.</p><h2>2. Données collectées</h2><ul><li><strong>Données "
+        RESPONSABLE_TRAITEMENT + "<h2>2. Données collectées</h2><ul><li><strong>Données "
         "d'identification\xa0:</strong> nom, prénom, adresse e-mail, téléphone "
         "(facultatif).</li><li><strong>Données de résidence\xa0:</strong> lot(s) associé(s), bâtiment, "
         "tantièmes.</li><li><strong>Données d'usage\xa0:</strong> tickets soumis, messages échangés, "
@@ -372,18 +364,14 @@ DEFAULT_LEGAL = {
         "base\xa0: exécution du contrat (art.\xa06-1-b).</li><li><strong>E-mails transactionnels</strong> —"
         " base\xa0: intérêt légitime / consentement.</li>"
         + TELEMETRIE_BASE_LEGALE
-        + "</ul><h2>4. Destinataires</h2><p>Les données "
-        "sont accessibles uniquement aux membres du conseil syndical et à l'administrateur. Elles ne "
-        "sont ni cédées à des tiers, ni commercialisées, ni utilisées à des fins "
-        "publicitaires.</p><p>Cette phrase vise la <strong>cession</strong> et la "
+        + "</ul>"
+        + DESTINATAIRES
+        + "<p>Cette phrase vise la <strong>cession</strong> et la "
         "<strong>commercialisation</strong>\xa0: il n'y en a aucune. Elle ne signifie pas qu'aucune "
         "donnée ne quitte l'application — les <strong>sous-traitants techniques</strong> nommés "
-        "ci-dessous en reçoivent, pour la seule exécution du service.</p><p><strong>Hébergement et "
-        "acheminement.</strong> <strong>À RENSEIGNER</strong> — où les données sont stockées, et par "
-        "qui. <strong>À RENSEIGNER</strong> si un intermédiaire technique (CDN, proxy, résolveur DNS)"
-        " relaie les connexions : nommez-le et dites d'où il opère. Un relais hors UE traite au "
-        "minimum les adresses IP des visiteurs, et le taire rendrait ce paragraphe "
-        "inexact.</p><p><strong>Services tiers qui reçoivent des données.</strong> "
+        "ci-dessous en reçoivent, pour la seule exécution du service.</p>"
+        + HEBERGEMENT
+        + "<p><strong>Services tiers qui reçoivent des données.</strong> "
         + FONCTIONS_TIERS
         + " — elles le sont au cas par cas, par l'administrateur\xa0:</p><ul><li><strong>Diffusion sur une messagerie "
         "instantanée</strong> — lorsqu'une publication est diffusée au groupe de la résidence, son "

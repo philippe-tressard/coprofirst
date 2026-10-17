@@ -31,7 +31,8 @@ async function ouvrir(page: Page, chemin: string): Promise<Envoi[]> {
 	});
 	await simulerApi(page, (api) => {
 		if (api === '/api/auth/me') return ADMIN;
-		if (api === '/api/config/legal') return LEGAL;
+		if (api === '/api/config/textes-legaux')
+			return { textes: LEGAL, champs: [], contact: '', etat: { a_relire: false, textes: [] } };
 	});
 	await page.goto(chemin);
 	await attendreHydratation(page);

@@ -10,6 +10,7 @@
 		type CommandeAccesEnAttente,
 		type CompteEnAttenteEnrichi,
 		type DemandeProfil,
+		type TextesLegauxSource,
 		type UtilisateurAdmin,
 	} from '$lib/api';
 	import { aRole, droitsOnglet, isAdmin, isOperateur, quandAuthResolue } from '$lib/stores/auth';
@@ -17,7 +18,7 @@
 	import { essayer, messagePartiel, TITRE_PARAMETRAGE_ILLISIBLE } from '$lib/chargement';
 	import type { ServiceCopropriete } from '$lib/api';
 	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
-	//  Les onglets qui ENREGISTRENT ce que `/config/admin` et `/config/legal` ont lu.
+	//  Les onglets qui ENREGISTRENT ce que `/config/admin` et `/config/textes-legaux` ont lu.
 	//  Si la lecture a échoué, leur formulaire serait vide — et enregistré, il
 	//  effacerait la configuration (#1459) : ils montrent l'échec à la place.
 	const ONGLETS_DU_PARAMETRAGE = [
@@ -31,13 +32,11 @@
 	];
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
-	import Icon from '$lib/components/Icon.svelte';
 	import { defautsDePage } from '$lib/pages';
 	import { page } from '$app/stores';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	import EntetePage from '$lib/components/EntetePage.svelte';
 	import { CONFIG_SITE_DEFAUT, ecrireConfigSite, lireConfigSite } from '$lib/configSite';
-	import RichEditor from '$lib/components/RichEditor.svelte';
 	import { IMPORT_TELECOMMANDES, IMPORT_VIGIK } from '$lib/imports-acces';
 	import OngletATraiter from '$lib/components/OngletATraiter.svelte';
 	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
@@ -175,7 +174,7 @@
 		if (!get(isAdmin)) return marquerDonneesAffichees();
 		//  🔴 Les files de « À traiter » partent D'ABORD, sans attendre le
 		//  paramétrage (#1842). Elles venaient après trois lectures en série
-		//  (coquille, `/config/admin`, `/config/legal`) qui ne servent qu'aux
+		//  (coquille, `/config/admin`, `/config/textes-legaux`) qui ne servent qu'aux
 		//  onglets de réglage : +225 ms à chaque ouverture de l'administration.
 		//  Les quatre files arrivées : les données de l'onglet par défaut (#1846).
 		Promise.all([loadBatiments(), loadComptes(), loadCommandes(), loadDemandesProfil()]).then(() =>
@@ -193,17 +192,20 @@
 		//  🔴 Lu UNE fois (il l'était deux) et jamais en silence (#1459) : un échec
 		//  laissait les textes légaux vides, et « Enregistrer » les effaçait.
 		//  Les trois lectures partent ENSEMBLE ; aucune ne dépend d'une autre.
+		//  Les textes légaux par leur SOURCE, champs compris (#2065) : le rendu public
+		//  de `/config/legal`, enregistré, figerait les noms à la place des champs.
 		const [, [adminCfg, eAdmin], [legal, eLegal]] = await Promise.all([
 			loadSiteConfig(),
 			essayer(configApi.admin(), {} as Record<string, string>),
-			essayer(configApi.legal(), {} as Record<string, string>),
+			essayer(configApi.textesLegaux(), null as TextesLegauxSource | null),
 		]);
 		erreurParametrage = messagePartiel(eAdmin, eLegal);
 		const cfg = { ...(get(configStore) as Record<string, string>), ...adminCfg };
 		siteConfig = lireConfigSite(cfg, {
-			mentions_legales: legal['mentions_legales'] ?? '',
-			politique_confidentialite: legal['politique_confidentialite'] ?? '',
+			mentions_legales: legal?.textes['mentions_legales'] ?? '',
+			politique_confidentialite: legal?.textes['politique_confidentialite'] ?? '',
 		});
+		textesLegaux = legal;
 		//  La configuration des pages est préparée par `OngletDescriptifPages`, qui
 		//  la reçoit dans `valeurs` : la page n'a plus à connaître sa forme.
 		// WhatsApp : la configuration part telle quelle vers l'onglet dédié.
@@ -222,6 +224,8 @@
 	//  sur les défauts écraserait la configuration en l'enregistrant (#1459).
 	//  Les files de « À traiter » ne l'attendent plus, ces onglets-là l'attendent.
 	let parametrageLu = false;
+	//  Le constat et les champs des textes légaux, pour l'onglet « Pages légales ».
+	let textesLegaux: TextesLegauxSource | null = null;
 	async function saveSiteConfig() {
 		siteSaving = true;
 		try {
@@ -367,33 +371,20 @@
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'legal'}
-	<section class="card config-section">
-		<h2 class="config-section-title"><Icon name="file-text" size={17} />Mentions légales</h2>
-		<p class="muted intro-texte">
-			Contenu affiché sur <code>/mentions-legales</code>.
-		</p>
-		<RichEditor bind:value={siteConfig.mentions_legales} minHeight="380px" titres sourceHtml />
-	</section>
-	<hr class="separateur-section" />
-	<section class="card config-section">
-		<h2 class="config-section-title">
-			<Icon name="shield" size={17} />Politique de confidentialité
-		</h2>
-		<p class="muted intro-texte">
-			Contenu affiché sur <code>/politique-de-confidentialite</code>.
-		</p>
-		<RichEditor
-			bind:value={siteConfig.politique_confidentialite}
-			minHeight="380px"
-			titres
-			sourceHtml
-		/>
-	</section>
-	<div class="form-actions">
-		<button class="btn btn-primary" on:click={saveSiteConfig} disabled={siteSaving}>
-			{siteSaving ? 'Enregistrement…' : 'Enregistrer'}
-		</button>
-	</div>
+	{#if textesLegaux}
+		{@const source = textesLegaux}
+		<ChargementDiffere charger={() => import('$lib/components/OngletLegal.svelte')}>
+			{#snippet contenu(OngletLegal)}
+				<OngletLegal
+					bind:siteConfig
+					{siteSaving}
+					{saveSiteConfig}
+					constat={source.etat}
+					champs={source.champs}
+				/>
+			{/snippet}
+		</ChargementDiffere>
+	{/if}
 {:else if onglet === 'whatsapp'}
 	<ChargementDiffere charger={() => import('$lib/components/OngletWhatsApp.svelte')}>
 		{#snippet contenu(OngletWhatsApp)}
@@ -479,16 +470,9 @@
 	    avec motif », qui était écrit TROIS fois ici. `.input-sm` est montée dans
 	    la charte — la page l'emploie encore trois fois, le composant une, et
 	    deux écritures d'une même règle divergent au premier ajustement. */
-	code {
-		background: var(--color-bg);
-		padding: 0.1rem 0.35rem;
-		border-radius: 0.25rem;
-		font-size: 0.85em;
-	}
+	/*  `code` et `.intro-texte` sont partis avec l'onglet « Pages légales », leur
+	    seul usage (`OngletLegal.svelte`, #2065). */
 	/*  🔴 `.badge-orange` et `.badge-purple` retirees le 28/08/2026 (#607) :
     la charte les porte, et cet ecran en donnait une TROISIEME teinte —
     `delegations` en avait une deuxieme. Meme notion, trois couleurs. */
-	.intro-texte {
-		margin-bottom: 1rem;
-	}
 </style>
