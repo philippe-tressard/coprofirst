@@ -162,6 +162,16 @@ def test_une_copropriete_neuve_a_ses_textes_a_relire_et_l_exemple_du_seed_ne_com
     assert A_RENSEIGNER in rendu
 
 
+def test_une_valeur_vide_ne_laisse_ni_none_ni_trou(http, trois):
+    """La copropriété neuve n'a ni syndic, ni contact, ni hébergeur : chaque champ vide se
+    dit « À RENSEIGNER », jamais « None », un paragraphe vide ou des parenthèses vides."""
+    for cle, texte in http.get("/config/legal", headers={ENTETE: "c"}).json().items():
+        nu = _texte_nu(texte)
+        for trou in ("None", "()", "( )", ", ,"):
+            assert trou not in nu, f"{cle} rend {trou!r} pour un champ vide"
+        assert "<p></p>" not in texte and "[[" not in texte, cle
+
+
 def test_la_relecture_d_un_texte_incomplet_est_refusee(http, trois):
     r = _envoyer(http, trois, "c", "POST", "/config/textes-legaux/relecture")
     assert r.status_code == 409, r.text
