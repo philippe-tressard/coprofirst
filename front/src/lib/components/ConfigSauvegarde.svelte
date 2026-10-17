@@ -58,7 +58,6 @@
 		enregistrement = true;
 		try {
 			await admin.updateBackupConfig({
-				frequence: 'quotidienne',
 				heure_execution: Number(heure_execution),
 				nb_versions_conservees: Number(nb_versions_conservees),
 			});

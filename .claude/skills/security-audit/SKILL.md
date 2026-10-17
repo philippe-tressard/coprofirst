@@ -253,7 +253,7 @@ if (Test-Path .env.example) { Get-Content .env.example }
 
 - **La clé du bridge WhatsApp** : `.env` seulement (`WHATSAPP_API_KEY`), lue par
   le bridge et par `utils/whatsapp.entetes_bridge` — `ConfigSite` la refuse
-  (`_CLES_HORS_BASE`). Le bridge refuse au démarrage une clé vide, d'exemple ou
+  (`utils/reglages.REFUSEES`, #2055). Le bridge refuse au démarrage une clé vide, d'exemple ou
   trop courte, et ignore `?apikey=`. 🔒 `api/tests/test_cle_bridge_whatsapp.py`,
   `whatsapp-bridge/tests/contrat-http.test.js`.
 - **Le SSH entre les nœuds** authentifie aussi le SERVEUR : clé d'hôte épinglée

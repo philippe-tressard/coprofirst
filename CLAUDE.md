@@ -422,11 +422,21 @@ est la seule liste ; l'onglet **Admin › Services** s'en déduit
 coupant. 🔴 **Les courriels de sécurité ne sont pas un service**
 (`COURRIELS_DE_SECURITE`) : le SMTP y est une infrastructure, sans interrupteur.
 🔒 `test_services_registre.py`, `test_courriels_securite_hors_service.py`.
+Ni la case **Actif** d'un modèle d'e-mail : un modèle `desactivable=False` du seed
+(`seed.emails.NON_DESACTIVABLES`, lu dans le code, jamais dans la colonne) part
+même décoché, et le `PATCH` refuse de le décocher (#2054).
+🔒 `test_modeles_non_desactivables.py`.
 
 ### Sécurité
 - JWT HS256 en cookies `httponly=True`, `secure=settings.cookie_secure`, `samesite="strict"`
 - CORS : allowlist explicite, jamais `["*"]` avec `credentials=True`
 - Rate limiting slowapi sur `/auth/*`
+- **Un réglage ne s'écrit par `PUT /config` que s'il est DÉCLARÉ** dans
+  `utils/reglages` (par onglet, familles lues sur leurs registres) ; une clé
+  inconnue, réservée au serveur (`llm_<usage>_reference`) ou qui a sa route
+  dédiée est refusée, et la requête n'écrit rien (#2055). Une clé neuve d'un
+  écran s'y ajoute. 🔒 `test_reglages_liste_blanche.py` lit aussi les charges
+  du front : un écran qui enverrait une clé non déclarée échoue en CI.
 - **Un jeton se stocke par son empreinte, jamais en clair** — rafraîchissement,
   mot de passe oublié, vérification d'adresse : `auth/empreinte_jeton.empreinte`
   (HMAC avec `SECRET_KEY`) à l'écriture ET à la recherche ; le brut ne vit que

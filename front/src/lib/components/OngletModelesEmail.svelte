@@ -146,8 +146,9 @@
 			const updated = await adminApi.updateEmailTemplate(id, {
 				sujet: emailSujet,
 				corps_html: emailCorpsHtml,
-				actif: emailActif,
 				intention: emailIntention,
+				//  La case n'existe pas pour un modèle non désactivable : rien à écrire.
+				...(emailEdit.desactivable ? { actif: emailActif } : {}),
 			});
 			emailTemplates = emailTemplates.map((t) => (t.id === id ? updated : t));
 			toast('success', 'Modèle mis à jour.');
@@ -258,7 +259,13 @@
 							{:else}<span class="muted texte-sm">—</span>{/if}
 						</td>
 						<td>
-							{#if tpl.actif}<span class="badge badge-green">Oui</span>
+							<!--  Un modèle non désactivable part toujours (#2054) : sa colonne ne
+							      dit ni « Oui » ni « Non », elle dit qu'il n'y a pas de case. -->
+							{#if !tpl.desactivable}<span
+									class="badge badge-green"
+									title="Ce courriel ne se désactive pas">Toujours</span
+								>
+							{:else if tpl.actif}<span class="badge badge-green">Oui</span>
 							{:else}<span class="badge badge-gray">Non</span>{/if}
 						</td>
 						<td>
@@ -346,10 +353,17 @@
 				      l'écran ne la montre plus et le PATCH ne l'envoie plus : la
 				      laisser dans la charge utile l'aurait écrasée d'une chaîne
 				      vide au premier enregistrement. -->
-										<label class="case">
-											<input type="checkbox" bind:checked={emailActif} />
-											Actif
-										</label>
+										{#if tpl.desactivable}
+											<label class="case">
+												<input type="checkbox" bind:checked={emailActif} />
+												Actif
+											</label>
+										{:else}
+											<p class="aide-modele">
+												Toujours envoyé : ce courriel ne se désactive pas (sécurité d’un
+												compte, message au syndic ou préavis avant effacement).
+											</p>
+										{/if}
 										{#if tpl.variables_disponibles}
 											<p class="variables-modele">
 												<strong>Variables disponibles :</strong>
@@ -427,6 +441,11 @@
 	}
 	.variables-modele code {
 		margin-left: 0.25rem;
+	}
+	.aide-modele {
+		font-size: var(--fs-sm);
+		color: var(--color-text-muted);
+		margin: 0;
 	}
 	.intro-modeles {
 		margin-bottom: 1rem;
