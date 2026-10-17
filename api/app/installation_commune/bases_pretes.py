@@ -17,7 +17,8 @@ change pour 5Hostachy.
 
 Lu par : l'intergiciel de résolution (503 pour le seul hôte de cette copropriété),
 `contexte.pour_chaque_copropriete` (la tâche la saute) et `/health`.
-🔒 `tests/test_installation_commune_bases.py`.
+🔒 `tests/test_etancheite_coproprietes.py` (l'installation commune réelle : une base
+injoignable n'isole que son hôte) et `test_installation_commune_aiguillage.py`.
 """
 
 from __future__ import annotations
