@@ -23,9 +23,8 @@ const ORDRE_SERIES = [
 	'entretien',
 ] as const;
 
-/** Le nombre de séries et de paliers que `BarresCroisees` sait peindre. */
-export const SERIES = ORDRE_SERIES.length;
-export const PALIERS = 4;
+/** Le nombre de paliers de gris que `BarresCroisees` sait peindre (`--palier-1`…`4`). */
+const PALIERS = 4;
 
 /** La teinte d'une tranche de catégorie : `s1`…`s8`, ou `autre`. */
 export function teinteCategorie(cle: string): string {

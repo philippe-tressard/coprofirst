@@ -31,6 +31,7 @@ from app.database import get_session
 from app.models.core import Utilisateur
 from app.utils import horloge
 from app.utils.config_site import config_site
+from app.utils.lecture import lire_objet
 from app.utils.limiter import LIMITE_APPEL_FACTURE, limiter
 from app.utils.liens import nom_site
 from app.utils.llm import ErreurLLM
@@ -112,6 +113,9 @@ class SuiviAffairesRead(BaseModel):
     #: Le ✨ a-t-il un sens ? Décidé par le serveur, rien de la configuration ne sort.
     resumes_disponibles: bool
 
+    class Config:
+        from_attributes = True
+
 
 class ResumesRedigesRead(BaseModel):
     #: Le nombre d'affaires dont le résumé vient d'être écrit.
@@ -131,15 +135,14 @@ def lire_suivi(
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
     r = releve(session, user, _mode(mode))
-    return SuiviAffairesRead(
-        jour=r.jour,
-        total=r.total,
-        anciennes=r.anciennes,
+    #  Lu sur le relevé (jour, total, anciennes, mode, délai) ; ne se nomme que
+    #  ce qui se calcule ici (`lire_objet`, #1563).
+    return lire_objet(
+        SuiviAffairesRead,
+        r,
         par_categorie=[BarreRead.model_validate(c) for c in r.par_categorie],
         par_batiment=[BarreRead.model_validate(c) for c in r.par_batiment],
-        mode=r.mode,
         affaires=[AffaireOuverteRead.model_validate(a) for a in r.affaires],
-        delai_jours=r.delai_jours,
         #  Pas de résumé en mode entretien : une visite se dit par son état (#2043).
         resumes_disponibles=r.mode == MODE_AFFAIRES and assistant.disponible(session),
     )
