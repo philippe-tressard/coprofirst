@@ -202,7 +202,7 @@ def test_une_copropriete_commune_ne_recoit_pas_les_identifiants_de_l_hebergeur(
 def test_la_tache_horaire_sauvegarde_une_fois_par_jour_a_son_heure(monkeypatch):
     """Exigence de la MEP : la tâche passe chaque heure, mais ne sauvegarde qu'à
     `heure_execution` — un jour entier en donne UNE, jamais une de plus que la
-    sauvegarde nocturne d'avant. Coupée, aucune."""
+    sauvegarde nocturne d'avant."""
     from datetime import datetime, timedelta
 
     from sqlmodel import SQLModel
