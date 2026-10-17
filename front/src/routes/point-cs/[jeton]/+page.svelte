@@ -141,7 +141,7 @@
 							/>
 						</form>
 					{:else}
-						<div class="form-actions">
+						<div class="rangee-gestes">
 							<button
 								type="button"
 								class="btn btn-outline"

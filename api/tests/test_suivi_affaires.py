@@ -86,9 +86,11 @@ def test_toutes_les_affaires_non_closes_et_elles_seules(moteur):
     assert corps["total"] == 3
     assert [a["id"] for a in corps["affaires"]] == [non_suivie, ouverte, suivie]
     assert corps["anciennes"] == 1
-    assert corps["par_categorie"] == [
-        {"categorie": "panne", "libelle": "Panne", "nombre": 2},
-        {"categorie": "etude_travaux", "libelle": "Étude & travaux", "nombre": 1},
+    #  Les barres et leur nombre ; les tranches par bâtiment sont tenues par
+    #  `test_suivi_repartition.py` (#2043).
+    assert [(c["cle"], c["libelle"], c["nombre"]) for c in corps["par_categorie"]] == [
+        ("panne", "Panne", 2),
+        ("etude_travaux", "Étude & travaux", 1),
     ]
     premiere = corps["affaires"][0]
     assert premiere["anciennete"] == "ancienne"

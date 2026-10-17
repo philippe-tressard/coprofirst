@@ -8,7 +8,7 @@ quitté l'écran.
 🔧 **Une exception, une seule, arbitrée le même jour** : l'**entretien
 périodique** — le passage d'un prestataire sous contrat ou à récurrence
 (`utils/entretien_periodique`). Il ne se relance pas auprès du syndic : il se
-constate, dans la vue « Entretien périodique » du reporting. Un Entretien ouvert
+constate, dans le mode « Suivi entretiens périodiques » du reporting (#2043). Un Entretien ouvert
 à la main, sans contrat ni récurrence, reste à relancer.
 
 Elle était écrite deux fois : dans la liste de l'Espace CS (Reporting → Relance

@@ -221,7 +221,7 @@ export type EtatVisite = 'non_realisee' | 'a_venir' | 'a_planifier' | 'realisee'
 
 /** Une visite de l'exercice : une affaire Entretien sous contrat ou à récurrence
  *  — `GET /tickets/entretiens-periodiques`, que `tickets.entretiensPeriodiques`
- *  appelle (Reporting › Entretien périodique, 10/10/2026). */
+ *  appelle (Reporting › Suivi des affaires, mode « Suivi entretiens périodiques », #2043). */
 export interface VisitePeriodique {
 	id: number;
 	numero: string;

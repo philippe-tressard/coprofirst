@@ -26,7 +26,8 @@ from app.utils.pdf_theme import (
 )
 from app.utils.suivi_affaires.releve import Releve
 
-TITRE = "Suivi des affaires"
+#: Le titre, selon le mode du relevé (#2043).
+TITRES = {"affaires": "Suivi des affaires", "entretien": "Suivi des entretiens périodiques"}
 
 #: L'aperçu s'arrête à cinq lignes — `line-clamp`, que WeasyPrint applique (#2035).
 LIGNES_APERCU = 5
@@ -69,18 +70,18 @@ table.affaires {{ width: 100%; border-collapse: collapse; }}
 """
 
 
-def _repartition(r: Releve) -> str:
-    cats = r.par_categorie
-    if not cats:
+def _repartition(titre: str, barres: list) -> str:
+    """Une répartition en barres pleines — l'écran les découpe, le papier non (#2043)."""
+    if not barres:
         return ""
-    plus_grand = max(c.nombre for c in cats)
+    plus_grand = max(c.nombre for c in barres)
     lignes = "".join(
         f'<tr><td class="nom">{escape(c.libelle)}</td>'
         f'<td><div class="piste"><div class="barre" style="width:{round(100 * c.nombre / plus_grand)}%">'
         f'</div></div></td><td class="nb">{c.nombre}</td></tr>'
-        for c in cats
+        for c in barres
     )
-    return f'<div class="repartition"><h2>Par catégorie</h2><table class="barres">{lignes}</table></div>'
+    return f'<div class="repartition"><h2>{titre}</h2><table class="barres">{lignes}</table></div>'
 
 
 def _tableau(r: Releve) -> str:
@@ -110,17 +111,19 @@ def _tableau(r: Releve) -> str:
 def html_rapport(r: Releve, *, site_nom: str, logo_png: bytes | None) -> str:
     """PURE. Le document HTML autonome du rapport."""
     pluriel = "s" if r.total > 1 else ""
+    titre = TITRES.get(r.mode, TITRES["affaires"])
     return (
-        f"<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>{TITRE}</title>"
+        f"<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>{titre}</title>"
         f"<style>{_CSS}</style></head><body>"
         f"{entete_rapport(logo_png, site_nom, f'Édité le {date_courte(r.jour)}')}"
-        f"<h1>{TITRE}</h1>"
+        f"<h1>{titre}</h1>"
         '<div class="tete"><div class="chiffres">'
         f'<div class="chiffre fort"><div class="v">{r.total}</div>'
         f'<div class="l">affaire{pluriel} non fermée{pluriel}</div></div>'
         f'<div class="chiffre alerte"><div class="v">{r.anciennes}</div>'
         '<div class="l">de plus de 90 jours</div></div>'
-        f"</div>{_repartition(r)}</div>"
+        f"</div>{_repartition('Par catégorie', r.par_categorie)}"
+        f"{_repartition('Par bâtiment', r.par_batiment)}</div>"
         f"{_tableau(r)}</body></html>"
     )
 

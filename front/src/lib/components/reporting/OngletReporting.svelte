@@ -42,6 +42,7 @@
 	import { fmtDatetime } from '$lib/date';
 	import {
 		REPORT_VUES,
+		VUE_PERIODIQUE,
 		VUE_RELANCE,
 		type ReportVue,
 		type ReportPrestataire,
@@ -52,7 +53,6 @@
 	import VueTickets from './VueTickets.svelte';
 	import VuePrestataires from './VuePrestataires.svelte';
 	import VueRenouvellements from './VueRenouvellements.svelte';
-	import VueEntretienPeriodique from './VueEntretienPeriodique.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 
 	/** Libellé de l'onglet, pour l'en-tête d'impression. */
@@ -70,15 +70,12 @@
 	let reportDiagTypes: DiagType[] = [];
 	let reportNoteMoyParPrest: Map<number, { moy: number; nb: number }> = new Map();
 
-	//  Les vues AUTONOMES — « Suivi des affaires » (qui porte la relance du syndic
-	//  depuis #2035) et « Entretien périodique » —
-	//  chargent leurs propres données ; elles rendent compte de leur état à la
-	//  barre d'outils, qui doit savoir quoi rafraîchir et si la page est vide avant
-	//  d'ouvrir la boîte d'impression. Une seule est montée à la fois : les trois
-	//  variables les servent toutes deux, chacune avec ce qu'elle a de propre.
+	//  La vue AUTONOME — « Suivi des affaires », qui porte la relance du syndic
+	//  (#2035) et le suivi des entretiens périodiques (#2043) — charge ses propres
+	//  données ; elle rend compte de son état à la barre d'outils, qui doit savoir
+	//  quoi rafraîchir et si la page est vide avant d'exporter.
 	const VUES_AUTONOMES: Partial<Record<ReportVue, string>> = {
 		affaires: `Aucune ${TICKET.libelle.toLowerCase()} ouverte — rien à exporter.`,
-		periodique: 'Aucune visite d’entretien périodique cette année — rien à imprimer.',
 	};
 	$: autonome = reportView in VUES_AUTONOMES;
 	//  `exporterPdf` : le Suivi des affaires seul a un PDF rendu par le serveur ;
@@ -153,7 +150,6 @@
 			tickets: 'Reporting CS — Analyse tickets',
 			prestataires: 'Reporting CS — Synthèse prestataires',
 			renouvellements: 'Reporting CS — Renouvellement contrats & audits',
-			periodique: 'Reporting CS — Entretien périodique',
 		};
 		// Rien à imprimer : le dire, plutôt qu'ouvrir la boîte de dialogue sur une
 		// page vide. C'est le cas qu'a rencontré l'utilisateur (04/08/2026) — la vue
@@ -212,9 +208,9 @@
 	//  qui renseigne cette prop après coup — et Svelte monte les enfants EN
 	//  PREMIER — laissait la vue demandée sans effet. Ce `$:` ne se déclenche que
 	//  lorsque la prop CHANGE, donc il n'annule jamais un clic de l'utilisateur.
-	$: if (vueInitiale === VUE_RELANCE) {
+	$: if (vueInitiale === VUE_RELANCE || vueInitiale === VUE_PERIODIQUE) {
 		reportView = 'affaires';
-		modeSuivi = 'relance';
+		modeSuivi = vueInitiale === VUE_RELANCE ? 'relance' : 'entretien';
 	} else if (vueInitiale && (REPORT_VUES as readonly string[]).includes(vueInitiale)) {
 		reportView = vueInitiale as ReportVue;
 	}
@@ -250,9 +246,6 @@
 				on:click={() => (reportView = 'renouvellements')}
 			>
 				&#x1F4C5; Renouvellements
-			</Pastille>
-			<Pastille active={reportView === 'periodique'} on:click={() => (reportView = 'periodique')}>
-				&#x1F9F0; Entretien périodique
 			</Pastille>
 		</div>
 		<div class="reporting-actions">
@@ -299,12 +292,6 @@
 			{reportPrestataires}
 			{reportDiagTypes}
 			{reportNoteMoyParPrest}
-		/>
-	{:else if reportView === 'periodique'}
-		<VueEntretienPeriodique
-			bind:this={vueAutonome}
-			bind:chargement={autonomeChargement}
-			bind:estVide={autonomeVide}
 		/>
 	{/if}
 </div>

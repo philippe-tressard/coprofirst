@@ -1,14 +1,15 @@
 /*
- *  **Espace CS › Reporting › Entretien périodique** (arbitré le 10/10/2026).
+ *  **Espace CS › Reporting › Suivi des affaires, mode « Suivi entretiens
+ *  périodiques »** (#2043, 17/10/2026) — il remplace la vue « Entretien
+ *  périodique », et `?vue=periodique` y mène.
  *
- *  Les visites sous contrat ou à récurrence ont quitté la relance syndic : cette
- *  vue les montre, une ligne par visite de l'année, avec l'état que le SERVEUR
- *  calcule (`utils/entretien_periodique`). L'écran ne fait que le nommer et le
- *  compter — l'API simulée rend donc la forme réelle de
- *  `GET /tickets/entretiens-periodiques`, états compris.
+ *  En tête, le bilan des visites de l'année (`GET /tickets/entretiens-periodiques`) ;
+ *  dessous, les affaires d'entretien périodique NON CLOSES (`GET /suivi-affaires?mode=entretien`),
+ *  l'état de leur visite à la place de la catégorie. Les états sont calculés au
+ *  SERVEUR (`utils/entretien_periodique`) ; l'écran ne fait que les nommer.
  */
 import { attendreHydratation, expect, simulerApi, test } from './aides';
-import type { EntretienPeriodiqueResponse } from '../src/lib/api';
+import type { EntretienPeriodiqueResponse, SuiviAffaires } from '../src/lib/api';
 
 const VISITE = {
 	statut: 'chez_prestataire',
@@ -49,25 +50,91 @@ const REPONSE: EntretienPeriodiqueResponse = {
 	],
 };
 
-test('chaque visite de l’année dit si elle a été réalisée', async ({ page }) => {
+const AFFAIRE = {
+	descriptif: '',
+	categorie: 'entretien',
+	libelle_categorie: 'Entretien',
+	statut: 'chez_prestataire',
+	libelle_statut: 'Chez le prestataire',
+	perimetre_cible: [],
+	jours_sans_avancee: 10,
+	a_relancer: false,
+	relances: [],
+	apercu: '',
+	apercu_ia: false,
+	batiments: [],
+};
+
+const RELEVE: SuiviAffaires = {
+	jour: '2026-10-17',
+	total: 2,
+	anciennes: 1,
+	resumes_disponibles: true,
+	delai_jours: 30,
+	mode: 'entretien',
+	par_categorie: [
+		{
+			cle: 'entretien',
+			libelle: 'Entretien',
+			nombre: 2,
+			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 2 }],
+		},
+	],
+	par_batiment: [
+		{
+			cle: 'racine',
+			libelle: 'Résidence',
+			nombre: 2,
+			tranches: [{ cle: 'entretien', libelle: 'Entretien', nombre: 2 }],
+		},
+	],
+	affaires: [
+		{
+			...AFFAIRE,
+			id: 48,
+			numero: 'TK-E00048',
+			titre: 'Toitures — Entretien toitures',
+			ouverte_le: '2026-01-05',
+			age_jours: 285,
+			anciennete: 'ancienne',
+			etat_visite: 'non_realisee',
+		},
+		{
+			...AFFAIRE,
+			id: 90,
+			numero: 'TK-000090',
+			titre: 'Portes — Maintenance',
+			ouverte_le: '2026-10-01',
+			age_jours: 16,
+			anciennete: 'recente',
+			etat_visite: 'a_venir',
+		},
+	],
+};
+
+test('le mode entretien : le bilan des visites, puis les entretiens non clos', async ({ page }) => {
+	const lus: string[] = [];
+	page.on('request', (r) => {
+		const url = new URL(r.url());
+		if (url.pathname === '/api/suivi-affaires') lus.push(url.searchParams.get('mode') ?? '');
+	});
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/tickets/entretiens-periodiques') return REPONSE;
+		if (chemin === '/api/suivi-affaires') return RELEVE;
 		return undefined;
 	});
 	await page.goto('/espace-cs/reporting?vue=periodique');
 	await attendreHydratation(page);
 
-	await expect(page.getByRole('heading', { name: /Entretien périodique — 2026/ })).toBeVisible();
-	const lignes = page.locator('.report-table tbody tr');
-	await expect(lignes).toHaveCount(3);
-	await expect(lignes.nth(0)).toContainText('✅ Réalisée');
-	await expect(lignes.nth(0)).toContainText('le 20 janv. 2026');
-	await expect(lignes.nth(1)).toContainText('⚠️ Non réalisée');
-	await expect(lignes.nth(1)).toContainText('Entretien toitures');
-	await expect(lignes.nth(2)).toContainText('⏳ À venir');
-	await expect(lignes.nth(1).getByRole('link')).toHaveAttribute('href', '/tickets/48');
+	//  L'ancienne adresse ouvre le mode, et la barre n'a plus de vue à part.
+	await expect(page.getByRole('button', { name: 'Suivi entretiens périodiques' })).toHaveAttribute(
+		'aria-pressed',
+		'true',
+	);
+	await expect(page.getByRole('button', { name: /Entretien périodique/ })).toHaveCount(0);
+	await expect.poll(() => lus).toContain('entretien');
 
-	//  Les compteurs : une réalisée, une en retard — signalée —, une à venir.
+	//  Le bilan : une réalisée, une en retard — signalée —, une à venir.
 	//  Le libellé EXACT : « Réalisées » est contenu dans « Non réalisées ».
 	const compteur = (libelle: string) =>
 		page.locator('.kpi-card').filter({ has: page.getByText(libelle, { exact: true }) });
@@ -76,14 +143,33 @@ test('chaque visite de l’année dit si elle a été réalisée', async ({ page
 	await expect(compteur('Non réalisées')).toHaveClass(/kpi-alert/);
 	await expect(compteur('À venir')).toContainText('1');
 	await expect(compteur('À planifier')).toContainText('0');
+
+	//  Le tableau : l'état de la visite à la place de la catégorie, et pas de résumé.
+	//  L'en-tête se masque au téléphone (une fiche par ligne) : on lit la cellule.
+	await expect(page.locator('table.affaires thead th', { hasText: 'Visite' })).toHaveCount(1);
+	const lignes = page.locator('table.affaires tbody tr');
+	await expect(lignes).toHaveCount(2);
+	await expect(lignes.nth(0)).toContainText('⚠️ Non réalisée');
+	await expect(lignes.nth(1)).toContainText('⏳ À venir');
+	await expect(page.getByRole('button', { name: /Résumer les affaires/ })).toHaveCount(0);
 });
 
-test('sans visite cette année, la vue le dit au lieu de rester vide', async ({ page }) => {
+test('sans entretien en cours, le mode le dit et garde son sélecteur', async ({ page }) => {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/tickets/entretiens-periodiques') return { exercice: 2026, visites: [] };
+		if (chemin === '/api/suivi-affaires')
+			return {
+				...RELEVE,
+				total: 0,
+				anciennes: 0,
+				par_categorie: [],
+				par_batiment: [],
+				affaires: [],
+			};
 		return undefined;
 	});
 	await page.goto('/espace-cs/reporting?vue=periodique');
 	await attendreHydratation(page);
-	await expect(page.getByText('Aucune visite d’entretien périodique en 2026')).toBeVisible();
+	await expect(page.getByText('Aucun entretien périodique en cours')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Suivi affaires' })).toBeVisible();
 });

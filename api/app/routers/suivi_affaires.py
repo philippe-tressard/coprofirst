@@ -5,9 +5,9 @@ le rapport est un outil du conseil, et le résumé est un appel facturé :
 
 | Route | Ce qu'elle rend |
 |---|---|
-| `GET /suivi-affaires` | le relevé : nombre, répartition, affaires — l'écran ne recalcule rien |
+| `GET /suivi-affaires?mode=` | le relevé du mode (`affaires`, `entretien` — #2043) : nombre, répartitions, affaires |
 | `POST /suivi-affaires/resumes` | fait rédiger le résumé de chaque affaire, et le garde sur elle (#2035) |
-| `POST /suivi-affaires/pdf` | le PDF du relevé |
+| `POST /suivi-affaires/pdf?mode=` | le PDF du relevé du mode |
 
 La règle d'entrée au rapport vit dans `utils/suivi_affaires/releve` : celle de
 la relance du syndic, que l'écran porte en second mode depuis #2035.
@@ -19,6 +19,7 @@ retirée le 16/10/2026 (#2035) : ce qui sert est l'état de chaque affaire.
 from __future__ import annotations
 
 from datetime import date
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -35,7 +36,7 @@ from app.utils.llm import ErreurLLM
 from app.utils.logo import logo_televerse_png
 from app.utils.suivi_affaires import resumes as assistant
 from app.utils.suivi_affaires.pdf import generer_pdf
-from app.utils.suivi_affaires.releve import releve
+from app.utils.suivi_affaires.releve import MODE_AFFAIRES, MODE_ENTRETIEN, releve
 
 router = APIRouter(prefix="/suivi-affaires", tags=["suivi-affaires"])
 
@@ -64,15 +65,30 @@ class AffaireOuverteRead(BaseModel):
     #: Ce qui s'affiche sous le titre : le résumé de l'assistant, sinon le descriptif.
     apercu: str
     apercu_ia: bool
+    #: Les bâtiments visés (#2043) ; l'état de la visite, en mode `entretien`.
+    batiments: list[int]
+    etat_visite: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 
-class CategorieRead(BaseModel):
-    categorie: str
+class TrancheRead(BaseModel):
+    cle: str
     libelle: str
     nombre: int
+
+    class Config:
+        from_attributes = True
+
+
+class BarreRead(BaseModel):
+    """Une barre d'une répartition, découpée selon l'autre (#2043)."""
+
+    cle: str
+    libelle: str
+    nombre: int
+    tranches: list[TrancheRead]
 
     class Config:
         from_attributes = True
@@ -82,7 +98,10 @@ class SuiviAffairesRead(BaseModel):
     jour: date
     total: int
     anciennes: int
-    par_categorie: list[CategorieRead]
+    #: Par catégorie (tranches par bâtiment) et par bâtiment (tranches par catégorie).
+    par_categorie: list[BarreRead]
+    par_batiment: list[BarreRead]
+    mode: str
     affaires: list[AffaireOuverteRead]
     #: Le délai de relance réglé, en jours — le pli « moins de N jours » le cite.
     delai_jours: int
@@ -95,20 +114,30 @@ class ResumesRedigesRead(BaseModel):
     rediges: int
 
 
+def _mode(mode: str) -> str:
+    if mode not in (MODE_AFFAIRES, MODE_ENTRETIEN):
+        raise HTTPException(422, "Mode du rapport inconnu")
+    return mode
+
+
 @router.get("", response_model=SuiviAffairesRead, summary="Les affaires non closes (CS/Admin)")
 def lire_suivi(
+    mode: str = MODE_AFFAIRES,
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
-    r = releve(session, user)
+    r = releve(session, user, _mode(mode))
     return SuiviAffairesRead(
         jour=r.jour,
         total=r.total,
         anciennes=r.anciennes,
-        par_categorie=[CategorieRead.model_validate(c) for c in r.par_categorie],
+        par_categorie=[BarreRead.model_validate(c) for c in r.par_categorie],
+        par_batiment=[BarreRead.model_validate(c) for c in r.par_batiment],
+        mode=r.mode,
         affaires=[AffaireOuverteRead.model_validate(a) for a in r.affaires],
         delai_jours=r.delai_jours,
-        resumes_disponibles=assistant.disponible(session),
+        #  Pas de résumé en mode entretien : une visite se dit par son état (#2043).
+        resumes_disponibles=r.mode == MODE_AFFAIRES and assistant.disponible(session),
     )
 
 
@@ -135,12 +164,13 @@ async def resumer(
 
 @router.post("/pdf", summary="Le rapport Suivi des affaires en PDF (CS/Admin)")
 def exporter_pdf(
+    mode: str = MODE_AFFAIRES,
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
     site = config_site(session)
     pdf = generer_pdf(
-        releve(session, user),
+        releve(session, user, _mode(mode)),
         site_nom=nom_site(site.get("site_nom")),
         logo_png=logo_televerse_png(session),
     )

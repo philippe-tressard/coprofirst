@@ -1,6 +1,7 @@
 """Tickets — l'entretien périodique de l'exercice : chaque visite, et si elle a eu lieu.
 
-Espace CS › Reporting › « Entretien périodique » (arbitré le 10/10/2026). Ces
+Espace CS › Reporting › Suivi des affaires : le bilan des visites en tête du mode
+« Suivi entretiens périodiques » (#2043, `BilanVisites`) — arbitré le 10/10/2026. Ces
 visites ont quitté la relance syndic, qui n'a pas à presser le syndic pour un
 passage de prestataire sous contrat ; elles se suivent ici, une ligne par
 passage prévu dans l'année civile en cours.

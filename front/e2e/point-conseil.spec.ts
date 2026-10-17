@@ -28,6 +28,8 @@ const AFFAIRE = {
 	relances: [],
 	apercu: 'La platine de rue ne sonne plus.',
 	apercu_ia: false,
+	batiments: [],
+	etat_visite: null,
 };
 
 const RELEVE: SuiviAffaires = {
@@ -36,7 +38,16 @@ const RELEVE: SuiviAffaires = {
 	anciennes: 1,
 	resumes_disponibles: false,
 	delai_jours: 30,
-	par_categorie: [{ categorie: 'panne', libelle: 'Panne', nombre: 1 }],
+	mode: 'affaires',
+	par_categorie: [
+		{
+			cle: 'panne',
+			libelle: 'Panne',
+			nombre: 1,
+			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 1 }],
+		},
+	],
+	par_batiment: [],
 	affaires: [AFFAIRE],
 };
 

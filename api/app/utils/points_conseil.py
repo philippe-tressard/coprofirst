@@ -40,6 +40,7 @@ from app.models.points_conseil import (
     A_VALIDER,
     EN_COURS,
     MODE_AFFAIRES,
+    MODE_ENTRETIEN,
     PRESENT_CS,
     PRESENT_INVITE,
     PRESENT_SYNDIC,
@@ -56,6 +57,8 @@ from app.utils.suivi_affaires.releve import Releve, releve
 #: Le relevé de chaque mode qui porte un point. Un mode neuf s'ajoute ICI.
 RELEVES: dict[str, Callable[[Session, Utilisateur], Releve]] = {
     MODE_AFFAIRES: releve,
+    #  Le Suivi des entretiens périodiques (#2043) porte le même point.
+    MODE_ENTRETIEN: lambda session, user: releve(session, user, MODE_ENTRETIEN),
 }
 
 #: En deçà, un point d'un autre mode est la même réunion : on reprend son Qui/Quand/Où.

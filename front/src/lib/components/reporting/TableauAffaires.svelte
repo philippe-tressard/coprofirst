@@ -27,12 +27,16 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import type { AffaireOuverte, CrAffaire } from '$lib/api';
 	import { etatCr } from '$lib/points-conseil';
+	import { ETATS_VISITE } from '$lib/entretien-periodique';
 	import { fmtDate } from '$lib/date';
 	import { categorieTicketLabel, lienTicket } from '$lib/tickets';
 
 	export let affaires: AffaireOuverte[];
 	/** Le mode « Relancer le syndic » : une case par ligne, et les relances envoyées. */
 	export let relance = false;
+	/**  Le mode « Suivi entretiens périodiques » (#2043) : l'état de la visite à la
+	 *   place de la catégorie, toujours « Entretien » dans ce mode. */
+	export let visites = false;
 	/** Les affaires cochées — liées, lues par l'aperçu et l'envoi. */
 	export let choisies: Set<number> = new Set();
 	/**  Les comptes rendus d'un point CS / Syndic EN COURS, par affaire — `null`
@@ -66,7 +70,7 @@
 		<thead>
 			<tr>
 				{#if relance}<th class="choix"><span class="sr-only">Relancer</span></th>{/if}
-				<th>Âge</th><th>Ouverte le</th><th>Affaire</th><th>Catégorie</th>
+				<th>Âge</th><th>Ouverte le</th><th>Affaire</th><th>{visites ? 'Visite' : 'Catégorie'}</th>
 				{#if relance}<th>Relances envoyées</th>{/if}
 			</tr>
 		</thead>
@@ -120,7 +124,15 @@
 							</p>
 						{/if}
 					</td>
-					<td class="categorie">{categorieTicketLabel(a.categorie)}</td>
+					<td class="categorie">
+						{#if visites && a.etat_visite}
+							<Badge teinte={ETATS_VISITE[a.etat_visite].teinte}
+								>{ETATS_VISITE[a.etat_visite].libelle}</Badge
+							>
+						{:else}
+							{categorieTicketLabel(a.categorie)}
+						{/if}
+					</td>
 					{#if relance}
 						<td class="relances"><PastillesRelances relances={a.relances} /></td>
 					{/if}

@@ -9,9 +9,10 @@
  */
 
 import { api } from './client';
+import type { ModeReleve } from './suivi-affaires';
 
-/** Le mode du rapport dont le point traite les affaires. */
-export type ModePoint = 'affaires';
+/** Le mode du rapport dont le point traite les affaires — les clés du relevé. */
+export type ModePoint = ModeReleve;
 export type EtatPoint = 'en_cours' | 'a_valider' | 'valide';
 export type NaturePresent = 'cs' | 'syndic' | 'invite';
 

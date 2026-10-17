@@ -55,7 +55,9 @@ from sqlmodel import Field, SQLModel
 from app.utils import horloge
 
 #: Les modes du rapport qui portent un point — un point par mode (17/10/2026).
+#: Les mêmes clés que le relevé (`utils/suivi_affaires/releve`).
 MODE_AFFAIRES = "affaires"
+MODE_ENTRETIEN = "entretien"
 
 #: Les trois états d'un point.
 EN_COURS = "en_cours"

@@ -117,7 +117,7 @@
 				<p>{c.contenu}</p>
 			</EncartAvertissement>
 		{/each}
-		<div class="form-actions">
+		<div class="rangee-gestes">
 			<button type="button" class="btn btn-sm btn-outline" disabled={enCours} on:click={renvoyer}>
 				<IconeAction icone="mail" /> Renvoyer aux présents
 			</button>
@@ -129,7 +129,7 @@
 		<p class="etat">
 			Validé le {fmtDate(point.valide_le)} : chaque affaire abordée porte son compte rendu.
 		</p>
-		<div class="form-actions">
+		<div class="rangee-gestes">
 			<button type="button" class="btn btn-sm btn-primary" disabled={enCours} on:click={pdf}>
 				<IconeAction icone="file-text" /> Exporter en PDF
 			</button>
