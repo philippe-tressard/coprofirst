@@ -53,7 +53,7 @@ from sqlmodel import Session
 from app import contexte
 from app.utils import manuel_pdf_cache
 from app.utils.config_site import config_site
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 from app.utils.logo import logo_televerse_png
 from app.utils.manuel_pdf_css import css_du_pdf
 from app.utils.manuel_pdf_pages import garde, mentions
@@ -246,7 +246,7 @@ def identite_du_manuel(session: Session) -> dict:
     cfg = config_site(session, "login_sous_titre")
     return {
         "site_nom": nom_site(cfg.get("site_nom")),
-        "site_url": base_site(cfg.get("site_url")),
+        "site_url": adresse_du_site(),
         "logo_png": logo_televerse_png(session),
         "sous_titre": (cfg.get("login_sous_titre") or "").strip(),
     }

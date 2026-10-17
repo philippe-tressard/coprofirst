@@ -42,7 +42,7 @@ from app.models.documents import Document
 from app.utils.config_site import config_site
 from app.utils.dates_fr import datetime_longue_paris as _fmt_paris
 from app.utils.fichiers import chemins_locaux
-from app.utils.liens import base_site, lien_ticket, nom_site
+from app.utils.liens import adresse_du_site, lien_ticket, nom_site
 from app.utils.noms import contexte_personne, nom_auteur
 from app.utils.perimetres import a_portee_globale, batiments_cibles, parse_json_perimetres
 from app.utils.photos import parse_photos, premiere_photo
@@ -167,7 +167,7 @@ def contexte_actualite(
         },
         "auteur": contexte_personne(user),
         "residence": {"nom": nom_site(cfg.get("site_nom"))},
-        "app": {"url": base_site(cfg.get("site_url"))},
+        "app": {"url": adresse_du_site()},
         "is_commentaire": est_commentaire,
         "commentaire": commentaire or "",
         "date_commentaire": _fmt_paris(horloge.maintenant()),
@@ -198,7 +198,7 @@ def _partager_sur_le_groupe(
         return
     #  L'adresse du site lue dans la configuration du CANAL, comme le partage
     #  d'une affaire suivie (`courriels._partager_sur_le_groupe`).
-    site = base_site(config.get("site_url"))
+    site = adresse_du_site()
     lien = site + lien_ticket(ticket.id)
     titre, contenu, photo = (
         ticket.titre,

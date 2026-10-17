@@ -88,6 +88,9 @@ class Entree:
     #: Ses domaines propres, dans l'ordre déclaré — le premier est son ADRESSE.
     hotes_propres: tuple[str, ...]
     suspendue: bool
+    #: Le NOM de la variable qui porte l'URL de sa base — jamais sa valeur : la
+    #: mise à jour nocturne exporte chaque base par `env:<nom>` (#2053).
+    variable_base: str = ""
 
 
 @dataclass(frozen=True)
@@ -107,9 +110,9 @@ class Declaration:
         return frozenset(entree.hotes_propres) | {self.adresse_derivee(entree)}
 
     def adresse(self, entree: Entree) -> str:
-        """L'URL où l'on renvoie : son propre domaine s'il en a un, sinon l'adresse dérivée."""
-        hote = entree.hotes_propres[0] if entree.hotes_propres else self.adresse_derivee(entree)
-        return f"{self.schema}://{hote}"
+        """L'URL où l'on renvoie : son propre domaine s'il en a un, sinon l'adresse dérivée
+        — calculée une fois, à la lecture (`Copropriete.adresse`)."""
+        return entree.copropriete.adresse
 
     def destination(self, alias: str) -> Entree | None:
         """La copropriété qu'un alias — actuel ou ancien — désigne, si elle peut être une
@@ -160,14 +163,19 @@ def lire(texte: str, origine: str, environnement) -> Declaration:
         erreurs.append("ORIGIN doit nommer l'hôte commun de l'installation par un nom de domaine.")
     if not fichier.coproprietes:
         erreurs.append("Aucune copropriété déclarée.")
-    entrees = [_entree(c, hote_commun, environnement, erreurs) for c in fichier.coproprietes]
+    schema = url.scheme or "https"
+    entrees = [
+        _entree(c, hote_commun, schema, environnement, erreurs) for c in fichier.coproprietes
+    ]
     _uniques(entrees, erreurs)
     if erreurs:
         raise DeclarationInvalide(" ; ".join(erreurs))
-    return Declaration(hote_commun, url.scheme or "https", tuple(entrees))
+    return Declaration(hote_commun, schema, tuple(entrees))
 
 
-def _entree(c: _CoproprieteDeclaree, hote_commun: str, env, erreurs: list[str]) -> Entree:
+def _entree(
+    c: _CoproprieteDeclaree, hote_commun: str, schema: str, env, erreurs: list[str]
+) -> Entree:
     qui = c.identifiant
     if not _IDENTIFIANT.fullmatch(qui) or qui == IDENTIFIANT_UNIQUE:
         erreurs.append(f"Identifiant invalide ou réservé : {qui!r}.")
@@ -206,11 +214,15 @@ def _entree(c: _CoproprieteDeclaree, hote_commun: str, env, erreurs: list[str]) 
             secret=valeurs["secret"],
             expediteur=c.expediteur,
             nom_expediteur=c.nom_expediteur or c.nom,
+            #  Son domaine propre s'il en a un, sinon l'adresse dérivée : celle où
+            #  l'aiguillage renvoie (`Declaration.adresse`), et celle de ses liens.
+            adresse=f"{schema}://{hotes[0] if hotes else alias + '.' + hote_commun}",
         ),
         alias=alias,
         anciens_alias=frozenset(c.anciens_alias),
         hotes_propres=hotes,
         suspendue=c.suspendue,
+        variable_base=c.base,
     )
 
 

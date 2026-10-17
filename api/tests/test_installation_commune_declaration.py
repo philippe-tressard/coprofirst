@@ -232,7 +232,9 @@ def test_une_declaration_invalide_ne_sert_rien(tmp_path, monkeypatch):
         client = TestClient(application)
         for hote in (HOTE_COMMUN, f"75015-les-tilleuls.{HOTE_COMMUN}", "testserver"):
             assert client.get("/config", headers={"host": hote}).status_code == 503
-        assert client.get("/health", headers={"host": HOTE_COMMUN}).status_code == 200
+        #  La santé d'une installation commune est celle de ses copropriétés (#2053) :
+        #  aucune servie, donc 503 — la mise à jour nocturne refuse alors de démarrer.
+        assert client.get("/health", headers={"host": HOTE_COMMUN}).status_code == 503
 
 
 def test_un_fichier_declare_mais_absent_ne_sert_rien(tmp_path, monkeypatch):
@@ -254,6 +256,20 @@ def test_la_verification_liste_les_adresses_sans_aucun_secret(tmp_path, monkeypa
     assert f"adresse https://75015-les-tilleuls.{HOTE_COMMUN}" in sortie
     assert "erables (SUSPENDUE)" in sortie
     assert not any(valeur in sortie for valeur in ENVIRONNEMENT.values())
+
+
+def test_la_verification_nomme_les_variables_des_bases_jamais_leur_valeur(
+    tmp_path, monkeypatch, capsys
+):
+    """`--bases` : ce que la mise à jour nocturne sauvegarde, base par base (#2053)."""
+    from app.installation_commune import verifier
+
+    with installation_commune(tmp_path, monkeypatch):
+        assert verifier.main(["--bases"]) == 0
+    sortie = capsys.readouterr().out.splitlines()
+    assert sortie == ["tilleuls TILLEULS_BASE", "chenes CHENES_BASE", "erables ERABLES_BASE"]
+    with installation_commune(tmp_path, monkeypatch, coproprietes=_avec(0, base="ABSENTE")):
+        assert verifier.main(["--bases"]) == 1  # invalide : la mise à jour refuse
 
 
 def test_la_verification_dit_la_regle_violee(tmp_path, monkeypatch, capsys):

@@ -37,7 +37,6 @@ PAR_ONGLET: dict[str, frozenset[str]] = {
     #  Paramétrage site › Paramètres généraux (`configSite.ECRIVAINS.generaux`).
     "site": frozenset(
         {
-            "site_url",
             "site_email",
             "site_manager_user_id",
             "login_sous_titre",
@@ -86,7 +85,7 @@ PAR_ONGLET: dict[str, frozenset[str]] = {
     #  l'identité du site à la Fiche et au paramétrage. Son pied, lui, s'écrit ICI
     #  depuis #2057 — il partait avec l'enregistrement global du site.
     "whatsapp": frozenset({"whatsapp_group_name"})
-    | (whatsapp.CLES_CONFIG - CLES_ACTIVATION - {"site_url", "site_nom"}),
+    | (whatsapp.CLES_CONFIG - CLES_ACTIVATION - {"site_nom"}),
     "ia": frozenset(
         {
             "llm_fournisseur",
@@ -116,6 +115,8 @@ REFUSEES: dict[str, str] = {
     "site_logo": "Le logo se téléverse par POST /config/logo.",
     #  Un réglage de l'INSTALLATION (spec `mode-demo.md` M1).
     demo.CLE_PUBLIQUE: "Le mode démo se règle dans .env (MODE_DEMO).",
+    #  Dérivée, jamais saisie (#2058) : l'adresse de l'installation (`liens.adresse_du_site`).
+    "site_url": "L'adresse du site est celle de son installation : elle ne se saisit pas.",
     #  Leurs routes portent des bornes que `PUT /config` n'appliquerait pas.
     "consignes_arrivant": "Les consignes aux arrivants se modifient par PUT /admin/arrivants/consignes.",
     "reglement_provenance": "La provenance du règlement se modifie par PUT /reglement/provenance.",

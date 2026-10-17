@@ -18,7 +18,7 @@ from app.utils import horloge
 from app.utils.arrivees_notification import etiqueter_courriel
 from app.utils.config_site import config_site
 from app.utils.fichiers import nom_lisible
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 
 from .gabarit import _wrap_email
 
@@ -55,7 +55,7 @@ def _contexte_rendu(session: Session, context: dict) -> tuple[dict, str, str, st
     """
     lignes = config_site(session, "email_footer", "reference_copro")
     site_nom = nom_site(lignes.get("site_nom"))
-    site_url = base_site(lignes.get("site_url"))
+    site_url = adresse_du_site()
     reference = (lignes.get("reference_copro") or "").strip()
 
     ctx = {

@@ -37,6 +37,7 @@ from app.utils.arrivees_notification import (
 )
 from app.utils.email import composer_email
 from app.utils.whatsapp_message import construire_message
+from tests.aides_adresse import poser_adresse_du_site
 from tests.aides_base import compte, moteur_de_test
 
 SITE = "https://residence.exemple"
@@ -135,8 +136,9 @@ def test_composer_email_n_etiquette_pas_le_lien_du_mot_de_passe_oublie():
     assert not re.search(r"[?&](amp;)?src=", html)
 
 
-def test_le_message_whatsapp_etiquette_son_lien():
-    config = {"site_url": SITE, "whatsapp_footer": "— CS"}
+def test_le_message_whatsapp_etiquette_son_lien(monkeypatch):
+    poser_adresse_du_site(monkeypatch, SITE)
+    config = {"whatsapp_footer": "— CS"}
     message = construire_message(
         "Titre", "<p>Texte</p>", False, None, config, lien=f"{SITE}/tickets/9"
     )

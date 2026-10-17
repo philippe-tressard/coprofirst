@@ -23,6 +23,7 @@ from app.models.core import RoleUtilisateur, Ticket
 from app.schemas_tickets import TicketEvolutionCreate
 from app.utils import horloge
 from app.utils.whatsapp_message import construire_message
+from tests.aides_adresse import poser_adresse_du_site
 from tests.aides_base import compte
 
 SITE = "https://5hostachy.fr"
@@ -32,7 +33,8 @@ INITIAL = "Elle ne ferme plus."
 @pytest.fixture()
 def session(session, monkeypatch):
     #  Le canal de la résidence, allumé : la couture est le registre (#1060).
-    monkeypatch.setattr(diffusion, "config_diffusion", lambda s, *a: {"site_url": SITE})
+    monkeypatch.setattr(diffusion, "config_diffusion", lambda s, *a: {})
+    poser_adresse_du_site(monkeypatch, SITE)
     return session
 
 

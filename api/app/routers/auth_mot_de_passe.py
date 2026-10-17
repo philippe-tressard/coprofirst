@@ -33,7 +33,7 @@ from app.models.core import PasswordResetToken, Utilisateur
 from app.utils.limiter import LIMITE_COURRIEL_DECLENCHE, LIMITE_SECRET_EPROUVE, limiter
 from app.utils.mots_de_passe import poser_mot_de_passe
 from app.utils.mots_de_passe import verifier_robustesse as _check_password_strength
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -86,7 +86,7 @@ def request_password_reset(
     Retourne toujours 204 pour éviter l'enumération d'adresses e-mail.
     """
     cfg = config_site(session)
-    site_url = base_site(cfg.get("site_url"))
+    site_url = adresse_du_site()
     site_nom = nom_site(cfg.get("site_nom"))
 
     user = compte_par_adresse(session, body.email)

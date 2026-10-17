@@ -6,6 +6,7 @@ API FastAPI v0.1
 import logging as _logging
 import os as _os
 from contextlib import asynccontextmanager
+from datetime import timedelta
 from app.utils import horloge
 
 from fastapi import FastAPI
@@ -83,56 +84,24 @@ from app.routers import patrimoine_branche
 from app.routers import manuel
 from app.registre import routeur as registre  # le registre des installations (§4.11)
 from app.installation_commune import routeur as aiguillage  # l'hôte commun (#1894)
+from app.installation_commune import fichiers as fichiers_commune  # /uploads/* (#2053)
 from app.routers import courriels_affaires
 from app.routers import partage
 from app.routers import assistant, config_llm, config_logo, config_services, reglement
 from app.routers import textes_legaux
 from app.routers import suivi_affaires
 from app.routers import points_conseil, points_conseil_validation
-from app.seed import seed
+from app.demarrage import preparer_les_coproprietes
 from app.utils.backup import setup_scheduler
 from app.utils.plateforme import NOM_PLATEFORME
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialisation au démarrage
-    # Note : la création des tables est gérée par Alembic (start.sh)
-    seed()
-
-    # Purge des refresh tokens — les échangés restent jusqu'à leur expiration,
-    # c'est par eux qu'un jeton rejoué se reconnaît (`auth/jetons_rafraichissement`).
-    from app.auth.jetons_rafraichissement import purger as purger_jetons
-
-    with contexte.nouvelle_session() as _s:
-        purger_jetons(_s, horloge.maintenant())
-        _s.commit()
-
-    # Nettoyage des sauvegardes orphelines restées "en_cours" suite à un
-    # redémarrage/arrêt du conteneur en plein milieu du job (faussait le
-    # contrôle de santé "dernière sauvegarde réussie")
-    from datetime import timedelta as _timedelta
-    from sqlmodel import select as _select
-    from app.models.core import HistoriqueSauvegarde, StatutSauvegarde
-
-    with contexte.nouvelle_session() as _s:
-        _seuil = horloge.maintenant() - _timedelta(hours=2)
-        _orphelines = _s.exec(
-            _select(HistoriqueSauvegarde).where(
-                (HistoriqueSauvegarde.statut == StatutSauvegarde.en_cours)
-                & (HistoriqueSauvegarde.cree_le < _seuil)
-            )
-        ).all()
-        for _b in _orphelines:
-            _b.statut = StatutSauvegarde.echouee
-            _b.message_erreur = "Interrompue par redémarrage du conteneur"
-            _b.terminee_le = horloge.maintenant()
-            _s.add(_b)
-        if _orphelines:
-            _s.commit()
-            _logger.info(
-                "Sauvegardes orphelines nettoyées : %d marquée(s) en échec.", len(_orphelines)
-            )
+    #  Données de démarrage, jetons échus, sauvegardes orphelines — dans la base de
+    #  CHAQUE copropriété (`app/demarrage.py`, #2053). La création des tables est
+    #  gérée par `start.sh` (`utils/preparer_bases`).
+    preparer_les_coproprietes()
 
     scheduler = setup_scheduler()
 
@@ -209,7 +178,7 @@ async def lifespan(app: FastAPI):
         contexte.pour_chaque_copropriete(_prechauffer_manuel, "manuel_pdf_prechauffage"),
         "date",
         #  Conscient, donc indépendant du fuseau du planificateur (#1565).
-        run_date=horloge.a_paris(horloge.maintenant()) + _timedelta(seconds=20),
+        run_date=horloge.a_paris(horloge.maintenant()) + timedelta(seconds=20),
         id="manuel_pdf_prechauffage",
     )
     scheduler.add_job(
@@ -456,6 +425,7 @@ app.include_router(points_conseil.router)
 app.include_router(points_conseil_validation.router)
 app.include_router(registre.router)
 app.include_router(aiguillage.router)
+app.include_router(fichiers_commune.router)  # 404 hors d'une installation commune
 
 # Fichiers statiques (photos uploadées)
 #  La racine vient du stockage de la copropriété (`utils/stockage`, #1748), jamais
@@ -484,6 +454,25 @@ def health():
     """
     from sqlmodel import text as _text
 
+    if contexte.est_commune():
+        #  Installation commune : une question sur la PLATEFORME, sans copropriété
+        #  servie (#2053). 503 seulement si AUCUNE base n'est servable — la mise à jour
+        #  nocturne revient alors en arrière ; une seule en panne se dit « degrade »,
+        #  et son hôte reçoit 503. Ni nom ni nombre : la route répond à tout hôte.
+        from app.installation_commune.bases_pretes import bilan
+        from app.installation_commune.declaration import DeclarationInvalide
+
+        try:
+            pretes, total = bilan()
+        except DeclarationInvalide:
+            pretes, total = 0, 1
+        if pretes:
+            return {"status": "ok" if pretes == total else "degrade", "version": API_VERSION}
+        _logger.error("Health check : aucune base de copropriete servable")
+        return JSONResponse(
+            status_code=503,
+            content={"status": "db_unavailable", "detail": "Base de données indisponible"},
+        )
     try:
         with contexte.nouvelle_session() as _s:
             _s.exec(_text("SELECT 1"))  # type: ignore[arg-type]

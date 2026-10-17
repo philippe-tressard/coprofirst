@@ -34,7 +34,7 @@ from app.utils.stockage import stockage
 
 # Toute règle de visibilité — documents compris — vient du module central.
 from app.utils.visibility import document_visible, peut_ecrire_dans, profil_admet
-from app.utils.liens import base_site
+from app.utils.liens import adresse_du_site
 from app.utils.liens import nom_site
 from app.utils.recuperer import connu_ou_404, fichier_ou_404, ou_404
 from app.utils.cloche import sonner
@@ -86,7 +86,7 @@ def _notifier_document_publie(
 
     cfg = config_site(session)
     site_nom = nom_site(cfg.get("site_nom"))
-    site_url = base_site(cfg.get("site_url"))
+    site_url = adresse_du_site()
 
     destinataires = session.exec(
         select(Utilisateur).where(Utilisateur.actif == True)  # noqa: E712

@@ -82,7 +82,6 @@ __all__ = [
 #: figurent déjà dans l'en-tête de chaque courriel.
 CONFIG_SITE_PAR_DEFAUT: dict[str, str] = {
     "site_nom": NOM_SITE_PAR_DEFAUT,
-    "site_url": "https://example.com/",
     "site_email": "admin@example.com",
     "site_manager_user_id": "",
     "login_sous_titre": "Votre espace numérique de résidence",
@@ -249,6 +248,11 @@ def _configuration_par_defaut(session: Session) -> None:
         "cle",
         [{"cle": cle, "valeur": valeur} for cle, valeur in CONFIG_SITE_PAR_DEFAUT.items()],
     )
+    #  Le SMTP de la copropriété vit dans SA base (#2058) : l'amorce y recopie une
+    #  fois ce que le repli sur `MAIL_*` produisait, puis la base décide seule.
+    from app.utils.smtp import amorcer
+
+    amorcer(session)
 
 
 def _modeles_email(session: Session) -> None:
@@ -344,4 +348,9 @@ def seed() -> None:
 
 
 if __name__ == "__main__":
-    seed()
+    import sys
+
+    from app.utils import commande
+
+    #  Sur une installation commune, la copropriété se nomme (#2053).
+    sys.exit(commande.lancer(lambda _arguments: seed()))

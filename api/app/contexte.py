@@ -62,6 +62,24 @@ class Copropriete:
     secret: str
     expediteur: str
     nom_expediteur: str
+    #: Son URL publique — celle des liens de ses courriels (#2058) : l'`ORIGIN`
+    #: d'une installation propre, son domaine ou son adresse dérivée dans une
+    #: installation commune. Vide : aucune adresse connue (`utils/liens` se replie).
+    adresse: str = ""
+
+
+class HorsCopropriete(RuntimeError):
+    """Une ressource de copropriété demandée sans copropriété NOMMÉE (#2053).
+
+    Dans une installation commune, aucune copropriété n'est « la » copropriété :
+    une tâche, un script, le démarrage la posent par `dans()` — ou se refusent.
+    Jamais un repli sur la configuration, qui servirait la même à tous.
+    """
+
+
+def est_commune() -> bool:
+    """L'installation sert-elle plusieurs copropriétés (déclaration posée, #1894) ?"""
+    return bool(get_settings().coproprietes_fichier.strip())
 
 
 #: La copropriété que sert l'exécution en cours — posée par `dans()`. Une variable
@@ -74,10 +92,20 @@ def courante() -> Copropriete:
     """La copropriété servie : celle que `dans()` a posée, sinon l'unique de l'installation.
 
     Le repli sur l'unique copropriété ne vaut que hors requête (tâche, script,
-    démarrage) et en phase 2 : une requête, elle, est résolue par son hôte à
-    l'entrée (`resoudre`), et un hôte inconnu reçoit 421 (§4.1, #1751).
+    démarrage) et pour une installation propre à une copropriété : une requête est
+    résolue par son hôte à l'entrée (`resoudre`), un hôte inconnu reçoit 421 (§4.1,
+    #1751). Une installation COMMUNE n'a pas d'unique : sans `dans()`, on lève
+    `HorsCopropriete` (#2053).
     """
-    return _servie.get() or _unique()
+    servie = _servie.get()
+    if servie is not None:
+        return servie
+    if est_commune():
+        raise HorsCopropriete(
+            "Installation commune : aucune copropriété n'est nommée (contexte.dans, "
+            "ou --copropriete pour une commande)."
+        )
+    return de_la_configuration()
 
 
 #: Les noms qui atteignent l'installation de l'INTÉRIEUR : sondes et scripts des
@@ -128,7 +156,7 @@ def registre() -> dict[str, tuple[Copropriete, frozenset[str]]]:
     hotes = {nom_d_hote(urlsplit(s.origin).netloc)} | {
         nom_d_hote(h) for h in s.hotes_copropriete.split(",") if h.strip()
     }
-    seule = _unique()
+    seule = de_la_configuration()
     return {seule.identifiant: (seule, frozenset(hotes - {""}))}
 
 
@@ -211,6 +239,16 @@ class ResolutionCopropriete:
             await reponse(scope, receive, send)
             return
         with dans(copro):
+            from fastapi.concurrency import run_in_threadpool
+
+            from app.installation_commune.bases_pretes import INDISPONIBLE, base_prete
+
+            #  Installation commune : une base que `start.sh` n'a pas pu préparer ne
+            #  se sert pas — 503 pour CET hôte seul, les autres copropriétés servent
+            #  (#2053). Lue dans un fil : la première lecture touche la base.
+            if not await run_in_threadpool(base_prete):
+                await JSONResponse({"detail": INDISPONIBLE}, status_code=503)(scope, receive, send)
+                return
             await self.app(scope, receive, send)
 
 
@@ -230,13 +268,18 @@ def dans(copro: Copropriete) -> Iterator[Copropriete]:
         _servie.reset(jeton)
 
 
-def pour_chaque_copropriete(tache: Callable[[], Any], nom: str) -> Callable[[], None]:
+def pour_chaque_copropriete(
+    tache: Callable[[], Any], nom: str, isoler: bool = True
+) -> Callable[[], None]:
     """L'enveloppe d'une tâche planifiée qui travaille pour UNE copropriété (§4.6, #1745).
 
     La tâche tourne une fois par copropriété, dans son contexte. L'échec de l'une
     est journalisé et ne bloque pas les suivantes ; chaque exécution laisse une
     ligne qui nomme la copropriété. Avec une seule copropriété, la boucle fait un
-    tour.
+    tour. Une copropriété dont la base n'est pas prête est sautée, et dit (#2053).
+
+    `isoler=False` laisse l'échec remonter — le démarrage d'une installation propre
+    à une copropriété, qui s'arrêtait sur une erreur et doit continuer de le faire.
 
     🔒 Toute tâche enregistrée passe par elle, sauf celles que
     `utils/taches.TACHES_DE_LA_PLATEFORME` déclare avec leur raison —
@@ -246,12 +289,23 @@ def pour_chaque_copropriete(tache: Callable[[], Any], nom: str) -> Callable[[], 
 
     @functools.wraps(tache)
     def _par_copropriete() -> None:
+        from app.installation_commune.bases_pretes import base_prete
+
         for copro in coproprietes():
             debut = time.monotonic()
             with dans(copro):
+                if not base_prete():
+                    logger.warning(
+                        "tache %s — copropriete %s : base non prete, passee",
+                        nom,
+                        copro.identifiant,
+                    )
+                    continue
                 try:
                     tache()
                 except Exception:
+                    if not isoler:
+                        raise
                     #  ERROR, comme APScheduler l'aurait écrit sans l'enveloppe : une
                     #  tâche qui lève est une panne, et le pré-check doit la compter.
                     logger.exception("tache %s — copropriete %s : ECHEC", nom, copro.identifiant)
@@ -267,8 +321,13 @@ def pour_chaque_copropriete(tache: Callable[[], Any], nom: str) -> Callable[[], 
     return _par_copropriete
 
 
-def _unique() -> Copropriete:
-    """L'unique copropriété d'une installation de phase 2 : celle de la configuration."""
+def de_la_configuration() -> Copropriete:
+    """La copropriété de la CONFIGURATION — l'unique d'une installation propre.
+
+    Une installation commune ne la sert jamais : ses copropriétés viennent de la
+    déclaration, et leurs identifiants ne peuvent pas valoir `IDENTIFIANT_UNIQUE`.
+    `database.engine` la lit au chargement ; tout autre appel passe par `courante()`.
+    """
     s = get_settings()
     return Copropriete(
         identifiant=IDENTIFIANT_UNIQUE,
@@ -277,7 +336,39 @@ def _unique() -> Copropriete:
         secret=s.secret_key,
         expediteur=s.mail_from,
         nom_expediteur=s.mail_from_name,
+        adresse=s.origin,
     )
+
+
+def dossier_des_sauvegardes() -> Path:
+    """Le dossier des archives de la copropriété servie (spec §4.9, #2053).
+
+    Le volume des sauvegardes est COMMUN à l'installation : y ranger toutes les
+    archives côte à côte ferait lister — et tourner — celles d'une copropriété par
+    une autre. Une installation commune les range donc sous
+    `coproprietes/<identifiant>/` ; une installation propre garde la racine, comme
+    avant (l'export hors site des Raspberry Pi y lit). `plateforme/` reste celui du
+    registre des installations (`registre/sauvegarde`).
+    """
+    racine = Path(get_settings().backup_dir)
+    if not est_commune():
+        return racine
+    return racine / "coproprietes" / courante().identifiant
+
+
+def racine_proposee(identifiant: str) -> Path:
+    """La racine des fichiers d'une copropriété qu'on CRÉE dans une installation commune :
+    un dossier à son nom sous le volume `uploads` (`installation_commune/creer`, #2053)."""
+    return Path(get_settings().uploads_dir) / identifiant
+
+
+def par_identifiant(identifiant: str) -> Copropriete:
+    """La copropriété de l'installation qui porte cet identifiant — pour une commande
+    qui la NOMME (`utils/commande`). Lève `HorsCopropriete` si aucune ne le porte."""
+    for copro in coproprietes():
+        if copro.identifiant == identifiant:
+            return copro
+    raise HorsCopropriete(f"Aucune copropriété de cette installation ne s'appelle {identifiant!r}.")
 
 
 #: Les moteurs des copropriétés autres que l'unique, par (identifiant, URL de base).

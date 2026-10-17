@@ -207,7 +207,10 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   tâche hors requête la reçoit de `contexte.dans(copro)`. Une installation COMMUNE
   déclare ses copropriétés dans un fichier (`COPROPRIETES_FICHIER`), lu par
   `installation_commune/declaration` et nulle part ailleurs ; son hôte commun ne fait
-  qu'aiguiller (#1894). 🔒 `test_contexte_source_unique.py`,
+  qu'aiguiller (#1894). Hors requête, une installation commune n'a PAS de copropriété
+  courante (`contexte.HorsCopropriete`) : une commande `python -m app…` la nomme par
+  `utils/commande` (`--copropriete`), le dossier des sauvegardes se demande à
+  `contexte.dossier_des_sauvegardes()` (#2053). 🔒 `test_commandes_nomment_leur_copropriete.py`. 🔒 `test_contexte_source_unique.py`,
   `test_etat_module_par_copropriete.py` (`A_INDEXER` vide, plafond zéro), et
   `test_etancheite_coproprietes.py` : deux bases aux identifiants identiques, aucune
   réponse servie pour l'une ne porte les données de l'autre (#1746).

@@ -120,4 +120,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    from app.utils import commande
+
+    sys.exit(commande.lancer(lambda _arguments: main()))

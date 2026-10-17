@@ -107,6 +107,19 @@ decider_cible() {
 
 #  `moteur_de_url` vit dans `lib-installation.sh` (copie déclarée de la référence).
 
+#  $1 URL d'une base → son nom (le chemin, sans paramètres) ; vide si illisible.
+base_de_url() {
+    local reste="${1#*://}"
+    case "$reste" in */*) reste="${reste#*/}"; echo "${reste%%\?*}" ;; *) echo "" ;; esac
+}
+
+#  $1 identifiant de la copropriété · $2 nom de l'export de l'installation (…-base.tar.gz)
+#  → le nom de SON export. L'unique d'une installation propre garde le nom d'avant
+#  #2053 : une restauration à la main le cherche sous ce nom.
+export_de() {
+    if [ "$1" = principale ]; then echo "$2"; else echo "${2%.tar.gz}-$1.tar.gz"; fi
+}
+
 #  $1 santé après la mise à jour (ok|ko) · $2 santé après le retour à l'image
 #  précédente (ok|ko|vide si non tenté) → reussie | revenir | revenue | restaurer
 decider_issue() {
@@ -155,6 +168,12 @@ if [ "${1:-}" = "--selftest" ]; then
     attendu "PostgreSQL sans pilote nommé"              postgresql moteur_de_url "postgresql://u:p@postgres/b"
     attendu "autre moteur → inconnu, donc refus"        inconnu    moteur_de_url "mysql://u:p@h/b"
     attendu "URL absente → inconnu, donc refus"         inconnu    moteur_de_url ""
+    echo "== self-test : une base par copropriété (#2053) =="
+    attendu "nom de la base"                            coprofirst base_de_url "postgresql+psycopg://u:p@postgres:5432/coprofirst"
+    attendu "nom de la base, paramètres retirés"        copro_t    base_de_url "postgresql://u:p@postgres/copro_t?sslmode=disable"
+    attendu "URL sans base → vide"                      ""         base_de_url "postgresql://u:p@postgres"
+    attendu "l'unique garde son nom d'export"           x-base.tar.gz          export_de principale x-base.tar.gz
+    attendu "une copropriété a le sien"                 x-base-tilleuls.tar.gz export_de tilleuls x-base.tar.gz
     exit "$fail"
 fi
 
@@ -184,6 +203,12 @@ SIGNATURE=$(lire_env COPROFIRST_SIGNATURE); SIGNATURE=${SIGNATURE:-si-possible}
 rendre_compte() {  # $1 statut (succes|erreur) · $2 erreur (vide si succès) · $3 vers · $4 issue
     #  L'issue est un mot du contrat (`registre/contrat.ISSUES_MISE_A_JOUR`) : le
     #  rapport nocturne la transmet à la référence, qui alerte sur un retour (#1981).
+    #  Une installation COMMUNE n'a pas « la » copropriété à qui le rendre : la mise à
+    #  jour est un fait de l'installation, il reste au journal (#2053).
+    if [ -n "$(lire_env COPROPRIETES_FICHIER)" ]; then
+        journal "(installation commune : rapport « $4 » au journal seulement)"
+        return 0
+    fi
     local details
     details=$(printf '{"de":"%s","vers":"%s","issue":"%s"}' "$COURANTE" "$3" "$4")
     rendre_compte_tache mise_a_jour "$1" "$2" "$details"
@@ -220,8 +245,6 @@ case "$DECISION" in
 esac
 [ -n "$SAUVEGARDES" ] && [ -d "$SAUVEGARDES" ] && [ -w "$SAUVEGARDES" ] \
     || echouer "COPROFIRST_SAUVEGARDES absent ou non inscriptible : pas de mise à jour sans sauvegarde (D15)."
-[ "$(moteur_de_url "$(lire_env DATABASE_URL)")" = postgresql ] \
-    || echouer "DATABASE_URL de .env ne désigne pas une base PostgreSQL : on ne sauvegarde pas une base qu'on ne sait pas nommer."
 journal "Mise à jour $COURANTE → $CIBLE."
 
 # ── 3. Tout préparer pendant que le service tourne ────────────────────────────
@@ -247,6 +270,21 @@ for s in $SERVICES; do
 done
 COPROFIRST_VERSION="$CIBLE" "${COMPOSE[@]}" pull --quiet || echouer "images de $CIBLE introuvables."
 
+#  Les bases à sauvegarder, « identifiant VARIABLE » par ligne (#2053) : la seule de
+#  `DATABASE_URL`, ou chacune de la déclaration d'une installation commune — lue par
+#  la NOUVELLE image, qui la servira ; invalide, rien n'est changé.
+if [ -n "$(lire_env COPROPRIETES_FICHIER)" ]; then
+    LISTE_BASES=$(COPROFIRST_VERSION="$CIBLE" "${COMPOSE[@]}" run --rm --no-deps -T --entrypoint python api \
+        -m app.installation_commune.verifier --bases) \
+        || echouer "déclaration des copropriétés invalide ou illisible : pas de mise à jour."
+else
+    LISTE_BASES="principale DATABASE_URL"
+fi
+while read -r _id var; do
+    [ "$(moteur_de_url "$(lire_env "$var")")" = postgresql ] \
+        || echouer "$var de .env ne désigne pas une base PostgreSQL : on ne sauvegarde pas une base qu'on ne sait pas nommer."
+done <<< "$LISTE_BASES"
+
 # ── 4. Sauvegarder, l'API arrêtée (aucun écrivain) ────────────────────────────
 IMAGE_API="$REGISTRE/coprofirst-api:$COURANTE"
 ARCHIVE="coprofirst_${COURANTE:-neuve}_vers_${CIBLE}_$(date +%Y%m%d_%H%M%S).tar.gz"
@@ -257,9 +295,21 @@ BASE="${ARCHIVE%.tar.gz}-base.tar.gz"
 PONCTUEL=("${COMPOSE[@]}" run --rm --no-deps -T -v "$SAUVEGARDES:/sortie" --entrypoint python api)
 "${COMPOSE[@]}" stop api >/dev/null
 sauvegarder() {
+    local id var exp
     docker run --rm "${VOLUMES[@]}" --entrypoint tar "$IMAGE_API" -czf "/sortie/$ARCHIVE" -C /donnees . || return 1
-    "${PONCTUEL[@]}" -m app.utils.export_copropriete exporter env:DATABASE_URL "/sortie/$BASE" \
-        && "${PONCTUEL[@]}" -m app.utils.export_copropriete verifier "/sortie/$BASE"
+    #  Chaque base, et chacune vérifiée : une seule qui ne se restaure pas, et rien
+    #  n'est changé (#2053). `--copropriete` vient APRÈS l'archive : une image d'avant
+    #  #2053 l'ignore.
+    #  Lu sur le descripteur 3 : `docker compose run|exec` lit l'entrée standard, et
+    #  avalerait les lignes suivantes — la boucle s'arrêterait à la première base.
+    while read -r id var <&3; do
+        exp=$(export_de "$id" "$BASE")
+        # shellcheck disable=SC2046 # l'option, présente ou absente, en deux mots
+        "${PONCTUEL[@]}" -m app.utils.export_copropriete exporter "env:$var" "/sortie/$exp" \
+            && "${PONCTUEL[@]}" -m app.utils.export_copropriete verifier "/sortie/$exp" \
+                $([ "$id" = principale ] || echo "--copropriete $id") \
+            || return 1
+    done 3<<< "$LISTE_BASES"
 }
 if ! sauvegarder; then
     "${COMPOSE[@]}" start api >/dev/null || true
@@ -268,7 +318,7 @@ if ! sauvegarder; then
     [ "$(sante)" = ok ] || journal "⚠ L'API ne répond pas après la sauvegarde refusée."
     echouer "sauvegarde avant mise à jour impossible ou invalide : rien n'est changé."
 fi
-journal "Sauvegarde vérifiée : $SAUVEGARDES/$ARCHIVE + $BASE."
+journal "Sauvegarde vérifiée : $SAUVEGARDES/$ARCHIVE + $(wc -l <<< "$LISTE_BASES") export(s) de base (${BASE%.tar.gz}…)."
 
 # ── 5–6. Poser la version, démarrer, sonder ──────────────────────────────────
 PRECEDENT="$DOSSIER/.precedent"
@@ -305,13 +355,17 @@ case "$(decider_issue "$NEUVE" "$RETOUR")" in
         "${COMPOSE[@]}" stop api >/dev/null || true
         docker run --rm "${VOLUMES[@]}" --entrypoint sh "$IMAGE_API" -c \
             "rm -rf /donnees/app_data/* /donnees/uploads/* && tar -xzf /sortie/$ARCHIVE -C /donnees"
-        #  La base de la version PRÉCÉDENTE (fichiers et .env déjà revenus) :
+        #  Chaque base de la version PRÉCÉDENTE (fichiers et .env déjà revenus) :
         #  schéma vidé, schéma initial de cette version, puis l'export d'avant.
-        "${COMPOSE[@]}" exec -T postgres psql -U coprofirst -d coprofirst -q \
-            -c "DROP SCHEMA public CASCADE" -c "CREATE SCHEMA public" \
-            && "${PONCTUEL[@]}" -m app.utils.schema_initial \
-            && "${PONCTUEL[@]}" -m app.utils.export_copropriete importer "/sortie/$BASE" env:DATABASE_URL \
-            || journal "🔴 Restauration de la base ÉCHOUÉE — l'export d'avant la mise à jour est $SAUVEGARDES/$BASE."
+        while read -r id var <&3; do
+            exp=$(export_de "$id" "$BASE")
+            # shellcheck disable=SC2046 # l'argument, présent ou absent
+            "${COMPOSE[@]}" exec -T postgres psql -U coprofirst -d "$(base_de_url "$(lire_env "$var")")" -q \
+                -c "DROP SCHEMA public CASCADE" -c "CREATE SCHEMA public" \
+                && "${PONCTUEL[@]}" -m app.utils.schema_initial $([ "$id" = principale ] || echo "env:$var") \
+                && "${PONCTUEL[@]}" -m app.utils.export_copropriete importer "/sortie/$exp" "env:$var" \
+                || journal "🔴 Restauration de la base $id ÉCHOUÉE — son export d'avant la mise à jour est $SAUVEGARDES/$exp."
+        done 3<<< "$LISTE_BASES"
         "${COMPOSE[@]}" up -d >/dev/null 2>&1 || true
         journal "Restauration terminée — santé : $(sante)."
         rendre_compte erreur "santé KO en $CIBLE puis en $COURANTE — sauvegarde $ARCHIVE restaurée" "$CIBLE" "restauree"

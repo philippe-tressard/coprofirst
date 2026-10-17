@@ -56,7 +56,7 @@ from app.models.core import EmailVerificationToken, Utilisateur
 from app.utils import horloge
 from app.utils.config_site import config_site
 from app.utils.journal_securite import journaliser_securite
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 
 #: La validité d'un lien de vérification d'adresse — **écrite une seule fois**.
 #:
@@ -83,7 +83,7 @@ def _expire_heures() -> int:
 
 def _site(session: Session) -> tuple[str, str]:
     cfg = config_site(session)
-    return base_site(cfg.get("site_url")), nom_site(cfg.get("site_nom"))
+    return adresse_du_site(), nom_site(cfg.get("site_nom"))
 
 
 def emettre_verification_email(

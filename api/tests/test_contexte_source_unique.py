@@ -26,10 +26,17 @@ CONFIGURATION = "config.py"
 
 #: Ce que `app.database` construit et que seul le contexte distribue.
 NOMS_DE_LA_BASE = frozenset({"engine", "SessionLocal"})
-#: Les réglages propres à une copropriété.
+#: Les réglages propres à une copropriété — `backup_dir` depuis #2053 : sur une
+#: installation commune, le volume des sauvegardes est partagé, et chaque copropriété
+#: a son dossier (`contexte.dossier_des_sauvegardes`).
 REGLAGES_DE_COPROPRIETE = frozenset(
-    {"database_url", "secret_key", "uploads_dir", "mail_from", "mail_from_name"}
+    {"database_url", "secret_key", "uploads_dir", "mail_from", "mail_from_name", "backup_dir"}
 )
+#: Les modules qui lisent un de ces réglages pour la PLATEFORME, avec leur raison.
+LECTEURS_DE_LA_PLATEFORME = {
+    "registre/sauvegarde.py": "la base `plateforme` a son dossier, `plateforme/`, hors "
+    "de toute copropriété (§4.9)",
+}
 
 
 def acces_directs(arbre: ast.AST, *, lit_la_base: bool, lit_les_reglages: bool) -> list:
@@ -64,7 +71,7 @@ def test_aucune_ressource_de_copropriete_lue_hors_du_contexte():
         a = acces_directs(
             m.arbre,
             lit_la_base=m.rel != CONSTRUCTEUR,
-            lit_les_reglages=m.rel != CONFIGURATION,
+            lit_les_reglages=m.rel not in (CONFIGURATION, *LECTEURS_DE_LA_PLATEFORME),
         )
         if a:
             fautes[m.rel] = a
@@ -103,7 +110,7 @@ a = get_settings().database_url
 b = settings.secret_key
 c = database.engine
 d = app.database.SessionLocal()
-e = get_settings().backup_dir
+e = get_settings().origin
 f = moteur.url
 '''
 

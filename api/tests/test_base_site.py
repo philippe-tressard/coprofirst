@@ -15,8 +15,16 @@ Les autres le faisaient chacun dans leur coin, par un `rstrip("/")` recopié —
 forme canonique de la duplication. Corriger le chemin signalé aurait laissé les
 dix autres, et le défaut serait revenu par celui qu'on n'a pas relu.
 
-Ce test refuse donc qu'une douzième copie apparaisse : toute lecture de
-`site_url` destinée à fabriquer une URL passe par `base_site`.
+Ce test refusait donc qu'une douzième copie apparaisse : toute lecture de
+`site_url` destinée à fabriquer une URL passait par `base_site`.
+
+## Depuis le 17/10/2026 (#2058) : `site_url` ne se lit plus en base
+
+L'adresse du site doublait `ORIGIN`. Arbitré (option A) : elle est DÉRIVÉE du
+contexte — `liens.adresse_du_site()`, l'`ORIGIN` d'une installation propre, ou
+l'adresse de la copropriété dans une installation commune. Le contrôle refuse
+désormais TOUTE lecture de la clé en base, normalisée ou non ; `base_site` reste
+la normalisation unique, que `adresse_du_site` emploie.
 
 ⚠️ Il ne regarde pas `rstrip` — un test qui cherche le REMÈDE passe à côté de la
 douzième copie qui l'écrit autrement (`.strip('/')`, une f-string, un `removesuffix`).
@@ -31,22 +39,25 @@ from pathlib import Path
 
 import pytest
 
-from app.utils.liens import DEFAUT_SITE, base_site
+from app import contexte
+from app.utils.liens import DEFAUT_SITE, adresse_du_site, base_site
 from tests.aides_sources import modules_app
 
 RACINE = Path(__file__).resolve().parents[1] / "app"
 
-#: Les fichiers autorisés à lire `site_url` sans passer par `base_site`.
+#: Les fichiers autorisés à lire `site_url` en base.
 #:
 #: Chacun a son motif, et un motif qui cesse d'être vrai fait échouer le test :
 #: une exception reconduite « au cas où » protège un fichier qui n'en a plus
 #: besoin et masque la prochaine vraie copie.
 EXCEPTIONS: dict[str, str] = {
-    #  🔴 VIDE, et c'est le but : `base_site` est le seul chemin. Le motif
+    #  🔴 VIDE, et c'est le but : `adresse_du_site` est le seul chemin. Le motif
     #  ci-dessous ne relève que les lectures de VALEUR, jamais les ensembles de
     #  clés à charger — il n'y avait donc pas de cas légitime à excuser.
     #  Si l'un apparaît, il s'écrit ici AVEC son motif : une exception non écrite
     #  n'est pas une exception, c'est un oubli qui ressemble à une décision.
+    "demarrage.py": "le CONSTAT d'écart au démarrage (#2058) : l'ancienne valeur se compare "
+    "à l'adresse servie et se journalise, elle ne fait jamais un lien",
 }
 
 #: Une lecture de VALEUR — `get("site_url")` ou `cfg["site_url"]`. Un ensemble de
@@ -103,35 +114,29 @@ def _lectures(sources) -> tuple[list[str], list[str]]:
             if not LECTURE.search(code_utile):
                 continue
             vues.append(rel)
-            if "base_site(" not in code_utile:
-                fautifs.append(f"{rel}:{debut}  fonction `{nom}`")
+            fautifs.append(f"{rel}:{debut}  fonction `{nom}`")
     return fautifs, vues
 
 
-def test_aucune_lecture_de_site_url_hors_de_base_site():
+def test_site_url_ne_se_lit_plus_en_base():
     fautifs, _vues = _lectures((m.rel, m.source) for m in modules_app())
     assert not fautifs, (
-        "site_url lu sans passer par `base_site` — la barre finale repassera :\n  "
-        + ("\n  ").join(fautifs)
+        "site_url lu en base (#2058) — l'adresse du site est DÉRIVÉE : "
+        "`liens.adresse_du_site()` :\n  " + ("\n  ").join(fautifs)
     )
 
 
 def test_le_controle_VOIT_les_lectures():
     """Cas zéro (#1496) : sans lui, un `LECTURE` qui ne reconnaîtrait plus rien
-    rendrait le contrôle ci-dessus vert sur tout `app/`.
-
-    - sur le CODE : les deux formes de la notion sont vues là où elles vivent —
-      `cfg.get("site_url")` dans `utils/config_site.py`, `session.get(ConfigSite,
-      "site_url")` dans `utils/reponses.py` ;
-    - sur un extrait FORGÉ : chacune des deux formes, sans `base_site`, est refusée.
+    rendrait le contrôle ci-dessus vert sur tout `app/`. Le code n'a plus aucune
+    lecture (#2058) : chacune des trois formes, sur un extrait FORGÉ, est refusée —
+    même normalisée par `base_site`.
     """
-    _fautifs, vues = _lectures((m.rel, m.source) for m in modules_app())
-    manquantes = {"utils/config_site.py", "utils/reponses.py"} - set(vues)
-    assert not manquantes, f"le contrôle ne voit plus les lectures de {sorted(manquantes)}"
     forges = [
         ("forge_a.py", 'def f(cfg):\n    return cfg.get("site_url").rstrip("/")\n'),
         ("forge_b.py", 'def f(s):\n    return s.get(ConfigSite, "site_url").valeur\n'),
         ("forge_c.py", "def f(s):\n    return session.get(ConfigSite, 'site_url').valeur\n"),
+        ("forge_d.py", 'def f(cfg):\n    return base_site(cfg.get("site_url"))\n'),
     ]
     fautifs, _vues = _lectures(forges)
     assert [f.split(":")[0] for f in fautifs] == [r for r, _ in forges], (
@@ -195,3 +200,83 @@ def test_la_normalisation_est_branchee_a_l_ENREGISTREMENT():
     }
     assert "_NORMALISEURS" in noms
     assert "_NORMALISEURS[cle](valeur)" in src, "la table est déclarée mais jamais appliquée"
+
+
+def test_l_adresse_est_celle_du_contexte_normalisee():
+    """L'adresse vient de la copropriété servie — et la barre finale ne repasse pas."""
+    from dataclasses import replace
+
+    base = contexte.de_la_configuration()
+    with contexte.dans(replace(base, adresse="https://residence-chenes.example/")):
+        assert adresse_du_site() == "https://residence-chenes.example"
+    with contexte.dans(replace(base, adresse="")):
+        assert adresse_du_site() == DEFAUT_SITE
+
+
+def test_l_adresse_se_lit_partout_par_adresse_du_site():
+    """Témoin : la notion a un lecteur, et il sert — sans quoi « aucune lecture en
+    base » serait vrai d'un code qui n'écrirait plus aucun lien."""
+    appelants = {m.rel for m in modules_app() if "adresse_du_site()" in m.source}
+    assert len(appelants) >= 15, f"adresse_du_site n'est appelée que par {sorted(appelants)}"
+
+
+def test_l_ecran_lit_l_adresse_derivee_et_ne_peut_pas_l_ecrire(session, monkeypatch):
+    """`GET /config` publie l'adresse du contexte ; `PUT /config` refuse de la saisir."""
+    from fastapi import HTTPException
+
+    from app.models.core import ConfigSite
+    from app.routers import config as routeur
+    from tests.aides_adresse import poser_adresse_du_site
+
+    poser_adresse_du_site(monkeypatch, "https://residence.exemple/")
+    #  Une valeur restée en base d'avant #2058 ne compte plus.
+    session.add(ConfigSite(cle="site_url", valeur="https://ancienne.exemple"))
+    session.commit()
+    assert routeur.get_config(session)["site_url"] == "https://residence.exemple"
+    with pytest.raises(HTTPException) as refus:
+        routeur.save_config({"site_url": "https://ailleurs.exemple"}, user=None, session=session)
+    assert refus.value.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "origine",
+    ["http://10.0.0.5", "http://localhost", "http://api:8000", "http://[::1]", ""],
+)
+def test_l_origin_d_un_standby_ne_fait_jamais_un_lien(monkeypatch, origine):
+    """Condition de l'arbitrage (17/10/2026) : sur le standby, `ORIGIN` est l'IP locale
+    du nœud — elle ne doit jamais partir dans un courriel. Le défaut la remplace."""
+    from tests.aides_adresse import poser_adresse_du_site
+
+    poser_adresse_du_site(monkeypatch, origine)
+    assert adresse_du_site() == DEFAUT_SITE
+
+
+def test_un_ecart_avec_l_ancienne_valeur_se_dit_au_demarrage(session, monkeypatch, caplog):
+    """La base garde une autre `site_url` : un WARNING (jamais ERROR, point 6 du
+    pré-check) ; la même valeur, à la barre près, ne dit rien (cas zéro)."""
+    import logging
+
+    from sqlmodel import SQLModel
+
+    from app import demarrage
+    from app.database import engine
+    from app.models.core import ConfigSite
+    from tests.aides_adresse import poser_adresse_du_site
+
+    SQLModel.metadata.create_all(engine)
+    poser_adresse_du_site(monkeypatch, "https://5hostachy.fr")
+    with contexte.nouvelle_session() as s:
+        ligne = s.get(ConfigSite, "site_url") or ConfigSite(cle="site_url", valeur="")
+        ligne.valeur = "https://5hostachy.fr/"
+        s.add(ligne)
+        s.commit()
+        assert demarrage.ecart_d_adresse() is None
+        ligne.valeur = "https://ancien.exemple"
+        s.add(ligne)
+        s.commit()
+    assert demarrage.ecart_d_adresse() == "https://ancien.exemple"
+    with caplog.at_level(logging.WARNING, logger="hostachy.api"):
+        monkeypatch.setattr("app.seed.seed", lambda: None)
+        demarrage.preparer_la_copropriete()
+    ecarts = [r for r in caplog.records if "la base garde" in r.getMessage()]
+    assert [r.levelname for r in ecarts] == ["WARNING"]

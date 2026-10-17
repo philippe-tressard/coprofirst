@@ -47,42 +47,12 @@ decider_registre() {
     esac
 }
 
-# ── Lire une partie de l'URL de la base — le mot de passe ne s'affiche jamais ─
-#  $1 URL · $2 u (utilisateur) | b (base) | m (mot de passe, décodé) → sur stdout
-plateforme_url_partie() {
-    python3 -c 'import sys,urllib.parse as u; p=u.urlsplit(sys.argv[1]); print({"u":p.username or "","b":p.path.lstrip("/"),"m":u.unquote(p.password or "")}[sys.argv[2]])' "$1" "$2" 2>/dev/null
-}
+# ── Les gestes communs à toute base d'une installation — lire une URL, savoir si
+#  le rôle et la base existent, les créer fermés aux autres — vivent dans
+#  `deploiement/standard/lib-bases.sh` depuis #2053 : une installation commune crée
+#  ainsi la base de chaque copropriété (`commune/creer-copropriete.sh`).
+# shellcheck source=../../deploiement/standard/lib-bases.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../../deploiement/standard/lib-bases.sh"
 
 # ── psql sur le PostgreSQL de la PRODUCTION (en root, sur le nœud qui sert) ───
 plateforme_psql_ref() { docker exec -i hostachy_postgres psql -v ON_ERROR_STOP=1 -U coprofirst -d coprofirst "$@"; }
-
-# ── Le rôle et la base existent-ils déjà ? ────────────────────────────────────
-#  $1 commande de requête (`pgq` : une ligne, sans en-tête) · $2 utilisateur · $3 base
-#  → « oui|non oui|non ». Un nom hors de [a-z0-9_] n'est jamais interpolé dans la
-#  requête : il rend « non non », et `decider_creation` le refuse ensuite.
-plateforme_existants() {
-    local q="$1" util="$2" base="$3" r=non b=non
-    case "$util$base" in *[!a-z0-9_]*|'') echo "non non"; return ;; esac
-    [ "$("$q" "SELECT 1 FROM pg_roles WHERE rolname='$util'")" = 1 ] && r=oui
-    [ "$("$q" "SELECT 1 FROM pg_database WHERE datname='$base'")" = 1 ] && b=oui
-    echo "$r $b"
-}
-
-# ── Créer le rôle et la base, fermée aux autres rôles ─────────────────────────
-#  $1 commande psql (une fonction de l'appelant, qui vise le bon serveur)
-#  · $2 utilisateur · $3 base · $4 mot de passe · $5 rôle existe · $6 base existe
-#  Les noms ont été validés par `decider_creation` ([a-z0-9_]) ; le mot de passe
-#  passe par une variable psql, jamais par la ligne de commande.
-#  → 0, ou 1 avec la raison sur la sortie standard.
-plateforme_creer() {
-    local psql="$1" util="$2" base="$3" mdp="$4"
-    if [ "$5" = non ]; then
-        printf '%s\n' "CREATE ROLE $util WITH LOGIN PASSWORD :'mdp';" | "$psql" -v mdp="$mdp" >/dev/null \
-            || { echo "rôle non créé"; return 1; }
-    fi
-    if [ "$6" = non ]; then
-        "$psql" -c "CREATE DATABASE $base OWNER $util;" >/dev/null || { echo "base non créée"; return 1; }
-        "$psql" -c "REVOKE CONNECT ON DATABASE $base FROM PUBLIC;" >/dev/null
-    fi
-    return 0
-}

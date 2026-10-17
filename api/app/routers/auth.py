@@ -51,7 +51,7 @@ from app.utils.limiter import (
     limiter,
 )
 from app.utils.mots_de_passe import verifier_robustesse as _check_password_strength
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 
 from app.utils.noms import contexte_personne
 from app.utils.verification_adresse import (
@@ -188,7 +188,7 @@ def register(
                         "nom": nom_site(site_cfg.get("site_nom"), cfg.get("site_nom")),
                     },
                     "app": {
-                        "url": base_site(site_cfg.get("site_url") or cfg.get("site_url")),
+                        "url": adresse_du_site(),
                     },
                 },
             )

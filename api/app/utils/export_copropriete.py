@@ -268,11 +268,17 @@ if __name__ == "__main__":
         sys.exit(_USAGE)
     if sys.argv[1] == "verifier":
         #  La sauvegarde d'une réplique, avant sa mise à jour (DI-4) : réimportée
-        #  dans une base jetable du même serveur, jamais dans la base qui sert.
+        #  dans une base jetable du même serveur, jamais dans la base qui sert. Le
+        #  serveur est celui de la copropriété NOMMÉE sur une installation commune.
         from app import contexte
+        from app.utils import commande
 
         try:
-            _bilan = verifier_archive(Path(sys.argv[2]), contexte.courante().url_base)
+            _copro, _reste = commande.copropriete_nommee(sys.argv[2:])
+        except contexte.HorsCopropriete as _refus:
+            sys.exit(f"REFUS : {_refus}")
+        try:
+            _bilan = verifier_archive(Path(_reste[0]), _copro.url_base)
         except ImportRefuse as _refus:
             sys.exit(f"ARCHIVE REFUSÉE : {_refus}")
         print(f"Archive vérifiée : {_bilan.tables} tables, {_bilan.lignes} lignes.")

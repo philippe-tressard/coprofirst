@@ -173,7 +173,11 @@ class Settings(BaseSettings):
     #: contexte de copropriété (#1744), et un fichier ne se situe que par
     #: `utils/stockage` (#1748).
     uploads_dir: str = "/app/uploads"
-    backup_hour: int = 3
+    #  `backup_hour` (BACKUP_HOUR) n'existe plus (#2058) : l'heure d'une copropriété
+    #  vit en base (`config_sauvegarde`, Admin › Maintenance). Une variable
+    #  d'environnement inconnue est ignorée — un `.env` qui la porte encore démarre.
+    #  La base `plateforme` du registre seule (`registre/sauvegarde`) : celle d'une
+    #  copropriété se règle en base (#2058).
     backup_keep_versions: int = 7
 
     # Maintenance cron — clé partagée pour l'endpoint /admin/maintenance/rapport

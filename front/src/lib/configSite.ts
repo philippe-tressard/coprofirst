@@ -132,7 +132,7 @@ export type SectionSite = 'generaux' | 'pied_de_page' | 'legal' | 'pied_whatsapp
  */
 const ECRIVAINS: Record<SectionSite, (c: ConfigSite) => Record<string, string>> = {
 	generaux: (c) => ({
-		site_url: c.url,
+		//  `site_url` ne s'écrit pas : l'API la dérive de l'installation (#2058).
 		site_email: c.email_admin,
 		login_sous_titre: c.login_sous_titre,
 		archivage_delai_jours: String(

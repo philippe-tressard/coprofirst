@@ -9,7 +9,6 @@ créée pour l'occasion : c'est la migration initiale de la spec §4.3.
 from __future__ import annotations
 
 import uuid
-from pathlib import Path
 
 import pytest
 from alembic import command
@@ -20,11 +19,9 @@ from sqlalchemy.pool import NullPool
 from sqlmodel import SQLModel
 
 import app.models.core  # noqa: F401 — toutes les tables, comme le module testé
-from app.utils.revision_base import ALEMBIC_INI, config_alembic
+from app.utils.revision_base import config_alembic
 from app.utils.schema_initial import poser_si_neuve
 from tests.aides_base import url_des_tests
-
-START = Path(__file__).resolve().parents[1] / "start.sh"
 
 
 def _tete() -> str:
@@ -108,14 +105,6 @@ def test_une_base_injoignable_rend_inconnu():
     )
 
 
-def test_start_sh_pose_le_schema_avant_de_migrer_et_jamais_sur_une_base_en_avance():
-    texte = "\n".join(
-        ligne
-        for ligne in START.read_text(encoding="utf-8").splitlines()
-        if not ligne.lstrip().startswith("#")
-    )
-    appel = "SCHEMA_INITIAL=$(python -m app.utils.schema_initial)"
-    assert texte.count(appel) == 1, "affecté, pas passé à echo : sous `set -e`, l'échec compte"
-    assert texte.index('"$ETAT_BASE" = "en_avance"') < texte.index(appel)
-    assert texte.index(appel) < texte.index("alembic upgrade head")
-    assert ALEMBIC_INI.exists()
+#  L'ordre que `start.sh` suivait (attendre, en avance, schéma initial, migrer) vit
+#  dans `app/utils/preparer_bases` depuis #2053, et s'éprouve sur son COMPORTEMENT :
+#  `tests/test_preparer_bases.py`.

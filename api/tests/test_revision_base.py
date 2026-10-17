@@ -9,7 +9,6 @@ emploie comme la table du module le dit.
 
 from __future__ import annotations
 
-from pathlib import Path
 
 from alembic.config import Config
 from alembic.script import ScriptDirectory
@@ -17,8 +16,6 @@ from sqlalchemy import text
 
 from app.utils.revision_base import ALEMBIC_INI, etat_revision
 from tests.aides_base import moteur_de_test
-
-START = Path(__file__).resolve().parents[1] / "start.sh"
 
 
 def _tete() -> str:
@@ -54,16 +51,6 @@ def test_une_lecture_impossible_ne_rend_jamais_un_verdict(tmp_path):
     assert etat_revision(_base(_tete()), ini=tmp_path / "absent.ini") == "inconnu"
 
 
-def test_start_sh_ne_saute_les_migrations_que_si_la_base_est_en_avance():
-    #  Le code seul : les commentaires de start.sh racontent pourquoi, et citent
-    #  la commande qu'ils expliquent.
-    texte = "\n".join(
-        ligne
-        for ligne in START.read_text(encoding="utf-8").splitlines()
-        if not ligne.lstrip().startswith("#")
-    )
-    assert "python -m app.utils.revision_base" in texte
-    assert '"$ETAT_BASE" = "en_avance"' in texte
-    #  Toute autre réponse — inconnu compris — migre : on ne devine pas.
-    assert texte.count("alembic upgrade head") == 1
-    assert texte.index('"$ETAT_BASE" = "en_avance"') < texte.index("alembic upgrade head")
+#  L'ordre que `start.sh` suivait (attendre, en avance, schéma initial, migrer) vit
+#  dans `app/utils/preparer_bases` depuis #2053, et s'éprouve sur son COMPORTEMENT :
+#  `tests/test_preparer_bases.py`.

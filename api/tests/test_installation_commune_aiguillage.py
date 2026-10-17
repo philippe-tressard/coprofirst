@@ -18,6 +18,7 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 
+from app.installation_commune.bases_pretes import INDISPONIBLE
 from app.installation_commune.routeur import ECHEC
 from app.main import app as application
 from app.utils.limiter import limiter
@@ -182,9 +183,12 @@ def test_l_hote_commun_ne_sert_aucune_route_de_copropriete(commune):
         reponse = commune.get(chemin, headers={"host": HOTE_COMMUN})
         assert reponse.status_code == 421, chemin
         assert "set-cookie" not in reponse.headers, chemin
-    # Témoin : sous l'adresse d'une copropriété, la requête est bien résolue et atteint
-    # la route — qui refuse un anonyme (401) sans toucher à la base, injoignable ici.
-    assert commune.get("/auth/me", headers={"host": TILLEULS}).status_code == 401
+    # Témoin : sous l'adresse d'une copropriété, la requête est bien RÉSOLUE — elle
+    # passe le 421 et bute sur la garde des bases (#2053) : la sienne est injoignable
+    # ici, donc 503 pour cet hôte seul, jamais un 421.
+    reponse = commune.get("/auth/me", headers={"host": TILLEULS})
+    assert reponse.status_code == 503
+    assert reponse.json() == {"detail": INDISPONIBLE}
 
 
 # ── Une installation propre à une copropriété ────────────────────────────────

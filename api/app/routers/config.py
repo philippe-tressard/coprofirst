@@ -25,7 +25,7 @@ from app.models.core import ConfigSite, Utilisateur
 from app.utils.destinataires import peut_gerer_le_site
 from app.utils import demo, pied_de_page, reglages
 from app.utils.config_site import config_site
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 from app.utils.recuperer import ou_404
 from app.utils.textes_legaux.relecture import CLE_RELECTURE, TEXTES
 
@@ -97,19 +97,9 @@ def _valeur_pour_admin(cle: str, valeur: str) -> str:
     return valeur
 
 
-#: Les clés dont la VALEUR se normalise à l'enregistrement.
-#:
-#: 🔴 11/09/2026 : `site_url` valait `https://5hostachy.fr/`, et tout modèle
-#: d'e-mail écrit `{{ app.url }}/tickets/…`. Le lien partait en
-#: `https://5hostachy.fr//tickets/34` — **404**, sur un courriel adressé au syndic.
-#:
-#: ⚠️ Ceci ne remplace PAS la normalisation à la lecture (`utils/liens.base_site`)
-#: et ne la remplacera jamais : les bases déjà en service portent la valeur sale,
-#: une restauration peut la ramener, et rien n'oblige à passer par cet écran. On
-#: normalise aux DEUX bouts — ici pour que la donnée soit propre, là-bas pour que
-#: le lien le soit même quand elle ne l'est pas.
+#: Les clés dont la VALEUR se normalise à l'enregistrement. `site_url` en était la
+#: première (11/09/2026, un lien en `//tickets/34`) ; il ne s'enregistre plus (#2058).
 _NORMALISEURS = {
-    "site_url": lambda v: base_site(str(v)),
     **pied_de_page.NORMALISEURS,
     #  L'activation d'un service ne s'écrit que `"1"` ou `"0"` (#1718) : la
     #  lecture unique (`service_actif`) n'en accepte pas d'autre.
@@ -128,6 +118,7 @@ def get_config(session: Session = Depends(get_session)):
     """
     rows = session.exec(select(ConfigSite)).all()
     publiques = {r.cle: r.valeur for r in rows if _est_public(r.cle)}
+    publiques |= {"site_url": adresse_du_site()}  # dérivée, jamais lue en base (#2058)
     #  Calculée, jamais lue en base : le front apprend ainsi qu'il sert la démo (#1901).
     publiques[demo.CLE_PUBLIQUE] = "1" if demo.est_demo() else "0"
     return publiques
@@ -140,7 +131,8 @@ def get_config_admin(
 ):
     """Retourne toutes les clés de configuration, y compris les clés privées (admin uniquement)."""
     rows = session.exec(select(ConfigSite)).all()
-    return {r.cle: _valeur_pour_admin(r.cle, r.valeur) for r in rows if r.cle not in _LEGAL_KEYS}
+    lues = {r.cle: _valeur_pour_admin(r.cle, r.valeur) for r in rows if r.cle not in _LEGAL_KEYS}
+    return lues | {"site_url": adresse_du_site()}  # dérivée (#2058)
 
 
 @router.put("")

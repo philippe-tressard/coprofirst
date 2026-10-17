@@ -13,7 +13,6 @@ from app.utils import horloge
 from sqlmodel import Session, select
 
 from app.utils.config_site import config_site
-from app.config import get_settings
 from app import contexte
 from app.utils.dates_fr import datetime_longue
 from app.models.core import (
@@ -160,7 +159,7 @@ def _check_archive_locale() -> list[str]:
     """
     from app.utils.backup import MOTIF_ARCHIVE, horodatage_archive
 
-    repertoire = get_settings().backup_dir
+    repertoire = contexte.dossier_des_sauvegardes()
     try:
         chemins = sorted(glob.glob(os.path.join(repertoire, MOTIF_ARCHIVE)))
     except OSError as exc:
@@ -356,7 +355,7 @@ from app.utils.etat_taches import problemes_taches
 from app.utils.sante_mise_a_jour import problemes_mise_a_jour
 from app.utils.llm_journal import problemes_ia
 from app.utils.conservation_copie import archives_en_retard
-from app.utils.liens import base_site, nom_site
+from app.utils.liens import adresse_du_site, nom_site
 from app.utils.sante_plateforme import disque_par_la_plateforme, probleme_disque
 
 
@@ -405,7 +404,7 @@ def _send_alert(to: str, issues: list[str], session: Session) -> None:
 
     cfg = config_site(session)
     site_nom = nom_site(cfg.get("site_nom"))
-    site_url = (base_site(cfg.get("site_url"))).rstrip("/")
+    site_url = (adresse_du_site()).rstrip("/")
 
     contexte = {
         "problemes": _en_problemes(issues),
