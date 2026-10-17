@@ -105,7 +105,7 @@ def main() -> int:
     from app.installation_commune.declaration import DeclarationInvalide
 
     if not contexte.est_commune():
-        verdict = preparer_base(contexte.de_la_configuration().url_base)
+        verdict = preparer_base(contexte.de_la_configuration().url_base, DELAI_SECONDES)
         print(f"base : {verdict}")
         return 0 if verdict in PRETES else 1
     try:

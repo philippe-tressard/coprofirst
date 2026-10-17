@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import ast
 
-from sqlmodel import select
+from sqlmodel import Session, select
 
 from app.config import get_settings
 from app.models.core import ConfigSite
@@ -197,3 +197,76 @@ def test_une_copropriete_commune_ne_recoit_pas_les_identifiants_de_l_hebergeur(
     for cle in ("smtp_password", "smtp_username", "smtp_server", "smtp_enabled"):
         assert cle not in v, cle
     assert "secret-de-l-hebergeur" not in v.values()
+
+
+def test_la_tache_horaire_sauvegarde_une_fois_par_jour_a_son_heure(monkeypatch):
+    """Exigence de la MEP : la tâche passe chaque heure, mais ne sauvegarde qu'à
+    `heure_execution` — un jour entier en donne UNE, jamais une de plus que la
+    sauvegarde nocturne d'avant. Coupée, aucune."""
+    from datetime import datetime, timedelta
+
+    from sqlmodel import SQLModel
+
+    from app.database import engine
+    from app.models.core import ConfigSauvegarde
+    from app.utils import backup, horloge
+
+    SQLModel.metadata.create_all(engine)
+    lancees: list = []
+    monkeypatch.setattr(backup, "run_backup", lambda: lancees.append(horloge.maintenant()))
+    with Session(engine) as s:
+        for ancienne in s.exec(select(ConfigSauvegarde)).all():
+            s.delete(ancienne)
+        s.add(ConfigSauvegarde(heure_execution=3))
+        s.commit()
+    #  Les 24 passages d'une journée d'octobre (UTC+2) : 00:00 à 23:00 à Paris.
+    debut = datetime(2026, 10, 16, 22, 0, 0)
+    for h in range(24):
+        monkeypatch.setattr(horloge, "maintenant", lambda h=h: debut + timedelta(hours=h))
+        backup.sauvegarder_si_c_est_l_heure()
+    assert len(lancees) == 1
+    assert horloge.a_paris(lancees[0]).hour == 3
+
+    #  L'heure changée dans Maintenance vaut au passage suivant, sans redémarrage.
+    with Session(engine) as s:
+        cfg = s.exec(select(ConfigSauvegarde)).first()
+        cfg.heure_execution = 5
+        s.add(cfg)
+        s.commit()
+    lancees.clear()
+    for h in range(24):
+        monkeypatch.setattr(horloge, "maintenant", lambda h=h: debut + timedelta(hours=h))
+        backup.sauvegarder_si_c_est_l_heure()
+    assert [horloge.a_paris(x).hour for x in lancees] == [5]
+
+
+def test_un_second_demarrage_n_ecrase_pas_un_reglage_fait_dans_l_admin(monkeypatch):
+    """Exigence de la MEP : l'amorce est idempotente — le seed d'un second démarrage
+    ne touche ni une valeur changée à l'écran, ni une valeur vidée."""
+    from sqlmodel import SQLModel
+
+    from app.database import engine
+    from app.seed import seed
+    from app.utils.config_site import ecrire_cle
+
+    s_ = get_settings()
+    monkeypatch.setattr(s_, "mail_server", "smtp.du-env.fr")
+    monkeypatch.setattr(s_, "mail_username", "compte-du-env")
+    monkeypatch.setattr(s_, "mail_from", "noreply@exemple.fr")
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as s:
+        for ligne in s.exec(select(ConfigSite).where(ConfigSite.cle.like("smtp%"))).all():
+            s.delete(ligne)
+        s.commit()
+    seed()  # premier démarrage : l'amorce
+    with Session(engine) as s:
+        assert _valeurs(s)["smtp_server"] == "smtp.du-env.fr"
+        ecrire_cle(s, "smtp_server", "smtp.choisi-a-l-ecran.fr")
+        ecrire_cle(s, "smtp_username", "")
+        s.commit()
+    monkeypatch.setattr(s_, "mail_server", "smtp.autre-env.fr")
+    seed()  # second démarrage
+    with Session(engine) as s:
+        v = _valeurs(s)
+    assert v["smtp_server"] == "smtp.choisi-a-l-ecran.fr"
+    assert v["smtp_username"] == ""

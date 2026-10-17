@@ -781,8 +781,23 @@ ici. Le tableau qui occupait cette place en citait **quatre sur six** : le
 préchauffage du manuel PDF (au démarrage puis chaque nuit) et la relève des
 courriels (toutes les 10 min) n'y figuraient pas — et il donnait `backup` à 03:00
 alors que l'heure est **configurable** (`cfg.heure_execution`). Trois erreurs dans
-quatre lignes (#1051). Depuis #2058, la tâche `backup` passe chaque heure et ne
-sauvegarde qu'à l'heure de la copropriété, lue en base — `BACKUP_HOUR` n'est plus lu.
+quatre lignes (#1051).
+
+**La sauvegarde depuis v2.179.0 (#2058) — le rythme ne change pas, sa mécanique si :**
+
+| | Avant | Depuis #2058 |
+|---|---|---|
+| tâche `backup` | un `cron` à `heure_execution`, lue UNE fois au démarrage | un `cron` à chaque heure pile, qui ne sauvegarde qu'à `heure_execution` (`backup.sauvegarder_si_c_est_l_heure`) |
+| sauvegardes par jour | une | **une** — 23 passages sur 24 ne font rien (`test_la_tache_horaire_sauvegarde_une_fois_par_jour_a_son_heure`) |
+| changer l'heure dans Maintenance | effet au redémarrage de l'API | effet dès l'heure suivante |
+| `BACKUP_HOUR` du `.env` | repli sans ligne en base | **retiré** ; la ligne `config_sauvegarde` est posée par le seed |
+| journal de l'API | une ligne par nuit | une ligne `tache backup — copropriete principale : faite` par heure, la sauvegarde elle-même une fois |
+| archives, dossier, nom, rotation, copie hors site, rattrapage | — | **inchangés** (installation propre : la racine de `/backups`) |
+
+⚠️ Au changement d'heure de mars, 02:00 n'existe pas : une `heure_execution` à 2
+n'a pas de passage ce jour-là, la sauvegarde est sautée et refaite la nuit suivante
+(`backup_rattrapage` ne joue qu'au démarrage de l'API). Le défaut est 3, qui existe
+toujours ; le contrôle de 06:00 signale une sauvegarde de plus de 25 h.
 
 Ce qu'il faut savoir et qui ne se lit pas dans le code : **quel job alerte**.
 `health_check` (06:00) est le seul à envoyer un courriel de lui-même — WhatsApp
