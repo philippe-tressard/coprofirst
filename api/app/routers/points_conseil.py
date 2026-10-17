@@ -69,6 +69,9 @@ class PresentEntree(BaseModel):
 class PointEntree(BaseModel):
     debut: datetime
     fin: Optional[datetime] = None
+    #: Le moyen (`regles.MOYENS`) ; absent, d'un client d'avant le moyen,
+    #: `a_distance` fait foi.
+    moyen: Optional[str] = None
     a_distance: bool = False
     lieu: Optional[str] = Field(default=None, max_length=COURT)
     presents: list[PresentEntree] = []
@@ -81,6 +84,7 @@ class PointCreate(PointEntree):
 class PointUpdate(BaseModel):
     debut: Optional[datetime] = None
     fin: Optional[datetime] = None
+    moyen: Optional[str] = None
     a_distance: Optional[bool] = None
     lieu: Optional[str] = Field(default=None, max_length=COURT)
     presents: Optional[list[PresentEntree]] = None
@@ -120,8 +124,11 @@ class PointRead(BaseModel):
     etat: str
     debut: datetime
     fin: Optional[datetime] = None
+    moyen: Optional[str] = None
     a_distance: bool
     lieu: Optional[str] = None
+    #: Le Où tel que le CR l'écrit (`regles.ou_du_point`) — l'écran ne le recompose pas.
+    ou: str
     cree_le: datetime
     termine_le: Optional[datetime] = None
     valide_le: Optional[datetime] = None
@@ -176,6 +183,7 @@ class RepriseRead(BaseModel):
     mode: str
     debut: datetime
     fin: Optional[datetime] = None
+    moyen: Optional[str] = None
     a_distance: bool
     lieu: Optional[str] = None
     cree_le: datetime
@@ -202,10 +210,20 @@ class LieuRead(BaseModel):
         from_attributes = True
 
 
+class MoyenRead(BaseModel):
+    cle: str
+    libelle: str
+    avec_lieu: bool
+
+    class Config:
+        from_attributes = True
+
+
 class ParticipantsRead(BaseModel):
     conseil: list[MembreRead]
     syndic: list[MembreRead]
     lieux: list[LieuRead]
+    moyens: list[MoyenRead]
 
 
 # ── Lectures ─────────────────────────────────────────────────────────────
@@ -222,7 +240,7 @@ def _compte_rendu_read(session: Session, point: PointConseil, user: Utilisateur)
     commentaires = validation.commentaires_du_point(session, point.id)
     noms = {p.id: p for p in cr.presents}
     return CompteRenduRead(
-        point=PointRead.model_validate(cr.point),
+        point=lire_objet(PointRead, cr.point, ou=regles.ou_du_point(cr.point)),
         presents=_presents_read(cr.presents),
         abordees=[
             AbordeeRead(affaire=AffaireCiteeRead.model_validate(a), cr=CrRead.model_validate(c))
@@ -254,6 +272,7 @@ def participants(
         conseil=[MembreRead(**m) for m in membres_du_conseil(session)],
         syndic=[MembreRead(**m) for m in membres_du_syndic(session)],
         lieux=[LieuRead.model_validate(lieu) for lieu in regles.lieux_proposes(session)],
+        moyens=[MoyenRead.model_validate(m) for m in regles.MOYENS],
     )
 
 
@@ -270,8 +289,8 @@ def courant(
         compte_rendu=_compte_rendu_read(session, point, user) if point else None,
         reprise=(
             RepriseRead(
-                **PointRead.model_validate(reprise).model_dump(
-                    include={"mode", "debut", "fin", "a_distance", "lieu", "cree_le"}
+                **lire_objet(PointRead, reprise, ou="").model_dump(
+                    include={"mode", "debut", "fin", "moyen", "a_distance", "lieu", "cree_le"}
                 ),
                 presents=_presents_read(regles.presents_du_point(session, reprise.id)),
             )
@@ -295,10 +314,6 @@ def _present(session: Session, entree: PresentEntree) -> PresentPoint:
     )
 
 
-def _lieu(lieu: Optional[str]) -> Optional[str]:
-    return (lieu or "").strip() or None
-
-
 @router.post(
     "", response_model=CompteRenduRead, status_code=201, summary="Ouvrir un point (CS/Admin)"
 )
@@ -317,9 +332,9 @@ def ouvrir(
         debut=body.debut,
         fin=body.fin,
         a_distance=body.a_distance,
-        lieu=_lieu(body.lieu),
         auteur_id=user.id,
     )
+    regles.poser_ou(point, body.moyen, body.lieu)
     session.add(point)
     session.flush()
     regles.remplacer_presents(session, point, presents)
@@ -336,11 +351,17 @@ def corriger(
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
     point = regles.exiger_en_cours(ou_404(session, PointConseil, point_id, "Point"))
-    champs = body.model_dump(exclude_unset=True, exclude={"presents"})
+    champs = body.model_dump(exclude_unset=True, exclude={"presents", "moyen", "lieu"})
     for cle, valeur in champs.items():
         setattr(point, cle, valeur)
-    if "lieu" in champs:
-        point.lieu = _lieu(point.lieu)
+    if "a_distance" in body.model_fields_set and "moyen" not in body.model_fields_set:
+        point.moyen = None  # un client d'avant le moyen : `a_distance` fait foi
+    if {"moyen", "lieu"} & body.model_fields_set:
+        regles.poser_ou(
+            point,
+            body.moyen if "moyen" in body.model_fields_set else point.moyen,
+            body.lieu if "lieu" in body.model_fields_set else point.lieu,
+        )
     if body.presents is not None:
         regles.remplacer_presents(session, point, [_present(session, p) for p in body.presents])
     point.mis_a_jour_le = horloge.maintenant()

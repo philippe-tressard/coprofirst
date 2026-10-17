@@ -64,7 +64,7 @@ from app.utils.cloche import sonner_systeme
 from app.utils.dates_fr import date_longue, datetime_longue
 from app.utils.destinataires import membres_cs_ou_admin, motif_injoignable
 from app.utils.journal_securite import journaliser_securite
-from app.utils.points_conseil import compte_rendu, nom_present, presents_du_point
+from app.utils.points_conseil import compte_rendu, nom_present, ou_du_point, presents_du_point
 from app.utils.recuperer import ou_rien, present_ou_404
 from app.utils.valeurs import valeur
 
@@ -146,10 +146,7 @@ def _contexte_courriel(session: Session, point: PointConseil, user: Utilisateur)
     return {
         "point": {
             "date": datetime_longue(point.debut),
-            "lieu": e(
-                ("À distance" if point.a_distance else "Sur place")
-                + (f" — {point.lieu}" if point.lieu else "")
-            ),
+            "lieu": e(ou_du_point(point)),
             "presents": e(", ".join(nom_present(p) for p in cr.presents)),
         },
         "affaires": [

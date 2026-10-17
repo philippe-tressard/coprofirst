@@ -4,14 +4,7 @@
 //  ⚠️ Aucune fonction d'ici ne touche au réseau ni au DOM : les règles (un point
 //  par mode, reprise, non traitées) vivent au serveur, `utils/points_conseil`.
 
-import type {
-	CrAffaire,
-	EtatPoint,
-	NaturePresent,
-	PointConseil,
-	PresentEntree,
-	PresentPoint,
-} from '$lib/api';
+import type { CrAffaire, EtatPoint, NaturePresent, PresentEntree, PresentPoint } from '$lib/api';
 
 /** Ce que dit l'état d'un point, à l'écran. */
 export const ETATS_POINT: Record<EtatPoint, { libelle: string; teinte: string }> = {
@@ -43,10 +36,10 @@ export function precisionPresent(p: PresentPoint): string {
 	return [p.fonction, nom ? p.entreprise : null].filter(Boolean).join(', ');
 }
 
-/** Le Où, en une ligne : « À distance », ou le lieu saisi. */
-export function lieuDuPoint(point: Pick<PointConseil, 'a_distance' | 'lieu'>): string {
-	if (point.a_distance) return point.lieu ? `À distance — ${point.lieu}` : 'À distance';
-	return point.lieu || 'Sur place';
+/**  Le moyen d'un point à reproposer — un point saisi avant le moyen se lit
+ *   par `a_distance` (#2041). */
+export function moyenDe(point: { moyen: string | null; a_distance: boolean }): string {
+	return point.moyen ?? (point.a_distance ? 'visio' : 'sur_place');
 }
 
 /**  Les présents d'un point, rendus en ce que l'API attend : un membre par sa

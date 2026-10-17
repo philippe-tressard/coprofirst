@@ -51,8 +51,11 @@ export interface PointConseil {
 	/** Heure murale, telle que saisie (« AAAA-MM-JJTHH:MM »). */
 	debut: string;
 	fin: string | null;
+	moyen: string | null;
 	a_distance: boolean;
 	lieu: string | null;
+	/** Le Où tel que le CR l'écrit — « Sur place — Cabinet du syndic ». */
+	ou: string;
 	cree_le: string;
 	termine_le: string | null;
 	valide_le: string | null;
@@ -107,6 +110,7 @@ export interface CompteRenduParLien {
 	fin: string | null;
 	a_distance: boolean;
 	lieu: string | null;
+	ou: string;
 	presents: string[];
 	abordees: { numero: string; titre: string; contenu: string }[];
 	non_traitees: string[];
@@ -121,6 +125,7 @@ export interface CrPublie {
 	debut: string;
 	a_distance: boolean;
 	lieu: string | null;
+	ou: string;
 	contenu: string;
 	conseil_seul: boolean;
 }
@@ -130,6 +135,7 @@ export interface ReprisePoint {
 	mode: ModePoint;
 	debut: string;
 	fin: string | null;
+	moyen: string | null;
 	a_distance: boolean;
 	lieu: string | null;
 	cree_le: string;
@@ -153,16 +159,25 @@ export interface LieuPropose {
 	adresse: string;
 }
 
+/** Un moyen de réunion — la liste vient du serveur (`regles.MOYENS`). */
+export interface MoyenPoint {
+	cle: string;
+	libelle: string;
+	/** Quelqu'un est sur place : le lieu se saisit. */
+	avec_lieu: boolean;
+}
+
 export interface ParticipantsPoint {
 	conseil: MembrePoint[];
 	syndic: MembrePoint[];
 	lieux: LieuPropose[];
+	moyens: MoyenPoint[];
 }
 
 export interface PointEntree {
 	debut: string;
 	fin: string | null;
-	a_distance: boolean;
+	moyen: string;
 	lieu: string | null;
 	presents: PresentEntree[];
 }

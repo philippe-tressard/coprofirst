@@ -24,7 +24,7 @@ from app.utils.pdf_theme import (
     html_to_pdf,
     regle_page,
 )
-from app.utils.points_conseil import CrGlobal, nom_present
+from app.utils.points_conseil import CrGlobal, nom_present, ou_du_point
 from app.utils.roles_libelles import libelle_role, libelle_statut
 
 TITRE = "Compte rendu du point CS / Syndic"
@@ -80,9 +80,7 @@ def _presents(cr: CrGlobal) -> str:
 def html_compte_rendu(cr: CrGlobal, *, site_nom: str, logo_png: bytes | None) -> str:
     """PURE. Le document HTML autonome du compte rendu."""
     point = cr.point
-    ou = ("À distance" if point.a_distance else "Sur place") + (
-        f" — {point.lieu}" if point.lieu else ""
-    )
+    ou = ou_du_point(point)
     abordees = (
         "".join(
             '<div class="abordee">'

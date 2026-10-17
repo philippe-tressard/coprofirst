@@ -36,7 +36,7 @@
 		type ReprisePoint,
 	} from '$lib/api';
 	import { champLocalMaintenant, fmtDatetime, fmtTime } from '$lib/date';
-	import { ETATS_POINT, entreesDepuisPresents, lieuDuPoint, nomPresent } from '$lib/points-conseil';
+	import { ETATS_POINT, entreesDepuisPresents, moyenDe, nomPresent } from '$lib/points-conseil';
 
 	export let mode: ModePoint;
 	/** Le point du mode et son CR global — lu par la vue (tableau, CR global). */
@@ -79,14 +79,14 @@
 			return {
 				debut: reprise.debut,
 				fin: reprise.fin,
-				a_distance: reprise.a_distance,
+				moyen: moyenDe(reprise),
 				lieu: reprise.lieu,
 				presents: entreesDepuisPresents(reprise.presents),
 			};
 		return {
 			debut: champLocalMaintenant(),
 			fin: null,
-			a_distance: false,
+			moyen: participants?.moyens[0]?.cle ?? 'sur_place',
 			lieu: participants?.lieux[0]?.adresse ?? null,
 			presents: [],
 		};
@@ -97,7 +97,7 @@
 		return {
 			debut: cr.point.debut,
 			fin: cr.point.fin,
-			a_distance: cr.point.a_distance,
+			moyen: moyenDe(cr.point),
 			lieu: cr.point.lieu,
 			presents: entreesDepuisPresents(cr.presents),
 		};
@@ -208,7 +208,7 @@
 				{fmtDatetime(point.debut)}{#if point.fin}&nbsp;→ {fmtTime(point.fin)}{/if}
 				<span class="sep">·</span>
 				<Icon name={point.a_distance ? 'globe' : 'building-2'} size={14} />
-				{lieuDuPoint(point)}
+				{point.ou}
 			</p>
 			<p class="ligne">
 				<Icon name="users" size={14} />

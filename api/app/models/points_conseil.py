@@ -64,6 +64,13 @@ EN_COURS = "en_cours"
 A_VALIDER = "a_valider"
 VALIDE = "valide"
 
+#: Le moyen d'un point (arbitré le 17/10/2026, liste « A ») ; ses libellés et
+#: qui porte un lieu : `utils/points_conseil.MOYENS`.
+MOYEN_SUR_PLACE = "sur_place"
+MOYEN_VISIO = "visio"
+MOYEN_TELEPHONE = "telephone"
+MOYEN_HYBRIDE = "hybride"
+
 #: La nature d'un présent.
 PRESENT_CS = "cs"
 PRESENT_SYNDIC = "syndic"
@@ -81,7 +88,12 @@ class PointConseil(SQLModel, table=True):
     #: telle que saisie — une réunion se date à l'heure murale.
     debut: NaiveDatetime
     fin: Optional[NaiveDatetime] = None
-    #: Où : à distance, ou sur place au lieu dit.
+    #: Où : le MOYEN de la réunion (`MOYENS`, #2041 — arbitré le 17/10/2026),
+    #: et le lieu dit quand quelqu'un est sur place. `None` sur un point saisi
+    #: avant : il se lit alors par `a_distance`.
+    moyen: Optional[str] = None
+    #: Déduit du moyen à l'écriture ; gardé pour la version précédente du code
+    #: (#1757) et pour les points saisis avant le moyen.
     a_distance: bool = False
     lieu: Optional[str] = None
     auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")

@@ -41,6 +41,10 @@ from app.models.points_conseil import (
     EN_COURS,
     MODE_AFFAIRES,
     MODE_ENTRETIEN,
+    MOYEN_HYBRIDE,
+    MOYEN_SUR_PLACE,
+    MOYEN_TELEPHONE,
+    MOYEN_VISIO,
     PRESENT_CS,
     PRESENT_INVITE,
     PRESENT_SYNDIC,
@@ -174,6 +178,60 @@ def copie_des_presents(presents: list[PresentPoint]) -> list[PresentPoint]:
 
 
 # ── Le Où ─────────────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class Moyen:
+    cle: str
+    libelle: str
+    #: Quelqu'un est sur place : le lieu se saisit, et se lit au CR.
+    avec_lieu: bool
+
+
+#: Le MOYEN d'un point, dans l'ordre de la liste (arbitré le 17/10/2026, liste
+#: « A »). La seule liste : le formulaire la lit par `GET /points-conseil/participants`.
+MOYENS: tuple[Moyen, ...] = (
+    Moyen(MOYEN_SUR_PLACE, "Sur place", True),
+    Moyen(MOYEN_VISIO, "Visioconférence", False),
+    Moyen(MOYEN_TELEPHONE, "Téléphone", False),
+    Moyen(MOYEN_HYBRIDE, "Sur place et à distance", True),
+)
+_MOYENS = {m.cle: m for m in MOYENS}
+
+
+def exiger_moyen(moyen: str) -> Moyen:
+    """Le moyen, s'il est connu — 422 sinon."""
+    if moyen not in _MOYENS:
+        raise HTTPException(422, "Moyen de réunion inconnu")
+    return _MOYENS[moyen]
+
+
+def poser_ou(point: PointConseil, moyen: Optional[str], lieu: Optional[str]) -> None:
+    """Écrit le Où : le moyen, `a_distance` qui s'en déduit, et le lieu s'il en porte un.
+
+    Sans moyen (un client d'avant le moyen), `a_distance` reste tel qu'envoyé.
+    """
+    lieu = (lieu or "").strip() or None
+    if moyen is not None:
+        m = exiger_moyen(moyen)
+        point.moyen = m.cle
+        point.a_distance = m.cle != MOYEN_SUR_PLACE
+        lieu = lieu if m.avec_lieu else None
+    point.lieu = lieu
+
+
+def ou_du_point(point: PointConseil) -> str:
+    """PURE. Le Où tel que le CR, le PDF et le courriel l'écrivent :
+    « Sur place — Cabinet du syndic », « Visioconférence ».
+
+    Un point saisi avant le moyen se lit par `a_distance`.
+    """
+    m = _MOYENS.get(point.moyen or "")
+    if m:
+        libelle, lieu = m.libelle, point.lieu if m.avec_lieu else None
+    else:
+        libelle, lieu = ("À distance" if point.a_distance else "Sur place"), point.lieu
+    return f"{libelle} — {lieu}" if lieu else libelle
 
 
 @dataclass(frozen=True)
