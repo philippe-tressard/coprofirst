@@ -360,8 +360,8 @@
 											</label>
 										{:else}
 											<p class="aide-modele">
-												Toujours envoyé : ce courriel ne se désactive pas (sécurité d’un
-												compte, message au syndic ou préavis avant effacement).
+												Toujours envoyé : ce courriel ne se désactive pas (sécurité d’un compte,
+												message au syndic ou préavis avant effacement).
 											</p>
 										{/if}
 										{#if tpl.variables_disponibles}

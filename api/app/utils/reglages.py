@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import re
 
-from app.utils import demo, pied_de_page
+from app.utils import demo, pied_de_page, whatsapp
 from app.utils.llm_usages import USAGES, champs
 from app.utils.services import CLES_ACTIVATION
 
@@ -78,7 +78,11 @@ PAR_ONGLET: dict[str, frozenset[str]] = {
             "courriels_affiches",
         }
     ),
-    "whatsapp": frozenset({"whatsapp_group_name", "whatsapp_api_url", "whatsapp_group_jid"}),
+    #  Les clés du canal se lisent dans `utils/whatsapp.CLES_CONFIG`, leur seule
+    #  énumération (`test_canaux_notification.py`) : son activation est aux Services,
+    #  son pied et l'identité du site à l'onglet « site ».
+    "whatsapp": frozenset({"whatsapp_group_name"})
+    | (whatsapp.CLES_CONFIG - CLES_ACTIVATION - {"whatsapp_footer", "site_url", "site_nom"}),
     "ia": frozenset(
         {
             "llm_fournisseur",

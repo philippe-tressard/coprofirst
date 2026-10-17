@@ -57,9 +57,8 @@ def _commune() -> Declaration:
 
 def _sur_l_hote_commun(request: Request) -> Declaration:
     commune = _commune()
-    if contexte.nom_d_hote(request.headers.get("host", "")) != commune.hote_commun:
-        raise HTTPException(404, "Not Found")
-    return commune
+    sur_place = contexte.nom_d_hote(request.headers.get("host", "")) == commune.hote_commun
+    return present_ou_404(commune if sur_place else None, "Not Found")
 
 
 def alias_demande(corps: bytes) -> str | None:
@@ -92,9 +91,7 @@ def hote_commun(request: Request) -> dict[str, bool]:
 async def aiguiller(request: Request) -> dict[str, str]:
     commune = _sur_l_hote_commun(request)
     alias = alias_demande(await request.body())
-    entree = commune.destination(alias) if alias else None
-    if entree is None:
-        raise HTTPException(404, ECHEC)
+    entree = present_ou_404(commune.destination(alias) if alias else None, ECHEC)
     return {"destination": f"{commune.adresse(entree)}/"}
 
 

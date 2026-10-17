@@ -108,8 +108,9 @@ export const admin = {
 	// Sauvegardes
 	backupConfig: () => api.get<ConfigSauvegarde | null>('/admin/sauvegardes/config'),
 	//  L'API n'écrit que ces deux réglages (#2055) : la sauvegarde est quotidienne.
-	updateBackupConfig: (data: Pick<ConfigSauvegarde, 'heure_execution' | 'nb_versions_conservees'>) =>
-		api.put<ConfigSauvegarde>('/admin/sauvegardes/config', data),
+	updateBackupConfig: (
+		data: Pick<ConfigSauvegarde, 'heure_execution' | 'nb_versions_conservees'>,
+	) => api.put<ConfigSauvegarde>('/admin/sauvegardes/config', data),
 	//  Rejoue MAINTENANT les contrôles du job de 06:00, et rend leurs verdicts
 	//  (#852). Aucun e-mail n'est envoyé : quelqu'un est devant l'écran.
 	relancerControleSante: () =>
