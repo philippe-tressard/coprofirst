@@ -132,6 +132,8 @@ GESTES_FERMES: tuple[Famille, ...] = (
             ("PUT", "/admin/sauvegardes/config"),
             ("POST", "/admin/maintenance/lancer"),
             ("POST", "/admin/maintenance/purges"),
+            #  L'accusé de copie des archives d'affaires (#2014) : la démo n'en produit pas.
+            ("POST", "/admin/maintenance/archives-affaires/copiees"),
             ("POST", "/admin/installations/{identifiant}/decisions"),
             ("PUT", "/admin/installations/{identifiant}/services"),
             ("PUT", "/admin/installations/{identifiant}/distribution"),

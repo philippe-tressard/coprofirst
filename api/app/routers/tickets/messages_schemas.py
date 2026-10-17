@@ -23,6 +23,8 @@ class MessageRead(BaseModel):
     id: int
     ticket_id: int
     auteur_id: Optional[int] = None  # #1688
+    #: l'auteur détaché par la conservation (#2014) : « Un résident », « Le conseil syndical »
+    auteur_qualite: Optional[str] = None
     contenu: str
     interne: bool
     cree_le: datetime

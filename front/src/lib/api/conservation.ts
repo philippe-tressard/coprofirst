@@ -3,11 +3,12 @@
  * Admin › Maintenance, carte `CarteConservationAffaires`.
  *
  * `routers/admin/conservation_affaires.py` ; la règle vit au serveur
- * (`utils/conservation_affaires`), l'écran n'en recalcule rien. Lot L1 : constat
- * seul, rien n'est archivé ni retiré.
+ * (`utils/conservation_affaires`), l'écran n'en recalcule rien. La case qui
+ * l'applique se coche dans Administration › Services (lot L2) ; les archives
+ * produites partent sur le PC par la sauvegarde hors site (lot L3).
  */
 
-import { api } from './client';
+import { api, BASE } from './client';
 
 /**  Un exercice et un type : les affaires qui partiront ensemble. */
 export interface EcheanceConservation {
@@ -30,14 +31,37 @@ export interface EcheanceConservation {
 	absents: number;
 }
 
+/** Une archive des pièces jointes d'affaires échues : un exercice, un type. */
+export interface ArchiveAffaires {
+	id: number;
+	/** `affaires-<copropriété>-<exercice>-<type>.zip` — le même nom sur le PC. */
+	nom: string;
+	exercice: string;
+	type: string;
+	libelle: string;
+	affaires: number;
+	fichiers: number;
+	octets: number;
+	cree_le: string;
+	/** `null` : le PC ne l'a pas encore copiée. */
+	copiee_le: string | null;
+	/** `null` : le serveur la garde — téléchargeable. */
+	retiree_le: string | null;
+}
+
 export interface ConstatConservation {
 	/** Le mois où commence l'exercice ; `null` : l'année civile. */
 	mois_debut_exercice: number | null;
-	/** Lot L1 : toujours faux — le constat ne retire rien. */
+	/** La case d'Administration › Services : cochée, les affaires échues sont traitées la nuit. */
 	application_active: boolean;
+	/** Le serveur retire sa copie d'une archive ce nombre de jours après sa copie sur le PC. */
+	delai_retrait_jours: number;
 	echeances: EcheanceConservation[];
+	archives: ArchiveAffaires[];
 }
 
 export const conservation = {
 	constat: () => api.get<ConstatConservation>('/admin/conservation-affaires'),
+	/** L'adresse de téléchargement d'une archive, tant que le serveur la garde. */
+	archiveUrl: (id: number) => `${BASE}/admin/conservation-affaires/archives/${id}/fichier`,
 };

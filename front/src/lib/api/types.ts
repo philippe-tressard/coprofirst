@@ -254,6 +254,9 @@ export interface Ticket extends PorteSaisiPourLu {
 	 *   « résolu » ou « annulé » — un repère, `statut` restant « publie »
 	 *   (`$lib/suivi-actualite`). */
 	suivi_actualite?: string | null;
+	/**  Conservée (#2014) : le jour où, échue, l'affaire a perdu ses pièces jointes —
+	 *   archivées hors ligne — et ses auteurs. `null` : intacte. */
+	conservee_le?: string | null;
 }
 
 /** Une réponse du syndic à une relance GROUPÉE — jamais ventilée dans les fils.

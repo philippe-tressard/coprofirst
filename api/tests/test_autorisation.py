@@ -168,6 +168,8 @@ _AUTHENTIFIES_PAR_CLE = {
     #  La version cible du bail, que suit la mise à jour nocturne d'une réplique
     #  (R5 #1881) : un état et une version, rien de la copropriété.
     ("rapports_scripts.py", "maintenance_bail"),
+    #  L'accusé de copie des archives d'affaires (#2014) : des noms et des empreintes.
+    ("rapports_scripts.py", "maintenance_archives_affaires_copiees"),
 }
 
 #: Le nom de la porte. Il est lu, pas supposé : le module d'authentification par

@@ -107,13 +107,16 @@ def rechercher(
         for d in session.exec(select(Document).where(col(Document.ticket_id).in_(ids))).all()
         if document_visible(user, d, session)
     )
-    noms: dict[int, Optional[str]] = {}
+    noms: dict[tuple[Optional[int], Optional[str]], str] = {}
 
-    def nom(uid: Optional[int]) -> str:
-        #  Sans compte (supprimé, #1688) : « Ancien résident », comme à l'écran.
-        if uid not in noms:
-            noms[uid] = nom_auteur(session.get(Utilisateur, uid) if uid is not None else None)
-        return noms[uid]
+    def nom(porteur) -> str:
+        #  Sans compte (supprimé, #1688) : « Ancien résident », comme à l'écran ;
+        #  détaché par la conservation (#2014) : sa qualité.
+        uid, qualite = porteur.auteur_id, porteur.auteur_qualite
+        if (uid, qualite) not in noms:
+            auteur = session.get(Utilisateur, uid) if uid is not None else None
+            noms[(uid, qualite)] = nom_auteur(auteur, qualite)
+        return noms[(uid, qualite)]
 
     trouves = []
     for rang, t in enumerate(affaires):
@@ -123,7 +126,7 @@ def rechercher(
             Texte("titre", t.titre),
             Texte("categorie", libelle_categorie(t.categorie)),
             Texte("lieu", perimetre_label(parse_json_perimetres(t.perimetre_cible))),
-            Texte("personne", nom(t.auteur_id) or ""),
+            Texte("personne", nom(t)),
             Texte("personne", proprietaire or ""),
             Texte("prestataire", nom_prestataire(session, t.prestataire_id) or ""),
             #  Le libellé de l'équipement n'existe qu'au front (`$lib/prestataires`) :
@@ -138,14 +141,12 @@ def rechercher(
                     "suite",
                     texte_brut(e.contenu or ""),
                     date=e.cree_le,
-                    auteur=nom(e.auteur_id),
+                    auteur=nom(e),
                 )
             )
             textes += _pieces(parse_photos(e.fichiers_urls), e.cree_le)
         for m in messages.get(t.id, []):
-            textes.append(
-                Texte("message", texte_brut(m.contenu), date=m.cree_le, auteur=nom(m.auteur_id))
-            )
+            textes.append(Texte("message", texte_brut(m.contenu), date=m.cree_le, auteur=nom(m)))
             textes += _pieces(parse_photos(m.fichiers_urls), m.cree_le)
         for d in documents.get(t.id, []):
             textes.append(Texte("piece_jointe", f"{d.titre} {d.fichier_nom}", date=d.publie_le))

@@ -56,6 +56,7 @@ SERVICE_IA = "assistant_ia"
 SERVICE_DIFFUSION = "diffusion"
 SERVICE_REPONSES_COURRIEL = "reponses_courriel"
 SERVICE_VERIF_VERSION = "verification_version"
+SERVICE_CONSERVATION = "conservation_affaires"
 INFRA_SMTP = "envoi_courriels"
 
 #: La valeur qui dit « activé ». Une seule, pour toutes les clés.
@@ -157,6 +158,24 @@ SERVICES: dict[str, Service] = {
         icone="refresh-cw",
         cle_actif="verification_version_active",
     ),
+    SERVICE_CONSERVATION: Service(
+        code=SERVICE_CONSERVATION,
+        libelle="Conservation des affaires",
+        description=(
+            "Chaque nuit, une affaire close arrivée à son échéance (2, 5 ou 10 exercices "
+            "selon sa catégorie) perd ses pièces jointes, archivées puis copiées sur le PC "
+            "de l'administration, et ses auteurs ; son texte reste, et le carnet d'entretien "
+            "avec lui. Les échéances se lisent dans Administration › Maintenance."
+        ),
+        perte=(
+            "Rien n'est archivé ni retiré : les affaires gardent leurs pièces jointes et "
+            "leurs auteurs sans limite, et la politique de confidentialité ne peut annoncer "
+            "aucune durée pour elles."
+        ),
+        onglet="maintenance",
+        icone="archive",
+        cle_actif="conservation_affaires_active",
+    ),
     INFRA_SMTP: Service(
         code=INFRA_SMTP,
         libelle="Envoi des courriels",
@@ -186,8 +205,10 @@ COURRIELS_DE_SECURITE = frozenset(
 
 #: Les services qu'une RÉPLIQUE garde sans que la référence les autorise (§4.11,
 #: arbitré le 13/10/2026) : la vérification de la version ne coûte rien et sert à
-#: suivre les mises à jour. Tous les autres passent par le bail.
-SERVICES_HORS_BAIL = frozenset({SERVICE_VERIF_VERSION})
+#: suivre les mises à jour ; la conservation des affaires (#2014) est l'obligation
+#: de la copropriété elle-même, que rien de la référence ne porte. Tous les autres
+#: passent par le bail.
+SERVICES_HORS_BAIL = frozenset({SERVICE_VERIF_VERSION, SERVICE_CONSERVATION})
 
 #: Ce que la référence peut accorder dans un bail — la seule liste, lue par le
 #: registre (`registre/decisions.py`) comme par l'installation.

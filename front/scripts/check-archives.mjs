@@ -71,6 +71,11 @@ const TITRES_LEGITIMES = {
 		"le JOURNAL des e-mails partis — ni des objets rangés, ni le fil d'un objet.",
 	'Historique des envois (6 derniers)':
 		'le JOURNAL des messages WhatsApp partis. Même notion, écrite autrement.',
+	//  Un QUATRIÈME sens, propre à la conservation des affaires (#2014) : des
+	//  FICHIERS d'archive (.zip), produits par la tâche nocturne et copiés sur le
+	//  PC — pas des objets rangés qu'on rouvrirait.
+	'Archives produites':
+		'les fichiers .zip de la conservation des affaires (CarteConservationAffaires), pas des objets rangés',
 };
 
 /** La constante que tout le reste doit employer. */

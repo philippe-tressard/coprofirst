@@ -60,10 +60,18 @@ def nom_affiche(prenom: Optional[str], nom: Optional[str], civilite=None) -> str
 #: chose à dire, une seule façon de la dire.
 ANCIEN_RESIDENT = "Ancien résident"
 
+#: Ce que dit d'un auteur DÉTACHÉ par la conservation des affaires (#2014) la
+#: qualité qu'il avait à l'échéance (`auteur_qualite`) : son compte existe peut-être
+#: encore, mais l'affaire ne dit plus qui il était.
+QUALITES_AUTEUR = {"resident": "Un résident", "conseil": "Le conseil syndical"}
 
-def nom_auteur(auteur) -> str:
-    """Le nom affiché d'un auteur — « Ancien résident » quand son compte n'existe plus."""
-    return nom_affiche(auteur.prenom, auteur.nom) if auteur else ANCIEN_RESIDENT
+
+def nom_auteur(auteur, qualite: str | None = None) -> str:
+    """Le nom affiché d'un auteur — sa qualité s'il a été détaché d'une affaire
+    conservée, « Ancien résident » quand son compte n'existe plus."""
+    if auteur:
+        return nom_affiche(auteur.prenom, auteur.nom)
+    return QUALITES_AUTEUR.get(qualite or "", ANCIEN_RESIDENT)
 
 
 def contexte_personne(personne, **extras) -> dict:

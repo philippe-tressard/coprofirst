@@ -31,6 +31,7 @@ from app.models.core import HistoriqueEmail, HistoriqueMaintenance
 from app.utils.sante_taches import STATUT_EN_COURS
 
 from .exploitation import _purger_anciens_rapports
+from app.utils.conservation_copie import accuser_copies
 from app.utils.maintenance import purger
 from app.utils.recuperer import present_ou_404
 
@@ -265,6 +266,28 @@ def maintenance_bail(
         canal=verdict.canal,
         version_cible=version_a_installer(verdict),
     )
+
+
+class CopiesArchivesAffaires(BaseModel):
+    #: nom de l'archive → empreinte SHA-256 de la copie sur le PC
+    copies: dict[str, str]
+
+
+@router.post("/maintenance/archives-affaires/copiees")
+def maintenance_archives_affaires_copiees(
+    body: CopiesArchivesAffaires,
+    x_maintenance_key: Optional[str] = Header(default=None, alias="x-maintenance-key"),
+    session: Session = Depends(get_session),
+):
+    """L'accusé de `export-hors-site.sh` : ces archives d'affaires sont copiées sur le PC
+    (#2014, lot L3). Une empreinte qui n'est pas celle du serveur n'accuse rien.
+
+    Ne reçoit et ne rend que des noms d'archives et des empreintes — aucune donnée de
+    copropriétaire, la portée de ce canal. Le serveur retirera sa copie 30 jours plus
+    tard (`utils/conservation_copie`).
+    """
+    exiger_cle_maintenance(x_maintenance_key)
+    return accuser_copies(session, body.copies, horloge.maintenant())
 
 
 @router.post("/maintenance/purges")

@@ -2,8 +2,9 @@
 
 Spécification : `specs/architecture/conservation-affaires.md`. Ce module porte la
 RÈGLE (la durée par catégorie, l'échéance par exercice) et le CONSTAT : ce qui
-partira, et quand. Il ne retire rien — le lot L1 est un constat seul ; le geste
-viendra en L2, derrière une case de l'administrateur coupée à la livraison.
+partira, et quand. Il ne retire rien : le geste (L2) vit dans
+`utils/conservation_application`, derrière une case de l'administrateur
+(`utils/services.SERVICE_CONSERVATION`), coupée à la livraison.
 
 ## La règle
 
@@ -163,31 +164,63 @@ def _par_ticket(session: Session, modele, ids: list[int]) -> dict[int, list]:
     return rangees
 
 
-def constat(session: Session) -> list[Echeance]:
-    """Les échéances à venir (et passées), par exercice et par type, de la plus proche
-    à la plus lointaine. Ne modifie rien."""
+@dataclass
+class Contenu:
+    """Une affaire close et ce qui l'accompagne : son fil, ses suites, ses documents."""
+
+    ticket: Ticket
+    cloture: date
+    messages: list[MessageTicket]
+    evolutions: list[TicketEvolution]
+    documents: list[Document]
+
+    def fichiers(self) -> list[Optional[Path]]:
+        return fichiers_de(self.ticket, self.messages, self.evolutions, self.documents)
+
+
+def groupes(session: Session) -> list[tuple[Echeance, list[Contenu]]]:
+    """Les affaires closes et pas encore conservées, rangées par exercice et par type,
+    de l'échéance la plus proche à la plus lointaine. Ne modifie rien.
+
+    La seule lecture : le constat les compte, l'application
+    (`utils/conservation_application`) traite celles dont l'échéance est passée.
+    """
     mois_debut = mois_debut_exercice(session)
-    tickets = session.exec(select(Ticket).where(pas_absorbee())).all()
+    tickets = session.exec(
+        select(Ticket).where(pas_absorbee(), col(Ticket.conservee_le).is_(None))
+    ).all()
     closes = [(t, j) for t in tickets if (j := jour_de_cloture(t)) is not None]
     ids = [t.id for t, _ in closes]
     messages = _par_ticket(session, MessageTicket, ids)
     evolutions = _par_ticket(session, TicketEvolution, ids)
     documents = _par_ticket(session, Document, ids)
 
-    groupes: dict[tuple[str, str], Echeance] = {}
+    rangees: dict[tuple[str, str], tuple[Echeance, list[Contenu]]] = {}
     for ticket, cloture in closes:
         genre = type_de(ticket.categorie)
         echoit_le, exercice, dernier = echeance(cloture, genre.exercices, mois_debut)
-        groupe = groupes.setdefault(
-            (genre.code, exercice), Echeance(genre, exercice, dernier, echoit_le)
+        groupe, contenus = rangees.setdefault(
+            (genre.code, exercice), (Echeance(genre, exercice, dernier, echoit_le), [])
         )
+        contenu = Contenu(
+            ticket, cloture, messages[ticket.id], evolutions[ticket.id], documents[ticket.id]
+        )
+        contenus.append(contenu)
         groupe.affaires += 1
-        for chemin in fichiers_de(
-            ticket, messages[ticket.id], evolutions[ticket.id], documents[ticket.id]
-        ):
+        for chemin in contenu.fichiers():
             if chemin is None or not chemin.is_file():
                 groupe.absents += 1
             else:
                 groupe.fichiers += 1
                 groupe.octets += chemin.stat().st_size
-    return sorted(groupes.values(), key=lambda e: (e.echoit_le, e.type.exercices))
+    return sorted(rangees.values(), key=lambda g: (g[0].echoit_le, g[0].type.exercices))
+
+
+def constat(session: Session) -> list[Echeance]:
+    """Les échéances à venir (et passées), par exercice et par type. Ne modifie rien."""
+    return [groupe for groupe, _ in groupes(session)]
+
+
+def echus(session: Session, aujourd_hui: date) -> list[tuple[Echeance, list[Contenu]]]:
+    """Les groupes dont l'échéance est arrivée — ce que la tâche nocturne traite."""
+    return [g for g in groupes(session) if g[0].echoit_le <= aujourd_hui]

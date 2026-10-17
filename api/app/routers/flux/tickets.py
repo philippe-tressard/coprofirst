@@ -128,7 +128,9 @@ def _derniere_suite(ctx: ContexteFlux, evol) -> dict:
         #  libellé, sur trois lignes au plus (`clamp-3`). 300 caractères en
         #  remplissent 2,3 : la coupure venait de la longueur, pas du gabarit.
         "evol_contenu": strip_html(evol.contenu, 400) if evol.contenu else None,
-        "evol_auteur": auteur_nom(ctx.session, evol.auteur_id),
+        "evol_auteur": auteur_nom(
+            ctx.session, evol.auteur_id, getattr(evol, "auteur_qualite", None)
+        ),
         "evol_pieces": repartir_pieces(evol.fichiers_urls),
     }
 

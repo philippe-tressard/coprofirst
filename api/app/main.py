@@ -298,6 +298,10 @@ async def lifespan(app: FastAPI):
         id="purge_comptes_inactifs",
     )
 
+    from app.utils.conservation_application import enregistrer as _conservation_affaires
+
+    _conservation_affaires(scheduler)  # 04:45, après la purge des comptes (#2014)
+
     #  🔴 Ce qui tourne VRAIMENT est comparé à ce qui est déclaré (#1047). Un
     #  `add_job` supprimé par mégarde — refactor, fusion, condition mal placée —
     #  laissait jusqu'ici l'application démarrer normalement : la sauvegarde ne se

@@ -1,8 +1,9 @@
 # Conservation des affaires — spécification (#2014)
 
 > **État** : spécification arbitrée le 16/10/2026 sur le feu vert de Philippe. Le lot
-> **L1** (constat seul) est livré avec elle ; L2 et L3 restent à faire. Les arbitrages
-> sont datés, ceux de la relecture au §9.
+> **L1** (constat seul) est livré avec elle ; **L2 et L3** le sont depuis le 17/10/2026,
+> la case d'application **coupée**. Les arbitrages sont datés, ceux de la relecture au §9,
+> ceux de la livraison au §11.
 
 ## 1. Pourquoi
 
@@ -173,8 +174,8 @@ Le retrait est **irréversible** sur le serveur : il se livre en deux temps.
 | Lot | Contenu | Effet en production |
 |---|---|---|
 | **L1** ✅ | `DUREES`, calcul des échéances, route de constat (admin), carte **Conservation des affaires** d'Admin › Maintenance | aucun : on voit ce qui partira |
-| **L2** | colonne `conservee_le`, tâche nocturne, archive et sommaire, retrait des pièces jointes, détachement des auteurs, case d'application (coupée), politique de confidentialité | aucun tant que la case est coupée |
-| **L3** | copie sur le PC sans rotation, accusé de copie, retrait différé côté serveur, contrôle d'âge | le PC reçoit les archives |
+| **L2** ✅ | colonne `conservee_le`, tâche nocturne, archive et sommaire, retrait des pièces jointes, détachement des auteurs, case d'application (coupée), politique de confidentialité | aucun tant que la case est coupée |
+| **L3** ✅ | copie sur le PC sans rotation, accusé de copie, retrait différé côté serveur, contrôle d'âge | le PC reçoit les archives |
 
 **Garde-fous** : chaque catégorie a sa durée ; les bornes d'exercice
 (31/12 et 1/1, et un `mois_debut_exercice` à 7) ; archive vérifiée avant tout
@@ -182,3 +183,31 @@ retrait (une archive tronquée n'efface rien) ; idempotence (`conservee_le`) ;
 carnet d'entretien intact après le passage ; aucun nom dans le sommaire ; fichiers
 d'une autre copropriété jamais touchés (`test_etancheite_coproprietes.py`) ;
 migration compatible (`test_migrations_compatibles.py`).
+
+## 11. Arbitrages de la livraison — 17/10/2026
+
+1. **La politique de confidentialité change le jour où la case est cochée**, pas à la
+   livraison de L2 : tant qu'elle est coupée, rien n'est appliqué, et annoncer les
+   durées les rendrait fictives (`standards/14`). Cocher la case est donc un geste en
+   deux temps — la phrase du §7 entre dans la politique (migration de texte livré),
+   puis la case se coche. Proposé à Philippe le 17/10/2026, sur son feu vert à L2-L3.
+2. **La case est un service** (`utils/services.SERVICE_CONSERVATION`), coché dans
+   Administration › Services et nulle part ailleurs ; la carte de Maintenance dit son
+   état et y renvoie. Elle est **hors bail** (`SERVICES_HORS_BAIL`) : c'est
+   l'obligation de la copropriété, que la référence n'a pas à accorder.
+3. **L'auteur détaché garde sa qualité** (`auteur_qualite` : « resident », « conseil »),
+   rendue par `utils/noms.nom_auteur` ; un compte déjà supprimé reste « Ancien résident ».
+   Le « saisi pour » d'une personne extérieure (nom, adresse) part avec les auteurs.
+4. **Un document rattaché part avec son fichier** (la ligne `Document` est supprimée) :
+   le sommaire garde son nom et son empreinte.
+5. **Le bandeau d'une affaire conservée** ne dit pas l'exercice ni le type de son
+   archive : « 🗄️ Conservée le … » suffit au lecteur, l'archive se retrouve par
+   Maintenance (`MentionConservation`).
+6. **Une affaire échue sans pièce jointe** est détachée sans archive.
+7. **L'accusé du poste** passe par sa propre route à clé
+   (`POST /admin/maintenance/archives-affaires/copiees`), pas par le rapport de la
+   copie hors site : le rapport reste celui de la sauvegarde ; une empreinte qui
+   n'est pas celle du serveur n'accuse rien.
+8. **Le contrôle d'âge** est un constat du contrôle de santé du matin
+   (`conservation_copie.archives_en_retard`), qui part par courriel comme la copie
+   hors site périmée.

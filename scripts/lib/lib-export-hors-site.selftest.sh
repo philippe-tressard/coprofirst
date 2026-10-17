@@ -166,5 +166,23 @@
   check "rattrapage : anciennes et nouvelles mêlées" "$P6" \
         "$(archives_a_rattraper 2 "$P5" "$(printf '%s\n%s' "$U4" "$P6")")"
 
+  # ── Archives d'affaires échues (#2014) ──────────────────────────────────
+  # La liste blanche : le nom vient du serveur et repart dans une commande.
+  nav() { nom_archive_affaires_valide "$1" && echo ok || echo refus; }
+  check "archive d'affaires"                 ok    "$(nav affaires-principale-2025-travaux.zip)"
+  check "exercice décalé et rang"            ok    "$(nav affaires-principale-2024-2025-breves-2.zip)"
+  check "remontée de dossier refusée"        refus "$(nav 'affaires-../x.zip')"
+  check "espace refusée"                     refus "$(nav 'affaires-a b.zip')"
+  check "soulignement refusé"                refus "$(nav affaires-a_b.zip)"
+  check "apostrophe refusée"                 refus "$(nav "affaires-a'b.zip")"
+  check "autre préfixe refusé"               refus "$(nav hostachy_backup_x.zip)"
+  SHA=$(printf 'a%.0s' $(seq 64))
+  check "accusé : une archive" "{\"copies\":{\"affaires-p-2025-travaux.zip\":\"$SHA\"}}"         "$(printf 'affaires-p-2025-travaux.zip %s
+' "$SHA" | charge_accuse_affaires)"
+  check "accusé : nom ou empreinte douteux écartés" '{"copies":{}}'         "$(printf 'affaires-a_b.zip %s
+affaires-p-2025-breves.zip pas-un-sha
+' "$SHA" | charge_accuse_affaires)"
+  check "accusé : rien à accuser" '{"copies":{}}' "$(printf '' | charge_accuse_affaires)"
+
   [ $st_fail -eq 0 ] && echo "== TOUS OK ==" || echo "== ÉCHECS =="
   exit $st_fail

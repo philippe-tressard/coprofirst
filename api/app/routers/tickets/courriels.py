@@ -179,7 +179,7 @@ def contexte_ticket_syndic(
             auteur_e = ou_rien(session, Utilisateur, ev.auteur_id)
             messages_ctx.append(
                 {
-                    "auteur_nom": nom_auteur(auteur_e) or "?",
+                    "auteur_nom": nom_auteur(auteur_e, ev.auteur_qualite),
                     "date": fmt_paris(ev.cree_le),
                     "contenu": ev.contenu,
                     #  🔴 Le périmètre de CETTE entrée, demandé le 31/08/2026 :
@@ -268,7 +268,7 @@ def envoyer_email_externe(
         auteur_m = ou_rien(session, Utilisateur, m.auteur_id)
         msgs_ctx.append(
             {
-                "auteur_nom": nom_auteur(auteur_m),
+                "auteur_nom": nom_auteur(auteur_m, m.auteur_qualite),
                 "date": fmt_paris(m.cree_le),
                 "contenu": m.contenu,
             }
