@@ -21,27 +21,27 @@ Tous deux ont rejoint `auth/appartenance.py` dans le même lot (#1028) : leur
 défaut n'était pas de doubler `ou_404` — ils l'appellent — mais d'écrire une
 règle de droits chez un routeur.
 
-## Pourquoi un PLAFOND et non zéro
+## Pourquoi une LISTE et non un plafond (17/10/2026)
 
-Le ticket demandait « plafond figé à 0 ». Une partie des `HTTPException(404)`
-restants **ne sont pas convertibles** : ils suivent un `select` avec jointure ou
-filtre, où il n'y a pas d'identifiant unique à passer au helper — et certains
-sont des 404 de **visibilité**, qui relèvent de l'autorisation et doivent rester
-là où les droits se lisent (`standards/03` §1).
+Les 404 restants **ne sont pas convertibles**, et chacun pour une raison qui lui
+est propre : la visibilité (un 404 qui tait l'existence, `standards/03` §1), une
+liste blanche d'accès, une réponse d'un serveur tiers. Ils ont été comptés par
+un plafond décroissant de 32 à 4 (#1047, #1564, #1571).
 
-Le plafond est donc le nombre **réel** constaté, et il ne peut que descendre :
-ajouter un 404 brut fait échouer le test. C'est un plafond décroissant, jamais
-une tolérance ouverte (`standards/05` §2).
+Un plafond compte, il ne nomme pas : un 404 retiré ici et un autre écrit ailleurs
+le laissaient vert. Les 404 qui restent se **déclarent** donc un par un dans
+`EXCEPTIONS`, avec leur raison, et le contrôle échoue dans les deux sens — un
+404 non déclaré, ou une exception qui ne sert plus.
 
-⚠️ **32, et pas 14.** Le ticket annonçait vingt-six écritures convertibles ; à la
-mesure, six seulement le sont mécaniquement — les autres portent une condition
-**composée** (`if not objet or objet.bail_id != bail_id`), c'est-à-dire deux
-questions dans une ligne. Les convertir demande de les séparer une par une, et
-c'est le volet 404 de #1047, pas celui-ci. Descendre le plafond en bloc aurait
-fait passer une réécriture sémantique pour un remplacement mécanique.
+⚠️ Et le plafond ne voyait que `HTTPException(404…)` écrit en toutes lettres :
+`registre/routeur.py` levait deux 404 par un alias, `_refus(404, …)`, que le
+motif ne reconnaissait pas. Le contrôle lit désormais tout `raise` dont l'appel
+porte 404, et `status.HTTP_404_NOT_FOUND` (`_404_dans`, éprouvé par
+`test_le_detecteur_voit_chaque_forme`).
 """
 
 import ast
+from collections import Counter
 from pathlib import Path
 
 from tests.aides_sources import modules_app
@@ -51,59 +51,115 @@ RACINE = Path(__file__).resolve().parents[1] / "app"
 #: Le module qui porte la question « existe-t-il ? ».
 SOURCE = "utils/recuperer.py"
 
-#: Ce qui reste, et qui ne peut PAS passer par le helper : un 404 qui suit un
-#: `select` (pas d'identifiant unique) ou qui relève de la visibilité.
+#: Les 404 écrits à la main qui restent, chacun avec sa raison — clé
+#: `module::fonction`, un seul 404 par fonction. Carte : #1571.
 #:
-#: 🔴 Ce nombre ne monte JAMAIS. Il descend quand une de ces écritures devient
-#: convertible ; l'augmenter, c'est rouvrir la duplication que `ou_404` a fermée.
-#: 08/10/2026 : 11 → 6 — `connu_ou_404` (clé d'un registre, ×2) et
-#: `present_ou_404` (résultat `None`, ×3). 13/10/2026 : 6 → 4 — la photo de
-#: relevé (condition composée, séparée en `ou_404` puis `present_ou_404`) et la
-#: catégorie de FAQ. Restent : la visibilité (`auth/appartenance`, ×2), la liste
-#: blanche d'accès des fichiers de compteurs, le dossier IMAP. Carte : #1571.
-PLAFOND_404_BRUTS = 4
+#: 🔴 Une entrée ne s'ajoute pas pour faire passer le contrôle : aller chercher un
+#: objet par son identifiant passe par `utils/recuperer` (`ou_404`,
+#: `present_ou_404`…). Une entrée qui ne sert plus fait échouer.
+EXCEPTIONS = {
+    "auth/appartenance.py::exiger_acces_du_porteur": (
+        "visibilité : le badge d'un voisin se lit comme absent (404 et non 403) — "
+        "une règle d'accès, qui vit avec les autres"
+    ),
+    "auth/appartenance.py::exiger_cible_visible": (
+        "visibilité : la cible qu'on n'a pas le droit de voir se lit comme absente"
+    ),
+    "routers/compteurs.py::_servir_fichier_prive": (
+        "liste blanche d'ACCÈS aux fichiers de `prive/` : elle décide d'un droit "
+        "(`recuperer.connu_ou_404` le refuse en toutes lettres)"
+    ),
+    "routers/config.py::imap_test": (
+        "le dossier IMAP absent est la réponse d'un serveur tiers, pas une ligne de la base"
+    ),
+}
 
 
-def _404_bruts() -> list[str]:
-    """Tout `HTTPException(404…)` du code applicatif, hors le helper lui-même."""
-    trouves = []
-    for m in modules_app():
-        chemin = m.rel
-        if chemin == SOURCE:
-            continue
-        arbre = m.arbre
-        for noeud in ast.walk(arbre):
-            if not (isinstance(noeud, ast.Call) and isinstance(noeud.func, ast.Name)):
-                continue
-            if noeud.func.id != "HTTPException":
-                continue
-            args = list(noeud.args) + [k.value for k in noeud.keywords]
-            if any(isinstance(a, ast.Constant) and a.value == 404 for a in args):
-                trouves.append(f"app/{chemin}:{noeud.lineno}")
-    return trouves
+def _est_404(noeud: ast.AST) -> bool:
+    return isinstance(noeud, ast.Constant) and noeud.value == 404
 
 
-def test_le_plafond_est_a_jour():
-    """Un 404 de plus est une copie de plus — le helper existe. Et un plafond
-    qui ne colle plus au réel cesse de mesurer.
+def _nom_appele(appel: ast.Call) -> str:
+    f = appel.func
+    return f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else ""
 
-    L'égalité tient les deux sens : au-dessus, une copie a été ajoutée ; en
-    dessous, le plafond autoriserait silencieusement de nouvelles copies jusqu'à
-    son niveau — le contrôle serait vert pendant qu'on rouvre la duplication.
+
+def _404_dans(arbre: ast.AST) -> list[tuple[str, int]]:
+    """Les 404 levés à la main dans un arbre : `(fonction englobante, ligne)`.
+
+    Trois formes : `HTTPException(…404…)` quel que soit son chemin d'import,
+    tout `raise f(…404…)` — un alias qui fabrique l'exception —, et
+    `status.HTTP_404_NOT_FOUND`.
     """
+    trouves: dict[int, str] = {}
+
+    def visiter(noeud: ast.AST, fonction: str) -> None:
+        if isinstance(noeud, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            fonction = noeud.name
+        appel = noeud.exc if isinstance(noeud, ast.Raise) else noeud
+        if isinstance(appel, ast.Call):
+            args = list(appel.args) + [k.value for k in appel.keywords]
+            if any(map(_est_404, args)) and (
+                isinstance(noeud, ast.Raise) or _nom_appele(appel) == "HTTPException"
+            ):
+                trouves.setdefault(appel.lineno, fonction)
+        if isinstance(noeud, ast.Attribute) and noeud.attr == "HTTP_404_NOT_FOUND":
+            trouves.setdefault(noeud.lineno, fonction)
+        for enfant in ast.iter_child_nodes(noeud):
+            visiter(enfant, fonction)
+
+    visiter(arbre, "<module>")
+    return sorted((f, ligne) for ligne, f in trouves.items())
+
+
+def _404_bruts() -> list[tuple[str, str]]:
+    """Tout 404 levé à la main dans `app/`, hors le helper : `(clé, emplacement)`."""
+    return [
+        (f"{m.rel}::{fonction}", f"app/{m.rel}:{ligne}")
+        for m in modules_app()
+        if m.rel != SOURCE
+        for fonction, ligne in _404_dans(m.arbre)
+    ]
+
+
+def test_le_detecteur_voit_chaque_forme():
+    """Un contrôle qui ne voit pas la forme fautive est vert sur elle : cas fautifs
+    d'abord, et ce qui n'est pas un 404 levé ne compte pas."""
+    source = """
+import fastapi
+from fastapi import status
+
+def a(): raise HTTPException(404, "x")
+def b(): raise HTTPException(status_code=404)
+def c(): raise fastapi.HTTPException(404)
+def d(): raise _refus(404, "x")
+def e(): raise HTTPException(status.HTTP_404_NOT_FOUND)
+def f(): erreur = HTTPException(404)
+def g(): raise HTTPException(403, "x")
+def h(): dessin.rectangle((404, 92, 538, 548))
+def i(): return 404
+"""
+    vus = {f for f, _ in _404_dans(ast.parse(source))}
+    assert vus == {"a", "b", "c", "d", "e", "f"}, vus
+
+
+def test_chaque_404_ecrit_a_la_main_est_declare():
+    """Un 404 non déclaré est une copie de plus — le helper existe. Une exception
+    qui ne sert plus ferme une question qui ne se pose plus."""
     bruts = _404_bruts()
-    reels = len(bruts)
-    assert reels == PLAFOND_404_BRUTS, (
-        f"Le plafond dit {PLAFOND_404_BRUTS}, le dépôt porte {reels} "
-        "`HTTPException(404)` écrits à la main :\n"
-        + "\n".join(f"  {b}" for b in bruts)
-        + (
-            "\n\nDescendre le plafond."
-            if reels < PLAFOND_404_BRUTS
-            else "\n\nAller chercher un objet par son identifiant passe par "
-            "`utils/recuperer.ou_404` — le libellé y est composé, donc les messages du "
-            "produit disent tous la même chose de la même façon."
-        )
+    comptes = Counter(cle for cle, _ in bruts)
+    inconnus = [lieu for cle, lieu in bruts if cle not in EXCEPTIONS]
+    multiples = sorted(cle for cle, n in comptes.items() if n > 1 and cle in EXCEPTIONS)
+    inutiles = sorted(set(EXCEPTIONS) - set(comptes))
+    assert not inconnus, (
+        "404 écrit(s) à la main hors de `utils/recuperer` : "
+        + ", ".join(inconnus)
+        + ". Aller chercher un objet par son identifiant passe par `ou_404`, un "
+        "résultat `None` par `present_ou_404` — le libellé y est composé."
+    )
+    assert not multiples, f"Exception(s) qui porte(nt) plus d'un 404 : {multiples}"
+    assert not inutiles, (
+        f"Exception(s) qui ne serve(nt) plus — à retirer d'`EXCEPTIONS` : {inutiles}"
     )
 
 
