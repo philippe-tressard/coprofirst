@@ -16,10 +16,18 @@ from __future__ import annotations
 from html import escape
 
 from app.utils.dates_fr import date_courte
-from app.utils.pdf_theme import FONT_SANS, PALETTE_CSS, html_to_pdf, logo_html, regle_page
+from app.utils.pdf_theme import (
+    CSS_ENTETE_RAPPORT,
+    FONT_SANS,
+    PALETTE_CSS,
+    entete_rapport,
+    html_to_pdf,
+    regle_page,
+)
 from app.utils.suivi_affaires.releve import Releve
 
-TITRE = "Suivi des affaires"
+#: Le titre, selon le mode du relevé (#2043).
+TITRES = {"affaires": "Suivi des affaires", "entretien": "Suivi des entretiens périodiques"}
 
 #: L'aperçu s'arrête à cinq lignes — `line-clamp`, que WeasyPrint applique (#2035).
 LIGNES_APERCU = 5
@@ -28,12 +36,7 @@ _CSS = f"""
 {PALETTE_CSS}
 {regle_page()}
 body {{ font-family: {FONT_SANS}; font-size: 9.5pt; color: var(--ink); margin: 0; }}
-.entete {{ display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 2px solid var(--navy); padding-bottom: 6pt; margin-bottom: 10pt; }}
-.marque {{ display: flex; align-items: center; gap: 8pt; font-weight: 700; color: var(--navy); }}
-.edite {{ color: var(--muted); font-size: 8.5pt; }}
-h1 {{ color: var(--navy); font-size: 15pt; margin: 0 0 8pt; }}
-.tete {{ display: flex; gap: 10pt; margin-bottom: 10pt; }}
+{CSS_ENTETE_RAPPORT}.tete {{ display: flex; gap: 10pt; margin-bottom: 10pt; }}
 .chiffres {{ display: flex; flex-direction: column; gap: 6pt; }}
 .chiffre {{ border: 1px solid var(--border); border-radius: 5pt; padding: 5pt 9pt; min-width: 90pt; }}
 .chiffre.fort {{ border-color: var(--navy); background: #eef2f7; }}
@@ -67,18 +70,18 @@ table.affaires {{ width: 100%; border-collapse: collapse; }}
 """
 
 
-def _repartition(r: Releve) -> str:
-    cats = r.par_categorie
-    if not cats:
+def _repartition(titre: str, barres: list) -> str:
+    """Une répartition en barres pleines — l'écran les découpe, le papier non (#2043)."""
+    if not barres:
         return ""
-    plus_grand = max(c.nombre for c in cats)
+    plus_grand = max(c.nombre for c in barres)
     lignes = "".join(
         f'<tr><td class="nom">{escape(c.libelle)}</td>'
         f'<td><div class="piste"><div class="barre" style="width:{round(100 * c.nombre / plus_grand)}%">'
         f'</div></div></td><td class="nb">{c.nombre}</td></tr>'
-        for c in cats
+        for c in barres
     )
-    return f'<div class="repartition"><h2>Par catégorie</h2><table class="barres">{lignes}</table></div>'
+    return f'<div class="repartition"><h2>{titre}</h2><table class="barres">{lignes}</table></div>'
 
 
 def _tableau(r: Releve) -> str:
@@ -108,18 +111,19 @@ def _tableau(r: Releve) -> str:
 def html_rapport(r: Releve, *, site_nom: str, logo_png: bytes | None) -> str:
     """PURE. Le document HTML autonome du rapport."""
     pluriel = "s" if r.total > 1 else ""
+    titre = TITRES.get(r.mode, TITRES["affaires"])
     return (
-        f"<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>{TITRE}</title>"
+        f"<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>{titre}</title>"
         f"<style>{_CSS}</style></head><body>"
-        f'<div class="entete"><span class="marque">{logo_html(logo_png, 28)}{escape(site_nom)}</span>'
-        f'<span class="edite">Édité le {date_courte(r.jour)}</span></div>'
-        f"<h1>{TITRE}</h1>"
+        f"{entete_rapport(logo_png, site_nom, f'Édité le {date_courte(r.jour)}')}"
+        f"<h1>{titre}</h1>"
         '<div class="tete"><div class="chiffres">'
         f'<div class="chiffre fort"><div class="v">{r.total}</div>'
         f'<div class="l">affaire{pluriel} non fermée{pluriel}</div></div>'
         f'<div class="chiffre alerte"><div class="v">{r.anciennes}</div>'
         '<div class="l">de plus de 90 jours</div></div>'
-        f"</div>{_repartition(r)}</div>"
+        f"</div>{_repartition('Par catégorie', r.par_categorie)}"
+        f"{_repartition('Par bâtiment', r.par_batiment)}</div>"
         f"{_tableau(r)}</body></html>"
     )
 

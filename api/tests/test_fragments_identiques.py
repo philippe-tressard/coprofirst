@@ -62,10 +62,11 @@ from app.seed import EMAIL_TEMPLATES
 #: ⬇️ Mise à jour le 16/10/2026 (#2035) : `relance_syndic` dit le « Point de situation »
 #: (résumé de l'assistant) et numérote la relance qui part — migration **0288**.
 #: Seul ce corps diffère.
-EMPREINTE = "ebecdc7457be3ae30c1faa68990a4ddb8b7c6bcb1c5199abf71723445e2ff5c8"
-NOMBRE_ATTENDU = 34  # + ticket_partage, lien_partage (#1357), adresse_changement_avis (#1549),
+EMPREINTE = "a3789fb810c8f32d13cf8f436ee2d856f3b0523bc18155f3d2c3a52711ac63ae"
+NOMBRE_ATTENDU = 35  # + ticket_partage, lien_partage (#1357), adresse_changement_avis (#1549),
 #  synthese_a_valider (#1643), ticket_copie_auteur, publication_copie_auteur,
-#  compte_inactif_avertissement (#1580) — AJOUTÉS, donc posés par le seed : aucune migration.
+#  compte_inactif_avertissement (#1580), point_conseil_validation (#2042) — AJOUTÉS, donc
+#  posés par le seed : aucune migration.
 
 
 def _empreinte() -> str:

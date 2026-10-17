@@ -9,6 +9,7 @@
  */
 
 import { api } from './client';
+import type { EtatVisite } from './prestataires';
 
 export interface AffaireOuverte {
 	id: number;
@@ -37,21 +38,46 @@ export interface AffaireOuverte {
 	apercu: string;
 	/** L'aperçu est-il le résumé de l'assistant ? */
 	apercu_ia: boolean;
+	/** Les bâtiments visés — vide pour toute la résidence (#2043). */
+	batiments: number[];
+	/** L'état de la visite, en mode `entretien` seulement. */
+	etat_visite: EtatVisite | null;
+	/**  Nouvelle, ou une entrée au fil depuis le dernier résumé (#2044) ; le motif
+	 *   est `nouvelle` ou le type de cette entrée (`commentaire`, `etat`…). */
+	a_evolue: boolean;
+	motif_evolution: string | null;
 }
 
-export interface RepartitionCategorie {
-	categorie: string;
+/** Une tranche d'une barre de répartition : un bâtiment, ou une catégorie. */
+export interface TrancheRepartition {
+	cle: string;
 	libelle: string;
 	nombre: number;
 }
+
+/**  Une barre de répartition, découpée selon l'autre (#2043) : une catégorie
+ *   découpée par bâtiment, ou un bâtiment découpé par catégorie. Les clés de
+ *   bâtiment : `racine`, `bat:<id>`, `plusieurs` — `utils/suivi_affaires/repartition`. */
+export interface BarreRepartition {
+	cle: string;
+	libelle: string;
+	nombre: number;
+	tranches: TrancheRepartition[];
+}
+
+/** Les deux relevés : le Suivi des affaires, et celui des entretiens périodiques. */
+export type ModeReleve = 'affaires' | 'entretien';
 
 export interface SuiviAffaires {
 	jour: string;
 	total: number;
 	/** Ouvertes depuis plus de 90 jours. */
 	anciennes: number;
-	/** La catégorie la plus nombreuse en tête. */
-	par_categorie: RepartitionCategorie[];
+	/** La catégorie la plus nombreuse en tête ; tranches par bâtiment. */
+	par_categorie: BarreRepartition[];
+	/** La racine en tête ; tranches par catégorie. */
+	par_batiment: BarreRepartition[];
+	mode: ModeReleve;
 	/** La plus ancienne en tête. */
 	affaires: AffaireOuverte[];
 	/** Le délai de relance réglé, en jours. */
@@ -61,10 +87,10 @@ export interface SuiviAffaires {
 }
 
 export const suiviAffaires = {
-	lire: () => api.get<SuiviAffaires>('/suivi-affaires'),
+	lire: (mode: ModeReleve = 'affaires') => api.get<SuiviAffaires>(`/suivi-affaires?mode=${mode}`),
 	/**  Fait rédiger le résumé de chaque affaire, gardé au serveur : l'écran les
 	 *   relit par `lire`. La synthèse d'ensemble de #2034 n'existe plus (#2035). */
 	resumer: () => api.post<{ rediges: number }>('/suivi-affaires/resumes'),
 	/** Le PDF du relevé, rendu par le serveur. */
-	pdf: () => api.postFichier('/suivi-affaires/pdf', {}),
+	pdf: (mode: ModeReleve = 'affaires') => api.postFichier(`/suivi-affaires/pdf?mode=${mode}`, {}),
 };

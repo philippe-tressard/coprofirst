@@ -78,4 +78,25 @@ def etat_visite(ticket: Any, aujourd_hui: date) -> str:
     return "non_realisee" if horloge.jour_civil(ticket.debut) < aujourd_hui else "a_venir"
 
 
-__all__ = ["ETATS_VISITE", "condition_periodique", "etat_visite", "jour_de_reference"]
+def conditions_entretien_en_cours() -> tuple:
+    """Les conditions SQL « entretien périodique non clos » — le relevé du mode
+    « Suivi entretiens périodiques » (#2043) : la règle de la relance, l'entretien
+    périodique gardé au lieu d'être écarté."""
+    from app.models.core import STATUTS_TICKET_ACTIFS
+    from app.utils.affaire_absorbee import pas_absorbee
+
+    return (
+        col(Ticket.statut).in_(STATUTS_TICKET_ACTIFS),
+        ~col(Ticket.archive_manuel),
+        pas_absorbee(),
+        condition_periodique(),
+    )
+
+
+__all__ = [
+    "ETATS_VISITE",
+    "condition_periodique",
+    "conditions_entretien_en_cours",
+    "etat_visite",
+    "jour_de_reference",
+]

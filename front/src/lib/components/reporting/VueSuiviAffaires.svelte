@@ -5,15 +5,22 @@
   au kanban, comme le faisait l'ancien « Suivi des dossiers » qu'elle remplace —,
   la plus ancienne en tête : âge, date d'ouverture, titre, périmètre et aperçu
   (cinq lignes au plus : le résumé de l'assistant, sinon le descriptif),
-  catégorie. Au-dessus, leur nombre, celles de plus de 90 jours et la
-  répartition par catégorie.
+  catégorie. Au-dessus, leur nombre, celles de plus de 90 jours et les deux
+  répartitions croisées, par catégorie et par bâtiment (#2043).
 
-  ## Deux modes, une liste (#2035)
+  ## Trois modes (#2035, #2043)
 
-  « Suivre » est la maquette D2. « Relancer le syndic » remplace
-  l'ancienne vue « Relance syndic » du reporting : la même liste, avec de quoi
-  composer la relance (`RelanceSyndic`). L'ancienne vue en comptait cinq de
-  moins, sous une autre règle — sur le même sujet, dans le même onglet.
+  - **Suivi affaires** — la maquette D2.
+  - **Suivi entretiens périodiques** — les affaires d'entretien périodique non
+    closes, sous le bilan des visites de l'année (`BilanVisites`) ; l'état de
+    chaque visite à la place de la catégorie, et pas de résumé de l'assistant.
+    Il remplace la vue « Entretien périodique » du reporting (`?vue=periodique`
+    y mène).
+  - **Relancer le syndic** — la liste du Suivi affaires, avec de quoi composer
+    la relance (`RelanceSyndic`).
+
+  Le sélecteur reste visible quand un mode est vide : sinon on ne pourrait plus
+  en changer.
 
   ## Le résumé de chaque affaire, pas une synthèse d'ensemble
 
@@ -22,38 +29,69 @@
   son titre. La synthèse d'ENSEMBLE de #2034 a été retirée le jour même : ce
   qui sert, au conseil comme au syndic, est l'état de chaque affaire.
 
-  🔴 Le relevé est CALCULÉ au serveur (`GET /suivi-affaires`) : la règle d'entrée,
-  l'ancienneté et ses seuils y vivent, et le PDF — rendu par le serveur, pas par
-  l'impression du navigateur — lit le même. Cette vue ne fait que les montrer.
+  🔴 Le relevé est CALCULÉ au serveur (`GET /suivi-affaires?mode=`) : la règle
+  d'entrée, l'ancienneté et ses seuils, les répartitions y vivent, et le PDF —
+  rendu par le serveur — lit le même. Cette vue ne fait que les montrer.
+
+  ## Le point CS / Syndic (#2041, #2042)
+
+  Dans les deux modes de suivi, un point s'ouvre au-dessus du tableau
+  (`PointConseil`, un par mode) ; chaque affaire offre la saisie de son compte
+  rendu (`SaisieCrAffaire`, dans le tableau), et le CR global se lit dessous
+  (`CrGlobal`).
 
   Autonome : elle charge ses données et rend compte à la barre d'outils du parent
   (`chargement`, `estVide`, `recharger`, `exporterPdf`).
 -->
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { messageErreur } from '$lib/erreurs';
-	import { suiviAffaires as suiviApi, type SuiviAffaires } from '$lib/api';
-	import { categorieTicketLabel } from '$lib/tickets';
+	import {
+		suiviAffaires as suiviApi,
+		type CompteRenduPoint,
+		type CrAffaire,
+		type ModeReleve,
+		type SuiviAffaires,
+	} from '$lib/api';
 	import { enregistrerFichier } from '$lib/fichiers';
+	import { teinteBatiment, teinteCategorie } from '$lib/repartition';
 	import { toast } from '$lib/components/Toast.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
 	import SelecteurMode from '$lib/components/SelecteurMode.svelte';
 	import TableauAffaires from './TableauAffaires.svelte';
 	import RelanceSyndic from './RelanceSyndic.svelte';
+	import PointConseil from './PointConseil.svelte';
+	import SaisieCrAffaire from './SaisieCrAffaire.svelte';
+	import CrGlobal from './CrGlobal.svelte';
+	import BarresCroisees from './BarresCroisees.svelte';
+	import BilanVisites from './BilanVisites.svelte';
 
 	const MODES = [
-		{ valeur: 'suivi', libelle: 'Suivre' },
+		{ valeur: 'suivi', libelle: 'Suivi affaires' },
+		{ valeur: 'entretien', libelle: 'Suivi entretiens périodiques' },
 		{ valeur: 'relance', libelle: 'Relancer le syndic' },
 	];
-	/** `suivi` ou `relance` — `?vue=relance` (l'alerte du tableau de bord) ouvre le second. */
+	/**  `suivi`, `entretien` ou `relance` — `?vue=relance` (l'alerte du tableau de
+	 *   bord) ouvre le troisième, `?vue=periodique` le deuxième. */
 	export let mode = 'suivi';
+
+	/** Le relevé que le mode lit : la relance lit celui du Suivi affaires. */
+	$: releve = (mode === 'entretien' ? 'entretien' : 'affaires') as ModeReleve;
+	$: entretien = releve === 'entretien';
 
 	let suivi: SuiviAffaires | null = null;
 	let enCours = false;
 	let erreur = '';
 	let redaction = false;
 	let exportEnCours = false;
+	/** Le point CS / Syndic du mode, et l'affaire dont le CR est en saisie. */
+	let compteRendu: CompteRenduPoint | null = null;
+	let crOuvert: number | null = null;
+	//  Les CR du point, quel que soit son état : terminé, un CR saisi se corrige
+	//  encore (#2042) ; seul un point en cours en accepte un nouveau (`ajout`).
+	$: crs = compteRendu
+		? new Map<number, CrAffaire>(compteRendu.abordees.map((a) => [a.affaire.id, a.cr]))
+		: null;
 
 	/** Lu par la barre d'outils du parent — ne pas écrire depuis l'extérieur. */
 	export let chargement = false;
@@ -62,30 +100,37 @@
 	$: chargement = enCours || exportEnCours;
 	$: estVide = !suivi || suivi.total === 0;
 
-	$: plusGrand = Math.max(1, ...(suivi?.par_categorie ?? []).map((c) => c.nombre));
+	$: ordreBatiments = (suivi?.par_batiment ?? []).map((b) => b.cle);
+	/** Les affaires nouvelles ou qui ont évolué depuis leur résumé — le serveur le dit (#2044). */
+	$: aResumer = (suivi?.affaires ?? []).filter((a) => a.a_evolue).length;
 
-	async function charger() {
+	async function charger(m: ModeReleve) {
 		enCours = true;
 		erreur = '';
+		compteRendu = null;
+		crOuvert = null;
 		try {
-			suivi = await suiviApi.lire();
+			suivi = await suiviApi.lire(m);
 		} catch (e) {
 			erreur = messageErreur(e, 'Chargement impossible');
 		} finally {
 			enCours = false;
 		}
 	}
+	//  Un relevé par mode : passer du Suivi affaires aux entretiens le recharge,
+	//  passer à la relance non (elle lit le même).
+	$: charger(releve);
 
 	/** Rechargement demandé par la barre d'outils du parent. */
 	export function recharger() {
-		charger();
+		charger(releve);
 	}
 
 	/**  Relire le relevé SANS repasser par l'état « chargement » : après un envoi
 	 *   de relance, ou pour montrer les résumés que l'assistant vient d'écrire. */
 	async function relire() {
 		try {
-			suivi = await suiviApi.lire();
+			suivi = await suiviApi.lire(releve);
 		} catch (e) {
 			toast('error', messageErreur(e, 'Rechargement impossible'));
 		}
@@ -111,51 +156,58 @@
 	export async function exporterPdf() {
 		exportEnCours = true;
 		try {
-			const pdf = await suiviApi.pdf();
-			enregistrerFichier(pdf, `suivi-des-affaires-${suivi?.jour ?? ''}.pdf`);
+			const pdf = await suiviApi.pdf(releve);
+			const nom = entretien ? 'suivi-des-entretiens-periodiques' : 'suivi-des-affaires';
+			enregistrerFichier(pdf, `${nom}-${suivi?.jour ?? ''}.pdf`);
 		} catch (e) {
 			toast('error', messageErreur(e, 'Export PDF impossible'));
 		} finally {
 			exportEnCours = false;
 		}
 	}
-
-	onMount(charger);
 </script>
+
+<div class="mode">
+	<!--  « Résumer » ne paraît que s'il y a du nouveau, et ne résume que lui (#2044). -->
+	{#if suivi?.resumes_disponibles && !entretien && aResumer > 0}
+		<button
+			type="button"
+			class="btn btn-sm btn-outline"
+			on:click={resumer}
+			disabled={redaction}
+			aria-busy={redaction}
+			title="L’assistant résume en une ou deux phrases chaque affaire nouvelle ou qui a évolué depuis son dernier résumé"
+		>
+			<IconeAction icone="sparkles" />
+			{redaction ? 'Rédaction…' : `Résumer ${aResumer} affaire${aResumer > 1 ? 's' : ''}`}
+		</button>
+	{/if}
+	<SelecteurMode libelle="Mode du suivi des affaires" options={MODES} bind:valeur={mode} />
+</div>
+
+{#if entretien}
+	<BilanVisites />
+{/if}
 
 {#if enCours || erreur || !suivi || suivi.total === 0}
 	<EtatListe
 		chargement={enCours}
 		{erreur}
 		vide={!suivi || suivi.total === 0}
-		titreErreur="Impossible d’afficher le suivi des affaires"
-		titreVide="Aucune affaire ouverte"
-		messageVide="Toutes les affaires sont résolues ou annulées."
+		titreErreur="Impossible d’afficher le suivi"
+		titreVide={entretien ? 'Aucun entretien périodique en cours' : 'Aucune affaire ouverte'}
+		messageVide={entretien
+			? 'Toutes les visites d’entretien sont faites ou annulées.'
+			: 'Toutes les affaires sont résolues ou annulées.'}
 	/>
 {:else}
-	<div class="mode">
-		{#if suivi.resumes_disponibles}
-			<button
-				type="button"
-				class="btn btn-sm btn-outline"
-				on:click={resumer}
-				disabled={redaction}
-				aria-busy={redaction}
-				title="L’assistant résume chaque affaire en une ou deux phrases, à partir de toute sa matière"
-			>
-				<IconeAction icone="sparkles" />
-				{redaction ? 'Rédaction…' : 'Résumer les affaires'}
-			</button>
-		{/if}
-		<SelecteurMode libelle="Mode du suivi des affaires" options={MODES} bind:valeur={mode} />
-	</div>
-
 	<div class="tete">
 		<div class="chiffres">
 			<div class="kpi-card">
 				<div class="kpi-value">{suivi.total}</div>
 				<div class="kpi-label">
-					affaire{suivi.total > 1 ? 's' : ''} non fermée{suivi.total > 1 ? 's' : ''}
+					{entretien ? 'entretien' : 'affaire'}{suivi.total > 1 ? 's' : ''} non
+					{entretien ? 'clos' : 'fermée'}{suivi.total > 1 ? 's' : ''}
 				</div>
 			</div>
 			<div class="kpi-card" class:kpi-alert={suivi.anciennes > 0}>
@@ -163,28 +215,45 @@
 				<div class="kpi-label">de plus de 90 jours</div>
 			</div>
 		</div>
-		<section class="report-card" aria-labelledby="titre-repartition">
-			<h3 id="titre-repartition" class="intitule">Par catégorie</h3>
-			<ul class="barres">
-				{#each suivi.par_categorie as c (c.categorie)}
-					<li>
-						<span>{categorieTicketLabel(c.categorie)}</span>
-						<span class="piste" aria-hidden="true">
-							<span class="barre" style="width:{(100 * c.nombre) / plusGrand}%"></span>
-						</span>
-						<span class="nombre">{c.nombre}</span>
-					</li>
-				{/each}
-			</ul>
-		</section>
+		<BarresCroisees
+			titre="Par catégorie"
+			barres={suivi.par_categorie}
+			teinte={(cle) => teinteBatiment(cle, ordreBatiments)}
+		/>
+		<BarresCroisees titre="Par bâtiment" barres={suivi.par_batiment} teinte={teinteCategorie} />
 	</div>
 
 	{#if mode === 'relance'}
 		<RelanceSyndic {suivi} onEnvoyee={relire} />
 	{:else}
+		{#key releve}
+			<PointConseil mode={releve} bind:compteRendu />
+		{/key}
 		<div class="report-card">
-			<TableauAffaires affaires={suivi.affaires} />
+			<TableauAffaires
+				affaires={suivi.affaires}
+				visites={entretien}
+				{crs}
+				ajout={compteRendu?.point.etat === 'en_cours'}
+				bind:ouverte={crOuvert}
+			>
+				<svelte:fragment slot="saisie" let:affaire let:cr>
+					{#if compteRendu}
+						<SaisieCrAffaire
+							pointId={compteRendu.point.id}
+							{affaire}
+							{cr}
+							brouillonAuto={compteRendu.point.etat === 'en_cours'}
+							onCompteRendu={(nouveau) => (compteRendu = nouveau)}
+							onFerme={() => (crOuvert = null)}
+						/>
+					{/if}
+				</svelte:fragment>
+			</TableauAffaires>
 		</div>
+		{#if compteRendu}
+			<CrGlobal {compteRendu} />
+		{/if}
 	{/if}
 {/if}
 
@@ -197,11 +266,13 @@
 		gap: 0.5rem 0.75rem;
 		margin-bottom: 0.75rem;
 	}
-	/*  La tête de la maquette D2 : les deux chiffres à gauche, la répartition à
-	    droite. Sous 768 px, ils s’empilent. */
+	/*  La tête : les deux chiffres à gauche, puis les deux répartitions côte à
+	    côte, chacune la moitié de la place restante, à la même hauteur (#2043).
+	    Sous 768 px, elles s'empilent. */
 	.tete {
 		display: grid;
-		grid-template-columns: minmax(9rem, auto) 1fr;
+		grid-template-columns: minmax(9rem, auto) minmax(0, 1fr) minmax(0, 1fr);
+		align-items: stretch;
 		gap: 0.75rem;
 		margin-bottom: 0.75rem;
 	}
@@ -211,56 +282,17 @@
 		gap: 0.75rem;
 	}
 	.chiffres .kpi-card {
-		flex: none;
+		flex: 1;
 		padding: 0.6rem 1rem;
 	}
-	.intitule {
-		font-size: var(--fs-xs);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--color-text-muted);
-		margin: 0 0 0.5rem;
-	}
-	.barres {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		grid-template-columns: max-content 1fr 2.5ch;
-		gap: 0.4rem 0.6rem;
-		align-items: center;
-		font-size: var(--fs-sm);
-	}
-	.barres li {
-		display: contents;
-	}
-	.piste {
-		background: var(--color-neutre-fond);
-		border-radius: var(--radius);
-		height: 0.6rem;
-		overflow: hidden;
-	}
-	.barre {
-		display: block;
-		height: 100%;
-		background: var(--color-primary);
-		border-radius: var(--radius);
-	}
-	.nombre {
-		text-align: right;
-		font-weight: 700;
-	}
-	/*  Au téléphone, les deux chiffres passent côte à côte au-dessus de la
-	    répartition ; le tableau devient une suite de fiches (`TableauAffaires`). */
+	/*  Au téléphone, les deux chiffres passent côte à côte au-dessus des
+	    répartitions ; le tableau devient une suite de fiches (`TableauAffaires`). */
 	@media (max-width: 767px) {
 		.tete {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 		}
 		.chiffres {
 			flex-direction: row;
-		}
-		.chiffres .kpi-card {
-			flex: 1;
 		}
 	}
 </style>

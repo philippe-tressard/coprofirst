@@ -502,6 +502,17 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 
 /* ── Formulaires ──
    Charte : Annuler (à gauche) | Action principale (à droite) */
+/*  Une rangée de GESTES qui ne soumet pas de formulaire — « Valider en l'état »,
+    « Je valide », « Exporter en PDF » : à droite, comme un pied, mais sans en
+    être un (`lint:soumission` lit `.form-actions` comme un pied de création,
+    au verbe « Enregistrer »). Née avec la validation d'un CR (#2042). */
+.rangee-gestes {
+	display: flex;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
 .form-actions {
 	display: flex;
 	justify-content: flex-end;

@@ -6,6 +6,11 @@
   - **Relancer le syndic** (`relance`) : une case en tête de ligne, pour composer
     la relance, et en fin de ligne les relances déjà envoyées.
 
+  - **Point CS / Syndic en cours** (`crs`, #2041) : sous l'aperçu, l'état du
+    compte rendu de l'affaire et le geste qui l'ouvre ; la saisie (créneau
+    `saisie`) s'ouvre dans une ligne pleine largeur, sous l'affaire. Une seule
+    à la fois : `ouverte`, liée.
+
   Sorti de `VueSuiviAffaires` pour que les deux modes rendent la MÊME ligne : la
   relance avait sa propre carte, avec ses propres badges, et ne disait ni l'âge,
   ni la date d'ouverture, ni le résumé de l'affaire.
@@ -19,15 +24,32 @@
 	import Badge from '$lib/components/Badge.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import PastillesRelances from './PastillesRelances.svelte';
-	import type { AffaireOuverte } from '$lib/api';
+	import Icon from '$lib/components/Icon.svelte';
+	import type { AffaireOuverte, CrAffaire } from '$lib/api';
+	import { etatCr } from '$lib/points-conseil';
+	import { ETATS_VISITE } from '$lib/entretien-periodique';
+	import { motifEvolution } from '$lib/reporting';
 	import { fmtDate } from '$lib/date';
 	import { categorieTicketLabel, lienTicket } from '$lib/tickets';
 
 	export let affaires: AffaireOuverte[];
 	/** Le mode « Relancer le syndic » : une case par ligne, et les relances envoyées. */
 	export let relance = false;
+	/**  Le mode « Suivi entretiens périodiques » (#2043) : l'état de la visite à la
+	 *   place de la catégorie, toujours « Entretien » dans ce mode. */
+	export let visites = false;
 	/** Les affaires cochées — liées, lues par l'aperçu et l'envoi. */
 	export let choisies: Set<number> = new Set();
+	/**  Les comptes rendus d'un point CS / Syndic EN COURS, par affaire — `null`
+	 *   hors d'un point : la ligne n'offre alors aucune saisie. */
+	export let crs: Map<number, CrAffaire> | null = null;
+	/** L'affaire dont le compte rendu est en saisie — une à la fois. */
+	export let ouverte: number | null = null;
+	/**  Le point accepte-t-il un compte rendu NOUVEAU ? Terminé, il n'offre que
+	 *   la correction des comptes rendus saisis (#2042). */
+	export let ajout = true;
+
+	$: colonnes = relance ? 6 : 4;
 
 	/** La teinte de l'âge — la tranche vient du serveur, qui garde les seuils. */
 	const TEINTE_AGE: Record<AffaireOuverte['anciennete'], string> = {
@@ -49,7 +71,7 @@
 		<thead>
 			<tr>
 				{#if relance}<th class="choix"><span class="sr-only">Relancer</span></th>{/if}
-				<th>Âge</th><th>Ouverte le</th><th>Affaire</th><th>Catégorie</th>
+				<th>Âge</th><th>Ouverte le</th><th>Affaire</th><th>{visites ? 'Visite' : 'Catégorie'}</th>
 				{#if relance}<th>Relances envoyées</th>{/if}
 			</tr>
 		</thead>
@@ -74,6 +96,14 @@
 					<td class="date">{fmtDate(a.ouverte_le)}</td>
 					<td class="affaire">
 						<a href={lienTicket(a.id)} class="titre">{a.titre}</a>
+						{#if a.a_evolue && !visites}
+							<!--  Le signal « a évolué » (#2044) : sous le titre, icône ET libellé. -->
+							<span class="evolution"
+								><Badge teinte="badge-orange" compact
+									><Icon name="bell" size={12} /> {motifEvolution(a.motif_evolution)}</Badge
+								></span
+							>
+						{/if}
 						<!--  Le périmètre — tu quand c'est celui par défaut (règle 4). -->
 						<BadgePerimetre perimetre={a.perimetre_cible} />
 						{#if a.apercu}
@@ -83,12 +113,44 @@
 									>{/if}{a.apercu}
 							</p>
 						{/if}
+						{#if crs && (ajout || crs.has(a.id))}
+							<p class="cr">
+								{#if crs.get(a.id)}
+									<Badge teinte={crs.get(a.id)?.brouillon ? 'badge-gray' : 'badge-green'} compact
+										>{etatCr(crs.get(a.id))}</Badge
+									>
+								{/if}
+								<button
+									type="button"
+									class="btn btn-sm btn-outline"
+									aria-expanded={ouverte === a.id}
+									aria-controls="saisie-cr-{a.id}"
+									on:click={() => (ouverte = ouverte === a.id ? null : a.id)}
+								>
+									<Icon name="file-text" size={14} />
+									{ouverte === a.id ? 'Replier' : 'Compte rendu'}
+								</button>
+							</p>
+						{/if}
 					</td>
-					<td class="categorie">{categorieTicketLabel(a.categorie)}</td>
+					<td class="categorie">
+						{#if visites && a.etat_visite}
+							<Badge teinte={ETATS_VISITE[a.etat_visite].teinte}
+								>{ETATS_VISITE[a.etat_visite].libelle}</Badge
+							>
+						{:else}
+							{categorieTicketLabel(a.categorie)}
+						{/if}
+					</td>
 					{#if relance}
 						<td class="relances"><PastillesRelances relances={a.relances} /></td>
 					{/if}
 				</tr>
+				{#if crs && ouverte === a.id}
+					<tr class="saisie" id="saisie-cr-{a.id}">
+						<td colspan={colonnes}><slot name="saisie" affaire={a} cr={crs.get(a.id)} /></td>
+					</tr>
+				{/if}
 			{/each}
 		</tbody>
 	</table>
@@ -119,6 +181,16 @@
 	.descriptif {
 		margin: 0.2rem 0 0;
 		white-space: pre-line;
+	}
+	.cr {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin: 0.35rem 0 0;
+	}
+	.evolution {
+		display: block;
+		margin: 0.15rem 0;
 	}
 	.ia-signe {
 		color: var(--color-violet);
@@ -154,6 +226,9 @@
 		}
 		.affaires td.relances {
 			order: 5;
+			flex-basis: 100%;
+		}
+		.affaires tr.saisie td {
 			flex-basis: 100%;
 		}
 	}

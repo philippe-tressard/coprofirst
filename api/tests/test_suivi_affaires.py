@@ -33,37 +33,15 @@ from app.utils.suivi_affaires import resumes as module_resumes
 from app.utils.suivi_affaires.format import construire_message, lire_reponse
 from app.utils.suivi_affaires.pdf import html_rapport
 from app.utils.suivi_affaires.releve import Releve, lire_affaire, tranche
-from tests.aides_base import compte
 from tests.aides_http import base_http, client_http
+from tests.aides_suivi import affaire_ouverte
 from tests.aides_pdf import besoin_weasyprint
-
-_numero = [0]
 
 
 @pytest.fixture(name="moteur")
 def moteur_fixture():
     with base_http() as moteur:
         yield moteur
-
-
-def _affaire(moteur, titre="Interphone muet", *, jours=0, **champs) -> int:
-    _numero[0] += 1
-    champs.setdefault("categorie", "panne")
-    champs.setdefault("statut", "ouvert")
-    champs.setdefault("perimetre_cible", json.dumps(["résidence"], ensure_ascii=False))
-    with Session(moteur) as s:
-        auteur = compte(s, prefixe="auteur", nom="Durand", prenom="Reine")
-        t = Ticket(
-            numero=f"S-{_numero[0]:04d}",
-            titre=titre,
-            description="<p>La platine ne sonne <strong>plus</strong>.</p>",
-            auteur_id=auteur.id,
-            cree_le=horloge.maintenant() - timedelta(days=jours),
-            **champs,
-        )
-        s.add(t)
-        s.commit()
-        return t.id
 
 
 # ── La porte ────────────────────────────────────────────────────────────────
@@ -87,16 +65,20 @@ def test_un_anonyme_est_refuse(moteur):
 
 
 def test_toutes_les_affaires_non_closes_et_elles_seules(moteur):
-    ouverte = _affaire(moteur, "Ouverte", jours=5)
-    suivie = _affaire(moteur, "Chez le prestataire", statut="chez_prestataire", suivi_kanban=True)
-    non_suivie = _affaire(moteur, "À l'AG", statut="en_ag", categorie="etude_travaux", jours=200)
-    _affaire(moteur, "Résolue", statut="résolu")
-    _affaire(moteur, "Annulée", statut="annulé")
-    _affaire(moteur, "Actualité", statut="publie", categorie="actualite")
+    ouverte = affaire_ouverte(moteur, "Ouverte", jours=5)
+    suivie = affaire_ouverte(
+        moteur, "Chez le prestataire", statut="chez_prestataire", suivi_kanban=True
+    )
+    non_suivie = affaire_ouverte(
+        moteur, "À l'AG", statut="en_ag", categorie="etude_travaux", jours=200
+    )
+    affaire_ouverte(moteur, "Résolue", statut="résolu")
+    affaire_ouverte(moteur, "Annulée", statut="annulé")
+    affaire_ouverte(moteur, "Actualité", statut="publie", categorie="actualite")
     #  Ce que la relance écarte, le suivi l'écarte aussi : une seule liste (#2035).
-    _affaire(moteur, "Archivée", archive_manuel=True)
-    _affaire(moteur, "Absorbée", fusionnee_dans_id=ouverte)
-    _affaire(moteur, "Visite sous contrat", categorie="entretien", contrat_id=1)
+    affaire_ouverte(moteur, "Archivée", archive_manuel=True)
+    affaire_ouverte(moteur, "Absorbée", fusionnee_dans_id=ouverte)
+    affaire_ouverte(moteur, "Visite sous contrat", categorie="entretien", contrat_id=1)
     http, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
 
     corps = http.get("/suivi-affaires").json()
@@ -104,9 +86,11 @@ def test_toutes_les_affaires_non_closes_et_elles_seules(moteur):
     assert corps["total"] == 3
     assert [a["id"] for a in corps["affaires"]] == [non_suivie, ouverte, suivie]
     assert corps["anciennes"] == 1
-    assert corps["par_categorie"] == [
-        {"categorie": "panne", "libelle": "Panne", "nombre": 2},
-        {"categorie": "etude_travaux", "libelle": "Étude & travaux", "nombre": 1},
+    #  Les barres et leur nombre ; les tranches par bâtiment sont tenues par
+    #  `test_suivi_repartition.py` (#2043).
+    assert [(c["cle"], c["libelle"], c["nombre"]) for c in corps["par_categorie"]] == [
+        ("panne", "Panne", 2),
+        ("etude_travaux", "Étude & travaux", 1),
     ]
     premiere = corps["affaires"][0]
     assert premiere["anciennete"] == "ancienne"
@@ -156,7 +140,7 @@ def _releve() -> Releve:
 def test_le_resume_part_de_toute_la_matiere_jamais_d_un_nom(moteur, monkeypatch):
     from app.models.core import MessageTicket, TicketEvolution
 
-    tid = _affaire(moteur, "Interphone muet", jours=12)
+    tid = affaire_ouverte(moteur, "Interphone muet", jours=12)
     with Session(moteur) as s:
         t = s.get(Ticket, tid)
         numero = t.numero
@@ -279,7 +263,7 @@ def test_le_pdf_ne_porte_plus_de_synthese_d_ensemble():
 
 @besoin_weasyprint
 def test_l_export_rend_un_pdf(moteur):
-    _affaire(moteur, "Interphone muet", jours=3)
+    affaire_ouverte(moteur, "Interphone muet", jours=3)
     http, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
     reponse = http.post("/suivi-affaires/pdf")
     assert reponse.status_code == 200
@@ -294,8 +278,8 @@ def test_l_export_rend_un_pdf(moteur):
 def test_jours_sans_avancee_et_relances_envoyees(moteur):
     from app.models.core import TicketEvolution
 
-    vieille = _affaire(moteur, "Sans nouvelles", jours=100)
-    recente = _affaire(moteur, "Avance bien", jours=100)
+    vieille = affaire_ouverte(moteur, "Sans nouvelles", jours=100)
+    recente = affaire_ouverte(moteur, "Avance bien", jours=100)
     with Session(moteur) as s:
         for tid, avancee in ((vieille, 45), (recente, 3)):
             t = s.get(Ticket, tid)
@@ -325,7 +309,7 @@ def test_jours_sans_avancee_et_relances_envoyees(moteur):
 
 
 def test_le_resume_de_chaque_affaire_est_garde_sans_dater_une_avancee(moteur, monkeypatch):
-    tid = _affaire(moteur, "Interphone muet", jours=12)
+    tid = affaire_ouverte(moteur, "Interphone muet", jours=12)
     with Session(moteur) as s:
         numero = s.get(Ticket, tid).numero
         avant = s.get(Ticket, tid).mis_a_jour_le

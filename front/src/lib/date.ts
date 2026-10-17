@@ -234,6 +234,26 @@ export function pourChampLocal(iso: string | null | undefined): string {
 	return String(iso).slice(0, 16);
 }
 
+/**
+ * L'heure de Paris, maintenant, en valeur d'un champ `datetime-local`
+ * (`AAAA-MM-JJTHH:MM`) — ce qu'un formulaire PROPOSE pour « quand » (#2041).
+ *
+ * ⚠️ Jamais `toISOString().slice(0, 16)` : c'est l'heure UTC, fausse d'une ou
+ * deux heures selon la saison.
+ */
+export function champLocalMaintenant(): string {
+	return new Intl.DateTimeFormat('sv-SE', {
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		timeZone: TZ,
+	})
+		.format(new Date())
+		.replace(' ', 'T');
+}
+
 /** L inverse : la valeur du champ vers ce que l API attend, ou `null` si vide. */
 export function depuisChampLocal(valeur: string | null | undefined): string | null {
 	const v = (valeur ?? '').trim();

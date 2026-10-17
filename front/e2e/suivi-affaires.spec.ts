@@ -15,9 +15,42 @@ const RELEVE: SuiviAffaires = {
 	anciennes: 1,
 	resumes_disponibles: true,
 	delai_jours: 30,
+	mode: 'affaires',
+	//  Les deux répartitions croisées (#2043) : par catégorie découpée par
+	//  bâtiment, par bâtiment découpée par catégorie.
 	par_categorie: [
-		{ categorie: 'panne', libelle: 'Panne', nombre: 2 },
-		{ categorie: 'etude_travaux', libelle: 'Étude & travaux', nombre: 1 },
+		{
+			cle: 'panne',
+			libelle: 'Panne',
+			nombre: 2,
+			tranches: [
+				{ cle: 'racine', libelle: 'Résidence', nombre: 1 },
+				{ cle: 'bat:3', libelle: 'Bât. C', nombre: 1 },
+			],
+		},
+		{
+			cle: 'etude_travaux',
+			libelle: 'Étude & travaux',
+			nombre: 1,
+			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 1 }],
+		},
+	],
+	par_batiment: [
+		{
+			cle: 'racine',
+			libelle: 'Résidence',
+			nombre: 2,
+			tranches: [
+				{ cle: 'panne', libelle: 'Panne', nombre: 1 },
+				{ cle: 'etude_travaux', libelle: 'Étude & travaux', nombre: 1 },
+			],
+		},
+		{
+			cle: 'bat:3',
+			libelle: 'Bât. C',
+			nombre: 1,
+			tranches: [{ cle: 'panne', libelle: 'Panne', nombre: 1 }],
+		},
 	],
 	affaires: [
 		{
@@ -39,6 +72,10 @@ const RELEVE: SuiviAffaires = {
 			//  Le résumé de l'assistant, montré à la place du descriptif (#2035).
 			apercu: 'Le conseil compare trois devis avant le vote en AG.',
 			apercu_ia: true,
+			batiments: [],
+			etat_visite: null,
+			a_evolue: false,
+			motif_evolution: null,
 		},
 		{
 			id: 31,
@@ -58,6 +95,10 @@ const RELEVE: SuiviAffaires = {
 			relances: [],
 			apercu: 'La platine de rue ne sonne plus.',
 			apercu_ia: false,
+			batiments: [],
+			etat_visite: null,
+			a_evolue: true,
+			motif_evolution: 'nouvelle',
 		},
 		{
 			id: 40,
@@ -77,6 +118,10 @@ const RELEVE: SuiviAffaires = {
 			relances: [],
 			apercu: '',
 			apercu_ia: false,
+			batiments: [],
+			etat_visite: null,
+			a_evolue: true,
+			motif_evolution: 'etat',
 		},
 	],
 };
@@ -95,10 +140,19 @@ test('le suivi montre toutes les affaires ouvertes, leur nombre et leur réparti
 	await expect(compteur('affaires non fermées')).toContainText('3');
 	await expect(compteur('de plus de 90 jours')).toHaveClass(/kpi-alert/);
 
-	const barres = page.locator('.barres li');
-	await expect(barres).toHaveCount(2);
-	await expect(barres.nth(0)).toContainText('Panne');
-	await expect(barres.nth(0)).toContainText('2');
+	const categories = page.getByRole('region', { name: 'Par catégorie' }).locator('.barres li');
+	await expect(categories).toHaveCount(2);
+	await expect(categories.nth(0)).toContainText('Panne');
+	await expect(categories.nth(0)).toContainText('2');
+	//  Chaque barre est découpée selon l'autre graphique, et la tranche se nomme.
+	await expect(categories.nth(0).locator('.tranche')).toHaveCount(2);
+	await expect(categories.nth(0).getByRole('img')).toHaveAttribute(
+		'aria-label',
+		'Panne : 2 — Résidence 1, Bât. C 1',
+	);
+	const batiments = page.getByRole('region', { name: 'Par bâtiment' }).locator('.barres li');
+	await expect(batiments).toHaveCount(2);
+	await expect(batiments.nth(0)).toContainText('Résidence');
 
 	const lignes = page.locator('table.affaires tbody tr');
 	await expect(lignes).toHaveCount(3);
@@ -116,6 +170,11 @@ test('le suivi montre toutes les affaires ouvertes, leur nombre et leur réparti
 	//  En mode Suivre, ni case ni colonne de relances : la maquette D2, telle quelle.
 	await expect(page.locator('table.affaires input[type=checkbox]')).toHaveCount(0);
 	await expect(lignes.nth(1).getByRole('link')).toHaveAttribute('href', '/tickets/31');
+	//  Le signal « a évolué » (#2044) : sous le titre des affaires qui ont du nouveau.
+	await expect(lignes.nth(0).locator('.evolution')).toHaveCount(0);
+	await expect(lignes.nth(1).locator('.evolution')).toContainText('Nouvelle affaire');
+	await expect(lignes.nth(2).locator('.evolution')).toContainText('Changement d’état');
+	await expect(page.getByRole('button', { name: 'Résumer 2 affaires' })).toBeVisible();
 });
 
 test('« Résumer les affaires » fait rédiger les résumés, puis les relit ; le PDF part sans synthèse', async ({
@@ -139,16 +198,22 @@ test('« Résumer les affaires » fait rédiger les résumés, puis les relit ; 
 		return undefined;
 	});
 	let corpsPdf: unknown = null;
-	await page.route('**/api/suivi-affaires/pdf', (route) => {
-		corpsPdf = route.request().postDataJSON();
-		return route.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.7' });
-	});
+	let modePdf: string | null = null;
+	//  Le mode du relevé part dans l'adresse (#2043).
+	await page.route(
+		(url) => url.pathname === '/api/suivi-affaires/pdf',
+		(route) => {
+			corpsPdf = route.request().postDataJSON();
+			modePdf = new URL(route.request().url()).searchParams.get('mode');
+			return route.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.7' });
+		},
+	);
 	await page.goto('/espace-cs/reporting');
 	await attendreHydratation(page);
 
 	//  La synthèse d'ensemble n'existe plus (#2035).
 	await expect(page.getByText('Synthèse de l’assistant')).toHaveCount(0);
-	await page.getByRole('button', { name: /Résumer les affaires/ }).click();
+	await page.getByRole('button', { name: /Résumer \d+ affaire/ }).click();
 	const ligne = page.locator('table.affaires tbody tr').nth(1);
 	await expect(ligne.locator('.descriptif')).toContainText('Le syndic attend le devis.');
 	await expect(ligne.locator('.ia-signe')).toBeVisible();
@@ -157,12 +222,13 @@ test('« Résumer les affaires » fait rédiger les résumés, puis les relit ; 
 	await page.getByRole('button', { name: /Exporter en PDF/ }).click();
 	expect((await telechargement).suggestedFilename()).toBe('suivi-des-affaires-2026-10-16.pdf');
 	expect(corpsPdf).toEqual({});
+	expect(modePdf).toBe('affaires');
 });
 
 test('sans affaire ouverte, la vue le dit', async ({ page }) => {
 	await simulerApi(page, (chemin) =>
 		chemin === '/api/suivi-affaires'
-			? { ...RELEVE, total: 0, anciennes: 0, par_categorie: [], affaires: [] }
+			? { ...RELEVE, total: 0, anciennes: 0, par_categorie: [], par_batiment: [], affaires: [] }
 			: undefined,
 	);
 	await page.goto('/espace-cs/reporting');

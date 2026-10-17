@@ -86,6 +86,7 @@ from app.routers import courriels_affaires
 from app.routers import partage
 from app.routers import assistant, config_llm, config_logo, config_services, reglement
 from app.routers import suivi_affaires
+from app.routers import points_conseil, points_conseil_validation
 from app.seed import seed
 from app.utils.backup import setup_scheduler
 from app.utils.plateforme import NOM_PLATEFORME
@@ -270,6 +271,18 @@ async def lifespan(app: FastAPI):
         id="desepinglage_affaires_closes",
     )
 
+    #  Le compte rendu d'un point CS / Syndic se valide d'office 7 jours après son
+    #  envoi aux présents, sauf commentaire (#2042). Toutes les heures : il l'est
+    #  donc au plus une heure après l'échéance. Ne lève jamais.
+    from app.utils.points_conseil_validation import auto_valider as _auto_valider_cr
+
+    scheduler.add_job(
+        contexte.pour_chaque_copropriete(_auto_valider_cr, "validation_points_conseil"),
+        "interval",
+        hours=1,
+        id="validation_points_conseil",
+    )
+
     #  La purge des comptes inactifs (#1580) : chaque jour à 04:30, après la
     #  sauvegarde de la nuit (03:00 par défaut). Elle avertit, puis supprime trente jours plus tard ;
     #  un passage manqué décale d'un jour, dans le sens de la conservation.
@@ -432,6 +445,8 @@ app.include_router(patrimoine_branche.router)
 app.include_router(assistant.router)
 app.include_router(reglement.router)
 app.include_router(suivi_affaires.router)
+app.include_router(points_conseil.router)
+app.include_router(points_conseil_validation.router)
 app.include_router(registre.router)
 
 # Fichiers statiques (photos uploadées)

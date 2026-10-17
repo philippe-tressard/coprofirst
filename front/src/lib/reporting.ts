@@ -76,8 +76,9 @@ export const REPORT_VUES = [
 	'tickets',
 	'prestataires',
 	'renouvellements',
-	//  Les visites d'entretien périodique — sorties de la relance (10/10/2026).
-	'periodique',
+	//  « Entretien périodique » a quitté la barre le 17/10/2026 (#2043) : c'est
+	//  désormais le mode « Suivi entretiens périodiques » du Suivi des affaires,
+	//  où `?vue=periodique` mène (`VUE_PERIODIQUE`).
 ] as const;
 export type ReportVue = (typeof REPORT_VUES)[number];
 
@@ -85,6 +86,24 @@ export type ReportVue = (typeof REPORT_VUES)[number];
  *   du tableau de bord). La vue « Relance syndic » est devenue le mode « Relancer
  *   le syndic » du Suivi des affaires (#2035) : l'adresse y mène, en ce mode. */
 export const VUE_RELANCE = 'relance';
+
+/**  `?vue=periodique` — l'adresse de l'ancienne vue « Entretien périodique » : elle
+ *   mène au mode « Suivi entretiens périodiques » du Suivi des affaires (#2043). */
+export const VUE_PERIODIQUE = 'periodique';
+
+/**  Ce que le signal « a évolué » dit sous le titre d'une affaire (#2044) — le
+ *   motif vient du serveur (`releve.evolution`) : `nouvelle`, ou le type de la
+ *   dernière entrée du fil depuis le résumé. Un type inconnu se dit « Du nouveau ». */
+const MOTIFS_EVOLUTION: Record<string, string> = {
+	nouvelle: 'Nouvelle affaire, jamais résumée',
+	commentaire: 'Nouvelle suite depuis le dernier résumé',
+	etat: 'Changement d’état depuis le dernier résumé',
+	reponse: 'Nouveau message depuis le dernier résumé',
+	relance: 'Relance envoyée depuis le dernier résumé',
+};
+export function motifEvolution(motif: string | null): string {
+	return (motif && MOTIFS_EVOLUTION[motif]) || 'Du nouveau depuis le dernier résumé';
+}
 
 /* ── Renouvellements : calculs ────────────────────────────────────────────
    L'année de référence est une FONCTION, pas une constante. Elle était figée au

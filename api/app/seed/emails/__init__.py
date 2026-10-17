@@ -62,6 +62,8 @@ INTENTIONS_PAR_MODELE: dict[str, str] = {
     "compte_en_attente": "action_requise",
     "ticket_bug_admin": "action_requise",
     "synthese_a_valider": "action_requise",
+    #  Valider le CR d'un point CS / Syndic, ou le commenter (#2042).
+    "point_conseil_validation": "action_requise",
     #  Le conseil doit TRAITER le ticket, pas répondre au courriel : il a un
     #  compte, et le fil vit sur le site. C'est ce qui le distingue de
     #  `ticket_syndic` (« réponse attendue »), adressé à quelqu'un qui n'en a
