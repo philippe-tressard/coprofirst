@@ -36,12 +36,51 @@
  * ⚠️ Le garde lit ce même nom et cette même valeur : il est inline, donc ne peut
  * rien importer. `api/tests/test_pwa_maj.py` vérifie que les deux concordent.
  */
+import { version } from '../../package.json';
+import { envoyerMaintenant, signalerErreur } from '$lib/telemetry';
+
 export const ATTRIBUT_DEMARRAGE = 'data-application';
 export const VALEUR_DEMARREE = 'demarree';
 
-/** Pose le marqueur. Rend la fonction qui le retire. */
+/**
+ * **Mesurer ce qu'on n'a pas su reproduire** (arbitré par la coordination le
+ * 17/10/2026, sur délégation de Philippe). Avant un rechargement de secours —
+ * automatique ou par son bouton —, le garde note son MOTIF dans l'onglet ; la
+ * page qui démarre ensuite le signale UNE fois au journal des erreurs du
+ * navigateur (`api/app/utils/erreurs_navigateur.py`, Admin › Télémétrie,
+ * « Erreurs vues par les résidents ») : `garde-demarrage:<motif>:v<version>`.
+ * Ni adresse ni saisie — la page, le code, le jour, comme toute erreur.
+ * ⚠️ La clé et les motifs sont écrits aussi dans le garde (inline) :
+ * `api/tests/test_pwa_maj.py` les compare.
+ */
+export const CLE_MOTIF = 'garde-demarrage-motif';
+export const MOTIFS = ['non-dessinee', 'non-demarree'] as const;
+export const PREFIXE_CODE = 'garde-demarrage';
+
+/** Le code d'un rechargement de secours, ou `null` s'il n'y en a pas eu. */
+export function codeRechargementDeSecours(motif: string | null): string | null {
+	if (!motif || !(MOTIFS as readonly string[]).includes(motif)) return null;
+	return `${PREFIXE_CODE}:${motif}:v${version}`;
+}
+
+function signalerRechargementDeSecours() {
+	let motif: string | null;
+	try {
+		motif = sessionStorage.getItem(CLE_MOTIF);
+		sessionStorage.removeItem(CLE_MOTIF);
+	} catch {
+		return; // stockage refusé : le garde n'a rien pu noter
+	}
+	const code = codeRechargementDeSecours(motif);
+	if (!code) return;
+	signalerErreur(code);
+	envoyerMaintenant();
+}
+
+/** Pose le marqueur, signale un rechargement de secours. Rend la fonction qui retire le marqueur. */
 export function signalerDemarrage(): () => void {
 	if (typeof document === 'undefined') return () => {};
 	document.documentElement.setAttribute(ATTRIBUT_DEMARRAGE, VALEUR_DEMARREE);
+	signalerRechargementDeSecours();
 	return () => document.documentElement.removeAttribute(ATTRIBUT_DEMARRAGE);
 }

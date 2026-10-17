@@ -10,6 +10,11 @@
 	// Un rechargement automatique au plus par fenêtre : jamais de boucle.
 	var FENETRE_RECHARGEMENT_MS = 5 * 60 * 1000;
 	var CLE = 'garde-demarrage-recharge-le';
+	// Le motif du rechargement de secours, lu par l'application une fois démarrée
+	// pour le signaler au journal des erreurs (`$lib/garde-demarrage`).
+	var CLE_MOTIF = 'garde-demarrage-motif';
+	var NON_DESSINEE = 'non-dessinee';
+	var NON_DEMARREE = 'non-demarree';
 
 	var racine = document.documentElement;
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -39,9 +44,11 @@
 		}
 	}
 
-	function recharger() {
+	/** @param {string} motif */
+	function recharger(motif) {
 		try {
 			sessionStorage.setItem(CLE, String(Date.now()));
+			sessionStorage.setItem(CLE_MOTIF, motif);
 		} catch {
 			/* le rechargement part quand même */
 		}
@@ -77,8 +84,8 @@
 		}
 	}
 
-	/** @param {string} titre @param {string} consigne */
-	function dire(titre, consigne) {
+	/** @param {string} titre @param {string} consigne @param {string} motif */
+	function dire(titre, consigne, motif) {
 		if (message || !document.body) return;
 		message = document.createElement('div');
 		message.setAttribute('role', 'alert');
@@ -94,7 +101,7 @@
 		bouton.className = 'btn btn-primary';
 		bouton.textContent = 'Recharger la page';
 		bouton.addEventListener('click', function () {
-			location.reload();
+			recharger(motif);
 		});
 		message.appendChild(t);
 		message.appendChild(c);
@@ -106,13 +113,14 @@
 		minuteur = undefined;
 		if (demarree()) return;
 		if (!dessinee()) {
-			if (!rechargeRecente()) return recharger();
+			if (!rechargeRecente()) return recharger(NON_DESSINEE);
 			lacherLesFeuillesEnAttente();
 			dire(
 				'Cette page ne s’affiche pas.',
 				'Rechargez-la — sur un ordinateur, Ctrl+Maj+R (Cmd+Maj+R sur Mac). ' +
 					'Dans l’application installée, ' +
 					'fermez-la puis rouvrez-la.',
+				NON_DESSINEE,
 			);
 			return;
 		}
@@ -123,6 +131,7 @@
 			dire(
 				'L’application n’a pas fini de se charger.',
 				'Rechargez la page. Si cela se reproduit, fermez l’application puis rouvrez-la.',
+				NON_DEMARREE,
 			);
 		});
 	}

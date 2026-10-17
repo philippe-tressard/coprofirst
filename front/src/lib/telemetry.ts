@@ -201,6 +201,17 @@ function flush() {
 	}
 }
 
+/**
+ * Envoie la file tout de suite, sans attendre le minuteur.
+ *
+ * Pour un signalement fait HORS du squelette `(app)`, où `initTelemetry` n'a
+ * pas armé l'envoi périodique : sur `/auth/*`, la file ne partait qu'au
+ * vingtième événement — c'est-à-dire jamais (#1993).
+ */
+export function envoyerMaintenant() {
+	flush();
+}
+
 /** Initialise la télémétrie (appeler une seule fois dans le layout). */
 export function initTelemetry() {
 	if (typeof window === 'undefined') return;

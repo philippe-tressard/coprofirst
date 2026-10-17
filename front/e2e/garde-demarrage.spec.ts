@@ -58,14 +58,36 @@ async function bloquerLeDessin(page: Page, chargements: number) {
  * Le module de l'application ne répond jamais : le HTML du serveur est là, mais
  * rien ne le fait fonctionner — l'application ne démarre pas.
  */
-async function bloquerLeDemarrage(page: Page) {
-	await page.route('**/.svelte-kit/generated/client/app.js*', () => {});
+async function bloquerLeDemarrage(page: Page, chargements = Infinity) {
+	let restants = chargements;
+	await page.route('**/.svelte-kit/generated/client/app.js*', async (route) => {
+		if (restants-- <= 0) await route.continue();
+		//  sinon : aucune réponse, jamais
+	});
 }
+
+/**
+ * Les codes signalés au journal des erreurs du navigateur (`/api/telemetry/collect`).
+ * La cause de #1993 n'est pas trouvée : chaque rechargement de secours se
+ * MESURE, une fois, quand la page démarre ensuite (arbitrage du 17/10/2026).
+ */
+async function signalements(page: Page): Promise<string[]> {
+	const codes: string[] = [];
+	await page.route('**/api/telemetry/collect', async (route) => {
+		const lot = route.request().postDataJSON() as { events: { action: string; detail?: string }[] };
+		for (const e of lot.events) if (e.action === 'erreur' && e.detail) codes.push(e.detail);
+		await route.fulfill({ status: 204 });
+	});
+	return codes;
+}
+
+const VERSION = String.raw`v\d+\.\d+\.\d+`;
 
 test('Premier chargement jamais dessiné : la page se recharge d’elle-même et s’affiche', async ({
 	page,
 }) => {
 	test.setTimeout(60_000);
+	const codes = await signalements(page);
 	await bloquerLeDessin(page, 1);
 	await page.goto('/auth/connexion', { waitUntil: 'commit' });
 
@@ -74,6 +96,9 @@ test('Premier chargement jamais dessiné : la page se recharge d’elle-même et
 		.toBe(true);
 	await expect(page.locator('input#email')).toBeVisible();
 	await expect(page.getByRole('alert')).toHaveCount(0);
+	//  …et le rechargement de secours est signalé, une fois, avec la version servie.
+	await expect.poll(() => codes).toHaveLength(1);
+	expect(codes[0]).toMatch(new RegExp(`^garde-demarrage:non-dessinee:${VERSION}$`));
 });
 
 test('Toujours bloquée après le rechargement : la feuille en attente est lâchée, la page s’affiche', async ({
@@ -107,14 +132,22 @@ test('Toujours rien après le rechargement : la page le dit, et propose de recha
 
 test('Dessinée mais jamais démarrée : la page le dit au lieu de rester figée', async ({ page }) => {
 	test.setTimeout(60_000);
-	await bloquerLeDemarrage(page);
+	const codes = await signalements(page);
+	await bloquerLeDemarrage(page, 1);
 	await page.goto('/auth/connexion', { waitUntil: 'commit' });
 
 	const alerte = page.getByRole('alert');
 	await expect(alerte).toContainText('L’application n’a pas fini de se charger', {
 		timeout: 40_000,
 	});
-	await expect(alerte.getByRole('button', { name: 'Recharger la page' })).toBeVisible();
+	//  Le bouton recharge ; la page démarre cette fois, et signale le motif.
+	await alerte.getByRole('button', { name: 'Recharger la page' }).click();
+	await expect(page.locator('html[data-application="demarree"]')).toHaveCount(1, {
+		timeout: 20_000,
+	});
+	await expect(page.getByRole('alert')).toHaveCount(0);
+	await expect.poll(() => codes).toHaveLength(1);
+	expect(codes[0]).toMatch(new RegExp(`^garde-demarrage:non-demarree:${VERSION}$`));
 });
 
 test('Une page qui démarre normalement ne montre rien', async ({ page }) => {

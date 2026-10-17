@@ -240,3 +240,25 @@ def test_une_page_qui_ne_se_dessine_pas_est_gardee():
     assert "signalerDemarrage" in _lire(_LAYOUT_RACINE), (
         "le layout racine ne signale plus le démarrage de l'application au garde."
     )
+
+
+def test_un_rechargement_de_secours_se_mesure():
+    """La cause de #1993 n'est pas trouvée : chaque secours se COMPTE (arbitré le 17/10/2026).
+
+    Le garde note son motif dans l'onglet avant de recharger ; l'application, une
+    fois démarrée, le signale au journal des erreurs du navigateur. La clé et
+    les motifs sont écrits deux fois — le garde est inline et n'importe rien — :
+    une divergence ferait taire la mesure sans un mot. Le signalement lui-même
+    est éprouvé par `e2e/garde-demarrage.spec.ts`.
+    """
+    garde = _lire(_GARDE)
+    module = _lire(_FRONT / "src" / "lib" / "garde-demarrage.ts")
+    cle = re.search(r"CLE_MOTIF = '([^']+)'", module).group(1)
+    assert f"CLE_MOTIF = '{cle}'" in garde, f"le garde n'écrit plus le motif sous `{cle}`"
+    motifs = re.findall(r"'([a-z-]+)'", re.search(r"MOTIFS = \[([^\]]+)\]", module).group(1))
+    assert sorted(motifs) == ["non-demarree", "non-dessinee"], motifs
+    for motif in motifs:
+        assert f"'{motif}'" in garde, f"le garde n'écrit plus le motif `{motif}`"
+    assert "signalerErreur" in module and "envoyerMaintenant" in module, (
+        "le démarrage ne signale plus le rechargement de secours au journal des erreurs."
+    )
