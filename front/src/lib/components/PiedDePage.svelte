@@ -5,8 +5,10 @@
 
   Une carte, sur le modèle de coprofirst.fr (maquette A, arbitrée le 15/10/2026) :
   la marque — logo et nom de la résidence, en gras — à gauche, les mentions en
-  petit sous le nom, les liens à droite. Au téléphone, les liens passent sous la
-  marque. Les éléments, leur place et ceux qui se masquent sont dans `$lib/piedDePage`.
+  petit sous le nom, les liens à droite. Au téléphone, trois lignes centrées
+  (arbitré le 17/10/2026, #2040) : logo et nom, les mentions, les liens — qui
+  peuvent tenir sur deux rangées, chacune centrée. Les éléments, leur place,
+  leur cible et ceux qui se masquent sont dans `$lib/piedDePage`.
 
   La version s'affiche courte (« v2.118.1 · RPi1 »). L'empreinte du build et sa
   date passent dans l'infobulle : elles servent toujours au diagnostic, par
@@ -16,10 +18,16 @@
 <script lang="ts">
 	import pkg from '../../../package.json';
 	import { env } from '$env/dynamic/public';
+	import Icon from '$lib/components/Icon.svelte';
 	import LogoResidence from '$lib/components/LogoResidence.svelte';
 	import { configStore, siteNomStore } from '$lib/stores/pageConfig';
-	import { lienSource, NOM_PLATEFORME } from '$lib/plateforme';
-	import { dansLaPlace, elementsAffiches, mentionAnnee, type ReglagePied } from '$lib/piedDePage';
+	import {
+		dansLaPlace,
+		ELEMENT_PIED,
+		elementsAffiches,
+		mentionAnnee,
+		type ReglagePied,
+	} from '$lib/piedDePage';
 
 	/** Le réglage, déjà lu (`lireReglagePied`). */
 	export let reglage: ReglagePied;
@@ -72,19 +80,18 @@
 			</div>
 		</div>
 		<nav class="liens" aria-label="Pied de page">
+			<!--  Un lien qui sort du site s'ouvre ailleurs et le montre : l'icône
+			      est décorative, l'infobulle dit où il mène (#2040). -->
 			{#each liens as code (code)}
-				{#if code === 'source'}<a
+				{@const e = ELEMENT_PIED.get(code)}
+				{#if e?.lien?.externe}<a
 						class="element"
-						href={lienSource(empreinte)}
+						href={e.lien.cible(empreinte)}
 						target="_blank"
 						rel="noopener noreferrer"
-						title="Le code source de la version en service">{NOM_PLATEFORME} (code source)</a
-					>{:else if code === 'mentions'}<a class="element" href="/mentions-legales"
-						>Mentions légales</a
-					>{:else if code === 'confidentialite'}<a
-						class="element"
-						href="/politique-de-confidentialite">Confidentialité</a
-					>{/if}
+						title={e.lien.infobulle}
+						>{e.libelle}<span class="sortie"><Icon name="external-link" size={14} /></span></a
+					>{:else if e?.lien}<a class="element" href={e.lien.cible(empreinte)}>{e.libelle}</a>{/if}
 			{/each}
 		</nav>
 	</div>
@@ -154,10 +161,40 @@
 		padding-bottom: 1px;
 		transition: color var(--duree-geste);
 	}
+	.sortie {
+		display: inline-flex;
+		margin-left: 0.25em;
+		vertical-align: -0.1em;
+	}
 	@media (hover: hover) and (pointer: fine) {
 		.liens a:hover,
 		a.nom:hover {
 			color: var(--color-primary-dark);
+		}
+	}
+	/*  Téléphone : trois lignes centrées. `.identite` s'efface de la mise en
+	    page (`display: contents`) — le nom rejoint le logo sur la première
+	    ligne, les mentions prennent la deuxième à elles seules. */
+	@media (max-width: 767px) {
+		.carte-pied {
+			flex-direction: column;
+			text-align: center;
+		}
+		.marque-pied {
+			flex-wrap: wrap;
+			justify-content: center;
+			row-gap: 0.25rem;
+		}
+		.identite {
+			display: contents;
+		}
+		.mentions {
+			flex-basis: 100%;
+			justify-content: center;
+			margin: 0;
+		}
+		.liens {
+			justify-content: center;
 		}
 	}
 </style>
