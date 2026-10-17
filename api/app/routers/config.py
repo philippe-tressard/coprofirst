@@ -106,6 +106,7 @@ _NORMALISEURS = {
     **{cle: normaliser_activation for cle in CLES_ACTIVATION},
 }
 
+
 @router.get("", response_model=Dict[str, str])
 def get_config(session: Session = Depends(get_session)):
     """Clés de configuration de l'interface exposables **sans authentification**.
