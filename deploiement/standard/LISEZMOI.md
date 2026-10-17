@@ -45,12 +45,15 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 | `deploiement/standard/LISEZMOI.md` | ce mode d'emploi |
 | `deploiement/standard/mise-a-jour.sh` | la mise à jour nocturne, réversible seule |
 | `deploiement/standard/lib-installation.sh` | les gestes communs des scripts de l'installation (journal, santé, compte rendu) |
+| `deploiement/standard/lib-bases.sh` | les gestes communs à toute base PostgreSQL : rôle et base fermée aux autres rôles |
 | `deploiement/demo/reinitialiser.sh` | la remise à zéro nocturne de la **démo publique** — sans effet ailleurs |
 | `deploiement/demo/LISEZMOI.md` | le mode d'emploi de la démo publique |
 | `deploiement/standard/postgresql/pg_hba.conf` | qui peut se connecter à PostgreSQL : l'API seule |
 | `deploiement/standard/commune/LISEZMOI.md` | une installation **commune** à plusieurs copropriétés : adresses, déclaration, nom de domaine |
 | `deploiement/standard/commune/coproprietes.exemple.json` | le gabarit de la déclaration des copropriétés d'une installation commune |
 | `deploiement/standard/commune/garde-des-pages.caddy` | la garde des pages d'une installation commune, à importer dans le `Caddyfile` |
+| `deploiement/standard/commune/compose.commune.yml` | la surcouche d'une installation commune : le front sert l'hôte demandé |
+| `deploiement/standard/commune/creer-copropriete.sh` | ajouter une copropriété à une installation commune : base, rôle, secret, dossier, déclaration |
 | `LICENSE` | AGPL-3.0-or-later |
 
 ## Installer

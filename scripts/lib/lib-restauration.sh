@@ -142,14 +142,14 @@ restauration_installer_fichiers() {
 #  → 0, ou 1 avec la raison.
 restauration_poser_registre() {
     local url="${PLATEFORME_DATABASE_URL:-}" util base mdp existants decision raison
-    util=$(plateforme_url_partie "$url" u); base=$(plateforme_url_partie "$url" b)
-    mdp=$(plateforme_url_partie "$url" m)
-    existants=$(plateforme_existants "$2" "$util" "$base")
+    util=$(base_url_partie "$url" u); base=$(base_url_partie "$url" b)
+    mdp=$(base_url_partie "$url" m)
+    existants=$(base_existants "$2" "$util" "$base")
     # shellcheck disable=SC2086 # deux mots voulus : rôle et base
     decision=$(decider_creation oui oui "$util" "$base" "$([ -n "$mdp" ] && echo oui || echo non)" $existants)
     case "$decision" in
         CREER)     # shellcheck disable=SC2086
-                   raison=$(plateforme_creer "$1" "$util" "$base" "$mdp" $existants) \
+                   raison=$(base_creer "$1" "$util" "$base" "$mdp" $existants) \
                        || { echo "registre : $raison"; return 1; } ;;
         DEJA_FAIT) ;;  # la restauration vérifie, elle, que la base est NEUVE
         *)         echo "registre : ${decision#REFUS:}"; return 1 ;;

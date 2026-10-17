@@ -22,6 +22,8 @@ from tests.aides_sources import modules_app
 #: Les modules qui se lancent sans travailler pour une copropriété, et pourquoi.
 SANS_COPROPRIETE = {
     "installation_commune/verifier.py": "lit la DÉCLARATION, aucune base de copropriété",
+    "installation_commune/creer.py": "CRÉE une copropriété : il la nomme en argument, "
+    "et ne lit la base d'aucune autre",
     "registre/migrer.py": "la base `plateforme` du registre des installations",
     "registre/sauvegarde.py": "la base `plateforme` du registre des installations",
     "utils/preparer_bases.py": "prépare TOUTES les bases, chacune nommée dans sa ligne",

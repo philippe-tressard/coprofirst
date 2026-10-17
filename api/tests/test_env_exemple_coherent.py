@@ -110,6 +110,11 @@ AJUSTEMENTS_DECLARES: dict[tuple[str, str], str] = {
     #  La mise à jour nocturne d'une RÉPLIQUE (#1756) pose UNE ligne, la version
     #  d'image à servir, après avoir gardé le `.env` d'avant dans `.precedent` pour
     #  le retour arrière.
+    #  Ajouter une copropriété à une installation commune (#2053) AJOUTE ses deux
+    #  variables — l'URL de sa base, son secret —, après avoir refusé si elles y sont.
+    ("creer-copropriete.sh", "} >> .env"): (
+        "l'URL de la base et le secret d'une copropriété neuve, ajoutés, jamais réécrits"
+    ),
     ("mise-a-jour.sh", 'echo "COPROFIRST_VERSION=$CIBLE" >> .env'): (
         "version d'image cible d'une réplique, l'ancien .env gardé pour le retour arrière"
     ),

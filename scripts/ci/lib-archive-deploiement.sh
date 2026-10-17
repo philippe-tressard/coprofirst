@@ -19,12 +19,15 @@ FICHIERS_DEPLOIEMENT=(
     deploiement/standard/LISEZMOI.md
     deploiement/standard/mise-a-jour.sh
     deploiement/standard/lib-installation.sh
+    deploiement/standard/lib-bases.sh
     deploiement/demo/reinitialiser.sh
     deploiement/demo/LISEZMOI.md
     deploiement/standard/postgresql/pg_hba.conf
     deploiement/standard/commune/LISEZMOI.md
     deploiement/standard/commune/coproprietes.exemple.json
     deploiement/standard/commune/garde-des-pages.caddy
+    deploiement/standard/commune/compose.commune.yml
+    deploiement/standard/commune/creer-copropriete.sh
     LICENSE
 )
 

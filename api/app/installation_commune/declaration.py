@@ -88,6 +88,9 @@ class Entree:
     #: Ses domaines propres, dans l'ordre déclaré — le premier est son ADRESSE.
     hotes_propres: tuple[str, ...]
     suspendue: bool
+    #: Le NOM de la variable qui porte l'URL de sa base — jamais sa valeur : la
+    #: mise à jour nocturne exporte chaque base par `env:<nom>` (#2053).
+    variable_base: str = ""
 
 
 @dataclass(frozen=True)
@@ -219,6 +222,7 @@ def _entree(
         anciens_alias=frozenset(c.anciens_alias),
         hotes_propres=hotes,
         suspendue=c.suspendue,
+        variable_base=c.base,
     )
 
 

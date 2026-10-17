@@ -65,5 +65,9 @@ def poser_si_neuve(url: str | None = None, ini: Path = ALEMBIC_INI) -> str:
 
 
 if __name__ == "__main__":
-    print(poser_si_neuve())
+    #  `env:NOM` : la base d'une copropriété d'installation commune, que la mise à
+    #  jour nocturne restaure (#2053) ; sans argument, `DATABASE_URL`, comme avant.
+    from app.utils.export_copropriete import adresse
+
+    print(poser_si_neuve(adresse(sys.argv[1]) if len(sys.argv) > 1 else None))
     sys.exit(0)

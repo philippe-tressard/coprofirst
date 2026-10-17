@@ -65,7 +65,6 @@ REGISTRE = {
         "smtp_from_name",
         {"contexte.py": "le nom d'expédition de la copropriété de configuration, idem"},
     ),
-    "backup_hour": ("config_sauvegarde.heure_execution", {}),
     "backup_keep_versions": (
         "config_sauvegarde.nb_versions_conservees",
         {"registre/sauvegarde.py": "la base `plateforme`, qui n'a ni ligne ni écran"},

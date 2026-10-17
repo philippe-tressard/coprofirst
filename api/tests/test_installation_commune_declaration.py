@@ -258,6 +258,20 @@ def test_la_verification_liste_les_adresses_sans_aucun_secret(tmp_path, monkeypa
     assert not any(valeur in sortie for valeur in ENVIRONNEMENT.values())
 
 
+def test_la_verification_nomme_les_variables_des_bases_jamais_leur_valeur(
+    tmp_path, monkeypatch, capsys
+):
+    """`--bases` : ce que la mise à jour nocturne sauvegarde, base par base (#2053)."""
+    from app.installation_commune import verifier
+
+    with installation_commune(tmp_path, monkeypatch):
+        assert verifier.main(["--bases"]) == 0
+    sortie = capsys.readouterr().out.splitlines()
+    assert sortie == ["tilleuls TILLEULS_BASE", "chenes CHENES_BASE", "erables ERABLES_BASE"]
+    with installation_commune(tmp_path, monkeypatch, coproprietes=_avec(0, base="ABSENTE")):
+        assert verifier.main(["--bases"]) == 1  # invalide : la mise à jour refuse
+
+
 def test_la_verification_dit_la_regle_violee(tmp_path, monkeypatch, capsys):
     from app.installation_commune import verifier
 
