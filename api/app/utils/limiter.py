@@ -114,3 +114,11 @@ LIMITE_APPEL_FACTURE = "10/minute"
 #: protège le registre d'un remplissage, pas un secret. Une installation légitime
 #: s'inscrit une fois, et ne revient que pour mettre à jour son contact.
 LIMITE_INSCRIPTION_INSTALLATION = "5/hour"
+
+#: Une tentative d'**aiguillage** sur l'hôte commun d'une installation commune
+#: (`installation_commune/routeur.py`, #1894) : code postal + nom, ou l'alias d'un
+#: chemin `/<alias>`. Ni secret ni courriel, mais la règle « pas d'énumération »
+#: (spec §4.1 bis, règle 5) : sans plafond, on essaierait les codes postaux et les
+#: noms courants jusqu'à dresser la liste des copropriétés hébergées. Un résident
+#: qui se trompe deux ou trois fois reste loin des deux seuils.
+LIMITE_AIGUILLAGE = "10/minute;30/hour"

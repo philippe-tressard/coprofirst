@@ -204,7 +204,10 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   dans une variable de module : l'utilisateur n° 12 d'une copropriété n'est pas
   celui d'une autre. La copropriété d'une requête se résout à son ENTRÉE
   (`contexte.ResolutionCopropriete`, le plus extérieur des intergiciels) ; une
-  tâche hors requête la reçoit de `contexte.dans(copro)`. 🔒 `test_contexte_source_unique.py`,
+  tâche hors requête la reçoit de `contexte.dans(copro)`. Une installation COMMUNE
+  déclare ses copropriétés dans un fichier (`COPROPRIETES_FICHIER`), lu par
+  `installation_commune/declaration` et nulle part ailleurs ; son hôte commun ne fait
+  qu'aiguiller (#1894). 🔒 `test_contexte_source_unique.py`,
   `test_etat_module_par_copropriete.py` (`A_INDEXER` vide, plafond zéro), et
   `test_etancheite_coproprietes.py` : deux bases aux identifiants identiques, aucune
   réponse servie pour l'une ne porte les données de l'autre (#1746).

@@ -48,6 +48,9 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 | `deploiement/demo/reinitialiser.sh` | la remise à zéro nocturne de la **démo publique** — sans effet ailleurs |
 | `deploiement/demo/LISEZMOI.md` | le mode d'emploi de la démo publique |
 | `deploiement/standard/postgresql/pg_hba.conf` | qui peut se connecter à PostgreSQL : l'API seule |
+| `deploiement/standard/commune/LISEZMOI.md` | une installation **commune** à plusieurs copropriétés : adresses, déclaration, nom de domaine |
+| `deploiement/standard/commune/coproprietes.exemple.json` | le gabarit de la déclaration des copropriétés d'une installation commune |
+| `deploiement/standard/commune/garde-des-pages.caddy` | la garde des pages d'une installation commune, à importer dans le `Caddyfile` |
 | `LICENSE` | AGPL-3.0-or-later |
 
 ## Installer

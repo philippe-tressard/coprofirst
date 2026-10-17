@@ -59,7 +59,7 @@ oublié suffit n'est pas étanche, elle n'est que *disciplinée*.
 | D24 | Transfert du rôle de référence (12/10/2026) | le rôle de référence se **transfère** vers une installation déjà déployée, **à l'initiative de la référence en place** ; **il ne peut y avoir deux références** | §4.11 ; époque de référence et chaîne de clés |
 | D25 | Vocabulaire (12/10/2026) | **« maître » devient « référence »** — l'installation de référence, le rôle de référence —, à la demande de l'auteur : le mot évoquait l'esclavage. Dans le code, le rôle s'écrit `reference` ; `maitre`, l'ancien nom, reste lu tant que le `.env` des deux Raspberry Pi le porte (`utils/installation.ANCIENS_NOMS`) | partout : spec, contrat d'inscription, administration, code ; les citations de l'auteur restent mot pour mot |
 | D26 | Conditions d'inscription (12/10/2026) | un **contrat d'engagements réciproques** : l'exploitant d'une installation s'engage à respecter la licence, la marque et le registre ; l'exploitant de la référence, à garder CoproFirst libre et à maintenir les services standards. Accepté par l'administrateur quand il valide l'inscription, il est **archivé dans le registre, rattaché à l'ID de l'installation** — texte exact, empreinte, date, qui l'a accepté. Les engagements portent sur le **service d'inscription**, jamais sur les droits de la licence | §4.11 ; `api/app/registre/conditions/` (une version par fichier, figée par son empreinte) ; #1876 |
-| D27 | Accès à une copropriété (13/10/2026) | **un seul code**, deux façons de l'héberger : une copropriété peut avoir **sa propre installation**, comme 5Hostachy, qui s'ouvre par son URL directement sur la connexion ; ou être **hébergée avec d'autres** dans une installation commune. Elle y est alors joignable par **son propre domaine** si elle en a un, sinon par une **adresse dérivée de l'URL commune et de `code-postal` + nom**, que l'hébergeur lui attribue sans frais ; l'URL commune elle-même **aiguille** (code postal, nom) puis redirige. Adresse dérivée et aiguillage ne résolvent rien eux-mêmes : la règle 1 du §4.1 reste entière | §4.1 bis, §4.2 ; #1894, phase 3 |
+| D27 | Accès à une copropriété (13/10/2026) | **un seul code**, deux façons de l'héberger : une copropriété peut avoir **sa propre installation**, comme 5Hostachy, qui s'ouvre par son URL directement sur la connexion ; ou être **hébergée avec d'autres** dans une installation commune. Elle y est alors joignable par **son propre domaine** si elle en a un, sinon par une **adresse dérivée de l'URL commune et de `code-postal` + nom**, que l'hébergeur lui attribue sans frais ; l'URL commune elle-même **aiguille** (code postal, nom) puis redirige. Adresse dérivée et aiguillage ne résolvent rien eux-mêmes : la règle 1 du §4.1 reste entière | §4.1 bis, §4.2 ; #1894 — premier lot livré le 17/10/2026 |
 
 ## 3. Les trois architectures comparées
 
@@ -159,6 +159,35 @@ Règles :
 6. **Une installation propre à une copropriété n'a ni aiguillage ni adresse
    dérivée** : son URL est la sienne.
 
+**Livré le 17/10/2026, premier lot (#1894)** — déclaré prioritaire ce jour-là, il lève
+le « rendez-vous » de la phase 3 pour lui seul. Arbitrages du jour : le registre des
+copropriétés est un **fichier déclaratif** de l'installation (`COPROPRIETES_FICHIER`,
+§4.2) ; l'hôte commun est celui de son **`ORIGIN`** — son URL publique, aucun domaine
+écrit dans le code ; l'aiguillage se tient sur l'**écran de connexion** de l'hôte commun.
+- `app/installation_commune/` : `alias` (forme et normalisation, `utils/slug`),
+  `declaration` (lecture tout ou rien — une déclaration invalide ne sert rien, 503,
+  jamais un repli sur la copropriété de la configuration), `routeur` (sous
+  `/plateforme/aiguillage`, hors résolution), `verifier` (avant mise en service) ;
+- `contexte.registre()` et `coproprietes()` lisent la déclaration : adresse dérivée
+  et domaines propres résolvent, l'hôte commun et les anciens alias non ;
+- l'écran de connexion de l'hôte commun demande code postal + nom ; `/<alias>`
+  passe par le même aiguillage (`LIMITE_AIGUILLAGE`, message unique `ECHEC`) ;
+- un ancien alias redirige (308, chemin compris) par la **garde des pages**, que
+  Caddy appelle en `forward_auth` sur une installation commune
+  (`deploiement/standard/commune/garde-des-pages.caddy`) ;
+- 🔒 `test_installation_commune_declaration.py`, `test_installation_commune_aiguillage.py`
+  (l'hôte commun rend 421 à toute route de copropriété, cas zéro et témoin ; un alias
+  inconnu ne redirige nulle part ; alias uniques et noms d'hôte valides).
+
+**Reste, second lot** (#2053) avant toute mise en service : migrations de
+chaque base au démarrage (`start.sh` n'en migre qu'une), `/uploads/*` par copropriété
+sous Caddy (une seule racine `/srv` aujourd'hui), configuration lue par le rendu
+serveur du front selon l'hôte (il appelle l'API par un nom interne, qui ne désigne
+plus personne à deux copropriétés ; `ORIGIN` du front unique), scripts hors requête
+qui supposent la copropriété de la configuration, outillage « créer une copropriété »
+(base, rôle, secret), sauvegarde par copropriété ; et l'exploitation — DNS et
+certificat génériques, gestes de l'hébergeur.
+
 ### 4.2 Le registre de la plateforme
 
 La seule donnée **commune** : la liste des copropriétés et de quoi résoudre leur
@@ -166,6 +195,12 @@ contexte (identifiant, sous-domaine, état actif ou suspendu, références vers 
 secrets), et l'**alias** de chaque copropriété — code postal et nom normalisés,
 unique, anciens alias conservés — dont se déduit son adresse dérivée (§4.1 bis). Il ne contient **aucune donnée personnelle** de résident ; les secrets
 eux-mêmes vivent dans le coffre de l'hébergeur, pas dans le registre.
+
+**Sa forme, arbitrée le 17/10/2026 (#1894)** : un fichier JSON de l'installation,
+monté en lecture seule et relu quand il change (`installation_commune/declaration.py`) ;
+il **nomme** les variables d'environnement qui portent la base et le secret de chaque
+copropriété, jamais leur valeur. Absent, l'installation sert la seule copropriété de
+sa configuration. Ni table ni écran avant le choix de l'hébergeur (phase 3).
 
 ### 4.3 Les données — PostgreSQL, une base et un rôle par copropriété (D4)
 

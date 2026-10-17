@@ -1,0 +1,30 @@
+{
+  "coproprietes": [
+    {
+      "identifiant": "tilleuls",
+      "code_postal": "75015",
+      "nom": "Les Tilleuls",
+      "anciens_alias": [],
+      "hotes": [],
+      "suspendue": false,
+      "base": "TILLEULS_DATABASE_URL",
+      "secret": "TILLEULS_SECRET_KEY",
+      "racine_fichiers": "/app/uploads/tilleuls",
+      "expediteur": "contact@exemple.fr",
+      "nom_expediteur": "Les Tilleuls"
+    },
+    {
+      "identifiant": "chenes",
+      "code_postal": "69003",
+      "nom": "Résidence des Chênes",
+      "anciens_alias": [],
+      "hotes": ["residence-des-chenes.fr"],
+      "suspendue": false,
+      "base": "CHENES_DATABASE_URL",
+      "secret": "CHENES_SECRET_KEY",
+      "racine_fichiers": "/app/uploads/chenes",
+      "expediteur": "contact@residence-des-chenes.fr",
+      "nom_expediteur": "Résidence des Chênes"
+    }
+  ]
+}

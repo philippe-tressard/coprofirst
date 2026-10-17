@@ -1,0 +1,31 @@
+# ── La garde des pages d'une INSTALLATION COMMUNE (#1894) ─────────────────────
+#
+# À importer en tête du DERNIER `handle` du Caddyfile — celui qui sert le front —,
+# sur une installation commune à plusieurs copropriétés SEULEMENT :
+#
+#     handle {
+#         import commune/garde-des-pages.caddy
+#         reverse_proxy front:3000
+#     }
+#
+# Chaque page demandée passe d'abord par l'API (`GET /plateforme/aiguillage/hote`,
+# `api/app/installation_commune/routeur.py`), qui lit l'hôte :
+#
+#   - l'adresse d'une copropriété, ou l'hôte commun → 204 : la page est servie ;
+#   - l'ANCIEN alias d'une copropriété → 308 vers son adresse actuelle, chemin
+#     compris (transmis par `X-Forwarded-Uri`) : les liens déjà envoyés restent bons ;
+#   - tout autre hôte → 421, comme l'API elle-même.
+#
+# `forward_auth` rend au navigateur toute réponse qui n'est pas un 2xx : c'est ce
+# qui fait du 308 une redirection, sans rien écrire de plus ici.
+#
+# Les fichiers du front (`/_app/*`, icônes, service worker) ne posent pas la
+# question : ils ne dépendent d'aucun hôte, et une page en charge des dizaines.
+#
+# ⚠️ Sur une installation propre à une copropriété (5Hostachy), NE PAS l'importer :
+# la route y répond 404, et `forward_auth` rendrait ce 404 à chaque page.
+
+@pages_commune not path /_app/* /sw.js /manifest.webmanifest /favicon* /icons/* /robots.txt
+forward_auth @pages_commune api:8000 {
+	uri /plateforme/aiguillage/hote
+}

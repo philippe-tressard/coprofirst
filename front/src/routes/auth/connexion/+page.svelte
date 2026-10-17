@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { auth as authApi } from '$lib/api';
+	import { auth as authApi, aiguillage } from '$lib/api';
 	import { messageErreur } from '$lib/erreurs';
 	import { setUser } from '$lib/stores/auth';
 	import { destinationApresConnexion } from '$lib/redirection';
@@ -10,13 +10,28 @@
 	import LogoResidence from '$lib/components/LogoResidence.svelte';
 	import ChampMotDePasse from '$lib/components/ChampMotDePasse.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import AiguillageCopropriete from '$lib/components/AiguillageCopropriete.svelte';
+	import { NOM_PLATEFORME } from '$lib/plateforme';
 
-	onMount(() => {
+	//  L'hôte COMMUN d'une installation à plusieurs copropriétés (#1894) : l'écran
+	//  demande d'abord laquelle, puis y renvoie. Partout ailleurs la route répond
+	//  404, et le formulaire reste celui de la copropriété — un échec le laisse aussi.
+	let hoteCommun = false;
+
+	onMount(async () => {
 		loadSiteConfig();
+		try {
+			hoteCommun = (await aiguillage.etat()).hote_commun === true;
+		} catch {
+			hoteCommun = false;
+		}
 	});
 
-	$: _siteNom = $siteNomStore;
-	$: loginSousTitre = $configStore['login_sous_titre'] ?? 'Votre espace numérique de résidence';
+	//  L'hôte commun n'est l'espace d'AUCUNE résidence : il porte le nom de la plateforme.
+	$: _siteNom = hoteCommun ? NOM_PLATEFORME : $siteNomStore;
+	$: loginSousTitre = hoteCommun
+		? ''
+		: ($configStore['login_sous_titre'] ?? 'Votre espace numérique de résidence');
 
 	let email = '';
 	let password = '';
@@ -75,56 +90,60 @@
 		      vitrine. L'inscription et le mot de passe oublié y sont fermés au serveur. -->
 		{#if $modeDemoStore}<BandeauDemo dansCarte />{/if}
 
-		{#if error}
-			<div class="alert alert-error">
-				{error}
-				{#if emailNotVerified}
-					<div class="renvoi">
-						{#if resendDone}
-							<span class="text-muted-md"
-								>Un nouveau lien a été envoyé si un compte non vérifié existe pour cette adresse.</span
-							>
-						{:else}
-							<button
-								type="button"
-								class="btn btn-sm btn-outline btn-renvoi"
-								disabled={resendLoading}
-								on:click={resendVerification}
-							>
-								{resendLoading ? 'Envoi…' : 'Renvoyer le lien de vérification'}
-							</button>
-						{/if}
-					</div>
-				{/if}
-			</div>
-		{/if}
+		{#if hoteCommun}
+			<AiguillageCopropriete />
+		{:else}
+			{#if error}
+				<div class="alert alert-error">
+					{error}
+					{#if emailNotVerified}
+						<div class="renvoi">
+							{#if resendDone}
+								<span class="text-muted-md"
+									>Un nouveau lien a été envoyé si un compte non vérifié existe pour cette adresse.</span
+								>
+							{:else}
+								<button
+									type="button"
+									class="btn btn-sm btn-outline btn-renvoi"
+									disabled={resendLoading}
+									on:click={resendVerification}
+								>
+									{resendLoading ? 'Envoi…' : 'Renvoyer le lien de vérification'}
+								</button>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{/if}
 
-		<form on:submit|preventDefault={submit}>
-			<div class="field">
-				<label for="email">Email<EtoileRequis vide={!email} /></label>
-				<input id="email" type="email" bind:value={email} required autocomplete="email" />
-			</div>
+			<form on:submit|preventDefault={submit}>
+				<div class="field">
+					<label for="email">Email<EtoileRequis vide={!email} /></label>
+					<input id="email" type="email" bind:value={email} required autocomplete="email" />
+				</div>
 
-			<ChampMotDePasse
-				id="password"
-				libelle="Mot de passe"
-				bind:valeur={password}
-				autocomplete="current-password"
-			/>
+				<ChampMotDePasse
+					id="password"
+					libelle="Mot de passe"
+					bind:valeur={password}
+					autocomplete="current-password"
+				/>
 
-			<div class="btn-wrapper">
-				<button class="btn btn-primary" type="submit" disabled={loading}>
-					{loading ? 'Connexion…' : 'Se connecter'}
-				</button>
-			</div>
-		</form>
+				<div class="btn-wrapper">
+					<button class="btn btn-primary" type="submit" disabled={loading}>
+						{loading ? 'Connexion…' : 'Se connecter'}
+					</button>
+				</div>
+			</form>
 
-		{#if !$modeDemoStore}
-			<div class="auth-links">
-				<a href="/auth/mot-de-passe-oublie">Mot de passe oublié ?</a>
-				<span>·</span>
-				<a href="/auth/inscription">Créer un compte</a>
-			</div>
+			{#if !$modeDemoStore}
+				<div class="auth-links">
+					<a href="/auth/mot-de-passe-oublie">Mot de passe oublié ?</a>
+					<span>·</span>
+					<a href="/auth/inscription">Créer un compte</a>
+				</div>
+			{/if}
 		{/if}
 
 		<div class="auth-legal">

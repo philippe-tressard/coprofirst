@@ -8,6 +8,23 @@ _INSECURE_KEY_DEFAULTS = {
 }
 
 
+def defaut_du_secret(valeur: str, nom: str) -> str | None:
+    """Ce qui manque à un secret de signature, ou `None` s'il convient — écrit une fois.
+
+    `SECRET_KEY` de l'installation, et celui de chaque copropriété d'une installation
+    commune (`installation_commune/declaration.py`, #1894). Le message nomme le
+    réglage, jamais sa valeur.
+    """
+    if valeur in _INSECURE_KEY_DEFAULTS:
+        return (
+            f"{nom} n'est pas configuré. Définissez une valeur aléatoire "
+            "d'au moins 32 caractères dans votre fichier .env."
+        )
+    if len(valeur) < 32:
+        return f"{nom} doit faire au moins 32 caractères."
+    return None
+
+
 class Settings(BaseSettings):
     # Identité du nœud — lue dans `.env` (`env_file`) ; le front la reçoit à
     # l'exécution sous `PUBLIC_INSTANCE_ID` pour afficher « RPi1 » au pied de
@@ -82,19 +99,23 @@ class Settings(BaseSettings):
     origin: str = "http://localhost"
     hotes_copropriete: str = ""
 
+    # Le REGISTRE DES COPROPRIÉTÉS d'une installation COMMUNE (#1894, spec §4.1 bis
+    # et §4.2) : le chemin d'un fichier JSON qui les déclare — alias, hôtes, état,
+    # base, fichiers, et le NOM des variables qui portent leurs secrets. L'`ORIGIN`
+    # nomme alors l'hôte COMMUN, qui ne désigne aucune copropriété et ne fait que
+    # rediriger ; `HOTES_COPROPRIETE` ne sert plus. Vide → installation propre à
+    # une copropriété, comme avant. Lu par `installation_commune/declaration.py`.
+    coproprietes_fichier: str = ""
+
     # Sécurité
     secret_key: str = "dev-secret-key-change-in-production"
 
     @field_validator("secret_key")
     @classmethod
     def secret_key_must_be_secure(cls, v: str) -> str:
-        if v in _INSECURE_KEY_DEFAULTS:
-            raise ValueError(
-                "SECRET_KEY n'est pas configuré. Définissez une valeur aléatoire "
-                "d'au moins 32 caractères dans votre fichier .env."
-            )
-        if len(v) < 32:
-            raise ValueError("SECRET_KEY doit faire au moins 32 caractères.")
+        defaut = defaut_du_secret(v, "SECRET_KEY")
+        if defaut:
+            raise ValueError(defaut)
         return v
 
     cookie_secure: bool = True  # False uniquement pour dev HTTP local
