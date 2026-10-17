@@ -1,0 +1,139 @@
+<!--
+  Le COMPTE RENDU GLOBAL d'un point CS / Syndic — maquette C1, deux parties
+  (arbitrée le 17/10/2026, #2041) :
+
+  1. **Le point** — Quand, Où, Qui (conseil, syndic, invités) ;
+  2. **Les affaires abordées**, une par bloc, dans l'ordre d'ouverture ; puis
+     les **non traitées**, numéro et titre seuls.
+
+  Composé par le serveur (`GET /points-conseil/courant`) ; un brouillon s'y lit
+  comme tel, et le texte riche passe par l'assainisseur.
+-->
+<script lang="ts">
+	import Badge from '$lib/components/Badge.svelte';
+	import type { CompteRenduPoint } from '$lib/api';
+	import { fmtDatetime, fmtTime } from '$lib/date';
+	import { safeHtml } from '$lib/sanitize';
+	import { lienTicket } from '$lib/tickets';
+	import {
+		ETATS_POINT,
+		GROUPES_PRESENTS,
+		lieuDuPoint,
+		nomPresent,
+		precisionPresent,
+	} from '$lib/points-conseil';
+
+	export let compteRendu: CompteRenduPoint;
+
+	$: point = compteRendu.point;
+	$: groupes = GROUPES_PRESENTS.map((g) => ({
+		...g,
+		presents: compteRendu.presents.filter((p) => p.nature === g.nature),
+	})).filter((g) => g.presents.length);
+</script>
+
+<section class="report-card" aria-labelledby="titre-cr-{point.id}">
+	<div class="tete">
+		<h3 id="titre-cr-{point.id}">Compte rendu du point</h3>
+		<Badge teinte={ETATS_POINT[point.etat].teinte}>{ETATS_POINT[point.etat].libelle}</Badge>
+	</div>
+
+	<h4 class="partie">1 · Le point</h4>
+	<p class="quand">
+		{fmtDatetime(point.debut)}{#if point.fin}&nbsp;→ {fmtTime(point.fin)}{/if} · {lieuDuPoint(
+			point,
+		)}
+	</p>
+	{#each groupes as g (g.nature)}
+		<p class="presents">
+			<span class="groupe">{g.libelle} :</span>
+			{#each g.presents as p, i (p.id)}{i ? ' · ' : ''}{nomPresent(p)}{#if precisionPresent(p)}<span
+						class="precision"
+					>
+						({precisionPresent(p)})</span
+					>{/if}{#if p.telephone || p.email}<span class="precision">
+						— {[p.telephone, p.email].filter(Boolean).join(', ')}</span
+					>{/if}{/each}
+		</p>
+	{:else}
+		<p class="vide">Aucun présent indiqué.</p>
+	{/each}
+
+	<h4 class="partie">2 · Les affaires abordées · {compteRendu.abordees.length}</h4>
+	{#each compteRendu.abordees as { affaire, cr } (affaire.id)}
+		<article class="abordee">
+			<p class="titre">
+				<a href={lienTicket(affaire.id)}>{affaire.numero} · {affaire.titre}</a>
+				{#if cr.brouillon}<Badge teinte="badge-gray" compact>Brouillon</Badge>{/if}
+				{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>Conseil seul</Badge>{/if}
+			</p>
+			<div class="contenu">{@html safeHtml(cr.contenu)}</div>
+		</article>
+	{:else}
+		<p class="vide">Aucune affaire n’a encore de compte rendu.</p>
+	{/each}
+
+	{#if compteRendu.non_traitees.length}
+		<h4 class="partie">Non traitées · {compteRendu.non_traitees.length}</h4>
+		<p class="non-traitees">
+			{#each compteRendu.non_traitees as a, i (a.id)}{i ? ' · ' : ''}<a href={lienTicket(a.id)}
+					>{a.numero}</a
+				>
+				{a.titre}{/each}
+		</p>
+	{/if}
+</section>
+
+<style>
+	.tete {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	.tete h3 {
+		margin: 0;
+	}
+	.partie {
+		font-size: var(--fs-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--color-text-muted);
+		margin: 1rem 0 0.35rem;
+	}
+	.quand,
+	.presents,
+	.non-traitees,
+	.vide {
+		margin: 0 0 0.25rem;
+		font-size: var(--fs-sm);
+	}
+	.groupe {
+		font-weight: 600;
+	}
+	.precision,
+	.vide {
+		color: var(--color-text-muted);
+	}
+	.abordee {
+		padding: 0.5rem 0;
+		border-top: 1px solid var(--color-border);
+	}
+	.titre {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem;
+		margin: 0 0 0.25rem;
+		font-weight: 600;
+	}
+	.titre a {
+		color: var(--color-text);
+	}
+	.contenu {
+		font-size: var(--fs-sm);
+	}
+	.contenu :global(p) {
+		margin: 0 0 0.35rem;
+	}
+</style>

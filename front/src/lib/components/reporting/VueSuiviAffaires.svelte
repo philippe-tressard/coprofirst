@@ -26,6 +26,13 @@
   l'ancienneté et ses seuils y vivent, et le PDF — rendu par le serveur, pas par
   l'impression du navigateur — lit le même. Cette vue ne fait que les montrer.
 
+  ## Le point CS / Syndic (#2041)
+
+  En mode « Suivre », un point s'ouvre au-dessus du tableau (`PointConseil`) ;
+  tant qu'il est en cours, chaque affaire offre la saisie de son compte rendu
+  (`SaisieCrAffaire`, dans le tableau), et le CR global se lit dessous
+  (`CrGlobal`).
+
   Autonome : elle charge ses données et rend compte à la barre d'outils du parent
   (`chargement`, `estVide`, `recharger`, `exporterPdf`).
 -->
@@ -41,6 +48,10 @@
 	import SelecteurMode from '$lib/components/SelecteurMode.svelte';
 	import TableauAffaires from './TableauAffaires.svelte';
 	import RelanceSyndic from './RelanceSyndic.svelte';
+	import PointConseil from './PointConseil.svelte';
+	import SaisieCrAffaire from './SaisieCrAffaire.svelte';
+	import CrGlobal from './CrGlobal.svelte';
+	import type { CompteRenduPoint, CrAffaire } from '$lib/api';
 
 	const MODES = [
 		{ valeur: 'suivi', libelle: 'Suivre' },
@@ -54,6 +65,13 @@
 	let erreur = '';
 	let redaction = false;
 	let exportEnCours = false;
+	/** Le point CS / Syndic du mode, et l'affaire dont le CR est en saisie. */
+	let compteRendu: CompteRenduPoint | null = null;
+	let crOuvert: number | null = null;
+	$: crs =
+		compteRendu?.point.etat === 'en_cours'
+			? new Map<number, CrAffaire>(compteRendu.abordees.map((a) => [a.affaire.id, a.cr]))
+			: null;
 
 	/** Lu par la barre d'outils du parent — ne pas écrire depuis l'extérieur. */
 	export let chargement = false;
@@ -182,9 +200,25 @@
 	{#if mode === 'relance'}
 		<RelanceSyndic {suivi} onEnvoyee={relire} />
 	{:else}
+		<PointConseil mode="affaires" bind:compteRendu />
 		<div class="report-card">
-			<TableauAffaires affaires={suivi.affaires} />
+			<TableauAffaires affaires={suivi.affaires} {crs} bind:ouverte={crOuvert}>
+				<svelte:fragment slot="saisie" let:affaire let:cr>
+					{#if compteRendu}
+						<SaisieCrAffaire
+							pointId={compteRendu.point.id}
+							{affaire}
+							{cr}
+							onCompteRendu={(nouveau) => (compteRendu = nouveau)}
+							onFerme={() => (crOuvert = null)}
+						/>
+					{/if}
+				</svelte:fragment>
+			</TableauAffaires>
 		</div>
+		{#if compteRendu}
+			<CrGlobal {compteRendu} />
+		{/if}
 	{/if}
 {/if}
 
