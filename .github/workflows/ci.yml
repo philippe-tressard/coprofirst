@@ -723,7 +723,12 @@ jobs:
             while IFS= read -r hit; do
               case "$hit" in
                 *"label=com.docker.compose.project"*) ;;
-                *) echo "::error file=$f::\`docker image prune\` sans --filter label=com.docker.compose.project — le daemon de rpi2 est partagé avec List-dons, un prune nu supprime aussi ses couches"; st=1 ;;
+                #  Les images TIRÉES de la CI (#1758) n'ont pas l'étiquette de
+                #  Compose : elles se reconnaissent à l'étiquette OCI que pose
+                #  images.yml, par la constante SOURCE_IMAGES de lib-images-ci.sh
+                #  — sa valeur est confrontée au workflow par test_images_publiees.py.
+                *'label=org.opencontainers.image.source=$SOURCE_IMAGES'*) ;;
+                *) echo "::error file=$f::\`docker image prune\` sans --filter label=com.docker.compose.project (ou l'étiquette de la CI, \$SOURCE_IMAGES) — le daemon de rpi2 est partagé avec List-dons, un prune nu supprime aussi ses couches"; st=1 ;;
               esac
             done < <(grep -nE '^[^#]*docker image prune' "$f")
             grep -qE '^[^#]*docker system prune' "$f" \
