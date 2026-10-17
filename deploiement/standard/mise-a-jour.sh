@@ -9,9 +9,13 @@
 #
 #  ## Le déroulé — rien ne s'arrête tant que tout n'est pas prêt
 #
-#   1. la version à installer : celle de la branche `replica` du dépôt public ;
-#   2. décider (fonction PURE `decider_cible`) : à jour, épinglée, trop tôt
-#      (échelonnement), version illisible, ou mettre à jour ;
+#   1. la version à installer : celle que porte le BAIL de l'installation, signé
+#      par la référence (R5 #1881) — l'API le renouvelle, le vérifie et rend sa
+#      version cible (`POST /admin/maintenance/bail`). Le canal, la vague, et
+#      l'épinglage sont décidés à la référence, et seulement là ;
+#   2. décider (fonction PURE `decider_cible`) : à jour, épinglée ici, sans bail
+#      valide (D18 : pas de mise à jour automatique), sans version cible,
+#      version illisible, mettre à jour, ou revenir — sur ordre signé seulement ;
 #   3. télécharger l'archive de déploiement de la version, tirer ses images,
 #      vérifier leur signature — le service tourne toujours ;
 #   4. arrêter l'API, SAUVEGARDER les volumes dans `COPROFIRST_SAUVEGARDES`
@@ -33,13 +37,14 @@
 #
 #  Réglages lus dans `.env` : COPROFIRST_VERSION (la version installée),
 #  COPROFIRST_SAUVEGARDES (dossier OBLIGATOIRE, de préférence monté hors de
-#  la machine), COPROFIRST_EPINGLEE=oui (ne pas suivre), COPROFIRST_DELAI_JOURS
-#  (0 pour l'installation pilote, 1 par défaut), COPROFIRST_SIGNATURE
-#  (`exigee` ou `si-possible`, défaut), MAINTENANCE_KEY (pour rendre compte).
+#  la machine), COPROFIRST_EPINGLEE=oui (l'exploitant refuse toute mise à
+#  jour), COPROFIRST_SIGNATURE (`exigee` ou `si-possible`, défaut),
+#  MAINTENANCE_KEY (pour lire le bail et rendre compte — OBLIGATOIRE depuis R5).
+#  COPROFIRST_DELAI_JOURS n'est plus lu : les vagues se décident à la référence.
 #
 #  ESSAI, jamais en service (lus dans l'ENVIRONNEMENT, pas dans `.env`) :
-#  COPROFIRST_ESSAI_CIBLE=X.Y.Z installe cette version au lieu de celle de
-#  `replica`, sans délai ; COPROFIRST_ESSAI_ARCHIVE=<fichier> prend l'archive de
+#  COPROFIRST_ESSAI_CIBLE=X.Y.Z installe cette version au lieu de celle du
+#  bail ; COPROFIRST_ESSAI_ARCHIVE=<fichier> prend l'archive de
 #  déploiement sur le disque au lieu de la release. C'est ainsi que
 #  `scripts/ci/essai-mise-a-jour.sh` éprouve tout le déroulé, de bout en bout,
 #  sans rien promouvoir.
@@ -69,20 +74,34 @@ version_au_plus() {
     [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -1)" = "$1" ]
 }
 
-#  $1 courante · $2 cible · $3 épinglée (oui|…) · $4 âge de la promotion en
-#  jours (vide : inconnu) · $5 délai d'échelonnement en jours
-#  → a-jour | epinglee | inconnue | retrograde | attendre | mettre-a-jour
+#  $1 corps JSON · $2 clé → la valeur d'un champ TEXTE de premier niveau, ou
+#  vide (absent, `null`). Le corps est celui de `POST /admin/maintenance/bail` :
+#  des mots et une version, jamais un guillemet échappé.
+champ_json() {
+    printf '%s' "$1" | sed -n 's/.*"'"$2"'": *"\([^"]*\)".*/\1/p' | head -1
+}
+
+#  $1 courante · $2 cible (celle du bail) · $3 état du bail (`inscription/constat` :
+#  active|suspendue|limitee|essai|reference ; vide : API muette) · $4 épinglée
+#  ici (oui|…)
+#  → epinglee | injoignable | sans-bail | sans-cible | inconnue | a-jour |
+#    revenir | mettre-a-jour
 decider_cible() {
-    local courante="$1" cible="$2" epinglee="$3" age="$4" delai="${5:-1}"
+    local courante="$1" cible="$2" etat="$3" epinglee="$4"
     local motif='^[0-9]+\.[0-9]+\.[0-9]+$'
-    if ! [[ "$cible" =~ $motif ]]; then echo inconnue; return; fi
+    #  Le refus de l'exploitant passe avant tout : c'est son installation.
     if [ "$epinglee" = oui ]; then echo epinglee; return; fi
+    case "$etat" in
+        '') echo injoignable; return ;;
+        active|suspendue) ;;
+        *) echo sans-bail; return ;;  # D18 : pas de mise à jour sans bail valide
+    esac
+    if [ -z "$cible" ]; then echo sans-cible; return; fi
+    if ! [[ "$cible" =~ $motif ]]; then echo inconnue; return; fi
     if [ "$cible" = "$courante" ]; then echo a-jour; return; fi
-    #  `replica` n'avance qu'en avant (#1754) : une cible plus ancienne est une
-    #  anomalie, pas un ordre de retour arrière.
-    if [[ "$courante" =~ $motif ]] && version_au_plus "$cible" "$courante"; then echo retrograde; return; fi
-    case "$age" in ''|*[!0-9]*) age=0 ;; esac
-    if [ "$age" -lt "$delai" ]; then echo attendre; return; fi
+    #  Une cible plus ancienne est un ORDRE signé de la référence (épinglage) : le
+    #  canal, lui, ne fait jamais reculer (`registre/canaux`, règle 6).
+    if [[ "$courante" =~ $motif ]] && version_au_plus "$cible" "$courante"; then echo revenir; return; fi
     echo mettre-a-jour
 }
 
@@ -106,17 +125,26 @@ if [ "${1:-}" = "--selftest" ]; then
         got=$("$f" "$@")
         if [ "$got" = "$voulu" ]; then echo "PASS  $lib"; else echo "FAIL  $lib — « $got »"; fail=1; fi
     }
-    echo "== self-test : quelle version installer =="
-    attendu "même version → à jour"                     a-jour        decider_cible 2.120.0 2.120.0 non 5 1
-    attendu "épinglée → ne suit pas"                    epinglee      decider_cible 2.120.0 2.121.0 oui 5 1
-    attendu "cible illisible → inconnue"                inconnue      decider_cible 2.120.0 "404: Not" non 5 1
-    attendu "cible plus ancienne → anomalie"            retrograde    decider_cible 2.121.0 2.120.0 non 5 1
-    attendu "2.119.10 > 2.119.9 (numérique)"            mettre-a-jour decider_cible 2.119.9 2.119.10 non 5 1
-    attendu "promue hier, délai 1 → mettre à jour"      mettre-a-jour decider_cible 2.120.0 2.121.0 non 1 1
-    attendu "promue aujourd'hui, délai 1 → attendre"    attendre      decider_cible 2.120.0 2.121.0 non 0 1
-    attendu "pilote (délai 0) → dès la promotion"       mettre-a-jour decider_cible 2.120.0 2.121.0 non 0 0
-    attendu "âge illisible, délai 1 → attendre"         attendre      decider_cible 2.120.0 2.121.0 non "" 1
-    attendu "première installation sans version"       mettre-a-jour decider_cible "" 2.121.0 non 3 1
+    echo "== self-test : quelle version installer (le bail, R5 #1881) =="
+    attendu "même version → à jour"                     a-jour        decider_cible 2.120.0 2.120.0 active non
+    attendu "épinglée ici → ne suit pas, bail ou non"   epinglee      decider_cible 2.120.0 2.121.0 active oui
+    attendu "épinglée ici, sans bail → épinglée"        epinglee      decider_cible 2.120.0 2.121.0 limitee oui
+    attendu "API muette → injoignable"                  injoignable   decider_cible 2.120.0 2.121.0 "" non
+    attendu "limitée → pas de mise à jour (D18)"        sans-bail     decider_cible 2.120.0 2.121.0 limitee non
+    attendu "installation d'essai → pas de bail"        sans-bail     decider_cible 2.120.0 2.121.0 essai non
+    attendu "référence → pas ce script"                 sans-bail     decider_cible 2.120.0 2.121.0 reference non
+    attendu "bail sans version cible → rien"            sans-cible    decider_cible 2.120.0 "" active non
+    attendu "cible illisible → inconnue"                inconnue      decider_cible 2.120.0 "404: Not" active non
+    attendu "cible plus ancienne → revenir (ordre)"     revenir       decider_cible 2.121.0 2.120.0 active non
+    attendu "2.119.10 > 2.119.9 (numérique)"            mettre-a-jour decider_cible 2.119.9 2.119.10 active non
+    attendu "suspendue → reçoit ses correctifs"         mettre-a-jour decider_cible 2.120.0 2.121.0 suspendue non
+    attendu "première installation sans version"       mettre-a-jour decider_cible "" 2.121.0 active non
+    echo "== self-test : lire la réponse du bail =="
+    BAIL_LU='{"etat":"active","raison":"bail valide","canal":"replica","version_cible":"2.121.0"}'
+    attendu "état lu"                                   active        champ_json "$BAIL_LU" etat
+    attendu "version cible lue"                         2.121.0       champ_json "$BAIL_LU" version_cible
+    attendu "version cible null → vide"                 ""            champ_json '{"etat":"limitee","version_cible":null}' version_cible
+    attendu "réponse vide → vide"                       ""            champ_json "" etat
     echo "== self-test : après la mise à jour =="
     attendu "santé OK → réussie"                        reussie   decider_issue ok ""
     attendu "santé KO → revenir à l'image précédente"   revenir   decider_issue ko ""
@@ -152,7 +180,6 @@ PROJET=$(printf '%s' "${COMPOSE_PROJECT_NAME:-$(basename "$DOSSIER")}" | tr '[:u
 COURANTE=$(lire_env COPROFIRST_VERSION)
 SAUVEGARDES=$(lire_env COPROFIRST_SAUVEGARDES)
 SIGNATURE=$(lire_env COPROFIRST_SIGNATURE); SIGNATURE=${SIGNATURE:-si-possible}
-DELAI=$(lire_env COPROFIRST_DELAI_JOURS); DELAI=${DELAI:-1}
 
 rendre_compte() {  # $1 statut (succes|erreur) · $2 erreur (vide si succès) · $3 vers · $4 issue
     #  L'issue est un mot du contrat (`registre/contrat.ISSUES_MISE_A_JOUR`) : le
@@ -168,25 +195,28 @@ echouer() {  # $1 message — sortie SANS avoir touché au service
     exit 1
 }
 
-# ── 1–2. La version à installer, et la décision ───────────────────────────────
-AGE=""
+# ── 1–2. La version à installer — celle du bail —, et la décision ─────────────
 if [ -n "${COPROFIRST_ESSAI_CIBLE:-}" ]; then
-    CIBLE="${COPROFIRST_ESSAI_CIBLE:-}"; AGE=999
-    journal "ESSAI : cible imposée $CIBLE (COPROFIRST_ESSAI_CIBLE), replica n'est pas lue."
+    CIBLE="${COPROFIRST_ESSAI_CIBLE:-}"; ETAT_BAIL=active; RAISON="essai"
+    journal "ESSAI : cible imposée $CIBLE (COPROFIRST_ESSAI_CIBLE), le bail n'est pas lu."
 else
-    CIBLE=$(curl -fsSL -m 20 "https://raw.githubusercontent.com/$DEPOT/replica/front/package.json" 2>/dev/null \
-        | sed -n 's/^[[:space:]]*"version": *"\([^"]*\)".*/\1/p' | head -1 || true)
-    PUBLIEE=$(curl -fsSL -m 20 "https://api.github.com/repos/$DEPOT/releases/tags/v$CIBLE" 2>/dev/null \
-        | sed -n 's/.*"published_at": *"\([^"]*\)".*/\1/p' | head -1 || true)
-    [ -n "${PUBLIEE:-}" ] && AGE=$(( ( $(date +%s) - $(date -d "${PUBLIEE:-}" +%s) ) / 86400 ))
+    #  L'API renouvelle le bail, VÉRIFIE sa signature et rend sa version cible : le
+    #  script ne croit rien qu'elle n'ait vérifié (`inscription/constat.py`).
+    REPONSE=$(printf '' | curl -fsS -m 60 -X POST http://localhost/api/admin/maintenance/bail \
+        -H "x-maintenance-key: $(lire_env MAINTENANCE_KEY)" --data-binary @- 2>/dev/null || true)
+    ETAT_BAIL=$(champ_json "$REPONSE" etat)
+    RAISON=$(champ_json "$REPONSE" raison)
+    CIBLE=$(champ_json "$REPONSE" version_cible)
 fi
-DECISION=$(decider_cible "$COURANTE" "$CIBLE" "$(lire_env COPROFIRST_EPINGLEE)" "$AGE" "$DELAI")
+DECISION=$(decider_cible "$COURANTE" "$CIBLE" "$ETAT_BAIL" "$(lire_env COPROFIRST_EPINGLEE)")
 case "$DECISION" in
-    a-jour)    journal "À jour en $COURANTE."; exit 0 ;;
-    epinglee)  journal "Version épinglée sur $COURANTE (COPROFIRST_EPINGLEE=oui) : $CIBLE n'est pas installée."; exit 0 ;;
-    attendre)  journal "$CIBLE promue il y a ${AGE:-?} jour(s), délai $DELAI : installée une nuit prochaine."; exit 0 ;;
-    inconnue)  echouer "version de replica illisible (« $CIBLE ») : dépôt injoignable ?" ;;
-    retrograde) echouer "replica porte $CIBLE, plus ancienne que $COURANTE : anomalie, rien n'est fait." ;;
+    a-jour)     journal "À jour en $COURANTE."; exit 0 ;;
+    epinglee)   journal "Version épinglée sur $COURANTE (COPROFIRST_EPINGLEE=oui) : rien n'est installé."; exit 0 ;;
+    sans-bail)  journal "Pas de mise à jour automatique sans bail valide (D18) — $ETAT_BAIL : $RAISON."; exit 0 ;;
+    sans-cible) journal "Le bail ne porte aucune version cible : rien à installer."; exit 0 ;;
+    injoignable) echouer "bail illisible : l'API ne répond pas, ou MAINTENANCE_KEY manque." ;;
+    inconnue)   echouer "version cible du bail illisible (« $CIBLE »)." ;;
+    revenir)    journal "Retour à $CIBLE ordonné par la référence (version épinglée)." ;;
 esac
 [ -n "$SAUVEGARDES" ] && [ -d "$SAUVEGARDES" ] && [ -w "$SAUVEGARDES" ] \
     || echouer "COPROFIRST_SAUVEGARDES absent ou non inscriptible : pas de mise à jour sans sauvegarde (D15)."

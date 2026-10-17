@@ -14,6 +14,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import CanauxDistribution from '$lib/components/CanauxDistribution.svelte';
 	import CarteRegistreInstallation from '$lib/components/CarteRegistreInstallation.svelte';
 	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
@@ -23,8 +24,10 @@
 	import {
 		registre as registreApi,
 		type FicheInstallation,
+		type CanalDistribution,
 		type GesteRegistre,
 		type RegistreLu,
+		type ReglageDistribution,
 	} from '$lib/api';
 	import { basculer } from '$lib/accordeon';
 	import { messageErreur } from '$lib/erreurs';
@@ -146,6 +149,34 @@
 		);
 	}
 
+	async function distribution(identifiant: string, reglage: ReglageDistribution) {
+		const motif = await demander({
+			titre: `Canal et version de ${identifiant}`,
+			message: 'La version cible qui en découle part dans le prochain bail de l’installation.',
+			libelle: 'Motif',
+			placeholder: 'Ce qui motive le réglage — il s’inscrit au journal.',
+			libelleValider: 'Enregistrer',
+			requis: true,
+		});
+		if (!motif?.trim()) return;
+		await appliquer(
+			identifiant,
+			() => registreApi.distribuer(identifiant, reglage, motif.trim()),
+			`Réglage enregistré. La version cible part dans le prochain bail de ${identifiant}.`,
+		);
+	}
+
+	/** Un canal spécial a avancé : les versions cibles de ses installations changent. */
+	async function canauxChanges(canaux: CanalDistribution[]) {
+		if (lu) lu = { ...lu, canaux };
+		fiches = {};
+		try {
+			lu = await registreApi.installations();
+		} catch (e) {
+			toast('error', messageErreur(e));
+		}
+	}
+
 	async function services(identifiant: string, choisis: string[]) {
 		const motif = await demander({
 			titre: `Services accordés à ${identifiant}`,
@@ -170,6 +201,10 @@
 		son nom dédié sont déclarés.
 	</p>
 {:else}
+	{#if lu}
+		<CanauxDistribution canaux={lu.canaux} on:change={(e) => canauxChanges(e.detail)} />
+	{/if}
+
 	<ReglagesListe>
 		<ChampRecherche
 			id="admin-recherche-installation"
@@ -203,10 +238,13 @@
 				fiche={fiches[i.identifiant] ?? null}
 				erreurFiche={erreursFiche[i.identifiant] ?? ''}
 				accordables={lu?.services_accordables ?? []}
+				canaux={lu?.canaux ?? []}
+				vagues={lu?.vagues ?? []}
 				enCours={enCours === i.identifiant}
 				on:basculer={() => ouvrir(i.identifiant)}
 				on:geste={(e) => geste(i.identifiant, e.detail)}
 				on:services={(e) => services(i.identifiant, e.detail)}
+				on:distribution={(e) => distribution(i.identifiant, e.detail)}
 			/>
 		{/each}
 	</EtatListe>

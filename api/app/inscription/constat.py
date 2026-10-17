@@ -16,6 +16,10 @@ sans réseau ni disque, cas par cas (`tests/test_inscription_constat.py`).
 4. **Mode constat** : ce verdict s'AFFICHE ; rien ne l'applique encore (R6 #1882) —
    sauf les SERVICES, avancés le 13/10/2026 : une réplique n'allume que ceux que
    son bail cru autorise (`services`, lu par `utils/services.service_actif`).
+5. **La mise à jour automatique suit le bail** (R5 #1881, D18) : seule une
+   installation active ou suspendue, au bail cru, reçoit une version à installer
+   (`version_a_installer`) ; une installation limitée n'en reçoit aucune, même
+   quand son bail échu en portait une.
 """
 
 from __future__ import annotations
@@ -56,6 +60,15 @@ class Constat:
     #: référence, une installation d'essai) ; sinon ceux du bail cru, et AUCUN
     #: sans bail cru, échu, en attente, suspendu ou résilié.
     services: Optional[frozenset[str]] = frozenset()
+
+
+#: Les états dont la version cible s'installe (règle 5) — aucun autre.
+ETATS_MIS_A_JOUR = frozenset({ACTIVE, SUSPENDUE})
+
+
+def version_a_installer(verdict: Constat) -> Optional[str]:
+    """La version que la mise à jour nocturne installe, ou None : aucune (règle 5)."""
+    return verdict.version_cible if verdict.etat in ETATS_MIS_A_JOUR else None
 
 
 def bail_valide(

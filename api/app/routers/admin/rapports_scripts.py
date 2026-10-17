@@ -22,6 +22,8 @@ from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from app.inscription.client import constat_pour_la_mise_a_jour
+from app.inscription.constat import version_a_installer
 from app.utils.declenchement import normaliser
 from app.auth.cle_maintenance import exiger_cle_maintenance
 from app.database import get_session
@@ -233,6 +235,36 @@ def maintenance_battement(
     session.add(ligne)
     session.commit()
     return {"tache": ligne.tache, "noeud": ligne.noeud, "terminee_le": ligne.terminee_le}
+
+
+class BailMiseAJour(BaseModel):
+    #: reference · essai · limitee · active · suspendue (`inscription/constat`)
+    etat: str
+    raison: str
+    canal: Optional[str] = None
+    #: la version que la référence fait installer — vide : aucune (D18)
+    version_cible: Optional[str] = None
+
+
+@router.post("/maintenance/bail", response_model=BailMiseAJour)
+def maintenance_bail(
+    x_maintenance_key: Optional[str] = Header(default=None, alias="x-maintenance-key"),
+):
+    """Le bail renouvelé, et la version qu'il fait installer (R5 #1881).
+
+    `deploiement/standard/mise-a-jour.sh` le demande avant de décider : une réplique
+    suit la version cible de son bail CRU — signature, époque, clé et échéance
+    vérifiées ici —, et sans bail valide n'installe rien (D18). Ne rend que l'état
+    et une version : rien de la copropriété.
+    """
+    exiger_cle_maintenance(x_maintenance_key)
+    verdict = constat_pour_la_mise_a_jour()
+    return BailMiseAJour(
+        etat=verdict.etat,
+        raison=verdict.raison,
+        canal=verdict.canal,
+        version_cible=version_a_installer(verdict),
+    )
 
 
 @router.post("/maintenance/purges")

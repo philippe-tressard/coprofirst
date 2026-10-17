@@ -9,6 +9,8 @@
      l'écran n'a pas de seconde table des transitions — « Supprimer » compris, offert
      à une installation résiliée seulement ;
   2. **Services accordés** — une case par service que la référence peut accorder ;
+  2 bis. **Canal et version** — canal, vague, épinglage, et la version cible qui en
+     découle (`DistributionInstallation`, R5 #1881) ;
   3. **Administrateur d'installation** — le contact qu'il a déclaré ;
   4. **Dernier rapport nocturne** — des nombres et des coches de conformité
      (`CocheConformite` : conforme, à corriger, inconnu), rien d'un résident ;
@@ -22,10 +24,17 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import CocheConformite from '$lib/components/CocheConformite.svelte';
+	import DistributionInstallation from '$lib/components/DistributionInstallation.svelte';
 	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import type { FicheInstallation, GesteRegistre, ServiceAccordable } from '$lib/api';
+	import type {
+		CanalDistribution,
+		FicheInstallation,
+		GesteRegistre,
+		ServiceAccordable,
+		VagueLue,
+	} from '$lib/api';
 	import { fmtDatetime } from '$lib/date';
 	import { fmtNombre } from '$lib/utils';
 	import {
@@ -38,6 +47,8 @@
 
 	export let fiche: FicheInstallation;
 	export let accordables: ServiceAccordable[] = [];
+	export let canaux: CanalDistribution[] = [];
+	export let vagues: VagueLue[] = [];
 	export let enCours = false;
 
 	const dispatch = createEventDispatcher<{
@@ -134,6 +145,8 @@
 			on:enregistre={() => dispatch('services', choisis)}
 		/>
 	{/if}
+
+	<DistributionInstallation {fiche} {canaux} {vagues} {enCours} on:distribution />
 {/if}
 
 <h4 class="intertitre">Administrateur d’installation</h4>

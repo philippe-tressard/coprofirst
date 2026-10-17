@@ -86,6 +86,8 @@ TACHES_PERMANENTES: dict[str, str] = {
     "conservation_registre": "l'effacement, à leur échéance, des coordonnées (12 mois) et du "
     "contrat archivé (5 ans) d'une installation résiliée — les durées promises par les "
     "conditions d'inscription (§4) redeviennent fictives",
+    "canaux_registre": "l'avancée du canal `replica` dans le registre (#1881) — les baux "
+    "portent alors une version cible figée, et aucune réplique ne reçoit la version promue",
 }
 
 
@@ -109,6 +111,8 @@ TACHES_DE_LA_PLATEFORME: dict[str, str] = {
     "aucune copropriété (§4.11) (#1878)",
     "conservation_registre": "la base `plateforme` (registre des installations), qui "
     "n'appartient à aucune copropriété (§4.11, règle 7)",
+    "canaux_registre": "le canal `replica` du registre des installations, relu sur le "
+    "dépôt public : il n'appartient à aucune copropriété (§4.11, règle 6) (#1881)",
 }
 
 
@@ -160,10 +164,10 @@ def enregistrer_taches_de_la_plateforme(scheduler) -> None:
     liste des tâches de la plateforme se lit ICI, à côté de leur déclaration.
     """
     from app.inscription import client
-    from app.registre import conservation, sauvegarde
+    from app.registre import canaux, conservation, sauvegarde
     from app.utils import sante_plateforme
 
-    for module in (sante_plateforme, sauvegarde, conservation, client):
+    for module in (sante_plateforme, sauvegarde, conservation, canaux, client):
         module.enregistrer(scheduler)
 
 

@@ -83,7 +83,6 @@ poser ORIGIN http://localhost
 poser COOKIE_SECURE false
 poser COPROFIRST_VERSION "$DE"
 poser COPROFIRST_SAUVEGARDES "$SAUV"
-poser COPROFIRST_DELAI_JOURS 0
 poser MAINTENANCE_KEY "$(openssl rand -hex 24)"
 MDP=$(openssl rand -hex 32)
 #  Une <de> qui portait PostgreSQL derrière un profil ne le démarre que par lui ;

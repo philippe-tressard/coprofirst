@@ -119,12 +119,20 @@ version précédente du code (on ajoute, puis on retire à la version suivante �
 
 ## La mise à jour automatique, chaque nuit
 
-`deploiement/standard/mise-a-jour.sh` suit la branche `replica` : quand une
-version y est promue, il l'installe, et revient seul en arrière si elle ne
-démarre pas. Il ne touche **à rien** tant que tout n'est pas prêt :
+`deploiement/standard/mise-a-jour.sh` suit le **bail** de l'installation,
+signé par la référence : il installe la **version cible** que le bail porte, et
+revient seul en arrière si elle ne démarre pas. Le canal suivi (`replica` par
+défaut), la **vague** (pilote, générale le lendemain d'une promotion, tardive
+trois jours après) et l'**épinglage** — y compris l'ordre de revenir à une
+version plus ancienne — se décident à la référence, dans son registre des
+installations. **Sans bail valide, aucune mise à jour automatique** : une
+installation non inscrite, en attente de validation, résiliée ou au bail échu
+reste sur sa version, et se met à jour à la main (ci-dessus). Il ne touche
+**à rien** tant que tout n'est pas prêt :
 
-1. il lit la version de `replica` et décide : déjà à jour, épinglée, trop tôt
-   (échelonnement), ou à installer ;
+1. il demande à l'API le bail renouvelé et sa version cible — l'API en vérifie
+   la signature —, et décide : déjà à jour, épinglée ici, sans bail valide,
+   sans version cible, à installer, ou à revenir sur ordre de la référence ;
 2. il télécharge l'archive de la version, tire ses images et vérifie leur
    signature — le site tourne toujours ;
 3. il arrête l'API, **sauvegarde** les volumes dans `COPROFIRST_SAUVEGARDES`
@@ -141,9 +149,8 @@ démarre pas. Il ne touche **à rien** tant que tout n'est pas prêt :
 | Réglage | Rôle |
 |---|---|
 | `COPROFIRST_SAUVEGARDES` | **obligatoire** — le dossier des sauvegardes d'avant mise à jour, à monter **hors de la machine** : sans lui, rien n'est installé |
-| `MAINTENANCE_KEY` | la clé qui permet au script de rendre compte à l'administration |
-| `COPROFIRST_DELAI_JOURS` | `0` pour l'installation pilote (dès la promotion), `1` par défaut (la nuit suivante) |
-| `COPROFIRST_EPINGLEE` | `oui` pour rester sur la version installée |
+| `MAINTENANCE_KEY` | **obligatoire** — la clé qui permet au script de lire le bail et de rendre compte à l'administration |
+| `COPROFIRST_EPINGLEE` | `oui` pour refuser toute mise à jour automatique, quoi que dise le bail |
 | `COPROFIRST_SIGNATURE` | `exigee` pour refuser une image dont la signature n'a pas pu être vérifiée (il faut `gh`, connecté) ; `si-possible` par défaut |
 
 **Le lancer chaque nuit**, à une heure creuse — une mise à jour coupe le site

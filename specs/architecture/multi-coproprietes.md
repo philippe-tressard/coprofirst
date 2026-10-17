@@ -356,7 +356,10 @@ stables de main. »*
    copropriété, image vérifiée, migrations base par base avec arrêt au premier
    échec, contrôle de santé, et retour à l'image précédente sinon. Déploiement
    **échelonné** (une installation pilote d'abord) ; une installation peut
-   **épingler** sa version.
+   **épingler** sa version. **Depuis R5 (#1881)**, la mise à jour suit la
+   **version cible du bail** (§4.11, règle 6) et non plus la branche `replica` :
+   l'échelonnement et l'épinglage se décident à la référence ; l'exploitant garde
+   le refus local (`COPROFIRST_EPINGLEE=oui`).
 7. **Les migrations sont compatibles sur une version** (#1757) : une version
    ajoute, la suivante retire. L'image précédente tourne alors sur le schéma
    migré, et le retour arrière n'est qu'un changement d'image — sans quoi il
@@ -457,7 +460,26 @@ revient à son exploitant — la référence n'y a aucun accès.
    déploiement **par vagues** (une part des installations d'abord), l'épinglage
    et le retour à une version. Ce qu'un client a de spécifique passe par le
    registre des services (§4.8), jamais par une branche — la règle 1 de §4.10
-   vaut pour tout canal.
+   vaut pour tout canal. **Livré par R5 (#1881)** — `registre/canaux.py` :
+   - la référence **calcule** la version cible (fonction pure) : aucune pour une
+     installation en attente ou résiliée (D18) ; une installation **suspendue**
+     reçoit ses correctifs ; la **version épinglée** par l'opérateur prime, et une
+     version plus ancienne est l'**ordre de revenir** — le seul chemin d'un retour ;
+     sinon la version du canal, selon la **vague** (pilote dès l'avancée du canal,
+     générale à J+1, tardive à J+3 ; avant son tour, la version précédente du
+     canal) ; une cible tirée du canal ne fait jamais reculer une installation ;
+   - `replica` avance **seul** : la référence lit sa branche chaque nuit (03:50,
+     avant les baux) et ne le fait jamais reculer ; un canal `special-<nom>`
+     avance par l'opérateur ; `main` n'est le canal que de la référence ;
+   - le **format du bail ne change pas** : `Bail` refuse les champs inconnus, et un
+     champ neuf ferait rejeter le bail par toute installation pas encore à jour —
+     plus de mise à jour automatique, donc jamais à jour. La décision voyage dans
+     `version_cible`, déjà au contrat ;
+   - l'installation vérifie le bail (`POST /admin/maintenance/bail`, clé de
+     maintenance) et sa mise à jour nocturne n'installe que la version qu'il porte ;
+   - une version cible doit être **promue** : seule une release porte l'archive de
+     déploiement. L'avant-première d'une version non promue demanderait une
+     archive par tag — écartée du lot.
 7. **Le registre n'est pas une donnée de la résidence** : base `plateforme`, rôle
    PostgreSQL distinct, onglet réservé à l'**opérateur de plateforme** (§4.7),
    jamais à l'administrateur de la copropriété 5Hostachy. La référence y figure,
@@ -679,7 +701,7 @@ Ouverts le 12/10/2026 ; le code de chaque lot reste soumis à accord, lot par lo
 | R2 | **Inscription et bail** côté installation, en **mode constat** : l'état est calculé et affiché, jamais appliqué ; mode essai. **Livré en v2.144.0** (arbitrages du jour : clé et état de l'installation dans le volume `app_data`, clé des baux créée sur l'actif par `creer-cle-baux.sh` et jamais sur le poste, saisie par l'opérateur dans Admin › Maintenance) : `POST /plateforme/baux` côté référence, `app/inscription/` côté installation (constat pur, bail rangé seulement s'il se croit, tâche `bail_installation`, alerte après 3 jours). La clé de l'époque 1, créée le 13/10/2026, est versée dans `app/inscription/cles.py` par #1892 — qui corrige aussi le chemin des envois : sans le préfixe `/api` du `Caddyfile`, ils partaient au front | M | R1 | #1878 |
 | R3 | **Rapport nocturne**, joint à la mise à jour de la nuit (#1756). **Livré en v2.144.0** : construit depuis les schémas du contrat (`app/inscription/rapport.py`) — des nombres et des oui/non, aucune donnée de résident, une mesure impossible rend « inconnu » ; envoyé par la tâche `bail_installation`, après le bail ; reçu par `POST /plateforme/rapports`, signé par la clé que la référence connaît pour cet identifiant, et gardé **30 jours** (`rapports.CONSERVATION`, arbitré avec le lot) | S | R2 | #1879 |
 | R4 | **L'onglet « Installations » de la référence** : liste, fiche, validation, canal, suspension, alertes, journal des décisions. **Livré le 13/10/2026 sans les alertes ni le canal** (arbitrage du jour, un seul lot) : liste et fiche (contact, contrat archivé, journal, dernier rapport), gestes motivés et journalisés — valider, suspendre, rétablir, résilier — et **services accordés**, portés par le bail (`registre/decisions.py`) ; masqué hors de la référence. **Alertes livrées le 14/10/2026** (R4b #1960, arbitrage du jour : toutes sur la carte, un courriel à l'opérateur pour les trois graves — muette, clone, deux références —, une fois par fait, suivi au journal) : `registre/alertes.py`. Restent : le canal et l'épinglage avec R5 | M | R1, R3 | #1880 |
-| R5 | **Canaux et version cible** portés par le bail ; déploiement par vagues, épinglage | M | R2, R4 | #1881 |
+| R5 | **Canaux et version cible** portés par le bail ; déploiement par vagues, épinglage. **Livré le 17/10/2026** (§4.11, règle 6) : base `plateforme` 0005 (canaux, vague, version épinglée), `registre/canaux.py`, section « Canal et version » et canaux de l'onglet Installations, `mise-a-jour.sh` qui suit le bail | M | R2, R4 | #1881 |
 | R6 | **Mode limité et suspension appliqués** — seulement après plusieurs semaines de R2 sans faux positif. **Avancé pour les SERVICES le 13/10/2026**, à la demande de l'auteur (*« les services ne doivent pas être activables tant que l'instance référence ne l'a autorisé »*) : une **réplique** n'allume que les services de son bail cru (`utils/services.autorise_par_la_reference`) ; la vérification de la version reste permise ; référence, essai et rôle inconnu ne sont pas restreints. Le plafond de 5 utilisateurs et la lecture seule restent en constat | M | R0, R2 à R5 | #1882 |
 | R7 | **Relevé de consommation**, déclaratif | S | R3 ; modèle économique | #1883 |
 | R8 | **Transfert du rôle de référence** : acte signé, époque, chaîne de clés ; jamais deux références | L | R1, R2, R5 | #1884 |

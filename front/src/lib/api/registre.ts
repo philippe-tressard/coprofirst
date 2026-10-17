@@ -7,6 +7,8 @@
  * les gestes — valider, suspendre, rétablir, résilier, accorder des services. Un
  * geste voyage dans le bail : l'installation le lit à son prochain renouvellement.
  * Supprimer une installation résiliée la retire de la liste (`registre/conservation`).
+ * Le canal, la vague et l'épinglage décident de la version cible de son bail, que sa
+ * mise à jour nocturne installe (`registre/canaux`, R5 #1881).
  *
  * À part d'`instance.ts`, qui parle de CETTE installation : ici, ce sont les AUTRES.
  */
@@ -36,7 +38,7 @@ export interface AlerteRegistre {
 export interface ResumeInstallation {
 	identifiant: string;
 	etat: EtatRegistre;
-	/** `main` (la référence) · `replica` */
+	/** `main` (la référence) · `replica` · `special-<nom>` */
 	canal: string;
 	version_logicielle: string | null;
 	cree_le: string;
@@ -50,6 +52,36 @@ export interface ResumeInstallation {
 	services_autorises: string[];
 	/** Ce que la référence lui reproche, dans l'ordre de la spec. */
 	alertes: AlerteRegistre[];
+	/** Quand elle reçoit la version de son canal (`VagueLue.code`). */
+	vague: number;
+	/** La version que l'opérateur lui impose — épinglage, ou ordre de revenir. */
+	version_epinglee: string | null;
+	/** Ce que son prochain bail portera ; `null` : aucune mise à jour automatique. */
+	version_cible: string | null;
+}
+
+/**  Un canal de distribution : un pointeur vers une version de `main` (D21). */
+export interface CanalDistribution {
+	nom: string;
+	version: string | null;
+	version_precedente: string | null;
+	/** Quand il a avancé — l'instant d'où se comptent les vagues. */
+	avance_le: string | null;
+	/** `replica` avance seul, à la lecture de sa branche ; un canal spécial, par l'opérateur. */
+	modifiable: boolean;
+}
+
+export interface VagueLue {
+	code: number;
+	libelle: string;
+}
+
+/**  Ce que l'opérateur règle : la version cible du prochain bail en découle. */
+export interface ReglageDistribution {
+	canal: string;
+	vague: number;
+	/** `null` ou vide : suivre le canal. */
+	version_epinglee: string | null;
 }
 
 export interface ServiceAccordable {
@@ -62,6 +94,9 @@ export interface RegistreLu {
 	actif: boolean;
 	installations: ResumeInstallation[];
 	services_accordables: ServiceAccordable[];
+	/** `replica` en tête, puis les canaux spéciaux. */
+	canaux: CanalDistribution[];
+	vagues: VagueLue[];
 }
 
 export interface ContratAccepte {
@@ -149,6 +184,17 @@ export const registre = {
 	accorderServices: (identifiant: string, services: string[], motif: string) =>
 		api.put<FicheInstallation>(`/admin/installations/${encodeURIComponent(identifiant)}/services`, {
 			services,
+			motif,
+		}),
+	distribuer: (identifiant: string, reglage: ReglageDistribution, motif: string) =>
+		api.put<FicheInstallation>(
+			`/admin/installations/${encodeURIComponent(identifiant)}/distribution`,
+			{ ...reglage, motif },
+		),
+	/** Crée un canal spécial, ou le fait pointer vers une version ; rend tous les canaux. */
+	pointerCanal: (nom: string, version: string, motif: string) =>
+		api.put<CanalDistribution[]>(`/admin/canaux-distribution/${encodeURIComponent(nom)}`, {
+			version,
 			motif,
 		}),
 	/** Résiliée seulement : la ligne quitte la liste, sa fiche répond 404 ensuite. */
