@@ -232,7 +232,9 @@ def test_une_declaration_invalide_ne_sert_rien(tmp_path, monkeypatch):
         client = TestClient(application)
         for hote in (HOTE_COMMUN, f"75015-les-tilleuls.{HOTE_COMMUN}", "testserver"):
             assert client.get("/config", headers={"host": hote}).status_code == 503
-        assert client.get("/health", headers={"host": HOTE_COMMUN}).status_code == 200
+        #  La santé d'une installation commune est celle de ses copropriétés (#2053) :
+        #  aucune servie, donc 503 — la mise à jour nocturne refuse alors de démarrer.
+        assert client.get("/health", headers={"host": HOTE_COMMUN}).status_code == 503
 
 
 def test_un_fichier_declare_mais_absent_ne_sert_rien(tmp_path, monkeypatch):

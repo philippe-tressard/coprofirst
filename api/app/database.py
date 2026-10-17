@@ -2,7 +2,7 @@ import logging
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 from sqlmodel import create_engine, Session, SQLModel
-from app.contexte import courante
+from app.contexte import de_la_configuration
 
 logger = logging.getLogger("hostachy.db")
 
@@ -24,7 +24,7 @@ def creer_moteur(url: str):
 #  Le moteur de l'UNIQUE copropriété de la phase 2 : son URL vient du contexte (#1744), jamais
 #  de `settings`. Ce module le construit ; le reste de l'application le demande à
 #  `contexte.moteur()` / `contexte.nouvelle_session()` — 🔒 test_contexte_source_unique.
-engine = creer_moteur(courante().url_base)
+engine = creer_moteur(de_la_configuration().url_base)
 
 
 def get_session():

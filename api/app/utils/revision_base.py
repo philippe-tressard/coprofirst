@@ -58,26 +58,48 @@ def config_alembic(ini: Path = ALEMBIC_INI) -> Config:
     return config
 
 
+def _lire(url: str | None, ini: Path) -> tuple[set[str], set[str], list[str] | None]:
+    """(révisions connues de ce code, ses têtes, révisions posées en base — `None` sans
+    table). Lève si la base ne se lit pas : chaque appelant dit ce que l'échec veut dire."""
+    config = config_alembic(ini)
+    script = ScriptDirectory.from_config(config)
+    connues = {r.revision for r in script.walk_revisions()}
+    moteur = create_engine(url or config.get_main_option("sqlalchemy.url"))
+    try:
+        with moteur.connect() as connexion:
+            if "alembic_version" not in inspect(connexion).get_table_names():
+                return connues, set(script.get_heads()), None
+            posees = [
+                r[0] for r in connexion.execute(text("SELECT version_num FROM alembic_version"))
+            ]
+    finally:
+        moteur.dispose()
+    return connues, set(script.get_heads()), posees
+
+
 def etat_revision(url: str | None = None, ini: Path = ALEMBIC_INI) -> str:
     """`connue` | `vide` | `en_avance` | `inconnu` — voir la table du module."""
     try:
-        config = config_alembic(ini)
-        connues = {r.revision for r in ScriptDirectory.from_config(config).walk_revisions()}
-        moteur = create_engine(url or config.get_main_option("sqlalchemy.url"))
-        try:
-            with moteur.connect() as connexion:
-                if "alembic_version" not in inspect(connexion).get_table_names():
-                    return "vide"
-                posees = [
-                    r[0] for r in connexion.execute(text("SELECT version_num FROM alembic_version"))
-                ]
-        finally:
-            moteur.dispose()
+        connues, _tetes, posees = _lire(url, ini)
     except Exception:  # noqa: BLE001 — toute erreur de lecture rend « inconnu », jamais un verdict
         return "inconnu"
     if not posees:
         return "vide"
     return "connue" if all(p in connues for p in posees) else "en_avance"
+
+
+def servable(url: str, ini: Path = ALEMBIC_INI) -> bool:
+    """Ce code peut-il servir cette base ? À la tête de sa chaîne, ou EN AVANCE (un
+    retour arrière, que les migrations compatibles permettent, #1757) — jamais une base
+    neuve, en retard ou illisible : la servir rendrait 500 à la première colonne neuve
+    (`installation_commune/bases_pretes`, #2053)."""
+    try:
+        connues, tetes, posees = _lire(url, ini)
+    except Exception:  # noqa: BLE001 — illisible : on ne sert pas
+        return False
+    if not posees:
+        return False
+    return set(posees) == tetes or not all(p in connues for p in posees)
 
 
 if __name__ == "__main__":

@@ -16,8 +16,8 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel
 
+from app import contexte
 from app.auth.deps import require_admin
-from app.config import get_settings
 from app.models.core import Utilisateur
 from app.utils import export_copropriete as ex
 from app.utils import import_copropriete as im
@@ -45,7 +45,6 @@ class VerificationRestauration(BaseModel):
 @router.post("/export-copropriete/verifier", response_model=VerificationRestauration)
 def verifier_restauration(_: Utilisateur = Depends(require_admin)):
     """Exporte la base et la réimporte dans une base jetable : se restaure-t-elle ?"""
-    from app import contexte
 
     debut = time.monotonic()
     with tempfile.TemporaryDirectory() as dossier:
@@ -72,7 +71,6 @@ class ExportLance(BaseModel):
 
 
 def _exporter(chemin: Path) -> None:
-    from app import contexte
     from app.utils.stockage import stockage
 
     partiel = chemin.with_suffix(".partiel")
@@ -86,7 +84,9 @@ def _exporter(chemin: Path) -> None:
 @router.post("/export-copropriete", response_model=ExportLance, status_code=202)
 def lancer_export(background_tasks: BackgroundTasks, _: Utilisateur = Depends(require_admin)):
     """Écrit l'archive complète — tables ET fichiers — dans le volume des sauvegardes."""
-    dossier = Path(get_settings().backup_dir)
+    #  Le dossier de CETTE copropriété : sur une installation commune, le volume est
+    #  partagé, et un administrateur listerait sinon l'export d'une autre (#2053).
+    dossier = contexte.dossier_des_sauvegardes()
     dossier.mkdir(parents=True, exist_ok=True)
     nom = f"{PREFIXE}{horloge.a_paris(horloge.maintenant()):%Y%m%d_%H%M%S}_paris.tar.gz"
     background_tasks.add_task(_exporter, dossier / nom)
@@ -105,7 +105,7 @@ class DernierExport(BaseModel):
 @router.get("/export-copropriete/dernier", response_model=DernierExport)
 def dernier_export(_: Utilisateur = Depends(require_admin)):
     """Le dernier export ENTIER du volume des sauvegardes, lu dans son manifeste."""
-    archives = sorted(Path(get_settings().backup_dir).glob(f"{PREFIXE}*.tar.gz"))
+    archives = sorted(contexte.dossier_des_sauvegardes().glob(f"{PREFIXE}*.tar.gz"))
     if not archives:
         return DernierExport()
     derniere = archives[-1]

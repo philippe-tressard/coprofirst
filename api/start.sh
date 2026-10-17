@@ -22,37 +22,19 @@ if [ "$(id -u)" = "0" ]; then
     exec setpriv --reuid=app --regid=app --init-groups "$0" "$@"
 fi
 
-#  Le serveur de base peut démarrer après l'API : on l'attend, et on s'arrête
-#  s'il ne répond pas — jamais de migration sur une base qu'on n'a pas pu lire
-#  (`app/utils/attendre_base`, #1759). Affecté AVANT d'être affiché, pour que
-#  `set -e` compte l'échec.
-JOIGNABLE=$(python -m app.utils.attendre_base)
-echo "==> Base : $JOIGNABLE"
-
-#  Une base EN AVANCE sur ce code (retour à l'image précédente, #1756) : son
-#  `alembic upgrade head` échouerait sur une révision qu'il ne connaît pas, et
-#  `set -e` arrêterait le conteneur en boucle. Les migrations étant compatibles
-#  d'une version à l'autre (#1757), ce code sait servir cette base : on démarre
-#  sans migrer, et on le DIT. Lecture impossible → « inconnu » → on migre.
-ETAT_BASE=$(python -m app.utils.revision_base 2>/dev/null || echo inconnu)
-if [ "$ETAT_BASE" = "en_avance" ]; then
-    echo "==> ⚠ Base EN AVANCE sur ce code (retour à une version précédente) — migrations ignorées."
-else
-    #  Une base NEUVE reçoit le schéma courant d'un coup, marqué à la tête
-    #  (#1747, spec §4.3). Une base qui a des tables n'est pas touchée.
-    #  Affecté AVANT d'être affiché : sous `set -e`, un échec dans `$(…)` passé à
-    #  `echo` serait ignoré, et le conteneur démarrerait sur une base sans schéma.
-    SCHEMA_INITIAL=$(python -m app.utils.schema_initial)
-    echo "==> Schéma initial d'une base neuve : $SCHEMA_INITIAL"
-    #  « inconnu » : la base n'a pas pu être lue. La migrer quand même marquerait
-    #  une base peut-être vide sans lui poser de schéma — on s'arrête, Docker relance.
-    if [ "$SCHEMA_INITIAL" = "inconnu" ]; then
-        echo "==> ✗ Base illisible au moment de poser le schéma — arrêt, sans migrer."
-        exit 1
-    fi
-    echo "==> Lancement des migrations Alembic... (utilisateur : $(id -un))"
-    alembic upgrade head
-fi
+#  CHAQUE base de l'installation est attendue, puis migrée — ou reçoit le schéma
+#  courant si elle est neuve (`app/utils/preparer_bases`, #2053). La décision vit
+#  là, écrite une fois pour les deux installations :
+#    - propre à une copropriété (5Hostachy) : `DATABASE_URL` seule, comme avant —
+#      illisible, ou en échec de migration → code 1, `set -e` arrête, Docker relance ;
+#      EN AVANCE sur ce code (retour arrière, #1756) → migrations ignorées, et dit ;
+#    - commune : une base par copropriété déclarée ; l'échec de l'une ne bloque pas
+#      les autres, sa ligne le dit et l'API la refuse (503 pour son seul hôte).
+#  Affecté AVANT d'être affiché : sous `set -e`, un échec dans `$(…)` passé à
+#  `echo` serait ignoré, et le conteneur démarrerait sur une base sans schéma.
+echo "==> Préparation des bases... (utilisateur : $(id -un))"
+BASES=$(python -m app.utils.preparer_bases)
+echo "$BASES" | sed 's/^/==> /'
 
 #  Le REGISTRE DES INSTALLATIONS (référence seule, spec §4.11) : sa base `plateforme`
 #  est une AUTRE base, migrée par sa propre chaîne. Jamais sous `set -e` : un

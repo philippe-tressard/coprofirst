@@ -75,7 +75,8 @@ def test_l_api_bascule_hors_de_root_avant_d_ecrire():
     assert bascule, (
         "start.sh ne bascule plus hors de root : l'API sert en root, ce que #769 corrigeait."
     )
-    alembic = re.search(r"^\s*alembic upgrade head\s*$", start, re.M)
+    #  Les migrations de CHAQUE base passent par `utils/preparer_bases` (#2053).
+    alembic = re.search(r"^BASES=\$\(python -m app\.utils\.preparer_bases\)$", start, re.M)
     assert alembic, "start.sh ne lance plus les migrations"
     assert bascule.start() < alembic.start(), (
         "les migrations tournent AVANT la bascule : elles s'exécuteraient en root."

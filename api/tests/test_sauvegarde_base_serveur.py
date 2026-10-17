@@ -20,6 +20,7 @@ from pathlib import Path
 import pytest
 from sqlmodel import Session, SQLModel, select
 
+from app.config import get_settings
 from app.database import engine
 from app.models.core import HistoriqueSauvegarde, StatutSauvegarde
 from app.utils import backup, horloge
@@ -33,7 +34,8 @@ LIB_HORS_SITE = RACINE / "scripts" / "lib" / "lib-export-hors-site.sh"
 @pytest.fixture
 def sauvegarde(tmp_path, monkeypatch):
     SQLModel.metadata.create_all(engine)
-    monkeypatch.setattr(backup.settings, "backup_dir", str(tmp_path))
+    #  Le dossier se lit par le contexte (`contexte.dossier_des_sauvegardes`, #2053).
+    monkeypatch.setattr(get_settings(), "backup_dir", str(tmp_path))
     monkeypatch.setattr(horloge, "maintenant", lambda: datetime(2026, 10, 9, 1, 0, 0))
     return tmp_path
 

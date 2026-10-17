@@ -105,11 +105,13 @@ def test_run_backup_ecrit_le_nom_a_l_heure_de_paris(tmp_path, monkeypatch):
     """Bout en bout : l'archive posée sur le disque porte le nom à l'heure de Paris."""
     from sqlmodel import SQLModel
 
+    from app.config import get_settings
     from app.database import engine
     from app.utils import backup
 
     SQLModel.metadata.create_all(engine)
-    monkeypatch.setattr(backup.settings, "backup_dir", str(tmp_path))
+    #  Le dossier se lit par le contexte (`contexte.dossier_des_sauvegardes`, #2053).
+    monkeypatch.setattr(get_settings(), "backup_dir", str(tmp_path))
     monkeypatch.setattr(horloge, "maintenant", lambda: datetime(2026, 10, 5, 2, 0, 0))
 
     backup.run_backup()

@@ -28,10 +28,10 @@ import json
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
+from app.config import get_settings
 from app.models.core import HistoriqueMaintenance, TachePlanifiee
 from app.utils import health_monitor, horloge
 from app.utils.backup import PREFIXE_ARCHIVE, horodatage_archive
@@ -47,12 +47,9 @@ def nom_archive(quand: datetime) -> str:
 
 @pytest.fixture
 def repertoire_sauvegardes(tmp_path, monkeypatch):
-    """Redirige `settings.backup_dir` vers un répertoire jetable."""
-    monkeypatch.setattr(
-        health_monitor,
-        "get_settings",
-        lambda: SimpleNamespace(backup_dir=str(tmp_path)),
-    )
+    """Redirige `settings.backup_dir` vers un répertoire jetable — lu par le contexte
+    (`contexte.dossier_des_sauvegardes`, #2053)."""
+    monkeypatch.setattr(get_settings(), "backup_dir", str(tmp_path))
     return tmp_path
 
 

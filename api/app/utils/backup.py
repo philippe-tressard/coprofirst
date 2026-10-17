@@ -11,15 +11,12 @@ from app.utils import horloge
 from sqlmodel import Session, select
 
 from app.utils.declenchement import AUTOMATIQUE
-from app.config import get_settings
 from app import contexte
 from app.utils.stockage import stockage
 from app.dialecte import verifier_integrite
 from app.models.core import ConfigSauvegarde, HistoriqueSauvegarde, StatutSauvegarde
 
 from app.utils.noeud import noeud_courant
-
-settings = get_settings()
 
 #  Nommage des archives — convention PORTEUSE DE SENS, pas cosmétique.
 #  L'horodatage dans le nom est déjà ce sur quoi repose la rotation (tri
@@ -151,9 +148,10 @@ def run_backup(history_id: int | None = None):
             session.refresh(entry)
 
         try:
-            os.makedirs(settings.backup_dir, exist_ok=True)
+            dossier_archives = contexte.dossier_des_sauvegardes()
+            os.makedirs(dossier_archives, exist_ok=True)
             filename = nom_archive(horloge.maintenant())
-            dest = os.path.join(settings.backup_dir, filename)
+            dest = os.path.join(dossier_archives, filename)
 
             verdict = _integrite()
             if verdict != "ok":
@@ -195,9 +193,11 @@ def garder_les_dernieres(motif: str, garder: int) -> list[str]:
 
 def _rotate_backups(session: Session):
     """Supprime les sauvegardes au-delà du nombre de versions à conserver."""
-    cfg: ConfigSauvegarde | None = session.exec(select(ConfigSauvegarde)).first()
-    keep = cfg.nb_versions_conservees if cfg else settings.backup_keep_versions
-    to_delete = garder_les_dernieres(os.path.join(settings.backup_dir, MOTIF_ARCHIVE), keep)
+    cfg = reglage_de_sauvegarde(session)
+    to_delete = garder_les_dernieres(
+        os.path.join(contexte.dossier_des_sauvegardes(), MOTIF_ARCHIVE),
+        cfg.nb_versions_conservees,
+    )
 
     # Marquer comme supprimées dans l'historique
     all_entries = session.exec(
@@ -228,22 +228,42 @@ def derniere_sauvegarde_reussie(session):
     return ligne.terminee_le if ligne else None
 
 
-def setup_scheduler():
-    """Configure APScheduler selon ConfigSauvegarde (ou paramètres .env par défaut)."""
-    from apscheduler.schedulers.background import BackgroundScheduler
+def reglage_de_sauvegarde(session: Session) -> ConfigSauvegarde:
+    """Le réglage de sauvegarde de la copropriété — la BASE seule (#2058).
 
-    #  Les tâches `cron` (heure=2, minute=0…) s'entendent à l'heure de Paris.
-    scheduler = BackgroundScheduler(timezone=horloge.TZ_PARIS)
+    `BACKUP_HOUR` et `BACKUP_KEEP_VERSIONS` le remplaçaient quand la ligne manquait :
+    deux sources pour un réglage, et `.env.example` disait 3 versions là où le code en
+    gardait 7. La ligne est posée par le seed ; absente, ce sont les défauts du
+    modèle, jamais l'environnement. `BACKUP_KEEP_VERSIONS` reste le réglage de la
+    seule base `plateforme`, qui n'a pas d'écran (`registre/sauvegarde`).
+    """
+    return session.exec(select(ConfigSauvegarde)).first() or ConfigSauvegarde()
 
+
+def sauvegarder_si_c_est_l_heure() -> None:
+    """La tâche horaire : sauvegarde la copropriété servie si c'est SON heure (#2058).
+
+    La tâche lisait l'heure une fois, au démarrage : changer l'heure dans
+    Maintenance n'avait d'effet qu'au redémarrage suivant. Elle passe désormais
+    chaque heure et relit le réglage de chaque copropriété — un changement vaut dès
+    l'heure suivante, et deux copropriétés peuvent choisir deux heures.
+    """
     with contexte.nouvelle_session() as session:
-        cfg: ConfigSauvegarde | None = session.exec(select(ConfigSauvegarde)).first()
-
+        cfg = reglage_de_sauvegarde(session)
     #  🔴 La sauvegarde ne se coupe PAS (#2060, 17/10/2026). `config_sauvegarde.active`
     #  la coupait sans qu'aucun écran ne montre l'interrupteur : une ligne posée à la
     #  main, une restauration, et plus rien n'était sauvegardé sans que rien ne le
     #  dise. La colonne reste en base, plus lue.
+    if horloge.a_paris(horloge.maintenant()).hour == cfg.heure_execution:
+        run_backup()
 
-    hour = cfg.heure_execution if cfg else settings.backup_hour
+
+def setup_scheduler():
+    """Le planificateur, et la sauvegarde horaire qui suit le réglage de chaque copropriété."""
+    from apscheduler.schedulers.background import BackgroundScheduler
+
+    #  Les tâches `cron` (heure=2, minute=0…) s'entendent à l'heure de Paris.
+    scheduler = BackgroundScheduler(timezone=horloge.TZ_PARIS)
 
     #  QUOTIDIENNE, et rien d'autre. `frequence` proposait aussi « hebdomadaire »
     #  et « mensuelle », qui ne s'ajoutent pas au quotidien mais le REMPLACENT :
@@ -255,9 +275,8 @@ def setup_scheduler():
     #  donne donc une sauvegarde quotidienne : le repli va dans le sens de la
     #  sécurité, jamais dans celui de la rareté.
     scheduler.add_job(
-        contexte.pour_chaque_copropriete(run_backup, "backup"),
+        contexte.pour_chaque_copropriete(sauvegarder_si_c_est_l_heure, "backup"),
         "cron",
-        hour=hour,
         minute=0,
         id="backup",
     )

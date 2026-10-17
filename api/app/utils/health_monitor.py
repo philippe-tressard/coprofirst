@@ -13,7 +13,6 @@ from app.utils import horloge
 from sqlmodel import Session, select
 
 from app.utils.config_site import config_site
-from app.config import get_settings
 from app import contexte
 from app.utils.dates_fr import datetime_longue
 from app.models.core import (
@@ -160,7 +159,7 @@ def _check_archive_locale() -> list[str]:
     """
     from app.utils.backup import MOTIF_ARCHIVE, horodatage_archive
 
-    repertoire = get_settings().backup_dir
+    repertoire = contexte.dossier_des_sauvegardes()
     try:
         chemins = sorted(glob.glob(os.path.join(repertoire, MOTIF_ARCHIVE)))
     except OSError as exc:
