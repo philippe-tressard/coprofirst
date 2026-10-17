@@ -25,14 +25,28 @@ from app.main import app
 from app.utils import stockage as module_stockage
 from app.utils.limiter import limiter
 from tests.aides_caddy import blocs_handle, caddyfile
-from tests.test_etancheite_coproprietes import HOTES, commune  # noqa: F401 — la fixture
-from tests.test_etancheite_coproprietes import _sous
+from tests.aides_base import compte
+from tests.aides_commune_reelle import HOTES, installation_commune_reelle, sous
 
 CLE = "photos/temoin.txt"
 
 
+def _administrateur(nom: str, s) -> tuple[str, int]:
+    from app.auth.jwt import creer_jeton_acces
+    from app.models.core import RoleUtilisateur
+
+    admin = compte(s, prefixe=f"fichiers-{nom}", role=RoleUtilisateur.admin, roles_json="admin")
+    return creer_jeton_acces(admin.id, admin.hashed_password), admin.id
+
+
 @pytest.fixture(scope="module")
-def fichiers(commune):  # noqa: F811 — la fixture importée
+def commune(tmp_path_factory):
+    with installation_commune_reelle(tmp_path_factory.mktemp("fichiers"), _administrateur) as c:
+        yield c
+
+
+@pytest.fixture(scope="module")
+def fichiers(commune):
     from app import contexte
 
     for nom in ("a", "b"):
@@ -57,7 +71,7 @@ def test_chaque_hote_sert_le_fichier_de_SA_copropriete(fichiers):
     client = _client()
     for nom in ("a", "b"):
         jeton, _ = fichiers["temoins"][nom]
-        reponse = _sous(client, f"/uploads/{CLE}", nom, jeton)
+        reponse = sous(client, f"/uploads/{CLE}", nom, jeton)
         assert reponse.status_code == 200, reponse.text
         assert reponse.text == f"fichier de {nom}"
         assert reponse.headers["cache-control"] == "private, no-store"
@@ -65,13 +79,13 @@ def test_chaque_hote_sert_le_fichier_de_SA_copropriete(fichiers):
 
 def test_le_jeton_de_A_n_ouvre_rien_chez_B(fichiers):
     jeton_a, _ = fichiers["temoins"]["a"]
-    reponse = _sous(_client(), f"/uploads/{CLE}", "b", jeton_a)
+    reponse = sous(_client(), f"/uploads/{CLE}", "b", jeton_a)
     assert reponse.status_code == 401
     assert "fichier de" not in reponse.text
 
 
 def test_sans_session_rien_n_est_servi(fichiers):
-    assert _sous(_client(), f"/uploads/{CLE}", "a").status_code == 401
+    assert sous(_client(), f"/uploads/{CLE}", "a").status_code == 401
 
 
 @pytest.mark.parametrize(
@@ -80,7 +94,7 @@ def test_sans_session_rien_n_est_servi(fichiers):
 )
 def test_ni_les_dossiers_jamais_servis_ni_une_sortie_de_la_racine(fichiers, cle):
     jeton, _ = fichiers["temoins"]["a"]
-    reponse = _sous(_client(), f"/uploads/{cle}", "a", jeton)
+    reponse = sous(_client(), f"/uploads/{cle}", "a", jeton)
     assert reponse.status_code == 404, cle
     assert "fichier de b" not in reponse.text and "privé" not in reponse.text
 
@@ -98,7 +112,7 @@ def test_un_lien_vers_une_autre_racine_ne_sert_rien(fichiers, tmp_path):
         pytest.skip("créer un lien demande un privilège sur ce poste")
     jeton, _ = fichiers["temoins"]["a"]
     try:
-        assert _sous(_client(), "/uploads/photos/vers-b.txt", "a", jeton).status_code == 404
+        assert sous(_client(), "/uploads/photos/vers-b.txt", "a", jeton).status_code == 404
     finally:
         lien.unlink()
 

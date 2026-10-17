@@ -240,7 +240,7 @@ def test_l_ecran_lit_l_adresse_derivee_et_ne_peut_pas_l_ecrire(session, monkeypa
 
 @pytest.mark.parametrize(
     "origine",
-    ["http://192.168.1.223", "http://localhost", "http://api:8000", "http://[::1]", ""],
+    ["http://10.0.0.5", "http://localhost", "http://api:8000", "http://[::1]", ""],
 )
 def test_l_origin_d_un_standby_ne_fait_jamais_un_lien(monkeypatch, origine):
     """Condition de l'arbitrage (17/10/2026) : sur le standby, `ORIGIN` est l'IP locale

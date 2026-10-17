@@ -33,14 +33,16 @@ Sur une installation propre, la route répond 404 : Caddy y garde le service, et
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse
 
 from app import contexte
 from app.auth.deps import get_current_user
 from app.models.core import Utilisateur
 from app.utils.limiter import LIMITE_CONTROLE_FICHIER, limiter
-from app.utils.recuperer import fichier_ou_404
+from app.utils.recuperer import fichier_ou_404, present_ou_404
 from app.utils.stockage import JAMAIS_SERVIS, CleInvalide, cle_valide, stockage
 
 router = APIRouter(tags=["installation-commune"])
@@ -55,13 +57,18 @@ def servir_fichier(
     request: Request, cle: str, _: Utilisateur = Depends(get_current_user)
 ) -> FileResponse:
     """Le fichier `cle` de la copropriété servie, à une session de CETTE copropriété."""
+    chemin = present_ou_404(_chemin_servi(cle), "Fichier introuvable sur le serveur")
+    return FileResponse(fichier_ou_404(chemin), headers=ENTETES)
+
+
+def _chemin_servi(cle: str) -> Path | None:
+    """Le chemin que la clé désigne sous la racine de la copropriété servie — ou None :
+    installation propre, clé hors de la racine, dossier jamais servi."""
     if not contexte.est_commune():
-        raise HTTPException(404, "Fichier introuvable sur le serveur")
+        return None
     try:
         cle = cle_valide(cle)
         chemin = stockage().chemin(cle)
-    except CleInvalide as refus:
-        raise HTTPException(404, "Fichier introuvable sur le serveur") from refus
-    if cle.split("/", 1)[0] in JAMAIS_SERVIS:
-        raise HTTPException(404, "Fichier introuvable sur le serveur")
-    return FileResponse(fichier_ou_404(chemin), headers=ENTETES)
+    except CleInvalide:
+        return None
+    return None if cle.split("/", 1)[0] in JAMAIS_SERVIS else chemin

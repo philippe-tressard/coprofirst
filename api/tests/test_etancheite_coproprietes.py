@@ -51,16 +51,15 @@ from app import contexte
 from app.auth.deps import get_current_user
 from app.auth.jwt import creer_jeton_acces
 
-from app.demarrage import preparer_les_coproprietes
 from app.installation_commune.bases_pretes import INDISPONIBLE
 from app.main import app
 from app.models.copropriete import Copropriete
 from app.models.core import RoleUtilisateur, Utilisateur
 from app.models.tickets import Ticket
-from app.utils import preparer_bases
 from app.utils.limiter import limiter
-from tests.aides_base import adresse_de_test, compte
-from tests.aides_installation_commune import HOTE_COMMUN, installation_commune
+from tests.aides_base import compte
+from tests.aides_commune_reelle import installation_commune_reelle, sous
+from tests.aides_installation_commune import HOTE_COMMUN
 from tests.aides_coproprietes import ENTETE, client_par_entete, coproprietes_semees
 from tests.aides_sources import operations_montees
 
@@ -224,81 +223,16 @@ def test_le_detecteur_voit_la_fuite_type_et_pas_l_etat_par_copropriete(http, deu
 
 # ── L'installation commune RÉELLE : déclaration, deux bases, l'hôte seul (#2053) ──
 
-#: Deux copropriétés servies, et une troisième dont la base ne répond pas.
-INJOIGNABLE = "postgresql+psycopg://personne:x@127.0.0.1:9/aucune?connect_timeout=1"
-
-
-def _hote(code_postal: str, nom: str) -> str:
-    return f"{code_postal}-{nom}.{HOTE_COMMUN}"
-
-
-HOTES = {
-    "a": _hote("75001", "essai-a"),
-    "b": _hote("75002", "essai-b"),
-    "c": _hote("75003", "essai-c"),
-}
-
-
-def _declaree(nom: str, racine: str) -> dict:
-    cle = f"ESSAI_{nom.upper()}"
-    return {
-        "identifiant": f"essai-{nom}",
-        "code_postal": {"a": "75001", "b": "75002", "c": "75003"}[nom],
-        "nom": f"Essai {nom.upper()}",
-        "base": f"{cle}_BASE",
-        "secret": f"{cle}_SECRET",
-        "racine_fichiers": f"{racine}/{nom}",
-        "expediteur": f"contact@essai-{nom}.example",
-    }
-
 
 @pytest.fixture(scope="module")
 def commune(tmp_path_factory):
-    """La déclaration, les bases préparées et semées comme au démarrage de l'API.
-
-    Rend `{nom: (jeton, identifiant)}` pour A et B, et le journal de la préparation.
-    """
-    dossier = tmp_path_factory.mktemp("commune")
-    #  Un chemin ABSOLU au sens du conteneur (Linux), que la déclaration exige.
-    racine = "/" + dossier.as_posix().split(":", 1)[-1].lstrip("/") + "/fichiers"
-    adresses, retraits = {}, []
-    for nom in ("a", "b"):
-        adresses[nom], retirer = adresse_de_test()
-        retraits.append(retirer)
-    adresses["c"] = INJOIGNABLE
-    with pytest.MonkeyPatch.context() as mp:
-        for nom, url in adresses.items():
-            mp.setenv(f"ESSAI_{nom.upper()}_BASE", url)
-            mp.setenv(f"ESSAI_{nom.upper()}_SECRET", nom * 40)
-        mp.setattr(preparer_bases, "DELAI_SECONDES", 1)
-        mp.setattr(preparer_bases, "DELAI_SUIVANTES", 1)
-        declarees = [_declaree(n, racine) for n in ("c", "a", "b")]
-        with installation_commune(dossier, mp, coproprietes=declarees):
-            journal: list[str] = []
-            code = preparer_bases.preparer_commune(contexte.coproprietes(), ecrire=journal.append)
-            preparer_les_coproprietes()
-            temoins = {}
-            for nom in ("a", "b"):
-                with contexte.dans(contexte.par_identifiant(f"essai-{nom}")):
-                    with Session(contexte.moteur()) as s:
-                        temoins[nom] = _temoins_dans(nom, s)
-            limiter.reset()
-            yield {"temoins": temoins, "journal": journal, "code": code}
-            limiter.reset()
-            for nom in ("a", "b"):
-                with contexte.dans(contexte.par_identifiant(f"essai-{nom}")):
-                    contexte.moteur().dispose()
-    for retirer in retraits:
-        retirer()
+    """L'installation commune réelle (`tests/aides_commune_reelle`), A et B marqués."""
+    with installation_commune_reelle(tmp_path_factory.mktemp("commune"), _temoins_dans) as c:
+        yield c
 
 
 def _client() -> TestClient:
     return TestClient(app, raise_server_exceptions=False)
-
-
-def _sous(client, chemin: str, nom: str, jeton: str | None = None):
-    cookies = {"access_token": jeton} if jeton else {}
-    return client.get(chemin, headers={"host": HOTES[nom]}, cookies=cookies)
 
 
 def test_chaque_base_est_preparee_et_la_mauvaise_ne_bloque_pas(commune):
@@ -315,19 +249,19 @@ def test_l_hote_seul_choisit_la_copropriete_cas_zero_et_temoin(commune):
     client = _client()
     for nom, marque in (("a", MARQUE_A), ("b", MARQUE_B)):
         jeton, _ident = commune["temoins"][nom]
-        reponse = _sous(client, "/auth/me", nom, jeton)
+        reponse = sous(client, "/auth/me", nom, jeton)
         assert reponse.status_code == 200 and marque in reponse.text, reponse.text
     #  Les identifiants sont identiques, les jetons ne passent pas d'une base à l'autre.
     assert commune["temoins"]["a"][1] == commune["temoins"]["b"][1]
     jeton_a, _ = commune["temoins"]["a"]
-    chez_b = _sous(client, "/auth/me", "b", jeton_a)
+    chez_b = sous(client, "/auth/me", "b", jeton_a)
     assert chez_b.status_code == 401 and MARQUE_A not in chez_b.text
 
 
 def test_aucune_reponse_servie_sous_l_hote_de_B_ne_porte_A(commune):
     client = _client()
     jeton_b, _ = commune["temoins"]["b"]
-    reponses = {c: _sous(client, c, "b", jeton_b) for c in _chemins_get()}
+    reponses = {c: sous(client, c, "b", jeton_b) for c in _chemins_get()}
     reussies = sum(1 for r in reponses.values() if r.status_code == 200)
     assert reussies >= MINIMUM_REPONSES_200, f"cas zéro : {reussies} réponse(s) 200"
     assert len(fuites(reponses, MARQUE_B)) >= MINIMUM_LECTURES_B, "témoin : B ne se lit pas"
@@ -339,9 +273,9 @@ def test_aucune_reponse_servie_sous_l_hote_de_B_ne_porte_A(commune):
 
 def test_la_base_injoignable_n_isole_que_son_hote(commune):
     client = _client()
-    chez_c = _sous(client, "/config", "c")
+    chez_c = sous(client, "/config", "c")
     assert chez_c.status_code == 503 and chez_c.json() == {"detail": INDISPONIBLE}
-    assert _sous(client, "/config", "a").status_code == 200
+    assert sous(client, "/config", "a").status_code == 200
     sante = client.get("/health", headers={"host": HOTE_COMMUN})
     assert sante.status_code == 200 and sante.json()["status"] == "degrade"
     assert "essai" not in sante.text  # ni nom ni identifiant : la route répond à tout hôte

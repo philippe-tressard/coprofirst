@@ -30,11 +30,14 @@ def test_le_service_fait_partie_de_la_pile_sans_que_l_api_le_demarre():
     )
     #  🔴 Un `depends_on` ferait démarrer la base par `up -d api` — une base VIDE
     #  sur un nœud sans réplique (CLAUDE.md, règle d'or). L'API attend la base
-    #  dans `start.sh` (`utils/attendre_base`), sans jamais la démarrer.
+    #  au démarrage (`utils/attendre_base`, appelé par `utils/preparer_bases`, que
+    #  `start.sh` lance depuis #2053), sans jamais la démarrer.
     assert "postgres" not in COMPOSE["services"]["api"].get("depends_on", {}), (
         "`up -d api` démarrerait la base si elle est arrêtée"
     )
-    assert "attendre_base" in (RACINE / "api" / "start.sh").read_text(encoding="utf-8")
+    assert "app.utils.preparer_bases" in (RACINE / "api" / "start.sh").read_text(encoding="utf-8")
+    preparer = (RACINE / "api" / "app" / "utils" / "preparer_bases.py").read_text(encoding="utf-8")
+    assert "from app.utils.attendre_base import" in preparer
 
 
 def test_le_port_n_est_lie_qu_a_l_ip_du_lan_ou_a_la_boucle_locale():
