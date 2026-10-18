@@ -16,7 +16,7 @@ const CR: CompteRenduParLien = {
 	a_distance: false,
 	lieu: '1 rue Test',
 	ou: 'Sur place — 1 rue Test',
-	presents: ['Reine Martin', 'Paul Bernard'],
+	presents: ['Reine MARTIN', 'Paul BERNARD'],
 	abordees: [
 		{ numero: 'TK-000031', titre: 'Interphone muet', contenu: '<p>Devis <b>attendu</b>.</p>' },
 	],

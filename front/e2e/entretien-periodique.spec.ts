@@ -154,6 +154,28 @@ test('le mode entretien : le bilan des visites, puis les entretiens non clos', a
 	await expect(lignes.nth(0)).toContainText('⚠️ Non réalisée');
 	await expect(lignes.nth(1)).toContainText('⏳ À venir');
 	await expect(page.getByRole('button', { name: /Résumer les affaires/ })).toHaveCount(0);
+
+	//  Les visites RÉALISÉES, que le tableau des non closes ne montre plus, se
+	//  listent dans leur section — avant le point CS / Syndic (17/10/2026).
+	const realisees = page.getByRole('region', { name: /Visites réalisées/ });
+	await expect(realisees.locator('tbody tr')).toHaveCount(1);
+	await expect(realisees).toContainText('TK-E00047');
+	await expect(realisees).toContainText('DURAND');
+	await expect(realisees).not.toContainText('TK-E00048');
+	await expect
+		.poll(() =>
+			page.evaluate(() => {
+				const titres = [...document.querySelectorAll('h3')];
+				const visites = titres.find((h) => h.textContent?.includes('Visites réalisées'));
+				const point = titres.find((h) => h.textContent?.includes('Point CS / Syndic'));
+				return Boolean(
+					visites &&
+					point &&
+					visites.compareDocumentPosition(point) & Node.DOCUMENT_POSITION_FOLLOWING,
+				);
+			}),
+		)
+		.toBe(true);
 });
 
 test('sans entretien en cours, le mode le dit et garde son sélecteur', async ({ page }) => {
@@ -173,5 +195,7 @@ test('sans entretien en cours, le mode le dit et garde son sélecteur', async ({
 	await page.goto('/espace-cs/reporting?vue=periodique');
 	await attendreHydratation(page);
 	await expect(page.getByText('Aucun entretien périodique en cours')).toBeVisible();
+	//  Aucune visite réalisée : la section se tait, le compteur dit déjà 0.
+	await expect(page.getByRole('region', { name: /Visites réalisées/ })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Suivi affaires' })).toBeVisible();
 });

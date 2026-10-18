@@ -54,7 +54,9 @@ def test_l_hote_commun_s_annonce(commune):
 
 @pytest.mark.parametrize("hote", [TILLEULS, "residence-chenes.example", "autre.example"])
 def test_ailleurs_l_aiguillage_n_existe_pas(commune, hote):
-    assert commune.get("/plateforme/aiguillage", headers={"host": hote}).status_code == 404
+    #  La question de l'écran de connexion répond, sans erreur : `false` (18/10/2026).
+    reponse = commune.get("/plateforme/aiguillage", headers={"host": hote})
+    assert (reponse.status_code, reponse.json()) == (200, {"hote_commun": False})
     assert (
         _aiguiller(commune, {"code_postal": "75015", "nom": "Les Tilleuls"}, hote).status_code
         == 404
@@ -198,7 +200,11 @@ def test_une_installation_propre_n_a_ni_aiguillage_ni_garde():
     limiter.reset()
     client = TestClient(application, follow_redirects=False)
     for hote in ("testserver", "localhost", HOTE_COMMUN):
-        assert client.get("/plateforme/aiguillage", headers={"host": hote}).status_code == 404
+        #  🔒 Constat de production du 18/10/2026 : l'écran de connexion de la référence
+        #  pose cette question à chaque visite, et un 404 à chaque chargement salissait
+        #  les journaux et la télémétrie des erreurs. Une réponse, jamais une erreur.
+        reponse = client.get("/plateforme/aiguillage", headers={"host": hote})
+        assert (reponse.status_code, reponse.json()) == (200, {"hote_commun": False})
         assert _aiguiller(client, {"alias": "75015-les-tilleuls"}, hote).status_code == 404
         assert _garde(client, hote).status_code == 404
     limiter.reset()

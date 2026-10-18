@@ -190,22 +190,6 @@ export function fmtDayMonth(d: string | null | undefined): string {
 }
 
 /**
- * Nombre de jours **entiers** écoulés depuis une date, 0 si elle est inconnue,
- * illisible ou dans le futur.
- *
- * Employé partout où un délai se compte en jours : ancienneté d'un ticket,
- * éligibilité d'une relance syndic, tri d'un kanban. Rendre 0 plutôt que `NaN`
- * sur une entrée douteuse est délibéré — un `NaN` se propage silencieusement
- * dans une comparaison et fait disparaître des lignes d'une liste.
- */
-export function daysSince(d: string | null | undefined): number {
-	if (!d) return 0;
-	const ts = new Date(d).getTime();
-	if (Number.isNaN(ts)) return 0;
-	return Math.max(0, Math.floor((Date.now() - ts) / 86400000));
-}
-
-/**
  * La salutation qui convient à l'heure qu'il est.
  *
  * ⚠️ À employer via `relire(donnees, salutation)` : dans un `$:` qui ne cite

@@ -4,6 +4,7 @@
 //  ⚠️ Aucune fonction d'ici ne touche au réseau ni au DOM : les règles (un point
 //  par mode, reprise, non traitées) vivent au serveur, `utils/points_conseil`.
 
+import { nomAffiche } from '$lib/noms';
 import type { CrAffaire, EtatPoint, NaturePresent, PresentEntree, PresentPoint } from '$lib/api';
 
 /** Ce que dit l'état d'un point, à l'écran. */
@@ -20,20 +21,18 @@ export const GROUPES_PRESENTS: readonly { nature: NaturePresent; libelle: string
 	{ nature: 'invite', libelle: 'Invités' },
 ];
 
-/** Le nom d'un présent : prénom et nom, sinon l'entreprise, sinon « Invité ». */
+/** Le nom d'un présent : « Prénom NOM » (`nomAffiche`), sinon l'entreprise, sinon « Invité ». */
 export function nomPresent(p: {
 	prenom?: string | null;
 	nom?: string | null;
 	entreprise?: string | null;
 }): string {
-	const nom = [p.prenom, p.nom].filter(Boolean).join(' ').trim();
-	return nom || p.entreprise || 'Invité';
+	return nomAffiche(p) || p.entreprise || 'Invité';
 }
 
 /** Ce qui suit le nom : fonction et entreprise d'un invité ou d'un membre du syndic. */
 export function precisionPresent(p: PresentPoint): string {
-	const nom = [p.prenom, p.nom].filter(Boolean).join(' ').trim();
-	return [p.fonction, nom ? p.entreprise : null].filter(Boolean).join(', ');
+	return [p.fonction, nomAffiche(p) ? p.entreprise : null].filter(Boolean).join(', ');
 }
 
 /**  Le moyen d'un point à reproposer — un point saisi avant le moyen se lit

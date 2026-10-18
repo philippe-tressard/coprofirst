@@ -162,7 +162,7 @@ test('ouvrir un point, puis saisir le compte rendu d’une affaire', async ({ pa
 	//  Une rangée par population, chacune nommée.
 	for (const nom of ['Conseil syndical', 'Syndic', 'Invités'])
 		await expect(page.getByRole('group', { name: nom, exact: true })).toBeVisible();
-	await page.getByRole('button', { name: 'Reine Martin' }).click();
+	await page.getByRole('button', { name: 'Reine MARTIN' }).click();
 	//  Plusieurs invités, et chacun se retire par la croix des pastilles.
 	for (const [prenom, entreprise] of [
 		['Jean', 'Étanchéité Sud'],
@@ -200,7 +200,7 @@ test('ouvrir un point, puis saisir le compte rendu d’une affaire', async ({ pa
 	//  Le bandeau dit l'état et les présents ; le CR global, les non traitées.
 	const point = page.locator('section.point');
 	await expect(point).toContainText('En cours');
-	await expect(point).toContainText('Reine Martin, Jean Durand');
+	await expect(point).toContainText('Reine MARTIN, Jean DURAND');
 	await expect(page.getByRole('region', { name: 'Compte rendu du point' })).toContainText(
 		'Non traitées · 1',
 	);
@@ -220,5 +220,5 @@ test('ouvrir un point, puis saisir le compte rendu d’une affaire', async ({ pa
 	await expect(global).toContainText('Les affaires abordées · 1');
 	await expect(global).toContainText('Le syndic relance l’entreprise.');
 	//  L'espace avant la précision d'un présent (v2.174.1) : « Durand(Étanchéité… » se lisait collé.
-	await expect(global).toContainText('Jean Durand (Étanchéité Sud)');
+	await expect(global).toContainText('Jean DURAND (Étanchéité Sud)');
 });
