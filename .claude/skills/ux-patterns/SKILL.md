@@ -2434,7 +2434,10 @@ sa réponse dans le produit. C'est la **sixième** fois — voir la mémoire
 `FormulaireCreation` (`encadre={false}`), titre inerte pendant la correction.
 `CarteContrat` et `CartePrestataire` le recopiaient l'une sur l'autre ; une carte
 neuve qui se corrige en place le monte et remplit ses emplacements (`tags`,
-`apercu`, `gestes`, `edition`, `detail`). ⚠️ `AnnonceCard` et `CarteActualite`
+`apercu`, `gestes`, `edition`, `detail`). Qui RETIRE sans corriger — le gestionnaire
+du site devant un avis (#2075) — se dit par `peutArchiver`, qui ressort par
+`peutRestaurer` (absents, ils valent `peutModifier`) ; ce qui se fait de plus aux
+Archives (🗑️ d'un avis) va dans `gestes-archive`. ⚠️ `AnnonceCard` et `CarteActualite`
 portent encore leur propre `formulaireOuvert` : même notion, pas encore migrée.
 
 🔴 **Et ce n'était toujours pas fini : le formulaire DÉFILAIT.** Troisième
