@@ -33,7 +33,9 @@ def _constante_ts(fichier: Path, nom: str) -> str:
     return trouve.group(2)
 
 
-@pytest.mark.parametrize("nom", ["NOM_PLATEFORME", "DEPOT_SOURCE", "LICENCE_SPDX", "LICENCE_NOM"])
+@pytest.mark.parametrize(
+    "nom", ["NOM_PLATEFORME", "DEPOT_SOURCE", "SITE_PLATEFORME", "LICENCE_SPDX", "LICENCE_NOM"]
+)
 def test_la_plateforme_est_la_meme_des_deux_cotes(nom):
     assert _constante_ts(FRONT_LIB / "plateforme.ts", nom) == getattr(plateforme, nom)
 

@@ -32,6 +32,10 @@ NOM_PLATEFORME = "CoproFirst"
 #: `scripts/ci/descriptif_depot.py` vérifie que GitHub le sert à cette adresse.
 DEPOT_SOURCE = "https://github.com/philippe-tressard/coprofirst"
 
+#: Le site de présentation du logiciel : le NOM de la plateforme y renvoie dans les
+#: mentions légales. Le front le lie aussi (pied de page, `plateforme.ts`).
+SITE_PLATEFORME = "https://coprofirst.fr"
+
 #: La licence, telle qu'on l'identifie, la nomme et la lie. Le texte qui fait
 #: foi est l'officiel, en anglais (`LICENSE`).
 LICENCE_SPDX = "AGPL-3.0-or-later"
