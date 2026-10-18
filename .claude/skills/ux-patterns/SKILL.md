@@ -901,8 +901,8 @@ serveur envoie la ligne au fil, et ✨ sur chaque carte de la communauté).
 
 ### 🗂️ L'affaire DÉPLIÉE au fil — trois rubriques (maquette A, 15/10/2026)
 
-> ⚠️ **À arbitrer** : la carte d'affaire rend la maquette G (arbitrage n° 20), le fil
-> celle-ci (n° 63). Une même affaire dépliée a deux rendus.
+> ⚠️ **Arbitré le 18/10/2026** (arbitrage n° 66) : la brique G partout, le fil ouvert sur
+> « La suite » — à livrer (#2078). D'ici là, le fil rend encore la maquette décrite ici.
 
 Signalé sur TK-109008 : la carte d'une affaire résolue montrait le texte de la
 **demande** et, dessous, les photos de la **clôture** — rien ne disait d'où elles
