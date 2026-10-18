@@ -57,6 +57,12 @@ _APP = pathlib.Path(__file__).resolve().parents[1] / "app"
 #: disparaît, son entrée peut partir — et le dernier test le signale.
 EXIGENCES = [
     (
+        #  #2075 : un avis consenti peut paraître sur le site de présentation.
+        "la publication d'un avis sur le site de présentation",
+        ("models/avis.py", "consentement_publication"),
+        ("avis sur l'application",),
+    ),
+    (
         "la télémétrie d'usage, nominative",
         ("models/telemetrie.py", "user_id"),
         ("télémétrie", "telemetrie", "mesure d'audience", "audience"),

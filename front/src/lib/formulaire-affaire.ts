@@ -70,6 +70,21 @@ export function estBati(categorie: string): boolean {
 /** La catégorie d'un bogue du site : au gestionnaire seul (#1191). */
 export const CATEGORIE_BUG = 'bug';
 
+/**  Le paramètre qui ouvre la boîte de création d'une affaire sur UNE catégorie —
+ *   l'avis sur l'application renvoie un problème vers un bogue (#2075). */
+const PARAM_CATEGORIE = 'categorie';
+
+/** L'adresse qui ouvre « + Nouvelle affaire » sur cette catégorie. */
+export function lienNouvelleAffaire(categorie: string): string {
+	return `/tickets?nouveau=1&${PARAM_CATEGORIE}=${encodeURIComponent(categorie)}`;
+}
+
+/** La catégorie demandée par l'adresse, si elle existe — `''` sinon. */
+export function categorieDuLien(params: URLSearchParams): string {
+	const demandee = params.get(PARAM_CATEGORIE) ?? '';
+	return CATEGORIES_TICKET.some((c) => c.value === demandee) ? demandee : '';
+}
+
 /** La catégorie de la récurrence : un Entretien seul se répète (#1092). */
 export const CATEGORIE_ENTRETIEN = 'entretien';
 

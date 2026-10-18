@@ -53,8 +53,8 @@ from typing import Any, Callable
 from fastapi import HTTPException
 from sqlmodel import Session
 
-from app.auth.deps import est_moderateur, est_rattache_au_lot
-from app.models.core import LocationBail, Lot, Utilisateur
+from app.auth.deps import est_auteur, est_moderateur, est_rattache_au_lot
+from app.models.core import LocationBail, Lot, RoleUtilisateur, Utilisateur
 from app.utils.recuperer import ou_404
 
 
@@ -270,3 +270,31 @@ def exiger_auteur_du_versement(
     if not peut_defaire_le_versement(v, user, deplacer=deplacer):
         raise HTTPException(403, "Seul celui qui a transféré, ou l'administrateur, peut le défaire")
     return v
+
+
+# ── Les avis sur l'application (#2075) ─────────────────────────────────────
+#
+#  Trois gestes, trois règles — elles ne se fondent pas : retirer admet l'auteur
+#  et le gestionnaire du site ; ressortir, le gestionnaire, et l'auteur pour ce
+#  qu'il a rangé lui-même ; supprimer, l'auteur et l'administration. Le
+#  gestionnaire se demande à `utils/destinataires.est_gestionnaire_du_site` (il
+#  faut la base) : l'appelant le passe.
+
+
+def peut_retirer_l_avis(avis, user: Utilisateur, *, gestionnaire: bool) -> bool:
+    """📦 Retirer un avis : son auteur, ou le gestionnaire du site."""
+    return gestionnaire or est_auteur(avis, user)
+
+
+def peut_ressortir_l_avis(avis, user: Utilisateur, *, gestionnaire: bool) -> bool:
+    """↩️ Ressortir un avis retiré : le gestionnaire ; l'auteur, s'il l'a rangé lui-même.
+
+    Ce que le gestionnaire a retiré (un avis inapproprié), son auteur ne le
+    republie pas d'un clic.
+    """
+    return gestionnaire or (avis.archive_par_id is not None and avis.archive_par_id == user.id)
+
+
+def peut_supprimer_l_avis(avis, user: Utilisateur) -> bool:
+    """🗑️ Supprimer un avis, aux Archives : son auteur (droit à l'effacement), ou l'administration."""
+    return est_auteur(avis, user) or user.has_role(RoleUtilisateur.admin)

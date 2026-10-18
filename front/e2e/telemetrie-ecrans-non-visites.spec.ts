@@ -69,10 +69,12 @@ test('un écran réservé à un rôle est marqué « Réservé », pas présent�
 	await ouvrir(page, 'mois', VUES);
 	const ligne = page.getByRole('row', { name: /\/espace-cs\b/ }).first();
 	await expect(ligne).toContainText('Réservé');
-	//  Un écran ouvert à tous ne porte pas la marque.
+	//  Un écran ouvert à tous ne porte pas la marque. `/avis` et non plus
+	//  `/annonces`, fermée au syndic et au mandataire depuis #2075 (« Réservé »
+	//  y est donc juste) : l'Avis est le seul onglet de la Communauté ouvert à tous.
 	const ouverte = page
 		.getByRole('row')
-		.filter({ has: page.getByRole('cell', { name: '/annonces', exact: true }) });
+		.filter({ has: page.getByRole('cell', { name: '/avis', exact: true }) });
 	await expect(ouverte).toHaveCount(1);
 	await expect(ouverte).not.toContainText('Réservé');
 });

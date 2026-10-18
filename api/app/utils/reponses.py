@@ -42,6 +42,34 @@ REPONSE_EMAIL_CODE = "reponse_communaute"
 #  révélerait si la personne habite son lot ou le loue.
 
 
+#  La signature d'un ADMINISTRATEUR en toutes lettres — « Admin » est
+#  l'étiquette d'un écran d'administration, pas une signature. Divergence
+#  assumée, écrite ici plutôt que subie (elle vivait dans `utils/reponses`).
+SIGNATURE_ADMIN = "Administrateur"
+
+
+def role_signature(personne) -> str | None:
+    """Ce qu'une personne EST, en un mot, à côté de son nom.
+
+    Le conseil syndical d'abord (c'est ce qui pèse dans un échange), puis
+    l'administration, puis le statut dans sa forme courte (« Copropriétaire »,
+    « Locataire », « Syndic »). `None` quand rien n'est connu.
+
+    Sortie d'`auteur_meta` (#2075) : la signature d'une réponse de la
+    Communauté et celle d'un avis sur l'application posent la même question —
+    une seule écriture. Elle vit ICI et non dans `roles_libelles`, qui porte la
+    table des rôles, `externe` compris : une décision par `has_role` à côté d'elle
+    y passerait pour une copie du refus des comptes externes
+    (`test_refus_externe_source_unique`).
+    """
+    if personne.has_role(RoleUtilisateur.conseil_syndical):
+        return libelle_role(RoleUtilisateur.conseil_syndical)
+    if personne.has_role(RoleUtilisateur.admin):
+        return SIGNATURE_ADMIN
+    statut = valeur(personne.statut) or ""
+    return libelle_statut_court(statut) if statut else None
+
+
 def auteur_meta(auteur: Optional[Utilisateur], session: Session) -> dict:
     """Nom + bâtiment + rôle d'un auteur de réponse.
 
@@ -56,16 +84,7 @@ def auteur_meta(auteur: Optional[Utilisateur], session: Session) -> dict:
             "est_cs": False,
         }
     est_cs = est_moderateur(auteur)
-    if auteur.has_role(RoleUtilisateur.conseil_syndical):
-        role = libelle_role(RoleUtilisateur.conseil_syndical)
-    elif auteur.has_role(RoleUtilisateur.admin):
-        #  ⚠️ « Administrateur » et non « Admin » : le libellé de la table sert
-        #  une étiquette d'écran d'administration, celui-ci une signature en
-        #  toutes lettres. Divergence assumée, écrite ici plutôt que subie.
-        role = "Administrateur"
-    else:
-        statut = valeur(auteur.statut) or ""
-        role = libelle_statut_court(statut) if statut else None
+    role = role_signature(auteur)
     batiment = None
     if auteur.batiment_id is not None:
         bat = session.get(Batiment, auteur.batiment_id)

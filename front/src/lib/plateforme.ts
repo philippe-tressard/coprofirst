@@ -26,7 +26,8 @@ export const NOM_PLATEFORME = 'CoproFirst';
 export const DEPOT_SOURCE = 'https://github.com/philippe-tressard/coprofirst';
 
 /** Le site de présentation du logiciel — « À propos de CoproFirst », en pied
- *  de page (#2040). Le front seul le lie : l'API ne le nomme nulle part. */
+ *  de page (#2040) ; l'API le lie aussi, sur le nom du logiciel, dans les
+ *  mentions légales (`api/app/utils/plateforme.py`). */
 export const SITE_PLATEFORME = 'https://coprofirst.fr';
 
 /** La licence, telle qu'on l'identifie, la nomme et la lie. Le texte qui fait

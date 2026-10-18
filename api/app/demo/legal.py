@@ -29,7 +29,7 @@ from html import escape
 from sqlmodel import Session
 
 from app.config import get_settings
-from app.seed.contenus_legaux import PARAGRAPHE_LICENCE
+from app.seed.contenus_legaux_licence import PARAGRAPHE_LICENCE
 from app.utils.config_site import ecrire_cle
 
 HEBERGEUR = (

@@ -123,12 +123,13 @@ export const isGestionnaire = derived(currentUser, estGestionnaire);
 
 /** Ce que l'utilisateur courant est, pour juger d'un onglet (`ongletsOuverts`). */
 export const droitsOnglet = derived(
-	[isAdmin, isOperateur, isProprioOuCS, isLocataire],
-	([administrateur, operateur, proprioOuCS, locataire]): DroitsOnglet => ({
+	[isAdmin, isOperateur, isProprioOuCS, isLocataire, isGestionnaire],
+	([administrateur, operateur, proprioOuCS, locataire, gestionnaire]): DroitsOnglet => ({
 		administrateur,
 		operateur,
 		proprioOuCS,
 		locataire,
+		gestionnaire,
 	}),
 );
 

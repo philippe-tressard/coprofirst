@@ -74,6 +74,13 @@
 	export let enEdition = false;
 	export let urgent = false;
 	export let peutModifier = false;
+	/**  📦 sans ✏️ : qui RETIRE sans corriger — le gestionnaire du site devant un
+	 *   avis (#2075). Absent, c'est `peutModifier`, comme avant. */
+	export let peutArchiver: boolean | null = null;
+	/** ↩️ : qui ressort l'objet des Archives. Absent, c'est `peutModifier`. */
+	export let peutRestaurer: boolean | null = null;
+	$: archivable = peutArchiver ?? peutModifier;
+	$: restaurable = peutRestaurer ?? peutModifier;
 	/** Le corps sur fond secondaire, avec son retrait haut (cf. l'en-tête). */
 	export let teinte = false;
 	/**  Rendue aux Archives : ↩️ y remplace 📦, et les gestes de correction se
@@ -121,6 +128,8 @@
 					on:click|stopPropagation={() => (enEdition ? onAnnuler() : onModifier())}
 					><IconeAction icone="pencil" /></button
 				>
+			{/if}
+			{#if archivable && !archive}
 				<!--  📦 et non 🗑️ (#1538) : la corbeille disait « supprimer » pour un
 				      geste qui range — et l'objet se retrouve aux Archives. -->
 				<button
@@ -129,13 +138,18 @@
 					title="Archiver — rejoint les Archives, en bas de la liste"
 					on:click|stopPropagation={() => onArchiver(true)}><IconeAction icone="archive" /></button
 				>
-			{:else if peutModifier && archive}
-				<button
-					class="btn-icon"
-					aria-label="Restaurer"
-					title={titreRestaurer}
-					on:click|stopPropagation={() => onArchiver(false)}><IconeAction icone="undo-2" /></button
-				>
+			{:else if archive}
+				{#if restaurable}
+					<button
+						class="btn-icon"
+						aria-label="Restaurer"
+						title={titreRestaurer}
+						on:click|stopPropagation={() => onArchiver(false)}
+						><IconeAction icone="undo-2" /></button
+					>
+				{/if}
+				<!--  Aux Archives seulement : ce qui s'y fait de plus (🗑️ d'un avis). -->
+				<slot name="gestes-archive" />
 			{/if}
 		</svelte:fragment>
 

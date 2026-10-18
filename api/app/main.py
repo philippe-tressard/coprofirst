@@ -66,6 +66,7 @@ from app.routers import (
     compteurs,
     sondages,
     idees,
+    avis,
     copropriete,
     copropriete_patrimoine,
     carnet,
@@ -390,7 +391,7 @@ app.include_router(prestataires_archivage.router)
 #  Les métriques des affaires d'un prestataire (#1646), même préfixe.
 app.include_router(prestataires_metriques.router)
 #  Les routeurs sans particularité de montage : un `include_router` chacun.
-for _routeur in (sondages, idees, annonces, annonces_hall, courriels_affaires, manuel):
+for _routeur in (sondages, idees, avis, annonces, annonces_hall, courriels_affaires, manuel):
     app.include_router(_routeur.router)
 app.include_router(copropriete.router)
 #  Les bâtiments et les lots — extraits le 22/09/2026 (modularité, rang 1). Même

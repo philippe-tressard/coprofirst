@@ -23,6 +23,8 @@ se rend, elle a l'air finie, et personne ne la lit jusqu'à ce que quelqu'un
 cherche qui contacter. La nôtre a vécu ainsi jusqu'à ce qu'un lecteur le voie.
 """
 
+from app.seed.contenus_legaux_avis import AVIS_SITE_PRESENTATION
+from app.seed.contenus_legaux_licence import PARAGRAPHE_LICENCE
 from app.seed.contenus_legaux_identite import (
     DESTINATAIRES,
     HEBERGEMENT,
@@ -32,7 +34,6 @@ from app.seed.contenus_legaux_identite import (
     RESPONSABLE_TRAITEMENT,
 )
 from app.utils.courriel_journal import CONSERVATION_RELEVES_JOURS
-from app.utils.plateforme import LICENCE_NOM, LICENCE_SPDX, LICENCE_URL, NOM_PLATEFORME
 from app.utils.purge_comptes.regles import (
     DELAI_ATTENTE_MOIS,
     DELAI_AVANT_SUPPRESSION_JOURS,
@@ -317,20 +318,6 @@ DROITS_DEPUIS_LE_PROFIL = (
     "l'application, ou exporter et effacer leurs données depuis leur profil."
 )
 
-#: Le paragraphe de licence des mentions légales (#1726, 08/10/2026) — UNE
-#: écriture, lue par ce gabarit ET par la migration 0270, qui le pose dans les
-#: mentions déjà en base à la place de celui de la Licence 5Hostachy.
-PARAGRAPHE_LICENCE = (
-    f"<p>Ce site est servi par {NOM_PLATEFORME}, un <strong>logiciel libre</strong> "
-    "distribué sous la "
-    f'<a href="{LICENCE_URL}" target="_blank" rel="noopener noreferrer">{LICENCE_NOM}</a> '
-    f"({LICENCE_SPDX}). Chacun peut l'utiliser, l'étudier, le modifier et le "
-    "redistribuer, y compris à titre commercial, à condition de publier ses "
-    "modifications sous la même licence — y compris lorsqu'il le fait fonctionner "
-    "comme service en ligne. Le code source de la version en service est accessible "
-    "depuis le pied de chaque page.</p>"
-)
-
 DEFAULT_LEGAL = {
     "mentions_legales": (
         MARQUE_MODELE
@@ -367,6 +354,7 @@ DEFAULT_LEGAL = {
         "base\xa0: intérêt légitime (art.\xa06-1-f).</li><li><strong>Communication résidents/CS</strong> — "
         "base\xa0: exécution du contrat (art.\xa06-1-b).</li><li><strong>E-mails transactionnels</strong> —"
         " base\xa0: intérêt légitime / consentement.</li>"
+        + AVIS_SITE_PRESENTATION
         + TELEMETRIE_BASE_LEGALE
         + "</ul>"
         + DESTINATAIRES

@@ -35,6 +35,7 @@ export * from './client';
 export * from './types';
 export * from './documents';
 export * from './communaute';
+export * from './avis';
 export * from './patrimoine';
 export * from './bailleur';
 export * from './acces';
