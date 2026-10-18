@@ -23,6 +23,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict, dataclass, field
+from typing import NamedTuple
 
 from sqlmodel import Session, select
 
@@ -37,10 +38,17 @@ from app.utils.textes_legaux.champs import (
 )
 from app.utils.textes_legaux.identite import IdentiteLegale, identite_legale
 
-#: Les deux textes, dans l'ordre de l'écran, et leur titre.
+
+class Titre(NamedTuple):
+    nom: str
+    #: Le participe accordé au titre : « Mentions légales » est un féminin pluriel.
+    relu: str
+
+
+#: Les deux textes, dans l'ordre de l'écran, leur titre et son accord.
 TEXTES = {
-    "mentions_legales": "Mentions légales",
-    "politique_confidentialite": "Politique de confidentialité",
+    "mentions_legales": Titre("Mentions légales", "relues"),
+    "politique_confidentialite": Titre("Politique de confidentialité", "relue"),
 }
 
 #: La relecture déclarée, par texte : `{clé: {empreinte, le, par}}`. Écrite par le
@@ -52,6 +60,8 @@ CLE_RELECTURE = "textes_legaux_relus"
 class EtatTexte:
     cle: str
     titre: str
+    #: « relue » ou « relues » — l'accord se déclare avec le titre, jamais ne se devine.
+    participe_relu: str
     relu: bool
     relu_le: str | None
     complet: bool
@@ -104,7 +114,8 @@ def etat(session: Session) -> list[EtatTexte]:
         rendus.append(
             EtatTexte(
                 cle=cle,
-                titre=TEXTES[cle],
+                titre=TEXTES[cle].nom,
+                participe_relu=TEXTES[cle].relu,
                 relu=relecture.get("empreinte") == empreinte(texte),
                 relu_le=relecture.get("le"),
                 complet=not manques,

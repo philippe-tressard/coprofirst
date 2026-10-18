@@ -20,6 +20,7 @@ const A_RELIRE = {
 		{
 			cle: 'mentions_legales',
 			titre: 'Mentions légales',
+			participe_relu: 'relues',
 			relu: false,
 			relu_le: null,
 			complet: false,
@@ -29,6 +30,7 @@ const A_RELIRE = {
 		{
 			cle: 'politique_confidentialite',
 			titre: 'Politique de confidentialité',
+			participe_relu: 'relue',
 			relu: false,
 			relu_le: null,
 			complet: true,
@@ -101,6 +103,7 @@ test('« J’ai relu ces textes » part au serveur, et l’onglet suit son const
 	const envois = await ouvrir(page);
 	await page.getByRole('button', { name: 'J’ai relu ces textes' }).click();
 	await expect.poll(() => envois).toContain('POST /api/config/textes-legaux/relecture');
-	await expect(page.getByText('Mentions légales relue')).toBeVisible();
+	await expect(page.getByText('Mentions légales relues', { exact: true })).toBeVisible();
+	await expect(page.getByText('Politique de confidentialité relue', { exact: true })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'J’ai relu ces textes' })).toHaveCount(0);
 });

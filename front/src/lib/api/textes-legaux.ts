@@ -16,6 +16,8 @@ export interface ChampTexteLegal {
 export interface EtatTexteLegal {
 	cle: string;
 	titre: string;
+	/** « relue » ou « relues » : l'accord du titre, déclaré par le serveur. */
+	participe_relu: string;
 	relu: boolean;
 	relu_le: string | null;
 	complet: boolean;

@@ -48,13 +48,13 @@
 
 	function point(e: EtatTexteLegal): PointConformite {
 		return {
-			conforme: `${e.titre} relue`,
+			conforme: `${e.titre} ${e.participe_relu}`,
 			aCorriger: `${e.titre} à relire`,
 			inconnu: e.titre,
 			explication: e.complet
 				? e.relu
-					? `Relue le ${fmtDatetime(e.relu_le)}, telle qu'elle est enregistrée.`
-					: 'Jamais relue, ou modifiée depuis la dernière relecture.'
+					? `Relecture déclarée le ${fmtDatetime(e.relu_le)}, sur le texte enregistré.`
+					: 'Aucune relecture déclarée, ou texte modifié depuis la dernière.'
 				: 'Il manque encore ce que la liste dessous énumère, avec où le renseigner.',
 		};
 	}
@@ -137,8 +137,8 @@
 				placeholder="donnees@exemple.fr"
 			/>
 			<span class="aide"
-				>Le champ <code>[[contact]]</code> : joignable sans compte, au nom du syndicat — un droit d'effacement
-				s'exerce souvent après la suppression du compte.</span
+				>Le champ <code>[[contact]]</code> : joignable sans compte, au nom du responsable du traitement
+				— un droit d'effacement s'exerce souvent après la suppression du compte.</span
 			>
 		</label>
 	</div>
