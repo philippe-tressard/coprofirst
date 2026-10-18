@@ -128,7 +128,9 @@ actif.
 🔎 Ce qui manque pour trancher DNS ou saturation de l'accès : la ligne
 `Sonde : dns=… connexion=… <erreur curl>` que health-watch écrit désormais sous
 chaque `⚠ Site HS` — `Resolving timed out` dit le DNS, `Connection timed out` le
-lien. `grep -A1 "Site HS" /var/log/hostachy-health-watch.log`.
+lien. `grep -A1 "Site HS" /var/log/hostachy-health-watch.log`. Une mesure hors de la
+fenêtre (18/10, 09:20–09:47 : 800 requêtes publiques, chaque résolveur interrogé
+1 000 fois) n'a vu aucun `000` — elle ne prouve rien pour 17 h.
 
 ⚠️ Les résolveurs viennent de la **box** (DHCP, `/etc/resolv.conf` réécrit le
 08/10/2026) : six sont annoncés, la glibc n'en lit que les **trois premiers**, et le
