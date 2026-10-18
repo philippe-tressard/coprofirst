@@ -17,10 +17,10 @@ Guide de référence des patterns UX établis. Tout pattern utilisé ≥ 2 fois 
 > l'**héritage partiel** quand on redéfinit localement une règle globale.
 > Ne pas la recopier ici : cette skill ne porte que son instanciation 5Hostachy.
 
-1. **Avant** d'implémenter, vérifier si un pattern similaire existe déjà (grep / semantic search)
+1. **Avant** d'implémenter, vérifier si un pattern similaire existe déjà (grep / semantic search) **et lire les entrées de [`ARBITRAGES.md`](ARBITRAGES.md) qui touchent la notion**
 2. Si le pattern existe ≥ 2 fois → c'est un **pattern établi** → l'appliquer à l'identique
-3. Si la demande contredit un pattern → **signaler le conflit** et demander confirmation
-4. Après implémentation → mettre à jour **cette skill** si le pattern a évolué
+3. Si la demande contredit un pattern **ou un arbitrage** → **signaler le conflit** (pour un arbitrage : son n°, sa date, son pourquoi) et demander confirmation
+4. Après implémentation → mettre à jour **cette skill** si le pattern a évolué, **et le registre** si une décision a été prise
 
 **Où chercher, ici** : les règles globales vivent dans `front/src/styles/*.css`, importées par `app.css` — qui n'en porte plus **aucune** depuis le 27/08/2026 (#453). `composants.css` porte les classes partagées (`.carte-liste`,
 `.page-header`, `.form-actions`, `.clamp-5`, `.chevron`, `.largeur-saisie`…) —
@@ -33,39 +33,26 @@ déjà** : `.form-actions` (identique, donc inerte, supprimée le 15/08) et
 issue #363, qui a projeté le titre de *Nouveau ticket* à droite de l'écran). Le
 réflexe n'est pas « qu'est-ce que j'ajoute ? » mais « de quoi est-ce que j'hérite ? ».
 
-## 🔴 CE QUI EST TRANCHÉ — à appliquer sans rediscuter
+## 🔴 CE QUI EST TRANCHÉ — le registre des arbitrages
 
-Onze arbitrages en deux jours (17–18/08/2026), tous **constatés à l'écran** avant
-d'être écrits ici. Trois d'entre eux **contredisent** une version antérieure de
-cette skill : c'est normal, et c'est même le mécanisme — *une règle d'interface
-se vérifie sur un écran, pas sur du papier*.
+Les décisions d'interface vivent dans **[`ARBITRAGES.md`](ARBITRAGES.md)**, à côté de
+cette skill : numéro, statut, date, ticket, qui a tranché, **pourquoi**, ce qui a été
+**écarté**, et le contrôle qui la tient. Elles s'appliquent **sans rediscuter** ; une
+demande qui en défait une se signale d'abord, et si elle est maintenue, l'entrée passe
+`remplacé par n° X` — jamais effacée.
 
-Ce bloc n'énonce que les décisions et renvoie à la section qui les développe.
-**Il ne recopie rien** : deux versions d'une même règle divergent au premier lot.
+**L'ouvrir avant d'écrire** : `grep -n "^### n° [0-9]" .claude/skills/ux-patterns/ARBITRAGES.md`,
+puis la notion. Cette skill développe la règle ; le registre dit d'où elle vient, et
+**il ne la recopie pas** : deux versions d'une même règle divergent au premier lot.
 
-| # | Ce qui est tranché | Développé en |
-|---|---|---|
-| 1 | **Le geste de dépliage est asymétrique** — carte repliée : clic n'importe où ; carte dépliée : **seul le titre** replie | §3 |
-| 2 | **Le survol colore le TITRE**, jamais le fond du bloc, et **sans soulignement** | §3 |
-| 3 | **Le liseré gauche** de `.carte-liste` qui passe au bleu est **la référence** — sauf sur le fil, où il porte déjà la couleur du type | §3 |
-| 4 | **L'en-tête de carte** : titre sur sa ligne, puis tags à gauche / date + actions + chevron à droite, **sur une seule ligne** — sauf au téléphone quand elle déborde : elle passe à la ligne, la date sur la dernière (27/09/2026, l'auteur s'y lisait « ✍️ Jear ») | §3 |
-| 5 | **Ordre des icônes : 🔗 🔄 ✏️ 🗑️**, dans l'en-tête et jamais dans le corps — le 🔗 en tête parce qu'il est le seul que tout le monde a | §3 |
-| 6 | **Le mode se lit sur l'icône** qui a ouvert le formulaire (`aria-pressed`), jamais sur un titre au-dessus | §13 bis |
-| 7 | **Section 1 = le titre SEUL** ; ce qui qualifie l'objet est en section 2 | §0 |
-| 8 | **Un workflow se déclare, le tracer est une AUTRE décision** — cinq états sur une annonce, aucun fil | §16 |
-| 9 | **L'archivage se calcule** : 30 j après un état terminal, sur `statut_change_le` — ⚠️ révisé le 24/09/2026 : sur une affaire ou une actualité, le conseil **peut aussi archiver d'un geste 📦**, à la place du 🗑️ de la liste ; prestataires et contrats n'ont **que** ce geste, et ↩️ pour ressortir (02/10/2026, #1538) | §8, §16 |
-| 10 | **Deux droits** : éditer = auteur · saisi_pour · admin ; commenter = les mêmes **+ CS** | §15 |
-| 11 | **L'écran dit ce que le serveur fait**, ni plus ni moins | §15 |
-| 12 | **L'objet DOCUMENTS a UNE forme** — pastilles « TYPE: nom », bouton puis champ de libellé, sans exception | §0 bis |
-| 13 | **La dernière ligne d'une carte est UNE** (27/09/2026) — celle de l'affaire fait la norme : catégorie · état · 🔹 · qui la lit · ⚡ Urgente · marqueurs · #numéro · **✍️ auteur** · ✨ ; le fil la rend à l'identique **sans 📌** | §3 |
-| 14 | **L'urgence se dit ⚡**, orange, partout — 🚨 est banni, manuel compris | §3 |
-| 15 | **Un seul sélecteur de fichiers** (`FichiersUpload`), 44 px au doigt | §0 bis |
-| 16 | **Le manuel montre la VRAIE pastille**, phrase au survol recalculée par le site — jamais une couleur propre au manuel | skill `user-manual` |
-| 17 | **Un seul bloc déplié à la fois, partout** (30/09/2026, « sans exception, formulaires compris ») — cartes, années d'archives, colonnes vides du kanban, sections de formulaire, réponses, `<details>`. Deux exceptions arbitrées : une section **modifiée** reste ouverte, une carte **en correction** aussi. Une seule mécanique : `$lib/accordeon` (`basculer`, `membre`, `listeMembre`, et l'écouteur des `<details>` posé par le layout) ; le bloc ouvert voit son **haut ramené à l'écran** quand le repli d'un voisin l'en a fait sortir (`amenerEnVue`, signalé dans Admin › IA : « on se trouve à la fin de la section ouverte ») ; 🔒 `npm run lint:accordeon` refuse un état d'ouverture en `Set`, `e2e/accordeon` éprouve formulaire et `<details>` | `$lib/accordeon` |
-| 18 | **Une rangée de filtres dit combien elle montre — sur la pastille RETENUE seulement** (10/10/2026, maquette J arbitrée à l'écran parmi dix) : le nombre est la longueur de la liste affichée, en vignette `Compte` inversée ; les autres pastilles n'en portent pas. Partout, sans exception — 🔒 `npm run lint:compte-filtres` | §5 |
-| 19 | **La carte d'AFFAIRE a une gouttière** (10/10/2026, maquette B « Gouttière » arbitrée parmi cinq, https://claude.ai/artifact/TUunrVHAwxQGhHgUn9wrGW) : à gauche la **date** (jour en grand) puis la **nature** (ACTU. · CAL. · AFF.), une ligne au-dessus du titre au téléphone ; densité aérée (base d'`EnteteCarte`), actions **au trait** (`IconeAction`), dernière ligne en **capsules** dont seuls l'état, « qui la lit » et l'urgence sont teintés. Le n° 4 (« date à droite ») cède pour elle. 🔴 **Elle est devenue LE STANDARD des pages de liste similaires** (arbitré le soir même, après livraison : *« elle doit devenir un standard pour les autres pages similaires »*) : **généralisé à tout le site le même soir (#1819)** : briques `Gouttiere`, `ReglagesListe`, `IconeAction` partout, capsules ; F1 n'existe plus. 🔒 `e2e/gouttiere-nature`, `lint:actions-au-trait` | §3 |
-| 20 | **Une affaire DÉPLIÉE se lit en trois ÉTAPES** (maquette G, 16/10/2026, choisie parmi dix en deux tours ; elle remplace la maquette A du 15/10, dont les intitulés avaient deux styles et des limites floues) : `RubriqueEtape` — un jalon sur un **rail** à gauche, un **encart teinté** à droite (neutre · bleu · vert), pliable. Ordre : « La demande » (la fiche, dans l'ordre du cadre) · « La suite · n entrées » (trois entrées, puis « plus anciennes » ; les transferts versés s'y défont) · « La synthèse » **en dernier** (texte d'abord, puis les chiffres ; chronologie et récidive pliées ; crayon et corbeille en tête de son contenu). **Une seule dépliée à la fois** (`basculer`), la demande d'abord ; pliée, une étape dit l'essentiel sur **une ligne** (`resume` : date, dernière suite « Résolu le … », « Validée le … · affaire close en n j ») — sans ce résumé, le pliage cacherait la conclusion. La Suite de synthèse quitte le fil (`entreesDuFil`). Repliée, la carte porte « 🧾 Synthèse » (`synthese_validee`). Une suite se supprime après **confirmation** (`RubriqueHistorique`). 🔒 `e2e/carte-affaire-close` | §3 |
-| 21 | **Un geste qui LANCE l’assistant IA : ✨, puis ⏳ qui clignote** (17/10/2026, demandé par l’utilisateur : *« standardise partout le principe […] est-il possible de le faire clignoter ? »*) — une seule brique, `IconeIA {enCours}` : `sparkles` au trait au repos, `hourglass` **Bleu Seine qui clignote** pendant l’appel (immobile sous `prefers-reduced-motion`), la couleur du texte dans un `.btn` qui parle. Le bouton porte `aria-busy={enCours}` et se désactive ; `.btn:disabled[aria-busy='true']` garde sa **pleine opacité** — à demi-teinte, l’attente se lisait comme un refus. Huit gestes : barre de l’éditeur et « Retravailler avec l’assistant », synthèse d’un contrat, produire / relancer / recommencer la synthèse d’une affaire, résumer les affaires en cours, question au règlement, tarif d’un modèle. ✨ **ne se dit que de l’IA** : la « Présélection recommandée » des accès d’un bail (une règle, pas l’assistant) l’a perdue. La MARQUE « rédigé avec l’assistant » (`MarqueIA`, ✨ émoji hors bouton) n’est pas un geste et ne clignote jamais. 🔒 `npm run lint:geste-ia`, `e2e/assistant-ia` | §3 |
+⚠️ Ce bloc était un tableau de 21 décisions, sans raison ni ticket. Le 18/10/2026, le
+relevé qui l'a remplacé a trouvé **cinq paragraphes** de cette skill qui contredisaient
+un arbitrage plus récent sans le dire — l'interface les avait suivis, pas le texte. Ils
+portent désormais un ⚠️ qui renvoie au numéro.
+
+Les onze premiers arbitrages (17–18/08/2026) ont tous été **constatés à l'écran** avant
+d'être écrits, et trois **contredisaient** une version antérieure de cette skill : c'est
+le mécanisme — *une règle d'interface se vérifie sur un écran, pas sur du papier*.
 
 ### ⚠️ Les trois pièges que ces onze arbitrages ont révélés
 
@@ -914,6 +901,9 @@ serveur envoie la ligne au fil, et ✨ sur chaque carte de la communauté).
 
 ### 🗂️ L'affaire DÉPLIÉE au fil — trois rubriques (maquette A, 15/10/2026)
 
+> ⚠️ **À arbitrer** : la carte d'affaire rend la maquette G (arbitrage n° 20), le fil
+> celle-ci (n° 63). Une même affaire dépliée a deux rendus.
+
 Signalé sur TK-109008 : la carte d'une affaire résolue montrait le texte de la
 **demande** et, dessous, les photos de la **clôture** — rien ne disait d'où elles
 venaient, et le texte de clôture manquait. Choisie parmi cinq maquettes :
@@ -961,7 +951,7 @@ déborde » : la mesure se fait après rendu (`scrollHeight > clientHeight`).
 
 ### Règles
 - **Une seule** carte ouverte à la fois — et un seul bloc déplié, quel qu'il soit
-  (règle 17 du tableau de tête, `$lib/accordeon`)
+  (arbitrage n° 17, `ARBITRAGES.md`, `$lib/accordeon`)
 - Chargement lazy des détails au premier clic
 - Une liste qui peut compter des dizaines de cartes se **rend par paquets** :
   `$lib/rendu-progressif` (`aRendre`, `quandProche`) — les premières d'emblée,
@@ -1033,6 +1023,10 @@ est correct est `svelte-check` : **aucun** « Unused CSS selector » nouveau.
 carte REPLIÉE  → toute la zone déplie · le fond change au survol
 carte DÉPLIÉE  → SEUL le titre replie · le corps se lit et se sélectionne
 ```
+
+> ⚠️ **Périmé sur un point** : le fond ne change pas au survol, c'est le TITRE qui se
+> colore — arbitrage n° 2 (`normes.css`, vérifié le 18/10/2026). Vaut aussi pour la
+> ligne `styles/composants.css` du tableau ci-dessous.
 
 Formulé ainsi : *« applique partout la logique du fil d'actualité : cliquable
 sur toute la zone pour déplier, avec changement de couleur au survol »* puis
@@ -1592,6 +1586,10 @@ donc à `PerimetrePicker` et au sélecteur de destinataires, partout.
 | 8 | **Photos** | `ChampsCommuns` |
 | 9 | **Documents** | `ChampsCommuns` |
 | 10 | **Diffusion** | `ChampsCommuns` |
+
+> ⚠️ **Périmé** : cette table date d'avant le 21/09/2026 (#1095 a scindé, ajouté et
+> déplacé des sections). L'ordre se lit dans `SECTIONS_ORDRE`, et nulle part ici —
+> arbitrage n° 53.
 
 🔴 **Révisé le 12/09/2026, et surtout CONTRÔLÉ depuis.** « Options de
 publication » n'avait aucun rang : chaque écran la posait où il voulait, et
@@ -2224,6 +2222,11 @@ signaler **trois fois** :
 
 1. **La commande d'annulation reste dans l'en-tête**, où le bouton d'ouverture
    bascule en « ✕ Annuler ». Ne PAS en ajouter une seconde dans la boîte.
+
+   > ⚠️ **Périmé** : depuis le 18/08/2026, l'annulation vit au pied du formulaire et
+   > `BoutonNouveau` s'efface pendant la saisie (§13, arbitrage n° 31) ; l'exemple ci-dessus
+   > aussi. Vérifié dans `BoutonNouveau.svelte` le 18/10/2026.
+
 2. **`alignerSaisie={showForm}` sur `EntetePage`** dès qu'un formulaire s'ouvre
    dans la page — sans lui le bouton flotte loin de ce qu'il annule.
 3. **Jamais de modale pour un formulaire de CRÉATION.** Les modales restent
@@ -2409,7 +2412,7 @@ désormais le cas sans dépendre du découpage : *un identifiant d'édition
 (`editXxxId`) ne peut pas à la fois ouvrir un formulaire dans l'écran et être
 confié à un composant enfant* — les deux rendus s'affichent alors ensemble.
 
-🔴 **QUATRIÈME position, et la bonne** — désignée par Philippe le 10/09/2026 :
+🔴 **QUATRIÈME position, et la bonne** — désignée par l'utilisateur le 10/09/2026 :
 *« l'affaire modifiée passe en premier ! prends exemple sur tickets »*. Remplacer
 la carte **entière** effaçait la ligne du contrat, et `FormulaireCreation`
 ramenait sa boîte en haut de la fenêtre dès qu'elle n'y tenait pas : l'objet
@@ -2644,6 +2647,9 @@ est publiée, puis bascule dans l'Historique au bout de son délai. « En cours 
 « Résolu », « Annulé » sont le vocabulaire d'un **ticket**, et les emprunter
 faisait ressembler une annonce à un dossier suivi. Son Publié/Brouillon est une
 décision de **diffusion**, et vit en section 2.
+
+> ⚠️ **Révisé le 10/10/2026** : une actualité a un **suivi optionnel** — Ouvert · Résolu ·
+> Annulé (`ETATS_SUIVI_ACTUALITE`, v2.131.0) — arbitrage n° 26.
 
 La déclaration le dit (`sansObjet`), et c'est elle qui l'impose : la section
 disparaît de la création, de l'édition **et** de l'Historique — dans ce dernier,

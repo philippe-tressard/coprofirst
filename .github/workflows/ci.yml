@@ -1475,6 +1475,15 @@ jobs:
         working-directory: front
         run: npm run lint:consignes
 
+      # Le registre des arbitrages d'interface (`ux-patterns/ARBITRAGES.md`,
+      # 18/10/2026) : forme des entrées, numérotation continue, « arbitrage n° N »
+      # cité dans le dépôt vers une entrée existante, et « Tenu par » qui nomme des
+      # scripts `lint:*` et des tests qui existent. Sans lui, le format et les
+      # renvois dérivent au premier lot (`standards/05`).
+      - name: Registre des arbitrages d'interface (forme et renvois)
+        working-directory: front
+        run: npm run lint:arbitrages
+
       # Le renouvellement silencieux de session était désactivé par le PRÉFIXE
       # `/auth/`, posé pour empêcher `/auth/refresh` de se rappeler lui-même. Il
       # attrapait aussi `/auth/me` : pendant les sept jours où la session restait
