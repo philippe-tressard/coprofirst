@@ -84,12 +84,56 @@ vient bien du nœud actif, via deux sondes indépendantes de l'URL publique :
 |---|---|---|
 | KO | — | **Failover** (nœud réellement mort — chemin critique inchangé) |
 | OK | KO | **Abstention** + alerte : panne de chemin, basculer ne rétablirait rien |
-| OK | OK | **Failover** : le nœud actif vit mais son tunnel est cassé |
+| OK | OK, et l'URL publique a RÉPONDU (503, 530…) | **Failover** : l'edge n'atteint plus l'origine (25/09/2026) |
+| OK | OK, aucune réponse (`000`) | selon le **tunnel de l'actif**, mesuré chez lui (#2073) : cassé → **failover** · sain → **abstention**, sans alerte · illisible → **abstention** + alerte |
 
 La sonde LAN est `http://<actif>/api/health` (via Caddy — le port 8000 n'est **pas**
 publié). La sonde d'edge (`cdn-cgi/trace`) exerce DNS + TLS, c'est-à-dire exactement la chaîne
 dont le tunnel dépend : « pourrais-je seulement servir ? ». Logique isolée en
 fonction pure `decide_failover()` + `./health-watch.sh --selftest`, vérifiée en CI.
+
+### Un `000` n'est pas un tunnel cassé (17/10/2026, #2073)
+
+Le 17/10 à 15:42, deux `000` à 30 s d'écart, l'actif vivant en LAN et l'edge
+joignable : la dernière ligne de la table disait alors « tunnel cassé », et rpi2 a
+promu sa base. Même motif le 15/10 à 20:02, dans l'autre sens. Le tunnel de rpi1
+tenait ses quatre connexions, et les `000` ont continué toute la soirée avec rpi2
+actif.
+
+- **Un tunnel coupé ne rend pas `000`** : l'edge répond, par une erreur (503 le
+  25/09). `000`, c'est que le sondeur n'a rien reçu en 10 s.
+- **La requête n'atteint pas l'origine** : chaque créneau de health-watch compte
+  deux `/api/health` dans le journal d'accès de Caddy (un par nœud, même minute) ;
+  à chaque `000`, seul celui de l'autre nœud est arrivé, servi en 7 ms.
+- Le tunnel se lit donc **chez l'actif**, par le SSH des nœuds, sans sudo :
+  `systemctl is-active cloudflared` et `curl -s http://127.0.0.1:20241/ready`
+  (`readyConnections`, le serveur de métriques de cloudflared) —
+  `etat_tunnel_sh`/`etat_tunnel` dans `lib-failover.sh`. « Sain » exige la preuve :
+  unité active ET au moins une connexion.
+- Pas d'alerte sur l'abstention « tunnel sain » : ces `000` durent une minute. Une
+  panne publique qui **dure** est l'affaire de **C1**, qui alerte avec ses deux sondes.
+- La seconde sonde est journalisée avec **où** la requête s'est perdue
+  (`http_detail`, `lib-sonde.sh`) : `dns=… connexion=… tls=…` et le message de curl.
+
+**La cause des `000`** (relevé du 18/10/2026) :
+
+| Hypothèse | Verdict | Sur quoi |
+|---|---|---|
+| tunnel de l'actif | **écartée** | quatre connexions, aucune erreur de cloudflared jusqu'à l'isolement ; les `000` continuent après le changement d'actif |
+| origine lente | **écartée** | la requête n'arrive pas au Caddy ; celle de l'autre nœud, à la même seconde, est servie en 7 ms |
+| délai de sonde trop court | **écartée** | rien n'arrive en 10 s ; allonger ne changerait que l'heure du `000` |
+| chemin du domicile aux heures chargées | **établie** | 14 h–23 h seulement (pic à 17 h), sur les deux nœuds, parfois à la même minute ; de 1–3 par jour à 5–9 depuis le 15/10 |
+| la résolution DNS, dans ce chemin | **probable** | cloudflared journalise `lookup region1.v2.argotunnel.com: i/o timeout` aux mêmes heures, 14–21 par jour depuis le 15/10 (1–3 avant) |
+
+🔎 Ce qui manque pour trancher DNS ou saturation de l'accès : la ligne
+`Sonde : dns=… connexion=… <erreur curl>` que health-watch écrit désormais sous
+chaque `⚠ Site HS` — `Resolving timed out` dit le DNS, `Connection timed out` le
+lien. `grep -A1 "Site HS" /var/log/hostachy-health-watch.log`.
+
+⚠️ Les résolveurs viennent de la **box** (DHCP, `/etc/resolv.conf` réécrit le
+08/10/2026) : six sont annoncés, la glibc n'en lit que les **trois premiers**, et le
+troisième (`194.242.2.4`) répond `REFUSED` à toute requête en clair — il en reste
+deux. Corriger cette liste est un réglage de la box, pas du dépôt.
 
 **Réflexe de diagnostic** au prochain « site public KO » : avant de suspecter un
 nœud, `curl http://<actif>/api/health` depuis l'autre RPi. S'il répond 200, le
