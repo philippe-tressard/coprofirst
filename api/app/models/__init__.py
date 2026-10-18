@@ -46,3 +46,4 @@ from app.models.points_conseil import CompteRenduAffaire as CompteRenduAffaire
 from app.models.points_conseil import PointConseil as PointConseil
 from app.models.points_conseil import PresentPoint as PresentPoint
 from app.models.conservation import ArchiveAffaires as ArchiveAffaires
+from app.models.avis import Avis as Avis

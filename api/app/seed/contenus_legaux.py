@@ -23,6 +23,7 @@ se rend, elle a l'air finie, et personne ne la lit jusqu'à ce que quelqu'un
 cherche qui contacter. La nôtre a vécu ainsi jusqu'à ce qu'un lecteur le voie.
 """
 
+from app.seed.contenus_legaux_avis import AVIS_SITE_PRESENTATION
 from app.seed.contenus_legaux_identite import (
     DESTINATAIRES,
     HEBERGEMENT,
@@ -367,6 +368,7 @@ DEFAULT_LEGAL = {
         "base\xa0: intérêt légitime (art.\xa06-1-f).</li><li><strong>Communication résidents/CS</strong> — "
         "base\xa0: exécution du contrat (art.\xa06-1-b).</li><li><strong>E-mails transactionnels</strong> —"
         " base\xa0: intérêt légitime / consentement.</li>"
+        + AVIS_SITE_PRESENTATION
         + TELEMETRIE_BASE_LEGALE
         + "</ul>"
         + DESTINATAIRES

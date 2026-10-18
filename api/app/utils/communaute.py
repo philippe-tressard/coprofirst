@@ -85,14 +85,20 @@ def notification_de_ban(definitif: bool) -> tuple[str, str]:
     return NOTIFICATION_BAN[bool(definitif)]
 
 
-def motif_de_refus(user: Utilisateur, maintenant: Optional[datetime] = None) -> Optional[str]:
+def motif_de_refus(
+    user: Utilisateur, maintenant: Optional[datetime] = None, *, profil: bool = True
+) -> Optional[str]:
     """Le motif du refus d'accès à la Communauté, ou `None` si l'accès est ouvert.
 
     ⚠️ Ne lève pas : un compteur doit pouvoir poser la question sans interrompre
     sa réponse. `exiger_acces` s'en charge pour les endpoints.
+
+    `profil=False` : la seule rubrique ouverte au syndic et au mandataire, l'avis
+    sur l'application (#2075, arbitrage du 18/10/2026) — un bannissement, lui,
+    s'applique toujours.
     """
     maintenant = maintenant or horloge.maintenant()
-    if user.statut in (StatutUtilisateur.syndic, StatutUtilisateur.mandataire):
+    if profil and user.statut in (StatutUtilisateur.syndic, StatutUtilisateur.mandataire):
         return MOTIF_PROFIL
     if user.communaute_interdit:
         return MOTIF_BAN_DEFINITIF
@@ -106,8 +112,8 @@ def acces_ouvert(user: Utilisateur, maintenant: Optional[datetime] = None) -> bo
     return motif_de_refus(user, maintenant) is None
 
 
-def exiger_acces(user: Utilisateur) -> None:
+def exiger_acces(user: Utilisateur, *, profil: bool = True) -> None:
     """Lève une 403 si l'accès est refusé. La forme que lisent les endpoints."""
-    motif = motif_de_refus(user)
+    motif = motif_de_refus(user, profil=profil)
     if motif:
         raise HTTPException(403, motif)

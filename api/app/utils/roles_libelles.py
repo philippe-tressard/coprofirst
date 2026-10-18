@@ -124,3 +124,28 @@ def libelle_statut(statut) -> str:
     """« copropriétaire_résident » → « Copropriétaire résident »."""
     cle = str(valeur(statut))
     return LIBELLES_STATUT.get(cle, cle)
+
+
+#  La signature d'un ADMINISTRATEUR en toutes lettres — « Admin » est
+#  l'étiquette d'un écran d'administration, pas une signature. Divergence
+#  assumée, écrite ici plutôt que subie (elle vivait dans `utils/reponses`).
+SIGNATURE_ADMIN = "Administrateur"
+
+
+def role_signature(personne) -> str | None:
+    """Ce qu'une personne EST, en un mot, à côté de son nom.
+
+    Le conseil syndical d'abord (c'est ce qui pèse dans un échange), puis
+    l'administration, puis le statut dans sa forme courte (« Copropriétaire »,
+    « Locataire », « Syndic »). `None` quand rien n'est connu.
+
+    Extraite de `utils/reponses.auteur_meta` (#2075) : la signature d'une
+    réponse de la Communauté et celle d'un avis sur l'application posent la
+    même question — une seule écriture.
+    """
+    if personne.has_role(RoleUtilisateur.conseil_syndical):
+        return libelle_role(RoleUtilisateur.conseil_syndical)
+    if personne.has_role(RoleUtilisateur.admin):
+        return SIGNATURE_ADMIN
+    statut = valeur(personne.statut) or ""
+    return libelle_statut_court(statut) if statut else None

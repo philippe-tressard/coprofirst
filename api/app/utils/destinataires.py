@@ -53,6 +53,20 @@ def peut_gerer_le_site(user: Optional[Utilisateur]) -> bool:
     return user is not None and user.has_role(RoleUtilisateur.admin)
 
 
+def est_gestionnaire_du_site(session: Session, user: Optional[Utilisateur]) -> bool:
+    """CETTE personne gère-t-elle le site — la question, posée ici et nulle part ailleurs.
+
+    Le gestionnaire désigné (`site_manager_user_id`) s'il y en a un ; sinon tout
+    administrateur — le même repli que l'envoi, qui retombe alors sur l'adresse
+    de l'administration. Sans lui, une copropriété qui n'a désigné personne
+    n'aurait personne pour répondre aux avis (#2075).
+    """
+    if not peut_gerer_le_site(user):
+        return False
+    designe = site_manager_user_id(session)
+    return designe is None or designe == user.id
+
+
 def batiments_du_perimetre(perimetres: list[str]) -> Optional[set[int]]:
     """`['bat:1','bat:3']` → `{1, 3}` ; None si le périmètre concerne tout le monde.
 

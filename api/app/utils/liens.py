@@ -214,6 +214,8 @@ EMPLACEMENTS: dict[str, str] = {
     "presta": "/prestataires",
     "annonce": "/annonces",
     "idee": "/idees",
+    #  Un avis sur l'application (#2075) : l'onglet Avis de la Communauté.
+    "avis": "/avis",
     "faq": "/faq",
     #  Un contrat d'entretien : sa fiche vit dans l'onglet Contrats des
     #  prestataires. Ajouté le 10/09/2026 avec le carnet d'entretien, qui y

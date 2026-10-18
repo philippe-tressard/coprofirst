@@ -54,6 +54,23 @@ def nom_affiche(prenom: Optional[str], nom: Optional[str], civilite=None) -> str
     return " ".join(p for p in (civilite, prenom, nom) if p)
 
 
+def nom_abrege(prenom: Optional[str], nom: Optional[str]) -> str:
+    """« Jean-Baptiste », « fort » → « Jean-Baptiste F. » — la forme PUBLIQUE.
+
+    Celle d'un avis sur l'application (#2075), qui peut paraître sur le site
+    vitrine : on y nomme quelqu'un sans l'identifier. L'initiale suit la règle
+    d'affichage (capitale), et une personne sans prénom se réduit à son
+    initiale plutôt qu'à son nom entier.
+
+    ⚠️ Serveur seul : l'écran reçoit le nom déjà rendu, il ne le compose pas —
+    il n'y a donc pas de jumeau dans `$lib/noms.ts`.
+    """
+    prenom = (prenom or "").strip()
+    nom = (nom or "").strip()
+    initiale = f"{nom[0].upper()}." if nom else ""
+    return " ".join(p for p in (prenom, initiale) if p)
+
+
 #: Le nom de l'auteur d'un contenu dont le compte a été supprimé (#1688). Le
 #: contenu collectif — une affaire, son fil, ses messages — reste, sans nom.
 #: Trois replis coexistaient (« ? », « Utilisateur supprimé », vide) : une seule
