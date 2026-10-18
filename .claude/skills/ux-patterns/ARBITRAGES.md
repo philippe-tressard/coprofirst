@@ -190,7 +190,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : la maquette A du 15/10 avait des intitulés de deux styles et des limites floues ; sans résumé, le pliage cacherait la conclusion.
 - **Écarté** : la maquette A sur la carte ; huit autres maquettes (G retenue parmi dix, en deux tours).
 - **Tenu par** : `e2e/carte-affaire-close`.
-- **Historique** : ⚠️ voir n° 63 — le fil rend encore la maquette A.
+- **Historique** : 18/10 — étendu au fil, qui s'ouvre sur « La suite » (n° 66, à livrer : #2078).
 
 ### n° 21 · en vigueur — Lancer l'assistant IA : ✨, puis ⏳ qui clignote
 17/10/2026 · sans ticket — v2.176.0 (PR #2063) · l'utilisateur, demande · §3, briques
@@ -479,13 +479,13 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Écarté** : rediriger `comptes`, `acces`, `demandes_profil` (les liens de l'API ont été corrigés à la place).
 - **Tenu par** : `test_liens_front.py`, `npm run lint:routes`.
 
-### n° 63 · à arbitrer — L'affaire dépliée AU FIL : maquette A
+### n° 63 · remplacé par n° 66 — L'affaire dépliée AU FIL : maquette A
 15/10/2026 · non retrouvé · l'utilisateur, sur maquette · §3 « L'affaire DÉPLIÉE au fil »
 - **Décidé** : au fil, « Dernière mise à jour » · « Synthèse » · « Demande initiale » pliée (`FluxRubriquesAffaire`) ; chaque rubrique porte ses pièces.
 - **Pourquoi** : sur TK-109008, les photos de la clôture s'affichaient sous le texte de la demande, sans dire d'où elles venaient.
 - **Écarté** : quatre autres maquettes.
 - **Tenu par** : `test_flux_affaire_rubriques.py`, `e2e/fil-rubriques-affaire.spec.ts`.
-- **Historique** : ⚠️ le n° 20 (16/10) dit remplacer la maquette A ; le code (18/10/2026) rend G sur la carte (`CorpsCarteTicket`) et **A au fil** (`FluxCorps`). Une même affaire dépliée a donc deux rendus : divergence voulue ou reste à faire ? Question pour l'utilisateur.
+- **Historique** : ⚠️ le n° 20 (16/10) dit remplacer la maquette A ; le code (18/10/2026) rend G sur la carte (`CorpsCarteTicket`) et **A au fil** (`FluxCorps`). Une même affaire dépliée avait donc deux rendus. 18/10 — arbitré : n° 66.
 
 ### n° 64 · en vigueur — La synthèse enrichit la carte, elle ne la date pas
 15/10/2026 · non retrouvé · non dit · §3
@@ -499,3 +499,11 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : « affichée d'une manière différente du fil d'actualité ou de la page ».
 - **Écarté** : une fiche de détail à part (en-tête, boutons d'état, Historique).
 - **Tenu par** : `e2e/lien-affaire-depliee.spec.ts`.
+
+### n° 66 · en vigueur — L'affaire dépliée a UN rendu ; le fil s'ouvre sur « La suite »
+18/10/2026 · #2078 · l'utilisateur, sur recommandation · §3
+- **Décidé** : la brique des trois étapes (`RubriqueEtape`, n° 20) rend l'affaire dépliée partout, fil d'activité compris ; seule l'étape dépliée par défaut dépend du contexte — « La demande » dans la liste, **« La suite »** au fil. Sous réserve de la maquette, à constater à l'écran avant tout code (R5).
+- **Pourquoi** : un objet, un rendu (n° 65) ; et le fil montre d'abord ce qui vient d'arriver, ce que la maquette A (n° 63) faisait bien.
+- **Écarté** : le fil en G à l'identique, ouvert sur la demande (l'actualité passerait derrière elle) ; garder A au fil en déclarant la divergence (deux composants, deux allures).
+- **Tenu par** : aucun garde-fou nommé — un e2e qui compare le fil et la liste est demandé dans #2078.
+- **Historique** : 18/10 — à livrer (#2078) ; d'ici là, le fil rend encore la maquette A.
