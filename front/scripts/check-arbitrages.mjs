@@ -170,7 +170,9 @@ function candidatsTest(jeton) {
 		return [`front/${avecExt}`];
 	}
 	if (/(^|\/)(test_\w+\.py|[\w.-]+\.spec\.ts)$/.test(j)) {
-		return j.includes('/') ? [j, `front/${j}`, `api/tests/${j}`] : [`api/tests/${j}`, `front/e2e/${j}`];
+		return j.includes('/')
+			? [j, `front/${j}`, `api/tests/${j}`]
+			: [`api/tests/${j}`, `front/e2e/${j}`];
 	}
 	return null;
 }
@@ -228,7 +230,9 @@ export function fautesDuRegistre(texte, { scripts, fichiers, minimum = 0 }) {
 		if (e.provenance === null || champsProv.length < 4 || champsProv.some((c) => !c.trim())) {
 			fautes.push(`${ou} — ligne de provenance absente ou incomplète (date · ticket · par · §)`);
 		} else if (!DATE.test(champsProv[0])) {
-			fautes.push(`${ou} — la provenance ne commence pas par une date (jj/mm/aaaa) : « ${champsProv[0]} »`);
+			fautes.push(
+				`${ou} — la provenance ne commence pas par une date (jj/mm/aaaa) : « ${champsProv[0]} »`,
+			);
 		}
 
 		// 3. Champs requis, sauf `ouvert` et `remplacé` (rien de décidé, ou plus rien).
@@ -245,20 +249,25 @@ export function fautesDuRegistre(texte, { scripts, fichiers, minimum = 0 }) {
 			const script = scriptNomme(jeton);
 			if (script) {
 				if (!(script in scripts)) {
-					fautes.push(`${ou} — « Tenu par » nomme \`${jeton}\` : aucun script « ${script} » dans package.json`);
+					fautes.push(
+						`${ou} — « Tenu par » nomme \`${jeton}\` : aucun script « ${script} » dans package.json`,
+					);
 				}
 				continue;
 			}
 			const cands = candidatsTest(jeton);
 			if (cands && !cands.some((c) => fichiers.has(c))) {
-				fautes.push(`${ou} — « Tenu par » nomme \`${jeton}\` : fichier de test introuvable (${cands.join(' | ')})`);
+				fautes.push(
+					`${ou} — « Tenu par » nomme \`${jeton}\` : fichier de test introuvable (${cands.join(' | ')})`,
+				);
 			}
 		}
 	}
 
 	// 4 bis. Tout « n° N » du registre désigne une entrée.
 	for (const [n, num] of renvoisInternes(texte)) {
-		if (!vus.has(num)) fautes.push(`${REGISTRE}:${n} — renvoi au n° ${num}, qui n'est pas dans le registre`);
+		if (!vus.has(num))
+			fautes.push(`${REGISTRE}:${n} — renvoi au n° ${num}, qui n'est pas dans le registre`);
 	}
 	return fautes;
 }
@@ -304,7 +313,8 @@ function entree(n, o = {}) {
 	for (const c of champs) lignes.push(`- **${c}** : ${c === 'Tenu par' ? tenu : 'du texte'}`);
 	return lignes.join('\n');
 }
-const registre = (...es) => `# Registre\n\n\`\`\`\n### n° N · <statut> — gabarit\n\`\`\`\n\n---\n\n${es.join('\n\n')}\n`;
+const registre = (...es) =>
+	`# Registre\n\n\`\`\`\n### n° N · <statut> — gabarit\n\`\`\`\n\n---\n\n${es.join('\n\n')}\n`;
 
 const MONDE = {
 	scripts: { 'lint:carte-liste': 'node x', 'lint:etats': 'node y' },
@@ -316,27 +326,91 @@ const SAIN = registre(entree(1), entree(2));
 const CAS_REGISTRE = [
 	['registre sain', SAIN, null],
 	['statut inconnu', registre(entree(1, { statut: 'validé' })), /titre hors forme/],
-	['titre sans tiret long', registre(entree(1)).replace('Un titre', 'x').replace(' — x', ' - x'), /titre hors forme/],
+	[
+		'titre sans tiret long',
+		registre(entree(1)).replace('Un titre', 'x').replace(' — x', ' - x'),
+		/titre hors forme/,
+	],
 	['numéro sauté', registre(entree(1), entree(3)), /numérotation non continue/],
 	['numéro répété', registre(entree(1), entree(1)), /répété/],
 	['sans provenance', registre(entree(1, { prov: null })), /provenance absente/],
-	['provenance à trois champs', registre(entree(1, { prov: '18/08/2026 · #12 · l’utilisateur' })), /provenance absente/],
-	['provenance sans date', registre(entree(1, { prov: 'hier · #12 · l’utilisateur · §3' })), /ne commence pas par une date/],
-	['sans « Décidé »', registre(entree(1, { champs: ['Pourquoi', 'Tenu par'] })), /« Décidé » absent/],
-	['sans « Pourquoi »', registre(entree(1, { champs: ['Décidé', 'Tenu par'] })), /« Pourquoi » absent/],
-	['sans « Tenu par »', registre(entree(1, { champs: ['Décidé', 'Pourquoi'] })), /« Tenu par » absent/],
+	[
+		'provenance à trois champs',
+		registre(entree(1, { prov: '18/08/2026 · #12 · l’utilisateur' })),
+		/provenance absente/,
+	],
+	[
+		'provenance sans date',
+		registre(entree(1, { prov: 'hier · #12 · l’utilisateur · §3' })),
+		/ne commence pas par une date/,
+	],
+	[
+		'sans « Décidé »',
+		registre(entree(1, { champs: ['Pourquoi', 'Tenu par'] })),
+		/« Décidé » absent/,
+	],
+	[
+		'sans « Pourquoi »',
+		registre(entree(1, { champs: ['Décidé', 'Tenu par'] })),
+		/« Pourquoi » absent/,
+	],
+	[
+		'sans « Tenu par »',
+		registre(entree(1, { champs: ['Décidé', 'Pourquoi'] })),
+		/« Tenu par » absent/,
+	],
 	['`ouvert` sans champs : admis', registre(entree(1, { statut: 'ouvert', champs: [] })), null],
-	['`remplacé` sans champs : admis', registre(entree(1, { statut: 'remplacé par n° 2', champs: [] }), entree(2)), null],
-	['remplacé par une entrée absente', registre(entree(1, { statut: 'remplacé par n° 9', champs: [] })), /n° 9, qui n'est pas/],
-	['remplacé par lui-même', registre(entree(1, { statut: 'remplacé par n° 1', champs: [] })), /elle-même/],
-	['renvoi interne vers une entrée absente', registre(entree(1), entree(2)).replace('du texte', 'voir n° 77'), /n° 77/],
-	['renvoi interne vers une entrée présente', registre(entree(1), entree(2)).replace('du texte', 'voir n° 2'), null],
-	['script lint absent', registre(entree(1, { tenu: '`npm run lint:fantome`' })), /aucun script « lint:fantome »/],
-	['script lint sans « npm run » absent', registre(entree(1, { tenu: '`lint:fantome`' })), /aucun script « lint:fantome »/],
-	['script lint présent', registre(entree(1, { tenu: '`npm run lint:etats`, `lint:carte-liste`' })), null],
-	['test python absent', registre(entree(1, { tenu: '`test_fantome.py`' })), /fichier de test introuvable/],
+	[
+		'`remplacé` sans champs : admis',
+		registre(entree(1, { statut: 'remplacé par n° 2', champs: [] }), entree(2)),
+		null,
+	],
+	[
+		'remplacé par une entrée absente',
+		registre(entree(1, { statut: 'remplacé par n° 9', champs: [] })),
+		/n° 9, qui n'est pas/,
+	],
+	[
+		'remplacé par lui-même',
+		registre(entree(1, { statut: 'remplacé par n° 1', champs: [] })),
+		/elle-même/,
+	],
+	[
+		'renvoi interne vers une entrée absente',
+		registre(entree(1), entree(2)).replace('du texte', 'voir n° 77'),
+		/n° 77/,
+	],
+	[
+		'renvoi interne vers une entrée présente',
+		registre(entree(1), entree(2)).replace('du texte', 'voir n° 2'),
+		null,
+	],
+	[
+		'script lint absent',
+		registre(entree(1, { tenu: '`npm run lint:fantome`' })),
+		/aucun script « lint:fantome »/,
+	],
+	[
+		'script lint sans « npm run » absent',
+		registre(entree(1, { tenu: '`lint:fantome`' })),
+		/aucun script « lint:fantome »/,
+	],
+	[
+		'script lint présent',
+		registre(entree(1, { tenu: '`npm run lint:etats`, `lint:carte-liste`' })),
+		null,
+	],
+	[
+		'test python absent',
+		registre(entree(1, { tenu: '`test_fantome.py`' })),
+		/fichier de test introuvable/,
+	],
 	['test python présent', registre(entree(1, { tenu: '`test_exemple.py`' })), null],
-	['e2e sans extension absent', registre(entree(1, { tenu: '`e2e/fantome`' })), /fichier de test introuvable/],
+	[
+		'e2e sans extension absent',
+		registre(entree(1, { tenu: '`e2e/fantome`' })),
+		/fichier de test introuvable/,
+	],
 	['e2e sans extension présent', registre(entree(1, { tenu: '`e2e/depot`' })), null],
 	['composant nommé : non jugé', registre(entree(1, { tenu: '`CarteListe`' })), null],
 	['cas zéro : registre vide', '# Registre\n', /0 entrée\(s\) lue\(s\)/, 21],
@@ -351,7 +425,11 @@ const CAS_CITATION = [
 	['citation en liste, un absent', { 'a.md': 'les arbitrages n° 1 et 99' }, 1],
 	['citation avec espace insécable', { 'a.md': 'arbitrage n° 99' }, 1],
 	['« arbitrage 2 » d’un autre document : non jugé', { 'a.py': '(§9, arbitrage 98)' }, 0],
-	['le fichier d’exception est ignoré', { 'front/scripts/check-arbitrages.mjs': 'arbitrage n° 99' }, 0],
+	[
+		'le fichier d’exception est ignoré',
+		{ 'front/scripts/check-arbitrages.mjs': 'arbitrage n° 99' },
+		0,
+	],
 ];
 
 function autotest() {
@@ -403,9 +481,7 @@ function controler() {
 	const texte = readFileSync(join(RACINE_DEPOT, REGISTRE), 'utf8');
 	const ensemble = new Set(fichiers);
 	const fautes = fautesDuRegistre(texte, { scripts, fichiers: ensemble, minimum: ENTREES_MINIMUM });
-	const numeros = new Set(
-		[...texte.matchAll(/^### n° (\d+) · /gm)].map((m) => Number(m[1])),
-	);
+	const numeros = new Set([...texte.matchAll(/^### n° (\d+) · /gm)].map((m) => Number(m[1])));
 
 	const contenus = {};
 	for (const f of fichiers) {
@@ -416,7 +492,9 @@ function controler() {
 	}
 	const lus = Object.keys(contenus).length;
 	if (lus < FICHIERS_MINIMUM) {
-		return inconnu(`${lus} fichier(s) lu(s) pour les citations, ${FICHIERS_MINIMUM} attendus au moins`);
+		return inconnu(
+			`${lus} fichier(s) lu(s) pour les citations, ${FICHIERS_MINIMUM} attendus au moins`,
+		);
 	}
 	if (citations(contenus[TEMOIN] ?? '').length === 0) {
 		return inconnu(`${TEMOIN} ne cite plus aucun « arbitrage n° N » : le balayage serait aveugle`);
