@@ -161,7 +161,7 @@ def test_un_commentaire_suspend_les_sept_jours_un_envoi_les_refait_courir(moteur
     assert r.status_code == 200
     cr = cs.get("/points-conseil/courant?mode=affaires").json()["compte_rendu"]
     assert cr["validation"]["suspendue"] and cr["validation"]["echeance"] is None
-    assert cr["commentaires"][0]["auteur"] == "Paul Bernard"
+    assert cr["commentaires"][0]["auteur"] == "Paul BERNARD"  # nom_affiche : le nom en capitales
 
     _vieillir(moteur, point, jours=8)
     with Session(moteur) as s:
