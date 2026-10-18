@@ -162,6 +162,13 @@ def test_une_copropriete_neuve_a_ses_textes_a_relire_et_l_exemple_du_seed_ne_com
     assert A_RENSEIGNER in rendu
 
 
+def test_chaque_texte_porte_l_accord_de_son_titre(http, trois):
+    """« Mentions légales relues » : l'accord se déclare avec le titre, l'écran ne le devine pas."""
+    textes = _get(http, trois, "c", "/config/textes-legaux").json()["etat"]["textes"]
+    accords = {t["titre"]: t["participe_relu"] for t in textes}
+    assert accords == {"Mentions légales": "relues", "Politique de confidentialité": "relue"}
+
+
 def test_une_valeur_vide_ne_laisse_ni_none_ni_trou(http, trois):
     """La copropriété neuve n'a ni syndic, ni contact, ni hébergeur : chaque champ vide se
     dit « À RENSEIGNER », jamais « None », un paragraphe vide ou des parenthèses vides."""

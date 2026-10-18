@@ -45,9 +45,9 @@ import pytest
 
 from app.utils.sante_taches import (
     _PERIODICITE_ATTENDUE_H,
-    _PERIODICITE_PAR_NOEUD_H,
-    _PERIODICITE_SAUVEGARDE_H,
+    _TACHES_DE_L_ACTIF,
     _TACHES_HORS_DES_NOEUDS,
+    _TOUR_NORMAL_H,
     _entree_sante,
     _sante_par_noeud,
 )
@@ -70,7 +70,7 @@ def _grouper(lignes, tache="backup", periode_h=24):
 
     ⚠️ Les tests passaient d'abord les deux seuils explicitement. Un test de
     mutation a montré qu'ils étaient alors **aveugles au câblage** : remplacer
-    `_PERIODICITE_PAR_NOEUD_H.get(tache, …)` par `periode_h` aux deux points
+    la recherche du tour d'un nœud par `periode_h` aux deux points
     d'appel ne les faisait pas broncher. Passer par la tâche réelle éprouve la
     décision ET la table qui la porte.
     """
@@ -157,16 +157,13 @@ def test_la_synthese_se_juge_sur_la_periode_de_la_TACHE():
 def test_les_taches_qui_alternent_sont_declarees():
     """🔴 Le cas zéro de ce lot : sans la déclaration, rien ne change.
 
-    `_PERIODICITE_PAR_NOEUD_H` est le seul endroit qui distingue « la tâche
-    tourne toutes les 24 h » de « chaque nœud agit une nuit sur deux ». Vide ou
-    amputée, le repli sur la période de la tâche ramène exactement la fausse
-    alerte quotidienne.
+    `_TACHES_DE_L_ACTIF` est le seul endroit qui distingue « la tâche tourne
+    toutes les 24 h » de « chaque nœud agit à son tour ». Vide ou amputée, le
+    repli sur la période de la tâche ramène exactement la fausse alerte
+    quotidienne. Le failover, lui, est éprouvé par `test_sante_taches_failover.py`.
     """
-    for tache in ("backup", "telemetrie"):
-        assert _PERIODICITE_PAR_NOEUD_H.get(tache) == 2 * _PERIODICITE_SAUVEGARDE_H, (
-            f"{tache} tourne sur l'ACTIF et le rôle alterne : chaque nœud n'agit "
-            "qu'une nuit sur deux."
-        )
+    assert _TACHES_DE_L_ACTIF == {"bascule", "backup", "telemetrie"}
+    assert _TOUR_NORMAL_H == 48, "le rôle alterne : chaque nœud n'agit qu'une nuit sur deux"
 
 
 def test_une_tache_absente_de_la_table_garde_la_periode_de_la_tache():

@@ -59,7 +59,7 @@ export const LIBELLE_ACTION: Record<string, string> = {
     ces tables ne disent rien de PROPRE à cet écran. Ce sont des données sur les
     statuts, et les libellés de TÂCHES vivaient déjà ici pour exactement cette
     raison — les redéfinir dans un écran est ce qui les fait diverger.  */
-/*  Les six états d'une tâche, chacun déclaré UNE fois avec ses trois attributs.
+/*  Les huit états d'une tâche, chacun déclaré UNE fois avec ses trois attributs.
 
     ⚠️ Ils étaient six clés répétées dans trois tables parallèles — et l'ordre
     différait de l'une à l'autre, ce qui rendait la comparaison à l'œil presque
@@ -75,6 +75,19 @@ const { libelle, aide, classe } = parAttribut({
 		libelle: 'En cours',
 		aide: 'La tâche a signalé son démarrage et n’a pas encore rendu son compte rendu.',
 		classe: 'badge-green',
+	},
+	//  Les tâches de l'ACTIF seul (bascule, sauvegarde, télémétrie) : un nœud n'y
+	//  agit qu'à son tour, et un failover le laisse hors du rôle deux nuits de
+	//  suite (#2072). Gris : ni « À jour », qui mentirait sur sa date, ni rouge,
+	//  puisque la tâche a tourné. Au-delà de trois nuits, l'API le repasse au rouge.
+	pas_actif: {
+		libelle: 'Pas actif à l’heure',
+		aide:
+			'Ce nœud n’a pas exécuté la tâche depuis plus de deux nuits, mais l’autre ' +
+			'nœud l’a fait : la tâche ne tourne que sur le nœud actif, et après un ' +
+			'failover un nœud peut ne pas être actif deux nuits de suite. Au-delà de ' +
+			'trois nuits, ou si la tâche elle-même est en retard, la ligne passe au rouge.',
+		classe: 'badge-gray',
 	},
 	rapport_perdu: {
 		libelle: 'Rapport non reçu',

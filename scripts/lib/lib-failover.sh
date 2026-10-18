@@ -7,7 +7,8 @@
 #  Il en décide en quatre temps, chacun ici en fonction PURE ou à gestes
 #  injectés, pour que l'autotest éprouve l'ORDRE et pas seulement les cas :
 #
-#    1. faut-il basculer ?            `decide_failover` (sondes + déploiement)
+#    1. faut-il basculer ?            `decide_failover` (sondes, déploiement,
+#                                     tunnel de l'actif mesuré chez lui)
 #    2. le tunnel démarre-t-il ici ?  `decide_suite_tunnel`
 #    3. la base peut-elle être prise, et l'ancien actif isolé ?
 #                                     `prendre_la_main` — DÉCIDER, puis ISOLER,
@@ -69,15 +70,69 @@ ISOLEMENT_ATTENTE_S=${ISOLEMENT_ATTENTE_S:-300}
 #  attend le passage suivant. Borné : un verrou tenu au-delà de VERROU_STALE_S
 #  (`bloque`) n'interdit plus rien. Pair injoignable (`inconnu`) : rien ne prouve
 #  qu'il vit — le chemin critique « actif mort » reste inchangé.
+#
+#  $4 le tunnel de l'actif (`etat_tunnel`) : sain|casse|inconnu
+#  $5 le code de la sonde publique qui a confirmé la panne (`000` : aucune réponse)
+#
+#  POURQUOI le tunnel (17/10/2026, #2073) : deux `000` à 30 s d'écart, l'API de
+#  l'actif vivante en LAN, l'edge joignable — la matrice concluait « tunnel
+#  cassé » et a promu la base de rpi2. Le tunnel de rpi1 avait ses quatre
+#  connexions, et les `000` ont continué toute la soirée avec rpi2 actif : la
+#  requête n'atteignait même pas le Caddy de l'actif. Un tunnel réellement
+#  coupé ne donne pas `000` : l'edge RÉPOND, par une erreur (503 le 25/09/2026,
+#  530 selon Cloudflare). Une absence de réponse avec un tunnel sain est une
+#  panne de chemin intermittente, que basculer ne réparerait pas — on la
+#  mesure chez l'actif lui-même plutôt que de la déduire. Un tunnel illisible
+#  avec un actif vivant ne s'isolerait pas davantage (même SSH) : on ne
+#  promeut pas sur une supposition. Le cas du 25/09 (edge qui répond 503) et
+#  le tunnel mesuré cassé basculent comme avant.
 decide_failover() {
-    local lan="$1" edge="$2" dep="${3:-inconnu}"
+    local lan="$1" edge="$2" dep="${3:-inconnu}" tunnel="${4:-inconnu}" public="${5:-000}"
     if [ "$dep" = en-cours ]; then
         echo "abstain:deploiement-en-cours"; return
     fi
     if [ "$lan" = "ok" ] && [ "$edge" != "ok" ]; then
         echo "abstain:chemin-public-coupe"; return
     fi
+    if [ "$lan" = "ok" ] && [ "$public" = 000 ] && [ "$tunnel" != casse ]; then
+        if [ "$tunnel" = sain ]; then echo "abstain:tunnel-actif-sain"
+        else echo "abstain:tunnel-actif-illisible"; fi
+        return
+    fi
     echo "failover"
+}
+
+#  La sonde du tunnel, exécutée CHEZ l'actif en un appel SSH (le compte des
+#  nœuds, sans sudo) : l'état de l'unité, puis le nombre de connexions que
+#  cloudflared tient avec l'edge, lu sur son serveur de métriques local
+#  (`/ready`, premier port libre de 20241 à 20245 — 20241 sur les deux nœuds).
+#  Écrit « tunnel <état systemd> <connexions|?> ».
+etat_tunnel_sh() {
+    printf '%s\n' \
+        'e=$(systemctl is-active cloudflared 2>/dev/null); r=""' \
+        'for p in 20241 20242 20243 20244 20245; do r=$(curl -s --max-time 3 "http://127.0.0.1:$p/ready" 2>/dev/null) && [ -n "$r" ] && break; done' \
+        'n=$(printf "%s" "$r" | sed -n "s/.*\"readyConnections\":\([0-9][0-9]*\).*/\1/p")' \
+        'echo "tunnel ${e:-inconnu} ${n:-?}"'
+}
+
+#  PURE : la sortie de la sonde → sain | casse | inconnu
+#  « sain » exige la PREUVE (unité active ET au moins une connexion) ; une unité
+#  arrêtée, en échec ou qui boucle, ou active sans connexion, est cassée ; rien
+#  lu (SSH en échec) ou un compte illisible ne prouvent rien.
+etat_tunnel() {
+    local _t e n
+    read -r _t e n <<< "$(printf '%s\n' "${1:-}" | grep '^tunnel ' | tail -n 1)"
+    [ "$_t" = tunnel ] || { echo inconnu; return; }
+    case "$e" in
+        active) ;;
+        inactive|failed|activating|deactivating) echo casse; return ;;
+        *) echo inconnu; return ;;
+    esac
+    case "$n" in
+        ''|*[!0-9]*) echo inconnu ;;
+        0)           echo casse ;;
+        *)           echo sain ;;
+    esac
 }
 
 # ── 2. Le tunnel démarre-t-il ici ? (PURE) ───────────────────────────────────
@@ -218,7 +273,16 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     ok_ko "actif mort, edge OK (cas nominal)"            failover                      "$(decide_failover ko ok libre)"
     ok_ko "actif mort + WAN KO (on prend le rôle)"       failover                      "$(decide_failover ko ko inconnu)"
     ok_ko "actif vivant en LAN, edge KO (30/07/2026)"    abstain:chemin-public-coupe   "$(decide_failover ok ko libre)"
-    ok_ko "actif vivant en LAN, edge OK (tunnel HS)"     failover                      "$(decide_failover ok ok libre)"
+    ok_ko "actif vivant, edge OK, tunnel MESURÉ cassé"   failover                      "$(decide_failover ok ok libre casse 000)"
+    #  🔴 Le 17/10/2026 (#2073) : 000, 000, LAN ok, edge ok, tunnel de l'actif sain.
+    ok_ko "17/10 : 000 deux fois, tunnel de l'actif SAIN" abstain:tunnel-actif-sain   "$(decide_failover ok ok libre sain 000)"
+    ok_ko "000, tunnel de l'actif ILLISIBLE : on ne promeut pas" abstain:tunnel-actif-illisible "$(decide_failover ok ok libre inconnu 000)"
+    #  Le 25/09/2026 : l'edge RÉPOND (503) — l'origine lui manque ; on bascule comme avant.
+    ok_ko "25/09 : l'edge répond 503, tunnel cassé"      failover                      "$(decide_failover ok ok libre casse 503)"
+    ok_ko "l'edge répond 530, tunnel illisible"          failover                      "$(decide_failover ok ok libre inconnu 530)"
+    #  Le chemin critique : l'API de l'actif ne répond plus, le tunnel n'y change rien.
+    ok_ko "actif MORT, tunnel encore « sain » : failover" failover                     "$(decide_failover ko ok libre sain 000)"
+    ok_ko "actif mort, rien de plus lu"                  failover                      "$(decide_failover ko ok inconnu)"
     #  Une sonde qui n'a PAS pu s'exécuter ne vaut pas « actif vivant ».
     ok_ko "sonde LAN indisponible → pas de blocage"      failover                      "$(decide_failover "" ko inconnu)"
     #  🔴 #1997 : l'API redémarre pendant une MEP — LAN et public KO, le pair déploie.
@@ -226,6 +290,31 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     ok_ko "le pair déploie, tunnel HS"                   abstain:deploiement-en-cours  "$(decide_failover ok ok en-cours)"
     ok_ko "déploiement BLOQUÉ au-delà du seuil"          failover                      "$(decide_failover ko ok bloque)"
     ok_ko "pair injoignable : rien ne prouve qu'il vit"  failover                      "$(decide_failover ko ok inconnu)"
+
+    echo "== etat_tunnel (la sonde du tunnel de l'actif, jugée) =="
+    ok_ko "unité active, 4 connexions (17/10)"   sain    "$(etat_tunnel "tunnel active 4")"
+    ok_ko "unité active, aucune connexion"       casse   "$(etat_tunnel "tunnel active 0")"
+    ok_ko "unité arrêtée (témoin)"               casse   "$(etat_tunnel "tunnel inactive ?")"
+    ok_ko "unité en échec"                       casse   "$(etat_tunnel "tunnel failed ?")"
+    ok_ko "jeton refusé, systemd relance"        casse   "$(etat_tunnel "tunnel activating ?")"
+    ok_ko "active, métriques illisibles"         inconnu "$(etat_tunnel "tunnel active ?")"
+    ok_ko "SSH en échec (rien lu)"               inconnu "$(etat_tunnel "")"
+    ok_ko "réponse inattendue"                   inconnu "$(etat_tunnel "Permission denied")"
+
+    echo "== la sonde du tunnel, EXÉCUTÉE avec systemctl et curl simulés =="
+    st() {  # $1 libellé · $2 attendu · $3 état systemd · $4 réponse de /ready (vide : rien n'écoute)
+        local r
+        r=$(E="$3" R="$4" bash -c "systemctl() { echo \"\$E\"; }; curl() { [ -n \"\$R\" ] && case \"\$*\" in *:20241/*) printf '%s' \"\$R\" ;; *) return 7 ;; esac; }; $(etat_tunnel_sh)")
+        ok_ko "$1" "$2" "$(etat_tunnel "$r")"
+    }
+    st "17/10 : rpi1, quatre connexions → sain" sain    active '{"status":200,"readyConnections":4,"connectorId":"x"}'
+    st "TÉMOIN : tunnel réellement arrêté → cassé" casse inactive ''
+    st "active mais /ready muet → illisible"   inconnu active ''
+    st "active, /ready sans connexion → cassé" casse   active '{"status":503,"readyConnections":0}'
+
+    echo "== la décision ENTIÈRE, des sondes à l'issue =="
+    ok_ko "17/10 rejoué : 000, 000, LAN ok, edge ok, tunnel sain → abstention" abstain:tunnel-actif-sain         "$(decide_failover ok ok "$(etat_deploiement libre 1000000)" "$(etat_tunnel "tunnel active 4")" 000)"
+    ok_ko "témoin : le tunnel de l'actif est arrêté → failover"                failover         "$(decide_failover ok ok "$(etat_deploiement libre 1000000)" "$(etat_tunnel "tunnel inactive ?")" 000)"
 
     echo "== etat_deploiement (la sonde du pair, jugée) =="
     ok_ko "verrou libre"                       libre    "$(etat_deploiement libre 1000000)"

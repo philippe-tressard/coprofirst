@@ -30,6 +30,18 @@ http_code() {  # $1 = URL, $2 = timeout (défaut 10) → code HTTP ou 000
   echo "${code:-000}"
 }
 
+# ── La même sonde, avec CE QUI A MANQUÉ (#2073) ──────────────────────────────
+#  Un `000` ne dit pas où la requête s'est perdue : résolution, connexion, TLS
+#  ou réponse. Le 17/10/2026, deux `000` ont fait promouvoir une base, et rien
+#  dans le journal ne permettait de les situer. Même appel unique, mêmes
+#  arguments : écrit « <code> dns=…s connexion=…s tls=…s total=…s ip=… <erreur> »
+#  — le premier mot EST le code de `http_code`.
+http_detail() {  # $1 = URL, $2 = timeout (défaut 10)
+  local r
+  r=$(curl -s -o /dev/null --max-time "${2:-10}" "$1" 2>/dev/null     -w '%{http_code} dns=%{time_namelookup}s connexion=%{time_connect}s tls=%{time_appconnect}s total=%{time_total}s ip=%{remote_ip} %{errormsg}')
+  echo "${r:-000 (curl muet)}"
+}
+
 # ── Attendre un 200, et JAMAIS sans fin (#1662) ──────────────────────────────
 #
 #  La boucle « sonder toutes les N s jusqu'au 200 » était écrite trois fois
@@ -103,6 +115,13 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   t "redémarrage : 000, 502, 503 puis 200"     prete    "000 502 503 200" 120 0 sonde_simulee
   t "jamais prête : bornée, elle renonce"      depassee "000"             1   0 sonde_simulee
   t "délai illisible : bornée quand même"      depassee "503"             x   0 sonde_simulee
+  #  `http_detail` : son premier mot EST le code (#2073) ; curl muet → 000.
+  d() { local libelle=$1 attendu=$2 r; r=$(bash -c "curl() { $3; }; $(declare -f http_detail); http_detail https://x 1" | cut -d' ' -f1)
+        if [ "$r" = "$attendu" ]; then echo "PASS  $libelle → $r"
+        else echo "FAIL  $libelle  attendu=$attendu obtenu=${r:-rien}"; st=1; fi; }
+  d "détail d'un 200"                          200 "printf '200 dns=0.01s connexion=0.02s tls=0.04s total=0.1s ip=::1 '"
+  d "détail d'une résolution expirée"          000 "printf '000 dns=0s connexion=0s tls=0s total=10s ip= Resolving timed out after 10000 milliseconds'"
+  d "curl muet : 000, jamais vide"             000 "return 6"
   [ $st -eq 0 ] && echo "== TOUS OK ==" || echo "== ÉCHECS =="
   exit $st
 fi

@@ -26,19 +26,14 @@ from __future__ import annotations
 
 _PERIODICITE_ATTENDUE_H = {
     "maintenance": 7 * 24,  # dimanche 03:00, sur les deux nœuds
-    #  ⚠️ 48 h et non 24, parce que le rôle ALTERNE. `bascule.sh` sort
-    #  immédiatement sur le standby (« Ce RPi n'est pas actif — rien à faire ») :
-    #  seul le nœud actif agit, donc **chaque nœud n'opère qu'une nuit sur deux**.
-    #  Attendre 24 h de chacun signalait un nœud sur deux comme « manquante »
-    #  TOUS LES JOURS, sur une infrastructure parfaitement saine — constaté le
-    #  09/08/2026, l'historique montrant l'alternance stricte 05→rpi1, 06→rpi2,
-    #  07→rpi1, 08→rpi2.
-    #
-    #  C'est la même erreur que le seuil du cache de build le 06/08 : un seuil se
-    #  règle sur le RÉGIME de ce qu'il surveille, pas sur la fréquence du cron
-    #  (`standards/04-fiabilite-des-controles.md` §18). Avec la tolérance de 6 h,
-    #  un nœud qui n'a rien fait depuis 54 h est en revanche réellement muet.
-    "bascule": 48,  # 02:00, une nuit sur deux par nœud
+    #  48 h est la période de la TÂCHE, et non 24 : une bascule ANNULÉE (pair
+    #  injoignable, disque plein, code non synchronisé) sort sans rapport, après
+    #  son propre courriel d'alerte — l'actif reste en place et rebascule la nuit
+    #  suivante. Une nuit sans bascule n'est donc pas une panne ; deux le sont.
+    #  Le rythme de CHAQUE NŒUD est une autre question : `_TACHES_DE_L_ACTIF`.
+    #  (Ce commentaire disait jusqu'au 18/10/2026 « une nuit sur deux par nœud »
+    #  — vrai en alternance stricte, faux au premier failover, #2072.)
+    "bascule": 48,  # 02:00, sur l'actif seul
     #  Copie hors site : lancée À LA MAIN depuis le poste, qui n'est pas
     #  allumé en permanence. Attendre 24 h ferait crier ce contrôle presque
     #  tous les jours, et une alerte qui crie tout le temps finit ignorée —
@@ -60,27 +55,44 @@ _PERIODICITE_ATTENDUE_H = {
 #  part pour une troisième table.
 _PERIODICITE_SAUVEGARDE_H = 24  # 03:00, tracée dans historique_sauvegarde
 _PERIODICITE_TELEMETRIE_H = 24  # 02:00, tracée dans historique_telemetrie
-#: 🔴 La période attendue de CHAQUE NŒUD, quand elle diffère de celle de la
-#: tâche. Deux notions distinctes, et les confondre produit une fausse alerte
-#: quotidienne sur une infrastructure saine.
+#: 🔴 Les tâches qui ne tournent que sur l'ACTIF — chaque nuit, sur le nœud qui
+#: sert. La TÂCHE a sa période (24 h, 48 h pour la bascule) ; chaque NŒUD n'y
+#: participe qu'à son TOUR, et ce tour ne se règle pas sur une période fixe.
 #:
-#: La sauvegarde et l'agrégation tournent sur l'ACTIF, chaque nuit — la tâche a
-#: donc bien une période de 24 h. Mais le rôle ALTERNE : chaque nœud n'agit
-#: qu'une nuit sur deux, et lui appliquer 24 h marque un nœud sur deux comme
-#: « Exécution manquante » TOUS LES JOURS.
+#: Le rôle alterne chaque nuit : en régime, un nœud agit une nuit sur deux, et
+#: ses deux exécutions sont espacées de 48 h (`_TOUR_NORMAL_H`). Mais un nombre
+#: IMPAIR de changements de rôle — un failover, une bascule annulée — le laisse
+#: hors du rôle actif deux nuits de suite : 72 h (`_TOUR_APRES_FAILOVER_H`).
+#: Juger chaque nœud sur 48 h + 6 h l'a mis en « Exécution manquante » le
+#: lendemain du failover du 17/10/2026 (15:42), sur les trois tâches, alors
+#: qu'elles avaient tourné chaque nuit (#2072). C'était la troisième fois que ce
+#: seuil faisait crier une infrastructure saine (09/08 sur `bascule`, 20/08 sur
+#: `backup` et `telemetrie`, #542).
 #:
-#: ⚠️ Cette leçon était déjà écrite dix lignes plus haut, pour `bascule` :
-#: « 48 h et non 24, parce que le rôle ALTERNE… constaté le 09/08/2026 ». Elle
-#: n'avait pas été reportée sur ces deux tâches-là, faute qu'elles aient jamais
-#: eu de sous-lignes par nœud. Le jour où elles en ont eu (#540), le défaut est
-#: réapparu à l'identique — signalé à l'écran dans l'heure (#542).
+#: ⚠️ « Ce nœud était-il l'actif à l'heure prévue ? » ne se lit pas en base : le
+#: failover ne rend aucun rapport à l'API, et celui de la bascule ne dit que la
+#: passation de 02:00. D'où la règle, qui ne demande que les rapports :
+#:
+#: - la SYNTHÈSE reste le juge de la tâche : ne tourne-t-elle plus, elle est
+#:   rouge, et chaque nœud avec elle ;
+#: - au-delà de son tour normal, un nœud dont la tâche tourne est « Pas actif à
+#:   l'heure » (neutre) — c'est l'autre nœud qui a eu les nuits ;
+#: - au-delà de ce qu'un failover explique (trois nuits), il redevient rouge :
+#:   c'est le nœud muet quand il est actif, celui que les sous-lignes existent
+#:   pour montrer (#331, #540).
+#:
+#: Ce que la règle ne voit pas : une nuit manquée par un nœud, suivie d'une
+#: nuit de l'autre, se lit « Pas actif à l'heure » — la synthèse, elle, a été
+#: rouge entre les deux. 🔒 `test_sante_taches_failover.py`.
 #:
 #: Une tâche absente de cette table est jugée sur sa propre période : c'est le
-#: cas quand les deux nœuds l'exécutent vraiment chacun (maintenance).
-_PERIODICITE_PAR_NOEUD_H = {
-    "backup": 48,
-    "telemetrie": 48,
-}
+#: cas quand les deux nœuds l'exécutent vraiment chacun (maintenance, contrôles).
+_TACHES_DE_L_ACTIF = frozenset({"bascule", "backup", "telemetrie"})
+_TOUR_NORMAL_H = 48
+_TOUR_APRES_FAILOVER_H = 72
+
+#: L'état neutre d'une sous-ligne : le nœud n'a pas eu son tour, l'autre l'a eu.
+STATUT_PAS_ACTIF = "pas_actif"
 
 _TOLERANCE_H = 6  # marge avant de déclarer un retard
 
@@ -167,6 +179,7 @@ _DELAI_FIN_DE_COURSE_H = 2
 _GRAVITE = {
     "ok": 0,
     "en_cours": 0,
+    STATUT_PAS_ACTIF: 0,
     "vigilance": 1,
     "erreur": 2,
     "rapport_perdu": 3,
@@ -182,6 +195,20 @@ _GRAVITE = {
 #: laissent de la marge pour une tâche hebdomadaire ou un nœud qui a manqué
 #: plusieurs tours — c'est justement celui-là qu'on cherche à voir.
 _LIGNES_REMONTEES = 20
+
+
+def _pas_actif_a_l_heure(tache: str, age_h: float, statut_synthese: str) -> bool:
+    """PURE. Le silence d'un nœud s'explique-t-il par le rôle, et non par une panne ?
+
+    Oui pour une tâche de l'actif seul, tant que la TÂCHE tourne (l'autre nœud a
+    eu les nuits) et que le silence tient dans ce qu'un failover explique.
+    Règle et raisons : `_TACHES_DE_L_ACTIF` (#2072).
+    """
+    return (
+        tache in _TACHES_DE_L_ACTIF
+        and statut_synthese != "manquante"
+        and age_h <= _TOUR_APRES_FAILOVER_H + _TOLERANCE_H
+    )
 
 
 def _sante_par_noeud(
@@ -245,13 +272,13 @@ def _sante_par_noeud(
 
     #  🔴 Les deux seuils se déduisent ICI, pas chez les appelants.
     #
-    #  La recherche dans `_PERIODICITE_PAR_NOEUD_H` a d'abord vécu aux deux
+    #  La recherche du tour d'un nœud a d'abord vécu aux deux
     #  points d'appel : deux copies du même geste, donc deux occasions de
     #  diverger — et un test de mutation les a trouvées TOUTES DEUX aveugles,
     #  puisque les tests de cette fonction lui passent des seuils explicites.
     #  Rentrer la recherche dans la fonction supprime le câblage plutôt que de
     #  le tester (`standards/02` §1).
-    periode_noeud_h = _PERIODICITE_PAR_NOEUD_H.get(tache, periode_h)
+    periode_noeud_h = _TOUR_NORMAL_H if tache in _TACHES_DE_L_ACTIF else periode_h
 
     def _etat(ligne, seuil_h):
         age_h = (maintenant - ligne.cree_le).total_seconds() / 3600
@@ -307,11 +334,13 @@ def _sante_par_noeud(
         "retard_heures": retard_s,
     }
 
-    #  Chaque NŒUD se juge sur SA période — une nuit sur deux pour les tâches
-    #  qui ne tournent que sur l'actif.
+    #  Chaque NŒUD se juge sur SON tour — une nuit sur deux pour les tâches
+    #  qui ne tournent que sur l'actif, trois après un failover.
     detail = []
     for noeud, ligne in sorted(par_noeud.items()):
         statut, retard = _etat(ligne, periode_noeud_h)
+        if statut == "manquante" and _pas_actif_a_l_heure(tache, retard, statut_s):
+            statut = STATUT_PAS_ACTIF
         detail.append(
             {
                 "noeud": noeud,
