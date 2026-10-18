@@ -5,7 +5,7 @@ Le paragraphe « Propriété intellectuelle » nommait CoproFirst sans lien et f
 sans dire où se trouve le dépôt. Désormais le NOM renvoie au site de présentation
 (`SITE_PLATEFORME`) et « code source » au dépôt (`DEPOT_SOURCE`) : aucune adresse écrite
 en clair, aucune mention de plus. Les phrases viennent du gabarit
-(`seed.contenus_legaux.PHRASE_SERVI_PAR`, `PHRASE_CODE_SOURCE`), qui les lit de
+(`seed.contenus_legaux_licence.PHRASE_SERVI_PAR`, `PHRASE_CODE_SOURCE`), qui les lit de
 `utils/plateforme`.
 
 Donnée seule, sur le modèle de la 0298 : un passage n'est remplacé que s'il figure TEL
@@ -19,7 +19,7 @@ Revises: 0300
 
 from alembic import op
 
-from app.seed.contenus_legaux import PHRASE_CODE_SOURCE, PHRASE_SERVI_PAR
+from app.seed.contenus_legaux_licence import PHRASE_CODE_SOURCE, PHRASE_SERVI_PAR
 from app.utils.plateforme import NOM_PLATEFORME
 from app.utils.textes_livres import remplacer_passage
 

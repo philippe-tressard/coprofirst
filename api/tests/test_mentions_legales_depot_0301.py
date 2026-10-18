@@ -11,7 +11,8 @@ from types import SimpleNamespace
 from sqlmodel import Session
 
 from app.models.core import ConfigSite
-from app.seed.contenus_legaux import DEFAULT_LEGAL, PHRASE_CODE_SOURCE, PHRASE_SERVI_PAR
+from app.seed.contenus_legaux import DEFAULT_LEGAL
+from app.seed.contenus_legaux_licence import PHRASE_CODE_SOURCE, PHRASE_SERVI_PAR
 from app.utils.plateforme import DEPOT_SOURCE, NOM_PLATEFORME, SITE_PLATEFORME
 from tests.aides_migrations import charger_migration
 
