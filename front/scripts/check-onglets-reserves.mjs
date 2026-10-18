@@ -101,6 +101,23 @@ const RESERVES = [
 			"le registre et le contact des administrateurs d'installation ne regardent que " +
 			"l'opérateur de la plateforme (§4.11, règle 7) — jamais l'administrateur de copropriété",
 	},
+	//  18/10/2026 (#2075) : la Communauté s'ouvre au syndic et au mandataire pour
+	//  son SEUL onglet Avis. Les trois autres leur restent fermés — le serveur
+	//  refuse par `exiger_acces` (le profil), l'écran masque et redirige vers l'Avis.
+	...[
+		['sondages', 'api/app/routers/sondages/crud.py'],
+		['idees', 'api/app/routers/idees.py'],
+		['annonces', 'api/app/routers/annonces.py'],
+	].map(([onglet, routeurApi]) => ({
+		page: 'communaute',
+		onglet,
+		predicat: 'nonGestionnaire',
+		routeurApi,
+		dependance: 'exiger_acces',
+		pourquoi:
+			"l'espace entre résidents : ni le syndic, ni un mandataire — l'avis sur " +
+			"l'application, seul, leur est ouvert",
+	})),
 	//  ⚠️ Le Kanban d'Affaires porte pourtant `reserve: 'nonLocataire'` depuis
 	//  le 28/09/2026 (#1428) — arbitré à l'écran : un locataire ne suit pas les
 	//  dossiers. C'est un masque d'ERGONOMIE, pas une protection : ce qu'il

@@ -21,6 +21,8 @@ export interface DroitsOnglet {
 	operateur: boolean;
 	proprioOuCS: boolean;
 	locataire: boolean;
+	/** Syndic ou mandataire — il gère, il n'habite pas. */
+	gestionnaire: boolean;
 }
 
 function reserveAdmise(o: OngletDef, d: DroitsOnglet): boolean {
@@ -28,7 +30,8 @@ function reserveAdmise(o: OngletDef, d: DroitsOnglet): boolean {
 		!o.reserve ||
 		(o.reserve === 'proprioOuCS' && d.proprioOuCS) ||
 		(o.reserve === 'nonLocataire' && !d.locataire) ||
-		(o.reserve === 'operateur' && d.operateur)
+		(o.reserve === 'operateur' && d.operateur) ||
+		(o.reserve === 'nonGestionnaire' && !d.gestionnaire)
 	);
 }
 

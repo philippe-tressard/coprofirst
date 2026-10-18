@@ -92,7 +92,9 @@ export interface OngletDef {
 	 * 🔒 `npm run lint:onglets-reserves` confronte chaque valeur ici à la
 	 * dépendance d'auth du routeur qui la justifie.
 	 */
-	reserve?: 'proprioOuCS' | 'nonLocataire' | 'operateur';
+	//  `nonGestionnaire` : ni syndic ni mandataire — la Communauté hors de l'Avis
+	//  (#2075), que `utils/communaute.exiger_acces` refuse à leur profil.
+	reserve?: 'proprioOuCS' | 'nonLocataire' | 'operateur' | 'nonGestionnaire';
 	/**
 	 * Sur une page `reserveeAdmin`, l'onglet que l'**opérateur** de la plateforme
 	 * ouvre aussi quand il n'est pas administrateur — sa supervision, et rien
@@ -341,25 +343,36 @@ export const PAGES: PageDef[] = [
 		titre: 'Communauté',
 		navLabel: 'Communauté',
 		icone: 'users-round',
-		descriptif: 'Sondages, boîte à idées et petites annonces entre résidents.',
+		descriptif:
+			'Sondages, boîte à idées, petites annonces entre résidents, et votre avis sur l’application.',
 		onglets: [
 			{
 				id: 'sondages',
 				route: '/sondages',
+				reserve: 'nonGestionnaire',
 				label: '\u{1F4CA} Sondages',
 				descriptif: 'Participez aux votes et consultations de la copropriété.',
 			},
 			{
 				id: 'idees',
 				route: '/idees',
+				reserve: 'nonGestionnaire',
 				label: '\u{1F4A1} Boîte à idées',
 				descriptif: 'Proposez et soutenez des idées pour améliorer la vie en résidence.',
 			},
 			{
 				id: 'annonces',
 				route: '/annonces',
+				reserve: 'nonGestionnaire',
 				label: '\u{1F3F7}️ Petites annonces',
 				descriptif: 'Achetez, vendez ou donnez des objets entre résidents.',
+			},
+			{
+				//  L'avis porte sur l'APPLICATION, pas sur la résidence (#2075).
+				id: 'avis',
+				route: '/avis',
+				label: '⭐ Avis',
+				descriptif: 'Votre avis sur l’application : ce qui vous aide, ce qui vous manque.',
 			},
 		],
 	},

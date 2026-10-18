@@ -99,6 +99,8 @@
 	 *   qui l'ouvre — relayé jusqu'à `FormulaireCreation` (`check-geste-edition`,
 	 *   règle F, 13/09/2026). */
 	export let cle: unknown = undefined;
+	/** La catégorie d'un dépôt ouvert par un lien (`lienNouvelleAffaire`, #2075). */
+	export let categorieInitiale = '';
 
 	const modeEdition = ticket !== null;
 
@@ -118,7 +120,7 @@
 	let assisteIA = false;
 	//  🔴 AUCUNE catégorie présélectionnée (21/09/2026) : un défaut qui engage
 	//  quelqu'un d'autre n'est pas un défaut, c'est une réponse qu'on n'a pas donnée.
-	let categorie = ticket?.categorie ?? '';
+	let categorie = ticket?.categorie ?? categorieInitiale;
 	let statut = ticket?.statut ?? 'ouvert';
 	//  Les options, reprises de l'affaire : le pont écran ⇄ objet vit dans
 	//  `$lib/tickets` (`brouillon` écrit `confidentiel`, `urgente` la priorité).

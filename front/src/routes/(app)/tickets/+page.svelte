@@ -17,6 +17,7 @@
 	import { messageErreur } from '$lib/erreurs';
 	import { affairesEnListe } from '$lib/affaires-en-liste';
 	import { TICKET } from '$lib/entites/ticket';
+	import { categorieDuLien } from '$lib/formulaire-affaire';
 	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
 	import ListeTickets from '$lib/components/ListeTickets.svelte';
 	import ArchivesParAnnee from '$lib/components/ArchivesParAnnee.svelte';
@@ -54,6 +55,8 @@
 	$: if (onglet === 'archives') historyExpanded = true;
 
 	let showForm = false;
+	//  La catégorie qu'un lien demande (`?categorie=`, #2075) — un bogue depuis l'avis.
+	let categorieInitiale = '';
 	$: if (showForm) ouvrirGeste('affaire.creer'); //  Le geste mesuré (#1633).
 
 	function ticketCree(e: CustomEvent<Ticket>) {
@@ -85,7 +88,10 @@
 			// remplace l'ancienne page `/tickets/nouveau` : les liens qui menaient
 			// à un écran de saisie doivent continuer à y mener, pas atterrir sur la
 			// liste en laissant l'utilisateur chercher le bouton.
-			if (params.get('nouveau')) showForm = true;
+			if (params.get('nouveau')) {
+				showForm = true;
+				categorieInitiale = categorieDuLien(params);
+			}
 			filterNature = OPTIONS_FILTRE_NATURE.some((o) => o.val === params.get('nature'))
 				? (params.get('nature') ?? '')
 				: '';
@@ -215,7 +221,12 @@
 {#if showForm}
 	<ChargementDiffere charger={() => import('$lib/components/FormulaireTicket.svelte')}>
 		{#snippet contenu(FormulaireTicket)}
-			<FormulaireTicket cle="creation" on:cree={ticketCree} on:annule={() => (showForm = false)} />
+			<FormulaireTicket
+				cle="creation"
+				{categorieInitiale}
+				on:cree={ticketCree}
+				on:annule={() => (showForm = false)}
+			/>
 		{/snippet}
 	</ChargementDiffere>
 {/if}

@@ -32,7 +32,6 @@
 		type SondageDetail,
 	} from '$lib/api';
 	import { currentUser, isAdmin, isCS, isGestionnaire, quandAuthResolue } from '$lib/stores/auth';
-	import { refuserLaCommunaute } from '$lib/communaute';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
 	import { messageErreur, tenter } from '$lib/erreurs';
@@ -43,6 +42,8 @@
 	import ListeSondages from '$lib/components/ListeSondages.svelte';
 	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
 	import OngletIdees from '$lib/components/OngletIdees.svelte';
+	import OngletAvis from '$lib/components/OngletAvis.svelte';
+	import { AVIS } from '$lib/entites/avis';
 	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
 	import { cibleDuHash, revelerCible } from '$lib/deepLink';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
@@ -154,6 +155,8 @@
 	let annonces: PetiteAnnonce[] = [];
 	let annoncesLoading = true;
 	let showFormAnnonce = false;
+	let showFormAvis = false;
+	let peutDeposerAvis = false;
 	let expandedAnnonce: number | null = null;
 
 	const statutClass = (s: string) => IDEE_BADGE[s] ?? 'badge-gray';
@@ -253,13 +256,14 @@
 	//  que l'API renvoie dans sa 403 et de celui que l'administration notifie
 	//  (29/08/2026). L'API décide et FORMULE ; l'écran choisit le GESTE.
 
-	// Garde réactive : redirige dès que le user est connu (garde contre la race condition async layout)
-	$: if ($currentUser && $isGestionnaire) refuserLaCommunaute($currentUser);
+	//  Le syndic et le mandataire n'ont que l'onglet Avis (#2075) : les trois
+	//  autres portent `reserve: 'nonGestionnaire'`, et `BarreOnglets` les y mène.
 
 	//  Pas `onMount` : il précède le layout qui charge l'utilisateur (#1486).
 	quandAuthResolue(async () => {
 		//  Un profil inadapté est déjà redirigé ci-dessus : ce qui reste ici est une
 		//  suspension, qui s'affiche en bandeau plutôt qu'en redirection.
+		if ($isGestionnaire) return; // l'onglet Avis charge ses avis lui-même
 		if ($currentUser?.communaute_motif_refus) {
 			banMessage = $currentUser.communaute_motif_refus;
 			sondagesLoading = false;
@@ -341,6 +345,10 @@
 	{:else if onglet === 'annonces' && !showFormAnnonce}
 		<button class="btn btn-primary page-header-btn" on:click={() => (showFormAnnonce = true)}>
 			+ Déposer une annonce
+		</button>
+	{:else if onglet === 'avis' && peutDeposerAvis && !showFormAvis}
+		<button class="btn btn-primary page-header-btn" on:click={() => (showFormAvis = true)}>
+			+ {AVIS.libelleNouveau}
 		</button>
 	{/if}
 </EntetePage>
@@ -468,6 +476,10 @@
 			currentUserId={$currentUser?.id}
 			onSignaler={signaler}
 		/>
+	{/if}
+
+	{#if onglet === 'avis'}
+		<OngletAvis bind:showForm={showFormAvis} bind:peutDeposer={peutDeposerAvis} />
 	{/if}
 {/if}
 
