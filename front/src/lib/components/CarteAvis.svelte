@@ -64,6 +64,11 @@
 	{onArchiver}
 >
 	<svelte:fragment slot="tags">
+		{#if !avis.lu_de_tous}
+			<!--  Sans l'accord de son auteur, l'avis ne se lit que de lui et du
+			      conseil (arbitrage du 18/10/2026) : la carte le dit à ceux qui le voient. -->
+			<span class="badge badge-gray">Auteur et conseil seulement</span>
+		{/if}
 		{#if avis.publication_validee}
 			<Badge teinte="badge-green">Retenu pour {VITRINE}</Badge>
 		{/if}

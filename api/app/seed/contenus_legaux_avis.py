@@ -17,13 +17,14 @@ Séparé de `contenus_legaux.py`, qui atteint 500 lignes (modularité, rang 1).
 
 #: L'entrée de la liste « Finalités et bases légales ».
 AVIS_SITE_PRESENTATION = (
-    "<li><strong>Avis sur l'application</strong> — un avis (note, titre, texte) se lit des "
-    "comptes de la copropriété. S'il compte au moins 4 étoiles et que son auteur l'accepte "
-    "<strong>expressément</strong> — Oui ou Non, sans réponse par défaut —, il peut paraître "
-    "sur le <strong>site de présentation du logiciel</strong>, une fois retenu par le "
-    "gestionnaire du site, avec le prénom, l'initiale du nom et le rôle de son auteur, et "
-    "rien d'autre — base\xa0: consentement (art.\xa06-1-a), qui se retire à tout moment "
-    "depuis l'onglet Avis. L'avis part avec le compte de son auteur.</li>"
+    "<li><strong>Avis sur l'application</strong> — un avis (note, titre, texte) se lit de son "
+    "auteur et du conseil syndical. S'il compte au moins 4 étoiles et que son auteur l'accepte "
+    "<strong>expressément</strong> — Oui ou Non, sans réponse par défaut —, il se lit aussi "
+    "de tous les comptes de la copropriété et peut paraître sur le <strong>site de "
+    "présentation du logiciel</strong>, une fois retenu par le gestionnaire du site, avec le "
+    "prénom, l'initiale du nom et le rôle de son auteur, et rien d'autre — base : "
+    "consentement (art. 6-1-a), qui se retire à tout moment depuis l'onglet Avis. L'avis "
+    "part avec le compte de son auteur.</li>"
 )
 
 #: L'entrée après laquelle il s'insère — telle que le gabarit la porte.

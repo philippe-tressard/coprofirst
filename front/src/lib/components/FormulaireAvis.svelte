@@ -98,6 +98,10 @@
 		{#if sectionPresente(AVIS, etat, 'nature')}
 			<SectionFormulaire titre="Note" requis rempli={note > 0}>
 				<NoteEtoiles saisie bind:note />
+				<p class="aide">
+					Votre avis se lit de vous et du conseil syndical. À partir de 4 étoiles, vous pourrez
+					accepter qu'il se lise de tous.
+				</p>
 				{#if avecRemarque}
 					<div class="field remarque">
 						<label for="{id}-remarque">
@@ -131,16 +135,17 @@
 				idTitre="{id}-publication"
 			>
 				<p class="aide">
-					Votre témoignage aidera d'autres copropriétés à découvrir l'application. Seuls votre
-					prénom, l'initiale de votre nom et votre rôle seraient affichés, et vous pourrez revenir
-					sur votre choix à tout moment depuis cet écran. Que vous répondiez oui ou non, votre avis
-					compte tout autant pour nous.
+					Avec votre accord, votre avis se lira aussi de tous les comptes de la résidence, et votre
+					témoignage aidera d'autres copropriétés à découvrir l'application. Seuls votre prénom,
+					l'initiale de votre nom et votre rôle seraient affichés sur coprofirst.fr, et vous pourrez
+					revenir sur votre choix à tout moment depuis cet écran. Que vous répondiez oui ou non,
+					votre avis compte tout autant pour nous.
 				</p>
 				<ChoixPastilles
 					options={OPTIONS_ACCORD}
 					bind:valeur={accord}
 					tous={false}
-					libelle="Acceptez-vous que cet avis soit publié sur {VITRINE} ?"
+					libelle="Acceptez-vous que cet avis soit lu de tous et publié sur {VITRINE} ?"
 					libelleVisible
 					radio="{id}-accord"
 					defilante={false}

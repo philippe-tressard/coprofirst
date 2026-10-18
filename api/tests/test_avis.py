@@ -160,17 +160,46 @@ def test_un_compte_externe_ne_donne_pas_d_avis(session):
     assert e.value.status_code == 403
 
 
+def _conseil(session):
+    return _resident(session, prenom="Luc", roles_json="propriétaire,conseil_syndical")
+
+
+@pytest.mark.parametrize("note,accord", [(5, False), (2, None), (3, None)])
+def test_sans_accord_l_avis_ne_se_lit_que_de_l_auteur_et_du_conseil(session, note, accord):
+    """Arbitré par Philippe le 18/10/2026 : sans consentement, auteur et CS ; avec, tous."""
+    auteur, voisin, conseil = (
+        _resident(session),
+        _resident(session, prenom="Paul"),
+        _conseil(session),
+    )
+    _avis(
+        session, auteur, note=note, consentement=accord, remarque="Trop lent" if note < 3 else None
+    )
+    assert lister(session, voisin).avis == []
+    assert len(lister(session, auteur).avis) == 1
+    assert len(lister(session, conseil).avis) == 1
+    assert len(lister(session, _admin(session)).avis) == 1
+
+
+def test_avec_accord_l_avis_se_lit_de_tous(session):
+    auteur, voisin = _resident(session), _resident(session, prenom="Paul")
+    syndic = _resident(session, prenom="Marc", nom="Roy", statut=StatutUtilisateur.syndic)
+    _avis(session, auteur, note=4, consentement=True)
+    for lecteur in (voisin, syndic):
+        assert [a.titre for a in lister(session, lecteur).avis] == ["Enfin un site clair"]
+
+
 def test_la_remarque_et_l_accord_ne_sortent_qu_a_l_auteur_et_au_gestionnaire(session):
-    auteur, voisin, gestion = _resident(session), _resident(session, prenom="Paul"), _admin(session)
+    auteur, conseil, gestion = _resident(session), _conseil(session), _admin(session)
     _avis(
         session, auteur, note=2, consentement=None, remarque="Les notifications arrivent en retard"
     )
-    vu_du_voisin = lister(session, voisin).avis[0]
-    assert vu_du_voisin.remarque is None and vu_du_voisin.consentement_publication is None
-    assert vu_du_voisin.auteur_nom == "Claire D." and vu_du_voisin.auteur_role == "Copropriétaire"
+    vu_du_conseil = lister(session, conseil).avis[0]
+    assert vu_du_conseil.remarque is None and vu_du_conseil.consentement_publication is None
+    assert vu_du_conseil.auteur_nom == "Claire D." and vu_du_conseil.auteur_role == "Copropriétaire"
     for proche in (auteur, gestion):
         assert lister(session, proche).avis[0].remarque == "Les notifications arrivent en retard"
-    assert lister(session, gestion).gestionnaire and not lister(session, voisin).gestionnaire
+    assert lister(session, gestion).gestionnaire and not lister(session, conseil).gestionnaire
 
 
 def test_seul_l_auteur_corrige_et_la_correction_retire_la_validation(session):

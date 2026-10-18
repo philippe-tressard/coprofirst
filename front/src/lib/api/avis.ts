@@ -25,6 +25,8 @@ export interface Avis {
 	archivee: boolean;
 	/** Ce lecteur peut le ressortir (↩️). */
 	restaurable: boolean;
+	/** Tous le lisent (l'auteur l'a accepté) — sinon l'auteur et le conseil seuls. */
+	lu_de_tous: boolean;
 	remarque: string | null;
 	consentement_publication: boolean | null;
 	publiable: boolean;

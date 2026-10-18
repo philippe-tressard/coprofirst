@@ -40,6 +40,8 @@ class AvisRead(BaseModel):
     mis_a_jour_le: Optional[datetime] = None
     archivee: bool = False
     restaurable: bool = False
+    #  Qui le lit : tous (l'auteur l'a accepté), ou l'auteur et le conseil seuls.
+    lu_de_tous: bool = False
     #  Ce qui ne regarde que l'auteur et le gestionnaire du site : `None` /
     #  `False` pour tout autre lecteur.
     remarque: Optional[str] = None

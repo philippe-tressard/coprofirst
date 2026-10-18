@@ -12,12 +12,14 @@
 consentement (RGPD art. 4-11, considérant 32 ; CJUE *Planet49*, C-673/17) :
 la question exige une réponse, et `None` vaut « pas d'accord ».
 
-## Qui voit quoi
+## Qui voit quoi (arbitré par Philippe le 18/10/2026)
 
-L'avis se lit de tous les comptes de la copropriété. Ce qui ne regarde que
-l'auteur et le gestionnaire du site — la remarque, l'accord, la validation —
-ne sort qu'à eux (`routers/avis.lire`). Un avis retiré (archivé) ne se lit plus que
-d'eux deux, aux Archives.
+**Sans l'accord de son auteur, un avis ne se lit que de lui et du conseil
+syndical** (CS et administration, `est_moderateur`) ; **avec son accord, de tous
+les comptes.** Un avis retiré (archivé) revient à son auteur et au conseil. La
+règle est `avis_visible`, et la liste l'appelle. Ce qui ne regarde que l'auteur
+et le gestionnaire du site — la remarque, l'accord, la validation — ne sort qu'à
+eux (`routers/avis._lire`).
 
 ## Ce qui part sur coprofirst.fr
 
@@ -34,6 +36,7 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlmodel import Session
 
+from app.auth.deps import est_moderateur
 from app.models.avis import Avis
 from app.models.core import Utilisateur
 from app.utils import horloge
@@ -72,6 +75,14 @@ def exiger_saisie_valide(
     if consentement is None:
         raise HTTPException(422, "Répondez par Oui ou par Non à la question de publication")
     return None, consentement
+
+
+def avis_visible(avis: Avis, lecteur: Utilisateur) -> bool:
+    """Ce lecteur peut-il lire cet avis ? Son auteur et le conseil, toujours ;
+    les autres comptes, seulement si l'auteur l'a accepté et ne l'a pas retiré."""
+    if avis.auteur_id == lecteur.id or est_moderateur(lecteur):
+        return True
+    return avis.consentement_publication is True and avis.archive_le is None
 
 
 def est_publiable(avis: Avis) -> bool:

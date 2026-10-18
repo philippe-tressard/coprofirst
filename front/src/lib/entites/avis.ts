@@ -96,7 +96,9 @@ export const AVIS: EntiteDeclaree = {
 		},
 		{
 			id: 'destinataires',
-			sansObjet: 'Un avis se lit de tous les comptes de la copropriété ; il ne se cible pas.',
+			sansObjet:
+				"Qui lit un avis découle de l'accord de son auteur (Diffusion) : sans lui, l'auteur et " +
+				'le conseil syndical ; avec, tous. Il ne se cible pas.',
 		},
 		{
 			id: 'mise_en_avant',

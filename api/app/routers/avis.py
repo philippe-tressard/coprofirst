@@ -7,7 +7,7 @@ ceux qui paraîtront sur coprofirst.fr et les exporte. Les règles vivent dans
 
 | Geste | Qui |
 |---|---|
-| lire | tout compte — syndic et mandataire compris (la seule rubrique de la Communauté qui leur est ouverte) ; un banni de la Communauté, non ; les archives : l'auteur et le gestionnaire |
+| lire | l'auteur et le conseil, toujours ; tout compte (syndic et mandataire compris, la seule rubrique de la Communauté qui leur est ouverte) si l'auteur l'a accepté — `avis_visible` ; un banni de la Communauté, non |
 | déposer, corriger | l'auteur — un compte externe ne donne pas d'avis |
 | retirer (📦) / ressortir (↩️) | l'auteur, le gestionnaire ; ce que le gestionnaire a retiré, lui seul le ressort |
 | répondre, retenir, exporter | le gestionnaire du site (`est_gestionnaire_du_site`) |
@@ -39,6 +39,7 @@ from app.routers.prestataires_archivage import Archivage
 from app.utils import horloge
 from app.utils.avis import (
     auteurs_de,
+    avis_visible,
     est_publiable,
     exiger_saisie_valide,
     exporter,
@@ -68,6 +69,7 @@ def _lire(avis: Avis, auteur, lecteur: Utilisateur, gestionnaire: bool) -> AvisR
         auteur_role=role,
         est_auteur=avis.auteur_id == lecteur.id,
         archivee=avis.archive_le is not None,
+        lu_de_tous=avis.consentement_publication is True,
         #  L'auteur ressort ce qu'il a rangé ; ce que le gestionnaire a retiré,
         #  seul le gestionnaire le ressort.
         restaurable=avis.archive_le is not None
@@ -102,10 +104,10 @@ def lister(
     exiger_acces(user, profil=False)
     gestionnaire = est_gestionnaire_du_site(session, user)
     tous = session.exec(select(Avis).order_by(Avis.cree_le.desc())).all()
-    #  🔒 Un avis retiré ne se lit plus que de son auteur et du gestionnaire :
-    #  le filtre est ICI, jamais dans l'écran (une carte masquée par le
-    #  navigateur resterait dans la charge utile).
-    lisibles = [a for a in tous if a.archive_le is None or gestionnaire or a.auteur_id == user.id]
+    #  🔒 Sans l'accord de son auteur, un avis ne se lit que de lui et du conseil
+    #  (`avis_visible`) : le filtre est ICI, jamais dans l'écran — une carte
+    #  masquée par le navigateur resterait dans la charge utile.
+    lisibles = [a for a in tous if avis_visible(a, user)]
     auteurs = auteurs_de(session, lisibles)
     mien = next((a.id for a in tous if a.auteur_id == user.id), None)
     return AvisListe(
