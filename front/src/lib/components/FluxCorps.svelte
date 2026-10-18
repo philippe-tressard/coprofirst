@@ -21,7 +21,7 @@
 	import { STATUT_TICKET_BADGE, statutTicketLabel } from '$lib/tickets';
 	import { safeHtml } from '$lib/sanitize';
 	import PiecesJointes from './PiecesJointes.svelte';
-	import FluxRubriquesAffaire from './FluxRubriquesAffaire.svelte';
+	import FluxAffaireEtapes from './FluxAffaireEtapes.svelte';
 
 	export let item: FluxItem;
 	/**  L'adresse de l'écran d'origine — calculée par la carte, qui connaît déjà
@@ -43,8 +43,9 @@
 	$: classeStatut = STATUT_TICKET_BADGE[String(item.meta?.statut ?? '')] ?? 'badge-gray';
 	$: photos = (item.meta?.photos_urls as string[] | undefined) ?? [];
 	$: fichiers = (item.meta?.fichiers_urls as string[] | undefined) ?? [];
-	//  Une AFFAIRE a son corps propre, en rubriques (maquette A, 15/10/2026) :
-	//  le serveur pose `demande` sur ses seules cartes (`flux/tickets._meta_ticket`).
+	//  Une AFFAIRE a le corps de la liste Affaires — les trois étapes, ouvertes sur
+	//  « La suite » (arbitrage n° 66) : le serveur pose `demande` sur ses seules
+	//  cartes (`flux/tickets._meta_ticket`), la donnée décide.
 	$: estAffaire = !!item.meta?.demande;
 </script>
 
@@ -91,8 +92,9 @@
 		      Historique le 18/08/2026, le fil a su le fournir, et RIEN ne
 		      s'affichait. La donnée décide, pas une énumération de types. -->
 	{#if estAffaire}
-		<!--  Une affaire : ses rubriques, chacune avec SES pièces (15/10/2026). -->
-		<FluxRubriquesAffaire {item} />
+		<!--  Une affaire : la brique des trois étapes, chaque rubrique avec SES
+		      pièces — le même composant que la liste (n° 66, 18/10/2026). -->
+		<FluxAffaireEtapes {item} />
 	{:else}
 		{#if item.meta?.evol_contenu}
 			<div class="flux-reaction">

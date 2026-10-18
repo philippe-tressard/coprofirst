@@ -62,6 +62,11 @@
 	/** Le lecteur peut-il suivre cette affaire ? Calculé par la carte (`peutCommenter`). */
 	export let peutSuivre = false;
 	export let gestes: GestesTicket;
+	/**  L'étape dépliée À L'OUVERTURE : « La demande » dans la liste Affaires,
+	 *   « La suite » au fil d'activité (arbitrage n° 66, 18/10/2026) — le fil
+	 *   montre d'abord ce qui vient d'arriver. Une affaire sans suite n'a que sa
+	 *   demande : elle reste dépliée, c'est elle la nouvelle. */
+	export let ouverteParDefaut: 'demande' | 'suite' = 'demande';
 
 	//  Le brouillon du panneau rapide : on ne touche PAS au ticket affiché tant
 	//  que le serveur n'a pas répondu — sinon l'écran montre un état enregistré
@@ -77,7 +82,10 @@
 
 	//  🔴 L'accordéon des trois rubriques (`$lib/accordeon`) : une ouverte, la
 	//  demande d'abord. Un identifiant, jamais un `Set`.
-	let ouverte: 'demande' | 'suite' | 'comptes-rendus' | 'synthese' | null = 'demande';
+	let ouverte: 'demande' | 'suite' | 'comptes-rendus' | 'synthese' | null =
+		ouverteParDefaut === 'suite' && entreesDuFil(evolutions).length === 0
+			? 'demande'
+			: ouverteParDefaut;
 
 	//  Ce que dit une rubrique PLIÉE, sur une ligne. La demande : quand, et pour
 	//  qui quand le conseil l'a saisie (lui seul le lit, comme la mention dépliée).
@@ -164,7 +172,7 @@
 	      maquette A du 15/10) : la DEMANDE, la SUITE, puis la SYNTHÈSE quand
 	      l'affaire est close — la conclusion se lit en dernier. Chacune dans son
 	      encart teinté, reliées par le rail ; une seule dépliée à la fois, la
-	      demande d'abord, les autres pliées sur une ligne qui dit l'essentiel.
+	      demande d'abord (la suite au fil d'activité : `ouverteParDefaut`), les autres pliées sur une ligne qui dit l'essentiel.
 	      L'ordre des sections de la demande reste celui du cadre (R2,
 	      `FicheLecture`). -->
 	<!--  Défaire un transfert de courriel, comme sur la fiche (#1482) : la carte

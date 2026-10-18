@@ -899,30 +899,42 @@ teinté ni ✨ avant elle, et l'idée comme le sondage sans auteur) · `e2e/lign
 rendus avec la même affaire, lisent la même ligne) · `test_flux_pastilles.py` (le
 serveur envoie la ligne au fil, et ✨ sur chaque carte de la communauté).
 
-### 🗂️ L'affaire DÉPLIÉE au fil — trois rubriques (maquette A, 15/10/2026)
+### 🗂️ L'affaire DÉPLIÉE au fil — la brique des trois étapes (n° 66, 18/10/2026, #2078)
 
-> ⚠️ **Arbitré le 18/10/2026** (arbitrage n° 66) : la brique G partout, le fil ouvert sur
-> « La suite » — à livrer (#2078). D'ici là, le fil rend encore la maquette décrite ici.
+Une même affaire dépliée avait deux rendus : la brique G dans la liste Affaires,
+trois encarts (maquette A du 15/10, TK-109008) au fil. **Décidé : la brique G
+partout** (`RubriqueEtape`, §3 n° 20), et le fil l'ouvre sur **« La suite »** —
+il répond à « quoi de neuf » —, la liste sur « La demande ». Seule l'étape ouverte
+par défaut change : titres, ordre, teintes et résumés sont ceux de la liste.
 
-Signalé sur TK-109008 : la carte d'une affaire résolue montrait le texte de la
-**demande** et, dessous, les photos de la **clôture** — rien ne disait d'où elles
-venaient, et le texte de clôture manquait. Choisie parmi cinq maquettes :
-
-| Rubrique | Quand | Forme |
+| Étape | Au fil | Forme |
 |---|---|---|
-| **Dernière mise à jour** | l'affaire a une suite | encart bleu : icône, auteur de la suite, libellé (« Résolu en … »), texte, **ses** pièces en grand |
-| **Synthèse** | affaire close ET synthèse lisible (validée ; brouillon pour le conseil seul) | encart vert ✨, « validée par le conseil » ou « brouillon à valider » |
-| **Demande initiale** | toujours | `<details>` plié sous sa date et « 📎 n » ; dépliée d'office si l'affaire n'a aucune suite (elle EST la nouvelle) |
+| **La demande** | pliée, résumé « date » | la fiche, **ses** pièces |
+| **La suite · n entrées** | **ouverte** : trois entrées, puis « plus anciennes » | chaque entrée porte **ses** pièces |
+| **La synthèse** | pliée, en dernier, si l'affaire est close et la synthèse lisible | « Validée le … · affaire close en n j » |
 
-- 🔴 **Chaque rubrique porte SES pièces** (`evol_pieces`, `demande`) — le repli sur
-  l'affaire (`photos_urls`) ne sert plus qu'à la vignette de la carte **pliée**.
+- **Un seul composant** : `FluxAffaireEtapes` (le fil) charge l'affaire et son fil à
+  l'ouverture (`tickets.get`, `tickets.evolutions`) puis rend `CorpsCarteTicket` — celui
+  de la liste — avec `ouverteParDefaut="suite"`. Une affaire **sans suite** n'a que sa
+  demande, dépliée : elle EST la nouvelle. Le corps est différé et préchargé à
+  l'approche de la main (`chargerCorpsAffaire`, `affaire-au-fil.ts`, #1860).
+- **Pourquoi à l'ouverture et pas dans la réponse du fil** : le fil ne porte que la
+  dernière suite (`meta.evol_*`) ; trois entrées par carte alourdiraient la réponse que
+  l'accueil lit entière. Aucun changement d'API.
+- **Lecture seule** : `peutSuivre` faux, gestes inertes sauf `filChange` (un transfert
+  défait, une synthèse produite se relisent). Corriger une suite se fait sur la page
+  Affaires — « Voir l'affaire → ».
 - 🔴 **La synthèse enrichit la carte, elle ne la date pas** (arbitré le 15/10/2026) :
   validée un ou deux jours après la clôture, une affaire qui remonterait en tête se
-  lirait comme une nouvelle panne. La Suite `synthese` n'est pas une candidate du fil.
+  lirait comme une nouvelle panne. La Suite `synthese` n'est pas une candidate du fil
+  (`test_flux_affaire_rubriques.py`).
 - L'état ne se redit pas dans le corps (« État : Résolu ») : il est dans la ligne de pastilles.
-- Où ça vit : `FluxRubriquesAffaire.svelte` (rendu), `flux/tickets._derniere_suite` et
-  `_joindre_syntheses` (données). 🔒 `test_flux_affaire_rubriques.py`,
-  `e2e/fil-rubriques-affaire.spec.ts`.
+- 🔒 `e2e/fil-rubriques-affaire.spec.ts` : trois étapes au fil avec leurs pièces, une
+  affaire neuve, et la **parité** — la même affaire lue au fil et dans la liste a les
+  mêmes titres, ordre, teintes et résumés, l'ouverture par défaut étant la seule
+  différence. `FluxRubriquesAffaire` est retiré ; `evol_pieces` et `demande.*` restent
+  envoyés par le serveur (le marqueur d'affaire, et la compatibilité d'un onglet PWA
+  resté sur l'ancienne version).
 
 ### La source unique : `.carte-liste` (`styles/composants.css`) — depuis le 15/08/2026
 

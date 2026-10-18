@@ -189,8 +189,8 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Décidé** : `RubriqueEtape` — un jalon sur un rail à gauche, un encart teinté (neutre · bleu · vert), pliable. « La demande » · « La suite · n entrées » (trois, puis « plus anciennes ») · « La synthèse » en dernier (texte, puis chiffres). Une seule dépliée à la fois, la demande d'abord ; pliée, une étape dit l'essentiel sur une ligne (`resume`). La Suite de synthèse quitte le fil (`entreesDuFil`) ; repliée, la carte porte « 🧾 Synthèse ». Une suite se supprime après confirmation.
 - **Pourquoi** : la maquette A du 15/10 avait des intitulés de deux styles et des limites floues ; sans résumé, le pliage cacherait la conclusion.
 - **Écarté** : la maquette A sur la carte ; huit autres maquettes (G retenue parmi dix, en deux tours).
-- **Tenu par** : `e2e/carte-affaire-close`.
-- **Historique** : 18/10 — étendu au fil, qui s'ouvre sur « La suite » (n° 66, à livrer : #2078).
+- **Tenu par** : `e2e/carte-affaire-close`, `e2e/fil-rubriques-affaire` (parité avec le fil).
+- **Historique** : 18/10 — étendu au fil, qui s'ouvre sur « La suite » (n° 66). 20/10 — livré au fil (v3.4.0, #2078) : le fil rend `CorpsCarteTicket`, `ouverteParDefaut="suite"` ; `e2e/fil-rubriques-affaire` tient la parité.
 
 ### n° 21 · en vigueur — Lancer l'assistant IA : ✨, puis ⏳ qui clignote
 17/10/2026 · sans ticket — v2.176.0 (PR #2063) · l'utilisateur, demande · §3, briques
@@ -501,12 +501,12 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Tenu par** : `e2e/lien-affaire-depliee.spec.ts`.
 
 ### n° 66 · en vigueur — L'affaire dépliée a UN rendu ; le fil s'ouvre sur « La suite »
-18/10/2026 · #2078 · l'utilisateur, sur recommandation · §3
-- **Décidé** : la brique des trois étapes (`RubriqueEtape`, n° 20) rend l'affaire dépliée partout, fil d'activité compris ; seule l'étape dépliée par défaut dépend du contexte — « La demande » dans la liste, **« La suite »** au fil. Sous réserve de la maquette, à constater à l'écran avant tout code (R5).
+18/10/2026 · v3.4.0 (#2078) · l'utilisateur, sur recommandation · §3
+- **Décidé** : la brique des trois étapes (`RubriqueEtape`, n° 20) rend l'affaire dépliée partout, fil d'activité compris ; seule l'étape dépliée par défaut dépend du contexte — « La demande » dans la liste, **« La suite »** au fil.
 - **Pourquoi** : un objet, un rendu (n° 65) ; et le fil montre d'abord ce qui vient d'arriver, ce que la maquette A (n° 63) faisait bien.
 - **Écarté** : le fil en G à l'identique, ouvert sur la demande (l'actualité passerait derrière elle) ; garder A au fil en déclarant la divergence (deux composants, deux allures).
-- **Tenu par** : aucun garde-fou nommé — un e2e qui compare le fil et la liste est demandé dans #2078.
-- **Historique** : 18/10 — à livrer (#2078) ; d'ici là, le fil rend encore la maquette A.
+- **Tenu par** : `e2e/fil-rubriques-affaire.spec.ts` — la même affaire lue au fil et dans la liste a les mêmes étapes (titres, ordre, teintes, résumés) ; seule l'ouverture par défaut diffère.
+- **Historique** : 18/10 — arbitré, maquette validée à l'écran. 20/10 — livré (v3.4.0, #2078) : `FluxAffaireEtapes` charge l'affaire et son fil à l'ouverture, `FluxRubriquesAffaire` est retiré, aucun changement d'API. L'affichage reste à constater en production.
 
 ### n° 67 · en vigueur — Après « Enregistrer » un CR, l'affaire suivante s'ouvre, son titre en haut
 20/10/2026 · #2082 · l'utilisateur · §3
