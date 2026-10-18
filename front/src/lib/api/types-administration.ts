@@ -329,9 +329,16 @@ export interface EnvoiEmail {
 
 //  ── Tâches planifiées (`routers/admin/exploitation.py`, `utils/sante_taches`) ───
 
-/**  Ce que `_sante_par_noeud` conclut d'une exécution — sept états (#488). */
+/**  Ce que `_sante_par_noeud` conclut d'une exécution — huit états (#488, #2072). */
 export type StatutSanteTache =
-	'ok' | 'en_cours' | 'vigilance' | 'erreur' | 'rapport_perdu' | 'manquante' | 'aucune_execution';
+	| 'ok'
+	| 'en_cours'
+	| 'pas_actif'
+	| 'vigilance'
+	| 'erreur'
+	| 'rapport_perdu'
+	| 'manquante'
+	| 'aucune_execution';
 
 export type PorteeExecution = 'applicative' | 'hygiene_locale';
 
