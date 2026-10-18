@@ -23,10 +23,16 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from app.auth.deps import exiger_non_externe, get_current_user
+from app.auth.appartenance import (
+    exiger_objet_autorise,
+    peut_retirer_l_avis,
+    peut_ressortir_l_avis,
+    peut_supprimer_l_avis,
+)
+from app.auth.deps import est_auteur, exiger_non_externe, get_current_user
 from app.database import get_session
 from app.models.avis import Avis
-from app.models.core import RoleUtilisateur, Utilisateur
+from app.models.core import Utilisateur
 from app.routers.avis_schemas import (
     AvisCreate,
     AvisListe,
@@ -39,6 +45,7 @@ from app.routers.prestataires_archivage import Archivage
 from app.utils import horloge
 from app.utils.avis import (
     auteurs_de,
+    avis_de,
     avis_visible,
     est_publiable,
     exiger_saisie_valide,
@@ -60,20 +67,19 @@ PREFIXE_LIEN = "avis"
 def _lire(avis: Avis, auteur, lecteur: Utilisateur, gestionnaire: bool) -> AvisRead:
     """L'avis tel que CE lecteur a le droit de le lire."""
     nom, role = signature(auteur)
-    proche = gestionnaire or avis.auteur_id == lecteur.id
+    auteur_lit = est_auteur(avis, lecteur)
+    proche = gestionnaire or auteur_lit
     prive = {} if proche else {"remarque": None, "consentement_publication": None}
     return lire_objet(
         AvisRead,
         avis,
         auteur_nom=nom,
         auteur_role=role,
-        est_auteur=avis.auteur_id == lecteur.id,
+        est_auteur=auteur_lit,
         archivee=avis.archive_le is not None,
         lu_de_tous=avis.consentement_publication is True,
-        #  L'auteur ressort ce qu'il a rangé ; ce que le gestionnaire a retiré,
-        #  seul le gestionnaire le ressort.
         restaurable=avis.archive_le is not None
-        and (gestionnaire or avis.archive_par_id == lecteur.id),
+        and peut_ressortir_l_avis(avis, lecteur, gestionnaire=gestionnaire),
         publiable=proche and est_publiable(avis),
         publication_validee=proche and avis.publication_validee_le is not None,
         **prive,
@@ -109,7 +115,7 @@ def lister(
     #  masquée par le navigateur resterait dans la charge utile.
     lisibles = [a for a in tous if avis_visible(a, user)]
     auteurs = auteurs_de(session, lisibles)
-    mien = next((a.id for a in tous if a.auteur_id == user.id), None)
+    mien = next((a.id for a in tous if est_auteur(a, user)), None)
     return AvisListe(
         avis=[_lire(a, auteurs.get(a.auteur_id), user, gestionnaire) for a in lisibles],
         gestionnaire=gestionnaire,
@@ -145,7 +151,7 @@ def deposer(
     if not titre or not description:
         raise HTTPException(422, "Le titre et la description sont obligatoires")
     remarque, accord = exiger_saisie_valide(body.note, body.remarque, body.consentement_publication)
-    if session.exec(select(Avis).where(Avis.auteur_id == user.id)).first():
+    if avis_de(session, user) is not None:
         raise HTTPException(409, "Vous avez déjà donné votre avis : modifiez-le plutôt")
     avis = Avis(
         auteur_id=user.id,
@@ -173,9 +179,9 @@ def corriger(
 ):
     """L'auteur corrige son avis — lui seul : on ne réécrit pas le témoignage d'un autre."""
     exiger_acces(user, profil=False)
-    avis = ou_404(session, Avis, avis_id, "Avis")
-    if avis.auteur_id != user.id:
-        raise HTTPException(403, "Seul son auteur peut modifier un avis")
+    avis = exiger_objet_autorise(
+        session, Avis, avis_id, "Avis", user, est_auteur, "Seul son auteur peut modifier un avis"
+    )
     if avis.archive_le is not None:
         raise HTTPException(400, "Cet avis est retiré : ressortez-le des Archives pour le modifier")
     donnees = body.model_dump(exclude_unset=True)
@@ -216,7 +222,7 @@ def archiver(
     exiger_acces(user, profil=False)
     avis = ou_404(session, Avis, avis_id, "Avis")
     gestionnaire = est_gestionnaire_du_site(session, user)
-    if not gestionnaire and avis.auteur_id != user.id:
+    if not peut_retirer_l_avis(avis, user, gestionnaire=gestionnaire):
         raise HTTPException(
             403, "Seuls son auteur et le gestionnaire du site peuvent retirer un avis"
         )
@@ -226,7 +232,7 @@ def archiver(
             #  Retiré, il quitte l'export : le ressortir ne le republie pas.
             avis.publication_validee_le = None
     elif avis.archive_le is not None:
-        if not gestionnaire and avis.archive_par_id != user.id:
+        if not peut_ressortir_l_avis(avis, user, gestionnaire=gestionnaire):
             raise HTTPException(403, "Cet avis a été retiré par le gestionnaire du site")
         avis.archive_le, avis.archive_par_id = None, None
     _enregistrer(session, avis)
@@ -243,9 +249,15 @@ def supprimer(
     L'auteur efface ce qu'il a écrit et signé : c'est son témoignage, et
     retirer son accord ne suffit pas toujours (RGPD, droit à l'effacement).
     """
-    avis = ou_404(session, Avis, avis_id, "Avis")
-    if avis.auteur_id != user.id and not user.has_role(RoleUtilisateur.admin):
-        raise HTTPException(403, "Seuls son auteur et l'administrateur suppriment un avis")
+    avis = exiger_objet_autorise(
+        session,
+        Avis,
+        avis_id,
+        "Avis",
+        user,
+        peut_supprimer_l_avis,
+        "Seuls son auteur et l'administrateur suppriment un avis",
+    )
     if avis.archive_le is None:
         raise HTTPException(400, "Retirez d'abord l'avis : la suppression se fait aux Archives")
     session.delete(avis)
@@ -268,7 +280,7 @@ def repondre(
     avis.reponse_par_id = user.id if texte else None
     avis.reponse_le = horloge.maintenant() if texte else None
     _enregistrer(session, avis)
-    if nouvelle and avis.auteur_id != user.id:
+    if nouvelle and not est_auteur(avis, user):
         sonner(
             session,
             destinataire_id=avis.auteur_id,

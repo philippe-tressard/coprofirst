@@ -20,14 +20,16 @@ from sqlmodel import Session
 from app.utils.batiments import libelle_batiment_ou
 from app.models.core import (
     Batiment,
+    RoleUtilisateur,
     Utilisateur,
 )
 from app.utils.noms import ANCIEN_RESIDENT, nom_affiche
 from app.utils.recuperer import ou_rien
-from app.utils.roles_libelles import role_signature
+from app.utils.roles_libelles import libelle_role, libelle_statut_court
 from app.utils.liens import adresse_du_site
 from app.auth.deps import est_moderateur
 from app.utils.cloche import sonner
+from app.utils.valeurs import valeur
 
 # Code du template email (voir seed.EMAIL_TEMPLATES + _EMAIL_PREF_MAP).
 REPONSE_EMAIL_CODE = "reponse_communaute"
@@ -38,6 +40,34 @@ REPONSE_EMAIL_CODE = "reponse_communaute"
 #  désormais nommée `LIBELLES_STATUT_COURT`, avec son motif : à côté d'une
 #  réponse, « Copropriétaire » suffit ; préciser « résident » ou « bailleur »
 #  révélerait si la personne habite son lot ou le loue.
+
+
+#  La signature d'un ADMINISTRATEUR en toutes lettres — « Admin » est
+#  l'étiquette d'un écran d'administration, pas une signature. Divergence
+#  assumée, écrite ici plutôt que subie (elle vivait dans `utils/reponses`).
+SIGNATURE_ADMIN = "Administrateur"
+
+
+def role_signature(personne) -> str | None:
+    """Ce qu'une personne EST, en un mot, à côté de son nom.
+
+    Le conseil syndical d'abord (c'est ce qui pèse dans un échange), puis
+    l'administration, puis le statut dans sa forme courte (« Copropriétaire »,
+    « Locataire », « Syndic »). `None` quand rien n'est connu.
+
+    Sortie d'`auteur_meta` (#2075) : la signature d'une réponse de la
+    Communauté et celle d'un avis sur l'application posent la même question —
+    une seule écriture. Elle vit ICI et non dans `roles_libelles`, qui porte la
+    table des rôles, `externe` compris : une décision par `has_role` à côté d'elle
+    y passerait pour une copie du refus des comptes externes
+    (`test_refus_externe_source_unique`).
+    """
+    if personne.has_role(RoleUtilisateur.conseil_syndical):
+        return libelle_role(RoleUtilisateur.conseil_syndical)
+    if personne.has_role(RoleUtilisateur.admin):
+        return SIGNATURE_ADMIN
+    statut = valeur(personne.statut) or ""
+    return libelle_statut_court(statut) if statut else None
 
 
 def auteur_meta(auteur: Optional[Utilisateur], session: Session) -> dict:

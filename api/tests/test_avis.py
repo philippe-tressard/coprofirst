@@ -36,7 +36,7 @@ from app.routers.prestataires_archivage import Archivage
 from app.utils.avis import exiger_saisie_valide
 from app.utils.destinataires import est_gestionnaire_du_site
 from app.utils.noms import nom_abrege
-from app.utils.roles_libelles import role_signature
+from app.utils.reponses import role_signature
 from app.utils.suppression_compte import supprimer_compte
 from tests.aides_base import compte
 

@@ -34,16 +34,16 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlmodel import Session
+from sqlmodel import Session, select
 
-from app.auth.deps import est_moderateur
+from app.auth.deps import est_auteur, est_moderateur
 from app.models.avis import Avis
 from app.models.core import Utilisateur
 from app.utils import horloge
 from app.utils.annonce_hall import texte_brut
 from app.utils.noms import nom_abrege
 from app.utils.recuperer import precharger
-from app.utils.roles_libelles import role_signature
+from app.utils.reponses import role_signature
 
 NOTE_MIN = 1
 NOTE_MAX = 5
@@ -77,10 +77,15 @@ def exiger_saisie_valide(
     return None, consentement
 
 
+def avis_de(session: Session, user: Utilisateur) -> Optional[Avis]:
+    """L'avis de ce compte, retiré compris — un seul par compte."""
+    return session.exec(select(Avis).where(Avis.auteur_id == user.id)).first()
+
+
 def avis_visible(avis: Avis, lecteur: Utilisateur) -> bool:
     """Ce lecteur peut-il lire cet avis ? Son auteur et le conseil, toujours ;
     les autres comptes, seulement si l'auteur l'a accepté et ne l'a pas retiré."""
-    if avis.auteur_id == lecteur.id or est_moderateur(lecteur):
+    if est_auteur(avis, lecteur) or est_moderateur(lecteur):
         return True
     return avis.consentement_publication is True and avis.archive_le is None
 
