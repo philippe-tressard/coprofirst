@@ -53,6 +53,7 @@
 		"lint:description-unique": "node scripts/check-description-unique.mjs",
 		"lint:workflow": "node scripts/check-workflow-envoye.mjs",
 		"lint:consignes": "node scripts/check-consignes.mjs",
+		"lint:arbitrages": "node scripts/check-arbitrages.mjs --selftest && node scripts/check-arbitrages.mjs",
 		"lint:session": "node scripts/check-renouvellement-session.mjs",
 		"lint:soumission": "node scripts/check-libelles-soumission.mjs",
 		"lint:audit": "node scripts/check-audit.mjs",
