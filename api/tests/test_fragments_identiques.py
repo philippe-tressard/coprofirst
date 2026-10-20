@@ -62,10 +62,14 @@ from app.seed import EMAIL_TEMPLATES
 #: ⬇️ Mise à jour le 16/10/2026 (#2035) : `relance_syndic` dit le « Point de situation »
 #: (résumé de l'assistant) et numérote la relance qui part — migration **0288**.
 #: Seul ce corps diffère.
-EMPREINTE = "a3789fb810c8f32d13cf8f436ee2d856f3b0523bc18155f3d2c3a52711ac63ae"
-NOMBRE_ATTENDU = 35  # + ticket_partage, lien_partage (#1357), adresse_changement_avis (#1549),
+#: ⬇️ Mise à jour le 20/10/2026 (#2082) : `point_conseil_validation` marque les CR
+#: « Modifié en révision N » (`a.marque`) — migration **0303** ; et un modèle AJOUTÉ,
+#: `point_conseil_valide` (le CR validé, PDF joint), posé par le seed.
+EMPREINTE = "a053eab180a4d83d4ff56be610f1a400d69898e4bb92c87782d7568d22e42413"
+NOMBRE_ATTENDU = 36  # + ticket_partage, lien_partage (#1357), adresse_changement_avis (#1549),
 #  synthese_a_valider (#1643), ticket_copie_auteur, publication_copie_auteur,
-#  compte_inactif_avertissement (#1580), point_conseil_validation (#2042) — AJOUTÉS, donc
+#  compte_inactif_avertissement (#1580), point_conseil_validation (#2042),
+#  point_conseil_valide (#2082) — AJOUTÉS, donc
 #  posés par le seed : aucune migration.
 
 
