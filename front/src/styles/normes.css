@@ -626,10 +626,13 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
    `amenerEnVue` (`$lib/accordeon`) ramène le haut du bloc qu'on vient d'ouvrir
    quand le repli d'un voisin l'a fait sortir de la fenêtre. Il s'arrête à cette
    marge, et la LIT pour savoir si le bloc est déjà visible : sur téléphone,
-   l'en-tête fixe (3,25 rem) couvrirait sinon le titre qu'on vient de toucher. */
+   l'en-tête fixe (3,25 rem) couvrirait sinon le titre qu'on vient de toucher.
+   `.cible-defilement` : ce qu'`amenerEnHaut` place en haut de l'écran (#2082 —
+   l'affaire suivante, après l'enregistrement d'un compte rendu). */
 details,
 .section-formulaire,
-.reponses-zone {
+.reponses-zone,
+.cible-defilement {
 	scroll-margin-top: 4rem;
 }
 

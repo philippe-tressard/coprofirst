@@ -67,6 +67,9 @@ ECRIVAINS_DU_STOCKAGE = {
     "relue avant tout retrait — rien n'est reçu du client",
     "demo/fichiers.py": "le logo, l'illustration et les PDF de la démo publique, PRODUITS "
     "par l'application à chaque chargement (#1904) — la démo ne reçoit aucun fichier (M10)",
+    "utils/points_conseil_expedition.py": "le PDF du compte rendu VALIDÉ d'un point CS / "
+    "Syndic, PRODUIT par l'application (WeasyPrint) et rangé sous le dossier privé (#2082) — "
+    "rien n'est reçu du client",
 }
 
 #: Les écritures sur disque qui ne sont **pas** des téléversements, nommées une

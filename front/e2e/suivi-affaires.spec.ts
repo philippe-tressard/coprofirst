@@ -24,15 +24,15 @@ const RELEVE: SuiviAffaires = {
 			libelle: 'Panne',
 			nombre: 2,
 			tranches: [
-				{ cle: 'racine', libelle: 'Résidence', nombre: 1 },
-				{ cle: 'bat:3', libelle: 'Bât. C', nombre: 1 },
+				{ cle: 'racine', libelle: 'Résidence', nombre: 1, teinte: 'p1' },
+				{ cle: 'bat:3', libelle: 'Bât. C', nombre: 1, teinte: 'p2' },
 			],
 		},
 		{
 			cle: 'etude_travaux',
 			libelle: 'Étude & travaux',
 			nombre: 1,
-			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 1 }],
+			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 1, teinte: 'p1' }],
 		},
 	],
 	par_batiment: [
@@ -41,15 +41,15 @@ const RELEVE: SuiviAffaires = {
 			libelle: 'Résidence',
 			nombre: 2,
 			tranches: [
-				{ cle: 'panne', libelle: 'Panne', nombre: 1 },
-				{ cle: 'etude_travaux', libelle: 'Étude & travaux', nombre: 1 },
+				{ cle: 'panne', libelle: 'Panne', nombre: 1, teinte: 's1' },
+				{ cle: 'etude_travaux', libelle: 'Étude & travaux', nombre: 1, teinte: 's5' },
 			],
 		},
 		{
 			cle: 'bat:3',
 			libelle: 'Bât. C',
 			nombre: 1,
-			tranches: [{ cle: 'panne', libelle: 'Panne', nombre: 1 }],
+			tranches: [{ cle: 'panne', libelle: 'Panne', nombre: 1, teinte: 's1' }],
 		},
 	],
 	affaires: [
@@ -76,6 +76,10 @@ const RELEVE: SuiviAffaires = {
 			etat_visite: null,
 			a_evolue: false,
 			motif_evolution: null,
+			prive: false,
+			etat_par_defaut: 'en_cours',
+			groupe: null,
+			fusionnees: [],
 		},
 		{
 			id: 31,
@@ -99,6 +103,10 @@ const RELEVE: SuiviAffaires = {
 			etat_visite: null,
 			a_evolue: true,
 			motif_evolution: 'nouvelle',
+			prive: false,
+			etat_par_defaut: 'en_cours',
+			groupe: null,
+			fusionnees: [],
 		},
 		{
 			id: 40,
@@ -122,6 +130,10 @@ const RELEVE: SuiviAffaires = {
 			etat_visite: null,
 			a_evolue: true,
 			motif_evolution: 'etat',
+			prive: false,
+			etat_par_defaut: 'en_cours',
+			groupe: null,
+			fusionnees: [],
 		},
 	],
 };
@@ -289,4 +301,49 @@ test('relancer le syndic : la même liste, les relances envoyées, un pli et l�
 	await apercu.getByRole('button', { name: /Envoyer la relance \(1 affaire\)/ }).click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
 	await expect.poll(() => envoye).toEqual({ ticket_ids: [12] });
+});
+
+test('les affaires liées se suivent ; « Fusionner » propose un titre, puis fusionne (#2083)', async ({
+	page,
+}) => {
+	//  Les affaires 31 et 40 sont liées : le serveur les rassemble (`groupe`).
+	const premiere = RELEVE.affaires[1];
+	const liee = { ...RELEVE.affaires[2], groupe: premiere.id };
+	const releve = {
+		...RELEVE,
+		affaires: [RELEVE.affaires[0], { ...premiere, groupe: premiere.id }, liee],
+	};
+	const envois: { quoi: string; corps: unknown }[] = [];
+	page.on('request', (r) => {
+		const url = new URL(r.url());
+		if (url.pathname.startsWith('/api/suivi-affaires/fusions'))
+			envois.push({ quoi: url.pathname, corps: r.postDataJSON() });
+	});
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/suivi-affaires') return releve;
+		if (chemin === '/api/suivi-affaires/fusions/proposition')
+			return {
+				titre: 'Interphone et fuite colonne B',
+				description: '<p>Une même intervention.</p>',
+				assiste_ia: true,
+			};
+		if (chemin === '/api/suivi-affaires/fusions') return { principale_id: 31, absorbees: [40] };
+		return undefined;
+	});
+	await page.goto('/espace-cs/reporting');
+	await attendreHydratation(page);
+
+	const tete = page.locator('tr.groupe-tete');
+	await expect(tete).toHaveCount(1);
+	await expect(tete).toContainText('2 affaires liées');
+	await expect(page.locator('tr.liee')).toHaveCount(2);
+
+	await tete.getByRole('button', { name: 'Fusionner', exact: true }).click();
+	const titre = page.getByLabel('Titre de l’affaire fusionnée');
+	await expect(titre).toHaveValue('Interphone et fuite colonne B');
+	await page.locator('form.fusion').getByRole('button', { name: 'Enregistrer' }).click();
+	await expect.poll(() => envois.map((e) => e.quoi)).toContain('/api/suivi-affaires/fusions');
+	expect(envois.find((e) => e.quoi === '/api/suivi-affaires/fusions')?.corps).toEqual(
+		expect.objectContaining({ ids: [31, 40], titre: 'Interphone et fuite colonne B' }),
+	);
 });

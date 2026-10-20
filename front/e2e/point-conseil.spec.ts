@@ -6,6 +6,10 @@
  *  tableau ; il paraît dans la ligne et dans le compte rendu global. Les règles
  *  (un point par mode, reprise, non traitées) sont tenues au serveur par
  *  `api/tests/test_points_conseil.py`.
+ *
+ *  #2082 : la saisie propose l'état à la validation (coché d'office par le
+ *  serveur) et la case « CS et présents » ; 🔴 après « Enregistrer », l'affaire
+ *  SUIVANTE se déplie et son titre se place en haut de l'écran.
  */
 import { attendreHydratation, expect, simulerApi, test } from './aides';
 import type { CompteRenduPoint, CrAffaire, ParticipantsPoint, SuiviAffaires } from '../src/lib/api';
@@ -32,6 +36,22 @@ const AFFAIRE = {
 	etat_visite: null,
 	a_evolue: false,
 	motif_evolution: null,
+	prive: false,
+	etat_par_defaut: 'en_cours',
+	groupe: null,
+	fusionnees: [],
+};
+
+/** Une seconde affaire, plus récente : la suivante du tableau. */
+const SUIVANTE = {
+	...AFFAIRE,
+	id: 32,
+	numero: 'TK-000032',
+	titre: 'Fuite en toiture bâtiment A',
+	ouverte_le: '2026-09-02',
+	age_jours: 47,
+	anciennete: 'moyenne' as const,
+	prive: true,
 };
 
 const RELEVE: SuiviAffaires = {
@@ -46,7 +66,7 @@ const RELEVE: SuiviAffaires = {
 			cle: 'panne',
 			libelle: 'Panne',
 			nombre: 1,
-			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 1 }],
+			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 1, teinte: 'p1' }],
 		},
 	],
 	par_batiment: [],
@@ -62,6 +82,12 @@ const ANNUAIRE: ParticipantsPoint = {
 		{ cle: 'visio', libelle: 'Visioconférence', avec_lieu: false },
 		{ cle: 'telephone', libelle: 'Téléphone', avec_lieu: false },
 		{ cle: 'hybride', libelle: 'Sur place et à distance', avec_lieu: true },
+	],
+	categories_seance: [{ cle: 'panne', libelle: 'Panne' }],
+	etats_validation: [
+		{ cle: 'en_cours', libelle: 'Chez le syndic' },
+		{ cle: 'en_ag', libelle: 'À l’AG' },
+		{ cle: 'résolu', libelle: 'Résolu' },
 	],
 };
 
@@ -80,6 +106,8 @@ function compteRendu(cr: CrAffaire | null): CompteRenduPoint {
 			cree_le: '2026-10-19T15:00:00',
 			termine_le: null,
 			valide_le: null,
+			revision: 0,
+			pdf_range: false,
 		},
 		presents: [
 			{
@@ -93,6 +121,9 @@ function compteRendu(cr: CrAffaire | null): CompteRenduPoint {
 				fonction: null,
 				telephone: null,
 				email: null,
+				destinataire: false,
+				valide_le: null,
+				par_derogation: false,
 			},
 			{
 				id: 2,
@@ -105,10 +136,18 @@ function compteRendu(cr: CrAffaire | null): CompteRenduPoint {
 				fonction: null,
 				telephone: null,
 				email: null,
+				destinataire: false,
+				valide_le: null,
+				par_derogation: false,
 			},
 		],
-		abordees: cr ? [{ affaire: { id: 31, numero: 'TK-000031', titre: AFFAIRE.titre }, cr }] : [],
+		abordees: cr
+			? [{ affaire: { id: 31, numero: 'TK-000031', titre: AFFAIRE.titre }, cr, marque: null }]
+			: [],
 		non_traitees: cr ? [] : [{ id: 31, numero: 'TK-000031', titre: AFFAIRE.titre }],
+		validation: { destinataires: 0, valides: 0, suspendue: false, echeance: null },
+		commentaires: [],
+		revision: 0,
 	};
 }
 
@@ -117,6 +156,7 @@ const CR: CrAffaire = {
 	contenu: '<p>Le syndic relance l’entreprise.</p>',
 	brouillon: false,
 	conseil_seul: false,
+	etat_cible: 'en_cours',
 	mis_a_jour_le: '2026-10-19T15:10:00',
 };
 
@@ -206,6 +246,9 @@ test('ouvrir un point, puis saisir le compte rendu d’une affaire', async ({ pa
 	);
 
 	await page.getByRole('button', { name: 'Compte rendu' }).click();
+	//  L'état à la validation, coché d'office par le serveur (#2082).
+	await expect(page.getByLabel('État à la validation du compte rendu')).toHaveValue('en_cours');
+	await expect(page.locator('.saisie-cr')).toContainText('CS et présents');
 	const editeur = page.locator('.saisie-cr .tiptap');
 	await editeur.click();
 	await editeur.pressSequentially('Le syndic relance l’entreprise.');
@@ -221,4 +264,82 @@ test('ouvrir un point, puis saisir le compte rendu d’une affaire', async ({ pa
 	await expect(global).toContainText('Le syndic relance l’entreprise.');
 	//  L'espace avant la précision d'un présent (v2.174.1) : « Durand(Étanchéité… » se lisait collé.
 	await expect(global).toContainText('Jean DURAND (Étanchéité Sud)');
+});
+
+test('après « Enregistrer », l’affaire suivante se déplie, son titre en haut de l’écran', async ({
+	page,
+}) => {
+	//  Une longue liste : sans défilement, la suivante resterait hors de l'écran.
+	const remplissage = Array.from({ length: 12 }, (_, i) => ({
+		...SUIVANTE,
+		id: 100 + i,
+		numero: `TK-0001${String(i).padStart(2, '0')}`,
+		titre: `Affaire de remplissage ${i + 1}`,
+	}));
+	const releve = { ...RELEVE, total: 14, affaires: [AFFAIRE, ...remplissage, SUIVANTE] };
+	//  La suivante de l'affaire 31 est la première de remplissage.
+	const suivante = remplissage[0];
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/suivi-affaires') return releve;
+		if (chemin === '/api/points-conseil/participants') return ANNUAIRE;
+		if (chemin === '/api/points-conseil/courant')
+			return { compte_rendu: compteRendu(null), reprise: null };
+		if (chemin === '/api/points-conseil/5/affaires/31') return compteRendu(CR);
+		return undefined;
+	});
+	await page.goto('/espace-cs/reporting');
+	await attendreHydratation(page);
+
+	await page.locator('#affaire-31').getByRole('button', { name: 'Compte rendu' }).click();
+	const editeur = page.locator('.saisie-cr .tiptap');
+	await editeur.click();
+	await editeur.pressSequentially('Relance faite.');
+	await page.locator('.saisie-cr').getByRole('button', { name: 'Enregistrer' }).click();
+
+	//  La suivante est ouverte, et elle seule.
+	await expect(page.locator(`#saisie-cr-${suivante.id}`)).toBeVisible();
+	await expect(page.locator('.saisie-cr')).toHaveCount(1);
+	//  Son titre est en haut de l'écran, sous l'en-tête fixe : on n'a pas à la chercher.
+	await expect
+		.poll(async () => {
+			const boite = await page.locator(`#affaire-${suivante.id}`).boundingBox();
+			return boite ? Math.round(boite.y) : -1;
+		})
+		.toBeLessThan(120);
+	await expect
+		.poll(async () => {
+			const boite = await page.locator(`#affaire-${suivante.id}`).boundingBox();
+			return boite ? Math.round(boite.y) : -1;
+		})
+		.toBeGreaterThanOrEqual(0);
+});
+
+test('pendant le point, « Ouvrir une affaire en séance » la crée et l’ajoute (#2084)', async ({
+	page,
+}) => {
+	const envois: { quoi: string; corps: unknown }[] = [];
+	page.on('request', (r) => {
+		const url = new URL(r.url());
+		if (url.pathname === '/api/points-conseil/5/affaires')
+			envois.push({ quoi: r.method(), corps: r.postDataJSON() });
+	});
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/suivi-affaires') return RELEVE;
+		if (chemin === '/api/points-conseil/participants') return ANNUAIRE;
+		if (chemin === '/api/points-conseil/courant')
+			return { compte_rendu: compteRendu(null), reprise: null };
+		if (chemin === '/api/points-conseil/5/affaires') return compteRendu(null);
+		return undefined;
+	});
+	await page.goto('/espace-cs/reporting');
+	await attendreHydratation(page);
+
+	await page.getByRole('button', { name: 'Ouvrir une affaire en séance' }).click();
+	await page.getByLabel('Titre de l’affaire').fill('Contrat ascenseur');
+	await page.locator('#seance-categorie-5').selectOption('panne');
+	await page.locator('.seance').getByRole('button', { name: 'Enregistrer' }).click();
+	await expect.poll(() => envois.map((e) => e.quoi)).toContain('POST');
+	expect(envois[0].corps).toEqual(
+		expect.objectContaining({ titre: 'Contrat ascenseur', categorie: 'panne' }),
+	);
 });

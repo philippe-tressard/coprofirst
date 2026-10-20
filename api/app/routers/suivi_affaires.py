@@ -5,7 +5,7 @@ le rapport est un outil du conseil, et le résumé est un appel facturé :
 
 | Route | Ce qu'elle rend |
 |---|---|
-| `GET /suivi-affaires?mode=` | le relevé du mode (`affaires`, `entretien` — #2043) : nombre, répartitions, affaires |
+| `GET /suivi-affaires?mode=&point=` | le relevé du mode (`affaires`, `entretien` — #2043) : nombre, répartitions, affaires ; avec `point`, les affaires du point en cours y restent jusqu'à sa validation (#2082) |
 | `POST /suivi-affaires/resumes` | fait rédiger le résumé de chaque affaire, et le garde sur elle (#2035) |
 | `POST /suivi-affaires/pdf?mode=` | le PDF du relevé du mode |
 
@@ -39,6 +39,8 @@ from app.utils.logo import logo_televerse_png
 from app.utils.suivi_affaires import resumes as assistant
 from app.utils.suivi_affaires.pdf import generer_pdf
 from app.utils.suivi_affaires.releve import MODE_AFFAIRES, MODE_ENTRETIEN, releve
+from app.utils.points_conseil import point_courant, releve_du_point
+from app.utils.points_conseil_etats import etat_par_defaut
 
 router = APIRouter(prefix="/suivi-affaires", tags=["suivi-affaires"])
 
@@ -73,6 +75,14 @@ class AffaireOuverteRead(BaseModel):
     #: Nouvelle, ou une entrée au fil depuis le dernier résumé (#2044), et pourquoi.
     a_evolue: bool
     motif_evolution: Optional[str] = None
+    #: La vignette Public / Privé (#2082) : seuls le conseil et le syndic la lisent.
+    prive: bool = False
+    #: L'état coché d'office à la saisie de son CR — « À l'AG » reste à l'AG (#2082).
+    etat_par_defaut: str = ""
+    #: Le groupe des affaires liées rassemblées (#2083) — `None` pour une affaire seule.
+    groupe: Optional[int] = None
+    #: L'historique de fusion, cité au point : « TK-12 — Titre » des absorbées.
+    fusionnees: list[str] = []
 
     class Config:
         from_attributes = True
@@ -82,6 +92,8 @@ class TrancheRead(BaseModel):
     cle: str
     libelle: str
     nombre: int
+    #: La teinte de la tranche (`repartition.teinter`) — l'écran la peint, sans la choisir.
+    teinte: str = ""
 
     class Config:
         from_attributes = True
@@ -131,10 +143,15 @@ def _mode(mode: str) -> str:
 @router.get("", response_model=SuiviAffairesRead, summary="Les affaires non closes (CS/Admin)")
 def lire_suivi(
     mode: str = MODE_AFFAIRES,
+    point: bool = False,
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
-    r = releve(session, user, _mode(mode))
+    #  Le tableau d'un point en cours ou en relecture garde SES affaires, même
+    #  closes ailleurs entre-temps (#2082) ; la relance, elle, lit sans `point`.
+    mode = _mode(mode)
+    courant = point_courant(session, mode) if point else None
+    r = releve_du_point(session, courant, user) if courant else releve(session, user, mode)
     #  Lu sur le relevé (jour, total, anciennes, mode, délai) ; ne se nomme que
     #  ce qui se calcule ici (`lire_objet`, #1563).
     return lire_objet(
@@ -142,7 +159,10 @@ def lire_suivi(
         r,
         par_categorie=[BarreRead.model_validate(c) for c in r.par_categorie],
         par_batiment=[BarreRead.model_validate(c) for c in r.par_batiment],
-        affaires=[AffaireOuverteRead.model_validate(a) for a in r.affaires],
+        affaires=[
+            lire_objet(AffaireOuverteRead, a, etat_par_defaut=etat_par_defaut(a.statut))
+            for a in r.affaires
+        ],
         #  Pas de résumé en mode entretien : une visite se dit par son état (#2043).
         resumes_disponibles=r.mode == MODE_AFFAIRES and assistant.disponible(session),
     )

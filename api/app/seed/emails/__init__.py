@@ -123,6 +123,8 @@ INTENTIONS_PAR_MODELE: dict[str, str] = {
     "publication_externe": "information",
     "acces_apparies_auto": "information",
     "etage_divergent": "information",
+    #  Le CR validé d'un point CS / Syndic, son PDF joint (#2082) : à garder.
+    "point_conseil_valide": "archive",
 }
 
 
@@ -159,6 +161,9 @@ EXPEDITEUR_PAR_INTENTION: dict[str, str] = {
     "action_requise": EXPEDITEUR_REPONSE,
     #  On informe. Rien n'est demandé, rien n'est attendu.
     "information": EXPEDITEUR_MUET,
+    #  À conserver (le CR validé d'un point CS / Syndic, PDF joint, #2082) : rien
+    #  n'est attendu non plus.
+    "archive": EXPEDITEUR_MUET,
 }
 
 

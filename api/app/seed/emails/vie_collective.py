@@ -284,7 +284,8 @@ MODELES = [
             f'<p style="margin:0;font-size:14px;color:{TEXTE}">Présents : {{{{ point.presents }}}}</p>'
         )
         + "{% for a in affaires %}"
-        + f'<p style="margin:0 0 4px;font-weight:700;color:{BLEU}">{{{{ a.numero }}}} · {{{{ a.titre }}}}</p>'
+        + f'<p style="margin:0 0 4px;font-weight:700;color:{BLEU}">{{{{ a.numero }}}} · {{{{ a.titre }}}}{{{{ a.marque | default('
+        ") }}}}</p>"
         + f'<p style="margin:0 0 14px;color:{TEXTE}">{{{{ a.texte }}}}</p>'
         + "{% endfor %}"
         + "{% if non_traitees %}"
@@ -294,6 +295,21 @@ MODELES = [
         + f'<p style="margin:0;font-size:13px;color:{GRIS}">Sans réponse de votre part, le compte '
         "rendu sera validé automatiquement le <strong>{{ echeance }}</strong>. Ce lien vous est "
         "personnel.</p>",
+        True,
+    ),
+    #  Le CR VALIDÉ, son PDF en pièce jointe (#2082) : aux présents du conseil et
+    #  du syndic qui ont une adresse — jamais aux invités.
+    (
+        "point_conseil_valide",
+        "Compte rendu validé d’un point CS / Syndic",
+        "{{ prefixe_copro }}Compte rendu validé du point CS / Syndic du {{ point.date }}",
+        titre("✅ Compte rendu validé")
+        + '<p style="margin:0 0 16px">Le compte rendu du point entre le conseil syndical et '
+        "le syndic auquel vous avez participé est validé. Vous le trouverez en pièce jointe, "
+        "au format PDF.</p>"
+        + encart(
+            f'<p style="margin:0;font-size:13px;color:{GRIS}">{{{{ point.date }}}} · {{{{ point.lieu }}}}</p>'
+        ),
         True,
     ),
 ]

@@ -25,12 +25,13 @@ def affaire_ouverte(moteur, titre="Interphone muet", *, jours=0, **champs) -> in
     champs.setdefault("statut", "ouvert")
     champs.setdefault("perimetre_cible", json.dumps(["résidence"], ensure_ascii=False))
     with Session(moteur) as s:
-        auteur = compte(s, prefixe="auteur", nom="Durand", prenom="Reine")
+        #  `auteur_id=None` : une affaire sans auteur résident (saisie par le conseil).
+        if "auteur_id" not in champs:
+            champs["auteur_id"] = compte(s, prefixe="auteur", nom="Durand", prenom="Reine").id
         t = Ticket(
             numero=f"S-{_numero[0]:04d}",
             titre=titre,
             description="<p>La platine ne sonne <strong>plus</strong>.</p>",
-            auteur_id=auteur.id,
             cree_le=horloge.maintenant() - timedelta(days=jours),
             **champs,
         )

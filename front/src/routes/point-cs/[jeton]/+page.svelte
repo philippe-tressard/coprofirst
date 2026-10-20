@@ -7,8 +7,10 @@
   messageries ouvrent les liens avant leur destinataire. Seuls « Je valide » et
   l'envoi d'un commentaire agissent, par un geste.
 
-  Le CR se lit tel que le serveur le sert — sans ce qui est « Conseil seul » ;
-  son texte riche passe par l'assainisseur.
+  Le CR se lit tel que le serveur le sert — en entier, « CS et présents »
+  compris (#2082) : les présents l'ont entendu. Chaque affaire porte sa vignette
+  Public / Privé et, après un renvoi, « Modifié en révision N ». Le texte riche
+  passe par l'assainisseur.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -22,6 +24,9 @@
 	import { messageErreur } from '$lib/erreurs';
 	import { safeHtml } from '$lib/sanitize';
 	import { getSiteNom } from '$lib/stores/pageConfig';
+	import { LIBELLE_CS_ET_PRESENTS } from '$lib/points-conseil';
+	import Badge from '$lib/components/Badge.svelte';
+	import VignetteVisibilite from '$lib/components/reporting/VignetteVisibilite.svelte';
 
 	const siteNom = getSiteNom();
 	$: jeton = $page.params.jeton ?? '';
@@ -87,10 +92,19 @@
 				{fmtDatetime(cr.debut)}{#if cr.fin}&nbsp;→ {fmtTime(cr.fin)}{/if} · {cr.ou}
 			</p>
 			<p class="presents">Présents : {cr.presents.join(', ') || '—'}</p>
+			{#if cr.revision > 1}
+				<p class="muet">Révision {cr.revision} du compte rendu.</p>
+			{/if}
 
 			{#each cr.abordees as a (a.numero)}
 				<section class="abordee">
 					<h2>{a.numero} · {a.titre}</h2>
+					<p class="marques">
+						<VignetteVisibilite prive={a.prive} />
+						{#if a.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge
+							>{/if}
+						{#if a.marque}<Badge teinte="badge-orange" compact>{a.marque}</Badge>{/if}
+					</p>
 					<div class="contenu">{@html safeHtml(a.contenu)}</div>
 				</section>
 			{:else}
@@ -164,6 +178,12 @@
 </div>
 
 <style>
+	.marques {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		margin: 0 0 0.35rem;
+	}
 	.lien-cr {
 		padding: 1.5rem;
 	}

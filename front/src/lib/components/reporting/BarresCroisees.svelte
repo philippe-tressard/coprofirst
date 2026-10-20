@@ -9,8 +9,9 @@
   - Le nombre s'écrit en bout de barre ; la légende dessous nomme chaque
     tranche ; le survol (et le titre lu au lecteur d'écran) donne « Bât. A : 3 ».
     La couleur ne porte jamais l'information seule (skill dataviz).
-  - Les teintes : jetons `--serie-*` et `--palier-*` de la charte, choisies par
-    `$lib/repartition` — une teinte suit l'entité, jamais son rang. Elle se pose
+  - Les teintes : jetons `--serie-*` et `--palier-*` de la charte ; CHOISIES
+    par le serveur (`TrancheRepartition.teinte`, #2082) — une teinte suit
+    l'entité, jamais son rang, et le PDF peint la même. Elle se pose
     en `data-teinte`, jamais en classe calculée : `lint:css-orphelin` ne verrait
     plus les classes du fichier.
 -->
@@ -20,8 +21,6 @@
 
 	export let titre: string;
 	export let barres: BarreRepartition[];
-	/** La teinte (classe) d'une tranche, par sa clé. */
-	export let teinte: (cle: string) => string;
 
 	const id = `rep-${Math.random().toString(36).slice(2, 8)}`;
 	$: plusGrand = Math.max(1, ...barres.map((b) => b.nombre));
@@ -45,7 +44,7 @@
 						{#each b.tranches as t (t.cle)}
 							<span
 								class="tranche"
-								data-teinte={teinte(t.cle)}
+								data-teinte={t.teinte}
 								style="flex-grow:{t.nombre}"
 								title="{t.libelle} : {t.nombre}"
 							></span>
@@ -60,7 +59,7 @@
 		<ul class="legende" aria-label="Légende">
 			{#each tranchesLegende as t (t.cle)}
 				<li>
-					<span class="pastille" data-teinte={teinte(t.cle)} aria-hidden="true"></span>{t.libelle}
+					<span class="pastille" data-teinte={t.teinte} aria-hidden="true"></span>{t.libelle}
 				</li>
 			{/each}
 		</ul>

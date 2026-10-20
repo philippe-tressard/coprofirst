@@ -6,9 +6,14 @@
     (`SectionDescription` : gras, italique, assistant IA) — **grande**, une
     douzaine de lignes à l'ouverture, et redimensionnable : *« c'est pénible
     quand la boîte est trop petite »*.
-  - Case 🛡️ « Conseil seul » : ce compte rendu ne sera lu que par le conseil.
+  - Case « CS et présents » (#2082, ex-« Conseil seul ») : lu du conseil et des
+    présents — PDF et validation compris —, masqué au fil et dans l'affaire.
+  - **L'état à la validation** (#2082) : l'état actuel, et celui que l'affaire
+    prendra quand le CR sera validé — pas avant. Coché d'office par le serveur
+    (`etat_par_defaut` : « Chez le syndic », mais « À l'AG » reste à l'AG).
   - **Annuler** referme sans rien écrire ; **Enregistrer** sauvegarde (le verbe
-    du site, `PiedFormulaire`, #396).
+    du site, `PiedFormulaire`, #396) et rend la main à la vue (`onEnregistre`),
+    qui ouvre l'affaire suivante.
   - Fermer AUTREMENT — ouvrir une autre affaire, replier celle-ci — enregistre
     la saisie en **brouillon** : la prise de notes ne s'arrête pas pour une
     question, et rien ne se perd.
@@ -22,36 +27,51 @@
 	import { messageErreur } from '$lib/erreurs';
 	import { contexteCommentaire } from '$lib/assistant';
 	import { richEmpty } from '$lib/publications';
+	import { LIBELLE_CS_ET_PRESENTS } from '$lib/points-conseil';
+	import { statutTicketLabel } from '$lib/tickets';
 	import {
 		pointsConseil,
 		type AffaireOuverte,
 		type CompteRenduPoint,
 		type CrAffaire,
+		type EtatValidation,
 	} from '$lib/api';
 
 	export let pointId: number;
 	export let affaire: AffaireOuverte;
 	export let cr: CrAffaire | undefined;
 	export let onCompteRendu: (cr: CompteRenduPoint) => void;
+	/** « Annuler » : la saisie se referme. */
 	export let onFerme: () => void;
+	/** « Enregistrer » a réussi : la vue ouvre l'affaire suivante (#2082). */
+	export let onEnregistre: () => void = onFerme;
+	/** Les états proposés pour la validation — la liste du serveur. */
+	export let etats: EtatValidation[] = [];
 	/**  Fermer sans geste enregistre-t-il en brouillon ? Pendant le point
 	 *   seulement : terminé, un CR se corrige et s'enregistre, ou rien (#2042). */
 	export let brouillonAuto = true;
 
-	const depart = { contenu: cr?.contenu ?? '', conseilSeul: cr?.conseil_seul ?? false };
+	const depart = {
+		contenu: cr?.contenu ?? '',
+		conseilSeul: cr?.conseil_seul ?? false,
+		etat: cr?.etat_cible ?? affaire.etat_par_defaut,
+	};
 	let contenu = depart.contenu;
 	let conseilSeul = depart.conseilSeul;
+	let etat = depart.etat;
 	let enCours = false;
 	/** Fermé par « Annuler » ou après « Sauvegarder » : rien à garder en brouillon. */
 	let regle = false;
 
-	$: modifie = contenu !== depart.contenu || conseilSeul !== depart.conseilSeul;
+	$: modifie =
+		contenu !== depart.contenu || conseilSeul !== depart.conseilSeul || etat !== depart.etat;
 
 	async function ecrire(brouillon: boolean) {
 		const corps = {
 			contenu: richEmpty(contenu) ? '' : contenu,
 			brouillon,
 			conseil_seul: conseilSeul,
+			etat_cible: etat || null,
 		};
 		onCompteRendu(await pointsConseil.ecrireCr(pointId, affaire.id, corps));
 	}
@@ -61,7 +81,7 @@
 		try {
 			await ecrire(false);
 			regle = true;
-			onFerme();
+			onEnregistre();
 		} catch (e) {
 			toast('error', messageErreur(e, 'Enregistrement impossible'));
 		} finally {
@@ -95,9 +115,23 @@
 		assistantAvecTitre={false}
 		bind:valeur={contenu}
 	/>
+	{#if etats.length}
+		<div class="etat">
+			<p class="actuel">État actuel : <strong>{statutTicketLabel(affaire.statut)}</strong></p>
+			<div class="field">
+				<label for="etat-cr-{affaire.id}">État à la validation du compte rendu</label>
+				<select id="etat-cr-{affaire.id}" bind:value={etat}>
+					{#each etats as e (e.cle)}
+						<option value={e.cle}>{e.libelle}</option>
+					{/each}
+				</select>
+			</div>
+		</div>
+	{/if}
 	<label class="case">
 		<input type="checkbox" bind:checked={conseilSeul} />
-		<Icon name="shield-check" size={14} /> Conseil seul — lu par le conseil syndical seulement
+		<Icon name="shield-check" size={14} />
+		{LIBELLE_CS_ET_PRESENTS} — lu par le conseil syndical et les présents seulement
 	</label>
 	<PiedFormulaire petit {enCours} on:annule={annuler} />
 </form>
@@ -108,5 +142,15 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		padding: 0.5rem 0 0.25rem;
+	}
+	.etat {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+	.actuel {
+		margin: 0;
+		font-size: var(--fs-sm);
+		color: var(--color-text-muted);
 	}
 </style>

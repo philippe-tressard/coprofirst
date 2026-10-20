@@ -7,14 +7,14 @@ syndic (`lit_les_points_conseil`) ; elle mène au Reporting, que le conseil seul
 ouvre — le syndic lit la carte, sans lien.
 """
 
-from sqlalchemy import func
 from sqlmodel import col, select
 
-from app.models.points_conseil import VALIDE, CompteRenduAffaire, PointConseil
+from app.models.points_conseil import VALIDE, PointConseil
 from app.auth.deps import est_moderateur
 from app.utils.dates_fr import date_longue
 from app.utils.liens import lien_element
-from app.utils.points_conseil_validation import lit_les_points_conseil
+from app.utils.lecteurs_du_conseil import lit_les_points_conseil
+from app.utils.points_conseil import nombres_abordees
 
 from .commun import ContexteFlux
 from .schemas import FluxItem
@@ -30,17 +30,7 @@ def collecter(ctx: ContexteFlux) -> list[FluxItem]:
     ).all()
     lien = est_moderateur(ctx.user)
     #  Le nombre d'affaires de chaque point, lu UNE fois pour la liste.
-    nombres = (
-        dict(
-            ctx.session.exec(
-                select(CompteRenduAffaire.point_id, func.count(CompteRenduAffaire.id))
-                .where(col(CompteRenduAffaire.point_id).in_([p.id for p in points]))
-                .group_by(CompteRenduAffaire.point_id)
-            ).all()
-        )
-        if points
-        else {}
-    )
+    nombres = nombres_abordees(ctx.session, [p.id for p in points])
     items = []
     for p in points:
         n = nombres.get(p.id, 0)

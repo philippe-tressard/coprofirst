@@ -100,6 +100,9 @@ _NIVEAUX: dict[str, int] = {
     "cr_valide_par_lien": logging.INFO,
     "cr_valide_force": logging.INFO,
     "cr_valide_auto": logging.INFO,
+    #  L'administrateur valide POUR un présent qui a donné son accord (#2082) :
+    #  un geste au nom d'autrui — WARNING, pour qu'il se lise.
+    "cr_valide_par_derogation": logging.WARNING,
 }
 
 

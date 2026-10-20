@@ -7,8 +7,8 @@ Ce qui est tenu :
   jeton inconnu rend 404 ;
 - **la validation** : tous les destinataires, ou 7 jours, ou le conseil ; un
   commentaire suspend les 7 jours, un nouvel envoi les refait courir ;
-- **ce qu'elle rend lisible, et pas avant** : la rubrique de l'affaire (« Conseil
-  seul » au conseil seul), une entrée au fil pour le CS et le syndic, le PDF ;
+- **ce qu'elle rend lisible, et pas avant** : la rubrique de l'affaire (« CS et
+  présents » aux lecteurs du conseil), une entrée au fil pour le CS et le syndic, le PDF ;
 - **la correction** après « Terminer » : un CR saisi se corrige, aucun ne s'ajoute.
 """
 
@@ -20,15 +20,14 @@ import pytest
 from sqlmodel import Session, select
 
 from app.models.core import RoleUtilisateur, StatutUtilisateur
-from app.models.gouvernance import GenreCivilite, MembreCS, MembreSyndic
 from app.models.points_conseil import CommentairePoint, CompteRenduAffaire, PointConseil
 from app.utils import horloge
-from app.utils.points_conseil import compte_rendu
+from app.utils.points_conseil_expedition import document
 from app.utils.points_conseil_pdf import html_compte_rendu
 from app.utils.points_conseil_validation import auto_valider
-from tests.aides_base import compte
+from tests.aides_points_conseil import hors_annexe
 from tests.aides_http import base_http, client_http
-from tests.aides_suivi import affaire_ouverte
+from tests.aides_points_conseil import intercepter_envois, liens, point_termine
 
 
 @pytest.fixture(name="moteur")
@@ -39,53 +38,7 @@ def moteur_fixture():
 
 @pytest.fixture(name="envois")
 def envois_fixture(monkeypatch):
-    envois: list[dict] = []
-
-    async def _intercepter(code, to, context, session=None, **_):
-        envois.append({"code": code, "to": to, **context})
-        return True
-
-    monkeypatch.setattr("app.utils.email.send_email", _intercepter)
-    return envois
-
-
-def _point_termine(moteur, cs, *, contenu="<p>Devis <b>attendu</b></p>", conseil_seul=False):
-    """Un point à deux présents joignables (CS, syndic) et un invité ; une affaire abordée."""
-    with Session(moteur) as s:
-        membre = compte(s, prefixe="membre-cs", nom="Martin", prenom="Reine")
-        m_cs = MembreCS(genre=GenreCivilite.mme, prenom="Reine", nom="Martin", user_id=membre.id)
-        m_sy = MembreSyndic(
-            genre=GenreCivilite.mr, prenom="Paul", nom="Bernard", email="Gestion@Exemple.test"
-        )
-        s.add(m_cs)
-        s.add(m_sy)
-        s.commit()
-        ids = (m_cs.id, m_sy.id, membre.email)
-    t = affaire_ouverte(moteur, "Infiltration hall B", jours=40)
-    affaire_ouverte(moteur, "Oubliée", jours=10)
-    point = cs.post(
-        "/points-conseil",
-        json={
-            "mode": "affaires",
-            "debut": "2026-10-19T17:00:00",
-            "presents": [
-                {"nature": "cs", "membre_id": ids[0]},
-                {"nature": "syndic", "membre_id": ids[1]},
-                {"nature": "invite", "prenom": "Jean", "email": "invite@exemple.test"},
-            ],
-        },
-    ).json()["point"]["id"]
-    cs.put(
-        f"/points-conseil/{point}/affaires/{t}",
-        json={"contenu": contenu, "conseil_seul": conseil_seul},
-    )
-    r = cs.post(f"/points-conseil/{point}/terminer")
-    assert r.status_code == 200, r.text
-    return point, t, ids[2]
-
-
-def _liens(envois) -> list[str]:
-    return [e["jeton"] for e in envois]
+    return intercepter_envois(monkeypatch)
 
 
 # ── L'envoi ─────────────────────────────────────────────────────────────────
@@ -93,10 +46,10 @@ def _liens(envois) -> list[str]:
 
 def test_terminer_ecrit_aux_presents_joignables_jamais_a_l_invite(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    point, _, adresse_cs = _point_termine(moteur, cs)
+    point, _, adresse_cs = point_termine(moteur, cs)
     assert sorted(e["to"] for e in envois) == sorted([adresse_cs, "gestion@exemple.test"])
     assert {e["code"] for e in envois} == {"point_conseil_validation"}
-    assert len(set(_liens(envois))) == 2, "un lien PAR présent"
+    assert len(set(liens(envois))) == 2, "un lien PAR présent"
     #  Les textes partent échappés : le modèle ne l'est pas.
     assert envois[0]["affaires"][0]["texte"] == "Devis attendu"
     cr = cs.get("/points-conseil/courant?mode=affaires").json()["compte_rendu"]
@@ -115,9 +68,9 @@ def test_terminer_ecrit_aux_presents_joignables_jamais_a_l_invite(moteur, envois
 
 def test_ouvrir_le_lien_deux_fois_ne_valide_rien(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    point, _, _ = _point_termine(moteur, cs)
+    point, _, _ = point_termine(moteur, cs)
     anonyme, _ = client_http(moteur, None)
-    lien = f"/points-conseil/lien/{_liens(envois)[0]}"
+    lien = f"/points-conseil/lien/{liens(envois)[0]}"
     premiere, seconde = anonyme.get(lien), anonyme.get(lien)
     assert premiere.status_code == seconde.status_code == 200
     assert premiere.json() == seconde.json()
@@ -127,12 +80,15 @@ def test_ouvrir_le_lien_deux_fois_ne_valide_rien(moteur, envois):
     assert anonyme.post("/points-conseil/lien/inconnu/valider").status_code == 404
 
 
-def test_le_lien_tait_le_cr_conseil_seul(moteur, envois):
+def test_cs_et_presents_se_lit_des_presents(moteur, envois):
+    """« CS et présents » (#2082, ex-« Conseil seul ») : le lien et le courriel le
+    montrent aux présents — ils l'ont entendu ; seuls le fil et l'affaire le taisent."""
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    _point_termine(moteur, cs, conseil_seul=True)
+    point_termine(moteur, cs, conseil_seul=True)
     anonyme, _ = client_http(moteur, None)
-    assert anonyme.get(f"/points-conseil/lien/{_liens(envois)[0]}").json()["abordees"] == []
-    assert envois[0]["affaires"] == []
+    (lu,) = anonyme.get(f"/points-conseil/lien/{liens(envois)[0]}").json()["abordees"]
+    assert lu["conseil_seul"] is True and lu["contenu"]
+    assert envois[0]["affaires"][0]["texte"] == "Devis attendu"
 
 
 # ── La validation ───────────────────────────────────────────────────────────
@@ -140,9 +96,9 @@ def test_le_lien_tait_le_cr_conseil_seul(moteur, envois):
 
 def test_valide_quand_tous_les_destinataires_ont_valide(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    point, _, _ = _point_termine(moteur, cs)
+    point, _, _ = point_termine(moteur, cs)
     anonyme, _ = client_http(moteur, None)
-    premier, second = _liens(envois)
+    premier, second = liens(envois)
     assert anonyme.post(f"/points-conseil/lien/{premier}/valider").json()["deja_valide"]
     #  Idempotent : un second clic ne change rien.
     assert anonyme.post(f"/points-conseil/lien/{premier}/valider").status_code == 200
@@ -152,10 +108,10 @@ def test_valide_quand_tous_les_destinataires_ont_valide(moteur, envois):
 
 def test_un_commentaire_suspend_les_sept_jours_un_envoi_les_refait_courir(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    point, _, _ = _point_termine(moteur, cs)
+    point, _, _ = point_termine(moteur, cs)
     anonyme, _ = client_http(moteur, None)
     r = anonyme.post(
-        f"/points-conseil/lien/{_liens(envois)[1]}/commentaire",
+        f"/points-conseil/lien/{liens(envois)[1]}/commentaire",
         json={"contenu": "Le devis est attendu sous 10 jours, pas 15."},
     )
     assert r.status_code == 200
@@ -168,7 +124,7 @@ def test_un_commentaire_suspend_les_sept_jours_un_envoi_les_refait_courir(moteur
         assert auto_valider(s) == 0, "suspendue : pas de validation d'office"
 
     assert cs.post(f"/points-conseil/{point}/renvoyer").json() == {"envoyes": 2}
-    anciens = _liens(envois)[:2]
+    anciens = liens(envois)[:2]
     assert anonyme.get(f"/points-conseil/lien/{anciens[0]}").status_code == 404
     #  Le nouvel envoi passe APRÈS le commentaire : on recule les deux d'autant.
     with Session(moteur) as s:
@@ -191,7 +147,7 @@ def _vieillir(moteur, point_id: int, *, jours: int) -> None:
 
 def test_sept_jours_sans_reponse_valident_d_office(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    point, _, _ = _point_termine(moteur, cs)
+    point, _, _ = point_termine(moteur, cs)
     _vieillir(moteur, point, jours=6)
     with Session(moteur) as s:
         assert auto_valider(s) == 0
@@ -203,7 +159,7 @@ def test_sept_jours_sans_reponse_valident_d_office(moteur, envois):
 
 def test_le_conseil_valide_en_l_etat_le_resident_ne_le_peut_pas(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    point, _, _ = _point_termine(moteur, cs)
+    point, _, _ = point_termine(moteur, cs)
     resident, _ = client_http(moteur, RoleUtilisateur.propriétaire)
     assert resident.post(f"/points-conseil/{point}/valider").status_code == 403
     assert cs.post(f"/points-conseil/{point}/valider").status_code == 204
@@ -215,7 +171,7 @@ def test_le_conseil_valide_en_l_etat_le_resident_ne_le_peut_pas(moteur, envois):
 
 def test_la_rubrique_de_l_affaire_ne_parait_qu_a_la_validation(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    point, t, _ = _point_termine(moteur, cs)
+    point, t, _ = point_termine(moteur, cs)
     resident, _ = client_http(moteur, RoleUtilisateur.propriétaire)
     assert resident.get(f"/points-conseil/affaires/{t}").json() == []
     cs.post(f"/points-conseil/{point}/valider")
@@ -234,7 +190,7 @@ def test_la_rubrique_de_l_affaire_ne_parait_qu_a_la_validation(moteur, envois):
 
 def test_une_seule_entree_au_fil_pour_le_cs_et_le_syndic(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    point, _, _ = _point_termine(moteur, cs)
+    point, _, _ = point_termine(moteur, cs)
     cs.post(f"/points-conseil/{point}/valider")
 
     def entrees(http):
@@ -251,11 +207,11 @@ def test_une_seule_entree_au_fil_pour_le_cs_et_le_syndic(moteur, envois):
 
 def test_le_pdf_n_existe_qu_une_fois_valide_et_echappe_tout(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    point, _, _ = _point_termine(moteur, cs, contenu="<p>&lt;script&gt;x&lt;/script&gt;</p>")
+    point, _, _ = point_termine(moteur, cs, contenu="<p>&lt;script&gt;x&lt;/script&gt;</p>")
     assert cs.post(f"/points-conseil/{point}/pdf").status_code == 409
     with Session(moteur) as s:
         p = s.get(PointConseil, point)
-        html = html_compte_rendu(compte_rendu(s, p, None), site_nom="<Résidence>", logo_png=None)
+        html = html_compte_rendu(document(s, p, None), site_nom="<Résidence>", logo_png=None)
     assert "<script>" not in html and "&lt;Résidence&gt;" in html
 
 
@@ -264,7 +220,7 @@ def test_le_pdf_n_existe_qu_une_fois_valide_et_echappe_tout(moteur, envois):
 
 def test_apres_terminer_un_cr_se_corrige_aucun_ne_s_ajoute(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    point, t, _ = _point_termine(moteur, cs)
+    point, t, _ = point_termine(moteur, cs)
     r = cs.put(f"/points-conseil/{point}/affaires/{t}", json={"contenu": "<p>Corrigé</p>"})
     assert r.status_code == 200, r.text
     assert cs.put(f"/points-conseil/{point}/affaires/{t}", json={"contenu": " "}).status_code == 409
@@ -272,7 +228,7 @@ def test_apres_terminer_un_cr_se_corrige_aucun_ne_s_ajoute(moteur, envois):
         autre = s.exec(select(CompteRenduAffaire)).all()
         assert [c.contenu for c in autre] == ["<p>Corrigé</p>"]
     oubliee = cs.get("/points-conseil/courant?mode=affaires").json()["compte_rendu"]
-    (nt,) = oubliee["non_traitees"]
+    (nt,) = hors_annexe(oubliee["non_traitees"])
     assert (
         cs.put(f"/points-conseil/{point}/affaires/{nt['id']}", json={"contenu": "<p>x</p>"})
     ).status_code == 409

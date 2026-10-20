@@ -27,11 +27,32 @@ Un commentaire reçu APRÈS l'envoi suspend les 7 jours, jusqu'à un nouvel envo
 ## Ce que la validation rend lisible — et pas avant
 
 Le CR de chaque affaire abordée, dans sa rubrique « Comptes rendus »
-(`crs_lisibles`), et UNE entrée au fil (`routers/flux/points_conseil`).
+(`crs_lisibles`), et UNE entrée au fil (`routers/flux/points_conseil`). Elle
+pose aussi l'état décidé de chaque affaire (`points_conseil_etats`) ; le PDF est
+alors rangé et envoyé (`points_conseil_expedition`).
+
+## Les révisions (#2082, arbitrées le 20/10/2026)
+
+Chaque envoi aux présents est une révision : la 1 à « Terminer », +1 par
+« Renvoyer ». Un CR qui change APRÈS un envoi porte la révision qu'il
+rejoindra : le prochain document le marque « Modifié en révision N ».
+
+## « CS et présents » (#2082)
+
+Un CR coché se lit des présents : il part dans le courriel de validation et sur
+la page de relecture. Il ne reste masqué qu'au fil et dans la rubrique de
+l'affaire, pour qui n'est pas un lecteur du conseil (`lecteurs_du_conseil`).
+
+## La dérogation de l'administrateur (#2082)
+
+Pour un présent qui ne peut pas valider mais donne son accord, l'administrateur
+valide POUR lui (`valider_pour`), avec un commentaire facultatif qui le dit.
+Ce commentaire ne suspend pas les 7 jours : c'est un accord, pas une objection.
 """
 
 from __future__ import annotations
 
+import asyncio
 import html
 import logging
 import secrets
@@ -42,10 +63,9 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlmodel import Session, col, select
 
-from app.auth.deps import est_moderateur
 from app.auth.adresse_compte import normaliser_adresse
 from app.auth.empreinte_jeton import empreinte
-from app.models.core import StatutUtilisateur, Utilisateur
+from app.models.core import Utilisateur
 from app.models.gouvernance import MembreCS, MembreSyndic
 from app.models.points_conseil import (
     A_VALIDER,
@@ -64,9 +84,11 @@ from app.utils.cloche import sonner_systeme
 from app.utils.dates_fr import date_longue, datetime_longue
 from app.utils.destinataires import membres_cs_ou_admin, motif_injoignable
 from app.utils.journal_securite import journaliser_securite
-from app.utils.points_conseil import compte_rendu, nom_present, ou_du_point, presents_du_point
+from app.utils.lecteurs_du_conseil import lit_les_points_conseil
+from app.utils.points_conseil import compte_rendu, crs_du_point, nom_present, presents_du_point
+from app.utils.points_conseil_etats import appliquer_etats
+from app.utils.points_conseil_ou import ou_du_point
 from app.utils.recuperer import ou_rien, present_ou_404
-from app.utils.valeurs import valeur
 
 logger = logging.getLogger(__name__)
 
@@ -86,12 +108,6 @@ def adresse_du_present(session: Session, present: PresentPoint) -> Optional[str]
         fiche = ou_rien(session, MembreSyndic, present.membre_syndic_id)
         return (normaliser_adresse(fiche.email) or None) if fiche else None
     return None
-
-
-def lit_les_points_conseil(user: Utilisateur) -> bool:
-    """Le conseil (et l'administration) et les comptes du syndic — ceux à qui le fil
-    annonce un compte rendu validé (arbitré le 17/10/2026)."""
-    return est_moderateur(user) or valeur(user.statut) == StatutUtilisateur.syndic.value
 
 
 def est_destinataire(present: PresentPoint) -> bool:
@@ -117,7 +133,9 @@ def etat_validation(
 ) -> EtatValidation:
     """PURE. Où en est la validation d'un point."""
     recus = [p for p in presents if est_destinataire(p)]
-    suspendue = bool(point.envoye_le and any(c.cree_le >= point.envoye_le for c in commentaires))
+    #  Un accord écrit par l'administrateur (dérogation) n'est pas une objection.
+    objections = [c for c in commentaires if c.saisi_par_id is None]
+    suspendue = bool(point.envoye_le and any(c.cree_le >= point.envoye_le for c in objections))
     echeance = (
         point.envoye_le + timedelta(days=DELAI_VALIDATION_JOURS)
         if point.etat == A_VALIDER and point.envoye_le and not suspendue
@@ -136,12 +154,37 @@ def commentaires_du_point(session: Session, point_id: int) -> list[CommentairePo
     )
 
 
+# ── Les révisions ─────────────────────────────────────────────────────────
+
+
+def marquer_modifie(point: PointConseil, cr: CompteRenduAffaire) -> None:
+    """Un CR qui change après un envoi rejoint la révision suivante."""
+    if point.revision >= 1:
+        cr.revision = point.revision + 1
+
+
+def revision_du_document(point: PointConseil, crs: list[CompteRenduAffaire]) -> int:
+    """PURE. La révision que le document montre : la dernière envoyée, ou la
+    suivante si un CR a changé depuis — 0 tant que rien n'est parti."""
+    if any((c.revision or 0) > point.revision for c in crs):
+        return point.revision + 1
+    return point.revision
+
+
+def marque_revision(cr: CompteRenduAffaire, revision: int) -> Optional[str]:
+    """PURE. « Modifié en révision N » — pour les CR changés depuis l'envoi précédent."""
+    if revision >= 2 and cr.revision == revision:
+        return f"Modifié en révision {revision}"
+    return None
+
+
 # ── L'envoi ───────────────────────────────────────────────────────────────
 
 
 def _contexte_courriel(session: Session, point: PointConseil, user: Utilisateur) -> dict:
     """Ce que le courriel montre du CR — du TEXTE échappé : le modèle ne l'est pas."""
     cr = compte_rendu(session, point, user)
+    revision = revision_du_document(point, [c for _, c in cr.abordees])
     e = html.escape
     return {
         "point": {
@@ -153,10 +196,12 @@ def _contexte_courriel(session: Session, point: PointConseil, user: Utilisateur)
             {
                 "numero": e(a.numero),
                 "titre": e(a.titre),
+                #  « — Modifié en révision N », déjà échappé, ou rien (#2082).
+                "marque": e(f" — {m}") if (m := marque_revision(c, revision)) else "",
                 "texte": e(texte_brut(c.contenu)).replace("\n", "<br>"),
             }
+            #  « CS et présents » part aux présents : ils le lisent (#2082).
             for a, c in cr.abordees
-            if not c.conseil_seul
         ],
         "non_traitees": e(", ".join(f"{a.numero} {a.titre}" for a in cr.non_traitees)),
         "echeance": date_longue(
@@ -186,6 +231,7 @@ async def envoyer_pour_validation(session: Session, point: PointConseil, user: U
             envois.append((adresse, jeton))
         session.add(present)
     point.envoye_le = point.mis_a_jour_le = horloge.maintenant()
+    point.revision += 1
     session.add(point)
     session.commit()
     for adresse, jeton in envois:
@@ -259,13 +305,65 @@ def commenter(session: Session, present: PresentPoint, contenu: str) -> Commenta
 
 
 def valider_point(session: Session, point: PointConseil, par: Optional[Utilisateur]) -> None:
-    """Le CR fait foi : il devient lisible dans les affaires et au fil."""
+    """Le CR fait foi : il devient lisible dans les affaires et au fil, et chaque
+    affaire abordée prend l'état décidé (#2082). Le PDF suit (`expedition`)."""
+    crs = crs_du_point(session, point.id)
+    ids = [c.ticket_id for c in crs]
+    tickets = (
+        {t.id: t for t in session.exec(select(Ticket).where(col(Ticket.id).in_(ids))).all()}
+        if ids
+        else {}
+    )
+    appliquer_etats(
+        session, point, [(tickets[c.ticket_id], c) for c in crs if c.ticket_id in tickets], par
+    )
+    #  L'affaire « Points annexes » restée sans compte rendu est annulée (#2084).
+    from app.utils.points_conseil_seance import annuler_annexe_vide
+
+    annuler_annexe_vide(session, point, par)
     point.etat = VALIDE
     point.valide_le = point.mis_a_jour_le = horloge.maintenant()
     point.valide_par_id = par.id if par else None
     session.add(point)
     if par:
         journaliser_securite("cr_valide_force", acteur_id=par.id, cible_id=point.id)
+
+
+def valider_pour(
+    session: Session,
+    present: PresentPoint,
+    admin: Utilisateur,
+    commentaire: Optional[str],
+) -> PointConseil:
+    """La dérogation : l'administrateur valide POUR un présent qui a donné son
+    accord sans pouvoir cliquer. Le dernier accord valide le CR, comme un lien."""
+    point = session.get(PointConseil, present.point_id)
+    exiger_a_valider(point)
+    if not est_destinataire(present):
+        raise HTTPException(422, "Ce présent n'a pas reçu le compte rendu")
+    if present.valide_le is not None:
+        raise HTTPException(409, "Ce présent a déjà validé")
+    present.valide_le = horloge.maintenant()
+    present.valide_par_id = admin.id
+    session.add(present)
+    if commentaire and commentaire.strip():
+        session.add(
+            CommentairePoint(
+                point_id=point.id,
+                present_id=present.id,
+                contenu=commentaire.strip(),
+                saisi_par_id=admin.id,
+            )
+        )
+    journaliser_securite(
+        "cr_valide_par_derogation",
+        acteur_id=admin.id,
+        cible_id=point.id,
+        detail=f"present={present.id}",
+    )
+    if all(p.valide_le for p in presents_du_point(session, point.id) if est_destinataire(p)):
+        valider_point(session, point, admin)
+    return point
 
 
 def exiger_a_valider(point: PointConseil) -> PointConseil:
@@ -307,6 +405,13 @@ def auto_valider(session: Optional[Session] = None) -> int:
             valides += 1
         session.commit()
         logger.info("points conseil : %s compte(s) rendu(s) valide(s) d'office", valides)
+        #  Le PDF de chacun se range et part aux présents (#2082) — hors de la
+        #  boucle d'événements de l'API : `asyncio.run` y est sûr.
+        from app.utils.points_conseil_expedition import expedier
+
+        for point in echus:
+            if point.etat == VALIDE:
+                asyncio.run(expedier(session, point))
         return valides
     except Exception:
         logger.exception("points conseil : validation automatique en echec")
@@ -325,6 +430,7 @@ def crs_lisibles(
     """Les CR VALIDÉS d'une affaire, le plus récent en tête ; « Conseil seul » au conseil seul.
 
     L'appelant a déjà vérifié que `user` lit l'affaire (`ticket_visible`).
+    « CS et présents » : le conseil et les comptes du syndic (#2082).
     """
     lignes = session.exec(
         select(PointConseil, CompteRenduAffaire)
@@ -332,5 +438,5 @@ def crs_lisibles(
         .where(CompteRenduAffaire.ticket_id == ticket.id, PointConseil.etat == VALIDE)
         .order_by(col(PointConseil.debut).desc())
     ).all()
-    moderateur = est_moderateur(user)
-    return [(p, c) for p, c in lignes if moderateur or not c.conseil_seul]
+    du_conseil = lit_les_points_conseil(user)
+    return [(p, c) for p, c in lignes if du_conseil or not c.conseil_seul]

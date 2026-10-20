@@ -65,6 +65,10 @@ const AFFAIRE = {
 	batiments: [],
 	a_evolue: true,
 	motif_evolution: 'nouvelle',
+	prive: false,
+	etat_par_defaut: 'en_cours',
+	groupe: null,
+	fusionnees: [],
 };
 
 const RELEVE: SuiviAffaires = {
@@ -79,7 +83,7 @@ const RELEVE: SuiviAffaires = {
 			cle: 'entretien',
 			libelle: 'Entretien',
 			nombre: 2,
-			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 2 }],
+			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 2, teinte: 'p1' }],
 		},
 	],
 	par_batiment: [
@@ -87,7 +91,7 @@ const RELEVE: SuiviAffaires = {
 			cle: 'racine',
 			libelle: 'Résidence',
 			nombre: 2,
-			tranches: [{ cle: 'entretien', libelle: 'Entretien', nombre: 2 }],
+			tranches: [{ cle: 'entretien', libelle: 'Entretien', nombre: 2, teinte: 's8' }],
 		},
 	],
 	affaires: [

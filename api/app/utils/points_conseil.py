@@ -6,7 +6,7 @@ Le modèle est dans `app/models/points_conseil.py` ; les routes, dans
 ## La liste d'un point est celle de son mode
 
 Un point traite les affaires que montre le mode du rapport où il est ouvert :
-`RELEVES` associe à chaque mode la fonction qui les relève. Il n'y a PAS de
+`MODES` dit lesquels en portent un ; le relevé du mode les liste. Il n'y a PAS de
 seconde règle d'entrée — une affaire hors du relevé ne reçoit pas de compte
 rendu (`exiger_affaire_du_point`).
 
@@ -16,11 +16,23 @@ Un point ouvert dans un mode moins de `REPRISE_HEURES` heures après l'ouverture
 d'un point d'un AUTRE mode en reprend le Quand, le Où et le Qui : c'est la même
 réunion, qui passe des affaires à l'entretien. Chaque point garde son propre CR.
 
+## La liste du point est FIGÉE à l'ouverture (#2082, arbitré le 20/10/2026)
+
+Les affaires du relevé, au moment où le point s'ouvre, s'écrivent sur lui
+(`affaires_initiales_json`) : une affaire close ailleurs pendant le point y
+reste — au tableau, au CR, au PDF — jusqu'à la validation. Le relevé du point
+est donc celui du mode, PLUS ces affaires-là (`releve_du_point`) ; un point
+d'avant, sans liste, lit le relevé du jour.
+
 ## Les non traitées sont FIGÉES à « Terminer »
 
-Tant que le point est en cours, les non traitées sont lues dans le relevé du
-jour. À « Terminer », elles sont écrites sur le point : le CR qu'on valide ne
-doit pas changer parce qu'une affaire a été close entre-temps.
+Tant que le point est en cours, les non traitées se lisent dans le relevé du
+point. À « Terminer », elles sont écrites sur lui : le CR qu'on valide ne doit
+pas changer parce qu'une affaire a été close entre-temps.
+
+## Un CR validé ne se modifie plus (#2082)
+
+Terminé, un CR se CORRIGE (#2042) — jusqu'à la validation, et plus après.
 """
 
 from __future__ import annotations
@@ -28,23 +40,20 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Callable, Optional
+from typing import Optional
 
 from fastapi import HTTPException
+from sqlalchemy import func
 from sqlmodel import Session, col, select
 
 from app.models.core import Utilisateur
-from app.models.copropriete import Copropriete
-from app.models.gouvernance import MembreCS, MembreSyndic, SyndicInfo
+from app.models.gouvernance import MembreCS, MembreSyndic
 from app.models.points_conseil import (
     A_VALIDER,
     EN_COURS,
+    VALIDE,
     MODE_AFFAIRES,
     MODE_ENTRETIEN,
-    MOYEN_HYBRIDE,
-    MOYEN_SUR_PLACE,
-    MOYEN_TELEPHONE,
-    MOYEN_VISIO,
     PRESENT_CS,
     PRESENT_INVITE,
     PRESENT_SYNDIC,
@@ -59,29 +68,64 @@ from app.utils.recuperer import ou_404, present_ou_404
 from app.utils.syndic import nom_du_syndic
 from app.utils.suivi_affaires.releve import Releve, releve
 
-#: Le relevé de chaque mode qui porte un point. Un mode neuf s'ajoute ICI.
-RELEVES: dict[str, Callable[[Session, Utilisateur], Releve]] = {
-    MODE_AFFAIRES: releve,
-    #  Le Suivi des entretiens périodiques (#2043) porte le même point.
-    MODE_ENTRETIEN: lambda session, user: releve(session, user, MODE_ENTRETIEN),
-}
+#: Les modes qui portent un point — un mode neuf s'ajoute ICI, et le relevé
+#: (`utils/suivi_affaires/releve`) le connaît déjà.
+MODES = (MODE_AFFAIRES, MODE_ENTRETIEN)
 
 #: En deçà, un point d'un autre mode est la même réunion : on reprend son Qui/Quand/Où.
 REPRISE_HEURES = 2
 
-#: Les derniers lieux saisis proposés à l'ouverture d'un point.
-DERNIERS_LIEUX = 5
-
 
 def exiger_mode(mode: str) -> str:
     """Le mode, s'il porte un point — 422 sinon."""
-    if mode not in RELEVES:
+    if mode not in MODES:
         raise HTTPException(422, "Mode du rapport inconnu")
     return mode
 
 
-def releve_du_point(session: Session, point: PointConseil, user: Utilisateur) -> Releve:
-    return RELEVES[point.mode](session, user)
+def releve_du_point(session: Session, point: PointConseil, user: Optional[Utilisateur]) -> Releve:
+    """Le relevé du mode, plus les affaires figées à l'ouverture du point."""
+    return releve(
+        session, user, point.mode, inclure=[a.id for a in affaires_initiales(point) or []]
+    )
+
+
+# ── La liste initiale, figée à l'ouverture ────────────────────────────────
+
+
+def _lire_citees(texte: Optional[str]) -> list["AffaireCitee"]:
+    try:
+        lues = json.loads(texte or "[]")
+    except ValueError:
+        return []
+    return [AffaireCitee(int(a["id"]), str(a["numero"]), str(a["titre"])) for a in lues]
+
+
+def _ecrire_citees(affaires) -> str:
+    return json.dumps(
+        [{"id": a.id, "numero": a.numero, "titre": a.titre} for a in affaires], ensure_ascii=False
+    )
+
+
+def affaires_initiales(point: PointConseil) -> Optional[list["AffaireCitee"]]:
+    """Les affaires à traiter, figées à l'ouverture — `None` pour un point d'avant."""
+    if point.affaires_initiales_json is None:
+        return None
+    return _lire_citees(point.affaires_initiales_json)
+
+
+def figer_affaires_initiales(session: Session, point: PointConseil, user: Utilisateur) -> None:
+    """Écrit sur le point les affaires que son mode montre à l'ouverture."""
+    point.affaires_initiales_json = _ecrire_citees(releve(session, user, point.mode).affaires)
+
+
+def ajouter_affaire_initiale(point: PointConseil, ticket: Ticket) -> None:
+    """Une affaire ouverte en séance rejoint la liste du point (#2084)."""
+    citees = affaires_initiales(point) or []
+    if ticket.id not in {a.id for a in citees}:
+        point.affaires_initiales_json = _ecrire_citees(
+            [*citees, AffaireCitee(ticket.id, ticket.numero, ticket.titre)]
+        )
 
 
 # ── Le point en cours, et celui à reprendre ───────────────────────────────
@@ -178,107 +222,6 @@ def copie_des_presents(presents: list[PresentPoint]) -> list[PresentPoint]:
     ]
 
 
-# ── Le Où ─────────────────────────────────────────────────────────────────
-
-
-@dataclass(frozen=True)
-class Moyen:
-    cle: str
-    libelle: str
-    #: Quelqu'un est sur place : le lieu se saisit, et se lit au CR.
-    avec_lieu: bool
-
-
-#: Le MOYEN d'un point, dans l'ordre de la liste (arbitré le 17/10/2026, liste
-#: « A »). La seule liste : le formulaire la lit par `GET /points-conseil/participants`.
-MOYENS: tuple[Moyen, ...] = (
-    Moyen(MOYEN_SUR_PLACE, "Sur place", True),
-    Moyen(MOYEN_VISIO, "Visioconférence", False),
-    Moyen(MOYEN_TELEPHONE, "Téléphone", False),
-    Moyen(MOYEN_HYBRIDE, "Sur place et à distance", True),
-)
-_MOYENS = {m.cle: m for m in MOYENS}
-
-
-def exiger_moyen(moyen: str) -> Moyen:
-    """Le moyen, s'il est connu — 422 sinon."""
-    if moyen not in _MOYENS:
-        raise HTTPException(422, "Moyen de réunion inconnu")
-    return _MOYENS[moyen]
-
-
-def poser_ou(point: PointConseil, moyen: Optional[str], lieu: Optional[str]) -> None:
-    """Écrit le Où : le moyen, `a_distance` qui s'en déduit, et le lieu s'il en porte un.
-
-    Sans moyen (un client d'avant le moyen), `a_distance` reste tel qu'envoyé.
-    """
-    lieu = (lieu or "").strip() or None
-    if moyen is not None:
-        m = exiger_moyen(moyen)
-        point.moyen = m.cle
-        point.a_distance = m.cle != MOYEN_SUR_PLACE
-        lieu = lieu if m.avec_lieu else None
-    point.lieu = lieu
-
-
-def ou_du_point(point: PointConseil) -> str:
-    """PURE. Le Où tel que le CR, le PDF et le courriel l'écrivent :
-    « Sur place — Cabinet du syndic », « Visioconférence ».
-
-    Un point saisi avant le moyen se lit par `a_distance`.
-    """
-    m = _MOYENS.get(point.moyen or "")
-    if m:
-        libelle, lieu = m.libelle, point.lieu if m.avec_lieu else None
-    else:
-        libelle, lieu = ("À distance" if point.a_distance else "Sur place"), point.lieu
-    return f"{libelle} — {lieu}" if lieu else libelle
-
-
-@dataclass(frozen=True)
-class LieuPropose:
-    libelle: str
-    adresse: str
-
-
-def lieux_proposes(session: Session) -> list[LieuPropose]:
-    """La copropriété, le cabinet du syndic, puis les derniers lieux saisis.
-
-    Rien n'est demandé à un service extérieur : les adresses viennent de la
-    fiche copropriété et de la fiche du syndic, déjà en base.
-    """
-    lieux: list[LieuPropose] = []
-    copro = session.exec(select(Copropriete)).first()
-    if copro and (copro.adresse or "").strip():
-        lieux.append(LieuPropose("Copropriété", copro.adresse.strip()))
-    info = session.exec(select(SyndicInfo)).first()
-    if info and (info.adresse or "").strip():
-        lieux.append(
-            LieuPropose(nom_du_syndic(session) or "Cabinet du syndic", info.adresse.strip())
-        )
-    deja = {lieu.adresse for lieu in lieux}
-    for lieu in _derniers_lieux(session):
-        if lieu not in deja:
-            deja.add(lieu)
-            lieux.append(LieuPropose("Dernier lieu", lieu))
-    return lieux
-
-
-def _derniers_lieux(session: Session) -> list[str]:
-    vus: list[str] = []
-    for lieu in session.exec(
-        select(PointConseil.lieu)
-        .where(col(PointConseil.lieu).is_not(None))
-        .order_by(col(PointConseil.cree_le).desc())
-    ).all():
-        propre = (lieu or "").strip()
-        if propre and propre not in vus:
-            vus.append(propre)
-        if len(vus) >= DERNIERS_LIEUX:
-            break
-    return vus
-
-
 # ── Le CR d'une affaire ───────────────────────────────────────────────────
 
 
@@ -295,7 +238,10 @@ def exiger_cr_modifiable(
     point: PointConseil, cr: Optional[CompteRenduAffaire], contenu: str
 ) -> Optional[CompteRenduAffaire]:
     """Ce qu'on peut écrire : tout, tant que le point est en cours ; ensuite, la
-    CORRECTION d'un CR déjà saisi, jamais vidé — dans le rapport seulement (#2042)."""
+    CORRECTION d'un CR déjà saisi, jamais vidé — dans le rapport seulement (#2042) ;
+    plus rien une fois le CR validé (#2082)."""
+    if point.etat == VALIDE:
+        raise HTTPException(409, "Ce compte rendu est validé : il ne se modifie plus")
     if point.etat == EN_COURS:
         return cr
     if cr is None or not contenu.strip():
@@ -309,6 +255,20 @@ def cr_de(session: Session, point_id: int, ticket_id: int) -> Optional[CompteRen
             CompteRenduAffaire.point_id == point_id, CompteRenduAffaire.ticket_id == ticket_id
         )
     ).first()
+
+
+def nombres_abordees(session: Session, point_ids: list[int]) -> dict[int, int]:
+    """Le nombre d'affaires abordées de chaque point, lu UNE fois pour une liste
+    — le fil et l'historique des CR (#2082)."""
+    if not point_ids:
+        return {}
+    return dict(
+        session.exec(
+            select(CompteRenduAffaire.point_id, func.count(CompteRenduAffaire.id))
+            .where(col(CompteRenduAffaire.point_id).in_(point_ids))
+            .group_by(CompteRenduAffaire.point_id)
+        ).all()
+    )
 
 
 def crs_du_point(session: Session, point_id: int) -> list[CompteRenduAffaire]:
@@ -336,14 +296,12 @@ class CrGlobal:
     #: (l'affaire, son CR), dans l'ordre d'ouverture des affaires.
     abordees: list[tuple[AffaireCitee, CompteRenduAffaire]] = field(default_factory=list)
     non_traitees: list[AffaireCitee] = field(default_factory=list)
+    #: La liste à traiter, figée à l'ouverture (#2082) — vide pour un point d'avant.
+    initiales: list[AffaireCitee] = field(default_factory=list)
 
 
 def lire_non_traitees(point: PointConseil) -> list[AffaireCitee]:
-    try:
-        lues = json.loads(point.non_traitees_json or "[]")
-    except ValueError:
-        return []
-    return [AffaireCitee(int(a["id"]), str(a["numero"]), str(a["titre"])) for a in lues]
+    return _lire_citees(point.non_traitees_json)
 
 
 def compte_rendu(session: Session, point: PointConseil, user: Optional[Utilisateur]) -> CrGlobal:
@@ -370,17 +328,20 @@ def compte_rendu(session: Session, point: PointConseil, user: Optional[Utilisate
         ]
     else:
         non_traitees = lire_non_traitees(point)
-    return CrGlobal(point, presents_du_point(session, point.id), abordees, non_traitees)
+    return CrGlobal(
+        point,
+        presents_du_point(session, point.id),
+        abordees,
+        non_traitees,
+        affaires_initiales(point) or [],
+    )
 
 
 def terminer(session: Session, point: PointConseil, user: Utilisateur) -> PointConseil:
     """« Terminer le point » : les non traitées se figent, le CR passe à valider."""
     exiger_en_cours(point)
     cr = compte_rendu(session, point, user)
-    point.non_traitees_json = json.dumps(
-        [{"id": a.id, "numero": a.numero, "titre": a.titre} for a in cr.non_traitees],
-        ensure_ascii=False,
-    )
+    point.non_traitees_json = _ecrire_citees(cr.non_traitees)
     point.etat = A_VALIDER
     point.termine_le = point.mis_a_jour_le = horloge.maintenant()
     session.add(point)

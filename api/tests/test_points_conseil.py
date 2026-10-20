@@ -25,8 +25,9 @@ from app.models.core import RoleUtilisateur
 from app.models.gouvernance import GenreCivilite, MembreCS, MembreSyndic, SyndicInfo
 from app.models.points_conseil import PointConseil
 from app.utils import horloge
-from app.utils import points_conseil as regles
 from app.utils.points_conseil import a_reprendre
+from app.utils.points_conseil_ou import ou_du_point
+from tests.aides_points_conseil import hors_annexe
 from tests.aides_http import base_http, client_http
 from tests.aides_suivi import affaire_ouverte
 
@@ -181,7 +182,7 @@ def test_le_cr_d_une_affaire_s_ecrit_se_reecrit_et_se_retire(moteur, cs):
 
     r = cs.put(route, json={"contenu": "  "})
     assert r.json()["abordees"] == []
-    assert [a["id"] for a in r.json()["non_traitees"]] == [t]
+    assert [a["id"] for a in hors_annexe(r.json()["non_traitees"])] == [t]
 
 
 def test_une_affaire_hors_du_rapport_ne_recoit_pas_de_cr(moteur, cs):
@@ -205,12 +206,12 @@ def test_terminer_fige_les_non_traitees_et_ferme_le_point(moteur, cs):
     cr = r.json()
     assert cr["point"]["etat"] == "a_valider"
     assert [a["affaire"]["id"] for a in cr["abordees"]] == [abordee]
-    assert [a["id"] for a in cr["non_traitees"]] == [oubliee]
+    assert [a["id"] for a in hors_annexe(cr["non_traitees"])] == [oubliee]
 
     #  Une affaire ouverte APRÈS « Terminer » n'entre pas au CR figé.
     affaire_ouverte(moteur, "Arrivée après")
     courant = cs.get("/points-conseil/courant?mode=affaires").json()["compte_rendu"]
-    assert [a["id"] for a in courant["non_traitees"]] == [oubliee]
+    assert [a["id"] for a in hors_annexe(courant["non_traitees"])] == [oubliee]
 
     assert (
         cs.put(
@@ -284,5 +285,5 @@ def test_corriger_le_moyen_efface_le_lieu_s_il_n_y_en_a_plus(cs):
 
 def test_un_point_d_avant_le_moyen_se_lit_par_a_distance():
     ancien = PointConseil(debut=horloge.maintenant(), a_distance=True, lieu="Teams")
-    assert regles.ou_du_point(ancien) == "À distance — Teams"
-    assert regles.ou_du_point(PointConseil(debut=horloge.maintenant())) == "Sur place"
+    assert ou_du_point(ancien) == "À distance — Teams"
+    assert ou_du_point(PointConseil(debut=horloge.maintenant())) == "Sur place"

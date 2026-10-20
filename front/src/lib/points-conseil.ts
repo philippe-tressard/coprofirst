@@ -69,3 +69,25 @@ export function etatCr(cr: CrAffaire | undefined): string {
 	if (!cr) return '';
 	return cr.brouillon ? 'Brouillon' : 'CR saisi';
 }
+
+/**  « CS et présents » (#2082, ex-« Conseil seul ») : le CR se lit du conseil et
+ *   des présents — PDF et validation compris —, masqué au fil et dans l'affaire. */
+export const LIBELLE_CS_ET_PRESENTS = 'CS et présents';
+
+/**  La vignette d'une affaire au rapport (#2082, arbitrée le 20/10/2026) :
+ *   « Privé = CS & Syndic / Public = tout autre cas ». Le serveur décide (`prive`). */
+export const VIGNETTES: Record<
+	'prive' | 'public',
+	{ libelle: string; teinte: string; aide: string }
+> = {
+	prive: {
+		libelle: 'Privé',
+		teinte: 'badge-purple',
+		aide: 'Lue seulement par le conseil syndical et le syndic',
+	},
+	public: {
+		libelle: 'Public',
+		teinte: 'badge-green',
+		aide: 'Lue au-delà du conseil et du syndic : copropriétaires, locataires…',
+	},
+};

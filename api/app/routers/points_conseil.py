@@ -9,243 +9,107 @@ conseil syndical et à l'administration. Les règles vivent dans
 |---|---|
 | `GET /points-conseil/participants` | l'annuaire du CS et du syndic, les lieux proposés |
 | `GET /points-conseil/courant?mode=` | le point du mode, son CR global, et le point à reprendre |
+| `GET /points-conseil/historique?mode=` | les points validés du mode, avec leur PDF (#2082) |
 | `POST /points-conseil` | ouvrir un point |
 | `PATCH /points-conseil/{id}` | corriger son Quand, son Où, son Qui |
 | `PUT /points-conseil/{id}/affaires/{ticket_id}` | écrire le CR d'une affaire (vide : le retirer) |
+| `POST /points-conseil/{id}/affaires` | ouvrir une affaire en séance : elle rejoint la liste du point (#2084) |
 | `POST /points-conseil/{id}/terminer` | terminer : le CR passe à valider et part aux présents (#2042) |
 | `DELETE /points-conseil/{id}` | abandonner un point ouvert par erreur |
 """
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
-from sqlmodel import Session
+from sqlmodel import Session, col, select
 
 from app.auth.deps import require_cs_or_admin
 from app.database import get_session
 from app.models.core import Utilisateur
 from app.models.points_conseil import (
     EN_COURS,
-    IdentitePresent,
     NATURES_PRESENT,
     PRESENT_INVITE,
+    VALIDE,
     CompteRenduAffaire,
     PointConseil,
     PresentPoint,
 )
+from app.routers.points_conseil_schemas import (
+    AbordeeRead,
+    AffaireCiteeRead,
+    AffaireSeanceEntree,
+    CategorieRead,
+    CommentaireRead,
+    CompteRenduRead,
+    CourantRead,
+    CrEntree,
+    CrRead,
+    EtatRead,
+    LieuRead,
+    MembreRead,
+    MoyenRead,
+    ParticipantsRead,
+    PointCreate,
+    PointHistoriqueRead,
+    PointRead,
+    PointUpdate,
+    PresentEntree,
+    PresentRead,
+    RepriseRead,
+    ValidationRead,
+)
 from app.utils import horloge
 from app.utils import points_conseil as regles
+from app.utils import points_conseil_ou as ou
 from app.utils import points_conseil_validation as validation
+from app.utils.points_conseil_etats import ETATS_A_LA_VALIDATION, exiger_etat_cible
+from app.utils import points_conseil_seance as seance
 from app.utils.annuaire import membres_du_conseil, membres_du_syndic
 from app.utils.lecture import lire_objet
 from app.utils.recuperer import ou_404
+from app.routers.tickets.commun import STATUT_LABELS
 
 router = APIRouter(prefix="/points-conseil", tags=["points-conseil"])
-
-#: Une ligne de bandeau, pas un texte : les champs de l'invité et le lieu.
-COURT = 120
-
-
-# ── Schémas propres à ce routeur ─────────────────────────────────────────
-
-
-class PresentEntree(BaseModel):
-    nature: str
-    #: Pour un membre du CS ou du syndic : sa fiche, d'où le nom est recopié.
-    membre_id: Optional[int] = None
-    #: Pour un invité : tout est facultatif (arbitré le 17/10/2026).
-    prenom: Optional[str] = Field(default=None, max_length=COURT)
-    nom: Optional[str] = Field(default=None, max_length=COURT)
-    entreprise: Optional[str] = Field(default=None, max_length=COURT)
-    fonction: Optional[str] = Field(default=None, max_length=COURT)
-    telephone: Optional[str] = Field(default=None, max_length=40)
-    email: Optional[str] = Field(default=None, max_length=COURT)
-
-
-class PointEntree(BaseModel):
-    debut: datetime
-    fin: Optional[datetime] = None
-    #: Le moyen (`regles.MOYENS`) ; absent, d'un client d'avant le moyen,
-    #: `a_distance` fait foi.
-    moyen: Optional[str] = None
-    a_distance: bool = False
-    lieu: Optional[str] = Field(default=None, max_length=COURT)
-    presents: list[PresentEntree] = []
-
-
-class PointCreate(PointEntree):
-    mode: str
-
-
-class PointUpdate(BaseModel):
-    debut: Optional[datetime] = None
-    fin: Optional[datetime] = None
-    moyen: Optional[str] = None
-    a_distance: Optional[bool] = None
-    lieu: Optional[str] = Field(default=None, max_length=COURT)
-    presents: Optional[list[PresentEntree]] = None
-
-
-class CrEntree(BaseModel):
-    #: Le texte riche ; vide, le compte rendu de l'affaire est retiré.
-    contenu: str = Field(default="", max_length=50_000)
-    brouillon: bool = False
-    conseil_seul: bool = False
-
-
-class PresentRead(IdentitePresent):
-    id: int
-    #: A reçu la demande de validation (#2042), et quand il a validé.
-    destinataire: bool = False
-    valide_le: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class CrRead(BaseModel):
-    ticket_id: int
-    contenu: str
-    brouillon: bool
-    conseil_seul: bool
-    mis_a_jour_le: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class PointRead(BaseModel):
-    id: int
-    mode: str
-    etat: str
-    debut: datetime
-    fin: Optional[datetime] = None
-    moyen: Optional[str] = None
-    a_distance: bool
-    lieu: Optional[str] = None
-    #: Le Où tel que le CR l'écrit (`regles.ou_du_point`) — l'écran ne le recompose pas.
-    ou: str
-    cree_le: datetime
-    termine_le: Optional[datetime] = None
-    valide_le: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class AffaireCiteeRead(BaseModel):
-    id: int
-    numero: str
-    titre: str
-
-    class Config:
-        from_attributes = True
-
-
-class AbordeeRead(BaseModel):
-    affaire: AffaireCiteeRead
-    cr: CrRead
-
-
-class ValidationRead(BaseModel):
-    destinataires: int
-    valides: int
-    suspendue: bool
-    echeance: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class CommentaireRead(BaseModel):
-    auteur: str
-    contenu: str
-    cree_le: datetime
-
-
-class CompteRenduRead(BaseModel):
-    point: PointRead
-    presents: list[PresentRead]
-    abordees: list[AbordeeRead]
-    non_traitees: list[AffaireCiteeRead]
-    #: Où en est la validation par les présents (#2042).
-    validation: ValidationRead
-    commentaires: list[CommentaireRead]
-
-
-class RepriseRead(BaseModel):
-    """Ce qu'un point ouvert dans un autre mode, il y a moins de deux heures, propose."""
-
-    mode: str
-    debut: datetime
-    fin: Optional[datetime] = None
-    moyen: Optional[str] = None
-    a_distance: bool
-    lieu: Optional[str] = None
-    cree_le: datetime
-    presents: list[PresentRead]
-
-
-class CourantRead(BaseModel):
-    compte_rendu: Optional[CompteRenduRead] = None
-    reprise: Optional[RepriseRead] = None
-
-
-class MembreRead(BaseModel):
-    id: int
-    prenom: str
-    nom: str
-    fonction: Optional[str] = None
-
-
-class LieuRead(BaseModel):
-    libelle: str
-    adresse: str
-
-    class Config:
-        from_attributes = True
-
-
-class MoyenRead(BaseModel):
-    cle: str
-    libelle: str
-    avec_lieu: bool
-
-    class Config:
-        from_attributes = True
-
-
-class ParticipantsRead(BaseModel):
-    conseil: list[MembreRead]
-    syndic: list[MembreRead]
-    lieux: list[LieuRead]
-    moyens: list[MoyenRead]
-
 
 # ── Lectures ─────────────────────────────────────────────────────────────
 
 
 def _presents_read(presents: list[PresentPoint]) -> list[PresentRead]:
     return [
-        lire_objet(PresentRead, p, destinataire=validation.est_destinataire(p)) for p in presents
+        lire_objet(
+            PresentRead,
+            p,
+            destinataire=validation.est_destinataire(p),
+            par_derogation=p.valide_par_id is not None,
+        )
+        for p in presents
     ]
+
+
+def _point_read(point: PointConseil) -> PointRead:
+    return lire_objet(
+        PointRead, point, ou=ou.ou_du_point(point), pdf_range=point.pdf_cle is not None
+    )
 
 
 def _compte_rendu_read(session: Session, point: PointConseil, user: Utilisateur):
     cr = regles.compte_rendu(session, point, user)
     commentaires = validation.commentaires_du_point(session, point.id)
     noms = {p.id: p for p in cr.presents}
+    revision = validation.revision_du_document(point, [c for _, c in cr.abordees])
     return CompteRenduRead(
-        point=lire_objet(PointRead, cr.point, ou=regles.ou_du_point(cr.point)),
+        point=_point_read(cr.point),
         presents=_presents_read(cr.presents),
         abordees=[
-            AbordeeRead(affaire=AffaireCiteeRead.model_validate(a), cr=CrRead.model_validate(c))
+            AbordeeRead(
+                affaire=AffaireCiteeRead.model_validate(a),
+                cr=CrRead.model_validate(c),
+                marque=validation.marque_revision(c, revision),
+            )
             for a, c in cr.abordees
         ],
+        revision=revision,
         non_traitees=[AffaireCiteeRead.model_validate(a) for a in cr.non_traitees],
         validation=ValidationRead.model_validate(
             validation.etat_validation(point, cr.presents, commentaires)
@@ -255,6 +119,7 @@ def _compte_rendu_read(session: Session, point: PointConseil, user: Utilisateur)
                 auteur=regles.nom_present(noms[c.present_id]) if c.present_id in noms else "",
                 contenu=c.contenu,
                 cree_le=c.cree_le,
+                par_derogation=c.saisi_par_id is not None,
             )
             for c in commentaires
         ],
@@ -271,8 +136,14 @@ def participants(
     return ParticipantsRead(
         conseil=[MembreRead(**m) for m in membres_du_conseil(session)],
         syndic=[MembreRead(**m) for m in membres_du_syndic(session)],
-        lieux=[LieuRead.model_validate(lieu) for lieu in regles.lieux_proposes(session)],
-        moyens=[MoyenRead.model_validate(m) for m in regles.MOYENS],
+        lieux=[LieuRead.model_validate(lieu) for lieu in ou.lieux_proposes(session)],
+        moyens=[MoyenRead.model_validate(m) for m in ou.MOYENS],
+        etats_validation=[
+            EtatRead(cle=e, libelle=STATUT_LABELS.get(e, e)) for e in ETATS_A_LA_VALIDATION
+        ],
+        categories_seance=[
+            CategorieRead(cle=c, libelle=nom) for c, nom in seance.categories_seance()
+        ],
     )
 
 
@@ -298,6 +169,37 @@ def courant(
             else None
         ),
     )
+
+
+@router.get(
+    "/historique",
+    response_model=list[PointHistoriqueRead],
+    summary="Les points validés du mode (CS/Admin)",
+)
+def historique(
+    mode: str,
+    session: Session = Depends(get_session),
+    _: Utilisateur = Depends(require_cs_or_admin),
+):
+    """L'historique des CR, le plus récent en tête — plié par défaut à l'écran (#2082)."""
+    regles.exiger_mode(mode)
+    points = session.exec(
+        select(PointConseil)
+        .where(PointConseil.mode == mode, PointConseil.etat == VALIDE)
+        .order_by(col(PointConseil.debut).desc())
+    ).all()
+    nombres = regles.nombres_abordees(session, [p.id for p in points])
+    return [
+        PointHistoriqueRead(
+            id=p.id,
+            debut=p.debut,
+            ou=ou.ou_du_point(p),
+            valide_le=p.valide_le,
+            abordees=nombres.get(p.id, 0),
+            pdf_range=p.pdf_cle is not None,
+        )
+        for p in points
+    ]
 
 
 # ── Gestes ───────────────────────────────────────────────────────────────
@@ -334,10 +236,15 @@ def ouvrir(
         a_distance=body.a_distance,
         auteur_id=user.id,
     )
-    regles.poser_ou(point, body.moyen, body.lieu)
+    ou.poser_ou(point, body.moyen, body.lieu)
+    #  La liste à traiter se fige à l'ouverture (#2082).
+    regles.figer_affaires_initiales(session, point, user)
     session.add(point)
     session.flush()
     regles.remplacer_presents(session, point, presents)
+    session.flush()
+    #  L'affaire « Points annexes » du Suivi affaires, dès l'ouverture (#2084).
+    seance.ouvrir_annexe(session, point, user)
     session.commit()
     session.refresh(point)
     return _compte_rendu_read(session, point, user)
@@ -357,7 +264,7 @@ def corriger(
     if "a_distance" in body.model_fields_set and "moyen" not in body.model_fields_set:
         point.moyen = None  # un client d'avant le moyen : `a_distance` fait foi
     if {"moyen", "lieu"} & body.model_fields_set:
-        regles.poser_ou(
+        ou.poser_ou(
             point,
             body.moyen if "moyen" in body.model_fields_set else point.moyen,
             body.lieu if "lieu" in body.model_fields_set else point.lieu,
@@ -388,6 +295,7 @@ def ecrire_cr(
     cr = regles.exiger_cr_modifiable(
         point, regles.cr_de(session, point.id, ticket_id), body.contenu
     )
+    exiger_etat_cible(body.etat_cible)
     if not body.contenu.strip():
         if cr:
             session.delete(cr)
@@ -396,11 +304,40 @@ def ecrire_cr(
         cr.contenu = body.contenu
         cr.brouillon = body.brouillon
         cr.conseil_seul = body.conseil_seul
+        cr.etat_cible = body.etat_cible
         cr.auteur_id = user.id
+        validation.marquer_modifie(point, cr)
         cr.mis_a_jour_le = horloge.maintenant()
         session.add(cr)
     point.mis_a_jour_le = horloge.maintenant()
     session.add(point)
+    session.commit()
+    session.refresh(point)
+    return _compte_rendu_read(session, point, user)
+
+
+@router.post(
+    "/{point_id}/affaires",
+    response_model=CompteRenduRead,
+    status_code=201,
+    summary="Ouvrir une affaire en séance (CS/Admin)",
+)
+def ouvrir_affaire(
+    point_id: int,
+    body: AffaireSeanceEntree,
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(require_cs_or_admin),
+):
+    """Elle rejoint la liste du point, en fin de tableau (#2084)."""
+    point = regles.exiger_en_cours(ou_404(session, PointConseil, point_id, "Point"))
+    seance.creer_affaire(
+        session,
+        point,
+        user,
+        titre=body.titre,
+        categorie=body.categorie,
+        description=body.description,
+    )
     session.commit()
     session.refresh(point)
     return _compte_rendu_read(session, point, user)
@@ -426,7 +363,10 @@ async def terminer(
 def abandonner(
     point_id: int,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    user: Utilisateur = Depends(require_cs_or_admin),
 ):
-    regles.supprimer_point(session, ou_404(session, PointConseil, point_id, "Point"))
+    point = regles.exiger_en_cours(ou_404(session, PointConseil, point_id, "Point"))
+    #  Son affaire annexe restée vide est annulée, jamais supprimée (#2084).
+    seance.annuler_annexe_vide(session, point, user)
+    regles.supprimer_point(session, point)
     session.commit()

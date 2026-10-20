@@ -10,8 +10,10 @@
 | `POST /points-conseil/lien/{jeton}/commentaire` | le porteur du lien | répondre ; suspend les 7 jours |
 | `POST /points-conseil/{id}/renvoyer` | CS / admin | renvoyer le CR corrigé aux présents |
 | `POST /points-conseil/{id}/valider` | CS / admin | valider en l'état |
-| `POST /points-conseil/{id}/pdf` | CS / admin | le PDF d'un CR validé (comme celui du Suivi) |
-| `PATCH /points-conseil/comptes-rendus/{id}` | CS / admin | « Conseil seul » d'un CR |
+| `POST /points-conseil/{id}/presents/{present_id}/derogation` | admin | valider POUR un présent qui a donné son accord (#2082) |
+| `POST /points-conseil/{id}/pdf` | CS / admin | le PDF d'un CR validé — celui qui a été rangé et envoyé (#2082) |
+| `POST /points-conseil/{id}/apercu` | CS / admin | l'aperçu du PDF, à tout instant : « Projet — révision N » (#2082) |
+| `PATCH /points-conseil/comptes-rendus/{id}` | CS / admin | « CS et présents » d'un CR |
 | `GET /points-conseil/affaires/{ticket_id}` | qui lit l'affaire | ses CR validés (rubrique « Comptes rendus ») |
 
 🔴 Le lien d'un présent est PUBLIC — un membre du syndic n'a souvent pas de
@@ -26,23 +28,23 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
-from sqlmodel import Session
+from sqlmodel import Session, col, select
 
 from app.auth.appartenance import exiger_objet_autorise
-from app.auth.deps import get_current_user, require_cs_or_admin
+from app.auth.deps import get_current_user, require_admin, require_cs_or_admin
 from app.database import get_session
 from app.models.core import Utilisateur
-from app.models.points_conseil import VALIDE, CompteRenduAffaire, PointConseil
+from app.models.points_conseil import VALIDE, CompteRenduAffaire, PointConseil, PresentPoint
 from app.models.tickets import Ticket
 from app.utils import points_conseil as regles
+from app.utils import points_conseil_expedition as expedition
 from app.utils import points_conseil_validation as validation
-from app.utils.config_site import config_site
 from app.utils.lecture import lire_objet
+from app.utils.lecteurs_du_conseil import privees
 from app.utils.limiter import LIMITE_SESSION, limiter
-from app.utils.liens import nom_site
-from app.utils.logo import logo_televerse_png
-from app.utils.points_conseil_pdf import generer_pdf
+from app.utils.points_conseil_ou import ou_du_point
 from app.utils.recuperer import ou_404
+from app.utils.stockage import stockage
 from app.utils.visibility import ticket_visible
 
 router = APIRouter(prefix="/points-conseil", tags=["points-conseil"])
@@ -52,10 +54,16 @@ class AffaireLienRead(BaseModel):
     numero: str
     titre: str
     contenu: str
+    #: « CS et présents » : lu des présents, masqué ailleurs (#2082).
+    conseil_seul: bool = False
+    #: « Modifié en révision N », ou rien (#2082).
+    marque: Optional[str] = None
+    #: La vignette : seuls le conseil et le syndic lisent l'affaire (#2082).
+    prive: bool = False
 
 
 class LienRead(BaseModel):
-    """Ce que le porteur du lien lit : le CR, sans ce qui est « Conseil seul »."""
+    """Ce que le porteur du lien lit : le CR entier — « CS et présents » compris (#2082)."""
 
     class Config:
         from_attributes = True
@@ -73,10 +81,17 @@ class LienRead(BaseModel):
     #: A-t-il déjà validé ? — un second clic ne change rien.
     deja_valide: bool
     echeance: Optional[datetime] = None
+    #: La révision que le présent relit (#2082).
+    revision: int = 0
 
 
 class CommentaireEntree(BaseModel):
     contenu: str = Field(min_length=1, max_length=4000)
+
+
+class DerogationEntree(BaseModel):
+    #: Ce que l'administrateur écrit de l'accord recueilli — facultatif.
+    commentaire: Optional[str] = Field(default=None, max_length=4000)
 
 
 class ConfidentialiteEntree(BaseModel):
@@ -104,16 +119,30 @@ def _lien_read(session: Session, jeton: str) -> LienRead:
     etat = validation.etat_validation(
         point, cr.presents, validation.commentaires_du_point(session, point.id)
     )
+    revision = validation.revision_du_document(point, [c for _, c in cr.abordees])
+    ids = [a.id for a, _ in cr.abordees]
+    secretes = (
+        privees(session, list(session.exec(select(Ticket).where(col(Ticket.id).in_(ids))).all()))
+        if ids
+        else set()
+    )
     return lire_objet(
         LienRead,
         point,
-        ou=regles.ou_du_point(point),
+        ou=ou_du_point(point),
         presents=[regles.nom_present(p) for p in cr.presents],
         abordees=[
-            AffaireLienRead(numero=a.numero, titre=a.titre, contenu=c.contenu)
+            AffaireLienRead(
+                numero=a.numero,
+                titre=a.titre,
+                contenu=c.contenu,
+                conseil_seul=c.conseil_seul,
+                marque=validation.marque_revision(c, revision),
+                prive=a.id in secretes,
+            )
             for a, c in cr.abordees
-            if not c.conseil_seul
         ],
+        revision=revision,
         non_traitees=[f"{a.numero} {a.titre}" for a in cr.non_traitees],
         deja_valide=present.valide_le is not None or point.etat == VALIDE,
         echeance=etat.echeance,
@@ -128,9 +157,12 @@ def lire_par_lien(request: Request, jeton: str, session: Session = Depends(get_s
 
 @router.post("/lien/{jeton}/valider", response_model=LienRead, summary="« Je valide »")
 @limiter.limit(LIMITE_SESSION)
-def valider_par_lien(request: Request, jeton: str, session: Session = Depends(get_session)):
-    validation.valider_par_present(session, validation.present_par_jeton(session, jeton))
+async def valider_par_lien(request: Request, jeton: str, session: Session = Depends(get_session)):
+    point = validation.valider_par_present(session, validation.present_par_jeton(session, jeton))
     session.commit()
+    #  Le dernier « Je valide » valide le CR : son PDF se range et part (#2082).
+    if point.etat == VALIDE and point.pdf_cle is None:
+        await expedition.expedier(session, point)
     return _lien_read(session, jeton)
 
 
@@ -161,7 +193,7 @@ async def renvoyer(
 
 
 @router.post("/{point_id}/valider", status_code=204, summary="Valider le CR en l'état (CS/Admin)")
-def valider(
+async def valider(
     point_id: int,
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
@@ -169,6 +201,35 @@ def valider(
     point = validation.exiger_a_valider(ou_404(session, PointConseil, point_id, "Point"))
     validation.valider_point(session, point, user)
     session.commit()
+    await expedition.expedier(session, point)
+
+
+@router.post(
+    "/{point_id}/presents/{present_id}/derogation",
+    status_code=204,
+    summary="Valider pour un présent qui a donné son accord (Admin)",
+)
+async def derogation(
+    point_id: int,
+    present_id: int,
+    body: DerogationEntree,
+    session: Session = Depends(get_session),
+    admin: Utilisateur = Depends(require_admin),
+):
+    """La dérogation (#2082) : l'administrateur seul, et c'est journalisé."""
+    present = ou_404(session, PresentPoint, present_id, "Présent", sous={"point_id": point_id})
+    point = validation.valider_pour(session, present, admin, body.commentaire)
+    session.commit()
+    if point.etat == VALIDE:
+        await expedition.expedier(session, point)
+
+
+def _reponse_pdf(contenu: bytes, nom: str) -> Response:
+    return Response(
+        content=contenu,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{nom}"'},
+    )
 
 
 @router.post("/{point_id}/pdf", summary="Le PDF d'un CR validé (CS/Admin)")
@@ -177,25 +238,29 @@ def pdf(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
+    """Celui qui a été rangé à la validation et envoyé ; un point validé avant
+    #2082, qui n'en a pas, le reçoit rendu à la demande."""
     point = ou_404(session, PointConseil, point_id, "Point")
     if point.etat != VALIDE:
         raise HTTPException(409, "Le PDF n'existe qu'une fois le compte rendu validé")
-    site = config_site(session)
-    contenu = generer_pdf(
-        regles.compte_rendu(session, point, user),
-        site_nom=nom_site(site.get("site_nom")),
-        logo_png=logo_televerse_png(session),
-    )
-    nom = f"compte-rendu-point-cs-syndic-{point.debut:%Y-%m-%d}.pdf"
-    return Response(
-        content=contenu,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{nom}"'},
-    )
+    range_ = stockage().fichier_de(point, "pdf")
+    contenu = range_.read_bytes() if range_ else expedition.pdf_du_point(session, point, user)
+    return _reponse_pdf(contenu, expedition.nom_du_fichier(point))
+
+
+@router.post("/{point_id}/apercu", summary="L'aperçu du PDF, à tout instant (CS/Admin)")
+def apercu(
+    point_id: int,
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(require_cs_or_admin),
+):
+    point = ou_404(session, PointConseil, point_id, "Point")
+    contenu = expedition.pdf_du_point(session, point, user, projet=point.etat != VALIDE)
+    return _reponse_pdf(contenu, f"projet-{expedition.nom_du_fichier(point)}")
 
 
 @router.patch(
-    "/comptes-rendus/{cr_id}", status_code=204, summary="« Conseil seul » d'un CR (CS/Admin)"
+    "/comptes-rendus/{cr_id}", status_code=204, summary="« CS et présents » d'un CR (CS/Admin)"
 )
 def confidentialite(
     cr_id: int,
@@ -205,6 +270,8 @@ def confidentialite(
 ):
     cr = ou_404(session, CompteRenduAffaire, cr_id, "Compte rendu")
     cr.conseil_seul = body.conseil_seul
+    #  En relecture, le changement rejoint la révision suivante (#2082).
+    validation.marquer_modifie(session.get(PointConseil, cr.point_id), cr)
     session.add(cr)
     session.commit()
 
@@ -229,7 +296,7 @@ def crs_de_l_affaire(
             debut=p.debut,
             a_distance=p.a_distance,
             lieu=p.lieu,
-            ou=regles.ou_du_point(p),
+            ou=ou_du_point(p),
             contenu=c.contenu,
             conseil_seul=c.conseil_seul,
             cr_id=c.id,
