@@ -507,3 +507,30 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Écarté** : le fil en G à l'identique, ouvert sur la demande (l'actualité passerait derrière elle) ; garder A au fil en déclarant la divergence (deux composants, deux allures).
 - **Tenu par** : aucun garde-fou nommé — un e2e qui compare le fil et la liste est demandé dans #2078.
 - **Historique** : 18/10 — à livrer (#2078) ; d'ici là, le fil rend encore la maquette A.
+
+### n° 67 · en vigueur — Après « Enregistrer » un CR, l'affaire suivante s'ouvre, son titre en haut
+20/10/2026 · #2082 · l'utilisateur · §3
+- **Décidé** : au point CS / Syndic, enregistrer le compte rendu d'une affaire déplie la ligne suivante du tableau et place son titre en haut de l'écran, mesuré après le repli de la précédente (`amenerEnHaut`).
+- **Pourquoi** : « c'est très perturbant de perdre le fil des affaires […] fait perdre du temps à rechercher l'affaire suivante ».
+- **Écarté** : rester sur place, rien d'ouvert (proposé, refusé).
+- **Tenu par** : `e2e/point-conseil.spec.ts`.
+
+### n° 68 · en vigueur — Vignette Public / Privé : Privé = lue du CS et du syndic seuls
+20/10/2026 · #2082 · l'utilisateur · §3
+- **Décidé** : chaque affaire du reporting (tableau, PDF, relecture) porte « Public » ou « Privé » ; Privé quand aucun compte hors du conseil et du syndic ne la lit, auteur résident compris — calculé au serveur par `ticket_visible` (`lecteurs_du_conseil`).
+- **Pourquoi** : « Privé = CS & Syndic / Public = tout autre cas ».
+- **Écarté** : Privé quand seul l'auteur résident la lit en plus du conseil.
+- **Tenu par** : `test_points_conseil_etats.py`.
+
+### n° 69 · en vigueur — L'état décidé au point ne s'applique qu'à la validation ; « À l'AG » reste à l'AG
+20/10/2026 · #2082 · l'utilisateur · §3
+- **Décidé** : la saisie d'un CR montre l'état actuel et l'« état à la validation » — « Chez le syndic » d'office pour une affaire ouverte, son état sinon ; posé par une Suite d'état à la validation seulement ; une affaire close ailleurs n'est pas rouverte.
+- **Pourquoi** : « offrir la possibilité de changer l'état à la validation du CR (pas avant) » ; « si une affaire a son suivi à AG, ne pas par défaut la mettre à Chez le syndic ».
+- **Tenu par** : `test_points_conseil_etats.py`.
+
+### n° 70 · en vigueur — Affaires liées : rassemblées, la plus ancienne absorbe et reste ouverte
+20/10/2026 · #2083 · l'utilisateur · §3
+- **Décidé** : au Suivi des affaires, les affaires liées se suivent sous une ligne « n affaires liées » ; « Fusionner » (titre et description proposés par l'assistant, relus) fait absorber les autres par la plus ancienne, qui garde son numéro et reste ouverte ; « Ne pas fusionner » rend le tri par ancienneté et tait la fusion à la clôture.
+- **Pourquoi** : demandé le 19/10/2026 ; « la plus ancienne absorbe » choisi parmi deux options le 20/10.
+- **Écarté** : une affaire neuve qui absorberait les deux.
+- **Tenu par** : `test_fusion_en_cours.py`, `e2e/suivi-affaires.spec.ts`.
