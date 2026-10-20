@@ -21,7 +21,6 @@ conseil syndical et à l'administration. Les règles vivent dans
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
 from sqlmodel import Session, col, select
 
 from app.auth.deps import require_cs_or_admin
@@ -189,17 +188,7 @@ def historique(
         .where(PointConseil.mode == mode, PointConseil.etat == VALIDE)
         .order_by(col(PointConseil.debut).desc())
     ).all()
-    nombres = (
-        dict(
-            session.exec(
-                select(CompteRenduAffaire.point_id, func.count(CompteRenduAffaire.id))
-                .where(col(CompteRenduAffaire.point_id).in_([p.id for p in points]))
-                .group_by(CompteRenduAffaire.point_id)
-            ).all()
-        )
-        if points
-        else {}
-    )
+    nombres = regles.nombres_abordees(session, [p.id for p in points])
     return [
         PointHistoriqueRead(
             id=p.id,

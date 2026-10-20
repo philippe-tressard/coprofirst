@@ -284,7 +284,8 @@ MODELES = [
             f'<p style="margin:0;font-size:14px;color:{TEXTE}">Présents : {{{{ point.presents }}}}</p>'
         )
         + "{% for a in affaires %}"
-        + f'<p style="margin:0 0 4px;font-weight:700;color:{BLEU}">{{{{ a.numero }}}} · {{{{ a.titre }}}}{{{{ a.marque | default('') }}}}</p>'
+        + f'<p style="margin:0 0 4px;font-weight:700;color:{BLEU}">{{{{ a.numero }}}} · {{{{ a.titre }}}}{{{{ a.marque | default('
+        ") }}}}</p>"
         + f'<p style="margin:0 0 14px;color:{TEXTE}">{{{{ a.texte }}}}</p>'
         + "{% endfor %}"
         + "{% if non_traitees %}"

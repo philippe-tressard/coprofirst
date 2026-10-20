@@ -14,6 +14,8 @@
 -->
 <script lang="ts">
 	import SectionDescription from '$lib/components/SectionDescription.svelte';
+	import { TICKET } from '$lib/entites/ticket';
+	import { pliageDe } from '$lib/pliage';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
@@ -79,13 +81,16 @@
 					{/each}
 				</select>
 			</div>
-			<SectionDescription idPrefixe="seance-{pointId}" hauteur="8rem" bind:valeur={description} />
+			<SectionDescription
+				pliable={pliageDe(TICKET, 'description')}
+				idPrefixe="seance-{pointId}"
+				hauteur="8rem"
+				bind:valeur={description}
+			/>
 			<PiedFormulaire
 				petit
 				{enCours}
 				desactive={!titre.trim() || !categorie}
-				libelle="Ouvrir l’affaire"
-				libelleEnCours="Ouverture…"
 				on:annule={() => {
 					vider();
 					ouvert = false;

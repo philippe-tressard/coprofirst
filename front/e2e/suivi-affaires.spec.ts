@@ -341,7 +341,7 @@ test('les affaires liées se suivent ; « Fusionner » propose un titre, puis fu
 	await tete.getByRole('button', { name: 'Fusionner', exact: true }).click();
 	const titre = page.getByLabel('Titre de l’affaire fusionnée');
 	await expect(titre).toHaveValue('Interphone et fuite colonne B');
-	await page.locator('form.fusion').getByRole('button', { name: 'Fusionner' }).click();
+	await page.locator('form.fusion').getByRole('button', { name: 'Enregistrer' }).click();
 	await expect.poll(() => envois.map((e) => e.quoi)).toContain('/api/suivi-affaires/fusions');
 	expect(envois.find((e) => e.quoi === '/api/suivi-affaires/fusions')?.corps).toEqual(
 		expect.objectContaining({ ids: [31, 40], titre: 'Interphone et fuite colonne B' }),

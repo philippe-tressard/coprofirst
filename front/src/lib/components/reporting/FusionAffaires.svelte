@@ -16,6 +16,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import SectionDescription from '$lib/components/SectionDescription.svelte';
+	import { TICKET } from '$lib/entites/ticket';
+	import { pliageDe } from '$lib/pliage';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
@@ -91,6 +93,7 @@
 			<input id="fusion-titre-{principale.id}" type="text" maxlength="200" bind:value={titre} />
 		</div>
 		<SectionDescription
+			pliable={pliageDe(TICKET, 'description')}
 			idPrefixe="fusion-{principale.id}"
 			titre="Description de l’affaire fusionnée"
 			hauteur="14rem"
@@ -109,14 +112,7 @@
 			</button>
 		</div>
 	{/if}
-	<PiedFormulaire
-		petit
-		{enCours}
-		desactive={proposition || !titre.trim()}
-		libelle="Fusionner"
-		libelleEnCours="Fusion…"
-		on:annule={onAnnule}
-	/>
+	<PiedFormulaire petit {enCours} desactive={proposition || !titre.trim()} on:annule={onAnnule} />
 </form>
 
 <style>

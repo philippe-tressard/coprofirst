@@ -337,7 +337,7 @@ test('pendant le point, « Ouvrir une affaire en séance » la crée et l’ajou
 	await page.getByRole('button', { name: 'Ouvrir une affaire en séance' }).click();
 	await page.getByLabel('Titre de l’affaire').fill('Contrat ascenseur');
 	await page.locator('#seance-categorie-5').selectOption('panne');
-	await page.getByRole('button', { name: 'Ouvrir l’affaire' }).click();
+	await page.locator('.seance').getByRole('button', { name: 'Enregistrer' }).click();
 	await expect.poll(() => envois.map((e) => e.quoi)).toContain('POST');
 	expect(envois[0].corps).toEqual(
 		expect.objectContaining({ titre: 'Contrat ascenseur', categorie: 'panne' }),

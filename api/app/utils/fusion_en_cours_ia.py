@@ -11,7 +11,7 @@ le NOM des pièces jointes — jamais leur contenu.
 
 La proposition n'écrit rien : le conseil la relit, la corrige, puis confirme
 (`fusion_en_cours.fusionner`). Sans assistant prêt — service coupé, usage non
-activé —, `proposer` rend une proposition SANS IA (titres joints, descriptions
+activé —, `proposer_fusion` rend une proposition SANS IA (titres joints, descriptions
 mises bout à bout) : la fusion ne dépend pas d'un service facturé.
 
 🔴 La réponse est du TEXTE, jamais du HTML : elle est échappée, puis mise en
@@ -131,7 +131,9 @@ def sans_assistant(tickets: list[Ticket]) -> Proposition:
     return Proposition(titre, description, False)
 
 
-async def proposer(session: Session, tickets: list[Ticket], *, demandeur: int) -> Proposition:
+async def proposer_fusion(
+    session: Session, tickets: list[Ticket], *, demandeur: int
+) -> Proposition:
     """La proposition de l'assistant — ou, s'il n'est pas prêt, celle sans lui."""
     from app.routers.tickets.commun import STATUT_LABELS
     from app.utils.llm import config_llm, demander

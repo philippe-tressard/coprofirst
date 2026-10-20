@@ -22,7 +22,7 @@ from app.database import get_session
 from app.models.core import Utilisateur
 from app.utils import fusion_en_cours
 from app.utils.fusion_affaires import prevenir_auteurs
-from app.utils.fusion_en_cours_ia import proposer
+from app.utils.fusion_en_cours_ia import proposer_fusion
 from app.utils.limiter import LIMITE_APPEL_FACTURE, limiter
 from app.utils.llm import ErreurLLM
 
@@ -69,7 +69,9 @@ async def proposition(
 ):
     tickets = fusion_en_cours.affaires_du_groupe(session, body.ids)
     try:
-        return PropositionRead.model_validate(await proposer(session, tickets, demandeur=user.id))
+        return PropositionRead.model_validate(
+            await proposer_fusion(session, tickets, demandeur=user.id)
+        )
     except ErreurLLM as exc:
         raise HTTPException(400, str(exc))
 

@@ -43,6 +43,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import HTTPException
+from sqlalchemy import func
 from sqlmodel import Session, col, select
 
 from app.models.core import Utilisateur
@@ -254,6 +255,20 @@ def cr_de(session: Session, point_id: int, ticket_id: int) -> Optional[CompteRen
             CompteRenduAffaire.point_id == point_id, CompteRenduAffaire.ticket_id == ticket_id
         )
     ).first()
+
+
+def nombres_abordees(session: Session, point_ids: list[int]) -> dict[int, int]:
+    """Le nombre d'affaires abordées de chaque point, lu UNE fois pour une liste
+    — le fil et l'historique des CR (#2082)."""
+    if not point_ids:
+        return {}
+    return dict(
+        session.exec(
+            select(CompteRenduAffaire.point_id, func.count(CompteRenduAffaire.id))
+            .where(col(CompteRenduAffaire.point_id).in_(point_ids))
+            .group_by(CompteRenduAffaire.point_id)
+        ).all()
+    )
 
 
 def crs_du_point(session: Session, point_id: int) -> list[CompteRenduAffaire]:

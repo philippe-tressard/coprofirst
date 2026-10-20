@@ -149,7 +149,8 @@ def lire_suivi(
 ):
     #  Le tableau d'un point en cours ou en relecture garde SES affaires, même
     #  closes ailleurs entre-temps (#2082) ; la relance, elle, lit sans `point`.
-    courant = point_courant(session, _mode(mode)) if point else None
+    mode = _mode(mode)
+    courant = point_courant(session, mode) if point else None
     r = releve_du_point(session, courant, user) if courant else releve(session, user, mode)
     #  Lu sur le relevé (jour, total, anciennes, mode, délai) ; ne se nomme que
     #  ce qui se calcule ici (`lire_objet`, #1563).
