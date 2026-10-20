@@ -15,8 +15,9 @@
   relance avait sa propre carte, avec ses propres badges, et ne disait ni l'âge,
   ni la date d'ouverture, ni le résumé de l'affaire.
 
-  - **#2082** : chaque affaire porte sa vignette Public / Privé
-    (`VignetteVisibilite`) ; en point, la ligne du CR dit aussi l'état décidé
+  - **#2089** : sous le titre, l'état de suivi (Chez le syndic, Résolu…) et
+    « qui la lit » — la pastille de la page Affaires (`PastilleLecture`), à
+    l'identique (la vignette Public / Privé de #2082 est retirée) ; en point, la ligne du CR dit aussi l'état décidé
     pour la validation (« → Résolu ») et « Modifié en révision N ». Chaque ligne
     est une cible de défilement (`cible-defilement`, `id="affaire-N"`) : après
     l'enregistrement d'un CR, la vue place l'affaire suivante en haut de l'écran.
@@ -35,14 +36,19 @@
 	import Badge from '$lib/components/Badge.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import PastillesRelances from './PastillesRelances.svelte';
-	import VignetteVisibilite from './VignetteVisibilite.svelte';
+	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { AffaireOuverte, CrAffaire } from '$lib/api';
 	import { etatCr } from '$lib/points-conseil';
 	import { ETATS_VISITE } from '$lib/entretien-periodique';
 	import { motifEvolution } from '$lib/reporting';
 	import { fmtDate } from '$lib/date';
-	import { categorieTicketLabel, lienTicket, statutTicketLabel } from '$lib/tickets';
+	import {
+		STATUT_TICKET_BADGE,
+		categorieTicketLabel,
+		lienTicket,
+		statutTicketLabel,
+	} from '$lib/tickets';
 
 	export let affaires: AffaireOuverte[];
 	/** Le mode « Relancer le syndic » : une case par ligne, et les relances envoyées. */
@@ -152,7 +158,12 @@
 					<td class="date">{fmtDate(a.ouverte_le)}</td>
 					<td class="affaire">
 						<a href={lienTicket(a.id)} class="titre">{a.titre}</a>
-						<VignetteVisibilite prive={a.prive} />
+						<span class="vignettes">
+							<Badge teinte={STATUT_TICKET_BADGE[a.statut] ?? 'badge-gray'} compact
+								>{statutTicketLabel(a.statut)}</Badge
+							>
+							<PastilleLecture ticket={a} />
+						</span>
 						{#if a.fusionnees.length}
 							<!--  L'historique de fusion, cité au point (#2083). -->
 							<span class="fusionnees">🔀 Fusionne {a.fusionnees.join(' · ')}</span>
@@ -281,6 +292,12 @@
 	}
 	tr.liee td:first-child {
 		box-shadow: inset 3px 0 0 var(--color-primary);
+	}
+	.vignettes {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		margin: 0.15rem 0;
 	}
 	.fusionnees {
 		display: block;

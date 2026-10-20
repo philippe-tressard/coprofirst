@@ -171,15 +171,20 @@ def test_le_document_suit_l_ordre_arbitre_et_marque_le_projet(moteur, envois):
         p = s.get(PointConseil, point)
         html = html_compte_rendu(document(s, p, None, projet=True), site_nom="R", logo_png=None)
         assert etat_validation(p, [], []).echeance is not None
+    #  La maquette B (#2089) : le point et ses validations, la tête du rapport,
+    #  puis chaque affaire abordée — son résumé d'origine, puis son CR.
     reperes = [
-        html.index("Par catégorie"),
-        html.index("1 · Le point"),
+        html.index("Le point"),
         html.index("Validations"),
-        html.index("2 · Les affaires à traiter"),
-        html.index("3 · Le compte rendu"),
+        html.index("Par catégorie"),
+        html.index("Les affaires · "),
+        html.index("La platine ne sonne"),
+        html.index("Devis attendu"),
+        html.index("Non abordées"),
     ]
     assert reperes == sorted(reperes)
     assert "Projet — révision 1" in html
     assert "(CS et présents)" in html
     assert "État à la validation : Ouvert → Résolu" in html
-    assert "Oubliée" in html, "la liste à traiter cite aussi la non traitée"
+    assert "Oubliée" in html, "les non abordées se citent à la fin"
+    assert "Chez le syndic" in html or "Ouvert" in html, "l'état de suivi en vignette"

@@ -134,13 +134,17 @@ def test_un_cr_valide_ne_se_modifie_plus(moteur, envois):
 # ── La vignette ─────────────────────────────────────────────────────────────
 
 
-def test_vignette_privee_quand_seuls_le_conseil_et_le_syndic_lisent(moteur):
+def test_le_suivi_porte_ce_que_lit_la_pastille_de_lecture(moteur):
+    """La vignette Public / Privé est retirée (#2089) : chaque affaire porte les
+    champs que lit la pastille de la page Affaires, et son libellé court."""
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
-    affaire_ouverte(moteur, "Confidentielle", confidentiel=True, auteur_id=None)
-    #  L'auteur résident la lit : elle est publique (arbitré le 20/10/2026).
-    affaire_ouverte(moteur, "De son auteur", confidentiel=True)
-    vignettes = {a["titre"]: a["prive"] for a in cs.get("/suivi-affaires").json()["affaires"]}
-    assert vignettes == {"Confidentielle": True, "De son auteur": False}
+    affaire_ouverte(moteur, "Confidentielle", confidentiel=True)
+    affaire_ouverte(moteur, "Panne au défaut")
+    affaire_ouverte(moteur, "À tous", public_cible='["résidents"]')
+    lues = {a["titre"]: a for a in cs.get("/suivi-affaires").json()["affaires"]}
+    assert lues["Confidentielle"]["confidentiel"] is True
+    assert lues["À tous"]["public_cible"] == ["résidents"]
+    assert "prive" not in lues["Panne au défaut"]
 
 
 # ── « CS et présents » dans l'affaire ───────────────────────────────────────
@@ -182,7 +186,7 @@ def test_le_point_du_suivi_affaires_ouvre_son_affaire_annexe(moteur):
     assert (annexe.categorie, annexe.statut) == ("etude_travaux", "ouvert")
     #  Elle est au tableau du point, en fin de liste, et privée.
     (a,) = cs.get("/suivi-affaires?point=true").json()["affaires"]
-    assert (a["id"], a["prive"]) == (annexe.id, True)
+    assert (a["id"], a["confidentiel"], a["public_cible"]) == (annexe.id, False, [])
 
 
 def test_le_point_des_entretiens_n_en_ouvre_pas(moteur):
@@ -237,3 +241,26 @@ def test_une_affaire_ouverte_en_seance_rejoint_le_point(moteur):
         ).status_code
         == 403
     )
+
+
+def test_une_affaire_abordee_close_ailleurs_reste_meme_sur_un_point_d_avant(moteur):
+    """Le cas du 20/10/2026 (#2089) : un point ouvert AVANT la liste figée, une
+    affaire abordée close par une réponse par courriel — elle reste au tableau."""
+    from app.models.points_conseil import PointConseil
+
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    t = affaire_ouverte(moteur, "Profession libérale")
+    point = _ouvrir(cs)["point"]["id"]
+    with Session(moteur) as s:
+        p = s.get(PointConseil, point)
+        p.affaires_initiales_json = None  # un point d'avant la v3.2.0
+        s.add(p)
+        s.commit()
+    cs.put(f"/points-conseil/{point}/affaires/{t}", json={"contenu": "<p>Courrier envoyé</p>"})
+    with Session(moteur) as s:
+        ticket = s.get(Ticket, t)
+        ticket.statut = "résolu"
+        s.add(ticket)
+        s.commit()
+    ids = [a["id"] for a in cs.get("/suivi-affaires?point=true").json()["affaires"]]
+    assert t in ids

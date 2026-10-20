@@ -515,7 +515,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Écarté** : rester sur place, rien d'ouvert (proposé, refusé).
 - **Tenu par** : `e2e/point-conseil.spec.ts`.
 
-### n° 68 · en vigueur — Vignette Public / Privé : Privé = lue du CS et du syndic seuls
+### n° 68 · remplacé par n° 71 — Vignette Public / Privé : Privé = lue du CS et du syndic seuls
 20/10/2026 · #2082 · l'utilisateur · §3
 - **Décidé** : chaque affaire du reporting (tableau, PDF, relecture) porte « Public » ou « Privé » ; Privé quand aucun compte hors du conseil et du syndic ne la lit, auteur résident compris — calculé au serveur par `ticket_visible` (`lecteurs_du_conseil`).
 - **Pourquoi** : « Privé = CS & Syndic / Public = tout autre cas ».
@@ -534,3 +534,17 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : demandé le 19/10/2026 ; « la plus ancienne absorbe » choisi parmi deux options le 20/10.
 - **Écarté** : une affaire neuve qui absorberait les deux.
 - **Tenu par** : `test_fusion_en_cours.py`, `e2e/suivi-affaires.spec.ts`.
+
+### n° 71 · en vigueur — Au reporting, l'affaire dit son état de suivi et « qui la lit » comme sur la page Affaires
+20/10/2026 · #2089 · l'utilisateur · §3
+- **Décidé** : sous le titre de chaque affaire du Suivi (tableau, CR global, relecture, PDF), l'état de suivi en vignette et la pastille « qui la lit » de la page Affaires (`PastilleLecture`) ; au PDF, son mot, calculé par la règle du serveur (`lecture_affaire`).
+- **Pourquoi** : « la vignette Privé/public n'est pas un bon choix : reprendre l'objet destinataires tel qu'il apparaît sur la page affaire ».
+- **Écarté** : la vignette Public / Privé (n° 68).
+- **Tenu par** : `test_lecture_affaire.py`.
+
+### n° 72 · en vigueur — Le PDF du point : la maquette B, et « Exporter en PDF » le tire pendant un point
+20/10/2026 · #2089 · l'utilisateur, sur maquette · §3
+- **Décidé** : le rapport « Exporter en PDF » du Suivi, augmenté : le point (Quand / Où / Qui) et un cartouche de validations en tête, chiffres et répartitions, chaque affaire abordée avec son résumé d'origine puis son CR dans la cellule, les non abordées à la fin ; pendant un point, « Exporter en PDF » rend ce document ; « Aperçu PDF » est retiré.
+- **Pourquoi** : « reprendre uniquement celui de “exporter PDF” qui est chouette » ; B choisie parmi cinq maquettes, « bien conserver les résumés initiaux de chaque affaire après le titre ».
+- **Écarté** : A (rapport puis CR en bande), C (deux colonnes), D (fiches), E (procès-verbal) ; le PDF de la v3.2.0 sans résumé ni âge.
+- **Tenu par** : `test_points_conseil_expedition.py`.

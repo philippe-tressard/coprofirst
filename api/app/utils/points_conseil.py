@@ -84,10 +84,13 @@ def exiger_mode(mode: str) -> str:
 
 
 def releve_du_point(session: Session, point: PointConseil, user: Optional[Utilisateur]) -> Releve:
-    """Le relevé du mode, plus les affaires figées à l'ouverture du point."""
-    return releve(
-        session, user, point.mode, inclure=[a.id for a in affaires_initiales(point) or []]
-    )
+    """Le relevé du mode, plus les affaires figées à l'ouverture du point ET celles
+    qu'il a ABORDÉES (#2089) : close ailleurs pendant le point — une réponse par
+    courriel —, une affaire qui a son compte rendu reste au tableau jusqu'à la
+    validation, même pour un point ouvert avant que la liste ne se fige."""
+    initiales = [a.id for a in affaires_initiales(point) or []]
+    abordees = [c.ticket_id for c in crs_du_point(session, point.id)] if point.id else []
+    return releve(session, user, point.mode, inclure=[*initiales, *abordees])
 
 
 # ── La liste initiale, figée à l'ouverture ────────────────────────────────

@@ -26,14 +26,18 @@
 <script lang="ts">
 	import ContenuBadge from '$lib/components/ContenuBadge.svelte';
 	import Infobulle from '$lib/components/Infobulle.svelte';
-	import { lectureDuCiblage, lectureDuTicket, type ObjetCible } from '$lib/lecture-ticket';
+	import {
+		lectureDuCiblage,
+		lectureDuTicket,
+		type ChampsLecture,
+		type ObjetCible,
+	} from '$lib/lecture-ticket';
 	import { titreLecture } from '$lib/lecture';
 	import { perimetresStore } from '$lib/stores/perimetres';
 	import { relire } from '$lib/utils';
-	import type { Ticket } from '$lib/api';
 
-	/** Une affaire… */
-	export let ticket: Ticket | null = null;
+	/** Une affaire — entière, ou telle que le Suivi des affaires la sert (#2089)… */
+	export let ticket: ChampsLecture | null = null;
 	/** … ou un objet ciblé : annonce, idée, sondage. */
 	export let cible: ObjetCible | null = null;
 	/** Un sondage : « Qui le lit », « Lu par… ». */

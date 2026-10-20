@@ -1,51 +1,45 @@
-"""Le PDF du compte rendu d'un point CS / Syndic (#2042, refait par #2082).
+"""Le PDF du point CS / Syndic — la maquette B (#2089, choisie le 20/10/2026 parmi cinq).
 
-## L'ordre du document (arbitré le 20/10/2026)
+> « Reprendre uniquement celui de “Exporter PDF”, qui est chouette ; il faut juste
+> rajouter les sections manquantes : Quand / Qui / Où et les validations, et le
+> CR du point — fusionner le listing des affaires avec le CR affaire par
+> affaire. » — puis : « On retient B, mais bien conserver les résumés initiaux
+> de chaque affaire après le titre. »
 
-> « Lorsque le CR est validé : les graphiques en couleur ; le Quand/Qui/Où et les
-> validations ; la liste initiale des affaires à traiter ; puis le CR du point. »
+Le document EST le rapport du Suivi des affaires (`suivi_affaires.pdf` : son
+style, sa tête, son tableau), augmenté :
 
-1. les deux répartitions des affaires du point, en couleur (`pdf_barres`) ;
-2. **le point** — Quand, Où, Qui — et **les validations** de chaque présent ;
-3. **les affaires à traiter**, figées à l'ouverture, avec leur vignette Public /
-   Privé et leur état ;
-4. **le compte rendu** : les affaires abordées, une par bloc — marquées
-   « CS et présents », « Modifié en révision N », et l'état décidé —, puis les
-   non traitées.
+1. **le point en tête** : Quand, Où, Qui, et les **validations** dans un cartouche ;
+2. les deux chiffres et les deux **répartitions en couleur** ;
+3. **les affaires abordées** : âge, date d'ouverture, titre — sous lui, l'état de
+   suivi et « qui la lit » en vignettes —, périmètre, **résumé d'origine**, puis
+   le **compte rendu** dans la cellule, marqué « CS et présents », « Modifié en
+   révision N », et l'état décidé ;
+4. **les non abordées**, à la fin, numéro et titre.
 
-Le même document sert d'APERÇU à tout instant (`projet`) : il porte alors
-« Projet — révision N » au lieu de la date de validation.
-
-Le thème — logo, palette, page, moteur — vient de `pdf_theme`, jamais d'ici.
-Tout texte est ÉCHAPPÉ ; un CR riche est rendu en texte (`texte_brut`). Ce
-module est PUR : `points_conseil_expedition.document` assemble ce qu'il montre.
+Le même document, validé ou non : un point en cours ou en relecture porte
+« Projet — révision N » ; validé, « Validé le … » — c'est lui qui est rangé et
+envoyé aux présents. Tout texte est ÉCHAPPÉ ; un CR riche est rendu en texte.
+Ce module est PUR : `points_conseil_expedition.document` assemble ce qu'il montre.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from html import escape
-from typing import Optional
 
 from app.models.core import RoleUtilisateur, StatutUtilisateur
 from app.models.points_conseil import CompteRenduAffaire
 from app.utils.annonce_hall import texte_brut
-from app.utils.dates_fr import date_courte, datetime_longue
-from app.utils.pdf_theme import (
-    CSS_ENTETE_RAPPORT,
-    FONT_SANS,
-    PALETTE_CSS,
-    entete_rapport,
-    html_to_pdf,
-    regle_page,
-)
+from app.utils.dates_fr import date_courte, date_longue, datetime_longue
+from app.utils.pdf_theme import entete_rapport, html_to_pdf
 from app.utils.points_conseil import CrGlobal, nom_present
 from app.utils.points_conseil_ou import ou_du_point
 from app.utils.roles_libelles import libelle_role, libelle_statut
-from app.utils.suivi_affaires.pdf_barres import CSS_BARRES, repartition_html
+from app.utils.suivi_affaires.pdf import CSS_RAPPORT, tableau_html, tete_html
 from app.utils.suivi_affaires.releve import AffaireOuverte, Releve
 
-TITRE = "Compte rendu du point CS / Syndic"
+TITRE = "Point CS / Syndic"
 
 #: Le libellé de la case « CS et présents » (#2082) — celui de l'écran.
 LIBELLE_CS_ET_PRESENTS = "CS et présents"
@@ -58,32 +52,48 @@ GROUPES = (
     ("invite", "Invités"),
 )
 
-_CSS = f"""
-{PALETTE_CSS}
-{regle_page()}
-body {{ font-family: {FONT_SANS}; font-size: 10pt; color: var(--ink); margin: 0; }}
-{CSS_ENTETE_RAPPORT}{CSS_BARRES}
-h2 {{ font-size: 8pt; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
-  margin: 12pt 0 4pt; }}
-p {{ margin: 0 0 3pt; }}
-.tete {{ display: flex; gap: 10pt; margin-bottom: 4pt; }}
-.groupe {{ font-weight: 700; }}
-.precision {{ color: var(--muted); }}
-ul.validations {{ margin: 0; padding-left: 12pt; }}
-table.liste {{ width: 100%; border-collapse: collapse; font-size: 9pt; }}
-.liste td {{ border-bottom: 1px solid var(--border); padding: 3pt 4pt; vertical-align: top; }}
-.liste .num, .liste .etat {{ white-space: nowrap; color: var(--muted); }}
-.vignette {{ font-size: 7pt; font-weight: 700; border-radius: 3pt; padding: 0 3pt;
-  white-space: nowrap; }}
-.vignette.prive {{ background: #efeaf8; color: #4a3aa7; }}
-.vignette.public {{ background: #e8f4ee; color: #3d6b4f; }}
-.abordee {{ border-top: 1px solid var(--border); padding: 5pt 0; break-inside: avoid; }}
-.abordee .titre {{ font-weight: 700; color: var(--navy); margin-bottom: 2pt; }}
-.abordee .texte {{ white-space: pre-line; }}
-.marque {{ font-size: 7.5pt; color: var(--muted); font-weight: 400; }}
-.marque.revision {{ color: #7b5815; }}
-.vide {{ color: var(--muted); font-style: italic; }}
+#: La teinte de la vignette d'état — celles des badges d'état de l'écran
+#: (`STATUT_TICKET_BADGE`) : orange chez le syndic, violet à l'AG, bleu chez le
+#: prestataire, vert clos, gris sinon.
+TEINTES_ETAT = {
+    "en_cours": ("#fdf3e0", "#7b5815"),
+    "en_ag": ("#efeaf8", "#4a3aa7"),
+    "chez_prestataire": ("#e6f0fb", "#1d5fa8"),
+    "résolu": ("#e8f4ee", "#2e7d4f"),
+    "annulé": ("#f3f4f7", "#5a6070"),
+}
+
+_CSS = (
+    CSS_RAPPORT
+    + """
+.cote { display: flex; gap: 10pt; margin-bottom: 10pt; }
+.point { flex: 1; border: 1px solid var(--border); border-radius: 5pt; padding: 6pt 9pt; }
+.point p { margin: 0 0 3pt; }
+.groupe { font-weight: 700; }
+.precision { color: var(--muted); }
+.cartouche { width: 160pt; border: 1px solid var(--navy); border-radius: 5pt; padding: 6pt 9pt;
+  font-size: 8.5pt; }
+.cartouche h3, .point h3 { margin: 0 0 4pt; font-size: 7.5pt; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--navy); }
+.cartouche p { margin: 0 0 3pt; }
+.cartouche .ok { color: #2e7d4f; }
+.cartouche .derog { color: #7b5815; }
+h2 { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+  margin: 12pt 0 4pt; }
+.caps { display: block; margin: 0 0 2pt; }
+.cap { display: inline-block; font-size: 7pt; font-weight: 700; border-radius: 6pt;
+  padding: 0 5pt; margin-right: 3pt; border: 1px solid transparent; }
+.cap.lecture { background: #eef2f7; color: var(--navy); }
+.cap.decide { background: #fff; color: var(--navy); border-color: var(--navy); }
+.crb { background: #f6f8fb; border-left: 2.5pt solid var(--navy); padding: 4pt 7pt;
+  margin-top: 4pt; font-size: 8.5pt; white-space: pre-line; }
+.crb .lbl { font-size: 7pt; text-transform: uppercase; letter-spacing: .05em; color: var(--navy);
+  font-weight: 700; margin-right: 4pt; }
+.marque { font-size: 7pt; color: var(--muted); }
+.marque.revision { color: #7b5815; font-weight: 700; }
+.nt { color: var(--muted); font-size: 8.5pt; }
 """
+)
 
 
 @dataclass
@@ -91,7 +101,7 @@ class DocumentPoint:
     """Ce que le PDF montre — assemblé par `points_conseil_expedition.document`."""
 
     cr: CrGlobal
-    #: Le relevé des affaires du point (les répartitions et la liste à traiter).
+    #: Le relevé des affaires du point (les répartitions et les lignes).
     releve: Releve
     #: La révision que le document montre, et les marques de chaque CR.
     revision: int
@@ -101,16 +111,8 @@ class DocumentPoint:
     validation_du_point: str = ""
     #: L'état décidé à la validation, par affaire, déjà écrit : « État : A → B ».
     etats: dict[int, str] = field(default_factory=dict)
-    #: Un aperçu (« Projet — révision N »), pas le document validé.
+    #: Un projet (« Projet — révision N »), pas le document validé.
     projet: bool = False
-
-
-def _vignette(a: Optional[AffaireOuverte]) -> str:
-    if a is None:
-        return ""
-    if a.prive:
-        return '<span class="vignette prive">Privé</span>'
-    return '<span class="vignette public">Public</span>'
 
 
 def _presents(cr: CrGlobal) -> str:
@@ -136,87 +138,94 @@ def _presents(cr: CrGlobal) -> str:
     return "".join(lignes) or '<p class="vide">Aucun présent indiqué.</p>'
 
 
-def _validations(doc: DocumentPoint) -> str:
-    items = "".join(f"<li>{escape(v)}</li>" for v in doc.validations)
-    tete = f"<p>{escape(doc.validation_du_point)}</p>" if doc.validation_du_point else ""
-    corps = f'<ul class="validations">{items}</ul>' if items else ""
-    return f"<h2>Validations</h2>{tete}{corps}" if (tete or corps) else ""
-
-
-def _liste_initiale(doc: DocumentPoint) -> str:
-    affaires = {a.id: a for a in doc.releve.affaires}
-    citees = doc.cr.initiales or [
-        *(a for a, _ in doc.cr.abordees),
-        *doc.cr.non_traitees,
-    ]
-    if not citees:
-        return '<p class="vide">Aucune affaire à traiter.</p>'
-    lignes = "".join(
-        f'<tr><td class="num">{escape(c.numero)}</td><td>{escape(c.titre)}</td>'
-        f"<td>{_vignette(affaires.get(c.id))}</td>"
-        f'<td class="etat">{escape(affaires[c.id].libelle_statut) if c.id in affaires else ""}</td></tr>'
-        for c in citees
+def _cartouche(doc: DocumentPoint) -> str:
+    lignes = (
+        "".join(
+            f'<p class="{"derog" if "dérogation" in v else "ok" if "validé" in v else ""}">'
+            f"{escape(v)}</p>"
+            for v in doc.validations
+        )
+        or '<p class="precision">Aucun destinataire.</p>'
     )
-    return f'<table class="liste">{lignes}</table>'
+    pied = (
+        f'<p class="precision">{escape(doc.validation_du_point)}</p>'
+        if doc.validation_du_point
+        else ""
+    )
+    return f'<div class="cartouche"><h3>Validations</h3>{lignes}{pied}</div>'
 
 
-def _marques(doc: DocumentPoint, ticket_id: int, c: CompteRenduAffaire) -> str:
+def _vignette_etat(a: AffaireOuverte) -> str:
+    fond, encre = TEINTES_ETAT.get(a.statut, ("#f3f4f7", "#5a6070"))
+    return (
+        f'<span class="cap" style="background:{fond};color:{encre}">'
+        f"{escape(a.libelle_statut)}</span>"
+    )
+
+
+def _sous_titre(a: AffaireOuverte) -> str:
+    """L'état de suivi et « qui la lit », sous le titre — comme la page Affaires."""
+    lecture = f'<span class="cap lecture">{escape(a.lecture)}</span>' if a.lecture else ""
+    fusions = (
+        f'<span class="marque">Fusionne : {escape(" · ".join(a.fusionnees))}</span>'
+        if a.fusionnees
+        else ""
+    )
+    return f'<span class="caps">{_vignette_etat(a)}{lecture}{fusions}</span>'
+
+
+def _compte_rendu(doc: DocumentPoint, ticket_id: int, c: CompteRenduAffaire) -> str:
     marques = []
     if c.conseil_seul:
         marques.append(f'<span class="marque">({LIBELLE_CS_ET_PRESENTS})</span>')
     if ticket_id in doc.marques:
         marques.append(f'<span class="marque revision">{escape(doc.marques[ticket_id])}</span>')
     if ticket_id in doc.etats:
-        marques.append(f'<span class="marque">{escape(doc.etats[ticket_id])}</span>')
-    #  L'historique de fusion, cité au point (#2083).
-    affaire = next((x for x in doc.releve.affaires if x.id == ticket_id), None)
-    if affaire and affaire.fusionnees:
-        fusions = " · ".join(affaire.fusionnees)
-        marques.append(f'<span class="marque">Fusionne : {escape(fusions)}</span>')
-    return " ".join(marques)
+        marques.append(f'<span class="cap decide">{escape(doc.etats[ticket_id])}</span>')
+    return (
+        f'<div class="crb"><span class="lbl">CR</span>{escape(texte_brut(c.contenu))}'
+        + (f" {' '.join(marques)}" if marques else "")
+        + "</div>"
+    )
 
 
 def html_compte_rendu(doc: DocumentPoint, *, site_nom: str, logo_png: bytes | None) -> str:
-    """PURE. Le document HTML autonome du compte rendu."""
+    """PURE. Le document HTML autonome du point (maquette B)."""
     cr, point = doc.cr, doc.cr.point
-    affaires = {a.id: a for a in doc.releve.affaires}
-    abordees = (
-        "".join(
-            '<div class="abordee">'
-            f'<p class="titre">{escape(a.numero)} · {escape(a.titre)} {_vignette(affaires.get(a.id))} '
-            f"{_marques(doc, a.id, c)}</p>"
-            f'<p class="texte">{escape(texte_brut(c.contenu))}</p></div>'
-            for a, c in cr.abordees
-        )
-        or '<p class="vide">Aucune affaire abordée.</p>'
-    )
+    crs = {a.id: c for a, c in cr.abordees}
+    abordees = [a for a in doc.releve.affaires if a.id in crs]
+    if doc.projet:
+        mention = f"Projet — révision {doc.revision}" if doc.revision else "Projet"
+    else:
+        mention = f"Validé le {date_courte(point.valide_le)}" if point.valide_le else ""
+    fin = f" → {point.fin:%H:%M}" if point.fin else ""
+    nb = len(cr.abordees) + len(cr.non_traitees)
     non_traitees = (
-        "<h2>Non traitées</h2><p>"
+        f'<h2>Non abordées · {len(cr.non_traitees)}</h2><p class="nt">'
         + " · ".join(f"{escape(a.numero)} {escape(a.titre)}" for a in cr.non_traitees)
         + "</p>"
         if cr.non_traitees
         else ""
     )
-    if doc.projet:
-        mention = f"Projet — révision {doc.revision}" if doc.revision else "Projet"
-    else:
-        mention = f"Validé le {date_courte(point.valide_le)}" if point.valide_le else ""
-    nb = len(cr.initiales) or len(cr.abordees) + len(cr.non_traitees)
     return (
         f"<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>{TITRE}</title>"
         f"<style>{_CSS}</style></head><body>"
         f"{entete_rapport(logo_png, site_nom, mention)}"
-        f"<h1>{TITRE}</h1>"
-        '<div class="tete">'
-        f"{repartition_html('Par catégorie', doc.releve.par_categorie)}"
-        f"{repartition_html('Par bâtiment', doc.releve.par_batiment)}</div>"
-        "<h2>1 · Le point</h2>"
-        f"<p>{escape(datetime_longue(point.debut))} · {escape(ou_du_point(point))}</p>"
-        f"{_presents(cr)}{_validations(doc)}"
-        f"<h2>2 · Les affaires à traiter · {nb}</h2>{_liste_initiale(doc)}"
-        f"<h2>3 · Le compte rendu · {len(cr.abordees)} affaire"
-        f"{'s' if len(cr.abordees) > 1 else ''} abordée{'s' if len(cr.abordees) > 1 else ''}</h2>"
-        f"{abordees}{non_traitees}</body></html>"
+        f"<h1>{TITRE} du {escape(date_longue(point.debut))}</h1>"
+        '<div class="cote"><div class="point"><h3>Le point</h3>'
+        f"<p>{escape(datetime_longue(point.debut))}{fin} · {escape(ou_du_point(point))}</p>"
+        f"{_presents(cr)}</div>{_cartouche(doc)}</div>"
+        f"{tete_html(doc.releve, 'affaires à traiter')}"
+        f"<h2>Les affaires · {nb} — abordées {len(cr.abordees)}, "
+        f"non abordées {len(cr.non_traitees)}</h2>"
+        + tableau_html(
+            abordees,
+            sous_titre=_sous_titre,
+            complement=lambda a: _compte_rendu(doc, a.id, crs[a.id]),
+            entete="Affaire et compte rendu",
+            vide="Aucune affaire abordée.",
+        )
+        + f"{non_traitees}</body></html>"
     )
 
 

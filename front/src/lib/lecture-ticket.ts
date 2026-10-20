@@ -35,7 +35,6 @@ export function perimetreRestreint(perimetre: string[] | null | undefined): bool
 	return !!perimetre && perimetre.length > 0 && !concerneTous(perimetre);
 }
 
-/** Qui lit cette affaire, telle qu'elle est enregistrée. */
 /**  Ce qui décide de la lecture d'une affaire, hors de ses choix — d'un objet
  *   enregistré comme d'une saisie en cours (`FormulaireTicket`). */
 export function natureLue(s: { categorie?: string | null; statut?: string | null }): NatureLue {
@@ -44,10 +43,6 @@ export function natureLue(s: { categorie?: string | null; statut?: string | null
 		categorie: s.categorie ?? undefined,
 		statut: s.statut ?? undefined,
 	};
-}
-
-export function natureDuTicket(t: Ticket): NatureLue {
-	return natureLue(t);
 }
 
 /**  Les Destinataires qu'une Suite présélectionne sur une AFFAIRE sans choix
@@ -86,9 +81,16 @@ export function ticketLuDuSeulConseil(t: Ticket): boolean {
 	return lectureDuTicket(t).profils.length === 0;
 }
 
-export function lectureDuTicket(t: Ticket): Lecture {
+/**  Ce que la pastille LIT d'une affaire — une `Ticket` entière, ou une affaire
+ *   du Suivi des affaires (`AffaireOuverte`, #2089), qui n'en porte que ceci. */
+export type ChampsLecture = Pick<
+	Ticket,
+	'categorie' | 'statut' | 'confidentiel' | 'public_cible' | 'perimetre_cible' | 'reserve_perimetre'
+>;
+
+export function lectureDuTicket(t: ChampsLecture): Lecture {
 	return lectureDe({
-		...natureDuTicket(t),
+		...natureLue(t),
 		confidentiel: t.confidentiel === true,
 		publicCible: t.public_cible,
 		perimetreRestreint: perimetreRestreint(t.perimetre_cible),

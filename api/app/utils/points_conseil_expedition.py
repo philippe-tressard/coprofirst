@@ -11,10 +11,11 @@
 le point (`pdf_cle`) — puis l'envoie. Il ne lève jamais : une validation est
 acquise même si le moteur PDF ou le courriel échouent, et l'échec se journalise.
 
-## L'aperçu
+## Le même document à tout instant
 
-Le même document, à tout instant (en cours, en relecture) : `pdf_du_point(…,
-projet=True)` le marque « Projet — révision N ».
+« Exporter en PDF », pendant un point, rend ce document marqué « Projet —
+révision N » (`pdf_du_point(…, projet=True)`, #2089 : le bouton « Aperçu PDF »
+est retiré).
 """
 
 from __future__ import annotations
@@ -91,7 +92,9 @@ def document(
     from app.routers.tickets.commun import STATUT_LABELS
 
     cr = compte_rendu(session, point, user)
-    ids = {a.id for a in cr.initiales} or {
+    #  Les affaires du point : sa liste figée, ses abordées, ses non traitées (#2089).
+    ids = {
+        *(a.id for a in cr.initiales),
         *(a.id for a, _ in cr.abordees),
         *(a.id for a in cr.non_traitees),
     }
