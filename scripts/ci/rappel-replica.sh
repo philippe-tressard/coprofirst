@@ -57,6 +57,15 @@ decider_rappel() {
 rappels_perimes() {
     awk -F '\t' -v t="$1" '$2 != t { print $1 }'
 }
+#  $1 commit de replica · $2 sa version → ses mineures de retard sur `origin/main`.
+#  Lit le dépôt git courant (le self-test lui en bâtit un). Le tag de replica est
+#  dans la liste, et `mineures_de_retard` l'exclut avec sa mineure : un filtre en
+#  amont vidait le tube quand replica porte la dernière version, et un `grep`
+#  qui ne trouve rien sort en 1 — sous `pipefail` + `set -e`, le script mourait
+#  sans un mot (nuits du 19 et du 20/10/2026, replica sur v3.1.0).
+retard_de_replica() {
+    git tag -l 'v[0-9]*' --merged origin/main --contains "$1" | mineures_de_retard "$2"
+}
 
 if [ "${1:-}" = "--selftest" ]; then
     fail=0
@@ -90,16 +99,31 @@ v3.0.1
     egal "même tranche, replica a avancé → créer" creer "$(printf '%s\n' "$t10" | decider_rappel "$(titre_rappel 2.150.0 10)")"
     egal "rappel 10 périmé quand 20 s'ouvre"     12    "$(printf '12\t%s\n15\t%s\n' "$t10" "$t20" | rappels_perimes "$t20")"
     egal "tout se ferme quand replica rattrape"  "12"  "$(printf '12\t%s\n' "$t10" | rappels_perimes "")"
+    #  Le retard lu dans un vrai dépôt : replica sur la DERNIÈRE version, puis en
+    #  retard. Le code de retour compte autant que la valeur : l'écriture fautive
+    #  rendait bien « 0 », mais en échec — et l'affectation tuait le script.
+    depot=$(mktemp -d)
+    commit() { git -c user.email=t@t -c user.name=t commit -q --allow-empty -m "$1"; }
+    (cd "$depot" && git init -q && commit a && git tag v3.1.0 && git update-ref refs/remotes/origin/main HEAD)
+    r=$(cd "$depot" && retard_de_replica HEAD 3.1.0) || r="échec (code $?)"
+    egal "replica sur la dernière version → 0, sans échec" 0 "$r"
+    (cd "$depot" && commit b && git tag v3.2.0 && commit c && git tag v3.2.1 && git update-ref refs/remotes/origin/main HEAD)
+    r=$(cd "$depot" && retard_de_replica v3.1.0 3.1.0) || r="échec (code $?)"
+    egal "une mineure et son correctif → 1"   1 "$r"
+    rm -rf "$depot"
     exit "$fail"
 fi
+
+#  Un échec se nomme : sous `set -e`, le run ne disait que « exit code 1 ».
+trap 'echo "::error::rappel-replica.sh, ligne $LINENO : « $BASH_COMMAND » a échoué"' ERR
 
 DEPOT="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY manquant}"
 git fetch --quiet origin main replica 2>/dev/null || true
 replica=$(git rev-parse --verify origin/replica)
 replica_version=$(version_du_commit "$replica")
 [ -n "$replica_version" ] || { echo "::error::replica ($replica) ne porte aucun tag de version"; exit 1; }
-derniere=$(git tag -l 'v[0-9]*' --merged origin/main --sort=-v:refname | head -n 1)
-retard=$(git tag -l 'v[0-9]*' --merged origin/main --contains "$replica" | grep -vxF "v$replica_version"     | mineures_de_retard "$replica_version")
+derniere=$(git tag -l 'v[0-9]*' --merged origin/main --sort=-v:refname | sed -n 1p)
+retard=$(retard_de_replica "$replica" "$replica_version")
 tranche=$(tranche_retard "$retard")
 titre=""
 [ "$tranche" -gt 0 ] && titre=$(titre_rappel "$replica_version" "$tranche")
