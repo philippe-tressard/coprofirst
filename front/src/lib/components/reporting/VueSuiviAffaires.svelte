@@ -52,6 +52,9 @@
     précédente rendu : *« c'est très perturbant de perdre le fil des affaires »*.
   - L'**historique des CR** (`HistoriquePoints`), plié, entre les graphiques et
     le point.
+  - **Les affaires liées** (#2083) se suivent ; **Fusionner** ouvre la fusion
+    sous leur en-tête (`FusionAffaires`), **Ne pas fusionner** l'écarte après
+    confirmation — au point comme hors d'un point.
 
   Autonome : elle charge ses données et rend compte à la barre d'outils du parent
   (`chargement`, `estVide`, `recharger`, `exporterPdf`).
@@ -80,6 +83,8 @@
 	import SaisieCrAffaire from './SaisieCrAffaire.svelte';
 	import CrGlobal from './CrGlobal.svelte';
 	import HistoriquePoints from './HistoriquePoints.svelte';
+	import FusionAffaires from './FusionAffaires.svelte';
+	import { confirmer } from '$lib/confirmation';
 	import BarresCroisees from './BarresCroisees.svelte';
 	import BilanVisites from './BilanVisites.svelte';
 	import VisitesRealisees from './VisitesRealisees.svelte';
@@ -125,6 +130,25 @@
 	$: suivreEtat(compteRendu?.point.etat ?? null);
 	/** Relu par l'historique quand un point vient d'être validé. */
 	let versionHistorique = 0;
+	/** Le groupe d'affaires liées dont la fusion est ouverte (#2083). */
+	let fusionOuverte: number | null = null;
+
+	async function ecarter(ids: number[]) {
+		const ok = await confirmer({
+			titre: 'Ne pas fusionner',
+			message:
+				'Ces affaires gardent chacune leur suivi et leur compte rendu ; elles ne seront plus rassemblées, et leur fusion ne sera plus proposée — ni ici, ni à la clôture. Leur historique le dira.',
+			libelleConfirmer: 'Ne pas fusionner',
+		});
+		if (!ok) return;
+		try {
+			await suiviApi.fusions.ecarter(ids);
+			toast('success', 'Fusion écartée');
+			await relire();
+		} catch (e) {
+			toast('error', messageErreur(e, 'Impossible d’écarter la fusion'));
+		}
+	}
 
 	/** Lu par la barre d'outils du parent — ne pas écrire depuis l'extérieur. */
 	export let chargement = false;
@@ -297,7 +321,19 @@
 				{marques}
 				ajout={actif?.point.etat === 'en_cours'}
 				bind:ouverte={crOuvert}
+				bind:fusionOuverte
+				onEcarter={ecarter}
 			>
+				<svelte:fragment slot="fusion" let:affaires>
+					<FusionAffaires
+						{affaires}
+						onFusionne={() => {
+							fusionOuverte = null;
+							relire();
+						}}
+						onAnnule={() => (fusionOuverte = null)}
+					/>
+				</svelte:fragment>
 				<svelte:fragment slot="saisie" let:affaire let:cr>
 					{#if actif}
 						<SaisieCrAffaire

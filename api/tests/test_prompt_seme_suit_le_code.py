@@ -51,6 +51,7 @@ from app.utils.llm_usages import USAGES
 #: | `synthese_affaire` | 0255 (03/10/2026) — le cinquième usage, semé à sa création (#1643) |
 #: | `question_reglement` | 0256 (03/10/2026) — le sixième usage, semé à sa création |
 #: | `synthese_affaires_en_cours` | 0289 (16/10/2026, #2035) — le résumé de CHAQUE affaire remplace la synthèse d'ensemble ; né sans semis (la clé absente retombe sur l'origine, `config_llm`), la 0289 remplace une valeur enregistrée si elle est intacte |
+#: | `fusion_affaires` | aucune (20/10/2026, #2083) — né sans semis, comme le précédent : la clé absente retombe sur l'origine (`config_llm`) |
 EMPREINTES_SEMEES = {
     "description": "a6bca9c941ff52c7b5f90108eccf8c0d0a1dbe2ced37f9ca41d621953b84528e",
     "synthese_contrat": "35d2cc4c13b269dbfa80bb197fec7ade1b27278dc7152b4c3acbf21b2036f097",
@@ -59,6 +60,7 @@ EMPREINTES_SEMEES = {
     "synthese_affaire": "4c3731e49d70c7ecc87be0cf738963557edc6671694c661b4c7eaf10f323407c",
     "question_reglement": "00e271b332d102aa58d6c548e06cd36dd5d8c662894d720aef2d61fea692bfe2",
     "synthese_affaires_en_cours": "4ad57e8196cc222c81278d1ec0661cb7517d552b365b4f2da27303ba81c9a24d",
+    "fusion_affaires": "9378f0059fff3f1370dba2bda2633ed0d3f439c391383070f9db867687fd75f8",
 }
 
 #: 🔴 Écart connu, tracé et non corrigé ici.

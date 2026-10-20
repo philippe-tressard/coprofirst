@@ -21,6 +21,11 @@
     est une cible de défilement (`cible-defilement`, `id="affaire-N"`) : après
     l'enregistrement d'un CR, la vue place l'affaire suivante en haut de l'écran.
 
+  - **#2083** : les affaires LIÉES se suivent, rassemblées par le serveur
+    (`groupe`) ; une ligne d'en-tête les annonce, avec **Fusionner** et **Ne pas
+    fusionner** (hors relance), et la fusion s'ouvre sous elle (créneau
+    `fusion`). Une affaire qui en a absorbé d'autres les cite sous son titre.
+
   Sous le titre, le PÉRIMÈTRE (`BadgePerimetre`, qui tait celui par défaut), puis
   l'APERÇU — le résumé de l'assistant (✨), sinon le descriptif —
   coupé à cinq lignes (`.clamp-rapport`). Le serveur décide lequel
@@ -57,6 +62,16 @@
 	export let ajout = true;
 	/** « Modifié en révision N », par affaire — lu dans le CR global (#2082). */
 	export let marques: Map<number, string> = new Map();
+	/** Le groupe dont la fusion est ouverte — un à la fois (#2083). */
+	export let fusionOuverte: number | null = null;
+	/** « Ne pas fusionner » : la vue demande confirmation, puis relit. */
+	export let onEcarter: ((ids: number[]) => void) | null = null;
+
+	/** Les membres de chaque groupe, dans l'ordre servi. */
+	$: membres = affaires.reduce((m, a) => {
+		if (a.groupe !== null) m.set(a.groupe, [...(m.get(a.groupe) ?? []), a]);
+		return m;
+	}, new Map<number, AffaireOuverte[]>());
 
 	$: colonnes = relance ? 6 : 4;
 
@@ -86,7 +101,39 @@
 		</thead>
 		<tbody>
 			{#each affaires as a (a.id)}
-				<tr id="affaire-{a.id}" class="cible-defilement">
+				{#if a.groupe === a.id && !relance}
+					<tr class="groupe-tete">
+						<td colspan={colonnes}>
+							<span class="groupe-titre">
+								<Icon name="link" size={14} />
+								{membres.get(a.id)?.length ?? 0} affaires liées
+							</span>
+							<button
+								type="button"
+								class="btn btn-sm btn-outline"
+								aria-expanded={fusionOuverte === a.id}
+								on:click={() => (fusionOuverte = fusionOuverte === a.id ? null : a.id)}
+							>
+								Fusionner
+							</button>
+							{#if onEcarter}
+								<button
+									type="button"
+									class="btn btn-sm btn-outline"
+									on:click={() => onEcarter?.((membres.get(a.id) ?? []).map((m) => m.id))}
+								>
+									Ne pas fusionner
+								</button>
+							{/if}
+						</td>
+					</tr>
+					{#if fusionOuverte === a.id}
+						<tr class="saisie">
+							<td colspan={colonnes}><slot name="fusion" affaires={membres.get(a.id) ?? []} /></td>
+						</tr>
+					{/if}
+				{/if}
+				<tr id="affaire-{a.id}" class="cible-defilement" class:liee={a.groupe !== null}>
 					{#if relance}
 						<td class="choix">
 							<input
@@ -106,6 +153,10 @@
 					<td class="affaire">
 						<a href={lienTicket(a.id)} class="titre">{a.titre}</a>
 						<VignetteVisibilite prive={a.prive} />
+						{#if a.fusionnees.length}
+							<!--  L'historique de fusion, cité au point (#2083). -->
+							<span class="fusionnees">🔀 Fusionne {a.fusionnees.join(' · ')}</span>
+						{/if}
 						{#if a.a_evolue && !visites}
 							<!--  Le signal « a évolué » (#2044) : sous le titre, icône ET libellé. -->
 							<span class="evolution"
@@ -212,6 +263,30 @@
 	.evolution {
 		display: block;
 		margin: 0.15rem 0;
+	}
+	.groupe-tete td {
+		background: var(--color-neutre-fond);
+		padding: 0.35rem 0.5rem;
+	}
+	.groupe-titre {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		margin-right: 0.75rem;
+		font-weight: 600;
+		font-size: var(--fs-sm);
+	}
+	.groupe-tete .btn {
+		margin-right: 0.4rem;
+	}
+	tr.liee td:first-child {
+		box-shadow: inset 3px 0 0 var(--color-primary);
+	}
+	.fusionnees {
+		display: block;
+		margin: 0.15rem 0;
+		font-size: var(--fs-sm);
+		color: var(--color-text-muted);
 	}
 	.ia-signe {
 		color: var(--color-violet);

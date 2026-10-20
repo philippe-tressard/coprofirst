@@ -41,7 +41,7 @@ est `a_relancer`. En jours civils de Paris, l'un comme l'autre.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from typing import Iterable, Optional
 
@@ -55,6 +55,8 @@ from app.utils import horloge
 from app.utils.annonce_hall import texte_brut
 from app.utils.batiments import libelle_batiment
 from app.utils.categories_ticket import libelle_categorie
+from app.utils import fusion_en_cours
+from app.utils.affaire_absorbee import pas_absorbee
 from app.utils.lecteurs_du_conseil import privees
 from app.utils.entretien_periodique import conditions_entretien_en_cours, etat_visite
 from app.utils.perimetres import (
@@ -122,6 +124,11 @@ class AffaireOuverte:
     #: La vignette (#2082) : seuls le conseil et le syndic la lisent
     #: (`utils/lecteurs_du_conseil.privees`).
     prive: bool = False
+    #: Les affaires liées rassemblées (#2083) : l'identifiant de la plus ancienne
+    #: du groupe — `None` pour une affaire seule (`utils/fusion_en_cours`).
+    groupe: Optional[int] = None
+    #: L'historique de fusion, cité au point : « TK-12 — Titre » des absorbées.
+    fusionnees: list[str] = field(default_factory=list)
 
     @property
     def apercu(self) -> str:
@@ -295,7 +302,10 @@ def releve(
 
     conditions = conditions_entretien_en_cours() if entretien else conditions_relancable()
     en_plus = [i for i in inclure if i is not None]
-    filtre = or_(and_(*conditions), col(Ticket.id).in_(en_plus)) if en_plus else and_(*conditions)
+    #  Une affaire du point absorbée par une fusion (#2083) le quitte : son
+    #  suivi se poursuit dans celle qui l'a absorbée, qui la cite.
+    du_point = and_(col(Ticket.id).in_(en_plus), pas_absorbee())
+    filtre = or_(and_(*conditions), du_point) if en_plus else and_(*conditions)
     tickets = [
         t
         for t in session.exec(
@@ -308,22 +318,39 @@ def releve(
     relances = relances_envoyees(session, [t.id for t in tickets])
     dernieres = dernieres_entrees(session, [t.id for t in tickets])
     secretes = privees(session, tickets)
+    affaires = [
+        lire_affaire(
+            t,
+            jour,
+            STATUT_LABELS,
+            delai_jours=delai,
+            relances=relances.get(t.id),
+            avec_visite=entretien,
+            derniere_entree=dernieres.get(t.id),
+            prive=t.id in secretes,
+        )
+        for t in tickets
+    ]
     return Releve(
         jour=jour,
         delai_jours=delai,
         mode=mode,
         batiments=libelles_batiments(session),
-        affaires=[
-            lire_affaire(
-                t,
-                jour,
-                STATUT_LABELS,
-                delai_jours=delai,
-                relances=relances.get(t.id),
-                avec_visite=entretien,
-                derniere_entree=dernieres.get(t.id),
-                prive=t.id in secretes,
-            )
-            for t in tickets
-        ],
+        affaires=rassembler(session, affaires),
     )
+
+
+def rassembler(session: Session, affaires: list[AffaireOuverte]) -> list[AffaireOuverte]:
+    """Les affaires liées rassemblées dans le tri, et ce que chacune a absorbé (#2083)."""
+    ids = [a.id for a in affaires]
+    groupe_de = fusion_en_cours.groupes(session, ids)
+    absorbees = fusion_en_cours.absorbees_par(session, ids)
+    enrichies = [
+        replace(
+            a,
+            groupe=groupe_de.get(a.id),
+            fusionnees=[f"{t.numero} — {t.titre}" for t in absorbees.get(a.id, [])],
+        )
+        for a in affaires
+    ]
+    return fusion_en_cours.ordonner(enrichies, groupe_de)

@@ -102,9 +102,14 @@ def _sans_fuite(session: Session, principale: Ticket, absorbee: Ticket) -> bool:
 
 def candidates(session: Session, principale: Ticket, lecteur: Utilisateur) -> list[dict]:
     """Les affaires liées qu'on peut proposer à la fusion : non closes, lisibles
-    par qui clôt, ni actualité ni déjà absorbées — chacune avec son verdict."""
+    par qui clôt, ni actualité ni déjà absorbées, ni écartées par le conseil
+    (#2083) — chacune avec son verdict."""
+    from app.utils.fusion_en_cours import liens_ecartes
+
     rendu = []
-    for i in sorted(ids_lies(session, principale.id)):
+    #  Une fusion écartée par le conseil n'est plus proposée (#2083).
+    ecartees = liens_ecartes(session, principale.id)
+    for i in sorted(ids_lies(session, principale.id) - ecartees):
         t = session.get(Ticket, i)
         if (
             t is None

@@ -79,6 +79,10 @@ class AffaireOuverteRead(BaseModel):
     prive: bool = False
     #: L'état coché d'office à la saisie de son CR — « À l'AG » reste à l'AG (#2082).
     etat_par_defaut: str = ""
+    #: Le groupe des affaires liées rassemblées (#2083) — `None` pour une affaire seule.
+    groupe: Optional[int] = None
+    #: L'historique de fusion, cité au point : « TK-12 — Titre » des absorbées.
+    fusionnees: list[str] = []
 
     class Config:
         from_attributes = True

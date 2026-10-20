@@ -38,6 +38,8 @@ const AFFAIRE = {
 	motif_evolution: null,
 	prive: false,
 	etat_par_defaut: 'en_cours',
+	groupe: null,
+	fusionnees: [],
 };
 
 /** Une seconde affaire, plus récente : la suivante du tableau. */

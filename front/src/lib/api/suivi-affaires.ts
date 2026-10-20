@@ -50,6 +50,18 @@ export interface AffaireOuverte {
 	prive: boolean;
 	/** L'état coché d'office à la saisie de son CR — « À l'AG » reste à l'AG. */
 	etat_par_defaut: string;
+	/** Le groupe des affaires liées rassemblées (#2083) : l'id de la plus ancienne. */
+	groupe: number | null;
+	/** L'historique de fusion, cité au point : « TK-12 — Titre » des absorbées. */
+	fusionnees: string[];
+}
+
+/** Ce que l'assistant — ou, sans lui, le serveur — propose pour une fusion (#2083). */
+export interface PropositionFusion {
+	titre: string;
+	/** HTML — à rendre par l'éditeur, qui l'assainit. */
+	description: string;
+	assiste_ia: boolean;
 }
 
 /** Une tranche d'une barre de répartition : un bâtiment, ou une catégorie. */
@@ -101,6 +113,19 @@ export const suiviAffaires = {
 	/**  Fait rédiger le résumé de chaque affaire, gardé au serveur : l'écran les
 	 *   relit par `lire`. La synthèse d'ensemble de #2034 n'existe plus (#2035). */
 	resumer: () => api.post<{ rediges: number }>('/suivi-affaires/resumes'),
+	/**  Les affaires liées (#2083) : la proposition (n'écrit rien), la fusion — la
+	 *   plus ancienne absorbe —, et « Ne pas fusionner ». */
+	fusions: {
+		proposer: (ids: number[]) =>
+			api.post<PropositionFusion>('/suivi-affaires/fusions/proposition', { ids }),
+		fusionner: (ids: number[], titre: string, description: string) =>
+			api.post<{ principale_id: number; absorbees: number[] }>('/suivi-affaires/fusions', {
+				ids,
+				titre,
+				description,
+			}),
+		ecarter: (ids: number[]) => api.post<void>('/suivi-affaires/fusions/ecarter', { ids }),
+	},
 	/** Le PDF du relevé, rendu par le serveur. */
 	pdf: (mode: ModeReleve = 'affaires') => api.postFichier(`/suivi-affaires/pdf?mode=${mode}`, {}),
 };

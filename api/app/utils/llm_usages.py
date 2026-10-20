@@ -37,6 +37,8 @@ from dataclasses import dataclass
 from app.utils.description_format import CONSIGNE_DEFAUT as CONSIGNE_DESCRIPTION
 from app.utils.question_reglement.format import CONSIGNE as CONSIGNE_QUESTION_REGLEMENT
 from app.utils.question_reglement.format import USAGE_QUESTION_REGLEMENT
+from app.utils.fusion_en_cours_ia import CONSIGNE as CONSIGNE_FUSION_AFFAIRES
+from app.utils.fusion_en_cours_ia import USAGE_FUSION_AFFAIRES
 from app.utils.reponse_courriel import CONSIGNE as CONSIGNE_REPONSE_COURRIEL
 from app.utils.reponse_courriel import USAGE_REPONSE_COURRIEL
 from app.utils.suivi_affaires.format import CONSIGNE as CONSIGNE_AFFAIRES_EN_COURS
@@ -259,6 +261,26 @@ USAGES: dict[str, Usage] = {
         #  #2035 : un résumé par affaire, et le fil de chacune en entrée.
         max_jetons_defaut=8_000,
         delai_min_s=120,
+    ),
+    #  20/10/2026 (#2083) : « Fusionner » des affaires liées au Suivi des
+    #  affaires — l'assistant propose le titre et la description de l'affaire qui
+    #  absorbe les autres ; le conseil relit avant de confirmer. Sans lui, une
+    #  proposition est composée sans IA : la fusion n'en dépend pas.
+    USAGE_FUSION_AFFAIRES: Usage(
+        code=USAGE_FUSION_AFFAIRES,
+        libelle="Fusion d'affaires liées",
+        description=(
+            "Espace CS › Reporting › Suivi des affaires : « Fusionner » des affaires liées "
+            "fait proposer par l'assistant le nouveau titre et la nouvelle description de "
+            "l'affaire qui absorbe les autres, à relire avant de confirmer. Sont transmis le "
+            "numéro, la catégorie, le titre, les dates, l'état, la description, le fil daté "
+            "et le nom des pièces jointes de chaque affaire, chaque personne désignée par son "
+            "rôle ; jamais un nom, le contenu d'une pièce jointe ni un message interne au "
+            "conseil. Réservé au conseil syndical et à l'administration."
+        ),
+        prompt_defaut=CONSIGNE_FUSION_AFFAIRES,
+        max_jetons_defaut=4_000,
+        delai_min_s=90,
     ),
 }
 

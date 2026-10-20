@@ -53,6 +53,7 @@ def test_les_usages_sont_declares_et_chacun_a_un_prompt_d_origine():
     #  Cinq depuis #1643 (03/10/2026) : la synthèse d'une affaire close.
     #  Six le même jour : la question au règlement de copropriété.
     #  Sept le 16/10/2026 : la synthèse des affaires en cours (Reporting CS).
+    #  Huit le 20/10/2026 (#2083) : la fusion d'affaires liées.
     assert set(USAGES) == {
         USAGE_SYNTHESE_CONTRAT,
         USAGE_DESCRIPTION,
@@ -61,6 +62,7 @@ def test_les_usages_sont_declares_et_chacun_a_un_prompt_d_origine():
         "synthese_affaire",
         "question_reglement",
         "synthese_affaires_en_cours",
+        "fusion_affaires",
     }
     for u in USAGES.values():
         assert u.prompt_defaut.strip()

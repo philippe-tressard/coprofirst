@@ -67,6 +67,8 @@ const AFFAIRE = {
 	motif_evolution: 'nouvelle',
 	prive: false,
 	etat_par_defaut: 'en_cours',
+	groupe: null,
+	fusionnees: [],
 };
 
 const RELEVE: SuiviAffaires = {

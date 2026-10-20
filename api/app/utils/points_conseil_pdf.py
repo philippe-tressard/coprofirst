@@ -168,6 +168,11 @@ def _marques(doc: DocumentPoint, ticket_id: int, c: CompteRenduAffaire) -> str:
         marques.append(f'<span class="marque revision">{escape(doc.marques[ticket_id])}</span>')
     if ticket_id in doc.etats:
         marques.append(f'<span class="marque">{escape(doc.etats[ticket_id])}</span>')
+    #  L'historique de fusion, cité au point (#2083).
+    affaire = next((x for x in doc.releve.affaires if x.id == ticket_id), None)
+    if affaire and affaire.fusionnees:
+        fusions = " · ".join(affaire.fusionnees)
+        marques.append(f'<span class="marque">Fusionne : {escape(fusions)}</span>')
     return " ".join(marques)
 
 
