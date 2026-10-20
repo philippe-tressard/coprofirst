@@ -15,6 +15,12 @@
   relance avait sa propre carte, avec ses propres badges, et ne disait ni l'âge,
   ni la date d'ouverture, ni le résumé de l'affaire.
 
+  - **#2082** : chaque affaire porte sa vignette Public / Privé
+    (`VignetteVisibilite`) ; en point, la ligne du CR dit aussi l'état décidé
+    pour la validation (« → Résolu ») et « Modifié en révision N ». Chaque ligne
+    est une cible de défilement (`cible-defilement`, `id="affaire-N"`) : après
+    l'enregistrement d'un CR, la vue place l'affaire suivante en haut de l'écran.
+
   Sous le titre, le PÉRIMÈTRE (`BadgePerimetre`, qui tait celui par défaut), puis
   l'APERÇU — le résumé de l'assistant (✨), sinon le descriptif —
   coupé à cinq lignes (`.clamp-rapport`). Le serveur décide lequel
@@ -24,13 +30,14 @@
 	import Badge from '$lib/components/Badge.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import PastillesRelances from './PastillesRelances.svelte';
+	import VignetteVisibilite from './VignetteVisibilite.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { AffaireOuverte, CrAffaire } from '$lib/api';
 	import { etatCr } from '$lib/points-conseil';
 	import { ETATS_VISITE } from '$lib/entretien-periodique';
 	import { motifEvolution } from '$lib/reporting';
 	import { fmtDate } from '$lib/date';
-	import { categorieTicketLabel, lienTicket } from '$lib/tickets';
+	import { categorieTicketLabel, lienTicket, statutTicketLabel } from '$lib/tickets';
 
 	export let affaires: AffaireOuverte[];
 	/** Le mode « Relancer le syndic » : une case par ligne, et les relances envoyées. */
@@ -48,6 +55,8 @@
 	/**  Le point accepte-t-il un compte rendu NOUVEAU ? Terminé, il n'offre que
 	 *   la correction des comptes rendus saisis (#2042). */
 	export let ajout = true;
+	/** « Modifié en révision N », par affaire — lu dans le CR global (#2082). */
+	export let marques: Map<number, string> = new Map();
 
 	$: colonnes = relance ? 6 : 4;
 
@@ -77,7 +86,7 @@
 		</thead>
 		<tbody>
 			{#each affaires as a (a.id)}
-				<tr>
+				<tr id="affaire-{a.id}" class="cible-defilement">
 					{#if relance}
 						<td class="choix">
 							<input
@@ -96,6 +105,7 @@
 					<td class="date">{fmtDate(a.ouverte_le)}</td>
 					<td class="affaire">
 						<a href={lienTicket(a.id)} class="titre">{a.titre}</a>
+						<VignetteVisibilite prive={a.prive} />
 						{#if a.a_evolue && !visites}
 							<!--  Le signal « a évolué » (#2044) : sous le titre, icône ET libellé. -->
 							<span class="evolution"
@@ -119,6 +129,17 @@
 									<Badge teinte={crs.get(a.id)?.brouillon ? 'badge-gray' : 'badge-green'} compact
 										>{etatCr(crs.get(a.id))}</Badge
 									>
+									{#if crs.get(a.id)?.etat_cible && crs.get(a.id)?.etat_cible !== a.statut}
+										<Badge
+											teinte="badge-blue"
+											compact
+											title="État posé à la validation du compte rendu"
+											>→ {statutTicketLabel(crs.get(a.id)?.etat_cible)}</Badge
+										>
+									{/if}
+									{#if marques.get(a.id)}
+										<Badge teinte="badge-orange" compact>{marques.get(a.id)}</Badge>
+									{/if}
 								{/if}
 								<button
 									type="button"

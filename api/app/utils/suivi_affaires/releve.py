@@ -43,8 +43,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Optional
+from typing import Iterable, Optional
 
+from sqlalchemy import and_, or_
 from sqlmodel import Session, col, select
 
 from app.models.copropriete import Batiment
@@ -54,6 +55,7 @@ from app.utils import horloge
 from app.utils.annonce_hall import texte_brut
 from app.utils.batiments import libelle_batiment
 from app.utils.categories_ticket import libelle_categorie
+from app.utils.lecteurs_du_conseil import privees
 from app.utils.entretien_periodique import conditions_entretien_en_cours, etat_visite
 from app.utils.perimetres import (
     batiments_cibles,
@@ -117,6 +119,9 @@ class AffaireOuverte:
     #: est `nouvelle` ou le type de cette dernière entrée.
     a_evolue: bool = False
     motif_evolution: Optional[str] = None
+    #: La vignette (#2082) : seuls le conseil et le syndic la lisent
+    #: (`utils/lecteurs_du_conseil.privees`).
+    prive: bool = False
 
     @property
     def apercu(self) -> str:
@@ -162,15 +167,21 @@ class Releve:
         ordre_bat = [c for c in self.batiments if c != CLE_RACINE]
         return libelles, ordre_cat, self.batiments, ordre_bat
 
+    def _repartitions(self) -> tuple[list[Barre], list[Barre]]:
+        return repartition.teinter(
+            repartition.par_categorie(self.affaires, *self._parametres()),
+            repartition.par_batiment(self.affaires, *self._parametres()),
+        )
+
     @property
     def par_categorie(self) -> list[Barre]:
         """La répartition par catégorie, la plus nombreuse en tête ; tranches par bâtiment."""
-        return repartition.par_categorie(self.affaires, *self._parametres())
+        return self._repartitions()[0]
 
     @property
     def par_batiment(self) -> list[Barre]:
         """La répartition par bâtiment, la racine en tête ; tranches par catégorie."""
-        return repartition.par_batiment(self.affaires, *self._parametres())
+        return self._repartitions()[1]
 
 
 #: Le motif d'une affaire jamais résumée.
@@ -214,6 +225,7 @@ def lire_affaire(
     relances: Optional[list] = None,
     avec_visite: bool = False,
     derniere_entree: Optional[tuple[datetime, str]] = None,
+    prive: bool = False,
 ) -> AffaireOuverte:
     """PURE. Ce que le rapport montre d'une affaire."""
     ouverte_le = horloge.jour_civil(ticket.cree_le)
@@ -245,6 +257,7 @@ def lire_affaire(
         etat_visite=etat_visite(ticket, jour) if avec_visite else None,
         a_evolue=a_evolue,
         motif_evolution=motif,
+        prive=prive,
     )
 
 
@@ -259,26 +272,42 @@ def libelles_batiments(session: Session) -> dict[str, str]:
     }
 
 
-def releve(session: Session, user: Utilisateur, mode: str = MODE_AFFAIRES) -> Releve:
-    """Les affaires non closes du mode que `user` voit, la plus ancienne en tête."""
+def releve(
+    session: Session,
+    user: Optional[Utilisateur],
+    mode: str = MODE_AFFAIRES,
+    *,
+    inclure: Iterable[int] = (),
+) -> Releve:
+    """Les affaires non closes du mode que `user` voit, la plus ancienne en tête.
+
+    `inclure` : des affaires qui y figurent QUEL QUE SOIT leur état — celles
+    d'un point CS / Syndic, figées à son ouverture (#2082) : close ailleurs
+    pendant le point, une affaire reste au tableau jusqu'à la validation.
+
+    `user` à `None` : la vue du CONSEIL, sans filtre de lecture — celle du PDF
+    d'un point validé par le lien d'un présent ou d'office, sans compte.
+    """
     entretien = mode == MODE_ENTRETIEN
     #  Import différé, comme `synthese_affaire.production` : les libellés de
     #  l'écran vivent dans le paquet des routeurs de tickets.
     from app.routers.tickets.commun import STATUT_LABELS
 
+    conditions = conditions_entretien_en_cours() if entretien else conditions_relancable()
+    en_plus = [i for i in inclure if i is not None]
+    filtre = or_(and_(*conditions), col(Ticket.id).in_(en_plus)) if en_plus else and_(*conditions)
     tickets = [
         t
         for t in session.exec(
-            select(Ticket)
-            .where(*(conditions_entretien_en_cours() if entretien else conditions_relancable()))
-            .order_by(Ticket.cree_le, Ticket.id)
+            select(Ticket).where(filtre).order_by(Ticket.cree_le, Ticket.id)
         ).all()
-        if ticket_visible(t, user)
+        if user is None or ticket_visible(t, user)
     ]
     jour = horloge.aujourd_hui()
     delai = delai_relance_jours(session)
     relances = relances_envoyees(session, [t.id for t in tickets])
     dernieres = dernieres_entrees(session, [t.id for t in tickets])
+    secretes = privees(session, tickets)
     return Releve(
         jour=jour,
         delai_jours=delai,
@@ -293,6 +322,7 @@ def releve(session: Session, user: Utilisateur, mode: str = MODE_AFFAIRES) -> Re
                 relances=relances.get(t.id),
                 avec_visite=entretien,
                 derniere_entree=dernieres.get(t.id),
+                prive=t.id in secretes,
             )
             for t in tickets
         ],

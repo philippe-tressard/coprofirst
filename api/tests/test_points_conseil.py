@@ -27,6 +27,7 @@ from app.models.points_conseil import PointConseil
 from app.utils import horloge
 from app.utils import points_conseil as regles
 from app.utils.points_conseil import a_reprendre
+from app.utils.points_conseil_ou import ou_du_point
 from tests.aides_http import base_http, client_http
 from tests.aides_suivi import affaire_ouverte
 
@@ -284,5 +285,5 @@ def test_corriger_le_moyen_efface_le_lieu_s_il_n_y_en_a_plus(cs):
 
 def test_un_point_d_avant_le_moyen_se_lit_par_a_distance():
     ancien = PointConseil(debut=horloge.maintenant(), a_distance=True, lieu="Teams")
-    assert regles.ou_du_point(ancien) == "À distance — Teams"
-    assert regles.ou_du_point(PointConseil(debut=horloge.maintenant())) == "Sur place"
+    assert ou_du_point(ancien) == "À distance — Teams"
+    assert ou_du_point(PointConseil(debut=horloge.maintenant())) == "Sur place"

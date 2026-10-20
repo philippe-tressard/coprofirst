@@ -30,6 +30,8 @@ export interface PresentPoint {
 	/** A reçu la demande de validation (#2042) — jamais un invité. */
 	destinataire: boolean;
 	valide_le: string | null;
+	/** Validé POUR lui par l'administrateur, avec son accord (#2082). */
+	par_derogation: boolean;
 }
 
 /** Ce que l'écran envoie : un membre par sa fiche, un invité par ses champs. */
@@ -59,6 +61,10 @@ export interface PointConseil {
 	cree_le: string;
 	termine_le: string | null;
 	valide_le: string | null;
+	/** Le nombre d'envois aux présents — la révision qu'ils ont reçue (#2082). */
+	revision: number;
+	/** Le PDF du CR validé est-il rangé ? */
+	pdf_range: boolean;
 }
 
 export interface CrAffaire {
@@ -66,7 +72,10 @@ export interface CrAffaire {
 	/** Texte riche — à rendre par un assainisseur de `$lib/sanitize`. */
 	contenu: string;
 	brouillon: boolean;
+	/** « CS et présents » (#2082) — le nom de champ est resté. */
 	conseil_seul: boolean;
+	/** L'état que l'affaire prend À LA VALIDATION — `null` : inchangé. */
+	etat_cible: string | null;
 	mis_a_jour_le: string;
 }
 
@@ -79,13 +88,15 @@ export interface AffaireCitee {
 export interface CompteRenduPoint {
 	point: PointConseil;
 	presents: PresentPoint[];
-	/** Dans l'ordre d'ouverture des affaires. */
-	abordees: { affaire: AffaireCitee; cr: CrAffaire }[];
+	/** Dans l'ordre d'ouverture des affaires ; `marque` : « Modifié en révision N » (#2082). */
+	abordees: { affaire: AffaireCitee; cr: CrAffaire; marque: string | null }[];
 	/** Lues dans le relevé tant que le point est en cours, figées à « Terminer ». */
 	non_traitees: AffaireCitee[];
 	/** Où en est la validation par les présents (#2042). */
 	validation: ValidationPoint;
 	commentaires: CommentairePoint[];
+	/** La révision que le document montre — 0 tant que rien n'est parti (#2082). */
+	revision: number;
 }
 
 export interface ValidationPoint {
@@ -101,9 +112,11 @@ export interface CommentairePoint {
 	auteur: string;
 	contenu: string;
 	cree_le: string;
+	/** L'accord écrit par l'administrateur pour le présent (#2082). */
+	par_derogation: boolean;
 }
 
-/** Ce que le porteur d'un lien de validation lit — sans ce qui est « Conseil seul ». */
+/** Ce que le porteur d'un lien de validation lit — le CR entier, « CS et présents » compris (#2082). */
 export interface CompteRenduParLien {
 	etat: EtatPoint;
 	debut: string;
@@ -112,10 +125,18 @@ export interface CompteRenduParLien {
 	lieu: string | null;
 	ou: string;
 	presents: string[];
-	abordees: { numero: string; titre: string; contenu: string }[];
+	abordees: {
+		numero: string;
+		titre: string;
+		contenu: string;
+		conseil_seul: boolean;
+		marque: string | null;
+		prive: boolean;
+	}[];
 	non_traitees: string[];
 	deja_valide: boolean;
 	echeance: string | null;
+	revision: number;
 }
 
 /** Un CR validé, dans la rubrique « Comptes rendus » d'une affaire. */
@@ -167,11 +188,29 @@ export interface MoyenPoint {
 	avec_lieu: boolean;
 }
 
+/** Un état proposé pour la validation d'un CR — la liste vient du serveur. */
+export interface EtatValidation {
+	cle: string;
+	libelle: string;
+}
+
 export interface ParticipantsPoint {
 	conseil: MembrePoint[];
 	syndic: MembrePoint[];
 	lieux: LieuPropose[];
 	moyens: MoyenPoint[];
+	/** Ce que la saisie d'un CR propose pour l'état à la validation (#2082). */
+	etats_validation: EtatValidation[];
+}
+
+/** Un point validé, dans l'historique du mode (#2082). */
+export interface PointHistorique {
+	id: number;
+	debut: string;
+	ou: string;
+	valide_le: string | null;
+	abordees: number;
+	pdf_range: boolean;
 }
 
 export interface PointEntree {
@@ -186,12 +225,16 @@ export interface CrEntree {
 	contenu: string;
 	brouillon: boolean;
 	conseil_seul: boolean;
+	etat_cible: string | null;
 }
 
 export const pointsConseil = {
 	participants: () => api.get<ParticipantsPoint>('/points-conseil/participants'),
 	courant: (mode: ModePoint) =>
 		api.get<PointCourant>(`/points-conseil/courant?mode=${encodeURIComponent(mode)}`),
+	/** Les points validés du mode, le plus récent en tête (#2082). */
+	historique: (mode: ModePoint) =>
+		api.get<PointHistorique[]>(`/points-conseil/historique?mode=${encodeURIComponent(mode)}`),
 	ouvrir: (mode: ModePoint, corps: PointEntree) =>
 		api.post<CompteRenduPoint>('/points-conseil', { mode, ...corps }),
 	corriger: (id: number, corps: Partial<PointEntree>) =>
@@ -204,11 +247,16 @@ export const pointsConseil = {
 	//  ── La validation (#2042) ──
 	renvoyer: (id: number) => api.post<{ envoyes: number }>(`/points-conseil/${id}/renvoyer`),
 	valider: (id: number) => api.post<void>(`/points-conseil/${id}/valider`),
-	/** Le PDF d'un CR validé, rendu par le serveur. */
+	/** Le PDF d'un CR validé — celui qui a été rangé et envoyé aux présents. */
 	pdf: (id: number) => api.postFichier(`/points-conseil/${id}/pdf`, {}),
+	/** L'aperçu du PDF, à tout instant : « Projet — révision N » (#2082). */
+	apercu: (id: number) => api.postFichier(`/points-conseil/${id}/apercu`, {}),
+	/** L'administrateur valide POUR un présent qui a donné son accord (#2082). */
+	derogation: (id: number, presentId: number, commentaire: string | null) =>
+		api.post<void>(`/points-conseil/${id}/presents/${presentId}/derogation`, { commentaire }),
 	/** La rubrique « Comptes rendus » d'une affaire : ses CR validés. */
 	crsAffaire: (ticketId: number) => api.get<CrPublie[]>(`/points-conseil/affaires/${ticketId}`),
-	/** « Conseil seul » d'un CR publié — le conseil le rend privé, ou le rouvre. */
+	/** « CS et présents » d'un CR publié — le conseil le restreint, ou le rouvre. */
 	confidentialite: (crId: number, conseilSeul: boolean) =>
 		api.patch<void>(`/points-conseil/comptes-rendus/${crId}`, { conseil_seul: conseilSeul }),
 	//  ── Le lien d'un présent : sans compte, le jeton seul l'identifie ──

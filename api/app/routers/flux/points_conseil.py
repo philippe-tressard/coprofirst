@@ -14,7 +14,7 @@ from app.models.points_conseil import VALIDE, CompteRenduAffaire, PointConseil
 from app.auth.deps import est_moderateur
 from app.utils.dates_fr import date_longue
 from app.utils.liens import lien_element
-from app.utils.points_conseil_validation import lit_les_points_conseil
+from app.utils.lecteurs_du_conseil import lit_les_points_conseil
 
 from .commun import ContexteFlux
 from .schemas import FluxItem

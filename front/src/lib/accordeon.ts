@@ -61,6 +61,22 @@ export function amenerEnVue(el: Element | null | undefined): void {
 	el.scrollIntoView({ behavior: doux ? 'smooth' : 'auto', block: 'start' });
 }
 
+/**
+ * Place le HAUT d'un bloc en haut de l'écran, sous l'en-tête fixe — TOUJOURS,
+ * qu'il soit visible ou non (#2082).
+ *
+ * Le pendant d'`amenerEnVue` pour un geste qui OUVRE le bloc suivant : après
+ * l'enregistrement du CR d'une affaire, l'affaire suivante se déplie et son
+ * titre doit se trouver en haut de l'écran — *« c'est très perturbant de perdre
+ * le fil des affaires »*. À appeler APRÈS le rendu (`tick`) : le repli du bloc
+ * précédent déplace tout ce qui suit.
+ */
+export function amenerEnHaut(el: Element | null | undefined): void {
+	if (!el || typeof window === 'undefined') return;
+	const doux = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+	el.scrollIntoView({ behavior: doux ? 'smooth' : 'auto', block: 'start' });
+}
+
 /** PURE. Le bloc ouvert après un clic sur `id` : lui, ou plus rien s'il l'était. */
 export function basculer<T>(ouvert: T | null, id: T): T | null {
 	return ouvert === id ? null : id;

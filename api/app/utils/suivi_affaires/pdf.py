@@ -1,7 +1,7 @@
 """Le PDF du rapport « Suivi des affaires » — maquette D2 (16/10/2026).
 
 En tête, le nombre d'affaires non fermées et celles de plus de 90 jours, à côté
-de la répartition par catégorie en barres ; puis le tableau : âge, date
+des deux répartitions en barres découpées, en couleur (`pdf_barres`, #2082) ; puis le tableau : âge, date
 d'ouverture, affaire (titre, périmètre quand ce n'est pas celui par défaut, et
 l'aperçu — le résumé de l'assistant, sinon le descriptif — coupé à cinq lignes),
 catégorie. Le même ordre qu'à l'écran.
@@ -24,6 +24,7 @@ from app.utils.pdf_theme import (
     html_to_pdf,
     regle_page,
 )
+from app.utils.suivi_affaires.pdf_barres import CSS_BARRES, repartition_html
 from app.utils.suivi_affaires.releve import Releve
 
 #: Le titre, selon le mode du relevé (#2043).
@@ -43,16 +44,7 @@ body {{ font-family: {FONT_SANS}; font-size: 9.5pt; color: var(--ink); margin: 0
 .chiffre .v {{ font-size: 20pt; font-weight: 700; color: var(--navy); line-height: 1.1; }}
 .chiffre.alerte .v {{ color: #c0392b; }}
 .chiffre .l {{ font-size: 8pt; color: var(--muted); }}
-.repartition {{ flex: 1; border: 1px solid var(--border); border-radius: 5pt; padding: 6pt 9pt; }}
-.repartition h2 {{ font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em;
-  color: var(--muted); margin: 0 0 5pt; }}
-.barres {{ width: 100%; border-collapse: collapse; }}
-.barres td {{ padding: 2pt 0; border: 0; vertical-align: middle; font-size: 8.5pt; }}
-.barres .nom {{ white-space: nowrap; padding-right: 8pt; width: 1%; }}
-.barres .nb {{ text-align: right; font-weight: 700; width: 1%; padding-left: 6pt; }}
-.piste {{ background: #f7f8fa; border-radius: 2pt; height: 7pt; }}
-.barre {{ background: var(--navy); border-radius: 2pt; height: 7pt; }}
-table.affaires {{ width: 100%; border-collapse: collapse; }}
+{CSS_BARRES}table.affaires {{ width: 100%; border-collapse: collapse; }}
 .affaires th {{ text-align: left; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em;
   color: var(--muted); border-bottom: 1.5pt solid var(--border); padding: 3pt 4pt; }}
 .affaires td {{ border-bottom: 1px solid var(--border); padding: 5pt 4pt; vertical-align: top; }}
@@ -68,20 +60,6 @@ table.affaires {{ width: 100%; border-collapse: collapse; }}
 .age.recente {{ background: #f7f8fa; color: var(--muted); }}
 .vide {{ color: var(--muted); font-style: italic; }}
 """
-
-
-def _repartition(titre: str, barres: list) -> str:
-    """Une répartition en barres pleines — l'écran les découpe, le papier non (#2043)."""
-    if not barres:
-        return ""
-    plus_grand = max(c.nombre for c in barres)
-    lignes = "".join(
-        f'<tr><td class="nom">{escape(c.libelle)}</td>'
-        f'<td><div class="piste"><div class="barre" style="width:{round(100 * c.nombre / plus_grand)}%">'
-        f'</div></div></td><td class="nb">{c.nombre}</td></tr>'
-        for c in barres
-    )
-    return f'<div class="repartition"><h2>{titre}</h2><table class="barres">{lignes}</table></div>'
 
 
 def _tableau(r: Releve) -> str:
@@ -122,8 +100,8 @@ def html_rapport(r: Releve, *, site_nom: str, logo_png: bytes | None) -> str:
         f'<div class="l">affaire{pluriel} non fermée{pluriel}</div></div>'
         f'<div class="chiffre alerte"><div class="v">{r.anciennes}</div>'
         '<div class="l">de plus de 90 jours</div></div>'
-        f"</div>{_repartition('Par catégorie', r.par_categorie)}"
-        f"{_repartition('Par bâtiment', r.par_batiment)}</div>"
+        f"</div>{repartition_html('Par catégorie', r.par_categorie)}"
+        f"{repartition_html('Par bâtiment', r.par_batiment)}</div>"
         f"{_tableau(r)}</body></html>"
     )
 

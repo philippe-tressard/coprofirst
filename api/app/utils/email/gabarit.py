@@ -32,8 +32,8 @@ INTENTIONS: dict[str, tuple[str, str, str]] = {
     "information": ("Pour information", "#EEF2F7", "#1E3A5F"),
     "action_requise": ("Action requise", "#FEF3E2", "#8A5A0B"),
     "reponse_attendue": ("Réponse attendue", "#F0F7F2", "#2C5138"),
-    # Disponible depuis Admin → Emails, aucun modèle ne la porte aujourd'hui :
-    # elle vaut pour un envoi qu'on garde sans avoir à en faire quoi que ce soit.
+    # Un envoi qu'on garde sans avoir à en faire quoi que ce soit — le CR validé
+    # d'un point CS / Syndic, PDF joint (#2082), et ce qu'Admin → Emails y range.
     "archive": ("À conserver", "#F4F2ED", "#5A6070"),
 }
 

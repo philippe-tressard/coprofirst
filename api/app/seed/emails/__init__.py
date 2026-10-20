@@ -123,6 +123,8 @@ INTENTIONS_PAR_MODELE: dict[str, str] = {
     "publication_externe": "information",
     "acces_apparies_auto": "information",
     "etage_divergent": "information",
+    #  Le CR validé d'un point CS / Syndic, son PDF joint (#2082) : à garder.
+    "point_conseil_valide": "archive",
 }
 
 

@@ -5,7 +5,11 @@
     d'office (7 jours), ou qu'elle est suspendue par un commentaire ; les
     commentaires reçus ; « Renvoyer aux présents » (après une correction, les
     validations repartent de zéro) et « Valider en l'état ».
-  - **Validé** : la date, et le PDF.
+  - **Validé** : la date, et le PDF — celui qui a été rangé et envoyé aux
+    présents (#2082).
+  - **La dérogation** (#2082) : pour un présent qui n'a pas validé mais a donné
+    son accord, l'administrateur — lui seul — « Valide pour lui », avec un
+    commentaire facultatif. C'est journalisé, et dit dans les validations du PDF.
 
   Les règles — qui reçoit, quand c'est validé — vivent au serveur
   (`utils/points_conseil_validation`) ; ce bloc ne fait que les montrer.
@@ -17,9 +21,11 @@
 	import { confirmer } from '$lib/confirmation';
 	import { messageErreur } from '$lib/erreurs';
 	import { enregistrerFichier } from '$lib/fichiers';
-	import { pointsConseil, type CompteRenduPoint } from '$lib/api';
+	import { pointsConseil, type CompteRenduPoint, type PresentPoint } from '$lib/api';
 	import { fmtDate, fmtDatetime, jourIso } from '$lib/date';
 	import { nomPresent } from '$lib/points-conseil';
+	import { isAdmin } from '$lib/stores/auth';
+	import { demander } from '$lib/saisie';
 
 	export let compteRendu: CompteRenduPoint;
 	/** Relire le point après un geste. */
@@ -74,6 +80,23 @@
 			);
 	}
 
+	async function deroger(present: PresentPoint) {
+		const accord = await demander({
+			titre: `Valider pour ${nomPresent(present)}`,
+			message:
+				'Le présent a donné son accord sans pouvoir valider lui-même. Dites comment, s’il y a lieu : c’est journalisé et cité au compte rendu.',
+			libelle: 'Accord recueilli (facultatif)',
+			libelleValider: 'Valider pour ce présent',
+			requis: false,
+		});
+		if (accord === null) return;
+		await geste(
+			() => pointsConseil.derogation(point.id, present.id, accord || null),
+			'Validation enregistrée pour ce présent',
+			'Validation impossible',
+		);
+	}
+
 	async function pdf() {
 		enCours = true;
 		try {
@@ -106,14 +129,29 @@
 				{#each destinataires as p (p.id)}
 					<li class:valide={p.valide_le}>
 						<IconeAction icone={p.valide_le ? 'check' : 'clock'} />
-						{nomPresent(p)}
+						{nomPresent(p)}{#if p.par_derogation}<span class="derogation"
+								>&nbsp;(par dérogation)</span
+							>{/if}
+						{#if $isAdmin && !p.valide_le}
+							<button
+								type="button"
+								class="btn btn-sm btn-outline"
+								disabled={enCours}
+								on:click={() => deroger(p)}
+							>
+								Valider pour lui
+							</button>
+						{/if}
 					</li>
 				{/each}
 			</ul>
 		{/if}
 		{#each compteRendu.commentaires as c, i (i)}
 			<EncartAvertissement compact class="commentaire">
-				<p class="qui">{c.auteur || 'Un présent'} · {fmtDatetime(c.cree_le)}</p>
+				<p class="qui">
+					{c.auteur || 'Un présent'} · {fmtDatetime(c.cree_le)}{#if c.par_derogation}
+						· accord écrit par l’administration{/if}
+				</p>
 				<p>{c.contenu}</p>
 			</EncartAvertissement>
 		{/each}
@@ -167,6 +205,9 @@
 	}
 	.presents li.valide {
 		color: var(--color-success-texte);
+	}
+	.derogation {
+		color: var(--color-text-muted);
 	}
 	:global(.encart-avertissement.commentaire) {
 		margin: 0 0 0.4rem;

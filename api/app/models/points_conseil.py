@@ -14,6 +14,20 @@ porte que la forme.
 | `point_conseil_cr` | le compte rendu d'UNE affaire dans ce point |
 | `point_conseil_commentaire` | ce qu'un présent répond à la demande de validation (#2042) |
 
+## Ce que #2082 ajoute (arbitré le 20/10/2026)
+
+- `affaires_initiales_json` : la liste des affaires à traiter, FIGÉE à
+  l'ouverture — une affaire close ailleurs pendant le point y reste, et reste
+  au tableau jusqu'à la validation. `None` sur un point d'avant : il lit le
+  relevé du jour, comme avant.
+- `revision` : chaque envoi aux présents est une révision (1 à « Terminer »,
+  +1 par « Renvoyer ») ; un CR modifié depuis l'envoi précédent porte celle
+  qu'il rejoindra (`CompteRenduAffaire.revision`).
+- `pdf_cle` : le PDF du CR validé, rangé dans le point et envoyé aux présents.
+- `CompteRenduAffaire.etat_cible` : l'état que l'affaire prend À LA VALIDATION.
+- `PresentPoint.valide_par_id` : l'administrateur qui a validé POUR ce présent
+  (dérogation), et `CommentairePoint.saisi_par_id`, qui a écrit son accord.
+
 | `etat` | ce qu'il dit |
 |---|---|
 | `en_cours` | la réunion a lieu ; le CR se saisit |
@@ -107,6 +121,13 @@ class PointConseil(SQLModel, table=True):
     envoye_le: Optional[NaiveDatetime] = None
     valide_le: Optional[NaiveDatetime] = None
     valide_par_id: Optional[int] = None
+    #: Les affaires à traiter, figées à l'ouverture : tableau JSON de
+    #: `{"id", "numero", "titre"}` (#2082). `None` : un point d'avant.
+    affaires_initiales_json: Optional[str] = None
+    #: Le nombre d'envois aux présents — la révision du CR qu'ils ont reçue.
+    revision: int = 0
+    #: Le PDF du CR validé, par sa clé de stockage (`utils/stockage`).
+    pdf_cle: Optional[str] = None
 
 
 class IdentitePresent(SQLModel):
@@ -137,6 +158,9 @@ class PresentPoint(IdentitePresent, table=True):
     jeton_empreinte: Optional[str] = Field(default=None, index=True)
     #: Quand il a cliqué « Je valide » — remis à `None` à chaque nouvel envoi.
     valide_le: Optional[NaiveDatetime] = None
+    #: L'administrateur qui a validé POUR lui, avec son accord (#2082) ; `None`
+    #: quand il a validé lui-même, par son lien.
+    valide_par_id: Optional[int] = None
 
 
 class CommentairePoint(SQLModel, table=True):
@@ -146,6 +170,9 @@ class CommentairePoint(SQLModel, table=True):
     #: Le présent qui écrit, par son lien — sans clé étrangère, comme le CR.
     present_id: Optional[int] = None
     contenu: str = ""
+    #: L'administrateur qui l'a écrit POUR le présent, avec la dérogation
+    #: (#2082) — il ne suspend pas la validation d'office : c'est un accord.
+    saisi_par_id: Optional[int] = None
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
 
 
@@ -162,8 +189,14 @@ class CompteRenduAffaire(SQLModel, table=True):
     contenu: str = ""
     #: Enregistré en passant à une autre affaire, sans « Sauvegarder ».
     brouillon: bool = False
-    #: 🛡️ Lu par le conseil syndical seul.
+    #: « CS et présents » (#2082, nom de colonne gardé) : lu par le conseil, le
+    #: syndic et les présents — au PDF et à la validation compris —, masqué au
+    #: fil et dans l'affaire pour tous les autres.
     conseil_seul: bool = False
+    #: L'état que prend l'affaire À LA VALIDATION (#2082) ; `None` : inchangé.
+    etat_cible: Optional[str] = None
+    #: La révision que ce CR rejoindra — posée quand il change après un envoi.
+    revision: Optional[int] = None
     auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     mis_a_jour_le: NaiveDatetime = Field(default_factory=horloge.maintenant)

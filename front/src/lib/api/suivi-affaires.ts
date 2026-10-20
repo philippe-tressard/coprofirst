@@ -46,6 +46,10 @@ export interface AffaireOuverte {
 	 *   est `nouvelle` ou le type de cette entrée (`commentaire`, `etat`…). */
 	a_evolue: boolean;
 	motif_evolution: string | null;
+	/** La vignette (#2082) : seuls le conseil et le syndic la lisent. */
+	prive: boolean;
+	/** L'état coché d'office à la saisie de son CR — « À l'AG » reste à l'AG. */
+	etat_par_defaut: string;
 }
 
 /** Une tranche d'une barre de répartition : un bâtiment, ou une catégorie. */
@@ -53,6 +57,9 @@ export interface TrancheRepartition {
 	cle: string;
 	libelle: string;
 	nombre: number;
+	/** La teinte, choisie par le serveur (`repartition.teinter`, #2082) : `s1`…`s8`,
+	 *  `p1`…`p4`, `plusieurs`, `autre` — l'écran la peint, il ne la choisit pas. */
+	teinte: string;
 }
 
 /**  Une barre de répartition, découpée selon l'autre (#2043) : une catégorie
@@ -87,7 +94,10 @@ export interface SuiviAffaires {
 }
 
 export const suiviAffaires = {
-	lire: (mode: ModeReleve = 'affaires') => api.get<SuiviAffaires>(`/suivi-affaires?mode=${mode}`),
+	/**  `point` : les affaires du point en cours y restent jusqu'à sa validation,
+	 *   même closes ailleurs (#2082) — la relance lit sans. */
+	lire: (mode: ModeReleve = 'affaires', point = false) =>
+		api.get<SuiviAffaires>(`/suivi-affaires?mode=${mode}${point ? '&point=true' : ''}`),
 	/**  Fait rédiger le résumé de chaque affaire, gardé au serveur : l'écran les
 	 *   relit par `lire`. La synthèse d'ensemble de #2034 n'existe plus (#2035). */
 	resumer: () => api.post<{ rediges: number }>('/suivi-affaires/resumes'),

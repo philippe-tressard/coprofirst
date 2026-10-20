@@ -7,17 +7,28 @@
      les **non traitées**, numéro et titre seuls.
 
   Composé par le serveur (`GET /points-conseil/courant`) ; un brouillon s'y lit
-  comme tel, et le texte riche passe par l'assainisseur.
+  comme tel, et le texte riche passe par l'assainisseur. Chaque affaire porte sa
+  vignette Public / Privé, « CS et présents », l'état décidé pour la validation
+  et « Modifié en révision N » (#2082).
 -->
 <script lang="ts">
 	import Badge from '$lib/components/Badge.svelte';
 	import type { CompteRenduPoint } from '$lib/api';
 	import { fmtDatetime, fmtTime } from '$lib/date';
 	import { safeHtml } from '$lib/sanitize';
-	import { lienTicket } from '$lib/tickets';
-	import { ETATS_POINT, GROUPES_PRESENTS, nomPresent, precisionPresent } from '$lib/points-conseil';
+	import { lienTicket, statutTicketLabel } from '$lib/tickets';
+	import {
+		ETATS_POINT,
+		GROUPES_PRESENTS,
+		LIBELLE_CS_ET_PRESENTS,
+		nomPresent,
+		precisionPresent,
+	} from '$lib/points-conseil';
+	import VignetteVisibilite from './VignetteVisibilite.svelte';
 
 	export let compteRendu: CompteRenduPoint;
+	/** La vignette de chaque affaire, lue dans le relevé (`prive`). */
+	export let vignettes: Map<number, boolean> = new Map();
 
 	$: point = compteRendu.point;
 	$: groupes = GROUPES_PRESENTS.map((g) => ({
@@ -29,7 +40,12 @@
 <section class="report-card" aria-labelledby="titre-cr-{point.id}">
 	<div class="tete">
 		<h3 id="titre-cr-{point.id}">Compte rendu du point</h3>
-		<Badge teinte={ETATS_POINT[point.etat].teinte}>{ETATS_POINT[point.etat].libelle}</Badge>
+		<span class="badges">
+			<Badge teinte={ETATS_POINT[point.etat].teinte}>{ETATS_POINT[point.etat].libelle}</Badge>
+			{#if compteRendu.revision}
+				<Badge teinte="badge-gray">Révision {compteRendu.revision}</Badge>
+			{/if}
+		</span>
 	</div>
 
 	<h4 class="partie">1 · Le point</h4>
@@ -53,12 +69,20 @@
 	{/each}
 
 	<h4 class="partie">2 · Les affaires abordées · {compteRendu.abordees.length}</h4>
-	{#each compteRendu.abordees as { affaire, cr } (affaire.id)}
+	{#each compteRendu.abordees as { affaire, cr, marque } (affaire.id)}
 		<article class="abordee">
 			<p class="titre">
 				<a href={lienTicket(affaire.id)}>{affaire.numero} · {affaire.titre}</a>
+				{#if vignettes.has(affaire.id)}<VignetteVisibilite
+						prive={vignettes.get(affaire.id) ?? false}
+					/>{/if}
 				{#if cr.brouillon}<Badge teinte="badge-gray" compact>Brouillon</Badge>{/if}
-				{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>Conseil seul</Badge>{/if}
+				{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge
+					>{/if}
+				{#if cr.etat_cible}<Badge teinte="badge-blue" compact title="À la validation"
+						>→ {statutTicketLabel(cr.etat_cible)}</Badge
+					>{/if}
+				{#if marque}<Badge teinte="badge-orange" compact>{marque}</Badge>{/if}
 			</p>
 			<div class="contenu">{@html safeHtml(cr.contenu)}</div>
 		</article>
@@ -86,6 +110,11 @@
 	}
 	.tete h3 {
 		margin: 0;
+	}
+	.badges {
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
 	}
 	.partie {
 		font-size: var(--fs-xs);

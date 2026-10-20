@@ -42,6 +42,17 @@
   rendu (`SaisieCrAffaire`, dans le tableau), et le CR global se lit dessous
   (`CrGlobal`).
 
+  ## Ce que #2082 y ajoute (arbitré le 20/10/2026)
+
+  - Le tableau d'un point garde SES affaires — figées à l'ouverture, même closes
+    ailleurs — jusqu'à la validation (`suiviApi.lire(…, point)`) ; validé, le
+    point rend la main au suivi simple, sans CR, jusqu'au point suivant.
+  - 🔴 **Après « Enregistrer »**, l'affaire SUIVANTE du tableau se déplie et son
+    titre se place en haut de l'écran (`amenerEnHaut`), une fois le repli de la
+    précédente rendu : *« c'est très perturbant de perdre le fil des affaires »*.
+  - L'**historique des CR** (`HistoriquePoints`), plié, entre les graphiques et
+    le point.
+
   Autonome : elle charge ses données et rend compte à la barre d'outils du parent
   (`chargement`, `estVide`, `recharger`, `exporterPdf`).
 -->
@@ -52,11 +63,13 @@
 		type CompteRenduPoint,
 		type CrAffaire,
 		type ModeReleve,
+		type ParticipantsPoint,
 		type SuiviAffaires,
 		type VisitePeriodique,
 	} from '$lib/api';
 	import { enregistrerFichier } from '$lib/fichiers';
-	import { teinteBatiment, teinteCategorie } from '$lib/repartition';
+	import { amenerEnHaut } from '$lib/accordeon';
+	import { tick } from 'svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import IconeIA from '$lib/components/IconeIA.svelte';
@@ -66,6 +79,7 @@
 	import PointConseil from './PointConseil.svelte';
 	import SaisieCrAffaire from './SaisieCrAffaire.svelte';
 	import CrGlobal from './CrGlobal.svelte';
+	import HistoriquePoints from './HistoriquePoints.svelte';
 	import BarresCroisees from './BarresCroisees.svelte';
 	import BilanVisites from './BilanVisites.svelte';
 	import VisitesRealisees from './VisitesRealisees.svelte';
@@ -92,12 +106,25 @@
 	let exportEnCours = false;
 	/** Le point CS / Syndic du mode, et l'affaire dont le CR est en saisie. */
 	let compteRendu: CompteRenduPoint | null = null;
+	let participants: ParticipantsPoint | null = null;
 	let crOuvert: number | null = null;
-	//  Les CR du point, quel que soit son état : terminé, un CR saisi se corrige
-	//  encore (#2042) ; seul un point en cours en accepte un nouveau (`ajout`).
-	$: crs = compteRendu
-		? new Map<number, CrAffaire>(compteRendu.abordees.map((a) => [a.affaire.id, a.cr]))
+	//  Les CR du point tant qu'il n'est pas validé : terminé, un CR saisi se
+	//  corrige encore (#2042) ; seul un point en cours en accepte un nouveau
+	//  (`ajout`). Validé, les CR quittent le tableau jusqu'au point suivant (#2082).
+	$: actif = compteRendu && compteRendu.point.etat !== 'valide' ? compteRendu : null;
+	$: crs = actif
+		? new Map<number, CrAffaire>(actif.abordees.map((a) => [a.affaire.id, a.cr]))
 		: null;
+	$: marques = new Map<number, string>(
+		(actif?.abordees ?? []).filter((a) => a.marque).map((a) => [a.affaire.id, a.marque ?? '']),
+	);
+	$: vignettes = new Map<number, boolean>((suivi?.affaires ?? []).map((a) => [a.id, a.prive]));
+	/**  L'état du point, suivi : à chaque changement (ouvert, terminé, validé,
+	 *   abandonné), le tableau se relit — ses affaires en dépendent (#2082). */
+	let etatVu: string | null | undefined = undefined;
+	$: suivreEtat(compteRendu?.point.etat ?? null);
+	/** Relu par l'historique quand un point vient d'être validé. */
+	let versionHistorique = 0;
 
 	/** Lu par la barre d'outils du parent — ne pas écrire depuis l'extérieur. */
 	export let chargement = false;
@@ -106,37 +133,61 @@
 	$: chargement = enCours || exportEnCours;
 	$: estVide = !suivi || suivi.total === 0;
 
-	$: ordreBatiments = (suivi?.par_batiment ?? []).map((b) => b.cle);
 	/** Les affaires nouvelles ou qui ont évolué depuis leur résumé — le serveur le dit (#2044). */
 	$: aResumer = (suivi?.affaires ?? []).filter((a) => a.a_evolue).length;
 
-	async function charger(m: ModeReleve) {
+	/** Le tableau d'un point garde ses affaires ; la relance lit sans (#2082). */
+	$: avecPoint = mode !== 'relance';
+
+	async function charger(m: ModeReleve, point: boolean) {
 		enCours = true;
 		erreur = '';
 		compteRendu = null;
 		crOuvert = null;
+		etatVu = undefined;
 		try {
-			suivi = await suiviApi.lire(m);
+			suivi = await suiviApi.lire(m, point);
 		} catch (e) {
 			erreur = messageErreur(e, 'Chargement impossible');
 		} finally {
 			enCours = false;
 		}
 	}
-	//  Un relevé par mode : passer du Suivi affaires aux entretiens le recharge,
-	//  passer à la relance non (elle lit le même).
-	$: charger(releve);
+	//  Un relevé par mode, et la relance le lit sans les affaires du point.
+	$: charger(releve, avecPoint);
 
 	/** Rechargement demandé par la barre d'outils du parent. */
 	export function recharger() {
-		charger(releve);
+		charger(releve, avecPoint);
+	}
+
+	function suivreEtat(etat: string | null) {
+		if (etatVu === undefined) {
+			etatVu = etat;
+			return;
+		}
+		if (etat === etatVu) return;
+		if (etat === 'valide') versionHistorique += 1;
+		etatVu = etat;
+		relire();
+	}
+
+	/**  « Enregistrer » le CR d'une affaire : la SUIVANTE se déplie, et son titre
+	 *   se place en haut de l'écran — mesuré après le repli de la précédente. */
+	async function apresEnregistrement(id: number) {
+		const liste = suivi?.affaires ?? [];
+		const suivante = liste[liste.findIndex((a) => a.id === id) + 1];
+		crOuvert =
+			suivante && (actif?.point.etat === 'en_cours' || crs?.has(suivante.id)) ? suivante.id : null;
+		await tick();
+		amenerEnHaut(document.getElementById(`affaire-${crOuvert ?? id}`));
 	}
 
 	/**  Relire le relevé SANS repasser par l'état « chargement » : après un envoi
 	 *   de relance, ou pour montrer les résumés que l'assistant vient d'écrire. */
 	async function relire() {
 		try {
-			suivi = await suiviApi.lire(releve);
+			suivi = await suiviApi.lire(releve, avecPoint);
 		} catch (e) {
 			toast('error', messageErreur(e, 'Rechargement impossible'));
 		}
@@ -224,12 +275,8 @@
 				<div class="kpi-label">de plus de 90 jours</div>
 			</div>
 		</div>
-		<BarresCroisees
-			titre="Par catégorie"
-			barres={suivi.par_categorie}
-			teinte={(cle) => teinteBatiment(cle, ordreBatiments)}
-		/>
-		<BarresCroisees titre="Par bâtiment" barres={suivi.par_batiment} teinte={teinteCategorie} />
+		<BarresCroisees titre="Par catégorie" barres={suivi.par_categorie} />
+		<BarresCroisees titre="Par bâtiment" barres={suivi.par_batiment} />
 	</div>
 
 	{#if mode === 'relance'}
@@ -239,32 +286,36 @@
 			<VisitesRealisees {visites} />
 		{/if}
 		{#key releve}
-			<PointConseil mode={releve} bind:compteRendu />
+			<HistoriquePoints mode={releve} version={versionHistorique} />
+			<PointConseil mode={releve} bind:compteRendu bind:participants />
 		{/key}
 		<div class="report-card">
 			<TableauAffaires
 				affaires={suivi.affaires}
 				visites={entretien}
 				{crs}
-				ajout={compteRendu?.point.etat === 'en_cours'}
+				{marques}
+				ajout={actif?.point.etat === 'en_cours'}
 				bind:ouverte={crOuvert}
 			>
 				<svelte:fragment slot="saisie" let:affaire let:cr>
-					{#if compteRendu}
+					{#if actif}
 						<SaisieCrAffaire
-							pointId={compteRendu.point.id}
+							pointId={actif.point.id}
 							{affaire}
 							{cr}
-							brouillonAuto={compteRendu.point.etat === 'en_cours'}
+							etats={participants?.etats_validation ?? []}
+							brouillonAuto={actif.point.etat === 'en_cours'}
 							onCompteRendu={(nouveau) => (compteRendu = nouveau)}
 							onFerme={() => (crOuvert = null)}
+							onEnregistre={() => apresEnregistrement(affaire.id)}
 						/>
 					{/if}
 				</svelte:fragment>
 			</TableauAffaires>
 		</div>
-		{#if compteRendu}
-			<CrGlobal {compteRendu} />
+		{#if actif}
+			<CrGlobal compteRendu={actif} {vignettes} />
 		{/if}
 	{/if}
 {/if}

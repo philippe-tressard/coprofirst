@@ -24,15 +24,15 @@ const RELEVE: SuiviAffaires = {
 			libelle: 'Panne',
 			nombre: 2,
 			tranches: [
-				{ cle: 'racine', libelle: 'Résidence', nombre: 1 },
-				{ cle: 'bat:3', libelle: 'Bât. C', nombre: 1 },
+				{ cle: 'racine', libelle: 'Résidence', nombre: 1, teinte: 'p1' },
+				{ cle: 'bat:3', libelle: 'Bât. C', nombre: 1, teinte: 'p2' },
 			],
 		},
 		{
 			cle: 'etude_travaux',
 			libelle: 'Étude & travaux',
 			nombre: 1,
-			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 1 }],
+			tranches: [{ cle: 'racine', libelle: 'Résidence', nombre: 1, teinte: 'p1' }],
 		},
 	],
 	par_batiment: [
@@ -41,15 +41,15 @@ const RELEVE: SuiviAffaires = {
 			libelle: 'Résidence',
 			nombre: 2,
 			tranches: [
-				{ cle: 'panne', libelle: 'Panne', nombre: 1 },
-				{ cle: 'etude_travaux', libelle: 'Étude & travaux', nombre: 1 },
+				{ cle: 'panne', libelle: 'Panne', nombre: 1, teinte: 's1' },
+				{ cle: 'etude_travaux', libelle: 'Étude & travaux', nombre: 1, teinte: 's5' },
 			],
 		},
 		{
 			cle: 'bat:3',
 			libelle: 'Bât. C',
 			nombre: 1,
-			tranches: [{ cle: 'panne', libelle: 'Panne', nombre: 1 }],
+			tranches: [{ cle: 'panne', libelle: 'Panne', nombre: 1, teinte: 's1' }],
 		},
 	],
 	affaires: [
@@ -76,6 +76,8 @@ const RELEVE: SuiviAffaires = {
 			etat_visite: null,
 			a_evolue: false,
 			motif_evolution: null,
+			prive: false,
+			etat_par_defaut: 'en_cours',
 		},
 		{
 			id: 31,
@@ -99,6 +101,8 @@ const RELEVE: SuiviAffaires = {
 			etat_visite: null,
 			a_evolue: true,
 			motif_evolution: 'nouvelle',
+			prive: false,
+			etat_par_defaut: 'en_cours',
 		},
 		{
 			id: 40,
@@ -122,6 +126,8 @@ const RELEVE: SuiviAffaires = {
 			etat_visite: null,
 			a_evolue: true,
 			motif_evolution: 'etat',
+			prive: false,
+			etat_par_defaut: 'en_cours',
 		},
 	],
 };

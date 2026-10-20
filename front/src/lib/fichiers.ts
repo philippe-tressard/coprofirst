@@ -300,3 +300,29 @@ export function enregistrerFichier(contenu: Blob, nom: string): void {
 	a.click();
 	URL.revokeObjectURL(url);
 }
+
+/**
+ * OUVRE un fichier reçu du serveur dans un nouvel onglet — l'aperçu du PDF d'un
+ * point CS / Syndic (#2082, « visualiser le PDF à tout instant »).
+ *
+ * L'onglet s'ouvre AVANT la requête : ouvert après un `await`, il serait pris
+ * pour une fenêtre surgissante et bloqué. Refusé quand même, le fichier se
+ * télécharge (`enregistrerFichier`) — on ne perd jamais l'aperçu.
+ */
+export async function ouvrirFichier(obtenir: () => Promise<Blob>, nom: string): Promise<void> {
+	const onglet = window.open('', '_blank');
+	try {
+		const contenu = await obtenir();
+		if (!onglet) {
+			enregistrerFichier(contenu, nom);
+			return;
+		}
+		const url = URL.createObjectURL(contenu);
+		onglet.location.href = url;
+		//  Le lien se rend quand l'onglet a eu le temps de le lire.
+		setTimeout(() => URL.revokeObjectURL(url), 60_000);
+	} catch (e) {
+		onglet?.close();
+		throw e;
+	}
+}

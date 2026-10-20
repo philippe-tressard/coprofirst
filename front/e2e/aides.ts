@@ -190,7 +190,14 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	//  `PointCourant`, `ParticipantsPoint` : le point CS / Syndic du Suivi des
 	//  affaires (#2041) — sans point ouvert, et un annuaire vide.
 	'/api/points-conseil/courant': { compte_rendu: null, reprise: null },
-	'/api/points-conseil/participants': { conseil: [], syndic: [], lieux: [], moyens: [] },
+	'/api/points-conseil/participants': {
+		conseil: [],
+		syndic: [],
+		lieux: [],
+		moyens: [],
+		etats_validation: [],
+	},
+	'/api/points-conseil/historique': [],
 	//  `TextesLegauxSource` : l'administration lit la source des textes légaux et
 	//  leur constat (#2065) — relus, rien à signaler.
 	'/api/config/textes-legaux': {
