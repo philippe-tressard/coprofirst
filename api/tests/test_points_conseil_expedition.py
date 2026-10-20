@@ -1,4 +1,5 @@
-"""Le point CS / Syndic, ce que #2082 y ajoute côté document.
+"""Le point CS / Syndic, ce que #2082 y ajoute côté document — par les routes des
+deux routeurs et leurs schémas (`points_conseil_schemas`).
 
 Ce qui est tenu :
 - **les révisions** : « Terminer » envoie la révision 1 ; un CR corrigé ensuite
