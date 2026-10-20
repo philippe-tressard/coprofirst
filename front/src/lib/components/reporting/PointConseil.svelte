@@ -11,8 +11,8 @@
   - Point à valider ou validé : le bandeau, sa validation (`ValidationPoint`,
     #2042), et « Ouvrir un nouveau point ».
   - L'ancre `point-cs-N` est celle du fil : il y mène, une fois le CR validé.
-  - **Aperçu PDF** (#2082) : à tout instant, en cours comme en relecture — le
-    document du point tel qu'il partirait, marqué « Projet — révision N ».
+  - Le PDF du point se tire par « Exporter en PDF » de la barre d'outils, à
+    tout instant (#2089 : l'« Aperçu PDF » du bandeau est retiré).
 
   Le compte rendu de chaque affaire se saisit dans le tableau
   (`SaisieCrAffaire`) ; ce composant tient le point et le rend à la vue par
@@ -29,7 +29,6 @@
 	import { toast } from '$lib/components/Toast.svelte';
 	import { confirmer } from '$lib/confirmation';
 	import { messageErreur } from '$lib/erreurs';
-	import { ouvrirFichier } from '$lib/fichiers';
 	import {
 		pointsConseil,
 		type CompteRenduPoint,
@@ -38,7 +37,7 @@
 		type PointEntree,
 		type ReprisePoint,
 	} from '$lib/api';
-	import { champLocalMaintenant, fmtDatetime, fmtTime, jourIso } from '$lib/date';
+	import { champLocalMaintenant, fmtDatetime, fmtTime } from '$lib/date';
 	import { ETATS_POINT, entreesDepuisPresents, moyenDe, nomPresent } from '$lib/points-conseil';
 
 	export let mode: ModePoint;
@@ -141,22 +140,6 @@
 		}
 	}
 
-	let apercuEnCours = false;
-	async function apercu() {
-		if (!point) return;
-		apercuEnCours = true;
-		try {
-			await ouvrirFichier(
-				() => pointsConseil.apercu((point as NonNullable<typeof point>).id),
-				`projet-compte-rendu-point-cs-syndic-${jourIso(point.debut)}.pdf`,
-			);
-		} catch (e) {
-			toast('error', messageErreur(e, 'Aperçu impossible'));
-		} finally {
-			apercuEnCours = false;
-		}
-	}
-
 	async function abandonner() {
 		if (!point) return;
 		const ok = await confirmer({
@@ -238,17 +221,6 @@
 				<ValidationPoint {compteRendu} onChange={relire} />
 			{/if}
 			<div class="gestes">
-				{#if point.etat !== 'valide'}
-					<button
-						type="button"
-						class="btn btn-sm btn-outline"
-						disabled={apercuEnCours}
-						aria-busy={apercuEnCours}
-						on:click={apercu}
-					>
-						<IconeAction icone="eye" /> Aperçu PDF
-					</button>
-				{/if}
 				{#if enSaisie}
 					<span class="muet">Ouvrez une affaire du tableau pour en saisir le compte rendu.</span>
 					<button type="button" class="btn btn-sm btn-outline" on:click={abandonner}>

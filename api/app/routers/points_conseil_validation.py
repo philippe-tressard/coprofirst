@@ -40,7 +40,7 @@ from app.utils import points_conseil as regles
 from app.utils import points_conseil_expedition as expedition
 from app.utils import points_conseil_validation as validation
 from app.utils.lecture import lire_objet
-from app.utils.lecteurs_du_conseil import privees
+from app.utils.lecture_affaire import lecture_courte
 from app.utils.limiter import LIMITE_SESSION, limiter
 from app.utils.points_conseil_ou import ou_du_point
 from app.utils.recuperer import ou_404
@@ -58,8 +58,8 @@ class AffaireLienRead(BaseModel):
     conseil_seul: bool = False
     #: « Modifié en révision N », ou rien (#2082).
     marque: Optional[str] = None
-    #: La vignette : seuls le conseil et le syndic lisent l'affaire (#2082).
-    prive: bool = False
+    #: « Qui la lit », le libellé de la pastille de la page Affaires (#2089).
+    lecture: str = ""
 
 
 class LienRead(BaseModel):
@@ -120,12 +120,12 @@ def _lien_read(session: Session, jeton: str) -> LienRead:
         point, cr.presents, validation.commentaires_du_point(session, point.id)
     )
     revision = validation.revision_du_document(point, [c for _, c in cr.abordees])
-    ids = [a.id for a, _ in cr.abordees]
-    secretes = (
-        privees(session, list(session.exec(select(Ticket).where(col(Ticket.id).in_(ids))).all()))
-        if ids
-        else set()
-    )
+    tickets = {
+        t.id: t
+        for t in session.exec(
+            select(Ticket).where(col(Ticket.id).in_([a.id for a, _ in cr.abordees]))
+        ).all()
+    }
     return lire_objet(
         LienRead,
         point,
@@ -138,7 +138,7 @@ def _lien_read(session: Session, jeton: str) -> LienRead:
                 contenu=c.contenu,
                 conseil_seul=c.conseil_seul,
                 marque=validation.marque_revision(c, revision),
-                prive=a.id in secretes,
+                lecture=lecture_courte(tickets[a.id]) if a.id in tickets else "",
             )
             for a, c in cr.abordees
         ],

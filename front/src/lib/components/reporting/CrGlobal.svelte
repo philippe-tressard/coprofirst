@@ -7,13 +7,13 @@
      les **non traitées**, numéro et titre seuls.
 
   Composé par le serveur (`GET /points-conseil/courant`) ; un brouillon s'y lit
-  comme tel, et le texte riche passe par l'assainisseur. Chaque affaire porte sa
-  vignette Public / Privé, « CS et présents », l'état décidé pour la validation
-  et « Modifié en révision N » (#2082).
+  comme tel, et le texte riche passe par l'assainisseur. Chaque affaire porte
+  « qui la lit » (`PastilleLecture`, #2089), « CS et présents », l'état décidé
+  pour la validation et « Modifié en révision N » (#2082).
 -->
 <script lang="ts">
 	import Badge from '$lib/components/Badge.svelte';
-	import type { CompteRenduPoint } from '$lib/api';
+	import type { AffaireOuverte, CompteRenduPoint } from '$lib/api';
 	import { fmtDatetime, fmtTime } from '$lib/date';
 	import { safeHtml } from '$lib/sanitize';
 	import { lienTicket, statutTicketLabel } from '$lib/tickets';
@@ -24,11 +24,11 @@
 		nomPresent,
 		precisionPresent,
 	} from '$lib/points-conseil';
-	import VignetteVisibilite from './VignetteVisibilite.svelte';
+	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
 
 	export let compteRendu: CompteRenduPoint;
-	/** La vignette de chaque affaire, lue dans le relevé (`prive`). */
-	export let vignettes: Map<number, boolean> = new Map();
+	/** Les affaires du relevé, par identifiant — ce que lit leur pastille de lecture. */
+	export let affaires: Map<number, AffaireOuverte> = new Map();
 
 	$: point = compteRendu.point;
 	$: groupes = GROUPES_PRESENTS.map((g) => ({
@@ -73,8 +73,8 @@
 		<article class="abordee">
 			<p class="titre">
 				<a href={lienTicket(affaire.id)}>{affaire.numero} · {affaire.titre}</a>
-				{#if vignettes.has(affaire.id)}<VignetteVisibilite
-						prive={vignettes.get(affaire.id) ?? false}
+				{#if affaires.has(affaire.id)}<PastilleLecture
+						ticket={affaires.get(affaire.id) ?? null}
 					/>{/if}
 				{#if cr.brouillon}<Badge teinte="badge-gray" compact>Brouillon</Badge>{/if}
 				{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge

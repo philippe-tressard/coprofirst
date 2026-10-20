@@ -75,8 +75,10 @@ class AffaireOuverteRead(BaseModel):
     #: Nouvelle, ou une entrée au fil depuis le dernier résumé (#2044), et pourquoi.
     a_evolue: bool
     motif_evolution: Optional[str] = None
-    #: La vignette Public / Privé (#2082) : seuls le conseil et le syndic la lisent.
-    prive: bool = False
+    #: « Qui la lit » (#2089) : les champs que lit la pastille de la page Affaires.
+    confidentiel: bool = False
+    public_cible: list[str] = []
+    reserve_perimetre: bool = False
     #: L'état coché d'office à la saisie de son CR — « À l'AG » reste à l'AG (#2082).
     etat_par_defaut: str = ""
     #: Le groupe des affaires liées rassemblées (#2083) — `None` pour une affaire seule.

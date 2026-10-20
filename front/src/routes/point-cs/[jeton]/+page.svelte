@@ -8,8 +8,8 @@
   l'envoi d'un commentaire agissent, par un geste.
 
   Le CR se lit tel que le serveur le sert — en entier, « CS et présents »
-  compris (#2082) : les présents l'ont entendu. Chaque affaire porte sa vignette
-  Public / Privé et, après un renvoi, « Modifié en révision N ». Le texte riche
+  compris (#2082) : les présents l'ont entendu. Chaque affaire porte « qui la lit »
+  (le mot de la pastille de la page Affaires, #2089) et, après un renvoi, « Modifié en révision N ». Le texte riche
   passe par l'assainisseur.
 -->
 <script lang="ts">
@@ -26,7 +26,6 @@
 	import { getSiteNom } from '$lib/stores/pageConfig';
 	import { LIBELLE_CS_ET_PRESENTS } from '$lib/points-conseil';
 	import Badge from '$lib/components/Badge.svelte';
-	import VignetteVisibilite from '$lib/components/reporting/VignetteVisibilite.svelte';
 
 	const siteNom = getSiteNom();
 	$: jeton = $page.params.jeton ?? '';
@@ -100,7 +99,8 @@
 				<section class="abordee">
 					<h2>{a.numero} · {a.titre}</h2>
 					<p class="marques">
-						<VignetteVisibilite prive={a.prive} />
+						{#if a.lecture}<Badge teinte="badge-blue" compact title="Qui la lit">{a.lecture}</Badge
+							>{/if}
 						{#if a.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge
 							>{/if}
 						{#if a.marque}<Badge teinte="badge-orange" compact>{a.marque}</Badge>{/if}

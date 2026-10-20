@@ -57,7 +57,7 @@ from app.utils.batiments import libelle_batiment
 from app.utils.categories_ticket import libelle_categorie
 from app.utils import fusion_en_cours
 from app.utils.affaire_absorbee import pas_absorbee
-from app.utils.lecteurs_du_conseil import privees
+from app.utils.lecture_affaire import lecture_courte
 from app.utils.entretien_periodique import conditions_entretien_en_cours, etat_visite
 from app.utils.perimetres import (
     batiments_cibles,
@@ -121,9 +121,12 @@ class AffaireOuverte:
     #: est `nouvelle` ou le type de cette dernière entrée.
     a_evolue: bool = False
     motif_evolution: Optional[str] = None
-    #: La vignette (#2082) : seuls le conseil et le syndic la lisent
-    #: (`utils/lecteurs_du_conseil.privees`).
-    prive: bool = False
+    #: « Qui la lit » (#2089) : ce que la pastille de la page Affaires lit
+    #: (`PastilleLecture`) — et son libellé court, pour le PDF (`lecture_affaire`).
+    confidentiel: bool = False
+    public_cible: list[str] = field(default_factory=list)
+    reserve_perimetre: bool = False
+    lecture: str = ""
     #: Les affaires liées rassemblées (#2083) : l'identifiant de la plus ancienne
     #: du groupe — `None` pour une affaire seule (`utils/fusion_en_cours`).
     groupe: Optional[int] = None
@@ -232,7 +235,6 @@ def lire_affaire(
     relances: Optional[list] = None,
     avec_visite: bool = False,
     derniere_entree: Optional[tuple[datetime, str]] = None,
-    prive: bool = False,
 ) -> AffaireOuverte:
     """PURE. Ce que le rapport montre d'une affaire."""
     ouverte_le = horloge.jour_civil(ticket.cree_le)
@@ -264,7 +266,10 @@ def lire_affaire(
         etat_visite=etat_visite(ticket, jour) if avec_visite else None,
         a_evolue=a_evolue,
         motif_evolution=motif,
-        prive=prive,
+        confidentiel=bool(ticket.confidentiel),
+        public_cible=parse_json_perimetres(ticket.public_cible),
+        reserve_perimetre=bool(ticket.reserve_perimetre),
+        lecture=lecture_courte(ticket),
     )
 
 
@@ -317,7 +322,6 @@ def releve(
     delai = delai_relance_jours(session)
     relances = relances_envoyees(session, [t.id for t in tickets])
     dernieres = dernieres_entrees(session, [t.id for t in tickets])
-    secretes = privees(session, tickets)
     affaires = [
         lire_affaire(
             t,
@@ -327,7 +331,6 @@ def releve(
             relances=relances.get(t.id),
             avec_visite=entretien,
             derniere_entree=dernieres.get(t.id),
-            prive=t.id in secretes,
         )
         for t in tickets
     ]

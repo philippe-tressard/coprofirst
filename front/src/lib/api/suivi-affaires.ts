@@ -46,8 +46,11 @@ export interface AffaireOuverte {
 	 *   est `nouvelle` ou le type de cette entrée (`commentaire`, `etat`…). */
 	a_evolue: boolean;
 	motif_evolution: string | null;
-	/** La vignette (#2082) : seuls le conseil et le syndic la lisent. */
-	prive: boolean;
+	/**  Ce que lit la pastille « qui la lit » de la page Affaires (#2089) —
+	 *   `PastilleLecture` la rend à l'identique. */
+	confidentiel: boolean;
+	public_cible: string[];
+	reserve_perimetre: boolean;
 	/** L'état coché d'office à la saisie de son CR — « À l'AG » reste à l'AG. */
 	etat_par_defaut: string;
 	/** Le groupe des affaires liées rassemblées (#2083) : l'id de la plus ancienne. */

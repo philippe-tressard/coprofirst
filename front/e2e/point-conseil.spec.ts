@@ -36,7 +36,9 @@ const AFFAIRE = {
 	etat_visite: null,
 	a_evolue: false,
 	motif_evolution: null,
-	prive: false,
+	confidentiel: false,
+	public_cible: [],
+	reserve_perimetre: false,
 	etat_par_defaut: 'en_cours',
 	groupe: null,
 	fusionnees: [],
@@ -51,7 +53,9 @@ const SUIVANTE = {
 	ouverte_le: '2026-09-02',
 	age_jours: 47,
 	anciennete: 'moyenne' as const,
-	prive: true,
+	confidentiel: false,
+	public_cible: [],
+	reserve_perimetre: false,
 };
 
 const RELEVE: SuiviAffaires = {

@@ -131,7 +131,8 @@ export interface CompteRenduParLien {
 		contenu: string;
 		conseil_seul: boolean;
 		marque: string | null;
-		prive: boolean;
+		/** « Qui la lit », le mot de la pastille de la page Affaires (#2089). */
+		lecture: string;
 	}[];
 	non_traitees: string[];
 	deja_valide: boolean;
@@ -254,7 +255,8 @@ export const pointsConseil = {
 	valider: (id: number) => api.post<void>(`/points-conseil/${id}/valider`),
 	/** Le PDF d'un CR validé — celui qui a été rangé et envoyé aux présents. */
 	pdf: (id: number) => api.postFichier(`/points-conseil/${id}/pdf`, {}),
-	/** L'aperçu du PDF, à tout instant : « Projet — révision N » (#2082). */
+	/**  Le PDF du point à tout instant — « Projet — révision N » tant qu'il n'est
+	 *   pas validé : c'est « Exporter en PDF » pendant un point (#2089). */
 	apercu: (id: number) => api.postFichier(`/points-conseil/${id}/apercu`, {}),
 	/** L'administrateur valide POUR un présent qui a donné son accord (#2082). */
 	derogation: (id: number, presentId: number, commentaire: string | null) =>

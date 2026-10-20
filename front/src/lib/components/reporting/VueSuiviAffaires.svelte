@@ -65,6 +65,7 @@
 <script lang="ts">
 	import { messageErreur } from '$lib/erreurs';
 	import {
+		pointsConseil,
 		suiviAffaires as suiviApi,
 		type CompteRenduPoint,
 		type CrAffaire,
@@ -74,6 +75,7 @@
 		type VisitePeriodique,
 	} from '$lib/api';
 	import { enregistrerFichier } from '$lib/fichiers';
+	import { jourIso } from '$lib/date';
 	import { amenerEnHaut } from '$lib/accordeon';
 	import { tick } from 'svelte';
 	import { toast } from '$lib/components/Toast.svelte';
@@ -127,7 +129,7 @@
 	$: marques = new Map<number, string>(
 		(actif?.abordees ?? []).filter((a) => a.marque).map((a) => [a.affaire.id, a.marque ?? '']),
 	);
-	$: vignettes = new Map<number, boolean>((suivi?.affaires ?? []).map((a) => [a.id, a.prive]));
+	$: parId = new Map((suivi?.affaires ?? []).map((a) => [a.id, a]));
 	/**  L'état du point, suivi : à chaque changement (ouvert, terminé, validé,
 	 *   abandonné), le tableau se relit — ses affaires en dépendent (#2082). */
 	let etatVu: string | null | undefined = undefined;
@@ -237,10 +239,19 @@
 		}
 	}
 
-	/** L'export, demandé par la barre d'outils : le PDF du serveur. */
+	/**  L'export, demandé par la barre d'outils : le PDF du serveur. Pendant un
+	 *   point, c'est le PDF du POINT — la maquette B, « Projet — révision N »
+	 *   (#2089) — qui remplace l'ancien bouton « Aperçu PDF ». */
 	export async function exporterPdf() {
 		exportEnCours = true;
 		try {
+			if (actif) {
+				enregistrerFichier(
+					await pointsConseil.apercu(actif.point.id),
+					`point-cs-syndic-${jourIso(actif.point.debut)}.pdf`,
+				);
+				return;
+			}
 			const pdf = await suiviApi.pdf(releve);
 			const nom = entretien ? 'suivi-des-entretiens-periodiques' : 'suivi-des-affaires';
 			enregistrerFichier(pdf, `${nom}-${suivi?.jour ?? ''}.pdf`);
@@ -365,7 +376,7 @@
 			{/if}
 		</div>
 		{#if actif}
-			<CrGlobal compteRendu={actif} {vignettes} />
+			<CrGlobal compteRendu={actif} affaires={parId} />
 		{/if}
 	{/if}
 {/if}
