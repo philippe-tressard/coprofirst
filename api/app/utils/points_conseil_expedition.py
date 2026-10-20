@@ -146,7 +146,7 @@ def nom_du_fichier(point: PointConseil) -> str:
 async def expedier(session: Session, point: PointConseil) -> int:
     """Range le PDF du CR validé et l'envoie aux présents joignables. Rend le
     nombre d'envois ; ne lève jamais (la validation est acquise)."""
-    from starlette.concurrency import run_in_threadpool
+    from fastapi.concurrency import run_in_threadpool
 
     from app.utils.email import send_email
 
