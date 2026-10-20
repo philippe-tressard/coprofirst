@@ -201,6 +201,8 @@ export interface ParticipantsPoint {
 	moyens: MoyenPoint[];
 	/** Ce que la saisie d'un CR propose pour l'état à la validation (#2082). */
 	etats_validation: EtatValidation[];
+	/** Les catégories d'une affaire ouverte en séance (#2084) — clé et libellé. */
+	categories_seance: EtatValidation[];
 }
 
 /** Un point validé, dans l'historique du mode (#2082). */
@@ -243,6 +245,9 @@ export const pointsConseil = {
 	ecrireCr: (id: number, ticketId: number, corps: CrEntree) =>
 		api.put<CompteRenduPoint>(`/points-conseil/${id}/affaires/${ticketId}`, corps),
 	terminer: (id: number) => api.post<CompteRenduPoint>(`/points-conseil/${id}/terminer`),
+	/** Ouvrir une affaire en séance : elle rejoint la liste du point (#2084). */
+	ouvrirAffaire: (id: number, corps: { titre: string; categorie: string; description: string }) =>
+		api.post<CompteRenduPoint>(`/points-conseil/${id}/affaires`, corps),
 	abandonner: (id: number) => api.delete<void>(`/points-conseil/${id}`),
 	//  ── La validation (#2042) ──
 	renvoyer: (id: number) => api.post<{ envoyes: number }>(`/points-conseil/${id}/renvoyer`),

@@ -317,6 +317,10 @@ def valider_point(session: Session, point: PointConseil, par: Optional[Utilisate
     appliquer_etats(
         session, point, [(tickets[c.ticket_id], c) for c in crs if c.ticket_id in tickets], par
     )
+    #  L'affaire « Points annexes » restée sans compte rendu est annulée (#2084).
+    from app.utils.points_conseil_seance import annuler_annexe_vide
+
+    annuler_annexe_vide(session, point, par)
     point.etat = VALIDE
     point.valide_le = point.mis_a_jour_le = horloge.maintenant()
     point.valide_par_id = par.id if par else None

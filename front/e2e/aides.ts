@@ -196,6 +196,7 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 		lieux: [],
 		moyens: [],
 		etats_validation: [],
+		categories_seance: [],
 	},
 	'/api/points-conseil/historique': [],
 	//  `TextesLegauxSource` : l'administration lit la source des textes légaux et

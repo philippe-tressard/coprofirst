@@ -83,6 +83,7 @@ const ANNUAIRE: ParticipantsPoint = {
 		{ cle: 'telephone', libelle: 'Téléphone', avec_lieu: false },
 		{ cle: 'hybride', libelle: 'Sur place et à distance', avec_lieu: true },
 	],
+	categories_seance: [{ cle: 'panne', libelle: 'Panne' }],
 	etats_validation: [
 		{ cle: 'en_cours', libelle: 'Chez le syndic' },
 		{ cle: 'en_ag', libelle: 'À l’AG' },
@@ -311,4 +312,34 @@ test('après « Enregistrer », l’affaire suivante se déplie, son titre en ha
 			return boite ? Math.round(boite.y) : -1;
 		})
 		.toBeGreaterThanOrEqual(0);
+});
+
+test('pendant le point, « Ouvrir une affaire en séance » la crée et l’ajoute (#2084)', async ({
+	page,
+}) => {
+	const envois: { quoi: string; corps: unknown }[] = [];
+	page.on('request', (r) => {
+		const url = new URL(r.url());
+		if (url.pathname === '/api/points-conseil/5/affaires')
+			envois.push({ quoi: r.method(), corps: r.postDataJSON() });
+	});
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/suivi-affaires') return RELEVE;
+		if (chemin === '/api/points-conseil/participants') return ANNUAIRE;
+		if (chemin === '/api/points-conseil/courant')
+			return { compte_rendu: compteRendu(null), reprise: null };
+		if (chemin === '/api/points-conseil/5/affaires') return compteRendu(null);
+		return undefined;
+	});
+	await page.goto('/espace-cs/reporting');
+	await attendreHydratation(page);
+
+	await page.getByRole('button', { name: 'Ouvrir une affaire en séance' }).click();
+	await page.getByLabel('Titre de l’affaire').fill('Contrat ascenseur');
+	await page.locator('#seance-categorie-5').selectOption('panne');
+	await page.getByRole('button', { name: 'Ouvrir l’affaire' }).click();
+	await expect.poll(() => envois.map((e) => e.quoi)).toContain('POST');
+	expect(envois[0].corps).toEqual(
+		expect.objectContaining({ titre: 'Contrat ascenseur', categorie: 'panne' }),
+	);
 });

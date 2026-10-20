@@ -128,6 +128,9 @@ class PointConseil(SQLModel, table=True):
     revision: int = 0
     #: Le PDF du CR validé, par sa clé de stockage (`utils/stockage`).
     pdf_cle: Optional[str] = None
+    #: L'affaire « Points annexes CS & Syndic » du point (#2084) — Suivi affaires
+    #: seulement ; annulée si elle reste sans compte rendu.
+    affaire_annexe_id: Optional[int] = None
 
 
 class IdentitePresent(SQLModel):

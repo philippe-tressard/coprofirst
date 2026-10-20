@@ -22,6 +22,7 @@ from app.models.core import RoleUtilisateur, StatutUtilisateur
 from app.models.tickets import Ticket, TicketEvolution
 from app.utils.points_conseil_etats import changement_a_poser, etat_par_defaut
 from app.models.points_conseil import CompteRenduAffaire
+from tests.aides_points_conseil import hors_annexe
 from tests.aides_http import base_http, client_http
 from tests.aides_points_conseil import intercepter_envois, point_termine
 from tests.aides_suivi import affaire_ouverte
@@ -113,9 +114,11 @@ def test_close_ailleurs_pendant_le_point_elle_reste_au_tableau_du_point(moteur):
         ticket.statut = "résolu"
         s.add(ticket)
         s.commit()
-    du_point = cs.get("/suivi-affaires?point=true").json()["affaires"]
+    du_point = hors_annexe(cs.get("/suivi-affaires?point=true").json()["affaires"])
     assert [a["id"] for a in du_point] == [t]
-    assert cs.get("/suivi-affaires").json()["affaires"] == [], "la relance ne la voit plus"
+    assert hors_annexe(cs.get("/suivi-affaires").json()["affaires"]) == [], (
+        "la relance ne la voit plus"
+    )
     r = cs.put(f"/points-conseil/{point}/affaires/{t}", json={"contenu": "<p>Close</p>"})
     assert r.status_code == 200, r.text
 
@@ -152,3 +155,85 @@ def test_cs_et_presents_se_lit_d_un_compte_du_syndic_pas_d_un_resident(moteur, e
     resident, _ = client_http(moteur, RoleUtilisateur.résident)
     lu = resident.get(f"/points-conseil/affaires/{t}")
     assert lu.status_code in (200, 403) and (lu.status_code == 403 or lu.json() == [])
+
+
+# ── Les affaires ouvertes en séance (#2084) ─────────────────────────────────
+
+
+def _ouvrir(cs, mode="affaires") -> dict:
+    r = cs.post("/points-conseil", json={"mode": mode, "debut": "2026-10-19T17:00:00"})
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+def _annexe(moteur, point_id: int):
+    from app.models.points_conseil import PointConseil
+
+    with Session(moteur) as s:
+        p = s.get(PointConseil, point_id)
+        return s.get(Ticket, p.affaire_annexe_id) if p.affaire_annexe_id else None
+
+
+def test_le_point_du_suivi_affaires_ouvre_son_affaire_annexe(moteur):
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    point = _ouvrir(cs)["point"]["id"]
+    annexe = _annexe(moteur, point)
+    assert annexe.titre == "Points annexes CS & Syndic du 19 octobre 2026"
+    assert (annexe.categorie, annexe.statut) == ("etude_travaux", "ouvert")
+    #  Elle est au tableau du point, en fin de liste, et privée.
+    (a,) = cs.get("/suivi-affaires?point=true").json()["affaires"]
+    assert (a["id"], a["prive"]) == (annexe.id, True)
+
+
+def test_le_point_des_entretiens_n_en_ouvre_pas(moteur):
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    assert _annexe(moteur, _ouvrir(cs, "entretien")["point"]["id"]) is None
+
+
+def test_l_annexe_vide_est_annulee_a_l_abandon(moteur):
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    point = _ouvrir(cs)["point"]["id"]
+    annexe = _annexe(moteur, point).id
+    assert cs.delete(f"/points-conseil/{point}").status_code == 204
+    assert _statut(moteur, annexe) == "annulé"
+
+
+def test_l_annexe_vide_est_annulee_a_la_validation_pas_l_annexe_ecrite(moteur, envois):
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    vide = _ouvrir(cs)["point"]["id"]
+    annexe_vide = _annexe(moteur, vide).id
+    cs.post(f"/points-conseil/{vide}/terminer")
+    cs.post(f"/points-conseil/{vide}/valider")
+    assert _statut(moteur, annexe_vide) == "annulé"
+
+    ecrit = _ouvrir(cs)["point"]["id"]
+    annexe = _annexe(moteur, ecrit).id
+    cs.put(
+        f"/points-conseil/{ecrit}/affaires/{annexe}",
+        json={"contenu": "<p>Badge du gardien.</p>", "etat_cible": None},
+    )
+    cs.post(f"/points-conseil/{ecrit}/terminer")
+    cs.post(f"/points-conseil/{ecrit}/valider")
+    assert _statut(moteur, annexe) == "ouvert"
+
+
+def test_une_affaire_ouverte_en_seance_rejoint_le_point(moteur):
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    point = _ouvrir(cs, "entretien")["point"]["id"]
+    r = cs.post(
+        f"/points-conseil/{point}/affaires",
+        json={"titre": "Contrat ascenseur", "categorie": "entretien", "description": ""},
+    )
+    assert r.status_code == 201, r.text
+    assert [a["titre"] for a in r.json()["non_traitees"]] == ["Contrat ascenseur"]
+    refus = cs.post(
+        f"/points-conseil/{point}/affaires", json={"titre": "x", "categorie": "actualite"}
+    )
+    assert refus.status_code == 422
+    resident, _ = client_http(moteur, RoleUtilisateur.résident)
+    assert (
+        resident.post(
+            f"/points-conseil/{point}/affaires", json={"titre": "x", "categorie": "panne"}
+        ).status_code
+        == 403
+    )

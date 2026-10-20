@@ -13,6 +13,7 @@ conseil syndical et à l'administration. Les règles vivent dans
 | `POST /points-conseil` | ouvrir un point |
 | `PATCH /points-conseil/{id}` | corriger son Quand, son Où, son Qui |
 | `PUT /points-conseil/{id}/affaires/{ticket_id}` | écrire le CR d'une affaire (vide : le retirer) |
+| `POST /points-conseil/{id}/affaires` | ouvrir une affaire en séance : elle rejoint la liste du point (#2084) |
 | `POST /points-conseil/{id}/terminer` | terminer : le CR passe à valider et part aux présents (#2042) |
 | `DELETE /points-conseil/{id}` | abandonner un point ouvert par erreur |
 """
@@ -38,6 +39,8 @@ from app.models.points_conseil import (
 from app.routers.points_conseil_schemas import (
     AbordeeRead,
     AffaireCiteeRead,
+    AffaireSeanceEntree,
+    CategorieRead,
     CommentaireRead,
     CompteRenduRead,
     CourantRead,
@@ -62,6 +65,7 @@ from app.utils import points_conseil as regles
 from app.utils import points_conseil_ou as ou
 from app.utils import points_conseil_validation as validation
 from app.utils.points_conseil_etats import ETATS_A_LA_VALIDATION, exiger_etat_cible
+from app.utils import points_conseil_seance as seance
 from app.utils.annuaire import membres_du_conseil, membres_du_syndic
 from app.utils.lecture import lire_objet
 from app.utils.recuperer import ou_404
@@ -137,6 +141,9 @@ def participants(
         moyens=[MoyenRead.model_validate(m) for m in ou.MOYENS],
         etats_validation=[
             EtatRead(cle=e, libelle=STATUT_LABELS.get(e, e)) for e in ETATS_A_LA_VALIDATION
+        ],
+        categories_seance=[
+            CategorieRead(cle=c, libelle=nom) for c, nom in seance.categories_seance()
         ],
     )
 
@@ -246,6 +253,9 @@ def ouvrir(
     session.add(point)
     session.flush()
     regles.remplacer_presents(session, point, presents)
+    session.flush()
+    #  L'affaire « Points annexes » du Suivi affaires, dès l'ouverture (#2084).
+    seance.ouvrir_annexe(session, point, user)
     session.commit()
     session.refresh(point)
     return _compte_rendu_read(session, point, user)
@@ -318,6 +328,33 @@ def ecrire_cr(
 
 
 @router.post(
+    "/{point_id}/affaires",
+    response_model=CompteRenduRead,
+    status_code=201,
+    summary="Ouvrir une affaire en séance (CS/Admin)",
+)
+def ouvrir_affaire(
+    point_id: int,
+    body: AffaireSeanceEntree,
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(require_cs_or_admin),
+):
+    """Elle rejoint la liste du point, en fin de tableau (#2084)."""
+    point = regles.exiger_en_cours(ou_404(session, PointConseil, point_id, "Point"))
+    seance.creer_affaire(
+        session,
+        point,
+        user,
+        titre=body.titre,
+        categorie=body.categorie,
+        description=body.description,
+    )
+    session.commit()
+    session.refresh(point)
+    return _compte_rendu_read(session, point, user)
+
+
+@router.post(
     "/{point_id}/terminer", response_model=CompteRenduRead, summary="Terminer le point (CS/Admin)"
 )
 async def terminer(
@@ -337,7 +374,10 @@ async def terminer(
 def abandonner(
     point_id: int,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    user: Utilisateur = Depends(require_cs_or_admin),
 ):
-    regles.supprimer_point(session, ou_404(session, PointConseil, point_id, "Point"))
+    point = regles.exiger_en_cours(ou_404(session, PointConseil, point_id, "Point"))
+    #  Son affaire annexe restée vide est annulée, jamais supprimée (#2084).
+    seance.annuler_annexe_vide(session, point, user)
+    regles.supprimer_point(session, point)
     session.commit()

@@ -52,6 +52,9 @@
     précédente rendu : *« c'est très perturbant de perdre le fil des affaires »*.
   - L'**historique des CR** (`HistoriquePoints`), plié, entre les graphiques et
     le point.
+  - **Ouvrir une affaire en séance** (#2084), sous le tableau d'un point en
+    cours (`AffaireSeance`) ; l'affaire « Points annexes » est créée d'office à
+    l'ouverture d'un point du Suivi affaires.
   - **Les affaires liées** (#2083) se suivent ; **Fusionner** ouvre la fusion
     sous leur en-tête (`FusionAffaires`), **Ne pas fusionner** l'écarte après
     confirmation — au point comme hors d'un point.
@@ -84,6 +87,7 @@
 	import CrGlobal from './CrGlobal.svelte';
 	import HistoriquePoints from './HistoriquePoints.svelte';
 	import FusionAffaires from './FusionAffaires.svelte';
+	import AffaireSeance from './AffaireSeance.svelte';
 	import { confirmer } from '$lib/confirmation';
 	import BarresCroisees from './BarresCroisees.svelte';
 	import BilanVisites from './BilanVisites.svelte';
@@ -349,6 +353,16 @@
 					{/if}
 				</svelte:fragment>
 			</TableauAffaires>
+			{#if actif?.point.etat === 'en_cours' && participants}
+				<AffaireSeance
+					pointId={actif.point.id}
+					categories={participants.categories_seance}
+					onOuverte={(nouveau) => {
+						compteRendu = nouveau;
+						relire();
+					}}
+				/>
+			{/if}
 		</div>
 		{#if actif}
 			<CrGlobal compteRendu={actif} {vignettes} />

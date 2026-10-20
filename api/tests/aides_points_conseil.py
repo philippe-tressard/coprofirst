@@ -70,3 +70,9 @@ def point_termine(
 
 def liens(envois) -> list[str]:
     return [e["jeton"] for e in envois]
+
+
+def hors_annexe(affaires: list[dict]) -> list[dict]:
+    """Les affaires d'un point, sans son affaire « Points annexes » — créée
+    d'office à l'ouverture d'un point du Suivi affaires (#2084)."""
+    return [a for a in affaires if not a["titre"].startswith("Points annexes CS & Syndic")]

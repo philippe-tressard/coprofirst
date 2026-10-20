@@ -204,6 +204,19 @@ class EtatRead(BaseModel):
     libelle: str
 
 
+class CategorieRead(BaseModel):
+    cle: str
+    libelle: str
+
+
+class AffaireSeanceEntree(BaseModel):
+    """Une affaire ouverte en séance (#2084) : titre, catégorie, description."""
+
+    titre: str = Field(min_length=1, max_length=200)
+    categorie: str
+    description: str = Field(default="", max_length=50_000)
+
+
 class ParticipantsRead(BaseModel):
     conseil: list[MembreRead]
     syndic: list[MembreRead]
@@ -211,6 +224,8 @@ class ParticipantsRead(BaseModel):
     moyens: list[MoyenRead]
     #: Ce que la saisie d'un CR propose pour l'état à la validation (#2082).
     etats_validation: list[EtatRead]
+    #: Les catégories d'une affaire ouverte en séance (#2084).
+    categories_seance: list[CategorieRead]
 
 
 class PointHistoriqueRead(BaseModel):

@@ -25,6 +25,7 @@ from app.utils import horloge
 from app.utils.points_conseil_expedition import document
 from app.utils.points_conseil_pdf import html_compte_rendu
 from app.utils.points_conseil_validation import auto_valider
+from tests.aides_points_conseil import hors_annexe
 from tests.aides_http import base_http, client_http
 from tests.aides_points_conseil import intercepter_envois, liens, point_termine
 
@@ -227,7 +228,7 @@ def test_apres_terminer_un_cr_se_corrige_aucun_ne_s_ajoute(moteur, envois):
         autre = s.exec(select(CompteRenduAffaire)).all()
         assert [c.contenu for c in autre] == ["<p>Corrigé</p>"]
     oubliee = cs.get("/points-conseil/courant?mode=affaires").json()["compte_rendu"]
-    (nt,) = oubliee["non_traitees"]
+    (nt,) = hors_annexe(oubliee["non_traitees"])
     assert (
         cs.put(f"/points-conseil/{point}/affaires/{nt['id']}", json={"contenu": "<p>x</p>"})
     ).status_code == 409
