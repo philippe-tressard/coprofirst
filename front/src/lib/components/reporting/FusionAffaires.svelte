@@ -95,7 +95,6 @@
 		<SectionDescription
 			pliable={pliageDe(TICKET, 'description')}
 			idPrefixe="fusion-{principale.id}"
-			titre="Description de l’affaire fusionnée"
 			hauteur="14rem"
 			bind:valeur={description}
 			{assisteIA}
