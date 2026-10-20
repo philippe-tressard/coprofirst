@@ -123,14 +123,13 @@ actif.
 | origine lente | **écartée** | la requête n'arrive pas au Caddy ; celle de l'autre nœud, à la même seconde, est servie en 7 ms |
 | délai de sonde trop court | **écartée** | rien n'arrive en 10 s ; allonger ne changerait que l'heure du `000` |
 | chemin du domicile aux heures chargées | **établie** | 14 h–23 h seulement (pic à 17 h), sur les deux nœuds, parfois à la même minute ; de 1–3 par jour à 5–9 depuis le 15/10 |
-| la résolution DNS, dans ce chemin | **probable** | cloudflared journalise `lookup region1.v2.argotunnel.com: i/o timeout` aux mêmes heures, 14–21 par jour depuis le 15/10 (1–3 avant) |
+| la résolution DNS, dans ce chemin | **établie** (20/10) | les 23 `000` détaillés des deux nœuds depuis le 18/10 disent tous `Resolving timed out after 10000 milliseconds` — aucun `Connection timed out` ; cloudflared journalise `lookup region1.v2.argotunnel.com: i/o timeout` aux mêmes heures |
 
-🔎 Ce qui manque pour trancher DNS ou saturation de l'accès : la ligne
-`Sonde : dns=… connexion=… <erreur curl>` que health-watch écrit désormais sous
-chaque `⚠ Site HS` — `Resolving timed out` dit le DNS, `Connection timed out` le
-lien. `grep -A1 "Site HS" /var/log/hostachy-health-watch.log`. Une mesure hors de la
-fenêtre (18/10, 09:20–09:47 : 800 requêtes publiques, chaque résolveur interrogé
-1 000 fois) n'a vu aucun `000` — elle ne prouve rien pour 17 h.
+🔎 Tranché le 20/10/2026 par la ligne `Sonde : dns=… connexion=… <erreur curl>`
+que health-watch écrit sous chaque `⚠ Site HS` (`grep -A1 "Site HS"
+/var/log/hostachy-health-watch.log`) : c'est la **résolution**, pas le lien. Le même
+hoquet a rendu C25 (scripts tiers) « non mesurable » le 20/10 à 15:51 : sa sonde se
+reprend désormais une fois (`page_html`, `lib-sonde.sh`) et le WARN nomme l'erreur de curl.
 
 ⚠️ Les résolveurs viennent de la **box** (DHCP, `/etc/resolv.conf` réécrit le
 08/10/2026) : six sont annoncés, la glibc n'en lit que les **trois premiers**, et le

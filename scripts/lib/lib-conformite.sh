@@ -190,17 +190,23 @@ conformite_verdicts() {
   #  répond (elle sort par le WAN et revient sur l'actif), donc le contrôle
   #  passerait deux fois sur le même fait — `standards/04` §33.
   HOTES_TIERS="static.cloudflareinsights.com googletagmanager.com google-analytics.com"
+  #
+  #  ⚠️ La page est relue une fois avant de conclure (`page_html`, lib-sonde) :
+  #  le 20/10/2026, une seule résolution DNS expirée a fait partir le digest.
+  #  Deux échecs restent un WARN, et il dit alors ce que curl a vu.
   PAGE_PUBLIQUE=""
+  CAUSE25=$(mktemp)
   if [ "$ENTETES_ROLE" = "actif" ]; then
-    PAGE_PUBLIQUE=$(curl -s --max-time 10 -H 'Accept: text/html'       -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36'       "${SITE_PUBLIC_HTML:-https://5hostachy.fr/auth/connexion}" 2>/dev/null)
+    PAGE_PUBLIQUE=$(page_html "${SITE_PUBLIC_HTML:-https://5hostachy.fr/auth/connexion}" "${SONDE_RETRY_S:-10}" "$CAUSE25")
   fi
   case "$(verdict_script_tiers "$PAGE_PUBLIQUE" "$HOTES_TIERS" "$ENTETES_ROLE")" in
     OK)          ok   "Aucun script tiers dans la page publique (${HOTES_TIERS// /, } surveillés)" ;;
     SANS_OBJET)  ok   "Scripts tiers : sans objet sur le standby (il ne sert pas la page publique)" ;;
     TIERS:*)     V25=$(verdict_script_tiers "$PAGE_PUBLIQUE" "$HOTES_TIERS" "$ENTETES_ROLE")
                  warn "Script TIERS servi à chaque résident : ${V25#TIERS:} — il n'est dans aucun fichier du dépôt, donc il vient d'un réglage d'arête (Cloudflare). Le couper, ou l'écrire dans les pages légales (#701)" ;;
-    *)           warn "Scripts tiers non mesurables (page publique non reçue) — ni vert ni rouge" ;;
+    *)           warn "Scripts tiers non mesurables (page publique non reçue deux fois à ${SONDE_RETRY_S:-10} s d'écart : $(tr '\n' ' ' < "$CAUSE25" | sed 's/^curl: //; s/ *$//')) — ni vert ni rouge" ;;
   esac
+  rm -f "$CAUSE25"
 
   # ── C30. Ce nœud reçoit-il ses correctifs ? (#1378) ──────────────────────────
   #  rpi2 n'en recevait plus depuis cinq mois, et aucun des contrôles ci-dessus ne
