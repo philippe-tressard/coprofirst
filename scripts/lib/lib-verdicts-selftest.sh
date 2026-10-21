@@ -385,6 +385,14 @@ verdicts_selftest() {
   #  L'ordre compte : une bascule pendant un build reste une bascule, c'est
   #  l'explication la plus proche de la coupure.
   vs "bascule ET build"                   "BASCULE:503"     503 503   oui oui
+  #  🔴 Le cas du 20/10/2026 à 22:36 : le résolveur du nœud expirait, le site
+  #  servait. La troisième sonde, résolue autrement, le dit.
+  vs "DNS du nœud muet, site joint autrement" "RESOLUTION:000" 000 000 non non 200
+  #  …et le cas qui doit RESTER rouge : l'autre chemin n'atteint rien non plus.
+  vs "DNS muet, autre chemin KO aussi"    "KO:000"          000 000   non non 000
+  vs "autre chemin : le site est en erreur" "KO:503"        000 000   non non 503
+  #  Pas de troisième sonde (échec hors résolution) : rien ne change.
+  vs "sans troisième sonde"               "KO:000"          000 000   non non ""
 
   echo "-- bascule_en_cours (C1/C2/C3) --"
   vb() { # description attendu lock_self lock_peer maintenant seuil

@@ -24,10 +24,28 @@
 # =============================================================================
 
 # ── Sonde HTTP — UNE valeur, toujours ────────────────────────────────────────
+#  $3… = options de curl en plus (ex. `--doh-url`, ci-dessous).
 http_code() {  # $1 = URL, $2 = timeout (défaut 10) → code HTTP ou 000
   local code
-  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "${2:-10}" "$1" 2>/dev/null)
+  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "${2:-10}" "${@:3}" "$1" 2>/dev/null)
   echo "${code:-000}"
+}
+
+# ── Quand c'est le RÉSOLVEUR du nœud qui se tait (21/10/2026) ───────────────
+#  Le 20/10/2026 à 22:36, C1 a écrit « Site public KO (HTTP 000) » : ses deux
+#  sondes avaient expiré à la RÉSOLUTION du nom (« Resolving timed out »), à la
+#  même minute où l'autre nœud recevait un 200. Le site servait ; c'était le
+#  chemin DNS du domicile aux heures chargées (`infra-rpi`, « La cause des 000 »).
+#
+#  Le nom se résout alors une fois par un AUTRE chemin — DNS sur HTTPS, à une
+#  adresse IP, donc sans passer par `/etc/resolv.conf` — et la même requête est
+#  rejouée. Pure : `echec_de_resolution` lit la sortie de `http_detail`.
+RESOLVEUR_INDEPENDANT=${RESOLVEUR_INDEPENDANT:-https://1.1.1.1/dns-query}
+echec_de_resolution() {  # $1 = sortie de http_detail → oui | non
+  case "${1:-}" in
+    "000 "*"Resolving timed out"*|"000 "*"Could not resolve host"*) echo oui ;;
+    *) echo non ;;
+  esac
 }
 
 # ── La même sonde, avec CE QUI A MANQUÉ (#2073) ──────────────────────────────
@@ -141,6 +159,16 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   t "redémarrage : 000, 502, 503 puis 200"     prete    "000 502 503 200" 120 0 sonde_simulee
   t "jamais prête : bornée, elle renonce"      depassee "000"             1   0 sonde_simulee
   t "délai illisible : bornée quand même"      depassee "503"             x   0 sonde_simulee
+  #  `echec_de_resolution` : seule la RÉSOLUTION du nœud ouvre la reprise par
+  #  un autre résolveur — un lien coupé ou un site en erreur n'y ont pas droit.
+  r() { local libelle=$1 attendu=$2 got; got=$(echec_de_resolution "$3")
+        if [ "$got" = "$attendu" ]; then echo "PASS  $libelle → $got"
+        else echo "FAIL  $libelle  attendu=$attendu obtenu=$got"; st=1; fi; }
+  r "résolution expirée (20/10/2026)"          oui "000 dns=0s connexion=0s tls=0s total=10s ip= Resolving timed out after 10001 milliseconds"
+  r "nom introuvable"                          oui "000 dns=0s connexion=0s tls=0s total=0s ip= Could not resolve host: 5hostachy.fr"
+  r "connexion expirée : le lien, pas le DNS"  non "000 dns=0.02s connexion=0s tls=0s total=10s ip= Connection timed out after 10001 milliseconds"
+  r "site en erreur"                           non "503 dns=0.02s connexion=0.03s tls=0.05s total=0.1s ip=::1 "
+  r "sortie vide"                              non ""
   #  `http_detail` : son premier mot EST le code (#2073) ; curl muet → 000.
   d() { local libelle=$1 attendu=$2 r; r=$(bash -c "curl() { $3; }; $(declare -f http_detail); http_detail https://x 1" | cut -d' ' -f1)
         if [ "$r" = "$attendu" ]; then echo "PASS  $libelle → $r"
