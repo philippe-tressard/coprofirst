@@ -8,6 +8,7 @@
 	import { surveillerImagesProtegees } from '$lib/imagesProtegees';
 	import { unSeulDetailsOuvert } from '$lib/accordeon';
 	import { signalerDemarrage } from '$lib/garde-demarrage';
+	import { initTelemetry } from '$lib/telemetry';
 
 	export let data;
 
@@ -35,6 +36,16 @@
 	//  surveiller. Sans ce marqueur, il dirait « pas fini de se charger » à une
 	//  page qui marche — c'est ici, à la racine, que toutes les pages passent.
 	onMount(signalerDemarrage);
+
+	//  La télémétrie s'arme ICI, à la racine (#2066) : envoi périodique et au
+	//  déchargement, écoute des erreurs non rattrapées. Armée par le seul
+	//  squelette `(app)`, elle laissait `/auth/*` muet — la file ne partait
+	//  qu'au vingtième événement, jamais, et le journal ne voyait rien des
+	//  écrans qu'on ouvre juste après une MEP. Le refus du profil reste
+	//  appliqué par le serveur pour un visiteur, par `(app)` dès que le compte
+	//  est connu (`setTelemetryOptOut`). Un écouteur global, posé une fois
+	//  (`standards/11` §12).
+	onMount(initTelemetry);
 
 	//  L'icône de l'onglet (#1728) : le logo de la résidence s'il a été
 	//  téléversé, sinon le logo neutre. Elle vivait dans `app.html`, figée au
