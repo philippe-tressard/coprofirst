@@ -314,8 +314,9 @@ const aveugles = tous.filter((f) => {
 //  n'était plus compté que pour un commentaire : le relevé saute désormais les
 //  blocs `/* … */`.
 //  ✅ 0 le 21/10/2026 (#1571) : `LiensGuide`, dernier fichier aveugle, recevait sa
-//  classe de son APPELANT (`class="{classe} nav-guide"`). Elle devient un booléen
-//  (`mobile`) et deux `class:` — mêmes classes posées, rien ne change à l'écran.
+//  classe de son APPELANT (`class="{classe} nav-guide"`) et comptait sur deux
+//  règles `:global` de `Nav.svelte`. Il porte désormais son habillage : plus de
+//  classe passée, rendu mesuré identique avant/après (`e2e/liens-guide`).
 //  Le contrôle garde son rôle : il échoue dès qu'un fichier redevient aveugle.
 //  Carte des plafonds décroissants : #1571.
 const PLAFOND_NON_MESURES = 0;
