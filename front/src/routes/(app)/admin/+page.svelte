@@ -22,7 +22,8 @@
 	//  Si la lecture a échoué, leur formulaire serait vide — et enregistré, il
 	//  effacerait la configuration (#1459) : ils montrent l'échec à la place.
 	const ONGLETS_DU_PARAMETRAGE = [
-		'site',
+		'fonctionnement',
+		'connexion',
 		'pages',
 		'legal',
 		'whatsapp',
@@ -42,7 +43,6 @@
 		lireConfigSite,
 		type SectionSite,
 	} from '$lib/configSite';
-	import { IMPORT_TELECOMMANDES, IMPORT_VIGIK } from '$lib/imports-acces';
 	import OngletATraiter from '$lib/components/OngletATraiter.svelte';
 	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
 
@@ -61,7 +61,8 @@
 	//  L'onglet actif SE LIT dans l'adresse (`?onglet=`, « sauf admin ») : chaque
 	//  onglet est un lien, qui se copie et que le bouton Précédent rejoue. Une clé
 	//  inconnue ouvre le premier onglet — le premier OUVERT : l'opérateur qui
-	//  n'est pas administrateur n'en a que deux (#2029).
+	//  n'est pas administrateur n'a que ceux de l'Exploitation (#2029). Une clé
+	//  d'avant le rangement par niveau (#2062) est redirigée par `+page.ts`.
 	$: ouverts = ongletsOuverts('admin', $droitsOnglet).map((o) => o.id);
 	$: demande = $page.url.searchParams.get('onglet');
 	$: onglet = demande && ouverts.includes(demande) ? demande : ouverts[0];
@@ -141,7 +142,7 @@
 	//  rechargement sur `?onglet=utilisateurs`, l'écran restait sur « Chargement… »
 	//  pour toujours, et l'onglet Site n'avait aucun gestionnaire à proposer.
 	let listeDemandee = false;
-	$: if ($isAdmin && (onglet === 'utilisateurs' || onglet === 'site') && !listeDemandee) {
+	$: if ($isAdmin && (onglet === 'utilisateurs' || onglet === 'fonctionnement') && !listeDemandee) {
 		listeDemandee = true;
 		loadUtilisateurs();
 	}
@@ -301,9 +302,9 @@
 		: 'Les numéros de bâtiment peuvent manquer dans les listes.'}
 />
 
-<!--  Les deux rangées — « Gestion utilisateurs », « Configuration » — sont
-      rendues par `BarreOnglets` depuis la table (`groupe`), avec le descriptif
-      de l'onglet actif dessous, comme sur toutes les pages à onglets. -->
+<!--  Les deux rangées — les six groupes, puis les onglets du groupe actif
+      (#2062) — sont rendues par `BarreOnglets` depuis la table (`groupe`), avec
+      le descriptif de l'onglet actif dessous, comme sur toutes les pages. -->
 <BarreOnglets
 	pageId="admin"
 	actif={onglet}
@@ -344,6 +345,12 @@
 			<OngletMaintenance />
 		{/snippet}
 	</ChargementDiffere>
+{:else if onglet === 'installation'}
+	<ChargementDiffere charger={() => import('$lib/components/CarteInstallation.svelte')}>
+		{#snippet contenu(CarteInstallation)}
+			<CarteInstallation />
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'installations'}
 	<ChargementDiffere charger={() => import('$lib/components/OngletInstallations.svelte')}>
 		{#snippet contenu(OngletInstallations)}
@@ -366,10 +373,16 @@
 			<OngletServices {apresBascule} />
 		{/snippet}
 	</ChargementDiffere>
-{:else if onglet === 'site'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletSite.svelte')}>
-		{#snippet contenu(OngletSite)}
-			<OngletSite bind:siteConfig {siteSaving} {siteManagerUsers} {saveSiteConfig} />
+{:else if onglet === 'fonctionnement'}
+	<ChargementDiffere charger={() => import('$lib/components/OngletFonctionnement.svelte')}>
+		{#snippet contenu(OngletFonctionnement)}
+			<OngletFonctionnement bind:siteConfig {siteSaving} {siteManagerUsers} {saveSiteConfig} />
+		{/snippet}
+	</ChargementDiffere>
+{:else if onglet === 'connexion'}
+	<ChargementDiffere charger={() => import('$lib/components/OngletConnexion.svelte')}>
+		{#snippet contenu(OngletConnexion)}
+			<OngletConnexion bind:siteConfig {siteSaving} {saveSiteConfig} />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'pages'}
@@ -428,7 +441,10 @@
 {:else if onglet === 'copropriete'}
 	<ChargementDiffere charger={() => import('$lib/components/OngletCopropriete.svelte')}>
 		{#snippet contenu(OngletCopropriete)}
-			<OngletCopropriete bind:referenceCopro={siteConfig.reference_copro} />
+			<OngletCopropriete
+				bind:referenceCopro={siteConfig.reference_copro}
+				urlPublique={siteConfig.url}
+			/>
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'perimetres'}
@@ -443,22 +459,10 @@
 			<OngletAuditLots />
 		{/snippet}
 	</ChargementDiffere>
-{:else if onglet === 'import_lots'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletImportLots.svelte')}>
-		{#snippet contenu(OngletImportLots)}
-			<OngletImportLots />
-		{/snippet}
-	</ChargementDiffere>
-{:else if onglet === 'import_tc'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletImportAcces.svelte')}>
-		{#snippet contenu(OngletImportAcces)}
-			<OngletImportAcces modele={IMPORT_TELECOMMANDES} />
-		{/snippet}
-	</ChargementDiffere>
-{:else if onglet === 'import_vigik'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletImportAcces.svelte')}>
-		{#snippet contenu(OngletImportAcces)}
-			<OngletImportAcces modele={IMPORT_VIGIK} />
+{:else if onglet === 'imports'}
+	<ChargementDiffere charger={() => import('$lib/components/OngletImports.svelte')}>
+		{#snippet contenu(OngletImports)}
+			<OngletImports />
 		{/snippet}
 	</ChargementDiffere>
 {/if}

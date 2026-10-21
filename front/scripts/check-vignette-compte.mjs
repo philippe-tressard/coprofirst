@@ -29,7 +29,7 @@ import { neutraliserCommentaires } from './lib-commentaires.mjs';
 
 /**  Écarts déclarés, avec leur raison. Une entrée qui ne sert plus fait échouer. */
 const EXCEPTIONS = {
-	'src/lib/components/Onglet.svelte':
+	'src/lib/components/SignalATraiter.svelte':
 		'un SIGNAL en rouge (« à traiter »), pas un nombre d’objets : autre notion, autre couleur',
 	'src/lib/components/RaccourcisRapides.svelte':
 		'la vignette resserrée des raccourcis de l’accueil, avec ses tons urgent et orange — à réunir avec `Compte` si l’on en décide (sa taille changerait)',

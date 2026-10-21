@@ -1,5 +1,5 @@
 <!--
-  Le bloc **Installation** d'Administration › Maintenance (#1761) : le rôle de cette
+  Le bloc **Installation** d'Administration › Exploitation › Installation (#1761, onglet propre depuis #2062) : le rôle de cette
   installation dans la distribution CoproFirst, et l'écart de sa version.
 
   Exigence de l'auteur, 08/10/2026 : « savoir si l'instance est le master

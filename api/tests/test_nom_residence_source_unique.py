@@ -66,4 +66,4 @@ def test_put_config_refuse_le_nom(session):
     with pytest.raises(HTTPException) as refus:
         save_config({"site_nom": "Autre nom"}, _Admin(), session)
     assert refus.value.status_code == 422
-    assert "Fiche copropriété" in refus.value.detail
+    assert "Copropriété › Identité" in refus.value.detail

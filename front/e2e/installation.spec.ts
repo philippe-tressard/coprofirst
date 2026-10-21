@@ -27,7 +27,7 @@ async function ouvrir(page, installation, inscription?: unknown) {
 		if (chemin === '/api/admin/installation/inscription') return inscription;
 		return undefined;
 	});
-	await page.goto('/admin?onglet=maintenance');
+	await page.goto('/admin?onglet=installation');
 	const carte = page.locator('section.config-section', {
 		has: page.getByText('Installation', { exact: true }),
 	});

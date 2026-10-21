@@ -34,7 +34,7 @@
  * Le nom de la résidence n'est plus ici (#2056) : il se saisit dans la Fiche
  * copropriété, seule source.
  *
- * ⚠️ Ce module ne connaît **que** l'onglet « Site ». Les pages
+ * ⚠️ Ce module ne connaît **que** les onglets Fonctionnement et Connexion. Les pages
  * (`page_config_*`), WhatsApp et les mentions légales ont leurs propres chemins,
  * et `mentions_legales` / `politique_confidentialite` se lisent par un endpoint
  * séparé (`/config/textes-legaux`, leur SOURCE, champs compris — jamais le rendu
@@ -121,7 +121,8 @@ export function lireConfigSite(
 }
 
 /** Les sections du paramétrage qui s'enregistrent chacune par son bouton. */
-export type SectionSite = 'generaux' | 'pied_de_page' | 'legal' | 'pied_whatsapp';
+export type SectionSite =
+	'fonctionnement' | 'connexion' | 'pied_de_page' | 'legal' | 'pied_whatsapp';
 
 /**
  * Formulaire → configuration stockée, SECTION PAR SECTION (#2057).
@@ -131,10 +132,11 @@ export type SectionSite = 'generaux' | 'pied_de_page' | 'legal' | 'pied_whatsapp
  * valeurs périmées — le défaut que ce module a mis au jour.
  */
 const ECRIVAINS: Record<SectionSite, (c: ConfigSite) => Record<string, string>> = {
-	generaux: (c) => ({
+	//  Copropriété › Fonctionnement — « Paramètres généraux » jusqu'au rangement
+	//  par niveau (#2062), qui en a sorti le sous-titre de connexion.
+	fonctionnement: (c) => ({
 		//  `site_url` ne s'écrit pas : l'API la dérive de l'installation (#2058).
 		site_email: c.email_admin,
-		login_sous_titre: c.login_sous_titre,
 		archivage_delai_jours: String(
 			c.archivage_delai_jours || CONFIG_SITE_DEFAUT.archivage_delai_jours,
 		),
@@ -142,6 +144,10 @@ const ECRIVAINS: Record<SectionSite, (c: ConfigSite) => Record<string, string>> 
 		notify_ticket_bug_email: c.notify_ticket_bug_email ? '1' : '0',
 		notify_new_user_created_email: c.notify_new_user_created_email ? '1' : '0',
 		site_manager_user_id: c.site_manager_user_id || '',
+	}),
+	//  Présentation › Connexion et pied de page : deux sections, deux boutons.
+	connexion: (c) => ({
+		login_sous_titre: c.login_sous_titre,
 	}),
 	pied_de_page: (c) => ecrireReglagePied(c.pied_de_page),
 	legal: (c) => ({

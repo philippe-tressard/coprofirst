@@ -374,7 +374,7 @@ def tableau(session: Session, scope: str, filtre: str) -> dict:
         **communs(session, lecture),
         "filtre_gestionnaire": {
             "propose": propose,
-            #  Faux : aucun administrateur n'est désigné gestionnaire (Paramétrage site) —
+            #  Faux : aucun administrateur n'est désigné gestionnaire (Copropriété › Fonctionnement) —
             #  c'est la cause de filtre absent que l'administrateur peut corriger.
             "gestionnaire_designe": gestionnaire_id is not None,
             "applique": applique,

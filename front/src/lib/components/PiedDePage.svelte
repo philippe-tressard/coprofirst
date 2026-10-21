@@ -1,6 +1,6 @@
 <!--
   LE pied de page de l'application : celui du squelette `(app)`, et son aperçu
-  dans Admin › Site. Un seul rendu pour les deux, si bien que l'aperçu montre ce
+  dans Admin › Présentation › Connexion et pied de page. Un seul rendu pour les deux, si bien que l'aperçu montre ce
   que le site affichera (08/10/2026).
 
   Une carte, sur le modèle de coprofirst.fr (maquette A, arbitrée le 15/10/2026) :

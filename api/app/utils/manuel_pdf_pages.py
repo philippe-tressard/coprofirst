@@ -1,7 +1,7 @@
 """Les deux pages que le manuel PDF ajoute au manuel servi : la garde et les mentions.
 
 Extraites de `manuel_pdf` (08/10/2026) quand le sous-titre réglé dans
-Admin › Site est entré dans la garde : le module passait les 500 lignes. Elles
+Admin › Présentation › Connexion et pied de page est entré dans la garde : le module passait les 500 lignes. Elles
 ne lisent rien — ni base, ni réseau — et se composent à partir de ce qu'on leur
 passe ; `manuel_pdf.identite_du_manuel` dit d'où cela vient.
 """

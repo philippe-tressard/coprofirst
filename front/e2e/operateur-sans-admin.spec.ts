@@ -5,7 +5,8 @@
  *  qui vivent sous `/admin`. L'écran doit donc :
  *  - lui offrir « Admin » au menu, et ne pas le renvoyer de `/admin` ;
  *  - ne lui montrer que les onglets `ouvertOperateur` (`$lib/onglets-ouverts`) —
- *    Maintenance, et Installations sur la référence ;
+ *    Installation, Maintenance, et Installations sur la référence : le seul
+ *    groupe Exploitation (#2062) ;
  *  - ouvrir sa supervision sur l'adresse d'un autre onglet — comme toute clé
  *    inconnue de la page ouvre son premier onglet ;
  *  - ne rien demander que le serveur lui refuserait : ni les files d'« À traiter »,
@@ -51,11 +52,15 @@ const onglet = (page: Page, nom: string) => page.locator('.tab-btn', { hasText: 
 test('l’opérateur seul a « Admin » au menu et n’y voit que sa supervision', async ({ page }) => {
 	const lus = await ouvrir(page, '/admin');
 	await expect(page.locator('nav.sidebar a.nav-item[href="/admin"]')).toHaveCount(1);
-	//  Cas zéro : la rangée est rendue, et elle est réduite.
+	//  Cas zéro : la rangée est rendue, et elle est réduite — un seul groupe,
+	//  donc pas de rangée de groupes (#2062).
+	await expect(page.locator('.tab-btn.active')).toHaveText('Installation');
 	await expect(onglet(page, 'Maintenance')).toBeVisible();
 	await expect(onglet(page, 'Installations')).toBeVisible();
 	await expect(onglet(page, 'Utilisateurs')).toHaveCount(0);
+	await expect(page.locator('.groupe')).toHaveCount(0);
 	//  La supervision est là ; ce qui porte des données de la résidence, non.
+	await onglet(page, 'Maintenance').click();
 	await expect(page.getByText('Contrôles de fiabilité').first()).toBeVisible();
 	await expect(page.getByText('Export vérifié')).toHaveCount(0);
 	expect(lus.filter((c) => RESERVEES_ADMIN.includes(c))).toEqual([]);
@@ -63,7 +68,7 @@ test('l’opérateur seul a « Admin » au menu et n’y voit que sa supervision
 
 test('l’adresse d’un autre onglet lui ouvre sa supervision', async ({ page }) => {
 	const lus = await ouvrir(page, '/admin?onglet=utilisateurs');
-	await expect(page.getByText('Contrôles de fiabilité').first()).toBeVisible();
+	await expect(page.locator('.tab-btn.active')).toHaveText('Installation');
 	await expect(onglet(page, 'Utilisateurs')).toHaveCount(0);
 	expect(lus.filter((c) => RESERVEES_ADMIN.includes(c))).toEqual([]);
 });

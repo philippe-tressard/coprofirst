@@ -96,9 +96,9 @@ test('Admin : la réception des réponses illisible ne s’offre pas en formulai
 	//  on revient : la section se remonte et RELIT pour elle seule — la page, non.
 	//  Avant #1475, elle restait un formulaire de valeurs par défaut, « Enregistrer »
 	//  actif, et l'échec partait en exception non rattrapée.
-	await page.getByRole('link', { name: 'Pages légales', exact: true }).click();
+	await page.getByRole('link', { name: 'WhatsApp', exact: true }).click();
 	await enEchec(page, '/api/config/admin');
-	await page.getByRole('link', { name: 'SMTP', exact: true }).click();
+	await page.getByRole('link', { name: 'Courriel', exact: true }).click();
 
 	await expect(section.getByText('Paramétrage illisible — rien n’a été modifié')).toBeVisible();
 	await expect(section.getByRole('button', { name: 'Enregistrer' })).toHaveCount(0);
