@@ -54,6 +54,8 @@ export interface ConstatConservation {
 	mois_debut_exercice: number | null;
 	/** La case d'Administration › Services : cochée, les affaires échues sont traitées la nuit. */
 	application_active: boolean;
+	/** La politique de confidentialité servie porte la phrase de conservation. */
+	politique_annonce: boolean;
 	/** Le serveur retire sa copie d'une archive ce nombre de jours après sa copie sur le PC. */
 	delai_retrait_jours: number;
 	echeances: EcheanceConservation[];
