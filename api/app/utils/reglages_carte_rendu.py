@@ -177,8 +177,6 @@ def _tableau_cles(notions: tuple[Notion, ...]) -> str:
 
 
 def _tableau_environnement() -> str:
-    from pydantic_core import PydanticUndefined
-
     from app.config import Settings
 
     sortie = []
@@ -187,7 +185,7 @@ def _tableau_environnement() -> str:
         for nom in noms:
             champ = Settings.model_fields[nom]
             type_ = getattr(champ.annotation, "__name__", str(champ.annotation))
-            if champ.default is PydanticUndefined:
+            if champ.is_required():
                 defaut = "**obligatoire**"
             elif nom in SECRETS_ENV:
                 defaut = "secret"
