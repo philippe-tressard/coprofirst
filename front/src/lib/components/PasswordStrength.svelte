@@ -136,7 +136,7 @@
 		flex: 1;
 		height: 4px;
 		border-radius: 2px;
-		background: var(--color-border, #e5e7eb);
+		background: var(--color-border);
 		transition: background var(--duree-geste);
 	}
 	.gauge-label {
@@ -160,7 +160,7 @@
 		align-items: center;
 		gap: 0.35rem;
 		font-size: var(--fs-sm);
-		color: var(--color-text-muted, #6b7280);
+		color: var(--color-text-muted);
 		transition: color var(--duree-geste);
 	}
 	.criteria-list li.ok {

@@ -220,7 +220,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 @media (hover: hover) and (pointer: fine) {
 	.btn-icon[aria-pressed='true']:hover,
 	.btn-icon-edit[aria-pressed='true']:hover {
-		background: var(--color-primary-dark, var(--color-primary));
+		background: var(--color-primary-dark);
 		color: var(--color-surface);
 	}
 }

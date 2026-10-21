@@ -43,10 +43,11 @@ import {
 	contrastesBadges,
 	egalesAUnJeton,
 	jetonsDe,
+	repliMortsDe,
 	resoudre,
 } from './lib-charte-jetons.mjs';
 
-export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, resoudre };
+export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, resoudre };
 
 /**
  *  Le compte autorisé, et son historique : c'est lui qui dit à quel rythme la
@@ -95,9 +96,16 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, resoudre };
  *  10/10/2026 : 70 tailles. La carte du fil passe à `CarteListe` (maquette B
  *  du fil) : l'émoji de rubrique et sa taille en dur (1,05 rem) partent dans
  *  la gouttière, qui écrit par l'échelle.
+ *  21/10/2026 (#1571) : 89 couleurs. Onze REPLIS MORTS (`var(--color-border,
+ *  #e5e7eb)` : le jeton est défini, le repli ne sert jamais) s'écrivent sans
+ *  repli — désormais INTERDITS (`repliMortsDe`) —, et seize fonds gris
+ *  quasi-blancs (`#f8f9fa`, `#f9fafb`, `#fafafa`, `#f8fafc`, `#f4f5f7`, tous à
+ *  trois unités au plus de `--color-neutre-fond`) l'emploient : ils étaient
+ *  posés sur des variables que RIEN ne définit (`--color-bg-secondary`,
+ *  `--color-bg-alt`…), donc le repli seul s'appliquait.
  */
 //  Carte des plafonds décroissants : #1571.
-const PLAFOND = { couleurs: 116, tailles: 69 };
+const PLAFOND = { couleurs: 89, tailles: 69 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
@@ -333,6 +341,14 @@ if (process.argv.includes('--selftest')) {
 		egalesAUnJeton('.a{color:#ffffff80;padding:.5rem;font-size:0.5rem;font-size:1rem}', jetons),
 		[],
 	);
+	cas(
+		'repli mort : un jeton défini avec un repli, pas une propriété de composant ni un jeton sans repli',
+		repliMortsDe(
+			'.a{border:1px solid var(--color-border, #e5e7eb);width:var(--avatar-size, 2.5rem);color:var(--color-border)}',
+			':root {\n\t--color-border: #d0d8e4;\n}',
+		),
+		[['var(--color-border, #e5e7eb)', 'var(--color-border)']],
+	);
 	console.log(ko ? '== ÉCHECS ==' : '== TOUS OK ==');
 	process.exit(ko);
 }
@@ -412,6 +428,19 @@ if (egales.length) {
 ✗ ${egales.length} valeur(s) égale(s) à un jeton de la charte, à écrire par lui :`);
 	egales.slice(0, 40).forEach((l) => console.error(l));
 	if (egales.length > 40) console.error(`   … et ${egales.length - 40} de plus`);
+}
+const socleCss = readFileSync(join(STYLES, FEUILLE_DES_JETONS), 'utf8');
+const replis = releves.flatMap(([chemin, css]) =>
+	repliMortsDe(css, socleCss).map(
+		([valeur, par]) => `   ${relative(RACINE, chemin).split(sep).join('/')} : ${valeur} → ${par}`,
+	),
+);
+if (replis.length) {
+	echec = 1;
+	console.error(`
+✗ ${replis.length} repli(s) mort(s) sur un jeton défini de la charte, à écrire sans repli :`);
+	replis.slice(0, 40).forEach((l) => console.error(l));
+	if (replis.length > 40) console.error(`   … et ${replis.length - 40} de plus`);
 }
 if (interdits.length) {
 	echec = 1;

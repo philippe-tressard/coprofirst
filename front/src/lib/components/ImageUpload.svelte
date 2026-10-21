@@ -87,10 +87,10 @@
 		width: var(--preview-size);
 		height: var(--preview-size);
 		border-radius: 8px;
-		border: 2px dashed var(--color-border, #e2e8f0);
+		border: 2px dashed var(--color-border);
 		overflow: hidden;
 		cursor: pointer;
-		background: var(--color-bg-subtle, #f8fafc);
+		background: var(--color-neutre-fond);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -99,7 +99,7 @@
 
 	@media (hover: hover) and (pointer: fine) {
 		.preview:hover {
-			border-color: var(--color-primary, #2563eb);
+			border-color: var(--color-primary);
 		}
 	}
 	.preview.circle {
@@ -160,7 +160,7 @@
 	.btn-link {
 		background: none;
 		border: none;
-		color: var(--color-primary, #2563eb);
+		color: var(--color-primary);
 		font-size: var(--fs-sm);
 		cursor: pointer;
 		padding: 0;
