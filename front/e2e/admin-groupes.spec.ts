@@ -66,11 +66,7 @@ async function ouvrir(page: Page, adresse: string, moi: object) {
 const groupes = (page: Page) => page.locator('nav.groupes .groupe');
 const onglets = (page: Page) => page.locator('.tabs .tab-btn');
 
-/** Le nom des groupes, sans le compte rouge qui peut suivre. */
-async function nomsDesGroupes(page: Page): Promise<string[]> {
-	return (await groupes(page).allTextContents()).map((t) => t.replace(/\d+$/, '').trim());
-}
-
+/** Les six groupes, dans l'ordre — le compte rouge peut suivre le nom. */
 const SIX = [
 	'👥 Personnes',
 	'📥 Imports',
@@ -78,12 +74,12 @@ const SIX = [
 	'🔌 Services',
 	'🎨 Présentation',
 	'🛠 Exploitation',
-];
+].map((nom) => new RegExp(`^ *${nom} *[0-9]* *$`));
 
 test('administrateur : six groupes, l’Exploitation réduite à Maintenance', async ({ page }) => {
 	await ouvrir(page, '/admin', ADMIN);
 	await expect(page.locator('.groupe[aria-current="true"]')).toContainText('Personnes');
-	await expect.poll(() => nomsDesGroupes(page)).toEqual(SIX);
+	await expect(groupes(page)).toHaveText(SIX);
 	await expect(onglets(page)).toHaveText(['À traiter', 'Utilisateurs', 'Audit lots', 'Télémétrie']);
 
 	//  Un groupe est un lien vers son premier onglet : la rangée suit.
@@ -112,7 +108,7 @@ test('administrateur : six groupes, l’Exploitation réduite à Maintenance', a
 
 test('administrateur + opérateur : l’Exploitation entière', async ({ page }) => {
 	await ouvrir(page, '/admin?onglet=maintenance', ADMIN_OPERATEUR);
-	await expect.poll(() => nomsDesGroupes(page)).toEqual(SIX);
+	await expect(groupes(page)).toHaveText(SIX);
 	await expect(page.locator('.groupe[aria-current="true"]')).toContainText('Exploitation');
 	await expect(onglets(page)).toHaveText(['Installation', 'Maintenance', 'Installations']);
 	await expect(page.locator('.tab-btn.active')).toHaveText('Maintenance');
@@ -125,6 +121,9 @@ test('opérateur seul : un groupe, donc une seule rangée', async ({ page }) => 
 });
 
 test('chaque adresse d’avant le rangement ouvre un onglet, et le bon', async ({ page }) => {
+	//  Dix-neuf ouvertures d'écran : le délai d'un test seul n'y suffit pas sur un
+	//  poste chargé (rejeu du 21/10/2026).
+	test.setTimeout(120_000);
 	await ouvrir(page, '/admin', ADMIN_OPERATEUR);
 	await expect(page.locator('.tab-btn.active')).toHaveText('À traiter');
 	for (const cle of CLES_D_AVANT) {
@@ -140,9 +139,11 @@ test('chaque adresse d’avant le rangement ouvre un onglet, et le bon', async (
 			await expect(page.locator('.tab-btn.active'), cle).toHaveCount(1);
 		}
 	}
-	//  Un courriel porte ses paramètres de suivi : ils suivent la redirection.
+	//  Un courriel porte son étiquette de suivi (`src`) : la redirection ne la
+	//  perd pas — la page la relève puis la retire de l'adresse (`$lib/arrivees`).
 	await page.goto('/admin?onglet=import_tc&src=courriel:ticket_nouveau');
-	await expect(page).toHaveURL(/onglet=imports&source=telecommandes&src=courriel/);
+	await expect(page).toHaveURL(/onglet=imports&source=telecommandes/);
+	await expect(page.getByRole('radio', { name: 'Télécommandes' })).toBeChecked();
 });
 
 test('au doigt : pas de défilement de page, cibles de 44 px', async ({ page, isMobile }) => {
