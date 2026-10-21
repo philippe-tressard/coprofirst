@@ -353,7 +353,7 @@
 		font-size: var(--fs-sm);
 		line-height: 1.6;
 		color: var(--color-text);
-		background: var(--color-bg-subtle, #f9fafb);
+		background: var(--color-neutre-fond);
 		border: none;
 		outline: none;
 		resize: vertical;

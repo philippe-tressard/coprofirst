@@ -414,7 +414,7 @@
 <style>
 	/*  `.section-title` : la charte porte tout (composants.css). Retiree le 28/08/2026 (#607). */
 	.demande-form {
-		background: var(--color-bg-subtle, #f9fafb);
+		background: var(--color-neutre-fond);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
 		padding: 1rem;

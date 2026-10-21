@@ -48,6 +48,26 @@ export function egalesAUnJeton(css, { couleurs, tailles }) {
 }
 
 /**
+ *  ## Un repli sur un jeton DÉFINI est mort (#1571, 21/10/2026)
+ *
+ *  `var(--color-border, #e5e7eb)` : la charte définit `--color-border`, le repli
+ *  ne sert jamais — c'est une valeur en dur que le plafond comptait pour rien, et
+ *  que la lecture prenait pour la vraie couleur de l'élément. Onze l'étaient,
+ *  chacune avec une teinte différente de la charte. On écrit le jeton seul.
+ *
+ *  Ne cible QUE les noms définis dans `socle.css` : un repli sur une propriété
+ *  propre à un composant (`--avatar-size`) est une API, pas un reste.
+ */
+export function repliMortsDe(css, socle) {
+	const definis = new Set([...socle.matchAll(/^\s*(--[a-z0-9-]+)\s*:/gm)].map((m) => m[1]));
+	const trouves = [];
+	for (const m of css.matchAll(/var\(\s*(--[a-z0-9-]+)\s*,\s*([^)]+)\)/g)) {
+		if (definis.has(m[1])) trouves.push([m[0], `var(${m[1]})`]);
+	}
+	return trouves;
+}
+
+/**
  *  ## Le texte d'un badge se LIT (#1410, 27/09/2026)
  *
  *  Chaque `.badge-<teinte>` de `styles/composants.css` pose un texte de

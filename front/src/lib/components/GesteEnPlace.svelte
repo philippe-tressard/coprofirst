@@ -68,7 +68,7 @@
 	.geste {
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
-		background: var(--color-bg-alt, #fafafa);
+		background: var(--color-neutre-fond);
 		padding: 0.75rem;
 		margin-bottom: 0.75rem;
 	}

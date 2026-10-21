@@ -371,7 +371,7 @@
 		padding: 0.6rem 0.75rem;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
-		background: var(--color-bg-subtle, #fafafa);
+		background: var(--color-neutre-fond);
 	}
 	.option-ligne {
 		display: flex;

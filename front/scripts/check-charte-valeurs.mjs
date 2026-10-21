@@ -43,10 +43,11 @@ import {
 	contrastesBadges,
 	egalesAUnJeton,
 	jetonsDe,
+	repliMortsDe,
 	resoudre,
 } from './lib-charte-jetons.mjs';
 
-export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, resoudre };
+export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, resoudre };
 
 /**
  *  Le compte autorisé, et son historique : c'est lui qui dit à quel rythme la
@@ -95,9 +96,13 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, resoudre };
  *  10/10/2026 : 70 tailles. La carte du fil passe à `CarteListe` (maquette B
  *  du fil) : l'émoji de rubrique et sa taille en dur (1,05 rem) partent dans
  *  la gouttière, qui écrit par l'échelle.
+ *  21/10/2026 (#1571) : 89 couleurs. Onze REPLIS MORTS (`var(--color-border,
+ *  #e5e7eb)`, jeton défini) s'écrivent sans repli — INTERDITS (`repliMortsDe`) ;
+ *  seize fonds quasi-blancs, posés sur des variables que RIEN ne définit
+ *  (`--color-bg-alt`…), prennent `--color-neutre-fond` (≤ 3 unités RVB d'écart).
  */
 //  Carte des plafonds décroissants : #1571.
-const PLAFOND = { couleurs: 116, tailles: 69 };
+const PLAFOND = { couleurs: 89, tailles: 69 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
@@ -333,6 +338,14 @@ if (process.argv.includes('--selftest')) {
 		egalesAUnJeton('.a{color:#ffffff80;padding:.5rem;font-size:0.5rem;font-size:1rem}', jetons),
 		[],
 	);
+	cas(
+		'repli mort : un jeton défini avec un repli, pas une propriété de composant ni un jeton sans repli',
+		repliMortsDe(
+			'.a{border:1px solid var(--color-border, #e5e7eb);width:var(--avatar-size, 2.5rem);color:var(--color-border)}',
+			':root {\n\t--color-border: #d0d8e4;\n}',
+		),
+		[['var(--color-border, #e5e7eb)', 'var(--color-border)']],
+	);
 	console.log(ko ? '== ÉCHECS ==' : '== TOUS OK ==');
 	process.exit(ko);
 }
@@ -394,34 +407,42 @@ for (const chemin of sources) {
 	}
 	for (const [valeur, par] of trouves) interdits.push(`   ${rel} : ${valeur} → ${par}`);
 }
-const jetons = jetonsDe(readFileSync(join(STYLES, FEUILLE_DES_JETONS), 'utf8'));
+const socleCss = readFileSync(join(STYLES, FEUILLE_DES_JETONS), 'utf8');
+const jetons = jetonsDe(socleCss);
 if (!Object.keys(jetons.couleurs).length || !Object.keys(jetons.tailles).length) {
 	console.error(`
 ✗ Aucun jeton lu dans ${FEUILLE_DES_JETONS} : contrôle inopérant (INCONNU).
 `);
 	process.exit(2);
 }
-const egales = releves.flatMap(([chemin, css]) =>
-	egalesAUnJeton(css, jetons).map(
-		([valeur, par]) => `   ${relative(RACINE, chemin).split(sep).join('/')} : ${valeur} → ${par}`,
-	),
-);
-if (egales.length) {
-	echec = 1;
-	console.error(`
-✗ ${egales.length} valeur(s) égale(s) à un jeton de la charte, à écrire par lui :`);
-	egales.slice(0, 40).forEach((l) => console.error(l));
-	if (egales.length > 40) console.error(`   … et ${egales.length - 40} de plus`);
-}
-if (interdits.length) {
-	echec = 1;
-	console.error(
-		`\n✗ ${interdits.length} valeur(s) tranchée(s) le 27/09/2026 encore écrite(s) ` +
-			'(taille au cran supérieur, couleur d’état de la charte) :',
+/** Les trouvailles d'une règle sur chaque relevé, en lignes `chemin : valeur → jeton`. */
+const parReleve = (regle) =>
+	releves.flatMap(([chemin, css]) =>
+		regle(css).map(
+			([valeur, par]) => `   ${relative(RACINE, chemin).split(sep).join('/')} : ${valeur} → ${par}`,
+		),
 	);
-	interdits.slice(0, 40).forEach((l) => console.error(l));
-	if (interdits.length > 40) console.error(`   … et ${interdits.length - 40} de plus`);
+/** Une règle sans plafond : la moindre ligne fait échouer, les 40 premières se lisent. */
+function refuser(lignes, entete) {
+	if (!lignes.length) return;
+	echec = 1;
+	console.error(`\n✗ ${lignes.length} ${entete} :`);
+	lignes.slice(0, 40).forEach((l) => console.error(l));
+	if (lignes.length > 40) console.error(`   … et ${lignes.length - 40} de plus`);
 }
+refuser(
+	parReleve((css) => egalesAUnJeton(css, jetons)),
+	'valeur(s) égale(s) à un jeton de la charte, à écrire par lui',
+);
+refuser(
+	parReleve((css) => repliMortsDe(css, socleCss)),
+	'repli(s) mort(s) sur un jeton défini de la charte, à écrire sans repli',
+);
+refuser(
+	interdits,
+	'valeur(s) tranchée(s) le 27/09/2026 encore écrite(s) ' +
+		'(taille au cran supérieur, couleur d’état de la charte)',
+);
 const badges = contrastesBadges(
 	readFileSync(join(STYLES, 'composants.css'), 'utf8'),
 	readFileSync(join(STYLES, 'socle.css'), 'utf8'),

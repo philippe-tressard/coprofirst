@@ -190,7 +190,7 @@
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.btn-icon-move:hover:not(:disabled) {
-			background: var(--color-bg-secondary, #f8f9fa);
+			background: var(--color-neutre-fond);
 			color: var(--color-text);
 		}
 	}

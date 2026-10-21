@@ -274,7 +274,7 @@
 	    classes sont posées sur le conteneur que `CarteListe` rend, hors de la
 	    portée de ce fichier ; bornées à `.carte-liste`, elles ne valent que là. */
 	:global(.carte-liste.carte-membre) {
-		background: var(--color-bg-secondary, #f8f9fa);
+		background: var(--color-neutre-fond);
 		border: 1px solid var(--color-border);
 		border-left-width: 3px;
 	}

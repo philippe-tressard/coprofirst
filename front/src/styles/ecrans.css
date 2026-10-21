@@ -96,12 +96,12 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 }
 
 .imp-edit-row td {
-	background: var(--color-bg-secondary, #f8f9fa);
+	background: var(--color-neutre-fond);
 	padding: 0;
 }
 .imp-edit-form {
 	padding: 0.75rem 1rem;
-	border-left: 3px solid var(--color-primary, #1a56db);
+	border-left: 3px solid var(--color-primary);
 }
 .imp-edit-grid {
 	display: grid;

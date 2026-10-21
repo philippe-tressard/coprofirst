@@ -291,7 +291,7 @@
 	.tl-kpi {
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius, 8px);
+		border-radius: var(--radius);
 		padding: 1.25rem 1rem;
 		text-align: center;
 	}
@@ -396,7 +396,7 @@
 		transition: height var(--duree-apparition) var(--ease-out);
 	}
 	.tl-bar-large {
-		background: var(--color-primary-light, #93c5fd);
+		background: var(--color-primary-light);
 	}
 	.tl-bar-label {
 		font-size: var(--fs-xs);

@@ -103,7 +103,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: var(--color-surface-alt, #f4f5f7);
+		background: var(--color-neutre-fond);
 		border-style: dashed;
 	}
 	.flux-vignette-doc-icone {
