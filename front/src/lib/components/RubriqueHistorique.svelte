@@ -458,7 +458,7 @@
 		background: var(--color-success-fond);
 	}
 	.evol-commentaire {
-		background: #fafafa;
+		background: var(--color-neutre-fond);
 	}
 
 	.evol-more {

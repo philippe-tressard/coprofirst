@@ -384,7 +384,7 @@
 		padding: 0.75rem 1rem;
 		border: 1px solid var(--color-primary);
 		border-radius: var(--radius);
-		background: var(--color-primary-light, #eff6ff);
+		background: var(--color-primary-light);
 	}
 
 	/* Les styles en ligne de la page, rendus à la feuille (#1329, 28/09/2026). */

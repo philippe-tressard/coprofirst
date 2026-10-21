@@ -425,7 +425,7 @@
 	    suivant. Partie de `admin/+page.svelte` avec le balisage qu'elle habille. */
 	.ligne-formulaire > td {
 		border-top: none;
-		background: var(--color-bg-alt, #fafafa);
+		background: var(--color-neutre-fond);
 		padding: 1rem;
 	}
 	.carte-table {

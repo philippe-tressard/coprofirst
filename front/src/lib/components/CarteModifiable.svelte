@@ -191,6 +191,6 @@
 	}
 	.carte-modifiable-corps.teinte {
 		padding-top: 0.75rem;
-		background: var(--color-bg-secondary, #f8f9fa);
+		background: var(--color-neutre-fond);
 	}
 </style>

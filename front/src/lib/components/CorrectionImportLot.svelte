@@ -116,7 +116,7 @@
 		font-weight: 600;
 	}
 	.occupants-editor {
-		border: 1px solid var(--color-border, #e5e7eb);
+		border: 1px solid var(--color-border);
 		border-radius: 6px;
 		padding: 0.5rem 0.75rem;
 		margin-bottom: 0.25rem;

@@ -231,7 +231,7 @@
 		gap: 0.5rem;
 		flex-wrap: wrap;
 		padding: 0.3rem 0.5rem;
-		background: var(--color-bg-alt, #f8fafc);
+		background: var(--color-neutre-fond);
 		border-radius: var(--radius);
 	}
 	.etat-lot {

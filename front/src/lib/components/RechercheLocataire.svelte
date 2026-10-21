@@ -186,7 +186,7 @@
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
 		padding: 0.75rem 0.85rem;
-		background: var(--color-surface-alt, #f8f9fa);
+		background: var(--color-neutre-fond);
 		margin: 0;
 	}
 	.optional-hint {
