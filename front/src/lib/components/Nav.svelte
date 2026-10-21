@@ -181,8 +181,8 @@
 		      arbitré à l'écran). Le PDF reste atteignable depuis le manuel et
 		      depuis la FAQ : deux entrées « Guide » côte à côte encombraient un
 		      menu déjà long, pour un document qu'on télécharge une fois. -->
-		<div class="enveloppe-guide">
-			<LiensGuide classe="nav-item" taille={18} avecPdf={false} />
+		<div>
+			<LiensGuide taille={18} avecPdf={false} />
 		</div>
 		<button class="nav-item nav-logout" on:click={logout} type="button">
 			<span class="nav-icon"><Icon name="log-out" size={18} /></span>
@@ -225,8 +225,8 @@
 				<span class="nav-icon"><Icon name="user" size={20} /></span>
 				<span>{$currentUser?.prenom ?? t['/profil']}</span>
 			</a>
-			<div class="enveloppe-guide">
-				<LiensGuide classe="overlay-item" taille={20} />
+			<div>
+				<LiensGuide taille={20} />
 			</div>
 			<button class="overlay-item nav-logout" on:click={logout} type="button">
 				<span class="nav-icon"><Icon name="log-out" size={20} /></span>
@@ -443,19 +443,5 @@
 		.overlay-menu {
 			display: flex;
 		}
-	}
-
-	/*  Les deux règles ci-dessous ne sont PAS des redéfinitions : elles rendent
-	    applicables au composant enfant celles que la page porte déjà. Bornées à
-	    l'enveloppe, elles ne fuient nulle part. */
-	.enveloppe-guide :global(.nav-item),
-	.enveloppe-guide :global(.overlay-item) {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		padding: 0.55rem 0.7rem;
-		border-radius: var(--radius);
-		color: var(--color-text);
-		text-decoration: none;
 	}
 </style>

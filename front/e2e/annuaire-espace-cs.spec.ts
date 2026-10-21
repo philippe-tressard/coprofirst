@@ -142,6 +142,28 @@ test('le syndic refuse un membre sans téléphone, et n’envoie rien', async ({
 	expect(envois).toHaveLength(0);
 });
 
+test('les téléphones du syndic s’éditent sans perdre le focus, et le retrait ôte la bonne ligne', async ({
+	page,
+}) => {
+	//  La boucle est clée par l'INDEX (`lint:each-key`, #1571) : une clé tirée de la
+	//  valeur recréerait le champ à chaque caractère, et le focus partirait.
+	await ouvrir(page);
+	const syndic = section(page, 'Syndic');
+	await syndic.getByRole('button', { name: /Nouveau membre Syndic/ }).click();
+	const champs = syndic.getByPlaceholder('ex. 01 23 45 67 89');
+	await champs.first().click();
+	await page.keyboard.type('0612345678');
+	await expect(champs.first()).toBeFocused();
+	await expect(champs.first()).toHaveValue('0612345678');
+
+	await syndic.getByRole('button', { name: '+ N° de téléphone' }).click();
+	await champs.nth(1).fill('0700000000');
+	await expect(champs).toHaveCount(2);
+	await syndic.getByRole('button', { name: 'Retirer ce numéro' }).first().click();
+	await expect(champs).toHaveCount(1);
+	await expect(champs.first()).toHaveValue('0700000000');
+});
+
 test('déplié, le conseil montre son détail et le syndic son résumé', async ({ page }) => {
 	await ouvrir(page);
 	const conseil = section(page, 'Conseil Syndical');
