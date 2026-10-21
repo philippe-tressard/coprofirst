@@ -95,7 +95,7 @@
 						{#if cr.pdf_disponible}
 							<button
 								type="button"
-								class="btn btn-sm btn-outline pdf"
+								class="btn btn-sm btn-outline"
 								disabled={pdfEnCours === cr.cr_id}
 								aria-busy={pdfEnCours === cr.cr_id}
 								on:click={() => telechargerPdf(cr)}
