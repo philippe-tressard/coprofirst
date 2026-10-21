@@ -62,6 +62,7 @@ ANGLAIS = {
 }
 
 #: Tables anglaises existantes au 24/09/2026 — à renommer au fil de l'eau.
+#: Carte des plafonds décroissants : #1571.
 TABLES_FIGEES = {
     "email_verification_token",
     "password_reset_token",
@@ -75,6 +76,7 @@ TABLES_FIGEES = {
 }
 
 #: Routes existantes portant un mot anglais au 24/09/2026 — même régime.
+#: Carte des plafonds décroissants : #1571.
 ROUTES_FIGEES = {
     "/acces/admin/imports-vigik/auto-match",
     "/acces/admin/imports-vigik/stats",

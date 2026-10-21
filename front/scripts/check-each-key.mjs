@@ -98,18 +98,19 @@ const RACINE = new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]
  * temps que le rendu se corrige, au lieu de choisir entre les deux. Elle
  * remplace au passage `splitTels()` et une recopie littérale dans l'annuaire.
  *
- * ⚠️ LA DERNIÈRE RESTE, ET C'EST DÉFINITIF : l'unique `{#each}` sans clé que
- * couvre `PLAFOND` est dans `AnnuaireSyndic.svelte` (l'édition du syndic, jadis
+ * ✅ LA DERNIÈRE EST SOLDÉE (21/10/2026, #1571) : l'unique `{#each}` sans clé
+ * était dans `AnnuaireSyndic.svelte` (l'édition du syndic, jadis
  * dans `espace-cs`), qui édite les numéros d'un membre par
  * `bind:value={…telephones[ti]}` — la ligne se retrouve par ce `bind`, elle
  * n'est pas recopiée ici : le numéro écrit jadis (« ligne ~1248 ») avait dérivé.
  * La boucle a BESOIN de l'index pour écrire dans le tableau, et une clé portée par la valeur
  * changerait à chaque caractère tapé — Svelte recréerait le nœud, et le champ
- * perdrait le focus en cours de frappe. Le remède serait ici plus grave que le
- * mal, et aucune clé n'est meilleure que l'index.
+ * perdrait le focus en cours de frappe. Aucune clé n'est meilleure que l'index :
+ * elle s'y écrit donc en toutes lettres (`(ti)`), ce qui ne change pas le rendu
+ * — Svelte réutilise déjà les nœuds par position — et dit que c'est un choix.
  */
 //  Carte des plafonds décroissants : #1571.
-const PLAFOND = 1;
+const PLAFOND = 0;
 
 /** En dessous, le repérage ne mord plus — le dépôt en porte ~200. */
 const PLANCHER_EACH = 150;

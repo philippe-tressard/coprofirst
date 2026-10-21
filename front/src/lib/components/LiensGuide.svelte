@@ -23,8 +23,10 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { manuel } from '$lib/api';
 
-	/** `nav-item` dans le menu latéral, `overlay-item` dans le menu mobile. */
-	export let classe: string;
+	/** `nav-item` dans le menu latéral, `overlay-item` dans le menu mobile. Un
+	    booléen et non une classe passée en prop : `class="{classe} …"` rendait ce
+	    fichier aveugle à `lint:css-orphelin` (#1571). */
+	export let mobile = false;
 	/** 18 px sur le côté, 20 px en plein écran. */
 	export let taille = 18;
 	/** Le menu principal ne montre que le guide en ligne (04/09/2026) : deux
@@ -33,14 +35,14 @@
 	export let avecPdf = true;
 </script>
 
-<a href="/manuel-utilisateur.html" target="_blank" rel="noopener" class="{classe} nav-guide">
+<a href="/manuel-utilisateur.html" target="_blank" rel="noopener" class="nav-guide" class:nav-item={!mobile} class:overlay-item={mobile}>
 	<span class="nav-icon"><Icon name="book-open" size={taille} /></span>
 	<span>Guide</span>
 </a>
 {#if avecPdf}
 	<!--  Le guide en PDF : il était enterré au bas du manuel (03/09/2026) — un
 	      document qu'on ne trouve pas n'existe pas. -->
-	<a href={manuel.pdfUrl()} target="_blank" rel="noopener" class="{classe} nav-guide">
+	<a href={manuel.pdfUrl()} target="_blank" rel="noopener" class="nav-guide" class:nav-item={!mobile} class:overlay-item={mobile}>
 		<span class="nav-icon"><Icon name="file-text" size={taille} /></span>
 		<span>Guide PDF</span>
 	</a>

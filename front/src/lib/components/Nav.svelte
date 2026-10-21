@@ -182,7 +182,7 @@
 		      depuis la FAQ : deux entrées « Guide » côte à côte encombraient un
 		      menu déjà long, pour un document qu'on télécharge une fois. -->
 		<div class="enveloppe-guide">
-			<LiensGuide classe="nav-item" taille={18} avecPdf={false} />
+			<LiensGuide taille={18} avecPdf={false} />
 		</div>
 		<button class="nav-item nav-logout" on:click={logout} type="button">
 			<span class="nav-icon"><Icon name="log-out" size={18} /></span>
@@ -226,7 +226,7 @@
 				<span>{$currentUser?.prenom ?? t['/profil']}</span>
 			</a>
 			<div class="enveloppe-guide">
-				<LiensGuide classe="overlay-item" taille={20} />
+				<LiensGuide mobile taille={20} />
 			</div>
 			<button class="overlay-item nav-logout" on:click={logout} type="button">
 				<span class="nav-icon"><Icon name="log-out" size={20} /></span>

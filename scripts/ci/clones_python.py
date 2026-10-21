@@ -44,6 +44,7 @@ import sys
 import tempfile
 
 #: 🔴 Ce nombre ne monte JAMAIS. Il descend quand un clone disparaît.
+#: Carte des plafonds décroissants : #1571.
 PLAFOND_CLONES = 6
 
 #: ÉPINGLÉ : le compte change d'une version à l'autre de l'outil. Monter la
