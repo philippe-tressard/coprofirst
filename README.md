@@ -193,6 +193,7 @@ Toute la configuration se fait via le fichier `.env` (voir [.env.example](.env.e
 | [api/app/registre/conditions/v1.md](api/app/registre/conditions/v1.md) | **Conditions d'inscription** d'une installation au registre de la référence — un contrat d'engagements réciproques, archivé pour chaque installation ; projet à faire relire (#1876) |
 | [deploiement/standard/commune/LISEZMOI.md](deploiement/standard/commune/LISEZMOI.md) | **Installation commune** à plusieurs copropriétés : adresses dérivées, aiguillage, déclaration des copropriétés, nom de domaine générique |
 | [docs/licences-tierces.md](docs/licences-tierces.md) | Inventaire **généré** des licences tierces — dépendances, exceptions déclarées, fichiers repris (vérifié en CI) |
+| [docs/carte-reglages.md](docs/carte-reglages.md) | Carte **générée** des réglages — qui règle quoi (administrateur, conseil syndical, opérateur, exploitant du serveur), où, et où la valeur vit ; l'accès de chaque notion est confronté à la route en CI (#2061) |
 
 ## Sécurité
 

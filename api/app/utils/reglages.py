@@ -12,8 +12,8 @@ d'Admin qui l'écrit. Les familles dont les membres se déduisent d'un autre
 registre (usages de l'IA, interrupteurs de service, pied de page, pages) en sont
 lues, jamais recopiées. Une clé refusée l'est avec sa raison (`REFUSEES`).
 
-C'est le premier pas du registre des réglages (#2061) : la carte des réglages
-versionnée se déduira de lui.
+La carte des réglages versionnée (`docs/carte-reglages.md`, #2061) se déduit de lui et
+de `utils/reglages_carte` (qui règle quoi) : un onglet de plus s'y déclare aussi.
 """
 
 from __future__ import annotations
@@ -118,7 +118,7 @@ REFUSEES: dict[str, str] = {
     #  Dérivée, jamais saisie (#2058) : l'adresse de l'installation (`liens.adresse_du_site`).
     "site_url": "L'adresse du site est celle de son installation : elle ne se saisit pas.",
     #  Leurs routes portent des bornes que `PUT /config` n'appliquerait pas.
-    "consignes_arrivant": "Les consignes aux arrivants se modifient par PUT /admin/arrivants/consignes.",
+    "consignes_arrivant": "Les consignes aux arrivants se modifient par PUT /admin/consignes-arrivant.",
     "reglement_provenance": "La provenance du règlement se modifie par PUT /reglement/provenance.",
     "whatsapp_community_url": "Le lien de la communauté WhatsApp se modifie dans l'annuaire du CS.",
     #  Une seule source pour le nom de la résidence (#2056) : la Fiche copropriété.
