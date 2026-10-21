@@ -11,7 +11,10 @@ tâche permanente déclarée dans `TACHES_PERMANENTES`.
 
 ## Ce qui inscrit une demande
 
-- l'affaire **passe** en résolu ou annulé (et contribue au carnet) ;
+- l'affaire **passe** en résolu ou annulé, quelle que soit sa catégorie —
+  depuis la fiche, une Suite ou la validation d'un point CS / Syndic ;
+- jamais l'affaire « Points annexes » annulée d'office, restée vide
+  (`points_conseil_seance.annuler_annexe_vide`) : il n'y a rien à raconter ;
 - jamais une simple correction d'une affaire close : une affaire close avant la
   mise en service ne se produit que par le bouton « Produire la synthèse ».
 

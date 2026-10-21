@@ -101,9 +101,18 @@ def appliquer_sections_suite(
 
 
 def appliquer_statut(
-    session: Session, ticket: Ticket, evol: TicketEvolution, statut: str, ferme_le: datetime
+    session: Session,
+    ticket: Ticket,
+    evol: TicketEvolution,
+    statut: str,
+    ferme_le: datetime,
+    *,
+    synthese: bool = True,
 ) -> None:
     """L'affaire prend `statut`, avec tout ce qu'un changement d'état emporte.
+
+    `synthese=False` : la clôture n'inscrit pas de synthèse — la seule à le
+    demander est l'annexe vide d'un point CS / Syndic, qui n'a rien à raconter.
 
     Une actualité n'a pas de cycle (#1091) : c'est son SUIVI qui change, s'il
     est activé (10/10/2026) — un repère, qui n'emporte rien d'autre.
@@ -124,7 +133,8 @@ def appliquer_statut(
     ticket.mis_a_jour_le = horloge.maintenant()
     session.add(ticket)
     apres_cloture(ticket, session)  # la prochaine visite d'un contrat (#1092)
-    inscrire_si_eligible(session, ticket, statut_avant=statut_avant)
+    if synthese:
+        inscrire_si_eligible(session, ticket, statut_avant=statut_avant)
 
 
 def corriger_suivi(
