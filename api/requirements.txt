@@ -47,7 +47,7 @@ dkimpy==1.1.8
 #  parce que le code l'importe désormais directement (#1048). Apache-2.0 ou BSD.
 cryptography==50.0.2
 dnspython==2.9.0
-Pillow==12.3.0
+Pillow==13.0.0
 qrcode[pil]==8.2
 jinja2==3.1.6
 weasyprint==70.0

@@ -123,19 +123,22 @@ actif.
 | origine lente | **écartée** | la requête n'arrive pas au Caddy ; celle de l'autre nœud, à la même seconde, est servie en 7 ms |
 | délai de sonde trop court | **écartée** | rien n'arrive en 10 s ; allonger ne changerait que l'heure du `000` |
 | chemin du domicile aux heures chargées | **établie** | 14 h–23 h seulement (pic à 17 h), sur les deux nœuds, parfois à la même minute ; de 1–3 par jour à 5–9 depuis le 15/10 |
-| la résolution DNS, dans ce chemin | **probable** | cloudflared journalise `lookup region1.v2.argotunnel.com: i/o timeout` aux mêmes heures, 14–21 par jour depuis le 15/10 (1–3 avant) |
+| la résolution DNS, dans ce chemin | **établie** (20/10) | du 18 au 20/10, 33 `Site HS` de health-watch sur les deux nœuds disent `Resolving timed out`, un seul `Connection timed out` ; cloudflared journalise `lookup region1.v2.argotunnel.com: i/o timeout` aux mêmes heures |
 
-🔎 Ce qui manque pour trancher DNS ou saturation de l'accès : la ligne
-`Sonde : dns=… connexion=… <erreur curl>` que health-watch écrit désormais sous
-chaque `⚠ Site HS` — `Resolving timed out` dit le DNS, `Connection timed out` le
-lien. `grep -A1 "Site HS" /var/log/hostachy-health-watch.log`. Une mesure hors de la
-fenêtre (18/10, 09:20–09:47 : 800 requêtes publiques, chaque résolveur interrogé
-1 000 fois) n'a vu aucun `000` — elle ne prouve rien pour 17 h.
+🔎 Tranché le 20/10/2026 par la ligne `Sonde : dns=… connexion=… <erreur curl>`
+que health-watch écrit sous chaque `⚠ Site HS` (`grep -A1 "Site HS"
+/var/log/hostachy-health-watch.log`) : c'est la **résolution**, pas le lien. Le même
+hoquet a rendu C25 (scripts tiers) « non mesurable » le 20/10 à 15:51 : sa sonde se
+reprend désormais une fois (`page_html`, `lib-sonde.sh`) et le WARN nomme l'erreur de curl.
+Il a fait écrire à C1 « Site public KO » le 20/10 à 22:36 : C1 rejoue désormais sa
+sonde par un autre résolveur (« Le résolveur du nœud n'est pas le site », ci-dessous, #2093).
 
 ⚠️ Les résolveurs viennent de la **box** (DHCP, `/etc/resolv.conf` réécrit le
-08/10/2026) : six sont annoncés, la glibc n'en lit que les **trois premiers**, et le
-troisième (`194.242.2.4`) répond `REFUSED` à toute requête en clair — il en reste
-deux. Corriger cette liste est un réglage de la box, pas du dépôt.
+08/10/2026) : la glibc n'en lit que les **trois premiers**. Relevé du 21/10 sur les
+deux nœuds : `9.9.9.9`, `1.1.1.2`, `192.168.1.254` (la box), puis deux ignorés —
+le `194.242.2.4` qui répondait `REFUSED` n'y est plus. Chaque serveur a 5 s par
+défaut : deux qui se taisent suffisent à épuiser les 10 s de la sonde. Corriger
+cette liste est un réglage de la box, pas du dépôt.
 
 **Réflexe de diagnostic** au prochain « site public KO » : avant de suspecter un
 nœud, `curl http://<actif>/api/health` depuis l'autre RPi. S'il répond 200, le
@@ -541,6 +544,7 @@ C1 rend donc désormais quatre verdicts, décidés par `verdict_site_public`
 | 200 | — | **OK** |
 | ≠200 puis 200 | — | **WARN** — hoquet, pas une panne |
 | ≠200 deux fois | tenu | **WARN** — build en cours, revérifié dans 15 min |
+| ≠200 deux fois, la seconde **à la résolution du nom**, puis 200 par un autre résolveur | — | **WARN** — le résolveur du nœud, pas le site (20/10/2026, 22:36) |
 | ≠200 deux fois | libre | **FAIL** — le chemin critique est inchangé |
 
 ⚠️ **Ce n’est pas un assouplissement de seuil.** La leçon du point 10 (#448) est
@@ -548,6 +552,14 @@ que la tolérance masque ; ici on ajoute une **seconde mesure**, et les deux cas
 non concluants sortent en WARN — donc dans le digest, jamais en silence. Un build
 qui échoue laisse le site KO : le verrou est relâché, et l’exécution suivante
 alerte.
+
+🔴 **Le résolveur du nœud n'est pas le site** (21/10/2026). Le 20/10 à 22:36, C1 a
+écrit FAIL sur deux `000` qui avaient expiré à la **résolution** du nom — rpi2
+recevait un 200 à la même minute. Quand la seconde sonde échoue ainsi
+(`echec_de_resolution`, `lib-sonde.sh`), une troisième rejoue la requête avec le nom
+résolu en DNS sur HTTPS (`RESOLVEUR_INDEPENDANT`, une adresse IP : hors de
+`/etc/resolv.conf`). Un 200 → WARN ; un échec reste le FAIL : une panne de DNS ou
+de lien du domicile coupe aussi le tunnel.
 
 Le verrou est lu **sur le nœud qui porte la prod**, jamais sur celui qui observe —
 un build sur le standby ne fait pas tomber le site public. Il est remonté par le
