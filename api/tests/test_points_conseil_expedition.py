@@ -21,6 +21,7 @@ from sqlmodel import Session, select
 
 from app.models.core import RoleUtilisateur, Utilisateur
 from app.models.points_conseil import PointConseil, PresentPoint
+from app.models.tickets import Ticket
 from app.utils.points_conseil_expedition import destinataires_du_pdf, document
 from app.utils.points_conseil_pdf import html_compte_rendu
 from app.utils.points_conseil_validation import auto_valider, etat_validation
@@ -203,3 +204,18 @@ def test_la_copie_au_conseil_ne_double_pas_un_present():
     )
     assert [e for _, e in a] == ["Reine@exemple.test", "syndic@exemple.test"]
     assert copie == [(2, "jean@exemple.test")]
+
+
+def test_le_lien_vers_le_pdf_seulement_sur_une_affaire_lue_du_seul_conseil(moteur, envois):
+    """Précisé le 21/10/2026 : « pour les affaires en visibilité exclusive du CS ;
+    les autres n'auront pas ce lien car ils n'y auront pas accès »."""
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    point, t, _ = point_termine(moteur, cs)  # une Panne : copropriétaires + locataires
+    cs.post(f"/points-conseil/{point}/valider")
+    assert cs.get(f"/points-conseil/affaires/{t}").json()[0]["pdf_disponible"] is False
+    with Session(moteur) as s:
+        ticket = s.get(Ticket, t)
+        ticket.public_cible = '["conseil_syndical"]'  # réservée au conseil
+        s.add(ticket)
+        s.commit()
+    assert cs.get(f"/points-conseil/affaires/{t}").json()[0]["pdf_disponible"] is True

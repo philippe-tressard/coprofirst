@@ -10,9 +10,11 @@
     l'affaire n'est ni close ni annulée. Le conseil peut seulement réserver un
     compte rendu au conseil et aux présents (« CS et présents », #2082), ou le
     rouvrir.
-  - Le conseil — lui seul, la route ne sert que lui — y trouve le PDF du compte
-    rendu du point, celui qui a été rangé et envoyé aux présents (demandé le
-    20/10/2026 : « ajouter dans cette section le lien vers ce CR »).
+  - Sur une affaire lue du SEUL conseil, chaque compte rendu porte le lien vers
+    le PDF du point, celui qui a été rangé et envoyé aux présents (demandé le
+    20/10/2026, précisé le 21/10 : « pour les affaires en visibilité exclusive du
+    CS ; les autres n'auront pas ce lien car ils n'y auront pas accès »). Le
+    serveur le dit (`pdf_disponible`) ; l'écran ne le recalcule pas.
   - Une étape du rail (`RubriqueEtape`), entre la suite et la synthèse ;
     l'accordéon reste tenu par la carte (`ouverte`, `onBasculer`).
 -->
@@ -89,27 +91,31 @@
 					<span class="lieu">· {cr.ou}</span>
 					{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge
 						>{/if}
-					{#if $isCS}
-						<button
-							type="button"
-							class="btn btn-sm btn-outline pdf"
-							disabled={pdfEnCours === cr.cr_id}
-							aria-busy={pdfEnCours === cr.cr_id}
-							on:click={() => telechargerPdf(cr)}
-							><IconeAction icone="file-text" /> Compte rendu du point (PDF)</button
-						>
-						<button
-							type="button"
-							class="btn-icon"
-							aria-pressed={cr.conseil_seul}
-							aria-label={cr.conseil_seul
-								? 'Rendre ce compte rendu lisible de qui lit l’affaire'
-								: 'Réserver ce compte rendu au conseil syndical et aux présents'}
-							title={cr.conseil_seul ? 'Rouvrir à qui lit l’affaire' : LIBELLE_CS_ET_PRESENTS}
-							on:click={() => basculerConfidentialite(cr)}
-							><IconeAction icone="shield-check" /></button
-						>
-					{/if}
+					<span class="gestes">
+						{#if cr.pdf_disponible}
+							<button
+								type="button"
+								class="btn btn-sm btn-outline pdf"
+								disabled={pdfEnCours === cr.cr_id}
+								aria-busy={pdfEnCours === cr.cr_id}
+								on:click={() => telechargerPdf(cr)}
+								><IconeAction icone="file-text" /> Compte rendu du point (PDF)</button
+							>
+						{/if}
+						{#if $isCS}
+							<button
+								type="button"
+								class="btn-icon"
+								aria-pressed={cr.conseil_seul}
+								aria-label={cr.conseil_seul
+									? 'Rendre ce compte rendu lisible de qui lit l’affaire'
+									: 'Réserver ce compte rendu au conseil syndical et aux présents'}
+								title={cr.conseil_seul ? 'Rouvrir à qui lit l’affaire' : LIBELLE_CS_ET_PRESENTS}
+								on:click={() => basculerConfidentialite(cr)}
+								><IconeAction icone="shield-check" /></button
+							>
+						{/if}
+					</span>
 				</p>
 				<div class="contenu">{@html safeHtml(cr.contenu)}</div>
 			</article>
@@ -134,7 +140,10 @@
 	.lieu {
 		color: var(--color-text-muted);
 	}
-	.tete .pdf {
+	.gestes {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
 		margin-left: auto;
 	}
 	.contenu {
