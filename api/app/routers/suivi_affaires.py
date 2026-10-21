@@ -117,6 +117,8 @@ class SuiviAffairesRead(BaseModel):
     jour: date
     total: int
     anciennes: int
+    #: Les affaires fusionnées dans celles du relevé — le troisième chiffre.
+    fusionnees: int = 0
     #: Par catégorie (tranches par bâtiment) et par bâtiment (tranches par catégorie).
     par_categorie: list[BarreRead]
     par_batiment: list[BarreRead]

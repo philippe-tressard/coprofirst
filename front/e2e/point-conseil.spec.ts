@@ -62,6 +62,7 @@ const RELEVE: SuiviAffaires = {
 	jour: '2026-10-19',
 	total: 1,
 	anciennes: 1,
+	fusionnees: 0,
 	resumes_disponibles: false,
 	delai_jours: 30,
 	mode: 'affaires',

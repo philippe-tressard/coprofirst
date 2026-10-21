@@ -19,9 +19,10 @@ from __future__ import annotations
 import pytest
 from sqlmodel import Session, select
 
-from app.models.core import RoleUtilisateur
+from app.models.core import RoleUtilisateur, Utilisateur
 from app.models.points_conseil import PointConseil, PresentPoint
-from app.utils.points_conseil_expedition import document
+from app.models.tickets import Ticket
+from app.utils.points_conseil_expedition import destinataires_du_pdf, document
 from app.utils.points_conseil_pdf import html_compte_rendu
 from app.utils.points_conseil_validation import auto_valider, etat_validation
 from app.utils.stockage import DOSSIER_PRIVE, stockage
@@ -108,8 +109,10 @@ def test_l_accord_ecrit_valide_sans_suspendre_et_le_dernier_valide_le_cr(moteur,
 # ── L'expédition ────────────────────────────────────────────────────────────
 
 
-def test_valide_le_pdf_est_range_et_part_aux_presents_jamais_a_l_invite(moteur, envois):
-    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+def test_valide_le_pdf_est_range_et_part_aux_presents_copie_au_conseil(moteur, envois):
+    """« Le CR une fois validé doit être envoyé aux présents, copie tout le CS »
+    (21/10/2026) : UN courriel, jamais à l'invité, le conseil en copie."""
+    cs, ident_cs = client_http(moteur, RoleUtilisateur.conseil_syndical)
     point, _, adresse_cs = point_termine(moteur, cs)
     envois.clear()
     assert cs.post(f"/points-conseil/{point}/valider").status_code == 204
@@ -117,8 +120,12 @@ def test_valide_le_pdf_est_range_et_part_aux_presents_jamais_a_l_invite(moteur, 
         p = s.get(PointConseil, point)
         assert p.pdf_cle and p.pdf_cle.startswith(f"{DOSSIER_PRIVE}/")
         assert stockage().lire(p.pdf_cle) == b"%PDF-1.4 essai"
-    assert sorted(e["to"] for e in envois) == sorted([adresse_cs, "gestion@exemple.test"])
-    assert all(e["pieces"] and e["pieces"][0].endswith(".pdf") for e in envois)
+    (envoi,) = envois
+    assert sorted(envoi["to"]) == sorted([adresse_cs, "gestion@exemple.test"])
+    with Session(moteur) as s:
+        adresse_conseil = s.get(Utilisateur, ident_cs).email
+    assert adresse_conseil in envoi["cc"] and adresse_cs not in envoi["cc"]
+    assert envoi["pieces"] and envoi["pieces"][0].endswith(".pdf")
     servi = cs.post(f"/points-conseil/{point}/pdf")
     assert servi.status_code == 200 and servi.content == b"%PDF-1.4 essai"
 
@@ -188,3 +195,33 @@ def test_le_document_suit_l_ordre_arbitre_et_marque_le_projet(moteur, envois):
     assert "État à la validation : Ouvert → Résolu" in html
     assert "Oubliée" in html, "les non abordées se citent à la fin"
     assert "Chez le syndic" in html or "Ouvert" in html, "l'état de suivi en vignette"
+
+
+def test_la_copie_au_conseil_ne_double_pas_un_present():
+    a, copie = destinataires_du_pdf(
+        ["Reine@exemple.test", None, "syndic@exemple.test"],
+        [(1, "reine@exemple.test"), (2, "jean@exemple.test")],
+    )
+    assert [e for _, e in a] == ["Reine@exemple.test", "syndic@exemple.test"]
+    assert copie == [(2, "jean@exemple.test")]
+
+
+def test_la_copie_ne_porte_pas_deux_fois_la_meme_adresse():
+    """Deux comptes du conseil à la même adresse : un seul exemplaire en copie."""
+    _, copie = destinataires_du_pdf([], [(1, "jean@exemple.test"), (2, "Jean@exemple.test")])
+    assert copie == [(1, "jean@exemple.test")]
+
+
+def test_le_lien_vers_le_pdf_seulement_sur_une_affaire_lue_du_seul_conseil(moteur, envois):
+    """Précisé le 21/10/2026 : « pour les affaires en visibilité exclusive du CS ;
+    les autres n'auront pas ce lien car ils n'y auront pas accès »."""
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    point, t, _ = point_termine(moteur, cs)  # une Panne : copropriétaires + locataires
+    cs.post(f"/points-conseil/{point}/valider")
+    assert cs.get(f"/points-conseil/affaires/{t}").json()[0]["pdf_disponible"] is False
+    with Session(moteur) as s:
+        ticket = s.get(Ticket, t)
+        ticket.public_cible = '["conseil_syndical"]'  # réservée au conseil
+        s.add(ticket)
+        s.commit()
+    assert cs.get(f"/points-conseil/affaires/{t}").json()[0]["pdf_disponible"] is True
