@@ -17,6 +17,7 @@ découpée en parts proportionnelles beaucoup moins.
 from __future__ import annotations
 
 from html import escape
+from urllib.parse import quote
 
 from app.utils.suivi_affaires.repartition import Barre, CLE_PLUSIEURS
 
@@ -38,8 +39,16 @@ TEINTES: dict[str, str] = {
     "autre": "#5a6070",
 }
 
-#: « Plusieurs bâtiments » : hachurée, comme à l'écran.
-_HACHURE = "repeating-linear-gradient(45deg, #888780 0 1.5pt, #f7f8fa 1.5pt 3.5pt)"
+#: « Plusieurs bâtiments » : hachurée, comme à l'écran. Un MOTIF SVG en data-URI,
+#: pas un `repeating-linear-gradient` : WeasyPrint ne rendait pas ce dernier — la
+#: barre restait vide et la légende sans carré (constaté sur le PDF du 21/10/2026).
+#: Encodé en entier (`quote`) : il vit dans un attribut `style="…"`.
+_MOTIF = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4">'
+    '<rect width="4" height="4" fill="#f7f8fa"/>'
+    '<path d="M-1 1 L1 -1 M0 4 L4 0 M3 5 L5 3" stroke="#888780" stroke-width="1.2"/></svg>'
+)
+_HACHURE = f"url(data:image/svg+xml;charset=utf-8,{quote(_MOTIF, safe='')})"
 
 CSS_BARRES = """
 .repartition { flex: 1; border: 1px solid var(--border); border-radius: 5pt; padding: 6pt 9pt; }
@@ -61,7 +70,7 @@ table.tranches td { padding: 0; height: 7pt; }
 
 def _fond(teinte: str) -> str:
     if teinte == CLE_PLUSIEURS:
-        return f"background:{_HACHURE}"
+        return f"background-color:#b4b2a9;background-image:{_HACHURE};background-size:4px 4px"
     return f"background:{TEINTES.get(teinte, TEINTES['autre'])}"
 
 

@@ -40,7 +40,7 @@ from app.utils import points_conseil as regles
 from app.utils import points_conseil_expedition as expedition
 from app.utils import points_conseil_validation as validation
 from app.utils.lecture import lire_objet
-from app.utils.lecture_affaire import lecture_courte
+from app.utils.lecture_affaire import CS, lecture_courte
 from app.utils.limiter import LIMITE_SESSION, limiter
 from app.utils.points_conseil_ou import ou_du_point
 from app.utils.recuperer import ou_404
@@ -107,6 +107,10 @@ class CrPublieRead(BaseModel):
     contenu: str
     conseil_seul: bool
     cr_id: int
+    #: Le lien vers le PDF du CR (#2082, précisé le 21/10/2026) : sur une affaire
+    #: lue du SEUL conseil (« qui la lit » = CS) — ses lecteurs peuvent l'ouvrir.
+    #: Une affaire lue au-delà n'en a pas : ses autres lecteurs n'y ont pas accès.
+    pdf_disponible: bool = False
 
 
 # ── Le lien d'un présent ──────────────────────────────────────────────────
@@ -290,6 +294,7 @@ def crs_de_l_affaire(
     user: Utilisateur = Depends(get_current_user),
 ):
     ticket = exiger_objet_autorise(session, Ticket, ticket_id, "Affaire", user, ticket_visible)
+    du_seul_conseil = lecture_courte(ticket) == CS
     return [
         CrPublieRead(
             point_id=p.id,
@@ -300,6 +305,7 @@ def crs_de_l_affaire(
             contenu=c.contenu,
             conseil_seul=c.conseil_seul,
             cr_id=c.id,
+            pdf_disponible=du_seul_conseil,
         )
         for p, c in validation.crs_lisibles(session, ticket, user)
     ]

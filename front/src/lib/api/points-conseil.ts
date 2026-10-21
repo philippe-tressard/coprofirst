@@ -150,6 +150,9 @@ export interface CrPublie {
 	ou: string;
 	contenu: string;
 	conseil_seul: boolean;
+	/**  Le lien vers le PDF du CR : sur une affaire lue du SEUL conseil — ses
+	 *   lecteurs peuvent l'ouvrir (#2082, précisé le 21/10/2026). */
+	pdf_disponible: boolean;
 }
 
 /** Un point d'un autre mode ouvert il y a moins de deux heures : son Qui/Quand/Où. */

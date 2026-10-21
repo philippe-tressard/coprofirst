@@ -313,6 +313,12 @@
 				<div class="kpi-value">{suivi.anciennes}</div>
 				<div class="kpi-label">de plus de 90 jours</div>
 			</div>
+			<div class="kpi-card">
+				<div class="kpi-value">{suivi.fusionnees}</div>
+				<div class="kpi-label">
+					affaire{suivi.fusionnees > 1 ? 's' : ''} fusionnée{suivi.fusionnees > 1 ? 's' : ''}
+				</div>
+			</div>
 		</div>
 		<BarresCroisees titre="Par catégorie" barres={suivi.par_categorie} />
 		<BarresCroisees titre="Par bâtiment" barres={suivi.par_batiment} />
@@ -403,11 +409,17 @@
 	.chiffres {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 0.4rem;
 	}
+	/*  Trois chiffres dans la hauteur où en tenaient deux (21/10/2026) : la
+	    colonne suit la hauteur des répartitions, chaque carte en prend un tiers. */
 	.chiffres .kpi-card {
 		flex: 1;
-		padding: 0.6rem 1rem;
+		padding: 0.3rem 1rem;
+	}
+	.chiffres .kpi-value {
+		font-size: var(--fs-chiffre);
+		line-height: 1.1;
 	}
 	/*  Au téléphone, les deux chiffres passent côte à côte au-dessus des
 	    répartitions ; le tableau devient une suite de fiches (`TableauAffaires`). */
