@@ -165,7 +165,8 @@ SERVICES: dict[str, Service] = {
             "Chaque nuit, une affaire close arrivée à son échéance (2, 5 ou 10 exercices "
             "selon sa catégorie) perd ses pièces jointes, archivées puis copiées sur le PC "
             "de l'administration, et ses auteurs ; son texte reste, et le carnet d'entretien "
-            "avec lui. Les échéances se lisent dans Administration › Maintenance."
+            "avec lui. Les échéances se lisent dans Administration › Maintenance. Cocher la case "
+            "ajoute à la politique de confidentialité la phrase qui annonce ces durées."
         ),
         perte=(
             "Rien n'est archivé ni retiré : les affaires gardent leurs pièces jointes et "

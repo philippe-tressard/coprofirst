@@ -29,6 +29,7 @@ from app.models.core import Utilisateur
 from app.utils import conservation_affaires as ca
 from app.utils.conservation_application import application_active
 from app.utils.conservation_copie import DELAI_RETRAIT_JOURS
+from app.utils.conservation_politique import politique_annonce
 from app.utils.lecture import lire_objet
 from app.utils.recuperer import fichier_ou_404, ou_404
 from app.utils.stockage import stockage
@@ -76,6 +77,9 @@ class ConstatConservation(BaseModel):
     mois_debut_exercice: Optional[int] = None
     #: la case d'Admin › Services : cochée, les affaires échues sont traitées la nuit
     application_active: bool = False
+    #: la politique de confidentialité servie porte la phrase de conservation (mesuré
+    #: sur le texte) : case cochée sans elle, l'écran le dit
+    politique_annonce: bool = False
     #: le serveur retire sa copie d'une archive ce nombre de jours après sa copie
     delai_retrait_jours: int = DELAI_RETRAIT_JOURS
     echeances: list[EcheanceLue]
@@ -94,6 +98,7 @@ def lire_constat(session: Session = Depends(get_session), _: Utilisateur = Depen
     return ConstatConservation(
         mois_debut_exercice=mois_debut_exercice(session),
         application_active=application_active(session),
+        politique_annonce=politique_annonce(session),
         echeances=[
             lire_objet(
                 EcheanceLue,

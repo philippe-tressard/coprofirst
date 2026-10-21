@@ -69,6 +69,17 @@
 				? 'suit le mois de début de la fiche copropriété'
 				: 'est l’année civile'}.
 		</p>
+		{#if constat.application_active}
+			{#if constat.politique_annonce}
+				<p class="aide">La politique de confidentialité annonce ces durées.</p>
+			{:else}
+				<div class="alert alert-error" role="alert">
+					La politique de confidentialité n’annonce pas ces durées&nbsp;: son texte a été modifié.
+					Ajoutez la phrase à la rubrique «&nbsp;Durée de conservation&nbsp;» avant la première
+					échéance.
+				</div>
+			{/if}
+		{/if}
 	{/if}
 
 	<EtatListe

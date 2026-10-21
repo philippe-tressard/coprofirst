@@ -25,6 +25,7 @@ from app.models.core import ConfigSite, Utilisateur
 from app.utils.destinataires import peut_gerer_le_site
 from app.utils import demo, pied_de_page, reglages
 from app.utils.config_site import config_site
+from app.utils.conservation_politique import apres_ecriture
 from app.utils.liens import adresse_du_site, nom_site
 from app.utils.recuperer import ou_404
 from app.utils.textes_legaux.relecture import CLE_RELECTURE, TEXTES
@@ -165,6 +166,7 @@ def save_config(
             session.add(existing)
         else:
             session.add(ConfigSite(cle=cle, valeur=str(valeur)))
+        apres_ecriture(session, cle, str(valeur))
     session.commit()
     return {"ok": True}
 

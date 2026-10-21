@@ -211,3 +211,14 @@ migration compatible (`test_migrations_compatibles.py`).
 8. **Le contrôle d'âge** est un constat du contrôle de santé du matin
    (`conservation_copie.archives_en_retard`), qui part par courriel comme la copie
    hors site périmée.
+
+## 12. Réalisation de l'arbitrage 1 du §11 — 21/10/2026
+
+La phrase du §7 n'entre pas par une migration (elle serait servie case coupée, donc
+fictive) : `PUT /config` l'insère **au passage de la case à « 1 »**
+(`utils/conservation_politique.apres_ecriture`), devant la ligne « Tokens de
+rafraîchissement » de la section 5, **une seule fois**, composée de `DUREES` et de leur
+fondement (`seed/contenus_legaux_conservation`). Un texte retouché dont l'ancre a
+disparu n'est pas réécrit : le constat (`politique_annonce`) et la carte de Maintenance
+le disent. Décocher ne la retire pas (ce qui a été archivé reste vrai). Le texte
+modifié repasse « à relire » (empreinte). 🔒 `test_conservation_politique.py`.
