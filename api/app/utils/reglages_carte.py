@@ -22,6 +22,8 @@ disait une chose, le serveur une autre, et seul le serveur compte.
 
 from __future__ import annotations
 
+import json
+import pathlib
 from dataclasses import dataclass
 from enum import Enum
 
@@ -366,83 +368,20 @@ def ecarts_d_acces(
 
 # ── L'environnement ─────────────────────────────────────────────────────────────
 
-#: Le thème de chaque variable de `Settings`. `test_carte_reglages` échoue pour un
-#: champ sans thème et pour un thème sans champ.
-THEMES_ENV: dict[str, tuple[str, ...]] = {
-    "Identité du nœud et rôle": (
-        "instance_id",
-        "role_installation",
-        "git_hash",
-        "coprofirst_version",
-    ),
-    "Mode démo": (
-        "mode_demo",
-        "demo_editeur",
-        "demo_contact",
-        "demo_admin_mot_de_passe",
-        "demo_operateur_mot_de_passe",
-    ),
-    "Registre des installations et baux": (
-        "plateforme_database_url",
-        "hote_registre",
-        "cle_signature_baux",
-        "registre_url",
-        "installation_dir",
-        "installation_essai",
-    ),
-    "Opérateur et hébergeur (alertes, textes légaux)": (
-        "courriel_operateur",
-        "mail_from_plateforme",
-        "operateur_nom",
-        "operateur_adresse",
-        "operateur_contact",
-        "hebergeur",
-        "hebergeur_pays",
-    ),
-    "Adresse servie et copropriétés": ("origin", "hotes_copropriete", "coproprietes_fichier"),
-    "Secrets et sessions": (
-        "secret_key",
-        "cookie_secure",
-        "access_token_expire_minutes",
-        "refresh_token_expire_days",
-        "algorithm",
-    ),
-    "Base de données": ("database_url",),
-    "Courriel de l'installation (`MAIL_*`)": (
-        "mail_enabled",
-        "mail_from",
-        "mail_from_name",
-        "mail_username",
-        "mail_password",
-        "mail_server",
-        "mail_port",
-        "mail_starttls",
-        "mail_ssl_tls",
-    ),
-    "Chemins et sauvegardes": (
-        "backup_dir",
-        "uploads_dir",
-        "backup_keep_versions",
-        "cache_manuel_dir",
-        "maintenance_key",
-    ),
-    "Pont WhatsApp": ("whatsapp_api_key", "wa_photo_budget_ko"),
-}
-
-#: Les variables dont la valeur est un secret : le défaut ne s'imprime pas.
-SECRETS_ENV = frozenset(
-    {
-        "secret_key",
-        "database_url",
-        "plateforme_database_url",
-        "cle_signature_baux",
-        "demo_admin_mot_de_passe",
-        "demo_operateur_mot_de_passe",
-        "mail_password",
-        "maintenance_key",
-        "whatsapp_api_key",
-    }
+#: Le thème de chaque variable de `Settings` et la liste de ses secrets : une DONNÉE, dans
+#: `reglages_environnement.json`, et non des littéraux de ce module. Les gardiens « une seule
+#: lecture » (rôle de l'installation, mode démo, clé du pont WhatsApp…) refusent
+#: qu'un module de l'API cite le nom d'une variable qu'un seul module lit : une table de
+#: documentation n'est pas une lecture, mais ils ne savent pas le distinguer.
+#: `test_carte_reglages` échoue pour un champ sans thème et pour un thème sans champ.
+_ENVIRONNEMENT = json.loads(
+    pathlib.Path(__file__).with_name("reglages_environnement.json").read_text(encoding="utf-8")
 )
+THEMES_ENV: dict[str, tuple[str, ...]] = {
+    theme: tuple(noms) for theme, noms in _ENVIRONNEMENT["themes"].items()
+}
+#: Les variables dont la valeur est un secret : le défaut ne s'imprime pas.
+SECRETS_ENV = frozenset(_ENVIRONNEMENT["secrets"])
 
 # ── Le type d'une clé de `config_site` ──────────────────────────────────────────
 
