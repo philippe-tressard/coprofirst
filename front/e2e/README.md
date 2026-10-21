@@ -99,8 +99,10 @@ port était 5173 — celui de `npm run dev` — et un serveur trouvé là était
 réutilisé sans un mot : celui du poste, ou celui d'une autre session dans un
 autre worktree. Le test lisait alors le code de qui avait lancé ce serveur, et
 tombait en `ERR_CONNECTION_REFUSED` quand celui-ci s'arrêtait — un test
-différent à chaque fois, jamais en isolé, jamais en CI. Le port se dérive
-désormais du processus (`playwright.config.ts`), et deux exécutions dans le
+différent à chaque fois, jamais en isolé, jamais en CI. Le port se **demande
+au système** (`portLibre`, `playwright.config.ts`) — jamais déduit du pid :
+la plage d'avant couvrait 5432, le PostgreSQL du poste (#2051) ; 🔒
+`npm run lint:e2e-serveur` refuse un port déduit. Deux exécutions dans le
 **même** dossier sont refusées d'emblée : elles partagent `test-results/` et
 s'effaçaient leurs traces. Le message donne le pid de celle qui tourne.
 
