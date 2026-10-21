@@ -15,7 +15,7 @@
 	import { browser } from '$app/environment';
 	import { marquerDonneesAffichees } from '$lib/telemetry';
 	import { afterNavigate } from '$app/navigation';
-	import { isCS, isLocataire, isProprioOuCS, quandAuthResolue } from '$lib/stores/auth';
+	import { isAdmin, isCS, isLocataire, isProprioOuCS, quandAuthResolue } from '$lib/stores/auth';
 	import {
 		copropriete as coproprieteApi,
 		documents as documentsApi,
@@ -295,7 +295,9 @@
 	<section class="section-residence">
 		<div class="section-header">
 			<h2 class="section-title">Résidence : {copropriete.nom}</h2>
-			{#if $isCS && !editing}
+			<!--  La fiche s'écrit par `PATCH /copropriete`, réservé à l'administrateur : le
+			      conseil syndical la lit, sans crayon qui finirait en 403 (#2096). -->
+			{#if $isAdmin && !editing}
 				<button
 					class="btn-icon-edit"
 					aria-label="Modifier la fiche de la résidence"

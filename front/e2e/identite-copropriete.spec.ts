@@ -49,7 +49,8 @@ async function viderLesLots(page: Page) {
 }
 
 test('Résidence : un nombre vidé part à null — il s’efface', async ({ page }) => {
-	const envois = await ouvrir(page, '/residence');
+	//  L'administrateur seul modifie la fiche : `PATCH /copropriete` l'exige (#2096).
+	const envois = await ouvrir(page, '/residence', ADMIN);
 	await page.getByRole('button', { name: 'Modifier la fiche de la résidence' }).click();
 	await viderLesLots(page);
 	await expect.poll(() => envois.length).toBe(1);
@@ -57,6 +58,14 @@ test('Résidence : un nombre vidé part à null — il s’efface', async ({ pag
 	expect(corps.nb_lots_total).toBeNull();
 	expect(corps.nom).toBe(FICHE.nom);
 	expect(corps.nb_lots_principaux).toBe(63);
+});
+
+test('Résidence : le conseil syndical lit la fiche, sans crayon qui finirait en 403 (#2096)', async ({
+	page,
+}) => {
+	await ouvrir(page, '/residence');
+	await expect(page.getByRole('heading', { name: `Résidence : ${FICHE.nom}` })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Modifier la fiche de la résidence' })).toHaveCount(0);
 });
 
 test('Admin › Fiche : les mêmes champs, la même règle', async ({ page }) => {
