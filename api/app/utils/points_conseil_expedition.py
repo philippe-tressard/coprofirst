@@ -6,6 +6,11 @@
 > jointe** aux présents du conseil et du syndic qui ont une adresse, jamais aux
 > invités (réponse à la question « qui expédie le PDF validé ? »).
 
+> « Le CR une fois validé doit être envoyé aux présents, copie tout le CS »
+> (corrigé le 21/10/2026) : UN courriel, adressé aux présents joignables, avec
+> en copie chaque membre du conseil syndical — par son rôle,
+> `destinataires.membres_cs_avec_email` — qui n'est pas déjà destinataire.
+
 `expedier` rend le PDF, le RANGE sous le dossier privé du stockage
 (`prive/points-conseil/` : jamais servi en direct, `utils/stockage`) — sa clé sur
 le point (`pdf_cle`) — puis l'envoie. Il ne lève jamais : une validation est
@@ -151,7 +156,8 @@ async def expedier(session: Session, point: PointConseil) -> int:
     nombre d'envois ; ne lève jamais (la validation est acquise)."""
     from fastapi.concurrency import run_in_threadpool
 
-    from app.utils.email import send_email
+    from app.utils.destinataires import membres_cs_avec_email
+    from app.utils.email import send_email_group
 
     try:
         contenu = await run_in_threadpool(pdf_du_point, session, point, None)
@@ -173,16 +179,36 @@ async def expedier(session: Session, point: PointConseil) -> int:
             "lieu": html.escape(ou_du_point(point)),
         },
     }
-    envois = 0
-    for present in compte_rendu(session, point, None).presents:
-        adresse = adresse_du_present(session, present)
-        if not adresse:
-            continue
-        try:
-            if await send_email(
-                "point_conseil_valide", adresse, contexte, session, attachments=[piece]
-            ):
-                envois += 1
-        except Exception:
-            logger.exception("points conseil : envoi du PDF au présent %s en échec", present.id)
-    return envois
+    a, copie = destinataires_du_pdf(
+        [adresse_du_present(session, p) for p in compte_rendu(session, point, None).presents],
+        membres_cs_avec_email(session),
+    )
+    if not a and not copie:
+        return 0
+    try:
+        await send_email_group(
+            "point_conseil_valide",
+            a or copie,
+            contexte,
+            session,
+            cc_recipients=copie if a else [],
+            attachments=[piece],
+        )
+    except Exception:
+        logger.exception("points conseil : envoi du PDF du point %s en échec", point.id)
+        return 0
+    return len(a) + (len(copie) if a else 0)
+
+
+def destinataires_du_pdf(
+    adresses_des_presents: list[Optional[str]], conseil: list[tuple[int, str]]
+) -> tuple[list[tuple[Optional[int], str]], list[tuple[Optional[int], str]]]:
+    """PURE. À : les présents joignables ; copie : le conseil, sans ceux déjà à « À »."""
+    a: list[tuple[Optional[int], str]] = []
+    vues: set[str] = set()
+    for adresse in adresses_des_presents:
+        if adresse and adresse.lower() not in vues:
+            vues.add(adresse.lower())
+            a.append((None, adresse))
+    copie = [(uid, e) for uid, e in conseil if e and e.lower() not in vues]
+    return a, copie

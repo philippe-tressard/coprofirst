@@ -7,8 +7,12 @@
     (`GET /points-conseil/affaires/{id}`, qui ne rend que ceux-là, et tait au
     lecteur ce qui est « Conseil seul »). Sans compte rendu, pas de rubrique.
   - Elle ne se corrige PAS ici : la correction vit dans le Reporting, tant que
-    l'affaire n'est ni close ni annulée. Le conseil peut seulement rendre un
-    compte rendu privé (« Conseil seul »), ou le rouvrir.
+    l'affaire n'est ni close ni annulée. Le conseil peut seulement réserver un
+    compte rendu au conseil et aux présents (« CS et présents », #2082), ou le
+    rouvrir.
+  - Le conseil — lui seul, la route ne sert que lui — y trouve le PDF du compte
+    rendu du point, celui qui a été rangé et envoyé aux présents (demandé le
+    20/10/2026 : « ajouter dans cette section le lien vers ce CR »).
   - Une étape du rail (`RubriqueEtape`), entre la suite et la synthèse ;
     l'accordéon reste tenu par la carte (`ouverte`, `onBasculer`).
 -->
@@ -23,6 +27,9 @@
 	import { messageErreur } from '$lib/erreurs';
 	import { safeHtml } from '$lib/sanitize';
 	import { isCS } from '$lib/stores/auth';
+	import { enregistrerFichier } from '$lib/fichiers';
+	import { jourIso } from '$lib/date';
+	import { LIBELLE_CS_ET_PRESENTS } from '$lib/points-conseil';
 
 	export let ticketId: number;
 	export let ouverte = false;
@@ -47,6 +54,22 @@
 		}
 	}
 
+	/** Le PDF du compte rendu du point — rangé à la validation, envoyé aux présents. */
+	let pdfEnCours: number | null = null;
+	async function telechargerPdf(cr: CrPublie) {
+		pdfEnCours = cr.cr_id;
+		try {
+			enregistrerFichier(
+				await pointsConseil.pdf(cr.point_id),
+				`compte-rendu-point-cs-syndic-${jourIso(cr.debut)}.pdf`,
+			);
+		} catch (e) {
+			toast('error', messageErreur(e, 'PDF indisponible'));
+		} finally {
+			pdfEnCours = null;
+		}
+	}
+
 	onMount(charger);
 </script>
 
@@ -64,16 +87,25 @@
 				<p class="tete">
 					<strong>Point CS / Syndic du {fmtDatetime(cr.debut)}</strong>
 					<span class="lieu">· {cr.ou}</span>
-					{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>Conseil seul</Badge>{/if}
+					{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge
+						>{/if}
 					{#if $isCS}
+						<button
+							type="button"
+							class="btn btn-sm btn-outline pdf"
+							disabled={pdfEnCours === cr.cr_id}
+							aria-busy={pdfEnCours === cr.cr_id}
+							on:click={() => telechargerPdf(cr)}
+							><IconeAction icone="file-text" /> Compte rendu du point (PDF)</button
+						>
 						<button
 							type="button"
 							class="btn-icon"
 							aria-pressed={cr.conseil_seul}
 							aria-label={cr.conseil_seul
 								? 'Rendre ce compte rendu lisible de qui lit l’affaire'
-								: 'Réserver ce compte rendu au conseil syndical'}
-							title={cr.conseil_seul ? 'Rouvrir à qui lit l’affaire' : 'Conseil seul'}
+								: 'Réserver ce compte rendu au conseil syndical et aux présents'}
+							title={cr.conseil_seul ? 'Rouvrir à qui lit l’affaire' : LIBELLE_CS_ET_PRESENTS}
 							on:click={() => basculerConfidentialite(cr)}
 							><IconeAction icone="shield-check" /></button
 						>
@@ -102,7 +134,7 @@
 	.lieu {
 		color: var(--color-text-muted);
 	}
-	.tete .btn-icon {
+	.tete .pdf {
 		margin-left: auto;
 	}
 	.contenu {

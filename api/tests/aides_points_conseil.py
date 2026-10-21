@@ -23,6 +23,20 @@ def intercepter_envois(monkeypatch) -> list[dict]:
         return True
 
     monkeypatch.setattr("app.utils.email.send_email", _intercepter)
+
+    async def _intercepter_groupe(code, to_recipients, context, session=None, **options):
+        cc = [e for _, e in options.get("cc_recipients") or []]
+        envois.append(
+            {
+                "code": code,
+                "to": [e for _, e in to_recipients],
+                "cc": cc,
+                "pieces": options.get("attachments"),
+                **context,
+            }
+        )
+
+    monkeypatch.setattr("app.utils.email.send_email_group", _intercepter_groupe)
     #  Le PDF rangé à la validation (#2082) : un faux document, pour que ces
     #  tests jugent la validation et non le moteur PDF, absent sous Windows.
     monkeypatch.setattr(
