@@ -32,6 +32,12 @@
  *      —, un spec DIFFÉRENT à chaque passage, une suite complète sur deux sur
  *      le poste. Une adresse, explicite, la même des deux côtés : six suites
  *      complètes de suite au vert.
+ *   5. un port DÉDUIT (du pid, d'une plage) au lieu d'un port demandé au
+ *      système (#2051, 17/10/2026). `5300 + pid % 600` couvrait 5432, le port
+ *      du PostgreSQL que la suite exige sur le poste : une relance tombée sur
+ *      lui a rendu un faux rouge (« Port 5432 is already in use »). Écarter
+ *      5432 ne protégerait que de lui ; le système, lui, ne rend jamais un
+ *      port tenu.
  *
  *  Lancer : node scripts/check-e2e-serveur.mjs [--selftest]
  */
@@ -61,6 +67,12 @@ export function fautes(source) {
 		f.push(
 			'la commande du serveur doit porter `--host 127.0.0.1` : sans elle, Vite écoute sur ::1 seul (#1732)',
 		);
+	if (/E2E_PORT\s*=[^;\n]*\bprocess\.pid\b/.test(code))
+		f.push(
+			'un port déduit du pid peut tomber sur un port tenu — 5432, le PostgreSQL du poste (#2051) : le demander au système',
+		);
+	if (!/\.listen\(\s*0\s*[,)]/.test(code))
+		f.push('le port du serveur se demande au système (`listen(0)`), jamais dans une plage (#2051)');
 	return f;
 }
 
@@ -73,12 +85,14 @@ if (process.argv.includes('--selftest')) {
 	};
 	const CONFORME =
 		'const PORT = Number(process.env.E2E_PORT);\n' +
+		"const sonde = createServer().listen(0, '127.0.0.1');\n" +
+		'process.env.E2E_PORT = portLibre();\n' +
 		'const BASE = `http://127.0.0.1:${PORT}`;\n' +
 		'webServer: { command: `npm run dev -- --host 127.0.0.1 --port ${PORT} --strictPort`, reuseExistingServer: false }';
-	//  🔴 L'état exact d'avant le 25/09/2026 : ses trois fautes, plus l'adresse.
+	//  🔴 L'état exact d'avant le 25/09/2026 : ses trois fautes, l'adresse et le port.
 	t(
 		'la config d’avant #1150',
-		4,
+		5,
 		"const PORT = 5173;\nwebServer: { command: 'npm run dev -- --port ' + PORT, reuseExistingServer: true }",
 	);
 	//  🔴 L'état exact d'avant le 08/10/2026 : `localhost`, et Vite sur ::1 seul.
@@ -86,6 +100,15 @@ if (process.argv.includes('--selftest')) {
 		'la config d’avant #1732',
 		2,
 		CONFORME.replace('127.0.0.1:${PORT}', 'localhost:${PORT}').replace('--host 127.0.0.1 ', ''),
+	);
+	//  🔴 L'état exact d'avant le 21/10/2026 : un port tiré dans 5300–5899.
+	t(
+		'la config d’avant #2051',
+		2,
+		CONFORME.replace("const sonde = createServer().listen(0, '127.0.0.1');\n", '').replace(
+			'process.env.E2E_PORT = portLibre();',
+			'process.env.E2E_PORT = String(5300 + (process.pid % 600));',
+		),
 	);
 	t('la config conforme', 0, CONFORME);
 	t('`localhost` cité en commentaire seulement', 0, CONFORME + '\n// jadis localhost');
