@@ -28,6 +28,7 @@
 	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
 	import FluxVignette from '$lib/components/FluxVignette.svelte';
 	import FluxCorps from '$lib/components/FluxCorps.svelte';
+	import { chargerCorpsAffaire } from '$lib/affaire-au-fil';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import PastillesAffaire from '$lib/components/PastillesAffaire.svelte';
 	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
@@ -133,6 +134,7 @@
 	urgent={estTicketUrgent(item)}
 	{archive}
 	onDeplier={basculer}
+	onApprocher={affaire ? chargerCorpsAffaire : null}
 	style="--nature-fort: {typeColor}"
 >
 	<EnteteCarte titre={item.titre} basculable on:toggle={basculer}>
