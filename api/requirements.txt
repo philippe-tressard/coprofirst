@@ -1,4 +1,4 @@
-fastapi==0.143.0
+fastapi==0.143.3
 uvicorn[standard]==0.54.0
 slowapi==0.1.10
 sqlmodel==0.0.48
@@ -7,14 +7,14 @@ sqlmodel==0.0.48
 #  transitivité (fastapi, sqlmodel, fastapi-mail). Une montée de l'un de ceux-là
 #  changeait donc leur version sans que ce fichier bouge (#1048, 24/09/2026).
 #  Épinglés à la version que ce fichier résolvait ce jour-là : aucun changement.
-pydantic==2.14.0
-pydantic-settings==2.15.0
+pydantic==2.14.1
+pydantic-settings==2.16.0
 #  `EmailStr` (routers/config, routers/partage) charge `email_validator` à
 #  l'exécution, sans `import` qu'un contrôle verrait : il n'arrivait que par
 #  `fastapi-mail`. Épinglé à la version que l'image installait déjà (2.3.0,
 #  dernière publiée) : aucun changement (#1570, même cas que #1048).
 email-validator==2.3.0
-sqlalchemy==2.0.54
+sqlalchemy==2.0.55
 #  Le pilote PostgreSQL (#1759, DI-7) : l'image sait se brancher sur PostgreSQL
 #  dès que `DATABASE_URL` le désigne. Roues binaires (libpq embarquée, aarch64
 #  compris) ; LGPL-3.0. Celui des tests depuis P2-5 — pg8000 rendait une clé
