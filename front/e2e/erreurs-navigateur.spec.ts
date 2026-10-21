@@ -154,3 +154,28 @@ test('une erreur sur la page de connexion part au journal, hors du squelette de 
 		.toContain('TypeError: connexion impossible');
 	expect(erreurs(recus).every((e) => e.page === '/auth/connexion')).toBe(true);
 });
+
+test('un rejet de promesse non rattrapé sur la page de connexion part aussi au journal', async ({
+	page,
+}) => {
+	//  #2066 : le second écouteur posé par `initTelemetry`, `unhandledrejection`.
+	//  Posté à la main, avec une promesse déjà tenue : un vrai rejet non rattrapé
+	//  ferait échouer le `test` des specs.
+	const recus = await lotsEnvoyes(page);
+	await page.goto('/auth/connexion');
+	await attendreHydratation(page);
+
+	await page.evaluate(() => {
+		window.dispatchEvent(
+			new PromiseRejectionEvent('unhandledrejection', {
+				promise: Promise.resolve(),
+				reason: new RangeError('délai dépassé'),
+			}),
+		);
+	});
+	await viderLaFile(page);
+
+	await expect
+		.poll(() => erreurs(recus).map((e) => e.detail))
+		.toContain('RangeError: délai dépassé');
+});
