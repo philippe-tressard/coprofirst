@@ -223,9 +223,9 @@ def _echeance_lue(prefixe: str, contrat) -> dict:
 def assurance_du_contrat(session: Session, copro: Copropriete) -> dict:
     """Ce que la fiche affiche comme « assurance » — lu sur le CONTRAT (#490).
 
-    Les colonnes `assurance_*` de `copropriete` ne sont plus la source : elles
-    subsistent pour qu'un retour arrière reste possible, mais plus rien ne les
-    lit.
+    Les colonnes `assurance_*` de `copropriete` ne sont plus la source, ni même
+    déclarées par le modèle (#2059) : elles subsistent en base le temps d'une
+    version, pour qu'un retour arrière reste possible, et plus rien ne les lit.
 
     Rend un dictionnaire vide si aucun contrat n'est trouvé : la fiche masque
     alors la section, exactement comme lorsque le champ texte était vide.
@@ -319,11 +319,11 @@ def copropriete_lue(session: Session, copro: Copropriete) -> CoproprieteRead:
     lue.nom = nom_site(config_site(session).get("site_nom"))
     #  🔴 On EFFACE d'abord, on remplit ensuite.
     #
-    #  `from_attributes=True` recopie les colonnes `assurance_*` conservées :
-    #  sans cet effacement, une copropriété SANS contrat affichait l'ancienne
-    #  saisie en texte libre — donc potentiellement un assureur qui n'est plus
-    #  le bon, sans que rien ne le signale. Le repli silencieux remettait en
-    #  service les colonnes qu'on venait de retirer du circuit.
+    #  `from_attributes=True` recopiait les colonnes `assurance_*` : sans cet
+    #  effacement, une copropriété SANS contrat affichait l'ancienne saisie en
+    #  texte libre — donc potentiellement un assureur qui n'est plus le bon, sans
+    #  que rien ne le signale. Le modèle ne les déclare plus (#2059) ; l'effacement
+    #  reste la garantie que la fiche n'invente rien, et couvre toujours `syndic_*`.
     #
     #  ⚠️ Trouvé par `test_sans_contrat_la_fiche_n_invente_rien`, écrit dans le
     #  même lot : le test a attrapé le défaut du code qu'il accompagnait.

@@ -282,13 +282,8 @@ export interface ReleveReclassement {
 export interface ConfigSauvegarde {
 	id: number;
 	active: boolean;
-	frequence: 'quotidienne' | 'hebdomadaire' | 'mensuelle';
 	/** 0 à 23. */
 	heure_execution: number;
-	/** 0 = lundi … 6 = dimanche. */
-	jour_semaine: number;
-	/** 1 à 28. */
-	jour_mois: number;
 	nb_versions_conservees: number;
 	modifie_par_id: number | null;
 	modifie_le: string | null;
@@ -305,7 +300,6 @@ export interface ModeleEmail {
 	libelle: string;
 	sujet: string;
 	corps_html: string;
-	corps_texte: string;
 	variables_disponibles: string;
 	/** `information` | `action_requise` | `reponse_attendue` | `archive`, ou `""`. */
 	intention: string;

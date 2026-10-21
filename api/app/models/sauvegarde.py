@@ -30,20 +30,20 @@ class StatutSauvegarde(str, Enum):
     echouee = "echouee"
 
 
-class FrequenceSauvegarde(str, Enum):
-    quotidienne = "quotidienne"
-    hebdomadaire = "hebdomadaire"
-    mensuelle = "mensuelle"
-
-
 class ConfigSauvegarde(SQLModel, table=True):
+    """Le réglage de la sauvegarde : l'heure et le nombre de versions conservées.
+
+    🔴 `frequence`, `jour_semaine` et `jour_mois` ont QUITTÉ le modèle (#2059, premier
+    temps) : la sauvegarde est quotidienne depuis la 0139 et rien ne les lisait. Les
+    colonnes restent en base le temps d'une version (migration compatible, #1757 :
+    `CONTRACTIONS` annonce leur retrait) ; la 0306 leur donne un défaut pour que le
+    code, qui ne les écrit plus, puisse insérer la ligne.
+    """
+
     __tablename__ = "config_sauvegarde"
     id: Optional[int] = Field(default=None, primary_key=True)
     active: bool = True
-    frequence: FrequenceSauvegarde = FrequenceSauvegarde.quotidienne
     heure_execution: int = 3  # 0-23
-    jour_semaine: int = 6  # 0=lun … 6=dim
-    jour_mois: int = 1  # 1-28
     nb_versions_conservees: int = 7
     modifie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     modifie_le: Optional[NaiveDatetime] = None
