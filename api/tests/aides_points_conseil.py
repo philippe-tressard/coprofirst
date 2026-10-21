@@ -46,7 +46,13 @@ def intercepter_envois(monkeypatch) -> list[dict]:
 
 
 def point_termine(
-    moteur, cs, *, contenu="<p>Devis <b>attendu</b></p>", conseil_seul=False, etat_cible=None
+    moteur,
+    cs,
+    *,
+    contenu="<p>Devis <b>attendu</b></p>",
+    conseil_seul=False,
+    etat_cible=None,
+    mode="affaires",
 ):
     """Un point à deux présents joignables (CS, syndic) et un invité ; une affaire abordée."""
     with Session(moteur) as s:
@@ -64,7 +70,7 @@ def point_termine(
     point = cs.post(
         "/points-conseil",
         json={
-            "mode": "affaires",
+            "mode": mode,
             "debut": "2026-10-19T17:00:00",
             "presents": [
                 {"nature": "cs", "membre_id": ids[0]},

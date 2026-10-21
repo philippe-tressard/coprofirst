@@ -74,6 +74,7 @@ REFERENTIELS = {
 }
 
 #: Le plafond des référentiels. Il ne fait que BAISSER.
+#: Carte des plafonds décroissants : #1571.
 PLAFOND_REFERENTIELS = 11
 
 
