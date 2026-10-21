@@ -206,6 +206,12 @@ def test_la_copie_au_conseil_ne_double_pas_un_present():
     assert copie == [(2, "jean@exemple.test")]
 
 
+def test_la_copie_ne_porte_pas_deux_fois_la_meme_adresse():
+    """Deux comptes du conseil à la même adresse : un seul exemplaire en copie."""
+    _, copie = destinataires_du_pdf([], [(1, "jean@exemple.test"), (2, "Jean@exemple.test")])
+    assert copie == [(1, "jean@exemple.test")]
+
+
 def test_le_lien_vers_le_pdf_seulement_sur_une_affaire_lue_du_seul_conseil(moteur, envois):
     """Précisé le 21/10/2026 : « pour les affaires en visibilité exclusive du CS ;
     les autres n'auront pas ce lien car ils n'y auront pas accès »."""

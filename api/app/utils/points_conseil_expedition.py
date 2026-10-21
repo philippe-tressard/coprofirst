@@ -210,5 +210,9 @@ def destinataires_du_pdf(
         if adresse and adresse.lower() not in vues:
             vues.add(adresse.lower())
             a.append((None, adresse))
-    copie = [(uid, e) for uid, e in conseil if e and e.lower() not in vues]
+    copie: list[tuple[Optional[int], str]] = []
+    for uid, adresse in conseil:
+        if adresse and adresse.lower() not in vues:
+            vues.add(adresse.lower())
+            copie.append((uid, adresse))
     return a, copie
