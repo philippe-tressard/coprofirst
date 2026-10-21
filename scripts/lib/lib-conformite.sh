@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  lib-conformite.sh — les contrôles de CONFORMITÉ de `check-reliability.sh`
-#                      (C20 à C25, C30, C32 à C38)
+#                      (C20 à C25, C30, C32 à C39)
 #
 #  Extrait le 20/08/2026, au fil de l'eau : `check-reliability.sh` a dépassé son
 #  plafond en recevant C23 (les en-têtes de sécurité réellement servis), et le
@@ -26,6 +26,8 @@
 #         (`lib-journal-acces.sh`)
 #    C37  la base PostgreSQL est-elle répliquée ? (`lib-replication.sh`)
 #    C38  chaque nœud refuse-t-il le mot de passe SSH ? (`lib-ssh-mot-de-passe.sh`)
+#    C39  le jeton du tunnel est-il en clair dans l'unité cloudflared ?
+#         (`lib-jeton-tunnel-clair.sh`)
 #
 #  Les contrôles restés dans `check-reliability.sh` posent l'autre question :
 #  *le service fonctionne-t-il ?* — la base, le rôle actif, le tunnel, la
@@ -247,4 +249,11 @@ conformite_verdicts() {
   #  (#1918). Sonde par la méthode `none`, sans rien tenter ; décision dans
   #  `lib-durcissement.sh`, sonde et constats dans `lib-ssh-mot-de-passe.sh`.
   ssh_mot_de_passe_verdicts
+
+  # ── C39. Le jeton du tunnel est-il EN CLAIR dans l'unité cloudflared ? (#2115) ─
+  #  `--token <valeur>` dans `ExecStart` est lisible par tout compte local (`ps`,
+  #  `systemctl cat`). Il l'est resté des mois sur les deux nœuds, noté dans une
+  #  mémoire et jamais mesuré. La collecte ne rend qu'un verdict, jamais l'unité ;
+  #  mesure et constats : `lib-jeton-tunnel-clair.sh`.
+  jeton_tunnel_clair_verdicts
 }

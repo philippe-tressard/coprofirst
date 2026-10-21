@@ -602,6 +602,8 @@ jobs:
           # Le jeton du tunnel : l'identifiant n'est pas un jeton (#1318, 25/09/2026).
           bash scripts/lib/lib-jeton-tunnel.sh      --selftest
           bash scripts/exploitation/changer-jeton-tunnel.sh --selftest
+          # Le jeton ne reste pas en clair dans l'unité cloudflared (#2115, C39).
+          bash scripts/lib/lib-jeton-tunnel-clair.sh --selftest
           # L'attente bornée d'un 200 (#1662) : auto-deploy recrée l'API seule,
           # attend son 200, puis le reste — jamais sans fin.
           bash scripts/lib/lib-sonde.sh             --selftest

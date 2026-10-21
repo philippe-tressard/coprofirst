@@ -13,12 +13,23 @@
 #
 #  Un jeton est le base64 d'un JSON {"a":compte,"t":tunnel,"s":secret}.
 #
+#  ── Où vit le jeton (22/10/2026, #2115) ─────────────────────────────────────
+#  Dans un FICHIER (`JETON_FICHIER`, root 600), jamais dans l'unité : `--token
+#  <valeur>` dans `ExecStart` est lisible par tout compte local (`ps`,
+#  `systemctl cat`/`show`) et se retrouve dans les journaux. Le jeton était en clair
+#  sur les deux nœuds, parce que `cloudflared service install <jeton>` et le `sed`
+#  de la rotation l'y écrivaient. L'unité ne porte plus que `--token-file <chemin>`.
+#  C39 (`lib-jeton-tunnel-clair.sh`) échoue si l'ancienne forme revient.
+#
 #  Fonctions PURES : ni réseau, ni écriture, ni lecture de fichier. Elles rendent
-#  toujours 0 (sauf `unite_avec_jeton`, qui refuse en 1) : sous `set -e`, un
+#  toujours 0 (sauf `unite_vers_fichier`, qui refuse en 1) : sous `set -e`, un
 #  `return 1` dans `X=$(…)` ferait avorter l'appelant avant son message.
 #
 #  Test : bash lib-jeton-tunnel.sh --selftest   (aucun effet de bord)
 # =============================================================================
+
+#: Le fichier du jeton — seule écriture du chemin (unité, scripts, C39 le lisent ici).
+JETON_FICHIER="${JETON_FICHIER:-/etc/cloudflared/jeton}"
 
 # ── Identifiant du tunnel porté par un jeton ─────────────────────────────────
 # Rend l'identifiant `t`, ou rien si le texte n'est pas un jeton lisible.
@@ -34,7 +45,7 @@ jeton_tunnel_id() {
 }
 
 # ── Le tunnel installé : l'identifiant attendu ───────────────────────────────
-# Depuis la valeur de `--token` dans l'unité : un jeton lisible donne son `t` ;
+# Depuis la valeur du jeton (celle du fichier, ou d'un `--token` hérité) : un jeton lisible donne son `t` ;
 # un identifiant nu (l'erreur du 25/09) EST l'identifiant ; sinon rien à comparer.
 tunnel_attendu() {
   local v="${1:-}" id
@@ -73,15 +84,50 @@ motif_refus() {  # verdict → phrase pour la personne qui a collé
 # recopier le secret.
 masquer_jeton() { sed -E 's/eyJ[A-Za-z0-9+\/=_-]*/<jeton masqué>/g'; }
 
-# ── L'unité systemd avec le nouveau jeton ────────────────────────────────────
-# Rend le texte de l'unité avec le jeton remplacé, ou échoue (code 1) si elle ne
-# porte pas exactement UN `--token` : deviner où l'écrire, c'est ce qui casse.
-unite_avec_jeton() {
-  local texte="$1" jeton="$2" n
-  n=$(printf '%s\n' "$texte" | grep -o -- '--token [^ ]*' | wc -l)
-  [ "$n" -eq 1 ] || return 1
-  # Délimiteur `|` : absent du base64, qui contient `/` `+` `=`.
-  printf '%s\n' "$texte" | sed "s|--token [^ ]*|--token $jeton|"
+# ── Le jeton lu dans une unité HÉRITÉE (`--token <valeur>`) ──────────────────
+# Rend la valeur, ou rien si l'unité n'en porte pas (déjà migrée, ou illisible).
+jeton_dans_unite() {
+  printf '%s
+' "${1:-}" | grep -o -- '--token [^ ]*' | head -n 1 | cut -d' ' -f2
+}
+
+# ── L'unité systemd qui lit le jeton dans JETON_FICHIER ──────────────────────
+# Rend le texte de l'unité où `--token <valeur>` est remplacé par `--token-file
+# <JETON_FICHIER>` (déjà migrée : le chemin est seulement ramené à JETON_FICHIER),
+# ou échoue (code 1) si elle ne porte pas exactement UNE de ces deux formes :
+# deviner où l'écrire, c'est ce qui casse. Aucun jeton n'entre ni ne sort ici.
+unite_vers_fichier() {
+  local texte="$1" n_clair n_fichier
+  n_clair=$(printf '%s
+' "$texte" | grep -o -- '--token [^ ]*' | wc -l)
+  n_fichier=$(printf '%s
+' "$texte" | grep -o -- '--token-file [^ ]*' | wc -l)
+  [ $(( n_clair + n_fichier )) -eq 1 ] || return 1
+  # Délimiteur `|` : absent d'un chemin sérieux.
+  printf '%s
+' "$texte" | sed -E "s|--token(-file)? [^ ]*|--token-file $JETON_FICHIER|"
+}
+
+# ── L'unité d'un nœud NEUF (install-cloudflared.sh) ──────────────────────────
+# Celle que `cloudflared service install` écrivait, sauf le jeton : elle lit
+# JETON_FICHIER. Écrite ici, une fois ; `unite_vers_fichier` la laisse intacte.
+unite_modele() {
+  cat <<UNITE
+[Unit]
+Description=cloudflared
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+TimeoutStartSec=15
+Type=notify
+ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token-file $JETON_FICHIER
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+UNITE
 }
 
 # ── Self-test ────────────────────────────────────────────────────────────────
@@ -108,16 +154,22 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   eq "masquage : le jeton disparaît" "$(printf 'x --token %s y' "$BON" | masquer_jeton)" "x --token <jeton masqué> y"
   eq "motif : l'identifiant est nommé" "$(motif_refus refuse:format | grep -c IDENTIFIANT)" "1"
   UNITE="[Service]
-ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token $ID
+ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token $BON
 Restart=on-failure"
-  eq "unité : le jeton remplace l'ancienne valeur" \
-     "$(unite_avec_jeton "$UNITE" "$BON" | grep ExecStart)" \
-     "ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token $BON"
-  eq "unité : le reste est intact" "$(unite_avec_jeton "$UNITE" "$BON" | grep -c Restart=on-failure)" "1"
-  unite_avec_jeton "[Service]
-ExecStart=/usr/bin/cloudflared tunnel run" "$BON" >/dev/null; eq "unité sans --token → refus" "$?" "1"
-  unite_avec_jeton "$UNITE
-ExecStartPost=/bin/true --token x" "$BON" >/dev/null; eq "unité à deux --token → refus" "$?" "1"
+  eq "unité héritée : le jeton en est lu"              "$(jeton_dans_unite "$UNITE")" "$BON"
+  eq "unité migrée : aucun jeton à lire"               "$(jeton_dans_unite "$(unite_vers_fichier "$UNITE")")" ""
+  eq "unité : --token devient --token-file"      "$(unite_vers_fichier "$UNITE" | grep ExecStart)"      "ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token-file $JETON_FICHIER"
+  #  LE POINT DE #2115 : rien de secret ne subsiste dans l'unité produite.
+  eq "unité : plus aucun eyJ après la migration"       "$(unite_vers_fichier "$UNITE" | grep -c eyJ)" "0"
+  eq "unité : le reste est intact"                     "$(unite_vers_fichier "$UNITE" | grep -c Restart=on-failure)" "1"
+  eq "unité déjà migrée : inchangée (idempotent)"      "$(unite_vers_fichier "$(unite_vers_fichier "$UNITE")")" "$(unite_vers_fichier "$UNITE")"
+  eq "unité migrée vers un autre chemin : ramenée à JETON_FICHIER"      "$(unite_vers_fichier "ExecStart=/x tunnel run --token-file /tmp/ailleurs" | grep -c "token-file $JETON_FICHIER\$")" "1"
+  eq "unité d'un nœud neuf : lit le fichier, sans aucun jeton"      "$(unite_modele | grep -c "tunnel run --token-file $JETON_FICHIER\$")|$(unite_modele | grep -c eyJ)" "1|0"
+  eq "unité d'un nœud neuf : unite_vers_fichier la laisse telle quelle"      "$(unite_vers_fichier "$(unite_modele)")" "$(unite_modele)"
+  unite_vers_fichier "[Service]
+ExecStart=/usr/bin/cloudflared tunnel run" >/dev/null; eq "unité sans jeton ni fichier → refus" "$?" "1"
+  unite_vers_fichier "$UNITE
+ExecStartPost=/bin/true --token x" >/dev/null; eq "unité à deux --token → refus" "$?" "1"
   [ $fail -eq 0 ] && echo "== TOUS OK ==" || echo "== ÉCHECS =="
   exit $fail
 fi

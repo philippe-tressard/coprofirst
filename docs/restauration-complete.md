@@ -261,6 +261,8 @@ sudo systemctl disable --now cloudflared
 Le jeton est dans **Cloudflare Zero Trust > Networks > Tunnels > le tunnel >
 Ajouter un connecteur** : la longue chaîne `eyJ…` de la commande d'installation,
 **pas** l'« ID du tunnel » (`91d1afa9-…`). Le script refuse l'un pour l'autre (#1318).
+Le script range le jeton dans `/etc/cloudflared/jeton` (root 600) : l'unité ne porte
+que `--token-file`, jamais le jeton (#2115, contrôle C39).
 Changer le jeton d'un nœud déjà installé : `scripts/exploitation/changer-jeton-tunnel.sh`,
 l'actif d'abord.
 
