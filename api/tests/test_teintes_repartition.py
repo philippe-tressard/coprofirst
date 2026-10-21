@@ -66,3 +66,21 @@ def test_teinter_suit_l_ordre_de_par_batiment():
     cat, bat = teinter(par_cat, par_bat)
     assert [t.teinte for t in cat[0].tranches] == ["p1", "p2"]
     assert bat[0].tranches[0].teinte == "s1"
+
+
+def test_la_hachure_plusieurs_batiments_est_un_motif_que_weasyprint_rend():
+    """21/10/2026 : `repeating-linear-gradient` n'était pas rendu au PDF — la barre
+    « Plusieurs bâtiments » restait vide, et la légende sans carré."""
+    from app.utils.suivi_affaires.pdf_barres import _fond
+
+    fond = _fond("plusieurs")
+    assert "repeating-linear-gradient" not in fond
+    assert "data:image/svg+xml" in fond and '"' not in fond, 'il vit dans style="…"'
+
+
+def test_la_tete_porte_trois_chiffres_dont_les_fusionnees():
+    from app.utils.suivi_affaires.pdf import tete_html
+    from app.utils.suivi_affaires.releve import Releve
+
+    html = tete_html(Releve(jour=__import__("datetime").date(2026, 10, 21)), "affaires")
+    assert html.count('<div class="chiffre') == 4 and "fusionnée" in html  # le conteneur + trois

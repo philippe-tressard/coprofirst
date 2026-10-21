@@ -95,6 +95,8 @@ export interface SuiviAffaires {
 	total: number;
 	/** Ouvertes depuis plus de 90 jours. */
 	anciennes: number;
+	/** Les affaires fusionnées dans celles du relevé (#2083) — le troisième chiffre. */
+	fusionnees: number;
 	/** La catégorie la plus nombreuse en tête ; tranches par bâtiment. */
 	par_categorie: BarreRepartition[];
 	/** La racine en tête ; tranches par catégorie. */

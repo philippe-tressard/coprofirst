@@ -41,12 +41,12 @@ CSS_RAPPORT = f"""
 {regle_page()}
 body {{ font-family: {FONT_SANS}; font-size: 9.5pt; color: var(--ink); margin: 0; }}
 {CSS_ENTETE_RAPPORT}.tete {{ display: flex; gap: 10pt; margin-bottom: 10pt; }}
-.chiffres {{ display: flex; flex-direction: column; gap: 6pt; }}
-.chiffre {{ border: 1px solid var(--border); border-radius: 5pt; padding: 5pt 9pt; min-width: 90pt; }}
+.chiffres {{ display: flex; flex-direction: column; gap: 4pt; }}
+.chiffre {{ border: 1px solid var(--border); border-radius: 5pt; padding: 2pt 9pt; min-width: 90pt; }}
 .chiffre.fort {{ border-color: var(--navy); background: #eef2f7; }}
-.chiffre .v {{ font-size: 20pt; font-weight: 700; color: var(--navy); line-height: 1.1; }}
+.chiffre .v {{ font-size: 14pt; font-weight: 700; color: var(--navy); line-height: 1.1; }}
 .chiffre.alerte .v {{ color: #c0392b; }}
-.chiffre .l {{ font-size: 8pt; color: var(--muted); }}
+.chiffre .l {{ font-size: 7.5pt; color: var(--muted); }}
 {CSS_BARRES}table.affaires {{ width: 100%; border-collapse: collapse; }}
 .affaires th {{ text-align: left; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em;
   color: var(--muted); border-bottom: 1.5pt solid var(--border); padding: 3pt 4pt; }}
@@ -106,13 +106,17 @@ def tableau_html(
 
 
 def tete_html(r: Releve, libelle_total: str) -> str:
-    """PURE. Les deux chiffres et les deux répartitions en couleur."""
+    """PURE. Les trois chiffres — affaires, de plus de 90 jours, fusionnées (#2083) —
+    dans la hauteur où en tenaient deux, et les deux répartitions en couleur."""
+    fusion = "s" if r.fusionnees > 1 else ""
     return (
         '<div class="tete"><div class="chiffres">'
         f'<div class="chiffre fort"><div class="v">{r.total}</div>'
         f'<div class="l">{escape(libelle_total)}</div></div>'
         f'<div class="chiffre alerte"><div class="v">{r.anciennes}</div>'
         '<div class="l">de plus de 90 jours</div></div>'
+        f'<div class="chiffre"><div class="v">{r.fusionnees}</div>'
+        f'<div class="l">affaire{fusion} fusionnée{fusion}</div></div>'
         f"</div>{repartition_html('Par catégorie', r.par_categorie)}"
         f"{repartition_html('Par bâtiment', r.par_batiment)}</div>"
     )

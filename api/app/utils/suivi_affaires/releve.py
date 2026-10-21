@@ -171,6 +171,12 @@ class Releve:
         """Le nombre d'affaires ouvertes depuis plus de 90 jours."""
         return sum(1 for a in self.affaires if a.anciennete == "ancienne")
 
+    @property
+    def fusionnees(self) -> int:
+        """Le nombre d'affaires FUSIONNÉES dans celles du relevé (#2083) — absorbées,
+        elles n'y figurent plus ; le troisième chiffre de la tête le dit."""
+        return sum(len(a.fusionnees) for a in self.affaires)
+
     def _parametres(self) -> tuple:
         libelles = {a.categorie: a.libelle_categorie for a in self.affaires}
         ordre_cat = [c.value for c in CategorieTicket]
