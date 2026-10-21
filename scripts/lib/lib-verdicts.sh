@@ -31,7 +31,11 @@
 #   code1 : première sonde de l'URL publique
 #   code2 : seconde sonde, après un délai — "" si l'on n'a pas eu à la faire
 #   deploiement : un build d'auto-deploy tient-il son verrou sur l'ACTIF ?
-# Échoit : OK · TRANSITOIRE:<code1> · DEPLOIEMENT:<code1> · KO:<code2> · INCONNU
+#   bascule : une bascule tient-elle son verrou (`bascule_en_cours`) ?
+#   code3 : troisième sonde, nom résolu par un autre chemin — "" si la seconde
+#           n'a pas échoué à la résolution
+# Échoit : OK · TRANSITOIRE:<code1> · RESOLUTION:<code2> · BASCULE:<code1> ·
+#          DEPLOIEMENT:<code1> · KO:<dernier code> · INCONNU
 #
 # 🔴 POURQUOI (01/09/2026). À 01:21, C1 a envoyé une alerte critique « Site public
 # KO (HTTP 503) ». Le site n'était pas en panne : `auto-deploy.sh` recréait les
@@ -70,16 +74,24 @@
 # figée depuis vingt minutes n'est plus une opération en cours, c'est une panne,
 # et le FAIL doit alors partir. Sans cette borne, un verrou oublié rendrait les
 # trois contrôles définitivement muets.
+#
+# 🔴 LE RÉSOLVEUR DU NŒUD N'EST PAS LE SITE (21/10/2026). Le 20/10 à 22:36, les
+# deux sondes avaient expiré à la résolution du nom, et rpi2 recevait un 200 à
+# la même minute. `$5` est alors une troisième sonde, résolue par un autre
+# chemin (`echec_de_resolution`, lib-sonde) : un 200 dit que le site servait —
+# WARN, au digest, parce que le chemin DNS du domicile a bien failli. Un échec
+# reste le FAIL : la panne de DNS ou de lien du domicile coupe aussi le tunnel.
 verdict_site_public() {
-  local code1="${1:-}" code2="${2:-}" deploiement="${3:-}" bascule="${4:-}"
+  local code1="${1:-}" code2="${2:-}" deploiement="${3:-}" bascule="${4:-}" code3="${5:-}"
   [ -z "$code1" ] && { echo "INCONNU"; return; }
   [ "$code1" = "200" ] && { echo "OK"; return; }
   [ "$code2" = "200" ] && { echo "TRANSITOIRE:$code1"; return; }
+  [ "$code3" = "200" ] && { echo "RESOLUTION:${code2:-$code1}"; return; }
   [ "$bascule" = "oui" ] && { echo "BASCULE:$code1"; return; }
   [ "$deploiement" = "oui" ] && { echo "DEPLOIEMENT:$code1"; return; }
-  #  On rend le code de la SECONDE sonde : c'est le plus récent, donc l'état à
-  #  l'instant de la décision. Vide (sonde impossible) → on garde le premier.
-  echo "KO:${code2:-$code1}"
+  #  On rend le code de la DERNIÈRE sonde : c'est le plus récent, donc l'état à
+  #  l'instant de la décision. Vide (sonde impossible) → on garde le précédent.
+  echo "KO:${code3:-${code2:-$code1}}"
 }
 
 # ── Une bascule est-elle EN COURS ? (PURE — testable) ────────────────────────
