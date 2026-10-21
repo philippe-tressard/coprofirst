@@ -77,7 +77,7 @@
 		border-radius: 8px;
 		overflow: hidden;
 		border: 1px solid var(--color-border);
-		background: var(--color-bg-alt, #f2f2f2);
+		background: var(--color-neutre-fond);
 	}
 	.flux-vignette img {
 		width: 100%;

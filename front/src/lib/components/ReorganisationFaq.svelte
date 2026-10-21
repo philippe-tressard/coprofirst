@@ -174,7 +174,7 @@
 		gap: 0.5rem;
 		padding: 0.75rem 1rem;
 		margin-bottom: 0.5rem;
-		background: var(--color-bg-subtle);
+		background: var(--color-neutre-fond);
 		border-radius: var(--radius);
 		border: 1px dashed var(--color-border);
 	}
@@ -223,6 +223,6 @@
 	.drag-over {
 		outline: 2px dashed var(--color-primary);
 		outline-offset: -2px;
-		background: var(--color-bg-subtle);
+		background: var(--color-neutre-fond);
 	}
 </style>

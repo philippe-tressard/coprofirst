@@ -8,10 +8,9 @@
 	 * (membres du CS groupés par bâtiment, membres du CS à plat, contacts du
 	 * syndic) avant d'être réclamé par l'en-tête du tableau de bord.
 	 *
-	 * Habillage : le composant ne décide que de la forme. La taille, le fond de
-	 * repli et l'anneau se pilotent depuis le parent par variables CSS, qui
-	 * cascadent jusqu'ici — `--avatar-size`, `--avatar-bg`, `--avatar-color`,
-	 * `--avatar-ring`.
+	 * Habillage : le composant ne décide que de la forme. La taille et le fond de
+	 * repli se pilotent depuis le parent par variables CSS, qui
+	 * cascadent jusqu'ici — `--avatar-size`, `--avatar-bg`, `--avatar-color`.
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 
@@ -40,7 +39,6 @@
 		border-radius: 50%;
 		background: var(--avatar-bg, var(--color-primary));
 		color: var(--avatar-color, var(--color-surface));
-		box-shadow: var(--avatar-ring, none);
 		display: flex;
 		align-items: center;
 		justify-content: center;

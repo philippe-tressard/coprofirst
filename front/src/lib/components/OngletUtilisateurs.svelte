@@ -467,7 +467,7 @@
 		color: #721c24;
 	}
 	.utag-sans_objet {
-		background: var(--color-bg-subtle, #f3f4f6);
+		background: var(--color-neutre-fond);
 		color: var(--color-text-muted);
 	}
 	.carte-comptes {

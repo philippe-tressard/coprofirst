@@ -310,7 +310,7 @@
 		color: var(--color-text-muted);
 		margin: 0.5rem 0;
 		padding: 0.5rem 0.75rem;
-		background: var(--color-bg-muted, #f5f5f5);
+		background: var(--color-neutre-fond);
 		border-radius: var(--radius);
 	}
 	.tk-envoi {

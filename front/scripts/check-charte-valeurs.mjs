@@ -100,9 +100,11 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, re
  *  #e5e7eb)`, jeton défini) s'écrivent sans repli — INTERDITS (`repliMortsDe`) ;
  *  seize fonds quasi-blancs, posés sur des variables que RIEN ne définit
  *  (`--color-bg-alt`…), prennent `--color-neutre-fond` (≤ 3 unités RVB d'écart).
+ *  22/10/2026 (#1571) : 81 couleurs. Les huit derniers replis sur des variables
+ *  que rien ne définit partent avec elles (`lint:variables-css`).
  */
 //  Carte des plafonds décroissants : #1571.
-const PLAFOND = { couleurs: 89, tailles: 69 };
+const PLAFOND = { couleurs: 81, tailles: 69 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
