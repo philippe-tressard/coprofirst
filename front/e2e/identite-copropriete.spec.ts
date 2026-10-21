@@ -65,7 +65,9 @@ test('Résidence : le conseil syndical lit la fiche, sans crayon qui finirait en
 }) => {
 	await ouvrir(page, '/residence');
 	await expect(page.getByRole('heading', { name: `Résidence : ${FICHE.nom}` })).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Modifier la fiche de la résidence' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Modifier la fiche de la résidence' })).toHaveCount(
+		0,
+	);
 });
 
 test('Admin › Fiche : les mêmes champs, la même règle', async ({ page }) => {
