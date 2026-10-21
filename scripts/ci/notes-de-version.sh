@@ -80,7 +80,7 @@ if [ "${1:-}" = "--selftest" ]; then
     c3=$(git -C "$DEPOT" rev-parse HEAD)
     SORTIE=$(mktemp -d)
     archive=$(cd "$DEPOT" && archiver_deploiement "$c3" 3.0.0 "$SORTIE")
-    n=$(tar -tzf "$archive" | grep -cv '/$')
+    n=$(tar -tzf "$archive" | grep -cv '/$' || true)
     if [ "$n" -eq "${#FICHIERS_DEPLOIEMENT[@]}" ]; then echo "PASS  archive : $n fichiers, préfixe coprofirst-3.0.0/"
     else echo "FAIL  archive : $n fichier(s) pour ${#FICHIERS_DEPLOIEMENT[@]}"; fail=1; fi
     if (cd "$DEPOT" && archiver_deploiement "$c" 2.0.0 "$SORTIE") >/dev/null 2>&1; then
