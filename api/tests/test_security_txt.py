@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 
 from app.utils import horloge
 from app.utils.plateforme import DEPOT_SOURCE
+from tests.aides_caddy import bloc_handle, caddyfile
 
 _RACINE = pathlib.Path(__file__).resolve().parents[2]
 _FICHIER = _RACINE / "front" / "static" / ".well-known" / "security.txt"
@@ -80,3 +81,12 @@ def test_l_echeance_n_est_pas_proche():
 
 def test_l_echeance_reste_a_moins_d_un_an():
     assert _echeance() - horloge.maintenant() < timedelta(days=HORIZON_JOURS)
+
+
+def test_caddy_le_sert_en_utf8_comme_l_exige_la_rfc():
+    """Le serveur du front pose `text/plain` sans jeu de caractères (constaté le
+    22/10/2026 sur le build) ; la RFC 9116 §3 exige `charset=utf-8`."""
+    bloc = bloc_handle(caddyfile(), "/.well-known/security.txt")
+    assert bloc is not None, "aucun `handle /.well-known/security.txt` dans le Caddyfile"
+    assert 'header >Content-Type "text/plain; charset=utf-8"' in bloc
+    assert "reverse_proxy front:3000" in bloc
