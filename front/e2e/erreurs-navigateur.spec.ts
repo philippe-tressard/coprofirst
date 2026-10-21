@@ -131,3 +131,51 @@ test('l’administrateur lit les erreurs dans l’onglet Télémétrie, sans dé
 	);
 	expect(deborde, 'le panneau des erreurs fait défiler la page horizontalement').toBe(false);
 });
+
+test('une erreur sur la page de connexion part au journal, hors du squelette de l’application', async ({
+	page,
+}) => {
+	//  #2066 : l'envoi n'était armé que par le squelette `(app)`. Sur `/auth/*`,
+	//  la file ne partait qu'au vingtième événement — jamais — et les erreurs non
+	//  rattrapées n'étaient pas même écoutées : le journal ne voyait rien des
+	//  écrans qu'on ouvre juste après une MEP.
+	const recus = await lotsEnvoyes(page);
+	await page.goto('/auth/connexion');
+	await attendreHydratation(page);
+
+	await page.evaluate(() => {
+		const erreur = new TypeError('connexion impossible');
+		window.dispatchEvent(new ErrorEvent('error', { error: erreur, message: erreur.message }));
+	});
+	await viderLaFile(page);
+
+	await expect
+		.poll(() => erreurs(recus).map((e) => e.detail))
+		.toContain('TypeError: connexion impossible');
+	expect(erreurs(recus).every((e) => e.page === '/auth/connexion')).toBe(true);
+});
+
+test('un rejet de promesse non rattrapé sur la page de connexion part aussi au journal', async ({
+	page,
+}) => {
+	//  #2066 : le second écouteur posé par `initTelemetry`, `unhandledrejection`.
+	//  Posté à la main, avec une promesse déjà tenue : un vrai rejet non rattrapé
+	//  ferait échouer le `test` des specs.
+	const recus = await lotsEnvoyes(page);
+	await page.goto('/auth/connexion');
+	await attendreHydratation(page);
+
+	await page.evaluate(() => {
+		window.dispatchEvent(
+			new PromiseRejectionEvent('unhandledrejection', {
+				promise: Promise.resolve(),
+				reason: new RangeError('délai dépassé'),
+			}),
+		);
+	});
+	await viderLaFile(page);
+
+	await expect
+		.poll(() => erreurs(recus).map((e) => e.detail))
+		.toContain('RangeError: délai dépassé');
+});

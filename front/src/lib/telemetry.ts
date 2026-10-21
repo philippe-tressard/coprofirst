@@ -202,17 +202,15 @@ function flush() {
 }
 
 /**
- * Envoie la file tout de suite, sans attendre le minuteur.
- *
- * Pour un signalement fait HORS du squelette `(app)`, où `initTelemetry` n'a
- * pas armé l'envoi périodique : sur `/auth/*`, la file ne partait qu'au
- * vingtième événement — c'est-à-dire jamais (#1993).
+ * Envoie la file tout de suite, sans attendre les 30 s du minuteur — pour le
+ * signalement d'un rechargement de secours (#1993), qui se lit aussitôt.
  */
 export function envoyerMaintenant() {
 	flush();
 }
 
-/** Initialise la télémétrie (appeler une seule fois dans le layout). */
+/** Initialise la télémétrie — une fois, par le layout RACINE : toutes les pages,
+ *  `/auth/*` compris (#2066). */
 export function initTelemetry() {
 	if (typeof window === 'undefined') return;
 	if (timer) return; // Déjà initialisé

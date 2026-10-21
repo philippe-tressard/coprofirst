@@ -11,7 +11,6 @@
 	import { chargerPerimetres } from '$lib/stores/perimetres';
 	import {
 		commencerNavigation,
-		initTelemetry,
 		mesurerNavigation,
 		trackPageView,
 		setTelemetryOptOut,
@@ -21,8 +20,6 @@
 	import { lireReglagePied } from '$lib/piedDePage';
 
 	onMount(async () => {
-		initTelemetry();
-
 		const [, meResult] = await Promise.allSettled([
 			loadSiteConfig(),
 			!$currentUser ? authApi.me() : Promise.resolve(null),
