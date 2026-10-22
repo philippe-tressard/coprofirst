@@ -20,7 +20,7 @@ from app.models.core import (
     TypeEvenement,
     Utilisateur,
 )
-from app.utils.perimetres import a_portee_globale, parse_perimetres
+from app.utils.perimetres import a_portee_globale, arbre, parse_perimetres
 
 from .socle import (
     _codes_json_pour_acces,
@@ -345,8 +345,13 @@ def hors_du_hall(ticket: Ticket) -> bool:
     génération de l'affiche ET la liste des éléments reprenables l'appellent —
     deux écritures divergeraient sur le cas limite, et l'une des deux
     publierait au mur ce que l'autre refuse.
+
+    « Réservée à son périmètre » est la règle du groupe WhatsApp,
+    `contenu_hors_du_groupe` : une affaire suivie d'un bâtiment comprise —
+    arbitré par l'utilisateur le 22/10/2026, après le code d'ascenseur parti
+    sur le groupe. Le hall et le groupe sont deux lieux lus par tous.
     """
-    return reservee_au_conseil(ticket) or bool(ticket.reserve_perimetre)
+    return reservee_au_conseil(ticket) or contenu_hors_du_groupe(ticket)
 
 
 def contenu_hors_du_groupe(ticket: Ticket) -> bool:
@@ -364,6 +369,9 @@ def contenu_hors_du_groupe(ticket: Ticket) -> bool:
       la copropriété et son périmètre n'est qu'un accent (#339) ;
     - un périmètre illisible : une donnée abîmée ne peut que restreindre (#789).
 
+    Une copropriété SANS périmètres configurés n'en restreint aucun (`arbre`,
+    état valide) : aucune affaire n'y vise un bâtiment, rien n'est amputé.
+
     Le public visé (`public_cible`) est jugé à côté, par le canal
     (`message_sans_contenu`), à qui l'appelant le transmet.
     """
@@ -374,7 +382,7 @@ def contenu_hors_du_groupe(ticket: Ticket) -> bool:
     codes = _codes_json_pour_acces(ticket.perimetre_cible)
     if codes is None:
         return True
-    return bool(codes) and not a_portee_globale(codes)
+    return bool(codes) and bool(arbre()) and not a_portee_globale(codes)
 
 
 # ── Règles Communauté : petite annonce et idée ────────────────────────────────

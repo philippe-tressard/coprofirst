@@ -198,3 +198,43 @@ def test_une_affaire_ne_se_diffuse_que_par_diffuser_l_affaire():
     )
     porte = (TICKETS / PORTE).read_text(encoding="utf-8")
     assert "diffuser(" in porte and "contenu_hors_du_groupe(" in porte, "témoin : la porte sert"
+
+
+# ── Le hall, lu par tout le monde, suit la même règle (22/10/2026) ──────────
+
+
+@pytest.mark.parametrize(
+    ("categorie", "perimetre_du_batiment", "au_hall"),
+    [("panne", True, False), ("panne", False, True), ("entretien", True, False)],
+)
+def test_une_affaire_reservee_ne_se_reprend_pas_au_hall(
+    contexte, categorie, perimetre_du_batiment, au_hall
+):
+    """Arbitré par l'utilisateur : une affaire réservée n'a pas d'affiche de hall.
+
+    Le hall n'a aucun contrôle d'accès ; la reprise (`sources_disponibles`, que
+    `prefill_source` relit) suit donc `contenu_hors_du_groupe`, cas zéro compris.
+    """
+    from app.utils.sources_affiche import sources_disponibles
+
+    s, cs, batiments = contexte
+    perimetre = [f"bat:{batiments[0]}"] if perimetre_du_batiment else []
+    lu, _ = _creer(s, cs, categorie, perimetre)
+    reprenables = {source.cle() for source in sources_disponibles(s)}
+    assert (f"ticket:{lu.id}" in reprenables) is au_hall
+
+
+def test_sans_perimetres_configures_rien_n_est_ampute(monkeypatch, arbre_vide):
+    """Une copropriété qui n'a saisi aucun périmètre n'en restreint aucun (`arbre`).
+
+    Sans ce cas, chaque affaire d'une installation neuve partait réduite à son
+    titre, et aucune ne se reprenait au hall.
+    """
+    from app.models.core import Ticket
+    from app.utils.visibility import contenu_hors_du_groupe, hors_du_hall
+
+    ticket = Ticket(titre="Panne", categorie="panne", perimetre_cible='["résidence"]')
+    assert not contenu_hors_du_groupe(ticket)
+    assert not hors_du_hall(ticket)
+    ticket.perimetre_cible = "pas du JSON"
+    assert contenu_hors_du_groupe(ticket), "un périmètre illisible restreint toujours"
