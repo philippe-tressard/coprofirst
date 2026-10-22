@@ -40,6 +40,9 @@ ROUTES_A_EFFET = {
     "l'administrateur d'INSTALLATION (pas d'un résident) ; rend l'état constaté (#1878)",
     ("POST", "/admin/installation/bail"): "demande le bail à la référence ; rend l'état "
     "constaté (#1878)",
+    ("PUT", "/admin/sauvegardes/config"): "règle l'heure et le nombre de versions de la "
+    "sauvegarde ; rend la ligne de réglage — des nombres et l'identifiant de qui l'a "
+    "modifiée (#2061 : réservée à l'opérateur, comme l'écran)",
 }
 
 #: Les routes de l'opérateur qui lisent un OBJET du registre (base `plateforme`), et
