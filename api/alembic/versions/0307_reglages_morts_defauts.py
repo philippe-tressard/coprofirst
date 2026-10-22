@@ -16,16 +16,16 @@ annoncé dans `CONTRACTIONS`, vient dans une version ultérieure). L'image préc
 Une base neuve n'a pas ces colonnes (le schéma courant vient des modèles) : la
 migration ne touche que ce qui existe.
 
-Revision ID: 0306
-Revises: 0305
+Revision ID: 0307
+Revises: 0306
 """
 
 import sqlalchemy as sa
 
 from alembic import op
 
-revision = "0306"
-down_revision = "0305"
+revision = "0307"
+down_revision = "0306"
 branch_labels = None
 depends_on = None
 
