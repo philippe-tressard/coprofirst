@@ -53,9 +53,7 @@
 	 *   ⚠️ Les libellés viennent de `optionPublication`, jamais réécrits ici :
 	 *   c'est la table qui nomme une option, et elle est déjà la source de ce
 	 *   que les cases affichent. */
-	$: actives = options.filter(
-		(c) => ({ epingle, urgente, brouillon })[c as 'epingle'],
-	);
+	$: actives = options.filter((c) => ({ epingle, urgente, brouillon })[c as 'epingle']);
 	$: resume = actives.length
 		? actives.map((c) => optionPublication(c)?.etat ?? c).join(' · ')
 		: 'ni épinglée ni urgente';
