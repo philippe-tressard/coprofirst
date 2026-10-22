@@ -6,7 +6,7 @@
   modularité : la page accueillait les mêmes options DANS le formulaire de
   commentaire (demande de l'utilisateur), et dépassait son plafond.
 
-  ⚠️ **Deux chemins mènent désormais aux mêmes quatre options** : ce panneau, et
+  ⚠️ **Deux chemins mènent désormais aux mêmes options** : ce panneau, et
   la section 2 du formulaire de commentaire. C'est un écart connu au principe
   « un geste, un endroit » (`ux-patterns` §10 bis) — ils ne répondent pas tout à
   fait à la même question (« je corrige une option » contre « je commente, et
@@ -26,19 +26,10 @@
 	 *   (« Visibilité du **ticket** au seul conseil syndical »). */
 	export let objet = 'actualité';
 	/**  Les options RENDUES : un événement n'a que l'épinglage, un ticket en a
-	 *   quatre dont une verrouillée. C'est l'appelant qui sait. */
-	export let optionsRendues: CleOptionPublication[] = [
-		'epingle',
-		'urgente',
-		'brouillon',
-		'confidentiel',
-	];
-	/** Le périmètre visé, qui décide si « Confidentiel » a un sens. */
-	export let perimetreCible: string[] = [];
+	 *   l'épinglage et l'urgence. C'est l'appelant qui sait. */
+	export let optionsRendues: CleOptionPublication[] = ['epingle', 'urgente', 'brouillon'];
 	/** L'objet était-il DÉJÀ épinglé ? (évite un double comptage) */
 	export let dejaEpingle = false;
-	/** 🔒 Motif pour lequel l'objet est TOUJOURS restreint — relayé tel quel. */
-	export let confidentielAcquis = '';
 	/** 🔒 Motif pour lequel l'épinglage est impossible — relayé tel quel. */
 	export let epingleInterdit = '';
 	/** La copie de travail, tenue par la page : on n'écrit qu'après le serveur. */
@@ -46,7 +37,6 @@
 		epingle: boolean;
 		urgente: boolean;
 		brouillon: boolean;
-		confidentiel: boolean;
 	};
 	export let enregistrement = false;
 
@@ -56,8 +46,7 @@
 <!--  ── Mise en avant ──
       LE MÊME composant qu'à la création et à l'édition
       (`SectionOptionsPublication`, section « Mise en avant » du cadre #430) : ni copie, ni
-      variante. Il porte déjà la règle « Confidentiel exige un
-      périmètre restreint », qu'un panneau réécrit n'aurait pas eue.
+      variante : un panneau réécrit en aurait recopié les règles.
       `role="presentation"` : ce conteneur n'est qu'un relais, il
       arrête la propagation pour que cocher ne referme pas la carte. -->
 <div class="options-form" role="presentation" on:click|stopPropagation on:keydown|stopPropagation>
@@ -68,14 +57,11 @@
 		premiere
 		{objet}
 		options={optionsRendues}
-		{perimetreCible}
 		{dejaEpingle}
-		{confidentielAcquis}
 		{epingleInterdit}
 		bind:epingle={options.epingle}
 		bind:urgente={options.urgente}
 		bind:brouillon={options.brouillon}
-		bind:confidentiel={options.confidentiel}
 	/>
 	<!--  🔴 `PiedFormulaire`, et non deux boutons écrits ici (12/09/2026, signalé
 	      à l'écran). Cette rangée était une **dixième copie** du pied que #822 a

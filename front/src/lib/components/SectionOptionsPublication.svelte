@@ -33,20 +33,15 @@
 	/** Le nom de l'objet décrit, pour les libellés qui le nomment. */
 	export let objet = 'actualité';
 	/** Les options rendues, dans l'ordre de la table. */
-	export let options: CleOptionPublication[] = ['epingle', 'urgente', 'brouillon', 'confidentiel'];
+	export let options: CleOptionPublication[] = ['epingle', 'urgente', 'brouillon'];
 	/** Première section du formulaire : pas de filet au-dessus. */
 	export let premiere = false;
 
 	export let epingle = false;
 	export let urgente = false;
 	export let brouillon = false;
-	export let confidentiel = false;
-	/** Le périmètre visé, qui décide si « Confidentiel » a un sens. */
-	export let perimetreCible: string[] = [];
 	/** L'objet édité était-il DÉJÀ épinglé ? (évite un double comptage) */
 	export let dejaEpingle = false;
-	/** 🔒 Motif pour lequel l'objet est TOUJOURS restreint — relayé tel quel. */
-	export let confidentielAcquis = '';
 	/** 🔒 Motif pour lequel l'épinglage est impossible — relayé tel quel. */
 	export let epingleInterdit = '';
 
@@ -59,7 +54,7 @@
 	 *   c'est la table qui nomme une option, et elle est déjà la source de ce
 	 *   que les cases affichent. */
 	$: actives = options.filter(
-		(c) => ({ epingle, urgente, brouillon, confidentiel })[c as 'epingle'],
+		(c) => ({ epingle, urgente, brouillon })[c as 'epingle'],
 	);
 	$: resume = actives.length
 		? actives.map((c) => optionPublication(c)?.etat ?? c).join(' · ')
@@ -80,13 +75,10 @@
 	<OptionsPublication
 		{objet}
 		{options}
-		{perimetreCible}
 		{dejaEpingle}
-		{confidentielAcquis}
 		{epingleInterdit}
 		bind:epingle
 		bind:urgente
 		bind:brouillon
-		bind:confidentiel
 	/>
 </SectionFormulaire>
