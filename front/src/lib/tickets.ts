@@ -291,19 +291,6 @@ export interface GestesTicket {
  */
 export const OPTIONS_TICKET: CleOptionPublication[] = ['epingle', 'urgente'];
 
-/**
- * 🔒 Pourquoi « Réservé au périmètre » est COCHÉ et VERROUILLÉ sur une affaire.
- *
- * Une affaire suivie n'est lue que dans son périmètre : `ticket_visible` appelle
- * `perimetre_visible` SANS `ouvert_a_la_copropriete`, là où une actualité le
- * passe (#339). La case la rendrait cochable pour une promesse que rien
- * n'applique — elle est donc montrée cochée, avec ce motif, en tête de la
- * section Périmètre (lot 1, 25/09/2026). Ce n'est pas une case morte : c'est un
- * état de l'objet, et il mérite d'être lu.
- */
-export const TICKET_CONFIDENTIEL_ACQUIS =
-	'Une affaire suivie l’est d’office : seuls ceux du périmètre sélectionné la lisent.';
-
 /** L'état COURANT des options — ce que le formulaire reprend à l'ouverture. */
 export function optionsDuTicket(ticket: Ticket | null | undefined): {
 	epingle: boolean;

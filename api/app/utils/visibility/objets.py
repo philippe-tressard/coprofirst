@@ -344,8 +344,46 @@ def hors_du_hall(ticket: Ticket) -> bool:
     génération de l'affiche ET la liste des éléments reprenables l'appellent —
     deux écritures divergeraient sur le cas limite, et l'une des deux
     publierait au mur ce que l'autre refuse.
+
+    « Réservée » est la règle du groupe WhatsApp, `contenu_hors_du_groupe` —
+    case cochée ou diffusion ciblée, arbitré par l'utilisateur le 22/10/2026.
+    Le hall et le groupe sont deux lieux lus par tous.
     """
-    return reservee_au_conseil(ticket) or bool(ticket.reserve_perimetre)
+    return reservee_au_conseil(ticket) or contenu_hors_du_groupe(ticket)
+
+
+def _diffusion_ciblee(raw: str | None) -> bool:
+    """Des Destinataires choisis qui ne s'adressent pas à tous les résidents.
+
+    Vides : aucun choix, rien de ciblé. Illisibles : ciblés — une donnée abîmée
+    ne peut que restreindre (#789).
+    """
+    if not raw:
+        return False
+    cible = _parse_json_list(raw, ["illisible"])
+    return bool(cible) and "résidents" not in cible
+
+
+def contenu_hors_du_groupe(ticket: Ticket) -> bool:
+    """Le groupe de la résidence ne reçoit-il que le titre et le lien de cette affaire ?
+
+    Le groupe est lu par TOUS les résidents : le contenu n'y part que si tous
+    peuvent le lire. Création, Suite et aperçu le demandent ici, par
+    `tickets/groupe.diffuser_l_affaire` — trois points d'envoi, dont un seul
+    transmettait la réserve, ont laissé partir un code d'accès (22/10/2026).
+
+    - 🔒 « Réservé au périmètre sélectionné » coché — une actualité comme une
+      affaire suivie, et seulement quand la case est cochée (arbitré par
+      l'utilisateur le 22/10/2026) : seuls les destinataires du périmètre la
+      lisent (`ticket_visible`, `lus_dans_toute_la_residence`) ;
+    - des Destinataires choisis qui ne sont pas « Tous » (`résidents`) : le
+      groupe compte des résidents qu'ils ne visent pas — et « une diffusion
+      restreinte ne peut être une affiche de hall » (même arbitrage).
+
+    Le canal juge aussi le public visé (`message_sans_contenu`) ; il est écrit
+    ICI pour que le hall (`hors_du_hall`) l'applique sans le redire.
+    """
+    return bool(ticket.reserve_perimetre) or _diffusion_ciblee(ticket.public_cible)
 
 
 # ── Règles Communauté : petite annonce et idée ────────────────────────────────

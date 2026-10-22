@@ -35,11 +35,13 @@
 	export let badgeImpose: string | null = null;
 
 	/**  🔒 La réserve au périmètre, EN TÊTE de la section (25/09/2026) — elle
-	 *   était sous les pastilles depuis #1096. Cochable pour une actualité ;
-	 *   cochée d'office pour une affaire, avec son motif (`reserveAcquise`). */
+	 *   était sous les pastilles depuis #1096. Cochable pour une actualité comme
+	 *   pour une affaire (22/10/2026) : cochée d'office et verrouillée, elle
+	 *   partait `false` et ne protégeait rien. */
 	export let reservable = false;
 	export let reserve = false;
-	export let reserveAcquise = '';
+	/** Le nom de l'objet, que l'aide de la case nomme. */
+	export let reserveObjet = 'actualité';
 	/** Le motif qui la rend sans objet — « Confidentielle » cochée. */
 	export let reserveSansObjet = '';
 
@@ -75,7 +77,7 @@
 		<CaseReservePerimetre
 			bind:coche={reserve}
 			perimetreCible={perimetre}
-			acquis={reserveAcquise}
+			objet={reserveObjet}
 			sansObjet={reserveSansObjet}
 		/>
 	{/if}

@@ -188,6 +188,8 @@ def apercu_whatsapp(
     perimetre: Optional[str] = None,
     photo: Optional[str] = None,
     lien: Optional[str] = None,
+    public_cible: Optional[str] = None,
+    confidentiel: bool = False,
 ) -> ApercuCanal:
     """Le message du groupe tel qu'il sera composé — ou pourquoi il ne partira pas.
 
@@ -219,8 +221,20 @@ def apercu_whatsapp(
     #  regarde l'aperçu POUR vérifier. `test_apercu_whatsapp_fidele` compare
     #  désormais les deux appels à `construire_message` — celui de l'aperçu et
     #  celui de l'envoi — et refuse qu'un paramètre n'existe que d'un côté.
-    texte = construire_message(titre, contenu, urgent, perimetre, cfg, lien=lien)
-    ampute = message_sans_contenu(None, False)
+    #  `public_cible` et `confidentiel` : ceux de l'envoi. Sans eux, l'aperçu
+    #  d'une affaire réservée montrait la description que l'envoi retient — ou,
+    #  avant le 22/10/2026, qu'il laissait partir.
+    texte = construire_message(
+        titre,
+        contenu,
+        urgent,
+        perimetre,
+        cfg,
+        public_cible=public_cible,
+        confidentiel=confidentiel,
+        lien=lien,
+    )
+    ampute = message_sans_contenu(public_cible, confidentiel)
     return ApercuCanal(
         canal="whatsapp",
         actif=True,

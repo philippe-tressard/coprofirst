@@ -83,7 +83,9 @@ def _condition_resolue(fonction: ast.AST, test: ast.AST) -> str:
 #  `diffuser(` : le geste du registre des canaux depuis #1060 (28/09/2026). Ce
 #  contrôle l'a signalé tout seul le jour du renommage — « le contrôle a perdu
 #  sa portée » —, au lieu de passer au vert sur des envois qu'il ne voyait plus.
-_ENVOIS = ("_partager_sur_le_groupe", "envoyer_whatsapp", "diffuser(")
+#  `diffuser_l_affaire` : la porte de toute affaire vers le groupe depuis le
+#  22/10/2026 (`tickets/groupe.py`) — `diffuser(` ne la reconnaît pas.
+_ENVOIS = ("_partager_sur_le_groupe", "envoyer_whatsapp", "diffuser(", "diffuser_l_affaire(")
 
 
 def _gardes_des_envois(fonction: ast.AST) -> list[str]:
@@ -223,7 +225,7 @@ _ENVOIS_RESERVES = _ENVOIS + ("envoyer_email_externe", "diffuser_actualite")
 
 #: Le module qui DÉFINIT les envois : la garde se lit au point d'APPEL, pas dans
 #: la fonction qui envoie. Déclaré, et le test échoue s'il cesse d'exister.
-_MODULES_DEFINISSANT = {"courriels.py", "actualite.py"}
+_MODULES_DEFINISSANT = {"courriels.py", "actualite.py", "groupe.py"}
 
 
 def _envois_et_gardes(fonction: ast.AST, noms: tuple[str, ...]) -> list[tuple[int, str]]:

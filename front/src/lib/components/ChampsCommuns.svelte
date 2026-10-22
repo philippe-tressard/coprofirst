@@ -361,7 +361,7 @@
 		badgeImpose={perimetreBadge}
 		reservable={avecReservePerimetre}
 		bind:reserve={reservePerimetre}
-		reserveAcquise={lecture && !lecture.actualite ? confidentielAcquis : ''}
+		reserveObjet={lecture && !lecture.actualite ? 'affaire' : 'actualité'}
 		reserveSansObjet={lecture && brouillon ? 'Sans objet : elle est confidentielle.' : ''}
 		inactive={inactives.perimetre ?? ''}
 	>

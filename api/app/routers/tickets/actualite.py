@@ -191,7 +191,9 @@ def _partager_sur_le_groupe(
     commentaire: Optional[str] = None,
     fichiers_urls: Optional[list[str]] = None,
 ) -> None:
-    from app.utils.diffusion import config_diffusion, diffuser
+    from app.utils.diffusion import config_diffusion
+
+    from .groupe import diffuser_l_affaire
 
     config = config_diffusion(session)
     if config is None:
@@ -218,16 +220,14 @@ def _partager_sur_le_groupe(
             fichiers_urls=fichiers_urls,
         )
         titre, contenu, photo, lien = suite.titre, suite.contenu, suite.photo, suite.lien
-    diffuser(
+    diffuser_l_affaire(
         background_tasks,
         config,
+        ticket,
         titre,
         contenu,
         urgente=ticket.priorite == "haute",
-        perimetre_cible=ticket.perimetre_cible,
         image_url=photo,
-        public_cible=ticket.public_cible,
-        confidentiel=ticket.reserve_perimetre,
         lien=lien,
     )
 

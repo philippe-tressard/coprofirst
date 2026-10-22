@@ -245,6 +245,8 @@ export const tickets = {
 		/** Ce qu'une actualité ajoute : l'urgence, et à qui l'on parle (#1091). */
 		urgente?: boolean;
 		public_cible?: string[];
+		/** 🔒 « Réservé au périmètre » d'une actualité : l'aperçu ampute alors le message. */
+		reserve_perimetre?: boolean;
 	}) => api.post<ApercuDiffusion>('/tickets/apercu-diffusion', brouillon),
 	//  `perimetre_cible` : le périmètre que l'entrée PRÉCISE, absent quand elle
 	//  n'en parle pas — le serveur ne touche alors pas à celui du ticket (#497).

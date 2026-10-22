@@ -1,0 +1,250 @@
+"""Ce qui est réservé à un périmètre ne part pas en entier sur le groupe (22/10/2026).
+
+## L'incident
+
+Signalé par l'utilisateur : une affaire « nouveau code de l'ascenseur », ciblée
+sur un bâtiment, l'écran affichant « Réservé au périmètre sélectionné » coché.
+Le groupe WhatsApp de la résidence — TOUS les résidents — a reçu la description,
+c'est-à-dire le code. La diffusion a dû être coupée.
+
+Trois défauts se sont additionnés. L'écran montrait la case cochée et
+VERROUILLÉE sur une affaire suivie, mais envoyait `false` : rien n'était
+réservé. L'affaire suivie ne transmettait jamais la réserve à `diffuser`
+(création, Suite), et l'aperçu ne la transmettait pour aucune nature. Et une
+Panne ou un Entretien se lisait par tous les copropriétaires de la résidence,
+quel que soit le périmètre (`lus_dans_toute_la_residence`). Les tests de
+diffusion vérifiaient qu'un message PARTAIT, jamais ce qu'il CONTENAIT.
+
+Arbitré par l'utilisateur : la règle ne joue que **case cochée** (ou
+Destinataires ciblés) — alors seuls les destinataires du périmètre lisent
+(`lecture_pastille.json`, cas du 22/10/2026), le groupe ne reçoit que le titre
+et le lien, et le hall rien.
+
+## Ce qu'on regarde
+
+Le texte que le groupe reçoit, composé comme le canal le compose
+(`construire_message`) — par les vraies routes : création, Suite, aperçu. Et une
+seule porte : `contenu_hors_du_groupe` décide, `diffuser_l_affaire` l'applique.
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+import pytest
+from fastapi import BackgroundTasks
+from sqlmodel import Session
+
+import app.routers.tickets.apercu as apercu
+import app.routers.tickets.crud as crud
+import app.routers.tickets.evolutions as evolutions
+import app.utils.diffusion as diffusion
+from app.database import engine
+from app.models.core import RoleUtilisateur
+from app.schemas import TicketCreate
+from app.schemas_tickets import TicketEvolutionCreate
+from app.utils.perimetres import arbre
+from app.utils.whatsapp_message import construire_message
+from tests.aides_adresse import poser_adresse_du_site
+from tests.aides_base import compte
+
+SECRET = "Code du portail : 4821B"
+SUITE = "Nouveau code à partir de lundi : 7730A"
+PHOTO = "/uploads/tickets/code.jpg"
+
+
+@pytest.fixture()
+def contexte(monkeypatch, batiments):
+    #  Le canal de la résidence, allumé : la couture est le registre (#1060).
+    monkeypatch.setattr(diffusion, "config_diffusion", lambda s, *a: {})
+    poser_adresse_du_site(monkeypatch, "https://5hostachy.fr")
+    arbre()
+    with Session(engine) as s:
+        cs = compte(
+            s,
+            prefixe="cs",
+            prenom="C",
+            nom="S",
+            roles_json=RoleUtilisateur.conseil_syndical.value,
+        )
+        yield s, cs, batiments
+
+
+def _recu(taches: BackgroundTasks) -> tuple[str, str | None, bool]:
+    """Le texte que le groupe reçoit, l'image demandée, et si le message est amputé."""
+    (envoi,) = [t for t in taches.tasks if t.func.__name__ == "envoyer_whatsapp_avec_log"]
+    titre, contenu, urgente, perimetre, image, config, public, confidentiel = envoi.args
+    texte = construire_message(
+        titre,
+        contenu,
+        urgente,
+        perimetre,
+        config,
+        public,
+        confidentiel,
+        lien=envoi.kwargs.get("lien"),
+    )
+    return texte, image, bool(confidentiel)
+
+
+def _creer(s, cs, categorie, perimetre, **champs):
+    taches = BackgroundTasks()
+    corps = TicketCreate(
+        titre="Nouveau code de l'ascenseur",
+        description=SECRET,
+        categorie=categorie,
+        partager_whatsapp=True,
+        perimetre_cible=perimetre,
+        photos_urls=[PHOTO],
+        **champs,
+    )
+    return crud.create_ticket(corps, taches, session=s, user=cs), taches
+
+
+# ── À la création ───────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("categorie", ["panne", "entretien", "espaces_verts"])
+def test_une_affaire_reservee_ne_part_qu_avec_son_titre(contexte, categorie):
+    """L'incident : « Réservé au périmètre » coché, le groupe lisait tout."""
+    s, cs, batiments = contexte
+    _lu, taches = _creer(s, cs, categorie, [f"bat:{batiments[0]}"], reserve_perimetre=True)
+    texte, _image, ampute = _recu(taches)
+    assert "Nouveau code de l'ascenseur" in texte, "le titre part"
+    assert SECRET not in texte, "la description d'une affaire réservée a fui sur le groupe"
+    assert ampute, "la photo ne doit pas partir non plus (`message_sans_contenu`)"
+
+
+def test_une_actualite_reservee_ne_part_qu_avec_son_titre(contexte):
+    s, cs, batiments = contexte
+    _lu, taches = _creer(s, cs, "actualite", [f"bat:{batiments[0]}"], reserve_perimetre=True)
+    texte, _image, _ampute = _recu(taches)
+    assert "Nouveau code de l'ascenseur" in texte
+    assert SECRET not in texte
+
+
+@pytest.mark.parametrize("categorie", ["panne", "actualite"])
+@pytest.mark.parametrize("du_batiment", [False, True])
+def test_case_decochee_le_message_part_en_entier(contexte, categorie, du_batiment):
+    """Le cas zéro : la case NON cochée ne change rien, bâtiment ou résidence.
+
+    « Quand la case est cochée, et uniquement dans ce cas » (22/10/2026).
+    """
+    s, cs, batiments = contexte
+    _lu, taches = _creer(s, cs, categorie, [f"bat:{batiments[0]}"] if du_batiment else [])
+    texte, image, ampute = _recu(taches)
+    assert SECRET in texte
+    assert not ampute and image == PHOTO
+
+
+# ── Une Suite ───────────────────────────────────────────────────────────────
+
+
+def _suite(s, cs, ticket_id) -> str:
+    taches = BackgroundTasks()
+    corps = TicketEvolutionCreate(type="commentaire", contenu=SUITE, partager_whatsapp=True)
+    evolutions.add_evolution(ticket_id, corps, taches, session=s, user=cs)
+    return _recu(taches)[0]
+
+
+@pytest.mark.parametrize(
+    ("categorie", "champs"),
+    [("panne", {"reserve_perimetre": True}), ("actualite", {"reserve_perimetre": True})],
+)
+def test_la_suite_d_une_affaire_reservee_ne_part_qu_avec_son_titre(contexte, categorie, champs):
+    s, cs, batiments = contexte
+    lu, _ = _creer(s, cs, categorie, [f"bat:{batiments[0]}"], **champs)
+    texte = _suite(s, cs, lu.id)
+    assert SUITE not in texte, "la Suite d'une affaire réservée a fui sur le groupe"
+    assert f"/tickets/{lu.id}" in texte, "le lien de la fiche, pour qui peut la lire"
+
+
+# ── L'aperçu montre ce qui partira ──────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("categorie", "champs"),
+    [("panne", {"reserve_perimetre": True}), ("actualite", {"reserve_perimetre": True})],
+)
+def test_l_apercu_d_une_affaire_reservee_montre_le_message_ampute(contexte, categorie, champs):
+    s, cs, batiments = contexte
+    brouillon = apercu.BrouillonTicket(
+        titre="Nouveau code de l'ascenseur",
+        description=SECRET,
+        categorie=categorie,
+        partager_whatsapp=True,
+        perimetre_cible=[f"bat:{batiments[0]}"],
+        **champs,
+    )
+    rendu = apercu.apercu_diffusion(brouillon, session=s, user=cs)
+    (wa,) = [c for c in rendu.canaux if c.canal == "whatsapp"]
+    assert SECRET not in wa.texte, "l'aperçu montrait la description qui, elle, allait partir"
+    assert wa.ampute and not wa.avec_photo
+
+
+# ── Une seule porte ─────────────────────────────────────────────────────────
+
+TICKETS = Path(__file__).resolve().parents[1] / "app" / "routers" / "tickets"
+PORTE = "groupe.py"
+
+
+def test_une_affaire_ne_se_diffuse_que_par_diffuser_l_affaire():
+    """Trois points d'envoi, dont un seul transmettait la réserve : il n'en reste qu'un.
+
+    Un appel direct à `diffuser` depuis le paquet des affaires est refusé hors de
+    la porte — c'est par là que la réserve s'oubliait.
+    """
+    fautifs = []
+    for chemin in sorted(TICKETS.glob("*.py")):
+        if chemin.name == PORTE:
+            continue
+        for noeud in ast.walk(ast.parse(chemin.read_text(encoding="utf-8"))):
+            if isinstance(noeud, ast.Call):
+                nom = getattr(noeud.func, "id", None) or getattr(noeud.func, "attr", None)
+                if nom == "diffuser":
+                    fautifs.append(f"{chemin.name}:{noeud.lineno}")
+    assert not fautifs, (
+        "Une affaire part sur le groupe par `diffuser_l_affaire` (tickets/groupe.py), "
+        f"qui seule applique la réserve : {fautifs}"
+    )
+    porte = (TICKETS / PORTE).read_text(encoding="utf-8")
+    assert "diffuser(" in porte and "contenu_hors_du_groupe(" in porte, "témoin : la porte sert"
+
+
+# ── Le hall, lu par tout le monde, suit la même règle (22/10/2026) ──────────
+
+
+@pytest.mark.parametrize(
+    ("categorie", "reservee", "au_hall"),
+    [("panne", True, False), ("panne", False, True), ("entretien", True, False)],
+)
+def test_une_affaire_reservee_ne_se_reprend_pas_au_hall(contexte, categorie, reservee, au_hall):
+    """Arbitré par l'utilisateur : une affaire réservée n'a pas d'affiche de hall.
+
+    Le hall n'a aucun contrôle d'accès ; la reprise (`sources_disponibles`, que
+    `prefill_source` relit) suit donc `contenu_hors_du_groupe`, cas zéro compris.
+    """
+    from app.utils.sources_affiche import sources_disponibles
+
+    s, cs, batiments = contexte
+    lu, _ = _creer(s, cs, categorie, [f"bat:{batiments[0]}"], reserve_perimetre=reservee)
+    reprenables = {source.cle() for source in sources_disponibles(s)}
+    assert (f"ticket:{lu.id}" in reprenables) is au_hall
+
+
+@pytest.mark.parametrize("categorie", ["panne", "actualite"])
+def test_une_diffusion_restreinte_n_est_jamais_une_affiche(contexte, categorie):
+    """Arbitré par l'utilisateur : « une diffusion restreinte ne peut être une affiche hall ».
+
+    Des destinataires choisis autres que « Tous » réduisent le message du groupe
+    au titre ; la même affaire ne se reprend donc pas au hall, même sur toute la
+    résidence. Une règle, deux lieux lus par tous.
+    """
+    from app.utils.sources_affiche import sources_disponibles
+
+    s, cs, _batiments = contexte
+    lu, taches = _creer(s, cs, categorie, [], public_cible=["copropriétaires"])
+    _texte, _image, ampute = _recu(taches)
+    assert ampute, "le groupe reçoit le message restreint"
+    assert f"ticket:{lu.id}" not in {source.cle() for source in sources_disponibles(s)}
