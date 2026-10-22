@@ -301,7 +301,7 @@
 		padding: 0.4rem 0.6rem;
 		border-radius: 6px;
 		font-size: var(--fs-md);
-		background: color-mix(in srgb, var(--color-bg-card) 90%, var(--color-border));
+		background: color-mix(in srgb, var(--color-surface) 90%, var(--color-border));
 		flex-wrap: wrap;
 	}
 	.frise-compact-info {

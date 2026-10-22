@@ -394,7 +394,7 @@
 		object-fit: contain;
 		border-radius: var(--radius);
 		border: 1px solid var(--color-border);
-		background: var(--color-bg-alt, #f5f5f5);
+		background: var(--color-neutre-fond);
 	}
 	.pj-docs {
 		display: flex;
@@ -409,7 +409,7 @@
 		padding: 0.2rem 0.5rem;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
-		background: var(--color-bg-alt, #f5f5f5);
+		background: var(--color-neutre-fond);
 		color: var(--color-primary);
 		font-size: var(--fs-md);
 		text-decoration: none;

@@ -2027,6 +2027,14 @@ jobs:
         working-directory: front
         run: npm run lint:charte-valeurs
 
+      # `var(--color-bg-subtle)` sans définition nulle part : la propriété retombe
+      # à sa valeur initiale sans un mot — la FAQ et la frise des contrats avaient
+      # perdu leur fond — et un repli sur un tel nom est une couleur en dur
+      # déguisée (#1571, 22/10/2026).
+      - name: Une variable CSS employée est définie
+        working-directory: front
+        run: npm run lint:variables-css
+
       # 495 attributs `style="…"` statiques dans les écrans, dont quarante dans
       # un seul onglet sans aucune feuille (#1329, 28/09/2026). Plafond
       # décroissant : il refuse d'en ajouter, et d'oublier de le baisser.

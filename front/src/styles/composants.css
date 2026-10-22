@@ -188,7 +188,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 @media (hover: hover) and (pointer: fine) {
 	.btn-icon:hover,
 	.btn-icon-edit:hover {
-		background: var(--color-bg-hover, #f3f4f6);
+		background: var(--color-bg);
 		color: var(--color-text);
 	}
 }

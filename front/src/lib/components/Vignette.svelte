@@ -40,7 +40,7 @@
 		border-radius: var(--radius);
 		overflow: hidden;
 		border: 1px solid var(--color-border);
-		background: var(--color-bg-alt, #f5f5f5);
+		background: var(--color-neutre-fond);
 	}
 	.vignette img {
 		width: 100%;

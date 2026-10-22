@@ -45,7 +45,7 @@
 		padding: 0.2rem 0.45rem;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
-		background: var(--color-bg-alt, #f5f5f5);
+		background: var(--color-neutre-fond);
 		font-size: var(--fs-sm);
 	}
 	/*  Le préfixe en tête, gris et compact : il se lit d'un coup d'œil sans voler

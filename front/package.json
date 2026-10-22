@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.11.0",
+	"version": "3.11.1",
 	"private": true,
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
@@ -108,6 +108,7 @@
 		"lint:options-en-double": "node scripts/check-options-en-double.mjs --selftest && node scripts/check-options-en-double.mjs",
 		"lint:mouvement": "node scripts/check-mouvement.mjs --selftest && node scripts/check-mouvement.mjs",
 		"lint:charte-valeurs": "node scripts/check-charte-valeurs.mjs --selftest && node scripts/check-charte-valeurs.mjs",
+		"lint:variables-css": "node scripts/check-variables-css.mjs --selftest && node scripts/check-variables-css.mjs",
 		"lint:styles-en-ligne": "node scripts/check-styles-en-ligne.mjs --selftest && node scripts/check-styles-en-ligne.mjs",
 		"lint:pastilles": "node scripts/check-pastilles.mjs --selftest && node scripts/check-pastilles.mjs",
 		"lint:manuel-pastilles": "node scripts/check-manuel-pastilles.mjs",
