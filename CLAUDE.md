@@ -568,6 +568,11 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       résidence offrait le crayon au conseil, le `PATCH` exigeait l'administrateur : 403,
       #2096). Un geste neuf se déclare dans `GESTES` de 🔒
       `test_ecran_offre_ce_que_la_route_permet.py`
+- [ ] Ce que l'écran MONTRE est ce qui PART : une case ou une section rendue a son
+      champ dans la charge, et un droit d'écran (`peutDiffuser`, `peutCibler`…) a un
+      défaut **fermé** — « Répondre » montrait Périmètre, Destinataires et Diffusion
+      qu'aucune route n'emportait (#2142). Une case de formulaire neuve se déclare
+      dans 🔒 `e2e/case-montree-charge-envoyee.spec.ts`, qui lit la requête
 - [ ] Onglet réservé à un rôle : `reserve:` **sur l'onglet** dans `pages.ts`, jamais
       un masquage écrit dans la page — `BarreOnglets` masque ET refuse la route
       directe (`npm run lint:onglets-reserves`)
