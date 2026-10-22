@@ -84,8 +84,15 @@ def _condition_resolue(fonction: ast.AST, test: ast.AST) -> str:
 #  contrôle l'a signalé tout seul le jour du renommage — « le contrôle a perdu
 #  sa portée » —, au lieu de passer au vert sur des envois qu'il ne voyait plus.
 #  `diffuser_l_affaire` : la porte de toute affaire vers le groupe depuis le
-#  22/10/2026 (`tickets/groupe.py`) — `diffuser(` ne la reconnaît pas.
-_ENVOIS = ("_partager_sur_le_groupe", "envoyer_whatsapp", "diffuser(", "diffuser_l_affaire(")
+#  22/10/2026 (`tickets/groupe.py`) — `diffuser(` ne la reconnaît pas ;
+#  `diffuser_le_sondage`, celle d'un sondage, le même jour (`sondages/groupe.py`).
+_ENVOIS = (
+    "_partager_sur_le_groupe",
+    "envoyer_whatsapp",
+    "diffuser(",
+    "diffuser_l_affaire(",
+    "diffuser_le_sondage(",
+)
 
 
 def _gardes_des_envois(fonction: ast.AST) -> list[str]:

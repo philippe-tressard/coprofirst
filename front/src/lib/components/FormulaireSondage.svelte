@@ -42,7 +42,8 @@
 	} from '$lib/api';
 	import { messageErreur } from '$lib/erreurs';
 	import { toast } from '$lib/components/Toast.svelte';
-	import { perimetreDefautListe } from '$lib/perimetres';
+	import { estPerimetreParDefaut, perimetreDefautListe } from '$lib/perimetres';
+	import { diffusionCiblee } from '$lib/destinataires';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 
 	//  Ce que le serveur rend, tel quel (#1572) ; la page recharge sa liste.
@@ -95,6 +96,10 @@
 			];
 	let perimetreCible: string[] = [...(sondage?.perimetre_cible ?? perimetreDefautListe())];
 	let publicCible: string[] = [...(sondage?.public_cible ?? ['résidents'])];
+	//  Ce que le groupe reçoit (22/10/2026) : un sondage n'est lu que de sa cible,
+	//  donc ciblé, il n'y part qu'avec sa question, son périmètre et le lien —
+	//  la règle de l'envoi, `sondage_hors_du_groupe`, que l'aide doit dire.
+	$: horsDuGroupe = !estPerimetreParDefaut(perimetreCible) || diffusionCiblee(publicCible);
 	let partagerWhatsapp = false;
 	let envoyerSyndic = false;
 	let envoyerCs = false;
@@ -338,6 +343,9 @@
 			descriptionPlaceholder="Description du sondage…"
 			avecDiffusion={sectionPresente(SONDAGE, etat, 'diffusion')}
 			bind:whatsapp={partagerWhatsapp}
+			aideWhatsapp={horsDuGroupe
+				? 'Le groupe est commun à toute la copropriété : ce sondage étant ciblé, le message portera la question et le périmètre, avec un lien vers l’application — jamais la description.'
+				: 'Le message est publié sur le groupe WhatsApp, avec la description du sondage.'}
 			bind:syndic={envoyerSyndic}
 			bind:cs={envoyerCs}
 			bind:auteur={envoyerAuteur}

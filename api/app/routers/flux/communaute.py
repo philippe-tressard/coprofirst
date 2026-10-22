@@ -14,7 +14,7 @@ from app.models.core import Idee, OptionSondage, PetiteAnnonce, Sondage, VoteIde
 from app.utils.liens import lien_element, lien_sondage
 from app.utils.montants import montant_fr
 from app.utils.photos import parse_photos
-from app.utils.visibility import sondage_accessible, sondage_clos
+from app.utils.visibility import annonce_visible, idee_visible, sondage_accessible, sondage_clos
 
 from .commun import ContexteFlux, auteur_nom, strip_html
 from .schemas import FluxItem
@@ -125,6 +125,10 @@ def _collecter_annonces(ctx: ContexteFlux) -> list[FluxItem]:
 
     cartes: list[FluxItem] = []
     for a in annonces:
+        #  Le fil lit ce que la rubrique lit (22/10/2026, #2141) : il servait
+        #  toutes les annonces, Destinataires ignorés, quand la liste les filtrait.
+        if not annonce_visible(a, ctx.user):
+            continue
         detail_parts = [_ANN_TYPE_LABELS.get(a.type_annonce, a.type_annonce)]
         if a.prix and a.type_annonce == "vente":
             detail_parts.append(montant_fr(a.prix))
@@ -180,6 +184,8 @@ def _collecter_idees(ctx: ContexteFlux) -> list[FluxItem]:
 
     cartes: list[FluxItem] = []
     for idee in idees:
+        if not idee_visible(idee, ctx.user):
+            continue
         nb_votes = ctx.session.exec(
             select(func.count(VoteIdee.id)).where(VoteIdee.idee_id == idee.id)
         ).one()

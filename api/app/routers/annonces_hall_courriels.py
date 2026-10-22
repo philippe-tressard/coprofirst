@@ -28,7 +28,7 @@ from typing import Optional
 from fastapi import BackgroundTasks
 from sqlmodel import Session
 
-from app.models.core import AnnonceHall, Utilisateur
+from app.models.core import AnnonceHall, Ticket, Utilisateur
 from app.utils import horloge
 from app.utils.annonce_hall import APERCU_MAX, date_longue, format_libelle, texte_brut
 
@@ -47,6 +47,7 @@ from app.utils.perimetres import parse_json_perimetres, perimetre_label_liste
 from app.utils.preferences_mail import Ecarte
 from app.utils.noms import contexte_personne
 from app.utils.diffusion import config_diffusion, diffuser
+from app.utils.visibility import contenu_hors_du_groupe
 
 
 def lien_affiche(annonce: AnnonceHall) -> str | None:
@@ -177,6 +178,21 @@ def _envoyer_email_annonce(
     return emails
 
 
+def reserve_de_l_affiche(session: Session, annonce: AnnonceHall) -> tuple[Optional[str], bool]:
+    """Le public visé et la réserve d'une affiche, pour le groupe — lus sur l'objet.
+
+    Une affiche est faite pour le hall, lu de tous : elle n'a pas de réserve
+    propre. Tirée d'une affaire, elle porte celle de l'affaire — que
+    `sources_disponibles` refuse de reprendre si elle est réservée, mais qu'un
+    appel direct à l'API pourrait encore nommer ; le groupe n'en reçoit alors que
+    le titre (22/10/2026). L'envoi et son aperçu la lisent ici.
+    """
+    source = session.get(Ticket, annonce.ticket_id) if annonce.ticket_id else None
+    if source is None:
+        return None, False
+    return source.public_cible, contenu_hors_du_groupe(source)
+
+
 def _partager_sur_le_groupe(
     annonce: AnnonceHall, background_tasks: BackgroundTasks, session: Session
 ) -> bool:
@@ -200,12 +216,15 @@ def _partager_sur_le_groupe(
     if cfg is None:
         return False
     perimetres = parse_json_perimetres(annonce.perimetre_cible)
+    public_cible, confidentiel = reserve_de_l_affiche(session, annonce)
     diffuser(
         background_tasks,
         cfg,
         annonce.titre,
         texte_brut(annonce.message),
         perimetre_cible=",".join(perimetres) if perimetres else None,
+        public_cible=public_cible,
+        confidentiel=confidentiel,
         lien=lien_affiche(annonce),
     )
     return True

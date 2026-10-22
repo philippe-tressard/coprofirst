@@ -57,6 +57,7 @@ from .annonces_hall_courriels import (
     destinataires_annonce,
     ecartes_annonce,
     lien_affiche,
+    reserve_de_l_affiche,
 )
 
 router = APIRouter()
@@ -163,6 +164,7 @@ def apercu_diffusion_annonce(
 
     # ── Groupe WhatsApp ──────────────────────────────────────────────────────
     if brouillon.partager_whatsapp:
+        public_cible, confidentiel = reserve_de_l_affiche(session, annonce)
         canaux.append(
             apercu_whatsapp(
                 session,
@@ -175,6 +177,9 @@ def apercu_diffusion_annonce(
                 #  l'affiche — arbitré le 01/09/2026, cf. `_partager_sur_le_groupe`.
                 photo=None,
                 lien=lien_affiche(annonce),
+                #  La règle de l'envoi (`_partager_sur_le_groupe`), lue au même endroit.
+                public_cible=public_cible,
+                confidentiel=confidentiel,
             )
         )
 
