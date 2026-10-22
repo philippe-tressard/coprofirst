@@ -205,11 +205,6 @@ NOTIONS: tuple[Notion, ...] = (
         f"Admin › {G_COPROPRIETE} › Identité ; Ma résidence",
         "table `copropriete` (+ `config_site.site_nom`)",
         ("PATCH", "/copropriete"),
-        ecart=(
-            "Ma résidence offre la modification à tout le conseil syndical (`isCS`), "
-            "mais la route est réservée à l'administrateur : un membre du CS qui "
-            "enregistre reçoit un refus (#2096)."
-        ),
     ),
     Notion(
         "perimetres",
