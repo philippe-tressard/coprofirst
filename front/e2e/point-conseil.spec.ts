@@ -257,11 +257,19 @@ test('ouvrir un point, puis saisir le compte rendu d’une affaire', async ({ pa
 	const editeur = page.locator('.saisie-cr .tiptap');
 	await editeur.click();
 	await editeur.pressSequentially('Le syndic relance l’entreprise.');
+	//  La case qui RESTREINT la lecture du compte rendu part dans la charge
+	//  (#2144 : une case montrée est une case envoyée — `case-montree-charge-envoyee`).
+	const caseConseil = page.locator('.saisie-cr').getByRole('checkbox', { name: /CS et présents/ });
+	await caseConseil.check();
+	await expect(caseConseil).toBeChecked();
 	await page.locator('.saisie-cr').getByRole('button', { name: 'Enregistrer' }).click();
 
 	await expect
 		.poll(() => envois.map((e) => e.quoi))
 		.toContain('PUT /api/points-conseil/5/affaires/31');
+	expect(
+		envois.find((e) => e.quoi === 'PUT /api/points-conseil/5/affaires/31')?.corps,
+	).toMatchObject({ conseil_seul: true, brouillon: false });
 	await expect(page.locator('.saisie-cr')).toHaveCount(0);
 	await expect(page.locator('table.affaires .cr')).toContainText('CR saisi');
 	const global = page.getByRole('region', { name: 'Compte rendu du point' });
