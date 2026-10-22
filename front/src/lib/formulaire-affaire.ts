@@ -233,14 +233,15 @@ export function chargeUtileAffaire(
 		});
 	} else {
 		//  Une affaire suivie : son état, ses options et ses Destinataires — vides
-		//  quand le conseil n'a rien changé à ceux de sa nature (#1343) ; l'Accès
-		//  d'une actualité est effacé s'il en venait.
+		//  quand le conseil n'a rien changé à ceux de sa nature (#1343) — et sa
+		//  réserve au périmètre, cochable depuis le 22/10/2026 (elle était
+		//  montrée cochée mais partait `false` : la case ne protégeait rien).
 		//  ⚠️ Une actualité repassée en suivi porte encore `publie`, que le
 		//  serveur refuse à une affaire suivie (422) : elle repart « Ouvert ».
 		Object.assign(charge, optionsVersTicket(s.options), {
 			statut: s.statut === 'publie' ? 'ouvert' : s.statut,
 			public_cible: s.publicCible,
-			reserve_perimetre: false,
+			reserve_perimetre: s.reservePerimetre,
 		});
 	}
 	return charge;
@@ -264,7 +265,6 @@ export function pertesAuChangement(avant: Ticket, apres: SaisieAffaire): string[
 	//  Le public visé n'est plus perdu (#1343) : une affaire a ses Destinataires,
 	//  et ceux que l'écran montre sont ceux qui partent.
 	if (etait === 'actualite') {
-		if (avant.reserve_perimetre) pertes.push('la réserve au périmètre (🔒)');
 		if (avant.suivi_actualite) pertes.push('le suivi de l’actualité');
 	} else {
 		pertes.push('l’état de suivi');
@@ -287,7 +287,6 @@ export function pertesAuChangement(avant: Ticket, apres: SaisieAffaire): string[
  * les lecteurs sans qu'un seul Destinataire ait bougé.
  */
 export function changementDeLecture(avant: Ticket, apres: SaisieAffaire): string | null {
-	const actualite = natureDe(apres.categorie) === 'actualite';
 	const ancienne = titreLecture(lectureDuTicket(avant));
 	const nouvelle = titreLecture(
 		lectureDe({
@@ -295,7 +294,7 @@ export function changementDeLecture(avant: Ticket, apres: SaisieAffaire): string
 			confidentiel: apres.options.brouillon,
 			publicCible: apres.publicCible,
 			perimetreRestreint: perimetreRestreint(apres.perimetreCible),
-			reservePerimetre: actualite && apres.reservePerimetre,
+			reservePerimetre: apres.reservePerimetre,
 		}),
 	);
 	return ancienne === nouvelle ? null : `« ${ancienne} » → « ${nouvelle} »`;

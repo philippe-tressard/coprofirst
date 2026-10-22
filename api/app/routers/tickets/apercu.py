@@ -73,7 +73,7 @@ from app.utils.categories_ticket import ticket_urgent
 from app.utils.nature_affaire import est_actualite, statut_pour
 from app.utils.perimetres import perimetre_cible_json
 from app.utils.recuperer import ou_404
-from app.utils.visibility import reservee_au_conseil
+from app.utils.visibility import contenu_hors_du_groupe, reservee_au_conseil
 
 router = APIRouter()
 
@@ -114,6 +114,9 @@ class BrouillonTicket(BaseModel):
     #  parle — Destinataires = « Conseil syndical » seul, et rien ne sort.
     urgente: bool = False
     public_cible: Optional[list[str]] = None
+    #  🔒 « Réservé au périmètre » d'une actualité : sans lui, l'aperçu montrait
+    #  la description entière d'une actualité réservée (22/10/2026).
+    reserve_perimetre: bool = False
 
 
 #  🔴 Les deux schémas et les deux assembleurs viennent de `app/utils/
@@ -147,6 +150,7 @@ def _ticket_previsionnel(brouillon: BrouillonTicket, auteur: Utilisateur) -> Tic
         else None,
         auteur_id=auteur.id,
         perimetre_cible=perimetre_cible_json(brouillon.perimetre_cible),
+        reserve_perimetre=brouillon.reserve_perimetre,
         photos_urls=photos_json(brouillon.photos_urls),
         fichiers_urls=photos_json(brouillon.fichiers_urls),
         destinataire_syndic=brouillon.destinataire_syndic,
@@ -289,6 +293,9 @@ def apercu_diffusion(
                 perimetre=ticket.perimetre_cible,
                 photo=photo,
                 lien=lien,
+                #  La règle de l'envoi (`groupe.diffuser_l_affaire`), lue au même endroit.
+                public_cible=ticket.public_cible,
+                confidentiel=contenu_hors_du_groupe(ticket),
             )
         )
 

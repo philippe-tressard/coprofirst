@@ -367,7 +367,9 @@ def _partager_sur_le_groupe(
     résidents, il n'est pas ouvert à l'auteur d'un ticket quelconque.
     """
     from app.utils.fichiers import est_image
-    from app.utils.diffusion import config_diffusion, diffuser
+    from app.utils.diffusion import config_diffusion
+
+    from .groupe import diffuser_l_affaire
 
     wa_config = config_diffusion(session)
     if wa_config is None:
@@ -376,13 +378,13 @@ def _partager_sur_le_groupe(
     #  sur une fuite ou une dégradation, c'est elle qui porte l'information. Les
     #  documents joints ne partent pas — le bridge n'envoie qu'une image.
     premiere_photo = next((u for u in parse_photos(ticket.photos_urls) if est_image(u)), None)
-    diffuser(
+    diffuser_l_affaire(
         background_tasks,
         wa_config,
+        ticket,
         f"🎫 {ticket.titre}",
         ticket.description,
         urgente=ticket_urgent(ticket),
-        perimetre_cible=ticket.perimetre_cible,
         image_url=premiere_photo,
     )
 
