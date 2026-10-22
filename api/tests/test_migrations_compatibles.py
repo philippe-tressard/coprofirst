@@ -71,8 +71,8 @@ CONTRACTIONS: dict[str, tuple[str, str]] = {
     ),
     "diagnostic_rapport.fichier_chemin": ("2.142.7", "même règle que le document (#1816)"),
     "annonce_hall.pdf_chemin": ("2.142.7", "même règle que le document (#1816)"),
-    #  Réglages écrits ou déclarés, jamais lus (#2059) : le code cesse d'en dépendre en v3.11.0,
-    #  la 0307 donne un défaut aux colonnes NOT NULL, la 0308 les retire (#2124).
+    #  Réglages écrits ou déclarés, jamais lus (#2059) : le code cesse d'en dépendre, la 0307
+    #  donne un défaut aux colonnes NOT NULL ; le retrait vient dans une version ultérieure.
     "config_sauvegarde.frequence": (
         "3.11.0",
         "la sauvegarde est quotidienne depuis la 0139, rien ne lisait la fréquence (#2059)",
