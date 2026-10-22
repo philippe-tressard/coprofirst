@@ -113,7 +113,7 @@ mindmap
 
 ## Écarts connus
 
-- **Fiche de la copropriété** (Admin › 🏢 Copropriété › Identité ; Ma résidence) — Ma résidence offre la modification à tout le conseil syndical (`isCS`), mais la route est réservée à l'administrateur : un membre du CS qui enregistre reçoit un refus (#2096).
+_Aucun écart connu entre un écran et sa route._
 
 ## Les clés de `config_site`
 

@@ -560,6 +560,11 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 - [ ] Droits : jamais recomposés dans un écran — `$isCS` (il **inclut** admin),
       `$isProprioOuCS`, `aRole(u, …)`, `peutEditer`/`peutCommenter`. Ils l'étaient
       **22 fois** avant #1041 (`npm run lint:droits` le refuse)
+- [ ] Un geste d'écriture n'est offert qu'aux rôles que sa route accepte : le prédicat de
+      l'écran ne peut pas être plus large que la dépendance de la route (la fiche de la
+      résidence offrait le crayon au conseil, le `PATCH` exigeait l'administrateur : 403,
+      #2096). Un geste neuf se déclare dans `GESTES` de 🔒
+      `test_ecran_offre_ce_que_la_route_permet.py`
 - [ ] Onglet réservé à un rôle : `reserve:` **sur l'onglet** dans `pages.ts`, jamais
       un masquage écrit dans la page — `BarreOnglets` masque ET refuse la route
       directe (`npm run lint:onglets-reserves`)
