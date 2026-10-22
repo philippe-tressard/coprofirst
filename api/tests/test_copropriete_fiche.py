@@ -31,7 +31,6 @@ l'enregistrement — n'a pas disparu avec le champ.
 from datetime import date
 
 import pytest
-from sqlalchemy import text
 from sqlmodel import Session, SQLModel, select
 
 from app.database import engine
@@ -192,22 +191,11 @@ def test_l_assurance_affichee_vient_du_CONTRAT_pas_des_colonnes(copro):
 def test_sans_contrat_la_fiche_n_invente_rien(copro):
     """Aucun contrat : la ligne se masque, comme le faisait un champ texte vide.
 
-    ⚠️ Et surtout : elle ne retombe PAS sur les colonnes héritées, que le modèle ne
-    déclare plus (#2059) mais que la base peut encore porter une version. Le test
-    écrit donc une ancienne saisie par SQL, hors du modèle.
+    Les anciennes colonnes de saisie (`assurance_compagnie`…) ont quitté le modèle
+    (#2059) puis la base (0308, #2124) : il n'y a plus d'ancienne saisie sur laquelle
+    retomber, seulement le contrat.
     """
     with Session(engine) as session:
-        #  Une base NEUVE n'a plus la colonne (le schéma vient des modèles) : on la rend à
-        #  la base de test, comme une installation d'avant #2059 la porte encore.
-        session.exec(
-            text("alter table copropriete add column if not exists assurance_compagnie varchar")
-        )
-        session.exec(
-            text(
-                "update copropriete set assurance_compagnie = 'ANCIEN ASSUREUR' where id = :i"
-            ).bindparams(i=copro)
-        )
-        session.commit()
         lu = copropriete_lue(session, session.get(Copropriete, copro))
     assert lu.assurance_compagnie is None
 
