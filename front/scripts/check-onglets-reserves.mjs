@@ -101,6 +101,19 @@ const RESERVES = [
 			"le registre et le contact des administrateurs d'installation ne regardent que " +
 			"l'opérateur de la plateforme (§4.11, règle 7) — jamais l'administrateur de copropriété",
 	},
+	{
+		//  21/10/2026 (#2062) : le bloc « Installation » quitte Maintenance pour son
+		//  onglet. Le serveur le refusait déjà à l'administrateur de copropriété ;
+		//  Maintenance, elle, reste ouverte aux deux (`ouvertOperateur`).
+		page: 'admin',
+		onglet: 'installation',
+		predicat: 'operateur',
+		routeurApi: 'api/app/routers/admin/installation.py',
+		dependance: 'require_operateur',
+		pourquoi:
+			"le rôle, la version et l'inscription au registre de l'installation sont la " +
+			"supervision de l'opérateur de la plateforme (#1750) — jamais celle de l'administrateur",
+	},
 	//  18/10/2026 (#2075) : la Communauté s'ouvre au syndic et au mandataire pour
 	//  son SEUL onglet Avis. Les trois autres leur restent fermés — le serveur
 	//  refuse par `exiger_acces` (le profil), l'écran masque et redirige vers l'Avis.

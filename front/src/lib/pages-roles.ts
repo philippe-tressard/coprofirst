@@ -96,12 +96,19 @@ export const PAGES_ROLES: PageDef[] = [
 		//  être renommés et décrits dans « Descriptif pages » comme ceux des autres
 		//  pages. L'adresse reste `?onglet=` (« sauf admin ») ; cette liste fait foi
 		//  pour `admin/+page.svelte`, qui n'en tient plus de seconde.
+		//
+		//  🔴 RANGÉS PAR NIVEAU depuis le 21/10/2026 (#2062, maquette validée) : six
+		//  groupes, un par question — qui sont les gens, quoi charger, comment la
+		//  copropriété est réglée, quels services tournent, comment le site se
+		//  présente, comment tourne le serveur. `BarreOnglets` rend une rangée de
+		//  GROUPES, puis les onglets du groupe actif. Une clé retirée (`site`,
+		//  `import_*`) reste servie : `$lib/admin-adresses`.
 		onglets: [
 			{
 				id: 'a_traiter',
 				route: '/admin',
 				label: 'À traiter',
-				groupe: '👥 Gestion utilisateurs',
+				groupe: '👥 Personnes',
 				descriptif:
 					"Ce qui attend un geste de l'administrateur : comptes à valider, commandes d'accès, demandes de modification de profil.",
 			},
@@ -109,126 +116,130 @@ export const PAGES_ROLES: PageDef[] = [
 				id: 'utilisateurs',
 				route: '/admin?onglet=utilisateurs',
 				label: 'Utilisateurs',
-				groupe: '👥 Gestion utilisateurs',
+				groupe: '👥 Personnes',
 				descriptif: 'Tous les comptes : statut, bâtiment, rôles, modification et suppression.',
-			},
-			{
-				id: 'telemetry',
-				route: '/admin?onglet=telemetry',
-				label: 'Télémétrie',
-				groupe: '👥 Gestion utilisateurs',
-				descriptif:
-					"Statistiques d'utilisation : qui utilise quoi, et quand — par jour, sur 30 jours, sur 12 mois ou par année.",
-			},
-			{
-				id: 'emails',
-				route: '/admin?onglet=emails',
-				label: 'Modèles e-mail',
-				groupe: '👥 Gestion utilisateurs',
-				descriptif:
-					"Le texte et la mise en page de chaque courriel envoyé par le site, avec l'historique des envois.",
-			},
-			{
-				id: 'import_lots',
-				route: '/admin?onglet=import_lots',
-				label: 'Import Lots',
-				groupe: '👥 Gestion utilisateurs',
-				descriptif:
-					'Importer la liste des lots et de leurs copropriétaires depuis un tableur du syndic.',
-			},
-			{
-				id: 'import_tc',
-				route: '/admin?onglet=import_tc',
-				label: 'Import TC',
-				groupe: '👥 Gestion utilisateurs',
-				descriptif: 'Importer le parc de télécommandes et le rapprocher des lots.',
-			},
-			{
-				id: 'import_vigik',
-				route: '/admin?onglet=import_vigik',
-				label: 'Import Vigik',
-				groupe: '👥 Gestion utilisateurs',
-				descriptif: 'Importer le parc de badges Vigik et le rapprocher des lots.',
 			},
 			{
 				id: 'audit_lots',
 				route: '/admin?onglet=audit_lots',
 				label: 'Audit lots',
-				groupe: '👥 Gestion utilisateurs',
+				groupe: '👥 Personnes',
 				descriptif:
 					'Les associations entre comptes et lots, pour repérer et retirer les affectations erronées.',
 			},
 			{
-				id: 'services',
-				route: '/admin?onglet=services',
-				label: 'Services',
-				groupe: '⚙️ Configuration',
+				id: 'telemetry',
+				route: '/admin?onglet=telemetry',
+				label: 'Télémétrie',
+				groupe: '👥 Personnes',
 				descriptif:
-					"Les services de la copropriété sur un seul écran : ce qui est activé, ce qu'on perd en le coupant, et le lien vers ses réglages.",
+					"Statistiques d'utilisation : qui utilise quoi, et quand — par jour, sur 30 jours, sur 12 mois ou par année.",
 			},
 			{
-				id: 'site',
-				route: '/admin?onglet=site',
-				label: 'Paramétrage site',
-				groupe: '⚙️ Configuration',
-				descriptif: 'Les réglages généraux du site.',
+				id: 'imports',
+				route: '/admin?onglet=imports',
+				label: 'Imports',
+				groupe: '📥 Imports',
+				descriptif:
+					'Charger un tableur du syndic — lots et copropriétaires, télécommandes ou badges Vigik — et le rapprocher des lots.',
 			},
 			{
 				id: 'copropriete',
 				route: '/admin?onglet=copropriete',
-				label: 'Fiche copropriété',
-				groupe: '⚙️ Configuration',
-				descriptif: "L'identité et les références de la copropriété.",
+				label: 'Identité',
+				groupe: '🏢 Copropriété',
+				descriptif: "L'identité et les références de la copropriété : nom, adresse, logo, syndic.",
 			},
 			{
 				id: 'perimetres',
 				route: '/admin?onglet=perimetres',
 				label: 'Périmètres',
-				groupe: '⚙️ Configuration',
+				groupe: '🏢 Copropriété',
 				descriptif: "L'arborescence des bâtiments et des espaces que l'on peut viser.",
 			},
 			{
-				id: 'pages',
-				route: '/admin?onglet=pages',
-				label: 'Descriptif pages',
-				groupe: '⚙️ Configuration',
+				id: 'fonctionnement',
+				route: '/admin?onglet=fonctionnement',
+				label: 'Fonctionnement',
+				groupe: '🏢 Copropriété',
 				descriptif:
-					"L'icône, le libellé de menu, le titre, la description et les onglets de chaque page, et leur ordre dans le menu.",
+					'Les délais d’archivage et de relance, le gestionnaire du site et les alertes qu’il reçoit.',
 			},
 			{
 				id: 'legal',
 				route: '/admin?onglet=legal',
 				label: 'Pages légales',
-				groupe: '⚙️ Configuration',
+				groupe: '🏢 Copropriété',
 				descriptif: 'Les mentions légales et la politique de confidentialité.',
+			},
+			{
+				id: 'services',
+				route: '/admin?onglet=services',
+				label: 'Services',
+				groupe: '🔌 Services',
+				descriptif:
+					"Les services de la copropriété sur un seul écran : ce qui est activé, ce qu'on perd en le coupant, et le lien vers ses réglages.",
+			},
+			{
+				id: 'smtp',
+				route: '/admin?onglet=smtp',
+				label: 'Courriel',
+				groupe: '🔌 Services',
+				descriptif: "L'envoi des courriels et la relève des réponses par courriel.",
 			},
 			{
 				id: 'whatsapp',
 				route: '/admin?onglet=whatsapp',
 				label: 'WhatsApp',
-				groupe: '⚙️ Configuration',
+				groupe: '🔌 Services',
 				descriptif:
 					'Le canal de diffusion de la résidence : connexion du groupe et pied des messages.',
-			},
-			{
-				id: 'smtp',
-				route: '/admin?onglet=smtp',
-				label: 'SMTP',
-				groupe: '⚙️ Configuration',
-				descriptif: "L'envoi des courriels et la relève des réponses par courriel.",
 			},
 			{
 				id: 'ia',
 				route: '/admin?onglet=ia',
 				label: 'Assistant IA',
-				groupe: '⚙️ Configuration',
+				groupe: '🔌 Services',
 				descriptif: "Le fournisseur, la clé et le réglage de chaque usage de l'assistant.",
+			},
+			{
+				id: 'pages',
+				route: '/admin?onglet=pages',
+				label: 'Menu et pages',
+				groupe: '🎨 Présentation',
+				descriptif:
+					"L'icône, le libellé de menu, le titre, la description et les onglets de chaque page, et leur ordre dans le menu.",
+			},
+			{
+				id: 'connexion',
+				route: '/admin?onglet=connexion',
+				label: 'Connexion et pied de page',
+				groupe: '🎨 Présentation',
+				descriptif: 'Le sous-titre de la page de connexion, et ce que dit le pied de chaque page.',
+			},
+			{
+				id: 'emails',
+				route: '/admin?onglet=emails',
+				label: 'Modèles e-mail',
+				groupe: '🎨 Présentation',
+				descriptif:
+					"Le texte et la mise en page de chaque courriel envoyé par le site, avec l'historique des envois.",
+			},
+			{
+				id: 'installation',
+				route: '/admin?onglet=installation',
+				label: 'Installation',
+				groupe: '🛠 Exploitation',
+				descriptif:
+					'Cette installation : son rôle, sa version, son inscription au registre et son bail.',
+				reserve: 'operateur',
+				ouvertOperateur: true,
 			},
 			{
 				id: 'maintenance',
 				route: '/admin?onglet=maintenance',
 				label: 'Maintenance',
-				groupe: '⚙️ Configuration',
+				groupe: '🛠 Exploitation',
 				descriptif: 'Les tâches automatiques, leur historique et leur déclenchement manuel.',
 				ouvertOperateur: true,
 			},
@@ -236,7 +247,7 @@ export const PAGES_ROLES: PageDef[] = [
 				id: 'installations',
 				route: '/admin?onglet=installations',
 				label: 'Installations',
-				groupe: '⚙️ Configuration',
+				groupe: '🛠 Exploitation',
 				descriptif:
 					'Les installations CoproFirst inscrites au registre de la référence : leur état, leur contrat, leurs services.',
 				reserve: 'operateur',

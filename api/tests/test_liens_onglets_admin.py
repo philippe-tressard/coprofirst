@@ -15,7 +15,15 @@ autre écran que celui annoncé, sans une erreur nulle part.
 ## Ce qu'il vérifie
 
 Toute écriture `/admin?onglet=<clé>` — notifications et modèles d'e-mail côté
-API, liens côté front — nomme un onglet que la table des pages déclare pour `admin` (`pages-roles.ts`).
+API, liens côté front — nomme un onglet que la table des pages déclare pour `admin` (`pages-roles.ts`),
+ou une ANCIENNE clé que la page redirige (`front/src/lib/admin-adresses.ts`).
+
+## L'exception du rangement par niveau (#2062, 21/10/2026)
+
+Contrairement aux clés d'« À traiter », celles retirées ce jour-là (`site`,
+`import_*`) sont redirigées : le modèle « télécommandes rapprochées » porte
+`import_tc`, et réécrire un modèle exige une migration (`test_fragments_identiques`)
+pour un lien que la redirection sert déjà, à vie — la table ne se vide jamais.
 """
 
 from __future__ import annotations
@@ -27,6 +35,7 @@ from tests.aides_sources import modules_app
 
 RACINE = pathlib.Path(__file__).resolve().parents[2]
 TABLE_PAGES = RACINE / "front" / "src" / "lib" / "pages-roles.ts"
+ANCIENNES = RACINE / "front" / "src" / "lib" / "admin-adresses.ts"
 FRONT = RACINE / "front" / "src"
 
 LIEN = re.compile(r"/admin\?onglet=([A-Za-z0-9_-]+)")
@@ -43,6 +52,17 @@ def _onglets_declares() -> set[str]:
     return cles
 
 
+def _anciennes_cles_servies() -> set[str]:
+    """Les clés d'avant le rangement que `+page.ts` redirige (`ANCIENNES_CLES_ADMIN`)."""
+    source = ANCIENNES.read_text(encoding="utf-8")
+    bloc = re.search(r"ANCIENNES_CLES_ADMIN[^=]*= \{(.*?)\};", source, re.S)
+    assert bloc, f"la table ANCIENNES_CLES_ADMIN est introuvable dans {ANCIENNES}"
+    cles = set(re.findall(r"^\t([a-z_]+): 'onglet=", bloc.group(1), re.M))
+    #  Cas zéro : la clé que porte le modèle de courriel doit y être lue.
+    assert "import_tc" in cles, f"lecture des anciennes clés suspecte : {cles}"
+    return cles
+
+
 def _liens() -> list[tuple[str, str]]:
     trouves = [(f"api/app/{m.rel}", cle) for m in modules_app() for cle in LIEN.findall(m.source)]
     for chemin in sorted(FRONT.rglob("*")):
@@ -53,7 +73,7 @@ def _liens() -> list[tuple[str, str]]:
 
 
 def test_chaque_lien_vise_un_onglet_declare():
-    onglets = _onglets_declares()
+    onglets = _onglets_declares() | _anciennes_cles_servies()
     liens = _liens()
     #  Cas zéro : trois liens connus (rattachement, import TC, audit des lots).
     assert len(liens) >= 3, f"{len(liens)} lien(s) `/admin?onglet=` trouvés : la lecture a changé"

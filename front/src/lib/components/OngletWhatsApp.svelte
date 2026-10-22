@@ -6,7 +6,7 @@
 	//  impose de découper le fichier quand on y touche. L'onglet est autonome
 	//  (son état, ses appels, son rendu) ; seul le pied de message reste au
 	//  parent, parce qu'il vit dans la configuration du site partagée avec
-	//  l'onglet « Paramétrage site ».
+	//  les onglets Fonctionnement et Connexion (« Paramétrage site » avant #2062).
 	import { onMount } from 'svelte';
 	import {
 		config as configApi,

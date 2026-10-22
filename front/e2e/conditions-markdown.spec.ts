@@ -56,7 +56,7 @@ test('le formulaire d’inscription montre les conditions mises en forme, sans H
 			return { version: 1, empreinte: 'abc', texte: TEXTE };
 		return undefined;
 	});
-	await page.goto('/admin?onglet=maintenance');
+	await page.goto('/admin?onglet=installation');
 	await page.getByRole('button', { name: 'Inscrire l’installation' }).click();
 
 	const boite = page.getByRole('region', { name: 'Conditions d’inscription, version 1' });

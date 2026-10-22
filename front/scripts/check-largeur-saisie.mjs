@@ -22,7 +22,7 @@
  * 🔴 **Six écrans n'ont pas suivi cette généralisation**, parce qu'ils n'employaient
  * pas la classe : elle ne pouvait pas les atteindre.
  *
- *     OngletSite      600px  (form-grid) ·  600px  (form-actions)
+ *     OngletFonctionnement 600px  (form-grid) ·  600px  (form-actions)
  *     EnteteSyndic    580px
  *     espace-cs       460px
  *     residence       700px

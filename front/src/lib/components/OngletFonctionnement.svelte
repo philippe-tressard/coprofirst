@@ -1,13 +1,15 @@
 <!--
-  L'onglet **Paramétrage site** de l'administration.
+  L'onglet **Copropriété › Fonctionnement** de l'administration : les délais, le
+  gestionnaire du site et les alertes qu'il reçoit.
 
-  ## Pourquoi il existe (#513)
+  ## Pourquoi il existe (#513, puis #2062)
 
-  Sept onglets d'administration étaient déjà des composants ; celui-ci vivait
-  encore dans `admin/+page.svelte`. Le garde-fou de modularité a refusé d'y
-  ajouter le second délai d'archivage — et il disait vrai : une page de 1 500
-  lignes qui porte encore un onglet entier n'a pas un problème de taille, elle a
-  un problème de découpage (#453).
+  Né « Paramétrage site » (#513), extrait d'`admin/+page.svelte` que le garde-fou
+  de modularité refusait de faire grossir. Le rangement par niveau (21/10/2026)
+  l'a scindé : ce qui règle la VIE de la copropriété reste ici ; ce qui règle la
+  PRÉSENTATION — sous-titre de connexion, pied de page — est parti dans
+  `OngletConnexion`, et le logo comme l'adresse publique dans l'Identité
+  (`OngletCopropriete`). `?onglet=site` mène ici (`$lib/admin-adresses`).
 
   ## Ce qui reste chez le parent
 
@@ -21,8 +23,6 @@
 	import { nomAffiche } from '$lib/noms';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { ConfigSite, SectionSite } from '$lib/configSite';
-	import ChampLogo from '$lib/components/ChampLogo.svelte';
-	import ReglagePiedDePage from '$lib/components/ReglagePiedDePage.svelte';
 
 	/** Lié : la page porte l'état et l'enregistre. */
 	export let siteConfig: ConfigSite;
@@ -33,31 +33,8 @@
 </script>
 
 <section class="card config-section">
-	<h2 class="config-section-title"><Icon name="settings" size={17} />Paramètres généraux</h2>
+	<h2 class="config-section-title"><Icon name="settings" size={17} />Fonctionnement</h2>
 	<div class="form-grid largeur-saisie">
-		<!--  Le nom de la résidence ne se saisit plus ici (#2056) : une seule source,
-		      la Fiche copropriété. Ce renvoi évite de le chercher à son ancienne place. -->
-		<p class="aide">
-			Le <strong>nom de la résidence</strong> se saisit dans
-			<a href="/admin?onglet=copropriete">Fiche copropriété</a>.
-		</p>
-		<ChampLogo />
-		<label class="field">
-			URL publique
-			<!--  Dérivée, jamais saisie (#2058) : l'adresse de l'installation. -->
-			<input type="url" value={siteConfig.url} readonly />
-			<span class="aide"
-				>L’adresse de l’installation, celle des liens des courriels et des pages légales&nbsp;: elle
-				ne se règle pas ici.</span
-			>
-		</label>
-		<label class="field champ-double">
-			E-mail administrateur
-			<input type="email" bind:value={siteConfig.email_admin} placeholder="admin@example.com" />
-			<span class="aide"
-				>Adresse de secours utilisée si aucun utilisateur gestionnaire du site n'est sélectionné.</span
-			>
-		</label>
 		<label class="field champ-double">
 			Gestionnaire du site (administrateur)
 			<select bind:value={siteConfig.site_manager_user_id}>
@@ -72,13 +49,11 @@
 			>
 		</label>
 		<label class="field champ-double">
-			Sous-titre de la page de connexion
-			<input
-				type="text"
-				bind:value={siteConfig.login_sous_titre}
-				placeholder="Votre espace numérique de résidence"
-			/>
-			<span class="aide">Affiché sous le nom du site sur la page de connexion.</span>
+			E-mail administrateur
+			<input type="email" bind:value={siteConfig.email_admin} placeholder="admin@example.com" />
+			<span class="aide"
+				>Adresse de secours utilisée si aucun utilisateur gestionnaire du site n'est sélectionné.</span
+			>
 		</label>
 		<!--  🔴 UN SEUL délai, pour tout le site (#515). Il y en avait TROIS : deux
           affichés ici — dont un qui ne concernait plus qu'un statut devenu
@@ -144,19 +119,13 @@
 	<div class="form-actions largeur-saisie">
 		<button
 			class="btn btn-primary"
-			on:click={() => saveSiteConfig('generaux')}
+			on:click={() => saveSiteConfig('fonctionnement')}
 			disabled={siteSaving}
 		>
 			{siteSaving ? 'Enregistrement…' : 'Enregistrer'}
 		</button>
 	</div>
 </section>
-
-<ReglagePiedDePage
-	bind:reglage={siteConfig.pied_de_page}
-	{siteSaving}
-	saveSiteConfig={() => saveSiteConfig('pied_de_page')}
-/>
 
 <style>
 </style>

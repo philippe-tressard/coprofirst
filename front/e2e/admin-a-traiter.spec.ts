@@ -7,7 +7,7 @@
  *  simulée, et vérifie ce que l'administrateur voit : la pastille de l'onglet
  *  additionne les trois files, la première section qui a quelque chose à
  *  montrer s'ouvre seule, en ouvrir une autre la replie (accordéon), et la
- *  Télémétrie est rangée sous « Gestion utilisateurs ».
+ *  Télémétrie est rangée sous « Personnes » (groupes depuis #2062).
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
 
@@ -40,7 +40,7 @@ test('Admin › À traiter : trois sections en accordéon, Télémétrie en gest
 
 	const onglet = page.locator('.tab-btn', { hasText: 'À traiter' });
 	await expect(onglet).toHaveClass(/active/);
-	await expect(onglet.locator('.badge-count')).toHaveText('3');
+	await expect(onglet.locator('.signal')).toHaveText('3');
 
 	const entete = (titre: string) => page.locator('.sr-entete', { hasText: titre });
 	//  Les comptes sont vides : c'est la section suivante, la première qui a
@@ -63,18 +63,18 @@ test('Admin › À traiter : trois sections en accordéon, Télémétrie en gest
 	await entete('Demandes de profil').click();
 	await expect(page.locator('.sr-entete[aria-expanded="true"]')).toHaveCount(0);
 
-	//  Les anciens onglets ont disparu, la Télémétrie a changé de groupe.
-	const gestion = page.locator('.tabs-group', { hasText: 'Gestion utilisateurs' });
-	await expect(gestion.locator('.tab-btn', { hasText: 'Télémétrie' })).toHaveCount(1);
-	const configuration = page.locator('.tabs-group', { hasText: 'Configuration' });
-	await expect(configuration.locator('.tab-btn', { hasText: 'Télémétrie' })).toHaveCount(0);
+	//  Les anciens onglets ont disparu ; la Télémétrie est dans la rangée du
+	//  groupe actif, « Personnes » (#2062).
+	await expect(page.locator('.groupe[aria-current="true"]')).toContainText('Personnes');
+	await expect(page.locator('.tab-btn', { hasText: 'Télémétrie' })).toHaveCount(1);
 	for (const ancien of ['Comptes en attente', "Commandes d'accès", 'Demandes profil']) {
 		await expect(page.locator('.tab-btn', { hasText: ancien })).toHaveCount(0);
 	}
 
 	//  Les onglets sont déclarés dans la table des pages (01/10/2026) : chacun est
 	//  une adresse, et son descriptif s'affiche sous les rangées.
-	await gestion.locator('.tab-btn', { hasText: 'Modèles e-mail' }).click();
+	await page.locator('.groupe', { hasText: 'Présentation' }).click();
+	await page.locator('.tab-btn', { hasText: 'Modèles e-mail' }).click();
 	await expect(page).toHaveURL(/\/admin\?onglet=emails$/);
 	await expect(page.locator('.tab-descriptif')).toContainText('chaque courriel envoyé par le site');
 
@@ -82,7 +82,8 @@ test('Admin › À traiter : trois sections en accordéon, Télémétrie en gest
 	await page.goto('/admin?onglet=pages');
 	await page.locator('.page-row-btn', { hasText: 'Paramétrage' }).click();
 	const cartes = page.locator('.onglet-card');
-	//  19 depuis l'onglet « Installations » du registre (#1880).
+	//  19 depuis l'onglet « Installations » du registre (#1880) — et toujours 19
+	//  après le rangement par niveau (#2062) : quatre partis, quatre venus.
 	await expect(cartes).toHaveCount(19);
 	await expect(cartes.first().locator('input').first()).toHaveValue('À traiter');
 

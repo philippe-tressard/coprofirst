@@ -1,6 +1,6 @@
 /**
  * Le PIED DE PAGE de l'application — ses éléments, et ceux que l'administration
- * peut masquer (Admin › Site, 08/10/2026).
+ * peut masquer (Admin › Présentation › Connexion et pied de page, 08/10/2026).
  *
  * ## Ce qui se stocke : les éléments MASQUÉS, jamais les affichés
  *
@@ -16,7 +16,7 @@
  * valeur lue, quelle que soit la configuration en base (une saisie directe par
  * l'API compte aussi). Le pied de page n'a donc pas à les tester un par un.
  * Le composant d'affichage est `PiedDePage.svelte`, celui du réglage est
- * `ReglagePiedDePage.svelte` (Admin › Site).
+ * `ReglagePiedDePage.svelte` (Admin › Présentation › Connexion et pied de page).
  *
  * ## L'année et le texte libre (arbitrés à l'écran, 08/10/2026)
  *

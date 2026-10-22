@@ -442,7 +442,7 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   écran s'y ajoute. **Une clé n'appartient qu'à UN onglet, et un bouton
   n'enregistre que son onglet** (#2057) : le paramétrage du site s'écrit section
   par section (`configSite.ECRIVAINS`). Le nom de la résidence n'a qu'une source,
-  `site_nom`, saisie dans la Fiche copropriété (#2056). 🔒
+  `site_nom`, saisie dans Copropriété › Identité (#2056). 🔒
   `test_reglages_liste_blanche.py` lit aussi les charges du front : une clé non
   déclarée, ou une charge qui écrit deux onglets, échoue en CI.
 - **Un jeton se stocke par son empreinte, jamais en clair** — rafraîchissement,

@@ -1,5 +1,5 @@
 <!--
-  Le réglage du PIED DE PAGE, dans Admin › Site.
+  Le réglage du PIED DE PAGE, dans Admin › Présentation › Connexion et pied de page.
 
   La marque — logo et nom de la résidence — est fixe, au cadenas : elle signe
   la carte (maquette A, 15/10/2026). Puis une liste par place de la carte,
