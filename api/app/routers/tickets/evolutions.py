@@ -374,7 +374,9 @@ def add_evolution(
         #  décide de l'envoi, le précédent pouvant être franchi par le syndic
         #  ou le CS seuls.
         if partage_whatsapp:
-            from app.utils.diffusion import config_diffusion, diffuser
+            from app.utils.diffusion import config_diffusion
+
+            from .groupe import diffuser_l_affaire
 
             wa_config = config_diffusion(session)
             if wa_config is not None:
@@ -388,13 +390,13 @@ def add_evolution(
                     suite_enregistree=True,
                     fichiers_urls=body.fichiers_urls,
                 )
-                diffuser(
+                diffuser_l_affaire(
                     background_tasks,
                     wa_config,
+                    ticket,
                     suite.titre,
                     suite.contenu,
                     urgente=suite.urgente,
-                    perimetre_cible=ticket.perimetre_cible,
                     image_url=suite.photo,
                     lien=suite.lien,
                 )

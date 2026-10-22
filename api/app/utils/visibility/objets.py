@@ -20,9 +20,10 @@ from app.models.core import (
     TypeEvenement,
     Utilisateur,
 )
-from app.utils.perimetres import parse_perimetres
+from app.utils.perimetres import a_portee_globale, parse_perimetres
 
 from .socle import (
+    _codes_json_pour_acces,
     _parse_json_list,
     cible_visible,
     perimetre_visible,
@@ -346,6 +347,34 @@ def hors_du_hall(ticket: Ticket) -> bool:
     publierait au mur ce que l'autre refuse.
     """
     return reservee_au_conseil(ticket) or bool(ticket.reserve_perimetre)
+
+
+def contenu_hors_du_groupe(ticket: Ticket) -> bool:
+    """Le groupe de la résidence ne reçoit-il que le titre et le lien de cette affaire ?
+
+    Le groupe est lu par TOUS les résidents : le contenu n'y part que si tous
+    peuvent le lire. Création, Suite et aperçu le demandent ici, par
+    `tickets/groupe.diffuser_l_affaire` — trois points d'envoi, dont un seul
+    transmettait la réserve, ont laissé partir un code d'accès (22/10/2026).
+
+    - 🔒 « Réservé au périmètre » coché (une actualité) ;
+    - une affaire SUIVIE dont le périmètre n'est pas global : elle n'est lue que
+      dans son périmètre (`ticket_visible`), et l'écran le montre coché et
+      verrouillé (`TICKET_CONFIDENTIEL_ACQUIS`). Une actualité, elle, s'adresse à
+      la copropriété et son périmètre n'est qu'un accent (#339) ;
+    - un périmètre illisible : une donnée abîmée ne peut que restreindre (#789).
+
+    Le public visé (`public_cible`) est jugé à côté, par le canal
+    (`message_sans_contenu`), à qui l'appelant le transmet.
+    """
+    if ticket.reserve_perimetre:
+        return True
+    if est_actualite(ticket):
+        return False
+    codes = _codes_json_pour_acces(ticket.perimetre_cible)
+    if codes is None:
+        return True
+    return bool(codes) and not a_portee_globale(codes)
 
 
 # ── Règles Communauté : petite annonce et idée ────────────────────────────────

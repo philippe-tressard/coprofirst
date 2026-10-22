@@ -50,6 +50,7 @@ from .socle import (
 from .objets import (
     annonce_visible,
     can_see_ag,
+    contenu_hors_du_groupe,
     evenement_visible,
     hors_du_hall,
     idee_visible,

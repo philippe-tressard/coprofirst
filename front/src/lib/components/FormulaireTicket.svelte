@@ -255,6 +255,7 @@
 			categorie,
 			urgente: options.urgente,
 			public_cible: publicCible,
+			reserve_perimetre: actualite && reservePerimetre,
 			perimetre_cible: perimetreCible,
 			photos_urls: photosUrls,
 			fichiers_urls: fichiersUrls,
