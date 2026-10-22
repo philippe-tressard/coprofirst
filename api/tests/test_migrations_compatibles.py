@@ -74,21 +74,21 @@ CONTRACTIONS: dict[str, tuple[str, str]] = {
     #  Réglages écrits ou déclarés, jamais lus (#2059) : le code cesse d'en dépendre, la 0307
     #  donne un défaut aux colonnes NOT NULL ; le retrait vient dans une version ultérieure.
     "config_sauvegarde.frequence": (
-        "3.10.0",
+        "3.11.0",
         "la sauvegarde est quotidienne depuis la 0139, rien ne lisait la fréquence (#2059)",
     ),
-    "config_sauvegarde.jour_semaine": ("3.10.0", "même règle que la fréquence (#2059)"),
-    "config_sauvegarde.jour_mois": ("3.10.0", "même règle que la fréquence (#2059)"),
+    "config_sauvegarde.jour_semaine": ("3.11.0", "même règle que la fréquence (#2059)"),
+    "config_sauvegarde.jour_mois": ("3.11.0", "même règle que la fréquence (#2059)"),
     "modele_email.corps_texte": (
-        "3.10.0",
+        "3.11.0",
         "le texte brut d'un modèle n'a jamais servi à l'envoi (#2059)",
     ),
     "copropriete.assurance_compagnie": (
-        "3.10.0",
+        "3.11.0",
         "la fiche lit l'assurance sur le contrat depuis #490 ; la colonne ne sert plus (#2059)",
     ),
-    "copropriete.assurance_numero_police": ("3.10.0", "même règle (#2059)"),
-    "copropriete.assurance_echeance": ("3.10.0", "même règle (#2059)"),
+    "copropriete.assurance_numero_police": ("3.11.0", "même règle (#2059)"),
+    "copropriete.assurance_echeance": ("3.11.0", "même règle (#2059)"),
 }
 
 #: Les gestes qui retirent quelque chose à l'ancien code.
