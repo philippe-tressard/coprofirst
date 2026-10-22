@@ -258,6 +258,20 @@ ci_dependances_etat() {    # $1 = verdict du vérificateur → "" (mesurable) | 
   esac
 }
 
+# ── Les fichiers du répertoire `scripts` de Python à exposer (#2112) ─────────
+#  `rejouer-ci.sh` met en tête de PATH les scripts que pip y a écrits (`pytest`,
+#  `ruff`…). Jamais l'INTERPRÉTEUR : c'est lui qui a désigné ce répertoire, il est
+#  donc déjà le premier du PATH. Sous Git Bash, `ln -s` COPIE ; le `python.exe`
+#  d'un venv est un lanceur qui cherche `pyvenv.cfg` à côté de lui, et sa copie
+#  répondait « failed to locate pyvenv.cfg » à chaque appel du rejeu : 163 étapes
+#  INCONNU et deux FAIL de `test-scripts`, le 21/10/2026. (PURE)
+ci_script_a_exposer() {    # $1 = nom · $2 = fichier|lien · $3 = exécutable oui|non → oui|non
+  local nom="${1,,}"
+  nom="${nom%.exe}"
+  [ "${2:-}" = fichier ] && [ "${3:-}" = oui ] || { echo non; return; }
+  [[ "$nom" =~ ^pythonw?[0-9.]*$ ]] && echo non || echo oui
+}
+
 # ── Les tests SAUTÉS d'une étape, nommés (#1734, 08/10/2026) ────────────────
 #  Le rejeu rendait « Run pytest — OK » sur un lot qui cassait deux tests de rendu
 #  PDF : ils portent `@besoin_weasyprint`, et WeasyPrint ne s'installe pas sur le
@@ -386,6 +400,18 @@ YAML
   #  🔴 Le cas zéro : un vérificateur qui n'a rien dit ne vaut pas un « aligné ».
   t "dépendances — muet : jamais mesurable" \
     "$(ci_dependances_etat '')" "dépendances du poste non vérifiables : vérificateur muet"
+  #  #2112 : l'interpréteur ne s'expose jamais — copié, le lanceur d'un venv perd son pyvenv.cfg.
+  t "exposer — script pip (pytest.exe)"    "$(ci_script_a_exposer pytest.exe fichier oui)" "oui"
+  t "exposer — script pip sans extension"  "$(ci_script_a_exposer ruff fichier oui)" "oui"
+  t "exposer — python.exe d'un venv"       "$(ci_script_a_exposer python.exe fichier oui)" "non"
+  t "exposer — pythonw.exe d'un venv"      "$(ci_script_a_exposer pythonw.exe fichier oui)" "non"
+  t "exposer — Python.exe (casse Windows)" "$(ci_script_a_exposer Python.exe fichier oui)" "non"
+  t "exposer — python3.12 sous Linux"      "$(ci_script_a_exposer python3.12 fichier oui)" "non"
+  t "exposer — python3-config reste un script" "$(ci_script_a_exposer python3-config fichier oui)" "oui"
+  t "exposer — lien posé par un autre (node)"  "$(ci_script_a_exposer node lien oui)" "non"
+  t "exposer — non exécutable (activate)"  "$(ci_script_a_exposer activate fichier non)" "non"
+  t "rejouer-ci.sh — l'exposition passe par la règle" \
+    "$(grep -v '^[[:space:]]*#' scripts/poste/rejouer-ci.sh 2>/dev/null | grep -c 'ci_script_a_exposer')" "1"
 
   ci_e2e_cas   # workers, node_modules, Vite, relance (#1809) : lib-ci-e2e.sh
   ci_base_cas  # pytest et sa base PostgreSQL : lib-ci-base.sh

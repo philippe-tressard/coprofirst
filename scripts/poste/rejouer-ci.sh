@@ -162,12 +162,13 @@ esac
 #  des liens vers les seuls FICHIERS ordinaires du répertoire — ce que pip y
 #  écrit (`pytest`, `ruff`, `pip-audit`…) —, jamais les liens symboliques qu'un
 #  autre installateur y a posés. Sous Windows, où tout y est fichier, rien ne
-#  change.
+#  change — sauf l'interpréteur d'un venv, jamais exposé : `ci_script_a_exposer` (#2112).
 SCRIPTS_PY=$(python -c "import sysconfig; print(sysconfig.get_path('scripts'))" 2>/dev/null)
 if [ -n "$SCRIPTS_PY" ] && [ -d "$SCRIPTS_PY" ]; then
   SCRIPTS_PY_EXPOSES=$(mktemp -d) || exit 2
   for f in "$SCRIPTS_PY"/*; do
-    [ -f "$f" ] && [ ! -L "$f" ] && [ -x "$f" ] && ln -s "$f" "$SCRIPTS_PY_EXPOSES/"
+    [ "$(ci_script_a_exposer "${f##*/}" "$([ -f "$f" ] && [ ! -L "$f" ] && echo fichier || echo lien)" \
+      "$([ -x "$f" ] && echo oui || echo non)")" = oui ] && ln -s "$f" "$SCRIPTS_PY_EXPOSES/"
   done
   PATH="$SCRIPTS_PY_EXPOSES:$PATH" && export PATH
 fi

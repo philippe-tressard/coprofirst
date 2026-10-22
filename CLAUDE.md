@@ -862,6 +862,14 @@ pendant qu'un autre tourne : un verrou dans le répertoire git commun le refuse,
 worktrees compris. Le rejeu de #1415 avait rendu « pytest OK » sur sqlmodel
 0.0.39 pour un lot qui posait 0.0.44.
 
+Un lot qui **monte des dépendances Python** se mesure dans un **venv** en tête de
+PATH (`python -m venv …`, `pip install -r api/requirements-dev.txt`, puis
+`PATH="<venv>/Scripts:$PATH" bash scripts/poste/rejouer-ci.sh`) — jamais en
+installant ses versions dans le Python du poste, que partagent les sessions
+parallèles : leurs rejeux rendraient INCONNU jusqu'à leur rebase. Le rejeu
+n'expose pas l'interpréteur du venv (`ci_script_a_exposer`) : copié, son lanceur
+perdait `pyvenv.cfg` et tout rendait INCONNU (#2112).
+
 Sur un poste déjà chargé par d'autres sessions, le rejeu passe les e2e à **un
 seul worker** (`E2E_WORKERS`, seuil et mesure dans `rejouer-ci.sh`, règle
 `ci_workers_e2e`) : les workers s'y disputaient la machine et quatre specs
