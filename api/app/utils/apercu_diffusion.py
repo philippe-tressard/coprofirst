@@ -184,12 +184,12 @@ def apercu_whatsapp(
     *,
     titre: str,
     contenu: str,
+    public_cible: Optional[str],
+    confidentiel: bool,
     urgent: bool = False,
     perimetre: Optional[str] = None,
     photo: Optional[str] = None,
     lien: Optional[str] = None,
-    public_cible: Optional[str] = None,
-    confidentiel: bool = False,
 ) -> ApercuCanal:
     """Le message du groupe tel qu'il sera composé — ou pourquoi il ne partira pas.
 
@@ -197,6 +197,9 @@ def apercu_whatsapp(
     le groupe recevra à coup sûr* : si une photo existe mais que son encodage pour
     le bridge échoue, le message reçoit en plus « 📷 Photos à voir sur le site ».
     Cela se décide à l'envoi. La nuance est petite et réelle.
+
+    `public_cible` et `confidentiel` n'ont pas de défaut, comme ceux de `diffuser`
+    (22/10/2026) : un aperçu qui les oublie montre un contenu que l'envoi retient.
     """
     from app.utils.diffusion import config_diffusion
     from app.utils.whatsapp_message import construire_message, message_sans_contenu

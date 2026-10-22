@@ -29,9 +29,6 @@ seule porte : `contenu_hors_du_groupe` décide, `diffuser_l_affaire` l'applique.
 
 from __future__ import annotations
 
-import ast
-from pathlib import Path
-
 import pytest
 from fastapi import BackgroundTasks
 from sqlmodel import Session
@@ -184,32 +181,10 @@ def test_l_apercu_d_une_affaire_reservee_montre_le_message_ampute(contexte, cate
 
 
 # ── Une seule porte ─────────────────────────────────────────────────────────
-
-TICKETS = Path(__file__).resolve().parents[1] / "app" / "routers" / "tickets"
-PORTE = "groupe.py"
-
-
-def test_une_affaire_ne_se_diffuse_que_par_diffuser_l_affaire():
-    """Trois points d'envoi, dont un seul transmettait la réserve : il n'en reste qu'un.
-
-    Un appel direct à `diffuser` depuis le paquet des affaires est refusé hors de
-    la porte — c'est par là que la réserve s'oubliait.
-    """
-    fautifs = []
-    for chemin in sorted(TICKETS.glob("*.py")):
-        if chemin.name == PORTE:
-            continue
-        for noeud in ast.walk(ast.parse(chemin.read_text(encoding="utf-8"))):
-            if isinstance(noeud, ast.Call):
-                nom = getattr(noeud.func, "id", None) or getattr(noeud.func, "attr", None)
-                if nom == "diffuser":
-                    fautifs.append(f"{chemin.name}:{noeud.lineno}")
-    assert not fautifs, (
-        "Une affaire part sur le groupe par `diffuser_l_affaire` (tickets/groupe.py), "
-        f"qui seule applique la réserve : {fautifs}"
-    )
-    porte = (TICKETS / PORTE).read_text(encoding="utf-8")
-    assert "diffuser(" in porte and "contenu_hors_du_groupe(" in porte, "témoin : la porte sert"
+#
+#  Le contrôle « aucun appel direct à `diffuser` » couvrait le seul paquet des
+#  affaires ; il couvre tout `api/app/` depuis le sondage du même jour :
+#  `test_groupe_portes.py`.
 
 
 # ── Le hall, lu par tout le monde, suit la même règle (22/10/2026) ──────────
@@ -248,3 +223,26 @@ def test_une_diffusion_restreinte_n_est_jamais_une_affiche(contexte, categorie):
     _texte, _image, ampute = _recu(taches)
     assert ampute, "le groupe reçoit le message restreint"
     assert f"ticket:{lu.id}" not in {source.cle() for source in sources_disponibles(s)}
+
+
+@pytest.mark.parametrize(("reservee", "ampute"), [(True, True), (False, False)])
+def test_l_affiche_tiree_d_une_affaire_reservee_ne_part_qu_avec_son_titre(
+    contexte, monkeypatch, reservee, ampute
+):
+    """L'affiche porte la réserve de l'affaire dont elle est tirée — cas zéro compris.
+
+    `sources_disponibles` refuse de reprendre une affaire réservée ; un appel
+    direct à l'API pouvait encore la nommer, et le groupe recevait le message.
+    """
+    import app.routers.annonces_hall_courriels as courriels_hall
+    from app.models.core import AnnonceHall
+
+    s, cs, batiments = contexte
+    monkeypatch.setattr(courriels_hall, "config_diffusion", lambda s, *a: {})
+    lu, _ = _creer(s, cs, "actualite", [f"bat:{batiments[0]}"], reserve_perimetre=reservee)
+    annonce = AnnonceHall(titre="Nouveau code de l'ascenseur", message=SECRET, ticket_id=lu.id)
+    taches = BackgroundTasks()
+    assert courriels_hall._partager_sur_le_groupe(annonce, taches, s)
+    texte, _image, est_ampute = _recu(taches)
+    assert est_ampute is ampute
+    assert (SECRET in texte) is not ampute

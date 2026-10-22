@@ -26,8 +26,9 @@ from app.utils.archivage import est_archivable, seuil_archivage_jours
 from app.utils.reponses import enrich_reponse, tri_reponses
 from app.utils.visibility import resultats_sondage_visibles, sondage_accessible, sondage_clos
 from app.utils.config_site import config_site
-from app.utils.diffusion import config_diffusion, diffuser
+from app.utils.diffusion import config_diffusion
 
+from .groupe import diffuser_le_sondage
 from .commun import (
     SondageCreate,
     SondageRead,
@@ -234,12 +235,7 @@ def create_sondage(
         if body.partager_whatsapp:
             cfg_canal = config_diffusion(session, "reference_copro", "site_nom")
             if cfg_canal is not None:
-                diffuser(
-                    background_tasks,
-                    cfg_canal,
-                    f"📊 Nouveau sondage : {s.question}",
-                    s.description or "",
-                )
+                diffuser_le_sondage(background_tasks, cfg_canal, s)
         cfg_map = config_site(session, "reference_copro")
 
         if body.envoyer_syndic or body.envoyer_cs:
