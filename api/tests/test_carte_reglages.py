@@ -172,7 +172,9 @@ def ecrans_d_admin_inconnus(notions, ranges: set[tuple[str, str]]) -> list[str]:
             continue
         morceaux = premier.removeprefix("Admin › ").split(" › ")
         if len(morceaux) != 2 or (morceaux[0], morceaux[1]) not in ranges:
-            inconnus.append(f"{n.code} : « {premier} » n'est pas un onglet rangé par pages-roles.ts")
+            inconnus.append(
+                f"{n.code} : « {premier} » n'est pas un onglet rangé par pages-roles.ts"
+            )
     return inconnus
 
 
