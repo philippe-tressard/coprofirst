@@ -107,6 +107,7 @@ __all__ = [
     "lus_dans_toute_la_residence",
     "reservee_au_conseil",
     "hors_du_hall",
+    "contenu_hors_du_groupe",
     "CATEGORIES_ADMIN_SEUL",
     "document_visible",
     "peut_ecrire_dans",

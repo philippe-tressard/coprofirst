@@ -244,8 +244,7 @@
 		frequenceValeur,
 	} satisfies SaisieAffaire;
 
-	//  ── L'aperçu avant diffusion (#498) — il compose avec le gabarit de la
-	//  NATURE (le serveur choisit `publication_syndic` pour une actualité).
+	//  ── L'aperçu avant diffusion (#498), au gabarit de la NATURE (`publication_syndic`…).
 	let refDiffusion: SectionDiffusion | null = null;
 	const brouillonApercu = () =>
 		ticketsApi.apercuDiffusion({
