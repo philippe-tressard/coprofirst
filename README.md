@@ -23,7 +23,7 @@
 
 ## Fonctionnalités
 
-> 🌐 **Le détail de chaque fonctionnalité, et une démonstration à essayer en ligne : [coprofirst.fr](https://coprofirst.fr)** (page « Démo », comptes publics, données fictives). Le [manuel utilisateur](docs/manuel-utilisateur.html) décrit chaque écran.
+> 🌐 **Le détail de chaque fonctionnalité, et une démonstration à essayer en ligne : [coprofirst.fr](https://coprofirst.fr)** — la [page Démo](https://coprofirst.fr/demo.html) donne les comptes publics (données fictives). Le [manuel utilisateur](docs/manuel-utilisateur.html) décrit chaque écran.
 
 - **Tableau de bord** — la page d'accueil : consignes du conseil syndical, éléments épinglés, kanban des dossiers en cours et fil de l'actualité.
 - **Affaires / Demandes** — signalements, actualités et événements datés suivis par le conseil syndical, avec périmètre, destinataires et recherche libre ; une affaire close reçoit une synthèse chiffrée, rédigée par l'assistant IA puis relue par le conseil.
