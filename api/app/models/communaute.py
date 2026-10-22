@@ -171,7 +171,7 @@ class PetiteAnnonce(AssisteIAMixin, table=True):
     #  archivage d'un mois, indéfiniment, à chaque retouche. `Publication` porte
     #  le même champ (`statut_change_le`) pour exactement cette raison.
     statut_change_le: Optional[NaiveDatetime] = None
-    contact_visible: bool = True  # autoriser affichage email/prénom-nom
+    contact_visible: bool = True  # montrer l'adresse — le nom, toujours (`adresse_de_contact`)
     auteur_id: int = Field(foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     mis_a_jour_le: Optional[NaiveDatetime] = None

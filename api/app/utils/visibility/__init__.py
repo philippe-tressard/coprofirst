@@ -48,6 +48,7 @@ from .socle import (
     reserve_au_conseil,
 )
 from .objets import (
+    adresse_de_contact,
     annonce_visible,
     can_see_ag,
     contenu_hors_du_groupe,
@@ -93,6 +94,7 @@ __all__ = [
     "public_cible_visible",
     "reserve_au_conseil",
     "annonce_visible",
+    "adresse_de_contact",
     "idee_visible",
     "actualite_visible",
     "sondage_clos",
