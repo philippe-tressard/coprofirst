@@ -451,7 +451,6 @@ from app.models.documents import (  # noqa: E402
 #  Sauvegardes — `models/sauvegarde.py` depuis le 14/08/2026 (modularité).
 from app.models.sauvegarde import (  # noqa: E402,F401
     ConfigSauvegarde,
-    FrequenceSauvegarde,
     HistoriqueSauvegarde,
     StatutSauvegarde,
 )

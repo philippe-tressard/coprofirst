@@ -233,13 +233,20 @@ def list_whatsapp_logs(
     user: Utilisateur = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
-    """Retourne les 6 derniers messages WhatsApp envoyés."""
+    """Retourne les 6 derniers messages WhatsApp envoyés, avec le canal qui les reçoit.
+
+    Le « Nom du canal » (`whatsapp_group_name`, Admin › WhatsApp) est lu ICI (#2059) : il
+    était écrit par l'onglet et lu par personne. Il nomme le groupe de la résidence dans
+    le journal — le nom courant, un seul canal étant configuré.
+    """
     from app.models.core import WhatsAppLog
 
+    canal = (config_site(session, "whatsapp_group_name").get("whatsapp_group_name") or "").strip()
     rows = session.exec(select(WhatsAppLog).order_by(WhatsAppLog.envoye_le.desc()).limit(6)).all()
     return [
         {
             "id": r.id,
+            "canal": canal,
             "label": r.label,
             "message": r.message,
             "statut": r.statut,

@@ -393,24 +393,14 @@ def est_archivable(
 def seuil_archivage_jours(session: Any) -> int:
     """Le délai du site, lu **une seule fois** et au même endroit.
 
-    Repli sur `publie_visibilite_jours` tant qu'une base n'a pas reçu la
-    migration 0155 : un site à jour du code mais pas de sa configuration doit
-    continuer de se comporter comme avant.
-
-    🔴 **Et surtout pas sur `archivage_delai_heures`**, qui semble pourtant le
-    candidat naturel. Cette clé vaut 48 **heures** : s'en servir ferait basculer
-    les sept objets du site à **deux jours** au lieu de trente, du seul fait
-    d'un déploiement. Elle ne gouvernait qu'un statut de publication devenu
-    inatteignable — et la purge, qui supprime. `publie_visibilite_jours` (30 j)
-    est le seul ancien réglage qui gouvernait vraiment ce que ce délai
-    gouverne : quand un contenu quitte les listes actives.
+    `archivage_delai_jours`, sinon le défaut. Le repli sur l'ancien
+    `publie_visibilite_jours` est retiré (#2059) : la migration 0155 l'a remplacé
+    partout, personne ne l'écrit, et la base de production n'en porte aucune ligne
+    (relevé du 21/10/2026).
     """
     from app.models.core import ConfigSite  # import local : évite un cycle
 
     row = session.get(ConfigSite, "archivage_delai_jours")
     if row and str(row.valeur).isdigit():
         return int(row.valeur)
-    legacy = session.get(ConfigSite, "publie_visibilite_jours")
-    if legacy and str(legacy.valeur).isdigit():
-        return int(legacy.valeur)
     return ARCHIVAGE_DELAI_JOURS

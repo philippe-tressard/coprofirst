@@ -31,6 +31,7 @@ l'enregistrement — n'a pas disparu avec le champ.
 from datetime import date
 
 import pytest
+from sqlalchemy import text
 from sqlmodel import Session, SQLModel, select
 
 from app.database import engine
@@ -145,21 +146,14 @@ def test_les_designations_sont_bien_acceptees():
 
 
 def test_l_assurance_affichee_vient_du_CONTRAT_pas_des_colonnes(copro):
-    """Ce que la fiche montre est celui du contrat, même si les colonnes diffèrent.
+    """Ce que la fiche montre est celui du contrat.
 
-    Les trois colonnes `assurance_*` subsistent en base pour qu'un retour arrière
-    reste possible. Si la lecture retombait dessus, la fiche afficherait
-    l'ancienne saisie — donc un assureur qui n'est plus le bon, sans que rien ne
-    le signale. On les renseigne ici avec des valeurs VOLONTAIREMENT différentes
-    de celles du contrat : c'est le seul moyen de prouver laquelle est lue.
+    Les colonnes `assurance_*` ne sont plus déclarées par le modèle (#2059) : le test qui
+    les renseignait « volontairement différentes » pour prouver laquelle est lue n'a plus
+    de colonne à renseigner. Reste ce qui compte : la fiche rend la compagnie, le numéro
+    et l'échéance du CONTRAT, et l'échéance se déduit (`prochaine_visite` n'est pas lue).
     """
     with Session(engine) as session:
-        c = session.get(Copropriete, copro)
-        c.assurance_compagnie = "ANCIEN ASSUREUR"
-        c.assurance_numero_police = "VIEUX-000"
-        c.assurance_echeance = date(2020, 1, 1)
-        session.add(c)
-
         presta = Prestataire(nom="Nouvel Assureur", specialite="Assurance")
         session.add(presta)
         session.commit()
@@ -180,7 +174,7 @@ def test_l_assurance_affichee_vient_du_CONTRAT_pas_des_colonnes(copro):
 
         lu = copropriete_lue(session, session.get(Copropriete, copro))
 
-    assert lu.assurance_compagnie == "Nouvel Assureur", "la fiche lit encore la colonne"
+    assert lu.assurance_compagnie == "Nouvel Assureur"
     assert lu.assurance_numero_police == "POL-2026"
 
     #  🔴 L'échéance se DÉDUIT (`utils/echeance_contrat.py`), elle ne recopie
@@ -198,13 +192,21 @@ def test_l_assurance_affichee_vient_du_CONTRAT_pas_des_colonnes(copro):
 def test_sans_contrat_la_fiche_n_invente_rien(copro):
     """Aucun contrat : la ligne se masque, comme le faisait un champ texte vide.
 
-    ⚠️ Et surtout : elle ne retombe PAS sur les colonnes conservées. Un repli
-    silencieux les remettrait en service sans que personne ne le décide.
+    ⚠️ Et surtout : elle ne retombe PAS sur les colonnes héritées, que le modèle ne
+    déclare plus (#2059) mais que la base peut encore porter une version. Le test
+    écrit donc une ancienne saisie par SQL, hors du modèle.
     """
     with Session(engine) as session:
-        c = session.get(Copropriete, copro)
-        c.assurance_compagnie = "ANCIEN ASSUREUR"
-        session.add(c)
+        #  Une base NEUVE n'a plus la colonne (le schéma vient des modèles) : on la rend à
+        #  la base de test, comme une installation d'avant #2059 la porte encore.
+        session.exec(
+            text("alter table copropriete add column if not exists assurance_compagnie varchar")
+        )
+        session.exec(
+            text(
+                "update copropriete set assurance_compagnie = 'ANCIEN ASSUREUR' where id = :i"
+            ).bindparams(i=copro)
+        )
         session.commit()
         lu = copropriete_lue(session, session.get(Copropriete, copro))
     assert lu.assurance_compagnie is None

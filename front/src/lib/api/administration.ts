@@ -346,6 +346,8 @@ export interface MessagePlanifieWhatsApp {
 /**  Un envoi WhatsApp journalisé (`GET /config/whatsapp-logs`). */
 export interface JournalEnvoiWhatsApp {
 	id: number;
+	/** Le « Nom du canal » réglé dans Admin › WhatsApp, vide s'il n'est pas renseigné. */
+	canal: string;
 	label: string;
 	message: string;
 	statut: string;

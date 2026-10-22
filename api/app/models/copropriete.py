@@ -15,7 +15,6 @@ modules les y prennent déjà, dont `auth.py` (736 lignes) qu'une ligne d'import
 de plus ferait refuser par le même contrôle de modularité.
 """
 
-from datetime import date
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
@@ -78,11 +77,10 @@ class Copropriete(SQLModel, table=True):
     assurance_contrat_id: Optional[int] = Field(default=None, foreign_key="contrat_entretien.id")
     syndic_contrat_id: Optional[int] = Field(default=None, foreign_key="contrat_entretien.id")
 
-    #: Conservées depuis #490 pour qu'un retour arrière reste possible. RIEN ne
-    #: les lit — `copropriete_lue` les efface avant de composer sa réponse.
-    assurance_compagnie: Optional[str] = None
-    assurance_numero_police: Optional[str] = None
-    assurance_echeance: Optional[date] = None
+    #  🔴 `assurance_compagnie`, `assurance_numero_police` et `assurance_echeance` ont QUITTÉ le
+    #  modèle (#2059, premier temps) : gardées depuis #490 pour un retour arrière, rien ne les lisait.
+    #  Les colonnes (nullables) restent en base le temps d'une version — `CONTRACTIONS` annonce
+    #  leur retrait ; la fiche lit l'assurance sur le CONTRAT (`assurance_du_contrat`).
     photo_url: Optional[str] = None
     nb_parkings_communs: int = 0
 

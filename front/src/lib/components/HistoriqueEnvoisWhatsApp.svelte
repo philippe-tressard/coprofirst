@@ -41,6 +41,7 @@
 	$: entrees = journaux.map((log): EntreeJournal => ({
 		cle: log.id,
 		titre: log.label,
+		sousTitre: log.canal ? `Canal : ${log.canal}` : undefined,
 		verdict: `${icone(log.statut)} ${log.statut}`,
 		ton: ton(log.statut),
 		date: log.envoye_le,
