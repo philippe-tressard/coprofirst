@@ -452,6 +452,9 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   déclaré n'est pas la dépendance que la route prend (#2061 : la sauvegarde se
   montrait à l'opérateur et la route acceptait tout administrateur), ou si une
   variable de `Settings` n'a pas de thème.
+  **Un réglage écrivable est LU** : 🔒 `test_reglages_lus.py` refuse une clé de la liste
+  blanche que nul module de l'API ne nomme (#2059 : « Nom du canal » était écrit par
+  l'onglet et lu par personne ; le journal des envois le lit désormais).
 - **Un jeton se stocke par son empreinte, jamais en clair** — rafraîchissement,
   mot de passe oublié, vérification d'adresse : `auth/empreinte_jeton.empreinte`
   (HMAC avec `SECRET_KEY`) à l'écriture ET à la recherche ; le brut ne vit que
