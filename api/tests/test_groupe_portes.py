@@ -11,6 +11,10 @@ sondage était hors de sa portée (`standards/05` §9).
 
 Ici, la portée est tout `api/app/`, et la liste des portes se lit dans `PORTES`.
 Une porte neuve s'y ajoute — avec la règle qu'elle lit sur l'objet.
+
+Sous `diffuser`, les gestes bruts du transport (`envoyer_whatsapp_raw`…) ne
+s'appellent que dans l'adaptateur, ou pour un texte SANS objet derrière — saisi
+par l'administrateur —, déclaré dans `SANS_OBJET` (#2143).
 """
 
 from __future__ import annotations
@@ -86,3 +90,45 @@ def test_le_controle_attrape_un_appel_direct(tmp_path):
         encoding="utf-8",
     )
     assert appels_directs(tmp_path) == [("fuite.py", "partager"), ("fuite.py", "partager_bis")]
+
+
+# ── Sous `diffuser` : les gestes bruts du transport ─────────────────────────
+
+GESTES_BRUTS = {"envoyer_whatsapp_raw", "envoyer_whatsapp", "envoyer_whatsapp_avec_log"}
+
+#: L'adaptateur, qui les définit et les enchaîne.
+ADAPTATEUR = "utils/whatsapp.py"
+
+#: Appelants d'un geste brut sans objet derrière — donc sans réserve à lire.
+SANS_OBJET = {
+    "utils/whatsapp_scheduler.py": "les messages programmés, saisis par l'administrateur",
+    "routers/config.py": "le message de test, saisi par l'administrateur",
+}
+
+
+def appels_bruts(racine: Path) -> set[str]:
+    trouves = set()
+    for chemin in sorted(racine.rglob("*.py")):
+        for n in ast.walk(ast.parse(chemin.read_text(encoding="utf-8"))):
+            if isinstance(n, ast.Call):
+                nom = getattr(n.func, "id", None) or getattr(n.func, "attr", None)
+                if nom in GESTES_BRUTS:
+                    trouves.add(chemin.relative_to(racine).as_posix())
+    return trouves
+
+
+def test_les_gestes_bruts_ne_s_appellent_que_sans_objet():
+    appelants = appels_bruts(APP) - {ADAPTATEUR}
+    assert appelants <= SANS_OBJET.keys(), (
+        "Un geste brut du transport contourne la porte de son objet : "
+        f"{sorted(appelants - SANS_OBJET.keys())}"
+    )
+    assert SANS_OBJET.keys() <= appelants, "exception déclarée qui ne sert plus"
+
+
+def test_le_controle_attrape_un_geste_brut(tmp_path):
+    (tmp_path / "fuite.py").write_text(
+        "def partager(s, cfg):\n    envoyer_whatsapp_raw(s.description, cfg)\n",
+        encoding="utf-8",
+    )
+    assert appels_bruts(tmp_path) == {"fuite.py"}
