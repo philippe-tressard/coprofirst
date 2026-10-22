@@ -16,13 +16,11 @@ Les clés de la famille `llm_<usage>_<champ>` se déduisent du registre des usag
 
 from __future__ import annotations
 
-import pathlib
 import re
 
 from app.utils import reglages
 from app.utils.llm_usages import USAGES, champs
-
-_APP = pathlib.Path(__file__).resolve().parents[1] / "app"
+from tests.aides_sources import modules_app
 
 #: Les modules qui DÉCLARENT les clés : les y trouver ne dit pas qu'elles servent.
 _REGISTRES = {"reglages.py", "reglages_carte.py", "reglages_carte_rendu.py"}
@@ -39,9 +37,9 @@ def cles_sans_lecteur(cles: set[str], sources: dict[str, str]) -> list[str]:
 
 def _sources_de_l_api() -> dict[str, str]:
     return {
-        str(p.relative_to(_APP)): p.read_text(encoding="utf-8")
-        for p in _APP.rglob("*.py")
-        if p.name not in _REGISTRES and "seed" not in p.parts
+        m.rel: m.source
+        for m in modules_app()
+        if m.rel.rsplit("/", 1)[-1] not in _REGISTRES and "seed" not in m.rel.split("/")
     }
 
 

@@ -197,6 +197,11 @@ def test_sans_contrat_la_fiche_n_invente_rien(copro):
     écrit donc une ancienne saisie par SQL, hors du modèle.
     """
     with Session(engine) as session:
+        #  Une base NEUVE n'a plus la colonne (le schéma vient des modèles) : on la rend à
+        #  la base de test, comme une installation d'avant #2059 la porte encore.
+        session.exec(
+            text("alter table copropriete add column if not exists assurance_compagnie varchar")
+        )
         session.exec(
             text(
                 "update copropriete set assurance_compagnie = 'ANCIEN ASSUREUR' where id = :i"
