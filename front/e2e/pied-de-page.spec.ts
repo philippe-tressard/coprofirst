@@ -157,11 +157,11 @@ test('un élément masqué disparaît ; un élément verrouillé reste', async (
 	await expect(pied).not.toContainText(/v\d+\.\d+\.\d+/);
 });
 
-test('Admin › Site : la marque est fixe, la pastille masque l’élément dans l’aperçu', async ({
+test('Admin › Connexion et pied de page : la marque est fixe, la pastille masque l’élément dans l’aperçu', async ({
 	page,
 }) => {
 	await simulerApi(page, (chemin) => (chemin === '/api/auth/me' ? ADMIN : undefined));
-	await page.goto('/admin?onglet=site');
+	await page.goto('/admin?onglet=connexion');
 	const mentions = page.getByRole('group', { name: 'Sous le nom' });
 	const liens = page.getByRole('group', { name: 'Liens, à droite' });
 	const apercu = page.getByRole('group', { name: 'Aperçu du pied de page' });
@@ -213,9 +213,11 @@ test('l’ordre réglé vaut dans chaque place, le préfixe et l’année se lis
 	]);
 });
 
-test('Admin › Site : un lien monte et descend dans sa place, l’aperçu suit', async ({ page }) => {
+test('Admin › Connexion et pied de page : un lien monte et descend dans sa place, l’aperçu suit', async ({
+	page,
+}) => {
 	await simulerApi(page, (chemin) => (chemin === '/api/auth/me' ? ADMIN : undefined));
-	await page.goto('/admin?onglet=site');
+	await page.goto('/admin?onglet=connexion');
 	const liens = page.getByRole('group', { name: 'Liens, à droite' });
 	const apercu = page.getByRole('group', { name: 'Aperçu du pied de page' });
 	const elements = apercu.locator('.liens > .element');

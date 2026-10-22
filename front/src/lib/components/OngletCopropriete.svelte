@@ -2,11 +2,15 @@
 	/**  La référence de la copropriété chez son syndic — clé `ConfigSite`,
 	 *   remontée par la page comme le reste de la configuration. */
 	export let referenceCopro = '';
+	/**  L'adresse publique de l'installation — dérivée, jamais saisie (#2058) ; lue
+	     par la page avec le paramétrage. Montrée dans l'Identité depuis #2062. */
+	export let urlPublique = '';
 	import { onMount } from 'svelte';
 	import { config as configApi, copropriete as coproprieteApi, type Copropriete } from '$lib/api';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { nomResidenceEnregistre, siteNomStore } from '$lib/stores/pageConfig';
 	import Icon from '$lib/components/Icon.svelte';
+	import ChampLogo from '$lib/components/ChampLogo.svelte';
 	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
 	import SectionContratReference from '$lib/components/SectionContratReference.svelte';
 	import ChampsIdentiteCopropriete, {
@@ -102,7 +106,7 @@
 	}
 </script>
 
-<svelte:head><title>Admin — Fiche copropriété — {_siteNom}</title></svelte:head>
+<svelte:head><title>Admin — Identité — {_siteNom}</title></svelte:head>
 
 {#if loading || erreur}
 	<EtatListe chargement={loading} {erreur} titreErreur="Impossible d’afficher la fiche" />
@@ -115,6 +119,19 @@
 			<SectionFormulaire premiere icone="settings" titre="Identité">
 				<div class="form-grid largeur-saisie">
 					<ChampsIdentiteCopropriete bind:valeurs={form} />
+					<!--  Le logo et l'adresse publique vivaient dans « Paramétrage site » :
+					      ils disent QUI est la copropriété, ils rejoignent son identité
+					      (#2062). Le logo se téléverse seul (`ChampLogo`), l'adresse ne se
+					      saisit pas — ni l'un ni l'autre ne part avec ce formulaire. -->
+					<ChampLogo />
+					<label class="field">
+						URL publique
+						<input type="url" value={urlPublique} readonly />
+						<span class="aide"
+							>L’adresse de l’installation, celle des liens des courriels et des pages
+							légales&nbsp;: elle ne se règle pas ici.</span
+						>
+					</label>
 				</div>
 			</SectionFormulaire>
 

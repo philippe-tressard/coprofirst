@@ -442,9 +442,16 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   écran s'y ajoute. **Une clé n'appartient qu'à UN onglet, et un bouton
   n'enregistre que son onglet** (#2057) : le paramétrage du site s'écrit section
   par section (`configSite.ECRIVAINS`). Le nom de la résidence n'a qu'une source,
-  `site_nom`, saisie dans la Fiche copropriété (#2056). 🔒
+  `site_nom`, saisie dans Copropriété › Identité (#2056). 🔒
   `test_reglages_liste_blanche.py` lit aussi les charges du front : une clé non
   déclarée, ou une charge qui écrit deux onglets, échoue en CI.
+  **Qui règle quoi** se lit dans `docs/carte-reglages.md`, GÉNÉRÉE par
+  `python scripts/ci/carte_reglages.py --ecrire` depuis `utils/reglages_carte` (la
+  notion, son accès, sa route) et les registres — jamais éditée. Un réglage neuf
+  s'y déclare ; 🔒 `test_carte_reglages.py` échoue si le document diffère, si l'accès
+  déclaré n'est pas la dépendance que la route prend (#2061 : la sauvegarde se
+  montrait à l'opérateur et la route acceptait tout administrateur), ou si une
+  variable de `Settings` n'a pas de thème.
 - **Un jeton se stocke par son empreinte, jamais en clair** — rafraîchissement,
   mot de passe oublié, vérification d'adresse : `auth/empreinte_jeton.empreinte`
   (HMAC avec `SECRET_KEY`) à l'écriture ET à la recherche ; le brut ne vit que
@@ -553,6 +560,11 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 - [ ] Droits : jamais recomposés dans un écran — `$isCS` (il **inclut** admin),
       `$isProprioOuCS`, `aRole(u, …)`, `peutEditer`/`peutCommenter`. Ils l'étaient
       **22 fois** avant #1041 (`npm run lint:droits` le refuse)
+- [ ] Un geste d'écriture n'est offert qu'aux rôles que sa route accepte : le prédicat de
+      l'écran ne peut pas être plus large que la dépendance de la route (la fiche de la
+      résidence offrait le crayon au conseil, le `PATCH` exigeait l'administrateur : 403,
+      #2096). Un geste neuf se déclare dans `GESTES` de 🔒
+      `test_ecran_offre_ce_que_la_route_permet.py`
 - [ ] Onglet réservé à un rôle : `reserve:` **sur l'onglet** dans `pages.ts`, jamais
       un masquage écrit dans la page — `BarreOnglets` masque ET refuse la route
       directe (`npm run lint:onglets-reserves`)

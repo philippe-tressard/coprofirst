@@ -12,8 +12,8 @@ d'Admin qui l'écrit. Les familles dont les membres se déduisent d'un autre
 registre (usages de l'IA, interrupteurs de service, pied de page, pages) en sont
 lues, jamais recopiées. Une clé refusée l'est avec sa raison (`REFUSEES`).
 
-C'est le premier pas du registre des réglages (#2061) : la carte des réglages
-versionnée se déduira de lui.
+La carte des réglages versionnée (`docs/carte-reglages.md`, #2061) se déduit de lui et
+de `utils/reglages_carte` (qui règle quoi) : un onglet de plus s'y déclare aussi.
 """
 
 from __future__ import annotations
@@ -25,8 +25,10 @@ from app.utils.llm_usages import USAGES, champs
 from app.utils.services import CLES_ACTIVATION
 from app.utils.textes_legaux.identite import CLE_CONTACT
 
-#: Les clés écrites par l'administration, par onglet — celui qui les écrit
-#: aujourd'hui, pas celui de la réorganisation à venir (#2062).
+#: Les clés écrites par l'administration, par SECTION — une section a son bouton,
+#: et un onglet d'Admin peut en porter deux (Connexion et pied de page). Les noms
+#: suivent le rangement par niveau (#2062) : `site` a été scindé en
+#: `fonctionnement` et `connexion`.
 #:
 #: 🔴 **Une clé n'appartient qu'à UN onglet** (#2057) : quatre boutons renvoyaient
 #: la même vingtaine de clés, et `email_footer` comme `reference_copro` avaient
@@ -34,19 +36,19 @@ from app.utils.textes_legaux.identite import CLE_CONTACT
 #: `test_reglages_liste_blanche` vérifie la partition, et que chaque charge du
 #: front ne porte que les clés d'un seul onglet.
 PAR_ONGLET: dict[str, frozenset[str]] = {
-    #  Paramétrage site › Paramètres généraux (`configSite.ECRIVAINS.generaux`).
-    "site": frozenset(
+    #  Copropriété › Fonctionnement (`configSite.ECRIVAINS.fonctionnement`).
+    "fonctionnement": frozenset(
         {
             "site_email",
             "site_manager_user_id",
-            "login_sous_titre",
             "archivage_delai_jours",
             "relance_syndic_delai_jours",
             "notify_ticket_bug_email",
             "notify_new_user_created_email",
         }
     ),
-    #  Paramétrage site › Pied de page.
+    #  Présentation › Connexion et pied de page : deux sections, deux boutons.
+    "connexion": frozenset({"login_sous_titre"}),
     "pied_de_page": pied_de_page.CLES_PUBLIQUES,
     #  + l'adresse des droits sur les données, que nomment les textes légaux (#2065).
     "legal": frozenset({"mentions_legales", "politique_confidentialite", CLE_CONTACT}),
@@ -118,11 +120,13 @@ REFUSEES: dict[str, str] = {
     #  Dérivée, jamais saisie (#2058) : l'adresse de l'installation (`liens.adresse_du_site`).
     "site_url": "L'adresse du site est celle de son installation : elle ne se saisit pas.",
     #  Leurs routes portent des bornes que `PUT /config` n'appliquerait pas.
-    "consignes_arrivant": "Les consignes aux arrivants se modifient par PUT /admin/arrivants/consignes.",
+    "consignes_arrivant": "Les consignes aux arrivants se modifient par PUT /admin/consignes-arrivant.",
     "reglement_provenance": "La provenance du règlement se modifie par PUT /reglement/provenance.",
     "whatsapp_community_url": "Le lien de la communauté WhatsApp se modifie dans l'annuaire du CS.",
-    #  Une seule source pour le nom de la résidence (#2056) : la Fiche copropriété.
-    "site_nom": "Le nom de la résidence se modifie dans la Fiche copropriété (PATCH /copropriete).",
+    #  Une seule source pour le nom de la résidence (#2056) : la fiche de la copropriété.
+    "site_nom": (
+        "Le nom de la résidence se modifie dans Copropriété › Identité (PATCH /copropriete)."
+    ),
     #  Réglés périmètre par périmètre (#2060) : la liste se compose sur le serveur.
     "acces_fixes_vigik": "Les accès fixes se cochent sur chaque périmètre (PATCH /perimetres/{id}).",
     "acces_fixes_telecommande": "Les accès fixes se cochent sur chaque périmètre (PATCH /perimetres/{id}).",

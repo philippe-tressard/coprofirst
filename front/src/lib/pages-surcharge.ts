@@ -3,7 +3,7 @@
  *
  * ## 🔴 Le défaut (#1105, 21/09/2026, capture à l'appui)
  *
- * Dans **Administration → Configuration → Descriptif pages**, trois entrées
+ * Dans **Administration → Présentation → Menu et pages**, trois entrées
  * s'affichaient **sans nom** : seulement leur icône et leur descriptif.
  *
  * Elles ont pourtant toutes un `nom` dans `pages.ts`. Ce qui manquait est

@@ -8,7 +8,6 @@
   derniers écrits en ligne, et l'accueillir aurait demandé de l'agrandir.
 -->
 <script lang="ts">
-	import CarteInstallation from '$lib/components/CarteInstallation.svelte';
 	import ControleSante from '$lib/components/ControleSante.svelte';
 	import CarteConservationAffaires from '$lib/components/CarteConservationAffaires.svelte';
 	import CarteExportCopropriete from '$lib/components/CarteExportCopropriete.svelte';
@@ -18,7 +17,7 @@
 	import { isAdmin, isOperateur } from '$lib/stores/auth';
 </script>
 
-<!--  🏢 La supervision technique (installation, tâches, contrôles, base, santé)
+<!--  🏢 La supervision technique (tâches, contrôles, base, santé)
       est à l'OPÉRATEUR de la plateforme (#1750, arbitrage du 10/10/2026) : le
       serveur la refuse à l'administrateur de copropriété qui ne l'est pas. Ce
       qui reste à l'administrateur — la consommation de l'IA, l'export de sa
@@ -46,8 +45,9 @@
       de l'agrégation — est déplacé dans `TachesPlanifiees` (AIDE_TACHE), et la
       profondeur d'historique y passe de 4 à 10 : retirer les cartes sans
       compenser aurait réduit en silence ce qu'un administrateur peut voir. -->
+<!--  Le bloc « Installation » (rôle, version, inscription au registre) a son
+      onglet depuis le rangement par niveau (#2062) : Exploitation › Installation. -->
 {#if $isOperateur}
-	<CarteInstallation />
 	<TachesPlanifiees />
 	<ControlesFiabilite />
 {/if}

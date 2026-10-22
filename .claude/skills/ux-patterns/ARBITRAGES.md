@@ -561,3 +561,10 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : une question et une nuisance closes au point du 19/10/2026 n'ont pas eu de synthèse, et l'utilisateur l'a lu comme une anomalie : « la clôture d'une affaire doit lancer le traitement IA de synthèse ». Remplace « uniquement les affaires du carnet sont éligibles » (03/10/2026, #1643).
 - **Écarté** : le carnet, plus toute affaire close en point (deux règles : une même question aurait une synthèse close en point, aucune close depuis sa carte).
 - **Tenu par** : `test_synthese_eligibilite.py`, `test_points_conseil_etats.py`.
+
+### n° 75 · en vigueur — Admin rangé par niveau : six groupes, deux rangées
+21/10/2026 · #2062 · l'utilisateur, sur maquette · §4, §9
+- **Décidé** : six groupes aux noms inchangés — 👥 Personnes, 📥 Imports, 🏢 Copropriété, 🔌 Services, 🎨 Présentation, 🛠 Exploitation ; variante A : une rangée de groupes, puis les onglets du groupe actif (`BarreOnglets`) ; l'Exploitation visible de l'administrateur ET de l'opérateur, ce sont ses onglets qui se réservent (Installation et Installations à l'opérateur, Maintenance aux deux) ; un seul onglet Imports, la source en pastilles ; « Paramétrage site » scindé en Copropriété › Fonctionnement et Présentation › Connexion et pied de page ; chaque ancienne adresse `?onglet=` reste servie.
+- **Pourquoi** : dix-neuf onglets en deux rangées sans ordre de niveau ; maquette validée le 21/10/2026, avec la correction de la relecture (un groupe Exploitation caché à l'administrateur lui aurait retiré Maintenance).
+- **Écarté** : la variante B (colonne au bureau, sélecteur au téléphone : un composant neuf) ; trois onglets d'import ; l'Exploitation réservée à l'opérateur.
+- **Tenu par** : `e2e/admin-groupes.spec.ts`, `npm run lint:onglets-reserves`, `npm run lint:routes`.

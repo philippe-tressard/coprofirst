@@ -241,7 +241,7 @@ def _sommaire(releve: list[tuple[int, str, str]]) -> str:
 def identite_du_manuel(session: Session) -> dict:
     """Ce que la garde porte de l'instance — une lecture pour la route ET le préchauffage.
 
-    Le sous-titre est celui d'Admin › Site ; il était écrit en dur (08/10/2026).
+    Le sous-titre est celui d'Admin › Présentation › Connexion et pied de page ; il était écrit en dur (08/10/2026).
     """
     cfg = config_site(session, "login_sous_titre")
     return {
@@ -350,7 +350,7 @@ def generer_manuel_pdf(
         edite_le.isoformat(),
         #  Le logo est DANS le document (#1728) : un logo changé est un autre PDF.
         hashlib.sha256(logo_png).hexdigest() if logo_png else "neutre",
-        #  Le sous-titre aussi : il se règle dans Admin › Site.
+        #  Le sous-titre aussi : il se règle dans Admin › Présentation › Connexion et pied de page.
         sous_titre,
     )
     memoire = _cache()

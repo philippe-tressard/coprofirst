@@ -1137,9 +1137,9 @@ qu'elles sont déclarées dans `pages.ts`.
 Pages implémentées : `mon-lot`, Communauté (`/sondages` · `/idees` · `/annonces`),
 `espace-cs`, `calendrier`, `prestataires`. **`admin` reste sur `?onglet=`** :
 demande explicite de l'utilisateur (« sauf admin »). Ses onglets sont pourtant
-DÉCLARÉS dans la table depuis le 01/10/2026 (route `/admin?onglet=<id>`, `groupe`
-pour ses deux rangées) et rendus par `BarreOnglets` : ils se renomment et se
-décrivent dans « Descriptif pages » comme les autres.
+DÉCLARÉS dans la table depuis le 01/10/2026 (route `/admin?onglet=<id>`, `groupe`)
+et rendus par `BarreOnglets` : ils se renomment et se décrivent dans « Menu et
+pages » comme les autres.
 
 ### 🔴 4 bis. L'onglet ACTIF se voit — trois marques, pas une
 
@@ -1457,7 +1457,7 @@ veille n’avait plus d’objet, et il a disparu.
 | Ce qui fait foi | Où |
 |---|---|
 | la liste des onglets | la **table des pages**, bloc `admin` de `pages-roles.ts` — libellé, descriptif, `groupe`, route `/admin?onglet=<id>` ; la page la lit (`PAGES`) et n’en tient plus de seconde (01/10/2026) |
-| la rangée | `BarreOnglets pageId="admin"` — une rangée par `groupe`, le descriptif de l’onglet actif dessous ; libellés et descriptifs se modifient dans **Descriptif pages** |
+| les rangées | `BarreOnglets pageId="admin"` — **deux rangées** dès que la table porte plusieurs `groupe` : les groupes (des liens vers leur premier onglet ouvert, le compte rouge additionné), puis les onglets du groupe actif ; le descriptif de l’onglet actif dessous ; libellés et descriptifs se modifient dans **Menu et pages** |
 | l’ouverture directe | `/admin?onglet=perimetres` — lue dans l’adresse (`$page.url`), chaque onglet est un lien |
 | le panneau | un composant `Onglet*.svelte`, jamais du balisage dans la page |
 
@@ -1475,7 +1475,19 @@ additionne les trois, la première section non vide s’ouvre seule. Une quatri�
 file s’y ajoute comme section, jamais comme onglet. Pas de redirection des
 anciennes clés (`comptes`, `acces`, `demandes_profil`) : arbitré, les liens
 émis par l’API ont été corrigés à la place. La Télémétrie est rangée sous
-« Gestion utilisateurs ».
+« Personnes ».
+
+🔴 **Rangée par niveau en six groupes** (#2062, maquette validée le 21/10/2026,
+variante A) — 👥 Personnes · 📥 Imports · 🏢 Copropriété · 🔌 Services ·
+🎨 Présentation · 🛠 Exploitation : un groupe par question, l’ordre et le contenu
+se lisent dans la table. **Un groupe ne se réserve pas, ses onglets si** :
+l’Exploitation reste visible de l’administrateur (Maintenance, `ouvertOperateur`)
+et de l’opérateur (Installation, Installations : `reserve: 'operateur'`). Un onglet
+refusé se replie sur le premier ouvert de **son groupe**. Contrairement à « À
+traiter », les clés retirées ce jour-là (`site`, `import_*`) **sont redirigées** :
+un modèle de courriel en base porte `import_tc`, et la base n’est pas le seed —
+`$lib/admin-adresses`, une clé ne s’en retire jamais. 🔒 `e2e/admin-groupes.spec.ts`
+parcourt les dix-neuf clés d’avant, et les trois comptes.
 
 ⚠️ **Un lien vers un écran d’admin s’écrit `/admin?onglet=<clé>`.** Un modèle
 d’e-mail pointait encore vers `/admin/telecommandes-import` : `test_liens_front.py`

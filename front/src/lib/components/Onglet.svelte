@@ -42,6 +42,8 @@
   vaut `submit` et enverrait le formulaire au premier clic.
 -->
 <script lang="ts">
+	import SignalATraiter from '$lib/components/SignalATraiter.svelte';
+
 	/** Destination. Absent : l'onglet bascule un panneau au lieu de naviguer. */
 	export let href: string | null = null;
 
@@ -66,7 +68,7 @@
 		title={eteint ? 'Service coupé — il s’active dans Services' : undefined}
 	>
 		<slot />{#if eteint}<span class="sr-only"> (service coupé)</span>{/if}
-		{#if compte}<span class="badge-count">{compte}</span>{/if}
+		<SignalATraiter n={compte} />
 	</a>
 {:else}
 	<button
@@ -78,27 +80,17 @@
 		on:click
 	>
 		<slot />{#if eteint}<span class="sr-only"> (service coupé)</span>{/if}
-		{#if compte}<span class="badge-count">{compte}</span>{/if}
+		<SignalATraiter n={compte} />
 	</button>
 {/if}
 
 <style>
-	/*  `.tabs` et `.tab-btn` restent dans `app.css` : la rangée est un conteneur
-	    de l'écran, et la classe est partagée par d'autres pages qui n'utilisent
-	    pas encore ce composant. Seule la pastille de compte vient ici, avec le
-	    balisage qu'elle habille — elle était définie dans le style scopé de
-	    `admin/+page.svelte`, donc inatteignable depuis tout autre écran. */
+	/*  `.tabs` et `.tab-btn` vivent dans la feuille commune ; le compte rouge est
+	    `SignalATraiter`, partagé avec la rangée des groupes de `BarreOnglets`
+	    depuis le 21/10/2026 (#2062). */
 	/*  Grisé, pas désactivé : l'onglet d'un service coupé s'ouvre toujours. Ouvert,
 	    il reprend sa pleine couleur — on lit ce qu'on règle. */
 	.eteint:not(.active) {
 		opacity: 0.5;
-	}
-	.badge-count {
-		background: var(--color-danger);
-		color: var(--color-surface);
-		border-radius: 999px;
-		font-size: var(--fs-2xs);
-		padding: 0.1rem 0.45rem;
-		font-weight: 700;
 	}
 </style>

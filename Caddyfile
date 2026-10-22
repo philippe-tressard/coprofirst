@@ -237,6 +237,14 @@
 		reverse_proxy front:3000
 	}
 
+	# `security.txt` (RFC 9116) : la RFC exige `text/plain; charset=utf-8`, et le
+	# serveur du front pose `text/plain` seul — un fichier accentué serait lu dans
+	# le jeu de caractères que devine le client. Le contenu : `front/static/`.
+	handle /.well-known/security.txt {
+		header >Content-Type "text/plain; charset=utf-8"
+		reverse_proxy front:3000
+	}
+
 	# Frontend SvelteKit (SSR)
 	handle {
 		reverse_proxy front:3000

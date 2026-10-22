@@ -30,8 +30,10 @@
 -->
 <script lang="ts">
 	import Onglet from '$lib/components/Onglet.svelte';
+	import SignalATraiter from '$lib/components/SignalATraiter.svelte';
 	import { configStore, getPageConfig, defautsDePage } from '$lib/stores/pageConfig';
 	import { ongletsOuverts } from '$lib/onglets-ouverts';
+	import { PAGES } from '$lib/pages';
 	import { safeHtml } from '$lib/sanitize';
 	import { stripHtml } from '$lib/utils';
 	import { browser } from '$app/environment';
@@ -60,10 +62,14 @@
 	//    • `masques` — un masquage qui dépend des DONNÉES, que seule la page sait
 	//      (« Gestion locative » n'apparaît que si le lot a des baux).
 	$: onglets = ongletsOuverts(pageId, $droitsOnglet).filter((o) => !masques.includes(o.id));
-	//  Les GROUPES de la rangée (`groupe` dans la table) : une rangée nommée par
-	//  groupe, dans l'ordre de la table. Une page sans groupe n'en a qu'un, sans
-	//  nom — c'est le cas de toutes, sauf l'administration (01/10/2026), qui
-	//  écrivait ses deux rangées à la main.
+	//  Les GROUPES de la rangée (`groupe` dans la table), dans l'ordre de la
+	//  table. Une page sans groupe n'en a qu'un, sans nom — c'est le cas de
+	//  toutes, sauf l'administration.
+	//
+	//  🔴 Deux rangées depuis le 21/10/2026 (#2062, variante A de la maquette) :
+	//  les GROUPES, puis les onglets du SEUL groupe actif. L'administration en
+	//  rendait une par groupe — deux, puis six au rangement par niveau, soit six
+	//  lignes d'onglets avant le premier champ.
 	$: groupes = onglets.reduce<{ nom: string; onglets: typeof onglets }[]>((acc, o) => {
 		const nom = o.groupe ?? '';
 		const dernier = acc[acc.length - 1];
@@ -71,6 +77,14 @@
 		else acc.push({ nom, onglets: [o] });
 		return acc;
 	}, []);
+	$: groupeActif = groupes.find((g) => g.onglets.some((o) => o.id === actif)) ?? groupes[0];
+	$: rangee = groupes.length > 1 ? (groupeActif?.onglets ?? []) : onglets;
+	//  Le compte d'un groupe additionne ceux de ses onglets : « À traiter » se
+	//  voit d'un autre groupe que le sien.
+	$: compteDe = (g: { onglets: { id: string }[] }) =>
+		g.onglets.reduce((n, o) => n + (comptes[o.id] ?? 0), 0);
+	$: libelle = (o: { id: string; label: string }) =>
+		_pc.onglets?.[o.id]?.label ?? defauts.onglets?.[o.id]?.label ?? o.label;
 	$: descriptifOnglet =
 		_pc.onglets?.[actif]?.descriptif ?? defauts.onglets?.[actif]?.descriptif ?? '';
 	//  Une phrase ne se lit pas deux fois (#1369) : quand l'onglet dit mot pour mot
@@ -97,28 +111,42 @@
 	//  est renvoyé sur la fiche — l'onglet lui est refusé sur « on ne sait pas
 	//  encore ». C'est le défaut corrigé sur `/admin` le 12/08/2026, que ce
 	//  composant venait de réintroduire (#1083).
+	//  Le repli reste dans le GROUPE de l'onglet refusé quand il en a un ouvert
+	//  (#2062) : « Installations » masquée sur une réplique ramène à
+	//  l'Exploitation, pas au premier groupe de la page.
 	$: if (browser && $authResolue && onglets.length > 0 && !onglets.some((o) => o.id === actif)) {
-		goto(onglets[0].route, { replaceState: true });
+		const groupe = PAGES.find((p) => p.id === pageId)?.onglets?.find((o) => o.id === actif)?.groupe;
+		const repli = onglets.find((o) => groupe && o.groupe === groupe) ?? onglets[0];
+		goto(repli.route, { replaceState: true });
 	}
 </script>
 
-{#each groupes as g (g.nom)}
-	<div class="tabs-group">
-		{#if g.nom}<div class="tabs-group-label">{g.nom}</div>{/if}
-		<div class="tabs" role="tablist" aria-label={g.nom || undefined}>
-			{#each g.onglets as o (o.id)}
-				<Onglet
-					href={o.route}
-					actif={actif === o.id}
-					compte={comptes[o.id] ?? null}
-					eteint={eteints.includes(o.id)}
-				>
-					{_pc.onglets?.[o.id]?.label ?? defauts.onglets?.[o.id]?.label ?? o.label}
-				</Onglet>
-			{/each}
-		</div>
-	</div>
-{/each}
+{#if groupes.length > 1}
+	<!--  Un groupe est un LIEN vers son premier onglet ouvert : il se copie, et le
+	      bouton Précédent le rejoue, comme un onglet. -->
+	<nav class="groupes" aria-label="Rubriques">
+		{#each groupes as g (g.nom)}
+			{@const n = compteDe(g)}
+			<a
+				href={g.onglets[0].route}
+				class="groupe"
+				aria-current={g === groupeActif ? 'true' : undefined}>{g.nom}<SignalATraiter {n} /></a
+			>
+		{/each}
+	</nav>
+{/if}
+<div class="tabs" role="tablist" aria-label={groupes.length > 1 ? groupeActif?.nom : undefined}>
+	{#each rangee as o (o.id)}
+		<Onglet
+			href={o.route}
+			actif={actif === o.id}
+			compte={comptes[o.id] ?? null}
+			eteint={eteints.includes(o.id)}
+		>
+			{libelle(o)}
+		</Onglet>
+	{/each}
+</div>
 {#if descriptif}
 	<p class="tab-descriptif">{@html safeHtml(descriptif)}</p>
 {/if}
@@ -160,18 +188,66 @@
 	    `Onglet.svelte`, et le style d'un composant n'atteint pas le balisage d'un
 	    enfant (leçon de `Pastille.svelte`, v2.67.11). Ce qui fuirait, c'est un
 	    `:global()` de PAGE — cf. #672. */
-	/*  L'intitulé d'un groupe d'onglets — repris tel quel de l'administration,
-	    qui le portait seule (01/10/2026). */
-	.tabs-group + .tabs-group {
-		margin-top: 0.5rem;
+	/*  La rangée des GROUPES (#2062) : des pastilles, comme un filtre — elle
+	    choisit la rangée d'onglets dessous. Défile au doigt plutôt que de se
+	    replier, comme la rangée d'onglets. */
+	.groupes {
+		display: flex;
+		gap: 0.4rem;
+		overflow-x: auto;
+		overflow-y: hidden;
+		scrollbar-width: thin;
+		padding-bottom: 0.15rem;
+		margin-bottom: 0.6rem;
 	}
-	.tabs-group-label {
-		font-size: var(--fs-2xs);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: var(--color-text-muted);
-		padding: 0 0.25rem 0.3rem;
+	.groupe {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		flex-shrink: 0;
+		white-space: nowrap;
+		padding: 0.35rem 0.85rem;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		background: var(--color-surface);
+		color: var(--color-text);
+		font-size: var(--fs-sm);
+		font-weight: 500;
+		text-decoration: none;
+		transition:
+			background-color var(--duree-geste),
+			border-color var(--duree-geste),
+			color var(--duree-geste),
+			transform var(--duree-geste) var(--ease-out);
+	}
+	/*  Le groupe actif : l'aplat Bleu Seine d'une pastille retenue. */
+	.groupe[aria-current='true'] {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: var(--color-surface);
+		font-weight: 600;
+	}
+	.groupe:active {
+		transform: scale(0.97);
+	}
+	@media (hover: hover) and (pointer: fine) {
+		.groupe:not([aria-current='true']):hover {
+			border-color: var(--color-primary);
+			color: var(--color-primary);
+			text-decoration: none;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.groupe:active {
+			transform: none;
+		}
+	}
+	/*  Au doigt, 44 px : une cible tactile est une taille physique. */
+	@media (pointer: coarse) {
+		.groupe,
+		.tabs :global(.tab-btn) {
+			min-height: 44px;
+		}
 	}
 	.tabs :global(.tab-btn) {
 		white-space: nowrap;
