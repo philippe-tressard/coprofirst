@@ -1,7 +1,8 @@
 #!/bin/bash
 # =============================================================================
-#  lib-precheck-pr.sh — point 23 du pré-check : aucune PR ouverte vers `main`
-#  hors de `dev` (#1870)
+#  lib-precheck-pr.sh — l'état du dépôt GITHUB vu par le pré-check :
+#    23 — aucune PR ouverte vers `main` hors de `dev` (#1870)
+#    24 — aucune alerte Dependabot haute ou critique ouverte (#2148)
 #
 #  Chaque MEP supprime `dev` (squash + `delete_branch_on_merge`) ; GitHub
 #  réoriente alors vers `main` les PR qui la visaient — Dependabot compris, sept
@@ -13,18 +14,31 @@
 #  (pure, self-testée) — le même script qui les reprend. Une PR réorientée rend
 #  ÉCART : elle ne fausse pas la MEP en cours, elle en menace la suivante.
 #
+#  Point 24 : deux alertes hautes ont dormi deux jours le 22/10/2026, sans PR ni
+#  ticket. FAIL, sauf si le lot modifie le manifeste qu'elles nomment (ÉCART) —
+#  décision `verdict_alertes`, même script, même autotest.
+#
 #  Sourcé par `scripts/poste/precheck-mep.sh`, qui fournit `rapporter`.
 # =============================================================================
 
-precheck_point_pr() {
+#  _point_github <n°> <libellé> <option> <verdicts admis> — une ligne du script.
+_point_github() {
   local sortie verdict detail
   if ! command -v python >/dev/null 2>&1; then
-    rapporter 23 INCONNU "Aucune PR vers main hors de dev" "python absent du poste"
+    rapporter "$1" INCONNU "$2" "python absent du poste"
     return
   fi
-  sortie=$(python "$RACINE_DEPOT/scripts/poste/reprendre-dependabot.py" --verifier 2>/dev/null | tail -1)
+  sortie=$(python "$RACINE_DEPOT/scripts/poste/reprendre-dependabot.py" "$3" 2>/dev/null | tail -1)
   verdict="${sortie%% *}"
   detail="${sortie#* }"
-  case "$verdict" in OK|ECART|INCONNU) ;; *) verdict=INCONNU; detail="vérificateur muet" ;; esac
-  rapporter 23 "$verdict" "Aucune PR vers main hors de dev" "$detail"
+  case " $4 " in *" $verdict "*) ;; *) verdict=INCONNU; detail="vérificateur muet" ;; esac
+  rapporter "$1" "$verdict" "$2" "$detail"
+}
+
+precheck_point_pr() {
+  _point_github 23 "Aucune PR vers main hors de dev" --verifier "OK ECART INCONNU"
+}
+
+precheck_point_alertes() {
+  _point_github 24 "Aucune alerte de sécurité haute ouverte" --alertes "OK ECART FAIL INCONNU"
 }

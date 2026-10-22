@@ -305,8 +305,9 @@ precheck_point_liens
 precheck_point_pages
 . "$RACINE_DEPOT/scripts/lib/lib-precheck-legal.sh"   # 21 — les textes légaux servis (#1585)
 precheck_point_legal
-. "$RACINE_DEPOT/scripts/lib/lib-precheck-pr.sh"      # 23 — aucune PR vers main hors de dev (#1870)
+. "$RACINE_DEPOT/scripts/lib/lib-precheck-pr.sh"      # 23-24 — PR vers main, alertes Dependabot
 precheck_point_pr
+precheck_point_alertes
 
 . "$RACINE_DEPOT/scripts/lib/lib-precheck-infra.sh"
 precheck_points_infra
