@@ -121,10 +121,16 @@
 	export let entite: EntiteDeclaree;
 	/**  Ce que l'objet EST et qui éteint une section — `sectionDeLaSuite`. */
 	export let conditions: ConditionInactive[] = [];
-	/**  Un DROIT, pas une section : `$isCS` sur la fiche, l'auteur sur sa carte. */
-	export let peutDiffuser = true;
+	/**  Un DROIT, pas une section : `$isCS` sur la fiche, l'auteur sur sa carte.
+	 *   🔴 Les trois droits ont un défaut FERMÉ (#2142, audit du 22/10/2026) : ils
+	 *   valaient `true`, et « Répondre », qui ne les passait pas, montrait
+	 *   Périmètre, Destinataires et Diffusion qu'aucune route n'emportait. Un hôte
+	 *   n'offre que ce que SA route accepte (`standards/11` §15). */
+	export let peutDiffuser = false;
 	/**  Même nature : préciser le périmètre change qui verra l'objet. */
-	export let peutPreciserPerimetre = true;
+	export let peutPreciserPerimetre = false;
+	/**  Même nature : les Destinataires disent qui lit l'objet. */
+	export let peutCibler = false;
 	/**  Une variante du GESTE, pas de la section — R4 ne sait pas la déclarer
 	 *   (#436) : faux sur une note interne, ligne de suivi et non signalement. */
 	export let avecPiecesJointes = true;
@@ -248,6 +254,7 @@
 	//  Ce que la Suite offre — la déclaration ET le droit : `$lib/evolutions`.
 	$: sections = sectionsDeLaSuite(entite, conditions, {
 		perimetre: peutPreciserPerimetre,
+		destinataires: peutCibler,
 		piecesJointes: avecPiecesJointes,
 		affairesLiees: affaireLiable !== null,
 		diffusion: peutDiffuser,
