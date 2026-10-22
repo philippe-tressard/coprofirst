@@ -105,6 +105,7 @@
 		"lint:badge-nouveau": "node scripts/check-badge-nouveau.mjs --selftest && node scripts/check-badge-nouveau.mjs",
 		"lint:animations-infinies": "node scripts/check-animations-infinies.mjs --selftest && node scripts/check-animations-infinies.mjs",
 		"lint:encart-avertissement": "node scripts/check-encart-avertissement.mjs --selftest && node scripts/check-encart-avertissement.mjs",
+		"lint:texte-avertissement": "node scripts/check-texte-avertissement.mjs --selftest && node scripts/check-texte-avertissement.mjs",
 		"lint:options-en-double": "node scripts/check-options-en-double.mjs --selftest && node scripts/check-options-en-double.mjs",
 		"lint:mouvement": "node scripts/check-mouvement.mjs --selftest && node scripts/check-mouvement.mjs",
 		"lint:charte-valeurs": "node scripts/check-charte-valeurs.mjs --selftest && node scripts/check-charte-valeurs.mjs",

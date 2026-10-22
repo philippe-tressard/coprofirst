@@ -458,7 +458,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Décidé** : une taille hors échelle se range au cran supérieur ; un état prend son jeton et ses dérivés ; `--color-warning` ne sert jamais au texte.
 - **Pourquoi** : posé par l'utilisateur comme règle de tout le projet — https://claude.ai/artifact/5EUqnbiH4HSF8wJe4khAgP
 - **Écarté** : les teintes de Tailwind ; rétrécir un texte.
-- **Tenu par** : `npm run lint:charte-valeurs`, `lint:badge`, `lint:encart-avertissement`.
+- **Tenu par** : `npm run lint:charte-valeurs`, `lint:badge`, `lint:encart-avertissement`, `lint:texte-avertissement` (#2167).
 
 ### n° 60 · en vigueur — L'auteur d'une idée ou d'un sondage ne s'affiche jamais
 27/09/2026 · #1373 · non dit · §3

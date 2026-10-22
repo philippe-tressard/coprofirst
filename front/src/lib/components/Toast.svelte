@@ -104,7 +104,7 @@
 	}
 	.toast-warning {
 		background: var(--color-warning-fond);
-		color: var(--color-warning);
+		color: var(--color-warning-texte);
 		border-left: 4px solid var(--color-warning);
 	}
 	.toast-info {

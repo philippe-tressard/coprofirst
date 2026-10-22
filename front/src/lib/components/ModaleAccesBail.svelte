@@ -361,7 +361,7 @@
 	    en mode compact, d'où cette règle est reprise. */
 	.etat-erreur-acces {
 		font-size: var(--fs-base);
-		color: var(--color-warning);
+		color: var(--color-warning-texte);
 		font-weight: 500;
 		padding: 0.5rem 0;
 	}

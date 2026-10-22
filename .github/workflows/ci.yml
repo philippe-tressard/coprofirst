@@ -2008,6 +2008,12 @@ jobs:
         working-directory: front
         run: npm run lint:encart-avertissement
 
+      # Un texte en `--color-warning` fait 3,29:1 sur son fond : la charte le
+      # refusait, et le contrôle des valeurs ne voyait pas le jeton (#2167).
+      - name: Un texte d'avertissement prend son jeton de texte
+        working-directory: front
+        run: npm run lint:texte-avertissement
+
       # 🔴 Une affaire urgente portait DEUX badges « Urgente » sur sa carte
       # (27/09/2026, signalé à l'écran) : le badge de priorité et la rangée des
       # options, qui ne retirait que la confidentialité. Exécute `optionsEnBadge`.
