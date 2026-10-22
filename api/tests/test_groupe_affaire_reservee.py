@@ -238,3 +238,20 @@ def test_sans_perimetres_configures_rien_n_est_ampute(monkeypatch, arbre_vide):
     assert not hors_du_hall(ticket)
     ticket.perimetre_cible = "pas du JSON"
     assert contenu_hors_du_groupe(ticket), "un périmètre illisible restreint toujours"
+
+
+@pytest.mark.parametrize("categorie", ["panne", "actualite"])
+def test_une_diffusion_restreinte_n_est_jamais_une_affiche(contexte, categorie):
+    """Arbitré par l'utilisateur : « une diffusion restreinte ne peut être une affiche hall ».
+
+    Des destinataires choisis autres que « Tous » réduisent le message du groupe
+    au titre ; la même affaire ne se reprend donc pas au hall, même sur toute la
+    résidence. Une règle, deux lieux lus par tous.
+    """
+    from app.utils.sources_affiche import sources_disponibles
+
+    s, cs, _batiments = contexte
+    lu, taches = _creer(s, cs, categorie, [], public_cible=["copropriétaires"])
+    _texte, _image, ampute = _recu(taches)
+    assert ampute, "le groupe reçoit le message restreint"
+    assert f"ticket:{lu.id}" not in {source.cle() for source in sources_disponibles(s)}

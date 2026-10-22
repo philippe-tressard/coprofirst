@@ -354,6 +354,18 @@ def hors_du_hall(ticket: Ticket) -> bool:
     return reservee_au_conseil(ticket) or contenu_hors_du_groupe(ticket)
 
 
+def _diffusion_ciblee(raw: str | None) -> bool:
+    """Des Destinataires choisis qui ne s'adressent pas à tous les résidents.
+
+    Vides : aucun choix, rien de ciblé. Illisibles : ciblés — une donnée abîmée
+    ne peut que restreindre (#789).
+    """
+    if not raw:
+        return False
+    cible = _parse_json_list(raw, ["illisible"])
+    return bool(cible) and "résidents" not in cible
+
+
 def contenu_hors_du_groupe(ticket: Ticket) -> bool:
     """Le groupe de la résidence ne reçoit-il que le titre et le lien de cette affaire ?
 
@@ -367,15 +379,18 @@ def contenu_hors_du_groupe(ticket: Ticket) -> bool:
       dans son périmètre (`ticket_visible`), et l'écran le montre coché et
       verrouillé (`TICKET_CONFIDENTIEL_ACQUIS`). Une actualité, elle, s'adresse à
       la copropriété et son périmètre n'est qu'un accent (#339) ;
+    - des Destinataires choisis qui ne sont pas « Tous » (`résidents`) : le
+      groupe compte des résidents qu'ils ne visent pas — et « une diffusion
+      restreinte ne peut être une affiche de hall » (arbitré le 22/10/2026) ;
     - un périmètre illisible : une donnée abîmée ne peut que restreindre (#789).
 
     Une copropriété SANS périmètres configurés n'en restreint aucun (`arbre`,
     état valide) : aucune affaire n'y vise un bâtiment, rien n'est amputé.
 
-    Le public visé (`public_cible`) est jugé à côté, par le canal
-    (`message_sans_contenu`), à qui l'appelant le transmet.
+    Le canal juge aussi le public visé (`message_sans_contenu`) ; il est écrit
+    ICI pour que le hall (`hors_du_hall`) l'applique sans le redire.
     """
-    if ticket.reserve_perimetre:
+    if ticket.reserve_perimetre or _diffusion_ciblee(ticket.public_cible):
         return True
     if est_actualite(ticket):
         return False
