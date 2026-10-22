@@ -17,7 +17,7 @@ import re
 
 from app.utils.arrivees_notification import SOURCE_WHATSAPP, etiqueter_lien
 from app.utils.liens import adresse_du_site, nom_site
-from app.utils.perimetres import est_perimetre_par_defaut
+from app.utils.perimetres import est_perimetre_par_defaut, perimetre_label
 
 #: La signature d'un message quand la configuration n'en porte pas — **neutre**.
 #:
@@ -48,6 +48,9 @@ def _libelle_perimetre(perimetre_cible: str | list | None) -> str:
     `lieux[0] == "résidence"` : le code de la racine en dur, là où l'arbre le
     désigne (#1567). La question se pose maintenant à `est_perimetre_par_defaut`,
     comme `estPerimetreParDefaut` côté front.
+
+    Les autres lieux se lisent par `perimetre_label`, le rendu de tout le site :
+    le groupe recevait le code brut, « bat:4/ascenseur » (22/10/2026).
     """
     try:
         lieux = (
@@ -59,7 +62,7 @@ def _libelle_perimetre(perimetre_cible: str | list | None) -> str:
         lieux = []
     if not isinstance(lieux, list) or est_perimetre_par_defaut(lieux):
         return "Copropriété"
-    return ", ".join(str(lieu) for lieu in lieux)
+    return perimetre_label([str(lieu) for lieu in lieux])
 
 
 def _entete(titre: str, urgente: bool, perimetre_cible: str | list | None) -> str:

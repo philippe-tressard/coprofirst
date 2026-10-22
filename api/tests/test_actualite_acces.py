@@ -211,8 +211,13 @@ def test_le_titre_de_repli_ne_sert_QUE_aux_actualites_sans_titre():
 
 
 def test_le_message_whatsapp_garde_le_perimetre_et_le_lien(message_confidentiel):
-    """C'est tout l'objet du message : faire venir les bons résidents."""
-    assert "bat:3" in message_confidentiel
+    """C'est tout l'objet du message : faire venir les bons résidents.
+
+    Par son LIBELLÉ, jamais son code — le groupe lisait « bat:4/ascenseur »
+    (22/10/2026) ; `perimetre_label`, le rendu de tout le site.
+    """
+    assert "Bât. 3" in message_confidentiel
+    assert "bat:3" not in message_confidentiel
     assert LIEN in message_confidentiel
 
 
