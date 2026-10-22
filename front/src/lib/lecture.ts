@@ -231,7 +231,7 @@ export interface EntreeLecture {
 	publicCible: string[] | string | null | undefined;
 	/** Le périmètre vise-t-il MOINS que la copropriété ? Tranché par l'appelant. */
 	perimetreRestreint: boolean;
-	/** 🔒 « Réservé au périmètre sélectionné » — le choix d'une actualité. */
+	/** 🔒 « Réservé au périmètre sélectionné » — une actualité comme une affaire (22/10/2026). */
 	reservePerimetre: boolean;
 	/** La catégorie d'une affaire, et son état — une Étude & travaux s'ouvre en AG. */
 	categorie?: string;
@@ -313,7 +313,8 @@ export function lectureDe(e: EntreeLecture): Lecture {
 		}
 	}
 	//  Qui lit HORS du périmètre : une actualité, sauf réserve ; une affaire au
-	//  défaut, ses copropriétaires (standard du 30/09/2026) ; un choix, personne.
+	//  défaut, ses copropriétaires (standard du 30/09/2026) sauf réserve
+	//  (22/10/2026, `lus_dans_toute_la_residence`) ; un choix, personne.
 	const auDefaut = !e.actualite && !explicites.length;
 	const partout = !e.perimetreRestreint
 		? profils
@@ -321,7 +322,7 @@ export function lectureDe(e: EntreeLecture): Lecture {
 			? e.reservePerimetre
 				? []
 				: profils
-			: auDefaut
+			: auDefaut && !e.reservePerimetre
 				? profils.filter((p) =>
 						codes.some((c) => CODES_COPROPRIETAIRES.includes(c) && PROFILS_DU_CODE[c]?.includes(p)),
 					)

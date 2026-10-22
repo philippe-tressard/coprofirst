@@ -67,7 +67,6 @@
 		optionsCategorie,
 		OPTIONS_TICKET,
 		STATUT_TICKET_LABELS,
-		TICKET_CONFIDENTIEL_ACQUIS,
 		optionsDuTicket,
 	} from '$lib/tickets';
 	import type { Etat } from '$lib/entites/types';
@@ -254,7 +253,7 @@
 			categorie,
 			urgente: options.urgente,
 			public_cible: publicCible,
-			reserve_perimetre: actualite && reservePerimetre,
+			reserve_perimetre: reservePerimetre,
 			perimetre_cible: perimetreCible,
 			photos_urls: photosUrls,
 			fichiers_urls: fichiersUrls,
@@ -411,7 +410,6 @@
 			avecOptions={sectionPresente(TICKET, etat, 'mise_en_avant')}
 			objet={actualite ? 'actualité' : 'ticket'}
 			optionsRendues={!$isCS ? ['urgente'] : OPTIONS_TICKET}
-			confidentielAcquis={TICKET_CONFIDENTIEL_ACQUIS}
 			dejaEpingle={ticket?.epingle ?? false}
 			bind:epingle={options.epingle}
 			bind:urgente={options.urgente}
@@ -447,7 +445,7 @@
 			bind:cs={destinataireCs}
 			bind:auteur={envoyerAuteur}
 			auteurNom={nomCopie(ticket)}
-			aideWhatsapp={actualite && reservePerimetre
+			aideWhatsapp={reservePerimetre
 				? 'Le groupe est commun à toute la copropriété : le message portera le titre et le périmètre, avec un lien vers l’application — jamais le contenu.'
 				: 'Le message est publié sur le groupe WhatsApp ; les photos jointes partent avec.'}
 			whatsappInterdit={motifWhatsappInterdit(reservee, actualite ? 'actualité' : 'ticket')}

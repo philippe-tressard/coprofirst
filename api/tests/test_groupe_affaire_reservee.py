@@ -7,10 +7,18 @@ sur un bâtiment, l'écran affichant « Réservé au périmètre sélectionné �
 Le groupe WhatsApp de la résidence — TOUS les résidents — a reçu la description,
 c'est-à-dire le code. La diffusion a dû être coupée.
 
-L'actualité réservée partait bien réduite au titre et au lien ; l'affaire suivie
-ne transmettait jamais la réserve à `diffuser` (création, Suite), et l'aperçu ne
-la transmettait pour aucune des deux natures. Les tests de diffusion vérifiaient
-qu'un message PARTAIT, jamais ce qu'il CONTENAIT.
+Trois défauts se sont additionnés. L'écran montrait la case cochée et
+VERROUILLÉE sur une affaire suivie, mais envoyait `false` : rien n'était
+réservé. L'affaire suivie ne transmettait jamais la réserve à `diffuser`
+(création, Suite), et l'aperçu ne la transmettait pour aucune nature. Et une
+Panne ou un Entretien se lisait par tous les copropriétaires de la résidence,
+quel que soit le périmètre (`lus_dans_toute_la_residence`). Les tests de
+diffusion vérifiaient qu'un message PARTAIT, jamais ce qu'il CONTENAIT.
+
+Arbitré par l'utilisateur : la règle ne joue que **case cochée** (ou
+Destinataires ciblés) — alors seuls les destinataires du périmètre lisent
+(`lecture_pastille.json`, cas du 22/10/2026), le groupe ne reçoit que le titre
+et le lien, et le hall rien.
 
 ## Ce qu'on regarde
 
@@ -98,10 +106,10 @@ def _creer(s, cs, categorie, perimetre, **champs):
 
 
 @pytest.mark.parametrize("categorie", ["panne", "entretien", "espaces_verts"])
-def test_une_affaire_d_un_batiment_ne_part_qu_avec_son_titre(contexte, categorie):
-    """L'incident : l'écran la dit réservée au périmètre, le groupe lisait tout."""
+def test_une_affaire_reservee_ne_part_qu_avec_son_titre(contexte, categorie):
+    """L'incident : « Réservé au périmètre » coché, le groupe lisait tout."""
     s, cs, batiments = contexte
-    _lu, taches = _creer(s, cs, categorie, [f"bat:{batiments[0]}"])
+    _lu, taches = _creer(s, cs, categorie, [f"bat:{batiments[0]}"], reserve_perimetre=True)
     texte, _image, ampute = _recu(taches)
     assert "Nouveau code de l'ascenseur" in texte, "le titre part"
     assert SECRET not in texte, "la description d'une affaire réservée a fui sur le groupe"
@@ -117,10 +125,14 @@ def test_une_actualite_reservee_ne_part_qu_avec_son_titre(contexte):
 
 
 @pytest.mark.parametrize("categorie", ["panne", "actualite"])
-def test_ce_qui_concerne_toute_la_residence_part_en_entier(contexte, categorie):
-    """Le cas zéro : la réserve ne doit pas amputer ce que tout le monde lit."""
-    s, cs, _batiments = contexte
-    _lu, taches = _creer(s, cs, categorie, [])
+@pytest.mark.parametrize("du_batiment", [False, True])
+def test_case_decochee_le_message_part_en_entier(contexte, categorie, du_batiment):
+    """Le cas zéro : la case NON cochée ne change rien, bâtiment ou résidence.
+
+    « Quand la case est cochée, et uniquement dans ce cas » (22/10/2026).
+    """
+    s, cs, batiments = contexte
+    _lu, taches = _creer(s, cs, categorie, [f"bat:{batiments[0]}"] if du_batiment else [])
     texte, image, ampute = _recu(taches)
     assert SECRET in texte
     assert not ampute and image == PHOTO
@@ -138,7 +150,7 @@ def _suite(s, cs, ticket_id) -> str:
 
 @pytest.mark.parametrize(
     ("categorie", "champs"),
-    [("panne", {}), ("actualite", {"reserve_perimetre": True})],
+    [("panne", {"reserve_perimetre": True}), ("actualite", {"reserve_perimetre": True})],
 )
 def test_la_suite_d_une_affaire_reservee_ne_part_qu_avec_son_titre(contexte, categorie, champs):
     s, cs, batiments = contexte
@@ -153,7 +165,7 @@ def test_la_suite_d_une_affaire_reservee_ne_part_qu_avec_son_titre(contexte, cat
 
 @pytest.mark.parametrize(
     ("categorie", "champs"),
-    [("panne", {}), ("actualite", {"reserve_perimetre": True})],
+    [("panne", {"reserve_perimetre": True}), ("actualite", {"reserve_perimetre": True})],
 )
 def test_l_apercu_d_une_affaire_reservee_montre_le_message_ampute(contexte, categorie, champs):
     s, cs, batiments = contexte
@@ -204,12 +216,10 @@ def test_une_affaire_ne_se_diffuse_que_par_diffuser_l_affaire():
 
 
 @pytest.mark.parametrize(
-    ("categorie", "perimetre_du_batiment", "au_hall"),
+    ("categorie", "reservee", "au_hall"),
     [("panne", True, False), ("panne", False, True), ("entretien", True, False)],
 )
-def test_une_affaire_reservee_ne_se_reprend_pas_au_hall(
-    contexte, categorie, perimetre_du_batiment, au_hall
-):
+def test_une_affaire_reservee_ne_se_reprend_pas_au_hall(contexte, categorie, reservee, au_hall):
     """Arbitré par l'utilisateur : une affaire réservée n'a pas d'affiche de hall.
 
     Le hall n'a aucun contrôle d'accès ; la reprise (`sources_disponibles`, que
@@ -218,26 +228,9 @@ def test_une_affaire_reservee_ne_se_reprend_pas_au_hall(
     from app.utils.sources_affiche import sources_disponibles
 
     s, cs, batiments = contexte
-    perimetre = [f"bat:{batiments[0]}"] if perimetre_du_batiment else []
-    lu, _ = _creer(s, cs, categorie, perimetre)
+    lu, _ = _creer(s, cs, categorie, [f"bat:{batiments[0]}"], reserve_perimetre=reservee)
     reprenables = {source.cle() for source in sources_disponibles(s)}
     assert (f"ticket:{lu.id}" in reprenables) is au_hall
-
-
-def test_sans_perimetres_configures_rien_n_est_ampute(monkeypatch, arbre_vide):
-    """Une copropriété qui n'a saisi aucun périmètre n'en restreint aucun (`arbre`).
-
-    Sans ce cas, chaque affaire d'une installation neuve partait réduite à son
-    titre, et aucune ne se reprenait au hall.
-    """
-    from app.models.core import Ticket
-    from app.utils.visibility import contenu_hors_du_groupe, hors_du_hall
-
-    ticket = Ticket(titre="Panne", categorie="panne", perimetre_cible='["résidence"]')
-    assert not contenu_hors_du_groupe(ticket)
-    assert not hors_du_hall(ticket)
-    ticket.perimetre_cible = "pas du JSON"
-    assert contenu_hors_du_groupe(ticket), "un périmètre illisible restreint toujours"
 
 
 @pytest.mark.parametrize("categorie", ["panne", "actualite"])

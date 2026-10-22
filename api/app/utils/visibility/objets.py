@@ -20,10 +20,9 @@ from app.models.core import (
     TypeEvenement,
     Utilisateur,
 )
-from app.utils.perimetres import a_portee_globale, arbre, parse_perimetres
+from app.utils.perimetres import parse_perimetres
 
 from .socle import (
-    _codes_json_pour_acces,
     _parse_json_list,
     cible_visible,
     perimetre_visible,
@@ -346,10 +345,9 @@ def hors_du_hall(ticket: Ticket) -> bool:
     deux écritures divergeraient sur le cas limite, et l'une des deux
     publierait au mur ce que l'autre refuse.
 
-    « Réservée à son périmètre » est la règle du groupe WhatsApp,
-    `contenu_hors_du_groupe` : une affaire suivie d'un bâtiment comprise —
-    arbitré par l'utilisateur le 22/10/2026, après le code d'ascenseur parti
-    sur le groupe. Le hall et le groupe sont deux lieux lus par tous.
+    « Réservée » est la règle du groupe WhatsApp, `contenu_hors_du_groupe` —
+    case cochée ou diffusion ciblée, arbitré par l'utilisateur le 22/10/2026.
+    Le hall et le groupe sont deux lieux lus par tous.
     """
     return reservee_au_conseil(ticket) or contenu_hors_du_groupe(ticket)
 
@@ -374,30 +372,18 @@ def contenu_hors_du_groupe(ticket: Ticket) -> bool:
     `tickets/groupe.diffuser_l_affaire` — trois points d'envoi, dont un seul
     transmettait la réserve, ont laissé partir un code d'accès (22/10/2026).
 
-    - 🔒 « Réservé au périmètre » coché (une actualité) ;
-    - une affaire SUIVIE dont le périmètre n'est pas global : elle n'est lue que
-      dans son périmètre (`ticket_visible`), et l'écran le montre coché et
-      verrouillé (`TICKET_CONFIDENTIEL_ACQUIS`). Une actualité, elle, s'adresse à
-      la copropriété et son périmètre n'est qu'un accent (#339) ;
+    - 🔒 « Réservé au périmètre sélectionné » coché — une actualité comme une
+      affaire suivie, et seulement quand la case est cochée (arbitré par
+      l'utilisateur le 22/10/2026) : seuls les destinataires du périmètre la
+      lisent (`ticket_visible`, `lus_dans_toute_la_residence`) ;
     - des Destinataires choisis qui ne sont pas « Tous » (`résidents`) : le
       groupe compte des résidents qu'ils ne visent pas — et « une diffusion
-      restreinte ne peut être une affiche de hall » (arbitré le 22/10/2026) ;
-    - un périmètre illisible : une donnée abîmée ne peut que restreindre (#789).
-
-    Une copropriété SANS périmètres configurés n'en restreint aucun (`arbre`,
-    état valide) : aucune affaire n'y vise un bâtiment, rien n'est amputé.
+      restreinte ne peut être une affiche de hall » (même arbitrage).
 
     Le canal juge aussi le public visé (`message_sans_contenu`) ; il est écrit
     ICI pour que le hall (`hors_du_hall`) l'applique sans le redire.
     """
-    if ticket.reserve_perimetre or _diffusion_ciblee(ticket.public_cible):
-        return True
-    if est_actualite(ticket):
-        return False
-    codes = _codes_json_pour_acces(ticket.perimetre_cible)
-    if codes is None:
-        return True
-    return bool(codes) and bool(arbre()) and not a_portee_globale(codes)
+    return bool(ticket.reserve_perimetre) or _diffusion_ciblee(ticket.public_cible)
 
 
 # ── Règles Communauté : petite annonce et idée ────────────────────────────────

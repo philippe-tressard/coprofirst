@@ -23,6 +23,8 @@ applique aussi. Sans choix du conseil :
 « Tous les copropriétaires » : un copropriétaire que le défaut vise le lit
 dans TOUTE la résidence, quel que soit le périmètre
 (`lus_dans_toute_la_residence`) ; un locataire, dans le périmètre seulement.
+« Réservé au périmètre sélectionné » coché referme cette ouverture : seuls les
+destinataires du périmètre lisent (22/10/2026).
 Un choix du conseil (Destinataires, « Confidentielle ») prime, et se lit
 toujours dans le périmètre.
 """
@@ -134,7 +136,12 @@ def lus_dans_toute_la_residence(ticket: Ticket) -> list[str]:
 
     Vide pour une actualité (sa règle est ailleurs) : ce n'est pas un défaut
     d'affaire. `ticket_visible` ne l'appelle que sans choix du conseil.
+
+    🔒 Vide aussi quand « Réservé au périmètre sélectionné » est coché — et
+    seulement alors : seuls les destinataires DU périmètre lisent (arbitré par
+    l'utilisateur le 22/10/2026, après un code d'ascenseur lu de toute la
+    résidence). Miroir : `lectureDe` (`front/src/lib/lecture.ts`).
     """
-    if est_actualite(ticket):
+    if est_actualite(ticket) or ticket.reserve_perimetre:
         return []
     return [c for c in destinataires_par_defaut(ticket) if c in _COPROPRIETAIRES]

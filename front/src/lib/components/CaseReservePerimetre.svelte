@@ -14,8 +14,13 @@
 
   | Où | Pour qui | État |
   |---|---|---|
-  | section Périmètre (`SectionPerimetre`) | une actualité | cochable |
-  | section Mise en avant (`OptionsPublication`) | une affaire suivie | cochée et verrouillée (`acquis`) |
+  | section Périmètre (`SectionPerimetre`) | une actualité, une affaire suivie | cochable |
+  | section Mise en avant (`OptionsPublication`) | — | verrouillée si un appelant passe `acquis` |
+
+  🔴 Une affaire suivie la montrait cochée et verrouillée (25/09/2026) alors
+  qu'elle partait `false` : le serveur ne restreignait rien, et un code
+  d'ascenseur a été lu de toute la résidence et envoyé au groupe WhatsApp
+  (22/10/2026). Elle est cochable pour les deux natures depuis.
 
   ## Les deux règles qu'elle fait respecter à l'écran
 
@@ -45,7 +50,7 @@
 	import { concerneTous } from '$lib/utils';
 	import { optionPublication } from '$lib/options-publication';
 
-	/** La case — `reserve_perimetre` sur une actualité. */
+	/** La case — `reserve_perimetre`, actualité comme affaire. */
 	export let coche = false;
 	/** Le périmètre sélectionné, qui décide si la case a un sens. */
 	export let perimetreCible: string[] = [];

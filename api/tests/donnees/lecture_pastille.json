@@ -635,6 +635,35 @@
 			"hors_perimetre": true
 		},
 		{
+			"nom": "affaire Entretien d'un bâtiment, « Réservé au périmètre » coché : ses copropriétaires seulement, personne hors du bâtiment (22/10/2026)",
+			"actualite": false,
+			"categorie": "entretien",
+			"confidentiel": false,
+			"public_cible": [],
+			"perimetre": "batiment",
+			"reserve_perimetre": true,
+			"lecteurs": [
+				"copropriétaire_résident",
+				"copropriétaire_bailleur"
+			],
+			"hors_perimetre": false
+		},
+		{
+			"nom": "affaire Panne d'un bâtiment, « Réservé au périmètre » coché : ses copropriétaires et ses locataires, personne hors du bâtiment (22/10/2026)",
+			"actualite": false,
+			"categorie": "panne",
+			"confidentiel": false,
+			"public_cible": [],
+			"perimetre": "batiment",
+			"reserve_perimetre": true,
+			"lecteurs": [
+				"copropriétaire_résident",
+				"copropriétaire_bailleur",
+				"locataire"
+			],
+			"hors_perimetre": false
+		},
+		{
 			"nom": "affaire Entretien, « Conseil syndical » choisi : le conseil seul — le choix prime sur la catégorie (30/09/2026)",
 			"actualite": false,
 			"categorie": "entretien",
