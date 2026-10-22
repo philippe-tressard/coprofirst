@@ -1,0 +1,8 @@
+# Signaler une faille de sécurité de CoproFirst (RFC 9116).
+# Le signalement est privé : jamais en ticket public.
+# Ce fichier est servi par chaque installation — il nomme le logiciel, pas la résidence.
+
+Contact: https://github.com/philippe-tressard/coprofirst/security/advisories/new
+Expires: 2027-10-01T00:00:00.000Z
+Preferred-Languages: fr, en
+Policy: https://github.com/philippe-tressard/coprofirst/blob/main/SECURITY.md

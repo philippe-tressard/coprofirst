@@ -19,13 +19,14 @@
 # `forward_auth` rend au navigateur toute réponse qui n'est pas un 2xx : c'est ce
 # qui fait du 308 une redirection, sans rien écrire de plus ici.
 #
-# Les fichiers du front (`/_app/*`, icônes, service worker) ne posent pas la
-# question : ils ne dépendent d'aucun hôte, et une page en charge des dizaines.
+# Les fichiers du front (`/_app/*`, icônes, service worker) et `/.well-known/`
+# (`security.txt`) ne posent pas la question : ils ne dépendent d'aucun hôte, et
+# une page en charge des dizaines.
 #
 # ⚠️ Sur une installation propre à une copropriété (5Hostachy), NE PAS l'importer :
 # la route y répond 404, et `forward_auth` rendrait ce 404 à chaque page.
 
-@pages_commune not path /_app/* /sw.js /manifest.webmanifest /favicon* /icons/* /robots.txt
+@pages_commune not path /_app/* /sw.js /manifest.webmanifest /favicon* /icons/* /robots.txt /.well-known/*
 forward_auth @pages_commune api:8000 {
 	uri /plateforme/aiguillage/hote
 }

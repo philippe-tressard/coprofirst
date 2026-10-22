@@ -209,7 +209,7 @@ Toute la configuration se fait via le fichier `.env` (voir [.env.example](.env.e
 - **Vulnérabilités des dépendances vérifiées en CI, des DEUX côtés** — `npm audit` sur tout l'arbre (`devDependencies` comprises : elles servent le site) et `pip-audit` sur `api/requirements.txt`. Même mécanique de part et d'autre : exceptions **nominatives**, chacune avec son motif d'atteignabilité, sa condition de levée et sa date de revue — et une exception devenue inutile fait **échouer** le contrôle, pour forcer son retrait (`front/audit-exceptions.json`, `api/audit-exceptions.json`)
 - **Le lock ne ment pas sur ses versions** — vérifié en CI : `npm audit` lit le champ `version` du lock, donc une version fausse le rend aveugle sans rien dire
 
-Voir [SECURITY.md](SECURITY.md) pour la politique de signalement de vulnérabilités.
+Voir [SECURITY.md](SECURITY.md) pour la politique de signalement de vulnérabilités. Chaque installation sert le même canal à l'adresse standard `/.well-known/security.txt` (RFC 9116), dont l'échéance est tenue par `api/tests/test_security_txt.py`.
 
 ## Contribuer
 
