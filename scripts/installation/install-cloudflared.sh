@@ -14,7 +14,7 @@ if [ -z "$TOKEN" ]; then
 fi
 
 # L'identifiant du tunnel a déjà été collé à la place du jeton (25/09/2026, #1318).
-# La règle vit dans lib-jeton-tunnel.sh, partagée avec changer-jeton-tunnel.sh.
+# La règle (et l'unité modèle) vit dans lib-jeton-tunnel.sh, partagée avec changer-jeton-tunnel.sh.
 # shellcheck source=../lib/lib-jeton-tunnel.sh
 source "$(dirname "$0")/../lib/lib-jeton-tunnel.sh"
 VERDICT=$(verdict_jeton "$TOKEN" "")
@@ -47,8 +47,17 @@ hash -r
 
 echo "==> Version installée : $(cloudflared --version)"
 
-echo "==> Configuration du service systemd..."
-cloudflared service install "$TOKEN"
+#  Le jeton va dans un FICHIER root 600, jamais dans l'unité (#2115, 22/10/2026) :
+#  `cloudflared service install <jeton>` l'écrivait en clair dans `ExecStart`, lisible
+#  par tout compte local (`ps`, `systemctl cat`). C39 de check-reliability.sh échoue
+#  si l'ancienne forme revient.
+echo "==> Jeton dans $JETON_FICHIER (root 600) et unité systemd..."
+install -d -m 700 -o root -g root "$(dirname "$JETON_FICHIER")"
+( umask 077; printf '%s' "$TOKEN" > "$JETON_FICHIER" )
+chown root:root "$JETON_FICHIER"; chmod 600 "$JETON_FICHIER"
+unite_modele > /etc/systemd/system/cloudflared.service
+chmod 644 /etc/systemd/system/cloudflared.service
+systemctl daemon-reload
 
 echo "==> Démarrage du service..."
 systemctl enable cloudflared
