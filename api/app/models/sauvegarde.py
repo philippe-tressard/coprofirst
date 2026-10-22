@@ -33,9 +33,11 @@ class StatutSauvegarde(str, Enum):
 class ConfigSauvegarde(SQLModel, table=True):
     """Le réglage de la sauvegarde : l'heure et le nombre de versions conservées.
 
-    🔴 `frequence`, `jour_semaine` et `jour_mois` ont QUITTÉ le modèle (#2059) : la
-    sauvegarde est quotidienne depuis la 0139 et rien ne les lisait. Retirées en deux
-    temps (#1757) : le code en v3.11.0, la base par la 0308 (#2124).
+    🔴 `frequence`, `jour_semaine` et `jour_mois` ont QUITTÉ le modèle (#2059, premier
+    temps) : la sauvegarde est quotidienne depuis la 0139 et rien ne les lisait. Les
+    colonnes restent en base le temps d'une version (migration compatible, #1757 :
+    `CONTRACTIONS` annonce leur retrait) ; la 0307 leur donne un défaut pour que le
+    code, qui ne les écrit plus, puisse insérer la ligne.
     """
 
     __tablename__ = "config_sauvegarde"

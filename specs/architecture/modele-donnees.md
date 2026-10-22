@@ -22,6 +22,9 @@
 | annee_construction | integer | Année de construction (ex. 1975) |
 | nb_lots_total | integer | Nombre total de lots de la copropriété |
 | numero_immatriculation | string | N° registre national des copropriétés ANAH — obligation Loi ALUR |
+| assurance_compagnie | string | Nom de l'assureur multirisques immeuble |
+| assurance_numero_police | string | Numéro de police d'assurance |
+| assurance_echeance | date | Date d'échéance du contrat d'assurance |
 | photo_url | string | Photo de la résidence (optionnel) |
 
 ### Bâtiment
@@ -278,7 +281,10 @@ Les deux axes restent distincts.
 |-------|------|-------------|
 | id | integer PK | Toujours 1 (ligne unique) |
 | active | boolean | Active ou désactive le cron automatique |
-| heure_execution | time | Heure de déclenchement (ex. `03:00`) — la sauvegarde est quotidienne |
+| frequence | enum | `quotidienne` \| `hebdomadaire` \| `mensuelle` — défaut : `hebdomadaire` |
+| heure_execution | time | Heure de déclenchement (ex. `03:00`) |
+| jour_semaine | integer | 0 = lundi … 6 = dimanche — significatif si fréquence = `hebdomadaire` |
+| jour_mois | integer | 1–28 — significatif si fréquence = `mensuelle` |
 | nb_versions_conservees | integer | Nombre de sauvegardes historisées avant rotation — défaut : 3, min : 1, max : 30 |
 | modifie_par_id | FK Utilisateur | Nullable — dernier admin ayant sauvegardé |
 | modifie_le | datetime | Nullable |
@@ -310,6 +316,7 @@ Les deux axes restent distincts.
 | libelle | string | Libellé affiché dans l’interface admin |
 | sujet | string | Objet de l’email — syntaxe Jinja2, ex. `[Résidence] Ticket n°{{ ticket.numero }} mis à jour` |
 | corps_html | text | Corps HTML du mail — syntaxe Jinja2 |
+| corps_texte | text | Version texte brut (fallback) — syntaxe Jinja2 |
 | variables_disponibles | JSON | Documentation des variables injectées (générée par l’API, en lecture seule dans l’UI) |
 | desactivable | boolean | `false` pour les templates système (MDP, invitation) |
 | actif | boolean | Si `false`, l’email n’est pas envoyé pour cet événement |
