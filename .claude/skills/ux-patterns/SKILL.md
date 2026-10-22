@@ -1983,6 +1983,12 @@ qu'à signaler la présence d'une image.
   retrait se lance à la fermeture **et** depuis `onDestroy`. Pourquoi une seule
   porte — une photo ouverte depuis une modale rendait le défilement, et `Échap`
   fermait les deux : l'en-tête du module (#1042). 🔒 `npm run lint:couches`.
+- **Le glissement suit le doigt** (#2169) : la photo est déplacée 1:1 pendant le geste
+  (`transform` posé sur l'image, jamais une variable CSS héritée), le lâcher décide sur la
+  **distance OU la vitesse** — vitesse mesurée à l'instant du lâcher —, la photo part du
+  côté où on la pousse et la voisine entre de l'autre ; seule, elle résiste au bord.
+  `touch-action: pan-y pinch-zoom` sur le fond : sans lui, le navigateur prenait le geste.
+  🔒 `e2e/visionneuse-glissement.spec.ts`.
 - `Échap` ferme la couche du dessus, les flèches naviguent, le compteur suit ; cible tactile **≥ 44 px**
   sur le bouton de fermeture — mesurée, pas supposée : la relecture avait laissé
   passer un bouton à 40 px, trouvé en mesurant dans un navigateur à 375×812.
@@ -1990,6 +1996,10 @@ qu'à signaler la présence d'une image.
 ## 12. Visibilité du Kanban (calendrier + widget tableau de bord)
 
 Filtre des colonnes : `if (col.id === 'ag' || col.id === 'cs') return canSeeAG;`
+
+**Glisser une carte** (le conseil seul) : la colonne qui la recevrait se marque PENDANT le
+geste, celle d'origine non, et la carte saisie s'efface à demi ; tout s'éteint au lâcher
+ou à l'abandon (#2170, 🔒 `e2e/kanban-glissement.spec.ts`).
 
 | Colonne | Locataire | Copropriétaire | CS / Admin |
 |---|---|---|---|
@@ -2725,7 +2735,7 @@ demande de l'utilisateur. Une seule écriture chacun, dans la charte :
 
 | Quoi | Règle | Où |
 |---|---|---|
-| jetons | `--ease-out` (courbe de sortie marquée), `--duree-geste` 120 ms, `--duree-apparition` 200 ms. **Aucune durée écrite** : un survol, un appui, un changement de couleur → `var(--duree-geste)` (courbe par défaut ; `--ease-out` si `transform`) ; ce qui ENTRE → `var(--duree-apparition) var(--ease-out)`, cascade par `var(--delay, 0s)` posée dans la page. Une dimension animée (largeur, hauteur) se déclare. 🔒 `npm run lint:mouvement` (27/09/2026 : 64 transitions sur 74 écrivaient la leur) | `styles/socle.css` |
+| jetons | `--ease-out` (courbe de sortie marquée), `--duree-geste` 120 ms, `--duree-apparition` 200 ms. Un SCRIPT n'en écrit pas non plus : il pose une classe ou une valeur, le CSS anime, et il attend `finDesAnimations` (`$lib/mouvement`, avec `mouvementReduit`) — jamais `transitionend`, muet quand la transition ne démarre pas (#2168). **Aucune durée écrite** : un survol, un appui, un changement de couleur → `var(--duree-geste)` (courbe par défaut ; `--ease-out` si `transform`) ; ce qui ENTRE → `var(--duree-apparition) var(--ease-out)`, cascade par `var(--delay, 0s)` posée dans la page. Une dimension animée (largeur, hauteur) se déclare. 🔒 `npm run lint:mouvement` (27/09/2026 : 64 transitions sur 74 écrivaient la leur) | `styles/socle.css` |
 | corps déplié | **entre** en 200 ms (fondu + 4 px), **sort** sans délai ; jamais la hauteur animée. Le corps porte **`.carte-corps`** | `composants.css` (`.carte-liste .carte-corps`) |
 | appui | `scale(0.97)` sur `:active`, `transform` seul ; pas sur une icône `aria-pressed` (déjà à 115 %) | `composants.css` (`.btn`, `.btn-icon*`, `.signaler-inline`) · `Pastille.svelte` |
 | animation sans fin | réservée à une ATTENTE (spinner, squelette, assistant qui travaille) — jamais décorative : ce qu'on voit plusieurs fois par jour ne s'anime pas. 🔒 `npm run lint:animations-infinies` (exceptions déclarées) | `composants.css` (`spin`) · `BadgeNouveau` (fixe) |

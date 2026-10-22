@@ -15,8 +15,9 @@
   Événement : `fermer`
 -->
 <script lang="ts">
-	import { createEventDispatcher, onDestroy } from 'svelte';
+	import { createEventDispatcher, onDestroy, tick } from 'svelte';
 	import { poserCouche } from '$lib/couche';
+	import { finDesAnimations, mouvementReduit } from '$lib/mouvement';
 
 	export let photos: string[] = [];
 	export let index = 0;
@@ -36,26 +37,117 @@
 		index = (index + 1) % photos.length;
 	}
 
-	//  ── Glissement tactile (#334) ─────────────────────────────────────────────
-	//  C'est le geste qu'on tente en plein écran, et il manquait : seules les
-	//  flèches et le clavier naviguaient. `pointer*` couvre le doigt, le stylet et
-	//  le glisser-souris d'un seul jeu d'écouteurs.
-	const SEUIL_GLISSEMENT = 45; // px — sous ce seuil, c'est un clic qui a tremblé
-	let departX: number | null = null;
+	//  ── Glissement (#334, puis #2169) ──────────────────────────────────────────
+	//  `pointer*` couvre le doigt, le stylet et le glisser-souris d'un seul jeu
+	//  d'écouteurs. Le geste ne lisait que son départ et son arrivée : la photo
+	//  ne suivait pas le doigt, changeait d'un coup au lâcher, et un geste vif
+	//  mais court ne comptait pas. Elle SUIT désormais le doigt (`transform`
+	//  posé directement, jamais par une variable CSS héritée), et le lâcher
+	//  décide sur la distance OU la vitesse ; la photo part du côté où le doigt
+	//  la pousse, la suivante arrive de l'autre. Ce que le CSS anime, ses durées
+	//  le disent (`--duree-apparition`) : le script ne fait qu'attendre.
+	const AMORCE = 10; // px — en deçà, c'est un appui qui a tremblé, pas un glissement
+	const SEUIL_GLISSEMENT = 45; // px — au-delà, la photo change, même lentement
+	const VITESSE_JETEE = 0.11; // px/ms — un geste vif change de photo, même court
+	const FENETRE_VITESSE = 100; // ms — la vitesse du lâcher, pas celle du geste entier
+	let image: HTMLImageElement;
+	let geste: {
+		id: number;
+		x0: number;
+		dx: number;
+		suit: boolean;
+		trace: [number, number][];
+	} | null = null;
 	let aGlisse = false;
+	/** La photo suit le doigt : aucune transition tant qu'il la tient. */
+	let suit = false;
+
+	/**
+	 * PURE. Au-delà d'un bord, la photo résiste de plus en plus au lieu de
+	 * s'arrêter net (apple-design §9) : seule, elle n'a nulle part où aller.
+	 */
+	function elastique(depasse: number, dimension: number, k = 0.55): number {
+		return (depasse * dimension * k) / (dimension + k * Math.abs(depasse));
+	}
+
+	/** PURE. La vitesse au lâcher, en px/ms, sur les derniers instants du geste. */
+	function vitesse(trace: [number, number][]): number {
+		const fin = trace[trace.length - 1];
+		const debut = trace.find(([, t]) => fin[1] - t <= FENETRE_VITESSE) ?? fin;
+		return fin[1] === debut[1] ? 0 : (fin[0] - debut[0]) / (fin[1] - debut[1]);
+	}
 
 	function debutGeste(e: PointerEvent) {
-		departX = e.clientX;
+		//  Un second doigt n'enlève pas la photo au premier ; un bouton garde son clic.
+		if (!e.isPrimary || geste || (e.target as Element).closest('button')) return;
+		geste = {
+			id: e.pointerId,
+			x0: e.clientX,
+			dx: 0,
+			suit: false,
+			trace: [[e.clientX, e.timeStamp]],
+		};
 		aGlisse = false;
 	}
 
-	function finGeste(e: PointerEvent) {
-		if (departX === null) return;
-		const dx = e.clientX - departX;
-		departX = null;
-		if (photos.length < 2 || Math.abs(dx) < SEUIL_GLISSEMENT) return;
+	function suiteGeste(e: PointerEvent) {
+		if (!geste || e.pointerId !== geste.id) return;
+		geste.dx = e.clientX - geste.x0;
+		geste.trace.push([e.clientX, e.timeStamp]);
+		if (!geste.suit && Math.abs(geste.dx) < AMORCE) return;
+		if (!geste.suit) {
+			geste.suit = true;
+			(e.currentTarget as Element).setPointerCapture(e.pointerId);
+			suit = true;
+		}
+		const dx = photos.length < 2 ? elastique(geste.dx, window.innerWidth) : geste.dx;
+		image.style.transform = `translateX(${dx}px)`;
+	}
+
+	async function finGeste(e: PointerEvent) {
+		if (!geste || e.pointerId !== geste.id) return;
+		//  L'instant du lâcher compte : un doigt qui s'est arrêté avant de lâcher n'a plus d'élan.
+		geste.trace.push([e.clientX, e.timeStamp]);
+		const { dx, suit: suivait, trace } = geste;
+		geste = null;
+		if (!suivait) return;
 		aGlisse = true;
-		dx > 0 ? precedente() : suivante();
+		suit = false;
+		const v = vitesse(trace);
+		const change =
+			photos.length > 1 &&
+			(Math.abs(dx) >= SEUIL_GLISSEMENT ||
+				(Math.abs(v) > VITESSE_JETEE && Math.sign(v) === Math.sign(dx)));
+		if (!change) {
+			image.style.transform = ''; // elle revient, en partant d'où elle est
+			return;
+		}
+		await changer(dx > 0 ? -1 : 1);
+	}
+
+	function abandonGeste() {
+		geste = null;
+		suit = false;
+		if (image) image.style.transform = '';
+	}
+
+	/** La photo sort du côté où on la pousse ; la voisine entre de l'autre. */
+	async function changer(sens: 1 | -1) {
+		const reduit = mouvementReduit();
+		image.style.opacity = '0';
+		if (!reduit) image.style.transform = `translateX(${-sens * window.innerWidth}px)`;
+		await finDesAnimations(image);
+		sens > 0 ? suivante() : precedente();
+		await tick();
+		//  Placée de l'autre côté sans transition, puis rendue à sa place.
+		suit = true;
+		image.style.transform = reduit ? '' : `translateX(${sens * 25}%)`;
+		await tick();
+		void image.offsetWidth;
+		suit = false;
+		await tick();
+		image.style.transform = '';
+		image.style.opacity = '';
 	}
 
 	//  Un glissement amorcé sur le fond produit AUSSI un `click` en fin de geste :
@@ -103,7 +195,9 @@
 	on:keydown={(e) =>
 		(e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget && fermer()}
 	on:pointerdown={debutGeste}
+	on:pointermove={suiteGeste}
 	on:pointerup={finGeste}
+	on:pointercancel={abandonGeste}
 >
 	<button class="lb-fermer" aria-label="Fermer la photo" on:click|stopPropagation={fermer}>×</button
 	>
@@ -125,7 +219,14 @@
 	     élément non interactif — ce que l'analyse d'accessibilité refuse à juste
 	     titre : un lecteur d'écran annoncerait une image cliquable qui n'est pas
 	     une commande. -->
-	<img class="lb-image" src={photos[index]} alt="Photo {index + 1} sur {photos.length}" />
+	<img
+		bind:this={image}
+		class="lb-image"
+		class:lb-suit={suit}
+		src={photos[index]}
+		alt="Photo {index + 1} sur {photos.length}"
+		draggable="false"
+	/>
 
 	{#if photos.length > 1}
 		<p class="lb-compteur">{index + 1} / {photos.length}</p>
@@ -142,6 +243,10 @@
 		align-items: center;
 		justify-content: center;
 		padding: 1rem;
+		/*  Le glissement horizontal est à la visionneuse ; le pincement reste au
+		    navigateur (agrandir une photo). Sans cette ligne, le navigateur
+		    prenait le geste pour lui et l'annulait (`pointercancel`). */
+		touch-action: pan-y pinch-zoom;
 	}
 	.lb-image {
 		max-width: 100%;
@@ -149,6 +254,21 @@
 		object-fit: contain;
 		border-radius: 4px;
 		cursor: default;
+		user-select: none;
+		transition:
+			transform var(--duree-apparition) var(--ease-out),
+			opacity var(--duree-apparition) var(--ease-out);
+	}
+	/*  Pendant que le doigt la tient, elle le suit sans retard : aucune transition. */
+	.lb-image.lb-suit {
+		transition: none;
+	}
+	/*  Mouvement réduit : la photo suit encore le doigt (c'est lui qui la
+	    déplace), mais le changement se fait en fondu, sans glissement. */
+	@media (prefers-reduced-motion: reduce) {
+		.lb-image {
+			transition: opacity var(--duree-apparition) var(--ease-out);
+		}
 	}
 	.lb-fermer,
 	.lb-nav {

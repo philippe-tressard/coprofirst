@@ -59,9 +59,20 @@
 	$: pastilles = relire($perimetresStore, () => perimetreTags);
 
 	let saisie: Ticket | null = null;
+	//  La colonne où la carte tomberait (#2170) : sans elle, on ne savait où
+	//  elle tombait qu'au lâcher. Celle d'où la carte vient ne s'allume pas.
+	let cible: string | null = null;
+	function lacher() {
+		saisie = null;
+		cible = null;
+	}
+	function quitter(e: DragEvent, colonne: string) {
+		const vers = e.relatedTarget as Node | null;
+		if (cible === colonne && !(e.currentTarget as Node).contains(vers)) cible = null;
+	}
 	async function deposer(colonne: string) {
 		const t = saisie;
-		saisie = null;
+		lacher();
 		const statut = STATUT_PAR_COLONNE[colonne];
 		if (!t || !statut || statut === t.statut) return;
 		//  Glisser en « Résolu » clôt : la fusion se demande ici aussi (#1704).
@@ -94,6 +105,9 @@
 			class="kanban-col"
 			role="group"
 			aria-label={col.label}
+			class:kanban-col-cible={cible === col.id}
+			on:dragenter={() => saisie && colonneDuTicket(saisie.statut) !== col.id && (cible = col.id)}
+			on:dragleave={(e) => quitter(e, col.id)}
 			on:dragover|preventDefault
 			on:drop|preventDefault={() => deposer(col.id)}
 		>
@@ -106,7 +120,9 @@
 					class="kanban-card card"
 					href={lienTicket(t.id)}
 					draggable={peutDeplacer ? 'true' : 'false'}
+					class:kanban-card-saisie={saisie?.id === t.id}
 					on:dragstart={() => (saisie = t)}
+					on:dragend={lacher}
 				>
 					<div class="kanban-card-tags">
 						{#each pastilles((t.perimetre_cible ?? []).join(',')) as tag (tag.code)}
@@ -125,3 +141,20 @@
 		</div>
 	{/each}
 </div>
+
+<style>
+	/*  La colonne qui recevrait la carte se marque pendant le glissement, et la
+	    carte saisie s'efface à demi : le geste se lit AVANT le lâcher (#2170). */
+	.kanban-col {
+		transition:
+			background var(--duree-geste),
+			border-color var(--duree-geste);
+	}
+	.kanban-col.kanban-col-cible {
+		background: var(--color-primary-light);
+		border-color: var(--color-primary);
+	}
+	.kanban-card.kanban-card-saisie {
+		opacity: 0.5;
+	}
+</style>

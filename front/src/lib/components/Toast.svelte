@@ -96,6 +96,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
+	import { finDesAnimations } from '$lib/mouvement';
 
 	onMount(() => {
 		const visibilite = () => (document.hidden ? suspendre() : reprendre());
@@ -104,11 +105,8 @@
 	});
 
 	/**
-	 *  La sortie s'achève quand les animations du message sont finies — ou
-	 *  annulées. On les DEMANDE au navigateur (`getAnimations`) plutôt que
-	 *  d'attendre un `transitionend` : une transition qui ne démarre pas (opacité
-	 *  déjà nulle, durée nulle, entrée encore en cours) n'en émet aucun, et le
-	 *  message restait invisible dans la pile — trouvé par `e2e/toast.spec.ts`.
+	 *  La sortie s'achève quand ses animations sont finies ou annulées —
+	 *  `finDesAnimations` dit pourquoi on ne guette pas `transitionend`.
 	 */
 	function sortie(noeud: HTMLElement, t: ToastMessage) {
 		return {
@@ -116,8 +114,7 @@
 				if (!n.sortant || t.sortant) return (t = n);
 				t = n;
 				await tick();
-				const animations = noeud.getAnimations();
-				await Promise.allSettled(animations.map((a) => a.finished));
+				await finDesAnimations(noeud);
 				retirer(n.id);
 			},
 		};
