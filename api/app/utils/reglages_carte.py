@@ -54,14 +54,13 @@ LIBELLE_ACCES: dict[Acces, str] = {
     Acces.PERSONNE: "Personne (constante du code)",
 }
 
-#: Les groupes d'Admin tels que la réorganisation (#2062) les propose. **Proposés** :
-#: la maquette n'est pas validée, et la carte les montre à ce titre.
+#: Les groupes d'Admin, tels que `front/src/lib/pages-roles.ts` les range depuis #2062
+#: (`test_carte_reglages` confronte chaque écran déclaré à ce fichier).
 G_PERSONNES = "👥 Personnes"
 G_COPROPRIETE = "🏢 Copropriété"
 G_SERVICES = "🔌 Services"
 G_PRESENTATION = "🎨 Présentation"
 G_EXPLOITATION = "🛠 Exploitation"
-G_HORS_ADMIN = "— (hors Admin)"
 
 
 @dataclass(frozen=True)
@@ -71,7 +70,8 @@ class Notion:
     code: str
     libelle: str
     acces: Acces
-    #: L'écran qui le règle aujourd'hui.
+    #: L'écran qui le règle : `Admin › <groupe> › <onglet>` pour un onglet d'Admin (lu et
+    #: confronté à `pages-roles.ts`), sinon le chemin de menus.
     ecran: str
     #: Où la valeur vit : `config_site`, une table, `.env`, le code.
     stockage: str
@@ -79,8 +79,6 @@ class Notion:
     route: tuple[str, str] | None = None
     #: L'onglet de `utils/reglages.PAR_ONGLET` dont la notion écrit les clés.
     onglet: str | None = None
-    #: Le groupe d'Admin proposé par #2062 (carte cible).
-    cible: str = G_HORS_ADMIN
     #: Pour une notion « code » : les constantes qui portent la valeur
     #: (`module:NOM`), confrontées au code par le test.
     constantes: tuple[str, ...] = ()
@@ -93,123 +91,120 @@ PUT_CONFIG = ("PUT", "/config")
 NOTIONS: tuple[Notion, ...] = (
     # ── Administrateur : PUT /config, onglet par onglet (#2057) ──────────────────
     Notion(
-        "site",
-        "Paramètres généraux : e-mail et gestionnaire du site, délais d'archivage et de relance, notifications",
+        "fonctionnement",
+        "Paramètres de fonctionnement : e-mail et gestionnaire du site, délais d'archivage et de relance, notifications",
         Acces.ADMIN,
-        "Admin › Paramétrage site",
+        f"Admin › {G_COPROPRIETE} › Fonctionnement",
         "config_site",
         PUT_CONFIG,
-        "site",
-        f"{G_COPROPRIETE} › Fonctionnement",
+        "fonctionnement",
+    ),
+    Notion(
+        "connexion",
+        "Sous-titre de la page de connexion",
+        Acces.ADMIN,
+        f"Admin › {G_PRESENTATION} › Connexion et pied de page",
+        "config_site",
+        PUT_CONFIG,
+        "connexion",
     ),
     Notion(
         "pied_de_page",
         "Pied de page du site",
         Acces.ADMIN,
-        "Admin › Paramétrage site (pied de page)",
+        f"Admin › {G_PRESENTATION} › Connexion et pied de page",
         "config_site",
         PUT_CONFIG,
         "pied_de_page",
-        f"{G_PRESENTATION} › Connexion et pied de page",
     ),
     Notion(
         "legal",
         "Pages légales et adresse des droits sur les données",
         Acces.ADMIN,
-        "Admin › Pages légales",
+        f"Admin › {G_COPROPRIETE} › Pages légales",
         "config_site",
         PUT_CONFIG,
         "legal",
-        f"{G_COPROPRIETE} › Pages légales",
     ),
     Notion(
         "reference_copro",
         "Référence de copropriété du syndic",
         Acces.ADMIN,
-        "Admin › Fiche copropriété",
+        f"Admin › {G_COPROPRIETE} › Identité",
         "config_site",
         PUT_CONFIG,
         "copropriete",
-        f"{G_COPROPRIETE} › Identité",
     ),
     Notion(
         "pages",
         "Menu et pages : ordre, icône, libellé, titre, description",
         Acces.ADMIN,
-        "Admin › Descriptif pages",
+        f"Admin › {G_PRESENTATION} › Menu et pages",
         "config_site",
         PUT_CONFIG,
         "pages",
-        f"{G_PRESENTATION} › Menu et pages",
     ),
     Notion(
         "services",
         "Interrupteurs des services",
         Acces.ADMIN,
-        "Admin › Services",
+        f"Admin › {G_SERVICES} › Services",
         "config_site",
         PUT_CONFIG,
         "services",
-        f"{G_SERVICES} › Services",
     ),
     Notion(
         "smtp",
         "Envoi des courriels (SMTP) et signature",
         Acces.ADMIN,
-        "Admin › SMTP",
+        f"Admin › {G_SERVICES} › Courriel",
         "config_site",
         PUT_CONFIG,
         "smtp",
-        f"{G_SERVICES} › Courriel",
     ),
     Notion(
         "reception",
         "Relève des réponses par courriel (IMAP)",
         Acces.ADMIN,
-        "Admin › SMTP",
+        f"Admin › {G_SERVICES} › Courriel",
         "config_site",
         PUT_CONFIG,
         "reception",
-        f"{G_SERVICES} › Courriel",
     ),
     Notion(
         "whatsapp",
         "Canal WhatsApp : pont, groupe, pied des messages",
         Acces.ADMIN,
-        "Admin › WhatsApp",
+        f"Admin › {G_SERVICES} › WhatsApp",
         "config_site",
         PUT_CONFIG,
         "whatsapp",
-        f"{G_SERVICES} › WhatsApp",
     ),
     Notion(
         "ia",
         "Assistant IA : fournisseur, clé, réglage de chaque usage",
         Acces.ADMIN,
-        "Admin › Assistant IA",
+        f"Admin › {G_SERVICES} › Assistant IA",
         "config_site",
         PUT_CONFIG,
         "ia",
-        f"{G_SERVICES} › Assistant IA",
     ),
     # ── Administrateur : les réglages qui ont leur propre route ─────────────────
     Notion(
         "logo",
         "Logo de la résidence",
         Acces.ADMIN,
-        "Admin › Paramétrage site",
+        f"Admin › {G_COPROPRIETE} › Identité",
         "fichier + config_site (`site_logo`)",
         ("POST", "/config/logo"),
-        cible=f"{G_COPROPRIETE} › Identité",
     ),
     Notion(
         "fiche_copropriete",
         "Fiche de la copropriété : identité, adresse, syndic, références",
         Acces.ADMIN,
-        "Admin › Fiche copropriété ; Ma résidence",
+        f"Admin › {G_COPROPRIETE} › Identité ; Ma résidence",
         "table `copropriete` (+ `config_site.site_nom`)",
         ("PATCH", "/copropriete"),
-        cible=f"{G_COPROPRIETE} › Identité",
         ecart=(
             "Ma résidence offre la modification à tout le conseil syndical (`isCS`), "
             "mais la route est réservée à l'administrateur : un membre du CS qui "
@@ -220,28 +215,25 @@ NOTIONS: tuple[Notion, ...] = (
         "perimetres",
         "Périmètres (arbre des bâtiments et espaces) et leurs accès fixes",
         Acces.ADMIN,
-        "Admin › Périmètres",
+        f"Admin › {G_COPROPRIETE} › Périmètres",
         "table `perimetre`",
         ("PATCH", "/perimetres/{perimetre_id}"),
-        cible=f"{G_COPROPRIETE} › Périmètres",
     ),
     Notion(
         "modeles_email",
         "Modèles de courriel",
         Acces.ADMIN,
-        "Admin › Modèles e-mail",
+        f"Admin › {G_PRESENTATION} › Modèles e-mail",
         "table `modele_email`",
         ("PATCH", "/admin/modeles-email/{modele_id}"),
-        cible=f"{G_PRESENTATION} › Modèles e-mail",
     ),
     Notion(
         "provenance_reglement",
         "Provenance du règlement",
         Acces.ADMIN,
-        "Admin › Assistant IA",
+        "Ma résidence › Règlement (mode administration)",
         "table / `config_site`",
         ("PUT", "/reglement/provenance"),
-        cible=f"{G_SERVICES} › Assistant IA",
     ),
     # ── Conseil syndical ────────────────────────────────────────────────────────
     Notion(
@@ -281,46 +273,41 @@ NOTIONS: tuple[Notion, ...] = (
         "sauvegarde",
         "Sauvegarde : heure et nombre de versions conservées",
         Acces.OPERATEUR,
-        "Admin › Maintenance",
+        f"Admin › {G_EXPLOITATION} › Maintenance",
         "table `config_sauvegarde`",
         ("PUT", "/admin/sauvegardes/config"),
-        cible=f"{G_EXPLOITATION} › Installation",
     ),
     Notion(
         "inscription",
         "Inscription de l'installation au registre",
         Acces.OPERATEUR,
-        "Admin › Maintenance",
+        f"Admin › {G_EXPLOITATION} › Installation",
         "volume `installation` (clé et état d'inscription)",
         ("POST", "/admin/installation/inscription"),
-        cible=f"{G_EXPLOITATION} › Installation",
     ),
     Notion(
         "bail",
         "Bail de l'installation",
         Acces.OPERATEUR,
-        "Admin › Maintenance",
+        f"Admin › {G_EXPLOITATION} › Installation",
         "volume `installation`",
         ("POST", "/admin/installation/bail"),
-        cible=f"{G_EXPLOITATION} › Installation",
     ),
     Notion(
         "registre_installations",
         "Registre des installations (décisions, services, distribution) — sur la référence",
         Acces.OPERATEUR,
-        "Admin › Installations",
+        f"Admin › {G_EXPLOITATION} › Installations",
         "base `plateforme`",
         ("PUT", "/admin/installations/{identifiant}/services"),
-        cible=f"{G_EXPLOITATION} › Installations",
     ),
     Notion(
         "taches",
         "Tâches planifiées : déclenchement manuel",
         Acces.OPERATEUR,
-        "Admin › Maintenance",
+        f"Admin › {G_EXPLOITATION} › Maintenance",
         "`utils/taches.TACHES_PERMANENTES` (le calendrier est dans le code)",
         ("POST", "/admin/maintenance/lancer"),
-        cible=f"{G_EXPLOITATION} › Maintenance",
     ),
     # ── Personne : des constantes du code ───────────────────────────────────────
     Notion(
@@ -336,7 +323,6 @@ NOTIONS: tuple[Notion, ...] = (
             "app.utils.erreurs_navigateur:CONSERVATION_JOURS",
             "app.utils.purge_comptes.regles:DELAI_AVANT_SUPPRESSION_JOURS",
         ),
-        cible=f"{G_COPROPRIETE} › Fonctionnement (en lecture)",
     ),
 )
 

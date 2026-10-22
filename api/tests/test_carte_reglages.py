@@ -149,6 +149,47 @@ def test_les_routes_citees_par_un_refus_existent():
     assert cites >= 3  # cas zéro : le motif lit bien les messages
 
 
+# ── L'écran déclaré est celui que le front range ───────────────────────────────
+
+_PAGES_ROLES = (
+    pathlib.Path(__file__).resolve().parents[2] / "front" / "src" / "lib" / "pages-roles.ts"
+)
+_ONGLET_RANGE = re.compile(r"label: '([^']+)',\s*groupe: '([^']+)'")
+
+
+def _onglets_ranges() -> set[tuple[str, str]]:
+    """(groupe, onglet) de chaque onglet d'Admin tel que `pages-roles.ts` le range."""
+    source = _PAGES_ROLES.read_text(encoding="utf-8")
+    return {(groupe, label) for label, groupe in _ONGLET_RANGE.findall(source)}
+
+
+def ecrans_d_admin_inconnus(notions, ranges: set[tuple[str, str]]) -> list[str]:
+    """PURE. Les écrans « Admin › groupe › onglet » que le front ne range pas."""
+    inconnus = []
+    for n in notions:
+        premier = n.ecran.split(" ; ")[0]
+        if not premier.startswith("Admin › "):
+            continue
+        morceaux = premier.removeprefix("Admin › ").split(" › ")
+        if len(morceaux) != 2 or (morceaux[0], morceaux[1]) not in ranges:
+            inconnus.append(f"{n.code} : « {premier} » n'est pas un onglet rangé par pages-roles.ts")
+    return inconnus
+
+
+def test_chaque_ecran_d_admin_est_un_onglet_que_le_front_range():
+    ranges = _onglets_ranges()
+    assert len(ranges) >= 18  # cas zéro : le relevé lit bien les onglets d'Admin
+    assert ecrans_d_admin_inconnus(NOTIONS, ranges) == []
+
+
+def test_le_controle_d_ecran_voit_un_onglet_qui_n_existe_pas():
+    """Témoin : un écran inventé, et un ancien libellé (« Paramétrage site »), sont refusés."""
+    ranges = _onglets_ranges()
+    sauvegarde = next(n for n in NOTIONS if n.code == "sauvegarde")
+    for faux in ("Admin › 🛠 Exploitation › Inventé", "Admin › Paramétrage site"):
+        assert ecrans_d_admin_inconnus((replace(sauvegarde, ecran=faux),), ranges)
+
+
 # ── Rien n'échappe à la carte ───────────────────────────────────────────────────
 
 

@@ -12,8 +12,8 @@ L'**accès** de chaque notion est confronté, en CI, à la dépendance d'autoris
 que sa route prend réellement : le tableau dit ce que fait le serveur, pas ce que
 l'écran laisse espérer. Les écarts connus entre les deux sont listés plus bas.
 
-> Les **groupes cibles** sont ceux que propose la réorganisation d'Admin (#2062) :
-> une **proposition**, tant que la maquette n'est pas validée.
+> Les **écrans** d'Admin se lisent « groupe › onglet » : ce sont ceux de
+> `front/src/lib/pages-roles.ts`, confrontés en CI (rangement par niveau, #2062).
 
 ## Vue d'ensemble
 
@@ -21,7 +21,8 @@ l'écran laisse espérer. Les écarts connus entre les deux sont listés plus ba
 mindmap
   root((Réglages))
     Administrateur de la copropriété
-      Paramètres généraux
+      Paramètres de fonctionnement
+      Sous-titre de la page de connexion
       Pied de page du site
       Pages légales et adresse des droits sur les données
       Référence de copropriété du syndic
@@ -66,70 +67,76 @@ mindmap
 
 ### Administrateur de la copropriété
 
-| Notion | Écran aujourd'hui | Stockage | Route | Groupe cible proposé (#2062) |
-|---|---|---|---|---|
-| Paramètres généraux : e-mail et gestionnaire du site, délais d'archivage et de relance, notifications | Admin › Paramétrage site | config_site | `PUT /config` | 🏢 Copropriété › Fonctionnement |
-| Pied de page du site | Admin › Paramétrage site (pied de page) | config_site | `PUT /config` | 🎨 Présentation › Connexion et pied de page |
-| Pages légales et adresse des droits sur les données | Admin › Pages légales | config_site | `PUT /config` | 🏢 Copropriété › Pages légales |
-| Référence de copropriété du syndic | Admin › Fiche copropriété | config_site | `PUT /config` | 🏢 Copropriété › Identité |
-| Menu et pages : ordre, icône, libellé, titre, description | Admin › Descriptif pages | config_site | `PUT /config` | 🎨 Présentation › Menu et pages |
-| Interrupteurs des services | Admin › Services | config_site | `PUT /config` | 🔌 Services › Services |
-| Envoi des courriels (SMTP) et signature | Admin › SMTP | config_site | `PUT /config` | 🔌 Services › Courriel |
-| Relève des réponses par courriel (IMAP) | Admin › SMTP | config_site | `PUT /config` | 🔌 Services › Courriel |
-| Canal WhatsApp : pont, groupe, pied des messages | Admin › WhatsApp | config_site | `PUT /config` | 🔌 Services › WhatsApp |
-| Assistant IA : fournisseur, clé, réglage de chaque usage | Admin › Assistant IA | config_site | `PUT /config` | 🔌 Services › Assistant IA |
-| Logo de la résidence | Admin › Paramétrage site | fichier + config_site (`site_logo`) | `POST /config/logo` | 🏢 Copropriété › Identité |
-| Fiche de la copropriété : identité, adresse, syndic, références | Admin › Fiche copropriété ; Ma résidence | table `copropriete` (+ `config_site.site_nom`) | `PATCH /copropriete` | 🏢 Copropriété › Identité |
-| Périmètres (arbre des bâtiments et espaces) et leurs accès fixes | Admin › Périmètres | table `perimetre` | `PATCH /perimetres/{perimetre_id}` | 🏢 Copropriété › Périmètres |
-| Modèles de courriel | Admin › Modèles e-mail | table `modele_email` | `PATCH /admin/modeles-email/{modele_id}` | 🎨 Présentation › Modèles e-mail |
-| Provenance du règlement | Admin › Assistant IA | table / `config_site` | `PUT /reglement/provenance` | 🔌 Services › Assistant IA |
+| Notion | Écran | Stockage | Route |
+|---|---|---|---|
+| Paramètres de fonctionnement : e-mail et gestionnaire du site, délais d'archivage et de relance, notifications | Admin › 🏢 Copropriété › Fonctionnement | config_site | `PUT /config` |
+| Sous-titre de la page de connexion | Admin › 🎨 Présentation › Connexion et pied de page | config_site | `PUT /config` |
+| Pied de page du site | Admin › 🎨 Présentation › Connexion et pied de page | config_site | `PUT /config` |
+| Pages légales et adresse des droits sur les données | Admin › 🏢 Copropriété › Pages légales | config_site | `PUT /config` |
+| Référence de copropriété du syndic | Admin › 🏢 Copropriété › Identité | config_site | `PUT /config` |
+| Menu et pages : ordre, icône, libellé, titre, description | Admin › 🎨 Présentation › Menu et pages | config_site | `PUT /config` |
+| Interrupteurs des services | Admin › 🔌 Services › Services | config_site | `PUT /config` |
+| Envoi des courriels (SMTP) et signature | Admin › 🔌 Services › Courriel | config_site | `PUT /config` |
+| Relève des réponses par courriel (IMAP) | Admin › 🔌 Services › Courriel | config_site | `PUT /config` |
+| Canal WhatsApp : pont, groupe, pied des messages | Admin › 🔌 Services › WhatsApp | config_site | `PUT /config` |
+| Assistant IA : fournisseur, clé, réglage de chaque usage | Admin › 🔌 Services › Assistant IA | config_site | `PUT /config` |
+| Logo de la résidence | Admin › 🏢 Copropriété › Identité | fichier + config_site (`site_logo`) | `POST /config/logo` |
+| Fiche de la copropriété : identité, adresse, syndic, références | Admin › 🏢 Copropriété › Identité ; Ma résidence | table `copropriete` (+ `config_site.site_nom`) | `PATCH /copropriete` |
+| Périmètres (arbre des bâtiments et espaces) et leurs accès fixes | Admin › 🏢 Copropriété › Périmètres | table `perimetre` | `PATCH /perimetres/{perimetre_id}` |
+| Modèles de courriel | Admin › 🎨 Présentation › Modèles e-mail | table `modele_email` | `PATCH /admin/modeles-email/{modele_id}` |
+| Provenance du règlement | Ma résidence › Règlement (mode administration) | table / `config_site` | `PUT /reglement/provenance` |
 
 ### Conseil syndical (ou administrateur)
 
-| Notion | Écran aujourd'hui | Stockage | Route | Groupe cible proposé (#2062) |
-|---|---|---|---|---|
-| Annuaire du syndic | Espace CS › Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/syndic` | — (hors Admin) |
-| Annuaire du conseil syndical (composition) | Espace CS › Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/cs` | — (hors Admin) |
-| Consignes aux arrivants | Espace CS › Annuaire CS & Syndic (consignes aux arrivants) | `config_site.consignes_arrivant` | `PUT /admin/consignes-arrivant` | — (hors Admin) |
-| Compteurs (relevés) | Espace CS › Compteurs (configuration des catégories) | table `compteur_config` | `POST /prestataires/compteurs-config` | — (hors Admin) |
+| Notion | Écran | Stockage | Route |
+|---|---|---|---|
+| Annuaire du syndic | Espace CS › Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/syndic` |
+| Annuaire du conseil syndical (composition) | Espace CS › Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/cs` |
+| Consignes aux arrivants | Espace CS › Annuaire CS & Syndic (consignes aux arrivants) | `config_site.consignes_arrivant` | `PUT /admin/consignes-arrivant` |
+| Compteurs (relevés) | Espace CS › Compteurs (configuration des catégories) | table `compteur_config` | `POST /prestataires/compteurs-config` |
 
 ### Opérateur de la plateforme
 
-| Notion | Écran aujourd'hui | Stockage | Route | Groupe cible proposé (#2062) |
-|---|---|---|---|---|
-| Sauvegarde : heure et nombre de versions conservées | Admin › Maintenance | table `config_sauvegarde` | `PUT /admin/sauvegardes/config` | 🛠 Exploitation › Installation |
-| Inscription de l'installation au registre | Admin › Maintenance | volume `installation` (clé et état d'inscription) | `POST /admin/installation/inscription` | 🛠 Exploitation › Installation |
-| Bail de l'installation | Admin › Maintenance | volume `installation` | `POST /admin/installation/bail` | 🛠 Exploitation › Installation |
-| Registre des installations (décisions, services, distribution) — sur la référence | Admin › Installations | base `plateforme` | `PUT /admin/installations/{identifiant}/services` | 🛠 Exploitation › Installations |
-| Tâches planifiées : déclenchement manuel | Admin › Maintenance | `utils/taches.TACHES_PERMANENTES` (le calendrier est dans le code) | `POST /admin/maintenance/lancer` | 🛠 Exploitation › Maintenance |
+| Notion | Écran | Stockage | Route |
+|---|---|---|---|
+| Sauvegarde : heure et nombre de versions conservées | Admin › 🛠 Exploitation › Maintenance | table `config_sauvegarde` | `PUT /admin/sauvegardes/config` |
+| Inscription de l'installation au registre | Admin › 🛠 Exploitation › Installation | volume `installation` (clé et état d'inscription) | `POST /admin/installation/inscription` |
+| Bail de l'installation | Admin › 🛠 Exploitation › Installation | volume `installation` | `POST /admin/installation/bail` |
+| Registre des installations (décisions, services, distribution) — sur la référence | Admin › 🛠 Exploitation › Installations | base `plateforme` | `PUT /admin/installations/{identifiant}/services` |
+| Tâches planifiées : déclenchement manuel | Admin › 🛠 Exploitation › Maintenance | `utils/taches.TACHES_PERMANENTES` (le calendrier est dans le code) | `POST /admin/maintenance/lancer` |
 
 ### Personne (constante du code)
 
-| Notion | Écran aujourd'hui | Stockage | Route | Groupe cible proposé (#2062) |
-|---|---|---|---|---|
-| Durées de conservation des données (courriels relevés, journal IA, erreurs du navigateur, comptes) | — (aucun écran) | constantes du code | — | 🏢 Copropriété › Fonctionnement (en lecture) |
+| Notion | Écran | Stockage | Route |
+|---|---|---|---|
+| Durées de conservation des données (courriels relevés, journal IA, erreurs du navigateur, comptes) | — (aucun écran) | constantes du code | — |
 
 ## Écarts connus
 
-- **Fiche de la copropriété** (Admin › Fiche copropriété ; Ma résidence) — Ma résidence offre la modification à tout le conseil syndical (`isCS`), mais la route est réservée à l'administrateur : un membre du CS qui enregistre reçoit un refus (#2096).
+- **Fiche de la copropriété** (Admin › 🏢 Copropriété › Identité ; Ma résidence) — Ma résidence offre la modification à tout le conseil syndical (`isCS`), mais la route est réservée à l'administrateur : un membre du CS qui enregistre reçoit un refus (#2096).
 
 ## Les clés de `config_site`
 
 Écrites par `PUT /config` (administrateur), onglet par onglet : une clé n'appartient qu'à un seul onglet (#2057).
 
-### Paramètres généraux — Admin › Paramétrage site
+### Paramètres de fonctionnement — Admin › 🏢 Copropriété › Fonctionnement
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
 | `archivage_delai_jours` | nombre | — | non |
-| `login_sous_titre` | texte | `Votre espace numérique de résidence` | oui |
 | `notify_new_user_created_email` | oui/non (`1`/`0`) | `0` | non |
 | `notify_ticket_bug_email` | oui/non (`1`/`0`) | `0` | non |
 | `relance_syndic_delai_jours` | nombre | — | non |
 | `site_email` | texte | `admin@example.com` | non |
 | `site_manager_user_id` | nombre | vide | non |
 
-### Pied de page du site — Admin › Paramétrage site (pied de page)
+### Sous-titre de la page de connexion — Admin › 🎨 Présentation › Connexion et pied de page
+
+| Clé | Type | Défaut d'amorce | Lisible sans connexion |
+|---|---|---|---|
+| `login_sous_titre` | texte | `Votre espace numérique de résidence` | oui |
+
+### Pied de page du site — Admin › 🎨 Présentation › Connexion et pied de page
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
@@ -139,7 +146,7 @@ mindmap
 | `pied_de_page_prefixe_nom` | texte | — | oui |
 | `pied_de_page_texte` | texte | — | oui |
 
-### Pages légales et adresse des droits sur les données — Admin › Pages légales
+### Pages légales et adresse des droits sur les données — Admin › 🏢 Copropriété › Pages légales
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
@@ -147,20 +154,20 @@ mindmap
 | `mentions_legales` | texte | texte du produit (seed) | non |
 | `politique_confidentialite` | texte | texte du produit (seed) | non |
 
-### Référence de copropriété du syndic — Admin › Fiche copropriété
+### Référence de copropriété du syndic — Admin › 🏢 Copropriété › Identité
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
 | `reference_copro` | texte | vide | non |
 
-### Menu et pages — Admin › Descriptif pages
+### Menu et pages — Admin › 🎨 Présentation › Menu et pages
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
 | `pages_order` | JSON | — | oui |
 | `page_config_<page>` | JSON | — | oui |
 
-### Interrupteurs des services — Admin › Services
+### Interrupteurs des services — Admin › 🔌 Services › Services
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
@@ -170,7 +177,7 @@ mindmap
 | `verification_version_active` | texte | — | non |
 | `whatsapp_enabled` | texte | — | non |
 
-### Envoi des courriels — Admin › SMTP
+### Envoi des courriels — Admin › 🔌 Services › Courriel
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
@@ -187,7 +194,7 @@ mindmap
 | `smtp_starttls` | oui/non (`1`/`0`) | — | non |
 | `smtp_username` | texte | — | non |
 
-### Relève des réponses par courriel — Admin › SMTP
+### Relève des réponses par courriel — Admin › 🔌 Services › Courriel
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
@@ -199,7 +206,7 @@ mindmap
 | `imap_server` | texte | — | non |
 | `imap_username` | texte | — | non |
 
-### Canal WhatsApp — Admin › WhatsApp
+### Canal WhatsApp — Admin › 🔌 Services › WhatsApp
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
@@ -208,7 +215,7 @@ mindmap
 | `whatsapp_group_jid` | texte | — | non |
 | `whatsapp_group_name` | texte | — | non |
 
-### Assistant IA — Admin › Assistant IA
+### Assistant IA — Admin › 🔌 Services › Assistant IA
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|

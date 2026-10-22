@@ -41,8 +41,8 @@ L'**accès** de chaque notion est confronté, en CI, à la dépendance d'autoris
 que sa route prend réellement : le tableau dit ce que fait le serveur, pas ce que
 l'écran laisse espérer. Les écarts connus entre les deux sont listés plus bas.
 
-> Les **groupes cibles** sont ceux que propose la réorganisation d'Admin (#2062) :
-> une **proposition**, tant que la maquette n'est pas validée.
+> Les **écrans** d'Admin se lisent « groupe › onglet » : ce sont ceux de
+> `front/src/lib/pages-roles.ts`, confrontés en CI (rangement par niveau, #2062).
 """
 
 #: Les caractères qu'un nœud `mindmap` de Mermaid ne supporte pas.
@@ -94,13 +94,13 @@ def _tableau_notions(notions: tuple[Notion, ...]) -> str:
         sortie += [
             f"### {LIBELLE_ACCES[acces]}",
             "",
-            "| Notion | Écran aujourd'hui | Stockage | Route | Groupe cible proposé (#2062) |",
-            "|---|---|---|---|---|",
+            "| Notion | Écran | Stockage | Route |",
+            "|---|---|---|---|",
         ]
         for n in choisies:
             sortie.append(
                 f"| {cellule(n.libelle)} | {cellule(n.ecran)} | {cellule(n.stockage)} "
-                f"| {_route(n)} | {cellule(n.cible)} |"
+                f"| {_route(n)} |"
             )
         sortie.append("")
     return "\n".join(sortie)
