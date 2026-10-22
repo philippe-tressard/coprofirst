@@ -139,7 +139,8 @@ def annuler_annexe_vide(session: Session, point: PointConseil, par: Optional[Uti
         cree_le=maintenant,
     )
     session.add(evol)
-    appliquer_statut(session, ticket, evol, "annulé", maintenant)
+    #  Sans synthèse : une affaire vide n'a rien à raconter (21/10/2026).
+    appliquer_statut(session, ticket, evol, "annulé", maintenant, synthese=False)
     return True
 
 

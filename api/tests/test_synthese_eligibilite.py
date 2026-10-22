@@ -1,16 +1,18 @@
-"""L'éligibilité d'une synthèse EST celle du carnet — jamais une copie (#1643).
+"""La synthèse ne choisit pas ses affaires par catégorie ; le carnet, si (#1643).
 
-Arbitré le 03/10/2026 : « uniquement les affaires du carnet sont éligibles ».
-La règle vit dans `carnet_entretien` (`est_du_bati`, `contribue_au_carnet`) ;
-une liste de catégories recopiée dans la synthèse, l'intervenant ou ailleurs
-divergerait à la première catégorie ajoutée, et une affaire entrerait au carnet
-sans synthèse — ou l'inverse — sans qu'aucun écran ne le montre.
+Arbitré le 03/10/2026 : « uniquement les affaires du carnet sont éligibles » —
+remplacé le 21/10/2026 : **toute affaire close** reçoit sa synthèse (une
+question close au point CS / Syndic n'en avait pas, lu comme une anomalie).
+Le carnet ne range toujours que les catégories du bâti, et c'est sa règle
+(`carnet_entretien` : `est_du_bati`, `contribue_au_carnet`) qui fait les
+moyennes de son bilan (`synthese_affaire/agregats`).
 
 Ce contrôle lit l'AST de `app/` :
 
 1. `CATEGORIES_BATI` n'est lu que dans `utils/carnet_entretien.py` ;
 2. le paquet `utils/synthese_affaire/` ne nomme aucune catégorie
-   (`CategorieTicket`) et appelle bien `contribue_au_carnet`.
+   (`CategorieTicket`) ; seul `agregats` lit la règle du carnet ;
+3. une affaire close d'une catégorie hors du bâti peut être produite.
 """
 
 from __future__ import annotations
@@ -52,9 +54,25 @@ def test_categories_bati_ne_se_lit_que_dans_le_carnet():
     )
 
 
-def test_la_synthese_ne_nomme_aucune_categorie_et_appelle_le_carnet():
+def test_la_synthese_ne_nomme_aucune_categorie_et_seul_le_bilan_lit_le_carnet():
     modules = modules_app(PAQUET, minimum=5)
     fautifs = [m.rel for m in modules if "CategorieTicket" in _noms(m.arbre)]
     assert not fautifs, f"la synthèse nomme des catégories elle-même : {fautifs}"
     appels = [m.rel for m in modules if "contribue_au_carnet" in _noms(m.arbre)]
-    assert appels, "aucun module de la synthèse n'appelle `contribue_au_carnet`"
+    assert appels == [f"{PAQUET}/agregats.py"], (
+        "la règle du carnet ne fait que les moyennes du bilan ; l'éligibilité d'une "
+        f"synthèse ne la lit plus (21/10/2026) : {appels}"
+    )
+
+
+def test_toute_affaire_close_peut_etre_produite():
+    from datetime import datetime
+
+    from app.models.tickets import Ticket
+    from app.utils.synthese_affaire.production import peut_etre_produite
+
+    for categorie in ("question", "nuisance", "acces_accueil", "panne"):
+        t = Ticket(numero="X", titre="x", categorie=categorie, statut="résolu")
+        t.ferme_le = datetime(2026, 10, 21, 4, 4)
+        assert peut_etre_produite(t), categorie
+    assert not peut_etre_produite(Ticket(numero="Y", titre="y", statut="en_cours"))

@@ -3,7 +3,7 @@
 Les garde-fous du ticket, sur une base en mémoire et par les vraies fonctions
 du routeur `routers/tickets/synthese` et du fil (`get_evolutions`) :
 
-- une clôture du carnet inscrit UNE demande ; hors carnet, aucune ;
+- une clôture inscrit UNE demande, quelle que soit la catégorie (21/10/2026) ;
 - la file attend son délai de grâce, puis produit une Suite `synthese` en
   brouillon — vide, avec son motif, quand l'assistant est coupé ;
 - **un seul courriel par production** : ni une seconde passe de la file, ni une
@@ -122,13 +122,12 @@ def test_une_cloture_du_carnet_inscrit_une_seule_demande(session):
     assert not inscrire_si_eligible(session, autre, statut_avant="résolu")
 
 
-def test_hors_carnet_aucune_demande_et_l_equipement_n_est_pas_exige(session):
-    """L'éligibilité est celle du carnet : la catégorie du bâti, avec ou sans
-    équipement — le carnet range l'affaire sous « Sans équipement rattaché »
-    (signalé à l'écran le 03/10/2026, v2.99.2)."""
+def test_hors_carnet_une_demande_aussi_et_l_equipement_n_est_pas_exige(session):
+    """Toute affaire close est éligible (21/10/2026 ; « du carnet » jusque-là),
+    avec ou sans équipement (signalé à l'écran le 03/10/2026, v2.99.2)."""
     resident, _ = _personnes(session)
     question = _close(session, resident, categorie="question", equipement=None)
-    assert not inscrire_si_eligible(session, question, statut_avant="ouvert")
+    assert inscrire_si_eligible(session, question, statut_avant="ouvert")
     sans = _close(session, resident, equipement=None, n=2)
     assert inscrire_si_eligible(session, sans, statut_avant="en_cours")
 
