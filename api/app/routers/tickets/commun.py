@@ -142,7 +142,7 @@ from app.utils.destinataires import (  # noqa: F401  (ré-export volontaire)
     destinataires_syndic_cs,
     syndic_principal,
 )
-from app.utils.saisi_pour import noms_derives
+from app.utils.saisi_pour import adresse_lisible, noms_derives
 from app.utils.noms import nom_auteur
 
 
@@ -284,6 +284,8 @@ def ticket_read(
         fusionnee=ticket.fusionnee_dans_id is not None,
         saisi_pour_affichage=saisi_pour_affichage,
         proprietaire_nom=proprietaire_nom,
+        #  L'adresse d'un tiers, au conseil seul (#2140) — la règle est là-bas.
+        saisi_pour_email=adresse_lisible(ticket, lecteur),
         #  Le délai du site, lu une fois par liste et non une fois par affaire.
         archivee=est_archivable("ticket", ticket, seuil_jours=groupe.seuil_jours),
         relance_count=groupe.relances[ticket.id],
