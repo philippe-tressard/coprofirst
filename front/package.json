@@ -125,6 +125,7 @@
 		"lint:caracteristiques-lot": "node scripts/check-caracteristiques-lot.mjs --selftest && node scripts/check-caracteristiques-lot.mjs",
 		"lint:suppression-confirmee": "node scripts/check-suppression-confirmee.mjs --selftest && node scripts/check-suppression-confirmee.mjs",
 		"lint:statut-recalcule": "node scripts/check-statut-recalcule.mjs --selftest && node scripts/check-statut-recalcule.mjs",
+		"lint:badge-etat-affaire": "node scripts/check-badge-etat-affaire.mjs --selftest && node scripts/check-badge-etat-affaire.mjs",
 		"lint:nombre-saisi": "node scripts/check-nombre-saisi.mjs --selftest && node scripts/check-nombre-saisi.mjs",
 		"lint:vignette-compte": "node scripts/check-vignette-compte.mjs --selftest && node scripts/check-vignette-compte.mjs",
 		"lint:compte-filtres": "node scripts/check-compte-filtres.mjs --selftest && node scripts/check-compte-filtres.mjs",

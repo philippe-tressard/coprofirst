@@ -77,12 +77,21 @@ def test_sans_affaire_le_choix_est_vide(moteur):
     assert http.get("/tickets/choix").json() == []
 
 
-def test_le_choix_ne_montre_que_numero_titre_et_statut(moteur):
+def test_le_choix_ne_montre_que_numero_titre_statut_et_date(moteur):
+    """La date de création s'y ajoute (#2173) : la section « Affaires liées »
+    la montre avec le suivi — rien d'autre ne sort."""
     http, moi = _resident(moteur)
     t = _affaire(moteur, moi, "Porte du garage")
 
     assert http.get("/tickets/choix").json() == [
-        {"id": t.id, "numero": t.numero, "titre": "Porte du garage", "statut": "ouvert"}
+        {
+            "id": t.id,
+            "numero": t.numero,
+            "titre": "Porte du garage",
+            "statut": "ouvert",
+            #  UTC naïf en base, rendu avec son `Z` comme toute date servie.
+            "cree_le": f"{t.cree_le.isoformat()}Z",
+        }
     ]
 
 

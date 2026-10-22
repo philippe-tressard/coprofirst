@@ -75,6 +75,30 @@ export function replier(texte: string | null | undefined): string {
 }
 
 /**
+ *  **Tous les mots de la recherche, n'importe où dans le texte** — sans accents
+ *  ni casse, des deux côtés. La règle des affaires (`recherche_affaires.py`),
+ *  appliquée à ce qu'un écran a déjà reçu. Une recherche vide laisse tout passer.
+ *
+ *  Écrite chez les prestataires (`correspondRecherche`) jusqu'au 23/10/2026 ;
+ *  remontée ici quand les trois tableaux d'import ont reçu la leur (#2173) — une
+ *  règle rangée chez un appelant est recopiée par le suivant (`standards/02`
+ *  §4 sexies).
+ *
+ *  @param texte ce que la ligne MONTRE, morceaux déjà assemblés ou non.
+ */
+export function contientTousLesMots(
+	texte: string | null | undefined | readonly (string | number | null | undefined)[],
+	recherche: string | null | undefined,
+): boolean {
+	const mots = replier(recherche).split(/\s+/).filter(Boolean);
+	if (!mots.length) return true;
+	const cible = replier(
+		Array.isArray(texte) ? texte.filter((m) => m != null && m !== '').join(' ') : (texte as string),
+	);
+	return mots.every((m) => cible.includes(m));
+}
+
+/**
  *  Le **code** d'un libellé : minuscules sans accents, tout le reste réduit au
  *  séparateur, sans séparateur aux bords.
  *

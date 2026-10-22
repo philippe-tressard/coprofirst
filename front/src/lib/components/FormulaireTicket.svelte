@@ -473,6 +473,8 @@
 				slot="affairesLiees"
 				bind:liees={affairesLiees}
 				exclure={ticket?.id ?? null}
+				affaire={ticket}
+				on:fusionnee={(e) => dispatch('modifie', e.detail)}
 				pliable={pliageDe(TICKET, 'affaires_liees')}
 				inactive={inactives.affaires_liees ?? ''}
 			/>

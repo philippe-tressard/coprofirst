@@ -85,11 +85,14 @@ export interface AffaireLiee {
 	id: number;
 	numero: string;
 	titre: string;
+	/** L'état — le « Suivi » de l'écran. */
 	statut: string;
+	/** ISO, sans fuseau (UTC naïf, comme la base) — `fmtDate` le lit (#2173). */
+	cree_le: string;
 }
 
 /**  Une affaire liée proposée à la FUSION, en clôturant (#1704) — `routers/tickets/fusion`.
- *   `fusionnable` faux : lue par moins de monde que l'affaire qu'on clôt, et `motif` le dit. */
+ *   `fusionnable` faux : lue par moins de monde que l'affaire qui l'absorberait, et `motif` le dit. */
 export interface CandidateFusion extends AffaireLiee {
 	fusionnable: boolean;
 	motif: string | null;

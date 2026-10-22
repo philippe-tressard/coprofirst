@@ -1,5 +1,6 @@
 <!--
-  Les trois bandeaux d'un écran d'IMPORT : statistiques, téléversement, filtres.
+  Les trois bandeaux d'un écran d'IMPORT : statistiques, téléversement, réglages
+  du tableau (recherche et statut).
 
   ## Pourquoi ce composant existe (27/08/2026, #453)
 
@@ -29,9 +30,29 @@
   **pas** pour la rangée de filtres, dont le `display:flex` en ligne n'avait pas
   de `flex-wrap` : au-delà de quatre statuts, les boutons débordaient de la
   largeur de l'écran. Corrigé ici, pour les trois d'un coup.
+
+  ## La RECHERCHE de chaque tableau (#2173, 23/10/2026)
+
+  Demandé : « offrir la possibilité de recherche dans chacun des 3 tableaux ».
+  Elle se pose ICI, une fois pour les trois, dans la grille des réglages du site
+  (`ReglagesListe`, la page Affaires, standard depuis le 10/10/2026, déjà sur
+  Badges & accès) : la **Recherche en tête** — on cherche avant de filtrer —,
+  puis le **Statut** en pastilles, le compteur sur la pastille retenue
+  (`ux-patterns` §5). Les boutons « Filtrer : » sont devenus ces pastilles :
+  même filtre, même ordre, même appel au serveur. Sous 768 px la grille passe
+  en une colonne, le champ prend la largeur, et le tableau défile dans sa carte.
+
+  Ce composant ne cherche RIEN : il expose la saisie (`recherche`) et reçoit le
+  nombre de lignes affichées (`compte`). La règle — tous les mots, sans accents
+  ni casse — est `contientTousLesMots` (`$lib/texte`), appliquée par l'écran à
+  ce que SA ligne montre : lui seul sait quelles colonnes il rend.
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import BilanRecherche from '$lib/components/BilanRecherche.svelte';
+	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
+	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
+	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
 
 	/**
 	 * Les tuiles du bandeau de statistiques. `couleur` est absente pour le total,
@@ -55,6 +76,14 @@
 	export let libellesStatuts: Record<string, string> = {};
 	/** Le statut retenu (lié bidirectionnellement). */
 	export let filtre = '';
+	/** La recherche saisie (liée) — l'écran filtre ses lignes avec. */
+	export let recherche = '';
+	/** Ce que la recherche lit, dit en exemple dans le champ. */
+	export let exempleRecherche = 'Un nom, un lot, un code…';
+	/** Le nombre de lignes que le tableau AFFICHE, recherche et statut appliqués. */
+	export let compte = 0;
+	/** Unique sur l'écran : relie le libellé « Recherche » à son champ. */
+	export let idRecherche: string;
 
 	const dispatch = createEventDispatcher<{
 		importer: { fichier: File; remplacer: boolean };
@@ -63,6 +92,16 @@
 
 	let fichier: FileList | null = null;
 	let remplacer = false;
+
+	//  Le statut est un filtre du SERVEUR : chaque changement relit la liste.
+	$: options = statuts
+		.filter((s) => s !== '')
+		.map((s) => ({ val: s, label: libellesStatuts[s] ?? s }));
+	let filtreLu = filtre;
+	$: if (filtre !== filtreLu) {
+		filtreLu = filtre;
+		dispatch('filtrer', filtre);
+	}
 
 	function importer() {
 		if (!fichier?.length) return;
@@ -99,51 +138,49 @@
 	</div>
 </div>
 
-<div class="imp-toolbar">
-	<div class="imp-filtres">
-		<span class="muted libelle-filtre">Filtrer :</span>
-		{#each statuts as s (s)}
-			<button
-				class="btn btn-sm"
-				class:btn-primary={filtre === s}
-				class:btn-outline={filtre !== s}
-				on:click={() => {
-					filtre = s;
-					dispatch('filtrer', s);
-				}}
-			>
-				{s === '' ? 'Tous' : (libellesStatuts[s] ?? s)}
-			</button>
-		{/each}
-	</div>
-	<!--  Les actions de masse (auto-match, auto-résoudre) diffèrent d'un import à
-	      l'autre : elles restent chez l'appelant, qui les place ici. -->
-	<div class="imp-actions">
-		<slot name="actions" />
-	</div>
+<ReglagesListe>
+	<ChampRecherche id={idRecherche} bind:valeur={recherche} placeholder={exempleRecherche} />
+	<ChoixPastilles
+		{options}
+		bind:valeur={filtre}
+		tous="Tous"
+		{compte}
+		libelle="Statut"
+		libelleDevant
+	/>
+</ReglagesListe>
+
+{#if recherche.trim()}
+	<BilanRecherche bind:recherche>
+		<span><strong>{compte} ligne{compte > 1 ? 's' : ''}</strong> pour « {recherche.trim()} »</span>
+	</BilanRecherche>
+{/if}
+
+<!--  Les actions de masse (auto-match, auto-résoudre) diffèrent d'un import à
+      l'autre : elles restent chez l'appelant, qui les place ici. -->
+<div class="imp-actions">
+	<slot name="actions" />
 </div>
 
 <style>
 	/*  Le style voyage avec le balisage : ces règles vivaient en ligne dans les
 	    trois copies, donc rien n'empêchait l'une de changer sans les autres. */
-	.imp-filtres,
+	/*  🔴 `flex-wrap` MANQUAIT sur la rangée de filtres des trois écrans : les
+	    lots en proposent six, et au-delà de quatre les boutons débordaient de la
+	    largeur d'un téléphone (`standards/11` §10). Les filtres sont des
+	    pastilles depuis #2173 ; les actions gardent la règle. */
 	.imp-actions {
 		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-		/*  🔴 `flex-wrap` MANQUAIT sur la rangée de filtres des trois écrans : les
-		    lots en proposent six, et au-delà de quatre les boutons débordaient de la
-		    largeur d'un téléphone (`standards/11` §10). */
-		flex-wrap: wrap;
-	}
-	.imp-actions {
 		gap: 0.35rem;
+		align-items: center;
+		flex-wrap: wrap;
+		margin-bottom: 1rem;
+	}
+	.imp-actions:empty {
+		display: none;
 	}
 	.colonnes {
 		font-size: var(--fs-md);
 		margin-bottom: 0.75rem;
-	}
-	.libelle-filtre {
-		font-size: var(--fs-md);
 	}
 </style>

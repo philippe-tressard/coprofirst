@@ -14,11 +14,10 @@
   s'afficherait deux fois sur toute carte ouverte.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
+	import BadgeEtatAffaire from '$lib/components/BadgeEtatAffaire.svelte';
 	import type { FluxItem } from '$lib/api';
 	import { fmtDatetimeShort } from '$lib/date';
 	import { typeVoirLabel } from '$lib/flux';
-	import { STATUT_TICKET_BADGE, statutTicketLabel } from '$lib/tickets';
 	import { safeHtml } from '$lib/sanitize';
 	import PiecesJointes from './PiecesJointes.svelte';
 	import FluxAffaireEtapes from './FluxAffaireEtapes.svelte';
@@ -31,16 +30,9 @@
 	//  Les deux listes viennent du même `meta` : les dériver ici plutôt que de les
 	//  recevoir évite deux props pour une donnée que le composant a déjà.
 	$: debut = item.meta?.debut as string | undefined;
-	//  🔴 La table des couleurs d'état vit dans `$lib/tickets`, et nulle part
-	//  ailleurs. Ce fichier en portait une COPIE sous forme de ternaire imbriqué —
-	//  la 4ᵉ écriture de la même notion, déclarée en exception dans
-	//  `test_statuts_tickets.py`. Elle tombe : « réalisé » y était vert alors que
-	//  la table ne le connaît pas, et « fermé » y était gris alors qu'elle le dit
-	//  autrement. Une copie ne diverge pas un jour, elle diverge dès le départ.
-	//
-	//  ⚠️ `badge-gray` en repli : le fil montre aussi des états d'autres objets
-	//  que les tickets (un événement, une idée), que cette table ne connaît pas.
-	$: classeStatut = STATUT_TICKET_BADGE[String(item.meta?.statut ?? '')] ?? 'badge-gray';
+	//  🔴 Le badge d'état — teinte de `$lib/tickets`, repli gris pour l'état d'un
+	//  autre objet (événement, idée) — est `BadgeEtatAffaire` (#2173). Ce fichier
+	//  en a porté une copie en ternaire imbriqué, puis la table lue sur place.
 	$: photos = (item.meta?.photos_urls as string[] | undefined) ?? [];
 	$: fichiers = (item.meta?.fichiers_urls as string[] | undefined) ?? [];
 	//  Une AFFAIRE a le corps de la liste Affaires — les trois étapes, ouvertes sur
@@ -73,7 +65,7 @@
 	{#if item.meta?.statut && !estAffaire}
 		<p class="flux-meta-line">
 			État :
-			<Badge teinte={classeStatut}>{statutTicketLabel(String(item.meta.statut))}</Badge>
+			<BadgeEtatAffaire statut={String(item.meta.statut)} />
 		</p>
 	{/if}
 	<!--  🔴 LA DERNIÈRE MISE À JOUR D'ABORD, le texte d'origine ensuite

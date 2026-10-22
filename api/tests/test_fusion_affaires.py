@@ -125,6 +125,17 @@ def test_seules_les_liees_ouvertes_sont_proposees(trois):
     assert [x["id"] for x in candidates(session, session.get(Ticket, a), cs)] == [b]
 
 
+def test_une_candidate_porte_la_forme_d_une_affaire_nommee(trois):
+    """La fusion depuis la correction (#2173) range le groupe par ancienneté — la
+    plus ancienne absorbe : la candidate porte sa date de création, comme toute
+    affaire liée (`affaires_liees._lue`), plus son verdict."""
+    session, _resident, cs, a, b, _c = trois
+    c = candidates(session, session.get(Ticket, a), cs)[0]
+    t = session.get(Ticket, c["id"])
+    assert c["cree_le"] == t.cree_le
+    assert set(c) == {"id", "numero", "titre", "statut", "cree_le", "fusionnable", "motif"}
+
+
 # ── 3. L'absorption ─────────────────────────────────────────────────────────
 
 
