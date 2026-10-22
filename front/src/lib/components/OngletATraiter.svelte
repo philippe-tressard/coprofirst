@@ -191,7 +191,7 @@
 			messageVide="Tous les comptes ont été traités."
 		/>
 	{:else}
-		<div class="card carte-table">
+		<div class="card">
 			<table class="table">
 				<thead>
 					<tr>
@@ -313,7 +313,7 @@
 			messageVide="Toutes les demandes d’accès ont été traitées."
 		/>
 	{:else}
-		<div class="card carte-table">
+		<div class="card">
 			<table class="table">
 				<thead>
 					<tr><th>Utilisateur</th><th>Type</th><th>Lot</th><th>Date</th><th>Actions</th></tr>
@@ -358,7 +358,7 @@
 			messageVide="Toutes les demandes de modification de profil ont été traitées."
 		/>
 	{:else}
-		<div class="card carte-table">
+		<div class="card">
 			<table class="table">
 				<thead>
 					<tr
@@ -427,9 +427,6 @@
 		border-top: none;
 		background: var(--color-neutre-fond);
 		padding: 1rem;
-	}
-	.carte-table {
-		overflow: hidden;
 	}
 	.nom-compte {
 		font-weight: 500;

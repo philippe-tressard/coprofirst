@@ -28,7 +28,17 @@
  * tableau mais celle de la page. Un contrôle qui remonterait indéfiniment finirait
  * par trouver une `.card` quelque part et ne dirait plus rien.
  *
- * Usage : npm run lint:tableaux
+ * ## 🔴 Le conteneur ne doit pas se RENIER (22/10/2026)
+ *
+ * Ce contrôle acceptait toute `.card` sur la foi de `normes.css`. Or trois écrans
+ * posaient sur leur carte une classe locale à `overflow: hidden` — Utilisateurs,
+ * À traiter (trois tableaux), Modèles d'e-mail : la règle du composant, plus
+ * précise, l'emportait sur celle de `.card`, et le tableau des utilisateurs était
+ * rogné sur téléphone. Le contrôle disait ✓ : il lisait la classe, pas son effet.
+ * Il refuse désormais un conteneur dont une classe reçoit, dans le `<style>` du
+ * même fichier, `overflow` ou `overflow-x` à `hidden` ou `clip`.
+ *
+ * Usage : npm run lint:tableaux (`--selftest` rejoue les cas)
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -40,6 +50,17 @@ const PORTEE = 1500;
 
 /** Ce qui fait défiler : la classe dédiée, la carte, ou un style explicite. */
 const CONTENEUR = /class="[^"]*\b(card|table-wrap|table-scroll)\b|overflow-x/;
+const CONTENEURS = new RegExp(CONTENEUR.source, 'g');
+
+/** Les classes d'un `<style>` qui coupent le débordement au lieu de le faire défiler. */
+function classesQuiRognent(style) {
+	const rognent = new Set();
+	for (const [, selecteurs, corps] of style.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+		if (!/overflow(-x)?\s*:\s*(hidden|clip)\b/.test(corps)) continue;
+		for (const [, nom] of selecteurs.matchAll(/\.([\w-]+)/g)) rognent.add(nom);
+	}
+	return rognent;
+}
 
 /**
  * 🔴 AUCUNE EXCEPTION, et ce n'est pas un oubli.
@@ -70,17 +91,56 @@ function fichiersSvelte(dossier) {
  * désarmé.
  */
 export function tableauxNus(source) {
+	//  Les retours à la ligne restent : sans eux, la ligne citée était fausse.
+	const blanchir = (bloc) => bloc.replace(/[^\n]/g, ' ');
 	const sansCommentaires = source
-		.replace(/<!--[\s\S]*?-->/g, (bloc) => ' '.repeat(bloc.length))
-		.replace(/\/\*[\s\S]*?\*\//g, (bloc) => ' '.repeat(bloc.length));
+		.replace(/<!--[\s\S]*?-->/g, blanchir)
+		.replace(/\/\*[\s\S]*?\*\//g, blanchir);
+
+	const style = (sansCommentaires.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [])[1] || '';
+	const rognent = classesQuiRognent(style);
 
 	const nus = [];
 	for (const m of sansCommentaires.matchAll(/<table\b/g)) {
 		const avant = sansCommentaires.slice(Math.max(0, m.index - PORTEE), m.index);
-		if (CONTENEUR.test(avant)) continue;
+		//  Le conteneur le plus PROCHE : c'est lui qui décide du débordement.
+		const proche = [...avant.matchAll(CONTENEURS)].pop();
+		//  Toutes ses classes : le motif s'arrête à `card`, l'attribut va plus loin.
+		const attribut = proche ? avant.slice(proche.index).match(/^class="([^"]*)/) : null;
+		const classes = attribut ? attribut[1].split(/\s+/) : [];
+		if (proche && !classes.some((c) => rognent.has(c))) continue;
 		nus.push(sansCommentaires.slice(0, m.index).split('\n').length);
 	}
 	return nus;
+}
+
+if (process.argv.includes('--selftest')) {
+	const carte = (classe, regle) =>
+		`<div class="${classe}"><table></table></div><style>${regle}</style>`;
+	const cas = [
+		['<div class="card"><table></table></div>', 0],
+		['<div class="table-wrap"><table></table></div>', 0],
+		['<section><table></table></section>', 1],
+		//  Le défaut du 22/10/2026 : la carte se renie par une classe locale.
+		[carte('card carte-comptes', '.carte-comptes { overflow: hidden; }'), 1],
+		[carte('card carte-x', '.a, .carte-x { overflow-x: clip }'), 1],
+		[carte('card carte-x', '.carte-x { overflow: auto; }'), 0],
+		//  Une autre classe du fichier qui rogne ne touche pas ce tableau.
+		[carte('card', '.sujet { overflow: hidden; }'), 0],
+		//  Le plus proche décide : une enveloppe défilante DANS une carte qui rogne.
+		[
+			'<div class="card r"><div class="table-wrap"><table></table></div></div>' +
+				'<style>.r { overflow: hidden }</style>',
+			0,
+		],
+	];
+	let ko = 0;
+	for (const [source, attendu] of cas) {
+		const obtenu = tableauxNus(source).length;
+		console.log(`${obtenu === attendu ? 'PASS' : 'FAIL'}  ${source.slice(0, 70)}`);
+		if (obtenu !== attendu) ko = 1;
+	}
+	process.exit(ko);
 }
 
 const fautifs = [];
@@ -116,7 +176,8 @@ if (fautifs.length) {
 			`  \`body { overflow-x: hidden }\` MASQUE le dépassement : les dernières\n` +
 			`  colonnes deviennent inatteignables, sans barre ni geste possible.\n\n` +
 			`  Remède : envelopper dans \`<div class="table-wrap">\` — la classe existe\n` +
-			`  déjà dans \`styles/normes.css\`.\n`,
+			`  déjà dans \`styles/normes.css\` —, et ne jamais poser \`overflow: hidden\`\n` +
+			`  sur le conteneur d'un tableau : il annule le défilement de \`.card\`.\n`,
 	);
 	process.exit(1);
 }

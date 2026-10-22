@@ -457,6 +457,13 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 		flex-wrap: wrap;
 		gap: 0.35rem;
 	}
+	/*  …sauf dans un tableau, qui DÉFILE au lieu de se comprimer (cellules en
+	    `nowrap` ci-dessus) : la cellule d'actions tombait à la largeur d'une icône,
+	    et les cinq gestes d'un compte s'empilaient en une ligne de 680 px de haut
+	    (Admin › Utilisateurs, 22/10/2026). */
+	.table .action-row {
+		flex-wrap: nowrap;
+	}
 
 	/*  Grilles de formulaire : 1 colonne.
 	    ⚠️ `.form-grid-2` AUSSI, et il a manqué à l'appel jusqu'au 01/09/2026 : sa
