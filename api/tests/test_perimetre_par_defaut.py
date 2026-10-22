@@ -41,7 +41,11 @@ def test_le_message_du_groupe_tait_le_defaut(batiments):
     assert _libelle_perimetre('["résidence"]') == "Copropriété"
     assert _libelle_perimetre("[]") == "Copropriété"
     assert _libelle_perimetre(None) == "Copropriété"
-    assert _libelle_perimetre('["bat:1"]') == "bat:1"
+    #  Le libellé de l'arbre, jamais le code brut : le groupe lisait « bat:4/ascenseur »
+    #  (22/10/2026) — le rendu commun du site, `perimetre_label`.
+    assert _libelle_perimetre('["bat:1"]') == "Bâtiment 1"
+    assert _libelle_perimetre('["bat:4/ascenseur"]') == "Bât. 4 › Ascenseur"
+    assert _libelle_perimetre('["bat:1", "bat:2"]') == "Bâtiment 1 · Bâtiment 2"
 
 
 def test_une_autre_racine_devient_le_defaut(batiments):
