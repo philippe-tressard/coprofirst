@@ -442,9 +442,9 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 
 ### n° 57 · en vigueur — Un message : deux régimes
 26/09/2026 · non retrouvé · non dit · §17
-- **Décidé** : un message simple va au coin fixe (`Toast`) ; la suite d'un geste naît de l'élément (bulle ancrée).
-- **Pourquoi** : une place prévisible pour l'un, l'origine du geste pour l'autre (`emil-design-eng`).
-- **Tenu par** : aucun garde-fou nommé.
+- **Décidé** : un message simple va au coin fixe (`Toast`) ; la suite d'un geste naît de l'élément (bulle ancrée). 23/10/2026 (#2168) : une erreur reste jusqu'à ce qu'on la ferme.
+- **Pourquoi** : une place prévisible pour l'un, l'origine du geste pour l'autre (`emil-design-eng`) ; partie en 4 s, une erreur n'était lue que par qui regardait (WCAG 2.2.1, audit `apple-design`).
+- **Tenu par** : `e2e/toast.spec.ts` (l'erreur reste, le survol retient la réussite).
 
 ### n° 58 · en vigueur — Une recherche libre remplace le filtre « Catégorie »
 27/09/2026 · #1397 (v2.72.0) · l'utilisateur, sur maquette · §5 bis
