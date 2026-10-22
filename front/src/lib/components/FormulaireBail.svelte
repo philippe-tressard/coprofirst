@@ -256,7 +256,8 @@
 				bind:email={bail.locataire_email}
 				bind:associe={compteAssocie}
 			/>
-			<!-- Pré-remplies et verrouillées si un compte est associé. -->
+			<!-- Nom et prénom pré-remplis et verrouillés si un compte est associé ;
+			     l'adresse, non : le compte ne la donne plus en entier (#2153). -->
 			<div class="form-grid form-grid-2">
 				<div class="field">
 					<label for="{uid}-prenom">Prénom</label>
@@ -285,7 +286,6 @@
 						type="email"
 						bind:value={bail.locataire_email}
 						placeholder="email@exemple.fr"
-						readonly={compteAssocie}
 					/>
 				</div>
 				<div class="field">

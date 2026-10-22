@@ -19,6 +19,7 @@ from __future__ import annotations
 import uuid
 from datetime import timedelta
 
+from markupsafe import escape
 from sqlmodel import Session
 
 from app.models.affaires_liees import AffaireLiee
@@ -138,7 +139,8 @@ def test_le_courriel_rendu_place_les_liees_apres_l_historique():
     assert html.index("Historique") < html.index("Affaires liées")
     #  Ordre de CRÉATION des affaires, pas du lien : l'ancienne d'abord.
     bloc = html[html.index("Affaires liées") :]
-    assert bloc.index(ancienne.titre) < bloc.index(recente.titre)
+    #  Le corps s'échappe (#2150) : « Colonne d'eau » s'écrit « Colonne d&#39;eau ».
+    assert bloc.index(escape(ancienne.titre)) < bloc.index(escape(recente.titre))
     assert "Le plombier passe lundi" in bloc
     assert secrete.titre not in html
 

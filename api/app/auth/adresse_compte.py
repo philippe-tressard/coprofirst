@@ -62,6 +62,22 @@ def normaliser_adresse(adresse: Optional[str]) -> str:
     return (adresse or "").strip().lower()
 
 
+def adresse_masquee(adresse: Optional[str]) -> str:
+    """`p***@domaine.fr` — assez pour reconnaître quelqu'un, pas assez pour ficher.
+
+    Écrit une fois pour deux lecteurs : le journal des envois (#777), et la
+    recherche d'un locataire par un bailleur (#2153), où l'adresse entière
+    servait d'annuaire à tout copropriétaire. Une chaîne vide si l'adresse l'est,
+    `***` si elle n'a pas de domaine.
+    """
+    if not adresse:
+        return ""
+    tete, _, domaine = adresse.strip().partition("@")
+    if not domaine:
+        return "***"
+    return f"{tete[:1]}***@{domaine}"
+
+
 def compte_par_adresse(
     session: Session, adresse: Optional[str], *, actif_seulement: bool = False
 ) -> Optional[Utilisateur]:

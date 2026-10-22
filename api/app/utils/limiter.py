@@ -76,6 +76,11 @@ LIMITE_LECTURE_AUTHENTIFIEE = "60/minute"
 #: l'identifiant de la télémétrie (#1545), rétablie le même jour avec lui.
 LIMITE_DONNEES_PERSONNELLES = "5/minute"
 
+#: La **recherche d'une personne** parmi les comptes — un bailleur qui cherche son
+#: locataire (#2153). Elle se lance au clic, jamais à la frappe : vingt par
+#: minute ne gênent personne, et bornent un balayage alphabétique de l'annuaire.
+LIMITE_RECHERCHE_DE_PERSONNES = "20/minute"
+
 #: Le basculement d'une **préférence** du compte.
 LIMITE_PREFERENCE = "10/minute"
 

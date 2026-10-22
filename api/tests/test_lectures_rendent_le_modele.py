@@ -287,12 +287,28 @@ def test_bail_locataire_out(session):
 
 
 def test_locataire_info(session):
+    from app.auth.adresse_compte import adresse_masquee
+    from app.models.core import StatutUtilisateur
     from app.routers.bailleur.baux import search_locataire
+    from tests.conftest import requete_de_test
 
     bailleur = compte(session, prefixe="bailleur")
-    locataire = compte(session, prefixe="loc", prenom="Alice", nom="LOCATAIRE", actif=False)
-    lus = _json(search_locataire(q=locataire.email, user=bailleur, session=session))
-    attendu = {"id": locataire.id, "nom": "LOCATAIRE", "prenom": "Alice", "email": locataire.email}
+    locataire = compte(
+        session,
+        prefixe="loc",
+        prenom="Alice",
+        nom="LOCATAIRE",
+        actif=False,
+        statut=StatutUtilisateur.locataire,
+    )
+    requete = requete_de_test("/bailleur/search-locataire", "GET")
+    lus = _json(search_locataire(requete, q=locataire.email, user=bailleur, session=session))
+    attendu = {
+        "id": locataire.id,
+        "nom": "LOCATAIRE",
+        "prenom": "Alice",
+        "email_masque": adresse_masquee(locataire.email),
+    }
     assert lus == [{**attendu, "actif": False}], lus
 
 

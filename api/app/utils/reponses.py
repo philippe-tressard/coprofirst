@@ -25,6 +25,7 @@ from app.models.core import (
 )
 from app.utils.noms import ANCIEN_RESIDENT, nom_affiche
 from app.utils.recuperer import ou_rien
+from app.utils.html_sur import html_riche
 from app.utils.roles_libelles import libelle_role, libelle_statut_court
 from app.utils.liens import adresse_du_site
 from app.auth.deps import est_moderateur
@@ -166,7 +167,7 @@ def notifier_nouvelle_reponse(
                 "auteur": nom_affiche(auteur.prenom, auteur.nom),
                 "rubrique_label": rubrique_label,
                 "sujet": sujet,
-                "extrait": extrait[:300],
+                "extrait": html_riche(extrait[:300]),
                 "lien": f"{adresse_du_site()}{lien_path}",
             }
         }

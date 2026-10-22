@@ -50,7 +50,7 @@ def tout_allume(session):
         "whatsapp_enabled": "1",
         "imap_enabled": "1",
         "verification_version_active": "1",
-        "whatsapp_api_url": "http://bridge.example",
+        "whatsapp_api_url": "http://whatsapp-bridge:8090",
         "whatsapp_group_jid": "groupe@g.us",
     }.items():
         session.add(ConfigSite(cle=cle, valeur=valeur))
@@ -85,9 +85,9 @@ def test_hors_demo_le_moteur_obeit_a_la_configuration(tout_allume):
 
 def test_en_demo_le_bridge_n_est_jamais_appele(en_demo, reseau_interdit):
     with pytest.raises(demo.FermeEnDemo):
-        whatsapp._poster_au_bridge("http://bridge.example/send", {}, {})
+        whatsapp._poster_au_bridge("http://whatsapp-bridge:8090/send", {}, {})
     with pytest.raises(demo.FermeEnDemo):
-        whatsapp.get_whatsapp_status({"whatsapp_api_url": "http://bridge.example"})
+        whatsapp.get_whatsapp_status({"whatsapp_api_url": "http://whatsapp-bridge:8090"})
 
 
 def test_en_demo_le_fournisseur_d_ia_n_est_jamais_appele(en_demo, reseau_interdit):

@@ -84,7 +84,7 @@ def test_une_requete_de_cles_declarees_s_ecrit(session):
         "site_email": "admin@exemple.fr",
         "smtp_server": "smtp.exemple.fr",
         "imap_dossier": "INBOX",
-        "whatsapp_api_url": "http://bridge:3000",
+        "whatsapp_api_url": "http://whatsapp-bridge:8090",
         "page_config_tableau-de-bord": "{}",
         "pages_order": "[]",
         "llm_synthese_contrat_modele": "modele-x",

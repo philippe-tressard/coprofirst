@@ -8,13 +8,15 @@ quatre modules partagent. Les redéclarer donnerait deux formes de la même
 réponse, libres de diverger au premier champ ajouté.
 """
 
-from app.utils import horloge
+import re
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from app.utils import horloge
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
 
-from app.auth.adresse_compte import compte_par_adresse
+from app.auth.adresse_compte import adresse_masquee, compte_par_adresse
 from app.auth.deps import require_cs_or_admin, require_proprietaire
 from app.database import get_session
 from app.models.core import (
@@ -25,6 +27,8 @@ from app.models.core import (
     Utilisateur,
 )
 from app.utils.comptes import condition_hors_comptes_techniques, est_compte_technique
+from app.utils.lecture import lire_objet
+from app.utils.limiter import LIMITE_RECHERCHE_DE_PERSONNES, limiter
 from app.utils.recuperer import ou_404
 from pydantic import BaseModel
 
@@ -207,14 +211,34 @@ def terminer_bail(
 
 
 class LocataireInfo(BaseModel):
+    """Un compte locataire proposé au bailleur — son adresse MASQUÉE (#2153).
+
+    L'adresse entière servait d'annuaire : tout copropriétaire balayait `q=aa`,
+    `q=ab`… et repartait avec le nom et l'adresse de chaque compte. Masquée, elle
+    suffit à distinguer deux homonymes ; le bailleur qui la connaît la saisit.
+    """
+
     id: int
     nom: str
     prenom: str
-    email: str
+    email_masque: str
     actif: bool
 
     class Config:
         from_attributes = True
+
+
+def _info(u: Utilisateur) -> LocataireInfo:
+    return lire_objet(LocataireInfo, u, email_masque=adresse_masquee(u.email))
+
+
+def _est_locataire():
+    """Clause SQL « ce compte peut être le locataire d'un bail » (#2153).
+
+    Un compte LOCATAIRE, jamais un compte technique. La recherche portait sur
+    tous les comptes — conseil, administration, syndic, autres copropriétaires.
+    """
+    return (Utilisateur.statut == StatutUtilisateur.locataire) & condition_hors_comptes_techniques()
 
 
 @router.get("/locataires-suggeres", response_model=List[LocataireInfo])
@@ -222,35 +246,43 @@ def locataires_suggeres(
     user: Utilisateur = Depends(require_proprietaire),
     session: Session = Depends(get_session),
 ):
-    """Locataires inscrits qui ont déclaré ce bailleur dans leur nom_proprietaire."""
-    bailleur_mots = {m for m in f"{user.prenom} {user.nom}".lower().split() if len(m) > 2}
-    if not bailleur_mots:
+    """Locataires inscrits qui ont déclaré ce bailleur dans leur nom_proprietaire.
+
+    🔴 Sur le NOM du bailleur, mot pour mot (#2153). Un mot quelconque du prénom
+    OU du nom, cherché comme sous-chaîne, suffisait : un bailleur prénommé
+    « Jean » recevait tout locataire dont le propriétaire déclaré s'appelait
+    « Jean … » — et son adresse avec.
+    """
+    mots_du_nom = {m for m in (user.nom or "").lower().split() if len(m) > 2}
+    if not mots_du_nom:
         return []
     candidats = session.exec(
         select(Utilisateur).where(
-            Utilisateur.statut == StatutUtilisateur.locataire,
+            _est_locataire(),
             Utilisateur.nom_proprietaire.isnot(None),  # type: ignore[attr-defined]
         )
     ).all()
-    result = []
-    for u in candidats:
-        if not u.nom_proprietaire:
-            continue
-        np = u.nom_proprietaire.lower()
-        if any(mot in np for mot in bailleur_mots):
-            result.append(LocataireInfo.model_validate(u))
-    return result
+    return [
+        _info(u)
+        for u in candidats
+        if u.nom_proprietaire
+        and mots_du_nom & set(re.findall(r"[\w-]+", u.nom_proprietaire.lower()))
+    ]
 
 
 @router.get("/search-locataire", response_model=List[LocataireInfo])
+@limiter.limit(LIMITE_RECHERCHE_DE_PERSONNES)
 def search_locataire(
+    request: Request,
     q: str,
     user: Utilisateur = Depends(require_proprietaire),
     session: Session = Depends(get_session),
 ):
-    """Chercher un utilisateur inscrit par email ou nom/prénom pour l'associer à un bail.
+    """Chercher un compte LOCATAIRE par adresse exacte ou nom/prénom, pour un bail.
 
-    Jamais un compte technique (#1985) : il n'est le locataire de personne.
+    🔴 Ni l'annuaire de la résidence, ni ses adresses (#2153) : seuls les comptes
+    locataires sont cherchés, et leur adresse revient masquée. Jamais un compte
+    technique (#1985) : il n'est le locataire de personne.
     """
     q = q.strip()
     if not q:
@@ -258,14 +290,15 @@ def search_locataire(
     if "@" in q:
         # Recherche exacte par email
         trouve = compte_par_adresse(session, q)
-        results = [trouve] if trouve and not est_compte_technique(trouve) else []
+        ok = trouve and trouve.statut == StatutUtilisateur.locataire
+        results = [trouve] if ok and not est_compte_technique(trouve) else []
     else:
         # Recherche partielle insensible à la casse par nom ou prénom
         pattern = f"%{q.lower()}%"
         results = session.exec(
             select(Utilisateur)
             .where((Utilisateur.nom.ilike(pattern)) | (Utilisateur.prenom.ilike(pattern)))
-            .where(condition_hors_comptes_techniques())
+            .where(_est_locataire())
             .limit(10)
         ).all()
-    return [LocataireInfo.model_validate(u) for u in results]
+    return [_info(u) for u in results]

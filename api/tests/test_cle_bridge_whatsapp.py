@@ -58,7 +58,7 @@ def test_la_cle_vient_de_l_environnement(cle_env):
 
 _CONFIG = {
     "whatsapp_enabled": "1",
-    "whatsapp_api_url": "http://bridge:8090/",
+    "whatsapp_api_url": "http://whatsapp-bridge:8090/",
     "whatsapp_group_jid": "123@g.us",
 }
 
@@ -103,7 +103,7 @@ def test_le_statut_porte_la_cle_en_en_tete(cle_env, monkeypatch):
     monkeypatch.setattr(W.httpx, "Client", _client_espion(appels))
     assert W.get_whatsapp_status(_CONFIG) == {"state": "open"}
     ((url, entetes, params),) = appels
-    assert url == "http://bridge:8090/status"
+    assert url == "http://whatsapp-bridge:8090/status"
     assert entetes["x-api-key"] == cle_env
     _sans_cle_dans_l_url(url, params)
 
@@ -124,7 +124,7 @@ def test_l_envoi_porte_la_cle_en_en_tete(cle_env, monkeypatch):
     W.envoyer_whatsapp("Titre", "Contenu", False, None, None, _CONFIG)
     assert len(appels) == 2
     for url, entetes in appels:
-        assert url == "http://bridge:8090/send"
+        assert url == "http://whatsapp-bridge:8090/send"
         assert entetes["x-api-key"] == cle_env
         _sans_cle_dans_l_url(url, {})
 

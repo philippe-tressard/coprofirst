@@ -494,6 +494,16 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   `ERROR`/`CRITICAL` (motif `MOTIF_ERREURS_API`), et une faute de frappe sur un
   mot de passe bloquerait alors la MEP. Cette ligne nommait aussi
   `check-reliability.sh`, qui ne compte rien de tel (23/09/2026).
+- **Le HTML d'un utilisateur, côté serveur : une seule porte** (#2150) —
+  `utils/html_sur` (`nh3`, liste blanche de `$lib/sanitize.ts`). Le corps d'un
+  courriel **s'échappe** ; un champ riche y entre par `html_riche(…)` au contexte
+  ou par `| safe`, redéfini pour assainir. Un assainissement « côté front » n'est
+  pas une règle : l'API s'appelle sans l'écran. 🔒 `test_html_sur.py` rend chaque
+  modèle avec une charge hostile dans chaque variable, et refuse `Markup(x)` hors
+  de la porte.
+- **La clé du bridge ne part que vers le bridge** (#2151) : `whatsapp_api_url` se
+  lit par `whatsapp.adresse_du_bridge` (service Compose ou conteneur, un port, rien
+  d'autre), vérifiée à l'écriture ET à chaque usage. 🔒 `test_adresse_bridge.py`.
 - **Téléversement : une seule porte.** Un fichier reçu s'écrit sur disque par
   `utils/fichiers.enregistrer_fichier_recu` **et nulle part ailleurs** ; les
   règles — liste blanche de types, plafond de taille, cohérence de la signature —

@@ -50,5 +50,13 @@ dnspython==2.9.0
 Pillow==13.0.0
 qrcode[pil]==8.2
 jinja2==3.1.6
+#  `Markup` : un champ riche entre marqué sûr dans un courriel qui s'échappe
+#  (`utils/html_sur`, #2150). Arrivait déjà par `jinja2`, à la même version :
+#  épinglé ici parce que le code l'importe directement (#1048).
+markupsafe==3.0.4
+#  L'assainisseur du HTML riche côté SERVEUR (`utils/html_sur`, #2150) : liste
+#  blanche analysée comme un navigateur (html5ever), jamais des expressions
+#  régulières. Roues abi3 (aarch64 compris), aucune bibliothèque système. MIT.
+nh3==0.3.7
 weasyprint==70.0
 openpyxl==3.1.5

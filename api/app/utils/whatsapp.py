@@ -2,6 +2,7 @@
 
 import logging
 from typing import Any, Callable
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -171,6 +172,62 @@ def entetes_bridge(json: bool = False) -> dict[str, str]:
     return entetes
 
 
+#: 🔴 Les seuls noms sous lesquels on joint le bridge (#2151) : son service Compose
+#: et son conteneur, sur le réseau interne de l'installation.
+#:
+#: `whatsapp_api_url` s'écrit par `PUT /config`, donc par l'administrateur de la
+#: copropriété — qui n'est pas l'opérateur de la plateforme (#1750). Libre, elle
+#: envoyait la clé du bridge (`x-api-key`, tenue hors de `ConfigSite` exprès,
+#: #1596) à l'hôte de son choix, et `GET /config/whatsapp-qr` lui renvoyait le
+#: corps de n'importe quelle page du réseau interne.
+HOTES_DU_BRIDGE = frozenset({"whatsapp-bridge", "hostachy_whatsapp"})
+
+
+class AdresseBridgeRefusee(ValueError):
+    """`whatsapp_api_url` ne désigne pas le bridge : rien ne part vers elle."""
+
+
+def refus_adresse_bridge(url: str) -> str | None:
+    """PURE. Pourquoi cette adresse n'est pas celle du bridge — `None` si elle l'est.
+
+    Un schéma web, un hôte de `HOTES_DU_BRIDGE`, un port, et rien d'autre : ni
+    identifiants, ni chemin, ni requête — on n'y ajoute que `/send`, `/status`
+    ou `/qr`.
+    """
+    try:
+        parts = urlsplit((url or "").strip())
+        parts.port  # lève sur un port illisible (« :abc », hors bornes)
+    except ValueError:
+        return "Adresse illisible."
+    if parts.scheme not in ("http", "https"):
+        return "L'adresse du bridge commence par http:// ou https://."
+    if parts.hostname not in HOTES_DU_BRIDGE:
+        noms = " ou ".join(sorted(HOTES_DU_BRIDGE))
+        return f"Le bridge se joint par son nom sur le réseau de l'installation : {noms}."
+    if parts.username or parts.password or parts.query or parts.fragment:
+        return "L'adresse du bridge ne porte ni identifiant, ni paramètre."
+    if parts.path not in ("", "/"):
+        return "L'adresse du bridge s'arrête au port (http://whatsapp-bridge:8090)."
+    return None
+
+
+def adresse_du_bridge(config: dict) -> str:
+    """L'adresse du bridge, sans « / » final — `""` si elle n'est pas réglée.
+
+    🔴 La SEULE lecture de `whatsapp_api_url` qui mène à une requête : l'adresse
+    est revérifiée à chaque usage, et pas seulement à l'écriture — une valeur
+    posée avant #2151, ou écrite en base par un autre chemin, ne part pas non
+    plus. Lève `AdresseBridgeRefusee` si elle n'est pas celle du bridge.
+    """
+    url = (config.get("whatsapp_api_url") or "").strip()
+    if not url:
+        return ""
+    motif = refus_adresse_bridge(url)
+    if motif:
+        raise AdresseBridgeRefusee(motif)
+    return url.rstrip("/")
+
+
 def config_whatsapp(session, *cles_en_plus: str) -> dict:
     """Configuration WhatsApp lue en une requête, avec d'éventuelles clés de contexte.
 
@@ -211,13 +268,17 @@ def envoyer_whatsapp(
     """Envoie un message sur le groupe WhatsApp. Silencieux en cas d'échec."""
     if not service_actif(config, SERVICE_DIFFUSION):
         return
-    api_url = config.get("whatsapp_api_url", "").strip()
+    try:
+        api_url = adresse_du_bridge(config)
+    except AdresseBridgeRefusee as exc:
+        logger.warning("WhatsApp : adresse du bridge refusée — %s", exc)
+        return
     group_jid = config.get("whatsapp_group_jid", "").strip()
     if not api_url or not group_jid:
         logger.warning("WhatsApp activé mais whatsapp_api_url ou whatsapp_group_jid manquant.")
         return
 
-    url = f"{api_url.rstrip('/')}/send"
+    url = f"{api_url}/send"
     headers = entetes_bridge(json=True)
 
     message = construire_message(
@@ -344,12 +405,12 @@ def envoyer_whatsapp_avec_log(
 
 def envoyer_whatsapp_raw(text: str, config: dict) -> dict:
     """Envoie un message brut sur le groupe WhatsApp. Lève une exception en cas d'échec."""
-    api_url = config.get("whatsapp_api_url", "").strip()
+    api_url = adresse_du_bridge(config)
     group_jid = config.get("whatsapp_group_jid", "").strip()
     if not api_url or not group_jid:
         raise ValueError("whatsapp_api_url ou whatsapp_group_jid manquant.")
 
-    url = f"{api_url.rstrip('/')}/send"
+    url = f"{api_url}/send"
     payload = {"number": group_jid, "text": text}
 
     return _poster_au_bridge(url, payload, entetes_bridge(json=True)).json()
@@ -361,13 +422,13 @@ def get_whatsapp_status(config: dict) -> dict:
     Un 401 se NOMME (#1596) : la clé de l'API n'est pas celle du bridge, et
     « 401 Unauthorized » n'aurait rien dit de plus qu'une panne.
     """
-    api_url = config.get("whatsapp_api_url", "").strip()
+    api_url = adresse_du_bridge(config)
     if not api_url:
         raise ValueError("whatsapp_api_url manquant.")
 
     exiger_hors_demo("WhatsApp")  # même une lecture d'état est un appel sortant (#1902)
     with httpx.Client(timeout=5) as client:
-        resp = client.get(f"{api_url.rstrip('/')}/status", headers=entetes_bridge())
+        resp = client.get(f"{api_url}/status", headers=entetes_bridge())
     if resp.status_code == 401:
         raise CleBridgeRefusee(
             "Le bridge WhatsApp refuse la clé de l'API : WHATSAPP_API_KEY n'est pas la même "
@@ -376,3 +437,25 @@ def get_whatsapp_status(config: dict) -> dict:
         )
     resp.raise_for_status()
     return resp.json()
+
+
+_SIGNATURE_PNG = b"\x89PNG\r\n\x1a\n"
+
+
+def qr_du_bridge(config: dict) -> bytes:
+    """L'image du QR code d'appairage — une image PNG, et rien d'autre (#2151).
+
+    Le corps de la réponse était renvoyé tel quel à l'écran : c'était la porte
+    par laquelle une adresse détournée faisait lire une page du réseau interne.
+    Ce qui n'est pas un PNG ne sort pas.
+    """
+    api_url = adresse_du_bridge(config)
+    if not api_url:
+        raise ValueError("whatsapp_api_url manquant.")
+    exiger_hors_demo("WhatsApp")
+    with httpx.Client(timeout=5) as client:
+        resp = client.get(f"{api_url}/qr", headers=entetes_bridge())
+    resp.raise_for_status()
+    if not resp.content.startswith(_SIGNATURE_PNG):
+        raise ValueError("Le bridge n'a pas rendu une image PNG.")
+    return resp.content

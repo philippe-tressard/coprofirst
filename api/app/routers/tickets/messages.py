@@ -25,6 +25,7 @@ from app.utils.visibility import ticket_visible
 from .commun import config_site, contexte_site
 from .courriels import envoyer_email_externe
 from app.utils.destinataires import membres_cs_ou_admin
+from app.utils.html_sur import html_riche
 from app.utils.noms import contexte_personne
 from app.utils.recuperer import ou_rien
 from app.utils.cloche import sonner
@@ -80,7 +81,7 @@ def _prevenir(
         to=email,
         context={
             "ticket": {"id": ticket.id, "numero": ticket.numero, "titre": ticket.titre},
-            "message": {"contenu": contenu[:300]},
+            "message": {"contenu": html_riche(contenu[:300])},
             "auteur_action": contexte_personne(user),
             **contexte_site(cfg),
         },

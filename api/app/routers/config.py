@@ -3,6 +3,7 @@ Configuration du site — paramètres admin persistants en base de données.
 Remplace le localStorage pour permettre la synchronisation multi-appareils.
 """
 
+import logging
 from html import escape
 from typing import Dict
 from app.utils import horloge
@@ -23,7 +24,7 @@ from app.utils.services import (
 from app.database import get_session
 from app.models.core import ConfigSite, Utilisateur
 from app.utils.destinataires import peut_gerer_le_site
-from app.utils import demo, pied_de_page, reglages
+from app.utils import demo, pied_de_page, reglages, whatsapp
 from app.utils.config_site import config_site
 from app.utils.conservation_politique import apres_ecriture
 from app.utils.liens import adresse_du_site, nom_site
@@ -107,6 +108,13 @@ _NORMALISEURS = {
     **{cle: normaliser_activation for cle in CLES_ACTIVATION},
 }
 
+#: Les clés dont la VALEUR se refuse avant toute écriture : `(valeur) -> motif | None`.
+#: L'adresse du bridge ne désigne que le bridge (#2151) — elle est aussi revérifiée
+#: à chaque usage (`whatsapp.adresse_du_bridge`), une valeur ancienne comprise.
+_VALIDATEURS = {
+    "whatsapp_api_url": lambda v: whatsapp.refus_adresse_bridge(v) if v.strip() else None,
+}
+
 
 @router.get("", response_model=Dict[str, str])
 def get_config(session: Session = Depends(get_session)):
@@ -151,7 +159,9 @@ def save_config(
     #  🔴 Liste blanche (#2055) : une clé non déclarée n'est pas écrite — et rien
     #  ne l'est, la requête entière est refusée avant la première écriture.
     for cle in data:
-        refus = reglages.refus_d_ecriture(cle)
+        refus = reglages.refus_d_ecriture(cle) or (
+            _VALIDATEURS[cle](str(data[cle])) if cle in _VALIDATEURS else None
+        )
         if refus:
             raise HTTPException(422, refus)
     for cle, valeur in data.items():
@@ -331,26 +341,25 @@ def whatsapp_qr(
     user: Utilisateur = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
-    """Retourne l'image QR code du bridge WhatsApp (admin uniquement)."""
-    import httpx
+    """Retourne l'image QR code du bridge WhatsApp (admin uniquement).
 
-    rows = session.exec(select(ConfigSite)).all()
-    config = {r.cle: r.valeur for r in rows}
+    🔴 Le détail d'un échec reste au journal (#2151) : renvoyé à l'écran, le
+    message de `httpx` disait ce qu'avait répondu l'hôte interrogé.
+    """
+    from app.utils.whatsapp import AdresseBridgeRefusee, qr_du_bridge
 
-    from app.utils.whatsapp import entetes_bridge
-
-    api_url = config.get("whatsapp_api_url", "").strip()
-    if not api_url:
+    config = config_site(session, "whatsapp_api_url")
+    if not (config.get("whatsapp_api_url") or "").strip():
         raise HTTPException(400, "whatsapp_api_url non configuré.")
 
     demo.exiger_hors_demo("WhatsApp")  # doublé par la garde du lot D1 (#1902)
     try:
-        with httpx.Client(timeout=5) as client:
-            resp = client.get(f"{api_url.rstrip('/')}/qr", headers=entetes_bridge())
-            resp.raise_for_status()
-            return Response(content=resp.content, media_type="image/png")
-    except Exception as e:
-        raise HTTPException(500, f"Impossible d'obtenir le QR code : {e}")
+        return Response(content=qr_du_bridge(config), media_type="image/png")
+    except AdresseBridgeRefusee as e:
+        raise HTTPException(400, str(e))
+    except Exception:
+        logging.getLogger("app").warning("QR du bridge WhatsApp indisponible", exc_info=True)
+        raise HTTPException(502, "Impossible d'obtenir le QR code du bridge WhatsApp.")
 
 
 class SmtpTestPayload(BaseModel):

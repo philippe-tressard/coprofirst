@@ -28,13 +28,25 @@ def moteur():
         with Session(moteur) as session:
             module_seed._admin_initial(session)
             session.commit()
-            compte(session, nom="Durand", prenom="Site", email="durand@exemple.test")
+            compte(
+                session,
+                nom="Durand",
+                prenom="Site",
+                email="durand@exemple.test",
+                statut=StatutUtilisateur.locataire,
+            )
         yield moteur
 
 
 def _adresses(reponse) -> set[str]:
     assert reponse.status_code == 200, reponse.text
     return {u["email"] for u in reponse.json()}
+
+
+def _trouves(reponse) -> set[str]:
+    """La recherche de locataire rend l'adresse MASQUÉE (#2153) : on lit les noms."""
+    assert reponse.status_code == 200, reponse.text
+    return {f"{u['prenom']} {u['nom']}" for u in reponse.json()}
 
 
 def test_le_conseil_ne_recoit_pas_les_comptes_techniques(moteur):
@@ -56,7 +68,8 @@ def test_la_recherche_de_locataire_ne_les_trouve_jamais(moteur, q):
     http, _ = client_http(
         moteur, RoleUtilisateur.propriétaire, statut=StatutUtilisateur.copropriétaire_bailleur
     )
-    assert not _adresses(http.get("/bailleur/search-locataire", params={"q": q})) & TECHNIQUES
+    trouves = _trouves(http.get("/bailleur/search-locataire", params={"q": q}))
+    assert trouves <= {"Site Durand"}, trouves
 
 
 @pytest.mark.parametrize("q", ["Durand", "durand@exemple.test"])
@@ -65,6 +78,4 @@ def test_la_recherche_trouve_toujours_un_habitant(moteur, q):
     http, _ = client_http(
         moteur, RoleUtilisateur.propriétaire, statut=StatutUtilisateur.copropriétaire_bailleur
     )
-    assert _adresses(http.get("/bailleur/search-locataire", params={"q": q})) == {
-        "durand@exemple.test"
-    }
+    assert _trouves(http.get("/bailleur/search-locataire", params={"q": q})) == {"Site Durand"}

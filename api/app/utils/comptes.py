@@ -39,6 +39,19 @@ def condition_compte_en_attente():
     )
 
 
+def est_en_attente(user: Utilisateur) -> bool:
+    """PURE. La même question que `condition_compte_en_attente`, sur un compte déjà lu.
+
+    🔴 C'est elle que pose le GESTE (`POST /admin/comptes/{id}/traiter`, #2152) :
+    la file ne montrait que les comptes en attente, la route acceptait tous les
+    autres. Le conseil syndical « validait » ainsi un compte que l'administrateur
+    avait désactivé — la liste filtrait, le geste ne refusait rien. Écrite à côté
+    de la clause SQL, et 🔒 `test_traiter_compte_en_attente.py` vérifie qu'elles
+    répondent pareil dans chaque état.
+    """
+    return not user.actif and user.decision_compte_le is None
+
+
 def comptes_en_attente(session: Session) -> list[Utilisateur]:
     """Les comptes qui attendent une décision, du plus ancien au plus récent."""
     return list(

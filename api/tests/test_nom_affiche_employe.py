@@ -50,12 +50,9 @@ _COMPOSITION = re.compile(
 #:
 #: ⚠️ Une exception qui ne sert plus fait échouer ce test : une tolérance qui
 #: survit à son objet finit par en couvrir une qui compte.
-EXCEPTIONS = {
-    "routers/bailleur/baux.py": "ce n'est PAS un affichage : la chaîne est aussitôt passée en minuscules "
-    "et découpée en mots pour RAPPROCHER un bailleur d'un bail. `nom_affiche` "
-    "mettrait le nom en capitales, que le `.lower()` défferait — un détour "
-    "pour le même résultat, et un lecteur croirait à un rendu.",
-}
+#: (Vide depuis #2153 : le rapprochement d'un bailleur à ses locataires ne lit plus
+#: que son NOM, sans composer « prénom nom ».)
+EXCEPTIONS: dict[str, str] = {}
 
 
 def test_le_motif_reconnait_ce_quil_doit_reconnaitre():

@@ -16,9 +16,14 @@
 
   ## Le contrat
 
-  Le composant renseigne l'identifiant du compte ET les trois champs d'identité,
-  et prévient l'hôte par `associe` — qui verrouille alors ses champs : ils
-  décrivent une personne enregistrée, que ce formulaire n'a pas à renommer.
+  Le composant renseigne l'identifiant du compte, le nom et le prénom, et prévient
+  l'hôte par `associe` — qui verrouille alors ces deux champs : ils décrivent une
+  personne enregistrée, que ce formulaire n'a pas à renommer.
+
+  🔴 L'ADRESSE n'est plus recopiée du compte (#2153) : le serveur la rend masquée,
+  pour que la recherche ne soit pas l'annuaire de la résidence. Elle est reprise
+  de la saisie quand on a cherché par adresse exacte — on la connaissait —, et
+  sinon laissée au bailleur, qui la saisit s'il la connaît.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -50,6 +55,8 @@
 	let resultats: LocataireTrouve[] = [];
 	let cherchant = false;
 	let rechercheFaite = false;
+	/** La recherche lancée, si c'était une adresse : la seule qu'on connaisse en entier. */
+	let adresseCherchee = '';
 
 	$: associe = trouve !== null;
 
@@ -66,10 +73,10 @@
 		}
 	});
 
-	function selectionner(l: LocataireTrouve) {
+	function selectionner(l: LocataireTrouve, adresse = '') {
 		trouve = l;
 		locataireId = l.id;
-		email = l.email;
+		email = adresse;
 		nom = l.nom;
 		prenom = l.prenom;
 		resultats = [];
@@ -91,12 +98,13 @@
 		cherchant = true;
 		trouve = null;
 		resultats = [];
+		adresseCherchee = recherche.includes('@') ? recherche.trim() : '';
 		try {
 			const rs = await bailApi.searchLocataire(recherche.trim());
 			rechercheFaite = true;
 			//  Un seul résultat : on le retient. Faire cliquer sur l'unique ligne
 			//  d'une liste d'un élément est un geste pour rien.
-			if (rs.length === 1) selectionner(rs[0]);
+			if (rs.length === 1) selectionner(rs[0], adresseCherchee);
 			else {
 				resultats = rs;
 				locataireId = null;
@@ -123,7 +131,7 @@
 		<div class="locataire-selected">
 			<div class="locataire-selected-info">
 				<span class="locataire-selected-name">✓ {nomAffiche(trouve)}</span>
-				<span class="locataire-selected-email">{trouve.email}</span>
+				<span class="locataire-selected-email">{trouve.email_masque}</span>
 				{#if !trouve.actif}
 					<span class="badge badge-yellow en-attente">En attente d'activation</span>
 				{/if}
@@ -140,7 +148,7 @@
 					<li>
 						<button class="locataire-resultat-btn" on:click={() => selectionner(sug)}>
 							<span class="lr-name">{nomAffiche(sug)}</span>
-							<span class="lr-email">{sug.email}</span>
+							<span class="lr-email">{sug.email_masque}</span>
 							{#if !sug.actif}<span class="badge badge-yellow en-attente">En attente</span>{/if}
 						</button>
 					</li>
@@ -169,9 +177,12 @@
 			<ul class="locataire-resultats">
 				{#each resultats as r (r.id)}
 					<li>
-						<button class="locataire-resultat-btn" on:click={() => selectionner(r)}>
+						<button
+							class="locataire-resultat-btn"
+							on:click={() => selectionner(r, adresseCherchee)}
+						>
 							<span class="lr-name">{nomAffiche(r)}</span>
-							<span class="lr-email">{r.email}</span>
+							<span class="lr-email">{r.email_masque}</span>
 							{#if !r.actif}<span class="badge badge-yellow en-attente">En attente</span>{/if}
 						</button>
 					</li>

@@ -358,8 +358,10 @@ def test_le_courriel_de_relance_lit_le_resume():
         "description": "La description",
     }
     ctx = {"residence": {"nom": "R"}, "interlocuteurs": "Madame", "anciennete": "un mois"}
-    avec = rendre(corps, {**ctx, "tickets": [{**item, "resume": "Le point de situation"}]})
-    sans = rendre(corps, {**ctx, "tickets": [{**item, "resume": ""}]})
+    avec = rendre(
+        corps, {**ctx, "tickets": [{**item, "resume": "Le point de situation"}]}, html=True
+    )
+    sans = rendre(corps, {**ctx, "tickets": [{**item, "resume": ""}]}, html=True)
     assert "Le point de situation" in avec and "La description" not in avec
     assert "La description" in sans
 
@@ -371,7 +373,9 @@ def test_le_resume_est_echappe_dans_le_courriel():
     corps = next(c for code, _, _, c, _ in EMAIL_TEMPLATES if code == "relance_syndic")
     item = {"numero": "S-1", "titre": "T", "relance_count": 0, "historique": []}
     ctx = {"residence": {"nom": "R"}, "interlocuteurs": "Madame", "anciennete": "un mois"}
-    rendu = _render(corps, {**ctx, "tickets": [{**item, "resume": "<script>x</script>"}]})
+    rendu = _render(
+        corps, {**ctx, "tickets": [{**item, "resume": "<script>x</script>"}]}, html=True
+    )
     assert "<script>x" not in rendu and "&lt;script&gt;" in rendu
 
 
@@ -383,5 +387,9 @@ def test_le_courriel_numerote_la_relance_qui_part():
     ctx = {"residence": {"nom": "R"}, "interlocuteurs": "Madame", "anciennete": "un mois"}
     item = {"numero": "S-1", "titre": "T", "historique": [], "resume": ""}
     #  Deux relances déjà parties : celle-ci est la troisième.
-    assert "Relance n°3" in _render(corps, {**ctx, "tickets": [{**item, "relance_count": 2}]})
-    assert "1ère relance" in _render(corps, {**ctx, "tickets": [{**item, "relance_count": 0}]})
+    assert "Relance n°3" in _render(
+        corps, {**ctx, "tickets": [{**item, "relance_count": 2}]}, html=True
+    )
+    assert "1ère relance" in _render(
+        corps, {**ctx, "tickets": [{**item, "relance_count": 0}]}, html=True
+    )
