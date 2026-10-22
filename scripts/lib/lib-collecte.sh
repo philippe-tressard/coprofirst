@@ -285,3 +285,10 @@ COLLECT="$COLLECT$COLLECT_ACCES"
 # vivent ensemble dans ce module.
 . "$(dirname "${BASH_SOURCE[0]}")/lib-paquets-proscrits.sh"
 COLLECT="$COLLECT$(collecte_paquets_proscrits)"
+
+# C39 (#2115) : le jeton du tunnel est-il EN CLAIR dans l unite cloudflared ?
+# La collecte ne rend qu un verdict (clair / absent), jamais un extrait de l unite :
+# le jeton ne quitte pas le noeud. Mesure et decision vivent ensemble, dans
+# `lib-jeton-tunnel-clair.sh`.
+. "$(dirname "${BASH_SOURCE[0]}")/lib-jeton-tunnel-clair.sh"
+COLLECT="$COLLECT$(collecte_jeton_tunnel)"

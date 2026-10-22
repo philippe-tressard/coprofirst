@@ -165,6 +165,23 @@ l'**actif** d'abord (le jeton est éprouvé par un connecteur temporaire avant d
 toucher à celui qui sert), puis le secours (tunnel laissé arrêté). Jamais
 `cloudflared service install` sur le standby : il démarre et active l'unité.
 
+🔴 **Le jeton vit dans un FICHIER, jamais dans l'unité** (#2115, 22/10/2026).
+`ExecStart` ne porte que `--token-file /etc/cloudflared/jeton` (root 600 ; le
+chemin s'écrit une fois, `JETON_FICHIER` de `lib-jeton-tunnel.sh`). Avant cette date
+les deux nœuds avaient `--token <valeur>` en clair — lisible par tout compte local
+(`ps`, `systemctl cat`) —, parce que `cloudflared service install <jeton>` et le
+`sed` de la rotation l'y écrivaient. Un nœud encore à l'ancienne forme se
+migre SANS changer le jeton : `sudo bash …/changer-jeton-tunnel.sh --migrer`, le
+**standby d'abord** (rien ne redémarre), puis l'actif (le tunnel redémarre, retour
+arrière si le site public ne répond pas 200). La rotation vient ensuite
+(tableau de bord Cloudflare, puis le script sans argument). Les sauvegardes de
+`/root` qui portent un secret sont détruites par le script (`shred -u`).
+**C39** (`lib-jeton-tunnel-clair.sh`) échoue (FAIL) si `systemctl cat cloudflared`
+contient un jeton en clair sur l'un des nœuds — la collecte ne remonte qu'un
+verdict, jamais un extrait de l'unité. ⚠️ Ne jamais afficher `systemctl cat
+cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abord
+(`sed -E 's/(--token[= ]+)[^ ]+/<MASQUÉ>/'`).
+
 ## Risques connus
 - **Build OOM** : `npm run build` peut saturer la RAM du RPi → préférer `--nocache` en cas de build lourd
 - **health-watch failover** → peut créer un split-brain ; toujours vérifier `docker ps` sur les 2 RPi
