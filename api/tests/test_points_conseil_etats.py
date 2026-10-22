@@ -90,6 +90,24 @@ def test_l_etat_ne_change_qu_a_la_validation(moteur, envois):
     assert "point CS / Syndic" in suite.contenu
 
 
+def test_une_affaire_close_a_la_validation_recoit_sa_synthese(moteur, envois):
+    """Une question close au point : la validation inscrit sa synthèse — elle
+    n'en recevait pas, faute d'être du carnet (signalé le 21/10/2026)."""
+    from app.models.synthese import SyntheseAffaire
+
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    point, t, _ = point_termine(moteur, cs, etat_cible="résolu")
+    with Session(moteur) as s:
+        ticket = s.get(Ticket, t)
+        ticket.categorie = "question"
+        s.add(ticket)
+        s.commit()
+    assert cs.post(f"/points-conseil/{point}/valider").status_code == 204
+    with Session(moteur) as s:
+        (demande,) = s.exec(select(SyntheseAffaire).where(SyntheseAffaire.ticket_id == t)).all()
+        assert demande.cloture_le == s.get(Ticket, t).ferme_le
+
+
 def test_un_etat_hors_liste_est_refuse(moteur, envois):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
     point, t, _ = point_termine(moteur, cs)
@@ -209,6 +227,12 @@ def test_l_annexe_vide_est_annulee_a_la_validation_pas_l_annexe_ecrite(moteur, e
     cs.post(f"/points-conseil/{vide}/terminer")
     cs.post(f"/points-conseil/{vide}/valider")
     assert _statut(moteur, annexe_vide) == "annulé"
+    from app.models.synthese import SyntheseAffaire
+
+    with Session(moteur) as s:
+        assert not s.exec(
+            select(SyntheseAffaire).where(SyntheseAffaire.ticket_id == annexe_vide)
+        ).all(), "une annexe vide n'a rien à raconter : pas de synthèse"
 
     ecrit = _ouvrir(cs)["point"]["id"]
     annexe = _annexe(moteur, ecrit).id

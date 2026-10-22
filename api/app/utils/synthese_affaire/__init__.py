@@ -1,6 +1,6 @@
 """La **synthèse IA d'une affaire close** (#1643).
 
-Quand une affaire qui contribue au carnet d'entretien passe en résolu ou annulé,
+Quand une affaire passe en résolu ou annulé, quelle que soit sa catégorie,
 une synthèse est produite en différé, déposée dans une nouvelle Suite de
 l'affaire, soumise au conseil pour relecture, puis validée — et alors visible
 des ayants droit et dans le carnet.
@@ -15,6 +15,8 @@ des ayants droit et dans le carnet.
 | `lecture` | qui lit une synthèse (brouillon / validée), et sous quelle forme |
 | `agregats` | les moyennes d'un ENSEMBLE d'affaires closes : bilan du carnet (#1645), fiche prestataire (#1646) |
 
-L'éligibilité n'est écrite nulle part ici : c'est celle du carnet,
-`carnet_entretien.contribue_au_carnet` (🔒 `test_synthese_eligibilite.py`).
+L'éligibilité est `production.peut_etre_produite` : toute affaire close et non
+absorbée (arbitré le 21/10/2026 ; « du carnet » jusque-là). Le paquet ne nomme
+aucune catégorie (🔒 `test_synthese_eligibilite.py`) ; les moyennes du bilan du
+carnet (`agregats`) gardent la règle du carnet, `contribue_au_carnet`.
 """

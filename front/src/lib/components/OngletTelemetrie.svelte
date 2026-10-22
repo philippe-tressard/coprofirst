@@ -151,8 +151,8 @@
 	</div>
 	{#if telemetryData && !telemetryData.filtre_gestionnaire.gestionnaire_designe}
 		<p class="aide">
-			Aucun gestionnaire du site n’est désigné (Paramétrage site) : le filtre « sans le gestionnaire
-			du site » n’a donc rien à écarter.
+			Aucun gestionnaire du site n’est désigné (Copropriété › Fonctionnement) : le filtre « sans le
+			gestionnaire du site » n’a donc rien à écarter.
 		</p>
 	{/if}
 	{#if filtre === 'sans' && telemetryData}

@@ -53,7 +53,7 @@ async function ouvrir(page: Page) {
 		if (chemin === '/api/lots/admin/imports/upload') return TELEVERSEMENT;
 		if (chemin === '/api/lots/admin/imports/auto-resoudre') return RESOLUTION;
 	});
-	await page.goto('/admin?onglet=import_lots');
+	await page.goto('/admin?onglet=imports&source=lots');
 	await attendreHydratation(page);
 }
 

@@ -50,7 +50,6 @@ from app.models.synthese import (
 )
 from app.models.tickets import STATUTS_TICKET_CLOS
 from app.utils import horloge
-from app.utils.carnet_entretien import contribue_au_carnet
 from app.utils.description_format import ReponseIllisible
 from app.utils.synthese_affaire.format import (
     USAGE_SYNTHESE_AFFAIRE,
@@ -81,12 +80,16 @@ class Resultat:
 
 
 def peut_etre_produite(ticket: Ticket) -> bool:
-    """Close, du carnet, et non absorbée — la condition commune à la file et au
-    bouton. Une absorbée est couverte par la synthèse de sa principale (#1704)."""
+    """Close et non absorbée — la condition commune à la file et au bouton. Une
+    absorbée est couverte par la synthèse de sa principale (#1704).
+
+    Toute catégorie : arbitré le 21/10/2026, à la place de « uniquement les
+    affaires du carnet » (03/10) — une question close au point CS / Syndic n'avait
+    pas de synthèse, et l'utilisateur l'a lu comme une anomalie. Le carnet, lui,
+    ne range toujours que les siennes (`carnet_entretien.contribue_au_carnet`)."""
     return (
         valeur(ticket.statut) in STATUTS_TICKET_CLOS
         and bool(ticket.ferme_le)
-        and (contribue_au_carnet(ticket))
         and ticket.fusionnee_dans_id is None
     )
 

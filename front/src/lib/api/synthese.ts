@@ -122,7 +122,7 @@ export interface SyntheseAffaire {
 /** `SyntheseEtat` — ce que la fiche demande pour une affaire. */
 export interface EtatSynthese {
 	synthese: SyntheseAffaire | null;
-	/** Le bouton « Produire la synthèse » (conseil, affaire du carnet close sans synthèse). */
+	/** Le bouton « Produire la synthèse » (conseil, affaire close sans synthèse). */
 	produisible: boolean;
 	/** Une demande attend ses trente minutes : la synthèse arrive. */
 	en_attente: boolean;

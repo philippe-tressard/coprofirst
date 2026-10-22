@@ -3,8 +3,8 @@
 
   Ce que le fil d'une affaire close demande au serveur — la synthèse lisible,
   et si l'on peut en produire une —, puis ce qu'il en montre au-dessus de
-  l'Historique : le bouton « 🧾 Produire la synthèse » (le conseil, affaire du
-  carnet close sans synthèse) ou la mention qu'elle est en préparation.
+  l'Historique : le bouton « 🧾 Produire la synthèse » (le conseil, affaire
+  close sans synthèse — toute catégorie depuis le 21/10/2026) ou la mention qu'elle est en préparation.
 
   🔴 Il est monté par les DEUX rendus du fil, la fiche (`HistoriqueTicket`) et la
   carte dépliée de la liste (`CarteTicket`), qui ne partagent pas leur câblage.

@@ -15,7 +15,7 @@
 
   ## Ce qui reste chez le parent
 
-  Comme `OngletSite` : `siteConfig` est LIÉ et `saveSiteConfig` arrive en
+  Comme `OngletFonctionnement` : `siteConfig` est LIÉ et `saveSiteConfig` arrive en
   callback — la page parle à l'API et tient le `configStore`. L'onglet ne relit
   que le constat, après un enregistrement ou une relecture.
 -->

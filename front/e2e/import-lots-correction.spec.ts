@@ -56,7 +56,7 @@ test('la correction d’une ligne envoie le lot, les occupants et la note saisis
 		if (chemin === '/api/admin/utilisateurs') return COMPTES;
 		if (chemin === '/api/lots/admin/imports/7') return LIGNE;
 	});
-	await page.goto('/admin?onglet=import_lots');
+	await page.goto('/admin?onglet=imports&source=lots');
 	await attendreHydratation(page);
 
 	await page.getByRole('button', { name: 'Modifier' }).first().click();

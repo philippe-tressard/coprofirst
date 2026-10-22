@@ -59,9 +59,9 @@ export interface OngletDef {
 	route: string;
 	/**
 	 * Le GROUPE de l'onglet, quand la rangée se partage en groupes nommés —
-	 * l'administration seule : « 👥 Gestion utilisateurs », « ⚙️ Configuration ».
-	 * `BarreOnglets` rend une rangée par groupe, dans l'ordre de la table ; les
-	 * onglets d'un même groupe se suivent.
+	 * l'administration seule, rangée par niveau en six groupes (#2062).
+	 * `BarreOnglets` rend alors deux rangées : les groupes, puis les onglets du
+	 * groupe actif. Les onglets d'un même groupe se suivent dans la table.
 	 */
 	groupe?: string;
 	/** Les sous-onglets, quand l'onglet en porte une rangée (un seul cas : les

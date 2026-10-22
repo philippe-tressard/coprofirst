@@ -548,3 +548,23 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : « reprendre uniquement celui de “exporter PDF” qui est chouette » ; B choisie parmi cinq maquettes, « bien conserver les résumés initiaux de chaque affaire après le titre ».
 - **Écarté** : A (rapport puis CR en bande), C (deux colonnes), D (fiches), E (procès-verbal) ; le PDF de la v3.2.0 sans résumé ni âge.
 - **Tenu par** : `test_points_conseil_expedition.py`.
+
+### n° 73 · en vigueur — L'affaire dépliée : La demande, La suite, Comptes rendus, La synthèse
+21/10/2026 · non retrouvé · l'utilisateur · §3
+- **Décidé** : les étapes d'une affaire dépliée se suivent toujours dans cet ordre — La demande · La suite · Comptes rendus (s'il y en a de validés) · La synthèse (si l'affaire close en a une) —, dans la liste Affaires comme au fil (`CorpsCarteTicket`, n° 66).
+- **Pourquoi** : « adopte l'ordre suivant des sections (mémorise-le) » — c'était déjà l'ordre rendu (#2042), jamais écrit comme une décision.
+- **Tenu par** : `e2e/fil-rubriques-affaire.spec.ts` (mêmes titres, même ordre au fil et dans la liste) — aucun contrôle ne fige l'ordre lui-même.
+
+### n° 74 · en vigueur — Toute affaire close reçoit sa synthèse, quelle que soit sa catégorie
+21/10/2026 · non retrouvé · l'utilisateur, sur recommandation · §3
+- **Décidé** : une affaire résolue ou annulée — à sa carte, par une Suite ou à la validation d'un point CS / Syndic — reçoit sa synthèse IA une demi-heure plus tard, toutes catégories ; seule l'annexe vide d'un point, annulée d'office, n'en reçoit pas. Le carnet ne range toujours que les catégories du bâti. Les affaires closes par un point déjà validé ont été rattrapées (migration 0306).
+- **Pourquoi** : une question et une nuisance closes au point du 19/10/2026 n'ont pas eu de synthèse, et l'utilisateur l'a lu comme une anomalie : « la clôture d'une affaire doit lancer le traitement IA de synthèse ». Remplace « uniquement les affaires du carnet sont éligibles » (03/10/2026, #1643).
+- **Écarté** : le carnet, plus toute affaire close en point (deux règles : une même question aurait une synthèse close en point, aucune close depuis sa carte).
+- **Tenu par** : `test_synthese_eligibilite.py`, `test_points_conseil_etats.py`.
+
+### n° 75 · en vigueur — Admin rangé par niveau : six groupes, deux rangées
+21/10/2026 · #2062 · l'utilisateur, sur maquette · §4, §9
+- **Décidé** : six groupes aux noms inchangés — 👥 Personnes, 📥 Imports, 🏢 Copropriété, 🔌 Services, 🎨 Présentation, 🛠 Exploitation ; variante A : une rangée de groupes, puis les onglets du groupe actif (`BarreOnglets`) ; l'Exploitation visible de l'administrateur ET de l'opérateur, ce sont ses onglets qui se réservent (Installation et Installations à l'opérateur, Maintenance aux deux) ; un seul onglet Imports, la source en pastilles ; « Paramétrage site » scindé en Copropriété › Fonctionnement et Présentation › Connexion et pied de page ; chaque ancienne adresse `?onglet=` reste servie.
+- **Pourquoi** : dix-neuf onglets en deux rangées sans ordre de niveau ; maquette validée le 21/10/2026, avec la correction de la relecture (un groupe Exploitation caché à l'administrateur lui aurait retiré Maintenance).
+- **Écarté** : la variante B (colonne au bureau, sélecteur au téléphone : un composant neuf) ; trois onglets d'import ; l'Exploitation réservée à l'opérateur.
+- **Tenu par** : `e2e/admin-groupes.spec.ts`, `npm run lint:onglets-reserves`, `npm run lint:routes`.

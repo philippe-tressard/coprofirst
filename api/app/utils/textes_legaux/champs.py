@@ -39,9 +39,11 @@ class Champ:
 
 #: 🔴 La SEULE liste des champs : le rendu, le constat et l'écran la lisent.
 CHAMPS: tuple[Champ, ...] = (
-    Champ("copropriete", "le nom de la copropriété", "Administration › Fiche copropriété"),
+    Champ("copropriete", "le nom de la copropriété", "Administration › Copropriété › Identité"),
     Champ(
-        "adresse_copropriete", "l'adresse de la copropriété", "Administration › Fiche copropriété"
+        "adresse_copropriete",
+        "l'adresse de la copropriété",
+        "Administration › Copropriété › Identité",
     ),
     Champ("syndic", "le nom du syndic", "Annuaire › Syndic, ou le contrat de syndic"),
     Champ("adresse_syndic", "l'adresse du syndic", "Annuaire › Syndic"),

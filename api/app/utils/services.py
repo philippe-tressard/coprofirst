@@ -151,10 +151,10 @@ SERVICES: dict[str, Service] = {
         description=(
             "Compare la version qui tourne à la branche que suit l'installation (main pour "
             "la référence, replica pour une réplique), sur le dépôt public, quand "
-            "Administration › Maintenance s'ouvre. Seul le commit de l'image part."
+            "Administration › Exploitation › Installation s'ouvre. Seul le commit de l'image part."
         ),
         perte="Le bloc « Installation » dit « non vérifié » : un retard ou un écart ne se voit plus.",
-        onglet="maintenance",
+        onglet="installation",
         icone="refresh-cw",
         cle_actif="verification_version_active",
     ),
