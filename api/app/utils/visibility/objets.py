@@ -20,9 +20,10 @@ from app.models.core import (
     TypeEvenement,
     Utilisateur,
 )
-from app.utils.perimetres import parse_perimetres
+from app.utils.perimetres import est_perimetre_par_defaut, parse_perimetres
 
 from .socle import (
+    _codes_json_pour_acces,
     _parse_json_list,
     cible_visible,
     perimetre_visible,
@@ -384,6 +385,29 @@ def contenu_hors_du_groupe(ticket: Ticket) -> bool:
     ICI pour que le hall (`hors_du_hall`) l'applique sans le redire.
     """
     return bool(ticket.reserve_perimetre) or _diffusion_ciblee(ticket.public_cible)
+
+
+def sondage_hors_du_groupe(sondage: Sondage) -> bool:
+    """Le groupe de la résidence ne reçoit-il que la question et le lien de ce sondage ?
+
+    Même question que `contenu_hors_du_groupe`, sur un objet dont la lecture est
+    plus fermée : un sondage n'est lu que de sa cible (`sondage_accessible`,
+    `ouvert_a_la_copropriete` faux — il fait voter). Il n'a donc pas de case
+    « Réservé » : son ciblage EST sa réserve. Un sondage « Bât. 4 › propriétaires »
+    envoyait pourtant sa description à toute la résidence (22/10/2026) — la porte
+    `sondages/groupe.diffuser_le_sondage` l'applique désormais.
+
+    - un **Périmètre** autre que celui par défaut — illisible compris : une
+      donnée abîmée ne peut que restreindre (#789). Un nœud à portée globale est
+      lu de tous et se trouve pourtant amputé ici : l'erreur se fait du côté sûr ;
+    - des **Destinataires** choisis qui ne sont pas « Tous » (`résidents`).
+    """
+    codes = _codes_json_pour_acces(sondage.perimetre_cible)
+    return (
+        codes is None
+        or not est_perimetre_par_defaut(codes)
+        or _diffusion_ciblee(sondage.public_cible)
+    )
 
 
 # ── Règles Communauté : petite annonce et idée ────────────────────────────────

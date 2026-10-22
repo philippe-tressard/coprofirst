@@ -61,6 +61,18 @@ export function concerneTousLesResidents(codes: string[] | null | undefined): bo
 }
 
 /**
+ * Des Destinataires choisis qui ne s'adressent pas à tout le monde : le groupe
+ * de la résidence ne reçoit alors que le titre, le périmètre et le lien.
+ *
+ * ⚠️ Miroir de `visibility._diffusion_ciblee` côté serveur, qui seul DÉCIDE
+ * (`sondage_hors_du_groupe`, `contenu_hors_du_groupe`) ; l'écran ne s'en sert
+ * que pour dire ce qui partira. `résidents` parmi d'autres vise tout le monde.
+ */
+export function diffusionCiblee(codes: string[] | null | undefined): boolean {
+	return !!codes && codes.length > 0 && !codes.includes(TOUS_LES_RESIDENTS);
+}
+
+/**
  * « Conseil syndical » SEUL — l'actualité est réservée au conseil, et RIEN ne
  * sort : ni groupe WhatsApp, ni courriel, ni affiche (#1096, 23/09/2026).
  *

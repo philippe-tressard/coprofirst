@@ -90,17 +90,24 @@ def diffuser(
     titre: str,
     contenu: str,
     *,
+    public_cible: Optional[str],
+    confidentiel: bool,
     urgente: bool = False,
     perimetre_cible: Optional[str] = None,
     image_url: Optional[str] = None,
-    public_cible: Optional[str] = None,
-    confidentiel: bool = False,
     lien: Optional[str] = None,
 ) -> None:
     """Programme la diffusion en tâche de fond — elle est journalisée par l'adaptateur.
 
     `config` est celle que `config_diffusion` a rendue : l'appelant l'a déjà lue
     pour décider, et y trouve l'adresse du site pour composer son lien.
+
+    🔴 **La réserve n'a pas de défaut** (22/10/2026, `standards/03` §2 bis) :
+    `public_cible` et `confidentiel` valaient `None` et `False`, si bien qu'un
+    appelant qui ne pensait pas à les passer envoyait tout au groupe — deux envois
+    d'affaire sur trois, puis le sondage. Elles se lisent sur l'OBJET, dans sa
+    porte (`diffuser_l_affaire`, `diffuser_le_sondage`, le partage d'une affiche),
+    et `test_groupe_portes.py` refuse tout autre appelant.
     """
     background_tasks.add_task(
         canal_residence().envoyer,

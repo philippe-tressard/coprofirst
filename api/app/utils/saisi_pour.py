@@ -134,6 +134,27 @@ def corriger(objet, body, envoye, session: Session) -> list[str]:
     return [saisi_pour_texte(nom_avant, nom_saisi(session, objet))]
 
 
+def adresse_lisible(objet, lecteur) -> Optional[str]:
+    """L'adresse de la personne « saisie pour », telle que CE lecteur la reçoit.
+
+    Le conseil seul la lit — l'écran ne la montre qu'à lui (`CorpsCarteTicket`).
+    Elle partait pourtant dans le JSON de toute lecture de l'affaire, si bien que
+    tout copropriétaire qui lisait une Panne saisie pour une personne sans compte
+    recevait son adresse (22/10/2026, #2140). Une donnée personnelle d'un tiers se
+    retient au SERVEUR, pas au rendu. Le nom, lui, est lu de tous : il signe la
+    carte (`proprietaire_nom`). L'identifiant d'un résident aussi : il fonde ses
+    droits sur l'objet (`peutEditer`).
+
+    Sans lecteur connu, rien : on ne révèle pas à qui l'on ne sait pas.
+    """
+    # Import différé — `auth.deps` importe les modèles, qui importent ce module.
+    from app.auth.deps import est_moderateur
+
+    if lecteur is None or not est_moderateur(lecteur):
+        return None
+    return getattr(objet, "saisi_pour_email", None)
+
+
 def noms_derives(session: Session, objet) -> tuple[Optional[str], Optional[str]]:
     """Les **deux** noms dérivés d'un objet, en un seul calcul.
 
