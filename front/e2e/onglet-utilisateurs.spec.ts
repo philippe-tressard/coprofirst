@@ -81,3 +81,29 @@ test('le bouton 🏠 ouvre l’accueil de l’arrivant, avec ses deux champs', a
 	await boite.getByRole('button', { name: 'Annuler' }).click();
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 });
+
+//  🔴 Sur téléphone, le tableau dépassait l'écran et ses dernières colonnes
+//  (rôles, actions) étaient inatteignables : la carte posait `overflow: hidden`,
+//  qui annulait le défilement que `.card` reçoit sous 767 px (22/10/2026). On
+//  mesure le GESTE — un défilement horizontal sur le tableau —, pas la règle CSS.
+//  ⚠️ Pas de `scrollLeft` : le survol de Playwright fait défiler jusqu'à la cible
+//  même un conteneur `overflow: hidden`, et ce critère passait sur le défaut.
+test('au doigt : le tableau défile jusqu’à sa dernière colonne', async ({ page, isMobile }) => {
+	test.skip(!isMobile, 'débordement propre au téléphone');
+	await ouvrir(page);
+	const tableau = page.locator('table').first();
+	await expect(tableau).toBeVisible();
+	//  …et les gestes tiennent sur une ligne : comprimée, la cellule d'actions
+	//  empilait ses cinq icônes, une ligne de 680 px de haut par compte.
+	const ligne = tableau.locator('tbody tr').first();
+	await expect.poll(() => ligne.evaluate((e) => e.offsetHeight)).toBeLessThan(150);
+	await tableau.locator('thead th').first().hover();
+	await page.mouse.wheel(4000, 0);
+	const derniere = tableau.locator('thead th').last();
+	await expect
+		.poll(async () => {
+			const boite = await derniere.boundingBox();
+			return boite ? boite.x + boite.width : Infinity;
+		})
+		.toBeLessThanOrEqual(page.viewportSize()!.width + 1);
+});

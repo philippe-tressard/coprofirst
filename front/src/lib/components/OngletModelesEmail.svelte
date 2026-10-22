@@ -228,7 +228,7 @@
 		titreVide="Aucun modèle trouvé"
 	/>
 {:else}
-	<div class="card carte-modeles">
+	<div class="card">
 		<div class="action-row actions-modeles">
 			<button
 				class="btn btn-outline btn-sm"
@@ -449,9 +449,6 @@
 	}
 	.intro-modeles {
 		margin-bottom: 1rem;
-	}
-	.carte-modeles {
-		overflow: hidden;
 	}
 	.actions-modeles {
 		margin-bottom: 0.75rem;

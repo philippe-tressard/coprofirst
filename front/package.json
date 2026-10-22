@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.11.8",
+	"version": "3.11.9",
 	"private": true,
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
@@ -91,7 +91,7 @@
 		"lint:editeur": "node scripts/check-editeur-riche.mjs",
 		"lint:editeur-unique": "node scripts/check-editeur-unique.mjs --selftest && node scripts/check-editeur-unique.mjs",
 		"lint:annuaire-membres": "node scripts/check-annuaire-membres.mjs --selftest && node scripts/check-annuaire-membres.mjs",
-		"lint:tableaux": "node scripts/check-tableaux-scrollables.mjs",
+		"lint:tableaux": "node scripts/check-tableaux-scrollables.mjs --selftest && node scripts/check-tableaux-scrollables.mjs",
 		"lint:csp": "node scripts/check-csp-servie.mjs",
 		"lint:evitement": "node scripts/check-lien-evitement.mjs",
 		"lint:seuil-listes": "node scripts/check-seuil-listes-courtes.mjs",

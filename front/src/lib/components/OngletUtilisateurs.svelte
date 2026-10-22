@@ -220,7 +220,7 @@
 	{#if filteredUsers.length === 0}
 		<div class="empty-state"><h3>Aucun résultat</h3></div>
 	{:else}
-		<div class="card carte-comptes">
+		<div class="card">
 			<table class="table">
 				<thead>
 					<tr
@@ -469,9 +469,6 @@
 	.utag-sans_objet {
 		background: var(--color-neutre-fond);
 		color: var(--color-text-muted);
-	}
-	.carte-comptes {
-		overflow: hidden;
 	}
 	.nom-compte {
 		font-weight: 500;
