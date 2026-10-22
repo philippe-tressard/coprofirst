@@ -302,6 +302,19 @@ label.field.case {
     Trouvé le 15/08/2026 en instruisant #374 : le site reprochait aux pages de
     redéfinir localement ce que le global portait déjà, et le global se
     contredisait lui-même. */
+/*  Au téléphone, tout champ de saisie prend `--fs-saisie-tactile` (16 px) :
+    en deçà, iOS agrandit la page à chaque appui dans un champ (#2165). Pour
+    TOUS les champs, ceux d'une `.field` comme ceux qu'un composant pose seul
+    (recherche, filtres) — d'où `!important`, qui passe devant les règles de
+    portée des composants. Mesuré : 🔒 `e2e/taille-texte.spec.ts`. */
+@media (max-width: 767px) {
+	input:not([type='checkbox'], [type='radio'], [type='range']),
+	select,
+	textarea,
+	[contenteditable='true'] {
+		font-size: var(--fs-saisie-tactile) !important;
+	}
+}
 .field input,
 .field select,
 .field textarea {

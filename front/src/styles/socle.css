@@ -153,6 +153,10 @@ body {
 	--fs-md: 0.85rem;
 	--fs-base: 0.9rem;
 	--fs-lg: 0.95rem;
+	/*  Le texte d'un CHAMP au téléphone : en deçà de 16 px, iOS agrandit la page
+	    à chaque appui dans le champ, et ne la rend pas. Une taille PHYSIQUE,
+	    comme les 44 px d'une cible tactile — elle ne suit pas la racine (#2165). */
+	--fs-saisie-tactile: 16px;
 	font-family:
 		'Segoe UI',
 		-apple-system,
@@ -161,7 +165,10 @@ body {
 		'Helvetica Neue',
 		Arial,
 		sans-serif;
-	font-size: 16px;
+	/*  Une PROPORTION de la taille choisie dans le navigateur, jamais des pixels :
+	    `16px` l'écrasait (#2166). 100 % vaut 16 px au réglage par défaut — le
+	    bureau ne change pas. 🔒 `npm run lint:taille-racine`. */
+	font-size: 100%;
 	color: var(--color-text);
 	background: var(--color-bg);
 }

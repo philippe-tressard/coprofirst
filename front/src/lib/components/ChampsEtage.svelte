@@ -220,7 +220,7 @@
 	}
 	/*  44 px : une cible tactile est une taille PHYSIQUE, celle d'un pouce — elle
 	    ne suit pas la typographie (#839, où `2.75rem` avait rendu 33 px, la racine
-	    valant 12 px en émulation mobile). */
+	    valant alors 12 px en émulation mobile, 14 depuis #2165). */
 	.etage-lot input {
 		min-height: 44px;
 	}

@@ -568,3 +568,10 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : dix-neuf onglets en deux rangées sans ordre de niveau ; maquette validée le 21/10/2026, avec la correction de la relecture (un groupe Exploitation caché à l'administrateur lui aurait retiré Maintenance).
 - **Écarté** : la variante B (colonne au bureau, sélecteur au téléphone : un composant neuf) ; trois onglets d'import ; l'Exploitation réservée à l'opérateur.
 - **Tenu par** : `e2e/admin-groupes.spec.ts`, `npm run lint:onglets-reserves`, `npm run lint:routes`.
+
+### n° 76 · en vigueur — Le texte au téléphone : racine à 14 px, champs à 16 px
+23/10/2026 · #2165, #2166 · l'utilisateur, sur maquette · §18
+- **Décidé** : la racine s'écrit en POURCENTAGE — `100 %` au bureau, `87,5 %` sous 768 px (14 px au réglage par défaut) ; tout champ de saisie prend `--fs-saisie-tactile` (16 px) au téléphone.
+- **Pourquoi** : la racine était à 12 px sur téléphone depuis la v1.0.0, jamais arbitrée — texte de lecture à 10,8 px, plus petit cran à 8,6, et iOS zoomait à chaque appui dans un champ ; `16px` au bureau écrasait la taille choisie dans le navigateur (audit `apple-design`). Maquette A / B / C sur trois écrans, B retenue.
+- **Écarté** : 16 px au téléphone (C : la rangée « Nature » déborde, « NEW » passe sous le titre, moins d'affaires par écran) ; garder 12 px (A).
+- **Tenu par** : `npm run lint:taille-racine`, `e2e/taille-texte.spec.ts`.

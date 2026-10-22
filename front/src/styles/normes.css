@@ -384,8 +384,12 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
     d'interrupteur ici — c'est la forme qui a échoué. */
 
 @media (max-width: 767px) {
+	/*  14 px au réglage par défaut — arbitré sur maquette le 23/10/2026 (#2165,
+	    n° 76 du registre). C'était 12 px depuis la v1.0.0 : le texte de lecture
+	    tombait à 10,8 px, le plus petit cran à 8,6. 16 px faisait déborder les
+	    rangées de pastilles et passer « NEW » sous le titre d'une carte. */
 	:root {
-		font-size: 12px;
+		font-size: 87.5%;
 	}
 
 	/*  L'espacement des cartes bascule ICI depuis le 14/09/2026 (#839) : il
@@ -542,8 +546,8 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
  *  petit portable à la souris — même raisonnement que pour `btn-icon`), et
  *  `480px` parle de la PLACE. Les fusionner priverait l'une des deux de son cas.
  *
- *  ⚠️ 44 `px`, jamais `2.75rem` : la racine vaut 12 px en émulation mobile, et
- *  2,75 rem y rendent 33. Une cible tactile est une taille physique. */
+ *  ⚠️ 44 `px`, jamais `2.75rem` : la racine vaut 14 px sur téléphone (12 jusqu'à
+ *  #2165), et 2,75 rem y rendent 38. Une cible tactile est une taille physique. */
 @media (pointer: coarse) {
 	.form-actions .btn {
 		min-height: 44px;
