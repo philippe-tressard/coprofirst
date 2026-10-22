@@ -22,7 +22,17 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-APP = Path(__file__).resolve().parents[1] / "app"
+from tests.aides_sources import PLANCHER_APP, Module, modules_app
+
+
+def _app() -> tuple[Module, ...]:
+    return modules_app(minimum=PLANCHER_APP)
+
+
+def _synthetique(source: str) -> tuple[Module, ...]:
+    """Un module fabriqué, pour le cas zéro."""
+    return (Module(chemin=Path("fuite.py"), rel="fuite.py", source=source),)
+
 
 #: Les seuls appelants de `diffuser`, et la règle que chacun lit sur l'objet.
 #: Le registre lui-même (`utils/diffusion.py`) définit le geste, il ne l'appelle pas.
@@ -34,12 +44,11 @@ PORTES: dict[str, tuple[str, str]] = {
 }
 
 
-def appels_directs(racine: Path) -> list[tuple[str, str]]:
+def appels_directs(modules) -> list[tuple[str, str]]:
     """(fichier relatif, fonction englobante) de chaque appel à `diffuser`."""
     trouves = []
-    for chemin in sorted(racine.rglob("*.py")):
-        rel = chemin.relative_to(racine).as_posix()
-        arbre = ast.parse(chemin.read_text(encoding="utf-8"))
+    for module in modules:
+        rel, arbre = module.rel, module.arbre
         for fonction in ast.walk(arbre):
             if not isinstance(fonction, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
@@ -60,7 +69,7 @@ def appels_directs(racine: Path) -> list[tuple[str, str]]:
 def test_le_groupe_ne_se_diffuse_que_par_une_porte_declaree():
     fautifs = [
         f"{rel} ({fonction})"
-        for rel, fonction in appels_directs(APP)
+        for rel, fonction in appels_directs(_app())
         if PORTES.get(rel, (None,))[0] != fonction
     ]
     assert not fautifs, (
@@ -71,25 +80,24 @@ def test_le_groupe_ne_se_diffuse_que_par_une_porte_declaree():
 
 def test_chaque_porte_sert_et_lit_la_reserve():
     """Témoin : une porte déclarée appelle `diffuser` ET lit la règle sur l'objet."""
-    appels = set(appels_directs(APP))
+    appels = set(appels_directs(_app()))
     for rel, (fonction, regle) in PORTES.items():
         assert (rel, fonction) in appels, f"porte déclarée qui ne sert plus : {rel} ({fonction})"
-        source = (APP / rel).read_text(encoding="utf-8")
+        source = next(m.source for m in _app() if m.rel == rel)
         assert regle in source, f"{rel} ne lit plus la réserve sur l'objet ({regle})"
 
 
-def test_le_controle_attrape_un_appel_direct(tmp_path):
+def test_le_controle_attrape_un_appel_direct():
     """Le cas zéro : un appelant hors porte est bien vu, sous ses deux formes."""
-    (tmp_path / "fuite.py").write_text(
+    fuite = _synthetique(
         "from app.utils import diffusion\n"
         "from app.utils.diffusion import diffuser\n"
         "def partager(t, c, s):\n"
         "    diffuser(t, c, s.titre, s.description)\n"
         "def partager_bis(t, c, s):\n"
-        "    diffusion.diffuser(t, c, s.titre, s.description)\n",
-        encoding="utf-8",
+        "    diffusion.diffuser(t, c, s.titre, s.description)\n"
     )
-    assert appels_directs(tmp_path) == [("fuite.py", "partager"), ("fuite.py", "partager_bis")]
+    assert appels_directs(fuite) == [("fuite.py", "partager"), ("fuite.py", "partager_bis")]
 
 
 # ── Sous `diffuser` : les gestes bruts du transport ─────────────────────────
@@ -106,19 +114,19 @@ SANS_OBJET = {
 }
 
 
-def appels_bruts(racine: Path) -> set[str]:
+def appels_bruts(modules) -> set[str]:
     trouves = set()
-    for chemin in sorted(racine.rglob("*.py")):
-        for n in ast.walk(ast.parse(chemin.read_text(encoding="utf-8"))):
+    for module in modules:
+        for n in ast.walk(module.arbre):
             if isinstance(n, ast.Call):
                 nom = getattr(n.func, "id", None) or getattr(n.func, "attr", None)
                 if nom in GESTES_BRUTS:
-                    trouves.add(chemin.relative_to(racine).as_posix())
+                    trouves.add(module.rel)
     return trouves
 
 
 def test_les_gestes_bruts_ne_s_appellent_que_sans_objet():
-    appelants = appels_bruts(APP) - {ADAPTATEUR}
+    appelants = appels_bruts(_app()) - {ADAPTATEUR}
     assert appelants <= SANS_OBJET.keys(), (
         "Un geste brut du transport contourne la porte de son objet : "
         f"{sorted(appelants - SANS_OBJET.keys())}"
@@ -126,9 +134,6 @@ def test_les_gestes_bruts_ne_s_appellent_que_sans_objet():
     assert SANS_OBJET.keys() <= appelants, "exception déclarée qui ne sert plus"
 
 
-def test_le_controle_attrape_un_geste_brut(tmp_path):
-    (tmp_path / "fuite.py").write_text(
-        "def partager(s, cfg):\n    envoyer_whatsapp_raw(s.description, cfg)\n",
-        encoding="utf-8",
-    )
-    assert appels_bruts(tmp_path) == {"fuite.py"}
+def test_le_controle_attrape_un_geste_brut():
+    fuite = _synthetique("def partager(s, cfg):\n    envoyer_whatsapp_raw(s.description, cfg)\n")
+    assert appels_bruts(fuite) == {"fuite.py"}
