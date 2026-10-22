@@ -91,7 +91,13 @@ async function casesRendues(formulaire: Locator): Promise<string[]> {
 	expect(regions.size, 'aucune section pliable : le relevé ne verrait rien').toBeGreaterThan(0);
 	for (const id of regions) {
 		const plie = formulaire.locator(`button[aria-controls="${id}"][aria-expanded="false"]`);
-		if ((await plie.count()) > 0) await plie.first().click();
+		if ((await plie.count()) > 0) {
+			await plie.first().click();
+			//  Lire une fois la section OUVERTE, jamais pendant le geste.
+			await expect(
+				formulaire.locator(`button[aria-controls="${id}"][aria-expanded="true"]`),
+			).toHaveCount(1);
+		}
 		await relever();
 	}
 	return [...libelles];
