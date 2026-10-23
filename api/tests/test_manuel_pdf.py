@@ -203,10 +203,28 @@ def test_le_sommaire_suit_les_titres_du_document(manuel, document):
             f"l'ancre de « {titre} » n'est posée nulle part : le lien du "
             "sommaire pointerait dans le vide"
         )
+    #  🔴 Posée, et la SEULE de sa balise : sur un titre à deux `id`, seul le
+    #  premier compte — le contrôle ci-dessus passait pendant que le PDF
+    #  journalisait « No anchor #som-27 » (v3.12.0).
+    for balise in re.findall(r"<h[23]\b[^>]*>", corps):
+        assert len(re.findall(r"\bid\s*=", balise)) <= 1, f"titre à deux id : {balise}"
 
     #  L'ordre du document, pas un ordre inventé.
     positions = [document.index(f'href="#{a}"') for _, _, a in releve]
     assert positions == sorted(positions)
+
+
+def test_un_titre_qui_porte_deja_un_id_garde_le_sien():
+    """Le cas qui a cassé le sommaire du PDF : un titre ciblé par un lien du
+    manuel (`<h3 id="fusion-correction">`). Le sommaire vise son `id`, et la
+    balise n'en reçoit pas un second ; le compteur des autres ne bouge pas."""
+    html = (
+        '<html><body><main><h2>Un</h2><h3 id="cible">Deux</h3><h3>Trois</h3></main></body></html>'
+    )
+    corps, releve = titres_ancres(html)
+    assert [a for _, _, a in releve] == ["som-0", "cible", "som-2"]
+    assert '<h3 id="cible">Deux</h3>' in corps
+    assert '<h3 id="som-2">Trois</h3>' in corps
 
 
 def test_les_numeros_de_page_sont_RESOLUS_a_la_mise_en_page(document):
