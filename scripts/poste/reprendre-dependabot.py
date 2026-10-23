@@ -104,10 +104,32 @@ def verdict(prs):
 SEVERITES_BLOQUANTES = ('critical', 'high')
 
 
-def verdict_alertes(alertes, manifestes_du_lot):
+def _version(texte):
+    """`'1.16.10'` → `(1, 16, 10)` : une comparaison NUMÉRIQUE, `'1.16.10' > '1.16.2'`."""
+    return tuple(int(x) for x in re.findall(r'\d+', texte or '')[:4])
+
+
+def corrigee_sur_main(alerte, graphe):
+    """PURE. Vrai si TOUTES les versions du paquet que le graphe de dépendances de `main`
+    connaît atteignent la version corrigée. Graphe illisible, paquet absent ou alerte sans
+    version corrigée : faux — on ne suppose jamais une correction qu'on n'a pas lue."""
+    versions = (graphe or {}).get(alerte['paquet'])
+    if not versions or not alerte.get('corrige'):
+        return False
+    return all(_version(v) >= _version(alerte['corrige']) for v in versions)
+
+
+def verdict_alertes(alertes, manifestes_du_lot, graphe=None):
     """La ligne du point 24 (PURE). `alertes` : [{numero, severite, paquet, manifeste,
     corrige}] ouvertes, ou `None` illisibles ; `manifestes_du_lot` : les fichiers que le
-    lot modifie par rapport à `main`."""
+    lot modifie par rapport à `main` ; `graphe` : {paquet: {versions}} du graphe de
+    dépendances de `main`, ou `None`.
+
+    #2180 (23/10/2026) : une alerte reste ouverte des heures après que `main` a reçu la
+    version corrigée — Dependabot ré-analyse en différé, et le point bloquait alors TOUTE
+    MEP sur un faux rouge (#112, #113 après #2179). Si le graphe de `main` ne porte plus
+    que des versions corrigées, c'est un ÉCART qui le dit, jamais un OK : l'alerte reste
+    à voir se fermer."""
     if alertes is None:
         return 'INCONNU alertes Dependabot illisibles (gh absent, hors ligne ou droit manquant)'
     graves = [a for a in alertes if a['severite'] in SEVERITES_BLOQUANTES]
@@ -118,12 +140,22 @@ def verdict_alertes(alertes, manifestes_du_lot):
     def nom(a):
         return (f"#{a['numero']} {a['paquet']} ({a['severite']}, {a['manifeste']}, "
                 f"corrigé en {a['corrige'] or '?'})")
-    non_traitees = [a for a in graves if a['manifeste'] not in manifestes_du_lot]
+    sur_main = [a for a in graves if corrigee_sur_main(a, graphe)]
+    non_traitees = [a for a in graves
+                    if a['manifeste'] not in manifestes_du_lot and a not in sur_main]
     if non_traitees:
         return (f'FAIL {len(non_traitees)} alerte(s) haute(s) ou critique(s) ouverte(s) : '
                 + ', '.join(nom(a) for a in non_traitees) + suite)
-    return ('ECART ' + ', '.join(nom(a) for a in graves)
-            + ' — manifeste(s) modifié(s) par ce lot : fermée(s) à la ré-analyse de main' + suite)
+    motifs = []
+    if sur_main:
+        motifs.append(', '.join(nom(a) for a in sur_main)
+                      + ' — déjà corrigée(s) sur main (graphe de dépendances), en attente de '
+                      'la ré-analyse de Dependabot')
+    par_le_lot = [a for a in graves if a not in sur_main]
+    if par_le_lot:
+        motifs.append(', '.join(nom(a) for a in par_le_lot)
+                      + ' — manifeste(s) modifié(s) par ce lot : fermée(s) à la ré-analyse de main')
+    return 'ECART ' + ' ; '.join(motifs) + suite
 
 
 def lire_alertes():
@@ -139,6 +171,26 @@ def lire_alertes():
         return [json.loads(ligne) for ligne in sortie.splitlines() if ligne.strip()]
     except (OSError, subprocess.SubprocessError, ValueError):
         return None
+
+
+def lire_graphe():
+    """{paquet: {versions}} du graphe de dépendances de la branche par défaut (`main`),
+    lu par l'export SBOM de GitHub — ou `None` s'il n'a pas répondu."""
+    try:
+        sortie = subprocess.run(
+            ['gh', 'api', 'repos/{owner}/{repo}/dependency-graph/sbom',
+             '--jq', '.sbom.packages[] | [.name, .versionInfo] | @tsv'],
+            capture_output=True, text=True, encoding='utf-8', timeout=60, check=True,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    graphe = {}
+    for ligne in sortie.splitlines():
+        nom, _, version = ligne.partition('	')
+        if nom and version:
+            #  Le SBOM préfixe l'écosystème (`npm:follow-redirects`) : le nom de l'alerte n'en a pas.
+            graphe.setdefault(nom.split(':')[-1], set()).add(version)
+    return graphe
 
 
 def manifestes_du_lot():
@@ -218,6 +270,24 @@ def selftest():
                         {'whatsapp-bridge/package-lock.json'}).split()[0], 'FAIL')
     cas('alertes illisibles : INCONNU, jamais OK', verdict_alertes(None, set()).split()[0],
         'INCONNU')
+    #  #2180 — corrigée sur main, l'alerte attend la ré-analyse de Dependabot.
+    corrige = {'follow-redirects': {'1.16.1'}}
+    cas('corrigée dans le graphe de main : ÉCART, pas FAIL',
+        verdict_alertes([haute], set(), corrige).split()[0], 'ECART')
+    cas('l’ÉCART dit qu’elle attend la ré-analyse',
+        'ré-analyse' in verdict_alertes([haute], set(), corrige), True)
+    cas('une version encore vulnérable dans le graphe : FAIL',
+        verdict_alertes([haute], set(), {'follow-redirects': {'1.16.0', '1.16.1'}}).split()[0],
+        'FAIL')
+    cas('graphe illisible : FAIL, jamais un ÉCART supposé',
+        verdict_alertes([haute], set(), None).split()[0], 'FAIL')
+    cas('paquet absent du graphe : FAIL',
+        verdict_alertes([haute], set(), {'autre': {'9.9.9'}}).split()[0], 'FAIL')
+    cas('alerte sans version corrigée : FAIL',
+        verdict_alertes([dict(haute, corrige=None)], set(), corrige).split()[0], 'FAIL')
+    cas('comparaison numérique : 1.16.10 corrige 1.16.2',
+        verdict_alertes([dict(haute, corrige='1.16.2')], set(),
+                        {'follow-redirects': {'1.16.10'}}).split()[0], 'ECART')
     print('== ÉCHECS ==' if ko else '== TOUS OK ==')
     return ko
 
@@ -227,7 +297,7 @@ def main():
     if '--selftest' in sys.argv:
         return selftest()
     if '--alertes' in sys.argv:
-        print(verdict_alertes(lire_alertes(), manifestes_du_lot()))
+        print(verdict_alertes(lire_alertes(), manifestes_du_lot(), lire_graphe()))
         return 0
     prs = lire_prs()
     if '--verifier' in sys.argv:
