@@ -93,10 +93,9 @@ async function casesRendues(formulaire: Locator): Promise<string[]> {
 		const plie = formulaire.locator(`button[aria-controls="${id}"][aria-expanded="false"]`);
 		if ((await plie.count()) > 0) {
 			await plie.first().click();
-			//  Lire une fois la section OUVERTE, jamais pendant le geste.
-			await expect(
-				formulaire.locator(`button[aria-controls="${id}"][aria-expanded="true"]`),
-			).toHaveCount(1);
+			//  Lire une fois la section OUVERTE — son bouton plié a disparu —,
+			//  jamais pendant le geste.
+			await expect(plie).toHaveCount(0);
 		}
 		await relever();
 	}

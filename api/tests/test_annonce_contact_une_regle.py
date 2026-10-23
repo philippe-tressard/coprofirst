@@ -27,7 +27,6 @@ fois, `visibility.adresse_de_contact`, et c'est la seule lecture de
 from __future__ import annotations
 
 import ast
-from pathlib import Path
 
 import pytest
 from sqlmodel import Session
@@ -38,8 +37,7 @@ from app.routers.flux.commun import ContexteFlux
 from app.routers.flux.communaute import collecter
 from app.utils import horloge
 from tests.aides_base import compte
-
-APP = Path(__file__).resolve().parents[1] / "app"
+from tests.aides_sources import modules_app
 
 #: La seule fonction qui lit le drapeau sur une annonce.
 REGLE = ("utils/visibility/objets.py", "adresse_de_contact")
@@ -50,11 +48,10 @@ LECTURES_DECLAREES = {
 }
 
 
-def lectures_du_drapeau(racine: Path) -> list[tuple[str, str]]:
-    """(fichier, fonction) de chaque `x.contact_visible` lu dans `racine`."""
+def lectures_du_drapeau(modules: list[tuple[str, ast.AST]]) -> list[tuple[str, str]]:
+    """(fichier, fonction) de chaque `x.contact_visible` lu dans ces modules."""
     trouvees = []
-    for chemin in sorted(racine.rglob("*.py")):
-        arbre = ast.parse(chemin.read_text(encoding="utf-8"))
+    for rel, arbre in modules:
         for fonction in ast.walk(arbre):
             if not isinstance(fonction, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
@@ -64,36 +61,41 @@ def lectures_du_drapeau(racine: Path) -> list[tuple[str, str]]:
                     and n.attr == "contact_visible"
                     and isinstance(n.ctx, ast.Load)
                 ):
-                    trouvees.append((chemin.relative_to(racine).as_posix(), fonction.name))
+                    trouvees.append((rel, fonction.name))
     return sorted(set(trouvees))
 
 
-def ecarts(racine: Path) -> list[str]:
+def ecarts(modules: list[tuple[str, ast.AST]]) -> list[str]:
     return [
         f"{f}:{fn} lit contact_visible hors de la règle"
-        for f, fn in lectures_du_drapeau(racine)
+        for f, fn in lectures_du_drapeau(modules)
         if (f, fn) != REGLE and (f, fn) not in LECTURES_DECLAREES
     ]
 
 
+def _app() -> list[tuple[str, ast.AST]]:
+    return [(m.rel, m.arbre) for m in modules_app()]
+
+
 def test_contact_visible_ne_se_lit_que_par_la_regle():
-    assert not ecarts(APP), ecarts(APP)
+    assert not ecarts(_app()), ecarts(_app())
 
 
 def test_la_regle_et_ses_exceptions_servent_encore():
     """Une exception qui ne sert plus — ou une règle disparue — fait échouer."""
-    lues = set(lectures_du_drapeau(APP))
+    lues = set(lectures_du_drapeau(_app()))
     assert REGLE in lues
     assert set(LECTURES_DECLAREES) <= lues, set(LECTURES_DECLAREES) - lues
 
 
-def test_le_controle_attrape_une_seconde_lecture(tmp_path):
+def test_le_controle_attrape_une_seconde_lecture():
     """Le cas zéro : l'état du 22/10/2026 — le fil jugeait le drapeau lui-même."""
-    (tmp_path / "fil.py").write_text(
-        "def _collecter_annonces(a):\n    return a.auteur if a.contact_visible else None\n",
-        encoding="utf-8",
+    fil = ast.parse(
+        "def _collecter_annonces(a):\n    return a.auteur if a.contact_visible else None\n"
     )
-    assert ecarts(tmp_path) == ["fil.py:_collecter_annonces lit contact_visible hors de la règle"]
+    assert ecarts([("fil.py", fil)]) == [
+        "fil.py:_collecter_annonces lit contact_visible hors de la règle"
+    ]
 
 
 # ── Ce que les deux sorties rendent ─────────────────────────────────────────
@@ -105,8 +107,8 @@ def annonce_discrete(session: Session):
     auteur = compte(
         s,
         prefixe="auteur",
-        prenom="Aline",
-        nom="Discrète",
+        prenom="Odile",
+        nom="Sorel",
         roles_json=RoleUtilisateur.propriétaire.value,
     )
     lecteur = compte(s, prefixe="lecteur", roles_json=RoleUtilisateur.propriétaire.value)
@@ -139,11 +141,11 @@ def test_coordonnees_masquees_le_nom_reste_l_adresse_part_pas(annonce_discrete):
     page = _enrich(annonce, lecteur, s)
     fil = _du_fil(s, lecteur, "Vélo à donner")
     #  La page : le nom, pas l'adresse.
-    assert (page["auteur_prenom"], page["auteur_nom"]) == ("Aline", "Discrète")
+    assert (page["auteur_prenom"], page["auteur_nom"]) == ("Odile", "Sorel")
     assert page["auteur_email"] is None
     #  Le fil : le MÊME nom — il le taisait.
     assert fil.meta["auteur"], fil.meta
-    assert "Discrète".upper() in fil.meta["auteur"].upper()
+    assert "SOREL" in fil.meta["auteur"].upper()
     assert auteur.email not in str(fil.meta)
 
 
