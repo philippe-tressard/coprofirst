@@ -184,10 +184,10 @@ def test_le_cache_sert_le_MEME_pdf_et_ne_recompose_pas(tmp_path, moteur):
 
 
 def test_un_manuel_MODIFIE_produit_un_pdf_neuf(tmp_path, moteur):
-    """⚠️ La clé est l'EMPREINTE du manuel, jamais sa version.
+    """⚠️ La clé est l'EMPREINTE du manuel : toute retouche produit un PDF neuf.
 
-    Une retouche livrée sans bump de version doit produire un PDF neuf. Se fier
-    au numéro aurait servi un document périmé sans que rien ne le signale.
+    Le manuel ne porte plus de numéro de version (23/10/2026) ; une clé tenue à
+    la main aurait servi un document périmé sans que rien ne le signale.
     """
     _generer(tmp_path)
     _generer(tmp_path, manuel=MANUEL + "<!-- retouche -->")

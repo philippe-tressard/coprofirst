@@ -41,7 +41,6 @@ from app.utils.manuel_pdf import (
     lire_manuel,
     sommaire,
     titres_ancres,
-    version_du_manuel,
 )
 from app.utils.manuel_pdf_css import css_du_pdf
 from app.utils.plateforme import LICENCE_SPDX
@@ -277,13 +276,6 @@ def test_l_identite_du_manuel_lit_le_reglage_d_Admin_Site(session):
     assert identite["sous_titre"] == "Notre résidence"
     assert identite["site_nom"] == "Les Tilleuls"
     assert set(identite) == {"site_nom", "site_url", "logo_png", "sous_titre"}
-
-
-def test_la_version_du_manuel_est_reprise_telle_qu_elle_est_ecrite(manuel, document):
-    """Elle est LUE dans le manuel, jamais saisie ici — sinon deux versions."""
-    version = version_du_manuel(manuel)
-    assert re.fullmatch(r"v\d+\.\d+", version), f"version illisible : {version!r}"
-    assert version in document
 
 
 def test_les_mentions_identifient_l_editeur(document):

@@ -588,8 +588,9 @@ quatre questions dans cet ordre :
    supprimer — ne jamais empiler une exception par-dessus.
 
 Vérifier aussi que la documentation *visible* a suivi : manuel utilisateur mis à jour
-**et** sa version/date bumpées aux deux emplacements
-(cf. [[feedback_manuel_version_date]]), `specs/` si un contrat d'API a changé.
+(il ne porte plus de version ni de date à bumper depuis le 23/10/2026 —
+`test_le_manuel_ne_porte_pas_de_numero_de_version` en refuse le retour), `specs/` si un
+contrat d'API a changé.
 
 **Pourquoi ce point existe :** sur le lot des pièces jointes (03/08/2026), quatre
 constats n'auraient été écrits nulle part sans un rappel explicite — la version du

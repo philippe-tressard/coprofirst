@@ -49,28 +49,28 @@ def test_manuels_synchronises_docs_et_static():
     )
 
 
-#: Le numéro du manuel s'écrit à DEUX endroits : le badge de l'en-tête et le pied
-#: de page. La v2.50.0 a livré « Version 1.78 » en tête et « v1.76 » au pied, et
-#: rien ne l'a vu (#1306) — la consigne de bumper les deux existait déjà.
-_VERSION_BADGE = re.compile(r'class="topbar-badge">Version (\d+\.\d+)\b')
-_VERSION_PIED = re.compile(r"Manuel utilisateur v(\d+\.\d+)\b")
+#: 🔴 LE MANUEL NE PORTE PLUS DE NUMÉRO DE VERSION (23/10/2026, arbitrage).
+#: Un badge « Version X.Y · Mois Année » en tête et « Manuel utilisateur vX.Y »
+#: au pied se bumpaient à la main ; ils ont divergé deux fois (#1306), puis plus
+#: aucun lot ne les a tenus : la v3.13.0 servait encore « Version 2.127 ». Un
+#: numéro que rien ne produit ment dès le lot suivant — il a été retiré, et ce
+#: contrôle, qui exigeait l'accord des deux, refuse désormais leur retour.
+_VERSION_DU_MANUEL = re.compile(
+    r"topbar-badge|Version \d+\.\d+ ·|Manuel utilisateur v\d", re.IGNORECASE
+)
 
 
-def versions_du_manuel(html: str) -> tuple[list[str], list[str]]:
-    """Les numéros lus dans le badge et dans le pied de page, dans cet ordre."""
-    return _VERSION_BADGE.findall(html), _VERSION_PIED.findall(html)
-
-
-def test_badge_et_pied_du_manuel_portent_la_meme_version():
-    """Un numéro illisible échoue aussi : une liste vide n'est pas un accord."""
+def test_le_manuel_ne_porte_pas_de_numero_de_version():
+    """Le manuel se date par la version de l'application qui le sert, pas par un badge."""
     for nom in _MANUELS:
         html = (_RACINE / "docs" / nom).read_text(encoding="utf-8")
-        badge, pied = versions_du_manuel(html)
-        assert len(badge) == 1 and len(pied) == 1, (
-            f"{nom} : badge {badge}, pied {pied} — un numéro, et un seul, à chaque endroit"
+        assert "Manuel utilisateur</span>" in html, (
+            f"{nom} : pied de page introuvable — le contrôle ne lit plus rien"
         )
-        assert badge == pied, (
-            f"{nom} : le badge dit {badge[0]}, le pied de page {pied[0]} — bumper les deux"
+        trouves = _VERSION_DU_MANUEL.findall(html)
+        assert not trouves, (
+            f"{nom} : un numéro de version du manuel réapparaît ({trouves}) — "
+            "aucun lot ne le tient à jour, il a été retiré le 23/10/2026"
         )
 
 
