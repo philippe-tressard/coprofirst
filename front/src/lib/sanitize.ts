@@ -62,10 +62,10 @@ const ALLOWED_ATTR = ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'];
 
 const _allowedTagSet = new Set(ALLOWED_TAGS);
 //  Les débuts d'URL admis par l'assainisseur de SECOURS (rendu serveur, premier
-//  rendu) — absolue web, courriel, chemin relatif, ancre ; une image peut aussi
-//  être une data-URI d'image. `//hote` (protocole implicite) n'en est pas.
+//  rendu) — absolue web, courriel, chemin relatif, ancre ; une image, absolue web
+//  ou chemin (`/uploads/…`). Ni data-URI ni `//hote` (protocole implicite).
 const URL_HREF_ADMISE = /^(?:https?:\/\/|mailto:|\/(?!\/)|#|\.{1,2}\/)/i;
-const URL_SRC_ADMISE = /^(?:https?:\/\/|\/(?!\/)|data:image\/(?:png|jpe?g|gif|webp);base64,)/i;
+const URL_SRC_ADMISE = /^(?:https?:\/\/|\/(?!\/))/i;
 const _allowedAttrSet = new Set(ALLOWED_ATTR);
 
 /** Nettoyage regex basique pour le SSR (les clients ré-hydrateront avec DOMPurify). */

@@ -69,7 +69,8 @@ def test_la_correction_dit_le_geste_et_la_valeur(session):
         statut="en_cours",
         titre="Rénovation de l'ascenseur",
         description="<p>Travaux du 28 septembre au 16 octobre.</p>",
-        fichiers_urls=["/uploads/0123456789abcdef0123456789abcdef_annonce-renovation.pdf"],
+        #  Dans le dossier des pièces jointes : la racine est écartée depuis #2157.
+        fichiers_urls=["/uploads/fichiers/0123456789abcdef0123456789abcdef_annonce-renovation.pdf"],
         fin=datetime(2026, 10, 16),
     )
     contenu = _suivi(session, ticket.id)
