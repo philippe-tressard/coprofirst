@@ -200,8 +200,10 @@ def test_le_controle_des_blocs_uploads_voit_et_refuse():
 def test_l_endpoint_de_verification_existe_et_reste_authentifie():
     """Un endpoint qui cesserait d'exiger une session rendrait forward_auth inerte."""
     source = (RACINE / "api" / "app" / "routers" / "auth.py").read_text(encoding="utf-8")
+    #  Jusqu'à la flèche du retour : depuis #2154 la signature porte `Depends(get_session)`,
+    #  et la première parenthèse fermante n'est plus celle de la signature.
     bloc = re.search(
-        r'@router\.get\("/verifier-acces".*?\ndef verifier_acces\((.*?)\)', source, re.S
+        r'@router\.get\("/verifier-acces".*?\ndef verifier_acces\((.*?)\)\s*->', source, re.S
     )
     assert bloc, "l'endpoint /auth/verifier-acces a disparu — forward_auth pointe dans le vide"
     assert "get_current_user" in bloc.group(1), (

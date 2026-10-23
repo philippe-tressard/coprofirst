@@ -24,6 +24,7 @@ from dataclasses import dataclass
 
 from app.utils.demo import refuser_fichier_recu
 from app.utils.stockage import DOSSIER_PRIVE, stockage
+from app.models.fichiers_recus import noter_auteur
 
 #: Les fichiers qui ne doivent JAMAIS être servis en statique vivent sous
 #: `stockage.DOSSIER_PRIVE` — le pourquoi (48 fichiers exposés le 03/08/2026, un
@@ -412,22 +413,21 @@ def enregistrer_fichier_recu(
     dossier: str,
     user=None,
     extension_forcee: str | None = None,
+    session=None,
 ) -> str:
     """Contrôle **puis** écrit un fichier reçu. Rend le nom stocké.
 
-    C'est le **seul** endroit du projet où des octets venus du réseau atteignent
-    le disque : `api/tests/test_televersement_source_unique.py` refuse toute
-    autre écriture, hors celles qui portent un fichier que l'application a
-    elle-même produit.
+    Le **seul** endroit où des octets venus du réseau atteignent le disque :
+    `test_televersement_source_unique.py` refuse toute autre écriture, hors un
+    fichier que l'application a elle-même produit.
 
-    :param dossier: la clé du répertoire où écrire, dans le stockage de la
-        copropriété servie (`photos`, `logo`…). Créé si besoin.
-    :param extension_forcee: pour une image réencodée, dont l'extension écrite
-        n'est plus celle du type reçu. Le contrôle, lui, porte sur le type reçu.
+    :param dossier: le répertoire (`photos`, `logo`…) du stockage de la copropriété servie.
+    :param extension_forcee: celle d'une image réencodée ; le contrôle porte sur le type reçu.
     """
     refuser_fichier_recu()  # la démo publique n'en reçoit aucun (#1901)
     extension = verifier_fichier_recu(octets, nom_origine, content_type, famille, user)
     nom = nom_stocke(nom_origine, extension_forcee or extension)
+    noter_auteur(session, user, f"{dossier}/{nom}")  # servi en direct : son auteur (#2154)
     stockage().ecrire(f"{dossier}/{nom}", octets)
     return nom
 

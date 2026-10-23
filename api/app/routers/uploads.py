@@ -39,7 +39,9 @@ router = APIRouter(prefix="/uploads", tags=["uploads"])
 # ── helpers ────────────────────────────────────────────────────────────────
 
 
-def _save_image(file: UploadFile, subfolder: str, max_dim: int = 1600) -> str:
+def _save_image(
+    file: UploadFile, subfolder: str, session: Session, user: Utilisateur, max_dim: int = 1600
+) -> str:
     """Valide, redimensionne si besoin et sauvegarde le fichier. Retourne l'URL relative."""
     data = lire_fichier_recu(file, "image")
 
@@ -86,7 +88,9 @@ def _save_image(file: UploadFile, subfolder: str, max_dim: int = 1600) -> str:
         file.content_type,
         "image",
         subfolder,
+        user=user,
         extension_forcee=".jpg",
+        session=session,
     )
     return stockage().url(f"{subfolder}/{filename}")
 
@@ -103,7 +107,7 @@ def upload_avatar(
     user: Utilisateur = Depends(get_current_user),
 ):
     """Upload et sauvegarde la photo de profil de l'utilisateur connecté."""
-    url = _save_image(file, "avatars", max_dim=400)
+    url = _save_image(file, "avatars", session, user, max_dim=400)
     user.photo_url = url
     session.add(user)
     session.commit()
@@ -119,7 +123,7 @@ def upload_residence(
     user: Utilisateur = Depends(require_cs_or_admin),
 ):
     """Upload une photo de la résidence. Retourne l'URL publique."""
-    url = _save_image(file, "residence", max_dim=1600)
+    url = _save_image(file, "residence", session, user, max_dim=1600)
     # Enregistre la dernière photo dans la table copropriete
     copro = session.exec(select(Copropriete)).first()
     if copro:
@@ -143,6 +147,7 @@ def upload_residence(
 def upload_fichier(
     request: Request,
     file: UploadFile = File(...),
+    session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
     """
@@ -171,7 +176,7 @@ def upload_fichier(
     original_name = file.filename or "fichier"
 
     if is_image:
-        url = _save_image(file, "fichiers", max_dim=1200)
+        url = _save_image(file, "fichiers", session, user, max_dim=1200)
         ftype = "image"
     else:
         data = lire_fichier_recu(file, "document")
@@ -194,6 +199,7 @@ def upload_fichier(
             "document",
             "fichiers",
             user=user,
+            session=session,
         )
         url = stockage().url(f"fichiers/{filename}")
         ftype = "document"

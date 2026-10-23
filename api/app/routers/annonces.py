@@ -355,7 +355,7 @@ def add_photo(
     photos = json.loads(annonce.photos_json)
     if len(photos) >= MAX_PHOTOS:
         raise HTTPException(400, f"Maximum {MAX_PHOTOS} photos par annonce")
-    url = _save_image(file, "annonces", max_dim=1200)
+    url = _save_image(file, "annonces", session, user, max_dim=1200)
     photos.append(url)
     annonce.photos_json = json.dumps(photos)
     annonce.mis_a_jour_le = horloge.maintenant()

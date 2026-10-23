@@ -22,6 +22,8 @@ Ce que la route garantit, à l'image du `Caddyfile` :
   `chemin`, borné même à travers un lien) ;
 - les dossiers qui ne se servent JAMAIS en direct (`stockage.JAMAIS_SERVIS` : la
   bibliothèque privée, les affiches) rendent 404, comme chez Caddy ;
+- le droit de lire l'objet qui CITE le fichier (`exiger_fichier_lisible`, #2154) —
+  la règle que Caddy demande à `/auth/verifier-acces`, appelée ici à l'identique ;
 - `Cache-Control: private, no-store` : un cache partagé ne garde pas un fichier
   dont l'accès dépend d'un cookie (incident du 03/08/2026, `Caddyfile`).
 
@@ -37,13 +39,16 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse
+from sqlmodel import Session
 
 from app import contexte
 from app.auth.deps import get_current_user
+from app.database import get_session
 from app.models.core import Utilisateur
 from app.utils.limiter import LIMITE_CONTROLE_FICHIER, limiter
 from app.utils.recuperer import fichier_ou_404, present_ou_404
 from app.utils.stockage import JAMAIS_SERVIS, CleInvalide, cle_valide, stockage
+from app.utils.visibility.fichiers import exiger_fichier_lisible
 
 router = APIRouter(tags=["installation-commune"])
 
@@ -54,10 +59,14 @@ ENTETES = {"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosn
 @router.get("/uploads/{cle:path}", include_in_schema=False)
 @limiter.limit(LIMITE_CONTROLE_FICHIER)
 def servir_fichier(
-    request: Request, cle: str, _: Utilisateur = Depends(get_current_user)
+    request: Request,
+    cle: str,
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(get_current_user),
 ) -> FileResponse:
     """Le fichier `cle` de la copropriété servie, à une session de CETTE copropriété."""
     chemin = present_ou_404(_chemin_servi(cle), "Fichier introuvable sur le serveur")
+    exiger_fichier_lisible(session, user, cle_valide(cle))
     return FileResponse(fichier_ou_404(chemin), headers=ENTETES)
 
 

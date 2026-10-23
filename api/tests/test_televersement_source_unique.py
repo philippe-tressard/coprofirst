@@ -332,7 +332,7 @@ def test_une_famille_inconnue_est_refusee_et_ne_passe_pas_en_silence():
         verifier_fichier_recu(b"%PDF-1.4", "x.pdf", "application/pdf", "famille-absente")
 
 
-def test_les_trois_regles_refusent_VRAIMENT(disque_jetable):
+def test_les_trois_regles_refusent_VRAIMENT(disque_jetable, session):
     """Chacune, éprouvée séparément — sinon « type et taille contrôlés » reste
     une affirmation sans contenu.
     """
@@ -340,6 +340,10 @@ def test_les_trois_regles_refusent_VRAIMENT(disque_jetable):
     from fastapi import HTTPException
 
     from app.utils.fichiers import FAMILLES, enregistrer_fichier_recu
+    from tests.aides_base import compte
+
+    #  « essai » est un dossier SERVI : le fichier écrit note son auteur (#2154).
+    auteur = compte(session)
 
     #  Le dossier « essai » du stockage de la copropriété servie (#1748) : `disque_jetable`.
 
@@ -366,7 +370,15 @@ def test_les_trois_regles_refusent_VRAIMENT(disque_jetable):
 
     #  Et le cas qui doit PASSER, sans quoi les trois refus ne prouvent rien :
     #  un contrôle qui refuse tout est aussi faux qu'un contrôle qui accepte tout.
-    nom = enregistrer_fichier_recu(pdf, "Devis toiture.pdf", "application/pdf", "document", "essai")
+    nom = enregistrer_fichier_recu(
+        pdf,
+        "Devis toiture.pdf",
+        "application/pdf",
+        "document",
+        "essai",
+        user=auteur,
+        session=session,
+    )
     assert nom.endswith(".pdf")
     assert "toiture" in nom, "le radical du nom d'origine est perdu"
     assert (disque_jetable / "essai" / nom).read_bytes() == pdf

@@ -522,6 +522,14 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   Le nom stocké passe par `nom_stocke` : préfixe UUID, radical assaini, et
   **extension dérivée du type**, jamais du nom fourni — `/uploads/*` est servi
   en statique et Caddy pose le `Content-Type` d'après l'extension sur disque.
+- **Un fichier servi (`/uploads/*`) se lit par son PORTEUR** (#2154) :
+  `utils/visibility/fichiers.exiger_fichier_lisible`, appelée par `/auth/verifier-acces`
+  (le `forward_auth` de Caddy) et par la route de l'installation commune. Le fichier
+  se lit si l'un des objets qui le citent (`PORTEURS`) se lit, par SON prédicat ;
+  sans porteur, par son auteur seul (`FichierRecu`, noté par `enregistrer_fichier_recu`) ;
+  avatars, résidence et logo par toute session (`TOUTE_SESSION`). Une colonne qui cite
+  un fichier se nomme dans `photos.COLONNES_DE_FICHIERS` et a son porteur.
+  🔒 `test_acces_fichiers_porteur.py`.
 - **Un fichier se situe par `utils/stockage`, et nulle part ailleurs** (#1748) :
   `stockage()` rend le stockage de la copropriété servie — `chemin(clé)`,
   `fichier_de_url("/uploads/…")`, `url(clé)` ; toute clé est bornée sous la

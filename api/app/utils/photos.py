@@ -40,7 +40,9 @@ DOSSIERS_DES_PIECES_JOINTES = frozenset(
 )
 
 #: Les colonnes qui CITENT un fichier par son adresse (tableau JSON d'URLs).
-COLONNES_DE_FICHIERS = ("photos_urls", "fichiers_urls", "images_json")
+#: `photos_json` (petites annonces) n'y était pas : `cles_citees` ne voyait pas leurs
+#: photos, et la règle de lecture d'un fichier non plus (#2154).
+COLONNES_DE_FICHIERS = ("photos_urls", "fichiers_urls", "images_json", "photos_json")
 
 
 def _dans_les_pieces_jointes(cle: str | None) -> bool:

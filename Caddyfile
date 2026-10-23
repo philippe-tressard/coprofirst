@@ -176,8 +176,10 @@
 	# elle ne sert qu'à REFUSER — api/tests/test_uploads_prives.py le vérifie.
 
 	# Tout le reste des fichiers uploadés — photos de profil, photos de ticket,
-	# pièces jointes : réservé aux sessions authentifiées. Caddy interroge l'API
-	# avant de servir (204 = autorisé, 401 = refusé).
+	# pièces jointes. Caddy interroge l'API avant de servir : 204 si CE fichier se
+	# lit, 401 sans session, 404 si l'objet qui le cite (affaire, message interne,
+	# annonce…) ne se lit pas — `forward_auth` transmet l'adresse demandée dans
+	# `X-Forwarded-Uri`, et la règle vit dans `utils/visibility/fichiers` (#2154).
 	handle /uploads/* {
 		# `forward_auth` transmet les en-têtes de la requête d'origine — donc le
 		# cookie de session — et ne sert le fichier que sur une réponse 2xx.
