@@ -57,7 +57,9 @@ test('une erreur reste affichée jusqu’à ce qu’on la ferme, et s’annonce 
 	page,
 }) => {
 	await importer(page);
-	await expect(page.locator('.annonce-toast[aria-live="assertive"]')).toHaveText(ERREUR);
+	//  L'erreur s'annonce sur-le-champ ; la réussite, à la pause suivante.
+	await expect(page.locator('.toast-error')).toHaveAttribute('role', 'alert');
+	await expect(page.locator('.toast-success')).toHaveAttribute('role', 'status');
 
 	await page.clock.runFor(10_000);
 	await expect(page.locator('.toast-success')).toHaveCount(0);

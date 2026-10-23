@@ -12,14 +12,6 @@
 
 	export const toasts = writable<ToastMessage[]>([]);
 
-	/**
-	 *  Ce que la voix annonce — DEUX régions vivantes, posées une fois et jamais
-	 *  recréées (#2168). Chaque toast portait `role="alert"` dans un conteneur
-	 *  `aria-live="polite"` : deux politiques contradictoires pour le même
-	 *  message. Une erreur s'annonce sur-le-champ, le reste à la prochaine pause.
-	 */
-	export const annonces = writable({ polie: '', urgente: '' });
-
 	//  🔴 Une ERREUR reste jusqu'à ce qu'on la ferme (#2168, audit `apple-design`) :
 	//  partie au bout de 4 s, elle n'était lue que par qui la regardait à cet
 	//  instant (WCAG 2.2.1). Trois au plus : la quatrième pousse la plus ancienne.
@@ -47,7 +39,6 @@
 		if (liste.some((t) => !t.sortant && t.type === type && t.message === message)) return;
 		const id = ++counter;
 		toasts.update((t) => [...t, { id, type, message }]);
-		annoncer(type, message);
 		if (PERSISTANTS.has(type)) {
 			const restants = liste.filter((t) => !t.sortant && PERSISTANTS.has(t.type));
 			if (restants.length >= PERSISTANTS_MAX) fermer(restants[0].id);
@@ -55,13 +46,6 @@
 		}
 		minuteries.set(id, { restant: duration, depuis: null });
 		if (!suspendu) demarrer(id);
-	}
-
-	function annoncer(type: ToastMessage['type'], message: string) {
-		const cle = type === 'error' ? 'urgente' : 'polie';
-		//  Vider puis remplir : un message identique au précédent est annoncé à nouveau.
-		annonces.update((a) => ({ ...a, [cle]: '' }));
-		tick().then(() => annonces.update((a) => ({ ...a, [cle]: message })));
 	}
 
 	/** Le message s'en va par le chemin de son entrée ; `retirer` suit. */
@@ -121,9 +105,10 @@
 	}
 </script>
 
-<p class="sr-only annonce-toast" aria-live="polite">{$annonces.polie}</p>
-<p class="sr-only annonce-toast" aria-live="assertive">{$annonces.urgente}</p>
-
+<!--  Chaque message porte SON rôle : `alert` pour une erreur, annoncée sur-le-champ,
+      `status` pour le reste, annoncé à la pause suivante (#2168). Le conteneur n'en
+      impose plus aucun : chaque toast portait `role="alert"` dans un conteneur
+      `aria-live="polite"`, deux politiques contradictoires pour le même message. -->
 <section
 	class="toast-container"
 	aria-label="Messages"
@@ -153,6 +138,7 @@
 			class:toast-warning={t.type === 'warning'}
 			class:toast-info={t.type === 'info'}
 			class:sortant={t.sortant}
+			role={t.type === 'error' ? 'alert' : 'status'}
 			use:sortie={t}
 		>
 			<span class="toast-texte">{t.message}</span>
