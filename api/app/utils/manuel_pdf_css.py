@@ -15,6 +15,7 @@ charte, qui dériverait à la première retouche de l'écran.
 
 from __future__ import annotations
 
+from app.utils.manuel_pdf_pages import css_des_pages_ajoutees
 from app.utils.pdf_theme import FONT_SANS, FONT_SERIF, PALETTE_CSS, regle_page
 
 
@@ -25,8 +26,10 @@ def css_du_pdf(styles_manuel: str) -> str:
 {styles_manuel}
 
 {regle_page()}
-}}
-/*  La page de garde n'a ni marge ni numéro : elle est une affiche. */
+/*  🔴 Une accolade orpheline suivait ici `regle_page()` (jusqu'au 23/10/2026) :
+    le moteur jetait alors la règle suivante, et la page de garde gardait les
+    marges et le numéro des autres pages. `test_manuel_pdf` compte les accolades.
+    La page de garde n'a ni marge ni numéro : elle est une affiche. */
 @page garde {{ margin: 0; @bottom-center {{ content: none; }} }}
 
 body {{
@@ -42,40 +45,65 @@ body {{
     nulle part. Le repli des blocs, lui, est levé À LA COMPOSITION (voir
     `corps_du_manuel`) — pas ici : ce qui suit habille le résultat. */
 .sidebar, .hero-actions, .aide-liens {{ display: none !important; }}
-.ecran-detail {{ margin-top: 2mm; border-top: 1px dashed var(--border); padding-top: 2mm; }}
-.ecran-detail-titre {{
-  font-size: 8.5pt;
-  font-weight: 700;
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  margin: 0 0 1.5mm;
+.renvoi-en-ligne {{
+  margin: 1.5mm 0 0;
+  font-size: 7.5pt;
+  font-style: italic;
+  color: var(--muted);
 }}
-.ecran-detail-corps {{ margin-top: 0; }}
+.sommaire-avis {{
+  margin: 0 0 5mm;
+  padding: 2.5mm 3.5mm;
+  background: var(--bg);
+  border-left: 3px solid var(--gold);
+  color: var(--muted);
+}}
+/*  🔴 Le premier libellé des tableaux d'affaires ne se coupe pas, à l'écran
+    (`white-space: nowrap`) : dans la largeur d'une page, il débordait SUR la
+    colonne voisine — « Copro-bailleurs, Bailleurs, Locataires… » imprimé par-dessus
+    son explication (signalé le 23/10/2026). */
+.affaire-table {{ font-size: 8.5pt; }}
+.affaire-table th, .affaire-table td {{ padding: 1.2mm 2mm; }}
+.affaire-table td:first-child {{ white-space: normal; }}
+/*  Un tableau à deux colonnes — un nom, son explication : le nom n'a pas besoin
+    de la moitié de la largeur. */
+.affaire-table td:first-child:nth-last-child(2) {{ width: 30%; }}
+/*  🔴 `inline-flex` se lit, chez WeasyPrint, comme un bloc : chaque pictogramme
+    au trait d'une phrase (✎ le crayon, la pastille « Occupants »…) partait seul
+    sur sa ligne, et coupait la phrase en trois (vu au rendu du 23/10/2026). */
+.ic, .pastille-lecture-ex {{ display: inline; }}
+.ic svg, .pastille-lecture-ex svg {{ display: inline; vertical-align: -.15em; }}
+.pastille-lecture-ex > * + * {{ margin-left: .25em; }}
+/*  La fin du manuel invite à télécharger… ce document : sur le papier, le lien
+    renvoie à lui-même. Le glyphe d'aide, lui, coûtait un tiers de page. */
+.aide-pdf, .aide-glyphe {{ display: none !important; }}
+.aide-fin {{ padding: 3mm 4mm; margin-bottom: 0; break-inside: avoid; }}
 
-/*  🔴 DEUX COLONNES sur les trois grilles — demandé le 03/09/2026.
-    Ce sont des listes de blocs courts : sur une pleine largeur A4, chacun tient
-    trois mots suivis de vingt centimètres de blanc, et le document double de
-    pages pour rien.
+/*  🔴 DEUX COLONNES PAR UNE GRILLE, et non par `column-count` (23/10/2026).
+    Les quatre grilles sont des listes de blocs courts : en pleine largeur A4,
+    chacun tiendrait trois mots suivis de vingt centimètres de blanc (demandé le
+    03/09/2026).
 
-    `column-count` et non un `display: grid` : la coupure en colonnes est ce que
-    l'impression sait faire, et elle continue d'une page à l'autre. Un grid CSS
-    poserait des lignes fixes que la pagination casserait au milieu.
+    Elles étaient en `column-count`, et WeasyPrint repoussait alors le conteneur
+    entier à la page suivante : « Pour qui ? », « Mini sommaire par profil » et
+    la grille des écrans laissaient chacun une page presque vide derrière leur
+    titre (signalé le 23/10/2026). Une grille se coupe entre deux rangées.
 
-    ⚠️ `break-inside: avoid` sur chaque carte est indispensable : sans lui, une
-    carte se couperait entre deux colonnes — la moitié en bas à gauche, la moitié
-    en haut à droite. */
+    ⚠️ `break-inside: avoid` sur chaque carte : une carte coupée se lirait en
+    deux morceaux. Il ne tient que parce que les cartes sont COURTES — les blocs
+    « En savoir plus » ne sont plus imprimés (`corps_du_manuel`). Une carte plus
+    haute qu'une page ne se couperait pas : elle déborderait, et son texte
+    sortirait de la feuille, comme les fiches Admin et Conseil syndical
+    jusqu'au 23/10/2026. */
 .ecran-grid, .quick-grid, .persona-grid, .profils-grid {{
-  display: block;
-  column-count: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   column-gap: 7mm;
+  row-gap: 2.5mm;
 }}
 .ecran-card, .quick-card, .persona-card, .profil-card {{
   break-inside: avoid;
   page-break-inside: avoid;
-  display: inline-block;
-  width: 100%;
-  margin-bottom: 2.5mm;
   border: 1px solid var(--border);
   border-left: 1mm solid var(--navy);
   border-radius: 0 2mm 2mm 0;
@@ -333,155 +361,5 @@ h3 {{
 }}
 a {{ color: var(--navy); text-decoration: none; }}
 
-/* ── Page de garde ────────────────────────────────────────────────────── */
-.garde {{
-  page: garde;
-  page-break-after: always;
-  height: 297mm;
-  position: relative;
-  background: var(--navy);
-  color: #fff;
-  text-align: center;
-}}
-/*  Le bandeau doré : la seule ligne de couleur chaude de la charte, employée
-    ici comme sur les affiches de hall — un rappel, pas une décoration. */
-.garde::after {{
-  content: "";
-  position: absolute; left: 0; right: 0; bottom: 0;
-  height: 14mm;
-  background: var(--gold);
-}}
-/*  Un liseré doré en haut répond à celui du pied : la page est tenue par ses
-    deux bords, pas posée sur un fond. */
-.garde::before {{
-  content: "";
-  position: absolute; left: 0; right: 0; top: 0;
-  height: 4mm;
-  background: var(--gold);
-}}
-.garde-logo {{ padding-top: 34mm; }}
-/*  Médaillon : le logo est blanc sur bleu, il se perdrait sans un fond clair. */
-.garde-medaillon {{
-  width: 30mm; height: 30mm;
-  margin: 0 auto;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .08);
-  border: 1px solid rgba(255, 255, 255, .18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}}
-.garde-surtitre {{
-  font-size: 9.5pt;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-top: 10mm;
-}}
-.garde-titre {{
-  font-family: {FONT_SERIF};
-  font-size: 34pt;
-  line-height: 1.1;
-  margin: 4mm 22mm 0;
-  letter-spacing: .01em;
-}}
-.garde-sous {{
-  font-size: 12pt;
-  color: #C7D2E0;
-  margin: 6mm 28mm 0;
-  line-height: 1.6;
-}}
-.garde-filet {{
-  width: 26mm; height: 2px;
-  background: var(--gold);
-  margin: 10mm auto;
-}}
-.garde-qr {{ margin-top: 12mm; }}
-.garde-qr img {{
-  width: 34mm; height: 34mm;
-  background: #fff;
-  padding: 3mm;
-  border-radius: 3mm;
-}}
-.garde-qr p {{
-  font-size: 9.5pt;
-  color: #C7D2E0;
-  margin-top: 4mm;
-}}
-.garde-qr strong {{ color: #fff; }}
-.garde-pied {{
-  position: absolute;
-  left: 0; right: 0; bottom: 20mm;
-  font-size: 9pt;
-  color: #A8B6C8;
-}}
-
-/* ── Sommaire ─────────────────────────────────────────────────────────── */
-.sommaire {{ page-break-after: always; }}
-.sommaire h2 {{ margin-bottom: 6mm; }}
-.sommaire ol {{ list-style: none; padding: 0; counter-reset: som; }}
-.sommaire li {{ padding: 1.2mm 0; }}
-.sommaire a {{
-  display: block;
-  color: var(--ink);
-  text-decoration: none;
-}}
-/*  🔴 Le numéro de page est RÉSOLU À LA MISE EN PAGE (`target-counter`), jamais
-    écrit : on ne sait pas encore combien de pages fera le document, et un
-    numéro saisi serait faux dès la première phrase ajoutée au manuel. */
-.sommaire a::after {{
-  content: target-counter(attr(href), page);
-  float: right;
-  color: var(--gold);
-  font-weight: 700;
-}}
-/*  Les points de conduite : c'est ce qui rend une ligne de sommaire lisible
-    quand le titre est court et le numéro loin. */
-.sommaire a::before {{
-  content: "";
-  float: right;
-  width: 0;
-}}
-.sommaire .som-n2 {{
-  counter-increment: som;
-  border-bottom: 1px solid var(--border);
-  margin-top: 3mm;
-}}
-.sommaire .som-n2 a {{
-  font-family: {FONT_SERIF};
-  font-size: 12pt;
-  color: var(--navy);
-}}
-.sommaire .som-n2 a::before {{
-  content: counter(som) ". ";
-  float: none;
-  color: var(--gold);
-  font-weight: 700;
-}}
-/*  Les quinze écrans sont des sous-entrées : décalées, plus discrètes, mais
-    présentes — c'est par elles qu'on cherche « Accès & badges ». */
-.sommaire .som-n3 {{
-  padding: .8mm 0 .8mm 7mm;
-  font-size: 9.5pt;
-  border-bottom: 1px dotted var(--border);
-}}
-.sommaire .som-n3 a {{ color: var(--muted); }}
-
-/* ── Mentions ─────────────────────────────────────────────────────────── */
-.mentions {{
-  page-break-before: always;
-  border-top: 3px solid var(--gold);
-  padding-top: 6mm;
-  font-size: 9pt;
-  color: var(--muted);
-}}
-.mentions h2 {{ font-size: 13pt; }}
-.mentions dt {{ font-weight: 700; color: var(--ink); margin-top: 3mm; }}
-.mentions dd {{ margin: 0 0 1mm; }}
-.mentions .avert {{
-  margin-top: 6mm;
-  padding: 3mm 4mm;
-  background: var(--bg);
-  border-left: 3px solid var(--gold);
-}}
+{css_des_pages_ajoutees()}
 """

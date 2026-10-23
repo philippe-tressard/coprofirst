@@ -74,7 +74,8 @@ def test_le_contenu_du_manuel_se_retrouve_dans_le_PDF(document, manuel):
 
     Si quelqu'un remplaçait un jour la lecture par une rédaction, ce test
     tomberait à la première divergence — c'est le seul moyen de tenir la
-    promesse « même contenu » faite au lecteur dans le lien de téléchargement.
+    promesse faite au lecteur dans le lien de téléchargement : l'essentiel du
+    manuel, pas un autre texte.
     """
     for extrait in (
         "Le menu, écran par écran",
@@ -105,77 +106,34 @@ def test_les_TREIZE_ecrans_sont_dans_le_PDF(document):
     assert document.count('class="ecran-card"') == 12
 
 
-# ── 🔴 Les blocs dépliables : du contenu invisible serait du contenu perdu ────
+# ── 🔴 Les blocs « En savoir plus » : retirés, et le retrait se dit ─────────
 
 
-def test_les_blocs_depliables_sont_OUVERTS(document, manuel):
-    """Un `<details>` fermé, sur du papier, est du contenu perdu.
+def test_les_blocs_en_savoir_plus_sont_RETIRES_et_SIGNALES(document, manuel):
+    """Le PDF donne l'essentiel ; le détail reste en ligne (23/10/2026).
 
-    Et c'est justement celui qu'on a demandé à voir : Tickets, Communauté, Mon
-    profil, Actualités — puis Mes lots et Prestataires (06/09/2026). Des écrans
-    dont l'usage ne se devine pas au titre.
+    Ces blocs portaient 62 % du texte : ouverts dans le PDF (choix du
+    03/09/2026), ils en faisaient 33 pages, avec des fiches plus hautes qu'une
+    page, que le moteur ne coupe pas — leur texte sortait de la feuille. Demandé :
+    un document divisé par deux, sans paragraphe qu'on ne lira jamais.
 
-    ⚠️ La première version s'en remettait au CSS (`display: block !important`).
-    Ça ne suffit pas : le repli d'un `<details>` est un comportement natif, pas
-    une règle de style — le navigateur l'a confirmé à l'aperçu, et un moteur PDF
-    n'a aucune raison de faire mieux. La balise est donc transformée.
-
-    🔴 **Le compte n'est plus écrit en dur** (06/09/2026). Il valait `== 5`, et
-    ajouter deux blocs au manuel a fait échouer ce test — sur un manuel
-    parfaitement correct. Un chiffre figé transforme un garde-fou en formalité :
-    on le met à jour sans le lire, et le jour où il dit quelque chose, on l'a
-    déjà désarmé par habitude.
-
-    L'invariant n'a jamais été « il y en a cinq » : c'est **que tous ceux du
-    manuel se retrouvent dépliés**. Le test compte donc la SOURCE et compare.
+    🔴 Le compte vient de la SOURCE : l'invariant est que CHAQUE bloc du manuel
+    laisse un renvoi à sa place — un retrait muet laisserait croire au lecteur
+    qu'il a tout lu.
     """
-    assert "<details" not in document, (
-        "un `<details>` subsiste : son contenu pourrait ne pas être imprimé"
-    )
-    assert "<summary" not in document
-
+    assert "<details" not in document and "<summary" not in document
     attendus = manuel.count("<details")
-    #  🔴 Cas zéro : si le manuel n'en portait plus aucun, la comparaison serait
-    #  vraie sans rien mesurer — et ce serait justement le signe que les blocs
-    #  ont disparu de la source.
+    #  🔴 Cas zéro : sans bloc dans la source, la comparaison ne mesurerait rien.
     assert attendus >= 5, f"le manuel ne porte plus que {attendus} bloc(s) dépliable(s)"
-    assert document.count("En détail") == attendus, (
-        f"{attendus} bloc(s) dépliable(s) dans le manuel, "
-        f"{document.count('En détail')} déplié(s) dans le document"
+    assert document.count(m.RENVOI_EN_LIGNE) == attendus, (
+        f"{attendus} bloc(s) dans le manuel, {document.count(m.RENVOI_EN_LIGNE)} renvoi(s) dans le PDF"
     )
-    #  Et leur contenu doit vraiment être là.
-    #  Témoin : Mes lots & accès (le bloc des Affaires est retiré le 24/09/2026).
-    assert "C'est cet inventaire qui fait foi" in document
-    assert "Boîte à idées" in document
-    #  Le cinquième, ajouté le 05/09/2026 : ce qu'on trouve sur l'Accueil.
-    assert "Consignes de la copropriété" in document
-
-    #  🔴 LES ATTRIBUTS SURVIVENT À LA CONVERSION — ajouté après un vrai défaut.
-    #
-    #  Le remplacement s'écrit avec une référence de groupe. Écrite via un
-    #  heredoc, elle est devenue le caractère de contrôle U+0001 : la conversion
-    #  produisait un `<div>` SANS SA CLASSE, avec un caractère invisible dedans.
-    #  Les assertions ci-dessus passaient toutes — plus de `<details`, le texte
-    #  présent — et le bloc se serait imprimé sans son habillage.
-    #
-    #  ⚠️ C'est l'étape « Aucun caractère de contrôle invisible » de la CI qui
-    #  l'a vu, pas ce fichier. Il regarde maintenant ce qu'il aurait dû regarder
-    #  dès le début : non pas que la balise a changé, mais que le RÉSULTAT est
-    #  celui qu'on veut. Le caractère fautif n'est pas cité ici — l'écrire pour
-    #  l'expliquer le réintroduirait, et la CI refuserait ce fichier à son tour.
-    #  Même raison que plus haut : le compte vient de la SOURCE, pas d'un chiffre
-    #  figé. Ce qui est vérifié est que **chaque** bloc converti a gardé sa
-    #  classe — pas qu'il y en a un nombre convenu.
-    classes = re.findall(r'<details class="([^"]+)"', manuel)  # ecran- et persona-detail
-    assert len(classes) == attendus and all(
-        document.count(f'<div class="{c}">') == classes.count(c) for c in set(classes)
-    ), "les blocs convertis ont perdu leurs attributs : ils s'imprimeraient sans leur habillage"
-    #  Les trois seuls caractères de contrôle voulus, désignés par leur code —
-    #  les écrire en littéral dans ce fichier serait précisément le défaut.
-    voulus = {9, 10, 13}
-    assert not any(ord(c) < 32 and ord(c) not in voulus for c in document), (
-        "un caractère de contrôle s'est glissé dans le document composé"
-    )
+    #  Témoins : du DÉTAIL (absent) et de l'ESSENTIEL de la même carte (présent).
+    assert "C'est cet inventaire qui fait foi" in manuel
+    assert "C'est cet inventaire qui fait foi" not in document
+    assert "Vos lots, vos badges Vigik" in document
+    #  Le sommaire dit où lire le reste, à l'adresse du site.
+    assert "https://5hostachy.fr" + m.CHEMIN_MANUEL_EN_LIGNE in document
 
 
 # ── Le sommaire est CONSTRUIT, pas recopié ───────────────────────────────────

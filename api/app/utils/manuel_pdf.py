@@ -70,6 +70,14 @@ _TITRES = re.compile(r"<h([23])([^>]*)>(.*?)</h\1>", re.S | re.I)
 _BALISES = re.compile(r"<[^>]+>")
 _ID = re.compile(r"""\bid\s*=\s*["']([^"']+)["']""", re.I)
 
+#: Ce qui remplace un bloc « En savoir plus » dans le PDF (voir `corps_du_manuel`).
+CLASSE_RENVOI = "renvoi-en-ligne"
+RENVOI_EN_LIGNE = "→ Le détail de cet écran est dans le manuel en ligne."
+
+#: Le manuel en ligne, tel que le front le sert : l'adresse que le PDF donne pour
+#: le détail qu'il ne porte pas.
+CHEMIN_MANUEL_EN_LIGNE = "/manuel-utilisateur.html"
+
 
 class ManuelIndisponible(RuntimeError):
     """Le manuel n'a pas pu être lu — on ne compose pas un PDF sur du vide."""
@@ -103,39 +111,32 @@ def lire_manuel(url: str = URL_MANUEL_INTERNE, timeout: float = 5.0) -> str:
 def corps_du_manuel(html: str) -> str:
     """Le contenu imprimable : le `<main>`, sans la navigation ni les scripts.
 
-    🔴 LES BLOCS DÉPLIABLES SONT OUVERTS À LA COMPOSITION, pas par du CSS.
+    🔴 LE PDF DONNE L'ESSENTIEL, LE DÉTAIL RESTE EN LIGNE (23/10/2026).
 
-    Un `<details>` fermé est du contenu **invisible** — donc, sur du papier, du
-    contenu perdu. Et c'est justement celui qu'on a demandé à voir : Tickets,
-    Communauté et Mon profil, les trois écrans dont l'usage ne se devine pas.
+    Les blocs « En savoir plus » portent 62 % du texte du manuel — 13 000 mots
+    sur 21 000, dont 5 000 pour la seule fiche Admin. Ouverts dans le PDF (choix
+    du 03/09/2026), ils en faisaient 33 pages, avec des fiches plus hautes qu'une
+    page. Demandé à l'écran : *« des paragraphes très longs, plus d'une page,
+    c'est trop : cela ne sera jamais lu »*, et un document divisé par deux.
 
-    La première version s'en remettait à `display: block !important` sur l'enfant.
-    Ça ne suffit pas : le repli d'un `<details>` est un comportement natif, pas
-    une règle de style — le navigateur l'a confirmé à l'aperçu, et un moteur PDF
-    n'a aucune raison de faire mieux. On transforme donc la balise, ce qui ne
-    dépend d'aucun moteur.
+    Le bloc est donc RETIRÉ, et un renvoi prend sa place : le lecteur sait qu'il
+    y a davantage, et où le trouver (le sommaire donne l'adresse). Rien n'est
+    réécrit : le PDF reste une mise en page du manuel servi, il en garde la
+    partie toujours visible à l'écran — celle qu'on lit avant de déplier.
 
-    Le `<summary>` devient un intertitre : « En savoir plus » n'a plus de sens
-    quand tout est déjà là, mais le supprimer collerait deux paragraphes.
+    ⚠️ La balise est retirée À LA COMPOSITION, comme elle était ouverte avant : un
+    `display: none` dépendrait du moteur, et un bloc caché laisserait ses titres
+    au sommaire.
     """
     trouve = _MAIN.search(html)
     corps = trouve.group(1) if trouve else html
     corps = re.sub(r"<script.*?</script>", "", corps, flags=re.S | re.I)
     corps = re.sub(
-        r"<summary[^>]*>.*?</summary>",
-        '<p class="ecran-detail-titre">En détail</p>',
+        r"<details[^>]*>.*?</details>",
+        f'<p class="{CLASSE_RENVOI}">{RENVOI_EN_LIGNE}</p>',
         corps,
         flags=re.S | re.I,
     )
-    #  Le `name` d'un `<details>` le range dans un accordéon (un seul déplié à la
-    #  fois, à l'écran) : il n'a pas de sens sur un `<div>`, et tout est déplié ici.
-    corps = re.sub(
-        r"<details([^>]*)>",
-        lambda m: "<div" + re.sub(r'\s+name="[^"]*"', "", m.group(1)) + ">",
-        corps,
-        flags=re.I,
-    )
-    corps = re.sub(r"</details>", "</div>", corps, flags=re.I)
     #  🔴 « UN LOGICIEL LIBRE » NE FIGURE PAS DEUX FOIS (05/09/2026).
     #
     #  Demandé à l'écran : *« le § Un logiciel libre est à déplacer à la fin, et
@@ -221,7 +222,7 @@ def sommaire(html: str) -> list[str]:
     return [titre for _, titre, _ in titres_ancres(html)[1]]
 
 
-def _sommaire(releve: list[tuple[int, str, str]]) -> str:
+def _sommaire(releve: list[tuple[int, str, str]], site_url: str) -> str:
     """Le sommaire, à DEUX niveaux et avec les numéros de page.
 
     🔴 Les numéros ne sont pas calculés ici — ils ne peuvent pas l'être : on ne
@@ -229,6 +230,9 @@ def _sommaire(releve: list[tuple[int, str, str]]) -> str:
     qui les résout au moment de la mise en page, une fonctionnalité CSS Paged
     Media que WeasyPrint implémente. Un numéro écrit à la main serait faux dès
     la première phrase ajoutée au manuel.
+
+    Il annonce aussi ce que le document NE porte pas — le détail de chaque écran —
+    et où le lire : c'est la page qu'on ouvre en premier.
     """
     if not releve:
         return ""
@@ -236,7 +240,13 @@ def _sommaire(releve: list[tuple[int, str, str]]) -> str:
         f'<li class="som-n{niveau}"><a href="#{ancre}">{escape(titre)}</a></li>'
         for niveau, titre, ancre in releve
     )
-    return f'<section class="sommaire"><h2>Sommaire</h2><ol>{lignes}</ol></section>'
+    adresse = escape(site_url.rstrip("/") + CHEMIN_MANUEL_EN_LIGNE)
+    avis = (
+        '<p class="sommaire-avis">Ce guide imprimé donne l’essentiel de chaque écran. '
+        "Le détail — chaque cas, chaque réglage — est dans le manuel en ligne : "
+        f"<strong>{adresse}</strong></p>"
+    )
+    return f'<section class="sommaire"><h2>Sommaire</h2>{avis}<ol>{lignes}</ol></section>'
 
 
 def identite_du_manuel(session: Session) -> dict:
@@ -283,7 +293,7 @@ def composer_html(
 <style>{css_du_pdf(styles_du_manuel(html))}</style>
 </head><body>
 {garde(site_nom, site_url, edite_le, logo_png, sous_titre)}
-{_sommaire(releve)}
+{_sommaire(releve, site_url)}
 {corps}
 {mentions(site_nom, site_url, edite_le)}
 </body></html>"""
