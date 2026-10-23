@@ -300,7 +300,13 @@ FAMILLES: dict[str, FamilleFichier] = {
     #  et elle borne un envoi accidentel ou malveillant — elle ne filtre pas un
     #  usage réel. La relever est une décision d'une ligne ; ne pas en avoir du
     #  tout n'en était pas une.
-    "document_prive": _famille(_TYPES_DOCUMENT | _TYPES_IMAGE, plafond_mo=30),
+    #
+    #  Le Markdown en plus : le règlement de copropriété se joint en `.md`, que
+    #  l'assistant lit (`question_reglement/texte.EXTENSIONS_LUES`) — accepté
+    #  depuis toujours, puisque cette famille n'était pas appliquée avant #2156.
+    "document_prive": _famille(
+        _TYPES_DOCUMENT | _TYPES_IMAGE | {"text/markdown": ".md"}, plafond_mo=30
+    ),
     #  Un fichier d'import d'accès est une LISTE, pas un scan — et il est lu
     #  intégralement en mémoire par l'analyseur. Le plafond y protège la mémoire
     #  du Raspberry Pi autant qu'il contrôle l'entrée.
@@ -310,6 +316,43 @@ FAMILLES: dict[str, FamilleFichier] = {
     #  publiquement et inséré dans les documents et les courriels.
     "logo": _famille({"image/png": ".png", "image/jpeg": ".jpg"}, plafond_mo=2),
 }
+
+
+#: Les types qu'un navigateur annonce quand il ne sait pas : sous Windows, un `.md`
+#: ou un `.docx` part souvent sans type, ou en `application/octet-stream`.
+TYPES_INDETERMINES = frozenset({"", "application/octet-stream"})
+
+
+def type_annonce(content_type: str | None, nom: str | None, famille: str) -> str | None:
+    """Le type à juger : celui du client, ou — s'il est INDÉTERMINÉ — celui que
+    l'extension désigne parmi les types de la famille (#2156).
+
+    L'extension retenue reste celle du type, que la signature du contenu confronte ;
+    une extension hors de la famille reste refusée.
+    """
+    if (content_type or "") not in TYPES_INDETERMINES:
+        return content_type
+    extension = extension_assainie(nom or "")
+    par_extension = {ext: t for t, ext in FAMILLES[famille].types.items()}
+    return par_extension.get(extension, content_type)
+
+
+def lire_fichier_recu(fichier, famille: str) -> bytes:
+    """Les octets d'un fichier reçu — au plus le plafond de sa famille (#2164).
+
+    🔴 Le corps entier était lu AVANT d'être comparé au plafond : rien ne bornait la
+    mémoire d'une requête sur le Raspberry Pi. Un octet de trop suffit à refuser (413).
+    """
+    from fastapi import HTTPException
+
+    regles = FAMILLES.get(famille)
+    if regles is None:
+        raise ValueError(f"Famille de fichier inconnue : {famille!r}")
+    plafond = regles.plafond_mo * 1024 * 1024
+    octets = fichier.file.read(plafond + 1)
+    if len(octets) > plafond:
+        raise HTTPException(413, f"Fichier trop volumineux (max {regles.plafond_mo} Mo).")
+    return octets
 
 
 def verifier_fichier_recu(
@@ -419,33 +462,23 @@ def enregistrer_televersement(file, raw_name: str, user=None) -> str:
     identifié doit pouvoir valider quand même. `getattr(user, "id", "?")` plutôt
     que `user.id` — un refus qui plante sur le journal ne refuse plus rien.
     """
-    import logging
-
-    from fastapi import HTTPException
-
-    refuser_fichier_recu()  # la démo publique n'en reçoit aucun (#1901)
-    #  Seize octets suffisent à toutes les signatures connues. `seek(0)` remet le
-    #  flux à zéro pour la copie qui suit — sans lui, le fichier écrit perd sa
-    #  tête.
-    debut = file.file.read(16)
-    file.file.seek(0)
-    extension = extension_assainie(raw_name)
-
-    #  🔴 LE CONTENU DOIT CORRESPONDRE À CE QU'IL PRÉTEND ÊTRE (#773).
-    #  `content_type` vient du client : seule la signature du fichier tranche.
-    motif = signature_incoherente(debut, extension)
-    if motif:
-        logging.getLogger("app").warning(
-            "Téléversement refusé (utilisateur %s) : %s", getattr(user, "id", "?"), motif
-        )
-        raise HTTPException(400, f"Fichier refusé : {motif}.")
-
-    st = stockage()
-    cle = f"{DOSSIER_PRIVE}/{nom_stocke(raw_name, extension)}"
-    st.ecrire_flux(cle, file.file)
+    #  🔴 LA FAMILLE « document_prive », enfin appliquée (#2156). Elle était
+    #  déclarée — types, plafond de 30 Mo — et n'avait AUCUN appelant : ce geste
+    #  ne contrôlait que la cohérence de la signature avec l'extension FOURNIE.
+    #  Un fichier de n'importe quel type et de n'importe quelle taille entrait.
+    #  Les trois règles, l'extension tirée du TYPE et l'écriture : la porte unique.
+    octets = lire_fichier_recu(file, "document_prive")
+    nom = enregistrer_fichier_recu(
+        octets,
+        raw_name,
+        type_annonce(file.content_type, raw_name, "document_prive"),
+        "document_prive",
+        DOSSIER_PRIVE,
+        user=user,
+    )
     #  La CLÉ, que la ligne de la base garde (`fichier_cle`, #1816) —
     #  `stockage().colonnes(cle)`.
-    return cle
+    return f"{DOSSIER_PRIVE}/{nom}"
 
 
 async def lire_tableur_recu(fichier, user=None) -> bytes:
@@ -462,6 +495,6 @@ async def lire_tableur_recu(fichier, user=None) -> bytes:
     Écrit une seule fois pour les trois imports (télécommandes, Vigik, lots) : la
     recopie du geste en était à dix lignes de commentaire par routeur.
     """
-    contenu = await fichier.read()
+    contenu = lire_fichier_recu(fichier, "tableur")
     verifier_fichier_recu(contenu, fichier.filename, fichier.content_type, "tableur", user)
     return contenu

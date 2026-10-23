@@ -27,6 +27,46 @@ def parse_photos(raw: Optional[str]) -> list[str]:
         return []
 
 
+#: 🔴 Les dossiers où vivent les photos et les pièces jointes d'un objet (#2157).
+#:
+#: `photos_internes` gardait toute adresse « des nôtres » — `prive/` (les
+#: documents de la copropriété, servis par un endpoint qui juge `document_visible`),
+#: `annonces-hall/`, `logo/`, `avatars/` compris. Une clé glissée dans les pièces
+#: jointes d'une affaire partait alors en copie par courriel, contournant Caddy et
+#: la règle de lecture. `tickets`, `publications` et `evenements` sont les dossiers
+#: des pièces jointes d'avant `/fichier` : les affaires anciennes les citent encore.
+DOSSIERS_DES_PIECES_JOINTES = frozenset(
+    {"fichiers", "annonces", "residence", "tickets", "publications", "evenements"}
+)
+
+#: Les colonnes qui CITENT un fichier par son adresse (tableau JSON d'URLs).
+COLONNES_DE_FICHIERS = ("photos_urls", "fichiers_urls", "images_json")
+
+
+def _dans_les_pieces_jointes(cle: str | None) -> bool:
+    return bool(cle) and cle.split("/", 1)[0] in DOSSIERS_DES_PIECES_JOINTES
+
+
+def cles_citees(session) -> set[str]:
+    """Les clés de fichier que la base cite encore, toutes tables confondues.
+
+    Lues sur chaque colonne de `COLONNES_DE_FICHIERS` des tables déclarées : une
+    table neuve qui joint des fichiers sous ce nom est couverte d'elle-même.
+    """
+    from sqlalchemy import select
+    from sqlmodel import SQLModel
+
+    from app.utils.stockage import cle_de_url
+
+    cles: set[str] = set()
+    for table in SQLModel.metadata.tables.values():
+        for nom in COLONNES_DE_FICHIERS:
+            if nom in table.c:
+                for (valeur,) in session.execute(select(table.c[nom])):
+                    cles.update(c for u in parse_photos(valeur) if (c := cle_de_url(u)))
+    return cles
+
+
 def photos_internes(urls: list[str]) -> list[str]:
     """Ne conserve que les URLs produites par notre propre endpoint d'upload.
 
@@ -39,7 +79,7 @@ def photos_internes(urls: list[str]) -> list[str]:
     #  La règle d'une adresse « des nôtres » vit dans `stockage.cle_de_url` (#1748).
     from app.utils.stockage import cle_de_url
 
-    return [str(u) for u in urls if cle_de_url(str(u)) is not None]
+    return [str(u) for u in urls if _dans_les_pieces_jointes(cle_de_url(str(u)))]
 
 
 def premiere_photo(raw: Optional[str]) -> Optional[str]:

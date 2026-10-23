@@ -19,7 +19,7 @@ from app.auth.deps import require_admin
 from app.database import get_session
 from app.models.core import ConfigSite, Utilisateur
 from app.utils.config_site import ecrire_cle
-from app.utils.fichiers import enregistrer_fichier_recu
+from app.utils.fichiers import enregistrer_fichier_recu, lire_fichier_recu
 from app.utils.images import carre_png
 from app.utils.stockage import stockage
 from app.utils.logo import (
@@ -50,7 +50,7 @@ def televerser_logo(
     user: Utilisateur = Depends(require_admin),
 ):
     """Remplace le logo. PNG ou JPEG (famille « logo »), lisible par Pillow."""
-    octets = file.file.read()
+    octets = lire_fichier_recu(file, "logo")
     nom = enregistrer_fichier_recu(
         octets, file.filename, file.content_type, "logo", DOSSIER, user=user
     )

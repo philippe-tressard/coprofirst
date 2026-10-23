@@ -256,6 +256,7 @@ def apercu_diffusion(
                 code_modele=code_modele,
                 contexte=contexte,
                 destinataires=destinataires,
+                lecteur=user,
                 pieces_jointes=pieces,
                 copie_auteur=copie,
                 ecartes=ecartes_syndic_cs(

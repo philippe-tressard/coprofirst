@@ -26,6 +26,8 @@ from __future__ import annotations
 
 import re
 
+import pytest
+
 from tests.aides_caddy import caddyfile
 from tests.conftest import racine_depot
 
@@ -38,6 +40,58 @@ RETRAITS = {
     "request>tls": "empreinte de session TLS",
     "resp_headers": "Set-Cookie",
 }
+
+
+#: Les routes qui portent un jeton à usage unique dans leur CHEMIN (#2162) — celle de
+#: l'écran et celle de l'API. Le jeton y reste valable jusqu'au renvoi du lien : il
+#: ne doit pas dormir sept jours dans `access.log`.
+ROUTES_A_JETON = {
+    "/point-cs/{jeton}": "la page du compte rendu, ouverte depuis le courriel",
+    "/api/points-conseil/lien/{jeton}": "lire, valider, commenter le compte rendu",
+}
+
+
+def _regle_uri(bloc: str) -> tuple[str, str] | None:
+    """(motif, remplacement) de la règle `request>uri regexp`, ou `None`."""
+    m = re.search(r"^\s*request>uri\s+regexp\s+(\S+)\s+(\S+)\s*$", bloc, re.M)
+    if not m:
+        return None
+    remplacement = m.group(2)
+    return m.group(1), "" if remplacement == '""' else remplacement.replace("$1", r"\1")
+
+
+def _journalise(uri: str) -> str:
+    """Ce que le journal écrit pour cette adresse — la règle du Caddyfile appliquée."""
+    motif, remplacement = _regle_uri(_bloc_journal(caddyfile()) or "")
+    return re.sub(motif, remplacement, uri)
+
+
+@pytest.mark.parametrize(
+    "uri,attendu",
+    [
+        ("/tickets/12?token=secret", "/tickets/12"),
+        ("/point-cs/JETONSECRET", "/point-cs"),
+        ("/point-cs/JETONSECRET?x=1", "/point-cs"),
+        ("/api/points-conseil/lien/JETONSECRET", "/api/points-conseil/lien"),
+        ("/api/points-conseil/lien/JETONSECRET/valider", "/api/points-conseil/lien/valider"),
+        ("/api/tickets/12", "/api/tickets/12"),
+    ],
+)
+def test_le_journal_ne_garde_ni_la_requete_ni_le_jeton_d_un_lien(uri, attendu):
+    assert _journalise(uri) == attendu
+
+
+def test_chaque_route_a_jeton_de_l_api_est_declaree():
+    """Une route neuve qui porte `{jeton}` dans son chemin entre dans `ROUTES_A_JETON`."""
+    from tests.aides_sources import routes_declarees
+
+    a_jeton = {
+        f"/api{r.path}" for r in routes_declarees() if "{jeton}" in r.path or "{token}" in r.path
+    }
+    assert a_jeton, "aucune route à jeton relevée : le contrôle ne lit plus rien"
+    for route in a_jeton:
+        assert any(route.startswith(d) for d in ROUTES_A_JETON), route
+        assert "JETON" not in _journalise(route.replace("{jeton}", "JETON")), route
 
 
 def _bloc_journal(contenu: str) -> str | None:
@@ -66,8 +120,8 @@ def _ecarts(contenu: str) -> list[str]:
     for champ, raison in RETRAITS.items():
         if not re.search(rf"^\s*{re.escape(champ)}\s+delete\s*$", bloc, re.M):
             ecarts.append(f"`{champ}` n'est pas retiré — {raison}")
-    if not re.search(r"request>uri\s+regexp\s+\\\?\.\*\s+\"\"", bloc):
-        ecarts.append("la chaîne de requête n'est pas coupée de `request>uri` (jeton d'un lien)")
+    if not _regle_uri(bloc):
+        ecarts.append("`request>uri` n'a pas de règle `regexp` : la requête et les jetons restent")
     return ecarts
 
 

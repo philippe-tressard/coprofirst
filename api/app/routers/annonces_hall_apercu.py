@@ -149,6 +149,7 @@ def apercu_diffusion_annonce(
                 destinataires=destinataires_annonce(
                     annonce, session, syndic=brouillon.envoyer_syndic, cs=brouillon.envoyer_cs
                 ),
+                lecteur=user,
                 pieces_jointes=[annonce.pdf_nom],
                 #  L'affiche n'existe pas encore : son auteur SERA le rédacteur.
                 #  `adresse_copie` le sait et rend son adresse — la taire ferait

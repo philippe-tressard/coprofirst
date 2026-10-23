@@ -225,6 +225,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 | 21 | **Textes légaux servis complets** — un « À RENSEIGNER » dans la page publique rend ÉCART : à compléter dans Admin › Légal (#1585) | OK · ÉCART · INCONNU |
 | 22 | **Réplication PostgreSQL** — un primaire sur l'actif, une réplique qui reçoit le journal sur le standby ; deux primaires ou une réplique déconnectée rendent FAIL. Décision partagée avec C37 (`lib-replication.sh`, #1781) | OK · FAIL · INCONNU |
 | 23 | **Aucune PR ouverte vers `main` hors de `dev`** — chaque MEP supprime `dev`, et GitHub réoriente vers `main` les PR qui la visaient (Dependabot compris). Une PR réorientée rend ÉCART ; la reprendre : `python scripts/poste/reprendre-dependabot.py` (relevé et montées), puis `--fermer`, et ses montées dans un lot sur `dev`. Joué aussi en `--post-mep`, premier moment où elles apparaissent (#1870) | OK · ÉCART · INCONNU |
+| 24 | **Aucune alerte Dependabot haute ou critique ouverte** — deux alertes hautes (`follow-redirects`, bridge) ont dormi deux jours sans PR ni ticket (#2148). FAIL qui nomme l'alerte, son manifeste et la version corrigée ; ÉCART si le lot modifie ce manifeste (le lot correctif ne se bloque pas lui-même). Joué aussi en `--post-mep` : l'alerte se ferme à la ré-analyse de `main`, quelques minutes après la fusion. Décision : `reprendre-dependabot.py --alertes` | OK · ÉCART · FAIL · INCONNU |
 
 ### Lire le verdict
 

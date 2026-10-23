@@ -514,7 +514,11 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   un plafond redéclaré dans un routeur, et une famille qui oublierait l'une des
   trois règles. `test_signature_fichiers.py` vérifie que **chaque** point de
   réception appelle la règle — les trois imports de tableur y ont été ajoutés,
-  ils n'avaient aucun contrôle.
+  ils n'avaient aucun contrôle. Un fichier reçu se **lit** par `lire_fichier_recu`
+  (au plus le plafond de sa famille + 1 octet, #2164), et **chaque famille a un
+  appelant** — `document_prive` n'en avait aucun, et le contrôle des trois règles
+  restait vert (#2156). Une pièce jointe ne cite que `photos.DOSSIERS_DES_PIECES_JOINTES`,
+  et la conservation ne retire pas un fichier qu'un autre objet cite (#2157).
   Le nom stocké passe par `nom_stocke` : préfixe UUID, radical assaini, et
   **extension dérivée du type**, jamais du nom fourni — `/uploads/*` est servi
   en statique et Caddy pose le `Content-Type` d'après l'extension sur disque.

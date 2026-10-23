@@ -60,8 +60,9 @@ EXCEPTIONS = {
     #  demande : une tolérance nominative doit mourir avec son objet, sans quoi
     #  elle finit par couvrir un fichier qu'elle n'a jamais examiné.
     "models/roles.py": "la définition du rôle et sa priorité, pas une décision",
-    #  L'inscription POSE le rôle externe ; elle n'oppose aucun refus.
-    "routers/auth.py": "attribution du rôle à l'inscription, pas un contrôle",
+    #  La règle « statut → rôles » POSE le rôle externe (inscription et changement de
+    #  statut, #2161) ; elle n'oppose aucun refus.
+    "utils/roles_du_statut.py": "attribution du rôle selon le statut, pas un contrôle",
 }
 
 

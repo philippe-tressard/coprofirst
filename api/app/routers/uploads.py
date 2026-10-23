@@ -4,7 +4,7 @@ Les fichiers sont enregistrés dans /app/uploads/{type}/{uuid}.ext
 et servis en statique via /uploads/*.
 """
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 import logging
 
 from app.auth.deps import get_current_user, require_cs_or_admin
@@ -14,9 +14,11 @@ from app.utils.stockage import stockage
 from app.utils.fichiers import (
     FAMILLES,
     enregistrer_fichier_recu,
+    lire_fichier_recu,
     verifier_fichier_recu,
 )
 from app.utils.images import reencoder_jpeg
+from app.utils.limiter import LIMITE_TELEVERSEMENT, limiter
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
@@ -39,7 +41,7 @@ router = APIRouter(prefix="/uploads", tags=["uploads"])
 
 def _save_image(file: UploadFile, subfolder: str, max_dim: int = 1600) -> str:
     """Valide, redimensionne si besoin et sauvegarde le fichier. Retourne l'URL relative."""
-    data = file.file.read()
+    data = lire_fichier_recu(file, "image")
 
     #  Les trois règles — type, plafond, cohérence du contenu — sont appliquées
     #  par la famille « image ». Elles étaient écrites ici, et deux autres
@@ -93,7 +95,9 @@ def _save_image(file: UploadFile, subfolder: str, max_dim: int = 1600) -> str:
 
 
 @router.post("/avatar", summary="Mettre à jour la photo de profil")
+@limiter.limit(LIMITE_TELEVERSEMENT)
 def upload_avatar(
+    request: Request,
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
@@ -107,7 +111,9 @@ def upload_avatar(
 
 
 @router.post("/residence", summary="Ajouter une photo de la résidence (CS/Admin)")
+@limiter.limit(LIMITE_TELEVERSEMENT)
 def upload_residence(
+    request: Request,
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(require_cs_or_admin),
@@ -133,7 +139,9 @@ def upload_residence(
 
 
 @router.post("/fichier", summary="Upload une pièce jointe (photo ou document)")
+@limiter.limit(LIMITE_TELEVERSEMENT)
 def upload_fichier(
+    request: Request,
     file: UploadFile = File(...),
     user: Utilisateur = Depends(get_current_user),
 ):
@@ -166,7 +174,7 @@ def upload_fichier(
         url = _save_image(file, "fichiers", max_dim=1200)
         ftype = "image"
     else:
-        data = file.file.read()
+        data = lire_fichier_recu(file, "document")
         #  🔴 Les trois règles — type, plafond, cohérence du contenu — et
         #  l'écriture, en un seul appel. Elles étaient recopiées ici depuis
         #  `utils/fichiers`, au caractère près pour le message de journal, et

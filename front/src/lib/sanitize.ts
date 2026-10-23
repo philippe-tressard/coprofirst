@@ -61,6 +61,11 @@ const ALLOWED_TAGS = [
 const ALLOWED_ATTR = ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'];
 
 const _allowedTagSet = new Set(ALLOWED_TAGS);
+//  Les débuts d'URL admis par l'assainisseur de SECOURS (rendu serveur, premier
+//  rendu) — absolue web, courriel, chemin relatif, ancre ; une image, absolue web
+//  ou chemin (`/uploads/…`). Ni data-URI ni `//hote` (protocole implicite).
+const URL_HREF_ADMISE = /^(?:https?:\/\/|mailto:|\/(?!\/)|#|\.{1,2}\/)/i;
+const URL_SRC_ADMISE = /^(?:https?:\/\/|\/(?!\/))/i;
 const _allowedAttrSet = new Set(ALLOWED_ATTR);
 
 /** Nettoyage regex basique pour le SSR (les clients ré-hydrateront avec DOMPurify). */
@@ -73,8 +78,21 @@ function _serverSanitize(input: string): string {
 			const tagLower = tag.toLowerCase();
 			if (!_allowedTagSet.has(tagLower)) return '';
 			const cleanAttrs = (attrs || '').replace(
-				/\s([a-z][a-z-]*)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*))?/gi,
-				(_: string, attrName: string) => (_allowedAttrSet.has(attrName.toLowerCase()) ? _ : ''),
+				/\s([a-z][a-z-]*)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]*))?/gi,
+				(_: string, attrName: string, valeur: string) => {
+					const nom = attrName.toLowerCase();
+					if (!_allowedAttrSet.has(nom)) return '';
+					//  🔴 Une URL n'est admise que par son DÉBUT (#2159) : la liste blanche
+					//  gardait `href="javascript:…"`, que seule la CSP arrêtait encore.
+					//  Ni décodage ni liste noire : un schéma déguisé (entités, blancs)
+					//  ne commence par aucun des débuts admis, donc il tombe.
+					if (nom === 'href' || nom === 'src') {
+						const url = (valeur || '').replace(/^["']|["']$/g, '').trim();
+						const admis = nom === 'src' ? URL_SRC_ADMISE : URL_HREF_ADMISE;
+						if (!admis.test(url)) return '';
+					}
+					return _;
+				},
 			);
 			return match.startsWith('</') ? `</${tagLower}>` : `<${tagLower}${cleanAttrs}>`;
 		});

@@ -125,6 +125,13 @@
 
 	# API — proxy vers FastAPI
 	handle /api/* {
+		# Le corps d'une requête est plafonné (#2164) : la plus grosse famille de
+		# fichiers reçus (`document_prive`, 30 Mo — `api/app/utils/fichiers.py`,
+		# FAMILLES) plus l'enveloppe multipart. Au-delà, Caddy refuse (413) avant
+		# que l'API ne reçoive un octet. 🔒 test_televersement_source_unique.
+		request_body {
+			max_size 40MB
+		}
 		uri strip_prefix /api
 		# ⚠️ SANS CETTE LIGNE, TOUT ENDPOINT SERVANT UN FICHIER DEVIENT PUBLIC.
 		# Cloudflare met en cache d'après l'EXTENSION de l'URL. Les endpoints de
@@ -283,7 +290,11 @@
 				request>headers delete
 				request>tls delete
 				resp_headers delete
-				request>uri regexp \?.* ""
+				# La chaîne de requête ET le jeton d'un lien porté par le CHEMIN
+				# (`/point-cs/<jeton>`, `/api/points-conseil/lien/<jeton>/…`, #2162) :
+				# une seule règle par champ, la seconde l'écraserait. Les routes à
+				# jeton se déclarent dans `ROUTES_A_JETON` (test_journal_acces_caddy).
+				request>uri regexp (/point-cs|/points-conseil/lien)/[^/?]+|\?.* $1
 			}
 		}
 	}

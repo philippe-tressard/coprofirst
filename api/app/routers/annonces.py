@@ -4,12 +4,13 @@ import json
 from app.utils import horloge
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from app.auth.appartenance import exiger_objet_autorise
 from app.auth.deps import est_auteur, get_current_user, peut_commenter
+from app.utils.limiter import LIMITE_TELEVERSEMENT, limiter
 from app.database import get_session
 from app.models.core import (
     PetiteAnnonce,
@@ -338,7 +339,9 @@ enregistrer_routes_reponses(
 
 
 @router.post("/{annonce_id}/photo")
+@limiter.limit(LIMITE_TELEVERSEMENT)
 def add_photo(
+    request: Request,
     annonce_id: int,
     file: UploadFile = File(...),
     session: Session = Depends(get_session),

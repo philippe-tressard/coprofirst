@@ -18,9 +18,20 @@ Arbitré le 12/10/2026 : on garde le flux, et la reprise devient un geste outill
     reprendre-dependabot.py              liste les PR Dependabot réorientées et
                                          leurs montées (à reprendre dans un lot)
     reprendre-dependabot.py --fermer     les ferme, chacune avec son motif
-    reprendre-dependabot.py --verifier   une ligne pour le pré-check (point 0h) :
+    reprendre-dependabot.py --verifier   une ligne pour le pré-check (point 23) :
                                          OK | ECART <détail> | INCONNU <motif>
+    reprendre-dependabot.py --alertes    une ligne pour le pré-check (point 24) :
+                                         OK | ECART | FAIL <détail> | INCONNU <motif>
     reprendre-dependabot.py --selftest
+
+## Les alertes de sécurité ouvertes (#2148, 22/10/2026)
+
+Deux alertes HAUTES sur `follow-redirects` (bridge WhatsApp) ont dormi deux jours :
+Dependabot n'avait ouvert aucune PR, et rien ne lisait les alertes. `--alertes`
+rend FAIL sur une alerte haute ou critique ouverte — sauf si le lot touche le
+manifeste qu'elle nomme (ÉCART : le lot qui la corrige ne se bloque pas lui-même ;
+l'alerte se ferme quand `main` est re-analysée). Les sévérités moindres sont
+comptées, sans bloquer.
 
 Les montées ne sont PAS appliquées ici : une majeure se juge (`dependabot.yml`),
 un lock se laisse écrire par npm, une action s'épingle par SHA vérifié contre son
@@ -89,6 +100,59 @@ def verdict(prs):
             'reprendre : python scripts/poste/reprendre-dependabot.py')
 
 
+#: Les sévérités qui bloquent une MEP — les autres sont comptées dans le détail.
+SEVERITES_BLOQUANTES = ('critical', 'high')
+
+
+def verdict_alertes(alertes, manifestes_du_lot):
+    """La ligne du point 24 (PURE). `alertes` : [{numero, severite, paquet, manifeste,
+    corrige}] ouvertes, ou `None` illisibles ; `manifestes_du_lot` : les fichiers que le
+    lot modifie par rapport à `main`."""
+    if alertes is None:
+        return 'INCONNU alertes Dependabot illisibles (gh absent, hors ligne ou droit manquant)'
+    graves = [a for a in alertes if a['severite'] in SEVERITES_BLOQUANTES]
+    moindres = len(alertes) - len(graves)
+    suite = f' ; {moindres} de sévérité moindre' if moindres else ''
+    if not graves:
+        return f'OK aucune alerte haute ou critique ouverte{suite}'
+    def nom(a):
+        return (f"#{a['numero']} {a['paquet']} ({a['severite']}, {a['manifeste']}, "
+                f"corrigé en {a['corrige'] or '?'})")
+    non_traitees = [a for a in graves if a['manifeste'] not in manifestes_du_lot]
+    if non_traitees:
+        return (f'FAIL {len(non_traitees)} alerte(s) haute(s) ou critique(s) ouverte(s) : '
+                + ', '.join(nom(a) for a in non_traitees) + suite)
+    return ('ECART ' + ', '.join(nom(a) for a in graves)
+            + ' — manifeste(s) modifié(s) par ce lot : fermée(s) à la ré-analyse de main' + suite)
+
+
+def lire_alertes():
+    """Les alertes Dependabot ouvertes, ou `None` si `gh` n'a pas répondu."""
+    try:
+        sortie = subprocess.run(
+            ['gh', 'api', '--paginate', 'repos/{owner}/{repo}/dependabot/alerts?state=open',
+             '--jq', '.[] | {numero: .number, severite: .security_advisory.severity, '
+             'paquet: .dependency.package.name, manifeste: .dependency.manifest_path, '
+             'corrige: .security_vulnerability.first_patched_version.identifier}'],
+            capture_output=True, text=True, encoding='utf-8', timeout=60, check=True,
+        ).stdout
+        return [json.loads(ligne) for ligne in sortie.splitlines() if ligne.strip()]
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
+
+
+def manifestes_du_lot():
+    """Les fichiers que HEAD modifie par rapport à `origin/main` (vide si illisible :
+    une alerte grave rend alors FAIL, jamais un ÉCART supposé)."""
+    try:
+        return set(subprocess.run(
+            ['git', 'diff', '--name-only', 'origin/main...HEAD'],
+            capture_output=True, text=True, encoding='utf-8', timeout=60, check=True,
+        ).stdout.split())
+    except (OSError, subprocess.SubprocessError):
+        return set()
+
+
 def lire_prs():
     """Les PR ouvertes vers `main`, ou `None` si `gh` n'a pas répondu."""
     try:
@@ -135,6 +199,25 @@ def selftest():
         verdict([dev, dep]).split(' — ')[0],
         'ECART 1 PR vers main hors de dev : #2 (dependabot/pip/api/dev/x)')
     cas('liste illisible : INCONNU, jamais OK', verdict(None).split()[0], 'INCONNU')
+    haute = {'numero': 113, 'severite': 'high', 'paquet': 'follow-redirects',
+             'manifeste': 'whatsapp-bridge/package-lock.json', 'corrige': '1.16.1'}
+    basse = dict(haute, numero=7, severite='low')
+    cas('aucune alerte : OK', verdict_alertes([], set()), 'OK aucune alerte haute ou critique ouverte')
+    cas('une alerte basse : OK, comptée',
+        verdict_alertes([basse], set()),
+        'OK aucune alerte haute ou critique ouverte ; 1 de sévérité moindre')
+    cas('une alerte haute que le lot ne touche pas : FAIL qui la nomme',
+        verdict_alertes([haute], {'front/package.json'}).split(' : ')[0],
+        'FAIL 1 alerte(s) haute(s) ou critique(s) ouverte(s)')
+    cas('critique comprise', verdict_alertes([dict(haute, severite='critical')], set()).split()[0],
+        'FAIL')
+    cas('le lot modifie son manifeste : ÉCART, pas FAIL',
+        verdict_alertes([haute], {'whatsapp-bridge/package-lock.json'}).split()[0], 'ECART')
+    cas('deux alertes, une seule traitée : FAIL',
+        verdict_alertes([haute, dict(haute, numero=9, manifeste='api/requirements.txt')],
+                        {'whatsapp-bridge/package-lock.json'}).split()[0], 'FAIL')
+    cas('alertes illisibles : INCONNU, jamais OK', verdict_alertes(None, set()).split()[0],
+        'INCONNU')
     print('== ÉCHECS ==' if ko else '== TOUS OK ==')
     return ko
 
@@ -143,6 +226,9 @@ def main():
     console_utf8()
     if '--selftest' in sys.argv:
         return selftest()
+    if '--alertes' in sys.argv:
+        print(verdict_alertes(lire_alertes(), manifestes_du_lot()))
+        return 0
     prs = lire_prs()
     if '--verifier' in sys.argv:
         print(verdict(prs))

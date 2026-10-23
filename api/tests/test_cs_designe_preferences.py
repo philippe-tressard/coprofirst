@@ -96,7 +96,11 @@ def test_l_apercu_trie_comme_l_envoi(session):
     coupe = compte(session, prenom="Jean", nom="DURAND", preferences_notifications=TOUT_COUPE)
 
     canal = apercu_email(
-        session, code_modele="ticket_syndic", contexte={}, destinataires=[(coupe.id, coupe.email)]
+        session,
+        code_modele="ticket_syndic",
+        contexte={},
+        destinataires=[(coupe.id, coupe.email)],
+        lecteur=coupe,
     )
 
     assert not canal.actif

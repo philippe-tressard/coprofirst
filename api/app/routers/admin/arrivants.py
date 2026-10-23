@@ -42,7 +42,7 @@ from app.utils.annonce_arrivee import creer_annonce_arrivee
 #  l'annonce aux voisins, et le message d'arrivée avec ses consignes.
 from app.utils.courriel_arrivee import FICHE_CONSIGNES, destinataires_arrivee
 from app.utils.courriel_arrivee import envoyer as envoyer_message_arrivee
-from app.utils.ticket_arrivant import creer_ticket_arrivant
+from app.utils.ticket_arrivant import creer_ticket_arrivant, ticket_arrivant_existant
 from app.utils.recuperer import ou_404
 from app.utils.cloche import sonner_systeme
 from app.utils.config_site import config_site
@@ -78,12 +78,20 @@ def _declencher_accueil_arrivant(
         raise HTTPException(400, "Cette démarche est réservée aux profils résidentiels")
 
     if not allow_repeat:
-        deja_declenche = session.exec(
-            select(Notification).where(
-                Notification.destinataire_id == user.id,
-                Notification.titre == "Bienvenue dans la résidence !",
-            )
-        ).first()
+        #  🔴 La notification seule ne suffisait pas (#2163) : son destinataire peut
+        #  la supprimer (`DELETE /notifications/{id}`), puis redéclencher la démarche
+        #  — et le syndic et le conseil recevaient à nouveau courriels et
+        #  notifications. L'affaire de suivi, elle, n'est pas à lui : il ne
+        #  l'efface pas. Le conseil garde la relance (`allow_repeat=True`).
+        deja_declenche = (
+            ticket_arrivant_existant(session, user.id)
+            or session.exec(
+                select(Notification).where(
+                    Notification.destinataire_id == user.id,
+                    Notification.titre == "Bienvenue dans la résidence !",
+                )
+            ).first()
+        )
         if deja_declenche:
             raise HTTPException(
                 409, "La démarche Nouvel Arrivant a déjà été déclarée pour ce compte"

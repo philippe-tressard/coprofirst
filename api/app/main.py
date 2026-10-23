@@ -11,7 +11,6 @@ from app.utils import horloge
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -429,18 +428,19 @@ app.include_router(registre.router)
 app.include_router(aiguillage.router)
 app.include_router(fichiers_commune.router)  # 404 hors d'une installation commune
 
-# Fichiers statiques (photos uploadées)
-#  La racine vient du stockage de la copropriété (`utils/stockage`, #1748), jamais
-#  d'un chemin figé : un `mkdir` absolu rendait `app.main` inimportable hors
-#  conteneur (tests/test_demarrage.py). Montée UNE fois, au démarrage, sur
-#  l'unique copropriété — un montage statique ne suit pas le contexte d'une
-#  requête. En production, c'est Caddy qui sert `/uploads/*` (arbitrage du
-#  10/10/2026 : inchangé en phase 2) ; ce montage sert le développement local.
+# Fichiers téléversés : l'API ne les sert PAS (#2158).
+#  Caddy sert `/uploads/*` après `forward_auth` (installation propre), la route
+#  `fichiers_commune` les sert sur une installation commune. Un montage
+#  `StaticFiles` vivait ici « pour le développement local » — que Vite ne relaie
+#  pas (`/api` seul) — et répondait 200 à un `HEAD /api/uploads/prive/…` sans
+#  session : la route de fichiers ne déclare que GET, et le HEAD retombait sur le
+#  montage. Le GET n'était refusé que par l'ordre des routes.
+#  La racine du stockage (`utils/stockage`, #1748) est créée au démarrage, jamais
+#  par un chemin figé : un `mkdir` absolu rendait `app.main` inimportable hors
+#  conteneur (tests/test_demarrage.py).
 from app.utils.stockage import stockage as _stockage  # noqa: E402
 
-uploads_dir = _stockage().racine
-uploads_dir.mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
+_stockage().racine.mkdir(parents=True, exist_ok=True)
 
 
 @app.get("/health", tags=["system"])

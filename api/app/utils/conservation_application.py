@@ -117,14 +117,27 @@ def _ecrire_au_journal(session: Session, groupe: Echeance, rendu: dict, debut: d
     )
 
 
-def _retirer(pieces: list[Piece]) -> int:
-    """Retire du disque les fichiers archivés, par le stockage ; rend le nombre d'échecs."""
+def _retirer(session: Session, pieces: list[Piece]) -> int:
+    """Retire du disque les fichiers archivés, par le stockage ; rend le nombre d'échecs.
+
+    🔴 Jamais un fichier qu'un AUTRE objet cite encore (#2157). Appelée après le
+    commit qui a détaché les fichiers du groupe : toute référence qui reste en base
+    est celle d'un objet hors du groupe — une affaire qui a repris la même pièce
+    jointe, une affiche, un événement. Le fichier part dans l'archive ET reste
+    sur le disque pour lui.
+    """
+    from app.utils.photos import cles_citees
+
     st = stockage()
     racine = st.racine.resolve()
+    encore_citees = cles_citees(session)
     echecs = 0
     for piece in pieces:
         try:
-            st.supprimer(piece.chemin.relative_to(racine).as_posix())
+            cle = piece.chemin.relative_to(racine).as_posix()
+            if cle in encore_citees:
+                continue
+            st.supprimer(cle)
         except (OSError, ValueError) as exc:
             echecs += 1
             logger.warning("Fichier archivé non retiré (%s) : %s", piece.nom, exc)
@@ -159,7 +172,7 @@ def traiter_groupe(
         if archive is not None:
             stockage().supprimer(archive.cle)  # l'archive n'a plus de ligne : elle part
         raise
-    rendu["retraits_echoues"] = _retirer(pieces)
+    rendu["retraits_echoues"] = _retirer(session, pieces)
     return rendu
 
 

@@ -54,6 +54,7 @@ from app.utils.mots_de_passe import verifier_robustesse as _check_password_stren
 from app.utils.liens import adresse_du_site, nom_site
 
 from app.utils.noms import contexte_personne
+from app.utils.roles_du_statut import poser_roles_du_statut
 from app.utils.verification_adresse import (
     emettre_verification_email,
     invalider_liens_en_attente,
@@ -128,32 +129,11 @@ def register(
         nom_aide=body.nom_aide or None,
         prenom_aide=body.prenom_aide or None,
     )
-    # Attribuer les rôles selon le statut
-    if body.statut in (
-        StatutUtilisateur.syndic,
-        StatutUtilisateur.mandataire,
-        StatutUtilisateur.aidant,
-    ):
-        #  🔴 Le rôle LU est `roles_json` (`has_role`) : y écrire le statut
-        #  (« syndic »…) laissait ces comptes ouvrir une affaire et voter, alors
-        #  que `role` les disait externes (#1911, arbitré le 13/10/2026 :
-        #  consulter seulement). Le statut reste porté par `statut`, que
-        #  `profil_admet` lit — le syndic garde ses PV d'AG.
-        user.role = RoleUtilisateur.externe
-        user.roles_json = RoleUtilisateur.externe.value
-    else:
-        _STATUT_ROLES = {
-            StatutUtilisateur.copropriétaire_résident: [
-                RoleUtilisateur.propriétaire,
-                RoleUtilisateur.résident,
-            ],
-            StatutUtilisateur.copropriétaire_bailleur: [RoleUtilisateur.propriétaire],
-            StatutUtilisateur.locataire: [RoleUtilisateur.résident],
-        }
-        roles = _STATUT_ROLES.get(body.statut, [RoleUtilisateur.résident])
-        _prio = {RoleUtilisateur.propriétaire: 2, RoleUtilisateur.résident: 1}
-        user.role = max(roles, key=lambda r: _prio.get(r, 0))
-        user.roles_json = ",".join(r.value for r in roles)
+    #  Les rôles que le statut confère : `utils/roles_du_statut`, la même règle
+    #  qu'au changement de statut (#2161). Le syndic, le mandataire et l'aidant
+    #  sont externes — consulter seulement (#1911) ; le statut reste porté par
+    #  `statut`, que `profil_admet` lit (le syndic garde ses PV d'AG).
+    poser_roles_du_statut(user, body.statut)
     session.add(user)
     session.commit()
     session.refresh(user)
