@@ -141,12 +141,7 @@
 	//  mêmes qu'une actualité.
 	export let avecOptions = false;
 	/** Les options rendues, dans l'ordre de la table `$lib/options-publication`. */
-	export let optionsRendues: CleOptionPublication[] = [
-		'epingle',
-		'urgente',
-		'brouillon',
-		'confidentiel',
-	];
+	export let optionsRendues: CleOptionPublication[] = ['epingle', 'urgente', 'brouillon'];
 	/** Le nom de l'objet décrit — il entre dans les libellés qui le nomment.
 	 *  Le mot d'ÉCRAN, jamais celui du modèle : `PUBLICATION.libelle` dit
 	 *  « Actualité » (#1107). */
@@ -154,11 +149,8 @@
 	export let epingle = false;
 	export let urgente = false;
 	export let brouillon = false;
-	export let confidentiel = false;
 	/** L'objet édité était-il DÉJÀ épinglé ? (évite un double comptage) */
 	export let dejaEpingle = false;
-	/** 🔒 Motif pour lequel l'objet est TOUJOURS restreint — relayé tel quel. */
-	export let confidentielAcquis = '';
 	/** 🔒 Motif pour lequel l'épinglage est impossible — relayé tel quel. */
 	export let epingleInterdit = '';
 
@@ -439,8 +431,8 @@
 {/if}
 
 {#if avecOptions}
-	<!--  3. Les options qui DÉCRIVENT l'objet — épinglage, urgence, brouillon,
-	      confidentialité. Toujours ici, jamais dans la Diffusion : elles se
+	<!--  3. Les options qui DÉCRIVENT l'objet — épinglage, urgence, brouillon.
+	      La réserve au périmètre vit en tête du Périmètre. Toujours ici, jamais dans la Diffusion : elles se
 	      corrigent, elles ne s'envoient pas. -->
 	<SectionOptionsPublication
 		{objet}
@@ -448,14 +440,11 @@
 		pliable={plie('mise_en_avant')}
 		inactive={inactives.mise_en_avant ?? ''}
 		options={optionsRendues}
-		perimetreCible={perimetre}
 		{dejaEpingle}
-		{confidentielAcquis}
 		{epingleInterdit}
 		bind:epingle
 		bind:urgente
 		bind:brouillon
-		bind:confidentiel
 	/>
 {/if}
 

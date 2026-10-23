@@ -155,7 +155,6 @@
 				{#snippet contenu(PanneauOptionsPublication)}
 					<PanneauOptionsPublication
 						optionsRendues={OPTIONS_TICKET}
-						perimetreCible={ticket.perimetre_cible ?? []}
 						dejaEpingle={ticket.epingle ?? false}
 						bind:options
 						enregistrement={optionsRapidesEnCours}

@@ -163,7 +163,9 @@ def _collecter_annonces(ctx: ContexteFlux) -> list[FluxItem]:
                     "type_annonce": a.type_annonce,
                     "statut": a.statut,
                     "prix": a.prix,
-                    "auteur": auteur_nom(ctx.session, a.auteur_id) if a.contact_visible else None,
+                    #  Le nom, comme la page de l'annonce : « coordonnées »
+                    #  ne règle que l'adresse (`adresse_de_contact`, #2145).
+                    "auteur": auteur_nom(ctx.session, a.auteur_id),
                     "assiste_ia": a.assiste_ia,
                     "resume": strip_html(a.description),
                     #  Même clé que partout ailleurs : la vignette du fil (FluxVignette)

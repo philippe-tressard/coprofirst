@@ -141,6 +141,7 @@
 	{entrees}
 	{whatsappInterdit}
 	peutDiffuser={$isCS}
+	peutCibler={$isCS}
 	showEmail={$isCS && !correction}
 	{saving}
 	avantSuivi={equipementDansLaSuite(ticket, $isCS)}

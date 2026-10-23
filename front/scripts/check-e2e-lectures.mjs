@@ -32,6 +32,10 @@ const LECTURE = /\.(allTextContents|allInnerTexts|count|textContent|innerText|is
 const DECLAREES = {
 	'accordeon.spec.ts': [1, 'après `toBeVisible` sur la deuxième section de la même liste'],
 	'affaire-sous-contrat.spec.ts': [1, 'après `toBeVisible` sur la section : son pliage est fixé'],
+	'case-montree-charge-envoyee.spec.ts': [
+		4,
+		'le relevé des cases (`casesRendues`) : formulaire attendu (`toBeVisible`), chaque section attendue ouverte',
+	],
 	'deconnexion.spec.ts': [1, 'après le titre rendu : le menu dépend du profil, pas du temps'],
 	'ligne-pastilles.spec.ts': [
 		2,

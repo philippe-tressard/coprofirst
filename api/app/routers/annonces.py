@@ -31,7 +31,7 @@ from app.routers.reponses_communaute import (
 )
 from app.utils.communaute import exiger_acces
 from app.utils.perimetres import parse_json_perimetres, perimetre_defaut_liste
-from app.utils.visibility import annonce_visible
+from app.utils.visibility import adresse_de_contact, annonce_visible
 from app.utils.assiste_ia import (
     AssisteIACorrection,
     AssisteIAEntree,
@@ -110,7 +110,8 @@ def _enrich(annonce: PetiteAnnonce, user: Utilisateur, session: Session) -> dict
         "public_cible": json.loads(annonce.public_cible or "[]"),
         "auteur_prenom": auteur.prenom if auteur else "",
         "auteur_nom": auteur.nom if auteur else "",
-        "auteur_email": auteur.email if annonce.contact_visible and auteur else None,
+        #  Le nom se lit toujours ; l'adresse, si l'auteur l'a permis (#2145).
+        "auteur_email": adresse_de_contact(annonce, auteur),
         #  Calculé par la règle centrale, pas recomparé ici : le drapeau que
         #  l'écran reçoit doit dire la même chose que le contrôle qui refuse.
         "est_auteur": est_auteur(annonce, user),

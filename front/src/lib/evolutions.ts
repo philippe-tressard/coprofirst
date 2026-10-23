@@ -392,6 +392,11 @@ export function sectionsDeLaSuite(
 	conditions: readonly ConditionInactive[],
 	droits: {
 		perimetre: boolean;
+		/**  Choisir les Destinataires change QUI LIT l'objet : un droit, comme le
+		 *   périmètre (#2142). La Suite l'accorde au conseil, que seule sa route
+		 *   honore (`suite_sections`) ; la réponse, jamais — `MessageCreate` ne
+		 *   porte pas le champ. */
+		destinataires: boolean;
 		piecesJointes: boolean;
 		/** L'hôte offre de lier l'affaire à d'autres (#1342). */
 		affairesLiees: boolean;
@@ -411,7 +416,7 @@ export function sectionsDeLaSuite(
 	//  (`destinatairesParDefautDuTicket`), présélectionnés.
 	return {
 		perimetre: droits.perimetre && sectionDeLaSuite(entite, 'perimetre', conditions),
-		destinataires: sectionDeLaSuite(entite, 'destinataires', conditions),
+		destinataires: droits.destinataires && sectionDeLaSuite(entite, 'destinataires', conditions),
 		avantSuivi: droits.creneaux.avant_suivi && creneauPresent(entite, 'avant_suivi'),
 		specifiques: droits.creneaux.specifiques && creneauPresent(entite, 'specifiques'),
 		miseEnAvant: droits.creneaux.mise_en_avant && creneauPresent(entite, 'mise_en_avant'),

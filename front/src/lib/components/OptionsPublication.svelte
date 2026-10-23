@@ -1,6 +1,6 @@
 <!--
-  OptionsPublication.svelte — les quatre options qui DÉCRIVENT une actualité :
-  épinglage, urgence, brouillon, confidentialité. **Section 2 du cadre #430**
+  OptionsPublication.svelte — les options qui DÉCRIVENT une actualité :
+  épinglage, urgence, brouillon. **Section 2 du cadre #430**
   (champs spécifiques), rendue à la création comme à l'édition.
 
   Extrait de `routes/(app)/actualites/+page.svelte` le 15/08/2026 (la rangée de
@@ -23,13 +23,16 @@
 
   ## 🔒 La case « visible du seul périmètre » est partie (23/09/2026, #1096)
 
-  Elle vit dans `CaseReservePerimetre`, avec ses règles et son avertissement :
-  une actualité la rend sous les pastilles du Périmètre, et ce composant ne la
-  rend plus que VERROUILLÉE, pour une affaire suivie (`confidentielAcquis`).
+  Elle vit dans `CaseReservePerimetre`, en tête de la section Périmètre.
+
+  🔴 Ce composant la rendait encore VERROUILLÉE, cochée sans que la valeur liée
+  change (`confidentielAcquis`) : c'est la mécanique qui a montré une affaire
+  réservée et l'a envoyée `false` (22/10/2026). Retirée avec son option
+  `'confidentiel'` le 23/10/2026 (#2144) : il n'y a plus ici de case de réserve,
+  donc plus de seconde case liée au mauvais champ.
 -->
 <script lang="ts">
 	import AlerteEpinglage from './AlerteEpinglage.svelte';
-	import CaseReservePerimetre from './CaseReservePerimetre.svelte';
 	//  Glyphes et libellés : la table est la source unique (`$lib/options-publication`).
 	//  Ils étaient écrits ici ET dans les badges de `CarteActualite`, et avaient
 	//  divergé — l'épinglage n'avait pas de glyphe ici et 📌 là-bas.
@@ -45,31 +48,13 @@
 	export let urgente = false;
 	/** Brouillon : invisible pour les résidents, ne déclenche aucun envoi. */
 	export let brouillon = false;
-	/** Lecture réservée au périmètre visé (#347). */
-	export let confidentiel = false;
-	/** Le périmètre sélectionné, qui décide si « Confidentiel » a un sens. */
-	export let perimetreCible: string[] = [];
 	/** L'élément édité était-il DÉJÀ épinglé ? (évite un double comptage) */
 	export let dejaEpingle = false;
-	/**  🔒 DÉJÀ ACQUIS — le motif pour lequel cette entité est TOUJOURS restreinte
-	 *   à son périmètre. Vide quand le choix se pose vraiment.
-	 *
-	 *   Demandé à l'écran le 05/09/2026 : *« il manque l'option confidentiel sur
-	 *   l'objet Options de publication »*. Sur un ticket, elle ne pouvait rien
-	 *   restreindre — sa lecture passe par `perimetre_visible` SANS
-	 *   `ouvert_a_la_copropriete`, là où une actualité le passe (#339) : le ticket
-	 *   se comporte déjà comme une actualité confidentielle.
-	 *
-	 *   Plutôt que de l'omettre (l'option manquait) ou de la rendre cochable
-	 *   (elle n'aurait rien fait — une promesse vide), elle est montrée **cochée
-	 *   et verrouillée**, avec son motif écrit. Ce n'est pas une case morte :
-	 *   c'est un ÉTAT de l'objet, et il vaut la peine d'être lu. */
-	export let confidentielAcquis = '';
-
 	/**  🔒 Le motif pour lequel l'épinglage est IMPOSSIBLE sur cet objet, ou vide.
 	 *
-	 *   Jumeau exact de `confidentielAcquis`, et pour la même raison : un
-	 *   événement absent du fil d'activité ne peut pas y être épinglé. Le
+	 *   Ce n'est PAS une case montrée cochée sans l'être : la valeur liée est
+	 *   décochée avec elle (ci-dessous), et l'infobulle dit pourquoi. Un événement absent du fil
+	 *   d'activité ne peut pas y être épinglé. Le
 	 *   calendrier écrivait sa propre case d'épinglage — glyphe compris — dans la
 	 *   section Diffusion, et cette dépendance était la seule raison invoquée
 	 *   (12/09/2026). Elle n'en est plus une : la case vit où vivent les options,
@@ -86,10 +71,9 @@
 	 *   pas. */
 	export let objet = 'actualité';
 
-	/**  Les options RENDUES, dans l'ordre de la table. Toutes par défaut — un
-	 *   ticket n'en porte qu'une, faute de colonne pour l'épinglage et l'urgence,
-	 *   qu'il exprime par sa catégorie (05/09/2026). */
-	export let options: CleOptionPublication[] = ['epingle', 'urgente', 'brouillon', 'confidentiel'];
+	/**  Les options RENDUES, dans l'ordre de la table. Toutes par défaut — une
+	 *   affaire n'en porte que deux (`OPTIONS_TICKET`). */
+	export let options: CleOptionPublication[] = ['epingle', 'urgente', 'brouillon'];
 	$: rendue = (cle: CleOptionPublication) => options.includes(cle);
 
 	//  Les options, lues UNE fois dans la table. Constantes de module et
@@ -135,15 +119,6 @@
 		</label>
 	{/if}
 </div>
-
-{#if rendue('confidentiel')}
-	<CaseReservePerimetre
-		bind:coche={confidentiel}
-		{perimetreCible}
-		acquis={confidentielAcquis}
-		{objet}
-	/>
-{/if}
 
 <AlerteEpinglage coche={epingle} {dejaEpingle} />
 
