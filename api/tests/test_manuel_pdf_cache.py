@@ -20,6 +20,7 @@ from __future__ import annotations
 import threading
 import time
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -223,3 +224,62 @@ def test_le_cache_est_BORNE(tmp_path, moteur):
     for jour in range(1, 12):
         _generer(tmp_path, jour=date(2026, 9, jour))
     assert len(m._cache()) <= m._CACHE_MAX
+
+
+# ── La clé porte le CODE qui compose le PDF (#2189) ──────────────────────────
+
+
+def test_un_COMPOSITEUR_change_produit_un_pdf_neuf(tmp_path, moteur, monkeypatch):
+    """🔴 #2189 : un correctif de `manuel_pdf*.py` n'était servi qu'à minuit.
+
+    La clé ne portait que le manuel, le site, la date, le logo et le sous-titre :
+    le préchauffage d'après un déploiement resservait le PDF composé par la
+    version précédente (sommaire cassé de la v3.13.0, resservi après la v3.13.1).
+    """
+    _generer(tmp_path)
+    monkeypatch.setattr(cache, "EMPREINTE_COMPOSITEUR", "autre-version-du-code")
+    _generer(tmp_path)
+    assert len(moteur) == 2, "le code du compositeur a changé, et le PDF servi est l'ancien"
+
+
+def test_l_empreinte_suit_le_contenu_des_sources(tmp_path):
+    """Deux sources différentes donnent deux empreintes ; les mêmes, la même."""
+    (tmp_path / "a.py").write_text("x = 1", encoding="utf-8")
+    un = cache.empreinte_sources(tmp_path, ("a.py",))
+    assert un == cache.empreinte_sources(tmp_path, ("a.py",))
+    (tmp_path / "a.py").write_text("x = 2", encoding="utf-8")
+    assert cache.empreinte_sources(tmp_path, ("a.py",)) != un
+
+
+def test_une_source_ILLISIBLE_ne_laisse_jamais_resservir_un_pdf_perime(tmp_path):
+    """Un contrôle qui ne peut pas s'exécuter ne rend pas une valeur fixe (INCONNU).
+
+    Une empreinte constante en cas d'échec resservirait indéfiniment l'ancien PDF :
+    elle est unique à chaque lecture ratée, donc aucun PDF du disque ne la
+    retrouve — le rendu est refait, jamais périmé.
+    """
+    (tmp_path / "a.py").write_text("x = 1", encoding="utf-8")
+    a = cache.empreinte_sources(tmp_path, ("absent.py",))
+    assert a and a != cache.empreinte_sources(tmp_path, ("a.py",))
+    assert a != cache.empreinte_sources(tmp_path, ("absent.py",)), (
+        "valeur fixe : PDF périmé resservi"
+    )
+
+
+def test_l_empreinte_du_process_vient_des_vraies_sources():
+    """Le garde-fou précédent ne sert à rien si les sources déclarées ne se lisent pas."""
+    assert not cache.EMPREINTE_COMPOSITEUR.startswith("inconnue-")
+
+
+def test_toute_source_du_compositeur_est_dans_l_empreinte():
+    """🔒 Un module `manuel_pdf_*` neuf qui compose le PDF doit entrer dans la clé.
+
+    Sans ce contrôle, l'ajout d'un module de mise en page recréerait #2189 pour
+    lui seul. `manuel_pdf_cache` ne compose rien : il est le seul écarté.
+    """
+    dossier = Path(cache.__file__).parent
+    composeurs = {f.name for f in dossier.glob("manuel_pdf*.py")} - {"manuel_pdf_cache.py"}
+    manquants = composeurs - set(cache.SOURCES_DU_COMPOSITEUR)
+    assert not manquants, f"modules de composition hors de la clé du cache : {sorted(manquants)}"
+    absents = [n for n in cache.SOURCES_DU_COMPOSITEUR if not (dossier / n).is_file()]
+    assert not absents, f"sources déclarées introuvables : {absents}"

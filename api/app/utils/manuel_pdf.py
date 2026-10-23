@@ -305,8 +305,9 @@ def composer_html(
 #: d'attente »*. WeasyPrint recomposait TOUT le document à chaque clic — polices,
 #: colonnes, pagination, résolution des numéros de page — sur un Raspberry Pi.
 #:
-#: Or le résultat ne dépend que de trois choses : le manuel servi, le nom et
-#: l'URL du site, et la date d'édition. Aucune ne change entre deux clics.
+#: Or le résultat ne dépend que de quelques choses : le manuel servi, le nom et
+#: l'URL du site, la date d'édition, le logo, le sous-titre — et le code qui
+#: compose (#2189). Aucune ne change entre deux clics.
 #:
 #: ⚠️ La clé est l'EMPREINTE DU MANUEL : toute retouche livrée doit produire un
 #: PDF neuf. Le manuel ne porte plus de numéro de version (retiré le 23/10/2026,
@@ -362,6 +363,8 @@ def generer_manuel_pdf(
         hashlib.sha256(logo_png).hexdigest() if logo_png else "neutre",
         #  Le sous-titre aussi : il se règle dans Admin › Présentation › Connexion et pied de page.
         sous_titre,
+        #  Le CODE qui compose aussi (#2189) : un correctif de mise en page est un autre PDF.
+        manuel_pdf_cache.EMPREINTE_COMPOSITEUR,
     )
     memoire = _cache()
     if cle in memoire:
