@@ -16,6 +16,7 @@ from app.utils import horloge
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, Cookie, Request
 from pydantic import BaseModel
+from urllib.parse import unquote, urlsplit
 from sqlmodel import Session, select
 
 from app.utils.config_site import config_site
@@ -54,6 +55,8 @@ from app.utils.mots_de_passe import verifier_robustesse as _check_password_stren
 from app.utils.liens import adresse_du_site, nom_site
 
 from app.utils.noms import contexte_personne
+from app.utils.stockage import cle_de_url
+from app.utils.visibility.fichiers import exiger_fichier_lisible
 from app.utils.roles_du_statut import poser_roles_du_statut
 from app.utils.verification_adresse import (
     emettre_verification_email,
@@ -293,12 +296,22 @@ def logout(
 
 @router.get("/verifier-acces", status_code=204)
 @limiter.limit(LIMITE_CONTROLE_FICHIER)
-def verifier_acces(request: Request, _: Utilisateur = Depends(get_current_user)) -> Response:
-    """Réservé au `forward_auth` de Caddy : 204 si la session est valide, 401 sinon.
+def verifier_acces(
+    request: Request,
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(get_current_user),
+) -> Response:
+    """Réservé au `forward_auth` de Caddy : 204 si CE fichier se lit, 401 ou 404 sinon.
 
     Caddy interroge cet endpoint avant de servir un fichier de `/uploads/*`, qui
     était jusqu'ici public. Il ne renvoie **aucun contenu** : seul le code compte,
     et un corps vide évite d'exposer quoi que ce soit sur le porteur du cookie.
+
+    🔴 Il juge le FICHIER, plus seulement la session (#2154, 23/10/2026) : Caddy
+    transmet l'adresse demandée (`X-Forwarded-Uri`), et `exiger_fichier_lisible`
+    applique le droit de lire l'objet qui le cite. Une session valide lisait
+    jusque-là la pièce jointe d'une affaire qu'elle ne voyait pas. Sans adresse
+    (un appel direct), la réponse est 404 : il n'y a rien à autoriser.
 
     Il s'appuie volontairement sur `get_current_user`, la dépendance d'authentification
     commune, et non sur une vérification allégée maison. Une seconde façon de valider
@@ -307,6 +320,8 @@ def verifier_acces(request: Request, _: Utilisateur = Depends(get_current_user))
     l'économiser ne rapporterait presque rien et laisserait un compte désactivé
     conserver l'accès jusqu'à l'expiration de son jeton (120 min).
     """
+    adresse = unquote(urlsplit(request.headers.get("x-forwarded-uri", "")).path)
+    exiger_fichier_lisible(session, user, cle_de_url(adresse))
     return Response(status_code=204)
 
 

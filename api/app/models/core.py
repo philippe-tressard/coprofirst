@@ -487,6 +487,7 @@ from app.models.exploitation import (  # noqa: E402
     TachePlanifiee as TachePlanifiee,
 )
 from app.models.affaires_liees import AffaireLiee as AffaireLiee  # noqa: E402,F401
+from app.models.fichiers_recus import FichierRecu as FichierRecu  # noqa: E402,F401
 
 #  La synthèse d'une affaire close (#1643) — importée ici pour qu'Alembic la voie.
 from app.models.synthese import SyntheseAffaire as SyntheseAffaire  # noqa: E402,F401

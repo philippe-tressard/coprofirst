@@ -52,7 +52,7 @@ def televerser_logo(
     """Remplace le logo. PNG ou JPEG (famille « logo »), lisible par Pillow."""
     octets = lire_fichier_recu(file, "logo")
     nom = enregistrer_fichier_recu(
-        octets, file.filename, file.content_type, "logo", DOSSIER, user=user
+        octets, file.filename, file.content_type, "logo", DOSSIER, user=user, session=session
     )
     try:
         #  La signature dit « PNG » : encore faut-il que l'image se lise. Un

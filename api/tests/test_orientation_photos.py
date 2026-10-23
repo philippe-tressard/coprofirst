@@ -67,6 +67,8 @@ from starlette.datastructures import Headers  # noqa: E402
 from app.config import get_settings  # noqa: E402
 from app.routers import uploads  # noqa: E402
 from app.utils import images  # noqa: E402
+from sqlmodel import Session  # noqa: E402
+from tests.aides_base import compte, moteur_de_test  # noqa: E402
 
 
 def _image_couchee() -> bytes:
@@ -110,7 +112,9 @@ def _televerser(donnees: bytes, racine: pathlib.Path, patch) -> Image.Image:
         filename="photo-de-ticket.jpg",
         headers=Headers({"content-type": "image/jpeg"}),
     )
-    url = uploads._save_image(fichier, "essai")
+    #  « essai » est un dossier SERVI : l'image note son auteur (#2154).
+    with Session(moteur_de_test()) as session:
+        url = uploads._save_image(fichier, "essai", session, compte(session))
     ecrit = racine / "essai" / url.rsplit("/", 1)[-1]
     assert ecrit.is_file(), f"aucun fichier écrit pour {url}"
     return Image.open(ecrit)

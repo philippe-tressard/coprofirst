@@ -71,6 +71,14 @@ from .documents import (
     reserve_a_l_admin,
 )
 from .trace_droits import trace_droits, trace_lecture_par_defaut
+from .fichiers import (
+    PORTEURS,
+    TOUTE_SESSION,
+    Porteur,
+    exiger_fichier_lisible,
+    fichier_lisible,
+    porteurs_du_fichier,
+)
 from .defauts_affaire import (
     CONCERNE,
     DEFAUT_INCONNU,
@@ -118,5 +126,12 @@ __all__ = [
     "profil_admet",
     "reserve_a_l_admin",
     "trace_droits",
+    #  Le droit de lire un fichier servi en direct : celui de son porteur (#2154).
+    "PORTEURS",
+    "TOUTE_SESSION",
+    "Porteur",
+    "exiger_fichier_lisible",
+    "fichier_lisible",
+    "porteurs_du_fichier",
     "trace_lecture_par_defaut",
 ]

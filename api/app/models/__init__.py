@@ -31,6 +31,7 @@ from app.models.gouvernance import MembreSyndic as MembreSyndic
 from app.models.gouvernance import SyndicInfo as SyndicInfo
 from app.models.evenement import EvenementEvolution as EvenementEvolution
 from app.models.affaires_liees import AffaireLiee as AffaireLiee
+from app.models.fichiers_recus import FichierRecu as FichierRecu
 from app.models.ia import AppelIA as AppelIA
 from app.models.diagnostics import DiagnosticRapport as DiagnosticRapport
 from app.models.diagnostics import DiagnosticType as DiagnosticType

@@ -23,9 +23,10 @@ disque : les appelants qui en dépendent encore (pièce jointe d'un courriel,
 
 ## Le service
 
-Inchangé, par arbitrage du 10/10/2026 (« Reporter ») : Caddy sert `/uploads/*`
-depuis le volume après avoir demandé à l'API si la session est valide
-(`forward_auth`). Le choix entre service par l'API et URL signées se fera en
+Caddy sert `/uploads/*` depuis le volume après avoir demandé à l'API si CE
+fichier se lit (`forward_auth`) : le droit de lire l'objet qui le cite, depuis
+#2154 (arbitrage du 23/10/2026, `utils/visibility/fichiers`) — la session seule
+suffisait jusque-là. Le choix entre service par l'API et URL signées se fera en
 phase 3, avec l'hébergeur dont il dépend.
 
 🔒 `tests/test_stockage_source_unique.py` refuse une racine de fichiers lue hors
