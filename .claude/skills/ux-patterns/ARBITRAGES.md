@@ -442,9 +442,9 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 
 ### n° 57 · en vigueur — Un message : deux régimes
 26/09/2026 · non retrouvé · non dit · §17
-- **Décidé** : un message simple va au coin fixe (`Toast`) ; la suite d'un geste naît de l'élément (bulle ancrée).
-- **Pourquoi** : une place prévisible pour l'un, l'origine du geste pour l'autre (`emil-design-eng`).
-- **Tenu par** : aucun garde-fou nommé.
+- **Décidé** : un message simple va au coin fixe (`Toast`) ; la suite d'un geste naît de l'élément (bulle ancrée). 23/10/2026 (#2168) : une erreur reste jusqu'à ce qu'on la ferme.
+- **Pourquoi** : une place prévisible pour l'un, l'origine du geste pour l'autre (`emil-design-eng`) ; partie en 4 s, une erreur n'était lue que par qui regardait (WCAG 2.2.1, audit `apple-design`).
+- **Tenu par** : `e2e/toast.spec.ts` (l'erreur reste, le survol retient la réussite).
 
 ### n° 58 · en vigueur — Une recherche libre remplace le filtre « Catégorie »
 27/09/2026 · #1397 (v2.72.0) · l'utilisateur, sur maquette · §5 bis
@@ -458,7 +458,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Décidé** : une taille hors échelle se range au cran supérieur ; un état prend son jeton et ses dérivés ; `--color-warning` ne sert jamais au texte.
 - **Pourquoi** : posé par l'utilisateur comme règle de tout le projet — https://claude.ai/artifact/5EUqnbiH4HSF8wJe4khAgP
 - **Écarté** : les teintes de Tailwind ; rétrécir un texte.
-- **Tenu par** : `npm run lint:charte-valeurs`, `lint:badge`, `lint:encart-avertissement`.
+- **Tenu par** : `npm run lint:charte-valeurs`, `lint:badge`, `lint:encart-avertissement`, `lint:texte-avertissement` (#2167).
 
 ### n° 60 · en vigueur — L'auteur d'une idée ou d'un sondage ne s'affiche jamais
 27/09/2026 · #1373 · non dit · §3
@@ -568,3 +568,10 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : dix-neuf onglets en deux rangées sans ordre de niveau ; maquette validée le 21/10/2026, avec la correction de la relecture (un groupe Exploitation caché à l'administrateur lui aurait retiré Maintenance).
 - **Écarté** : la variante B (colonne au bureau, sélecteur au téléphone : un composant neuf) ; trois onglets d'import ; l'Exploitation réservée à l'opérateur.
 - **Tenu par** : `e2e/admin-groupes.spec.ts`, `npm run lint:onglets-reserves`, `npm run lint:routes`.
+
+### n° 76 · en vigueur — Le texte au téléphone : racine à 14 px, champs à 16 px
+23/10/2026 · #2165, #2166 · l'utilisateur, sur maquette · §18
+- **Décidé** : la racine s'écrit en POURCENTAGE — `100 %` au bureau, `87,5 %` sous 768 px (14 px au réglage par défaut) ; tout champ de saisie prend `--fs-saisie-tactile` (16 px) au téléphone.
+- **Pourquoi** : la racine était à 12 px sur téléphone depuis la v1.0.0, jamais arbitrée — texte de lecture à 10,8 px, plus petit cran à 8,6, et iOS zoomait à chaque appui dans un champ ; `16px` au bureau écrasait la taille choisie dans le navigateur (audit `apple-design`). Maquette A / B / C sur trois écrans, B retenue.
+- **Écarté** : 16 px au téléphone (C : la rangée « Nature » déborde, « NEW » passe sous le titre, moins d'affaires par écran) ; garder 12 px (A).
+- **Tenu par** : `npm run lint:taille-racine`, `e2e/taille-texte.spec.ts`.

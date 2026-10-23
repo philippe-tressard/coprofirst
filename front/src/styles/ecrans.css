@@ -340,7 +340,7 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 	color: var(--color-primary);
 }
 .kpi-card.kpi-alert .kpi-value {
-	color: var(--color-warning);
+	color: var(--color-warning-texte);
 }
 .kpi-label {
 	font-size: var(--fs-sm);

@@ -1983,6 +1983,12 @@ qu'à signaler la présence d'une image.
   retrait se lance à la fermeture **et** depuis `onDestroy`. Pourquoi une seule
   porte — une photo ouverte depuis une modale rendait le défilement, et `Échap`
   fermait les deux : l'en-tête du module (#1042). 🔒 `npm run lint:couches`.
+- **Le glissement suit le doigt** (#2169) : la photo est déplacée 1:1 pendant le geste
+  (`transform` posé sur l'image, jamais une variable CSS héritée), le lâcher décide sur la
+  **distance OU la vitesse** — vitesse mesurée à l'instant du lâcher —, la photo part du
+  côté où on la pousse et la voisine entre de l'autre ; seule, elle résiste au bord.
+  `touch-action: pan-y pinch-zoom` sur le fond : sans lui, le navigateur prenait le geste.
+  🔒 `e2e/visionneuse-glissement.spec.ts`.
 - `Échap` ferme la couche du dessus, les flèches naviguent, le compteur suit ; cible tactile **≥ 44 px**
   sur le bouton de fermeture — mesurée, pas supposée : la relecture avait laissé
   passer un bouton à 40 px, trouvé en mesurant dans un navigateur à 375×812.
@@ -1990,6 +1996,10 @@ qu'à signaler la présence d'une image.
 ## 12. Visibilité du Kanban (calendrier + widget tableau de bord)
 
 Filtre des colonnes : `if (col.id === 'ag' || col.id === 'cs') return canSeeAG;`
+
+**Glisser une carte** (le conseil seul) : la colonne qui la recevrait se marque PENDANT le
+geste, celle d'origine non, et la carte saisie s'efface à demi ; tout s'éteint au lâcher
+ou à l'abandon (#2170, 🔒 `e2e/kanban-glissement.spec.ts`).
 
 | Colonne | Locataire | Copropriétaire | CS / Admin |
 |---|---|---|---|
@@ -2725,12 +2735,12 @@ demande de l'utilisateur. Une seule écriture chacun, dans la charte :
 
 | Quoi | Règle | Où |
 |---|---|---|
-| jetons | `--ease-out` (courbe de sortie marquée), `--duree-geste` 120 ms, `--duree-apparition` 200 ms. **Aucune durée écrite** : un survol, un appui, un changement de couleur → `var(--duree-geste)` (courbe par défaut ; `--ease-out` si `transform`) ; ce qui ENTRE → `var(--duree-apparition) var(--ease-out)`, cascade par `var(--delay, 0s)` posée dans la page. Une dimension animée (largeur, hauteur) se déclare. 🔒 `npm run lint:mouvement` (27/09/2026 : 64 transitions sur 74 écrivaient la leur) | `styles/socle.css` |
+| jetons | `--ease-out` (courbe de sortie marquée), `--duree-geste` 120 ms, `--duree-apparition` 200 ms. Un SCRIPT n'en écrit pas non plus : il pose une classe ou une valeur, le CSS anime, et il attend `finDesAnimations` (`$lib/mouvement`, avec `mouvementReduit`) — jamais `transitionend`, muet quand la transition ne démarre pas (#2168). **Aucune durée écrite** : un survol, un appui, un changement de couleur → `var(--duree-geste)` (courbe par défaut ; `--ease-out` si `transform`) ; ce qui ENTRE → `var(--duree-apparition) var(--ease-out)`, cascade par `var(--delay, 0s)` posée dans la page. Une dimension animée (largeur, hauteur) se déclare. 🔒 `npm run lint:mouvement` (27/09/2026 : 64 transitions sur 74 écrivaient la leur) | `styles/socle.css` |
 | corps déplié | **entre** en 200 ms (fondu + 4 px), **sort** sans délai ; jamais la hauteur animée. Le corps porte **`.carte-corps`** | `composants.css` (`.carte-liste .carte-corps`) |
 | appui | `scale(0.97)` sur `:active`, `transform` seul ; pas sur une icône `aria-pressed` (déjà à 115 %) | `composants.css` (`.btn`, `.btn-icon*`, `.signaler-inline`) · `Pastille.svelte` |
 | animation sans fin | réservée à une ATTENTE (spinner, squelette, assistant qui travaille) — jamais décorative : ce qu'on voit plusieurs fois par jour ne s'anime pas. 🔒 `npm run lint:animations-infinies` (exceptions déclarées) | `composants.css` (`spin`) · `BadgeNouveau` (fixe) |
 | modale | entre depuis le CENTRE : fondu + 96 % → 100 %, 200 ms `--ease-out` (`modale-entree`), fondu seul si le mouvement est réduit | `.modal`, `.modal-box` |
-| message | **deux régimes** (arbitré le 26/09/2026, `emil-design-eng`) : un message SIMPLE — enregistré, erreur — va au coin fixe (`Toast` : bas à droite, bas au centre sous 767 px), une place prévisible ; la SUITE d'un geste sur un élément naît de l'élément — bulle ancrée, origine au déclencheur, 200 ms `--ease-out`, fermée au clic dehors, à Échap, au défilement | `Toast.svelte` · `BoutonLien` (« Lien copié · L'envoyer par courriel ») |
+| message | **deux régimes** (arbitré le 26/09/2026, `emil-design-eng`) : un message SIMPLE — enregistré, erreur — va au coin fixe (`Toast` : bas à droite, bas au centre sous 767 px), une place prévisible ; il repart par où il est venu, se ferme par son ×, et une **erreur reste jusqu'à ce qu'on la ferme** (trois au plus, sans doublon) — la réussite part seule, retenue au survol, au focus et onglet caché ; chaque toast porte son rôle — `alert` pour une erreur, `status` sinon —, jamais une région qui RECOPIE son texte (lu deux fois) (#2168, 🔒 `e2e/toast.spec.ts`) ; la SUITE d'un geste sur un élément naît de l'élément — bulle ancrée, origine au déclencheur, 200 ms `--ease-out`, fermée au clic dehors, à Échap, au défilement | `Toast.svelte` · `BoutonLien` (« Lien copié · L'envoyer par courriel ») |
 | explication | une phrase qui s'ouvre AU TOUCHER, au clic et au clavier, jamais un `title` seul (au doigt il ne se montre pas) : `Infobulle` — vrai bouton, nom accessible, fermée au clic dehors, à Échap (le focus revient), au défilement ; elle se retourne au bord de l'écran. Un point mesuré conforme / à corriger / inconnu se rend par `CocheConformite` : trois FORMES (✓ ✗ ?), jamais ✓ pour une mesure absente, et la phrase dit le fait selon l'état (15/10/2026) | `Infobulle.svelte` · `PastilleLecture` · `CocheConformite` |
 | survol | ce qui ne sert qu'à la souris passe sous `@media (hover: hover) and (pointer: fine)` — au doigt, `:hover` reste collé. 🔒 `npm run lint:survol` (26/09/2026) : les feuilles communes sont rangées, les composants sous **plafond décroissant** | `normes.css` (`.carte-liste`, `.ec-titre`) · `.attenue` des cartes · toute `src/styles/` |
 | transitions | les propriétés **nommées**, jamais `all` | partout |
@@ -2756,9 +2766,9 @@ projet** : https://claude.ai/artifact/5EUqnbiH4HSF8wJe4khAgP
 |---|---|---|
 | valeur qui A un jeton | elle s'écrit **par le jeton** (`#fff` → `var(--color-surface)`, `0.8rem` → `var(--fs-sm)`) — sans plafond : 85 étaient revenues entre le 27/09 et le 10/10/2026 (#1571) | `egalesAUnJeton`, qui lit les jetons dans `styles/socle.css` |
 | repli sur un jeton défini | `var(--color-border, #e5e7eb)` : le jeton existe, le repli est **mort** — on écrit `var(--color-border)` (#1571, 21/10/2026). Une variable que RIEN ne définit (`--color-bg-alt`, `--color-bg-subtle`…) n'est pas un jeton : seul son repli s'applique, c'est une valeur en dur déguisée — un fond neutre s'écrit `var(--color-neutre-fond)`. Sans repli, la propriété est perdue sans un mot (la FAQ, la frise des contrats) | `repliMortsDe` (`scripts/lib-charte-jetons.mjs`) · `npm run lint:variables-css` (`scripts/check-variables-css.mjs`) : toute `var(--nom)` est définie quelque part — sans plafond |
-| taille de texte | un jeton `--fs-*` ; une valeur hors échelle se range au cran **supérieur** — aucun texte ne rétrécit | `styles/socle.css` · la table de rangement dans `scripts/check-charte-valeurs.mjs` (`TAILLES_HORS_ECHELLE`) |
+| taille de texte | un jeton `--fs-*` ; une valeur hors échelle se range au cran **supérieur** — aucun texte ne rétrécit. La RACINE, qui les décide tous, s'écrit en pourcentage : `100 %`, `87,5 %` sous 768 px ; un champ au téléphone prend `--fs-saisie-tactile` (16 px, n° 76) | `styles/socle.css` · la table de rangement dans `scripts/check-charte-valeurs.mjs` (`TAILLES_HORS_ECHELLE`) · 🔒 `npm run lint:taille-racine` |
 | couleur d'état | `--color-danger`, `--color-success`, `--color-warning` ; un fond **se teinte depuis le jeton** (`-fond`), un filet clair aussi (`-bordure`) — jamais le rouge, le vert ou l'ambre de Tailwind | `styles/socle.css` · `COULEURS_ETAT_ETRANGERES` dans le même contrôle |
-| texte d'avertissement | `--color-warning-texte` : `--color-warning` fait 3,62 sur blanc, il sert au cadre, à l'icône, à l'aplat — **jamais au texte** | `styles/socle.css` |
+| texte d'avertissement | `--color-warning-texte` : `--color-warning` fait 3,62 sur blanc, il sert au cadre, à l'icône, à l'aplat — **jamais au texte** ; un pictogramme (étoile, puce) se déclare | `styles/socle.css` · 🔒 `npm run lint:texte-avertissement` (#2167 : quatre textes l'avaient pris, le jeton échappait au contrôle des valeurs) |
 | texte d'un badge | ≥ 4,5 sur son fond, **mesuré** par le contrôle pour chaque `.badge-*` ; sinon un dérivé `-texte` (`--color-success-texte`, #1410) | `styles/composants.css` |
 | note par étoiles | proposition **B** : les étoiles portent la teinte d'état, le chiffre reste en couleur de texte ; en saisie, étoiles pleines en `--color-warning` | `NoteEtoiles.svelte` |
 | badge d'état tiré d'une table | `<Badge teinte={TABLE[clé]}>` — teinte posée en `class:` ; `compact` pour le cran `--fs-2xs`. Une teinte écrite sans règle `.badge-*` se déclare avec son ticket dans `SANS_REGLE` (vide depuis #1986). Une teinte de catégorie neuve prend ses jetons dans `socle.css` (`--color-violet`, `--color-sarcelle`) ; `e2e/badges-roles` exige un fond de chaque rôle | 🔒 `npm run lint:badge` (#1571) |

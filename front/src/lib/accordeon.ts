@@ -37,6 +37,9 @@ import { writable, type Writable } from 'svelte/store';
 //  ⚠️ `import type` seulement : l'autotest charge ce module sous Node, sans
 //  l'alias `$lib` (`scripts/check-accordeon.mjs`).
 import type { EtatDepliable } from '$lib/listeDepliable';
+//  Relatif ET avec son extension, et non `$lib/…` : l'auto-test de `lint:accordeon`
+//  charge ce module sous Node, qui ne résout ni l'alias ni un chemin sans extension.
+import { mouvementReduit } from './mouvement.ts';
 
 /**
  * Ramène le HAUT d'un bloc à l'écran s'il n'y est plus.
@@ -57,7 +60,7 @@ export function amenerEnVue(el: Element | null | undefined): void {
 	const r = el.getBoundingClientRect();
 	const marge = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
 	if (r.top >= marge && r.top <= window.innerHeight - 80) return;
-	const doux = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+	const doux = !mouvementReduit();
 	el.scrollIntoView({ behavior: doux ? 'smooth' : 'auto', block: 'start' });
 }
 
@@ -73,7 +76,7 @@ export function amenerEnVue(el: Element | null | undefined): void {
  */
 export function amenerEnHaut(el: Element | null | undefined): void {
 	if (!el || typeof window === 'undefined') return;
-	const doux = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+	const doux = !mouvementReduit();
 	el.scrollIntoView({ behavior: doux ? 'smooth' : 'auto', block: 'start' });
 }
 

@@ -97,7 +97,7 @@
 		    23 px sur téléphone. */
 		line-height: 1.3;
 		/*  🔴 Les icônes sont en PIXELS (prop `size`), les marges en `rem` : sous
-		    768 px la racine passe à 12 px (`normes.css`), et une marge de 1,7 rem
+		    768 px la racine passe à 14 px (`normes.css`, 12 jusqu'à #2165), et une marge de 1,7 rem
 		    ne couvrait plus le chevron — le texte passait dessous. La réserve se
 		    calcule donc à partir de l'icône, pas à côté d'elle. */
 		padding: 0.35rem calc(0.6rem + 14px + 0.3rem) 0.35rem 0.75rem;

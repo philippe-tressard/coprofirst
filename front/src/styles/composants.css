@@ -153,7 +153,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 
     🔴 **44 `px`, et non `2.75rem`.** Ma première rédaction employait `rem`,
     par réflexe d'unité relative — et le navigateur a rendu **33 px** : la
-    racine vaut 12 px sur l'émulation mobile, donc 2,75 rem n'y font pas 44.
+    racine valait alors 12 px sur l'émulation mobile (14 px depuis #2165), donc 2,75 rem n'y font pas 44.
     Une cible tactile est une taille **physique**, celle d'un pouce ; elle n'a
     aucune raison de suivre la typographie. C'est le test de navigateur qui
     l'a dit, pas la relecture — la règle avait l'air juste.

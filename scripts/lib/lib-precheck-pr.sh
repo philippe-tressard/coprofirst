@@ -15,7 +15,9 @@
 #  ÉCART : elle ne fausse pas la MEP en cours, elle en menace la suivante.
 #
 #  Point 24 : deux alertes hautes ont dormi deux jours le 22/10/2026, sans PR ni
-#  ticket. FAIL, sauf si le lot modifie le manifeste qu'elles nomment (ÉCART) —
+#  ticket. FAIL, sauf si le lot modifie le manifeste qu'elles nomment, ou si le
+#  graphe de dépendances de `main` ne porte plus que des versions corrigées —
+#  l'alerte attend alors la ré-analyse de Dependabot (ÉCART, #2180) —
 #  décision `verdict_alertes`, même script, même autotest.
 #
 #  Sourcé par `scripts/poste/precheck-mep.sh`, qui fournit `rapporter`.
