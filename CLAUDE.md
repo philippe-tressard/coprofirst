@@ -882,8 +882,11 @@ worktrees compris. Le rejeu de #1415 avait rendu « pytest OK » sur sqlmodel
 0.0.39 pour un lot qui posait 0.0.44.
 
 Un lot qui **monte des dépendances Python** se mesure dans un **venv** en tête de
-PATH (`python -m venv …`, `pip install -r api/requirements-dev.txt`, puis
-`PATH="<venv>/Scripts:$PATH" bash scripts/poste/rejouer-ci.sh`) — jamais en
+PATH (`python -m venv …`, `pip install -r api/requirements-dev.txt` **et** chaque
+outil que `ci.yml` installe hors requirements — `ruff`, `pip-audit`, `reuse`, aux
+versions qu'il épingle —, puis `PATH="/c/…/<venv>/Scripts:$PATH" bash
+scripts/poste/rejouer-ci.sh` : un chemin `C:/…` est coupé en deux par le `:` du
+PATH, et c'est le Python du poste qui répond) — jamais en
 installant ses versions dans le Python du poste, que partagent les sessions
 parallèles : leurs rejeux rendraient INCONNU jusqu'à leur rebase. Le rejeu
 n'expose pas l'interpréteur du venv (`ci_script_a_exposer`) : copié, son lanceur

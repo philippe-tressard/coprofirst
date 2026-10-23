@@ -170,6 +170,13 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 		align-items: center;
 		justify-content: center;
 	}
+	/*  Le bouton TEXTE aussi, où qu'il soit (#2171) : la règle ne couvrait que
+	    `.form-actions .btn`, et « Se connecter », posé dans `.btn-wrapper`,
+	    mesurait 26 px au doigt. `.btn` porte les trois crans (`-sm`, `-xs`) et
+	    centre déjà son libellé (`inline-flex`) : la hauteur seule suffit. */
+	.btn {
+		min-height: 44px;
+	}
 }
 
 /* Boutons icône (modifier · supprimer · action) */

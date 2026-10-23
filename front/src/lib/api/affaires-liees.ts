@@ -18,6 +18,9 @@ export interface AffaireLiee {
 	statut: string;
 	/** ISO, rendu en UTC (`Z`) — `fmtDate` le lit (#2173). */
 	cree_le: string;
+	/** 🔀 Absorbée par une autre affaire (#2186) : son état est HÉRITÉ de la
+	 *  principale, elle ne se fusionne plus. */
+	fusionnee?: boolean;
 }
 
 /**  Une affaire liée proposée à la FUSION (#1704, #2173) — `routers/tickets/fusion`.

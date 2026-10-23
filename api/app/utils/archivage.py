@@ -90,6 +90,11 @@ class RegleArchivage:
     #: archivé (#1538). Prestataires et contrats l'avaient avant ce module ; le
     #: déclarer ici évite une migration ET une seconde lecture de la règle.
     champ_actif: Optional[str] = None
+    #: L'ABSORPTION : renseigné = l'objet a été fondu dans un autre, qui porte
+    #: désormais son suivi (#2186). Archivage immédiat, quel que soit l'état —
+    #: l'absorbée hérite de celui de la principale, et deux cartes « Chez le
+    #: syndic » se lisaient comme deux affaires.
+    champ_absorbe: Optional[str] = None
     #: L'épinglage : « garder en vue ». Il interdit l'archivage automatique.
     champ_epingle: Optional[str] = None
     #: Un brouillon n'est pas encore publié — il n'a rien à quitter.
@@ -129,9 +134,13 @@ REGLES: dict[str, RegleArchivage] = {
         #  remplace, dans la liste, la corbeille de l'administrateur — supprimer
         #  n'est plus proposé qu'aux Archives (`ux-patterns` §8).
         champ_archive_manuel="archive_manuel",
+        #  🔀 Fusionnée dans une autre affaire (#2186) : elle n'est plus qu'un
+        #  numéro qui renvoie à la principale — la principale, elle, reste.
+        champ_absorbe="fusionnee_dans_id",
         declencheur=(
             "30 jours après le passage en « Résolu ». « Annulé » : immédiat. "
-            "📦 Archivée par le conseil : immédiat."
+            "📦 Archivée par le conseil : immédiat. "
+            "🔀 Fusionnée dans une autre affaire : immédiat."
         ),
     ),
     #  🔴 Une affaire de catégorie « Actualité » (#1091, 23/09/2026) : la règle
@@ -334,7 +343,8 @@ def est_archivable(
 
     L'ordre des règles n'est pas cosmétique, chacune peut annuler la suivante :
 
-    1. **archivage manuel** — décision humaine, elle ne se discute pas ;
+    1. **archivage manuel** — décision humaine, elle ne se discute pas ; la
+       **fusion** aussi (#2186) : l'objet absorbé n'a plus de suivi propre ;
     2. **brouillon** — pas encore publié, rien à quitter ;
     3. **périmé** — sa date de validité est passée (#1093). Elle passe **avant**
        l'épinglage : « garder en vue » n'a plus de sens pour une information
@@ -357,6 +367,8 @@ def est_archivable(
         return True
     #  ⚠️ Défaut `True` : un objet sans la colonne n'est pas réputé archivé.
     if regle.champ_actif and not getattr(objet, regle.champ_actif, True):
+        return True
+    if regle.champ_absorbe and getattr(objet, regle.champ_absorbe, None) is not None:
         return True
     if regle.champ_brouillon and getattr(objet, regle.champ_brouillon, False):
         return False

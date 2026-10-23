@@ -118,7 +118,9 @@
 					<span class="liee-numero">{l.numero}</span>
 					<span class="liee-titre clamp-2">{l.titre}</span>
 					<span class="liee-meta">
-						<span class="liee-suivi"><BadgeEtatAffaire statut={l.statut} compact /></span>
+						<span class="liee-suivi"
+							><BadgeEtatAffaire statut={l.statut} fusionnee={l.fusionnee} compact /></span
+						>
 						<span class="liee-date">créée le {fmtDate(l.cree_le)}</span>
 					</span>
 					<button

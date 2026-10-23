@@ -129,3 +129,49 @@ test('à la souris, une section pliée a la hauteur d’une ligne', async ({ pag
 			'qu’une section ouverte, et l’espacement paraît double',
 	).toBeLessThan(44);
 });
+
+/**
+ *  🔴 Un `.btn` HORS d'une rangée d'actions est lui aussi une cible tactile (#2171).
+ *
+ *  La règle des 44 px ne couvrait que `[class*='btn-icon']` et `.form-actions .btn` :
+ *  « Se connecter » — le premier geste de tout résident — mesurait 26 px au doigt,
+ *  parce qu'il vit dans `.btn-wrapper`. Deux mesures : le vrai bouton de la page
+ *  publique, et un témoin de chaque cran (`.btn`, `.btn-sm`, `.btn-xs`) posé hors de
+ *  toute rangée — c'est la règle, pas un écran, qui se vérifie.
+ */
+async function mesurerBoutonsTexte(page: import('@playwright/test').Page) {
+	await page.goto(PAGE);
+	await page.evaluate(() => {
+		for (const cran of ['', 'btn-sm', 'btn-xs']) {
+			const b = document.createElement('button');
+			b.className = `btn btn-secondary ${cran}`.trim();
+			b.dataset.temoin = cran || 'btn';
+			b.textContent = 'Valider';
+			document.body.appendChild(b);
+		}
+	});
+	const boites: Record<string, { width: number; height: number } | null> = {
+		connexion: await page.getByRole('button', { name: 'Se connecter' }).boundingBox(),
+	};
+	for (const cran of ['btn', 'btn-sm', 'btn-xs']) {
+		boites[cran] = await page.locator(`[data-temoin="${cran}"]`).boundingBox();
+	}
+	for (const [nom, boite] of Object.entries(boites)) {
+		expect(boite, `le bouton « ${nom} » n’a pas été rendu`).not.toBeNull();
+	}
+	return boites as Record<string, { width: number; height: number }>;
+}
+
+test('au doigt, tout bouton texte fait au moins 44 px de haut', async ({ page }, info) => {
+	test.skip(info.project.name !== 'mobile', 'la règle ne vise que `pointer: coarse`');
+	for (const [nom, boite] of Object.entries(await mesurerBoutonsTexte(page))) {
+		expect(boite.height, `hauteur de « ${nom} » au doigt`).toBeGreaterThanOrEqual(44);
+	}
+});
+
+test('à la souris, un bouton texte garde sa hauteur de ligne', async ({ page }, info) => {
+	test.skip(info.project.name !== 'bureau', 'le pendant : rien ne change au pointeur fin');
+	for (const [nom, boite] of Object.entries(await mesurerBoutonsTexte(page))) {
+		expect(boite.height, `la règle tactile déborde sur le bureau (« ${nom} »)`).toBeLessThan(44);
+	}
+});

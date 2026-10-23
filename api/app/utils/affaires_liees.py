@@ -107,6 +107,9 @@ def _lue(t: Ticket) -> dict:
         "titre": t.titre,
         "statut": valeur(t.statut),
         "cree_le": t.cree_le,
+        #  L'état d'une absorbée est celui de sa principale (#2186) : sans ce
+        #  drapeau, l'écran la prenait pour une affaire ouverte à fusionner.
+        "fusionnee": t.fusionnee_dans_id is not None,
     }
 
 

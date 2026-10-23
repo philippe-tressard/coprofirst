@@ -63,7 +63,7 @@
 		>{categorieTicketEmoji(affaire.categorie)}</span
 	>
 	{#if etat}
-		<BadgeEtatAffaire statut={etat} />
+		<BadgeEtatAffaire statut={etat} fusionnee={affaire.fusionnee} />
 	{/if}
 	<BadgePerimetre perimetre={affaire.perimetre_cible} />
 	<PastilleLecture ticket={affaire} />
