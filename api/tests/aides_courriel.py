@@ -121,11 +121,19 @@ def scene():
 
 
 def _evolutions(session, ticket):
-    return session.exec(select(TicketEvolution).where(TicketEvolution.ticket_id == ticket.id)).all()
+    return session.exec(
+        select(TicketEvolution)
+        .where(TicketEvolution.ticket_id == ticket.id)
+        .order_by(TicketEvolution.id)
+    ).all()
 
 
 def _notifs(session, user):
-    return session.exec(select(Notification).where(Notification.destinataire_id == user.id)).all()
+    return session.exec(
+        select(Notification)
+        .where(Notification.destinataire_id == user.id)
+        .order_by(Notification.id)
+    ).all()
 
 
 # ── Un fil transféré par le conseil ───────────────────────────────────────────
@@ -186,7 +194,7 @@ def monde(scene, monkeypatch):
 
 
 def _affaires(session, objet):
-    return session.exec(select(Ticket).where(Ticket.titre == objet)).all()
+    return session.exec(select(Ticket).where(Ticket.titre == objet).order_by(Ticket.id)).all()
 
 
 def _transferer(session, cs, objet, corps, *, sujet=None, auth=_AUTH_OK):
