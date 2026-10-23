@@ -713,8 +713,18 @@ en root, sans sudo, et :
    premier passage réel s'était abstenu pour lui, et l'aurait fait une nuit sur deux ;
 2. pose la dernière **révision** de sa série (6.18.50 → 6.18.5x), avec le
    micrologiciel : `NOYAU_PAQUETS` dans `lib-mises-a-jour.sh`, la seule liste ;
-3. redémarre s'il tourne sur un noyau plus ancien que l'installé, après avoir
-   attendu qu'`auto-deploy` relâche son verrou.
+2 bis. pose **toutes les autres mises à jour** en attente (#2198) — Docker,
+   containerd, cloudflared, Node.js, Raspberry Pi, qu'`unattended-upgrades` ignore.
+   Une mise à jour qui **tirerait un paquet proscrit** (la pile de bureau retirée le
+   03/10, liste de C35) ou qui **en retirerait un** est écartée, les autres posées,
+   et l'écart part par courriel. Fichiers de configuration : les nôtres sont gardés
+   (`--force-confold`). Si Docker ou containerd change, le moteur redémarre : la
+   réplique repart seule (`unless-stopped`, C37), List-dons est relevé et C30
+   vérifie son retour. Un cloudflared que sa mise à jour aurait allumé est arrêté.
+   Décision : `lib-maj-paquets.sh` ;
+3. redémarre s'il tourne sur un noyau plus ancien que l'installé — ou, noyau à
+   jour, si une mise à jour l'exige (`/run/reboot-required`) —, après avoir attendu
+   qu'`auto-deploy` relâche son verrou.
 
 Les rôles alternent : chaque nœud suit en 48 h au plus, toujours comme standby, et
 il est mis à l'épreuve comme actif la nuit suivante pendant que l'autre reste en
@@ -727,6 +737,8 @@ repli.
 | le pair ne revient pas | au-delà de 10 min, **FAIL** « il ne repart pas » → alerte. Le Pi n'a pas de menu de démarrage : accès physique |
 | redémarré, mais toujours sur l'ancien noyau | pas de nouvelle tentative (`/var/lib/hostachy/noyau-tente`) : alerte. Supprimer ce fichier pour retenter |
 | installation en échec | pas de redémarrage, alerte avec la fin de la sortie d'apt |
+| une mise à jour ramènerait la pile de bureau, ou retirerait un paquet | ce paquet-là est **écarté**, les autres posés ; courriel « Mises à jour écartées » avec le verdict. Il reste en attente, et C30 le compte (seuil `APT_HORS_SECU_MAX`) |
+| simulation illisible (verrou, dépôt) | rien n'est posé, courriel, retenté à la bascule suivante |
 | un autre projet tournait sur le standby | relevé avant le redémarrage (`CONTENEURS_ETRANGERS`, `lib-mises-a-jour.sh`) ; C30 dit **OK** quand chacun tourne de nouveau et que son healthcheck n'est ni `unhealthy` ni `starting`, **WARN** jusqu'à 10 min, **FAIL** au-delà → alerte. Le relevé cesse de compter après 6 h |
 
 Journal : `/var/log/hostachy-bascule.log`, lignes `[noyau]`. Banc sans effet :

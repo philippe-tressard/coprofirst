@@ -20,8 +20,9 @@
 #    4. `Unattended-Upgrade::Mail` a-t-il la même valeur EFFECTIVE sur les deux
 #       nœuds (#1677, 04/10/2026 : posé sur rpi1 seul, une ERROR par passage) ?
 #
-#  ⚠️ Ce module MESURE et DIT. Il ne pose rien : aucune commande de mise à jour
-#  n'est écrite ici (volet « geste » de #1591, hors de ce lot).
+#  ⚠️ Ce module MESURE et DIT. Il ne pose rien : le geste vit dans
+#  `noyau-standby.sh`, qui pose tout ce qui attend sur le standby après chaque
+#  bascule (#2198, décision dans `lib-maj-paquets.sh`).
 #
 #  Lecture seule : `apt list`, `apt-get -s` (SIMULATION, sans verrou ni écriture)
 #  et `dpkg-query`. Rien ne touche à la base ni aux volumes.
@@ -36,9 +37,11 @@
 
 #: Au-delà, trop de paquets hors sécurité attendent : `unattended-upgrades` ne
 #: pose que les origines Debian (docker.com, cloudflare, Raspberry Pi n'y sont
-#: pas), et rien d'autre ne le fait. 100 = de quoi absorber un mois de dépôts
-#: sans alerter, bien au-dessous des 222 / 191 constatés le 02/10/2026.
-APT_HORS_SECU_MAX=${APT_HORS_SECU_MAX:-100}
+#: pas), et c'est `noyau-standby.sh` qui pose le reste, sur le standby, après
+#: chaque bascule (#2198). Chaque nœud est donc à jour en 48 h : 20 absorbe deux
+#: jours de dépôts. Il valait 100 avant que le geste existe, et laissait passer
+#: les 16 paquets du 23/10/2026 — Node.js vulnérable et le tunnel compris.
+APT_HORS_SECU_MAX=${APT_HORS_SECU_MAX:-20}
 
 #: Les paquets dont la version doit être la même sur les deux nœuds : le moteur
 #: de conteneurs, son runtime, et le tunnel. UNE liste, pour la collecte ET pour
@@ -153,7 +156,7 @@ paquets_verdicts() {
         eval "hs=\${${p}_apt_hors_secu:-} rt=\${${p}_apt_retenus:-} enc=\${${p}_apt_en_cours:-}"
         case "$(verdict_hors_secu "$hs")" in
             OK)   ok   "Paquets hors sécurité en attente sur $n : $hs (seuil ${APT_HORS_SECU_MAX})" ;;
-            TROP) warn "$hs paquets hors sécurité en attente sur $n (seuil ${APT_HORS_SECU_MAX}) — aucun mécanisme ne les pose : docker.com, Cloudflare et Raspberry Pi sont hors des origines d'unattended-upgrades. Mise à jour manuelle, le STANDBY d'abord (#1591)" ;;
+            TROP) warn "$hs paquets hors sécurité en attente sur $n (seuil ${APT_HORS_SECU_MAX}) — le standby les pose après chaque bascule (noyau-standby.sh, #2198) : un reste au-delà du seuil dit un geste qui n'a pas abouti ou des paquets ÉCARTÉS (ils ramèneraient la pile de bureau) — lignes [noyau] de /var/log/hostachy-bascule.log" ;;
             *)    if [ "$enc" = oui ]; then ok "Paquets hors sécurité sur $n : un passage d'installation est EN COURS — INCONNU, revérifié au prochain passage (#1591)"
                   else warn "Paquets hors sécurité en attente sur $n INCONNUS (valeur='${hs:-vide}') — ni vert ni rouge"; fi ;;
         esac
@@ -207,8 +210,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t() { local r; r=$("${@:3}"); [ "$r" = "$2" ] && echo "PASS  $1 → ${r:-(rien)}" || { echo "FAIL  $1  attendu=${2:-(rien)} obtenu=${r:-(rien)}"; st=1; }; }
 
     echo "== (1) paquets hors sécurité =="
-    t "au seuil exact → OK"                     OK       verdict_hors_secu 100
-    t "un de plus → TROP"                       TROP     verdict_hors_secu 101
+    t "au seuil exact → OK"                     OK       verdict_hors_secu 20
+    t "un de plus → TROP"                       TROP     verdict_hors_secu 21
     t "rpi1 le 02/10 : 222 en attente"          TROP     verdict_hors_secu 222
     t "aucun → OK"                              OK       verdict_hors_secu 0
     t "vide (apt illisible) → INCONNU"          INCONNU  verdict_hors_secu ""
