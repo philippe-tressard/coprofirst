@@ -203,6 +203,11 @@ def test_le_sommaire_suit_les_titres_du_document(manuel, document):
             f"l'ancre de « {titre} » n'est posée nulle part : le lien du "
             "sommaire pointerait dans le vide"
         )
+    #  🔴 Posée, et la SEULE de sa balise : sur un titre à deux `id`, seul le
+    #  premier compte — le contrôle ci-dessus passait pendant que le PDF
+    #  journalisait « No anchor #som-27 » (v3.12.0).
+    for balise in re.findall(r"<h[23]\b[^>]*>", corps):
+        assert len(re.findall(r"\bid\s*=", balise)) <= 1, f"titre à deux id : {balise}"
 
     #  L'ordre du document, pas un ordre inventé.
     positions = [document.index(f'href="#{a}"') for _, _, a in releve]
