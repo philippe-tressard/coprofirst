@@ -68,6 +68,7 @@ URL_MANUEL_INTERNE = "http://front:3000/manuel-utilisateur.html"
 _MAIN = re.compile(r"<main[^>]*>(.*?)</main>", re.S | re.I)
 _TITRES = re.compile(r"<h([23])([^>]*)>(.*?)</h\1>", re.S | re.I)
 _BALISES = re.compile(r"<[^>]+>")
+_ID = re.compile(r"""\bid\s*=\s*["']([^"']+)["']""", re.I)
 
 
 class ManuelIndisponible(RuntimeError):
@@ -201,8 +202,15 @@ def titres_ancres(html: str) -> tuple[str, list[tuple[int, str, str]]]:
         titre = re.sub(r"\s+", " ", unescape(_BALISES.sub("", contenu))).strip()
         if not titre:
             return m.group(0)
-        ancre = _ancre(len(releve))
+        #  🔴 Un titre qui porte DÉJÀ un `id` (un lien du manuel le vise) garde le
+        #  sien, et le sommaire le vise : un second `id` sur la balise est ignoré
+        #  — le premier gagne —, et le lien du sommaire pointait dans le vide
+        #  (« No anchor #som-27 », v3.12.0, `<h3 id="fusion-correction">`).
+        existant = _ID.search(attrs)
+        ancre = existant.group(1) if existant else _ancre(len(releve))
         releve.append((niveau, titre, ancre))
+        if existant:
+            return m.group(0)
         return f'<h{niveau}{attrs} id="{ancre}">{contenu}</h{niveau}>'
 
     return _TITRES.sub(poser, corps), releve
