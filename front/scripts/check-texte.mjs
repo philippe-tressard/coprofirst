@@ -40,7 +40,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, sep } from 'node:path';
 
-import { replier, sansAccents, slug } from '../src/lib/texte.ts';
+import { contientTousLesMots, replier, sansAccents, slug } from '../src/lib/texte.ts';
 
 const RACINE = 'src';
 /** Le fichier qui a le droit — et le devoir — de l'écrire. */
@@ -155,6 +155,18 @@ function comportement() {
 	//  décide (les deux copies testaient `if (!slug) return ''`).
 	v('slug sans rien à garder', slug('—'), '');
 	v('slug sur rien', slug(null), '');
+
+	//  La recherche des listes chargées (prestataires, imports, #2173) : TOUS les
+	//  mots, n'importe où, sans accents ni casse — et le cas zéro laisse passer.
+	v(
+		'tous les mots, dans le désordre',
+		contientTousLesMots('Bât. 3 Lot 12 DURAND', 'lot durand'),
+		true,
+	);
+	v('un mot absent écarte', contientTousLesMots('Bât. 3 Lot 12', 'lot cave'), false);
+	v('accents et casse rabattus', contientTousLesMots(['Électricité', null, 12], 'electr 12'), true);
+	v('recherche vide laisse passer', contientTousLesMots('quoi que ce soit', '   '), true);
+	v('texte absent, recherche posée', contientTousLesMots(null, 'x'), false);
 
 	return { cas, echecs };
 }

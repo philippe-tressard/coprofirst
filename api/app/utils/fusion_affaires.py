@@ -65,8 +65,10 @@ from app.utils.synthese_affaire.lecture import TYPE_SYNTHESE
 from app.utils.valeurs import valeur
 from app.utils.visibility import ticket_visible
 
-#: Ce que dit une affaire liée qu'on ne peut pas absorber sans fuite.
-MOTIF_LECTEURS = "lue par moins de monde que l'affaire qu'on clôt"
+#: Ce que dit une affaire liée qu'on ne peut pas absorber sans fuite — à la
+#: clôture comme depuis la correction (#2173), d'où « qui l'absorberait » et
+#: non plus « qu'on clôt ».
+MOTIF_LECTEURS = "lue par moins de monde que l'affaire qui l'absorberait"
 
 #: Les tables qui suivent l'affaire, par leur colonne `ticket_id`. La Suite et
 #: le message ont leur traitement (marque, Suite d'ouverture) ; celles-ci
@@ -122,10 +124,7 @@ def candidates(session: Session, principale: Ticket, lecteur: Utilisateur) -> li
         fusionnable = _sans_fuite(session, principale, t)
         rendu.append(
             {
-                "id": t.id,
-                "numero": t.numero,
-                "titre": t.titre,
-                "statut": valeur(t.statut),
+                **_lue(t),
                 "fusionnable": fusionnable,
                 "motif": None if fusionnable else MOTIF_LECTEURS,
             }

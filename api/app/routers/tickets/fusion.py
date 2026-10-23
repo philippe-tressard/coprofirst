@@ -13,12 +13,12 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.auth.deps import require_cs_or_admin
 from app.database import get_session
 from app.models.core import Ticket, Utilisateur
+from app.schemas import AffaireLieeLue
 from app.utils.fusion_affaires import candidates
 from app.utils.recuperer import ou_404
 from app.utils.visibility import ticket_visible
@@ -26,13 +26,10 @@ from app.utils.visibility import ticket_visible
 router = APIRouter()
 
 
-class CandidateFusion(BaseModel):
-    """Une affaire liée proposée à la fusion, et ce qui l'en empêche le cas échéant."""
+class CandidateFusion(AffaireLieeLue):
+    """Une affaire liée proposée à la fusion — la forme d'une affaire nommée
+    (date de création comprise, #2173) —, et ce qui l'en empêche le cas échéant."""
 
-    id: int
-    numero: str
-    titre: str
-    statut: str
     fusionnable: bool
     motif: Optional[str] = None
 

@@ -70,13 +70,15 @@ NomMajuscules = Annotated[Optional[str], BeforeValidator(nom_en_majuscules)]
 
 class AffaireLieeLue(BaseModel):
     """Une affaire liée, telle qu'un lecteur la voit (#1342) : de quoi la
-    reconnaître — numéro, titre, statut. Rendue seulement si le lecteur peut
-    la lire (`utils/affaires_liees`)."""
+    reconnaître — numéro, titre, statut (le « suivi » de l'écran) et date de
+    création (#2173). Rendue seulement si le lecteur peut la lire
+    (`utils/affaires_liees`)."""
 
     id: int
     numero: str
     titre: str
     statut: str
+    cree_le: datetime
 
 
 class ContratDeLAffaire(BaseModel):

@@ -1,6 +1,7 @@
 <!--
   FUSIONNER des affaires liées du Suivi des affaires (#2083) — au point comme
-  entre deux points.
+  entre deux points, et depuis la correction d'une affaire (#2173, monté tel
+  quel par `ModaleFusionAffaires`).
 
   S'ouvre DANS le tableau, sous l'en-tête du groupe (la correction s'ouvre à la
   place de l'objet, `ux-patterns` §14 ter). À l'ouverture, l'assistant propose
@@ -24,12 +25,15 @@
 	import IconeIA from '$lib/components/IconeIA.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { messageErreur } from '$lib/erreurs';
-	import { suiviAffaires, type AffaireOuverte } from '$lib/api';
+	import { suiviAffaires } from '$lib/api';
+	import type { AffaireAFusionner, FusionFaite } from '$lib/fusion-affaires';
 
-	/** Les affaires du groupe, la plus ancienne en tête : elle absorbe. */
-	export let affaires: AffaireOuverte[];
-	/** La fusion est faite : la vue relit le suivi. */
-	export let onFusionne: () => void;
+	/**  Les affaires du groupe, la plus ancienne en tête : elle absorbe. Une
+	 *   affaire du Suivi, ou une affaire liée depuis sa correction (#2173). */
+	export let affaires: AffaireAFusionner[];
+	/**  La fusion est faite : la vue relit le suivi — la correction, elle, lit
+	 *   la principale, l'affaire corrigée ayant pu être absorbée. */
+	export let onFusionne: (r: FusionFaite) => void;
 	export let onAnnule: () => void;
 
 	let titre = '';
@@ -60,9 +64,9 @@
 		if (!titre.trim()) return;
 		enCours = true;
 		try {
-			await suiviAffaires.fusions.fusionner(ids, titre.trim(), description);
+			const r = await suiviAffaires.fusions.fusionner(ids, titre.trim(), description);
 			toast('success', `${affaires.length} affaires fusionnées dans ${principale.numero}`);
-			onFusionne();
+			onFusionne(r);
 		} catch (e) {
 			toast('error', messageErreur(e, 'Fusion impossible'));
 		} finally {

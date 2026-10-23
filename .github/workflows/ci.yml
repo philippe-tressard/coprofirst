@@ -2144,6 +2144,13 @@ jobs:
         working-directory: front
         run: npm run lint:statut-recalcule
 
+      # Le badge d'état d'une affaire (son « Suivi ») se rend par
+      # `BadgeEtatAffaire` : écrit trois fois, la section « Affaires liées »
+      # allait en faire la quatrième, #2173.
+      - name: Badge d'état d'une affaire écrit une fois
+        working-directory: front
+        run: npm run lint:badge-etat-affaire
+
       # Une valeur saisie se convertit en nombre par `nombreOuNull` (#1516,
       # 01/10/2026). Un champ numérique vidé rend `null` : `v === '' ? null :
       # Number(v)` l'envoyait à 0 — un relevé de consommation à 0 m³.

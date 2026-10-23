@@ -34,6 +34,7 @@
 -->
 <script lang="ts">
 	import Badge from '$lib/components/Badge.svelte';
+	import BadgeEtatAffaire from '$lib/components/BadgeEtatAffaire.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import PastillesRelances from './PastillesRelances.svelte';
 	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
@@ -43,12 +44,7 @@
 	import { ETATS_VISITE } from '$lib/entretien-periodique';
 	import { motifEvolution } from '$lib/reporting';
 	import { fmtDate } from '$lib/date';
-	import {
-		STATUT_TICKET_BADGE,
-		categorieTicketLabel,
-		lienTicket,
-		statutTicketLabel,
-	} from '$lib/tickets';
+	import { categorieTicketLabel, lienTicket, statutTicketLabel } from '$lib/tickets';
 
 	export let affaires: AffaireOuverte[];
 	/** Le mode « Relancer le syndic » : une case par ligne, et les relances envoyées. */
@@ -159,9 +155,7 @@
 					<td class="affaire">
 						<a href={lienTicket(a.id)} class="titre">{a.titre}</a>
 						<span class="vignettes">
-							<Badge teinte={STATUT_TICKET_BADGE[a.statut] ?? 'badge-gray'} compact
-								>{statutTicketLabel(a.statut)}</Badge
-							>
+							<BadgeEtatAffaire statut={a.statut} compact />
 							<PastilleLecture ticket={a} />
 						</span>
 						{#if a.fusionnees.length}

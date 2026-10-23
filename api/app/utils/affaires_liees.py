@@ -99,8 +99,15 @@ def liees_lisibles(
 
 
 def _lue(t: Ticket) -> dict:
-    """Ce qu'on montre d'une affaire liée — et d'une affaire proposée au choix."""
-    return {"id": t.id, "numero": t.numero, "titre": t.titre, "statut": valeur(t.statut)}
+    """Ce qu'on montre d'une affaire liée — et d'une affaire proposée au choix,
+    ou à la fusion (`fusion_affaires.candidates`)."""
+    return {
+        "id": t.id,
+        "numero": t.numero,
+        "titre": t.titre,
+        "statut": valeur(t.statut),
+        "cree_le": t.cree_le,
+    }
 
 
 def choix_lisibles(session: Session, lecteur: Utilisateur) -> list[dict]:

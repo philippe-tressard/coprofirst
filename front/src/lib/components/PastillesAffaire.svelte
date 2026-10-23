@@ -27,6 +27,7 @@
 -->
 <script lang="ts">
 	import Badge from '$lib/components/Badge.svelte';
+	import BadgeEtatAffaire from '$lib/components/BadgeEtatAffaire.svelte';
 	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
 	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
 	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
@@ -34,8 +35,6 @@
 	import {
 		BADGE_PRIORITE,
 		PRIORITE_BREVE,
-		STATUT_TICKET_BADGE,
-		STATUT_TICKET_LABELS,
 		categorieTicketEmoji,
 		categorieTicketLabel,
 		optionsEnBadge,
@@ -64,9 +63,7 @@
 		>{categorieTicketEmoji(affaire.categorie)}</span
 	>
 	{#if etat}
-		<Badge teinte={STATUT_TICKET_BADGE[etat] ?? 'badge-gray'}>
-			{STATUT_TICKET_LABELS[etat] ?? etat}
-		</Badge>
+		<BadgeEtatAffaire statut={etat} />
 	{/if}
 	<BadgePerimetre perimetre={affaire.perimetre_cible} />
 	<PastilleLecture ticket={affaire} />

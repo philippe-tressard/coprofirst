@@ -13,6 +13,7 @@
 	import BarreImport from '$lib/components/BarreImport.svelte';
 	import CorrectionImportLot from '$lib/components/CorrectionImportLot.svelte';
 	import { parAttribut } from '$lib/table-statuts';
+	import { contientTousLesMots } from '$lib/texte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 
 	$: _siteNom = $siteNomStore;
@@ -24,6 +25,8 @@
 	let loading = true;
 	let filtre = '';
 	let tri = 'copro'; // copro | batiment | numero
+	//  La recherche du tableau (#2173) : locale, la liste est chargée en entière.
+	let recherche = '';
 
 	// ── Upload ───────────────────────────────────────────────────────────────
 	//  Le FORMULAIRE de téléversement vit dans `BarreImport`, comme sur l'écran
@@ -200,6 +203,28 @@
 		resolu: { libelle: 'Résolu', badge: 'badge-green' },
 		ignore: { libelle: 'Ignoré', badge: 'badge-gray' },
 	});
+
+	//  Ce que la ligne MONTRE, et rien d'autre : chercher dans une colonne
+	//  cachée ferait garder une ligne sans qu'on voie pourquoi.
+	$: affiches = imports.filter((imp) =>
+		contientTousLesMots(
+			[
+				imp.nom_coproprietaire,
+				imp.no_coproprietaire,
+				imp.batiment_nom ?? imp.batiment_id,
+				imp.numero,
+				imp.type_raw,
+				imp.etage_raw,
+				imp.lot_label,
+				statutLabel[imp.statut] ?? imp.statut,
+				...(imp.utilisateurs ?? []).flatMap((o) => [
+					TYPE_LIEN_LABEL[o.type_lien] ?? o.type_lien,
+					o.utilisateur ? nomAffiche(o.utilisateur) : '',
+				]),
+			],
+			recherche,
+		),
+	);
 </script>
 
 <svelte:head><title>Import Lots — {_siteNom}</title></svelte:head>
@@ -224,6 +249,10 @@
 	statuts={['', 'en_attente', 'utilisateur_lie', 'lot_lie', 'resolu', 'ignore']}
 	libellesStatuts={statutLabel}
 	bind:filtre
+	bind:recherche
+	idRecherche="imp-lots-recherche"
+	exempleRecherche="Nom, n° de copropriétaire, bâtiment, lot…"
+	compte={affiches.length}
 	on:importer={(e) => uploadExcel(e.detail.fichier, e.detail.remplacer)}
 	on:filtrer={reload}
 >
@@ -245,7 +274,7 @@
 		<h3>Aucun import</h3>
 		<p>Importez un fichier .xlsx pour démarrer.</p>
 	</div>
-{:else}
+{:else if affiches.length > 0}
 	<div class="card carte-imports">
 		<table class="table imp-table-dense">
 			<thead>
@@ -257,7 +286,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each imports as imp (imp.id)}
+				{#each affiches as imp (imp.id)}
 					<tr
 						class:imp-row-resolu={imp.statut === 'resolu'}
 						class:imp-row-ignore={imp.statut === 'ignore'}

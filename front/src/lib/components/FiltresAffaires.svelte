@@ -28,6 +28,7 @@
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
 	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
 	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
+	import BilanRecherche from '$lib/components/BilanRecherche.svelte';
 	import { OPTIONS_FILTRE_NATURE } from '$lib/tickets';
 	import type { Ticket } from '$lib/api';
 	import { archiveesTrouvees, type EtatRecherche } from '$lib/recherche-affaires';
@@ -95,7 +96,7 @@
 </ReglagesListe>
 
 {#if etat.terme || etat.enCours || etat.erreur}
-	<p class="bilan-recherche" role="status">
+	<BilanRecherche bind:recherche>
 		{#if etat.erreur}
 			La recherche n'a pas abouti : {etat.erreur}
 		{:else if etat.enCours && !etat.resultats}
@@ -113,26 +114,5 @@
 				>
 			{/if}
 		{/if}
-		<button type="button" class="btn btn-outline btn-sm effacer" on:click={() => (recherche = '')}
-			>Effacer la recherche</button
-		>
-	</p>
+	</BilanRecherche>
 {/if}
-
-<style>
-	.bilan-recherche {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.35rem;
-		align-items: baseline;
-		margin: -0.5rem 0 1rem;
-		font-size: var(--fs-base);
-		color: var(--color-text-muted);
-	}
-	.bilan-recherche strong {
-		color: var(--color-text);
-	}
-	.effacer {
-		margin-left: auto;
-	}
-</style>

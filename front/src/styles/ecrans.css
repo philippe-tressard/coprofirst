@@ -75,15 +75,6 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 	font-size: var(--fs-base);
 }
 
-.imp-toolbar {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 0.75rem;
-	margin-bottom: 0.75rem;
-	flex-wrap: wrap;
-}
-
 .imp-table-dense td,
 .imp-table-dense th {
 	padding: 0.35rem 0.55rem;

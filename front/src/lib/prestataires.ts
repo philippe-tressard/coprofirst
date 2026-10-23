@@ -28,7 +28,7 @@
  * est **l'unique arbitre**. Même forme que `test_statuts_tickets.py` (#415), née
  * du même défaut — cinq listes, chacune cohérente avec elle-même, aucune juste.
  */
-import { replier } from '$lib/texte';
+import { contientTousLesMots, replier } from '$lib/texte';
 import { stripHtml } from '$lib/utils';
 import type { ContactPrestataire, ContratEntretien, Prestataire } from '$lib/api';
 
@@ -295,13 +295,10 @@ export function texteCherchable(p: PrestataireCherchable): string {
 	return replier(morceaux.filter(Boolean).join(' '));
 }
 
-/**  Tous les mots, n'importe où — la règle des affaires (`recherche_affaires.py`),
- *   appliquée à une fiche. Une recherche vide laisse tout passer. */
+/**  Tous les mots, n'importe où — `contientTousLesMots` (`$lib/texte`), appliqué
+ *   à une fiche. Une recherche vide laisse tout passer. */
 export function correspondRecherche(p: PrestataireCherchable, recherche: string): boolean {
-	const mots = replier(recherche).split(/\s+/).filter(Boolean);
-	if (!mots.length) return true;
-	const texte = texteCherchable(p);
-	return mots.every((m) => texte.includes(m));
+	return contientTousLesMots(texteCherchable(p), recherche);
 }
 
 /**  Les prestataires qui passent les filtres. « Sous contrat » se lit sur les

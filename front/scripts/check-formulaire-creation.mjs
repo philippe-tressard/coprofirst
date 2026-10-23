@@ -79,13 +79,22 @@ const CADRE_REL = 'lib/components/CadreFormulaire.svelte';
  * La liste est **calculée**, jamais tenue à la main : une liste recopiée
  * diverge au premier composant ajouté, et c'est justement le composant ajouté
  * qui échappe au contrôle.
+ *
+ * 🔴 SOUS-DOSSIERS COMPRIS depuis le 23/10/2026 (#2173) : la lecture s'arrêtait
+ * au premier niveau, et `reporting/FusionAffaires` — un `<form>` — monté dans
+ * une `<Modale>` passait sans un mot. C'est la fenêtre de ce lot qui l'a montré,
+ * en restant verte alors qu'elle devait se déclarer.
  */
 function composantsPorteursDeFormulaire() {
 	const noms = new Set();
-	for (const nom of readdirSync(COMPOSANTS)) {
-		if (!nom.endsWith('.svelte')) continue;
-		if (/<form\b/.test(sansCommentaires(readFileSync(join(COMPOSANTS, nom), 'utf8')))) {
-			noms.add(nom.replace(/\.svelte$/, ''));
+	for (const chemin of fichiers(COMPOSANTS)) {
+		if (/<form\b/.test(sansCommentaires(readFileSync(chemin, 'utf8')))) {
+			noms.add(
+				chemin
+					.split(sep)
+					.pop()
+					.replace(/\.svelte$/, ''),
+			);
 		}
 	}
 	return noms;
@@ -136,6 +145,14 @@ const EXCEPTIONS = {
 	//  est donc l'endroit juste — elle nomme la décision au lieu de la cacher.
 	'lib/components/Saisie.svelte':
 		'saisie qui accompagne un geste, comme Confirmation — forme déclarée par ux-patterns §14 bis (#931, tranché le 14/09/2026)',
+	//  ── 23/10/2026 (#2173) ───────────────────────────────────────────────────
+	//  Fusionner les affaires liées DEPUIS la correction d'une affaire : la boîte
+	//  du Suivi (`FusionAffaires`, un `<form>`) ne peut pas s'ouvrir dans la
+	//  section, qui vit dans le `<form>` de la correction — deux formulaires
+	//  imbriqués sont invalides. Ni création ni correction d'un objet : un geste
+	//  (fusionner) et sa saisie, comme `Saisie`.
+	'lib/components/ModaleFusionAffaires.svelte':
+		'fusion depuis la correction : la boîte du Suivi, hors du <form> de la correction qui la contiendrait — saisie qui accompagne un geste, ux-patterns §14 bis (#2173)',
 };
 
 /** Retire commentaires et balisage commenté : expliquer la règle ne doit pas l'enfreindre. */
