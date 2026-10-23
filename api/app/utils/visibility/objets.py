@@ -446,6 +446,20 @@ def annonce_visible(annonce: PetiteAnnonce, user: Utilisateur) -> bool:
     )
 
 
+def adresse_de_contact(annonce: PetiteAnnonce, auteur: Utilisateur | None) -> str | None:
+    """L'adresse par laquelle on JOINT l'auteur d'une annonce, ou `None` (#2145).
+
+    « Afficher mes coordonnées aux autres résidents » ne règle que ce moyen de
+    contact. Le NOM de l'auteur se lit toujours, comme sur toute carte
+    (« ✍️ Nom ») : la page de l'annonce, sa carte et l'historique du hall le
+    servaient, seul le fil le taisait — règle majoritaire retenue le 23/10/2026.
+
+    🔒 Seule lecture de `contact_visible` de l'application
+    (`test_annonce_contact_une_regle.py`) : la page ET le fil passent ici.
+    """
+    return auteur.email if auteur and annonce.contact_visible else None
+
+
 def idee_visible(idee: Idee, user: Utilisateur) -> bool:
     """Cette idée est-elle visible de cet utilisateur ?
 

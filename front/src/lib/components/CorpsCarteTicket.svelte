@@ -122,7 +122,6 @@
 		<PanneauOptionsPublication
 			objet="ticket"
 			optionsRendues={OPTIONS_TICKET}
-			perimetreCible={ticket.perimetre_cible ?? []}
 			dejaEpingle={ticket.epingle ?? false}
 			enregistrement={optionsRapidesEnCours}
 			bind:options={optionsRapides}

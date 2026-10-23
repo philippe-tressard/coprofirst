@@ -1,6 +1,12 @@
 /**
- * Les QUATRE options qui décrivent une publication — épinglage, urgence,
- * brouillon, confidentialité — déclarées **une seule fois**.
+ * Les options qui décrivent une publication — épinglage, urgence, brouillon —
+ * déclarées **une seule fois**.
+ *
+ * 🔴 La quatrième, `'confidentiel'` (« Rendre confidentielle », 🔒), est RETIRÉE
+ * le 23/10/2026 (#2144). Elle ne se rendait plus que dans `OptionsPublication`,
+ * par un mécanisme qui la montrait cochée sans changer la valeur envoyée — celui
+ * de l'incident du 22/10/2026. La réserve au périmètre est `reserve_perimetre`,
+ * rendue par `CaseReservePerimetre` en tête du Périmètre, et seulement là.
  *
  * ## Pourquoi ce fichier (29/08/2026)
  *
@@ -33,7 +39,7 @@
  */
 
 /** Les clés sont celles du modèle serveur (`api/app/models/core.py`). */
-export type CleOptionPublication = 'epingle' | 'urgente' | 'brouillon' | 'confidentiel';
+export type CleOptionPublication = 'epingle' | 'urgente' | 'brouillon';
 
 export interface OptionPublication {
 	cle: CleOptionPublication;
@@ -110,14 +116,6 @@ export const OPTIONS_PUBLICATION: readonly OptionPublication[] = [
 		//  ⚠️ Le libellé ne PROMET plus rien sur les envois : il dit ce que la case
 		//  fait, et renvoie la question des courriels là où elle se règle.
 		aide: 'Seul le conseil syndical le voit. La notification du conseil à la création, elle, ne dépend pas de cette case.',
-	},
-	{
-		cle: 'confidentiel',
-		icone: 'lock',
-		glyphe: '\u{1F512}',
-		action: 'Rendre confidentielle',
-		etat: 'Confidentielle',
-		aide: 'Visible des seuls résidents du périmètre sélectionné.',
 	},
 ] as const;
 

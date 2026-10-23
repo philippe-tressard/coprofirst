@@ -1,5 +1,5 @@
 /**
- * Garde-fou : les quatre options d'une publication ne s'écrivent qu'une fois.
+ * Garde-fou : les options d'une publication ne s'écrivent qu'une fois.
  *
  * ## Ce qui a rendu ce contrôle nécessaire (29/08/2026)
  *
@@ -19,7 +19,7 @@
  *
  * ## Ce qui est vérifié — le fait, pas la forme
  *
- *   1. la table est lisible et porte les quatre options attendues (cas zéro : si
+ *   1. la table est lisible et porte les options attendues (cas zéro : si
  *      elle a bougé, ce contrôle ÉCHOUE au lieu de conclure au vert) ;
  *   2. les glyphes de la table sont **distincts entre eux** — deux options qui
  *      partageraient un glyphe rendraient le bouton d'options illisible ;
@@ -61,10 +61,14 @@ const CONSOMMATEURS = [
 	//  par `SuiteAffaire` et sa Mise en avant par `OptionsEvolutionTicket`, comme
 	//  une affaire ; il ne rend plus d'option lui-même, il passe `OPTIONS_TICKET`
 	//  au panneau — comme `CarteTicket`, que la liste ne nomme pas non plus.
-	join('lib', 'components', 'CaseReservePerimetre.svelte'),
+	//  `CaseReservePerimetre` a quitté la liste le 23/10/2026 (#2144) : l'option
+	//  `'confidentiel'` est retirée de la table, et la case ne lit plus rien
+	//  d'elle — elle porte son icône du catalogue et sa propre aide.
 ];
 
-const CLES_ATTENDUES = ['epingle', 'urgente', 'brouillon', 'confidentiel'];
+//  `'confidentiel'` retirée le 23/10/2026 (#2144) : la retrouver dans la table
+//  ferait échouer le contrôle ci-dessous (« clé inattendue »).
+const CLES_ATTENDUES = ['epingle', 'urgente', 'brouillon'];
 
 /** Le crayon, sans son sélecteur de variante — c'est « Modifier », et rien d'autre. */
 const CRAYON = '✏';
@@ -122,6 +126,16 @@ for (const cle of CLES_ATTENDUES) {
 		? String.fromCodePoint(parseInt(brut.slice(PREFIXE_ECHAPPE.length, -1), 16))
 		: brut;
 	glyphes.set(cle, glyphe);
+}
+//  …et la table n'en déclare PAS d'autre : une option qui y revient sans être
+//  attendue ici redeviendrait rendable sans que personne l'ait décidé (#2144).
+const declarees = [...source.matchAll(/cle: '([a-z_]+)'/g)].map((m) => m[1]);
+const inattendues = declarees.filter((c) => !CLES_ATTENDUES.includes(c));
+if (inattendues.length > 0) {
+	echec(
+		`✗ Clé inattendue dans la table : ${inattendues.join(', ')}.`,
+		'  Une option ajoutée se déclare dans CLES_ATTENDUES, avec sa raison.',
+	);
 }
 
 // ── 2. Les glyphes sont distincts ────────────────────────────────────────────
