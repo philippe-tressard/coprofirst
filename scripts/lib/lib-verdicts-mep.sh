@@ -329,6 +329,19 @@ verdict_alerte() {         # $1 = âge de la dernière « Alerte envoyée », $2
 #  celui-ci regarde ce qu'on s'apprête à pousser. La trace est écrite par
 #  `rejouer-ci.sh` et porte le commit couvert : une trace d'un autre commit ne
 #  dit rien de celui-ci, donc INCONNU — jamais OK par ancienneté.
+#  La dernière ligne de pytest (#2191) : « 3 passed, 3 errors » contient « passed »,
+#  et le point 15 rendait OK sur des tests qui n'avaient pas tourné (un import
+#  manquant dans le Python du poste). Une erreur n'est pas un échec du code : la
+#  mesure n'a pas eu lieu — INCONNU. Rien de reconnu : INCONNU aussi.
+verdict_pytest_resume() {  # $1 = dernière ligne de `pytest -q`
+  case "$1" in
+    *" failed"*) echo FAIL ;;
+    *" error"*|*"no tests ran"*) echo INCONNU ;;
+    *" passed"*) echo OK ;;
+    *) echo INCONNU ;;
+  esac
+}
+
 verdict_rejeu_ci() {       # $1 = sha de la trace, $2 = HEAD, $3 = nb FAIL, $4 = nb INCONNU
   [ -z "$1" ] || [ -z "$2" ] && { echo INCONNU; return; }
   [ "$1" != "$2" ] && { echo INCONNU; return; }

@@ -220,10 +220,9 @@ rapporter 0f "$V0F" "Titre et descriptif de PR préparés" "$D0F"
 # 15 — endpoints orphelins (poste de dev, avant le push)
 if [ -d api/tests ]; then
   ORPH=$( (cd api && python -m pytest tests/test_endpoints_orphelins.py -q 2>&1 | tail -1) )
-  case "$ORPH" in
-    *"passed"*) V15=OK ;;
-    *) V15=FAIL ;;
-  esac
+  #  « 3 passed, 3 errors » rendait OK : les tests n'avaient pas tourné (#2191).
+  V15=$(verdict_pytest_resume "$ORPH")
+  [ "$V15" = INCONNU ] && ORPH="$ORPH — tests non exécutés : dépendances du poste ≠ lot ? (lancer avec le venv du rejeu)"
 else
   V15=INCONNU; ORPH="répertoire api/tests introuvable"
 fi

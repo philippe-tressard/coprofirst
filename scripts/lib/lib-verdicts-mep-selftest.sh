@@ -252,6 +252,14 @@ feat(b) : deux"
   #  Un échec DÉJÀ ÉCRIT prouve que le producteur a tourné : la vivacité ne doit
   #  pas rendre INCONNU un canal démontré muet, sinon on perd l'information.
   t "échec muet malgré producteur mort"  FAIL    verdict_alerte "" 30 999 40
+  #  ── #2191 : la dernière ligne de pytest, lue sans faux vert ────────────────
+  t "pytest vert"                        OK      verdict_pytest_resume "3 passed in 1.2s"
+  t "pytest vert, avertissement"         OK      verdict_pytest_resume "3 passed, 1 warning in 1.2s"
+  #  Le cas du 23/10 : les tests ne se sont pas exécutés (import manquant).
+  t "pytest en erreur de collecte"       INCONNU verdict_pytest_resume "3 passed, 1 warning, 3 errors in 1.71s"
+  t "pytest en échec"                    FAIL    verdict_pytest_resume "1 failed, 2 passed in 1.2s"
+  t "pytest muet"                        INCONNU verdict_pytest_resume ""
+  t "aucun test"                         INCONNU verdict_pytest_resume "no tests ran in 0.01s"
   #  ── #319 : la CI rejouée en local couvre-t-elle CE commit ? ───────────────
   t "rejeu complet et vert"              OK      verdict_rejeu_ci abc123 abc123 0 0
   t "rejeu en échec"                     FAIL    verdict_rejeu_ci abc123 abc123 1 0
