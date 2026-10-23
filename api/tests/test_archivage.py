@@ -108,6 +108,19 @@ def test_une_affaire_archivee_par_le_conseil_quitte_la_liste():
     )
 
 
+def test_une_affaire_absorbee_quitte_la_liste_et_pas_sa_principale():
+    """🔀 L'absorbée hérite de l'état de la principale — « Chez le syndic » —, et
+    deux cartes se lisaient comme deux affaires (#2186). Arbitré le 23/10/2026 :
+    elle part aux Archives dès la fusion, la principale reste en vue."""
+    absorbee = archivable(
+        "ticket", statut=StatutTicket.en_cours, cree_le=MAINTENANT, fusionnee_dans_id=79
+    )
+    principale = archivable(
+        "ticket", statut=StatutTicket.en_cours, cree_le=MAINTENANT, fusionnee_dans_id=None
+    )
+    assert absorbee and not principale
+
+
 def test_annonce_vendue_depuis_plus_du_delai():
     assert archivable("annonce", statut=StatutAnnonce.vendu, statut_change_le=VIEUX)
 
@@ -235,6 +248,7 @@ def test_les_champs_declares_existent_sur_le_modele(type_objet):
         regle.champ_statut,
         regle.champ_archive_manuel,
         regle.champ_actif,
+        regle.champ_absorbe,
         regle.champ_epingle,
         regle.champ_brouillon,
     ):

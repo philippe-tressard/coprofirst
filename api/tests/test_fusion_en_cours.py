@@ -105,6 +105,25 @@ def test_la_plus_ancienne_absorbe_et_reste_ouverte(moteur):
     assert seule["id"] == vieille and seule["fusionnees"][0].endswith("Tache plafond 5e")
 
 
+def test_l_absorbee_quitte_la_liste_et_se_dit_fusionnee_la_principale_reste(moteur):
+    """🔀 L'absorbée hérite de « Chez le syndic » : sans cela, deux cartes se
+    lisaient comme deux affaires, et la correction de la principale offrait
+    « Fusionner » sur une liée déjà absorbée (#2186, arbitré le 23/10/2026)."""
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    vieille = affaire_ouverte(moteur, "Contrat incendie", jours=60, statut="en_cours")
+    recente = affaire_ouverte(moteur, "Dénonciation du contrat", jours=5)
+    _lier(moteur, vieille, recente)
+    r = cs.post("/suivi-affaires/fusions", json={"ids": [vieille, recente], "titre": "Incendie"})
+    assert r.status_code == 200, r.text
+    lues = {t["id"]: t for t in cs.get("/tickets").json()}
+    assert lues[recente]["archivee"] and lues[recente]["fusionnee"]
+    assert not lues[vieille]["archivee"]
+    (liee,) = lues[vieille]["affaires_liees"]
+    assert (liee["id"], liee["fusionnee"]) == (recente, True)
+    #  Plus rien à fusionner : la candidate absorbée n'est plus proposée.
+    assert cs.get(f"/tickets/{vieille}/fusion").json() == []
+
+
 def test_une_chaine_se_fusionne_d_un_geste(moteur):
     cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
     a = affaire_ouverte(moteur, "A", jours=30)

@@ -72,7 +72,9 @@ export type AffaireCorrigee = AffaireLiee & {
  * **Fusionner se propose-t-il depuis la correction de cette affaire ?** (#2173)
  *
  * Une affaire ouverte — ni actualité, ni déjà absorbée — qui a au moins UNE
- * affaire liée ENREGISTRÉE encore ouverte : deux affaires à fusionner au moins,
+ * affaire liée ENREGISTRÉE encore ouverte et NON absorbée — une absorbée hérite
+ * de l'état de sa principale, « Chez le syndic » sans plus rien à fusionner
+ * (#2186) : deux affaires à fusionner au moins,
  * comme la paire liée que le Suivi rassemble (#2083). Les liens ajoutés dans la
  * correction ne comptent pas tant qu'ils ne sont pas enregistrés : le serveur ne
  * fusionne que des affaires liées entre elles.
@@ -86,7 +88,7 @@ export function fusionPossible(affaire: AffaireCorrigee | null | undefined): boo
 		!estTicketClos(affaire.statut) &&
 		!estActualite(affaire) &&
 		!affaire.fusionnee &&
-		(affaire.affaires_liees ?? []).some((l) => !estTicketClos(l.statut))
+		(affaire.affaires_liees ?? []).some((l) => !estTicketClos(l.statut) && !l.fusionnee)
 	);
 }
 
@@ -103,7 +105,9 @@ const parAnciennete = (a: AffaireLiee, b: AffaireLiee) =>
  * `FusionAffaires`, dans une fenêtre (`ModaleFusionAffaires` dit pourquoi).
  *
  * Rend ce que la fusion a fait, ou `null` quand on renonce, qu'il n'y a rien à
- * fusionner (on le dit), ou que la liste n'a pas pu être lue (on le dit aussi).
+ * fusionner (on le dit — avec le MOTIF du serveur quand une liée s'y refuse,
+ * #2186 : un message générique taisait pourquoi), ou que la liste n'a pas pu
+ * être lue (on le dit aussi).
  */
 export async function fusionnerLiees(affaire: AffaireLiee): Promise<FusionFaite | null> {
 	if (!get(isCS)) return null;
@@ -115,15 +119,21 @@ export async function fusionnerLiees(affaire: AffaireLiee): Promise<FusionFaite 
 		return null;
 	}
 	const fusionnables = candidates.filter((c) => c.fusionnable);
+	const refusees = candidates.filter((c) => !c.fusionnable);
 	if (!fusionnables.length) {
-		toast('info', 'Aucune affaire liée ne peut être fusionnée avec celle-ci.');
+		toast(
+			'info',
+			refusees.length
+				? `Fusion impossible : ${refusees.map((c) => `${c.numero} est ${c.motif}`).join(' ; ')}.`
+				: 'Aucune affaire liée ne peut être fusionnée avec celle-ci.',
+		);
 		return null;
 	}
 	return modaleImperative<FusionFaite | null>(
 		ModaleFusionAffaires,
 		{
 			affaires: [affaire, ...fusionnables].sort(parAnciennete),
-			horsFusion: candidates.filter((c) => !c.fusionnable),
+			horsFusion: refusees,
 		},
 		null,
 	);

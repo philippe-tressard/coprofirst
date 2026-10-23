@@ -133,7 +133,17 @@ def test_une_candidate_porte_la_forme_d_une_affaire_nommee(trois):
     c = candidates(session, session.get(Ticket, a), cs)[0]
     t = session.get(Ticket, c["id"])
     assert c["cree_le"] == t.cree_le
-    assert set(c) == {"id", "numero", "titre", "statut", "cree_le", "fusionnable", "motif"}
+    #  `fusionnee` (#2186) : toujours faux ici — une absorbée n'est jamais candidate.
+    assert set(c) == {
+        "id",
+        "numero",
+        "titre",
+        "statut",
+        "cree_le",
+        "fusionnee",
+        "fusionnable",
+        "motif",
+    }
 
 
 # ── 3. L'absorption ─────────────────────────────────────────────────────────

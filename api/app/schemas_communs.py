@@ -79,6 +79,9 @@ class AffaireLieeLue(BaseModel):
     titre: str
     statut: str
     cree_le: datetime
+    #: 🔀 Absorbée par une autre affaire (#2186) : son état est celui qu'elle a
+    #: hérité, et l'écran ne la propose plus à la fusion.
+    fusionnee: bool = False
 
 
 class ContratDeLAffaire(BaseModel):
