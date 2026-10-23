@@ -81,6 +81,12 @@ LIMITE_DONNEES_PERSONNELLES = "5/minute"
 #: minute ne gênent personne, et bornent un balayage alphabétique de l'annuaire.
 LIMITE_RECHERCHE_DE_PERSONNES = "20/minute"
 
+#: Le **dépôt d'un fichier** par un compte connecté — photo, pièce jointe, avatar
+#: (#2164). Chaque dépôt occupe le disque et la mémoire du Raspberry Pi le temps
+#: d'être lu ; trente par minute couvrent largement l'ajout de photos à une
+#: affaire, et bornent un remplissage.
+LIMITE_TELEVERSEMENT = "30/minute"
+
 #: Le basculement d'une **préférence** du compte.
 LIMITE_PREFERENCE = "10/minute"
 

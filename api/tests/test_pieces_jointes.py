@@ -211,7 +211,10 @@ def test_photos_json_ecarte_les_urls_etrangeres():
         ]
     )
     assert json.loads(sortie) == ["/uploads/publications/ok.jpg"]
-    assert "é" in photos_json(["/uploads/été.jpg"]), "ensure_ascii=False perdu : accents échappés"
+    #  Dans un dossier de pièces jointes : la racine est écartée depuis #2157.
+    assert "é" in photos_json(["/uploads/fichiers/été.jpg"]), (
+        "ensure_ascii=False perdu : accents échappés"
+    )
 
 
 def test_photos_json_tolere_l_absence():

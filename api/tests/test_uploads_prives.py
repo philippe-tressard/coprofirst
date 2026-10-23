@@ -110,7 +110,7 @@ def test_un_fichier_prive_s_ecrit_sous_le_dossier_prive(disque_jetable):
     from app.utils.fichiers import enregistrer_televersement
     from app.utils.stockage import DOSSIER_PRIVE, stockage
 
-    recu = SimpleNamespace(file=io.BytesIO(b"%PDF-1.7 essai"))
+    recu = SimpleNamespace(file=io.BytesIO(b"%PDF-1.7 essai"), content_type="application/pdf")
     #  La porte rend la CLÉ (#1816) ; le fichier est sous la racine du stockage.
     cle = enregistrer_televersement(recu, "pv-ag.pdf")
     chemin = stockage().chemin(cle)
@@ -360,3 +360,25 @@ def test_l_api_entiere_est_non_cacheable():
     assert "private" in valeur or "no-store" in valeur, (
         f"Cache-Control « {directive.group(1)} » n'interdit pas le stockage par un cache partagé."
     )
+
+
+# ── #2158 : l'API ne sert aucun fichier téléversé sans session ───────────────
+
+
+@pytest.mark.parametrize("methode", ["GET", "HEAD"])
+def test_l_api_ne_sert_aucun_fichier_televerse_sans_session(methode, disque_jetable):
+    """Un montage `StaticFiles` répondait 200 à `HEAD /uploads/prive/…` (#2158).
+
+    La route de fichiers ne déclare que GET : le HEAD retombait sur le montage,
+    qui rendait la taille et la date d'un document privé. Le fichier existe ici,
+    sur le disque jetable : un refus ne vient pas de son absence.
+    """
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    (disque_jetable / "prive").mkdir(exist_ok=True)
+    (disque_jetable / "prive" / "pv.pdf").write_bytes(b"%PDF-1.4 confidentiel")
+    reponse = TestClient(app).request(methode, "/uploads/prive/pv.pdf")
+    assert reponse.status_code >= 400, (methode, reponse.status_code, dict(reponse.headers))
+    assert "content-length" not in reponse.headers or reponse.headers["content-length"] != "21"

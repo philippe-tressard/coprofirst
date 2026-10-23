@@ -178,7 +178,8 @@ def test_le_geste_factorise_REMBOBINE_le_flux():
     stockage().chemin(DOSSIER_PRIVE).mkdir(parents=True, exist_ok=True)
 
     contenu = b"%PDF-1.4 contenu de test"
-    faux = SimpleNamespace(file=_io.BytesIO(contenu))
+    #  Le type annoncé, comme un vrai `UploadFile` : la famille le juge depuis #2156.
+    faux = SimpleNamespace(file=_io.BytesIO(contenu), content_type="application/pdf")
     chemin = stockage().chemin(enregistrer_televersement(faux, "rapport.pdf"))
     try:
         assert pathlib.Path(chemin).read_bytes() == contenu, (
@@ -203,7 +204,10 @@ def test_le_geste_factorise_REFUSE_un_fichier_deguise():
 
     from app.utils.fichiers import enregistrer_televersement
 
-    faux = SimpleNamespace(file=_io.BytesIO(b"MZ" + bytes([0x90, 0x00]) + b" un executable"))
+    faux = SimpleNamespace(
+        file=_io.BytesIO(b"MZ" + bytes([0x90, 0x00]) + b" un executable"),
+        content_type="application/pdf",
+    )
     with _pytest.raises(HTTPException) as capture:
         enregistrer_televersement(faux, "innocent.pdf")
     assert capture.value.status_code == 400
