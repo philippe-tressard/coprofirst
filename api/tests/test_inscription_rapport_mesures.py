@@ -78,6 +78,14 @@ def test_sans_mise_a_jour_nocturne_rien_n_est_dit(base):
     assert rapport.construire().identite.derniere_mise_a_jour is None
 
 
+def test_l_etat_des_correctifs_du_systeme_part_au_registre(base):
+    """Le contrôle de `correctifs-systeme.sh` en défaut → la référence le sait ;
+    sans contrôle posé (la référence elle-même), rien ne part."""
+    assert rapport.construire().identite.correctifs_systeme is None
+    _tache(base, TachePlanifiee.correctifs_systeme, "erreur", il_y_a=timedelta(hours=2))
+    assert rapport.construire().identite.correctifs_systeme == "en_defaut"
+
+
 def test_le_script_nomme_une_issue_du_contrat_a_chaque_compte_rendu():
     """`mise-a-jour.sh` et le contrat parlent les mêmes mots — sinon l'issue se perd."""
     source = SCRIPT_MAJ.read_text(encoding="utf-8")

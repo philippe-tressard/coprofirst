@@ -38,7 +38,10 @@ APT_EN_COURS_MAX_S=${APT_EN_COURS_MAX_S:-7200}
 #   - apt_listes_j : âge en jours de la liste la PLUS RÉCENTE. On mesure la
 #     chose (les listes), pas son enregistrement (un tampon de tentative, que
 #     `apt-daily` pose même quand il échoue) — `standards/04` §14.
-COLLECT_APT='
+#  Nommée à part (`COLLECT_APT_LISTES`) : le contrôle des correctifs d'une
+#  installation standard (`deploiement/standard/correctifs-systeme.sh`) l'assemble
+#  avec SA liste de paquets en attente.
+COLLECT_APT_LISTES='
 _t0=$(date +%s)
 echo "apt_erreurs=$(command -v apt-config >/dev/null 2>&1 && apt-config dump 2>&1 >/dev/null | grep -c "^E:")"
 _t=$(find /var/lib/apt/lists -maxdepth 1 -name "*InRelease" -printf "%T@\n" 2>/dev/null | sort -n | tail -1)
@@ -70,12 +73,19 @@ APT_SECU_DELAI_S=${APT_SECU_DELAI_S:-108000}
 #  L'ancienneté se relit dans le FICHIER, après son écriture : un relevé qui ne
 #  s'écrit pas (disque plein, pair sans droit) rend un âge vide, donc INCONNU —
 #  jamais « vu à l'instant » à chaque passage, qui serait un ATTENTE perpétuel.
+#
+#  $2 (facultatif) : la commande qui liste les paquets en attente, un
+#  « <paquet>=<version> » par ligne — par défaut les correctifs `*-security`
+#  (C30). Une installation standard y passe ce qu'`unattended-upgrades` posera
+#  (`deploiement/standard/correctifs-systeme.sh`). Même contrainte : aucune
+#  apostrophe.
+APT_LISTE_SECU='apt list --upgradable 2>/dev/null | grep -- "-security" | awk -F"[/ ]" "{ print \$1 \"=\" \$3 }"'
 collecte_secu() {
     printf '%s' '
 _f='"$1"'
 _n=$(date +%s)
 if command -v apt >/dev/null 2>&1; then
-_l=$(apt list --upgradable 2>/dev/null | grep -- "-security" | awk -F"[/ ]" "{ print \$1 \"=\" \$3 }" | sort)
+_l=$('"${2:-$APT_LISTE_SECU}"' | sort)
 echo "apt_secu=$(printf "%s" "$_l" | grep -c .)"
 _vu() { awk -v p="$1" "\$2 == p && \$1 ~ /^[0-9]+\$/ { print \$1; exit }" "$_f" 2>/dev/null; }
 if [ "$(id -u)" = 0 ] && mkdir -p "$(dirname "$_f")"; then
@@ -124,7 +134,7 @@ echo "apt_en_cours="
 fi
 '
 }
-COLLECT_APT="$COLLECT_APT$(collecte_secu "$APT_SECU_VU")$(collecte_apt_en_cours)"
+COLLECT_APT="$COLLECT_APT_LISTES$(collecte_secu "$APT_SECU_VU")$(collecte_apt_en_cours)"
 
 # ── Décision PURE (aucun effet de bord) ──────────────────────────────────────
 
@@ -237,6 +247,15 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     rm -f "$vuf"; id() { echo 1000; }
     t "collecte : hors root, rien d'écrit ni d'inventé" "" champ apt_secu_vu_s
     t "collecte : hors root, aucun fichier créé" non eval '[ -e "$vuf" ] && echo oui || echo non'
+    #  Une autre liste (celle d'une installation standard) : même relevé, même horloge.
+    rm -f "$vuf"; id() { echo 0; }
+    autre="$tmps/attente"; printf 'docker-ce=5:29.9.2-1
+cloudflared=2026.10.3
+' > "$autre"
+    t "collecte : liste fournie → ses paquets comptent" 2 eval 'eval "$(collecte_secu "$vuf" "cat $autre")" | sed -n "s/^apt_secu=//p"'
+    t "collecte : liste fournie → relevée par paquet" "cloudflared=2026.10.3" eval 'cut -d" " -f2 "$vuf" | head -1'
+    : > "$autre"
+    t "collecte : liste fournie vide → 0" 0 eval 'eval "$(collecte_secu "$vuf" "cat $autre")" | sed -n "s/^apt_secu=//p"'
     unset -f apt systemctl id champ; rm -rf "$tmps"
 
     #  #1610 — la collecte du passage en cours, exécutée sur un systemd simulé aux

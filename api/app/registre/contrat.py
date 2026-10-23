@@ -38,6 +38,12 @@ VERSION_CONTRAT = 1
 #: sauvegarde restaurée. Les deux dernières sont un retour en arrière (alerte).
 ISSUES_MISE_A_JOUR = ("echouee", "reussie", "revenue", "restauree")
 
+#: L'état des correctifs du SYSTÈME de l'installation, jugé par `utils/sante_correctifs`
+#: sur le contrôle quotidien de `deploiement/standard/correctifs-systeme.sh` : à jour,
+#: en défaut (un correctif ne passe pas, la configuration n'est plus en service, l'état
+#: est illisible), ou muet (le contrôle ne rend plus compte). Les deux derniers alertent.
+ETATS_CORRECTIFS = ("a_jour", "en_defaut", "muet")
+
 #: L'en-tête qui porte la signature d'un envoi de l'installation (Ed25519, base64),
 #: sur les octets du corps — écrit ici : l'installation l'envoie, la référence le lit.
 EN_TETE_SIGNATURE = "X-Signature-Installation"
@@ -171,6 +177,14 @@ class Identite(_Contrat):
     se_declare_reference: Optional[bool] = Field(
         default=None,
         description="voir deux installations qui se déclarent référence (D24, R4b #1960)",
+    )
+    #  Le résultat des mises à jour du SYSTÈME — même famille que la dernière mise à
+    #  jour de CoproFirst (conditions v1, §3 : « résultat de la dernière mise à
+    #  jour »). Ajouté, optionnel, dans la version 1 du contrat (règle 3).
+    correctifs_systeme: Optional[str] = Field(
+        default=None,
+        description="voir un serveur qui ne reçoit plus ses correctifs de sécurité "
+        "(`ETATS_CORRECTIFS`)",
     )
 
 

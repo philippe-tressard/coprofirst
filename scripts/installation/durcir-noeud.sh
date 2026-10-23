@@ -32,6 +32,10 @@ set -uo pipefail
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 # shellcheck source=../lib/lib-durcissement.sh
 . "$REPO/scripts/lib/lib-durcissement.sh"
+#  `poser` (écriture idempotente d'un fichier root) : partagée avec le contrôle des
+#  correctifs d'une installation standard (`deploiement/standard/correctifs-systeme.sh`).
+# shellcheck source=../../deploiement/standard/lib-installation.sh
+. "$REPO/deploiement/standard/lib-installation.sh"
 
 if [ "${1:-}" = "--selftest" ]; then
   durcissement_selftest
@@ -85,16 +89,6 @@ etat() {
   [ -e "$APT_HERITE" ] && log "  hérité    $APT_HERITE présent (s'ajoute aux origines Debian, ne restreint rien)"
   log "  clés      $(compter_cles || echo '?') clé(s) dans $CLES_AUTORISEES"
   return "$rc"
-}
-
-# ── Écriture idempotente d'un fichier root (contenu sur l'entrée standard) ───
-#  Rend 0 si le fichier a changé, 1 s'il était déjà identique, 2 en cas d'échec.
-poser() {  # $1 chemin · $2 mode
-  local tmp; tmp=$(mktemp) || return 2
-  cat > "$tmp"
-  if [ -f "$1" ] && cmp -s "$tmp" "$1"; then rm -f "$tmp"; return 1; fi
-  install -o root -g root -m "$2" "$tmp" "$1" || { rm -f "$tmp"; return 2; }
-  rm -f "$tmp"
 }
 
 paquets() {

@@ -6,8 +6,9 @@ plein à plus de 80 %, certificat proche de l'échéance, retard de version, clo
 références déclarées. »*
 
 Arbitrage de l'auteur, 14/10/2026 : **toutes à l'écran**, sur la carte de
-l'installation (Admin › Installations) ; **un courriel à l'opérateur** pour les trois
-graves seulement — muette, clone, deux références (`GENRES`, `grave`).
+l'installation (Admin › Installations) ; **un courriel à l'opérateur** pour les
+graves seulement — muette, clone, deux références (`GENRES`, `grave`), et depuis le
+23/10/2026 les correctifs du système en défaut (un serveur exposé sans correctifs).
 
 ## Les règles
 
@@ -75,6 +76,12 @@ CLONE_RECENT = timedelta(days=7)
 #: Les issues d'une mise à jour nocturne qui sont un retour en arrière (`ISSUES_MISE_A_JOUR`).
 MISES_A_JOUR_REVENUES = frozenset({"revenue", "restauree"})
 
+#: Les états des correctifs du système qui alertent (`ETATS_CORRECTIFS`), et ce qu'on en dit.
+CORRECTIFS_EN_DEFAUT = {
+    "en_defaut": "Les correctifs du système ne passent plus sur le serveur.",
+    "muet": "Le contrôle des correctifs du système ne rend plus compte : état inconnu.",
+}
+
 #: Les gestes du journal qui portent le suivi d'une alerte grave.
 SIGNALEE, LEVEE = "alerte_signalee:", "alerte_levee:"
 
@@ -96,6 +103,9 @@ GENRES: dict[str, Genre] = {
     "disque_plein": Genre("Disque plein"),
     "certificat_echeance": Genre("Certificat proche de l'échéance"),
     "retard_version": Genre("Retard de version"),
+    #  Un serveur exposé qui ne reçoit plus ses correctifs de sécurité : grave
+    #  (arbitrage du 23/10/2026, « fais selon tes recommandations »).
+    "correctifs_systeme": Genre("Correctifs du système en défaut", grave=True),
     "clone": Genre("Clone", grave=True),
     "deux_references": Genre("Deux références", grave=True),
 }
@@ -205,6 +215,8 @@ def evaluer(
             )
         if ident.se_declare_reference is True:
             trouvees["deux_references"] = "Elle se déclare installation de référence."
+        if ident.correctifs_systeme in CORRECTIFS_EN_DEFAUT:
+            trouvees["correctifs_systeme"] = CORRECTIFS_EN_DEFAUT[ident.correctifs_systeme]
 
     return [Alerte(code, trouvees[code]) for code in GENRES if code in trouvees]
 

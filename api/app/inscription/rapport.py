@@ -149,13 +149,10 @@ def posture() -> Posture:
 def _issue_mise_a_jour(session) -> Optional[str]:
     """L'issue de la DERNIÈRE mise à jour nocturne, telle que le script l'a nommée —
     `None` sans mise à jour (la référence n'en fait pas), ou d'un script d'avant #1981."""
-    from app.models.core import HistoriqueMaintenance, TachePlanifiee
+    from app.models.core import TachePlanifiee
+    from app.utils.etat_taches import dernier_rapport
 
-    derniere = session.exec(
-        select(HistoriqueMaintenance)
-        .where(HistoriqueMaintenance.tache == TachePlanifiee.mise_a_jour.value)
-        .order_by(HistoriqueMaintenance.cree_le.desc())
-    ).first()
+    derniere = dernier_rapport(session, TachePlanifiee.mise_a_jour.value)
     try:
         issue = (json.loads(derniere.details or "{}") or {}).get("issue") if derniere else None
     except ValueError:
@@ -172,9 +169,19 @@ def _la_plus_grave(issues) -> Optional[str]:
     return max(lues, key=lambda i: (i != "reussie", _GRAVITE_ISSUE[i])) if lues else None
 
 
+#: L'état des correctifs du système le plus grave d'abord (`ETATS_CORRECTIFS`).
+_GRAVITE_CORRECTIFS = {"en_defaut": 2, "muet": 1, "a_jour": 0}
+
+
+def _pire_correctifs(etats) -> Optional[str]:
+    """Une installation à plusieurs copropriétés dit l'état le plus grave."""
+    lus = [e for e in etats if e in _GRAVITE_CORRECTIFS]
+    return max(lus, key=_GRAVITE_CORRECTIFS.__getitem__) if lus else None
+
+
 def _copropriete(
     identifiant_installation: str,
-) -> tuple[CoproprieteRapport, Optional[datetime], Optional[bool], Optional[str]]:
+) -> tuple[CoproprieteRapport, Optional[datetime], Optional[bool], Optional[str], Optional[str]]:
     """Les NOMBRES d'une copropriété — dans son contexte, sans lire une donnée de résident."""
     from app.models.copropriete import Lot
     from app.models.core import Utilisateur
@@ -182,6 +189,7 @@ def _copropriete(
     from app.utils.config_site import config_site
     from app.utils.health_monitor import copie_hors_site_a_jour
     from app.utils.liens import nom_site
+    from app.utils.sante_correctifs import etat_correctifs
     from app.utils.services import SERVICES, service_actif
 
     copro = contexte.courante()
@@ -208,6 +216,7 @@ def _copropriete(
             _mesure(derniere_sauvegarde_reussie, session),
             _mesure(copie_hors_site_a_jour, session),
             _mesure(_issue_mise_a_jour, session),
+            _mesure(etat_correctifs, session),
         )
 
 
@@ -216,14 +225,15 @@ def construire() -> Rapport:
     etat = depot.lire()
     identifiant = etat.identifiant or ""
     bail = (etat.bail or {}).get("bail") or {}
-    coproprietes, sauvegardes, copies, issues = [], [], [], []
+    coproprietes, sauvegardes, copies, issues, correctifs = [], [], [], [], []
     for copro in contexte.coproprietes():
         with contexte.dans(copro):
-            rendu, sauvee, copie, issue = _copropriete(identifiant)
+            rendu, sauvee, copie, issue, correctif = _copropriete(identifiant)
         coproprietes.append(rendu)
         sauvegardes.append(sauvee)
         copies.append(copie)
         issues.append(issue)
+        correctifs.append(correctif)
     #  La sauvegarde de l'INSTALLATION est celle de sa copropriété la moins à jour :
     #  une seule qui manque, et il en manque une. La copie hors de la machine aussi.
     derniere = None if (not sauvegardes or None in sauvegardes) else min(sauvegardes)
@@ -235,6 +245,7 @@ def construire() -> Rapport:
             canal=bail.get("canal") or "replica",
             version_logicielle=installation.version_logicielle(),
             derniere_mise_a_jour=_la_plus_grave(issues),
+            correctifs_systeme=_pire_correctifs(correctifs),
             se_declare_reference=installation.est_reference(),
         ),
         hebergement=hebergement(),

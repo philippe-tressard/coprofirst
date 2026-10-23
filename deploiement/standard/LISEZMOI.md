@@ -46,6 +46,13 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 | `deploiement/standard/mise-a-jour.sh` | la mise à jour nocturne, réversible seule |
 | `deploiement/standard/lib-installation.sh` | les gestes communs des scripts de l'installation (journal, santé, compte rendu) |
 | `deploiement/standard/lib-bases.sh` | les gestes communs à toute base PostgreSQL : rôle et base fermée aux autres rôles |
+| `deploiement/standard/correctifs-systeme.sh` | les correctifs du **système** : les pose chaque nuit, les contrôle chaque matin (voir « Les correctifs du système ») |
+| `deploiement/standard/systeme/52coprofirst-correctifs` | ce qu'`unattended-upgrades` pose en plus de la sécurité (distribution, Docker, `cloudflared`), et le redémarrage |
+| `deploiement/standard/systeme/apt-daily.timer.conf` | l'heure du rafraîchissement des listes de paquets (02:30) |
+| `deploiement/standard/systeme/apt-daily-upgrade.timer.conf` | l'heure du passage (03:00–03:20) |
+| `deploiement/standard/systeme/coprofirst-correctifs.service` | le contrôle quotidien des correctifs, rendu à l'administration |
+| `deploiement/standard/systeme/coprofirst-correctifs.timer` | son heure (07:30) |
+| `scripts/lib/lib-apt.sh` | la décision « ce serveur reçoit-il ses correctifs ? », la même que sur la référence |
 | `deploiement/demo/reinitialiser.sh` | la remise à zéro nocturne de la **démo publique** — sans effet ailleurs |
 | `deploiement/demo/LISEZMOI.md` | le mode d'emploi de la démo publique |
 | `deploiement/standard/postgresql/pg_hba.conf` | qui peut se connecter à PostgreSQL : l'API seule |
@@ -94,6 +101,11 @@ dépôt), l'archive `coprofirst-deploiement-X.Y.Z.tar.gz`. Elle contient,
 5. Démarrer :
    ```bash
    docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml up -d
+   ```
+   Puis poser les **correctifs automatiques du système** (voir « Les correctifs
+   du système » — ce qu'ils changent sur la machine, et comment s'en retirer) :
+   ```bash
+   sudo deploiement/standard/correctifs-systeme.sh --appliquer
    ```
 6. Le premier lancement crée deux comptes, dont les mots de passe s'affichent
    une fois dans les journaux : l'**administrateur** de la copropriété
@@ -167,6 +179,49 @@ le temps de redémarrer (crontab de l'utilisateur qui pilote Docker) :
 
 ```
 30 4 * * * /opt/coprofirst/deploiement/standard/mise-a-jour.sh >> /var/log/coprofirst-maj.log 2>&1
+```
+
+## Les correctifs du système
+
+Le serveur reçoit seul ses correctifs de sécurité — le système, **Docker** et le
+tunnel **`cloudflared`** —, par `unattended-upgrades`, l'outil standard d'Ubuntu et
+de Debian. `sudo deploiement/standard/correctifs-systeme.sh --appliquer` le règle,
+une fois, à l'installation ; le relancer après une mise à jour de CoproFirst qui
+change ces fichiers ne fait que rafraîchir ce qui a changé.
+
+**Ce qui change sur la machine** — rien d'autre :
+
+| Quoi | Où |
+|---|---|
+| `unattended-upgrades` pose aussi les mises à jour de la distribution (`-updates`), du dépôt Docker et du dépôt Cloudflare — en plus des correctifs de sécurité du système, qu'il posait déjà | `/etc/apt/apt.conf.d/52coprofirst-correctifs` |
+| les listes de paquets se rafraîchissent vers **02:30** ; le passage tourne entre **03:00 et 03:20**, sans rattrapage au démarrage | `/etc/systemd/system/apt-daily.timer.d/`, `apt-daily-upgrade.timer.d/` |
+| un contrôle, chaque matin vers **07:30**, rendu à l'administration | `coprofirst-correctifs.timer` et `.service`, `/etc/default/coprofirst-correctifs` |
+| la copie du contrôle que le minuteur exécute — root seul peut la réécrire | `/usr/local/lib/coprofirst-correctifs/` |
+| ce que le contrôle retient d'un jour à l'autre | `/var/lib/coprofirst-correctifs/` |
+
+**Quand la machine redémarre** : juste après le passage de la nuit, entre 03:00 et
+03:30, et **seulement** si un correctif l'exige (noyau, bibliothèque système). Une
+mise à jour de Docker redémarre les conteneurs, sans redémarrer la machine. Ces
+heures sont loin de la mise à jour de CoproFirst (04:30) : les deux ne se
+chevauchent pas. Le site est coupé une à deux minutes.
+
+**Si les correctifs ne passent plus**, le contrôle de 07:30 le dit à
+*Administration › Maintenance* (tâche « Correctifs du système ») ; le contrôle de
+06:00 en fait un courriel, et le rapport nocturne le transmet à la référence si
+l'installation est inscrite. Il le dit quand un paquet vu par un passage n'a pas
+été posé, quand rien ne passe depuis plus de 30 heures, quand un redémarrage requis
+n'a pas eu lieu, quand la configuration n'est plus en service — et quand il ne peut
+rien lire, ce qui n'est jamais « à jour ». L'état, à tout moment :
+
+```bash
+sudo deploiement/standard/correctifs-systeme.sh --etat
+```
+
+**S'en retirer** — `unattended-upgrades` revient à la configuration du système
+(sécurité seule, 06:00–07:00, sans redémarrage), et le contrôle s'arrête :
+
+```bash
+sudo deploiement/standard/correctifs-systeme.sh --retirer
 ```
 
 ## La base de données

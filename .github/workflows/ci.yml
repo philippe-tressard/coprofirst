@@ -598,6 +598,10 @@ jobs:
           # Ajouter une copropriété à une installation commune (#2053).
           bash deploiement/standard/commune/creer-copropriete.sh --selftest
           bash deploiement/demo/reinitialiser.sh    --selftest
+          # Les correctifs du système d'une installation standard : la configuration
+          # SERVIE (apt-config dump, minuteur), le redémarrage en attente, INCONNU
+          # jamais vert — sur la décision apt de C30 (lib-apt.sh).
+          bash deploiement/standard/correctifs-systeme.sh --selftest
           bash scripts/ci/essai-mise-a-jour.sh      --selftest
           # Le jeton du tunnel : l'identifiant n'est pas un jeton (#1318, 25/09/2026).
           bash scripts/lib/lib-jeton-tunnel.sh      --selftest

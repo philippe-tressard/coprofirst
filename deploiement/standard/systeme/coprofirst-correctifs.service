@@ -1,0 +1,16 @@
+# Posé par deploiement/standard/correctifs-systeme.sh — ne pas éditer à la main.
+# Le contrôle quotidien des correctifs du système, rendu à l'administration
+# (Administration › Maintenance, tâche « Correctifs du système »).
+[Unit]
+Description=CoproFirst — contrôle des correctifs du système
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Le script s'exécute en root depuis une copie que root seul peut réécrire
+# (/usr/local/lib/coprofirst-correctifs), jamais depuis le dossier de
+# l'installation, que l'utilisateur de Docker et la mise à jour nocturne
+# réécrivent (standards/03 §8 bis).
+EnvironmentFile=/etc/default/coprofirst-correctifs
+ExecStart=/usr/local/lib/coprofirst-correctifs/correctifs-systeme.sh --rapport

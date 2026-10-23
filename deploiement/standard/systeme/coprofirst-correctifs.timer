@@ -1,0 +1,13 @@
+# Posé par deploiement/standard/correctifs-systeme.sh — ne pas éditer à la main.
+# Après le passage de 03:00 et la remise à zéro de 05:15 : le contrôle juge la
+# nuit écoulée. Rattrapé au démarrage (Persistent=true) : il ne fait que lire.
+[Unit]
+Description=CoproFirst — contrôle quotidien des correctifs du système
+
+[Timer]
+OnCalendar=*-*-* 07:30
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

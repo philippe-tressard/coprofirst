@@ -20,6 +20,15 @@ FICHIERS_DEPLOIEMENT=(
     deploiement/standard/mise-a-jour.sh
     deploiement/standard/lib-installation.sh
     deploiement/standard/lib-bases.sh
+    deploiement/standard/correctifs-systeme.sh
+    deploiement/standard/systeme/52coprofirst-correctifs
+    deploiement/standard/systeme/apt-daily.timer.conf
+    deploiement/standard/systeme/apt-daily-upgrade.timer.conf
+    deploiement/standard/systeme/coprofirst-correctifs.service
+    deploiement/standard/systeme/coprofirst-correctifs.timer
+    #  La décision apt des nœuds de la référence (C30), que `correctifs-systeme.sh`
+    #  source : une seule règle pour « ce serveur reçoit-il ses correctifs ? ».
+    scripts/lib/lib-apt.sh
     deploiement/demo/reinitialiser.sh
     deploiement/demo/LISEZMOI.md
     deploiement/standard/postgresql/pg_hba.conf
