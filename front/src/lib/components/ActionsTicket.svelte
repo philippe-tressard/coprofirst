@@ -14,10 +14,13 @@
   les recalculer ici en ferait une seconde lecture de la même règle.
 
   🔴 L'ORDRE des icônes est celui de tout le site — 🔗 · 🔄 · ✏️ · options · 🗑️ —
-  arbitré le 18/08/2026 sur cette carte précisément.
+  arbitré le 18/08/2026 sur cette carte précisément. 💬 Répondre (23/10/2026,
+  *« cette icône doit être sur l'affaire »*) se range après 🔗 : les deux gestes
+  qui mènent à la page de l'affaire, puis ceux qui la changent.
 -->
 <script lang="ts">
 	import { SUITE } from '$lib/gestes';
+	import { gesteReponse } from '$lib/tickets';
 	import { isCS } from '$lib/stores/auth';
 	import { createEventDispatcher } from 'svelte';
 	import BoutonLien from './BoutonLien.svelte';
@@ -34,7 +37,11 @@
 	/** Rendue aux Archives : 🗑️ y remplace 📦 (`ux-patterns` §8). */
 	export let archive = false;
 
+	//  Qui peut répondre, et ce que le bouton dit : la règle du fil des messages.
+	$: reponse = gesteReponse(ticket);
+
 	const dispatch = createEventDispatcher<{
+		repondre: void;
 		evoluer_ouvrir: void;
 		modifier: void;
 		options_ouvrir: void;
@@ -53,6 +60,15 @@
 	      dans une liste que le destinataire n'a peut-être pas le droit de voir
 	      en entier. Même adresse que `lien_ticket()` côté API. -->
 <BoutonLien chemin="/tickets/{ticket.id}" quoi="l'affaire" />
+{#if reponse}
+	<button
+		class="btn-icon"
+		aria-label={reponse.libelle}
+		title={reponse.libelle}
+		on:click|stopPropagation={() => dispatch('repondre')}
+		><IconeAction icone={reponse.icone} /></button
+	>
+{/if}
 {#if peutSuivre}
 	<button
 		class="btn-icon"

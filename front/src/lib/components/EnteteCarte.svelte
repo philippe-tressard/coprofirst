@@ -408,6 +408,23 @@
 		.ec-ligne-titre {
 			align-items: center;
 		}
+		/*  🔴 UN TITRE SE LIT AVANT SES ICÔNES (23/10/2026, 💬 Répondre). Une
+		    affaire porte jusqu'à six icônes : à 360 px, le titre tombait à 70 px
+		    (« Ascenseur en pann… »). Sa base est donc la largeur de son TEXTE
+		    (`auto`) : s'il ne tient pas entier à côté des icônes, la rangée passe
+		    sous lui, à droite, et il reprend la ligne. Un titre court les garde à
+		    côté — la carte ne grandit que là où le titre se serait coupé.
+		    🔒 `e2e/repondre-depuis-la-carte.spec.ts`, `e2e/gouttiere-nature`. */
+		.ec-ligne-titre {
+			flex-wrap: wrap;
+			row-gap: 0.25rem;
+		}
+		.ec-ligne-titre .ec-titre {
+			flex: 1 1 auto;
+		}
+		.ec-droite--titre {
+			margin-left: auto;
+		}
 		.ec-droite--titre {
 			align-items: center;
 			margin-top: 0;
