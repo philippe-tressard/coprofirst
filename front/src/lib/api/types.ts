@@ -79,24 +79,10 @@ export interface PorteSaisiPourLu {
 	saisi_pour_affichage?: string | null;
 }
 
-/**  Une affaire liée, telle que CE lecteur la voit (#1342) : de quoi la
- *   reconnaître. Le serveur ne rend que celles qu'il peut lire. */
-export interface AffaireLiee {
-	id: number;
-	numero: string;
-	titre: string;
-	/** L'état — le « Suivi » de l'écran. */
-	statut: string;
-	/** ISO, sans fuseau (UTC naïf, comme la base) — `fmtDate` le lit (#2173). */
-	cree_le: string;
-}
-
-/**  Une affaire liée proposée à la FUSION, en clôturant (#1704) — `routers/tickets/fusion`.
- *   `fusionnable` faux : lue par moins de monde que l'affaire qui l'absorberait, et `motif` le dit. */
-export interface CandidateFusion extends AffaireLiee {
-	fusionnable: boolean;
-	motif: string | null;
-}
+//  Les affaires liées et les candidates d'une fusion vivent dans leur module
+//  (#2173) ; ré-exportées ici pour les écrans qui les lisent dans `types`.
+import type { AffaireLiee } from './affaires-liees';
+export type { AffaireLiee, CandidateFusion } from './affaires-liees';
 
 /**  Un transfert de courriel versé dans une affaire (#1482), tel que le voit qui
  *   peut le défaire — celui qui a transféré, ou l'administrateur. */
