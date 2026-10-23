@@ -13,6 +13,7 @@ from sqlmodel import Session
 from app.models.core import Ticket, Utilisateur
 from app.schemas import TicketEvolutionCreate
 from app.utils.cloche import sonner
+from app.utils.html_sur import html_riche
 from app.utils.liens import lien_ticket
 from app.utils.noms import contexte_personne
 from app.utils.recuperer import ou_rien
@@ -61,7 +62,7 @@ def _notifier_auteur(
                 to=auteur.email,
                 context={
                     "ticket": base_ticket,
-                    "message": {"contenu": body.contenu[:300]},
+                    "message": {"contenu": html_riche(body.contenu[:300])},
                     "auteur_action": contexte_personne(user),
                     **contexte_site(cfg),
                 },

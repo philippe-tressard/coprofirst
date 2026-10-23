@@ -46,6 +46,11 @@ EXCEPTIONS_HOSTACHY: dict[str, tuple[int, str]] = {
         "`hostachy_backup_` : le préfixe des archives DÉJÀ sur disque, que la rotation "
         "et la restauration reconnaissent",
     ),
+    "utils/whatsapp.py": (
+        1,
+        "`hostachy_whatsapp` : le nom du CONTENEUR du bridge (`container_name` du "
+        "compose), l'une des deux adresses admises pour le joindre (#2151)",
+    ),
 }
 
 #: Un nom de journal (`logging.getLogger("hostachy.llm")`) est un espace de noms

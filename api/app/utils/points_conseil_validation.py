@@ -53,7 +53,6 @@ Ce commentaire ne suspend pas les 7 jours : c'est un accord, pas une objection.
 from __future__ import annotations
 
 import asyncio
-import html
 import logging
 import secrets
 from dataclasses import dataclass
@@ -61,6 +60,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import HTTPException
+from markupsafe import Markup
 from sqlmodel import Session, col, select
 
 from app.auth.adresse_compte import normaliser_adresse
@@ -182,28 +182,33 @@ def marque_revision(cr: CompteRenduAffaire, revision: int) -> Optional[str]:
 
 
 def _contexte_courriel(session: Session, point: PointConseil, user: Utilisateur) -> dict:
-    """Ce que le courriel montre du CR — du TEXTE échappé : le modèle ne l'est pas."""
+    """Ce que le courriel montre du CR — du TEXTE, que le corps du modèle échappe.
+
+    Il était échappé ICI, à la main, parce que le modèle ne l'était pas : le
+    corps des courriels s'échappe depuis #2150, et un second échappement
+    écrirait « &amp;amp; ». Seul le retour à la ligne est du balisage : il entre
+    marqué sûr, entre des morceaux de texte que `Markup.join` échappe.
+    """
     cr = compte_rendu(session, point, user)
     revision = revision_du_document(point, [c for _, c in cr.abordees])
-    e = html.escape
     return {
         "point": {
             "date": datetime_longue(point.debut),
-            "lieu": e(ou_du_point(point)),
-            "presents": e(", ".join(nom_present(p) for p in cr.presents)),
+            "lieu": ou_du_point(point),
+            "presents": ", ".join(nom_present(p) for p in cr.presents),
         },
         "affaires": [
             {
-                "numero": e(a.numero),
-                "titre": e(a.titre),
-                #  « — Modifié en révision N », déjà échappé, ou rien (#2082).
-                "marque": e(f" — {m}") if (m := marque_revision(c, revision)) else "",
-                "texte": e(texte_brut(c.contenu)).replace("\n", "<br>"),
+                "numero": a.numero,
+                "titre": a.titre,
+                #  « — Modifié en révision N », ou rien (#2082).
+                "marque": f" — {m}" if (m := marque_revision(c, revision)) else "",
+                "texte": Markup("<br>").join(texte_brut(c.contenu).split("\n")),
             }
             #  « CS et présents » part aux présents : ils le lisent (#2082).
             for a, c in cr.abordees
         ],
-        "non_traitees": e(", ".join(f"{a.numero} {a.titre}" for a in cr.non_traitees)),
+        "non_traitees": ", ".join(f"{a.numero} {a.titre}" for a in cr.non_traitees),
         "echeance": date_longue(
             horloge.jour_civil(horloge.maintenant() + timedelta(days=DELAI_VALIDATION_JOURS))
         ),

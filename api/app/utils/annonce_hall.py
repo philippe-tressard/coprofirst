@@ -19,6 +19,7 @@ from html import escape, unescape
 # fiche arrivant et les e-mails) ; réimportée ici car le routeur `annonces_hall`
 # l'importe historiquement depuis ce module.
 from app.utils.dates_fr import date_longue
+from app.utils.html_sur import assainir_html
 from app.utils.slug import en_slug
 from app.utils.pdf_theme import (
     FONT_SANS,
@@ -176,15 +177,6 @@ _GABARITS: dict[str, dict[str, str]] = {
 # Formats trop petits pour porter le QR code du pied de page.
 _SANS_QR = ("a7",)
 
-# Balises et attributs retirés avant rendu — défense en profondeur côté serveur,
-# en complément du `safeHtml()` appliqué à l'affichage côté front.
-_BALISES_INTERDITES = re.compile(
-    r"<\s*(script|style|iframe|object|embed|link|meta)\b.*?(?:</\s*\1\s*>|>)",
-    re.IGNORECASE | re.DOTALL,
-)
-_ATTRS_INTERDITS = re.compile(r"\s(on\w+|srcdoc)\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", re.IGNORECASE)
-
-
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 #: Longueur de l'aperçu du message — dans l'historique comme dans le courriel.
@@ -203,11 +195,6 @@ def texte_brut(html: str) -> str:
     """
     txt = unescape(re.sub(r"<[^>]*>", " ", html or ""))
     return re.sub(r"\s+", " ", txt).strip()
-
-
-def nettoyer_html(html: str) -> str:
-    """Retire les balises et attributs exécutables du message saisi."""
-    return _ATTRS_INTERDITS.sub("", _BALISES_INTERDITES.sub("", html or ""))
 
 
 def choisir_format(
@@ -466,7 +453,7 @@ def construire_html(
     </div>
     <h1 class="titre">{escape(titre)}</h1>
     <div class="filet"></div>
-    <div class="message">{nettoyer_html(message_html)}</div>
+    <div class="message">{assainir_html(message_html)}</div>
     {galerie}
   </div>
 

@@ -82,8 +82,13 @@ def test_le_mot_de_passe_oublie_retrouve_le_compte_ancien(session):
 
 
 def test_la_connexion_et_la_recherche_d_un_locataire_aussi(session):
-    """Les deux autres lecteurs, pour que la règle soit la même partout."""
-    user = _compte_ancien(session, email_verifie=True)
+    """Les deux autres lecteurs, pour que la règle soit la même partout.
+
+    Un compte LOCATAIRE : la recherche du bailleur ne cherche qu'eux (#2153).
+    """
+    from app.models.core import StatutUtilisateur
+
+    user = _compte_ancien(session, email_verifie=True, statut=StatutUtilisateur.locataire)
     lu = auth.login(
         requete_de_test("/auth/login"),
         body=LoginRequest(email=SAISIE, password="Mdp-Test-1"),
@@ -91,5 +96,7 @@ def test_la_connexion_et_la_recherche_d_un_locataire_aussi(session):
         session=session,
     )
     assert lu.id == user.id
-    trouves = baux.search_locataire(q=SAISIE, user=user, session=session)
+    trouves = baux.search_locataire(
+        requete_de_test("/bailleur/search-locataire", "GET"), q=SAISIE, user=user, session=session
+    )
     assert [t.id for t in trouves] == [user.id]

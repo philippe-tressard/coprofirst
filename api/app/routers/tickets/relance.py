@@ -29,6 +29,7 @@ from app.utils.destinataires import formule_appel, interlocuteurs_syndic
 from app.utils.perimetres import perimetre_label_json
 from app.utils.preferences_mail import Designe
 from app.utils.relance_syndic import ids_relancables
+from app.utils.html_sur import html_riche
 
 from .commun import (
     STATUT_LABELS,
@@ -77,7 +78,7 @@ def _contexte_ticket(session: Session, ticket: Ticket) -> dict:
         #  `vide=""` : un ticket sans périmètre n'affiche aucune ligne, là où le
         #  fil d'activité afficherait « Copropriété entière ». Cf. utils/perimetres.
         "perimetre": perimetre_label_json(ticket.perimetre_cible),
-        "description": ticket.description,
+        "description": html_riche(ticket.description),
         #  Le résumé de l'assistant, montré dans l'aperçu avant l'envoi (#2035).
         "resume": (ticket.resume_ia or "").strip(),
         # La relance qui vient d'être enregistrée ne se compte pas elle-même.

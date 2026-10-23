@@ -53,12 +53,11 @@ def _masquer(adresse: str | None) -> str:
     ⚠️ L'historique en base garde l'adresse entière : il répond à « qui n'a pas
     reçu quoi ? », derrière une session admin.
     """
-    if not adresse:
-        return "(vide)"
-    tete, _, domaine = adresse.partition("@")
-    if not domaine:
-        return "***"
-    return f"{tete[:1]}***@{domaine}"
+    #  La forme est celle de `auth/adresse_compte.adresse_masquee`, sa seule
+    #  écriture (#2153) ; le journal dit seulement « (vide) » plutôt que rien.
+    from app.auth.adresse_compte import adresse_masquee
+
+    return adresse_masquee(adresse) or "(vide)"
 
 
 # Mapping code email → clé préférence utilisateur (catégorie_mail)

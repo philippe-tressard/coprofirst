@@ -20,6 +20,7 @@ from app.schemas import UserRead
 from app.utils.comptes import (
     REFUS,
     comptes_en_attente as lister_comptes_en_attente,
+    est_en_attente,
     marquer_decide,
 )
 from typing import Any
@@ -92,6 +93,12 @@ def traiter_compte(
     admin: Utilisateur = Depends(require_cs_or_admin),
 ):
     user = ou_404(session, Utilisateur, user_id, "Utilisateur")
+    #  🔴 On ne traite que ce que la file propose (#2152) : un compte déjà décidé
+    #  — validé, refusé, ou désactivé par l'administration — ne se rouvre pas ici,
+    #  où le conseil syndical passe. Réactiver est `PATCH /admin/utilisateurs/{id}`,
+    #  réservé à l'administrateur.
+    if not est_en_attente(user):
+        raise HTTPException(409, "Ce compte n'attend plus de décision.")
     if body.action == "valider":
         user.actif = True
         notif_titre = "Votre compte a été activé"

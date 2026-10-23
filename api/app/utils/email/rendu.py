@@ -18,13 +18,26 @@ from app.utils import horloge
 from app.utils.arrivees_notification import etiqueter_courriel
 from app.utils.config_site import config_site
 from app.utils.fichiers import nom_lisible
+from app.utils.html_sur import filtre_safe
 from app.utils.liens import adresse_du_site, nom_site
 
 from .gabarit import _wrap_email
 
 
-def _render(template_str: str, context: dict) -> str:
-    env = SandboxedEnvironment(loader=BaseLoader())
+def _render(template_str: str, context: dict, *, html: bool) -> str:
+    """Rend un champ de modèle. `html=True` pour le corps, `False` pour l'objet.
+
+    🔴 Le CORPS s'échappe (#2150). Il ne l'était pas : un titre, un nom ou une
+    description entrait tel quel dans le HTML, et `| safe` ne faisait que
+    confirmer un état de fait. Désormais tout est échappé, et un champ riche
+    arrive soit marqué sûr par le code (`html_sur.html_riche`), soit par
+    `| safe` — redéfini pour ASSAINIR (`html_sur.filtre_safe`).
+
+    L'OBJET reste du texte : l'échapper y écrirait « &amp; ».
+    """
+    env = SandboxedEnvironment(loader=BaseLoader(), autoescape=html)
+    if html:
+        env.filters["safe"] = filtre_safe
     tmpl = env.from_string(template_str)
     return tmpl.render(**context)
 
@@ -145,7 +158,7 @@ def composer_email(
 
     Ne touche ni au réseau ni à la base : elle reçoit tout ce dont elle a besoin.
     """
-    corps = _render(template.corps_html, ctx)
+    corps = _render(template.corps_html, ctx, html=True)
     html = _wrap_email(
         corps,
         site_nom=site_nom,
@@ -158,4 +171,4 @@ def composer_email(
     #  L'étiquette d'arrivée (#1634), ici et pas dans les modèles : elle vaut pour
     #  tous, et l'aperçu la montre. Jamais sur un lien à jeton ni un courriel de compte.
     html = etiqueter_courriel(html, site_url, template.code)
-    return _sujet_sur_une_ligne(_render(template.sujet, ctx)), html
+    return _sujet_sur_une_ligne(_render(template.sujet, ctx, html=False)), html

@@ -28,6 +28,7 @@ from app.utils.copie_auteur import destinataires_et_copie
 from app.utils.perimetres import perimetre_label_json
 from app.utils.dates_fr import date_courte, datetime_longue_paris as fmt_paris
 from app.utils.fichiers import chemins_locaux
+from app.utils.html_sur import html_riche
 
 from .commun import (
     config_site,
@@ -50,7 +51,9 @@ def _contexte_ticket(ticket) -> dict:
         "id": ticket.id,
         "numero": ticket.numero,
         "titre": ticket.titre,
-        "description": ticket.description or "",
+        #  Le HTML riche ASSAINI : le corps des courriels s'échappe, un champ riche
+        #  y entre marqué sûr par la seule porte (`utils/html_sur`, #2150).
+        "description": html_riche(ticket.description),
         #  🔴 LE LIBELLÉ, pas l'énumération. Le courriel du syndic affichait
         #  « CategorieTicket.panne » : `CategorieTicket` est une `(str, Enum)`, et
         #  depuis Python 3.11 son `__str__` rend le nom qualifié. Le destinataire
@@ -348,7 +351,7 @@ def _alerter_bug(
                 "id": ticket.id,
                 "numero": ticket.numero,
                 "titre": ticket.titre,
-                "description": ticket.description,
+                "description": html_riche(ticket.description),
                 "categorie": ticket.categorie,
             },
             "auteur": contexte_personne(user, email=user.email),

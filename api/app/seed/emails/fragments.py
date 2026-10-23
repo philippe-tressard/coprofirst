@@ -174,10 +174,12 @@ def ligne_auteur(
 def contenu_riche(variable: str) -> str:
     """Le corps d'un message, rendu tel quel.
 
-    ⚠️ `| safe` est délibéré et sans danger **ici** : le texte est assaini à
-    l'écriture, côté front, par `$lib/sanitize` (DOMPurify). Assainir une
-    seconde fois à l'envoi doublerait la règle — et c'est la copie qui se
-    périme.
+    🔴 Ce commentaire disait : *« `| safe` est sans danger ici, le texte est
+    assaini à l'écriture côté front »*. C'était faux (#2150) : l'API
+    n'assainissait rien, et n'importe quel compte peut l'appeler sans l'écran.
+    Dans un courriel, `| safe` ASSAINIT désormais (`utils/html_sur.filtre_safe`,
+    branché par `utils/email/rendu`) — y compris dans un modèle réécrit depuis
+    Admin → Emails.
     """
     return f'<div style="font-size:14px;color:{TEXTE}">{{{{ {variable} | safe }}}}</div>'
 

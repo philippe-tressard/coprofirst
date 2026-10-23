@@ -175,7 +175,7 @@ def bridge_factice(monkeypatch):
 
 CONFIG_WA = {
     "whatsapp_enabled": "1",
-    "whatsapp_api_url": "http://bridge",
+    "whatsapp_api_url": "http://whatsapp-bridge:8090",
     "whatsapp_group_jid": "123@g.us",
 }
 

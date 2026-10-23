@@ -31,6 +31,7 @@ from app.utils.annexes import (
 )
 from app.utils.fichiers import enregistrer_televersement
 from app.utils.stockage import stockage
+from app.utils.html_sur import html_riche
 
 # Toute règle de visibilité — documents compris — vient du module central.
 from app.utils.visibility import document_visible, peut_ecrire_dans, profil_admet
@@ -134,7 +135,7 @@ def _notifier_document_publie(
                 #  l'affiche sous le titre quand elle existe (migration 0185).
                 "document": {
                     "titre": doc.titre,
-                    "description": doc.description,
+                    "description": html_riche(doc.description),
                     "lien": lien_doc,
                 },
                 "residence": {"nom": site_nom},
