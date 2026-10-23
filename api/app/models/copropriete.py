@@ -79,8 +79,8 @@ class Copropriete(SQLModel, table=True):
 
     #  🔴 `assurance_compagnie`, `assurance_numero_police` et `assurance_echeance` ont QUITTÉ le
     #  modèle (#2059, premier temps) : gardées depuis #490 pour un retour arrière, rien ne les lisait.
-    #  Les colonnes (nullables) restent en base le temps d'une version — `CONTRACTIONS` annonce
-    #  leur retrait ; la fiche lit l'assurance sur le CONTRAT (`assurance_du_contrat`).
+    #  Les colonnes ont quitté la base avec la 0308 (#2124) ; la fiche lit l'assurance sur le
+    #  CONTRAT (`assurance_du_contrat`).
     photo_url: Optional[str] = None
     nb_parkings_communs: int = 0
 

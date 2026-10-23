@@ -35,9 +35,8 @@ class ConfigSauvegarde(SQLModel, table=True):
 
     🔴 `frequence`, `jour_semaine` et `jour_mois` ont QUITTÉ le modèle (#2059, premier
     temps) : la sauvegarde est quotidienne depuis la 0139 et rien ne les lisait. Les
-    colonnes restent en base le temps d'une version (migration compatible, #1757 :
-    `CONTRACTIONS` annonce leur retrait) ; la 0307 leur donne un défaut pour que le
-    code, qui ne les écrit plus, puisse insérer la ligne.
+    colonnes, et leur type `frequencesauvegarde`, ont quitté la base avec la 0308
+    (second temps, #2124).
     """
 
     __tablename__ = "config_sauvegarde"
