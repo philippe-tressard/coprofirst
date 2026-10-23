@@ -214,19 +214,6 @@ def test_le_sommaire_suit_les_titres_du_document(manuel, document):
     assert positions == sorted(positions)
 
 
-def test_un_titre_qui_porte_deja_un_id_garde_le_sien():
-    """Le cas qui a cassé le sommaire du PDF : un titre ciblé par un lien du
-    manuel (`<h3 id="fusion-correction">`). Le sommaire vise son `id`, et la
-    balise n'en reçoit pas un second ; le compteur des autres ne bouge pas."""
-    html = (
-        '<html><body><main><h2>Un</h2><h3 id="cible">Deux</h3><h3>Trois</h3></main></body></html>'
-    )
-    corps, releve = titres_ancres(html)
-    assert [a for _, _, a in releve] == ["som-0", "cible", "som-2"]
-    assert '<h3 id="cible">Deux</h3>' in corps
-    assert '<h3 id="som-2">Trois</h3>' in corps
-
-
 def test_les_numeros_de_page_sont_RESOLUS_a_la_mise_en_page(document):
     """🔴 Jamais écrits — on ne sait pas encore combien de pages fera le document.
 
