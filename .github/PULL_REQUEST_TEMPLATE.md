@@ -22,7 +22,7 @@ Le manuel et le `README` sont de **même rang**. Un lot qui ne touche qu'un seul
 des deux le dit, et pourquoi.
 
 - [ ] `docs/manuel-utilisateur.html` — comment on s'en sert (écran, libellé,
-      geste, parcours), puis version et date du document
+      geste, parcours) ; il ne porte ni version ni date à bumper
 - [ ] `front/static/manuel-utilisateur.html` resynchronisé
 - [ ] `README.md` — ce que le produit est (module, écran de premier niveau,
       capacité ajoutée, retirée ou renommée)

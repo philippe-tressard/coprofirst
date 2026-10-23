@@ -19,7 +19,6 @@ from app.utils.plateforme import LICENCE_NOM, LICENCE_SPDX, NOM_PLATEFORME
 def garde(
     site_nom: str,
     site_url: str,
-    version: str,
     edite_le: date,
     logo_png: bytes | None,
     sous_titre: str,
@@ -41,14 +40,12 @@ def garde(
      Trouver vite ce dont vous avez besoin.</p>
   <div class="garde-filet"></div>
   {bloc_qr}
-  <p class="garde-pied">Édition du {date_longue(edite_le)}{
-        f" · {escape(version)}" if version else ""
-    }</p>
+  <p class="garde-pied">Édition du {date_longue(edite_le)}</p>
 </section>
 """
 
 
-def mentions(site_nom: str, site_url: str, version: str, edite_le: date) -> str:
+def mentions(site_nom: str, site_url: str, edite_le: date) -> str:
     """Les mentions du feuillet — ce qu'un document imprimé doit porter.
 
     ⚠️ La LICENCE y figure (04/09/2026, à la demande). Le corps du manuel la
@@ -61,7 +58,7 @@ def mentions(site_nom: str, site_url: str, version: str, edite_le: date) -> str:
   <h2>À propos de ce document</h2>
   <dl>
     <dt>Document</dt>
-    <dd>Manuel utilisateur de {escape(site_nom)}{f" — {escape(version)}" if version else ""}.</dd>
+    <dd>Manuel utilisateur de {escape(site_nom)}.</dd>
     <dt>Édité le</dt><dd>{date_longue(edite_le)}</dd>
     <dt>Éditeur</dt>
     <dd>Le conseil syndical de la copropriété. Mentions légales complètes et
