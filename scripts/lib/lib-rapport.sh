@@ -53,7 +53,7 @@ rapport_echapper() { # $1=texte brut → texte sûr pour un "…" JSON
 # chiffre serait ingérable — cf. le commentaire de HistoriqueMaintenance).
 rapport_payload() { # tache noeud portee statut duree details erreur debut fin [tokens] [taille_db]
     local tache="${1:-}" noeud="${2:-}" portee="${3:-applicative}" statut="${4:-succes}"
-    local duree="${5:-0}" details="${6:-null}" erreur="${7:-}" debut="${8:-}" fin="${9:-}"
+    local duree="${5:-null}" details="${6:-null}" erreur="${7:-}" debut="${8:-}" fin="${9:-}"
     local tokens="${10:-0}" taille="${11:-null}"
     #  🔴 Une date VIDE s'écrit `null`, jamais `""` (#1367, 27/09/2026). Le
     #  battement de début (`maintenance.sh`, #488) n'a pas de fin : `""` était
@@ -158,9 +158,12 @@ except Exception as e:
 #  PURE. La charge du battement. Avec `details` (fragment JSON déjà formé), elle
 #  porte aussi `erreur`, VIDE compris : l'API remplace alors les deux, et un
 #  `erreur` absent laisserait affiché un échec résolu (#1805).
-battement_payload() { # $1=tâche $2=nœud [$3=details $4=erreur]
+#  Avec une durée (`$5`, en secondes), elle porte celle du passage (#2199) : la
+#  ligne prolongée montrait sinon celle du premier relevé.
+battement_payload() { # $1=tâche $2=nœud [$3=details $4=erreur $5=durée]
     local base
     base=$(printf '"tache":"%s","noeud":"%s"' "$(rapport_echapper "${1:-}")" "$(rapport_echapper "${2:-}")")
+    [ -n "${5:-}" ] && base=$(printf '%s,"duree_secondes":%s' "$base" "$(rapport_entier_ou_null "$5")")
     if [ -n "${3:-}" ]; then
         printf '{%s,"details":%s,"erreur":"%s"}' "$base" "$3" "$(rapport_echapper "${4:-}")"
     else
@@ -172,9 +175,9 @@ battement_payload() { # $1=tâche $2=nœud [$3=details $4=erreur]
 #  créer de ligne (#1396), et rafraîchit ses constats s'ils sont fournis — leurs
 #  chiffres ont pu bouger (#1805). Le code HTTP reste lisible dans RAPPORT_HTTP —
 #  un 404 dit qu'il n'y a rien à prolonger, et l'appelant renverra un rapport complet.
-rapport_battement() { # $1=url_base $2=clé $3=tâche $4=nœud [$5=details $6=erreur]
+rapport_battement() { # $1=url_base $2=clé $3=tâche $4=nœud [$5=details $6=erreur $7=durée]
     #  La charge par l'entrée standard, comme `rapport_envoyer` (#1964).
-    RAPPORT_HTTP=$(battement_payload "${3:-}" "${4:-}" "${5:-}" "${6:-}" \
+    RAPPORT_HTTP=$(battement_payload "${3:-}" "${4:-}" "${5:-}" "${6:-}" "${7:-}" \
         | curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
         -X POST "${1:-}/api/admin/maintenance/battement" \
         -H "Content-Type: application/json" \
@@ -265,18 +268,20 @@ ligne2')"
         "$(rapport_payload bascule rpi1 applicative succes 42 '{"vers":"rpi2"}' '' D F)"
 
     check "details omis → null" \
-        '{"tache":"t","noeud":"","portee":"applicative","statut":"succes","tokens_supprimes":0,"taille_db_octets":null,"duree_secondes":0,"details":null,"erreur":"","cree_le":null,"terminee_le":null}' \
+        '{"tache":"t","noeud":"","portee":"applicative","statut":"succes","tokens_supprimes":0,"taille_db_octets":null,"duree_secondes":null,"details":null,"erreur":"","cree_le":null,"terminee_le":null}' \
         "$(rapport_payload t)"
 
     #  #1805 — le battement des contrôles porte leurs constats et leur erreur.
     check "battement sans constats : la tâche et le nœud seuls"         '{"tache":"reliability","noeud":"rpi1"}' "$(battement_payload reliability rpi1)"
     check "battement avec constats : details tel quel, erreur échappée"         '{"tache":"reliability","noeud":"rpi1","details":{"warn":1},"erreur":"KO \"503\""}'         "$(battement_payload reliability rpi1 '{"warn":1}' 'KO "503"')"
     check "battement avec constats sans échec : erreur vide, pas absente"         '{"tache":"reliability","noeud":"rpi1","details":{"warn":1},"erreur":""}'         "$(battement_payload reliability rpi1 '{"warn":1}' '')"
+    check "battement avec durée : celle du passage, en entier"         '{"tache":"reliability","noeud":"rpi1","duree_secondes":23,"details":{"warn":1},"erreur":""}'         "$(battement_payload reliability rpi1 '{"warn":1}' '' 23)"
+    check "battement : une durée illisible part en null, jamais en zéro"         '{"tache":"reliability","noeud":"rpi1","duree_secondes":null,"details":{"warn":1},"erreur":""}'         "$(battement_payload reliability rpi1 '{"warn":1}' '' x)"
 
     #  Le battement de début (#1367) : une fin vide part en null.
     check "battement : fin vide → null" \
-        '{"tache":"maintenance","noeud":"rpi1","portee":"hygiene_locale","statut":"en_cours","tokens_supprimes":0,"taille_db_octets":null,"duree_secondes":0,"details":null,"erreur":"","cree_le":"D","terminee_le":null}' \
-        "$(rapport_payload maintenance rpi1 hygiene_locale en_cours 0 null '' D '')"
+        '{"tache":"maintenance","noeud":"rpi1","portee":"hygiene_locale","statut":"en_cours","tokens_supprimes":0,"taille_db_octets":null,"duree_secondes":null,"details":null,"erreur":"","cree_le":"D","terminee_le":null}' \
+        "$(rapport_payload maintenance rpi1 hygiene_locale en_cours null null '' D '')"
 
     # Le JSON produit doit être *analysable*, pas seulement ressemblant : c'est
     # la seule vérification qui aurait attrapé le défaut d'échappement d'origine.

@@ -114,3 +114,28 @@ def test_un_battement_SANS_constats_garde_ceux_de_la_ligne(session):
     session.refresh(ligne)
     assert json.loads(ligne.details) == AVANT
     assert ligne.erreur == "Site public KO (HTTP 502)"
+
+
+#  #2199 (23/10/2026) — « 0 s » sur chaque ligne : la durée s'écrivait en dur, et
+#  le battement ne la portait pas. Il porte celle du passage qui prolonge la ligne.
+def test_le_battement_porte_la_DUREE_du_passage(session):
+    ligne = _ligne("rpi1", DEPUIS)
+    ligne.duree_secondes = 31
+    session.add(ligne)
+    session.commit()
+    maintenance_battement(
+        BattementTache(tache="reliability", noeud="rpi1", duree_secondes=24), None, session
+    )
+    session.refresh(ligne)
+    assert ligne.duree_secondes == 24, "l'écran garderait la durée du premier relevé"
+
+
+def test_un_battement_SANS_duree_garde_celle_de_la_ligne(session):
+    """Un nœud dont le script n'est pas encore redéployé n'écrit pas de zéro."""
+    ligne = _ligne("rpi1", DEPUIS)
+    ligne.duree_secondes = 31
+    session.add(ligne)
+    session.commit()
+    maintenance_battement(BattementTache(tache="reliability", noeud="rpi1"), None, session)
+    session.refresh(ligne)
+    assert ligne.duree_secondes == 31

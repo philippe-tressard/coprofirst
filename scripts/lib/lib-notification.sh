@@ -201,6 +201,9 @@ rapporter_verdicts() { # repo self — après repartir_constats
     local statut=succes actif=$REP_ACTIF cible="http://localhost" ip cle details erreur maintenant
     local porte=$REP_PORTE retenus=$REP_RETENUS propres=$REP_PROPRES communs=$REP_COMMUNS
     local nf=$REP_NF nw=$REP_NW
+    #  La durée du PASSAGE (#2199) : `$SECONDS` compte depuis le lancement de
+    #  check-reliability, qui appelle ce rapport en dernier. Elle s'écrivait `0`.
+    local duree=$SECONDS
     command -v rapport_payload >/dev/null 2>&1 \
         || source "$repo/scripts/lib/lib-rapport.sh" 2>/dev/null || return 0
 
@@ -231,7 +234,7 @@ rapporter_verdicts() { # repo self — après repartir_constats
         #  (#1805) : la signature ignore les chiffres, et l'écran gardait ceux du
         #  premier relevé jusqu'à 23 h. Un 404 = plus de ligne à prolonger : on
         #  oublie, et le passage suivant renvoie un rapport complet.
-        rapport_battement "$cible" "$cle" reliability "$self" "$details" "$erreur"
+        rapport_battement "$cible" "$cle" reliability "$self" "$details" "$erreur" "$duree"
         [ "$RAPPORT_HTTP" = 404 ] && rm -f "$etat"
         return 0
     fi
@@ -241,7 +244,7 @@ rapporter_verdicts() { # repo self — après repartir_constats
     maintenant=$(date -u +%Y-%m-%dT%H:%M:%S)
     RAPPORT_HTTP=""
     rapport_envoyer "$cible" "$cle" \
-        "$(rapport_payload reliability "$self" applicative "$statut" 0 "$details" "$erreur" \
+        "$(rapport_payload reliability "$self" applicative "$statut" "$duree" "$details" "$erreur" \
             "$maintenant" "$maintenant")" \
         "Rapport des contrôles"
     #  Mémorisé seulement s'il a ABOUTI : un envoi perdu se retente au passage

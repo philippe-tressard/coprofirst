@@ -136,7 +136,7 @@ def test_le_BATTEMENT_de_debut_est_accepte():
 
     `battement_debut` (`maintenance.sh`, #488) envoie un rapport SANS fin — la
     maintenance commence. Les arguments ci-dessous sont ceux de son appel
-    exact : `rapport_payload maintenance "$SELF" "$portee" en_cours 0 null ""
+    exact : `rapport_payload maintenance "$SELF" "$portee" en_cours null null ""
     "$MAINTE_DEBUT" ""`. La fin vide partait en `"terminee_le":""`, que
     Pydantic refuse (« input is too short ») : **422 à chaque fois**, sur les
     deux nœuds, et la seconde sonde de #488 n'a jamais rien enregistré.
@@ -151,7 +151,7 @@ def test_le_BATTEMENT_de_debut_est_accepte():
         "rpi1",
         "hygiene_locale",
         "en_cours",
-        "0",
+        "null",
         "null",
         "",
         "2026-09-27T03:00:01",
@@ -160,6 +160,8 @@ def test_le_BATTEMENT_de_debut_est_accepte():
     assert charge["terminee_le"] is None, "une fin vide doit partir en null, pas en chaîne vide"
     lu = RapportMaintenance(**charge)
     assert lu.terminee_le is None and lu.statut == "en_cours"
+    #  #2199 : une maintenance qui COMMENCE n'a pas de durée — `null`, jamais `0`.
+    assert lu.duree_secondes is None
 
 
 def test_une_DATE_VIDE_part_en_null():
