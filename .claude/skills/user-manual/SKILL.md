@@ -56,7 +56,7 @@ une phrase décrit encore l'application.
 docs/manuel-utilisateur.html
 ├── <head> : CSS variables, styles, responsive
 ├── <nav class="sidebar"> : Navigation latérale sticky
-├── <header class="topbar"> : Titre + badge version
+├── <header class="topbar"> : Titre + lien PDF (aucun badge de version, 23/10/2026)
 ├── <main class="main">
 │   ├── <section class="hero"> : Introduction
 │   └── <section class="chapter" id="..." data-section="..."> : Chapitres

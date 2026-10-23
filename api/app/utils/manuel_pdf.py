@@ -27,7 +27,7 @@ d'un manuel qu'on n'a pas pu lire.
 |---|---|
 | **page de garde** | logo, titre, le QR code du site, la date d'édition |
 | **sommaire** | construit depuis les `<h2>` réellement présents — jamais une liste tenue à la main |
-| **mentions** | éditeur, version du manuel, avertissement de péremption |
+| **mentions** | éditeur, date d'édition, licence |
 
 Le sommaire mérite un mot : le construire **depuis le document** est ce qui
 l'empêche de mentir. Une table des matières recopiée est une table de plus, et ce
@@ -68,7 +68,6 @@ URL_MANUEL_INTERNE = "http://front:3000/manuel-utilisateur.html"
 _MAIN = re.compile(r"<main[^>]*>(.*?)</main>", re.S | re.I)
 _TITRES = re.compile(r"<h([23])([^>]*)>(.*?)</h\1>", re.S | re.I)
 _BALISES = re.compile(r"<[^>]+>")
-_VERSION = re.compile(r"Manuel utilisateur (v[\d.]+)")
 
 
 class ManuelIndisponible(RuntimeError):
@@ -214,12 +213,6 @@ def sommaire(html: str) -> list[str]:
     return [titre for _, titre, _ in titres_ancres(html)[1]]
 
 
-def version_du_manuel(html: str) -> str:
-    """La version imprimée dans le pied du manuel, ou une chaîne vide."""
-    trouve = _VERSION.search(_BALISES.sub(" ", html))
-    return trouve.group(1) if trouve else ""
-
-
 def _sommaire(releve: list[tuple[int, str, str]]) -> str:
     """Le sommaire, à DEUX niveaux et avec les numéros de page.
 
@@ -273,7 +266,6 @@ def composer_html(
     """
     html = html_manuel if html_manuel is not None else lire_manuel()
     edite_le = edite_le or horloge.aujourd_hui()
-    version = version_du_manuel(html)
     #  Le corps et le relevé viennent de la MÊME passe : voir `titres_ancres`.
     corps, releve = titres_ancres(html)
 
@@ -282,10 +274,10 @@ def composer_html(
 <title>Manuel utilisateur — {escape(site_nom)}</title>
 <style>{css_du_pdf(styles_du_manuel(html))}</style>
 </head><body>
-{garde(site_nom, site_url, version, edite_le, logo_png, sous_titre)}
+{garde(site_nom, site_url, edite_le, logo_png, sous_titre)}
 {_sommaire(releve)}
 {corps}
-{mentions(site_nom, site_url, version, edite_le)}
+{mentions(site_nom, site_url, edite_le)}
 </body></html>"""
 
 
@@ -298,10 +290,10 @@ def composer_html(
 #: Or le résultat ne dépend que de trois choses : le manuel servi, le nom et
 #: l'URL du site, et la date d'édition. Aucune ne change entre deux clics.
 #:
-#: ⚠️ La clé est l'EMPREINTE DU MANUEL, pas sa version : une retouche livrée sans
-#: bump de version doit produire un PDF neuf. Se fier au numéro de version aurait
-#: servi un document périmé sans que rien ne le signale — le défaut qu'on
-#: passe son temps à corriger ailleurs.
+#: ⚠️ La clé est l'EMPREINTE DU MANUEL : toute retouche livrée doit produire un
+#: PDF neuf. Le manuel ne porte plus de numéro de version (retiré le 23/10/2026,
+#: les lots ne le tenaient plus) — et s'y fier aurait de toute façon servi un
+#: document périmé sans que rien ne le signale.
 #:
 #: ⚠️ Le cache en mémoire disparaît à chaque redémarrage, donc à chaque
 #: déploiement. Il est doublé, depuis le 25/09/2026, d'une copie SUR DISQUE :
