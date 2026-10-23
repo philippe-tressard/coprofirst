@@ -27,6 +27,7 @@
  * contrôle d'accordéon et qui en sort avec ce module.
  */
 import { derived, get, writable, type Writable } from 'svelte/store';
+import { goto } from '$app/navigation';
 
 import { tickets as ticketsApi, type Ticket, type TicketEvolution } from '$lib/api';
 import { basculer } from '$lib/accordeon';
@@ -35,7 +36,7 @@ import { ARCHIVAGE, SUPPRESSION, confirmerPuis } from '$lib/confirmation';
 import { messageErreur } from '$lib/erreurs';
 import { chargeCorrection, type ChargeUtileEvolution } from '$lib/evolutions';
 import { optionsRapides } from '$lib/options-rapides';
-import { estActualite, type GestesTicket } from '$lib/tickets';
+import { estActualite, lienReponse, type GestesTicket } from '$lib/tickets';
 
 /** Ce que les cartes lisent — les props d'état de `ListeTickets`. */
 export interface EtatAffairesEnListe {
@@ -66,6 +67,10 @@ interface EtatInterne {
 export interface ReglagesAffairesEnListe {
 	/** Après une suppression définitive — le lien direct quitte une page devenue vide. */
 	apresSuppression?: (t: Ticket) => void;
+	/** 💬 Répondre : le lien direct ouvre son formulaire sur place. Sans lui, la
+	 *  liste mène à la page de l'affaire, formulaire ouvert — c'est là que vit le
+	 *  fil des messages, et l'envoi (`tickets/[id]`) : il ne s'écrit pas deux fois. */
+	repondre?: (t: Ticket) => void;
 }
 
 /** Une actualité n'affiche pas de numéro : on la nomme par son titre. */
@@ -268,6 +273,7 @@ export function affairesEnListe(liste: Writable<Ticket[]>, reglages: ReglagesAff
 		annuler: fermerFormulaires,
 		filChange: (t) =>
 			ticketsApi.get(t.id).then(modifie, (err) => toast('error', messageErreur(err))),
+		repondre: reglages.repondre ?? ((t) => goto(lienReponse(t))),
 	};
 
 	return { etat, gestes, deplier, chargerFil };

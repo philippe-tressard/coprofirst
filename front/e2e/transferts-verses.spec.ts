@@ -167,7 +167,9 @@ test('la carte dépliée de la liste offre le même geste, et relit l’affaire'
 
 	await page.goto('/tickets');
 	const carte = page.locator('.carte-liste', { hasText: 'Portillon bloqué' });
-	await carte.click();
+	//  Par le titre : au téléphone, le centre de la carte peut tomber sur la
+	//  rangée d'icônes, passée sous un titre qui ne tient pas à côté (23/10/2026).
+	await carte.getByRole('button', { name: /Portillon bloqué/ }).click();
 	const bloc = carte.locator('section.transferts');
 	await expect(bloc.getByText('Transferts de courriel')).toBeVisible();
 	//  Pas de carte dans la carte (#425) : le bloc n'y porte pas `.card`.

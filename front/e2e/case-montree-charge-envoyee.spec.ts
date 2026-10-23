@@ -129,7 +129,12 @@ async function ouvrirLaReponse(page: Page): Promise<{ formulaire: Locator; envoi
 	);
 	await page.goto('/tickets/7');
 	await attendreHydratation(page);
-	await page.getByRole('button', { name: /Répondre/ }).click();
+	//  Le bouton sous le fil des messages : l'icône de la carte (exactement
+	//  « Répondre ») ouvre le même formulaire — `repondre-depuis-la-carte.spec.ts`.
+	await page
+		.locator('.carte-repondre')
+		.getByRole('button', { name: /Répondre/ })
+		.click();
 	const formulaire = page.getByRole('group', { name: 'Répondre' });
 	await expect(formulaire.getByRole('button', { name: 'Enregistrer' })).toBeVisible();
 	return { formulaire, envois };

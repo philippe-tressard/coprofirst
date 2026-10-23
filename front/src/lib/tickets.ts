@@ -278,6 +278,9 @@ export interface GestesTicket {
 	/** L'affaire et son fil ont changé dans la carte — un transfert de courriel
 	 *  défait, une synthèse produite (#1643) : la page les relit. */
 	filChange: (t: Ticket) => void;
+	/** 💬 Répondre (`gesteReponse`) : la page de l'affaire ouvre son formulaire
+	 *  sur place ; une liste y mène, formulaire ouvert (`?repondre=1`). */
+	repondre: (t: Ticket) => void;
 }
 
 /**
@@ -444,3 +447,26 @@ export const CATEGORIE_ACTUALITE = 'actualite';
 export function estActualite(t: { categorie?: string | null } | null | undefined): boolean {
 	return t?.categorie === CATEGORIE_ACTUALITE;
 }
+
+/**
+ * **Répondre à une affaire** — ce que le bouton dit, ou `null` s'il n'est pas offert.
+ *
+ * 🔴 Une source pour les DEUX endroits qui l'offrent (23/10/2026, demandé à
+ * l'écran : *« cette icône doit être sur l'affaire »*) : l'icône de la carte
+ * (`ActionsTicket`) et le bouton sous le fil des messages (`FilMessagesTicket`).
+ * Les mêmes règles que la route (`POST /tickets/{id}/messages`) : toute
+ * personne qui LIT l'affaire peut y répondre — la liste ne montre que celles-là —,
+ * sauf une affaire absorbée (#1704 : la discussion vit dans la principale). Une
+ * actualité n'a pas de fil de messages : elle informe.
+ */
+export function gesteReponse(
+	t: Ticket,
+): { libelle: string; glyphe: string; icone: 'message-square-text' | 'undo-2' } | null {
+	if (t.fusionnee || estActualite(t)) return null;
+	return estTicketClos(t.statut)
+		? { libelle: 'Rouvrir la discussion', glyphe: '↩️', icone: 'undo-2' }
+		: { libelle: 'Répondre', glyphe: '💬', icone: 'message-square-text' };
+}
+
+/** La page de l'affaire, formulaire de réponse ouvert — lu par `tickets/[id]`. */
+export const lienReponse = (t: Ticket) => `/tickets/${t.id}?repondre=1`;

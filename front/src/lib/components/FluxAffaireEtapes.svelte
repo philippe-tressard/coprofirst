@@ -71,6 +71,7 @@
 		modifie: inerte,
 		annuler: inerte,
 		filChange: charger,
+		repondre: inerte,
 	};
 </script>
 
