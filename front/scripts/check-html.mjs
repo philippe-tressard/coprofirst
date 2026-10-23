@@ -231,8 +231,67 @@ if (erreurs.length) {
 	process.exit(1);
 }
 
+// ── 5. L'assainisseur de SECOURS, éprouvé (#2159) ───────────────────────────
+//  Tant que DOMPurify n'est pas chargé (rendu serveur, premier rendu), c'est lui
+//  qui assainit — et un rendu fait par lui le reste. Il gardait
+//  `href="javascript:…"` : seule la CSP l'arrêtait. On l'exécute ici sur des
+//  charges réelles, tiré du SOURCE de `sanitize.ts` (aucune copie à tenir).
+const sourceSanitize = readFileSync(SOURCE_SANITIZE, 'utf8');
+
+function assainisseurDeSecours() {
+	const morceau = (motif) => {
+		const m = sourceSanitize.match(motif);
+		if (!m) throw new Error(`introuvable dans sanitize.ts : ${motif}`);
+		return m[0];
+	};
+	const code = [
+		morceau(/const ALLOWED_TAGS = \[[\s\S]*?\];/).replace(/\/\/[^\n]*/g, ''),
+		morceau(/const ALLOWED_ATTR = \[[^\]]*\];/),
+		'const _allowedTagSet = new Set(ALLOWED_TAGS);',
+		'const _allowedAttrSet = new Set(ALLOWED_ATTR);',
+		morceau(/const URL_HREF_ADMISE = [^\n]*;/),
+		morceau(/const URL_SRC_ADMISE = [^\n]*;/),
+		morceau(/function _serverSanitize[\s\S]*?\n\}/).replace(/: string/g, ''),
+		'return _serverSanitize;',
+	].join('\n');
+	return new Function(code)();
+}
+
+let secours;
+try {
+	secours = assainisseurDeSecours();
+} catch (e) {
+	console.error(`✗ INCONNU : l'assainisseur de secours ne se lit plus (${e.message}).`);
+	process.exit(1);
+}
+const CHARGES = [
+	['<a href="javascript:alert(1)">x</a>', /javascript:/i],
+	['<a href=" javascript:alert(1)">x</a>', /javascript:/i],
+	['<a href="&#106;avascript:alert(1)">x</a>', /href/],
+	['<a href="//tiers.example/x">x</a>', /href/],
+	['<img src="javascript:alert(1)">', /src/],
+	['<img src="data:text/html;base64,PHNjcmlwdD4=">', /src/],
+	['<img src=x onerror=alert(1)>', /onerror/i],
+	['<svg onload=alert(1)>', /svg|onload/i],
+];
+const TEMOINS = [
+	['<a href="https://exemple.fr/x">x</a>', 'href="https://exemple.fr/x"'],
+	['<a href="/tickets/3">x</a>', 'href="/tickets/3"'],
+	['<a href="mailto:a@exemple.fr">x</a>', 'href="mailto:a@exemple.fr"'],
+	['<img src="/uploads/fichiers/a.jpg" alt="a">', 'src="/uploads/fichiers/a.jpg"'],
+];
+const fuites = CHARGES.filter(([entree, interdit]) => interdit.test(secours(entree)));
+const perdus = TEMOINS.filter(([entree, garde]) => !secours(entree).includes(garde));
+if (fuites.length || perdus.length) {
+	console.error("✗ L'assainisseur de secours (`_serverSanitize`) est faux :\n");
+	for (const [e] of fuites) console.error(`  • laisse passer : ${e} → ${secours(e)}`);
+	for (const [e] of perdus) console.error(`  • retire un contenu légitime : ${e} → ${secours(e)}`);
+	process.exit(1);
+}
+
 console.log(
 	`✓ HTML : ${prises} occurrences de {@html} dans ${fichiers.length} composants — ` +
 		`toutes assainies par ${[...assainisseurs].join('/')}, ` +
-		`${Object.keys(EXCEPTIONS).length} exceptions déclarées et servies.`,
+		`${Object.keys(EXCEPTIONS).length} exceptions déclarées et servies ; ` +
+		`assainisseur de secours éprouvé (${CHARGES.length} charges, ${TEMOINS.length} témoins).`,
 );
