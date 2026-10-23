@@ -21,7 +21,12 @@
 #     redémarre (`noyau-standby.sh`, appelé par la bascule). Un changement de
 #     SÉRIE reste un geste humain : C30 le signale, avec la commande.
 #
-#  Ce module porte les trois, parce qu'ils répondent à la même question — « ce
+#  4. les AUTRES paquets des dépôts tiers (#2198) : Docker, containerd,
+#     cloudflared, Node.js. Le standby les pose avec le noyau
+#     (`noyau-standby.sh`, décision dans `lib-maj-paquets.sh`), sans jamais
+#     ramener un paquet retiré par l'allègement (C35).
+#
+#  Ce module porte les trois premiers, parce qu'ils répondent à la même question — « ce
 #  nœud reçoit-il ses correctifs ? » — et qu'aucun n'a d'autre maison.
 #  La couche apt (1.) a sa collecte et sa décision dans `lib-apt.sh` depuis le
 #  28/09/2026 (#1441) ; ses messages restent ici, dans la boucle par nœud.
@@ -249,9 +254,9 @@ mises_a_jour_verdicts() {
         eval "e_age=\${${p}_etrangers_age:-} e_att=\${${p}_etrangers_attendus:-} e_man=\${${p}_etrangers_manquants:-} e_lu=\${${p}_etrangers_lu:-}"
         case "$(verdict_etrangers_revenus "$e_age" "$e_att" "$e_man" "$e_lu")" in
             SANS_OBJET) ;;
-            REVENUS)  ok   "Conteneurs hors 5Hostachy revenus sur $n après son redémarrage de noyau : ${e_att//,/, }" ;;
+            REVENUS)  ok   "Conteneurs hors 5Hostachy revenus sur $n après son redémarrage (noyau ou moteur de conteneurs) : ${e_att//,/, }" ;;
             EN_COURS) warn "Redémarrage de noyau de $n il y a ${e_age} s : ${e_man//,/, } pas encore revenu(s) — revérifié au prochain passage (#1395)" ;;
-            ABSENTS)  fail "Conteneur(s) ${e_man//,/, } NON revenu(s) sur $n, $(( e_age / 60 )) min après son redémarrage de noyau (#1395) — un autre projet est à l'arrêt : 'docker ps -a' sur $n, puis 'docker compose up -d <ses services>' dans son répertoire" ;;
+            ABSENTS)  fail "Conteneur(s) ${e_man//,/, } NON revenu(s) sur $n, $(( e_age / 60 )) min après son redémarrage — noyau ou moteur de conteneurs (#1395, #2198) — un autre projet est à l'arrêt : 'docker ps -a' sur $n, puis 'docker compose up -d <ses services>' dans son répertoire" ;;
             *)        warn "Retour des conteneurs hors 5Hostachy sur $n INCONNU (relevé de '${e_age:-vide}' s, docker lu='${e_lu:-non}') — ni vert ni rouge" ;;
         esac
         case "$(decision_noyau_candidat "$actif" "$cand")" in

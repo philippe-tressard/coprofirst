@@ -622,6 +622,10 @@ jobs:
           # docker / containerd / cloudflared — la collecte exécutée sur apt et
           # dpkg simulés, et le cas zéro de chaque mesure.
           bash scripts/lib/lib-paquets.sh           --selftest
+          # Le geste (#2198) : le standby pose toutes ses mises à jour, sauf celles
+          # qui ramèneraient la pile de bureau proscrite (C35) ou retireraient un
+          # paquet — sur un apt simulé, dont la forme réelle du 23/10/2026.
+          bash scripts/lib/lib-maj-paquets.sh       --selftest
           # C32 (#1593) : les ports à l'écoute sur toutes les interfaces — la collecte
           # exécutée sur un `ss` simulé (IPv4, IPv6, formes anciennes), la liste
           # blanche confrontée à `docker-compose.yml`, et le cas zéro.
