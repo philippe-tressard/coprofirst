@@ -40,6 +40,7 @@
   elle y passera en entier.
 -->
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { page } from '$app/stores';
 	import { toast } from '$lib/components/Toast.svelte';
 	import PartageCourriel from '$lib/components/PartageCourriel.svelte';
@@ -68,14 +69,22 @@
 	//  d'un geste sur cet élément naît de lui. « Lien copié · L'envoyer par
 	//  courriel » s'affichait en bas à droite, loin de l'icône : la main
 	//  traversait l'écran pour atteindre un champ lié au 🔗.
-	/** La position de la bulle, sous le 🔗 — `null` : fermée. */
-	let bulle: { haut: number; droite: number } | null = null;
+	/** La position de la bulle, sous le 🔗 (au-dessus s'il le faut) — `null` : fermée. */
+	let bulle: { haut: number; droite: number; dessus?: boolean } | null = null;
 	let minuterie: ReturnType<typeof setTimeout> | undefined;
 
-	function ouvrirBulle() {
+	async function ouvrirBulle() {
 		const r = bouton.getBoundingClientRect();
 		bulle = { haut: r.bottom + 6, droite: Math.max(8, window.innerWidth - r.right) };
 		relancer();
+		//  🔴 Elle se RETOURNE au-dessus du 🔗 quand elle sortirait par le bas : fixée
+		//  à l'écran et fermée au défilement, elle était alors hors d'atteinte. Une
+		//  carte au bas d'un téléphone suffisait (trouvé avec #2165, le texte
+		//  grandissant). 🔒 `e2e/partage-courriel-champ.spec.ts`, profil mobile.
+		await tick();
+		const h = zone?.getBoundingClientRect().height ?? 0;
+		if (bulle && bulle.haut + h > window.innerHeight - 8)
+			bulle = { ...bulle, haut: Math.max(8, r.top - 6 - h), dessus: true };
 	}
 	function fermer() {
 		clearTimeout(minuterie);
@@ -153,6 +162,7 @@
 		role="dialog"
 		tabindex="-1"
 		aria-label="Lien copié"
+		class:bulle-dessus={bulle.dessus}
 		style:top="{bulle.haut}px"
 		style:right="{bulle.droite}px"
 		on:pointerenter={suspendre}
@@ -180,6 +190,10 @@
 		font-size: var(--fs-base);
 		transform-origin: 100% 0;
 		animation: bulle-entree var(--duree-apparition) var(--ease-out);
+	}
+	/*  Retournée au-dessus du 🔗, elle naît de son bord bas. */
+	.bulle-lien.bulle-dessus {
+		transform-origin: 100% 100%;
 	}
 	.copie {
 		margin: 0;
