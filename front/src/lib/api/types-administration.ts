@@ -281,7 +281,6 @@ export interface ReleveReclassement {
 /**  La configuration des sauvegardes — la LIGNE `config_sauvegarde`. */
 export interface ConfigSauvegarde {
 	id: number;
-	active: boolean;
 	/** 0 à 23. */
 	heure_execution: number;
 	nb_versions_conservees: number;
