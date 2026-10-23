@@ -566,3 +566,22 @@ def test_le_depot_d_un_fichier_est_borne_en_debit():
             for _ in range(plafond + 1)
         ]
     assert set(codes[:plafond]) == {400} and codes[plafond] == 429, codes
+
+
+def test_caddy_plafonne_le_corps_au_dessus_de_la_plus_grosse_famille():
+    """Le plafond de Caddy (#2164) ne doit ni manquer, ni couper un dépôt légitime.
+
+    Contrat entre deux fichiers que rien d'autre ne relie : `request_body.max_size`
+    du bloc `/api/*` et le plus gros `plafond_mo` de `FAMILLES`.
+    """
+    from app.utils.fichiers import FAMILLES
+    from tests.aides_caddy import caddyfile
+
+    bloc = re.search(r"handle /api/\* \{(.*?)\n\t\}", caddyfile(), re.S)
+    assert bloc, "bloc `handle /api/*` introuvable dans le Caddyfile"
+    plafond = re.search(r"request_body \{\s*max_size (\d+)MB", bloc.group(1))
+    assert plafond, "aucun `request_body { max_size … }` sur /api/* : rien ne borne le corps"
+    plus_grosse = max(f.plafond_mo for f in FAMILLES.values())
+    assert plus_grosse < int(plafond.group(1)) <= plus_grosse * 2, (
+        f"max_size {plafond.group(1)} Mo pour une famille de {plus_grosse} Mo"
+    )

@@ -21,6 +21,8 @@ from app.utils import horloge
 from app.utils.noms import nom_affiche
 from app.utils.recuperer import ou_404
 from app.utils.cloche import sonner_systeme
+from app.utils.journal_securite import journaliser_securite
+from app.utils.roles_du_statut import poser_roles_du_statut
 from app.utils.demandes_profil import lire_demande
 from app.utils.valeurs import valeur
 
@@ -81,6 +83,19 @@ def traiter_demande_profil(
     if body.action == "approuver":
         if demande.statut_souhaite:
             utilisateur.statut = StatutUtilisateur(demande.statut_souhaite)
+            #  🔴 Les rôles suivent le statut (#2161) : `require_proprietaire` lit
+            #  les RÔLES. Un copropriétaire devenu locataire gardait le rôle
+            #  `propriétaire`, et tout ce qu'il ouvre. Chaque rôle qui change est
+            #  un geste sensible : il va au journal de sécurité.
+            ajoutes, retires = poser_roles_du_statut(utilisateur, utilisateur.statut)
+            for role in sorted(ajoutes):
+                journaliser_securite(
+                    "role_ajoute", acteur_id=cs.id, cible_id=utilisateur.id, detail=role
+                )
+            for role in sorted(retires):
+                journaliser_securite(
+                    "role_retire", acteur_id=cs.id, cible_id=utilisateur.id, detail=role
+                )
         if demande.batiment_id_souhaite:
             utilisateur.batiment_id = demande.batiment_id_souhaite
         demande.statut_demande = StatutDemandeProfil.approuvee

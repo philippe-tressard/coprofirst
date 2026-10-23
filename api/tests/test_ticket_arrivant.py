@@ -245,3 +245,26 @@ def test_la_description_ECHAPPE_ce_que_l_utilisateur_a_saisi():
     assert "<script>" not in corps, corps
     assert "onerror" not in corps or "&lt;img" in corps, corps
     assert "&lt;script&gt;" in corps
+
+
+def test_l_arrivant_ne_rejoue_pas_sa_demarche_en_effacant_sa_notification(arrivant):
+    """#2163 : la garde lisait une notification que son destinataire peut supprimer.
+
+    Supprimée, la démarche se redéclenchait : courriels au syndic et au conseil,
+    notifications au conseil, à nouveau. L'affaire de suivi, elle, n'est pas à lui.
+    """
+    from fastapi import HTTPException
+
+    with Session(engine) as session:
+        u = session.get(Utilisateur, arrivant.id)
+        _declencher_accueil_arrivant(
+            u, AccueilArrivantBody(batiment="Bât. A"), BackgroundTasks(), session
+        )
+        for n in session.exec(select(Notification).where(Notification.destinataire_id == u.id)):
+            session.delete(n)
+        session.commit()
+        taches = BackgroundTasks()
+        with pytest.raises(HTTPException) as refus:
+            _declencher_accueil_arrivant(u, AccueilArrivantBody(batiment="Bât. A"), taches, session)
+        assert refus.value.status_code == 409
+        assert taches.tasks == [], "un second envoi a été programmé"

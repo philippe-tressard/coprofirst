@@ -106,6 +106,7 @@ def apercu_email(
     code_modele: str,
     contexte: dict[str, Any],
     destinataires: list[tuple[int | None, str]],
+    lecteur,
     pieces_jointes: Optional[list[str]] = None,
     copie_auteur: Optional[str] = None,
     ecartes: Optional[list[tuple[str, str]]] = None,
@@ -119,6 +120,12 @@ def apercu_email(
 
     `ecartes` porte ce que la SÉLECTION a laissé de côté (`ecartes_syndic_cs`…) ;
     la préférence de chacun s'y ajoute ici, par la fonction même de l'envoi.
+
+    🔴 `lecteur` est OBLIGATOIRE (#2155) : l'aperçu est demandé par tout compte
+    connecté, et il rendait en clair les adresses personnelles du conseil
+    syndical, que l'annuaire ne publie pas. Hors modérateur, elles reviennent
+    masquées (`p***@domaine`) — sauf la copie de l'auteur, qui est la sienne.
+    Le masquage vit ici, dans la sortie, et ne dépend d'aucun appelant.
     """
     from app.utils.preferences_mail import trier_destinataires
 
@@ -164,8 +171,12 @@ def apercu_email(
     #  ⚠️ Nommée « (copie) » : elle part en copie CACHÉE, donc les autres
     #  destinataires ne la verront pas. L'auteur, lui, doit savoir qu'il l'a
     #  demandée.
-    adresses = list(retenus)
-    if copie_auteur and copie_auteur.lower() not in {e.lower() for e in adresses}:
+    from app.auth.adresse_compte import adresse_masquee
+    from app.auth.deps import est_moderateur
+
+    lisible = est_moderateur(lecteur)
+    adresses = [e if lisible else adresse_masquee(e) for e in retenus]
+    if copie_auteur and copie_auteur.lower() not in {e.lower() for e in retenus}:
         adresses.append(f"{copie_auteur} (copie)")
 
     return ApercuCanal(
