@@ -541,18 +541,10 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
  *  claire : *la règle la plus déployée est enrichie pour s'appliquer à toutes
  *  ses occurrences*.
  *
- *  ⚠️ Deux media queries, parce que ce sont deux questions distinctes :
- *  `pointer: coarse` parle du DOIGT (une tablette large se pilote au doigt, un
- *  petit portable à la souris — même raisonnement que pour `btn-icon`), et
- *  `480px` parle de la PLACE. Les fusionner priverait l'une des deux de son cas.
- *
- *  ⚠️ 44 `px`, jamais `2.75rem` : la racine vaut 14 px sur téléphone (12 jusqu'à
- *  #2165), et 2,75 rem y rendent 38. Une cible tactile est une taille physique. */
-@media (pointer: coarse) {
-	.form-actions .btn {
-		min-height: 44px;
-	}
-}
+ *  ⚠️ La hauteur au DOIGT (`pointer: coarse`) n'est plus ici : elle vaut pour
+ *  tout `.btn`, rangée ou non, et vit avec la cible des boutons icône
+ *  (`composants.css`, #2171). Reste la PLACE (`480px`) — deux questions
+ *  distinctes, que fusionner priverait l'une de son cas. */
 @media (max-width: 480px) {
 	/*  Sur un petit téléphone, les deux boutons prennent toute la largeur plutôt
 	    que de se serrer l'un contre l'autre. */
