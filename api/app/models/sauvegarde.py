@@ -36,12 +36,13 @@ class ConfigSauvegarde(SQLModel, table=True):
     🔴 `frequence`, `jour_semaine` et `jour_mois` ont QUITTÉ le modèle (#2059, premier
     temps) : la sauvegarde est quotidienne depuis la 0139 et rien ne les lisait. Les
     colonnes, et leur type `frequencesauvegarde`, ont quitté la base avec la 0308
-    (second temps, #2124).
+    (second temps, #2124). `active`, plus lue depuis #2060 (la sauvegarde ne se coupe
+    pas), les a suivis (#2182) : premier temps v3.13.8 (le champ quitte le modèle, la
+    0310 donne un défaut à la colonne), second temps dans une version ultérieure.
     """
 
     __tablename__ = "config_sauvegarde"
     id: Optional[int] = Field(default=None, primary_key=True)
-    active: bool = True
     heure_execution: int = 3  # 0-23
     nb_versions_conservees: int = 7
     modifie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")

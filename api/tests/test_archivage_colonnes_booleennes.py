@@ -67,15 +67,11 @@ REFERENTIELS = {
         "référentiel : un nœud de l'arbre des périmètres retiré des choix ; "
         "le contenu qui le cite garde son code"
     ),
-    ("ConfigSauvegarde", "active"): (
-        "ancien interrupteur de la sauvegarde planifiée, plus lu depuis #2060 (la "
-        "sauvegarde ne se coupe plus) : la colonne attend son retrait en second temps"
-    ),
 }
 
 #: Le plafond des référentiels. Il ne fait que BAISSER.
 #: Carte des plafonds décroissants : #1571.
-PLAFOND_REFERENTIELS = 11
+PLAFOND_REFERENTIELS = 10
 
 
 def colonnes_booleennes_de_disparition(sources: dict[str, str]) -> set[tuple[str, str]]:

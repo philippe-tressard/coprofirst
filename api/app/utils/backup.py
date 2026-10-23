@@ -253,7 +253,7 @@ def sauvegarder_si_c_est_l_heure() -> None:
     #  🔴 La sauvegarde ne se coupe PAS (#2060, 17/10/2026). `config_sauvegarde.active`
     #  la coupait sans qu'aucun écran ne montre l'interrupteur : une ligne posée à la
     #  main, une restauration, et plus rien n'était sauvegardé sans que rien ne le
-    #  dise. La colonne reste en base, plus lue.
+    #  dise. Le champ a quitté le modèle (#2182).
     if horloge.a_paris(horloge.maintenant()).hour == cfg.heure_execution:
         run_backup()
 

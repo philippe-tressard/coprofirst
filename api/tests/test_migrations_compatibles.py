@@ -89,6 +89,11 @@ CONTRACTIONS: dict[str, tuple[str, str]] = {
     ),
     "copropriete.assurance_numero_police": ("3.11.0", "même règle (#2059)"),
     "copropriete.assurance_echeance": ("3.11.0", "même règle (#2059)"),
+    #  Même famille, premier temps de #2182 : la 0310 donne un défaut à la colonne NOT NULL.
+    "config_sauvegarde.active": (
+        "3.13.8",
+        "la sauvegarde ne se coupe plus depuis #2060, rien ne lit ni n'écrit l'interrupteur (#2182)",
+    ),
 }
 
 #: Les gestes qui retirent quelque chose à l'ancien code.
