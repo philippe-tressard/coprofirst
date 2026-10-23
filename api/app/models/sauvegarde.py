@@ -38,7 +38,7 @@ class ConfigSauvegarde(SQLModel, table=True):
     colonnes, et leur type `frequencesauvegarde`, ont quitté la base avec la 0308
     (second temps, #2124). `active`, plus lue depuis #2060 (la sauvegarde ne se coupe
     pas), les a suivis (#2182) : premier temps v3.13.8 (le champ quitte le modèle, la
-    0310 donne un défaut à la colonne), second temps dans une version ultérieure.
+    0310 donne un défaut à la colonne), la colonne a quitté la base avec la 0311.
     """
 
     __tablename__ = "config_sauvegarde"
