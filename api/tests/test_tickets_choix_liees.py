@@ -79,7 +79,8 @@ def test_sans_affaire_le_choix_est_vide(moteur):
 
 def test_le_choix_ne_montre_que_numero_titre_statut_et_date(moteur):
     """La date de création s'y ajoute (#2173) : la section « Affaires liées »
-    la montre avec le suivi — rien d'autre ne sort."""
+    la montre avec le suivi, puis le drapeau d'absorption (#2186) — rien d'autre
+    ne sort."""
     http, moi = _resident(moteur)
     t = _affaire(moteur, moi, "Porte du garage")
 
@@ -91,6 +92,9 @@ def test_le_choix_ne_montre_que_numero_titre_statut_et_date(moteur):
             "statut": "ouvert",
             #  UTC naïf en base, rendu avec son `Z` comme toute date servie.
             "cree_le": f"{t.cree_le.isoformat()}Z",
+            #  🔀 Absorbée ou non (#2186) : ce que la fiche de l'affaire, déjà
+            #  lisible, dit en toutes lettres (« Fusionnée dans … »).
+            "fusionnee": False,
         }
     ]
 
