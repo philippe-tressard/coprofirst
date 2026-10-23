@@ -28,7 +28,7 @@
 	import { TICKET } from '$lib/entites/ticket';
 	import { HREF_VERS_PAGE } from '$lib/pages';
 	import { siteNomStore } from '$lib/stores/pageConfig';
-	import { estActualite, estTicketClos } from '$lib/tickets';
+	import { estActualite } from '$lib/tickets';
 	import { aboutirGeste, ouvrirGeste } from '$lib/aboutissement';
 
 	$: _siteNom = $siteNomStore;
@@ -38,7 +38,12 @@
 	//  liste, sans en écrire une seconde. Une suppression la vide — on rejoint
 	//  alors la liste, la page n'a plus d'objet.
 	const liste = writable<Ticket[]>([]);
-	const affaires = affairesEnListe(liste, { apresSuppression: () => goto('/tickets') });
+	//  💬 L'icône de la carte ouvre le formulaire de réponse SUR PLACE, sous la
+	//  carte : c'est ici qu'il vit, avec son envoi (`sendMessage`).
+	const affaires = affairesEnListe(liste, {
+		apresSuppression: () => goto('/tickets'),
+		repondre: () => (repondreOuvert = true),
+	});
 	const { etat, gestes } = affaires;
 	$: ticket = $liste[0] ?? null;
 
@@ -60,7 +65,9 @@
 	let msgVise: number | null = null;
 
 	onMount(async () => {
-		repondreOuvert = new URLSearchParams(window.location.search).get('repondre') === '1';
+		//  `$page.url`, pas `window.location` : on arrive ici par l'icône 💬 d'une
+		//  liste (`lienReponse`), une navigation du client.
+		repondreOuvert = $page.url.searchParams.get('repondre') === '1';
 		// Ancre `#msg-42` : les notifications de réponse pointent sur le message
 		// qui a déclenché l'alerte — on y descend, plutôt qu'en haut d'un fil long.
 		const ancre = window.location.hash.match(/^#msg-(\d+)$/);
@@ -156,7 +163,6 @@
 			{messages}
 			evolutions={$etat.evolsMap[ticket.id] ?? []}
 			{msgVise}
-			clos={estTicketClos(ticket.statut)}
 			{sending}
 			bind:repondreOuvert
 			bind:newInterne

@@ -173,6 +173,7 @@
 				peutEditer={peutEditerCeTicket}
 				{peutAdministrer}
 				{archive}
+				on:repondre={() => gestes.repondre(ticket)}
 				on:evoluer_ouvrir={() => gestes.evoluerOuvrir(ticket)}
 				on:modifier={() => gestes.modifier(ticket)}
 				on:options_ouvrir={() => gestes.optionsOuvrir(ticket)}

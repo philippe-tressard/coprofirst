@@ -28,6 +28,7 @@
 	import { conditionsDeLaSuite } from '$lib/formulaire-affaire';
 	import { motifWhatsappInterdit } from '$lib/options-publication';
 	import { ticketLuDuSeulConseil } from '$lib/lecture-ticket';
+	import { gesteReponse } from '$lib/tickets';
 	import type { Ticket, TicketMessage, TicketEvolution } from '$lib/api';
 	import { nomCopie } from '$lib/saisi-pour';
 
@@ -39,8 +40,6 @@
 	export let evolutions: TicketEvolution[] = [];
 	/** Le message pointé par l'ancre d'une notification, encadré à l'arrivée. */
 	export let msgVise: number | null = null;
-	/** Le ticket est-il clos ? Change le seul libellé du bouton. */
-	export let clos = false;
 
 	/** Le formulaire de réponse est-il ouvert ? Lié par l'appelant, qui l'ouvre
 	 *  aussi depuis une ancre. */
@@ -54,6 +53,27 @@
 	//  tient les erreurs. Ce composant rend le fil et transmet la saisie — il ne
 	//  décide de rien.
 	const dispatch = createEventDispatcher<{ envoyer: unknown }>();
+
+	//  Le bouton dit ce que dit l'icône de la carte — une règle, `gesteReponse`.
+	$: reponse = gesteReponse(ticket);
+
+	/**  Le formulaire OUVERT se met sous les yeux, curseur dans le texte : on l'ouvre
+	 *   depuis l'icône de la carte, en haut, ou depuis la liste (`?repondre=1`), et
+	 *   il naît plus bas, hors de l'écran au téléphone. L'éditeur arrive en différé
+	 *   (`ChargementDiffere`, puis l'éditeur riche) : on l'attend, sans délai écrit. */
+	function auPremierPlan(noeud: HTMLElement) {
+		const viser = () => {
+			const zone = noeud.querySelector<HTMLElement>('[contenteditable="true"]');
+			if (!zone) return false;
+			zone.focus({ preventScroll: true });
+			noeud.scrollIntoView({ block: 'center' });
+			return true;
+		};
+		if (viser()) return;
+		const veille = new MutationObserver(() => viser() && veille.disconnect());
+		veille.observe(noeud, { childList: true, subtree: true, attributes: true });
+		return { destroy: () => veille.disconnect() };
+	}
 </script>
 
 <div class="messages colonne-lecture">
@@ -84,16 +104,17 @@
 
 	<!--  Absorbée (#1704) : la discussion se poursuit dans la principale, et
 	      l'Historique, juste dessous, le dit — une seule fois. -->
-	{#if ticket.fusionnee}
+	{#if !reponse}
 		<!-- rien à répondre ici -->
 	{:else if !repondreOuvert}
 		<div class="card carte-repondre">
 			<button type="button" class="btn btn-outline" on:click={() => (repondreOuvert = true)}>
-				{clos ? '↩️ Rouvrir la discussion' : '💬 Répondre'}
+				{reponse.glyphe}
+				{reponse.libelle}
 			</button>
 		</div>
 	{:else}
-		<div class="card reply-form">
+		<div class="card reply-form" use:auPremierPlan>
 			{#key repondreOuvert}
 				<ChargementDiffere charger={() => import('$lib/components/EvolForm.svelte')}>
 					{#snippet contenu(EvolForm)}
