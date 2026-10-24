@@ -219,8 +219,10 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   à `lot.nature` — vide tant que l'état descriptif n'est pas importé ; ses périmètres
   (*situé dans*, *desservi par*) se **dérivent** par `utils/perimetres/lots` et vivent
   dans `lot_perimetre`. Une **annexe** (cave, place) n'apporte pas son bâtiment à « mes
-  bâtiments » : elle est desservie par une circulation. 🔒 `test_nature_lot_source_unique.py`,
-  `test_annexes_hors_mes_batiments.py`.
+  bâtiments » : elle est desservie par une circulation, et ce qui la concerne passe par
+  `mes_batiments.perimetres_desservis` — l'ascenseur, l'escalier, les caves, jamais le
+  bâtiment desservant entier (`perimetre_visible`, #2214). 🔒 `test_nature_lot_source_unique.py`,
+  `test_annexes_hors_mes_batiments.py`, `test_mes_perimetres.py`.
 - Lire un objet ou rendre 404 : `utils/recuperer.ou_404(session, Modele, id,
   "libellé")` — jamais `session.get` suivi d'un `raise HTTPException(404)`, ni
   un alias qui fabrique l'exception. Les 404 écrits à la main qui restent se

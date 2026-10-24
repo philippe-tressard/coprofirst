@@ -41,6 +41,14 @@ vérifie l'élargissement et sa borne **dans le même test** — pour qu'ils ne
 puissent pas se séparer.
 
 
+## « Mes périmètres » (#2214)
+
+Une place ou une cave est desservie par une circulation — l'ascenseur et l'escalier
+d'un bâtiment qui n'est pas forcément le sien. La même lecture rend donc aussi
+`perimetres_desservis` : les nœuds qui desservent ses lots actifs, que la règle
+d'accès confronte aux périmètres d'un contenu. Une notion, deux lectures, un cache.
+
+
 ## Le cache
 
 Même parti pris que `utils/perimetres.arbre()` : une durée courte, et **aucune
