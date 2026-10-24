@@ -233,6 +233,16 @@ test('Une page démarrée qui a perdu ses feuilles se recharge à son retour', a
 	await expect.poll(() => stylee(page)).toBe(true);
 });
 
+test('Une page n’est jamais conservée par le navigateur', async ({ page }) => {
+	//  Sans `Cache-Control`, Safari a ressorti d'une restauration d'onglet une
+	//  copie vieille de sept semaines (24/10/2026, `hooks.server.ts`).
+	for (const chemin of ['/auth/connexion', '/tableau-de-bord']) {
+		const reponse = await page.request.get(chemin, { maxRedirects: 0 });
+		expect(reponse.headers()['content-type'], chemin).toContain('text/html');
+		expect(reponse.headers()['cache-control'], chemin).toBe('no-store');
+	}
+});
+
 test('Une page qui démarre normalement ne montre rien', async ({ page }) => {
 	await page.goto('/auth/connexion');
 	await expect(page.locator('html[data-application="demarree"]')).toHaveCount(1);
