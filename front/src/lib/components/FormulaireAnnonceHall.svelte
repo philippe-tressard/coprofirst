@@ -79,17 +79,20 @@
 		['A6', 750],
 		['A5', 1220],
 	];
-	const ORDRE = ['A4', 'A5', 'A6', 'A7'];
-	const formatMinPhotos = 'A5';
+	//  Avec photo : la galerie prend la place d'une partie du texte, et l'affiche
+	//  ne descend pas sous l'A6 (`SEUILS_FORMAT_AVEC_PHOTOS`, même contrôle).
+	const SEUILS_AVEC_PHOTOS: [string, number][] = [
+		['A6', 520],
+		['A5', 860],
+	];
+	const formatMinPhotos = SEUILS_AVEC_PHOTOS[0][0];
 
 	$: longueur = message.replace(/<[^>]*>/g, '').length + titre.trim().length;
 	$: formatPrevu = (() => {
 		if (format !== 'auto') return format.toUpperCase();
-		const trouve = SEUILS.find(([, seuil]) => longueur <= seuil);
-		const fmt = trouve ? trouve[0] : 'A4';
-		return photos.length && ORDRE.indexOf(fmt) > ORDRE.indexOf(formatMinPhotos)
-			? formatMinPhotos
-			: fmt;
+		const seuils = photos.length ? SEUILS_AVEC_PHOTOS : SEUILS;
+		const trouve = seuils.find(([, seuil]) => longueur <= seuil);
+		return trouve ? trouve[0] : 'A4';
 	})();
 
 	/**  9. DIFFUSION — les TROIS canaux, comme partout ailleurs (#480).

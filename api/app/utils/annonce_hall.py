@@ -50,8 +50,10 @@ FORMATS = ("a4", "a5", "a6", "a7")
 # l'affiche déborderait du feuillet et le format ne serait plus tenu.
 MAX_PHOTOS = 2
 
-# En dessous de l'A5, une affiche avec photo devient illisible : on ne descend pas.
-FORMAT_MIN_AVEC_PHOTOS = "a5"
+# En dessous de l'A6, une affiche avec photo devient illisible : on ne descend pas.
+# C'était l'A5 jusqu'au 24/10/2026 — une annonce de 150 caractères et une capture
+# d'écran sortait sur un A5 à moitié blanc, sa photo rognée (`object-fit: cover`).
+FORMAT_MIN_AVEC_PHOTOS = "a6"
 
 # Poids maximal du contenu (titre + message, en caractères) tenant dans chaque
 # format. Au-delà du dernier seuil, on reste en A4.
@@ -89,6 +91,25 @@ SEUILS_FORMAT: tuple[tuple[str, int], ...] = (
     ("a4", 1700),
 )
 
+# Les mêmes seuils quand l'affiche porte des photos : la galerie (hauteur
+# `galerie_max` du gabarit) prend la place d'une partie du texte. Relevés le
+# 24/10/2026 au rendu WeasyPrint RÉEL (image de l'API), photo carrée, une ou
+# deux — la galerie a la même hauteur —, même marge de −10 % :
+#
+#     format   galerie   dernier poids qui tient   seuil retenu
+#     a6        38 mm              580                  520
+#     a5        50 mm              960                  860
+#     a4        70 mm            1 500                1 350
+#
+# ⚠️ « Tient » se lit au TEXTE RENDU, jamais au nombre de pages : un `.corps` en
+# flex ne se fragmente pas, WeasyPrint TRONQUE le message qui dépasse — une page,
+# et la fin du texte perdue sans un mot.
+SEUILS_FORMAT_AVEC_PHOTOS: tuple[tuple[str, int], ...] = (
+    ("a6", 520),
+    ("a5", 860),
+    ("a4", 1350),
+)
+
 # Gabarit par format : dimensions de page et échelle typographique.
 #
 # 🔴 **LE CHROME A ÉTÉ RESSERRÉ LE 11/09/2026, PAS LE TEXTE.** Demandé à l'écran :
@@ -123,7 +144,7 @@ _GABARITS: dict[str, dict[str, str]] = {
         "titre": "30pt",
         "meta": "10pt",
         "corps": "13pt",
-        "galerie_max": "44mm",
+        "galerie_max": "70mm",
         "qr": "26mm",
         "pied": "9pt",
     },
@@ -138,7 +159,7 @@ _GABARITS: dict[str, dict[str, str]] = {
         "titre": "21pt",
         "meta": "8.5pt",
         "corps": "10.5pt",
-        "galerie_max": "30mm",
+        "galerie_max": "50mm",
         "qr": "15mm",
         "pied": "7.5pt",
     },
@@ -153,7 +174,7 @@ _GABARITS: dict[str, dict[str, str]] = {
         "titre": "15pt",
         "meta": "7pt",
         "corps": "8.5pt",
-        "galerie_max": "0mm",  # pas de photo en dessous de l'A5
+        "galerie_max": "38mm",
         "qr": "11mm",
         "pied": "6pt",
     },
@@ -168,7 +189,7 @@ _GABARITS: dict[str, dict[str, str]] = {
         "titre": "11pt",
         "meta": "5.5pt",
         "corps": "7pt",
-        "galerie_max": "0mm",
+        "galerie_max": "0mm",  # pas de photo en dessous de l'A6
         "qr": "0mm",  # pied simplifié : plus de QR
         "pied": "5pt",
     },
@@ -210,23 +231,16 @@ def choisir_format(
     contenu : une annonce courte occupe ainsi moins de place dans l'afficheur
     du hall. Un choix explicite du CS est prioritaire.
 
-    Une affiche portant des photos ne descend jamais sous
-    `FORMAT_MIN_AVEC_PHOTOS` : en dessous, la photo écrase le texte.
+    Une affiche portant des photos se mesure sur ses propres seuils, qui
+    commencent à `FORMAT_MIN_AVEC_PHOTOS` : la galerie prend la place du texte.
     """
     demande = (format_demande or "auto").lower()
     if demande in FORMATS:
         return demande
 
     poids = len(texte_brut(message_html)) + len(texte_brut(titre))
-    format_retenu = "a4"
-    for fmt, seuil in SEUILS_FORMAT:
-        if poids <= seuil:
-            format_retenu = fmt
-            break
-
-    if avec_photos and FORMATS.index(format_retenu) > FORMATS.index(FORMAT_MIN_AVEC_PHOTOS):
-        return FORMAT_MIN_AVEC_PHOTOS
-    return format_retenu
+    seuils = SEUILS_FORMAT_AVEC_PHOTOS if avec_photos else SEUILS_FORMAT
+    return next((fmt for fmt, seuil in seuils if poids <= seuil), "a4")
 
 
 def format_libelle(fmt: str) -> str:
@@ -363,12 +377,19 @@ body {{
 .message a {{ color: var(--navy); text-decoration: underline; }}
 .message img {{ max-width: 100%; border-radius: 1.5mm; }}
 
-/* ── Photos : secondaires, calées en pied de contenu (le texte reste central) ── */
-.galerie {{ display: flex; gap: 3mm; margin-top: auto; padding-top: 6mm; }}
+/* ── Photos : secondaires, calées en pied de contenu (le texte reste central) ──
+   🔴 Jamais rognées (24/10/2026) : une hauteur FIXE avec `object-fit: cover`
+   coupait une capture d'écran à sa bande du milieu. La photo garde ses
+   proportions et RÉDUIT pour tenir dans la boîte — `max-*` et dimensions `auto`,
+   le calcul le plus élémentaire d'un élément remplacé. */
+.galerie {{ margin-top: auto; padding-top: 3mm; text-align: center; line-height: 0; }}
 .galerie img {{
-  flex: 1 1 0; min-width: 0; height: {g["galerie_max"]};
-  object-fit: cover; border-radius: 2mm; border: .3mm solid var(--border);
+  display: inline-block; vertical-align: top;
+  width: auto; height: auto; max-width: 100%; max-height: {g["galerie_max"]};
+  border-radius: 2mm; border: .3mm solid var(--border);
 }}
+.galerie-2 img {{ max-width: 48%; }}
+.galerie-2 img + img {{ margin-left: 3mm; }}
 
 /* ── Pied de page ── */
 .pied {{
@@ -409,7 +430,7 @@ def construire_html(
     alt = escape(titre)
 
     # Photos facultatives, embarquées comme le reste (data-URI).
-    # Ignorées sous l'A5 : le gabarit n'a pas la place de les porter.
+    # Ignorées sous l'A6 : le gabarit n'a pas la place de les porter.
     galerie = ""
     photos_admises = (
         (images or [])[:MAX_PHOTOS]
@@ -419,7 +440,7 @@ def construire_html(
     vignettes = [uri for uri in (image_data_uri(u) for u in photos_admises) if uri]
     if vignettes:
         balises = "".join(f'<img src="{uri}" alt="{alt}">' for uri in vignettes)
-        galerie = f'<div class="galerie">{balises}</div>'
+        galerie = f'<div class="galerie galerie-{len(vignettes)}">{balises}</div>'
 
     qr = "" if format_effectif in _SANS_QR else qr_data_uri(url_complete)
     qr_html = f'<img class="pied-qr" src="{qr}" alt="QR {escape(site_affiche)}">' if qr else ""

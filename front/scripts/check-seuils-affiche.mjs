@@ -35,51 +35,60 @@ function echouer(message) {
 	process.exit(1);
 }
 
-/** Les couples (format, seuil) déclarés côté serveur. */
-function seuilsApi() {
+/** Les couples (format, seuil) d'une table déclarée côté serveur. */
+function seuilsApi(nom) {
 	const src = readFileSync(API, 'utf8');
-	const bloc = src.match(/SEUILS_FORMAT[^=]*=\s*\(([\s\S]*?)\n\)/);
-	if (!bloc) echouer('Cas zéro : SEUILS_FORMAT introuvable côté API — contrôle inopérant.');
+	const bloc = src.match(new RegExp(String.raw`\n${nom}[^=]*=\s*\(([\s\S]*?)\n\)`));
+	if (!bloc) echouer(`Cas zéro : ${nom} introuvable côté API — contrôle inopérant.`);
 	return [...bloc[1].matchAll(/\(\s*"(a\d)"\s*,\s*(\d+)\s*\)/g)].map((m) => [
 		m[1].toUpperCase(),
 		Number(m[2]),
 	]);
 }
 
-/** Les couples (format, seuil) déclarés côté écran. */
-function seuilsFront() {
+/** Les couples (format, seuil) d'une table déclarée côté écran. */
+function seuilsFront(nom) {
 	const src = readFileSync(FRONT, 'utf8');
-	const bloc = src.match(/const SEUILS[^=]*=\s*\[([\s\S]*?)\n\t\];/);
-	if (!bloc) echouer('Cas zéro : la table SEUILS est introuvable côté front — contrôle inopérant.');
+	const bloc = src.match(new RegExp(String.raw`const ${nom}[^=]*=\s*\[([\s\S]*?)\n\t\];`));
+	if (!bloc) echouer(`Cas zéro : la table ${nom} est introuvable côté front — contrôle inopérant.`);
 	return [...bloc[1].matchAll(/\[\s*'(A\d)'\s*,\s*(\d+)\s*\]/g)].map((m) => [m[1], Number(m[2])]);
 }
 
-const api = seuilsApi();
-const front = seuilsFront();
-
-if (api.length === 0 || front.length === 0) {
-	echouer(
-		`Cas zéro : ${api.length} seuil(s) côté API, ${front.length} côté front — extraction cassée.`,
-	);
-}
-
-//  Le dernier seuil de l'API est celui de l'A4 : il ne sert qu'à documenter le
-//  point de débordement, l'écran n'a rien à en prévoir (au-delà, c'est A4 quoi
-//  qu'il arrive). Il n'a donc pas de jumeau côté front, et c'est voulu.
-const attendus = api.filter(([fmt]) => fmt !== 'A4');
+//  Deux paires de tables (24/10/2026) : sans photo, et avec photo — la galerie
+//  prend la place d'une partie du texte, et l'affiche ne descend pas sous l'A6.
+const PAIRES = [
+	['SEUILS_FORMAT', 'SEUILS'],
+	['SEUILS_FORMAT_AVEC_PHOTOS', 'SEUILS_AVEC_PHOTOS'],
+];
 
 const ecarts = [];
-if (attendus.length !== front.length) {
-	ecarts.push(
-		`l'API déclare ${attendus.length} seuil(s) prévisibles (${attendus
-			.map(([f]) => f)
-			.join(', ')}), l'écran ${front.length} (${front.map(([f]) => f).join(', ')})`,
-	);
-}
-for (const [fmt, seuil] of attendus) {
-	const jumeau = front.find(([f]) => f === fmt);
-	if (!jumeau) ecarts.push(`${fmt} : absent côté écran`);
-	else if (jumeau[1] !== seuil) ecarts.push(`${fmt} : API ${seuil}, écran ${jumeau[1]}`);
+const bilans = [];
+for (const [nomApi, nomFront] of PAIRES) {
+	const api = seuilsApi(nomApi);
+	const front = seuilsFront(nomFront);
+	if (api.length === 0 || front.length === 0) {
+		echouer(
+			`Cas zéro : ${api.length} seuil(s) dans ${nomApi}, ${front.length} dans ${nomFront} — extraction cassée.`,
+		);
+	}
+	//  Le dernier seuil de l'API est celui de l'A4 : il ne sert qu'à documenter le
+	//  point de débordement, l'écran n'a rien à en prévoir (au-delà, c'est A4 quoi
+	//  qu'il arrive). Il n'a donc pas de jumeau côté front, et c'est voulu.
+	const attendus = api.filter(([fmt]) => fmt !== 'A4');
+	if (attendus.length !== front.length) {
+		ecarts.push(
+			`${nomApi} déclare ${attendus.length} seuil(s) prévisibles (${attendus
+				.map(([f]) => f)
+				.join(', ')}), ${nomFront} ${front.length} (${front.map(([f]) => f).join(', ')})`,
+		);
+	}
+	for (const [fmt, seuil] of attendus) {
+		const jumeau = front.find(([f]) => f === fmt);
+		if (!jumeau) ecarts.push(`${nomApi} ${fmt} : absent de ${nomFront}`);
+		else if (jumeau[1] !== seuil)
+			ecarts.push(`${nomApi} ${fmt} : API ${seuil}, écran ${jumeau[1]}`);
+	}
+	bilans.push(`${nomFront} ${attendus.map(([f, s]) => `${f}≤${s}`).join(' · ')}`);
 }
 
 if (ecarts.length > 0) {
@@ -92,7 +101,4 @@ if (ecarts.length > 0) {
 	process.exit(1);
 }
 
-console.log(
-	`✓ Seuils d’affiche : ${attendus.length} format(s) prévisibles, identiques des deux côtés ` +
-		`(${attendus.map(([f, s]) => `${f}≤${s}`).join(' · ')}).`,
-);
+console.log(`✓ Seuils d’affiche identiques des deux côtés (${bilans.join(' ; ')}).`);
