@@ -58,6 +58,25 @@ export const fmtAgrege = (l: ExecutionTelemetrie): string =>
 	`${l.jours_agreges} jour${l.jours_agreges > 1 ? 's' : ''} · ${l.mois_agreges} mois`;
 
 /**
+ *  Les clés du « Détail » que l'écran sait dire en français — celles des
+ *  contrôles de fiabilité. Une clé inconnue s'affiche telle quelle (bascule,
+ *  mise à jour…) : ce tableau ne décide pas de ce que les autres tâches écrivent.
+ *  `fail: 0 · warn: 0` se lisait pareil pour 74 contrôles verts et pour aucun.
+ */
+const LIBELLES_DETAIL: Record<string, string> = {
+	ok: 'contrôles OK',
+	fail: 'échecs',
+	warn: 'avertissements',
+	constats: 'constats du nœud',
+	communs: 'constats communs',
+	porte_communs: 'porte les communs',
+};
+
+/** Une liste se compte (ses lignes se lisent dans leur propre carte), un booléen se dit. */
+const valeurDetail = (v: unknown): string =>
+	Array.isArray(v) ? String(v.length) : typeof v === 'boolean' ? (v ? 'oui' : 'non') : String(v);
+
+/**
  *  Les colonnes de l'historique d'une tâche — **une seule écriture**.
  *
  *  🔴 Elles étaient déclarées DEUX fois : une condition `aValeur(lignes, …)`
@@ -126,7 +145,7 @@ export const COLONNES: {
 				? Object.entries(l.details)
 						//  Une LISTE se compte ici : les constats des contrôles de
 						//  fiabilité se lisent en entier dans leur propre carte.
-						.map(([k, v]) => `${k}: ${Array.isArray(v) ? v.length : v}`)
+						.map(([k, v]) => `${LIBELLES_DETAIL[k] ?? k} : ${valeurDetail(v)}`)
 						.join(' · ')
 				: '—',
 		style: 'font-size:.72rem;color:var(--color-text-muted)',

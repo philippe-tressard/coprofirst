@@ -459,6 +459,8 @@ export interface RapportFiabilite {
 	/** Le dernier passage du contrôleur — prolongé à chaque quart d'heure (#1396). */
 	terminee_le: string | null;
 	details: {
+		/** Contrôles réussis du passage — absent d'un rapport d'avant #2199. */
+		ok?: number;
 		fail: number;
 		warn: number;
 		/** Les constats qui ne nomment que CE nœud (depuis #1396 ; tous, avant). */
