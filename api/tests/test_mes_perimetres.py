@@ -47,7 +47,7 @@ def _place(numero, desservie_par=None):
 
 
 @pytest.fixture()
-def b(batiments):
+def b(batiments, lots_jetables):
     yield batiments
     mes_batiments.invalider_cache()
 
