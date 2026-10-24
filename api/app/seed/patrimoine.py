@@ -94,10 +94,8 @@ GABARIT_BATIMENT: list[tuple[str, str, str]] = [
 ]
 
 
-#: Ce que dessert chaque espace du gabarit (#2212) : l'ascenseur et l'escalier sont
-#: la CIRCULATION qui mène aux caves et aux places, les caves du bâtiment sont celles
-#: que sa circulation dessert. Valeur INITIALE, comme l'icône : l'administration la
-#: règle ensuite (`Perimetre.desserte`). La 0312 l'a posée sur les bases existantes.
+#: Ce que dessert chaque espace du gabarit (#2212) — valeur INITIALE, comme l'icône ;
+#: l'administration la règle (`Perimetre.desserte`), la 0312 l'a posée sur l'existant.
 DESSERTES_GABARIT: dict[str, DessertePerimetre] = {
     "escaliers": DessertePerimetre.circulation,
     "ascenseur": DessertePerimetre.circulation,

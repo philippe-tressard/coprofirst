@@ -319,51 +319,6 @@ export interface QuotePartLot {
 	denominateur: number;
 }
 
-/** Un constat de l'état descriptif — `ConstatLu` (`routers/lots_etat_descriptif.py`). */
-export interface ConstatEtatDescriptif {
-	code: string;
-	gravite: 'bloquant' | 'avertissement' | 'inconnu';
-	message: string;
-	lots: string[];
-}
-
-/** Une ligne de l'état descriptif, telle que le fichier l'écrit — `LigneLue`. */
-export interface LigneEtatDescriptif {
-	rang: number;
-	lot: string;
-	batiment: string | null;
-	nature: string | null;
-	/** La nature reconnue, `null` si la mention est illisible. */
-	nature_lue: string | null;
-	numero_usage: string | null;
-	niveau: string | null;
-	circulation: string | null;
-	lot_origine: string | null;
-	source: string | null;
-	/** Tantièmes par code de clé. */
-	quotes: Record<string, number>;
-}
-
-/** L'atelier de l'état descriptif — `EtatDescriptifLu`. */
-export interface EtatDescriptif {
-	importe_le: string | null;
-	applique_le: string | null;
-	cles: { code: string; libelle: string; denominateur: number }[];
-	lignes: LigneEtatDescriptif[];
-	constats: ConstatEtatDescriptif[];
-	lettres_citees: string[];
-	batiments: { id: number; libelle: string; lettre_rcp: string | null }[];
-	applicable: boolean;
-}
-
-/** Le bilan d'une application de l'état descriptif — `Application`. */
-export interface BilanEtatDescriptif {
-	lots: number;
-	cles_creees: number;
-	quotes_modifiees: number;
-	perimetres_modifies: number;
-}
-
 /** Un lot que le locataire peut se dire louer — `LotPropose` (`routers/lots.py`). */
 export interface LotPropose extends MonLot {
 	/** Les badges que la location de ce lot remet, par type d'accès. */
@@ -430,15 +385,6 @@ export const lots = {
 			{},
 		),
 	ignorerimport: (id: number) => api.post<{ ok: boolean }>(`/lots/admin/imports/${id}/ignorer`, {}),
-	// Admin — l'état descriptif du règlement (#2213) : même atelier, autre fichier
-	etatDescriptif: () => api.get<EtatDescriptif>('/lots/admin/etat-descriptif'),
-	televerserEtatDescriptif: (file: File) =>
-		postFormData<EtatDescriptif>('/lots/admin/etat-descriptif', { file }),
-	saisirLettres: (correspondances: { batiment_id: number; lettre_rcp: string | null }[]) =>
-		api.put<EtatDescriptif>('/lots/admin/etat-descriptif/lettres', { correspondances }),
-	appliquerEtatDescriptif: () =>
-		api.post<BilanEtatDescriptif>('/lots/admin/etat-descriptif/appliquer', {}),
-	gabaritEtatDescriptifUrl: (): string => `${BASE}/lots/admin/etat-descriptif/gabarit`,
 };
 
 /**

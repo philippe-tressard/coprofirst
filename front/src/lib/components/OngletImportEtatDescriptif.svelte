@@ -26,7 +26,7 @@
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
-	import { lots as lotsApi, type EtatDescriptif, type LigneEtatDescriptif } from '$lib/api';
+	import { etatDescriptif as api, type EtatDescriptif, type LigneEtatDescriptif } from '$lib/api';
 	import { confirmer } from '$lib/confirmation';
 	import { fmtDatetime } from '$lib/date';
 	import { messageErreur } from '$lib/erreurs';
@@ -64,7 +64,7 @@
 
 	async function charger() {
 		try {
-			recevoir(await lotsApi.etatDescriptif());
+			recevoir(await api.lire());
 		} catch (e) {
 			toast('error', messageErreur(e, "Lecture de l'état descriptif impossible"));
 		} finally {
@@ -76,7 +76,7 @@
 	async function televerser(fichier: File) {
 		televersement = true;
 		try {
-			recevoir(await lotsApi.televerserEtatDescriptif(fichier));
+			recevoir(await api.televerser(fichier));
 			toast('success', `${etat?.lignes.length ?? 0} lot(s) lu(s) — rien n'est encore appliqué`);
 		} catch (e) {
 			toast('error', messageErreur(e, 'Import refusé'));
@@ -90,7 +90,7 @@
 		enregistrement = true;
 		try {
 			recevoir(
-				await lotsApi.saisirLettres(
+				await api.saisirLettres(
 					etat.batiments.map((b) => ({
 						batiment_id: b.id,
 						lettre_rcp: lettres[b.id]?.trim() || null,
@@ -118,7 +118,7 @@
 		if (!ok) return;
 		application = true;
 		try {
-			const bilan = await lotsApi.appliquerEtatDescriptif();
+			const bilan = await api.appliquer();
 			toast(
 				'success',
 				`${bilan.lots} lot(s) désigné(s), ${bilan.quotes_modifiees} tantième(s) posé(s) ou ` +
@@ -166,8 +166,8 @@
 	on:importer={(e) => televerser(e.detail.fichier)}
 >
 	<p slot="preparer" class="aide gabarit">
-		<a href={lotsApi.gabaritEtatDescriptifUrl()} download>Télécharger le gabarit vide</a> — les en-têtes
-		seuls, une colonne par clé de charges à ajouter sur le modèle de la dernière.
+		<a href={api.gabaritUrl()} download>Télécharger le gabarit vide</a> — les en-têtes seuls, une colonne
+		par clé de charges à ajouter sur le modèle de la dernière.
 	</p>
 </BarreImport>
 

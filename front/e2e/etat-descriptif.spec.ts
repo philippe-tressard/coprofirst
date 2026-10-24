@@ -11,7 +11,7 @@
  *  Lots et lettres fictifs.
  */
 import type { Page } from '@playwright/test';
-import type { BilanEtatDescriptif, EtatDescriptif } from '../src/lib/api/patrimoine';
+import type { BilanEtatDescriptif, EtatDescriptif } from '../src/lib/api/etat-descriptif';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
