@@ -109,6 +109,19 @@ def anomalies_recentes(session: Session, maintenant: datetime) -> list[Historiqu
     ).all()
 
 
+def dernier_rapport(session: Session, tache: str) -> HistoriqueMaintenance | None:
+    """Le DERNIER compte rendu d'une tâche, ou None si elle n'en a jamais rendu.
+
+    Trois lecteurs : le contrôle de 06:00 de la mise à jour nocturne et celui des
+    correctifs du système, et le rapport nocturne au registre.
+    """
+    return session.exec(
+        select(HistoriqueMaintenance)
+        .where(HistoriqueMaintenance.tache == tache)
+        .order_by(HistoriqueMaintenance.cree_le.desc())
+    ).first()
+
+
 def problemes_taches(session: Session) -> list[str]:
     """Les lignes que le contrôle de 06:00 ajoute à son courriel."""
     return anomalies_a_signaler(etat_des_taches(session, horloge.maintenant()))

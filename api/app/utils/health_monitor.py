@@ -353,6 +353,7 @@ def _check_reference_copro(session: Session) -> list[str]:
 from app.utils.sante_modeles_email import controler as controler_modeles_email
 from app.utils.etat_taches import problemes_taches
 from app.utils.sante_mise_a_jour import problemes_mise_a_jour
+from app.utils.sante_correctifs import problemes_correctifs
 from app.utils.llm_journal import problemes_ia
 from app.utils.conservation_copie import archives_en_retard
 from app.utils.liens import adresse_du_site, nom_site
@@ -448,6 +449,9 @@ def collecter_problemes(session: Session) -> list[str]:
     #  Une archive d'affaires échues pas encore copiée sur le PC (#2014, §6).
     problemes += archives_en_retard(session, horloge.maintenant())
     problemes += problemes_mise_a_jour(session)
+    #  Les correctifs du SYSTÈME d'une installation standard (rien sur la référence,
+    #  qui n'en rend pas compte : ses nœuds ont C30).
+    problemes += problemes_correctifs(session)
     #  Le disque est celui de la PLATEFORME : jugé ici tant qu'il n'y a qu'une
     #  copropriété, par `sante_plateforme` à partir de la deuxième (#1814).
     if not disque_par_la_plateforme():

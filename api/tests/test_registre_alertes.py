@@ -198,13 +198,27 @@ def test_une_autre_installation_qui_se_declare_reference():
     assert "deux_references" not in _codes(rapport=_rapport(reference=False))
 
 
-def test_seules_les_trois_graves_partent_par_courriel():
-    """L'arbitrage du 14/10/2026, écrit une fois : le registre des genres."""
+def test_seules_les_graves_partent_par_courriel():
+    """Les arbitrages du 14/10/2026 et du 23/10/2026, écrits une fois : le registre des genres."""
     assert {c for c, g in alertes.GENRES.items() if g.grave} == {
         "muette",
         "clone",
         "deux_references",
+        "correctifs_systeme",
     }
+
+
+@pytest.mark.parametrize(
+    "etat, alerte",
+    [("en_defaut", True), ("muet", True), ("a_jour", False), (None, False)],
+)
+def test_correctifs_du_systeme_en_defaut_ou_muets(etat, alerte):
+    """Un serveur qui ne reçoit plus ses correctifs, ou dont le contrôle se tait, alerte ;
+    une installation qui n'a pas posé le contrôle (`None`) ne dit rien."""
+    rapport = _rapport()
+    rapport.identite.correctifs_systeme = etat
+    assert ("correctifs_systeme" in _codes(rapport=rapport)) is alerte
+    assert all(e in alertes.CORRECTIFS_EN_DEFAUT for e in ("en_defaut", "muet"))
 
 
 def test_la_version_de_tete_est_la_plus_avancee_des_versions_lisibles():

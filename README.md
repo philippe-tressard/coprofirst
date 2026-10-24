@@ -123,6 +123,9 @@ L'application est accessible sur `http://localhost`.
 > référence, ou sans attendre pour un correctif urgent.
 > **Installer sans construire** : [`deploiement/standard/LISEZMOI.md`](deploiement/standard/LISEZMOI.md)
 > — chaque version promue joint son archive de déploiement à ses notes de version.
+> Le serveur d'une installation y reçoit seul ses **correctifs de sécurité** — système,
+> Docker, `cloudflared` — chaque nuit à 03:00, contrôlés chaque matin
+> (`deploiement/standard/correctifs-systeme.sh`).
 
 Au premier lancement, deux comptes sont créés avec un **mot de passe aléatoire** affiché dans les logs : l'**administrateur** de la copropriété (`admin@localhost`) et l'**opérateur** de l'installation (`operateur@localhost`, administrateur aussi — supervision, santé, inscription au registre). Séparés pour confier le premier sans livrer le second.
 

@@ -3,9 +3,10 @@
 #  lib-installation.sh — Les gestes communs des scripts d'une INSTALLATION
 #  CoproFirst : lire `.env`, journaliser, sonder la santé, rendre compte.
 #
-#  Sourcée par `mise-a-jour.sh` (la mise à jour nocturne d'une réplique, #1756)
-#  et par `deploiement/demo/reinitialiser.sh` (la remise à zéro nocturne de la
-#  démo publique, #1905). Elle les avait en ligne dans le premier ; le second
+#  Sourcée par `mise-a-jour.sh` (la mise à jour nocturne d'une réplique, #1756),
+#  par `deploiement/demo/reinitialiser.sh` (la remise à zéro nocturne de la
+#  démo publique, #1905), par `correctifs-systeme.sh` (les correctifs du
+#  système) et, pour `poser` seule, par `scripts/installation/durcir-noeud.sh`. Elle les avait en ligne dans le premier ; le second
 #  en aurait été la copie (rang 1 : factorisation).
 #
 #  ⚠️ Elle part dans l'ARCHIVE de déploiement (`scripts/ci/lib-archive-deploiement.sh`) :
@@ -64,4 +65,15 @@ rendre_compte_tache() {
     printf '%s' "$corps" | curl -fsS -m 20 -o /dev/null -X POST http://localhost/api/admin/maintenance/rapport \
         -H "x-maintenance-key: $cle" -H "Content-Type: application/json" --data-binary @- \
         || journal "⚠ Rapport non transmis à l'administration."
+}
+
+#  Écriture idempotente d'un fichier root (contenu sur l'entrée standard).
+#  $1 chemin · $2 mode → 0 si le fichier a changé, 1 s'il était déjà identique,
+#  2 en cas d'échec. Le répertoire parent doit exister.
+poser() {
+    local tmp; tmp=$(mktemp) || return 2
+    cat > "$tmp"
+    if [ -f "$1" ] && cmp -s "$tmp" "$1"; then rm -f "$tmp"; return 1; fi
+    install -o root -g root -m "$2" "$tmp" "$1" || { rm -f "$tmp"; return 2; }
+    rm -f "$tmp"
 }

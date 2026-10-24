@@ -17,10 +17,11 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from app.models.core import HistoriqueMaintenance, TachePlanifiee
+from app.models.core import TachePlanifiee
 from app.utils import horloge
+from app.utils.etat_taches import dernier_rapport
 
 #: Au-delà, l'échec est déjà dit par le courriel d'hier, ou a été suivi d'un succès.
 FENETRE = timedelta(hours=30)
@@ -28,11 +29,7 @@ FENETRE = timedelta(hours=30)
 
 def problemes_mise_a_jour(session: Session) -> list[str]:
     """Le dernier passage, s'il a échoué il y a moins de `FENETRE` — sinon rien."""
-    dernier = session.exec(
-        select(HistoriqueMaintenance)
-        .where(HistoriqueMaintenance.tache == TachePlanifiee.mise_a_jour.value)
-        .order_by(HistoriqueMaintenance.cree_le.desc())
-    ).first()
+    dernier = dernier_rapport(session, TachePlanifiee.mise_a_jour.value)
     if dernier is None or dernier.statut != "erreur":
         return []
     if horloge.maintenant() - dernier.cree_le > FENETRE:

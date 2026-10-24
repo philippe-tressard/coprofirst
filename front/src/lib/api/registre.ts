@@ -31,7 +31,7 @@ export interface AlerteRegistre {
 	libelle: string;
 	/** Ce qui a été constaté, avec sa mesure. */
 	message: string;
-	/** Grave : l'opérateur en reçoit un courriel (muette, clone, deux références). */
+	/** Grave : l'opérateur en reçoit un courriel (muette, clone, deux références, correctifs du système). */
 	grave: boolean;
 }
 

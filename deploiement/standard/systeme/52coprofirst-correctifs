@@ -1,0 +1,36 @@
+// Posé par deploiement/standard/correctifs-systeme.sh — ne pas éditer à la main :
+// le prochain --appliquer le réécrit. Pour s'en retirer : --retirer.
+//
+// Lu APRÈS 50unattended-upgrades (ordre alphabétique) : ses LISTES s'ajoutent
+// à celles du système, ses valeurs simples l'emportent (`apt-config dump` fait foi).
+//
+// Les listes ET l'installation, chaque jour — quelle que soit la valeur de
+// 20auto-upgrades, que l'image du système pose (ou pas).
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+
+// Ce qu'unattended-upgrades pose en plus des correctifs de sécurité du système :
+// les mises à jour de la distribution, le moteur de conteneurs (dépôt Docker)
+// et le tunnel (dépôt Cloudflare). Le dépôt Cloudflare n'a pas de « Suite » :
+// il se désigne par son nom de code (`codename`), jamais par `Allowed-Origins`.
+Unattended-Upgrade::Origins-Pattern {
+        "origin=Ubuntu,archive=${distro_codename}-updates";
+        "origin=Debian,codename=${distro_codename}-updates";
+        "origin=Docker,label=Docker CE,archive=${distro_codename}";
+        "origin=cloudflared,codename=${distro_codename}";
+};
+
+// Un fichier de configuration modifié à la main ne bloque plus le paquet : la
+// version locale est gardée.
+Dpkg::Options {
+        "--force-confdef";
+        "--force-confold";
+};
+
+// Redémarrer JUSTE APRÈS le passage, et seulement s'il l'exige (noyau, libc…) :
+// le passage tourne entre 03:00 et 03:20, loin de la mise à jour de CoproFirst
+// (04:30) et de la remise à zéro de la démo (05:15). Une heure différée ferait
+// tomber le redémarrage au lendemain si le passage la dépassait.
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+Unattended-Upgrade::Automatic-Reboot-Time "now";
