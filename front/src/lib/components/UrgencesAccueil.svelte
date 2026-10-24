@@ -21,11 +21,21 @@
   par un pseudo-élément. Le clavier et les lecteurs d'écran reçoivent un lien
   natif (Entrée, ouverture dans un onglet, adresse annoncée), et le rendu ne
   bouge pas.
+
+  ## 🔴 Le texte riche, pas l'extrait (24/10/2026)
+
+  Le bandeau rendait `detail` : un extrait que le serveur a déjà dépouillé de
+  son HTML (`strip_html`). Le gras d'une actualité urgente — « le code 0753 » —
+  disparaissait ici alors que le fil, juste dessous, le rendait. Quand le
+  serveur envoie le texte d'origine (`meta.full_html`), c'est lui qui se rend,
+  assaini par `safeDescription` et borné à trois lignes comme l'aperçu d'une
+  carte ; `detail` reste le repli des éléments qui n'en ont pas.
 -->
 <script lang="ts">
 	import type { FluxItem } from '$lib/api';
 	import { fmtTime } from '$lib/date';
 	import { cleFluxItem, typeCouleur, typeFond, typeLibelle, typeLink } from '$lib/flux';
+	import { safeDescription } from '$lib/sanitize';
 
 	/** Les urgences à montrer, déjà choisies et bornées par la page. */
 	export let items: FluxItem[] = [];
@@ -78,6 +88,10 @@
 					{#if u.meta?.prestataire}
 						· {u.meta.prestataire}{/if}
 				</p>
+			{:else if u.meta?.full_html}
+				<div class="urgence-horaire urgence-texte rich-content clamp-3">
+					{@html safeDescription(String(u.meta.full_html))}
+				</div>
 			{:else if u.detail}
 				<p class="urgence-horaire">{u.detail}</p>
 			{/if}
@@ -193,6 +207,11 @@
 		font-size: var(--fs-md);
 		color: var(--color-text-muted);
 		margin: 0;
+	}
+	/*  Le texte riche garde l'allure de la ligne : ses paragraphes ne
+	    s'écartent que d'un souffle, comme dans l'aperçu d'une carte. */
+	.urgence-texte :global(p) {
+		margin: 0 0 0.12em;
 	}
 	.urgence-concerne {
 		font-size: var(--fs-md);
