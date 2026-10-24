@@ -15,6 +15,10 @@
 	var CLE_MOTIF = 'garde-demarrage-motif';
 	var NON_DESSINEE = 'non-dessinee';
 	var NON_DEMARREE = 'non-demarree';
+	var NON_STYLEE = 'non-stylee';
+	// Posée par la feuille principale (`styles/socle.css`) : absente du style
+	// calculé, la page s'affiche sans sa mise en forme.
+	var TEMOIN_FEUILLE = '--feuille-principale';
 
 	var racine = document.documentElement;
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -33,6 +37,11 @@
 		var types = PerformanceObserver.supportedEntryTypes || [];
 		if (types.indexOf('paint') < 0) return true;
 		return perf.getEntriesByName('first-contentful-paint').length > 0;
+	}
+
+	function stylee() {
+		if (!window.getComputedStyle) return true; // rien n'est établi : on se tait
+		return getComputedStyle(racine).getPropertyValue(TEMOIN_FEUILLE).trim() !== '';
 	}
 
 	function rechargeRecente() {
@@ -141,6 +150,31 @@
 		clearTimeout(minuteur);
 		minuteur = setTimeout(action, delai);
 	}
+
+	/**
+	 *  Une page affichée SANS sa feuille principale (24/10/2026) : une tablette
+	 *  rouverte le lendemain montrait la page brute, liens soulignés sur fond
+	 *  blanc — une page d'avant une MEP dont les feuilles, aux noms hachés,
+	 *  n'existent plus. Elle est dessinée, parfois même démarrée : les deux
+	 *  constats ci-dessus se taisaient. Jugé au chargement complet, au retour
+	 *  sur l'onglet et à la restauration depuis le cache de navigation — et
+	 *  après le démarrage aussi, la page restaurée l'étant souvent déjà.
+	 */
+	function verifierFeuilles() {
+		if (message || document.readyState !== 'complete') return;
+		if (document.visibilityState === 'hidden' || stylee()) return;
+		if (!rechargeRecente()) return recharger(NON_STYLEE);
+		dire(
+			'Cette page s’affiche sans sa mise en forme.',
+			'Rechargez-la — sur un ordinateur, Ctrl+Maj+R (Cmd+Maj+R sur Mac). ' +
+				'Dans l’application installée, fermez-la puis rouvrez-la.',
+			NON_STYLEE,
+		);
+	}
+
+	window.addEventListener('load', verifierFeuilles);
+	window.addEventListener('pageshow', verifierFeuilles);
+	document.addEventListener('visibilitychange', verifierFeuilles);
 
 	// Le décompte ne court que pendant que l'onglet est visible.
 	function surVisibilite() {

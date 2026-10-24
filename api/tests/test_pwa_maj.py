@@ -241,6 +241,14 @@ def test_une_page_qui_ne_se_dessine_pas_est_gardee():
         "le layout racine ne signale plus le démarrage de l'application au garde."
     )
 
+    #  5. la variable témoin de la feuille principale (24/10/2026) : le garde la
+    #  lit dans le style calculé, `socle.css` la pose. Renommée d'un seul côté,
+    #  toute page saine passerait pour une page sans mise en forme.
+    temoin = re.search(r"TEMOIN_FEUILLE = '([^']+)'", garde).group(1)
+    assert f"{temoin}:" in _lire(_FRONT / "src" / "styles" / "socle.css"), (
+        f"`socle.css` ne pose plus `{temoin}`, que le garde lit pour juger la mise en forme."
+    )
+
 
 def test_un_rechargement_de_secours_se_mesure():
     """La cause de #1993 n'est pas trouvée : chaque secours se COMPTE (arbitré le 17/10/2026).
@@ -256,7 +264,7 @@ def test_un_rechargement_de_secours_se_mesure():
     cle = re.search(r"CLE_MOTIF = '([^']+)'", module).group(1)
     assert f"CLE_MOTIF = '{cle}'" in garde, f"le garde n'écrit plus le motif sous `{cle}`"
     motifs = re.findall(r"'([a-z-]+)'", re.search(r"MOTIFS = \[([^\]]+)\]", module).group(1))
-    assert sorted(motifs) == ["non-demarree", "non-dessinee"], motifs
+    assert sorted(motifs) == ["non-demarree", "non-dessinee", "non-stylee"], motifs
     for motif in motifs:
         assert f"'{motif}'" in garde, f"le garde n'écrit plus le motif `{motif}`"
     assert "signalerErreur" in module and "envoyerMaintenant" in module, (
