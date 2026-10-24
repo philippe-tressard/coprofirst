@@ -37,6 +37,7 @@
 | nb_etages | integer | RDC + 3 étages (= 4 niveaux) |
 | sous_sol | string | Description des niveaux -1 / -2 |
 | specificites | string | Ex. jardin collectif + local vélo (bât. 4) |
+| lettre_rcp | string, nullable | La lettre ou le numéro que le règlement donne au bâtiment ; saisie, jamais déduite (`lots-et-perimetres.md`) |
 
 ### Périmètre  *(arborescence : où se situe une demande)*
 
@@ -80,7 +81,21 @@ Les deux axes restent distincts.
 | numero | string | Numéro de lot |
 | type | enum | `appartement` \| `cave` \| `parking` |
 | type_appartement | enum | `studio` \| `T1` \| `T2` \| `T3` \| `T4` \| `T5` (si appartement) |
-| etage | integer | Null si cave/parking |
+| etage | integer | Le niveau, sous-sols compris (−2 pour une place au 2ᵉ sous-sol) ; il n'y a pas de colonne `niveau` à part |
+| nature | enum, nullable | `logement` \| `commerce` \| `cave` \| `parking` \| `divers` — l'état descriptif ; vide tant qu'il n'est pas importé, lue par `utils/designation_lot.nature_du_lot` |
+| numero_usage | string, nullable | La porte ou la place (« 5 & 6 ») |
+| circulation_perimetre_id | FK Périmètre, nullable | Le nœud (bâtiment) dont la circulation dessert le lot ; nul = accès direct |
+
+### CléDeCharges · QuotePartLot · LotPérimètre *(la désignation du règlement, #2212)*
+
+| Table | Champs | Rôle |
+|-------|--------|------|
+| `cle_de_charges` | code, libelle, denominateur, perimetre_id?, ordre | une répartition du règlement |
+| `quote_part_lot` | lot_id, cle_id, numerateur — unique (lot, clé) | les tantièmes d'un lot dans une clé |
+| `lot_perimetre` | lot_id, perimetre_id, relation (`situe_dans` \| `desservi_par`), derive | les périmètres d'un lot, **dérivés** (`utils/perimetres/lots`), une ligne manuelle (`derive = faux`) survit |
+| `import_etat_descriptif` · `ligne_etat_descriptif` | — | la table de passage de l'état descriptif |
+
+`Perimetre.desserte` (`circulation` \| `caves` \| `stationnement`) dit ce qu'un nœud dessert. **Règle de visibilité** : un contenu ciblé est lu si son bâtiment est l'un des miens (rattachement, logements — jamais une annexe), ou s'il est ciblé sous un nœud qui dessert l'un de mes lots ; la table des cas est dans `lots-et-perimetres.md` §5.
 
 ### Utilisateur
 
