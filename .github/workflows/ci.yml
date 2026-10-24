@@ -2404,6 +2404,14 @@ jobs:
         working-directory: front
         run: npm run lint:lock
 
+      # 🔒 Un paquet importé est un paquet DÉCLARÉ (#2205, 24/10/2026).
+      # `esbuild`, importé par `scripts/lib/charger-module.mjs`, n'a jamais figuré
+      # dans `package.json` : Vite 6 l'apportait. Vite 8 ne l'apporte plus, et douze
+      # contrôles du front sont tombés d'un coup au rejeu, après la montée.
+      - name: Tout paquet importé est déclaré dans package.json
+        working-directory: front
+        run: npm run lint:imports-declares
+
       # 🔴 DEUX COPIES SUR CINQ AVAIENT DIVERGÉ SUR CE QU'ON NE VOIT PAS (18/09/2026).
       #
       # Le dépliement Unicode qui retire les accents était recopié cinq fois :
