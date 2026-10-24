@@ -162,7 +162,8 @@
 		"lint:intitules-section": "node scripts/check-intitules-section.mjs",
 		"lint:section-lue": "node scripts/check-section-lue.mjs",
 		"e2e": "playwright test",
-		"e2e:ui": "playwright test --ui"
+		"e2e:ui": "playwright test --ui",
+		"e2e:sw": "node scripts/check-sw-enregistre.mjs --selftest && node scripts/check-sw-enregistre.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

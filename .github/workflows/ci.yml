@@ -2678,3 +2678,16 @@ jobs:
             exit 1
           fi
           exit $code
+
+      # 🔒 Le service worker s'enregistre, DANS UN NAVIGATEUR (#2205, 24/10/2026).
+      # `lint:sw` lit le bundle ; il s'est trompé deux fois (chemin relatif jamais
+      # vu du navigateur, le 26/07 ; accents graves de Rolldown pris pour une
+      # disparition, le 24/10). Ceci lance l'application CONSTRUITE et demande au
+      # navigateur. Le service worker n'existe qu'au build : `vite dev` n'en sert pas.
+      - name: Construire l'application (le service worker n'existe qu'au build)
+        working-directory: front
+        run: npm run build
+
+      - name: Service worker enregistré (Chromium, application construite)
+        working-directory: front
+        run: npm run e2e:sw
