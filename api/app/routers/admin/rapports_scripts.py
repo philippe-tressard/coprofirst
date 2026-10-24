@@ -185,6 +185,9 @@ class BattementTache(BaseModel):
     #  la ligne garde les siens ; présents, ils la remplacent avec `erreur`.
     details: Optional[dict] = None
     erreur: Optional[str] = None
+    #  #2199 : la durée du passage qui prolonge la ligne. Absente (script pas
+    #  encore redéployé), la ligne garde la sienne.
+    duree_secondes: Optional[int] = None
 
 
 @router.post("/maintenance/battement")
@@ -230,6 +233,8 @@ def maintenance_battement(
         "Aucun rapport à prolonger pour ce nœud",
     )
     ligne.terminee_le = horloge.maintenant()
+    if body.duree_secondes is not None:
+        ligne.duree_secondes = body.duree_secondes
     if body.details is not None:
         ligne.details = _details_en_base(body.details)
         ligne.erreur = body.erreur

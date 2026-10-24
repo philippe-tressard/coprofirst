@@ -178,7 +178,10 @@ arrière si le site public ne répond pas 200). La rotation vient ensuite
 `/root` qui portent un secret sont détruites par le script (`shred -u`).
 **C39** (`lib-jeton-tunnel-clair.sh`) échoue (FAIL) si `systemctl cat cloudflared`
 contient un jeton en clair sur l'un des nœuds — la collecte ne remonte qu'un
-verdict, jamais un extrait de l'unité. ⚠️ Ne jamais afficher `systemctl cat
+verdict, jamais un extrait de l'unité. Les **droits** du fichier, chaque nœud
+ne juge que les siens, en root : WARN « INCONNUS » s'il ne les lit pas, jamais OK
+(#2199) — même règle pour le cache de build (C16). Ce qui ne se mesure que chez
+soi se lit dans `MESURES_PAR_SOI` (`api/tests/test_controles_mesures_par_soi.py`). ⚠️ Ne jamais afficher `systemctl cat
 cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abord
 (`sed -E 's/(--token[= ]+)[^ ]+/<MASQUÉ>/'`).
 
