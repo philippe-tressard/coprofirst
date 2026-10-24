@@ -109,6 +109,21 @@ EXCEPTIONS = (
         ),
     },
     {
+        "source": "front",
+        "paquets": ("lightningcss", "lightningcss-*"),
+        "licences": ("MPL-2.0",),
+        "motif": (
+            "Minifieur CSS de Vite 8 (#2205), dépendance directe de `vite` : il n'est pas "
+            "substituable sans quitter la chaîne de construction. Copyleft faible au "
+            "niveau du fichier ; utilisé sans modification. Les binaires de plateforme "
+            "(un par système) sont des paquets optionnels, dont un seul est installé."
+        ),
+        "statut": _compatible(
+            "la MPL-2.0 admet la GPL et l'AGPL comme « Secondary Licenses » ; outil de "
+            "construction, présent dans node_modules de l'image sans être modifié"
+        ),
+    },
+    {
         "source": "api",
         "paquets": ("psycopg", "psycopg-binary"),
         "licences": ("LGPL-3.0-only",),
