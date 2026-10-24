@@ -45,15 +45,20 @@ from app.routers.copropriete import (
     copropriete_lue,
     update_copropriete,
 )
+from tests.aides_purge import vider_patrimoine
 
 
 @pytest.fixture()
 def copro() -> int:
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
-        for ligne in session.exec(select(Copropriete)).all():
-            session.delete(ligne)
-        session.commit()
+        #  🔴 Le patrimoine entier, pas les seules copropriétés (24/10/2026) : un
+        #  bâtiment laissé par un test précédent de la même tranche était « délié »
+        #  par SQLAlchemy (`copropriete_id = NULL`, colonne NOT NULL) et les six
+        #  tests tombaient au montage. Le conftest avait corrigé UN fournisseur de
+        #  bâtiments le 15/08 ; la victime, elle, dépendait toujours de l'ordre
+        #  des fichiers — un fichier de tests ajouté l'a de nouveau révélé.
+        vider_patrimoine(session)
         c = Copropriete(nom="Test", adresse="1 rue Test")
         session.add(c)
         session.commit()
