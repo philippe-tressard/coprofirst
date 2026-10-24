@@ -36,6 +36,22 @@ class TypeLot(str, Enum):
     parking = "parking"
 
 
+class NatureLot(str, Enum):
+    """La nature d'un lot telle que l'état descriptif du règlement la dit (#2212).
+
+    Plus fine que `TypeLot` : un commerce ou un lot « divers » (local, remise) n'est
+    ni un appartement ni une annexe. Premier temps d'une expansion : `type` reste lu
+    partout, `nature` le précise ; `utils/designation_lot.nature_du_lot` répond pour
+    un lot qui n'a pas encore de nature, en la déduisant de `type`.
+    """
+
+    logement = "logement"
+    commerce = "commerce"
+    cave = "cave"
+    parking = "parking"
+    divers = "divers"
+
+
 # ──────────────────────────────────────────────
 #  Copropriété
 # ──────────────────────────────────────────────
@@ -114,6 +130,12 @@ class Batiment(SQLModel, table=True):
     nb_caves: int = 0
     nb_parkings: int = 0
     nb_locaux_commerciaux: int = 0
+    #: La lettre (ou le numéro) que le règlement de copropriété donne à ce bâtiment.
+    #: L'application compte « 1, 2, 3 » quand l'acte dit « A, B, C » — parfois dans
+    #: l'ordre inverse : la correspondance se SAISIT, elle ne se déduit jamais de
+    #: l'ordre (spec `lots-et-perimetres.md` §2, #2212). Rendue par
+    #: `utils/batiments.libelle_batiment`, et nulle part ailleurs.
+    lettre_rcp: Optional[str] = None
 
     copropriete: Optional[Copropriete] = Relationship(back_populates="batiments")
     lots: List["Lot"] = Relationship(back_populates="batiment")
@@ -130,6 +152,17 @@ class Lot(SQLModel, table=True):
     type_appartement: Optional[str] = None  # Studio, T1, T2…
     etage: Optional[int] = None
     superficie: Optional[float] = None
+    #: La désignation du règlement (#2212, spec `lots-et-perimetres.md` §4). Le
+    #: niveau n'a pas de colonne à lui : `etage` le porte déjà, sous-sols compris
+    #: (`utils/etages.ETAGE_MIN`) — deux colonnes pour un même fait divergeraient.
+    nature: Optional[NatureLot] = None
+    #: La porte ou la place, ce que le résident dit (« 5 & 6 » pour un double
+    #: emplacement) ; `numero` reste le numéro de lot de l'acte.
+    numero_usage: Optional[str] = None
+    #: Le nœud de l'arbre des périmètres qui DESSERT le lot — l'ascenseur et
+    #: l'escalier par lesquels on le rejoint. Nul pour un accès direct. C'est lui,
+    #: et non le bâtiment du propriétaire, qui décide de ce qui concerne l'occupant.
+    circulation_perimetre_id: Optional[int] = Field(default=None, foreign_key="perimetre.id")
 
     batiment: Optional[Batiment] = Relationship(back_populates="lots")
     user_lots: List["UserLot"] = Relationship(back_populates="lot")

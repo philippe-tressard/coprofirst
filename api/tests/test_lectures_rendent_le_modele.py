@@ -452,6 +452,14 @@ ATTENDU_LOT = {
     "batiment_nom": "Bât. B",
     "est_logement_de_reference": False,
     "type_lien": None,
+    #  La désignation du règlement (#2212) : la nature se déduit du type tant que
+    #  l'état descriptif ne l'a pas posée ; les tantièmes ne se montrent qu'à qui
+    #  les lit (`None`, jamais une liste vide trompeuse).
+    "nature": "logement",
+    "numero_usage": None,
+    "circulation": None,
+    "perimetres": [],
+    "quotes_parts": None,
 }
 ATTENDU_ACCES = {
     "code": "V-9",

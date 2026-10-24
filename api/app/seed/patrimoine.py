@@ -48,7 +48,7 @@ libellé renommé.
 from sqlmodel import Session, select
 
 from app.models.core import Batiment, ConfigSite
-from app.models.perimetre import Perimetre
+from app.models.perimetre import DessertePerimetre, Perimetre
 
 #: Espaces posés sous chaque bâtiment. `(suffixe de code, libellé, description)`.
 #: C'est le « gabarit » que l'écran d'administration proposera de réappliquer.
@@ -92,6 +92,17 @@ GABARIT_BATIMENT: list[tuple[str, str, str]] = [
         "Tout espace du bâtiment qui n'entre pas dans les catégories ci-dessus.",
     ),
 ]
+
+
+#: Ce que dessert chaque espace du gabarit (#2212) : l'ascenseur et l'escalier sont
+#: la CIRCULATION qui mène aux caves et aux places, les caves du bâtiment sont celles
+#: que sa circulation dessert. Valeur INITIALE, comme l'icône : l'administration la
+#: règle ensuite (`Perimetre.desserte`). La 0312 l'a posée sur les bases existantes.
+DESSERTES_GABARIT: dict[str, DessertePerimetre] = {
+    "escaliers": DessertePerimetre.circulation,
+    "ascenseur": DessertePerimetre.circulation,
+    "caves": DessertePerimetre.caves,
+}
 
 
 #: Icône **initiale** de chaque périmètre, par code. Les noms sont ceux que
@@ -195,6 +206,7 @@ def _racines() -> list[dict]:
             "tous.",
             "portee_globale": True,
             "selectionnable": True,
+            "desserte": DessertePerimetre.stationnement,
             "ordre": 20,
             "enfants": [
                 ("places", "Places", "Les places de stationnement et leur marquage."),
@@ -341,6 +353,7 @@ def _poser(session: Session, connus: dict[str, int], entree: dict, parent_id: in
         batiment_id=entree.get("batiment_id"),
         portee_globale=entree.get("portee_globale", False),
         selectionnable=entree.get("selectionnable", True),
+        desserte=entree.get("desserte"),
         ordre=entree.get("ordre", 0),
     )
     session.add(noeud)
@@ -472,6 +485,7 @@ def _poser_les_batiments(session: Session, connus: dict[str, int]) -> None:
                     "libelle": libelle,
                     "description": description,
                     #  `batiment_id` non répété : il est hérité de l'ancêtre bâtiment.
+                    "desserte": DESSERTES_GABARIT.get(suffixe),
                     "ordre": rang_espace,
                 },
                 bat_id,

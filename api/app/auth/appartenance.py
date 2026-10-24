@@ -298,3 +298,18 @@ def peut_ressortir_l_avis(avis, user: Utilisateur, *, gestionnaire: bool) -> boo
 def peut_supprimer_l_avis(avis, user: Utilisateur) -> bool:
     """🗑️ Supprimer un avis, aux Archives : son auteur (droit à l'effacement), ou l'administration."""
     return est_auteur(avis, user) or user.has_role(RoleUtilisateur.admin)
+
+
+#: Les liens à un lot qui en montrent les TANTIÈMES (#2212, spec `lots-et-perimetres.md`
+#: §9). Arbitré le 24/10/2026 (coordination, sur délégation de Philippe du 17/10) :
+#: le copropriétaire et qui le représente — le mandataire de gestion —, pas le
+#: locataire, qui ne paie pas les charges de copropriété. Le conseil et
+#: l'administration lisent le patrimoine entier par `/lots/admin/tous`.
+LIENS_QUI_LISENT_LES_TANTIEMES = frozenset({"propriétaire", "bailleur", "mandataire"})
+
+
+def lit_les_tantiemes(type_lien: Any) -> bool:
+    """Ce lien à un lot en montre-t-il les tantièmes ?"""
+    from app.utils.valeurs import valeur
+
+    return str(valeur(type_lien) or "") in LIENS_QUI_LISENT_LES_TANTIEMES

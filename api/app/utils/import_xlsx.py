@@ -92,6 +92,12 @@ def _lignes(source) -> list:
         classeur.close()
 
 
+def lignes_du_classeur(contenu: bytes) -> list:
+    """Les lignes d'un classeur reçu en octets — pour un import qui n'a pas la forme
+    « une ligne, un objet en attente » de `importeurs` (l'état descriptif, #2213)."""
+    return _lignes(io.BytesIO(contenu))
+
+
 def importer_bytes(
     contenu: bytes,
     session: Session,

@@ -14,7 +14,7 @@ from app.auth.deps import (
     get_current_user,
     require_cs_or_admin,
 )
-from app.auth.appartenance import exiger_lots_proposes_au_locataire
+from app.auth.appartenance import exiger_lots_proposes_au_locataire, lit_les_tantiemes
 from app.database import get_session
 from app.utils.rattachement_locataire import (
     acces_des_lots,
@@ -22,7 +22,9 @@ from app.utils.rattachement_locataire import (
     rattacher_lots_declares,
 )
 from app.utils.valeurs import valeur
+from app.utils.designation_lot import nature_du_lot
 from app.utils.lecture import lire_objet
+from app.utils.lecture_lots import Designation, designations
 from app.utils.lots_rattaches import rattachements_actifs
 from app.utils.recuperer import ou_404
 from app.utils.etages import (
@@ -57,7 +59,9 @@ router = APIRouter(prefix="/lots", tags=["lots"])
 #  Schémas
 
 
-class LotRead(BaseModel):
+class LotRead(Designation):
+    """Un lot — et sa désignation du règlement (#2212), héritée de `Designation`."""
+
     id: int
     numero: str
     type: str
@@ -76,14 +80,21 @@ class LotRead(BaseModel):
     #: `/lots/mes-lots` : l'écran du locataire sépare ce qu'il LOUE de ce qu'il
     #: possède. `None` hors de cette liste.
     type_lien: Optional[str] = None
+    #: La nature selon le règlement (`utils/designation_lot.nature_du_lot`).
+    nature: Optional[str] = None
+    #: La porte ou la place (« 5 & 6 »), ce que le résident dit.
+    numero_usage: Optional[str] = None
 
 
-def _lot_read(lot: Lot) -> LotRead:
+def _lot_read(lot: Lot, designation: Optional[Designation] = None) -> LotRead:
+    nature = nature_du_lot(lot)
     return lire_objet(
         LotRead,
         lot,
         type=type_de_lot(lot),
         batiment_nom=libelle_batiment_ou(lot.batiment, None),
+        nature=nature.value if nature else None,
+        **(designation or Designation()).model_dump(),
     )
 
 
@@ -105,9 +116,11 @@ def mes_lots(
     #  porte sur l'ENSEMBLE des lots (« un seul logement »), donc elle ne peut pas
     #  se calculer lot par lot dans `_lot_read`.
     reference = logement_de_reference(lots)
+    liens = {lot.id: lien for lot, lien in rattachements}
+    lues = designations(session, lots, lambda lot: lit_les_tantiemes(liens[lot.id].type_lien))
     lectures = []
     for lot, lien in rattachements:
-        lecture = _lot_read(lot)
+        lecture = _lot_read(lot, lues.get(lot.id))
         lecture.est_logement_de_reference = reference is not None and lot.id == reference.id
         lecture.type_lien = valeur(lien.type_lien)
         lectures.append(lecture)
@@ -120,7 +133,10 @@ def tous_les_lots(
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
     """Liste complète de tous les lots (admin/CS)."""
-    return [_lot_read(lot) for lot in session.exec(select(Lot)).all()]
+    lots = session.exec(select(Lot)).all()
+    #  Le conseil et l'administration lisent le patrimoine entier, tantièmes compris.
+    lues = designations(session, lots, lambda _lot: True)
+    return [_lot_read(lot, lues.get(lot.id)) for lot in lots]
 
 
 #  🔴 `_lot_rattache` a été SUPPRIMÉE le 19/09/2026 (#1028), pas renommée : sa
@@ -279,3 +295,8 @@ def declarer_ma_location(
 from app.routers.lots_imports import router as _router_imports  # noqa: E402
 
 router.include_router(_router_imports)
+
+#  L'état descriptif du règlement (#2213) : même atelier, même préfixe, autre fichier.
+from app.routers.lots_etat_descriptif import router as _router_etat_descriptif  # noqa: E402
+
+router.include_router(_router_etat_descriptif)

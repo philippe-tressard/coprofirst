@@ -12,10 +12,26 @@ et surtout que la table reste enregistrée auprès de SQLModel au moment du
 """
 
 from app.utils import horloge
+from enum import Enum
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, UniqueConstraint
 from pydantic import NaiveDatetime
+
+
+class DessertePerimetre(str, Enum):
+    """Ce qu'un nœud dessert — voir `Perimetre.desserte`."""
+
+    circulation = "circulation"
+    caves = "caves"
+    stationnement = "stationnement"
+
+
+class RelationLotPerimetre(str, Enum):
+    """Les deux rattachements d'un lot à l'arbre (spec `lots-et-perimetres.md` §1)."""
+
+    situe_dans = "situe_dans"
+    desservi_par = "desservi_par"
 
 
 class Perimetre(SQLModel, table=True):
@@ -106,9 +122,45 @@ class Perimetre(SQLModel, table=True):
     #: d'AFUL, et le code ne doit connaître aucun nœud par son nom.
     hors_copropriete: bool = Field(default=False)
 
+    #: Ce nœud DESSERT-il des lots, et comment ? (#2212, spec `lots-et-perimetres.md` §4)
+    #:
+    #: Un parking ou une cave est rattaché à la circulation qui le dessert, pas au
+    #: bâtiment de son propriétaire. Le lot désigne le nœud de cette circulation
+    #: (`Lot.circulation_perimetre_id`, le bâtiment) ; ce drapeau dit lesquels de
+    #: ses enfants en relèvent — l'ascenseur et les escaliers (`circulation`), les
+    #: caves (`caves`) — et quel nœud porte les places (`stationnement`).
+    #:
+    #: ⚠️ Administré, comme `privatif` : aucun code ne connaît « ascenseur » par son
+    #: nom, une autre copropriété a peut-être deux escaliers ou aucun ascenseur.
+    desserte: Optional[DessertePerimetre] = None
+
     ordre: int = Field(default=0)
     actif: bool = Field(default=True)
 
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     modifie_le: Optional[NaiveDatetime] = None
     modifie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+
+
+class LotPerimetre(SQLModel, table=True):
+    """Les périmètres qui concernent un lot — DÉRIVÉS, jamais saisis deux fois (#2212).
+
+    *Situé dans* : le nœud de son bâtiment (le stationnement pour une place sans
+    bâtiment). *Desservi par* : les nœuds de sa circulation qui desservent
+    (`Perimetre.desserte`). La dérivation est une fonction pure,
+    `utils/perimetres/lots.deriver` ; `derive = False` marque une ligne posée à la
+    main dans l'administration, qu'une re-dérivation laisse en place.
+
+    ⚠️ `derive` n'est pas un `actif` : il ne fait rien disparaître, il dit qui a
+    écrit la ligne (`test_archivage_colonnes_booleennes`).
+    """
+
+    __tablename__ = "lot_perimetre"
+    __table_args__ = (
+        UniqueConstraint("lot_id", "perimetre_id", "relation", name="uq_lot_perimetre"),
+    )
+    id: Optional[int] = Field(default=None, primary_key=True)
+    lot_id: int = Field(foreign_key="lot.id", index=True)
+    perimetre_id: int = Field(foreign_key="perimetre.id")
+    relation: RelationLotPerimetre
+    derive: bool = Field(default=True)

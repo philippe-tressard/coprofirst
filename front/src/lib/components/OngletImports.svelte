@@ -25,6 +25,9 @@
 		{ val: 'lots', label: 'Lots' },
 		{ val: 'telecommandes', label: 'Télécommandes' },
 		{ val: 'vigik', label: 'Vigik' },
+		//  L'état descriptif du RÈGLEMENT (#2213) : ce qu'est chaque lot — nature,
+		//  circulation qui le dessert, tantièmes —, rapproché des lots par leur numéro.
+		{ val: 'etat-descriptif', label: 'État descriptif' },
 	];
 
 	$: demandee = $page.url.searchParams.get('source') ?? '';
@@ -55,6 +58,12 @@
 	<ChargementDiffere charger={() => import('$lib/components/OngletImportLots.svelte')}>
 		{#snippet contenu(OngletImportLots)}
 			<OngletImportLots />
+		{/snippet}
+	</ChargementDiffere>
+{:else if courante === 'etat-descriptif'}
+	<ChargementDiffere charger={() => import('$lib/components/OngletImportEtatDescriptif.svelte')}>
+		{#snippet contenu(OngletImportEtatDescriptif)}
+			<OngletImportEtatDescriptif />
 		{/snippet}
 	</ChargementDiffere>
 {:else}

@@ -22,7 +22,12 @@ from app.models.courriel import ReponseRelance as ReponseRelance
 from app.models.courriel import FilCourriel as FilCourriel
 from app.models.courriel import MessageVerse as MessageVerse
 from app.models.courriel import VersementCourriel as VersementCourriel
+from app.models.perimetre import LotPerimetre as LotPerimetre
 from app.models.perimetre import Perimetre as Perimetre
+from app.models.charges import CleDeCharges as CleDeCharges
+from app.models.charges import QuotePartLot as QuotePartLot
+from app.models.etat_descriptif import ImportEtatDescriptif as ImportEtatDescriptif
+from app.models.etat_descriptif import LigneEtatDescriptif as LigneEtatDescriptif
 from app.models.whatsapp import WhatsAppLog as WhatsAppLog
 from app.models.whatsapp import WhatsAppScheduled as WhatsAppScheduled
 from app.models.gouvernance import AgCsInfo as AgCsInfo
