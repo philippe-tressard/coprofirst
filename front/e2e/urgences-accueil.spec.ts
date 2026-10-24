@@ -47,6 +47,34 @@ test('au clavier : Tab atteint le lien, Entrée ouvre l’affaire', async ({ pag
 	await expect(page).toHaveURL(/\/tickets\?open=TK-109008/);
 });
 
+/*  Une ACTUALITÉ urgente garde la mise en forme de sa description (24/10/2026) :
+ *  le bandeau rendait l'extrait sans HTML (`detail`), et le gras du code
+ *  d'ascenseur disparaissait alors que le fil le rendait. */
+const ACTUALITE_URGENTE = {
+	id: 'tk_8',
+	type: 'publication',
+	date: '2026-09-30T08:00:00',
+	titre: 'Nouveau code de l’ascenseur',
+	detail: 'Le code est 0000.',
+	badges: [],
+	icon: '📰',
+	meta: {
+		ticket_id: 8,
+		urgente: true,
+		full_html: '<p>Le code est <strong>0000</strong>.</p><script>window.__xss = 1</script>',
+	},
+};
+
+test('une actualité urgente garde sa mise en forme, assainie', async ({ page }) => {
+	await simulerApi(page, (chemin) =>
+		chemin === '/api/flux' ? { items: [ACTUALITE_URGENTE], sante: {} } : undefined,
+	);
+	await page.goto('/tableau-de-bord');
+	await attendreHydratation(page);
+	await expect(page.locator('.urgence-fieldset strong', { hasText: '0000' })).toBeVisible();
+	await expect(page.locator('.urgence-fieldset script')).toHaveCount(0);
+});
+
 test('un clic ailleurs sur la carte ouvre aussi l’affaire', async ({ page }) => {
 	await accueil(page);
 	//  Le texte de détail n'est pas dans le lien : c'est le lien étiré qui le
