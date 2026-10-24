@@ -1,12 +1,13 @@
 #!/bin/bash
 # =============================================================================
-#  notes-de-version.sh — Les notes d'une version promue sur `replica`, pour
-#  les exploitants des répliques (#1754, 08/10/2026)
+#  notes-de-version.sh — Les notes d'une version publiée, pour les exploitants
+#  des répliques (#1754, 08/10/2026 ; chaque version taguée depuis #2210)
 #
-#  Appelé par le workflow « Promotion », après l'avance de `replica`. Publie une
+#  Appelé par `publier-version.sh` (workflow « Images », chaque version taguée)
+#  et par le workflow « Promotion », après l'avance de `replica`. Publie une
 #  release GitHub sur le tag `vX.Y.Z`, qui dit ce qu'un exploitant doit savoir
 #  AVANT la mise à jour nocturne de son installation :
-#  - les lots livrés depuis la version précédemment promue (titres des fusions) ;
+#  - les lots livrés depuis la version précédente (titres des fusions) ;
 #  - les migrations de base ajoutées ;
 #  - les réglages ajoutés ou retirés dans `.env.example`.
 #
@@ -14,8 +15,8 @@
 #  `coprofirst-deploiement-X.Y.Z.tar.gz`, tirée du commit promu par
 #  `git archive` — les fichiers exacts de cette version, rien du poste.
 #
-#  Entrées (environnement) : VERSION, COMMIT, PRECEDENT (vide à la première
-#  promotion), MODE (`urgence`, `automatique` ou vide, #1934), GH_TOKEN. Une release déjà publiée n'est pas réécrite.
+#  Entrées (environnement) : VERSION, COMMIT, PRECEDENT (vide pour la première
+#  version), MODE (`urgence`, `automatique` ou vide, #1934), GH_TOKEN. Une release déjà publiée n'est pas réécrite.
 #
 #  Test : bash scripts/ci/notes-de-version.sh --selftest
 # =============================================================================
@@ -38,11 +39,11 @@ composer_notes() {
         automatique) echo "> Version majeure promue automatiquement après 7 jours de rodage sur la référence."; echo ;;
     esac
     if [ -z "$precedent" ]; then
-        echo "Première version promue sur \`replica\`."
+        echo "Première version publiée."
         return
     fi
     plage="$precedent..$commit"
-    echo "## Ce qui change depuis la version promue précédente"
+    echo "## Ce qui change depuis la version précédente"
     echo
     git log --format='- %s' "$plage"
     echo
@@ -93,7 +94,7 @@ if [ "${1:-}" = "--selftest" ]; then
     if printf '%s' "$notes" | grep -q "Correctif urgent\|automatiquement"; then echo "FAIL  une promotion manuelle se dit urgente"; fail=1
     else echo "PASS  une promotion manuelle ne dit rien de plus"; fi
     premiere=$(cd "$DEPOT" && composer_notes "" "$c" 1.0.0)
-    if printf '%s' "$premiere" | grep -q "Première version promue"; then echo "PASS  première promotion"
+    if printf '%s' "$premiere" | grep -q "Première version publiée"; then echo "PASS  première promotion"
     else echo "FAIL  première promotion : « $premiere »"; fail=1; fi
     rm -rf "$DEPOT"
     exit "$fail"

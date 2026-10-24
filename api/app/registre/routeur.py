@@ -270,12 +270,12 @@ async def renouveler_bail(request: Request, session: Session = Depends(get_sessi
         session.add(inst)
         session.commit()
         session.refresh(inst)
-        canal = canaux.canal_de(session, inst)
+        versions = canaux.versions_disponibles(session)
     except SQLAlchemyError as exc:
         session.rollback()
         logger.warning("registre : bail non délivré (%s)", type(exc).__name__)
         raise HTTPException(503, "Le registre est indisponible.") from None
-    return baux.delivrer(inst, cle, horloge.maintenant(), canal).model_dump(mode="json")
+    return baux.delivrer(inst, cle, horloge.maintenant(), versions).model_dump(mode="json")
 
 
 @router.post("/rapports", status_code=202, dependencies=[Depends(_servi_ici)])

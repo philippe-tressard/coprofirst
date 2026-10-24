@@ -21,6 +21,8 @@ Ce que le test tient, sur le texte du workflow (PyYAML vient avec
 """
 
 from __future__ import annotations
+import re
+
 
 from tests.aides_compose import RACINE, services_construits
 from tests.aides_compose import lire_yaml as _yaml
@@ -70,8 +72,8 @@ def test_aucun_droit_par_defaut_et_chaque_job_dit_les_siens():
     ecrivent_le_depot = {
         n for n, j in flux["jobs"].items() if j["permissions"].get("contents") == "write"
     }
-    assert ecrivent_le_depot == {"version"}, (
-        f"seul le job du tag écrit dans le dépôt : {ecrivent_le_depot}"
+    assert ecrivent_le_depot == {"version", "publier-version"}, (
+        f"seuls le tag et la release écrivent dans le dépôt : {ecrivent_le_depot}"
     )
     signent = {n for n, j in flux["jobs"].items() if j["permissions"].get("id-token") == "write"}
     assert signent == {"publier"}, f"seul le job qui atteste reçoit un jeton OIDC : {signent}"
@@ -170,3 +172,16 @@ def test_auto_deploy_et_la_bascule_obtiennent_sans_construire_eux_memes():
     ]
     assert len(appels) == 3, appels
     assert all(a == "rc=0; obtenir_images --quiet || rc=$?" for a in appels), appels
+
+
+def test_chaque_version_taguee_est_publiee_apres_ses_images():
+    """#2210 : la référence ne propose que les versions qui ont leur archive de
+    déploiement ; elle se publie une fois les images lues, jamais avant."""
+    job = _yaml(WORKFLOW)["jobs"]["publier-version"]
+    assert job["needs"] == ["version", "verifier-front"]
+    assert job["if"] == "needs.version.outputs.versionner == 'true'"
+    assert "bash scripts/ci/publier-version.sh" in WORKFLOW.read_text(encoding="utf-8")
+    assert re.search(
+        r"bash scripts/ci/publier-version\.sh\s+--selftest",
+        (RACINE / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8"),
+    ), "publier-version.sh --selftest n'est lancé par aucun job de la CI"

@@ -7,8 +7,8 @@
  * les gestes — valider, suspendre, rétablir, résilier, accorder des services. Un
  * geste voyage dans le bail : l'installation le lit à son prochain renouvellement.
  * Supprimer une installation résiliée la retire de la liste (`registre/conservation`).
- * Le canal, la vague et l'épinglage décident de la version cible de son bail, que sa
- * mise à jour nocturne installe (`registre/canaux`, R5 #1881).
+ * Le canal (Urgence ou une version choisie) et la vague décident de la version cible
+ * de son bail, que sa mise à jour nocturne installe (`registre/canaux`, #2210).
  *
  * À part d'`instance.ts`, qui parle de CETTE installation : ici, ce sont les AUTRES.
  */
@@ -38,7 +38,7 @@ export interface AlerteRegistre {
 export interface ResumeInstallation {
 	identifiant: string;
 	etat: EtatRegistre;
-	/** `main` (la référence) · `replica` · `special-<nom>` */
+	/** `urgence` (la dernière version publiée) · une version `X.Y.Z` choisie · `main` (la référence) */
 	canal: string;
 	version_logicielle: string | null;
 	cree_le: string;
@@ -54,34 +54,43 @@ export interface ResumeInstallation {
 	alertes: AlerteRegistre[];
 	/** Quand elle reçoit la version de son canal (`VagueLue.code`). */
 	vague: number;
-	/** La version que l'opérateur lui impose — épinglage, ou ordre de revenir. */
-	version_epinglee: string | null;
 	/** Ce que son prochain bail portera ; `null` : aucune mise à jour automatique. */
 	version_cible: string | null;
 }
 
-/**  Un canal de distribution : un pointeur vers une version de `main` (D21). */
-export interface CanalDistribution {
-	nom: string;
-	version: string | null;
-	version_precedente: string | null;
-	/** Quand il a avancé — l'instant d'où se comptent les vagues. */
-	avance_le: string | null;
-	/** `replica` avance seul, à la lecture de sa branche ; un canal spécial, par l'opérateur. */
-	modifiable: boolean;
+/**  Une version PUBLIÉE : son tag a sa release et l'archive de déploiement. */
+export interface VersionPubliee {
+	version: string;
+	/** La date du tag, d'où se comptent les 7 jours. */
+	publiee_le: string;
+}
+
+/**  Les versions publiées, relues chaque nuit par la référence (`registre/versions`). */
+export interface VersionsPubliees {
+	/** Les 5 dernières mineures, chacune à son dernier correctif — la liste du canal. */
+	proposees: VersionPubliee[];
+	/** La dernière lecture des releases ; `null` : jamais lues. */
+	lues_le: string | null;
 }
 
 export interface VagueLue {
 	code: number;
 	libelle: string;
+	/** Ce qu'elle installe, en une phrase. */
+	detail: string;
+	/** Offerte avec le canal Urgence ; sinon, avec une version choisie (Fixe). */
+	avec_urgence: boolean;
+	/** Celle d'une inscription neuve, et du canal Urgence quand on y revient. */
+	defaut: boolean;
+	/** Ce qu'elle installe aujourd'hui, pour une vague du canal Urgence. */
+	cible: VersionPubliee | null;
 }
 
 /**  Ce que l'opérateur règle : la version cible du prochain bail en découle. */
 export interface ReglageDistribution {
+	/** `urgence`, ou une version `X.Y.Z` publiée. */
 	canal: string;
 	vague: number;
-	/** `null` ou vide : suivre le canal. */
-	version_epinglee: string | null;
 }
 
 export interface ServiceAccordable {
@@ -94,8 +103,8 @@ export interface RegistreLu {
 	actif: boolean;
 	installations: ResumeInstallation[];
 	services_accordables: ServiceAccordable[];
-	/** `replica` en tête, puis les canaux spéciaux. */
-	canaux: CanalDistribution[];
+	/** Les versions publiées, d'où se choisit le canal. */
+	versions: VersionsPubliees;
 	vagues: VagueLue[];
 }
 
@@ -191,12 +200,6 @@ export const registre = {
 			`/admin/installations/${encodeURIComponent(identifiant)}/distribution`,
 			{ ...reglage, motif },
 		),
-	/** Crée un canal spécial, ou le fait pointer vers une version ; rend tous les canaux. */
-	pointerCanal: (nom: string, version: string, motif: string) =>
-		api.put<CanalDistribution[]>(`/admin/canaux-distribution/${encodeURIComponent(nom)}`, {
-			version,
-			motif,
-		}),
 	/** Résiliée seulement : la ligne quitte la liste, sa fiche répond 404 ensuite. */
 	supprimer: (identifiant: string, motif: string) =>
 		api.post<void>(`/admin/installations/${encodeURIComponent(identifiant)}/suppression`, {

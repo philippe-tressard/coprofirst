@@ -1132,7 +1132,17 @@ Instanciation 5Hostachy :
   de 30 min le nœud construit en **secours** et alerte (arbitrage du 08/10/2026).
   ⚠️ La fusion n'est donc plus le build : `Déployé:` arrive après la CI « Images »,
   une quinzaine de minutes.
-- **Les répliques suivent `replica`, et une version y passe par PROMOTION** (#1754) :
+- 🔴 **Une réplique suit son BAIL : canal Urgence ou une version choisie** (#2210,
+  24/10/2026) — la vague (Urgence, Pilote, Standard, Fixe) et la règle vivent dans
+  `registre/versions` et `registre/canaux`, réglées par l'opérateur dans Admin ›
+  Installations. **Chaque version taguée est publiée** (release + archive, job
+  `publier-version` d'« Images ») et la purge nocturne retire releases et images
+  que plus aucune vague ne sert (`purge-paquets.yml`, la même règle exécutée par
+  `python3 -I api/app/registre/versions.py garder`, jamais recopiée en bash).
+  `replica` et la promotion ci-dessous **ne décident plus** ce que reçoit une
+  installation (leurs notes de version restent) ; les retirer est la décision de
+  l'auteur.
+- **La branche `replica` et la PROMOTION** (#1754) :
   le workflow « Promotion », lancé à la main par l'auteur (`gh workflow run
   promotion.yml -f version=X.Y.Z`), avance `replica` en avance rapide vers le tag
   et publie les notes de version (release GitHub). `replica` n'a **aucun commit

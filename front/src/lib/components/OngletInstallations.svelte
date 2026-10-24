@@ -14,17 +14,16 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import CanauxDistribution from '$lib/components/CanauxDistribution.svelte';
 	import CarteRegistreInstallation from '$lib/components/CarteRegistreInstallation.svelte';
 	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
+	import VersionsPubliees from '$lib/components/VersionsPubliees.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import {
 		registre as registreApi,
 		type FicheInstallation,
-		type CanalDistribution,
 		type GesteRegistre,
 		type RegistreLu,
 		type ReglageDistribution,
@@ -166,17 +165,6 @@
 		);
 	}
 
-	/** Un canal spécial a avancé : les versions cibles de ses installations changent. */
-	async function canauxChanges(canaux: CanalDistribution[]) {
-		if (lu) lu = { ...lu, canaux };
-		fiches = {};
-		try {
-			lu = await registreApi.installations();
-		} catch (e) {
-			toast('error', messageErreur(e));
-		}
-	}
-
 	async function services(identifiant: string, choisis: string[]) {
 		const motif = await demander({
 			titre: `Services accordés à ${identifiant}`,
@@ -202,7 +190,7 @@
 	</p>
 {:else}
 	{#if lu}
-		<CanauxDistribution canaux={lu.canaux} on:change={(e) => canauxChanges(e.detail)} />
+		<VersionsPubliees versions={lu.versions} vagues={lu.vagues} />
 	{/if}
 
 	<ReglagesListe>
@@ -238,7 +226,7 @@
 				fiche={fiches[i.identifiant] ?? null}
 				erreurFiche={erreursFiche[i.identifiant] ?? ''}
 				accordables={lu?.services_accordables ?? []}
-				canaux={lu?.canaux ?? []}
+				versions={lu?.versions}
 				vagues={lu?.vagues ?? []}
 				enCours={enCours === i.identifiant}
 				on:basculer={() => ouvrir(i.identifiant)}

@@ -26,6 +26,7 @@ SANS_COPROPRIETE = {
     "et ne lit la base d'aucune autre",
     "registre/migrer.py": "la base `plateforme` du registre des installations",
     "registre/sauvegarde.py": "la base `plateforme` du registre des installations",
+    "registre/versions.py": "règle PURE, sans base : `scripts/ci/purge-paquets.sh` l'exécute en CI",
     "utils/preparer_bases.py": "prépare TOUTES les bases, chacune nommée dans sa ligne",
     "utils/attendre_base.py": "outil de `DATABASE_URL`, appelé par `start.sh` avant #2053",
     "utils/revision_base.py": "outil de `DATABASE_URL`, appelé par `start.sh` avant #2053",

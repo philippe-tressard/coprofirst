@@ -1,0 +1,57 @@
+name: Purge des paquets
+
+#  #2210 (24/10/2026) — retirer les releases et les images GHCR que plus aucune
+#  vague ne peut servir. La règle de ce qui se garde est celle de l'API
+#  (`api/app/registre/versions.py`), exécutée telle quelle par
+#  `scripts/ci/purge-paquets.sh` : la liste proposée, la cible de chaque vague, et
+#  tout ce qui a moins de 8 jours. Le tag git `vX.Y.Z` ne se supprime jamais.
+#
+#  Chaque nuit, la purge SUPPRIME (au plus 300 éléments par passage) ; lancée à la
+#  main, elle ne fait que le CONSTAT, sauf `-f supprimer=true` :
+#      gh workflow run purge-paquets.yml               # constat
+#      gh workflow run purge-paquets.yml -f supprimer=true
+on:
+  workflow_dispatch:
+    inputs:
+      supprimer:
+        description: "Supprimer pour de bon (sinon : le constat seul)"
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    #  05:23 UTC : après la lecture des versions par la référence (03:50 à Paris)
+    #  et la promotion de la nuit (02:17 UTC) ; minute décalée exprès.
+    - cron: "23 5 * * *"
+
+concurrency:
+  group: purge-paquets
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions: {}
+
+jobs:
+  purger:
+    name: Purger les paquets périmés
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write   # supprimer les releases périmées (le tag reste)
+      packages: write   # supprimer les versions d'images périmées
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      #  Le choix passe par l'environnement, jamais interpolé dans le script.
+      - name: Purger
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUPPRIMER: ${{ (github.event_name == 'schedule' || inputs.supprimer) && 'oui' || 'non' }}
+        run: bash scripts/ci/purge-paquets.sh

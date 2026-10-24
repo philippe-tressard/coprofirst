@@ -11,8 +11,8 @@
 #
 #   1. la version à installer : celle que porte le BAIL de l'installation, signé
 #      par la référence (R5 #1881) — l'API le renouvelle, le vérifie et rend sa
-#      version cible (`POST /admin/maintenance/bail`). Le canal, la vague, et
-#      l'épinglage sont décidés à la référence, et seulement là ;
+#      version cible (`POST /admin/maintenance/bail`). Le canal (Urgence ou une
+#      version choisie) et la vague sont décidés à la référence, et seulement là ;
 #   2. décider (fonction PURE `decider_cible`) : à jour, épinglée ici, sans bail
 #      valide (D18 : pas de mise à jour automatique), sans version cible,
 #      version illisible, mettre à jour, ou revenir — sur ordre signé seulement ;
@@ -99,8 +99,8 @@ decider_cible() {
     if [ -z "$cible" ]; then echo sans-cible; return; fi
     if ! [[ "$cible" =~ $motif ]]; then echo inconnue; return; fi
     if [ "$cible" = "$courante" ]; then echo a-jour; return; fi
-    #  Une cible plus ancienne est un ORDRE signé de la référence (épinglage) : le
-    #  canal, lui, ne fait jamais reculer (`registre/canaux`, règle 6).
+    #  Une cible plus ancienne est un ORDRE signé de la référence (une version
+    #  fixée) : les autres vagues ne font jamais reculer (`registre/canaux`, règle 5).
     if [[ "$courante" =~ $motif ]] && version_au_plus "$cible" "$courante"; then echo revenir; return; fi
     echo mettre-a-jour
 }
@@ -241,7 +241,7 @@ case "$DECISION" in
     sans-cible) journal "Le bail ne porte aucune version cible : rien à installer."; exit 0 ;;
     injoignable) echouer "bail illisible : l'API ne répond pas, ou MAINTENANCE_KEY manque." ;;
     inconnue)   echouer "version cible du bail illisible (« $CIBLE »)." ;;
-    revenir)    journal "Retour à $CIBLE ordonné par la référence (version épinglée)." ;;
+    revenir)    journal "Retour à $CIBLE ordonné par la référence (version fixée)." ;;
 esac
 [ -n "$SAUVEGARDES" ] && [ -d "$SAUVEGARDES" ] && [ -w "$SAUVEGARDES" ] \
     || echouer "COPROFIRST_SAUVEGARDES absent ou non inscriptible : pas de mise à jour sans sauvegarde (D15)."

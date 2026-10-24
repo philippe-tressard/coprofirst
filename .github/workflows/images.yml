@@ -225,3 +225,26 @@ jobs:
           docker cp "$id:/app/build/client" "$RUNNER_TEMP/client"
           docker rm "$id" > /dev/null
           node front/scripts/check-version-servie.mjs --client "$RUNNER_TEMP/client"
+
+  #  Une version taguée est PUBLIÉE (#2210) : sa release, ses notes et l'archive du
+  #  déploiement standard, une fois ses images publiées et lues. C'est ce que la
+  #  référence propose aux installations (canal Urgence ou version choisie) : sans
+  #  archive, la mise à jour nocturne d'une réplique n'aurait rien à télécharger.
+  publier-version:
+    name: Publier la version (release et archive)
+    needs: [version, verifier-front]
+    if: needs.version.outputs.versionner == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write   # créer la release et y joindre l'archive
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0   # les tags : la version qui précède, pour les notes
+
+      - name: Publier la release de la version
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/ci/publier-version.sh

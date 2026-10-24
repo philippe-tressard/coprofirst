@@ -41,7 +41,7 @@ def test_inscrite_en_attente_puis_validee_puis_suspendue(registre):
     modifier_inscrite(registre, etat=EtatInscription.active)
     client.renouveler()
     verdict = client.constat_courant()
-    assert (verdict.etat, verdict.canal, verdict.epoque) == ("active", "replica", 1)
+    assert (verdict.etat, verdict.canal, verdict.epoque) == ("active", "urgence", 1)
 
     modifier_inscrite(registre, etat=EtatInscription.suspendue)
     client.renouveler()

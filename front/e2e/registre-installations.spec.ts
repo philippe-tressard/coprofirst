@@ -13,8 +13,9 @@
  *    repliée, liste en tête de la fiche, les graves dites « courriel à l'opérateur » ;
  *  - le DERNIER RAPPORT : chaque point de conformité en coche — conforme, à corriger,
  *    inconnu (jamais ✓) —, une phrase qui dit le fait, l'explication au clavier.
- *  - le CANAL ET LA VERSION (R5 #1881) : la version cible que le serveur calcule, la
- *    vague et l'épinglage réglés avec un motif, et les canaux en tête de l'onglet.
+ *  - le CANAL ET LA VERSION (#2210) : la version cible que le serveur calcule, le
+ *    canal (Urgence ou une version publiée) et la vague réglés avec un motif — seules
+ *    les vagues du canal retenu s'offrent —, et les versions publiées en tête.
  *  Sur bureau et sur téléphone, sans défilement horizontal.
  */
 import { boiteStable, expect, MEMBRE_CS, simulerApi, test } from './aides';
@@ -36,7 +37,7 @@ const INSTALLATION = {
 const DEMO = {
 	identifiant: 'CF-000003',
 	etat: 'en_attente' as const,
-	canal: 'replica',
+	canal: 'urgence',
 	version_logicielle: '2.144.1',
 	cree_le: '2026-10-13T21:12:13',
 	vue_le: '2026-10-13T21:12:13',
@@ -45,8 +46,7 @@ const DEMO = {
 	dernier_rapport_le: null,
 	services_autorises: [],
 	alertes: [],
-	vague: 1,
-	version_epinglee: null,
+	vague: 2,
 	version_cible: null,
 };
 
@@ -83,19 +83,47 @@ const REGISTRE: RegistreLu = {
 		{ code: 'diffusion', libelle: 'Diffusion sur le groupe WhatsApp' },
 		{ code: 'reponses_courriel', libelle: 'Réponses par courriel' },
 	],
-	canaux: [
-		{
-			nom: 'replica',
-			version: '2.172.0',
-			version_precedente: '2.171.0',
-			avance_le: '2026-10-16T03:50:00',
-			modifiable: false,
-		},
-	],
+	versions: {
+		proposees: [
+			{ version: '2.172.0', publiee_le: '2026-10-16T03:50:00' },
+			{ version: '2.171.2', publiee_le: '2026-10-10T03:50:00' },
+			{ version: '2.170.4', publiee_le: '2026-10-02T03:50:00' },
+		],
+		lues_le: '2026-10-17T03:50:00',
+	},
 	vagues: [
-		{ code: 0, libelle: 'Pilote — dès que le canal avance' },
-		{ code: 1, libelle: 'Générale — le lendemain' },
-		{ code: 2, libelle: 'Tardive — trois jours après' },
+		{
+			code: 0,
+			libelle: 'Urgence',
+			detail: 'la dernière version, aussitôt publiée',
+			avec_urgence: true,
+			defaut: false,
+			cible: { version: '2.172.0', publiee_le: '2026-10-16T03:50:00' },
+		},
+		{
+			code: 1,
+			libelle: 'Pilote',
+			detail: 'la dernière version publiée depuis 7 jours',
+			avec_urgence: true,
+			defaut: false,
+			cible: { version: '2.171.2', publiee_le: '2026-10-10T03:50:00' },
+		},
+		{
+			code: 2,
+			libelle: 'Standard',
+			detail: 'le dernier correctif de 7 jours de la mineure précédente (y-1)',
+			avec_urgence: true,
+			defaut: true,
+			cible: { version: '2.171.2', publiee_le: '2026-10-10T03:50:00' },
+		},
+		{
+			code: 3,
+			libelle: 'Fixe',
+			detail: 'la version choisie, 7 jours après sa publication',
+			avec_urgence: false,
+			defaut: false,
+			cible: null,
+		},
 	],
 };
 
@@ -163,9 +191,9 @@ async function ouvrir(
 		if (chemin === '/api/admin/installations/CF-000003/distribution')
 			return fiche({
 				...champsFiche,
-				vague: 0,
-				version_epinglee: '2.171.0',
-				version_cible: '2.171.0',
+				canal: '2.170.4',
+				vague: 3,
+				version_cible: '2.170.4',
 			});
 		return undefined;
 	});
@@ -413,7 +441,7 @@ test('Installations : une documentation d’API publiée est à corriger', async
 	).toHaveAttribute('data-etat', 'conforme');
 });
 
-test('Installations : le canal et la version — la vague, l’épinglage, et la cible du bail', async ({
+test('Installations : le canal et la version — la vague, la version fixée, et la cible du bail', async ({
 	page,
 }) => {
 	const ecrits = await ouvrir(page, 'reference', [], {
@@ -421,33 +449,34 @@ test('Installations : le canal et la version — la vague, l’épinglage, et la
 		version_cible: '2.172.0',
 		gestes_possibles: ['suspendre', 'resilier'],
 	});
-	//  Les canaux, en tête de l'onglet : replica et sa version, sans geste — il avance seul.
-	await page.getByRole('button', { name: /Canaux de distribution/ }).click();
-	await expect(page.getByText('v2.172.0', { exact: true })).toBeVisible();
-	await expect(page.getByText('suit la branche, chaque nuit')).toBeVisible();
+	//  Les versions publiées, en tête de l'onglet : ce que chaque vague installe.
+	await page.getByRole('button', { name: /Versions publiées/ }).click();
+	const publiees = page.locator('.cibles');
+	await expect(publiees.getByText('Urgence', { exact: true })).toBeVisible();
+	await expect(publiees.locator('li', { hasText: 'Standard' })).toContainText('v2.171.2');
 
 	const carte = page.locator('#installation-CF-000003');
 	await carte.getByRole('button', { name: /CF-000003/ }).click();
 	await expect(carte.locator('h4.intertitre', { hasText: 'Canal et version' })).toBeVisible();
 	await expect(carte.getByText('Version cible du prochain bail :')).toContainText('v2.172.0');
 
-	await carte.getByRole('radio', { name: /Pilote/ }).check({ force: true });
-	await carte.getByLabel('Version épinglée').fill('2.171.0');
+	//  Canal Urgence : Urgence, Pilote et Standard s'offrent, pas Fixe.
+	await expect(carte.getByRole('radio', { name: /Standard/ })).toBeChecked();
+	await expect(carte.getByRole('radio', { name: /Fixe/ })).toHaveCount(0);
+	//  Une version choisie : seule Fixe s'offre, et elle est retenue.
+	await carte.getByLabel('Canal suivi').selectOption('2.170.4');
+	await expect(carte.getByRole('radio', { name: /Urgence/ })).toHaveCount(0);
+	await expect(carte.getByRole('radio', { name: /Fixe/ })).toBeChecked();
 	await carte.getByRole('button', { name: 'Enregistrer' }).click();
 	const saisie = page.getByRole('dialog');
 	await saisie.getByRole('textbox').fill('régression du 2.172');
 	await saisie.getByRole('button', { name: 'Enregistrer' }).click();
-	await expect(carte.getByText('Version cible du prochain bail :')).toContainText('v2.171.0');
+	await expect(carte.getByText('Version cible du prochain bail :')).toContainText('v2.170.4');
 	expect(ecrits).toEqual([
 		{
 			methode: 'PUT',
 			chemin: '/api/admin/installations/CF-000003/distribution',
-			corps: {
-				canal: 'replica',
-				vague: 0,
-				version_epinglee: '2.171.0',
-				motif: 'régression du 2.172',
-			},
+			corps: { canal: '2.170.4', vague: 3, motif: 'régression du 2.172' },
 		},
 	]);
 
