@@ -63,21 +63,37 @@ import { pathToFileURL } from 'node:url';
 const RACINE = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
 /**
- * Les deux formes sous lesquelles la version du paquet peut survivre au bundle.
+ * Les guillemets d'une chaîne émise par un bundler : `"`, `'` et l'accent grave.
  *
- * ⚠️ Ancrées sur `{version:…}`, la STRUCTURE que le code source produit
+ * 🔴 Rollup écrivait `"3.20.0"` ; Rolldown (Vite 8) écrit `3.20.0` entre accents
+ * graves. Un motif qui ne connaît que `["']` rend INCONNU sur le premier build
+ * Vite 8 — le cas du 30/08/2026 une seconde fois, par une autre porte (#2205,
+ * 24/10/2026).
+ */
+const G = '["\'`]';
+
+/**
+ * Les formes sous lesquelles la version du paquet peut survivre au bundle.
+ *
+ * ⚠️ Ancrées sur `{…version:…}`, la STRUCTURE que le code source produit
  * (`import pkg from package.json` → `pkg.version`), et non sur un nom de
  * variable ni sur le nom du paquet — les deux ancrages précédents ont été
  * élagués par la chaîne d'outils, chacun à son tour.
+ *
+ * Deux écritures de la const hissée : Rollup la déclare seule
+ * (`const fn="3.20.0",hn={version:fn}`), Rolldown la range dans UN `var` avec les
+ * clés voisines du paquet (`var e=<nom>,t=<version>,n={name:e,version:t,…`).
  */
 const FORMES = [
 	//  Inlinée : `{version:"3.20.0"}`
-	{ nom: 'inlinée', regex: /\{\s*version\s*:\s*["'](\d+\.\d+\.\d+)["']/ },
-	//  Par une const hissée : `const fn="3.20.0",hn={version:fn}`
+	{ nom: 'inlinée', regex: new RegExp(`\\{\\s*version\\s*:\\s*${G}(\\d+\\.\\d+\\.\\d+)${G}`) },
+	//  Par une const hissée, déclarée seule ou au milieu d'une liste de déclarations.
 	{
 		nom: 'const hissée',
-		regex:
-			/(?:const|let|var)\s+(\w+)\s*=\s*["'](\d+\.\d+\.\d+)["'][\s\S]{0,80}?\{\s*version\s*:\s*\1\s*[,}]/,
+		regex: new RegExp(
+			`(?:(?:const|let|var)\\s+|,\\s*)(\\w+)\\s*=\\s*${G}(\\d+\\.\\d+\\.\\d+)${G}` +
+				`[\\s\\S]{0,80}?\\{[^{}]{0,80}?\\bversion\\s*:\\s*\\1\\s*[,}]`,
+		),
 		version: (m) => m[2],
 	},
 ];
@@ -256,6 +272,17 @@ async function selftest() {
 	//  🔴 La forme réelle du 30/08/2026, celle qui a fait rendre INCONNU.
 	t('const hissée', 'const fn="3.20.0",hn={version:fn};var gn=1;', '3.20.0');
 	t('guillemets simples', "const a='1.2.3',b={version:a};", '1.2.3');
+	//  🔴 Les formes de Rolldown (Vite 8) : accents graves, et la const rangée dans
+	//  un seul `var` avec le nom du paquet — celle que `lint:version-servie` a
+	//  refusée au premier essai de la montée (24/10/2026).
+	t('accents graves, inlinée', 'var x={version:`3.20.0`};', '3.20.0');
+	t(
+		'accents graves, const au milieu d’un var (Rolldown)',
+		'var e=`hostachy-front`,t=`3.13.9`,n={name:e,version:t,private:!0};',
+		'3.13.9',
+	);
+	t('accents graves, const hissée', 'const fn=`3.20.0`,hn={version:fn};', '3.20.0');
+	t('un var d’une autre chose, sans {version:} → null', 'var e=`x`,t=`3.13.9`,n={name:e};', null);
 
 	//  ⚠️ Un `{version:…}` qui ne se rapporte pas à la const trouvée ne compte
 	//  pas : sans le renvoi arrière, n'importe quelle chaîne du chunk passerait.
@@ -292,6 +319,21 @@ async function selftest() {
 		[`${SITE}/_app/immutable/nodes/0.Xyz.js`]: 'const fn="2.49.2",hn={version:fn};',
 	};
 	await m('site sain → la version', sain, '2.49.2');
+	await m(
+		'site sain en accents graves (Rolldown) → la version',
+		{
+			...sain,
+			[`${SITE}/_app/immutable/nodes/0.Xyz.js`]:
+				'var e=`hostachy-front`,t=`2.49.2`,n={name:e,version:t};',
+		},
+		'2.49.2',
+	);
+	//  Cas zéro : des chunks sans aucune version rendent INCONNU, jamais un vert.
+	await m(
+		'chunks sans version → INCONNU nommé',
+		{ ...sain, [`${SITE}/_app/immutable/nodes/0.Xyz.js`]: 'const a=1;' },
+		'INCONNU: version absente des 1 chunk(s) servi(s)',
+	);
 	//  🔴 Le cas du 25/09/2026 : le proxy d'une session cloud refuse le domaine.
 	//  Avant #1283 : « le site ne sert pas un build SvelteKit ».
 	await m(
