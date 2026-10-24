@@ -235,7 +235,9 @@ def test_un_brouillon_est_invisible_d_un_lecteur_ordinaire(session, envois, assi
     assert routes.lire_synthese(ticket.id, session=session, user=resident).synthese is None
     assert "synthese" in fil(cs)
     assert routes.lire_synthese(ticket.id, session=session, user=cs).synthese.statut == BROUILLON
+    #  L'aperçu de la carte du carnet : la demande, tant que rien n'est validé.
     assert not construire_carnet(session, lecteur=cs)[0]["synthese"]
+    assert construire_carnet(session, lecteur=cs)[0]["extrait"] == "<p>Bloqué au 3e.</p>"
 
     routes.valider_synthese(ticket.id, session=session, user=cs)
     session.refresh(demande)
@@ -243,7 +245,10 @@ def test_un_brouillon_est_invisible_d_un_lecteur_ordinaire(session, envois, assi
     assert "synthese" in fil(resident)
     lue = routes.lire_synthese(ticket.id, session=session, user=resident).synthese
     assert lue.synthese == "<p>Récit</p>" and lue.metriques["duree_totale"] >= 0
-    assert construire_carnet(session, lecteur=cs)[0]["synthese"]["statut"] == VALIDEE
+    ligne = construire_carnet(session, lecteur=cs)[0]
+    assert ligne["synthese"]["statut"] == VALIDEE
+    #  …puis « Ce qui s'est passé », une fois la synthèse validée (24/10/2026).
+    assert ligne["extrait"] == "<p>Récit</p>"
 
 
 def test_la_carte_dit_la_synthese_validee_seulement(session, envois, assistant):

@@ -37,6 +37,7 @@
 	import ChoixPastilles from './ChoixPastilles.svelte';
 	import ReglagesListe from './ReglagesListe.svelte';
 	import EnteteCarte from './EnteteCarte.svelte';
+	import ApercuCarte from './ApercuCarte.svelte';
 	import IconeAction from './IconeAction.svelte';
 	import LienAction from './LienAction.svelte';
 	import { anneesDuCarnet, entreesDeLAnnee } from '$lib/carnet';
@@ -256,7 +257,14 @@
 												>
 											{/if}
 										</svelte:fragment>
+										<!--  Juste sous le titre, les trois lignes de l'aperçu :
+										      « Ce qui s'est passé » si une synthèse validée le
+										      raconte, sinon la demande (24/10/2026) — le serveur
+										      choisit. -->
 										<svelte:fragment slot="apercu">
+											{#if entree.extrait}
+												<ApercuCarte contenu={entree.extrait} dansLigne />
+											{/if}
 											{#if entree.detail}
 												<p class="detail">{entree.detail}</p>
 											{/if}

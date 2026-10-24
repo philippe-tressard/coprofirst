@@ -25,6 +25,7 @@ const ENTREE: EntreeCarnet = {
 	perimetre: [],
 	lien: '',
 	alerte: null,
+	extrait: '',
 };
 
 const CARNET: Carnet = {
@@ -43,7 +44,12 @@ const CARNET: Carnet = {
 			lien: '/interventions/12',
 			alerte: 'visite attendue depuis 12 jours',
 		},
-		{ ...ENTREE, libelle: 'Peinture du hall', lien: '/interventions/13' },
+		{
+			...ENTREE,
+			libelle: 'Peinture du hall',
+			lien: '/interventions/13',
+			extrait: '<p>Les murs du hall sont écaillés.</p>',
+		},
 	],
 };
 
@@ -96,4 +102,14 @@ test('un copropriétaire lit le contrat sans lien, l’intervention avec', async
 	await expect(liste).toContainText('Contrat ascenseur Témoin');
 	await expect(liste.getByRole('link', { name: 'Contrat ascenseur Témoin' })).toHaveCount(0);
 	await expect(liste.getByRole('link', { name: 'Ramonage des conduits' })).toHaveCount(1);
+});
+
+test('la carte montre l’extrait sous le titre, et seulement s’il existe', async ({ page }) => {
+	await ouvrir(page);
+	//  « Ce qui s'est passé » ou la demande : le serveur a choisi, l'écran rend.
+	const apercus = page.locator('.carte-preview');
+	//  Cas zéro : les deux entrées sans extrait n'ont pas d'aperçu vide.
+	await expect(apercus).toHaveCount(1);
+	await expect(apercus).toHaveText('Les murs du hall sont écaillés.');
+	await expect(apercus).toHaveClass(/clamp-3/);
 });
