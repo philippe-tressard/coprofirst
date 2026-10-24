@@ -195,3 +195,32 @@ sans acte » tant que l'acte n'est pas versé.
 | 6 | Accès : portes d'un badge | `routers/acces`, constat | 1, 2 |
 | 7 | Usage IA « lire l'état descriptif » | `llm_usages`, atelier | 2 |
 | 8 | Documentation : glossaire, modèle de données, manuel, FAQ | docs | 1–6 |
+
+## 11. Décisions prises en réalisant (24/10/2026)
+
+Arbitrées par la coordination sur délégation de Philippe du 17/10/2026, consignées
+sur l'épopée :
+
+- **Un contenu ciblé sur un bâtiment SEUL n'est pas lu du détenteur d'une place qu'il
+  dessert.** Le *desservi par* ne porte que les nœuds de circulation (ascenseur,
+  escaliers) et les caves de la circulation — jamais le nœud du bâtiment : sinon ses
+  actualités confidentielles s'ouvriraient à un extérieur. Le conseil cible
+  l'ascenseur ou l'escalier.
+- **Le badge du hall desservant est proposé par défaut** à l'extérieur qui n'a qu'une
+  place ou une cave ; le conseil valide ou retranche (§7).
+- **Les tantièmes** se lisent par le propriétaire, le bailleur et le mandataire, et par
+  le conseil et l'administration ; pas par le locataire
+  (`auth/appartenance.lit_les_tantiemes`).
+- **Pas de colonne `niveau`** : `Lot.etage` porte déjà les sous-sols — deux colonnes
+  pour un fait divergeraient.
+- **La table de passage de l'état descriptif est à part** (`ligne_etat_descriptif`),
+  et non des colonnes de `lot_import` : les deux fichiers n'ont ni les mêmes états ni
+  la même purge. Un seul atelier quand même — l'onglet Imports, source « État
+  descriptif ».
+- **Ce qui dessert se lit sur l'arbre** : `Perimetre.desserte` (`circulation`,
+  `caves`, `stationnement`), administré, posé par le seed sur le gabarit et par la
+  migration 0312 sur les bases existantes.
+- **Une annexe n'apporte pas son bâtiment** à « mes bâtiments », ni aux documents au
+  périmètre « bâtiment ». Mesuré en production avant de l'écrire : aucun compte ne
+  tenait un bâtiment de ses seules annexes.
+- **Un tantième vide ou nul ne pose pas de part.**

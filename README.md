@@ -40,6 +40,7 @@
 - **Questions au règlement** — l'assistant IA répond en juriste d'après le règlement de copropriété, avec extraits cités et vérifiés.
 - **Administration** — comptes, pages légales, services (IA, WhatsApp, courriel), nom et logo de la résidence.
 - **Périmètres** — arborescence de la copropriété (bâtiments, parking, espaces) pour localiser affaires, actualités, sondages et annonces.
+- **Lots et règlement** — la désignation de chaque lot selon l'état descriptif du règlement de copropriété : nature, porte ou place, niveau, circulation qui le dessert et tantièmes par clé de charges, importés et contrôlés par l'atelier d'import ; une cave ou une place est rattachée à sa circulation, pas au bâtiment de son propriétaire.
 - **WhatsApp** — notifications programmées vers le groupe de la résidence. ⚠️ Le pont passe par un client non officiel (Baileys) : le numéro peut être bloqué, le courriel reste le canal de repli.
 - **Maintenance** — rôle et version de l'installation, export vérifié de la base, tâches automatiques, contrôles de santé et suivi de la consommation de l'IA.
 - **Installations** — registre des installations CoproFirst inscrites, pour l'opérateur de la référence seulement.

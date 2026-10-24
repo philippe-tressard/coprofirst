@@ -322,6 +322,8 @@ Chacun porte, en tête de fichier, le pourquoi et la règle arbitrée :
 | comparer deux **noms de personnes** | `utils/rapprochement_noms` |
 | dire qui a **lancé une tâche planifiée** | `utils/declenchement` — un vocabulaire, un geste |
 | le **libellé d'un étage** | `utils/etages` (et non `dates_fr`, qui ne parle que de dates) |
+| la **nature d'un lot** (logement, cave, parking…), « est-ce une annexe ? » | `utils/designation_lot` — jamais `lot.nature` lu en direct (#2212) |
+| les **périmètres d'un lot** (situé dans, desservi par) | `utils/perimetres/lots` (`deriver`, `rederiver`) ; leur lecture groupée : `utils/lecture_lots` |
 
 Côté front, les familles équivalentes (composants `Section*`, `Onglet*`,
 `Formulaire*`, `$lib/table-statuts`, `$lib/types-acces`) sont routées dans
