@@ -15,6 +15,7 @@ from contextlib import contextmanager
 
 from app.config import get_settings
 from app.installation_commune import declaration as module_declaration
+from tests.aides_processus import SERVEUR_INJOIGNABLE
 
 HOTE_COMMUN = "acces.example"
 
@@ -54,11 +55,11 @@ COPROPRIETES = [
 
 #: Les variables d'environnement que la déclaration NOMME : bases et secrets.
 ENVIRONNEMENT = {
-    "TILLEULS_BASE": "postgresql+psycopg://tilleuls@127.0.0.1:1/tilleuls",
+    "TILLEULS_BASE": f"postgresql+psycopg://tilleuls@{SERVEUR_INJOIGNABLE}/tilleuls",
     "TILLEULS_SECRET": "t" * 40,
-    "CHENES_BASE": "postgresql+psycopg://chenes@127.0.0.1:1/chenes",
+    "CHENES_BASE": f"postgresql+psycopg://chenes@{SERVEUR_INJOIGNABLE}/chenes",
     "CHENES_SECRET": "c" * 40,
-    "ERABLES_BASE": "postgresql+psycopg://erables@127.0.0.1:1/erables",
+    "ERABLES_BASE": f"postgresql+psycopg://erables@{SERVEUR_INJOIGNABLE}/erables",
     "ERABLES_SECRET": "e" * 40,
 }
 

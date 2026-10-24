@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import pytest
 from sqlalchemy.exc import ProgrammingError
-from sqlmodel import select
 
 #  ⚠️ L'import des modèles n'est pas décoratif : les relations entre modèles se
 #  résolvent par leur NOM, à la première requête. Le fichier qui tournait seul en
@@ -33,15 +32,13 @@ def sans_arbre():
     Le vider ici rend la condition visible au lieu de la supposer.
     """
     from app import contexte
-    from app.models.perimetre import Perimetre
     from app.utils.perimetres import invalider_cache
+    from tests.aides_purge import vider_perimetres
 
     invalider_cache()
     try:
         with contexte.nouvelle_session() as s:
-            for ligne in sorted(s.exec(select(Perimetre)).all(), key=lambda n: -n.id):
-                s.delete(ligne)
-            s.commit()
+            vider_perimetres(s)
     except ProgrammingError:
         pass  # la table n'existe pas encore : l'arbre est vide, c'est l'état voulu
     invalider_cache()

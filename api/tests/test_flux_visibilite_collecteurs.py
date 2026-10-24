@@ -24,7 +24,7 @@ import json
 from pathlib import Path
 
 import pytest
-from sqlmodel import Session
+from sqlmodel import Session, SQLModel
 
 from app.database import engine
 from app.models.core import Idee, PetiteAnnonce, RoleUtilisateur
@@ -141,6 +141,9 @@ def test_le_controle_attrape_un_collecteur_sans_predicat(tmp_path):
 
 @pytest.fixture()
 def lecteurs():
+    #  Les tables d'abord : un fichier ne trouve de la base du processus que ce
+    #  qu'il y pose (#2223) — il comptait sur celles d'un fichier passé avant lui.
+    SQLModel.metadata.create_all(engine)
     with Session(engine) as s:
         auteur = compte(s, prefixe="auteur", roles_json=RoleUtilisateur.propriétaire.value)
         locataire = compte(

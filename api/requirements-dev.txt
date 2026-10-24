@@ -10,3 +10,10 @@ pytest==9.1.1
 #  Pose un sceau ARC (`dkim.arc_sign`) dans `test_courriel_authenticite` : la
 #  VÉRIFICATION n'en a pas besoin, d'où son absence de l'image. Apache 2.0.
 authres==1.2.0
+#  La suite en parallèle (#2223) : `pytest -n` répartit les tests entre des
+#  processus (`scripts/ci/mesure-postgresql.sh`). MIT, comme `execnet`, qu'il tire.
+pytest-xdist==3.8.0
+execnet==2.1.2
+#  L'ordre des tests est TIRÉ AU SORT, graine affichée (#2223) : une dépendance à
+#  l'ordre sort au lot qui l'écrit, plus sur celui d'un autre. MIT.
+pytest-randomly==5.0.0

@@ -93,6 +93,30 @@ MOTIFS = (
         "`aides_sources.docstrings(arbre)` ou `aides_sources.chaines_du_code(arbre)`",
     ),
     Motif(
+        "patrimoine vidé à la main",
+        #  Le défaut du 24/10/2026 (#2223) : une fixture ne supprimait que les
+        #  copropriétés, et SQLAlchemy déliait les bâtiments qu'un test précédent
+        #  avait laissés — six erreurs, sur le lot d'un autre. Vider UNE table du
+        #  patrimoine, c'est laisser les autres incohérentes.
+        re.compile(
+            r"select\((?:Copropriete|Batiment|Perimetre)\)\)\.all\(\)[^\n]*:\s*\n\s*\w+\.delete\("
+            r"|\bdelete\((?:Copropriete|Batiment|Perimetre)\)"
+            r"|purger_referentiellement\(\s*\w+,\s*(?:Copropriete|Batiment|Perimetre)\b"
+            r"|(?i:delete\s+from\s+\"?(?:copropriete|batiment|perimetre)\b)"
+        ),
+        "aides_purge.py",
+        "`aides_purge.vider_patrimoine(session)` — l'arbre seul : `vider_perimetres(session)`",
+    ),
+    Motif(
+        "session de test jamais fermée",
+        #  `session = Session(moteur_de_test())` garde sa connexion ouverte : le
+        #  retrait du schéma du test l'attendait 10 s, puis échouait et laissait le
+        #  schéma derrière lui (#2223, cinq tests sur la suite parallèle).
+        re.compile(r"=\s*Session\(\s*moteur_de_test\("),
+        None,
+        "la fixture `session` (conftest), ou `with Session(moteur_de_test()) as s:`",
+    ),
+    Motif(
         "portée des scripts shell",
         re.compile(r"glob\(\s*[\"'][^\"']*\*\.sh[\"']"),
         "conftest.py",
@@ -105,6 +129,10 @@ EXCEPTIONS: dict[tuple[str, str], str] = {
     ("balayage de app/", "test_dependances_declarees.py"): (
         "son second `rglob` lit `alembic/`, que `aides_sources` ne couvre pas : "
         "une migration importe aussi des modules tiers"
+    ),
+    ("schéma de test posé à la main", "test_schemas_jetables_perimes.py"): (
+        "il pose des schémas sous des NOMS choisis — périmé, sans heure lisible — "
+        "pour éprouver la purge (#2223) : `moteur_de_test` rend toujours un nom neuf"
     ),
     ("balayage de app/", "test_python_sans_avertissement_de_syntaxe.py"): (
         "il COMPILE chaque fichier de `app/`, `tests/`, `alembic/` et `scripts/` : "
@@ -160,6 +188,10 @@ def test_le_controle_sait_REFUSER():
         "migration chargée à la main": "spec = importlib.util.spec_from_file_location(n, c)",
         "horloge dépréciée": "t = datetime.utcnow()",
         "docstrings écartées à la main": "if isinstance(corps[0].value, ast.Constant):",
+        "patrimoine vidé à la main": (
+            "for ligne in session.exec(select(Copropriete)).all():\n    session.delete(ligne)\n"
+        ),
+        "session de test jamais fermée": "session = Session(moteur_de_test())",
         "portée des scripts shell": 'racine.rglob("*.sh")',
     }
     assert set(forges) == {m.nom for m in MOTIFS}, "un motif n'a pas son extrait forgé"

@@ -24,6 +24,7 @@ from app.utils.preparer_bases import preparer_base
 from app.utils.revision_base import servable
 from tests.aides_base import adresse_de_test
 from tests.aides_installation_commune import ENVIRONNEMENT, installation_commune
+from tests.aides_processus import SERVEUR_INJOIGNABLE
 
 
 @pytest.fixture(autouse=True)
@@ -97,7 +98,7 @@ def test_noms_rend_les_noms_et_l_adresse(tmp_path, monkeypatch, capsys):
 
 def test_une_base_qui_ne_se_prepare_pas_laisse_la_declaration_intacte(tmp_path, monkeypatch):
     environnement = ENVIRONNEMENT | {
-        "PEUPLIERS_DATABASE_URL": "postgresql+psycopg://p@127.0.0.1:1/p",
+        "PEUPLIERS_DATABASE_URL": f"postgresql+psycopg://p@{SERVEUR_INJOIGNABLE}/p",
         "PEUPLIERS_SECRET_KEY": "p" * 40,
     }
     semees = []

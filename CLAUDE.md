@@ -780,6 +780,20 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   test reçoit un schéma neuf sur le PostgreSQL que désigne `TESTS_BASE_URL`, retiré
   à sa fin (`tests/aides_base`). En local, le PostgreSQL 17 du poste :
   `TESTS_BASE_URL=postgresql+psycopg://…`.
+  **En parallèle, dans un ordre tiré au sort** (#2223) : `scripts/ci/mesure-postgresql.sh`
+  lance `pytest -n` (pytest-xdist, `--dist loadfile`) — workers : `PYTEST_WORKERS`, sinon
+  `workers_suite` (cœurs, `max_connections`, plafond) — et pytest-randomly, dont la
+  **graine** s'affiche et se rejoue (`PYTEST_GRAINE=<n>`). Chaque worker pose SON schéma
+  d'application (`tests/aides_processus` : il héritait de celui du maître, 545 erreurs),
+  et chaque **fichier** le trouve **neuf comme en production** — toutes les tables, aucune
+  ligne (`_base_du_processus_neuve`, `aides_purge.remettre_a_neuf`) : ce qu'un fichier y
+  laisse n'atteint plus le suivant — la dépendance d'ordre du 24/10/2026. Entre les tests
+  d'un MÊME fichier, l'ordre tiré au sort fait sortir ce qui reste. 🔒 Une `Session(moteur_de_test())` jamais
+  fermée, un patrimoine vidé à la main sont refusés (`test_aides_de_tests_source_unique.py`).
+  Le nom d'un schéma jetable porte son heure ; la suite retire au démarrage ceux de plus
+  de 6 h, qu'un passage interrompu a laissés (1 447 rendaient chaque `create_all` 4,6 fois
+  plus lent sur le poste). Une base injoignable s'écrit `SERVEUR_INJOIGNABLE` : sous
+  Windows, `127.0.0.1:1` attendait le délai du système (130 s pour un test).
 - **Ce qui s'écrit dans la langue du moteur vit dans `app/dialecte.py`** :
   intégrité, compactage, format SQL d'une date (`dialecte.jour`, `dialecte.mois`),
   base jetable — derrière un nom qui dit la question posée. Une base NEUVE reçoit le
@@ -801,7 +815,8 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   L'image de Caddy porte une **mineure explicite** (`FROM caddy:2.11`,
   `test_image_caddy_epinglee.py`, #1602) : Dependabot propose alors ses montées. Python et
   Node restent flottants, par choix de `dependabot.yml`.
-- Lancer en local (deps requises) : `cd api && pytest tests/ -q`.
+- Lancer en local (deps requises) : `cd api && pytest tests/ -q -n 8` — ou toute la suite telle que
+  la CI la joue : `bash ../scripts/ci/mesure-postgresql.sh` (6 min 40 au lieu de 12 sur le poste, #2223).
 
 ### Scripts d'infra — job CI `test-scripts` (depuis le 30/07/2026)
 Les scripts qui décident d'arrêter la prod (`bascule.sh`, `health-watch.sh`,
@@ -925,6 +940,8 @@ Sur un poste déjà chargé par d'autres sessions, le rejeu passe les e2e à **u
 seul worker** (`E2E_WORKERS`, seuil et mesure dans `rejouer-ci.sh`, règle
 `ci_workers_e2e`) : les workers s'y disputaient la machine et quatre specs
 tombaient en délai d'hydratation (#1665). La CI GitHub garde le défaut.
+pytest, lui, se borne par `PYTEST_WORKERS` (lu par `mesure-postgresql.sh`) ; sans
+elle, `workers_suite` en prend au plus 12, sous ce que `max_connections` admet (#2223).
 
 🔒 Un worktree dont `front/node_modules` est une **jonction** vers le clone
 principal en partage le cache de Vite : les e2e y tombent au hasard dès qu'une

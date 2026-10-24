@@ -1,27 +1,24 @@
 """La migration initiale : une base neuve reçoit le schéma courant, marqué à la tête (#1747).
 
 `app/utils/schema_initial.py` est lancé par `start.sh` avant `alembic upgrade
-head`. Ces tests le jouent sur une base-fichier neuve et, quand `TESTS_BASE_URL`
-désigne un PostgreSQL (workflow « PostgreSQL »), sur une BASE PostgreSQL neuve
-créée pour l'occasion : c'est la migration initiale de la spec §4.3.
+head`. Ces tests le jouent sur une base PostgreSQL neuve — un schéma vide, seul visible
+(`url_neuve`) : c'est la migration initiale de la spec §4.3.
 """
 
 from __future__ import annotations
-
-import uuid
 
 import pytest
 from alembic import command
 from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, inspect, text
-from sqlalchemy.engine import make_url
 from sqlalchemy.pool import NullPool
 from sqlmodel import SQLModel
 
 import app.models.core  # noqa: F401 — toutes les tables, comme le module testé
 from app.utils.revision_base import config_alembic
 from app.utils.schema_initial import poser_si_neuve
-from tests.aides_base import url_des_tests
+from tests.aides_base import adresse_de_test
+from tests.aides_processus import SERVEUR_INJOIGNABLE
 
 
 def _tete() -> str:
@@ -29,19 +26,20 @@ def _tete() -> str:
 
 
 @pytest.fixture
-def url_neuve(tmp_path):
-    """L'adresse d'une base VIDE : une base PostgreSQL créée puis détruite."""
-    serveur = url_des_tests()
-    nom = f"t_{uuid.uuid4().hex[:16]}"
-    admin = create_engine(serveur, isolation_level="AUTOCOMMIT", poolclass=NullPool)
-    with admin.connect() as c:
-        c.execute(text(f'CREATE DATABASE "{nom}"'))  # noqa: S608 — identifiant généré ici
+def url_neuve():
+    """L'adresse d'une base VIDE, telle que l'application la voit : un schéma neuf, retiré à la fin.
+
+    C'était une BASE créée puis détruite. Sous Windows, `DROP DATABASE` force un
+    point de contrôle du serveur entier : 60 à 140 s par test pendant que la suite
+    parallèle écrit (#2223), la plus longue attente de toute la suite. Un schéma
+    seul visible (`search_path`) est, pour le module testé comme pour Alembic,
+    une base qui ne contient rien.
+    """
+    adresse, retirer = adresse_de_test()
     try:
-        yield make_url(serveur).set(database=nom).render_as_string(hide_password=False)
+        yield adresse
     finally:
-        with admin.connect() as c:
-            c.execute(text(f'DROP DATABASE IF EXISTS "{nom}" WITH (FORCE)'))  # noqa: S608
-        admin.dispose()
+        retirer()
 
 
 def _lire(url: str) -> tuple[set[str], list[str]]:
@@ -100,8 +98,7 @@ def test_des_tables_sans_version_ne_font_pas_une_base_neuve(url_neuve):
 def test_une_base_injoignable_rend_inconnu():
     """Jamais « posée » ni « existante » sur ce qu'on n'a pas pu lire."""
     assert (
-        poser_si_neuve("postgresql+psycopg://personne:x@127.0.0.1:9/aucune?connect_timeout=2")
-        == "inconnu"
+        poser_si_neuve(f"postgresql+psycopg://personne:x@{SERVEUR_INJOIGNABLE}/aucune") == "inconnu"
     )
 
 

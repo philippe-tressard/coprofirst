@@ -28,6 +28,12 @@ def ligne_de_saut(report) -> str | None:
     """
     if not getattr(report, "skipped", False):
         return None
+    #  Sous `pytest -n` (#2223), le maître RELAIE le rapport de chaque worker, et
+    #  le crochet le voit deux fois : chez le worker, puis chez le maître — qui y
+    #  a posé `node`, le worker d'origine. Seul l'original se consigne : sinon
+    #  chaque saut comptait double (9 sauts → 17 lignes, mesuré le 24/10/2026).
+    if getattr(report, "node", None) is not None:
+        return None
     longrepr = getattr(report, "longrepr", None)
     raison = longrepr[2] if isinstance(longrepr, tuple) and len(longrepr) == 3 else str(longrepr)
     raison = raison.removeprefix("Skipped: ").replace("\t", " ").replace("\n", " ").strip()
