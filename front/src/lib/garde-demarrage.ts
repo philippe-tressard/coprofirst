@@ -24,7 +24,13 @@
  *     répondent pas — ce qui rend le dessin possible — et dire quoi faire ;
  *  2. dessinée, mais l'application n'a pas démarré après 20 s → le dire, sans
  *     recharger d'autorité : le champ d'adresse marche sans l'application, et
- *     une saisie en cours serait perdue.
+ *     une saisie en cours serait perdue ;
+ *  3. dessinée SANS sa feuille principale (24/10/2026 : une tablette rouverte le
+ *     lendemain affichait la page brute d'avant une MEP, dont les feuilles aux
+ *     noms hachés n'existaient plus) → recharger, comme au 1, puis le dire.
+ *     Jugé au chargement complet, au retour sur l'onglet et à la restauration
+ *     depuis le cache de navigation, démarrée ou non : la variable témoin
+ *     `--feuille-principale` de `styles/socle.css` manque au style calculé.
  *
  * Il apprend que tout va bien par ce marqueur, posé depuis le `onMount` du
  * layout racine : quand il est là, le code de l'application a tourné. Le
@@ -54,7 +60,7 @@ export const VALEUR_DEMARREE = 'demarree';
  * `api/tests/test_pwa_maj.py` les compare.
  */
 export const CLE_MOTIF = 'garde-demarrage-motif';
-export const MOTIFS = ['non-dessinee', 'non-demarree'] as const;
+export const MOTIFS = ['non-dessinee', 'non-demarree', 'non-stylee'] as const;
 export const PREFIXE_CODE = 'garde-demarrage';
 
 /** Le code d'un rechargement de secours, ou `null` s'il n'y en a pas eu. */

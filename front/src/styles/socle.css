@@ -38,6 +38,9 @@ body {
 }
 
 :root {
+	/* Témoin lu par le garde de démarrage (`src/garde-demarrage.js`) : absent du
+	   style calculé, la page s'affiche sans sa feuille principale et se recharge. */
+	--feuille-principale: chargee;
 	/* Couleurs principales (charte graphique) */
 	--color-primary: #1e3a5f; /* Bleu Seine */
 	--color-primary-dark: #16304f;

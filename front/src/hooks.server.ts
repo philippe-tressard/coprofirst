@@ -28,7 +28,32 @@ export const handle: Handle = async ({ event, resolve }) => {
 	//
 	//  ⚠️ Un commentaire qui décrit une protection inexistante est pire qu'un
 	//  silence : il se lit comme une garantie (#1083, 22/09/2026).
-	return resolve(event, {
+	const reponse = await resolve(event, {
 		transformPageChunk: ({ html }) => html.replace(REPERE_GARDE, () => SCRIPT_GARDE),
 	});
+	return sansCopieConservee(reponse);
 };
+
+/**
+ *  Une page HTML ne se garde pas dans le navigateur (24/10/2026).
+ *
+ *  Les pages partaient sans `Cache-Control` : le navigateur était libre d'en
+ *  garder une copie et de la ressortir sans redemander au serveur — à la
+ *  restauration d'un onglet, à l'historique. Une tablette a ainsi réaffiché un
+ *  matin `/tableau-de-bord` dans sa version du 06/09, consultée à jour la
+ *  veille au soir : page brute, ses feuilles et son code aux noms hachés
+ *  n'existant plus. `no-store` impose de redemander la page à chaque fois ; ce
+ *  n'est pas un coût, rien ne la revalidait (ni `ETag` ni `Last-Modified`). Et
+ *  une page authentifiée n'a rien à faire sur le disque d'un appareil partagé.
+ *
+ *  Seulement le HTML que rend SvelteKit : les fichiers `/_app/immutable/…` sont
+ *  servis avant ce hook, avec leur cache d'un an — leur nom change à chaque
+ *  build. Un en-tête posé par une route n'est jamais écrasé.
+ *  🔒 `e2e/garde-demarrage.spec.ts`.
+ */
+function sansCopieConservee(reponse: Response): Response {
+	const type = reponse.headers.get('content-type') ?? '';
+	if (type.startsWith('text/html') && !reponse.headers.has('cache-control'))
+		reponse.headers.set('cache-control', 'no-store');
+	return reponse;
+}

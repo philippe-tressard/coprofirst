@@ -83,6 +83,41 @@ async function signalements(page: Page): Promise<string[]> {
 
 const VERSION = String.raw`v\d+\.\d+\.\d+`;
 
+/** La feuille principale est-elle appliquée ? Le garde lit le même témoin. */
+const stylee = (page: Page) =>
+	page
+		.evaluate(
+			() =>
+				getComputedStyle(document.documentElement)
+					.getPropertyValue('--feuille-principale')
+					.trim() !== '',
+		)
+		.catch(() => false); // document en cours de remplacement (rechargement)
+
+/**
+ * Sert `/auth/connexion` SANS ses styles pour les `n` premiers chargements :
+ * la page d'avant une MEP dont les feuilles aux noms hachés n'existent plus.
+ * En développement, les styles voyagent dans `<style data-sveltekit>` — et le
+ * code de l'application les réinjecterait : il est bloqué au même chargement.
+ */
+async function servirSansStyles(page: Page, chargements: number) {
+	let restants = chargements;
+	await page.route(
+		(url) => url.pathname === '/auth/connexion',
+		async (route) => {
+			if (route.request().resourceType() !== 'document' || restants <= 0) {
+				await route.continue();
+				return;
+			}
+			restants--;
+			const reponse = await route.fetch();
+			const html = (await reponse.text()).replace(/<style data-sveltekit>[\s\S]*?<\/style>/, '');
+			await route.fulfill({ response: reponse, body: html });
+		},
+	);
+	await bloquerLeDemarrage(page, chargements);
+}
+
 test('Premier chargement jamais dessiné : la page se recharge d’elle-même et s’affiche', async ({
 	page,
 }) => {
@@ -148,6 +183,64 @@ test('Dessinée mais jamais démarrée : la page le dit au lieu de rester figée
 	await expect(page.getByRole('alert')).toHaveCount(0);
 	await expect.poll(() => codes).toHaveLength(1);
 	expect(codes[0]).toMatch(new RegExp(`^garde-demarrage:non-demarree:${VERSION}$`));
+});
+
+test('Affichée sans sa mise en forme : la page se recharge d’elle-même, stylée', async ({
+	page,
+}) => {
+	test.setTimeout(60_000);
+	const codes = await signalements(page);
+	await servirSansStyles(page, 1);
+	await page.goto('/auth/connexion', { waitUntil: 'commit' });
+
+	await expect(page.locator('html[data-application="demarree"]')).toHaveCount(1, {
+		timeout: 30_000,
+	});
+	await expect.poll(() => stylee(page)).toBe(true);
+	await expect(page.getByRole('alert')).toHaveCount(0);
+	await expect.poll(() => codes).toHaveLength(1);
+	expect(codes[0]).toMatch(new RegExp(`^garde-demarrage:non-stylee:${VERSION}$`));
+});
+
+test('Toujours sans mise en forme après le rechargement : la page le dit', async ({ page }) => {
+	test.setTimeout(60_000);
+	await servirSansStyles(page, 99);
+	await page.goto('/auth/connexion', { waitUntil: 'commit' });
+
+	const alerte = page.getByRole('alert');
+	await expect(alerte).toContainText('Cette page s’affiche sans sa mise en forme', {
+		timeout: 30_000,
+	});
+	await expect(alerte.getByRole('button', { name: 'Recharger la page' })).toBeVisible();
+});
+
+test('Une page démarrée qui a perdu ses feuilles se recharge à son retour', async ({ page }) => {
+	test.setTimeout(60_000);
+	await page.goto('/auth/connexion');
+	await expect(page.locator('html[data-application="demarree"]')).toHaveCount(1);
+	expect(await stylee(page)).toBe(true);
+
+	//  L'onglet rouvert le lendemain : la page est là, ses feuilles non.
+	const rechargement = page.waitForEvent('framenavigated');
+	await page.evaluate(() => {
+		document.querySelectorAll('style, link[rel="stylesheet"]').forEach((e) => e.remove());
+		window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+	});
+	await rechargement;
+	await expect(page.locator('html[data-application="demarree"]')).toHaveCount(1, {
+		timeout: 20_000,
+	});
+	await expect.poll(() => stylee(page)).toBe(true);
+});
+
+test('Une page n’est jamais conservée par le navigateur', async ({ page }) => {
+	//  Sans `Cache-Control`, Safari a ressorti d'une restauration d'onglet une
+	//  copie vieille de sept semaines (24/10/2026, `hooks.server.ts`).
+	for (const chemin of ['/auth/connexion', '/tableau-de-bord']) {
+		const reponse = await page.request.get(chemin, { maxRedirects: 0 });
+		expect(reponse.headers()['content-type'], chemin).toContain('text/html');
+		expect(reponse.headers()['cache-control'], chemin).toBe('no-store');
+	}
 });
 
 test('Une page qui démarre normalement ne montre rien', async ({ page }) => {
