@@ -343,7 +343,14 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 
   Le script **extrait** les commandes de `.github/workflows/ci.yml` ; il n'en
   tient aucune liste, parce qu'une seconde liste divergerait au premier job
-  ajouté — et c'est le job ajouté qu'on oublie de rejouer. Environ une minute.
+  ajouté — et c'est le job ajouté qu'on oublie de rejouer. Il commence par un
+  **pré-vol** (dépendances, base des tests, Playwright, versions, venv) qui refuse
+  en quelques secondes au lieu de finir INCONNU, puis joue les étapes **rapides**
+  de tous les jobs avant les **lentes** (qui démarrent sur les créneaux libres),
+  en couloirs parallèles ; un rouge l'arrête à la fin de sa phase, sans trace (#2224). Après une correction :
+  `bash scripts/poste/rejouer-ci.sh --reprendre` rejoue d'abord ce qui était rouge.
+  Dépendances du poste en écart : `--venv` (venv aligné sur le lot, réutilisé).
+  Où passe le temps des rejeux : `python scripts/poste/mesurer-rejeux.py`.
   Il rend compte de trois genres d'étapes : les **contrôles** (exécutés), les
   **installations** (affichées, jamais exécutées — elles écraseraient
   l'environnement du poste), et les **non rejouables** (INCONNU). Une étape dont

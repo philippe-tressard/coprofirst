@@ -38,7 +38,10 @@ ci_verrou_selftest() {
   t "rejouer-ci.sh — le tour se prend par la règle" \
     "$(grep -v '^[[:space:]]*#' "$f" | grep -c 'ci_rejeu_acquerir')" "1"
   t "rejouer-ci.sh — le veilleur est lancé"  "$(grep -v '^[[:space:]]*#' "$f" | grep -c 'ci_veilleur ')" "1"
-  t "rejouer-ci.sh — un battement par étape" "$(grep -v '^[[:space:]]*#' "$f" | grep -c 'ci_battement ')" "1"
+  #  Le battement part de l'ORDONNANCEUR, au lancement de chaque étape (#2224) :
+  #  les étapes tournent côte à côte, et rejouer-ci.sh n'en lance plus aucune.
+  t "ordonnanceur — un battement par étape lancée" \
+    "$(grep -v '^[[:space:]]*#' "$(dirname "${BASH_SOURCE[0]}")/lib-ci-execution.sh" | grep -c 'ci_battement ')" "1"
 
   # ── Le lanceur : chaîne, ancre, état ─────────────────────────────────────
   t "ancre — le plus haut de la chaîne"     "$(ci_ancre '12 34 56 ')" "56"
