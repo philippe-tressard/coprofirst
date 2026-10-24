@@ -121,36 +121,32 @@ updates:
       #  Chaque règle porte donc SA CONDITION DE LEVÉE, vérifiable par une
       #  commande, jamais par une date ni par une compatibilité annoncée.
       #
-      #  ── Chaîne Vite/Svelte : on reste en Vite 6 ──────────────────────────
-      #  Mesuré, pas déduit : vite 8 + @sveltejs/vite-plugin-svelte 7
-      #  s'installent proprement ET le build réussit (SvelteKit 2.70.2 accepte
-      #  déjà les deux, svelte ^5.56.8 couvre le ^5.46.4 exigé). Ce qui casse
-      #  est invisible au build : plus AUCUNE référence à `/sw.js` dans le
-      #  bundle client. `sw.js` et `workbox-*.js` sont bien écrits sur le
-      #  disque — mais personne ne les enregistre. Donc ni cache hors ligne,
-      #  ni bandeau de mise à jour, et rien ne le signalerait à l'exécution :
-      #  le jumeau exact de l'incident du 26/07/2026. Seul `npm run lint:sw`,
-      #  qui inspecte le bundle livré, l'a vu.
-      #  Second dégât de la même montée : sous Rolldown (moteur de Vite 8), le
-      #  nom du paquet disparaît du bundle. Or c'est l'ancrage du contrôle P3,
-      #  qui mesure la version réellement servie — P3 deviendrait aveugle.
-      #  `vite-plugin-pwa@1.3.0`, la dernière, déclare pourtant `vite: ^8.0.0`.
-      #  Une compatibilité déclarée n'est pas une compatibilité observée
-      #  (~/.claude/standards/04-fiabilite-des-controles.md §15).
-      #  LEVÉE : quand `npm run lint:sw` passe avec vite 8 sur une branche
-      #  d'essai. C'est la condition — pas une annonce de l'auteur du greffon.
-      - dependency-name: "vite"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@sveltejs/vite-plugin-svelte"
-        update-types: ["version-update:semver-major"]
+      #  ── Chaîne Vite/Svelte : LEVÉE le 24/10/2026 (#2205) ─────────────────
+      #  Les règles `ignore` de `vite` et de `@sveltejs/vite-plugin-svelte`
+      #  avaient été posées le 04/08/2026 sur ce constat : « Vite 8 compile,
+      #  mais plus AUCUNE référence à `/sw.js` dans le bundle — le service
+      #  worker n'est plus enregistré ». C'était un FAUX NÉGATIF du contrôle,
+      #  pas une régression : Rolldown (Vite 8) écrit ses chaînes en gabarits à
+      #  accents graves (`/sw.js` entre accents graves), et `lint:sw` comme
+      #  l'extracteur de P3 ne connaissaient que les guillemets. L'enregistrement
+      #  était là, en URL absolue. Mesuré depuis dans un navigateur :
+      #  `npm run e2e:sw` lance l'application construite et exige un service
+      #  worker activé, de portée `/` — avec un cas zéro (service workers
+      #  bloqués → refus) et une mutation éprouvée.
+      #  Les deux contrôles lisent désormais les trois guillemets, `--selftest`
+      #  compris. Leçon générique : `~/.claude/standards/04` §15 — un contrôle qui
+      #  lit la FORME d'un artefact se casse à chaque changement de l'outil qui
+      #  l'émet ; le comportement prime.
       #
-      #  ── SvelteKit 3 : derrière la même chaîne (12/10/2026) ───────────────
-      #  `@sveltejs/kit@3` exige `@sveltejs/vite-plugin-svelte` 7, donc Vite 8 —
-      #  bloqué par la règle ci-dessus. #1855 l'a montré seul : build, pytest et
-      #  e2e rouges. C'est une migration (cookies v2, `$app/paths` sans `base`,
-      #  `load` relancées sur un lien vers la page courante, Node 22…), pas une
-      #  montée : elle se fera APRÈS Vite 8, dans un lot à elle.
-      #  LEVÉE : quand la règle Vite 8 est levée (`npm run lint:sw` vert en Vite 8).
+      #  ── SvelteKit 3 : une migration, lot 3 de #2205 ──────────────────────
+      #  `@sveltejs/kit@3` n'est pas une montée de lock : `svelte.config.js`
+      #  disparaît (options passées au plugin Vite), `$app/stores` est retiré,
+      #  `ORIGIN` d'adapter-node devient `paths.origin` (option de BUILD, alors
+      #  que l'image de la CI sert deux nœuds), les matcheurs de `src/params`
+      #  changent de forme, et le build casse dans `vite-plugin-pwa` (precache
+      #  vide). Le plan chiffré est en commentaire de #2205 (24/10/2026).
+      #  LEVÉE : quand ce lot est livré — c'est lui qui retire aussi les deux
+      #  exceptions d'`audit-exceptions.json`.
       - dependency-name: "@sveltejs/kit"
         update-types: ["version-update:semver-major"]
       #
