@@ -142,6 +142,7 @@ Le déroulé complet, une fois le pré-check vert :
 ```
 gh pr create --base main --head dev …
 gh pr checks <n> --watch          # TOUS les checks requis (liste : protection de main), pas un de moins
+bash scripts/ci/relancer-annules.sh <n>   # un check requis ANNULÉ par GitHub bloque sans un mot (#2225)
 gh pr merge <n> --squash --delete-branch
 git fetch --prune && git checkout -B dev origin/main
 SKIP_PRECHECK=1 git push -u origin dev   # recrée `dev` distante (piège 2)
@@ -356,6 +357,12 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 
   Un seul job : `bash scripts/poste/rejouer-ci.sh build-frontend` — utile en cours de
   correction, mais **aucune trace n'est écrite** et le point 16 reste INCONNU.
+  **Un seul rejeu à la fois, à son tour** (#2225) : sur un poste partagé,
+  `REJEU_PROPRIETAIRE="<lot> #<ticket>" bash scripts/poste/rejouer-ci.sh --attendre`
+  — sans `--attendre`, il est refusé tant qu'un rejeu tourne ou qu'un autre attend.
+  Qui tient le verrou, à quelle étape, qui attend : `bash scripts/poste/etat-rejeu.sh`.
+  Le lancer en tâche de fond de l'outil, jamais détaché : un rejeu dont le shell
+  lanceur disparaît s'arrête de lui-même et libère le verrou.
 - **INCONNU** → le contrôle n'a **pas pu** mesurer. Ce n'est jamais un vert. Le
   script sort en 2 au-delà d'un seul INCONNU.
 - **Point 9 est INCONNU par construction** : l'historique des e-mails s'interroge

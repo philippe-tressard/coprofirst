@@ -656,6 +656,11 @@ jobs:
           bash scripts/poste/precheck-mep.sh      --selftest
           bash scripts/exploitation/maintenance.sh       --selftest
           bash scripts/poste/rejouer-ci.sh        --selftest
+          # Le verrou du rejeu nommé, sa file d'attente, et le veilleur qui arrête un
+          # rejeu dont le lanceur a disparu (#2225) — éprouvés sur de vrais processus.
+          bash scripts/lib/lib-ci-verrou.sh       --selftest
+          # Les checks ANNULÉS d'une PR se relancent (#2225) : la décision par exécution.
+          bash scripts/ci/relancer-annules.sh     --selftest
           python scripts/poste/verifier-fins-de-ligne.py --selftest
           # 🔒 Le hook pre-commit refuse un index à marqueurs de conflit (#1616) :
           # LF et CRLF, la dérogation, et le VRAI hook joué dans un dépôt jetable.
