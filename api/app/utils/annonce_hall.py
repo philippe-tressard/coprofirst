@@ -19,6 +19,12 @@ from html import escape, unescape
 # fiche arrivant et les e-mails) ; réimportée ici car le routeur `annonces_hall`
 # l'importe historiquement depuis ce module.
 from app.utils.dates_fr import date_longue
+from app.utils.annonce_hall_photos import (
+    FORMAT_MIN_AVEC_PHOTOS,
+    SEUILS_FORMAT_AVEC_PHOTOS,
+    hauteur_image_seule,
+    html_galerie,
+)
 from app.utils.html_sur import assainir_html
 from app.utils.slug import en_slug
 from app.utils.pdf_theme import (
@@ -49,11 +55,6 @@ FORMATS = ("a4", "a5", "a6", "a7")
 # Photos facultatives, placées en pied de contenu. Volontairement limité : au-delà,
 # l'affiche déborderait du feuillet et le format ne serait plus tenu.
 MAX_PHOTOS = 2
-
-# En dessous de l'A6, une affiche avec photo devient illisible : on ne descend pas.
-# C'était l'A5 jusqu'au 24/10/2026 — une annonce de 150 caractères et une capture
-# d'écran sortait sur un A5 à moitié blanc, sa photo rognée (`object-fit: cover`).
-FORMAT_MIN_AVEC_PHOTOS = "a6"
 
 # Poids maximal du contenu (titre + message, en caractères) tenant dans chaque
 # format. Au-delà du dernier seuil, on reste en A4.
@@ -89,25 +90,6 @@ SEUILS_FORMAT: tuple[tuple[str, int], ...] = (
     ("a6", 750),
     ("a5", 1220),
     ("a4", 1700),
-)
-
-# Les mêmes seuils quand l'affiche porte des photos : la galerie (hauteur
-# `galerie_max` du gabarit) prend la place d'une partie du texte. Relevés le
-# 24/10/2026 au rendu WeasyPrint RÉEL (image de l'API), photo carrée, une ou
-# deux — la galerie a la même hauteur —, même marge de −10 % :
-#
-#     format   galerie   dernier poids qui tient   seuil retenu
-#     a6        38 mm              580                  520
-#     a5        50 mm              960                  860
-#     a4        70 mm            1 500                1 350
-#
-# ⚠️ « Tient » se lit au TEXTE RENDU, jamais au nombre de pages : un `.corps` en
-# flex ne se fragmente pas, WeasyPrint TRONQUE le message qui dépasse — une page,
-# et la fin du texte perdue sans un mot.
-SEUILS_FORMAT_AVEC_PHOTOS: tuple[tuple[str, int], ...] = (
-    ("a6", 520),
-    ("a5", 860),
-    ("a4", 1350),
 )
 
 # Gabarit par format : dimensions de page et échelle typographique.
@@ -377,11 +359,7 @@ body {{
 .message a {{ color: var(--navy); text-decoration: underline; }}
 .message img {{ max-width: 100%; border-radius: 1.5mm; }}
 
-/* ── Photos : secondaires, calées en pied de contenu (le texte reste central) ──
-   🔴 Jamais rognées (24/10/2026) : une hauteur FIXE avec `object-fit: cover`
-   coupait une capture d'écran à sa bande du milieu. La photo garde ses
-   proportions et RÉDUIT pour tenir dans la boîte — `max-*` et dimensions `auto`,
-   le calcul le plus élémentaire d'un élément remplacé. */
+/* ── Photos : jamais rognées, elles réduisent pour tenir (`annonce_hall_photos`) ── */
 .galerie {{ margin-top: auto; padding-top: 3mm; text-align: center; line-height: 0; }}
 .galerie img {{
   display: inline-block; vertical-align: top;
@@ -390,7 +368,11 @@ body {{
 }}
 .galerie-2 img {{ max-width: 48%; }}
 .galerie-2 img + img {{ margin-left: 3mm; }}
-
+/* Sans texte, la galerie occupe la zone et y centre la photo. */
+.corps-image .galerie {{
+  flex: 1 1 0; min-height: 0; margin-top: 0;
+  display: flex; align-items: center; justify-content: center;
+}}
 /* ── Pied de page ── */
 .pied {{
   background: var(--footer-bg); border-top: .3mm solid var(--border);
@@ -431,16 +413,17 @@ def construire_html(
 
     # Photos facultatives, embarquées comme le reste (data-URI).
     # Ignorées sous l'A6 : le gabarit n'a pas la place de les porter.
-    galerie = ""
     photos_admises = (
         (images or [])[:MAX_PHOTOS]
         if FORMATS.index(format_effectif) <= FORMATS.index(FORMAT_MIN_AVEC_PHOTOS)
         else []
     )
     vignettes = [uri for uri in (image_data_uri(u) for u in photos_admises) if uri]
-    if vignettes:
-        balises = "".join(f'<img src="{uri}" alt="{alt}">' for uri in vignettes)
-        galerie = f'<div class="galerie galerie-{len(vignettes)}">{balises}</div>'
+    #  Sans texte, la photo s'ajuste dans toute la zone sous le titre.
+    image_seule = bool(vignettes) and not texte_brut(message_html)
+    hauteur = hauteur_image_seule(format_effectif, titre, g["titre"]) if image_seule else None
+    galerie = html_galerie(vignettes, alt, hauteur_mm=hauteur)
+    classe_corps = "corps corps-image" if image_seule else "corps"
 
     qr = "" if format_effectif in _SANS_QR else qr_data_uri(url_complete)
     qr_html = f'<img class="pied-qr" src="{qr}" alt="QR {escape(site_affiche)}">' if qr else ""
@@ -466,7 +449,7 @@ def construire_html(
   </div>
   <div class="barre-accent"></div>
 
-  <div class="corps">
+  <div class="{classe_corps}">
     <div class="meta">
       <span class="chip-perimetre"
         ><span class="chip-filet"></span><span class="chip-texte">{escape(perimetre_label)}</span></span>

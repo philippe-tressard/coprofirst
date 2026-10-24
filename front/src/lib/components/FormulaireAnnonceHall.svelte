@@ -88,6 +88,9 @@
 	const formatMinPhotos = SEUILS_AVEC_PHOTOS[0][0];
 
 	$: longueur = message.replace(/<[^>]*>/g, '').length + titre.trim().length;
+	//  Sans texte, la photo fait l'affiche : elle s'ajuste dans toute la zone sous
+	//  le titre (`annonce_hall_photos`, 24/10/2026). L'aide le dit, l'aperçu le montre.
+	$: imageSeule = photos.length > 0 && message.replace(/<[^>]*>/g, '').trim().length === 0;
 	$: formatPrevu = (() => {
 		if (format !== 'auto') return format.toUpperCase();
 		const seuils = photos.length ? SEUILS_AVEC_PHOTOS : SEUILS;
@@ -237,13 +240,18 @@
 	</div>
 	<p class="aide">
 		{#if format === 'auto'}
-			Le plus petit format qui accueille le texte est retenu, pour occuper le moins de place
-			possible dans l'afficheur du hall. Sous l'A4, des pointillés de découpe sont tracés sur
+			Le plus petit format qui accueille le texte et les photos est retenu, pour occuper le moins de
+			place possible dans l'afficheur du hall. Sous l'A4, des pointillés de découpe sont tracés sur
 			l'affiche.
 		{:else}
 			Format imposé — le message sera mis en page en {format.toUpperCase()}.
 		{/if}
-		<strong>Prévu : {formatPrevu}</strong> ({longueur} caractère{longueur > 1 ? 's' : ''} — titre et message)
+		<strong>Prévu : {formatPrevu}</strong>
+		{#if imageSeule}
+			— photo seule, ajustée à la zone sous le titre.
+		{:else}
+			({longueur} caractère{longueur > 1 ? 's' : ''} — titre et message)
+		{/if}
 	</p>
 </SectionFormulaire>
 
@@ -270,7 +278,7 @@
       toute la résidence. Le champ garde son nom technique (`message`) côté API. -->
 <SectionDescription
 	idPrefixe="ah"
-	requis
+	requis={photos.length === 0}
 	placeholder="Rédigez l'annonce telle qu'elle sera affichée…"
 	bind:valeur={message}
 	assistant={contexteAssistant('annonce de hall', { Périmètre: perimetreContexte(perimetre) })}
@@ -298,8 +306,9 @@
 		on:change={onPhotosChange}
 	/>
 	<p class="aide">
-		Des photos, {maxPhotos} au maximum, placées en pied d'affiche : le texte de l'annonce reste l'élément
-		central. Une affiche avec photo ne descend jamais sous l'{formatMinPhotos}.
+		Des photos, {maxPhotos} au maximum, entières (jamais rognées). Avec une description, elles se placent
+		en pied d'affiche et le texte reste l'élément central ; sans description, elles occupent toute la
+		zone sous le titre. Une affiche avec photo ne descend jamais sous l'{formatMinPhotos}.
 	</p>
 </SectionFormulaire>
 

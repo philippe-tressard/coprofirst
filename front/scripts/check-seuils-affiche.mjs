@@ -27,7 +27,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
-const API = join(ICI, '..', '..', 'api', 'app', 'utils', 'annonce_hall.py');
+//  Les seuils sans photo vivent dans `annonce_hall.py`, ceux avec photo dans
+//  `annonce_hall_photos.py` (24/10/2026) : on lit les deux, une table par nom.
+const UTILS = join(ICI, '..', '..', 'api', 'app', 'utils');
+const API = ['annonce_hall.py', 'annonce_hall_photos.py'].map((f) => join(UTILS, f));
 const FRONT = join(ICI, '..', 'src', 'lib', 'components', 'FormulaireAnnonceHall.svelte');
 
 function echouer(message) {
@@ -37,7 +40,7 @@ function echouer(message) {
 
 /** Les couples (format, seuil) d'une table déclarée côté serveur. */
 function seuilsApi(nom) {
-	const src = readFileSync(API, 'utf8');
+	const src = API.map((f) => readFileSync(f, 'utf8')).join('\n');
 	const bloc = src.match(new RegExp(String.raw`\n${nom}[^=]*=\s*\(([\s\S]*?)\n\)`));
 	if (!bloc) echouer(`Cas zéro : ${nom} introuvable côté API — contrôle inopérant.`);
 	return [...bloc[1].matchAll(/\(\s*"(a\d)"\s*,\s*(\d+)\s*\)/g)].map((m) => [
@@ -96,7 +99,7 @@ if (ecarts.length > 0) {
 	for (const e of ecarts) console.error(`  • ${e}`);
 	console.error(
 		'\n  L’écran annoncerait un format que l’API ne produirait pas. Aligner\n' +
-			'  `FormulaireAnnonceHall.svelte` sur `api/app/utils/annonce_hall.py`.\n',
+			'  `FormulaireAnnonceHall.svelte` sur `api/app/utils/annonce_hall*.py`.\n',
 	);
 	process.exit(1);
 }
