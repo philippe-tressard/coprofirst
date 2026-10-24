@@ -19,6 +19,12 @@ from html import escape, unescape
 # fiche arrivant et les e-mails) ; réimportée ici car le routeur `annonces_hall`
 # l'importe historiquement depuis ce module.
 from app.utils.dates_fr import date_longue
+from app.utils.annonce_hall_photos import (
+    FORMAT_MIN_AVEC_PHOTOS,
+    SEUILS_FORMAT_AVEC_PHOTOS,
+    hauteur_image_seule,
+    html_galerie,
+)
 from app.utils.html_sur import assainir_html
 from app.utils.slug import en_slug
 from app.utils.pdf_theme import (
@@ -49,9 +55,6 @@ FORMATS = ("a4", "a5", "a6", "a7")
 # Photos facultatives, placées en pied de contenu. Volontairement limité : au-delà,
 # l'affiche déborderait du feuillet et le format ne serait plus tenu.
 MAX_PHOTOS = 2
-
-# En dessous de l'A5, une affiche avec photo devient illisible : on ne descend pas.
-FORMAT_MIN_AVEC_PHOTOS = "a5"
 
 # Poids maximal du contenu (titre + message, en caractères) tenant dans chaque
 # format. Au-delà du dernier seuil, on reste en A4.
@@ -123,7 +126,7 @@ _GABARITS: dict[str, dict[str, str]] = {
         "titre": "30pt",
         "meta": "10pt",
         "corps": "13pt",
-        "galerie_max": "44mm",
+        "galerie_max": "70mm",
         "qr": "26mm",
         "pied": "9pt",
     },
@@ -138,7 +141,7 @@ _GABARITS: dict[str, dict[str, str]] = {
         "titre": "21pt",
         "meta": "8.5pt",
         "corps": "10.5pt",
-        "galerie_max": "30mm",
+        "galerie_max": "50mm",
         "qr": "15mm",
         "pied": "7.5pt",
     },
@@ -153,7 +156,7 @@ _GABARITS: dict[str, dict[str, str]] = {
         "titre": "15pt",
         "meta": "7pt",
         "corps": "8.5pt",
-        "galerie_max": "0mm",  # pas de photo en dessous de l'A5
+        "galerie_max": "38mm",
         "qr": "11mm",
         "pied": "6pt",
     },
@@ -168,7 +171,7 @@ _GABARITS: dict[str, dict[str, str]] = {
         "titre": "11pt",
         "meta": "5.5pt",
         "corps": "7pt",
-        "galerie_max": "0mm",
+        "galerie_max": "0mm",  # pas de photo en dessous de l'A6
         "qr": "0mm",  # pied simplifié : plus de QR
         "pied": "5pt",
     },
@@ -210,23 +213,16 @@ def choisir_format(
     contenu : une annonce courte occupe ainsi moins de place dans l'afficheur
     du hall. Un choix explicite du CS est prioritaire.
 
-    Une affiche portant des photos ne descend jamais sous
-    `FORMAT_MIN_AVEC_PHOTOS` : en dessous, la photo écrase le texte.
+    Une affiche portant des photos se mesure sur ses propres seuils, qui
+    commencent à `FORMAT_MIN_AVEC_PHOTOS` : la galerie prend la place du texte.
     """
     demande = (format_demande or "auto").lower()
     if demande in FORMATS:
         return demande
 
     poids = len(texte_brut(message_html)) + len(texte_brut(titre))
-    format_retenu = "a4"
-    for fmt, seuil in SEUILS_FORMAT:
-        if poids <= seuil:
-            format_retenu = fmt
-            break
-
-    if avec_photos and FORMATS.index(format_retenu) > FORMATS.index(FORMAT_MIN_AVEC_PHOTOS):
-        return FORMAT_MIN_AVEC_PHOTOS
-    return format_retenu
+    seuils = SEUILS_FORMAT_AVEC_PHOTOS if avec_photos else SEUILS_FORMAT
+    return next((fmt for fmt, seuil in seuils if poids <= seuil), "a4")
 
 
 def format_libelle(fmt: str) -> str:
@@ -363,13 +359,20 @@ body {{
 .message a {{ color: var(--navy); text-decoration: underline; }}
 .message img {{ max-width: 100%; border-radius: 1.5mm; }}
 
-/* ── Photos : secondaires, calées en pied de contenu (le texte reste central) ── */
-.galerie {{ display: flex; gap: 3mm; margin-top: auto; padding-top: 6mm; }}
+/* ── Photos : jamais rognées, elles réduisent pour tenir (`annonce_hall_photos`) ── */
+.galerie {{ margin-top: auto; padding-top: 3mm; text-align: center; line-height: 0; }}
 .galerie img {{
-  flex: 1 1 0; min-width: 0; height: {g["galerie_max"]};
-  object-fit: cover; border-radius: 2mm; border: .3mm solid var(--border);
+  display: inline-block; vertical-align: top;
+  width: auto; height: auto; max-width: 100%; max-height: {g["galerie_max"]};
+  border-radius: 2mm; border: .3mm solid var(--border);
 }}
-
+.galerie-2 img {{ max-width: 48%; }}
+.galerie-2 img + img {{ margin-left: 3mm; }}
+/* Sans texte, la galerie occupe la zone et y centre la photo. */
+.corps-image .galerie {{
+  flex: 1 1 0; min-height: 0; margin-top: 0;
+  display: flex; align-items: center; justify-content: center;
+}}
 /* ── Pied de page ── */
 .pied {{
   background: var(--footer-bg); border-top: .3mm solid var(--border);
@@ -409,17 +412,18 @@ def construire_html(
     alt = escape(titre)
 
     # Photos facultatives, embarquées comme le reste (data-URI).
-    # Ignorées sous l'A5 : le gabarit n'a pas la place de les porter.
-    galerie = ""
+    # Ignorées sous l'A6 : le gabarit n'a pas la place de les porter.
     photos_admises = (
         (images or [])[:MAX_PHOTOS]
         if FORMATS.index(format_effectif) <= FORMATS.index(FORMAT_MIN_AVEC_PHOTOS)
         else []
     )
     vignettes = [uri for uri in (image_data_uri(u) for u in photos_admises) if uri]
-    if vignettes:
-        balises = "".join(f'<img src="{uri}" alt="{alt}">' for uri in vignettes)
-        galerie = f'<div class="galerie">{balises}</div>'
+    #  Sans texte, la photo s'ajuste dans toute la zone sous le titre.
+    image_seule = bool(vignettes) and not texte_brut(message_html)
+    hauteur = hauteur_image_seule(format_effectif, titre, g["titre"]) if image_seule else None
+    galerie = html_galerie(vignettes, alt, hauteur_mm=hauteur)
+    classe_corps = "corps corps-image" if image_seule else "corps"
 
     qr = "" if format_effectif in _SANS_QR else qr_data_uri(url_complete)
     qr_html = f'<img class="pied-qr" src="{qr}" alt="QR {escape(site_affiche)}">' if qr else ""
@@ -445,7 +449,7 @@ def construire_html(
   </div>
   <div class="barre-accent"></div>
 
-  <div class="corps">
+  <div class="{classe_corps}">
     <div class="meta">
       <span class="chip-perimetre"
         ><span class="chip-filet"></span><span class="chip-texte">{escape(perimetre_label)}</span></span>

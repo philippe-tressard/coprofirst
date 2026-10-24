@@ -104,8 +104,10 @@
 	//  ce sont des calculs de PRÉSENTATION — combien de caractères, quel format en
 	//  résulte — et ils n'ont d'intérêt que pour l'aide affichée sous les pastilles.
 	//  La page garde ce qu'elle seule sait : la validité, qui commande son bouton.
+	//  La règle de `_valider` côté API : un titre, et un message — sauf pour une
+	//  affiche faite d'une photo, qui occupe alors le feuillet (24/10/2026).
 	$: ahFormulaireValide =
-		ahTitre.trim().length > 0 && stripHtml(ahMessage).length + ahTitre.trim().length > 0;
+		ahTitre.trim().length > 0 && (stripHtml(ahMessage).length > 0 || ahPhotos.length > 0);
 
 	/**  Ce que le fil propose de reprendre — actualités, tickets ET événements.
 	 *

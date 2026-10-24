@@ -100,8 +100,11 @@ from app.routers.annonces_hall_schemas import (  # noqa: E402
 def _valider(body: AnnonceHallBase) -> None:
     if not body.titre.strip():
         raise HTTPException(422, "Le titre est obligatoire")
-    if not texte_brut(body.message):
-        raise HTTPException(422, "Le message est obligatoire")
+    #  Une photo seule fait une affiche (24/10/2026) : elle occupe alors le feuillet.
+    if not texte_brut(body.message) and not body.images:
+        raise HTTPException(
+            422, "Le message est obligatoire, sauf pour une affiche faite d'une photo"
+        )
     if (body.format_demande or "auto").lower() not in ("auto", *FORMATS):
         raise HTTPException(422, "Format invalide (auto, a4 ou a5)")
     if len(body.images) > MAX_PHOTOS:
