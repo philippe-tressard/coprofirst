@@ -591,6 +591,10 @@ jobs:
           # les notes de version des exploitants ; le rappel de retard.
           bash scripts/ci/promotion.sh              --selftest
           bash scripts/ci/notes-de-version.sh       --selftest
+          # Chaque version taguée publiée — release et archive (#2210) ; la purge
+          # des paquets que plus aucune vague ne peut servir.
+          bash scripts/ci/publier-version.sh        --selftest
+          bash scripts/ci/purge-paquets.sh          --selftest
           bash scripts/ci/rappel-replica.sh         --selftest
           # La mise à jour nocturne d'une réplique (#1756) : quelle version, et
           # revenir ou restaurer après une santé KO.

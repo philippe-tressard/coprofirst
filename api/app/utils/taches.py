@@ -86,8 +86,9 @@ TACHES_PERMANENTES: dict[str, str] = {
     "conservation_registre": "l'effacement, à leur échéance, des coordonnées (12 mois) et du "
     "contrat archivé (5 ans) d'une installation résiliée — les durées promises par les "
     "conditions d'inscription (§4) redeviennent fictives",
-    "canaux_registre": "l'avancée du canal `replica` dans le registre (#1881) — les baux "
-    "portent alors une version cible figée, et aucune réplique ne reçoit la version promue",
+    "canaux_registre": "la lecture des versions publiées dans le registre (#2210) — les "
+    "baux portent alors une version cible figée, et aucune réplique ne reçoit de nouvelle "
+    "version",
     "conservation_affaires": "l'archivage, à leur échéance, des pièces jointes des affaires "
     "closes et le détachement de leurs auteurs (#2014), puis le retrait du serveur des "
     "archives copiées sur le PC depuis 30 jours — les durées de conservation redeviennent "
@@ -115,8 +116,8 @@ TACHES_DE_LA_PLATEFORME: dict[str, str] = {
     "aucune copropriété (§4.11) (#1878)",
     "conservation_registre": "la base `plateforme` (registre des installations), qui "
     "n'appartient à aucune copropriété (§4.11, règle 7)",
-    "canaux_registre": "le canal `replica` du registre des installations, relu sur le "
-    "dépôt public : il n'appartient à aucune copropriété (§4.11, règle 6) (#1881)",
+    "canaux_registre": "les versions publiées du registre des installations, relues sur "
+    "le dépôt public : elles n'appartiennent à aucune copropriété (§4.11, règle 6) (#2210)",
 }
 
 

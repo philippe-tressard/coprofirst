@@ -18,11 +18,11 @@
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import FicheRegistreInstallation from '$lib/components/FicheRegistreInstallation.svelte';
 	import type {
-		CanalDistribution,
 		FicheInstallation,
 		ResumeInstallation,
 		ServiceAccordable,
 		VagueLue,
+		VersionsPubliees,
 	} from '$lib/api';
 	import { fmtDatetime } from '$lib/date';
 	import {
@@ -39,7 +39,7 @@
 	export let fiche: FicheInstallation | null = null;
 	export let erreurFiche = '';
 	export let accordables: ServiceAccordable[] = [];
-	export let canaux: CanalDistribution[] = [];
+	export let versions: VersionsPubliees = { proposees: [], lues_le: null };
 	export let vagues: VagueLue[] = [];
 	/** Un geste est en cours sur cette installation : ses boutons attendent. */
 	export let enCours = false;
@@ -47,6 +47,7 @@
 	const dispatch = createEventDispatcher<{ basculer: void }>();
 
 	$: i = installation;
+	$: vagueDe = vagues.find((v) => v.code === i.vague);
 	$: titre = i.administrateur ? `${i.identifiant} · ${i.administrateur}` : i.identifiant;
 	$: alertes = resumeAlertes(i.alertes);
 </script>
@@ -89,9 +90,7 @@
 			{/if}
 			{#if i.version_logicielle}<span class="badge badge-gray">v{i.version_logicielle}</span>{/if}
 			{#if i.canal !== 'main'}<span title="Version cible du prochain bail"
-					>→ {libelleVersionCible(
-						i.version_cible,
-					)}{#if i.version_epinglee}&nbsp;(épinglée){/if}</span
+					>→ {libelleVersionCible(i.version_cible)}{#if vagueDe}&nbsp;({vagueDe.libelle}){/if}</span
 				>{/if}
 			{#if i.conditions_acceptees}<span>Contrat v{i.conditions_acceptees}</span>{/if}
 			<span>{servicesAccordes(i.services_autorises.length)}</span>
@@ -105,7 +104,7 @@
 				<FicheRegistreInstallation
 					{fiche}
 					{accordables}
-					{canaux}
+					{versions}
 					{vagues}
 					{enCours}
 					on:geste

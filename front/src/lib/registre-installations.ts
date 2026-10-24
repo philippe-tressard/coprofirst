@@ -110,25 +110,26 @@ export function servicesAccordes(n: number): string {
 		: `${n} service${n > 1 ? 's' : ''} accordé${n > 1 ? 's' : ''}`;
 }
 
+/**  Le canal qui suit la dernière version publiée (`registre/canaux.CANAL_URGENCE`) ;
+ *   tout autre canal d'une installation est une version `X.Y.Z` choisie (#2210). */
+export const CANAL_URGENCE = 'urgence';
+
 const CANAUX = [
 	{ val: 'main', label: 'Référence' },
-	{ val: 'replica', label: 'Réplique' },
-	{ val: 'special', label: 'Canal spécial' },
+	{ val: CANAL_URGENCE, label: 'Canal Urgence' },
+	{ val: 'version', label: 'Version fixe' },
 ] as const;
 
 const MARQUES_CANAL: Record<string, MarqueGouttiere> = {
 	main: ['star', 'RÉF.'],
-	replica: ['layers', 'RÉPL.'],
-	special: ['pin', 'SPÉC.'],
+	[CANAL_URGENCE]: ['zap', 'URG.'],
+	version: ['pin', 'FIXE'],
 };
 
-/**  Le préfixe d'un canal spécial (`registre/canaux.MOTIF_SPECIAL`, R5 #1881). */
-export const PREFIXE_CANAL_SPECIAL = 'special-';
-
-/**  La gouttière d'une installation : son rôle, lu sur le canal qu'elle suit — un
- *   canal spécial, quel que soit son nom, se classe sous une seule marque. */
+/**  La gouttière d'une installation : son rôle, lu sur le canal qu'elle suit — une
+ *   version choisie, quelle qu'elle soit, se classe sous une seule marque. */
 export function classeInstallation(canal: string): ClasseGouttiere | null {
-	const famille = canal.startsWith(PREFIXE_CANAL_SPECIAL) ? 'special' : canal;
+	const famille = canal === 'main' || canal === CANAL_URGENCE ? canal : 'version';
 	return classeDe(CANAUX, MARQUES_CANAL, famille);
 }
 

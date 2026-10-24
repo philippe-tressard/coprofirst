@@ -59,10 +59,8 @@ ROUTES_DU_REGISTRE = {
     "installation ; rend sa fiche (R4 #1880)",
     ("POST", "/admin/installations/{identifiant}/suppression"): "supprimer une installation "
     "résiliée ; ne rend rien (204, #1980)",
-    ("PUT", "/admin/installations/{identifiant}/distribution"): "le canal, la vague et la "
-    "version épinglée d'une installation ; rend sa fiche (R5 #1881)",
-    ("PUT", "/admin/canaux-distribution/{nom}"): "créer ou avancer un canal spécial ; rend les "
-    "canaux — des noms et des versions (R5 #1881)",
+    ("PUT", "/admin/installations/{identifiant}/distribution"): "le canal et la vague d'une "
+    "installation ; rend sa fiche (#2210)",
 }
 
 #: Le cas zéro : neuf routes au 10/10/2026 (supervision technique et base).

@@ -1,4 +1,4 @@
-"""Le canal, la vague et l'épinglage, de l'opérateur à la mise à jour nocturne (R5 #1881).
+"""Le canal et la vague, de l'opérateur à la mise à jour nocturne (#2210).
 
 Les deux côtés parlent pour de vrai (`aides_registre.installation_branchee`) :
 l'opérateur règle la distribution à la référence, la réplique renouvelle son bail —
@@ -8,9 +8,11 @@ réellement signé, puis vérifié —, et `POST /admin/maintenance/bail`, que l
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.config import get_settings
 from app.inscription import client
@@ -19,7 +21,6 @@ from app.main import app
 from app.models.core import RoleUtilisateur
 from app.models.roles import ROLE_OPERATEUR
 from app.registre import canaux, migrer
-from app.registre.modeles import CanalDistribution, DecisionRegistre
 from app.utils import horloge
 from tests.aides_http import base_http, client_http
 from tests.aides_registre import installation_branchee
@@ -28,16 +29,21 @@ CONTACT = Contact(prenom="Alix", nom="Durand", courriel="alix@example.org")
 REPLIQUE = "CF-000002"
 CLE = "cle-de-test-du-bail"
 
+#: Les versions publiées, et leur âge en jours.
+PUBLIEES = {"2.169.0": 30, "2.170.0": 20, "2.171.0": 10, "2.171.1": 2, "2.172.0": 1}
+
 
 @pytest.fixture
 def operateur(monkeypatch, tmp_path):
-    """La référence, une réplique inscrite en 2.170.0, `replica` lu en 2.172.0."""
+    """La référence, une réplique inscrite en 2.170.0, les versions publiées lues."""
     monkeypatch.setattr(get_settings(), "coprofirst_version", "2.170.0")
     monkeypatch.setattr(get_settings(), "maintenance_key", CLE)
     with installation_branchee(monkeypatch, tmp_path) as registre, base_http() as moteur:
+        maintenant = horloge.maintenant()
+        lues = [canaux.Publication(v, maintenant - timedelta(days=j)) for v, j in PUBLIEES.items()]
         with Session(registre) as s:
             migrer.inscrire_reference(s)
-            canaux.relire_replica(s, "2.172.0", horloge.maintenant())
+            canaux.relire_versions(s, lues, maintenant)
             s.commit()
         client.inscrire(CONTACT)
         http, _ = client_http(moteur, RoleUtilisateur.admin, roles_json=f"admin,{ROLE_OPERATEUR}")
@@ -53,8 +59,16 @@ def _bail_pour_la_maj() -> dict:
 def _distribuer(http, **corps):
     return http.put(
         f"/admin/installations/{REPLIQUE}/distribution",
-        json={"canal": "replica", "vague": 1, "motif": "essai", **corps},
+        json={"canal": "urgence", "vague": canaux.VAGUE_PILOTE, "motif": "essai", **corps},
     )
+
+
+def _valider(http):
+    r = http.post(
+        f"/admin/installations/{REPLIQUE}/decisions", json={"geste": "valider", "motif": "ok"}
+    )
+    assert r.status_code == 200, r.text
+    return r.json()
 
 
 def test_sans_cle_le_bail_ne_se_lit_pas(operateur):
@@ -67,46 +81,67 @@ def test_en_attente_aucune_version_a_installer(operateur):
     assert lu["etat"] == "limitee" and lu["version_cible"] is None
 
 
-def test_validee_elle_recoit_la_version_de_replica(operateur):
+def test_validee_elle_suit_standard(operateur):
+    """Une inscription neuve suit Urgence en vague Standard : la mineure qui précède la
+    dernière (2.172 → 2.171), à son dernier correctif de plus de 7 jours (2.171.0)."""
     http, _ = operateur
-    r = http.post(
-        f"/admin/installations/{REPLIQUE}/decisions", json={"geste": "valider", "motif": "ok"}
+    fiche = _valider(http)
+    assert (fiche["canal"], fiche["vague"], fiche["version_cible"]) == (
+        "urgence",
+        canaux.VAGUE_STANDARD,
+        "2.171.0",
     )
-    assert r.status_code == 200, r.text
-    assert r.json()["version_cible"] == "2.172.0"
     lu = _bail_pour_la_maj()
-    assert lu == {**lu, "etat": "active", "canal": "replica", "version_cible": "2.172.0"}
+    assert lu == {**lu, "etat": "active", "canal": "urgence", "version_cible": "2.171.0"}
 
 
-def test_l_operateur_epingle_puis_ordonne_le_retour(operateur):
+@pytest.mark.parametrize(
+    "vague, attendue",
+    [(canaux.VAGUE_URGENCE, "2.172.0"), (canaux.VAGUE_PILOTE, "2.171.0")],
+)
+def test_les_vagues_du_canal_urgence_partent_dans_le_bail(operateur, vague, attendue):
     http, _ = operateur
-    http.post(
-        f"/admin/installations/{REPLIQUE}/decisions", json={"geste": "valider", "motif": "ok"}
+    _valider(http)
+    r = _distribuer(http, vague=vague, motif="correctif attendu")
+    assert r.status_code == 200, r.text
+    assert r.json()["version_cible"] == attendue
+    assert _bail_pour_la_maj()["version_cible"] == attendue
+    journal = r.json()["decisions"][0]
+    assert journal["geste"] == canaux.GESTE_DISTRIBUTION
+    assert (
+        journal["motif"]
+        == f"correctif attendu — canal Urgence, vague {canaux.VAGUES[vague].libelle}"
     )
-    r = _distribuer(http, vague=0, version_epinglee="2.169.0", motif="régression du 2.170")
+
+
+def test_l_operateur_fixe_une_version_puis_ordonne_le_retour(operateur):
+    http, _ = operateur
+    _valider(http)
+    r = _distribuer(http, canal="2.169.0", vague=canaux.VAGUE_FIXE, motif="régression du 2.170")
     assert r.status_code == 200, r.text
     fiche = r.json()
-    assert (fiche["vague"], fiche["version_epinglee"], fiche["version_cible"]) == (
-        0,
+    assert (fiche["canal"], fiche["vague"], fiche["version_cible"]) == (
         "2.169.0",
+        canaux.VAGUE_FIXE,
         "2.169.0",
     )
-    assert fiche["decisions"][0]["geste"] == canaux.GESTE_DISTRIBUTION
-    assert "épinglée en 2.169.0" in fiche["decisions"][0]["motif"]
+    assert "version 2.169.0, vague Fixe" in fiche["decisions"][0]["motif"]
     #  Le bail signé porte l'ordre ; le script le lit comme un retour.
     assert _bail_pour_la_maj()["version_cible"] == "2.169.0"
-    #  Libérée : elle rejoint son canal.
-    assert _distribuer(http, version_epinglee="").json()["version_epinglee"] is None
-    assert _bail_pour_la_maj()["version_cible"] == "2.172.0"
+    #  Une version de moins de 7 jours attend son tour : rien ne bouge.
+    r = _distribuer(http, canal="2.171.1", vague=canaux.VAGUE_FIXE)
+    assert r.json()["version_cible"] == "2.170.0"
 
 
 @pytest.mark.parametrize(
     "corps, raison",
     [
         ({"canal": "main"}, "référence seule"),
-        ({"canal": "special-inconnu"}, "Canal inconnu"),
+        ({"canal": "replica"}, "Urgence, ou une version"),
+        ({"canal": "2.150.0", "vague": canaux.VAGUE_FIXE}, "Version non publiée"),
+        ({"canal": "2.170.0", "vague": canaux.VAGUE_PILOTE}, "vague Fixe"),
+        ({"vague": canaux.VAGUE_FIXE}, "Urgence, Pilote ou Standard"),
         ({"vague": 7}, "Vague inconnue"),
-        ({"version_epinglee": "5aa41dad"}, "X.Y.Z"),
     ],
 )
 def test_une_distribution_fautive_est_refusee(operateur, corps, raison):
@@ -119,52 +154,29 @@ def test_la_reference_ne_se_distribue_pas(operateur):
     http, _ = operateur
     r = http.put(
         "/admin/installations/CF-000000/distribution",
-        json={"canal": "replica", "vague": 1, "motif": "essai"},
+        json={"canal": "urgence", "vague": canaux.VAGUE_PILOTE, "motif": "essai"},
     )
     assert r.status_code == 409
 
 
-def test_un_canal_special_porte_sa_version_et_s_inscrit_au_journal(operateur):
-    http, registre = operateur
-    http.post(
-        f"/admin/installations/{REPLIQUE}/decisions", json={"geste": "valider", "motif": "ok"}
-    )
-    r = http.put(
-        "/admin/canaux-distribution/special-pilote",
-        json={"version": "2.171.0", "motif": "client A"},
-    )
-    assert r.status_code == 200, r.text
-    assert [c["nom"] for c in r.json()] == ["replica", "special-pilote"]
-    assert r.json()[0]["modifiable"] is False and r.json()[1]["modifiable"] is True
-
-    assert _distribuer(http, canal="special-pilote", vague=0).json()["version_cible"] == "2.171.0"
-    r = http.put(
-        "/admin/canaux-distribution/special-pilote", json={"version": "2.172.0", "motif": "suite"}
-    )
-    assert r.status_code == 200
-    assert _bail_pour_la_maj()["version_cible"] == "2.172.0"
-    with Session(registre) as s:
-        gestes = s.exec(
-            select(DecisionRegistre.motif).where(
-                DecisionRegistre.geste == canaux.GESTE_CANAL_AVANCE
-            )
-        ).all()
-        assert gestes == ["suite — special-pilote en 2.172.0"]
-        assert s.exec(select(CanalDistribution).where(CanalDistribution.nom == "replica")).one()
-
-
-@pytest.mark.parametrize(
-    "nom, version", [("replica", "2.173.0"), ("Spécial", "2.1.0"), ("special-a", "v2")]
-)
-def test_un_canal_special_fautif_est_refuse(operateur, nom, version):
-    http, _ = operateur
-    r = http.put(f"/admin/canaux-distribution/{nom}", json={"version": version, "motif": "x"})
-    assert r.status_code == 409
-
-
-def test_la_liste_montre_les_canaux_et_les_vagues(operateur):
+def test_la_liste_montre_les_versions_et_les_vagues(operateur):
     http, _ = operateur
     liste = http.get("/admin/installations").json()
-    assert [c["nom"] for c in liste["canaux"]] == ["replica"]
-    assert liste["canaux"][0]["version"] == "2.172.0"
+    versions = liste["versions"]
+    assert [v["version"] for v in versions["proposees"]] == [
+        "2.172.0",
+        "2.171.1",
+        "2.170.0",
+        "2.169.0",
+    ]
+    assert versions["lues_le"] is not None
     assert [v["code"] for v in liste["vagues"]] == list(canaux.VAGUES)
+    assert [v["avec_urgence"] for v in liste["vagues"]] == [True, True, True, False]
+    assert [v["code"] for v in liste["vagues"] if v["defaut"]] == [canaux.VAGUE_STANDARD]
+    #  Ce que chaque vague du canal Urgence installe aujourd'hui ; Fixe n'en a pas.
+    assert [(v["cible"] or {}).get("version") for v in liste["vagues"]] == [
+        "2.172.0",
+        "2.171.0",
+        "2.171.0",
+        None,
+    ]

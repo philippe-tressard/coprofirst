@@ -9,7 +9,7 @@
      l'écran n'a pas de seconde table des transitions — « Supprimer » compris, offert
      à une installation résiliée seulement ;
   2. **Services accordés** — une case par service que la référence peut accorder ;
-  2 bis. **Canal et version** — canal, vague, épinglage, et la version cible qui en
+  2 bis. **Canal et version** — canal, vague, et la version cible qui en
      découle (`DistributionInstallation`, R5 #1881) ;
   3. **Administrateur d'installation** — le contact qu'il a déclaré ;
   4. **Dernier rapport nocturne** — des nombres et des coches de conformité
@@ -29,11 +29,11 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import type {
-		CanalDistribution,
 		FicheInstallation,
 		GesteRegistre,
 		ServiceAccordable,
 		VagueLue,
+		VersionsPubliees,
 	} from '$lib/api';
 	import { fmtDatetime } from '$lib/date';
 	import { fmtNombre } from '$lib/utils';
@@ -48,7 +48,7 @@
 
 	export let fiche: FicheInstallation;
 	export let accordables: ServiceAccordable[] = [];
-	export let canaux: CanalDistribution[] = [];
+	export let versions: VersionsPubliees = { proposees: [], lues_le: null };
 	export let vagues: VagueLue[] = [];
 	export let enCours = false;
 
@@ -147,7 +147,7 @@
 		/>
 	{/if}
 
-	<DistributionInstallation {fiche} {canaux} {vagues} {enCours} on:distribution />
+	<DistributionInstallation {fiche} {versions} {vagues} {enCours} on:distribution />
 {/if}
 
 <h4 class="intertitre">Administrateur d’installation</h4>

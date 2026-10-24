@@ -56,10 +56,13 @@ class Installation(TablePlateforme, table=True):
     cle_publique: Optional[str] = Field(default=None, unique=True, max_length=60)
     empreinte_cle: Optional[str] = Field(default=None, max_length=16)
     etat: EtatInscription = Field(default=EtatInscription.en_attente)
-    canal: str = Field(default="replica", max_length=60)
-    #: Quand elle reçoit la version de son canal (`registre/canaux.VAGUES`, R5 #1881).
-    vague: int = Field(default=1, sa_column_kwargs={"server_default": "1"})
-    #: La version que l'opérateur lui impose — épinglage, ou ordre de revenir (R5).
+    #: `urgence` (la dernière version publiée) ou une version `X.Y.Z` choisie ; `main`
+    #: pour la référence seule (`registre/canaux`, #2210).
+    canal: str = Field(default="urgence", max_length=60)
+    #: Quand elle reçoit la version de son canal (`registre/canaux.VAGUES`).
+    vague: int = Field(default=2, sa_column_kwargs={"server_default": "2"})
+    #: Plus écrite depuis #2210 — la version choisie est le canal. Relue par
+    #: `canaux.suivi_de` tant qu'une image précédente peut la poser.
     version_epinglee: Optional[str] = Field(default=None, max_length=40)
     version_logicielle: Optional[str] = Field(default=None, max_length=40)
     conditions_acceptees: Optional[int] = None
@@ -76,12 +79,28 @@ class Installation(TablePlateforme, table=True):
     effacee_le: Optional[NaiveDatetime] = None
 
 
-class CanalDistribution(TablePlateforme, table=True):
-    """Un CANAL : un pointeur vers une version de `main`, jamais une branche de travail (D21).
+class VersionDisponible(TablePlateforme, table=True):
+    """Une version PUBLIÉE : son tag a sa release et l'archive de déploiement (#2210).
 
-    `replica` avance seul, à la lecture nocturne de sa branche (`registre/canaux`) ;
-    un canal `special-<nom>`, par l'opérateur. `main` n'a pas de ligne : c'est la
-    référence seule, qui suit `main` par son propre déploiement.
+    Relue chaque nuit sur le dépôt public (`registre/canaux.relire_versions`) ; c'est
+    la liste où l'opérateur choisit, et d'où se calcule la version cible du bail.
+    """
+
+    __tablename__ = "version_disponible"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    version: str = Field(unique=True, max_length=40)
+    #: la date du tag — d'où se comptent les 7 jours de l'attente standard
+    publiee_le: NaiveDatetime
+    lue_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
+
+
+class CanalDistribution(TablePlateforme, table=True):
+    """Un CANAL-BRANCHE (`replica`, `special-<nom>`) — PLUS LU depuis #2210.
+
+    Une installation suit désormais Urgence ou une version choisie (`registre/canaux`).
+    La table reste le temps qu'une image précédente puisse la lire (migrations
+    compatibles sur une version) ; elle se retire dans un second temps.
     """
 
     __tablename__ = "canal_distribution"

@@ -142,11 +142,16 @@ version précédente du code (on ajoute, puis on retire à la version suivante �
 
 `deploiement/standard/mise-a-jour.sh` suit le **bail** de l'installation,
 signé par la référence : il installe la **version cible** que le bail porte, et
-revient seul en arrière si elle ne démarre pas. Le canal suivi (`replica` par
-défaut), la **vague** (pilote, générale le lendemain d'une promotion, tardive
-trois jours après) et l'**épinglage** — y compris l'ordre de revenir à une
-version plus ancienne — se décident à la référence, dans son registre des
-installations. **Sans bail valide, aucune mise à jour automatique** : une
+revient seul en arrière si elle ne démarre pas. Le **canal** — *Urgence*, la
+dernière version publiée, ou une version choisie parmi les cinq dernières
+mineures — et la **vague** se décident à la référence, dans son registre des
+installations : *Urgence* (la dernière version, aussitôt), *Pilote* (la
+dernière de plus de 7 jours), *Standard* (le défaut : le dernier correctif de plus
+de 7 jours de la mineure qui précède la dernière, à défaut d'une mineure antérieure) ou *Fixe* (la version
+choisie, 7 jours après sa publication — plus ancienne que celle qui tourne,
+c'est l'ordre d'y revenir). Chaque version taguée est publiée avec son archive de
+déploiement ; les releases et les images que plus aucune vague ne peut servir
+sont purgées chaque nuit. **Sans bail valide, aucune mise à jour automatique** : une
 installation non inscrite, en attente de validation, résiliée ou au bail échu
 reste sur sa version, et se met à jour à la main (ci-dessus). Il ne touche
 **à rien** tant que tout n'est pas prêt :

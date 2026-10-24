@@ -40,13 +40,14 @@ from app.models.core import Utilisateur
 from app.registre import alertes as registre_alertes
 from app.registre import base, canaux, conservation, decisions
 from app.registre.contrat import Rapport
+from app.registre.versions import versions_proposees
 from app.registre.modeles import (
     AcceptationConditions,
     ContactInstallation,
     DecisionRegistre,
     Installation,
-    CanalDistribution,
     RapportInstallation,
+    VersionDisponible,
 )
 from app.utils import horloge
 from app.utils.lecture import lire_objet
@@ -73,6 +74,7 @@ class ResumeInstallation(BaseModel):
     identifiant: str
     #: en_attente · active · suspendue · resiliee
     etat: str
+    #: `urgence`, une version `X.Y.Z` choisie, ou `main` (la référence) — `canaux.suivi_de`
     canal: str
     version_logicielle: Optional[str] = None
     cree_le: datetime
@@ -84,10 +86,8 @@ class ResumeInstallation(BaseModel):
     dernier_rapport_le: Optional[datetime] = None
     #: les services que la référence lui accorde — le bail les porte
     services_autorises: list[str] = []
-    #: quand elle reçoit la version de son canal (`registre/canaux.VAGUES`, R5)
+    #: quand elle reçoit la version de son canal (`registre/canaux.VAGUES`)
     vague: int = 1
-    #: la version que l'opérateur lui impose — épinglage, ou ordre de revenir
-    version_epinglee: Optional[str] = None
     #: la version que son prochain bail portera ; vide : aucune mise à jour
     version_cible: Optional[str] = None
     #: ce que la référence lui reproche, dans l'ordre de la spec (R4b #1960)
@@ -99,18 +99,33 @@ class ServiceAccordable(BaseModel):
     libelle: str
 
 
+class VersionLue(BaseModel):
+    version: str
+    #: la date du tag, d'où se comptent les 7 jours
+    publiee_le: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class VagueLue(BaseModel):
     code: int
     libelle: str
+    #: ce qu'elle installe, en une phrase
+    detail: str
+    #: offerte quand le canal est Urgence ; sinon, quand c'est une version choisie
+    avec_urgence: bool
+    #: celle d'une inscription neuve, et du canal Urgence quand on y revient
+    defaut: bool = False
+    #: ce qu'elle installe aujourd'hui, pour une vague du canal Urgence
+    cible: Optional[VersionLue] = None
 
 
-class CanalLu(BaseModel):
-    nom: str
-    version: Optional[str] = None
-    version_precedente: Optional[str] = None
-    avance_le: Optional[datetime] = None
-    #: avancé par l'opérateur ; `replica` avance seul, à la lecture de sa branche
-    modifiable: bool
+class VersionsLues(BaseModel):
+    #: les dernières mineures, à leur dernier correctif — la liste du canal
+    proposees: list[VersionLue] = []
+    #: la dernière lecture des releases ; vide : jamais lues
+    lues_le: Optional[datetime] = None
 
 
 class RegistreLu(BaseModel):
@@ -119,8 +134,8 @@ class RegistreLu(BaseModel):
     installations: list[ResumeInstallation]
     #: ce que la référence peut accorder — la liste de `utils/services`, seule
     services_accordables: list[ServiceAccordable]
-    #: les canaux de distribution, `replica` en tête (R5 #1881)
-    canaux: list[CanalLu] = []
+    #: les versions publiées, d'où se choisit le canal (#2210)
+    versions: VersionsLues = VersionsLues()
     vagues: list[VagueLue] = []
 
 
@@ -139,14 +154,9 @@ class DemandeServices(BaseModel):
 
 
 class DemandeDistribution(BaseModel):
+    #: `urgence`, ou une version `X.Y.Z` publiée
     canal: str = Field(min_length=1, max_length=60)
     vague: int
-    version_epinglee: Optional[str] = Field(default=None, max_length=40)
-    motif: str = Field(min_length=1, max_length=300)
-
-
-class DemandeCanal(BaseModel):
-    version: str = Field(min_length=1, max_length=40)
     motif: str = Field(min_length=1, max_length=300)
 
 
@@ -212,15 +222,18 @@ def _resume(
     coordonnees: Optional[ContactInstallation],
     dernier_rapport_le: Optional[datetime],
     alertes: list[registre_alertes.Alerte],
-    canal: Optional[CanalDistribution],
+    versions: list[VersionDisponible],
     schema: type[ResumeInstallation] = ResumeInstallation,
     **derives,
 ) -> ResumeInstallation:
+    canal, vague = canaux.suivi_de(inst)
     return lire_objet(
         schema,
         inst,
         etat=inst.etat.value,
-        version_cible=canaux.version_cible(inst, canal, horloge.maintenant()),
+        canal=canal,
+        vague=vague,
+        version_cible=canaux.version_cible(inst, versions, horloge.maintenant()),
         administrateur=nom_affiche(coordonnees.prenom, coordonnees.nom) if coordonnees else None,
         dernier_rapport_le=dernier_rapport_le,
         services_autorises=decisions.services_de(inst),
@@ -244,27 +257,38 @@ def _accordables() -> list[ServiceAccordable]:
     return [ServiceAccordable(code=c, libelle=SERVICES[c].libelle) for c in SERVICES_AUTORISABLES]
 
 
-def _vagues() -> list[VagueLue]:
-    return [VagueLue(code=c, libelle=v.libelle) for c, v in canaux.VAGUES.items()]
+def _vagues(versions: list[VersionDisponible]) -> list[VagueLue]:
+    maintenant = horloge.maintenant()
 
+    def cible(code: int) -> Optional[VersionLue]:
+        retenue = canaux.CIBLES[code](versions, maintenant) if code in canaux.CIBLES else None
+        return VersionLue.model_validate(retenue) if retenue else None
 
-def _canaux(session: Session) -> dict[str, CanalDistribution]:
-    """Les canaux du registre, par nom — `replica` en tête, puis les spéciaux."""
-    lignes = session.exec(select(CanalDistribution)).all()
-    return {c.nom: c for c in sorted(lignes, key=lambda c: (c.nom != canaux.CANAL_DEFAUT, c.nom))}
-
-
-def _canaux_lus(par_nom: dict[str, CanalDistribution]) -> list[CanalLu]:
     return [
-        lire_objet(CanalLu, c, modifiable=c.nom != canaux.CANAL_DEFAUT) for c in par_nom.values()
+        VagueLue(
+            code=c,
+            libelle=v.libelle,
+            detail=v.detail,
+            avec_urgence=v.avec_urgence,
+            defaut=c == canaux.VAGUE_DEFAUT,
+            cible=cible(c),
+        )
+        for c, v in canaux.VAGUES.items()
     ]
+
+
+def _versions_lues(versions: list[VersionDisponible]) -> VersionsLues:
+    return VersionsLues(
+        proposees=[VersionLue.model_validate(v) for v in versions_proposees(versions)],
+        lues_le=max((v.lue_le for v in versions), default=None),
+    )
 
 
 @router.get("/installations", response_model=RegistreLu)
 def lister_installations(_: Utilisateur = Depends(require_operateur)):
     if not base.registre_actif():
         return RegistreLu(
-            actif=False, installations=[], services_accordables=_accordables(), vagues=_vagues()
+            actif=False, installations=[], services_accordables=_accordables(), vagues=_vagues([])
         )
     with Session(base.moteur()) as session:
         installations = session.exec(
@@ -281,7 +305,7 @@ def lister_installations(_: Utilisateur = Depends(require_operateur)):
             ).all()
         )
         par_installation = registre_alertes.alertes_du_registre(session)
-        par_nom = _canaux(session)
+        versions = canaux.versions_disponibles(session)
         return RegistreLu(
             actif=True,
             installations=[
@@ -290,13 +314,13 @@ def lister_installations(_: Utilisateur = Depends(require_operateur)):
                     contacts.get(i.id),
                     derniers.get(i.id),
                     par_installation[i.id],
-                    par_nom.get(i.canal),
+                    versions,
                 )
                 for i in installations
             ],
             services_accordables=_accordables(),
-            canaux=_canaux_lus(par_nom),
-            vagues=_vagues(),
+            versions=_versions_lues(versions),
+            vagues=_vagues(versions),
         )
 
 
@@ -345,7 +369,7 @@ def _fiche(session: Session, inst: Installation) -> FicheInstallation:
         contact,
         rapport.recu_le if rapport else None,
         registre_alertes.alertes_du_registre(session)[inst.id],
-        canaux.canal_de(session, inst),
+        canaux.versions_disponibles(session),
         FicheInstallation,
         contact=ContactLu.model_validate(contact) if contact else None,
         contrats=[ContratAccepte.model_validate(c) for c in contrats],
@@ -412,7 +436,7 @@ def accorder_services(
 def regler_distribution(
     identifiant: str, body: DemandeDistribution, user: Utilisateur = Depends(require_operateur)
 ):
-    """Canal, vague et épinglage — la version cible de son prochain bail (R5 #1881)."""
+    """Canal et vague — la version cible de son prochain bail (#2210)."""
     with _session_registre() as session:
         inst = _installation(session, identifiant)
         auteur = decisions.auteur_de(user.id)
@@ -424,23 +448,10 @@ def regler_distribution(
                 inst,
                 canal=body.canal,
                 vague=body.vague,
-                version_epinglee=body.version_epinglee,
                 motif=body.motif,
                 auteur=auteur,
             ),
         )
-
-
-@router.put("/canaux-distribution/{nom}", response_model=list[CanalLu])
-def pointer_canal(nom: str, body: DemandeCanal, user: Utilisateur = Depends(require_operateur)):
-    """Crée un canal spécial, ou le fait pointer vers une version (R5 #1881)."""
-    with _session_registre() as session:
-        auteur = decisions.auteur_de(user.id)
-        _executer(
-            session,
-            lambda: canaux.pointer_canal_special(session, nom, body.version, body.motif, auteur),
-        )
-        return _canaux_lus(_canaux(session))
 
 
 @router.post("/installations/{identifiant}/suppression", status_code=204)

@@ -525,23 +525,30 @@ revient à son exploitant — la référence n'y a aucun accès.
    vaut pour tout canal. **Livré par R5 (#1881)** — `registre/canaux.py` :
    - la référence **calcule** la version cible (fonction pure) : aucune pour une
      installation en attente ou résiliée (D18) ; une installation **suspendue**
-     reçoit ses correctifs ; la **version épinglée** par l'opérateur prime, et une
-     version plus ancienne est l'**ordre de revenir** — le seul chemin d'un retour ;
-     sinon la version du canal, selon la **vague** (pilote dès l'avancée du canal,
-     générale à J+1, tardive à J+3 ; avant son tour, la version précédente du
-     canal) ; une cible tirée du canal ne fait jamais reculer une installation ;
-   - `replica` avance **seul** : la référence lit sa branche chaque nuit (03:50,
-     avant les baux) et ne le fait jamais reculer ; un canal `special-<nom>`
-     avance par l'opérateur ; `main` n'est le canal que de la référence ;
+     reçoit ses correctifs. **Révisé le 24/10/2026 (#2210)** : le canal n'est
+     plus une branche mais **Urgence** (la dernière version publiée de `main`) ou
+     **une version choisie** parmi les publiées (les 5 dernières mineures, chacune
+     à son dernier correctif) ; la **vague** dit quand : *Urgence* aussitôt,
+     *Pilote* la dernière de plus de 7 jours, *Standard* (le défaut) le dernier
+     correctif de plus de 7 jours de la mineure y-1 (à défaut, d'une antérieure), *Fixe* la version choisie
+     7 jours après sa publication — plus ancienne, c'est l'**ordre de revenir**,
+     le seul chemin d'un retour. Urgence, Pilote et Standard ne font jamais
+     reculer une installation. La règle est PURE (`registre/versions`) ;
+   - les versions **publiées** — celles qui ont leur release et l'archive de
+     déploiement — sont relues par la référence au démarrage et chaque nuit
+     (03:50, avant les baux) ; `main` n'est le canal que de la référence. La
+     branche `replica` et les canaux `special-<nom>` ne décident plus rien ;
    - le **format du bail ne change pas** : `Bail` refuse les champs inconnus, et un
      champ neuf ferait rejeter le bail par toute installation pas encore à jour —
      plus de mise à jour automatique, donc jamais à jour. La décision voyage dans
      `version_cible`, déjà au contrat ;
    - l'installation vérifie le bail (`POST /admin/maintenance/bail`, clé de
      maintenance) et sa mise à jour nocturne n'installe que la version qu'il porte ;
-   - une version cible doit être **promue** : seule une release porte l'archive de
-     déploiement. L'avant-première d'une version non promue demanderait une
-     archive par tag — écartée du lot.
+   - une version cible doit être **publiée** : seule une release porte l'archive
+     de déploiement. Depuis #2210, chaque version taguée a la sienne (workflow
+     « Images », `scripts/ci/publier-version.sh`), et la purge nocturne retire
+     les releases et les images GHCR que plus aucune vague ne peut servir
+     (`scripts/ci/purge-paquets.sh`, même règle que le registre).
 7. **Le registre n'est pas une donnée de la résidence** : base `plateforme`, rôle
    PostgreSQL distinct, onglet réservé à l'**opérateur de plateforme** (§4.7),
    jamais à l'administrateur de la copropriété 5Hostachy. La référence y figure,
