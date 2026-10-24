@@ -240,7 +240,7 @@ export async function attacherA(
 	id: number,
 	fichiers: Iterable<File>,
 ): Promise<DocumentAttache[]> {
-	const { documents } = await import('$lib/api');
+	const { documents } = await import('$lib/api/documents');
 	const crees: DocumentAttache[] = [];
 	for (const f of fichiers) {
 		crees.push(await documents.uploadPour(cible, id, f.name, f));
