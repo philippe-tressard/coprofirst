@@ -15,6 +15,7 @@ from app.models.copropriete import Batiment, Lot, NatureLot, TypeLot
 from app.models.perimetre import LotPerimetre, Perimetre
 from app.utils import constats as C
 from app.utils import etat_descriptif as E
+from tests.aides_purge import purger_referentiellement
 from app.utils.etat_descriptif_application import (
     EtatDescriptifRefuse,
     appliquer,
@@ -151,6 +152,10 @@ def test_une_division_sans_acte_avertit_sans_bloquer():
 
 
 def _monter(session, batiments):
+    #  Le contrôle confronte le fichier à TOUS les lots en base : ceux qu'un test
+    #  précédent aurait laissés feraient un « lot absent du fichier ». Ce test pose
+    #  donc lui-même le patrimoine qu'il contrôle.
+    purger_referentiellement(session, Lot)
     b1, b2 = (session.get(Batiment, i) for i in batiments[:2])
     b1.lettre_rcp, b2.lettre_rcp = "X", "Y"
     lots = [

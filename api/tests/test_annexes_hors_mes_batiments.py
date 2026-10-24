@@ -30,7 +30,7 @@ def test_la_nature_se_deduit_du_type_tant_que_le_reglement_ne_l_a_pas_dite():
     assert not est_annexe(Lot(numero="1", type=TypeLot.appartement))
 
 
-def test_une_cave_n_apporte_pas_son_batiment_un_logement_si(batiments):
+def test_une_cave_n_apporte_pas_son_batiment_un_logement_si(batiments, lots_jetables):
     b1, b2 = batiments[0], batiments[1]
     with Session(engine) as session:
         titulaire = compte(session, statut=StatutUtilisateur.copropriétaire_bailleur)
