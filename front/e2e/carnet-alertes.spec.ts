@@ -55,10 +55,10 @@ const CARNET: Carnet = {
 
 const PROPRIETAIRE = { ...MEMBRE_CS, role: 'propriétaire', roles: ['propriétaire'] };
 
-async function ouvrir(page: Page, moi = MEMBRE_CS) {
+async function ouvrir(page: Page, moi = MEMBRE_CS, carnet: Carnet = CARNET) {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return moi;
-		if (chemin === '/api/carnet-entretien') return CARNET;
+		if (chemin === '/api/carnet-entretien') return carnet;
 	});
 	await page.goto('/residence/carnet');
 	await attendreHydratation(page);
@@ -102,6 +102,27 @@ test('un copropriétaire lit le contrat sans lien, l’intervention avec', async
 	await expect(liste).toContainText('Contrat ascenseur Témoin');
 	await expect(liste.getByRole('link', { name: 'Contrat ascenseur Témoin' })).toHaveCount(0);
 	await expect(liste.getByRole('link', { name: 'Ramonage des conduits' })).toHaveCount(1);
+});
+
+test('le n° d’affaire est dans le pied de la carte, pas sur une ligne à lui', async ({ page }) => {
+	const affaire: EntreeCarnet = {
+		...ENTREE,
+		libelle: 'Portillon en panne',
+		origine: 'affaire',
+		categorie: 'panne',
+		numero: 'TK-300601',
+		lien: '/tickets/601',
+		extrait: '<p>Le bras de rappel ne ferme plus.</p>',
+	};
+	await ouvrir(page, MEMBRE_CS, { total: 1, entrees: [affaire] });
+	const carte = page.locator('.carte-liste', { hasText: 'Portillon en panne' });
+	//  Le pied commun des cartes d'affaire (`PiedCarte`) : l'emoji de catégorie
+	//  puis « #TK-… » — comme au fil et sur la page Affaires.
+	const pied = carte.locator('.ec-tags');
+	await expect(pied).toContainText('#TK-300601');
+	await expect(pied.locator('.pa-cat')).toHaveCount(1);
+	//  Cas zéro : le n° n'est plus dans le détail, qui n'existe plus pour une affaire.
+	await expect(carte.locator('p.detail')).toHaveCount(0);
 });
 
 test('la carte montre l’extrait sous le titre, et seulement s’il existe', async ({ page }) => {

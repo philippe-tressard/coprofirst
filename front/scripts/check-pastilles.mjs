@@ -48,10 +48,18 @@ const SANS_AUTEUR = {
 	'lib/components/ListeSondages.svelte': 'un sondage reste anonyme pour ses lecteurs (27/09/2026)',
 };
 const SOURCE_LIGNE = 'lib/components/PastillesAffaire.svelte';
+/** Le squelette du pied (catégorie, numéro, fin), commun aux cartes d'affaire ET au
+ *  carnet d'entretien (24/10/2026) : le n° TK y avait sa propre ligne. */
+const SOURCE_PIED = 'lib/components/PiedCarte.svelte';
+/** Ce qui rend un pied d'affaire : il passe par `PiedCarte`, jamais recomposé. */
+const PORTEURS_DU_PIED = [SOURCE_LIGNE, 'lib/components/CarnetEntretien.svelte'];
 const SOURCE_AUTEUR = 'lib/components/AuteurCarte.svelte';
 
-/** Ce que seule la ligne commune a le droit de rendre. */
-const RENDUS_DE_LA_LIGNE = [/\bPRIORITE_BREVE\b/, /\bcategorieTicketEmoji\(/];
+/** Ce que seule la ligne commune a le droit de rendre — et par quel fichier. */
+const RENDUS_DE_LA_LIGNE = [
+	{ motif: /\bPRIORITE_BREVE\b/, source: SOURCE_LIGNE },
+	{ motif: /\bcategorieTicketEmoji\(/, source: SOURCE_PIED },
+];
 
 /** Les écarts d'une source, pour un fichier donné. PURE. */
 export function ecarts(rel, source) {
@@ -71,9 +79,12 @@ export function ecarts(rel, source) {
 	}
 	if (rel in SANS_AUTEUR && /<AuteurCarte\b/.test(s))
 		sortie.push(`nomme son auteur — ${SANS_AUTEUR[rel]}`);
-	if (rel.endsWith('.svelte') && rel !== SOURCE_LIGNE)
-		for (const motif of RENDUS_DE_LA_LIGNE)
-			if (motif.test(s)) sortie.push(`${motif.source} hors de PastillesAffaire`);
+	if (PORTEURS_DU_PIED.includes(rel) && !/<PiedCarte\b/.test(s))
+		sortie.push('ne rend pas <PiedCarte> : son pied (catégorie, n° d’affaire) diverge');
+	if (rel.endsWith('.svelte'))
+		for (const { motif, source } of RENDUS_DE_LA_LIGNE)
+			if (rel !== source && motif.test(s))
+				sortie.push(`${motif.source} hors de ${source.split('/').pop()}`);
 	return sortie;
 }
 
@@ -91,6 +102,17 @@ if (process.argv.includes('--selftest')) {
 	t('✍️ recopié', 1, ecarts('lib/components/X.svelte', '<span>✍️ {nom}</span>').length);
 	t('✍️ en commentaire ignoré', 0, ecarts('lib/components/X.svelte', '<!-- ✍️ -->').length);
 	t('priorité recomposée', 1, ecarts('lib/components/X.svelte', '{PRIORITE_BREVE[p]}').length);
+	//  🔴 La forme du 24/10/2026 : le carnet disait la catégorie en texte et le n° TK
+	//  sur une ligne à lui, au lieu du pied commun.
+	const C = 'lib/components/CarnetEntretien.svelte';
+	t('carnet sans le pied commun', 1, ecarts(C, '<span class="badge">{cat}</span>').length);
+	t('carnet avec le pied commun', 0, ecarts(C, '<PiedCarte categorie={c} numero={n} />').length);
+	t('emoji de catégorie recomposé', 1, ecarts(C, '<PiedCarte />{categorieTicketEmoji(c)}').length);
+	t(
+		'emoji de catégorie dans le pied',
+		0,
+		ecarts(SOURCE_PIED, '{categorieTicketEmoji(categorie)}').length,
+	);
 	const I = 'lib/components/ListeIdees.svelte';
 	const ligne = '<BadgePerimetre perimetre={p} /><PastilleLecture cible={i} /><MarqueIA />';
 	t('idée conforme', 0, ecarts(I, ligne).length);
@@ -131,9 +153,14 @@ for (const f of fichiers('src')) {
 	lus.add(rel);
 	for (const e of ecarts(rel, readFileSync(f, 'utf8'))) fautifs.push(`${rel} — ${e}`);
 }
-const absents = [...CARTES, ...CARTES_CIBLEES, SOURCE_LIGNE, SOURCE_AUTEUR].filter(
-	(f) => !lus.has(f),
-);
+const absents = [
+	...CARTES,
+	...CARTES_CIBLEES,
+	...PORTEURS_DU_PIED,
+	SOURCE_LIGNE,
+	SOURCE_PIED,
+	SOURCE_AUTEUR,
+].filter((f) => !lus.has(f));
 if (absents.length) {
 	console.error(`\n✗ INCONNU : introuvable(s) — ${absents.join(', ')}.\n`);
 	process.exit(2);

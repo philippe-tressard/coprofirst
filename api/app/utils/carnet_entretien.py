@@ -123,6 +123,9 @@ class EntreeCarnet:
     libelle: str
     origine: str  # contrat | intervention | affaire
     detail: str = ""
+    #: Le n° de l'affaire (`TK-109008`) — le pied de la carte le dit (24/10/2026),
+    #: il n'est plus une ligne du détail.
+    numero: Optional[str] = None
     #: La VALEUR de la catégorie d'une affaire (`etude_travaux`) — l'écran la
     #: rend par son libellé. Le badge disait « Incident » pour TOUTE affaire du
     #: bâti, une étude de remplacement des pelouses comprise (26/09/2026).
@@ -151,6 +154,7 @@ class EntreeCarnet:
             "libelle": self.libelle,
             "origine": self.origine,
             "detail": self.detail,
+            "numero": self.numero,
             "categorie": self.categorie,
             "equipement": self.equipement,
             "perimetre": self.perimetre,
@@ -378,7 +382,7 @@ def _entrees_affaires(
                 #  qualifiait toutes, une étude ou des travaux compris.
                 origine="affaire",
                 categorie=valeur(ticket.categorie),
-                detail=ticket.numero,
+                numero=ticket.numero,
                 equipement=ticket.equipement,
                 perimetre=_codes_de(ticket.perimetre_cible),
                 lien=lien_ticket(ticket.id),

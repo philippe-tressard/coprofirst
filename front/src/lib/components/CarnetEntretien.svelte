@@ -41,7 +41,9 @@
 	import IconeAction from './IconeAction.svelte';
 	import LienAction from './LienAction.svelte';
 	import { anneesDuCarnet, entreesDeLAnnee } from '$lib/carnet';
-	import { categorieTicketLabel, NATURES } from '$lib/tickets';
+	import { NATURES } from '$lib/tickets';
+	import PiedCarte from './PiedCarte.svelte';
+	import BadgePerimetre from './BadgePerimetre.svelte';
 	import { essayer } from '$lib/chargement';
 	import EtatListe from './EtatListe.svelte';
 	import SyntheseAffaire from './SyntheseAffaire.svelte';
@@ -269,22 +271,18 @@
 												<p class="detail">{entree.detail}</p>
 											{/if}
 										</svelte:fragment>
-										<!--  La dernière ligne : ce qui DÉCRIT en capsules neutres, ce
-										      qui ALERTE en capsule teintée. Une affaire se dit par sa
-										      CATÉGORIE (26/09/2026) — son origine est déjà dans la
+										<!--  La dernière ligne est le PIED commun des cartes d'affaire
+										      (`PiedCarte`, 24/10/2026) : catégorie en emoji, ce qui
+										      ALERTE en capsule teintée, la portée — toujours dite —,
+										      puis le n° d'affaire. Son origine est déjà dans la
 										      gouttière. -->
 										<svelte:fragment slot="tags">
-											{#if entree.categorie}
-												<span class="badge badge-gray"
-													>{categorieTicketLabel(entree.categorie)}</span
-												>
-											{/if}
-											{#if entree.alerte}
-												<span class="badge badge-orange">⚠️ {entree.alerte}</span>
-											{/if}
-											{#if portee(entree.perimetre)}
-												<span class="badge badge-gray">{portee(entree.perimetre)}</span>
-											{/if}
+											<PiedCarte categorie={entree.categorie} numero={entree.numero}>
+												{#if entree.alerte}
+													<span class="badge badge-orange">⚠️ {entree.alerte}</span>
+												{/if}
+												<BadgePerimetre perimetre={entree.perimetre} toujours />
+											</PiedCarte>
 										</svelte:fragment>
 									</EnteteCarte>
 									{#if entree.synthese && ouverte === entree.lien}

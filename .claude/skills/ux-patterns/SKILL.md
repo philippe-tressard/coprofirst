@@ -893,7 +893,14 @@ propres (prix, votants…) · ✍️ · ✨ en fin de ligne, plus à côté du t
   27/09/2026) : leurs API ne l'exposent pas, et l'exposer serait une décision de données
   personnelles. La petite annonce nomme le sien — le nom que l'API sert déjà.
 
-🔒 `npm run lint:pastilles` (les trois cartes passent par `PastillesAffaire`, ✍️ ne
+🔴 **Le squelette de ce pied est `PiedCarte`** (24/10/2026, demandé à l'écran sur le carnet
+d'entretien, où le n° TK avait sa propre ligne sous l'aperçu) : catégorie (emoji) · *créneau*
+· `#numéro` · *créneau de fin* (✍️, ✨). `PastillesAffaire` et `CarnetEntretien` le montent, et
+lui seul écrit l'emoji de catégorie et le numéro — une carte qui dit une affaire n'écrit pas
+son pied, elle remplit ses créneaux. Le carnet y garde sa règle, la portée **toujours** dite,
+par `<BadgePerimetre toujours />` : le même badge 🔹, qui ne tait plus le défaut.
+
+🔒 `npm run lint:pastilles` (les trois cartes passent par `PastillesAffaire`, et le pied du carnet par `PiedCarte`, ✍️ ne
 s'écrit que dans `AuteurCarte` ; les cartes de la communauté rendent `PastilleLecture`, sans 🔹
 teinté ni ✨ avant elle, et l'idée comme le sondage sans auteur) · `e2e/ligne-pastilles.spec.ts` (le fil et la carte,
 rendus avec la même affaire, lisent la même ligne) · `test_flux_pastilles.py` (le

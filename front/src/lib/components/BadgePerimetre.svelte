@@ -60,10 +60,18 @@
 	 */
 	export let ton: 'gray' | 'blue' | 'purple' = 'gray';
 
+	/**
+	 * Dire la portée MÊME quand c'est celle par défaut — le carnet d'entretien :
+	 * un contrat qui couvre toute la résidence apparaît sous « Bât. 3 », et sans
+	 * sa portée il s'y lirait comme propre à ce bâtiment. Ce n'est pas un second
+	 * badge : c'est le même, qui ne tait plus le défaut.
+	 */
+	export let toujours = false;
+
 	//  Un seul calcul, une seule dépendance : le libellé, ou la chaîne vide quand
 	//  il n'y a rien à dire — ni périmètre, ni autre chose que celui par défaut.
 	$: texte = relire($perimetresStore, () =>
-		perimetre && !estPerimetreParDefaut(perimetre) ? perimetreLabel(perimetre) : '',
+		perimetre && (toujours || !estPerimetreParDefaut(perimetre)) ? perimetreLabel(perimetre) : '',
 	);
 </script>
 
