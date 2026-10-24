@@ -931,8 +931,22 @@ nomme, le point 16 les reprend (`RELANCES=`) et chaque relance s'inscrit dans
 manque pour trouver la cause. Conditions et plafond : `ci_relance_e2e`
 (`lib-ci-e2e.sh`) ; un rechargement de Vite (#1421) n'y ouvre jamais droit.
 
-Le **verrou** du rejeu ne se retire que par son propriétaire, et un orphelin se
-reprend seul au lancement suivant : ne jamais l'effacer à la main (#1808).
+Le **verrou** du rejeu ne se retire que par son propriétaire, et un verrou dont le
+pid est mort se reprend seul au lancement suivant : ne jamais l'effacer à la main (#1808).
+
+🔒 **Le rejeu se prend à son tour, nommé, et ne survit pas à son lanceur** (#2225,
+24/10/2026 : deux rejeux à la même minute, un hors file, un orphelin qui a tenu le
+verrou 20 min sans que personne sache à qui il était). `rejouer-ci.sh --attendre`
+dépose un ticket dans le répertoire git commun et démarre dans l'ordre d'arrivée ;
+sans `--attendre`, il est refusé tant qu'un rejeu tourne **ou qu'un autre attend**.
+`REJEU_PROPRIETAIRE="<lot> #<ticket>"` le nomme. `bash scripts/poste/etat-rejeu.sh`
+dit qui tient le verrou, l'étape, l'âge du pouls et la file ;
+`bash scripts/poste/file-rejeu.sh` réordonne la file (`devant`, `retirer`, `purger`)
+et reprend un verrou **orphelin** (`reprendre "<motif>"`, journalisé). Un veilleur
+arrête le rejeu dont le shell lanceur a disparu : le lancer en tâche de fond de
+l'outil, jamais détaché (`nohup … &`). Les règles : `scripts/lib/lib-ci-verrou.sh`.
+Un check requis **annulé** par GitHub bloque une PR sans un mot :
+`bash scripts/ci/relancer-annules.sh <n° de PR>`.
 
 ---
 

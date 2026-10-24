@@ -29,6 +29,7 @@
 #
 #  Usage : bash scripts/poste/rejouer-ci.sh                 # tous les jobs, écrit la trace
 #          bash scripts/poste/rejouer-ci.sh lint-backend …  # un ou plusieurs jobs, sans trace
+#          bash scripts/poste/rejouer-ci.sh --attendre …    # prend son tour dans la file (#2225)
 #          bash scripts/poste/rejouer-ci.sh --selftest      # éprouve l'extraction
 # =============================================================================
 set -uo pipefail
@@ -54,25 +55,24 @@ RACINE=$(git rev-parse --show-toplevel 2>/dev/null) || RACINE=$(pwd)
 cd "$RACINE" || exit 2
 [ -f "$CI" ] || { echo "✗ $CI introuvable — lancer depuis la racine du dépôt."; exit 2; }
 
-#  ── Un seul rejeu à la fois (#1417) — la règle : `ci_verrou_etat` ──────────
-VERROU_REJEU="$(cd "$(git rev-parse --git-common-dir 2>/dev/null || echo .git)" && pwd)/rejeu-ci.verrou"
-pid_verrou=$(cat "$VERROU_REJEU/pid" 2>/dev/null || true)
-vivant=non
-[ -n "$pid_verrou" ] && kill -0 "$pid_verrou" 2>/dev/null && vivant=oui
-case "$(ci_verrou_etat "$pid_verrou" "$vivant")" in
-  occupe)
-    echo "✗ Un autre rejeu tourne déjà (pid $pid_verrou) : deux rejeux simultanés se sabotent."
-    echo "  Attendre sa fin — rien n'a été rejoué, ce n'est pas un succès."
-    exit 2 ;;
-  orphelin) ci_verrou_reprendre "$VERROU_REJEU" "$pid_verrou" ;;   # refus → le mkdir le dira
-esac
-#  Le pid relu après écriture : un verrou déplacé pendant ce temps n'est pas à nous (#1808).
-if ! mkdir "$VERROU_REJEU" 2>/dev/null || ! echo $$ > "$VERROU_REJEU/pid" 2>/dev/null \
-   || [ "$(cat "$VERROU_REJEU/pid" 2>/dev/null)" != "$$" ]; then
-  echo "✗ Le verrou du rejeu vient d'être pris par un autre rejeu : attendre sa fin."
-  exit 2
-fi
+#  ── Un seul rejeu à la fois (#1417), nommé, en file, sans orphelin (#2225) ──
+#  Les règles vivent dans `lib-ci-verrou.sh` : `ci_rejeu_acquerir` (verrou
+#  libre, ou file d'attente avec `--attendre`), la fiche du propriétaire, et le
+#  veilleur qui bat le pouls et arrête ce rejeu si son lanceur disparaît.
+#  État lisible par tous : `bash scripts/poste/etat-rejeu.sh`.
+MODE_REJEU=direct; ARGS_REJEU=()
+for a in "$@"; do [ "$a" = --attendre ] && MODE_REJEU=attendre || ARGS_REJEU+=("$a"); done
+set -- ${ARGS_REJEU[@]+"${ARGS_REJEU[@]}"}
+VERROU_REJEU="$(ci_dossier_commun)/rejeu-ci.verrou"
+ANCRE_REJEU=$(ci_ancre "$(ci_chaine_ancetres $$)")
+FICHE_REJEU=$(ci_fiche $$ "$ANCRE_REJEU" "$*")
+ci_rejeu_acquerir "$VERROU_REJEU" "$MODE_REJEU" "$ANCRE_REJEU" "$FICHE_REJEU" || exit 2
 trap 'ci_verrou_liberer "$VERROU_REJEU" $$' EXIT
+#  Le lanceur parti, la sortie peut l'être aussi : écrire ne doit pas tuer le trap.
+trap 'trap "" PIPE; ci_rejeu_arrete "$VERROU_REJEU"; exit 2' TERM HUP
+ci_verrou_signer "$VERROU_REJEU" "$FICHE_REJEU"
+ci_veilleur "$VERROU_REJEU" $$ "$ANCRE_REJEU" >/dev/null 2>&1 &
+[ -n "$ANCRE_REJEU" ] || echo "· lanceur non surveillé (aucun shell parent) : un rejeu abandonné ne s'arrêtera pas seul."
 
 #  ── Workers e2e sur un poste occupé (#1665) — la règle : `ci_workers_e2e` ────
 #  La charge est mesurée MAINTENANT, avant nos propres étapes : c'est celle des
@@ -310,6 +310,7 @@ relancer_si_cause_poste() { # $1 = rép, $2 = code, $3 = corps → détail à ra
 
 executer() {               # $1 = job, $2 = étape, $3 = rép, corps dans $TMP/corps
   local corps genre sortie code duree t0 sauts n_sauts relance
+  ci_battement "$VERROU_REJEU" "$1 · $2" "$ECRIT"
   corps=$(ci_substituer "$SHA_COURT" < "$TMP/corps")
   genre=$(printf '%s\n' "$corps" | ci_classer)
 
