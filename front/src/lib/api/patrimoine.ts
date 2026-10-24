@@ -204,6 +204,10 @@ export interface EntreeCarnet {
 	alerte: string | null;
 	/**  La synthèse VALIDÉE de l'affaire (#1643) — rendue dans la partie pliée. */
 	synthese?: SyntheseAffaire | null;
+	/**  L'aperçu de la carte, en HTML riche : « Ce qui s'est passé » d'une synthèse
+	 *   validée, sinon la demande de l'affaire ; vide pour un contrat. Le choix est
+	 *   fait par le serveur (`carnet_entretien._joindre_syntheses`). */
+	extrait: string;
 }
 
 export interface Carnet {

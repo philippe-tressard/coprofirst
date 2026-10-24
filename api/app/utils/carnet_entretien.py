@@ -138,6 +138,10 @@ class EntreeCarnet:
     ticket_id: Optional[int] = None
     #: La synthèse VALIDÉE de l'affaire, dans la partie pliée de la ligne.
     synthese: Optional[dict] = None
+    #: Les trois lignes d'aperçu de la carte (24/10/2026) : la DEMANDE de
+    #: l'affaire, remplacée par « Ce qui s'est passé » quand une synthèse validée
+    #: le raconte (`_joindre_syntheses`). Un contrat n'en a pas.
+    extrait: str = ""
 
     def en_dict(self) -> dict:
         return {
@@ -153,6 +157,7 @@ class EntreeCarnet:
             "lien": self.lien,
             "alerte": self.alerte,
             "synthese": self.synthese,
+            "extrait": self.extrait,
         }
 
 
@@ -328,6 +333,7 @@ def _entrees_interventions(
                 perimetre=codes,
                 lien=lien_ticket(ticket.id),
                 ticket_id=ticket.id,
+                extrait=ticket.description or "",
             )
         )
     return entrees
@@ -377,6 +383,7 @@ def _entrees_affaires(
                 perimetre=_codes_de(ticket.perimetre_cible),
                 lien=lien_ticket(ticket.id),
                 ticket_id=ticket.id,
+                extrait=ticket.description or "",
             )
         )
     return entrees
@@ -409,7 +416,11 @@ def construire_carnet(
 def _joindre_syntheses(session: Session, entrees: list[EntreeCarnet]) -> None:
     """La synthèse VALIDÉE de chaque affaire (#1643) — un brouillon n'entre jamais
     au carnet. Le lecteur a déjà passé `ticket_visible` pour la ligne : c'est la
-    règle d'une synthèse validée, il n'y en a pas d'autre à rejouer ici."""
+    règle d'une synthèse validée, il n'y en a pas d'autre à rejouer ici.
+
+    Son récit — « Ce qui s'est passé » — devient l'extrait de la carte : il dit
+    ce que l'affaire a été, la demande ne disait que ce qu'elle annonçait.
+    Sans récit, l'extrait reste la demande (24/10/2026)."""
     from app.utils.synthese_affaire.lecture import synthese_lue, syntheses_validees
 
     validees = syntheses_validees(session, [e.ticket_id for e in entrees if e.ticket_id])
@@ -417,3 +428,4 @@ def _joindre_syntheses(session: Session, entrees: list[EntreeCarnet]) -> None:
         synthese = validees.get(entree.ticket_id)
         if synthese is not None:
             entree.synthese = synthese_lue(session, synthese).model_dump(mode="json")
+            entree.extrait = synthese.synthese or entree.extrait
