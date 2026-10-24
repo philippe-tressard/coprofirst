@@ -21,8 +21,8 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Badge from '$lib/components/Badge.svelte';
 	import BarreImport from '$lib/components/BarreImport.svelte';
+	import ConstatsLots from '$lib/components/ConstatsLots.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
@@ -42,11 +42,6 @@
 	/** La lettre saisie pour chaque bâtiment, par identifiant. */
 	let lettres: Record<number, string> = {};
 
-	const { libelle: GRAVITE, badge: TEINTE } = parAttribut({
-		bloquant: { libelle: 'Bloquant', badge: 'badge-red' },
-		inconnu: { libelle: 'Inconnu', badge: 'badge-gray' },
-		avertissement: { libelle: 'À savoir', badge: 'badge-orange' },
-	});
 	const { libelle: NATURE } = parAttribut({
 		logement: { libelle: 'Logement' },
 		commerce: { libelle: 'Commerce' },
@@ -54,9 +49,6 @@
 		parking: { libelle: 'Parking' },
 		divers: { libelle: 'Divers' },
 	});
-	/** Au-delà, la liste des lots d'un constat se résume : le compte suffit à agir. */
-	const LOTS_MONTRES = 12;
-
 	function recevoir(lu: EtatDescriptif) {
 		etat = lu;
 		lettres = Object.fromEntries(lu.batiments.map((b) => [b.id, b.lettre_rcp ?? '']));
@@ -136,7 +128,8 @@
 		return [l.lot, l.batiment, l.nature, l.numero_usage, l.niveau, l.circulation, l.lot_origine];
 	}
 
-	$: bloquants = etat?.constats.filter((c) => c.gravite !== 'avertissement') ?? [];
+	$: bloquants =
+		etat?.constats.filter((c) => c.gravite === 'bloquant' || c.gravite === 'inconnu') ?? [];
 	$: avertissements = etat?.constats.filter((c) => c.gravite === 'avertissement') ?? [];
 	$: affichees = (etat?.lignes ?? []).filter((l) => contientTousLesMots(ligneLue(l), recherche));
 	$: lettresSaisies = new Set(Object.values(lettres).map((l) => l.trim().toUpperCase()));
@@ -225,28 +218,7 @@
 	{:else}
 		<section class="card config-section">
 			<h2 class="config-section-title"><Icon name="shield-check" size={17} />Contrôles</h2>
-			{#if etat.constats.length === 0}
-				<p class="muted">Aucun constat : le fichier tombe juste.</p>
-			{:else}
-				<ul class="constats">
-					{#each [...bloquants, ...avertissements] as c (c.code + c.message)}
-						<li>
-							<Badge teinte={TEINTE[c.gravite]}>{GRAVITE[c.gravite]}</Badge>
-							<div>
-								<p class="constat-message">{c.message}</p>
-								{#if c.lots.length}
-									<p class="aide">
-										Lot{c.lots.length > 1 ? 's' : ''}
-										{c.lots.slice(0, LOTS_MONTRES).join(', ')}{c.lots.length > LOTS_MONTRES
-											? ` et ${c.lots.length - LOTS_MONTRES} autre(s)`
-											: ''}
-									</p>
-								{/if}
-							</div>
-						</li>
-					{/each}
-				</ul>
-			{/if}
+			<ConstatsLots constats={etat.constats} videTexte="Aucun constat : le fichier tombe juste." />
 		</section>
 
 		<section class="card config-section carte-lignes">
@@ -321,22 +293,6 @@
 	}
 	.gabarit {
 		margin: 0 0 0.75rem;
-	}
-	.constats {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 0.75rem;
-	}
-	.constats li {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: 0.6rem;
-		align-items: start;
-	}
-	.constat-message {
-		margin: 0;
 	}
 	.manquantes {
 		color: var(--color-danger);

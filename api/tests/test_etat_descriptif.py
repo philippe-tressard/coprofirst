@@ -13,6 +13,7 @@ from app.database import engine
 from app.models.charges import CleDeCharges, QuotePartLot
 from app.models.copropriete import Batiment, Lot, NatureLot, TypeLot
 from app.models.perimetre import LotPerimetre, Perimetre
+from app.utils import constats as C
 from app.utils import etat_descriptif as E
 from app.utils.etat_descriptif_application import (
     EtatDescriptifRefuse,
@@ -66,8 +67,8 @@ def test_un_fichier_sans_colonne_de_circulation_le_dit():
 def test_un_fichier_vide_rend_inconnu_jamais_ok():
     lu = E.lire([EN_TETES])
     trouves = E.controler(lu, [], {}, set())
-    assert any(c.gravite == E.INCONNU for c in trouves)
-    assert not E.applicable(trouves)
+    assert any(c.gravite == C.INCONNU for c in trouves)
+    assert not C.applicable(trouves)
 
 
 def test_mentions_de_nature_et_de_niveau():
@@ -98,7 +99,7 @@ def _app_juste():
 
 def test_un_fichier_juste_est_applicable():
     trouves = E.controler(_fichier_juste(), _app_juste(), LETTRES, AVEC_NOEUD)
-    assert E.applicable(trouves), trouves
+    assert C.applicable(trouves), trouves
 
 
 @pytest.mark.parametrize(
@@ -117,8 +118,8 @@ def test_chaque_controle_bloquant_bloque(modifier, code):
     lu, app = _fichier_juste(), _app_juste()
     modifier(lu, app)
     trouves = E.controler(lu, app, LETTRES, AVEC_NOEUD)
-    assert code in {c.code for c in trouves if c.gravite == E.BLOQUANT}
-    assert not E.applicable(trouves)
+    assert code in {c.code for c in trouves if c.gravite == C.BLOQUANT}
+    assert not C.applicable(trouves)
 
 
 def test_une_circulation_sans_noeud_bloque():
@@ -140,10 +141,10 @@ def test_une_division_sans_acte_avertit_sans_bloquer():
         ("952", 2, NatureLot.logement),
     )
     trouves = E.controler(lu, app, LETTRES, AVEC_NOEUD)
-    assert E.applicable(trouves), trouves
+    assert C.applicable(trouves), trouves
     par_code = {c.code: c for c in trouves}
-    assert par_code["division_sans_acte"].lots == ("951",)
-    assert par_code["divise"].lots == ("950",)
+    assert par_code["division_sans_acte"].lots == ["951"]
+    assert par_code["divise"].lots == ["950"]
 
 
 # ── Application ──────────────────────────────────────────────────────────────
@@ -244,3 +245,35 @@ def test_la_route_d_application_refuse_en_409_et_le_gabarit_se_telecharge(batime
         assert client.post("/lots/admin/etat-descriptif/appliquer").status_code == 409
     finally:
         app.dependency_overrides.pop(require_cs_or_admin, None)
+
+
+def test_chaque_route_de_l_atelier_exige_le_conseil_ou_l_administration():
+    """`routers/lots_etat_descriptif` : aucune route sans `require_cs_or_admin`."""
+    from fastapi.routing import APIRoute
+
+    from app.auth.deps import require_cs_or_admin
+    from app.routers.lots_etat_descriptif import router
+
+    routes = [r for r in router.routes if isinstance(r, APIRoute)]
+    assert len(routes) == 5, "une route ajoutée ou retirée : relire ce test"
+    for route in routes:
+        appels = {d.call for d in route.dependant.dependencies}
+        assert require_cs_or_admin in appels, route.path
+
+
+def test_un_resident_est_refuse(batiments):
+    from fastapi.testclient import TestClient
+
+    from app.auth.deps import get_current_user
+    from app.main import app
+    from app.models.core import StatutUtilisateur
+    from tests.aides_base import compte
+
+    with Session(engine) as session:
+        resident = compte(session, statut=StatutUtilisateur.copropriétaire_résident)
+    app.dependency_overrides[get_current_user] = lambda: resident
+    try:
+        reponse = TestClient(app).post("/lots/admin/etat-descriptif/appliquer")
+        assert reponse.status_code == 403
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)

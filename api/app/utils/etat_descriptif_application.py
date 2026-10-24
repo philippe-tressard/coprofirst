@@ -21,21 +21,19 @@ désignation de chaque lot, ses tantièmes, et re-dériver ses périmètres.
 from __future__ import annotations
 
 import json
-from dataclasses import asdict
-
 from sqlmodel import Session, delete, select
 
 from app.models.charges import CleDeCharges, QuotePartLot
 from app.models.copropriete import Batiment, Lot, NatureLot
 from app.models.etat_descriptif import ImportEtatDescriptif, LigneEtatDescriptif
 from app.utils import horloge
+from app.utils.constats import applicable
 from app.utils.designation_lot import nature_du_lot
 from app.utils.etat_descriptif import (
     Cle,
     Lecture,
     Ligne,
     LotConnu,
-    applicable,
     controler,
     lettre_de,
     lire,
@@ -44,6 +42,7 @@ from app.utils.etat_descriptif import (
     numero_de_lot,
 )
 from app.utils.import_xlsx import normaliser
+from app.utils.lecture import lire_objet
 from app.utils.perimetres import perimetre_du_batiment
 from app.utils.perimetres.lots import rederiver
 
@@ -70,7 +69,7 @@ def poser(session: Session, rows: list) -> ImportEtatDescriptif:
     imp = ImportEtatDescriptif(
         entete_json=json.dumps(
             {
-                "cles": [asdict(c) for c in lecture.cles],
+                "cles": [c.model_dump() for c in lecture.cles],
                 "avec_circulation": lecture.avec_circulation,
                 "erreurs": lecture.erreurs,
             },
@@ -83,16 +82,8 @@ def poser(session: Session, rows: list) -> ImportEtatDescriptif:
         session.add(
             LigneEtatDescriptif(
                 import_id=imp.id,
-                rang=ligne.rang,
-                lot=ligne.lot,
-                batiment_raw=ligne.batiment,
-                nature_raw=ligne.nature,
-                numero_usage=ligne.numero_usage,
-                niveau_raw=ligne.niveau,
-                circulation_raw=ligne.circulation,
                 quotes_json=json.dumps(ligne.quotes),
-                lot_origine=ligne.lot_origine,
-                source=ligne.source,
+                **ligne.model_dump(exclude={"quotes"}),
             )
         )
     session.flush()
@@ -109,21 +100,7 @@ def relire(session: Session, imp: ImportEtatDescriptif) -> Lecture:
     ).all()
     return Lecture(
         cles=[Cle(**c) for c in entete.get("cles", [])],
-        lignes=[
-            Ligne(
-                rang=lu.rang,
-                lot=lu.lot,
-                batiment=lu.batiment_raw,
-                nature=lu.nature_raw,
-                numero_usage=lu.numero_usage,
-                niveau=lu.niveau_raw,
-                circulation=lu.circulation_raw,
-                lot_origine=lu.lot_origine,
-                source=lu.source,
-                quotes=json.loads(lu.quotes_json or "{}"),
-            )
-            for lu in lignes
-        ],
+        lignes=[lire_objet(Ligne, lu, quotes=json.loads(lu.quotes_json or "{}")) for lu in lignes],
         avec_circulation=bool(entete.get("avec_circulation", True)),
         erreurs=list(entete.get("erreurs", [])),
     )

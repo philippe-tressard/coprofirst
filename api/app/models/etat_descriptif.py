@@ -43,12 +43,12 @@ class LigneEtatDescriptif(SQLModel, table=True):
     import_id: int = Field(foreign_key="import_etat_descriptif.id", index=True)
     rang: int
     lot: str
-    batiment_raw: Optional[str] = None
-    nature_raw: Optional[str] = None
+    batiment: Optional[str] = None
+    nature: Optional[str] = None
     numero_usage: Optional[str] = None
-    niveau_raw: Optional[str] = None
+    niveau: Optional[str] = None
     #: La lettre du bâtiment qui dessert ; vide ou « / » = accès direct.
-    circulation_raw: Optional[str] = None
+    circulation: Optional[str] = None
     #: `{code_de_cle: numerateur}`.
     quotes_json: str = Field(default="{}")
     #: Une DIVISION postérieure au recueil : le numéro du lot d'origine.

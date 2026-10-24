@@ -6,10 +6,10 @@
  */
 import { api, postFormData, BASE } from './client';
 
-/** Un constat de l'état descriptif — `ConstatLu` (`routers/lots_etat_descriptif.py`). */
-export interface ConstatEtatDescriptif {
+/** Un constat du patrimoine — `Constat` (`utils/constats.py`) : état descriptif, onglet Lots. */
+export interface ConstatPatrimoine {
 	code: string;
-	gravite: 'bloquant' | 'avertissement' | 'inconnu';
+	gravite: 'bloquant' | 'inconnu' | 'avertissement' | 'information';
 	message: string;
 	lots: string[];
 }
@@ -37,7 +37,7 @@ export interface EtatDescriptif {
 	applique_le: string | null;
 	cles: { code: string; libelle: string; denominateur: number }[];
 	lignes: LigneEtatDescriptif[];
-	constats: ConstatEtatDescriptif[];
+	constats: ConstatPatrimoine[];
 	lettres_citees: string[];
 	batiments: { id: number; libelle: string; lettre_rcp: string | null }[];
 	applicable: boolean;

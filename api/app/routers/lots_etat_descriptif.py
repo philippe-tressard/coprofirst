@@ -25,7 +25,8 @@ from app.database import get_session
 from app.models.copropriete import Batiment
 from app.models.core import Utilisateur
 from app.utils.batiments import libelle_batiment
-from app.utils.etat_descriptif import EN_TETES_FIXES, applicable, lettre_de, nature_de
+from app.utils.constats import Constat, applicable
+from app.utils.etat_descriptif import EN_TETES_FIXES, Cle, Ligne, lettre_de, nature_de
 from app.utils.etat_descriptif_application import (
     EtatDescriptifRefuse,
     appliquer,
@@ -42,32 +43,9 @@ router = APIRouter()
 _TYPE_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
-class ConstatLu(BaseModel):
-    code: str
-    gravite: str
-    message: str
-    lots: list[str] = []
-
-
-class CleLue(BaseModel):
-    code: str
-    libelle: str
-    denominateur: int
-
-
-class LigneLue(BaseModel):
-    rang: int
-    lot: str
-    batiment: Optional[str] = None
-    nature: Optional[str] = None
+class LigneLue(Ligne):
     #: La nature reconnue (`NatureLot`), `None` si la mention est illisible.
     nature_lue: Optional[str] = None
-    numero_usage: Optional[str] = None
-    niveau: Optional[str] = None
-    circulation: Optional[str] = None
-    lot_origine: Optional[str] = None
-    source: Optional[str] = None
-    quotes: dict[str, int] = {}
 
 
 class BatimentLettre(BaseModel):
@@ -81,9 +59,9 @@ class EtatDescriptifLu(BaseModel):
 
     importe_le: Optional[datetime] = None
     applique_le: Optional[datetime] = None
-    cles: list[CleLue] = []
+    cles: list[Cle] = []
     lignes: list[LigneLue] = []
-    constats: list[ConstatLu] = []
+    constats: list[Constat] = []
     #: Les lettres que le fichier cite (bâtiment et circulation), triées.
     lettres_citees: list[str] = []
     batiments: list[BatimentLettre] = []
@@ -120,12 +98,14 @@ def _etat(session: Session) -> EtatDescriptifLu:
     return EtatDescriptifLu(
         importe_le=imp.importe_le,
         applique_le=imp.applique_le,
-        cles=[CleLue(**vars(c)) for c in lecture.cles],
+        cles=lecture.cles,
         lignes=[
-            LigneLue(**vars(lu), nature_lue=nature[lu.rang].value if nature[lu.rang] else None)
+            LigneLue(
+                **lu.model_dump(), nature_lue=nature[lu.rang].value if nature[lu.rang] else None
+            )
             for lu in lecture.lignes
         ],
-        constats=[ConstatLu(**{**vars(c), "lots": list(c.lots)}) for c in trouves],
+        constats=trouves,
         lettres_citees=sorted(
             {
                 lettre_de(brut)

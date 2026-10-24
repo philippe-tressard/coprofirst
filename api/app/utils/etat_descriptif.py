@@ -33,7 +33,10 @@ import unicodedata
 from dataclasses import dataclass, field
 from typing import Optional
 
+from pydantic import BaseModel
+
 from app.models.copropriete import NatureLot
+from app.utils.constats import AVERTISSEMENT, BLOQUANT, INCONNU, Constat, constat
 from app.utils.import_xlsx import etage_de_lot, normaliser
 
 #: En-tête normalisé (`normaliser`) → champ de la ligne. Plusieurs en-têtes par
@@ -84,20 +87,22 @@ _NATURES: dict[str, NatureLot] = {
 #: Ce qu'une cellule de circulation écrit pour dire « accès direct ».
 _ACCES_DIRECT = {"", "/", "-", "AUCUNE", "DIRECT", "ACCES DIRECT"}
 
-BLOQUANT = "bloquant"
-AVERTISSEMENT = "avertissement"
-INCONNU = "inconnu"
 
+class Cle(BaseModel):
+    """Une clé déclarée par un en-tête — `code` dérivé du libellé, dénominateur déclaré."""
 
-@dataclass(frozen=True)
-class Cle:
     code: str
     libelle: str
     denominateur: int
 
 
-@dataclass
-class Ligne:
+class Ligne(BaseModel):
+    """Une ligne de l'état descriptif, telle que le fichier l'écrit.
+
+    Un modèle et non une simple structure : la réponse de l'atelier l'étend
+    (`routers/lots_etat_descriptif.LigneLue`) au lieu d'en recopier les champs.
+    """
+
     rang: int
     lot: str
     batiment: Optional[str] = None
@@ -107,15 +112,7 @@ class Ligne:
     circulation: Optional[str] = None
     lot_origine: Optional[str] = None
     source: Optional[str] = None
-    quotes: dict[str, int] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class Constat:
-    code: str
-    gravite: str
-    message: str
-    lots: tuple[str, ...] = ()
+    quotes: dict[str, int] = {}
 
 
 @dataclass
@@ -171,7 +168,9 @@ def lire(rows: list) -> Lecture:
         trouve = _EN_TETE_CLE.match(brut)
         if trouve:
             libelle = trouve["libelle"].strip()
-            cles[rang] = Cle(code_de_cle(libelle), libelle, int(trouve["denominateur"]))
+            cles[rang] = Cle(
+                code=code_de_cle(libelle), libelle=libelle, denominateur=int(trouve["denominateur"])
+            )
     erreurs = []
     if "lot" not in champs.values():
         erreurs.append("Aucune colonne « lot » : le numéro de lot est obligatoire.")
@@ -247,15 +246,15 @@ def controler(
     `lettres` : lettre RCP normalisée → `batiment.id` ; `batiments_avec_noeud` :
     les bâtiments qui ont un nœud dans l'arbre (une circulation doit en avoir un).
     """
-    constats: list[Constat] = [Constat("lecture", BLOQUANT, message) for message in lecture.erreurs]
+    constats: list[Constat] = [constat("lecture", BLOQUANT, message) for message in lecture.erreurs]
     lignes = lecture.lignes
     if not lignes:
-        constats.append(Constat("vide", INCONNU, "Aucune ligne de lot lue : rien à contrôler."))
+        constats.append(constat("vide", INCONNU, "Aucune ligne de lot lue : rien à contrôler."))
         return constats
 
     def _bloquant(code, message, lots):
         if lots:
-            constats.append(Constat(code, BLOQUANT, message, tuple(sorted(set(lots)))))
+            constats.append(constat(code, BLOQUANT, message, sorted(set(lots))))
 
     vus: dict[str, int] = {}
     for ligne in lignes:
@@ -293,7 +292,7 @@ def controler(
     )
     if origines:
         constats.append(
-            Constat(
+            constat(
                 "divise",
                 AVERTISSEMENT,
                 "Lot d'origine divisé : il reste en historique, ses tantièmes comptent dans "
@@ -304,7 +303,7 @@ def controler(
     sans_acte = [ligne.lot for ligne in lignes if ligne.lot_origine and not ligne.source]
     if sans_acte:
         constats.append(
-            Constat(
+            constat(
                 "division_sans_acte",
                 AVERTISSEMENT,
                 "Division sans acte : aucune source n'est citée.",
@@ -327,7 +326,7 @@ def controler(
     )
     if lettres_inconnues:
         constats.append(
-            Constat(
+            constat(
                 "lettre",
                 BLOQUANT,
                 "Lettre de bâtiment sans correspondance : saisir la lettre de l'acte de chaque "
@@ -366,7 +365,7 @@ def controler(
         somme = sum(ligne.quotes.get(cle.code, 0) for ligne in lignes)
         if somme != cle.denominateur:
             constats.append(
-                Constat(
+                constat(
                     "somme",
                     BLOQUANT,
                     f"« {cle.libelle} » : la somme des tantièmes vaut {somme}, "
@@ -375,7 +374,7 @@ def controler(
             )
     if not lecture.cles:
         constats.append(
-            Constat(
+            constat(
                 "sans_cle",
                 AVERTISSEMENT,
                 "Aucune clé de charges déclarée : aucun tantième ne sera posé.",
@@ -383,7 +382,7 @@ def controler(
         )
     if not lecture.avec_circulation:
         constats.append(
-            Constat(
+            constat(
                 "sans_circulation",
                 AVERTISSEMENT,
                 "Aucune colonne de circulation : les caves et les places restent sans "
@@ -391,8 +390,3 @@ def controler(
             )
         )
     return constats
-
-
-def applicable(constats: list[Constat]) -> bool:
-    """Un seul bloquant ou un seul inconnu, et rien ne s'applique."""
-    return not any(c.gravite in (BLOQUANT, INCONNU) for c in constats)
