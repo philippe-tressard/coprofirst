@@ -16,7 +16,7 @@ from sqlmodel import Session, func, select
 from app.models.charges import CleDeCharges, QuotePartLot
 from app.models.copropriete import NatureLot
 from app.models.perimetre import LotPerimetre
-from app.utils.alertes_lot import alertes_du_lot
+from app.utils.alertes_lot import alertes_du_lot, note_de_cle
 from app.utils.constats import Constat
 from app.utils.designation_lot import nature_du_lot
 from app.utils.lots_explication import phrase
@@ -44,6 +44,11 @@ class QuotePart(BaseModel):
     nb_lots: int = 0
     #: La somme des parts de TOUS les lots : le contrôle contre le dénominateur déclaré.
     somme: int = 0
+    #: Ce que la clé finance, selon le règlement (« l'escalier des deux sous-sols », #2251).
+    description: str | None = None
+    #: Ce qu'il faut savoir de la clé quand ses parts ne font pas le dénominateur —
+    #: une phrase du serveur (`alertes_lot.note_de_cle`), dite une fois sous la clé.
+    note: str | None = None
 
 
 class Designation(BaseModel):
@@ -125,6 +130,8 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
                 else None,
                 nb_lots=totaux.get(cle.id, (0, 0))[0],
                 somme=totaux.get(cle.id, (0, 0))[1],
+                description=cle.description,
+                note=note_de_cle(cle.denominateur, totaux.get(cle.id, (0, 0))[1]),
             )
         )
 
@@ -137,11 +144,6 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
         voit = avec_tantiemes(lot)
         declaree = valeur(getattr(lot, "nature", None))
         parts = quotes.get(lot.id, []) if voit else None
-        #  Les écarts se lisent sur les clés du LOT, mais ne dépendent pas de qui lit : un
-        #  locataire qui ne voit pas les tantièmes n'a pas à en lire les écarts non plus.
-        ecarts = [
-            (q.libelle, q.denominateur, q.somme) for q in (parts or []) if q.somme != q.denominateur
-        ]
         return Designation(
             circulation=_perimetre(lot.circulation_perimetre_id, "circulation"),
             perimetres=lus,
@@ -165,7 +167,6 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
                 or lot.circulation_perimetre_id is not None,
                 voit,
                 [(q.libelle, q.numerateur, q.denominateur) for q in (parts or [])],
-                ecarts,
             ),
         )
 

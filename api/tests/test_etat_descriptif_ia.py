@@ -72,6 +72,18 @@ def _reponse(**surcharges) -> dict:
 # ── La réponse du modèle ─────────────────────────────────────────────────────
 
 
+def test_ce_que_finance_chaque_cle_suit_la_lecture():
+    """#2251 : l'« objet » d'une clé, quand l'acte le définit, devient sa description."""
+    from app.utils.etat_descriptif_ia import descriptions
+
+    reponse = _reponse()
+    reponse["cles"][1]["objet"] = "L'escalier qui dessert les deux niveaux de sous-sol"
+    lecture = lire_reponse(json.dumps(reponse))
+    assert descriptions(lecture) == {
+        "escalier-x-prime": "L'escalier qui dessert les deux niveaux de sous-sol"
+    }
+
+
 def test_une_reponse_conforme_se_lit_et_un_numero_reste_un_texte():
     lecture = lire_reponse(json.dumps(_reponse()))
     assert [lot.lot for lot in lecture.lots] == ["901", "902"]

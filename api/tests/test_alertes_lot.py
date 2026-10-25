@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from app.models.copropriete import NatureLot as N
 from app.utils import constats as C
-from app.utils.alertes_lot import alertes_du_lot
+from app.utils.alertes_lot import alertes_du_lot, note_de_cle
 
 FINE = " "  # espace fine insécable, comme `montants.montant_fr`
 
@@ -23,7 +23,6 @@ def _lot(**surcharges):
         desservi=True,
         voit_les_tantiemes=True,
         parts=[("Générales", 60, 10000)],
-        cles_en_ecart=[],
     )
     base.update(surcharges)
     return alertes_du_lot(**base)
@@ -56,13 +55,15 @@ def test_un_lecteur_sans_droit_aux_tantiemes_n_apprend_pas_qu_ils_manquent():
     assert "sans_tantieme" in _codes(_lot(voit_les_tantiemes=True, parts=[]))
 
 
-def test_une_cle_en_ecart_dit_le_sens_et_la_grandeur():
-    court = _lot(cles_en_ecart=[("Ascenseur D", 10000, 9900)])
-    trop = _lot(cles_en_ecart=[("Escalier C", 10000, 10003)])
-    assert "il en manque 100" in court[0].message
-    assert f"9{FINE}900 pour 10{FINE}000" in court[0].message
-    assert "il y en a 3 de trop" in trop[0].message
-    assert court[0].gravite == trop[0].gravite == C.AVERTISSEMENT
+def test_l_ecart_d_une_cle_se_dit_sous_la_cle_sans_alarmer():
+    """#2251 : l'écart concerne la copropriété, pas la part du lecteur — une note de la
+    clé, plus une alerte du lot."""
+    court = note_de_cle(10000, 9900)
+    trop = note_de_cle(10000, 10003)
+    assert "il en manque 100" in court and f"9{FINE}900 pour 10{FINE}000" in court
+    assert "il y en a 3 de trop" in trop
+    assert "Votre part, elle, est celle de l'acte." in court
+    assert note_de_cle(10000, 10000) is None
 
 
 def test_aucune_alerte_ne_bloque_et_aucune_ne_nomme_personne():
@@ -73,7 +74,6 @@ def test_aucune_alerte_ne_bloque_et_aucune_ne_nomme_personne():
         numero_usage=None,
         desservi=False,
         parts=[],
-        cles_en_ecart=[("Générales", 10006, 10005)],
     )
     assert C.applicable(pires)  # « applicable » : ni BLOQUANT ni INCONNU
     assert {c.gravite for c in pires} <= {C.AVERTISSEMENT, C.INFORMATION}

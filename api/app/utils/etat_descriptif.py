@@ -106,6 +106,8 @@ class Cle(BaseModel):
     code: str
     libelle: str
     denominateur: int
+    #: Ce qu'elle finance, tel que le règlement le définit (feuille « Clés », #2251).
+    description: Optional[str] = None
 
 
 class Ligne(BaseModel):
@@ -176,8 +178,43 @@ def _cellule(valeur) -> Optional[str]:
     return texte or None
 
 
-def lire(rows: list) -> Lecture:
-    """Les lignes d'un classeur → clés déclarées et lignes, sans rien écrire."""
+#: Le nom de la feuille facultative qui définit les clés (#2251).
+FEUILLE_CLES = "Clés"
+
+
+def lire_descriptions(rows: Optional[list]) -> dict[str, str]:
+    """PURE. La feuille « Clés » → `{code de la clé: ce qu'elle finance}`.
+
+    Deux colonnes reconnues à l'en-tête : la clé (« clé ») et sa définition (« ce qu'elle
+    finance », ou « description »). Une feuille absente ou sans ces colonnes ne rend rien :
+    la description est facultative, et une clé sans elle reste affichée seule.
+    """
+    if not rows:
+        return {}
+    col_cle = col_texte = None
+    for rang, en_tete in enumerate(rows[0]):
+        nom = normaliser(_cellule(en_tete) or "")
+        if nom in ("CLE", "CLES", "CLE DE CHARGES"):
+            col_cle = rang
+        elif "FINANCE" in nom or nom == "DESCRIPTION":
+            col_texte = rang
+    if col_cle is None or col_texte is None:
+        return {}
+    lues: dict[str, str] = {}
+    for row in rows[1:]:
+        cle = _cellule(row[col_cle]) if col_cle < len(row) else None
+        texte = _cellule(row[col_texte]) if col_texte < len(row) else None
+        if cle and texte:
+            lues[code_de_cle(cle)] = texte
+    return lues
+
+
+def lire(rows: list, descriptions: Optional[dict[str, str]] = None) -> Lecture:
+    """Les lignes d'un classeur → clés déclarées et lignes, sans rien écrire.
+
+    `descriptions` : ce que finance chaque clé (`lire_descriptions`), par code.
+    """
+    descriptions = descriptions or {}
     if not rows:
         return Lecture(cles=[], lignes=[], avec_circulation=False, erreurs=["Fichier vide."])
     champs: dict[int, str] = {}
@@ -193,8 +230,12 @@ def lire(rows: list) -> Lecture:
         trouve = _EN_TETE_CLE.match(brut)
         if trouve:
             libelle = trouve["libelle"].strip()
+            code = code_de_cle(libelle)
             cles[rang] = Cle(
-                code=code_de_cle(libelle), libelle=libelle, denominateur=int(trouve["denominateur"])
+                code=code,
+                libelle=libelle,
+                denominateur=int(trouve["denominateur"]),
+                description=descriptions.get(code),
             )
     erreurs = []
     vus: dict[str, str] = {}

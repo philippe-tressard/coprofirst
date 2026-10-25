@@ -31,6 +31,10 @@ class CleDeCharges(SQLModel, table=True):
     #: facultatif, il ne sert qu'à expliquer.
     perimetre_id: Optional[int] = Field(default=None, foreign_key="perimetre.id")
     ordre: int = Field(default=0)
+    #: Ce que la clé finance, tel que le règlement le définit (« l'escalier qui dessert
+    #: les deux niveaux de sous-sol ») — sans elle, « Escalier A » et « Escalier A' » ne
+    #: se distinguent pas (#2251). Entre par l'atelier (feuille « Clés »).
+    description: Optional[str] = None
 
 
 class QuotePartLot(SQLModel, table=True):

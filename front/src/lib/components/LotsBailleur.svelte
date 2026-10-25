@@ -13,7 +13,7 @@
 	import { nomLocataire } from '$lib/bail';
 	import BadgeStatutBail from '$lib/components/BadgeStatutBail.svelte';
 	import DetailReglementLot from '$lib/components/DetailReglementLot.svelte';
-	import TotauxCharges from '$lib/components/TotauxCharges.svelte';
+	import TableauCharges from '$lib/components/TableauCharges.svelte';
 	import { designationDuLot } from '$lib/charges-lots';
 	import { fmtDateShort as fmt } from '$lib/date';
 	import { etageLabel, lotTypeComplet } from '$lib/utils';
@@ -44,8 +44,8 @@
 	$: lotsVacants = lots.filter((l) => !bauxActifs.find((b) => b.lot_id === l.id));
 </script>
 
-<!-- Le total de mes charges, tous mes lots confondus (#2215) -->
-<TotauxCharges {lots} />
+<!-- Mes charges, lot par lot et au total (#2251, maquette A) -->
+<TableauCharges {lots} />
 
 <!-- Section 1 : Tous les lots possédés -->
 <div class="lots-section-label">🏢 Lots possédés ({lots.length})</div>
@@ -69,8 +69,8 @@
 					>{/if}
 				{#if lot.superficie}<span class="text-muted-sm">{lot.superficie} m²</span>{/if}
 			</div>
-			<!--  Où est le lot et ce qui le dessert, puis la phrase qui explique la charge, les parts
-			      clé par clé et les alertes (#2215) : écrits une fois, côté serveur et dans
+			<!--  Où est le lot et ce qui le dessert, puis le chemin vers sa colonne du tableau des
+			      charges et ses alertes (#2215, #2251) : écrits une fois, dans
 			      `DetailReglementLot`. -->
 			{#if lot.numero_usage || lot.perimetres?.length}
 				<p class="text-muted-sm designation-lot">{designationDuLot(lot)}</p>

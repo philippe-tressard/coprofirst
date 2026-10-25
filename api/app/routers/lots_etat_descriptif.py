@@ -27,7 +27,15 @@ from app.models.copropriete import Batiment
 from app.models.core import Utilisateur
 from app.utils.batiments import libelle_batiment
 from app.utils.constats import Constat, applicable
-from app.utils.etat_descriptif import EN_TETES_FIXES, Cle, Ligne, lettre_de, nature_de
+from app.utils.etat_descriptif import (
+    EN_TETES_FIXES,
+    FEUILLE_CLES,
+    Cle,
+    Ligne,
+    lettre_de,
+    lire_descriptions,
+    nature_de,
+)
 from app.utils.etat_descriptif_application import (
     LECTURE_ECHEC,
     LECTURE_EN_COURS,
@@ -41,7 +49,7 @@ from app.utils.etat_descriptif_application import (
 )
 from app.utils.etat_descriptif_ia import USAGE_LECTURE_ETAT_DESCRIPTIF, remplir_en_tache_de_fond
 from app.utils.fichiers import lire_tableur_recu
-from app.utils.import_xlsx import lignes_du_classeur
+from app.utils.import_xlsx import feuille_du_classeur, lignes_du_classeur
 from app.utils.recuperer import ou_404
 
 router = APIRouter()
@@ -163,6 +171,10 @@ def gabarit_etat_descriptif(_: Utilisateur = Depends(require_cs_or_admin)):
     feuille = classeur.active
     feuille.title = "Etat descriptif"
     feuille.append([*EN_TETES_FIXES, "Charges générales /10000"])
+    #  Ce que finance chaque clé, tel que le règlement le définit (#2251) — facultatif.
+    cles = classeur.create_sheet(FEUILLE_CLES)
+    cles.append(["clé", "ce qu'elle finance"])
+    cles.append(["Charges générales", "Le sol et les parties communes générales"])
     tampon = io.BytesIO()
     classeur.save(tampon)
     tampon.seek(0)
@@ -181,7 +193,11 @@ async def televerser_etat_descriptif(
 ):
     """Remplace le fichier en attente ; rien ne touche au patrimoine avant « Appliquer »."""
     contenu = await lire_tableur_recu(file, user)
-    poser(session, lignes_du_classeur(contenu))
+    poser(
+        session,
+        lignes_du_classeur(contenu),
+        lire_descriptions(feuille_du_classeur(contenu, FEUILLE_CLES)),
+    )
     session.commit()
     return _etat(session)
 

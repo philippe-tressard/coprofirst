@@ -76,8 +76,10 @@ générales », puis, pour chaque bâtiment X dont il figure au tableau, « Bât
 - page_source : où tu l'as lu (livre, page ou ligne, tableau) — OBLIGATOIRE ;
 - confiance : « sûr », ou « douteux » si le passage est illisible, ambigu, ou marqué [?].
 
-Et les clés : leur libellé, exactement comme dans les quotes, et leur dénominateur tel que \
-l'acte le déclare (10 000, 1 000…) — le dernier acte modificatif l'emporte.
+Et les clés : leur libellé, exactement comme dans les quotes, leur dénominateur tel que \
+l'acte le déclare (10 000, 1 000…) — le dernier acte modificatif l'emporte —, et ce qu'elles \
+financent (« objet »), tel que l'acte les définit (« l'escalier desservant les deux niveaux \
+de sous-sol ») ; vide si l'acte ne le dit pas.
 
 Règles :
 - N'invente rien. Un lot supprimé par un acte modificatif ne figure plus ; un lot créé y figure.
@@ -87,7 +89,8 @@ ligne « douteux ». La somme se contrôle ailleurs.
 
 #: Le format de réponse — imposé par le code, jamais par le prompt réglable.
 FORMAT_REPONSE = """Réponds par un SEUL objet JSON, sans texte autour :
-{"cles": [{"libelle": "Charges générales", "denominateur": 10000}],
+{"cles": [{"libelle": "Charges générales", "denominateur": 10000,
+           "objet": "le sol et les parties communes générales"}],
  "lots": [{"lot": "12", "batiment": "A", "nature": "logement", "numero_usage": "12",
            "niveau": 1, "circulation": "A", "quotes": {"Charges générales": 120},
            "lot_origine": null, "page_source": "p. 14, état descriptif", "confiance": "sûr"}]}
@@ -99,6 +102,8 @@ class CleLue(BaseModel):
 
     libelle: str = Field(min_length=1)
     denominateur: StrictInt = Field(gt=0)
+    #: Ce que la clé finance, tel que l'acte le définit (#2251) — facultatif.
+    objet: Optional[str] = None
 
 
 class LotLu(BaseModel):
@@ -174,8 +179,16 @@ def en_tableau(lecture: LectureIA) -> list:
     return [en_tetes, *lignes]
 
 
-async def lire_le_reglement(session: Session, demandeur: Optional[int]) -> list:
-    """Interroge l'assistant sur le règlement versé ; rend le tableau. Lève `ErreurLLM`."""
+def descriptions(lecture: LectureIA) -> dict[str, str]:
+    """PURE. Ce que finance chaque clé, par code — la feuille « Clés » d'un fichier (#2251)."""
+    from app.utils.etat_descriptif import code_de_cle
+
+    return {code_de_cle(c.libelle): c.objet for c in lecture.cles if c.objet}
+
+
+async def lire_le_reglement(session: Session, demandeur: Optional[int]) -> tuple[list, dict]:
+    """Interroge l'assistant sur le règlement versé ; rend le tableau et ce que finance
+    chaque clé. Lève `ErreurLLM`."""
     from app.utils.llm import ErreurLLM, config_llm, demander
     from app.utils.question_reglement.texte import assembler
 
@@ -191,7 +204,8 @@ async def lire_le_reglement(session: Session, demandeur: Optional[int]) -> list:
         demandeur=demandeur,
     )
     try:
-        return en_tableau(lire_reponse(reponse.texte))
+        lecture = lire_reponse(reponse.texte)
+        return en_tableau(lecture), descriptions(lecture)
     except ReponseIllisible as exc:
         logger.warning("Lecture de l'état descriptif : %s", exc)
         raise ErreurLLM(
@@ -211,7 +225,7 @@ async def remplir_en_tache_de_fond(copro, import_id: int, demandeur: Optional[in
 
     with contexte.dans(copro), contexte.nouvelle_session() as session:
         try:
-            rows = await lire_le_reglement(session, demandeur)
+            rows, definitions = await lire_le_reglement(session, demandeur)
             erreur = None
         except ErreurLLM as exc:  # limites d'appels comprises (`RefusLimite`)
             rows, erreur = None, str(exc)
@@ -226,5 +240,5 @@ async def remplir_en_tache_de_fond(copro, import_id: int, demandeur: Optional[in
         if rows is None:
             noter_echec(session, imp, erreur or "Échec de la lecture.")
         else:
-            ecrire(session, imp, rows, lecture_ia=LECTURE_TERMINEE)
+            ecrire(session, imp, rows, definitions, lecture_ia=LECTURE_TERMINEE)
         session.commit()

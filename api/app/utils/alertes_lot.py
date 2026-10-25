@@ -25,6 +25,28 @@ from app.utils.designation_lot import NATURES_ANNEXES
 from app.utils.montants import montant_fr
 
 
+def note_de_cle(denominateur: int, somme: int) -> str | None:
+    """PURE. Ce qu'il faut savoir d'une clé dont les parts ne font pas le dénominateur (#2251).
+
+    Dit une fois sous la clé, sans alarmer : c'est la copropriété qui n'est pas complète
+    au règlement (une division non reportée, un acte manquant), pas la part du lecteur.
+    `None` quand la clé tombe juste.
+    """
+    ecart = denominateur - somme
+    if ecart == 0:
+        return None
+    sens = (
+        f"il en manque {montant_fr(ecart, '')}, encore à reporter depuis les actes"
+        if ecart > 0
+        else f"il y en a {montant_fr(-ecart, '')} de trop, à vérifier dans les actes"
+    )
+    return (
+        f"Les parts que le règlement attribue à l'ensemble des lots totalisent "
+        f"{montant_fr(somme, '')} pour {montant_fr(denominateur, '')} : {sens}. "
+        "Votre part, elle, est celle de l'acte."
+    )
+
+
 def alertes_du_lot(
     nature_declaree: Optional[NatureLot],
     nature: Optional[NatureLot],
@@ -33,15 +55,16 @@ def alertes_du_lot(
     desservi: bool,
     voit_les_tantiemes: bool,
     parts: list[tuple[str, int, int]],
-    cles_en_ecart: list[tuple[str, int, int]],
 ) -> list[Constat]:
     """Les constats d'un lot — fonction PURE, du plus important au moins important.
 
     `nature_declaree` : celle que l'état descriptif a posée (`None` tant qu'il n'est pas
     appliqué) ; `nature` : la déclarée, sinon celle que le type désigne. `parts` : les
-    `(libellé, numérateur, dénominateur)` du lot ; `cles_en_ecart` : les
-    `(libellé, dénominateur, somme)` des clés dont il fait partie et dont la somme, sur
-    tous les lots, n'est pas le dénominateur déclaré.
+    `(libellé, numérateur, dénominateur)` du lot.
+
+    ⚠️ L'écart d'une CLÉ (la somme de tous les lots ≠ le dénominateur) n'est plus une
+    alerte du lot (#2251) : il concerne la copropriété, pas cette part, et se dit une
+    fois sous la clé, dans le tableau des charges (`note_de_cle`).
     """
     if nature_declaree is None:
         return [
@@ -70,22 +93,6 @@ def alertes_du_lot(
                 AVERTISSEMENT,
                 "Aucun tantième n'est enregistré pour ce lot : ses charges ne peuvent pas "
                 "être expliquées ici.",
-            )
-        )
-    for libelle, denominateur, somme in cles_en_ecart:
-        ecart = denominateur - somme
-        sens = (
-            f"il en manque {montant_fr(ecart, '')}"
-            if ecart > 0
-            else f"il y en a {montant_fr(-ecart, '')} de trop"
-        )
-        trouves.append(
-            constat(
-                "cle_en_ecart",
-                AVERTISSEMENT,
-                f"« {libelle} » : les parts lues dans le règlement totalisent "
-                f"{montant_fr(somme, '')} pour {montant_fr(denominateur, '')} — {sens}. "
-                "Votre part reste celle du règlement ; l'écart est à vérifier à la source.",
             )
         )
     if nature in NATURES_ANNEXES and not numero_usage:

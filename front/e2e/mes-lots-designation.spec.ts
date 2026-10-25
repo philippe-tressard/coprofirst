@@ -3,9 +3,9 @@
  *
  *  Un résident du bâtiment 1 qui détient une place desservie par le bâtiment 3 :
  *  la carte de la place dit « Desservi par Bât. 3 › Ascenseur », jamais « Bât. 3 »
- *  en « Situé dans », ses tantièmes et la phrase qui explique la charge — rendue
- *  telle que le serveur l'écrit. Lots FICTIFS ; l'API simulée rend la forme réelle
- *  de `LotRead` (type `MonLot`).
+ *  en « Situé dans » ; sa part se lit dans le tableau croisé des charges, que la carte
+ *  ne répète plus (#2251). Lots FICTIFS ; l'API simulée rend la forme réelle de
+ *  `LotRead` (type `MonLot`).
  */
 import type { Page } from '@playwright/test';
 import type { MonLot } from '../src/lib/api/patrimoine';
@@ -88,6 +88,8 @@ const PLACE = lot({
 			perimetre: null,
 			nb_lots: 174,
 			somme: 10000,
+			description: null,
+			note: null,
 		},
 	],
 	explication: PHRASE,
@@ -112,11 +114,14 @@ test('la place desservie par un autre bâtiment dit sa circulation, sa part et p
 	await expect(carte.getByText('Bât. 3 › Ascenseur, Bât. 3 › Escaliers')).toBeVisible();
 	await expect(carte.getByText('Situé dans')).toHaveCount(0);
 	await expect(carte.getByText('5 & 6')).toBeVisible();
-	await expect(carte.getByText(PHRASE)).toBeVisible();
-	await expect(carte.getByRole('table', { name: /charges/i })).toContainText('Générales');
+	//  La part se lit dans le tableau croisé, plus sur la carte (#2251).
+	await expect(carte.getByText(PHRASE)).toHaveCount(0);
+	const charges = page.getByRole('region', { name: 'Mes charges selon le règlement' });
+	await expect(charges.getByRole('columnheader', { name: 'Place 902' })).toBeVisible();
 });
 
-test('la carte du bailleur porte la même phrase', async ({ page }) => {
+test('la carte du bailleur renvoie à sa colonne du tableau des charges', async ({ page }) => {
 	await ouvrir(page, BAILLEUR);
-	await expect(page.getByText(PHRASE)).toBeVisible();
+	await expect(page.getByText(PHRASE)).toHaveCount(0);
+	await expect(page.getByRole('link', { name: /Voir sa colonne/ }).first()).toBeVisible();
 });

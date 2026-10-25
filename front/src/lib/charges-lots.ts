@@ -1,46 +1,90 @@
 /**
- * Les charges d'un ou de plusieurs lots, lues de `MonLot.quotes_parts` — des fonctions PURES.
+ * Les charges de mes lots, lues de `MonLot.quotes_parts` — des fonctions PURES (#2215, #2251).
  *
- * Un copropriétaire de plusieurs lots (un logement, une cave, deux places) ne contribue pas
- * à une clé par lot mais par TOTAL : « Ascenseur A » pèse sur lui pour la somme de ses
- * parts. L'écran le dit, au lieu de laisser faire l'addition. Le serveur reste la source de
- * chaque part ; ici on ne fait que les ADDITIONNER — jamais les recalculer.
+ * Un copropriétaire de plusieurs lots (un logement, une cave, deux places) contribue à une
+ * clé par la SOMME de ses parts. Le tableau croisé de « Mes lots » (maquette A, arbitrée le
+ * 25/10/2026) le montre d'un coup : une ligne par clé, une colonne par lot, puis le total.
+ * Il remplace trois rendus qui disaient la même chose (le total par clé, le tableau de
+ * chaque lot, la phrase de la carte) et ne nommaient pas les lots — « où est ma cave ? ».
+ *
+ * Le serveur reste la source de chaque part, de ce que finance la clé et de sa note ; ici
+ * on ne fait que les RANGER et les ADDITIONNER — jamais les recalculer.
  */
+import { writable } from 'svelte/store';
 import type { MonLot, QuotePartLot } from '$lib/api';
+import { lotTypeLabel } from '$lib/utils';
 
-export interface TotalDeCle {
+/** Ce que vaut un tableau de charges : une lecture du règlement, jamais un décompte. */
+export const AVIS_CHARGES =
+	'À titre d’information : ces parts sont lues dans le règlement de copropriété. Ce que ' +
+	'vous payez, seuls les appels de fonds et les comptes tenus par le syndic le disent.';
+
+/** « Logement 15 », « Cave 417 », « Place 450 » — la nature du règlement, sinon le type. */
+export function nomDuLot(lot: Pick<MonLot, 'numero' | 'nature' | 'type'>): string {
+	const nature = lot.nature ?? lot.type;
+	//  « Place » et non « Parking » : c'est ainsi qu'un résident nomme son emplacement.
+	return `${nature === 'parking' ? 'Place' : lotTypeLabel(nature)} ${lot.numero}`;
+}
+
+export interface ColonneDeLot {
+	id: number;
+	nom: string;
+}
+
+export interface LigneDeCle {
 	cle: string;
 	libelle: string;
-	perimetre: string | null;
-	numerateur: number;
+	/** Ce que la clé finance, selon le règlement — `null` si l'acte ne le dit pas. */
+	description: string | null;
+	/** Ce qu'il faut savoir de la clé (ses parts ne font pas le dénominateur), du serveur. */
+	note: string | null;
+	nbLots: number;
 	denominateur: number;
-	/** Combien de lots du lecteur contribuent à cette clé. */
-	lots: number;
+	/** La part de chacun de mes lots, par identifiant ; absent = il n'y contribue pas. */
+	parts: Record<number, number>;
+	total: number;
 }
 
-/** Le total de mes parts par clé, dans l'ordre où le serveur les rend. Vide si aucun lot n'en lit. */
-export function totauxParCle(lots: Pick<MonLot, 'quotes_parts'>[]): TotalDeCle[] {
-	const totaux = new Map<string, TotalDeCle>();
-	for (const lot of lots) {
+export interface TableauDesCharges {
+	colonnes: ColonneDeLot[];
+	lignes: LigneDeCle[];
+}
+
+/** Le tableau croisé de mes charges, dans l'ordre des clés que le serveur rend. */
+export function tableauDesCharges(
+	lots: Pick<MonLot, 'id' | 'numero' | 'nature' | 'type' | 'quotes_parts'>[],
+): TableauDesCharges {
+	const avecParts = lots.filter((l) => l.quotes_parts?.length);
+	const lignes = new Map<string, LigneDeCle>();
+	for (const lot of avecParts) {
 		for (const part of lot.quotes_parts ?? ([] as QuotePartLot[])) {
-			const deja = totaux.get(part.cle);
-			if (deja) {
-				deja.numerateur += part.numerateur;
-				deja.lots += 1;
-			} else {
-				totaux.set(part.cle, {
+			let ligne = lignes.get(part.cle);
+			if (!ligne) {
+				ligne = {
 					cle: part.cle,
 					libelle: part.libelle,
-					perimetre: part.perimetre,
-					numerateur: part.numerateur,
+					description: part.description ?? null,
+					note: part.note ?? null,
+					nbLots: part.nb_lots,
 					denominateur: part.denominateur,
-					lots: 1,
-				});
+					parts: {},
+					total: 0,
+				};
+				lignes.set(part.cle, ligne);
 			}
+			ligne.parts[lot.id] = part.numerateur;
+			ligne.total += part.numerateur;
 		}
 	}
-	return [...totaux.values()];
+	return {
+		colonnes: avecParts.map((l) => ({ id: l.id, nom: nomDuLot(l) })),
+		lignes: [...lignes.values()],
+	};
 }
+
+/**  Le lot dont la carte a demandé à voir sa colonne (« Voir sa colonne dans le tableau
+ *   des charges ») : le tableau la surligne un instant. */
+export const lotSurligne = writable<number | null>(null);
 
 /** « Porte ou place 5 & 6 · Situé dans Bât. 1 · Desservi par Bât. 3 › Ascenseur » — une ligne. */
 export function designationDuLot(lot: Pick<MonLot, 'numero_usage' | 'perimetres'>): string {

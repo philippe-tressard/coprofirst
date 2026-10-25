@@ -22,8 +22,9 @@
 
   `designation` — un `MonLot` — ajoute ce que l'état descriptif dit du lot : sa porte
   ou sa place, où il est SITUÉ, ce qui le DESSERT, ses tantièmes (absents pour qui
-  n'a pas à les lire : le serveur rend `null`), la phrase qui explique la charge et les
-  alertes du lot — le tout par `DetailReglementLot`, écrit une fois pour toutes les vues.
+  n'a pas à les lire : le serveur rend `null`) et les alertes du lot. Les parts se lisent
+  dans le tableau croisé (`TableauCharges`, #2251) : la carte y renvoie, par
+  `DetailReglementLot`, écrit une fois pour toutes les vues.
   Les libellés des périmètres viennent du serveur aussi : aucun n'est recomposé ici.
 -->
 <script lang="ts">
@@ -38,7 +39,7 @@
 	/** Le lot tel que `/lots/mes-lots` le rend — sa désignation du règlement. */
 	export let designation: Pick<
 		MonLot,
-		'numero_usage' | 'perimetres' | 'quotes_parts' | 'explication' | 'alertes'
+		'id' | 'numero_usage' | 'perimetres' | 'quotes_parts' | 'alertes'
 	> | null = null;
 
 	$: situe = (designation?.perimetres ?? []).filter((p) => p.relation === 'situe_dans');

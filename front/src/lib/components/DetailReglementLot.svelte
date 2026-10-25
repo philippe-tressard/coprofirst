@@ -1,29 +1,32 @@
 <!--
-  **Ce que le règlement dit d'un lot, et ce qu'il faut en savoir** (#2215) — la phrase qui
-  explique la charge, les parts clé par clé, et les alertes du lot. Écrit ici UNE fois pour
-  les endroits qui montrent un lot à son propriétaire : la fiche d'un lot, la carte d'un lot
-  possédé, le lot d'un locataire qui en possède aussi.
+  **Ce qu'il faut savoir d'un lot selon le règlement** (#2215, #2251) — ses alertes, et le
+  chemin vers sa part. Écrit ici UNE fois pour les endroits qui montrent un lot à son
+  propriétaire : la fiche d'un lot, la carte d'un lot possédé, le lot d'un locataire qui en
+  possède aussi.
 
-  Tout vient du serveur et se montre tel quel : la phrase (`utils/lots_explication`), les
-  parts (`quotes_parts`) et les alertes (`utils/alertes_lot`, rendues par le composant du
-  patrimoine, `ConstatsLots`). Un lecteur sans droit aux tantièmes reçoit `null` : le tableau
-  disparaît, et la phrase s'arrête à la desserte.
+  🔴 Les CHIFFRES n'y sont plus (#2251, maquette A du 25/10/2026) : la part de chaque lot se
+  lit dans le tableau croisé « Mes charges selon le règlement » (`TableauCharges`), une
+  colonne par lot. La carte ne les répète pas — ni tableau ni phrase de charges —, elle
+  renvoie à la colonne du lot, que le tableau surligne un instant. La désignation (situé
+  dans, desservi par) reste au-dessus, dans `CaracteristiquesLot`.
+
+  Les alertes viennent du serveur (`utils/alertes_lot`) et se rendent par `ConstatsLots`.
 -->
 <script lang="ts">
-	import ChargesDuLot from '$lib/components/ChargesDuLot.svelte';
 	import ConstatsLots from '$lib/components/ConstatsLots.svelte';
+	import { lotSurligne } from '$lib/charges-lots';
 	import type { MonLot } from '$lib/api';
 
-	export let lot: Pick<MonLot, 'quotes_parts' | 'explication' | 'alertes'>;
-
-	$: lignes = (lot.quotes_parts ?? []).map((q) => ({
-		...q,
-		precision: q.nb_lots > 1 ? `${q.nb_lots} lots y contribuent` : undefined,
-	}));
+	export let lot: Pick<MonLot, 'id' | 'quotes_parts' | 'alertes'>;
 </script>
 
-{#if lot.explication}<p class="aide explication">{lot.explication}</p>{/if}
-<ChargesDuLot {lignes} />
+{#if lot.quotes_parts?.length}
+	<p class="vers-charges">
+		<a href="#mes-charges" on:click={() => lotSurligne.set(lot.id)}
+			>Voir sa colonne dans le tableau des charges ↑</a
+		>
+	</p>
+{/if}
 {#if lot.alertes?.length}
 	<div class="alertes">
 		<ConstatsLots constats={lot.alertes} />
@@ -31,9 +34,9 @@
 {/if}
 
 <style>
-	.explication {
-		margin: 0.75rem 0 0.5rem;
-		max-width: 60ch;
+	.vers-charges {
+		margin: 0.6rem 0 0;
+		font-size: var(--fs-sm);
 	}
 	.alertes {
 		margin-top: 0.75rem;
