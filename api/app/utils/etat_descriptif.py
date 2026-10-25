@@ -126,10 +126,23 @@ class Lecture:
     erreurs: list[str] = field(default_factory=list)
 
 
+#: Le « prime » d'un libellé — « Escalier A' » est une AUTRE clé qu'« Escalier A » :
+#: un règlement répartit souvent l'escalier en deux colonnes (25/10/2026). Toutes ses
+#: graphies : apostrophe droite, typographique, prime, lettre modificative.
+_PRIME = re.compile("['’′ʼ]")
+
+
 def code_de_cle(libelle: str) -> str:
-    """« Charges générales » → `charges-generales` : la clé de réimport d'une clé."""
+    """« Charges générales » → `charges-generales` : la clé de réimport d'une clé.
+
+    Le prime se dit en toutes lettres (`escalier-a-prime`) : sinon il tombait avec
+    la ponctuation, et deux colonnes partageaient un code — la seconde écrasait les
+    tantièmes de la première, et l'écran ne se rendait plus.
+    """
     sans_accents = "".join(
-        c for c in unicodedata.normalize("NFD", libelle) if unicodedata.category(c) != "Mn"
+        c
+        for c in unicodedata.normalize("NFD", _PRIME.sub(" prime ", libelle))
+        if unicodedata.category(c) != "Mn"
     )
     return re.sub(r"[^a-z0-9]+", "-", sans_accents.lower()).strip("-")
 
@@ -172,6 +185,14 @@ def lire(rows: list) -> Lecture:
                 code=code_de_cle(libelle), libelle=libelle, denominateur=int(trouve["denominateur"])
             )
     erreurs = []
+    vus: dict[str, str] = {}
+    for cle in cles.values():
+        #  Deux colonnes, une clé : la seconde écraserait la première sans un mot.
+        if cle.code in vus:
+            erreurs.append(
+                f"Deux colonnes désignent la même clé : « {vus[cle.code]} » et « {cle.libelle} »."
+            )
+        vus.setdefault(cle.code, cle.libelle)
     if "lot" not in champs.values():
         erreurs.append("Aucune colonne « lot » : le numéro de lot est obligatoire.")
     lignes: list[Ligne] = []
