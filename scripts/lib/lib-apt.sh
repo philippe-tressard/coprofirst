@@ -220,7 +220,13 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
 
     #  #1441 — la collecte des correctifs, sur un apt et un systemd simulés aux
     #  formes RÉELLES (sortie de rpi2 le 28/09/2026).
-    tmps=$(mktemp -d); vuf="$tmps/sous/apt-secu-vu"; now=$(date +%s)
+    tmps=$(mktemp -d); vuf="$tmps/sous/apt-secu-vu"; now=1790000000
+    #  Horloge FIGÉE (#2236) : le test posait `now=$(date +%s)` puis exigeait un âge
+    #  de 36000 à 36005 s mesuré sur l'horloge RÉELLE — la collecte, jouée sous la
+    #  charge d'un rejeu complet, dépassait la fenêtre et faisait un rouge au hasard.
+    #  La collecte appelle `date +%s` : une fonction `date` simulée lui rend `now`,
+    #  et chaque âge devient une égalité, indépendante de la machine.
+    date() { if [ "$*" = "+%s" ]; then echo "$now"; else command date "$@"; fi; }
     heif='libheif1/stable-security 1.23.4-1~deb13u1 arm64 [upgradable from: 1.19.8-1+deb13u1]'
     apt() { printf 'Listing...\n%s\nbluez/stable 5.82-1.1+rpt2 arm64 [upgradable from: 5.82-1.1+rpt1]\n' "$heif"; }
     systemctl() { case "$*" in
@@ -229,9 +235,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     id() { echo 0; }
     champ() { eval "$(collecte_secu "$vuf")" | sed -n "s/^$1=//p"; }
     t "collecte : seuls les paquets -security comptent" 1 champ apt_secu
-    t "collecte : premier relevé → vu à l'instant" oui eval '[ "$(champ apt_secu_vu_s)" -le 5 ] && echo oui'
+    t "collecte : premier relevé → vu à l'instant" 0 champ apt_secu_vu_s
     t "collecte : relevé écrit, répertoire créé" "libheif1=1.23.4-1~deb13u1" eval 'cut -d" " -f2 "$vuf"'
-    t "collecte : début du dernier passage" oui eval 'a=$(champ apt_passage_s); [ "$a" -ge 36000 ] && [ "$a" -le 36005 ] && echo oui'
+    t "collecte : début du dernier passage" 36000 champ apt_passage_s
     t "collecte : heure du prochain passage" 06:39 champ apt_prochain
     #  Un paquet bloqué garde SON ancienneté quand un autre correctif arrive.
     echo "$(( now - 50000 )) libheif1=1.23.4-1~deb13u1" > "$vuf"
@@ -242,7 +248,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     #  Une nouvelle VERSION du même paquet est un nouveau correctif.
     echo "$(( now - 50000 )) libheif1=1.19.9-1" > "$vuf"
     apt() { printf '%s\n' "$heif"; }
-    t "collecte : nouvelle version → nouvelle horloge" oui eval '[ "$(champ apt_secu_vu_s)" -le 5 ] && echo oui'
+    t "collecte : nouvelle version → nouvelle horloge" 0 champ apt_secu_vu_s
     #  Le pair lit sans écrire : un paquet absent du relevé ne compte pas.
     rm -f "$vuf"; id() { echo 1000; }
     t "collecte : hors root, rien d'écrit ni d'inventé" "" champ apt_secu_vu_s
@@ -256,11 +262,11 @@ cloudflared=2026.10.3
     t "collecte : liste fournie → relevée par paquet" "cloudflared=2026.10.3" eval 'cut -d" " -f2 "$vuf" | head -1'
     : > "$autre"
     t "collecte : liste fournie vide → 0" 0 eval 'eval "$(collecte_secu "$vuf" "cat $autre")" | sed -n "s/^apt_secu=//p"'
-    unset -f apt systemctl id champ; rm -rf "$tmps"
+    unset -f apt systemctl id champ date; rm -rf "$tmps"
 
     #  #1610 — la collecte du passage en cours, exécutée sur un systemd simulé aux
     #  formes RÉELLES (`ActiveState` d'un service oneshot, horodatage `@epoch`).
-    now=$(date +%s); etat="inactive"; debut="@$(( now - 36000 ))"
+    now=1790000000; etat="inactive"; debut="@$(( now - 36000 ))"
     systemctl() { case "$*" in
         *ActiveState*) echo "$etat" ;;
         *ExecMainStartTimestamp*) echo "$debut" ;; esac; }
