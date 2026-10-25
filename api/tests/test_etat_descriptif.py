@@ -57,6 +57,33 @@ def test_les_colonnes_se_reconnaissent_a_l_en_tete_et_les_cles_au_denominateur()
     assert lu.avec_circulation
 
 
+def test_une_cle_prime_est_une_autre_cle():
+    """« Escalier A' » n'est pas « Escalier A » (25/10/2026) : un même code faisait
+    écraser les tantièmes de l'une par l'autre, et la clé répétée figeait l'écran."""
+    lu = _lecture(
+        (901, "A", "Appartement", "12", "2", "A", None, None, 60, 6, 7),
+        en_tetes=(*EN_TETES[:-1], "Escalier A /10", "Escalier A' /10"),
+    )
+    assert [c.code for c in lu.cles] == ["generales", "escalier-a", "escalier-a-prime"]
+    assert lu.lignes[0].quotes == {"generales": 60, "escalier-a": 6, "escalier-a-prime": 7}
+    assert not lu.erreurs
+    #  Toutes les graphies du prime, et aucune autre ponctuation n'en fait un.
+    for graphie in ("Escalier A’", "Escalier A′", "Escalier Aʼ"):
+        assert E.code_de_cle(graphie) == "escalier-a-prime"
+    assert E.code_de_cle("Escalier (A)") == "escalier-a"
+
+
+def test_deux_colonnes_d_une_meme_cle_bloquent():
+    lu = _lecture(
+        (901, "A", "Appartement", "12", "2", "A", None, None, 60, 6, 7),
+        en_tetes=(*EN_TETES[:-1], "Escalier A /10", "Escalier (A) /10"),
+    )
+    assert lu.erreurs == [
+        "Deux colonnes désignent la même clé : « Escalier A » et « Escalier (A) »."
+    ]
+    assert not C.applicable(E.controler(lu, _connus(("901", 1, None)), {"A": 1}, {1}))
+
+
 def test_un_fichier_sans_colonne_de_circulation_le_dit():
     """Cas zéro : il s'importe comme avant, et un constat le dit."""
     lu = E.lire([("Lot", "Nature"), ("901", "Cave")])
@@ -231,6 +258,25 @@ def test_appliquer_refuse_un_fichier_bloque_et_n_ecrit_rien(batiments):
         with pytest.raises(EtatDescriptifRefuse):
             appliquer(session)
         assert cave.nature is None and not session.exec(select(CleDeCharges)).all()
+        session.rollback()
+
+
+def test_un_fichier_range_avec_un_code_repete_se_rend_et_demande_un_reimport(batiments):
+    """Le fichier rangé en production le 25/10/2026, quand « Escalier A' » prenait le
+    code d'« Escalier A » : ses clés reprennent un code unique, et un bloquant dit de
+    le réimporter — l'écran se rend au lieu de se figer sur une clé répétée."""
+    import json
+
+    with Session(engine) as session:
+        _monter(session, batiments)
+        imp = poser(session, _rows())
+        entete = json.loads(imp.entete_json)
+        entete["cles"][1]["libelle"] = "Ascenseur X'"  # code resté « ascenseur-x »
+        imp.entete_json = json.dumps(entete)
+        lecture, trouves = constats(session, imp)
+        assert [c.code for c in lecture.cles] == ["generales", "ascenseur-x-prime"]
+        assert any("importez-le de nouveau" in c.message for c in trouves)
+        assert not C.applicable(trouves)
         session.rollback()
 
 

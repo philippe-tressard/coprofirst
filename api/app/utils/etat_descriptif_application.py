@@ -34,6 +34,7 @@ from app.utils.etat_descriptif import (
     Lecture,
     Ligne,
     LotConnu,
+    code_de_cle,
     controler,
     lettre_de,
     lire,
@@ -98,11 +99,20 @@ def relire(session: Session, imp: ImportEtatDescriptif) -> Lecture:
         .where(LigneEtatDescriptif.import_id == imp.id)
         .order_by(LigneEtatDescriptif.rang)
     ).all()
+    cles = [Cle(**c) for c in entete.get("cles", [])]
+    erreurs = list(entete.get("erreurs", []))
+    #  Un fichier rangé quand deux colonnes partageaient un code (« Escalier A » et
+    #  « Escalier A' », 25/10/2026) : ses tantièmes se sont écrasés au rangement, il
+    #  ne se répare pas — il se réimporte. Ses clés reprennent le code d'aujourd'hui,
+    #  qui ne se répète plus : l'écran se rend, et dit quoi faire.
+    if any(cle.code != code_de_cle(cle.libelle) for cle in cles):
+        cles = [cle.model_copy(update={"code": code_de_cle(cle.libelle)}) for cle in cles]
+        erreurs.append("Fichier rangé par une version précédente : importez-le de nouveau.")
     return Lecture(
-        cles=[Cle(**c) for c in entete.get("cles", [])],
+        cles=cles,
         lignes=[lire_objet(Ligne, lu, quotes=json.loads(lu.quotes_json or "{}")) for lu in lignes],
         avec_circulation=bool(entete.get("avec_circulation", True)),
-        erreurs=list(entete.get("erreurs", [])),
+        erreurs=erreurs,
     )
 
 
