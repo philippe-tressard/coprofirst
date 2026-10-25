@@ -41,7 +41,7 @@ import re
 
 from fastapi.routing import APIRoute
 
-from app.routers.acces import imports_telecommandes, imports_vigik, parc, resident
+from app.routers.acces import imports_telecommandes, imports_vigik, parc, portes, resident
 
 #: L'ordre d'inclusion réel, lu dans `routers/acces/__init__.py`.
 #:
@@ -55,6 +55,9 @@ ORDRE = [
     #  `/admin/{type_cle}/{objet_id}` avalait `PATCH /admin/imports/{id}`.
     ("imports_vigik", imports_vigik),
     ("imports_telecommandes", imports_telecommandes),
+    #  Les lectures de ce qu'un badge ouvre (#2217) : chemins fixes à un segment,
+    #  avant le joker `/admin/{type_cle}` du parc.
+    ("portes", portes),
     ("parc", parc),
 ]
 

@@ -46,6 +46,8 @@ FONCTION = "journaliser_securite"
 #: Les gestes qui DOIVENT laisser une trace : (fichier, fonction du routeur).
 #: Une entrée dont la fonction a disparu fait échouer `test_les_gestes_declares_existent`.
 GESTES_SENSIBLES = {
+    ("utils/acces_gestes.py", "journaliser_acces"): "ce qu'un badge ouvre, posé ou "
+    "changé par le conseil — une porte physique (#2217) ; la dérivation ne fait que proposer",
     ("routers/auth.py", "login"): "une connexion refusée — sans elle, une attaque "
     "par force brute est freinée par le rate limit mais jamais signalée",
     ("routers/auth_mot_de_passe.py", "change_password"): "un mot de passe changé par son porteur",

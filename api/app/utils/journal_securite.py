@@ -103,6 +103,9 @@ _NIVEAUX: dict[str, int] = {
     #  L'administrateur valide POUR un présent qui a donné son accord (#2082) :
     #  un geste au nom d'autrui — WARNING, pour qu'il se lise.
     "cr_valide_par_derogation": logging.WARNING,
+    #  Ce qu'un badge ouvre, posé ou changé par le conseil (#2217) : une porte
+    #  PHYSIQUE. La dérivation des lots ne fait que proposer ; ce geste décide.
+    "acces_perimetre_pose": logging.WARNING,
 }
 
 

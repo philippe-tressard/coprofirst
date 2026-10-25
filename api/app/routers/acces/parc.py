@@ -37,7 +37,6 @@ pour voir et corriger, `require_admin` pour supprimer définitivement.
 
 import csv
 import io
-import json
 from app.utils import horloge, valeurs
 from typing import Optional
 
@@ -56,9 +55,14 @@ from app.models.core import (
     Vigik,
 )
 from app.routers.acces.vues import AccesOut
-from app.utils.acces_choix import codes_autorises, valider_acces
+from app.utils.acces_choix import valider_acces
 from app.utils.acces_detachement import detacher_acces
-from app.utils.acces_gestes import _acces_json, _prevenir_porteur, _tracer_sur_ticket
+from app.utils.acces_gestes import (
+    _acces_json,
+    _prevenir_porteur,
+    _tracer_sur_ticket,
+    journaliser_acces,
+)
 from app.utils.porteurs_acces import noms_des_porteurs
 from app.utils.resolution_acces import exiger_code_libre, synchroniser_import
 from app.utils.dates_fr import date_courte
@@ -238,6 +242,7 @@ def creer_acces_admin(
     )
     session.add(objet)
     session.flush()
+    journaliser_acces(user, type_acces, objet, None)  # une porte posée laisse sa trace
     synchroniser_import(session, type_acces, objet)  # le parc complète l'import
     session.commit()
     session.refresh(objet)
@@ -264,6 +269,7 @@ def modifier_acces_admin(
     changement de code, pas de retirer le geste.
     """
     objet = _acces_admin(session, type_acces, objet_id)
+    avant = objet.perimetre_cible
     ticket = _ticket_par_numero(session, body.ticket_numero)
     #  🔒 La MÊME validation qu'à la création, et c'est tout l'intérêt de la
     #  sortir du formulaire : une restriction qui ne vivrait que dans l'écran
@@ -284,10 +290,8 @@ def modifier_acces_admin(
     if body.statut is not None:
         objet.statut = body.statut
     if body.perimetre_cible is not None:
-        objet.perimetre_cible = (
-            json.dumps(body.perimetre_cible, ensure_ascii=False) if body.perimetre_cible else None
-        )
-
+        objet.perimetre_cible = _acces_json(session, type_acces, body.perimetre_cible, None, None)
+    journaliser_acces(user, type_acces, objet, avant)
     session.add(objet)
     synchroniser_import(session, type_acces, objet)  # le parc complète l'import
     session.commit()
@@ -372,44 +376,6 @@ def list_telecommandes(
 #  Ce qui RESTE, et pourquoi : les deux LECTURES ci-dessus répondent à une
 #  question qu'aucun autre écran ne sait poser — « quels badges circulent, et
 #  chez qui ? ». C'est le seul trou réel qu'avait ce domaine.
-
-
-class ChoixAccesOut(BaseModel):
-    """Ce qu'un type d'accès peut ouvrir, et comment son défaut se décide."""
-
-    codes: list[str]
-    #: 🔴 Dit à l'écran quelle aide afficher — « il est déduit du lot » ou « elle
-    #: reçoit les portails ». Sans cela, le formulaire devrait écrire
-    #: `type === 'vigik'`, c'est-à-dire reconnaître un type par son nom : la
-    #: faute même que `TypeAcces` a supprimée côté serveur, réintroduite à
-    #: l'écran.
-    suit_le_lot: bool
-
-
-@router.get("/admin/choix-acces", response_model=dict[str, ChoixAccesOut])
-def choix_acces(
-    session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
-):
-    """Ce que chaque type d'accès a le droit d'ouvrir — par clé de type.
-
-    ⚠️ Des **codes**, pas des libellés : l'écran les met en forme lui-même à
-    partir de l'arbre qu'il a déjà chargé, comme `BadgePerimetre` et
-    `PerimetrePicker` le font partout ailleurs. Renvoyer des libellés obligerait
-    le serveur à décider d'un rendu, et ferait de cette route un second endroit
-    où le nom d'un périmètre s'écrit.
-
-    ⚠️ Cette route **informe** l'écran ; elle ne le contraint pas. Ce qui
-    contraint, c'est `valider_acces` sur les deux gestes d'écriture — un écran
-    est une commodité, jamais un contrôle d'accès.
-    """
-    return {
-        cle: ChoixAccesOut(
-            codes=codes_autorises(session, type_acces),
-            suit_le_lot=type_acces.acces_suit_le_lot,
-        )
-        for cle, type_acces in TYPES_ACCES.items()
-    }
 
 
 #: Les colonnes d'un export, dans l'ordre.
