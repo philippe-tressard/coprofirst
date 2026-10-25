@@ -11,6 +11,7 @@
 //  quarante et un `from '$lib/api'` du front ne changent pas d'une ligne.
 import { api, BASE } from './client';
 import { uploadExcel } from './documents';
+import type { ConstatPatrimoine } from './etat-descriptif';
 
 //  ── Ce que le serveur RENVOIE (#1572) ───────────────────────────────────────────
 //
@@ -195,6 +196,16 @@ export interface ChoixAcces {
 	suit_le_lot: boolean;
 }
 
+/**  Une porte que les lots d'un badge justifient, et la raison qui se lit à
+ *   l'écran (« dessert votre place ») — `PorteProposee` (#2217).
+ *
+ *   🔴 Une PROPOSITION : le conseil la reprend ou non, et c'est l'enregistrement
+ *   qui décide. Rien n'est posé sans lui (« proposer, jamais poser »). */
+export interface PorteProposee {
+	code: string;
+	raison: string;
+}
+
 export const acces = {
 	mesVigiks: () => api.get<AccesPorteur[]>('/acces/mes-vigiks'),
 	mesTelecommandes: () => api.get<AccesPorteur[]>('/acces/mes-telecommandes'),
@@ -238,6 +249,15 @@ export const acces = {
 	//  qu'il a déjà chargé, comme `BadgePerimetre` et `PerimetrePicker` partout
 	//  ailleurs. Deux mises en forme du même objet, c'est la divergence de demain.
 	choixAcces: () => api.get<Record<string, ChoixAcces>>('/acces/admin/choix-acces'),
+	//  Les portes que les lots du badge justifient — une proposition, jamais posée.
+	portesProposees: (porteurId: number | null, lotId: number | null) => {
+		const q = new URLSearchParams();
+		if (porteurId) q.set('porteur_id', String(porteurId));
+		if (lotId) q.set('lot_id', String(lotId));
+		return api.get<PorteProposee[]>(`/acces/admin/portes-proposees?${q}`);
+	},
+	//  Les badges dont l'accès diffère de ce que leurs lots justifient — jamais bloquant.
+	constatsBadges: () => api.get<ConstatPatrimoine[]>('/acces/admin/constats-badges'),
 	listVigiks: () => api.get<AccesAdmin[]>('/acces/admin/vigiks'),
 	listTelecommandes: () => api.get<AccesAdmin[]>('/acces/admin/telecommandes'),
 	//  Le TYPE est un paramètre de chemin, pas deux méthodes : `vigik` et

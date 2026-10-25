@@ -30,7 +30,7 @@
 - **Kanban & calendrier** — les dossiers longs avancent au kanban (AG · CS · Syndic · Prestataire · Terminé), et ce qui porte une date se lit sous le filtre Calendrier d'Affaires.
 - **Documents** — GED avec catégories et accès par profil (résidents, propriétaires, conseil syndical).
 - **Carnet d'entretien** — l'histoire du bâti exigée par le décret n° 2001-477, constituée par équipement à partir des contrats et des affaires résolues, avec un bilan d'exercice pour le conseil.
-- **Mes lots & accès** — lots, badges Vigik, télécommandes de parking et gestion locative (baux, locataires, inventaire de remise).
+- **Mes lots & accès** — lots, badges Vigik, télécommandes de parking et gestion locative (baux, locataires, inventaire de remise). Le conseil voit les portes que les lots d'un badge justifient — proposées, jamais posées seules — et les badges qui s'en écartent.
 - **FAQ** — questions fréquentes filtrées par profil.
 - **Communauté** — idées, sondages, petites annonces et avis sur l'application, réservés aux résidents.
 - **Prestataires & Contrats** — annuaire, contrats d'entretien, échéances de visite, notation, et synthèse de contrat par l'assistant IA.

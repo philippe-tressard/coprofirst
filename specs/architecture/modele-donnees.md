@@ -155,7 +155,10 @@ Les deux axes restent distincts.
 | lot_id | FK Lot | Lot associé |
 | user_id | FK Utilisateur | Détenteur actuel |
 | statut | enum | `actif` \| `suspendu` \| `perdu` |
+| perimetre_cible | JSON, nullable | Ce que le badge **ouvre** : codes de périmètre (la copropriété, des bâtiments, les portillons). `null` = « on ne sait pas » (#953), jamais « tout » |
 | cree_le | datetime | — |
+
+**Les portes d'un badge** (#2217) : celles que ses lots justifient se **dérivent** (`utils/acces_portes`) — le bâtiment d'un logement, le bâtiment de la circulation qui dessert une place ou une cave, rien pour une place en accès direct ; un badge remis au locataire, par ses seuls lots. Elles ne sont que **proposées** au conseil, qui les reprend ou non : `perimetre_cible` ne s'écrit que par un geste du conseil (journalisé, `acces_perimetre_pose`) ou, en silence, par la règle de #953 (`utils/acces_perimetre`). Le constat `utils/acces_constats` signale le manque et l'excès, jamais bloquant.
 
 ### Télécommande
 
