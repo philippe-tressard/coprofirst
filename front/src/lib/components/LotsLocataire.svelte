@@ -15,6 +15,7 @@
 <script lang="ts">
 	import BadgeStatutBail from '$lib/components/BadgeStatutBail.svelte';
 	import CaracteristiquesLot from '$lib/components/CaracteristiquesLot.svelte';
+	import TableauCharges from '$lib/components/TableauCharges.svelte';
 	import QuestionsLocation from '$lib/components/QuestionsLocation.svelte';
 	import type { BailLocataire, MonLot } from '$lib/api';
 	import { fmtDateShort as fmt } from '$lib/date';
@@ -85,6 +86,10 @@
 	<div class="lots-section-label" class:lots-en-propre={section.enPropre}>
 		{section.titre} ({section.lots.length})
 	</div>
+	<!--  Les charges des lots qu'il possède (#2251) — ceux qu'il loue n'en montrent aucune. -->
+	{#if section.enPropre}<div class="largeur-saisie">
+			<TableauCharges lots={section.lots} />
+		</div>{/if}
 	{#each section.lots as lot (lot.id)}
 		<div class="card largeur-saisie carte-lot">
 			<h2 class="carte-lot-titre">{lot.batiment_nom ?? '—'} / {lot.numero}</h2>

@@ -328,6 +328,10 @@ export interface QuotePartLot {
 	nb_lots: number;
 	/** La somme des parts de tous les lots : ce qu'on contrôle contre le dénominateur. */
 	somme: number;
+	/** Ce que la clé finance, selon le règlement (« l'escalier des deux sous-sols », #2251). */
+	description: string | null;
+	/** Ce qu'il faut savoir de la clé quand ses parts ne font pas le dénominateur (#2251). */
+	note: string | null;
 }
 
 /** Un lot que le locataire peut se dire louer — `LotPropose` (`routers/lots.py`). */

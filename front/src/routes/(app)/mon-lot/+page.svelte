@@ -2,7 +2,7 @@
 	import { lotTypeLabel } from '$lib/utils';
 	import EntetePage from '$lib/components/EntetePage.svelte';
 	import CaracteristiquesLot from '$lib/components/CaracteristiquesLot.svelte';
-	import TotauxCharges from '$lib/components/TotauxCharges.svelte';
+	import TableauCharges from '$lib/components/TableauCharges.svelte';
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
 	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
 	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
@@ -312,9 +312,9 @@
 				/>
 			{/if}
 
-			<!--  Plusieurs lots : une même clé pèse pour la SOMME de mes parts (#2215). -->
+			<!--  Mes charges, lot par lot et au total (#2251, maquette A). -->
 			<div class="largeur-saisie">
-				<TotauxCharges {lots} />
+				<TableauCharges {lots} />
 			</div>
 
 			{#if selectedLot}

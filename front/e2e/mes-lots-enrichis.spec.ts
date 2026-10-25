@@ -1,11 +1,12 @@
 /*
- *  **« Mes lots » en dit le plus possible à son copropriétaire** (#2215).
+ *  **« Mes lots » : mes charges en un seul tableau croisé** (#2215, #2251 — maquette A du
+ *  25/10/2026).
  *
- *  Ce que l'état descriptif a rendu — la clé, ce qu'elle finance, la part en
- *  dix-millièmes et en pourcentage, le nombre de lots qui y contribuent — et ce qu'il faut
- *  en savoir : les alertes du lot, jamais bloquantes. Pour qui possède plusieurs lots, une
- *  même clé pèse pour la SOMME de ses parts. Lots FICTIFS ; l'API simulée rend la forme
- *  réelle de `LotRead` (type `MonLot`).
+ *  Ce qu'on lit : une ligne par clé, une colonne par lot (nommé), le total et le
+ *  pourcentage ; sous chaque clé, ce qu'elle finance et combien de lots y contribuent ;
+ *  l'écart d'une clé dit UNE fois sous le tableau, plus sur chaque carte ; la mention que
+ *  seul le syndic fait foi ; des cartes de lot qui ne répètent plus les chiffres et
+ *  renvoient à leur colonne. Lots FICTIFS ; l'API simulée rend la forme réelle de `LotRead`.
  */
 import type { Page } from '@playwright/test';
 import type { MonLot } from '../src/lib/api/patrimoine';
@@ -18,6 +19,8 @@ const BAILLEUR = {
 	role: 'propriétaire',
 	roles: ['propriétaire'],
 };
+const NOTE =
+	'Les parts que le règlement attribue à l’ensemble des lots totalisent 9 900 pour 10 000.';
 
 function lot(champs: Partial<MonLot>): MonLot {
 	return {
@@ -44,23 +47,27 @@ function lot(champs: Partial<MonLot>): MonLot {
 				perimetre: null,
 				nb_lots: 174,
 				somme: 10006,
+				description: 'Le sol et les parties communes générales',
+				note: null,
 			},
 			{
-				cle: 'ascenseur-a',
-				libelle: 'Ascenseur A',
+				cle: 'escalier-a',
+				libelle: 'Escalier A',
 				numerateur: 34,
 				denominateur: 10000,
-				perimetre: 'Bât. 4 › Ascenseur',
+				perimetre: null,
 				nb_lots: 38,
 				somme: 9900,
+				description: 'L’escalier du bâtiment A, du rez-de-chaussée aux étages',
+				note: NOTE,
 			},
 		],
-		explication: 'Ce logement contribue aux charges Charges générales pour 91/10 006.',
+		explication: null,
 		alertes: [
 			{
-				code: 'cle_en_ecart',
-				gravite: 'avertissement',
-				message: '« Ascenseur A » : les parts lues totalisent 9 900 pour 10 000.',
+				code: 'sans_numero_usage',
+				gravite: 'information',
+				message: 'Le numéro de la place ou de la cave n’est pas renseigné.',
 				lots: [],
 			},
 		],
@@ -79,16 +86,28 @@ const PLACE = lot({
 	numero_usage: '5 & 6',
 	quotes_parts: [
 		{
-			cle: 'ascenseur-a',
-			libelle: 'Ascenseur A',
+			cle: 'escalier-a-prime',
+			libelle: "Escalier A'",
 			numerateur: 6,
 			denominateur: 10000,
-			perimetre: 'Bât. 4 › Ascenseur',
-			nb_lots: 38,
-			somme: 9900,
+			perimetre: null,
+			nb_lots: 41,
+			somme: 10000,
+			description: 'L’escalier qui dessert les deux niveaux de sous-sol',
+			note: null,
+		},
+		{
+			cle: 'generales',
+			libelle: 'Charges générales',
+			numerateur: 9,
+			denominateur: 10006,
+			perimetre: null,
+			nb_lots: 174,
+			somme: 10006,
+			description: 'Le sol et les parties communes générales',
+			note: null,
 		},
 	],
-	explication: null,
 	alertes: [],
 });
 
@@ -101,52 +120,87 @@ async function ouvrir(page: Page, compte: object, lots: MonLot[]) {
 	await attendreHydratation(page);
 }
 
-test('les charges d’un lot se lisent clé par clé, en dix-millièmes et en pourcentage', async ({
+const charges = (page: Page) =>
+	page.getByRole('region', { name: 'Mes charges selon le règlement' });
+
+test('plusieurs lots : une colonne par lot nommé, le total et ce que finance chaque clé', async ({
 	page,
 }) => {
-	await ouvrir(page, PROPRIETAIRE, [lot({})]);
-	const charges = page.locator('.carte-lot').getByRole('table', { name: /charges/i });
-	const ascenseur = charges.getByRole('row', { name: /Ascenseur A/ });
-	await expect(ascenseur).toContainText('Bât. 4 › Ascenseur');
-	await expect(ascenseur).toContainText('38 lots y contribuent');
-	await expect(ascenseur).toContainText('34/10 000');
-	await expect(ascenseur).toContainText('0,34 %');
-	await expect(charges.getByRole('row', { name: /Charges générales/ })).toContainText('0,91 %');
+	await ouvrir(page, PROPRIETAIRE, [lot({}), PLACE]);
+	const tableau = charges(page).getByRole('table');
+	await expect(tableau.getByRole('columnheader', { name: 'Logement 901' })).toBeVisible();
+	await expect(tableau.getByRole('columnheader', { name: 'Place 902' })).toBeVisible();
+	const generales = tableau.getByRole('row', { name: /Charges générales/ });
+	//  91 + 9 = 100 dix-millièmes, au total.
+	await expect(generales).toContainText('100/10 006');
+	await expect(generales).toContainText('Le sol et les parties communes générales');
+	await expect(generales).toContainText('174 lots y contribuent');
+	//  La place ne contribue pas à l'escalier des étages : « — », pas un zéro.
+	const etages = tableau.getByRole('row', { name: /^Escalier A L’escalier du bâtiment A/ });
+	await expect(etages).toContainText('—');
+	await expect(tableau.getByRole('row', { name: /Escalier A'/ })).toContainText(
+		'L’escalier qui dessert les deux niveaux de sous-sol',
+	);
 });
 
-test('l’alerte d’un lot se dit sur sa carte, sans rien bloquer', async ({ page }) => {
+test('l’écart d’une clé se dit une fois sous le tableau, et seul le syndic fait foi', async ({
+	page,
+}) => {
+	await ouvrir(page, PROPRIETAIRE, [lot({}), PLACE]);
+	await expect(charges(page).getByText(NOTE)).toHaveCount(1);
+	await expect(charges(page)).toContainText(
+		'seuls les appels de fonds et les comptes tenus par le syndic',
+	);
+	//  La carte ne porte plus l'écart : il concerne la copropriété, pas le lot.
+	await expect(page.locator('.carte-lot').getByText(NOTE)).toHaveCount(0);
+});
+
+test('un seul lot : pas de colonne Total, sa colonne porte la part entière', async ({ page }) => {
+	await ouvrir(page, PROPRIETAIRE, [lot({})]);
+	const tableau = charges(page).getByRole('table');
+	await expect(tableau.getByRole('columnheader', { name: 'Total' })).toHaveCount(0);
+	await expect(tableau.getByRole('row', { name: /Charges générales/ })).toContainText('91/10 006');
+	await expect(tableau.getByRole('row', { name: /Charges générales/ })).toContainText('0,91 %');
+});
+
+test('la carte d’un lot ne répète plus les chiffres et renvoie à sa colonne', async ({ page }) => {
 	await ouvrir(page, PROPRIETAIRE, [lot({})]);
 	const carte = page.locator('.carte-lot');
-	await expect(carte.getByText('À savoir')).toBeVisible();
-	await expect(carte.getByText(/totalisent 9 900 pour 10 000/)).toBeVisible();
+	await expect(carte.getByRole('table')).toHaveCount(0);
+	await expect(carte.getByText('À savoir')).toHaveCount(0); // une information, pas une alerte
+	await carte.getByRole('link', { name: /Voir sa colonne dans le tableau des charges/ }).click();
+	await expect(charges(page).getByRole('columnheader', { name: 'Logement 901' })).toHaveClass(
+		/surligne/,
+	);
 });
 
-test('un lot sans alerte n’affiche aucun bloc d’alerte', async ({ page }) => {
-	await ouvrir(page, PROPRIETAIRE, [lot({ alertes: [] })]);
-	await expect(page.locator('.carte-lot').getByText('À savoir')).toHaveCount(0);
-});
-
-test('plusieurs lots : une même clé pèse pour la somme de mes parts', async ({ page }) => {
-	await ouvrir(page, PROPRIETAIRE, [lot({}), PLACE]);
-	const totaux = page.getByRole('region', { name: 'Mes charges, tous mes lots' });
-	const ascenseur = totaux.getByRole('row', { name: /Ascenseur A/ });
-	//  34 + 6 = 40 dix-millièmes, sur deux de mes lots.
-	await expect(ascenseur).toContainText('40/10 000');
-	await expect(ascenseur).toContainText('2 de mes lots');
-	await expect(ascenseur).toContainText('0,40 %');
-});
-
-test('un seul lot : pas de total, il redirait la fiche du lot', async ({ page }) => {
-	await ouvrir(page, PROPRIETAIRE, [lot({})]);
-	await expect(page.getByRole('region', { name: 'Mes charges, tous mes lots' })).toHaveCount(0);
-});
-
-test('la carte du bailleur porte la désignation, les charges et les alertes', async ({ page }) => {
+test('la vue du bailleur porte le même tableau, et ses cartes renvoient à leur colonne', async ({
+	page,
+}) => {
 	await ouvrir(page, BAILLEUR, [lot({}), PLACE]);
+	await expect(charges(page).getByRole('columnheader', { name: 'Place 902' })).toBeVisible();
 	const carte = page.locator('.lot-possede-card', { hasText: '902' });
 	await expect(carte).toContainText('Porte ou place 5 & 6');
-	await expect(carte.getByRole('table', { name: /charges/i })).toContainText('0,06 %');
-	const premiere = page.locator('.lot-possede-card', { hasText: '901' });
-	await expect(premiere.getByText(/totalisent 9 900 pour 10 000/)).toBeVisible();
-	await expect(page.getByRole('region', { name: 'Mes charges, tous mes lots' })).toBeVisible();
+	await expect(carte.getByRole('table')).toHaveCount(0);
+	await expect(carte.getByRole('link', { name: /Voir sa colonne/ })).toBeVisible();
+});
+
+test('sur smartphone, au-delà de deux lots : une clé par bloc, le détail par lot dessous', async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	const cave = lot({
+		...PLACE,
+		id: 3,
+		numero: '903',
+		type: 'cave',
+		nature: 'cave',
+		numero_usage: null,
+		quotes_parts: PLACE.quotes_parts?.map((q) => ({ ...q, numerateur: 1 })) ?? null,
+	});
+	await ouvrir(page, PROPRIETAIRE, [lot({}), PLACE, cave]);
+	await expect(charges(page).getByRole('table')).toBeHidden();
+	const bloc = charges(page).locator('li', { hasText: "Escalier A'" });
+	await expect(bloc).toContainText('L’escalier qui dessert les deux niveaux de sous-sol');
+	await expect(bloc).toContainText('Place 902 : 6 · Cave 903 : 1');
 });
