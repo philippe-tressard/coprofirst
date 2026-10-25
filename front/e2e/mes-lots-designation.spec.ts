@@ -49,6 +49,7 @@ function lot(champs: Partial<MonLot>): MonLot {
 		],
 		quotes_parts: [],
 		explication: 'Ce logement est desservi par Bât. 1 › Escaliers.',
+		alertes: [],
 		...champs,
 	};
 }
@@ -78,7 +79,17 @@ const PLACE = lot({
 			derive: true,
 		},
 	],
-	quotes_parts: [{ cle: 'generales', libelle: 'Générales', numerateur: 8, denominateur: 10000 }],
+	quotes_parts: [
+		{
+			cle: 'generales',
+			libelle: 'Générales',
+			numerateur: 8,
+			denominateur: 10000,
+			perimetre: null,
+			nb_lots: 174,
+			somme: 10000,
+		},
+	],
 	explication: PHRASE,
 });
 
@@ -102,7 +113,7 @@ test('la place desservie par un autre bâtiment dit sa circulation, sa part et p
 	await expect(carte.getByText('Situé dans')).toHaveCount(0);
 	await expect(carte.getByText('5 & 6')).toBeVisible();
 	await expect(carte.getByText(PHRASE)).toBeVisible();
-	await expect(carte.locator('.tantiemes')).toContainText('Générales');
+	await expect(carte.getByRole('table', { name: /charges/i })).toContainText('Générales');
 });
 
 test('la carte du bailleur porte la même phrase', async ({ page }) => {

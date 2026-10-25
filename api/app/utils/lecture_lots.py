@@ -11,10 +11,13 @@ from __future__ import annotations
 from typing import Iterable
 
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.models.charges import CleDeCharges, QuotePartLot
+from app.models.copropriete import NatureLot
 from app.models.perimetre import LotPerimetre
+from app.utils.alertes_lot import alertes_du_lot
+from app.utils.constats import Constat
 from app.utils.designation_lot import nature_du_lot
 from app.utils.lots_explication import phrase
 from app.utils.perimetres import arbre, perimetre_label_un
@@ -35,6 +38,12 @@ class QuotePart(BaseModel):
     libelle: str
     numerateur: int
     denominateur: int
+    #: Ce que la clé finance — « Bât. 3 › Ascenseur » —, quand le règlement le rattache à un nœud.
+    perimetre: str | None = None
+    #: Combien de lots contribuent à cette clé (un compte, aucun nom).
+    nb_lots: int = 0
+    #: La somme des parts de TOUS les lots : le contrôle contre le dénominateur déclaré.
+    somme: int = 0
 
 
 class Designation(BaseModel):
@@ -46,6 +55,9 @@ class Designation(BaseModel):
     quotes_parts: list[QuotePart] | None = None
     #: La phrase qui explique ce que le lot emporte (`utils/lots_explication`).
     explication: str | None = None
+    #: Ce que le propriétaire doit savoir de son lot (`utils/alertes_lot`) : désignation
+    #: incomplète, clé qui ne tombe pas juste. Jamais bloquant.
+    alertes: list[Constat] = []
 
 
 def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, Designation]:
@@ -83,6 +95,18 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
         if lu is not None:
             perimetres.setdefault(ligne.lot_id, []).append(lu)
 
+    #  Les sommes sont celles de TOUS les lots, pas seulement de la liste lue : une clé
+    #  « ne tombe pas juste » à l'échelle de la copropriété.
+    totaux = {
+        cle_id: (nb, somme or 0)
+        for cle_id, nb, somme in session.exec(
+            select(
+                QuotePartLot.cle_id,
+                func.count(QuotePartLot.id),  # type: ignore[arg-type]
+                func.sum(QuotePartLot.numerateur),
+            ).group_by(QuotePartLot.cle_id)
+        ).all()
+    }
     quotes: dict[int, list[QuotePart]] = {}
     for part, cle in session.exec(
         select(QuotePartLot, CleDeCharges)
@@ -96,6 +120,11 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
                 libelle=cle.libelle,
                 numerateur=part.numerateur,
                 denominateur=cle.denominateur,
+                perimetre=perimetre_label_un(par_id[cle.perimetre_id].code)
+                if cle.perimetre_id in par_id
+                else None,
+                nb_lots=totaux.get(cle.id, (0, 0))[0],
+                somme=totaux.get(cle.id, (0, 0))[1],
             )
         )
 
@@ -105,7 +134,14 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
 
     def _designation(lot) -> Designation:
         lus = perimetres.get(lot.id, [])
-        parts = quotes.get(lot.id, []) if avec_tantiemes(lot) else None
+        voit = avec_tantiemes(lot)
+        declaree = valeur(getattr(lot, "nature", None))
+        parts = quotes.get(lot.id, []) if voit else None
+        #  Les écarts se lisent sur les clés du LOT, mais ne dépendent pas de qui lit : un
+        #  locataire qui ne voit pas les tantièmes n'a pas à en lire les écarts non plus.
+        ecarts = [
+            (q.libelle, q.denominateur, q.somme) for q in (parts or []) if q.somme != q.denominateur
+        ]
         return Designation(
             circulation=_perimetre(lot.circulation_perimetre_id, "circulation"),
             perimetres=lus,
@@ -119,6 +155,17 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
                     if p.relation == "desservi_par" and p.code not in stationnement
                 ],
                 [(q.libelle, q.numerateur, q.denominateur) for q in parts] if parts else None,
+            ),
+            alertes=alertes_du_lot(
+                NatureLot(declaree) if declaree else None,
+                nature_du_lot(lot),
+                lot.etage,
+                getattr(lot, "numero_usage", None),
+                any(p.relation == "desservi_par" for p in lus)
+                or lot.circulation_perimetre_id is not None,
+                voit,
+                [(q.libelle, q.numerateur, q.denominateur) for q in (parts or [])],
+                ecarts,
             ),
         )
 

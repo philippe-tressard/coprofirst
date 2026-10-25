@@ -10,6 +10,7 @@
 //  ⚠️ La surface publique NE BOUGE PAS : `index.ts` réexporte tout, et les
 //  quarante et un `from '$lib/api'` du front ne changent pas d'une ligne.
 import { api, buildQuery, postFormData, BASE } from './client';
+import type { ConstatPatrimoine } from './etat-descriptif';
 import { uploadExcel, type CompteImportTableur } from './documents';
 import type { ExerciceLu, ResumeAffaires, SyntheseAffaire } from './synthese';
 import type { Perimetre as PerimetreDTO } from '$lib/perimetres';
@@ -302,6 +303,8 @@ export interface MonLot {
 	quotes_parts: QuotePartLot[] | null;
 	/** La phrase qui explique ce que le lot emporte (`utils/lots_explication`). */
 	explication: string | null;
+	/** Ce que le propriétaire doit savoir de son lot (`utils/alertes_lot`) — jamais bloquant. */
+	alertes: ConstatPatrimoine[];
 }
 
 /** Un périmètre d'un lot — `PerimetreDuLot` (`utils/lecture_lots.py`). */
@@ -319,6 +322,12 @@ export interface QuotePartLot {
 	libelle: string;
 	numerateur: number;
 	denominateur: number;
+	/** Ce que la clé finance — « Bât. 3 › Ascenseur » —, `null` si le règlement ne le rattache à rien. */
+	perimetre: string | null;
+	/** Combien de lots contribuent à cette clé. */
+	nb_lots: number;
+	/** La somme des parts de tous les lots : ce qu'on contrôle contre le dénominateur. */
+	somme: number;
 }
 
 /** Un lot que le locataire peut se dire louer — `LotPropose` (`routers/lots.py`). */
