@@ -15,6 +15,9 @@ import type { MonLot, QuotePartLot } from '$lib/api';
 import { lotTypeLabel } from '$lib/utils';
 
 /** Ce que vaut un tableau de charges : une lecture du règlement, jamais un décompte. */
+/** La fiche du syndic dans l'annuaire — ses coordonnées, déjà dans l'application. */
+export const FICHE_DU_SYNDIC = '/annuaire#syndic';
+
 export const AVIS_CHARGES =
 	'À titre d’information : ces parts sont lues dans le règlement de copropriété. Ce que ' +
 	'vous payez, seuls les appels de fonds et les comptes tenus par le syndic le disent.';
@@ -38,6 +41,10 @@ export interface LigneDeCle {
 	description: string | null;
 	/** Ce qu'il faut savoir de la clé (ses parts ne font pas le dénominateur), du serveur. */
 	note: string | null;
+	/** Faux : prévue au règlement, non appelée par le syndic en ce moment (#2252). */
+	appelee: boolean;
+	/** Son libellé sur l'appel de fonds — le rapprochement ligne à ligne (#2252). */
+	libelleSyndic: string | null;
 	nbLots: number;
 	denominateur: number;
 	/** La part de chacun de mes lots, par identifiant ; absent = il n'y contribue pas. */
@@ -47,7 +54,11 @@ export interface LigneDeCle {
 
 export interface TableauDesCharges {
 	colonnes: ColonneDeLot[];
+	/** Les clés que le syndic appelle : les lignes de l'appel de fonds. */
 	lignes: LigneDeCle[];
+	/** Prévues au règlement, non appelées en ce moment : repliées, jamais cachées — le jour
+	 *  où le syndic en appelle une, la question inverse se poserait (#2252). */
+	nonAppelees: LigneDeCle[];
 }
 
 /** Le tableau croisé de mes charges, dans l'ordre des clés que le serveur rend. */
@@ -65,6 +76,8 @@ export function tableauDesCharges(
 					libelle: part.libelle,
 					description: part.description ?? null,
 					note: part.note ?? null,
+					appelee: part.appelee ?? true,
+					libelleSyndic: part.libelle_syndic ?? null,
 					nbLots: part.nb_lots,
 					denominateur: part.denominateur,
 					parts: {},
@@ -76,9 +89,11 @@ export function tableauDesCharges(
 			ligne.total += part.numerateur;
 		}
 	}
+	const toutes = [...lignes.values()];
 	return {
 		colonnes: avecParts.map((l) => ({ id: l.id, nom: nomDuLot(l) })),
-		lignes: [...lignes.values()],
+		lignes: toutes.filter((l) => l.appelee),
+		nonAppelees: toutes.filter((l) => !l.appelee),
 	};
 }
 

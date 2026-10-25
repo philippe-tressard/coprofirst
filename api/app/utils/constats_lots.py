@@ -57,13 +57,14 @@ def constater(r: Releve) -> list[Constat]:
         "Lot sans propriétaire actif : personne n'y est rattaché comme copropriétaire.",
         [n for n in numeros if n not in r.lots_avec_proprietaire],
     )
-    if r.comptes_proprietaires_sans_lot:
+    if n := r.comptes_proprietaires_sans_lot:
+        #  Accordé, jamais « compte(s) » : une parenthèse se relit deux fois (#2252).
+        qui = "1 compte copropriétaire n'a" if n == 1 else f"{n} comptes copropriétaires n'ont"
         trouves.append(
             constat(
                 "proprietaire_sans_lot",
                 AVERTISSEMENT,
-                f"{r.comptes_proprietaires_sans_lot} compte(s) copropriétaire sans lot actif "
-                "(Admin › Personnes › Utilisateurs).",
+                f"{qui} aucun lot actif (Admin › Personnes › Utilisateurs).",
             )
         )
     #  Sans état descriptif appliqué, une annexe sans circulation n'a simplement pas

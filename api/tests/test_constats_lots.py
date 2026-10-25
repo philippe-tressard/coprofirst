@@ -38,7 +38,7 @@ def test_chaque_constat_se_declenche_sur_son_cas():
         )
     )
     assert trouves["sans_proprietaire"].lots == ["902"]
-    assert "2 compte(s)" in trouves["proprietaire_sans_lot"].message
+    assert "2 comptes copropriétaires n'ont aucun lot" in trouves["proprietaire_sans_lot"].message
     assert trouves["annexe_sans_circulation"].lots == ["902"]
     assert trouves["annexe_sans_circulation"].gravite == C.INFORMATION, (
         "état appliqué : accès direct"
@@ -47,6 +47,21 @@ def test_chaque_constat_se_declenche_sur_son_cas():
     assert "Bât. 2" in trouves["batiment_sans_lettre"].message
     assert trouves["hors_etat_descriptif"].lots == ["903"]
     assert "4 sur la fiche" in trouves["total_fiche"].message
+
+
+def test_un_seul_compte_sans_lot_se_dit_au_singulier():
+    (seul,) = [
+        c
+        for c in constater(
+            Releve(
+                lots=[("901", False, True)],
+                lots_avec_proprietaire={"901"},
+                comptes_proprietaires_sans_lot=1,
+            )
+        )
+        if c.code == "proprietaire_sans_lot"
+    ]
+    assert seul.message.startswith("1 compte copropriétaire n'a aucun lot actif")
 
 
 def test_un_patrimoine_juste_ne_dit_rien():
@@ -77,7 +92,7 @@ def test_chaque_route_de_l_onglet_exige_le_conseil_ou_l_administration():
     from app.routers.lots_admin import router
 
     routes = [r for r in router.routes if isinstance(r, APIRoute)]
-    assert len(routes) == 4, "une route ajoutée ou retirée : relire ce test"
+    assert len(routes) == 6, "une route ajoutée ou retirée : relire ce test"
     for route in routes:
         assert require_cs_or_admin in {d.call for d in route.dependant.dependencies}, route.path
 

@@ -368,6 +368,27 @@ def test_appliquer_pose_la_description_et_un_fichier_sans_feuille_ne_l_efface_pa
         session.rollback()
 
 
+def test_un_reimport_garde_ce_que_le_conseil_a_regle_sur_une_cle(batiments):
+    """Appelée ou non, libellé de l'appel de fonds : le conseil les règle, l'acte ne les dit
+    pas — un réimport de l'état descriptif ne les remet pas à zéro (#2252)."""
+    with Session(engine) as session:
+        _monter(session, batiments)
+        poser(session, _rows())
+        appliquer(session)
+        session.flush()
+        cle = session.exec(select(CleDeCharges).where(CleDeCharges.code == "ascenseur-x")).one()
+        assert cle.appelee is True and cle.libelle_syndic is None, "défaut : appelée, sans libellé"
+        cle.appelee, cle.libelle_syndic = False, "ASCENSEUR BAT X"
+        session.add(cle)
+        session.flush()
+        poser(session, _rows())
+        appliquer(session)
+        session.flush()
+        session.refresh(cle)
+        assert (cle.appelee, cle.libelle_syndic) == (False, "ASCENSEUR BAT X")
+        session.rollback()
+
+
 def test_appliquer_refuse_un_fichier_bloque_et_n_ecrit_rien(batiments):
     with Session(engine) as session:
         _, _, (logement, cave, place) = _monter(session, batiments)

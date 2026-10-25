@@ -35,6 +35,13 @@ class CleDeCharges(SQLModel, table=True):
     #: les deux niveaux de sous-sol ») — sans elle, « Escalier A » et « Escalier A' » ne
     #: se distinguent pas (#2251). Entre par l'atelier (feuille « Clés »).
     description: Optional[str] = None
+    #: Le syndic l'appelle-t-il en ce moment ? Le règlement prévoit des clés qu'aucun
+    #: budget n'alimente un temps (un escalier) : « Mes lots » les replie au lieu de les
+    #: monter au rang des autres (#2252). Réglé par le conseil ; vrai par défaut.
+    appelee: bool = Field(default=True)
+    #: Le libellé de la même clé sur l'appel de fonds du syndic (« CHARGES ASCENSEURS
+    #: BAT 4 ») — le rapprochement ligne à ligne, sans avoir à le demander (#2252).
+    libelle_syndic: Optional[str] = None
 
 
 class QuotePartLot(SQLModel, table=True):

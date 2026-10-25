@@ -332,6 +332,10 @@ export interface QuotePartLot {
 	description: string | null;
 	/** Ce qu'il faut savoir de la clé quand ses parts ne font pas le dénominateur (#2251). */
 	note: string | null;
+	/** Faux : prévue au règlement, non appelée par le syndic en ce moment (#2252). */
+	appelee: boolean;
+	/** Son libellé sur l'appel de fonds, quand le conseil l'a saisi (#2252). */
+	libelle_syndic: string | null;
 }
 
 /** Un lot que le locataire peut se dire louer — `LotPropose` (`routers/lots.py`). */

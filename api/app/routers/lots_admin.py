@@ -6,6 +6,9 @@ l'atelier d'import (`require_cs_or_admin`). La liste des lots elle-même est
 une seconde.
 
 🔴 Pas de création de lot ici : un lot naît d'un acte, il entre par l'import.
+Ni de clé de charges : elle naît de l'état descriptif. Le conseil n'en règle que ce
+que l'acte ne dit pas — appelée ou non par le syndic, son libellé sur l'appel de
+fonds (#2252).
 """
 
 from __future__ import annotations
@@ -18,6 +21,7 @@ from sqlmodel import Session, select
 
 from app.auth.deps import require_cs_or_admin
 from app.database import get_session
+from app.models.charges import CleDeCharges
 from app.models.copropriete import Lot
 from app.models.core import Utilisateur
 from app.models.perimetre import LotPerimetre, Perimetre, RelationLotPerimetre
@@ -36,6 +40,25 @@ class Rederivation(BaseModel):
 class PerimetreManuel(BaseModel):
     perimetre_id: int
     relation: Literal["situe_dans", "desservi_par"]
+
+
+class CleRead(BaseModel):
+    id: int
+    code: str
+    libelle: str
+    denominateur: int
+    description: str | None = None
+    appelee: bool
+    libelle_syndic: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class CleUpdate(BaseModel):
+    appelee: bool | None = None
+    #: Vide → aucun libellé : le rapprochement se tait plutôt que d'afficher un blanc.
+    libelle_syndic: str | None = None
 
 
 @router.get("/admin/constats", response_model=list[Constat])
@@ -115,3 +138,34 @@ def retirer_un_perimetre(
     from app.utils import mes_batiments
 
     mes_batiments.invalider_cache()
+
+
+@router.get("/admin/cles", response_model=list[CleRead])
+def cles_de_charges(
+    session: Session = Depends(get_session),
+    _: Utilisateur = Depends(require_cs_or_admin),
+):
+    """Les clés du règlement, dans l'ordre de l'état descriptif (#2252)."""
+    cles = session.exec(select(CleDeCharges).order_by(CleDeCharges.ordre, CleDeCharges.id))
+    return [CleRead.model_validate(c) for c in cles.all()]
+
+
+@router.patch("/admin/cles/{cle_id}", response_model=CleRead)
+def regler_une_cle(
+    cle_id: int,
+    body: CleUpdate,
+    session: Session = Depends(get_session),
+    _: Utilisateur = Depends(require_cs_or_admin),
+):
+    """Appelée ou non par le syndic, et son libellé sur l'appel de fonds — rien d'autre :
+    libellé, dénominateur et parts restent ceux de l'acte (#2252)."""
+    cle = ou_404(session, CleDeCharges, cle_id, "Clé de charges")
+    champs = body.model_dump(exclude_unset=True)
+    if champs.get("appelee") is not None:
+        cle.appelee = champs["appelee"]
+    if "libelle_syndic" in champs:
+        cle.libelle_syndic = (champs["libelle_syndic"] or "").strip() or None
+    session.add(cle)
+    session.commit()
+    session.refresh(cle)
+    return CleRead.model_validate(cle)
