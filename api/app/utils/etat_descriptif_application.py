@@ -79,14 +79,20 @@ def _ouvrir(session: Session, en_tete: dict) -> ImportEtatDescriptif:
     return imp
 
 
-def ecrire(session: Session, imp: ImportEtatDescriptif, rows: list, **issue) -> None:
+def ecrire(
+    session: Session,
+    imp: ImportEtatDescriptif,
+    rows: list,
+    descriptions: dict[str, str] | None = None,
+    **issue,
+) -> None:
     """Lit les lignes d'un tableau et les range sous `imp` — fichier ou lecture de l'IA.
 
     `issue` s'ajoute à ce que la lecture dit d'elle-même (la lecture de l'IA y
     note son issue) : les deux chemins remplissent la MÊME table de passage, et
     passent donc par les mêmes contrôles avant « Appliquer ».
     """
-    lecture = lire(rows)
+    lecture = lire(rows, descriptions)
     imp.entete_json = json.dumps(
         {
             "cles": [c.model_dump() for c in lecture.cles],
@@ -108,10 +114,12 @@ def ecrire(session: Session, imp: ImportEtatDescriptif, rows: list, **issue) -> 
     session.flush()
 
 
-def poser(session: Session, rows: list) -> ImportEtatDescriptif:
-    """Remplace le fichier en attente par celui-ci."""
+def poser(
+    session: Session, rows: list, descriptions: dict[str, str] | None = None
+) -> ImportEtatDescriptif:
+    """Remplace le fichier en attente par celui-ci (et ce que finance chaque clé, #2251)."""
     imp = _ouvrir(session, {})
-    ecrire(session, imp, rows)
+    ecrire(session, imp, rows, descriptions)
     return imp
 
 
@@ -210,6 +218,10 @@ def appliquer(session: Session) -> dict:
                 cle.denominateur,
                 rang,
             )
+        #  Une définition lue remplace la précédente ; un fichier sans feuille « Clés »
+        #  n'efface pas celle qu'un import antérieur a posée (#2251).
+        if cle.description:
+            existante.description = cle.description
         session.add(existante)
         cles[cle.code] = existante
     session.flush()

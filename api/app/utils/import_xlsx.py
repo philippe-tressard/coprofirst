@@ -98,6 +98,24 @@ def lignes_du_classeur(contenu: bytes) -> list:
     return _lignes(io.BytesIO(contenu))
 
 
+def feuille_du_classeur(contenu: bytes, nom: str) -> list | None:
+    """Les lignes de la feuille `nom` (casse et accents ignorés), `None` si elle manque —
+    la feuille « Clés » facultative de l'état descriptif (#2251)."""
+    try:
+        import openpyxl  # type: ignore
+    except ImportError:
+        raise RuntimeError(_ERREUR_OPENPYXL)
+
+    classeur = openpyxl.load_workbook(io.BytesIO(contenu), read_only=True, data_only=True)
+    try:
+        for feuille in classeur.worksheets:
+            if normaliser(feuille.title) == normaliser(nom):
+                return list(feuille.iter_rows(values_only=True))
+        return None
+    finally:
+        classeur.close()
+
+
 def importer_bytes(
     contenu: bytes,
     session: Session,

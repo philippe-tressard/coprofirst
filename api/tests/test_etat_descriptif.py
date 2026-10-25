@@ -303,11 +303,68 @@ def test_la_lecture_d_un_lot_dit_ses_parts_leurs_totaux_et_ce_qu_il_faut_savoir(
         session.add(part)
         session.flush()
         apres = designations(session, [logement, place], lambda _lot: True)
-        assert [c.code for c in apres[place.id].alertes] == ["cle_en_ecart"]
-        assert "il en manque 1" in apres[place.id].alertes[0].message
+        #  L'écart se dit sous la clé (#2251), plus en alerte du lot.
+        assert not apres[place.id].alertes
+        notes = [q.note for q in apres[place.id].quotes_parts if q.note]
+        assert len(notes) == 1 and "il en manque 1" in notes[0]
         #  Un lecteur qui ne voit pas les tantièmes n'en lit pas non plus les écarts.
         sans = designations(session, [place], lambda _lot: False)
         assert sans[place.id].quotes_parts is None and not sans[place.id].alertes
+        session.rollback()
+
+
+# ── Ce que finance une clé (#2251) ────────────────────────────────────────────
+
+
+def test_la_feuille_cles_dit_ce_que_finance_chaque_cle():
+    feuille = [
+        ("clé", "ce qu'elle finance"),
+        ("Ascenseur X", "L'ascenseur du bâtiment X"),
+        ("Escalier X'", "L'escalier qui dessert les deux niveaux de sous-sol"),
+        ("Générales", None),  # une ligne sans texte ne pose rien
+    ]
+    lues = E.lire_descriptions(feuille)
+    assert lues == {
+        "ascenseur-x": "L'ascenseur du bâtiment X",
+        "escalier-x-prime": "L'escalier qui dessert les deux niveaux de sous-sol",
+    }
+    lu = E.lire([EN_TETES], lues)
+    assert [c.description for c in lu.cles] == [None, "L'ascenseur du bâtiment X"]
+    #  Une feuille absente, ou sans les deux colonnes, ne rend rien : c'est facultatif.
+    assert E.lire_descriptions(None) == {} and E.lire_descriptions([("a", "b")]) == {}
+
+
+def test_la_feuille_cles_se_lit_dans_le_classeur_a_cote_de_la_premiere():
+    import io
+
+    import openpyxl
+
+    from app.utils.import_xlsx import feuille_du_classeur, lignes_du_classeur
+
+    classeur = openpyxl.Workbook()
+    classeur.active.append(list(EN_TETES))
+    classeur.create_sheet("Clés").append(["clé", "ce qu'elle finance"])
+    tampon = io.BytesIO()
+    classeur.save(tampon)
+    contenu = tampon.getvalue()
+    assert lignes_du_classeur(contenu)[0][0] == "Lot"
+    assert feuille_du_classeur(contenu, E.FEUILLE_CLES) == [("clé", "ce qu'elle finance")]
+    assert feuille_du_classeur(contenu, "Absente") is None
+
+
+def test_appliquer_pose_la_description_et_un_fichier_sans_feuille_ne_l_efface_pas(batiments):
+    with Session(engine) as session:
+        _monter(session, batiments)
+        poser(session, _rows(), {"ascenseur-x": "L'ascenseur du bâtiment X"})
+        appliquer(session)
+        session.flush()
+        cle = session.exec(select(CleDeCharges).where(CleDeCharges.code == "ascenseur-x")).one()
+        assert cle.description == "L'ascenseur du bâtiment X"
+        poser(session, _rows())
+        appliquer(session)
+        session.flush()
+        session.refresh(cle)
+        assert cle.description == "L'ascenseur du bâtiment X"
         session.rollback()
 
 
