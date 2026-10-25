@@ -90,6 +90,14 @@ const EXCEPTIONS = {
 			'Tombe quand `Modale` posera elle-même le focus initial. Était tu par un ' +
 			'`svelte-ignore` jusqu’à #1045.',
 	},
+	'src/lib/components/TableLignesEtatDescriptif.svelte::a11y_no_noninteractive_tabindex': {
+		depuis: '25/10/2026',
+		raison:
+			'le tableau des lignes lues défile en largeur (treize clés de charges) : la zone doit ' +
+			'prendre le focus pour se parcourir au clavier (WCAG 2.1.1, règle axe ' +
+			'« scrollable-region-focusable ») ; elle porte `role="region"` et un `aria-label`. ' +
+			'Même cas que `TexteMarkdown`.',
+	},
 	'src/lib/components/TexteMarkdown.svelte::a11y_no_noninteractive_tabindex': {
 		depuis: '14/10/2026',
 		raison:

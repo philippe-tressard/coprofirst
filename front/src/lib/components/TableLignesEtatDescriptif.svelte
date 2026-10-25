@@ -29,7 +29,7 @@
 </script>
 
 <div
-	class="defilement"
+	class="table-wrap defilement"
 	tabindex="0"
 	role="region"
 	aria-label="Lignes lues — défiler pour voir toutes les clés"
