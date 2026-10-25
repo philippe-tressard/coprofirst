@@ -448,6 +448,7 @@ périmés en silence :
 |---|---|---|
 | `[0-9]+\.[0-9]+\.[0-9]+` sur la racine | la racine redirige vers `/auth/connexion` | 03/08/2026 |
 | `"hostachy-front",VAR="x.y.z"` | Rollup élague l'import JSON : le **nom du paquet** a disparu du bundle, qui ne porte plus que `const fn="3.20.0",hn={version:fn}` | 30/08/2026, MEP v3.20.0 |
+| `{version:"x.y.z"}` entre **guillemets** | Rolldown (Vite 8) écrit ses chaînes en gabarits à **accents graves** : `` var e=`hostachy-front`,t=`3.13.9`,n={name:e,version:t,…`` | 24/10/2026, essai Vite 8 (#2205) — lu en essai, avant toute MEP |
 
 Le second avait été choisi *parce que* le nom « survit à la minification,
 contrairement aux noms de variables ». C'était vrai, et insuffisant : ce n'est pas

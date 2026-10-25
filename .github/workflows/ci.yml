@@ -2404,6 +2404,14 @@ jobs:
         working-directory: front
         run: npm run lint:lock
 
+      # 🔒 Un paquet importé est un paquet DÉCLARÉ (#2205, 24/10/2026).
+      # `esbuild`, importé par `scripts/lib/charger-module.mjs`, n'a jamais figuré
+      # dans `package.json` : Vite 6 l'apportait. Vite 8 ne l'apporte plus, et douze
+      # contrôles du front sont tombés d'un coup au rejeu, après la montée.
+      - name: Tout paquet importé est déclaré dans package.json
+        working-directory: front
+        run: npm run lint:imports-declares
+
       # 🔴 DEUX COPIES SUR CINQ AVAIENT DIVERGÉ SUR CE QU'ON NE VOIT PAS (18/09/2026).
       #
       # Le dépliement Unicode qui retire les accents était recopié cinq fois :
@@ -2678,3 +2686,16 @@ jobs:
             exit 1
           fi
           exit $code
+
+      # 🔒 Le service worker s'enregistre, DANS UN NAVIGATEUR (#2205, 24/10/2026).
+      # `lint:sw` lit le bundle ; il s'est trompé deux fois (chemin relatif jamais
+      # vu du navigateur, le 26/07 ; accents graves de Rolldown pris pour une
+      # disparition, le 24/10). Ceci lance l'application CONSTRUITE et demande au
+      # navigateur. Le service worker n'existe qu'au build : `vite dev` n'en sert pas.
+      - name: Construire l'application (le service worker n'existe qu'au build)
+        working-directory: front
+        run: npm run build
+
+      - name: Service worker enregistré (Chromium, application construite)
+        working-directory: front
+        run: npm run e2e:sw

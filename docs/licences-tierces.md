@@ -20,6 +20,7 @@ se relit ici. La politique — liste blanche, exceptions et leurs motifs — vit
 | whatsapp-bridge | `libsignal` | `GPL-3.0` | Protocole de chiffrement Signal, tiré par `baileys` (seule bibliothèque WhatsApp Web maintenue de l'écosystème Node), non substituable. Copyleft fort. Il s'exécute dans le bridge, conteneur distinct de l'API et du front, avec lesquels il ne communique que par HTTP. | compatible avec l'AGPL-3.0-or-later (la GPLv3 et l'AGPLv3 se combinent l'une avec l'autre (§13 de chacune) ; programme distinct, joint par HTTP) — analyse du 08/10/2026, validée par l'auteur |
 | whatsapp-bridge | `@img/sharp-libvips-*`, `@img/sharp-win32-*`, `@img/sharp-wasm32` | `LGPL-3.0-or-later`<br>`Apache-2.0 AND LGPL-3.0-or-later`<br>`Apache-2.0 AND LGPL-3.0-or-later AND MIT` | Binaires de libvips embarqués par `sharp`, dépendance pair de `baileys` (traitement d'images). Copyleft faible ; une seule variante de plateforme est installée dans l'image (Linux musl). Même conteneur que libsignal. | compatible avec l'AGPL-3.0-or-later (la LGPL-3.0-or-later l'est par construction) — analyse du 08/10/2026, validée par l'auteur |
 | front | `caniuse-lite` | `CC-BY-4.0` | Table de compatibilité des navigateurs lue par `browserslist` au moment de la construction (devDependencies). Licence de données, qui demande l'attribution. | compatible avec l'AGPL-3.0-or-later (la CC-BY-4.0 est compatible avec la GPLv3 ; outil de construction, non distribué ; attribution portée par cet inventaire) — analyse du 08/10/2026, validée par l'auteur |
+| front | `lightningcss`, `lightningcss-*` | `MPL-2.0` | Minifieur CSS de Vite 8 (#2205), dépendance directe de `vite` : il n'est pas substituable sans quitter la chaîne de construction. Copyleft faible au niveau du fichier ; utilisé sans modification. Les binaires de plateforme (un par système) sont des paquets optionnels, dont un seul est installé. | compatible avec l'AGPL-3.0-or-later (la MPL-2.0 admet la GPL et l'AGPL comme « Secondary Licenses » ; outil de construction, présent dans node_modules de l'image sans être modifié) — analyse du 08/10/2026, validée par l'auteur |
 | api | `psycopg`, `psycopg-binary` | `LGPL-3.0-only` | Pilote PostgreSQL (DI-7, #1759 ; tests depuis P2-5, #1747), employé tel quel par SQLAlchemy. Copyleft faible ; les roues binaires embarquent libpq (licence PostgreSQL) et ses dépendances. Seul pilote qui rend une clé violée en `IntegrityError` — pg8000, sous BSD, ne le faisait pas. | compatible avec l'AGPL-3.0-or-later (la LGPL-3.0 permet l'usage d'une bibliothèque par une œuvre sous GPLv3 ou AGPLv3 (§4 et §5 de la LGPL), qui la distribue avec sa licence et son source) — analyse du 08/10/2026, validée par l'auteur |
 | api | `certifi` | `MPL-2.0` | Magasin de certificats racine (tiré par httpx). Copyleft faible au niveau du fichier ; utilisé sans modification. | compatible avec l'AGPL-3.0-or-later (la MPL-2.0 admet la GPL et l'AGPL comme « Secondary Licenses ») — analyse du 08/10/2026, validée par l'auteur |
 | api | `pyphen` | `GPL-2.0-or-later \| LGPL-2.0-or-later \| MPL-1.1 (classifieurs multiples)` | Césure des mots, tirée par WeasyPrint (documents PDF). Le paquet se dit « GPL 2.0+/LGPL 2.1+/MPL 1.1 tri-license » (fichier LICENSE installé) ; ses dictionnaires viennent de LibreOffice sous GPL, LGPL et/ou MPL. | compatible avec l'AGPL-3.0-or-later (par son option GPL-2.0-or-later ou LGPL-2.1-or-later) — analyse du 08/10/2026, validée par l'auteur |
@@ -34,7 +35,7 @@ se relit ici. La politique — liste blanche, exceptions et leurs motifs — vit
 
 Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `stairs` : absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur; `whatsapp` : Simple Icons.
 
-## Dépendances — `front` (549 paquets)
+## Dépendances — `front` (580 paquets)
 
 | Paquet | Licence | Déclaré | Admise |
 |---|---|---|---|
@@ -181,8 +182,25 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `@keyv/bigmap` | `MIT` | devDependencies | oui |
 | `@keyv/serialize` | `MIT` | devDependencies | oui |
 | `@napi-rs/lzma-linux-x64-gnu` | `MIT` | devDependencies (optionnel) | oui |
+| `@oxc-project/types` | `MIT` | devDependencies | oui |
 | `@playwright/test` | `Apache-2.0` | devDependencies | oui |
 | `@polka/url` | `MIT` | devDependencies | oui |
+| `@rolldown/binding-android-arm-eabi` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-android-arm64` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-darwin-arm64` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-darwin-x64` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-freebsd-x64` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-linux-arm-gnueabihf` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-linux-arm64-gnu` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-linux-arm64-musl` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-linux-ppc64-gnu` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-linux-s390x-gnu` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-linux-x64-gnu` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-linux-x64-musl` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-openharmony-arm64` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-win32-arm64-msvc` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/binding-win32-x64-msvc` | `MIT` | devDependencies (optionnel) | oui |
+| `@rolldown/pluginutils` | `MIT` | devDependencies | oui |
 | `@rollup/plugin-babel` | `MIT` | devDependencies | oui |
 | `@rollup/plugin-commonjs` | `MIT` | devDependencies | oui |
 | `@rollup/plugin-json` | `MIT` | devDependencies | oui |
@@ -221,7 +239,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `@sveltejs/kit` | `MIT` | devDependencies | oui |
 | `@sveltejs/load-config` | `MIT` | devDependencies | oui |
 | `@sveltejs/vite-plugin-svelte` | `MIT` | devDependencies | oui |
-| `@sveltejs/vite-plugin-svelte-inspector` | `MIT` | devDependencies | oui |
 | `@tiptap/core` | `MIT` | dependencies | oui |
 | `@tiptap/extension-blockquote` | `MIT` | dependencies | oui |
 | `@tiptap/extension-bold` | `MIT` | dependencies | oui |
@@ -309,6 +326,7 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `deepmerge` | `MIT` | devDependencies | oui |
 | `define-data-property` | `MIT` | devDependencies | oui |
 | `define-properties` | `MIT` | devDependencies | oui |
+| `detect-libc` | `Apache-2.0` | devDependencies | oui |
 | `devalue` | `MIT` | devDependencies | oui |
 | `dompurify` | `(MPL-2.0 OR Apache-2.0)` | dependencies | oui |
 | `dunder-proto` | `MIT` | devDependencies | oui |
@@ -424,6 +442,18 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `known-css-properties` | `MIT` | devDependencies | oui |
 | `leven` | `MIT` | devDependencies | oui |
 | `levn` | `MIT` | devDependencies | oui |
+| `lightningcss` | `MPL-2.0` | devDependencies | **exception** |
+| `lightningcss-android-arm64` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
+| `lightningcss-darwin-arm64` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
+| `lightningcss-darwin-x64` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
+| `lightningcss-freebsd-x64` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
+| `lightningcss-linux-arm-gnueabihf` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
+| `lightningcss-linux-arm64-gnu` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
+| `lightningcss-linux-arm64-musl` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
+| `lightningcss-linux-x64-gnu` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
+| `lightningcss-linux-x64-musl` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
+| `lightningcss-win32-arm64-msvc` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
+| `lightningcss-win32-x64-msvc` | `MPL-2.0` | devDependencies (optionnel) | **exception** |
 | `lilconfig` | `MIT` | devDependencies | oui |
 | `linkifyjs` | `MIT` | dependencies | oui |
 | `locate-character` | `MIT` | devDependencies | oui |
@@ -446,6 +476,7 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `object-inspect` | `MIT` | devDependencies | oui |
 | `object-keys` | `MIT` | devDependencies | oui |
 | `object.assign` | `MIT` | devDependencies | oui |
+| `obug` | `MIT` | devDependencies | oui |
 | `optionator` | `MIT` | devDependencies | oui |
 | `orderedmap` | `MIT` | dependencies | oui |
 | `own-keys` | `MIT` | devDependencies | oui |
@@ -496,6 +527,7 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `regjsparser` | `BSD-2-Clause` | devDependencies | oui |
 | `require-from-string` | `MIT` | devDependencies | oui |
 | `resolve` | `MIT` | devDependencies | oui |
+| `rolldown` | `MIT` | devDependencies | oui |
 | `rollup` | `MIT` | devDependencies | oui |
 | `rope-sequence` | `MIT` | dependencies | oui |
 | `sade` | `MIT` | devDependencies | oui |

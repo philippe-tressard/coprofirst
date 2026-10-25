@@ -86,6 +86,32 @@ export function composantsDifferes(sources) {
 	return [...cles].sort();
 }
 
+/**  Les barils (`index.ts` qui font `export * from …`) qu'un `import()` ne doit pas
+ *   viser : le moteur doit alors fabriquer l'objet-espace de noms de TOUS leurs
+ *   exports, et il y accroche, par un import statique, le morceau de chaque module
+ *   exporté — y compris ceux qu'une seule fenêtre chargée à la demande utilise.
+ *
+ *   🔴 Constaté en montant Vite 8 (Rolldown), #2205 : `await import('$lib/api')`
+ *   (`fichiers.ts`) faisait importer STATIQUEMENT, par le morceau « api » que
+ *   presque tout écran charge, les onglets Maintenance, Installations, Courriels
+ *   et Annuaire CS — chacun portait son client d'API. 116 couples écran/onglet en
+ *   étaient alourdis ; Rollup (Vite 6) ne le faisait pas. La parade est de viser le
+ *   module précis (`$lib/api/documents`), qui reste chargé à la demande. */
+export const BARILS_INTERDITS_EN_IMPORT_DYNAMIQUE = ['$lib/api'];
+
+/**  Les `import('<baril>')` d'un jeu de sources : `[baril, extrait]`. */
+export function importsDeBarils(sources) {
+	const trouves = [];
+	for (const texte of sources) {
+		for (const baril of BARILS_INTERDITS_EN_IMPORT_DYNAMIQUE) {
+			const nu = baril.replace(/[$/]/g, '\\$&');
+			const motif = new RegExp(`import\\(\\s*['"\`]${nu}['"\`]\\s*\\)`, 'g');
+			for (const m of texte.matchAll(motif)) trouves.push([baril, m[0]]);
+		}
+	}
+	return trouves;
+}
+
 /**  Le texte de chaque `.svelte` et `.ts` de `src/`. */
 function lireSources(dossier) {
 	const textes = [];
@@ -207,6 +233,22 @@ function selftest() {
 		'composant fondu dans un morceau commun : signalé',
 		juger(m, lire, ['src/lib/components/Fondu.svelte']).fondus.length === 1,
 	]);
+	cas.push([
+		'import() du baril $lib/api : refusé',
+		importsDeBarils(["const { documents } = await import('$lib/api');"]).length === 1,
+	]);
+	cas.push([
+		'import() du baril, guillemets doubles : refusé aussi',
+		importsDeBarils(['await import("$lib/api")']).length === 1,
+	]);
+	cas.push([
+		'import() d’un module précis de l’API : admis',
+		importsDeBarils(["await import('$lib/api/documents')"]).length === 0,
+	]);
+	cas.push([
+		'import statique du baril : admis (ce n’est pas un import())',
+		importsDeBarils(["import { api } from '$lib/api';"]).length === 0,
+	]);
 	const rates = cas.filter(([, v]) => !v);
 	for (const [n, v] of cas) console.log(`${v ? '✓' : '✗'} ${n}`);
 	process.exit(rates.length ? 1 : 0);
@@ -236,7 +278,19 @@ if (!ecrans.length) {
 	process.exit(1);
 }
 
-const differes = composantsDifferes(lireSources(join(CLIENT, '..', '..', '..', 'src')));
+const sources = lireSources(join(CLIENT, '..', '..', '..', 'src'));
+const barils = importsDeBarils(sources);
+if (barils.length) {
+	console.error(
+		`\n✗ lint:poids-ouverture — ${barils.length} import() dynamique(s) d'un baril :\n\n` +
+			barils.map(([b, x]) => `  ${x}  (${b})`).join('\n') +
+			`\n\n  Le moteur de Vite 8 y accroche, en import statique, le morceau de chaque module\n` +
+			`  exporté : les fenêtres chargées à la demande se retrouvent dans le chargement initial.\n` +
+			`  Viser le module précis (\`import('$lib/api/documents')\`).\n`,
+	);
+	process.exit(1);
+}
+const differes = composantsDifferes(sources);
 if (!differes.length) {
 	console.error(
 		"\n✗ lint:poids-ouverture — aucun `charger={() => import('$lib/components/….svelte')}` lu dans src/ :\n" +
