@@ -11,21 +11,13 @@
 <script lang="ts">
 	import type { EtatDescriptif, LigneEtatDescriptif } from '$lib/api';
 	import { abregerCle, libelleEcart, sommeDeCle } from '$lib/etat-descriptif';
-	import { parAttribut } from '$lib/table-statuts';
+	import { lotTypeLabel } from '$lib/utils';
 
 	/** Les lignes à montrer (la recherche en écarte). */
 	export let lignes: LigneEtatDescriptif[];
 	/** Toutes les lignes lues : les sommes ne dépendent pas de la recherche. */
 	export let toutes: LigneEtatDescriptif[];
 	export let cles: EtatDescriptif['cles'];
-
-	const { libelle: NATURE } = parAttribut({
-		logement: { libelle: 'Logement' },
-		commerce: { libelle: 'Commerce' },
-		cave: { libelle: 'Cave' },
-		parking: { libelle: 'Parking' },
-		divers: { libelle: 'Divers' },
-	});
 </script>
 
 <div
@@ -57,7 +49,7 @@
 					</td>
 					<td>{l.batiment ?? '—'}</td>
 					<td class:illisible={!l.nature_lue}>
-						{l.nature_lue ? NATURE[l.nature_lue] : (l.nature ?? '—')}
+						{l.nature_lue ? lotTypeLabel(l.nature_lue) : (l.nature ?? '—')}
 					</td>
 					<td>{l.numero_usage ?? '—'}</td>
 					<td>{l.niveau ?? '—'}</td>

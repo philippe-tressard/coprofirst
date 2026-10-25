@@ -300,3 +300,8 @@ router.include_router(_router_imports)
 from app.routers.lots_etat_descriptif import router as _router_etat_descriptif  # noqa: E402
 
 router.include_router(_router_etat_descriptif)
+
+#  Admin › Copropriété › Lots (#2216) : constats, re-dérivation, périmètres manuels.
+from app.routers.lots_admin import router as _router_admin  # noqa: E402
+
+router.include_router(_router_admin)

@@ -129,4 +129,20 @@ FAQ_COMPLEMENTAIRE = [
         "Le conseil syndical peut enregistrer une demande <strong>pour</strong> quelqu'un — ce que vous avez signalé par téléphone, par exemple. Le formulaire porte alors une section <strong>Au nom de</strong>, et c'est votre nom qui s'affiche sur la fiche : c'est bien de votre demande qu'il s'agit, et vous recevez les courriels de suivi. La personne qui a fait la saisie reste indiquée comme auteur — les deux informations coexistent parce qu'elles ne disent pas la même chose. Cela vaut pour les affaires comme pour les actualités.",
         15,
     ),
+    #  Les lots selon le règlement (#2219, épopée #2220) : deux questions que le
+    #  résident se pose dès que sa place ou sa cave le rattache à une autre
+    #  circulation. Aucun bâtiment nommé, aucun chiffre : la règle vaut partout,
+    #  l'exemple de chacun se lit dans « Mes lots ».
+    (
+        "🚗 Stationnement",
+        "Pourquoi est-ce que je paie l'ascenseur d'un autre bâtiment ?",
+        "Le règlement de copropriété rattache chaque place et chaque cave à la <strong>circulation</strong> qui la dessert — l'ascenseur et l'escalier par lesquels on la rejoint —, qui n'est pas forcément celle du bâtiment où vous habitez. Vous contribuez donc aux charges de cet ascenseur et de cet escalier selon vos tantièmes, et ce qui les concerne (une panne, un entretien) vous concerne aussi. Dans <strong>Mes lots</strong>, chaque lot le dit en une phrase : par quoi il est desservi, et pour quelle part il contribue.",
+        17,
+    ),
+    (
+        "🚗 Stationnement",
+        "J'ai seulement une place de parking : qu'est-ce que je vois ?",
+        "Vous êtes copropriétaire à part entière : vous votez à l'assemblée générale et contribuez aux charges générales et à celles de la circulation qui dessert votre place. L'application vous montre ce qui concerne cette circulation — son ascenseur, son escalier — et le parking, mais pas le hall ni les actualités d'un bâtiment où vous n'habitez pas. Les documents et décisions de la copropriété vous restent ouverts comme à tout copropriétaire.",
+        18,
+    ),
 ]

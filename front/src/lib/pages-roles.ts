@@ -158,6 +158,14 @@ export const PAGES_ROLES: PageDef[] = [
 				descriptif: "L'arborescence des bâtiments et des espaces que l'on peut viser.",
 			},
 			{
+				id: 'lots',
+				route: '/admin?onglet=lots',
+				label: 'Lots',
+				groupe: '🏢 Copropriété',
+				descriptif:
+					'Les lots selon le règlement — ce qui les dessert, leurs périmètres, et ce qui ne tombe pas juste.',
+			},
+			{
 				id: 'fonctionnement',
 				route: '/admin?onglet=fonctionnement',
 				label: 'Fonctionnement',
