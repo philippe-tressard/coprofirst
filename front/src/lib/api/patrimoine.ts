@@ -300,6 +300,8 @@ export interface MonLot {
 	perimetres: PerimetreDuLot[];
 	/** Ses tantièmes par clé — `null` quand le lecteur n'a pas à les voir (un locataire). */
 	quotes_parts: QuotePartLot[] | null;
+	/** La phrase qui explique ce que le lot emporte (`utils/lots_explication`). */
+	explication: string | null;
 }
 
 /** Un périmètre d'un lot — `PerimetreDuLot` (`utils/lecture_lots.py`). */

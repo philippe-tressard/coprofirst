@@ -460,6 +460,7 @@ ATTENDU_LOT = {
     "circulation": None,
     "perimetres": [],
     "quotes_parts": None,
+    "explication": None,
 }
 ATTENDU_ACCES = {
     "code": "V-9",

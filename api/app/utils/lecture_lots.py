@@ -15,6 +15,8 @@ from sqlmodel import Session, select
 
 from app.models.charges import CleDeCharges, QuotePartLot
 from app.models.perimetre import LotPerimetre
+from app.utils.designation_lot import nature_du_lot
+from app.utils.lots_explication import phrase
 from app.utils.perimetres import arbre, perimetre_label_un
 from app.utils.valeurs import valeur
 
@@ -42,6 +44,8 @@ class Designation(BaseModel):
     perimetres: list[PerimetreDuLot] = []
     #: `None` quand le lecteur n'a pas à les voir — jamais une liste vide trompeuse.
     quotes_parts: list[QuotePart] | None = None
+    #: La phrase qui explique ce que le lot emporte (`utils/lots_explication`).
+    explication: str | None = None
 
 
 def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, Designation]:
@@ -95,11 +99,27 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
             )
         )
 
-    return {
-        lot.id: Designation(
+    #  La phrase ne cite que la CIRCULATION et les caves : le stationnement concerne
+    #  tout le monde, le nommer n'expliquerait rien.
+    stationnement = {n.code for n in noeuds.values() if n.desserte == "stationnement"}
+
+    def _designation(lot) -> Designation:
+        lus = perimetres.get(lot.id, [])
+        parts = quotes.get(lot.id, []) if avec_tantiemes(lot) else None
+        return Designation(
             circulation=_perimetre(lot.circulation_perimetre_id, "circulation"),
-            perimetres=perimetres.get(lot.id, []),
-            quotes_parts=quotes.get(lot.id, []) if avec_tantiemes(lot) else None,
+            perimetres=lus,
+            quotes_parts=parts,
+            explication=phrase(
+                nature_du_lot(lot),
+                lot.etage,
+                [
+                    p.libelle
+                    for p in lus
+                    if p.relation == "desservi_par" and p.code not in stationnement
+                ],
+                [(q.libelle, q.numerateur, q.denominateur) for q in parts] if parts else None,
+            ),
         )
-        for lot in lots
-    }
+
+    return {lot.id: _designation(lot) for lot in lots}
