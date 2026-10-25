@@ -12,6 +12,9 @@
 	import type { Bail, MonLot } from '$lib/api';
 	import { nomLocataire } from '$lib/bail';
 	import BadgeStatutBail from '$lib/components/BadgeStatutBail.svelte';
+	import DetailReglementLot from '$lib/components/DetailReglementLot.svelte';
+	import TotauxCharges from '$lib/components/TotauxCharges.svelte';
+	import { designationDuLot } from '$lib/charges-lots';
 	import { fmtDateShort as fmt } from '$lib/date';
 	import { etageLabel, lotTypeComplet } from '$lib/utils';
 
@@ -41,6 +44,9 @@
 	$: lotsVacants = lots.filter((l) => !bauxActifs.find((b) => b.lot_id === l.id));
 </script>
 
+<!-- Le total de mes charges, tous mes lots confondus (#2215) -->
+<TotauxCharges {lots} />
+
 <!-- Section 1 : Tous les lots possédés -->
 <div class="lots-section-label">🏢 Lots possédés ({lots.length})</div>
 <div class="lots-possedes-grid">
@@ -63,9 +69,13 @@
 					>{/if}
 				{#if lot.superficie}<span class="text-muted-sm">{lot.superficie} m²</span>{/if}
 			</div>
-			<!--  Ce que le lot emporte — desserte et tantièmes —, phrase écrite côté
-			      serveur (`utils/lots_explication`, #2215), rendue telle quelle. -->
-			{#if lot.explication}<p class="aide explication-lot">{lot.explication}</p>{/if}
+			<!--  Où est le lot et ce qui le dessert, puis la phrase qui explique la charge, les parts
+			      clé par clé et les alertes (#2215) : écrits une fois, côté serveur et dans
+			      `DetailReglementLot`. -->
+			{#if lot.numero_usage || lot.perimetres?.length}
+				<p class="text-muted-sm designation-lot">{designationDuLot(lot)}</p>
+			{/if}
+			<DetailReglementLot {lot} />
 			{#if lot.bail}
 				<div class="lpc-occupant">👤 {nomLocataire(lot.bail)}</div>
 			{:else}
@@ -149,7 +159,7 @@
 {/if}
 
 <style>
-	.explication-lot {
+	.designation-lot {
 		margin: 0.5rem 0 0;
 	}
 	.lot-vacant {

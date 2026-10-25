@@ -92,6 +92,17 @@ const DEUX_DECIMALES = new Intl.NumberFormat('fr-FR', {
 });
 
 /**
+ * Une part d'un tout, en pourcentage — `34 / 10 000` → `0,34 %` · `0` ou dénominateur nul → `—`.
+ *
+ * Deux décimales : une part de copropriété tient en dix-millièmes, que l'arrondi à l'entier
+ * ferait tous valoir « 0 % ». Le format est celui de `fmtNombre`, la virgule comprise.
+ */
+export function fmtPartEnPourcent(numerateur: number, denominateur: number): string {
+	if (!denominateur) return '—';
+	return `${DEUX_DECIMALES.format((numerateur / denominateur) * 100)}\u00a0%`;
+}
+
+/**
  * Taille en octets — échelle unique de l'application : o · Ko · Mo · Go (base 1024).
  *
  * `512` → `512 o` · `51 200` → `50 Ko` · `1 258 291` → `1,2 Mo` · `3 435 973 837` → `3,20 Go`

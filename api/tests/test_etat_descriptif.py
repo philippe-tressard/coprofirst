@@ -277,6 +277,40 @@ def test_appliquer_pose_la_desserte_les_tantiemes_et_les_perimetres(batiments):
         session.rollback()
 
 
+def test_la_lecture_d_un_lot_dit_ses_parts_leurs_totaux_et_ce_qu_il_faut_savoir(batiments):
+    """Après l'application : chaque part porte le nombre de lots de la clé et sa somme ; une
+    clé qui ne tombe plus juste devient une alerte sur les lots qui y contribuent."""
+    from app.utils.lecture_lots import designations
+
+    with Session(engine) as session:
+        _, _, (logement, cave, place) = _monter(session, batiments)
+        poser(session, _rows())
+        appliquer(session)
+        session.flush()
+
+        lues = designations(session, [logement, cave, place], lambda _lot: True)
+        ascenseur = next(q for q in lues[place.id].quotes_parts if q.cle == "ascenseur-x")
+        assert (ascenseur.numerateur, ascenseur.nb_lots, ascenseur.somme) == (6, 2, 10)
+        assert all(not lues[lot.id].alertes for lot in (logement, cave, place)), (
+            "le fichier tombe juste"
+        )
+
+        #  Une part corrigée à la main : la clé ne totalise plus son dénominateur.
+        part = session.exec(
+            select(QuotePartLot).where(QuotePartLot.lot_id == place.id).order_by(QuotePartLot.id)
+        ).all()[-1]
+        part.numerateur = 5
+        session.add(part)
+        session.flush()
+        apres = designations(session, [logement, place], lambda _lot: True)
+        assert [c.code for c in apres[place.id].alertes] == ["cle_en_ecart"]
+        assert "il en manque 1" in apres[place.id].alertes[0].message
+        #  Un lecteur qui ne voit pas les tantièmes n'en lit pas non plus les écarts.
+        sans = designations(session, [place], lambda _lot: False)
+        assert sans[place.id].quotes_parts is None and not sans[place.id].alertes
+        session.rollback()
+
+
 def test_appliquer_refuse_un_fichier_bloque_et_n_ecrit_rien(batiments):
     with Session(engine) as session:
         _, _, (logement, cave, place) = _monter(session, batiments)

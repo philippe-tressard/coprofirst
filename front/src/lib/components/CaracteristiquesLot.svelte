@@ -22,13 +22,14 @@
 
   `designation` — un `MonLot` — ajoute ce que l'état descriptif dit du lot : sa porte
   ou sa place, où il est SITUÉ, ce qui le DESSERT, ses tantièmes (absents pour qui
-  n'a pas à les lire : le serveur rend `null`), et la phrase qui explique la charge,
-  écrite une fois côté serveur (`utils/lots_explication`) et rendue telle quelle.
+  n'a pas à les lire : le serveur rend `null`), la phrase qui explique la charge et les
+  alertes du lot — le tout par `DetailReglementLot`, écrit une fois pour toutes les vues.
   Les libellés des périmètres viennent du serveur aussi : aucun n'est recomposé ici.
 -->
 <script lang="ts">
+	import DetailReglementLot from '$lib/components/DetailReglementLot.svelte';
 	import type { MonLot } from '$lib/api';
-	import { etageLabel, fmtNombre, lotTypeComplet } from '$lib/utils';
+	import { etageLabel, lotTypeComplet } from '$lib/utils';
 
 	export let type: string | null | undefined = null;
 	export let typeAppartement: string | null | undefined = null;
@@ -37,7 +38,7 @@
 	/** Le lot tel que `/lots/mes-lots` le rend — sa désignation du règlement. */
 	export let designation: Pick<
 		MonLot,
-		'numero_usage' | 'perimetres' | 'quotes_parts' | 'explication'
+		'numero_usage' | 'perimetres' | 'quotes_parts' | 'explication' | 'alertes'
 	> | null = null;
 
 	$: situe = (designation?.perimetres ?? []).filter((p) => p.relation === 'situe_dans');
@@ -70,23 +71,10 @@
 		<dt>Desservi par</dt>
 		<dd>{dessert.map((p) => p.libelle).join(', ')}</dd>
 	{/if}
-	{#if designation?.quotes_parts?.length}
-		<dt>Tantièmes</dt>
-		<dd>
-			<ul class="tantiemes">
-				{#each designation.quotes_parts as q (q.cle)}
-					<li>
-						{q.libelle}
-						<span class="part">{fmtNombre(q.numerateur)}/{fmtNombre(q.denominateur)}</span>
-					</li>
-				{/each}
-			</ul>
-		</dd>
-	{/if}
 	<slot name="apres" />
 </dl>
-{#if designation?.explication}
-	<p class="aide explication">{designation.explication}</p>
+{#if designation}
+	<DetailReglementLot lot={designation} />
 {/if}
 
 <style>
@@ -107,21 +95,5 @@
 	}
 	.type-lot {
 		text-transform: capitalize;
-	}
-	.tantiemes {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 0.15rem;
-	}
-	.part {
-		font-variant-numeric: tabular-nums;
-		color: var(--color-text-muted);
-		margin-left: 0.35rem;
-	}
-	.explication {
-		margin-top: 0.75rem;
-		max-width: 60ch;
 	}
 </style>
