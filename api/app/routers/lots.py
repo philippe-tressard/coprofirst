@@ -26,6 +26,8 @@ from app.utils.designation_lot import nature_du_lot
 from app.utils.lecture import lire_objet
 from app.utils.lecture_lots import Designation, designations
 from app.utils.lots_rattaches import rattachements_actifs
+from app.utils.acces_perimetre import code_batiment
+from app.utils.mes_batiments import batiments_de_l_utilisateur, perimetres_desservis
 from app.utils.recuperer import ou_404
 from app.utils.etages import (
     ETAGE_HORS_BORNES,
@@ -125,6 +127,27 @@ def mes_lots(
         lecture.type_lien = valeur(lien.type_lien)
         lectures.append(lecture)
     return lectures
+
+
+class MesPerimetres(BaseModel):
+    """« Mes périmètres » (#2214) : les bâtiments du compte et ce qui dessert ses lots."""
+
+    batiments: list[str]
+    desservis: list[str]
+
+
+@router.get("/mes-perimetres", response_model=MesPerimetres)
+def mes_perimetres(user: Utilisateur = Depends(get_current_user)):
+    """Ce qui concerne ce compte — lu par la règle d'accès, et rien d'autre (#2215).
+
+    L'écran ne s'en sert que pour savoir s'il y a de quoi filtrer : la pastille
+    « Ce qui me concerne » se tait quand les deux listes sont vides. Le tri, lui,
+    se lit élément par élément (`me_concerne`), calculé côté serveur.
+    """
+    return MesPerimetres(
+        batiments=sorted(code_batiment(b) for b in batiments_de_l_utilisateur(user)),
+        desservis=sorted(perimetres_desservis(user)),
+    )
 
 
 @router.get("/admin/tous")

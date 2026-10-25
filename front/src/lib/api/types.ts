@@ -130,6 +130,8 @@ export interface CorrespondanceAffaire {
 
 export interface Ticket extends PorteSaisiPourLu {
 	id: number;
+	/** « Me concerne » pour qui lit, par la règle de l'accès (#2215) ; `null` sans lecteur. */
+	me_concerne?: boolean | null;
 	/** « Rédigé avec l'assistant IA » (#985). */
 	assiste_ia?: boolean;
 	numero: string;
@@ -380,6 +382,8 @@ export interface FluxItem {
 	icon: string;
 	lien?: string;
 	meta: Record<string, unknown>;
+	/** « Me concerne », posé par le serveur (#2215) ; `null` pour ce qui ne porte aucun lieu. */
+	me_concerne?: boolean | null;
 }
 export interface FluxProchain {
 	id: string;

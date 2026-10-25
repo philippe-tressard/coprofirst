@@ -26,7 +26,7 @@
 > 🌐 **Le détail de chaque fonctionnalité, et une démonstration à essayer en ligne : [coprofirst.fr](https://coprofirst.fr)** — la [page Démo](https://coprofirst.fr/demo.html) donne les comptes publics (données fictives). Le [manuel utilisateur](docs/manuel-utilisateur.html) décrit chaque écran.
 
 - **Tableau de bord** — la page d'accueil : consignes du conseil syndical, éléments épinglés, kanban des dossiers en cours et fil de l'actualité.
-- **Affaires / Demandes** — signalements, actualités et événements datés suivis par le conseil syndical, avec périmètre, destinataires et recherche libre ; une affaire close reçoit une synthèse chiffrée, rédigée par l'assistant IA puis relue par le conseil.
+- **Affaires / Demandes** — signalements, actualités et événements datés suivis par le conseil syndical, avec périmètre, destinataires, recherche libre et la pastille « Ce qui me concerne » (aussi sur le fil d'accueil) ; une affaire close reçoit une synthèse chiffrée, rédigée par l'assistant IA puis relue par le conseil.
 - **Kanban & calendrier** — les dossiers longs avancent au kanban (AG · CS · Syndic · Prestataire · Terminé), et ce qui porte une date se lit sous le filtre Calendrier d'Affaires.
 - **Documents** — GED avec catégories et accès par profil (résidents, propriétaires, conseil syndical).
 - **Carnet d'entretien** — l'histoire du bâti exigée par le décret n° 2001-477, constituée par équipement à partir des contrats et des affaires résolues, avec un bilan d'exercice pour le conseil.

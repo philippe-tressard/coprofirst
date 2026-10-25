@@ -77,6 +77,7 @@ from app.auth.deps import get_current_user, require_admin
 from app.database import get_session
 from app.models.core import FluxMasque, Utilisateur
 from app.utils.archivage import seuil_archivage_jours
+from app.utils.visibility import concerne
 
 from . import (
     annuaire,
@@ -147,6 +148,13 @@ def get_flux(
     #  exactement ce que la demande du 31/08/2026 dit.
     masques = set(session.exec(select(FluxMasque.item_id)).all())
     items = [i for i in items if i.id not in masques]
+    #  « Ce qui me concerne » (#2215), au même point d'assemblage et pour la même
+    #  raison : la règle de l'accès (`visibility.concerne`), une fois, sur chaque
+    #  élément qui porte un lieu. Ceux qui n'en portent pas restent `None` : ils
+    #  s'adressent à toute la copropriété, et la pastille les garde.
+    for item in items:
+        if codes := item.meta.get("perimetre_codes"):
+            item.me_concerne = concerne(user, codes)
 
     items.sort(key=lambda x: x.date, reverse=True)
 

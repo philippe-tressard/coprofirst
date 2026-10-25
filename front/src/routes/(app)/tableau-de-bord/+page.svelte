@@ -35,6 +35,9 @@
 	import LienConsignes from '$lib/components/LienConsignes.svelte';
 	import RaccourcisRapides from '$lib/components/RaccourcisRapides.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
+	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
+	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
+	import { OPTIONS_PORTEE, offrirLaPastille, selonPortee } from '$lib/me-concerne';
 	// Toutes les règles du fil (apparence, liens, appartenance aux trois
 	// registres) vivent dans ce module — cf. `$lib/flux.ts`.
 	import { dateDeReference, estEpingle, estNonResolu, estUrgent, grouperParJour } from '$lib/flux';
@@ -53,6 +56,14 @@
 	let loading = true;
 	let ready = false;
 	let kanbanAffaires: Ticket[] = [];
+	//  « Ce qui me concerne » (#2215) : filtre la chronologie du fil, offerte s'il
+	//  y a de quoi filtrer. Urgences et épinglés restent : ils ne se trient pas.
+	let offrirMeConcerne = false;
+	let portee = '';
+
+	onMount(async () => {
+		offrirMeConcerne = await offrirLaPastille();
+	});
 
 	onMount(async () => {
 		try {
@@ -133,7 +144,7 @@
 	// backend renvoie `date = cree_le`) ; l'agenda répond à « quoi ensuite ? »
 	// et affiche la date de tenue. Les deux vues coexistent sans doublon de
 	// sens : ce n'est pas la même information.
-	$: filItems = filteredItems;
+	$: filItems = selonPortee(filteredItems, portee);
 
 	// ── Classement du fil : récent / ancien / masqué ───────────────────────
 	//  🔴 UN SEUL délai, pour tout le site (#513 puis #515) — voir `$lib/archivage`.
@@ -288,12 +299,24 @@
 		<h2 class="section-title titre-fil">
 			<Icon name="newspaper" size={16} /> Fil d'activité
 		</h2>
+		{#if offrirMeConcerne}
+			<ReglagesListe>
+				<ChoixPastilles
+					options={[...OPTIONS_PORTEE]}
+					bind:valeur={portee}
+					tous="Tout"
+					compte={filItems.length}
+					libelle="Portée"
+					libelleDevant
+				/>
+			</ReglagesListe>
+		{/if}
 	</div>
 
 	{#if recentItems.length === 0 && olderItems.length === 0}
 		<div class="empty-state">
 			<Icon name="inbox" size={32} />
-			<h3>Aucune activité récente</h3>
+			<h3>{portee ? 'Rien de récent qui vous concerne' : 'Aucune activité récente'}</h3>
 			<p>Les mouvements de la résidence apparaîtront ici.</p>
 		</div>
 	{:else}

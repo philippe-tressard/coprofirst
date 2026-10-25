@@ -43,6 +43,7 @@ from .socle import (
     CODES_PUBLIC_CIBLE,
     LIBELLES_PUBLIC_CIBLE,
     cible_visible,
+    concerne,
     perimetre_visible,
     public_cible_visible,
     reserve_au_conseil,
@@ -93,6 +94,9 @@ from .defauts_affaire import (
 #  constante et non une fonction — et la suite de tests ne démarrait plus.
 __all__ = [
     "perimetre_visible",
+    #  « Ce contenu me concerne-t-il ? » — le cœur de `perimetre_visible`, lu
+    #  aussi par la pastille « Ce qui me concerne » des listes (#2215).
+    "concerne",
     #  La règle des deux axes (périmètre puis public cible), composée par la
     #  publication, le sondage, la petite annonce et l'idée. Ce n'est pas une
     #  primitive de plus : c'est leur écriture UNIQUE, depuis le 06/09 (#782).

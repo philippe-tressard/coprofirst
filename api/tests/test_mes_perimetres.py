@@ -119,3 +119,99 @@ def test_la_restriction_volontaire_garde_la_circulation_et_retire_le_reste(b):
         u = _titulaire(session, b1, _place("976", desservie_par=b3), restreint=True)
         assert perimetre_visible([f"bat:{b3}/ascenseur"], u, ouvert_a_la_copropriete=True)
         assert not perimetre_visible([f"bat:{b3}/toit"], u, ouvert_a_la_copropriete=True)
+
+
+# ── « Ce qui me concerne » (#2215) : la même règle, lue par l'écran ────────────
+
+
+def test_concerne_dit_ce_que_la_regle_d_acces_dit(b):
+    """`concerne` est le cœur de `perimetre_visible` : mêmes verdicts, mêmes bornes."""
+    from app.utils.visibility import concerne
+
+    b1, b2, b3 = b[0], b[1], b[2]
+    with Session(engine) as session:
+        u = _titulaire(session, b1, _place("981", desservie_par=b3))
+        assert concerne(u, [f"bat:{b1}"])  # son bâtiment
+        assert concerne(u, [f"bat:{b3}/ascenseur"])  # la circulation de sa place
+        assert not concerne(u, [f"bat:{b3}/toit"])  # pas le bâtiment desservant entier
+        assert not concerne(u, [f"bat:{b2}"])  # un bâtiment où il n'a rien
+        for codes in ([f"bat:{b1}"], [f"bat:{b3}/ascenseur"], [f"bat:{b2}"]):
+            assert concerne(u, codes) == perimetre_visible(codes, u)
+
+
+def test_la_restriction_d_acces_passe_par_concerne():
+    """🔒 Une seule écriture de la règle : `perimetre_visible` appelle `concerne`."""
+    import ast
+    import inspect
+
+    from app.utils.visibility import socle
+
+    arbre = ast.parse(inspect.getsource(socle.perimetre_visible))
+    appels = {
+        n.func.id
+        for n in ast.walk(arbre)
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+    }
+    assert "concerne" in appels
+    assert "sous_l_une_des_branches" not in appels and "batiments_cibles" not in appels
+
+
+def test_mes_perimetres_rend_ce_que_la_regle_lit(b):
+    from app.routers.lots import mes_perimetres
+
+    b1, b3 = b[0], b[2]
+    with Session(engine) as session:
+        u = _titulaire(session, b1, _place("982", desservie_par=b3))
+        lu = mes_perimetres(user=u)
+        assert lu.batiments == [perimetre_du_batiment(b1).code]
+        assert f"bat:{b3}/ascenseur" in lu.desservis
+        vide = mes_perimetres(user=_titulaire(session, None))
+        assert vide.batiments == [] and vide.desservis == []
+
+
+def test_la_liste_des_affaires_filtre_par_l_acces_avant_de_dire_me_concerne():
+    """🔒 La pastille FILTRE ce que la liste montre déjà : le filtre d'accès reste en place."""
+    import ast
+    import inspect
+
+    from app.routers.tickets import crud
+
+    source = inspect.getsource(crud.list_tickets)
+    assert "ticket_visible(ticket, user)" in source
+    assert any(isinstance(n, ast.comprehension) for n in ast.walk(ast.parse(source)))
+
+
+def test_une_affaire_et_le_fil_disent_me_concerne_pour_qui_les_lit(b):
+    """Le champ vient de la règle d'accès, au lecteur près — jamais recomposé à l'écran."""
+    from app.models.core import Ticket
+    from app.routers.flux import get_flux
+    from app.routers.tickets.commun import ticket_read
+
+    b1, b2, b3 = b[0], b[1], b[2]
+    with Session(engine) as session:
+        u = _titulaire(session, b1, _place("983", desservie_par=b3))
+        miennes = Ticket(
+            numero="T-983",
+            titre="Ascenseur arrêté",
+            description="Panne",
+            categorie="panne",
+            auteur_id=u.id,
+            perimetre_cible=f'["bat:{b3}/ascenseur"]',
+        )
+        ailleurs = Ticket(
+            numero="T-984",
+            titre="Hall",
+            description="Ampoule",
+            categorie="panne",
+            auteur_id=u.id,
+            perimetre_cible=f'["bat:{b2}"]',
+        )
+        session.add_all([miennes, ailleurs])
+        session.commit()
+        assert ticket_read(miennes, session, u).me_concerne is True
+        assert ticket_read(ailleurs, session, u).me_concerne is False
+        assert ticket_read(miennes, session).me_concerne is None  # sans lecteur
+
+        fil = {i.id: i for i in get_flux(session=session, user=u).items}
+        assert fil[f"tk_{miennes.id}"].me_concerne is True
+        assert fil[f"tk_{ailleurs.id}"].me_concerne is False

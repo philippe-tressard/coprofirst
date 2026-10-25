@@ -63,6 +63,19 @@ def _codes_json_pour_acces(raw: Optional[str]) -> Optional[list[str]]:
 # ── Règles géographiques ──────────────────────────────────────────────────────
 
 
+def concerne(user: Utilisateur, perimetres: list[str]) -> bool:
+    """« Ce contenu me concerne-t-il ? » — UNE question, posée par l'accès et par l'écran.
+
+    Il vise l'un de mes bâtiments (rattachement et lots, annexes exclues), ou un
+    espace d'une circulation qui dessert mes lots (#2214). C'est le cœur de
+    `perimetre_visible`, et la pastille « Ce qui me concerne » le lit tel quel
+    (#2215) : elle FILTRE ce que la liste montre déjà, elle n'ouvre rien.
+    """
+    return bool(batiments_de_l_utilisateur(user) & batiments_cibles(perimetres)) or (
+        sous_l_une_des_branches(perimetres_desservis(user), perimetres)
+    )
+
+
 def perimetre_visible(
     perimetres: list[str], user: Utilisateur, *, ouvert_a_la_copropriete: bool = False
 ) -> bool:
@@ -178,9 +191,7 @@ def perimetre_visible(
     desservis = perimetres_desservis(user)
 
     def _concerne() -> bool:
-        return bool(miens & batiments_cibles(perimetres)) or sous_l_une_des_branches(
-            desservis, perimetres
-        )
+        return concerne(user, perimetres)
 
     if ouvert_a_la_copropriete:
         if not getattr(user, "restreindre_a_mes_batiments", False):
