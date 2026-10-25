@@ -11,7 +11,7 @@
 import type { Page } from '@playwright/test';
 import type { ChoixAcces, LotPourBadge, PorteProposee } from '../src/lib/api/acces';
 import type { ConstatPatrimoine } from '../src/lib/api/etat-descriptif';
-import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreHydratation, expect, simulerApi, test } from './aides';
 
 const LOTS: LotPourBadge[] = [
 	{ id: 31, libelle: 'Lot 931', type: 'appartement', coproprietaire: null },
