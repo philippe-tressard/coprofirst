@@ -133,10 +133,7 @@ def test_un_fichier_juste_est_applicable():
 @pytest.mark.parametrize(
     "modifier, code",
     [
-        (lambda lu, app: lu.lignes[1].quotes.update(generales=41), "somme"),
         (lambda lu, app: lu.lignes.append(lu.lignes[0]), "double_fichier"),
-        (lambda lu, app: app.append(E.LotConnu("903", 1, NatureLot.logement)), "absent_fichier"),
-        (lambda lu, app: app.pop(), "absent_application"),
         (lambda lu, app: setattr(lu.lignes[1], "circulation", "Z"), "lettre"),
         (lambda lu, app: setattr(lu.lignes[0], "nature", "?"), "nature"),
         (lambda lu, app: setattr(lu.lignes[0], "batiment", "Y"), "batiment_different"),
@@ -148,6 +145,39 @@ def test_chaque_controle_bloquant_bloque(modifier, code):
     trouves = E.controler(lu, app, LETTRES, AVEC_NOEUD)
     assert code in {c.code for c in trouves if c.gravite == C.BLOQUANT}
     assert not C.applicable(trouves)
+
+
+@pytest.mark.parametrize(
+    "modifier, code",
+    [
+        (lambda lu, app: lu.lignes[1].quotes.update(generales=41), "somme"),
+        (lambda lu, app: app.append(E.LotConnu("903", 1, NatureLot.logement)), "absent_fichier"),
+        (lambda lu, app: app.pop(), "absent_application"),
+    ],
+)
+def test_un_fichier_incomplet_avertit_sans_bloquer(modifier, code):
+    """Incomplet n'est pas faux (25/10/2026) : un règlement dont les totaux ne tombent
+    pas juste, ou un lot qu'il ne cite pas, ne tenait pas l'import fermé — il le disait."""
+    lu, app = _fichier_juste(), _app_juste()
+    modifier(lu, app)
+    trouves = E.controler(lu, app, LETTRES, AVEC_NOEUD)
+    assert code in {c.code for c in trouves if c.gravite == C.AVERTISSEMENT}
+    assert C.applicable(trouves), trouves
+
+
+def test_l_ecart_d_une_somme_se_dit_dans_les_deux_sens():
+    court, trop = _fichier_juste(), _fichier_juste()
+    court.lignes[1].quotes.update(generales=38)
+    trop.lignes[1].quotes.update(generales=43)
+    messages = [
+        next(
+            c.message
+            for c in E.controler(lu, _app_juste(), LETTRES, AVEC_NOEUD)
+            if c.code == "somme"
+        )
+        for lu in (court, trop)
+    ]
+    assert "il en manque 2" in messages[0] and "il y en a 3 de trop" in messages[1]
 
 
 def test_une_circulation_sans_noeud_bloque():
@@ -251,10 +281,10 @@ def test_appliquer_refuse_un_fichier_bloque_et_n_ecrit_rien(batiments):
     with Session(engine) as session:
         _, _, (logement, cave, place) = _monter(session, batiments)
         rows = _rows()
-        rows[1] = ("901", "X", "T2", None, "1", None, None, None, 51, 4)  # somme fausse
+        rows[1] = ("901", "X", "???", None, "1", None, None, None, 51, 4)  # nature illisible
         imp = poser(session, rows)
         _, trouves = constats(session, imp)
-        assert "somme" in {c.code for c in trouves}
+        assert "nature" in {c.code for c in trouves}
         with pytest.raises(EtatDescriptifRefuse):
             appliquer(session)
         assert cave.nature is None and not session.exec(select(CleDeCharges)).all()
