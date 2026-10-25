@@ -83,8 +83,9 @@ test('Admin › À traiter : trois sections en accordéon, Télémétrie en gest
 	await page.locator('.page-row-btn', { hasText: 'Paramétrage' }).click();
 	const cartes = page.locator('.onglet-card');
 	//  19 depuis l'onglet « Installations » du registre (#1880) — et toujours 19
-	//  après le rangement par niveau (#2062) : quatre partis, quatre venus.
-	await expect(cartes).toHaveCount(19);
+	//  après le rangement par niveau (#2062) : quatre partis, quatre venus. 20 depuis
+	//  l'onglet « Lots » de Copropriété (#2216).
+	await expect(cartes).toHaveCount(20);
 	await expect(cartes.first().locator('input').first()).toHaveValue('À traiter');
 
 	const deborde = await page.evaluate(

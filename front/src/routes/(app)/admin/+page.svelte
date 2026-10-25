@@ -453,6 +453,12 @@
 			<OngletPerimetres />
 		{/snippet}
 	</ChargementDiffere>
+{:else if onglet === 'lots'}
+	<ChargementDiffere charger={() => import('$lib/components/OngletLots.svelte')}>
+		{#snippet contenu(OngletLots)}
+			<OngletLots />
+		{/snippet}
+	</ChargementDiffere>
 {:else if onglet === 'audit_lots'}
 	<ChargementDiffere charger={() => import('$lib/components/OngletAuditLots.svelte')}>
 		{#snippet contenu(OngletAuditLots)}
