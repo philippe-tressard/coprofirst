@@ -37,6 +37,8 @@ from dataclasses import dataclass
 from app.utils.description_format import CONSIGNE_DEFAUT as CONSIGNE_DESCRIPTION
 from app.utils.question_reglement.format import CONSIGNE as CONSIGNE_QUESTION_REGLEMENT
 from app.utils.question_reglement.format import USAGE_QUESTION_REGLEMENT
+from app.utils.etat_descriptif_ia import CONSIGNE as CONSIGNE_ETAT_DESCRIPTIF
+from app.utils.etat_descriptif_ia import USAGE_LECTURE_ETAT_DESCRIPTIF
 from app.utils.fusion_en_cours_ia import CONSIGNE as CONSIGNE_FUSION_AFFAIRES
 from app.utils.fusion_en_cours_ia import USAGE_FUSION_AFFAIRES
 from app.utils.reponse_courriel import CONSIGNE as CONSIGNE_REPONSE_COURRIEL
@@ -281,6 +283,27 @@ USAGES: dict[str, Usage] = {
         prompt_defaut=CONSIGNE_FUSION_AFFAIRES,
         max_jetons_defaut=4_000,
         delai_min_s=90,
+    ),
+    #  25/10/2026 (#2218) : du règlement versé au tableau de l'atelier de l'état
+    #  descriptif — jamais une écriture dans le patrimoine (`utils/etat_descriptif_ia`).
+    #  Une réponse de cent à deux cents lignes : un plafond de jetons et un délai
+    #  à la mesure, l'appel tourne en tâche de fond.
+    USAGE_LECTURE_ETAT_DESCRIPTIF: Usage(
+        code=USAGE_LECTURE_ETAT_DESCRIPTIF,
+        libelle="Lecture de l'état descriptif du règlement",
+        description=(
+            "Admin › Imports › État descriptif : « Remplir depuis le règlement » fait lire "
+            "à l'assistant le règlement versé dans Ma résidence › Règlement, et poser dans "
+            "l'atelier une ligne par lot — nature, bâtiment, porte ou place, niveau, "
+            "circulation qui le dessert, tantièmes par clé, avec le passage d'où il les "
+            "tient. Rien ne touche au patrimoine avant « Appliquer » : les contrôles de "
+            "l'atelier jugent la lecture comme un fichier. Seul le texte du règlement est "
+            "transmis. Réservé au conseil syndical et à l'administration ; l'appel dure "
+            "plusieurs minutes."
+        ),
+        prompt_defaut=CONSIGNE_ETAT_DESCRIPTIF,
+        max_jetons_defaut=32_000,
+        delai_min_s=600,
     ),
 }
 

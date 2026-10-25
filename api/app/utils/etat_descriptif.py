@@ -87,6 +87,10 @@ _NATURES: dict[str, NatureLot] = {
 #: Ce qu'une cellule de circulation écrit pour dire « accès direct ».
 _ACCES_DIRECT = {"", "/", "-", "AUCUNE", "DIRECT", "ACCES DIRECT"}
 
+#: Ce que la lecture du règlement par l'assistant ajoute à la source d'une ligne
+#: qu'elle n'a pas lue avec certitude (#2218) — un constat « À savoir » la relève.
+MARQUE_DOUTEUX = "à vérifier sur l'acte"
+
 
 class Cle(BaseModel):
     """Une clé déclarée par un en-tête — `code` dérivé du libellé, dénominateur déclaré."""
@@ -329,6 +333,17 @@ def controler(
                 AVERTISSEMENT,
                 "Division sans acte : aucune source n'est citée.",
                 tuple(sorted(sans_acte)),
+            )
+        )
+    douteuses = [ligne.lot for ligne in lignes if MARQUE_DOUTEUX in (ligne.source or "")]
+    if douteuses:
+        constats.append(
+            constat(
+                "douteux",
+                AVERTISSEMENT,
+                "Lu par l'assistant sans certitude : vérifier ces lots sur l'acte avant "
+                "d'appliquer — leur source dit où.",
+                tuple(sorted(douteuses)),
             )
         )
 

@@ -24,6 +24,7 @@ cherche qui contacter. La nôtre a vécu ainsi jusqu'à ce qu'un lecteur le voie
 """
 
 from app.seed.contenus_legaux_avis import AVIS_SITE_PRESENTATION
+from app.seed.contenus_legaux_etat_descriptif import LECTURE_ETAT_DESCRIPTIF
 from app.seed.contenus_legaux_licence import PARAGRAPHE_LICENCE
 from app.seed.contenus_legaux_identite import (
     DESTINATAIRES,
@@ -376,6 +377,7 @@ DEFAULT_LEGAL = {
         "documents joints</strong> — est transmis au service de modèle de langage configuré. "
         "<strong>À RENSEIGNER</strong>\xa0: lequel, et depuis quel pays il opère. "
         + QUESTION_REGLEMENT
+        + LECTURE_ETAT_DESCRIPTIF
         + ASSISTANT_DEUX_AUTOMATIQUES
         + COURRIELS_TRANSFERES
         + SYNTHESE_AFFAIRE_CLOSE

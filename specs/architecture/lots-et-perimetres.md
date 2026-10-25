@@ -224,3 +224,14 @@ sur l'épopée :
   périmètre « bâtiment ». Mesuré en production avant de l'écrire : aucun compte ne
   tenait un bâtiment de ses seules annexes.
 - **Un tantième vide ou nul ne pose pas de part.**
+- **La lecture par l'assistant (#2218, 25/10/2026) ne se valide pas ligne à ligne** :
+  elle rend le MÊME tableau qu'un fichier, rangé dans la même table de passage, et passe
+  par les mêmes contrôles — une somme fausse bloque. Une ligne lue sans certitude porte
+  « à vérifier sur l'acte » dans sa source et passe en tête ; un constat *À savoir* la
+  relève. Toute la réponse est refusée si une ligne n'a pas de source, si un tantième
+  n'est pas entier ou si une clé citée n'est pas déclarée. La lecture tourne en tâche de
+  fond (plusieurs minutes, au-delà des 100 s qu'un mandataire laisse) ; l'écran se relit.
+  La politique de confidentialité nomme la transmission (migration 0313).
+- **« Escalier A' » est une autre clé qu'« Escalier A »** (25/10/2026) : le prime se dit
+  en toutes lettres dans le code de la clé (`escalier-a-prime`) ; deux colonnes d'un même
+  code sont un bloquant de lecture.

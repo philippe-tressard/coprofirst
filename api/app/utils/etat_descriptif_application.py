@@ -48,6 +48,13 @@ from app.utils.perimetres import perimetre_du_batiment
 from app.utils.perimetres.lots import rederiver
 
 
+#: Les issues d'une lecture du règlement par l'assistant (#2218), notées dans
+#: l'en-tête de l'import qu'elle remplit.
+LECTURE_EN_COURS = "en_cours"
+LECTURE_TERMINEE = "terminee"
+LECTURE_ECHEC = "echec"
+
+
 class EtatDescriptifRefuse(Exception):
     """L'application est refusée : un contrôle bloque, ou rien n'est en attente."""
 
@@ -59,26 +66,37 @@ def en_attente(session: Session) -> ImportEtatDescriptif | None:
     ).first()
 
 
-def poser(session: Session, rows: list) -> ImportEtatDescriptif:
-    """Remplace le fichier en attente par celui-ci (le dernier appliqué reste en trace)."""
-    lecture = lire(rows)
+def _ouvrir(session: Session, en_tete: dict) -> ImportEtatDescriptif:
+    """Remplace ce qui attend par un import neuf (le dernier appliqué reste en trace)."""
     for ancien in session.exec(
         select(ImportEtatDescriptif).where(ImportEtatDescriptif.applique_le.is_(None))  # type: ignore[union-attr]
     ).all():
         session.exec(delete(LigneEtatDescriptif).where(LigneEtatDescriptif.import_id == ancien.id))
         session.delete(ancien)
-    imp = ImportEtatDescriptif(
-        entete_json=json.dumps(
-            {
-                "cles": [c.model_dump() for c in lecture.cles],
-                "avec_circulation": lecture.avec_circulation,
-                "erreurs": lecture.erreurs,
-            },
-            ensure_ascii=False,
-        )
-    )
+    imp = ImportEtatDescriptif(entete_json=json.dumps(en_tete, ensure_ascii=False))
     session.add(imp)
     session.flush()
+    return imp
+
+
+def ecrire(session: Session, imp: ImportEtatDescriptif, rows: list, **issue) -> None:
+    """Lit les lignes d'un tableau et les range sous `imp` — fichier ou lecture de l'IA.
+
+    `issue` s'ajoute à ce que la lecture dit d'elle-même (la lecture de l'IA y
+    note son issue) : les deux chemins remplissent la MÊME table de passage, et
+    passent donc par les mêmes contrôles avant « Appliquer ».
+    """
+    lecture = lire(rows)
+    imp.entete_json = json.dumps(
+        {
+            "cles": [c.model_dump() for c in lecture.cles],
+            "avec_circulation": lecture.avec_circulation,
+            "erreurs": lecture.erreurs,
+            **issue,
+        },
+        ensure_ascii=False,
+    )
+    session.add(imp)
     for ligne in lecture.lignes:
         session.add(
             LigneEtatDescriptif(
@@ -88,19 +106,44 @@ def poser(session: Session, rows: list) -> ImportEtatDescriptif:
             )
         )
     session.flush()
+
+
+def poser(session: Session, rows: list) -> ImportEtatDescriptif:
+    """Remplace le fichier en attente par celui-ci."""
+    imp = _ouvrir(session, {})
+    ecrire(session, imp, rows)
     return imp
+
+
+def ouvrir_lecture_ia(session: Session) -> ImportEtatDescriptif:
+    """Un import vide, « lecture en cours » : l'IA le remplira en tâche de fond (#2218)."""
+    return _ouvrir(session, {"lecture_ia": LECTURE_EN_COURS})
+
+
+def noter_echec(session: Session, imp: ImportEtatDescriptif, erreur: str) -> None:
+    """La lecture de l'IA a échoué : l'import le dit, sans ligne ni constat de fichier."""
+    imp.entete_json = json.dumps(
+        {"lecture_ia": LECTURE_ECHEC, "erreur_ia": erreur}, ensure_ascii=False
+    )
+    session.add(imp)
+    session.flush()
+
+
+def entete(imp: ImportEtatDescriptif) -> dict:
+    """Ce que l'en-tête de l'import dit — clés, circulation, et l'issue d'une lecture."""
+    return json.loads(imp.entete_json or "{}")
 
 
 def relire(session: Session, imp: ImportEtatDescriptif) -> Lecture:
     """La lecture telle que la table de passage la garde."""
-    entete = json.loads(imp.entete_json or "{}")
+    lu_entete = entete(imp)
     lignes = session.exec(
         select(LigneEtatDescriptif)
         .where(LigneEtatDescriptif.import_id == imp.id)
         .order_by(LigneEtatDescriptif.rang)
     ).all()
-    cles = [Cle(**c) for c in entete.get("cles", [])]
-    erreurs = list(entete.get("erreurs", []))
+    cles = [Cle(**c) for c in lu_entete.get("cles", [])]
+    erreurs = list(lu_entete.get("erreurs", []))
     #  Un fichier rangé quand deux colonnes partageaient un code (« Escalier A » et
     #  « Escalier A' », 25/10/2026) : ses tantièmes se sont écrasés au rangement, il
     #  ne se répare pas — il se réimporte. Ses clés reprennent le code d'aujourd'hui,
@@ -111,7 +154,7 @@ def relire(session: Session, imp: ImportEtatDescriptif) -> Lecture:
     return Lecture(
         cles=cles,
         lignes=[lire_objet(Ligne, lu, quotes=json.loads(lu.quotes_json or "{}")) for lu in lignes],
-        avec_circulation=bool(entete.get("avec_circulation", True)),
+        avec_circulation=bool(lu_entete.get("avec_circulation", True)),
         erreurs=erreurs,
     )
 

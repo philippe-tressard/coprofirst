@@ -16,15 +16,25 @@
   3. lire les contrôles : un seul bloquant, et rien ne s'applique ;
   4. relire les lignes, puis appliquer.
 
+  ## Sans tableau : l'assistant lit le règlement (#2218)
+
+  Une copropriété qui n'a que son règlement (versé dans Ma résidence › Règlement)
+  demande à l'assistant de le lire : il rend le MÊME tableau qu'un fichier, rangé
+  dans la même table de passage, et passe par les mêmes contrôles. La lecture dure
+  plusieurs minutes — au-delà de ce qu'une requête peut attendre derrière le
+  mandataire : elle tourne en tâche de fond, et l'écran relit l'atelier toutes les
+  dix secondes tant qu'elle est en cours (minuterie arrêtée à la sortie de l'écran).
+
   🔴 Le fichier d'une copropriété réelle ne s'enregistre nulle part ailleurs que
   dans sa table de passage : le dépôt est public.
 -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import BarreImport from '$lib/components/BarreImport.svelte';
 	import ConstatsLots from '$lib/components/ConstatsLots.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import IconeIA from '$lib/components/IconeIA.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { etatDescriptif as api, type EtatDescriptif, type LigneEtatDescriptif } from '$lib/api';
 	import { confirmer } from '$lib/confirmation';
@@ -38,6 +48,10 @@
 	let televersement = false;
 	let enregistrement = false;
 	let application = false;
+	let lancement = false;
+	/** La relecture programmée pendant que l'assistant lit le règlement. */
+	let sonde: ReturnType<typeof setTimeout> | undefined;
+	const INTERVALLE_SONDE_MS = 10_000;
 	let recherche = '';
 	/** La lettre saisie pour chaque bâtiment, par identifiant. */
 	let lettres: Record<number, string> = {};
@@ -52,6 +66,46 @@
 	function recevoir(lu: EtatDescriptif) {
 		etat = lu;
 		lettres = Object.fromEntries(lu.batiments.map((b) => [b.id, b.lettre_rcp ?? '']));
+		clearTimeout(sonde);
+		if (lu.lecture_ia === 'en_cours') sonde = setTimeout(sonder, INTERVALLE_SONDE_MS);
+	}
+
+	/** Relit l'atelier ; à l'issue de la lecture, la dit une fois. */
+	async function sonder() {
+		try {
+			recevoir(await api.lire());
+		} catch {
+			sonde = setTimeout(sonder, INTERVALLE_SONDE_MS);
+			return;
+		}
+		if (etat?.lecture_ia === 'terminee')
+			toast(
+				'success',
+				`${etat.lignes.length} lot(s) lu(s) dans le règlement — relisez les contrôles, rien n'est encore appliqué`,
+			);
+		else if (etat?.lecture_ia === 'echec')
+			toast('error', etat.erreur_ia ?? 'La lecture du règlement a échoué');
+	}
+	onDestroy(() => clearTimeout(sonde));
+
+	async function lireReglement() {
+		const ok = await confirmer({
+			titre: 'Remplir depuis le règlement',
+			message:
+				"L'assistant lit le règlement versé dans Ma résidence et en tire le tableau des lots, " +
+				'comme un fichier importé. La lecture prend plusieurs minutes et remplace ce qui ' +
+				'attend ; rien ne touche au patrimoine avant « Appliquer ».',
+			libelleConfirmer: 'Lancer la lecture',
+		});
+		if (!ok) return;
+		lancement = true;
+		try {
+			recevoir(await api.lireReglement());
+		} catch (e) {
+			toast('error', messageErreur(e, 'Lecture refusée'));
+		} finally {
+			lancement = false;
+		}
 	}
 
 	async function charger() {
@@ -133,11 +187,14 @@
 	$: avertissements = etat?.constats.filter((c) => c.gravite === 'avertissement') ?? [];
 	$: affichees = (etat?.lignes ?? []).filter((l) => contientTousLesMots(ligneLue(l), recherche));
 	$: lettresSaisies = new Set(Object.values(lettres).map((l) => l.trim().toUpperCase()));
+	$: lectureEnCours = etat?.lecture_ia === 'en_cours';
+	/** Une lecture en cours ou échouée n'a encore rien posé : ni tuiles ni contrôles. */
+	$: sansLignes = !etat?.importe_le || lectureEnCours || etat?.lecture_ia === 'echec';
 	$: lettresManquantes = (etat?.lettres_citees ?? []).filter((l) => !lettresSaisies.has(l));
 </script>
 
 <BarreImport
-	tuiles={etat?.importe_le
+	tuiles={etat && !sansLignes
 		? [
 				{ valeur: etat.lignes.length, libelle: 'Lots lus' },
 				{ valeur: etat.cles.length, libelle: 'Clés de charges' },
@@ -162,6 +219,26 @@
 		<a href={api.gabaritUrl()} download>Télécharger le gabarit vide</a> — les en-têtes seuls, une colonne
 		par clé de charges à ajouter sur le modèle de la dernière.
 	</p>
+	<div slot="autrement">
+		{#if etat?.ia_disponible}
+			<div class="autrement">
+				<p class="aide">
+					Pas de tableau ? L'assistant peut lire l'état descriptif dans le règlement versé (Ma
+					résidence › Règlement) et remplir l'atelier à votre place.
+				</p>
+				<button
+					class="btn btn-outline btn-sm"
+					type="button"
+					on:click={lireReglement}
+					disabled={lancement || lectureEnCours}
+					aria-busy={lancement || lectureEnCours}
+				>
+					<IconeIA enCours={lancement || lectureEnCours} />
+					{lectureEnCours ? 'L’assistant lit le règlement…' : 'Remplir depuis le règlement'}
+				</button>
+			</div>
+		{/if}
+	</div>
 </BarreImport>
 
 {#if chargement}
@@ -207,7 +284,20 @@
 		</div>
 	</section>
 
-	{#if !etat.importe_le}
+	{#if lectureEnCours}
+		<div class="empty-state card" role="status">
+			<h3>L'assistant lit le règlement</h3>
+			<p>
+				Quelques minutes : l'écran se met à jour seul, et vous pouvez le quitter. Le tableau
+				arrivera ici, avec ses contrôles — rien ne sera appliqué sans vous.
+			</p>
+		</div>
+	{:else if etat.lecture_ia === 'echec'}
+		<div class="empty-state card" role="alert">
+			<h3>La lecture du règlement a échoué</h3>
+			<p>{etat.erreur_ia ?? 'Réessayez, ou importez un fichier.'}</p>
+		</div>
+	{:else if !etat.importe_le}
 		<div class="empty-state card">
 			<h3>Aucun état descriptif</h3>
 			<p>
@@ -293,6 +383,18 @@
 	}
 	.gabarit {
 		margin: 0 0 0.75rem;
+	}
+	.autrement {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.4rem;
+		margin-top: 1rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--color-border);
+	}
+	.autrement p {
+		margin: 0;
 	}
 	.manquantes {
 		color: var(--color-danger);

@@ -15,11 +15,12 @@ import io
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from app import contexte
 from app.auth.deps import require_cs_or_admin
 from app.database import get_session
 from app.models.copropriete import Batiment
@@ -28,12 +29,17 @@ from app.utils.batiments import libelle_batiment
 from app.utils.constats import Constat, applicable
 from app.utils.etat_descriptif import EN_TETES_FIXES, Cle, Ligne, lettre_de, nature_de
 from app.utils.etat_descriptif_application import (
+    LECTURE_ECHEC,
+    LECTURE_EN_COURS,
     EtatDescriptifRefuse,
     appliquer,
     constats,
     en_attente,
+    entete,
+    ouvrir_lecture_ia,
     poser,
 )
+from app.utils.etat_descriptif_ia import USAGE_LECTURE_ETAT_DESCRIPTIF, remplir_en_tache_de_fond
 from app.utils.fichiers import lire_tableur_recu
 from app.utils.import_xlsx import lignes_du_classeur
 from app.utils.recuperer import ou_404
@@ -66,6 +72,12 @@ class EtatDescriptifLu(BaseModel):
     lettres_citees: list[str] = []
     batiments: list[BatimentLettre] = []
     applicable: bool = False
+    #: L'assistant peut-il lire le règlement ? (usage activé, clé et modèle — #2218)
+    ia_disponible: bool = False
+    #: L'issue de la lecture qui a rempli l'import : `en_cours`, `terminee`, `echec` —
+    #: `None` pour un fichier téléversé.
+    lecture_ia: Optional[str] = None
+    erreur_ia: Optional[str] = None
 
 
 class Correspondance(BaseModel):
@@ -90,9 +102,22 @@ def _etat(session: Session) -> EtatDescriptifLu:
         BatimentLettre(id=b.id, libelle=libelle_batiment(b), lettre_rcp=b.lettre_rcp)
         for b in session.exec(select(Batiment).order_by(Batiment.id)).all()
     ]
+    from app.utils.llm import config_llm
+
+    ia = config_llm(session, USAGE_LECTURE_ETAT_DESCRIPTIF).pret
     imp = en_attente(session)
     if imp is None:
-        return EtatDescriptifLu(batiments=batiments)
+        return EtatDescriptifLu(batiments=batiments, ia_disponible=ia)
+    issue = entete(imp)
+    if issue.get("lecture_ia") in (LECTURE_EN_COURS, LECTURE_ECHEC):
+        #  Rien à contrôler : la lecture n'a pas (encore) posé de ligne.
+        return EtatDescriptifLu(
+            importe_le=imp.importe_le,
+            batiments=batiments,
+            ia_disponible=ia,
+            lecture_ia=issue["lecture_ia"],
+            erreur_ia=issue.get("erreur_ia"),
+        )
     lecture, trouves = constats(session, imp)
     nature = {lu.rang: nature_de(lu.nature) for lu in lecture.lignes}
     return EtatDescriptifLu(
@@ -116,6 +141,8 @@ def _etat(session: Session) -> EtatDescriptifLu:
         ),
         batiments=batiments,
         applicable=imp.applique_le is None and applicable(trouves),
+        ia_disponible=ia,
+        lecture_ia=issue.get("lecture_ia"),
     )
 
 
@@ -187,3 +214,37 @@ def appliquer_etat_descriptif(
         raise HTTPException(409, str(exc))
     session.commit()
     return Application(**bilan)
+
+
+@router.post(
+    "/admin/etat-descriptif/lire-reglement", response_model=EtatDescriptifLu, status_code=202
+)
+def lire_le_reglement(
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(require_cs_or_admin),
+):
+    """L'assistant lit le règlement versé et remplit l'atelier, en tâche de fond (#2218).
+
+    Rend aussitôt l'état « lecture en cours » : l'écran le relit jusqu'à l'issue.
+    Le fichier en attente est remplacé ; rien ne touche au patrimoine avant « Appliquer ».
+    """
+    from app.utils import llm_limites
+    from app.utils.llm import config_llm
+    from app.utils.question_reglement.texte import assembler
+
+    if not config_llm(session, USAGE_LECTURE_ETAT_DESCRIPTIF).pret:
+        raise HTTPException(
+            400, "L'assistant n'est pas activé pour cette lecture (Admin › Assistant IA)."
+        )
+    if assembler(session) is None:
+        raise HTTPException(400, "Aucun règlement n'est versé (Ma résidence › Règlement).")
+    #  La limite d'appels se dit AVANT d'ouvrir la lecture : la tâche la verrait
+    #  aussi (`demander`), mais l'écran aurait remplacé ce qui attendait pour rien.
+    refus = llm_limites.refus_avant_envoi(session, USAGE_LECTURE_ETAT_DESCRIPTIF, user.id)
+    if refus:
+        raise HTTPException(429, refus[1])
+    imp = ouvrir_lecture_ia(session)
+    session.commit()
+    background_tasks.add_task(remplir_en_tache_de_fond, contexte.courante(), imp.id, user.id)
+    return _etat(session)
