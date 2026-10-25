@@ -143,6 +143,9 @@
 			{enCours ? 'Import…' : 'Importer'}
 		</button>
 	</div>
+	<!--  Une AUTRE façon de remplir l'import — l'assistant qui lit le règlement
+	      (état descriptif, #2218) : sous le fichier, comme l'alternative qu'elle est. -->
+	<slot name="autrement" />
 </div>
 
 <ReglagesListe>

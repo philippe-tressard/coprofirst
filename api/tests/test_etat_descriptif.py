@@ -306,7 +306,7 @@ def test_chaque_route_de_l_atelier_exige_le_conseil_ou_l_administration():
     from app.routers.lots_etat_descriptif import router
 
     routes = [r for r in router.routes if isinstance(r, APIRoute)]
-    assert len(routes) == 5, "une route ajoutée ou retirée : relire ce test"
+    assert len(routes) == 6, "une route ajoutée ou retirée : relire ce test"
     for route in routes:
         appels = {d.call for d in route.dependant.dependencies}
         assert require_cs_or_admin in appels, route.path

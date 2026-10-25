@@ -105,6 +105,12 @@ EXIGENCES = [
         ("synthèse d'une affaire close",),
     ),
     (
+        #  #2218 : le texte du règlement part aussi pour lire l'état descriptif.
+        "la lecture de l'état descriptif du règlement par l'assistant",
+        ("utils/etat_descriptif_ia.py", "async def lire_le_reglement"),
+        ("lire l'état descriptif",),
+    ),
+    (
         "l'acheminement des courriels par un tiers",
         ("utils/smtp.py", "def "),
         #  ⚠️ Pas « courriel » ni « e-mail » seuls : le texte les emploie déjà

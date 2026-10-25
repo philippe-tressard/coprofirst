@@ -63,6 +63,7 @@ def test_les_usages_sont_declares_et_chacun_a_un_prompt_d_origine():
         "question_reglement",
         "synthese_affaires_en_cours",
         "fusion_affaires",
+        "lecture_etat_descriptif",
     }
     for u in USAGES.values():
         assert u.prompt_defaut.strip()
