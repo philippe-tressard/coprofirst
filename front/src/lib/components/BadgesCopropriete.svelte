@@ -57,6 +57,7 @@
 <script lang="ts">
 	import { TYPES_ACCES } from '$lib/types-acces';
 	import { onMount } from 'svelte';
+	import ConstatsBadges from '$lib/components/ConstatsBadges.svelte';
 	import {
 		acces as accesApi,
 		admin as adminApi,
@@ -320,6 +321,7 @@
 	<div class="section-header">
 		<h2 class="section-title">Tous les badges de la copropriété</h2>
 	</div>
+	<ConstatsBadges />
 	<!--  🔴 Ce paragraphe annonçait « Cette vue est en LECTURE SEULE » alors que
 	      l'écran porte, depuis la v1.37.0, un bouton « Enregistrer un accès », un
 	      crayon et une corbeille sur chaque ligne. Signalé le 15/09/2026, sur une

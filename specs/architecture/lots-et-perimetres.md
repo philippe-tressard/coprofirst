@@ -235,3 +235,13 @@ sur l'épopée :
 - **« Escalier A' » est une autre clé qu'« Escalier A »** (25/10/2026) : le prime se dit
   en toutes lettres dans le code de la clé (`escalier-a-prime`) ; deux colonnes d'un même
   code sont un bloquant de lecture.
+- **Les portes d'un badge se PROPOSENT, elles ne se posent pas** (#2217, 25/10/2026 —
+  la sécurité tranche, rang 1) : la dérivation (`utils/acces_portes`) s'affiche dans le
+  formulaire du conseil avec la raison de chaque porte, et ne coche rien d'elle-même ;
+  le conseil la reprend d'un geste, la retranche, et l'enregistrement décide (journalisé,
+  `acces_perimetre_pose`). Les chemins silencieux — import, acceptation d'une commande,
+  déclaration — gardent la règle de #953 à l'identique : **l'import ne dérive pas en
+  silence**, écart assumé au texte du §7. Les cas où la proposition ouvre plus que #953
+  (une place desservie par un autre bâtiment, l'extérieur à une seule place, deux
+  logements dans deux bâtiments) sont nommés dans `tests/test_acces_portes.py`. Poser un
+  jour la dérivation automatiquement reste une décision de l'auteur, non prise.

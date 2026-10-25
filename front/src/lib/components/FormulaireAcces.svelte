@@ -35,7 +35,8 @@
 	import { STATUT_ACCES_OPTIONS } from '$lib/types-acces';
 	import { sectionPresente, type Etat } from '$lib/entites/types';
 	import { pliageDe, requisDe } from '$lib/pliage';
-	import type { ChoixAcces } from '$lib/api/acces';
+	import { acces as apiAcces, type ChoixAcces, type PorteProposee } from '$lib/api/acces';
+	import { perimetreLabelUn } from '$lib/perimetres';
 
 	const dispatch = createEventDispatcher<{ annule: void; enregistre: void }>();
 
@@ -101,6 +102,36 @@
 	//  dire « il est déduit du lot » d'une télécommande décrirait un autre écran
 	//  que celui qu'on a sous les yeux.
 	$: accesSuitLeLot = choixDuType?.suit_le_lot ?? true;
+
+	//  🔴 Les portes que les lots justifient (#2217) — une PROPOSITION : elle ne
+	//  coche rien d'elle-même, le conseil la REPREND d'un geste, la retranche dans
+	//  le sélecteur, et c'est l'enregistrement qui décide. Une porte physique ne
+	//  s'ajoute jamais sur une dérivation (« proposer, jamais poser »).
+	let proposition: PorteProposee[] = [];
+	let demande = '';
+	async function proposer(suitLeLot: boolean, porteurId: number | null, lotId: number | null) {
+		const cleDemande = `${suitLeLot}|${porteurId}|${lotId}`;
+		demande = cleDemande;
+		if (!suitLeLot || (!porteurId && !lotId)) {
+			proposition = [];
+			return;
+		}
+		try {
+			const lue = await apiAcces.portesProposees(porteurId, lotId);
+			if (demande === cleDemande) proposition = lue; // la dernière demande gagne
+		} catch {
+			proposition = []; // une proposition absente ne bloque aucun geste
+		}
+	}
+	$: proposer(accesSuitLeLot, saisie.porteur_id, saisie.lot_id);
+	$: dejaRepris =
+		proposition.length > 0 && proposition.every((p) => saisie.perimetre_cible.includes(p.code));
+	function reprendre() {
+		saisie.perimetre_cible = [
+			...saisie.perimetre_cible,
+			...proposition.map((p) => p.code).filter((c) => !saisie.perimetre_cible.includes(c)),
+		];
+	}
 </script>
 
 <!--  🔴 LE CADRE EST POSÉ ICI, parce que ce composant CONNAÎT le geste
@@ -193,10 +224,29 @@
 			<!--  🔒 Les choix sont RESTREINTS par type (15/09/2026) : un badge ne
 			      commande pas un local à poubelles. La liste vient du serveur, qui
 			      l'oppose aussi à la requête — l'écran propose, il ne protège pas. -->
+			{#if accesSuitLeLot && proposition.length}
+				<div class="proposition" aria-live="polite">
+					<p class="proposition-titre">Ce que ses lots justifient</p>
+					<ul>
+						{#each proposition as porte (porte.code)}
+							<li><strong>{perimetreLabelUn(porte.code)}</strong> — {porte.raison}</li>
+						{/each}
+					</ul>
+					<button
+						type="button"
+						class="btn btn-outline btn-sm"
+						on:click={reprendre}
+						disabled={dejaRepris}
+					>
+						{dejaRepris ? 'Proposition reprise' : 'Reprendre la proposition'}
+					</button>
+				</div>
+			{/if}
 			<p class="aide">
 				{#if accesSuitLeLot}
 					Ce que le badge ouvre. Laissé vide à la création, il est déduit&nbsp;: le bâtiment du lot,
-					ou celui du porteur si tous ses lots sont dans le même.
+					ou celui du porteur si tous ses lots sont dans le même. La proposition ne coche rien
+					d'elle-même&nbsp;: reprise, elle se retranche dans la liste avant d'enregistrer.
 				{:else}
 					Ce que la télécommande ouvre. Laissé vide, elle reçoit les portails d'accès de la
 					résidence.
@@ -275,3 +325,22 @@
 		on:enregistre={() => dispatch('enregistre')}
 	/>
 </CadreFormulaire>
+
+<style>
+	/*  La proposition des lots (#2217) : un encart qui se distingue du sélecteur —
+	    ce qui est PROPOSÉ n'est pas ce qui est coché. */
+	.proposition {
+		margin: 0.5rem 0;
+		padding: 0.6rem 0.75rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+	}
+	.proposition-titre {
+		margin: 0 0 0.25rem;
+		font-weight: 600;
+	}
+	.proposition ul {
+		margin: 0 0 0.5rem;
+		padding-left: 1.1rem;
+	}
+</style>

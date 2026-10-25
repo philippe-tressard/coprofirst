@@ -25,6 +25,7 @@ from app.utils.acces_perimetre import acces_deduit
 from app.utils.perimetres import parse_json_perimetres, perimetre_label
 from app.utils.types_acces import TypeAcces
 from app.utils.cloche import sonner_systeme
+from app.utils.journal_securite import journaliser_securite
 
 
 #  ── Ce que le badge ouvre, et ce qui en découle ────────────────────────────
@@ -132,3 +133,27 @@ def _prevenir_porteur(session: Session, porteur: Utilisateur, type_acces: TypeAc
         lien="/mon-lot",
     )
     session.commit()
+
+
+def journaliser_acces(
+    acteur: Utilisateur, type_acces: TypeAcces, objet, avant: Optional[str]
+) -> None:
+    """Le conseil a posé ou changé ce qu'un badge OUVRE : la trace de qui, et sur quoi (#2217).
+
+    Une porte physique ne s'ajoute pas sans laisser de ligne — c'est le pendant de
+    « proposer, jamais poser » (`utils/acces_portes`). Rien n'est écrit si l'accès
+    n'a pas changé. 🔴 Sans donnée personnelle : des identifiants et des codes de
+    périmètre, jamais un nom.
+    """
+    if objet.perimetre_cible == avant:
+        return
+    journaliser_securite(
+        "acces_perimetre_pose",
+        acteur_id=acteur.id,
+        cible_id=objet.user_id,
+        detail=(
+            f"type={type_acces.cle} objet={objet.id} "
+            f"avant={','.join(json.loads(avant)) if avant else '-'} "
+            f"apres={','.join(json.loads(objet.perimetre_cible)) if objet.perimetre_cible else '-'}"
+        ),
+    )

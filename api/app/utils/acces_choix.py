@@ -127,7 +127,7 @@ def fixer_acces(session: Session, code: str, types: list[str]) -> None:
         ecrire_cle(session, cle_config(type_acces), json.dumps(codes, ensure_ascii=False))
 
 
-def _codes_batiments() -> list[str]:
+def codes_batiments() -> list[str]:
     """Les nœuds de l'arbre qui SONT un bâtiment, dans l'ordre de l'arbre.
 
     Seul le nœud « bâtiment » porte un `batiment_id` ; ses espaces (hall,
@@ -158,7 +158,7 @@ def codes_autorises(session: Session, type_acces: TypeAcces) -> list[str]:
     #  les accès qui ne dépendent d'aucun lot. Un `set` rendrait la même liste
     #  dans un ordre différent à chaque démarrage, et la rangée de pastilles
     #  changerait de forme sous les yeux de qui la lit.
-    autorises = ([defaut] if defaut else []) + _codes_batiments()
+    autorises = ([defaut] if defaut else []) + codes_batiments()
     return autorises + [c for c in fixes if c not in autorises]
 
 

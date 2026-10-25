@@ -81,7 +81,7 @@ Une divergence légitime qui ne se déclare pas est indistinguable d'un oubli
 
 from fastapi import APIRouter
 
-from . import imports_telecommandes, imports_vigik, parc, resident
+from . import imports_telecommandes, imports_vigik, parc, portes, resident
 
 router = APIRouter(prefix="/acces", tags=["acces"])
 
@@ -112,4 +112,7 @@ router.include_router(resident.router)
 #  et à chaque PR.
 router.include_router(imports_vigik.router)
 router.include_router(imports_telecommandes.router)
+#  Les lectures de ce qu'un badge ouvre (#2217) : chemins fixes à un segment,
+#  montés AVANT le joker `/admin/{type_cle}` du parc.
+router.include_router(portes.router)
 router.include_router(parc.router)
