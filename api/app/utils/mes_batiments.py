@@ -111,15 +111,31 @@ def batiments_de_l_utilisateur(user) -> frozenset[int]:
         from app.models.copropriete import Lot
         from app.models.core import UserLot
 
+        from app.utils.designation_lot import est_annexe
+
         with contexte.nouvelle_session() as session:
-            lignes = session.exec(
-                select(Lot.batiment_id)
+            lots = session.exec(
+                select(Lot)
                 .join(UserLot, UserLot.lot_id == Lot.id)
                 .where(UserLot.user_id == user_id, UserLot.actif == True)  # noqa: E712
             ).all()
-        #  `batiment_id` est nul sur un lot de parking : un parking n'est pas un
-        #  bâtiment et ne doit pas entrer dans la liste.
-        des_lots = frozenset(b for b in lignes if b is not None)
+            #  🔴 Une ANNEXE — cave ou place — n'apporte pas son bâtiment (#2212,
+            #  spec `lots-et-perimetres.md` §5–6) : on la rejoint par une
+            #  circulation, on n'y vit pas, et le hall, le toit et les actualités
+            #  confidentielles du bâtiment ne la concernent pas. Ce qui la concerne
+            #  — l'ascenseur et l'escalier qui la desservent — passe par ses
+            #  périmètres (`lot_perimetre`), pas par ici.
+            #
+            #  Mesuré en production le 24/10/2026 avant d'écrire cette ligne :
+            #  AUCUN compte ne tenait un bâtiment de ses seules annexes. Elle ne
+            #  retire donc rien à personne ; elle empêche l'import de l'état
+            #  descriptif, qui situe enfin une cave dans SON bâtiment (et non
+            #  celui de son propriétaire), d'ouvrir ce bâtiment en entier.
+            des_lots = frozenset(
+                lot.batiment_id
+                for lot in lots
+                if lot.batiment_id is not None and not est_annexe(lot)
+            )
     except Exception as exc:
         #  Pas de mise en cache : la base reviendra, et une liste figée à vide
         #  ferait durer la panne au-delà d'elle-même.

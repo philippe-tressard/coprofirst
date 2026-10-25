@@ -92,7 +92,11 @@ import pytest  # noqa: E402  (après les variables d'environnement, par construc
 #  Les helpers de purge vivent dans `tests/aides_purge.py` : un conftest n'est pas
 #  importable par un test, et un fichier qui en avait besoin en gardait une COPIE
 #  divergente (#546, 28/08/2026). Réexportés ici pour les fixtures ci-dessous.
-from tests.aides_purge import delier_references, vider_patrimoine  # noqa: E402,F401
+from tests.aides_purge import (  # noqa: E402,F401
+    delier_references,
+    purger_referentiellement,
+    vider_patrimoine,
+)
 
 
 @pytest.fixture()
@@ -163,6 +167,24 @@ def disque_jetable(monkeypatch, tmp_path):
 
     monkeypatch.setattr(get_settings(), "uploads_dir", str(tmp_path))
     return tmp_path
+
+
+@pytest.fixture()
+def lots_jetables():
+    """Les lots qu'un test COMMET repartent à sa sortie (#2212).
+
+    `vider_patrimoine` délie les lots de leurs bâtiments sans les effacer : un lot
+    laissé par un test faisait « lot absent de l'état descriptif » au suivant, qui
+    confronte un fichier à TOUS les lots en base."""
+    from sqlmodel import Session
+
+    from app.database import engine
+    from app.models.copropriete import Lot
+
+    yield
+    with Session(engine) as session:
+        purger_referentiellement(session, Lot)
+        session.commit()
 
 
 @pytest.fixture()

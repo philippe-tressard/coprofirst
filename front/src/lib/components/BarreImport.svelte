@@ -66,7 +66,9 @@
 	export let tuiles: { valeur: number | string; libelle: string; couleur?: string }[] = [];
 	/** Les colonnes attendues du fichier, affichées en aide. */
 	export let colonnesAttendues: string;
-	/** Le libellé de la case de remplacement — il diffère d'un import à l'autre. */
+	/** Le libellé de la case de remplacement — il diffère d'un import à l'autre.
+	 *  Vide : pas de case — l'import remplace toujours ce qui attend (l'état
+	 *  descriptif, #2213). */
 	export let libelleRemplacer = 'Remplacer les imports en attente existants';
 	/** Un import est en cours : le bouton se verrouille. */
 	export let enCours = false;
@@ -126,12 +128,17 @@
 	<p class="muted colonnes">
 		Colonnes attendues : <code>{colonnesAttendues}</code>
 	</p>
+	<!--  Ce qui aide à PRÉPARER le fichier (un gabarit à télécharger) se pose ici,
+	      à côté de ce qu'il prépare — pas parmi les actions sur les lignes. -->
+	<slot name="preparer" />
 	<div class="imp-upload-row">
 		<input type="file" accept=".xlsx,.xls" bind:files={fichier} class="imp-file-input" />
-		<label class="imp-checkbox-label">
-			<input type="checkbox" bind:checked={remplacer} />
-			{libelleRemplacer}
-		</label>
+		{#if libelleRemplacer}
+			<label class="imp-checkbox-label">
+				<input type="checkbox" bind:checked={remplacer} />
+				{libelleRemplacer}
+			</label>
+		{/if}
 		<button class="btn btn-primary" on:click={importer} disabled={enCours || !fichier?.length}>
 			{enCours ? 'Import…' : 'Importer'}
 		</button>
@@ -140,14 +147,16 @@
 
 <ReglagesListe>
 	<ChampRecherche id={idRecherche} bind:valeur={recherche} placeholder={exempleRecherche} />
-	<ChoixPastilles
-		{options}
-		bind:valeur={filtre}
-		tous="Tous"
-		{compte}
-		libelle="Statut"
-		libelleDevant
-	/>
+	{#if options.length > 0}
+		<ChoixPastilles
+			{options}
+			bind:valeur={filtre}
+			tous="Tous"
+			{compte}
+			libelle="Statut"
+			libelleDevant
+		/>
+	{/if}
 </ReglagesListe>
 
 {#if recherche.trim()}

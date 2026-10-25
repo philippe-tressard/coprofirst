@@ -58,6 +58,12 @@ def libelle_batiment(batiment) -> str:
     #  La forme, écrite une fois : un point après « Bât », une espace ordinaire
     #  et non insécable — c'est ce qu'employaient les onze copies, et en changer
     #  serait un changement d'affichage, pas une factorisation.
+    #  La lettre de l'acte entre parenthèses, quand elle est saisie et diffère du
+    #  numéro (« Bât. 1 (D) ») : c'est ce qui relie l'écran au règlement, et elle
+    #  ne s'écrit qu'ici (#2212).
+    lettre = str(getattr(batiment, "lettre_rcp", None) or "").strip()
+    if lettre and lettre != str(numero).strip():
+        return f"Bât. {numero} ({lettre})"
     return f"Bât. {numero}"
 
 

@@ -21,6 +21,7 @@ from app.models.evenement import Evenement
 
 from .objets import evenement_visible, ticket_visible
 from app.auth.deps import est_moderateur, est_rattache_au_lot
+from app.utils.designation_lot import est_annexe
 from app.utils.valeurs import valeur
 
 # ── Règles document ───────────────────────────────────────────────────────────
@@ -197,9 +198,15 @@ def document_visible(user: Utilisateur, doc: Document, session) -> bool:
     #  rattachement (`user.batiment_id`) n'y entre pas — un diagnostic ou une
     #  attestation de bâtiment concernent qui y détient un lot, pas qui y est
     #  domicilié sans lot. Ce n'est donc pas une copie de « mes bâtiments ».
+    #  🔴 Une ANNEXE (cave, place) n'en est pas un détenteur : la spec
+    #  `lots-et-perimetres.md` §6 refuse les PV d'un bâtiment à qui n'y range que sa
+    #  voiture, et l'import de l'état descriptif situe désormais une cave dans SON
+    #  bâtiment. Même règle que « mes bâtiments », lue au même endroit (#2212).
     if doc.perimetre == "bâtiment" and doc.batiment_id:
         lots_du_batiment = {
-            ul.lot_id for ul in user.user_lots if ul.lot and ul.lot.batiment_id == doc.batiment_id
+            ul.lot_id
+            for ul in user.user_lots
+            if ul.lot and ul.lot.batiment_id == doc.batiment_id and not est_annexe(ul.lot)
         }
         if not any(est_rattache_au_lot(user, lot_id) for lot_id in lots_du_batiment):
             return False

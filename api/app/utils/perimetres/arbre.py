@@ -60,6 +60,7 @@ import time
 from typing import NamedTuple, Optional
 
 from app import contexte
+from app.utils.valeurs import valeur
 
 logger = logging.getLogger("hostachy.perimetres")
 
@@ -90,6 +91,11 @@ class Noeud(NamedTuple):
     hors_copropriete: bool
     actif: bool
     ordre: int
+    #: Ce que le nœud dessert (`Perimetre.desserte`) — `circulation`, `caves`,
+    #: `stationnement` ou `None`. Lu par `perimetres/lots.deriver` (#2212).
+    desserte: Optional[str] = None
+    #: L'identifiant en base, pour qui doit ÉCRIRE une référence au nœud.
+    id: Optional[int] = None
 
 
 def _cache() -> dict:
@@ -145,6 +151,8 @@ def arbre() -> dict[str, Noeud]:
                     hors_copropriete=bool(getattr(ligne, "hors_copropriete", False)),
                     actif=bool(ligne.actif),
                     ordre=ligne.ordre or 0,
+                    desserte=valeur(ligne.desserte),
+                    id=ligne.id,
                 )
                 for ligne in lignes
             }

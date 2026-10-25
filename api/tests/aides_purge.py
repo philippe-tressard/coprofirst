@@ -124,7 +124,14 @@ def vider_perimetres(session) -> None:
     """
     from sqlmodel import select
 
-    from app.models.perimetre import Perimetre
+    from app.models.perimetre import LotPerimetre, Perimetre
+
+    #  Ce qui RÉFÉRENCE un nœud part d'abord (#2212) : les lignes `lot_perimetre`,
+    #  dont la clé n'est pas nullable, puis toute colonne nullable qui pointe vers
+    #  `perimetre` (circulation d'un lot, clé de charges) — déduite des métadonnées.
+    purger_referentiellement(session, LotPerimetre)
+    delier_references(session, Perimetre)
+    session.commit()
 
     restants = session.exec(select(Perimetre)).all()
     while restants:

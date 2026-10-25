@@ -7,6 +7,7 @@
 - [Vue d'ensemble](vue-ensemble.md)
 - [Stack technique](stack.md)
 - [Modèle de données](modele-donnees.md)
+- [Lots, circulations et périmètres](lots-et-perimetres.md) — la règle générale d'un règlement de copropriété : un lot est situé dans un bâtiment, desservi par une circulation, et contribue à des clés de charges ; l'impact sur la visibilité et les badges
 - [API](api.md)
 
 ## Cible

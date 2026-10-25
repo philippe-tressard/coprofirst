@@ -290,6 +290,33 @@ export interface MonLot {
 	est_logement_de_reference: boolean;
 	/** Mon lien à ce lot : `locataire` pour un lot que je LOUE, sinon propriétaire, bailleur… */
 	type_lien: string | null;
+	/** La nature selon le règlement — `logement`, `commerce`, `cave`, `parking`, `divers` (#2212). */
+	nature: string | null;
+	/** La porte ou la place, ce que le résident dit (« 5 & 6 »). */
+	numero_usage: string | null;
+	/** Le nœud qui DESSERT le lot — `null` pour un accès direct. */
+	circulation: PerimetreDuLot | null;
+	/** Les périmètres qui le concernent : situé dans, desservi par. */
+	perimetres: PerimetreDuLot[];
+	/** Ses tantièmes par clé — `null` quand le lecteur n'a pas à les voir (un locataire). */
+	quotes_parts: QuotePartLot[] | null;
+}
+
+/** Un périmètre d'un lot — `PerimetreDuLot` (`utils/lecture_lots.py`). */
+export interface PerimetreDuLot {
+	code: string;
+	libelle: string;
+	relation: 'situe_dans' | 'desservi_par' | 'circulation';
+	/** Posé par la dérivation, ou à la main dans l'administration. */
+	derive: boolean;
+}
+
+/** La part d'un lot dans une clé de charges — `QuotePart` (`utils/lecture_lots.py`). */
+export interface QuotePartLot {
+	cle: string;
+	libelle: string;
+	numerateur: number;
+	denominateur: number;
 }
 
 /** Un lot que le locataire peut se dire louer — `LotPropose` (`routers/lots.py`). */

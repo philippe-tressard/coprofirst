@@ -37,6 +37,7 @@ export * from './documents';
 export * from './communaute';
 export * from './avis';
 export * from './patrimoine';
+export * from './etat-descriptif';
 export * from './bailleur';
 export * from './acces';
 export * from './prestataires';
