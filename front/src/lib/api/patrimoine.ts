@@ -193,6 +193,9 @@ export interface EntreeCarnet {
 	libelle: string;
 	origine: 'contrat' | 'intervention' | 'affaire';
 	detail: string;
+	/**  Le n° d'une affaire (`TK-109008`) — le pied de la carte le dit, comme celui
+	 *   d'une carte d'affaire. Vide pour un contrat ou une intervention. */
+	numero?: string | null;
 	/**  La VALEUR de la catégorie d'une affaire — l'écran rend son libellé. */
 	categorie?: string | null;
 	equipement: string | null;

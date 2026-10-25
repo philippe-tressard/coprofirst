@@ -24,6 +24,10 @@
   de bâtiment en attendant.
 
   🔒 `npm run lint:pastilles` exige que les trois cartes passent par ici.
+
+  Le squelette (catégorie, numéro, fin) est `PiedCarte`, commun à ce composant
+  et au carnet d'entretien (24/10/2026) : l'ordre ci-dessus s'y lit, il ne s'y
+  écrit plus qu'une fois.
 -->
 <script lang="ts">
 	import Badge from '$lib/components/Badge.svelte';
@@ -32,14 +36,8 @@
 	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
 	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
 	import MarqueIA from '$lib/components/MarqueIA.svelte';
-	import {
-		BADGE_PRIORITE,
-		PRIORITE_BREVE,
-		categorieTicketEmoji,
-		categorieTicketLabel,
-		optionsEnBadge,
-		ticketUrgent,
-	} from '$lib/tickets';
+	import PiedCarte from '$lib/components/PiedCarte.svelte';
+	import { BADGE_PRIORITE, PRIORITE_BREVE, optionsEnBadge, ticketUrgent } from '$lib/tickets';
 	import type { Ticket } from '$lib/api';
 	import { etatAffiche } from '$lib/suivi-actualite';
 
@@ -55,13 +53,9 @@
 	$: etat = etatAffiche(affaire);
 </script>
 
-<!--  `display: contents` : les pastilles restent les enfants de la ligne qui les
-      reçoit (`.ec-tags`, `.flux-badges`) — c'est elle qui les range et les fait
-      passer à la ligne. L'enveloppe ne sert qu'à borner l'habillage ci-dessous. -->
-<span class="pa">
-	<span class="pa-cat" title={categorieTicketLabel(affaire.categorie)}
-		>{categorieTicketEmoji(affaire.categorie)}</span
-	>
+<!--  Le squelette — catégorie, numéro, créneau de fin — est `PiedCarte` (24/10/2026),
+      que le carnet d'entretien rend aussi : ici, seulement ce que dit une affaire. -->
+<PiedCarte categorie={affaire.categorie} numero={affaire.numero}>
 	{#if etat}
 		<BadgeEtatAffaire statut={etat} fusionnee={affaire.fusionnee} />
 	{/if}
@@ -82,27 +76,8 @@
 			>🧾 Synthèse</span
 		>
 	{/if}
-	<span>#{affaire.numero}</span>
-	<AuteurCarte nom={auteur} />
-	<MarqueIA assiste={affaire.assiste_ia} />
-</span>
-
-<style>
-	.pa {
-		display: contents;
-	}
-	/*  Les pastilles ne se compriment pas — la règle de `.ec-tags`, qui ne les
-	    atteint plus à travers l'enveloppe. */
-	.pa > :global(*) {
-		flex-shrink: 0;
-	}
-	/*  🔴 UN HABILLAGE, et la couleur seulement où elle DISTINGUE (maquette B,
-	    10/10/2026 : « visuellement brouillon ») : des CAPSULES, neutres pour ce
-	    qui décrit, teintées pour l'état, « qui la lit » et l'urgence. Devenu le
-	    standard du site : la règle vit dans `styles/composants.css` (`.badge`,
-	    `:is(.ec-tags, .pa) .badge-gray`), plus ici. */
-	.pa-cat {
-		flex-shrink: 0;
-		font-size: var(--fs-lg);
-	}
-</style>
+	<svelte:fragment slot="fin">
+		<AuteurCarte nom={auteur} />
+		<MarqueIA assiste={affaire.assiste_ia} />
+	</svelte:fragment>
+</PiedCarte>

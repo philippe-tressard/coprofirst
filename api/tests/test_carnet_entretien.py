@@ -129,6 +129,9 @@ def test_une_affaire_se_dit_par_sa_categorie_jamais_incident():
             assert ligne["origine"] == "affaire"
             assert ligne["categorie"] == "etude_travaux"
             assert "etude_travaux" not in ligne["detail"]
+            #  Le n° d'affaire est dit par le pied de la carte, pas par son détail.
+            assert ligne["numero"] == ticket.numero
+            assert ticket.numero not in ligne["detail"]
         finally:
             purger_ligne(session, Ticket, ticket.id)
             purger_ligne(session, Utilisateur, auteur.id)
