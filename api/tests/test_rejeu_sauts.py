@@ -22,6 +22,12 @@ def test_un_saut_donne_son_noeud_et_sa_raison():
     assert ligne_de_saut(r) == "tests/test_x.py::test_y\tWeasyPrint absent (système)"
 
 
+def test_un_saut_relaye_par_le_maitre_xdist_ne_compte_pas_deux_fois():
+    relaye = _rapport(True, ("f", 1, "Skipped: WeasyPrint absent"))
+    relaye.node = object()  # le worker d'origine, posé par xdist chez le maître
+    assert ligne_de_saut(relaye) is None
+
+
 def test_un_test_joue_ne_donne_rien():
     assert ligne_de_saut(_rapport(False)) is None
 

@@ -28,7 +28,6 @@ import ast
 import pathlib
 import types
 
-from tests.aides_base import moteur_de_test
 from tests.aides_sources import modules_app
 
 APP = pathlib.Path(__file__).resolve().parents[1] / "app"
@@ -214,7 +213,7 @@ def test_le_serveur_refuse_d_ecraser_la_saisie_quand_le_contrat_fait_foi():
     )
 
 
-def _base_avec_copro(nom_saisi: str | None):
+def _base_avec_copro(session, nom_saisi: str | None):
     """Base jetable portant une copropriété, et la saisie libre si on en veut une.
 
     ⚠️ Une base RÉELLE, pas le double `_Session` du reste du fichier : ce qu'on
@@ -222,22 +221,19 @@ def _base_avec_copro(nom_saisi: str | None):
     d'abord, la saisie ensuite. Un double qui rend ce qu'on lui a préparé
     prouverait seulement qu'on sait préparer un double.
     """
-    from sqlmodel import Session
-
     from app.models.copropriete import Copropriete
     from app.models.core import SyndicInfo
 
-    session = Session(moteur_de_test())
     copro = Copropriete(nom="Résidence d'essai", adresse="1 rue d'essai")
     session.add(copro)
     if nom_saisi is not None:
         session.add(SyndicInfo(nom_syndic=nom_saisi))
     session.commit()
     session.refresh(copro)
-    return session, copro
+    return copro
 
 
-def test_la_fiche_de_la_residence_replie_sur_la_saisie_quand_aucun_contrat():
+def test_la_fiche_de_la_residence_replie_sur_la_saisie_quand_aucun_contrat(session):
     """Sans contrat désigné, la fiche affiche la saisie — pas un vide.
 
     🔴 C'est le défaut trouvé le 29/08/2026 en ajoutant le syndic à la fiche de
@@ -251,11 +247,11 @@ def test_la_fiche_de_la_residence_replie_sur_la_saisie_quand_aucun_contrat():
     """
     from app.routers.copropriete import copropriete_lue
 
-    session, copro = _base_avec_copro("Cabinet de repli")
+    copro = _base_avec_copro(session, "Cabinet de repli")
     assert copropriete_lue(session, copro).syndic_cabinet == "Cabinet de repli"
 
 
-def test_sans_contrat_NI_saisie_la_fiche_n_invente_aucun_syndic():
+def test_sans_contrat_NI_saisie_la_fiche_n_invente_aucun_syndic(session):
     """Le cas zéro : rien en base, donc rien à l'écran.
 
     ⚠️ Sans ce test, le précédent passerait tout aussi bien sur un repli qui
@@ -265,5 +261,5 @@ def test_sans_contrat_NI_saisie_la_fiche_n_invente_aucun_syndic():
     """
     from app.routers.copropriete import copropriete_lue
 
-    session, copro = _base_avec_copro(None)
+    copro = _base_avec_copro(session, None)
     assert copropriete_lue(session, copro).syndic_cabinet is None

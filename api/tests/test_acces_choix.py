@@ -42,6 +42,7 @@ from app.utils.acces_choix import (
 from app.utils.acces_gestes import _acces_json
 from app.utils.perimetres import invalider_cache
 from app.utils.types_acces import TELECOMMANDE, VIGIK
+from tests.aides_purge import vider_patrimoine
 
 #: Les portails de l'arbre d'essai — deux nœuds de second niveau, sous deux
 #: parents différents : c'est la forme exacte de la demande (« parking » ET
@@ -116,21 +117,11 @@ def arbre_dessai():
 
         for ligne in s.exec(select(ConfigSite)).all():
             s.delete(ligne)
-        #  ⚠️ Les ENFANTS d'abord : `perimetre.parent_id` est une clé étrangère, et
-        #  la suite vérifie les clés. Un balayage dans l'ordre
-        #  des identifiants échouait donc au premier parent — et le nettoyage
-        #  raté laissait l'arbre en place pour les fichiers suivants, qui
-        #  échouaient pour une raison qui ne les regardait pas.
-        #  ⚠️ Un `commit` par ligne, des ENFANTS vers les parents :
-        #  `perimetre.parent_id` est une clé étrangère, la suite active
-        #  la vérification des clés, et SQLAlchemy ne connaît pas l'ordre à
-        #  suivre — la relation n'est pas cartographiée, seule la colonne l'est.
-        #  Un lot unique se faisait donc réordonner et échouait sur le premier
-        #  parent ; le nettoyage raté laissait l'arbre en place, et les fichiers
-        #  suivants échouaient pour une raison qui ne les regardait pas.
-        for ligne in sorted(s.exec(select(Perimetre)).all(), key=lambda n: -n.id):
-            s.delete(ligne)
-            s.commit()
+        #  Le patrimoine ENTIER — arbre, bâtiments, copropriété : la fixture ne
+        #  retirait que l'arbre, et la copropriété et ses deux bâtiments restaient
+        #  dans la base du processus pour le test suivant (#2223). L'arbre part
+        #  par vagues, des enfants vers les parents (`vider_perimetres`).
+        vider_patrimoine(s)
     invalider_cache()
 
 
