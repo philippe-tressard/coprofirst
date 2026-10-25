@@ -19,11 +19,19 @@ source que la lecture.
 
 ## Les contrôles
 
-Bloquants : somme d'une clé ≠ son dénominateur ; numéro de lot en double ; lot du
-fichier absent de l'application et l'inverse ; lettre de bâtiment sans
-correspondance ; nature illisible ; logement dont le bâtiment diffère de celui de
-l'application ; circulation dont le bâtiment n'a pas de nœud dans l'arbre. Un
-contrôle qui ne peut pas se calculer rend INCONNU — bloquant lui aussi, jamais OK.
+Bloquants — ce que l'application écrirait FAUX ou ne saurait pas placer : numéro de
+lot en double ; lettre de bâtiment sans correspondance ; nature illisible ; logement
+dont le bâtiment diffère de celui de l'application ; circulation dont le bâtiment n'a
+pas de nœud dans l'arbre. Un contrôle qui ne peut pas se calculer rend INCONNU —
+bloquant lui aussi, jamais OK.
+
+À savoir — ce qui est INCOMPLET sans rendre faux ce qui s'écrit (25/10/2026) : somme
+d'une clé ≠ son dénominateur (le règlement lui-même ne tombe pas toujours juste, après
+ses modificatifs), lot de l'application absent du fichier (il garde sa désignation
+actuelle, à récupérer dans le règlement), lot du fichier absent de l'application (sa
+ligne est ignorée, rien n'est créé). Ils restent affichés, avec leur écart, et
+l'écran de confirmation les rappelle : on applique en connaissance de cause, puis on
+complète — un fichier incomplet ne bloquait que le travail qu'il permettait déjà.
 """
 
 from __future__ import annotations
@@ -277,9 +285,15 @@ def controler(
         constats.append(constat("vide", INCONNU, "Aucune ligne de lot lue : rien à contrôler."))
         return constats
 
-    def _bloquant(code, message, lots):
+    def _signaler(code, gravite, message, lots):
         if lots:
-            constats.append(constat(code, BLOQUANT, message, sorted(set(lots))))
+            constats.append(constat(code, gravite, message, sorted(set(lots))))
+
+    def _bloquant(code, message, lots):
+        _signaler(code, BLOQUANT, message, lots)
+
+    def _a_savoir(code, message, lots):
+        _signaler(code, AVERTISSEMENT, message, lots)
 
     vus: dict[str, int] = {}
     for ligne in lignes:
@@ -300,9 +314,10 @@ def controler(
     )
 
     origines = {ligne.lot_origine for ligne in lignes if ligne.lot_origine}
-    _bloquant(
+    _a_savoir(
         "absent_application",
-        "Lot du règlement absent de l'application (lot sans propriétaire dans la liste du syndic).",
+        "Lot du règlement absent de l'application (lot sans propriétaire dans la liste du "
+        "syndic) : sa ligne est ignorée, rien n'est créé.",
         [
             ligne.lot
             for ligne in lignes
@@ -310,9 +325,10 @@ def controler(
         ],
     )
     du_fichier = {ligne.lot for ligne in lignes}
-    _bloquant(
+    _a_savoir(
         "absent_fichier",
-        "Lot de l'application absent de l'état descriptif.",
+        "Lot de l'application absent de l'état descriptif : il garde sa désignation actuelle, "
+        "à récupérer dans le règlement.",
         [n for n in numeros_app if n not in du_fichier],
     )
     if origines:
@@ -400,12 +416,15 @@ def controler(
     for cle in lecture.cles:
         somme = sum(ligne.quotes.get(cle.code, 0) for ligne in lignes)
         if somme != cle.denominateur:
+            ecart = cle.denominateur - somme
             constats.append(
                 constat(
                     "somme",
-                    BLOQUANT,
-                    f"« {cle.libelle} » : la somme des tantièmes vaut {somme}, "
-                    f"le dénominateur déclaré {cle.denominateur}.",
+                    AVERTISSEMENT,
+                    f"« {cle.libelle} » : la somme des tantièmes vaut {somme} pour un "
+                    f"dénominateur déclaré de {cle.denominateur} — "
+                    + (f"il en manque {ecart}." if ecart > 0 else f"il y en a {-ecart} de trop.")
+                    + " Les tantièmes lus sont posés tels quels.",
                 )
             )
     if not lecture.cles:

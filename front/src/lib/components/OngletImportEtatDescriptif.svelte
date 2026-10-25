@@ -13,7 +13,9 @@
   1. téléverser (le gabarit vide se télécharge à côté) ;
   2. dire la lettre de l'acte de chaque bâtiment — une correspondance SAISIE,
      jamais déduite de l'ordre ;
-  3. lire les contrôles : un seul bloquant, et rien ne s'applique ;
+  3. lire les contrôles : un bloquant ferme l'application, un « à savoir » (somme qui
+     ne tombe pas juste, lot absent d'un côté) ne la ferme pas et se rappelle à la
+     confirmation ;
   4. relire les lignes, puis appliquer.
 
   ## Sans tableau : l'assistant lit le règlement (#2218)
@@ -35,12 +37,12 @@
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import IconeIA from '$lib/components/IconeIA.svelte';
+	import TableLignesEtatDescriptif from '$lib/components/TableLignesEtatDescriptif.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { etatDescriptif as api, type EtatDescriptif, type LigneEtatDescriptif } from '$lib/api';
 	import { confirmer } from '$lib/confirmation';
 	import { fmtDatetime } from '$lib/date';
 	import { messageErreur } from '$lib/erreurs';
-	import { parAttribut } from '$lib/table-statuts';
 	import { contientTousLesMots } from '$lib/texte';
 
 	let etat: EtatDescriptif | null = null;
@@ -56,13 +58,6 @@
 	/** La lettre saisie pour chaque bâtiment, par identifiant. */
 	let lettres: Record<number, string> = {};
 
-	const { libelle: NATURE } = parAttribut({
-		logement: { libelle: 'Logement' },
-		commerce: { libelle: 'Commerce' },
-		cave: { libelle: 'Cave' },
-		parking: { libelle: 'Parking' },
-		divers: { libelle: 'Divers' },
-	});
 	function recevoir(lu: EtatDescriptif) {
 		etat = lu;
 		lettres = Object.fromEntries(lu.batiments.map((b) => [b.id, b.lettre_rcp ?? '']));
@@ -158,7 +153,10 @@
 			message:
 				`${etat.lignes.length} lot(s) recevront leur nature, leur circulation et leurs ` +
 				'tantièmes ; les caves et les places seront situées dans le bâtiment que dit le ' +
-				'règlement. Rejouer le même fichier ensuite ne change rien.',
+				'règlement. Rejouer le même fichier ensuite ne change rien.' +
+				(avertissements.length
+					? ` ${avertissements.length} point(s) à savoir ne bloquent pas : ils restent à compléter.`
+					: ''),
 			libelleConfirmer: 'Appliquer',
 		});
 		if (!ok) return;
@@ -311,42 +309,12 @@
 			<ConstatsLots constats={etat.constats} videTexte="Aucun constat : le fichier tombe juste." />
 		</section>
 
-		<section class="card config-section carte-lignes">
+		<section class="card config-section">
 			<h2 class="config-section-title"><Icon name="clipboard-list" size={17} />Lignes lues</h2>
 			{#if affichees.length === 0}
 				<p class="muted">Aucune ligne pour cette recherche.</p>
 			{:else}
-				<table class="table imp-table-dense">
-					<thead>
-						<tr>
-							<th>Lot</th><th>Bât.</th><th>Nature</th><th>Porte ou place</th><th>Niveau</th>
-							<th>Desservi par</th>
-							{#each etat.cles as cle (cle.code)}
-								<th class="nombre" title="{cle.libelle} — sur {cle.denominateur}">{cle.libelle}</th>
-							{/each}
-						</tr>
-					</thead>
-					<tbody>
-						{#each affichees as l (l.rang)}
-							<tr>
-								<td class="numero-lot">
-									{l.lot}
-									{#if l.lot_origine}<span class="aide-ligne">divisé de {l.lot_origine}</span>{/if}
-								</td>
-								<td>{l.batiment ?? '—'}</td>
-								<td class:illisible={!l.nature_lue}>
-									{l.nature_lue ? NATURE[l.nature_lue] : (l.nature ?? '—')}
-								</td>
-								<td>{l.numero_usage ?? '—'}</td>
-								<td>{l.niveau ?? '—'}</td>
-								<td>{l.circulation ?? 'Accès direct'}</td>
-								{#each etat.cles as cle (cle.code)}
-									<td class="nombre">{l.quotes[cle.code] ?? ''}</td>
-								{/each}
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+				<TableLignesEtatDescriptif lignes={affichees} toutes={etat.lignes} cles={etat.cles} />
 			{/if}
 		</section>
 
@@ -356,7 +324,12 @@
 					Appliqué le {fmtDatetime(etat.applique_le)}. Importez un nouveau fichier pour le
 					remplacer.
 				{:else if etat.applicable}
-					Tous les contrôles sont passés.
+					{#if avertissements.length}
+						Aucun contrôle ne bloque. {avertissements.length} point(s) à savoir resteront à compléter
+						après l'application.
+					{:else}
+						Tous les contrôles sont passés.
+					{/if}
 				{:else}
 					Un contrôle bloque : corrigez le fichier ou la correspondance, puis réimportez.
 				{/if}
@@ -397,25 +370,6 @@
 		margin: 0;
 	}
 	.manquantes {
-		color: var(--color-danger);
-	}
-	.carte-lignes {
-		overflow-x: auto;
-	}
-	.nombre {
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-	.numero-lot {
-		font-weight: 600;
-	}
-	.aide-ligne {
-		display: block;
-		font-weight: 400;
-		font-size: var(--fs-xs);
-		color: var(--color-text-muted);
-	}
-	.illisible {
 		color: var(--color-danger);
 	}
 	.application {

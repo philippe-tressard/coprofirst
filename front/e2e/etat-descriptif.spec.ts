@@ -9,6 +9,9 @@
  *  - appliquer passe par une confirmation, puis rend compte ;
  *  - l'assistant qui lit le règlement (#2218) : une confirmation, l'écran dit la
  *    lecture en cours, se relit seul et annonce l'issue.
+ *  - un « à savoir » (somme qui ne tombe pas juste) ne ferme pas l'application, et la
+ *    confirmation le rappelle (25/10/2026) ;
+ *  - le tableau défile dans sa carte : la dernière clé s'atteint, la page ne déborde pas.
  *
  *  Lots et lettres fictifs.
  */
@@ -91,10 +94,54 @@ const BILAN: BilanEtatDescriptif = {
 	perimetres_modifies: 5,
 };
 
-async function ouvrir(page: Page, applicable: boolean) {
+const CLES_LARGES = [
+	'Charges générales',
+	'Bâtiment A',
+	'Bâtiment C',
+	'Bâtiment D',
+	'Ascenseur A',
+	'Ascenseur C',
+	'Ascenseur D',
+	'Escalier A',
+	'Escalier C',
+	'Escalier D',
+	"Escalier A'",
+	"Escalier C'",
+	"Escalier D'",
+];
+
+/** Treize clés, dont une dont la somme ne tombe pas juste : applicable, avec un « à savoir ». */
+function etatIncomplet(): EtatDescriptif {
+	const base = etat(true);
+	const cles = CLES_LARGES.map((libelle, i) => ({
+		code: `cle-${i}`,
+		libelle,
+		denominateur: i === 0 ? 101 : 100,
+	}));
+	return {
+		...base,
+		cles,
+		lignes: base.lignes.map((l) => ({
+			...l,
+			quotes: Object.fromEntries(cles.map((c) => [c.code, l.rang === 2 ? 60 : 40])),
+		})),
+		constats: [
+			{
+				code: 'somme',
+				gravite: 'avertissement',
+				message: '« Charges générales » : il en manque 1.',
+				lots: [],
+			},
+		],
+	};
+}
+
+async function ouvrir(page: Page, applicable: boolean, incomplet = false) {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;
-		if (chemin === '/api/lots/admin/etat-descriptif') return etat(applicable);
+		if (chemin === '/api/lots/admin/etat-descriptif') {
+			return incomplet ? etatIncomplet() : etat(applicable);
+		}
 		if (chemin === '/api/lots/admin/etat-descriptif/lettres') return etat(true);
 		if (chemin === '/api/lots/admin/etat-descriptif/appliquer') return BILAN;
 	});
@@ -178,4 +225,44 @@ test('une lecture échouée le dit, sans contrôle ni bouton d’application', a
 	await expect(page.getByRole('alert')).toContainText('pas rendu le tableau attendu');
 	await expect(page.getByRole('button', { name: 'Appliquer au patrimoine' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Remplir depuis le règlement' })).toBeEnabled();
+});
+
+test('un « à savoir » ne ferme pas l’application, et la confirmation le rappelle', async ({
+	page,
+}) => {
+	await ouvrir(page, true, true);
+	await expect(page.getByRole('button', { name: 'Appliquer au patrimoine' })).toBeEnabled();
+	await expect(page.getByText('Aucun contrôle ne bloque. 1 point(s) à savoir')).toBeVisible();
+	await page.getByRole('button', { name: 'Appliquer au patrimoine' }).click();
+	await expect(page.getByRole('dialog')).toContainText('1 point(s) à savoir ne bloquent pas');
+});
+
+test('le tableau défile dans sa carte : la dernière clé s’atteint, la page ne déborde pas', async ({
+	page,
+}) => {
+	await ouvrir(page, true, true);
+	const zone = page.getByRole('region', { name: /Lignes lues/ });
+	await expect(zone.getByRole('columnheader', { name: /Escalier D'/ })).toBeAttached();
+	//  Des en-têtes abrégés, le nom entier dans l'infobulle et pour les lecteurs d'écran.
+	await expect(zone.locator('th[title^="Ascenseur A"]')).toContainText('Asc. A');
+	//  La zone défile (le contenu la dépasse) sans élargir la page : les noms entiers des clés,
+	//  posés en absolu, ancraient la page à la fin de la ligne et la rendaient trois fois plus large.
+	const mesure = await zone.evaluate((el) => ({
+		zone: el.clientWidth,
+		contenu: el.scrollWidth,
+		page: window.innerWidth,
+		doc: document.documentElement.scrollWidth,
+	}));
+	expect(mesure.contenu).toBeGreaterThan(mesure.zone);
+	expect(mesure.doc).toBeLessThanOrEqual(mesure.page);
+	expect(mesure.zone).toBeLessThanOrEqual(mesure.page);
+	await zone.evaluate((el) => (el.scrollLeft = el.scrollWidth));
+	const derniere = zone.locator('thead th').last();
+	const [boite, cadre] = await Promise.all([derniere.boundingBox(), zone.boundingBox()]);
+	expect(boite!.x + boite!.width).toBeLessThanOrEqual(cadre!.x + cadre!.width + 1);
+	//  La colonne Lot reste en place pendant que les clés défilent.
+	const lot = zone.locator('thead th.lot');
+	expect((await lot.boundingBox())!.x).toBeGreaterThanOrEqual(cadre!.x - 1);
+	//  La ligne Somme dit l'écart que le contrôle signale.
+	await expect(zone.locator('tfoot td.ecart').first()).toHaveText('100');
 });
