@@ -672,6 +672,8 @@ jobs:
           python scripts/poste/verifier-variables-shell.py --selftest
           # Le poste a-t-il ce que le lot épingle ? Sinon le rejeu rend INCONNU (#1417).
           python scripts/poste/verifier-dependances-poste.py --selftest
+          # Où passe le temps des rejeux : part non verte, étapes les plus longues (#2224).
+          python scripts/poste/mesurer-rejeux.py --selftest
           # Les PR réorientées vers main à la suppression de dev (#1870) : leur relevé
           # et leurs montées, lus jusque dans une description tronquée.
           python scripts/poste/reprendre-dependabot.py --selftest

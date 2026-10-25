@@ -881,6 +881,27 @@ Sa trace (`.git/rejeu-ci.ok`) est lue par le **point 16** du pré-check.
 Un seul job : `bash scripts/poste/rejouer-ci.sh build-frontend` — mais alors aucune trace n'est
 écrite, et le point 16 reste INCONNU.
 
+🔒 **Pré-vol, puis phases rapide et lente, en couloirs parallèles** (#2224, 24/10/2026).
+Avant la première étape, le rejeu sonde le poste — dépendances du lot, base des tests,
+`front/node_modules` réel, Chromium de Playwright, Node et Python, venv — et **refuse**
+en quelques secondes, avec la commande qui répare : sept rejeux sur 72 avaient fini
+INCONNU au bout de 20 min. Il joue ensuite les étapes **rapides** de tous les jobs, puis
+les **lentes** — durée **mesurée** au rejeu précédent (`rejeu-ci-durees.tsv`, répertoire
+git commun), jamais une liste —, chaque job dans son couloir, plusieurs couloirs côte à
+côte (`REJEU_PARALLELE`, défaut : cœurs libres / 4, au plus 8 ; `1` = en série). Une
+lente démarre dès qu'un créneau se libère (pytest pendant build-frontend). Un rouge
+arrête le rejeu à la fin de sa phase, **sans trace**, et les lentes déjà parties avec
+lui ; `--tout` joue tout,
+`--reprendre` rejoue d'abord les rouges du rejeu précédent du lot (avec ce qui les
+précède dans leur couloir), `--venv` construit une fois par jeu de dépendances un venv
+aligné sur le lot (`requirements-dev` et chaque `pip install` de `ci.yml`), réutilisé
+par tous les worktrees. Règles pures et exceptions de couloir déclarées :
+`scripts/lib/lib-ci-orchestration.sh` ; pré-vol : `lib-ci-prevol.sh`. Chaque rejeu,
+complet ou non, écrit une ligne par étape et un bilan dans `rejeu-durees.log`
+(répertoire git commun) : `python scripts/poste/mesurer-rejeux.py [--jours N]` en sort
+la part du temps passée dans des rejeux non verts, les dix étapes les plus longues et
+la minute du premier rouge de chaque rejeu.
+
 🔒 **Depuis le 28/09/2026 (#1417), deux choses le rendent INCONNU au lieu d'un faux
 vert** : un poste dont les dépendances installées ne sont pas celles que le lot
 épingle — la ligne `ENV … dépendances` donne l'écart et la commande qui aligne

@@ -27,9 +27,20 @@
 #   - la parité entre les `run:` écrits et les étapes extraites est vérifiée
 #     AVANT tout : sans elle, le script rendrait un vert sur ce qu'il n'a pas lu.
 #
+#  DÉROULEMENT (#2224) : un PRÉ-VOL d'abord (dépendances, base des tests,
+#  node_modules, Playwright, versions, venv — un écart refuse le rejeu en
+#  quelques secondes), puis les étapes RAPIDES de tous les jobs, puis les
+#  LENTES (pytest, e2e…), chaque job dans son couloir, plusieurs couloirs côte
+#  à côte. Un rouge arrête le rejeu à la fin de sa phase. Les règles :
+#  `lib-ci-orchestration.sh` (pures) ; les gestes : `lib-ci-execution.sh`.
+#
 #  Usage : bash scripts/poste/rejouer-ci.sh                 # tous les jobs, écrit la trace
 #          bash scripts/poste/rejouer-ci.sh lint-backend …  # un ou plusieurs jobs, sans trace
 #          bash scripts/poste/rejouer-ci.sh --attendre …    # prend son tour dans la file (#2225)
+#          bash scripts/poste/rejouer-ci.sh --reprendre     # les rouges d'avant en tête
+#          bash scripts/poste/rejouer-ci.sh --tout          # ne s'arrête pas au premier rouge
+#          bash scripts/poste/rejouer-ci.sh --venv          # dans un venv aligné sur le lot
+#          REJEU_PARALLELE=1 bash scripts/poste/rejouer-ci.sh   # une étape à la fois
 #          bash scripts/poste/rejouer-ci.sh --selftest      # éprouve l'extraction
 # =============================================================================
 set -uo pipefail
@@ -173,28 +184,29 @@ if [ -n "$SCRIPTS_PY" ] && [ -d "$SCRIPTS_PY" ]; then
   PATH="$SCRIPTS_PY_EXPOSES:$PATH" && export PATH
 fi
 
-#  ── Le node_modules du front est-il celui du worktree ? (#1722) ────────────
-#  La règle est `ci_node_modules_etat` ; ici, seulement le constat. `-L`
-#  reconnaît aussi une jonction NTFS sous Git Bash (mesuré le 07/10/2026).
-genre_node_modules() {
-  local d="$RACINE/front/node_modules"
-  if [ -L "$d" ]; then echo lien
-  elif [ -d "$d" ]; then echo repertoire
-  else echo absent; fi
-}
-MOTIF_NODE_MODULES=$(ci_node_modules_etat "$(genre_node_modules)")
-[ -n "$MOTIF_NODE_MODULES" ] && {
-  echo "? $MOTIF_NODE_MODULES — les tests de navigateur rendront INCONNU."
-  echo "  Réparer : cmd //c \"rmdir front\node_modules\" && (cd front && npm ci --legacy-peer-deps)"
-  echo "  (rmdir retire le LIEN, jamais le node_modules partagé.)"
-}
-
 #  ── La base PostgreSQL des tests — la règle : `ci_base_tests_etat` ─────────
 #  Posée ici si personne ne l'a posée ; l'`env:` d'un job de ci.yml la remplace
 #  le temps de son étape, comme sur GitHub. Sondée à la première étape pytest.
 export TESTS_BASE_URL="${TESTS_BASE_URL:-$CI_BASE_TESTS_DEFAUT}"
 
-FILTRE="$*"
+#  ── Les options (#2224) — tout le reste est le filtre de jobs ──────────────
+#    --tout       joue la phase suivante même après un rouge ;
+#    --reprendre  rejoue d'abord les rouges du rejeu précédent de ce lot ;
+#    --venv       rejoue dans un venv aligné sur le lot (construit au besoin).
+TOUT=non; REPRENDRE=non; VENV=non; FILTRE=""
+for arg in "$@"; do
+  case "$arg" in
+    --tout)      TOUT=oui ;;
+    --reprendre) REPRENDRE=oui ;;
+    --venv)      VENV=oui ;;
+    --*) echo "✗ Option inconnue : $arg (connues : --tout, --reprendre, --venv, --selftest) — rien n'a été rejoué."; exit 2 ;;
+    *)   FILTRE="${FILTRE:+$FILTRE }$arg" ;;
+  esac
+done
+#  Le répertoire git COMMUN : durées mesurées, venvs, journal des relances —
+#  ce que les worktrees partagent.
+COMMUN=$(cd "$(git rev-parse --git-common-dir 2>/dev/null || echo .git)" && pwd)
+T_DEBUT=$EPOCHSECONDS   # l'horloge du rejeu : pré-vol compris
 SHA=$(git rev-parse HEAD 2>/dev/null)
 SHA_COURT=$(git rev-parse --short HEAD 2>/dev/null)
 
@@ -211,172 +223,44 @@ TMP=$(mktemp -d) || exit 2
 trap 'ci_verrou_liberer "$VERROU_REJEU" $$; rm -rf "$TMP" ${SCRIPTS_PY_EXPOSES:+"$SCRIPTS_PY_EXPOSES"}' EXIT
 ci_extraire < "$CI" > "$TMP/flux"
 
-NB_OK=0; NB_FAIL=0; NB_INCONNU=0; NB_PREP=0; NB_SAUTS=0; NB_RELANCES=0
+#  ── Le venv aligné sur le lot (`--venv`, #2224) — `ci_venv_preparer` ───────
+#  Construit (ou repris) SOUS le verrou, puis placé en tête du PATH par un
+#  chemin `/c/…` : écrit `C:/…`, le deux-points coupe l'entrée (23/10/2026).
+if [ "$VENV" = oui ]; then
+  BIN_VENV=$(ci_venv_preparer "$RACINE" "$COMMUN" "$TMP/flux") \
+    || { echo "✗ Le venv aligné sur le lot n'a pas pu être construit — rien n'a été rejoué."; exit 2; }
+  BIN_VENV=$(cygpath -u "$BIN_VENV" 2>/dev/null || echo "$BIN_VENV")
+  VIRTUAL_ENV=${BIN_VENV%/*}
+  PATH="$BIN_VENV:$PATH"
+  export PATH VIRTUAL_ENV
+  echo "· venv aligné sur le lot : $VIRTUAL_ENV"
+fi
 
-#  Les tests SAUTÉS se nomment (#1734) : le crochet de `api/tests/conftest.py`
-#  les consigne dans ce fichier, que chaque étape vide avant de tourner. Hors
-#  rejeu la variable est absente, et pytest n'écrit rien.
-export REJEU_SAUTS="$TMP/sauts"
-
-#  🔴 La sortie COMPLÈTE d'une étape en échec est gardée (#1150, 25/09/2026).
-#  Le rapport n'en montre que la queue, et pour Playwright la queue est faite
-#  des `ECONNREFUSED` du proxy — l'assertion en cause n'y apparaissait jamais,
-#  et trois échecs e2e sont restés sans diagnostic. Un dossier par rejeu, vidé
-#  au suivant : ce qu'il contient parle TOUJOURS du dernier rejeu.
+#  Les gestes d'une étape (#2224) : `lib-ci-execution.sh`, et le pré-vol.
+# shellcheck source=../lib/lib-ci-execution.sh
+. "$RACINE_DEPOT/scripts/lib/lib-ci-execution.sh"
 ECHECS="$(dirname "$MARQUEUR")/rejeu-ci-echecs"
 rm -rf "$ECHECS"
-
-#  Le verdict et le job sont en TÊTE, le nom de l'étape en queue : `printf`
-#  compte des OCTETS, pas des caractères, si bien qu'une colonne de largeur fixe
-#  contenant « Modularité » ou « Libellés » se décale d'autant d'accents. Une
-#  colonne qui ne s'aligne pas se lit mal, et un rapport qu'on lit mal, on cesse
-#  de le lire.
-rapporter() {              # $1 = verdict, $2 = job, $3 = étape, $4 = détail
-  local icone
-  case "$1" in
-    OK)      icone="✓"; NB_OK=$((NB_OK+1)) ;;
-    FAIL)    icone="✗"; NB_FAIL=$((NB_FAIL+1)) ;;
-    INCONNU) icone="?"; NB_INCONNU=$((NB_INCONNU+1)) ;;
-    PRÉP)    icone="·"; NB_PREP=$((NB_PREP+1)) ;;
-    *)       icone="·" ;;
-  esac
-  printf "%s %-7s %-15s %s%s\n" "$icone" "$1" "$2" "$3" "${4:+  — $4}"
-}
-
-version_locale() {         # $1 = uses — ce que la CI ÉPINGLE, ce que le poste a
-  case "$1" in
-    *setup-python*) python --version 2>&1 | awk '{print $2}' ;;
-    *setup-node*)   node --version 2>&1 | tr -d 'v' ;;
-    *) echo "" ;;
-  esac
-}
-
-#  Les contrôles d'un job ne mesurent le lot que si le poste a installé ce que
-#  ses étapes d'installation épinglent (#1417). Sinon ils rendent INCONNU, et
-#  la ligne ENV dit l'écart et la commande qui aligne le poste.
-verifier_dependances() {   # $1 = job, $2 = rép, $3 = corps de l'installation
-  local verdict motif
-  verdict=$(printf '%s\n' "$3" \
-    | python "$RACINE/scripts/poste/verifier-dependances-poste.py" --rep "$RACINE${2:+/$2}" 2>/dev/null \
-    | tail -1)
-  motif=$(ci_dependances_etat "$verdict")
-  [ -z "$motif" ] && return
-  printf '%s\n' "$motif" > "$TMP/deps-$1"
-  rapporter "ENV" "$1" "dépendances" \
-    "$motif · aligner : (cd ${2:-.} && $(printf '%s' "$3" | grep -v '^[[:space:]]*#' | tr '\n' ' ' | sed 's/ *$//'))"
-}
-
-#  Une commande dans le répertoire d'une étape, avec l'`env:` de son job.
-dans_etape() {             # $1 = rép, puis la commande
-  (
-    cd "$RACINE${1:+/$1}" || exit 127
-    shift
-    while IFS= read -r kv; do
-      [ -z "$kv" ] && continue
-      local_cle=${kv%%:*}
-      local_val=${kv#*: }
-      local_val=${local_val%\"}; local_val=${local_val#\"}
-      local_val=${local_val%\'}; local_val=${local_val#\'}
-      export "$local_cle=$local_val"
-    done < "$TMP/env"
-    "$@" < /dev/null
-  )
-}
-
-#  ── Relance des e2e tombés sur une cause propre au poste (#1809, #1989) ─────
-#  La règle est `ci_relance_e2e` (lib-ci-e2e.sh) : une seule relance, des seuls
-#  tests tombés, nommée sur la ligne de l'étape et JOURNALISÉE — date, lot,
-#  charge, workers, tests, cause (`ci_cause_relance`) —, pour qu'on la mesure.
-#  Sortie vide : pas de relance, ou relance rouge (sa sortie s'ajoute alors à
-#  celle de l'étape).
 PLAFOND_RELANCE_E2E=3
-JOURNAL_RELANCES="$(dirname "$VERROU_REJEU")/rejeu-e2e-relances.log"
-relancer_si_cause_poste() { # $1 = rép, $2 = code, $3 = corps → détail à rapporter, ou vide
-  local tombes cause
-  [ "$(ci_relance_e2e "$2" "$(printf '%s\n' "$3" | ci_sert_par_vite)" "$PLAFOND_RELANCE_E2E" \
-       < "$TMP/sortie")" = oui ] || return 0
-  tombes=$(ci_tests_tombes < "$TMP/sortie")
-  cause=$(ci_cause_relance < "$TMP/sortie")
-  if dans_etape "$1" npx playwright test --last-failed > "$TMP/relance" 2>&1 \
-     && ! grep -q "optimized dependencies changed" "$TMP/relance"; then
-    printf '%s\t%s\tcharge=%s\tworkers=%s\t%s\tcause=%s\n' "$(date '+%F %T')" "$SHA_COURT" \
-      "${CHARGE:-?}" "${E2E_WORKERS:-défaut}" "$(printf '%s' "$tombes" | paste -sd '|' -)" \
-      "$cause" >> "$JOURNAL_RELANCES"
-    echo "relancé, vert : $(printf '%s' "$tombes" | paste -sd ';' -) — $cause"
-  else
-    { echo; echo "── Relance ($cause), rouge elle aussi ──"; cat "$TMP/relance"; } >> "$TMP/sortie"
-  fi
-}
+JOURNAL_RELANCES="$COMMUN/rejeu-e2e-relances.log"
+DUREES="$COMMUN/rejeu-ci-durees.tsv"           # mesurées, partagées par les worktrees
+ROUGES="$(dirname "$MARQUEUR")/rejeu-ci-rouges.tsv"   # celles DE ce worktree
 
-executer() {               # $1 = job, $2 = étape, $3 = rép, corps dans $TMP/corps
-  local corps genre sortie code duree t0 sauts n_sauts relance
-  ci_battement "$VERROU_REJEU" "$1 · $2" "$ECRIT"
-  corps=$(ci_substituer "$SHA_COURT" < "$TMP/corps")
-  genre=$(printf '%s\n' "$corps" | ci_classer)
+#  Interrompre le rejeu arrête ses étapes, et l'arbre de leurs processus
+#  (`ci_arreter_pids`) : sous Windows, un `kill` ne descend pas jusqu'au python
+#  ou au node qu'une étape a lancé.
+JOURNAL_DUREES="$COMMUN/rejeu-durees.log"   # une ligne par étape, chaque rejeu (`mesurer-rejeux.py`)
+PORTEE="complet"; [ -n "$FILTRE" ] && PORTEE="partiel : $FILTRE"
+trap 'echo; echo "✗ Rejeu interrompu — aucune trace écrite."; ci_arreter_pids $(jobs -p); ci_journaliser "$JOURNAL_DUREES" INTERROMPU "$PORTEE"; exit 130' INT
+#  Le veilleur de #2225 (lanceur disparu) envoie TERM : les étapes partent avec.
+trap 'trap "" PIPE; ci_arreter_pids $(jobs -p); ci_journaliser "$JOURNAL_DUREES" INTERROMPU "$PORTEE"; ci_rejeu_arrete "$VERROU_REJEU"; exit 2' TERM HUP
 
-  case "$genre" in
-    PREPARATION)
-      rapporter "PRÉP" "$1" "$2" "installation — non exécutée sur le poste"
-      verifier_dependances "$1" "$3" "$corps"
-      return ;;
-    INCONNU*)
-      rapporter INCONNU "$1" "$2" "${genre#INCONNU }"
-      return ;;
-  esac
-  if [ -s "$TMP/deps-$1" ]; then
-    rapporter INCONNU "$1" "$2" "ne mesure pas le lot : dépendances du poste (ligne ENV)"
-    return
-  fi
-  #  pytest exige sa base : sondée avec l'`env:` du job, avant l'étape.
-  if [ "$(printf '%s\n' "$corps" | ci_lance_pytest)" = oui ]; then
-    local motif_base
-    motif_base=$(ci_base_tests_etat "$(dans_etape "$3" ci_sonder_base_tests)")
-    [ -n "$motif_base" ] && { rapporter INCONNU "$1" "$2" "$motif_base"; return; }
-  fi
-  #  Les tests de navigateur, et eux seuls, servent l'application par Vite.
-  if [ -n "$MOTIF_NODE_MODULES" ] && [ "$(printf '%s
-' "$corps" | ci_sert_par_vite)" = oui ]; then
-    rapporter INCONNU "$1" "$2" "$MOTIF_NODE_MODULES"
-    return
-  fi
-
-  printf '%s\n' "$corps" > "$TMP/etape.sh"
-  : > "$TMP/sauts"
-  t0=$(date +%s)
-  dans_etape "$3" bash -e "$TMP/etape.sh" > "$TMP/sortie" 2>&1
-  code=$?
-  sortie=$(ci_requalifier "$code" < "$TMP/sortie")
-  relance=$(relancer_si_cause_poste "$3" "$code" "$corps")
-  [ -n "$relance" ] && { sortie=OK; NB_RELANCES=$((NB_RELANCES + $(ci_tests_tombes < "$TMP/sortie" | grep -c .))); }
-  duree=$(( $(date +%s) - t0 ))
-  case "$sortie" in
-    OK)       sauts=$(ci_resumer_sauts < "$TMP/sauts")
-              n_sauts=${sauts%% *}
-              NB_SAUTS=$((NB_SAUTS + ${n_sauts:-0}))
-              rapporter OK "$1" "$2" "${duree}s${sauts:+ — $sauts}${relance:+ — $relance}" ;;
-    INCONNU*) rapporter INCONNU "$1" "$2" "${sortie#INCONNU } (${duree}s)" ;;
-    *)        rapporter FAIL "$1" "$2" "code $code (${duree}s)"
-              sed 's/^/      │ /' "$TMP/sortie" | tail -15
-              mkdir -p "$ECHECS"
-              cp "$TMP/sortie" "$ECHECS/$1-$NB_FAIL.log"
-              echo "      │ … sortie complète : $ECHECS/$1-$NB_FAIL.log" ;;
-  esac
-}
-
-# ── Déroulement ──────────────────────────────────────────────────────────────
-echo "Rejeu de $CI sur $SHA_COURT — $ECRIT commande(s) extraite(s)"
-[ -n "$FILTRE" ] && echo "Jobs retenus : $FILTRE"
-echo "───────────────────────────────────────────────────────────────────────────────"
-
-JOB=""; ETAPE=""; GENRE=""; REP=""; USES=""; WITH=""; DANS_RUN=0; RETENU=1
-: > "$TMP/env"; : > "$TMP/corps"
-
-lancer_si_besoin() {
-  [ "$RETENU" -eq 1 ] || return
-  [ "$GENRE" = "run" ] || return
-  executer "$JOB" "$ETAPE" "$REP"
-}
-
+# ── Les étapes retenues, une par dossier ─────────────────────────────────────
+#  Chaque étape `run:` (ou `uses:`, pour le pré-vol) reçoit son dossier : job,
+#  nom, rép, `env:`, corps, genre. Rien de partagé entre deux étapes qui
+#  tournent ensemble.
+JOB=""; ETAPE=""; GENRE=""; REP=""; USES=""; WITH=""; DANS_RUN=0; D=""; IDX=0
+mkdir -p "$TMP/e"
 while IFS= read -r ligne <&3; do
   case "$ligne" in
     '@@ERREUR'*)
@@ -386,36 +270,131 @@ while IFS= read -r ligne <&3; do
     '@@STEP'*)
       IFS=$'\t' read -r _ JOB _ ETAPE GENRE REP USES WITH <<< "$ligne"
       #  `-` est le marqueur de champ vide posé par `nz()` côté extraction.
-      [ "$ETAPE" = "-" ] && ETAPE=""
-      [ "$REP"   = "-" ] && REP=""
-      [ "$USES"  = "-" ] && USES=""
-      [ "$WITH"  = "-" ] && WITH=""
-      : > "$TMP/env"; : > "$TMP/corps"; DANS_RUN=0
-      RETENU=1
-      if [ -n "$FILTRE" ]; then
-        case " $FILTRE " in *" $JOB "*) RETENU=1 ;; *) RETENU=0 ;; esac
-      fi
-      if [ "$GENRE" = "uses" ] && [ "$RETENU" -eq 1 ]; then
-        case "$USES" in
-          *checkout*) ;;
-          *) rapporter "ENV" "$JOB" "${ETAPE:-$USES}" \
-               "épinglé « ${WITH:-—} » · poste $(version_locale "$USES")" ;;
-        esac
-      fi ;;
-    '@@ENV'*)   printf '%s\n' "${ligne#*$'\t'}" >> "$TMP/env" ;;
-    '@@RUN')    DANS_RUN=1; : > "$TMP/corps" ;;
-    '@@END')    DANS_RUN=0; lancer_si_besoin ;;
-    *)          [ "$DANS_RUN" -eq 1 ] && printf '%s\n' "$ligne" >> "$TMP/corps" ;;
+      for v in ETAPE REP USES WITH; do [ "${!v}" = "-" ] && printf -v "$v" ''; done
+      D=""; DANS_RUN=0
+      [ -n "$FILTRE" ] && case " $FILTRE " in *" $JOB "*) ;; *) continue ;; esac
+      case "$GENRE:$USES" in run:*|uses:*) ;; *) continue ;; esac
+      case "$USES" in *checkout*) continue ;; esac
+      IDX=$((IDX + 1)); D="$TMP/e/$(printf '%04d' "$IDX")"
+      mkdir -p "$D"
+      printf '%s' "$JOB" > "$D/job"; printf '%s' "${ETAPE:-$USES}" > "$D/etape"
+      printf '%s' "$REP" > "$D/rep"; printf '%s' "$USES" > "$D/uses"; printf '%s' "$WITH" > "$D/with"
+      : > "$D/env"; : > "$D/brut"
+      [ "$GENRE" = uses ] && echo USES > "$D/genre" ;;
+    '@@ENV'*)   [ -n "$D" ] && printf '%s\n' "${ligne#*$'\t'}" >> "$D/env" ;;
+    '@@RUN')    DANS_RUN=1 ;;
+    '@@END')
+      DANS_RUN=0
+      [ -n "$D" ] || continue
+      ci_substituer "$SHA_COURT" < "$D/brut" > "$D/corps"
+      genre=$(ci_classer < "$D/corps")
+      case "$genre" in
+        PREPARATION) printf 'PRÉP\tinstallation — non exécutée sur le poste\n' > "$D/res" ;;
+        INCONNU*)    printf 'INCONNU\t%s\n' "${genre#INCONNU }" > "$D/res"; genre=INCONNU ;;
+      esac
+      echo "$genre" > "$D/genre" ;;
+    *)          [ "$DANS_RUN" -eq 1 ] && [ -n "$D" ] && printf '%s\n' "$ligne" >> "$D/brut" ;;
   esac
 done 3< "$TMP/flux"
 
-# ── Conclusion ───────────────────────────────────────────────────────────────
-REJOUEES=$((NB_OK + NB_FAIL + NB_INCONNU))
+echo "Rejeu de $CI sur $SHA_COURT — $ECRIT commande(s) extraite(s)"
+[ -n "$FILTRE" ] && echo "Jobs retenus : $FILTRE"
+
+# ── Pré-vol : le poste peut-il mesurer le lot ? (#2224) — `ci_prevol` ────────
+ci_prevol "$TMP/e" || { ci_journaliser "$JOURNAL_DUREES" REFUS "$PORTEE"; exit 2; }
+
+# ── Le plan : phases, couloirs, priorité — `ci_plan` ─────────────────────────
+for d in "$TMP"/e/*/; do
+  d=${d%/}
+  [ "$(<"$d/genre")" = CONTROLE ] && printf '%s\t%s\t%s\n' "${d##*/}" "$(<"$d/job")" "$(<"$d/etape")"
+done > "$TMP/a-jouer"
+awk -F'\t' -v OFS='\t' '!lu { d[$1 "\t" $2] = $3; next } { print $0, d[$2 "\t" $3] }' \
+  "$([ -f "$DUREES" ] && echo "$DUREES" || echo /dev/null)" lu=1 "$TMP/a-jouer" > "$TMP/a-jouer-durees"
+
+#  Les rouges d'avant valent-ils pour ce lot ? (même lot : `ci_reprise_valable`)
+ROUGES_VALABLES=non
+if [ -s "$ROUGES" ]; then
+  IFS=$'\t' read -r _ sha_avant branche_avant < "$ROUGES"
+  ancetre=non
+  git merge-base --is-ancestor "$sha_avant" HEAD 2>/dev/null && ancetre=oui
+  ROUGES_VALABLES=$(ci_reprise_valable "$branche_avant" "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" "$ancetre")
+fi
+: > "$TMP/reprendre"
+if [ "$REPRENDRE" = oui ]; then
+  [ "$ROUGES_VALABLES" = oui ] && grep -v '^#' "$ROUGES" > "$TMP/reprendre"
+  if [ -s "$TMP/reprendre" ]; then
+    echo "· Reprise : $(wc -l < "$TMP/reprendre") étape(s) rouge(s) du rejeu précédent ($sha_avant) en tête, avec ce qui les précède dans leur couloir"
+  else
+    echo "· Reprise : aucun rouge d'un rejeu précédent de ce lot — rejeu ordinaire."
+  fi
+fi
+SEUIL_LENTE="${REJEU_SEUIL_LENTE:-$CI_SEUIL_LENTE}"   # imposable, comme le budget
+ci_plan "$SEUIL_LENTE" "$TMP/reprendre" < "$TMP/a-jouer-durees" > "$TMP/plan"
+[ -s "$TMP/a-jouer-durees" ] && ! cut -f4 "$TMP/a-jouer-durees" | grep -q . \
+  && echo "· Aucune durée mesurée encore : tout est « rapide » ce coup-ci ; les durées s'apprennent ($DUREES)."
+
+BUDGET=$(ci_budget_parallele "${REJEU_PARALLELE:-}" "$(nproc 2>/dev/null)" "${CHARGE:-}")
+compte_phase() { awk -F'\t' -v p="$1" '$1 == p' "$TMP/plan" | grep -c .; }
+printf 'Plan : %d étape(s) à jouer — reprise %d · rapide %d · lente %d (mesurée ≥ %d s) · %d côte à côte (%s cœurs, charge %s %%, imposable par REJEU_PARALLELE)\n' \
+  "$(grep -c . "$TMP/plan")" "$(compte_phase reprise)" "$(compte_phase rapide)" "$(compte_phase lente)" \
+  "$SEUIL_LENTE" "$BUDGET" "$(nproc 2>/dev/null || echo ?)" "${CHARGE:-?}"
 echo "───────────────────────────────────────────────────────────────────────────────"
-printf "%d étape(s) rejouée(s) sur %d extraite(s) — OK=%d ÉCHEC=%d INCONNU=%d (préparation=%d)\n" \
-       "$REJOUEES" "$ECRIT" "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_PREP"
+
+#  Ce qui n'est pas joué ici (installations, expressions GitHub), dans l'ordre.
+for d in "$TMP"/e/*/; do
+  case "$(<"${d%/}/genre")" in PREPARATION|INCONNU) ci_afficher_etape "${d%/}" ;; esac
+done
+
+# ── Déroulement : reprise, rapide, lente — `ci_jouer` ────────────────────────
+#  Un rouge arrête le rejeu à la fin de sa phase (`ci_suite_apres_phase`) :
+#  tous les rouges de la phase sont là, et la suivante ne changerait pas le
+#  verdict ; ce qu'elle avait commencé par anticipation est arrêté. `--tout`
+#  joue tout. Les lignes d'une phase s'affichent à sa fin, dans l'ordre de
+#  ci.yml ; chaque rouge s'annonce dès qu'il tombe.
+ci_jouer "$TMP/plan" "$TOUT"
+
+# ── Conclusion ───────────────────────────────────────────────────────────────
+NB_OK=0; NB_FAIL=0; NB_INCONNU=0; NB_PREP=0; NB_SAUTS=0; NB_RELANCES=0; NB_NON_JOUEES=0
+: > "$TMP/mesures"; : > "$TMP/jouees"; : > "$TMP/rouges"
+for d in "$TMP"/e/*/; do
+  d=${d%/}
+  [ "$(<"$d/genre")" = USES ] && continue
+  if [ ! -f "$d/res" ]; then NB_NON_JOUEES=$((NB_NON_JOUEES + 1)); continue; fi
+  IFS=$'\t' read -r verdict _ < "$d/res"
+  case "$verdict" in
+    OK) NB_OK=$((NB_OK + 1)) ;; FAIL) NB_FAIL=$((NB_FAIL + 1)) ;;
+    INCONNU) NB_INCONNU=$((NB_INCONNU + 1)) ;; PRÉP) NB_PREP=$((NB_PREP + 1)) ;;
+  esac
+  #  `$(<f)`, jamais `$(cat f)` : une fourche coûte ~50 ms sous Windows.
+  [ -f "$d/nb_sauts" ] && NB_SAUTS=$((NB_SAUTS + $(<"$d/nb_sauts")))
+  [ -f "$d/nb_relances" ] && NB_RELANCES=$((NB_RELANCES + $(<"$d/nb_relances")))
+  if [ -f "$d/duree" ]; then
+    printf '%s\t%s\n' "$(<"$d/job")" "$(<"$d/etape")" >> "$TMP/jouees"
+    case "$verdict" in OK|FAIL) printf '%s\t%s\t%s\n' "$(<"$d/job")" "$(<"$d/etape")" "$(<"$d/duree")" >> "$TMP/mesures" ;; esac
+    [ "$verdict" = FAIL ] && printf '%s\t%s\n' "$(<"$d/job")" "$(<"$d/etape")" >> "$TMP/rouges"
+  fi
+done
+#  Ce que le rejeu apprend : les durées (pour le plan suivant), les rouges
+#  (pour `--reprendre`) — jamais la trace, qui suit ses propres règles.
+ci_durees_fusionner "$([ -f "$DUREES" ] && echo "$DUREES")" "$TMP/mesures" > "$TMP/durees" \
+  && mv -f "$TMP/durees" "$DUREES"
+{ printf '#\t%s\t%s\n' "$SHA" "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  ci_rouges_fusionner "$([ "$ROUGES_VALABLES" = oui ] && echo "$ROUGES")" "$TMP/jouees" "$TMP/rouges"
+} > "$TMP/rouges-fusion" && mv -f "$TMP/rouges-fusion" "$ROUGES"
+
+REJOUEES=$((NB_OK + NB_FAIL + NB_INCONNU))
+if [ "$NB_FAIL" -gt 0 ]; then VERDICT_REJEU=ROUGE
+elif [ "$NB_INCONNU" -gt 0 ] || [ "$REJOUEES" -eq 0 ]; then VERDICT_REJEU=INCONNU
+else VERDICT_REJEU=VERT; fi
+[ -z "$FILTRE" ] && [ "$NB_NON_JOUEES" -gt 0 ] && PORTEE="arrêté après la phase $ARRET"
+ci_journaliser "$JOURNAL_DUREES" "$VERDICT_REJEU" "$PORTEE"
+echo "───────────────────────────────────────────────────────────────────────────────"
+printf "%d étape(s) rejouée(s) sur %d extraite(s) — OK=%d ÉCHEC=%d INCONNU=%d (préparation=%d) — en %s\n" \
+       "$REJOUEES" "$ECRIT" "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_PREP" "$(ci_horloge)"
 [ "$NB_SAUTS" -gt 0 ] && echo "· $NB_SAUTS test(s) sauté(s) ici, que seule la CI GitHub joue — le détail est sur la ligne de leur étape (#1734)."
 [ "$NB_RELANCES" -gt 0 ] && echo "· $NB_RELANCES test(s) e2e relancé(s) sur une cause propre au poste (#1809, #1989) — journal : $JOURNAL_RELANCES"
+[ -n "$ARRET" ] && [ "$NB_NON_JOUEES" -gt 0 ] && \
+  echo "· Arrêté après la phase $ARRET : $NB_NON_JOUEES étape(s) non jouée(s). Corriger, puis \`--reprendre\` ; \`--tout\` joue tout malgré un rouge."
 
 if [ "$REJOUEES" -eq 0 ]; then
   echo "? Aucune étape rejouée — ce n'est pas un succès, c'est une absence de mesure."
@@ -424,6 +403,8 @@ fi
 
 if [ -n "$FILTRE" ]; then
   echo "  (rejeu partiel : aucune trace écrite — le point 16 du pré-check exige le rejeu complet.)"
+elif [ "$NB_NON_JOUEES" -gt 0 ]; then
+  echo "  (rejeu incomplet : aucune trace écrite — le point 16 du pré-check exige le rejeu complet.)"
 else
   mkdir -p "$(dirname "$MARQUEUR")"
   printf '%s %s OK=%d FAIL=%d INCONNU=%d SAUTS=%d RELANCES=%d\n' "$SHA" "$(date +%s)" \

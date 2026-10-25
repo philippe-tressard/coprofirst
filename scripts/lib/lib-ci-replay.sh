@@ -43,6 +43,11 @@
 #  avec son propre `--selftest`.
 # shellcheck source=lib-ci-verrou.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib-ci-verrou.sh"
+#  Dans quel ordre, et côte à côte (#2224) ; le pré-vol du poste.
+# shellcheck source=lib-ci-orchestration.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-ci-orchestration.sh"
+# shellcheck source=lib-ci-prevol.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-ci-prevol.sh"
 
 # ── Extraction ───────────────────────────────────────────────────────────────
 #  Le parseur ne prétend PAS lire YAML : il lit la forme que ce fichier-ci a, et
@@ -176,7 +181,9 @@ ci_classer() {             # corps sur stdin → "PREPARATION" | "INCONNU <motif
   case "$joint" in *'${{'*) echo "INCONNU expression GitHub non résolue"; return ;; esac
   local ligne reste=0
   while IFS= read -r ligne; do
-    ligne=$(printf '%s' "$ligne" | sed 's/^[[:space:]]*//')
+    #  Développement de paramètre, jamais un `sed` par ligne : une fourche
+    #  coûte ~50 ms sous Windows, et ci.yml porte deux mille lignes de corps (#2224).
+    ligne="${ligne#"${ligne%%[![:space:]]*}"}"
     [ -z "$ligne" ] && continue
     case "$ligne" in
       '#'*) continue ;;
@@ -371,6 +378,8 @@ YAML
 
   ci_e2e_cas   # workers, node_modules, Vite, relance (#1809) : lib-ci-e2e.sh
   ci_base_cas  # pytest et sa base PostgreSQL : lib-ci-base.sh
+  ci_orchestration_cas  # phases, couloirs, budget, reprise (#2224)
+  ci_prevol_cas        # versions, Playwright, venv (#2224)
   #  #1734 : un saut se NOMME, il ne se tait pas ; aucun saut, aucune mention.
   t "sauts — aucun : rien à dire"    "$(printf '' | ci_resumer_sauts)" ""
   t "sauts — regroupés par raison, le plus fréquent d'abord"     "$(printf 'a::t1	WeasyPrint absent
