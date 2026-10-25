@@ -300,3 +300,69 @@ def etat_invalide(session):
             session.commit()
 
     return _porte()
+
+
+# ── La base partagée du processus, remise à neuf à chaque fichier (#2223) ────────────
+
+
+def remettre_a_neuf(url) -> int:
+    """La base de `url` dans l'état d'une base de production neuve : toutes les tables, aucune ligne.
+
+    Pour la base PARTAGÉE du processus — celle du moteur de l'application, que
+    voient tous ses tests. `start.sh` pose les tables avant que l'API démarre :
+    un fichier de tests les trouve donc, et rien d'autre — quels que soient les
+    fichiers passés avant lui sur le même worker. Sans les tables, un fichier
+    réussissait ou non selon qu'un autre les avait créées avant lui (#2223).
+    Rend le nombre de tables qu'il a fallu vider.
+
+    Seules les tables qui ont des lignes passent par `TRUNCATE` : il recrée le
+    fichier de chaque table, 0,4 s pour les 89 sur le poste, à chaque fichier de
+    tests — la plupart trouvent la base déjà vide. Les compteurs avancés, eux,
+    repartent tous à 1.
+    """
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.pool import NullPool
+    from sqlmodel import SQLModel
+
+    import app.models.core  # noqa: F401 — toutes les tables, comme la production
+
+    moteur = create_engine(url, poolclass=NullPool)
+    try:
+        SQLModel.metadata.create_all(moteur)
+        with moteur.begin() as c:
+            tables = list(
+                c.execute(
+                    text("SELECT tablename FROM pg_tables WHERE schemaname = current_schema()")
+                ).scalars()
+            )
+            #  Noms lus au catalogue du schéma, jamais une entrée.
+            pleines = (
+                list(
+                    c.execute(
+                        text(
+                            " UNION ALL ".join(
+                                f"(SELECT '{t}' FROM \"{t}\" LIMIT 1)"  # noqa: S608
+                                for t in tables
+                            )
+                        )
+                    ).scalars()
+                )
+                if tables
+                else []
+            )
+            if pleines:
+                #  Une connexion restée ouverte sur une table bloquerait le geste :
+                #  10 s, puis l'erreur le dit au lieu de figer.
+                c.execute(text("SET LOCAL lock_timeout = '10s'"))
+                liste = ", ".join(f'"{t}"' for t in pleines)
+                c.execute(text(f"TRUNCATE TABLE {liste} CASCADE"))  # noqa: S608
+            for sequence in c.execute(
+                text(
+                    "SELECT sequencename FROM pg_sequences "
+                    "WHERE schemaname = current_schema() AND last_value IS NOT NULL"
+                )
+            ).scalars():
+                c.execute(text("SELECT setval(:s, 1, false)").bindparams(s=f'"{sequence}"'))
+    finally:
+        moteur.dispose()
+    return len(pleines)

@@ -22,14 +22,11 @@ dans le cache de l'utilisateur n° 12 de B.
 - **Jeton de A présenté à B** (§5.3) : refusé, le secret de signature diffère ;
   présenté à A, il passe — sans quoi le refus ne prouverait rien.
 
-## L'installation commune RÉELLE, de bout en bout (#2053)
+## L'installation commune RÉELLE
 
-La seconde moitié du fichier ne remplace plus rien : une déclaration
-(`COPROPRIETES_FICHIER`), deux vraies bases préparées par `utils/preparer_bases`,
-semées par le démarrage (`app/demarrage`), et la copropriété résolue par le seul
-en-tête `Host` — l'adresse dérivée de chacune. Une troisième, à la base
-injoignable, est le témoin de l'isolement : 503 pour son hôte seul, les deux
-autres servent, ses tâches sont sautées. Cas zéro : chacune se lit elle-même.
+Elle a son fichier, `test_etancheite_installation_commune.py` : ses deux
+fixtures de module basculaient le processus entier dans un mode que celles-ci
+refusent, et ne tenaient ensemble que par l'ordre d'écriture des tests (#2223).
 
 ## Ce qu'il ne voit pas — dit, pour ne pas le croire plus large
 
@@ -40,8 +37,6 @@ autres servent, ses tâches sont sautées. Cas zéro : chacune se lit elle-même
 
 from __future__ import annotations
 
-import re
-
 import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
@@ -49,65 +44,19 @@ from sqlmodel import Session, select
 
 from app import contexte
 from app.auth.deps import get_current_user
-from app.auth.jwt import creer_jeton_acces
-
-from app.installation_commune.bases_pretes import INDISPONIBLE
-from app.main import app
-from app.models.copropriete import Copropriete
-from app.models.core import RoleUtilisateur, Utilisateur
-from app.models.tickets import Ticket
+from app.models.core import Utilisateur
 from app.utils.limiter import limiter
-from tests.aides_base import compte
-from tests.aides_commune_reelle import installation_commune_reelle, sous
-from tests.aides_installation_commune import HOTE_COMMUN
 from tests.aides_coproprietes import ENTETE, client_par_entete, coproprietes_semees
-from tests.aides_sources import operations_montees
-
-#: Le témoin planté dans A : un mot qu'aucun libellé de l'application ne contient.
-MARQUE_A = "Fuitezq"
-MARQUE_B = "Temoinb"
-
-#: Les routes GET que le balayage n'appelle pas, avec leur raison.
-ROUTES_ECARTEES = {
-    "/health": "sans base ni copropriété : la sonde de Caddy",
-}
-
-#: Le cas zéro — des ordres de grandeur, pas des valeurs figées.
-MINIMUM_ROUTES = 120
-MINIMUM_REPONSES_200 = 40
-#: Les routes qui rendent le témoin de B pour B (quatre au 10/10/2026).
-MINIMUM_LECTURES_B = 3
-
-
-def _temoins_dans(nom: str, s: Session) -> tuple[str, int]:
-    """Dans la base `s` : un administrateur, la fiche et une affaire n° 1, tous marqués
-    du témoin de `nom`. Rend (jeton de l'administrateur, son identifiant)."""
-    marque = MARQUE_A if nom == "a" else MARQUE_B
-    admin = compte(
-        s,
-        prefixe=marque.lower(),
-        prenom=marque,
-        nom=f"{marque} Gestionnaire",
-        role=RoleUtilisateur.admin,
-        roles_json="admin",
-    )
-    ident = admin.id
-    jeton = creer_jeton_acces(ident, admin.hashed_password)
-    #  Le témoin aussi dans la fiche de la copropriété et dans une
-    #  affaire n° 1 : plus de tables marquées, plus de routes qui lisent.
-    for fiche in s.exec(select(Copropriete)).all():
-        fiche.nom = f"Residence {marque}"
-        s.add(fiche)
-    s.add(
-        Ticket(
-            numero=f"TK-{nom}-1",
-            titre=f"Affaire {marque}",
-            description=f"Description {marque}",
-            auteur_id=ident,
-        )
-    )
-    s.commit()
-    return jeton, ident
+from tests.aides_etancheite import (
+    MARQUE_A,
+    MARQUE_B,
+    MINIMUM_LECTURES_B,
+    MINIMUM_REPONSES_200,
+    MINIMUM_ROUTES,
+    chemins_get,
+    fuites,
+    temoins_dans,
+)
 
 
 @pytest.fixture(scope="module")
@@ -115,7 +64,7 @@ def deux(tmp_path_factory):
     """Deux copropriétés semées, aux identifiants identiques. Rend `{nom: (copro, jeton, id)}`."""
 
     dossier = tmp_path_factory.mktemp("etancheite")
-    with coproprietes_semees(dossier, ("a", "b"), _temoins_dans) as semees:
+    with coproprietes_semees(dossier, ("a", "b"), temoins_dans) as semees:
         yield {nom: (copro, *rendu) for nom, (copro, rendu) in semees.items()}
 
 
@@ -130,23 +79,9 @@ def _appel(http, chemin: str, copro: str, jeton: str):
     return http.get(chemin, headers={ENTETE: copro}, cookies={"access_token": jeton})
 
 
-def _chemins_get() -> list[str]:
-    chemins = {
-        re.sub(r"\{[^}]+\}", "1", chemin)
-        for methode, chemin, _route in operations_montees(app)
-        if methode == "GET" and chemin not in ROUTES_ECARTEES
-    }
-    return sorted(chemins)
-
-
-def fuites(reponses: dict[str, object], marque: str) -> list[str]:
-    """Les chemins dont la réponse porte `marque` — le détecteur, témoin compris."""
-    return sorted(c for c, r in reponses.items() if marque in r.text)
-
-
 def _balayer(http, deux) -> dict[str, object]:
     _copro, jeton_b, _id = deux["b"]
-    return {chemin: _appel(http, chemin, "b", jeton_b) for chemin in _chemins_get()}
+    return {chemin: _appel(http, chemin, "b", jeton_b) for chemin in chemins_get()}
 
 
 def test_les_deux_copropriétés_partagent_leurs_identifiants(deux):
@@ -219,93 +154,3 @@ def test_le_detecteur_voit_la_fuite_type_et_pas_l_etat_par_copropriete(http, deu
         assert all(r.status_code == 200 for r in reponses.values()), reponses
     #  Lu pour A d'abord, puis pour B : seule la route au cache de module rend A à B.
     assert fuites(reponses, MARQUE_A) == ["/fuyante"]
-
-
-# ── L'installation commune RÉELLE : déclaration, deux bases, l'hôte seul (#2053) ──
-
-
-@pytest.fixture(scope="module")
-def commune(tmp_path_factory):
-    """L'installation commune réelle (`tests/aides_commune_reelle`), A et B marqués."""
-    with installation_commune_reelle(tmp_path_factory.mktemp("commune"), _temoins_dans) as c:
-        yield c
-
-
-def _client() -> TestClient:
-    return TestClient(app, raise_server_exceptions=False)
-
-
-def test_chaque_base_est_preparee_et_la_mauvaise_ne_bloque_pas(commune):
-    """`start.sh` : la base injoignable, déclarée la première, n'arrête pas les autres."""
-    assert commune["journal"][:3] == [
-        "copropriete essai-c : illisible",
-        "copropriete essai-a : posee",
-        "copropriete essai-b : posee",
-    ]
-    assert commune["code"] == 0
-
-
-def test_l_hote_seul_choisit_la_copropriete_cas_zero_et_temoin(commune):
-    client = _client()
-    for nom, marque in (("a", MARQUE_A), ("b", MARQUE_B)):
-        jeton, _ident = commune["temoins"][nom]
-        reponse = sous(client, "/auth/me", nom, jeton)
-        assert reponse.status_code == 200 and marque in reponse.text, reponse.text
-    #  Les identifiants sont identiques, les jetons ne passent pas d'une base à l'autre.
-    assert commune["temoins"]["a"][1] == commune["temoins"]["b"][1]
-    jeton_a, _ = commune["temoins"]["a"]
-    chez_b = sous(client, "/auth/me", "b", jeton_a)
-    assert chez_b.status_code == 401 and MARQUE_A not in chez_b.text
-
-
-def test_aucune_reponse_servie_sous_l_hote_de_B_ne_porte_A(commune):
-    client = _client()
-    jeton_b, _ = commune["temoins"]["b"]
-    reponses = {c: sous(client, c, "b", jeton_b) for c in _chemins_get()}
-    reussies = sum(1 for r in reponses.values() if r.status_code == 200)
-    assert reussies >= MINIMUM_REPONSES_200, f"cas zéro : {reussies} réponse(s) 200"
-    assert len(fuites(reponses, MARQUE_B)) >= MINIMUM_LECTURES_B, "témoin : B ne se lit pas"
-    assert not fuites(reponses, MARQUE_A), (
-        "Donnée de A servie sous l'hôte de B (#2053) :\n  "
-        + "\n  ".join(fuites(reponses, MARQUE_A))
-    )
-
-
-def test_la_base_injoignable_n_isole_que_son_hote(commune):
-    client = _client()
-    chez_c = sous(client, "/config", "c")
-    assert chez_c.status_code == 503 and chez_c.json() == {"detail": INDISPONIBLE}
-    assert sous(client, "/config", "a").status_code == 200
-    sante = client.get("/health", headers={"host": HOTE_COMMUN})
-    assert sante.status_code == 200 and sante.json()["status"] == "degrade"
-    assert "essai" not in sante.text  # ni nom ni identifiant : la route répond à tout hôte
-
-
-def test_l_hote_commun_et_un_hote_inconnu_ne_servent_rien(commune):
-    client = _client()
-    jeton_a, _ = commune["temoins"]["a"]
-    for hote in (HOTE_COMMUN, "inconnu.example", "localhost"):
-        reponse = client.get("/auth/me", headers={"host": hote}, cookies={"access_token": jeton_a})
-        assert reponse.status_code == 421, hote
-
-
-def test_une_tache_tourne_pour_chacune_et_saute_la_base_injoignable(commune):
-    vues: list[str] = []
-    contexte.pour_chaque_copropriete(
-        lambda: vues.append(contexte.courante().identifiant), "essai"
-    )()
-    assert vues == ["essai-a", "essai-b"]
-
-
-def test_hors_requete_aucune_copropriete_n_est_devinee(commune):
-    with pytest.raises(contexte.HorsCopropriete):
-        contexte.courante()
-
-
-def test_les_mesures_de_l_installation_ne_supposent_aucune_copropriete(commune):
-    """Le rapport nocturne mesure l'installation hors requête : il nomme ses
-    copropriétés une à une, il ne s'en remet pas à une « courante » (#2053)."""
-    from app.inscription import rapport
-
-    assert rapport.hebergement().moteur_base == "postgresql"
-    assert rapport.posture().secret_suffisant is True

@@ -56,7 +56,10 @@ def moteur_de_test(*, schema: bool = True, cles_etrangeres: bool = False):
     moteur, retirer = schema_jetable(url_des_tests(), cles_etrangeres=cles_etrangeres)
     _A_RETIRER.append(retirer)
     if schema:
-        SQLModel.metadata.create_all(moteur)
+        #  `checkfirst=False` : le schéma est NEUF, aucune table n'y existe. La
+        #  vérification coûtait une requête au catalogue par table — 89 —, et
+        #  ces requêtes ralentissent avec chaque schéma resté sur le serveur.
+        SQLModel.metadata.create_all(moteur, checkfirst=False)
     return moteur
 
 

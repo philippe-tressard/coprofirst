@@ -86,7 +86,8 @@ def test_lecture_de_l_arborescence_par_le_router(batiments):
         auteur = _auteur(session)
         #  Un contenu qui cite deux périmètres, pour que `utilise` ait à les trouver
         #  dans les deux formats stockés (JSON et CSV).
-        session.add(_actualite(auteur, '["aful", "bat:%d"]' % batiments[0]))
+        actualite = _actualite(auteur, '["aful", "bat:%d"]' % batiments[0])
+        session.add(actualite)
         session.commit()
 
         cites = _codes_cites(session)
@@ -94,6 +95,7 @@ def test_lecture_de_l_arborescence_par_le_router(batiments):
         assert f"bat:{batiments[0]}" in cites
 
         lus = _en_lecture(list(session.exec(select(Perimetre)).all()), cites)
+        purger_ligne(session, Ticket, actualite.id)
 
     assert len(lus) == 63, f"63 nœuds semés, {len(lus)} rendus"
 
@@ -117,18 +119,21 @@ def test_codes_cites_lit_les_trois_formats_de_stockage(batiments):
 
     with Session(engine) as session:
         auteur = _auteur(session)
-        session.add(_actualite(auteur, '["parking"]'))
-        session.add(
-            Evenement(
-                titre="E",
-                type=TypeEvenement.travaux,
-                auteur_id=auteur,
-                debut=datetime(2026, 8, 12, 9, 0),
-                perimetre="espaces-verts,cheminements",
-            )
+        actualite = _actualite(auteur, '["parking"]')
+        evenement = Evenement(
+            titre="E",
+            type=TypeEvenement.travaux,
+            auteur_id=auteur,
+            debut=datetime(2026, 8, 12, 9, 0),
+            perimetre="espaces-verts,cheminements",
         )
+        session.add_all([actualite, evenement])
         session.commit()
         cites = _codes_cites(session)
+        #  Ce qu'il cite part avec lui : laissé dans la base du processus,
+        #  « cheminements » paraissait utilisé au test de lecture joué après (#2223).
+        purger_ligne(session, Evenement, evenement.id)
+        purger_ligne(session, Ticket, actualite.id)
 
     assert {"parking", "espaces-verts", "cheminements"} <= cites
 

@@ -8,13 +8,17 @@ date »), jamais la commande du moteur.
 
 from __future__ import annotations
 
+import re
 import uuid
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from datetime import datetime, timedelta
 
 from sqlalchemy import Interval, String, cast, func, literal, text
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.pool import NullPool
+
+from app.utils import horloge
 
 # ── Les gestes d'exploitation ────────────────────────────────────────────────
 
@@ -71,9 +75,18 @@ def differer_cles_etrangeres(conn) -> None:
 # ── Une base de travail jetable ──────────────────────────────────────────────
 
 
+#: Le nom d'un schéma jetable porte l'heure de sa CRÉATION (UTC) : un schéma
+#: resté derrière un processus interrompu se reconnaît alors à son âge (#2223).
+#: Sans elle, 1 447 schémas orphelins s'étaient accumulés sur la base d'essai du
+#: poste — 128 000 tables au catalogue, et chaque `create_all` y prenait 1,85 s
+#: au lieu de 0,39 s (24/10/2026).
+_FORMAT_HEURE_SCHEMA = "%Y%m%d%H%M%S"
+_NOM_SCHEMA_JETABLE = re.compile(r"^t_(\d{14})_[0-9a-f]{12}$")
+
+
 def poser_schema(url) -> str:
     """Crée un SCHÉMA neuf sur le serveur de `url` ; rend son nom."""
-    nom = f"t_{uuid.uuid4().hex[:16]}"
+    nom = f"t_{horloge.maintenant():{_FORMAT_HEURE_SCHEMA}}_{uuid.uuid4().hex[:12]}"
     admin = _creer_moteur(url, isolation_level="AUTOCOMMIT", poolclass=NullPool)
     try:
         with admin.connect() as c:
@@ -106,6 +119,45 @@ def retirer_schema(url, nom: str) -> None:
             c.execute(text(f'DROP SCHEMA IF EXISTS "{nom}" CASCADE'))  # noqa: S608
     finally:
         admin.dispose()
+
+
+def heure_du_schema_jetable(nom: str) -> datetime | None:
+    """L'heure de création (UTC naïf) inscrite dans le nom d'un schéma jetable. PURE.
+
+    `None` pour tout autre nom — un schéma qui n'est pas jetable, ou nommé avant
+    que son nom ne porte son heure : on ne sait pas son âge, on n'y touche pas.
+    """
+    trouve = _NOM_SCHEMA_JETABLE.match(nom)
+    if not trouve:
+        return None
+    try:
+        return datetime.strptime(trouve.group(1), _FORMAT_HEURE_SCHEMA)
+    except ValueError:
+        return None
+
+
+def retirer_schemas_jetables_perimes(url, *, plus_vieux_que: timedelta) -> int:
+    """Retire les schémas jetables créés il y a plus de `plus_vieux_que` ; rend leur nombre.
+
+    Le geste qui borne ce qu'un processus interrompu laisse derrière lui. Seul
+    l'âge écrit dans le nom décide : un schéma sans heure lisible reste.
+    """
+    limite = horloge.maintenant() - plus_vieux_que
+    admin = _creer_moteur(url, isolation_level="AUTOCOMMIT", poolclass=NullPool)
+    retires = 0
+    try:
+        with admin.connect() as c:
+            noms = c.execute(text("SELECT nspname FROM pg_namespace")).scalars().all()
+            for nom in noms:
+                heure = heure_du_schema_jetable(nom)
+                if heure is None or heure >= limite:
+                    continue
+                c.execute(text("SET lock_timeout = '10s'"))
+                c.execute(text(f'DROP SCHEMA IF EXISTS "{nom}" CASCADE'))  # noqa: S608 — nom relu au motif
+                retires += 1
+    finally:
+        admin.dispose()
+    return retires
 
 
 def schema_jetable(url, *, cles_etrangeres: bool = True) -> tuple[object, Callable[[], None]]:

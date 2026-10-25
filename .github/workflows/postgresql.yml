@@ -12,8 +12,9 @@ name: PostgreSQL
 #  Un job qui n'a pas pu rejouer la suite (pytest interrompu, base injoignable)
 #  rend toujours l'échec : INCONNU, jamais OK (`standards/04` §1).
 #
-#  La suite tourne en tranches parallèles (`TRANCHES`) : un schéma par test,
-#  donc ~300 tables posées à chaque fois, et les quatre cœurs de l'exécuteur.
+#  La suite tourne en parallèle (`pytest -n`, #2223), dans un ordre tiré au sort
+#  dont la graine est au résumé : un schéma par test, et les cœurs de l'exécuteur
+#  (le nombre de workers : `workers_suite` dans le script).
 on:
   push:
     branches: [main]
@@ -73,5 +74,4 @@ jobs:
         working-directory: api
         env:
           TESTS_BASE_URL: postgresql+psycopg://essai:essai@localhost:5432/essai
-          TRANCHES: "4"
         run: bash ../scripts/ci/mesure-postgresql.sh

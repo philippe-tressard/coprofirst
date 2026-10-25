@@ -20,16 +20,38 @@ import tempfile
 os.environ.setdefault("SECRET_KEY", "x" * 40)
 _URL_TESTS = os.environ.get("TESTS_BASE_URL")
 _SCHEMA_DU_PROCESSUS = None
-if "DATABASE_URL" not in os.environ:
-    if _URL_TESTS:
-        from app.dialecte import poser_schema, url_dans_schema
+#  Un worker de `pytest -n` hérite du `DATABASE_URL` du maître : il pose le
+#  sien, sans quoi tous écrivaient dans le même schéma (`tests/aides_processus`).
+from tests.aides_processus import MARQUE as _POSEE_ICI  # noqa: E402
+from tests.aides_processus import SERVEUR_INJOIGNABLE, base_a_poser  # noqa: E402
 
+if base_a_poser(os.environ):
+    os.environ.pop("DATABASE_URL", None)
+    if _URL_TESTS:
+        from datetime import timedelta
+
+        from app.dialecte import poser_schema, retirer_schemas_jetables_perimes, url_dans_schema
+
+        #  Ce qu'un passage INTERROMPU a laissé — ses schémas n'ont pas été
+        #  retirés — part au suivant (#2223) : 1 447 orphelins rendaient chaque
+        #  `create_all` 4,6 fois plus lent sur le poste. Six heures : aucune
+        #  suite n'en dure une, et celles d'autres sessions tournent peut-être.
+        #  Le processus maître seul (`PYTEST_XDIST_WORKER` absent) : ses workers
+        #  partent au même instant, et retireraient les mêmes schémas que lui.
+        if "PYTEST_XDIST_WORKER" not in os.environ:
+            try:
+                retirer_schemas_jetables_perimes(_URL_TESTS, plus_vieux_que=timedelta(hours=6))
+            except Exception as exc:  # noqa: BLE001 — une purge manquée ne change pas le verdict
+                print(f"schémas périmés non retirés : {exc}")
         _SCHEMA_DU_PROCESSUS = poser_schema(_URL_TESTS)
         os.environ["DATABASE_URL"] = url_dans_schema(
             _URL_TESTS, _SCHEMA_DU_PROCESSUS
         ).render_as_string(hide_password=False)
+        os.environ[_POSEE_ICI] = os.environ["DATABASE_URL"]
     else:
-        os.environ["DATABASE_URL"] = "postgresql+psycopg://essai@127.0.0.1:1/sans-serveur"
+        os.environ["DATABASE_URL"] = (
+            f"postgresql+psycopg://essai@{SERVEUR_INJOIGNABLE}/sans-serveur"
+        )
 os.environ.setdefault("ENABLE_API_DOCS", "false")
 #  Pas de cache du manuel PDF : il s'écrirait sous `/app/data` du poste.
 os.environ.setdefault("CACHE_MANUEL_DIR", "")
@@ -288,6 +310,38 @@ def utilisateur():
         session.commit()
         purger_ligne(session, Utilisateur, u.id)
         session.commit()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _base_du_processus_neuve():
+    """Chaque FICHIER de tests trouve la base partagée du processus neuve (#2223).
+
+    Elle est la seule que voient TOUS les tests d'un processus : ce qu'un fichier
+    y laissait, le suivant le trouvait — et lequel est le suivant dépend de la
+    répartition entre workers. Le 24/10/2026, des bâtiments laissés là ont fait
+    tomber `test_copropriete_fiche.py` sur un lot qui n'y touchait pas. Démarrer
+    l'application (`TestClient`, donc `lifespan`) y sème aussi toute la
+    copropriété d'essai.
+
+    Neuve comme en production : toutes les tables, aucune ligne, les compteurs à
+    1 (`aides_purge.remettre_a_neuf`). Les états de copropriété tenus en mémoire
+    (`contexte.etat` : arbre des périmètres, bâtiments de chacun…) partent avec,
+    sans quoi ils parleraient de lignes qui n'existent plus. Dans un même fichier, l'ordre est tiré au
+    sort (`pytest-randomly`) : une dépendance entre ses tests sort là, au lot
+    qui l'écrit.
+    """
+    import sys
+
+    if _SCHEMA_DU_PROCESSUS is not None:
+        from tests.aides_purge import remettre_a_neuf
+
+        remettre_a_neuf(os.environ["DATABASE_URL"])
+        contexte = sys.modules.get("app.contexte")
+        if contexte is not None:
+            #  Le registre des états (`contexte.etat`) : la seule porte, et elle
+            #  n'a pas de geste « tout oublier » — que les tests seuls emploieraient.
+            contexte._etats.clear()
+    yield
 
 
 @pytest.fixture(autouse=True)

@@ -20,7 +20,6 @@ import uuid
 from datetime import timedelta
 
 from markupsafe import escape
-from sqlmodel import Session
 
 from app.models.affaires_liees import AffaireLiee
 from app.models.core import StatutTicket, Ticket, TicketEvolution
@@ -33,7 +32,7 @@ from app.routers.tickets.historique_courriel import (
 from app.seed.emails.tickets import MODELES
 from app.utils import horloge
 from app.utils.email import _contexte_rendu, composer_email
-from tests.aides_base import compte, moteur_de_test
+from tests.aides_base import compte
 
 
 def _affaire(session, auteur, titre, *, cree_le, confidentiel=False) -> Ticket:
@@ -68,9 +67,8 @@ def _rendre(session, code, sujet, corps, ctx) -> str:
     ]
 
 
-def _monde():
+def _monde(session):
     """Une affaire, et trois autres posées dans le désordre de leur création."""
-    session = Session(moteur_de_test())
     cs = compte(session, prefixe="cs", roles_json="conseil_syndical")
     maintenant = horloge.maintenant()
     jour = timedelta(days=1)
@@ -94,11 +92,11 @@ def _monde():
         )
     )
     session.commit()
-    return session, cs, principale, ancienne, recente, secrete
+    return cs, principale, ancienne, recente, secrete
 
 
-def test_les_liees_se_rangent_par_creation_de_l_affaire_et_la_secrete_n_en_est_pas():
-    session, cs, principale, ancienne, recente, secrete = _monde()
+def test_les_liees_se_rangent_par_creation_de_l_affaire_et_la_secrete_n_en_est_pas(session):
+    cs, principale, ancienne, recente, secrete = _monde(session)
     ctx = contexte_ticket_syndic(principale, cs, session, pieces_jointes=[])
 
     assert [a["titre"] for a in ctx["affaires_liees"]] == [ancienne.titre, recente.titre]
@@ -107,8 +105,8 @@ def test_les_liees_se_rangent_par_creation_de_l_affaire_et_la_secrete_n_en_est_p
     assert secrete.titre not in texte and secrete.numero not in texte
 
 
-def test_l_historique_trace_le_lien_et_chaque_liee_porte_le_sien():
-    session, cs, principale, ancienne, recente, _s = _monde()
+def test_l_historique_trace_le_lien_et_chaque_liee_porte_le_sien(session):
+    cs, principale, ancienne, recente, _s = _monde(session)
     ctx = contexte_ticket_syndic(principale, cs, session, pieces_jointes=[])
 
     traces = [h["label"] for h in ctx["historique"] if h["label"].startswith("Liée à")]
@@ -130,8 +128,8 @@ def test_l_historique_trace_le_lien_et_chaque_liee_porte_le_sien():
     ]
 
 
-def test_le_courriel_rendu_place_les_liees_apres_l_historique():
-    session, cs, principale, ancienne, recente, secrete = _monde()
+def test_le_courriel_rendu_place_les_liees_apres_l_historique(session):
+    cs, principale, ancienne, recente, secrete = _monde(session)
     ctx = contexte_ticket_syndic(principale, cs, session, pieces_jointes=[])
     code, _l, sujet, corps, _d = next(m for m in MODELES if m[0] == "ticket_syndic")
     html = _rendre(session, code, sujet, corps, ctx)
@@ -145,8 +143,7 @@ def test_le_courriel_rendu_place_les_liees_apres_l_historique():
     assert secrete.titre not in html
 
 
-def test_sans_lien_rien_ne_change():
-    session = Session(moteur_de_test())
+def test_sans_lien_rien_ne_change(session):
     cs = compte(session, prefixe="cs", roles_json="conseil_syndical")
     seule = _affaire(session, cs, "Seule", cree_le=horloge.maintenant())
     ctx = contexte_ticket_syndic(seule, cs, session, pieces_jointes=[])
@@ -156,9 +153,9 @@ def test_sans_lien_rien_ne_change():
     assert "Affaires liées" not in html
 
 
-def test_historique_courriel_les_liees_montrables_et_l_ordre_des_lignes():
+def test_historique_courriel_les_liees_montrables_et_l_ordre_des_lignes(session):
     """`historique_courriel` en direct : qui est montrable, et comment les lignes se rangent."""
-    session, _cs, principale, ancienne, recente, secrete = _monde()
+    _cs, principale, ancienne, recente, secrete = _monde(session)
 
     liees = affaires_liees_du_courriel(session, principale)
     assert [t.id for t, _le in liees] == [ancienne.id, recente.id]

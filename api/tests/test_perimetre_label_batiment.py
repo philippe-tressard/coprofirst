@@ -61,7 +61,7 @@ from app.models.perimetre import Perimetre
 #  `perimetre.modifie_par_id` sans le modèle `Utilisateur` en mémoire.
 from app.models.core import Utilisateur  # noqa: F401
 from app.utils import perimetres as P
-from tests.aides_purge import monter_batiments, vider_perimetres
+from tests.aides_purge import monter_batiments, vider_patrimoine, vider_perimetres
 
 
 @pytest.fixture()
@@ -125,9 +125,9 @@ def arbre_deux_batiments():
     P.invalider_cache()
     yield codes
     with Session(engine) as session:
-        #  Par VAGUES : `perimetre` s'auto-référence, un DELETE global viole la
-        #  clé sur les enfants dès que les clés sont vérifiées (#546).
-        vider_perimetres(session)
+        #  Le patrimoine ENTIER, bâtiments montés compris : laissés dans la base
+        #  du processus, ils attendaient le test suivant (#2223).
+        vider_patrimoine(session)
     P.invalider_cache()
 
 
@@ -215,7 +215,9 @@ def arbre_du_ticket():
             libelle="Bâtiment 4",
             libelle_court="Bât. 4",
             description="",
-            batiment_id=4,
+            #  Monté ici : `batiment_id=4` ne tenait que grâce aux bâtiments que
+            #  la fixture voisine laissait dans la base du processus (#2223).
+            batiment_id=monter_batiments(session, ("4",))[0],
             profondeur=1,
             ordre=3,
             actif=True,
@@ -270,9 +272,9 @@ def arbre_du_ticket():
     P.invalider_cache()
     yield codes
     with Session(engine) as session:
-        #  Par VAGUES : `perimetre` s'auto-référence, un DELETE global viole la
-        #  clé sur les enfants dès que les clés sont vérifiées (#546).
-        vider_perimetres(session)
+        #  Le patrimoine ENTIER, bâtiments montés compris : laissés dans la base
+        #  du processus, ils attendaient le test suivant (#2223).
+        vider_patrimoine(session)
     P.invalider_cache()
 
 
