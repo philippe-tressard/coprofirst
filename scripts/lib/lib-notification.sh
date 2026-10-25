@@ -222,7 +222,10 @@ rapporter_verdicts() { # repo self — après repartir_constats
     #  Ce que l'écran montrera, calculé une fois pour le rapport ET le battement.
     #  Les FAIL vont AUSSI dans `erreur` : c'est ce que liste « Anomalies
     #  récentes », et un échec critique doit y figurer comme ceux des autres tâches.
-    details=$(printf '{"fail":%d,"warn":%d,"constats":%s,"communs":%s,"porte_communs":%s}' \
+    #  Le nombre de contrôles réussis du passage (`OKS`, check-reliability.sh).
+    #  Absent → la clé s'omet : un « 0 » se lirait comme une mesure.
+    details=$(printf '{%s"fail":%d,"warn":%d,"constats":%s,"communs":%s,"porte_communs":%s}' \
+        "$([ -n "${OKS:-}" ] && printf '"ok":%d,' "$OKS")" \
         "$nf" "$nw" "$(constats_json "$propres")" "$(constats_json "$communs")" \
         "$([ "$porte" = oui ] && echo true || echo false)")
     erreur=$(printf '%s\n%s\n' "$propres" "$communs" | sed -n 's/^\[FAIL\] //p' | paste -sd'|' - | sed 's/|/ | /g')
@@ -347,6 +350,18 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     passage "[FAIL] Site public KO (HTTP 503)" 1 0
     passage "[FAIL] Site public KO (HTTP 502)" 1 0
     t "un FAIL dont seul le code change → l'erreur suit" "Site public KO (HTTP 502)" "$BATTEMENT_ERREUR"
+    #  Les contrôles réussis se disent, et JSON reste valide : sans eux, « fail 0 ·
+    #  warn 0 » se lit pareil pour 74 points verts et pour aucun (23/10/2026).
+    #  Absents (`OKS` non posé) → la clé s'omet, jamais un « 0 » qui se lirait
+    #  comme une mesure.
+    passage "[WARN] 4 erreur(s) sur 2000 requêtes" 0 1   # signature changée : rapport complet
+    OKS=74 passage "[WARN] 5 erreur(s) sur 2100 requêtes" 0 1   # même signature : battement
+    t "OKS posé → le battement dit « ok »" 1 "$(printf '%s' "$BATTEMENT_DETAILS" | grep -c '"ok":74,')"
+    t "…et la charge reste du JSON" ok \
+      "$(printf '%s' "$BATTEMENT_DETAILS" | python3 -c 'import json,sys; print("ok" if json.load(sys.stdin)["ok"]==74 else "ko")' 2>/dev/null \
+         || printf '%s' "$BATTEMENT_DETAILS" | python -c 'import json,sys; print("ok" if json.load(sys.stdin)["ok"]==74 else "ko")' 2>/dev/null)"
+    passage "[WARN] 6 erreur(s) sur 2200 requêtes" 0 1
+    t "OKS absent → aucune clé « ok » (pas de 0 trompeur)" 0 "$(printf '%s' "$BATTEMENT_DETAILS" | grep -c '"ok"')"
     unset -f rapport_cle rapport_envoyer rapport_battement passage
     rm -rf "$tmp"
 
