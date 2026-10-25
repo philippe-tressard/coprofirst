@@ -28,31 +28,33 @@
 </script>
 
 {#if lignes.length}
-	<table class="table charges-lot" aria-label={titre}>
-		<thead>
-			<tr>
-				<th scope="col">Charges</th>
-				<th scope="col" class="nombre">Ma part</th>
-				<th scope="col" class="nombre">En %</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each lignes as l (l.cle)}
+	<div class="table-wrap">
+		<table class="table charges-lot" aria-label={titre}>
+			<thead>
 				<tr>
-					<th scope="row">
-						{l.libelle}
-						{#if l.perimetre || l.precision}
-							<span class="precision">
-								{[l.perimetre, l.precision].filter(Boolean).join(' · ')}
-							</span>
-						{/if}
-					</th>
-					<td class="nombre">{fmtNombre(l.numerateur)}/{fmtNombre(l.denominateur)}</td>
-					<td class="nombre">{fmtPartEnPourcent(l.numerateur, l.denominateur)}</td>
+					<th scope="col">Charges</th>
+					<th scope="col" class="nombre">Ma part</th>
+					<th scope="col" class="nombre">En %</th>
 				</tr>
-			{/each}
-		</tbody>
-	</table>
+			</thead>
+			<tbody>
+				{#each lignes as l (l.cle)}
+					<tr>
+						<th scope="row">
+							{l.libelle}
+							{#if l.perimetre || l.precision}
+								<span class="precision">
+									{[l.perimetre, l.precision].filter(Boolean).join(' · ')}
+								</span>
+							{/if}
+						</th>
+						<td class="nombre">{fmtNombre(l.numerateur)}/{fmtNombre(l.denominateur)}</td>
+						<td class="nombre">{fmtPartEnPourcent(l.numerateur, l.denominateur)}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 {/if}
 
 <style>
