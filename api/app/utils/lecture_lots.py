@@ -17,6 +17,7 @@ from app.models.charges import CleDeCharges, QuotePartLot
 from app.models.copropriete import NatureLot
 from app.models.perimetre import LotPerimetre
 from app.utils.alertes_lot import alertes_du_lot, note_de_cle
+from app.utils.lecture import lire_objet
 from app.utils.constats import Constat
 from app.utils.designation_lot import nature_du_lot
 from app.utils.lots_explication import phrase
@@ -49,6 +50,10 @@ class QuotePart(BaseModel):
     #: Ce qu'il faut savoir de la clé quand ses parts ne font pas le dénominateur —
     #: une phrase du serveur (`alertes_lot.note_de_cle`), dite une fois sous la clé.
     note: str | None = None
+    #: Faux : prévue au règlement, non appelée par le syndic en ce moment (#2252).
+    appelee: bool = True
+    #: Son libellé sur l'appel de fonds, quand le conseil l'a saisi (#2252).
+    libelle_syndic: str | None = None
 
 
 class Designation(BaseModel):
@@ -119,18 +124,19 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
         .where(QuotePartLot.lot_id.in_(ids))  # type: ignore[union-attr]
         .order_by(CleDeCharges.ordre, CleDeCharges.id)
     ).all():
+        #  Ce que la CLÉ porte se lit sur elle (libellé, dénominateur, description, appel) ;
+        #  ne se nomme ici que ce qui se calcule (#1563).
         quotes.setdefault(part.lot_id, []).append(
-            QuotePart(
+            lire_objet(
+                QuotePart,
+                cle,
                 cle=cle.code,
-                libelle=cle.libelle,
                 numerateur=part.numerateur,
-                denominateur=cle.denominateur,
                 perimetre=perimetre_label_un(par_id[cle.perimetre_id].code)
                 if cle.perimetre_id in par_id
                 else None,
                 nb_lots=totaux.get(cle.id, (0, 0))[0],
                 somme=totaux.get(cle.id, (0, 0))[1],
-                description=cle.description,
                 note=note_de_cle(cle.denominateur, totaux.get(cle.id, (0, 0))[1]),
             )
         )

@@ -145,4 +145,13 @@ FAQ_COMPLEMENTAIRE = [
         "Vous êtes copropriétaire à part entière : vous votez à l'assemblée générale et contribuez aux charges générales et à celles de la circulation qui dessert votre place. L'application vous montre ce qui concerne cette circulation — son ascenseur, son escalier — et le parking, mais pas le hall ni les actualités d'un bâtiment où vous n'habitez pas. Les documents et décisions de la copropriété vous restent ouverts comme à tout copropriétaire.",
         18,
     ),
+    #  L'appel de fonds et « Mes lots » (#2252) : la question qu'un copropriétaire pose
+    #  au conseil en comparant les deux. Aucune clé, aucun montant, aucun libellé de
+    #  syndic : la réponse vaut pour toute copropriété.
+    (
+        "💶 Charges",
+        "Pourquoi l'application ne montre-t-elle pas exactement les mêmes lignes que mon appel de fonds ?",
+        "<strong>Mes lots</strong> montre vos parts telles que le règlement de copropriété les fixe, clé par clé. L'appel de fonds applique le budget voté : le syndic n'appelle pas toujours toutes les clés (un escalier sans dépense ce trimestre), répartit certaines charges autrement — l'eau au compteur, par exemple — et peut ajouter des lignes que le règlement ne prévoit pas. Les clés qu'il n'appelle pas en ce moment sont regroupées sous « Prévues au règlement, non appelées actuellement », et le libellé de chaque clé sur l'appel de fonds est indiqué sous elle quand le conseil syndical l'a renseigné. L'application n'affiche jamais de montant : seuls les appels de fonds et les comptes du syndic font foi. Une question sur un montant se pose au syndic, dont les coordonnées sont dans l'<strong>Annuaire</strong>.",
+        19,
+    ),
 ]
