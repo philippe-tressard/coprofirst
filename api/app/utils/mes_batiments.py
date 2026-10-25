@@ -41,6 +41,14 @@ vérifie l'élargissement et sa borne **dans le même test** — pour qu'ils ne
 puissent pas se séparer.
 
 
+## « Mes périmètres » (#2214)
+
+Une place ou une cave est desservie par une circulation — l'ascenseur et l'escalier
+d'un bâtiment qui n'est pas forcément le sien. La même lecture rend donc aussi
+`perimetres_desservis` : les nœuds qui desservent ses lots actifs, que la règle
+d'accès confronte aux périmètres d'un contenu. Une notion, deux lectures, un cache.
+
+
 ## Le cache
 
 Même parti pris que `utils/perimetres.arbre()` : une durée courte, et **aucune
@@ -52,7 +60,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from app import contexte
 
@@ -63,21 +71,103 @@ logger = logging.getLogger("hostachy.mes_batiments")
 _TTL_SECONDES = 30.0
 
 
-def _cache() -> dict[int, tuple[float, frozenset[int]]]:
+class _Lu(NamedTuple):
+    """Ce que les lots actifs d'un compte apportent — lu en une fois, mis en cache."""
+
+    batiments: frozenset[int]
+    desservis: frozenset[str]
+
+
+_RIEN = _Lu(frozenset(), frozenset())
+
+
+def _cache() -> dict[int, tuple[float, _Lu]]:
     """Le cache de LA copropriété servie, indexé par `user_id` (#1744, spec §4.5)."""
     return contexte.etat("mes_batiments")
 
 
 def invalider_cache(user_id: Optional[int] = None) -> None:
-    """À appeler après une écriture sur `user_lot` — ou entièrement, sans argument."""
+    """À appeler après une écriture sur `user_lot` ou `lot_perimetre` — ou entièrement."""
     if user_id is None:
         _cache().clear()
     else:
         _cache().pop(user_id, None)
 
 
+def _lu(user) -> _Lu:
+    """Les bâtiments et les périmètres desservis de ses lots actifs — `_RIEN` si inconnu."""
+    user_id = getattr(user, "id", None)
+    if user_id is None:
+        return _RIEN
+    entree = _cache().get(user_id)
+    if entree is not None and (time.monotonic() - entree[0]) < _TTL_SECONDES:
+        return entree[1]
+
+    try:
+        from sqlmodel import select
+
+        from app.models.copropriete import Lot
+        from app.models.core import UserLot
+        from app.models.perimetre import LotPerimetre, Perimetre, RelationLotPerimetre
+
+        from app.utils.designation_lot import est_annexe
+
+        with contexte.nouvelle_session() as session:
+            lots = session.exec(
+                select(Lot)
+                .join(UserLot, UserLot.lot_id == Lot.id)
+                .where(UserLot.user_id == user_id, UserLot.actif == True)  # noqa: E712
+            ).all()
+            #  🔴 Une ANNEXE — cave ou place — n'apporte pas son bâtiment (#2212,
+            #  spec `lots-et-perimetres.md` §5–6) : on la rejoint par une
+            #  circulation, on n'y vit pas, et le hall, le toit et les actualités
+            #  confidentielles du bâtiment ne la concernent pas. Ce qui la concerne
+            #  — l'ascenseur et l'escalier qui la desservent — passe par ses
+            #  périmètres desservis, ci-dessous.
+            #
+            #  Mesuré en production le 24/10/2026 avant d'écrire cette ligne :
+            #  AUCUN compte ne tenait un bâtiment de ses seules annexes. Elle ne
+            #  retire donc rien à personne ; elle empêche l'import de l'état
+            #  descriptif, qui situe enfin une cave dans SON bâtiment (et non
+            #  celui de son propriétaire), d'ouvrir ce bâtiment en entier.
+            batiments = frozenset(
+                lot.batiment_id
+                for lot in lots
+                if lot.batiment_id is not None and not est_annexe(lot)
+            )
+            desservis = (
+                frozenset(
+                    code.lower()
+                    for code in session.exec(
+                        select(Perimetre.code)
+                        .join(LotPerimetre, LotPerimetre.perimetre_id == Perimetre.id)
+                        .where(
+                            LotPerimetre.lot_id.in_([lot.id for lot in lots]),  # type: ignore[union-attr]
+                            LotPerimetre.relation == RelationLotPerimetre.desservi_par,
+                        )
+                    ).all()
+                )
+                if lots
+                else frozenset()
+            )
+    except Exception as exc:
+        #  Pas de mise en cache : la base reviendra, et une liste figée à vide
+        #  ferait durer la panne au-delà d'elle-même.
+        logger.error(
+            "Lots de l'utilisateur %s illisibles (%s) — seul son bâtiment de "
+            "rattachement est retenu",
+            user_id,
+            exc,
+        )
+        return _RIEN
+
+    lu = _Lu(batiments, desservis)
+    _cache()[user_id] = (time.monotonic(), lu)
+    return lu
+
+
 def batiments_de_l_utilisateur(user) -> frozenset[int]:
-    """Les bâtiments de son rattachement **et** de ses lots actifs.
+    """Les bâtiments de son rattachement **et** de ses lots actifs (annexes exclues).
 
     Renvoie un ensemble **vide** si rien n'est connu. ⚠️ Ce cas zéro n'a PAS le
     même sens pour les deux appelants, et cette fonction ne tranche pas à leur
@@ -93,59 +183,17 @@ def batiments_de_l_utilisateur(user) -> frozenset[int]:
     elle les actualités confidentielles, à des comptes techniques (cas zéro,
     `standards/04` §2 : une absence d'information n'est pas une autorisation).
     """
-    user_id = getattr(user, "id", None)
-    connus: set[int] = set()
-    if getattr(user, "batiment_id", None) is not None:
-        connus.add(user.batiment_id)
+    connus = frozenset({user.batiment_id}) if getattr(user, "batiment_id", None) else frozenset()
+    return _lu(user).batiments | connus
 
-    if user_id is None:
-        return frozenset(connus)
 
-    entree = _cache().get(user_id)
-    if entree is not None and (time.monotonic() - entree[0]) < _TTL_SECONDES:
-        return entree[1] | frozenset(connus)
+def perimetres_desservis(user) -> frozenset[str]:
+    """Les codes (en minuscules) des périmètres qui DESSERVENT ses lots actifs (#2214).
 
-    try:
-        from sqlmodel import select
-
-        from app.models.copropriete import Lot
-        from app.models.core import UserLot
-
-        from app.utils.designation_lot import est_annexe
-
-        with contexte.nouvelle_session() as session:
-            lots = session.exec(
-                select(Lot)
-                .join(UserLot, UserLot.lot_id == Lot.id)
-                .where(UserLot.user_id == user_id, UserLot.actif == True)  # noqa: E712
-            ).all()
-            #  🔴 Une ANNEXE — cave ou place — n'apporte pas son bâtiment (#2212,
-            #  spec `lots-et-perimetres.md` §5–6) : on la rejoint par une
-            #  circulation, on n'y vit pas, et le hall, le toit et les actualités
-            #  confidentielles du bâtiment ne la concernent pas. Ce qui la concerne
-            #  — l'ascenseur et l'escalier qui la desservent — passe par ses
-            #  périmètres (`lot_perimetre`), pas par ici.
-            #
-            #  Mesuré en production le 24/10/2026 avant d'écrire cette ligne :
-            #  AUCUN compte ne tenait un bâtiment de ses seules annexes. Elle ne
-            #  retire donc rien à personne ; elle empêche l'import de l'état
-            #  descriptif, qui situe enfin une cave dans SON bâtiment (et non
-            #  celui de son propriétaire), d'ouvrir ce bâtiment en entier.
-            des_lots = frozenset(
-                lot.batiment_id
-                for lot in lots
-                if lot.batiment_id is not None and not est_annexe(lot)
-            )
-    except Exception as exc:
-        #  Pas de mise en cache : la base reviendra, et une liste figée à vide
-        #  ferait durer la panne au-delà d'elle-même.
-        logger.error(
-            "Lots de l'utilisateur %s illisibles (%s) — seul son bâtiment de "
-            "rattachement est retenu",
-            user_id,
-            exc,
-        )
-        return frozenset(connus)
-
-    _cache()[user_id] = (time.monotonic(), des_lots)
-    return des_lots | frozenset(connus)
+    L'ascenseur et l'escalier de la circulation d'une place ou d'une cave, les caves
+    de cette circulation (`utils/perimetres/lots`) — jamais le nœud du bâtiment
+    desservant lui-même. C'est la seconde lecture de « mes périmètres » : un
+    contenu ciblé sous l'un d'eux concerne qui les emprunte et les paie, même sans
+    habiter le bâtiment (spec `lots-et-perimetres.md` §5–6).
+    """
+    return _lu(user).desservis

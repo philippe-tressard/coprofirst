@@ -13,8 +13,8 @@ from app.utils.statuts_lus import statuts_lus
 from app.models.core import (
     Utilisateur,
 )
-from app.utils.mes_batiments import batiments_de_l_utilisateur
-from app.utils.perimetres import a_portee_globale, batiments_cibles
+from app.utils.mes_batiments import batiments_de_l_utilisateur, perimetres_desservis
+from app.utils.perimetres import a_portee_globale, batiments_cibles, sous_l_une_des_branches
 from app.utils.roles_libelles import libelle_role
 from app.auth.deps import est_moderateur
 
@@ -167,22 +167,36 @@ def perimetre_visible(
     #  divergeaient — rattachement + lots ici, rattachement seul là —, et l'écart
     #  était invisible parce que chacune était juste de son côté.
     miens = batiments_de_l_utilisateur(user)
+    #  🔴 « MES PÉRIMÈTRES » (#2214, spec `lots-et-perimetres.md` §5–6) : une place
+    #  ou une cave est desservie par une circulation — l'ascenseur et l'escalier
+    #  d'un bâtiment qui n'est pas forcément le sien. Ce qui est ciblé SOUS ces
+    #  nœuds concerne qui les emprunte et les paie, résident ou copropriétaire
+    #  extérieur. Jamais le bâtiment desservant en entier : arbitré le 24/10/2026,
+    #  ses actualités confidentielles, son hall et son toit restent à ses résidents.
+    #  C'est un ajout pur à l'intersection des bâtiments : qui n'a pas de lot
+    #  desservi garde exactement ses verdicts d'hier (`test_perimetres_arbre`).
+    desservis = perimetres_desservis(user)
+
+    def _concerne() -> bool:
+        return bool(miens & batiments_cibles(perimetres)) or sous_l_une_des_branches(
+            desservis, perimetres
+        )
 
     if ouvert_a_la_copropriete:
         if not getattr(user, "restreindre_a_mes_batiments", False):
             return True
         #  Cas zéro : rien de connu, donc rien à restreindre — renvoyer False
         #  laisserait un fil vide à qui a simplement coché une case.
-        if not miens:
+        if not miens and not desservis:
             return True
-        return bool(miens & batiments_cibles(perimetres))
+        return _concerne()
 
-    #  Même intersection, cas zéro INVERSE, et c'est toute la différence : ne pas
-    #  savoir de quels bâtiments on parle n'a pas le même sens selon qu'on
-    #  restreint un affichage ou qu'on décide d'un accès.
-    if not miens:
+    #  Même question, cas zéro INVERSE, et c'est toute la différence : ne pas
+    #  savoir de quoi l'on parle n'a pas le même sens selon qu'on restreint un
+    #  affichage ou qu'on décide d'un accès.
+    if not miens and not desservis:
         return False
-    return bool(miens & batiments_cibles(perimetres))
+    return _concerne()
 
 
 # ── Règle « à qui ça s'adresse » ──────────────────────────────────────────────

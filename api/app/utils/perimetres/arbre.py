@@ -230,6 +230,28 @@ def _hors_copropriete(chaine: list["Noeud"]) -> bool:
     return any(n.hors_copropriete for n in chaine)
 
 
+def _dans_la_lignee(codes, chaine: list[Noeud]) -> bool:
+    """L'un de ces codes est-il le nœud de la chaîne ou l'un de ses ancêtres ?"""
+    lignee = {n.code.lower() for n in chaine}
+    return any(code.strip().lower() in lignee for code in codes)
+
+
+def sous_l_une_des_branches(branches, codes: list[str]) -> bool:
+    """L'un de ces périmètres est-il l'une de ces branches, ou en dessous ? (#2214)
+
+    La moitié « même code ou ancêtre » de `couvre`, sans la portée globale : une
+    branche qui dessert un lot (l'ascenseur du bâtiment 3) couvre ce qui est ciblé
+    sur elle ou sous elle, jamais le bâtiment qui la porte. Arbre vide ou code
+    inconnu : rien n'est couvert — cette question décide d'un accès.
+    """
+    if not branches or not codes:
+        return False
+    noeuds = arbre()
+    if not noeuds:
+        return False
+    return any(_dans_la_lignee(branches, _chaine(code, noeuds)) for code in codes)
+
+
 def couvre(codes_portee: list[str], demande: Optional[str]) -> bool:
     """Ces périmètres englobent-ils celui qu'on demande ?
 
@@ -265,10 +287,8 @@ def couvre(codes_portee: list[str], demande: Optional[str]) -> bool:
         #  (`standards/04` : une mesure impossible ne rend pas un verdict).
         return True
     chaine = _chaine(demande, noeuds)
-    lignee = {n.code.lower() for n in chaine}
-    for code in codes_portee:
-        if code.strip().lower() in lignee:
-            return True
+    if _dans_la_lignee(codes_portee, chaine):
+        return True
     #  🔴 CE QUI N'APPARTIENT PAS À LA COPROPRIÉTÉ N'EST PAS COUVERT PAR ELLE
     #  (13/09/2026, #943) — signalé à l'écran :
     #
