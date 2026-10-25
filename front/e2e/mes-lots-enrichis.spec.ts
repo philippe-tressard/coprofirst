@@ -6,7 +6,9 @@
  *  pourcentage ; sous chaque clé, ce qu'elle finance et combien de lots y contribuent ;
  *  l'écart d'une clé dit UNE fois sous le tableau, plus sur chaque carte ; la mention que
  *  seul le syndic fait foi ; des cartes de lot qui ne répètent plus les chiffres et
- *  renvoient à leur colonne. Lots FICTIFS ; l'API simulée rend la forme réelle de `LotRead`.
+ *  renvoient à leur colonne. Aligné sur l'appel de fonds (#2252) : le libellé du syndic
+ *  sous la clé, les clés non appelées repliées avec leur part, « Contacter le syndic ».
+ *  Lots FICTIFS ; l'API simulée rend la forme réelle de `LotRead`.
  */
 import type { Page } from '@playwright/test';
 import type { MonLot } from '../src/lib/api/patrimoine';
@@ -203,4 +205,34 @@ test('sur smartphone, au-delà de deux lots : une clé par bloc, le détail par 
 	const bloc = charges(page).locator('li', { hasText: "Escalier A'" });
 	await expect(bloc).toContainText('L’escalier qui dessert les deux niveaux de sous-sol');
 	await expect(bloc).toContainText('Place 902 : 6 · Cave 903 : 1');
+});
+
+test('aligné sur l’appel de fonds : le libellé du syndic, les clés non appelées repliées', async ({
+	page,
+}) => {
+	const [generales, escalier] = lot({}).quotes_parts ?? [];
+	await ouvrir(page, PROPRIETAIRE, [
+		lot({
+			quotes_parts: [
+				{ ...generales, appelee: true, libelle_syndic: 'CHARGES COMMUNES X' },
+				{ ...escalier, appelee: false, libelle_syndic: null },
+			],
+		}),
+	]);
+	const tableau = charges(page).getByRole('table');
+	await expect(tableau.getByRole('row', { name: /Charges générales/ })).toContainText(
+		'Sur l’appel de fonds : CHARGES COMMUNES X',
+	);
+	//  Non appelée : hors du tableau, jamais cachée — repliée, avec sa part.
+	await expect(tableau.getByRole('row', { name: /Escalier A/ })).toHaveCount(0);
+	const repli = charges(page).locator('details', {
+		hasText: 'Prévues au règlement, non appelées actuellement (1)',
+	});
+	await repli.locator('summary').click();
+	await expect(repli).toContainText('Escalier A');
+	await expect(repli).toContainText('34/10 000');
+	await expect(charges(page).getByRole('link', { name: 'Contacter le syndic' })).toHaveAttribute(
+		'href',
+		'/annuaire#syndic',
+	);
 });

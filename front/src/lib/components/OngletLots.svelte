@@ -10,6 +10,7 @@
   - Un périmètre DÉRIVÉ se recalcule (« Recalculer les périmètres »), il ne se
     retire pas ; un périmètre POSÉ À LA MAIN survit au recalcul et se retire.
   - Un seul lot déplié à la fois (`$lib/accordeon`).
+  - Les clés de charges telles que le syndic les appelle : `ReglageDesCles` (#2252).
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -20,6 +21,7 @@
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
+	import ReglageDesCles from '$lib/components/ReglageDesCles.svelte';
 	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import {
@@ -158,6 +160,8 @@
 	</div>
 	<ConstatsLots {constats} videTexte="Aucun constat : le patrimoine tombe juste." />
 </section>
+
+<ReglageDesCles />
 
 <ReglagesListe>
 	<ChampRecherche

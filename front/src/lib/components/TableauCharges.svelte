@@ -14,7 +14,10 @@
   - L'écart d'une clé (ses parts ne font pas le dénominateur) se dit UNE fois, sous le
     tableau, par la note du serveur : il concerne la copropriété, pas la part du lecteur.
   - La mention sous le tableau dit ce que vaut ce tableau : une lecture du règlement ; ce
-    que l'on paie, seul le syndic le dit (demandé le 25/10/2026).
+    que l'on paie, seul le syndic le dit (demandé le 25/10/2026) — et où le joindre.
+  - Aligné sur l'appel de fonds (#2252) : sous chaque clé, son libellé chez le syndic quand
+    le conseil l'a saisi ; les clés que le syndic n'appelle pas en ce moment passent dans un
+    bloc replié, avec leur part — repliées, jamais cachées.
 
   Rien n'est calculé ici au-delà d'une addition (`$lib/charges-lots`) : les parts, les
   définitions et les notes viennent du serveur. Rien ne s'affiche sans part lisible (un
@@ -22,8 +25,9 @@
 -->
 <script lang="ts">
 	import { onDestroy } from 'svelte';
+	import BlocDeCle from '$lib/components/BlocDeCle.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import { AVIS_CHARGES, lotSurligne, tableauDesCharges } from '$lib/charges-lots';
+	import { AVIS_CHARGES, FICHE_DU_SYNDIC, lotSurligne, tableauDesCharges } from '$lib/charges-lots';
 	import type { MonLot } from '$lib/api';
 	import { fmtNombre, fmtPartEnPourcent } from '$lib/utils';
 
@@ -31,7 +35,7 @@
 
 	$: tableau = tableauDesCharges(lots);
 	$: plusieurs = tableau.colonnes.length > 1;
-	$: notes = tableau.lignes.filter((l) => l.note);
+	$: notes = [...tableau.lignes, ...tableau.nonAppelees].filter((l) => l.note);
 
 	//  Le surlignage demandé par une carte s'éteint seul : il désigne, il ne marque pas.
 	let minuterie: ReturnType<typeof setTimeout> | undefined;
@@ -49,7 +53,7 @@
 		n === undefined ? '—' : sur ? `${fmtNombre(n)}/${fmtNombre(sur)}` : fmtNombre(n);
 </script>
 
-{#if tableau.lignes.length}
+{#if tableau.lignes.length || tableau.nonAppelees.length}
 	<section
 		id="mes-charges"
 		class="card mes-charges"
@@ -83,6 +87,9 @@
 							<th scope="row">
 								<span class="cle">{l.libelle}</span>
 								{#if l.description}<span class="finance">{l.description}</span>{/if}
+								{#if l.libelleSyndic}<span class="finance"
+										>Sur l’appel de fonds : {l.libelleSyndic}</span
+									>{/if}
 								{#if l.nbLots > 1}<span class="contributeurs">{l.nbLots} lots y contribuent</span
 									>{/if}
 							</th>
@@ -108,31 +115,35 @@
 		      bascule l'affichage, sans second chargement). -->
 		<ul class="vue-blocs">
 			{#each tableau.lignes as l (l.cle)}
-				<li>
-					<div class="bloc-entete">
-						<span class="cle">{l.libelle}</span>
-						<span
-							><strong>{fmtNombre(l.total)}/{fmtNombre(l.denominateur)}</strong> · {fmtPartEnPourcent(
-								l.total,
-								l.denominateur,
-							)}</span
-						>
-					</div>
-					{#if l.description}<span class="finance">{l.description}</span>{/if}
-					<span class="detail-lots">
-						{tableau.colonnes
-							.filter((c) => l.parts[c.id] !== undefined)
-							.map((c) => `${c.nom} : ${fmtNombre(l.parts[c.id])}`)
-							.join(' · ')}
-					</span>
-				</li>
+				<li><BlocDeCle ligne={l} colonnes={tableau.colonnes} /></li>
 			{/each}
 		</ul>
+
+		{#if tableau.nonAppelees.length}
+			<details class="non-appelees">
+				<summary
+					>Prévues au règlement, non appelées actuellement ({tableau.nonAppelees.length})</summary
+				>
+				<p class="aide">
+					Le syndic n’appelle pas ces clés en ce moment : elles ne figurent pas sur votre appel de
+					fonds. Votre part, celle de l’acte, reste la même le jour où il les appelle.
+				</p>
+				<ul class="blocs">
+					{#each tableau.nonAppelees as l (l.cle)}
+						<li><BlocDeCle ligne={l} colonnes={tableau.colonnes} /></li>
+					{/each}
+				</ul>
+			</details>
+		{/if}
 
 		{#each notes as l (l.cle)}
 			<p class="aide note"><Icon name="file-text" size={16} />« {l.libelle} » : {l.note}</p>
 		{/each}
 		<p class="aide note"><Icon name="help-circle" size={16} />{AVIS_CHARGES}</p>
+		<p class="aide note">
+			<Icon name="mail" size={16} />Une question sur un montant ?
+			<a href={FICHE_DU_SYNDIC}>Contacter le syndic</a>
+		</p>
 	</section>
 {/if}
 
@@ -169,8 +180,7 @@
 		font-weight: 600;
 	}
 	.finance,
-	.contributeurs,
-	.detail-lots {
+	.contributeurs {
 		display: block;
 		font-weight: 400;
 		font-size: var(--fs-sm);
@@ -187,20 +197,30 @@
 		align-items: flex-start;
 		margin: 0.6rem 0 0;
 	}
-	.vue-blocs {
-		display: none;
+	.vue-blocs,
+	.blocs {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 	}
-	.vue-blocs li {
+	.vue-blocs {
+		display: none;
+	}
+	.vue-blocs li,
+	.blocs li {
 		padding: 0.6rem 0;
 		border-bottom: 1px solid var(--color-border);
 	}
-	.bloc-entete {
-		display: flex;
-		justify-content: space-between;
-		gap: 0.75rem;
+	.non-appelees {
+		margin-top: 0.75rem;
+	}
+	.non-appelees summary {
+		cursor: pointer;
+		font-weight: 600;
+		font-size: var(--fs-sm);
+	}
+	.non-appelees .aide {
+		margin: 0.4rem 0 0;
 	}
 	@media (max-width: 767px) {
 		.en-blocs .vue-tableau {
