@@ -69,7 +69,8 @@ function lot(champs: Partial<MonLot>): MonLot {
 			{
 				code: 'sans_numero_usage',
 				gravite: 'information',
-				message: 'Le numéro de la place ou de la cave n’est pas renseigné.',
+				message:
+					'Le numéro de la cave (celui de sa porte ou de son marquage, distinct du numéro de lot) n’est pas renseigné.',
 				lots: [],
 			},
 		],

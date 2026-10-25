@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, func, select
 
 from app.models.charges import CleDeCharges, QuotePartLot
-from app.models.copropriete import NatureLot
+from app.models.copropriete import Lot, NatureLot
 from app.models.perimetre import LotPerimetre
 from app.utils.alertes_lot import alertes_du_lot, note_de_cle
 from app.utils.lecture import lire_objet
@@ -144,6 +144,14 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
     #  La phrase ne cite que la CIRCULATION et les caves : le stationnement concerne
     #  tout le monde, le nommer n'expliquerait rien.
     stationnement = {n.code for n in noeuds.values() if n.desserte == "stationnement"}
+    #  Les natures que la copropriété numérote : l'absence d'un numéro n'est un manque que
+    #  là où les autres lots en ont un (`alertes_lot`, `sans_numero_usage`).
+    numerotees = {
+        nature_du_lot(numerote)
+        for numerote in session.exec(
+            select(Lot).where(Lot.numero_usage.is_not(None))  # type: ignore[union-attr]
+        ).all()
+    }
 
     def _designation(lot) -> Designation:
         lus = perimetres.get(lot.id, [])
@@ -173,6 +181,7 @@ def designations(session: Session, lots: Iterable, avec_tantiemes) -> dict[int, 
                 or lot.circulation_perimetre_id is not None,
                 voit,
                 [(q.libelle, q.numerateur, q.denominateur) for q in (parts or [])],
+                nature_du_lot(lot) in numerotees,
             ),
         )
 

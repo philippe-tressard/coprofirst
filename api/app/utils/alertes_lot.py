@@ -55,12 +55,14 @@ def alertes_du_lot(
     desservi: bool,
     voit_les_tantiemes: bool,
     parts: list[tuple[str, int, int]],
+    numerotee: bool,
 ) -> list[Constat]:
     """Les constats d'un lot — fonction PURE, du plus important au moins important.
 
     `nature_declaree` : celle que l'état descriptif a posée (`None` tant qu'il n'est pas
     appliqué) ; `nature` : la déclarée, sinon celle que le type désigne. `parts` : les
-    `(libellé, numérateur, dénominateur)` du lot.
+    `(libellé, numérateur, dénominateur)` du lot. `numerotee` : la copropriété numérote-
+    t-elle les lots de cette nature (au moins un a son numéro de porte ou de place) ?
 
     ⚠️ L'écart d'une CLÉ (la somme de tous les lots ≠ le dénominateur) n'est plus une
     alerte du lot (#2251) : il concerne la copropriété, pas cette part, et se dit une
@@ -95,12 +97,17 @@ def alertes_du_lot(
                 "être expliquées ici.",
             )
         )
-    if nature in NATURES_ANNEXES and not numero_usage:
+    #  Seulement si la copropriété numérote ce genre de lot : un règlement qui ne numérote
+    #  pas les caves les laisse toutes sans numéro, et l'alerte se lisait comme un oubli —
+    #  « or le numéro de ma cave est renseigné : 417 », qui est celui du LOT (25/10/2026).
+    if nature in NATURES_ANNEXES and not numero_usage and numerotee:
+        quoi = "de la place" if nature == NatureLot.parking else "de la cave"
         trouves.append(
             constat(
                 "sans_numero_usage",
                 INFORMATION,
-                "Le numéro de la place ou de la cave n'est pas renseigné.",
+                f"Le numéro {quoi} (celui de sa porte ou de son marquage, distinct du numéro "
+                "de lot) n'est pas renseigné.",
             )
         )
     if etage is None:

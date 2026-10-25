@@ -23,6 +23,7 @@ def _lot(**surcharges):
         desservi=True,
         voit_les_tantiemes=True,
         parts=[("Générales", 60, 10000)],
+        numerotee=True,
     )
     base.update(surcharges)
     return alertes_du_lot(**base)
@@ -83,3 +84,14 @@ def test_aucune_alerte_ne_bloque_et_aucune_ne_nomme_personne():
 def test_les_avertissements_passent_avant_les_informations():
     ordre = [c.gravite for c in _lot(etage=None, parts=[], nature=N.cave, desservi=False)]
     assert ordre == sorted(ordre, key=lambda g: g != C.AVERTISSEMENT)
+
+
+def test_un_numero_de_cave_ne_manque_que_si_la_copropriete_numerote_ses_caves():
+    """Un règlement qui ne numérote pas les caves les laisse toutes sans numéro : l'alerte
+    se lisait comme un oubli, et le copropriétaire répondait par son numéro de LOT."""
+    cave = dict(nature=N.cave, nature_declaree=N.cave, numero_usage=None)
+    assert "sans_numero_usage" not in _codes(_lot(**cave, numerotee=False))
+    (alerte,) = [c for c in _lot(**cave) if c.code == "sans_numero_usage"]
+    assert "de la cave" in alerte.message and "distinct du numéro de lot" in alerte.message
+    place = dict(nature=N.parking, nature_declaree=N.parking, numero_usage=None)
+    assert any("de la place" in c.message for c in _lot(**place))
