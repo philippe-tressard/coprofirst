@@ -570,6 +570,9 @@ jobs:
           # C31 (#1586) : health-watch écrit son battement AVANT de décider, la
           # collecte le lit, et un silence rend FAIL sur le nœud qu'il concerne.
           bash scripts/lib/lib-health-watch.sh      --selftest
+          # 25/10/2026 : une lecture vide ponctuelle (02 h 06) donnait quatre INCONNU
+          # sur deux nœuds ; une lecture vide n'est plus conclue avant une seconde.
+          bash scripts/lib/lib-relecture.sh         --selftest
           # C17 : maintenance.sh écrit sa marque en fin d'hygiène, la collecte la
           # lit, et le seuil se lit en jours ET heures (faux retard du 05/10/2026).
           bash scripts/lib/lib-maintenance-trace.sh --selftest
