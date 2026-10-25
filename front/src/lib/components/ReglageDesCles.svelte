@@ -61,7 +61,7 @@
 			<ul class="cles">
 				{#each cles as c (c.id)}
 					<li>
-						<div class="cle">
+						<div>
 							<strong>{c.libelle}</strong>
 							<span class="muted">/{fmtNombre(c.denominateur)}</span>
 							{#if c.description}<span class="description">{c.description}</span>{/if}

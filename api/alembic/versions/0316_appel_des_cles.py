@@ -22,14 +22,26 @@ branch_labels = None
 depends_on = None
 
 
+TABLE = "cle_de_charges"  # identifiant : constante du fichier
+
+
+def _colonnes() -> set[str]:
+    return {c["name"] for c in sa.inspect(op.get_bind()).get_columns(TABLE)}
+
+
 def upgrade() -> None:
-    op.add_column(
-        "cle_de_charges",
-        sa.Column("appelee", sa.Boolean(), nullable=False, server_default=sa.true()),
-    )
-    op.add_column("cle_de_charges", sa.Column("libelle_syndic", sa.String(), nullable=True))
+    #  Rejouable : un redémarrage après une migration interrompue la relance (0312).
+    presentes = _colonnes()
+    if "appelee" not in presentes:
+        op.add_column(
+            TABLE, sa.Column("appelee", sa.Boolean(), nullable=False, server_default=sa.true())
+        )
+    if "libelle_syndic" not in presentes:
+        op.add_column(TABLE, sa.Column("libelle_syndic", sa.String(), nullable=True))
 
 
 def downgrade() -> None:
-    op.drop_column("cle_de_charges", "libelle_syndic")
-    op.drop_column("cle_de_charges", "appelee")
+    presentes = _colonnes()
+    for colonne in ("libelle_syndic", "appelee"):
+        if colonne in presentes:
+            op.drop_column(TABLE, colonne)
