@@ -93,6 +93,7 @@
 				typeAppartement={lot.type_appartement}
 				etage={lot.etage}
 				superficie={lot.superficie}
+				designation={lot}
 			/>
 		</div>
 	{/each}

@@ -319,6 +319,7 @@
 						typeAppartement={selectedLot.type_appartement}
 						etage={selectedLot.etage}
 						superficie={selectedLot.superficie}
+						designation={selectedLot}
 					>
 						<svelte:fragment slot="avant">
 							<dt>Lot</dt>

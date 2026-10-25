@@ -63,6 +63,9 @@
 					>{/if}
 				{#if lot.superficie}<span class="text-muted-sm">{lot.superficie} m²</span>{/if}
 			</div>
+			<!--  Ce que le lot emporte — desserte et tantièmes —, phrase écrite côté
+			      serveur (`utils/lots_explication`, #2215), rendue telle quelle. -->
+			{#if lot.explication}<p class="aide explication-lot">{lot.explication}</p>{/if}
 			{#if lot.bail}
 				<div class="lpc-occupant">👤 {nomLocataire(lot.bail)}</div>
 			{:else}
@@ -146,6 +149,9 @@
 {/if}
 
 <style>
+	.explication-lot {
+		margin: 0.5rem 0 0;
+	}
 	.lot-vacant {
 		opacity: 0.8;
 		border-style: dashed;
