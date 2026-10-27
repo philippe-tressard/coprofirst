@@ -8,10 +8,13 @@ bombe à retardement : son verdict change sans qu'aucun code change. Le 26/10/20
 toute session, tombait sur le job `test-scripts` sans lien avec son lot
 (`standards/04` : une décision se teste sur une date INJECTÉE).
 
-Deux formes sont refusées, dans les `*.sh` versionnés (commentaires exclus) :
+Trois formes sont refusées, dans les `*.sh` versionnés (commentaires exclus) :
   A. une CONSTANTE datée (`NOM=2026-10-25`) dans un fichier qui lit aussi l'horloge
      réelle — c'est la forme exacte du 26/10 ;
-  B. un littéral daté et une lecture de l'horloge réelle sur la MÊME ligne.
+  B. un littéral daté et une lecture de l'horloge réelle sur la MÊME ligne ;
+  C. l'âge d'un horodatage LOCAL calculé à la main, `$(date +%s) - $(date -d "$ts" +%s)` :
+     il rend un âge négatif pendant l'heure double d'octobre (#2232). L'âge se demande à
+     `age_min_epoch` (`lib-horodatage.sh`), qui la corrige.
 
 Ne comptent PAS comme lecture de l'horloge réelle :
   - `${AUJOURDHUI:-$(date +%F)}` — la forme injectable : le test pose la variable ;
@@ -39,6 +42,7 @@ INJECTABLE = re.compile(r'\$\{\w+:-\$\((?:[^()]|\([^()]*\))*\)\}')
 #  `date -d '2026-07-30 01:30:00' +%s` : convertir une date posée, pas lire l'heure.
 CONVERSION = re.compile(r'''date\s+-d\s+('[^']*'|"[^"]*"|\S+)''')
 HORLOGE = re.compile(r'date\s+(?:-u\s+)?\+%|\$EPOCHSECONDS|\$\(\s*date\s*\)')
+AGE_A_LA_MAIN = re.compile(r'date\s+\+%s\s*\)\s*-\s*\\?\$\(\s*date\s+-d\b')
 MINIMUM = 100  # moins de scripts lus : le motif git est cassé, pas « tout va bien »
 
 
@@ -57,6 +61,8 @@ def juger(chemin, texte):
             fautes.append((i, 'A', ligne.strip()))
         if LITTERAL.search(ligne) and lit_l_horloge(ligne):
             fautes.append((i, 'B', ligne.strip()))
+        if AGE_A_LA_MAIN.search(ligne):
+            fautes.append((i, 'C', ligne.strip()))
     return fautes
 
 
@@ -106,6 +112,12 @@ def _selftest():
         'x.sh', 'export FIN="2026-10-25"\nnow=$EPOCHSECONDS\n')], ['A'])
     attendre('forme B : même ligne', [f[1] for f in juger(
         'x.sh', '[ "$(date +%s)" -gt "$(date -d 2026-10-25 +%s)" ] && [ "$(date +%F)" = 2026-10-25 ]\n')], ['B'])
+    attendre('forme C : âge à la main (point 8)', [f[1] for f in juger(
+        'x.sh', 'echo $(( ( $(date +%s) - $(date -d "$d" +%s) ) / 60 ))\n')], ['C'])
+    attendre('forme C : âge à la main, échappé pour ssh (point 13)', [f[1] for f in juger(
+        'x.sh', r'echo \$(( ( \$(date +%s) - \$(date -d \"\$d\" +%s) ) / 60 ))' + '\n')], ['C'])
+    attendre('forme C : le relevé à deux epoch est sain', juger(
+        'x.sh', 'echo "$(date -d "$d" +%s) $(date +%s)"\n'), [])
     #  Ce qui est sain doit passer.
     attendre('injectable : sain', juger('x.sh', 'FIN=2026-10-25\nJOUR=${AUJOURDHUI:-$(date +%F)}\n'), [])
     attendre('conversion d\'une date posée : saine', juger(
@@ -147,7 +159,7 @@ def _selftest():
     if echecs:
         print('FAIL horloge_autotests :', *echecs, sep='\n  ')
         return 1
-    print('OK horloge_autotests — formes A et B, injection, conversion, cas zéro, exception inutile')
+    print('OK horloge_autotests — formes A, B et C, injection, conversion, cas zéro, exception inutile')
     return 0
 
 

@@ -215,6 +215,7 @@ crontab_scripts() {  # $1 = texte brut du crontab → "a.sh,b.sh" | ""
     | sed 's#.*/##' | sort -u | paste -sd, - | tr -d ' \n'
 }
 
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib-horodatage.sh"   # age_min_epoch
 # ── Âge du dernier battement horodaté d'un log (minutes) ─────────────────────
 # Rend -1 si aucun horodatage exploitable : INCONNU, jamais « récent ».
 beat_age_min() {  # $1 = "AAAA-MM-JJ HH:MM:SS" (peut être vide), $2 = epoch de réf.
@@ -222,7 +223,7 @@ beat_age_min() {  # $1 = "AAAA-MM-JJ HH:MM:SS" (peut être vide), $2 = epoch de 
   [ -n "$ts" ] || { echo -1; return; }
   e=$(date -d "$ts" +%s 2>/dev/null)
   [ -n "$e" ] || { echo -1; return; }
-  echo $(( (now - e) / 60 ))
+  age_min_epoch "$e" "$now"   # l'heure double d'octobre ne rend plus d'âge négatif (#2232)
 }
 
 verdict_sondes_maintenance() {

@@ -537,6 +537,7 @@ jobs:
           bash scripts/lib/lib-ssh-noeuds.sh        --selftest
           bash scripts/lib/lib-env-role.sh          --selftest
           bash scripts/lib/lib-horloge.sh           --selftest
+          bash scripts/lib/lib-horodatage.sh        --selftest
           bash scripts/lib/lib-modules-sources.sh   --selftest
           bash scripts/lib/lib-parite.sh            --selftest
           bash scripts/lib/lib-cache-build.sh       --selftest
