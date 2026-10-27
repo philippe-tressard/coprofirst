@@ -16,7 +16,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { tickets as ticketsApi } from '$lib/api';
 	import type { AffaireLiee } from '$lib/api/types';
-	import { estTicketActif, estTicketClos } from '$lib/tickets';
+	import { estTicketActif, estTicketClos, idAffaireDepuisLien } from '$lib/tickets';
 
 	/** L'`id` du champ — le titre de section de l'appelant peut s'y associer. */
 	export let id: string;
@@ -51,6 +51,8 @@
 	}
 
 	$: terme = recherche.trim().toLowerCase();
+	//  Un lien collé (« …/tickets/465?src=whatsapp ») désigne une affaire par son id.
+	$: idLien = idAffaireDepuisLien(recherche);
 	$: ecartees = new Set(exclure);
 	//  `choix` arrive du plus récent au plus ancien : les premières sont les dernières.
 	$: propositions = deroulee
@@ -59,9 +61,11 @@
 					(a) =>
 						!ecartees.has(a.id) &&
 						!(sansCloses && estTicketClos(a.statut)) &&
-						(terme
-							? `${a.numero} ${a.titre}`.toLowerCase().includes(terme)
-							: estTicketActif(a.statut)),
+						(idLien !== null
+							? a.id === idLien
+							: terme
+								? `${a.numero} ${a.titre}`.toLowerCase().includes(terme)
+								: estTicketActif(a.statut)),
 				)
 				.slice(0, PROPOSITIONS_MAX)
 		: [];
