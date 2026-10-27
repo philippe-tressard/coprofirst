@@ -2043,6 +2043,12 @@ jobs:
         working-directory: front
         run: npm run lint:texte-avertissement
 
+      # Un jeton sert de texte et d'aplat ; au sombre ce sont deux valeurs. Le
+      # texte clair d'un aplat se dit `--color-sur-plein`, l'aplat `-plein` (#2174).
+      - name: Un texte clair se pose sur un aplat par ses jetons
+        working-directory: front
+        run: npm run lint:aplats
+
       # La racine était à 12 px sur téléphone et à 16 px figés au bureau : texte à
       # 10,8 px, zoom d'iOS sur les champs, préférence du navigateur écrasée (#2165).
       - name: La taille de la racine suit la préférence du navigateur

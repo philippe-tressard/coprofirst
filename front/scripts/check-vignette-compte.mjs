@@ -35,7 +35,8 @@ const EXCEPTIONS = {
 		'la vignette resserrée des raccourcis de l’accueil, avec ses tons urgent et orange — à réunir avec `Compte` si l’on en décide (sa taille changerait)',
 };
 
-const FOND = /background(?:-color)?:\s*var\(--color-(?:primary|danger|info|accent|secondary)\)/;
+const FOND =
+	/background(?:-color)?:\s*var\(--color-(?:primary|danger|info|accent|secondary)(?:-plein)?\)/;
 const RAYON = /border-radius:\s*(?:999px|9999px|12px|1rem|50%)/;
 const GRAISSE = /font-weight:\s*(?:600|700|bold)/;
 
@@ -70,6 +71,11 @@ process.exit(
 				1,
 			],
 			//  Un bouton plein : fond et rayon, sans graisse appuyée.
+			//  L'aplat par son jeton -plein (#2174) est le même fond.
+			[
+				'.archives-compte {\n\tbackground: var(--color-primary-plein);\n\tborder-radius: 12px;\n\tfont-weight: 700;\n}',
+				1,
+			],
 			['.btn {\n\tbackground: var(--color-primary);\n\tborder-radius: 999px;\n}', 0],
 			//  Une pastille au repos : graisse et rayon, fond blanc.
 			[
