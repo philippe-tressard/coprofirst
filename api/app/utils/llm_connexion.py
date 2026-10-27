@@ -13,8 +13,6 @@ from typing import Any, Optional
 
 from sqlmodel import Session
 
-from app.utils.llm import config_llm, demander
-
 
 async def tester(session: Session, usage: str, *, demandeur: Optional[int]) -> dict[str, Any]:
     """Vérifie que la configuration de cet USAGE parle au modèle — le fait,
@@ -29,6 +27,10 @@ async def tester(session: Session, usage: str, *, demandeur: Optional[int]) -> d
     et deux usages n'ont pas le même. Un test sur un modèle commun n'aurait
     prouvé le bon fonctionnement d'aucun des deux.
     """
+    #  Différé : `llm` ré-exporte ce module à sa fin, et un import en tête le
+    #  rencontrait à moitié chargé quand on entrait par ici (#2241).
+    from app.utils.llm import config_llm, demander
+
     cfg = config_llm(session, usage)
     debut = time.monotonic()
     reponse = await demander(

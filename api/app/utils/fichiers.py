@@ -24,7 +24,6 @@ from dataclasses import dataclass
 
 from app.utils.demo import refuser_fichier_recu
 from app.utils.stockage import DOSSIER_PRIVE, stockage
-from app.models.fichiers_recus import noter_auteur
 
 #: Les fichiers qui ne doivent JAMAIS être servis en statique vivent sous
 #: `stockage.DOSSIER_PRIVE` — le pourquoi (48 fichiers exposés le 03/08/2026, un
@@ -427,6 +426,8 @@ def enregistrer_fichier_recu(
     refuser_fichier_recu()  # la démo publique n'en reçoit aucun (#1901)
     extension = verifier_fichier_recu(octets, nom_origine, content_type, famille, user)
     nom = nom_stocke(nom_origine, extension_forcee or extension)
+    from app.models.fichiers_recus import noter_auteur  # différé : cycle via models (#2241)
+
     noter_auteur(session, user, f"{dossier}/{nom}")  # servi en direct : son auteur (#2154)
     stockage().ecrire(f"{dossier}/{nom}", octets)
     return nom
