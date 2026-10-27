@@ -326,3 +326,31 @@ test('Nouvelle affaire : rien de coché, rien de restreint', async ({ page }) =>
 	await expect(formulaire.getByRole('checkbox', { name: /Réservé/ })).not.toBeChecked();
 	expect(await enregistrer(page, formulaire, envois)).toMatchObject({ reserve_perimetre: false });
 });
+
+/**
+ *  Une date saisie sans l'heure vaut `''` pour le navigateur, qui refuse alors
+ *  l'envoi en silence : « Enregistrer » semblait mort (TK-687841, 27/10/2026).
+ *  L'écran doit dire pourquoi, sous le champ.
+ */
+test('Nouvelle actualité : une date sans heure est signalée, rien ne part', async ({
+	page,
+}, info) => {
+	test.skip(
+		info.project.name !== 'bureau',
+		'la saisie par segments (jour, mois, année) est celle d’un clavier d’ordinateur',
+	);
+	const { formulaire, envois } = await nouvelleAffaire(page, /Information — suivi optionnel/);
+	await formulaire.getByText('Quand').first().click();
+	const debut = formulaire.getByLabel('Début');
+	await debut.focus();
+	await page.keyboard.type('05112026');
+	await formulaire.getByRole('button', { name: 'Enregistrer' }).click();
+	await expect(formulaire.getByRole('alert').filter({ hasText: /Date incomplète/ })).toBeVisible();
+	await expect(debut).toHaveAttribute('aria-invalid', 'true');
+	await formulaire.getByRole('button', { name: 'Enregistrer' }).click();
+	expect(envois).toHaveLength(0);
+	//  Complétée, la date part et le message s'efface.
+	await debut.fill('2026-11-05T10:00');
+	await expect(formulaire.getByRole('alert').filter({ hasText: /Date incomplète/ })).toHaveCount(0);
+	expect(await enregistrer(page, formulaire, envois)).toMatchObject({ debut: '2026-11-05T10:00' });
+});
