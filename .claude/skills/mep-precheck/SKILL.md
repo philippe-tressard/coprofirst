@@ -333,7 +333,9 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   (PR #297, 11/08/2026 — v2.49.1 jamais servie).
 - **16** → il ne mesure rien lui-même : il **lit la trace** que `scripts/poste/rejouer-ci.sh`
   écrit dans `.git/rejeu-ci.ok`, et qui porte le commit couvert. Une trace d'un
-  autre commit rend INCONNU — sinon un lot hériterait du vert du lot précédent.
+  autre commit rend INCONNU — sinon un lot hériterait du vert du lot précédent. Elle porte aussi
+  l'**arbre** git : un autre sha à arbre identique (reword, squash) reste valide, le détail le dit
+  (« même arbre », #2245) ; une trace sans arbre, ou un contenu modifié, rend INCONNU.
   Il reprend aussi le nombre de tests **sautés** sur le poste (`SAUTS=`, #1734) :
   ceux-là — le rendu PDF, faute de WeasyPrint — seule la CI de la PR les joue.
 
