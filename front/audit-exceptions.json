@@ -19,6 +19,11 @@
 			"leveeSi": "@sveltejs/kit monté en 3.x (correctif publié en 3.0.0, montée majeure suivie par #2205)",
 			"revoirLe": "2026-11-23"
 		},
+		"GHSA-gcqx-w48m-w2h4": {
+			"motif": "deepmerge mergeObject() : pollution de prototype d'un objet fusionné. Inatteignable ici : deepmerge n'est tiré que par la CHAÎNE DE CONSTRUCTION (@sveltejs/vite-plugin-svelte et @rollup/plugin-node-resolve, qui fusionnent leurs propres options au build) ; il n'est ni dans front/src, ni dans le serveur construit — 0 fichier de front/build ne le cite (mesuré le 28/10/2026) — et rien n'y fusionne une entrée venue d'un utilisateur.",
+			"leveeSi": "deepmerge corrigé en amont, ou @sveltejs/kit monté en 3.x (montée majeure suivie par #2205)",
+			"revoirLe": "2026-11-23"
+		},
 		"GHSA-27mw-82g8-phjj": {
 			"motif": "XSS par un en-tête cache-control non fiable dans une page PRÉ-RENDUE. Inatteignable ici : aucune page n'est pré-rendue — ni `prerender` dans front/src, ni dans svelte.config.js (mesuré le 24/10/2026, 0 occurrence) ; tout est rendu par l'adaptateur Node.",
 			"leveeSi": "@sveltejs/kit monté en 3.x (correctif publié en 3.0.0, montée majeure suivie par #2205)",
