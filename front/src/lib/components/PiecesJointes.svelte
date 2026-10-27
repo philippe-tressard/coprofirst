@@ -321,7 +321,7 @@
 			border: none;
 			border-radius: 50%;
 			background: rgba(0, 0, 0, 0.5);
-			color: var(--color-surface);
+			color: var(--color-sur-voile);
 			font-size: var(--fs-chiffre);
 			line-height: 1;
 			cursor: pointer;

@@ -92,7 +92,7 @@
 		padding: 0 0.3rem;
 		border-radius: 6px;
 		background: rgba(0, 0, 0, 0.62);
-		color: var(--color-surface);
+		color: var(--color-sur-voile);
 		font-size: var(--fs-2xs);
 		font-weight: 600;
 		line-height: 1.35;

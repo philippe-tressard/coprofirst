@@ -164,8 +164,8 @@
 		color: var(--color-text-muted);
 	}
 	.btn-arrivant-deja {
-		background: var(--color-success);
-		color: var(--color-surface);
+		background: var(--color-success-plein);
+		color: var(--color-sur-plein);
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.btn-arrivant-deja:hover:not(:disabled) {

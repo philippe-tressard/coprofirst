@@ -54,18 +54,18 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 }
 
 .btn-primary {
-	background: var(--color-primary);
-	color: var(--color-surface);
+	background: var(--color-primary-plein);
+	color: var(--color-sur-plein);
 }
 @media (hover: hover) and (pointer: fine) {
 	.btn-primary:hover:not(:disabled) {
-		background: var(--color-primary-dark);
+		background: var(--color-primary-plein-survol);
 	}
 }
 
 .btn-danger {
-	background: var(--color-danger);
-	color: var(--color-surface);
+	background: var(--color-danger-plein);
+	color: var(--color-sur-plein);
 }
 .btn-outline {
 	background: transparent;
@@ -220,15 +220,15 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
    pointée. */
 .btn-icon[aria-pressed='true'],
 .btn-icon-edit[aria-pressed='true'] {
-	background: var(--color-primary);
-	color: var(--color-surface);
+	background: var(--color-primary-plein);
+	color: var(--color-sur-plein);
 	transform: scale(1.15);
 }
 @media (hover: hover) and (pointer: fine) {
 	.btn-icon[aria-pressed='true']:hover,
 	.btn-icon-edit[aria-pressed='true']:hover {
-		background: var(--color-primary-dark);
-		color: var(--color-surface);
+		background: var(--color-primary-plein-survol);
+		color: var(--color-sur-plein);
 	}
 }
 

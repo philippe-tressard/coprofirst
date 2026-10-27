@@ -62,8 +62,8 @@
 			color var(--duree-geste);
 	}
 	.segment.actif {
-		background: var(--color-primary);
-		color: var(--color-surface);
+		background: var(--color-primary-plein);
+		color: var(--color-sur-plein);
 	}
 	.segment:focus-visible {
 		outline: 2px solid currentColor;

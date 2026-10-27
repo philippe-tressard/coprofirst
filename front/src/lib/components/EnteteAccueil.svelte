@@ -87,7 +87,7 @@
 	.hero {
 		margin: -1rem -1rem 0;
 		padding: 1.5rem 1.25rem 1.25rem;
-		background: linear-gradient(135deg, var(--color-primary) 0%, #2a4f7a 100%);
+		background: linear-gradient(135deg, var(--color-primary-plein) 0%, #2a4f7a 100%);
 		border-radius: 0 0 var(--radius) var(--radius);
 		position: relative;
 		overflow: hidden;
@@ -163,12 +163,12 @@
 		width: 1.05rem;
 		height: 1.05rem;
 		border-radius: 50%;
-		background: var(--color-accent);
-		color: var(--color-surface);
+		background: var(--color-accent-plein);
+		color: var(--color-sur-plein);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 0 0 2px var(--color-primary);
+		box-shadow: 0 0 0 2px var(--color-primary-plein);
 	}
 	.hero-greeting {
 		font-size: 1.35rem;

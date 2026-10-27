@@ -403,8 +403,8 @@
 		flex-shrink: 0;
 	}
 	.btn-success {
-		background: var(--color-success);
-		color: var(--color-surface);
+		background: var(--color-success-plein);
+		color: var(--color-sur-plein);
 		border: none;
 	}
 	@media (hover: hover) and (pointer: fine) {
