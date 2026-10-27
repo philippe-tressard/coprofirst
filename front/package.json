@@ -173,7 +173,7 @@
 		"@sveltejs/kit": "^2.70.3",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@types/node": "^26.6.5",
-		"esbuild": "^0.25.12",
+		"esbuild": "^0.28.2",
 		"eslint": "^10.13.0",
 		"eslint-plugin-svelte": "^3.23.1",
 		"globals": "^17.13.0",
