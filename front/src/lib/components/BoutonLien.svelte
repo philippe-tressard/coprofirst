@@ -41,7 +41,7 @@
 -->
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { toast } from '$lib/components/Toast.svelte';
 	import PartageCourriel from '$lib/components/PartageCourriel.svelte';
 	import IconeAction from '$lib/components/IconeAction.svelte';
@@ -115,7 +115,7 @@
 		ouvrirBulle();
 	}
 
-	$: base = chemin ?? $page.url.pathname;
+	$: base = chemin ?? page.url.pathname;
 	$: lien = ancre ? `${base}#${ancre}` : base;
 
 	async function copier() {

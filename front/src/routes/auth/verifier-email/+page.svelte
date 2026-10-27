@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { auth as authApi } from '$lib/api';
 	import { messageErreur } from '$lib/erreurs';
 	import { getSiteNom } from '$lib/stores/pageConfig';
@@ -16,7 +16,7 @@
 	let resendLoading = false;
 
 	onMount(async () => {
-		const token = $page.url.searchParams.get('token');
+		const token = page.url.searchParams.get('token');
 		if (!token) {
 			status = 'error';
 			errorMessage = 'Lien de vérification invalide.';

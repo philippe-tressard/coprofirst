@@ -18,7 +18,7 @@
 -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { cibleDuHash } from '$lib/deepLink';
 	import { suivreEvenementPromu } from '$lib/gestes-actualite';
@@ -29,7 +29,7 @@
 		//  `#ev_archive-N` : le lien d'un événement archivé (carnet d'entretien).
 		const idEv = cibleDuHash('ev') ?? cibleDuHash('ev_archive');
 		if (idEv !== null && (await suivreEvenementPromu(idEv))) return;
-		const reste = $page.params.reste;
+		const reste = page.params.reste;
 		const cible =
 			reste === 'kanban' || reste === 'archives'
 				? routeOnglet('mes-demandes', reste)

@@ -86,6 +86,14 @@ const FORMES = [
 		global: true,
 	},
 	{
+		//  `$app/stores` — les stores de SvelteKit, dépréciés au profit de `$app/state`
+		//  (#2205, lot 1) et retirés en kit 3 : la montée casserait chaque import.
+		motif: () => /from\s+['"]\$app\/stores['"]/,
+		quoi: "`$app/stores` (API SvelteKit 2, retirée en kit 3)",
+		remede: "`import { page, navigating, updated } from '$app/state'` — des objets, plus de `$`",
+		global: true,
+	},
+	{
 		motif: () => /\.\$set\s*\(/,
 		quoi: '`$set()` (API Svelte 4)',
 		remede: 'passer les props à `mount`, ou rendre le composant réactif',

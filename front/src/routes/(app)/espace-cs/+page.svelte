@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { nomAffiche } from '$lib/noms';
 	import type { Inscrit, LigneImport, LotRapproche } from '$lib/annuaire-rapprochement';
 	import type { User } from '$lib/api/types';
@@ -47,7 +47,7 @@
 	 * à relancer » du tableau de bord ouvrait le suivi des dossiers au lieu de la
 	 * relance. Le lien était juste, l'ordre de montage le rendait sans effet.
 	 */
-	$: vueReporting = onglet === 'reporting' ? ($page.url.searchParams.get('vue') ?? null) : null;
+	$: vueReporting = onglet === 'reporting' ? (page.url.searchParams.get('vue') ?? null) : null;
 	$: trackTabView(onglet);
 
 	// -- Validations --------------------------------------------------------
