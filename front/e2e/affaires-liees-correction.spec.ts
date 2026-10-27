@@ -121,3 +121,22 @@ test('une affaire close ne propose pas de fusion', async ({ page }) => {
 		0,
 	);
 });
+
+test('un lien collé dans la recherche propose l’affaire qu’il désigne', async ({ page }) => {
+	const AUTRE = { ...LIEE, id: 465, numero: 'TK-E00036', titre: 'Vote du changement de laine' };
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/tickets') return [AFFAIRE];
+		if (chemin === '/api/tickets/60') return { ...AFFAIRE, affaires_liees: [] };
+		if (chemin === '/api/tickets/choix') return [LIEE, AUTRE];
+	});
+	await page.goto('/tickets');
+	await attendreHydratation(page);
+	await page.locator('.carte-liste').first().getByText(AFFAIRE.titre).click();
+	await page.getByRole('button', { name: 'Modifier', exact: true }).first().click();
+	await section(page)
+		.getByPlaceholder('Numéro ou mots du titre')
+		.fill('👉 Voir le contenu complet :\nhttps://5hostachy.fr/tickets/465?src=whatsapp');
+	const propositions = section(page).getByRole('list', { name: 'Affaires proposées' });
+	await expect(propositions.getByRole('button')).toHaveCount(1);
+	await expect(propositions).toContainText(AUTRE.numero);
+});
