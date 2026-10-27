@@ -41,12 +41,10 @@ MAINT_MAX_AGE_MIN=11520
 #  La marque, UNE fois. ASCII seulement : le motif voyage par SSH, et
 #  « Hygiène » y dépendrait de la locale des deux bouts.
 MAINT_MARQUE='HYGIENE-FAITE'
-#  ⏳ TRANSITION : jusqu'au premier dimanche après la MEP, aucun journal ne
-#  porte encore la marque. La ligne de purge écrite depuis #1524 (04/10 compris)
-#  tient lieu de trace d'ici là ; sans elle, C17 rendrait INCONNU une semaine.
-#  L'autotest échoue après MAINT_TRANSITION_FIN : retirer alors l'alternative.
-MAINT_MOTIF_FIN="$MAINT_MARQUE|Purge du cache de build \\("
-MAINT_TRANSITION_FIN=2026-10-25
+#  La transition (la ligne de purge de #1524 valait trace tant qu'aucun journal ne
+#  portait la marque) a pris fin le 25/10/2026 : la marque est lue sur les deux
+#  nœuds depuis le 18/10, et l'alternative est retirée.
+MAINT_MOTIF_FIN="$MAINT_MARQUE"
 
 # ── La ligne de fin d'hygiène (PURE) ─────────────────────────────────────────
 ligne_fin_hygiene() {
@@ -125,7 +123,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
         echo "[2026-10-04 03:00:20]   → Cache de build : 11.52GB → 11.24GB."
         echo "[2026-10-04 03:00:30] ===== Maintenance terminée (27s, statut: succes) ====="
     } > "$tmp/transition.log"
-    t "faute du 05/10 : le passage du 04/10 est vu (transition)" "maint_last=2026-10-04 03:00:17" \
+    t "un journal sans marque (ancien format) n'est plus lu : INCONNU" "maint_last=" \
       "$(bash -c "$(collecte_maintenance "$tmp/transition.log")")"
     {
         cat "$tmp/transition.log"
@@ -167,12 +165,6 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "faute injectée : hygiène sans marque → refusée" ABSENT "$(marque_en_fin_hygiene "$tmp/sans.sh")"
     printf '%s\n' 'hygiene_locale() {' '    log "$(ligne_fin_hygiene)"' '    roter_log a 1' '}' > "$tmp/avant.sh"
     t "faute injectée : marque AVANT la rotation → refusée" AVANT "$(marque_en_fin_hygiene "$tmp/avant.sh")"
-
-    echo "== C17 : la transition a une fin =="
-    if [ "$(date +%F)" \> "$MAINT_TRANSITION_FIN" ]; then
-        echo "FAIL  transition échue ($MAINT_TRANSITION_FIN) : retirer « |Purge du cache de build » de MAINT_MOTIF_FIN, et son cas d'épreuve"
-        st=1
-    else echo "PASS  transition en cours jusqu'au $MAINT_TRANSITION_FIN"; fi
 
     rm -rf "$tmp"
     [ "$st" -eq 0 ] && echo "lib-maintenance-trace : tous les cas passent."
