@@ -19,7 +19,6 @@ import os
 import re
 import unicodedata
 import uuid
-
 from dataclasses import dataclass
 
 from app.utils.demo import refuser_fichier_recu
