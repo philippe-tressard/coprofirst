@@ -42,18 +42,20 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests.aides_sources import modules_app
+
 RACINE_API = Path(__file__).resolve().parents[1]
 RACINE_DEPOT = RACINE_API.parent
 
 
-def _modules(racine: Path) -> dict[str, Path]:
-    modules = {}
-    for chemin in racine.rglob("*.py"):
-        parties = list(chemin.relative_to(racine.parent).with_suffix("").parts)
-        if parties[-1] == "__init__":
-            parties = parties[:-1]
-        modules[".".join(parties)] = chemin
-    return modules
+def _nom(rel: str) -> str:
+    """`utils/email/__init__.py` → `app.utils.email` : le nom qu'un import écrit."""
+    parties = ["app", *rel.removesuffix(".py").split("/")]
+    return ".".join(parties[:-1] if parties[-1] == "__init__" else parties)
+
+
+def _modules_de_l_api() -> dict[str, ast.Module]:
+    return {_nom(m.rel): m.arbre for m in modules_app(minimum=400)}
 
 
 def _imports_au_chargement(arbre: ast.Module):
@@ -67,10 +69,10 @@ def _imports_au_chargement(arbre: ast.Module):
             yield from (n for n in ast.walk(noeud) if isinstance(n, (ast.Import, ast.ImportFrom)))
 
 
-def _graphe(modules: dict[str, Path]) -> dict[str, set[str]]:
+def _graphe(modules: dict[str, ast.Module]) -> dict[str, set[str]]:
     graphe: dict[str, set[str]] = {m: set() for m in modules}
-    for module, chemin in modules.items():
-        for noeud in _imports_au_chargement(ast.parse(chemin.read_text(encoding="utf-8"))):
+    for module, arbre in modules.items():
+        for noeud in _imports_au_chargement(arbre):
             if isinstance(noeud, ast.Import):
                 cibles = [a.name for a in noeud.names]
             elif noeud.module and noeud.level == 0:
@@ -145,28 +147,30 @@ def _echec_import_seul(module: str) -> str | None:
     return None if sortie.returncode == 0 else sortie.stderr.strip().splitlines()[-1]
 
 
-def test_le_detecteur_voit_un_cycle_et_ignore_le_paquet_parent(tmp_path):
+def test_le_detecteur_voit_un_cycle_et_ignore_le_paquet_parent():
     """Témoin : un cycle posé exprès est trouvé ; un sous-module qui importe son
     paquet ne l'est pas ; un import de fonction ou sous TYPE_CHECKING non plus."""
-    paquet = tmp_path / "pq"
-    paquet.mkdir()
-    (paquet / "__init__.py").write_text("from pq import a\n", encoding="utf-8")
-    (paquet / "a.py").write_text("import pq\nfrom pq.b import y\nx = 1\n", encoding="utf-8")
-    (paquet / "b.py").write_text("from pq.a import x\ny = 2\n", encoding="utf-8")
-    (paquet / "c.py").write_text(
-        "from typing import TYPE_CHECKING\n"
-        "if TYPE_CHECKING:\n    from pq.d import z\n"
-        "def f():\n    from pq.d import z\n",
-        encoding="utf-8",
-    )
-    (paquet / "d.py").write_text("from pq.c import f\nz = 3\n", encoding="utf-8")
-    assert _cycles(_graphe(_modules(paquet))) == [["pq.a", "pq.b"]]
+    sources = {
+        "pq": "from pq import a\n",
+        "pq.a": "import pq\nfrom pq.b import y\nx = 1\n",
+        "pq.b": "from pq.a import x\ny = 2\n",
+        "pq.c": (
+            "from typing import TYPE_CHECKING\n"
+            "if TYPE_CHECKING:\n    from pq.d import z\n"
+            "def f():\n    from pq.d import z\n"
+        ),
+        "pq.d": "from pq.c import f\nz = 3\n",
+    }
+    modules = {nom: ast.parse(source) for nom, source in sources.items()}
+    assert _cycles(_graphe(modules)) == [["pq.a", "pq.b"]]
+    assert _nom("utils/email/__init__.py") == "app.utils.email"
+    assert _nom("utils/fichiers.py") == "app.utils.fichiers"
 
 
 def test_chaque_module_d_un_cycle_s_importe_seul():
-    modules = _modules(RACINE_API / "app")
-    #  Cas zéro : une racine fausse rendrait un graphe vide, donc aucun cycle.
-    assert len(modules) > 400, f"seulement {len(modules)} module(s) relevé(s) sous app/"
+    #  Cas zéro : `modules_app` lève sous 400 modules — une racine fausse rendrait
+    #  un graphe vide, donc aucun cycle.
+    modules = _modules_de_l_api()
     en_cause = sorted({m for c in _cycles(_graphe(modules)) for m in c})
     echecs = {m: e for m in en_cause if (e := _echec_import_seul(m))}
     assert not echecs, (
