@@ -7,13 +7,12 @@ Elle vivait dans `test_suivi_affaires.py` ; le point conseil syndical / syndic
 from __future__ import annotations
 
 import json
-from datetime import timedelta
 
 from sqlmodel import Session
 
 from app.models.tickets import Ticket
-from app.utils import horloge
 from tests.aides_base import compte
+from tests.aides_horloge import il_y_a_jours
 
 _numero = [0]
 
@@ -32,7 +31,7 @@ def affaire_ouverte(moteur, titre="Interphone muet", *, jours=0, **champs) -> in
             numero=f"S-{_numero[0]:04d}",
             titre=titre,
             description="<p>La platine ne sonne <strong>plus</strong>.</p>",
-            cree_le=horloge.maintenant() - timedelta(days=jours),
+            cree_le=il_y_a_jours(jours),
             **champs,
         )
         s.add(t)

@@ -234,21 +234,17 @@ rapporter 15 "$V15" "Aucun endpoint orphelin" "$ORPH"
 #      Ruff — est le seul qui a échoué. La consigne de tout rejouer existe
 #      (skill `avant-commit` §7) et n'a pas tenu. `rejouer-ci.sh` EXTRAIT les
 #      commandes de ci.yml et écrit sa trace ; ce point la lit.
-if [ -f "$GIT_DEPOT/rejeu-ci.ok" ]; then
-  #  `SAUTS=` en sixième champ depuis #1734 ; une trace plus ancienne n'en a pas.
-  #  Sans ce sixième nom, `R_INC` avalerait le reste de la ligne.
-  #  `RELANCES=` en septième depuis #1809 : des e2e relancés sur l'import de Vite.
-  read -r R_SHA _ R_OK R_FAIL R_INC R_SAUTS R_REL _ < "$GIT_DEPOT/rejeu-ci.ok"
-  R_FAIL=${R_FAIL#FAIL=}; R_INC=${R_INC#INCONNU=}; R_OK=${R_OK#OK=}; R_SAUTS=${R_SAUTS#SAUTS=}
-  R_REL=${R_REL#RELANCES=}
-else
-  R_SHA=""; R_OK="?"; R_FAIL=""; R_INC=""; R_SAUTS=""; R_REL=""
-fi
-V16=$(verdict_rejeu_ci "${R_SHA:-}" "$(git rev-parse HEAD 2>/dev/null)" "${R_FAIL:-}" "${R_INC:-}")
+#  Le format de la trace (champs, ordre) est écrit et lu dans `lib-depot.sh` — une
+#  seule fois : SAUTS (#1734), RELANCES (#1809) et TREE (#2245) y sont ajoutés.
+trace_rejeu_lire "$GIT_DEPOT/rejeu-ci.ok"
+H_SHA=$(git rev-parse HEAD 2>/dev/null)
+V16=$(verdict_rejeu_ci "${R_SHA:-}" "$H_SHA" "${R_FAIL:-}" "${R_INC:-}" "${R_TREE:-}" "$(git rev-parse 'HEAD^{tree}' 2>/dev/null)")
 case "$V16" in
   #  Un saut n'est pas une faute, mais il se DIT (#1734) : ces tests-là, seule la
   #  CI de la PR les joue — et c'est elle qui a vu ce que le rejeu taisait.
   OK)   D16="$R_OK étape(s) rejouée(s) sur ce commit"
+        #  Autre sha, même arbre (#2245) : l'historique a été réécrit, le code est celui qui a été testé.
+        [ "${R_SHA:-}" != "$H_SHA" ] && D16="$R_OK étape(s) rejouée(s) sur le même arbre (${R_SHA:0:9} → ${H_SHA:0:9} : historique réécrit, code identique)"
         case "${R_SAUTS:-0}" in 0|*[!0-9]*) ;; *) D16="$D16, dont $R_SAUTS test(s) sauté(s) ici — joué(s) par la CI de la PR" ;; esac
         case "${R_REL:-0}" in 0|*[!0-9]*) ;; *) D16="$D16, $R_REL e2e vert(s) à la relance (#1809)" ;; esac ;;
   FAIL) D16="$R_FAIL étape(s) en échec — la CI échouerait" ;;
