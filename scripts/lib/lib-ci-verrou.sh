@@ -223,6 +223,20 @@ ci_rejeu_diagnostic_dit() { # $1 = diagnostic → la phrase (PURE)
     *)              echo "inconnu ($1)" ;;
   esac
 }
+#  L'âge d'un horodatage, jamais négatif (#2229) : un repère posé APRÈS la lecture de l'heure
+#  (une étape qui démarre pendant que `etat-rejeu.sh` s'affiche) donnait « il y a ? ».
+ci_age_s() {               # $1 = horodatage · $2 = maintenant → secondes, 0 au minimum ; vide si illisible (PURE)
+  case "${1:-}" in ''|*[!0-9]*) return 0 ;; esac
+  case "${2:-}" in ''|*[!0-9]*) return 0 ;; esac
+  [ "$2" -ge "$1" ] && echo $(($2 - $1)) || echo 0
+}
+#  Les noms de jobs d'une ligne de commande : tout ce qui n'est pas une option (#2229). La fiche du
+#  propriétaire et le filtre du rejeu lisent la même règle — la fiche prenait `$*`, options comprises.
+ci_noms_de_jobs() {        # $@ = arguments de rejouer-ci.sh → « job1 job2 » (PURE)
+  local a r=""
+  for a in "$@"; do case "$a" in --*) ;; *) r="${r:+$r }$a" ;; esac; done
+  printf '%s' "$r"
+}
 ci_duree() {               # $1 = secondes → « 42 s », « 7 min », « 1 h 05 » (PURE)
   case "${1:-}" in ''|*[!0-9]*) echo "?"; return ;; esac
   if [ "$1" -lt 60 ]; then echo "$1 s"

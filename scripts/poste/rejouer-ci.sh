@@ -76,7 +76,7 @@ for a in "$@"; do [ "$a" = --attendre ] && MODE_REJEU=attendre || ARGS_REJEU+=("
 set -- ${ARGS_REJEU[@]+"${ARGS_REJEU[@]}"}
 VERROU_REJEU="$(ci_dossier_commun)/rejeu-ci.verrou"
 ANCRE_REJEU=$(ci_ancre "$(ci_chaine_ancetres $$)")
-FICHE_REJEU=$(ci_fiche $$ "$ANCRE_REJEU" "$*")
+FICHE_REJEU=$(ci_fiche $$ "$ANCRE_REJEU" "$(ci_noms_de_jobs "$@")")   # les jobs, pas les options (#2229)
 ci_rejeu_acquerir "$VERROU_REJEU" "$MODE_REJEU" "$ANCRE_REJEU" "$FICHE_REJEU" || exit 2
 trap 'ci_verrou_liberer "$VERROU_REJEU" $$' EXIT
 #  Le lanceur parti, la sortie peut l'être aussi : écrire ne doit pas tuer le trap.

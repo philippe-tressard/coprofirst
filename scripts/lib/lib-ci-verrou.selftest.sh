@@ -98,6 +98,13 @@ ci_verrou_selftest() {
   t "durée — minutes"   "$(ci_duree 420)" "7 min"
   t "durée — heures"    "$(ci_duree 3900)" "1 h 05"
   t "durée — illisible" "$(ci_duree '')" "?"
+  #  #2229 : un repère posé après la lecture de l'heure ne fait plus « il y a ? ».
+  t "âge — ordinaire"                  "$(ci_age_s 100 160)" "60"
+  t "âge — repère de la seconde même"  "$(ci_age_s 160 160)" "0"
+  t "âge — repère après la lecture"    "$(ci_age_s 163 160)" "0"
+  t "âge — repère illisible"           "$(ci_age_s '' 160)" ""
+  t "noms de jobs — options écartées"  "$(ci_noms_de_jobs --venv test-scripts --tout lint-backend)" "test-scripts lint-backend"
+  t "noms de jobs — aucun : vide"      "$(ci_noms_de_jobs --venv --tout)" ""
 
   # ── Décision de lancement ────────────────────────────────────────────────
   t "lancement — direct, tout libre"        "$(ci_lancement direct libre 0)" "prendre"
