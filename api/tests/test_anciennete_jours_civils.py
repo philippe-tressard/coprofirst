@@ -89,6 +89,10 @@ def test_les_fichiers_convertis_sont_rejoues_a_l_heure_hostile():
     manque = []
     for fichier in sorted(TESTS.glob("test_*.py")):
         texte = fichier.read_text(encoding="utf-8")
-        if "il_y_a_jours(" in texte and "heure_hostile" not in texte and fichier.name not in EXPLICATIONS:
+        if (
+            "il_y_a_jours(" in texte
+            and "heure_hostile" not in texte
+            and fichier.name not in EXPLICATIONS
+        ):
             manque.append(fichier.name)
     assert not manque, f"pose par il_y_a_jours sans pytestmark heure_hostile : {manque}"
