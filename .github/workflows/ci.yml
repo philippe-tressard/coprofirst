@@ -493,6 +493,13 @@ jobs:
         # La boucle d'avant lançait quatre processus par fichier : 28 minutes côte à côte.
         run: python scripts/ci/scans_fichiers.py controle '*.py' '*.ts' '*.js' '*.mjs' '*.svelte' '*.sh' '*.yml'
 
+      - name: Aucun script ne juge l'horloge réelle contre une date posée
+        # 26/10/2026 (#2261) : `lib-maintenance-trace.sh --selftest` comparait
+        # `date +%F` à une échéance écrite en dur et échouait passé cette date — tout
+        # rejeu, de toute session, tombait sur ce job sans lien avec son lot. Une
+        # décision se teste sur une date INJECTÉE (`${AUJOURDHUI:-$(date +%F)}`).
+        run: python scripts/ci/horloge_autotests.py
+
       - name: Syntaxe de tous les scripts shell
         run: |
           st=0
@@ -514,6 +521,7 @@ jobs:
           # Les deux outils de cette étape, jugés sur des fichiers et des commandes piégés.
           python scripts/ci/scans_fichiers.py --selftest
           python scripts/ci/lancer_en_parallele.py --selftest
+          python scripts/ci/horloge_autotests.py --selftest
           bash scripts/lib/lib-role.sh              --selftest
           bash scripts/lib/lib-applicatifs.sh       --selftest
           bash scripts/lib/lib-replication.sh       --selftest

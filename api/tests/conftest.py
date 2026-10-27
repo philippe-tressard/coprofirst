@@ -154,6 +154,21 @@ def batiments() -> list[int]:
     P.invalider_cache()
 
 
+@pytest.fixture(params=["hiver-23h30", "ete-00h30"])  # les clés de `INSTANTS_HOSTILES`
+def heure_hostile(request, monkeypatch):
+    """L'horloge figée à l'heure où 24 h × N et N jours civils diffèrent (#2257).
+
+    Un test d'ancienneté en jours s'y rejoue deux fois : le soir d'hiver et la nuit d'été.
+    Sans elle, il n'échouait qu'entre 23 h et minuit — un rouge qu'aucun lot ne causait.
+    `horloge.aujourd_hui()` et `jour_civil` se tirent de `maintenant()` : figer l'un fige tout.
+    """
+    from app.utils import horloge
+    from tests.aides_horloge import INSTANTS_HOSTILES
+
+    monkeypatch.setattr(horloge, "maintenant", lambda: INSTANTS_HOSTILES[request.param])
+    return INSTANTS_HOSTILES[request.param]
+
+
 @pytest.fixture()
 def disque_jetable(monkeypatch, tmp_path):
     """Le stockage de la copropriété servie, posé sur `tmp_path` — rendu.
