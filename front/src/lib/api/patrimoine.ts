@@ -363,8 +363,17 @@ export interface ResultatImportLots extends CompteImportTableur {
 	auto_erreurs: string[];
 }
 
+/**  « Mes périmètres » (#2214) — `MesPerimetres`. L'écran n'y lit qu'une chose :
+ *   y a-t-il de quoi filtrer ? Le verdict de chaque élément vient du serveur
+ *   (`me_concerne`), jamais d'une règle recomposée ici (#2215). */
+export interface MesPerimetres {
+	batiments: string[];
+	desservis: string[];
+}
+
 export const lots = {
 	mesList: () => api.get<MonLot[]>('/lots/mes-lots'),
+	mesPerimetres: () => api.get<MesPerimetres>('/lots/mes-perimetres'),
 	//  Le locataire dit ce qu'il loue, d'après le fichier des lots du syndic
 	//  (04/10/2026) : les lots proposés, puis sa réponse.
 	propositionsLocation: () => api.get<PropositionsLocation>('/lots/ma-location/propositions'),

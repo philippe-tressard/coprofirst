@@ -27,6 +27,8 @@ from app.utils.affaires_liees import liees_lisibles
 from app.utils.fusion_affaires import principale_lue
 from app.utils.nature_affaire import natures
 from app.utils.batiments import libelle_batiment_ou
+from app.utils.perimetres import parse_json_perimetres
+from app.utils.visibility import concerne
 from app.models.core import (
     Batiment,
     Ticket,
@@ -294,6 +296,9 @@ def ticket_read(
         perime_le=perime_le(ticket, "ticket"),
         prestataire_nom=nom_prestataire(session, ticket.prestataire_id),
         contrat=contrat_de_l_affaire(session, ticket.contrat_id, lecteur),
+        me_concerne=(
+            concerne(lecteur, parse_json_perimetres(ticket.perimetre_cible)) if lecteur else None
+        ),
     )
 
 

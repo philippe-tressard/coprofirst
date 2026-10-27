@@ -27,6 +27,9 @@ class FluxItem(BaseModel):
     icon: str = ""
     lien: Optional[str] = None
     meta: dict = {}
+    #: « Cet élément me concerne-t-il ? » (#2215) — posé au point d'assemblage du fil
+    #: par la règle de l'accès ; `None` pour ce qui ne porte aucun lieu.
+    me_concerne: Optional[bool] = None
 
 
 class FluxSante(BaseModel):

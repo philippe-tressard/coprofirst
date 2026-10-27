@@ -186,6 +186,10 @@ class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant):
     lot_id: Optional[int] = None
     batiment_id: Optional[int] = None
     perimetre_cible: Optional[List[str]] = None
+    #: « Cette affaire me concerne-t-elle ? » pour QUI la lit (#2215) — la règle de
+    #: l'accès (`visibility.concerne`), pas une seconde : la pastille « Ce qui me
+    #: concerne » filtre avec, sans rien recomposer. `None` sans lecteur.
+    me_concerne: Optional[bool] = None
     photos_urls: Optional[ListeJson] = None
     fichiers_urls: ListeJson = []
     #  Ce que la carte REPLIÉE montre en vignette — dérivé, jamais saisi. Le

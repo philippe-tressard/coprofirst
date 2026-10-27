@@ -25,6 +25,7 @@
 	import AvertissementUrgence from '$lib/components/AvertissementUrgence.svelte';
 	import { OPTIONS_FILTRE_NATURE, statutsPresents } from '$lib/tickets';
 	import { estArchive, filtrerAffaires, rechercheAffaires } from '$lib/recherche-affaires';
+	import { offrirLaPastille, selonPortee } from '$lib/me-concerne';
 
 	$: _pc = getPageConfig($configStore, 'mes-demandes', defautsDePage('mes-demandes'));
 	$: _siteNom = $siteNomStore;
@@ -79,6 +80,13 @@
 	//  `$lib/tickets` : quatre listes de statuts avaient divergé (#415), et les
 	//  catégories étaient à leur tour écrites en quatre endroits — dont ces six
 	//  boutons de filtre, en dur dans le balisage (#431).
+
+	//  « Ce qui me concerne » (#2215) : offerte s'il y a de quoi filtrer.
+	let offrirMeConcerne = false;
+	let portee = '';
+	onMount(async () => {
+		offrirMeConcerne = await offrirLaPastille();
+	});
 
 	onMount(async () => {
 		try {
@@ -140,13 +148,16 @@
 	//  ET plus aucun bouton pour en sortir. On retombe alors sur « Tous ».
 	$: if (filterStatut && !optionsStatut.some((o) => o.value === filterStatut)) filterStatut = '';
 
-	$: filtered = filtrerAffaires($ticketList, {
-		resultats: $moteur.resultats,
-		inclureArchives,
-		statut: filterStatut,
-		nature: filterNature,
-		optionsStatut,
-	});
+	$: filtered = selonPortee(
+		filtrerAffaires($ticketList, {
+			resultats: $moteur.resultats,
+			inclureArchives,
+			statut: filterStatut,
+			nature: filterNature,
+			optionsStatut,
+		}),
+		portee,
+	);
 	$: correspondances = new Map(($moteur.resultats ?? []).map((r) => [r.ticket_id, r]));
 
 	// Historique : tickets clôturés depuis plus de 7 jours, limité à 3 ans, groupés par année décroissante
@@ -213,6 +224,8 @@
 		etat={$moteur}
 		tickets={$ticketList}
 		affichees={filtered.length}
+		{offrirMeConcerne}
+		bind:portee
 	/>
 {/if}
 

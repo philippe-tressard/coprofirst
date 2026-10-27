@@ -26,6 +26,7 @@
 -->
 <script lang="ts">
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
+	import { OPTIONS_PORTEE } from '$lib/me-concerne';
 	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
 	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
 	import BilanRecherche from '$lib/components/BilanRecherche.svelte';
@@ -44,6 +45,10 @@
 	export let statut = '';
 	export let recherche = '';
 	export let inclureArchives = false;
+	/**  La pastille « Ce qui me concerne » (#2215) — offerte seulement s'il y a de
+	 *   quoi filtrer ; sa valeur est liée à l'écran, qui applique `selonPortee`. */
+	export let offrirMeConcerne = false;
+	export let portee = '';
 	/** Où en est la recherche — tenu par `rechercheAffaires()`. */
 	export let etat: EtatRecherche;
 
@@ -93,6 +98,16 @@
 		libelle="Suivi"
 		libelleDevant
 	/>
+	{#if offrirMeConcerne}
+		<ChoixPastilles
+			options={[...OPTIONS_PORTEE]}
+			bind:valeur={portee}
+			tous="Tout"
+			compte={affichees}
+			libelle="Portée"
+			libelleDevant
+		/>
+	{/if}
 </ReglagesListe>
 
 {#if etat.terme || etat.enCours || etat.erreur}
