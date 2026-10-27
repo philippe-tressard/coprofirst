@@ -342,9 +342,11 @@ verdict_pytest_resume() {  # $1 = dernière ligne de `pytest -q`
   esac
 }
 
-verdict_rejeu_ci() {       # $1 = sha de la trace, $2 = HEAD, $3 = nb FAIL, $4 = nb INCONNU
+#  Le rejeu mesure le CODE, pas l'historique (#2245) : un reword ou un squash change le sha, pas
+#  l'arbre. La trace vaut si le sha OU l'arbre (`$5` trace, `$6` HEAD) est le même ; arbre absent : INCONNU.
+verdict_rejeu_ci() {       # $1 = sha trace, $2 = HEAD, $3 = nb FAIL, $4 = nb INCONNU, $5 = arbre trace, $6 = arbre HEAD
   [ -z "$1" ] || [ -z "$2" ] && { echo INCONNU; return; }
-  [ "$1" != "$2" ] && { echo INCONNU; return; }
+  [ "$1" != "$2" ] && { [ -n "${5:-}" ] && [ "${5:-}" = "${6:-}" ] || { echo INCONNU; return; }; }
   case "$3$4" in (*[!0-9]*|"") echo INCONNU; return ;; esac
   [ "$3" -gt 0 ] && { echo FAIL; return; }
   [ "$4" -gt 0 ] && { echo INCONNU; return; }

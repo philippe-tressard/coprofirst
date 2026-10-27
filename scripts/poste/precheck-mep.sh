@@ -50,6 +50,7 @@ BATTEMENT_DEPLOY_MIN=20    # auto-deploy écrit ~12 lignes/h sur le standby
 RACINE_DEPOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$RACINE_DEPOT" || exit 1   # les contrôles lisent api/, .git/ et front/ en relatif
 . "$RACINE_DEPOT/scripts/lib/lib-verdicts-mep.sh"
+. "$RACINE_DEPOT/scripts/lib/lib-horodatage.sh"   # age_min_releve : points 8 et 13 (#2232)
 . "$RACINE_DEPOT/scripts/lib/lib-depot.sh"   # traces : répertoire git DU clone, worktree compris (#1226)
 GIT_DEPOT="$(dossier_git)"
 MARQUEUR="${MARQUEUR:-$GIT_DEPOT/precheck-mep.ok}"
@@ -245,8 +246,10 @@ fi
 rapporter 7 "$V7" "Scripts cron exécutables" "$D7"
 
 # 8 — battement d'auto-deploy sur le STANDBY (sur l'actif, le silence est normal)
-AGE=$(sur "$STANDBY" 'd=$(grep -oE "^\[[0-9-]+ [0-9:]+" /var/log/hostachy-deploy.log 2>/dev/null | tail -1 | tr -d "["); \
-      [ -n "$d" ] && echo $(( ( $(date +%s) - $(date -d "$d" +%s) ) / 60 ))')
+#   Le nœud rend l'epoch du repère ET celui de son présent ; l'âge se calcule ici, à l'abri de
+#   l'heure double d'octobre (`lib-horodatage.sh`, #2232).
+AGE=$(age_min_releve "$(sur "$STANDBY" 'd=$(grep -oE "^\[[0-9-]+ [0-9:]+" /var/log/hostachy-deploy.log 2>/dev/null | tail -1 | tr -d "["); \
+      [ -n "$d" ] && echo "$(date -d "$d" +%s) $(date +%s)"')")
 rapporter 8 "$(verdict_age_min "${AGE:-}" $BATTEMENT_DEPLOY_MIN)" "Battement auto-deploy (standby)" \
           "dernier battement il y a ${AGE:-?} min"
 

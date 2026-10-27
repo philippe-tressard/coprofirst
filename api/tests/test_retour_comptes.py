@@ -21,8 +21,9 @@ d'un compte qui a refusé la mesure ; la purge l'efface après 12 mois.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
+import pytest
 from sqlmodel import Session, select
 
 from app.models.telemetrie import DerniereVisite, TelemetryEvent
@@ -34,10 +35,11 @@ from app.utils.retour_comptes import (
     retour_comptes,
 )
 from tests.aides_base import compte, moteur_de_test
+from tests.aides_horloge import il_y_a_jours
 
-
-def _il_y_a(jours: int) -> datetime:
-    return horloge.maintenant() - timedelta(days=jours)
+#  Les anciennetés se comptent en jours civils de Paris : chaque test se rejoue aux deux heures où
+#  24 h × N et N jours ne sont pas la même chose (#2257).
+pytestmark = pytest.mark.usefixtures("heure_hostile")
 
 
 def _jour_il_y_a(jours: int) -> str:
@@ -45,25 +47,25 @@ def _jour_il_y_a(jours: int) -> str:
 
 
 def _jeu(s: Session) -> dict[str, int]:
-    ancien = _il_y_a(200)
+    ancien = il_y_a_jours(200)
     ids = {}
     ids["actif"] = compte(s, prenom="Alice", nom="Martin", cree_le=ancien).id
     ids["dormant61"] = compte(s, prenom="Bruno", nom="Durand", cree_le=ancien).id
     ids["dormant95"] = compte(s, prenom="Claire", nom="Leroy", cree_le=ancien).id
     ids["jamais_vu"] = compte(
-        s, prenom="Elise", nom="Faure", cree_le=ancien, decision_compte_le=_il_y_a(100)
+        s, prenom="Elise", nom="Faure", cree_le=ancien, decision_compte_le=il_y_a_jours(100)
     ).id
     ids["refus"] = compte(s, cree_le=ancien, opt_out_telemetrie=True).id
     ids["ferme"] = compte(s, cree_le=ancien, actif=False).id
-    ids["revenu"] = compte(s, decision_compte_le=_il_y_a(10)).id
-    ids["jamais_revenu"] = compte(s, decision_compte_le=_il_y_a(12)).id
-    ids["en_attente"] = compte(s, decision_compte_le=_il_y_a(2)).id
-    ids["ancien_arrivant"] = compte(s, decision_compte_le=_il_y_a(40)).id
+    ids["revenu"] = compte(s, decision_compte_le=il_y_a_jours(10)).id
+    ids["jamais_revenu"] = compte(s, decision_compte_le=il_y_a_jours(12)).id
+    ids["en_attente"] = compte(s, decision_compte_le=il_y_a_jours(2)).id
+    ids["ancien_arrivant"] = compte(s, decision_compte_le=il_y_a_jours(40)).id
 
-    s.add(TelemetryEvent(user_id=ids["actif"], page="/", cree_le=_il_y_a(2)))
-    s.add(TelemetryEvent(user_id=ids["revenu"], page="/", cree_le=_il_y_a(10 - 3)))
-    s.add(TelemetryEvent(user_id=ids["jamais_revenu"], page="/", cree_le=_il_y_a(12 - 9)))
-    s.add(TelemetryEvent(user_id=ids["ancien_arrivant"], page="/", cree_le=_il_y_a(5)))
+    s.add(TelemetryEvent(user_id=ids["actif"], page="/", cree_le=il_y_a_jours(2)))
+    s.add(TelemetryEvent(user_id=ids["revenu"], page="/", cree_le=il_y_a_jours(10 - 3)))
+    s.add(TelemetryEvent(user_id=ids["jamais_revenu"], page="/", cree_le=il_y_a_jours(12 - 9)))
+    s.add(TelemetryEvent(user_id=ids["ancien_arrivant"], page="/", cree_le=il_y_a_jours(5)))
     s.add(DerniereVisite(user_id=ids["dormant61"], jour=_jour_il_y_a(61)))
     s.add(DerniereVisite(user_id=ids["dormant95"], jour=_jour_il_y_a(95)))
     s.add(DerniereVisite(user_id=ids["refus"], jour=_jour_il_y_a(120)))

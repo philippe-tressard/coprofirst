@@ -834,6 +834,23 @@ test : ni Python ni Svelte, donc hors de portée des trois autres jobs. Le job
 `test-scripts` vérifie à chaque PR la syntaxe (`bash -n`) de tous les `.sh`
 versionnés, les modes git (0b), et exécute les **self-tests**.
 
+🔒 **Un processus par fichier est interdit dans ce job** (#2231) : les scans d'octets (BOM,
+fins de ligne, caractères de contrôle) passent par `scripts/ci/scans_fichiers.py` — une lecture
+pour tous les fichiers, cas zéro compris —, et les self-tests de l'étape « Self-tests des
+fonctions de décision » se jouent côte à côte par `scripts/ci/lancer_en_parallele.py` : la liste
+des commandes reste écrite dans `ci.yml`, une par ligne (c'est elle que lit
+`verifier-selftests-branches.sh`). Un self-test est donc **pur et indépendant** : il n'écrit que
+dans son dossier jetable. Les boucles `for f in $(git ls-files …)` coûtaient 8 à 28 min côte à
+côte sous Cygwin (rejeu du 25/10/2026).
+
+🔒 **Un autotest ne lit pas l'horloge réelle contre une date posée** (#2261, #2232) :
+`scripts/ci/horloge_autotests.py` refuse une constante datée dans un script qui lit `date +%F`
+(la date s'injecte : `${AUJOURDHUI:-$(date +%F)}`) et un âge calculé à la main —
+`$(date +%s) - $(date -d "$ts" +%s)` rend un âge négatif à l'heure double d'octobre ; l'âge se
+demande à `age_min_epoch` (`lib-horodatage.sh`). Côté pytest, une ancienneté en jours se pose par
+`tests/aides_horloge.il_y_a_jours(N)` (midi de Paris) et le fichier se rejoue à l'heure hostile
+(fixture `heure_hostile`) ; 🔒 `test_anciennete_jours_civils.py` refuse une pose en 24 h de plus.
+
 **Règle pour toute nouvelle logique de décision d'infra** : l'isoler en fonction
 **pure** (aucun SSH, docker, écriture ni `sudo`), exposer `--selftest`, et
 l'ajouter au job. C'est le seul moyen de tester une décision de bascule sans les
@@ -901,7 +918,10 @@ Les **cinq** jobs ci-dessus se rejouent en une à deux minutes sur le poste, san
 recopier : le script **extrait** les commandes de `.github/workflows/ci.yml`. Une
 liste tenue à la main divergerait au premier job ajouté — et c'est justement le job
 ajouté, ou celui qu'on ne pense pas à lancer, qui échoue (#319 : Ruff, le 12/08).
-Sa trace (`.git/rejeu-ci.ok`) est lue par le **point 16** du pré-check.
+Sa trace (`.git/rejeu-ci.ok`) est lue par le **point 16** du pré-check. Elle porte le sha **et
+l'arbre** (`HEAD^{tree}`) : le rejeu mesure le code, pas l'historique — un reword ou un squash à
+arbre identique ne coûte pas un rejeu (#2245) ; un contenu modifié, une trace d'avant l'arbre ou
+un arbre illisible rendent INCONNU. Son format s'écrit et se lit dans `lib-depot.sh`, une seule fois.
 Un seul job : `bash scripts/poste/rejouer-ci.sh build-frontend` — mais alors aucune trace n'est
 écrite, et le point 16 reste INCONNU.
 

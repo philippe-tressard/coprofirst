@@ -334,12 +334,13 @@ jobs:
         # token $'in\r'` pour le premier, `#!/bin/bash: command not found` pour le
         # second (le BOM est consommé comme partie du shebang). C'est un artefact de
         # clone Windows, pas une faute de frappe — il faut le nommer comme tel.
+        #
+        # Un seul processus pour tous les fichiers (#2231) : la boucle shell lançait
+        # trois processus par fichier, et côte à côte (#2224) elle durait 8 minutes.
         run: |
           st=0
-          for f in $(git ls-files -- '*.sh' '.githooks/*'); do
-            head -c3 "$f" | grep -q $'\xef\xbb\xbf' && { echo "::error file=$f::BOM UTF-8 en tête — le shebang devient inexécutable"; st=1; }
-            grep -qU $'\r$' "$f" && { echo "::error file=$f::fins de ligne CRLF — attendu LF (.editorconfig)"; st=1; }
-          done
+          python scripts/ci/scans_fichiers.py bom '*.sh' '.githooks/*' || st=1
+          python scripts/ci/scans_fichiers.py crlf '*.sh' '.githooks/*' || st=1
           exit $st
 
       - name: Le rangement des cartes du kanban ne s'écrit qu'à un endroit
@@ -436,12 +437,9 @@ jobs:
         # Les fins de ligne, elles, ne sont PAS contrôlées ici : le DÉPÔT est
         # légitimement mixte CRLF/LF hors des scripts — un FICHIER ne l'est jamais
         # (étape suivante).
-        run: |
-          st=0
-          for f in $(git ls-files -- '*.py' '*.ts' '*.js' '*.mjs' '*.svelte' '*.json' '*.yml' '*.yaml' '*.css' '*.html' '.gitignore'); do
-            head -c3 "$f" | grep -q $'\xef\xbb\xbf' && { echo "::error file=$f::BOM UTF-8 en tête — écrire ce fichier sans BOM (Set-Content -Encoding utf8 en pose un)"; st=1; }
-          done
-          exit $st
+        #
+        # Un seul processus pour tous les fichiers (#2231), mêmes motifs, même message.
+        run: python scripts/ci/scans_fichiers.py bom '*.py' '*.ts' '*.js' '*.mjs' '*.svelte' '*.json' '*.yml' '*.yaml' '*.css' '*.html' '.gitignore'
 
       - name: Aucun fichier à fins de ligne mixtes
         # Le dépôt mêle des fichiers CRLF et des fichiers LF, et c'est assumé.
@@ -488,21 +486,19 @@ jobs:
         # annonce couvrir ment par omission (`standards/05` §9 : la portée du
         # contrôle fait partie du contrôle). On COMPTE donc les caractères
         # restants au lieu de demander à `grep` s'il en voit.
-        run: |
-          st=0
-          for f in $(git ls-files -- '*.py' '*.ts' '*.js' '*.mjs' '*.svelte' '*.sh' '*.yml'); do
-            # ⚠️ `tr -dc` et non `grep` : les trois caractères volontaires
-            # (tabulation, saut de ligne, retour chariot) sont retirés, puis on
-            # NE GARDE que les caractères de contrôle et on les compte. `grep`
-            # rendait un faux vert sur un fichier contenant un NUL, qu'il classe
-            # binaire ; `wc` ne juge pas son entrée.
-            n=$(LC_ALL=C tr -d '\n\r\t' < "$f" | LC_ALL=C tr -dc '[:cntrl:]' | wc -c)
-            if [ "$n" -gt 0 ]; then
-              echo "::error file=$f::$n caractère(s) de contrôle invisible(s) (U+0008, U+0000 et voisins) — ils changent un motif sans se voir"
-              st=1
-            fi
-          done
-          exit $st
+        #
+        # Un seul processus pour tous les fichiers (#2231) : `scans_fichiers.py` retire
+        # les trois caractères volontaires, COMPTE ceux qui restent (NUL compris — pas de
+        # `grep`, qui classe le NUL binaire et se tait) et nomme chaque fichier fautif.
+        # La boucle d'avant lançait quatre processus par fichier : 28 minutes côte à côte.
+        run: python scripts/ci/scans_fichiers.py controle '*.py' '*.ts' '*.js' '*.mjs' '*.svelte' '*.sh' '*.yml'
+
+      - name: Aucun script ne juge l'horloge réelle contre une date posée
+        # 26/10/2026 (#2261) : `lib-maintenance-trace.sh --selftest` comparait
+        # `date +%F` à une échéance écrite en dur et échouait passé cette date — tout
+        # rejeu, de toute session, tombait sur ce job sans lien avec son lot. Une
+        # décision se teste sur une date INJECTÉE (`${AUJOURDHUI:-$(date +%F)}`).
+        run: python scripts/ci/horloge_autotests.py
 
       - name: Syntaxe de tous les scripts shell
         run: |
@@ -517,6 +513,15 @@ jobs:
         # (aucun effet de bord : ni SSH, ni docker, ni écriture). C'est le seul
         # moyen de tester une décision d'infra sans les deux RPi.
         run: |
+          # Un seul lanceur, plusieurs processus (#2231) : ces self-tests sont purs et
+          # indépendants, la liste reste écrite ici — une commande par ligne — et c'est
+          # elle que lit `verifier-selftests-branches.sh`. Tous sont joués, un échec est
+          # nommé avec sa sortie ; une liste vide échoue (`lancer_en_parallele.py`).
+          python scripts/ci/lancer_en_parallele.py <<'COMMANDES'
+          # Les deux outils de cette étape, jugés sur des fichiers et des commandes piégés.
+          python scripts/ci/scans_fichiers.py --selftest
+          python scripts/ci/lancer_en_parallele.py --selftest
+          python scripts/ci/horloge_autotests.py --selftest
           bash scripts/lib/lib-role.sh              --selftest
           bash scripts/lib/lib-applicatifs.sh       --selftest
           bash scripts/lib/lib-replication.sh       --selftest
@@ -532,6 +537,7 @@ jobs:
           bash scripts/lib/lib-ssh-noeuds.sh        --selftest
           bash scripts/lib/lib-env-role.sh          --selftest
           bash scripts/lib/lib-horloge.sh           --selftest
+          bash scripts/lib/lib-horodatage.sh        --selftest
           bash scripts/lib/lib-modules-sources.sh   --selftest
           bash scripts/lib/lib-parite.sh            --selftest
           bash scripts/lib/lib-cache-build.sh       --selftest
@@ -570,6 +576,9 @@ jobs:
           # C31 (#1586) : health-watch écrit son battement AVANT de décider, la
           # collecte le lit, et un silence rend FAIL sur le nœud qu'il concerne.
           bash scripts/lib/lib-health-watch.sh      --selftest
+          # 25/10/2026 : une lecture vide ponctuelle (02 h 06) donnait quatre INCONNU
+          # sur deux nœuds ; une lecture vide n'est plus conclue avant une seconde.
+          bash scripts/lib/lib-relecture.sh         --selftest
           # C17 : maintenance.sh écrit sa marque en fin d'hygiène, la collecte la
           # lit, et le seuil se lit en jours ET heures (faux retard du 05/10/2026).
           bash scripts/lib/lib-maintenance-trace.sh --selftest
@@ -690,6 +699,7 @@ jobs:
           # Le garde-fou de cette étape elle-même : tout script versionné qui
           # expose --selftest doit être listé ci-dessus (étape suivante).
           bash scripts/poste/verifier-selftests-branches.sh --selftest
+          COMMANDES
 
       - name: Tout --selftest exposé est lancé par ce job
         # `check-ci-complete.mjs` transposé aux scripts d'infra (#1574, famille

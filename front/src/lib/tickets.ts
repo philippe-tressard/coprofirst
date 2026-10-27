@@ -22,6 +22,7 @@ import {
 	type OptionPublication,
 } from '$lib/options-publication';
 import type { Ticket } from '$lib/api';
+import { nombreOuNull } from '$lib/utils';
 import { parAttribut } from '$lib/table-statuts';
 
 //  Les catégories vivent dans leur propre module depuis le 21/09/2026 (500
@@ -193,6 +194,15 @@ export function estTicketActif(statut: string | undefined | null): boolean {
 /** Ce ticket est-il clos ? — la seule écriture de cette question côté front. */
 export function estTicketClos(statut: string | undefined | null): boolean {
 	return STATUTS_TICKET_CLOS.includes(statut ?? '');
+}
+
+/**
+ * L'identifiant d'une affaire que désigne un lien collé (`…/tickets/465?src=whatsapp`),
+ * ou `null` si le texte n'en est pas un.
+ */
+export function idAffaireDepuisLien(texte: string): number | null {
+	const m = /\/tickets\/(\d+)(?:[/?#]|$)/.exec(texte);
+	return nombreOuNull(m?.[1]);
 }
 
 /** Libellé affichable d'un statut, valeur brute à défaut (jamais vide). */

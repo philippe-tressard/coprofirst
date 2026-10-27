@@ -52,7 +52,7 @@ precheck_points_infra() {
   #      ÉCHEC, tous deux horodatés. Les « Email KO » ne le sont pas : les compter
   #      donnait 7 depuis toujours, indatables (mémoire du 02/08/2026).
   age_ligne() {  # $1 = hôte, $2 = motif, $3 = fichier — âge en minutes, vide si absent
-    sur "$1" "d=\$(grep \"$2\" $3 2>/dev/null | grep -oE '^\[[0-9-]+ [0-9:]+' | tail -1 | tr -d '[');             [ -n \"\$d\" ] && echo \$(( ( \$(date +%s) - \$(date -d \"\$d\" +%s) ) / 60 ))"
+    age_min_releve "$(sur "$1" "d=\$(grep \"$2\" $3 2>/dev/null | grep -oE '^\[[0-9-]+ [0-9:]+' | tail -1 | tr -d '[');             [ -n \"\$d\" ] && echo \"\$(date -d \"\$d\" +%s) \$(date +%s)\"")"
   }
   AGE_ALERTE=$(age_ligne "$ACTIF" "Alerte envoyée" /var/log/hostachy-reliability.log)
   AGE_FAIL=$(age_ligne "$ACTIF" "^\[FAIL\]" /var/log/hostachy-reliability.log)
@@ -62,7 +62,7 @@ precheck_points_infra() {
   #  mort sur l'actif (#306). L'horodatage est celui de l'en-tête de chaque
   #  exécution, le même repère que C15 utilise pour surveiller le peer.
   CR_MAX_AGE_MIN=40   # 2 ticks de 15 min manqués, aligné sur C15
-  AGE_CR=$(sur "$ACTIF" "d=\$(grep -oE 'check-reliability \([0-9-]{10} [0-9:]{8}\)' /var/log/hostachy-reliability.log 2>/dev/null | tail -1 | tr -d '()' | cut -d' ' -f2-);             [ -n \"\$d\" ] && echo \$(( ( \$(date +%s) - \$(date -d \"\$d\" +%s) ) / 60 ))")
+  AGE_CR=$(age_min_releve "$(sur "$ACTIF" "d=\$(grep -oE 'check-reliability \([0-9-]{10} [0-9:]{8}\)' /var/log/hostachy-reliability.log 2>/dev/null | tail -1 | tr -d '()' | cut -d' ' -f2-);             [ -n \"\$d\" ] && echo \"\$(date -d \"\$d\" +%s) \$(date +%s)\"")")
   if [ -n "${AGE_FAIL:-}" ]; then
     DETAIL13="dernier échec il y a ${AGE_FAIL} min, alerte ${AGE_ALERTE:-jamais envoyée}"
   elif [ -z "${AGE_CR:-}" ] || [ "${AGE_CR:-999}" -gt "$CR_MAX_AGE_MIN" ] 2>/dev/null; then

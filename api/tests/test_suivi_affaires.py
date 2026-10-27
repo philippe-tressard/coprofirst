@@ -19,7 +19,6 @@ Ce qui est tenu :
 from __future__ import annotations
 
 import json
-from datetime import timedelta
 from types import SimpleNamespace
 
 import pytest
@@ -33,9 +32,15 @@ from app.utils.suivi_affaires import resumes as module_resumes
 from app.utils.suivi_affaires.format import construire_message, lire_reponse
 from app.utils.suivi_affaires.pdf import html_rapport
 from app.utils.suivi_affaires.releve import Releve, lire_affaire, tranche
+from tests.aides_horloge import il_y_a_jours
 from tests.aides_http import base_http, client_http
 from tests.aides_suivi import affaire_ouverte
 from tests.aides_pdf import besoin_weasyprint
+
+
+#  L'ancienneté se compte en jours civils de Paris : chaque test se rejoue aux deux heures où
+#  24 h × N et N jours ne sont pas la même chose (#2257).
+pytestmark = pytest.mark.usefixtures("heure_hostile")
 
 
 @pytest.fixture(name="moteur")
@@ -131,7 +136,7 @@ def _releve() -> Releve:
         categorie="panne",
         statut="en_cours",
         perimetre_cible=json.dumps(["batiment_b"]),
-        cree_le=horloge.maintenant() - timedelta(days=40),
+        cree_le=il_y_a_jours(40),
         resume_ia="<b>Le syndic</b> attend le devis.",
     )
     return Releve(jour=jour, affaires=[lire_affaire(t, jour, {"en_cours": "Chez le syndic"})])
@@ -283,7 +288,7 @@ def test_jours_sans_avancee_et_relances_envoyees(moteur):
     with Session(moteur) as s:
         for tid, avancee in ((vieille, 45), (recente, 3)):
             t = s.get(Ticket, tid)
-            t.mis_a_jour_le = horloge.maintenant() - timedelta(days=avancee)
+            t.mis_a_jour_le = il_y_a_jours(avancee)
             s.add(t)
         for jours in (60, 45):
             s.add(
@@ -291,7 +296,7 @@ def test_jours_sans_avancee_et_relances_envoyees(moteur):
                     ticket_id=vieille,
                     type="relance",
                     contenu="Relance",
-                    cree_le=horloge.maintenant() - timedelta(days=jours),
+                    cree_le=il_y_a_jours(jours),
                 )
             )
         s.commit()

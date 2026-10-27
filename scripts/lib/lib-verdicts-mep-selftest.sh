@@ -269,6 +269,16 @@ feat(b) : deux"
   t "trace d'un autre commit"            INCONNU verdict_rejeu_ci deadbee abc123 0 0
   t "aucune trace"                       INCONNU verdict_rejeu_ci "" abc123 0 0
   t "comptes illisibles"                 INCONNU verdict_rejeu_ci abc123 abc123 "x" 0
+  #  ── #2245 : l'arbre, pas l'historique ──────────────────────────────────────
+  #  Un reword ou un squash change le sha, jamais l'arbre : ce qui a été testé reste vrai.
+  t "autre sha, même arbre"              OK      verdict_rejeu_ci deadbee abc123 0 0 tree1 tree1
+  t "autre sha, même arbre, en échec"    FAIL    verdict_rejeu_ci deadbee abc123 1 0 tree1 tree1
+  t "autre sha, même arbre, INCONNU"     INCONNU verdict_rejeu_ci deadbee abc123 0 2 tree1 tree1
+  #  Le contenu a changé : la trace ne dit rien, comme avant.
+  t "autre sha, autre arbre"             INCONNU verdict_rejeu_ci deadbee abc123 0 0 tree1 tree2
+  t "trace d'avant #2245 (sans arbre)"   INCONNU verdict_rejeu_ci deadbee abc123 0 0 "" tree2
+  t "arbre de HEAD illisible"            INCONNU verdict_rejeu_ci deadbee abc123 0 0 tree1 ""
+  t "deux arbres vides ne s'égalent pas" INCONNU verdict_rejeu_ci deadbee abc123 0 0 "" ""
   #  ── #502 : l'erreur que CE lot corrige ─────────────────────────────────────
   #  Sans déclaration, rien ne change : le point reste intransigeant.
   t "prod saine, aucune déclaration"     OK      verdict_erreurs_api 0 "" "" abc123 ""

@@ -26,7 +26,7 @@ MAINTENANT=$(date +%s)
 
 il_y_a() {                 # $1 = horodatage → « HH:MM:SS (il y a …) », ou « ? »
   case "${1:-}" in ''|*[!0-9]*) echo "?"; return ;; esac
-  echo "$(date -d "@$1" '+%H:%M:%S' 2>/dev/null) (il y a $(ci_duree $((MAINTENANT - $1))))"
+  echo "$(date -d "@$1" '+%H:%M:%S' 2>/dev/null) (il y a $(ci_duree "$(ci_age_s "$1" "$MAINTENANT")"))"
 }
 
 echo "Rejeu de la CI — état au $(date '+%d/%m %H:%M:%S')"
