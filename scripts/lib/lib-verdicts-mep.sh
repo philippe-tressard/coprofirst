@@ -342,9 +342,16 @@ verdict_pytest_resume() {  # $1 = dernière ligne de `pytest -q`
   esac
 }
 
-verdict_rejeu_ci() {       # $1 = sha de la trace, $2 = HEAD, $3 = nb FAIL, $4 = nb INCONNU
+#  Le rejeu mesure le CODE, pas l'historique (#2245) : un reword, un squash ou un
+#  réordonnancement de messages change le sha et laisse l'arbre — ce qui a été testé —
+#  identique. La trace vaut donc si le sha est le même, OU si l'arbre l'est (`$5` = arbre
+#  de la trace, `$6` = arbre de HEAD). Un arbre absent d'un côté (trace d'avant #2245,
+#  git muet) ne prouve rien : INCONNU, comme un autre commit.
+verdict_rejeu_ci() {       # $1 = sha de la trace, $2 = HEAD, $3 = nb FAIL, $4 = nb INCONNU, $5 = arbre de la trace, $6 = arbre de HEAD
   [ -z "$1" ] || [ -z "$2" ] && { echo INCONNU; return; }
-  [ "$1" != "$2" ] && { echo INCONNU; return; }
+  if [ "$1" != "$2" ]; then
+    { [ -n "${5:-}" ] && [ "${5:-}" = "${6:-}" ]; } || { echo INCONNU; return; }
+  fi
   case "$3$4" in (*[!0-9]*|"") echo INCONNU; return ;; esac
   [ "$3" -gt 0 ] && { echo FAIL; return; }
   [ "$4" -gt 0 ] && { echo INCONNU; return; }

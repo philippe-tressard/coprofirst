@@ -209,6 +209,9 @@ COMMUN=$(cd "$(git rev-parse --git-common-dir 2>/dev/null || echo .git)" && pwd)
 T_DEBUT=$EPOCHSECONDS   # l'horloge du rejeu : pré-vol compris
 SHA=$(git rev-parse HEAD 2>/dev/null)
 SHA_COURT=$(git rev-parse --short HEAD 2>/dev/null)
+#  L'arbre de HEAD (#2245) : ce que le rejeu teste, indépendamment du message et de
+#  l'historique. La trace le porte pour qu'un reword ou un squash ne coûte pas un rejeu.
+ARBRE=$(git rev-parse 'HEAD^{tree}' 2>/dev/null)
 
 # ── Parité : refuser de conclure sur ce qu'on n'a pas lu ─────────────────────
 read -r ECRIT EXTRAIT <<< "$(ci_parite "$CI")"
@@ -407,8 +410,8 @@ elif [ "$NB_NON_JOUEES" -gt 0 ]; then
   echo "  (rejeu incomplet : aucune trace écrite — le point 16 du pré-check exige le rejeu complet.)"
 else
   mkdir -p "$(dirname "$MARQUEUR")"
-  printf '%s %s OK=%d FAIL=%d INCONNU=%d SAUTS=%d RELANCES=%d\n' "$SHA" "$(date +%s)" \
-    "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_SAUTS" "$NB_RELANCES" > "$MARQUEUR"
+  trace_rejeu_ecrire "$MARQUEUR" "$SHA" "$(date +%s)" \
+    "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_SAUTS" "$NB_RELANCES" "$ARBRE"
 fi
 
 [ "$NB_FAIL" -gt 0 ] && { echo "✗ La CI échouerait — corriger avant de pousser."; exit 1; }
