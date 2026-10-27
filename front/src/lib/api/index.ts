@@ -21,6 +21,7 @@ import type {
 	User,
 	TransfertVerse,
 } from './types';
+import type { ChoixConciliation } from './affaires-liees';
 import type { ExportTelemetrie } from './telemetrie';
 import type { EntretienPeriodiqueResponse } from './prestataires';
 //  Le type des périmètres vit dans `$lib/perimetres` et non dans `./types` : ce
@@ -33,6 +34,17 @@ export type { Perimetre } from '$lib/perimetres';
 //  `from '$lib/api'` du front n'ont pas à changer, et ne changent pas.
 export * from './client';
 export * from './types';
+//  La conciliation d'une fusion refusée (27/10/2026) : ses types vivent avec les
+//  affaires liées, et `types.ts` est au plafond de modularité.
+export type {
+	ChoixConciliation,
+	CodeConciliation,
+	Conciliation,
+	EcartFusion,
+	OptionConciliation,
+	PersonneConcernee,
+	ResultatConciliation,
+} from './affaires-liees';
 export * from './documents';
 export * from './communaute';
 export * from './avis';
@@ -204,7 +216,9 @@ export const tickets = {
 	/** Les affaires que je peux lier : numéro, titre, statut (#1342). */
 	choix: () => api.get<AffaireLiee[]>('/tickets/choix'),
 	//  Les affaires liées qu'une clôture peut absorber (#1704) — conseil seul.
-	candidatesFusion: (id: number) => api.get<CandidateFusion[]>(`/tickets/${id}/fusion`),
+	//  `inversion` : hors clôture, le conseil peut faire absorber l'autre (conciliation).
+	candidatesFusion: (id: number, inversion = false) =>
+		api.get<CandidateFusion[]>(`/tickets/${id}/fusion${inversion ? '?inversion=true' : ''}`),
 	//  Le miroir du pré-remplissage des affiches (#832) : le CS compose souvent
 	//  l'affiche du hall d'abord, puis veut la même information en ligne. Une
 	//  actualité étant une affaire (#1091), la route vit chez les affaires.
@@ -269,6 +283,8 @@ export const tickets = {
 			notifier?: boolean;
 			/** 🔀 Les affaires liées à absorber, quand cette Suite clôt (#1704). */
 			fusionner?: number[];
+			/** Les fusions refusées pour fuite de lecture que le conseil a conciliées. */
+			conciliations?: ChoixConciliation[];
 			perimetre_cible?: string[];
 			/**  🔴 LES OPTIONS DE PUBLICATION, corrigées depuis un commentaire
 			 *   (05/09/2026) — comme sur une actualité : le formulaire montre le

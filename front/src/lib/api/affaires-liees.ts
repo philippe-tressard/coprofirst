@@ -28,4 +28,58 @@ export interface AffaireLiee {
 export interface CandidateFusion extends AffaireLiee {
 	fusionnable: boolean;
 	motif: string | null;
+	/** Le plan pour AUTORISER une fusion refusée pour fuite de lecture (`null` si elle est possible). */
+	conciliation: Conciliation | null;
+}
+
+/**  Une personne que la fusion ferait lire autrement — nommée : la confirmation du conseil l'est. */
+export interface PersonneConcernee {
+	id: number;
+	nom: string;
+}
+
+/** Une section d'accès qui diffère entre la principale et l'autre affaire. */
+export interface EcartFusion {
+	champ: string;
+	libelle: string;
+	principale: string;
+	absorbee: string;
+}
+
+export type CodeConciliation = 'inverser' | 'restreindre' | 'elargir';
+
+/** Ce que dirait la principale une fois l'option posée. */
+export interface ResultatConciliation {
+	perimetre: string;
+	destinataires: string;
+	acces: string;
+}
+
+/**  Une façon d'autoriser la fusion, avec ce qu'elle fait lire (`utils/fusion_conciliation`). */
+export interface OptionConciliation {
+	code: CodeConciliation;
+	libelle: string;
+	disponible: boolean;
+	/** Pourquoi elle ne l'est pas. */
+	pourquoi: string | null;
+	/** Ceux qui liront ce qu'ils ne lisaient pas — à confirmer par leur nom. */
+	exposes: PersonneConcernee[];
+	/** Combien perdent l'accès à un fil qu'ils lisaient. */
+	perdants: number;
+	resultat: ResultatConciliation | null;
+	/** Vrai si `exposes` n'est pas vide : la confirmation nominative est exigée. */
+	consentement: boolean;
+}
+
+export interface Conciliation {
+	ecarts: EcartFusion[];
+	options: OptionConciliation[];
+}
+
+/** Ce que le corps d'une clôture ou d'une fusion envoie pour UNE affaire conciliée. */
+export interface ChoixConciliation {
+	affaire_id: number;
+	option: 'restreindre' | 'elargir';
+	/** Les identifiants des personnes montrées à l'écran — le serveur exige la même liste. */
+	confirmes: number[];
 }

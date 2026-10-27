@@ -1,4 +1,4 @@
-import type { CorrectionEvolution } from '$lib/api';
+import type { ChoixConciliation, CorrectionEvolution } from '$lib/api';
 import { separerFichiers } from '$lib/fichiers';
 import { perimetreHerite } from '$lib/perimetres';
 import { richEmpty } from '$lib/publications';
@@ -123,6 +123,8 @@ export interface ChargeUtileEvolution {
 	affaires_liees?: number[];
 	/** 🔀 Les affaires à ABSORBER en clôturant (#1704) — posé par `SuiteAffaire`, jamais par `EvolForm`. */
 	fusionner?: number[];
+	/** Les fusions refusées pour fuite de lecture que le conseil a conciliées (restreindre / élargir). */
+	conciliations?: ChoixConciliation[];
 	email_externe?: string;
 	partager_whatsapp?: boolean;
 	envoyer_syndic?: boolean;

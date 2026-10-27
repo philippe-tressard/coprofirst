@@ -18,6 +18,10 @@
 * 🔒 **Fusion refusée** si un lecteur de la principale ne pouvait pas lire
   l'absorbée : ses Suites lui deviendraient lisibles. Comparé compte par compte,
   par `ticket_visible` — la règle de la fiche, jamais une recopie.
+  **Le conseil peut CONCILIER** (27/10/2026, `utils/fusion_conciliation`) :
+  inverser, restreindre ou élargir, chaque personne qui lirait sans avoir lu
+  étant confirmée par son nom. Le refus reste le défaut ; l'invariant est relu
+  sur l'état final de la principale (`_absorbables`).
 * La description d'une absorbée devient une **Suite d'ouverture** de la
   principale, datée de sa création et signée de son auteur.
 * L'absorbée sort du **carnet** et des moyennes (`utils/affaire_absorbee`) ;
@@ -102,10 +106,16 @@ def _sans_fuite(session: Session, principale: Ticket, absorbee: Ticket) -> bool:
     )
 
 
-def candidates(session: Session, principale: Ticket, lecteur: Utilisateur) -> list[dict]:
+def candidates(
+    session: Session, principale: Ticket, lecteur: Utilisateur, *, inversion: bool = False
+) -> list[dict]:
     """Les affaires liées qu'on peut proposer à la fusion : non closes, lisibles
     par qui clôt, ni actualité ni déjà absorbées, ni écartées par le conseil
-    (#2083) — chacune avec son verdict."""
+    (#2083) — chacune avec son verdict. Une affaire refusée porte en plus sa
+    CONCILIATION (`utils/fusion_conciliation`) : l'écart, et les options.
+
+    `inversion` : l'appelant laisse-t-il choisir qui absorbe ? (Pas à la clôture.)"""
+    from app.utils.fusion_conciliation import diagnostic
     from app.utils.fusion_en_cours import liens_ecartes
 
     rendu = []
@@ -127,25 +137,65 @@ def candidates(session: Session, principale: Ticket, lecteur: Utilisateur) -> li
                 **_lue(t),
                 "fusionnable": fusionnable,
                 "motif": None if fusionnable else MOTIF_LECTEURS,
+                "conciliation": None
+                if fusionnable
+                else diagnostic(session, principale, t, inversion=inversion),
             }
         )
     return rendu
 
 
-def _absorbables(session: Session, principale: Ticket, ids, lecteur: Utilisateur) -> list[Ticket]:
-    """Les affaires demandées, chacune candidate ET fusionnable — sinon 422."""
+def _absorbables(
+    session: Session,
+    principale: Ticket,
+    ids,
+    lecteur: Utilisateur,
+    conciliations: dict | None = None,
+) -> list[Ticket]:
+    """Les affaires demandées, chacune candidate ET fusionnable — sinon 422.
+
+    Une affaire refusée pour fuite de lecture passe si le conseil l'a CONCILIÉE
+    (`conciliations` : id de l'absorbée → `{option, confirmes}`) : l'option est
+    posée sur la principale, qui garde ensuite l'invariant — ceux qui liraient
+    l'absorbée sans la lire sont tous confirmés par leur nom."""
+    from app.utils.fusion_conciliation import appliquer, lecteurs_en_trop
+
     if not est_moderateur(lecteur):
         raise HTTPException(403, "Seul le conseil syndical fusionne des affaires")
     admises = {c["id"]: c for c in candidates(session, principale, lecteur)}
+    conciliations = conciliations or {}
     rendu = []
     for i in sorted({int(x) for x in ids}):
         c = admises.get(i)
         if c is None:
             raise HTTPException(422, f"Affaire à fusionner introuvable (#{i})")
+        absorbee = session.get(Ticket, i)
+        choix = conciliations.get(i)
         if not c["fusionnable"]:
-            raise HTTPException(422, f"Fusion refusée : {c['numero']} est {MOTIF_LECTEURS}")
-        rendu.append(session.get(Ticket, i))
+            if choix is None:
+                raise HTTPException(422, f"Fusion refusée : {c['numero']} est {MOTIF_LECTEURS}")
+            appliquer(
+                session, principale, absorbee, choix["option"], choix.get("confirmes", []), lecteur
+            )
+        rendu.append(absorbee)
+    #  Une conciliation peut élargir la principale : l'invariant se relit sur
+    #  l'ÉTAT FINAL, affaire par affaire — ceux qui la liraient sans lire l'autre
+    #  sont tous nommés dans ce que le conseil a confirmé.
+    for a in rendu:
+        confirmes = set((conciliations.get(a.id) or {}).get("confirmes", []))
+        en_trop = lecteurs_en_trop(session, principale, a) - confirmes
+        if en_trop:
+            raise HTTPException(
+                422,
+                f"Fusion refusée : {a.numero} deviendrait lisible par des personnes "
+                "que la conciliation n'a pas confirmées",
+            )
     return rendu
+
+
+def conciliations_par_affaire(choix) -> dict[int, dict]:
+    """Les choix du corps de requête (`ChoixConciliation`) rangés par absorbée."""
+    return {c.affaire_id: {"option": c.option, "confirmes": list(c.confirmes)} for c in choix or []}
 
 
 def _marque(numero: str) -> str:
@@ -212,11 +262,15 @@ def fusionner(
     ids,
     lecteur: Utilisateur,
     suite: TicketEvolution | None,
+    conciliations: dict | None = None,
 ) -> list[tuple[Ticket, str]]:
     """Absorbe les affaires `ids` dans `principale`, qui vient d'être close par
     `suite` — elles prennent son état au même instant. Rend chacune avec l'état
-    qu'elle quitte (l'avis à son auteur le dit). Sans `commit`."""
-    absorbees = _absorbables(session, principale, ids or [], lecteur)
+    qu'elle quitte (l'avis à son auteur le dit). Sans `commit`.
+
+    `conciliations` : les fusions refusées pour fuite que le conseil a conciliées
+    (`utils/fusion_conciliation`), par identifiant d'absorbée."""
+    absorbees = _absorbables(session, principale, ids or [], lecteur, conciliations)
     statut = valeur(principale.statut)
     rendu = []
     for a in absorbees:

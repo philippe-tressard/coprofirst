@@ -52,7 +52,12 @@ from .notifier_auteur import _notifier_auteur
 from .suite_groupe import message_suite
 from app.utils.liens import adresse_du_site
 from app.utils.affaires_liees import ajouter_liens
-from app.utils.fusion_affaires import fusionner, prevenir_auteurs, refuser_si_absorbee
+from app.utils.fusion_affaires import (
+    conciliations_par_affaire,
+    fusionner,
+    prevenir_auteurs,
+    refuser_si_absorbee,
+)
 
 router = APIRouter()
 
@@ -305,7 +310,14 @@ def add_evolution(
     #  🔀 Une Suite qui CLÔT peut absorber des affaires liées (#1704).
     absorbees = []
     if body.fusionner and valeur(ticket.statut) in STATUTS_TICKET_CLOS and body.type == "etat":
-        absorbees = fusionner(session, ticket, body.fusionner, user, evol)
+        absorbees = fusionner(
+            session,
+            ticket,
+            body.fusionner,
+            user,
+            evol,
+            conciliations_par_affaire(body.conciliations),
+        )
 
     if ticket.auteur_id != user.id and body.notifier:
         _notifier_auteur(

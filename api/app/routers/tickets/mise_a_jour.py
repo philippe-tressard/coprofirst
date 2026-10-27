@@ -18,7 +18,12 @@ dit la docstring du paquet.
 """
 
 from app.utils.affaires_liees import poser_liens
-from app.utils.fusion_affaires import fusionner, prevenir_auteurs, refuser_si_absorbee
+from app.utils.fusion_affaires import (
+    conciliations_par_affaire,
+    fusionner,
+    prevenir_auteurs,
+    refuser_si_absorbee,
+)
 from app.utils import horloge
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -387,7 +392,14 @@ def update_ticket(
     #  sans courriel, comme toute correction : la cloche seule.
     absorbees = []
     if body.fusionner and etat_a_change and valeur(ticket.statut) in STATUTS_TICKET_CLOS:
-        absorbees = fusionner(session, ticket, body.fusionner, user, None)
+        absorbees = fusionner(
+            session,
+            ticket,
+            body.fusionner,
+            user,
+            None,
+            conciliations_par_affaire(body.conciliations),
+        )
 
     # Notification auteur (in-app) — sauf si c'est l'auteur lui-même qui modifie
     #  Une actualité se corrige entre membres du conseil : l'auteur n'en est pas

@@ -12,7 +12,7 @@ démarrage de l'application.
 
 import json
 from datetime import datetime
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Literal, Optional
 
 from pydantic import BaseModel, BeforeValidator
 
@@ -82,6 +82,21 @@ class AffaireLieeLue(BaseModel):
     #: 🔀 Absorbée par une autre affaire (#2186) : son état est celui qu'elle a
     #: hérité, et l'écran ne la propose plus à la fusion.
     fusionnee: bool = False
+
+
+class ChoixConciliation(BaseModel):
+    """Ce que le conseil a décidé pour UNE affaire dont la fusion était refusée
+    pour fuite de lecture (`utils/fusion_conciliation`).
+
+    `confirmes` : les identifiants des personnes que l'écran a NOMMÉES — celles
+    qui liront ce qu'elles ne lisaient pas. Le serveur recalcule la liste et
+    exige la même : la confirmation est nominative, elle ne se donne pas en bloc.
+    « Inverser » n'est pas ici : c'est la principale qui change (`principale_id`).
+    """
+
+    affaire_id: int
+    option: Literal["restreindre", "elargir"]
+    confirmes: List[int] = []
 
 
 class ContratDeLAffaire(BaseModel):

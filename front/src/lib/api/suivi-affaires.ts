@@ -9,6 +9,7 @@
  */
 
 import { api } from './client';
+import type { CandidateFusion, ChoixConciliation } from './affaires-liees';
 import type { EtatVisite } from './prestataires';
 
 export interface AffaireOuverte {
@@ -123,11 +124,23 @@ export const suiviAffaires = {
 	fusions: {
 		proposer: (ids: number[]) =>
 			api.post<PropositionFusion>('/suivi-affaires/fusions/proposition', { ids }),
-		fusionner: (ids: number[], titre: string, description: string) =>
+		/**  Pour chaque affaire du groupe autre que la plus ancienne : la fusion est-elle
+		 *   possible — sinon l'écart et les options pour l'autoriser. N'écrit rien. */
+		conciliation: (ids: number[]) =>
+			api.post<CandidateFusion[]>('/suivi-affaires/fusions/conciliation', { ids }),
+		/**  `principale_id` : l'affaire qui absorbe, quand le conseil a inversé les rôles ;
+		 *   `conciliations` : les restreindre / élargir confirmés par leur nom. */
+		fusionner: (
+			ids: number[],
+			titre: string,
+			description: string,
+			conciliation: { principale_id?: number; conciliations?: ChoixConciliation[] } = {},
+		) =>
 			api.post<{ principale_id: number; absorbees: number[] }>('/suivi-affaires/fusions', {
 				ids,
 				titre,
 				description,
+				...conciliation,
 			}),
 		ecarter: (ids: number[]) => api.post<void>('/suivi-affaires/fusions/ecarter', { ids }),
 	},

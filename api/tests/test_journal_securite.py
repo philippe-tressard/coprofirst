@@ -90,6 +90,8 @@ GESTES_SENSIBLES = {
     "des comptes inactifs, sans acteur humain",
     ("utils/purge_comptes/tache.py", "_avertir"): "l'avertissement qui ouvre le délai "
     "de trente jours avant l'effacement",
+    ("utils/fusion_conciliation.py", "appliquer"): "une fusion conciliée : la principale "
+    "change de lecteurs et des personnes liront ce qu'elles ne lisaient pas",
 }
 
 #: Ce qui reconnaît un geste sur un compte dans un routeur — le relevé mécanique

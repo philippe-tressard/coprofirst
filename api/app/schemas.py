@@ -14,6 +14,7 @@ from app.utils.perimetres import perimetre_defaut_liste
 from app.schemas_communs import (  # noqa: F401
     AffaireLieeLue,
     ChampsIntervenant,
+    ChoixConciliation,
     ContratDeLAffaire,
     ListeJson as ListeJson,
     liste_depuis_json as liste_depuis_json,
@@ -291,6 +292,8 @@ class TicketUpdate(SaisiPourEntree, AssisteIACorrection, ChampsIntervenant):
     statut: Optional[StatutTicket] = None
     #  🔀 Les affaires liées à absorber quand ce `statut` clôt l'affaire (#1704).
     fusionner: Optional[List[int]] = None
+    #  Les fusions refusées pour fuite de lecture que le conseil a conciliées.
+    conciliations: Optional[List[ChoixConciliation]] = None
     priorite: Optional[str] = None
     titre: Optional[str] = None
     description: Optional[str] = None
