@@ -85,6 +85,13 @@ def _lier_utilisateurs(session: Session, entrees: list[dict], lot_id: int) -> No
         type_lien = _type_lien_from_str(entree.get("type_lien", "propriétaire"))
         if not uid:
             continue
+        if type_lien == TypeLien.locataire:
+            #  Le lien ET les badges du lot : la seule porte (#2267). Rattaché
+            #  ici, un locataire avait son lot sans ses Vigik ni ses télécommandes.
+            from app.utils.rattachement_locataire import lier_locataire
+
+            lier_locataire(session, uid, [ou_404(session, Lot, lot_id, "Lot")])
+            continue
         existant = session.exec(
             select(UserLot).where(UserLot.user_id == uid, UserLot.lot_id == lot_id)
         ).first()

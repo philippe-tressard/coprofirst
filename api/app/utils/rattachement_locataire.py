@@ -44,7 +44,15 @@ from __future__ import annotations
 from sqlmodel import Session, select
 
 from app.models.copropriete import Lot
-from app.models.core import StatutAcces, StatutUtilisateur, TypeLien, UserLot, Utilisateur
+from app.models.core import (
+    LocationBail,
+    StatutAcces,
+    StatutBail,
+    StatutUtilisateur,
+    TypeLien,
+    UserLot,
+    Utilisateur,
+)
 from app.utils.journal_securite import journaliser_securite
 from app.utils.lot_des_imports import lots_du_nom
 from app.utils.mes_batiments import batiments_de_l_utilisateur, invalider_cache
@@ -117,23 +125,50 @@ def _acces_remissibles(session: Session, lot_ids: list[int]):
                 yield t, objet
 
 
-def rattacher_lots_declares(user: Utilisateur, lots: list[Lot], session: Session) -> dict[str, int]:
-    """Rattache le locataire à ces lots — déjà vérifiés comme proposés — et lui en remet les badges.
+def lier_locataire(session: Session, user_id: int, lots: list[Lot]) -> dict[str, int]:
+    """LA porte qui lie un locataire à des lots : le lien, puis les badges en main.
 
-    Ne committe pas : l'appelant (la route) le fait.
+    ## 🔴 Pourquoi une seule porte (signalé le 27/10/2026)
+
+    Quatre chemins posaient un lien `locataire` — sa déclaration, le nom de son
+    bailleur, la résolution d'un import par l'administration, et la validation
+    d'office —, et seul le premier remettait les badges : rattaché par un autre,
+    le locataire avait son lot mais ni Vigik ni télécommande, et la remise se
+    faisait à la main. 🔒 `test_lier_locataire_source_unique.py` refuse un lien
+    `locataire` écrit ailleurs.
+
+    Un lien déjà présent n'est pas dupliqué. Ne committe pas.
     """
     for lot in lots:
-        session.add(
-            UserLot(user_id=user.id, lot_id=lot.id, type_lien=TypeLien.locataire, actif=True)
-        )
+        existant = session.exec(
+            select(UserLot).where(UserLot.user_id == user_id, UserLot.lot_id == lot.id)
+        ).first()
+        if existant is None:
+            session.add(
+                UserLot(user_id=user_id, lot_id=lot.id, type_lien=TypeLien.locataire, actif=True)
+            )
     #  Ses bâtiments viennent de changer : ce qu'il lit en dépend (`mes_batiments`).
-    invalider_cache(user.id)
+    invalider_cache(user_id)
     remis = {t.cle: 0 for t in TYPES_ACCES.values()}
     for t, objet in _acces_remissibles(session, [lot.id for lot in lots]):
+        if objet.chez_locataire and objet.user_id == user_id:
+            continue
         objet.chez_locataire = True
-        objet.user_id = user.id
+        objet.user_id = user_id
         session.add(objet)
         remis[t.cle] += 1
+    return remis
+
+
+def rattacher_lots_declares(
+    user: Utilisateur, lots: list[Lot], session: Session, *, d_office: bool = False
+) -> dict[str, int]:
+    """Rattache le locataire à ces lots — déjà vérifiés comme proposés — et lui en remet les badges.
+
+    `d_office` : c'est la validation du compte qui l'a fait, pas sa réponse
+    (`rattacher_d_office`). Ne committe pas : l'appelant le fait.
+    """
+    remis = lier_locataire(session, user.id, lots)
 
     numeros = ", ".join(lot.numero for lot in lots)
     #  Des IDENTIFIANTS, jamais un nom : le journal ne porte aucune donnée
@@ -142,16 +177,108 @@ def rattacher_lots_declares(user: Utilisateur, lots: list[Lot], session: Session
         "rattachement_declare",
         acteur_id=user.id,
         cible_id=user.id,
-        detail="lots " + ",".join(str(lot.id) for lot in lots),
+        detail="lots " + ",".join(str(lot.id) for lot in lots) + (" d'office" if d_office else ""),
     )
+    qui = nom_affiche(user.prenom, user.nom)
+    if d_office:
+        titre = "Locataire rattaché à la validation de son compte"
+        phrase = f"{qui} a été rattaché d'office aux lots {numeros} de {user.nom_proprietaire}"
+    else:
+        titre = "Locataire rattaché sur sa déclaration"
+        phrase = f"{qui} s'est déclaré locataire des lots {numeros} de {user.nom_proprietaire}"
     prevenir_gestionnaire(
         session,
-        "Locataire rattaché sur sa déclaration",
-        f"{nom_affiche(user.prenom, user.nom)} s'est déclaré locataire des lots {numeros} "
-        f"de {user.nom_proprietaire}, d'après le fichier des lots, et en a reçu les badges. "
-        "À défaire si la déclaration est fausse.",
+        titre,
+        f"{phrase}, d'après le fichier des lots, et en a reçu les badges. À défaire si c'est faux.",
     )
     return {"lots": len(lots), **remis}
+
+
+def _deja_loue(session: Session, lot_ids: list[int], user_id: int) -> bool:
+    """Un de ces lots a-t-il déjà un AUTRE locataire — lien actif ou bail en cours ?"""
+    autre = session.exec(
+        select(UserLot).where(
+            UserLot.lot_id.in_(lot_ids),  # type: ignore[union-attr]
+            UserLot.user_id != user_id,
+            UserLot.type_lien == TypeLien.locataire,
+            UserLot.actif == True,  # noqa: E712
+        )
+    ).first()
+    bail = session.exec(
+        select(LocationBail).where(
+            LocationBail.lot_id.in_(lot_ids),  # type: ignore[union-attr]
+            LocationBail.statut != StatutBail.termine,
+        )
+    ).first()
+    return autre is not None or bail is not None
+
+
+def rattacher_d_office(user: Utilisateur, session: Session) -> int:
+    """À la validation du compte : la déclaration se fait seule quand rien n'est ambigu.
+
+    ## Pourquoi (signalé le 27/10/2026)
+
+    Les questions de « Mes lots » attendaient la réponse du locataire, qui ne
+    venait pas : les quatre derniers locataires sont restés sans lot ni badge
+    jusqu'à un rattachement à la main — que la règle des noms aurait trouvé à
+    l'identique. Arbitré : quand le fichier des lots ne désigne qu'UN
+    appartement, le locataire est rattaché d'office à tout ce que ce
+    copropriétaire possède (appartement, caves, parkings), avec leurs badges.
+
+    Restent aux questions : plusieurs appartements, aucun, ou un lot déjà loué à
+    un autre (lien actif ou bail en cours) — on ne retire rien à personne.
+    Rend le nombre de lots rattachés. Ne committe pas.
+    """
+    proposes = lots_proposes(user, session)
+    if len(proposes["appartement"]) != 1:
+        return 0
+    lots = [lot for n in NATURES for lot in proposes[n]]
+    if _deja_loue(session, [lot.id for lot in lots], user.id):
+        return 0
+    rattacher_lots_declares(user, lots, session, d_office=True)
+    return len(lots)
+
+
+def remettre_badges_manquants(user: Utilisateur, session: Session) -> dict[str, int]:
+    """Un locataire déjà lié à ses lots, sans bail : les badges qu'il n'a pas encore en main.
+
+    Le rattrapage de « Relancer l'appariement » (#2267) : avant la porte
+    unique, un lien posé à la main ou par le bailleur laissait les badges chez
+    le propriétaire. Un lot sous bail en cours n'est pas touché — c'est le bail
+    qui remet les siens (`acces_bail`). Ne committe pas.
+    """
+    if valeur(user.statut) != StatutUtilisateur.locataire.value:
+        return {}
+    sous_bail = {
+        b.lot_id
+        for b in session.exec(
+            select(LocationBail).where(
+                LocationBail.locataire_id == user.id, LocationBail.statut != StatutBail.termine
+            )
+        ).all()
+    }
+    lot_ids = [
+        ul.lot_id
+        for ul in session.exec(
+            select(UserLot).where(
+                UserLot.user_id == user.id,
+                UserLot.type_lien == TypeLien.locataire,
+                UserLot.actif == True,  # noqa: E712
+            )
+        ).all()
+        if ul.lot_id not in sous_bail
+    ]
+    if not lot_ids:
+        return {}
+    lots = session.exec(select(Lot).where(Lot.id.in_(lot_ids))).all()  # type: ignore[union-attr]
+    remis = lier_locataire(session, user.id, list(lots))
+    if any(remis.values()):
+        journaliser_securite(
+            "rattachement_declare",
+            cible_id=user.id,
+            detail="badges remis sur les lots " + ",".join(str(i) for i in sorted(lot_ids)),
+        )
+    return remis
 
 
 def rendre_acces_declares(session: Session, user_id: int, lot_id: int) -> None:
@@ -177,7 +304,10 @@ def rendre_acces_declares(session: Session, user_id: int, lot_id: int) -> None:
 __all__ = [
     "NATURES",
     "acces_des_lots",
+    "lier_locataire",
     "lots_proposes",
+    "rattacher_d_office",
     "rattacher_lots_declares",
+    "remettre_badges_manquants",
     "rendre_acces_declares",
 ]

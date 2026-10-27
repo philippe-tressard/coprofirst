@@ -21,7 +21,7 @@
  * 🔴 `standards/02` §4 bis : quand deux implémentations coexistent, on retient
  * **la plus disante**. C'est elle qui est ici, et les deux écrans l'obtiennent.
  */
-import { admin as adminApi, type CompteTraite, type User } from '$lib/api';
+import { admin as adminApi, type CompteTraite, type ResultatAutoMatch, type User } from '$lib/api';
 import { nomAffiche } from '$lib/noms';
 
 /** Un message à afficher, et le ton sur lequel le dire. */
@@ -57,6 +57,8 @@ export function annonceValidation(reponse: CompteTraite, utilisateur: CompteAVal
 			texte: `Compte activé — ⚠️ Copropriétaire aidé(e) « ${nom} » non trouvé(e). Affectation manuelle requise.`,
 		};
 	}
+	const locataire = annonceLocataire(auto, utilisateur?.statut);
+	if (locataire) return { ton: locataire.ton, texte: `Compte activé — ${locataire.texte}` };
 	const resolus = auto?.lots_resolus ?? 0;
 	if (resolus > 0) {
 		return {
@@ -75,6 +77,37 @@ export function annonceValidation(reponse: CompteTraite, utilisateur: CompteAVal
 		return { ton: 'warning', texte: "Compte activé — ⚠️ Aucun lot trouvé dans l'import." };
 	}
 	return { ton: 'success', texte: 'Compte activé.' };
+}
+
+/**
+ * Ce que l'appariement a fait d'un LOCATAIRE — `null` pour tout autre statut.
+ *
+ * Lue par la validation ET par « Relancer l'appariement » : un locataire resté
+ * sans lot se taisait, et l'administration le rattachait à la main sans savoir
+ * pourquoi (#2267).
+ */
+export function annonceLocataire(
+	auto: Partial<ResultatAutoMatch> | undefined,
+	statut: string | undefined,
+): Annonce | null {
+	if (statut !== 'locataire' || !auto) return null;
+	const office = auto.lots_d_office ?? 0;
+	if (office > 0) {
+		return {
+			ton: 'success',
+			texte: `rattaché d'office à ${office} lot(s) du fichier des lots, badges remis.`,
+		};
+	}
+	const badges = auto.badges_remis ?? 0;
+	if (badges > 0) return { ton: 'success', texte: `${badges} badge(s) de ses lots remis.` };
+	if ((auto.baux ?? 0) > 0 || (auto.rattache ?? 0) > 0) {
+		return { ton: 'success', texte: 'rattaché à son bail ou à son bailleur.' };
+	}
+	return {
+		ton: 'warning',
+		texte:
+			'⚠️ aucun lot désigné sans ambiguïté : il le déclarera dans « Mes lots », ou à rattacher à la main.',
+	};
 }
 
 /** Ce que l'accueil d'un nouvel arrivant déclenche — dit en toutes lettres. */

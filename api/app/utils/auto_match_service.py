@@ -329,6 +329,7 @@ def auto_match_pour_utilisateur(user, session: Session) -> dict:
       3. tc        → auto-link lot via UserLot (SEULEMENT si propriétaire a des lots)
       4. vigik     → auto-link lot via UserLot (SEULEMENT si propriétaire a des lots)
       5. baux      → lie le locataire aux baux créés par email (si locataire)
+      6. bailleur, puis fichier des lots → rattache le locataire sans bail (#1136, #2267)
 
     RÈGLE CRITIQUE pour propriétaires/bailleures :
       - Si lots_resolus = 0 ET c'est un copropriétaire/bailleur/mandataire
@@ -370,6 +371,12 @@ def auto_match_pour_utilisateur(user, session: Session) -> dict:
     from app.utils.rattachement_bailleur import rattacher_au_bailleur
 
     rattache = 0 if baux else rattacher_au_bailleur(user, session)
+    #  Sans bailleur inscrit, le fichier des lots rattache d'office (#2267).
+    from app.utils.rattachement_locataire import rattacher_d_office, remettre_badges_manquants
+
+    lots_d_office = 0 if baux or rattache else rattacher_d_office(user, session)
+    #  Un locataire déjà lié à la main reçoit les badges qui lui manquent.
+    badges_remis = sum(remettre_badges_manquants(user, session).values())
     annuaire = _auto_link_annuaire(user, session)
     return {
         "lots": lots,
@@ -378,9 +385,18 @@ def auto_match_pour_utilisateur(user, session: Session) -> dict:
         "vigik": vigik,
         "baux": baux,
         "rattache": rattache,
+        "lots_d_office": lots_d_office,
+        "badges_remis": badges_remis,
         "annuaire_cs": annuaire["cs"],
         "annuaire_syndic": annuaire["syndic"],
-        "total": lots + tc + vigik + baux + rattache + annuaire["cs"] + annuaire["syndic"],
+        "total": lots
+        + tc
+        + vigik
+        + baux
+        + rattache
+        + lots_d_office
+        + annuaire["cs"]
+        + annuaire["syndic"],
     }
 
 
