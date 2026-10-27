@@ -85,6 +85,19 @@
 	 *   ⚠️ Comparer à vide et non à « renseigné » : c'est la nuance qui a fait
 	 *   que rien ne pliait à la première écriture (21/09/2026). */
 	$: resume = debut ? `à partir du ${fmtDate(debut)}` : 'sans date';
+
+	/**  🔴 Une date saisie SANS l'heure (ou l'inverse) rend `''` et pose
+	 *   `validity.badInput` : le navigateur refuse alors l'envoi du formulaire en
+	 *   silence — aucun message, le bouton « Enregistrer » semble mort (signalé le
+	 *   27/10/2026, TK-687841). On le DIT, sous le champ, dès la saisie.
+	 *   Lu sur l'élément, jamais sur `debut` : la valeur liée est vide dans ce cas,
+	 *   et le navigateur n'émet aucun `input` tant que la valeur reste vide — d'où
+	 *   `invalid`, que l'envoi bloqué déclenche. */
+	const MESSAGE_INCOMPLET =
+		'Date incomplète : renseignez le jour, le mois, l’année, puis l’heure et les minutes.';
+	let debutIncomplet = false;
+	let finIncomplete = false;
+	const incomplet = (e: Event) => (e.currentTarget as HTMLInputElement).validity.badInput;
 </script>
 
 <SectionFormulaire
@@ -99,11 +112,35 @@
 	<div class="quand-grille">
 		<div class="field">
 			<label for="{idPrefixe}-debut">Début</label>
-			<input id="{idPrefixe}-debut" type="datetime-local" bind:value={debut} />
+			<input
+				id="{idPrefixe}-debut"
+				type="datetime-local"
+				bind:value={debut}
+				aria-invalid={debutIncomplet ? 'true' : undefined}
+				aria-describedby={debutIncomplet ? `${idPrefixe}-debut-erreur` : undefined}
+				on:input={(e) => (debutIncomplet = incomplet(e))}
+				on:change={(e) => (debutIncomplet = incomplet(e))}
+				on:invalid={() => (debutIncomplet = true)}
+			/>
+			{#if debutIncomplet}
+				<p class="quand-erreur" id="{idPrefixe}-debut-erreur" role="alert">{MESSAGE_INCOMPLET}</p>
+			{/if}
 		</div>
 		<div class="field">
 			<label for="{idPrefixe}-fin">Fin</label>
-			<input id="{idPrefixe}-fin" type="datetime-local" bind:value={fin} />
+			<input
+				id="{idPrefixe}-fin"
+				type="datetime-local"
+				bind:value={fin}
+				aria-invalid={finIncomplete ? 'true' : undefined}
+				aria-describedby={finIncomplete ? `${idPrefixe}-fin-erreur` : undefined}
+				on:input={(e) => (finIncomplete = incomplet(e))}
+				on:change={(e) => (finIncomplete = incomplet(e))}
+				on:invalid={() => (finIncomplete = true)}
+			/>
+			{#if finIncomplete}
+				<p class="quand-erreur" id="{idPrefixe}-fin-erreur" role="alert">{MESSAGE_INCOMPLET}</p>
+			{/if}
 		</div>
 	</div>
 	<p class="quand-aide">
@@ -121,6 +158,11 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 		gap: 0.75rem;
+	}
+	.quand-erreur {
+		margin: 0.3rem 0 0;
+		font-size: var(--fs-sm);
+		color: var(--color-danger);
 	}
 	.quand-aide {
 		margin: 0.55rem 0 0;
