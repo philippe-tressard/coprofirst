@@ -47,9 +47,6 @@
 	import { marquerDonneesAffichees, trackTabView } from '#lib/telemetry.ts';
 
 	//  Onglets
-	// 'sauvegardes' retiré le 02/08/2026 : ce bloc n'était accessible par AUCUN
-	// bouton et dupliquait, dans une version divergente (accents perdus), celui de
-	// « Paramétrage site ». Les deux vivent désormais dans le sous-onglet Maintenance.
 	//  🔴 La liste des onglets vit dans `#lib/pages-roles.ts` (page `admin`) et
 	//  NULLE PART AILLEURS, depuis le 01/10/2026 : déclarés comme ceux des autres
 	//  pages, ils se renomment et se décrivent dans « Descriptif pages », et

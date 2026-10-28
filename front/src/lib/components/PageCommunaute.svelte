@@ -84,19 +84,12 @@
 
 	//  🔴 La partition courants / Archives est portée par `ListeEtArchives`, sur
 	//  le `s.archivee` que le SERVEUR calcule (`app/utils/archivage.py`, #515) :
-	//  30 jours après la date de clôture, délai réglable en administration. La
-	//  recalculer ici en ferait une seconde règle — c'est exactement ce que #468 a
-	//  retiré pour `cloture`, que la liste comparait à l'heure LOCALE du navigateur
-	//  quand le serveur date en UTC.
+	//  la recalculer ici en ferait une seconde règle (délai réglable en admin).
 	let sondagesLoading = true;
 	let showFormSondage = false;
 
-	//  « Ce sondage est-il clos ? » n'est PLUS calculé ici : le serveur le dit dans
-	//  `s.cloture`, par la même `sondage_clos()` que la fiche, le vote et le fil
-	//  (#468). La règle locale comparait `cloture_le` à l'heure LOCALE du
-	//  navigateur quand le serveur date en UTC — un sondage clôturant à minuit
-	//  était clos ou non selon le fuseau du lecteur. Un écran ne tranche pas ce
-	//  genre de question (`ux-patterns` §16).
+	//  « Clos ? » se lit dans `s.cloture`, que le SERVEUR calcule (#468) : comparer
+	//  `cloture_le` à l'heure du navigateur le rendait fonction du fuseau (§16).
 
 	//  La correction d'un sondage (#783). L'état vit ICI, pas dans
 	//  `ListeSondages` : celui-ci est rendu DEUX fois (courants et Archives), et
