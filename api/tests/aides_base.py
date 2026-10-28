@@ -56,11 +56,26 @@ def moteur_de_test(*, schema: bool = True, cles_etrangeres: bool = False):
     moteur, retirer = schema_jetable(url_des_tests(), cles_etrangeres=cles_etrangeres)
     _A_RETIRER.append(retirer)
     if schema:
-        #  `checkfirst=False` : le schéma est NEUF, aucune table n'y existe. La
-        #  vérification coûtait une requête au catalogue par table — 89 —, et
-        #  ces requêtes ralentissent avec chaque schéma resté sur le serveur.
-        SQLModel.metadata.create_all(moteur, checkfirst=False)
+        creer_les_tables(moteur)
     return moteur
+
+
+def creer_les_tables(moteur) -> None:
+    """Toutes les tables de l'application dans la base de `moteur`, NEUVE.
+
+    `checkfirst=False` : le schéma est NEUF, aucune table n'y existe. La
+    vérification coûtait une requête au catalogue par table — 89 —, et
+    ces requêtes ralentissent avec chaque schéma resté sur le serveur.
+
+    🔴 **En AUTOCOMMIT : chaque instruction est sa propre transaction.** Dans une
+    seule, `create_all` gardait 1 465 verrous jusqu'à son `commit` ; quatre workers
+    qui posaient leur schéma au même instant épuisaient la table partagée du serveur
+    — « increase max_locks_per_transaction » (#2279). Rien n'est perdu : un schéma
+    jetable à moitié posé est retiré avec son test.
+    """
+    SQLModel.metadata.create_all(
+        moteur.execution_options(isolation_level="AUTOCOMMIT"), checkfirst=False
+    )
 
 
 def adresse_de_test() -> tuple[str, Callable[[], None]]:

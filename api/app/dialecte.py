@@ -108,15 +108,56 @@ def url_dans_schema(url, nom: str, *, cles_etrangeres: bool = True) -> URL:
     return make_url(url).update_query_dict({"options": options})
 
 
+#: Tables retirées ou créées par instruction. 🔴 Un verrou se prend par table ET par
+#: index, et se garde jusqu'à la fin de la TRANSACTION : `DROP SCHEMA … CASCADE` d'un
+#: schéma de 94 tables en tenait 1 655 d'un coup, `create_all` dans une transaction
+#: 1 465 — mesuré le 29/10/2026 (#2279). La table des verrous du serveur est PARTAGÉE
+#: (`max_locks_per_transaction` × connexions = 6 400 par défaut) : quatre workers qui
+#: retiraient un schéma au même instant l'épuisaient, « mémoire partagée épuisée ».
+#: Dix tables par instruction, chacune dans sa transaction (AUTOCOMMIT) : ~170 verrous.
+TABLES_PAR_LOT = 10
+
+
+def par_lots(elements, taille: int = TABLES_PAR_LOT) -> list[list]:
+    """`elements` coupés en lots de `taille` au plus, dans l'ordre. PURE."""
+    elements = list(elements)
+    return [elements[i : i + taille] for i in range(0, len(elements), taille)]
+
+
+def instructions_de_retrait(nom: str, tables) -> list[str]:
+    """Les instructions qui retirent le schéma `nom`, chacune à passer SEULE. PURE.
+
+    Les tables d'abord, par lots (`CASCADE` : une clé qui pointe hors du lot tombe
+    avec elle), puis le schéma — qui ne porte plus que ses types et ses séquences.
+    """
+    lots = [
+        "DROP TABLE IF EXISTS " + ", ".join(f'"{nom}"."{t}"' for t in lot) + " CASCADE"
+        for lot in par_lots(sorted(tables))
+    ]
+    return [*lots, f'DROP SCHEMA IF EXISTS "{nom}" CASCADE']
+
+
+def _retirer_schema_en_lots(c, nom: str) -> None:
+    """Retire `nom` par `instructions_de_retrait`. `c` DOIT être en AUTOCOMMIT : une
+    seule transaction autour des lots rendrait la table des verrous à ce qu'elle était."""
+    #  Une connexion restée ouverte bloquerait le retrait : 10 s, puis
+    #  l'appelant apprend l'échec plutôt que de figer.
+    c.execute(text("SET lock_timeout = '10s'"))
+    tables = (
+        c.execute(text("SELECT tablename FROM pg_tables WHERE schemaname = :s"), {"s": nom})
+        .scalars()
+        .all()
+    )
+    for instruction in instructions_de_retrait(nom, tables):
+        c.execute(text(instruction))  # noqa: S608 — identifiants relus au catalogue
+
+
 def retirer_schema(url, nom: str) -> None:
     """Retire le schéma `nom` et tout ce qu'il contient."""
     admin = _creer_moteur(url, isolation_level="AUTOCOMMIT", poolclass=NullPool)
     try:
         with admin.connect() as c:
-            #  Une connexion restée ouverte bloquerait le retrait : 10 s, puis
-            #  l'appelant apprend l'échec plutôt que de figer.
-            c.execute(text("SET lock_timeout = '10s'"))
-            c.execute(text(f'DROP SCHEMA IF EXISTS "{nom}" CASCADE'))  # noqa: S608
+            _retirer_schema_en_lots(c, nom)
     finally:
         admin.dispose()
 
@@ -152,8 +193,7 @@ def retirer_schemas_jetables_perimes(url, *, plus_vieux_que: timedelta) -> int:
                 heure = heure_du_schema_jetable(nom)
                 if heure is None or heure >= limite:
                     continue
-                c.execute(text("SET lock_timeout = '10s'"))
-                c.execute(text(f'DROP SCHEMA IF EXISTS "{nom}" CASCADE'))  # noqa: S608 — nom relu au motif
+                _retirer_schema_en_lots(c, nom)  # nom relu au motif
                 retires += 1
     finally:
         admin.dispose()
