@@ -401,18 +401,23 @@ c::t3	WeasyPrint absent
     t "parité sur le ci.yml réel (${p% *} écrits)" "${p#* }" "${p% *}"
     #  Le critère de #1722 doit reconnaître AU MOINS une étape du vrai fichier :
     #  sinon le garde-fou du node_modules partagé ne garde plus rien.
-    local corps_vite=0 bloc=""
+    #  De même pour pytest : sans lui, le pré-vol ne sonde ni la base des tests
+    #  ni ses orphelins — muet depuis que pytest passe par mesure-postgresql.sh
+    #  (#2223), trouvé le 28/10 (#2270).
+    local corps_vite=0 corps_pytest=0 bloc=""
     while IFS= read -r l; do
       case "$l" in
         '@@RUN') bloc="" ;;
         '@@END') [ "$(printf '%s
-' "$bloc" | ci_sert_par_vite)" = oui ] && corps_vite=$((corps_vite+1)) ;;
+' "$bloc" | ci_sert_par_vite)" = oui ] && corps_vite=$((corps_vite+1))
+                 [ "$(printf '%s\n' "$bloc" | ci_lance_pytest)" = oui ] && corps_pytest=$((corps_pytest+1)) ;;
         '@@'*) ;;
         *) bloc="$bloc$l"$'
 ' ;;
       esac
     done < <(ci_extraire < .github/workflows/ci.yml)
     t "le ci.yml réel a une étape servie par Vite" "$([ "$corps_vite" -ge 1 ] && echo oui || echo "aucune")" "oui"
+    t "le ci.yml réel a une étape qui lance pytest" "$([ "$corps_pytest" -ge 1 ] && echo oui || echo "aucune")" "oui"
   else
     echo "?     parité sur le ci.yml réel — fichier absent, non mesuré"
   fi

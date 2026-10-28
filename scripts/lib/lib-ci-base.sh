@@ -26,8 +26,10 @@ CI_BASE_TESTS_REPARER="net start postgresql-17 (invite en administrateur) — ba
 #  de commande ; jamais un commentaire, jamais l'installation (`pip install
 #  pytest`, qui n'est d'ailleurs jamais rejouée). (PURE) Corps sur stdin → oui | non
 ci_lance_pytest() {
+  #  …ou par son lanceur, `mesure-postgresql.sh` (#2223) : la commande de ci.yml
+  #  depuis le 24/10, que ce motif ne voyait plus (#2270).
   grep -v '^[[:space:]]*#' \
-    | grep -Eq '(^|[;&|(]|then|do)[[:space:]]*(python[0-9.]*[[:space:]]+-m[[:space:]]+)?pytest([[:space:]]|$)' \
+    | grep -Eq '(^|[;&|(]|then|do)[[:space:]]*((python[0-9.]*[[:space:]]+-m[[:space:]]+)?pytest([[:space:]]|$)|bash[[:space:]]+[^[:space:]]*/mesure-postgresql\.sh)' \
     && echo oui || echo non
 }
 
@@ -69,6 +71,7 @@ ci_base_cas() {
   t "pytest — la commande de ci.yml"        "$(printf 'pytest tests/ -q\n' | ci_lance_pytest)" "oui"
   t "pytest — par python -m"                "$(printf 'python -m pytest tests/test_x.py -q\n' | ci_lance_pytest)" "oui"
   t "pytest — après un cd"                  "$(printf 'cd api && pytest -q\n' | ci_lance_pytest)" "oui"
+  t "pytest — par son lanceur (#2223)"      "$(printf 'bash ../scripts/ci/mesure-postgresql.sh\n' | ci_lance_pytest)" "oui"
   t "pytest — l'installation n'en est pas"  "$(printf 'pip install pytest\n' | ci_lance_pytest)" "non"
   t "pytest — un commentaire n'en est pas"  "$(printf '# pytest tests/\nruff check .\n' | ci_lance_pytest)" "non"
   t "pytest — un mot voisin n'en est pas"   "$(printf 'bash scripts/ci/pytest-resume.sh\n' | ci_lance_pytest)" "non"
