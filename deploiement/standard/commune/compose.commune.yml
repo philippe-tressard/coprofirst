@@ -15,12 +15,10 @@
 services:
   front:
     environment:
-      #  `ORIGIN` fige l'adresse de chaque page rendue par le serveur (`url.origin`,
-      #  `url.host`) : à plusieurs copropriétés, toutes auraient celle de l'hôte
-      #  commun, et le rendu demanderait sa configuration pour personne (421).
-      #  Vide, adapter-node lit l'hôte dans la requête — celui que Caddy transmet tel
-      #  quel, le même que l'API lit pour résoudre la copropriété (§4.1).
-      - ORIGIN=
+      #  Le front ne fixe aucune adresse (SvelteKit 3 : plus d'`ORIGIN`, #2205) :
+      #  adapter-node lit l'hôte dans la requête — celui que Caddy transmet tel quel,
+      #  le même que l'API lit pour résoudre la copropriété (§4.1). Une adresse figée
+      #  ferait demander sa configuration à l'hôte commun pour toutes (421).
       - HOST_HEADER=host
       #  Le schéma vient du proxy de confiance (tunnel, `trusted_proxies` du
       #  Caddyfile) ; sans l'en-tête, adapter-node suppose `https`.

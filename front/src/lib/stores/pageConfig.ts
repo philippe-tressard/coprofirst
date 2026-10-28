@@ -1,5 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { config as configApi } from '$lib/api';
 import { NOM_SITE_PAR_DEFAUT } from '$lib/configSite';

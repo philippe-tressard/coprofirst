@@ -27,7 +27,6 @@ import ts from 'typescript-eslint';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 import { defineConfig } from 'eslint/config';
-import svelteConfig from './svelte.config.js';
 
 export default defineConfig(
 	// ── Périmètre : ce qui est écrit à la main, jamais ce qui est produit ────────
@@ -83,8 +82,8 @@ export default defineConfig(
 	},
 
 	// ── Fichiers de configuration à la racine ───────────────────────────────────
-	// `vite.config.ts` et `svelte.config.js` sont écrits à la main comme le reste :
-	// ils entrent dans le périmètre. Ajoutés le 20/08/2026 — ils n'étaient couverts
+	// `vite.config.ts` est écrit à la main comme le reste (SvelteKit 3 n'a plus de
+	// `svelte.config.js`, #2205) : il entre dans le périmètre. Ajoutés le 20/08/2026 — ils n'étaient couverts
 	// par AUCUN bloc, donc analysés avec l'analyseur JavaScript par défaut, qui
 	// s'arrête au premier `:` de type. Une erreur d'analyse n'est pas un relevé :
 	// ces fichiers n'étaient tout simplement pas mesurés.
@@ -100,9 +99,9 @@ export default defineConfig(
 	},
 
 	// ── Composants Svelte ───────────────────────────────────────────────────────
-	// `svelteConfig` est passé au parseur pour qu'il connaisse les préprocesseurs et
-	// les alias de SvelteKit ; sans lui, le TypeScript des balises <script lang="ts">
-	// n'est pas compris et le relevé serait faussement vide.
+	// Le parseur lit `lang="ts"` avec `ts.parser` ; il n'a plus de `svelteConfig` à
+	// recevoir (SvelteKit 3 a supprimé `svelte.config.js`, #2205) — Svelte 5 comprend
+	// le TypeScript sans préprocesseur.
 	// `projectService` n'est PAS activé : aucune règle « type-checked » n'est en
 	// service ici, et l'activer coûterait le typage complet du projet à chaque
 	// exécution sans rien mesurer de plus.
@@ -114,7 +113,6 @@ export default defineConfig(
 			parserOptions: {
 				parser: ts.parser,
 				extraFileExtensions: ['.svelte'],
-				svelteConfig,
 			},
 		},
 		rules: {
@@ -203,9 +201,9 @@ export default defineConfig(
 
 			// `no-navigation-without-resolve` (95 signalements) exige `resolve()` autour
 			// des `href` et des `goto()`. Cela ne sert qu'à une application servie sous
-			// un chemin de base ; `svelte.config.js` ne définit AUCUN `paths.base` et le
+			// un chemin de base ; `vite.config.ts` ne définit AUCUN `paths.base` et le
 			// site est servi à la racine.
-			// → À réactiver le jour où un `paths.base` apparaît dans `svelte.config.js`.
+			// → À réactiver le jour où un `paths.base` apparaît dans `vite.config.ts`.
 			'svelte/no-navigation-without-resolve': 'off',
 
 			// `no-irregular-whitespace` (**7** signalements au 29/08/2026, contre 10)

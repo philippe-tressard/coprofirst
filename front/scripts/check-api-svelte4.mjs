@@ -94,6 +94,35 @@ const FORMES = [
 		global: true,
 	},
 	{
+		//  `$app/environment` — renommé `$app/env` par SvelteKit 3 (#2205, lot 3). Le
+		//  module n'existe plus : l'import échoue au build, mais le garde-fou refuse
+		//  le retour avant d'en arriver là.
+		motif: () => /from\s+['"]\$app\/environment['"]/,
+		quoi: '`$app/environment` (renommé `$app/env` en kit 3)',
+		remede: "`import { browser, dev, building, version } from '$app/env'`",
+		global: true,
+	},
+	{
+		//  `$env/dynamic/public` et ses trois frères — dépréciés en kit 3 pour
+		//  `$app/env/public` et `$app/env/private`, qui n'exposent QUE les variables
+		//  déclarées dans `src/env.ts` : une variable absente y vaut `undefined`, sans
+		//  un mot. Le module hérité lit, lui, un espace de noms vide.
+		motif: () => /from\s+['"]\$env\/(?:static|dynamic)\/(?:public|private)['"]/,
+		quoi: '`$env/…` (déprécié en kit 3, retiré en kit 4)',
+		remede: "déclarer la variable dans `src/env.ts`, puis `import { X } from '$app/env/public'`",
+		global: true,
+	},
+	{
+		//  `goto(url, { noScroll, keepFocus })` : réunis en `reset: false` par kit 3 ;
+		//  `invalidateAll` devient `refreshAll`, `replaceState` devient `replace`.
+		//  Une option inconnue de `goto` ne lève rien : elle est ignorée.
+		motif: () => /\b(?:noScroll|keepFocus|invalidateAll)\s*:/,
+		quoi: 'option de `goto` retirée en kit 3 (`noScroll`, `keepFocus`, `invalidateAll`)',
+		remede:
+			"`{ reset: false }` à la place de `noScroll` + `keepFocus` ; `refreshAll` à la place d'`invalidateAll`",
+		global: true,
+	},
+	{
 		//  `$: x = page.params.id` : `page` est un import immuable, le `$:` ne s'y
 		//  abonne pas et la navigation laisse la valeur périmée, sans erreur.
 		//  ESLint ne le voit que si toutes les variables du `$:` sont immuables.

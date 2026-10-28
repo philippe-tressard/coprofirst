@@ -1,5 +1,5 @@
 import { request } from 'node:http';
-import { env } from '$env/dynamic/public';
+import { PUBLIC_API_URL } from '$app/env/private';
 
 /** Le temps laissé à l'API pour répondre au rendu serveur, avant de rendre `{}`. */
 const DELAI_MS = 3000;
@@ -26,7 +26,7 @@ const DELAI_MS = 3000;
  * `{}` : le client prend le relais, et le manifeste se replie sur le nom neutre.
  */
 export async function lireConfigServeur(hote: string): Promise<Record<string, string>> {
-	const apiBase = env.PUBLIC_API_URL;
+	const apiBase = PUBLIC_API_URL;
 	if (!apiBase || !hote) return {};
 	try {
 		return await lireJson(new URL(`${apiBase}/config`), hote);

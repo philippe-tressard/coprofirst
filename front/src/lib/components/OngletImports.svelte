@@ -38,9 +38,9 @@
 	//  Une pastille choisie change l'adresse — jamais l'inverse en boucle : la
 	//  ligne du dessus ne dépend que de l'adresse.
 	$: if (choisie && choisie !== courante) {
-		const params = new URLSearchParams($lieu.url.searchParams);
+		const params = new URLSearchParams($lieu.url.search);
 		params.set('source', choisie);
-		goto(`${$lieu.url.pathname}?${params.toString()}`, { noScroll: true, keepFocus: true });
+		goto(`${$lieu.url.pathname}?${params.toString()}`, { reset: false });
 	}
 </script>
 

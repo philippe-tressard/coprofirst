@@ -60,7 +60,10 @@ services:
       # gravé au build : une même image sert les deux nœuds, et les images
       # viennent de la CI, qui ne sait pas où elles tourneront (#1758).
       - PUBLIC_INSTANCE_ID=${INSTANCE_ID:-}
-      - ORIGIN=${ORIGIN:-http://localhost}
+      # PAS d'ORIGIN pour le front depuis SvelteKit 3 (#2205) : adapter-node 6 ne
+      # la lit plus. L'adresse des pages se déduit de l'en-tête Host que Caddy
+      # transmet tel quel — le nom public sur l'actif, l'IP locale sur le standby —,
+      # sans réglage par rôle. `ORIGIN` du .env reste celui de l'API (#1751).
       - TZ=Europe/Paris
     depends_on:
       - api

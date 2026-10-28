@@ -138,17 +138,13 @@ updates:
       #  lit la FORME d'un artefact se casse à chaque changement de l'outil qui
       #  l'émet ; le comportement prime.
       #
-      #  ── SvelteKit 3 : une migration, lot 3 de #2205 ──────────────────────
-      #  `@sveltejs/kit@3` n'est pas une montée de lock : `svelte.config.js`
-      #  disparaît (options passées au plugin Vite), `$app/stores` est retiré,
-      #  `ORIGIN` d'adapter-node devient `paths.origin` (option de BUILD, alors
-      #  que l'image de la CI sert deux nœuds), les matcheurs de `src/params`
-      #  changent de forme, et le build casse dans `vite-plugin-pwa` (precache
-      #  vide). Le plan chiffré est en commentaire de #2205 (24/10/2026).
-      #  LEVÉE : quand ce lot est livré — c'est lui qui retire aussi les deux
-      #  exceptions d'`audit-exceptions.json`.
-      - dependency-name: "@sveltejs/kit"
-        update-types: ["version-update:semver-major"]
+      #  ── SvelteKit 3 : LEVÉE le 28/10/2026 (#2205, lot 3) ─────────────────
+      #  La règle `ignore` de `@sveltejs/kit` (majeure) a été posée parce que la
+      #  montée n'était pas une montée de lock : `svelte.config.js` disparaît,
+      #  `$app/stores`, `$app/environment` et `$env/*` sont retirés, `ORIGIN`
+      #  d'adapter-node n'existe plus, les matcheurs changent de forme, et le
+      #  build casse dans `vite-plugin-pwa`. Tout cela est fait : la règle ne
+      #  protégeait plus rien et aurait masqué la majeure suivante.
       #
       #  ── Tiptap 2 → 3 : LEVÉE (23/09/2026, #1161) ─────────────────────────
       #  La migration est faite (`@tiptap/*` en ^3.31) : la règle ne protégeait

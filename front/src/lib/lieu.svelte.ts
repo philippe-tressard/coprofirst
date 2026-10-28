@@ -1,3 +1,4 @@
+import type { ReadonlyURL } from '$app/state';
 import type { Readable } from 'svelte/store';
 import { page } from '$app/state';
 
@@ -15,7 +16,7 @@ import { page } from '$app/state';
  * Ce pont tombe avec le dernier `$:` qui s'en sert.
  */
 export interface Lieu {
-	url: URL;
+	url: ReadonlyURL;
 	params: Record<string, string | undefined>;
 }
 

@@ -11,22 +11,13 @@
 		"`npm audit fix` (lock seul), cookie par l'override `cookie: ^0.7.2`. Un troisième",
 		"override, `@humanfs/node: ^0.16.8`, a été posé le 02/09/2026 pour GHSA-p498-v437-472g",
 		"(dépendance transitive d'ESLint, montée de patch, aucune exception nécessaire).",
-		"GHSA-cp6q-959q-f8rh (Tiptap) est LEVÉE le 03/09/2026 : Tiptap 3.31 est monté. L'API a changé sur deux points, tous deux vérifiés et non devinés — `setContent(html, false)` devient `setContent(html, { emitUpdate: false })`, et `Underline` est désormais INCLUS dans StarterKit (constaté en listant les extensions du paquet installé, pas d'après le guide de migration) : l'importer en plus l'aurait chargé deux fois."
+		"GHSA-cp6q-959q-f8rh (Tiptap) est LEVÉE le 03/09/2026 : Tiptap 3.31 est monté. L'API a changé sur deux points, tous deux vérifiés et non devinés — `setContent(html, false)` devient `setContent(html, { emitUpdate: false })`, et `Underline` est désormais INCLUS dans StarterKit (constaté en listant les extensions du paquet installé, pas d'après le guide de migration) : l'importer en plus l'aurait chargé deux fois.",
+		"GHSA-pfhg-q3qv-9q6r et GHSA-27mw-82g8-phjj (SvelteKit) sont LEVÉES le 28/10/2026 : @sveltejs/kit 3.1 est monté (#2205). Le même lot a retiré l'override `cookie: ^0.7.2` (kit 3 dépend de cookie 2 et appelle `parseCookie`, que la 0.7 n'a pas : le serveur plantait à la première requête)."
 	],
 	"exceptions": {
-		"GHSA-pfhg-q3qv-9q6r": {
-			"motif": "Redirection vers un site tiers par la soumission ENRICHIE d'un formulaire (use:enhance). Inatteignable ici : aucun fichier de front/src n'importe $app/forms ni n'emploie use:enhance (mesuré le 24/10/2026, 0 occurrence) — les formulaires passent par le client d'API.",
-			"leveeSi": "@sveltejs/kit monté en 3.x (correctif publié en 3.0.0, montée majeure suivie par #2205)",
-			"revoirLe": "2026-11-23"
-		},
 		"GHSA-gcqx-w48m-w2h4": {
 			"motif": "deepmerge mergeObject() : pollution de prototype d'un objet fusionné. Inatteignable ici : deepmerge n'est tiré que par la CHAÎNE DE CONSTRUCTION (@sveltejs/vite-plugin-svelte et @rollup/plugin-node-resolve, qui fusionnent leurs propres options au build) ; il n'est ni dans front/src, ni dans le serveur construit — 0 fichier de front/build ne le cite (mesuré le 28/10/2026) — et rien n'y fusionne une entrée venue d'un utilisateur.",
-			"leveeSi": "deepmerge corrigé en amont, ou @sveltejs/kit monté en 3.x (montée majeure suivie par #2205)",
-			"revoirLe": "2026-11-23"
-		},
-		"GHSA-27mw-82g8-phjj": {
-			"motif": "XSS par un en-tête cache-control non fiable dans une page PRÉ-RENDUE. Inatteignable ici : aucune page n'est pré-rendue — ni `prerender` dans front/src, ni dans svelte.config.js (mesuré le 24/10/2026, 0 occurrence) ; tout est rendu par l'adaptateur Node.",
-			"leveeSi": "@sveltejs/kit monté en 3.x (correctif publié en 3.0.0, montée majeure suivie par #2205)",
+			"leveeSi": "deepmerge corrigé en amont (@sveltejs/kit 3.1 est monté depuis le 28/10/2026 : l'avis demeure par @sveltejs/vite-plugin-svelte, qui le tire encore)",
 			"revoirLe": "2026-11-23"
 		}
 	}

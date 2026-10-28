@@ -14,7 +14,7 @@ Les références canoniques sont dans `.claude/skills/` (voir le tableau ci-dess
 
 - **Backend** : FastAPI + SQLModel + Alembic (`api/`) — **PostgreSQL 17**, seul moteur : en production (DI-7, répliqué vers le standby), sur une réplique, et pour les tests (CI et poste, `TESTS_BASE_URL`)
 - **Documents imprimables** : HTML/CSS → PDF via WeasyPrint (libs système dans `api/Dockerfile`)
-- **Frontend** : SvelteKit v2 + TypeScript strict + Vite + PWA (`front/`)
+- **Frontend** : SvelteKit v3 + TypeScript strict + Vite 8 + PWA (`front/`)
 - **Infra** : Docker Compose + Caddy + Raspberry Pi 5
 - **Langue** : français exclusif (interface + nommage des champs)
 

@@ -123,8 +123,10 @@ function lireSources(dossier) {
 	return textes;
 }
 
-/**  Les écrans : un nœud de route de SvelteKit par fichier `nodes/N.js`. */
-const estEcran = (cle) => /generated\/client[^/]*\/nodes\/\d+\.js$/.test(cle);
+/**  Les écrans : un nœud de route de SvelteKit par fichier `nodes/N.js`.
+ *   SvelteKit 3 les range sous `generated/build/client-optimized/`, SvelteKit 2
+ *   sous `generated/client-optimized/` : le contrôle lit les deux (#2205). */
+const estEcran = (cle) => /generated\/(?:build\/)?client[^/]*\/nodes\/\d+\.js$/.test(cle);
 
 /**  La route d'un nœud, lue dans le fichier que SvelteKit génère pour lui —
  *   `nodes/19.js` ne dit rien à qui lit l'échec. */

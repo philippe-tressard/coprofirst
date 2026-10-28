@@ -36,7 +36,7 @@
 	import { PAGES } from '$lib/pages';
 	import { safeHtml } from '$lib/sanitize';
 	import { stripHtml } from '$lib/utils';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
 	import { droitsOnglet, authResolue } from '$lib/stores/auth';
 

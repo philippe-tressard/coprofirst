@@ -1886,7 +1886,7 @@ jobs:
         working-directory: front
         run: npm run lint:poids-ouverture
 
-      # 🔒 `script-src` en mode BLOQUANT tient à SIX LIGNES de `svelte.config.js`
+      # 🔒 `script-src` en mode BLOQUANT tient à SIX LIGNES de `vite.config.ts` (SvelteKit 3 : l'ancien `svelte.config.js` n'est plus lu)
       # (#770, 06/09/2026) : c'est SvelteKit qui émet `script-src 'self'
       # 'sha256-…'`, parce que lui seul connaît le contenu de ses scripts
       # d'hydratation. Rien n'obligeait ces lignes à rester là.
