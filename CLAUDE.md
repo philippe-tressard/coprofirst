@@ -944,7 +944,12 @@ lui ; `--tout` joue tout,
 précède dans leur couloir), `--venv` construit une fois par jeu de dépendances un venv
 aligné sur le lot (`requirements-dev` et chaque `pip install` de `ci.yml`), réutilisé
 par tous les worktrees. Règles pures et exceptions de couloir déclarées :
-`scripts/lib/lib-ci-orchestration.sh` ; pré-vol : `lib-ci-prevol.sh`. Chaque rejeu,
+`scripts/lib/lib-ci-orchestration.sh` ; pré-vol : `lib-ci-prevol.sh`.
+🔒 **Un rejeu ne se fige plus en silence** (#2270) : le pré-vol refuse un arbre pytest
+**orphelin** (lanceur mort, il tient la base des tests) et donne la commande qui l'arrête ;
+une étape au-delà de son plafond (4 × sa durée mesurée, 20 min au moins) **et** muette
+depuis 15 min est arrêtée, INCONNU, avec `pg_stat_activity` dans sa sortie
+(`scripts/lib/lib-ci-gel.sh`). Chaque rejeu,
 complet ou non, écrit une ligne par étape et un bilan dans `rejeu-durees.log`
 (répertoire git commun) : `python scripts/poste/mesurer-rejeux.py [--jours N]` en sort
 la part du temps passée dans des rejeux non verts, les dix étapes les plus longues et

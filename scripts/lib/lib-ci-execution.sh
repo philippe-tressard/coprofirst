@@ -71,9 +71,16 @@ ci_executer_etape() {          # $1 = dossier de l'étape
   t0=$EPOCHSECONDS
   #  Les tests SAUTÉS se nomment (#1734) : le crochet de `api/tests/conftest.py`
   #  les consigne dans ce fichier — un par étape, les étapes tournant ensemble.
-  REJEU_SAUTS="$d/sauts" ci_dans_etape "$(<"$d/rep")" "$d/env" bash -e "$d/corps" > "$d/sortie" 2>&1
+  #  L'étape tourne sous surveillance : longue ET muette, elle est figée (#2270).
+  REJEU_SAUTS="$d/sauts" ci_dans_etape "$(<"$d/rep")" "$d/env" bash -e "$d/corps" > "$d/sortie" 2>&1 &
+  local pid_etape=$! pid_veille
+  ci_surveiller_etape "$d" "$pid_etape" > /dev/null 2>&1 &
+  pid_veille=$!
+  wait "$pid_etape"
   code=$?
+  kill "$pid_veille" 2>/dev/null
   verdict=$(ci_requalifier "$code" < "$d/sortie")
+  [ -s "$d/gel" ] && verdict="INCONNU $(<"$d/gel")"
   relance=$(ci_relancer_si_cause_poste "$d" "$code")
   [ -n "$relance" ] && { verdict=OK; ci_tests_tombes < "$d/sortie" | grep -c . > "$d/nb_relances"; }
   duree=$(( EPOCHSECONDS - t0 ))
