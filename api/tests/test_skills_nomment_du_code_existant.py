@@ -20,7 +20,7 @@ une table (`FAMILLES`), un seul balayage, et tous les écarts nommés d'un coup 
 |---|---|---|
 | `Quelquechose.svelte` | les skills du front | un fichier de ce nom sous `front/src` |
 | `lint:quelquechose` | les skills du front | un script de ce nom dans `front/package.json` |
-| `$lib/x.ts` | les skills du front | le fichier correspondant |
+| `#lib/x.ts` | les skills du front | le fichier correspondant |
 | `test_x.py`, ou `` `test_x` `` | **toutes** les skills et `CLAUDE.md` | un fichier de `api/tests/` — ou, sans extension, une fonction de test |
 
 🔴 La quatrième est née le 30/09/2026 : une skill ou `CLAUDE.md` cite un test
@@ -185,7 +185,7 @@ FAMILLES = (
     Famille(
         "module de lib",
         _documents_front,
-        re.compile(r"\$lib/([a-z0-9_/-]+\.ts)\b"),
+        re.compile(r"#lib/([a-z0-9_/-]+\.ts)\b"),
         lambda nom: (_FRONT / "src" / "lib" / nom).exists(),
     ),
     #  🔴 Deux formes : `test_x.py` (le fichier, où qu'il soit écrit —

@@ -1,4 +1,4 @@
-"""Comment un RÔLE et un STATUT s'écrivent — jumeau serveur de `$lib/roles.ts`.
+"""Comment un RÔLE et un STATUT s'écrivent — jumeau serveur de `#lib/roles.ts`.
 
 ## 🔴 Pourquoi ce module (#801, 06/09/2026)
 

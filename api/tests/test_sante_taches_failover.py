@@ -218,7 +218,7 @@ def test_chaque_etat_rendu_par_l_api_a_son_libelle_a_l_ecran():
     """Un état sans libellé s'affiche en clair (« pas_actif ») et en ROUGE.
 
     L'écran retombe sur `badge-red` pour une clé inconnue : un état neutre ajouté
-    ici sans son entrée dans `$lib/taches.ts` recréerait le faux rouge qu'il
+    ici sans son entrée dans `#lib/taches.ts` recréerait le faux rouge qu'il
     supprime. Les états se lisent dans `_GRAVITE`, la table qui les ordonne.
     """
     source = _TACHES_TS.read_text(encoding="utf-8")

@@ -473,7 +473,7 @@ def anomalies_a_signaler(taches: list[dict]) -> list[str]:
     """PURE. Les entrées de la synthèse → les lignes du courriel de 06:00.
 
     Le nom de la tâche est son identifiant, et l'état sa clé : leurs libellés
-    vivent dans le front (`$lib/taches.ts`), et les recopier ici ferait deux
+    vivent dans le front (`#lib/taches.ts`), et les recopier ici ferait deux
     sources. La dernière ligne envoie à l'écran, qui les nomme.
     """
     lignes = []

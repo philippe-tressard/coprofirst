@@ -34,9 +34,9 @@ Get-ChildItem -Recurse -Filter "*.py" | Where-Object { $_.FullName -notmatch "__
 Get-ChildItem -Recurse -Filter "*.svelte" | Select-String -Pattern "@html"
 ```
 
-**Règle** : Tout `{@html}` DOIT passer par une fonction de `$lib/sanitize.ts` — elles sont **trois** (`safeHtml`, `safeRichContent`, `safeDescription`), toutes adossées à DOMPurify. Vérifié en CI par `npm run lint:html` (`CLAUDE.md`, règle front n° 1), qui exige que le nom vienne de l'**import** : une fonction locale homonyme ne prouve rien (#429).
+**Règle** : Tout `{@html}` DOIT passer par une fonction de `#lib/sanitize.ts` — elles sont **trois** (`safeHtml`, `safeRichContent`, `safeDescription`), toutes adossées à DOMPurify. Vérifié en CI par `npm run lint:html` (`CLAUDE.md`, règle front n° 1), qui exige que le nom vienne de l'**import** : une fonction locale homonyme ne prouve rien (#429).
 **Exceptions** : déclarées dans `front/scripts/check-html.mjs` (`EXCEPTIONS`), avec leur raison — et le contrôle **échoue** si l'une cesse de servir. Ne pas les recopier ici : cette ligne n'en nommait qu'une sur deux, et un audit qui la suivait signalait la seconde comme un écart qui n'en était pas un (#1051).
-**Fix** : `import { safeDescription } from '$lib/sanitize'` → `{@html safeDescription(contenu)}` — et jamais un helper local, fût-il correct : c'est ainsi que trois copies de `safeDescription` ont coexisté.
+**Fix** : `import { safeDescription } from '#lib/sanitize.ts'` → `{@html safeDescription(contenu)}` — et jamais un helper local, fût-il correct : c'est ainsi que trois copies de `safeDescription` ont coexisté.
 
 Configuration DOMPurify — **lire `front/src/lib/sanitize.ts`**, jamais cette page :
 la liste recopiée ici avait déjà perdu `details` et `summary`, ajoutés le 17/09/2026

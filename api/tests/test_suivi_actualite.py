@@ -236,7 +236,7 @@ def test_ouvert_suit_la_regle_de_l_actualite():
 
 
 def test_l_ecran_propose_les_memes_trois_etats():
-    """Le miroir d'écran (`$lib/tickets`) ne diverge pas du serveur."""
+    """Le miroir d'écran (`#lib/tickets`) ne diverge pas du serveur."""
     import pathlib
     import re
 
@@ -244,5 +244,5 @@ def test_l_ecran_propose_les_memes_trois_etats():
         pathlib.Path(__file__).resolve().parents[2] / "front" / "src" / "lib" / "tickets.ts"
     ).read_text(encoding="utf-8")
     trouve = re.search(r"ETATS_SUIVI_ACTUALITE[^=]*=\s*\[([^\]]*)\]", source)
-    assert trouve, "`ETATS_SUIVI_ACTUALITE` a quitté `$lib/tickets` : ce contrôle ne lit plus rien"
+    assert trouve, "`ETATS_SUIVI_ACTUALITE` a quitté `#lib/tickets` : ce contrôle ne lit plus rien"
     assert tuple(re.findall(r"'([^']+)'", trouve.group(1))) == ETATS_SUIVI_ACTUALITE

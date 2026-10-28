@@ -326,7 +326,7 @@ Chacun porte, en tête de fichier, le pourquoi et la règle arbitrée :
 | les **périmètres d'un lot** (situé dans, desservi par) | `utils/perimetres/lots` (`deriver`, `rederiver`) ; leur lecture groupée : `utils/lecture_lots` |
 
 Côté front, les familles équivalentes (composants `Section*`, `Onglet*`,
-`Formulaire*`, `$lib/table-statuts`, `$lib/types-acces`) sont routées dans
+`Formulaire*`, `#lib/table-statuts`, `#lib/types-acces`) sont routées dans
 `svelte-patterns`.
 
 ### 7. Checklist finale

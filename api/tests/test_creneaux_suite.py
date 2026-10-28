@@ -6,7 +6,7 @@ avant ». `EvolForm` n'avait qu'un créneau, `specifiques`, rendu après le Suiv
 et avant le Périmètre : la Mise en avant y passait sept rangs trop tôt,
 l'Équipement après le Suivi.
 
-`EvolForm` en offre désormais trois, à leur rang (`$lib/evolutions.creneauDe`) :
+`EvolForm` en offre désormais trois, à leur rang (`#lib/evolutions.creneauDe`) :
 `avant_suivi`, `specifiques`, `mise_en_avant`. `lint:ordre-sections` tient
 l'ordre DANS `EvolForm` ; il ne peut pas voir qu'un écran hôte pose une section
 dans le mauvais créneau — l'ordre de son propre fichier resterait croissant.

@@ -1,6 +1,6 @@
 """Formatage des montants en euros, à la française — source unique côté backend.
 
-Le front a `fmtMontant()` (`$lib/utils.ts`) depuis que le rendu de `montant_estime`
+Le front a `fmtMontant()` (`#lib/utils.ts`) depuis que le rendu de `montant_estime`
 avait dérivé en trois écritures différentes sur une même page. Le backend, lui,
 n'avait rien : `flux.py` formatait à la main, deux fois, avec `:,.0f` — un
 **arrondi à l'entier**.

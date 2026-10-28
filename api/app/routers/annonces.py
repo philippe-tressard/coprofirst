@@ -106,7 +106,7 @@ def _enrich(annonce: PetiteAnnonce, user: Utilisateur, session: Session) -> dict
         #  renomme ce nœud (#789).
         "perimetre_cible": parse_json_perimetres(annonce.perimetre_cible),
         #  Idem pour le public cible : liste de codes, jamais du JSON brut.
-        #  `None` sort en liste VIDE, que `$lib/destinataires.ts` lit comme
+        #  `None` sort en liste VIDE, que `#lib/destinataires.ts` lit comme
         #  « tous les résidents » — le même sens des deux côtés.
         "public_cible": json.loads(annonce.public_cible or "[]"),
         "auteur_prenom": auteur.prenom if auteur else "",

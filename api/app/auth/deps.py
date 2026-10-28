@@ -303,7 +303,7 @@ def est_auteur(objet, user: Utilisateur) -> bool:
     #  ⚠️ Sans identifiant, on ne compare rien : `None == None` rendrait VRAI sur
     #  tout objet dont l'auteur est nul, et ouvrirait l'édition à qui n'a pas
     #  d'identité. Un utilisateur authentifié en a toujours un — c'est donc une
-    #  garde défensive, et son jumeau `$lib/droits.ts` la portait déjà. Les deux
+    #  garde défensive, et son jumeau `#lib/droits.ts` la portait déjà. Les deux
     #  écritures d'une même règle doivent dire la même chose jusque dans leurs cas
     #  limites, sinon les comparer côte à côte ne prouve rien.
     if uid is None:

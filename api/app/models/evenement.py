@@ -113,7 +113,7 @@ class Evenement(SaisiPourMixin, AssisteIAMixin, table=True):
     #  `Publication.brouillon` et `Ticket.confidentiel`, sous le nom qui la dit.
     #
     #  ⚠️ Les trois se rendent par la MÊME case côté écran (clé `brouillon` de
-    #  `$lib/options-publication`) : une notion, une case, un libellé. Les deux
+    #  `#lib/options-publication`) : une notion, une case, un libellé. Les deux
     #  autres noms sont historiques et documentés comme une dette ; en créer un
     #  troisième du même genre l'aurait aggravée.
     #

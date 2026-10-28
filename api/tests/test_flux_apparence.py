@@ -51,7 +51,7 @@ _ATTRIBUT = re.compile(r"([a-z]+):\s*'([^']+)'")
 
 #: Les attributs qu'une rubrique DOIT porter. Écrits ici parce que le test doit
 #: pouvoir dire lequel manque ; côté TypeScript, c'est le compilateur qui le
-#: refuse (`$lib/table-statuts`), donc ce contrôle-ci ne peut plus échouer sur
+#: refuse (`#lib/table-statuts`), donc ce contrôle-ci ne peut plus échouer sur
 #: une entrée incomplète — il reste pour le jour où quelqu'un défera la table.
 _ATTENDUS = ("libelle", "couleur", "fond", "icone", "abrege")
 

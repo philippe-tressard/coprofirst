@@ -1,4 +1,4 @@
-"""Le pied de page du site — ce que le serveur en sait (`$lib/piedDePage` côté front).
+"""Le pied de page du site — ce que le serveur en sait (`#lib/piedDePage` côté front).
 
 Tout ce qu'il affiche est déjà public : ses clés se lisent sans connexion
 (`GET /config`). Le texte libre et le préfixe du nom tiennent sur une ligne,

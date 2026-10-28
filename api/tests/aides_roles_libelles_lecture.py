@@ -56,7 +56,7 @@ def table_ts(source: str, ancre: str, attribut: str) -> dict[str, str]:
     🔴 Le front déclarait ces valeurs en tables PARALLÈLES — les libellés, les
     abrégés, les teintes — aux mêmes clés, et le commentaire de chacune devait
     rappeler qu'elle doit couvrir les autres. Elles ont fondu en une le
-    15/09/2026 (`$lib/table-statuts`) : une entrée par état, tous ses attributs
+    15/09/2026 (`#lib/table-statuts`) : une entrée par état, tous ses attributs
     ensemble, et le compilateur TypeScript refuse l'entrée incomplète.
 
     ⚠️ Les trois comparaisons de ces tables entre elles — réunies depuis le

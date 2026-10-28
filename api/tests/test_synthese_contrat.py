@@ -427,7 +427,7 @@ EXIGENCES_CONSIGNE: dict[str, str] = {
     ),
     "bloc DÉPLIABLE, replié à l'ouverture": "l'extrait est replié à l'ouverture (#992)",
     "n'écris JAMAIS l'attribut `open`": (
-        "`open` est de toute façon retiré par `$lib/sanitize` : consigne et rendu disent "
+        "`open` est de toute façon retiré par `#lib/sanitize` : consigne et rendu disent "
         "la même chose, et c'est le rendu qui tranche (#992)"
     ),
 }

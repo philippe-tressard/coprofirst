@@ -169,7 +169,7 @@ class GesteFormulaire(SQLModel, table=True):
 
     Pas un événement : un compteur, SANS `user_id` — savoir qu'un formulaire
     décourage ne demande pas de savoir qui l'a abandonné. `geste` est un
-    IDENTIFIANT de la liste fermée du front (`$lib/gestes`), jamais un contenu.
+    IDENTIFIANT de la liste fermée du front (`#lib/gestes`), jamais un contenu.
     Écrit et lu par `utils/gestes_formulaire`, purgé après `CONSERVATION_JOURS`
     par l'agrégation quotidienne.
     """

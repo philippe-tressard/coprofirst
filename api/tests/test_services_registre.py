@@ -178,7 +178,7 @@ def test_chaque_icone_existe_dans_le_catalogue():
     catalogue = json.loads(ICONES.read_text(encoding="utf-8"))
     assert len(catalogue) > 20
     inconnues = {s.code: s.icone for s in SERVICES.values() if s.icone not in catalogue}
-    assert not inconnues, f"icône absente de $lib/icones-svg.json : {inconnues}"
+    assert not inconnues, f"icône absente de #lib/icones-svg.json : {inconnues}"
 
 
 @pytest.fixture(name="moteur")

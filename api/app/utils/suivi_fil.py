@@ -67,7 +67,7 @@ def suivi_corrige(
 ) -> tuple[str, Optional[str], Optional[str]]:
     """Ce que la Suite devient : `(type, ancien_statut, nouveau_statut)`.
 
-    Le geste se DÉDUIT, comme à la saisie (`typeDeLEntree`, `$lib/evolutions`) :
+    Le geste se DÉDUIT, comme à la saisie (`typeDeLEntree`, `#lib/evolutions`) :
     choisir l'état d'avant, c'est ne rien faire avancer — la Suite est alors un
     commentaire.
     """
