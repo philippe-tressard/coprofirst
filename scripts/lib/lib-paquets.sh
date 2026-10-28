@@ -163,6 +163,15 @@ verdict_versions_parite_roles() {
 ' "$1" "$2" | sort -V | tail -1)" = "$2" ] && echo STANDBY_EN_AVANCE || echo DIVERGENCE
 }
 
+#  $1 `.active` lu sur ce nœud · $2 lu sur le pair · $3 ce nœud · $4 le pair
+#  → S (ce nœud est l'actif) | P (le pair l'est) | rien. Le rôle ne compte que
+#  si les deux `.active` le disent : sinon, aucune avance du standby n'est admise
+#  (C3 dit déjà l'incohérence). Une source pour les paquets ET le noyau.
+cote_actif() {
+    [ -n "${1:-}" ] && [ "$1" = "${2:-}" ] || return 0
+    case "$1" in "${3:-}") echo S ;; "${4:-}") echo P ;; esac
+}
+
 # ── Les verdicts de C30 pour ce module, appelés par `mises_a_jour_verdicts` ──
 #  Dépend de l'appelant : ok/warn, SELF/PEER/PEER_OK et les champs S_*/P_*.
 #  Tout sort en WARN (digest), jamais en FAIL. Un `apt-get -s` qui échoue PENDANT
@@ -189,11 +198,7 @@ paquets_verdicts() {
     done
     [ "$PEER_OK" -eq 0 ] || return 0
     #  Un constat COMMUN (il nomme les deux nœuds) : l'actif le porte, une fois.
-    #  Le rôle ne compte que si les deux `.active` le disent : sinon, aucune
-    #  avance n'est admise (C3 dit déjà l'incohérence).
-    if [ -n "${S_active:-}" ] && [ "${S_active:-}" = "${P_active:-}" ]; then
-        case "$S_active" in "$SELF") act=S ;; "$PEER") act=P ;; esac
-    fi
+    act=$(cote_actif "${S_active:-}" "${P_active:-}" "$SELF" "$PEER")
     for k in $PAQUETS_PARITE; do
         eval "a=\${S_$(cle_version "$k"):-} b=\${P_$(cle_version "$k"):-}"
         case "$act" in
@@ -267,6 +272,10 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "vide d'un côté → INCONNU, jamais OK"      INCONNU     verdict_versions_parite 5:29.2.1-1 ""
     t "vide des deux côtés → INCONNU (pas « égaux »)" INCONNU verdict_versions_parite "" ""
     echo "== (3 bis) parité selon le rôle : le standby pose, l'actif suit (#2198) =="
+    t "côté actif : ce nœud"                   S  cote_actif rpi1 rpi1 rpi1 rpi2
+    t "côté actif : le pair"                   P  cote_actif rpi2 rpi2 rpi1 rpi2
+    t ".active incohérent → aucun côté"        "" cote_actif rpi1 rpi2 rpi1 rpi2
+    t ".active vide des deux côtés → aucun"    "" cote_actif "" "" rpi1 rpi2
     t "identiques → OK"                                     OK                verdict_versions_parite_roles 2026.10.5 2026.10.5
     t "cloudflared actif 10.4 / standby 10.5 (28/10)"       STANDBY_EN_AVANCE verdict_versions_parite_roles 2026.10.4 2026.10.5
     t "actif en avance → DIVERGENCE (le standby n'a pas posé)" DIVERGENCE     verdict_versions_parite_roles 2026.10.5 2026.10.4

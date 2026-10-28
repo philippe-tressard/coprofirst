@@ -119,6 +119,20 @@ verdict_noyaux_parite() {
     [ "${1%%+*}" = "${2%%+*}" ] && echo OK || echo DIVERGENCE
 }
 
+#  $1 le noyau de l'ACTIF · $2 celui du STANDBY → OK | STANDBY_EN_AVANCE |
+#  DIVERGENCE | INCONNU. Une RÉVISION que le standby a posée après la bascule
+#  (#1395) le met en avance d'un jour : l'actif la prend à la suivante — la même
+#  règle que les paquets (`verdict_versions_parite_roles`, lib-paquets.sh). Une
+#  autre SÉRIE ne se pose qu'à la main : elle reste un écart.
+verdict_noyaux_parite_roles() {
+    local v a b
+    v=$(verdict_noyaux_parite "${1:-}" "${2:-}")
+    [ "$v" = DIVERGENCE ] || { echo "$v"; return; }
+    a=$(version_noyau "$1"); b=$(version_noyau "$2")
+    [ "${a%.*}" = "${b%.*}" ] || { echo DIVERGENCE; return; }
+    verdict_versions_parite_roles "$a" "$b"
+}
+
 # ── Le noyau du standby (#1395) ──────────────────────────────────────────────
 
 #: Les paquets d'une montée de noyau : le méta-paquet des deux saveurs, leurs
@@ -268,8 +282,15 @@ mises_a_jour_verdicts() {
     done
     paquets_verdicts   # lib-paquets.sh : hors sécurité, retenus, parité docker/containerd/cloudflared (#1591)
     [ "$PEER_OK" -eq 0 ] || return 0
-    case "$(verdict_noyaux_parite "${S_noyau_actif:-}" "${P_noyau_actif:-}")" in
+    local v
+    case "$(cote_actif "${S_active:-}" "${P_active:-}" "$SELF" "$PEER")" in
+        S) v=$(verdict_noyaux_parite_roles "${S_noyau_actif:-}" "${P_noyau_actif:-}") ;;
+        P) v=$(verdict_noyaux_parite_roles "${P_noyau_actif:-}" "${S_noyau_actif:-}") ;;
+        *) v=$(verdict_noyaux_parite "${S_noyau_actif:-}" "${P_noyau_actif:-}") ;;
+    esac
+    case "$v" in
         OK)         ok   "Même noyau sur les 2 nœuds (${S_noyau_actif%%+*})" ;;
+        STANDBY_EN_AVANCE) ok "Noyau du standby en avance sur l'actif ($S_active) — $SELF en ${S_noyau_actif%%+*}, $PEER en ${P_noyau_actif%%+*} : révision posée après la bascule (#1395), l'actif la prend à la suivante" ;;
         DIVERGENCE) warn "Noyaux DIVERGENTS — $SELF en ${S_noyau_actif%%+*}, $PEER en ${P_noyau_actif%%+*} : les deux nœuds se relaient chaque nuit et ne se comportent pas pareil. Une révision se résorbe seule en 48 h (le standby la pose après la bascule) ; un écart de SÉRIE se résorbe à la main (voir « Nouvelle SÉRIE »)" ;;
         *)          warn "Parité des noyaux INCONNUE ($SELF='${S_noyau_actif:-vide}' $PEER='${P_noyau_actif:-vide}')" ;;
     esac
@@ -287,6 +308,13 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "noyaux identiques"       OK          verdict_noyaux_parite 6.12.75+rpt-rpi-2712 6.12.75+rpt-rpi-2712
     t "rpi1 / rpi2 le 27/09"    DIVERGENCE  verdict_noyaux_parite 6.12.62+rpt-rpi-2712 6.12.75+rpt-rpi-2712
     t "peer muet"               INCONNU     verdict_noyaux_parite 6.12.62+rpt-rpi-2712 ""
+    #  Selon le rôle : le standby pose la révision après la bascule, l'actif suit.
+    t "révision : standby en avance"   STANDBY_EN_AVANCE verdict_noyaux_parite_roles 6.18.50+rpt-rpi-2712 6.18.52+rpt-rpi-2712
+    t "révision : tri numérique"       STANDBY_EN_AVANCE verdict_noyaux_parite_roles 6.18.9+rpt-rpi-2712 6.18.10+rpt-rpi-2712
+    t "révision : l'ACTIF en avance"   DIVERGENCE  verdict_noyaux_parite_roles 6.18.52+rpt-rpi-2712 6.18.50+rpt-rpi-2712
+    t "SÉRIE, même au standby → écart" DIVERGENCE  verdict_noyaux_parite_roles 6.12.75+rpt-rpi-2712 6.18.50+rpt-rpi-2712
+    t "mêmes noyaux → OK"              OK          verdict_noyaux_parite_roles 6.18.50+rpt-rpi-2712 6.18.50+rpt-rpi-2712
+    t "un côté muet → INCONNU"         INCONNU     verdict_noyaux_parite_roles 6.18.50+rpt-rpi-2712 ""
 
     #  #1395 — le noyau du standby. Les formes RÉELLES : uname -r et dpkg.
     t "version : uname -r"      6.18.50     version_noyau 6.18.50+rpt-rpi-2712
