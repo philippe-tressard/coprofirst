@@ -36,7 +36,6 @@ from app.models.core import (
     Lot,
     StatutBail,
     StatutUtilisateur,
-    TypeLien,
     UserLot,
     Utilisateur,
 )
@@ -133,9 +132,10 @@ def rattacher_au_bailleur(user: Utilisateur, session: Session) -> int:
         ]
         if len(set(logements)) != 1:
             return 0
-        session.add(
-            UserLot(user_id=user.id, lot_id=logements[0], type_lien=TypeLien.locataire, actif=True)
-        )
+        #  Le lien ET les badges du logement : la seule porte (#2267).
+        from app.utils.rattachement_locataire import lier_locataire
+
+        lier_locataire(session, user.id, [session.get(Lot, logements[0])])
         quoi = f"lot {logements[0]}"
 
     #  Des IDENTIFIANTS, jamais un nom : le journal ne porte aucune donnée

@@ -218,3 +218,80 @@ def test_les_routes_proposent_puis_rattachent():
 
         anonyme, _ = client_http(moteur, None)
         assert anonyme.get("/lots/ma-location/propositions").status_code == 401
+
+
+# ── D'office, à la validation du compte (#2267, 27/10/2026) ─────────────────
+#  Les quatre derniers locataires n'avaient pas répondu aux questions : sans
+#  lot ni badge, ils ont été rattachés à la main — aux lots que la règle des
+#  noms désignait déjà.
+
+
+def test_la_validation_rattache_d_office_tout_le_lot_et_ses_badges(session, parc):
+    from app.utils.auto_match_service import auto_match_pour_utilisateur
+
+    lots, badges = parc
+    loc = _locataire(session)
+    resultat = auto_match_pour_utilisateur(loc, session)
+    session.commit()
+    assert resultat["lots_d_office"] == 3
+    liens = session.exec(select(UserLot).where(UserLot.user_id == loc.id)).all()
+    assert {ul.lot_id for ul in liens} == {lots[n].id for n in ("appart", "cave", "parking")}
+    for cle in ("vigik", "tc"):
+        session.refresh(badges[cle])
+        assert (badges[cle].chez_locataire, badges[cle].user_id) == (True, loc.id)
+
+
+def test_deux_appartements_restent_aux_questions(session, parc):
+    from app.utils.rattachement_locataire import rattacher_d_office
+
+    loc = compte(
+        session, nom="LOC", statut=StatutUtilisateur.locataire, nom_proprietaire="DURANDAL"
+    )
+    assert rattacher_d_office(loc, session) == 0
+    assert session.exec(select(UserLot).where(UserLot.user_id == loc.id)).all() == []
+    assert len(lots_proposes(loc, session)["appartement"]) == 2
+
+
+def test_un_lot_deja_loue_a_un_autre_n_est_pas_pris(session, parc):
+    from app.utils.rattachement_locataire import rattacher_d_office
+
+    lots, badges = parc
+    autre = _locataire(session)
+    session.add(UserLot(user_id=autre.id, lot_id=lots["parking"].id, type_lien=TypeLien.locataire))
+    session.commit()
+    loc = _locataire(session)
+    assert rattacher_d_office(loc, session) == 0
+    session.refresh(badges["tc"])
+    assert badges["tc"].user_id is None
+
+
+def test_la_resolution_d_un_import_remet_les_badges_au_locataire(session, parc):
+    from app.routers.lots_imports import _lier_utilisateurs
+
+    lots, badges = parc
+    loc = _locataire(session)
+    _lier_utilisateurs(session, [{"user_id": loc.id, "type_lien": "locataire"}], lots["appart"].id)
+    session.commit()
+    session.refresh(badges["vigik"])
+    assert (badges["vigik"].chez_locataire, badges["vigik"].user_id) == (True, loc.id)
+    #  Rejouée, elle ne duplique rien.
+    _lier_utilisateurs(session, [{"user_id": loc.id, "type_lien": "locataire"}], lots["appart"].id)
+    session.commit()
+    assert len(session.exec(select(UserLot).where(UserLot.user_id == loc.id)).all()) == 1
+
+
+def test_relancer_l_appariement_remet_les_badges_d_un_lien_pose_a_la_main(session, parc):
+    """Le rattrapage des locataires liés avant la porte unique (#2267)."""
+    from app.utils.auto_match_service import auto_match_pour_utilisateur
+
+    lots, badges = parc
+    loc = _locataire(session)
+    session.add(UserLot(user_id=loc.id, lot_id=lots["appart"].id, type_lien=TypeLien.locataire))
+    session.commit()
+    resultat = auto_match_pour_utilisateur(loc, session)
+    session.commit()
+    assert (resultat["lots_d_office"], resultat["badges_remis"]) == (0, 1)
+    session.refresh(badges["vigik"])
+    assert (badges["vigik"].chez_locataire, badges["vigik"].user_id) == (True, loc.id)
+    #  Rejoué, rien de plus.
+    assert auto_match_pour_utilisateur(loc, session)["badges_remis"] == 0
