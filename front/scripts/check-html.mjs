@@ -16,7 +16,7 @@
  * ## Ce que ce contrôle cherche
  *
  * Toute expression `{@html …}` dont la racine n'est pas un **appel** à une fonction
- * d'assainissement **importée de `$lib/sanitize`**.
+ * d'assainissement **importée de `#lib/sanitize`**.
  *
  * 🔴 Les deux conditions comptent. Une fonction locale nommée `safeHtml` qui ne
  * ferait qu'un `return input` passerait le premier filtre : ce contrôle exige donc
@@ -128,9 +128,9 @@ for (const chemin of fichiers) {
 	const relatif = relative(RACINE, chemin).replace(/\\/g, '/');
 	const source = readFileSync(chemin, 'utf8');
 
-	//  Les noms réellement IMPORTÉS de `$lib/sanitize` par ce fichier.
+	//  Les noms réellement IMPORTÉS de `#lib/sanitize` par ce fichier.
 	const importes = new Set();
-	for (const m of source.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"]\$lib\/sanitize['"]/g)) {
+	for (const m of source.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"]#lib\/sanitize\.ts['"]/g)) {
 		for (const nom of m[1].split(',')) {
 			const propre = nom
 				.trim()
@@ -182,7 +182,7 @@ for (const chemin of fichiers) {
 		if (appel && assainisseurs.has(appel[1])) {
 			erreurs.push(
 				`${relatif}:${ligne} — ${appel[1]}(…) porte le nom d'un assainisseur mais n'est PAS ` +
-					"importé de `$lib/sanitize` : c'est une fonction locale, et rien ne dit ce qu'elle fait.",
+					"importé de `#lib/sanitize` : c'est une fonction locale, et rien ne dit ce qu'elle fait.",
 			);
 		} else {
 			const apercu = expr.length > 60 ? expr.slice(0, 57) + '…' : expr;
@@ -223,7 +223,7 @@ if (erreurs.length) {
 	console.error('✗ {@html} sans assainissement — injection de HTML possible :\n');
 	for (const e of erreurs) console.error(`  • ${e}`);
 	console.error(
-		'\n🔴 Règle : {@html X} où X est un appel à une fonction de `$lib/sanitize`\n' +
+		'\n🔴 Règle : {@html X} où X est un appel à une fonction de `#lib/sanitize`\n' +
 			`   (${[...assainisseurs].join(', ')}), et rien d'autre.\n` +
 			'   Une exception se DÉCLARE dans `EXCEPTIONS` avec sa raison, et se répercute\n' +
 			"   dans `CLAUDE.md` — sinon ce n'est pas une exception, c'est un oubli.\n",

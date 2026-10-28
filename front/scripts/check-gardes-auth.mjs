@@ -243,7 +243,7 @@ if (auMontage.length > 0) {
 	console.error(
 		`\n  L'onMount d'un écran précède celui du layout qui charge l'utilisateur : sur un\n` +
 			`  chargement direct ou un rechargement, ces stores y valent encore false / null.\n` +
-			`\n  → \`quandAuthResolue(() => …)\` (\`$lib/stores/auth\`) à la place de l'onMount.\n`,
+			`\n  → \`quandAuthResolue(() => …)\` (\`#lib/stores/auth\`) à la place de l'onMount.\n`,
 	);
 	process.exit(1);
 }

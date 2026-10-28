@@ -10,9 +10,9 @@
   `OngletFonctionnement` : la page parle seule à l'API.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import type { ConfigSite, SectionSite } from '$lib/configSite';
-	import ReglagePiedDePage from '$lib/components/ReglagePiedDePage.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import type { ConfigSite, SectionSite } from '#lib/configSite.ts';
+	import ReglagePiedDePage from '#lib/components/ReglagePiedDePage.svelte';
 
 	/** Lié : la page porte l'état et l'enregistre. */
 	export let siteConfig: ConfigSite;

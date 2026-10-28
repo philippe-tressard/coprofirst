@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { isAdminOuOperateur, authResolue } from '$lib/stores/auth';
+	import { isAdminOuOperateur, authResolue } from '#lib/stores/auth.ts';
 
 	//  Ce garde décidait dans un `onMount`, donc AVANT que `(app)/+layout.svelte`
 	//  ait fini de charger l'utilisateur : `$isAdmin` valait encore false, et toute
@@ -13,7 +13,7 @@
 	//  « on ne sait pas encore », que `isAuthenticated` confondait. On ne refuse que
 	//  sur un « non » avéré, jamais sur un « pas encore ».
 	//  L'opérateur qui n'est pas administrateur entre aussi (#2029) : la page ne
-	//  lui ouvre que sa supervision (`$lib/onglets-ouverts`).
+	//  lui ouvre que sa supervision (`#lib/onglets-ouverts`).
 	$: if ($authResolue && !$isAdminOuOperateur) {
 		goto('/tableau-de-bord');
 	}

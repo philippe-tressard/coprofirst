@@ -13,7 +13,7 @@
   cadre (`ux-patterns` §0) — ce n'est pas une divergence à réduire.
 -->
 <script lang="ts">
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	export let nouveau: { code: string; libelle: string; description: string };
 	export let codePropose = '';
 </script>

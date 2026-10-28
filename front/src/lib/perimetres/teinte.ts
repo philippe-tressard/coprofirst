@@ -41,14 +41,14 @@
  * Le prédicat vit donc **ici**, dans le module pur, et `arbre.ts` l'importe :
  * une seule notion de « tête », éprouvable sans navigateur.
  *
- * ## Pourquoi un module à part, sans aucun import `$lib`
+ * ## Pourquoi un module à part, sans aucun import `#lib`
  *
  * La règle est une décision PURE : elle ne lit ni store, ni API, ni DOM.
  * L'isoler ici la rend éprouvable par `npm run lint:teinte`, sans navigateur et
  * sans arborescence réelle — le motif du dépôt pour toute décision qu'on ne peut
  * pas voir à l'œil (`boot-role-guard.sh`, puis `listeDepliable.ts`).
  *
- * ⚠️ Aucun import de `$lib/…` ici, et ce n'est pas un oubli : le script de
+ * ⚠️ Aucun import de `#lib/…` ici, et ce n'est pas un oubli : le script de
  * self-test importe ce fichier par son chemin relatif, et un alias Vite ne se
  * résout pas sous `node --experimental-strip-types`.
  */
@@ -133,7 +133,7 @@ const premierSegment = (code: string) => (code ?? '').split('/')[0] || code;
  * la première rangée et laisse les locaux techniques dans la leur. Deux formes
  * d'arbre, un seul niveau visible.
  *
- * ⚠️ Même définition que `perimetresNiveau1` (`$lib/perimetres/arbre`), qui
+ * ⚠️ Même définition que `perimetresNiveau1` (`#lib/perimetres/arbre`), qui
  * l'importe d'ici : ce qui fait une pastille de tête à la SAISIE est exactement
  * ce qui donne sa couleur à la LECTURE. Les deux ont divergé tant qu'elles
  * étaient écrites deux fois, et l'écran l'a montré.

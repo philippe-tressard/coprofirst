@@ -246,7 +246,7 @@ export default defineConfig(
 			// ⚠️ MISE À JOUR DU 20/08/2026 — LE TROU EST COMBLÉ, et cette note l'a
 			// affirmé faux pendant trois jours. `npm run lint:html` existe depuis le
 			// 18/08 et fait exactement ce qui manquait : il exige que tout `{@html}`
-			// passe par un assainisseur de `$lib/sanitize`, avec le nom pris dans
+			// passe par un assainisseur de `#lib/sanitize`, avec le nom pris dans
 			// l'IMPORT (une fonction locale homonyme ne passe pas) et deux exceptions
 			// déclarées qui font échouer le contrôle si elles cessent de servir.
 			//

@@ -25,18 +25,18 @@
       (skill `ux-patterns` §9 bis).
 -->
 <script lang="ts">
-	import { contexteAssistant, perimetreContexte } from '$lib/assistant';
+	import { contexteAssistant, perimetreContexte } from '#lib/assistant.ts';
 	import { createEventDispatcher } from 'svelte';
-	import CadreFormulaire from '$lib/components/CadreFormulaire.svelte';
-	import SectionTitre from '$lib/components/SectionTitre.svelte';
-	import ChampsCommuns from '$lib/components/ChampsCommuns.svelte';
-	import { sectionPresente, type Etat } from '$lib/entites/types';
-	import { IDEE } from '$lib/entites/idee';
-	import { perimetreDefautListe } from '$lib/perimetres';
-	import { idees as ideesApi, type Idee, type IdeeCreee } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
+	import SectionTitre from '#lib/components/SectionTitre.svelte';
+	import ChampsCommuns from '#lib/components/ChampsCommuns.svelte';
+	import { sectionPresente, type Etat } from '#lib/entites/types.ts';
+	import { IDEE } from '#lib/entites/idee.ts';
+	import { perimetreDefautListe } from '#lib/perimetres/index.ts';
+	import { idees as ideesApi, type Idee, type IdeeCreee } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 
 	//  Ce que le serveur rend, tel quel (#1572) : la LIGNE brute à la création —
 	//  la page recharge alors sa liste —, l'idée enrichie à la correction, que la

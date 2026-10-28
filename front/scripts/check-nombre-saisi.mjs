@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- *  Une valeur SAISIE se convertit en nombre par `nombreOuNull` (`$lib/utils`),
+ *  Une valeur SAISIE se convertit en nombre par `nombreOuNull` (`#lib/utils`),
  *  jamais à la main (#1516, 01/10/2026).
  *
  *  🔴 Un `<input type="number" bind:value>` vidé rend `null` (Svelte), pas
@@ -85,6 +85,6 @@ process.exit(
 		ok: 'Nombres saisis : convertis par nombreOuNull seulement',
 		ko: 'conversion(s) de saisie en nombre écrite(s) à la main',
 		conseil:
-			"Employer `nombreOuNull(v)` (`$lib/utils`) : '', null et undefined donnent null, 0 reste 0.",
+			"Employer `nombreOuNull(v)` (`#lib/utils`) : '', null et undefined donnent null, 0 reste 0.",
 	}),
 );

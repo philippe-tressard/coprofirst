@@ -17,7 +17,7 @@
  * pliages ». `estPerimetreParDefaut` et `concerneTousLesResidents` savent, eux,
  * ce qu'est le défaut.
  */
-import { section, type EntiteDeclaree, type IdSection } from '$lib/entites/types';
+import { section, type EntiteDeclaree, type IdSection } from '#lib/entites/types.ts';
 
 /** La section est-elle repliée par défaut ? `false` sans déclaration. */
 export function pliageDe(entite: EntiteDeclaree | null, id: IdSection): boolean {

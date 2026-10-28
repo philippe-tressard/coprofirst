@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { lotTypeLabel } from '$lib/utils';
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import CaracteristiquesLot from '$lib/components/CaracteristiquesLot.svelte';
-	import TableauCharges from '$lib/components/TableauCharges.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
+	import { lotTypeLabel } from '#lib/utils.ts';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import CaracteristiquesLot from '#lib/components/CaracteristiquesLot.svelte';
+	import TableauCharges from '#lib/components/TableauCharges.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import { onMount } from 'svelte';
-	import { marquerDonneesAffichees } from '$lib/telemetry';
+	import { marquerDonneesAffichees } from '#lib/telemetry.ts';
 	import {
 		lots as lotsApi,
 		bailleur as bailApi,
 		type Bail,
 		type BailLocataire,
 		type MonLot,
-	} from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
+	} from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		isBailleur,
 		isCS,
@@ -23,20 +23,25 @@
 		isLocataire,
 		isResident,
 		quandAuthResolue,
-	} from '$lib/stores/auth';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
+	} from '#lib/stores/auth.ts';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
 	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
-	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
+	import BarreOnglets from '#lib/components/BarreOnglets.svelte';
 	//  ⏱ Les onglets Accès et Location, la correction d'un bail et ses accès
 	//  attendent un geste : chargés à leur affichage (#1844).
-	import BoutonNouveau from '$lib/components/BoutonNouveau.svelte';
-	import { messageErreur, tenter } from '$lib/erreurs';
-	import { routeOnglet, routeSousOnglet } from '$lib/routes-onglets';
-	import { bailEnCours, champsLocataire, nomLocataire } from '$lib/bail';
-	import LotsBailleur from '$lib/components/LotsBailleur.svelte';
-	import LotsLocataire from '$lib/components/LotsLocataire.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import BoutonNouveau from '#lib/components/BoutonNouveau.svelte';
+	import { messageErreur, tenter } from '#lib/erreurs.ts';
+	import { routeOnglet, routeSousOnglet } from '#lib/routes-onglets.ts';
+	import { bailEnCours, champsLocataire, nomLocataire } from '#lib/bail.ts';
+	import LotsBailleur from '#lib/components/LotsBailleur.svelte';
+	import LotsLocataire from '#lib/components/LotsLocataire.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	$: _pc = getPageConfig($configStore, 'mon-lot', defautsDePage('mon-lot'));
 	$: _siteNom = $siteNomStore;
@@ -69,7 +74,7 @@
 		goto(routeOnglet('mon-lot', 'lots'), { replaceState: true });
 	}
 
-	//  🔴 `Objet` est devenu `ObjetRemis`, dans `$lib/api` (#806) : c'est une
+	//  🔴 `Objet` est devenu `ObjetRemis`, dans `#lib/api` (#806) : c'est une
 	//  réponse d'API, pas une notion de cet écran, et il était déclaré à
 	//  l'identique ici et dans le composant qui le rend.
 
@@ -258,7 +263,7 @@
       onglets d'une page par UN écran, donc `/mon-lot/badges` arrive ici. Motif
       des dix-sept `Onglet*.svelte` de l'administration. -->
 {#if mainTab === 'badges' || mainTab === 'telecommandes'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletAcces.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletAcces.svelte')}>
 		{#snippet contenu(OngletAcces)}
 			<OngletAcces
 				section={mainTab}
@@ -346,7 +351,7 @@
 	      deux sous-onglets d'accès, et le plafond de modularité a refusé — comme
 	      l'audit de l'issue l'avait annoncé. La coupe suit la frontière que la
 	      barre d'onglets dessine déjà. -->
-	<ChargementDiffere charger={() => import('$lib/components/OngletGestionLocative.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletGestionLocative.svelte')}>
 		{#snippet contenu(OngletGestionLocative)}
 			<OngletGestionLocative
 				bind:baux
@@ -370,7 +375,7 @@
       de création, donc en bas de page. Le motif est dans `FormulaireCreation`. -->
 {#if bailEdite}
 	<FormulaireCreation titre="Modifier les informations" cle={bailEdite.id}>
-		<ChargementDiffere charger={() => import('$lib/components/FormulaireBail.svelte')}>
+		<ChargementDiffere charger={() => import('#lib/components/FormulaireBail.svelte')}>
 			{#snippet contenu(FormulaireBail)}
 				<FormulaireBail
 					edition
@@ -389,7 +394,7 @@
 {#if bailAcces}
 	<!--  Le bail fixé ici : le rétrécissement de `{#if}` ne traverse pas le snippet. -->
 	{@const bail = bailAcces}
-	<ChargementDiffere charger={() => import('$lib/components/ModaleAccesBail.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/ModaleAccesBail.svelte')}>
 		{#snippet contenu(ModaleAccesBail)}
 			<ModaleAccesBail
 				bailId={bail.id}

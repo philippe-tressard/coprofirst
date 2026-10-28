@@ -69,7 +69,7 @@ export interface PointConseil {
 
 export interface CrAffaire {
 	ticket_id: number;
-	/** Texte riche — à rendre par un assainisseur de `$lib/sanitize`. */
+	/** Texte riche — à rendre par un assainisseur de `#lib/sanitize`. */
 	contenu: string;
 	brouillon: boolean;
 	/** « CS et présents » (#2082) — le nom de champ est resté. */

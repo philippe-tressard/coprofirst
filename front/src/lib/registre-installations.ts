@@ -5,8 +5,13 @@
  *  restent au serveur (`registre/decisions.TRANSITIONS`), qui rend les gestes
  *  possibles de chaque fiche : ce module n'en tient que les mots.
  */
-import { classeDe, type ClasseGouttiere, type MarqueGouttiere } from '$lib/gouttiere';
-import type { AlerteRegistre, EtatRegistre, GesteRegistre, RapportInstallation } from '$lib/api';
+import { classeDe, type ClasseGouttiere, type MarqueGouttiere } from '#lib/gouttiere.ts';
+import type {
+	AlerteRegistre,
+	EtatRegistre,
+	GesteRegistre,
+	RapportInstallation,
+} from '#lib/api/index.ts';
 
 /**  Les états, dans l'ordre de vie d'une inscription — filtre en pastilles (≤ 6). */
 export const ETATS_REGISTRE: readonly { val: EtatRegistre; label: string }[] = [

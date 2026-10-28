@@ -129,7 +129,7 @@ const FORMES = [
 		motif: () =>
 			/^[ \t]*\$:.*(?<![\w$.])page\.(?:url|params|route|status|error|data|state|form)\b/m,
 		quoi: '`page` de `$app/state` lu dans un `$:` (jamais réévalué)',
-		remede: "`import { lieu } from '$lib/lieu.svelte'` puis `$: id = $lieu.params.id`",
+		remede: "`import { lieu } from '#lib/lieu.svelte.ts'` puis `$: id = $lieu.params.id`",
 		global: true,
 	},
 	{

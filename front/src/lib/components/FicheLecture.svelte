@@ -39,13 +39,13 @@
   la résidence. Un objet se rend toujours de la même façon (R3).
 -->
 <script lang="ts">
-	import type { AffaireLiee } from '$lib/api';
-	import type { EntiteDeclaree } from '$lib/entites/types';
-	import { sectionsDe } from '$lib/entites/types';
+	import type { AffaireLiee } from '#lib/api/index.ts';
+	import type { EntiteDeclaree } from '#lib/entites/types.ts';
+	import { sectionsDe } from '#lib/entites/types.ts';
 	import PiecesJointes from './PiecesJointes.svelte';
-	import { safeDescription } from '$lib/sanitize';
-	import { perimetreLabel, estPerimetreParDefaut, relire } from '$lib/utils';
-	import { perimetresStore } from '$lib/stores/perimetres';
+	import { safeDescription } from '#lib/sanitize.ts';
+	import { perimetreLabel, estPerimetreParDefaut, relire } from '#lib/utils.ts';
+	import { perimetresStore } from '#lib/stores/perimetres.ts';
 
 	/** La déclaration de l'entité affichée — `TICKET`, puis `ACTUALITE`… */
 	export let entite: EntiteDeclaree;

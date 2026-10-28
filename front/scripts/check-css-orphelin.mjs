@@ -305,7 +305,7 @@ const aveugles = tous.filter((f) => {
 //  badge d'état d'une demande, tiré de sa propre table : aucune interpolation
 //  nouvelle, une dette répartie sur deux fichiers.
 //  ✅ 1 le 15/10/2026 (#1571) : les trente classes tirées d'une TABLE de teintes
-//  passent par `Badge` (`$lib/components/Badge.svelte`), qui pose la teinte en
+//  passent par `Badge` (`#lib/components/Badge.svelte`), qui pose la teinte en
 //  `class:` — le « composant de pastille commun » annoncé au 08/10. Aucun `.badge`
 //  stylé dans une page ne s'y perdait (relevé avant conversion). Rendus
 //  mesurables, les écrans ont livré cinq sélecteurs morts, retirés : `.pastille-xs`
@@ -340,7 +340,7 @@ if (aveugles.length !== PLAFOND_NON_MESURES) {
 				'    • la classe calculée est LOCALE et ses valeurs sont connues',
 				'      -> `class:ma-classe={condition}`, que Svelte sait résoudre ;',
 				"    • c'est la teinte d'un badge tirée d'une TABLE (`badge {STATUT[…]}`)",
-				'      -> `<Badge teinte={STATUT[…]}>` (`$lib/components/Badge.svelte`) ;',
+				'      -> `<Badge teinte={STATUT[…]}>` (`#lib/components/Badge.svelte`) ;',
 				"    • elle vient de l'APPELANT (une prop `classe`) : monter le plafond en le",
 				'      justifiant ici — ce qui doit rester exceptionnel.',
 				'',

@@ -7,7 +7,7 @@
  *  Arbitré à l'écran : le manuel nommait « la pastille bleue » en texte brut,
  *  et survoler le mot ne montrait rien. Il montre désormais la VRAIE pastille,
  *  avec sa phrase au survol. Mais une phrase recopiée dans un document diverge
- *  au premier changement de `$lib/lecture` — et le manuel mentirait alors en
+ *  au premier changement de `#lib/lecture` — et le manuel mentirait alors en
  *  toute confiance.
  *
  *  ## Ce qu'il vérifie

@@ -25,7 +25,7 @@
 
 	/** L'adresse — rendue par le client d'API ou le serveur, jamais composée ici. */
 	export let href: string;
-	/** Le pictogramme au trait (`$lib/icones-svg.json`). */
+	/** Le pictogramme au trait (`#lib/icones-svg.json`). */
 	export let icone: string;
 	/** Le nom accessible, complet : « Télécharger le rapport », « Ouvrir le contrat ». */
 	export let libelle: string;

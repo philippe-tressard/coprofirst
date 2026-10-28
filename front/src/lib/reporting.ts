@@ -1,5 +1,5 @@
 //  Le vocabulaire du **reporting CS** — écrit une fois pour les six vues qui le
-//  partagent (`$lib/components/reporting/`).
+//  partagent (`#lib/components/reporting/`).
 //
 //  Il vivait dans `espace-cs/+page.svelte`, mêlé à l'état de quatre autres
 //  onglets. En sortant la rubrique de la page (#453), ces types et ces calculs
@@ -125,7 +125,7 @@ export function anneeCourante(): number {
  *
  * ⚠️ À employer via `relire(donnees, minuitDuJour)` : appelée dans un `$:` qui
  * ne cite aucune variable réactive, elle serait figée au chargement de l'onglet
- * (`$lib/utils.relire`).
+ * (`#lib/utils.relire`).
  */
 export function minuitDuJour(): Date {
 	const d = new Date();

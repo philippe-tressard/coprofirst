@@ -54,7 +54,7 @@
 -->
 <script lang="ts">
 	import Gouttiere from './Gouttiere.svelte';
-	import type { ClasseGouttiere } from '$lib/gouttiere';
+	import type { ClasseGouttiere } from '#lib/gouttiere.ts';
 
 	/** L'ancre de la carte (`ticket-42`) : liens profonds, 🔗, fil d'activité. */
 	export let id: string | undefined = undefined;

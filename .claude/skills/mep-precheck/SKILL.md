@@ -528,7 +528,7 @@ annonce de hall) et regarder.
 > servi en local : elle marchait. En production, elle ne marchait pas. En local il
 > n'y a **pas de backend** : `auth.me()` échoue en **erreur réseau** et c'est la
 > garde du layout qui redirige ; en production l'API répond **401**, et c'est
-> `$lib/api.ts` qui redirige en premier — un troisième chemin, non corrigé. Avant de
+> `#lib/api.ts` qui redirige en premier — un troisième chemin, non corrigé. Avant de
 > conclure d'un test local, se demander **quel chemin de code il a réellement
 > exercé**, et si la production en emprunte un autre (API absente vs 401/403,
 > cookies, HTTPS, service worker, reverse proxy). Quand un même effet a plusieurs

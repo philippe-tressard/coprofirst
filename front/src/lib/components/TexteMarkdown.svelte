@@ -6,15 +6,15 @@
   sur fond gris dans la fiche du registre (`FicheRegistreInstallation`). Un même
   texte, une même boîte : celle-ci.
 
-  Le texte s'affiche tel quel le temps que le moteur arrive (`$lib/markdown`, chargé
+  Le texte s'affiche tel quel le temps que le moteur arrive (`#lib/markdown`, chargé
   au premier rendu), puis mis en forme — jamais une boîte vide. Si le moteur ne
   peut pas se charger, le texte reste lisible tel quel.
 
   🔒 Le HTML passe par `safeHtml` : un texte archivé vient d'une autre installation.
 -->
 <script lang="ts">
-	import { markdownEnHtml } from '$lib/markdown';
-	import { safeHtml } from '$lib/sanitize';
+	import { markdownEnHtml } from '#lib/markdown.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
 
 	/** Le texte source, en Markdown — jamais modifié ici. */
 	export let texte: string;

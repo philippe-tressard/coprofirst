@@ -198,7 +198,7 @@ def test_les_routes_de_la_table_sont_des_onglets_declares():
 
     Le contrôle a changé de forme le 05/09/2026, pas d'objet. Il vérifiait qu'un
     `?onglet=xxx` correspondait à une valeur connue de la page ; il vérifie
-    maintenant que la ROUTE écrite côté API est l'une de celles que `$lib/pages.ts`
+    maintenant que la ROUTE écrite côté API est l'une de celles que `#lib/pages.ts`
     déclare — ou la page d'un écran sans onglets (`/actualites`, `/faq`).
 
     Sans lui, `/annonce` au lieu d'`/annonces` passerait : le segment de reste

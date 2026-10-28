@@ -96,7 +96,7 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
 > récidivistes de la duplication).
 
 1. **XSS** : jamais `{@html contenu}`, toujours `{@html <assainisseur>(contenu)}`.
-   Ils sont **trois**, tous exportés par `$lib/sanitize.ts` et tous adossés à
+   Ils sont **trois**, tous exportés par `#lib/sanitize.ts` et tous adossés à
    DOMPurify : `safeHtml` (HTML riche), `safeRichContent` (riche ou texte, **sans**
    enveloppe — appelé à l'intérieur d'un `<p>`), `safeDescription` (idem, **avec**
    enveloppe `<p>`). Cette règle ne nommait que le premier alors que les trois
@@ -121,7 +121,7 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
    ressemble à une décision. Toute nouvelle exception s'ajoute **ici** avec sa
    raison, sinon la règle devient « sauf quand on a jugé que ça allait ».
 2. **Dates et montants** : ne jamais réimplémenter un format dans une page.
-   `$lib/date.ts` (`fmtDate`, `fmtDatetime`, `fmtMonthYear`…), `$lib/utils.ts`
+   `#lib/date.ts` (`fmtDate`, `fmtDatetime`, `fmtMonthYear`…), `#lib/utils.ts`
    (`fmtMontant`, `fmtOctets`, `fmtNombre`, `perimetreLabel`), et côté API `app/utils/dates_fr.py`. Deux
    garde-fous échouent en CI : `api/tests/test_dates_fr.py` et `npm run lint:dates`.
 3. **Accessibilité** : tout élément cliquable non-`<button>` porte `role="button"`,
@@ -130,7 +130,7 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
    (`standards/11-interface-et-ux.md` §2, seule source générique ; les skills y renvoient).
 4. **Icônes de contexte** : 📍 = lieu physique, 🔹 = périmètre logique — **jamais
    mélangés**, et le périmètre par défaut ne s'affiche pas — la question se pose à
-   `estPerimetreParDefaut` (`$lib/perimetres`), jamais par un `=== 'résidence'` :
+   `estPerimetreParDefaut` (`#lib/perimetres`), jamais par un `=== 'résidence'` :
    le code n'en contient plus un seul, et le nom du périmètre racine est
    **administrable**.
 
@@ -504,7 +504,7 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   mot de passe bloquerait alors la MEP. Cette ligne nommait aussi
   `check-reliability.sh`, qui ne compte rien de tel (23/09/2026).
 - **Le HTML d'un utilisateur, côté serveur : une seule porte** (#2150) —
-  `utils/html_sur` (`nh3`, liste blanche de `$lib/sanitize.ts`). Le corps d'un
+  `utils/html_sur` (`nh3`, liste blanche de `#lib/sanitize.ts`). Le corps d'un
   courriel **s'échappe** ; un champ riche y entre par `html_riche(…)` au contexte
   ou par `| safe`, redéfini pour assainir. Un assainissement « côté front » n'est
   pas une règle : l'API s'appelle sans l'écran. 🔒 `test_html_sur.py` rend chaque
@@ -569,6 +569,9 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 ## Checklist avant commit
 
 ### Frontend
+- [ ] Import d'un module de `src/lib` : `#lib/<fichier>.<extension>`, extension obligatoire
+      (un dossier : `#lib/<dossier>/index.ts`) — le champ `imports` de `front/package.json` le
+      résout, l'ancien alias SvelteKit est retiré (#2278, `npm run lint:alias-lib`)
 - [ ] Pattern existant réutilisé (pas de variante ad hoc) — *non mesurable : aucun
       garde-fou ne le tient, c'est la relecture qui le porte*
 - [ ] Méta toujours visible en mode collapsé — tenue par `EnteteCarte`, qui porte
@@ -588,7 +591,7 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       exceptions dans `ux-patterns` §3 (`npm run lint:pastilles`)
 - [ ] `.clamp-3` sur l'aperçu d'une carte (`.clamp-5` seulement hors carte) ;
       aucune troncature écrite hors de `normes.css` (`npm run lint:clamp`)
-- [ ] un assainisseur de `$lib/sanitize` sur tout `{@html}` — jamais un helper
+- [ ] un assainisseur de `#lib/sanitize` sur tout `{@html}` — jamais un helper
       local, même correct (`npm run lint:html` le refuse)
 - [ ] Accessibilité : `role`, `tabindex`, `aria-label`, `on:keydown`
 - [ ] Droits : jamais recomposés dans un écran — `$isCS` (il **inclut** admin),
@@ -607,12 +610,12 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 - [ ] Onglet réservé à un rôle : `reserve:` **sur l'onglet** dans `pages.ts`, jamais
       un masquage écrit dans la page — `BarreOnglets` masque ET refuse la route
       directe (`npm run lint:onglets-reserves`)
-- [ ] Nom affiché d'un objet « Saisi pour » : `nomProprietaire` (`$lib/saisi-pour`),
+- [ ] Nom affiché d'un objet « Saisi pour » : `nomProprietaire` (`#lib/saisi-pour`),
       **jamais** `objet.auteur_nom` — c'est le rédacteur, et le « Saisi pour » s'y
       substitue (12/09). La case de copie, elle, dit `nomCopie` : deux questions.
       Il y en avait **13** avant #1104 (`npm run lint:nom-proprietaire` le refuse)
-- [ ] Section d'un formulaire : elle est déclarée dans `$lib/entites/<entité>`,
-      dans l'ordre de `SECTIONS_ORDRE` (`$lib/entites/types.ts`) — la liste ET
+- [ ] Section d'un formulaire : elle est déclarée dans `#lib/entites/<entité>`,
+      dans l'ordre de `SECTIONS_ORDRE` (`#lib/entites/types.ts`) — la liste ET
       son compte se lisent là, jamais ici : « treize » y est resté écrit six
       jours pour quatorze (#1541, `npm run lint:consignes`) — et son **pliage** suit la
       règle *obligatoire → déplié · facultatif → plié*, ou porte son
@@ -623,7 +626,7 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       Et l'**appelant** la passe, lue par `pliageDe` : jamais absente ni `pliable`
       nu — la Suite d'une affaire ouvrait ce que l'Édition pliait (#1329)
 - [ ] Libellé qui NOMME un objet — bouton, titre de boîte, toast, confirmation :
-      le mot vient de `$lib/entites/<entité>` (`libelle`, `libelleNouveau`,
+      le mot vient de `#lib/entites/<entité>` (`libelle`, `libelleNouveau`,
       `libelleModifier`), **jamais** réécrit dans un écran. « Ticket » est un
       nom de modèle (« Publication » l'était, jusqu'à sa suppression le
       30/09/2026, #1177) ; l'écran dit « Affaire » et « Actualité ». Il y en avait **20** avant #1107 (`npm run lint:vocabulaire-ecran`)
@@ -660,7 +663,7 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       08/10/2026 (#1571, 524 au départ). Une classe pèse moins qu'un attribut :
       si une règle globale plus forte vise l'élément, qualifier le sélecteur
 - [ ] Bloc pliable (carte, section, année, `<details>`…) : **un seul déplié à la
-      fois**, par `$lib/accordeon` — jamais un `Set` d'ouverture. Exceptions
+      fois**, par `#lib/accordeon` — jamais un `Set` d'ouverture. Exceptions
       arbitrées : section modifiée, carte en correction (`npm run lint:accordeon`,
       30/09/2026)
 - [ ] Rangée de pastilles qui FILTRE une liste : `compte={<liste affichée>.length}` —
@@ -681,7 +684,7 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 - [ ] Badge dont la teinte vient d'une TABLE (état, rôle, import…) : `<Badge teinte={…}>`,
       jamais `class="badge {…}"` — une classe interpolée rend l'écran aveugle à
       `lint:css-orphelin` (25 fichiers l'étaient, #1571). `npm run lint:badge`
-- [ ] Icône vérifiée dans `$lib/icones-svg.json` — un nom inconnu échoue en silence
+- [ ] Icône vérifiée dans `#lib/icones-svg.json` — un nom inconnu échoue en silence
       (`npm run lint:icones` le refuse ; un relais d'icône s'appelle `icone`)
 - [ ] Tout champ libellé dans un `.field` — jamais une nomenclature locale
       (`npm run lint:champs` ; il y en avait **six** avant #413) — **y compris**
@@ -713,7 +716,7 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       **aucun `any` nulle part** : ESLint `no-explicit-any` en erreur sur tout le
       front (`eslint.config.js` — le client à zéro en v2.105.0, #1572, le reste
       le 08/10/2026, #1571). Typer sur les types du client, lire un champ dont le
-      nom est une donnée par `champDe` (`$lib/utils`)
+      nom est une donnée par `champDe` (`#lib/utils`)
 - [ ] `cd api && ruff format .` — la CI refuse un fichier non formaté depuis le
       24/09/2026 (#1048 ; Ruff **épinglé** dans `ci.yml`, largeur 100, migrations
       exclues par `api/ruff.toml`). ⚠️ Une ligne coupée emporte son `# noqa` sur

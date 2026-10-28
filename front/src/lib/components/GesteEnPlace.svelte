@@ -26,7 +26,7 @@
 -->
 <script lang="ts">
 	import PiedFormulaire from './PiedFormulaire.svelte';
-	import { safeRichContent } from '$lib/sanitize';
+	import { safeRichContent } from '#lib/sanitize.ts';
 
 	/**  Ce que le geste demande de confirmer, en une phrase.
 	 *

@@ -18,7 +18,7 @@ On cliquait « 💬 Commenter » et l'entrée s'affichait en 📝 — un mémo, 
 relance. Chacune de ces tables était cohérente **avec elle-même** : c'est ce qui
 les rendait invisibles à la relecture (#415, #413).
 
-Les trois écritures du front ont été réunies dans `$lib/evolutions.ts`. La
+Les trois écritures du front ont été réunies dans `#lib/evolutions.ts`. La
 quatrième ne peut pas les rejoindre : **les contextes de build sont `./api` et
 `./front`**, rien de la racine n'entre dans les images (mémoire projet du
 14/08/2026). Deux écritures sont donc inévitables.
@@ -44,7 +44,7 @@ _API = _RACINE / "api" / "app" / "routers" / "flux" / "tickets.py"
 
 
 def _icones_front() -> dict[str, str]:
-    """`EVOLUTION_ICONE` de `$lib/evolutions.ts`, lu comme du texte.
+    """`EVOLUTION_ICONE` de `#lib/evolutions.ts`, lu comme du texte.
 
     Les échappements `\\u{1F4AC}` sont résolus : le front les écrit ainsi parce
     qu'un emoji hors BMP survit mal aux allers-retours d'encodage sous Windows

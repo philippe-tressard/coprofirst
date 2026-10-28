@@ -36,10 +36,10 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { admin as adminApi, type BailSansLocataire } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { fmtDate } from '$lib/date';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { admin as adminApi, type BailSansLocataire } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	let lignes: BailSansLocataire[] = [];
 	let chargement = true;

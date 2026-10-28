@@ -103,7 +103,7 @@ pas la grammaire. C'est le signe que la grammaire est la bonne.
 porter un changement d'état, des pièces jointes et une diffusion. C'est déjà le
 vocabulaire du code (`TicketEvolution`, `EvolForm`).
 ⚠️ Le cadre parle d'évolutions ; **l'écran parle de gestes** — « Ajouter une
-suite » (`$lib/gestes.ts`, depuis la v2.7.0 ; « Commenter » est le mot abandonné).
+suite » (`#lib/gestes.ts`, depuis la v2.7.0 ; « Commenter » est le mot abandonné).
 
 ### Les sections, dans cet ordre — il ne se discute pas
 
@@ -208,9 +208,9 @@ données pour celles inappropriées »*. Une actualité est une affaire de caté
   de survol). Style « A », arbitré sur captures le 23/09/2026 — les hachures du
   premier jet ont été refusées. Elle ne se déplie pas et son contenu n'est pas rendu.
 - Le motif se **déclare** : `inactivePour` sur la section, dans
-  `$lib/entites/<entité>` ; `motifInactif()` le lit. Jamais un `{#if}` d'écran.
+  `#lib/entites/<entité>` ; `motifInactif()` le lit. Jamais un `{#if}` d'écran.
 - « Sans données » : ce qu'une section éteinte portait **ne part pas**
-  (`$lib/formulaire-affaire.chargeUtileAffaire`). Changer de nature en correction
+  (`#lib/formulaire-affaire.chargeUtileAffaire`). Changer de nature en correction
   l'**efface**, après une confirmation qui dit quoi (`pertesAuChangement`).
 - La pastille qui ouvre l'autre chemin (« 📰 Actualité — Information, sans
   suivi ») est **en tête**, pleine ligne, bord « information » sur fond blanc (un fond bleu la faisait croire cochée), suivie d'un filet
@@ -231,7 +231,7 @@ Les sections **1 à 8 décrivent l'entité** ; la **9 est un acte**.
 🔒 **La Suite suit le MÊME ordre** (#1326, 25/09/2026, signalé à l'écran) :
 `EvolForm` offre trois créneaux, rendus à leur rang — `avant_suivi` (Équipement),
 `specifiques` (Quand, Intervenant), `mise_en_avant` (après les Destinataires) —,
-déduits de `SECTIONS_ORDRE` (`$lib/evolutions.creneauDe`). Il n'en avait qu'un,
+déduits de `SECTIONS_ORDRE` (`#lib/evolutions.creneauDe`). Il n'en avait qu'un,
 et la Mise en avant y passait avant le Périmètre. `lint:ordre-sections` tient
 l'ordre dans `EvolForm`, `test_creneaux_suite.py` le créneau chez chaque hôte.
 
@@ -451,7 +451,7 @@ gris (`PDF`, `EXCEL`, `WORD`) ; le **nom sans son extension** ensuite — elle e
 déjà dite par le type, et « PDF: contrat.pdf » allonge la pastille sans rien
 apprendre ; une **croix rouge** pour retirer.
 
-Le type se calcule dans `$lib/fichiers` (`typeFichier`, `nomSansExtension`),
+Le type se calcule dans `#lib/fichiers` (`typeFichier`, `nomSansExtension`),
 jamais dans un écran : quatre rendus l'affichent, et un format recopié aurait
 divergé au premier ajustement. Les familles bureautiques y sont ramenées au nom
 que tout le monde emploie (`XLSX` et `XLS` → `EXCEL`), sinon deux tableurs
@@ -538,7 +538,7 @@ caves.
 > plus consultée est celle qui trompe le plus longtemps.
 
 **Écrire un code de périmètre est interdit** — `npm run lint:perimetres` échoue
-dessus. Utiliser, depuis `$lib/perimetres` :
+dessus. Utiliser, depuis `#lib/perimetres` :
 
 | Besoin | Fonction |
 |---|---|
@@ -593,7 +593,7 @@ Les trois rendus par page que cette section listait (actualités, calendrier,
 tickets) sont tous passés par ce composant ; la page Calendrier n'existe plus
 (#1092).
 
-Le label vient de `perimetreLabel()` (`$lib/utils`) — ne pas réimplémenter la table
+Le label vient de `perimetreLabel()` (`#lib/utils`) — ne pas réimplémenter la table
 de correspondance dans une page.
 
 ## 2 bis. Les DESTINATAIRES — la nomenclature (arbitrée le 25/09/2026)
@@ -613,14 +613,14 @@ n'est pas résident. »* Les libellés sont **au pluriel**.
 - Un **résident** HABITE la résidence : copropriétaire occupant **ou** locataire.
   Un copropriétaire bailleur, un bailleur **ne sont pas** des résidents.
 - Le choix sans restriction s'écrit **« Tous »**, jamais « Tous les résidents » :
-  `LIBELLE_TOUS` (`$lib/destinataires`), lu par le sélecteur, le badge d'état de
+  `LIBELLE_TOUS` (`#lib/destinataires`), lu par le sélecteur, le badge d'état de
   la section et la pastille de lecture. Le **code** reste `résidents` — stocké en
   base, lu par `public_cible_visible` ; le renommer serait une migration.
 - Le manuel suit (cartes d'écran « Tous »).
 - La **pastille de lecture** — livrée au lot 1 (25/09/2026), maquette :
   https://claude.ai/artifact/WRVxXqqJaFATAmWfz7WTsn
-  - calcul **unique** : `$lib/lecture` (`lectureDe`), appliqué à l'objet par
-    `$lib/lecture-ticket` ; rendu `PastilleLecture` (carte) et badge d'état de
+  - calcul **unique** : `#lib/lecture` (`lectureDe`), appliqué à l'objet par
+    `#lib/lecture-ticket` ; rendu `PastilleLecture` (carte) et badge d'état de
     `SectionDestinataires` (icônes par `ContenuBadge`). **Une** couleur, bleue ;
     rien sur la carte quand personne n'est exclu ; cadenas `lock` quand le
     périmètre est réservé ; « CS » remplace tout quand elle est confidentielle.
@@ -657,7 +657,7 @@ n'est pas résident. »* Les libellés sont **au pluriel**.
     entre Locataires et elle — trois degrés de restriction, pas un doublon.
   - ✅ **#1436** (28/09/2026) : CHAQUE catégorie d'affaire a ses Destinataires
     par défaut — la table vit au serveur (`DEFAUT_PAR_CATEGORIE`,
-    `utils/visibility/defauts_affaire.py`), son miroir dans `$lib/lecture`, et
+    `utils/visibility/defauts_affaire.py`), son miroir dans `#lib/lecture`, et
     `lecture_pastille.json` en tient un cas par catégorie. « Résident concerné »
     y est un DÉFAUT : la pastille est cochée sans poser le drapeau, et la
     vignette dit « Concerné ». Fermée ainsi, une affaire ne sort pas plus (groupe,
@@ -840,8 +840,8 @@ NOTION, et la forme aérée est devenue la base :
 |---|---|---|
 | `CarteListe` | **le conteneur de toute carte de liste** (10/10/2026) : `.carte-liste`, la gouttière dès que `quand`, `classe` ou le créneau `gouttiere` la remplit (`.a-gouttiere`), le geste asymétrique (`onDeplier`, absent = la carte ne se déplie pas), ce qui l'ANNONCE (`onApprocher` : appui, survol à la souris, focus — précharger un corps différé, #1860), `expanded`, `urgent`, `archive`, `heure` (la gouttière dit l'heure, le jour étant l'intitulé du groupe) ; `class`, `style` et les `data-*` (teinte) sont transmis | toutes les cartes du site, **fil d'activité compris** (maquette B du fil, 10/10/2026 : heure puis rubrique, `classeFlux` ; la frise est partie — l'heure sous un intitulé de jour seulement : le bandeau Épinglé, qui n'en a pas, dit la date, 12/10/2026) ; 🔒 `npm run lint:carte-liste` refuse le conteneur, la gouttière ou un état de carte écrits ailleurs |
 | `Gouttiere` | `quand` (ISO, découpé par `partiesDate`) puis `classe` (`{icone, libelle, abrege}`), et un slot libre dessous (le vote d'une idée) ; au téléphone (≤ 480 px), une ligne au-dessus du titre | rendue par `CarteListe` **seul** ; la carte **ne passe plus** `date` à `EnteteCarte` |
-| `$lib/gouttiere` | le type `ClasseGouttiere` et `classeDe(table, marques, val)` : une notion déclare la **marque** de chaque valeur (`[icone, abrege]`), le libellé vient de sa table — `$lib/prestataires-gouttiere`, `classementAnnonce` | tout écran qui classe |
-| `gouttiereAffaire(t)` | la gouttière d'une affaire, `{ quand, classe }` : `mis_a_jour_le ?? cree_le` et la nature (`natureDe`), à étaler sur `CarteListe` ; la teinte vient de `[data-nature]` (`--nature-fort`), sans elle le Bleu Seine | `CarteTicket`, `CarteActualite` (`$lib/tickets`) |
+| `#lib/gouttiere` | le type `ClasseGouttiere` et `classeDe(table, marques, val)` : une notion déclare la **marque** de chaque valeur (`[icone, abrege]`), le libellé vient de sa table — `#lib/prestataires-gouttiere`, `classementAnnonce` | tout écran qui classe |
+| `gouttiereAffaire(t)` | la gouttière d'une affaire, `{ quand, classe }` : `mis_a_jour_le ?? cree_le` et la nature (`natureDe`), à étaler sur `CarteListe` ; la teinte vient de `[data-nature]` (`--nature-fort`), sans elle le Bleu Seine | `CarteTicket`, `CarteActualite` (`#lib/tickets`) |
 | `ReglagesListe` | la grille des réglages : libellés dans une colonne de la largeur de la gouttière, `ChampRecherche` **en tête**, puis `ChoixPastilles libelleDevant` / `FiltrePerimetre libelleDevant`, chacun avec `compte` | `FiltresAffaires` et toute page à réglages |
 | `EnteteCarte` | la densité **aérée** est la base (l'ex-variante `ample`) : titre `--fs-lg`, aperçu `--fs-md` interligne 1,5, actions 26 px au bureau, 32 au doigt | toutes les cartes |
 | `.carte-liste` | le filet sur trois côtés et 0,85 rem entre deux cartes (0,6 au téléphone) | `normes.css` |
@@ -970,10 +970,10 @@ déborde » : la mesure se fait après rendu (`scrollHeight > clientHeight`).
 
 ### Règles
 - **Une seule** carte ouverte à la fois — et un seul bloc déplié, quel qu'il soit
-  (arbitrage n° 17, `ARBITRAGES.md`, `$lib/accordeon`)
+  (arbitrage n° 17, `ARBITRAGES.md`, `#lib/accordeon`)
 - Chargement lazy des détails au premier clic
 - Une liste qui peut compter des dizaines de cartes se **rend par paquets** :
-  `$lib/rendu-progressif` (`aRendre`, `quandProche`) — les premières d'emblée,
+  `#lib/rendu-progressif` (`aRendre`, `quandProche`) — les premières d'emblée,
   la suite à l'approche du bas, la carte visée par un lien toujours rendue. Seul
   le rendu change : filtres et compteurs portent sur la liste entière (#1840,
   Affaires par `ListeTickets`)
@@ -986,7 +986,7 @@ déborde » : la mesure se fait après rendu (`scrollHeight > clientHeight`).
   (`GLYPHE_URGENCE`) ; 🔒 `npm run lint:pictogrammes` refuse 🚨 partout, manuel compris.
   Une **affaire** en priorité haute porte en plus son badge de priorité, « ⚡ Urgente »
   (`PRIORITE_BREVE`), **une fois** : la rangée des options passe par `optionsEnBadge`
-  (`$lib/tickets`), qui retire ce qu'un badge dédié dit déjà — urgence et
+  (`#lib/tickets`), qui retire ce qu'un badge dédié dit déjà — urgence et
   confidentialité. Elle les répétait (27/09/2026, #1364). 🔒 `npm run lint:options-en-double`
 - **Le corps déplié ne referme pas la carte** : `on:click|stopPropagation` dessus.
   On referme par l'en-tête. Sans cela, impossible de sélectionner du texte, et un
@@ -1091,8 +1091,8 @@ eu à copier que l'adresse de la page voisine.
 | Ce qu'on écrit | Où |
 |---|---|
 | la rangée | **`BarreOnglets.svelte`** — `<BarreOnglets pageId="…" actif={onglet} />`, jamais un `<div class="tabs">` à la main |
-| la liste, l'ordre, le libellé **et la route** de chaque onglet | `$lib/pages.ts` (`onglets[].route`, `onglets[].sous[]`) |
-| la résolution route ⇄ onglet | `$lib/routes-onglets.ts` (`routeOnglet`, `ongletDepuisChemin`) |
+| la liste, l'ordre, le libellé **et la route** de chaque onglet | `#lib/pages.ts` (`onglets[].route`, `onglets[].sous[]`) |
+| la résolution route ⇄ onglet | `#lib/routes-onglets.ts` (`routeOnglet`, `ongletDepuisChemin`) |
 | la lecture de l'URL | le **`load`** du `+page.ts` : `resoudreOnglet(pageId, url)` |
 | l'onglet dans l'écran | `export let data` → `$: onglet = data.onglet` — **jamais** un `let onglet` qu'on affecte |
 
@@ -1219,7 +1219,7 @@ uniquement pour la pastille retenue »*, à appliquer à toute nouvelle demande.
   Un composant de filtres qui enveloppe la rangée reçoit le nombre de la page
   (`affichees`, `affiches`) : c'est la page qui tient la liste.
 - **Lequel** : la liste **principale** — ce qui est rangé aux Archives a sa propre
-  vignette en dessous, et ne compte pas (`enCours` de `$lib/archives`, sur le
+  vignette en dessous, et ne compte pas (`enCours` de `#lib/archives`, sur le
   `archivee` que le serveur calcule).
 - **Le style** : la vignette `Compte` des Archives, inversée sur l'aplat Bleu
   Seine — chiffres à chasse fixe, sans animation (`emil-design-eng` : ce qu'on
@@ -1240,7 +1240,7 @@ https://claude.ai/artifact/BRYAWNn4EZAx1EBTHHNMQu
 - **La règle est au SERVEUR** (`app/utils/recherche_affaires.py`, `--selftest`) :
   tous les mots, partout, sans accents ni casse — n°, titre, description,
   catégorie, lieu, personnes, prestataire, équipement, suites, messages, pièces
-  jointes. L'écran n'en a pas de seconde : `$lib/recherche-affaires` demande
+  jointes. L'écran n'en a pas de seconde : `#lib/recherche-affaires` demande
   (après la frappe, dernière réponse seule) et filtre.
 - 🔴 **Elle ne lit que ce que l'écran montre** : `ticket_visible` (l'affaire et son
   fil, depuis le 29/09/2026), `lit_les_notes_internes`, `document_visible` — les prédicats des routes qui
@@ -1493,7 +1493,7 @@ et de l’opérateur (Installation, Installations : `reserve: 'operateur'`). Un 
 refusé se replie sur le premier ouvert de **son groupe**. Contrairement à « À
 traiter », les clés retirées ce jour-là (`site`, `import_*`) **sont redirigées** :
 un modèle de courriel en base porte `import_tc`, et la base n’est pas le seed —
-`$lib/admin-adresses`, une clé ne s’en retire jamais. 🔒 `e2e/admin-groupes.spec.ts`
+`#lib/admin-adresses`, une clé ne s’en retire jamais. 🔒 `e2e/admin-groupes.spec.ts`
 parcourt les dix-neuf clés d’avant, et les trois comptes.
 
 ⚠️ **Un lien vers un écran d’admin s’écrit `/admin?onglet=<clé>`.** Un modèle
@@ -1528,7 +1528,7 @@ portait `.field input` **deux fois**, une version blanche et une beige, et c’e
 l’ordre de la cascade qui tranchait (#413).
 
 ⚠️ **Pas d’émoji dans un titre de section ni de bloc** : le tracé vient du
-catalogue partagé `$lib/icones-svg.json`, via `icone` sur `SectionFormulaire` ou
+catalogue partagé `#lib/icones-svg.json`, via `icone` sur `SectionFormulaire` ou
 `<Icon>` sur `.config-section-title`. Un émoji dépend de la police du système ;
 l’en-tête de page prenait déjà ses tracés dans le catalogue — deux façons de
 désigner une section, dont une seule est stable.
@@ -1627,7 +1627,7 @@ publication » n'avait aucun rang : chaque écran la posait où il voulait, et
 l'utilisateur a vu la divergence — entre Actualité et Tickets d'une part, et
 dans le calendrier d'autre part, où « Épingler dans le fil » vivait carrément
 dans la **Diffusion**, avec son propre glyphe, alors que
-`$lib/options-publication` porte la notion.
+`#lib/options-publication` porte la notion.
 
 ⚠️ **Les deux écarts avaient la même cause** : cette table existait et rien ne
 la faisait respecter. Elle est désormais tenue par deux mécanismes, pas par la
@@ -1889,7 +1889,7 @@ Structure pour les tickets/publications avec historique :
 ### 10 bis. Le workflow d'un objet : UNE liste, et UN geste par écran
 
 **Les états proposables ne s'écrivent jamais dans un écran.** Pour un ticket, ils
-viennent de `$lib/tickets` (`STATUT_TICKET_OPTIONS`, `…_LABELS`, `…_BADGE`,
+viennent de `#lib/tickets` (`STATUT_TICKET_OPTIONS`, `…_LABELS`, `…_BADGE`,
 `STATUTS_TICKET_FILTRE`, `estTicketActif`, `estTicketClos`), qui répond à
 `StatutTicket` côté serveur. `api/tests/test_statuts_tickets.py` échoue sur toute
 liste réécrite — y compris dans un fichier qui importe déjà le module.
@@ -1923,15 +1923,15 @@ chacune avec sa propre expression régulière pour décider ce qui est une image
 
 | Composant | Rôle | Props |
 |---|---|---|
-| `$lib/components/PiecesJointes.svelte` | **affichage en lecture seule** d'une liste de pièces jointes (photos + documents) | `urls`, `size`, `compact`, `format` |
-| `$lib/components/Lightbox.svelte` | visionneuse plein écran | `photos`, `index` · événement `fermer` |
-| `$lib/components/Vignette.svelte` | vignette carrée (brique de bas niveau) | `src`, `alt`, `placeholder`, `count`, `size`, slot d'actions |
-| `$lib/components/FichiersUpload.svelte` | galerie **éditable** — photos **et** documents ; `ImageUpload.svelte` pour une image seule. ⚠️ Cette ligne nommait `PhotosUpload.svelte`, qui n'existe pas | `urls`, `max`, `readonly`, `upload`, `remove` |
-| `$lib/components/FichiersUpload.svelte` | **saisie** de pièces jointes ; `differe` retient les `File` quand le parent n'existe pas encore | `urls`, `fichiers`, `differe`, `mode`, `max`, `titre` |
+| `#lib/components/PiecesJointes.svelte` | **affichage en lecture seule** d'une liste de pièces jointes (photos + documents) | `urls`, `size`, `compact`, `format` |
+| `#lib/components/Lightbox.svelte` | visionneuse plein écran | `photos`, `index` · événement `fermer` |
+| `#lib/components/Vignette.svelte` | vignette carrée (brique de bas niveau) | `src`, `alt`, `placeholder`, `count`, `size`, slot d'actions |
+| `#lib/components/FichiersUpload.svelte` | galerie **éditable** — photos **et** documents ; `ImageUpload.svelte` pour une image seule. ⚠️ Cette ligne nommait `PhotosUpload.svelte`, qui n'existe pas | `urls`, `max`, `readonly`, `upload`, `remove` |
+| `#lib/components/FichiersUpload.svelte` | **saisie** de pièces jointes ; `differe` retient les `File` quand le parent n'existe pas encore | `urls`, `fichiers`, `differe`, `mode`, `max`, `titre` |
 
 Le téléversement est **délégué par callback** : chaque rubrique garde son propre
 endpoint, le composant ne connaît pas l'API. La règle « qu'est-ce qu'une image, et
-quel nom afficher » vit dans `$lib/fichiers.ts` (`separerFichiers`, `nomFichier`) —
+quel nom afficher » vit dans `#lib/fichiers.ts` (`separerFichiers`, `nomFichier`) —
 jamais réimplémentée dans une page.
 
 ### Quel `format` de `PiecesJointes` — la vignette ne répond pas à la même question
@@ -1986,7 +1986,7 @@ qu'à signaler la présence d'une image.
   sortait de la PWA vers le fichier brut, et le retour ramenait sur une page dont
   l'article s'était refermé — le geste le plus coûteux de l'écran, sur mobile surtout.
 - **Le verrou de défilement et `Échap` sont des biens du document** : ils passent par
-  `poserCouche` (`$lib/couche.ts`), commun à `Modale` et à la visionneuse, dont le
+  `poserCouche` (`#lib/couche.ts`), commun à `Modale` et à la visionneuse, dont le
   retrait se lance à la fermeture **et** depuis `onDestroy`. Pourquoi une seule
   porte — une photo ouverte depuis une modale rendait le défilement, et `Échap`
   fermait les deux : l'en-tête du module (#1042). 🔒 `npm run lint:couches`.
@@ -2020,7 +2020,7 @@ ou à l'abandon (#2170, 🔒 `e2e/kanban-glissement.spec.ts`).
 Items non-affichables : masqués aux non-CS/admin, sauf `maintenance_recurrente`.
 
 🔴 **Les colonnes elles-mêmes ne s'écrivent qu'à un endroit** : `KANBAN_COLS`
-(`$lib/kanban`), et la brique d'accueil **dérive** `KANBAN_COLS_ACCUEIL`. Elle
+(`#lib/kanban`), et la brique d'accueil **dérive** `KANBAN_COLS_ACCUEIL`. Elle
 recopiait la table jusqu'au 19/09/2026 (#1030) — cinq colonnes au lieu de six,
 libellés plus courts, couleurs recopiées à l'identique.
 
@@ -2059,7 +2059,7 @@ tiennent :
   fallait donc agir pour apprendre qu'il n'y a rien à voir. Le `writing-mode`
   de l'en-tête l'oriente avec le titre, et le pli dit alors ce qu'il contient.
 
-- **l'accueil borne ses colonnes à `MAX_CARTES_ACCUEIL`** (trois, `$lib/kanban`),
+- **l'accueil borne ses colonnes à `MAX_CARTES_ACCUEIL`** (trois, `#lib/kanban`),
   avec un report « +N / total ». Le nombre se déclare là et **nulle part
   ailleurs** : il était écrit trois fois dans le composant, et en oublier une
   donne un compteur qui ment sans qu'aucun test ne le voie (`lint:plafond-liste`
@@ -2106,7 +2106,7 @@ de l'utilisateur. *Une consigne fausse fait lire l'écart comme une décision.*
 | Prop | Rôle |
 |---|---|
 | `titre` | obligatoire |
-| `icone` | nom Lucide du catalogue `$lib/icones-svg.json` |
+| `icone` | nom Lucide du catalogue `#lib/icones-svg.json` |
 | `retour` | href — affiche `← Retour` **à gauche du titre** |
 | `descriptif` | le descriptif **de la page** (`_pc.descriptif`), rendu sous l'en-tête et **au-dessus** des onglets |
 | ~~`marge`~~ | **retirée le 17/08/2026** — voir ci-dessous |
@@ -2123,7 +2123,7 @@ administrable ne s'y affichait pas. Une phrase par niveau : la page dit ce qu'el
 il répète mot pour mot la page — comparé sans balisage, les deux étant administrables.
 🔒 `lint:entetes` (motif 4, composants compris) · `e2e/descriptif-page.spec.ts`.
 
-⚠️ **Vérifier que l'icône existe** dans `$lib/icones-svg.json` : `Icon` retombe
+⚠️ **Vérifier que l'icône existe** dans `#lib/icones-svg.json` : `Icon` retombe
 **silencieusement** sur `help-circle` pour un nom inconnu. `message-square-plus`
 n'existe pas et aurait affiché un point d'interrogation sans qu'aucun contrôle ne
 le dise (constaté le 15/08/2026). Depuis le 24/09/2026, `npm run lint:icones` le
@@ -2167,7 +2167,7 @@ mécaniquement : ce qu'il faut y mettre est instruit dans #365.
 *« affichée d'une manière différente du fil d'actualité ou de la page »*).
 `/tickets/[id]` rendait une fiche à part — en-tête, boutons d'état, Historique ; il
 rend désormais `ListeTickets` sur une liste d'UNE affaire, dépliée d'office, avec
-les gestes de la liste (`$lib/affaires-en-liste`, la seule écriture des gestes, que
+les gestes de la liste (`#lib/affaires-en-liste`, la seule écriture des gestes, que
 la page Affaires emploie aussi). Ce qui lui reste propre : le fil de MESSAGES dessous
 (les notifications pointent `#msg-…`), et un `<h1 class="sr-only">` — le titre de la
 carte est un bouton qui la plie, pas un intitulé. Un objet, un rendu : une fiche qui
@@ -2576,7 +2576,7 @@ introuvable. Les deux sont arrivés le même jour dans `RubriqueHistorique`.
 Le pendant du droit ci-dessus, et il a mis six jours à le rejoindre. Un objet
 « Saisi pour » appartient à celui **pour qui** il a été ouvert :
 
-| Ce qu'on demande | La fonction, dans `$lib/saisi-pour` |
+| Ce qu'on demande | La fonction, dans `#lib/saisi-pour` |
 |---|---|
 | le nom que l'écran **affiche** | `nomProprietaire(objet)` |
 | le nom que la case « Envoyer une copie à … » **annonce** | `nomCopie(objet, saisie?)` |
@@ -2615,7 +2615,7 @@ sa catégorie (le modèle `Publication` a été supprimé le 30/09/2026, #1177).
 | le titre de la boîte d'édition | `ENTITE.libelleModifier` |
 | un toast, une confirmation, un titre de section | `ENTITE.libelle` |
 
-`$lib/entites/<entité>.ts` — jamais réécrit dans un écran.
+`#lib/entites/<entité>.ts` — jamais réécrit dans un écran.
 
 ⚠️ **Le renommage v2.1.0 a traité les écrans, la FAQ, le README et le manuel, et
 PAS les verbes d'action.** Le mot de code avait donc fui jusqu'au bouton :
@@ -2742,7 +2742,7 @@ demande de l'utilisateur. Une seule écriture chacun, dans la charte :
 
 | Quoi | Règle | Où |
 |---|---|---|
-| jetons | `--ease-out` (courbe de sortie marquée), `--duree-geste` 120 ms, `--duree-apparition` 200 ms. Un SCRIPT n'en écrit pas non plus : il pose une classe ou une valeur, le CSS anime, et il attend `finDesAnimations` (`$lib/mouvement`, avec `mouvementReduit`) — jamais `transitionend`, muet quand la transition ne démarre pas (#2168). **Aucune durée écrite** : un survol, un appui, un changement de couleur → `var(--duree-geste)` (courbe par défaut ; `--ease-out` si `transform`) ; ce qui ENTRE → `var(--duree-apparition) var(--ease-out)`, cascade par `var(--delay, 0s)` posée dans la page. Une dimension animée (largeur, hauteur) se déclare. 🔒 `npm run lint:mouvement` (27/09/2026 : 64 transitions sur 74 écrivaient la leur) | `styles/socle.css` |
+| jetons | `--ease-out` (courbe de sortie marquée), `--duree-geste` 120 ms, `--duree-apparition` 200 ms. Un SCRIPT n'en écrit pas non plus : il pose une classe ou une valeur, le CSS anime, et il attend `finDesAnimations` (`#lib/mouvement`, avec `mouvementReduit`) — jamais `transitionend`, muet quand la transition ne démarre pas (#2168). **Aucune durée écrite** : un survol, un appui, un changement de couleur → `var(--duree-geste)` (courbe par défaut ; `--ease-out` si `transform`) ; ce qui ENTRE → `var(--duree-apparition) var(--ease-out)`, cascade par `var(--delay, 0s)` posée dans la page. Une dimension animée (largeur, hauteur) se déclare. 🔒 `npm run lint:mouvement` (27/09/2026 : 64 transitions sur 74 écrivaient la leur) | `styles/socle.css` |
 | corps déplié | **entre** en 200 ms (fondu + 4 px), **sort** sans délai ; jamais la hauteur animée. Le corps porte **`.carte-corps`** | `composants.css` (`.carte-liste .carte-corps`) |
 | appui | `scale(0.97)` sur `:active`, `transform` seul ; pas sur une icône `aria-pressed` (déjà à 115 %) | `composants.css` (`.btn`, `.btn-icon*`, `.signaler-inline`) · `Pastille.svelte` |
 | animation sans fin | réservée à une ATTENTE (spinner, squelette, assistant qui travaille) — jamais décorative : ce qu'on voit plusieurs fois par jour ne s'anime pas. 🔒 `npm run lint:animations-infinies` (exceptions déclarées) | `composants.css` (`spin`) · `BadgeNouveau` (fixe) |
@@ -2783,7 +2783,7 @@ projet** : https://claude.ai/artifact/5EUqnbiH4HSF8wJe4khAgP
 | encart d'avertissement | `EncartAvertissement`, et lui seul — `compact` sous un champ, la marge chez l'appelant ; un fond d'avertissement ailleurs est un **emprunt de teinte** (survol, badge, carte mise en avant) et se déclare dans le contrôle, avec son nombre (#1455) | 🔒 `npm run lint:encart-avertissement` |
 
 ⚠️ **Les palettes de CATÉGORIES ne sont pas des états** et restent hors de la
-règle : la teinte d'un type du fil (`$lib/flux`), d'un périmètre, d'une colonne
+règle : la teinte d'un type du fil (`#lib/flux`), d'un périmètre, d'une colonne
 de kanban, d'une nature (`--nature-fort`), l'orange de l'urgence, `.badge-yellow`
 (#495). Les confondre ferait perdre ce qui les distingue.
 

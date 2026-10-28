@@ -11,7 +11,7 @@
   ⚠️ **Une vue = un fichier, et c'est la seule découpe qui tienne.** Tout ramener
   dans UN composant donnait 1 400 lignes : le même défaut, déplacé d'un fichier à
   l'autre. Ce qui est partagé monte d'un cran — les types et les calculs dans
-  `$lib/reporting.ts`, le vocabulaire de style dans `app.css`.
+  `#lib/reporting.ts`, le vocabulaire de style dans `app.css`.
 
   🔴 **Plus aucune liste d'affaires n'est chargée ici depuis le 17/10/2026.** Elle
   servait la seule vue « Analyse des affaires » (volume, urgences, répartitions
@@ -26,14 +26,14 @@
   changement d'onglet. Elle vivait dans la page, qui, elle, restait montée.
 -->
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import Pastille from '$lib/components/Pastille.svelte';
-	import { TICKET } from '$lib/entites/ticket';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import Pastille from '#lib/components/Pastille.svelte';
+	import { TICKET } from '#lib/entites/ticket.ts';
 	import { onMount, onDestroy, tick } from 'svelte';
-	import { prestataires as prestApi, diagnostics as diagnosticsApi } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { fmtDatetime } from '$lib/date';
+	import { prestataires as prestApi, diagnostics as diagnosticsApi } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { fmtDatetime } from '#lib/date.ts';
 	import {
 		REPORT_VUES,
 		VUE_PERIODIQUE,
@@ -42,11 +42,11 @@
 		type ReportPrestataire,
 		type ReportContrat,
 		type DiagType,
-	} from '$lib/reporting';
+	} from '#lib/reporting.ts';
 	import VueSuiviAffaires from './VueSuiviAffaires.svelte';
 	import VuePrestataires from './VuePrestataires.svelte';
 	import VueRenouvellements from './VueRenouvellements.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	/** Libellé de l'onglet, pour l'en-tête d'impression. */
 	export let titreOnglet = 'Reporting';

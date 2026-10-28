@@ -1,11 +1,17 @@
 //  Le vocabulaire du POINT CONSEIL SYNDICAL / SYNDIC (#2041) — écrit une fois
-//  pour le bandeau, la saisie et le CR global (`$lib/components/reporting/`).
+//  pour le bandeau, la saisie et le CR global (`#lib/components/reporting/`).
 //
 //  ⚠️ Aucune fonction d'ici ne touche au réseau ni au DOM : les règles (un point
 //  par mode, reprise, non traitées) vivent au serveur, `utils/points_conseil`.
 
-import { nomAffiche } from '$lib/noms';
-import type { CrAffaire, EtatPoint, NaturePresent, PresentEntree, PresentPoint } from '$lib/api';
+import { nomAffiche } from '#lib/noms.ts';
+import type {
+	CrAffaire,
+	EtatPoint,
+	NaturePresent,
+	PresentEntree,
+	PresentPoint,
+} from '#lib/api/index.ts';
 
 /** Ce que dit l'état d'un point, à l'écran. */
 export const ETATS_POINT: Record<EtatPoint, { libelle: string; teinte: string }> = {

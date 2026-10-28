@@ -17,7 +17,7 @@
  *  valeurs vides sont écartées ICI, une fois — sinon chaque écran testerait
  *  ses champs avant de les passer.
  */
-import { perimetreLabel, stripHtml } from '$lib/utils';
+import { perimetreLabel, stripHtml } from '#lib/utils.ts';
 
 /**
  *  La nature d'un commentaire, telle que le modele la lit.

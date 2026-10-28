@@ -10,8 +10,8 @@
  * `perimetreLabel()` de rester synchrone au milieu d'un gabarit.
  */
 import { writable } from 'svelte/store';
-import { perimetres as perimetresApi } from '$lib/api';
-import { definirPerimetres, type Perimetre } from '$lib/perimetres';
+import { perimetres as perimetresApi } from '#lib/api/index.ts';
+import { definirPerimetres, type Perimetre } from '#lib/perimetres/index.ts';
 
 export const perimetresStore = writable<Perimetre[]>([]);
 

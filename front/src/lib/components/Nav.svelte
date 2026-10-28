@@ -1,19 +1,19 @@
 <script lang="ts">
-	import { lieu } from '$lib/lieu.svelte';
+	import { lieu } from '#lib/lieu.svelte.ts';
 	import {
 		currentUser,
 		isCS,
 		isAdminOuOperateur,
 		hasResidentRole,
 		isAdminOnly,
-	} from '$lib/stores/auth';
-	import { locale, NAV_LABELS } from '$lib/stores/locale';
-	import { auth as authApi } from '$lib/api';
-	import { CHEMIN_CONNEXION } from '$lib/redirection';
-	import { configStore, getPageConfig } from '$lib/stores/pageConfig';
-	import Icon from '$lib/components/Icon.svelte';
-	import LiensGuide from '$lib/components/LiensGuide.svelte';
-	import MarqueResidence from '$lib/components/MarqueResidence.svelte';
+	} from '#lib/stores/auth.ts';
+	import { locale, NAV_LABELS } from '#lib/stores/locale.ts';
+	import { auth as authApi } from '#lib/api/index.ts';
+	import { CHEMIN_CONNEXION } from '#lib/redirection.ts';
+	import { configStore, getPageConfig } from '#lib/stores/pageConfig.ts';
+	import Icon from '#lib/components/Icon.svelte';
+	import LiensGuide from '#lib/components/LiensGuide.svelte';
+	import MarqueResidence from '#lib/components/MarqueResidence.svelte';
 	import {
 		HREFS_DEFAUT,
 		HREF_VERS_PAGE,
@@ -21,10 +21,10 @@
 		PAGES_MENU,
 		identifiantsRepetes,
 		ordonnerPages,
-	} from '$lib/pages';
+	} from '#lib/pages.ts';
 
 	// Les valeurs par défaut, l'ordre et la correspondance identifiant → route
-	// viennent tous de `$lib/pages.ts` — voir l'en-tête de ce fichier pour les trois
+	// viennent tous de `#lib/pages.ts` — voir l'en-tête de ce fichier pour les trois
 	// divergences qu'entretenaient les deux tables d'avant (#401).
 
 	function navItem(href: string, raw: Record<string, string>) {

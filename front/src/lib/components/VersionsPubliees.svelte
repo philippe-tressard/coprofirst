@@ -12,9 +12,9 @@
   §0 ter), sans la repousser.
 -->
 <script lang="ts">
-	import SectionRepliee from '$lib/components/SectionRepliee.svelte';
-	import type { VagueLue, VersionPubliee, VersionsPubliees } from '$lib/api';
-	import { fmtDate, fmtDatetime } from '$lib/date';
+	import SectionRepliee from '#lib/components/SectionRepliee.svelte';
+	import type { VagueLue, VersionPubliee, VersionsPubliees } from '#lib/api/index.ts';
+	import { fmtDate, fmtDatetime } from '#lib/date.ts';
 
 	export let versions: VersionsPubliees;
 	export let vagues: VagueLue[] = [];

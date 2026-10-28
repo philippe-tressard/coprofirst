@@ -15,8 +15,8 @@
  * besoin, et #515 va en demander sur sept pages. Une copie par écran divergerait
  * au premier message ajusté.
  */
-import { ApiError, CHEMINS_SANS_RENOUVELLEMENT } from '$lib/api';
-import { toast } from '$lib/components/Toast.svelte';
+import { ApiError, CHEMINS_SANS_RENOUVELLEMENT } from '#lib/api/index.ts';
+import { toast } from '#lib/components/Toast.svelte';
 
 /**
  *  @param repli  Ce qu'on dit quand l'erreur n'est PAS une réponse du serveur
@@ -41,7 +41,7 @@ export function messageErreur(e: unknown, repli?: string): string {
 			//  partagé les aurait dégradés.
 			//
 			//  La liste n'est pas réécrite ici : c'est celle qui gouverne déjà le
-			//  renouvellement (`$lib/api/client.ts`). Une seule liste, deux
+			//  renouvellement (`#lib/api/client.ts`). Une seule liste, deux
 			//  usages — et `lint:session` la surveille.
 			if (e.chemin && CHEMINS_SANS_RENOUVELLEMENT.includes(e.chemin))
 				return e.message || 'Identifiants refusés.';

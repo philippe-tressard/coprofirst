@@ -39,21 +39,21 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import type { AffaireLiee } from '$lib/api/types';
-	import BadgeEtatAffaire from '$lib/components/BadgeEtatAffaire.svelte';
-	import ChoixAffaire from '$lib/components/ChoixAffaire.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
-	import { fmtDate } from '$lib/date';
-	import type { Ticket } from '$lib/api';
+	import type { AffaireLiee } from '#lib/api/types.ts';
+	import BadgeEtatAffaire from '#lib/components/BadgeEtatAffaire.svelte';
+	import ChoixAffaire from '#lib/components/ChoixAffaire.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import type { Ticket } from '#lib/api/index.ts';
 	import {
 		apresFusion,
 		fusionPossible,
 		fusionnerLiees,
 		type AffaireCorrigee,
-	} from '$lib/fusion-affaires';
-	import { isCS } from '$lib/stores/auth';
+	} from '#lib/fusion-affaires.ts';
+	import { isCS } from '#lib/stores/auth.ts';
 
 	/** Les affaires retenues — lié : l'appelant en envoie les `id`. */
 	export let liees: AffaireLiee[] = [];

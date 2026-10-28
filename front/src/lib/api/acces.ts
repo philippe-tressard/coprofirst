@@ -8,7 +8,7 @@
 //  coupe suit donc une couture existante et non le compteur de lignes.
 //
 //  ⚠️ La surface publique NE BOUGE PAS : `index.ts` réexporte tout, et les
-//  quarante et un `from '$lib/api'` du front ne changent pas d'une ligne.
+//  quarante et un `from '#lib/api/index.ts'` du front ne changent pas d'une ligne.
 import { api, BASE } from './client';
 import { uploadExcel } from './documents';
 import type { ConstatPatrimoine } from './etat-descriptif';
@@ -175,7 +175,7 @@ export interface RattachementImport {
 }
 
 /** Un lot tel que le proposent les deux formulaires de badge (import, parc) —
- *  `GET /acces/admin/imports-lots`. Venu de `$lib/imports-acces` à côté de son client. */
+ *  `GET /acces/admin/imports-lots`. Venu de `#lib/imports-acces` à côté de son client. */
 export interface LotPourBadge {
 	id: number;
 	libelle: string;

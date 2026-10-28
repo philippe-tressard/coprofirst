@@ -29,9 +29,9 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher, type ComponentProps } from 'svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import ChampsNouveauPerimetre from '$lib/components/ChampsNouveauPerimetre.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import ChampsNouveauPerimetre from '#lib/components/ChampsNouveauPerimetre.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 
 	const dispatch = createEventDispatcher<{ annule: void; enregistre: void }>();
 

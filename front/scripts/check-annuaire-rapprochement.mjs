@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Auto-test de `$lib/annuaire-rapprochement.ts` — retrouver, par le NOM saisi
+ * Auto-test de `#lib/annuaire-rapprochement.ts` — retrouver, par le NOM saisi
  * dans une fiche de l'annuaire, l'inscrit et le logement d'un membre.
  *
  * 🔴 POURQUOI (29/09/2026, #779). Ces règles vivaient dans

@@ -9,12 +9,12 @@
   le menu, l'écran de connexion et l'onglet changent aussitôt.
 -->
 <script lang="ts">
-	import ImageUpload from '$lib/components/ImageUpload.svelte';
-	import { config as configApi } from '$lib/api';
-	import { configStore } from '$lib/stores/pageConfig';
-	import { tenter } from '$lib/erreurs';
-	import { confirmer } from '$lib/confirmation';
-	import { NOM_PLATEFORME } from '$lib/plateforme';
+	import ImageUpload from '#lib/components/ImageUpload.svelte';
+	import { config as configApi } from '#lib/api/index.ts';
+	import { configStore } from '#lib/stores/pageConfig.ts';
+	import { tenter } from '#lib/erreurs.ts';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { NOM_PLATEFORME } from '#lib/plateforme.ts';
 
 	let envoi = false;
 	$: logo = $configStore['site_logo'] ?? '';

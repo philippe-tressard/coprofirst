@@ -21,22 +21,22 @@
   c'est ce qui rend la règle vraie des deux côtés.
 -->
 <script lang="ts">
-	import { fmtDateShort } from '$lib/date';
-	import { PRESTATAIRE } from '$lib/entites/prestataire';
-	import { classeTypePrestataire } from '$lib/prestataires-gouttiere';
+	import { fmtDateShort } from '#lib/date.ts';
+	import { PRESTATAIRE } from '#lib/entites/prestataire.ts';
+	import { classeTypePrestataire } from '#lib/prestataires-gouttiere.ts';
 	import {
 		equipLabel,
 		typePrestataireLabel,
 		type ContactSaisi,
 		type FormulairePrestataire,
-	} from '$lib/prestataires';
-	import type { ContratEntretien, Notation, Prestataire } from '$lib/api';
-	import { safeDescription } from '$lib/sanitize';
-	import { nomAffiche } from '$lib/noms';
+	} from '#lib/prestataires.ts';
+	import type { ContratEntretien, Notation, Prestataire } from '#lib/api/index.ts';
+	import { safeDescription } from '#lib/sanitize.ts';
+	import { nomAffiche } from '#lib/noms.ts';
 	import CarteModifiable from './CarteModifiable.svelte';
 	import NotationsPrestataire from './NotationsPrestataire.svelte';
 	import MetriquesPrestataire from './MetriquesPrestataire.svelte';
-	import { isCS } from '$lib/stores/auth';
+	import { isCS } from '#lib/stores/auth.ts';
 	import ChampsPrestataire from './ChampsPrestataire.svelte';
 	import PiedFormulaire from './PiedFormulaire.svelte';
 

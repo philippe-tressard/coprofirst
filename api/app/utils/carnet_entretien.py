@@ -114,7 +114,7 @@ class EntreeCarnet:
     """Un fait daté qui concerne le bâti.
 
     `equipement` porte la **valeur** de `TypeEquipement` (`"ascenseur"`), jamais
-    son libellé : la table des libellés vit côté front (`$lib/prestataires`,
+    son libellé : la table des libellés vit côté front (`#lib/prestataires`,
     `EQUIPEMENTS`) et `test_types_equipement.py` la compare déjà à l'énumération
     du serveur. En rendre une seconde ici en ferait une troisième écriture.
     """
@@ -225,7 +225,7 @@ def type_equipement_resolu(contrat, specialite_prestataire: Optional[str]) -> Op
     spécialité `vmc`, apparaissait donc « VMC » dans l'onglet Contrats et
     « Autre » dans le carnet. Signalé à l'écran le 10/09/2026.
 
-    La règle vit côté front depuis longtemps (`$lib/reporting`,
+    La règle vit côté front depuis longtemps (`#lib/reporting`,
     `typeEquipementDuContrat`) et servait quatre écrans. Le carnet est le premier
     lecteur SERVEUR de cette notion : la copie est obligatoire — les contextes de
     build sont `./api` et `./front` —, et `test_type_equipement_resolu.py` refuse

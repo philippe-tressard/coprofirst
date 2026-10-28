@@ -45,7 +45,7 @@ export interface OptionPublication {
 	cle: CleOptionPublication;
 	/** Le glyphe, unique à cette notion dans tout le site. */
 	glyphe: string;
-	/**  Le même, AU TRAIT (`$lib/icones-svg.json`) — dans une rangée d'actions
+	/**  Le même, AU TRAIT (`#lib/icones-svg.json`) — dans une rangée d'actions
 	 *   dessinée au trait, celle des cartes d'affaire (maquette B, 10/10/2026). */
 	icone: string;
 	/** Le GESTE, pour une case à cocher : « Épingler ». */

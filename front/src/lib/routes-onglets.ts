@@ -21,7 +21,7 @@
  * toujours où l'on est, et elle se copie telle quelle.
  */
 
-import { PAGES } from '$lib/pages';
+import { PAGES } from '#lib/pages.ts';
 
 /** Retire la barre oblique finale, sauf pour la racine. */
 function normaliserChemin(chemin: string): string {

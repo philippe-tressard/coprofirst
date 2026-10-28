@@ -18,15 +18,20 @@
     autant qu'on veut.
 -->
 <script lang="ts">
-	import Pastille from '$lib/components/Pastille.svelte';
-	import PastilleRetirable from '$lib/components/PastilleRetirable.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import Pastille from '#lib/components/Pastille.svelte';
+	import PastilleRetirable from '#lib/components/PastilleRetirable.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import InvitePoint from './InvitePoint.svelte';
-	import type { MembrePoint, ParticipantsPoint, PointEntree, PresentEntree } from '$lib/api';
-	import { depuisChampLocal, pourChampLocal } from '$lib/date';
-	import { GROUPES_PRESENTS, cleMembre, nomPresent } from '$lib/points-conseil';
+	import type {
+		MembrePoint,
+		ParticipantsPoint,
+		PointEntree,
+		PresentEntree,
+	} from '#lib/api/index.ts';
+	import { depuisChampLocal, pourChampLocal } from '#lib/date.ts';
+	import { GROUPES_PRESENTS, cleMembre, nomPresent } from '#lib/points-conseil.ts';
 
 	export let idPrefixe: string;
 	export let participants: ParticipantsPoint;

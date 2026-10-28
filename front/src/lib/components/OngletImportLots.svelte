@@ -1,20 +1,25 @@
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { nombreOuNull } from '$lib/utils';
-	import { confirmer } from '$lib/confirmation';
-	import { messageErreur } from '$lib/erreurs';
-	import { nomAffiche } from '$lib/noms';
+	import Badge from '#lib/components/Badge.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { nombreOuNull } from '#lib/utils.ts';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { nomAffiche } from '#lib/noms.ts';
 	import { onMount } from 'svelte';
-	import { lots as lotsApi, admin as adminApi } from '$lib/api';
-	import type { LigneImportLot, MonLot, StatsImportLots, UtilisateurAdmin } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { siteNomStore } from '$lib/stores/pageConfig';
-	import BarreImport from '$lib/components/BarreImport.svelte';
-	import CorrectionImportLot from '$lib/components/CorrectionImportLot.svelte';
-	import { parAttribut } from '$lib/table-statuts';
-	import { contientTousLesMots } from '$lib/texte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { lots as lotsApi, admin as adminApi } from '#lib/api/index.ts';
+	import type {
+		LigneImportLot,
+		MonLot,
+		StatsImportLots,
+		UtilisateurAdmin,
+	} from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { siteNomStore } from '#lib/stores/pageConfig.ts';
+	import BarreImport from '#lib/components/BarreImport.svelte';
+	import CorrectionImportLot from '#lib/components/CorrectionImportLot.svelte';
+	import { parAttribut } from '#lib/table-statuts.ts';
+	import { contientTousLesMots } from '#lib/texte.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	$: _siteNom = $siteNomStore;
 	// ── Données ─────────────────────────────────────────────────────────────

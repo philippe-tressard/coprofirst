@@ -14,7 +14,7 @@
   un champ, une écriture.
 -->
 <script lang="ts">
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 
 	/** `AAAA-MM-JJ`, ou vide. */
 	export let valeur = '';

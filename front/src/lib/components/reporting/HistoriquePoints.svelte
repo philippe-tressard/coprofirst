@@ -9,13 +9,13 @@
   validé (`version`).
 -->
 <script lang="ts">
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { pointsConseil, type ModePoint, type PointHistorique } from '$lib/api';
-	import { fmtDate, fmtDatetime, jourIso } from '$lib/date';
-	import { messageErreur } from '$lib/erreurs';
-	import { enregistrerFichier } from '$lib/fichiers';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { pointsConseil, type ModePoint, type PointHistorique } from '#lib/api/index.ts';
+	import { fmtDate, fmtDatetime, jourIso } from '#lib/date.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { enregistrerFichier } from '#lib/fichiers.ts';
 
 	export let mode: ModePoint;
 	/** Change quand un point vient d'être validé : l'historique se relit. */

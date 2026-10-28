@@ -9,9 +9,9 @@
   garde son verbe de soumission commun (`lint:soumission`, ux-patterns §9 quinquies bis).
 -->
 <script lang="ts">
-	import ConciliationFusion from '$lib/components/ConciliationFusion.svelte';
-	import type { CandidateFusion } from '$lib/api';
-	import { verrous, type Decisions } from '$lib/fusion-conciliation';
+	import ConciliationFusion from '#lib/components/ConciliationFusion.svelte';
+	import type { CandidateFusion } from '#lib/api/index.ts';
+	import { verrous, type Decisions } from '#lib/fusion-conciliation.ts';
 
 	/** Le numéro de l'affaire qui absorberait (la plus ancienne). */
 	export let numeroPrincipale: string;

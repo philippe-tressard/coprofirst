@@ -31,9 +31,9 @@
   décochées côté appelant. Envoyer une notification est une action délibérée.
 -->
 <script lang="ts">
-	import { nomAffiche } from '$lib/noms';
-	import { currentUser } from '$lib/stores/auth';
-	import Icon from '$lib/components/Icon.svelte';
+	import { nomAffiche } from '#lib/noms.ts';
+	import { currentUser } from '#lib/stores/auth.ts';
+	import Icon from '#lib/components/Icon.svelte';
 
 	/** Partager sur le groupe WhatsApp de la copropriété */
 	export let whatsapp = false;

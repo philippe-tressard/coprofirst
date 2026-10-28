@@ -44,10 +44,10 @@
   répété.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import type { AccesBail } from '$lib/api';
-	import { statutAccesBadge, statutAccesLabel, typeAccesLabel } from '$lib/types-acces';
-	import { isLocataire } from '$lib/stores/auth';
+	import Badge from '#lib/components/Badge.svelte';
+	import type { AccesBail } from '#lib/api/index.ts';
+	import { statutAccesBadge, statutAccesLabel, typeAccesLabel } from '#lib/types-acces.ts';
+	import { isLocataire } from '#lib/stores/auth.ts';
 
 	/** Les accès confiés par le bailleur — locataires seulement. */
 	export let accesRecus: AccesBail[] = [];

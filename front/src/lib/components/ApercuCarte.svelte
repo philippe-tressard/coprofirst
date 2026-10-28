@@ -20,8 +20,8 @@
   afficher un trombone.
 -->
 <script lang="ts">
-	import FluxVignette from '$lib/components/FluxVignette.svelte';
-	import { safeDescription } from '$lib/sanitize';
+	import FluxVignette from '#lib/components/FluxVignette.svelte';
+	import { safeDescription } from '#lib/sanitize.ts';
 
 	/**  Contenu de l'élément, brut. `safeDescription` l'assainit ET enveloppe le
 	 *   texte non-HTML dans un paragraphe : les descriptions de tickets sont parfois

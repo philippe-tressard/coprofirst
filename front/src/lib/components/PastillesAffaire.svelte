@@ -30,16 +30,16 @@
   écrit plus qu'une fois.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import BadgeEtatAffaire from '$lib/components/BadgeEtatAffaire.svelte';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
-	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
-	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
-	import MarqueIA from '$lib/components/MarqueIA.svelte';
-	import PiedCarte from '$lib/components/PiedCarte.svelte';
-	import { BADGE_PRIORITE, PRIORITE_BREVE, optionsEnBadge, ticketUrgent } from '$lib/tickets';
-	import type { Ticket } from '$lib/api';
-	import { etatAffiche } from '$lib/suivi-actualite';
+	import Badge from '#lib/components/Badge.svelte';
+	import BadgeEtatAffaire from '#lib/components/BadgeEtatAffaire.svelte';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
+	import PastilleLecture from '#lib/components/PastilleLecture.svelte';
+	import AuteurCarte from '#lib/components/AuteurCarte.svelte';
+	import MarqueIA from '#lib/components/MarqueIA.svelte';
+	import PiedCarte from '#lib/components/PiedCarte.svelte';
+	import { BADGE_PRIORITE, PRIORITE_BREVE, optionsEnBadge, ticketUrgent } from '#lib/tickets.ts';
+	import type { Ticket } from '#lib/api/index.ts';
+	import { etatAffiche } from '#lib/suivi-actualite.ts';
 
 	/** L'affaire — une carte la passe entière, le fil ses seuls champs de ligne. */
 	export let affaire: Ticket;

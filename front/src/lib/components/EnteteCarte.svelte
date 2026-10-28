@@ -109,7 +109,7 @@
 	/** Le titre, sur une ou deux lignes. Au-delà, il est coupé — pas la carte. */
 	export let titre: string;
 	/** La date affichée à droite. Déjà formatée : ce composant ne connaît pas
-	    `$lib/date`, et n'a donc aucun moyen d'en réinventer un format. */
+	    `#lib/date`, et n'a donc aucun moyen d'en réinventer un format. */
 	export let date = '';
 	/**  Le titre bascule-t-il la carte ? `false` laisse un simple texte — une
 	 *   fiche qui n'a rien à replier ne propose pas un bouton inerte.

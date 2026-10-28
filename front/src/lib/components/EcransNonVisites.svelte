@@ -7,17 +7,17 @@
 	 * La liste des écrans est celle de `pages.ts` (la table unique), soustraite des
 	 * pages vues que le serveur rend déjà (`top_pages`, non bornée) : aucune liste
 	 * recopiée côté API, le front et l'API ne partageant aucun fichier. La
-	 * comparaison est dans `$lib/ecrans-non-visites`, éprouvée par
+	 * comparaison est dans `#lib/ecrans-non-visites`, éprouvée par
 	 * `npm run lint:ecrans-non-visites`.
 	 *
 	 * Un bloc de la section « Fréquentation » (comme `TopPages`), montré sur les
 	 * vues **Mois** et **Année** seulement : sur une journée, presque tout écran est
 	 * « non visité », et la liste ne dirait rien.
 	 */
-	import PanneauTelemetrie from '$lib/components/PanneauTelemetrie.svelte';
-	import { PAGES } from '$lib/pages';
-	import { PAGES_ROLES } from '$lib/pages-roles';
-	import { ecransDeclares, ecransNonVisites } from '$lib/ecrans-non-visites';
+	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
+	import { PAGES } from '#lib/pages.ts';
+	import { PAGES_ROLES } from '#lib/pages-roles.ts';
+	import { ecransDeclares, ecransNonVisites } from '#lib/ecrans-non-visites.ts';
 
 	export let pages: { page: string; total: number; uniques: number }[] = [];
 	/** « 30 derniers jours », « 12 derniers mois » : ce que couvrent les pages vues. */

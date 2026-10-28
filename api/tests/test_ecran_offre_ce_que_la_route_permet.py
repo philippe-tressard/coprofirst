@@ -4,7 +4,7 @@ Relevé en générant la carte des réglages (#2061) : la fiche de la résidence
 s'éditait pour `$isCS` — le conseil syndical ET l'administrateur — alors que
 `PATCH /copropriete` exige `require_admin`. Un membre du conseil voyait le crayon,
 saisissait, enregistrait… et recevait un 403. Rien ne confrontait l'écran à la
-route : la règle d'affichage (`$lib/stores/auth`) et la règle d'accès
+route : la règle d'affichage (`#lib/stores/auth`) et la règle d'accès
 (`app/auth/deps.py`) sont deux textes.
 
 Le contrôle lit les DEUX : les rôles qu'ouvre le prédicat qui garde le geste dans
@@ -62,7 +62,7 @@ GESTES = [
 
 
 def roles_du_magasin() -> dict[str, frozenset[str]]:
-    """`$isCS` → {conseil_syndical, admin}, lu dans `$lib/stores/auth.ts`."""
+    """`$isCS` → {conseil_syndical, admin}, lu dans `#lib/stores/auth.ts`."""
     source = (FRONT / "lib/stores/auth.ts").read_text(encoding="utf-8")
     return {
         nom: frozenset(re.findall(r"'([a-z_]+)'", roles))
@@ -166,5 +166,5 @@ def test_aucun_ecran_n_offre_un_geste_que_sa_route_refuse():
     ecarts = {g.libelle: sorted(ecart(g, magasin)) for g in GESTES if ecart(g, magasin)}
     assert not ecarts, (
         "Un écran offre un geste à un rôle que sa route refuse (403 à l'enregistrement) : "
-        f"{ecarts}. Aligner l'écran sur la route (`$lib/stores/auth`), jamais la route sur l'écran."
+        f"{ecarts}. Aligner l'écran sur la route (`#lib/stores/auth`), jamais la route sur l'écran."
     )

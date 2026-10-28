@@ -1,14 +1,14 @@
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { confirmer, SUPPRESSION } from '$lib/confirmation';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { confirmer, SUPPRESSION } from '#lib/confirmation.ts';
 	import { onMount } from 'svelte';
-	import { admin as adminApi, type LienCompteLot } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { siteNomStore } from '$lib/stores/pageConfig';
-	import BauxSansLocataire from '$lib/components/BauxSansLocataire.svelte';
-	import ReclassementTickets from '$lib/components/ReclassementTickets.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { admin as adminApi, type LienCompteLot } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { siteNomStore } from '#lib/stores/pageConfig.ts';
+	import BauxSansLocataire from '#lib/components/BauxSansLocataire.svelte';
+	import ReclassementTickets from '#lib/components/ReclassementTickets.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	$: _siteNom = $siteNomStore;
 

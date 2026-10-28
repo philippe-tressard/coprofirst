@@ -28,12 +28,12 @@
 	import SectionFormulaire from './SectionFormulaire.svelte';
 	import EtatListe from './EtatListe.svelte';
 	import ListeConstats from './ListeConstats.svelte';
-	import { admin as adminApi, type RapportFiabilite } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { fmtDate, fmtDatetime, fmtTime } from '$lib/date';
+	import { admin as adminApi, type RapportFiabilite } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { fmtDate, fmtDatetime, fmtTime } from '#lib/date.ts';
 	//  Le titre est le NOM de la tâche dans la synthèse : une seule écriture,
 	//  sinon la ligne de la synthèse cesse de renvoyer à cette carte.
-	import { LIBELLE_TACHE } from '$lib/taches';
+	import { LIBELLE_TACHE } from '#lib/taches.ts';
 
 	let rapports: RapportFiabilite[] = [];
 	let chargement = true;

@@ -1,12 +1,12 @@
 <script lang="ts">
-	import PageLegale from '$lib/components/PageLegale.svelte';
+	import PageLegale from '#lib/components/PageLegale.svelte';
 	import {
 		LICENCE_NOM,
 		LICENCE_SPDX,
 		LICENCE_URL,
 		NOM_PLATEFORME,
 		lienSource,
-	} from '$lib/plateforme';
+	} from '#lib/plateforme.ts';
 
 	//  La version qui TOURNE (AGPLv3 §13) — le pied de page de l'application
 	//  pointe au même endroit, par la même fonction (#1725).
@@ -43,7 +43,7 @@
 
 <style>
 	/*  Ce qui est PROPRE aux mentions légales : la section « Logiciel
-	    libre ». Le squelette vit dans `$lib/components/PageLegale.svelte`,
+	    libre ». Le squelette vit dans `#lib/components/PageLegale.svelte`,
 	    le reste dans `styles/legal.css` (#583).
 
 	    🔴 Les sélecteurs ne peuvent PAS partir de `.legal-page` : cette classe

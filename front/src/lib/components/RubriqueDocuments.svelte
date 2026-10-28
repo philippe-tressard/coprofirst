@@ -26,26 +26,26 @@
   bibliothèque en un appel (`annexesParFiche`) et les range sous chaque carte.
 -->
 <script lang="ts">
-	import type { ClasseGouttiere } from '$lib/gouttiere';
-	import { nombreOuNull } from '$lib/utils';
-	import { jourIso } from '$lib/date';
+	import type { ClasseGouttiere } from '#lib/gouttiere.ts';
+	import { nombreOuNull } from '#lib/utils.ts';
+	import { jourIso } from '#lib/date.ts';
 	import { onMount } from 'svelte';
-	import { documents as documentsApi, type Document } from '$lib/api';
-	import { essayer } from '$lib/chargement';
-	import { tenter } from '$lib/erreurs';
-	import type { PiecesFiche } from '$lib/components/PiecesJointesFiche.svelte';
-	import { supprimerDocument } from '$lib/gestes-document';
-	import { titreOuNomDuFichier } from '$lib/fichiers';
-	import ChampDateDocument from '$lib/components/ChampDateDocument.svelte';
-	import ChampsCrAg from '$lib/components/ChampsCrAg.svelte';
-	import FormulaireDocument from '$lib/components/FormulaireDocument.svelte';
+	import { documents as documentsApi, type Document } from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import { tenter } from '#lib/erreurs.ts';
+	import type { PiecesFiche } from '#lib/components/PiecesJointesFiche.svelte';
+	import { supprimerDocument } from '#lib/gestes-document.ts';
+	import { titreOuNomDuFichier } from '#lib/fichiers.ts';
+	import ChampDateDocument from '#lib/components/ChampDateDocument.svelte';
+	import ChampsCrAg from '#lib/components/ChampsCrAg.svelte';
+	import FormulaireDocument from '#lib/components/FormulaireDocument.svelte';
 	import FormulaireEditionDocument, {
 		correctionVide,
 		type CorrectionDocument,
 		type ModeDocument,
-	} from '$lib/components/FormulaireEditionDocument.svelte';
-	import SectionDocuments from '$lib/components/SectionDocuments.svelte';
-	import { aboutirGeste, ouvrirGeste } from '$lib/aboutissement';
+	} from '#lib/components/FormulaireEditionDocument.svelte';
+	import SectionDocuments from '#lib/components/SectionDocuments.svelte';
+	import { aboutirGeste, ouvrirGeste } from '#lib/aboutissement.ts';
 
 	export let mode: ModeDocument;
 	export let titre: string;

@@ -9,7 +9,7 @@
  *  défilement à une page encore couverte par la modale. Et les deux écoutaient
  *  Échap sur `window` : une seule pression fermait les deux, saisie comprise.
  *
- *  `npm run lint:couches` impose le passage par `$lib/couche.ts` ; ce test
+ *  `npm run lint:couches` impose le passage par `#lib/couche.ts` ; ce test
  *  mesure que le module fait ce qu'il promet, DANS un navigateur — le verrou
  *  est un style du document, et Échap un vrai évènement clavier.
  *

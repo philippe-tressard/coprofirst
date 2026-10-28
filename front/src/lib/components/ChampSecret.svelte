@@ -27,7 +27,7 @@
   symptôme visible avant le prochain envoi d'e-mail.
 -->
 <script lang="ts">
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	/** Le libellé du champ — « Mot de passe SMTP », « Clé d'API »… */
 	export let libelle: string;
 

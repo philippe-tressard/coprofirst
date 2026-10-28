@@ -25,10 +25,10 @@
 	 * sans gestes, pas une autre brique.
 	 */
 	import { goto } from '$app/navigation';
-	import { categorieTicketLabel, lienTicket } from '$lib/tickets';
-	import { perimetreTags } from '$lib/perimetres-pastilles';
-	import { perimetresStore } from '$lib/stores/perimetres';
-	import { relire } from '$lib/utils';
+	import { categorieTicketLabel, lienTicket } from '#lib/tickets.ts';
+	import { perimetreTags } from '#lib/perimetres-pastilles.ts';
+	import { perimetresStore } from '#lib/stores/perimetres.ts';
+	import { relire } from '#lib/utils.ts';
 
 	/** L'affaire rendue (un événement jusqu'au 23/09/2026, #1092) — on n'en lit
 	 *  que l'identifiant, la catégorie, le titre et le périmètre. */

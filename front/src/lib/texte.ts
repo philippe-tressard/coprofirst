@@ -37,8 +37,8 @@
  *  Les confondre reviendrait à comparer des textes avec des tirets à la place
  *  des espaces — ou à stocker un libellé en guise de code.
  *
- *  ⚠️ Ce module ne connaît ni les noms de personnes (`$lib/noms`) ni les étages
- *  (`$lib/utils`) : il ne sait que du texte. C'est ce qui lui permet de servir
+ *  ⚠️ Ce module ne connaît ni les noms de personnes (`#lib/noms`) ni les étages
+ *  (`#lib/utils`) : il ne sait que du texte. C'est ce qui lui permet de servir
  *  cinq appelants qui n'ont rien d'autre en commun.
  *
  *  Autotest : `node --experimental-strip-types scripts/check-texte.mjs --selftest`

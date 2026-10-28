@@ -20,7 +20,7 @@
   ## Ce que ce bouton dit, et pourquoi il disparaît
 
   Il rend les **glyphes des options actives**, pris dans la table
-  (`$lib/options-publication`) : 📌 ⚡ 📝 🔒. Il n'apparaît pas quand aucune n'est
+  (`#lib/options-publication`) : 📌 ⚡ 📝 🔒. Il n'apparaît pas quand aucune n'est
   active — un bouton « Options » vide n'annonce rien, et la création d'une option
   se fait dans le formulaire, où la section est complète.
 
@@ -29,9 +29,9 @@
   glyphes montrent, pas « bouton options ».
 -->
 <script lang="ts">
-	import { optionsActives, libelleOptionsActives } from '$lib/options-publication';
-	import type { CleOptionPublication } from '$lib/options-publication';
-	import IconeAction from '$lib/components/IconeAction.svelte';
+	import { optionsActives, libelleOptionsActives } from '#lib/options-publication.ts';
+	import type { CleOptionPublication } from '#lib/options-publication.ts';
+	import IconeAction from '#lib/components/IconeAction.svelte';
 
 	/** L'objet dont on lit les options — n'importe quel porteur des quatre clés. */
 	export let objet: Partial<Record<CleOptionPublication, boolean | undefined>>;

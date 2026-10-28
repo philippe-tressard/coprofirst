@@ -65,7 +65,7 @@ test('une exception se signale par son nom, sans ce qui est entre guillemets ni 
 
 test('une erreur d’un script étranger ne s’impute pas au site', async ({ page }) => {
 	//  03/10/2026 : `t().filter is not a function`, du code ES5 qu'aucun fichier
-	//  servi ne contient (`erreurDuSite`, `$lib/telemetry`). Trois provenances
+	//  servi ne contient (`erreurDuSite`, `#lib/telemetry`). Trois provenances
 	//  étrangères, puis une erreur du site : seule la dernière se compte — sans
 	//  elle, un filtre qui tairait TOUT passerait ce test.
 	await simulerApi(page);

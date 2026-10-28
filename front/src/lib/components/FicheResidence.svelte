@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Batiment, Copropriete } from '$lib/api';
+	import type { Batiment, Copropriete } from '#lib/api/index.ts';
 	/**
 	 * Fiche d'identité de la résidence — adresse, immatriculation, lots,
 	 * assurance, et composition par bâtiment.
@@ -14,7 +14,7 @@
 	 * une seconde source pour les mêmes règles. Elles ne servaient nulle part
 	 * ailleurs dans la page — la coupe est donc nette, sans duplication.
 	 */
-	import { fmtDateShort as fmt, libelleExercice } from '$lib/date';
+	import { fmtDateShort as fmt, libelleExercice } from '#lib/date.ts';
 
 	/**  Comment s'écrit l'échéance d'un contrat sur cette fiche.
 	 *

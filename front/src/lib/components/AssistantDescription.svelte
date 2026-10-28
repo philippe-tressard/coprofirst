@@ -36,16 +36,16 @@
     en `assiste_ia`, et ce que la carte rend ensuite par `MarqueIA`.
 -->
 <script lang="ts">
-	import { isCS, quandAuthResolue } from '$lib/stores/auth';
-	import { assistantStore, chargerAssistant } from '$lib/stores/assistant';
-	import { assistant as assistantApi, type PropositionDescription } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { safeRichContent } from '$lib/sanitize';
-	import { ENTITE_COMMENTAIRE, peutSolliciter, type ContexteAssistant } from '$lib/assistant';
-	import { toast } from '$lib/components/Toast.svelte';
-	import IconeIA from '$lib/components/IconeIA.svelte';
+	import { isCS, quandAuthResolue } from '#lib/stores/auth.ts';
+	import { assistantStore, chargerAssistant } from '#lib/stores/assistant.ts';
+	import { assistant as assistantApi, type PropositionDescription } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { safeRichContent } from '#lib/sanitize.ts';
+	import { ENTITE_COMMENTAIRE, peutSolliciter, type ContexteAssistant } from '#lib/assistant.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import IconeIA from '#lib/components/IconeIA.svelte';
 
-	/** L'entité et son contexte — composés par le formulaire (`$lib/assistant`). */
+	/** L'entité et son contexte — composés par le formulaire (`#lib/assistant`). */
 	export let contexte: ContexteAssistant;
 	/** Préfixe des `id` : plusieurs sections Description coexistent à l'écran. */
 	export let idPrefixe: string;

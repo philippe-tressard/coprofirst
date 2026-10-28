@@ -19,25 +19,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	import { annoncesHall as annoncesHallApi } from '$lib/api';
-	import { messageErreur, tenter } from '$lib/erreurs';
-	import type { AnnonceHall } from '$lib/api';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import MarqueIA from '$lib/components/MarqueIA.svelte';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
-	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
-	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
-	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { fmtDatetimeShort as fmtDatetime } from '$lib/date';
-	import { basculer } from '$lib/accordeon';
-	import { safeHtml } from '$lib/sanitize';
-	import { isAdmin } from '$lib/stores/auth';
-	import { confirmer } from '$lib/confirmation';
-	import { fmtOctets } from '$lib/utils';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { annoncesHall as annoncesHallApi } from '#lib/api/index.ts';
+	import { messageErreur, tenter } from '#lib/erreurs.ts';
+	import type { AnnonceHall } from '#lib/api/index.ts';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import MarqueIA from '#lib/components/MarqueIA.svelte';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
+	import FichiersUpload from '#lib/components/FichiersUpload.svelte';
+	import ApercuCarte from '#lib/components/ApercuCarte.svelte';
+	import AuteurCarte from '#lib/components/AuteurCarte.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { fmtDatetimeShort as fmtDatetime } from '#lib/date.ts';
+	import { basculer } from '#lib/accordeon.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { isAdmin } from '#lib/stores/auth.ts';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { fmtOctets } from '#lib/utils.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	let ahList: AnnonceHall[] = [];
 	let ahLoading = false;

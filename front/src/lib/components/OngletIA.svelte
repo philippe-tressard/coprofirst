@@ -31,18 +31,18 @@
   son activation.
 -->
 <script lang="ts">
-	import EncartDemo from '$lib/components/EncartDemo.svelte';
-	import { messageErreur } from '$lib/erreurs';
+	import EncartDemo from '#lib/components/EncartDemo.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import { onMount } from 'svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import { config as configApi, type LimitesUsageIA, type UsageIA } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import ChampSecret from '$lib/components/ChampSecret.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import BlocUsageIA from '$lib/components/BlocUsageIA.svelte';
-	import EtatService from '$lib/components/EtatService.svelte';
-	import { oublierAssistant } from '$lib/stores/assistant';
+	import Icon from '#lib/components/Icon.svelte';
+	import { config as configApi, type LimitesUsageIA, type UsageIA } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import ChampSecret from '#lib/components/ChampSecret.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import BlocUsageIA from '#lib/components/BlocUsageIA.svelte';
+	import EtatService from '#lib/components/EtatService.svelte';
+	import { oublierAssistant } from '#lib/stores/assistant.ts';
 
 	/** Valeurs lues au chargement par la page (`adminCfg`). */
 	export let valeurs: Record<string, string> = {};

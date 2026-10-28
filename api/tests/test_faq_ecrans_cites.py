@@ -56,7 +56,7 @@ TERMES_MORTS = {
     "Signalements & tickets": "le libellé de la page est « Tickets » (pages.ts)",
     #  #1594 (v2.93.3) : deux réponses avaient gardé le mot du modèle.
     "commentaire de suivi": "la section s'appelle « Suivi », le geste « Ajouter une suite »",
-    "section Saisi pour": "la section s'appelle « Au nom de » ($lib/entites/types.ts) ; "
+    "section Saisi pour": "la section s'appelle « Au nom de » (#lib/entites/types.ts) ; "
     "« Saisi pour » est le champ",
 }
 
@@ -124,7 +124,7 @@ def test_la_question_du_prix_d_un_badge_existe_et_repond_a_son_lien():
 
     Les onglets Badges et Télécommandes de « Mes lots & accès » portent un lien
     `/faq#badge-prix`, et le manuel le documente. Le résolveur de la page FAQ
-    (`estQuestionPrixBadge`, `$lib/faq`) cherche la question par **libellé** — l'identifiant
+    (`estQuestionPrixBadge`, `#lib/faq`) cherche la question par **libellé** — l'identifiant
     variant d'une instance à l'autre. Or **aucune question du seed ne contenait
     « prix »** : le lien n'aboutissait que si le conseil syndical avait créé la
     question à la main.
@@ -132,13 +132,13 @@ def test_la_question_du_prix_d_un_badge_existe_et_repond_a_son_lien():
     Le contrôle lit le motif **dans le résolveur**, il ne le recopie pas : deux
     expressions qui se recopient divergent au premier ajustement.
     """
-    #  Le résolveur vit dans `$lib/faq` depuis le 26/09/2026 (#1329,
+    #  Le résolveur vit dans `#lib/faq` depuis le 26/09/2026 (#1329,
     #  `estQuestionPrixBadge`) : il était écrit dans la page.
     page = (_FRONT / "lib" / "faq.ts").read_text(encoding="utf-8")
 
     motif_lu = re.search(r"/([^/]+)/i\.test\(question\)", page)
     assert motif_lu, (
-        "le résolveur de `#badge-prix` a changé de forme dans $lib/faq.ts : "
+        "le résolveur de `#badge-prix` a changé de forme dans #lib/faq.ts : "
         "ce contrôle ne sait plus quel libellé la page attend"
     )
     motif = re.compile(motif_lu.group(1), re.I)
@@ -166,6 +166,6 @@ def test_le_lien_badge_prix_est_encore_appele():
     pages = (_FRONT / "lib" / "pages.ts").read_text(encoding="utf-8")
     assert "/faq#badge-prix" in pages, (
         "plus aucun descriptif n'appelle `/faq#badge-prix` : si le raccourci a "
-        "été retiré, retirer aussi son résolveur dans $lib/faq et la "
+        "été retiré, retirer aussi son résolveur dans #lib/faq et la "
         "vérification du test précédent"
     )

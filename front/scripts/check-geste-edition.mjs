@@ -251,7 +251,7 @@ for (const f of tous) {
 	const src = readFileSync(f, 'utf8');
 	//  Cas zéro : si ce composant cesse de défiler du tout, la règle n'a plus
 	//  d'objet — et un contrôle sans objet doit le DIRE, pas rendre vert.
-	//  Le défilement passe par `amenerEnVue` (`$lib/accordeon`) depuis le
+	//  Le défilement passe par `amenerEnVue` (`#lib/accordeon`) depuis le
 	//  30/09/2026 : la règle y a été extraite quand l'accordéon en a eu besoin.
 	if (!src.includes('scrollIntoView') && !/amenerEnVue\(/.test(src)) {
 		console.error(

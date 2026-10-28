@@ -1,27 +1,32 @@
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import { confirmer } from '$lib/confirmation';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import { nomAffiche } from '$lib/noms';
-	import Icon from '$lib/components/Icon.svelte';
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import { currentUser, isCS, quandAuthResolue } from '$lib/stores/auth';
+	import Badge from '#lib/components/Badge.svelte';
+	import { confirmer } from '#lib/confirmation.ts';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import { nomAffiche } from '#lib/noms.ts';
+	import Icon from '#lib/components/Icon.svelte';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import { currentUser, isCS, quandAuthResolue } from '#lib/stores/auth.ts';
 	import {
 		delegations as delegationsApi,
 		admin as adminApi,
 		type Delegation,
 		type UtilisateurAdmin,
-	} from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import { fmtDateShort as fmt } from '$lib/date';
-	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
-	import { essayer } from '$lib/chargement';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import { parAttribut } from '$lib/table-statuts';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	} from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
+	import { fmtDateShort as fmt } from '#lib/date.ts';
+	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
+	import { essayer } from '#lib/chargement.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import { parAttribut } from '#lib/table-statuts.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	// Cette page importait déjà getPageConfig sans s'en servir : son titre était en
 	// dur, elle était donc la seule entrée du menu qu'on ne pouvait ni renommer ni

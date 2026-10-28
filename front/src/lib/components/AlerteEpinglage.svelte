@@ -13,8 +13,8 @@
   dit le message.
 -->
 <script lang="ts">
-	import { flux } from '$lib/api';
-	import { avertissementEpinglage } from '$lib/flux';
+	import { flux } from '#lib/api/index.ts';
+	import { avertissementEpinglage } from '#lib/flux.ts';
 
 	/** État courant de la case dans le formulaire. */
 	export let coche = false;

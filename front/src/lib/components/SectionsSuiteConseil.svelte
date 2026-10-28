@@ -17,7 +17,7 @@
   `specifiques` : l'Équipement passait après le Suivi, la Mise en avant avant le
   Périmètre. L'Équipement est désormais `SuiteConseilEquipement` (créneau
   `avant_suivi`), la Mise en avant `OptionsEvolutionTicket` (créneau
-  `mise_en_avant`), et l'état qu'ils partagent vit dans `$lib/suite-conseil`.
+  `mise_en_avant`), et l'état qu'ils partagent vit dans `#lib/suite-conseil`.
 
   Les règles serveur sont celles de la correction (`utils/intervenant`,
   `_appliquer_quand`), appliquées par `add_evolution`.
@@ -25,17 +25,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	import { prestataires as prestatairesApi, type Ticket } from '$lib/api';
-	import { essayer } from '$lib/chargement';
-	import { depuisChampLocal } from '$lib/date';
-	import { intervenantPropose } from '$lib/formulaire-affaire';
-	import type { ContratEnCours } from '$lib/prestataires';
-	import { isCS } from '$lib/stores/auth';
-	import { conseilDansLaSuite, equipementDansLaSuite, etatSuite } from '$lib/suite-conseil';
+	import { prestataires as prestatairesApi, type Ticket } from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import { depuisChampLocal } from '#lib/date.ts';
+	import { intervenantPropose } from '#lib/formulaire-affaire.ts';
+	import type { ContratEnCours } from '#lib/prestataires.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { conseilDansLaSuite, equipementDansLaSuite, etatSuite } from '#lib/suite-conseil.ts';
 	import SectionIntervenant from './SectionIntervenant.svelte';
 	import SectionQuand from './SectionQuand.svelte';
-	import { pliageDe } from '$lib/pliage';
-	import { TICKET } from '$lib/entites/ticket';
+	import { pliageDe } from '#lib/pliage.ts';
+	import { TICKET } from '#lib/entites/ticket.ts';
 
 	export let ticket: Ticket;
 	export let premiere = false;

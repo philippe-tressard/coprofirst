@@ -13,9 +13,9 @@
   Les alertes viennent du serveur (`utils/alertes_lot`) et se rendent par `ConstatsLots`.
 -->
 <script lang="ts">
-	import ConstatsLots from '$lib/components/ConstatsLots.svelte';
-	import { lotSurligne } from '$lib/charges-lots';
-	import type { MonLot } from '$lib/api';
+	import ConstatsLots from '#lib/components/ConstatsLots.svelte';
+	import { lotSurligne } from '#lib/charges-lots.ts';
+	import type { MonLot } from '#lib/api/index.ts';
 
 	export let lot: Pick<MonLot, 'id' | 'quotes_parts' | 'alertes'>;
 </script>

@@ -1,6 +1,6 @@
 """« QUI LA LIT » — le libellé court d'une affaire, pour un document du serveur (#2089).
 
-À l'écran, la pastille de lecture (`PastilleLecture`, `$lib/lecture`) dit qui
+À l'écran, la pastille de lecture (`PastilleLecture`, `#lib/lecture`) dit qui
 lit une affaire : « Copropriétaires », « CS », « Concerné »… Le PDF du point CS
 / Syndic doit dire LA MÊME CHOSE (demandé le 20/10/2026 : « reprendre l'objet
 destinataires tel qu'il apparaît sur la page affaire »), et il est rendu par le

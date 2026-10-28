@@ -1,5 +1,5 @@
-import Saisie from '$lib/components/Saisie.svelte';
-import { modaleImperative } from '$lib/modale-imperative';
+import Saisie from '#lib/components/Saisie.svelte';
+import { modaleImperative } from '#lib/modale-imperative.ts';
 
 /**
  * **Demander un texte**, dans la charte du site. Rend la saisie, ou `null` si

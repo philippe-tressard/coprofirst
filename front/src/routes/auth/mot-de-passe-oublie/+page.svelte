@@ -1,7 +1,7 @@
 <script lang="ts">
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import { auth as authApi } from '$lib/api';
-	import { getSiteNom } from '$lib/stores/pageConfig';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import { auth as authApi } from '#lib/api/index.ts';
+	import { getSiteNom } from '#lib/stores/pageConfig.ts';
 
 	const _siteNom = getSiteNom();
 

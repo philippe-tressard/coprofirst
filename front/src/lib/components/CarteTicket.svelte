@@ -38,25 +38,30 @@
   ## L'affichage passe par le squelette de lecture
 
   Le corps déplié (`CorpsCarteTicket`) n'écrit plus l'ordre de ses notions : `FicheLecture` le lit dans
-  la déclaration `TICKET` (`$lib/entites/ticket`). La carte affichait
+  la déclaration `TICKET` (`#lib/entites/ticket`). La carte affichait
   *description → photos → périmètre* ; les deux formulaires demandent
   *périmètre → description → photos → documents*. C'est R2, et elle vaut aussi
   pour l'affichage.
 -->
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
 	import ApercuTicket from './ApercuTicket.svelte';
 	import ExtraitRecherche from './ExtraitRecherche.svelte';
 	import EnteteCarte from './EnteteCarte.svelte';
 	import PastillesAffaire from './PastillesAffaire.svelte';
 	import ActionsTicket from './ActionsTicket.svelte';
-	import { currentUser, isAdmin, isCS } from '$lib/stores/auth';
-	import { peutCommenter as peutCommenterCe, peutEditer } from '$lib/droits';
-	import { ticketUrgent, attributsNature, gouttiereAffaire, type GestesTicket } from '$lib/tickets';
-	import { type CorrespondanceAffaire, type Ticket, type TicketEvolution } from '$lib/api';
-	import { nomProprietaire } from '$lib/saisi-pour';
+	import { currentUser, isAdmin, isCS } from '#lib/stores/auth.ts';
+	import { peutCommenter as peutCommenterCe, peutEditer } from '#lib/droits.ts';
+	import {
+		ticketUrgent,
+		attributsNature,
+		gouttiereAffaire,
+		type GestesTicket,
+	} from '#lib/tickets.ts';
+	import { type CorrespondanceAffaire, type Ticket, type TicketEvolution } from '#lib/api/index.ts';
+	import { nomProprietaire } from '#lib/saisi-pour.ts';
 
 	export let ticket: Ticket;
 	//  À QUI l'affaire appartient — le « Saisi pour » s'il existe, l'auteur
@@ -118,7 +123,7 @@
 	//  quand la main s'approche de la carte (`onApprocher`) et le charge au
 	//  dépliage — `import()` ne télécharge qu'une fois, le second appel reprend
 	//  la même promesse.
-	const chargerCorps = () => import('$lib/components/CorpsCarteTicket.svelte');
+	const chargerCorps = () => import('#lib/components/CorpsCarteTicket.svelte');
 </script>
 
 <!--  QUAND puis QUOI, dans la colonne de gauche (maquette B, 10/10/2026) : la

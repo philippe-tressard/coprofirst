@@ -17,28 +17,28 @@
   l'assistant peut répondre (`disponible`) : rien de sa configuration ne sort.
 -->
 <script lang="ts">
-	import IconeIA from '$lib/components/IconeIA.svelte';
+	import IconeIA from '#lib/components/IconeIA.svelte';
 	import { onMount } from 'svelte';
-	import CarteQuestionReglement from '$lib/components/CarteQuestionReglement.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import FormulaireFaq from '$lib/components/FormulaireFaq.svelte';
-	import SectionTexteReglement from '$lib/components/SectionTexteReglement.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
+	import CarteQuestionReglement from '#lib/components/CarteQuestionReglement.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import FormulaireFaq from '#lib/components/FormulaireFaq.svelte';
+	import SectionTexteReglement from '#lib/components/SectionTexteReglement.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		faq as faqApi,
 		reglement as reglementApi,
 		type EtatReglement,
 		type QuestionReglement,
-	} from '$lib/api';
-	import { basculer } from '$lib/accordeon';
-	import { confirmer } from '$lib/confirmation';
-	import { cibleDuHash, revelerCible } from '$lib/deepLink';
-	import { messageErreur } from '$lib/erreurs';
-	import { categorieSaisie, saisieFaqVide, type SaisieFaq } from '$lib/faq';
-	import { richEmpty } from '$lib/publications';
-	import { isAdmin, isCS } from '$lib/stores/auth';
+	} from '#lib/api/index.ts';
+	import { basculer } from '#lib/accordeon.ts';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { cibleDuHash, revelerCible } from '#lib/deepLink.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { categorieSaisie, saisieFaqVide, type SaisieFaq } from '#lib/faq.ts';
+	import { richEmpty } from '#lib/publications.ts';
+	import { isAdmin, isCS } from '#lib/stores/auth.ts';
 
 	let etat: EtatReglement | null = null;
 	let questions: QuestionReglement[] = [];

@@ -4,7 +4,7 @@
  * Le LIBELLÉ d'un verdict vient du serveur (`verdict_libelle`, une seule liste :
  * `utils/question_reglement/format.VERDICTS`) ; sa teinte, de `BadgeVerdict`.
  */
-import { ACCEPT_DOCUMENTS, LIBELLE_TYPES } from '$lib/fichiers';
+import { ACCEPT_DOCUMENTS, LIBELLE_TYPES } from '#lib/fichiers.ts';
 
 /**
  * Les fichiers du règlement : les documents de tout le site, PLUS le Markdown

@@ -1,6 +1,6 @@
 import { perimetreLabel, perimetreLabelUn } from './libelles';
 import { estRegroupement } from './teinte';
-import { slug } from '$lib/texte';
+import { slug } from '#lib/texte.ts';
 
 /**
  * Périmètres — le rendu, sans table.
@@ -24,7 +24,7 @@ import { slug } from '$lib/texte';
  * s'occupe de la remplir — c'est le store qui connaît l'API, pas l'inverse.
  *
  * N'importer rien ici est délibéré : `lib/utils.ts` réexporte `perimetreLabel`, et
- * une dépendance vers `$lib/api` créerait un cycle avec les modules qui importent
+ * une dépendance vers `#lib/api` créerait un cycle avec les modules qui importent
  * `utils`.
  */
 
@@ -66,7 +66,7 @@ export interface Perimetre {
 	/**  Le serveur accepterait-il de dupliquer cette branche ? Sa règle
 	 *   (`utils/perimetres/branche.refus_duplication`) ne se recopie pas ici. */
 	dupliquable: boolean;
-	/**  Les types d'accès (`$lib/types-acces`) qui ouvrent ce nœud d'office, sans
+	/**  Les types d'accès (`#lib/types-acces`) qui ouvrent ce nœud d'office, sans
 	 *   dépendre d'aucun lot — un portillon, un portail (#2060). */
 	acces_fixes: string[];
 }
@@ -111,7 +111,7 @@ export function tousLesPerimetres(): Perimetre[] {
  * rangée comptait des dizaines d'entrées pour une palette de neuf. « Local eau »
  * reprenait alors la couleur du bâtiment 1, signalé à l'écran.
  *
- * 🔴 Ils portent la COULEUR de tout ce qui vit sous eux (`$lib/perimetres/teinte`),
+ * 🔴 Ils portent la COULEUR de tout ce qui vit sous eux (`#lib/perimetres/teinte`),
  * et c'est leur RANG qui la décide : des teintes attribuées dans l'ordre donnent
  * autant de couleurs distinctes, là où un condensat en fait collisionner deux
  * dès le quatrième nœud.
@@ -268,7 +268,7 @@ export function batimentsCibles(items: string[] | string | null | undefined): nu
 export function perimetresNiveau1(liste: Perimetre[], exclure?: string | null): Perimetre[] {
 	const actifs = liste.filter((n) => n.actif);
 	const parCode = new Map(actifs.map((n) => [cle(n.code), n]));
-	//  🔴 Le prédicat vit dans `$lib/perimetres/teinte` — il y était écrit une
+	//  🔴 Le prédicat vit dans `#lib/perimetres/teinte` — il y était écrit une
 	//  SECONDE fois, et les deux ont divergé (13/09/2026). Ce qui fait une
 	//  pastille de tête à la saisie doit être exactement ce qui donne sa couleur
 	//  à la lecture, sinon l'écran montre deux découpages du même arbre.

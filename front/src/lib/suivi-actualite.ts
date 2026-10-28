@@ -9,11 +9,11 @@
  *
  * Le serveur porte la règle (`api/app/utils/suivi_actualite.py`) ; ce module en
  * est le miroir d'écran, et la seule écriture des trois questions que les écrans
- * posent. Les états eux-mêmes vivent dans `$lib/tickets`, avec le cycle ;
+ * posent. Les états eux-mêmes vivent dans `#lib/tickets`, avec le cycle ;
  * `test_suivi_actualite.py` tient leur concordance avec le serveur.
  */
-import type { Ticket } from '$lib/api';
-import { ETATS_SUIVI_ACTUALITE, STATUT_TICKET_OPTIONS, estActualite } from '$lib/tickets';
+import type { Ticket } from '#lib/api/index.ts';
+import { ETATS_SUIVI_ACTUALITE, STATUT_TICKET_OPTIONS, estActualite } from '#lib/tickets.ts';
 
 /** L'état d'un suivi qu'on active — `ETAT_SUIVI_DEFAUT` côté serveur : le premier. */
 export const ETAT_SUIVI_DEFAUT = ETATS_SUIVI_ACTUALITE[0];

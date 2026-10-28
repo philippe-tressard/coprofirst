@@ -12,34 +12,39 @@
 	//  onglet quitté puis rouvert les retrouve. `null` = pas encore lues :
 	//  l'onglet ouvert ensuite les demande lui-même.
 	//
-	//  🔴 Le vocabulaire des prestataires vit dans `$lib/prestataires.ts`, pas
+	//  🔴 Le vocabulaire des prestataires vit dans `#lib/prestataires.ts`, pas
 	//  dans un écran. La table des équipements écrite ici recopiait
 	//  `TypeEquipement` et en OUBLIAIT deux valeurs — `assurance` et `syndic`,
 	//  précisément celles que la fiche de copropriété désigne (#553).
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { tenter } from '$lib/erreurs';
-	import { essayer } from '$lib/chargement';
+	import { tenter } from '#lib/erreurs.ts';
+	import { essayer } from '#lib/chargement.ts';
 	import {
 		prestataires as prestApi,
 		type ContratEntretien,
 		type Notation,
 		type Prestataire,
-	} from '$lib/api';
-	import { isCS } from '$lib/stores/auth';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
-	import { cibleDuHash } from '$lib/deepLink';
-	import { routeOnglet } from '$lib/routes-onglets';
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import BoutonNouveau from '$lib/components/BoutonNouveau.svelte';
-	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	} from '#lib/api/index.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
+	import { marquerDonneesAffichees, trackTabView } from '#lib/telemetry.ts';
+	import { cibleDuHash } from '#lib/deepLink.ts';
+	import { routeOnglet } from '#lib/routes-onglets.ts';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import BoutonNouveau from '#lib/components/BoutonNouveau.svelte';
+	import BarreOnglets from '#lib/components/BarreOnglets.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 	//  ⏱ Contrats et Consommations attendent un geste — le passage sur leur
 	//  onglet : chargés à leur affichage (#1844). Le TYPE seul est importé ici.
-	import type OngletContrats from '$lib/components/OngletContrats.svelte';
-	import OngletPrestataires from '$lib/components/OngletPrestataires.svelte';
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
+	import type OngletContrats from '#lib/components/OngletContrats.svelte';
+	import OngletPrestataires from '#lib/components/OngletPrestataires.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 
 	$: _pc = getPageConfig($configStore, 'prestataires', defautsDePage('prestataires'));
 	$: _siteNom = $siteNomStore;
@@ -53,7 +58,7 @@
 
 	// ── Onglets (3) ────────────────────────────────────────────────
 	//  La liste, l'ordre ET l'adresse de chaque onglet vivent dans la table
-	//  (`$lib/pages.ts`). Elle était écrite ici, et la table n'en connaissait que
+	//  (`#lib/pages.ts`). Elle était écrite ici, et la table n'en connaissait que
 	//  DEUX sur trois : « Contrats » n'était donc ni renommable ni descriptible
 	//  depuis l'administration, alors que les quatre autres pages du site le sont.
 	//
@@ -150,7 +155,7 @@
 {#if loading}
 	<EtatListe chargement />
 {:else if onglet === 'contrats'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletContrats.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletContrats.svelte')}>
 		{#snippet contenu(OngletContrats)}
 			<OngletContrats
 				bind:this={ongletContrats}
@@ -172,7 +177,7 @@
 		{contrats}
 	/>
 {:else if onglet === 'consommations'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletConsommations.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletConsommations.svelte')}>
 		{#snippet contenu(OngletConsommations)}
 			<OngletConsommations bind:showReleveForm bind:libelleBouton={libelleReleve} {prestataires} />
 		{/snippet}

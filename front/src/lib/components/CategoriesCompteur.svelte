@@ -18,18 +18,22 @@
   fournisseur et « + Catégorie » viennent dessous, dans la colonne des champs.
 -->
 <script lang="ts">
-	import { nombreOuNull } from '$lib/utils';
-	import { prestataires as prestApi, type CompteurConfig, type Prestataire } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { slug } from '$lib/texte';
-	import { isCS } from '$lib/stores/auth';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { SUPPRESSION, confirmerPuis } from '$lib/confirmation';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
+	import { nombreOuNull } from '#lib/utils.ts';
+	import {
+		prestataires as prestApi,
+		type CompteurConfig,
+		type Prestataire,
+	} from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { slug } from '#lib/texte.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { SUPPRESSION, confirmerPuis } from '#lib/confirmation.ts';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
 
 	/** Les catégories de compteur, liées : la page les charge et les lit. */
 	export let compteurConfigs: CompteurConfig[] = [];

@@ -31,7 +31,7 @@
  * Ces contrôles **exécutent** les fonctions plutôt que de relire leur code :
  * c'est le comportement qui compte, et une relecture aurait laissé passer
  * n'importe quelle réécriture qui perd le dédoublonnage. Le bundle esbuild sert
- * seulement à résoudre les alias `$lib` que Node ne connaît pas.
+ * seulement à résoudre les alias `#lib` que Node ne connaît pas.
  */
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';

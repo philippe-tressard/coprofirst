@@ -34,13 +34,13 @@
   Philippe qui a nommé la première. Chercher la NOTION, pas le nom demandé.
 -->
 <script lang="ts">
-	import { frequenceLabel, type FormulaireContratData } from '$lib/prestataires';
-	import { classeEquipement } from '$lib/prestataires-gouttiere';
-	import { typeEquipementDuContrat } from '$lib/reporting';
-	import type { ContratEntretien, Document, Prestataire } from '$lib/api';
-	import { fmtDateShort } from '$lib/date';
-	import { safeHtml } from '$lib/sanitize';
-	import { CONTRAT } from '$lib/entites/contrat';
+	import { frequenceLabel, type FormulaireContratData } from '#lib/prestataires.ts';
+	import { classeEquipement } from '#lib/prestataires-gouttiere.ts';
+	import { typeEquipementDuContrat } from '#lib/reporting.ts';
+	import type { ContratEntretien, Document, Prestataire } from '#lib/api/index.ts';
+	import { fmtDateShort } from '#lib/date.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { CONTRAT } from '#lib/entites/contrat.ts';
 	import CarteModifiable from './CarteModifiable.svelte';
 	import ListeDocuments from './ListeDocuments.svelte';
 	import FormulaireContrat from './FormulaireContrat.svelte';

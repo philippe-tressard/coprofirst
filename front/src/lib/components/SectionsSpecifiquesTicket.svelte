@@ -18,21 +18,21 @@
   `lint:etats` la refuse.
 -->
 <script lang="ts">
-	import { pliageDe, requisDe } from '$lib/pliage';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import SectionWorkflow from '$lib/components/SectionWorkflow.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import { isCS } from '$lib/stores/auth';
-	import { LEGENDE_CARNET, STATUT_TICKET_OPTIONS, estActualite } from '$lib/tickets';
+	import { pliageDe, requisDe } from '#lib/pliage.ts';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import SectionWorkflow from '#lib/components/SectionWorkflow.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { LEGENDE_CARNET, STATUT_TICKET_OPTIONS, estActualite } from '#lib/tickets.ts';
 	import {
 		AIDE_SUIVI_ACTUALITE,
 		ETAT_SUIVI_DEFAUT,
 		SUIVI_ACTUALITE_OPTIONS,
-	} from '$lib/suivi-actualite';
-	import SectionEquipement from '$lib/components/SectionEquipement.svelte';
-	import type { Etat, IdSection } from '$lib/entites/types';
-	import { sectionPresente } from '$lib/entites/types';
-	import { TICKET } from '$lib/entites/ticket';
+	} from '#lib/suivi-actualite.ts';
+	import SectionEquipement from '#lib/components/SectionEquipement.svelte';
+	import type { Etat, IdSection } from '#lib/entites/types.ts';
+	import { sectionPresente } from '#lib/entites/types.ts';
+	import { TICKET } from '#lib/entites/ticket.ts';
 
 	/** L'état de rendu — c'est lui, et non l'écran, qui décide des sections. */
 	export let etat: Etat;
@@ -65,7 +65,7 @@
 		etatSuivi: null as string | null,
 	};
 	/**  Les sections ÉTEINTES par la nature de l'affaire, avec leur motif
-	 *   (`$lib/formulaire-affaire`, 23/09/2026) : grisées, pliées, sans champ. */
+	 *   (`#lib/formulaire-affaire`, 23/09/2026) : grisées, pliées, sans champ. */
 	export let inactives: Partial<Record<IdSection, string>> = {};
 	/** L'équipement concerné (#1097) — une valeur de `TypeEquipement`, ou `''`. */
 	export let equipement = '';
@@ -124,7 +124,7 @@
 		      première fois — et ce qu'il annonce n'est pas un détail de
 		      rangement : l'affaire, une fois close, entre dans un document
 		      qu'un acquéreur peut réclamer.
-		      ⚠️ La phrase se LIT dans `$lib/tickets` (`LEGENDE_CARNET`), à côté
+		      ⚠️ La phrase se LIT dans `#lib/tickets` (`LEGENDE_CARNET`), à côté
 		      du drapeau qui pose le repère. Recopiée ici, elle survivrait au
 		      jour où la liste des catégories concernées change. -->
 		<p class="aide">{LEGENDE_CARNET}</p>

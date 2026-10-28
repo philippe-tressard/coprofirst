@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Un refus du serveur se lit-il en PHRASE ? (#1327, 25/09/2026) —
- * `$lib/detail-erreur` est transpilé et EXÉCUTÉ sur les formes réelles, et le
+ * `#lib/detail-erreur` est transpilé et EXÉCUTÉ sur les formes réelles, et le
  * client doit l'appeler.
  *
  * Signalé à l'écran sur « Nouveau prestataire » : le toast affichait
@@ -23,7 +23,7 @@ const { detailLisible } = await chargerModule(
 	echouer,
 );
 if (typeof detailLisible !== 'function') {
-	echouer('Cas zéro : `$lib/detail-erreur` n’exporte plus `detailLisible` — rien n’est mesuré.');
+	echouer('Cas zéro : `#lib/detail-erreur` n’exporte plus `detailLisible` — rien n’est mesuré.');
 }
 
 const REPLI = 'Erreur';

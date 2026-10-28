@@ -5,7 +5,7 @@
   Ce bloc était réécrit à l'identique dans quatre pages (fiche ticket, actualité,
   espace CS, affaires) — avec à chaque fois sa propre expression régulière pour
   décider ce qui est une image, et son propre `split('/').pop()` pour le nom
-  affiché. La règle vit désormais dans `$lib/fichiers.ts`, le rendu ici.
+  affiché. La règle vit désormais dans `#lib/fichiers.ts`, le rendu ici.
 
   Props :
     - urls   : liste d'URLs internes (/uploads/…)
@@ -31,7 +31,7 @@
 	import { onDestroy } from 'svelte';
 	import Lightbox from './Lightbox.svelte';
 	import Vignette from './Vignette.svelte';
-	import { nomFichier, separerFichiers } from '$lib/fichiers';
+	import { nomFichier, separerFichiers } from '#lib/fichiers.ts';
 
 	export let urls: string[] | null | undefined = [];
 	export let size = 72;

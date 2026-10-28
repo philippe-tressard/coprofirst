@@ -172,7 +172,7 @@
       bloc, la question de la spécificité disparaît au lieu d'être arbitrée.
 
    ⚠️ La bascule large/étroit, elle, n'est plus en CSS du tout : c'est un `{#if}`
-   sur `SEUIL_KANBAN_ETROIT` (`$lib/kanban.ts`). Ne pas réintroduire ici de classe
+   sur `SEUIL_KANBAN_ETROIT` (`#lib/kanban.ts`). Ne pas réintroduire ici de classe
    d'interrupteur — c'est la forme qui a échoué deux fois. */
 .kb-header {
 	display: flex;

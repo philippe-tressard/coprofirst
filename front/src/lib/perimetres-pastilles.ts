@@ -8,7 +8,7 @@
  * faire dans l'écran qui gère aussi le kanban, les événements et leur formulaire.
  *
  * ⚠️ Ces fonctions sont **pures** et ne lisent aucun store : `noeudPerimetre` et
- * `perimetreLabelUn` viennent de `$lib/utils`, qui porte déjà l'arbre. Les
+ * `perimetreLabelUn` viennent de `#lib/utils`, qui porte déjà l'arbre. Les
  * remonter ici aurait fait une seconde lecture de la même source.
  */
 import {
@@ -17,9 +17,9 @@ import {
 	perimetreDefautListe,
 	perimetreLabel,
 	perimetreLabelUn,
-} from '$lib/utils';
-import { codeDeTeinte, rangPremierNiveau, teinteDuCode } from '$lib/perimetres/teinte';
-import { codesPremierNiveau } from '$lib/perimetres';
+} from '#lib/utils.ts';
+import { codeDeTeinte, rangPremierNiveau, teinteDuCode } from '#lib/perimetres/teinte.ts';
+import { codesPremierNiveau } from '#lib/perimetres/index.ts';
 
 /** Une pastille : son code (la clé), son libellé court et sa couleur. */
 export interface PastillePerimetre {
@@ -28,7 +28,7 @@ export interface PastillePerimetre {
 	color: string;
 }
 
-//  🔴 La teinte vit dans `$lib/perimetres/teinte` — palette, choix de l'ancêtre
+//  🔴 La teinte vit dans `#lib/perimetres/teinte` — palette, choix de l'ancêtre
 //  de premier niveau, et leur self-test. Ce fichier-ci rend des pastilles ; il
 //  ne décide pas des couleurs.
 export function couleurPerimetre(code: string): string {

@@ -1,5 +1,5 @@
 /**
- * Auto-test de `$lib/ecrans-non-visites.ts` — « écrans non visités » (#1630).
+ * Auto-test de `#lib/ecrans-non-visites.ts` — « écrans non visités » (#1630).
  *
  * Le front n'a pas de lanceur de tests : la décision « cet écran a-t-il été
  * ouvert ? » se prouve ici, par le même motif que `check-init-prestataires` —
@@ -8,7 +8,7 @@
  * barre finale) afficherait tout écran comme mort, ou aucun, sans que rien ne le dise.
  *
  * Il éprouve aussi la TABLE RÉELLE : `pages.ts` n'est pas lisible par Node (alias
- * `$lib`), le contrôle en relit donc les routes dans le texte — et exige qu'elles
+ * `#lib`), le contrôle en relit donc les routes dans le texte — et exige qu'elles
  * soient toutes absolues, sans quoi la comparaison les prendrait pour des écrans
  * introuvables.
  *

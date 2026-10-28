@@ -11,7 +11,7 @@
 //  coupe suit donc une couture existante et non le compteur de lignes.
 //
 //  ⚠️ La surface publique NE BOUGE PAS : `index.ts` réexporte tout, et les
-//  quarante et un `from '$lib/api'` du front ne changent pas d'une ligne.
+//  quarante et un `from '#lib/api/index.ts'` du front ne changent pas d'une ligne.
 import { api, postFormData } from './client';
 import type { ExerciceLu, ResumeAffaires } from './synthese';
 

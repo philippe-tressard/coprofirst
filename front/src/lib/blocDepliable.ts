@@ -16,7 +16,7 @@
  *  ## Replié par défaut, et ce n'est pas un choix de style
  *
  *  Un `<details>` s'ouvre quand il porte l'attribut `open`. Cet attribut n'est
- *  PAS dans la liste blanche de `$lib/sanitize` : l'assainisseur le retire, quoi
+ *  PAS dans la liste blanche de `#lib/sanitize` : l'assainisseur le retire, quoi
  *  que le modèle écrive. Le repli n'est donc pas une consigne qu'on espère
  *  respectée, c'est une propriété du rendu.
  *

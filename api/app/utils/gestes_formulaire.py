@@ -12,7 +12,7 @@ Le navigateur poste, par la file de la mesure d'audience (même route, même
 plafond, même refus du profil — `routers/telemetry_collecte.py`), deux
 événements par geste : `ACTION_OUVERTURE` quand le formulaire s'ouvre,
 `ACTION_ENVOI` quand l'envoi a RÉUSSI. Leur `detail` est l'IDENTIFIANT du geste
-(`affaire.creer`), tiré de la liste fermée du front (`$lib/gestes`) — jamais le
+(`affaire.creer`), tiré de la liste fermée du front (`#lib/gestes`) — jamais le
 contenu saisi. Un `detail` qui n'a pas cette forme ne s'enregistre pas : le
 client du site n'en envoie pas, ce qui arrive ainsi vient d'ailleurs.
 
@@ -49,7 +49,7 @@ from app.utils.erreurs_navigateur import CONSERVATION_JOURS
 
 #: Les deux actions d'un geste — celles que `TelemetryEvent.action` prévoyait
 #: (« view | click | submit ») sans qu'aucun écran les envoie. ⚠️ Tenues à la
-#: main avec `$lib/gestes.ts` : le front et l'API ne partagent aucun fichier.
+#: main avec `#lib/gestes.ts` : le front et l'API ne partagent aucun fichier.
 ACTION_OUVERTURE = "click"
 ACTION_ENVOI = "submit"
 

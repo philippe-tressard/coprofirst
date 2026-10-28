@@ -12,9 +12,9 @@
   et ce bloc nomme d'autres affaires).
 -->
 <script lang="ts">
-	import type { MetriquesSynthese } from '$lib/api';
-	import { fmtDate } from '$lib/date';
-	import { equipLabel } from '$lib/prestataires';
+	import type { MetriquesSynthese } from '#lib/api/index.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { equipLabel } from '#lib/prestataires.ts';
 
 	export let metriques: MetriquesSynthese;
 

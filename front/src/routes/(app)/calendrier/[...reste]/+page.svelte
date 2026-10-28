@@ -20,10 +20,10 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import { cibleDuHash } from '$lib/deepLink';
-	import { suivreEvenementPromu } from '$lib/gestes-actualite';
-	import { routeOnglet } from '$lib/routes-onglets';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { cibleDuHash } from '#lib/deepLink.ts';
+	import { suivreEvenementPromu } from '#lib/gestes-actualite.ts';
+	import { routeOnglet } from '#lib/routes-onglets.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	onMount(async () => {
 		//  `#ev_archive-N` : le lien d'un événement archivé (carnet d'entretien).

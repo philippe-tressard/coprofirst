@@ -8,9 +8,9 @@
   variante d'impression comprise.
 -->
 <script lang="ts">
-	import { fmtDate } from '$lib/date';
-	import { relire } from '$lib/utils';
-	import { anneeCourante, diagnosticsAvecEcheance, type DiagType } from '$lib/reporting';
+	import { fmtDate } from '#lib/date.ts';
+	import { relire } from '#lib/utils.ts';
+	import { anneeCourante, diagnosticsAvecEcheance, type DiagType } from '#lib/reporting.ts';
 
 	export let reportDiagTypes: DiagType[] = [];
 

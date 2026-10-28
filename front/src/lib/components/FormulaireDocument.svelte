@@ -52,13 +52,13 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 
-	import CadreFormulaire from '$lib/components/CadreFormulaire.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import SectionPerimetre from '$lib/components/SectionPerimetre.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
-	import PiecesJointesFiche, { type PiecesFiche } from '$lib/components/PiecesJointesFiche.svelte';
-	import { MAX_FICHIERS } from '$lib/fichiers';
+	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import SectionPerimetre from '#lib/components/SectionPerimetre.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import FichiersUpload from '#lib/components/FichiersUpload.svelte';
+	import PiecesJointesFiche, { type PiecesFiche } from '#lib/components/PiecesJointesFiche.svelte';
+	import { MAX_FICHIERS } from '#lib/fichiers.ts';
 
 	/** L'intitulé du formulaire — en-tête de la boîte, ou titre de la modale. */
 	export let intitule: string;
@@ -101,7 +101,7 @@
 	const PIECES_JOINTES_PLIEES = true;
 	//  ⚠️ Plus de liste `accept` écrite ici (27/09/2026) : elle disait « PDF et
 	//  images » quand le serveur accepte aussi Word, Excel et texte (famille
-	//  `document_prive`). Le mode `mixte` lit `ACCEPT_FICHIERS` dans `$lib/fichiers`,
+	//  `document_prive`). Le mode `mixte` lit `ACCEPT_FICHIERS` dans `#lib/fichiers`,
 	//  comme les documents des contrats et des affaires — même route serveur.
 
 	/** L'enregistrement est-il en cours, et peut-on l'engager ? */

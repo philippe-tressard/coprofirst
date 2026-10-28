@@ -8,7 +8,7 @@
   s'affichent ou se masquent (leur pastille), les trois que la loi ou la
   licence imposent restent — mais se déplacent comme les autres (arbitré à
   l'écran, 09/10/2026). Dessous, l'année de création, le préfixe du nom et le
-  texte libre. La règle vit dans `$lib/piedDePage`.
+  texte libre. La règle vit dans `#lib/piedDePage`.
 
   L'aperçu est le VRAI composant du squelette : il ne peut pas montrer autre
   chose que le site.
@@ -19,11 +19,11 @@
   sous le champ porte l'exemple.
 -->
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import LibelleGroupe from '$lib/components/LibelleGroupe.svelte';
-	import Pastille from '$lib/components/Pastille.svelte';
-	import PiedDePage from '$lib/components/PiedDePage.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import LibelleGroupe from '#lib/components/LibelleGroupe.svelte';
+	import Pastille from '#lib/components/Pastille.svelte';
+	import PiedDePage from '#lib/components/PiedDePage.svelte';
 	import {
 		dansLaPlace,
 		deplacer,
@@ -33,7 +33,7 @@
 		PREFIXE_NOM_MAX,
 		TEXTE_PIED_MAX,
 		type ReglagePied,
-	} from '$lib/piedDePage';
+	} from '#lib/piedDePage.ts';
 
 	/** Lié : la page porte l'état et l'enregistre. */
 	export let reglage: ReglagePied;

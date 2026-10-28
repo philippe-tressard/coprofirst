@@ -1,6 +1,6 @@
 <!--
   Le badge d'ÉTAT d'une affaire — son « Suivi » : la teinte et le libellé de la
-  table de `$lib/tickets`, `badge-gray` pour un état qu'elle ne connaît pas.
+  table de `#lib/tickets`, `badge-gray` pour un état qu'elle ne connaît pas.
 
   ## Pourquoi (#2173, 23/10/2026)
 
@@ -20,8 +20,8 @@
   alors la valeur brute, jamais une chaîne vide.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import { STATUT_TICKET_BADGE, statutTicketLabel } from '$lib/tickets';
+	import Badge from '#lib/components/Badge.svelte';
+	import { STATUT_TICKET_BADGE, statutTicketLabel } from '#lib/tickets.ts';
 
 	export let statut: string | null | undefined;
 	/** Un cran sous le corps du badge, pour une liste dense (`Badge`). */

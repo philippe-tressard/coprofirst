@@ -23,7 +23,7 @@ série dans les deux graphiques et d'un jour à l'autre. Les catégories prennen
 les séries `s1`…`s8` dans l'ordre `ORDRE_SERIES` (au-delà : `autre`) ; les
 bâtiments, des paliers de gris `p1`…`p4` — la racine en premier, dans l'ordre de
 « Par bâtiment » —, et « Plusieurs bâtiments » la sienne. La règle vivait dans
-`$lib/repartition` ; le PDF du point (#2082) la lit aussi : elle est ICI, et
+`#lib/repartition` ; le PDF du point (#2082) la lit aussi : elle est ICI, et
 l'écran comme le papier reçoivent la teinte, jamais la règle. Les couleurs des
 teintes : `utils/suivi_affaires/pdf_barres.TEINTES` (papier) et `socle.css`
 (écran) — 🔒 `test_teintes_repartition.py` les tient d'accord.

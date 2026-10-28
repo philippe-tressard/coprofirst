@@ -56,7 +56,7 @@
  *   - un identifiant de page absent de la table : `defautsDePage()` lèverait à
  *     l'exécution, et une page en erreur ne se découvre pas en production.
  *
- * Le troisième argument s'écrit `defautsDePage('<id>')` (`$lib/pages`).
+ * Le troisième argument s'écrit `defautsDePage('<id>')` (`#lib/pages`).
  *
  * Le contrôle s'auto-contrôle : si la source disparaît ou change de forme, il ÉCHOUE
  * au lieu de conclure au vert (`standards/04-fiabilite-des-controles.md` §2, cas zéro).
@@ -295,7 +295,7 @@ if (violations.length || inutiles.length || defautsRecopies.length) {
 	}
 	for (const { rel, cites } of violations) {
 		console.error(`   ${rel} — ${cites.length} identifiants de pages : ${cites.join(', ')}`);
-		console.error('      → importer PAGES / PAGES_MENU / ID_VERS_HREF depuis `$lib/pages`\n');
+		console.error('      → importer PAGES / PAGES_MENU / ID_VERS_HREF depuis `#lib/pages`\n');
 	}
 	for (const rel of inutiles) {
 		console.error(`   ${rel} : exception INUTILE — ce fichier ne cite plus ${SEUIL} identifiants`);

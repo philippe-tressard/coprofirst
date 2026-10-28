@@ -28,8 +28,8 @@
  * pastille qui annoncerait « Tous » là où les locataires ne lisent pas mentirait
  * à chaque lecteur, sans que rien casse — d'où le contrôle.
  *
- * 🔴 Ce module n'importe que `$lib/destinataires` et les états de
- * `$lib/tickets` : il doit s'exécuter HORS du site, dans le contrôle. Le périmètre lui arrive donc déjà tranché
+ * 🔴 Ce module n'importe que `#lib/destinataires` et les états de
+ * `#lib/tickets` : il doit s'exécuter HORS du site, dans le contrôle. Le périmètre lui arrive donc déjà tranché
  * (`perimetreRestreint`) — l'arbre des périmètres est un état chargé à
  * l'exécution, que le contrôle n'a pas.
  */
@@ -38,8 +38,8 @@ import {
 	codesDestinataires,
 	concerneTousLesResidents,
 	reserveAuConseil,
-} from '$lib/destinataires';
-import { STATUTS_ETUDE_OUVERTE } from '$lib/tickets';
+} from '#lib/destinataires.ts';
+import { STATUTS_ETUDE_OUVERTE } from '#lib/tickets.ts';
 
 /**
  * Les PROFILS de lecteurs, au pluriel — la nomenclature arbitrée le 25/09/2026

@@ -12,10 +12,10 @@
   (`routers/tickets/relance`), et les recopier ici les ferait diverger.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
+	import Badge from '#lib/components/Badge.svelte';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
 	import PastillesRelances from './PastillesRelances.svelte';
-	import type { AffaireOuverte } from '$lib/api';
+	import type { AffaireOuverte } from '#lib/api/index.ts';
 
 	/** Les affaires cochées, dans l'ordre du tableau. */
 	export let affaires: AffaireOuverte[];

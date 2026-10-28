@@ -16,7 +16,7 @@
  *
  *  Les `import … from 'x'`, `export … from 'x'` et `import('x')` de `scripts/`,
  *  `e2e/`, `src/` et des configs à la racine de `front/`. Sont écartés : les
- *  modules natifs (`node:`), les chemins relatifs, les alias du framework (`$lib`,
+ *  modules natifs (`node:`), les chemins relatifs, les alias du framework (`#lib`,
  *  `$app`, `$env`, `$service-worker`), les modules virtuels (`virtual:…`) et les
  *  noms construits à l'exécution. Les commentaires sont blanchis avant lecture.
  *
@@ -120,7 +120,7 @@ function selftest() {
 	t(
 		'module natif, relatif, alias, virtuel : écartés',
 		noms(
-			"import a from 'node:fs'; import b from './x.js'; import c from '$lib/x'; import d from 'virtual:pwa-register'; import e from 'fs';",
+			"import a from 'node:fs'; import b from './x.js'; import c from '#lib/x'; import d from 'virtual:pwa-register'; import e from 'fs';",
 		),
 		[],
 	);

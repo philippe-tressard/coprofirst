@@ -41,10 +41,10 @@
   partir les pastilles nues en production (v2.67.11).
 -->
 <script lang="ts" generics="T">
-	import SectionRepliee from '$lib/components/SectionRepliee.svelte';
-	import Compte from '$lib/components/Compte.svelte';
-	import { TITRE_ARCHIVES } from '$lib/archives';
-	import { basculer } from '$lib/accordeon';
+	import SectionRepliee from '#lib/components/SectionRepliee.svelte';
+	import Compte from '#lib/components/Compte.svelte';
+	import { TITRE_ARCHIVES } from '#lib/archives.ts';
+	import { basculer } from '#lib/accordeon.ts';
 
 	/** Les objets archivés. Vide tant que rien n'est chargé. */
 	export let items: T[] = [];
@@ -55,7 +55,7 @@
 	/**  ⚠️ `null` tant que rien n'a été chargé : annoncer « 0 » se lirait
 	 *   « il n'y a rien » alors qu'on n'a pas encore regardé. */
 	export let compte: number | null = null;
-	/**  Le titre vient de `$lib/archives` et non d'une chaîne écrite ici : cinq
+	/**  Le titre vient de `#lib/archives` et non d'une chaîne écrite ici : cinq
 	 *   écrans l'avaient en dur, et concordaient parce qu'on venait de les
 	 *   aligner à la main (#516, point 4). */
 	export let titre = TITRE_ARCHIVES;
@@ -63,7 +63,7 @@
 	/** Affiche le message de vide : l'appelant sait s'il a fini de charger. */
 	export let charge = false;
 
-	//  UNE année dépliée à la fois (accordéon, 30/09/2026 — `$lib/accordeon`).
+	//  UNE année dépliée à la fois (accordéon, 30/09/2026 — `#lib/accordeon`).
 	//  C'était un `Set` : dix années ouvertes l'une après l'autre faisaient une
 	//  page sans fin.
 	let anneeDepliee: number | null = null;

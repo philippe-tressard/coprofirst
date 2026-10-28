@@ -1,6 +1,6 @@
-import { signalements as signalementsApi } from '$lib/api';
-import { tenter } from '$lib/erreurs';
-import { demander } from '$lib/saisie';
+import { signalements as signalementsApi } from '#lib/api/index.ts';
+import { tenter } from '#lib/erreurs.ts';
+import { demander } from '#lib/saisie.ts';
 
 /**
  * **Signaler un contenu au conseil syndical** — demander le motif, l'envoyer,

@@ -31,17 +31,17 @@
   `{{ ["civilite" }}`. Recopier le geste aurait recopié le défaut.
 -->
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import { onMount } from 'svelte';
-	import { admin as adminApi, type EnvoiEmail, type ModeleEmail } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { confirmer } from '$lib/confirmation';
-	import { safeHtml } from '$lib/sanitize';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import HistoriqueEnvoisEmail from '$lib/components/HistoriqueEnvoisEmail.svelte';
+	import { admin as adminApi, type EnvoiEmail, type ModeleEmail } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import HistoriqueEnvoisEmail from '#lib/components/HistoriqueEnvoisEmail.svelte';
 
 	let emailTemplates: ModeleEmail[] = [];
 	let emailsLoading = true;

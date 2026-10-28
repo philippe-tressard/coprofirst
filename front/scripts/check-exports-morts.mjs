@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Garde-fou : un export de `$lib` que **plus rien ne référence** est refusé
+ * Garde-fou : un export de `#lib` que **plus rien ne référence** est refusé
  * (#1577, 02/10/2026).
  *
  * ## Pourquoi il existe
@@ -79,7 +79,7 @@ export function compterMots(texte, compteur = new Map()) {
 /**
  * Les exports sans la moindre référence en dehors de leur déclaration. PURE.
  *
- * @param {Record<string, string>} lib      chemin → source des modules de `$lib`
+ * @param {Record<string, string>} lib      chemin → source des modules de `#lib`
  * @param {Map<string, number>} mots        occurrences de chaque mot du corpus
  *        (les modules de `lib` en font partie : chaque déclaration y compte une fois)
  */
@@ -122,7 +122,7 @@ function selftest() {
 			`${ok ? 'PASS' : 'ÉCHEC'}  ${nom} → ${JSON.stringify(obtenu)} (attendu ${JSON.stringify(attendu)})`,
 		);
 	};
-	/** Un arbre fictif : `lib` = modules de `$lib` ; `autres` = le reste du corpus. */
+	/** Un arbre fictif : `lib` = modules de `#lib` ; `autres` = le reste du corpus. */
 	const releve = (lib, autres = []) => {
 		const mots = new Map();
 		for (const s of Object.values(lib)) compterMots(neutraliserCommentaires(s), mots);
@@ -142,7 +142,7 @@ function selftest() {
 	verifier(
 		'appelé par un écran, hors lib : accepté',
 		releve({ 'a.ts': 'export function f() {}' }, [
-			'<script>import { f } from "$lib/a"; f();</script>',
+			'<script>import { f } from "#lib/a"; f();</script>',
 		]),
 		[],
 	);
@@ -262,7 +262,7 @@ if (perimees.length) {
 if (mortsHorsExceptions.length) {
 	echec = true;
 	console.error(
-		`\n✗ lint:client-appele (exports morts) — ${mortsHorsExceptions.length} export(s) de $lib que plus rien ne référence (#1577) :\n\n  ` +
+		`\n✗ lint:client-appele (exports morts) — ${mortsHorsExceptions.length} export(s) de #lib que plus rien ne référence (#1577) :\n\n  ` +
 			mortsHorsExceptions.map((m) => `${m.nom}  (${m.chemins.join(', ')})`).join('\n  ') +
 			'\n\n  Supprimer l’export — et sa déclaration si elle devient morte. Un export mort\n' +
 			'  AFFIRME un usage ou un garde-fou qui n’existe plus. Gardé exprès : le déclarer\n' +
@@ -272,6 +272,6 @@ if (mortsHorsExceptions.length) {
 if (echec) process.exit(1);
 
 console.log(
-	`✓ Exports de $lib : ${total} déclaré(s), tous référencés ailleurs que sur leur déclaration ` +
+	`✓ Exports de #lib : ${total} déclaré(s), tous référencés ailleurs que sur leur déclaration ` +
 		`(${lus} fichiers lus, ${Object.keys(EXCEPTIONS).length} exception(s)).`,
 );

@@ -14,15 +14,15 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { courriels, type CourrielReleve } from '$lib/api';
-	import { fmtDatetimeShort } from '$lib/date';
-	import { messageErreur } from '$lib/erreurs';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { courriels, type CourrielReleve } from '#lib/api/index.ts';
+	import { fmtDatetimeShort } from '#lib/date.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 	import JournalVerdicts, {
 		type EntreeJournal,
 		type TonVerdict,
-	} from '$lib/components/JournalVerdicts.svelte';
-	import { lienTicket } from '$lib/tickets';
+	} from '#lib/components/JournalVerdicts.svelte';
+	import { lienTicket } from '#lib/tickets.ts';
 
 	//  La gravité, pas le nom : un refus est orange — le conseil a été prévenu,
 	//  rien n'est cassé —, un message ignoré est gris.

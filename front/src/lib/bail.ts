@@ -23,8 +23,8 @@
  * fonctions, au lieu d'être devinée en comparant deux listes.
  */
 
-import { parAttribut } from '$lib/table-statuts';
-import { nomAffiche } from '$lib/noms';
+import { parAttribut } from '#lib/table-statuts.ts';
+import { nomAffiche } from '#lib/noms.ts';
 
 /** Ce qui identifie et joint un locataire — commun aux deux gestes. */
 export interface ChampsLocataire {

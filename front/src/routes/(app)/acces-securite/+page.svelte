@@ -19,7 +19,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { routeOnglet } from '$lib/routes-onglets';
+	import { routeOnglet } from '#lib/routes-onglets.ts';
 
 	onMount(() => {
 		//  La cible vient de la TABLE, jamais écrite ici : `lint:pages` refuse une

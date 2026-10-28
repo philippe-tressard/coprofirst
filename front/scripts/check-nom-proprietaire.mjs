@@ -25,7 +25,7 @@
  *
  * Aucun `<objet>.auteur_nom` dans un écran, **quand `<objet>` est d'un type
  * porteur de « Saisi pour »**. Le nom affiché passe par `nomProprietaire`
- * (`$lib/saisi-pour`), le nom de la copie par `nomCopie` — deux questions, un
+ * (`#lib/saisi-pour`), le nom de la copie par `nomCopie` — deux questions, un
  * seul module.
  *
  * 🔴 **La liste des types porteurs n'est pas écrite ici** : elle se lit dans
@@ -352,7 +352,7 @@ if (fautifs.length) {
 			'\n  la carte annonçait le rédacteur, et la FAQ promettait l’inverse.' +
 			'\n\n  Employer `nomProprietaire(objet)` pour ce qui s’AFFICHE, et `nomCopie()`' +
 			'\n  pour ce que la case « Envoyer une copie à … » annonce — les deux dans' +
-			'\n  `$lib/saisi-pour`, jamais réécrites dans un écran.\n',
+			'\n  `#lib/saisi-pour`, jamais réécrites dans un écran.\n',
 	);
 	process.exit(1);
 }

@@ -20,12 +20,12 @@
   et la règle vivrait alors à deux endroits.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
+	import Badge from '#lib/components/Badge.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
 	import { createEventDispatcher } from 'svelte';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
-	import { statutAccesBadge, statutAccesLabel } from '$lib/types-acces';
-	import type { AccesAdmin } from '$lib/api';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
+	import { statutAccesBadge, statutAccesLabel } from '#lib/types-acces.ts';
+	import type { AccesAdmin } from '#lib/api/index.ts';
 
 	type Ligne = AccesAdmin & { type: string };
 

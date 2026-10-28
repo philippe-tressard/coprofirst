@@ -1,5 +1,5 @@
 /**
- * **Charger un module `$lib` depuis un contrôle** — une seule façon de le faire.
+ * **Charger un module `#lib` depuis un contrôle** — une seule façon de le faire.
  *
  * ## Pourquoi ce module (15/09/2026)
  *
@@ -11,9 +11,9 @@
  * | Forme | Conséquence |
  * |---|---|
  * | `esbuild.transform` seul | les `import` restent non résolus ; le data-URI ne sait pas d'où il vient |
- * | `esbuild.build({ bundle })` | suit les imports relatifs — mais pas l'alias `$lib` |
+ * | `esbuild.build({ bundle })` | suit les imports relatifs — mais pas l'alias `#lib` |
  *
- * 🔴 Constaté en ajoutant un `import { parAttribut } from '$lib/table-statuts'`
+ * 🔴 Constaté en ajoutant un `import { parAttribut } from '#lib/table-statuts.ts'`
  * à `lib/tickets.ts` : `lint:filtre-statuts` est tombé sur son **cas zéro**, en
  * annonçant « ne se transpile pas ». Il avait raison, et c'est exactement
  * `standards/04` §16 — **le contrôle partageait la faiblesse de ce qu'il
@@ -27,12 +27,6 @@
  * devient la seule.
  */
 import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const ICI = dirname(fileURLToPath(import.meta.url));
-//: `scripts/lib` → `front` → `front/src/lib`, tel que l'alias de `vite.config.ts` le voit.
-const SRC_LIB = join(ICI, '..', '..', 'src', 'lib');
 
 /**
  * Le module tel que le SITE l'exécute — imports résolus, TypeScript effacé.
@@ -53,10 +47,8 @@ export async function chargerModule(source, echouer) {
 			write: false,
 			format: 'esm',
 			platform: 'neutral',
-			//  L'alias que SvelteKit pose : sans lui, tout module qui emploie un
-			//  voisin par `$lib/…` est irrésoluble ici, alors qu'il l'est partout
-			//  ailleurs.
-			alias: { $lib: SRC_LIB },
+			//  `#lib/…` se résout par le champ `imports` de `package.json`, que esbuild
+			//  lit comme Vite et Node : aucun alias à répéter ici.
 			logLevel: 'silent',
 		});
 		//  Import par data: URL — aucun fichier temporaire à nettoyer, et la

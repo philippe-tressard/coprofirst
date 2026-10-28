@@ -24,12 +24,12 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import EtatListe from './EtatListe.svelte';
-	import { tickets, type FluxItem, type Ticket, type TicketEvolution } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import type { GestesTicket } from '$lib/tickets';
-	import { chargerCorpsAffaire } from '$lib/affaire-au-fil';
+	import { tickets, type FluxItem, type Ticket, type TicketEvolution } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import type { GestesTicket } from '#lib/tickets.ts';
+	import { chargerCorpsAffaire } from '#lib/affaire-au-fil.ts';
 
 	export let item: FluxItem;
 

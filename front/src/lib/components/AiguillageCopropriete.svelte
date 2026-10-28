@@ -15,9 +15,9 @@
   l'alias de l'adresse n'a mené nulle part.
 -->
 <script lang="ts">
-	import { aiguillage } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import { aiguillage } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 
 	export let echec = '';
 

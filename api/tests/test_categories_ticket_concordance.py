@@ -34,7 +34,7 @@ from app.utils.carnet_entretien import CATEGORIES_BATI
 from app.utils.categories_ticket import LIBELLES_CATEGORIE, libelle_categorie
 
 #  ⚠️ `tickets-categories.ts` depuis le 21/09/2026 : la table a quitté
-#  `tickets.ts`, qui dépassait 500 lignes. `$lib/tickets` la réexporte, donc
+#  `tickets.ts`, qui dépassait 500 lignes. `#lib/tickets` la réexporte, donc
 #  aucun écran n'a bougé — mais un test qui lit un FICHIER, si.
 _FRONT = Path(__file__).resolve().parents[2] / "front" / "src" / "lib" / "tickets-categories.ts"
 

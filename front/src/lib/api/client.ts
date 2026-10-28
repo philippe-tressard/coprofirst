@@ -7,9 +7,9 @@
  * En développement, vite proxy forward /api → localhost:8000.
  */
 
-import { urlDeConnexion } from '$lib/redirection';
-import { detailLisible } from '$lib/detail-erreur';
-import { codeHttp, signalerErreur } from '$lib/telemetry';
+import { urlDeConnexion } from '#lib/redirection.ts';
+import { detailLisible } from '#lib/detail-erreur.ts';
+import { codeHttp, signalerErreur } from '#lib/telemetry.ts';
 
 export const BASE = '/api';
 
@@ -99,7 +99,7 @@ async function tryRefresh(): Promise<boolean> {
  *
  * Exportée ici pour que l'occurrence non couverte suive la MÊME règle, plutôt
  * que d'en inventer une deuxième dans un écran :
- * `$lib/imagesProtegees.ts` l'appelle telle quelle.
+ * `#lib/imagesProtegees.ts` l'appelle telle quelle.
  *
  * @returns `true` si la session a été renouvelée — le geste peut être rejoué.
  *          `false` après redirection vers la mire : la session est morte, et

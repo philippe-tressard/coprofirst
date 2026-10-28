@@ -5,33 +5,33 @@
 
   Une carte par installation, au standard du site (page Affaires) : recherche en
   tête, filtre par état — le compteur sur la pastille retenue —, cartes datées par
-  leur dernier signe de vie. Une seule carte ouverte (`$lib/accordeon`) ; sa fiche
+  leur dernier signe de vie. Une seule carte ouverte (`#lib/accordeon`) ; sa fiche
   se charge au premier dépliage.
 
   L'état et les appels réseau vivent ici (`svelte-patterns`, famille `Onglet<Nom>`) :
-  la fiche dispatche un geste, l'onglet demande le motif (`$lib/saisie`), appelle
+  la fiche dispatche un geste, l'onglet demande le motif (`#lib/saisie`), appelle
   le serveur, et range la fiche qu'il rend.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import CarteRegistreInstallation from '$lib/components/CarteRegistreInstallation.svelte';
-	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
-	import VersionsPubliees from '$lib/components/VersionsPubliees.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
+	import CarteRegistreInstallation from '#lib/components/CarteRegistreInstallation.svelte';
+	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
+	import VersionsPubliees from '#lib/components/VersionsPubliees.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		registre as registreApi,
 		type FicheInstallation,
 		type GesteRegistre,
 		type RegistreLu,
 		type ReglageDistribution,
-	} from '$lib/api';
-	import { basculer } from '$lib/accordeon';
-	import { messageErreur } from '$lib/erreurs';
-	import { demander } from '$lib/saisie';
-	import { ETATS_REGISTRE, GESTES_REGISTRE } from '$lib/registre-installations';
+	} from '#lib/api/index.ts';
+	import { basculer } from '#lib/accordeon.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { demander } from '#lib/saisie.ts';
+	import { ETATS_REGISTRE, GESTES_REGISTRE } from '#lib/registre-installations.ts';
 
 	let lu: RegistreLu | null = null;
 	let chargement = true;

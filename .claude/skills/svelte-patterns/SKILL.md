@@ -14,29 +14,29 @@ Conventions et patterns pour créer des pages et composants SvelteKit dans le pr
 
 ```svelte
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import { onMount } from 'svelte';
-	import { isCS, isAdmin, currentUser } from '$lib/stores/auth';
-	import { entity as entityApi, ApiError, type Entity } from '$lib/api';
-	import { getPageConfig, configStore, siteNomStore } from '$lib/stores/pageConfig';
-	import { safeHtml } from '$lib/sanitize';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { fmtDate, fmtDatetime } from '$lib/date';
-	import { fmtMontant, perimetreLabel } from '$lib/utils';
+	import { isCS, isAdmin, currentUser } from '#lib/stores/auth.ts';
+	import { entity as entityApi, ApiError, type Entity } from '#lib/api/index.ts';
+	import { getPageConfig, configStore, siteNomStore } from '#lib/stores/pageConfig.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { fmtDate, fmtDatetime } from '#lib/date.ts';
+	import { fmtMontant, perimetreLabel } from '#lib/utils.ts';
 </script>
 ```
 
 ### Page Config (titre dynamique via admin)
 
-Les valeurs par défaut vivent dans `$lib/pages.ts` et **nulle part ailleurs** :
+Les valeurs par défaut vivent dans `#lib/pages.ts` et **nulle part ailleurs** :
 `defautsDePage('page-id')`, jamais un objet recopié dans l'écran (#420). Titre,
 icône et descriptif passent par `EntetePage` — jamais un `<h1>` ni un
 `page-subtitle` écrits à la main (`npm run lint:entetes`, #1369).
 
 ```svelte
 <script lang="ts">
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import { configStore, getPageConfig, defautsDePage, siteNomStore } from '$lib/stores/pageConfig';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import { configStore, getPageConfig, defautsDePage, siteNomStore } from '#lib/stores/pageConfig.ts';
 
 	$: _pc = getPageConfig($configStore, 'page-id', defautsDePage('page-id'));
 	$: _siteNom = $siteNomStore;
@@ -56,7 +56,7 @@ tait quand il répète mot pour mot celui de la page (`ux-patterns` §13).
 
 ```svelte
 <script lang="ts">
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	let items: Entity[] = [];
 	let chargement = true;
@@ -88,7 +88,7 @@ n'ai pas pu regarder ».
 
 C'est le **cas zéro** de `standards/04` appliqué à un écran : une absence
 d'information ne se rend pas comme une information d'absence. `EtatListe`
-porte les trois états, et `messageErreur` (`$lib/erreurs.ts`) porte le texte.
+porte les trois états, et `messageErreur` (`#lib/erreurs.ts`) porte le texte.
 
 #### Ce qui dépend du rôle : `quandAuthResolue`, jamais `onMount`
 
@@ -100,7 +100,7 @@ c'est la seule qu'on essaie à la main (#1486 : huit écrans, dont un bailleur q
 voyait tous ses lots « Vacant »).
 
 Un chargement qui lit un rôle — même par une fonction locale qu'il appelle —
-passe par `quandAuthResolue(action)` (`$lib/stores/auth`), qui l'exécute une
+passe par `quandAuthResolue(action)` (`#lib/stores/auth`), qui l'exécute une
 fois, quand l'utilisateur est connu. L'`onMount` reste pour ce qui ne dépend de
 personne. 🔒 `npm run lint:gardes-auth` refuse un rôle lu dans un `onMount`, et
 son e2e type est `e2e/role-au-chargement-direct.spec.ts`.
@@ -111,13 +111,13 @@ son e2e type est `e2e/role-au-chargement-direct.spec.ts`.
 conversion `v === '' ? null : Number(v)` l'envoie donc à **0** — un relevé de
 consommation enregistré à 0 m³, un nombre de lots à 0 (#1516, #779) ; et
 `v ? Number(v) : null` efface un 0 réellement saisi. La règle vit dans
-`nombreOuNull` (`$lib/utils`) ; 🔒 `npm run lint:nombre-saisi` refuse la forme
+`nombreOuNull` (`#lib/utils`) ; 🔒 `npm run lint:nombre-saisi` refuse la forme
 recopiée, et `e2e/nombre-saisi` tient le comportement.
 
 ### Gestion d'erreurs API
 
 Un message d'erreur ne se rédige pas dans un écran : il vient de
-**`$lib/erreurs.ts`** (`messageErreur`), que tous les écrans emploient. Deux écrans qui
+**`#lib/erreurs.ts`** (`messageErreur`), que tous les écrans emploient. Deux écrans qui
 formulent le même échec autrement apprennent deux choses différentes à
 l'utilisateur pour un seul fait.
 
@@ -150,7 +150,7 @@ avait **vingt-trois** le 24/09/2026, sous cinq allures, dont une copie de la
 classe `.etat-chargement` d'`EtatListe` avec son style (#1045). 🔒
 `npm run lint:chargement` refuse le suivant ; un bouton qui attend
 (`{envoi ? 'Chargement…' : label}`) n'est pas concerné.
-`$lib/chargement.ts` porte `essayer` et `messagePartiel` (elle ne porte pas de
+`#lib/chargement.ts` porte `essayer` et `messagePartiel` (elle ne porte pas de
 libellés, contrairement à ce que disait cette ligne), et `ChargementPartiel` le
 cas d'un bloc qui se recharge seul.
 
@@ -162,7 +162,7 @@ anciennes, masquage vs redirection) est dans `ux-patterns` §4.
 
 ```svelte
 <!-- src/routes/(app)/tickets/+page.ts — la page ne bouge pas -->
-import { resoudreOnglet } from '$lib/deepLink';
+import { resoudreOnglet } from '#lib/deepLink.ts';
 
 export const load = ({ url }) => resoudreOnglet('mes-demandes', url);
 ```
@@ -173,7 +173,7 @@ envoie, et `url` reste l'adresse demandée.
 ```svelte
 <!-- src/routes/(app)/tickets/+page.svelte -->
 <script lang="ts">
-	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
+	import BarreOnglets from '#lib/components/BarreOnglets.svelte';
 
 	export let data: { onglet: string; sous: string | null };
 	$: onglet = data.onglet;
@@ -189,7 +189,7 @@ envoie, et `url` reste l'adresse demandée.
 ```
 
 ⚠️ **Ne pas écrire la rangée à la main** : `BarreOnglets` lit la liste, l'ordre, les
-libellés (configurables en administration) et les routes dans `$lib/pages.ts`, et
+libellés (configurables en administration) et les routes dans `#lib/pages.ts`, et
 rend chaque onglet en `<a>`. Un `<div class="tabs">` local rouvre les cinq
 divergences que ce composant vient de fermer.
 
@@ -203,7 +203,7 @@ reste aucune occurrence**, et trois linters refusent de le voir revenir.
 |---|---|---|
 | l'en-tête d'une carte (titre, icônes, chevron) | `EnteteCarte` | `lint:entete-carte` — **exceptions vides** |
 | l'aperçu du contenu, coupé à 3 lignes | `ApercuCarte` | `lint:clamp` |
-| l'ouverture / fermeture d'un élément de liste | `$lib/listeDepliable.ts` | `lint:liste-depliable` |
+| l'ouverture / fermeture d'un élément de liste | `#lib/listeDepliable.ts` | `lint:liste-depliable` |
 | les pastilles d'état | `Pastille` | `lint:statuts`, `lint:etats` |
 | le périmètre affiché | `BadgePerimetre` | `lint:libelle-perimetre`, `lint:teinte` |
 
@@ -242,26 +242,26 @@ ses sections : il déclare son contenu.
 ## Avant d'écrire un composant : la famille existe peut-être déjà (#1561)
 
 « Grep le pattern existant » est la seule consigne qui couvrait ces familles, et
-elles sont les plus réutilisées de `$lib/components/`. **Une ligne de routage par
+elles sont les plus réutilisées de `#lib/components/`. **Une ligne de routage par
 famille** — l'usage se compte en cherchant l'import du composant sous `front/src`, il ne
 s'écrit pas ici :
 
 | Ce qu'on écrit | Ce qui existe | Où lire pourquoi |
 |---|---|---|
-| une **section** de formulaire | l'enveloppe est `SectionFormulaire` (intitulé, filet, pliage) ; le contenu partagé entre écrans est un `Section<Nom>` : `SectionQuand`, `SectionPerimetre`, `SectionEquipement`, `SectionDiffusion`, `SectionDestinataires`, `SectionAffairesLiees`, `SectionOptionsPublication`, `SectionDescription`…, et `SectionsSuiteConseil` pour ce que le conseil pose dans une Suite. Elle se **déclare** dans `$lib/entites/<entité>` (`CLAUDE.md`, checklist front) | l'en-tête du composant |
+| une **section** de formulaire | l'enveloppe est `SectionFormulaire` (intitulé, filet, pliage) ; le contenu partagé entre écrans est un `Section<Nom>` : `SectionQuand`, `SectionPerimetre`, `SectionEquipement`, `SectionDiffusion`, `SectionDestinataires`, `SectionAffairesLiees`, `SectionOptionsPublication`, `SectionDescription`…, et `SectionsSuiteConseil` pour ce que le conseil pose dans une Suite. Elle se **déclare** dans `#lib/entites/<entité>` (`CLAUDE.md`, checklist front) | l'en-tête du composant |
 | un **onglet d'administration** | un composant `Onglet<Nom>` (`OngletSmtp`, `OngletWhatsApp`, `OngletConsommations`, `OngletPerimetres`, `OngletAcces`…) : l'état et les appels réseau vivent **dedans**, la page ne garde que le choix de l'onglet — c'est ce qui la garde sous le plafond de modularité. `Onglet.svelte` est, lui, le **bouton** d'une rangée | `OngletSmtp.svelte` (même forme que `OngletWhatsApp`) |
 | un onglet **qui n'est pas celui par défaut**, ou un formulaire qui ne s'ouvre qu'au geste (✏️, « Répondre », « Nouvelle… ») | `ChargementDiffere` : la page passe l'`import()`, le composant revient typé par le snippet `contenu`. Importé en tête de page, il entre dans l'**ouverture** de l'écran — `/admin` téléchargeait ses seize onglets pour en afficher un (298 → 94 Ko compressés, 11/10/2026). 🔒 `npm run lint:poids-ouverture` (après le build) refuse qu'un composant ainsi confié soit chargé d'emblée par un écran. ⚠️ Le parent ne lui parle que par des props liées : un `bind:this` vaut `null` tant que le morceau n'est pas arrivé, et la méthode appelée se perd (« Nouveau contrat », 12/10/2026). Le **corps déplié d'une carte** se diffère de même, son conteneur `.carte-corps` restant dans la carte (le fondu d'entrée) : le chargeur se NOMME (`const chargerCorps = () => import(…)`) et sert deux fois — `charger={chargerCorps}` et `CarteListe onApprocher={chargerCorps}`, qui le précharge à l'appui, au survol à la souris et au focus (`CarteTicket` → `CorpsCarteTicket`, #1860) | `ChargementDiffere.svelte` |
 | un **formulaire d'entité** | un `Formulaire<Entité>` qui sert la création **et** la correction (`FormulaireBail`, `FormulaireAnnonce`, `FormulaireSondage`, `FormulaireAnnonceHall`…) ; ses seules différences se passent par props (`avecLots`, `avecDateEntree`). Ne pas le réécrire dans un écran | `FormulaireBail.svelte` |
 | « **qui est prévenu ?** » | `CanauxNotification` (WhatsApp, syndic, conseil), puis `ApercuDiffusion` pour voir ce qui partira avant de confirmer | `CanauxNotification.svelte` |
-| une **liste d'affaires** et ses gestes — déplier, Suite, correction, options, archiver — page Affaires **et** lien direct d'une affaire | `$lib/affaires-en-liste` (`affairesEnListe(liste)` → `etat`, `gestes`), rendu par `ListeTickets` ; la page ne garde que ses filtres | l'en-tête du module |
+| une **liste d'affaires** et ses gestes — déplier, Suite, correction, options, archiver — page Affaires **et** lien direct d'une affaire | `#lib/affaires-en-liste` (`affairesEnListe(liste)` → `etat`, `gestes`), rendu par `ListeTickets` ; la page ne garde que ses filtres | l'en-tête du module |
 | un bandeau « 📁 Historique (n) ▼ » | `SectionRepliee` | `SectionRepliee.svelte` |
 | une case 🔒 « visible du seul périmètre sélectionné » | `CaseReservePerimetre` | `CaseReservePerimetre.svelte` |
 | un mot de passe | `ChampMotDePasse` (bascule, jauge, « Verr. Maj. ») | idem |
 | les actions d'une carte d'actualité | `ActionsActualite` | idem |
 | le tableau des tâches planifiées | `TachesPlanifiees` (prévu **et** arrivé, ensemble) | idem |
 | le **badge** d'un état dont la teinte vient d'une table | `Badge` (`teinte`, `compact`) — la teinte en `class:`, jamais une classe interpolée ; les teintes concordent avec les `.badge-*` des feuilles (`npm run lint:badge`, #1571) | `Badge.svelte` |
-| un **état** (libellé, classe de pastille, aide) qui se décline par clé | `$lib/table-statuts.ts` — une table, ses colonnes s'en déduisent | l'en-tête du module |
-| le **type d'un accès** (Vigik, télécommande) | `$lib/types-acces.ts` | idem |
+| un **état** (libellé, classe de pastille, aide) qui se décline par clé | `#lib/table-statuts.ts` — une table, ses colonnes s'en déduisent | l'en-tête du module |
+| le **type d'un accès** (Vigik, télécommande) | `#lib/types-acces.ts` | idem |
 
 ⚠️ Côté serveur, les familles équivalentes (`utils/cloche`, `utils/nature_affaire`…)
 sont routées dans `api-scaffold`.
@@ -273,10 +273,10 @@ Les formats de date et de montant sont **centralisés**. Une page qui redéfinit
 
 ```svelte
 <script lang="ts">
-	// $lib/date.ts — TOUTES les dates affichées (locale fr-FR + TZ Europe/Paris figés)
-	import { fmtDate, fmtDateLong, fmtDateShort, fmtDatetime, fmtTime, fmtMonthYear } from '$lib/date';
-	// $lib/utils.ts — montants, périmètre, extraits HTML
-	import { fmtMontant, perimetreLabel, stripHtml } from '$lib/utils';
+	// #lib/date.ts — TOUTES les dates affichées (locale fr-FR + TZ Europe/Paris figés)
+	import { fmtDate, fmtDateLong, fmtDateShort, fmtDatetime, fmtTime, fmtMonthYear } from '#lib/date.ts';
+	// #lib/utils.ts — montants, périmètre, extraits HTML
+	import { fmtMontant, perimetreLabel, stripHtml } from '#lib/utils.ts';
 </script>
 ```
 
@@ -308,7 +308,7 @@ local » — dont le corps était :
 	}
 ```
 
-C'est **exactement** `safeDescription`, exportée par `$lib/sanitize.ts` — laquelle
+C'est **exactement** `safeDescription`, exportée par `#lib/sanitize.ts` — laquelle
 a été créée pour supprimer ce helper, alors écrit en double sous le nom `renderDesc`
 dans deux pages. **La consigne a survécu à la factorisation qu'elle décrivait.**
 
@@ -318,7 +318,7 @@ motif supprimé le fait réapparaître — c'est la duplication qui se reproduit
 propre documentation.
 
 ```svelte
-	import { safeDescription } from '$lib/sanitize';
+	import { safeDescription } from '#lib/sanitize.ts';
 	…
 	{@html safeDescription(contenu)}
 ```
@@ -350,7 +350,7 @@ déclarée, et `lint:largeur-saisie` interdit d'écrire une largeur dans un écr
 
 ## Sécurité XSS
 
-**OBLIGATOIRE** : tout `{@html}` passe par une fonction de `$lib/sanitize.ts`.
+**OBLIGATOIRE** : tout `{@html}` passe par une fonction de `#lib/sanitize.ts`.
 Elles sont **trois**, toutes adossées à DOMPurify — cette section n'en nommait
 qu'une alors que les trois étaient en service, ce qui faisait lire 19 usages
 conformes comme autant d'écarts (#429) :
@@ -419,7 +419,7 @@ foi — cette section n'en recopie que ce qu'un écran doit savoir :
   prestataires et contrats (`PATCH …/archivage`, #1538). Le bouton porte
   `aria-label="Archiver"` et l'icône 📦 — **jamais 🗑️**, qui dit « supprimer ».
   Le pendant aux Archives est ↩️ Restaurer. La confirmation passe par `ARCHIVAGE`
-  ou `archiverPuis` (`$lib/confirmation`), jamais une phrase écrite dans l'écran.
+  ou `archiverPuis` (`#lib/confirmation`), jamais une phrase écrite dans l'écran.
 
 🔴 Cette section affirmait jusqu'au 02/10/2026 *« il n'y a pas de bouton 📦 »* —
 démenti depuis le 24/09 par les affaires (#1555). Une consigne qui nie un geste
@@ -438,7 +438,7 @@ retirées :
 | Avant (kit 2) | Maintenant |
 |---|---|
 | `svelte.config.js` | options à plat dans `sveltekit({…})` de `vite.config.ts` |
-| `$app/stores` (`$page`) | `page` de `$app/state` — **hors** `$:`, où l'on passe par `$lib/lieu.svelte` |
+| `$app/stores` (`$page`) | `page` de `$app/state` — **hors** `$:`, où l'on passe par `#lib/lieu.svelte` |
 | `$app/environment` | `$app/env` |
 | `$env/dynamic/public` | variable **déclarée** dans `src/env.ts`, lue par `$app/env/public` (ou `private`) — une variable non déclarée vaut `undefined`, sans un mot |
 | `src/params/alias.ts` | une entrée de `defineParams` dans `src/params.ts` |
@@ -446,6 +446,8 @@ retirées :
 | types de hooks dans `@sveltejs/kit` | `@sveltejs/kit/hooks` ; `handleError` reçoit `{ kind, error }` |
 | `ORIGIN` d'adapter-node | supprimé : l'adresse se déduit de l'en-tête `Host` |
 
-`$lib` reste servi par l'option `alias` (dépréciée) : sa migration en
-`#lib` est un lot à part. Le service worker se génère au build du client
+`#lib/…` se résout par le champ `imports` de `front/package.json` — Vite,
+TypeScript, esbuild et Node le lisent là — et l'option `alias`, dépréciée, est
+retirée (#2278) : on écrit `#lib/<fichier>.<extension>`, **extension obligatoire**
+(un dossier : `#lib/<dossier>/index.ts`). 🔒 `npm run lint:alias-lib`. Le service worker se génère au build du client
 seulement (`clientSeul` dans `vite.config.ts`, dossier `outDir` nommé).

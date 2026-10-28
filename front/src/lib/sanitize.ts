@@ -50,7 +50,7 @@ const ALLOWED_TAGS = [
 	//  arrive toujours fermé. Le repli n'est pas une consigne qu'on espère
 	//  respectée, c'est une propriété du rendu.
 	//
-	//  📖 Les nœuds qui les font survivre à l'éditeur : `$lib/blocDepliable`.
+	//  📖 Les nœuds qui les font survivre à l'éditeur : `#lib/blocDepliable`.
 	//  Ces trois listes — celle-ci, celle du schéma Tiptap et celle de la
 	//  consigne donnée au modèle — sont tenues d'accord par
 	//  `api/tests/test_consigne_balises.py`.

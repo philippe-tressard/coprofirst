@@ -8,7 +8,7 @@
 
   1. **C'était le seul lien externe du produit.** L'utilisateur a demandé de les
      supprimer : une icône se prend dans le catalogue local
-     (`$lib/icones-svg.json`), pas sur un site tiers.
+     (`#lib/icones-svg.json`), pas sur un site tiers.
   2. **Le catalogue ne contient que 58 des 1 500 icônes de Lucide.** Parcourir
      lucide.dev, c'était donc choisir dans une bibliothèque dont le produit ne
      sert qu'un vingtième — et `Icon` retombe **en silence** sur `help-circle`
@@ -25,8 +25,8 @@
   son icône au premier enregistrement.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import icones from '$lib/icones-svg.json';
+	import Icon from '#lib/components/Icon.svelte';
+	import icones from '#lib/icones-svg.json';
 
 	/** Le nom de l'icône, lié à l'appelant. */
 	export let valeur: string;

@@ -12,8 +12,8 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import ConstatsLots from '$lib/components/ConstatsLots.svelte';
-	import { acces, type ConstatPatrimoine } from '$lib/api';
+	import ConstatsLots from '#lib/components/ConstatsLots.svelte';
+	import { acces, type ConstatPatrimoine } from '#lib/api/index.ts';
 
 	let constats: ConstatPatrimoine[] | null = null;
 

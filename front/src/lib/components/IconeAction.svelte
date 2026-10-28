@@ -7,7 +7,7 @@
   Sur une carte d'affaire, six émojis d'action de six couleurs : la couleur ne
   hiérarchisait plus rien. La maquette retenue les dessine au trait, en gris,
   Bleu Seine au survol. Arbitré d'abord pour les affaires seules — la liste
-  posait un contexte (`$lib/actions-au-trait`) que ce composant lisait —, puis
+  posait un contexte (`#lib/actions-au-trait`) que ce composant lisait —, puis
   étendu à TOUT le site le soir même : la page Affaires est le standard. Le
   contexte n'avait plus rien à décider ; il est retiré, et l'émoji avec lui.
 
@@ -18,9 +18,9 @@
   bleu) ou de DANGER (la corbeille).
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 
-	/** Le pictogramme au trait, nommé dans `$lib/icones-svg.json`. */
+	/** Le pictogramme au trait, nommé dans `#lib/icones-svg.json`. */
 	export let icone: string;
 </script>
 

@@ -8,10 +8,10 @@
   réseau, qu'il lance sur `enregistre`.
 -->
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import type { LigneImportLot, MonLot, UtilisateurAdmin } from '$lib/api';
-	import { nomAffiche } from '$lib/noms';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import type { LigneImportLot, MonLot, UtilisateurAdmin } from '#lib/api/index.ts';
+	import { nomAffiche } from '#lib/noms.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 
 	export let imp: LigneImportLot;
 	export let lots: MonLot[] = [];

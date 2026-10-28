@@ -13,10 +13,10 @@
   qui sait ce qu'enregistrer veut dire.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import { ICONES_PERIMETRE } from '$lib/perimetres';
-	import { TYPES_ACCES } from '$lib/types-acces';
+	import Icon from '#lib/components/Icon.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import { ICONES_PERIMETRE } from '#lib/perimetres/index.ts';
+	import { TYPES_ACCES } from '#lib/types-acces.ts';
 
 	/** L'objet de saisie, lié dans les deux sens : l'onglet porte son cycle de vie. */
 	export let form: {

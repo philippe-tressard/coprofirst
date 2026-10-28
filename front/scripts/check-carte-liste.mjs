@@ -52,11 +52,11 @@ process.exit(
 			["\timport Gouttiere from './Gouttiere.svelte';", 1],
 			//  La forme voulue, jamais signalée.
 			['<CarteListe class="idee-card" quand={x.cree_le} {expanded}>', 0],
-			["\timport CarteListe from '$lib/components/CarteListe.svelte';", 0],
+			["\timport CarteListe from '#lib/components/CarteListe.svelte';", 0],
 			//  Un voisin de nom ne vaut pas la classe ; un sélecteur CSS non plus.
 			['<div class="carte-liste-titre">', 0],
 			['\t.carte-liste .carte-corps { opacity: 1; }', 0],
-			["\timport type { ClasseGouttiere } from '$lib/gouttiere';", 0],
+			["\timport type { ClasseGouttiere } from '#lib/gouttiere.ts';", 0],
 		],
 		ok: 'Carte de liste : conteneur et gouttière rendus par CarteListe seul',
 		ko: 'conteneur(s) de carte ou gouttière(s) écrits hors de CarteListe',

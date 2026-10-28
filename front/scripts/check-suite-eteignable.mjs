@@ -4,7 +4,7 @@
  *
  *  ## Pourquoi
  *
- *  `sectionsDeLaSuite` (`$lib/evolutions`) décidait du Périmètre et de la
+ *  `sectionsDeLaSuite` (`#lib/evolutions`) décidait du Périmètre et de la
  *  Diffusion par `sectionPresente(entite, 'evolution', …)` — présente ou non,
  *  sans lire `inactivePour`. La Suite d'un Bogue les offrait donc, alors que la
  *  déclaration les dit inactives et que la création les éteint.
@@ -13,7 +13,7 @@
  *
  *  Dans le corps de `sectionsDeLaSuite`, un `sectionPresente(entite,
  *  'evolution', '<id>')` dont l'id figure dans `SECTIONS_ETEIGNABLES`
- *  (`$lib/formulaire-affaire`, la liste des sections qu'une nature, un rôle ou
+ *  (`#lib/formulaire-affaire`, la liste des sections qu'une nature, un rôle ou
  *  une catégorie éteignent) : il doit passer par `sectionDeLaSuite(…, conditions)`.
  *
  *  Lancer : node scripts/check-suite-eteignable.mjs [--selftest]

@@ -15,13 +15,13 @@
   pour laquelle ce composant existe encore.
 
   ⚠️ Les dérivations (`contratsAvecEcheance`, `diagnosticsAvecEcheance`) vivent
-  dans `$lib/reporting.ts` et non ici : ce fichier ET ses deux enfants en ont
+  dans `#lib/reporting.ts` et non ici : ce fichier ET ses deux enfants en ont
   besoin. Les recopier aurait rendu le découpage plus coûteux que le fichier
   unique — un découpage qui duplique n'est pas un découpage.
 -->
 <script lang="ts">
 	import VueRenouvellementsContrats from './VueRenouvellementsContrats.svelte';
-	import { relire } from '$lib/utils';
+	import { relire } from '#lib/utils.ts';
 	import VueRenouvellementsAudits from './VueRenouvellementsAudits.svelte';
 	import {
 		anneeCourante,
@@ -30,7 +30,7 @@
 		type DiagType,
 		type ReportContrat,
 		type ReportPrestataire,
-	} from '$lib/reporting';
+	} from '#lib/reporting.ts';
 
 	export let reportContrats: ReportContrat[] = [];
 	export let reportPrestataires: ReportPrestataire[] = [];

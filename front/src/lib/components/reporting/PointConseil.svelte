@@ -20,15 +20,15 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Badge from '$lib/components/Badge.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import Badge from '#lib/components/Badge.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 	import FormulairePoint from './FormulairePoint.svelte';
 	import ValidationPoint from './ValidationPoint.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { confirmer } from '$lib/confirmation';
-	import { messageErreur } from '$lib/erreurs';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import {
 		pointsConseil,
 		type CompteRenduPoint,
@@ -36,9 +36,9 @@
 		type ParticipantsPoint,
 		type PointEntree,
 		type ReprisePoint,
-	} from '$lib/api';
-	import { champLocalMaintenant, fmtDatetime, fmtTime } from '$lib/date';
-	import { ETATS_POINT, entreesDepuisPresents, moyenDe, nomPresent } from '$lib/points-conseil';
+	} from '#lib/api/index.ts';
+	import { champLocalMaintenant, fmtDatetime, fmtTime } from '#lib/date.ts';
+	import { ETATS_POINT, entreesDepuisPresents, moyenDe, nomPresent } from '#lib/points-conseil.ts';
 
 	export let mode: ModePoint;
 	/** Le point du mode et son CR global — lu par la vue (tableau, CR global). */

@@ -15,7 +15,7 @@
   écrive une clé d'activation.
 -->
 <script lang="ts">
-	import BadgeEtatService from '$lib/components/BadgeEtatService.svelte';
+	import BadgeEtatService from '#lib/components/BadgeEtatService.svelte';
 
 	/** Le service est-il activé — la clé d'activation lue par l'onglet. */
 	export let actif: boolean;

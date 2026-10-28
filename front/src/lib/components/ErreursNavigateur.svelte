@@ -6,9 +6,9 @@
 	 *
 	 * La clé (page, code) est unique : le serveur regroupe par ce couple.
 	 */
-	import PanneauTelemetrie from '$lib/components/PanneauTelemetrie.svelte';
-	import { fmtDatetimeShort } from '$lib/date';
-	import type { ErreurNavigateur } from '$lib/api';
+	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
+	import { fmtDatetimeShort } from '#lib/date.ts';
+	import type { ErreurNavigateur } from '#lib/api/index.ts';
 
 	export let erreurs: ErreurNavigateur[] = [];
 	export let periode: string;

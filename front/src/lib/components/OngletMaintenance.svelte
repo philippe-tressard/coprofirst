@@ -8,13 +8,13 @@
   derniers écrits en ligne, et l'accueillir aurait demandé de l'agrandir.
 -->
 <script lang="ts">
-	import ControleSante from '$lib/components/ControleSante.svelte';
-	import CarteConservationAffaires from '$lib/components/CarteConservationAffaires.svelte';
-	import CarteExportCopropriete from '$lib/components/CarteExportCopropriete.svelte';
-	import ControlesFiabilite from '$lib/components/ControlesFiabilite.svelte';
-	import ConsommationIA from '$lib/components/ConsommationIA.svelte';
-	import TachesPlanifiees from '$lib/components/TachesPlanifiees.svelte';
-	import { isAdmin, isOperateur } from '$lib/stores/auth';
+	import ControleSante from '#lib/components/ControleSante.svelte';
+	import CarteConservationAffaires from '#lib/components/CarteConservationAffaires.svelte';
+	import CarteExportCopropriete from '#lib/components/CarteExportCopropriete.svelte';
+	import ControlesFiabilite from '#lib/components/ControlesFiabilite.svelte';
+	import ConsommationIA from '#lib/components/ConsommationIA.svelte';
+	import TachesPlanifiees from '#lib/components/TachesPlanifiees.svelte';
+	import { isAdmin, isOperateur } from '#lib/stores/auth.ts';
 </script>
 
 <!--  🏢 La supervision technique (tâches, contrôles, base, santé)

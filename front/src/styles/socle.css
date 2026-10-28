@@ -83,7 +83,7 @@ body {
 	--color-sarcelle: #0b6470;
 	--color-sarcelle-fond: #ddf1f4;
 	/*  Les SÉRIES des répartitions croisées du Suivi des affaires (#2043) : une
-	    teinte par catégorie, dans l'ordre fixe de `$lib/repartition` — palette
+	    teinte par catégorie, dans l'ordre fixe de `#lib/repartition` — palette
 	    catégorielle à huit teintes, validée daltonisme (skill dataviz : écart
 	    CVD ≥ 9 entre voisines). Sous 3:1 sur blanc pour trois d'entre elles :
 	    la légende et le nombre en bout de barre portent l'information. */

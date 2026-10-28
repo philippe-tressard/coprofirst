@@ -59,8 +59,8 @@
   les **mêmes cartes** que les courants, simplement atténuées.
 -->
 <script lang="ts" generics="T extends { archivee?: boolean }">
-	import SectionRepliee from '$lib/components/SectionRepliee.svelte';
-	import { TITRE_ARCHIVES, enCours } from '$lib/archives';
+	import SectionRepliee from '#lib/components/SectionRepliee.svelte';
+	import { TITRE_ARCHIVES, enCours } from '#lib/archives.ts';
 
 	/** La liste complète, courants et archivés mêlés, déjà triée par l'appelant. */
 	export let liste: T[] = [];
@@ -85,7 +85,7 @@
 
 <slot items={courants} />
 
-<!--  Le bandeau vient de `SectionRepliee` et son intitulé de `$lib/archives` : il
+<!--  Le bandeau vient de `SectionRepliee` et son intitulé de `#lib/archives` : il
       était en dur dans cinq écrans (#516, point 4). -->
 {#if archives.length}
 	<SectionRepliee titre={TITRE_ARCHIVES} compte={archives.length}>

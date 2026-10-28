@@ -51,7 +51,7 @@
  * place : il se stocke toujours en entier, si bien qu'un ordre enregistré avant
  * la carte se lit sans migration — chaque place y garde son ordre relatif.
  */
-import { lienSource, NOM_PLATEFORME, SITE_PLATEFORME } from '$lib/plateforme';
+import { lienSource, NOM_PLATEFORME, SITE_PLATEFORME } from '#lib/plateforme.ts';
 
 /** Où l'élément se rend dans la carte. */
 export type PlacePied = 'marque' | 'mention' | 'lien';

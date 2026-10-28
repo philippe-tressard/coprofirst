@@ -14,9 +14,9 @@
   bilan dit déjà 0.
 -->
 <script lang="ts">
-	import type { VisitePeriodique } from '$lib/api';
-	import { fmtDate } from '$lib/date';
-	import { lienTicket } from '$lib/tickets';
+	import type { VisitePeriodique } from '#lib/api/index.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { lienTicket } from '#lib/tickets.ts';
 
 	export let visites: VisitePeriodique[];
 

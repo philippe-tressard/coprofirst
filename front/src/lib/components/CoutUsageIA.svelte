@@ -15,7 +15,7 @@
   modèle ; ce composant n'en montre que le compte rendu (`tarifEnregistre`).
 -->
 <script context="module" lang="ts">
-	import type { PrixIA } from '$lib/api';
+	import type { PrixIA } from '#lib/api/index.ts';
 
 	//  🔴 Les prix, en DOLLARS par million de jetons (30/09/2026, arbitré :
 	//  « comme les grilles »), et TROIS — l'entrée lue en cache a le sien chez
@@ -42,10 +42,10 @@
 </script>
 
 <script lang="ts">
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import type { LimitesUsageIA, UsageIA } from '$lib/api';
-	import { fmtDate } from '$lib/date';
-	import { fmtMontant, fmtNombre } from '$lib/utils';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import type { LimitesUsageIA, UsageIA } from '#lib/api/index.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { fmtMontant, fmtNombre } from '#lib/utils.ts';
 
 	/** Toutes les valeurs de configuration, liées : le composant écrit les siennes. */
 	export let valeurs: Record<string, string>;

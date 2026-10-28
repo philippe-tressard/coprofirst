@@ -112,7 +112,7 @@ def au_demi_jour(jours: float) -> float:
 def libelle_jours(jours: float | None) -> str:
     """« 22,5 j », « 3 j », « — » — la forme lue par l'assistant et dans les courriels.
 
-    L'écran a la sienne (`$lib/synthese`), les contextes de build l'imposent ;
+    L'écran a la sienne (`#lib/synthese`), les contextes de build l'imposent ;
     elles disent la même chose, et `test_jours_ouvres.py` fixe celle-ci.
     """
     if jours is None:

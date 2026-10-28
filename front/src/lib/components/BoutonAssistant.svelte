@@ -36,7 +36,7 @@
   à lui ; sa pulsation d'étincelle, la seule du produit, est partie.
 -->
 <script lang="ts">
-	import IconeIA from '$lib/components/IconeIA.svelte';
+	import IconeIA from '#lib/components/IconeIA.svelte';
 
 	/** Le panneau est-il ouvert ? Porté par l'assistant, lu ici pour `aria-expanded`. */
 	export let ouvert = false;

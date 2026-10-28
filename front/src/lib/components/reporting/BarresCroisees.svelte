@@ -16,8 +16,8 @@
     plus les classes du fichier.
 -->
 <script lang="ts">
-	import type { BarreRepartition } from '$lib/api';
-	import { legende } from '$lib/repartition';
+	import type { BarreRepartition } from '#lib/api/index.ts';
+	import { legende } from '#lib/repartition.ts';
 
 	export let titre: string;
 	export let barres: BarreRepartition[];

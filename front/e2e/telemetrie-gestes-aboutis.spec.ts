@@ -5,7 +5,7 @@
  *  d'audience — `click` à l'ouverture, `submit` à l'envoi réussi —, dont le
  *  `detail` est l'IDENTIFIANT du geste, jamais un contenu. L'onglet Télémétrie
  *  les rend par geste, avec le taux d'aboutissement, pour la liste FERMÉE de
- *  `$lib/aboutissement` : un geste déclaré s'affiche à zéro, un inconnu jamais.
+ *  `#lib/aboutissement` : un geste déclaré s'affiche à zéro, un inconnu jamais.
  */
 import {
 	attendreHydratation,

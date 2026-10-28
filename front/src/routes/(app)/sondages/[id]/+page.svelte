@@ -1,23 +1,29 @@
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import { lieu } from '$lib/lieu.svelte';
-	import { sondages as sondagesApi, type SondageDetail } from '$lib/api';
-	import { confirmer, confirmerPuis, SUPPRESSION } from '$lib/confirmation';
-	import { tenter, messageErreur } from '$lib/erreurs';
-	import { signaler } from '$lib/signalements';
-	import { currentUser, isAdmin, isCS, isGestionnaire, quandAuthResolue } from '$lib/stores/auth';
-	import { refuserLaCommunaute } from '$lib/communaute';
-	import { safeHtml } from '$lib/sanitize';
-	import { siteNomStore } from '$lib/stores/pageConfig';
-	import { toast } from '$lib/components/Toast.svelte';
-	import FilAriane from '$lib/components/FilAriane.svelte';
-	import Reponses from '$lib/components/Reponses.svelte';
-	import { fmtDateShort } from '$lib/date';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { aboutirGeste, ouvrirGeste } from '$lib/aboutissement';
-	import ResultatsSondage from '$lib/components/ResultatsSondage.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import { lieu } from '#lib/lieu.svelte.ts';
+	import { sondages as sondagesApi, type SondageDetail } from '#lib/api/index.ts';
+	import { confirmer, confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
+	import { tenter, messageErreur } from '#lib/erreurs.ts';
+	import { signaler } from '#lib/signalements.ts';
+	import {
+		currentUser,
+		isAdmin,
+		isCS,
+		isGestionnaire,
+		quandAuthResolue,
+	} from '#lib/stores/auth.ts';
+	import { refuserLaCommunaute } from '#lib/communaute.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { siteNomStore } from '#lib/stores/pageConfig.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import FilAriane from '#lib/components/FilAriane.svelte';
+	import Reponses from '#lib/components/Reponses.svelte';
+	import { fmtDateShort } from '#lib/date.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { aboutirGeste, ouvrirGeste } from '#lib/aboutissement.ts';
+	import ResultatsSondage from '#lib/components/ResultatsSondage.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
 
 	let sondage: SondageDetail | null = null;
 	let loading = true;
@@ -210,7 +216,7 @@
 		<!--  La correction s'ouvre SOUS l'en-tête, près du ✏️ qui l'ouvre — elle
 		      était rendue en bas de page, après les résultats et les commentaires. -->
 		{#if edition}
-			<ChargementDiffere charger={() => import('$lib/components/FormulaireSondage.svelte')}>
+			<ChargementDiffere charger={() => import('#lib/components/FormulaireSondage.svelte')}>
 				{#snippet contenu(FormulaireSondage)}
 					<FormulaireSondage {sondage} on:modifie={corrige} on:annule={() => (edition = false)} />
 				{/snippet}

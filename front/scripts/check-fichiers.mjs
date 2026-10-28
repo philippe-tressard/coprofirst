@@ -15,7 +15,7 @@
  *   3. La liste `accept` du sélecteur de fichiers, écrite trois fois, déjà
  *      divergente entre les pages.
  *
- * `$lib/fichiers.ts` porte les trois (`estImage`, `nomFichier`,
+ * `#lib/fichiers.ts` porte les trois (`estImage`, `nomFichier`,
  * `ACCEPT_PHOTOS` / `ACCEPT_DOCUMENTS` / `ACCEPT_FICHIERS`) et
  * `api/tests/test_pieces_jointes.py` vérifie qu'elles restent alignées sur la
  * liste blanche du serveur — qui, elle, fait autorité.
@@ -38,11 +38,11 @@ const EXEMPTS = new Set(['src/lib/fichiers.ts']);
 const MOTIFS = [
 	{
 		regex: /jpe\?g/,
-		message: "test d'extension d'image réécrit — utiliser estImage() de $lib/fichiers",
+		message: "test d'extension d'image réécrit — utiliser estImage() de #lib/fichiers",
 	},
 	{
 		regex: /\.split\(\s*['"]\/['"]\s*\)\s*\.pop\(\)/,
-		message: "nom de fichier dérivé d'une URL — utiliser nomFichier() de $lib/fichiers",
+		message: "nom de fichier dérivé d'une URL — utiliser nomFichier() de #lib/fichiers",
 	},
 	{
 		// Volontairement restreint à la forme MIME `application/pdf` : c'est
@@ -177,7 +177,7 @@ for (const f of Object.keys(SELECTEURS_NATIFS))
 
 if (fautifs.length > 0) {
 	console.error(
-		`\n✗ ${fautifs.length} règle(s) de pièce jointe réécrite(s) hors de $lib/fichiers.ts :\n\n` +
+		`\n✗ ${fautifs.length} règle(s) de pièce jointe réécrite(s) hors de #lib/fichiers.ts :\n\n` +
 			fautifs.join('\n') +
 			`\n\n  Une règle recopiée diverge : c'est ainsi que .gif s'est retrouvé classé` +
 			`\n  « document » dans les huit copies du test d'image.\n`,

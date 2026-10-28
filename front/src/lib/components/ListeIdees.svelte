@@ -29,23 +29,23 @@
   l'autre.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
-	import MarqueIA from '$lib/components/MarqueIA.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
-	import BoutonLien from '$lib/components/BoutonLien.svelte';
-	import WorkflowPastilles from '$lib/components/WorkflowPastilles.svelte';
-	import Reponses from '$lib/components/Reponses.svelte';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
-	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
-	import { STATUTS_IDEE, STATUT_IDEE_LABELS } from '$lib/idees';
-	import type { Idee } from '$lib/api';
+	import Badge from '#lib/components/Badge.svelte';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
+	import MarqueIA from '#lib/components/MarqueIA.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import ApercuCarte from '#lib/components/ApercuCarte.svelte';
+	import BoutonLien from '#lib/components/BoutonLien.svelte';
+	import WorkflowPastilles from '#lib/components/WorkflowPastilles.svelte';
+	import Reponses from '#lib/components/Reponses.svelte';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
+	import PastilleLecture from '#lib/components/PastilleLecture.svelte';
+	import { STATUTS_IDEE, STATUT_IDEE_LABELS } from '#lib/idees.ts';
+	import type { Idee } from '#lib/api/index.ts';
 
 	/** Les idées à rendre, déjà filtrées et triées par l'appelant. */
-	import { peutEditer } from '$lib/droits';
+	import { peutEditer } from '#lib/droits.ts';
 
 	export let idees: Idee[] = [];
 	export let currentUserId: number | undefined = undefined;

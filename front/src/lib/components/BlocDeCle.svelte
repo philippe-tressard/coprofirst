@@ -7,8 +7,8 @@
   n'appelle pas en ce moment.
 -->
 <script lang="ts">
-	import type { ColonneDeLot, LigneDeCle } from '$lib/charges-lots';
-	import { fmtNombre, fmtPartEnPourcent } from '$lib/utils';
+	import type { ColonneDeLot, LigneDeCle } from '#lib/charges-lots.ts';
+	import { fmtNombre, fmtPartEnPourcent } from '#lib/utils.ts';
 
 	export let ligne: LigneDeCle;
 	export let colonnes: ColonneDeLot[];

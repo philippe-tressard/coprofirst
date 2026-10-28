@@ -9,9 +9,9 @@
   celles qu'une recherche laisse —, qui dit l'écart au dénominateur déclaré.
 -->
 <script lang="ts">
-	import type { EtatDescriptif, LigneEtatDescriptif } from '$lib/api';
-	import { abregerCle, libelleEcart, sommeDeCle } from '$lib/etat-descriptif';
-	import { lotTypeLabel } from '$lib/utils';
+	import type { EtatDescriptif, LigneEtatDescriptif } from '#lib/api/index.ts';
+	import { abregerCle, libelleEcart, sommeDeCle } from '#lib/etat-descriptif.ts';
+	import { lotTypeLabel } from '#lib/utils.ts';
 
 	/** Les lignes à montrer (la recherche en écarte). */
 	export let lignes: LigneEtatDescriptif[];

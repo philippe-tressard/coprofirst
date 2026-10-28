@@ -24,15 +24,15 @@
   d'équipement restent — ce sont eux qui font l'écran.
 -->
 <script lang="ts">
-	import type { ClasseGouttiere } from '$lib/gouttiere';
+	import type { ClasseGouttiere } from '#lib/gouttiere.ts';
 	import { onMount } from 'svelte';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import { carnet as carnetApi, type Carnet, type EntreeCarnet } from '$lib/api';
-	import { EQUIPEMENTS } from '$lib/prestataires';
-	import { perimetreLabel } from '$lib/perimetres';
-	import { perimetresStore } from '$lib/stores/perimetres';
-	import { relire } from '$lib/utils';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import { carnet as carnetApi, type Carnet, type EntreeCarnet } from '#lib/api/index.ts';
+	import { EQUIPEMENTS } from '#lib/prestataires.ts';
+	import { perimetreLabel } from '#lib/perimetres/index.ts';
+	import { perimetresStore } from '#lib/stores/perimetres.ts';
+	import { relire } from '#lib/utils.ts';
 	import FiltrePerimetre from './FiltrePerimetre.svelte';
 	import ChoixPastilles from './ChoixPastilles.svelte';
 	import ReglagesListe from './ReglagesListe.svelte';
@@ -40,15 +40,15 @@
 	import ApercuCarte from './ApercuCarte.svelte';
 	import IconeAction from './IconeAction.svelte';
 	import LienAction from './LienAction.svelte';
-	import { anneesDuCarnet, entreesDeLAnnee } from '$lib/carnet';
-	import { NATURES } from '$lib/tickets';
+	import { anneesDuCarnet, entreesDeLAnnee } from '#lib/carnet.ts';
+	import { NATURES } from '#lib/tickets.ts';
 	import PiedCarte from './PiedCarte.svelte';
 	import BadgePerimetre from './BadgePerimetre.svelte';
-	import { essayer } from '$lib/chargement';
+	import { essayer } from '#lib/chargement.ts';
 	import EtatListe from './EtatListe.svelte';
 	import SyntheseAffaire from './SyntheseAffaire.svelte';
-	import { basculer } from '$lib/accordeon';
-	import { isCS } from '$lib/stores/auth';
+	import { basculer } from '#lib/accordeon.ts';
+	import { isCS } from '#lib/stores/auth.ts';
 
 	let donnees: Carnet | null = null;
 	let erreur = '';
@@ -96,7 +96,7 @@
 	 *   alphabétique : ce qui a bougé récemment se lit en premier, et l'équipement
 	 *   dont plus rien ne bouge tombe en bas — où il se remarque. */
 	//  📅 Le filtre par ANNÉE (24/09/2026) — la règle, et ce que le décret
-	//  n° 2001-477 en dit, vivent dans `$lib/carnet`.
+	//  n° 2001-477 en dit, vivent dans `#lib/carnet`.
 	let anneeChoisie = '';
 	$: annees = anneesDuCarnet(donnees?.entrees ?? []).map((a) => ({ val: a, label: a }));
 	$: entreesVues = entreesDeLAnnee(donnees?.entrees ?? [], anneeChoisie);

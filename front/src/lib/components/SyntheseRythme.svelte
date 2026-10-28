@@ -7,8 +7,8 @@
   marquée en rouge — « 2 semaines muettes sur 10 ».
 -->
 <script lang="ts">
-	import type { MetriquesSynthese } from '$lib/api';
-	import { libelleMuettes } from '$lib/synthese';
+	import type { MetriquesSynthese } from '#lib/api/index.ts';
+	import { libelleMuettes } from '#lib/synthese.ts';
 
 	export let metriques: MetriquesSynthese;
 

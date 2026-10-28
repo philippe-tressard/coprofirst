@@ -6,10 +6,10 @@
 	 * un modèle envoyé et jamais suivi a sa ligne, à zéro.
 	 *
 	 * L'étiquette du lien, sa lecture et ses limites :
-	 * `api/app/utils/arrivees_notification.py` et `$lib/arrivees`.
+	 * `api/app/utils/arrivees_notification.py` et `#lib/arrivees`.
 	 */
-	import PanneauTelemetrie from '$lib/components/PanneauTelemetrie.svelte';
-	import type { ArriveeNotification } from '$lib/api';
+	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
+	import type { ArriveeNotification } from '#lib/api/index.ts';
 
 	export let arrivees: ArriveeNotification[] = [];
 	export let periode: string;

@@ -1,14 +1,14 @@
 <script lang="ts">
 	import '../app.css';
-	import Toast from '$lib/components/Toast.svelte';
-	import MajDisponible from '$lib/components/MajDisponible.svelte';
-	import { configStore, modeDemoStore } from '$lib/stores/pageConfig';
-	import { config as configApi } from '$lib/api';
+	import Toast from '#lib/components/Toast.svelte';
+	import MajDisponible from '#lib/components/MajDisponible.svelte';
+	import { configStore, modeDemoStore } from '#lib/stores/pageConfig.ts';
+	import { config as configApi } from '#lib/api/index.ts';
 	import { onMount } from 'svelte';
-	import { surveillerImagesProtegees } from '$lib/imagesProtegees';
-	import { unSeulDetailsOuvert } from '$lib/accordeon';
-	import { signalerDemarrage } from '$lib/garde-demarrage';
-	import { initTelemetry } from '$lib/telemetry';
+	import { surveillerImagesProtegees } from '#lib/imagesProtegees.ts';
+	import { unSeulDetailsOuvert } from '#lib/accordeon.ts';
+	import { signalerDemarrage } from '#lib/garde-demarrage.ts';
+	import { initTelemetry } from '#lib/telemetry.ts';
 
 	export let data;
 
@@ -29,7 +29,7 @@
 
 	//  L'accordéon des `<details>` natifs (30/09/2026) : en ouvrir un referme les
 	//  autres, partout. Ici pour la même raison — un écouteur global, posé une
-	//  fois ; les composants n'ont rien à écrire (`$lib/accordeon`).
+	//  fois ; les composants n'ont rien à écrire (`#lib/accordeon`).
 	onMount(unSeulDetailsOuvert);
 
 	//  L'application a démarré (#1993) : le garde de `app.html` cesse de

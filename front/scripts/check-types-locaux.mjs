@@ -18,8 +18,8 @@
  *  `type` littéral — portant un champ `id` à son premier niveau. Le champ `id`
  *  est le signe d'une entité : c'est la clé que le serveur lui donne.
  *
- *  Le type va dans `$lib/api/types.ts` ou dans le module du domaine
- *  (`$lib/api/bailleur.ts` pour un bail), et le CLIENT le rend.
+ *  Le type va dans `#lib/api/types.ts` ou dans le module du domaine
+ *  (`#lib/api/bailleur.ts` pour un bail), et le CLIENT le rend.
  *
  *  ## Ce qui est déclaré
  *
@@ -157,7 +157,7 @@ if (nouveaux.length) {
 	console.error(`\n✗ ${nouveaux.length} type(s) d'entité déclaré(s) dans un écran :\n`);
 	for (const c of nouveaux) console.error(`   ${c}`);
 	console.error(
-		'\n  Le déclarer dans `$lib/api/types.ts` ou le module de son domaine, et que le' +
+		'\n  Le déclarer dans `#lib/api/types.ts` ou le module de son domaine, et que le' +
 			'\n  CLIENT le rende — sinon chaque écran retype la même entité, et diverge.' +
 			"\n  Si ce `id` n'est pas celui d'une entité de l'API, le déclarer dans" +
 			'\n  `LEGITIMES`, avec sa raison.\n',

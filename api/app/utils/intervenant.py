@@ -51,7 +51,7 @@ from app.utils.recuperer import ou_404
 from app.utils.valeurs import valeur
 
 #: Les unités de récurrence — celles de `ContratEntretien`, qui fixe le rythme
-#: d'un prestataire. Même table côté écran : `FREQUENCES` de `$lib/prestataires`.
+#: d'un prestataire. Même table côté écran : `FREQUENCES` de `#lib/prestataires`.
 #: « mois » vaut « mensuelle » : sans nombre saisi, il vaut 1.
 FREQUENCES: tuple[str, ...] = ("semaines", "mois", "fois_par_an", "ans")
 
@@ -65,7 +65,7 @@ CHAMPS: tuple[str, ...] = (
 
 #: Ce qu'une affaire peut désigner comme équipement : `TypeEquipement`, moins
 #: ce qui classe un CONTRAT sans être un équipement. Même liste côté écran :
-#: `EQUIPEMENTS_AFFAIRE` de `$lib/prestataires` (`test_types_equipement.py`).
+#: `EQUIPEMENTS_AFFAIRE` de `#lib/prestataires` (`test_types_equipement.py`).
 HORS_EQUIPEMENT: frozenset[str] = frozenset(
     {TypeEquipement.assurance.value, TypeEquipement.syndic.value}
 )

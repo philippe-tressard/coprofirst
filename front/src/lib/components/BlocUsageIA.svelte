@@ -35,22 +35,22 @@
     pas d'icône ✨, c'est la règle de tout le produit.
 -->
 <script lang="ts">
-	import { messageErreur } from '$lib/erreurs';
-	import IconeIA from '$lib/components/IconeIA.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import IconeIA from '#lib/components/IconeIA.svelte';
 	import { createEventDispatcher } from 'svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import CoutUsageIA, { PRIX } from '$lib/components/CoutUsageIA.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import CoutUsageIA, { PRIX } from '#lib/components/CoutUsageIA.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import {
 		assistant as assistantApi,
 		config as configApi,
 		type LimitesUsageIA,
 		type UsageIA,
-	} from '$lib/api';
-	import { memePrompt } from '$lib/promptOrigine';
-	import { fmtNombre } from '$lib/utils';
+	} from '#lib/api/index.ts';
+	import { memePrompt } from '#lib/promptOrigine.ts';
+	import { fmtNombre } from '#lib/utils.ts';
 
 	export let usage: UsageIA;
 	/** Toutes les valeurs de configuration, liées : le bloc écrit les siennes. */

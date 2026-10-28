@@ -1,4 +1,4 @@
-import { parAttribut } from '$lib/table-statuts';
+import { parAttribut } from '#lib/table-statuts.ts';
 /**
  * Le vocabulaire d'une **demande de modification de profil** — écrit une fois.
  *

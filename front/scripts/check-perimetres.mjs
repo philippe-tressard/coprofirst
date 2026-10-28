@@ -44,11 +44,11 @@ import { join, relative, sep } from 'node:path';
 import { neutraliserCommentaires as sansCommentaires } from './lib-commentaires.mjs';
 
 const RACINE = new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
-//  ⚠️ `$lib/perimetres` est un PAQUET depuis le 10/09/2026 (le fichier unique
+//  ⚠️ `#lib/perimetres` est un PAQUET depuis le 10/09/2026 (le fichier unique
 //  avait franchi les 500 lignes). Le chemin ci-dessous pointe le module qui
 //  porte réellement ce que ce contrôle mesure — l'`index.ts` ne fait que
 //  réexporter, et transpiler une réexportation ne donne rien à lire.
-//  🔴 LES DEUX modules du paquet, pas un fichier : `$lib/perimetres` est un
+//  🔴 LES DEUX modules du paquet, pas un fichier : `#lib/perimetres` est un
 //  paquet depuis le 10/09/2026, et les quatre exports que ce contrôle exige
 //  y sont répartis — `perimetreLabel` dans les libellés, les trois autres
 //  dans l'arbre. N'en lire qu'un déclencherait le cas zéro à chaque fois.

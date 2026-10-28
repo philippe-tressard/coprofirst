@@ -5,4 +5,4 @@
  * le dépliage reprenne la même promesse — `import()` ne télécharge qu'une fois
  * (#1860).
  */
-export const chargerCorpsAffaire = () => import('$lib/components/CorpsCarteTicket.svelte');
+export const chargerCorpsAffaire = () => import('#lib/components/CorpsCarteTicket.svelte');

@@ -198,7 +198,7 @@ if (composent.length) {
 	echecs.push(
 		['Ces écrans composent « Prénom NOM » à la main :', ...composent].join(SAUT) +
 			SAUT +
-			'   Emploie `nomAffiche` de $lib/noms — le nom passe en capitales.',
+			'   Emploie `nomAffiche` de #lib/noms — le nom passe en capitales.',
 	);
 }
 
@@ -206,7 +206,7 @@ if (recomposent.length) {
 	echecs.push(
 		['Ces écrans recomposent le CLASSEMENT des personnes :', ...recomposent].join(SAUT) +
 			SAUT +
-			'   Emploie `comparerParNom` de $lib/noms — nom de famille, puis prénom.',
+			'   Emploie `comparerParNom` de #lib/noms — nom de famille, puis prénom.',
 	);
 }
 

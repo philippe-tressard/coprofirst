@@ -1,19 +1,19 @@
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import BoiteNouveauPerimetre from '$lib/components/BoiteNouveauPerimetre.svelte';
-	import BoiteDuplicationPerimetre from '$lib/components/BoiteDuplicationPerimetre.svelte';
-	import ChampsPerimetre from '$lib/components/ChampsPerimetre.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import BoiteNouveauPerimetre from '#lib/components/BoiteNouveauPerimetre.svelte';
+	import BoiteDuplicationPerimetre from '#lib/components/BoiteDuplicationPerimetre.svelte';
+	import ChampsPerimetre from '#lib/components/ChampsPerimetre.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
 	import { onMount } from 'svelte';
-	import { perimetres as perimetresApi } from '$lib/api';
-	import { tenter, messageErreur } from '$lib/erreurs';
-	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
-	import Icon from '$lib/components/Icon.svelte';
-	import { perimetresStore, rechargerPerimetres } from '$lib/stores/perimetres';
-	import { codeSousParent, type Perimetre } from '$lib/perimetres';
-	import { siteNomStore } from '$lib/stores/pageConfig';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { perimetres as perimetresApi } from '#lib/api/index.ts';
+	import { tenter, messageErreur } from '#lib/erreurs.ts';
+	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
+	import Icon from '#lib/components/Icon.svelte';
+	import { perimetresStore, rechargerPerimetres } from '#lib/stores/perimetres.ts';
+	import { codeSousParent, type Perimetre } from '#lib/perimetres/index.ts';
+	import { siteNomStore } from '#lib/stores/pageConfig.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	$: _siteNom = $siteNomStore;
 

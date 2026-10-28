@@ -22,29 +22,29 @@
   passés en slots — ils sont écrits dans la page, donc leurs styles y restent.
 -->
 <script lang="ts">
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
-	import { nomProprietaire } from '$lib/saisi-pour';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
+	import { nomProprietaire } from '#lib/saisi-pour.ts';
 	import { createEventDispatcher } from 'svelte';
-	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
-	import ExtraitRecherche from '$lib/components/ExtraitRecherche.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import PastillesAffaire from '$lib/components/PastillesAffaire.svelte';
-	import BoutonLien from '$lib/components/BoutonLien.svelte';
-	import PiecesJointes from '$lib/components/PiecesJointes.svelte';
+	import ApercuCarte from '#lib/components/ApercuCarte.svelte';
+	import ExtraitRecherche from '#lib/components/ExtraitRecherche.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import PastillesAffaire from '#lib/components/PastillesAffaire.svelte';
+	import BoutonLien from '#lib/components/BoutonLien.svelte';
+	import PiecesJointes from '#lib/components/PiecesJointes.svelte';
 	import {
 		documents as docsApi,
 		type CorrespondanceAffaire,
 		type Document,
 		type Ticket,
-	} from '$lib/api';
-	import { safeHtml } from '$lib/sanitize';
-	import { attributsNature, gouttiereAffaire, lienTicket, ticketUrgent } from '$lib/tickets';
+	} from '#lib/api/index.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { attributsNature, gouttiereAffaire, lienTicket, ticketUrgent } from '#lib/tickets.ts';
 	//  Glyphes et intitulés des quatre options : source unique. Ils étaient
 	//  écrits ici ET dans les cases du formulaire, et avaient divergé.
-	import { optionPublication } from '$lib/options-publication';
-	import { fmtDateLong } from '$lib/date';
+	import { optionPublication } from '#lib/options-publication.ts';
+	import { fmtDateLong } from '#lib/date.ts';
 
 	export let pub: Ticket;
 	//  À QUI l'actualité appartient — le « Saisi pour » s'il existe, l'auteur

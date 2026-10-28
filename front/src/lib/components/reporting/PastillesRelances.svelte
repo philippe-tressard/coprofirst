@@ -8,7 +8,7 @@
   précédentes étaient parties. Le tableau et l'aperçu du courriel le lisent ici.
 -->
 <script lang="ts">
-	import { fmtDayMonth } from '$lib/date';
+	import { fmtDayMonth } from '#lib/date.ts';
 
 	/** Les jours (AAAA-MM-JJ) des relances envoyées, la plus ancienne en tête. */
 	export let relances: string[];

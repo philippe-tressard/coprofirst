@@ -14,7 +14,7 @@
   - Le déclencheur est un VRAI `<button>` : Entrée et Espace l'ouvrent, il prend le
     focus, et son nom accessible (`libelle`) dit ce qu'il montre.
   - Elle se ferme au clic dehors, à Échap (le focus revient au bouton) et au
-    défilement (`ux-patterns` §17). Échap passe par la pile de `$lib/couche`
+    défilement (`ux-patterns` §17). Échap passe par la pile de `#lib/couche`
     (`poserEchap`) : ouverte dans une modale, la bulle se ferme seule.
     ⚠️ Le bouton arrête la propagation de ses touches (Entrée ne doit pas
     déplier la carte) — SAUF Échap. `PastilleLecture` écrivait
@@ -40,7 +40,7 @@
 -->
 <script lang="ts">
 	import { onDestroy, tick } from 'svelte';
-	import { poserEchap } from '$lib/couche';
+	import { poserEchap } from '#lib/couche.ts';
 
 	/** Le nom accessible du déclencheur : ce qu'il montre, et son état. */
 	export let libelle: string;

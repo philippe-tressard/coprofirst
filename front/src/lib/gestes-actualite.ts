@@ -24,11 +24,15 @@
  */
 import { goto } from '$app/navigation';
 
-import { calendrier as calApi, publications as pubsApi, tickets as ticketsApi } from '$lib/api';
-import type { Ticket } from '$lib/api/types';
-import { confirmerPuis } from '$lib/confirmation';
-import { TICKET } from '$lib/entites/ticket';
-import { lienTicket } from '$lib/tickets';
+import {
+	calendrier as calApi,
+	publications as pubsApi,
+	tickets as ticketsApi,
+} from '#lib/api/index.ts';
+import type { Ticket } from '#lib/api/types.ts';
+import { confirmerPuis } from '#lib/confirmation.ts';
+import { TICKET } from '#lib/entites/ticket.ts';
+import { lienTicket } from '#lib/tickets.ts';
 
 /**
  * La catégorie que reçoit une actualité promue. « Question » : la plus neutre,

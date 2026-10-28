@@ -41,7 +41,7 @@
   elles disparaissent ici.
 -->
 <script lang="ts">
-	import { siteNomStore } from '$lib/stores/pageConfig';
+	import { siteNomStore } from '#lib/stores/pageConfig.ts';
 
 	/**
 	 * Les étapes AVANT la page courante, de la plus générale à la plus proche.

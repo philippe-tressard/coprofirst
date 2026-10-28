@@ -10,7 +10,7 @@
   geste de dépliage et la barre d'actions étaient recopiés au caractère près.
 
   C'est la troisième couche d'une même extraction : `ActionsMembre` a pris la
-  barre d'actions (07/09), `$lib/listeDepliable` la mécanique déplier/éditer
+  barre d'actions (07/09), `#lib/listeDepliable` la mécanique déplier/éditer
   (#640, 01/09) — et il restait la fiche elle-même.
 
   ## 🔴 Et les deux copies avaient DIVERGÉ, chacune dans son coin
@@ -57,12 +57,12 @@
   | le lien vers un inscrit : « Inscrit lié », « Délier », « Aucun inscrit » | qui est lié, par `membre.user_id` |
   | le pied Enregistrer / Annuler | ce que « enregistrer » veut dire, par `on:enregistrer` |
 
-  ⚠️ `nomAffiche` n'est PAS recopié ici : il vient de `$lib/noms`, comme partout
+  ⚠️ `nomAffiche` n'est PAS recopié ici : il vient de `#lib/noms`, comme partout
   ailleurs (`npm run lint:noms` le refuse).
 -->
 <script context="module" lang="ts">
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
 	/**
 	 *  Ce que TOUT membre d'annuaire porte, quel que soit son côté.
 	 *
@@ -90,10 +90,10 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 
-	import ActionsMembre, { type Geste } from '$lib/components/ActionsMembre.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import { nomAffiche } from '$lib/noms';
+	import ActionsMembre, { type Geste } from '#lib/components/ActionsMembre.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { nomAffiche } from '#lib/noms.ts';
 
 	/** Le membre édité — lié par `bind:membre` pour que la saisie remonte. */
 	export let membre: MembreBase;

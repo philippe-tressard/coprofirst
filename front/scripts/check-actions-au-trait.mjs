@@ -16,7 +16,7 @@
  *
  * Tout `<button>` de `src/` dont le contenu visible est un ÉMOJI sans aucun mot
  * — un bouton icône-seule dessiné en couleur. Le pictogramme passe par
- * `<IconeAction icone="…" />` (`$lib/icones-svg.json`).
+ * `<IconeAction icone="…" />` (`#lib/icones-svg.json`).
  *
  * Ce qu'il ne juge PAS, et pourquoi :
  *  - un bouton qui PARLE (« 🚩 Signaler l'annonce ») : l'émoji y décore un mot,
@@ -145,7 +145,7 @@ if (fautes.length > 0) {
 	console.error(
 		'\n  Le standard du site (page Affaires, 10/10/2026) dessine les actions AU\n' +
 			'  TRAIT : gris au repos, Bleu Seine au survol.\n' +
-			'  → <IconeAction icone="pencil" /> (noms : `$lib/icones-svg.json`),\n' +
+			'  → <IconeAction icone="pencil" /> (noms : `#lib/icones-svg.json`),\n' +
 			'    en gardant l’aria-label du bouton.\n',
 	);
 	process.exit(1);

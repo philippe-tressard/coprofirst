@@ -7,8 +7,8 @@
  * montre une forme COURTE ; le nom entier reste dans l'infobulle et dans le nom
  * accessible de la colonne.
  */
-import type { LigneEtatDescriptif } from '$lib/api';
-import { sansAccents } from '$lib/texte';
+import type { LigneEtatDescriptif } from '#lib/api/index.ts';
+import { sansAccents } from '#lib/texte.ts';
 
 /** Mot du règlement → son abréviation d'en-tête. Un mot inconnu reste tel quel. */
 const ABREVIATIONS: Record<string, string> = {

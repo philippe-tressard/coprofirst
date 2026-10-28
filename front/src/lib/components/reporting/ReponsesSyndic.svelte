@@ -13,10 +13,10 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { tickets as ticketsApi, type ReponseRelance } from '$lib/api';
-	import { fmtDatetime } from '$lib/date';
-	import { essayer } from '$lib/chargement';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { tickets as ticketsApi, type ReponseRelance } from '#lib/api/index.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	let reponses: ReponseRelance[] = [];
 	//  Une ligne discrète, pas un second bandeau : l'écran reste juste sans cet

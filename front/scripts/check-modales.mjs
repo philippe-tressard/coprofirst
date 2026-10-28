@@ -103,7 +103,7 @@ for (const prop of ['titre', 'classeBoite', 'styleBoite', 'fermetureAuFond']) {
 for (const [motif, quoi] of [
 	[/class="modal-overlay"/, 'le fond'],
 	[/role="dialog"/, 'le rôle de dialogue'],
-	//  Échap passe par `$lib/couche.ts` depuis #1042 : c'est `poserCouche(fermer)`
+	//  Échap passe par `#lib/couche.ts` depuis #1042 : c'est `poserCouche(fermer)`
 	//  qui porte la fermeture au clavier, et `lint:couches` en garde le module.
 	[/poserCouche\(\s*fermer\s*\)/, 'la fermeture au clavier (poserCouche)'],
 	[/class="modal-header"/, "l'en-tête"],

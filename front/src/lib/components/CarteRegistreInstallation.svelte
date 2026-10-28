@@ -13,25 +13,25 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import FicheRegistreInstallation from '$lib/components/FicheRegistreInstallation.svelte';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import FicheRegistreInstallation from '#lib/components/FicheRegistreInstallation.svelte';
 	import type {
 		FicheInstallation,
 		ResumeInstallation,
 		ServiceAccordable,
 		VagueLue,
 		VersionsPubliees,
-	} from '$lib/api';
-	import { fmtDatetime } from '$lib/date';
+	} from '#lib/api/index.ts';
+	import { fmtDatetime } from '#lib/date.ts';
 	import {
 		classeInstallation,
 		LIBELLE_ETAT_REGISTRE,
 		libelleVersionCible,
 		resumeAlertes,
 		servicesAccordes,
-	} from '$lib/registre-installations';
+	} from '#lib/registre-installations.ts';
 
 	export let installation: ResumeInstallation;
 	export let ouvert = false;

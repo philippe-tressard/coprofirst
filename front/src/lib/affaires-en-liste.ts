@@ -22,21 +22,21 @@
  *
  * ## Une carte dépliée à la fois
  *
- * L'ouverture est UN identifiant, basculé par `$lib/accordeon` — la page la
+ * L'ouverture est UN identifiant, basculé par `#lib/accordeon` — la page la
  * tenait dans un `Set` remis à un élément, forme déclarée en exception du
  * contrôle d'accordéon et qui en sort avec ce module.
  */
 import { derived, get, writable, type Writable } from 'svelte/store';
 import { goto } from '$app/navigation';
 
-import { tickets as ticketsApi, type Ticket, type TicketEvolution } from '$lib/api';
-import { basculer } from '$lib/accordeon';
-import { toast } from '$lib/components/Toast.svelte';
-import { ARCHIVAGE, SUPPRESSION, confirmerPuis } from '$lib/confirmation';
-import { messageErreur } from '$lib/erreurs';
-import { chargeCorrection, type ChargeUtileEvolution } from '$lib/evolutions';
-import { optionsRapides } from '$lib/options-rapides';
-import { estActualite, lienReponse, type GestesTicket } from '$lib/tickets';
+import { tickets as ticketsApi, type Ticket, type TicketEvolution } from '#lib/api/index.ts';
+import { basculer } from '#lib/accordeon.ts';
+import { toast } from '#lib/components/Toast.svelte';
+import { ARCHIVAGE, SUPPRESSION, confirmerPuis } from '#lib/confirmation.ts';
+import { messageErreur } from '#lib/erreurs.ts';
+import { chargeCorrection, type ChargeUtileEvolution } from '#lib/evolutions.ts';
+import { optionsRapides } from '#lib/options-rapides.ts';
+import { estActualite, lienReponse, type GestesTicket } from '#lib/tickets.ts';
 
 /** Ce que les cartes lisent — les props d'état de `ListeTickets`. */
 export interface EtatAffairesEnListe {
@@ -96,7 +96,7 @@ export function affairesEnListe(liste: Writable<Ticket[]>, reglages: ReglagesAff
 	const poser = (p: Partial<EtatInterne>) => interne.update((e) => ({ ...e, ...p }));
 
 	//  Le crayon ouvre les huit sections ; dépingler n'en touche qu'une
-	//  (12/09/2026). L'état et le geste viennent de `$lib/options-rapides`.
+	//  (12/09/2026). L'état et le geste viennent de `#lib/options-rapides`.
 	const options = optionsRapides<Ticket>();
 
 	const etat = derived(

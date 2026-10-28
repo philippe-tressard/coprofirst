@@ -14,7 +14,7 @@
   🔴 Le soir même, la page Affaires est devenue le STANDARD du site (« applique-le
   à toutes les pages ») : ce composant s'appelait `GouttiereAffaire` et ne savait
   lire qu'une affaire. Il prend désormais une date et un classement — la NATURE
-  d'une affaire (`gouttiereAffaire`, `$lib/tickets`), le type d'un prestataire,
+  d'une affaire (`gouttiereAffaire`, `#lib/tickets`), le type d'un prestataire,
   la rubrique d'une question… Ce que l'objet n'a pas ne s'invente pas : sans
   date, la colonne ne porte que le classement.
 
@@ -35,9 +35,9 @@
   une LIGNE d'en-tête — « 5 oct. 2026 · CAL. » —, posée au-dessus du titre.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import { fmtTime, partiesDate } from '$lib/date';
-	import type { ClasseGouttiere } from '$lib/gouttiere';
+	import Icon from '#lib/components/Icon.svelte';
+	import { fmtTime, partiesDate } from '#lib/date.ts';
+	import type { ClasseGouttiere } from '#lib/gouttiere.ts';
 
 	/** L'instant qui situe l'objet (ISO), ou rien. */
 	export let quand: string | null | undefined = null;

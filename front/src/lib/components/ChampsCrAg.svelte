@@ -13,7 +13,7 @@
   lui prêter une exigence qu'il n'a pas marquerait requis ce qui ne l'est pas.
 -->
 <script lang="ts">
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 
 	export let annee: string | number = '';
 	export let dateAg = '';

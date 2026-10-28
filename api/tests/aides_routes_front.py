@@ -54,7 +54,7 @@ def _resoudre(base: pathlib.Path, segments: list[str]) -> bool:
     return any(_resoudre(c, reste) for c in candidats)
 
 
-#  Les URL dédiées des onglets, lues dans la table du front (`$lib/pages.ts`).
+#  Les URL dédiées des onglets, lues dans la table du front (`#lib/pages.ts`).
 #  Aucune n'a de dossier de route à elle : `reroute` (`front/src/hooks.ts`) les
 #  envoie toutes au fichier de leur page — `/annonces` est rendue par
 #  `routes/(app)/sondages/+page.svelte`. Les chercher dans l'arborescence
@@ -145,20 +145,20 @@ def _page_du_lien(lien: str) -> pathlib.Path | None:
     return descendre(_ROUTES, segments)
 
 
-#  `$lib/components/X.svelte` ou `./X.svelte` : un composant voisin s'importe aussi
+#  `#lib/components/X.svelte` ou `./X.svelte` : un composant voisin s'importe aussi
 #  en relatif (`ListeAnnonces` → `./AnnonceCard.svelte`), et ne suivre que la
 #  première forme laissait l'ancre qu'il pose hors de la vue du contrôle.
 _MOTIF_IMPORT_COMPOSANT = re.compile(
-    r"import\s+(\w+)\s+from\s+['\"](\$lib/components/|\./)([\w./-]+\.svelte)['\"]"
+    r"import\s+(\w+)\s+from\s+['\"](#lib/components/|\./)([\w./-]+\.svelte)['\"]"
 )
 #: Un composant chargé AU GESTE : `ChargementDiffere charger={() =>
-#: import('$lib/components/OngletReglement.svelte')}`, rendu ensuite par
+#: import('#lib/components/OngletReglement.svelte')}`, rendu ensuite par
 #: `<OngletReglement />` dans son `{#snippet}`. Le nom est celui du fichier.
 #: ⚠️ Un sous-dossier compris (17/10/2026) : l'Espace CS charge
-#: `$lib/components/reporting/OngletReporting.svelte`, et le point CS / Syndic
+#: `#lib/components/reporting/OngletReporting.svelte`, et le point CS / Syndic
 #: (#2042) y pose son ancre `point-cs-…` trois niveaux plus bas.
 _MOTIF_IMPORT_DIFFERE = re.compile(
-    r"import\(\s*['\"](\$lib/components/|\./)((?:[\w-]+/)*(\w+)\.svelte)['\"]\s*\)"
+    r"import\(\s*['\"](#lib/components/|\./)((?:[\w-]+/)*(\w+)\.svelte)['\"]\s*\)"
 )
 
 

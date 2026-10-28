@@ -6,7 +6,7 @@
 //  suivi et le bilan les lisent ici. L'état est CALCULÉ au serveur
 //  (`utils/entretien_periodique.etat_visite`) ; ce module ne fait que le nommer.
 
-import type { EtatVisite } from '$lib/api';
+import type { EtatVisite } from '#lib/api/index.ts';
 
 /** Le nom de chaque état, et la teinte de son badge (`Badge teinte=`). */
 export const ETATS_VISITE: Record<EtatVisite, { libelle: string; teinte: string }> = {

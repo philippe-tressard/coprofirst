@@ -7,7 +7,7 @@
  *  un prestataire noté **1/5 y paraissait comme un 3,5**. La teinte est censée
  *  dire d'un coup d'œil si l'on est content de quelqu'un ; là, elle mentait.
  *
- *  ⚠️ `starsDisplay` était DÉJÀ dans `$lib/utils` : la règle était factorisée,
+ *  ⚠️ `starsDisplay` était DÉJÀ dans `#lib/utils` : la règle était factorisée,
  *  son **emploi** non — et c'est l'emploi qui porte les SEUILS (`< 3`, `< 4`,
  *  `>= 4`), donc le jugement. Même motif que la validation des téléversements
  *  (#825), où la règle vivait à un endroit et son geste dans trois routeurs.
@@ -52,7 +52,7 @@ function selftest() {
 	const cas = [
 		['\t\t<td>{starsDisplay(n.note)} {n.note}/5</td>', 1],
 		['\t\t<NoteEtoiles note={n.note} surCinq />', 0],
-		['//  `starsDisplay` vit dans `$lib/utils` — ce commentaire ne rend rien', 0],
+		['//  `starsDisplay` vit dans `#lib/utils` — ce commentaire ne rend rien', 0],
 		['\t\t*  ⚠️ starsDisplay( est le marqueur cherché', 0],
 	];
 	let ko = 0;

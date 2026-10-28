@@ -12,13 +12,13 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { perimetreDefautListe } from '$lib/perimetres';
-	import { archiverPuis } from '$lib/confirmation';
-	import { supprimerDocument } from '$lib/gestes-document';
-	import { attacherApres } from '$lib/fichiers';
-	import { messageErreur, tenter } from '$lib/erreurs';
-	import { essayer } from '$lib/chargement';
-	import { basculer } from '$lib/accordeon';
+	import { perimetreDefautListe } from '#lib/perimetres/index.ts';
+	import { archiverPuis } from '#lib/confirmation.ts';
+	import { supprimerDocument } from '#lib/gestes-document.ts';
+	import { attacherApres } from '#lib/fichiers.ts';
+	import { messageErreur, tenter } from '#lib/erreurs.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import { basculer } from '#lib/accordeon.ts';
 	import {
 		prestataires as prestApi,
 		documents as docsApi,
@@ -26,17 +26,17 @@
 		type Document,
 		type Notation,
 		type Prestataire,
-	} from '$lib/api';
-	import { isCS } from '$lib/stores/auth';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { EQUIPEMENTS as equipements, contratDepuis, contratVierge } from '$lib/prestataires';
-	import { minuitDuJour, typeEquipementDuContrat } from '$lib/reporting';
-	import { relire, nombreOuNull } from '$lib/utils';
-	import CarteContrat from '$lib/components/CarteContrat.svelte';
-	import FormulaireContrat from '$lib/components/FormulaireContrat.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import IntertitreGroupe from '$lib/components/IntertitreGroupe.svelte';
-	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
+	} from '#lib/api/index.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { EQUIPEMENTS as equipements, contratDepuis, contratVierge } from '#lib/prestataires.ts';
+	import { minuitDuJour, typeEquipementDuContrat } from '#lib/reporting.ts';
+	import { relire, nombreOuNull } from '#lib/utils.ts';
+	import CarteContrat from '#lib/components/CarteContrat.svelte';
+	import FormulaireContrat from '#lib/components/FormulaireContrat.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import IntertitreGroupe from '#lib/components/IntertitreGroupe.svelte';
+	import ListeEtArchives from '#lib/components/ListeEtArchives.svelte';
 
 	export let prestataires: Prestataire[] = [];
 	export let contrats: ContratEntretien[] = [];
@@ -44,7 +44,7 @@
 	/** La boîte de création est ouverte — lue par le bouton de l'en-tête. */
 	export let creationOuverte = false;
 
-	//  Un seul contrat déplié à la fois (`$lib/accordeon`) : c'était un `Set`
+	//  Un seul contrat déplié à la fois (`#lib/accordeon`) : c'était un `Set`
 	//  remis à un élément, déclaré en exception jusqu'au 01/10/2026 (#779).
 	let ouvert: number | null = null;
 	let submitting = false;
@@ -93,7 +93,7 @@
 	let contratFichiersEnAttente: File[] = [];
 	let editContratId: number | null = null;
 
-	//  La forme du formulaire vit dans `$lib/prestataires` : elle était énumérée
+	//  La forme du formulaire vit dans `#lib/prestataires` : elle était énumérée
 	//  TROIS fois ici — déclaration, remise à zéro, édition —, si bien qu'ajouter
 	//  un champ demandait de le poser aux trois endroits.
 	let contratForm = contratVierge(perimetreDefautListe());
@@ -265,7 +265,7 @@
 		contratDocsMap = { ...contratDocsMap, [contratId]: await docsApi.list(undefined, contratId) };
 	}
 
-	//  Le geste est partagé (`$lib/gestes-document`) ; la liste se recharge.
+	//  Le geste est partagé (`#lib/gestes-document`) ; la liste se recharge.
 	const deleteDoc = (contratId: number, docId: number) =>
 		supprimerDocument(docId, 'Ce document', () => rechargerDocs(contratId));
 

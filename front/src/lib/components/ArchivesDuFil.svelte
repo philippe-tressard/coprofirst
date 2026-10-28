@@ -46,10 +46,10 @@
   rejoint la frise.
 -->
 <script lang="ts">
-	import SectionRepliee from '$lib/components/SectionRepliee.svelte';
-	import FriseDuFil from '$lib/components/FriseDuFil.svelte';
-	import { TITRE_ARCHIVES } from '$lib/archives';
-	import type { GroupeDuFil } from '$lib/flux';
+	import SectionRepliee from '#lib/components/SectionRepliee.svelte';
+	import FriseDuFil from '#lib/components/FriseDuFil.svelte';
+	import { TITRE_ARCHIVES } from '#lib/archives.ts';
+	import type { GroupeDuFil } from '#lib/flux.ts';
 
 	/** Les éléments archivés, déjà groupés par jour (`grouperParJour`). */
 	export let groupesParJour: GroupeDuFil[] = [];

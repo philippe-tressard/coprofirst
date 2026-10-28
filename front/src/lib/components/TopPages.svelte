@@ -13,7 +13,7 @@
 	 * des autres panneaux. Un BLOC de la section « Fréquentation », pas une
 	 * section : l'onglet regroupe graphe, top pages et utilisateurs actifs.
 	 */
-	import PanneauTelemetrie from '$lib/components/PanneauTelemetrie.svelte';
+	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 
 	export let pages: { page: string; total: number; uniques: number }[] = [];
 

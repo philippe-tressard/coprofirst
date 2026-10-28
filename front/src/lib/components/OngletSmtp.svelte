@@ -17,14 +17,14 @@
   la page qui reste propriétaire de `siteConfig`.
 -->
 <script lang="ts">
-	import EncartDemo from '$lib/components/EncartDemo.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import Icon from '$lib/components/Icon.svelte';
-	import { config as configApi } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import SectionReceptionReponses from '$lib/components/SectionReceptionReponses.svelte';
-	import ChampSecret from '$lib/components/ChampSecret.svelte';
+	import EncartDemo from '#lib/components/EncartDemo.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import Icon from '#lib/components/Icon.svelte';
+	import { config as configApi } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import SectionReceptionReponses from '#lib/components/SectionReceptionReponses.svelte';
+	import ChampSecret from '#lib/components/ChampSecret.svelte';
 
 	/** Signature ajoutée en bas de chaque e-mail — appartient à `siteConfig`. */
 	export let emailFooter = '';

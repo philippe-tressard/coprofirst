@@ -12,11 +12,11 @@
   Le FILTRAGE reste dans la page : ce composant ne dit que ce qu'on a choisi.
 -->
 <script lang="ts">
-	import PastilleDeroulante from '$lib/components/PastilleDeroulante.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
-	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
-	import { LIBELLES_STATUT_ABREGE } from '$lib/roles';
+	import PastilleDeroulante from '#lib/components/PastilleDeroulante.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
+	import { LIBELLES_STATUT_ABREGE } from '#lib/roles.ts';
 
 	export let recherche = '';
 	export let statut = '';

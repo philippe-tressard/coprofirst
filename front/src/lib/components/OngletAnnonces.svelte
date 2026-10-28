@@ -34,19 +34,19 @@
   commune aux trois rubriques et vit avec elles.
 -->
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import ListeAnnonces from '$lib/components/ListeAnnonces.svelte';
-	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import PastilleDeroulante from '$lib/components/PastilleDeroulante.svelte';
-	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
-	import { CATEGORIES_ANNONCE, TRIS_ANNONCE, TYPES_ANNONCE } from '$lib/annonces';
-	import { enCours } from '$lib/archives';
-	import { annonces as annoncesApi, type PetiteAnnonce } from '$lib/api';
-	import { messageErreur, tenter } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import ListeAnnonces from '#lib/components/ListeAnnonces.svelte';
+	import ListeEtArchives from '#lib/components/ListeEtArchives.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import PastilleDeroulante from '#lib/components/PastilleDeroulante.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
+	import { CATEGORIES_ANNONCE, TRIS_ANNONCE, TYPES_ANNONCE } from '#lib/annonces.ts';
+	import { enCours } from '#lib/archives.ts';
+	import { annonces as annoncesApi, type PetiteAnnonce } from '#lib/api/index.ts';
+	import { messageErreur, tenter } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
 
 	/** La liste, tenue par la page — elle la charge avec les deux autres rubriques. */
 	export let annonces: PetiteAnnonce[] = [];
@@ -229,7 +229,7 @@
 <!--  §0 ter : la boîte de création vient APRÈS les filtres — ce qui qualifie la
       liste reste au-dessus du formulaire ouvert (#1186). `lint:filtre-avant-formulaire`. -->
 {#if showForm}
-	<ChargementDiffere charger={() => import('$lib/components/FormulaireAnnonce.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/FormulaireAnnonce.svelte')}>
 		{#snippet contenu(FormulaireAnnonce)}
 			<FormulaireAnnonce
 				on:cree={(e) => {
@@ -294,7 +294,7 @@
 					<!--  `{#key}` remonte le composant d'une annonce à l'autre : ses champs
 					      sont initialisés une seule fois, à la construction. -->
 					{#key annonce.id}
-						<ChargementDiffere charger={() => import('$lib/components/FormulaireAnnonce.svelte')}>
+						<ChargementDiffere charger={() => import('#lib/components/FormulaireAnnonce.svelte')}>
 							{#snippet contenu(FormulaireAnnonce)}
 								<FormulaireAnnonce
 									{annonce}

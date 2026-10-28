@@ -63,7 +63,7 @@
   (`chargement`, `estVide`, `recharger`, `exporterPdf`).
 -->
 <script lang="ts">
-	import { messageErreur } from '$lib/erreurs';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import {
 		pointsConseil,
 		suiviAffaires as suiviApi,
@@ -73,15 +73,15 @@
 		type ParticipantsPoint,
 		type SuiviAffaires,
 		type VisitePeriodique,
-	} from '$lib/api';
-	import { enregistrerFichier } from '$lib/fichiers';
-	import { jourIso } from '$lib/date';
-	import { amenerEnHaut } from '$lib/accordeon';
+	} from '#lib/api/index.ts';
+	import { enregistrerFichier } from '#lib/fichiers.ts';
+	import { jourIso } from '#lib/date.ts';
+	import { amenerEnHaut } from '#lib/accordeon.ts';
 	import { tick } from 'svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import IconeIA from '$lib/components/IconeIA.svelte';
-	import SelecteurMode from '$lib/components/SelecteurMode.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import IconeIA from '#lib/components/IconeIA.svelte';
+	import SelecteurMode from '#lib/components/SelecteurMode.svelte';
 	import TableauAffaires from './TableauAffaires.svelte';
 	import RelanceSyndic from './RelanceSyndic.svelte';
 	import PointConseil from './PointConseil.svelte';
@@ -90,7 +90,7 @@
 	import HistoriquePoints from './HistoriquePoints.svelte';
 	import FusionAffaires from './FusionAffaires.svelte';
 	import AffaireSeance from './AffaireSeance.svelte';
-	import { confirmer } from '$lib/confirmation';
+	import { confirmer } from '#lib/confirmation.ts';
 	import BarresCroisees from './BarresCroisees.svelte';
 	import BilanVisites from './BilanVisites.svelte';
 	import VisitesRealisees from './VisitesRealisees.svelte';

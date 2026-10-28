@@ -8,9 +8,9 @@
   composant ne rend rien.
 -->
 <script lang="ts">
-	import type { ComparaisonSynthese, MetriquesSynthese } from '$lib/api';
-	import { fmtNombre } from '$lib/utils';
-	import { fmtJours, nomCategorie, partBarre } from '$lib/synthese';
+	import type { ComparaisonSynthese, MetriquesSynthese } from '#lib/api/index.ts';
+	import { fmtNombre } from '#lib/utils.ts';
+	import { fmtJours, nomCategorie, partBarre } from '#lib/synthese.ts';
 
 	export let metriques: MetriquesSynthese;
 

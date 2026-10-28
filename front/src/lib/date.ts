@@ -194,7 +194,7 @@ export function fmtDayMonth(d: string | null | undefined): string {
  *
  * ⚠️ À employer via `relire(donnees, salutation)` : dans un `$:` qui ne cite
  * aucune variable réactive, elle serait figée au montage et dirait « Bonjour »
- * à 20 h (`$lib/utils.relire`, #549).
+ * à 20 h (`#lib/utils.relire`, #549).
  */
 export function salutation(): string {
 	const h = new Date().getHours();

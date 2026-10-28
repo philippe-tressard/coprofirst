@@ -8,7 +8,7 @@
  *
  *  L'infobulle de l'icône de catégorie, sur la liste des affaires, disait
  *  « etude_travaux » au lieu de « Étude & travaux ». Le libellé existait
- *  (`categorieTicketLabel`, `$lib/tickets-categories`) ; rien n'obligeait à le
+ *  (`categorieTicketLabel`, `#lib/tickets-categories`) ; rien n'obligeait à le
  *  prendre. La recherche en a trouvé deux autres : le tableau des reportings
  *  et la relance du syndic rendaient la même valeur brute.
  *

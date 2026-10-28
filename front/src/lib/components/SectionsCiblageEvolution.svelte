@@ -22,7 +22,7 @@
 
   Les deux champs partent donc **remplis** de ce qui est en vigueur, et non vides :
   on corrige ce qu'on voit. Ce sont les DÉCLARATIONS d'entité qui ouvrent ces
-  sections (`$lib/entites/…`) — un ticket les garde fermées, et rien ne change
+  sections (`#lib/entites/…`) — un ticket les garde fermées, et rien ne change
   pour lui.
 
   ⚠️ Tout le rendu vient de `ChampsCommuns` : ce composant ne redéfinit rien, il
@@ -30,8 +30,8 @@
   de périmètre est exactement ce que #463 a supprimé.
 -->
 <script lang="ts">
-	import ChampsCommuns from '$lib/components/ChampsCommuns.svelte';
-	import type { EntiteDeclaree } from '$lib/entites/types';
+	import ChampsCommuns from '#lib/components/ChampsCommuns.svelte';
+	import type { EntiteDeclaree } from '#lib/entites/types.ts';
 
 	export let idPrefixe: string;
 	/**  L'entité porteuse : c'est elle qui dit le PLIAGE, comme en édition.

@@ -11,7 +11,7 @@
 	var FENETRE_RECHARGEMENT_MS = 5 * 60 * 1000;
 	var CLE = 'garde-demarrage-recharge-le';
 	// Le motif du rechargement de secours, lu par l'application une fois démarrée
-	// pour le signaler au journal des erreurs (`$lib/garde-demarrage`).
+	// pour le signaler au journal des erreurs (`#lib/garde-demarrage`).
 	var CLE_MOTIF = 'garde-demarrage-motif';
 	var NON_DESSINEE = 'non-dessinee';
 	var NON_DEMARREE = 'non-demarree';

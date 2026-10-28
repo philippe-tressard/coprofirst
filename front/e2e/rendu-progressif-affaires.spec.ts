@@ -13,7 +13,7 @@ import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
 
 const TOTAL = 100;
-const PREMIERS = 20; //  ⚠️ `PREMIERS` de `$lib/rendu-progressif`
+const PREMIERS = 20; //  ⚠️ `PREMIERS` de `#lib/rendu-progressif`
 
 const affaire = (id: number) => ({
 	id,

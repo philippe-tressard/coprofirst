@@ -21,7 +21,7 @@
 -->
 <script lang="ts">
 	import SectionFormulaire from './SectionFormulaire.svelte';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
 
 	/** `id` du champ — le titre de section s'y relie (`for`). */
 	export let id: string;

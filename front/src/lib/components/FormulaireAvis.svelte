@@ -1,7 +1,7 @@
 <!--
   Le formulaire d'un AVIS sur l'application — le dépôt et la correction (#2075).
 
-  Ordre du cadre (`$lib/entites/avis`) : le titre, puis la NOTE — sous 3
+  Ordre du cadre (`#lib/entites/avis`) : le titre, puis la NOTE — sous 3
   étoiles, ce qui a manqué —, puis la description, puis, à partir de 4 étoiles,
   la question de publication sur le site vitrine. La note précède la
   description, comme demandé : la remarque se pose avant qu'on raconte le reste.
@@ -13,19 +13,19 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import CadreFormulaire from '$lib/components/CadreFormulaire.svelte';
-	import SectionTitre from '$lib/components/SectionTitre.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import ChampsCommuns from '$lib/components/ChampsCommuns.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import NoteEtoiles from '$lib/components/NoteEtoiles.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import { sectionPresente, type Etat } from '$lib/entites/types';
-	import { AVIS } from '$lib/entites/avis';
-	import { avis as avisApi, type Avis } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
+	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
+	import SectionTitre from '#lib/components/SectionTitre.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import ChampsCommuns from '#lib/components/ChampsCommuns.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import NoteEtoiles from '#lib/components/NoteEtoiles.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { sectionPresente, type Etat } from '#lib/entites/types.ts';
+	import { AVIS } from '#lib/entites/avis.ts';
+	import { avis as avisApi, type Avis } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		NOTE_PUBLIABLE,
 		NOTE_REMARQUE,
@@ -34,7 +34,7 @@
 		accordDe,
 		choixAccord,
 		merciPour,
-	} from '$lib/avis';
+	} from '#lib/avis.ts';
 
 	const dispatch = createEventDispatcher<{ cree: Avis; modifie: Avis; annule: void }>();
 

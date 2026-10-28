@@ -12,8 +12,8 @@
   Rien hors démo.
 -->
 <script lang="ts">
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import { modeDemoStore } from '$lib/stores/pageConfig';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import { modeDemoStore } from '#lib/stores/pageConfig.ts';
 
 	/** Le rappel d'un formulaire, au lieu de l'onglet fermé. */
 	export let saisie = false;

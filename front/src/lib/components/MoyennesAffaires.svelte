@@ -11,9 +11,9 @@
   partielle dit sur combien d'affaires elle porte.
 -->
 <script lang="ts">
-	import type { ResumeAffaires } from '$lib/api';
-	import { fmtJours, libelleEtape, surAffaires } from '$lib/synthese';
-	import { fmtNombre } from '$lib/utils';
+	import type { ResumeAffaires } from '#lib/api/index.ts';
+	import { fmtJours, libelleEtape, surAffaires } from '#lib/synthese.ts';
+	import { fmtNombre } from '#lib/utils.ts';
 	import TuilesChiffres from './TuilesChiffres.svelte';
 
 	export let resume: ResumeAffaires;

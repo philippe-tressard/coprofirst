@@ -22,7 +22,7 @@
 -->
 <script lang="ts">
 	import PastilleFichier from './PastilleFichier.svelte';
-	import { documents as docsApi, type Document } from '$lib/api';
+	import { documents as docsApi, type Document } from '#lib/api/index.ts';
 
 	/** Les documents attachés — entités `Document` de l'API. */
 	export let documents: Document[] = [];

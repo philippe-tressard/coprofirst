@@ -33,7 +33,7 @@ process.exit(
 			//  La forme voulue, jamais signalée.
 			['\t<AnnuaireMembres bind:membres={membresCS} {charger} {nouveau} {envoyer}>', 0],
 			//  Importer le TYPE de la fiche n'est pas la monter.
-			["\timport { type MembreBase } from '$lib/components/CarteMembre.svelte';", 0],
+			["\timport { type MembreBase } from '#lib/components/CarteMembre.svelte';", 0],
 			//  Un nom qui commence pareil n'est pas la fiche.
 			['\t<CarteMembreDetail />', 0],
 		],

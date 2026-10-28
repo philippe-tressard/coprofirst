@@ -19,7 +19,7 @@
   ## Ce que ce composant N'EST PAS
 
   Il ne décide pas de la liste des options ni de ce qu'elles écrivent : c'est
-  `$lib/tickets` qui porte le pont écran ⇄ objet (`OPTIONS_TICKET`,
+  `#lib/tickets` qui porte le pont écran ⇄ objet (`OPTIONS_TICKET`,
   `optionsDuTicket`, `optionsVersTicket`). Ici, il n'y a qu'un rendu et une
   liaison.
 
@@ -28,11 +28,11 @@
   le serveur qui protège, pas cette condition.
 -->
 <script lang="ts">
-	import SectionOptionsPublication from '$lib/components/SectionOptionsPublication.svelte';
-	import { OPTIONS_TICKET } from '$lib/tickets';
-	import { isCS } from '$lib/stores/auth';
-	import { TICKET } from '$lib/entites/ticket';
-	import { pliageDe } from '$lib/pliage';
+	import SectionOptionsPublication from '#lib/components/SectionOptionsPublication.svelte';
+	import { OPTIONS_TICKET } from '#lib/tickets.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { TICKET } from '#lib/entites/ticket.ts';
+	import { pliageDe } from '#lib/pliage.ts';
 
 	/** Vrai pour la première section rendue du formulaire : pas de filet au-dessus. */
 	export let premiere = false;

@@ -3,7 +3,7 @@
 ## Le défaut (02/10/2026, #1567)
 
 Côté interface, la question « cette sélection désigne-t-elle toute la
-copropriété ? » se pose à `estPerimetreParDefaut` (`$lib/perimetres`), et la
+copropriété ? » se pose à `estPerimetreParDefaut` (`#lib/perimetres`), et la
 sélection initiale d'un formulaire vient de `perimetreDefautListe` : le front ne
 contient plus un seul `'résidence'`. Côté API, le même code était écrit en dur
 **vingt-trois fois dans dix-neuf modules** (l'audit en avait compté treize) —

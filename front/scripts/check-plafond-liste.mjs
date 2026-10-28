@@ -78,7 +78,7 @@ if (fautes.length > 0) {
 		'\n  Un nombre employé pour couper ET pour comparer est un SEUIL : le changer\n' +
 			'  demande de corriger les deux, et en oublier un donne un compteur qui ment\n' +
 			'  sans qu’aucun test ne le voie.\n' +
-			'  → le déclarer dans un module (`$lib/kanban`, `$lib/pages`…) et l’importer.\n',
+			'  → le déclarer dans un module (`#lib/kanban`, `#lib/pages`…) et l’importer.\n',
 	);
 	process.exit(1);
 }

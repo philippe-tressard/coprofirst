@@ -18,17 +18,17 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
-	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
-	import BadgeVerdict from '$lib/components/BadgeVerdict.svelte';
-	import BoutonLien from '$lib/components/BoutonLien.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import type { QuestionReglement } from '$lib/api';
-	import { fmtDatetime } from '$lib/date';
-	import { safeHtml } from '$lib/sanitize';
-	import { isCS } from '$lib/stores/auth';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import ApercuCarte from '#lib/components/ApercuCarte.svelte';
+	import AuteurCarte from '#lib/components/AuteurCarte.svelte';
+	import BadgeVerdict from '#lib/components/BadgeVerdict.svelte';
+	import BoutonLien from '#lib/components/BoutonLien.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import type { QuestionReglement } from '#lib/api/index.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { isCS } from '#lib/stores/auth.ts';
 
 	export let q: QuestionReglement;
 	/** La carte est-elle dépliée ? L'état vit dans l'onglet : une seule ouverte. */

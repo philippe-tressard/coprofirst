@@ -5,7 +5,11 @@ import garde from './garde-demarrage.js?raw';
 //  premier script de la page, avant les feuilles de style. Injecté TEL QUEL — la
 //  CSP l'admet par le condensat de ce même fichier, calculé dans `vite.config.ts`.
 const REPERE_GARDE = /<!-- garde-demarrage .*?-->/;
-const SCRIPT_GARDE = `<script>${garde}</script>`;
+//  Le repère est un COMMENTAIRE : SvelteKit compte ceux de la page avant et après
+//  `transformPageChunk` et avertit (`transform_page_chunk_comments`) quand le
+//  remplacement en retire un — ce qui peut défaire l'hydratation. Le remplacement
+//  en garde donc un, compact, devant le script.
+const SCRIPT_GARDE = `<!-- garde-demarrage --><script>${garde}</script>`;
 
 export const handle: Handle = async ({ event, resolve }) => {
 	//  L'authentification est portée par des cookies `HttpOnly` que ce hook

@@ -14,17 +14,21 @@
   éléments, et la ligne serait sortie nue (#344, #356).
 
   L'accordéon reste à la section — un seul bloc déplié dans toute la section
-  (`$lib/accordeon`) : la ligne dit seulement si SA synthèse est ouverte.
+  (`#lib/accordeon`) : la ligne dit seulement si SA synthèse est ouverte.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import BoutonLien from '$lib/components/BoutonLien.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import LienAction from '$lib/components/LienAction.svelte';
-	import ListeDocuments from '$lib/components/ListeDocuments.svelte';
-	import { diagnostics as diagnosticsApi, type Document, type RapportDiagnostic } from '$lib/api';
-	import { safeHtml } from '$lib/sanitize';
-	import { fmtDateShort as fmt } from '$lib/date';
+	import Icon from '#lib/components/Icon.svelte';
+	import BoutonLien from '#lib/components/BoutonLien.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import LienAction from '#lib/components/LienAction.svelte';
+	import ListeDocuments from '#lib/components/ListeDocuments.svelte';
+	import {
+		diagnostics as diagnosticsApi,
+		type Document,
+		type RapportDiagnostic,
+	} from '#lib/api/index.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { fmtDateShort as fmt } from '#lib/date.ts';
 
 	export let rapport: RapportDiagnostic;
 	export let peutModifier = false;

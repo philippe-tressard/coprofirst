@@ -22,18 +22,18 @@
   l'API et recharge la liste.
 -->
 <script lang="ts">
-	import type { Sondage } from '$lib/api';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
-	import MarqueIA from '$lib/components/MarqueIA.svelte';
-	import { fmtDateShort } from '$lib/date';
-	import BoutonLien from '$lib/components/BoutonLien.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
-	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
-	import { currentUser, isAdmin } from '$lib/stores/auth';
+	import type { Sondage } from '#lib/api/index.ts';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
+	import MarqueIA from '#lib/components/MarqueIA.svelte';
+	import { fmtDateShort } from '#lib/date.ts';
+	import BoutonLien from '#lib/components/BoutonLien.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import ApercuCarte from '#lib/components/ApercuCarte.svelte';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
+	import PastilleLecture from '#lib/components/PastilleLecture.svelte';
+	import { currentUser, isAdmin } from '#lib/stores/auth.ts';
 
 	/** Les sondages à rendre, déjà filtrés par l'appelant. */
 	export let sondages: Sondage[] = [];

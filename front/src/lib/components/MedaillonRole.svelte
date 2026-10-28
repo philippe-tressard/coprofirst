@@ -32,7 +32,7 @@
   entrée ici, une fois, pour tous les écrans qui l'afficheront.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 
 	/**  Le rôle désigné. Le nom porte le SENS, pas la couleur : c'est ce qui
 	 *   empêche deux rôles d'atterrir sur la même teinte par hasard. */
@@ -40,7 +40,7 @@
 	/**  Le texte de l'infobulle ET du nom accessible — un seul, donc jamais l'un
 	 *   sans l'autre. */
 	export let titre: string;
-	/**  L'icône du catalogue `$lib/icones-svg.json`. Sans elle, le contenu du
+	/**  L'icône du catalogue `#lib/icones-svg.json`. Sans elle, le contenu du
 	 *   slot est rendu — c'est ce qui laisse passer le ★ du gestionnaire
 	 *   principal sans lui inventer une icône qui n'existe pas.
 	 *

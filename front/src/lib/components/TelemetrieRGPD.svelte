@@ -18,11 +18,11 @@
   valeur que le serveur détient déjà.
 -->
 <script lang="ts">
-	import { auth as authApi } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { currentUser, quandAuthResolue, setUser } from '$lib/stores/auth';
-	import { setTelemetryOptOut } from '$lib/telemetry';
-	import { enregistrerFichier } from '$lib/fichiers';
+	import { auth as authApi } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { currentUser, quandAuthResolue, setUser } from '#lib/stores/auth.ts';
+	import { setTelemetryOptOut } from '#lib/telemetry.ts';
+	import { enregistrerFichier } from '#lib/fichiers.ts';
 
 	let optOutTelemetrie = false;
 	let savingOptOut = false;

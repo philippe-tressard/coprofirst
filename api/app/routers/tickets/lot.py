@@ -11,7 +11,7 @@ prestataire », suivies au kanban.
 ## Les trois règles reprises de l'ancien lot
 
 1. **Une transaction** : soit toutes les visites existent, soit aucune — le
-   geste reste rejouable, la clé anti-doublon (`$lib/init-prestataires`) écarte
+   geste reste rejouable, la clé anti-doublon (`#lib/init-prestataires`) écarte
    ce qui existe déjà.
 2. **Aucune diffusion, jamais** : un lot est un pré-remplissage silencieux ; en
    faire un canal offrirait l'envoi de cent courriels en une requête. Le corps

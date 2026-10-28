@@ -40,9 +40,9 @@ process.exit(
 			["\tconst { Editor } = await import('@tiptap/core');", 1],
 			['\tconst vue = new EditorView(el, { state });', 1],
 			//  La forme voulue, jamais signalée.
-			["\timport RichEditor from '$lib/components/RichEditor.svelte';", 0],
+			["\timport RichEditor from '#lib/components/RichEditor.svelte';", 0],
 			['\t<RichEditor bind:value minHeight="380px" titres sourceHtml />', 0],
-			["\timport { BlocDepliable } from '$lib/blocDepliable';", 0],
+			["\timport { BlocDepliable } from '#lib/blocDepliable.ts';", 0],
 			//  Un nom qui CONTIENT « Editor » n'en instancie pas un.
 			['\tconst editeur = new EditorState();', 0],
 		],

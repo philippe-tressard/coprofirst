@@ -13,9 +13,9 @@
   Le serveur compose la liste ; l'écran la date en heure de Paris.
 -->
 <script lang="ts">
-	import type { JalonSynthese, MetriquesSynthese } from '$lib/api';
-	import { fmtDate, fmtDayMonth } from '$lib/date';
-	import { fmtJours, libelleEtape } from '$lib/synthese';
+	import type { JalonSynthese, MetriquesSynthese } from '#lib/api/index.ts';
+	import { fmtDate, fmtDayMonth } from '#lib/date.ts';
+	import { fmtJours, libelleEtape } from '#lib/synthese.ts';
 	import Icon from './Icon.svelte';
 
 	export let metriques: MetriquesSynthese;

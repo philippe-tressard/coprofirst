@@ -19,14 +19,14 @@
   qui mènent à la page de l'affaire, puis ceux qui la changent.
 -->
 <script lang="ts">
-	import { SUITE } from '$lib/gestes';
-	import { gesteReponse } from '$lib/tickets';
-	import { isCS } from '$lib/stores/auth';
+	import { SUITE } from '#lib/gestes.ts';
+	import { gesteReponse } from '#lib/tickets.ts';
+	import { isCS } from '#lib/stores/auth.ts';
 	import { createEventDispatcher } from 'svelte';
 	import BoutonLien from './BoutonLien.svelte';
 	import BoutonOptions from './BoutonOptions.svelte';
 	import IconeAction from './IconeAction.svelte';
-	import type { Ticket } from '$lib/api';
+	import type { Ticket } from '#lib/api/index.ts';
 
 	export let ticket: Ticket;
 	/** Le mode ouvert sur la carte — il inverse l'icône qui l'a ouvert. */

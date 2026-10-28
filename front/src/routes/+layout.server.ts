@@ -1,4 +1,4 @@
-import { lireConfigServeur } from '$lib/server/config-site';
+import { lireConfigServeur } from '#lib/server/config-site.ts';
 
 /**
  * Pré-charge la configuration du site côté serveur (SSR).
