@@ -177,6 +177,11 @@ ci_prevol() {
     motif=$(ci_base_tests_etat "$(ci_dans_etape "$(<"$pytest/rep")" "$pytest/env" ci_sonder_base_tests)")
     if [ -n "$motif" ]; then printf '%s\t%s\n' "$(<"$pytest/job")" "$motif" >> "$refus"
     else echo "base des tests jointe" >> "$faits"; fi
+    #  Un arbre pytest orphelin tient la base : pytest s'y figerait (#2270).
+    motif=$(ci_table_systeme | ci_pytest_orphelins \
+      | ci_orphelins_etat "$(command -v taskkill > /dev/null 2>&1 && echo oui || echo non)")
+    if [ -n "$motif" ]; then printf '%s\t%s\n' "$(<"$pytest/job")" "$motif" >> "$refus"
+    else echo "aucun pytest orphelin" >> "$faits"; fi
   fi
   if [ -n "$vite" ]; then
     job=$(<"$vite/job")

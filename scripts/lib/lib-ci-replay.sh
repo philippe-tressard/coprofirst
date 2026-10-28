@@ -48,6 +48,9 @@
 . "$(dirname "${BASH_SOURCE[0]}")/lib-ci-orchestration.sh"
 # shellcheck source=lib-ci-prevol.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib-ci-prevol.sh"
+#  Un rejeu ne se fige plus en silence (#2270) : orphelins, plafond, base.
+# shellcheck source=lib-ci-gel.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-ci-gel.sh"
 
 # ── Extraction ───────────────────────────────────────────────────────────────
 #  Le parseur ne prétend PAS lire YAML : il lit la forme que ce fichier-ci a, et
@@ -380,6 +383,7 @@ YAML
   ci_base_cas  # pytest et sa base PostgreSQL : lib-ci-base.sh
   ci_orchestration_cas  # phases, couloirs, budget, reprise (#2224)
   ci_prevol_cas        # versions, Playwright, venv (#2224)
+  ci_gel_cas           # orphelins, plafond d'une étape figée (#2270)
   #  #1734 : un saut se NOMME, il ne se tait pas ; aucun saut, aucune mention.
   t "sauts — aucun : rien à dire"    "$(printf '' | ci_resumer_sauts)" ""
   t "sauts — regroupés par raison, le plus fréquent d'abord"     "$(printf 'a::t1	WeasyPrint absent
@@ -397,18 +401,23 @@ c::t3	WeasyPrint absent
     t "parité sur le ci.yml réel (${p% *} écrits)" "${p#* }" "${p% *}"
     #  Le critère de #1722 doit reconnaître AU MOINS une étape du vrai fichier :
     #  sinon le garde-fou du node_modules partagé ne garde plus rien.
-    local corps_vite=0 bloc=""
+    #  De même pour pytest : sans lui, le pré-vol ne sonde ni la base des tests
+    #  ni ses orphelins — muet depuis que pytest passe par mesure-postgresql.sh
+    #  (#2223), trouvé le 28/10 (#2270).
+    local corps_vite=0 corps_pytest=0 bloc=""
     while IFS= read -r l; do
       case "$l" in
         '@@RUN') bloc="" ;;
         '@@END') [ "$(printf '%s
-' "$bloc" | ci_sert_par_vite)" = oui ] && corps_vite=$((corps_vite+1)) ;;
+' "$bloc" | ci_sert_par_vite)" = oui ] && corps_vite=$((corps_vite+1))
+                 [ "$(printf '%s\n' "$bloc" | ci_lance_pytest)" = oui ] && corps_pytest=$((corps_pytest+1)) ;;
         '@@'*) ;;
         *) bloc="$bloc$l"$'
 ' ;;
       esac
     done < <(ci_extraire < .github/workflows/ci.yml)
     t "le ci.yml réel a une étape servie par Vite" "$([ "$corps_vite" -ge 1 ] && echo oui || echo "aucune")" "oui"
+    t "le ci.yml réel a une étape qui lance pytest" "$([ "$corps_pytest" -ge 1 ] && echo oui || echo "aucune")" "oui"
   else
     echo "?     parité sur le ci.yml réel — fichier absent, non mesuré"
   fi
