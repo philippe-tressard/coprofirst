@@ -8,11 +8,11 @@
   servait que pour décider d'afficher la section.
 -->
 <script lang="ts">
-	import { auth as authApi, type User } from '$lib/api';
-	import { currentUser, setUser } from '$lib/stores/auth';
-	import { tenter } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
+	import { auth as authApi, type User } from '#lib/api/index.ts';
+	import { currentUser, setUser } from '#lib/stores/auth.ts';
+	import { tenter } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 
 	export let batiments: { id: number; numero: string }[] = [];
 

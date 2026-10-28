@@ -23,11 +23,11 @@
  *
  * Refusé : deux littéraux d'objet, dans le même fichier, dont les clés se
  * recouvrent à **60 % ou plus**. La réponse est `parAttribut()`
- * (`$lib/table-statuts`) : un état, une entrée, tous ses attributs — et le
+ * (`#lib/table-statuts`) : un état, une entrée, tous ses attributs — et le
  * compilateur refuse alors l'entrée incomplète.
  *
  * Laissé passer : deux tables aux clés franchement différentes. Le seuil de
- * 60 % est là pour ça — `LIBELLES_HERITES` (`$lib/roles`) porte d'anciennes
+ * 60 % est là pour ça — `LIBELLES_HERITES` (`#lib/roles`) porte d'anciennes
  * clés, volontairement à part des énumérations du serveur, et ne doit pas
  * fondre dans elles.
  */
@@ -129,7 +129,7 @@ function selftest() {
 		//  de présentation : sur une entrée d'une seule ligne, la regex ne voit
 		//  que la première clé et la profondeur ne déciderait de rien. C'est la
 		//  forme que Prettier produit dès qu'une entrée dépasse cent colonnes —
-		//  celle de `$lib/roles`. Sans le contrôle de profondeur, les trois
+		//  celle de `#lib/roles`. Sans le contrôle de profondeur, les trois
 		//  attributs comptent pour des états : 3 clés communes sur 6, sous le
 		//  seuil, et le couple passe inaperçu.
 		//
@@ -207,7 +207,7 @@ if (fautifs.length) {
 		'\n  Ajouter un état demande alors de le poser dans chaque table, et un oubli\n' +
 			'  ne lève rien : la table incomplète rend `undefined`, donc un badge sans\n' +
 			'  couleur ou un libellé vide.\n' +
-			'  → `parAttribut({ etat: { libelle, badge } })` de `$lib/table-statuts` :\n' +
+			'  → `parAttribut({ etat: { libelle, badge } })` de `#lib/table-statuts` :\n' +
 			'    une entrée par état, et le compilateur refuse celle qui est incomplète.\n',
 	);
 	process.exit(1);

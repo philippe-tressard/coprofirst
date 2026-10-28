@@ -22,15 +22,15 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 
-	import CadreFormulaire from '$lib/components/CadreFormulaire.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import SectionTitre from '$lib/components/SectionTitre.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import SectionDescription from '$lib/components/SectionDescription.svelte';
-	import { categorieSaisie, NOUVELLE_CATEGORIE, type SaisieFaq } from '$lib/faq';
-	import { FAQ } from '$lib/entites/faq';
+	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import SectionTitre from '#lib/components/SectionTitre.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import SectionDescription from '#lib/components/SectionDescription.svelte';
+	import { categorieSaisie, NOUVELLE_CATEGORIE, type SaisieFaq } from '#lib/faq.ts';
+	import { FAQ } from '#lib/entites/faq.ts';
 
 	const dispatch = createEventDispatcher<{ annule: void }>();
 

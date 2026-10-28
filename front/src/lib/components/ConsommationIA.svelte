@@ -16,10 +16,14 @@
 	import { onMount } from 'svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
 	import EtatListe from './EtatListe.svelte';
-	import { config as configApi, type ConsommationIA, type LigneConsommationIA } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { fmtMonthYear } from '$lib/date';
-	import { fmtMontant, fmtNombre } from '$lib/utils';
+	import {
+		config as configApi,
+		type ConsommationIA,
+		type LigneConsommationIA,
+	} from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { fmtMonthYear } from '#lib/date.ts';
+	import { fmtMontant, fmtNombre } from '#lib/utils.ts';
 
 	let donnees: ConsommationIA | null = null;
 	let chargement = true;

@@ -5,7 +5,7 @@
 Le corps d'une affaire, d'une actualité ou d'un message est du HTML écrit par
 l'éditeur riche. Jusqu'ici, le serveur le croyait propre : les courriels
 l'inséraient par `| safe`, avec ce commentaire — *« le texte est assaini à
-l'écriture, côté front, par `$lib/sanitize` »*. Or l'API n'assainissait rien, et
+l'écriture, côté front, par `#lib/sanitize` »*. Or l'API n'assainissait rien, et
 n'importe quel compte peut l'appeler sans passer par l'écran : un résident
 envoyait au conseil et au syndic, depuis le domaine de la résidence et signé
 DKIM, le HTML de son choix (faux bouton de connexion, formulaire, lien déguisé).

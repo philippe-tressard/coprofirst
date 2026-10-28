@@ -10,13 +10,17 @@
   d'où le couple `id` sur le titre / `aria-labelledby` sur le groupe.
 -->
 <script lang="ts">
-	import CaseReservePerimetre from '$lib/components/CaseReservePerimetre.svelte';
-	import PerimetrePicker from '$lib/components/PerimetrePicker.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
-	import { estPerimetreParDefaut, perimetreLabelUn, perimetreParDefaut } from '$lib/perimetres';
-	import { perimetresStore } from '$lib/stores/perimetres';
-	import { relire } from '$lib/utils';
+	import CaseReservePerimetre from '#lib/components/CaseReservePerimetre.svelte';
+	import PerimetrePicker from '#lib/components/PerimetrePicker.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
+	import {
+		estPerimetreParDefaut,
+		perimetreLabelUn,
+		perimetreParDefaut,
+	} from '#lib/perimetres/index.ts';
+	import { perimetresStore } from '#lib/stores/perimetres.ts';
+	import { relire } from '#lib/utils.ts';
 
 	/** Préfixe des identifiants — l'écran en ouvre parfois plusieurs à la fois. */
 	export let idPrefixe: string;

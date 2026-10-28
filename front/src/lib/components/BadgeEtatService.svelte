@@ -7,7 +7,7 @@
   mesurable par `lint:css-orphelin`.
 -->
 <script lang="ts">
-	import type { ServiceCopropriete } from '$lib/api';
+	import type { ServiceCopropriete } from '#lib/api/index.ts';
 
 	export let etat: ServiceCopropriete['etat'];
 

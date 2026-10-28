@@ -59,7 +59,7 @@
 | **MembreSyndic** | Entité représentant un contact individuel du cabinet syndic. Indépendante des comptes `Utilisateur`. |
 | **ConfigSite** | Table clé/valeur stockant les paramètres de configuration de l'application modifiables par l'admin sans redéploiement : nom du site, titres/icônes/sous-titres des pages, contenus des pages légales. |
 | **RichEditor** | Composant Svelte (TipTap) fournissant un éditeur de texte riche (WYSIWYG) avec barre d'outils. Utilisé pour l'édition des sous-titres de pages, des pages légales et des templates d'emails. |
-| **safeHtml** | Fonction utilitaire (`$lib/sanitize.ts`) basée sur `isomorphic-dompurify`. Sanitise un fragment HTML avant son injection via `{@html …}` dans les composants Svelte — protège contre les attaques XSS. |
+| **safeHtml** | Fonction utilitaire (`#lib/sanitize.ts`) basée sur `isomorphic-dompurify`. Sanitise un fragment HTML avant son injection via `{@html …}` dans les composants Svelte — protège contre les attaques XSS. |
 | **PetiteAnnonce** | Annonce publiée par un résident (vente, don ou recherche d'objet). Statuts : `disponible`, `réservé`, `vendu`, `archivé`. Jusqu'à 5 photos. Catégories : mobilier, électroménager, bricolage, jardin, sport, enfants, vêtements, informatique, autre. |
 | **TypeAnnonce** | Enum classifiant le type d'une petite annonce : `vente`, `don`, `recherche`. |
 | **CategorieAnnonce** | Enum des catégories de petites annonces : `mobilier`, `electromenager`, `bricolage`, `jardin`, `sport`, `enfants`, `vetements`, `informatique`, `autre`. |

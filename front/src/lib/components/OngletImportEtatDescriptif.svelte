@@ -32,18 +32,22 @@
 -->
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import BarreImport from '$lib/components/BarreImport.svelte';
-	import ConstatsLots from '$lib/components/ConstatsLots.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import IconeIA from '$lib/components/IconeIA.svelte';
-	import TableLignesEtatDescriptif from '$lib/components/TableLignesEtatDescriptif.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { etatDescriptif as api, type EtatDescriptif, type LigneEtatDescriptif } from '$lib/api';
-	import { confirmer } from '$lib/confirmation';
-	import { fmtDatetime } from '$lib/date';
-	import { messageErreur } from '$lib/erreurs';
-	import { contientTousLesMots } from '$lib/texte';
+	import BarreImport from '#lib/components/BarreImport.svelte';
+	import ConstatsLots from '#lib/components/ConstatsLots.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import IconeIA from '#lib/components/IconeIA.svelte';
+	import TableLignesEtatDescriptif from '#lib/components/TableLignesEtatDescriptif.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import {
+		etatDescriptif as api,
+		type EtatDescriptif,
+		type LigneEtatDescriptif,
+	} from '#lib/api/index.ts';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { contientTousLesMots } from '#lib/texte.ts';
 
 	let etat: EtatDescriptif | null = null;
 	let chargement = true;

@@ -159,7 +159,7 @@ def _enrich(idees: list, user_id: int, session: Session) -> list[dict]:
             #  contrat que les événements et les annonces.
             perimetre_cible=_perimetre_liste(idee.perimetre_cible),
             #  Même contrat pour le public cible : une LISTE de codes, que
-            #  `$lib/destinataires.ts` lit. Vide = tous les résidents.
+            #  `#lib/destinataires.ts` lit. Vide = tous les résidents.
             public_cible=json.loads(idee.public_cible or "[]"),
             nb_votes=nb,
             mon_vote=mon_vote,

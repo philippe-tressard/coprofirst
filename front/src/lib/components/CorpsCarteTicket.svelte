@@ -20,7 +20,7 @@
   référence vaudrait `null` (règle de `ChargementDiffere`).
 -->
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import EtatListe from './EtatListe.svelte';
 	import PanneauOptionsPublication from './PanneauOptionsPublication.svelte';
 	import FicheLecture from './FicheLecture.svelte';
@@ -31,9 +31,9 @@
 	import TransfertsVerses from './TransfertsVerses.svelte';
 	import MentionFusion from './MentionFusion.svelte';
 	import MentionConservation from './MentionConservation.svelte';
-	import type { Ticket, TicketEvolution } from '$lib/api';
-	import { currentUser, isAdmin, isCS } from '$lib/stores/auth';
-	import { TICKET } from '$lib/entites/ticket';
+	import type { Ticket, TicketEvolution } from '#lib/api/index.ts';
+	import { currentUser, isAdmin, isCS } from '#lib/stores/auth.ts';
+	import { TICKET } from '#lib/entites/ticket.ts';
 	import {
 		OPTIONS_TICKET,
 		optionsDuTicket,
@@ -42,12 +42,12 @@
 		estTicketClos,
 		statutTicketLabel,
 		type GestesTicket,
-	} from '$lib/tickets';
-	import { basculer } from '$lib/accordeon';
-	import { entreesDuFil } from '$lib/evolutions';
-	import { fmtDate } from '$lib/date';
-	import { stripHtml } from '$lib/utils';
-	import { equipLabel, intervenantAffiche } from '$lib/prestataires';
+	} from '#lib/tickets.ts';
+	import { basculer } from '#lib/accordeon.ts';
+	import { entreesDuFil } from '#lib/evolutions.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { stripHtml } from '#lib/utils.ts';
+	import { equipLabel, intervenantAffiche } from '#lib/prestataires.ts';
 
 	export let ticket: Ticket;
 	export let evolutions: TicketEvolution[] = [];
@@ -80,7 +80,7 @@
 	//  « La suite · n entrées » compte ce que le fil raconte — la même liste que lui.
 	$: suites = entreesDuFil(evolutions);
 
-	//  🔴 L'accordéon des trois rubriques (`$lib/accordeon`) : une ouverte, la
+	//  🔴 L'accordéon des trois rubriques (`#lib/accordeon`) : une ouverte, la
 	//  demande d'abord. Un identifiant, jamais un `Set`.
 	let ouverte: 'demande' | 'suite' | 'comptes-rendus' | 'synthese' | null =
 		ouverteParDefaut === 'suite' && entreesDuFil(evolutions).length === 0
@@ -140,7 +140,7 @@
 	</div>
 {:else if mode === 'edition'}
 	<div class="tk-formulaire">
-		<ChargementDiffere charger={() => import('$lib/components/FormulaireTicket.svelte')}>
+		<ChargementDiffere charger={() => import('#lib/components/FormulaireTicket.svelte')}>
 			{#snippet contenu(FormulaireTicket)}
 				<FormulaireTicket
 					{ticket}
@@ -153,7 +153,7 @@
 {:else if mode === 'evolution'}
 	<div class="tk-formulaire">
 		<!--  Le MÊME montage que la fiche (`SuiteAffaire`, 01/10/2026). -->
-		<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+		<ChargementDiffere charger={() => import('#lib/components/SuiteAffaire.svelte')}>
 			{#snippet contenu(SuiteAffaire)}
 				<SuiteAffaire
 					{ticket}
@@ -259,7 +259,7 @@
 			>
 				<svelte:fragment slot="edition" let:evol>
 					{#key evolEnEdition}
-						<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+						<ChargementDiffere charger={() => import('#lib/components/SuiteAffaire.svelte')}>
 							{#snippet contenu(SuiteAffaire)}
 								<SuiteAffaire
 									{ticket}

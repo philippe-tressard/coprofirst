@@ -20,7 +20,7 @@
   passe ici ; l'emoji de catégorie ne s'écrit nulle part ailleurs.
 -->
 <script lang="ts">
-	import { categorieTicketEmoji, categorieTicketLabel } from '$lib/tickets';
+	import { categorieTicketEmoji, categorieTicketLabel } from '#lib/tickets.ts';
 
 	/** La VALEUR de la catégorie de l'affaire (`panne`) ; rien, pas de pictogramme. */
 	export let categorie: string | null | undefined = null;

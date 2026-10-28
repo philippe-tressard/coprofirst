@@ -10,7 +10,7 @@
  * Elle ne s'offre que s'il y a de quoi filtrer : « mes périmètres » vides (un
  * compte sans rattachement ni lot), elle se tait.
  */
-import { lots, type MesPerimetres } from '$lib/api/patrimoine';
+import { lots, type MesPerimetres } from '#lib/api/patrimoine.ts';
 
 /** La valeur de la pastille retenue ; `''` = tout. */
 export const ME_CONCERNE = 'moi';

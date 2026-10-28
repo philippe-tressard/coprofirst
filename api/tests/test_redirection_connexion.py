@@ -72,7 +72,7 @@ def test_aucune_redirection_en_dur_vers_l_ecran_de_connexion():
     """TOUTE redirection vers la connexion doit passer par `urlDeConnexion()`.
 
     Il y en avait trois, pas deux : la garde de `(app)/+layout.svelte`, l'écran de
-    connexion… et `$lib/api.ts`, qui redirige en dur quand le rafraîchissement de
+    connexion… et `#lib/api.ts`, qui redirige en dur quand le rafraîchissement de
     session échoue (401). C'est ce troisième chemin — le seul emprunté en production
     lorsqu'une session manque — qui a fait perdre la destination le 26/07/2026 alors
     que les deux autres étaient corrigés. En local, sans backend, l'appel échouait en
@@ -121,6 +121,6 @@ def test_la_destination_ne_peut_pas_pointer_hors_du_site():
     )
     assert "'/auth/'" in module, "une cible /auth/… boucle : elle doit être refusée"
     for appelant in (_GARDE, _CONNEXION):
-        assert "$lib/redirection" in _lire(appelant), (
+        assert "#lib/redirection" in _lire(appelant), (
             f"{appelant.name} n'utilise plus le module de redirection commun"
         )

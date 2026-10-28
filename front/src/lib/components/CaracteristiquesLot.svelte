@@ -28,9 +28,9 @@
   Les libellés des périmètres viennent du serveur aussi : aucun n'est recomposé ici.
 -->
 <script lang="ts">
-	import DetailReglementLot from '$lib/components/DetailReglementLot.svelte';
-	import type { MonLot } from '$lib/api';
-	import { etageLabel, lotTypeComplet } from '$lib/utils';
+	import DetailReglementLot from '#lib/components/DetailReglementLot.svelte';
+	import type { MonLot } from '#lib/api/index.ts';
+	import { etageLabel, lotTypeComplet } from '#lib/utils.ts';
 
 	export let type: string | null | undefined = null;
 	export let typeAppartement: string | null | undefined = null;

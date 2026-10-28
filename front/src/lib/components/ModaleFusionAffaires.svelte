@@ -26,13 +26,13 @@
   et une description relus se perdraient d'un clic à côté. `Échap` et
   « Annuler » restent.
 
-  ⚠️ S'emploie par `fusionnerLiees()` (`$lib/fusion-affaires`), jamais
+  ⚠️ S'emploie par `fusionnerLiees()` (`#lib/fusion-affaires`), jamais
   directement — comme `DialogueFusion` par `demanderFusion()`.
 -->
 <script lang="ts">
 	import Modale from './Modale.svelte';
 	import FusionAffaires from './reporting/FusionAffaires.svelte';
-	import type { AffaireAFusionner, FusionFaite } from '$lib/fusion-affaires';
+	import type { AffaireAFusionner, FusionFaite } from '#lib/fusion-affaires.ts';
 
 	/** Le groupe, la plus ancienne en tête : elle absorbe. */
 	export let affaires: AffaireAFusionner[];

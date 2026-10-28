@@ -32,10 +32,10 @@
   carte ; `detail` reste le repli des éléments qui n'en ont pas.
 -->
 <script lang="ts">
-	import type { FluxItem } from '$lib/api';
-	import { fmtTime } from '$lib/date';
-	import { cleFluxItem, typeCouleur, typeFond, typeLibelle, typeLink } from '$lib/flux';
-	import { safeDescription } from '$lib/sanitize';
+	import type { FluxItem } from '#lib/api/index.ts';
+	import { fmtTime } from '#lib/date.ts';
+	import { cleFluxItem, typeCouleur, typeFond, typeLibelle, typeLink } from '#lib/flux.ts';
+	import { safeDescription } from '#lib/sanitize.ts';
 
 	/** Les urgences à montrer, déjà choisies et bornées par la page. */
 	export let items: FluxItem[] = [];

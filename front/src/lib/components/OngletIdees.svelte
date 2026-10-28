@@ -19,15 +19,15 @@
   l'état d'une idée.
 -->
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import type { Idee } from '$lib/api';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import ListeIdees from '$lib/components/ListeIdees.svelte';
-	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
-	import { STATUTS_IDEE } from '$lib/idees';
-	import { enCours } from '$lib/archives';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import type { Idee } from '#lib/api/index.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import ListeIdees from '#lib/components/ListeIdees.svelte';
+	import ListeEtArchives from '#lib/components/ListeEtArchives.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
+	import { STATUTS_IDEE } from '#lib/idees.ts';
+	import { enCours } from '#lib/archives.ts';
 
 	export let idees: Idee[] = [];
 	export let chargement = false;
@@ -104,7 +104,7 @@
 <!--  §0 ter : la boîte de création vient APRÈS les filtres — ce qui qualifie la
       liste reste au-dessus du formulaire ouvert (#1186). `lint:filtre-avant-formulaire`. -->
 {#if showForm}
-	<ChargementDiffere charger={() => import('$lib/components/FormulaireIdee.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/FormulaireIdee.svelte')}>
 		{#snippet contenu(FormulaireIdee)}
 			<FormulaireIdee on:cree on:annule />
 		{/snippet}
@@ -142,7 +142,7 @@
 			>
 				<svelte:fragment slot="formulaire" let:idee>
 					{#key idee.id}
-						<ChargementDiffere charger={() => import('$lib/components/FormulaireIdee.svelte')}>
+						<ChargementDiffere charger={() => import('#lib/components/FormulaireIdee.svelte')}>
 							{#snippet contenu(FormulaireIdee)}
 								<FormulaireIdee
 									{idee}

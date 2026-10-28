@@ -29,7 +29,7 @@
   « rédigé avec l'assistant » — reste `MarqueIA`, qui ne clignote jamais.
 -->
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
 
 	/** Vrai pendant l'appel à l'assistant : ✨ devient ⏳, qui clignote. */
 	export let enCours: boolean;

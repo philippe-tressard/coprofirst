@@ -24,8 +24,8 @@
  * mensonge à l'écran. Les deux moitiés se vérifient donc côté API, où elles sont
  * décidées — cf. `api/tests/test_compteurs_tableau_de_bord.py`.
  */
-import { aRole } from '$lib/stores/auth';
-import type { FluxSante, User } from '$lib/api';
+import { aRole } from '#lib/stores/auth.ts';
+import type { FluxSante, User } from '#lib/api/index.ts';
 
 /** Un décompte affiché sur une pastille. `valeur === 0` → rien ne s'affiche. */
 export interface CompteurRaccourci {
@@ -54,7 +54,7 @@ export interface Raccourci {
 	id: string;
 	libelle: string;
 	href: string;
-	/** Nom Lucide — doit exister dans `$lib/icones-svg.json`, sinon `Icon` retombe en silence sur `help-circle`. */
+	/** Nom Lucide — doit exister dans `#lib/icones-svg.json`, sinon `Icon` retombe en silence sur `help-circle`. */
 	icone: string;
 	/** Variante visuelle ; absente = pastille neutre. */
 	variante?: 'cs' | 'admin';

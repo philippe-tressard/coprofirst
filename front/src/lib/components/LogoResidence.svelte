@@ -16,9 +16,9 @@
   `alt` est vide : le nom de la résidence est toujours écrit à côté.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import { config as configApi } from '$lib/api';
-	import { configStore } from '$lib/stores/pageConfig';
+	import Icon from '#lib/components/Icon.svelte';
+	import { config as configApi } from '#lib/api/index.ts';
+	import { configStore } from '#lib/stores/pageConfig.ts';
 
 	/** Côté affiché, en pixels. */
 	export let taille: number;

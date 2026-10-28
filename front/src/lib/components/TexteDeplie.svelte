@@ -17,7 +17,7 @@
   corps (`lint:entete-carte`), et qui décide qu'un clic dedans ne la replie pas.
 -->
 <script lang="ts">
-	import { safeDescription } from '$lib/sanitize';
+	import { safeDescription } from '#lib/sanitize.ts';
 
 	/** Le texte, simple ou riche — `safeDescription`, comme l'aperçu. */
 	export let contenu: string;

@@ -8,8 +8,8 @@
 //  Seul change ce qu'on retire de quelle liste : c'est le paramètre `retirer`.
 //  Le serveur exige le conseil syndical ou l'admin (`require_cs_or_admin`).
 
-import { documents as documentsApi } from '$lib/api';
-import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
+import { documents as documentsApi } from '#lib/api/index.ts';
+import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
 
 export async function supprimerDocument(
 	id: number,

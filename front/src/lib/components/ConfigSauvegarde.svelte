@@ -1,5 +1,5 @@
 <script lang="ts">
-	import EncartDemo from '$lib/components/EncartDemo.svelte';
+	import EncartDemo from '#lib/components/EncartDemo.svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
 	/**
 	 * Réglage de la sauvegarde quotidienne — heure et rétention.
@@ -34,10 +34,10 @@
 	 * deux tâches distinctes, deux ordonnanceurs — celle-ci tourne dans l'API.
 	 */
 	import { onMount } from 'svelte';
-	import { admin } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { admin } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	//  Les NOMS DU MODÈLE, pas des noms inventés : c'est ce qui manquait.
 	let heure_execution = 3;

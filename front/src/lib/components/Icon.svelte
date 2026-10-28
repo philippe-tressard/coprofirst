@@ -2,7 +2,7 @@
 	export let name: string;
 	export let size: number = 20;
 
-	//  Les tracés vivent dans `$lib/icones-svg.json`, catalogue commun au site et
+	//  Les tracés vivent dans `#lib/icones-svg.json`, catalogue commun au site et
 	//  aux documents imprimables du serveur (`api/app/utils/icones-svg.json`, copie
 	//  octet pour octet, verrouillée par `api/tests/test_icones_svg.py`).
 	//
@@ -15,7 +15,7 @@
 	//  Exception assumée, portée par le tracé lui-même : `whatsapp` n'est pas une
 	//  icône Lucide mais une marque. Son `fill` (vert officiel) et son `stroke="none"`
 	//  neutralisent les attributs de l'enveloppe <svg> plus bas.
-	import icones from '$lib/icones-svg.json';
+	import icones from '#lib/icones-svg.json';
 
 	const icons = icones as Record<string, string>;
 </script>

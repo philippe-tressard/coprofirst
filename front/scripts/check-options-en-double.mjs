@@ -15,7 +15,7 @@
  *
  *  1. `optionsActives(` dans un écran, hors de `BoutonOptions` (le bouton du
  *     geste, qui montre TOUS les glyphes, et c'est son rôle). Une carte passe
- *     par `optionsEnBadge` (`$lib/tickets`), qui retire ce qu'un badge dédié dit.
+ *     par `optionsEnBadge` (`#lib/tickets`), qui retire ce qu'un badge dédié dit.
  *  2. Un badge dédié rendu par une carte sans que son option figure dans
  *     `OPTIONS_RENDUES_AILLEURS` : c'est ce qui fait tenir la liste à jour.
  *  3. Le COMPORTEMENT, exécuté et non relu (`standards/04` §22) : une affaire
@@ -111,7 +111,7 @@ for (const f of fichiers('src')) {
 	if (!appelleOptionsActives(readFileSync(f, 'utf8'))) continue;
 	if (EXCEPTIONS[f]) servies.add(f);
 	else
-		erreurs.push(`${f} — optionsActives( dans un écran : passer par optionsEnBadge ($lib/tickets)`);
+		erreurs.push(`${f} — optionsActives( dans un écran : passer par optionsEnBadge (#lib/tickets)`);
 }
 for (const f of Object.keys(EXCEPTIONS))
 	if (!servies.has(f)) erreurs.push(`${f} — exception qui ne sert plus : la retirer`);

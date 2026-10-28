@@ -8,12 +8,12 @@
   déborder. Le bloc lit le compte dans le store, comme la page le faisait.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import type { MonLot } from '$lib/api';
-	import { currentUser } from '$lib/stores/auth';
-	import { badgesDeRoles, LIBELLES_STATUT } from '$lib/roles';
-	import { fmtDateShort as fmtDate, fmtDatetimeShort as fmtDatetime } from '$lib/date';
-	import { etageLabel, lotTypeLabel } from '$lib/utils';
+	import Badge from '#lib/components/Badge.svelte';
+	import type { MonLot } from '#lib/api/index.ts';
+	import { currentUser } from '#lib/stores/auth.ts';
+	import { badgesDeRoles, LIBELLES_STATUT } from '#lib/roles.ts';
+	import { fmtDateShort as fmtDate, fmtDatetimeShort as fmtDatetime } from '#lib/date.ts';
+	import { etageLabel, lotTypeLabel } from '#lib/utils.ts';
 
 	/** Les lots du compte (`lots.mesList()`), chargés par la page. */
 	export let lots: MonLot[] = [];

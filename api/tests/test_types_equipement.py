@@ -129,7 +129,7 @@ def test_aucun_ecran_ne_recopie_la_table():
             fautifs.append(str(chemin.relative_to(_FRONT_SRC)).replace("\\", "/"))
     assert not fautifs, (
         f"la table des équipements est recopiée dans {fautifs} : elle vit dans "
-        "`$lib/prestataires.ts`, et nulle part ailleurs."
+        "`#lib/prestataires.ts`, et nulle part ailleurs."
     )
 
 

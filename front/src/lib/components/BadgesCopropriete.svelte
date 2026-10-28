@@ -55,28 +55,28 @@
   rendu passe en statut, parce qu'il a existé et qu'il circule.
 -->
 <script lang="ts">
-	import { TYPES_ACCES } from '$lib/types-acces';
+	import { TYPES_ACCES } from '#lib/types-acces.ts';
 	import { onMount } from 'svelte';
-	import ConstatsBadges from '$lib/components/ConstatsBadges.svelte';
+	import ConstatsBadges from '#lib/components/ConstatsBadges.svelte';
 	import {
 		acces as accesApi,
 		admin as adminApi,
 		type AccesAdmin,
 		type ChoixAcces,
 		type LotPourBadge,
-	} from '$lib/api';
-	import { isAdmin } from '$lib/stores/auth';
-	import BoutonNouveau from '$lib/components/BoutonNouveau.svelte';
-	import FormulaireAcces from '$lib/components/FormulaireAcces.svelte';
-	import TableParcAcces from '$lib/components/TableParcAcces.svelte';
-	import { confirmerPuis } from '$lib/confirmation';
-	import { messageErreur, tenter } from '$lib/erreurs';
-	import { comparerParNom, nomAffiche } from '$lib/noms';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
-	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
-	import { ACCES } from '$lib/entites/acces';
+	} from '#lib/api/index.ts';
+	import { isAdmin } from '#lib/stores/auth.ts';
+	import BoutonNouveau from '#lib/components/BoutonNouveau.svelte';
+	import FormulaireAcces from '#lib/components/FormulaireAcces.svelte';
+	import TableParcAcces from '#lib/components/TableParcAcces.svelte';
+	import { confirmerPuis } from '#lib/confirmation.ts';
+	import { messageErreur, tenter } from '#lib/erreurs.ts';
+	import { comparerParNom, nomAffiche } from '#lib/noms.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
+	import { ACCES } from '#lib/entites/acces.ts';
 
 	let vigiks: AccesAdmin[] = [];
 	let telecommandes: AccesAdmin[] = [];
@@ -88,7 +88,7 @@
 
 	//  Deux types, donc deux pastilles plus « Tous » : sous le seuil des listes
 	//  courtes, `ChoixPastilles` s'impose (`ux-patterns`).
-	//  La liste vit dans `$lib/types-acces` : elle était écrite trois fois (#1329).
+	//  La liste vit dans `#lib/types-acces` : elle était écrite trois fois (#1329).
 	const TYPES = TYPES_ACCES;
 	let filtreType = '';
 	let recherche = '';
@@ -102,7 +102,7 @@
 	//  propre, et rien ne le lui permettait.
 	//  La PERSONNE, pas seulement son rendu : `affiche` sert au sélecteur,
 	//  `prenom` et `nom` au classement — qui se fait sur le nom de famille
-	//  (`comparerParNom`, `$lib/noms`). Les confondre revenait à classer
+	//  (`comparerParNom`, `#lib/noms`). Les confondre revenait à classer
 	//  « Alain FAURE » à la lettre A.
 	let porteurs: { id: number; affiche: string; prenom: string; nom: string }[] = [];
 	/**  🔒 Ce que chaque type d'accès a le droit d'ouvrir, par clé de type.
@@ -303,7 +303,7 @@
 		//  chaîne affichée : `porteur_nom` vaut « Alain FAURE », et trier dessus
 		//  rangeait Alain à la lettre A (signalé à l'écran le 15/09/2026).
 		//
-		//  La règle est celle de `$lib/noms.comparerParNom` — la plus déployée du
+		//  La règle est celle de `#lib/noms.comparerParNom` — la plus déployée du
 		//  produit (annuaire, administration, espace CS) —, pas une comparaison
 		//  écrite ici.
 		.sort((x, y) => {

@@ -8,12 +8,12 @@
 //  coupe suit donc une couture existante et non le compteur de lignes.
 //
 //  ⚠️ La surface publique NE BOUGE PAS : `index.ts` réexporte tout, et les
-//  quarante et un `from '$lib/api'` du front ne changent pas d'une ligne.
+//  quarante et un `from '#lib/api/index.ts'` du front ne changent pas d'une ligne.
 import { api, buildQuery, postFormData, BASE } from './client';
 import type { ConstatPatrimoine } from './etat-descriptif';
 import { uploadExcel, type CompteImportTableur } from './documents';
 import type { ExerciceLu, ResumeAffaires, SyntheseAffaire } from './synthese';
-import type { Perimetre as PerimetreDTO } from '$lib/perimetres';
+import type { Perimetre as PerimetreDTO } from '#lib/perimetres/index.ts';
 
 //  ── Ce que le serveur RENVOIE (#1572) ───────────────────────────────────────────
 //
@@ -186,7 +186,7 @@ export type ContratCandidat = {
 /**  Une entrée du carnet d'entretien — un fait daté qui concerne le bâti.
  *
  *   `equipement` porte la VALEUR de `TypeEquipement` (`'ascenseur'`), pas son
- *   libellé : celui-ci vient d'`EQUIPEMENTS` (`$lib/prestataires`), qui est déjà
+ *   libellé : celui-ci vient d'`EQUIPEMENTS` (`#lib/prestataires`), qui est déjà
  *   la table unique et que `test_types_equipement.py` compare au serveur.
  */
 export interface EntreeCarnet {
@@ -419,7 +419,7 @@ export const lots = {
  * Périmètres — l'arborescence « où se situe une demande ».
  *
  * Lecture pour tout utilisateur connecté, écriture réservée à l'administration.
- * Le type `Perimetre` vit dans `$lib/perimetres`, qui n'importe rien : c'est ce
+ * Le type `Perimetre` vit dans `#lib/perimetres`, qui n'importe rien : c'est ce
  * qui permet à `perimetreLabel()` de rester synchrone dans les gabarits.
  */
 /**  Ce qu'une écriture envoie : la lecture rend toujours un `libelle_court`, mais

@@ -9,9 +9,9 @@
  * (mémoire `project_partage_front_api_impossible`) : la copie est tenue par
  * `api/tests/test_avis_seuils_front.py`, qui lit ce fichier.
  */
-import type { Avis } from '$lib/api';
-import type { ClasseGouttiere } from '$lib/gouttiere';
-import { NOM_PLATEFORME, SITE_PLATEFORME } from '$lib/plateforme';
+import type { Avis } from '#lib/api/index.ts';
+import type { ClasseGouttiere } from '#lib/gouttiere.ts';
+import { NOM_PLATEFORME, SITE_PLATEFORME } from '#lib/plateforme.ts';
 
 /** Le site vitrine, tel qu'on le nomme dans une phrase : « coprofirst.fr ». */
 export const VITRINE = new URL(SITE_PLATEFORME).host;

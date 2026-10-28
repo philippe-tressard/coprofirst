@@ -7,7 +7,7 @@
  * seul l'affichage passe par ici.
  *
  * 🔒 Ce module rend du HTML NON assaini. L'appelant le passe à un assainisseur de
- * `$lib/sanitize` dans son gabarit (`{@html safeHtml(html)}`, `npm run lint:html`) —
+ * `#lib/sanitize` dans son gabarit (`{@html safeHtml(html)}`, `npm run lint:html`) —
  * et il le faut : le texte archivé d'une fiche du registre vient d'une AUTRE
  * installation, et `marked` laisse passer le HTML brut qu'un Markdown contient.
  *

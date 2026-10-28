@@ -266,7 +266,7 @@ for (const chemin of tousSvelte) {
 	//  `import type` ne consomme rien : seul un import de VALEUR fait de ce
 	//  fichier un rendu gouverné par la déclaration.
 	const importe = [
-		...brut.matchAll(/import\s+(?!type\b)\{([^}]*)\}\s+from\s+'\$lib\/entites\/[^']+'/g),
+		...brut.matchAll(/import\s+(?!type\b)\{([^}]*)\}\s+from\s+'#lib\/entites\/[^']+'/g),
 	];
 	if (importe.length === 0) continue;
 	consommateurs += 1;

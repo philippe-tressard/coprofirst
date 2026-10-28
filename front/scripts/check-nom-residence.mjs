@@ -11,9 +11,9 @@
  *  affichait le nom de celle-ci chez une autre.
  *
  *  Deux noms, deux sources — jamais un littéral :
- *    - la RÉSIDENCE : `siteNomStore` (`$lib/stores/pageConfig`), repli neutre
- *      `NOM_SITE_PAR_DEFAUT` (`$lib/configSite`) ;
- *    - la PLATEFORME : `$lib/plateforme` — le logiciel s'appelle CoproFirst
+ *    - la RÉSIDENCE : `siteNomStore` (`#lib/stores/pageConfig`), repli neutre
+ *      `NOM_SITE_PAR_DEFAUT` (`#lib/configSite`) ;
+ *    - la PLATEFORME : `#lib/plateforme` — le logiciel s'appelle CoproFirst
  *      (D9), et ce module porte aussi l'adresse du dépôt et la licence en
  *      vigueur.
  *
@@ -59,8 +59,8 @@ const code = controler({
 	ok: 'Nom de la résidence : jamais écrit dans le code du site',
 	ko: 'ligne(s) qui écrivent « hostachy »',
 	conseil:
-		'La résidence : `$siteNomStore` (`$lib/stores/pageConfig`) ; la plateforme : ' +
-		'`$lib/plateforme`. Une exception se déclare dans ce contrôle, avec sa raison.',
+		'La résidence : `$siteNomStore` (`#lib/stores/pageConfig`) ; la plateforme : ' +
+		'`#lib/plateforme`. Une exception se déclare dans ce contrôle, avec sa raison.',
 });
 
 //  Le contenu livré tel quel : le manuel, le manifeste, les icônes.

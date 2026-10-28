@@ -13,13 +13,13 @@
     page, passent par `CaracteristiquesLot` (`lint:caracteristiques-lot`).
 -->
 <script lang="ts">
-	import BadgeStatutBail from '$lib/components/BadgeStatutBail.svelte';
-	import CaracteristiquesLot from '$lib/components/CaracteristiquesLot.svelte';
-	import TableauCharges from '$lib/components/TableauCharges.svelte';
-	import QuestionsLocation from '$lib/components/QuestionsLocation.svelte';
-	import type { BailLocataire, MonLot } from '$lib/api';
-	import { fmtDateShort as fmt } from '$lib/date';
-	import { nomAffiche } from '$lib/noms';
+	import BadgeStatutBail from '#lib/components/BadgeStatutBail.svelte';
+	import CaracteristiquesLot from '#lib/components/CaracteristiquesLot.svelte';
+	import TableauCharges from '#lib/components/TableauCharges.svelte';
+	import QuestionsLocation from '#lib/components/QuestionsLocation.svelte';
+	import type { BailLocataire, MonLot } from '#lib/api/index.ts';
+	import { fmtDateShort as fmt } from '#lib/date.ts';
+	import { nomAffiche } from '#lib/noms.ts';
 
 	/** Le bail du locataire (`bailleur.monBail()`), ou `null` s'il n'en a pas. */
 	export let bail: BailLocataire | null = null;

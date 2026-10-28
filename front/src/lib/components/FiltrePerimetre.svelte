@@ -8,7 +8,7 @@
   filtre du carnet d'entretien, qui listait les BÂTIMENTS : il ne pouvait ni
   proposer « Parking » ou « Caves » — qui n'en sont pas —, ni suivre l'arbre.
 
-  La règle du premier niveau vient de `$lib/perimetres` (`perimetresNiveau1`),
+  La règle du premier niveau vient de `#lib/perimetres` (`perimetresNiveau1`),
   partagée avec `PerimetrePicker` : deux calculs auraient divergé au premier
   périmètre ajouté, c'est-à-dire précisément le jour où ce filtre doit servir.
 
@@ -26,9 +26,13 @@
 
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { perimetresStore } from '$lib/stores/perimetres';
-	import { perimetreLabelUn, perimetresNiveau1, perimetreParDefaut } from '$lib/perimetres';
-	import { relire } from '$lib/utils';
+	import { perimetresStore } from '#lib/stores/perimetres.ts';
+	import {
+		perimetreLabelUn,
+		perimetresNiveau1,
+		perimetreParDefaut,
+	} from '#lib/perimetres/index.ts';
+	import { relire } from '#lib/utils.ts';
 	import Pastille from './Pastille.svelte';
 
 	/**  Le code choisi, ou `null` pour « tout ». C'est un **code de périmètre**

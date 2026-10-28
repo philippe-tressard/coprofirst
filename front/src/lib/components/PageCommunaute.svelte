@@ -15,10 +15,10 @@
   ce qui était exactement le défaut d'origine.
 -->
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import { IDEE_BADGE } from '$lib/idees';
-	import OngletAnnonces from '$lib/components/OngletAnnonces.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import { IDEE_BADGE } from '#lib/idees.ts';
+	import OngletAnnonces from '#lib/components/OngletAnnonces.svelte';
 	import { goto } from '$app/navigation';
 	import {
 		sondages as sondagesApi,
@@ -30,25 +30,36 @@
 		type Signalement,
 		type Sondage,
 		type SondageDetail,
-	} from '$lib/api';
-	import { currentUser, isAdmin, isCS, isGestionnaire, quandAuthResolue } from '$lib/stores/auth';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import { messageErreur, tenter } from '$lib/erreurs';
-	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
-	import { signaler as signalerContenu } from '$lib/signalements';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { essayer } from '$lib/chargement';
-	import ListeSondages from '$lib/components/ListeSondages.svelte';
-	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
-	import OngletIdees from '$lib/components/OngletIdees.svelte';
-	import OngletAvis from '$lib/components/OngletAvis.svelte';
-	import { AVIS } from '$lib/entites/avis';
-	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
-	import { cibleDuHash, revelerCible } from '$lib/deepLink';
-	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
-	import PanneauModeration from '$lib/components/PanneauModeration.svelte';
-	import { routeOnglet } from '$lib/routes-onglets';
+	} from '#lib/api/index.ts';
+	import {
+		currentUser,
+		isAdmin,
+		isCS,
+		isGestionnaire,
+		quandAuthResolue,
+	} from '#lib/stores/auth.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
+	import { messageErreur, tenter } from '#lib/erreurs.ts';
+	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
+	import { signaler as signalerContenu } from '#lib/signalements.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { essayer } from '#lib/chargement.ts';
+	import ListeSondages from '#lib/components/ListeSondages.svelte';
+	import ListeEtArchives from '#lib/components/ListeEtArchives.svelte';
+	import OngletIdees from '#lib/components/OngletIdees.svelte';
+	import OngletAvis from '#lib/components/OngletAvis.svelte';
+	import { AVIS } from '#lib/entites/avis.ts';
+	import { marquerDonneesAffichees, trackTabView } from '#lib/telemetry.ts';
+	import { cibleDuHash, revelerCible } from '#lib/deepLink.ts';
+	import BarreOnglets from '#lib/components/BarreOnglets.svelte';
+	import PanneauModeration from '#lib/components/PanneauModeration.svelte';
+	import { routeOnglet } from '#lib/routes-onglets.ts';
 
 	$: _pc = getPageConfig($configStore, 'communaute', defautsDePage('communaute'));
 	$: _siteNom = $siteNomStore;
@@ -73,19 +84,12 @@
 
 	//  🔴 La partition courants / Archives est portée par `ListeEtArchives`, sur
 	//  le `s.archivee` que le SERVEUR calcule (`app/utils/archivage.py`, #515) :
-	//  30 jours après la date de clôture, délai réglable en administration. La
-	//  recalculer ici en ferait une seconde règle — c'est exactement ce que #468 a
-	//  retiré pour `cloture`, que la liste comparait à l'heure LOCALE du navigateur
-	//  quand le serveur date en UTC.
+	//  la recalculer ici en ferait une seconde règle (délai réglable en admin).
 	let sondagesLoading = true;
 	let showFormSondage = false;
 
-	//  « Ce sondage est-il clos ? » n'est PLUS calculé ici : le serveur le dit dans
-	//  `s.cloture`, par la même `sondage_clos()` que la fiche, le vote et le fil
-	//  (#468). La règle locale comparait `cloture_le` à l'heure LOCALE du
-	//  navigateur quand le serveur date en UTC — un sondage clôturant à minuit
-	//  était clos ou non selon le fuseau du lecteur. Un écran ne tranche pas ce
-	//  genre de question (`ux-patterns` §16).
+	//  « Clos ? » se lit dans `s.cloture`, que le SERVEUR calcule (#468) : comparer
+	//  `cloture_le` à l'heure du navigateur le rendait fonction du fuseau (§16).
 
 	//  La correction d'un sondage (#783). L'état vit ICI, pas dans
 	//  `ListeSondages` : celui-ci est rendu DEUX fois (courants et Archives), et
@@ -232,7 +236,7 @@
 		[signalements, erreurSignalements] = await essayer(signalementsApi.liste('en_attente'), []);
 	}
 
-	//  Le geste lui-même vit dans `$lib/signalements` : il était écrit à
+	//  Le geste lui-même vit dans `#lib/signalements` : il était écrit à
 	//  l'identique ici et dans `sondages/[id]`. Ne reste que ce qui est PROPRE à
 	//  cet écran — recharger la liste de modération quand on est au CS.
 	const signaler = (cibleType: string, cibleId: number) =>
@@ -371,7 +375,7 @@
 
 	{#if onglet === 'sondages'}
 		{#if showFormSondage && $isCS}
-			<ChargementDiffere charger={() => import('$lib/components/FormulaireSondage.svelte')}>
+			<ChargementDiffere charger={() => import('#lib/components/FormulaireSondage.svelte')}>
 				{#snippet contenu(FormulaireSondage)}
 					<FormulaireSondage
 						on:cree={async () => {
@@ -420,7 +424,7 @@
 							{#if editSondage}
 								{#key editSondage.id}
 									<ChargementDiffere
-										charger={() => import('$lib/components/FormulaireSondage.svelte')}
+										charger={() => import('#lib/components/FormulaireSondage.svelte')}
 									>
 										{#snippet contenu(FormulaireSondage)}
 											<FormulaireSondage

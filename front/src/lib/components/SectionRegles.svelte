@@ -54,8 +54,8 @@
 		reglesResidence as reglesApi,
 		type Document,
 		type RegleResidenceEcrite,
-	} from '$lib/api';
-	import { essayer } from '$lib/chargement';
+	} from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
 
 	/** Les règles et leurs annexes ; un échec des annexes les laisse vides. */
 	export function lireRegles() {
@@ -69,21 +69,21 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { attacherApres } from '$lib/fichiers';
+	import { attacherApres } from '#lib/fichiers.ts';
 	import ListeDocuments from './ListeDocuments.svelte';
 	import type { PiecesFiche } from './PiecesJointesFiche.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import { confirmer, SUPPRESSION } from '$lib/confirmation';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import type { ClasseGouttiere } from '$lib/gouttiere';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { isCS } from '$lib/stores/auth';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { confirmer, SUPPRESSION } from '#lib/confirmation.ts';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import type { ClasseGouttiere } from '#lib/gouttiere.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { isCS } from '#lib/stores/auth.ts';
 	import EtatListe from './EtatListe.svelte';
 	import ApercuCarte from './ApercuCarte.svelte';
 	import EnteteCarte from './EnteteCarte.svelte';
 	import IconeAction from './IconeAction.svelte';
 	import TexteDeplie from './TexteDeplie.svelte';
-	import { basculer } from '$lib/accordeon';
+	import { basculer } from '#lib/accordeon.ts';
 	import FormulaireDocument from './FormulaireDocument.svelte';
 
 	/** La lecture lancée par la page, prise une fois (puis remise à `null`). */
@@ -107,7 +107,7 @@
 	let regleTitre = '';
 	let regleContenu = '';
 	let savingRegle = false;
-	//  UNE règle dépliée à la fois (`$lib/accordeon`).
+	//  UNE règle dépliée à la fois (`#lib/accordeon`).
 	let deplie: number | null = null;
 	/** Les annexes, rangées sous leur règle ; un échec les laisse vides. */
 	let annexes = new Map<number, Document[]>();

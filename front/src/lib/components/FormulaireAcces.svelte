@@ -24,19 +24,19 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import CadreFormulaire from '$lib/components/CadreFormulaire.svelte';
-	import PerimetrePicker from '$lib/components/PerimetrePicker.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import { libelleLotPourBadge, lotsPourBadge, type LotPourBadge } from '$lib/imports-acces';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import { ACCES } from '$lib/entites/acces';
-	import { STATUT_ACCES_OPTIONS } from '$lib/types-acces';
-	import { sectionPresente, type Etat } from '$lib/entites/types';
-	import { pliageDe, requisDe } from '$lib/pliage';
-	import { acces as apiAcces, type ChoixAcces, type PorteProposee } from '$lib/api/acces';
-	import { perimetreLabelUn } from '$lib/perimetres';
+	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
+	import PerimetrePicker from '#lib/components/PerimetrePicker.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import { libelleLotPourBadge, lotsPourBadge, type LotPourBadge } from '#lib/imports-acces.ts';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import { ACCES } from '#lib/entites/acces.ts';
+	import { STATUT_ACCES_OPTIONS } from '#lib/types-acces.ts';
+	import { sectionPresente, type Etat } from '#lib/entites/types.ts';
+	import { pliageDe, requisDe } from '#lib/pliage.ts';
+	import { acces as apiAcces, type ChoixAcces, type PorteProposee } from '#lib/api/acces.ts';
+	import { perimetreLabelUn } from '#lib/perimetres/index.ts';
 
 	const dispatch = createEventDispatcher<{ annule: void; enregistre: void }>();
 
@@ -189,7 +189,7 @@
 			pliable={pliageDe(ACCES, 'suivi')}
 			rempli={!!saisie.statut}
 		>
-			<!--  Les états d'un accès, libellé compris, viennent de `$lib/types-acces`
+			<!--  Les états d'un accès, libellé compris, viennent de `#lib/types-acces`
 			      (#1575). Trois valeurs : sous le seuil des listes courtes, donc des
 			      pastilles (`ux-patterns` §0). -->
 			<ChoixPastilles options={STATUT_ACCES_OPTIONS} bind:valeur={saisie.statut} tous={false} />

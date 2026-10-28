@@ -6,7 +6,7 @@
 //  ne s'écrit qu'une fois. Les couleurs restent les jetons `--serie-*` et
 //  `--palier-*` de `socle.css` (`test_teintes_repartition.py`).
 
-import type { TrancheRepartition } from '$lib/api';
+import type { TrancheRepartition } from '#lib/api/index.ts';
 
 /** La légende d'un graphique : chaque tranche une fois, dans l'ordre où elles paraissent. */
 export function legende(tranches: readonly TrancheRepartition[][]): TrancheRepartition[] {

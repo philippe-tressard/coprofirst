@@ -23,7 +23,7 @@
   section ne connaît aucune API et ne doit pas en connaître.
 -->
 <script lang="ts">
-	import Compte from '$lib/components/Compte.svelte';
+	import Compte from '#lib/components/Compte.svelte';
 
 	/** L'intitulé, emoji compris — c'est l'appelant qui nomme sa section. */
 	export let titre: string;
@@ -34,7 +34,7 @@
 	/** Déplié ? Lié, pour que l'appelant puisse charger au premier dépliage. */
 	export let ouvert = false;
 	/**  Le clic, quand c'est l'APPELANT qui décide de l'ouverture : plusieurs
-	 *   sections voisines en accordéon (`$lib/accordeon`, règle 17) — une seule
+	 *   sections voisines en accordéon (`#lib/accordeon`, règle 17) — une seule
 	 *   dépliée à la fois. Absent : la section bascule seule, comme avant. */
 	export let surBascule: (() => void) | null = null;
 	/**  La section fait partie d'une SÉRIE de bandeaux qui forment tout un écran

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- *  Self-test de la **teinte d'une pastille de périmètre** (`$lib/perimetres/teinte`).
+ *  Self-test de la **teinte d'une pastille de périmètre** (`#lib/perimetres/teinte`).
  *
  *  ## La règle, arbitrée à l'écran
  *

@@ -7,7 +7,7 @@
 //  coupe suit donc une couture existante et non le compteur de lignes.
 //
 //  ⚠️ La surface publique NE BOUGE PAS : `index.ts` réexporte tout, et les
-//  quarante et un `from '$lib/api'` du front ne changent pas d'une ligne.
+//  quarante et un `from '#lib/api/index.ts'` du front ne changent pas d'une ligne.
 import { api, BASE, buildQuery, postFormData } from './client';
 import type { ConsommationIA, UsageIA } from './assistant';
 import type { ServiceCopropriete } from './services';
@@ -45,7 +45,7 @@ import type {
 } from './types-administration';
 
 //  Les types de ce que ces routes RENDENT vivent à côté (#1572) : réexportés ici,
-//  ils parviennent à `index.ts`, donc à tout `from '$lib/api'`.
+//  ils parviennent à `index.ts`, donc à tout `from '#lib/api/index.ts'`.
 export type * from './types-administration';
 
 export const annuaireAdmin = {

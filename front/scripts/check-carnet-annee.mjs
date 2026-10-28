@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Le filtre par année du carnet d'entretien fait-il ce que le décret demande ?
- * (24/09/2026) — `$lib/carnet` est transpilé et EXÉCUTÉ, jamais relu.
+ * (24/09/2026) — `#lib/carnet` est transpilé et EXÉCUTÉ, jamais relu.
  *
  * Décret n° 2001-477 : les travaux se datent par leur « année de réalisation »
  * (art. 4) ; les contrats EN VIGUEUR y figurent (art. 3 et 4) ; aucune durée de
@@ -22,7 +22,7 @@ const { anneesDuCarnet, entreesDeLAnnee } = await chargerModule(
 );
 if (typeof anneesDuCarnet !== 'function' || typeof entreesDeLAnnee !== 'function') {
 	echouer(
-		'Cas zéro : `$lib/carnet` n’exporte plus ses deux fonctions — ce contrôle ne mesure plus rien.',
+		'Cas zéro : `#lib/carnet` n’exporte plus ses deux fonctions — ce contrôle ne mesure plus rien.',
 	);
 }
 

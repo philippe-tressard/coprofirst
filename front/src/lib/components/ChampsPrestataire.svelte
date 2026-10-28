@@ -17,21 +17,21 @@
 </script>
 
 <script lang="ts">
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
-	import { pliageDe, requisDe } from '$lib/pliage';
-	import SectionTitre from '$lib/components/SectionTitre.svelte';
-	import { PRESTATAIRE } from '$lib/entites/prestataire';
-	import SectionDescription from '$lib/components/SectionDescription.svelte';
-	import SectionEquipement from '$lib/components/SectionEquipement.svelte';
-	import { contexteAssistant } from '$lib/assistant';
+	import { pliageDe, requisDe } from '#lib/pliage.ts';
+	import SectionTitre from '#lib/components/SectionTitre.svelte';
+	import { PRESTATAIRE } from '#lib/entites/prestataire.ts';
+	import SectionDescription from '#lib/components/SectionDescription.svelte';
+	import SectionEquipement from '#lib/components/SectionEquipement.svelte';
+	import { contexteAssistant } from '#lib/assistant.ts';
 	import {
 		contactRenseigne,
 		contactVide,
 		type ContactSaisi,
 		type FormulairePrestataire,
-	} from '$lib/prestataires';
-	import { sectionPresente, type Etat } from '$lib/entites/types';
+	} from '#lib/prestataires.ts';
+	import { sectionPresente, type Etat } from '#lib/entites/types.ts';
 
 	export let prestForm: FormulairePrestataire;
 	export let prestContacts: ContactSaisi[] = [];

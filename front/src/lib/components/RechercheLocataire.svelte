@@ -28,8 +28,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	import { bailleur as bailApi, type LocataireTrouve } from '$lib/api';
-	import { nomAffiche } from '$lib/noms';
+	import { bailleur as bailApi, type LocataireTrouve } from '#lib/api/index.ts';
+	import { nomAffiche } from '#lib/noms.ts';
 
 	/** Racine des identifiants — l'hôte la fournit, il en a déjà une. */
 	export let uid: string;

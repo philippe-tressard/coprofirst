@@ -1,4 +1,4 @@
-import { parAttribut } from '$lib/table-statuts';
+import { parAttribut } from '#lib/table-statuts.ts';
 
 //  Nom de chaque tâche planifiée — SOURCE UNIQUE.
 //

@@ -63,7 +63,7 @@ def nom_abrege(prenom: Optional[str], nom: Optional[str]) -> str:
     initiale plutôt qu'à son nom entier.
 
     ⚠️ Serveur seul : l'écran reçoit le nom déjà rendu, il ne le compose pas —
-    il n'y a donc pas de jumeau dans `$lib/noms.ts`.
+    il n'y a donc pas de jumeau dans `#lib/noms.ts`.
     """
     prenom = (prenom or "").strip()
     nom = (nom or "").strip()

@@ -4,7 +4,7 @@
   Extraite de `prestataires/+page.svelte` le 28/09/2026 (#1444) : le filtre
   « sous contrat » l'aurait fait grossir, et la page dépasse déjà 500 lignes
   (`standards/02` §6, « on découpe QUAND on y touche »). La règle de tri, elle,
-  vit dans `$lib/prestataires` (`filtrerPrestataires`) — le composant ne fait
+  vit dans `#lib/prestataires` (`filtrerPrestataires`) — le composant ne fait
   que la saisir.
 
   Les rangées et le champ « Catégorie » du formulaire : UN motif, porté par
@@ -29,7 +29,11 @@
 	import ChoixPastilles from './ChoixPastilles.svelte';
 	import ChampRecherche from './ChampRecherche.svelte';
 	import ReglagesListe from './ReglagesListe.svelte';
-	import { FILTRES_CONTRAT, TYPES_PRESTATAIRE, type FiltresPrestataires } from '$lib/prestataires';
+	import {
+		FILTRES_CONTRAT,
+		TYPES_PRESTATAIRE,
+		type FiltresPrestataires,
+	} from '#lib/prestataires.ts';
 
 	export let filtres: FiltresPrestataires;
 	/** Combien l'annuaire en montre — porté par la pastille retenue de chaque rangée. */

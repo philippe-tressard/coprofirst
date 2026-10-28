@@ -9,9 +9,14 @@
  * l'assistant) : les contextes de build `./api` et `./front` interdisent le
  * partage d'un fichier. Les deux disent la même chose, et chacun a son test.
  */
-import { fmtNombre } from '$lib/utils';
-import { CATEGORIES_TICKET, STATUT_TICKET_LABELS } from '$lib/tickets';
-import type { EtapeMoyenne, EtapeSynthese, MetriquesSynthese, ResumeAffaires } from '$lib/api';
+import { fmtNombre } from '#lib/utils.ts';
+import { CATEGORIES_TICKET, STATUT_TICKET_LABELS } from '#lib/tickets.ts';
+import type {
+	EtapeMoyenne,
+	EtapeSynthese,
+	MetriquesSynthese,
+	ResumeAffaires,
+} from '#lib/api/index.ts';
 
 /** Le temps passé close avant une réouverture — une étape à part (serveur). */
 export const CLOSE_AVANT_REOUVERTURE = 'close_avant_reouverture';

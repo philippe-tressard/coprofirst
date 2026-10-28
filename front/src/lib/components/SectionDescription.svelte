@@ -38,12 +38,12 @@
   — le bouton ne porte que la bascule.
 -->
 <script lang="ts">
-	import { richEmpty } from '$lib/publications';
-	import RichEditor from '$lib/components/RichEditor.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import AssistantDescription from '$lib/components/AssistantDescription.svelte';
-	import BoutonAssistant from '$lib/components/BoutonAssistant.svelte';
-	import type { ContexteAssistant } from '$lib/assistant';
+	import { richEmpty } from '#lib/publications.ts';
+	import RichEditor from '#lib/components/RichEditor.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import AssistantDescription from '#lib/components/AssistantDescription.svelte';
+	import BoutonAssistant from '#lib/components/BoutonAssistant.svelte';
+	import type { ContexteAssistant } from '#lib/assistant.ts';
 
 	/** Préfixe des identifiants — l'écran en ouvre parfois plusieurs à la fois. */
 	export let idPrefixe: string;

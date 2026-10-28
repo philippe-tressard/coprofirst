@@ -17,22 +17,22 @@
   page arrivent en `valeurs`, tout le reste vit ici.
 -->
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { messageErreur } from '$lib/erreurs';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import { onMount } from 'svelte';
-	import { config as configApi } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { configStore } from '$lib/stores/pageConfig';
-	import Icon from '$lib/components/Icon.svelte';
-	import ChampIcone from '$lib/components/ChampIcone.svelte';
-	import RichEditor from '$lib/components/RichEditor.svelte';
+	import { config as configApi } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { configStore } from '#lib/stores/pageConfig.ts';
+	import Icon from '#lib/components/Icon.svelte';
+	import ChampIcone from '#lib/components/ChampIcone.svelte';
+	import RichEditor from '#lib/components/RichEditor.svelte';
 	//  ⚠️ `stripHtml` et non une copie locale : la page portait un
 	//  `stripHtmlPreview` maison qui ne décodait pas les entités HTML
 	//  (`&nbsp;`, `&amp;`). La version partagée fait plus, et elle est déjà
 	//  employée par tous les aperçus du site.
-	import { stripHtml } from '$lib/utils';
-	import { PAGES, configDepuisPage, ordonnerPages, type PageDef } from '$lib/pages';
-	import { fusionnerSurcharge } from '$lib/pages-surcharge';
+	import { stripHtml } from '#lib/utils.ts';
+	import { PAGES, configDepuisPage, ordonnerPages, type PageDef } from '#lib/pages.ts';
+	import { fusionnerSurcharge } from '#lib/pages-surcharge.ts';
 
 	/** La configuration complète, lue une fois par la page (`adminCfg`). */
 	export let valeurs: Record<string, string> = {};
@@ -51,7 +51,7 @@
 	 * de la page, jamais une valeur. Les reprendre de l'enregistrement donnait
 	 * deux pages homonymes et un `each_key_duplicate` — écran figé (16/09/2026).
 	 *
-	 * Le repli et les rattrapages d'onglets vivent dans `$lib/pages-surcharge`,
+	 * Le repli et les rattrapages d'onglets vivent dans `#lib/pages-surcharge`,
 	 * avec ceux du store : ils y étaient recopiés au caractère près.
 	 */
 	function pageAffichee(saved: unknown, defauts: PageDef): PageDef {
@@ -81,7 +81,7 @@
 		expandedPages = expandedPages.has(id) ? new Set() : new Set([id]);
 	}
 	async function savePageConfig(pg: PageDef) {
-		// Conversion partagée avec `defautsDePage` (`$lib/pages.ts`, #420) ; `pg` et non son id : ce sont les valeurs ÉDITÉES qui partent.
+		// Conversion partagée avec `defautsDePage` (`#lib/pages.ts`, #420) ; `pg` et non son id : ce sont les valeurs ÉDITÉES qui partent.
 		const val = JSON.stringify(configDepuisPage(pg));
 		try {
 			await configApi.save({ [`page_config_${pg.id}`]: val });

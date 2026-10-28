@@ -8,8 +8,8 @@
  *  les rôles, et exige de chaque badge un fond qui ne soit pas transparent —
  *  la base `.badge` seule n'en pose aucun.
  *
- *  ⚠️ Les rôles se lisent dans `$lib/roles` PAR LE NAVIGATEUR, servis par Vite :
- *  importé ici, le module tirerait `$lib`, que Playwright ne résout qu'après un
+ *  ⚠️ Les rôles se lisent dans `#lib/roles` PAR LE NAVIGATEUR, servis par Vite :
+ *  importé ici, le module tirerait `#lib`, que Playwright ne résout qu'après un
  *  `svelte-kit sync` — absent du job e2e, où la collecte de TOUTE la suite
  *  échouerait. Recopier la liste, elle, divergerait au premier rôle ajouté.
  */
@@ -23,7 +23,7 @@ test('Admin › À traiter : chaque badge de rôle a un fond', async ({ page }) 
 		async () => (await import('/src/lib/roles.ts')).LIBELLES_ROLE,
 	);
 	const ROLES = Object.keys(LIBELLES_ROLE);
-	expect(ROLES.length, 'rôles lus dans $lib/roles').toBeGreaterThan(1);
+	expect(ROLES.length, 'rôles lus dans #lib/roles').toBeGreaterThan(1);
 
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;

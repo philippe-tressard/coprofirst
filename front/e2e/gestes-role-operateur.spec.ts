@@ -2,7 +2,7 @@
  *  **Accorder ou retirer les rôles Opérateur et Admin** dans Admin › Utilisateurs.
  *
  *  L'écran propose ce que le serveur accepte, ni plus ni moins —
- *  `gestesAdminOperateur` (`$lib/droits`) contre `_exiger_geste_operateur` et
+ *  `gestesAdminOperateur` (`#lib/droits`) contre `_exiger_geste_operateur` et
  *  `_exiger_un_autre_titulaire` (`api/app/routers/admin/utilisateurs.py`,
  *  éprouvés par `api/tests/test_role_operateur_attribution.py`) :
  *  tout admin accorde Opérateur à un admin, lui-même compris ; Admin et

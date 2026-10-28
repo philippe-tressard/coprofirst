@@ -49,7 +49,7 @@ def _collecter_fiches(ctx: ContexteFlux) -> list[FluxItem]:
             titre=pr.nom,
             #  L'équipement part en VALEUR (`meta`) et l'écran le traduit : il
             #  s'affichait « interphone_digicode », deux fois (26/09/2026). Les
-            #  libellés vivent côté front (`$lib/prestataires`, `EQUIPEMENTS`),
+            #  libellés vivent côté front (`#lib/prestataires`, `EQUIPEMENTS`),
             #  comparés au serveur par `test_types_equipement.py`.
             detail="Nouveau prestataire",
             icon="🛠️",

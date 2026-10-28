@@ -19,7 +19,7 @@
   détour d'un déplacement de fichier qui la ferait passer pour une décision.
 -->
 <script lang="ts">
-	import TelemetrieRGPD from '$lib/components/TelemetrieRGPD.svelte';
+	import TelemetrieRGPD from '#lib/components/TelemetrieRGPD.svelte';
 </script>
 
 <!-- ── RGPD ─────────────────────────────────────────────────────────────── -->

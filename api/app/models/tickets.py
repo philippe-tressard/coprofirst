@@ -57,7 +57,7 @@ class StatutTicket(str, Enum):
 
     C'est cette énumération qui fait foi, partout : les deux endpoints qui
     changent l'état d'un ticket valident par elle (`TicketUpdate.statut`,
-    `TicketEvolutionCreate.nouveau_statut`), et `$lib/tickets.ts` lui répond
+    `TicketEvolutionCreate.nouveau_statut`), et `#lib/tickets.ts` lui répond
     côté écran. `api/tests/test_statuts_tickets.py` échoue si l'un des deux
     dérive.
     """
@@ -90,7 +90,7 @@ STATUTS_TICKET_CLOS: tuple[str, ...] = (StatutTicket.résolu.value, StatutTicket
 #: Les états où une Étude & travaux sans choix du conseil sort du conseil pour
 #: tous les copropriétaires (standard du 30/09/2026, `visibility/defauts_affaire`) :
 #: à l'AG, où ils la votent, chez le prestataire, et close. Miroir à l'écran :
-#: `STATUTS_ETUDE_OUVERTE` (`$lib/tickets`).
+#: `STATUTS_ETUDE_OUVERTE` (`#lib/tickets`).
 STATUTS_ETUDE_OUVERTE: frozenset[str] = frozenset(
     {StatutTicket.en_ag.value, StatutTicket.chez_prestataire.value, *STATUTS_TICKET_CLOS}
 )

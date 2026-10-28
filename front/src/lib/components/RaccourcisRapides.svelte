@@ -4,11 +4,11 @@
 	//  peu moins — le découpage se fait au fil de l'eau, sur ce qu'on touche.
 	//
 	//  Ce composant ne décide de RIEN : qui voit quoi et d'où vient chaque nombre
-	//  sont déclarés dans `$lib/raccourcis.ts`. Il ne fait que rendre la table.
-	import Icon from '$lib/components/Icon.svelte';
-	import { currentUser } from '$lib/stores/auth';
-	import { raccourcisVisibles } from '$lib/raccourcis';
-	import type { FluxSante } from '$lib/api';
+	//  sont déclarés dans `#lib/raccourcis.ts`. Il ne fait que rendre la table.
+	import Icon from '#lib/components/Icon.svelte';
+	import { currentUser } from '#lib/stores/auth.ts';
+	import { raccourcisVisibles } from '#lib/raccourcis.ts';
+	import type { FluxSante } from '#lib/api/index.ts';
 
 	export let sante: FluxSante;
 	/** Anime l'apparition, comme les autres sections de la page. */

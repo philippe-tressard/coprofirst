@@ -23,9 +23,9 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { config as configApi } from '$lib/api';
-	import { loadSiteConfig, getSiteNom, siteNomStore, configStore } from '$lib/stores/pageConfig';
-	import { safeHtml } from '$lib/sanitize';
+	import { config as configApi } from '#lib/api/index.ts';
+	import { loadSiteConfig, getSiteNom, siteNomStore, configStore } from '#lib/stores/pageConfig.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
 
 	/** Le titre affiché, et repris dans l'onglet du navigateur. */
 	export let titre: string;

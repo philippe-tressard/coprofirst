@@ -32,12 +32,12 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { prestataires as prestApi, type Notation } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { confirmer } from '$lib/confirmation';
-	import { fmtDate } from '$lib/date';
-	import { etoiles, moyenneNotes } from '$lib/notations';
+	import { prestataires as prestApi, type Notation } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { etoiles, moyenneNotes } from '#lib/notations.ts';
 	import IconeAction from './IconeAction.svelte';
 
 	/** Les notations de CE prestataire, déjà filtrées par l'appelant. */

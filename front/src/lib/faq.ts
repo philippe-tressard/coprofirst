@@ -10,7 +10,7 @@
  * ⚠️ Les catégories sont du TEXTE administrable, pas une énumération : on les
  * reconnaît donc par les mots qu'elles portent, accents et casse repliés.
  */
-import { replier } from '$lib/texte';
+import { replier } from '#lib/texte.ts';
 
 export function normalizeCategorieLabel(cat: string | null | undefined): string {
 	const original = cat ?? 'Général';

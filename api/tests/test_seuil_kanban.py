@@ -64,7 +64,7 @@ _SOURCES = [
 
 
 def _constante_seuil() -> int:
-    """`SEUIL_KANBAN_ETROIT` dans `$lib/kanban.ts` — le seuil du condensé."""
+    """`SEUIL_KANBAN_ETROIT` dans `#lib/kanban.ts` — le seuil du condensé."""
     fichier = _FRONT / "lib" / "kanban.ts"
     assert fichier.exists(), f"{fichier} est introuvable — ce test ne mesure plus rien."
     m = re.search(

@@ -1,22 +1,22 @@
 /**
  * La pastille de lecture d'un objet ENREGISTRÉ — une affaire, et depuis #1373
- * une petite annonce, une idée ou un sondage — `$lib/lecture` appliqué à lui.
+ * une petite annonce, une idée ou un sondage — `#lib/lecture` appliqué à lui.
  *
- * Séparé de `$lib/lecture` pour une seule raison : trancher « le périmètre
+ * Séparé de `#lib/lecture` pour une seule raison : trancher « le périmètre
  * est-il restreint ? » demande l'ARBRE des périmètres, un état chargé à
  * l'exécution que le contrôle `lint:lecture` n'a pas. Le calcul reste pur
  * là-bas ; ici, on ne fait que lui fournir ses entrées.
  */
-import { concerneTous } from '$lib/perimetres';
+import { concerneTous } from '#lib/perimetres/index.ts';
 import {
 	destinatairesParDefaut,
 	lectureCiblee,
 	lectureDe,
 	type EntreeLecture,
 	type Lecture,
-} from '$lib/lecture';
-import { estActualite } from '$lib/tickets';
-import type { Ticket } from '$lib/api';
+} from '#lib/lecture.ts';
+import { estActualite } from '#lib/tickets.ts';
+import type { Ticket } from '#lib/api/index.ts';
 
 /** Ce que le FORMULAIRE sait de la nature — la pastille de sa section. */
 export type NatureLue = {

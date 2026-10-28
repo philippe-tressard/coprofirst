@@ -152,7 +152,7 @@ let code = controler({
 	ok: 'Badges : aucune teinte interpolée hors de `Badge`',
 	ko: 'classe(s) `badge` interpolée(s) — l’écran devient aveugle à `lint:css-orphelin`',
 	conseil:
-		'Employer `<Badge teinte={…}>` (`$lib/components/Badge.svelte`) ; `petit` pour le cran `--fs-2xs`.',
+		'Employer `<Badge teinte={…}>` (`#lib/components/Badge.svelte`) ; `petit` pour le cran `--fs-2xs`.',
 });
 if (process.argv.includes('--selftest')) {
 	code = selftestConcordance() || code;

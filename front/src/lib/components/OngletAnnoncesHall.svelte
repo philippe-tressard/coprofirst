@@ -32,18 +32,18 @@
   refaite deux fois depuis.
 -->
 <script lang="ts">
-	import Pastille from '$lib/components/Pastille.svelte';
+	import Pastille from '#lib/components/Pastille.svelte';
 	import { onMount } from 'svelte';
-	import FormulaireAnnonceHall from '$lib/components/FormulaireAnnonceHall.svelte';
-	import HistoriqueAnnoncesHall from '$lib/components/HistoriqueAnnoncesHall.svelte';
-	import { MAX_PHOTOS_AFFICHE } from '$lib/annonces';
-	import { annoncesHall as annoncesHallApi } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import type { SourceAffiche } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { stripHtml, perimetreDefautListe } from '$lib/utils';
-	import { fichiersApi } from '$lib/api';
-	import { essayer } from '$lib/chargement';
+	import FormulaireAnnonceHall from '#lib/components/FormulaireAnnonceHall.svelte';
+	import HistoriqueAnnoncesHall from '#lib/components/HistoriqueAnnoncesHall.svelte';
+	import { MAX_PHOTOS_AFFICHE } from '#lib/annonces.ts';
+	import { annoncesHall as annoncesHallApi } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import type { SourceAffiche } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { stripHtml, perimetreDefautListe } from '#lib/utils.ts';
+	import { fichiersApi } from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
 
 	//  L'onglet s'amorce SEUL. Avant, la page appelait `loadAnnoncesHall()` et
 	//  `loadAhPublications()` à deux endroits (au montage et au clic d'onglet) :

@@ -14,8 +14,8 @@
   à une taille qui y laisse une marge. 🔒 `e2e/logo-menu.spec.ts`
 -->
 <script lang="ts">
-	import LogoResidence from '$lib/components/LogoResidence.svelte';
-	import { siteNomStore } from '$lib/stores/pageConfig';
+	import LogoResidence from '#lib/components/LogoResidence.svelte';
+	import { siteNomStore } from '#lib/stores/pageConfig.ts';
 
 	/** `barre` : la barre latérale, logo au-dessus du nom ; `entete` : l'en-tête mobile, en ligne. */
 	export let variante: 'barre' | 'entete';

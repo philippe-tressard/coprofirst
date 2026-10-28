@@ -37,7 +37,7 @@
 <script lang="ts">
 	import EncartDemo from './EncartDemo.svelte';
 	import { onMount } from 'svelte';
-	import { amenerEnVue } from '$lib/accordeon';
+	import { amenerEnVue } from '#lib/accordeon.ts';
 
 	export let titre: string;
 	/**  Le cadre visible — une carte blanche avec sa bordure.
@@ -113,7 +113,7 @@
 	$: if (monte && cle !== undefined) ramener(cle);
 
 	//  La règle — le HAUT dans la fenêtre, sous l'en-tête fixe — vit dans
-	//  `$lib/accordeon` depuis que l'accordéon en a eu besoin (30/09/2026).
+	//  `#lib/accordeon` depuis que l'accordéon en a eu besoin (30/09/2026).
 	function ramener(_cle: unknown) {
 		amenerEnVue(cadre);
 	}

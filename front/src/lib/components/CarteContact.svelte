@@ -26,7 +26,7 @@
   autres `Carte*` du dossier : la structure appartient au composant, le contenu
   variable arrive par les props et le slot.
 
-  ⚠️ `nomAffiche` n'est PAS recopié ici : il vient de `$lib/noms`, comme partout
+  ⚠️ `nomAffiche` n'est PAS recopié ici : il vient de `#lib/noms`, comme partout
   ailleurs. Une carte qui composerait elle-même « Prénom NOM » divergerait du
   reste du site au premier changement de convention — et `npm run lint:noms` le
   refuse.
@@ -48,9 +48,9 @@
 </script>
 
 <script lang="ts">
-	import Avatar from '$lib/components/Avatar.svelte';
-	import MedaillonRole from '$lib/components/MedaillonRole.svelte';
-	import { nomAffiche } from '$lib/noms';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import MedaillonRole from '#lib/components/MedaillonRole.svelte';
+	import { nomAffiche } from '#lib/noms.ts';
 
 	/** La personne : ce qu'il faut pour l'avatar et le nom. */
 	export let personne: {

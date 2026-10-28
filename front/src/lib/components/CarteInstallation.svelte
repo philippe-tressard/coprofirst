@@ -30,13 +30,13 @@
 		type ConditionsInscription,
 		type EtatInstallation,
 		type InscriptionInstallation,
-	} from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import { fmtDatetime } from '$lib/date';
-	import { nomAffiche } from '$lib/noms';
-	import { lienSource } from '$lib/plateforme';
-	import TexteMarkdown from '$lib/components/TexteMarkdown.svelte';
+	} from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { nomAffiche } from '#lib/noms.ts';
+	import { lienSource } from '#lib/plateforme.ts';
+	import TexteMarkdown from '#lib/components/TexteMarkdown.svelte';
 
 	let etat: EtatInstallation | null = null;
 	let chargement = true;

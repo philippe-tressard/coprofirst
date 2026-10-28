@@ -19,16 +19,16 @@
   pliée de la ligne, en lecture) : une entité, un rendu.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import IconeIA from '$lib/components/IconeIA.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import IconeIA from '#lib/components/IconeIA.svelte';
 	import { createEventDispatcher } from 'svelte';
-	import { syntheses, type PropositionSynthese, type SyntheseAffaire } from '$lib/api';
-	import { confirmer } from '$lib/confirmation';
-	import { demander } from '$lib/saisie';
-	import { fmtDatetime } from '$lib/date';
-	import { messageErreur } from '$lib/erreurs';
-	import { safeDescription } from '$lib/sanitize';
+	import { syntheses, type PropositionSynthese, type SyntheseAffaire } from '#lib/api/index.ts';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { demander } from '#lib/saisie.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { safeDescription } from '#lib/sanitize.ts';
 	import EncartAvertissement from './EncartAvertissement.svelte';
 	import FormulaireCreation from './FormulaireCreation.svelte';
 	import PiedFormulaire from './PiedFormulaire.svelte';

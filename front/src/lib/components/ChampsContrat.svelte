@@ -39,24 +39,24 @@
   téléversement — un autre lot, et il est nommé dans #390.
 -->
 <script context="module" lang="ts">
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import { pliageDe, requisDe } from '$lib/pliage';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import { pliageDe, requisDe } from '#lib/pliage.ts';
 	let compteur = 0;
 </script>
 
 <script lang="ts">
-	import type { Prestataire } from '$lib/api';
-	import type { FormulaireContratData } from '$lib/prestataires';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
+	import type { Prestataire } from '#lib/api/index.ts';
+	import type { FormulaireContratData } from '#lib/prestataires.ts';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
 	import SectionEquipement from './SectionEquipement.svelte';
 	import SectionPerimetre from './SectionPerimetre.svelte';
 	import SectionDescription from './SectionDescription.svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
-	import SectionTitre from '$lib/components/SectionTitre.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import ChampFrequence from '$lib/components/ChampFrequence.svelte';
-	import { CONTRAT } from '$lib/entites/contrat';
-	import { sectionPresente, type Etat } from '$lib/entites/types';
+	import SectionTitre from '#lib/components/SectionTitre.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import ChampFrequence from '#lib/components/ChampFrequence.svelte';
+	import { CONTRAT } from '#lib/entites/contrat.ts';
+	import { sectionPresente, type Etat } from '#lib/entites/types.ts';
 
 	/** Le formulaire lié — l'écran porte l'état et l'enregistre. */
 	export let contratForm: FormulaireContratData;

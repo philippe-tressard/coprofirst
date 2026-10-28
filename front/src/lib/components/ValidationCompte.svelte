@@ -22,13 +22,13 @@
   rendu le 11/09/2026 sur #889 : *« les gestes courts dans la carte »*. Valider un
   compte est un geste sur un objet de liste, au même titre que corriger.
 
-  ⚠️ Ce composant ne fait AUCUN appel réseau. Le geste vit dans `$lib/comptes.ts`
+  ⚠️ Ce composant ne fait AUCUN appel réseau. Le geste vit dans `#lib/comptes.ts`
   — un seul endroit qui sait quoi appeler, dans quel ordre, et quoi annoncer.
   L'écran garde ce qui lui est propre : d'où vient l'utilisateur, et ce qu'il
   advient de sa liste après.
 -->
 <script lang="ts">
-	import type { User } from '$lib/api';
+	import type { User } from '#lib/api/index.ts';
 	import PiedFormulaire from './PiedFormulaire.svelte';
 
 	/** L'utilisateur dont on valide le compte. */

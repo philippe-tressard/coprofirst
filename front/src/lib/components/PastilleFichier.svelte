@@ -18,7 +18,7 @@
 
   Demandé le même jour : *« PDF: MON NOM »*. Le type est l'information la plus
   utile d'une liste de pièces jointes — on cherche « le PDF », pas « le
-  cinquième ». Il se calcule dans `$lib/fichiers` (`typeFichier`), jamais ici :
+  cinquième ». Il se calcule dans `#lib/fichiers` (`typeFichier`), jamais ici :
   quatre rendus l'affichent, un format recopié aurait divergé au premier
   ajustement.
 
@@ -26,8 +26,8 @@
   et « PDF: contrat.pdf » allonge la pastille pour ne rien apprendre.
 -->
 <script lang="ts">
-	import PastilleRetirable from '$lib/components/PastilleRetirable.svelte';
-	import { typeFichier, nomSansExtension } from '$lib/fichiers';
+	import PastilleRetirable from '#lib/components/PastilleRetirable.svelte';
+	import { typeFichier, nomSansExtension } from '#lib/fichiers.ts';
 
 	/**  Le nom du fichier, ou son URL — `typeFichier` accepte les deux. */
 	export let nom: string;

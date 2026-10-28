@@ -26,17 +26,17 @@
 -->
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import SectionDescription from '$lib/components/SectionDescription.svelte';
+	import SectionDescription from '#lib/components/SectionDescription.svelte';
 	import EtapeConciliationFusion from './EtapeConciliationFusion.svelte';
-	import { TICKET } from '$lib/entites/ticket';
-	import { pliageDe } from '$lib/pliage';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import IconeIA from '$lib/components/IconeIA.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import { suiviAffaires, type CandidateFusion } from '$lib/api';
+	import { TICKET } from '#lib/entites/ticket.ts';
+	import { pliageDe } from '#lib/pliage.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import IconeIA from '#lib/components/IconeIA.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { suiviAffaires, type CandidateFusion } from '#lib/api/index.ts';
 	import {
 		choixPourServeur,
 		conciliable,
@@ -44,8 +44,8 @@
 		decisionPrete,
 		principaleInversee,
 		type Decisions,
-	} from '$lib/fusion-conciliation';
-	import type { AffaireAFusionner, FusionFaite } from '$lib/fusion-affaires';
+	} from '#lib/fusion-conciliation.ts';
+	import type { AffaireAFusionner, FusionFaite } from '#lib/fusion-affaires.ts';
 
 	/**  Les affaires du groupe, la plus ancienne en tête : elle absorbe. Une
 	 *   affaire du Suivi, ou une affaire liée depuis sa correction (#2173). */

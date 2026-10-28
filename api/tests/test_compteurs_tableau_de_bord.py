@@ -310,7 +310,7 @@ def test_la_pastille_admin_somme_les_trois_files_de_son_ecran(base):
 def test_un_compteur_reserve_vaut_zero_pour_qui_ne_voit_pas_sa_pastille(base):
     """L'autre moitié de la règle : ne pas calculer ce qui ne s'affichera pas.
 
-    La condition de visibilité vit côté front (`$lib/raccourcis.ts`), la décision
+    La condition de visibilité vit côté front (`#lib/raccourcis.ts`), la décision
     de calculer vit ici. Les deux doivent dire la même chose : une pastille
     masquée dont le serveur remplit le compteur, c'est du travail inutile ; une
     pastille visible dont le compteur vaut 0 faute de droit, c'est un mensonge à

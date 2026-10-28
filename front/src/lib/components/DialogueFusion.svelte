@@ -15,21 +15,21 @@
 
   Rien n'est coché par défaut : une fusion ne se défait pas.
 
-  ⚠️ S'emploie par `demanderFusion()` (`$lib/fusion-affaires`), jamais
+  ⚠️ S'emploie par `demanderFusion()` (`#lib/fusion-affaires`), jamais
   directement — comme `Confirmation` par `confirmer()`.
 -->
 <script lang="ts">
 	import Modale from './Modale.svelte';
 	import ConciliationFusion from './ConciliationFusion.svelte';
-	import type { CandidateFusion } from '$lib/api';
-	import type { DemandeFusion } from '$lib/fusion-affaires';
+	import type { CandidateFusion } from '#lib/api/index.ts';
+	import type { DemandeFusion } from '#lib/fusion-affaires.ts';
 	import {
 		choixPourServeur,
 		conciliable,
 		decisionIncomplete,
 		decisionPrete,
 		type Decisions,
-	} from '$lib/fusion-conciliation';
+	} from '#lib/fusion-conciliation.ts';
 
 	/** Le numéro de l'affaire qu'on clôt — celle qui absorbe. */
 	export let numero: string;

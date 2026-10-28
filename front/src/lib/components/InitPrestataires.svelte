@@ -5,17 +5,17 @@
   revient dans l'onglet Kanban d'Affaires, réservé au conseil : il pose des
   affaires Entretien « Chez le prestataire », sans aucune diffusion.
 
-  La DÉCISION vit dans `$lib/init-prestataires` (pure, autotestée) ; ce
+  La DÉCISION vit dans `#lib/init-prestataires` (pure, autotestée) ; ce
   composant ne fait que lire, demander, écrire — et résoudre ce que lui seul
   sait : le nom d'un prestataire et le périmètre d'un bâtiment.
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { prestataires as prestApi, tickets as ticketsApi, type Ticket } from '$lib/api';
-	import { confirmer } from '$lib/confirmation';
-	import { messageErreur } from '$lib/erreurs';
-	import { perimetreDuBatiment } from '$lib/perimetres';
-	import { toast } from '$lib/components/Toast.svelte';
+	import { prestataires as prestApi, tickets as ticketsApi, type Ticket } from '#lib/api/index.ts';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { perimetreDuBatiment } from '#lib/perimetres/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		clesDesAffaires,
 		planifier,
@@ -23,7 +23,7 @@
 		sourcesDesAffaires,
 		sourcesDesContrats,
 		versAffaire,
-	} from '$lib/init-prestataires';
+	} from '#lib/init-prestataires.ts';
 
 	/** Les affaires chargées par la page — archivées comprises, pour la clé anti-doublon. */
 	export let tickets: Ticket[] = [];

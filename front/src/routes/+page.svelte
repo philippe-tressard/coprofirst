@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { auth } from '$lib/api';
-	import { setUser } from '$lib/stores/auth';
-	import { CHEMIN_CONNEXION } from '$lib/redirection';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { auth } from '#lib/api/index.ts';
+	import { setUser } from '#lib/stores/auth.ts';
+	import { CHEMIN_CONNEXION } from '#lib/redirection.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	onMount(async () => {
 		try {

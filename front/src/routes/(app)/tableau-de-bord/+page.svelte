@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { messageErreur } from '$lib/erreurs';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import { onMount } from 'svelte';
-	import { marquerDonneesAffichees } from '$lib/telemetry';
-	import { relire } from '$lib/utils';
-	import KanbanTableauBord from '$lib/components/KanbanTableauBord.svelte';
-	import UrgencesAccueil from '$lib/components/UrgencesAccueil.svelte';
-	import { salutation } from '$lib/date';
-	import { seuilRecentMs } from '$lib/archivage';
-	import AlerteRelanceSyndic from '$lib/components/AlerteRelanceSyndic.svelte';
-	import ArchivesDuFil from '$lib/components/ArchivesDuFil.svelte';
+	import { marquerDonneesAffichees } from '#lib/telemetry.ts';
+	import { relire } from '#lib/utils.ts';
+	import KanbanTableauBord from '#lib/components/KanbanTableauBord.svelte';
+	import UrgencesAccueil from '#lib/components/UrgencesAccueil.svelte';
+	import { salutation } from '#lib/date.ts';
+	import { seuilRecentMs } from '#lib/archivage.ts';
+	import AlerteRelanceSyndic from '#lib/components/AlerteRelanceSyndic.svelte';
+	import ArchivesDuFil from '#lib/components/ArchivesDuFil.svelte';
 	import {
 		authResolue,
 		currentUser,
@@ -17,7 +17,7 @@
 		isCS,
 		isLocataire,
 		isProprioOuCS,
-	} from '$lib/stores/auth';
+	} from '#lib/stores/auth.ts';
 	import { goto } from '$app/navigation';
 	import {
 		flux,
@@ -27,20 +27,31 @@
 		type FluxResponse,
 		type MonLot,
 		type Ticket,
-	} from '$lib/api';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import Icon from '$lib/components/Icon.svelte';
-	import EnteteAccueil from '$lib/components/EnteteAccueil.svelte';
-	import FriseDuFil from '$lib/components/FriseDuFil.svelte';
-	import LienConsignes from '$lib/components/LienConsignes.svelte';
-	import RaccourcisRapides from '$lib/components/RaccourcisRapides.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
-	import { OPTIONS_PORTEE, offrirLaPastille, selonPortee } from '$lib/me-concerne';
+	} from '#lib/api/index.ts';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
+	import Icon from '#lib/components/Icon.svelte';
+	import EnteteAccueil from '#lib/components/EnteteAccueil.svelte';
+	import FriseDuFil from '#lib/components/FriseDuFil.svelte';
+	import LienConsignes from '#lib/components/LienConsignes.svelte';
+	import RaccourcisRapides from '#lib/components/RaccourcisRapides.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
+	import { OPTIONS_PORTEE, offrirLaPastille, selonPortee } from '#lib/me-concerne.ts';
 	// Toutes les règles du fil (apparence, liens, appartenance aux trois
-	// registres) vivent dans ce module — cf. `$lib/flux.ts`.
-	import { dateDeReference, estEpingle, estNonResolu, estUrgent, grouperParJour } from '$lib/flux';
+	// registres) vivent dans ce module — cf. `#lib/flux.ts`.
+	import {
+		dateDeReference,
+		estEpingle,
+		estNonResolu,
+		estUrgent,
+		grouperParJour,
+	} from '#lib/flux.ts';
 
 	$: _pc = getPageConfig($configStore, 'tableau-de-bord', defautsDePage('tableau-de-bord'));
 	$: _siteNom = $siteNomStore;
@@ -97,7 +108,7 @@
 
 	//  ⚠️ Dépend de l'HEURE : sans dépendance citée, ce `$:` restait au montage et
 	//  disait « Bonjour » à 20 h (`utils.relire`). `salutation` vit dans
-	//  `$lib/date` — c'est une notion de date, pas de cet écran.
+	//  `#lib/date` — c'est une notion de date, pas de cet écran.
 	$: greeting = relire(data, salutation);
 
 	// ── Expand state (unique entre prochaines échéances et fil d'activité) ─
@@ -147,7 +158,7 @@
 	$: filItems = selonPortee(filteredItems, portee);
 
 	// ── Classement du fil : récent / ancien / masqué ───────────────────────
-	//  🔴 UN SEUL délai, pour tout le site (#513 puis #515) — voir `$lib/archivage`.
+	//  🔴 UN SEUL délai, pour tout le site (#513 puis #515) — voir `#lib/archivage`.
 	//  `PLAFOND_CHARGEMENT` est une borne de CHARGEMENT, pas un second seuil de
 	//  visibilité : les Archives couvrent tout l'intervalle.
 	$: SEUIL_RECENT = seuilRecentMs(data?.delai_recent_jours);
@@ -178,7 +189,7 @@
 		olderItems = _older;
 	}
 
-	// ── Groupement par jour : `grouperParJour` (`$lib/flux`), rendu par `FriseDuFil`.
+	// ── Groupement par jour : `grouperParJour` (`#lib/flux`), rendu par `FriseDuFil`.
 	$: recentDayGroups = grouperParJour(recentItems);
 	$: olderDayGroups = grouperParJour(olderItems);
 	let olderOpen = false;
@@ -199,7 +210,7 @@
 	// 1. 🔴 Urgences  — « qu'est-ce qui brûle ? »        (plafonné à 3, s'auto-périme)
 	// 2. 📌 Épinglé   — « qu'est-ce qu'il ne faut pas perdre de vue ? »
 	// 3. Chronologie  — « quoi de neuf ? »               (recentItems / olderItems)
-	// Les filtres sont dans `$lib/flux.ts` et sont mutuellement exclusifs : un
+	// Les filtres sont dans `#lib/flux.ts` et sont mutuellement exclusifs : un
 	// élément urgent ET épinglé ne paraît qu'en urgence, la gravité primant.
 	$: urgentItems = filteredItems.filter(estUrgent);
 	$: pinnedItems = filteredItems.filter(estEpingle);
@@ -248,7 +259,7 @@
 	     précisément parce qu'il était cassé. -->
 
 	<!-- ═══ RACCOURCIS RAPIDES ═════════════════════════════════════════════ -->
-	<!-- Qui voit quelle pastille, et d'où vient chaque nombre : `$lib/raccourcis.ts`,
+	<!-- Qui voit quelle pastille, et d'où vient chaque nombre : `#lib/raccourcis.ts`,
 	     et nulle part ailleurs. La page recomposait ici la règle d'accès à
 	     l'Espace CS, que le serveur écrivait déjà de son côté (#399). -->
 	<RaccourcisRapides sante={data.sante} {ready} --delay=".08s" />

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { nomAffiche } from '$lib/noms';
+	import { nomAffiche } from '#lib/noms.ts';
 	/**
 	 * Pastille ronde d'identité : la photo de profil si elle existe, sinon les
 	 * initiales, sinon une silhouette générique.
@@ -12,7 +12,7 @@
 	 * repli se pilotent depuis le parent par variables CSS, qui
 	 * cascadent jusqu'ici — `--avatar-size`, `--avatar-bg`, `--avatar-color`.
 	 */
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 
 	export let photoUrl: string | null | undefined = null;
 	export let prenom: string | null | undefined = '';

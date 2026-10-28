@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { FormulaireCompte } from '$lib/comptes';
-	import ChampAdresseCompte from '$lib/components/ChampAdresseCompte.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import { ETAGE_MAX, ETAGE_MIN } from '$lib/utils';
+	import type { FormulaireCompte } from '#lib/comptes.ts';
+	import ChampAdresseCompte from '#lib/components/ChampAdresseCompte.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { ETAGE_MAX, ETAGE_MIN } from '#lib/utils.ts';
 
 	/**
 	 * Le formulaire d'édition d'un compte utilisateur (Administration → Comptes).

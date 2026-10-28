@@ -76,7 +76,7 @@ class Service:
     perte: str
     #: L'onglet d'administration de ses réglages détaillés (`pages-roles.ts`).
     onglet: str
-    #: Son tracé, pris dans le catalogue du front (`$lib/icones-svg.json`).
+    #: Son tracé, pris dans le catalogue du front (`#lib/icones-svg.json`).
     icone: str
     #: La clé `ConfigSite` qui l'active. `None` pour une infrastructure.
     cle_actif: str | None = None

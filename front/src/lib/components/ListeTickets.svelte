@@ -36,19 +36,19 @@
 
   96 cartes rendues d'un coup coûtaient +320 ms à un téléphone moyen après
   l'arrivée des données. Les `PREMIERS` se rendent d'emblée, la suite à
-  l'approche du bas (`$lib/rendu-progressif`) ; une carte dépliée — par un lien
+  l'approche du bas (`#lib/rendu-progressif`) ; une carte dépliée — par un lien
   profond — est toujours rendue. La liste reçue reste ENTIÈRE : filtres,
   recherche et compteurs ne voient pas la différence.
 -->
 <script lang="ts">
 	import ActualiteEnListe from './ActualiteEnListe.svelte';
 	import CarteTicket from './CarteTicket.svelte';
-	import type { CorrespondanceAffaire, Ticket, TicketEvolution } from '$lib/api';
-	import { estActualite, type GestesTicket } from '$lib/tickets';
-	import { aRendre, PAQUET, PREMIERS, quandProche } from '$lib/rendu-progressif';
+	import type { CorrespondanceAffaire, Ticket, TicketEvolution } from '#lib/api/index.ts';
+	import { estActualite, type GestesTicket } from '#lib/tickets.ts';
+	import { aRendre, PAQUET, PREMIERS, quandProche } from '#lib/rendu-progressif.ts';
 
 	/**  Tout ce que la page fait quand la liste bouge — le type vit dans
-	 *   `$lib/tickets`, avec le reste du vocabulaire du ticket. */
+	 *   `#lib/tickets`, avec le reste du vocabulaire du ticket. */
 	export let gestes: GestesTicket;
 
 	export let tickets: Ticket[] = [];

@@ -176,7 +176,7 @@ export const SECTIONS_LIBELLE: Readonly<Record<IdSection, string>> = {
  * elle vaut ici comme ailleurs.
  *
  * 🔒 `npm run lint:vocabulaire-ecran` lit cette table comme il lit `motDeCode`
- * dans les entités et `motAbandonne` dans `$lib/gestes` : trois sources, une
+ * dans les entités et `motAbandonne` dans `#lib/gestes` : trois sources, une
  * règle — un mot qu'on a cessé de dire ne se réécrit nulle part.
  */
 export const SECTIONS_LIBELLE_ABANDONNE: Readonly<Record<string, IdSection>> = {

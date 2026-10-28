@@ -30,7 +30,7 @@
  *  Même télémétrie, une semaine plus tard : `/admin` et `/espace-cs` importaient
  *  tous leurs onglets, et chaque carte d'affaire le formulaire de correction
  *  qu'on n'ouvre qu'au ✏️. Ils passent désormais par `ChargementDiffere`, qui
- *  reçoit un `import('$lib/components/….svelte')`. La liste n'est écrite nulle
+ *  reçoit un `import('#lib/components/….svelte')`. La liste n'est écrite nulle
  *  part : elle est LUE dans le source (`composantsDifferes`), donc un onglet
  *  différé demain est gardé sans qu'on y pense. Dans le build, chacun doit être
  *  une entrée dynamique du manifeste (cas zéro : un composant renommé ou fondu
@@ -53,23 +53,23 @@ const CLIENT = new URL('../.svelte-kit/output/client', import.meta.url).pathname
  *   morceau du build — les noms de morceaux sont des empreintes. */
 export const A_LA_DEMANDE = {
 	'Tiptap / ProseMirror (éditeur riche)': /ProseMirror/,
-	//  #1930 : le rendu des conditions d'inscription, chargé par `$lib/markdown` à
+	//  #1930 : le rendu des conditions d'inscription, chargé par `#lib/markdown` à
 	//  l'affichage du texte — jamais à l'ouverture de l'administration.
 	'marked (rendu Markdown)': /github\.com\/markedjs\/marked/,
 };
 
-/**  `charger={() => import('$lib/components/X.svelte')}` : un composant confié à
+/**  `charger={() => import('#lib/components/X.svelte')}` : un composant confié à
  *   `ChargementDiffere`. Un `import()` ailleurs ne promet rien sur l'ouverture
- *   (`$lib/fichiers.ts` importe `Toast` à la demande, que la page a déjà). */
+ *   (`#lib/fichiers.ts` importe `Toast` à la demande, que la page a déjà). */
 const IMPORT_DIFFERE =
-	/charger=\{\s*\(\)\s*=>\s*import\(\s*'\$lib\/components\/([^']+\.svelte)'\s*\)\s*\}/g;
+	/charger=\{\s*\(\)\s*=>\s*import\(\s*'#lib\/components\/([^']+\.svelte)'\s*\)\s*\}/g;
 
-/**  `const chargerCorps = () => import('$lib/components/X.svelte')` : un chargeur
+/**  `const chargerCorps = () => import('#lib/components/X.svelte')` : un chargeur
  *   NOMMÉ, que la carte appelle aussi pour précharger à l'approche de la main
  *   (`CarteTicket`, #1860). Il ne compte que si `charger={chargerCorps}` le
  *   reçoit dans le même fichier — sinon, c'est un `import()` comme un autre. */
 const CHARGEUR_NOMME =
-	/const\s+(\w+)\s*=\s*\(\)\s*=>\s*import\(\s*'\$lib\/components\/([^']+\.svelte)'\s*\)/g;
+	/const\s+(\w+)\s*=\s*\(\)\s*=>\s*import\(\s*'#lib\/components\/([^']+\.svelte)'\s*\)/g;
 
 /**  Les composants que le SOURCE charge à la demande, sous leur clé de manifeste
  *   (`src/lib/components/X.svelte`). */
@@ -91,20 +91,20 @@ export function composantsDifferes(sources) {
  *   exports, et il y accroche, par un import statique, le morceau de chaque module
  *   exporté — y compris ceux qu'une seule fenêtre chargée à la demande utilise.
  *
- *   🔴 Constaté en montant Vite 8 (Rolldown), #2205 : `await import('$lib/api')`
+ *   🔴 Constaté en montant Vite 8 (Rolldown), #2205 : `await import('#lib/api/index.ts')`
  *   (`fichiers.ts`) faisait importer STATIQUEMENT, par le morceau « api » que
  *   presque tout écran charge, les onglets Maintenance, Installations, Courriels
  *   et Annuaire CS — chacun portait son client d'API. 116 couples écran/onglet en
  *   étaient alourdis ; Rollup (Vite 6) ne le faisait pas. La parade est de viser le
- *   module précis (`$lib/api/documents`), qui reste chargé à la demande. */
-export const BARILS_INTERDITS_EN_IMPORT_DYNAMIQUE = ['$lib/api'];
+ *   module précis (`#lib/api/documents`), qui reste chargé à la demande. */
+export const BARILS_INTERDITS_EN_IMPORT_DYNAMIQUE = ['#lib/api/index.ts'];
 
 /**  Les `import('<baril>')` d'un jeu de sources : `[baril, extrait]`. */
 export function importsDeBarils(sources) {
 	const trouves = [];
 	for (const texte of sources) {
 		for (const baril of BARILS_INTERDITS_EN_IMPORT_DYNAMIQUE) {
-			const nu = baril.replace(/[$/]/g, '\\$&');
+			const nu = baril.replace(/[./]/g, '\\$&');
 			const motif = new RegExp(`import\\(\\s*['"\`]${nu}['"\`]\\s*\\)`, 'g');
 			for (const m of texte.matchAll(motif)) trouves.push([baril, m[0]]);
 		}
@@ -211,11 +211,11 @@ function selftest() {
 	contenus['x.js'] = '';
 	cas.push([
 		'source lu : le composant différé est trouvé',
-		composantsDifferes(["charger={() => import('$lib/components/OngletX.svelte')}"])[0] === onglet,
+		composantsDifferes(["charger={() => import('#lib/components/OngletX.svelte')}"])[0] === onglet,
 	]);
 	//  Un chargeur NOMMÉ, que la carte appelle aussi pour précharger (#1860).
 	const nomme =
-		"const chargerCorps = () => import('$lib/components/CorpsX.svelte');\n" +
+		"const chargerCorps = () => import('#lib/components/CorpsX.svelte');\n" +
 		'<ChargementDiffere charger={chargerCorps}>';
 	cas.push([
 		'source lu : un chargeur nommé passé à `charger` est trouvé',
@@ -236,20 +236,20 @@ function selftest() {
 		juger(m, lire, ['src/lib/components/Fondu.svelte']).fondus.length === 1,
 	]);
 	cas.push([
-		'import() du baril $lib/api : refusé',
-		importsDeBarils(["const { documents } = await import('$lib/api');"]).length === 1,
+		'import() du baril #lib/api : refusé',
+		importsDeBarils(["const { documents } = await import('#lib/api/index.ts');"]).length === 1,
 	]);
 	cas.push([
 		'import() du baril, guillemets doubles : refusé aussi',
-		importsDeBarils(['await import("$lib/api")']).length === 1,
+		importsDeBarils(['await import("#lib/api/index.ts")']).length === 1,
 	]);
 	cas.push([
 		'import() d’un module précis de l’API : admis',
-		importsDeBarils(["await import('$lib/api/documents')"]).length === 0,
+		importsDeBarils(["await import('#lib/api/documents.ts')"]).length === 0,
 	]);
 	cas.push([
 		'import statique du baril : admis (ce n’est pas un import())',
-		importsDeBarils(["import { api } from '$lib/api';"]).length === 0,
+		importsDeBarils(["import { api } from '#lib/api/index.ts';"]).length === 0,
 	]);
 	const rates = cas.filter(([, v]) => !v);
 	for (const [n, v] of cas) console.log(`${v ? '✓' : '✗'} ${n}`);
@@ -288,14 +288,14 @@ if (barils.length) {
 			barils.map(([b, x]) => `  ${x}  (${b})`).join('\n') +
 			`\n\n  Le moteur de Vite 8 y accroche, en import statique, le morceau de chaque module\n` +
 			`  exporté : les fenêtres chargées à la demande se retrouvent dans le chargement initial.\n` +
-			`  Viser le module précis (\`import('$lib/api/documents')\`).\n`,
+			`  Viser le module précis (\`import('#lib/api/documents.ts')\`).\n`,
 	);
 	process.exit(1);
 }
 const differes = composantsDifferes(sources);
 if (!differes.length) {
 	console.error(
-		"\n✗ lint:poids-ouverture — aucun `charger={() => import('$lib/components/….svelte')}` lu dans src/ :\n" +
+		"\n✗ lint:poids-ouverture — aucun `charger={() => import('#lib/components/….svelte')}` lu dans src/ :\n" +
 			'  le motif ne mord plus, ou le chemin des sources a changé. Il ne garde rien.\n',
 	);
 	process.exit(1);

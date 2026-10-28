@@ -55,11 +55,11 @@
     - change(detail: string[]) — après ajout ou retrait (mode normal)
 -->
 <script lang="ts">
-	import { messageErreur } from '$lib/erreurs';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import Vignette from './Vignette.svelte';
 	import PastilleFichier from './PastilleFichier.svelte';
-	import { fichiersApi } from '$lib/api';
+	import { fichiersApi } from '#lib/api/index.ts';
 	import { toast } from './Toast.svelte';
 	import {
 		ACCEPT_DOCUMENTS,
@@ -69,7 +69,7 @@
 		MAX_FICHIERS,
 		nomFichier,
 		separerFichiers,
-	} from '$lib/fichiers';
+	} from '#lib/fichiers.ts';
 
 	export let urls: string[] = [];
 	export let max = MAX_FICHIERS;
@@ -163,7 +163,7 @@
 	$: _titre =
 		titre ??
 		(_nature === 'photos' ? 'Photos' : _nature === 'documents' ? 'Documents' : 'Pièces jointes');
-	//  🔴 Les types annoncés se LISENT dans `$lib/fichiers`, à côté des `ACCEPT_*`
+	//  🔴 Les types annoncés se LISENT dans `#lib/fichiers`, à côté des `ACCEPT_*`
 	//  qu'ils décrivent. Ils étaient récités ICI, sous un commentaire qui
 	//  affirmait le contraire — et le mode MIXTE annonçait donc « PDF, Word,
 	//  Excel, texte » au-dessus d'un contrôle qui accepte aussi les photos

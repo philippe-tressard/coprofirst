@@ -25,22 +25,22 @@
   | 🗑️ Supprimer (admin) | `gestes.supprimer` |
 -->
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import {
 		documents as docsApi,
 		type CorrespondanceAffaire,
 		type Document,
 		type Ticket,
 		type TicketEvolution,
-	} from '$lib/api';
-	import { supprimerDocument } from '$lib/gestes-document';
-	import { promouvoirActualite } from '$lib/gestes-actualite';
-	import { isCS } from '$lib/stores/auth';
-	import { OPTIONS_TICKET, ticketUrgent, type GestesTicket } from '$lib/tickets';
+	} from '#lib/api/index.ts';
+	import { supprimerDocument } from '#lib/gestes-document.ts';
+	import { promouvoirActualite } from '#lib/gestes-actualite.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { OPTIONS_TICKET, ticketUrgent, type GestesTicket } from '#lib/tickets.ts';
 	import ActionsActualite from './ActionsActualite.svelte';
 	import CarteActualite from './CarteActualite.svelte';
 	import EtatListe from './EtatListe.svelte';
-	import { essayer, messagePartiel } from '$lib/chargement';
+	import { essayer, messagePartiel } from '#lib/chargement.ts';
 
 	export let ticket: Ticket;
 	export let evolutions: TicketEvolution[] = [];
@@ -100,7 +100,7 @@
 	//  📦 Le fil ne se charge qu'au dépliage (#1861), comme le corps d'une affaire
 	//  (#1860) : la MÊME fonction le précharge quand la main s'approche de la
 	//  carte, et le charge au dépliage — `import()` ne télécharge qu'une fois.
-	const chargerFil = () => import('$lib/components/FilActualiteEnListe.svelte');
+	const chargerFil = () => import('#lib/components/FilActualiteEnListe.svelte');
 </script>
 
 <CarteActualite
@@ -139,7 +139,7 @@
 		      le corps de la carte ne se replie pas pendant la saisie (#640). -->
 		{#if mode === 'edition'}
 			{#key ticket.id}
-				<ChargementDiffere charger={() => import('$lib/components/FormulaireTicket.svelte')}>
+				<ChargementDiffere charger={() => import('#lib/components/FormulaireTicket.svelte')}>
 					{#snippet contenu(FormulaireTicket)}
 						<FormulaireTicket
 							{ticket}
@@ -151,7 +151,7 @@
 			{/key}
 		{:else if mode === 'options'}
 			<!--  Au geste ⚙️ seulement, comme la correction (#1861). -->
-			<ChargementDiffere charger={() => import('$lib/components/PanneauOptionsPublication.svelte')}>
+			<ChargementDiffere charger={() => import('#lib/components/PanneauOptionsPublication.svelte')}>
 				{#snippet contenu(PanneauOptionsPublication)}
 					<PanneauOptionsPublication
 						optionsRendues={OPTIONS_TICKET}
@@ -178,7 +178,7 @@
 			>
 				<!--  Le montage de TOUTE Suite d'affaire (`SuiteAffaire`) : il sait qu'une
 				      actualité n'a pas de suivi (#1091). -->
-				<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+				<ChargementDiffere charger={() => import('#lib/components/SuiteAffaire.svelte')}>
 					{#snippet contenu(SuiteAffaire)}
 						<SuiteAffaire
 							{ticket}

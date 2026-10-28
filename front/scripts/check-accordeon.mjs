@@ -1,5 +1,5 @@
 /**
- * Auto-test de `$lib/accordeon.ts` — un seul bloc déplié à la fois (30/09/2026).
+ * Auto-test de `#lib/accordeon.ts` — un seul bloc déplié à la fois (30/09/2026).
  *
  * Demandé : « déplier une section replie les autres, sans exception ». Le module
  * porte les trois formes de la règle ; ce test éprouve les deux qui se testent
@@ -103,7 +103,7 @@ for (const f of fichiers(racine)) {
 		if (EXCEPTIONS.has(cle)) vus.add(cle);
 		else
 			echecs.push(
-				`${cle} : un état d'ouverture en \`Set\` laisse plusieurs blocs ouverts — un identifiant et \`basculer\` (\`$lib/accordeon\`).`,
+				`${cle} : un état d'ouverture en \`Set\` laisse plusieurs blocs ouverts — un identifiant et \`basculer\` (\`#lib/accordeon\`).`,
 			);
 	}
 }

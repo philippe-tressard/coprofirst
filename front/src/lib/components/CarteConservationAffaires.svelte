@@ -17,11 +17,11 @@
 	import { onMount } from 'svelte';
 	import EtatListe from './EtatListe.svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
-	import { conservation, type ConstatConservation } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { fmtDate, fmtDatetime } from '$lib/date';
-	import { fmtNombre, fmtOctets } from '$lib/utils';
-	import { LIBELLE_TACHE } from '$lib/taches';
+	import { conservation, type ConstatConservation } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { fmtDate, fmtDatetime } from '#lib/date.ts';
+	import { fmtNombre, fmtOctets } from '#lib/utils.ts';
+	import { LIBELLE_TACHE } from '#lib/taches.ts';
 
 	let constat: ConstatConservation | null = null;
 	let chargement = true;

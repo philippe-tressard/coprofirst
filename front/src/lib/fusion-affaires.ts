@@ -1,9 +1,9 @@
 import { get } from 'svelte/store';
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
-import DialogueFusion from '$lib/components/DialogueFusion.svelte';
-import ModaleFusionAffaires from '$lib/components/ModaleFusionAffaires.svelte';
-import { toast } from '$lib/components/Toast.svelte';
+import DialogueFusion from '#lib/components/DialogueFusion.svelte';
+import ModaleFusionAffaires from '#lib/components/ModaleFusionAffaires.svelte';
+import { toast } from '#lib/components/Toast.svelte';
 import {
 	suiviAffaires,
 	tickets as ticketsApi,
@@ -11,11 +11,11 @@ import {
 	type CandidateFusion,
 	type ChoixConciliation,
 	type Ticket,
-} from '$lib/api';
-import { messageErreur } from '$lib/erreurs';
-import { modaleImperative } from '$lib/modale-imperative';
-import { isCS } from '$lib/stores/auth';
-import { STATUT_TICKET_LABELS, estActualite, estTicketClos, lienTicket } from '$lib/tickets';
+} from '#lib/api/index.ts';
+import { messageErreur } from '#lib/erreurs.ts';
+import { modaleImperative } from '#lib/modale-imperative.ts';
+import { isCS } from '#lib/stores/auth.ts';
+import { STATUT_TICKET_LABELS, estActualite, estTicketClos, lienTicket } from '#lib/tickets.ts';
 
 /**
  * **À la clôture, demander s'il faut fusionner les affaires liées** (#1704).

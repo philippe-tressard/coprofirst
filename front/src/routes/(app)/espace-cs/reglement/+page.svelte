@@ -10,8 +10,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { routeOnglet } from '$lib/routes-onglets';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { routeOnglet } from '#lib/routes-onglets.ts';
 
 	onMount(() => {
 		goto(routeOnglet('residence', 'reglement') + window.location.hash, { replaceState: true });

@@ -12,12 +12,12 @@
   (fonction, e-mail, téléphones) et l'interlocuteur principal.
 -->
 <script lang="ts">
-	import { annuaireAdmin, type MembreSyndicAdmin } from '$lib/api';
-	import { inscritParNom, type SourcesRapprochement } from '$lib/annuaire-rapprochement';
-	import EnteteSyndic from '$lib/components/EnteteSyndic.svelte';
-	import { type Geste } from '$lib/components/ActionsMembre.svelte';
-	import AnnuaireMembres from '$lib/components/AnnuaireMembres.svelte';
-	import { type MembreBase } from '$lib/components/CarteMembre.svelte';
+	import { annuaireAdmin, type MembreSyndicAdmin } from '#lib/api/index.ts';
+	import { inscritParNom, type SourcesRapprochement } from '#lib/annuaire-rapprochement.ts';
+	import EnteteSyndic from '#lib/components/EnteteSyndic.svelte';
+	import { type Geste } from '#lib/components/ActionsMembre.svelte';
+	import AnnuaireMembres from '#lib/components/AnnuaireMembres.svelte';
+	import { type MembreBase } from '#lib/components/CarteMembre.svelte';
 
 	/** Les données de référence du rapprochement par le nom. */
 	export let sources: SourcesRapprochement;

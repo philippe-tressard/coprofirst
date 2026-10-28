@@ -14,11 +14,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
-	import { instance, type DernierExport, type VerificationRestauration } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { fmtDatetime } from '$lib/date';
-	import { fmtNombre, fmtOctets } from '$lib/utils';
-	import { toast } from '$lib/components/Toast.svelte';
+	import { instance, type DernierExport, type VerificationRestauration } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { fmtNombre, fmtOctets } from '#lib/utils.ts';
+	import { toast } from '#lib/components/Toast.svelte';
 
 	let verification: VerificationRestauration | null = null;
 	let enVerification = false;

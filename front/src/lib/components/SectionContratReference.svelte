@@ -30,9 +30,9 @@
 		copropriete as coproprieteApi,
 		documents as documentsApi,
 		type ContratCandidat,
-	} from '$lib/api';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import { fmtDateShort } from '$lib/date';
+	} from '#lib/api/index.ts';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import { fmtDateShort } from '#lib/date.ts';
 
 	export let titre: string;
 	export let icone: string;

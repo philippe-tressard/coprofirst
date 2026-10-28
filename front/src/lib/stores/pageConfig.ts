@@ -1,10 +1,10 @@
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/env';
 
-import { config as configApi } from '$lib/api';
-import { NOM_SITE_PAR_DEFAUT } from '$lib/configSite';
+import { config as configApi } from '#lib/api/index.ts';
+import { NOM_SITE_PAR_DEFAUT } from '#lib/configSite.ts';
 
-import { fusionnerSurcharge } from '$lib/pages-surcharge';
+import { fusionnerSurcharge } from '#lib/pages-surcharge.ts';
 
 export interface PageConfig {
 	titre: string;
@@ -29,7 +29,7 @@ function decodeEscapedHtml(input: string): string {
  * La configuration effective — défauts, puis ce que l'administration a saisi.
  *
  * 🔴 La règle du repli et les rattrapages d'onglets vivent dans
- * `$lib/pages-surcharge` depuis le 21/09/2026 (#1105) : ils étaient écrits ICI
+ * `#lib/pages-surcharge` depuis le 21/09/2026 (#1105) : ils étaient écrits ICI
  * **et** dans l'écran d'administration, au caractère près, et l'une des deux
  * copies ne repliait pas sur les défauts. C'est elle qui affichait trois pages
  * sans nom.
@@ -59,7 +59,7 @@ function normalizePageConfig(id: string, parsed: unknown, defaults: PageConfig):
 //  vérifie le cas zéro de `check-pages.mjs`) ; c'est la PORTE qui est unifiée.
 //  L'import de `pages.ts` vers ce fichier est un `import type`, effacé à la
 //  compilation : aucun cycle à l'exécution.
-export { defautsDePage, configDepuisPage } from '$lib/pages';
+export { defautsDePage, configDepuisPage } from '#lib/pages.ts';
 
 export const configStore = writable<Record<string, string>>({});
 
@@ -72,7 +72,7 @@ export function nomResidenceEnregistre(nom: string): void {
 	configStore.update((c) => ({ ...c, site_nom: nom }));
 }
 
-// Nom du site réactif — le repli neutre vient de `$lib/configSite` (#1725)
+// Nom du site réactif — le repli neutre vient de `#lib/configSite` (#1725)
 export const siteNomStore = derived(
 	configStore,
 	($c) => ($c['site_nom'] ?? '').trim() || NOM_SITE_PAR_DEFAUT,
@@ -100,7 +100,7 @@ export async function loadSiteConfig(): Promise<void> {
 	try {
 		//  🔴 `fetch('/api/config')` en dur jusqu'au 12/09/2026 (#932).
 		//
-		//  Le chemin était écrit ici et dans `$lib/api/administration` — deux
+		//  Le chemin était écrit ici et dans `#lib/api/administration` — deux
 		//  écritures d'une même route, dont l'une échappait aux deux contrôles :
 		//  `lint:client-api` ne lit pas les stores, et `lint:client-appele`
 		//  croyait `config.get` appelée parce que neuf objets du client portent

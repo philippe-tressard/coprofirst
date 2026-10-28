@@ -18,14 +18,14 @@
  * étaient d'accord avec eux-mêmes. C'est précisément l'état dans lequel se
  * trouvaient les quatre copies des statuts de ticket avant #415 — « chacune
  * était cohérente avec elle-même ; c'est ce qui les rendait invisibles à la
- * relecture » (`$lib/tickets`). On ne factorise pas ici un bug, on retire
+ * relecture » (`#lib/tickets`). On ne factorise pas ici un bug, on retire
  * l'endroit où il naît.
  *
  * ## La règle déployée, généralisée — pas une invention
  *
- * `$lib/tickets` fait déjà exactement cela depuis le 17/08/2026 : une liste de
+ * `#lib/tickets` fait déjà exactement cela depuis le 17/08/2026 : une liste de
  * `{ value, label, emoji, badge }`, et les tables plates **dérivées** par
- * `Object.fromEntries`. `$lib/idees` l'applique à moitié — ses libellés sont
+ * `Object.fromEntries`. `#lib/idees` l'applique à moitié — ses libellés sont
  * dérivés, sa table de pastilles est écrite à la main sur les quatre mêmes
  * états. C'est cette règle-là qu'on étend, pas une nouvelle.
  *
@@ -73,7 +73,7 @@ export function parAttribut<Etat extends string, Attribut extends string>(
  * La même bascule, depuis une **liste ordonnée** plutôt qu'une table.
  *
  * L'ordre du cycle de vie est lui-même une donnée — c'est celui des boutons et
- * des listes déroulantes. `$lib/tickets` et `$lib/idees` déclarent donc leurs
+ * des listes déroulantes. `#lib/tickets` et `#lib/idees` déclarent donc leurs
  * états en liste ; cette fonction leur rend les mêmes colonnes sans qu'ils
  * réécrivent `Object.fromEntries` une fois par attribut.
  *

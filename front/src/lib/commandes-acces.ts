@@ -10,8 +10,8 @@
  * le serveur les pose sur le lot commandé, et le demandeur en est porteur avec
  * les autres copropriétaires du lot. Laisser vide accepte sans rien créer.
  */
-import { admin as adminApi } from '$lib/api';
-import { demander } from '$lib/saisie';
+import { admin as adminApi } from '#lib/api/index.ts';
+import { demander } from '#lib/saisie.ts';
 
 /** Rend `false` si l'on renonce, `true` une fois la commande acceptée. */
 export async function accepterCommandeAcces(id: number): Promise<boolean> {

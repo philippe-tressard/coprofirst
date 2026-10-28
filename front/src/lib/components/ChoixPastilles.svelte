@@ -41,13 +41,13 @@
                     libelle="Type" requis avecDetail />
 -->
 <script context="module" lang="ts">
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	/** Compte les instances, pour donner un identifiant stable a chaque libelle. */
 	let compteur = 0;
 </script>
 
 <script lang="ts">
-	import Pastille from '$lib/components/Pastille.svelte';
+	import Pastille from '#lib/components/Pastille.svelte';
 
 	/**
 	 *  Les entrées. `desc` n'est lue que si `avecDetail` est vrai.

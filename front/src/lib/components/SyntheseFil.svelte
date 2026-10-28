@@ -19,19 +19,19 @@
   (`entreesDuFil`) : elle est la conclusion de l'affaire, pas une étape.
 -->
 <script lang="ts">
-	import IconeIA from '$lib/components/IconeIA.svelte';
+	import IconeIA from '#lib/components/IconeIA.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import {
 		syntheses,
 		type EtatSynthese,
 		type SyntheseAffaire as SyntheseLue,
 		type Ticket,
-	} from '$lib/api';
-	import { fmtDate } from '$lib/date';
-	import { messageErreur } from '$lib/erreurs';
-	import { isCS } from '$lib/stores/auth';
-	import { fmtJours } from '$lib/synthese';
-	import { estTicketClos } from '$lib/tickets';
+	} from '#lib/api/index.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { fmtJours } from '#lib/synthese.ts';
+	import { estTicketClos } from '#lib/tickets.ts';
 	import EtatListe from './EtatListe.svelte';
 	import RubriqueEtape from './RubriqueEtape.svelte';
 	import SyntheseAffaire from './SyntheseAffaire.svelte';

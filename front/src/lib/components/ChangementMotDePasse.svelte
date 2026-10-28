@@ -14,8 +14,8 @@
 -->
 <script lang="ts">
 	import ChampMotDePasse from './ChampMotDePasse.svelte';
-	import { auth as authApi } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
+	import { auth as authApi } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import { toast } from './Toast.svelte';
 
 	let pwdActuel = '';

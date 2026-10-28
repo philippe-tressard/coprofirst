@@ -31,24 +31,24 @@
   (`lien_reglement`).
 -->
 <script lang="ts">
-	import DocumentsRattaches from '$lib/components/DocumentsRattaches.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import ListeDocuments from '$lib/components/ListeDocuments.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
+	import DocumentsRattaches from '#lib/components/DocumentsRattaches.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import ListeDocuments from '#lib/components/ListeDocuments.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		documents as docsApi,
 		reglement as reglementApi,
 		type Document,
 		type EtatReglement,
-	} from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { supprimerDocument } from '$lib/gestes-document';
-	import { ACCEPT_FICHIERS_REGLEMENT, TYPES_FICHIERS_REGLEMENT } from '$lib/reglement';
-	import { isAdmin } from '$lib/stores/auth';
+	} from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { supprimerDocument } from '#lib/gestes-document.ts';
+	import { ACCEPT_FICHIERS_REGLEMENT, TYPES_FICHIERS_REGLEMENT } from '#lib/reglement.ts';
+	import { isAdmin } from '#lib/stores/auth.ts';
 
 	export let etat: EtatReglement;
 	/** Relit l'état de l'onglet — un fichier joint ou retiré change le texte lu. */

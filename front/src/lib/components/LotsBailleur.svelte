@@ -9,14 +9,14 @@
 -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { Bail, MonLot } from '$lib/api';
-	import { nomLocataire } from '$lib/bail';
-	import BadgeStatutBail from '$lib/components/BadgeStatutBail.svelte';
-	import DetailReglementLot from '$lib/components/DetailReglementLot.svelte';
-	import TableauCharges from '$lib/components/TableauCharges.svelte';
-	import { designationDuLot } from '$lib/charges-lots';
-	import { fmtDateShort as fmt } from '$lib/date';
-	import { etageLabel, lotTypeComplet } from '$lib/utils';
+	import type { Bail, MonLot } from '#lib/api/index.ts';
+	import { nomLocataire } from '#lib/bail.ts';
+	import BadgeStatutBail from '#lib/components/BadgeStatutBail.svelte';
+	import DetailReglementLot from '#lib/components/DetailReglementLot.svelte';
+	import TableauCharges from '#lib/components/TableauCharges.svelte';
+	import { designationDuLot } from '#lib/charges-lots.ts';
+	import { fmtDateShort as fmt } from '#lib/date.ts';
+	import { etageLabel, lotTypeComplet } from '#lib/utils.ts';
 
 	export let lots: MonLot[] = [];
 	export let bauxActifs: Bail[] = [];

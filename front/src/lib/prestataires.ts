@@ -28,9 +28,9 @@
  * est **l'unique arbitre**. Même forme que `test_statuts_tickets.py` (#415), née
  * du même défaut — cinq listes, chacune cohérente avec elle-même, aucune juste.
  */
-import { contientTousLesMots, replier } from '$lib/texte';
-import { stripHtml } from '$lib/utils';
-import type { ContactPrestataire, ContratEntretien, Prestataire } from '$lib/api';
+import { contientTousLesMots, replier } from '#lib/texte.ts';
+import { stripHtml } from '#lib/utils.ts';
+import type { ContactPrestataire, ContratEntretien, Prestataire } from '#lib/api/index.ts';
 
 /**  Un type d'équipement, tel que l'écran le nomme.
  *
@@ -295,7 +295,7 @@ export function texteCherchable(p: PrestataireCherchable): string {
 	return replier(morceaux.filter(Boolean).join(' '));
 }
 
-/**  Tous les mots, n'importe où — `contientTousLesMots` (`$lib/texte`), appliqué
+/**  Tous les mots, n'importe où — `contientTousLesMots` (`#lib/texte`), appliqué
  *   à une fiche. Une recherche vide laisse tout passer. */
 export function correspondRecherche(p: PrestataireCherchable, recherche: string): boolean {
 	return contientTousLesMots(texteCherchable(p), recherche);
@@ -392,7 +392,7 @@ export function frequenceLabel(c: {
  * **en silence** : une clé absente d'un objet JavaScript ne lève rien.
  *
  * C'est le même défaut que le calendrier portait le matin même, avec deux
- * écritures au lieu de trois (`$lib/evenement-formulaire`).
+ * écritures au lieu de trois (`#lib/evenement-formulaire`).
  */
 export interface FormulaireContratData {
 	copropriete_id: number;
@@ -416,7 +416,7 @@ export interface FormulaireContratData {
  * Un formulaire de contrat VIERGE.
  *
  * :param perimetreDefaut: la liste par défaut, passée par l'appelant — elle vient
- *   de l'arborescence administrée (`$lib/perimetres`), que ce module n'a pas à
+ *   de l'arborescence administrée (`#lib/perimetres`), que ce module n'a pas à
  *   connaître.
  */
 export function contratVierge(perimetreDefaut: string[]): FormulaireContratData {

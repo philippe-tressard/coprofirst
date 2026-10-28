@@ -32,15 +32,15 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { tickets as ticketsApi } from '$lib/api';
-	import type { AffaireLiee, AffaireVisee, TransfertVerse } from '$lib/api/types';
-	import ChoixAffaire from '$lib/components/ChoixAffaire.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { confirmer } from '$lib/confirmation';
-	import { fmtDatetime } from '$lib/date';
-	import { TICKET } from '$lib/entites/ticket';
-	import { messageErreur } from '$lib/erreurs';
+	import { tickets as ticketsApi } from '#lib/api/index.ts';
+	import type { AffaireLiee, AffaireVisee, TransfertVerse } from '#lib/api/types.ts';
+	import ChoixAffaire from '#lib/components/ChoixAffaire.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { TICKET } from '#lib/entites/ticket.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
 
 	export let ticketId: number;
 	/** `false` dans la carte d'une liste : pas de carte dans la carte (#425). */

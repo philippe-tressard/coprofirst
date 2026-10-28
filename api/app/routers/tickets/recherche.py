@@ -129,7 +129,7 @@ def rechercher(
             Texte("personne", nom(t)),
             Texte("personne", proprietaire or ""),
             Texte("prestataire", nom_prestataire(session, t.prestataire_id) or ""),
-            #  Le libellé de l'équipement n'existe qu'au front (`$lib/prestataires`) :
+            #  Le libellé de l'équipement n'existe qu'au front (`#lib/prestataires`) :
             #  la valeur, soulignés en espaces, suffit à « vmc », « porte parking ».
             Texte("equipement", (t.equipement or "").replace("_", " ")),
             Texte("description", texte_brut(t.description)),

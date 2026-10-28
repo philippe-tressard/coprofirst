@@ -40,7 +40,7 @@
  *
  * ## Le remède, quand il échoue
  *
- * `$lib/chargement.ts` → `essayer(promesse, repli)` rend `[valeur, erreur]`.
+ * `#lib/chargement.ts` → `essayer(promesse, repli)` rend `[valeur, erreur]`.
  * Puis, selon la nature de la donnée :
  *   - **liste affichée**   → `EtatListe` (l'échec passe AVANT le vide) ;
  *   - **donnée de référence** (un `<select>`, une table de correspondance)
@@ -336,7 +336,7 @@ function main() {
 		console.error('');
 		for (const x of muets) console.error(`    ${x}`);
 		console.error('');
-		console.error('  Remède : `essayer()` de `$lib/chargement` et son erreur rendue à l’écran —');
+		console.error('  Remède : `essayer()` de `#lib/chargement` et son erreur rendue à l’écran —');
 		console.error('  ou, si la valeur initiale ne ment pas, une entrée dans MUETS_DECLARES,');
 		console.error('  avec sa raison.');
 		console.error('');
@@ -354,7 +354,7 @@ function main() {
 	console.error('  Un écran qui affirme une absence qu’il n’a pas constatée provoque la');
 	console.error('  réaction qu’une perte réelle provoquerait (vécu le 19/08/2026).');
 	console.error('');
-	console.error('  Remède : `essayer()` de `$lib/chargement`, puis `EtatListe` pour une');
+	console.error('  Remède : `essayer()` de `#lib/chargement`, puis `EtatListe` pour une');
 	console.error('  liste affichée, ou `ChargementPartiel` pour une donnée de référence.');
 	console.error('');
 	return 1;

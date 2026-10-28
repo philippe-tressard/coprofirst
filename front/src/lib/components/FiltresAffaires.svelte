@@ -25,14 +25,14 @@
   qui pourrait diverger. Le bilan de recherche le lit au même endroit.
 -->
 <script lang="ts">
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import { OPTIONS_PORTEE } from '$lib/me-concerne';
-	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
-	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
-	import BilanRecherche from '$lib/components/BilanRecherche.svelte';
-	import { OPTIONS_FILTRE_NATURE } from '$lib/tickets';
-	import type { Ticket } from '$lib/api';
-	import { archiveesTrouvees, type EtatRecherche } from '$lib/recherche-affaires';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import { OPTIONS_PORTEE } from '#lib/me-concerne.ts';
+	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
+	import BilanRecherche from '#lib/components/BilanRecherche.svelte';
+	import { OPTIONS_FILTRE_NATURE } from '#lib/tickets.ts';
+	import type { Ticket } from '#lib/api/index.ts';
+	import { archiveesTrouvees, type EtatRecherche } from '#lib/recherche-affaires.ts';
 
 	/** Les états présents dans la liste — calculés par la page, qui la connaît. */
 	export let optionsStatut: { value: string; label: string; statuts: readonly string[] }[] = [];

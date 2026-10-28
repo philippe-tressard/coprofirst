@@ -89,7 +89,7 @@
 -->
 <script lang="ts">
 	import { afterUpdate, createEventDispatcher, onDestroy } from 'svelte';
-	import { poserCouche } from '$lib/couche';
+	import { poserCouche } from '#lib/couche.ts';
 
 	/**
 	 * Le titre de la boîte — **affiché ET annoncé**. Obligatoire : sans lui, un
@@ -187,7 +187,7 @@
 		dispatch('fermer');
 	}
 
-	//  Défilement du fond et Échap : `$lib/couche.ts`, partagé avec la
+	//  Défilement du fond et Échap : `#lib/couche.ts`, partagé avec la
 	//  visionneuse — deux modales ou une photo ouverte depuis une modale, et
 	//  seule la couche du dessus se ferme (#1042). Posée au montage : le
 	//  composant n'existe que lorsque l'écran l'ouvre (`{#if}`).

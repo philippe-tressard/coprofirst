@@ -11,12 +11,12 @@
   en place (#889). `lint:geste-edition` le déclare (liste `MODALES`).
 -->
 <script lang="ts">
-	import { messageErreur } from '$lib/erreurs';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import { createEventDispatcher } from 'svelte';
-	import { admin as adminApi, type User } from '$lib/api';
-	import Modale from '$lib/components/Modale.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { nomAffiche } from '$lib/noms';
+	import { admin as adminApi, type User } from '#lib/api/index.ts';
+	import Modale from '#lib/components/Modale.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { nomAffiche } from '#lib/noms.ts';
 
 	export let utilisateur: User;
 	export let batimentsMap: Record<number, string> = {};

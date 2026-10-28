@@ -15,17 +15,17 @@
   (`utils/points_conseil_validation`) ; ce bloc ne fait que les montrer.
 -->
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { confirmer } from '$lib/confirmation';
-	import { messageErreur } from '$lib/erreurs';
-	import { enregistrerFichier } from '$lib/fichiers';
-	import { pointsConseil, type CompteRenduPoint, type PresentPoint } from '$lib/api';
-	import { fmtDate, fmtDatetime, jourIso } from '$lib/date';
-	import { nomPresent } from '$lib/points-conseil';
-	import { isAdmin } from '$lib/stores/auth';
-	import { demander } from '$lib/saisie';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { enregistrerFichier } from '#lib/fichiers.ts';
+	import { pointsConseil, type CompteRenduPoint, type PresentPoint } from '#lib/api/index.ts';
+	import { fmtDate, fmtDatetime, jourIso } from '#lib/date.ts';
+	import { nomPresent } from '#lib/points-conseil.ts';
+	import { isAdmin } from '#lib/stores/auth.ts';
+	import { demander } from '#lib/saisie.ts';
 
 	export let compteRendu: CompteRenduPoint;
 	/** Relire le point après un geste. */

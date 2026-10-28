@@ -9,7 +9,7 @@
   l'a scindé : ce qui règle la VIE de la copropriété reste ici ; ce qui règle la
   PRÉSENTATION — sous-titre de connexion, pied de page — est parti dans
   `OngletConnexion`, et le logo comme l'adresse publique dans l'Identité
-  (`OngletCopropriete`). `?onglet=site` mène ici (`$lib/admin-adresses`).
+  (`OngletCopropriete`). `?onglet=site` mène ici (`#lib/admin-adresses`).
 
   ## Ce qui reste chez le parent
 
@@ -18,11 +18,11 @@
   donnerait deux vérités sur la configuration du site.
 -->
 <script lang="ts">
-	import type { UtilisateurAdmin } from '$lib/api';
-	import { GLYPHE_URGENCE } from '$lib/options-publication';
-	import { nomAffiche } from '$lib/noms';
-	import Icon from '$lib/components/Icon.svelte';
-	import type { ConfigSite, SectionSite } from '$lib/configSite';
+	import type { UtilisateurAdmin } from '#lib/api/index.ts';
+	import { GLYPHE_URGENCE } from '#lib/options-publication.ts';
+	import { nomAffiche } from '#lib/noms.ts';
+	import Icon from '#lib/components/Icon.svelte';
+	import type { ConfigSite, SectionSite } from '#lib/configSite.ts';
 
 	/** Lié : la page porte l'état et l'enregistre. */
 	export let siteConfig: ConfigSite;

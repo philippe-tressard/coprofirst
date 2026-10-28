@@ -62,7 +62,7 @@ class QuestionReglement(SQLModel, table=True):
     #: `oui` · `non` · `sous_conditions` · `non_prevu` · `incertain`
     #: (`utils/question_reglement/format.VERDICTS`).
     verdict: str
-    #: HTML simple — rendu par un assainisseur de `$lib/sanitize`.
+    #: HTML simple — rendu par un assainisseur de `#lib/sanitize`.
     reponse: str
     #: Les réserves du juriste : ce que la loi impose par-dessus le règlement,
     #: une majorité d'assemblée, un passage illisible. HTML simple, ou vide.

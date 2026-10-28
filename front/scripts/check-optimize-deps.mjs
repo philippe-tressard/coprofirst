@@ -34,12 +34,12 @@ const VITE = new URL('../vite.config.ts', import.meta.url);
 /** Les modules que fournit un PLUGIN, pas `node_modules` : Vite ne les optimise pas. */
 const VIRTUELS = /^virtual:/;
 
-/** `import('x')` d'un paquet — ni chemin relatif, ni alias `$lib`, ni absolu. */
+/** `import('x')` d'un paquet — ni chemin relatif, ni alias `#lib`, ni absolu. */
 export function paquetsImportesALaDemande(source) {
 	const trouves = new Set();
 	for (const m of neutraliserCommentaires(source).matchAll(/\bimport\(\s*['"]([^'"]+)['"]\s*\)/g)) {
 		const spec = m[1];
-		if (/^[./$]/.test(spec) || VIRTUELS.test(spec)) continue;
+		if (/^[./#]/.test(spec) || VIRTUELS.test(spec)) continue;
 		trouves.add(spec);
 	}
 	return trouves;
@@ -76,7 +76,7 @@ function selftest() {
 		[
 			'un chemin, un alias, un module virtuel ne le sont pas',
 			paquetsImportesALaDemande(
-				"import('./a.svelte'); import('$lib/x'); import('virtual:pwa-register');",
+				"import('./a.svelte'); import('#lib/x'); import('virtual:pwa-register');",
 			).size === 0,
 		],
 		[

@@ -8,7 +8,7 @@ filtres, et chacun jette ce qu'il ne connaît pas.
 
 | Filtre | Ce qu'il fait d'une balise inconnue |
 |---|---|
-| `$lib/sanitize.ts` (DOMPurify) | la retire, en gardant son texte |
+| `#lib/sanitize.ts` (DOMPurify) | la retire, en gardant son texte |
 | le schéma de l'éditeur (ProseMirror) | l'aplatit au premier chargement |
 
 Trois listes doivent donc parler des mêmes balises : la consigne, la liste

@@ -163,7 +163,7 @@ def test_un_utilisateur_sans_identifiant_n_a_aucun_droit():
     sans cette garde, `getattr(objet, "auteur_id", None) == uid` serait VRAI dès
     que les deux valent `None`, et l'édition s'ouvrirait à qui n'a pas d'identité.
 
-    Le jumeau front (`$lib/droits.ts`) portait déjà la garde : les deux écritures
+    Le jumeau front (`#lib/droits.ts`) portait déjà la garde : les deux écritures
     d'une même règle doivent dire la même chose **jusque dans leurs cas limites**,
     sinon les comparer côte à côte ne prouve rien. C'est l'audit du 18/08/2026 qui
     a relevé l'écart.

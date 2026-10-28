@@ -4,7 +4,7 @@
  *  Admin se retire à un opérateur depuis le 16/10/2026 : il garde ses écrans,
  *  qui vivent sous `/admin`. L'écran doit donc :
  *  - lui offrir « Admin » au menu, et ne pas le renvoyer de `/admin` ;
- *  - ne lui montrer que les onglets `ouvertOperateur` (`$lib/onglets-ouverts`) —
+ *  - ne lui montrer que les onglets `ouvertOperateur` (`#lib/onglets-ouverts`) —
  *    Installation, Maintenance, et Installations sur la référence : le seul
  *    groupe Exploitation (#2062) ;
  *  - ouvrir sa supervision sur l'adresse d'un autre onglet — comme toute clé

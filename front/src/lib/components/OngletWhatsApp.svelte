@@ -1,6 +1,6 @@
 <script lang="ts">
-	import EncartDemo from '$lib/components/EncartDemo.svelte';
-	import { messageErreur } from '$lib/erreurs';
+	import EncartDemo from '#lib/components/EncartDemo.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
 	//  Onglet « WhatsApp » de l'administration — extrait de `admin/+page.svelte`
 	//  le 14/08/2026 : la page dépassait 2 200 lignes et la règle de modularité
 	//  impose de découper le fichier quand on y touche. L'onglet est autonome
@@ -12,16 +12,16 @@
 		config as configApi,
 		type JournalEnvoiWhatsApp,
 		type MessagePlanifieWhatsApp,
-	} from '$lib/api';
-	import { configStore } from '$lib/stores/pageConfig';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { essayer } from '$lib/chargement';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import MessagesPlanifiesWhatsApp from '$lib/components/MessagesPlanifiesWhatsApp.svelte';
-	import HistoriqueEnvoisWhatsApp from '$lib/components/HistoriqueEnvoisWhatsApp.svelte';
-	import EtatService from '$lib/components/EtatService.svelte';
+	} from '#lib/api/index.ts';
+	import { configStore } from '#lib/stores/pageConfig.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { essayer } from '#lib/chargement.ts';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import MessagesPlanifiesWhatsApp from '#lib/components/MessagesPlanifiesWhatsApp.svelte';
+	import HistoriqueEnvoisWhatsApp from '#lib/components/HistoriqueEnvoisWhatsApp.svelte';
+	import EtatService from '#lib/components/EtatService.svelte';
 
 	/** Configuration publique déjà chargée par la page (préremplit le formulaire). */
 	export let cfgPublique: Record<string, string> = {};

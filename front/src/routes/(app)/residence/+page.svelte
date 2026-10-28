@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { tenter, messageErreur } from '$lib/erreurs';
-	import AideSource from '$lib/components/AideSource.svelte';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
-	import BanniereResidence from '$lib/components/BanniereResidence.svelte';
-	import SectionDiagnostics from '$lib/components/SectionDiagnostics.svelte';
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import { tenter, messageErreur } from '#lib/erreurs.ts';
+	import AideSource from '#lib/components/AideSource.svelte';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
+	import BanniereResidence from '#lib/components/BanniereResidence.svelte';
+	import SectionDiagnostics from '#lib/components/SectionDiagnostics.svelte';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import ChampsIdentiteCopropriete, {
 		chargeIdentite,
 		identiteDepuis,
-	} from '$lib/components/ChampsIdentiteCopropriete.svelte';
+	} from '#lib/components/ChampsIdentiteCopropriete.svelte';
 	import { tick } from 'svelte';
 	import { browser } from '$app/env';
-	import { marquerDonneesAffichees } from '$lib/telemetry';
+	import { marquerDonneesAffichees } from '#lib/telemetry.ts';
 	import { afterNavigate } from '$app/navigation';
-	import { isAdmin, isCS, isLocataire, isProprioOuCS, quandAuthResolue } from '$lib/stores/auth';
+	import { isAdmin, isCS, isLocataire, isProprioOuCS, quandAuthResolue } from '#lib/stores/auth.ts';
 	import {
 		copropriete as coproprieteApi,
 		documents as documentsApi,
@@ -25,29 +25,29 @@
 		type Copropriete,
 		type DiagnosticType,
 		type Document,
-	} from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { cibleDuHash, revelerCible } from '$lib/deepLink';
+	} from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { cibleDuHash, revelerCible } from '#lib/deepLink.ts';
 	import {
 		getPageConfig,
 		configStore,
 		siteNomStore,
 		defautsDePage,
 		nomResidenceEnregistre,
-	} from '$lib/stores/pageConfig';
-	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
+	} from '#lib/stores/pageConfig.ts';
+	import BarreOnglets from '#lib/components/BarreOnglets.svelte';
 	import SectionRegles, {
 		lireRegles,
 		type LectureRegles,
-	} from '$lib/components/SectionRegles.svelte';
+	} from '#lib/components/SectionRegles.svelte';
 	//  ⏱ Le Carnet et son bilan attendent le passage sur leur onglet (#1844).
-	import FicheResidence from '$lib/components/FicheResidence.svelte';
-	import RubriqueDocuments from '$lib/components/RubriqueDocuments.svelte';
-	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
-	import { essayer, messagePartiel } from '$lib/chargement';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
+	import FicheResidence from '#lib/components/FicheResidence.svelte';
+	import RubriqueDocuments from '#lib/components/RubriqueDocuments.svelte';
+	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
+	import { essayer, messagePartiel } from '#lib/chargement.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 
 	/**  L'onglet vient du CHEMIN, résolu par `+page.ts` — jamais d'un `let`
 	 *   qu'on affecte : une page qui écrit son propre onglet ne peut plus être
@@ -245,7 +245,7 @@
 
 <!--  Cette page n'avait pas d'onglets avant le carnet d'entretien (10/09/2026).
       La rangée passe par `BarreOnglets`, qui lit la liste, l'ordre, les libellés
-      et les routes dans `$lib/pages` — un `<div class="tabs">` local rouvrirait
+      et les routes dans `#lib/pages` — un `<div class="tabs">` local rouvrirait
       les cinq divergences que ce composant a fermées. -->
 <BarreOnglets pageId="residence" actif={onglet} {masques} />
 
@@ -265,13 +265,13 @@
 	      l'arrivée. À côté du carnet et non dedans — le carnet est la lecture de
 	      tous les copropriétaires, le bilan celle du conseil. -->
 	{#if $isCS}
-		<ChargementDiffere charger={() => import('$lib/components/BilanCarnet.svelte')}>
+		<ChargementDiffere charger={() => import('#lib/components/BilanCarnet.svelte')}>
 			{#snippet contenu(BilanCarnet)}
 				<BilanCarnet />
 			{/snippet}
 		</ChargementDiffere>
 	{/if}
-	<ChargementDiffere charger={() => import('$lib/components/CarnetEntretien.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/CarnetEntretien.svelte')}>
 		{#snippet contenu(CarnetEntretien)}
 			<CarnetEntretien />
 		{/snippet}
@@ -280,7 +280,7 @@
 	{#if accesReglement === null}
 		<EtatListe chargement />
 	{:else}
-		<ChargementDiffere charger={() => import('$lib/components/OngletReglement.svelte')}>
+		<ChargementDiffere charger={() => import('#lib/components/OngletReglement.svelte')}>
 			{#snippet contenu(OngletReglement)}
 				<OngletReglement />
 			{/snippet}

@@ -42,7 +42,7 @@
   non-responsabilité — est inchangé **au mot près**. Seul l'objet nommé change.
 -->
 <script lang="ts">
-	import { GLYPHE_URGENCE } from '$lib/options-publication';
+	import { GLYPHE_URGENCE } from '#lib/options-publication.ts';
 	//  Replié par défaut : l'avertissement doit être accessible en permanence sans
 	//  occuper l'écran de quelqu'un qui vient consulter ses affaires.
 	let disclaimerOpen = false;

@@ -17,7 +17,7 @@
   ## Ce qu'il ne décide pas
 
   Ni la liste des états — elle vient de la source unique de chaque entité
-  (`$lib/tickets`, `$lib/publications`…) —, ni le droit de la changer. L'appelant
+  (`#lib/tickets`, `#lib/publications`…) —, ni le droit de la changer. L'appelant
   passe `lecture` quand le lecteur n'a pas la main : les pastilles se lisent
   alors, mais ne répondent pas. ⚠️ Le serveur refait le contrôle — ce que
   l'interface interdit n'est qu'un confort (`standards/03` §1).

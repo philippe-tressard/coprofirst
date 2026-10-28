@@ -33,11 +33,11 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import BoutonLien from '$lib/components/BoutonLien.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { safeHtml } from '$lib/sanitize';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import BoutonLien from '#lib/components/BoutonLien.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { safeHtml } from '#lib/sanitize.ts';
 
 	/** La question, telle que l'API la rend. */
 	export let item: { id: number; question: string; reponse: string; actif: boolean };

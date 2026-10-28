@@ -811,7 +811,7 @@ pure à `--selftest`, la mesure vit dans un module de `scripts/lib/`.
 | Contrôle | Ce qu'il dit | Module |
 |---|---|---|
 | C30, passage en cours | un passage `apt-daily-upgrade` tourne : la mesure est **différée** (ligne `ok` dite « INCONNU, revérifié au prochain passage », bornée à 2 h) — jamais un WARN sur un fait résolu vingt secondes plus tard | `lib-apt.sh`, `lib-mises-a-jour.sh` |
-| C30, paquets | hors sécurité en attente au-delà d'un seuil, paquets « retenus » (hors noyau), **parité** des paquets de `PAQUETS_PARITE` et de la valeur effective de `Unattended-Upgrade::Mail` (`apt-config dump`, #1677) entre les deux nœuds | `lib-paquets.sh` |
+| C30, paquets | hors sécurité en attente au-delà d'un seuil, paquets « retenus » (hors noyau), **parité** des paquets de `PAQUETS_PARITE` (le **standby en avance** sur l'actif est le geste de #2198 et se dit OK : l'actif suit à la bascule ; l'**actif** en avance, ou un `.active` incohérent, reste WARN) et de la valeur effective de `Unattended-Upgrade::Mail` (`apt-config dump`, #1677) entre les deux nœuds | `lib-paquets.sh` |
 | C32 | ports TCP à l'écoute sur toutes les interfaces, hors liste blanche (celle de `docker-compose.yml`, SSH, 80, 443, 8080) ; dit si le port est aussi sur l'autre nœud | `lib-ports-ecoute.sh` |
 | C33 | copie de `.env*` laissée à côté de `.env` et `.env.example` à la racine du dépôt déployé | `lib-fichiers-parasites.sh` |
 | C34 | copie de base (`*.db*`) laissée dans le volume de données, hors de toute règle de conservation, par un **listage de répertoire** | `lib-fichiers-parasites.sh` |

@@ -22,8 +22,8 @@
   que ce que la règle globale ne dit pas.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import { safeHtml } from '$lib/sanitize';
+	import Icon from '#lib/components/Icon.svelte';
+	import { safeHtml } from '#lib/sanitize.ts';
 
 	export let titre: string;
 	/** Nom d'icône Lucide. Toute page en porte une — sauf à ne pas savoir laquelle. */

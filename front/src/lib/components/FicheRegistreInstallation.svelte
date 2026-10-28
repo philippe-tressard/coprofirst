@@ -17,34 +17,34 @@
   5. **Contrat accepté** — le texte EXACT archivé sous l'identifiant (D26) ;
   6. **Journal des décisions** — qui, quand, quoi, pourquoi.
 
-  Un geste et un enregistrement de services demandent un MOTIF (`$lib/saisie`) :
+  Un geste et un enregistrement de services demandent un MOTIF (`#lib/saisie`) :
   le journal dit pourquoi. Ils partent dans le bail au prochain renouvellement de
   l'installation — la référence ne pousse jamais (§4.11, règle 5), et l'écran le dit.
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import CocheConformite from '$lib/components/CocheConformite.svelte';
-	import DistributionInstallation from '$lib/components/DistributionInstallation.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import CocheConformite from '#lib/components/CocheConformite.svelte';
+	import DistributionInstallation from '#lib/components/DistributionInstallation.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import type {
 		FicheInstallation,
 		GesteRegistre,
 		ServiceAccordable,
 		VagueLue,
 		VersionsPubliees,
-	} from '$lib/api';
-	import { fmtDatetime } from '$lib/date';
-	import { fmtNombre } from '$lib/utils';
-	import { nomAffiche } from '$lib/noms';
+	} from '#lib/api/index.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { fmtNombre } from '#lib/utils.ts';
+	import { nomAffiche } from '#lib/noms.ts';
 	import {
 		COPIE_HORS_MACHINE,
 		GESTES_REGISTRE,
 		libelleDecision,
 		pointsPosture,
-	} from '$lib/registre-installations';
-	import TexteMarkdown from '$lib/components/TexteMarkdown.svelte';
+	} from '#lib/registre-installations.ts';
+	import TexteMarkdown from '#lib/components/TexteMarkdown.svelte';
 
 	export let fiche: FicheInstallation;
 	export let accordables: ServiceAccordable[] = [];

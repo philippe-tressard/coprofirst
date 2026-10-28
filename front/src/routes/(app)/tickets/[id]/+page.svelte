@@ -5,7 +5,7 @@
 	//  Historique —, et la même affaire se lisait autrement qu'au fil d'activité
 	//  et dans la liste (signalé à l'écran). Elle rend désormais la carte de la
 	//  liste, seule et dépliée : même corps, mêmes gestes, par la même porte
-	//  (`$lib/affaires-en-liste`). Le changement d'état passe par la Suite, comme
+	//  (`#lib/affaires-en-liste`). Le changement d'état passe par la Suite, comme
 	//  partout ailleurs ; la corbeille, par les Archives (`ux-patterns` §8).
 	//
 	//  Ce qui lui reste PROPRE : le fil de MESSAGES, que la carte ne porte pas —
@@ -14,22 +14,27 @@
 	import { onMount, tick } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
-	import { lieu } from '$lib/lieu.svelte';
-	import { isAdmin } from '$lib/stores/auth';
-	import { tickets as ticketsApi, ApiError, type Ticket, type TicketMessage } from '$lib/api';
-	import { affairesEnListe } from '$lib/affaires-en-liste';
-	import { estArchive } from '$lib/recherche-affaires';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { estAbsent, messageErreur } from '$lib/erreurs';
-	import ListeTickets from '$lib/components/ListeTickets.svelte';
-	import FilMessagesTicket from '$lib/components/FilMessagesTicket.svelte';
-	import FilAriane from '$lib/components/FilAriane.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { TICKET } from '$lib/entites/ticket';
-	import { HREF_VERS_PAGE } from '$lib/pages';
-	import { siteNomStore } from '$lib/stores/pageConfig';
-	import { estActualite } from '$lib/tickets';
-	import { aboutirGeste, ouvrirGeste } from '$lib/aboutissement';
+	import { lieu } from '#lib/lieu.svelte.ts';
+	import { isAdmin } from '#lib/stores/auth.ts';
+	import {
+		tickets as ticketsApi,
+		ApiError,
+		type Ticket,
+		type TicketMessage,
+	} from '#lib/api/index.ts';
+	import { affairesEnListe } from '#lib/affaires-en-liste.ts';
+	import { estArchive } from '#lib/recherche-affaires.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { estAbsent, messageErreur } from '#lib/erreurs.ts';
+	import ListeTickets from '#lib/components/ListeTickets.svelte';
+	import FilMessagesTicket from '#lib/components/FilMessagesTicket.svelte';
+	import FilAriane from '#lib/components/FilAriane.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { TICKET } from '#lib/entites/ticket.ts';
+	import { HREF_VERS_PAGE } from '#lib/pages.ts';
+	import { siteNomStore } from '#lib/stores/pageConfig.ts';
+	import { estActualite } from '#lib/tickets.ts';
+	import { aboutirGeste, ouvrirGeste } from '#lib/aboutissement.ts';
 
 	$: _siteNom = $siteNomStore;
 	$: ticketId = Number($lieu.params.id);

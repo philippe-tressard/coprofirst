@@ -357,7 +357,7 @@ jobs:
         # divergence entre eux se déclare*. Celle-ci ne se déclarait nulle part et
         # n'était visible qu'en regardant les deux écrans côte à côte.
         #
-        # La règle vit dans `$lib/kanban.colonneDeLEvenement`.
+        # La règle vit dans `#lib/kanban.colonneDeLEvenement`.
         #
         # 🔴 ÉTENDU le 19/09/2026 (#1030) à la TABLE DES COLONNES, et non dans un
         # second contrôle : c'est la même porte, le même défaut et la même origine
@@ -379,14 +379,14 @@ jobs:
           for f in $(git ls-files -- 'front/src/**/*.svelte' 'front/src/**/*.ts'); do
             case "$f" in front/src/lib/kanban.ts) continue ;; esac
             if LC_ALL=C grep -nE 'statut_kanban\s*===\s*col(\.id)?\b' "$f" >/dev/null; then
-              echo "::error file=$f::le rangement des cartes du kanban est recopié ici — employer \`colonneDeLEvenement()\` de \$lib/kanban"
+              echo "::error file=$f::le rangement des cartes du kanban est recopié ici — employer \`colonneDeLEvenement()\` de #lib/kanban"
               st=1
             fi
             # Une SECONDE table de colonnes : une entrée qui porte à la fois un
             # `id` de colonne connue et sa teinte. C'est la forme que prenait la
             # copie, et elle ne peut pas apparaître par hasard.
             if LC_ALL=C grep -nE "id: *'(ag|cs|syndic|fournisseur|termine|annule)'.*color:" "$f" >/dev/null; then
-              echo "::error file=$f::la table des colonnes du kanban est recopiée ici — dériver \`KANBAN_COLS\` (ou \`KANBAN_COLS_ACCUEIL\`) de \$lib/kanban, et déclarer tout écart par \`labelCourt\` / \`masqueAccueil\`"
+              echo "::error file=$f::la table des colonnes du kanban est recopiée ici — dériver \`KANBAN_COLS\` (ou \`KANBAN_COLS_ACCUEIL\`) de #lib/kanban, et déclarer tout écart par \`labelCourt\` / \`masqueAccueil\`"
               st=1
             fi
           done
@@ -999,7 +999,7 @@ jobs:
       # Et le STATUT d'une personne : « est locataire » était recomposé dans SIX
       # écrans, « syndic ou mandataire » dans deux, et « bailleur ou résident »
       # deux fois dans le même fichier — qui définissait par ailleurs la dérivée
-      # sans l'employer. Les prédicats vivent dans `$lib/roles` (#959).
+      # sans l'employer. Les prédicats vivent dans `#lib/roles` (#959).
       #
       # ⚠️ Le contrôle vise le statut d'une PERSONNE, reconnu à son porteur.
       # `bail.statut === 'actif'` est un autre axe : crier dessus le ferait
@@ -1370,7 +1370,7 @@ jobs:
           # Le pré-remplissage du kanban par les prestataires (#605) : deux
           # boucles quasi identiques dans une page de 848 lignes, qu'aucun
           # contrôle ne touchait. Les fonctions pures vivent désormais dans
-          # `$lib/init-prestataires.ts` — que Node lit directement, donc le
+          # `#lib/init-prestataires.ts` — que Node lit directement, donc le
           # module éprouvé est CELUI QUE LE SITE EMBARQUE, pas une copie.
           npm run lint:init-prestataires
           # Les écrans que personne n'a ouverts (#1630) : la comparaison de la table
@@ -1384,7 +1384,7 @@ jobs:
           # voit qu'en supprimant un membre du MILIEU de la liste.
           npm run lint:liste-depliable
           # Un seul bloc déplié à la fois, partout (30/09/2026) : l'autotest de
-          # `$lib/accordeon` (groupes, correction qui reste ouverte, main rendue à
+          # `#lib/accordeon` (groupes, correction qui reste ouverte, main rendue à
           # la destruction) et le refus d'un nouvel état d'ouverture en `Set`.
           npm run lint:accordeon
           # Retrouver l'inscrit et le logement d'un membre de l'annuaire par son
@@ -1428,6 +1428,14 @@ jobs:
         working-directory: front
         run: npm run lint:html
 
+      # `#lib/…` est le seul chemin d'import vers `src/lib` (#2278) : SvelteKit 3
+      # déprécie l'alias historique, que l'option `alias` ne maintient que pour
+      # un temps. Le contrôle refuse son retour — commentaires compris — et exige
+      # que `package.json` déclare `imports` : sans lui, tout import est irrésoluble.
+      - name: Aucun import par l'ancien alias de src/lib
+        working-directory: front
+        run: npm run lint:alias-lib
+
       # Le nom d'une section de formulaire écrit DEUX FOIS à l'écran : la section
       # le pose en petites capitales, et le champ qu'elle contient le repose en
       # dessous — `FichiersUpload`, `PerimetrePicker` et `DestinatairePicker`
@@ -1461,7 +1469,7 @@ jobs:
       # Le défilement du document et la touche Échap, empruntés par Modale ET la
       # visionneuse : écrits deux fois, une photo ouverte depuis une modale
       # rendait le défilement, et Échap fermait les deux couches (#1042).
-      - name: Couches superposées passant par $lib/couche
+      - name: Couches superposées passant par #lib/couche
         working-directory: front
         run: npm run lint:couches
 
@@ -1784,13 +1792,13 @@ jobs:
       - name: Le carnet filtré par année suit le décret n° 2001-477
         # Les travaux se datent par leur année de réalisation (art. 4), les
         # contrats EN VIGUEUR restent (art. 3 et 4), rien ne se purge. La règle
-        # (`$lib/carnet`) est transpilée et exécutée ici.
+        # (`#lib/carnet`) est transpilée et exécutée ici.
         working-directory: front
         run: npm run lint:carnet-annee
 
       - name: Un refus du serveur se lit en phrase, jamais en JSON
         # #1327 : le toast de « Nouveau prestataire » affichait la liste de
-        # validation brute d'un 422. `$lib/detail-erreur` est exécuté ici.
+        # validation brute d'un 422. `#lib/detail-erreur` est exécuté ici.
         working-directory: front
         run: npm run lint:detail-erreur
 
@@ -2099,7 +2107,7 @@ jobs:
         run: npm run lint:pastilles
 
       # Le manuel montre les VRAIES pastilles « qui la lit », avec leur phrase au
-      # survol (27/09/2026) : recalculées par `$lib/lecture`, jamais recopiées.
+      # survol (27/09/2026) : recalculées par `#lib/lecture`, jamais recopiées.
       - name: Les pastilles du manuel disent ce que le site dit
         working-directory: front
         run: npm run lint:manuel-pastilles
@@ -2147,7 +2155,7 @@ jobs:
         run: npm run lint:identite-copropriete
 
       # Le nom de CETTE résidence ne s'écrit pas dans le site (#1725) : la résidence
-      # se lit dans sa configuration, la plateforme dans `$lib/plateforme`.
+      # se lit dans sa configuration, la plateforme dans `#lib/plateforme`.
       - name: Nom de la résidence jamais écrit dans le site
         working-directory: front
         run: npm run lint:nom-residence
@@ -2166,7 +2174,7 @@ jobs:
         run: npm run lint:caracteristiques-lot
 
       # Une suppression définitive se confirme par `SUPPRESSION`
-      # (`$lib/confirmation`) — deux modales écrites à la main avaient survécu
+      # (`#lib/confirmation`) — deux modales écrites à la main avaient survécu
       # (bail, compte), #779.
       - name: Suppressions confirmées par la boîte partagée
         working-directory: front
@@ -2212,7 +2220,7 @@ jobs:
       # teinte dit d'un coup d'œil si l'on est content de quelqu'un — là, elle
       # mentait.
       #
-      # ⚠️ `starsDisplay` était déjà dans `$lib/utils` : la règle était
+      # ⚠️ `starsDisplay` était déjà dans `#lib/utils` : la règle était
       # factorisée, son EMPLOI non — et c'est l'emploi qui porte les seuils,
       # donc le jugement. Même motif que #825.
       - name: Note de prestataire rendue à un seul endroit
@@ -2391,13 +2399,13 @@ jobs:
       # Aucune ne divergeait encore : c'est exactement l'état des quatre copies
       # des statuts de ticket avant #415, « chacune cohérente avec elle-même ».
       # Une clé oubliée dans l'une rend `undefined`, donc un badge sans couleur —
-      # rien ne lève, rien ne se voit. Les tables ont fondu (`$lib/table-statuts`),
+      # rien ne lève, rien ne se voit. Les tables ont fondu (`#lib/table-statuts`),
       # et ce contrôle interdit d'en rouvrir une paire.
       - name: Une table d'états n'est pas énumérée deux fois
         working-directory: front
         run: npm run lint:tables-statuts
 
-      # Les statuts d'un accès ne s'écrivent que dans `$lib/types-acces` (#1575,
+      # Les statuts d'un accès ne s'écrivent que dans `#lib/types-acces` (#1575,
       # 02/10/2026) : le formulaire en gardait une table à lui, « ✅ Actif » où
       # tous les autres écrans disaient « Actif ». Le contrôle précédent ne
       # compare que deux tables d'un même fichier ; celle-ci était seule.

@@ -24,7 +24,7 @@ process.exit(
 		fautes: lignesPortant(COPIE),
 		cas: [
 			["\t\t<Badge teinte={STATUT_TICKET_BADGE[etat] ?? 'badge-gray'}>", 1],
-			["\timport { STATUT_TICKET_BADGE, statutTicketLabel } from '$lib/tickets';", 1],
+			["\timport { STATUT_TICKET_BADGE, statutTicketLabel } from '#lib/tickets.ts';", 1],
 			//  La forme voulue, jamais signalée.
 			['\t\t<BadgeEtatAffaire statut={a.statut} compact />', 0],
 			//  Une autre table de teintes : hors portée.

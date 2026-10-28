@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  *  Les **statuts d'un accès** (badge Vigik, télécommande) — libellé, badge et
- *  pictogramme — ne s'écrivent que dans `$lib/types-acces` (#1575, 02/10/2026).
+ *  pictogramme — ne s'écrivent que dans `#lib/types-acces` (#1575, 02/10/2026).
  *
  *  🔴 `STATUTS_ACCES` les portait depuis #1345, et six écrans la lisaient. Une
  *  table locale survivait pourtant dans `FormulaireAcces` — les pastilles du
@@ -62,10 +62,10 @@ process.exit(
 			//  Un commentaire qui cite la forme refusée.
 			["\t// on écrivait { val: 'suspendu', label: '⏸️ Suspendu' } ici", 0],
 		],
-		ok: "Statuts d'accès : écrits dans `$lib/types-acces` seul",
-		ko: "table(s) des statuts d'accès écrite(s) hors de `$lib/types-acces`",
+		ok: "Statuts d'accès : écrits dans `#lib/types-acces` seul",
+		ko: "table(s) des statuts d'accès écrite(s) hors de `#lib/types-acces`",
 		conseil:
 			'Lire `STATUTS_ACCES`, `STATUT_ACCES_OPTIONS`, `statutAccesLabel` ou ' +
-			'`statutAccesBadge` (`$lib/types-acces`) ; un attribut qui manque s’y ajoute.',
+			'`statutAccesBadge` (`#lib/types-acces`) ; un attribut qui manque s’y ajoute.',
 	}),
 );

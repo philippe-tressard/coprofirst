@@ -71,7 +71,7 @@ async function libelleDe(formulaire: Locator, c: Locator): Promise<string> {
 /**
  *  Les libellés de toutes les cases que le formulaire REND — section par section :
  *  les sections facultatives sont pliées, et un seul bloc se déplie à la fois
- *  (`$lib/accordeon`). Compter sans déplier rendrait « aucune case » vert pour
+ *  (`#lib/accordeon`). Compter sans déplier rendrait « aucune case » vert pour
  *  une section qui en cache trois.
  */
 async function casesRendues(formulaire: Locator): Promise<string[]> {

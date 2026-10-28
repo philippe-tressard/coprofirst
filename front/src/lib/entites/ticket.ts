@@ -109,7 +109,7 @@ export const TICKET: EntiteDeclaree = {
 			//  (`api/app/routers/tickets/crud.py`).
 			//  🔁 Une ACTUALITÉ a désormais un suivi OPTIONNEL (10/10/2026) : la case
 			//  du conseil, puis Ouvert · Résolu · Annulé par une Suite. La section n'y
-			//  est donc plus éteinte ; facultative, elle s'y plie (`$lib/suivi-actualite`
+			//  est donc plus éteinte ; facultative, elle s'y plie (`#lib/suivi-actualite`
 			//  et `SectionsSpecifiquesTicket`).
 			id: 'suivi',
 			requis: true,

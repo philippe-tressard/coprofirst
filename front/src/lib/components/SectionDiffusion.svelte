@@ -27,12 +27,12 @@
   gabarit (`standards/04` §14).
 -->
 <script lang="ts">
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import CanauxNotification from '$lib/components/CanauxNotification.svelte';
-	import ApercuDiffusionModale from '$lib/components/ApercuDiffusion.svelte';
-	import { creerApercu } from '$lib/apercu';
-	import type { ApercuDiffusion } from '$lib/api';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import CanauxNotification from '#lib/components/CanauxNotification.svelte';
+	import ApercuDiffusionModale from '#lib/components/ApercuDiffusion.svelte';
+	import { creerApercu } from '#lib/apercu.ts';
+	import type { ApercuDiffusion } from '#lib/api/index.ts';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher<{ envoyer: void }>();
@@ -120,7 +120,7 @@
 	/** Passé à la modale : elle grise « Envoyer » pendant l'enregistrement. */
 	export let envoiEnCours = false;
 
-	//  Le store vit ICI, plus dans chaque formulaire. `$lib/apercu` était déjà
+	//  Le store vit ICI, plus dans chaque formulaire. `#lib/apercu` était déjà
 	//  partagé ; c'est son BRANCHEMENT qui était recopié.
 	const apercu = creerApercu(() => {
 		if (!demanderApercu) throw new Error('Aperçu non disponible sur cet écran.');

@@ -13,10 +13,10 @@
   `bind:this` (`ChargementDiffere`, la référence vaut `null` avant l'arrivée).
 -->
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import type { Ticket, TicketEvolution } from '$lib/api';
-	import { currentUser, isCS } from '$lib/stores/auth';
-	import type { GestesTicket } from '$lib/tickets';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import type { Ticket, TicketEvolution } from '#lib/api/index.ts';
+	import { currentUser, isCS } from '#lib/stores/auth.ts';
+	import type { GestesTicket } from '#lib/tickets.ts';
 	import RubriqueHistorique from './RubriqueHistorique.svelte';
 
 	export let ticket: Ticket;
@@ -40,7 +40,7 @@
 	>
 		<svelte:fragment slot="edition" let:evol>
 			<!--  Sa correction rouvre ses sections, comme celle d'une affaire. -->
-			<ChargementDiffere charger={() => import('$lib/components/SuiteAffaire.svelte')}>
+			<ChargementDiffere charger={() => import('#lib/components/SuiteAffaire.svelte')}>
 				{#snippet contenu(SuiteAffaire)}
 					<SuiteAffaire
 						{ticket}

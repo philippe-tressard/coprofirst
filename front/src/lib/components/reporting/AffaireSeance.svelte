@@ -13,15 +13,15 @@
   (« Points annexes CS & Syndic »), créée à l'ouverture du point.
 -->
 <script lang="ts">
-	import SectionDescription from '$lib/components/SectionDescription.svelte';
-	import { TICKET } from '$lib/entites/ticket';
-	import { pliageDe } from '$lib/pliage';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import { pointsConseil, type CompteRenduPoint, type EtatValidation } from '$lib/api';
+	import SectionDescription from '#lib/components/SectionDescription.svelte';
+	import { TICKET } from '#lib/entites/ticket.ts';
+	import { pliageDe } from '#lib/pliage.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { pointsConseil, type CompteRenduPoint, type EtatValidation } from '#lib/api/index.ts';
 
 	export let pointId: number;
 	/** Les catégories proposées — la liste du serveur. */

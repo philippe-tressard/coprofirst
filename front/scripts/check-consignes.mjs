@@ -105,7 +105,7 @@ const tableauxEtBlocs = (texte) =>
  * Les PARAGRAPHES d'un fichier — pour une énumération écrite en prose.
  *
  * 🔴 Lu sur le fichier entier, le déclencheur des exceptions XSS rougissait sur
- * un `import Icon from '$lib/components/Icon.svelte'` d'exemple, parce que le mot
+ * un `import Icon from '#lib/components/Icon.svelte'` d'exemple, parce que le mot
  * « exception » figurait trois cents lignes plus loin. C'est arrivé le 23/09/2026,
  * quand `svelte-patterns` a remplacé sa liste par un renvoi : le contrôle punissait
  * exactement le geste qu'il recommande (claude-config#122). Une liste d'exceptions

@@ -11,7 +11,7 @@
   les décide. Sans icône, il rend le libellé seul — le badge d'avant.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 
 	export let icones: string[] = [];
 	export let texte = '';

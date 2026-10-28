@@ -1,39 +1,44 @@
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import { lieu } from '$lib/lieu.svelte';
-	import { nomAffiche } from '$lib/noms';
-	import type { Inscrit, LigneImport, LotRapproche } from '$lib/annuaire-rapprochement';
-	import type { User } from '$lib/api/types';
-	import EntetePage from '$lib/components/EntetePage.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import { lieu } from '#lib/lieu.svelte.ts';
+	import { nomAffiche } from '#lib/noms.ts';
+	import type { Inscrit, LigneImport, LotRapproche } from '#lib/annuaire-rapprochement.ts';
+	import type { User } from '#lib/api/types.ts';
+	import EntetePage from '#lib/components/EntetePage.svelte';
 	//  ⏱ L'onglet Annuaire et la boîte de validation attendent un geste :
 	//  chargés à leur affichage (#1844).
-	import { validerCompte } from '$lib/comptes';
-	import { messageErreur, tenter } from '$lib/erreurs';
-	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
-	import { essayer, messagePartiel } from '$lib/chargement';
-	import { isCS, authResolue, quandAuthResolue } from '$lib/stores/auth';
+	import { validerCompte } from '#lib/comptes.ts';
+	import { messageErreur, tenter } from '#lib/erreurs.ts';
+	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
+	import { essayer, messagePartiel } from '#lib/chargement.ts';
+	import { isCS, authResolue, quandAuthResolue } from '#lib/stores/auth.ts';
 	import { goto } from '$app/navigation';
 	import {
 		admin as adminApi,
 		auth as authApi,
 		lots as lotsApi,
 		type CommandeAccesEnAttente,
-	} from '$lib/api';
-	import { typeAccesLabel } from '$lib/types-acces';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import { fmtDateShort } from '$lib/date';
-	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
-	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
-	import { agitPourAutrui } from '$lib/roles';
-	import { accepterCommandeAcces, refuserCommandeAcces } from '$lib/commandes-acces';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	} from '#lib/api/index.ts';
+	import { typeAccesLabel } from '#lib/types-acces.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
+	import { fmtDateShort } from '#lib/date.ts';
+	import { marquerDonneesAffichees, trackTabView } from '#lib/telemetry.ts';
+	import BarreOnglets from '#lib/components/BarreOnglets.svelte';
+	import { agitPourAutrui } from '#lib/roles.ts';
+	import { accepterCommandeAcces, refuserCommandeAcces } from '#lib/commandes-acces.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	$: _pc = getPageConfig($configStore, 'espace-cs', defautsDePage('espace-cs'));
 	$: _siteNom = $siteNomStore;
 
 	// -- Onglet -------------------------------------------------------------
-	//  🔴 UNE SEULE LISTE, et elle est dans la TABLE (`$lib/pages.ts`, 05/09/2026).
+	//  🔴 UNE SEULE LISTE, et elle est dans la TABLE (`#lib/pages.ts`, 05/09/2026).
 	//  Elle a d'abord été écrite deux fois dans ce fichier (04/09), puis une fois
 	//  ici et une fois dans la table — qui porte désormais aussi l'URL de chaque
 	//  onglet. Une liste locale rouvrirait la divergence avec l'adresse.
@@ -65,7 +70,7 @@
 	//  L'onglet vit dans `AnnuaireConseil` et `AnnuaireSyndic` (#779, 29/09/2026),
 	//  qui s'amorcent seuls. La page ne garde que les données de RÉFÉRENCE qu'elle
 	//  charge de toute façon : elles servent aux deux à rapprocher un nom saisi
-	//  d'un inscrit et d'un logement (`$lib/annuaire-rapprochement`).
+	//  d'un inscrit et d'un logement (`#lib/annuaire-rapprochement`).
 	/** Non vide = une donnée de référence manque : l'écran est faux, pas vide. */
 	let erreurBatiments = '';
 	let erreurAnnuaire = '';
@@ -156,7 +161,7 @@
 		cvAncienResident = '';
 	}
 
-	//  🔴 Le geste vit dans `$lib/comptes` (12/09/2026). Cet écran en portait sa
+	//  🔴 Le geste vit dans `#lib/comptes` (12/09/2026). Cet écran en portait sa
 	//  propre version, plus PAUVRE que celle de l'administration : le même
 	//  endpoint rend `auto_match`, et le conseil syndical ne voyait ni les lots
 	//  résolus, ni l'avertissement quand un copropriétaire aidé reste introuvable.
@@ -279,7 +284,7 @@
 					      dérive. -->
 					{#if cvModal?.id === user.id}
 						<div class="pending-form">
-							<ChargementDiffere charger={() => import('$lib/components/ValidationCompte.svelte')}>
+							<ChargementDiffere charger={() => import('#lib/components/ValidationCompte.svelte')}>
 								{#snippet contenu(ValidationCompte)}
 									<ValidationCompte
 										utilisateur={user}
@@ -331,13 +336,13 @@
 	{/if}
 {:else if onglet === 'badges'}
 	<!--  Le parc de badges a quitté « Mes lots & accès » (12/09/2026) : motif dans `pages.ts`. -->
-	<ChargementDiffere charger={() => import('$lib/components/BadgesCopropriete.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/BadgesCopropriete.svelte')}>
 		{#snippet contenu(BadgesCopropriete)}
 			<BadgesCopropriete />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'reporting'}
-	<ChargementDiffere charger={() => import('$lib/components/reporting/OngletReporting.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/reporting/OngletReporting.svelte')}>
 		{#snippet contenu(OngletReporting)}
 			<OngletReporting
 				titreOnglet={_pc.onglets?.reporting?.label ?? 'Reporting'}
@@ -346,20 +351,20 @@
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'annonces-hall'}
-	<!-- Aucune prop de plafond : l'affiche a la sienne (`$lib/annonces`, #651). -->
-	<ChargementDiffere charger={() => import('$lib/components/OngletAnnoncesHall.svelte')}>
+	<!-- Aucune prop de plafond : l'affiche a la sienne (`#lib/annonces`, #651). -->
+	<ChargementDiffere charger={() => import('#lib/components/OngletAnnoncesHall.svelte')}>
 		{#snippet contenu(OngletAnnoncesHall)}
 			<OngletAnnoncesHall />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'courriels'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletCourriels.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletCourriels.svelte')}>
 		{#snippet contenu(OngletCourriels)}
 			<OngletCourriels />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'annuaire'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletAnnuaireCS.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletAnnuaireCS.svelte')}>
 		{#snippet contenu(OngletAnnuaireCS)}
 			<OngletAnnuaireCS {referenceLue} {sources} />
 		{/snippet}

@@ -44,7 +44,7 @@ def collecter(ctx: ContexteFlux) -> list[FluxItem]:
             meta={
                 "question_reglement_id": q.id,
                 #  Le CODE du verdict : la capsule prend sa teinte, comme dans
-                #  l'onglet (`$lib/reglement`, `CLASSE_VERDICT`).
+                #  l'onglet (`#lib/reglement`, `CLASSE_VERDICT`).
                 "verdict": q.verdict,
                 "auteur": auteur_nom(ctx.session, q.auteur_id),
             },

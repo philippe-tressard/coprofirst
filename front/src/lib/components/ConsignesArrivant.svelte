@@ -27,13 +27,13 @@
 		consignesArrivant as consignesApi,
 		type ConsigneArrivant,
 		type ConsignesArrivant,
-	} from '$lib/api';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { messageErreur } from '$lib/erreurs';
+	} from '#lib/api/index.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
 
 	/** Le serveur en refuse davantage (`utils/consignes_arrivant.Consignes`). */
 	const MAX_RUBRIQUES = 12;

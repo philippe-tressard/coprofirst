@@ -12,9 +12,9 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher, tick } from 'svelte';
-	import { partage as partageApi } from '$lib/api';
-	import type { CiblePartage } from '$lib/partage';
-	import { messageErreur } from '$lib/erreurs';
+	import { partage as partageApi } from '#lib/api/index.ts';
+	import type { CiblePartage } from '#lib/partage.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
 
 	/** Ce qui est transmis — l'affaire, l'annonce, le sondage… (`cibleDuLien`). */
 	export let cible: CiblePartage;

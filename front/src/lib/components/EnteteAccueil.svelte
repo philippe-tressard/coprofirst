@@ -8,12 +8,12 @@
   logement —, la page gardant le chargement.
 -->
 <script lang="ts">
-	import type { MonLot } from '$lib/api';
-	import Avatar from '$lib/components/Avatar.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import { libelleLogement } from '$lib/utils';
-	import { libelleRole, libelleStatut, LIBELLES_STATUT } from '$lib/roles';
-	import { currentUser } from '$lib/stores/auth';
+	import type { MonLot } from '#lib/api/index.ts';
+	import Avatar from '#lib/components/Avatar.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import { libelleLogement } from '#lib/utils.ts';
+	import { libelleRole, libelleStatut, LIBELLES_STATUT } from '#lib/roles.ts';
+	import { currentUser } from '#lib/stores/auth.ts';
 
 	/**  Calculée par la page, qui la relit au chargement des données
 	 *   (`relire`) : ici, elle serait figée au montage. */
@@ -23,7 +23,7 @@
 	/** Vrai quand la page a chargé : l'en-tête entre alors en fondu. */
 	export let visible = false;
 
-	//  🔴 Les deux tables locales ont rejoint `$lib/roles` (#801) : elles étaient
+	//  🔴 Les deux tables locales ont rejoint `#lib/roles` (#801) : elles étaient
 	//  la troisième écriture front de la même notion, et la SEULE à écrire
 	//  « Copropriétaire résident » — les deux autres écrans mettaient une
 	//  capitale au second mot. C'est cette forme-ci qui a été retenue.

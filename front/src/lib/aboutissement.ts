@@ -10,14 +10,14 @@
  * compte ni page (`api/app/utils/gestes_formulaire.py`) ; l'onglet Télémétrie
  * lit ici leurs libellés.
  *
- * ⚠️ À ne pas confondre avec `$lib/gestes`, qui NOMME les gestes à l'écran
+ * ⚠️ À ne pas confondre avec `#lib/gestes`, qui NOMME les gestes à l'écran
  * (« Ajouter une suite ») : celui-ci les MESURE.
  *
  * Un geste neuf : une ligne dans `GESTES_MESURES`, puis `ouvrirGeste` là où son
  * formulaire s'ouvre et `aboutirGeste` là où son envoi réussit — dans le
  * composant qui tient l'ouverture et l'envoi, pas écran par écran.
  */
-import { trackEvent } from '$lib/telemetry';
+import { trackEvent } from '#lib/telemetry.ts';
 
 export const GESTES_MESURES = {
 	'affaire.creer': 'Créer une affaire',

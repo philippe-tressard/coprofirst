@@ -107,7 +107,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Décidé** : une petite annonce a un workflow — En cours · Réservé · Vendu · Donné · Annulé — et aucun fil d'évolutions.
 - **Pourquoi** : la question de la section est « où en est l'objet ? », pas « qui agit ? » ; un vendeur qui a réservé ou vendu a un cycle que ses voisins lisent.
 - **Écarté** : « l'annonce n'a qu'un acteur, donc pas de workflow » (écrit le matin même) ; importer `RubriqueHistorique` par réflexe.
-- **Tenu par** : la déclaration de l'entité (`$lib/entites/`), `lint:etats`.
+- **Tenu par** : la déclaration de l'entité (`#lib/entites/`), `lint:etats`.
 
 ### n° 9 · révisé — L'archivage se calcule ; le conseil peut aussi ranger d'un geste
 18/08/2026 · #1538 (révision) · l'utilisateur · §8, §16
@@ -163,7 +163,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Tenu par** : voir la skill `user-manual`.
 
 ### n° 17 · en vigueur — Un seul bloc déplié à la fois, partout
-30/09/2026 · v2.87.0 (PR #1487) · l'utilisateur, demande · §3 Règles, `$lib/accordeon`
+30/09/2026 · v2.87.0 (PR #1487) · l'utilisateur, demande · §3 Règles, `#lib/accordeon`
 - **Décidé** : cartes, années d'archives, colonnes vides du kanban, sections de formulaire, réponses, `<details>` — « sans exception, formulaires compris ». Deux exceptions : une section **modifiée** reste ouverte, une carte **en correction** aussi. Une seule mécanique (`basculer`, `membre`, `listeMembre`, l'écouteur des `<details>` posé par le layout) ; le bloc ouvert remonte à l'écran quand le repli d'un voisin l'en a fait sortir (`amenerEnVue`).
 - **Pourquoi** : signalé dans Admin › IA : « on se trouve à la fin de la section ouverte ».
 - **Écarté** : un `Set` d'ouverture (« ce n'est pas un accordéon », colonnes vides du kanban).
@@ -229,7 +229,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Décidé** : pas de workflow d'affaire sur une actualité ; son Publié / Brouillon est une décision de diffusion. Depuis le 10/10, un **suivi optionnel** à trois états — Ouvert · Résolu · Annulé (`ETATS_SUIVI_ACTUALITE`).
 - **Pourquoi** : « En cours », « Résolu » faisaient ressembler une annonce à un dossier suivi (ré-arbitré le 18/08, après l'avoir ouvert la veille).
 - **Écarté** : le workflow complet d'une affaire.
-- **Tenu par** : la déclaration (`sansObjet`), `$lib/suivi-actualite`.
+- **Tenu par** : la déclaration (`sansObjet`), `#lib/suivi-actualite`.
 - **Historique** : 10/10 — suivi optionnel, v2.131.0 (#1807). ⚠️ Le §16 dit encore « c'est définitif » : périmé (vérifié dans le code le 18/10/2026).
 
 ### n° 27 · en vigueur — La Diffusion se rouvre à l'édition
@@ -244,7 +244,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Décidé** : la section s'appelle Workflow ; un changement de colonne est une transition tracée.
 - **Pourquoi** : ses colonnes répondent à « où en est cet objet ? ».
 - **Écarté** : un second champ d'état « Suivi Kanban » ; ranger le kanban dans la Diffusion.
-- **Tenu par** : `KANBAN_COLS` (`$lib/kanban`), contrôle du kanban (job `test-scripts`).
+- **Tenu par** : `KANBAN_COLS` (`#lib/kanban`), contrôle du kanban (job `test-scripts`).
 
 ### n° 29 · en vigueur — Une seule largeur de saisie
 18/08/2026 · non retrouvé · l'utilisateur · §9
@@ -310,7 +310,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 
 ### n° 38 · en vigueur — Un onglet est une adresse
 05/09/2026 · non retrouvé · l'utilisateur, demande · §4
-- **Décidé** : chaque onglet et sous-onglet a son URL (`BarreOnglets`, `$lib/pages.ts`, `reroute`) ; plate pour un contenu, imbriquée pour une vue. Admin reste sur `?onglet=`.
+- **Décidé** : chaque onglet et sous-onglet a son URL (`BarreOnglets`, `#lib/pages.ts`, `reroute`) ; plate pour un contenu, imbriquée pour une vue. Admin reste sur `?onglet=`.
 - **Pourquoi** : envoyer une petite annonce ne donnait à copier que l'adresse de la page voisine ; « sauf admin », demandé.
 - **Écarté** : un segment de reste `[...vue]` (il déplace les écrans) ; se replier sur le premier onglet pour une adresse inconnue.
 - **Tenu par** : `test_liens_front.py`, `npm run lint:onglets-reserves`.

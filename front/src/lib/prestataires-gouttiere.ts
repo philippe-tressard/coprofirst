@@ -3,12 +3,12 @@
  *  carte (la page Affaires devenue le standard du site, 10/10/2026, #1819).
  *
  *  Les tables (`EQUIPEMENTS`, `TYPES_PRESTATAIRE`) restent dans
- *  `$lib/prestataires` : ce module n'y ajoute que la marque de gouttière de
- *  chaque valeur — pictogramme au trait (`$lib/icones-svg.json`) et mot abrégé.
+ *  `#lib/prestataires` : ce module n'y ajoute que la marque de gouttière de
+ *  chaque valeur — pictogramme au trait (`#lib/icones-svg.json`) et mot abrégé.
  *  Une valeur sans marque n'a pas de classement : `classeDe` rend `null`.
  */
-import { classeDe, type ClasseGouttiere, type MarqueGouttiere } from '$lib/gouttiere';
-import { EQUIPEMENTS, TYPES_PRESTATAIRE } from '$lib/prestataires';
+import { classeDe, type ClasseGouttiere, type MarqueGouttiere } from '#lib/gouttiere.ts';
+import { EQUIPEMENTS, TYPES_PRESTATAIRE } from '#lib/prestataires.ts';
 
 /**  ⚠️ Deux types n'ont pas de pictogramme au catalogue — `nettoyage` (balai)
  *   et `vmc` (ventilateur) : ils prennent celui de « Autre », et leur mot

@@ -21,7 +21,7 @@
   pour ce qui lui est propre (la Résidence y ajoute l'aide sur l'assurance).
 -->
 <script context="module" lang="ts">
-	import { nombreOuNull } from '$lib/utils';
+	import { nombreOuNull } from '#lib/utils.ts';
 
 	/** Ce que `CoproprieteUpdate` accepte de l'identité ; un nombre vide vaut `''`
 	 *  ou `null` le temps de la saisie (cf. `chargeIdentite`). */
@@ -76,9 +76,9 @@
 </script>
 
 <script lang="ts">
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import LibelleGroupe from '$lib/components/LibelleGroupe.svelte';
-	import { NOMS_MOIS } from '$lib/date';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import LibelleGroupe from '#lib/components/LibelleGroupe.svelte';
+	import { NOMS_MOIS } from '#lib/date.ts';
 
 	export let valeurs: IdentiteCopropriete;
 </script>

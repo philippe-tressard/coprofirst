@@ -60,9 +60,9 @@
   tout, ce qui est une chose de moins à savoir pour la suivre.
 -->
 <script lang="ts">
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import { fmtDate } from '$lib/date';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import { fmtDate } from '#lib/date.ts';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
 
 	/** Préfixe des identifiants — l'écran en ouvre parfois plusieurs à la fois. */
 	export let idPrefixe: string;

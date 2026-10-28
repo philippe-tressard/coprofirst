@@ -1,19 +1,24 @@
 <script lang="ts">
-	import { comparerParNom } from '$lib/noms';
-	import Icon from '$lib/components/Icon.svelte';
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import CarteContact, { type Medaillon } from '$lib/components/CarteContact.svelte';
-	import QRCode from '$lib/components/QRCode.svelte';
+	import { comparerParNom } from '#lib/noms.ts';
+	import Icon from '#lib/components/Icon.svelte';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import CarteContact, { type Medaillon } from '#lib/components/CarteContact.svelte';
+	import QRCode from '#lib/components/QRCode.svelte';
 	import { onMount } from 'svelte';
-	import { marquerDonneesAffichees } from '$lib/telemetry';
-	import { annuaire as annuaireApi, type Annuaire, type MembreAnnuaireCS } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import { fmtDateLong as formatDate } from '$lib/date';
-	import { revelerCible } from '$lib/deepLink';
-	import { etageLabel, telephonesDe } from '$lib/utils';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import LienConsignes from '$lib/components/LienConsignes.svelte';
+	import { marquerDonneesAffichees } from '#lib/telemetry.ts';
+	import { annuaire as annuaireApi, type Annuaire, type MembreAnnuaireCS } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
+	import { fmtDateLong as formatDate } from '#lib/date.ts';
+	import { revelerCible } from '#lib/deepLink.ts';
+	import { etageLabel, telephonesDe } from '#lib/utils.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import LienConsignes from '#lib/components/LienConsignes.svelte';
 
 	$: _pc = getPageConfig($configStore, 'annuaire', defautsDePage('annuaire'));
 	$: _siteNom = $siteNomStore;
@@ -97,7 +102,7 @@
 				membres: [...membres].sort((a, b) => {
 					const gd = genreOrder(a.genre) - genreOrder(b.genre);
 					if (gd !== 0) return gd;
-					//  Puis la règle commune — nom, puis prénom (`$lib/noms`).
+					//  Puis la règle commune — nom, puis prénom (`#lib/noms`).
 					return comparerParNom(a, b);
 				}),
 			}));

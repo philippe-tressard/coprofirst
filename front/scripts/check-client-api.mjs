@@ -289,7 +289,7 @@ if (ecarts.length) {
 	for (const e of ecarts) console.error(`  ${e}`);
 	console.error(
 		`\n  La route appartient au client. Deux gestes possibles, jamais un troisième :\n` +
-			`    • la méthode existe   → l'appeler (import depuis '$lib/api') ;\n` +
+			`    • la méthode existe   → l'appeler (import depuis '#lib/api') ;\n` +
 			`    • elle n'existe pas, ou ne couvre pas le besoin (paramètre manquant,\n` +
 			`      retour non typé) → l'AJOUTER ou l'ENRICHIR dans src/lib/api/, puis l'appeler.\n`,
 	);

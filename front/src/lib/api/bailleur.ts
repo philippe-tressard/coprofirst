@@ -6,7 +6,7 @@
 //  existante (`routers/bailleur/`, son propre paquet côté serveur).
 //
 //  ⚠️ La surface publique NE BOUGE PAS : `index.ts` réexporte tout, et les
-//  `from '$lib/api'` du front ne changent pas d'une ligne.
+//  `from '#lib/api/index.ts'` du front ne changent pas d'une ligne.
 import { api } from './client';
 
 /**

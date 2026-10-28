@@ -27,7 +27,7 @@ export interface SyntheseDurees {
 }
 
 /** Un geste mesuré (#1633) — `utils/gestes_formulaire.synthese_gestes`. `geste` est
- *  un identifiant de `$lib/aboutissement`, qui en porte le libellé. */
+ *  un identifiant de `#lib/aboutissement`, qui en porte le libellé. */
 export interface GesteAbouti {
 	geste: string;
 	ouvertures: number;

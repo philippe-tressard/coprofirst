@@ -11,9 +11,9 @@
   `check-reliability.sh` (« [FAIL] … ») : autre source, autre forme.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import type { ConstatPatrimoine } from '$lib/api';
-	import { parAttribut } from '$lib/table-statuts';
+	import Badge from '#lib/components/Badge.svelte';
+	import type { ConstatPatrimoine } from '#lib/api/index.ts';
+	import { parAttribut } from '#lib/table-statuts.ts';
 
 	export let constats: ConstatPatrimoine[] = [];
 	/** Ce qu'on dit quand il n'y en a aucun. */

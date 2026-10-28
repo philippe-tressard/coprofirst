@@ -7,9 +7,9 @@
 	 * c'est lui qui trie les pages, parce qu'une médiane correcte cache la lenteur
 	 * que subit un résident sur quatre.
 	 */
-	import PanneauTelemetrie from '$lib/components/PanneauTelemetrie.svelte';
-	import { fmtDuree, fmtNombre } from '$lib/utils';
-	import type { SyntheseDurees } from '$lib/api';
+	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
+	import { fmtDuree, fmtNombre } from '#lib/utils.ts';
+	import type { SyntheseDurees } from '#lib/api/index.ts';
 
 	export let durees: SyntheseDurees;
 	export let periode: string;

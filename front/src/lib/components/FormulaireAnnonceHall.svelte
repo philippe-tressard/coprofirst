@@ -31,17 +31,17 @@
   réécrire ce qu'on vient de saisir.
 -->
 <script lang="ts">
-	import SectionDiffusion from '$lib/components/SectionDiffusion.svelte';
-	import { annoncesHall as annoncesHallApi } from '$lib/api';
-	import SectionDescription from '$lib/components/SectionDescription.svelte';
-	import { contexteAssistant, perimetreContexte } from '$lib/assistant';
-	import Pastille from '$lib/components/Pastille.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import SectionPerimetre from '$lib/components/SectionPerimetre.svelte';
-	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
-	import { fmtDateShort } from '$lib/date';
-	import type { SourceAffiche } from '$lib/api';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import SectionDiffusion from '#lib/components/SectionDiffusion.svelte';
+	import { annoncesHall as annoncesHallApi } from '#lib/api/index.ts';
+	import SectionDescription from '#lib/components/SectionDescription.svelte';
+	import { contexteAssistant, perimetreContexte } from '#lib/assistant.ts';
+	import Pastille from '#lib/components/Pastille.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import SectionPerimetre from '#lib/components/SectionPerimetre.svelte';
+	import FichiersUpload from '#lib/components/FichiersUpload.svelte';
+	import { fmtDateShort } from '#lib/date.ts';
+	import type { SourceAffiche } from '#lib/api/index.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	type AhFormat = 'auto' | 'a4' | 'a5' | 'a6' | 'a7';
 

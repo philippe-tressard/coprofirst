@@ -29,7 +29,7 @@
   d'une page longue est lu après ce qu'il devait qualifier.
 -->
 <script lang="ts">
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	/** Non vide = au moins une donnée de référence n'a pas pu être chargée. */
 	export let erreur = '';
 	/**  Ce que le lecteur risque de mal interpréter s'il l'ignore. Obligatoire

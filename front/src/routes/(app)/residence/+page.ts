@@ -6,6 +6,6 @@
 //  dupliqué. Un chemin non déclaré n'est pas traduit, donc SvelteKit rend une
 //  404 : se replier sur le premier onglet ferait passer `/residence/carnett`
 //  pour une adresse valide, et le lien cassé survivrait.
-import { resoudreOnglet } from '$lib/deepLink';
+import { resoudreOnglet } from '#lib/deepLink.ts';
 
 export const load = ({ url }) => resoudreOnglet('residence', url);

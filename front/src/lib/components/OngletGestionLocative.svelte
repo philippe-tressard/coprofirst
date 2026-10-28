@@ -29,28 +29,28 @@
   accès, qui s'ouvrent aussi depuis la vue bailleur.
 -->
 <script lang="ts">
-	import FormulaireBail from '$lib/components/FormulaireBail.svelte';
-	import InventaireBail from '$lib/components/InventaireBail.svelte';
-	import { fmtDateShort as fmt } from '$lib/date';
-	import { lotTypeComplet } from '$lib/utils';
-	import { safeHtml } from '$lib/sanitize';
-	import GesteEnPlace from '$lib/components/GesteEnPlace.svelte';
-	import Onglet from '$lib/components/Onglet.svelte';
-	import { isCS } from '$lib/stores/auth';
-	import { TITRE_ARCHIVES } from '$lib/archives';
-	import { bailleur as bailApi, type Bail, type MonLot, type ObjetRemis } from '$lib/api';
-	import { bailVierge, nomLocataire } from '$lib/bail';
-	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
-	import { messageErreur, tenter } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { etageLabel, lotTypeLabel } from '$lib/utils';
+	import FormulaireBail from '#lib/components/FormulaireBail.svelte';
+	import InventaireBail from '#lib/components/InventaireBail.svelte';
+	import { fmtDateShort as fmt } from '#lib/date.ts';
+	import { lotTypeComplet } from '#lib/utils.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import GesteEnPlace from '#lib/components/GesteEnPlace.svelte';
+	import Onglet from '#lib/components/Onglet.svelte';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { TITRE_ARCHIVES } from '#lib/archives.ts';
+	import { bailleur as bailApi, type Bail, type MonLot, type ObjetRemis } from '#lib/api/index.ts';
+	import { bailVierge, nomLocataire } from '#lib/bail.ts';
+	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
+	import { messageErreur, tenter } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { etageLabel, lotTypeLabel } from '#lib/utils.ts';
 
 	//  Les routes viennent de la TABLE, jamais écrites ici (`lint:pages`).
 	const ROUTE_BAUX_ACTIFS = routeSousOnglet('mon-lot', 'location', 'actif');
 	const ROUTE_BAUX_ARCHIVES = routeSousOnglet('mon-lot', 'location', 'archives');
-	import { routeSousOnglet } from '$lib/routes-onglets';
-	import BadgeStatutBail from '$lib/components/BadgeStatutBail.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { routeSousOnglet } from '#lib/routes-onglets.ts';
+	import BadgeStatutBail from '#lib/components/BadgeStatutBail.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	/**  Les baux — LIÉS : la vue bailleur de la page les lit aussi, et chaque
 	 *   geste d'ici les met à jour. */
@@ -179,7 +179,7 @@
 	//  🔴 La table des libellés vivait ICI, puis descendait en prop chez
 	//  `OngletGestionLocative`, qui recomposait la TEINTE du même état en
 	//  ternaire. Le libellé et la couleur d'un état sont deux attributs d'une
-	//  même chose : ils se déclarent ensemble, dans `$lib/bail`.
+	//  même chose : ils se déclarent ensemble, dans `#lib/bail`.
 
 	//  Les lots tels que `FormulaireBail` les attend : un libellé et un état.
 	//  🔴 La préparation vit ICI, pas dans le composant : `lotLabel` s'appuie sur

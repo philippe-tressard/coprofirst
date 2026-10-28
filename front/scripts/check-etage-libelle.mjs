@@ -134,7 +134,7 @@ if (fautifs.length) {
 	console.error(
 		"\n  Il était écrit SIX fois, en trois rendus : un sous-sol s'affichait « -1 »\n" +
 			'  sur un écran et « SS 1 » sur un autre.\n' +
-			'  → employer `etageLabel(etage, { suffixe })` de `$lib/utils`.\n',
+			'  → employer `etageLabel(etage, { suffixe })` de `#lib/utils`.\n',
 	);
 	process.exit(1);
 }

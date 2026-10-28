@@ -9,7 +9,7 @@
  * la comparaison front ⇆ API plus difficile qu'elle ne l'est déjà — les deux
  * règles de libellé sont tenues par une seule chaîne attendue en CI.
  *
- * ⚠️ Le paquet réexporte tout : `$lib/perimetres` continue de servir, et aucun
+ * ⚠️ Le paquet réexporte tout : `#lib/perimetres` continue de servir, et aucun
  * import du dépôt n'a changé.
  */
 import { PREFIXE_BATIMENT, carte, cle, normaliser, type Perimetre } from './arbre';

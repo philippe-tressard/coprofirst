@@ -19,17 +19,22 @@
     le conseil l'a saisi ; les clés que le syndic n'appelle pas en ce moment passent dans un
     bloc replié, avec leur part — repliées, jamais cachées.
 
-  Rien n'est calculé ici au-delà d'une addition (`$lib/charges-lots`) : les parts, les
+  Rien n'est calculé ici au-delà d'une addition (`#lib/charges-lots`) : les parts, les
   définitions et les notes viennent du serveur. Rien ne s'affiche sans part lisible (un
   locataire reçoit `null`).
 -->
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import BlocDeCle from '$lib/components/BlocDeCle.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import { AVIS_CHARGES, FICHE_DU_SYNDIC, lotSurligne, tableauDesCharges } from '$lib/charges-lots';
-	import type { MonLot } from '$lib/api';
-	import { fmtNombre, fmtPartEnPourcent } from '$lib/utils';
+	import BlocDeCle from '#lib/components/BlocDeCle.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import {
+		AVIS_CHARGES,
+		FICHE_DU_SYNDIC,
+		lotSurligne,
+		tableauDesCharges,
+	} from '#lib/charges-lots.ts';
+	import type { MonLot } from '#lib/api/index.ts';
+	import { fmtNombre, fmtPartEnPourcent } from '#lib/utils.ts';
 
 	export let lots: Pick<MonLot, 'id' | 'numero' | 'nature' | 'type' | 'quotes_parts'>[];
 

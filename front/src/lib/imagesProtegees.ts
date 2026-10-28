@@ -13,7 +13,7 @@
  * `/uploads/*` passe par le `forward_auth` du Caddyfile, et le navigateur
  * charge ces fichiers **lui-même** : ils ne traversent pas le client
  * TypeScript. Le renouvellement silencieux sur 401 — écrit dans
- * `$lib/api/client.ts` et déployé sur tous les appels d'API depuis #379 —
+ * `#lib/api/client.ts` et déployé sur tous les appels d'API depuis #379 —
  * n'avait donc aucune prise sur eux. L'access token vit 120 min, le refresh
  * token 7 jours : pendant cette fenêtre la session est parfaitement
  * renouvelable, et c'est exactement le cas qui s'est produit.
@@ -34,7 +34,7 @@
  * session ; annoncer une session expirée dans ce cas serait un faux message,
  * et l'utilisateur chercherait à se reconnecter pour rien.
  */
-import { renouvelerSession } from '$lib/api/client';
+import { renouvelerSession } from '#lib/api/client.ts';
 
 /**
  * Le préfixe des fichiers derrière `forward_auth` (Caddyfile).

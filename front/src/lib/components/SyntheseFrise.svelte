@@ -7,8 +7,8 @@
   le serveur qui ne l'envoie pas autrement.
 -->
 <script lang="ts">
-	import type { MetriquesSynthese } from '$lib/api';
-	import { fmtJours, libelleEtape, libelleIssue, segmentsFrise } from '$lib/synthese';
+	import type { MetriquesSynthese } from '#lib/api/index.ts';
+	import { fmtJours, libelleEtape, libelleIssue, segmentsFrise } from '#lib/synthese.ts';
 
 	export let metriques: MetriquesSynthese;
 

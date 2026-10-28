@@ -12,7 +12,7 @@
 
   🔴 Les deux tables de libellés sont d'abord venues avec lui — et j'ai cassé la
   page, qui s'en sert AUSSI pour la demande en cours, quarante lignes plus haut.
-  Elles vivent désormais dans `$lib/demandes.ts`, lues par les deux : recopier
+  Elles vivent désormais dans `#lib/demandes.ts`, lues par les deux : recopier
   aurait donné deux vocabulaires d'accord le jour même et divergents au premier
   libellé ajusté (c'est la panne des statuts de ticket, #415).
 
@@ -22,10 +22,10 @@
   vocabulaire divergeraient au premier libellé ajusté.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import type { MaDemandeProfil } from '$lib/api';
-	import { fmtDateShort as fmtDate } from '$lib/date';
-	import { STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LABEL } from '$lib/demandes';
+	import Badge from '#lib/components/Badge.svelte';
+	import type { MaDemandeProfil } from '#lib/api/index.ts';
+	import { fmtDateShort as fmtDate } from '#lib/date.ts';
+	import { STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LABEL } from '#lib/demandes.ts';
 
 	export let demandes: MaDemandeProfil[] = [];
 	/** Vrai tant que la donnée n'est pas arrivée : on ne montre rien. */

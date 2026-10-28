@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 
-import { PARAMETRE_SOURCE } from '$lib/arrivees';
-import { CHEMIN_CONNEXION } from '$lib/redirection';
+import { PARAMETRE_SOURCE } from '#lib/arrivees.ts';
+import { CHEMIN_CONNEXION } from '#lib/redirection.ts';
 
 /**
  * Redirection serveur selon l'état de la session.

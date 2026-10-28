@@ -33,9 +33,9 @@
   `ouvrirDeclaration`, que l'écran hôte lie à ses boutons.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import { statutAccesBadge, statutAccesLabel } from '$lib/types-acces';
-	import FormulairesAcces from '$lib/components/FormulairesAcces.svelte';
+	import Badge from '#lib/components/Badge.svelte';
+	import { statutAccesBadge, statutAccesLabel } from '#lib/types-acces.ts';
+	import FormulairesAcces from '#lib/components/FormulairesAcces.svelte';
 	import {
 		acces as accesApi,
 		lots as lotsApi,
@@ -44,20 +44,20 @@
 		type AccesPorteur,
 		type Bail,
 		type MonLot,
-	} from '$lib/api';
-	import { tenter, messageErreur } from '$lib/erreurs';
+	} from '#lib/api/index.ts';
+	import { tenter, messageErreur } from '#lib/erreurs.ts';
 	//  ⚠️ `confirmer` et `SUPPRESSION` sont partis avec la poubelle (15/09/2026) :
 	//  il ne reste ici aucun geste irréversible à faire confirmer en rouge.
-	import { confirmerPuis } from '$lib/confirmation';
-	import { toast } from '$lib/components/Toast.svelte';
+	import { confirmerPuis } from '#lib/confirmation.ts';
+	import { toast } from '#lib/components/Toast.svelte';
 	//  `isCS` n'est plus lu : il ne servait qu'à ouvrir la suppression au conseil
 	//  syndical sur CET écran — un geste qui vit désormais chez l'administrateur,
 	//  sur l'écran du parc.
-	import { isBailleur, isLocataire, quandAuthResolue } from '$lib/stores/auth';
-	import MesAcces from '$lib/components/MesAcces.svelte';
-	import AccesConnexes from '$lib/components/AccesConnexes.svelte';
-	import { bailEnCours, nomLocataire } from '$lib/bail';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { isBailleur, isLocataire, quandAuthResolue } from '#lib/stores/auth.ts';
+	import MesAcces from '#lib/components/MesAcces.svelte';
+	import AccesConnexes from '#lib/components/AccesConnexes.svelte';
+	import { bailEnCours, nomLocataire } from '#lib/bail.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	let vigiks: AccesPorteur[] = [];
 	let telecommandes: AccesPorteur[] = [];

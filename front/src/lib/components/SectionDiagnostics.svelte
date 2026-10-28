@@ -33,29 +33,29 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import ChampDateDocument from '$lib/components/ChampDateDocument.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import LigneRapportDiagnostic from '$lib/components/LigneRapportDiagnostic.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import FormulaireDocument from '$lib/components/FormulaireDocument.svelte';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import ChampDateDocument from '#lib/components/ChampDateDocument.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import LigneRapportDiagnostic from '#lib/components/LigneRapportDiagnostic.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import FormulaireDocument from '#lib/components/FormulaireDocument.svelte';
 	import {
 		diagnostics as diagnosticsApi,
 		documents as documentsApi,
 		type DiagnosticType,
 		type Document,
 		type RapportDiagnostic,
-	} from '$lib/api';
-	import { essayer } from '$lib/chargement';
-	import type { PiecesFiche } from '$lib/components/PiecesJointesFiche.svelte';
-	import { tenter } from '$lib/erreurs';
-	import { titreOuNomDuFichier } from '$lib/fichiers';
-	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
-	import { basculer } from '$lib/accordeon';
-	import { jourIso } from '$lib/date';
-	import { classeFlux } from '$lib/flux';
+	} from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import type { PiecesFiche } from '#lib/components/PiecesJointesFiche.svelte';
+	import { tenter } from '#lib/erreurs.ts';
+	import { titreOuNomDuFichier } from '#lib/fichiers.ts';
+	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
+	import { basculer } from '#lib/accordeon.ts';
+	import { jourIso } from '#lib/date.ts';
+	import { classeFlux } from '#lib/flux.ts';
 
 	/** Les types de diagnostic et leurs rapports — chargés par la page. */
 	export let types: DiagnosticType[] = [];
@@ -95,7 +95,7 @@
 
 	let togglingNonApplicableId: number | null = null;
 	//  UN bloc déplié à la fois dans la section (accordéon, 30/09/2026 —
-	//  `$lib/accordeon`) : la synthèse d'un rapport (son id) ou le bloc des
+	//  `#lib/accordeon`) : la synthèse d'un rapport (son id) ou le bloc des
 	//  diagnostics non applicables (`NON_APPLICABLES`). C'était un `Set` de
 	//  synthèses, et le `<details>` vivait à côté sans rien savoir d'elles.
 	const NON_APPLICABLES = 'non-applicables';

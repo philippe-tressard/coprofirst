@@ -25,26 +25,26 @@
   qu'on lui a présenté le choix « apparence seulement » ou « modèle compris ».
 -->
 <script lang="ts">
-	import { contexteAssistant, perimetreContexte } from '$lib/assistant';
+	import { contexteAssistant, perimetreContexte } from '#lib/assistant.ts';
 	import { createEventDispatcher } from 'svelte';
-	import CadreFormulaire from '$lib/components/CadreFormulaire.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import SectionTitre from '$lib/components/SectionTitre.svelte';
-	import ChampsCommuns from '$lib/components/ChampsCommuns.svelte';
-	import { sectionPresente, type Etat } from '$lib/entites/types';
-	import { SONDAGE } from '$lib/entites/sondage';
-	import { pliageDe, requisDe } from '$lib/pliage';
+	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import SectionTitre from '#lib/components/SectionTitre.svelte';
+	import ChampsCommuns from '#lib/components/ChampsCommuns.svelte';
+	import { sectionPresente, type Etat } from '#lib/entites/types.ts';
+	import { SONDAGE } from '#lib/entites/sondage.ts';
+	import { pliageDe, requisDe } from '#lib/pliage.ts';
 	import {
 		sondages as sondagesApi,
 		type SondageCorrige,
 		type SondageCree,
 		type SondageDetail,
-	} from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { estPerimetreParDefaut, perimetreDefautListe } from '$lib/perimetres';
-	import { diffusionCiblee } from '$lib/destinataires';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	} from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { estPerimetreParDefaut, perimetreDefautListe } from '#lib/perimetres/index.ts';
+	import { diffusionCiblee } from '#lib/destinataires.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 
 	//  Ce que le serveur rend, tel quel (#1572) ; la page recharge sa liste.
 	const dispatch = createEventDispatcher<{

@@ -18,15 +18,15 @@
   quoi faire »*.
 -->
 <script lang="ts">
-	import { messageErreur } from '$lib/erreurs';
-	import ChampSecret from '$lib/components/ChampSecret.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import ChampSecret from '#lib/components/ChampSecret.svelte';
 	import { createEventDispatcher, onMount } from 'svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import { config as configApi } from '$lib/api';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { essayer, TITRE_PARAMETRAGE_ILLISIBLE } from '$lib/chargement';
-	import { toast } from '$lib/components/Toast.svelte';
-	import EtatService from '$lib/components/EtatService.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import { config as configApi } from '#lib/api/index.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { essayer, TITRE_PARAMETRAGE_ILLISIBLE } from '#lib/chargement.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import EtatService from '#lib/components/EtatService.svelte';
 
 	/** Le serveur d'envoi, pour le bouton « Reprendre les paramètres d'envoi ». */
 	export let serveurSmtp = '';

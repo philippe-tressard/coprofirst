@@ -42,7 +42,7 @@
   vaut `submit` et enverrait le formulaire au premier clic.
 -->
 <script lang="ts">
-	import SignalATraiter from '$lib/components/SignalATraiter.svelte';
+	import SignalATraiter from '#lib/components/SignalATraiter.svelte';
 
 	/** Destination. Absent : l'onglet bascule un panneau au lieu de naviguer. */
 	export let href: string | null = null;

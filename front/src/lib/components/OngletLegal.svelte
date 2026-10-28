@@ -25,16 +25,16 @@
 		type ChampTexteLegal,
 		type ConstatTextesLegaux,
 		type EtatTexteLegal,
-	} from '$lib/api';
-	import type { ConfigSite } from '$lib/configSite';
-	import { fmtDatetime } from '$lib/date';
-	import { messageErreur } from '$lib/erreurs';
-	import type { PointConformite } from '$lib/registre-installations';
-	import CocheConformite from '$lib/components/CocheConformite.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import RichEditor from '$lib/components/RichEditor.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
+	} from '#lib/api/index.ts';
+	import type { ConfigSite } from '#lib/configSite.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import type { PointConformite } from '#lib/registre-installations.ts';
+	import CocheConformite from '#lib/components/CocheConformite.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import RichEditor from '#lib/components/RichEditor.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
 
 	/** Lié : la page porte l'état et l'enregistre. */
 	export let siteConfig: ConfigSite;

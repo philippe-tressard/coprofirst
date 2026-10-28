@@ -1,17 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { auth as authApi, aiguillage } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { setUser } from '$lib/stores/auth';
-	import { destinationApresConnexion } from '$lib/redirection';
-	import { loadSiteConfig, configStore, modeDemoStore, siteNomStore } from '$lib/stores/pageConfig';
-	import BandeauDemo from '$lib/components/BandeauDemo.svelte';
-	import LogoResidence from '$lib/components/LogoResidence.svelte';
-	import ChampMotDePasse from '$lib/components/ChampMotDePasse.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import AiguillageCopropriete from '$lib/components/AiguillageCopropriete.svelte';
-	import { NOM_PLATEFORME } from '$lib/plateforme';
+	import { auth as authApi, aiguillage } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { setUser } from '#lib/stores/auth.ts';
+	import { destinationApresConnexion } from '#lib/redirection.ts';
+	import {
+		loadSiteConfig,
+		configStore,
+		modeDemoStore,
+		siteNomStore,
+	} from '#lib/stores/pageConfig.ts';
+	import BandeauDemo from '#lib/components/BandeauDemo.svelte';
+	import LogoResidence from '#lib/components/LogoResidence.svelte';
+	import ChampMotDePasse from '#lib/components/ChampMotDePasse.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import AiguillageCopropriete from '#lib/components/AiguillageCopropriete.svelte';
+	import { NOM_PLATEFORME } from '#lib/plateforme.ts';
 
 	//  L'hôte COMMUN d'une installation à plusieurs copropriétés (#1894) : l'écran
 	//  demande d'abord laquelle, puis y renvoie. Partout ailleurs la route répond

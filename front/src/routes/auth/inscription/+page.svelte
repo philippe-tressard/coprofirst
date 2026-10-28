@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { auth as authApi } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { essayer } from '$lib/chargement';
-	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
-	import { getSiteNom } from '$lib/stores/pageConfig';
-	import ChampMotDePasse from '$lib/components/ChampMotDePasse.svelte';
-	import LibelleGroupe from '$lib/components/LibelleGroupe.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import { auth as authApi } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
+	import { getSiteNom } from '#lib/stores/pageConfig.ts';
+	import ChampMotDePasse from '#lib/components/ChampMotDePasse.svelte';
+	import LibelleGroupe from '#lib/components/LibelleGroupe.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 
 	const _siteNom = getSiteNom();
 

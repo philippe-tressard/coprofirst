@@ -295,5 +295,5 @@ def test_aucune_table_de_role_ou_statut_n_est_REECRITE_dans_un_ecran():
 
     assert not fautifs, (
         "Une table indexée par des rôles ou des statuts est réécrite hors de "
-        "`$lib/roles.ts` :\n" + "\n".join(fautifs)
+        "`#lib/roles.ts` :\n" + "\n".join(fautifs)
     )

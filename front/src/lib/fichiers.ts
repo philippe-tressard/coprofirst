@@ -15,7 +15,7 @@
  */
 
 /** Formats d'image acceptés par `_save_image` (ALLOWED_MIME côté API). */
-import type { CibleDocument } from '$lib/api/documents';
+import type { CibleDocument } from '#lib/api/documents.ts';
 
 export const ACCEPT_PHOTOS = 'image/jpeg,image/png,image/webp,image/gif';
 
@@ -70,7 +70,7 @@ export const LIBELLE_TYPES: Readonly<Record<'photos' | 'documents' | 'mixte', st
  *                            déborde du feuillet et le format n'est plus tenu ;
  *                            `POST /annonces-hall` refuse en 422)
  *
- *  Les deux vivent dans `$lib/annonces.ts`, avec leur raison.
+ *  Les deux vivent dans `#lib/annonces.ts`, avec leur raison.
  *
  *  ⚠️ Et le plus important : **cette constante-ci n'est bornée par AUCUN
  *  routeur**. C'est un confort d'interface, pas une limite — un client qui poste
@@ -232,7 +232,7 @@ export interface DocumentAttache {
  *  avait besoin à l'identique, et le réécrire aurait donné la deuxième copie —
  *  celle qui diverge sur la gestion d'erreur ou sur l'ordre.
  *
- *  ⚠️ `cible` est le type de `$lib/api` : ajouter un rattachement côté API le
+ *  ⚠️ `cible` est le type de `#lib/api` : ajouter un rattachement côté API le
  *  rend disponible ici sans toucher à cette fonction.
  */
 export async function attacherA(
@@ -240,7 +240,7 @@ export async function attacherA(
 	id: number,
 	fichiers: Iterable<File>,
 ): Promise<DocumentAttache[]> {
-	const { documents } = await import('$lib/api/documents');
+	const { documents } = await import('#lib/api/documents.ts');
 	const crees: DocumentAttache[] = [];
 	for (const f of fichiers) {
 		crees.push(await documents.uploadPour(cible, id, f.name, f));
@@ -280,7 +280,7 @@ export async function attacherApres(
 	try {
 		await attacherA(cible, id, fichiers);
 	} catch {
-		const { toast } = await import('$lib/components/Toast.svelte');
+		const { toast } = await import('#lib/components/Toast.svelte');
 		toast('error', `${objet} — mais un document n’a pas pu être joint.`);
 	}
 }

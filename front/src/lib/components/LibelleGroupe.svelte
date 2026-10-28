@@ -30,7 +30,7 @@
       </LibelleGroupe>
 -->
 <script lang="ts">
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 
 	/**  L'intitulé affiché — SANS astérisque : le requis passe par `requis`.
 	 *

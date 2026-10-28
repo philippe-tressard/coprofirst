@@ -10,8 +10,8 @@
   formulaire du point, donc sans `<form>` à lui (`PiedFormulaire soumission={false}`).
 -->
 <script lang="ts">
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import type { PresentEntree } from '$lib/api';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import type { PresentEntree } from '#lib/api/index.ts';
 
 	export let idPrefixe: string;
 	export let onAjoute: (invite: PresentEntree) => void;

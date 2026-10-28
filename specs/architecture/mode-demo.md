@@ -319,7 +319,7 @@ installée :
 ## 8. L'interface
 
 Livrée par #1906. `GET /config` porte la clé calculée `mode_demo` ; le front la lit
-par `modeDemoStore` (`$lib/stores/pageConfig`) et rien d'autre.
+par `modeDemoStore` (`#lib/stores/pageConfig`) et rien d'autre.
 
 - **Bandeau permanent** (`BandeauDemo`) : « Démonstration — résidence fictive. Ce
   que vous saisissez est visible des autres visiteurs et effacé chaque nuit. Aucun

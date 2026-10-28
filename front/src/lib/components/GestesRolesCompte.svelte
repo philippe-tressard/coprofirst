@@ -1,7 +1,7 @@
 <!--
   Les gestes de rôle d'un compte (Admin › Comptes) : donner ou retirer le
   conseil syndical, l'administration et l'opérateur de la plateforme — ces deux
-  derniers selon `gestesAdminOperateur` (`$lib/droits`), pendant écran de la
+  derniers selon `gestesAdminOperateur` (`#lib/droits`), pendant écran de la
   règle du serveur : jamais retirés à leur dernier titulaire actif, que l'onglet
   compte (`titulaires`). Le geste lui-même — la confirmation, puis l'appel —
   reste à l'onglet, qui le reçoit par `demander`.
@@ -11,9 +11,9 @@
   déborder.
 -->
 <script lang="ts">
-	import type { UtilisateurAdmin } from '$lib/api';
-	import { aRole } from '$lib/stores/auth';
-	import { gestesAdminOperateur, type Titulaires } from '$lib/droits';
+	import type { UtilisateurAdmin } from '#lib/api/index.ts';
+	import { aRole } from '#lib/stores/auth.ts';
+	import { gestesAdminOperateur, type Titulaires } from '#lib/droits.ts';
 
 	export let u: UtilisateurAdmin;
 	export let titulaires: Titulaires;

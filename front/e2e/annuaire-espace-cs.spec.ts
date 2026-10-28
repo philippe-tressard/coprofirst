@@ -3,7 +3,7 @@
  *
  *  Extrait de `espace-cs/+page.svelte` le 29/09/2026 (#779, modularité) :
  *  `AnnuaireConseil`, `AnnuaireSyndic`, et les rapprochements par le nom dans
- *  `$lib/annuaire-rapprochement`. Un découpage ne change pas un comportement —
+ *  `#lib/annuaire-rapprochement`. Un découpage ne change pas un comportement —
  *  ce test le vérifie sur le VRAI écran, API simulée :
  *
  *  • les deux sections s'amorcent seules et rendent leurs membres, avec les

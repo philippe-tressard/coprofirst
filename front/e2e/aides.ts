@@ -49,7 +49,7 @@ export { expect };
  * la surveillance des images protégées ne soit en place : le test mesurerait
  * alors le moment de l'hydratation, pas la règle qu'il annonce.
  *
- * Le repère est posé par `$lib/imagesProtegees.ts`, depuis le `onMount` du
+ * Le repère est posé par `#lib/imagesProtegees.ts`, depuis le `onMount` du
  * layout racine : quand il est là, le script du layout a tourné. Écrit ici une
  * fois — deux fichiers de test l'attendent, et un sélecteur recopié dans chacun
  * divergerait au premier renommage.

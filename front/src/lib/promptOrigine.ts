@@ -16,8 +16,8 @@
  *
  *  Node le lit directement (`scripts/check-prompt-origine.mjs --selftest`, en
  *  CI) : le code éprouvé est donc CELUI QUE LE SITE EMBARQUE, pas une copie.
- *  Le premier jet vivait dans `$lib/assistant.ts`, qui importe `$lib/utils` —
- *  et un alias `$lib` ne se résout pas hors de Vite. Un module pur se teste, un
+ *  Le premier jet vivait dans `#lib/assistant.ts`, qui importe `#lib/utils` —
+ *  et un alias `#lib` ne se résout pas hors de Vite. Un module pur se teste, un
  *  module lié ne se teste qu'avec tout son graphe.
  */
 

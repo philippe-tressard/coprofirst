@@ -1,6 +1,6 @@
 """Supprimer un `Document` : un geste, une écriture (#1178, 24/09/2026).
 
-`$lib/gestes-document.supprimerDocument` porte la confirmation, l'appel et le
+`#lib/gestes-document.supprimerDocument` porte la confirmation, l'appel et le
 message. Il était écrit TROIS fois — Résidence (qui l'avait déjà factorisé pour
 ses trois sections), Prestataires, et la carte d'une actualité en avait besoin
 à son tour. Trois copies de ce geste avaient déjà divergé sur ce qu'elles

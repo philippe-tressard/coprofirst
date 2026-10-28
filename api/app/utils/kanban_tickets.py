@@ -28,7 +28,7 @@ deux objets décrivant la même affaire divergent au premier geste. Déplacer un
 carte changerait alors le statut de l'un et pas de l'autre, et il faudrait
 décider lequel fait foi.
 
-C'est déjà la règle des événements, écrite dans `$lib/kanban.ts` :
+C'est déjà la règle des événements, écrite dans `#lib/kanban.ts` :
 
     « Aucun second champ d'état n'a été créé — deux notions de suivi sur le
       même objet se contredisent au premier écart. »

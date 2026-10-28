@@ -7,9 +7,9 @@
   500 lignes. Au passage, le bouton s'atteint au clavier et répond à l'appui.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import { tenter } from '$lib/erreurs';
-	import { uploads as uploadsApi, type Copropriete } from '$lib/api';
+	import Icon from '#lib/components/Icon.svelte';
+	import { tenter } from '#lib/erreurs.ts';
+	import { uploads as uploadsApi, type Copropriete } from '#lib/api/index.ts';
 
 	/** La fiche lue ; sa `photo_url` est remplacée après un téléversement. */
 	export let copropriete: Copropriete;

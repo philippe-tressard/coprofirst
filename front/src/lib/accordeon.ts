@@ -35,9 +35,9 @@
 import { tick } from 'svelte';
 import { writable, type Writable } from 'svelte/store';
 //  ⚠️ `import type` seulement : l'autotest charge ce module sous Node, sans
-//  l'alias `$lib` (`scripts/check-accordeon.mjs`).
-import type { EtatDepliable } from '$lib/listeDepliable';
-//  Relatif ET avec son extension, et non `$lib/…` : l'auto-test de `lint:accordeon`
+//  l'alias `#lib` (`scripts/check-accordeon.mjs`).
+import type { EtatDepliable } from '#lib/listeDepliable.ts';
+//  Relatif ET avec son extension, et non `#lib/…` : l'auto-test de `lint:accordeon`
 //  charge ce module sous Node, qui ne résout ni l'alias ni un chemin sans extension.
 import { mouvementReduit } from './mouvement.ts';
 

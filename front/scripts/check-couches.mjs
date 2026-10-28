@@ -1,7 +1,7 @@
 /**
  * Garde-fou : une couche superposée (modale, visionneuse…) emprunte le
  * défilement du document et la touche Échap par UNE seule porte —
- * `poserCouche` (`$lib/couche.ts`).
+ * `poserCouche` (`#lib/couche.ts`).
  *
  * ## Pourquoi ce contrôle existe (#1042, 24/09/2026)
  *
@@ -17,7 +17,7 @@
  * deux écritures d'un bien commun ne se coordonnent pas, elles se marchent
  * dessus.
  *
- * ## Ce qui est interdit hors de `$lib/couche.ts`
+ * ## Ce qui est interdit hors de `#lib/couche.ts`
  *
  *   1. écrire `body.style.overflow` ;
  *   2. traiter `Escape` dans un écouteur de `<svelte:window>` — Échap ne ferme
@@ -60,7 +60,7 @@ if (!existsSync(MODULE)) {
 }
 if (!/export function poserCouche\b/.test(readFileSync(MODULE, 'utf8'))) {
 	console.error(
-		"✗ Cas zéro : `$lib/couche.ts` n'exporte plus `poserCouche` — le contrat a changé.",
+		"✗ Cas zéro : `#lib/couche.ts` n'exporte plus `poserCouche` — le contrat a changé.",
 	);
 	process.exit(1);
 }
@@ -97,7 +97,7 @@ for (const attendu of APPELANTS_ATTENDUS) {
 }
 
 if (ecarts.length) {
-	console.error(`✗ ${ecarts.length} écart(s) — la couche passe par $lib/couche.ts :\n`);
+	console.error(`✗ ${ecarts.length} écart(s) — la couche passe par #lib/couche.ts :\n`);
 	for (const e of ecarts) console.error(`  ${e}`);
 	process.exit(1);
 }

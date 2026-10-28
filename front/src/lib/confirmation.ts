@@ -1,6 +1,6 @@
-import Confirmation from '$lib/components/Confirmation.svelte';
-import { tenter } from '$lib/erreurs';
-import { modaleImperative } from '$lib/modale-imperative';
+import Confirmation from '#lib/components/Confirmation.svelte';
+import { tenter } from '#lib/erreurs.ts';
+import { modaleImperative } from '#lib/modale-imperative.ts';
 
 /**
  * Demande confirmation, dans la charte du site. Rend `true` si l'on confirme.
@@ -30,7 +30,7 @@ import { modaleImperative } from '$lib/modale-imperative';
  *
  * ⚠️ Le montage, le démontage et la résolution unique — ainsi que le refus par
  * défaut côté serveur, où il n'y a pas de fenêtre — sont dans
- * `$lib/modale-imperative`, partagés avec `demander()`.
+ * `#lib/modale-imperative`, partagés avec `demander()`.
  */
 export function confirmer(
 	options:

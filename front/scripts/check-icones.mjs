@@ -181,7 +181,7 @@ if (relais.length) {
 }
 if (inconnus.length) {
 	console.error(
-		`\n✗ lint:icones — ${inconnus.length} nom(s) d’icône absent(s) de \`$lib/icones-svg.json\` :\n\n  ` +
+		`\n✗ lint:icones — ${inconnus.length} nom(s) d’icône absent(s) de \`#lib/icones-svg.json\` :\n\n  ` +
 			inconnus.join('\n  ') +
 			'\n\n  `Icon` les rendrait en « ? » (help-circle), sans un mot. Choisir un nom du\n' +
 			'  catalogue, ou y ajouter le tracé Lucide — dans les DEUX copies :\n' +

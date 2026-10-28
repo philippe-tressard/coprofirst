@@ -124,7 +124,7 @@ function importsDe(racine, chemin, texte) {
 	let m;
 	while ((m = re.exec(texte))) {
 		const [, local, spec] = m;
-		const abs = spec.startsWith('$lib/')
+		const abs = spec.startsWith('#lib/')
 			? join(racine, 'lib', spec.slice(5))
 			: join(dirname(chemin), spec);
 		out.set(local, abs.replace(/\\/g, '/'));
@@ -274,7 +274,7 @@ if (process.argv[2] === '--selftest') {
 		'lib/Muet.svelte',
 		`<script>const dispatch = createEventDispatcher();</script><button on:click={() => dispatch('perdu')}>x</button>`,
 	);
-	ecrire('routes/a/+page.svelte', `<script>import Muet from '$lib/Muet.svelte';</script><Muet />`);
+	ecrire('routes/a/+page.svelte', `<script>import Muet from '#lib/Muet.svelte';</script><Muet />`);
 	//  2. chaîne avec transfert NU qui aboutit → ACCEPTÉ (le cas de #505, corrigé)
 	ecrire(
 		'lib/Bas.svelte',
@@ -282,11 +282,11 @@ if (process.argv[2] === '--selftest') {
 	);
 	ecrire(
 		'lib/Milieu.svelte',
-		`<script>import Bas from '$lib/Bas.svelte';</script><Bas on:remonte />`,
+		`<script>import Bas from '#lib/Bas.svelte';</script><Bas on:remonte />`,
 	);
 	ecrire(
 		'routes/b/+page.svelte',
-		`<script>import Milieu from '$lib/Milieu.svelte';</script><Milieu on:remonte={() => {}} />`,
+		`<script>import Milieu from '#lib/Milieu.svelte';</script><Milieu on:remonte={() => {}} />`,
 	);
 	//  3. chaîne avec transfert NU qui n'aboutit PAS → REFUSÉ (le défaut exact de #505)
 	ecrire(
@@ -295,11 +295,11 @@ if (process.argv[2] === '--selftest') {
 	);
 	ecrire(
 		'lib/MilieuKo.svelte',
-		`<script>import BasKo from '$lib/BasKo.svelte';</script><BasKo on:orphelin />`,
+		`<script>import BasKo from '#lib/BasKo.svelte';</script><BasKo on:orphelin />`,
 	);
 	ecrire(
 		'routes/c/+page.svelte',
-		`<script>import MilieuKo from '$lib/MilieuKo.svelte';</script><MilieuKo />`,
+		`<script>import MilieuKo from '#lib/MilieuKo.svelte';</script><MilieuKo />`,
 	);
 	//  4. composant importé sous ALIAS, écouté → ACCEPTÉ (le faux positif corrigé)
 	ecrire(
@@ -308,7 +308,7 @@ if (process.argv[2] === '--selftest') {
 	);
 	ecrire(
 		'routes/d/+page.svelte',
-		`<script>import ToutAutreNom from '$lib/VraiNom.svelte';</script><ToutAutreNom on:valide={() => {}} />`,
+		`<script>import ToutAutreNom from '#lib/VraiNom.svelte';</script><ToutAutreNom on:valide={() => {}} />`,
 	);
 	//  5. deux routes homonymes `+page.svelte` → l'une écoute (l'indexation par
 	//     basename les écrasait, et déclarait l'événement orphelin à tort)
@@ -318,7 +318,7 @@ if (process.argv[2] === '--selftest') {
 	);
 	ecrire(
 		'routes/e/+page.svelte',
-		`<script>import Homonyme from '$lib/Homonyme.svelte';</script><Homonyme on:vu={() => {}} />`,
+		`<script>import Homonyme from '#lib/Homonyme.svelte';</script><Homonyme on:vu={() => {}} />`,
 	);
 
 	//  8-10. Capacités : le composant réel de PAIRES_CAPACITE, avec trois appelants
@@ -328,19 +328,19 @@ if (process.argv[2] === '--selftest') {
 	);
 	ecrire(
 		'routes/f/+page.svelte',
-		`<script>import RubriqueHistorique from '$lib/RubriqueHistorique.svelte';</script><RubriqueHistorique avecSuppression on:supprimer={() => {}} />`,
+		`<script>import RubriqueHistorique from '#lib/RubriqueHistorique.svelte';</script><RubriqueHistorique avecSuppression on:supprimer={() => {}} />`,
 	);
 	ecrire(
 		'routes/g/+page.svelte',
-		`<script>import RubriqueHistorique from '$lib/RubriqueHistorique.svelte';</script><RubriqueHistorique />`,
+		`<script>import RubriqueHistorique from '#lib/RubriqueHistorique.svelte';</script><RubriqueHistorique />`,
 	);
 	ecrire(
 		'routes/h/+page.svelte',
-		`<script>import RubriqueHistorique from '$lib/RubriqueHistorique.svelte';</script><RubriqueHistorique avecSuppression />`,
+		`<script>import RubriqueHistorique from '#lib/RubriqueHistorique.svelte';</script><RubriqueHistorique avecSuppression />`,
 	);
 	ecrire(
 		'routes/i/+page.svelte',
-		`<script>import RubriqueHistorique from '$lib/RubriqueHistorique.svelte';</script><RubriqueHistorique on:supprimer={() => {}} />`,
+		`<script>import RubriqueHistorique from '#lib/RubriqueHistorique.svelte';</script><RubriqueHistorique on:supprimer={() => {}} />`,
 	);
 
 	const r = analyser(tmp, {});

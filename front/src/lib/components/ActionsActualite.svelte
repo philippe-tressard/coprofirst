@@ -40,10 +40,10 @@
   dans l'ordre de la table — c'est ce qui le rend lisible sans l'ouvrir.
 -->
 <script lang="ts">
-	import type { Ticket } from '$lib/api';
-	import { SUITE } from '$lib/gestes';
-	import { isCS, isAdmin } from '$lib/stores/auth';
-	import { ticketUrgent } from '$lib/tickets';
+	import type { Ticket } from '#lib/api/index.ts';
+	import { SUITE } from '#lib/gestes.ts';
+	import { isCS, isAdmin } from '#lib/stores/auth.ts';
+	import { ticketUrgent } from '#lib/tickets.ts';
 	import BoutonOptions from './BoutonOptions.svelte';
 	import IconeAction from './IconeAction.svelte';
 

@@ -11,7 +11,7 @@
   Ce composant les montre et dit ce qu'on a cliqué.
 -->
 <script lang="ts">
-	import type { Signalement } from '$lib/api';
+	import type { Signalement } from '#lib/api/index.ts';
 	import { createEventDispatcher } from 'svelte';
 
 	/** Les signalements en attente, tels que l'API les rend. */

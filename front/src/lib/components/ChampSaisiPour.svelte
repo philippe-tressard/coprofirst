@@ -19,13 +19,13 @@
   nues (v2.67.11), que `npm run lint:classes-nues` refuse depuis.
 -->
 <script lang="ts">
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
-	import { nomAffiche } from '$lib/noms';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import type { ModeSaisiPour } from '$lib/saisi-pour';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
+	import { nomAffiche } from '#lib/noms.ts';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import type { ModeSaisiPour } from '#lib/saisi-pour.ts';
 
 	/** Lié par l'appelant : lui seul sait ce que ces valeurs deviennent. */
 	export let mode: ModeSaisiPour = 'moi';

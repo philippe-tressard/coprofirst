@@ -13,31 +13,31 @@
   l'onglet Site en lit aussi les gestionnaires possibles.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import { admin as adminApi, type UtilisateurAdmin } from '$lib/api';
+	import Badge from '#lib/components/Badge.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { admin as adminApi, type UtilisateurAdmin } from '#lib/api/index.ts';
 	import {
 		adresseChangee,
 		annonceLienEnvoye,
 		annonceLocataire,
 		ETIQUETTES_COMPTE,
 		formulaireCompte,
-	} from '$lib/comptes';
-	import { fmtDate } from '$lib/date';
-	import { comparerParNom, nomAffiche } from '$lib/noms';
-	import { badgeStatut, badgesDeRoles, libelleRole, LIBELLES_STATUT_ABREGE } from '$lib/roles';
-	import { aRole, currentUser, setUser } from '$lib/stores/auth';
-	import { compterTitulaires } from '$lib/droits';
-	import GestesRolesCompte from '$lib/components/GestesRolesCompte.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import FiltresUtilisateurs from '$lib/components/FiltresUtilisateurs.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import FormulaireUtilisateur from '$lib/components/FormulaireUtilisateur.svelte';
-	import Modale from '$lib/components/Modale.svelte';
-	import ModaleAccueilArrivant from '$lib/components/ModaleAccueilArrivant.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
+	} from '#lib/comptes.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { comparerParNom, nomAffiche } from '#lib/noms.ts';
+	import { badgeStatut, badgesDeRoles, libelleRole, LIBELLES_STATUT_ABREGE } from '#lib/roles.ts';
+	import { aRole, currentUser, setUser } from '#lib/stores/auth.ts';
+	import { compterTitulaires } from '#lib/droits.ts';
+	import GestesRolesCompte from '#lib/components/GestesRolesCompte.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import FiltresUtilisateurs from '#lib/components/FiltresUtilisateurs.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import FormulaireUtilisateur from '#lib/components/FormulaireUtilisateur.svelte';
+	import Modale from '#lib/components/Modale.svelte';
+	import ModaleAccueilArrivant from '#lib/components/ModaleAccueilArrivant.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
 
 	/** La liste des comptes — chargée par la page (l'onglet Site la lit aussi). */
 	export let utilisateurs: UtilisateurAdmin[] = [];
@@ -243,7 +243,7 @@
 									</div>
 								{/if}
 								<!--  Trois états, dont « sans objet » en gris (26/09/2026) : l'état
-								      vient du serveur, les mots de `$lib/comptes`. -->
+								      vient du serveur, les mots de `#lib/comptes`. -->
 								<div class="user-tags">
 									{#each ETIQUETTES_COMPTE as t (t.cle)}
 										{@const e = u.etiquettes?.[t.cle] ?? 'manque'}

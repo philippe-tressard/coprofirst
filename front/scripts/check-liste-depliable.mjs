@@ -1,5 +1,5 @@
 /**
- * Auto-test de `$lib/listeDepliable.ts` — la mécanique des cartes dépliables.
+ * Auto-test de `#lib/listeDepliable.ts` — la mécanique des cartes dépliables.
  *
  * 🔴 POURQUOI (#640, 01/09/2026). Cette mécanique vivait **deux fois** dans
  * `espace-cs/+page.svelte` — une pour les membres du conseil syndical, une pour

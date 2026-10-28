@@ -70,8 +70,8 @@
 
 <script lang="ts">
 	import { tick } from 'svelte';
-	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
-	import { documents as docsApi, type CibleDocument, type Document } from '$lib/api';
+	import FichiersUpload from '#lib/components/FichiersUpload.svelte';
+	import { documents as docsApi, type CibleDocument, type Document } from '#lib/api/index.ts';
 
 	/** L'objet qui porte les documents — le rattachement que l'API attend. */
 	export let cible: CibleDocument;

@@ -9,7 +9,7 @@
  *
  * Convention du projet, à respecter des deux côtés :
  *   - une **route dédiée** par onglet (`/annonces`, `/calendrier/kanban`) — la
- *     table est dans `$lib/pages.ts`, et elle seule ;
+ *     table est dans `#lib/pages.ts`, et elle seule ;
  *   - `#<prefixe>-<id>`  → élément à ouvrir et à révéler (`#annonce-42`).
  *
  * ⚠️ `?onglet=<id>` était la première moitié de cette convention (24/07/2026). Il
@@ -24,7 +24,7 @@
  */
 
 import { error, redirect } from '@sveltejs/kit';
-import { ongletDepuisChemin, routeOnglet } from '$lib/routes-onglets';
+import { ongletDepuisChemin, routeOnglet } from '#lib/routes-onglets.ts';
 
 /** Ce que le chemin désigne : l'onglet, et son sous-onglet s'il en a un. */
 export interface OngletCourant {

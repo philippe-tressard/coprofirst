@@ -12,7 +12,7 @@
   par svelte-check (une prop de slot, `let:`, le perdait : `never`) :
 
   ```svelte
-  <ChargementDiffere charger={() => import('$lib/components/OngletSmtp.svelte')}>
+  <ChargementDiffere charger={() => import('#lib/components/OngletSmtp.svelte')}>
   	{#snippet contenu(OngletSmtp)}
   		<OngletSmtp bind:emailFooter={…} />
   	{/snippet}
@@ -35,7 +35,7 @@
 <script lang="ts" generics="T">
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	/** L'`import()` du composant — appelé une fois, au montage. */
 	export let charger: () => Promise<{ default: T }>;

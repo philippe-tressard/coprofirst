@@ -7,11 +7,11 @@
   dire ce qu'un envoi WhatsApp donne à lire.
 -->
 <script lang="ts">
-	import type { JournalEnvoiWhatsApp } from '$lib/api';
+	import type { JournalEnvoiWhatsApp } from '#lib/api/index.ts';
 	import JournalVerdicts, {
 		type EntreeJournal,
 		type TonVerdict,
-	} from '$lib/components/JournalVerdicts.svelte';
+	} from '#lib/components/JournalVerdicts.svelte';
 
 	export let journaux: JournalEnvoiWhatsApp[] = [];
 	export let erreur = '';

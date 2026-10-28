@@ -15,12 +15,12 @@
   Replié à l'arrivée, il ne demande rien au serveur tant qu'on ne l'ouvre pas.
 -->
 <script lang="ts">
-	import { carnet as carnetApi, type BilanCarnet } from '$lib/api';
-	import { essayer } from '$lib/chargement';
-	import { fmtDate } from '$lib/date';
-	import { fmtJours, libelleAffaires } from '$lib/synthese';
-	import { categorieTicketLabel } from '$lib/tickets';
-	import { fmtNombre, nombreOuNull } from '$lib/utils';
+	import { carnet as carnetApi, type BilanCarnet } from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { fmtJours, libelleAffaires } from '#lib/synthese.ts';
+	import { categorieTicketLabel } from '#lib/tickets.ts';
+	import { fmtNombre, nombreOuNull } from '#lib/utils.ts';
 	import ChoixPastilles from './ChoixPastilles.svelte';
 	import EtatListe from './EtatListe.svelte';
 	import MoyennesAffaires from './MoyennesAffaires.svelte';

@@ -32,7 +32,7 @@
  *
  *  `<alias>.<nom>` apparaît dans un `.svelte` ou un `.ts` **hors de `lib/api/`**,
  *  où `<alias>` est le nom local sous lequel CE fichier a importé l'objet
- *  (`import { acces as accesApi } from '$lib/api'`).
+ *  (`import { acces as accesApi } from '#lib/api/index.ts'`).
  *
  *  ⚠️ **Elle exige `.<nom>` et NON `.<nom>(`**, et c'est ce que le relevé
  *  d'origine avait manqué : seize méthodes passées **par référence**
@@ -154,7 +154,7 @@ function methodes(source, fichier) {
 
 /**  Les objets du client importés par CE fichier, sous leur nom LOCAL.
  *
- *   `import { acces as accesApi, ApiError } from '$lib/api'` rend
+ *   `import { acces as accesApi, ApiError } from '#lib/api/index.ts'` rend
  *   `accesApi → acces`. Un `import type` est ignoré : il n'appelle rien.
  *
  *   ⚠️ `objets` borne la lecture aux objets réellement exportés par `lib/api/` :
@@ -162,7 +162,7 @@ function methodes(source, fichier) {
  *   et n'importe quel `ApiError.<mot>` compterait comme un appel. */
 export function aliasDuFichier(source, objets) {
 	const map = new Map();
-	const re = /import\s+(type\s+)?\{([^}]*)\}\s*from\s*'\$lib\/api[^']*'/g;
+	const re = /import\s+(type\s+)?\{([^}]*)\}\s*from\s*'#lib\/api[^']*'/g;
 	let m;
 	while ((m = re.exec(source))) {
 		if (m[1]) continue;
@@ -240,7 +240,7 @@ function selftest() {
 	//  `machin.commun` l'était — vérifié échouant.
 	const objets = new Set(['truc', 'machin']);
 	const consommateur = [
-		"import { truc as trucApi, machin, ApiError } from '$lib/api';",
+		"import { truc as trucApi, machin, ApiError } from '#lib/api/index.ts';",
 		'await machin.commun();',
 		'const f = machin.parReference;',
 		'await monTrucApi.commun();',
@@ -262,7 +262,9 @@ function selftest() {
 		}
 	}
 	//  Un `import type` n'appelle rien, et `ApiError` n'est pas un objet du client.
-	if (aliasDuFichier("import type { Ticket } from '$lib/api';", new Set(['Ticket'])).size) {
+	if (
+		aliasDuFichier("import type { Ticket } from '#lib/api/index.ts';", new Set(['Ticket'])).size
+	) {
 		console.error('  ✗ un `import type` a été lu comme un appelant');
 		ko++;
 	}

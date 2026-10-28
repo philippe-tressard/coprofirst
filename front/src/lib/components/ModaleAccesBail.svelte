@@ -18,23 +18,23 @@
   duplication que le découpage doit retirer. Il n'a besoin que de ces trois
   choses ; il ne demande que ces trois choses.
 
-  ⚠️ `lotTypeLabel` est parti dans `$lib/utils` : il servait ICI et à la
+  ⚠️ `lotTypeLabel` est parti dans `#lib/utils` : il servait ICI et à la
   préparation de `FormulaireBail`, restée dans la page. L'emporter en aurait
   fait une deuxième écriture — c'est le défaut que `mon-lot` avait déjà nommé en
   commentaire, et qui se serait produit à cette extraction-ci.
 -->
 <script lang="ts">
-	import { statutAccesLabel } from '$lib/types-acces';
-	import { confirmer } from '$lib/confirmation';
+	import { statutAccesLabel } from '#lib/types-acces.ts';
+	import { confirmer } from '#lib/confirmation.ts';
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { bailleur as bailApi, type AccesBail } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { lotTypeLabel } from '$lib/utils';
-	import { toast } from '$lib/components/Toast.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import Modale from '$lib/components/Modale.svelte';
-	import Pastille from '$lib/components/Pastille.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { bailleur as bailApi, type AccesBail } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { lotTypeLabel } from '#lib/utils.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import Modale from '#lib/components/Modale.svelte';
+	import Pastille from '#lib/components/Pastille.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	/** Le bail dont on gère les accès. */
 	export let bailId: number;

@@ -2,7 +2,7 @@
 /**
  *  Le libellé du TYPE d'un lot ne se réécrit pas dans un écran (#779, 30/09/2026).
  *
- *  🔴 `$lib/utils` exportait déjà `lotTypeLabel`, et `mon-lot` l'importait — mais
+ *  🔴 `#lib/utils` exportait déjà `lotTypeLabel`, et `mon-lot` l'importait — mais
  *  le même libellé était recalculé À LA MAIN six fois (cinq dans `mon-lot`, une
  *  dans `OngletGestionLocative`) : `type.replace('_', ' ')` suivi de
  *  `type_appartement`. Les deux écritures divergeaient déjà : la fonction rendait
@@ -46,6 +46,6 @@ process.exit(
 		ok: 'Type de lot : aucun libellé recalculé hors de `lotTypeLabel` / `lotTypeComplet`',
 		ko: 'libellé(s) de type de lot recalculé(s) à la main',
 		conseil:
-			'Employer `lotTypeComplet(type, typeAppartement)` ou `lotTypeLabel(type)` (`$lib/utils`).',
+			'Employer `lotTypeComplet(type, typeAppartement)` ou `lotTypeLabel(type)` (`#lib/utils`).',
 	}),
 );

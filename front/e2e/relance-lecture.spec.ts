@@ -5,7 +5,7 @@
  *  du conteneur de l'API par un déploiement. Le résident lisait « Service
  *  momentanément indisponible » alors que, deux secondes plus tard, tout répondait.
  *
- *  Le client d'API (`$lib/api/client`) rejoue donc UNE fois, après une courte
+ *  Le client d'API (`#lib/api/client`) rejoue donc UNE fois, après une courte
  *  attente, un **GET** qui reçoit 502, 503 ou 504 — idempotent, donc sans risque.
  *  Jamais une écriture : rejouer un POST pourrait la faire deux fois.
  *

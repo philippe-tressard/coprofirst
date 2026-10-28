@@ -51,9 +51,9 @@
   parle pas du tableau mais de la place qu'il occupe dans l'écran.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
-	import { statutAccesBadge, statutAccesLabel } from '$lib/types-acces';
+	import Badge from '#lib/components/Badge.svelte';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
+	import { statutAccesBadge, statutAccesLabel } from '#lib/types-acces.ts';
 
 	/** « Badges d'accès (Vigik) » ou « Télécommandes de parking ». */
 	export let titre: string;

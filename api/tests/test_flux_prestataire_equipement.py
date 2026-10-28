@@ -2,7 +2,7 @@
 
 Signalé à l'écran le 26/09/2026 : « DBI — interphone_digicode », deux fois
 (détail et pastille). Le serveur n'a pas la table des libellés d'équipement —
-elle vit côté écran (`$lib/prestataires`, `EQUIPEMENTS`) — : il envoie la
+elle vit côté écran (`#lib/prestataires`, `EQUIPEMENTS`) — : il envoie la
 VALEUR dans `meta`, et `badgesDuFlux` (`front/src/lib/flux.ts`) la traduit.
 """
 

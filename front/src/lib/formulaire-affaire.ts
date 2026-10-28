@@ -22,19 +22,19 @@
  * suivie, le 🛡️ d'une affaire devenue actualité) — sinon l'objet garderait en
  * base une valeur qu'aucun écran ne montre plus.
  */
-import { nombreOuNull } from '$lib/utils';
-import type { Ticket } from '$lib/api';
-import type { ConditionInactive, Etat, IdSection, NatureAffaire } from '$lib/entites/types';
-import { motifInactif } from '$lib/entites/types';
-import { TICKET } from '$lib/entites/ticket';
-import { concerneTousLesResidents } from '$lib/destinataires';
-import { lectureDe, titreLecture } from '$lib/lecture';
-import { lectureDuTicket, natureLue, perimetreRestreint } from '$lib/lecture-ticket';
-import { depuisChampLocal } from '$lib/date';
-import { lotDepuisSaisie, type SaisieSaisiPour } from '$lib/saisi-pour';
-import { CATEGORIES_TICKET, estActualite, optionsVersTicket } from '$lib/tickets';
-import { typeEquipementDuContrat } from '$lib/reporting';
-import type { ContratEnCours } from '$lib/prestataires';
+import { nombreOuNull } from '#lib/utils.ts';
+import type { Ticket } from '#lib/api/index.ts';
+import type { ConditionInactive, Etat, IdSection, NatureAffaire } from '#lib/entites/types.ts';
+import { motifInactif } from '#lib/entites/types.ts';
+import { TICKET } from '#lib/entites/ticket.ts';
+import { concerneTousLesResidents } from '#lib/destinataires.ts';
+import { lectureDe, titreLecture } from '#lib/lecture.ts';
+import { lectureDuTicket, natureLue, perimetreRestreint } from '#lib/lecture-ticket.ts';
+import { depuisChampLocal } from '#lib/date.ts';
+import { lotDepuisSaisie, type SaisieSaisiPour } from '#lib/saisi-pour.ts';
+import { CATEGORIES_TICKET, estActualite, optionsVersTicket } from '#lib/tickets.ts';
+import { typeEquipementDuContrat } from '#lib/reporting.ts';
+import type { ContratEnCours } from '#lib/prestataires.ts';
 
 /** La nature d'une catégorie : Actualité informe, toute autre se suit. */
 export function natureDe(categorie: string): NatureAffaire {

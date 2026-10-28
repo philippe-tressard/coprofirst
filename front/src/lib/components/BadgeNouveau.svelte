@@ -6,15 +6,15 @@
   son propre « NEW » rouge. Arbitré à l'écran le 26/09/2026 : **un seul badge,
   le NEW rouge du fil**. Le fil l'emploie désormais aussi.
 
-  La règle de fraîcheur est `isNouveau` (`$lib/date`) quand on donne une date ;
-  le fil, qui a la sienne (`isNew`, `$lib/flux`), passe son verdict par `si`.
+  La règle de fraîcheur est `isNouveau` (`#lib/date`) quand on donne une date ;
+  le fil, qui a la sienne (`isNew`, `#lib/flux`), passe son verdict par `si`.
 
   Fixe, sans pulsation : le fil le faisait battre en continu. Une animation
   permanente sur une liste parcourue plusieurs fois par jour fatigue sans rien
   apprendre (`emil-design-eng` : ce qu'on voit souvent ne s'anime pas).
 -->
 <script lang="ts">
-	import { isNouveau } from '$lib/date';
+	import { isNouveau } from '#lib/date.ts';
 
 	/** La date de création de l'objet ; absente, `si` décide seul (le fil). */
 	export let le: string | null | undefined = undefined;

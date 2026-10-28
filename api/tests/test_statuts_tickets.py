@@ -53,7 +53,7 @@ _PROPOSABLES = [s.value for s in StatutTicket if s.value not in STATUTS_TICKET_S
 
 
 def _options_du_front() -> list[str]:
-    """Les états proposés par l'interface, lus dans `$lib/tickets.ts`.
+    """Les états proposés par l'interface, lus dans `#lib/tickets.ts`.
 
     On lit le **fichier**, pas une liste recopiée ici : recopier les quatre
     valeurs dans ce test reviendrait à comparer une constante à elle-même, et
@@ -140,7 +140,7 @@ def test_les_etats_clos_sont_les_memes_des_deux_cotes():
 _EXCEPTIONS_FRONT = {
     #  Badge générique du fil d'activité : il colore AUSSI les publications
     #  (`resolu` sans accent) et les prestations (`réalisé`), qui ne sont pas des
-    #  tickets. Le rapatrier dans `$lib/tickets` importerait la notion de ticket
+    #  tickets. Le rapatrier dans `#lib/tickets` importerait la notion de ticket
     #  dans un composant qui sert quatre types d'objets.
     #  ⚠️ Il donne `badge-orange` à `ouvert` là où les écrans de tickets donnent
     #  `badge-blue` — écart connu, hors périmètre de #415.
@@ -169,7 +169,7 @@ def _listes_detats(code: str) -> list[list[str]]:
     (`if nouveau === 'résolu'`) reste légitime — c'est une question sur un cas,
     pas une table de vérité parallèle à l'énumération.
 
-    ⚠️ Ce test s'est d'abord contenté d'exiger un `import '$lib/tickets'` dans
+    ⚠️ Ce test s'est d'abord contenté d'exiger un `import '#lib/tickets'` dans
     tout fichier nommant deux états. Il passait au vert sur une sixième liste
     écrite dans un écran **qui importait déjà** le module — vérifié en injectant
     le défaut, pas en relisant le contrôle.
@@ -189,7 +189,7 @@ def _fichiers_front():
 
 
 def test_aucun_ecran_ne_reecrit_une_liste_detats():
-    """Options, libellés, pastilles, états clos : tout vient de `$lib/tickets`."""
+    """Options, libellés, pastilles, états clos : tout vient de `#lib/tickets`."""
     coupables = []
     for chemin in _fichiers_front():
         rel = chemin.relative_to(_FRONT_SRC).as_posix()
@@ -199,7 +199,7 @@ def test_aucun_ecran_ne_reecrit_une_liste_detats():
             coupables.append(f"{rel} → {etats}")
     assert not coupables, (
         "ces fichiers écrivent leur propre liste d'états de ticket au lieu de "
-        f"la tenir de $lib/tickets : {coupables}"
+        f"la tenir de #lib/tickets : {coupables}"
     )
 
 
@@ -251,7 +251,7 @@ def test_les_deux_balayages_VOIENT_une_liste():
 
     - la PORTÉE lit : le front compte des centaines de fichiers ;
     - sur le CODE : les deux sources légitimes portent bien des listes, et le
-      contrôle les reconnaît (`$lib/tickets.ts`, la table des libellés de l'API) ;
+      contrôle les reconnaît (`#lib/tickets.ts`, la table des libellés de l'API) ;
     - sur un extrait FORGÉ : une sixième liste est reconnue.
     """
     assert len(list(_fichiers_front())) > 100, f"{_FRONT_SRC} ne rend presque rien"

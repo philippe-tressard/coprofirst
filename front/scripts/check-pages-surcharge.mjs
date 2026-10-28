@@ -1,5 +1,5 @@
 /**
- * Auto-test de `$lib/pages-surcharge.ts` — le repli d'une surcharge de page.
+ * Auto-test de `#lib/pages-surcharge.ts` — le repli d'une surcharge de page.
  *
  * 🔴 POURQUOI (#1105, 21/09/2026). Trois entrées de **Descriptif pages**
  * s'affichaient sans nom. La règle « une surcharge absente retombe sur la
