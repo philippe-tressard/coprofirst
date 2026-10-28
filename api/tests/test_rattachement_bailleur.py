@@ -111,3 +111,19 @@ def test_le_rapprochement_d_un_compte_rattache_le_locataire(session):
     )
     loc = _locataire(session)
     assert auto_match_pour_utilisateur(loc, session)["rattache"] == 1
+
+
+def test_le_logement_du_bailleur_remet_ses_badges_au_locataire(session):
+    """Le lien seul laissait le Vigik chez le propriétaire (#2267)."""
+    from app.models.core import Vigik
+
+    b = compte(session, nom="DURANDAL", statut=StatutUtilisateur.copropriétaire_bailleur)
+    lot = _logement(session, b)
+    vigik = Vigik(code="V-2267", lot_id=lot.id)
+    session.add(vigik)
+    session.commit()
+    loc = _locataire(session)
+    assert rattacher_au_bailleur(loc, session) == 1
+    session.commit()
+    session.refresh(vigik)
+    assert (vigik.chez_locataire, vigik.user_id) == (True, loc.id)
