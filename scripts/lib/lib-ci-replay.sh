@@ -48,6 +48,9 @@
 . "$(dirname "${BASH_SOURCE[0]}")/lib-ci-orchestration.sh"
 # shellcheck source=lib-ci-prevol.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib-ci-prevol.sh"
+#  Un rejeu ne se fige plus en silence (#2270) : orphelins, plafond, base.
+# shellcheck source=lib-ci-gel.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-ci-gel.sh"
 
 # ── Extraction ───────────────────────────────────────────────────────────────
 #  Le parseur ne prétend PAS lire YAML : il lit la forme que ce fichier-ci a, et
@@ -380,6 +383,7 @@ YAML
   ci_base_cas  # pytest et sa base PostgreSQL : lib-ci-base.sh
   ci_orchestration_cas  # phases, couloirs, budget, reprise (#2224)
   ci_prevol_cas        # versions, Playwright, venv (#2224)
+  ci_gel_cas           # orphelins, plafond d'une étape figée (#2270)
   #  #1734 : un saut se NOMME, il ne se tait pas ; aucun saut, aucune mention.
   t "sauts — aucun : rien à dire"    "$(printf '' | ci_resumer_sauts)" ""
   t "sauts — regroupés par raison, le plus fréquent d'abord"     "$(printf 'a::t1	WeasyPrint absent

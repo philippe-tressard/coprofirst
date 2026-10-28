@@ -313,6 +313,8 @@ for d in "$TMP"/e/*/; do
 done > "$TMP/a-jouer"
 awk -F'\t' -v OFS='\t' '!lu { d[$1 "\t" $2] = $3; next } { print $0, d[$2 "\t" $3] }' \
   "$([ -f "$DUREES" ] && echo "$DUREES" || echo /dev/null)" lu=1 "$TMP/a-jouer" > "$TMP/a-jouer-durees"
+#  Le plafond d'une étape figée se tire de sa durée mesurée (#2270).
+while IFS=$'\t' read -r idx _ _ duree; do printf '%s\n' "$duree" > "$TMP/e/$idx/mesuree"; done < "$TMP/a-jouer-durees"
 
 #  Les rouges d'avant valent-ils pour ce lot ? (même lot : `ci_reprise_valable`)
 ROUGES_VALABLES=non
