@@ -111,6 +111,10 @@ export interface ResultatAutoMatch {
 	vigik: number;
 	baux: number;
 	rattache: number;
+	/** Lots où un locataire sans bailleur inscrit est rattaché d'office, par le fichier des lots (#2267). */
+	lots_d_office: number;
+	/** Badges remis à un locataire déjà lié à ses lots, qui ne les avait pas en main (#2267). */
+	badges_remis: number;
 	annuaire_cs: number;
 	annuaire_syndic: number;
 	total: number;

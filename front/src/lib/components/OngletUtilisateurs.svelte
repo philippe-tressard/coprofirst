@@ -20,6 +20,7 @@
 	import {
 		adresseChangee,
 		annonceLienEnvoye,
+		annonceLocataire,
 		ETIQUETTES_COMPTE,
 		formulaireCompte,
 	} from '$lib/comptes';
@@ -61,12 +62,14 @@
 	/** Le mot de passe de l'administrateur, si l'adresse change (#1549) — jamais gardé. */
 	let motDePasseAdmin = '';
 
-	async function relancerAutoMatch(userId: number, userNom: string) {
+	async function relancerAutoMatch(userId: number, userNom: string, statut: string) {
 		try {
 			const res = await adminApi.autoMatchUtilisateur(userId);
+			const locataire = annonceLocataire(res?.auto_match, statut);
 			const lots = res?.auto_match?.lots_resolus ?? 0;
 			const lotsM = res?.auto_match?.lots ?? 0;
-			if (lots > 0) toast('success', `${userNom} — ${lots} lot(s) résolu(s) automatiquement.`);
+			if (locataire) toast(locataire.ton, `${userNom} — ${locataire.texte}`);
+			else if (lots > 0) toast('success', `${userNom} — ${lots} lot(s) résolu(s) automatiquement.`);
 			else if (lotsM > 0)
 				toast('success', `${userNom} — ${lotsM} lot(s) matché(s) (en attente de résolution).`);
 			else toast('info', `${userNom} — Aucun import trouvé pour ce nom.`);
@@ -312,7 +315,7 @@
 											class="btn-icon"
 											aria-label="Rejouer auto-match lots"
 											title="Rejouer auto-match lots"
-											on:click={() => relancerAutoMatch(u.id, nomAffiche(u))}
+											on:click={() => relancerAutoMatch(u.id, nomAffiche(u), u.statut)}
 											><IconeAction icone="refresh-cw" /></button
 										>
 									{/if}
