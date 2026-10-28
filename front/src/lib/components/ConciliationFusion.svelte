@@ -126,6 +126,9 @@
 		padding: 0.4rem 0.6rem;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
+		/* Le bloc se monte au choix de l'option : fondu seul (pas de déplacement, donc rien
+		   à couper sous prefers-reduced-motion), comme l'entrée du corps d'une carte. */
+		animation: fadeIn var(--duree-apparition) var(--ease-out);
 	}
 	.options {
 		display: flex;
