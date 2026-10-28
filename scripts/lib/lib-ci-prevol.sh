@@ -177,11 +177,15 @@ ci_prevol() {
     motif=$(ci_base_tests_etat "$(ci_dans_etape "$(<"$pytest/rep")" "$pytest/env" ci_sonder_base_tests)")
     if [ -n "$motif" ]; then printf '%s\t%s\n' "$(<"$pytest/job")" "$motif" >> "$refus"
     else echo "base des tests jointe" >> "$faits"; fi
-    #  Un arbre pytest orphelin tient la base : pytest s'y figerait (#2270).
-    motif=$(ci_table_systeme | ci_pytest_orphelins \
-      | ci_orphelins_etat "$(command -v taskkill > /dev/null 2>&1 && echo oui || echo non)")
-    if [ -n "$motif" ]; then printf '%s\t%s\n' "$(<"$pytest/job")" "$motif" >> "$refus"
-    else echo "aucun pytest orphelin" >> "$faits"; fi
+    #  Un arbre de rejeu mort tient la base des tests : pytest s'y figerait (#2270). Le rejeu
+    #  tient le verrou, aucun autre rejeu ne peut donc en être l'auteur : ces restes sont
+    #  tués (`REJEU_ORPHELINS=signaler` : seulement nommés), puis les schémas qu'ils tenaient
+    #  — ceux de plus d'une heure — sont retirés. Un reste qui résiste refuse le rejeu.
+    if ! ci_orphelins_traiter "${REJEU_ORPHELINS:-tuer}"; then
+      printf '%s	%s
+' "$(<"$pytest/job")" "un reste de rejeu mort résiste et tient la base des tests · arrêter : taskkill //F //T //PID <pid ci-dessus>" >> "$refus"
+    fi
+    ci_gel_schemas_purger "$RACINE"
   fi
   if [ -n "$vite" ]; then
     job=$(<"$vite/job")

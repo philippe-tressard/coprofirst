@@ -223,7 +223,9 @@ if [ "${ECRIT:-0}" -eq 0 ] || [ "$ECRIT" != "$EXTRAIT" ]; then
 fi
 
 TMP=$(mktemp -d) || exit 2
-trap 'ci_verrou_liberer "$VERROU_REJEU" $$; rm -rf "$TMP" ${SCRIPTS_PY_EXPOSES:+"$SCRIPTS_PY_EXPOSES"}' EXIT
+#  À la sortie, quelle qu'elle soit, plus rien du rejeu ne survit (#2270) : l'arbre entier est
+#  tué AVANT de rendre le verrou — un pytest qui lui survivrait tiendrait la base des tests.
+trap 'ci_proc_tuer sous "$(ci_winpid $$)" "" 2>/dev/null; ci_verrou_liberer "$VERROU_REJEU" $$; rm -rf "$TMP" ${SCRIPTS_PY_EXPOSES:+"$SCRIPTS_PY_EXPOSES"}' EXIT
 ci_extraire < "$CI" > "$TMP/flux"
 
 #  ── Le venv aligné sur le lot (`--venv`, #2224) — `ci_venv_preparer` ───────

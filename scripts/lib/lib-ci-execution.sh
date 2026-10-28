@@ -131,15 +131,14 @@ ci_afficher_etape() {           # $1 = dossier de l'étape
 
 ci_horloge() { local s=$(( EPOCHSECONDS - T_DEBUT )); printf '%d:%02d' $((s / 60)) $((s % 60)); }
 
-#  Arrête des étapes en cours. Sous Windows, un `kill` ne descend pas jusqu'au
-#  python ou au node qu'une étape a lancé : `taskkill /T` prend l'arbre.
+#  Arrête des étapes en cours, et tout leur arbre (`ci_proc_tuer`, #2270). Sous Windows, un
+#  `kill` ne descend pas jusqu'au python ou au node qu'une étape a lancé, et `taskkill /T` ne
+#  suit pas les enfants d'un shell de MSYS : la table fusionne les deux parentés.
 ci_arreter_pids() {            # $@ = pids des sous-shells des étapes
-  local p w
-  for p in "$@"; do
-    w=""; [ -r "/proc/$p/winpid" ] && w=$(<"/proc/$p/winpid")
-    [ -n "$w" ] && taskkill //F //T //PID "$w" > /dev/null 2>&1
-    kill "$p" 2>/dev/null
-  done
+  local p racines=""
+  for p in "$@"; do racines="$racines $(ci_winpid "$p")"; done
+  ci_proc_tuer avec "$racines" "" 2>/dev/null
+  for p in "$@"; do kill "$p" 2>/dev/null; done
   for p in "$@"; do wait "$p" 2>/dev/null; done
   return 0
 }

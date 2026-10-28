@@ -37,6 +37,9 @@ ci_verrou_selftest() {
   t "rejouer-ci.sh — aucun rm direct du verrou" "$(grep -cE 'rm [^#]*VERROU_REJEU' "$f")" "0"
   t "rejouer-ci.sh — le tour se prend par la règle" \
     "$(grep -v '^[[:space:]]*#' "$f" | grep -c 'ci_rejeu_acquerir')" "1"
+  #  #2270 : sortir du rejeu emporte son arbre, et arrêter une étape passe par la fermeture par ppid.
+  t "rejouer-ci.sh — l'arbre est tué à la sortie, avant de rendre le verrou"     "$(grep -v '^[[:space:]]*#' "$f" | grep -c "ci_proc_tuer sous .*; ci_verrou_liberer")" "1"
+  t "ci_arreter_pids — passe par ci_proc_tuer, plus par un taskkill //T seul"     "$(grep -v '^[[:space:]]*#' "$(dirname "${BASH_SOURCE[0]}")/lib-ci-execution.sh" | grep -c 'ci_proc_tuer avec')" "1"
   t "rejouer-ci.sh — le veilleur est lancé"  "$(grep -v '^[[:space:]]*#' "$f" | grep -c 'ci_veilleur ')" "1"
   #  Le battement part de l'ORDONNANCEUR, au lancement de chaque étape (#2224) :
   #  les étapes tournent côte à côte, et rejouer-ci.sh n'en lance plus aucune.
@@ -59,11 +62,7 @@ ci_verrou_selftest() {
   t "processus — lanceur tué : disparu"     "$(ci_parent_etat "$p" "$(ci_chaine_ancetres "$r")")" "disparu"
   kill "$r" 2>/dev/null
 
-  # ── Les descendants, profonds d'abord ────────────────────────────────────
-  t "descendants — arbre, profonds d'abord" "$(printf '10 1 -\n20 10 w20\n30 20 w30\n40 10 -\n50 1 -\n' \
-    | ci_descendants 10 | tr '\n' ';')" "30 w30;20 w20;40 -;"
-  t "descendants — aucun : rien"            "$(printf '10 1 -\n50 1 -\n' | ci_descendants 10)" ""
-  t "table — au moins ce shell"             "$(ci_table_processus | awk -v p="$$" '$1 == p' | grep -c .)" "1"
+  #  Les descendants, la table et le coup de grâce : `lib-ci-arbre.sh --selftest` (#2270).
 
   # ── Le veilleur : lanceur tué → rejeu ET ses descendants arrêtés ─────────
   #  P lance R, qui lance S. Le verrou est à R. P tué, le veilleur doit arrêter
@@ -84,6 +83,30 @@ ci_verrou_selftest() {
   t "veilleur — et son descendant"           "$(kill -0 "$s" 2>/dev/null && echo vivant || echo arrete)" "arrete"
   t "veilleur — l'arrêt est signé"           "$(ci_champ "$vd/v/battement" motif | cut -c1-17)" "lanceur disparu ("
   kill "$w" "$r" "$s" 2>/dev/null; rm -rf "$vd/v"
+
+  # ── Le veilleur : le rejeu meurt À VIF (kill -9, aucun trap) → ses restes tombent (#2270) ──
+  #  C'est ce qui a laissé deux arbres pytest vivants six heures. Le lanceur, lui, vit
+  #  toujours : seul le rejeu disparaît, sans libérer son verrou.
+  if ci_orphelins_possibles; then
+    rm -f "$vd/s2"
+    bash -c 'python -c "import time; time.sleep(90)" -m pytest veilleur-de-test & echo $! > "$1/s2"; wait' _ "$vd" & r=$!
+    sleep 30 & p=$!                                              # le lanceur : bien vivant
+    for _ in $(seq 1 40); do [ -s "$vd/s2" ] && break; sleep 0.2; done
+    sleep 1.5
+    mkdir "$vd/v2" && echo "$r" > "$vd/v2/pid"
+    ( REJEU_POULS_S=1; CI_ORPHELINS_MOTIF='veilleur-de-test'; ci_veilleur "$vd/v2" "$r" "$p" ) >/dev/null 2>&1 & w=$!
+    sleep 1.5
+    kill -9 "$r" 2>/dev/null                                     # le rejeu meurt, son verrou reste
+    for _ in $(seq 1 40); do kill -0 "$w" 2>/dev/null || break; sleep 0.5; done
+    sleep 1
+    t "veilleur — rejeu tué à vif : le veilleur sort" "$(kill -0 "$w" 2>/dev/null && echo vivant)" ""
+    t "veilleur — rejeu tué à vif : ses restes sont tués"       "$(ci_proc_table | awk -F'	' '$5 ~ /veilleur-de-test/ && $4 ~ /python/' | grep -c .)" "0"
+    #  Mort, le rejeu n'a plus d'ancêtres : le veilleur y lit d'abord « lanceur disparu » ; l'un ou l'autre motif signe.
+    t "veilleur — rejeu tué à vif : l'arrêt est signé" "$(ci_champ "$vd/v2/battement" motif | grep -c .)" "1"
+    kill "$p" 2>/dev/null; rm -rf "$vd/v2"
+  else
+    echo "SKIP  veilleur — rejeu tué à vif : hors Windows init adopte les restes (cas couvert par la table relevée avant)"
+  fi
 
   # ── Diagnostic ───────────────────────────────────────────────────────────
   t "diag — pas de verrou : libre"          "$(ci_rejeu_diagnostic '' non present '' 180)" "libre"

@@ -38,6 +38,9 @@ CONNEXIONS_RESERVEES=30
 #: Au-delà, un worker de plus ne fait plus gagner de temps : 401 s à 11 workers,
 #: 431 s à 16 sur le poste de 28 cœurs — la base y sature (#2223).
 WORKERS_PLAFOND=12
+#: Un test resté bloqué plus longtemps écrit la pile de tous ses fils dans le journal (secondes).
+#: Il n'échoue pas : c'est la trace qui manquait aux gels du 28/10/2026 (#2270).
+DELAI_PILE_S=300
 
 # ── PURE : le code de sortie de pytest → le code de sortie de la suite ───────
 #  Le plus grand l'emporte : une fin interrompue (≥ 2) dit que la suite n'a pas
@@ -155,11 +158,14 @@ echo "Suite : $WORKERS worker(s) ; ordre aléatoire, graine $GRAINE — rejouer 
 
 dossier=$(mktemp -d)
 journal="$dossier/suite.log"
+#  Annoncé AVANT de lancer pytest : un rejeu qui arrête l'étape figée y lit la pile des tests
+#  bloqués (`faulthandler_timeout`) — le journal ne s'imprime sinon qu'à la fin (#2270).
+echo "Journal pytest : $journal"
 #  `--randomly-dont-reset-seed` : l'ordre change, pas le hasard des tests —
 #  `random` réamorcé à chaque test rendrait le même numéro d'affaire à tous.
 python -m pytest tests -n "$WORKERS" --dist load \
     --randomly-seed="$GRAINE" --randomly-dont-reset-seed \
-    -q -p no:cacheprovider --tb=short -rfE > "$journal" 2>&1
+    -q -p no:cacheprovider --tb=short -rfE -o faulthandler_timeout="$DELAI_PILE_S" > "$journal" 2>&1
 code=$?
 
 bilan=$(grep -hE "^[0-9]+ (passed|failed)|[0-9]+ (passed|failed|error)" "$journal" | tail -1)

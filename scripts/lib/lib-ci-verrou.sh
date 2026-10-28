@@ -40,6 +40,9 @@ REJEU_SEUIL_FIGE_S=${REJEU_SEUIL_FIGE_S:-180}
 #: Une attente en file qui dépasse ceci abandonne, sans rien rejouer (secondes).
 REJEU_ATTENTE_MAX_S=${REJEU_ATTENTE_MAX_S:-14400}
 
+# shellcheck source=lib-ci-arbre.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib-ci-arbre.sh"
+
 ci_dossier_commun() {      # → le répertoire git COMMUN (REJEU_DOSSIER_COMMUN l'impose : tests)
   if [ -n "${REJEU_DOSSIER_COMMUN:-}" ]; then printf '%s\n' "$REJEU_DOSSIER_COMMUN"; return; fi
   (cd "$(git rev-parse --git-common-dir 2>/dev/null || echo .git)" && pwd)
@@ -137,65 +140,46 @@ ci_parent_etat() {         # $1 = ancre · $2 = chaîne actuelle → non_surveil
 #  de 10 min garderait le verrou 10 min. On arrête donc les descendants du
 #  rejeu, les plus profonds d'abord ; sous Windows, `taskkill /T` emporte aussi
 #  les enfants natifs (node, python) que la table MSYS ne voit pas.
-ci_descendants() {         # $1 = pid racine · stdin « pid ppid [winpid] » → « pid winpid », profonds d'abord (PURE)
-  awk -v r="$1" '
-    { par[$1] = $2; w[$1] = ($3 == "" ? "-" : $3); ordre[NR] = $1 }
-    END {
-      for (i = 1; i <= NR; i++) {
-        p = ordre[i]; q = p; d = 0
-        while ((q in par) && q != r && d < 60) { q = par[q]; d++ }
-        if (q == r && p != r) printf "%d %s %s\n", d, p, w[p]
-      }
-    }' | sort -k1,1nr -k2,2n | awk '{ print $2, $3 }'
-}
-ci_table_processus() {     # → « pid ppid winpid » de tous les processus visibles (lecture seule)
-  local t
-  if t=$(ps -eo pid=,ppid= 2>/dev/null) && [ -n "$t" ]; then
-    printf '%s\n' "$t" | awk '{ print $1, $2, "-" }'; return
-  fi
-  #  MSYS/Cygwin : PID PPID PGID WINPID … — une lettre d'état peut précéder.
-  ps -e 2>/dev/null | awk 'NR > 1 { sub(/^[^0-9]+/, ""); print $1, $2, $4 }'
-}
-ci_arreter_descendants() { # $1 = pid du rejeu · $2 = pid épargné (le veilleur, et les siens) · $3 = table relevée avant
-  local table="${3:-}" cibles exclus pid winpid
-  [ -n "$table" ] || table=$(ci_table_processus)
-  exclus=" $2 $(printf '%s\n' "$table" | ci_descendants "$2" | awk '{ printf "%s ", $1 }')"
-  cibles=$(printf '%s\n' "$table" | ci_descendants "$1")
-  while read -r pid winpid; do
-    [ -z "$pid" ] && continue
-    case "$exclus" in *" $pid "*) continue ;; esac
-    if [ "${winpid:--}" != "-" ] && command -v taskkill >/dev/null 2>&1; then
-      taskkill //T //F //PID "$winpid" >/dev/null 2>&1
-    fi
-    kill -TERM "$pid" 2>/dev/null
-  done <<< "$cibles"
-  return 0
+#  Les gestes vivent dans `lib-ci-arbre.sh` (#2270) : la table des processus, la
+#  fermeture par ppid — qui retrouve un arbre dont la racine est morte —, et le
+#  coup de grâce. `ci_arreter_descendants` n'en est plus qu'un nom pour le veilleur.
+ci_arreter_descendants() { # $1 = pid Windows du rejeu · $2 = pid Windows épargné (le veilleur) · $3 = table relevée avant
+  ci_proc_tuer sous "$1" "$2" "${3:-}" 2>/dev/null
 }
 #  Le veilleur : en arrière-plan, sortie jetée. Il bat le pouls, et si l'ancre a
-#  disparu il signe l'arrêt dans le battement, relève les descendants, signale
-#  le rejeu (dont le trap TERM sort par `exit`, donc par le trap EXIT qui
-#  libère le verrou), puis arrête les descendants relevés AVANT le signal — un
-#  rejeu sans trap meurt aussitôt, et ses enfants rattachés ailleurs ne
-#  seraient plus les siens. Il recommence tant que le rejeu vit : une étape
-#  lancée entre le relevé et le signal y passe aussi. Il s'éteint de lui-même
-#  quand le verrou n'est plus au rejeu ou que le rejeu est mort.
+#  disparu il signe l'arrêt dans le battement, relève la table, signale le rejeu
+#  (dont le trap TERM sort par `exit`, donc par le trap EXIT qui libère le
+#  verrou), puis arrête les descendants relevés AVANT le signal — un rejeu sans
+#  trap meurt aussitôt, et ses enfants rattachés ailleurs ne seraient plus les
+#  siens. Il recommence tant que le rejeu vit : une étape lancée entre le relevé
+#  et le signal y passe aussi. Il s'éteint de lui-même quand le verrou n'est plus
+#  au rejeu — ou, si le rejeu est mort sans libérer son verrou (kill -9 : aucun
+#  trap n'a couru), après avoir tué ce qu'il a laissé (#2270).
 ci_veilleur() {            # $1 = verrou · $2 = pid du rejeu · $3 = ancre
-  local table
+  local table rw vw
+  #  Les pids Windows se relèvent maintenant : une fois le rejeu mort, /proc ne les donne plus.
+  rw=$(ci_winpid "$2"); vw=$(ci_winpid "$BASHPID")
   while kill -0 "$2" 2>/dev/null && [ "$(cat "$1/pid" 2>/dev/null)" = "$2" ]; do
     date +%s | ci_ecrire_atomique "$1/pouls"
     if [ "$(ci_parent_etat "$3" "$(ci_chaine_ancetres "$2")")" = disparu ]; then
       printf 'arret=%s\nmotif=lanceur disparu (ancre %s)\n' "$(date +%s)" "$3" >> "$1/battement"
-      table=$(ci_table_processus)
+      table=$(ci_proc_table)
       kill -TERM "$2" 2>/dev/null
-      ci_arreter_descendants "$2" "$BASHPID" "$table"
+      ci_arreter_descendants "$rw" "$vw" "$table"
       for _ in 1 2 3 4 5; do
         kill -0 "$2" 2>/dev/null || break
-        sleep 1; ci_arreter_descendants "$2" "$BASHPID"
+        sleep 1; ci_arreter_descendants "$rw" "$vw"
       done
       return 0
     fi
     sleep "$REJEU_POULS_S"
   done
+  #  Mort sans libérer : les restes, avant que quelqu'un les trouve six heures plus tard.
+  if [ "$(cat "$1/pid" 2>/dev/null)" = "$2" ] && ! kill -0 "$2" 2>/dev/null; then
+    printf 'arret=%s\nmotif=rejeu mort sans libérer son verrou\n' "$(date +%s)" >> "$1/battement"
+    ci_arreter_descendants "$rw" "$vw"
+    CI_ORPHELINS_AGE_MIN_S=0 ci_orphelins_traiter tuer >/dev/null 2>&1
+  fi
 }
 
 # ── Le diagnostic d'un verrou ────────────────────────────────────────────────
