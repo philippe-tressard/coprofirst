@@ -35,7 +35,7 @@ se relit ici. La politique — liste blanche, exceptions et leurs motifs — vit
 
 Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `stairs` : absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur; `whatsapp` : Simple Icons.
 
-## Dépendances — `front` (580 paquets)
+## Dépendances — `front` (574 paquets)
 
 | Paquet | Licence | Déclaré | Admise |
 |---|---|---|---|
@@ -202,8 +202,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `@rolldown/binding-win32-x64-msvc` | `MIT` | devDependencies (optionnel) | oui |
 | `@rolldown/pluginutils` | `MIT` | devDependencies | oui |
 | `@rollup/plugin-babel` | `MIT` | devDependencies | oui |
-| `@rollup/plugin-commonjs` | `MIT` | devDependencies | oui |
-| `@rollup/plugin-json` | `MIT` | devDependencies | oui |
 | `@rollup/plugin-node-resolve` | `MIT` | devDependencies | oui |
 | `@rollup/plugin-replace` | `MIT` | devDependencies | oui |
 | `@rollup/plugin-terser` | `MIT` | devDependencies | oui |
@@ -266,7 +264,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `@tiptap/pm` | `MIT` | dependencies | oui |
 | `@tiptap/starter-kit` | `MIT` | dependencies | oui |
 | `@trickfilm400/rollup-plugin-off-main-thread` | `Apache-2.0` | devDependencies | oui |
-| `@types/cookie` | `MIT` | devDependencies | oui |
 | `@types/esrecurse` | `MIT` | devDependencies | oui |
 | `@types/estree` | `MIT` | devDependencies | oui |
 | `@types/json-schema` | `MIT` | devDependencies | oui |
@@ -311,7 +308,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `clsx` | `MIT` | devDependencies | oui |
 | `commander` | `MIT` | devDependencies | oui |
 | `common-tags` | `MIT` | devDependencies | oui |
-| `commondir` | `MIT` | devDependencies | oui |
 | `convert-source-map` | `MIT` | devDependencies | oui |
 | `cookie` | `MIT` | devDependencies | oui |
 | `core-js-compat` | `MIT` | devDependencies | oui |
@@ -438,7 +434,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `jsonfile` | `MIT` | devDependencies | oui |
 | `jsonpointer` | `MIT` | devDependencies | oui |
 | `keyv` | `MIT` | devDependencies | oui |
-| `kleur` | `MIT` | devDependencies | oui |
 | `known-css-properties` | `MIT` | devDependencies | oui |
 | `leven` | `MIT` | devDependencies | oui |
 | `levn` | `MIT` | devDependencies | oui |
@@ -536,7 +531,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `safe-regex-test` | `MIT` | devDependencies | oui |
 | `semver` | `ISC` | devDependencies | oui |
 | `serialize-javascript` | `BSD-3-Clause` | devDependencies | oui |
-| `set-cookie-parser` | `MIT` | devDependencies | oui |
 | `set-function-length` | `MIT` | devDependencies | oui |
 | `set-function-name` | `MIT` | devDependencies | oui |
 | `set-proto` | `MIT` | devDependencies | oui |

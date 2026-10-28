@@ -31,7 +31,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
-//: `scripts/lib` → `front` → `front/src/lib`, tel que `svelte.config.js` le voit.
+//: `scripts/lib` → `front` → `front/src/lib`, tel que l'alias de `vite.config.ts` le voit.
 const SRC_LIB = join(ICI, '..', '..', 'src', 'lib');
 
 /**

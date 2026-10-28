@@ -11,7 +11,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { aiguillage } from '$lib/api';
 	import { messageErreur } from '$lib/erreurs';
 	import { CHEMIN_CONNEXION } from '$lib/redirection';
@@ -34,7 +34,7 @@
 			return;
 		}
 		try {
-			const { destination } = await aiguillage.aller({ alias: $page.params.alias ?? '' });
+			const { destination } = await aiguillage.aller({ alias: page.params.alias ?? '' });
 			window.location.replace(destination);
 		} catch (e) {
 			echec = messageErreur(e);

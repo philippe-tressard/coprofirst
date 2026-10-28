@@ -15,7 +15,7 @@
   `$lib/admin-adresses`) y mènent. Une source inconnue ouvre les lots.
 -->
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { lieu } from '$lib/lieu.svelte';
 	import { goto } from '$app/navigation';
 	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
 	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
@@ -30,7 +30,7 @@
 		{ val: 'etat-descriptif', label: 'État descriptif' },
 	];
 
-	$: demandee = $page.url.searchParams.get('source') ?? '';
+	$: demandee = $lieu.url.searchParams.get('source') ?? '';
 	$: courante = SOURCES.some((s) => s.val === demandee) ? demandee : 'lots';
 	let choisie = '';
 	//  L'adresse fait foi : un Précédent la change, la pastille suit.
@@ -38,9 +38,9 @@
 	//  Une pastille choisie change l'adresse — jamais l'inverse en boucle : la
 	//  ligne du dessus ne dépend que de l'adresse.
 	$: if (choisie && choisie !== courante) {
-		const params = new URLSearchParams($page.url.searchParams);
+		const params = new URLSearchParams($lieu.url.search);
 		params.set('source', choisie);
-		goto(`${$page.url.pathname}?${params.toString()}`, { noScroll: true, keepFocus: true });
+		goto(`${$lieu.url.pathname}?${params.toString()}`, { reset: false });
 	}
 </script>
 

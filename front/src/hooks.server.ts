@@ -1,9 +1,9 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
 import garde from './garde-demarrage.js?raw';
 
 //  Le garde de démarrage (#1993) prend la place de son repère dans `app.html` :
 //  premier script de la page, avant les feuilles de style. Injecté TEL QUEL — la
-//  CSP l'admet par le condensat de ce même fichier, calculé dans `svelte.config.js`.
+//  CSP l'admet par le condensat de ce même fichier, calculé dans `vite.config.ts`.
 const REPERE_GARDE = /<!-- garde-demarrage .*?-->/;
 const SCRIPT_GARDE = `<script>${garde}</script>`;
 

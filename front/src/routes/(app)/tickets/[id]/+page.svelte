@@ -14,7 +14,7 @@
 	import { onMount, tick } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+	import { lieu } from '$lib/lieu.svelte';
 	import { isAdmin } from '$lib/stores/auth';
 	import { tickets as ticketsApi, ApiError, type Ticket, type TicketMessage } from '$lib/api';
 	import { affairesEnListe } from '$lib/affaires-en-liste';
@@ -32,7 +32,7 @@
 	import { aboutirGeste, ouvrirGeste } from '$lib/aboutissement';
 
 	$: _siteNom = $siteNomStore;
-	$: ticketId = Number($page.params.id);
+	$: ticketId = Number($lieu.params.id);
 
 	//  Une liste d'UNE affaire : c'est ce qui donne à cette page la carte de la
 	//  liste, sans en écrire une seconde. Une suppression la vide — on rejoint
@@ -65,9 +65,9 @@
 	let msgVise: number | null = null;
 
 	onMount(async () => {
-		//  `$page.url`, pas `window.location` : on arrive ici par l'icône 💬 d'une
+		//  `$lieu.url`, pas `window.location` : on arrive ici par l'icône 💬 d'une
 		//  liste (`lienReponse`), une navigation du client.
-		repondreOuvert = $page.url.searchParams.get('repondre') === '1';
+		repondreOuvert = $lieu.url.searchParams.get('repondre') === '1';
 		// Ancre `#msg-42` : les notifications de réponse pointent sur le message
 		// qui a déclenché l'alerte — on y descend, plutôt qu'en haut d'un fil long.
 		const ancre = window.location.hash.match(/^#msg-(\d+)$/);

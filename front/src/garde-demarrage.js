@@ -2,7 +2,7 @@
  *  Garde de démarrage (#1993) — servi INLINE dans chaque page, premier script de
  *  <head> : une page qui ne se dessine pas se recharge une fois, puis dit quoi
  *  faire. Pourquoi et comment : `src/lib/garde-demarrage.ts`. La CSP l'admet par
- *  le condensat de CE fichier (`svelte.config.js`) : le modifier suffit.
+ *  le condensat de CE fichier (`vite.config.ts`) : le modifier suffit.
  */
 (function () {
 	var DESSIN_MS = 10000;

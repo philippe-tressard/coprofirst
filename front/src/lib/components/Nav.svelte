@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { lieu } from '$lib/lieu.svelte';
 	import {
 		currentUser,
 		isCS,
@@ -143,20 +143,20 @@
 		.map((href) => navItem(href, $configStore));
 
 	function isActive(href: string) {
-		return $page.url.pathname.startsWith(href);
+		return $lieu.url.pathname.startsWith(href);
 	}
 
 	//  Fermer le menu lors d'un changement de page.
 	//
 	//  ⚠️ La dépendance passe en ARGUMENT plutôt qu'en expression séquentielle
-	//  (`$: $page.url.pathname, closeMenu()`). Les deux formes ont le même effet,
+	//  (`$: $lieu.url.pathname, closeMenu()`). Les deux formes ont le même effet,
 	//  mais la seconde se lit comme une valeur calculée puis jetée — ce qui est
 	//  presque toujours un `=` oublié, et ce qu'ESLint signale à raison. Ici
 	//  l'argument DIT ce qui déclenche : le chemin change, le menu se ferme.
 	function fermerAuChangementDePage(_chemin: string) {
 		closeMenu();
 	}
-	$: fermerAuChangementDePage($page.url.pathname);
+	$: fermerAuChangementDePage($lieu.url.pathname);
 </script>
 
 <!-- ─── Sidebar desktop ─────────────────────────────────────────────────── -->

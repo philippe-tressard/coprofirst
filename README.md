@@ -196,7 +196,7 @@ Toute la configuration se fait via le fichier `.env` (voir [.env.example](.env.e
 - **Exposition publique en liste blanche** — ce qui est lisible sans authentification est énuméré, jamais déduit par exclusion
 - Rate limiting sur les endpoints d'authentification (slowapi)
 - Validation Pydantic / SQLModel sur toutes les entrées
-- En-têtes de sécurité — HSTS, `X-Frame-Options`, `X-Content-Type-Options` et `Referrer-Policy` servis par **Caddy**&nbsp;; la **politique de sécurité du contenu** (CSP) est émise par **SvelteKit** (`svelte.config.js`), qui seul connaît le condensat de ses scripts en ligne
+- En-têtes de sécurité — HSTS, `X-Frame-Options`, `X-Content-Type-Options` et `Referrer-Policy` servis par **Caddy**&nbsp;; la **politique de sécurité du contenu** (CSP) est émise par **SvelteKit** (`vite.config.ts`), qui seul connaît le condensat de ses scripts en ligne
 - Sanitisation HTML côté client (DOMPurify)
 - Protection path traversal sur les uploads
 - **Vulnérabilités des dépendances vérifiées en CI, des DEUX côtés** — `npm audit` sur tout l'arbre (`devDependencies` comprises : elles servent le site) et `pip-audit` sur `api/requirements.txt`. Même mécanique de part et d'autre : exceptions **nominatives**, chacune avec son motif d'atteignabilité, sa condition de levée et sa date de revue — et une exception devenue inutile fait **échouer** le contrôle, pour forcer son retrait (`front/audit-exceptions.json`, `api/audit-exceptions.json`)

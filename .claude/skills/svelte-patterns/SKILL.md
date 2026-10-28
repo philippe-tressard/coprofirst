@@ -428,3 +428,24 @@ des prestataires et des contrats (#1538).
 
 La **suppression définitive** reste possible pour un administrateur, et c'est le
 seul cas : `require_admin` côté API.
+
+## SvelteKit 3 : ce qui a changé, et où ça vit (#2205)
+
+Le front est en **SvelteKit 3** depuis le 28/10/2026. Ce qu'on retrouve en
+écrivant un écran — `npm run lint:api-svelte4` refuse le retour des formes
+retirées :
+
+| Avant (kit 2) | Maintenant |
+|---|---|
+| `svelte.config.js` | options à plat dans `sveltekit({…})` de `vite.config.ts` |
+| `$app/stores` (`$page`) | `page` de `$app/state` — **hors** `$:`, où l'on passe par `$lib/lieu.svelte` |
+| `$app/environment` | `$app/env` |
+| `$env/dynamic/public` | variable **déclarée** dans `src/env.ts`, lue par `$app/env/public` (ou `private`) — une variable non déclarée vaut `undefined`, sans un mot |
+| `src/params/alias.ts` | une entrée de `defineParams` dans `src/params.ts` |
+| `goto(u, { noScroll, keepFocus })` | `goto(u, { reset: false })` |
+| types de hooks dans `@sveltejs/kit` | `@sveltejs/kit/hooks` ; `handleError` reçoit `{ kind, error }` |
+| `ORIGIN` d'adapter-node | supprimé : l'adresse se déduit de l'en-tête `Host` |
+
+`$lib` reste servi par l'option `alias` (dépréciée) : sa migration en
+`#lib` est un lot à part. Le service worker se génère au build du client
+seulement (`clientSeul` dans `vite.config.ts`, dossier `outDir` nommé).

@@ -95,8 +95,8 @@
 		#  et c'est le cœur de #770 (06/09/2026). SvelteKit sert un script inline
 		#  par page (hydratation) : il totalisait 370 des 404 violations. Seul le
 		#  framework connaît le contenu de ses scripts, donc seul lui peut en
-		#  calculer le condensat — `kit.csp` (mode `hash`) dans
-		#  `front/svelte.config.js` émet `script-src 'self' 'sha256-…'`.
+		#  calculer le condensat — l'option `csp` (mode `hash`) de
+		#  `front/vite.config.ts` émet `script-src 'self' 'sha256-…'`.
 		#
 		#  🔴 D'où le `+` : dans un bloc `header`, écrire le nom nu REMPLACE.
 		#  Sans lui, Caddy écraserait le condensat de SvelteKit et le site
