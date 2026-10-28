@@ -33,7 +33,7 @@
 from __future__ import annotations
 
 import html
-from typing import Iterable
+from typing import Iterable, Optional
 
 from fastapi import HTTPException
 from sqlmodel import Session, col, or_, select
@@ -128,9 +128,14 @@ def _exiger_conseil(lecteur: Utilisateur) -> None:
         raise HTTPException(403, "Seul le conseil syndical fusionne des affaires")
 
 
-def affaires_du_groupe(session: Session, ids: list[int]) -> list[Ticket]:
+def affaires_du_groupe(
+    session: Session, ids: list[int], principale_id: Optional[int] = None
+) -> list[Ticket]:
     """Les affaires demandées, la plus ancienne en tête — 422 s'il en manque une,
-    s'il y en a moins de deux, ou si elles ne sont pas liées entre elles."""
+    s'il y en a moins de deux, ou si elles ne sont pas liées entre elles.
+
+    `principale_id` : le conseil a CONCILIÉ une fusion refusée en faisant absorber
+    l'autre (`fusion_conciliation`, option « inverser ») — elle passe en tête."""
     uniques = list(dict.fromkeys(int(i) for i in ids))
     tickets = [session.get(Ticket, i) for i in uniques]
     if len(uniques) < 2 or any(t is None for t in tickets):
@@ -138,7 +143,12 @@ def affaires_du_groupe(session: Session, ids: list[int]) -> list[Ticket]:
     paires = [(lg.affaire_id, lg.liee_id) for lg in _liens_entre(session, uniques)]
     if set(composantes(paires, uniques)) != set(uniques):
         raise HTTPException(422, "Ces affaires ne sont pas liées entre elles")
-    return sorted(tickets, key=lambda t: (t.cree_le, t.id))
+    rendu = sorted(tickets, key=lambda t: (t.cree_le, t.id))
+    if principale_id is not None:
+        if principale_id not in uniques:
+            raise HTTPException(422, "La principale choisie n'est pas dans ce groupe")
+        rendu.sort(key=lambda t: t.id != principale_id)  # stable : le reste garde l'ancienneté
+    return rendu
 
 
 def _suite(ticket: Ticket, contenu: str, lecteur: Utilisateur) -> TicketEvolution:
@@ -157,14 +167,19 @@ def fusionner(
     lecteur: Utilisateur,
     titre: str,
     description: str,
+    principale_id: Optional[int] = None,
+    conciliations: Optional[dict] = None,
 ) -> tuple[Ticket, list[tuple[Ticket, str]]]:
     """La plus ancienne absorbe les autres et prend le titre et la description
     relus par le conseil ; elle reste ouverte. Rend la principale et les
-    absorbées (avec l'état qu'elles quittent). Sans `commit`."""
+    absorbées (avec l'état qu'elles quittent). Sans `commit`.
+
+    `principale_id` et `conciliations` : ce que le conseil a décidé pour une
+    fusion refusée pour fuite de lecture (`utils/fusion_conciliation`)."""
     from app.utils.fusion_affaires import fusionner as absorber
 
     _exiger_conseil(lecteur)
-    principale, *autres = affaires_du_groupe(session, ids)
+    principale, *autres = affaires_du_groupe(session, ids, principale_id)
     restantes = {t.id for t in autres}
     absorbees: list[tuple[Ticket, str]] = []
     #  Une chaîne A–B–C : C ne devient candidate qu'une fois B absorbée (ses
@@ -173,7 +188,7 @@ def fusionner(
         directes = sorted(restantes & ids_lies(session, principale.id))
         if not directes:
             raise HTTPException(422, "Ces affaires ne sont pas liées entre elles")
-        absorbees += absorber(session, principale, directes, lecteur, None)
+        absorbees += absorber(session, principale, directes, lecteur, None, conciliations)
         restantes -= set(directes)
     e = html.escape
     ancien = principale.titre

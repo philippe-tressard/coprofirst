@@ -143,6 +143,7 @@ def test_une_candidate_porte_la_forme_d_une_affaire_nommee(trois):
         "fusionnee",
         "fusionnable",
         "motif",
+        "conciliation",
     }
 
 

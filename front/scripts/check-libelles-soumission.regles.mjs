@@ -35,6 +35,12 @@ export const EXCEPTIONS = {
 	//  gestes que le verbe générique ne dirait pas, même raison que le courriel.
 	'lib/components/OngletReglement.svelte':
 		'« Poser la question » interroge l’assistant (facturé) : il n’enregistre pas une saisie',
+	//  🔴 Concilier une fusion refusée (27/10/2026) : le premier temps de la fusion
+	//  CHOISIT, il n'enregistre rien — « Continuer » mène à la fusion elle-même, dont
+	//  le formulaire (`FusionAffaires`) garde le verbe commun. Un « Enregistrer » ici
+	//  ferait croire que la conciliation est déjà décidée côté serveur.
+	'lib/components/reporting/EtapeConciliationFusion.svelte':
+		'étape de choix avant la fusion : « Continuer » n’enregistre rien, la fusion qui suit a son « Enregistrer »',
 	'lib/components/PartageCourriel.svelte':
 		'le bouton envoie un courriel et n’enregistre rien : « Envoyer » nomme le geste',
 	//  🔴 `PiedFormulaire` rend `{enCours ? libelleEnCours : libelle}` — des

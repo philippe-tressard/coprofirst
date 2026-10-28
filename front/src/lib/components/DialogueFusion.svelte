@@ -9,6 +9,9 @@
   🔒 Une affaire lue par moins de monde que celle qu'on clôt est montrée
   DÉSACTIVÉE, avec sa raison : la fusion rendrait ses suites lisibles à qui ne
   les lisait pas. Le serveur la refuse de toute façon (`utils/fusion_affaires`).
+  Quand le conseil a une façon de l'autoriser (restreindre, élargir — l'inversion
+  n'a pas lieu à la clôture), `ConciliationFusion` montre l'écart et les noms
+  de ceux que la conciliation ferait lire autrement, à confirmer (27/10/2026).
 
   Rien n'est coché par défaut : une fusion ne se défait pas.
 
@@ -17,23 +20,45 @@
 -->
 <script lang="ts">
 	import Modale from './Modale.svelte';
+	import ConciliationFusion from './ConciliationFusion.svelte';
 	import type { CandidateFusion } from '$lib/api';
+	import type { DemandeFusion } from '$lib/fusion-affaires';
+	import {
+		choixPourServeur,
+		conciliable,
+		decisionIncomplete,
+		decisionPrete,
+		type Decisions,
+	} from '$lib/fusion-conciliation';
 
 	/** Le numéro de l'affaire qu'on clôt — celle qui absorbe. */
 	export let numero: string;
 	/** L'état de clôture, en toutes lettres (« Résolu », « Annulé »). */
 	export let etat: string;
 	export let candidates: CandidateFusion[];
-	/** `null` : on renonce à clore ; une liste (vide comprise) : on clôt. */
-	export let onReponse: (ids: number[] | null) => void;
+	/** `null` : on renonce à clore ; sinon ce qu'on absorbe (rien, éventuellement) : on clôt. */
+	export let onReponse: (r: DemandeFusion | null) => void;
 
 	let cochees: number[] = [];
+	let decisions: Decisions = {};
 
 	function basculer(id: number, oui: boolean) {
 		cochees = oui ? [...cochees, id] : cochees.filter((x) => x !== id);
 	}
 
-	$: libelle = cochees.length ? `Clore et fusionner (${cochees.length})` : 'Clore sans fusionner';
+	/** Les refusées que le conseil a conciliées, noms confirmés. */
+	$: conciliees = candidates.filter((c) => !c.fusionnable && decisionPrete(c, decisions[c.id]));
+	/** Une option est choisie sans que ses noms soient confirmés : on ne clôt pas. */
+	$: incomplet = candidates.some((c) => !c.fusionnable && decisionIncomplete(c, decisions[c.id]));
+	$: total = cochees.length + conciliees.length;
+	$: libelle = total ? `Clore et fusionner (${total})` : 'Clore sans fusionner';
+
+	function clore() {
+		onReponse({
+			fusionner: [...cochees, ...conciliees.map((c) => c.id)],
+			conciliations: choixPourServeur(candidates, decisions),
+		});
+	}
 </script>
 
 <Modale titre="Fusionner les affaires liées ?" on:fermer={() => onReponse(null)}>
@@ -59,6 +84,13 @@
 					{#if c.motif}
 						<p class="aide sous-case">Impossible : {c.motif}.</p>
 					{/if}
+					{#if conciliable(c)}
+						<ConciliationFusion
+							candidate={c}
+							numeroPrincipale={numero}
+							bind:decision={decisions[c.id]}
+						/>
+					{/if}
 				</li>
 			{/each}
 		</ul>
@@ -68,7 +100,7 @@
 		<button type="button" class="btn btn-outline" on:click={() => onReponse(null)}>
 			Annuler
 		</button>
-		<button type="button" class="btn btn-primary" on:click={() => onReponse(cochees)}>
+		<button type="button" class="btn btn-primary" disabled={incomplet} on:click={clore}>
 			{libelle}
 		</button>
 	</div>

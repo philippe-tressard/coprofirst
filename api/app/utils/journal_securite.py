@@ -106,6 +106,10 @@ _NIVEAUX: dict[str, int] = {
     #  Ce qu'un badge ouvre, posé ou changé par le conseil (#2217) : une porte
     #  PHYSIQUE. La dérivation des lots ne fait que proposer ; ce geste décide.
     "acces_perimetre_pose": logging.WARNING,
+    #  Une fusion d'affaires conciliée (restreindre / élargir) : la principale
+    #  change de lecteurs, des personnes liront ce qu'elles ne lisaient pas, sur
+    #  confirmation nominative du conseil (`utils/fusion_conciliation`).
+    "fusion_conciliation": logging.WARNING,
 }
 
 

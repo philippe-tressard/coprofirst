@@ -9,6 +9,7 @@ import {
 	tickets as ticketsApi,
 	type AffaireLiee,
 	type CandidateFusion,
+	type ChoixConciliation,
 	type Ticket,
 } from '$lib/api';
 import { messageErreur } from '$lib/erreurs';
@@ -25,10 +26,11 @@ import { STATUT_TICKET_LABELS, estActualite, estTicketClos, lienTicket } from '$
  * chemin pris pour clore.
  *
  * Rend :
- * - `[]` quand il n'y a rien à demander — l'état ne CLÔT pas (déjà close, ou
- *   un état actif), le lecteur n'est pas du conseil, aucune liée n'est
+ * - `SANS_FUSION` quand il n'y a rien à demander — l'état ne CLÔT pas (déjà
+ *   close, ou un état actif), le lecteur n'est pas du conseil, aucune liée n'est
  *   ouverte — ou qu'on clôt sans fusionner ;
- * - les identifiants cochés ;
+ * - les identifiants cochés, et les conciliations décidées pour les affaires
+ *   refusées pour fuite de lecture (27/10/2026) ;
  * - `null` quand on renonce, ou que la liste n'a pas pu être lue : le geste
  *   de clôture ne part pas. Clore sans avoir pu poser la question ferait
  *   passer « je n'ai pas pu regarder » pour « il n'y avait rien ».
@@ -36,11 +38,21 @@ import { STATUT_TICKET_LABELS, estActualite, estTicketClos, lienTicket } from '$
  * ⚠️ Le CONSEIL seul fusionne (`utils/fusion_affaires`) — la liste des
  * candidates lui est réservée, d'où la garde sur `isCS`.
  */
+export interface DemandeFusion {
+	/** Les affaires à absorber. */
+	fusionner: number[];
+	/** Restreindre / élargir, confirmés par le nom de chaque personne concernée. */
+	conciliations: ChoixConciliation[];
+}
+
+/** Rien à fusionner : la clôture part seule. */
+export const SANS_FUSION: DemandeFusion = { fusionner: [], conciliations: [] };
+
 export async function demanderFusion(
 	ticket: { id: number; numero: string; statut: string },
 	statut: string | undefined,
-): Promise<number[] | null> {
-	if (!get(isCS) || !estTicketClos(statut) || estTicketClos(ticket.statut)) return [];
+): Promise<DemandeFusion | null> {
+	if (!get(isCS) || !estTicketClos(statut) || estTicketClos(ticket.statut)) return SANS_FUSION;
 	let candidates: CandidateFusion[];
 	try {
 		candidates = await ticketsApi.candidatesFusion(ticket.id);
@@ -48,8 +60,8 @@ export async function demanderFusion(
 		toast('error', messageErreur(e));
 		return null;
 	}
-	if (!candidates.length) return [];
-	return modaleImperative<number[] | null>(
+	if (!candidates.length) return SANS_FUSION;
+	return modaleImperative<DemandeFusion | null>(
 		DialogueFusion,
 		{ numero: ticket.numero, etat: STATUT_TICKET_LABELS[statut ?? ''] ?? statut, candidates },
 		null,
@@ -99,15 +111,19 @@ const parAnciennete = (a: AffaireLiee, b: AffaireLiee) =>
 /**
  * **Fusionner les affaires liées depuis la correction d'une affaire** (#2173).
  *
- * Le geste du Suivi (#2083), sans rien en récrire : les affaires fusionnables
- * sont celles que le serveur propose déjà à la clôture (`GET /tickets/{id}/fusion`
+ * Le geste du Suivi (#2083), sans rien en récrire : les affaires proposées sont
+ * celles que le serveur propose déjà à la clôture (`GET /tickets/{id}/fusion`
  * — ouvertes, ni absorbées, ni actualités, ni fusion écartée) ; la boîte est
  * `FusionAffaires`, dans une fenêtre (`ModaleFusionAffaires` dit pourquoi).
  *
- * Rend ce que la fusion a fait, ou `null` quand on renonce, qu'il n'y a rien à
- * fusionner (on le dit — avec le MOTIF du serveur quand une liée s'y refuse,
- * #2186 : un message générique taisait pourquoi), ou que la liste n'a pas pu
- * être lue (on le dit aussi).
+ * C'est `FusionAffaires` qui vérifie qui lirait quoi et propose, pour une liée
+ * refusée, le plan de conciliation (27/10/2026) : la candidate d'ici ne sert
+ * qu'à constituer le groupe. Avant, une liée refusée était écartée en amont avec
+ * son motif (#2186) — le conseil ne pouvait que renoncer.
+ *
+ * Rend ce que la fusion a fait, ou `null` quand on renonce, qu'il n'y a aucune
+ * liée à proposer (on le dit), ou que la liste n'a pas pu être lue (on le dit
+ * aussi).
  */
 export async function fusionnerLiees(affaire: AffaireLiee): Promise<FusionFaite | null> {
 	if (!get(isCS)) return null;
@@ -118,23 +134,13 @@ export async function fusionnerLiees(affaire: AffaireLiee): Promise<FusionFaite 
 		toast('error', messageErreur(e));
 		return null;
 	}
-	const fusionnables = candidates.filter((c) => c.fusionnable);
-	const refusees = candidates.filter((c) => !c.fusionnable);
-	if (!fusionnables.length) {
-		toast(
-			'info',
-			refusees.length
-				? `Fusion impossible : ${refusees.map((c) => `${c.numero} est ${c.motif}`).join(' ; ')}.`
-				: 'Aucune affaire liée ne peut être fusionnée avec celle-ci.',
-		);
+	if (!candidates.length) {
+		toast('info', 'Aucune affaire liée ne peut être fusionnée avec celle-ci.');
 		return null;
 	}
 	return modaleImperative<FusionFaite | null>(
 		ModaleFusionAffaires,
-		{
-			affaires: [affaire, ...fusionnables].sort(parAnciennete),
-			horsFusion: refusees,
-		},
+		{ affaires: [affaire, ...candidates].sort(parAnciennete) },
 		null,
 	);
 }

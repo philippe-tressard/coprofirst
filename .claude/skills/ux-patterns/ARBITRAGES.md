@@ -575,3 +575,10 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : la racine était à 12 px sur téléphone depuis la v1.0.0, jamais arbitrée — texte de lecture à 10,8 px, plus petit cran à 8,6, et iOS zoomait à chaque appui dans un champ ; `16px` au bureau écrasait la taille choisie dans le navigateur (audit `apple-design`). Maquette A / B / C sur trois écrans, B retenue.
 - **Écarté** : 16 px au téléphone (C : la rangée « Nature » déborde, « NEW » passe sous le titre, moins d'affaires par écran) ; garder 12 px (A).
 - **Tenu par** : `npm run lint:taille-racine`, `e2e/taille-texte.spec.ts`.
+
+### n° 77 · en vigueur — Une fusion refusée pour fuite de lecture se concilie, par le nom
+27/10/2026 · #2268 · l'utilisateur · §3, §14 bis
+- **Décidé** : le refus de #1704 (un lecteur de la principale ne lisait pas l'absorbée) ne s'arrête plus à un message : la boîte montre l'ÉCART (périmètre, Destinataires, accès) et trois options — **inverser** (l'autre absorbe ; hors clôture), **restreindre** (ce que les deux avaient en commun), **élargir** (l'union ; impossible si l'une est confidentielle). Toute option qui ferait lire à quelqu'un ce qu'il ne lisait pas NOMME ces personnes et se confirme par leur liste exacte — le serveur recalcule et refuse (409) si elle a changé.
+- **Pourquoi** : « la fusion est parfois refusée car une section diffère, notamment le périmètre » — le conseil n'avait que « renoncer ». L'invariant de #1704 (personne ne lit sans l'avoir lu) devient une décision nominative, jamais un contournement silencieux. Les chiffres sont MESURÉS par `ticket_visible` sur la principale modifiée à blanc, jamais calculés à part.
+- **Écarté** : élargir en bloc sans noms ; ouvrir une affaire confidentielle ; inverser à la clôture (l'affaire qu'on clôt porte le bilan, #1704).
+- **Tenu par** : `api/tests/test_fusion_conciliation.py`, `e2e/fusion-conciliation.spec.ts`, `test_journal_securite.py` (geste sensible `fusion_conciliation`).

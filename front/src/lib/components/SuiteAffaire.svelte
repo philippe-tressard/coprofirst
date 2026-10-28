@@ -48,7 +48,7 @@
 	import { nomCopie } from '$lib/saisi-pour';
 	import { isCS } from '$lib/stores/auth';
 	import { equipementDansLaSuite } from '$lib/suite-conseil';
-	import { demanderFusion } from '$lib/fusion-affaires';
+	import { demanderFusion, SANS_FUSION } from '$lib/fusion-affaires';
 	import {
 		STATUT_TICKET_LABELS,
 		estActualite,
@@ -103,9 +103,10 @@
 	//  ouvertes (#1704) — jamais une correction : la clôture a déjà eu lieu.
 	async function soumettre(charge: ChargeUtileEvolution) {
 		//  Une actualité ne fusionne pas : son suivi est un repère, pas une clôture.
-		const fusionner = correction || actu ? [] : await demanderFusion(ticket, charge.nouveau_statut);
-		if (fusionner === null) return;
-		dispatch('submit', fusionner.length ? { ...charge, fusionner } : charge);
+		const demande =
+			correction || actu ? SANS_FUSION : await demanderFusion(ticket, charge.nouveau_statut);
+		if (demande === null) return;
+		dispatch('submit', demande.fusionner.length ? { ...charge, ...demande } : charge);
 	}
 </script>
 

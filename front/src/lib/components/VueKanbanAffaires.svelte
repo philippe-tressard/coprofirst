@@ -76,16 +76,16 @@
 		const statut = STATUT_PAR_COLONNE[colonne];
 		if (!t || !statut || statut === t.statut) return;
 		//  Glisser en « Résolu » clôt : la fusion se demande ici aussi (#1704).
-		const fusionner = await demanderFusion(t, statut);
-		if (fusionner === null) return;
+		const demande = await demanderFusion(t, statut);
+		if (demande === null) return;
 		try {
 			await ticketsApi.addEvolution(t.id, {
 				type: 'etat',
 				nouveau_statut: statut,
 				notifier: false,
-				fusionner,
+				...demande,
 			});
-			for (const id of [t.id, ...fusionner]) dispatch('deplace', { id, statut });
+			for (const id of [t.id, ...demande.fusionner]) dispatch('deplace', { id, statut });
 		} catch (e) {
 			toast('error', messageErreur(e));
 		}

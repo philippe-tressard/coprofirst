@@ -7,10 +7,12 @@
   description, le conseil relit, la plus ancienne absorbe et reste ouverte, même
   route, mêmes refus. Elle n'ajoute que ce que la correction rend nécessaire :
 
-  - ce qui reste HORS de la fusion, et pourquoi (une affaire que la fusion
-    ferait lire à qui ne la lisait pas — le motif vient du serveur) ;
   - que la fusion s'enregistre seule : ce que la correction n'a pas enregistré
     est abandonné, le serveur ayant réécrit titre et description.
+
+  Une liée que la fusion ferait lire à qui ne la lisait pas n'est plus écartée
+  ici : `FusionAffaires` vérifie qui lirait quoi, montre l'écart et propose de
+  concilier (inverser, restreindre, élargir — confirmé par les noms).
 
   ## Pourquoi une fenêtre, et pas la section elle-même
 
@@ -31,21 +33,15 @@
 	import Modale from './Modale.svelte';
 	import FusionAffaires from './reporting/FusionAffaires.svelte';
 	import type { AffaireAFusionner, FusionFaite } from '$lib/fusion-affaires';
-	import type { CandidateFusion } from '$lib/api';
 
 	/** Le groupe, la plus ancienne en tête : elle absorbe. */
 	export let affaires: AffaireAFusionner[];
-	/** Les liées que le serveur écarte de la fusion, avec leur motif. */
-	export let horsFusion: CandidateFusion[] = [];
 	/** `null` : on renonce ; sinon ce que la fusion a fait. */
 	export let onReponse: (r: FusionFaite | null) => void;
 </script>
 
 <Modale titre="Fusionner les affaires liées" on:fermer={() => onReponse(null)}>
 	<div class="modal-body">
-		{#each horsFusion as h (h.id)}
-			<p class="aide">Hors fusion : {h.numero} — {h.titre}{h.motif ? ` (${h.motif})` : ''}.</p>
-		{/each}
 		<p class="aide">
 			La fusion s’enregistre seule : ce que vous n’avez pas enregistré dans la correction est
 			abandonné.

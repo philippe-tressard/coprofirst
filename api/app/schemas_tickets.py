@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from app.models.core import StatutTicket
-from app.schemas_communs import ChampsIntervenant, EvolutionLue, ListeJson
+from app.schemas_communs import ChampsIntervenant, ChoixConciliation, EvolutionLue, ListeJson
 from app.utils.assiste_ia import AssisteIACorrection, AssisteIAEntree
 
 
@@ -65,6 +65,8 @@ class TicketEvolutionCreate(AssisteIAEntree, ChampsSuiteAffaire):
     #  🔀 Les affaires liées à ABSORBER, quand cette Suite clôt l'affaire (#1704) :
     #  conseil seul, règles dans `utils/fusion_affaires`. Ignoré hors clôture.
     fusionner: Optional[List[int]] = None
+    #  Les fusions refusées pour fuite de lecture que le conseil a conciliées.
+    conciliations: Optional[List[ChoixConciliation]] = None
     partager_whatsapp: Optional[bool] = None
     envoyer_syndic: Optional[bool] = None
     envoyer_cs: Optional[bool] = None

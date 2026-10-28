@@ -59,7 +59,11 @@ async function corriger(page: Page, affaire: typeof AFFAIRE) {
 		if (chemin === '/api/tickets') return [affaire];
 		if (chemin === '/api/tickets/60') return affaire;
 		if (chemin === '/api/tickets/61') return PRINCIPALE;
-		if (chemin === '/api/tickets/60/fusion') return [{ ...LIEE, fusionnable: true, motif: null }];
+		if (chemin === '/api/tickets/60/fusion')
+			return [{ ...LIEE, fusionnable: true, motif: null, conciliation: null }];
+		//  Le verdict de la fusion : la plus ancienne (61) absorbe, 60 est lisible de ses lecteurs.
+		if (chemin === '/api/suivi-affaires/fusions/conciliation')
+			return [{ ...AFFAIRE, fusionnable: true, motif: null, conciliation: null }];
 		if (chemin === '/api/suivi-affaires/fusions/proposition')
 			return { titre: PRINCIPALE.titre, description: '<p>Les deux.</p>', assiste_ia: false };
 		if (chemin === '/api/suivi-affaires/fusions') return { principale_id: 61, absorbees: [60] };
