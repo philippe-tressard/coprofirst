@@ -60,7 +60,9 @@ async function bloquerLeDessin(page: Page, chargements: number) {
  */
 async function bloquerLeDemarrage(page: Page, chargements = Infinity) {
 	let restants = chargements;
-	await page.route('**/.svelte-kit/generated/client/app.js*', async (route) => {
+	//  SvelteKit 3 sert l'entrée sous `generated/dev/client/` (SvelteKit 2 : `generated/client/`) :
+	//  le motif lit les deux, un chemin déplacé ne désarmerait pas le test en silence (#2205).
+	await page.route('**/.svelte-kit/generated/**/client/app.js*', async (route) => {
 		if (restants-- <= 0) await route.continue();
 		//  sinon : aucune réponse, jamais
 	});
@@ -102,20 +104,31 @@ const stylee = (page: Page) =>
  */
 async function servirSansStyles(page: Page, chargements: number) {
 	let restants = chargements;
+	//  Le blocage suit le DOCUMENT servi, non un compte de requêtes : sous SvelteKit 3
+	//  l'entrée de l'application (deux `import()` en chaîne) n'est demandée qu'APRÈS le
+	//  chargement, et le garde recharge d'abord — un compteur de requêtes aurait
+	//  consommé son blocage sur le rechargement, et lâché la page stylée sans que le
+	//  test ait vu le constat (#2205).
+	let sansStyles = false;
 	await page.route(
 		(url) => url.pathname === '/auth/connexion',
 		async (route) => {
 			if (route.request().resourceType() !== 'document' || restants <= 0) {
+				if (route.request().resourceType() === 'document') sansStyles = false;
 				await route.continue();
 				return;
 			}
 			restants--;
+			sansStyles = true;
 			const reponse = await route.fetch();
 			const html = (await reponse.text()).replace(/<style data-sveltekit>[\s\S]*?<\/style>/, '');
 			await route.fulfill({ response: reponse, body: html });
 		},
 	);
-	await bloquerLeDemarrage(page, chargements);
+	await page.route('**/.svelte-kit/generated/**/client/app.js*', async (route) => {
+		if (!sansStyles) await route.continue();
+		//  sinon : aucune réponse, jamais
+	});
 }
 
 test('Premier chargement jamais dessiné : la page se recharge d’elle-même et s’affiche', async ({
