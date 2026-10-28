@@ -9,7 +9,7 @@
  * #770 (06/09/2026) a mis `script-src` en mode bloquant sans écrire une ligne
  * dans le `Caddyfile` : c'est SvelteKit qui émet `script-src 'self' 'sha256-…'`,
  * parce que lui seul connaît le contenu de ses scripts d'hydratation. Cette
- * protection tient donc à **six lignes de `svelte.config.js`** que rien
+ * protection tient donc à **six lignes de `vite.config.ts`** que rien
  * n'obligeait à rester là.
  *
  * 🔴 Le précédent est connu et coûteux : la v2.24.0 a livré un bandeau de mise à
@@ -145,7 +145,7 @@ async function mesurer() {
 		const { ok, motif } = verdictEntete(reponse.headers.get('content-security-policy'));
 		if (!ok) {
 			console.error(`❌ CSP servie par SvelteKit : ${motif}`);
-			console.error('   `kit.csp` (mode `hash`) dans front/svelte.config.js — cf. #770.');
+			console.error('   option `csp` (mode `hash`) de front/vite.config.ts — cf. #770.');
 			return 1;
 		}
 		console.log(`✅ CSP servie par SvelteKit : ${motif}`);

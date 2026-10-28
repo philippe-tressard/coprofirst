@@ -201,7 +201,7 @@ def test_une_page_qui_ne_se_dessine_pas_est_gardee():
 
     1. le repère de `app.html`, AVANT `%sveltekit.head%` (donc avant les feuilles) ;
     2. son remplacement par `hooks.server.ts`, avec le contenu du fichier ;
-    3. le condensat de ce même fichier dans la CSP (`svelte.config.js`) — sans
+    3. le condensat de ce même fichier dans la CSP (`vite.config.ts`) — sans
        lui, le navigateur refuse le script ;
     4. le marqueur « démarrée », posé par le layout racine et lu par le garde
        sous le même nom — sans lui, toute page saine dirait « pas fini de se
@@ -222,9 +222,9 @@ def test_une_page_qui_ne_se_dessine_pas_est_gardee():
         "hooks.server.ts n'injecte plus le garde de démarrage dans la page."
     )
 
-    config = _lire(_FRONT / "svelte.config.js")
+    config = _lire(_FRONT / "vite.config.ts")
     assert "src/garde-demarrage.js" in config and "GARDE_DEMARRAGE" in config, (
-        "svelte.config.js ne calcule plus le condensat du garde : la CSP le bloquerait."
+        "vite.config.ts ne calcule plus le condensat du garde : la CSP le bloquerait."
     )
     assert re.search(r"'script-src':\s*\[[^\]]*GARDE_DEMARRAGE", config), (
         "le condensat du garde n'est plus dans `script-src`."

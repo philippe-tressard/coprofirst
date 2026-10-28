@@ -37,8 +37,8 @@ limité. Une copropriété **suspendue** n'est jamais une destination.
 ## Démarrer l'installation
 
 Une installation commune se lance avec une surcouche de plus, qui fait servir au
-front l'hôte que le visiteur a demandé (son `ORIGIN` est vidé, l'hôte se lit dans la
-requête) :
+front l'hôte que le visiteur a demandé (le front ne fixe aucune adresse, l'hôte se lit
+dans la requête) :
 
 ```bash
 docker compose -f docker-compose.yml -f deploiement/standard/compose.images.yml \

@@ -25,7 +25,7 @@
 		quandAuthResolue,
 	} from '$lib/stores/auth';
 	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	//  ⏱ Les onglets Accès et Location, la correction d'un bail et ses accès

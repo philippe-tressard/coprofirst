@@ -17,7 +17,7 @@
 -->
 <script lang="ts">
 	import pkg from '../../../package.json';
-	import { env } from '$env/dynamic/public';
+	import { PUBLIC_INSTANCE_ID } from '$app/env/public';
 	import Icon from '$lib/components/Icon.svelte';
 	import LogoResidence from '$lib/components/LogoResidence.svelte';
 	import { configStore, siteNomStore } from '$lib/stores/pageConfig';
@@ -37,7 +37,7 @@
 	const empreinte = import.meta.env.VITE_GIT_HASH ?? 'dev';
 	//  Le nœud se lit à l'EXÉCUTION (`PUBLIC_INSTANCE_ID`, docker-compose) : une
 	//  image construite par la CI sert les deux nœuds (#1758).
-	const serveur = env.PUBLIC_INSTANCE_ID || '';
+	const serveur = PUBLIC_INSTANCE_ID || '';
 	const version = `v${pkg.version}`;
 	const build = [version, empreinte, import.meta.env.VITE_BUILD_DATE].filter(Boolean).join(' · ');
 	const anneeCourante = new Date().getFullYear();

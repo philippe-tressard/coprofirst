@@ -12,7 +12,7 @@
 		identiteDepuis,
 	} from '$lib/components/ChampsIdentiteCopropriete.svelte';
 	import { tick } from 'svelte';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { marquerDonneesAffichees } from '$lib/telemetry';
 	import { afterNavigate } from '$app/navigation';
 	import { isAdmin, isCS, isLocataire, isProprioOuCS, quandAuthResolue } from '$lib/stores/auth';

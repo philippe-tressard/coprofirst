@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
-	import { navigating, updated } from '$app/stores';
+	import { navigating, updated } from '$app/state';
 
 	// Mise à jour de l'application — appliquée d'elle-même, sans rien demander.
 	//
@@ -115,7 +114,7 @@
 	let perimee = false;
 
 	function surImportEchoue() {
-		if (get(navigating)) return;
+		if (navigating.to) return;
 		updated
 			.check()
 			.then((nouvelle) => {
