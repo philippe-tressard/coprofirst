@@ -144,13 +144,32 @@ verdict_versions_parite() {
     [ "$1" = "$2" ] && echo OK || echo DIVERGENCE
 }
 
+#  $1 la version de l'ACTIF, $2 celle du STANDBY → OK | STANDBY_EN_AVANCE |
+#  DIVERGENCE | INCONNU. Seul le standby pose ces paquets, après chaque bascule
+#  (`noyau-standby.sh`, #2198) : une version publiée entre deux nuits le met en
+#  avance sur l'actif pour un jour, et l'actif la prend à la bascule suivante,
+#  devenu standby à son tour. C'est le geste qui marche, pas un écart — le
+#  28/10/2026, cloudflared 2026.10.5 sur rpi2, 2026.10.4 sur rpi1 : WARN au digest.
+#  L'ACTIF en avance, lui, dit un standby qui n'a pas posé ce qu'il devait : écart.
+#  « absent » d'un côté n'est jamais une avance (sort -V le rangerait après tout
+#  chiffre) ; une version vide reste INCONNU.
+verdict_versions_parite_roles() {
+    local v
+    v=$(verdict_versions_parite "${1:-}" "${2:-}")
+    [ "$v" = DIVERGENCE ] || { echo "$v"; return; }
+    case "$1|$2" in absent\|*|*\|absent) echo DIVERGENCE; return ;; esac
+    [ "$(printf '%s
+%s
+' "$1" "$2" | sort -V | tail -1)" = "$2" ] && echo STANDBY_EN_AVANCE || echo DIVERGENCE
+}
+
 # ── Les verdicts de C30 pour ce module, appelés par `mises_a_jour_verdicts` ──
 #  Dépend de l'appelant : ok/warn, SELF/PEER/PEER_OK et les champs S_*/P_*.
 #  Tout sort en WARN (digest), jamais en FAIL. Un `apt-get -s` qui échoue PENDANT
 #  un passage d'installation (verrou) n'est pas une panne : dit en `ok`, comme
 #  C30 le fait pour `EN_COURS` (#1610) — un `warn` partirait au digest.
 paquets_verdicts() {
-    local n p hs rt enc k a b ecarts='' inconnus=''
+    local n p hs rt enc k a b v act='' ecarts='' inconnus='' avances=''
     for n in "$SELF" "$PEER"; do
         if [ "$n" = "$SELF" ]; then p=S; else [ "$PEER_OK" -eq 0 ] || continue; p=P; fi
         eval "hs=\${${p}_apt_hors_secu:-} rt=\${${p}_apt_retenus:-} enc=\${${p}_apt_en_cours:-}"
@@ -170,17 +189,29 @@ paquets_verdicts() {
     done
     [ "$PEER_OK" -eq 0 ] || return 0
     #  Un constat COMMUN (il nomme les deux nœuds) : l'actif le porte, une fois.
+    #  Le rôle ne compte que si les deux `.active` le disent : sinon, aucune
+    #  avance n'est admise (C3 dit déjà l'incohérence).
+    if [ -n "${S_active:-}" ] && [ "${S_active:-}" = "${P_active:-}" ]; then
+        case "$S_active" in "$SELF") act=S ;; "$PEER") act=P ;; esac
+    fi
     for k in $PAQUETS_PARITE; do
         eval "a=\${S_$(cle_version "$k"):-} b=\${P_$(cle_version "$k"):-}"
-        case "$(verdict_versions_parite "$a" "$b")" in
-            OK)         ;;
-            DIVERGENCE) ecarts="$ecarts${ecarts:+ ; }$k : $SELF $a, $PEER $b" ;;
-            *)          inconnus="$inconnus${inconnus:+, }$k" ;;
+        case "$act" in
+            S) v=$(verdict_versions_parite_roles "$a" "$b") ;;
+            P) v=$(verdict_versions_parite_roles "$b" "$a") ;;
+            *) v=$(verdict_versions_parite "$a" "$b") ;;
+        esac
+        case "$v" in
+            OK)                ;;
+            STANDBY_EN_AVANCE) avances="$avances${avances:+ ; }$k : $SELF $a, $PEER $b" ;;
+            DIVERGENCE)        ecarts="$ecarts${ecarts:+ ; }$k : $SELF $a, $PEER $b" ;;
+            *)                 inconnus="$inconnus${inconnus:+, }$k" ;;
         esac
     done
+    [ -z "$avances" ] || ok "Standby en avance sur l'actif ($S_active) — $avances : posé(s) après la bascule (#2198), l'actif les prend à la suivante"
     [ -z "$ecarts" ] || warn "Versions DIVERGENTES entre $SELF et $PEER — $ecarts : les deux nœuds se relaient chaque nuit et le moteur de conteneurs (comme le tunnel) ne devrait pas différer d'un jour à l'autre ; aligner le STANDBY d'abord (#1591)"
     [ -z "$inconnus" ] || warn "Parité des versions INCONNUE pour ${inconnus} entre $SELF et $PEER (dpkg-query illisible sur un nœud) — ni vert ni rouge"
-    if [ -z "$ecarts" ] && [ -z "$inconnus" ]; then
+    if [ -z "$ecarts" ] && [ -z "$inconnus" ] && [ -z "$avances" ]; then
         ok "Mêmes versions de ${PAQUETS_PARITE// /, } sur les 2 nœuds"
     fi
     #  #1677 : `Unattended-Upgrade::Mail "root"` sur rpi1 seul — sans /usr/bin/mail,
@@ -235,6 +266,15 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "présent d'un seul côté → DIVERGENCE"      DIVERGENCE  verdict_versions_parite 2026.9.3 absent
     t "vide d'un côté → INCONNU, jamais OK"      INCONNU     verdict_versions_parite 5:29.2.1-1 ""
     t "vide des deux côtés → INCONNU (pas « égaux »)" INCONNU verdict_versions_parite "" ""
+    echo "== (3 bis) parité selon le rôle : le standby pose, l'actif suit (#2198) =="
+    t "identiques → OK"                                     OK                verdict_versions_parite_roles 2026.10.5 2026.10.5
+    t "cloudflared actif 10.4 / standby 10.5 (28/10)"       STANDBY_EN_AVANCE verdict_versions_parite_roles 2026.10.4 2026.10.5
+    t "actif en avance → DIVERGENCE (le standby n'a pas posé)" DIVERGENCE     verdict_versions_parite_roles 2026.10.5 2026.10.4
+    t "ordre numérique, pas lexical (9 < 10)"               STANDBY_EN_AVANCE verdict_versions_parite_roles 2026.9.3 2026.10.4
+    t "époque docker comprise"                              STANDBY_EN_AVANCE verdict_versions_parite_roles 5:29.2.1-1 5:29.4.0-1
+    t "absent sur l'actif → DIVERGENCE, jamais une avance"  DIVERGENCE        verdict_versions_parite_roles absent 2026.10.5
+    t "absent sur le standby → DIVERGENCE"                  DIVERGENCE        verdict_versions_parite_roles 2026.10.5 absent
+    t "vide d'un côté → INCONNU"                            INCONNU           verdict_versions_parite_roles "" 2026.10.5
     t "clé d'un paquet à point" ver_containerd_io cle_version containerd.io
     t "clé d'un paquet à tiret" ver_docker_ce     cle_version docker-ce
 
@@ -312,7 +352,7 @@ X
         S_apt_hors_secu=12 P_apt_hors_secu=9 S_apt_retenus="ok:" P_apt_retenus="ok:linux-image-rpi-2712"
         S_ver_docker_ce=5:29.4.0-1 P_ver_docker_ce=5:29.4.0-1 S_ver_containerd_io=2.2.3 P_ver_containerd_io=2.2.3
         S_ver_cloudflared=2026.9.3 P_ver_cloudflared=2026.9.3 S_apt_en_cours=non P_apt_en_cours=non
-        S_uu_mail="ok:" P_uu_mail="ok:"
+        S_uu_mail="ok:" P_uu_mail="ok:" S_active=rpi1 P_active=rpi1
     }
     plein; sortie=$(paquets_verdicts)
     t "deux nœuds sains → aucun WARN"       0 eval 'grep -c "^WARN" <<< "$sortie"'
@@ -325,9 +365,20 @@ X
     t "initramfs-tools-core retenu sur rpi1 seul → WARN qui nomme rpi1" 1 \
       eval 'grep -c "^WARN Paquet(s) retenu(s) (kept back) sur rpi1 : initramfs-tools-core" <<< "$sortie"'
     t "…et rien sur rpi2" 0 eval 'grep -c "Paquet(s) retenu(s) (kept back) sur rpi2" <<< "$sortie"'
-    plein; S_ver_docker_ce=5:29.2.1-1 P_ver_docker_ce=5:29.4.0-1 S_ver_containerd_io=2.2.1 P_ver_containerd_io=2.2.3; sortie=$(paquets_verdicts)
+    #  02/10/2026 : l'ACTIF en retard ne s'admet plus (#2198) — ici rpi2 actif, en avance.
+    plein; S_active=rpi2 P_active=rpi2 S_ver_docker_ce=5:29.2.1-1 P_ver_docker_ce=5:29.4.0-1 S_ver_containerd_io=2.2.1 P_ver_containerd_io=2.2.3; sortie=$(paquets_verdicts)
     t "docker ET containerd divergents → UN WARN commun qui nomme les deux paquets et les deux nœuds" 1 \
       eval 'grep -c "^WARN Versions DIVERGENTES entre rpi1 et rpi2 — docker-ce : rpi1 5:29.2.1-1, rpi2 5:29.4.0-1 ; containerd.io : rpi1 2.2.1, rpi2 2.2.3" <<< "$sortie"'
+    #  28/10/2026 : rpi1 actif en 2026.10.4, rpi2 standby en 2026.10.5 — le geste de #2198.
+    plein; S_ver_cloudflared=2026.10.4 P_ver_cloudflared=2026.10.5; sortie=$(paquets_verdicts)
+    t "standby en avance → aucun WARN, un OK qui nomme l'avance" "0|1"       eval 'echo "$(grep -c "^WARN" <<< "$sortie")|$(grep -c "^OK Standby en avance sur l.actif (rpi1) — cloudflared : rpi1 2026.10.4, rpi2 2026.10.5" <<< "$sortie")"'
+    t "…et pas de « mêmes versions » : ce n'est pas vrai" 0 eval 'grep -c "^OK Mêmes versions" <<< "$sortie"'
+    plein; S_active=rpi2 P_active=rpi2 S_ver_cloudflared=2026.10.4 P_ver_cloudflared=2026.10.5; sortie=$(paquets_verdicts)
+    t "l'ACTIF (rpi2, vu de rpi1) en avance → WARN DIVERGENTES" 1 eval 'grep -c "^WARN Versions DIVERGENTES entre rpi1 et rpi2 — cloudflared" <<< "$sortie"'
+    plein; S_active=rpi1 P_active=rpi2 S_ver_cloudflared=2026.10.4 P_ver_cloudflared=2026.10.5; sortie=$(paquets_verdicts)
+    t ".active incohérent → aucune avance admise, WARN" 1 eval 'grep -c "^WARN Versions DIVERGENTES" <<< "$sortie"'
+    plein; S_ver_cloudflared=2026.10.4 P_ver_cloudflared=2026.10.5 S_ver_docker_ce=5:29.4.0-1 P_ver_docker_ce=5:29.2.1-1; sortie=$(paquets_verdicts)
+    t "une avance ET un écart → l'écart reste WARN, l'avance OK" "1|1"       eval 'echo "$(grep -c "^WARN Versions DIVERGENTES entre rpi1 et rpi2 — docker-ce" <<< "$sortie")|$(grep -c "^OK Standby en avance" <<< "$sortie")"'
     plein; P_ver_cloudflared=""; sortie=$(paquets_verdicts)
     t "cloudflared illisible sur rpi2 → WARN INCONNU, pas de « mêmes versions »" "1|0" \
       eval 'echo "$(grep -c "^WARN Parité des versions INCONNUE pour cloudflared" <<< "$sortie")|$(grep -c "^OK Mêmes versions" <<< "$sortie")"'
