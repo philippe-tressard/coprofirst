@@ -161,7 +161,6 @@
 	    valeur dont elles héritaient. C'est `lint:charte` qui l'a dit, en refusant
 	    la règle que j'avais reprise d'elles. */
 	.tabs {
-		padding-bottom: 0.1rem;
 		/*  Les onglets DÉFILENT plutôt que de se replier — même parti que les tags
 		    d'`EnteteCarte`. C'était l'écart de `/prestataires`, seule page à trois
 		    onglets longs ; il n'a plus de raison d'être propre à un écran. */

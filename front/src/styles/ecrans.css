@@ -207,11 +207,19 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
    Remonter la règle ici plutôt que la recopier dans le composant : une classe
    partagée par deux composants n'a rien à faire dans le style scopé de l'un
    d'eux (`standards/02-factorisation.md`). */
+/*  🔴 La ligne de base est une OMBRE INTÉRIEURE, pas une bordure (28/10/2026,
+    signalé à l'écran : « on ne voit pas le sous-menu sélectionné »). Le liseré
+    de l'onglet actif chevauchait la bordure par un `margin-bottom: -2px` ; or
+    `BarreOnglets` fait défiler sa rangée en largeur, donc masque l'axe vertical,
+    et ce masquage rogne au bord du rembourrage, AVANT la bordure : le liseré y
+    perdait sa moitié basse et flottait au-dessus de la ligne grise. Peinte DANS
+    la boîte, sous les onglets, la ligne laisse le liseré la recouvrir en entier,
+    que la rangée défile ou non. 🔒 `e2e/onglet-actif-lisere.spec.ts`. */
 .tabs {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.25rem;
-	border-bottom: 2px solid var(--color-border);
+	box-shadow: inset 0 -2px 0 var(--color-border);
 	margin-bottom: 1.5rem;
 }
 /*  🔴 Le BOUTON d'onglet, remonté ici le 29/08/2026 (#491). `.tabs` était déjà
@@ -232,7 +240,6 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 	font-size: var(--fs-base);
 	color: var(--color-text-muted);
 	border-bottom: 2px solid transparent;
-	margin-bottom: -2px;
 	border-radius: var(--radius) var(--radius) 0 0;
 }
 @media (hover: hover) and (pointer: fine) {
@@ -254,7 +261,6 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 	font-size: var(--fs-base);
 	color: var(--color-text-muted);
 	border-bottom: 2px solid transparent;
-	margin-bottom: -2px;
 	font-weight: 500;
 	display: flex;
 	align-items: center;
