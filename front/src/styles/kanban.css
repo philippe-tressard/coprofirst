@@ -127,7 +127,7 @@
 	font-weight: 600;
 	padding: 0.1rem 0.4rem;
 	border-radius: 3px;
-	color: var(--color-surface);
+	color: var(--color-sur-plein);
 	line-height: 1.4;
 }
 .kanban-card-prest {

@@ -222,9 +222,9 @@
 	}
 	/*  Le groupe actif : l'aplat Bleu Seine d'une pastille retenue. */
 	.groupe[aria-current='true'] {
-		background: var(--color-primary);
-		border-color: var(--color-primary);
-		color: var(--color-surface);
+		background: var(--color-primary-plein);
+		border-color: var(--color-primary-plein);
+		color: var(--color-sur-plein);
 		font-weight: 600;
 	}
 	.groupe:active {

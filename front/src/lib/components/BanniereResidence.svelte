@@ -106,7 +106,7 @@
 		bottom: 0.75rem;
 		right: 0.75rem;
 		background: rgba(0, 0, 0, 0.55);
-		color: var(--color-surface);
+		color: var(--color-sur-voile);
 		border: none;
 		border-radius: var(--radius);
 		padding: 0.35rem 0.75rem;

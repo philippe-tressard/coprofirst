@@ -461,7 +461,7 @@
 		top: 2px;
 		right: 2px;
 		background: rgba(0, 0, 0, 0.6);
-		color: var(--color-surface);
+		color: var(--color-sur-voile);
 		border: none;
 		border-radius: 50%;
 		width: 18px;

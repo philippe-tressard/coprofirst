@@ -208,9 +208,9 @@
 		}
 	}
 	.icone-active {
-		background: var(--color-primary);
-		color: var(--color-surface);
-		border-color: var(--color-primary);
+		background: var(--color-primary-plein);
+		color: var(--color-sur-plein);
+		border-color: var(--color-primary-plein);
 	}
 	.field-check {
 		display: block;

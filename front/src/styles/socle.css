@@ -110,6 +110,21 @@ body {
 	--color-border: #d0d8e4;
 	--color-bg: #f2efe9; /* Pierre de taille */
 	--color-surface: #ffffff;
+	/*  LES APLATS (mode sombre, #2174 — lot S0). Un jeton de la charte sert deux
+	    fois : de TEXTE ou de filet (un lien, une bordure, une icône) et d'APLAT
+	    sous un texte clair (un bouton, une pastille retenue, un compteur). Au
+	    sombre le texte doit s'éclaircir et l'aplat rester assez foncé pour porter
+	    du blanc : deux valeurs, donc deux jetons. Au clair ils sont identiques —
+	    le rendu n'a pas bougé. Le texte posé dessus est `--color-sur-plein` ; sur
+	    un voile noir translucide (lightbox, bouton sur photo), `--color-sur-voile`,
+	    qui ne change jamais : le voile reste sombre dans les deux thèmes. */
+	--color-primary-plein: var(--color-primary);
+	--color-primary-plein-survol: var(--color-primary-dark);
+	--color-danger-plein: var(--color-danger);
+	--color-success-plein: var(--color-success);
+	--color-accent-plein: var(--color-accent);
+	--color-sur-plein: #ffffff;
+	--color-sur-voile: #ffffff;
 	/*  Un fond NEUTRE posé sur la surface blanche — l'encart d'une rubrique qui
 	    n'a pas d'état à dire (« La demande », maquette G du 16/10/2026). Le
 	    `--color-bg` de la page est trop chaud pour un bloc dans une carte. */
@@ -270,8 +285,8 @@ a {
 	top: 0;
 	z-index: 100;
 	padding: 0.6rem 1rem;
-	background: var(--color-primary);
-	color: #fff;
+	background: var(--color-primary-plein);
+	color: var(--color-sur-plein);
 	border-radius: 0 0 var(--radius) 0;
 	font-weight: 600;
 	text-decoration: none;

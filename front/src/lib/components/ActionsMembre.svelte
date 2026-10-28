@@ -169,8 +169,8 @@
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.btn-icon-edit:hover {
-			background: var(--color-primary);
-			color: var(--color-surface);
+			background: var(--color-primary-plein);
+			color: var(--color-sur-plein);
 		}
 	}
 	.btn-icon-remove {
@@ -179,8 +179,8 @@
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.btn-icon-remove:hover {
-			background: var(--color-danger);
-			color: var(--color-surface);
+			background: var(--color-danger-plein);
+			color: var(--color-sur-plein);
 		}
 	}
 	.btn-icon-move {
@@ -205,8 +205,8 @@
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.btn-icon-star:hover {
-			background: var(--color-accent);
-			color: var(--color-surface);
+			background: var(--color-accent-plein);
+			color: var(--color-sur-plein);
 		}
 	}
 </style>

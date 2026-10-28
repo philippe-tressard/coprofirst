@@ -79,7 +79,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--color-surface);
+		color: var(--color-sur-plein);
 		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 		z-index: 1;
 	}
@@ -90,6 +90,6 @@
 		background: #1e40af;
 	}
 	.medaillon-gestionnaire-principal {
-		background: var(--color-accent);
+		background: var(--color-accent-plein);
 	}
 </style>

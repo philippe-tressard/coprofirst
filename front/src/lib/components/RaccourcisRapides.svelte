@@ -120,8 +120,8 @@
 		text-decoration: none;
 	}
 	.quick-count {
-		background: var(--color-primary);
-		color: var(--color-surface);
+		background: var(--color-primary-plein);
+		color: var(--color-sur-plein);
 		font-size: var(--fs-2xs);
 		font-weight: 700;
 		padding: 0.05rem 0.4rem;

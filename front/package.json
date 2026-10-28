@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.33.2",
+	"version": "3.33.3",
 	"private": true,
 	"license": "AGPL-3.0-or-later",
 	"scripts": {
@@ -107,6 +107,7 @@
 		"lint:encart-avertissement": "node scripts/check-encart-avertissement.mjs --selftest && node scripts/check-encart-avertissement.mjs",
 		"lint:taille-racine": "node scripts/check-taille-racine.mjs --selftest && node scripts/check-taille-racine.mjs",
 		"lint:texte-avertissement": "node scripts/check-texte-avertissement.mjs --selftest && node scripts/check-texte-avertissement.mjs",
+		"lint:aplats": "node scripts/check-aplats.mjs --selftest && node scripts/check-aplats.mjs",
 		"lint:options-en-double": "node scripts/check-options-en-double.mjs --selftest && node scripts/check-options-en-double.mjs",
 		"lint:mouvement": "node scripts/check-mouvement.mjs --selftest && node scripts/check-mouvement.mjs",
 		"lint:charte-valeurs": "node scripts/check-charte-valeurs.mjs --selftest && node scripts/check-charte-valeurs.mjs",

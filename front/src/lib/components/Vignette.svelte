@@ -61,7 +61,7 @@
 		right: 4px;
 		font-size: var(--fs-2xs);
 		background: rgba(0, 0, 0, 0.55);
-		color: var(--color-surface);
+		color: var(--color-sur-voile);
 		border-radius: 4px;
 		padding: 0 4px;
 	}

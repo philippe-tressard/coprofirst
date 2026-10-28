@@ -151,9 +151,9 @@
 		margin-left: auto;
 	}
 	.pastille-deroulante.active {
-		background: var(--color-primary);
-		border-color: var(--color-primary);
-		color: var(--color-surface);
+		background: var(--color-primary-plein);
+		border-color: var(--color-primary-plein);
+		color: var(--color-sur-plein);
 	}
 	.pastille-deroulante.active .icone-chevron {
 		opacity: 0.9;

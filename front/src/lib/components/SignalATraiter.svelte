@@ -19,8 +19,8 @@
 
 <style>
 	.signal {
-		background: var(--color-danger);
-		color: var(--color-surface);
+		background: var(--color-danger-plein);
+		color: var(--color-sur-plein);
 		border-radius: 999px;
 		font-size: var(--fs-2xs);
 		padding: 0.1rem 0.45rem;

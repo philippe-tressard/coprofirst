@@ -203,8 +203,8 @@
 		left: 8px;
 		display: inline-flex;
 		align-items: center;
-		background: var(--color-primary);
-		color: var(--color-surface);
+		background: var(--color-primary-plein);
+		color: var(--color-sur-plein);
 		font-size: var(--fs-2xs);
 		padding: 0.1rem 0.35rem;
 		border-radius: 8px;

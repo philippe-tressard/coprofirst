@@ -32,8 +32,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		background: var(--color-primary);
-		color: var(--color-surface);
+		background: var(--color-primary-plein);
+		color: var(--color-sur-plein);
 		font-size: var(--fs-xs);
 		font-weight: 700;
 		line-height: 1.2;

@@ -274,7 +274,7 @@
 	.lb-nav {
 		position: absolute;
 		background: rgba(0, 0, 0, 0.45);
-		color: var(--color-surface);
+		color: var(--color-sur-voile);
 		border: none;
 		border-radius: 50%;
 		cursor: pointer;
@@ -318,7 +318,7 @@
 		left: 50%;
 		transform: translateX(-50%);
 		margin: 0;
-		color: var(--color-surface);
+		color: var(--color-sur-voile);
 		font-size: var(--fs-md);
 		background: rgba(0, 0, 0, 0.45);
 		padding: 0.2rem 0.7rem;
