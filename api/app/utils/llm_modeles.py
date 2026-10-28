@@ -13,7 +13,6 @@ from typing import Any
 from sqlmodel import Session
 
 from app.utils.demo import MESSAGE, est_demo
-from app.utils.llm import config_llm
 
 logger = logging.getLogger("hostachy.llm")
 
@@ -41,6 +40,8 @@ async def modeles_disponibles(session: Session) -> dict[str, Any]:
     c'est pourquoi l'absence de liste n'est pas une erreur.
     """
     import httpx
+
+    from app.utils.llm import config_llm  # différé : `llm` ré-exporte ce module (#2241)
 
     if est_demo():
         #  Avant même la configuration : rien ne part de la démo publique (#1902).
