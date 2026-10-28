@@ -44,15 +44,15 @@
 
   Ce composant ne cherche RIEN : il expose la saisie (`recherche`) et reçoit le
   nombre de lignes affichées (`compte`). La règle — tous les mots, sans accents
-  ni casse — est `contientTousLesMots` (`$lib/texte`), appliquée par l'écran à
+  ni casse — est `contientTousLesMots` (`#lib/texte`), appliquée par l'écran à
   ce que SA ligne montre : lui seul sait quelles colonnes il rend.
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import BilanRecherche from '$lib/components/BilanRecherche.svelte';
-	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
+	import BilanRecherche from '#lib/components/BilanRecherche.svelte';
+	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
 
 	/**
 	 * Les tuiles du bandeau de statistiques. `couleur` est absente pour le total,

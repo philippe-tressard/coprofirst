@@ -1,13 +1,13 @@
 <script lang="ts">
-	import Pastille from '$lib/components/Pastille.svelte';
-	import { relire } from '$lib/utils';
-	import { perimetresStore } from '$lib/stores/perimetres';
+	import Pastille from '#lib/components/Pastille.svelte';
+	import { relire } from '#lib/utils.ts';
+	import { perimetresStore } from '#lib/stores/perimetres.ts';
 	import {
 		SEPARATEUR_ELEMENT,
 		perimetreParDefaut,
 		perimetresNiveau1,
 		type Perimetre,
-	} from '$lib/perimetres';
+	} from '#lib/perimetres/index.ts';
 
 	/** Valeurs sélectionnées — tableau de codes. Ex : ['résidence'] ou ['bat:1','parking'] */
 	export let value: string[] = [];
@@ -64,7 +64,7 @@
 	//  formulaire s'ouvrirait alors sans sélection par défaut (#549).
 	$: defaut = relire($perimetresStore, perimetreParDefaut);
 
-	//  La règle du premier niveau vit dans `$lib/perimetres` depuis le
+	//  La règle du premier niveau vit dans `#lib/perimetres` depuis le
 	//  10/09/2026 : le filtre du carnet d'entretien a besoin de la même rangée,
 	//  et deux calculs auraient divergé au premier périmètre créé en admin.
 	$: niveau1 = perimetresNiveau1($perimetresStore, defaut);

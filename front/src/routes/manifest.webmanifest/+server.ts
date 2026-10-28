@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
-import { config as configApi } from '$lib/api';
-import { NOM_SITE_PAR_DEFAUT } from '$lib/configSite';
-import { lireConfigServeur } from '$lib/server/config-site';
+import { config as configApi } from '#lib/api/index.ts';
+import { NOM_SITE_PAR_DEFAUT } from '#lib/configSite.ts';
+import { lireConfigServeur } from '#lib/server/config-site.ts';
 
 /**
  * Le manifeste de l'application installée — servi, et non plus généré au build.

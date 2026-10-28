@@ -29,7 +29,7 @@
   nouveau, puis retirer l'ancien.
 -->
 <script context="module" lang="ts">
-	import type { Document, PorteurAnnexes } from '$lib/api';
+	import type { Document, PorteurAnnexes } from '#lib/api/index.ts';
 
 	/** Le fichier qui EST la fiche — absent pour une règle. */
 	export interface FichierPrincipal {
@@ -54,13 +54,13 @@
 	import { onMount } from 'svelte';
 	import DocumentsRattaches, {
 		type PiecePrincipale,
-	} from '$lib/components/DocumentsRattaches.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import { documents as docsApi } from '$lib/api';
-	import { essayer } from '$lib/chargement';
-	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
-	import { supprimerDocument } from '$lib/gestes-document';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
+	} from '#lib/components/DocumentsRattaches.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import { documents as docsApi } from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
+	import { supprimerDocument } from '#lib/gestes-document.ts';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
 
 	export let idPrefixe: string;
 	/** Le pliage, transmis par l'appelant (`lint:pliage-transmis`). */
@@ -83,7 +83,7 @@
 	onMount(recharger);
 
 	/**  Retirer une annexe SUPPRIME le fichier : le geste de toute suppression de
-	 *   document, confirmation comprise (`$lib/gestes-document`). */
+	 *   document, confirmation comprise (`#lib/gestes-document`). */
 	const supprimer = (_objetId: number, docId: number) =>
 		supprimerDocument(docId, 'Cette pièce jointe', recharger);
 

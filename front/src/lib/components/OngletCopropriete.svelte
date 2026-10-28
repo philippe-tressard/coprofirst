@@ -6,20 +6,24 @@
 	     par la page avec le paramétrage. Montrée dans l'Identité depuis #2062. */
 	export let urlPublique = '';
 	import { onMount } from 'svelte';
-	import { config as configApi, copropriete as coproprieteApi, type Copropriete } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { nomResidenceEnregistre, siteNomStore } from '$lib/stores/pageConfig';
-	import Icon from '$lib/components/Icon.svelte';
-	import ChampLogo from '$lib/components/ChampLogo.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import SectionContratReference from '$lib/components/SectionContratReference.svelte';
+	import {
+		config as configApi,
+		copropriete as coproprieteApi,
+		type Copropriete,
+	} from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { nomResidenceEnregistre, siteNomStore } from '#lib/stores/pageConfig.ts';
+	import Icon from '#lib/components/Icon.svelte';
+	import ChampLogo from '#lib/components/ChampLogo.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import SectionContratReference from '#lib/components/SectionContratReference.svelte';
 	import ChampsIdentiteCopropriete, {
 		chargeIdentite,
 		identiteDepuis,
-	} from '$lib/components/ChampsIdentiteCopropriete.svelte';
-	import { fmtDateShort as fmtDate } from '$lib/date';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { estAbsent, messageErreur } from '$lib/erreurs';
+	} from '#lib/components/ChampsIdentiteCopropriete.svelte';
+	import { fmtDateShort as fmtDate } from '#lib/date.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { estAbsent, messageErreur } from '#lib/erreurs.ts';
 
 	$: _siteNom = $siteNomStore;
 
@@ -180,7 +184,7 @@
 	      jour où un message ne partirait pas. -->
 			<!--  ⚠️ L'ICÔNE EST VÉRIFIÉE DANS LE CATALOGUE avant d'être écrite.
 	      `briefcase` — le premier choix — n'existe pas dans
-	      `$lib/icones-svg.json` : `Icon` serait retombé EN SILENCE sur
+	      `#lib/icones-svg.json` : `Icon` serait retombé EN SILENCE sur
 	      `help-circle`, et la section aurait porté un point d'interrogation sans
 	      qu'aucun contrôle ne le dise. `users-round` dit « un cabinet, des
 	      gens », et il est là. -->

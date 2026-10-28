@@ -7,17 +7,17 @@
   prestataire — les charger toutes d'avance n'aurait aucun sens.
 -->
 <script lang="ts">
-	import { nomAffiche } from '$lib/noms';
+	import { nomAffiche } from '#lib/noms.ts';
 	//  ⚠️ Cet écran affichait la valeur BRUTE — `chauffage_collectif` — parce que
 	//  la table des libellés vivait dans `prestataires/+page.svelte` et qu'il n'y
 	//  avait pas accès. Une table qui vit dans UN écran, les autres s'en passent.
-	import { equipLabel, typePrestataireLabel } from '$lib/prestataires';
-	import { prestataires as prestApi, type SynthesePrestataire } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { fmtDate } from '$lib/date';
-	import NoteEtoiles from '$lib/components/NoteEtoiles.svelte';
-	import { type ReportPrestataire } from '$lib/reporting';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { equipLabel, typePrestataireLabel } from '#lib/prestataires.ts';
+	import { prestataires as prestApi, type SynthesePrestataire } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { fmtDate } from '#lib/date.ts';
+	import NoteEtoiles from '#lib/components/NoteEtoiles.svelte';
+	import { type ReportPrestataire } from '#lib/reporting.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	export let reportPrestataires: ReportPrestataire[] = [];
 

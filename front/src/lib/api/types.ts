@@ -69,7 +69,7 @@ export interface User {
  * lignes auraient divergé au premier ajout — c'est ce qui vient d'arriver au
  * périmètre d'un badge, calculé à deux endroits.
  *
- * Pendants : `PorteSaisiPour` (`$lib/saisi-pour`, ce qu'on ENVOIE) et
+ * Pendants : `PorteSaisiPour` (`#lib/saisi-pour`, ce qu'on ENVOIE) et
  * `SaisiPourSortie` (`api/app/utils/saisi_pour.py`).
  */
 export interface PorteSaisiPourLu {
@@ -239,11 +239,11 @@ export interface Ticket extends PorteSaisiPourLu {
 	 *
 	 *   ⚠️ Elle dit SI, jamais OÙ : la colonne se déduit du `statut`. Un second
 	 *   champ d'état créerait deux notions de suivi sur le même objet.
-	 *   Correspondance : `colonneDuTicket()` dans `$lib/kanban`. */
+	 *   Correspondance : `colonneDuTicket()` dans `#lib/kanban`. */
 	suivi_kanban?: boolean;
 	/**  Le suivi d'une ACTUALITÉ (10/10/2026) : `null` sans suivi, sinon « ouvert »,
 	 *   « résolu » ou « annulé » — un repère, `statut` restant « publie »
-	 *   (`$lib/suivi-actualite`). */
+	 *   (`#lib/suivi-actualite`). */
 	suivi_actualite?: string | null;
 	/**  Conservée (#2014) : le jour où, échue, l'affaire a perdu ses pièces jointes —
 	 *   archivées hors ligne — et ses auteurs. `null` : intacte. */
@@ -302,7 +302,7 @@ export interface TicketEvolution {
 }
 
 /**  La CORRECTION d'une Suite (`PATCH`) — toutes ses sections sauf la Diffusion
- *   (01/10/2026). Composée par `chargeCorrection` (`$lib/evolutions`), seule
+ *   (01/10/2026). Composée par `chargeCorrection` (`#lib/evolutions`), seule
  *   écriture : un relais qui énumérerait ses champs en perdrait (#529). */
 export interface CorrectionEvolution {
 	contenu: string;

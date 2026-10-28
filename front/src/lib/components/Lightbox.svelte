@@ -16,8 +16,8 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher, onDestroy, tick } from 'svelte';
-	import { poserCouche } from '$lib/couche';
-	import { finDesAnimations, mouvementReduit } from '$lib/mouvement';
+	import { poserCouche } from '#lib/couche.ts';
+	import { finDesAnimations, mouvementReduit } from '#lib/mouvement.ts';
 
 	export let photos: string[] = [];
 	export let index = 0;
@@ -175,7 +175,7 @@
 		else if (e.key === 'ArrowRight' && photos.length > 1) suivante();
 	}
 
-	//  Défilement du fond et Échap : `$lib/couche.ts`, partagé avec `Modale`.
+	//  Défilement du fond et Échap : `#lib/couche.ts`, partagé avec `Modale`.
 	//  Ouverte depuis une modale, la visionneuse ne rend plus le défilement en se
 	//  fermant, et Échap ne ferme qu'elle (#1042). Posée au montage et non dans
 	//  un `on:click` : elle s'ouvre au clavier comme à la souris.

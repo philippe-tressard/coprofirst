@@ -33,7 +33,7 @@
     de tri à côté de quatre pastilles de type se liraient comme un seul filtre.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 
 	export let options: readonly { val: string; label: string }[] = [];
 

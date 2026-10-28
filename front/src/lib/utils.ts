@@ -168,11 +168,11 @@ export function fmtDuree(ms: number | null | undefined): string {
  * n'existait nulle part.
  *
  * L'arborescence vit désormais en base et s'édite depuis l'administration
- * (`/admin/patrimoine`). Le rendu est dans `$lib/perimetres`, alimenté au
- * démarrage par `$lib/stores/perimetres`.
+ * (`/admin/patrimoine`). Le rendu est dans `#lib/perimetres`, alimenté au
+ * démarrage par `#lib/stores/perimetres`.
  *
  * Ces réexports existent pour que les cinq pages qui écrivent
- * `import { perimetreLabel } from '$lib/utils'` n'aient pas à changer : le chemin
+ * `import { perimetreLabel } from '#lib/utils.ts'` n'aient pas à changer : le chemin
  * d'import n'est pas la question que ce lot traite.
  */
 export {
@@ -187,7 +187,7 @@ export {
 	concerneTous,
 	batimentsCibles,
 	type Perimetre,
-} from '$lib/perimetres';
+} from '#lib/perimetres/index.ts';
 
 /**
  * État de la touche Verr. Maj., ou `null` si l'événement ne permet pas de le savoir.

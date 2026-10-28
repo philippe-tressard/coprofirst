@@ -16,7 +16,7 @@
   ## Ce que ce composant N'EST PAS
 
   Il ne décide pas des options : c'est `options` qui le dit, et la table
-  (`$lib/options-publication`) qui porte glyphes et libellés. Un ticket n'en rend
+  (`#lib/options-publication`) qui porte glyphes et libellés. Un ticket n'en rend
   qu'une — il n'a ni colonne d'épinglage ni colonne d'urgence.
 
   ⚠️ Les liaisons restent nommées (`bind:epingle`…) et non regroupées dans un
@@ -24,11 +24,11 @@
   chaque hôte à le défaire ensuite.
 -->
 <script lang="ts">
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
-	import { optionPublication } from '$lib/options-publication';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import OptionsPublication from '$lib/components/OptionsPublication.svelte';
-	import type { CleOptionPublication } from '$lib/options-publication';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
+	import { optionPublication } from '#lib/options-publication.ts';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import OptionsPublication from '#lib/components/OptionsPublication.svelte';
+	import type { CleOptionPublication } from '#lib/options-publication.ts';
 
 	/** Le nom de l'objet décrit, pour les libellés qui le nomment. */
 	export let objet = 'actualité';

@@ -26,7 +26,7 @@
  * l'annuaire du CS et du syndic —, le décalage est compensé à la suppression.
  *
  * ⚠️ Depuis le 01/09/2026 cette compensation ne s'écrit plus dans l'écran mais
- * dans `$lib/listeDepliable`, éprouvée par `npm run lint:liste-depliable` : elle y
+ * dans `#lib/listeDepliable`, éprouvée par `npm run lint:liste-depliable` : elle y
  * existait en DEUX exemplaires identiques, et c'est exactement le genre de code
  * qu'on recopie sans le relire. Les lignes de
  * formulaire de l'annuaire du syndic (`AnnuaireSyndic.svelte`, jadis dans
@@ -94,7 +94,7 @@ const RACINE = new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]
  * numéros découpés d'un champ libre. Leur poser une clé aurait été PIRE que le
  * défaut : deux numéros identiques font lever `each_key_duplicate`, et l'écran
  * entier tombe. Quatre ont été réglées **à la source** : `telephonesDe()`
- * (`$lib/utils`) découpe, nettoie et DÉDOUBLONNE — la clé devient sûre en même
+ * (`#lib/utils`) découpe, nettoie et DÉDOUBLONNE — la clé devient sûre en même
  * temps que le rendu se corrige, au lieu de choisir entre les deux. Elle
  * remplace au passage `splitTels()` et une recopie littérale dans l'annuaire.
  *

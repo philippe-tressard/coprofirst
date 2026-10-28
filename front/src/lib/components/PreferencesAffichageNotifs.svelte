@@ -22,7 +22,7 @@
   profils d'accès aux documents. L'interface ne doit pas laisser croire l'inverse.
 -->
 <script lang="ts">
-	import { CANAUX_NOTIFS } from '$lib/preferences';
+	import { CANAUX_NOTIFS } from '#lib/preferences.ts';
 
 	export let valeurs: Record<string, boolean>;
 	export let restreindre = false;

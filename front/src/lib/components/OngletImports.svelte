@@ -12,14 +12,14 @@
 
   `?onglet=imports&source=vigik` ouvre l'import Vigik : le choix se copie, le
   bouton Précédent le rejoue, et les anciennes clés (`?onglet=import_tc`,
-  `$lib/admin-adresses`) y mènent. Une source inconnue ouvre les lots.
+  `#lib/admin-adresses`) y mènent. Une source inconnue ouvre les lots.
 -->
 <script lang="ts">
-	import { lieu } from '$lib/lieu.svelte';
+	import { lieu } from '#lib/lieu.svelte.ts';
 	import { goto } from '$app/navigation';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import { IMPORT_TELECOMMANDES, IMPORT_VIGIK } from '$lib/imports-acces';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import { IMPORT_TELECOMMANDES, IMPORT_VIGIK } from '#lib/imports-acces.ts';
 
 	const SOURCES = [
 		{ val: 'lots', label: 'Lots' },
@@ -55,20 +55,20 @@
 />
 
 {#if courante === 'lots'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletImportLots.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletImportLots.svelte')}>
 		{#snippet contenu(OngletImportLots)}
 			<OngletImportLots />
 		{/snippet}
 	</ChargementDiffere>
 {:else if courante === 'etat-descriptif'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletImportEtatDescriptif.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletImportEtatDescriptif.svelte')}>
 		{#snippet contenu(OngletImportEtatDescriptif)}
 			<OngletImportEtatDescriptif />
 		{/snippet}
 	</ChargementDiffere>
 {:else}
 	{#key courante}
-		<ChargementDiffere charger={() => import('$lib/components/OngletImportAcces.svelte')}>
+		<ChargementDiffere charger={() => import('#lib/components/OngletImportAcces.svelte')}>
 			{#snippet contenu(OngletImportAcces)}
 				<OngletImportAcces modele={courante === 'vigik' ? IMPORT_VIGIK : IMPORT_TELECOMMANDES} />
 			{/snippet}

@@ -13,18 +13,18 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { archiverPuis } from '$lib/confirmation';
-	import { tenter } from '$lib/erreurs';
-	import { essayer } from '$lib/chargement';
-	import { basculer } from '$lib/accordeon';
+	import { archiverPuis } from '#lib/confirmation.ts';
+	import { tenter } from '#lib/erreurs.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import { basculer } from '#lib/accordeon.ts';
 	import {
 		prestataires as prestApi,
 		type ContratEntretien,
 		type Notation,
 		type Prestataire,
-	} from '$lib/api';
-	import { isCS } from '$lib/stores/auth';
-	import { toast } from '$lib/components/Toast.svelte';
+	} from '#lib/api/index.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		EQUIPEMENTS as equipements,
 		TYPES_PRESTATAIRE as typesPrestataire,
@@ -34,16 +34,16 @@
 		contactsAEnvoyer,
 		contactsDepuis,
 		prestataireDepuis,
-	} from '$lib/prestataires';
-	import { telephonesDe } from '$lib/utils';
-	import { cibleDuHash, revelerCible } from '$lib/deepLink';
-	import FiltresPrestataires from '$lib/components/FiltresPrestataires.svelte';
-	import ChampsPrestataire from '$lib/components/ChampsPrestataire.svelte';
-	import CartePrestataire from '$lib/components/CartePrestataire.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import IntertitreGroupe from '$lib/components/IntertitreGroupe.svelte';
-	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
+	} from '#lib/prestataires.ts';
+	import { telephonesDe } from '#lib/utils.ts';
+	import { cibleDuHash, revelerCible } from '#lib/deepLink.ts';
+	import FiltresPrestataires from '#lib/components/FiltresPrestataires.svelte';
+	import ChampsPrestataire from '#lib/components/ChampsPrestataire.svelte';
+	import CartePrestataire from '#lib/components/CartePrestataire.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import IntertitreGroupe from '#lib/components/IntertitreGroupe.svelte';
+	import ListeEtArchives from '#lib/components/ListeEtArchives.svelte';
 
 	export let prestataires: Prestataire[] = [];
 	export let contrats: ContratEntretien[] = [];
@@ -51,7 +51,7 @@
 	/** La boîte de création est ouverte — lue par le bouton de l'en-tête. */
 	export let creationOuverte = false;
 
-	//  Une seule fiche dépliée à la fois (`$lib/accordeon`) : c'était un `Set`
+	//  Une seule fiche dépliée à la fois (`#lib/accordeon`) : c'était un `Set`
 	//  remis à un élément, déclaré en exception jusqu'au 01/10/2026 (#779).
 	let ouvert: number | null = null;
 	let submitting = false;
@@ -72,7 +72,7 @@
 	$: compactPrests = filteredPrests.length > 7;
 
 	//  Tous les contrats du prestataire, assurances et mandats compris : la carte
-	//  les montre. `contratsDuPrestataire` (`$lib/prestataires`) répond à une
+	//  les montre. `contratsDuPrestataire` (`#lib/prestataires`) répond à une
 	//  autre question — sous quel contrat il peut INTERVENIR — et les écarte.
 	function contratsForPrest(prestId: number): ContratEntretien[] {
 		return contrats.filter((c) => c.prestataire_id === prestId);

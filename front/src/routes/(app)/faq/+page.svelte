@@ -1,20 +1,25 @@
 <script lang="ts">
-	import { confirmer, SUPPRESSION } from '$lib/confirmation';
-	import { FAQ } from '$lib/entites/faq';
-	import { messageErreur } from '$lib/erreurs';
-	import FormulaireFaq from '$lib/components/FormulaireFaq.svelte';
-	import CarteFaq from '$lib/components/CarteFaq.svelte';
-	import ReorganisationFaq from '$lib/components/ReorganisationFaq.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import EntetePage from '$lib/components/EntetePage.svelte';
+	import { confirmer, SUPPRESSION } from '#lib/confirmation.ts';
+	import { FAQ } from '#lib/entites/faq.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import FormulaireFaq from '#lib/components/FormulaireFaq.svelte';
+	import CarteFaq from '#lib/components/CarteFaq.svelte';
+	import ReorganisationFaq from '#lib/components/ReorganisationFaq.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import EntetePage from '#lib/components/EntetePage.svelte';
 	import { onMount } from 'svelte';
-	import { marquerDonneesAffichees } from '$lib/telemetry';
-	import { cibleDuHash, revelerCible } from '$lib/deepLink';
-	import { faq as faqApi, manuel, type EntreeFaq } from '$lib/api';
-	import { isCS, currentUser } from '$lib/stores/auth';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
+	import { marquerDonneesAffichees } from '#lib/telemetry.ts';
+	import { cibleDuHash, revelerCible } from '#lib/deepLink.ts';
+	import { faq as faqApi, manuel, type EntreeFaq } from '#lib/api/index.ts';
+	import { isCS, currentUser } from '#lib/stores/auth.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
 	import {
 		categoriesPourStatut,
 		categorieSaisie,
@@ -24,11 +29,11 @@
 		saisieFaqDepuis,
 		saisieFaqVide,
 		type SaisieFaq,
-	} from '$lib/faq';
-	import { richEmpty } from '$lib/publications';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { essayer } from '$lib/chargement';
-	import BoutonNouveau from '$lib/components/BoutonNouveau.svelte';
+	} from '#lib/faq.ts';
+	import { richEmpty } from '#lib/publications.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { essayer } from '#lib/chargement.ts';
+	import BoutonNouveau from '#lib/components/BoutonNouveau.svelte';
 
 	$: _pc = getPageConfig($configStore, 'faq', defautsDePage('faq'));
 	$: _siteNom = $siteNomStore;

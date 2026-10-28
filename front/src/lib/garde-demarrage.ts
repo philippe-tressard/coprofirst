@@ -43,7 +43,7 @@
  * rien importer. `api/tests/test_pwa_maj.py` vérifie que les deux concordent.
  */
 import { version } from '../../package.json';
-import { envoyerMaintenant, signalerErreur } from '$lib/telemetry';
+import { envoyerMaintenant, signalerErreur } from '#lib/telemetry.ts';
 
 export const ATTRIBUT_DEMARRAGE = 'data-application';
 export const VALEUR_DEMARREE = 'demarree';

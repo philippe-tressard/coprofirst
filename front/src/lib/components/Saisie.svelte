@@ -24,12 +24,12 @@
   l'autre : c'est une question, comme `Confirmation`, dont ce fichier reprend
   exactement la structure — un message, les champs, `.form-actions`.
 
-  ⚠️ Ce composant s'emploie par `demander()` (`$lib/saisie.ts`), jamais
+  ⚠️ Ce composant s'emploie par `demander()` (`#lib/saisie.ts`), jamais
   directement — même raison que `Confirmation` : c'est l'appel impératif qui
   garde les appelants à une ligne, sans état d'ouverture ni gestionnaire.
 -->
 <script lang="ts">
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import Modale from './Modale.svelte';
 
 	export let titre: string;

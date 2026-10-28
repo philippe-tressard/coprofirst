@@ -8,9 +8,9 @@
   et n'écrit rien.
 -->
 <script lang="ts">
-	import type { EnvoiEmail } from '$lib/api';
-	import { fmtDatetimeShort as fmt } from '$lib/date';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import type { EnvoiEmail } from '#lib/api/index.ts';
+	import { fmtDatetimeShort as fmt } from '#lib/date.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	export let historique: EnvoiEmail[] = [];
 	export let chargement = true;

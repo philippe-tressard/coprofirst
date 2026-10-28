@@ -12,19 +12,19 @@
   pour la validation et « Modifié en révision N » (#2082).
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import type { AffaireOuverte, CompteRenduPoint } from '$lib/api';
-	import { fmtDatetime, fmtTime } from '$lib/date';
-	import { safeHtml } from '$lib/sanitize';
-	import { lienTicket, statutTicketLabel } from '$lib/tickets';
+	import Badge from '#lib/components/Badge.svelte';
+	import type { AffaireOuverte, CompteRenduPoint } from '#lib/api/index.ts';
+	import { fmtDatetime, fmtTime } from '#lib/date.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { lienTicket, statutTicketLabel } from '#lib/tickets.ts';
 	import {
 		ETATS_POINT,
 		GROUPES_PRESENTS,
 		LIBELLE_CS_ET_PRESENTS,
 		nomPresent,
 		precisionPresent,
-	} from '$lib/points-conseil';
-	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
+	} from '#lib/points-conseil.ts';
+	import PastilleLecture from '#lib/components/PastilleLecture.svelte';
 
 	export let compteRendu: CompteRenduPoint;
 	/** Les affaires du relevé, par identifiant — ce que lit leur pastille de lecture. */

@@ -17,24 +17,24 @@
   épinglé et chronologie. Une carte se rend de la même façon partout.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
+	import Badge from '#lib/components/Badge.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
 	import { createEventDispatcher } from 'svelte';
 
-	import { isAdmin } from '$lib/stores/auth';
-	import type { FluxItem, Ticket } from '$lib/api';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import FluxVignette from '$lib/components/FluxVignette.svelte';
-	import FluxCorps from '$lib/components/FluxCorps.svelte';
-	import { chargerCorpsAffaire } from '$lib/affaire-au-fil';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
-	import PastillesAffaire from '$lib/components/PastillesAffaire.svelte';
-	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
-	import MarqueIA from '$lib/components/MarqueIA.svelte';
-	import BadgeVerdict from '$lib/components/BadgeVerdict.svelte';
-	import { champDe } from '$lib/utils';
+	import { isAdmin } from '#lib/stores/auth.ts';
+	import type { FluxItem, Ticket } from '#lib/api/index.ts';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import FluxVignette from '#lib/components/FluxVignette.svelte';
+	import FluxCorps from '#lib/components/FluxCorps.svelte';
+	import { chargerCorpsAffaire } from '#lib/affaire-au-fil.ts';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
+	import PastillesAffaire from '#lib/components/PastillesAffaire.svelte';
+	import AuteurCarte from '#lib/components/AuteurCarte.svelte';
+	import MarqueIA from '#lib/components/MarqueIA.svelte';
+	import BadgeVerdict from '#lib/components/BadgeVerdict.svelte';
+	import { champDe } from '#lib/utils.ts';
 	import {
 		badgeClass,
 		badgesDuFlux,
@@ -43,7 +43,7 @@
 		isNew,
 		typeCouleur,
 		typeLink,
-	} from '$lib/flux';
+	} from '#lib/flux.ts';
 
 	export let item: FluxItem;
 	export let expanded = false;

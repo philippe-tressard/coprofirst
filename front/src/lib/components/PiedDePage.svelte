@@ -8,7 +8,7 @@
   petit sous le nom, les liens à droite. Au téléphone, trois lignes centrées
   (arbitré le 17/10/2026, #2040) : logo et nom, les mentions, les liens — qui
   peuvent tenir sur deux rangées, chacune centrée. Les éléments, leur place,
-  leur cible et ceux qui se masquent sont dans `$lib/piedDePage`.
+  leur cible et ceux qui se masquent sont dans `#lib/piedDePage`.
 
   La version s'affiche courte (« v2.118.1 · RPi1 »). L'empreinte du build et sa
   date passent dans l'infobulle : elles servent toujours au diagnostic, par
@@ -18,16 +18,16 @@
 <script lang="ts">
 	import pkg from '../../../package.json';
 	import { PUBLIC_INSTANCE_ID } from '$app/env/public';
-	import Icon from '$lib/components/Icon.svelte';
-	import LogoResidence from '$lib/components/LogoResidence.svelte';
-	import { configStore, siteNomStore } from '$lib/stores/pageConfig';
+	import Icon from '#lib/components/Icon.svelte';
+	import LogoResidence from '#lib/components/LogoResidence.svelte';
+	import { configStore, siteNomStore } from '#lib/stores/pageConfig.ts';
 	import {
 		dansLaPlace,
 		ELEMENT_PIED,
 		elementsAffiches,
 		mentionAnnee,
 		type ReglagePied,
-	} from '$lib/piedDePage';
+	} from '#lib/piedDePage.ts';
 
 	/** Le réglage, déjà lu (`lireReglagePied`). */
 	export let reglage: ReglagePied;

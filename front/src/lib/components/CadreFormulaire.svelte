@@ -50,7 +50,7 @@
   `on:fermer`, et c'est tout.
 
   Il ne décide pas non plus du **contenu** du formulaire selon le geste : les
-  sections viennent du cadre #430 (`$lib/entites/*` + `sectionPresente`), et
+  sections viennent du cadre #430 (`#lib/entites/*` + `sectionPresente`), et
   `npm run lint:etats` refuse qu'on remette une condition en dur.
 
   🔒 `edition` reste une prop, alors qu'elle ne change plus le cadre : elle

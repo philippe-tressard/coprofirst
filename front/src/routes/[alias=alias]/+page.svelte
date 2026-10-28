@@ -12,13 +12,13 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { aiguillage } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { CHEMIN_CONNEXION } from '$lib/redirection';
-	import AiguillageCopropriete from '$lib/components/AiguillageCopropriete.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import LogoResidence from '$lib/components/LogoResidence.svelte';
-	import { NOM_PLATEFORME } from '$lib/plateforme';
+	import { aiguillage } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { CHEMIN_CONNEXION } from '#lib/redirection.ts';
+	import AiguillageCopropriete from '#lib/components/AiguillageCopropriete.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import LogoResidence from '#lib/components/LogoResidence.svelte';
+	import { NOM_PLATEFORME } from '#lib/plateforme.ts';
 
 	let echec = '';
 

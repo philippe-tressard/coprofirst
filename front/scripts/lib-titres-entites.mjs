@@ -40,12 +40,12 @@ export async function titresParEntite(dossierEntites, echouer) {
 
 /**
  * Les intitulés applicables à UNE source : ceux des entités qu'elle importe
- * (import de valeur depuis `$lib/entites/…`). PURE.
+ * (import de valeur depuis `#lib/entites/…`). PURE.
  */
 export function titresDeLaSource(source, parEntite) {
 	const titres = {};
 	for (const m of source.matchAll(
-		/import\s+(?!type\b)\{([^}]*)\}\s+from\s+'\$lib\/entites\/[^']+'/g,
+		/import\s+(?!type\b)\{([^}]*)\}\s+from\s+'#lib\/entites\/[^']+'/g,
 	)) {
 		for (const nom of m[1].split(',').map((n) => n.trim().split(/\s+as\s+/)[0])) {
 			Object.assign(titres, parEntite[nom] ?? {});

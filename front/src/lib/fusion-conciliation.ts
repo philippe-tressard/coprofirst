@@ -3,7 +3,7 @@ import type {
 	ChoixConciliation,
 	CodeConciliation,
 	OptionConciliation,
-} from '$lib/api';
+} from '#lib/api/index.ts';
 
 /**
  * **La CONCILIATION d'une fusion refusée pour fuite de lecture** — ce que l'écran

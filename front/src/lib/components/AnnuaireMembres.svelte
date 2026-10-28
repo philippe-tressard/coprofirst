@@ -33,10 +33,10 @@
 -->
 <script lang="ts" generics="T extends MembreBase">
 	import { onDestroy, onMount } from 'svelte';
-	import { listeMembre } from '$lib/accordeon';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { tenter } from '$lib/erreurs';
-	import { nomAffiche } from '$lib/noms';
+	import { listeMembre } from '#lib/accordeon.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { tenter } from '#lib/erreurs.ts';
+	import { nomAffiche } from '#lib/noms.ts';
 	import {
 		REPLIE,
 		ajouter,
@@ -44,10 +44,10 @@
 		editer,
 		retirer,
 		type EtatDepliable,
-	} from '$lib/listeDepliable';
-	import { type Geste } from '$lib/components/ActionsMembre.svelte';
-	import CarteMembre, { type MembreBase } from '$lib/components/CarteMembre.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	} from '#lib/listeDepliable.ts';
+	import { type Geste } from '#lib/components/ActionsMembre.svelte';
+	import CarteMembre, { type MembreBase } from '#lib/components/CarteMembre.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	/** Les membres — liés (`bind:membres`) : l'appelant les lit pour ses rapprochements. */
 	export let membres: T[] = [];
@@ -73,7 +73,7 @@
 	let chargement = true;
 	let enregistrement = false;
 	let enregistrementIdx: number | null = null;
-	//  La mécanique déplier/éditer/ajouter/retirer : `$lib/listeDepliable` (#640).
+	//  La mécanique déplier/éditer/ajouter/retirer : `#lib/listeDepliable` (#640).
 	let etat: EtatDepliable = REPLIE;
 	//  L'accordéon (30/09/2026) : conseil et syndic n'ont qu'une carte ouverte À
 	//  EUX DEUX (`listeMembre`).

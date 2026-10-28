@@ -36,7 +36,7 @@
 	export type Geste = {
 		variante: 'deplacer' | 'designer';
 		libelle: string;
-		/** Le pictogramme au trait, nommé dans `$lib/icones-svg.json` (10/10/2026). */
+		/** Le pictogramme au trait, nommé dans `#lib/icones-svg.json` (10/10/2026). */
 		icone: string;
 		desactive?: boolean;
 		onClic: () => void;
@@ -44,7 +44,7 @@
 </script>
 
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
 
 	export let gestes: Geste[] = [];
 	/** Le membre est en cours d'édition : la disquette remplace le crayon. */

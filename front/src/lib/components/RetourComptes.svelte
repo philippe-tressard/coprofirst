@@ -9,9 +9,9 @@
 	 * (`require_admin` sur le tableau de bord). Les règles de calcul :
 	 * `api/app/utils/retour_comptes.py`.
 	 */
-	import PanneauTelemetrie from '$lib/components/PanneauTelemetrie.svelte';
-	import { fmtDate } from '$lib/date';
-	import type { RetourComptes } from '$lib/api';
+	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
+	import { fmtDate } from '#lib/date.ts';
+	import type { RetourComptes } from '#lib/api/index.ts';
 
 	export let retour: RetourComptes;
 	/** Section dépliée ? L'onglet décide, et reçoit `basculer` (`PanneauTelemetrie`). */

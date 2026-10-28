@@ -39,9 +39,9 @@
 </script>
 
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { fmtDatetimeShort } from '$lib/date';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { fmtDatetimeShort } from '#lib/date.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	export let entrees: EntreeJournal[] = [];
 	/** Non vide = le journal n'a pas pu être lu : il ne se dit pas « vide » (#1459). */

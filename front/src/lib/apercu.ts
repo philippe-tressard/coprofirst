@@ -31,9 +31,9 @@
  * ```
  */
 import { writable, type Readable } from 'svelte/store';
-import { type ApercuDiffusion } from '$lib/api';
-import { messageErreur } from '$lib/erreurs';
-import { toast } from '$lib/components/Toast.svelte';
+import { type ApercuDiffusion } from '#lib/api/index.ts';
+import { messageErreur } from '#lib/erreurs.ts';
+import { toast } from '#lib/components/Toast.svelte';
 
 export interface EtatApercu {
 	ouvert: boolean;

@@ -29,11 +29,11 @@
   non l'heure : sans intitulé, rien ne dirait le jour (12/10/2026).
 
   L'intitulé du jour (`.flux-day-label`) vit dans la charte (`composants.css`) ;
-  la clé d'une carte, dans `cleFluxItem` (`$lib/flux`).
+  la clé d'une carte, dans `cleFluxItem` (`#lib/flux`).
 -->
 <script lang="ts">
-	import FluxCard from '$lib/components/FluxCard.svelte';
-	import { cleFluxItem, type GroupeDuFil } from '$lib/flux';
+	import FluxCard from '#lib/components/FluxCard.svelte';
+	import { cleFluxItem, type GroupeDuFil } from '#lib/flux.ts';
 
 	export let groupes: GroupeDuFil[] = [];
 	export let variante: 'fil' | 'archives' | 'epingle' = 'fil';

@@ -164,7 +164,7 @@ for (const rel of CONSOMMATEURS) {
 		);
 	}
 	const texte = readFileSync(chemin, 'utf8');
-	if (!texte.includes("from '$lib/options-publication'")) sansImport.push(rel);
+	if (!texte.includes("from '#lib/options-publication.ts'")) sansImport.push(rel);
 	//  Le glyphe écrit en dur ALORS QUE la table existe : c'est la recopie.
 	const rendu = sansCommentaires(texte);
 	for (const [cle, g] of glyphes) {
@@ -175,7 +175,7 @@ if (sansImport.length > 0) {
 	echec(
 		"✗ Fichier(s) rendant les options d'une publication sans importer la table :",
 		...sansImport.map((f) => `    ${f}`),
-		'  → importer depuis `$lib/options-publication` (glyphe, action, état, aide).',
+		'  → importer depuis `#lib/options-publication` (glyphe, action, état, aide).',
 	);
 }
 if (enDur.length > 0) {

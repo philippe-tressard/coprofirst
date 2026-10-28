@@ -14,18 +14,18 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { lieu } from '$lib/lieu.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { pointsConseil, type CompteRenduParLien } from '$lib/api';
-	import { fmtDate, fmtDatetime, fmtTime } from '$lib/date';
-	import { messageErreur } from '$lib/erreurs';
-	import { safeHtml } from '$lib/sanitize';
-	import { getSiteNom } from '$lib/stores/pageConfig';
-	import { LIBELLE_CS_ET_PRESENTS } from '$lib/points-conseil';
-	import Badge from '$lib/components/Badge.svelte';
+	import { lieu } from '#lib/lieu.svelte.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { pointsConseil, type CompteRenduParLien } from '#lib/api/index.ts';
+	import { fmtDate, fmtDatetime, fmtTime } from '#lib/date.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { getSiteNom } from '#lib/stores/pageConfig.ts';
+	import { LIBELLE_CS_ET_PRESENTS } from '#lib/points-conseil.ts';
+	import Badge from '#lib/components/Badge.svelte';
 
 	const siteNom = getSiteNom();
 	$: jeton = $lieu.params.jeton ?? '';

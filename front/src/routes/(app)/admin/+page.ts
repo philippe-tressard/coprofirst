@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { adresseActuelleAdmin } from '$lib/admin-adresses';
+import { adresseActuelleAdmin } from '#lib/admin-adresses.ts';
 
 /**
  * Une ancienne clé d'onglet (`?onglet=import_tc`, `?onglet=site`) part en 308

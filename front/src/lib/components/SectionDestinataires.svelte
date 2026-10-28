@@ -35,15 +35,15 @@
   et le conseil — c'est ce que le drapeau a toujours voulu dire sur une affaire.
 -->
 <script lang="ts">
-	import DestinatairePicker from '$lib/components/DestinatairePicker.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import CaseConfidentielle from '$lib/components/CaseConfidentielle.svelte';
-	import { LIBELLE_TOUS, concerneTousLesResidents } from '$lib/destinataires';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
-	import { destinatairesParDefaut, estConcerne, lectureDe, titreLecture } from '$lib/lecture';
-	import { perimetreRestreint, type NatureLue } from '$lib/lecture-ticket';
-	import { perimetresStore } from '$lib/stores/perimetres';
-	import { relire } from '$lib/utils';
+	import DestinatairePicker from '#lib/components/DestinatairePicker.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import CaseConfidentielle from '#lib/components/CaseConfidentielle.svelte';
+	import { LIBELLE_TOUS, concerneTousLesResidents } from '#lib/destinataires.ts';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
+	import { destinatairesParDefaut, estConcerne, lectureDe, titreLecture } from '#lib/lecture.ts';
+	import { perimetreRestreint, type NatureLue } from '#lib/lecture-ticket.ts';
+	import { perimetresStore } from '#lib/stores/perimetres.ts';
+	import { relire } from '#lib/utils.ts';
 
 	/** Préfixe des identifiants — l'écran en ouvre parfois plusieurs à la fois. */
 	export let idPrefixe: string;

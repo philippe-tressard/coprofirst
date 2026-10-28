@@ -14,15 +14,15 @@
   - **INCONNU n'est jamais ✓** (`standards/04`) : une mesure qui n'a pas pu se
     faire (`null`) n'atteste rien. Son libellé est le seul NOM du point, sans
     adjectif : on ne sait pas.
-  - **La phrase change avec l'état** (`PointConformite`, `$lib/registre-installations`) :
+  - **La phrase change avec l'état** (`PointConformite`, `#lib/registre-installations`) :
     la coche confirme le fait, elle ne le porte pas.
   - **L'explication s'ouvre au toucher, au clic et au clavier** (`Infobulle`) ; à
     la souris, elle est aussi au survol.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import Infobulle from '$lib/components/Infobulle.svelte';
-	import type { PointConformite } from '$lib/registre-installations';
+	import Icon from '#lib/components/Icon.svelte';
+	import Infobulle from '#lib/components/Infobulle.svelte';
+	import type { PointConformite } from '#lib/registre-installations.ts';
 
 	export let point: PointConformite;
 	/** `true` conforme, `false` à corriger, `null` : la mesure n'a pas pu se faire. */

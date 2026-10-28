@@ -10,7 +10,7 @@
  * store. `check-annuaire-rapprochement.mjs --selftest` les éprouve sur ce
  * module, pas sur une copie.
  */
-import { replier, sansAccents } from '$lib/texte';
+import { replier, sansAccents } from '#lib/texte.ts';
 
 /** Un inscrit, tel que l'écran le rapproche. */
 export interface Inscrit {

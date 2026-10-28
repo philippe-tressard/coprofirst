@@ -18,8 +18,8 @@
   (clôture) et `FusionAffaires` (correction, Suivi).
 -->
 <script lang="ts">
-	import type { CandidateFusion } from '$lib/api';
-	import type { DecisionConciliation } from '$lib/fusion-conciliation';
+	import type { CandidateFusion } from '#lib/api/index.ts';
+	import type { DecisionConciliation } from '#lib/fusion-conciliation.ts';
 
 	/** L'affaire refusée, avec son plan (`conciliation`). */
 	export let candidate: CandidateFusion;

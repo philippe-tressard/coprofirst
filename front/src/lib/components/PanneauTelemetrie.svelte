@@ -14,7 +14,7 @@
 	 *
 	 * - `niveau="section"` (défaut) : une SECTION pliable de l'onglet — un
 	 *   `<details>`, un seul déplié à la fois (l'accordéon natif du layout,
-	 *   `$lib/accordeon.unSeulDetailsOuvert`, qui ramène aussi le haut du bloc
+	 *   `#lib/accordeon.unSeulDetailsOuvert`, qui ramène aussi le haut du bloc
 	 *   ouvert à l'écran). L'onglet tient l'état (`ouvert`) et reçoit `basculer`,
 	 *   comme `OngletIA` avec ses blocs d'usage : il le garde quand la portée change.
 	 *   Une section VIDE ne se déplie pas : son intitulé reste, suivi du libellé

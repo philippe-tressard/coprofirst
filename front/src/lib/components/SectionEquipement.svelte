@@ -12,9 +12,9 @@
   est passé en props : la liste, le requis, l'aide.
 -->
 <script lang="ts">
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
-	import { EQUIPEMENTS_AFFAIRE, equipLabel, type TypeEquipementOption } from '$lib/prestataires';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
+	import { EQUIPEMENTS_AFFAIRE, equipLabel, type TypeEquipementOption } from '#lib/prestataires.ts';
 
 	/** La valeur de `TypeEquipement`, ou `''`. */
 	export let equipement = '';

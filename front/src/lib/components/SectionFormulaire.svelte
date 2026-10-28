@@ -52,7 +52,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import Icon from './Icon.svelte';
-	import { membre } from '$lib/accordeon';
+	import { membre } from '#lib/accordeon.ts';
 	import EtoileRequis from './EtoileRequis.svelte';
 	import ContenuBadge from './ContenuBadge.svelte';
 
@@ -60,7 +60,7 @@
 	    séparation reste, ce qui sert aux groupes évidents (le titre d'un objet). */
 	export let titre = '';
 
-	/** Icône du catalogue partagé (`$lib/icones-svg.json`), devant l’intitulé.
+	/** Icône du catalogue partagé (`#lib/icones-svg.json`), devant l’intitulé.
 	    Les titres portaient des ÉMOJI ; l’en-tête de page, lui, prenait déjà ses
 	    tracés dans le catalogue. Deux façons de désigner une section, dont une
 	    qui dépend de la police du système (19/08/2026). */

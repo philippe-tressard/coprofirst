@@ -12,7 +12,7 @@
  * comme une clé inconnue et ouvrirait son premier onglet, sans un mot.
  *
  * Les autres pages servent leurs anciennes adresses par `reroute` et
- * `resoudreOnglet` (`$lib/deepLink`) ; l'administration, restée sur `?onglet=`
+ * `resoudreOnglet` (`#lib/deepLink`) ; l'administration, restée sur `?onglet=`
  * (« sauf admin »), les sert ici, dans le `load` de sa page, en **308**.
  *
  * ⚠️ Une clé ne se retire JAMAIS de cette table : le courriel qui la porte a

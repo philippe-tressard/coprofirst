@@ -19,9 +19,9 @@
   écran seul serait contourné par un second écran ou un appel direct.
 -->
 <script lang="ts">
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import AideSource from '$lib/components/AideSource.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import AideSource from '#lib/components/AideSource.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
 
 	export let nom = '';
 	export let adresse = '';

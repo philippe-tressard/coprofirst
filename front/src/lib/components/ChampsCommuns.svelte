@@ -60,29 +60,29 @@
 
   ## L'ordre — il ne se discute pas par écran
 
-  Il se lit dans `SECTIONS_ORDRE` (`$lib/entites/types`), tenu par
+  Il se lit dans `SECTIONS_ORDRE` (`#lib/entites/types`), tenu par
   `lint:ordre-sections`. Ce bloc en portait une copie — neuf sections, quand le
   cadre en comptait davantage : une liste recopiée ment dès le lot suivant.
 -->
 <script lang="ts">
-	import type { ApercuDiffusion } from '$lib/api';
-	import SectionDescription from '$lib/components/SectionDescription.svelte';
-	import SectionQuand from '$lib/components/SectionQuand.svelte';
-	import SectionsPiecesJointes from '$lib/components/SectionsPiecesJointes.svelte';
+	import type { ApercuDiffusion } from '#lib/api/index.ts';
+	import SectionDescription from '#lib/components/SectionDescription.svelte';
+	import SectionQuand from '#lib/components/SectionQuand.svelte';
+	import SectionsPiecesJointes from '#lib/components/SectionsPiecesJointes.svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
-	import { SECTIONS_LIBELLE, type EntiteDeclaree, type IdSection } from '$lib/entites/types';
-	import { pliageDe, requisDe } from '$lib/pliage';
-	import { MAX_FICHIERS } from '$lib/fichiers';
+	import { SECTIONS_LIBELLE, type EntiteDeclaree, type IdSection } from '#lib/entites/types.ts';
+	import { pliageDe, requisDe } from '#lib/pliage.ts';
+	import { MAX_FICHIERS } from '#lib/fichiers.ts';
 	import SectionDiffusion from './SectionDiffusion.svelte';
 	import SectionOptionsPublication from './SectionOptionsPublication.svelte';
 	import SectionPerimetre from './SectionPerimetre.svelte';
 	import SectionDestinataires from './SectionDestinataires.svelte';
-	import ChampSaisiPour from '$lib/components/ChampSaisiPour.svelte';
-	import { nomCopie, saisieDepuis } from '$lib/saisi-pour';
-	import type { SaisieSaisiPour } from '$lib/saisi-pour';
-	import type { CleOptionPublication } from '$lib/options-publication';
-	import type { ContexteAssistant } from '$lib/assistant';
-	import type { NatureLue } from '$lib/lecture-ticket';
+	import ChampSaisiPour from '#lib/components/ChampSaisiPour.svelte';
+	import { nomCopie, saisieDepuis } from '#lib/saisi-pour.ts';
+	import type { SaisieSaisiPour } from '#lib/saisi-pour.ts';
+	import type { CleOptionPublication } from '#lib/options-publication.ts';
+	import type { ContexteAssistant } from '#lib/assistant.ts';
+	import type { NatureLue } from '#lib/lecture-ticket.ts';
 
 	/** Préfixe des `id` des champs — deux formulaires peuvent coexister à l'écran,
 	    et deux `<label for="…">` pointant le même id ne désignent plus rien. */
@@ -140,7 +140,7 @@
 	//  à sa place. Le CONTENU, lui, reste déclaré — un ticket n'en rend pas les
 	//  mêmes qu'une actualité.
 	export let avecOptions = false;
-	/** Les options rendues, dans l'ordre de la table `$lib/options-publication`. */
+	/** Les options rendues, dans l'ordre de la table `#lib/options-publication`. */
 	export let optionsRendues: CleOptionPublication[] = ['epingle', 'urgente', 'brouillon'];
 	/** Le nom de l'objet décrit — il entre dans les libellés qui le nomment.
 	 *  Le mot d'ÉCRAN, jamais celui du modèle : `PUBLICATION.libelle` dit
@@ -222,7 +222,7 @@
 	     tickets). Ne la surcharger que pour une vraie contrainte de place. */
 	export let descriptionHauteur = '120px';
 	/**  L'assistant IA de la section (#985) : l'entité et son contexte, composés
-	 *   par l'écran (`$lib/assistant`). `null` = pas d'assistant. */
+	 *   par l'écran (`#lib/assistant`). `null` = pas d'assistant. */
 	export let assistant: ContexteAssistant | null = null;
 	/**  Le titre de l'OBJET, prêté par l'écran pour que l'assistant puisse le
 	 *   retravailler — LIÉ dans les deux sens. Ce composant ne rend pas la

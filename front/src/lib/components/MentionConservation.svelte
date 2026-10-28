@@ -9,8 +9,8 @@
   une affaire mal saisie. La règle vit au serveur (`utils/conservation_application`).
 -->
 <script lang="ts">
-	import type { Ticket } from '$lib/api';
-	import { fmtDate } from '$lib/date';
+	import type { Ticket } from '#lib/api/index.ts';
+	import { fmtDate } from '#lib/date.ts';
 
 	export let ticket: Pick<Ticket, 'conservee_le'>;
 </script>

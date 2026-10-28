@@ -6,7 +6,7 @@
  * de l'eau » — on découpe quand on y touche.
  *
  * ⚠️ `tickets.ts` **réexporte** tout ce module : aucun écran n'a changé
- * d'import, et `$lib/tickets` reste la porte du domaine. Ce qui a changé est le
+ * d'import, et `#lib/tickets` reste la porte du domaine. Ce qui a changé est le
  * FICHIER que les contrôles lisent — `check-choix-requis.mjs`,
  * `test_categories_ticket_concordance.py` et `test_manuel_ne_recopie_rien.py`
  * pointent ici.
@@ -313,7 +313,7 @@ export const OPTIONS_CATEGORIE: readonly {
 //: écrit en entier, « CALENDRIER » dépassait de la bande ou l'élargissait. Le
 //: filtre, lui, garde le mot entier — il a la place.
 //: `icone` est le pictogramme AU TRAIT de la gouttière (maquette B, 10/10/2026) :
-//: l'émoji reste celui du filtre, la carte dessine le sien (`$lib/icones-svg.json`).
+//: l'émoji reste celui du filtre, la carte dessine le sien (`#lib/icones-svg.json`).
 export const NATURES = [
 	{
 		val: 'actualite',

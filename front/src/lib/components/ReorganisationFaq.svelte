@@ -9,12 +9,12 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { faq as faqApi, type EntreeFaq } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { grouperParCategorie, normalizeCategorieLabel } from '$lib/faq';
+	import { faq as faqApi, type EntreeFaq } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { grouperParCategorie, normalizeCategorieLabel } from '#lib/faq.ts';
 
 	export let items: EntreeFaq[];
 

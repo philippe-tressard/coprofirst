@@ -11,8 +11,8 @@
   les modifient en place, et `enregistrer` reçoit l'objet tel qu'il est saisi.
 -->
 <script lang="ts">
-	import type { MessagePlanifieWhatsApp } from '$lib/api';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import type { MessagePlanifieWhatsApp } from '#lib/api/index.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	export let messages: MessagePlanifieWhatsApp[] = [];
 	/** Non vide = la liste n'a pas pu être lue : elle ne se dit pas « vide » (#1459). */

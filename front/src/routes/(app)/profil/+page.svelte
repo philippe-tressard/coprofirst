@@ -1,13 +1,13 @@
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import ChangementMotDePasse from '$lib/components/ChangementMotDePasse.svelte';
-	import { clesHeritees, DEFAUTS_NOTIFS } from '$lib/preferences';
-	import { LIBELLES_STATUT, STATUTS_DEMANDABLES } from '$lib/roles';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import PreferencesAffichageNotifs from '$lib/components/PreferencesAffichageNotifs.svelte';
+	import Badge from '#lib/components/Badge.svelte';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import ChangementMotDePasse from '#lib/components/ChangementMotDePasse.svelte';
+	import { clesHeritees, DEFAUTS_NOTIFS } from '#lib/preferences.ts';
+	import { LIBELLES_STATUT, STATUTS_DEMANDABLES } from '#lib/roles.ts';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import PreferencesAffichageNotifs from '#lib/components/PreferencesAffichageNotifs.svelte';
 	import { onMount } from 'svelte';
-	import { currentUser, setUser } from '$lib/stores/auth';
+	import { currentUser, setUser } from '#lib/stores/auth.ts';
 	import {
 		auth as authApi,
 		lots as lotsApi,
@@ -15,23 +15,28 @@
 		type MaDemandeProfil,
 		type MonLot,
 		type User,
-	} from '$lib/api';
-	import { tenter } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import ImageUpload from '$lib/components/ImageUpload.svelte';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
-	import HistoriqueDemandes from '$lib/components/HistoriqueDemandes.svelte';
-	import { STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LABEL } from '$lib/demandes';
-	import { essayer, messagePartiel } from '$lib/chargement';
-	import DroitsRgpd from '$lib/components/DroitsRgpd.svelte';
-	import InformationsCompte from '$lib/components/InformationsCompte.svelte';
-	import ChampsEtage from '$lib/components/ChampsEtage.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import DemarcheArrivant from '$lib/components/DemarcheArrivant.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import ChampAdresseCompte from '$lib/components/ChampAdresseCompte.svelte';
-	import { adresseChangee, annonceLienEnvoye } from '$lib/comptes';
+	} from '#lib/api/index.ts';
+	import { tenter } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import ImageUpload from '#lib/components/ImageUpload.svelte';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
+	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
+	import HistoriqueDemandes from '#lib/components/HistoriqueDemandes.svelte';
+	import { STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LABEL } from '#lib/demandes.ts';
+	import { essayer, messagePartiel } from '#lib/chargement.ts';
+	import DroitsRgpd from '#lib/components/DroitsRgpd.svelte';
+	import InformationsCompte from '#lib/components/InformationsCompte.svelte';
+	import ChampsEtage from '#lib/components/ChampsEtage.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import DemarcheArrivant from '#lib/components/DemarcheArrivant.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import ChampAdresseCompte from '#lib/components/ChampAdresseCompte.svelte';
+	import { adresseChangee, annonceLienEnvoye } from '#lib/comptes.ts';
 
 	$: _pc = getPageConfig($configStore, 'profil', defautsDePage('profil'));
 	$: _siteNom = $siteNomStore;
@@ -80,11 +85,11 @@
 
 	// ── Labels ─────────────────────────────────────────────────────────────────
 
-	//  🔴 Libellés dans `$lib/roles` (#801) — voir l'en-tête de ce module : la
+	//  🔴 Libellés dans `#lib/roles` (#801) — voir l'en-tête de ce module : la
 	//  table était écrite six fois, et celle-ci écrivait « Copropriétaire
 	//  Résident » là où le tableau de bord écrivait « Copropriétaire résident ».
 
-	//  ⚠️ Le vocabulaire d'une demande vit dans `$lib/demandes` : cette page ET
+	//  ⚠️ Le vocabulaire d'une demande vit dans `#lib/demandes` : cette page ET
 	//  `HistoriqueDemandes` le lisent. Je l'avais d'abord emporté avec la table
 	//  extraite — la page s'en sert aussi, quarante lignes plus haut.
 
@@ -352,7 +357,7 @@
 					Les modifications du profil d'utilisateur et du bâtiment sont soumises à validation du
 					conseil syndical.
 				</p>
-				<!--  Des pastilles, libellés lus dans `$lib/roles` (#1329) : ils étaient
+				<!--  Des pastilles, libellés lus dans `#lib/roles` (#1329) : ils étaient
 				      recopiés ici. -->
 				<ChoixPastilles
 					options={STATUTS_DEMANDABLES.map((v) => ({ val: v, label: LIBELLES_STATUT[v] }))}

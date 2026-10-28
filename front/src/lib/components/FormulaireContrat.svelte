@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Document, Prestataire } from '$lib/api';
-	import type { FormulaireContratData } from '$lib/prestataires';
+	import type { Document, Prestataire } from '#lib/api/index.ts';
+	import type { FormulaireContratData } from '#lib/prestataires.ts';
 	/**
 	 * Le formulaire d'un contrat d'entretien — **un seul rendu**, deux enveloppes.
 	 *
@@ -50,10 +50,10 @@
 	import ChampsContrat from './ChampsContrat.svelte';
 	import DocumentsRattaches from './DocumentsRattaches.svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
-	import { CONTRAT } from '$lib/entites/contrat';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
-	import { pliageDe } from '$lib/pliage';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import { CONTRAT } from '#lib/entites/contrat.ts';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
+	import { pliageDe } from '#lib/pliage.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 
 	/** L'état du formulaire, lié dans les deux sens par l'appelant. */
 	export let contratForm: FormulaireContratData;

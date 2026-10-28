@@ -12,7 +12,7 @@
  *  par formulaire ouvert, pour rien. L'appelant vérifie `$isCS` avant.
  */
 import { writable } from 'svelte/store';
-import { assistant as assistantApi } from '$lib/api';
+import { assistant as assistantApi } from '#lib/api/index.ts';
 
 export interface DisponibiliteAssistant {
 	description: boolean;

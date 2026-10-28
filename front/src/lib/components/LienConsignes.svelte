@@ -23,8 +23,8 @@
   🔒 `npm run lint:lien-consignes` refuse l'adresse de la fiche écrite ailleurs.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import { admin as adminApi } from '$lib/api';
+	import Icon from '#lib/components/Icon.svelte';
+	import { admin as adminApi } from '#lib/api/index.ts';
 
 	export let forme: 'carte' | 'bouton' = 'bouton';
 	/** Carte seulement : habillée en avertissement. */

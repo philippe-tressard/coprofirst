@@ -3,16 +3,16 @@
 
   Il vivait dans `SectionsSuiteConseil`, rendu après le Suivi. Il en est sorti
   pour prendre le créneau `avant_suivi` d'`EvolForm` ; l'état reste partagé
-  (`$lib/suite-conseil`), car l'Équipement propose l'Intervenant, rendu après.
+  (`#lib/suite-conseil`), car l'Équipement propose l'Intervenant, rendu après.
 -->
 <script lang="ts">
 	import type { Writable } from 'svelte/store';
-	import type { Ticket } from '$lib/api';
-	import { isCS } from '$lib/stores/auth';
-	import { equipementDansLaSuite, etatSuite } from '$lib/suite-conseil';
+	import type { Ticket } from '#lib/api/index.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { equipementDansLaSuite, etatSuite } from '#lib/suite-conseil.ts';
 	import SectionEquipement from './SectionEquipement.svelte';
-	import { pliageDe } from '$lib/pliage';
-	import { TICKET } from '$lib/entites/ticket';
+	import { pliageDe } from '#lib/pliage.ts';
+	import { TICKET } from '#lib/entites/ticket.ts';
 
 	export let ticket: Ticket;
 	export let partage: Writable<Record<string, unknown>>;

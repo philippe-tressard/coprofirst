@@ -10,7 +10,7 @@
 //  ⚠️ Ces quatre états sont la notion **Workflow** au sens de `ux-patterns`
 //  §9 sexies — « où en est cet objet ? ». À ne pas confondre avec la Diffusion
 //  (« qui le voit, et où ? »), ni avec les statuts d'une PUBLICATION, qui sont
-//  une autre notion et vivent dans `$lib/publications.ts`.
+//  une autre notion et vivent dans `#lib/publications.ts`.
 //
 //  La contrepartie serveur est `StatutTicket` (`api/app/models/core.py`), et
 //  `api/tests/test_statuts_tickets.py` échoue si les deux divergent.
@@ -20,15 +20,15 @@ import {
 	optionsActives,
 	type CleOptionPublication,
 	type OptionPublication,
-} from '$lib/options-publication';
-import type { Ticket } from '$lib/api';
-import { nombreOuNull } from '$lib/utils';
-import { parAttribut } from '$lib/table-statuts';
+} from '#lib/options-publication.ts';
+import type { Ticket } from '#lib/api/index.ts';
+import { nombreOuNull } from '#lib/utils.ts';
+import { parAttribut } from '#lib/table-statuts.ts';
 
 //  Les catégories vivent dans leur propre module depuis le 21/09/2026 (500
-//  lignes). `$lib/tickets` reste la porte du domaine : tout écran qui importait
+//  lignes). `#lib/tickets` reste la porte du domaine : tout écran qui importait
 //  `CATEGORIES_TICKET` d'ici continue de le faire.
-export * from '$lib/tickets-categories';
+export * from '#lib/tickets-categories.ts';
 
 export interface StatutTicket {
 	/** Valeur envoyée à l'API — jamais traduite, jamais réécrite. */
@@ -65,7 +65,7 @@ export const STATUTS_TICKET: readonly StatutTicket[] = [
 
 //: 🔁 Les trois états du suivi OPTIONNEL d'une actualité (10/10/2026) — un
 //: sous-ensemble du cycle, tenu ici avec lui. Miroir de `ETATS_SUIVI_ACTUALITE`
-//: (`api/app/utils/suivi_actualite.py`) ; ses règles : `$lib/suivi-actualite`.
+//: (`api/app/utils/suivi_actualite.py`) ; ses règles : `#lib/suivi-actualite`.
 export const ETATS_SUIVI_ACTUALITE: readonly string[] = ['ouvert', 'résolu', 'annulé'];
 
 //: Options d'un `<select>` ou d'une rangée de boutons — pastille comprise.
@@ -222,7 +222,7 @@ export function statutTicketLabel(statut: string | undefined | null): string {
 //  actualités et aux événements autant qu'aux tickets, et la laisser ici
 //  aurait fait de « tickets » le domicile d'une règle partagée.
 //  Réexporté pour que rien n'ait à changer chez les appelants.
-export type { ModeSaisiPour } from '$lib/saisi-pour';
+export type { ModeSaisiPour } from '#lib/saisi-pour.ts';
 
 // ── Options de publication ───────────────────────────────────────────────────
 
@@ -237,7 +237,7 @@ export type { ModeSaisiPour } from '$lib/saisi-pour';
  *
  * ## Les clés de l'écran ne sont pas les champs du ticket
  *
- * | Option (table `$lib/options-publication`) | Champ du ticket |
+ * | Option (table `#lib/options-publication`) | Champ du ticket |
  * |---|---|
  * | `epingle` | `epingle` |
  * | `urgente` | `priorite === 'haute'` — ce que la catégorie « Urgence » pose déjà |

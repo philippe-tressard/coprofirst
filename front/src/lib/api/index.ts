@@ -24,14 +24,14 @@ import type {
 import type { ChoixConciliation } from './affaires-liees';
 import type { ExportTelemetrie } from './telemetrie';
 import type { EntretienPeriodiqueResponse } from './prestataires';
-//  Le type des périmètres vit dans `$lib/perimetres` et non dans `./types` : ce
+//  Le type des périmètres vit dans `#lib/perimetres` et non dans `./types` : ce
 //  module-là ne doit dépendre de rien pour rester importable depuis `lib/utils.ts`
-//  sans créer de cycle. Il est réexporté ici pour que `from '$lib/api'` suffise.
+//  sans créer de cycle. Il est réexporté ici pour que `from '#lib/api/index.ts'` suffise.
 
-export type { Perimetre } from '$lib/perimetres';
+export type { Perimetre } from '#lib/perimetres/index.ts';
 
 //  Le paquet expose exactement ce que `api.ts` exposait : les 41 imports
-//  `from '$lib/api'` du front n'ont pas à changer, et ne changent pas.
+//  `from '#lib/api/index.ts'` du front n'ont pas à changer, et ne changent pas.
 export * from './client';
 export * from './types';
 //  La conciliation d'une fusion refusée (27/10/2026) : ses types vivent avec les
@@ -295,7 +295,7 @@ export const tickets = {
 			 *
 			 *   ⚠️ `urgente` n'est pas une colonne du ticket : elle pilote sa
 			 *   `priorite`, ce que fait déjà la catégorie « Urgence ». Le pont vit
-			 *   dans `$lib/tickets` (`optionsVersTicket`). */
+			 *   dans `#lib/tickets` (`optionsVersTicket`). */
 			epingle?: boolean;
 			urgente?: boolean;
 			confidentiel?: boolean;

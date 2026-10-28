@@ -18,9 +18,9 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import SectionOptionsPublication from '$lib/components/SectionOptionsPublication.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import type { CleOptionPublication } from '$lib/options-publication';
+	import SectionOptionsPublication from '#lib/components/SectionOptionsPublication.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import type { CleOptionPublication } from '#lib/options-publication.ts';
 
 	/**  Le nom de l'objet décrit — il entre dans les libellés qui le nomment
 	 *   (« Visibilité du **ticket** au seul conseil syndical »). */

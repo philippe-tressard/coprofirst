@@ -1,31 +1,36 @@
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import BoutonNouveau from '$lib/components/BoutonNouveau.svelte';
-	import FiltresAffaires from '$lib/components/FiltresAffaires.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import BoutonNouveau from '#lib/components/BoutonNouveau.svelte';
+	import FiltresAffaires from '#lib/components/FiltresAffaires.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 	import { onMount } from 'svelte';
-	import { marquerDonneesAffichees } from '$lib/telemetry';
+	import { marquerDonneesAffichees } from '#lib/telemetry.ts';
 	import { goto } from '$app/navigation';
-	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
+	import BarreOnglets from '#lib/components/BarreOnglets.svelte';
 	//  ⏱ Le Kanban attend le passage sur son onglet (#1844).
-	import { routeOnglet } from '$lib/routes-onglets';
-	import { revelerCible } from '$lib/deepLink';
-	import { isAdmin, isCS } from '$lib/stores/auth';
+	import { routeOnglet } from '#lib/routes-onglets.ts';
+	import { revelerCible } from '#lib/deepLink.ts';
+	import { isAdmin, isCS } from '#lib/stores/auth.ts';
 	import { writable } from 'svelte/store';
-	import { tickets as ticketsApi, type Ticket } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { affairesEnListe } from '$lib/affaires-en-liste';
-	import { TICKET } from '$lib/entites/ticket';
-	import { categorieDuLien } from '$lib/formulaire-affaire';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import ListeTickets from '$lib/components/ListeTickets.svelte';
-	import ArchivesParAnnee from '$lib/components/ArchivesParAnnee.svelte';
-	import { aboutirGeste, ouvrirGeste } from '$lib/aboutissement';
-	import AvertissementUrgence from '$lib/components/AvertissementUrgence.svelte';
-	import { OPTIONS_FILTRE_NATURE, statutsPresents } from '$lib/tickets';
-	import { estArchive, filtrerAffaires, rechercheAffaires } from '$lib/recherche-affaires';
-	import { offrirLaPastille, selonPortee } from '$lib/me-concerne';
+	import { tickets as ticketsApi, type Ticket } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { affairesEnListe } from '#lib/affaires-en-liste.ts';
+	import { TICKET } from '#lib/entites/ticket.ts';
+	import { categorieDuLien } from '#lib/formulaire-affaire.ts';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
+	import ListeTickets from '#lib/components/ListeTickets.svelte';
+	import ArchivesParAnnee from '#lib/components/ArchivesParAnnee.svelte';
+	import { aboutirGeste, ouvrirGeste } from '#lib/aboutissement.ts';
+	import AvertissementUrgence from '#lib/components/AvertissementUrgence.svelte';
+	import { OPTIONS_FILTRE_NATURE, statutsPresents } from '#lib/tickets.ts';
+	import { estArchive, filtrerAffaires, rechercheAffaires } from '#lib/recherche-affaires.ts';
+	import { offrirLaPastille, selonPortee } from '#lib/me-concerne.ts';
 
 	$: _pc = getPageConfig($configStore, 'mes-demandes', defautsDePage('mes-demandes'));
 	$: _siteNom = $siteNomStore;
@@ -36,7 +41,7 @@
 	let erreur = '';
 	let filterStatut = '';
 	//  La recherche libre a remplacé le filtre Catégorie (27/09/2026) : la
-	//  règle est au serveur, `$lib/recherche-affaires` demande et filtre.
+	//  règle est au serveur, `#lib/recherche-affaires` demande et filtre.
 	let recherche = '';
 	let inclureArchives = false;
 	const moteur = rechercheAffaires();
@@ -68,7 +73,7 @@
 
 	//  Ce que la page décide pour ses cartes — laquelle est dépliée, en
 	//  correction, en attente d'une Suite — et les appels de chaque geste vivent
-	//  dans `$lib/affaires-en-liste`, que le lien direct d'une affaire emploie
+	//  dans `#lib/affaires-en-liste`, que le lien direct d'une affaire emploie
 	//  aussi (15/10/2026). Le rendu vit dans `ListeTickets` → `CarteTicket`.
 	const affaires = affairesEnListe(ticketList);
 	const { etat: etatAffaires, gestes } = affaires;
@@ -77,7 +82,7 @@
 	$: etatListe = { ...$etatAffaires, peutAdministrer: $isAdmin };
 
 	//  Badges, libellés, options du workflow ET catégories viennent de
-	//  `$lib/tickets` : quatre listes de statuts avaient divergé (#415), et les
+	//  `#lib/tickets` : quatre listes de statuts avaient divergé (#415), et les
 	//  catégories étaient à leur tour écrites en quatre endroits — dont ces six
 	//  boutons de filtre, en dur dans le balisage (#431).
 
@@ -136,7 +141,7 @@
 	});
 
 	//  La règle d'archivage n'est PAS ici : `estArchive` lit le champ calculé par
-	//  le serveur (#515) — `$lib/recherche-affaires`, avec le filtre de la liste.
+	//  le serveur (#515) — `#lib/recherche-affaires`, avec le filtre de la liste.
 
 	//  Ce que la liste principale peut montrer, AVANT le filtre d'état : c'est
 	//  cet ensemble-là qui donne les boutons du filtre. Le calculer après
@@ -232,7 +237,7 @@
 <!--  Le formulaire s'ouvre APRÈS l'avertissement et les filtres : `ux-patterns`
       §0 ter, signalé ici le 12/09/2026. -->
 {#if showForm}
-	<ChargementDiffere charger={() => import('$lib/components/FormulaireTicket.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/FormulaireTicket.svelte')}>
 		{#snippet contenu(FormulaireTicket)}
 			<FormulaireTicket
 				cle="creation"
@@ -247,7 +252,7 @@
 <!--  Les trois états par `EtatListe` (#796) — dont l'ERREUR, qui n'existait pas :
       une panne affichait « Aucune demande ». -->
 {#if onglet === 'kanban'}
-	<ChargementDiffere charger={() => import('$lib/components/VueKanbanAffaires.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/VueKanbanAffaires.svelte')}>
 		{#snippet contenu(VueKanbanAffaires)}
 			<VueKanbanAffaires
 				tickets={$ticketList}

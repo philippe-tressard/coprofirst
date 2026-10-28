@@ -17,7 +17,7 @@
     pliage cacherait « Résolu le 15 oct. » derrière un clic de plus.
 
   L'accordéon est tenu par l'APPELANT (`ouverte`, `onBasculer`) : il connaît
-  les rubriques voisines, et `basculer` (`$lib/accordeon`) dit laquelle s'ouvre.
+  les rubriques voisines, et `basculer` (`#lib/accordeon`) dit laquelle s'ouvre.
 
   Le rail se trace de jalon en jalon : une étape suivie d'une autre étape porte
   le trait (`:has`). La dernière n'en a pas, quelle que soit celle qui l'est —
@@ -31,7 +31,7 @@
 	import Icon from './Icon.svelte';
 
 	export let titre: string;
-	/** Icône du catalogue (`$lib/icones-svg.json`), dans le jalon. */
+	/** Icône du catalogue (`#lib/icones-svg.json`), dans le jalon. */
 	export let icone: string;
 	/** La teinte de l'encart : neutre, l'information, ou ce qui est conclu. */
 	export let ton: 'neutre' | 'info' | 'succes' = 'neutre';

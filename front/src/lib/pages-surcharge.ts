@@ -35,7 +35,7 @@
  * pas de lanceur de tests, c'est le pattern de `check-liste-depliable.mjs` :
  * fonction pure + `--selftest`, sur le module que le site embarque.
  */
-import type { PageConfig } from '$lib/stores/pageConfig';
+import type { PageConfig } from '#lib/stores/pageConfig.ts';
 
 /** Ce qu'un onglet porte, une fois la forme historique convertie. */
 export interface OngletSurcharge {

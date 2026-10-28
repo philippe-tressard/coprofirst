@@ -5,7 +5,7 @@
  *  affaire est affichée d'une manière différente du fil d'actualité ou de la
  *  page actualité »*. `/tickets/42` rendait une fiche à part — en-tête, boutons
  *  « Changer le statut », Historique. Il rend désormais la carte de la liste,
- *  seule et dépliée, par la même porte (`$lib/affaires-en-liste`).
+ *  seule et dépliée, par la même porte (`#lib/affaires-en-liste`).
  *
  *  Ce test vérifie ce que l'écran MONTRE — API simulée, compte témoin :
  *  - une seule carte, dépliée d'emblée, et son corps (le fil de la carte) ;

@@ -11,8 +11,8 @@
  * on ne fait que les RANGER et les ADDITIONNER — jamais les recalculer.
  */
 import { writable } from 'svelte/store';
-import type { MonLot, QuotePartLot } from '$lib/api';
-import { lotTypeLabel } from '$lib/utils';
+import type { MonLot, QuotePartLot } from '#lib/api/index.ts';
+import { lotTypeLabel } from '#lib/utils.ts';
 
 /** Ce que vaut un tableau de charges : une lecture du règlement, jamais un décompte. */
 /** La fiche du syndic dans l'annuaire — ses coordonnées, déjà dans l'application. */

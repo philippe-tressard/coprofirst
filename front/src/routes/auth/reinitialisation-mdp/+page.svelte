@@ -1,8 +1,8 @@
 <script lang="ts">
-	import ChampMotDePasse from '$lib/components/ChampMotDePasse.svelte';
-	import { auth as authApi, ApiError } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { getSiteNom } from '$lib/stores/pageConfig';
+	import ChampMotDePasse from '#lib/components/ChampMotDePasse.svelte';
+	import { auth as authApi, ApiError } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { getSiteNom } from '#lib/stores/pageConfig.ts';
 
 	export let data: { token: string };
 

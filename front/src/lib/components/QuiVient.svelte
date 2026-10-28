@@ -9,8 +9,8 @@
 	 * un copropriétaire du conseil compte sous les deux —, donc leurs lignes ne
 	 * s'additionnent pas, et l'écran le dit. La règle de calcul : `utils/adoption.py`.
 	 */
-	import PanneauTelemetrie from '$lib/components/PanneauTelemetrie.svelte';
-	import type { Adoption, LigneAdoption } from '$lib/api';
+	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
+	import type { Adoption, LigneAdoption } from '#lib/api/index.ts';
 
 	/** `null` : la vue ne sait pas qui est venu (Total) — la section, vide, ne se déplie pas. */
 	export let adoption: Adoption | null;

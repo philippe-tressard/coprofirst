@@ -20,22 +20,22 @@
 -->
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import SectionDescription from '$lib/components/SectionDescription.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import { contexteCommentaire } from '$lib/assistant';
-	import { richEmpty } from '$lib/publications';
-	import { LIBELLE_CS_ET_PRESENTS } from '$lib/points-conseil';
-	import { statutTicketLabel } from '$lib/tickets';
+	import SectionDescription from '#lib/components/SectionDescription.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { contexteCommentaire } from '#lib/assistant.ts';
+	import { richEmpty } from '#lib/publications.ts';
+	import { LIBELLE_CS_ET_PRESENTS } from '#lib/points-conseil.ts';
+	import { statutTicketLabel } from '#lib/tickets.ts';
 	import {
 		pointsConseil,
 		type AffaireOuverte,
 		type CompteRenduPoint,
 		type CrAffaire,
 		type EtatValidation,
-	} from '$lib/api';
+	} from '#lib/api/index.ts';
 
 	export let pointId: number;
 	export let affaire: AffaireOuverte;

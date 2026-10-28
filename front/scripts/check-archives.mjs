@@ -188,7 +188,7 @@ function main() {
 	console.error('');
 	for (const [f, titre] of coupables) console.error(`    ${f}  →  « ${titre} »`);
 	console.error('');
-	console.error(`  Employer \`${CONSTANTE}\` de \`$lib/archives\`. Cinq écrans l'avaient en dur`);
+	console.error(`  Employer \`${CONSTANTE}\` de \`#lib/archives\`. Cinq écrans l'avaient en dur`);
 	console.error("  et concordaient parce qu'on venait de les aligner à la main (#516).");
 	console.error('');
 	console.error("  Si le titre est légitime — le FIL d'un objet, par exemple —, le déclarer");

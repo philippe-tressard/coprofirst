@@ -9,7 +9,7 @@
 //  ⚠️ Dans un fichier à part, et non en tête du client comme pour `communaute.ts` :
 //  `administration.ts` en portait déjà 455 lignes, et la modularité est de rang 1.
 //  Le client les RÉEXPORTE (`export type * from`) : `index.ts`, et donc chaque
-//  `from '$lib/api'`, les voient sans qu'on y touche.
+//  `from '#lib/api/index.ts'`, les voient sans qu'on y touche.
 //
 //  ⚠️ Plusieurs routes n'ont pas de `response_model` : elles rendent un dict
 //  composé à la main, ou la LIGNE de la table telle quelle (`model_dump`). Les

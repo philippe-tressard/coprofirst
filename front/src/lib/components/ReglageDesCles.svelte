@@ -11,12 +11,12 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { lotsAdmin, type CleDeChargesReglee } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { fmtNombre } from '$lib/utils';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { lotsAdmin, type CleDeChargesReglee } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { fmtNombre } from '#lib/utils.ts';
 
 	let cles: CleDeChargesReglee[] = [];
 	let chargement = true;

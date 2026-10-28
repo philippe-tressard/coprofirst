@@ -379,7 +379,7 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
     ailleurs disait le contraire.
 
     Le tableau de bord bascule désormais par un `{#if}` sur `SEUIL_KANBAN_ETROIT`
-    (`$lib/kanban.ts`) : une seule vue est rendue à la fois, et ce qui n'est pas
+    (`#lib/kanban.ts`) : une seule vue est rendue à la fois, et ce qui n'est pas
     rendu ne peut pas être masqué par erreur. Ne pas remettre de classe
     d'interrupteur ici — c'est la forme qui a échoué. */
 
@@ -626,7 +626,7 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 }
 
 /* ── Où s'arrête le défilement vers un bloc déplié (30/09/2026) ──
-   `amenerEnVue` (`$lib/accordeon`) ramène le haut du bloc qu'on vient d'ouvrir
+   `amenerEnVue` (`#lib/accordeon`) ramène le haut du bloc qu'on vient d'ouvrir
    quand le repli d'un voisin l'a fait sortir de la fenêtre. Il s'arrête à cette
    marge, et la LIT pour savoir si le bloc est déjà visible : sur téléphone,
    l'en-tête fixe (3,25 rem) couvrirait sinon le titre qu'on vient de toucher.
@@ -640,7 +640,7 @@ details,
 }
 
 /* ── Cible d'un lien profond (fil d'activité, notification, e-mail) ──
-   Posée en JS par `$lib/deepLink.ts` → doit rester GLOBALE : une classe ajoutée
+   Posée en JS par `#lib/deepLink.ts` → doit rester GLOBALE : une classe ajoutée
    hors du rendu Svelte n'est pas touchée par le scoping des styles de composant.
    Sur une liste longue, le simple défilement ne dit pas LEQUEL des éléments
    visibles était visé — d'où la surbrillance, qui s'efface d'elle-même. */

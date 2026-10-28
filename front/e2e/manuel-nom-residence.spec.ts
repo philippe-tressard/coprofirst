@@ -8,7 +8,7 @@
  *  par un script de la page — « Manuel utilisateur — Résidence 5Hostachy ».
  *
  *  🔒 Le nom composé est celui du pied de page des écrans (`PiedDePage.svelte`) :
- *  le manuel ne peut pas importer `$lib/piedDePage`, alors le premier test rend
+ *  le manuel ne peut pas importer `#lib/piedDePage`, alors le premier test rend
  *  LES DEUX sur la même configuration et les compare — une seconde façon de
  *  composer le nom divergerait sans que rien ne le dise.
  */

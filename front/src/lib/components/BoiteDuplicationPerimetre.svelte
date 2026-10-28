@@ -25,14 +25,14 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	import BoiteNouveauPerimetre from '$lib/components/BoiteNouveauPerimetre.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import { copropriete as coproprieteApi, perimetres as perimetresApi } from '$lib/api';
-	import type { Batiment } from '$lib/api';
-	import { essayer } from '$lib/chargement';
-	import { tenter } from '$lib/erreurs';
-	import { codeSousParent, noeudDuBatiment, type Perimetre } from '$lib/perimetres';
-	import { rechargerPerimetres } from '$lib/stores/perimetres';
+	import BoiteNouveauPerimetre from '#lib/components/BoiteNouveauPerimetre.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import { copropriete as coproprieteApi, perimetres as perimetresApi } from '#lib/api/index.ts';
+	import type { Batiment } from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import { tenter } from '#lib/erreurs.ts';
+	import { codeSousParent, noeudDuBatiment, type Perimetre } from '#lib/perimetres/index.ts';
+	import { rechargerPerimetres } from '#lib/stores/perimetres.ts';
 
 	/** Le nœud dont on copie la branche. */
 	export let source: Perimetre;

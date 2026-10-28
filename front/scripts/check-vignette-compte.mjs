@@ -88,6 +88,6 @@ process.exit(
 		ok: 'Vignettes de compte : rendues par Compte.svelte seul',
 		ko: 'vignette(s) de compte redessinée(s) hors de Compte.svelte',
 		conseil:
-			'Employer `<Compte n={…} />` (`$lib/components/Compte.svelte`) — `surAplat` sur un fond Bleu Seine — ou `compte` sur une `Pastille`.',
+			'Employer `<Compte n={…} />` (`#lib/components/Compte.svelte`) — `surAplat` sur un fond Bleu Seine — ou `compte` sur une `Pastille`.',
 	}),
 );

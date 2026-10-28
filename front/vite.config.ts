@@ -51,7 +51,7 @@ function buildDate(): string {
 	// 26/07/2026), soit 2 h de moins, et sans aucune mention du fuseau — donc lu
 	// comme une heure locale fausse. Même classe que le bug des mois en anglais du
 	// même jour : une date montrée à l'utilisateur qui ne suit pas la convention
-	// Europe/Paris du projet (cf. `$lib/date.ts`).
+	// Europe/Paris du projet (cf. `#lib/date.ts`).
 	//
 	// `formatToParts` plutôt qu'un `replace` sur une chaîne localisée : on
 	// recompose explicitement, sans dépendre du format d'une locale.
@@ -94,9 +94,6 @@ export default defineConfig({
 				out: 'build',
 				precompress: true,
 			}),
-			alias: {
-				$lib: 'src/lib',
-			},
 			//  🔒 CSP — `script-src` en mode BLOQUANT, ce que Caddy ne pouvait pas faire (#770).
 			//
 			//  SvelteKit sert DEUX scripts inline par page (hydratation) : ils
@@ -120,7 +117,7 @@ export default defineConfig({
 				// (`skipWaiting` + `clientsClaim`) et la page se recharge d'elle-même dès
 				// qu'une version est trouvée — un formulaire en cours de saisie serait
 				// perdu sans avertissement. Ici le nouveau service worker reste en attente
-				// et `$lib/components/MajDisponible.svelte` propose le rechargement.
+				// et `#lib/components/MajDisponible.svelte` propose le rechargement.
 				registerType: 'prompt',
 				// Enregistrement explicite par ce même composant, qui a besoin des
 				// callbacks (`onNeedRefresh`) et pose le contrôle périodique. `auto`
@@ -220,7 +217,7 @@ export default defineConfig({
 	//  « Tests de navigateur » échoue quand Vite recharge une page en plein test.
 	optimizeDeps: {
 		include: [
-			'dompurify', // $lib/sanitize.ts, chargé côté navigateur seulement
+			'dompurify', // #lib/sanitize.ts, chargé côté navigateur seulement
 			'@tiptap/core', // l'éditeur riche, chargé à la demande
 			'@tiptap/starter-kit',
 			'@tiptap/extension-placeholder',
@@ -229,7 +226,7 @@ export default defineConfig({
 			//  fait découvrir en plein test (#779, 01/10/2026).
 			'qrcode-generator',
 			//  Le rendu Markdown des conditions d'inscription, chargé à l'affichage
-			//  (`$lib/markdown`, #1930) : découvert en plein e2e, il rechargeait la page.
+			//  (`#lib/markdown`, #1930) : découvert en plein e2e, il rechargeait la page.
 			'marked',
 		],
 	},

@@ -32,8 +32,8 @@
     </Pastille>
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import Compte from '$lib/components/Compte.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import Compte from '#lib/components/Compte.svelte';
 
 	/** Pastille retenue — fond plein. */
 	export let active = false;

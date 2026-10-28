@@ -16,10 +16,10 @@
 -->
 <script lang="ts">
 	import SectionFormulaire from './SectionFormulaire.svelte';
-	import { admin as adminApi } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { fmtDatetime } from '$lib/date';
-	import { toast } from '$lib/components/Toast.svelte';
+	import { admin as adminApi } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { toast } from '#lib/components/Toast.svelte';
 
 	type Probleme = { titre: string; details: string[] };
 

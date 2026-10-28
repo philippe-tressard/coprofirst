@@ -42,7 +42,7 @@
   (`separatePhotosAndDocs`) a disparu le 18/08/2026 avec son dernier appelant.
 
   ✅ **Gouverné par la déclaration d'entité** (02/09/2026, #463) : il REÇOIT
-  l'entité, et la règle qui en tire les sections vit dans `$lib/evolutions`
+  l'entité, et la règle qui en tire les sections vit dans `#lib/evolutions`
   (`sectionsDeLaSuite`, 25/09/2026). Les cinq écrans ne décident plus des
   sections — seulement des DROITS de leur lecteur, et de ce que l'objet EST.
 
@@ -60,33 +60,33 @@
   les recopiait, et deux listes divergent au premier ajout.
 
   Événements :
-    submit(data)  – une `ChargeUtileEvolution` (`$lib/evolutions`, seule écriture de ses champs)
+    submit(data)  – une `ChargeUtileEvolution` (`#lib/evolutions`, seule écriture de ses champs)
     cancel        – fermer le formulaire sans sauvegarder
 -->
 <script lang="ts">
-	import SectionWorkflow from '$lib/components/SectionWorkflow.svelte';
-	import SectionDescription from '$lib/components/SectionDescription.svelte';
+	import SectionWorkflow from '#lib/components/SectionWorkflow.svelte';
+	import SectionDescription from '#lib/components/SectionDescription.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { writable } from 'svelte/store';
-	import SectionDiffusion from '$lib/components/SectionDiffusion.svelte';
+	import SectionDiffusion from '#lib/components/SectionDiffusion.svelte';
 	import {
 		typeDeLEntree,
 		entreeEnregistrable,
 		etatInitialEntree,
 		sectionsDeLaSuite,
 		type ChargeUtileEvolution,
-	} from '$lib/evolutions';
-	import SectionsPiecesJointes from '$lib/components/SectionsPiecesJointes.svelte';
-	import SectionAffairesLiees from '$lib/components/SectionAffairesLiees.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import SectionsCiblageEvolution from '$lib/components/SectionsCiblageEvolution.svelte';
-	import type { ConditionInactive, EntiteDeclaree } from '$lib/entites/types';
-	import { pliageDe } from '$lib/pliage';
-	import { SUITE } from '$lib/gestes';
-	import type { AffaireLiee, ApercuDiffusion } from '$lib/api';
-	import { perimetreEntree } from '$lib/perimetres';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import { avecNouvelEtat, type ContexteAssistant } from '$lib/assistant';
+	} from '#lib/evolutions.ts';
+	import SectionsPiecesJointes from '#lib/components/SectionsPiecesJointes.svelte';
+	import SectionAffairesLiees from '#lib/components/SectionAffairesLiees.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import SectionsCiblageEvolution from '#lib/components/SectionsCiblageEvolution.svelte';
+	import type { ConditionInactive, EntiteDeclaree } from '#lib/entites/types.ts';
+	import { pliageDe } from '#lib/pliage.ts';
+	import { SUITE } from '#lib/gestes.ts';
+	import type { AffaireLiee, ApercuDiffusion } from '#lib/api/index.ts';
+	import { perimetreEntree } from '#lib/perimetres/index.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { avecNouvelEtat, type ContexteAssistant } from '#lib/assistant.ts';
 
 	// ── Props ─────────────────────────────────────────────────────────────────
 	/** Préfixe des `id` des champs. Plusieurs formulaires d'évolution coexistent à
@@ -135,7 +135,7 @@
 	 *   Un créneau déclaré mais vide ôterait au Suivi son rang de première section. */
 	export let avantSuivi = true;
 	/**  L'état que les TROIS créneaux partagent : l'Équipement (avant le Suivi)
-	 *   propose l'Intervenant (après) — `$lib/suite-conseil`. */
+	 *   propose l'Intervenant (après) — `#lib/suite-conseil`. */
 	const partage = writable<Record<string, unknown>>({});
 	/** Valeurs par défaut des notifications */
 	export let defaultPartagerWhatsapp = false;
@@ -204,7 +204,7 @@
 	export let assistant: ContexteAssistant | null = null;
 
 	// ── Events ────────────────────────────────────────────────────────────────
-	//  🔴 UNE écriture de la charge utile, `$lib/evolutions` — il y en avait deux (17/09/2026).
+	//  🔴 UNE écriture de la charge utile, `#lib/evolutions` — il y en avait deux (17/09/2026).
 	const dispatch = createEventDispatcher<{ submit: ChargeUtileEvolution; cancel: void }>();
 
 	// ── State ─────────────────────────────────────────────────────────────────
@@ -218,7 +218,7 @@
 	let envoyerAuteur = false;
 	let emailExterne = '';
 	let affairesLiees: AffaireLiee[] = [];
-	//  L'état INITIAL d'une entrée (périmètre, destinataires, pièces) : `$lib/evolutions` (17/09/2026).
+	//  L'état INITIAL d'une entrée (périmètre, destinataires, pièces) : `#lib/evolutions` (17/09/2026).
 	let {
 		perimetre,
 		destinataires,
@@ -247,7 +247,7 @@
 	//  la décide (#426).
 	//  🔄 Le Suivi se corrige aussi (01/10/2026) : `app/utils/suivi_fil.py`.
 	$: sectionWorkflow = statutOptions.length > 0;
-	//  Ce que la Suite offre — la déclaration ET le droit : `$lib/evolutions`.
+	//  Ce que la Suite offre — la déclaration ET le droit : `#lib/evolutions`.
 	$: sections = sectionsDeLaSuite(entite, conditions, {
 		perimetre: peutPreciserPerimetre,
 		destinataires: peutCibler,
@@ -274,7 +274,7 @@
 	//  montre déjà la sélection ; ici le sélecteur part vide, donc le badge est le
 	//  SEUL endroit où l'on lit le périmètre actuel — il est toujours affiché.
 	//
-	//  Le calcul lui-même vit dans `$lib/perimetres` : il parle de périmètre, pas
+	//  Le calcul lui-même vit dans `#lib/perimetres` : il parle de périmètre, pas
 	//  de formulaire (extrait le 31/08/2026, sur refus de modularité).
 	//  ⚠️ Des affectations plutôt qu'une déstructuration réactive : ESLint 10
 	//  plante sur `$: ({a, b} = f())` (@typescript-eslint/no-unused-vars). Le
@@ -286,7 +286,7 @@
 	//  🔴 L'INTITULÉ NE BASCULE PLUS (voir l'en-tête). « Commentaire » et non
 	//  « Description » : c'est le mot d'un auteur sur un fil, pas le corps d'un objet.
 	const titreContenu = 'Commentaire';
-	//  Les trois règles du fil vivent dans `$lib/evolutions` depuis le 05/09/2026 :
+	//  Les trois règles du fil vivent dans `#lib/evolutions` depuis le 05/09/2026 :
 	//  « quel geste ? », « le texte est-il requis ? », « y a-t-il quelque chose à
 	//  enregistrer ? » se posent pareil sur les trois entités qui portent un fil.
 	$: evolType = typeDeLEntree(nouveauStatut, currentStatut);
@@ -361,7 +361,7 @@
 <FormulaireCreation {titre} encadre={false}>
 	<!--  🔴 L'ORDRE EST CELUI DE `SECTIONS_ORDRE`, comme dans l'édition (#1326) :
 	      les trois créneaux de l'hôte se rendent à LEUR rang (`creneauDe`,
-	      `$lib/evolutions`) — Équipement avant le Suivi, Quand et Intervenant
+	      `#lib/evolutions`) — Équipement avant le Suivi, Quand et Intervenant
 	      après, Mise en avant après les Destinataires. -->
 	{#if sections.avantSuivi}
 		<!-- eslint-disable-next-line svelte/require-store-reactive-access -- le MAGASIN, pas sa valeur : les créneaux l'écrivent -->

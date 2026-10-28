@@ -22,10 +22,10 @@
 	import ChargementDiffere from './ChargementDiffere.svelte';
 	import ReponseAvis from './ReponseAvis.svelte';
 	import EncartAvertissement from './EncartAvertissement.svelte';
-	import { AVIS } from '$lib/entites/avis';
-	import { VITRINE, auteurAvis, classeNote } from '$lib/avis';
-	import { safeDescription } from '$lib/sanitize';
-	import type { Avis } from '$lib/api';
+	import { AVIS } from '#lib/entites/avis.ts';
+	import { VITRINE, auteurAvis, classeNote } from '#lib/avis.ts';
+	import { safeDescription } from '#lib/sanitize.ts';
+	import type { Avis } from '#lib/api/index.ts';
 
 	export let avis: Avis;
 	/** Le lecteur gère le site — servi par `GET /avis` (`gestionnaire`). */
@@ -95,7 +95,7 @@
 	<svelte:fragment slot="edition">
 		<!--  Différé : il ne s'ouvre qu'au geste ✏️ (`svelte-patterns`). -->
 		{#key avis.id}
-			<ChargementDiffere charger={() => import('$lib/components/FormulaireAvis.svelte')}>
+			<ChargementDiffere charger={() => import('#lib/components/FormulaireAvis.svelte')}>
 				{#snippet contenu(FormulaireAvis)}
 					<FormulaireAvis
 						{avis}

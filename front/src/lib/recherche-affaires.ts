@@ -14,9 +14,9 @@
  *  page le même jour : elle était à 494 lignes pour un plafond de 500.
  */
 import { writable } from 'svelte/store';
-import { tickets as ticketsApi, type CorrespondanceAffaire, type Ticket } from '$lib/api';
-import { messageErreur } from '$lib/erreurs';
-import { suiviCorrespond } from '$lib/tickets';
+import { tickets as ticketsApi, type CorrespondanceAffaire, type Ticket } from '#lib/api/index.ts';
+import { messageErreur } from '#lib/erreurs.ts';
+import { suiviCorrespond } from '#lib/tickets.ts';
 
 /** En dessous, une frappe n'est pas encore une recherche. */
 export const RECHERCHE_MIN = 2;

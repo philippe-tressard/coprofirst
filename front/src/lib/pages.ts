@@ -30,9 +30,9 @@
  * notification.
  */
 
-import { TITRE_ARCHIVES } from '$lib/archives';
+import { TITRE_ARCHIVES } from '#lib/archives.ts';
 import { PAGES_ROLES } from './pages-roles';
-import type { PageConfig } from '$lib/stores/pageConfig';
+import type { PageConfig } from '#lib/stores/pageConfig.ts';
 
 export interface OngletDef {
 	id: string;
@@ -98,7 +98,7 @@ export interface OngletDef {
 	/**
 	 * Sur une page `reserveeAdmin`, l'onglet que l'**opérateur** de la plateforme
 	 * ouvre aussi quand il n'est pas administrateur — sa supervision, et rien
-	 * d'autre (#2029). La règle se lit dans `$lib/onglets-ouverts`.
+	 * d'autre (#2029). La règle se lit dans `#lib/onglets-ouverts`.
 	 */
 	ouvertOperateur?: true;
 }
@@ -486,4 +486,4 @@ export function configDepuisPage(def: PageDef): PageConfig {
 	};
 }
 
-export { identifiantsRepetes, ordonnerPages } from '$lib/pages-ordre';
+export { identifiantsRepetes, ordonnerPages } from '#lib/pages-ordre.ts';

@@ -23,21 +23,21 @@
   ## Ce qui reste propre à l'annonce
 
   Le prix, la gestion des photos (l'endpoint exige l'identifiant, cf. la dette
-  `api` déclarée dans `$lib/entites/annonce`), et le raccourci de workflow.
+  `api` déclarée dans `#lib/entites/annonce`), et le raccourci de workflow.
 
   Le composant ne connaît ni l'API ni les magasins : tout ce qui écrit passe par
   un callback. C'est ce qui permet à l'onglet de garder la main sur la liste.
 
   Le vocabulaire — types, catégories, états et leurs rendus — vit dans
-  `$lib/annonces.ts` : la carte le rend, l'onglet en fait ses filtres.
+  `#lib/annonces.ts` : la carte le rend, l'onglet en fait ses filtres.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import type { PetiteAnnonce } from '$lib/api';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import BadgeNouveau from '$lib/components/BadgeNouveau.svelte';
-	import MarqueIA from '$lib/components/MarqueIA.svelte';
-	import { nomAffiche } from '$lib/noms';
+	import Badge from '#lib/components/Badge.svelte';
+	import type { PetiteAnnonce } from '#lib/api/index.ts';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
+	import MarqueIA from '#lib/components/MarqueIA.svelte';
+	import { nomAffiche } from '#lib/noms.ts';
 	import EnteteCarte from './EnteteCarte.svelte';
 	import IconeAction from './IconeAction.svelte';
 	import BoutonLien from './BoutonLien.svelte';
@@ -46,11 +46,11 @@
 	import PiecesJointes from './PiecesJointes.svelte';
 	import Reponses from './Reponses.svelte';
 	import WorkflowPastilles from './WorkflowPastilles.svelte';
-	import { safeHtml } from '$lib/sanitize';
-	import { fmtMontant } from '$lib/utils';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
-	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
-	import AuteurCarte from '$lib/components/AuteurCarte.svelte';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { fmtMontant } from '#lib/utils.ts';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
+	import PastilleLecture from '#lib/components/PastilleLecture.svelte';
+	import AuteurCarte from '#lib/components/AuteurCarte.svelte';
 	import {
 		MAX_PHOTOS_ANNONCE,
 		OPTIONS_STATUT_ANNONCE,
@@ -58,7 +58,7 @@
 		classementAnnonce,
 		statutAnnonceClass,
 		statutAnnonceLabel,
-	} from '$lib/annonces';
+	} from '#lib/annonces.ts';
 
 	export let annonce: PetiteAnnonce;
 	/** L'annonce est-elle dépliée ? */

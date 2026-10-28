@@ -49,7 +49,7 @@
  * membre du conseil syndical : deux tables, jamais une.
  */
 
-import { parAttribut } from '$lib/table-statuts';
+import { parAttribut } from '#lib/table-statuts.ts';
 
 /**  Les rôles — `RoleUtilisateur` côté serveur.
 

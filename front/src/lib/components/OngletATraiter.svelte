@@ -10,7 +10,7 @@
   « Gestion utilisateurs », chacun avec sa pastille : la même question — « qu'y
   a-t-il à traiter ? » — se lisait en trois clics.
 
-  Les trois sections sont des `SectionRepliee` en accordéon (`$lib/accordeon`,
+  Les trois sections sont des `SectionRepliee` en accordéon (`#lib/accordeon`,
   règle 17 de `ux-patterns`) : une seule dépliée à la fois. À l'arrivée, c'est
   la première qui a quelque chose à montrer qui s'ouvre — une demande, ou un
   échec de lecture.
@@ -22,27 +22,27 @@
   ouvert. Les listes arrivent donc liées, et les gestes qui les vident vivent ici.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import { nomAffiche } from '$lib/noms';
+	import Badge from '#lib/components/Badge.svelte';
+	import { nomAffiche } from '#lib/noms.ts';
 	import {
 		admin as adminApi,
 		type CommandeAccesEnAttente,
 		type CompteEnAttenteEnrichi,
 		type DemandeProfil,
 		type User,
-	} from '$lib/api';
-	import { badgeRole, badgeStatut, libelleRole, LIBELLES_STATUT_ABREGE } from '$lib/roles';
-	import { basculer } from '$lib/accordeon';
-	import { validerCompte } from '$lib/comptes';
-	import { messageErreur } from '$lib/erreurs';
-	import { accepterCommandeAcces, refuserCommandeAcces } from '$lib/commandes-acces';
-	import { fmtDatetimeShort as fmt } from '$lib/date';
-	import { toast } from '$lib/components/Toast.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import AccepterRefuser from '$lib/components/AccepterRefuser.svelte';
+	} from '#lib/api/index.ts';
+	import { badgeRole, badgeStatut, libelleRole, LIBELLES_STATUT_ABREGE } from '#lib/roles.ts';
+	import { basculer } from '#lib/accordeon.ts';
+	import { validerCompte } from '#lib/comptes.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { accepterCommandeAcces, refuserCommandeAcces } from '#lib/commandes-acces.ts';
+	import { fmtDatetimeShort as fmt } from '#lib/date.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import AccepterRefuser from '#lib/components/AccepterRefuser.svelte';
 	//  ⏱ La boîte de validation attend le geste « Valider » (#1844).
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import SectionRepliee from '$lib/components/SectionRepliee.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import SectionRepliee from '#lib/components/SectionRepliee.svelte';
 
 	export let comptes: CompteEnAttenteEnrichi[] = [];
 	export let comptesLoading = true;
@@ -104,7 +104,7 @@
 		cvAncienResident = '';
 	}
 
-	//  🔴 Le compte rendu de la validation vit dans `$lib/comptes` depuis le
+	//  🔴 Le compte rendu de la validation vit dans `#lib/comptes` depuis le
 	//  12/09/2026 : l'espace CS en portait une version plus PAUVRE, qui taisait
 	//  les lots résolus et l'avertissement sur un copropriétaire aidé introuvable.
 	//  `standards/02` §4 bis — entre deux implémentations, la plus disante.
@@ -269,7 +269,7 @@
 							<tr class="ligne-formulaire">
 								<td colspan="7">
 									<ChargementDiffere
-										charger={() => import('$lib/components/ValidationCompte.svelte')}
+										charger={() => import('#lib/components/ValidationCompte.svelte')}
 									>
 										{#snippet contenu(ValidationCompte)}
 											<ValidationCompte

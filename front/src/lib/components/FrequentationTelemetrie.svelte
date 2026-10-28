@@ -15,11 +15,11 @@
 	 * devant `class="tl-bar {cond ? 'x' : ''}"`, Svelte cesse de déclarer les
 	 * sélecteurs inutilisés pour tout le fichier.
 	 */
-	import PanneauTelemetrie from '$lib/components/PanneauTelemetrie.svelte';
-	import TopPages from '$lib/components/TopPages.svelte';
-	import EcransNonVisites from '$lib/components/EcransNonVisites.svelte';
-	import type { TableauTelemetrie } from '$lib/api';
-	import { fmtDate, fmtDatetimeShort as fmt, fmtMoisCourt } from '$lib/date';
+	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
+	import TopPages from '#lib/components/TopPages.svelte';
+	import EcransNonVisites from '#lib/components/EcransNonVisites.svelte';
+	import type { TableauTelemetrie } from '#lib/api/index.ts';
+	import { fmtDate, fmtDatetimeShort as fmt, fmtMoisCourt } from '#lib/date.ts';
 
 	export let donnees: TableauTelemetrie;
 	/** Section dépliée ? L'onglet décide, et reçoit `basculer` (`PanneauTelemetrie`). */

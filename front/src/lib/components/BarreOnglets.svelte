@@ -10,7 +10,7 @@
 
   Le remède n'est pas d'écrire l'onglet dans l'URL après coup — c'est que
   **l'onglet SOIT une adresse**. Chaque onglet est donc un `<a href>` vers sa
-  route déclarée (`$lib/pages.ts`), et la page lit l'onglet actif dans le chemin.
+  route déclarée (`#lib/pages.ts`), et la page lit l'onglet actif dans le chemin.
   On y gagne trois choses qu'un `<button>` ne donnait pas : le lien se copie, le
   bouton Précédent revient à l'onglet précédent, et le clic milieu ouvre la
   rubrique dans un nouvel onglet du navigateur.
@@ -29,16 +29,16 @@
   sans nom.
 -->
 <script lang="ts">
-	import Onglet from '$lib/components/Onglet.svelte';
-	import SignalATraiter from '$lib/components/SignalATraiter.svelte';
-	import { configStore, getPageConfig, defautsDePage } from '$lib/stores/pageConfig';
-	import { ongletsOuverts } from '$lib/onglets-ouverts';
-	import { PAGES } from '$lib/pages';
-	import { safeHtml } from '$lib/sanitize';
-	import { stripHtml } from '$lib/utils';
+	import Onglet from '#lib/components/Onglet.svelte';
+	import SignalATraiter from '#lib/components/SignalATraiter.svelte';
+	import { configStore, getPageConfig, defautsDePage } from '#lib/stores/pageConfig.ts';
+	import { ongletsOuverts } from '#lib/onglets-ouverts.ts';
+	import { PAGES } from '#lib/pages.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { stripHtml } from '#lib/utils.ts';
 	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
-	import { droitsOnglet, authResolue } from '$lib/stores/auth';
+	import { droitsOnglet, authResolue } from '#lib/stores/auth.ts';
 
 	/** L'identifiant de configuration de la page — celui de `PAGES`. */
 	export let pageId: string;

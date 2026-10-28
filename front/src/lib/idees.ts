@@ -1,7 +1,7 @@
-import { parAttributDepuisListe } from '$lib/table-statuts';
+import { parAttributDepuisListe } from '#lib/table-statuts.ts';
 
 //  Les états d'une IDÉE — écrits une fois, comme ceux d'un ticket ou d'une
-//  publication (`$lib/tickets`, `$lib/publications`).
+//  publication (`#lib/tickets`, `#lib/publications`).
 //
 //  Extrait de `routes/(app)/sondages/+page.svelte` le 18/08/2026, en passant le
 //  workflow en pastilles (R3, #423). La page en portait **trois** listes : les

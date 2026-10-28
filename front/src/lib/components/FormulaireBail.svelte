@@ -62,15 +62,15 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import { BAIL } from '$lib/entites/bail';
-	import { SECTIONS_LIBELLE, sectionPresente, type Etat } from '$lib/entites/types';
-	import { pliageDe, requisDe } from '$lib/pliage';
-	import CadreFormulaire from '$lib/components/CadreFormulaire.svelte';
-	import RechercheLocataire from '$lib/components/RechercheLocataire.svelte';
-	import SectionDescription from '$lib/components/SectionDescription.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import { BAIL } from '#lib/entites/bail.ts';
+	import { SECTIONS_LIBELLE, sectionPresente, type Etat } from '#lib/entites/types.ts';
+	import { pliageDe, requisDe } from '#lib/pliage.ts';
+	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
+	import RechercheLocataire from '#lib/components/RechercheLocataire.svelte';
+	import SectionDescription from '#lib/components/SectionDescription.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 
 	/** Un lot proposé à la sélection. `occupe` grise la ligne et la verrouille. */
 	export let lots: { id: number; libelle: string; occupe: boolean }[] = [];

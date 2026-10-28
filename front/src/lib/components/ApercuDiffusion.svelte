@@ -30,11 +30,11 @@
   sera composé*, pas *ce que le groupe recevra à coup sûr*.
 -->
 <script lang="ts">
-	import Modale from '$lib/components/Modale.svelte';
+	import Modale from '#lib/components/Modale.svelte';
 	import { createEventDispatcher } from 'svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import type { ApercuDiffusion } from '$lib/api';
+	import Icon from '#lib/components/Icon.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import type { ApercuDiffusion } from '#lib/api/index.ts';
 
 	export let apercu: ApercuDiffusion | null = null;
 	/** Chargement en cours côté serveur. */

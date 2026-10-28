@@ -49,9 +49,9 @@
   en avant.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import { concerneTous } from '$lib/utils';
+	import Icon from '#lib/components/Icon.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import { concerneTous } from '#lib/utils.ts';
 
 	/** La case — `reserve_perimetre`, actualité comme affaire. */
 	export let coche = false;
@@ -66,7 +66,7 @@
 	//  Identifiant unique : deux formulaires peuvent coexister à l'écran.
 	const idAide = `aide-reserve-${Math.random().toString(36).slice(2, 8)}`;
 	//  Ce que la case fait, en une phrase. Écrit ICI : l'option `'confidentiel'`
-	//  de `$lib/options-publication` n'est plus rendue nulle part (#2144).
+	//  de `#lib/options-publication` n'est plus rendue nulle part (#2144).
 	const AIDE = 'Visible des seuls résidents du périmètre sélectionné.';
 
 	//  « Rien à restreindre » : miroir de `a_portee_globale` côté serveur. La

@@ -27,8 +27,8 @@
   apporter. Une classe qui ne style rien n'est pas une classe, c'est un vestige.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import { manuel } from '$lib/api';
+	import Icon from '#lib/components/Icon.svelte';
+	import { manuel } from '#lib/api/index.ts';
 
 	/** 18 px sur le côté, 20 px en plein écran. */
 	export let taille = 18;

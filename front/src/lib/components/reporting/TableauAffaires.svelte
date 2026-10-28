@@ -33,18 +33,18 @@
   (`AffaireOuverte.apercu`) ; c'est du TEXTE, jamais un `{@html}`.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import BadgeEtatAffaire from '$lib/components/BadgeEtatAffaire.svelte';
-	import BadgePerimetre from '$lib/components/BadgePerimetre.svelte';
+	import Badge from '#lib/components/Badge.svelte';
+	import BadgeEtatAffaire from '#lib/components/BadgeEtatAffaire.svelte';
+	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
 	import PastillesRelances from './PastillesRelances.svelte';
-	import PastilleLecture from '$lib/components/PastilleLecture.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import type { AffaireOuverte, CrAffaire } from '$lib/api';
-	import { etatCr } from '$lib/points-conseil';
-	import { ETATS_VISITE } from '$lib/entretien-periodique';
-	import { motifEvolution } from '$lib/reporting';
-	import { fmtDate } from '$lib/date';
-	import { categorieTicketLabel, lienTicket, statutTicketLabel } from '$lib/tickets';
+	import PastilleLecture from '#lib/components/PastilleLecture.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import type { AffaireOuverte, CrAffaire } from '#lib/api/index.ts';
+	import { etatCr } from '#lib/points-conseil.ts';
+	import { ETATS_VISITE } from '#lib/entretien-periodique.ts';
+	import { motifEvolution } from '#lib/reporting.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { categorieTicketLabel, lienTicket, statutTicketLabel } from '#lib/tickets.ts';
 
 	export let affaires: AffaireOuverte[];
 	/** Le mode « Relancer le syndic » : une case par ligne, et les relances envoyées. */

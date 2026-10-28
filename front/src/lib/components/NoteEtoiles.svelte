@@ -16,7 +16,7 @@
   apparaît en orange**, exactement comme un 3,5. La teinte est censée dire d'un
   coup d'œil si l'on est content de quelqu'un — là, elle ment.
 
-  ⚠️ `starsDisplay` était DÉJÀ dans `$lib/utils` : la règle était factorisée,
+  ⚠️ `starsDisplay` était DÉJÀ dans `#lib/utils` : la règle était factorisée,
   son **emploi** non. C'est le même motif que la validation des téléversements
   (#825) — et c'est l'emploi qui porte les seuils, donc la décision.
 
@@ -27,7 +27,7 @@
   n'est plus « correct ».
 -->
 <script lang="ts">
-	import { starsDisplay } from '$lib/utils';
+	import { starsDisplay } from '#lib/utils.ts';
 
 	/** La note sur 5. `null` : rien n'est rendu — l'appelant n'a pas à le tester. */
 	export let note: number | null | undefined = null;

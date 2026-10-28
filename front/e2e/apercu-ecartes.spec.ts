@@ -6,7 +6,7 @@
  *  serveur rend désormais `ecartes` — tri par la fonction même de l'envoi — et
  *  l'écran les montre sous « Ne recevront rien », avec le motif.
  */
-import type { ApercuDiffusion } from '$lib/api';
+import type { ApercuDiffusion } from '#lib/api/index.ts';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
 
 const APERCU: ApercuDiffusion = {

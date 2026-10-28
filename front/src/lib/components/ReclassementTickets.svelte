@@ -37,9 +37,9 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { admin as adminApi, type ReleveReclassement } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { admin as adminApi, type ReleveReclassement } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	let releve: ReleveReclassement | null = null;
 	let chargement = true;

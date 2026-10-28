@@ -15,10 +15,10 @@
   ce qui était exactement le défaut d'origine.
 -->
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import { IDEE_BADGE } from '$lib/idees';
-	import OngletAnnonces from '$lib/components/OngletAnnonces.svelte';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import { IDEE_BADGE } from '#lib/idees.ts';
+	import OngletAnnonces from '#lib/components/OngletAnnonces.svelte';
 	import { goto } from '$app/navigation';
 	import {
 		sondages as sondagesApi,
@@ -30,25 +30,36 @@
 		type Signalement,
 		type Sondage,
 		type SondageDetail,
-	} from '$lib/api';
-	import { currentUser, isAdmin, isCS, isGestionnaire, quandAuthResolue } from '$lib/stores/auth';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import { messageErreur, tenter } from '$lib/erreurs';
-	import { confirmerPuis, SUPPRESSION } from '$lib/confirmation';
-	import { signaler as signalerContenu } from '$lib/signalements';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { essayer } from '$lib/chargement';
-	import ListeSondages from '$lib/components/ListeSondages.svelte';
-	import ListeEtArchives from '$lib/components/ListeEtArchives.svelte';
-	import OngletIdees from '$lib/components/OngletIdees.svelte';
-	import OngletAvis from '$lib/components/OngletAvis.svelte';
-	import { AVIS } from '$lib/entites/avis';
-	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
-	import { cibleDuHash, revelerCible } from '$lib/deepLink';
-	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
-	import PanneauModeration from '$lib/components/PanneauModeration.svelte';
-	import { routeOnglet } from '$lib/routes-onglets';
+	} from '#lib/api/index.ts';
+	import {
+		currentUser,
+		isAdmin,
+		isCS,
+		isGestionnaire,
+		quandAuthResolue,
+	} from '#lib/stores/auth.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
+	import { messageErreur, tenter } from '#lib/erreurs.ts';
+	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
+	import { signaler as signalerContenu } from '#lib/signalements.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { essayer } from '#lib/chargement.ts';
+	import ListeSondages from '#lib/components/ListeSondages.svelte';
+	import ListeEtArchives from '#lib/components/ListeEtArchives.svelte';
+	import OngletIdees from '#lib/components/OngletIdees.svelte';
+	import OngletAvis from '#lib/components/OngletAvis.svelte';
+	import { AVIS } from '#lib/entites/avis.ts';
+	import { marquerDonneesAffichees, trackTabView } from '#lib/telemetry.ts';
+	import { cibleDuHash, revelerCible } from '#lib/deepLink.ts';
+	import BarreOnglets from '#lib/components/BarreOnglets.svelte';
+	import PanneauModeration from '#lib/components/PanneauModeration.svelte';
+	import { routeOnglet } from '#lib/routes-onglets.ts';
 
 	$: _pc = getPageConfig($configStore, 'communaute', defautsDePage('communaute'));
 	$: _siteNom = $siteNomStore;
@@ -232,7 +243,7 @@
 		[signalements, erreurSignalements] = await essayer(signalementsApi.liste('en_attente'), []);
 	}
 
-	//  Le geste lui-même vit dans `$lib/signalements` : il était écrit à
+	//  Le geste lui-même vit dans `#lib/signalements` : il était écrit à
 	//  l'identique ici et dans `sondages/[id]`. Ne reste que ce qui est PROPRE à
 	//  cet écran — recharger la liste de modération quand on est au CS.
 	const signaler = (cibleType: string, cibleId: number) =>
@@ -371,7 +382,7 @@
 
 	{#if onglet === 'sondages'}
 		{#if showFormSondage && $isCS}
-			<ChargementDiffere charger={() => import('$lib/components/FormulaireSondage.svelte')}>
+			<ChargementDiffere charger={() => import('#lib/components/FormulaireSondage.svelte')}>
 				{#snippet contenu(FormulaireSondage)}
 					<FormulaireSondage
 						on:cree={async () => {
@@ -420,7 +431,7 @@
 							{#if editSondage}
 								{#key editSondage.id}
 									<ChargementDiffere
-										charger={() => import('$lib/components/FormulaireSondage.svelte')}
+										charger={() => import('#lib/components/FormulaireSondage.svelte')}
 									>
 										{#snippet contenu(FormulaireSondage)}
 											<FormulaireSondage

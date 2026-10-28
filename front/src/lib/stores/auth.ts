@@ -1,14 +1,14 @@
 import { onMount } from 'svelte';
 import { writable, derived } from 'svelte/store';
-import type { User } from '$lib/api';
-import type { DroitsOnglet } from '$lib/onglets-ouverts';
+import type { User } from '#lib/api/index.ts';
+import type { DroitsOnglet } from '#lib/onglets-ouverts.ts';
 import {
 	estBailleur,
 	estCoproprietaire,
 	estGestionnaire,
 	estLocataire,
 	estResident,
-} from '$lib/roles';
+} from '#lib/roles.ts';
 
 export const currentUser = writable<User | null>(null);
 
@@ -26,7 +26,7 @@ export const isAuthenticated = derived(currentUser, ($u) => $u !== null);
  * (#399).
  *
  * ⚠️ C'est une fonction, pas un store : elle se teste, se compose, et sert aussi
- * bien dans un `$:` que dans une table de configuration (`$lib/raccourcis.ts`).
+ * bien dans un `$:` que dans une table de configuration (`#lib/raccourcis.ts`).
  * Elle ne décide de **rien** côté serveur — le front n'est jamais le gardien
  * d'un droit, il n'en est que le reflet.
  */
@@ -51,7 +51,7 @@ export const isOperateur = derived(currentUser, ($u) => aRole($u, 'operateur'));
 
 /**
  * Qui ouvre l'administration (`/admin`) : l'administrateur, et l'opérateur qui
- * ne l'est pas — réduite alors à sa supervision (`$lib/onglets-ouverts`, #2029).
+ * ne l'est pas — réduite alors à sa supervision (`#lib/onglets-ouverts`, #2029).
  * Le menu et la garde d'`admin/+layout.svelte` posent cette question-ci.
  */
 export const isAdminOuOperateur = derived(currentUser, ($u) => aRole($u, 'admin', 'operateur'));
@@ -105,7 +105,7 @@ export const isAdminOnly = derived(
 //  test deux lignes plus loin : une duplication n'a pas besoin de traverser le
 //  dépôt pour diverger.
 //
-//  🔒 La QUESTION est posée par `$lib/roles` (`estLocataire`…), pour qu'elle
+//  🔒 La QUESTION est posée par `#lib/roles` (`estLocataire`…), pour qu'elle
 //  serve aussi à une personne qui n'est pas l'utilisateur courant — un membre
 //  de l'annuaire du conseil syndical. Ici on ne fait que l'appliquer au
 //  courant. Deux endroits, deux rôles, une seule écriture de la règle.

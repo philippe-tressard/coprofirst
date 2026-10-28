@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- *  Auto-test de `memePrompt` (`$lib/assistant.ts`) — « ce texte est-il le prompt
+ *  Auto-test de `memePrompt` (`#lib/assistant.ts`) — « ce texte est-il le prompt
  *  d'origine ? », la question que l'écran d'administration pose à chaque usage
  *  de l'assistant IA (#994).
  *

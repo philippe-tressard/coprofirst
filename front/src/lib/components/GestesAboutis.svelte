@@ -4,14 +4,14 @@
 	 * ouvert, combien de fois il a été envoyé, et le taux d'aboutissement. Un
 	 * formulaire ouvert souvent et rarement envoyé est un écran qui décourage.
 	 *
-	 * La liste est FERMÉE, et ses libellés viennent de `$lib/aboutissement` : un
+	 * La liste est FERMÉE, et ses libellés viennent de `#lib/aboutissement` : un
 	 * geste déclaré s'affiche même à zéro, un identifiant inconnu du serveur ne
 	 * s'affiche pas. Le compte est fait sans compte ni page
 	 * (`api/app/utils/gestes_formulaire.py`).
 	 */
-	import PanneauTelemetrie from '$lib/components/PanneauTelemetrie.svelte';
-	import { GESTES_MESURES, type GesteMesure } from '$lib/aboutissement';
-	import type { GesteAbouti } from '$lib/api';
+	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
+	import { GESTES_MESURES, type GesteMesure } from '#lib/aboutissement.ts';
+	import type { GesteAbouti } from '#lib/api/index.ts';
 
 	export let gestes: GesteAbouti[] = [];
 	export let periode: string;

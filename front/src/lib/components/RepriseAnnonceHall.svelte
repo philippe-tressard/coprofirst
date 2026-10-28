@@ -8,7 +8,7 @@
   🔴 **Ce n'est PAS une section du cadre #430**, et c'est ce que disait déjà le
   commentaire laissé sur place : *« un raccourci qui REMPLIT le formulaire, pas
   une section de l'entité »*. D'où sa place **avant** le titre, hors de la
-  déclaration de `$lib/entites/publication` — et d'où le fait qu'il se sorte
+  déclaration de `#lib/entites/publication` — et d'où le fait qu'il se sorte
   proprement : une notion qui n'est pas une section n'a rien à faire dans un
   écran qui, lui, rend des sections.
 
@@ -18,14 +18,14 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { annoncesProposables, reprendreAnnonce } from '$lib/actualite-prefill';
-	import type { PrefillActualite } from '$lib/actualite-prefill';
-	import { annoncesHall, tickets } from '$lib/api';
-	import { perimetreDefautListe } from '$lib/perimetres';
-	import { fmtDateShort } from '$lib/date';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import type { AnnonceHall } from '$lib/api/types';
+	import { annoncesProposables, reprendreAnnonce } from '#lib/actualite-prefill.ts';
+	import type { PrefillActualite } from '#lib/actualite-prefill.ts';
+	import { annoncesHall, tickets } from '#lib/api/index.ts';
+	import { perimetreDefautListe } from '#lib/perimetres/index.ts';
+	import { fmtDateShort } from '#lib/date.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import type { AnnonceHall } from '#lib/api/types.ts';
 
 	/** En édition, le raccourci ne s'affiche pas — voir l'en-tête. */
 	export let modeEdition = false;

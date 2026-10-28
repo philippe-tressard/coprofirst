@@ -41,14 +41,14 @@
   donnerait deux chemins concurrents vers la même liste.
 -->
 <script lang="ts">
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import { contexteAssistant, perimetreContexte } from '$lib/assistant';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import { contexteAssistant, perimetreContexte } from '#lib/assistant.ts';
 	import { createEventDispatcher } from 'svelte';
-	import CadreFormulaire from '$lib/components/CadreFormulaire.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import SectionTitre from '$lib/components/SectionTitre.svelte';
-	import ChampsCommuns from '$lib/components/ChampsCommuns.svelte';
-	import SectionWorkflow from '$lib/components/SectionWorkflow.svelte';
+	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import SectionTitre from '#lib/components/SectionTitre.svelte';
+	import ChampsCommuns from '#lib/components/ChampsCommuns.svelte';
+	import SectionWorkflow from '#lib/components/SectionWorkflow.svelte';
 	import {
 		CATEGORIES_ANNONCE,
 		MAX_PHOTOS_ANNONCE,
@@ -56,16 +56,16 @@
 		TYPES_ANNONCE,
 		categorieAnnonceLabel,
 		typeAnnonceLabel,
-	} from '$lib/annonces';
-	import { annonces as annoncesApi, type PetiteAnnonce } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { perimetreDefautListe, nombreOuNull } from '$lib/utils';
-	import type { Etat } from '$lib/entites/types';
-	import { sectionPresente } from '$lib/entites/types';
-	import { pliageDe, requisDe } from '$lib/pliage';
-	import { ANNONCE } from '$lib/entites/annonce';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	} from '#lib/annonces.ts';
+	import { annonces as annoncesApi, type PetiteAnnonce } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { perimetreDefautListe, nombreOuNull } from '#lib/utils.ts';
+	import type { Etat } from '#lib/entites/types.ts';
+	import { sectionPresente } from '#lib/entites/types.ts';
+	import { pliageDe, requisDe } from '#lib/pliage.ts';
+	import { ANNONCE } from '#lib/entites/annonce.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 
 	/**  L'annonce à CORRIGER, avec ses valeurs déjà saisies. `null` (défaut) =
 	 *   dépôt. Le mode ne change pas pendant la vie du composant : l'appelant la
@@ -76,7 +76,7 @@
 	const modeEdition = annonce !== null;
 
 	/**  L'état du cadre #430 que ce formulaire rend. C'est LUI qui décide des
-	 *   sections — voir `$lib/entites/annonce`, qui porte chaque divergence avec
+	 *   sections — voir `#lib/entites/annonce`, qui porte chaque divergence avec
 	 *   son motif. */
 	const etat: Etat = modeEdition ? 'edition' : 'creation';
 
@@ -285,7 +285,7 @@
 
 		<!--  3. Suivi — `SectionWorkflow`, la section de TOUTES les entités (#1329) :
 		      elle s'appelait « Où en est cette annonce ? » et ignorait son pliage.
-		      La liste vient de `$lib/annonces`, que la carte rend aussi. -->
+		      La liste vient de `#lib/annonces`, que la carte rend aussi. -->
 		{#if sectionPresente(ANNONCE, etat, 'suivi')}
 			<SectionWorkflow
 				idTitre="annonce-{annonce?.id ?? 'new'}-suivi"

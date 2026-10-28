@@ -1,7 +1,7 @@
-import type { ChoixConciliation, CorrectionEvolution } from '$lib/api';
-import { separerFichiers } from '$lib/fichiers';
-import { perimetreHerite } from '$lib/perimetres';
-import { richEmpty } from '$lib/publications';
+import type { ChoixConciliation, CorrectionEvolution } from '#lib/api/index.ts';
+import { separerFichiers } from '#lib/fichiers.ts';
+import { perimetreHerite } from '#lib/perimetres/index.ts';
+import { richEmpty } from '#lib/publications.ts';
 import {
 	motifInactif,
 	SECTIONS_ORDRE,
@@ -9,7 +9,7 @@ import {
 	type ConditionInactive,
 	type EntiteDeclaree,
 	type IdSection,
-} from '$lib/entites/types';
+} from '#lib/entites/types.ts';
 /**
  * Le vocabulaire d'un **fil d'évolution** — écrit une fois pour les trois entités
  * qui en portent un : tickets, actualités, événements de calendrier.

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
+	import Badge from '#lib/components/Badge.svelte';
 	/**
 	 * Le badge « état d'un bail » — **une seule écriture**.
 	 *
@@ -17,11 +17,11 @@
 	 * la même raison — et qui y a trouvé, lui aussi, un défaut que les neuf
 	 * partageaient.
 	 *
-	 * ⚠️ Le vocabulaire (libellé, teinte) ne vit pas ici mais dans `$lib/bail` :
+	 * ⚠️ Le vocabulaire (libellé, teinte) ne vit pas ici mais dans `#lib/bail` :
 	 * ce composant décide du **rendu**, pas des mots. Un écran qui voudrait un
 	 * autre rendu passe par une prop, jamais par une seconde table.
 	 */
-	import { BADGE_STATUT_BAIL, LIBELLE_STATUT_BAIL } from '$lib/bail';
+	import { BADGE_STATUT_BAIL, LIBELLE_STATUT_BAIL } from '#lib/bail.ts';
 
 	/** L'état du bail — la valeur brute de l'API. */
 	export let statut: string | null | undefined;
@@ -30,7 +30,7 @@
 </script>
 
 <!--  Repli gris + valeur brute : un état inconnu doit se VOIR, pas s'effacer.
-      C'est la même règle que `libelleRole()` côté `$lib/roles`.  -->
+      C'est la même règle que `libelleRole()` côté `#lib/roles`.  -->
 <Badge {compact} teinte={BADGE_STATUT_BAIL[statut ?? ''] ?? 'badge-gray'}>
 	{LIBELLE_STATUT_BAIL[statut ?? ''] ?? statut ?? '—'}
 </Badge>

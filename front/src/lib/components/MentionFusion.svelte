@@ -10,8 +10,8 @@
   le serveur) ; aux autres, le fait seul — un lien ne révèle rien.
 -->
 <script lang="ts">
-	import type { Ticket } from '$lib/api';
-	import { lienTicket } from '$lib/tickets';
+	import type { Ticket } from '#lib/api/index.ts';
+	import { lienTicket } from '#lib/tickets.ts';
 
 	export let ticket: Pick<Ticket, 'fusionnee' | 'fusionnee_dans'>;
 </script>

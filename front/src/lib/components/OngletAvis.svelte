@@ -20,15 +20,15 @@
 	import ListeEtArchives from './ListeEtArchives.svelte';
 	import ReglagesListe from './ReglagesListe.svelte';
 	import CarteAvis from './CarteAvis.svelte';
-	import { avis as avisApi, type Avis } from '$lib/api';
-	import { enCours } from '$lib/archives';
-	import { basculer } from '$lib/accordeon';
-	import { FILTRES_NOTE, VITRINE } from '$lib/avis';
-	import { archiverPuis, confirmerPuis, SUPPRESSION } from '$lib/confirmation';
-	import { cibleDuHash, revelerCible } from '$lib/deepLink';
-	import { CATEGORIE_BUG, lienNouvelleAffaire } from '$lib/formulaire-affaire';
-	import { messageErreur, tenter } from '$lib/erreurs';
-	import { isAdmin } from '$lib/stores/auth';
+	import { avis as avisApi, type Avis } from '#lib/api/index.ts';
+	import { enCours } from '#lib/archives.ts';
+	import { basculer } from '#lib/accordeon.ts';
+	import { FILTRES_NOTE, VITRINE } from '#lib/avis.ts';
+	import { archiverPuis, confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
+	import { cibleDuHash, revelerCible } from '#lib/deepLink.ts';
+	import { CATEGORIE_BUG, lienNouvelleAffaire } from '#lib/formulaire-affaire.ts';
+	import { messageErreur, tenter } from '#lib/erreurs.ts';
+	import { isAdmin } from '#lib/stores/auth.ts';
 
 	/** Le formulaire de dépôt est ouvert ? Lié : le bouton vit dans l'en-tête de page. */
 	export let showForm = false;
@@ -127,7 +127,7 @@
 {/if}
 
 {#if showForm}
-	<ChargementDiffere charger={() => import('$lib/components/FormulaireAvis.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/FormulaireAvis.svelte')}>
 		{#snippet contenu(FormulaireAvis)}
 			<FormulaireAvis on:cree={avisCree} on:annule={() => (showForm = false)} />
 		{/snippet}

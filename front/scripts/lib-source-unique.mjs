@@ -120,6 +120,8 @@ export function releve(contenus, { sources = [], temoin = null, exceptions = {},
  *
  * @param {object} o
  * @param {string} [o.racine]          'src'
+ * @param {string[]} [o.racines]       plusieurs racines à la place de `racine`
+ * @param {string[]} [o.fichiers]       fichiers isolés lus en plus des racines
  * @param {string[]} [o.extensions]    ['.svelte']
  * @param {string[]} [o.sources]       fichiers qui portent la notion : non relevés
  * @param {string|null} [o.temoin]     fichier qui DOIT porter la forme (la source elle-même)
@@ -132,11 +134,15 @@ export function releve(contenus, { sources = [], temoin = null, exceptions = {},
  */
 export function controler(o) {
 	if (process.argv.includes('--selftest')) return rejouerCas(o.cas, o.fautes);
-	const racine = o.racine ?? 'src';
+	const racines = o.racines ?? [o.racine ?? 'src'];
+	const racine = racines.join(', ');
 	const contenus = {};
-	for (const f of fichiersSources(racine, o.extensions ?? ['.svelte'])) {
-		contenus[f] = readFileSync(f, 'utf8');
+	for (const r of racines) {
+		for (const f of fichiersSources(r, o.extensions ?? ['.svelte'])) {
+			contenus[f] = readFileSync(f, 'utf8');
+		}
 	}
+	for (const f of o.fichiers ?? []) contenus[f] = readFileSync(f, 'utf8');
 	const r = releve(contenus, o);
 	//  Cas zéro (standards/04 §2) : aucun fichier lu n'est pas « aucune copie ».
 	if (!r.lus) {

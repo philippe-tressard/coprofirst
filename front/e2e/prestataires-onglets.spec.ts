@@ -7,7 +7,7 @@
  *  COMPORTEMENT : ce test tient les trois gestes que la découpe a déplacés.
  *
  *  1. un seul bloc déplié à la fois, dans chaque onglet — c'étaient deux `Set`,
- *     devenus `basculer` (`$lib/accordeon`) ;
+ *     devenus `basculer` (`#lib/accordeon`) ;
  *  2. le bouton « + Nouveau … » de l'en-tête de la PAGE ouvre et referme la
  *     boîte de création que possède l'ONGLET ;
  *  3. le lien profond `#presta-<id>` venu d'un autre onglet conduit à la fiche,

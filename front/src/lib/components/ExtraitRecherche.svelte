@@ -9,9 +9,9 @@
   ici, par le gabarit — il n'y a rien à assainir, et donc aucun `{@html}`.
 -->
 <script lang="ts">
-	import type { CorrespondanceAffaire } from '$lib/api';
-	import { fmtDate } from '$lib/date';
-	import { SOURCE_DATEE, TROUVE_DANS } from '$lib/recherche-affaires';
+	import type { CorrespondanceAffaire } from '#lib/api/index.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { SOURCE_DATEE, TROUVE_DANS } from '#lib/recherche-affaires.ts';
 
 	export let correspondance: CorrespondanceAffaire;
 	/** L'affaire est aux Archives : la recherche les montre quand on le demande. */

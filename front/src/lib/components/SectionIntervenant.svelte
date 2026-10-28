@@ -18,13 +18,13 @@
   (`ux-patterns` §0, seuil des listes courtes).
 -->
 <script lang="ts">
-	import { nombreOuNull } from '$lib/utils';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
-	import { prestataires as prestatairesApi } from '$lib/api';
-	import { EQUIPEMENTS, contactRenseigne, contratsDuPrestataire } from '$lib/prestataires';
-	import { tenter } from '$lib/erreurs';
+	import { nombreOuNull } from '#lib/utils.ts';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
+	import { prestataires as prestatairesApi } from '#lib/api/index.ts';
+	import { EQUIPEMENTS, contactRenseigne, contratsDuPrestataire } from '#lib/prestataires.ts';
+	import { tenter } from '#lib/erreurs.ts';
 
 	/** L'identifiant du prestataire retenu, ou `null`. */
 	export let prestataireId: number | null = null;

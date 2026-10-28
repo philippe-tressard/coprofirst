@@ -16,7 +16,7 @@
  * allers-retours d'encodage sous Windows (cf. skill `svelte-patterns`).
  */
 
-import { classeDe, type ClasseGouttiere, type MarqueGouttiere } from '$lib/gouttiere';
+import { classeDe, type ClasseGouttiere, type MarqueGouttiere } from '#lib/gouttiere.ts';
 
 /**  Photos d'une petite annonce. ⚠️ Bornée CÔTÉ SERVEUR — `routers/annonces.py`
  *   refuse au-delà (`MAX_PHOTOS = 5`). Les deux doivent rester d'accord :

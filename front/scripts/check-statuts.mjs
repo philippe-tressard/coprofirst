@@ -25,7 +25,7 @@
  *
  * ## Ce qui est cherché
  *
- * Une comparaison de `.statut` à un littéral, dans `src/` hors de `$lib/roles`.
+ * Une comparaison de `.statut` à un littéral, dans `src/` hors de `#lib/roles`.
  * Les prédicats (`estLocataire`, `estBailleur`, `estResident`,
  * `estCoproprietaire`, `estGestionnaire`) sont là pour ça.
  *
@@ -38,7 +38,7 @@
  *
  * ## Cas zéro
  *
- * Si `$lib/roles` cessait d'exporter ces prédicats, ce contrôle n'aurait plus de
+ * Si `#lib/roles` cessait d'exporter ces prédicats, ce contrôle n'aurait plus de
  * quoi renvoyer les fautifs : il ÉCHOUE alors, au lieu de passer au vert en ne
  * mesurant rien (`standards/04` §2).
  *
@@ -47,7 +47,7 @@
  * Un prédicat bâti sur une chaîne fautive — un accent oublié dans
  * « copropriétaire_résident » — serait **toujours faux**, et rien ne le
  * signalerait : l'écran afficherait simplement moins de choses. `STATUTS_TESTES`
- * (`$lib/roles`) nomme ces chaînes et son commentaire disait que ce contrôle la
+ * (`#lib/roles`) nomme ces chaînes et son commentaire disait que ce contrôle la
  * lisait : ce n'était plus vrai, et la liste n'était lue par personne — un export
  * mort qui affirmait un garde-fou. Il est rétabli, dans les deux sens :
  *
@@ -203,7 +203,7 @@ const source = readFileSync(SOURCE, 'utf8');
 const absents = PREDICATS.filter((p) => !new RegExp(`export const ${p}\\b`).test(source));
 if (absents.length) {
 	console.error(
-		`✗ $lib/roles n'exporte plus : ${absents.join(', ')}.\n` +
+		`✗ #lib/roles n'exporte plus : ${absents.join(', ')}.\n` +
 			"  Ce contrôle n'a plus de quoi renvoyer les écrans fautifs : il échoue " +
 			'plutôt que de passer au vert sans rien mesurer.',
 	);
@@ -214,7 +214,7 @@ if (absents.length) {
 const ecarts = ecartsStatuts(source);
 if (ecarts.length) {
 	console.error(
-		`✗ $lib/roles — ${ecarts.length} écart(s) entre STATUTS_TESTES, les prédicats et LIBELLES_STATUT :\n  ` +
+		`✗ #lib/roles — ${ecarts.length} écart(s) entre STATUTS_TESTES, les prédicats et LIBELLES_STATUT :\n  ` +
 			ecarts.join('\n  ') +
 			'\n\n  Un prédicat bâti sur une chaîne fautive est TOUJOURS faux, et rien ne le dit (#1577).',
 	);
@@ -237,7 +237,7 @@ if (fautifs.length) {
 	console.error(
 		`✗ ${fautifs.length} écran(s) recomposent un statut de personne :\n  ` +
 			fautifs.join('\n  ') +
-			`\n\n  Emploie un prédicat de $lib/roles — ${PREDICATS.join(', ')} —\n` +
+			`\n\n  Emploie un prédicat de #lib/roles — ${PREDICATS.join(', ')} —\n` +
 			'  ou ajoutes-y la notion si elle manque. Une notion écrite deux fois\n' +
 			"  diverge : « bailleur ou résident » l'était déjà deux fois dans le\n" +
 			'  même fichier (#959).',
@@ -245,4 +245,4 @@ if (fautifs.length) {
 	process.exit(1);
 }
 
-console.log('✓ Statuts de personne : aucun écran ne recompose la règle de $lib/roles');
+console.log('✓ Statuts de personne : aucun écran ne recompose la règle de #lib/roles');

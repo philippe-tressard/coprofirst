@@ -91,10 +91,10 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 
-	import ChampDateDocument from '$lib/components/ChampDateDocument.svelte';
-	import ChampsCrAg from '$lib/components/ChampsCrAg.svelte';
-	import FormulaireDocument from '$lib/components/FormulaireDocument.svelte';
-	import type { PiecesFiche } from '$lib/components/PiecesJointesFiche.svelte';
+	import ChampDateDocument from '#lib/components/ChampDateDocument.svelte';
+	import ChampsCrAg from '#lib/components/ChampsCrAg.svelte';
+	import FormulaireDocument from '#lib/components/FormulaireDocument.svelte';
+	import type { PiecesFiche } from '#lib/components/PiecesJointesFiche.svelte';
 
 	const dispatch = createEventDispatcher<{ annuler: void; enregistrer: void }>();
 

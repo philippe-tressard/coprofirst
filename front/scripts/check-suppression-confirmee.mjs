@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  *  Une suppression DÉFINITIVE se confirme par `confirmer(SUPPRESSION(…))`
- *  (`$lib/confirmation`) — jamais par une modale écrite à la main (#779,
+ *  (`#lib/confirmation`) — jamais par une modale écrite à la main (#779,
  *  01/10/2026).
  *
  *  🔴 Deux modales « … Cette action est irréversible. » avaient survécu au lot
@@ -9,7 +9,7 @@
  *  lots ») et celle d'un compte (Admin › Utilisateurs). Chacune avait sa mise
  *  en forme, ses styles en ligne et son ordre de boutons.
  *
- *  Ce contrôle refuse la phrase hors de `$lib/confirmation.ts` : c'est elle qui
+ *  Ce contrôle refuse la phrase hors de `#lib/confirmation.ts` : c'est elle qui
  *  signe une confirmation recopiée.
  *
  *  Lancer : node scripts/check-suppression-confirmee.mjs [--selftest]
@@ -35,6 +35,6 @@ process.exit(
 		],
 		ok: 'Suppressions définitives : confirmées par SUPPRESSION seul',
 		ko: 'confirmation(s) de suppression écrite(s) à la main',
-		conseil: 'Employer `confirmerPuis(SUPPRESSION(…), succès, action)` — `$lib/confirmation`.',
+		conseil: 'Employer `confirmerPuis(SUPPRESSION(…), succès, action)` — `#lib/confirmation`.',
 	}),
 );

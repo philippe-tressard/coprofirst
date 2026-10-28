@@ -14,7 +14,7 @@
  * contrôle reste utile : il reste deux emplacements dans deux fichiers, et rien
  * n'empêcherait le prochain écran de retaper un nom à la main.
  *
- * Regrouper les libellés dans `$lib/taches.ts` ne suffit pas : rien n'empêche
+ * Regrouper les libellés dans `#lib/taches.ts` ne suffit pas : rien n'empêche
  * le prochain écran de retaper « Sauvegarde quotidienne » dans un titre. Ce
  * contrôle échoue en CI si c'est le cas.
  *

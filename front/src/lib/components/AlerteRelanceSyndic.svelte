@@ -7,7 +7,7 @@
   d'alerte —, que la page ne fait qu'afficher.
 -->
 <script lang="ts">
-	import { HREF_RELANCE_SYNDIC } from '$lib/raccourcis';
+	import { HREF_RELANCE_SYNDIC } from '#lib/raccourcis.ts';
 
 	/** Le nombre d'affaires transmises au syndic sans avancée depuis plus d'un mois. */
 	export let nombre: number;

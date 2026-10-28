@@ -32,7 +32,7 @@
   de `@tiptap/core` / `@tiptap/starter-kit` hors de ce fichier.
 -->
 <script lang="ts">
-	import IconeAction from '$lib/components/IconeAction.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	//  🔴 TIPTAP SE CHARGE À LA DEMANDE, jamais par un import statique (04/10/2026).
 	//
@@ -101,8 +101,8 @@
 				//  (#992) : ProseMirror ne garde que ce que son schéma connaît, et le
 				//  texte proposé par l'assistant traverse ce formulaire avant d'être
 				//  enregistré. Sans eux, un `<details>` serait aplati sans un mot.
-				//  Voir `$lib/blocDepliable` — chargé ici aussi : il importe Tiptap.
-				import('$lib/blocDepliable'),
+				//  Voir `#lib/blocDepliable` — chargé ici aussi : il importe Tiptap.
+				import('#lib/blocDepliable.ts'),
 			]);
 		if (detruit) return;
 		editor = new Editor({

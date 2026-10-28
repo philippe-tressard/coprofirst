@@ -8,8 +8,8 @@
   avec les moyennes d'un ensemble d'affaires (#1645, #1646).
 -->
 <script lang="ts">
-	import type { MetriquesSynthese } from '$lib/api';
-	import { fmtJours, libelleEtape } from '$lib/synthese';
+	import type { MetriquesSynthese } from '#lib/api/index.ts';
+	import { fmtJours, libelleEtape } from '#lib/synthese.ts';
 	import TuilesChiffres from './TuilesChiffres.svelte';
 
 	export let metriques: MetriquesSynthese;

@@ -8,8 +8,8 @@
   geste). Deux copies des mêmes champs auraient divergé au premier ajustement.
 -->
 <script lang="ts">
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 
 	export let types: readonly { val: string; label: string; desc?: string }[] = [];
 	export let fType = '';

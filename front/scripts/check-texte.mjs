@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- *  Le dépliement Unicode qui retire les accents s'écrit dans `$lib/texte`, et
+ *  Le dépliement Unicode qui retire les accents s'écrit dans `#lib/texte`, et
  *  nulle part ailleurs.
  *
  *  ## Pourquoi ce contrôle (18/09/2026)
@@ -93,7 +93,7 @@ if (process.argv.includes('--selftest')) {
 	t('recopie en guillemets doubles', 'recopie', 'x.normalize("NFD")');
 	t('recopie espacée', 'recopie', "x.normalize( 'NFD' )");
 	//  L'emploi de la source : c'est la forme attendue, et elle ne déclenche rien.
-	t('emploi de $lib/texte', 'ok', "import { replier } from '$lib/texte';\nreplier(u.nom)");
+	t('emploi de #lib/texte', 'ok', "import { replier } from '#lib/texte.ts';\nreplier(u.nom)");
 	//  ⚠️ Une autre normalisation Unicode n'est PAS le sujet : `NFC` recompose,
 	//  il ne retire rien. Le confondre ferait un faux positif que le contrôle
 	//  finirait par se voir désarmer.
@@ -233,7 +233,7 @@ if (fautifs.length) {
 	console.error(`\n✗ ${fautifs.length} fichier(s) déplient les accents eux-mêmes :\n`);
 	for (const f of fautifs) console.error(`  ${f}`);
 	console.error(
-		'\n  `$lib/texte` porte les deux notions, et elles ne se confondent pas :\n' +
+		'\n  `#lib/texte` porte les deux notions, et elles ne se confondent pas :\n' +
 			'    • `replier(t)` — la forme COMPARABLE (sans accents, minuscules, sans bords)\n' +
 			'    • `slug(t, sep)` — le CODE stocké, immuable une fois posé\n' +
 			'    • `sansAccents(t)` — quand la casse porte un sens (« 1ER », « RDC »)\n' +

@@ -12,9 +12,9 @@
  * le magasin qu'`EvolForm` fournit à ses créneaux (`partage`), un par formulaire.
  */
 import type { Writable } from 'svelte/store';
-import type { Ticket } from '$lib/api';
-import { pourChampLocal } from '$lib/date';
-import { estBati, natureDe } from '$lib/formulaire-affaire';
+import type { Ticket } from '#lib/api/index.ts';
+import { pourChampLocal } from '#lib/date.ts';
+import { estBati, natureDe } from '#lib/formulaire-affaire.ts';
 
 export interface EtatSuiteConseil {
 	equipement: string;

@@ -41,18 +41,18 @@
 -->
 <script lang="ts">
 	import FiltreFil from './FiltreFil.svelte';
-	import MarqueIA from '$lib/components/MarqueIA.svelte';
-	import MessageOrigine from '$lib/components/MessageOrigine.svelte';
+	import MarqueIA from '#lib/components/MarqueIA.svelte';
+	import MessageOrigine from '#lib/components/MessageOrigine.svelte';
 	import { createEventDispatcher } from 'svelte';
-	import type { TicketEvolution } from '$lib/api/types';
+	import type { TicketEvolution } from '#lib/api/types.ts';
 	import PiecesJointes from './PiecesJointes.svelte';
 	import IconeAction from './IconeAction.svelte';
-	import { safeDescription } from '$lib/sanitize';
-	import { fmtDate, fmtDatetime } from '$lib/date';
-	import { perimetreLabel } from '$lib/perimetres';
-	import { entreesDuFil, evolutionIcone } from '$lib/evolutions';
-	import { peutEditer } from '$lib/droits';
-	import { confirmer } from '$lib/confirmation';
+	import { safeDescription } from '#lib/sanitize.ts';
+	import { fmtDate, fmtDatetime } from '#lib/date.ts';
+	import { perimetreLabel } from '#lib/perimetres/index.ts';
+	import { entreesDuFil, evolutionIcone } from '#lib/evolutions.ts';
+	import { peutEditer } from '#lib/droits.ts';
+	import { confirmer } from '#lib/confirmation.ts';
 
 	export let evolutions: TicketEvolution[] = [];
 	/** Libellés du workflow — `STATUT_TICKET_LABELS` et rien d'autre (#415). */
@@ -227,7 +227,7 @@
 			<!--  🔴 Un `class:` par type plutôt que `evol-{evol.type}` (#810) : devant une
 			      classe interpolée, Svelte cesse de déclarer les sélecteurs inutilisés
 			      pour TOUT le fichier, et `lint:css-orphelin` devient aveugle ici.
-			      Les valeurs sont les clés de `EVOLUTION_ICONE` ($lib/evolutions) : un
+			      Les valeurs sont les clés de `EVOLUTION_ICONE` (#lib/evolutions) : un
 			      type ajouté là-bas reçoit son fond ici, à la main (synthèse, #1643). -->
 			<div
 				class="evol-item"
@@ -235,7 +235,7 @@
 				class:evol-etat={evol.type === 'etat'}
 				class:evol-reponse={evol.type === 'reponse'}
 			>
-				<!--  🔴 L'icône vient de `$lib/evolutions`, plus d'une chaîne écrite ici.
+				<!--  🔴 L'icône vient de `#lib/evolutions`, plus d'une chaîne écrite ici.
 				      Elle valait 📝 pour un commentaire alors que le bouton qui le crée
 				      dit « 💬 Commenter » — signalé à l'écran le 19/08/2026 : *« pourquoi
 				      mon commentaire a une icône de type relance ? »*. La bulle était

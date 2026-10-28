@@ -5,11 +5,11 @@
   Extrait de `TachesPlanifiees` le 08/10/2026 (#1571) : l'écran frôlait les
   500 lignes, et ses styles en ligne ne pouvaient passer en classes sans le faire
   déborder. La table ne lit que les lignes qu'on lui donne ; les colonnes et le
-  motif d'échec viennent de `$lib/taches-colonnes`, comme avant.
+  motif d'échec viennent de `#lib/taches-colonnes`, comme avant.
 -->
 <script lang="ts">
-	import type { ExecutionTache } from '$lib/api';
-	import { colonnesVisibles, motifEchec } from '$lib/taches-colonnes';
+	import type { ExecutionTache } from '#lib/api/index.ts';
+	import { colonnesVisibles, motifEchec } from '#lib/taches-colonnes.ts';
 
 	export let lignes: ExecutionTache[] = [];
 </script>

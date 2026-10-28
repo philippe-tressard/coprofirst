@@ -50,18 +50,18 @@
   `TexteDeplie` — chacun avec ses règles.
 -->
 <script lang="ts">
-	import type { ClasseGouttiere } from '$lib/gouttiere';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import BoutonLien from '$lib/components/BoutonLien.svelte';
-	import ApercuCarte from '$lib/components/ApercuCarte.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import LienAction from '$lib/components/LienAction.svelte';
-	import TexteDeplie from '$lib/components/TexteDeplie.svelte';
-	import ListeDocuments from '$lib/components/ListeDocuments.svelte';
-	import { basculer } from '$lib/accordeon';
-	import type { Document } from '$lib/api';
+	import type { ClasseGouttiere } from '#lib/gouttiere.ts';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import BoutonLien from '#lib/components/BoutonLien.svelte';
+	import ApercuCarte from '#lib/components/ApercuCarte.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import LienAction from '#lib/components/LienAction.svelte';
+	import TexteDeplie from '#lib/components/TexteDeplie.svelte';
+	import ListeDocuments from '#lib/components/ListeDocuments.svelte';
+	import { basculer } from '#lib/accordeon.ts';
+	import type { Document } from '#lib/api/index.ts';
 
 	/** Le titre affiché, emoji compris — la page reste maîtresse de son vocabulaire. */
 	export let titre: string;
@@ -88,7 +88,7 @@
 	 *   dépliée, et une carte qui en porte se déplie même sans description. */
 	export let annexesDe: (doc: Document) => Document[] = () => [];
 
-	//  UNE description dépliée à la fois (`$lib/accordeon`).
+	//  UNE description dépliée à la fois (`#lib/accordeon`).
 	let deplie: number | null = null;
 </script>
 

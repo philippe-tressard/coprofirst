@@ -141,7 +141,7 @@ test('chaque adresse d’avant le rangement ouvre un onglet, et le bon', async (
 		}
 	}
 	//  Un courriel porte son étiquette de suivi (`src`) : la redirection ne la
-	//  perd pas — la page la relève puis la retire de l'adresse (`$lib/arrivees`).
+	//  perd pas — la page la relève puis la retire de l'adresse (`#lib/arrivees`).
 	await page.goto('/admin?onglet=import_tc&src=courriel:ticket_nouveau');
 	await expect(page).toHaveURL(/onglet=imports&source=telecommandes/);
 	await expect(page.getByRole('radio', { name: 'Télécommandes' })).toBeChecked();

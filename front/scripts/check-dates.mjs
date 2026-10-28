@@ -2,7 +2,7 @@
 /**
  * Garde-fou : aucune date affichée ne doit dépendre du fuseau de l'appareil.
  *
- * `$lib/date.ts` fige `LOCALE = 'fr-FR'` et `TZ = 'Europe/Paris'` précisément pour
+ * `#lib/date.ts` fige `LOCALE = 'fr-FR'` et `TZ = 'Europe/Paris'` précisément pour
  * cela. Le 26/07/2026, deux contournements ont échappé à toute vérification :
  *
  *   1. `vite.config.ts` construisait l'horodatage du footer avec
@@ -90,7 +90,7 @@ if (fautifs.length > 0) {
 	console.error(
 		`\n✗ ${fautifs.length} formatage(s) de date sans fuseau épinglé :\n\n` +
 			fautifs.join('\n') +
-			`\n\n  Utiliser les helpers de $lib/date.ts (fmtDate, fmtDateLong, fmtTime,` +
+			`\n\n  Utiliser les helpers de #lib/date.ts (fmtDate, fmtDateLong, fmtTime,` +
 			`\n  fmtDatetime, fmtMonthYear…), qui figent fr-FR + Europe/Paris.` +
 			`\n  Si le formatage est légitimement spécifique, épingler` +
 			`\n  \`timeZone: 'Europe/Paris'\` explicitement dans les options.\n`,

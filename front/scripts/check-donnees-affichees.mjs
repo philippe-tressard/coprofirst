@@ -6,7 +6,7 @@
  *
  *  La télémétrie mesurait l'ouverture d'un écran jusqu'à l'hydratation : la
  *  moitié de l'attente — Affaires à chaud, 430 ms hydratée, 861 ms affichée.
- *  `marquerDonneesAffichees()` (`$lib/telemetry`) mesure l'autre moitié, mais
+ *  `marquerDonneesAffichees()` (`#lib/telemetry`) mesure l'autre moitié, mais
  *  seul l'écran sait quand ses données principales sont posées : l'appel est
  *  explicite. Un écran qui l'oublie ne produit RIEN — et un écran qui ne se
  *  mesure pas passe pour rapide.
@@ -14,7 +14,7 @@
  *  ## Ce qu'il exige
  *
  *  Chaque écran de premier niveau appelle `marquerDonneesAffichees(`. La liste
- *  se LIT : les `href` de `$lib/pages.ts` (le menu), plus `ECRANS_HORS_MENU`.
+ *  se LIT : les `href` de `#lib/pages.ts` (le menu), plus `ECRANS_HORS_MENU`.
  *  Un écran qui confie son chargement à un composant se déclare dans `DELEGUES`.
  *  Une entrée qui ne sert plus — l'écran a disparu, ou n'appelle plus son
  *  composant — fait échouer.

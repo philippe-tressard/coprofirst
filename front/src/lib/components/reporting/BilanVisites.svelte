@@ -12,10 +12,10 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { tickets as ticketsApi, type EtatVisite, type VisitePeriodique } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { COMPTEURS_VISITE } from '$lib/entretien-periodique';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { tickets as ticketsApi, type EtatVisite, type VisitePeriodique } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { COMPTEURS_VISITE } from '#lib/entretien-periodique.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	/** Lu par le parent (`bind:visites`) — ne pas écrire depuis l'extérieur. */
 	export let visites: VisitePeriodique[] = [];

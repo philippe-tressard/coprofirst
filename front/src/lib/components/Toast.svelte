@@ -79,8 +79,8 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { finDesAnimations } from '$lib/mouvement';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { finDesAnimations } from '#lib/mouvement.ts';
 
 	onMount(() => {
 		const visibilite = () => (document.hidden ? suspendre() : reprendre());

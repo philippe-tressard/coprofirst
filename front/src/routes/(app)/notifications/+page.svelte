@@ -1,18 +1,23 @@
 <script lang="ts">
-	import { confirmer, SUPPRESSION } from '$lib/confirmation';
+	import { confirmer, SUPPRESSION } from '#lib/confirmation.ts';
 	//  🔴 Les deux `class:` du gabarit remplacent un ternaire INTERPOLÉ (#810).
 	//  Devant `class="… {cond ? 'a' : 'b'}"`, Svelte cesse de déclarer les
 	//  sélecteurs inutilisés pour TOUT le fichier — le contrôle devenait aveugle
 	//  sur cet écran. Deux valeurs locales et connues : la conversion ne coûte rien.
-	import EntetePage from '$lib/components/EntetePage.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { essayer } from '$lib/chargement';
+	import EntetePage from '#lib/components/EntetePage.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { essayer } from '#lib/chargement.ts';
 	import { onMount } from 'svelte';
-	import { notifications as notifApi, type Notification } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { getPageConfig, configStore, siteNomStore, defautsDePage } from '$lib/stores/pageConfig';
-	import { safeRichContent } from '$lib/sanitize';
-	import { fmtTime, fmtDateShort } from '$lib/date';
+	import { notifications as notifApi, type Notification } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		defautsDePage,
+	} from '#lib/stores/pageConfig.ts';
+	import { safeRichContent } from '#lib/sanitize.ts';
+	import { fmtTime, fmtDateShort } from '#lib/date.ts';
 
 	$: _pc = getPageConfig($configStore, 'notifications', defautsDePage('notifications'));
 	$: _siteNom = $siteNomStore;

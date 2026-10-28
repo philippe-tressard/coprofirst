@@ -6,7 +6,7 @@
  * table. C'est ce qui s'est passé sur la liste des sondages, qui affichait les
  * valeurs BRUTES de la base (« copropriétaire_résident ») dans ses badges.
  *
- * Même partage que `$lib/perimetres.ts` pour l'axe géographique : le sélecteur
+ * Même partage que `#lib/perimetres.ts` pour l'axe géographique : le sélecteur
  * et l'affichage lisent la même liste, et une valeur ajoutée ici se dit des deux
  * côtés sans qu'on y pense.
  *
@@ -40,7 +40,7 @@ export const DESTINATAIRES: Destinataire[] = [
 	//  couvrait exactement les deux suivantes. Migration 0221 ; la règle du
 	//  serveur et la pastille de lecture LISENT encore l'ancien code.
 	//  `home` pour l'occupant (il y habite), `building-2` pour le bailleur (il le
-	//  loue). Les deux existent au catalogue `$lib/icones-svg.json` — un nom
+	//  loue). Les deux existent au catalogue `#lib/icones-svg.json` — un nom
 	//  inconnu y retombe SILENCIEUSEMENT sur `help-circle`.
 	{ code: 'copropriétaires_occupants', libelle: 'Copropriétaires occupants', icone: 'home' },
 	//  « Copropriétaires bailleurs » et non plus « Bailleurs » (25/09/2026) : le
@@ -86,7 +86,7 @@ export function reserveAuConseil(codes: string[] | null | undefined): boolean {
 
 /**
  * Les CODES d'un public cible, qu'il arrive en tableau ou en chaîne JSON — ce
- * que rend l'API. Écrite une fois : la pastille de lecture (`$lib/lecture`) la
+ * que rend l'API. Écrite une fois : la pastille de lecture (`#lib/lecture`) la
  * lit, et deux lectures d'une chaîne abîmée divergeraient sur le cas limite.
  * (Le libellé `destinatairesLabel` qui la lisait aussi est parti avec le badge
  * orange des cartes de la communauté, #1373.)

@@ -24,9 +24,9 @@
   appartenait pas.
 -->
 <script lang="ts">
-	import type { Ticket } from '$lib/api';
+	import type { Ticket } from '#lib/api/index.ts';
 	import ApercuCarte from './ApercuCarte.svelte';
-	import { separerFichiers } from '$lib/fichiers';
+	import { separerFichiers } from '#lib/fichiers.ts';
 
 	/** Le ticket, tel que l'API le renvoie (`apercu_pieces` compris). */
 	export let ticket: Ticket;

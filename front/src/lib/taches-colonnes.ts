@@ -13,9 +13,9 @@
  *  `<th>` de plus que de `<td>` ne lève rien, il déplace les valeurs d'une
  *  case, et le lecteur voit une durée sous « Taille ».
  */
-import type { ExecutionTache, ExecutionTelemetrie } from '$lib/api';
-import { fmtDatetime } from '$lib/date';
-import { champDe, fmtOctets } from '$lib/utils';
+import type { ExecutionTache, ExecutionTelemetrie } from '#lib/api/index.ts';
+import { fmtDatetime } from '#lib/date.ts';
+import { champDe, fmtOctets } from '#lib/utils.ts';
 
 //  Taille DB et Détail ne sont renseignés que par la maintenance applicative.
 //  Ils ne sont PAS structurellement vides : ils l'étaient parce qu'aucun

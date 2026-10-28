@@ -101,7 +101,7 @@
 	// hachés) : un onglet ouvert avant ne retrouve plus ceux qu'il charge à la
 	// demande. Pendant une NAVIGATION, SvelteKit s'en charge seul — il relit
 	// `version.json` et recharge vers la page visée. Mais un import lancé par un
-	// composant (DOMPurify dans `$lib/sanitize`, l'éditeur riche…) échouait sans
+	// composant (DOMPurify dans `#lib/sanitize`, l'éditeur riche…) échouait sans
 	// recours : « Importing a module script failed. » relevé trois fois par la
 	// télémétrie le 03/10, après les déploiements de 15:00 et 17:20.
 	//

@@ -36,7 +36,7 @@
   pas une section unique, c'est deux sections sans titre.
 
   ⚠️ **Les deux réservoirs restent**, parce que le serveur les distingue. Mais
-  ils ne se voient plus : `separerFichiers` (`$lib/fichiers`, qui existait déjà)
+  ils ne se voient plus : `separerFichiers` (`#lib/fichiers`, qui existait déjà)
   range chaque URL selon son type, et les appelants continuent de recevoir
   `photos` et `documents` sans rien changer.
 
@@ -49,10 +49,10 @@
   d'aucune colonne.
 -->
 <script lang="ts">
-	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
-	import SectionFormulaire from '$lib/components/SectionFormulaire.svelte';
-	import { SECTIONS_LIBELLE } from '$lib/entites/types';
-	import { ACCEPT_PHOTOS, MAX_FICHIERS, separerFichiers } from '$lib/fichiers';
+	import FichiersUpload from '#lib/components/FichiersUpload.svelte';
+	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
+	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
+	import { ACCEPT_PHOTOS, MAX_FICHIERS, separerFichiers } from '#lib/fichiers.ts';
 
 	/** Préfixe des identifiants — l'écran en ouvre parfois plusieurs à la fois. */
 	export let idPrefixe: string;
@@ -123,7 +123,7 @@
 		toutes = [...photos, ...documents];
 	}
 	//  🔴 La répartition vers les deux réservoirs du serveur, par
-	//  `separerFichiers` — qui existait déjà dans `$lib/fichiers`.
+	//  `separerFichiers` — qui existait déjà dans `#lib/fichiers`.
 	//
 	//  ⚠️ Les gardes d'égalité ne sont pas décoratives : sans elles, réaffecter
 	//  `photos` relance ce bloc, qui réaffecte `photos`… Svelte boucle jusqu'à

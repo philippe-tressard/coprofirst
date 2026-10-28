@@ -60,18 +60,18 @@
   la duplication que la table supprime. Le sujet est le CONTRÔLE, pas ce code.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { confirmer, SUPPRESSION } from '$lib/confirmation';
+	import Badge from '#lib/components/Badge.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { confirmer, SUPPRESSION } from '#lib/confirmation.ts';
 	import { createEventDispatcher } from 'svelte';
-	import { bailleur as bailApi, type ObjetRemis } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { fmtDate } from '$lib/date';
-	import CadreFormulaire from '$lib/components/CadreFormulaire.svelte';
-	import ChampsObjetRemis from '$lib/components/ChampsObjetRemis.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import { parAttribut } from '$lib/table-statuts';
+	import { bailleur as bailApi, type ObjetRemis } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { fmtDate } from '#lib/date.ts';
+	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
+	import ChampsObjetRemis from '#lib/components/ChampsObjetRemis.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { parAttribut } from '#lib/table-statuts.ts';
 
 	/** Le bail dont on tient l'inventaire. */
 	export let bailId: number;

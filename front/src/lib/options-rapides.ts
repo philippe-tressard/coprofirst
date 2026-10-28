@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 
-import { tenter } from '$lib/erreurs';
+import { tenter } from '#lib/erreurs.ts';
 
 /**
  * **Le panneau d'options rapides d'une liste** — quel objet est ouvert, s'il

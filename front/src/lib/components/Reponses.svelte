@@ -8,14 +8,14 @@
   les callbacks onSubmit / onDelete (puis rafraîchit la liste).
 -->
 <script lang="ts">
-	import type { ReponseCommunaute } from '$lib/api';
-	import { fmtDateShort } from '$lib/date';
+	import type { ReponseCommunaute } from '#lib/api/index.ts';
+	import { fmtDateShort } from '#lib/date.ts';
 
-	import { peutCommenter } from '$lib/droits';
-	import { confirmer, SUPPRESSION } from '$lib/confirmation';
+	import { peutCommenter } from '#lib/droits.ts';
+	import { confirmer, SUPPRESSION } from '#lib/confirmation.ts';
 	import { onDestroy } from 'svelte';
-	import { membre } from '$lib/accordeon';
-	import IconeAction from '$lib/components/IconeAction.svelte';
+	import { membre } from '#lib/accordeon.ts';
+	import IconeAction from '#lib/components/IconeAction.svelte';
 
 	export let reponses: ReponseCommunaute[] = [];
 	export let currentUserId: number | undefined = undefined;
@@ -28,7 +28,7 @@
 	export let expanded = false;
 
 	//  L'accordéon (30/09/2026) : ouvrir les réponses d'une idée replie celles
-	//  d'une autre (`$lib/accordeon`). Le champ en cours de saisie n'est pas
+	//  d'une autre (`#lib/accordeon`). Le champ en cours de saisie n'est pas
 	//  perdu — `content` vit dans le composant, seul l'affichage se replie.
 	const accordeon = membre('reponses', () => (expanded = false));
 	onDestroy(accordeon.liberer);

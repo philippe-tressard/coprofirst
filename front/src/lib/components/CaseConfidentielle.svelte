@@ -16,8 +16,8 @@
   (`ticket_visible`, `reservee_au_conseil`) : c'est lui qui décide.
 -->
 <script lang="ts">
-	import Icon from '$lib/components/Icon.svelte';
-	import { optionPublication } from '$lib/options-publication';
+	import Icon from '#lib/components/Icon.svelte';
+	import { optionPublication } from '#lib/options-publication.ts';
 
 	export let coche = false;
 

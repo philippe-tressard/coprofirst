@@ -20,21 +20,21 @@
   règle au serveur. La pastille est la même : elle a remplacé sur leurs cartes
   le badge orange des destinataires, arbitré par l'utilisateur.
 
-  Le calcul vit dans `$lib/lecture` — tenu contre la règle du serveur par
+  Le calcul vit dans `#lib/lecture` — tenu contre la règle du serveur par
   `lint:lecture` et `test_lecture_pastille.py`. Ici, seulement le rendu.
 -->
 <script lang="ts">
-	import ContenuBadge from '$lib/components/ContenuBadge.svelte';
-	import Infobulle from '$lib/components/Infobulle.svelte';
+	import ContenuBadge from '#lib/components/ContenuBadge.svelte';
+	import Infobulle from '#lib/components/Infobulle.svelte';
 	import {
 		lectureDuCiblage,
 		lectureDuTicket,
 		type ChampsLecture,
 		type ObjetCible,
-	} from '$lib/lecture-ticket';
-	import { titreLecture } from '$lib/lecture';
-	import { perimetresStore } from '$lib/stores/perimetres';
-	import { relire } from '$lib/utils';
+	} from '#lib/lecture-ticket.ts';
+	import { titreLecture } from '#lib/lecture.ts';
+	import { perimetresStore } from '#lib/stores/perimetres.ts';
+	import { relire } from '#lib/utils.ts';
 
 	/** Une affaire — entière, ou telle que le Suivi des affaires la sert (#2089)… */
 	export let ticket: ChampsLecture | null = null;

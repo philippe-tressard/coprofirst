@@ -20,7 +20,7 @@ export interface ServiceCopropriete {
 	onglet: string;
 	/**  L'onglet ne règle que ce service : coupé, il se grise dans la rangée. */
 	onglet_dedie: boolean;
-	/**  Son tracé, du catalogue `$lib/icones-svg.json` (vérifié côté serveur). */
+	/**  Son tracé, du catalogue `#lib/icones-svg.json` (vérifié côté serveur). */
 	icone: string;
 	coupable: boolean;
 	cle_actif: string | null;

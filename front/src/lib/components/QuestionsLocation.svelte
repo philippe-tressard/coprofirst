@@ -16,12 +16,12 @@
   rend le message d'attente d'avant.
 -->
 <script lang="ts">
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { lots as lotsApi, type LotPropose, type PropositionsLocation } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { lotTypeLabel } from '$lib/utils';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { lots as lotsApi, type LotPropose, type PropositionsLocation } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { lotTypeLabel } from '#lib/utils.ts';
 	import { onMount } from 'svelte';
 
 	/** Appelé une fois le locataire rattaché : la page relit ses lots. */

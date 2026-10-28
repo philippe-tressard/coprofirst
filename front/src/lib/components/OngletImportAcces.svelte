@@ -1,5 +1,5 @@
 <!--
-  L'écran d'import d'ACCÈS — un seul, piloté par un modèle (`$lib/imports-acces`).
+  L'écran d'import d'ACCÈS — un seul, piloté par un modèle (`#lib/imports-acces`).
 
   ## 🔴 Un badge appartient au LOT (#1194, 23/09/2026)
 
@@ -18,9 +18,9 @@
   « Vigik », ni « télécommande », ni un chemin d'API.
 -->
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { champDe, nombreOuNull } from '$lib/utils';
+	import Badge from '#lib/components/Badge.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { champDe, nombreOuNull } from '#lib/utils.ts';
 	import { onMount } from 'svelte';
 	import {
 		acces as accesApi,
@@ -28,13 +28,13 @@
 		type LotPourBadge,
 		type StatsImportAcces,
 		type UtilisateurAdmin,
-	} from '$lib/api';
-	import { nomAffiche } from '$lib/noms';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { siteNomStore } from '$lib/stores/pageConfig';
-	import { isAdmin } from '$lib/stores/auth';
-	import { confirmer } from '$lib/confirmation';
-	import { messageErreur } from '$lib/erreurs';
+	} from '#lib/api/index.ts';
+	import { nomAffiche } from '#lib/noms.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { siteNomStore } from '#lib/stores/pageConfig.ts';
+	import { isAdmin } from '#lib/stores/auth.ts';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import {
 		STATUT_BADGE,
 		STATUT_LABEL,
@@ -42,12 +42,12 @@
 		lotsPourBadge,
 		type LigneImport,
 		type ModeleImportAcces,
-	} from '$lib/imports-acces';
-	import BarreImport from '$lib/components/BarreImport.svelte';
-	import { contientTousLesMots } from '$lib/texte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	} from '#lib/imports-acces.ts';
+	import BarreImport from '#lib/components/BarreImport.svelte';
+	import { contientTousLesMots } from '#lib/texte.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 
 	export let modele: ModeleImportAcces;
 

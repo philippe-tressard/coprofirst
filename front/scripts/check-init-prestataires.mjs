@@ -1,5 +1,5 @@
 /**
- * Auto-test de `$lib/init-prestataires.ts` — le pré-remplissage du kanban.
+ * Auto-test de `#lib/init-prestataires.ts` — le pré-remplissage du kanban.
  *
  * 🔴 POURQUOI il existe (#605, 28/08/2026). Cette décision vivait dans
  * `calendrier/+page.svelte`, en deux boucles quasi identiques, et **rien ne

@@ -5,7 +5,7 @@
  *
  *  ## Le défaut qui l'a fait naître
  *
- *  « Agir pour… » : le client (`$lib/api/client.ts`) posait `X-Acting-As` sur
+ *  « Agir pour… » : le client (`#lib/api/client.ts`) posait `X-Acting-As` sur
  *  chaque requête, le menu affichait « Vous agissez pour Mme X », et côté
  *  serveur seule `auth/deps.get_acting_user` lisait l'en-tête — une dépendance
  *  qu'AUCUNE route n'a jamais prise. L'aidant écrivait donc sous sa propre

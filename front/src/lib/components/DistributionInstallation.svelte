@@ -17,16 +17,16 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import type {
 		FicheInstallation,
 		ReglageDistribution,
 		VagueLue,
 		VersionsPubliees,
-	} from '$lib/api';
-	import { fmtDate } from '$lib/date';
-	import { CANAL_URGENCE, libelleVersionCible } from '$lib/registre-installations';
+	} from '#lib/api/index.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { CANAL_URGENCE, libelleVersionCible } from '#lib/registre-installations.ts';
 
 	export let fiche: FicheInstallation;
 	export let versions: VersionsPubliees = { proposees: [], lues_le: null };

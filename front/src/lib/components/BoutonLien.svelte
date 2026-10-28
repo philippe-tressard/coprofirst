@@ -34,19 +34,19 @@
   l'utilisateur — *« accessible à tous ceux qui ont accès »*.
 
   ⚠️ L'icône est un ÉMOJI, comme ✏️ et 🗑️ dans la même rangée. Le catalogue
-  `$lib/icones-svg.json` aurait donné un tracé plus net, mais mélanger un SVG et
+  `#lib/icones-svg.json` aurait donné un tracé plus net, mais mélanger un SVG et
   deux émojis sur une même ligne se voit tout de suite : ils n'ont ni la même
   hauteur d'œil ni la même graisse. Le jour où la rangée passera au catalogue,
   elle y passera en entier.
 -->
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { lieu } from '$lib/lieu.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import PartageCourriel from '$lib/components/PartageCourriel.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import { cibleDuLien } from '$lib/partage';
-	import { portail } from '$lib/portail';
+	import { lieu } from '#lib/lieu.svelte.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import PartageCourriel from '#lib/components/PartageCourriel.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import { cibleDuLien } from '#lib/partage.ts';
+	import { portail } from '#lib/portail.ts';
 
 	/**  L'ancre de l'élément, sans le `#` — `annonce-42`. C'est l'`id` que la carte
 	 *   pose déjà sur son conteneur pour les liens profonds : les deux ne peuvent

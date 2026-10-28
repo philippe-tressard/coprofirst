@@ -15,10 +15,10 @@
 	//  ⚠️ Cet écran affichait la valeur BRUTE — `chauffage_collectif` — parce que
 	//  la table des libellés vivait dans `prestataires/+page.svelte` et qu'il n'y
 	//  avait pas accès. Une table qui vit dans UN écran, les autres s'en passent.
-	import { equipLabel } from '$lib/prestataires';
-	import { relire } from '$lib/utils';
-	import { fmtDate } from '$lib/date';
-	import NoteEtoiles from '$lib/components/NoteEtoiles.svelte';
+	import { equipLabel } from '#lib/prestataires.ts';
+	import { relire } from '#lib/utils.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import NoteEtoiles from '#lib/components/NoteEtoiles.svelte';
 	import {
 		MOIS_LABELS,
 		PREAVIS_MOIS,
@@ -26,7 +26,7 @@
 		contratsAvecEcheance,
 		type ReportContrat,
 		type ReportPrestataire,
-	} from '$lib/reporting';
+	} from '#lib/reporting.ts';
 
 	export let reportContrats: ReportContrat[] = [];
 	export let reportPrestataires: ReportPrestataire[] = [];
@@ -39,7 +39,7 @@
 	//  d'alors décrivait un remède qui n'avait pas lieu (#549, 29/08/2026).
 	$: ANNEE_COURANTE = relire(reportContrats, anneeCourante);
 
-	//  La dérivation vit dans `$lib/reporting.ts` : le parent en a besoin pour ses
+	//  La dérivation vit dans `#lib/reporting.ts` : le parent en a besoin pour ses
 	//  compteurs, ce composant pour sa frise. La recopier serait la duplication
 	//  que ce découpage existe pour retirer.
 	$: contratsAvecFin = contratsAvecEcheance(

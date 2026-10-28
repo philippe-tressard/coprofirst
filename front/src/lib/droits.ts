@@ -41,8 +41,8 @@
  * une actualité est **la parole du conseil**.
  */
 
-import type { User } from '$lib/api';
-import { aRole } from '$lib/stores/auth';
+import type { User } from '#lib/api/index.ts';
+import { aRole } from '#lib/stores/auth.ts';
 
 /** Ce que ces fonctions savent lire d'un objet — rien de plus. */
 export interface ObjetPossede {

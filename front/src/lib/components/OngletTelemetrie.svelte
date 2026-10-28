@@ -12,7 +12,7 @@
   - **Vues** : Jour · Mois (30 j) · Année (12 derniers mois) · Total (par année,
     10 ans). « Année (10 ans) » est devenue Total ; Année lit douze mois.
   - **Sections pliables**, un seul dépliée à la fois — l'accordéon natif des
-    `<details>` (`$lib/accordeon`, posé par le layout) replie les autres et
+    `<details>` (`#lib/accordeon`, posé par le layout) replie les autres et
     ramène le haut de la section ouverte à l'écran. L'état vit ICI
     (`sectionOuverte`), comme dans `OngletIA` : il survit au changement de vue,
     qui recharge tout. À l'arrivée : **Indicateurs et fréquentation** (nombres
@@ -26,20 +26,20 @@
     Les erreurs et les durées, sans compte, ne bougent pas.
 -->
 <script lang="ts">
-	import { admin as adminApi } from '$lib/api';
-	import type { FiltreGestionnaire, PorteeTelemetrie, TableauTelemetrie } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { fmtDate } from '$lib/date';
-	import Icon from '$lib/components/Icon.svelte';
-	import FrequentationTelemetrie from '$lib/components/FrequentationTelemetrie.svelte';
-	import ErreursNavigateur from '$lib/components/ErreursNavigateur.svelte';
-	import DureesAffichage from '$lib/components/DureesAffichage.svelte';
-	import QuiVient from '$lib/components/QuiVient.svelte';
-	import RetourComptes from '$lib/components/RetourComptes.svelte';
-	import GestesAboutis from '$lib/components/GestesAboutis.svelte';
-	import ArriveesNotification from '$lib/components/ArriveesNotification.svelte';
-	import Pastille from '$lib/components/Pastille.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { admin as adminApi } from '#lib/api/index.ts';
+	import type { FiltreGestionnaire, PorteeTelemetrie, TableauTelemetrie } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import Icon from '#lib/components/Icon.svelte';
+	import FrequentationTelemetrie from '#lib/components/FrequentationTelemetrie.svelte';
+	import ErreursNavigateur from '#lib/components/ErreursNavigateur.svelte';
+	import DureesAffichage from '#lib/components/DureesAffichage.svelte';
+	import QuiVient from '#lib/components/QuiVient.svelte';
+	import RetourComptes from '#lib/components/RetourComptes.svelte';
+	import GestesAboutis from '#lib/components/GestesAboutis.svelte';
+	import ArriveesNotification from '#lib/components/ArriveesNotification.svelte';
+	import Pastille from '#lib/components/Pastille.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	let telemetryData: TableauTelemetrie | null = null;
 	let telemetryLoading = true;

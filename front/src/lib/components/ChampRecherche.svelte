@@ -8,7 +8,7 @@
   recherche « comme pour les affaires » : recopier le balisage et ses quarante
   lignes de style aurait fait la deuxième écriture d'un même objet (`standards/02`).
   Il ne cherche RIEN — il expose la saisie liée ; la règle de correspondance
-  reste à qui la connaît (le serveur pour les affaires, `$lib/prestataires`
+  reste à qui la connaît (le serveur pour les affaires, `#lib/prestataires`
   pour l'annuaire).
 
   - `aide` : la phrase grise sous le champ — facultative, un annuaire dont la

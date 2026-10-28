@@ -15,10 +15,10 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { prestataires as prestApi, type MetriquesPrestataire } from '$lib/api';
-	import { essayer } from '$lib/chargement';
-	import { etapeMoyenne, fmtJours, libelleAffaires, surAffaires } from '$lib/synthese';
-	import { fmtNombre } from '$lib/utils';
+	import { prestataires as prestApi, type MetriquesPrestataire } from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
+	import { etapeMoyenne, fmtJours, libelleAffaires, surAffaires } from '#lib/synthese.ts';
+	import { fmtNombre } from '#lib/utils.ts';
 	import EtatListe from './EtatListe.svelte';
 	import MoyennesAffaires from './MoyennesAffaires.svelte';
 

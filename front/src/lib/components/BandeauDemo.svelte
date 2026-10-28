@@ -10,8 +10,8 @@
   `EncartAvertissement`, seule écriture de la notion.
 -->
 <script lang="ts">
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
-	import { modeDemoStore } from '$lib/stores/pageConfig';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
+	import { modeDemoStore } from '#lib/stores/pageConfig.ts';
 
 	/** Dans la carte de connexion : pleine largeur de la carte, détaché de ce qui suit. */
 	export let dansCarte = false;

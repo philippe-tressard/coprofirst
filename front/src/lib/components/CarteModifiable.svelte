@@ -50,13 +50,13 @@
   elle. Les actions sont dessinées au trait (`IconeAction`).
 -->
 <script lang="ts">
-	import type { EntiteDeclaree } from '$lib/entites/types';
+	import type { EntiteDeclaree } from '#lib/entites/types.ts';
 	import BoutonLien from './BoutonLien.svelte';
 	import EnteteCarte from './EnteteCarte.svelte';
 	import CarteListe from './CarteListe.svelte';
 	import FormulaireCreation from './FormulaireCreation.svelte';
 	import IconeAction from './IconeAction.svelte';
-	import type { ClasseGouttiere } from '$lib/gouttiere';
+	import type { ClasseGouttiere } from '#lib/gouttiere.ts';
 
 	/** L'objet : son `libelleModifier` titre la boîte et nomme le crayon. */
 	export let entite: EntiteDeclaree;

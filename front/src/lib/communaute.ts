@@ -1,6 +1,6 @@
 import { goto } from '$app/navigation';
-import { toast } from '$lib/components/Toast.svelte';
-import type { User } from '$lib/api';
+import { toast } from '#lib/components/Toast.svelte';
+import type { User } from '#lib/api/index.ts';
 
 /**
  * **Fermer la Communauté à qui n'y a pas accès** — le dire, et renvoyer au

@@ -7,7 +7,7 @@
   nombre, l'événement trois dont « tous les N mois ». L'affaire Entretien, qui
   reçoit les maintenances du calendrier, en aurait été la troisième. Le contrat
   fait référence — c'est lui qui fixe le rythme d'un prestataire — et ses unités
-  se lisent dans `FREQUENCES` (`$lib/prestataires`), jamais dans l'écran.
+  se lisent dans `FREQUENCES` (`#lib/prestataires`), jamais dans l'écran.
 
   Forme standard d'un champ de section : `.field` puis `<label for>` — la même
   que « Début » et « Fin » juste au-dessus, en deux colonnes qui repassent en
@@ -20,8 +20,8 @@
   lit, il ne se saisit pas. Deux rythmes pour une même visite divergeraient.
 -->
 <script lang="ts">
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import { FREQUENCES, frequenceLabel } from '$lib/prestataires';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import { FREQUENCES, frequenceLabel } from '#lib/prestataires.ts';
 
 	export let frequenceType: string | null | undefined = '';
 	export let frequenceValeur: number | string | null | undefined = null;

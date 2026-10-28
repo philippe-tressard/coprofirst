@@ -25,12 +25,12 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { config as configApi, type ServiceCopropriete } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import BadgeEtatService from '$lib/components/BadgeEtatService.svelte';
+	import { config as configApi, type ServiceCopropriete } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import BadgeEtatService from '#lib/components/BadgeEtatService.svelte';
 
 	/**  La page tient la configuration lue au chargement : elle y reporte la bascule. */
 	export let apresBascule: (cle: string, valeur: string) => void = () => {};

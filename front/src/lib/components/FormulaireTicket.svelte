@@ -15,7 +15,7 @@
   qu'elle décide — informer ou faire traiter — éteint des sections : Suivi,
   Équipement et Intervenant pour une actualité (Destinataires, éteinte pour une
   affaire, s'y rallume le 25/09/2026 : elle porte « Confidentielle »). Elles restent à leur rang, grisées, avec leur motif, et ce qu'elles
-  portaient ne part pas. La règle vit dans `$lib/formulaire-affaire` (et le motif
+  portaient ne part pas. La règle vit dans `#lib/formulaire-affaire` (et le motif
   dans la déclaration `TICKET`), pas en `{#if}` ici : la même question se pose à
   l'affichage et à l'envoi.
 
@@ -32,35 +32,35 @@
   porte plus de « ✕ Annuler » quand le formulaire est ouvert (#367).
 -->
 <script lang="ts">
-	import { messageErreur } from '$lib/erreurs';
-	import { pourChampLocal } from '$lib/date';
-	import { contexteAssistant, perimetreContexte } from '$lib/assistant';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { pourChampLocal } from '#lib/date.ts';
+	import { contexteAssistant, perimetreContexte } from '#lib/assistant.ts';
 	import { createEventDispatcher } from 'svelte';
-	import { perimetreDefautListe } from '$lib/perimetres';
+	import { perimetreDefautListe } from '#lib/perimetres/index.ts';
 	import {
 		tickets as ticketsApi,
 		admin as adminApi,
 		prestataires as prestatairesApi,
 		type Ticket,
-	} from '$lib/api';
-	import type SectionDiffusion from '$lib/components/SectionDiffusion.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import SectionTitre from '$lib/components/SectionTitre.svelte';
-	import SectionsSpecifiquesTicket from '$lib/components/SectionsSpecifiquesTicket.svelte';
-	import ChampsCommuns from '$lib/components/ChampsCommuns.svelte';
-	import DiffusionPublication from '$lib/components/DiffusionPublication.svelte';
-	import RepriseAnnonceHall from '$lib/components/RepriseAnnonceHall.svelte';
-	import { lueDuSeulConseil, natureLue } from '$lib/lecture-ticket';
-	import SectionAffairesLiees from '$lib/components/SectionAffairesLiees.svelte';
-	import SectionIntervenant from '$lib/components/SectionIntervenant.svelte';
-	import { contratDeLaSaisie, type ContratEnCours } from '$lib/prestataires';
-	import { richEmpty } from '$lib/publications';
-	import ChampFrequence from '$lib/components/ChampFrequence.svelte';
-	import { essayer } from '$lib/chargement';
-	import { pliageDe } from '$lib/pliage';
-	import type { PrefillActualite } from '$lib/actualite-prefill';
-	import { isCS, quandAuthResolue } from '$lib/stores/auth';
+	} from '#lib/api/index.ts';
+	import type SectionDiffusion from '#lib/components/SectionDiffusion.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import SectionTitre from '#lib/components/SectionTitre.svelte';
+	import SectionsSpecifiquesTicket from '#lib/components/SectionsSpecifiquesTicket.svelte';
+	import ChampsCommuns from '#lib/components/ChampsCommuns.svelte';
+	import DiffusionPublication from '#lib/components/DiffusionPublication.svelte';
+	import RepriseAnnonceHall from '#lib/components/RepriseAnnonceHall.svelte';
+	import { lueDuSeulConseil, natureLue } from '#lib/lecture-ticket.ts';
+	import SectionAffairesLiees from '#lib/components/SectionAffairesLiees.svelte';
+	import SectionIntervenant from '#lib/components/SectionIntervenant.svelte';
+	import { contratDeLaSaisie, type ContratEnCours } from '#lib/prestataires.ts';
+	import { richEmpty } from '#lib/publications.ts';
+	import ChampFrequence from '#lib/components/ChampFrequence.svelte';
+	import { essayer } from '#lib/chargement.ts';
+	import { pliageDe } from '#lib/pliage.ts';
+	import type { PrefillActualite } from '#lib/actualite-prefill.ts';
+	import { isCS, quandAuthResolue } from '#lib/stores/auth.ts';
 	import {
 		CATEGORIE_ACTUALITE,
 		OPTIONS_CATEGORIE,
@@ -68,14 +68,14 @@
 		OPTIONS_TICKET,
 		STATUT_TICKET_LABELS,
 		optionsDuTicket,
-	} from '$lib/tickets';
-	import type { Etat } from '$lib/entites/types';
-	import { sectionPresente } from '$lib/entites/types';
-	import { TICKET } from '$lib/entites/ticket';
-	import { PUBLICATION } from '$lib/entites/publication';
-	import { GLYPHE_URGENCE, motifWhatsappInterdit } from '$lib/options-publication';
-	import { confirmer } from '$lib/confirmation';
-	import { demanderFusion, SANS_FUSION } from '$lib/fusion-affaires';
+	} from '#lib/tickets.ts';
+	import type { Etat } from '#lib/entites/types.ts';
+	import { sectionPresente } from '#lib/entites/types.ts';
+	import { TICKET } from '#lib/entites/ticket.ts';
+	import { PUBLICATION } from '#lib/entites/publication.ts';
+	import { GLYPHE_URGENCE, motifWhatsappInterdit } from '#lib/options-publication.ts';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { demanderFusion, SANS_FUSION } from '#lib/fusion-affaires.ts';
 	import {
 		CATEGORIE_ENTRETIEN,
 		chargeUtileAffaire,
@@ -84,10 +84,10 @@
 		alerteCorrection,
 		sectionsInactives,
 		type SaisieAffaire,
-	} from '$lib/formulaire-affaire';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import { comparerParNom } from '$lib/noms';
-	import { nomCopie, saisieDepuis } from '$lib/saisi-pour';
+	} from '#lib/formulaire-affaire.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { comparerParNom } from '#lib/noms.ts';
+	import { nomCopie, saisieDepuis } from '#lib/saisi-pour.ts';
 
 	/**  L'affaire à MODIFIER, avec ses valeurs déjà saisies. `null` (défaut) =
 	 *   création. Le mode ne change pas pendant la vie du composant : l'appelant le
@@ -122,7 +122,7 @@
 	let categorie = ticket?.categorie ?? categorieInitiale;
 	let statut = ticket?.statut ?? 'ouvert';
 	//  Les options, reprises de l'affaire : le pont écran ⇄ objet vit dans
-	//  `$lib/tickets` (`brouillon` écrit `confidentiel`, `urgente` la priorité).
+	//  `#lib/tickets` (`brouillon` écrit `confidentiel`, `urgente` la priorité).
 	let options = optionsDuTicket(ticket);
 	//  Copies défensives : les tableaux viennent de la carte affichée, et une
 	//  sélection abandonnée y resterait visible sans avoir été enregistrée.
@@ -214,7 +214,7 @@
 		categorie = CATEGORIE_ACTUALITE;
 	}
 
-	/** Tout ce qui a été saisi — la charge utile en est dérivée (`$lib/formulaire-affaire`). */
+	/** Tout ce qui a été saisi — la charge utile en est dérivée (`#lib/formulaire-affaire`). */
 	$: saisie = {
 		titre,
 		description,

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  *  Une taille en octets et un nombre affiché se formatent par `fmtOctets` et
- *  `fmtNombre` (`$lib/utils`), jamais à la main (#1576, 02/10/2026).
+ *  `fmtNombre` (`#lib/utils`), jamais à la main (#1576, 02/10/2026).
  *
  *  🔴 La règle 2 de `CLAUDE.md` (« dates et montants : ne jamais réimplémenter
  *  un format dans une page ») n'avait de garde-fou que pour les dates. Les
@@ -45,7 +45,7 @@ const EXCEPTIONS = {
  *  - `.toFixed(` — l'arrondi d'une taille ou d'un nombre, point décimal compris ;
  *  - `/ 1024`, `/ (1024 * 1024)` — le changement d'échelle d'un octet ;
  *  - `.toLocaleString('fr-FR')` ou `.toLocaleString()` — un nombre groupé à la
- *    main (celui d'une DATE passe par `$lib/date`, qui épingle `LOCALE`).
+ *    main (celui d'une DATE passe par `#lib/date`, qui épingle `LOCALE`).
  */
 const COPIE = /\.toFixed\s*\(|\/\s*\(?\s*1024\b|\.toLocaleString\s*\(\s*(?:\)|['"]fr-FR['"]\s*\))/;
 
@@ -58,7 +58,7 @@ const NBSP = '\u202f'; // le séparateur de milliers de fr-FR
  *  tests, et un contrôle qui ne lisait que le texte de `utils.ts` laisserait
  *  passer un seuil faux. Le morceau `fmtNombre` → `fmtOctets` est extrait de
  *  `utils.ts`, transpilé (TypeScript est déjà là pour `svelte-check`) et
- *  exécuté ; `utils.ts` lui-même ne s'importe pas hors de Vite (`$lib/…`).
+ *  exécuté ; `utils.ts` lui-même ne s'importe pas hors de Vite (`#lib/…`).
  */
 const CAS_COMPORTEMENT = [
 	['fmtNombre', [null], '—'],
@@ -142,7 +142,7 @@ process.exit(
 			ok: 'Tailles et nombres : formatés par fmtOctets / fmtNombre seulement',
 			ko: 'format(s) de taille ou de nombre écrit(s) à la main',
 			conseil:
-				'Employer `fmtOctets(n)` (tailles) ou `fmtNombre(n)` (nombres) de `$lib/utils`. ' +
+				'Employer `fmtOctets(n)` (tailles) ou `fmtNombre(n)` (nombres) de `#lib/utils`. ' +
 				'Un écart légitime se déclare dans EXCEPTIONS de scripts/check-formats.mjs, avec sa raison.',
 		}),
 );

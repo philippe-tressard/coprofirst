@@ -13,7 +13,7 @@
   3. **elle ne dit pas la gravité.** Archiver et supprimer définitivement y ont
      exactement le même aspect — or l'un se défait et l'autre non.
 
-  ⚠️ Ce composant s'emploie par `confirmer()` (`$lib/confirmation.ts`), jamais
+  ⚠️ Ce composant s'emploie par `confirmer()` (`#lib/confirmation.ts`), jamais
   directement : c'est l'appel impératif qui rend la conversion des quarante
   sites tenable, et qui garde les appelants à une ligne.
 -->

@@ -7,7 +7,7 @@
   seul, comme `OngletAnnoncesHall` ; la page ne lui passe que les données de
   RÉFÉRENCE qu'elle charge de toute façon (inscrits, lots, registre importé),
   qui servent à rapprocher un nom saisi d'un inscrit et d'un logement
-  (`$lib/annuaire-rapprochement`). Son pendant : `AnnuaireSyndic`.
+  (`#lib/annuaire-rapprochement`). Son pendant : `AnnuaireSyndic`.
 
   La LISTE — chargement, fiches, gestes, ajout — vit dans `AnnuaireMembres`
   depuis le 02/10/2026 (#1539) : les deux annuaires la recopiaient. Ne reste
@@ -15,21 +15,21 @@
   le président.
 -->
 <script lang="ts">
-	import { confirmer } from '$lib/confirmation';
-	import { annuaireAdmin, type MembreConseilAdmin } from '$lib/api';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { fmtDateShort } from '$lib/date';
-	import { comparerParNom, nomAffiche } from '$lib/noms';
-	import { localisationMembre } from '$lib/utils';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { annuaireAdmin, type MembreConseilAdmin } from '#lib/api/index.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { fmtDateShort } from '#lib/date.ts';
+	import { comparerParNom, nomAffiche } from '#lib/noms.ts';
+	import { localisationMembre } from '#lib/utils.ts';
 	import {
 		inscritParNom,
 		localisationParNom,
 		type SourcesRapprochement,
-	} from '$lib/annuaire-rapprochement';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import ActionsMembre from '$lib/components/ActionsMembre.svelte';
-	import AnnuaireMembres from '$lib/components/AnnuaireMembres.svelte';
-	import { type MembreBase } from '$lib/components/CarteMembre.svelte';
+	} from '#lib/annuaire-rapprochement.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import ActionsMembre from '#lib/components/ActionsMembre.svelte';
+	import AnnuaireMembres from '#lib/components/AnnuaireMembres.svelte';
+	import { type MembreBase } from '#lib/components/CarteMembre.svelte';
 
 	/** Les données de référence du rapprochement par le nom. */
 	export let sources: SourcesRapprochement;
@@ -76,7 +76,7 @@
 		}));
 		return membres.sort((a: MembreCSForm, b: MembreCSForm) => {
 			const bat = (a.batiment_nom ?? 'zzz').localeCompare(b.batiment_nom ?? 'zzz', 'fr');
-			//  Puis la règle commune — nom, puis prénom (`$lib/noms`).
+			//  Puis la règle commune — nom, puis prénom (`#lib/noms`).
 			return bat !== 0 ? bat : comparerParNom(a, b);
 		});
 	}

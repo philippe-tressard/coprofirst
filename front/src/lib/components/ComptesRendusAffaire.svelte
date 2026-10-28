@@ -24,14 +24,14 @@
 	import Badge from './Badge.svelte';
 	import IconeAction from './IconeAction.svelte';
 	import { toast } from './Toast.svelte';
-	import { pointsConseil, type CrPublie } from '$lib/api';
-	import { fmtDate, fmtDatetime } from '$lib/date';
-	import { messageErreur } from '$lib/erreurs';
-	import { safeHtml } from '$lib/sanitize';
-	import { isCS } from '$lib/stores/auth';
-	import { enregistrerFichier } from '$lib/fichiers';
-	import { jourIso } from '$lib/date';
-	import { LIBELLE_CS_ET_PRESENTS } from '$lib/points-conseil';
+	import { pointsConseil, type CrPublie } from '#lib/api/index.ts';
+	import { fmtDate, fmtDatetime } from '#lib/date.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { enregistrerFichier } from '#lib/fichiers.ts';
+	import { jourIso } from '#lib/date.ts';
+	import { LIBELLE_CS_ET_PRESENTS } from '#lib/points-conseil.ts';
 
 	export let ticketId: number;
 	export let ouverte = false;

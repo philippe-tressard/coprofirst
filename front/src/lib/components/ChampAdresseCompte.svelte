@@ -19,7 +19,7 @@
 <script lang="ts">
 	import ChampMotDePasse from './ChampMotDePasse.svelte';
 	import EtoileRequis from './EtoileRequis.svelte';
-	import { adresseChangee } from '$lib/comptes';
+	import { adresseChangee } from '#lib/comptes.ts';
 
 	/** Identifiant du champ d'adresse ; celui du mot de passe en dérive. */
 	export let id: string;

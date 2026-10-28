@@ -31,7 +31,7 @@
 	 *
 	 * > *« Sélecteur de périmètre | le périmètre par défaut | `perimetreParDefaut()`
 	 * >   lit un état de module posé au chargement de l'arbre : avant lui, `null`,
-	 * >   et pour toujours »* — `$lib/utils`, `relire()`, 29/08/2026 (#549).
+	 * >   et pour toujours »* — `#lib/utils`, `relire()`, 29/08/2026 (#549).
 	 *
 	 * Elle avait été appliquée aux **deux sélecteurs** de périmètre, et à eux
 	 * seuls. Les neuf badges lisaient le même état de module, dans le même piège,
@@ -41,9 +41,9 @@
 	 * ⚠️ `$perimetresStore` n'est pas lu par le calcul : il dit à Svelte de quoi
 	 * ce calcul dépend. Le citer **est** le geste.
 	 */
-	import { estPerimetreParDefaut, perimetreLabel } from '$lib/perimetres';
-	import { perimetresStore } from '$lib/stores/perimetres';
-	import { relire } from '$lib/utils';
+	import { estPerimetreParDefaut, perimetreLabel } from '#lib/perimetres/index.ts';
+	import { perimetresStore } from '#lib/stores/perimetres.ts';
+	import { relire } from '#lib/utils.ts';
 
 	/** Les codes à rendre — la liste (`perimetre_cible`) ou la chaîne (`perimetre`). */
 	export let perimetre: string | string[] | null | undefined = null;

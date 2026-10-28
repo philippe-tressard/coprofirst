@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import { messageErreur } from '$lib/erreurs';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import { get } from 'svelte/store';
 	import {
 		admin as adminApi,
@@ -12,12 +12,12 @@
 		type DemandeProfil,
 		type TextesLegauxSource,
 		type UtilisateurAdmin,
-	} from '$lib/api';
-	import { aRole, droitsOnglet, isAdmin, isOperateur, quandAuthResolue } from '$lib/stores/auth';
-	import { ongletsOuverts } from '$lib/onglets-ouverts';
-	import { essayer, messagePartiel, TITRE_PARAMETRAGE_ILLISIBLE } from '$lib/chargement';
-	import type { ServiceCopropriete } from '$lib/api';
-	import ChargementPartiel from '$lib/components/ChargementPartiel.svelte';
+	} from '#lib/api/index.ts';
+	import { aRole, droitsOnglet, isAdmin, isOperateur, quandAuthResolue } from '#lib/stores/auth.ts';
+	import { ongletsOuverts } from '#lib/onglets-ouverts.ts';
+	import { essayer, messagePartiel, TITRE_PARAMETRAGE_ILLISIBLE } from '#lib/chargement.ts';
+	import type { ServiceCopropriete } from '#lib/api/index.ts';
+	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
 	//  Les onglets qui ENREGISTRENT ce que `/config/admin` et `/config/textes-legaux` ont lu.
 	//  Si la lecture a échoué, leur formulaire serait vide — et enregistré, il
 	//  effacerait la configuration (#1459) : ils montrent l'échec à la place.
@@ -31,26 +31,26 @@
 		'ia',
 		'copropriete',
 	];
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { defautsDePage } from '$lib/pages';
-	import { lieu } from '$lib/lieu.svelte';
-	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
-	import EntetePage from '$lib/components/EntetePage.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { defautsDePage } from '#lib/pages.ts';
+	import { lieu } from '#lib/lieu.svelte.ts';
+	import BarreOnglets from '#lib/components/BarreOnglets.svelte';
+	import EntetePage from '#lib/components/EntetePage.svelte';
 	import {
 		CONFIG_SITE_DEFAUT,
 		ecrireConfigSite,
 		lireConfigSite,
 		type SectionSite,
-	} from '$lib/configSite';
-	import OngletATraiter from '$lib/components/OngletATraiter.svelte';
-	import { marquerDonneesAffichees, trackTabView } from '$lib/telemetry';
+	} from '#lib/configSite.ts';
+	import OngletATraiter from '#lib/components/OngletATraiter.svelte';
+	import { marquerDonneesAffichees, trackTabView } from '#lib/telemetry.ts';
 
 	//  Onglets
 	// 'sauvegardes' retiré le 02/08/2026 : ce bloc n'était accessible par AUCUN
 	// bouton et dupliquait, dans une version divergente (accents perdus), celui de
 	// « Paramétrage site ». Les deux vivent désormais dans le sous-onglet Maintenance.
-	//  🔴 La liste des onglets vit dans `$lib/pages-roles.ts` (page `admin`) et
+	//  🔴 La liste des onglets vit dans `#lib/pages-roles.ts` (page `admin`) et
 	//  NULLE PART AILLEURS, depuis le 01/10/2026 : déclarés comme ceux des autres
 	//  pages, ils se renomment et se décrivent dans « Descriptif pages », et
 	//  `BarreOnglets` rend leurs deux rangées. Cette page en tenait sa propre liste,
@@ -152,7 +152,7 @@
 		utilisateursLoading = false;
 	}
 
-	//  🔴 La table des libellés vit dans `$lib/roles` depuis le 06/09/2026 (#801).
+	//  🔴 La table des libellés vit dans `#lib/roles` depuis le 06/09/2026 (#801).
 	//  Elle était écrite SIX fois — trois ici côté front, trois côté serveur — et
 	//  les six avaient dérivé : « Copropriétaire Résident » dans deux écrans,
 	//  « Copropriétaire résident » dans le troisième ; « Conseil syndical » ici,
@@ -283,7 +283,12 @@
 		.filter((s) => s.onglet_dedie && s.etat === 'coupe')
 		.map((s) => s.onglet);
 
-	import { getPageConfig, configStore, siteNomStore, loadSiteConfig } from '$lib/stores/pageConfig';
+	import {
+		getPageConfig,
+		configStore,
+		siteNomStore,
+		loadSiteConfig,
+	} from '#lib/stores/pageConfig.ts';
 	$: _pc = getPageConfig($configStore, 'admin', defautsDePage('admin'));
 	$: _siteNom = $siteNomStore;
 </script>
@@ -327,7 +332,7 @@
 		{batimentsMap}
 	/>
 {:else if onglet === 'utilisateurs'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletUtilisateurs.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletUtilisateurs.svelte')}>
 		{#snippet contenu(OngletUtilisateurs)}
 			<OngletUtilisateurs
 				bind:utilisateurs
@@ -340,25 +345,25 @@
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'maintenance'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletMaintenance.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletMaintenance.svelte')}>
 		{#snippet contenu(OngletMaintenance)}
 			<OngletMaintenance />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'installation'}
-	<ChargementDiffere charger={() => import('$lib/components/CarteInstallation.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/CarteInstallation.svelte')}>
 		{#snippet contenu(CarteInstallation)}
 			<CarteInstallation />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'installations'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletInstallations.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletInstallations.svelte')}>
 		{#snippet contenu(OngletInstallations)}
 			<OngletInstallations />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'emails'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletModelesEmail.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletModelesEmail.svelte')}>
 		{#snippet contenu(OngletModelesEmail)}
 			<OngletModelesEmail />
 		{/snippet}
@@ -368,25 +373,25 @@
 {:else if erreurParametrage && ONGLETS_DU_PARAMETRAGE.includes(onglet)}
 	<EtatListe erreur={erreurParametrage} titreErreur={TITRE_PARAMETRAGE_ILLISIBLE} />
 {:else if onglet === 'services'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletServices.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletServices.svelte')}>
 		{#snippet contenu(OngletServices)}
 			<OngletServices {apresBascule} />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'fonctionnement'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletFonctionnement.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletFonctionnement.svelte')}>
 		{#snippet contenu(OngletFonctionnement)}
 			<OngletFonctionnement bind:siteConfig {siteSaving} {siteManagerUsers} {saveSiteConfig} />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'connexion'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletConnexion.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletConnexion.svelte')}>
 		{#snippet contenu(OngletConnexion)}
 			<OngletConnexion bind:siteConfig {siteSaving} {saveSiteConfig} />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'pages'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletDescriptifPages.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletDescriptifPages.svelte')}>
 		{#snippet contenu(OngletDescriptifPages)}
 			<OngletDescriptifPages valeurs={smtpValeurs} />
 		{/snippet}
@@ -394,7 +399,7 @@
 {:else if onglet === 'legal'}
 	{#if textesLegaux}
 		{@const source = textesLegaux}
-		<ChargementDiffere charger={() => import('$lib/components/OngletLegal.svelte')}>
+		<ChargementDiffere charger={() => import('#lib/components/OngletLegal.svelte')}>
 			{#snippet contenu(OngletLegal)}
 				<OngletLegal
 					bind:siteConfig
@@ -407,7 +412,7 @@
 		</ChargementDiffere>
 	{/if}
 {:else if onglet === 'whatsapp'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletWhatsApp.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletWhatsApp.svelte')}>
 		{#snippet contenu(OngletWhatsApp)}
 			<OngletWhatsApp
 				cfgPublique={waCfgPublique}
@@ -418,7 +423,7 @@
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'smtp'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletSmtp.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletSmtp.svelte')}>
 		{#snippet contenu(OngletSmtp)}
 			<OngletSmtp bind:emailFooter={siteConfig.email_footer} valeurs={smtpValeurs} />
 		{/snippet}
@@ -427,19 +432,19 @@
 	<!--  Les mêmes valeurs que le SMTP : c'est `adminCfg`, la configuration
 	      complète lue une fois au chargement. Un second appel pour les mêmes
 	      clés donnerait deux vérités à quelques millisecondes d'écart. -->
-	<ChargementDiffere charger={() => import('$lib/components/OngletIA.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletIA.svelte')}>
 		{#snippet contenu(OngletIA)}
 			<OngletIA valeurs={smtpValeurs} />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'telemetry'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletTelemetrie.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletTelemetrie.svelte')}>
 		{#snippet contenu(OngletTelemetrie)}
 			<OngletTelemetrie />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'copropriete'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletCopropriete.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletCopropriete.svelte')}>
 		{#snippet contenu(OngletCopropriete)}
 			<OngletCopropriete
 				bind:referenceCopro={siteConfig.reference_copro}
@@ -448,25 +453,25 @@
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'perimetres'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletPerimetres.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletPerimetres.svelte')}>
 		{#snippet contenu(OngletPerimetres)}
 			<OngletPerimetres />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'lots'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletLots.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletLots.svelte')}>
 		{#snippet contenu(OngletLots)}
 			<OngletLots />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'audit_lots'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletAuditLots.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletAuditLots.svelte')}>
 		{#snippet contenu(OngletAuditLots)}
 			<OngletAuditLots />
 		{/snippet}
 	</ChargementDiffere>
 {:else if onglet === 'imports'}
-	<ChargementDiffere charger={() => import('$lib/components/OngletImports.svelte')}>
+	<ChargementDiffere charger={() => import('#lib/components/OngletImports.svelte')}>
 		{#snippet contenu(OngletImports)}
 			<OngletImports />
 		{/snippet}

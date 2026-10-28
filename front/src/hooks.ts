@@ -26,7 +26,7 @@
  * page ferait passer une faute de frappe pour une adresse valide, et le lien
  * cassé survivrait.
  */
-import { routeInterne } from '$lib/routes-onglets';
+import { routeInterne } from '#lib/routes-onglets.ts';
 import type { Reroute } from '@sveltejs/kit/hooks';
 
 export const reroute: Reroute = ({ url }) => routeInterne(url.pathname);

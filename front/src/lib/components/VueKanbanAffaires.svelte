@@ -7,7 +7,7 @@
   kanban devient un onglet d'Affaires — *Liste · Kanban · Archives*. Les six
   colonnes restent ; chacune a désormais son état d'affaire (`en_ag`,
   `chez_prestataire` sont nés pour cela), et la correspondance s'écrit dans
-  `$lib/kanban` (`COLONNE_PAR_STATUT_TICKET`), jamais ici.
+  `#lib/kanban` (`COLONNE_PAR_STATUT_TICKET`), jamais ici.
 
   ## Glisser une carte — le revirement, et sa raison
 
@@ -28,17 +28,17 @@
 		MOT_COLONNE_VIDE,
 		colonneDuTicket,
 		COLONNE_PAR_STATUT_TICKET,
-	} from '$lib/kanban';
-	import { categorieTicketLabel, lienTicket } from '$lib/tickets';
-	import { perimetreTags } from '$lib/perimetres-pastilles';
-	import { perimetresStore } from '$lib/stores/perimetres';
-	import { relire } from '$lib/utils';
-	import { tickets as ticketsApi, type Ticket } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { demanderFusion } from '$lib/fusion-affaires';
-	import { toast } from '$lib/components/Toast.svelte';
+	} from '#lib/kanban.ts';
+	import { categorieTicketLabel, lienTicket } from '#lib/tickets.ts';
+	import { perimetreTags } from '#lib/perimetres-pastilles.ts';
+	import { perimetresStore } from '#lib/stores/perimetres.ts';
+	import { relire } from '#lib/utils.ts';
+	import { tickets as ticketsApi, type Ticket } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { demanderFusion } from '#lib/fusion-affaires.ts';
+	import { toast } from '#lib/components/Toast.svelte';
 	import { createEventDispatcher } from 'svelte';
-	import InitPrestataires from '$lib/components/InitPrestataires.svelte';
+	import InitPrestataires from '#lib/components/InitPrestataires.svelte';
 
 	export let tickets: Ticket[] = [];
 	/** Le conseil glisse les cartes ; les autres lisent. */
@@ -46,7 +46,7 @@
 	//  La page tient la liste : elle y reporte le nouvel état.
 	const dispatch = createEventDispatcher<{ deplace: { id: number; statut: string } }>();
 
-	//  La colonne → l'état : l'inverse de la table de `$lib/kanban`, dérivé, jamais recopié.
+	//  La colonne → l'état : l'inverse de la table de `#lib/kanban`, dérivé, jamais recopié.
 	const STATUT_PAR_COLONNE: Record<string, string> = Object.fromEntries(
 		Object.entries(COLONNE_PAR_STATUT_TICKET).map(([statut, col]) => [col, statut]),
 	);

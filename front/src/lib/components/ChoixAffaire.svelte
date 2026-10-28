@@ -14,9 +14,9 @@
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { tickets as ticketsApi } from '$lib/api';
-	import type { AffaireLiee } from '$lib/api/types';
-	import { estTicketActif, estTicketClos, idAffaireDepuisLien } from '$lib/tickets';
+	import { tickets as ticketsApi } from '#lib/api/index.ts';
+	import type { AffaireLiee } from '#lib/api/types.ts';
+	import { estTicketActif, estTicketClos, idAffaireDepuisLien } from '#lib/tickets.ts';
 
 	/** L'`id` du champ — le titre de section de l'appelant peut s'y associer. */
 	export let id: string;

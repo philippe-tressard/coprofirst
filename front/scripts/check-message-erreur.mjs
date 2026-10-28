@@ -9,7 +9,7 @@
  *  fichiers**. Quatre-vingt-deux de ces copies retombent sur le mot « Erreur ».
  *
  *  🔴 Ce n'est pas une duplication cosmétique : c'est **la même information
- *  perdue 82 fois**. `$lib/erreurs.messageErreur` sait dire :
+ *  perdue 82 fois**. `#lib/erreurs.messageErreur` sait dire :
  *
  *    401 → « Votre session a expiré — rechargez la page pour vous reconnecter. »
  *    403 → le message du serveur, ou « Vous n'avez pas accès à cette rubrique. »
@@ -20,7 +20,7 @@
  *  dise que sa connexion est coupée.
  *
  *  ⚠️ Et la duplication avait déjà produit sa divergence : `messageErreur`
- *  existait **en DEUX exemplaires**, dans `$lib/erreurs` et dans `$lib/comptes`,
+ *  existait **en DEUX exemplaires**, dans `#lib/erreurs` et dans `#lib/comptes`,
  *  sous le même nom et avec des comportements différents. Deux écrans
  *  importaient la moins disante.
  *
@@ -130,7 +130,7 @@ if (process.argv.includes('--selftest')) {
 	//  #1571 : les trois écritures que le motif d'origine laissait passer.
 	t('repli local', 1, "toast('error', e.message ?? 'Erreur');");
 	//  08/10/2026 : la forme à chaînage optionnel, et le corps d'`apiMessage`
-	//  (`$lib/utils`), seconde écriture de `messageErreur` qu'aucun motif ne voyait.
+	//  (`#lib/utils`), seconde écriture de `messageErreur` qu'aucun motif ne voyait.
 	t('repli local optionnel', 1, "toast('error', e?.message ?? 'Erreur');");
 	t('rejet d’un allSettled', 1, "x = r.reason?.message ?? 'Chargement impossible';");
 	t(
@@ -198,7 +198,7 @@ if (total > PLAFOND) {
 		console.error(`  ${n}x  ${f}`);
 	}
 	console.error(
-		'\n  `messageErreur(e)` de `$lib/erreurs` dit ce que le ternaire tait : une\n' +
+		'\n  `messageErreur(e)` de `#lib/erreurs` dit ce que le ternaire tait : une\n' +
 			'  session expirée, un serveur injoignable. Il accepte un repli contextuel\n' +
 			'  en second argument : `messageErreur(e, "Impossible de charger vos lots")`.\n' +
 			'  → convertir, ou baisser le plafond si une conversion a eu lieu ailleurs.\n',

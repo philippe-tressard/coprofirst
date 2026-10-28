@@ -102,12 +102,12 @@ const APPELS_SANS_AWAIT = /(?<!await\s{1,4})\bconfirmer\s*\(/;
  * un plafond à zéro et une interdiction disent la même chose, mais seule la
  * seconde le dit à qui lit le code.
  *
- * Le remplacement est `demander()` (`$lib/saisie`) pour une saisie, et un
+ * Le remplacement est `demander()` (`#lib/saisie`) pour une saisie, et un
  * `toast()` pour un message — `alert()` n'a jamais eu d'usage légitime ici.
  */
 const BOITES_NATIVES = [
-	['prompt', 'demander() — `$lib/saisie`'],
-	['alert', "toast('info' | 'error', …) — `$lib/components/Toast.svelte`"],
+	['prompt', 'demander() — `#lib/saisie`'],
+	['alert', "toast('info' | 'error', …) — `#lib/components/Toast.svelte`"],
 ];
 
 const releve = [];
@@ -176,7 +176,7 @@ if (releve.length) {
 			`\n\n  La boîte native bloque le navigateur, ignore la charte, et donne le MÊME` +
 			`\n  aspect à « archiver » et à « supprimer définitivement ». Le compte est à` +
 			`\n  ZÉRO depuis le 25/09/2026 (#1043).` +
-			`\n  → \`if (!(await confirmer('…'))) return;\` — \`$lib/confirmation\`, une ligne,` +
+			`\n  → \`if (!(await confirmer('…'))) return;\` — \`#lib/confirmation\`, une ligne,` +
 			`\n    et \`SUPPRESSION(…)\` pour ce qui ne se défait pas.\n`,
 	);
 	process.exit(1);

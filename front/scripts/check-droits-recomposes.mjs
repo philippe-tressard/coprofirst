@@ -6,7 +6,7 @@
  *
  * ## Pourquoi ce contrôle (#1041, audit du 19/09/2026)
  *
- * `$lib/droits.ts` et `$lib/stores/auth.ts` sont la source déclarée de « qui peut
+ * `#lib/droits.ts` et `#lib/stores/auth.ts` sont la source déclarée de « qui peut
  * quoi » côté écran. Les écrans la recomposaient quand même — **vingt-deux fois**,
  * de quatre façons :
  *
@@ -76,7 +76,7 @@ const FORMES = [
 		nom: 'appartenance recomposée sur `auteur_id`',
 		motif: /\.auteur_id\s*===/,
 		remede:
-			'appeler `peutEditer` / `peutCommenter` de `$lib/droits`. Une comparaison ' +
+			'appeler `peutEditer` / `peutCommenter` de `#lib/droits`. Une comparaison ' +
 			'directe oublie le champ « saisi pour » : le crayon disparaît pour le résident ' +
 			'au nom de qui le conseil a déposé la demande.',
 	},

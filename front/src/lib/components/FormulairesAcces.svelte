@@ -17,12 +17,12 @@
   second état chez l'hôte finirait par se désaccorder de celui-ci.
 -->
 <script lang="ts">
-	import type { MonLot } from '$lib/api';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import { TYPES_ACCES } from '$lib/types-acces';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
+	import type { MonLot } from '#lib/api/index.ts';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { TYPES_ACCES } from '#lib/types-acces.ts';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 
 	/** Les formulaires ouverts — liés à l'en-tête, qui porte les boutons. */
 	export let showForm = false;

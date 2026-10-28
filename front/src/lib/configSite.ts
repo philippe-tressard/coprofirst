@@ -40,8 +40,8 @@
  * séparé (`/config/textes-legaux`, leur SOURCE, champs compris — jamais le rendu
  * public de `/config/legal`, #2065) — c'est pourquoi `lireConfigSite` les reçoit à part.
  */
-import { delaiArchivageJours } from '$lib/archivage';
-import { ecrireReglagePied, lireReglagePied, type ReglagePied } from '$lib/piedDePage';
+import { delaiArchivageJours } from '#lib/archivage.ts';
+import { ecrireReglagePied, lireReglagePied, type ReglagePied } from '#lib/piedDePage.ts';
 
 export interface ConfigSite {
 	url: string;
@@ -61,7 +61,7 @@ export interface ConfigSite {
 	email_footer: string;
 	/** Lu ici pour être LIÉ à la Fiche copropriété, seule à l'écrire. */
 	reference_copro: string;
-	/** Le pied de page : éléments masqués, année de création, texte libre (`$lib/piedDePage`). */
+	/** Le pied de page : éléments masqués, année de création, texte libre (`#lib/piedDePage`). */
 	pied_de_page: ReglagePied;
 }
 
@@ -106,7 +106,7 @@ export function lireConfigSite(
 		mentions_legales: legal.mentions_legales ?? '',
 		politique_confidentialite: legal.politique_confidentialite ?? '',
 		contact_donnees: cfg['contact_donnees_personnelles'] ?? '',
-		//  Le réglage unique et son repli vivent dans `$lib/archivage` : les
+		//  Le réglage unique et son repli vivent dans `#lib/archivage` : les
 		//  recopier ici rouvrirait exactement la divergence que #515 referme.
 		archivage_delai_jours: delaiArchivageJours(cfg),
 		relance_syndic_delai_jours: parseInt(cfg['relance_syndic_delai_jours'] ?? '30') || 30,

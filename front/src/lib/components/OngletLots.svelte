@@ -9,21 +9,21 @@
   - Un lot ne se CRÉE pas ici : il naît d'un acte, il entre par l'import.
   - Un périmètre DÉRIVÉ se recalcule (« Recalculer les périmètres »), il ne se
     retire pas ; un périmètre POSÉ À LA MAIN survit au recalcul et se retire.
-  - Un seul lot déplié à la fois (`$lib/accordeon`).
+  - Un seul lot déplié à la fois (`#lib/accordeon`).
   - Les clés de charges telles que le syndic les appelle : `ReglageDesCles` (#2252).
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Badge from '$lib/components/Badge.svelte';
-	import ChampRecherche from '$lib/components/ChampRecherche.svelte';
-	import ChoixPastilles from '$lib/components/ChoixPastilles.svelte';
-	import ConstatsLots from '$lib/components/ConstatsLots.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import ReglageDesCles from '$lib/components/ReglageDesCles.svelte';
-	import ReglagesListe from '$lib/components/ReglagesListe.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
+	import Badge from '#lib/components/Badge.svelte';
+	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import ConstatsLots from '#lib/components/ConstatsLots.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import Icon from '#lib/components/Icon.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import ReglageDesCles from '#lib/components/ReglageDesCles.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		lots as lotsApi,
 		lotsAdmin,
@@ -31,12 +31,12 @@
 		type ConstatPatrimoine,
 		type MonLot,
 		type RelationLotPerimetre,
-	} from '$lib/api';
-	import { basculer } from '$lib/accordeon';
-	import { messageErreur } from '$lib/erreurs';
-	import type { Perimetre } from '$lib/perimetres';
-	import { contientTousLesMots } from '$lib/texte';
-	import { etageLabel, lotTypeLabel } from '$lib/utils';
+	} from '#lib/api/index.ts';
+	import { basculer } from '#lib/accordeon.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import type { Perimetre } from '#lib/perimetres/index.ts';
+	import { contientTousLesMots } from '#lib/texte.ts';
+	import { etageLabel, lotTypeLabel } from '#lib/utils.ts';
 
 	let lots: MonLot[] = [];
 	let constats: ConstatPatrimoine[] = [];

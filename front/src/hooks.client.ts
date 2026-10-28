@@ -12,7 +12,7 @@
  * ne lui donnait que les imprévues et les adresses inconnues (#2205).
  */
 import type { HandleClientError } from '@sveltejs/kit/hooks';
-import { codeErreur, signalerErreur } from '$lib/telemetry';
+import { codeErreur, signalerErreur } from '#lib/telemetry.ts';
 
 export const handleError: HandleClientError = ({ kind, error }) => {
 	if (kind === 'app') return;

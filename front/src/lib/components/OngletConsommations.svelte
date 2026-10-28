@@ -24,26 +24,26 @@
   de quel compteur il s'agit.
 -->
 <script lang="ts">
-	import { fmtNombre, nombreOuNull } from '$lib/utils';
+	import { fmtNombre, nombreOuNull } from '#lib/utils.ts';
 	import {
 		prestataires as prestApi,
 		type CompteurConfig,
 		type Prestataire,
 		type ReleveCompteur,
-	} from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { isCS } from '$lib/stores/auth';
-	import CarteListe from '$lib/components/CarteListe.svelte';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { SUPPRESSION, confirmerPuis } from '$lib/confirmation';
-	import FichiersUpload from '$lib/components/FichiersUpload.svelte';
-	import FormulaireCreation from '$lib/components/FormulaireCreation.svelte';
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import CategoriesCompteur from '$lib/components/CategoriesCompteur.svelte';
-	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
-	import EnteteCarte from '$lib/components/EnteteCarte.svelte';
-	import IconeAction from '$lib/components/IconeAction.svelte';
-	import IntertitreGroupe from '$lib/components/IntertitreGroupe.svelte';
+	} from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import CarteListe from '#lib/components/CarteListe.svelte';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { SUPPRESSION, confirmerPuis } from '#lib/confirmation.ts';
+	import FichiersUpload from '#lib/components/FichiersUpload.svelte';
+	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import CategoriesCompteur from '#lib/components/CategoriesCompteur.svelte';
+	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
+	import IntertitreGroupe from '#lib/components/IntertitreGroupe.svelte';
 
 	/** L'annuaire des prestataires — la page le charge déjà, on ne le recharge pas. */
 	export let prestataires: Prestataire[] = [];
@@ -122,7 +122,7 @@
 	//  gains de l'extraction — la page n'a plus à dire à l'onglet qu'il est
 	//  visible.
 	import { onMount } from 'svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 	onMount(() => {
 		if (!compteursDemandes) loadCompteurConfigs();
 	});

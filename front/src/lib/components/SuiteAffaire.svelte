@@ -35,27 +35,27 @@
 	import SectionsSuiteConseil from './SectionsSuiteConseil.svelte';
 	import SuiteConseilEquipement from './SuiteConseilEquipement.svelte';
 	import OptionsEvolutionTicket from './OptionsEvolutionTicket.svelte';
-	import { tickets as ticketsApi, type Ticket, type TicketEvolution } from '$lib/api';
-	import { contexteCommentaire } from '$lib/assistant';
-	import { TICKET } from '$lib/entites/ticket';
-	import type { ChargeUtileEvolution, EntreeCorrigee } from '$lib/evolutions';
-	import { fichiersDepuisUrls } from '$lib/fichiers';
-	import { conditionsDeLaSuite } from '$lib/formulaire-affaire';
-	import { SUITE } from '$lib/gestes';
-	import { destinatairesParDefautDuTicket, ticketLuDuSeulConseil } from '$lib/lecture-ticket';
-	import { motifWhatsappInterdit } from '$lib/options-publication';
-	import { reserveAuConseil } from '$lib/destinataires';
-	import { nomCopie } from '$lib/saisi-pour';
-	import { isCS } from '$lib/stores/auth';
-	import { equipementDansLaSuite } from '$lib/suite-conseil';
-	import { demanderFusion, SANS_FUSION } from '$lib/fusion-affaires';
+	import { tickets as ticketsApi, type Ticket, type TicketEvolution } from '#lib/api/index.ts';
+	import { contexteCommentaire } from '#lib/assistant.ts';
+	import { TICKET } from '#lib/entites/ticket.ts';
+	import type { ChargeUtileEvolution, EntreeCorrigee } from '#lib/evolutions.ts';
+	import { fichiersDepuisUrls } from '#lib/fichiers.ts';
+	import { conditionsDeLaSuite } from '#lib/formulaire-affaire.ts';
+	import { SUITE } from '#lib/gestes.ts';
+	import { destinatairesParDefautDuTicket, ticketLuDuSeulConseil } from '#lib/lecture-ticket.ts';
+	import { motifWhatsappInterdit } from '#lib/options-publication.ts';
+	import { reserveAuConseil } from '#lib/destinataires.ts';
+	import { nomCopie } from '#lib/saisi-pour.ts';
+	import { isCS } from '#lib/stores/auth.ts';
+	import { equipementDansLaSuite } from '#lib/suite-conseil.ts';
+	import { demanderFusion, SANS_FUSION } from '#lib/fusion-affaires.ts';
 	import {
 		STATUT_TICKET_LABELS,
 		estActualite,
 		optionsDuTicket,
 		optionsVersTicket,
-	} from '$lib/tickets';
-	import { etatDeLaSuite, etatsDeLaSuite } from '$lib/suivi-actualite';
+	} from '#lib/tickets.ts';
+	import { etatDeLaSuite, etatsDeLaSuite } from '#lib/suivi-actualite.ts';
 
 	export let ticket: Ticket;
 	/** L'entrée CORRIGÉE — `null` pour une Suite neuve. */
@@ -76,7 +76,7 @@
 	//  Ce qui distingue l'actualité, écrit ICI et nulle part ailleurs : pas de
 	//  cycle, pas d'aperçu (son module compose son message), ses canaux par défaut,
 	//  et le groupe fermé quand elle ne parle qu'au conseil. Son SUIVI, optionnel
-	//  (10/10/2026), s'avance ici comme celui d'une affaire : `$lib/suivi-actualite`.
+	//  (10/10/2026), s'avance ici comme celui d'une affaire : `#lib/suivi-actualite`.
 	$: actu = estActualite(ticket);
 	$: etatCourant = etatDeLaSuite(ticket);
 	$: whatsappInterdit = actu

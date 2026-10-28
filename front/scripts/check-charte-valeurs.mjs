@@ -152,8 +152,8 @@ export function valeursEnDur(css) {
  *  Le tableau dit la valeur de REMPLACEMENT : le message d'échec la donne.
  *
  *  ⚠️ Les palettes CATÉGORIELLES ne sont pas des états et restent hors de ce
- *  contrôle : la teinte d'un type du fil (`$lib/flux`), d'un périmètre
- *  (`$lib/perimetres/teinte`), d'une colonne de kanban, d'une nature
+ *  contrôle : la teinte d'un type du fil (`#lib/flux`), d'un périmètre
+ *  (`#lib/perimetres/teinte`), d'une colonne de kanban, d'une nature
  *  (`--nature-fort`), l'orange de l'urgence, `.badge-yellow` (#495).
  */
 export const TAILLES_HORS_ECHELLE = {

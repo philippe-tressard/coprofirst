@@ -16,11 +16,11 @@
   vivent dans le même fichier et voyagent ensemble.
 -->
 <script lang="ts">
-	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import EncartAvertissement from '$lib/components/EncartAvertissement.svelte';
+	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import Icon from './Icon.svelte';
 	import PasswordStrength from './PasswordStrength.svelte';
-	import { capsLockActif } from '$lib/utils';
+	import { capsLockActif } from '#lib/utils.ts';
 
 	/** Identifiant du champ — relie le libellé (`for`) et le message d'erreur. */
 	export let id: string;

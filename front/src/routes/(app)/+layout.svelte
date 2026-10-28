@@ -1,23 +1,23 @@
 <script lang="ts">
-	import BandeauDemo from '$lib/components/BandeauDemo.svelte';
+	import BandeauDemo from '#lib/components/BandeauDemo.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
-	import Nav from '$lib/components/Nav.svelte';
-	import { auth as authApi } from '$lib/api';
-	import { setUser, currentUser, marquerAuthResolue } from '$lib/stores/auth';
-	import { urlDeConnexion } from '$lib/redirection';
-	import { loadSiteConfig, configStore } from '$lib/stores/pageConfig';
-	import { chargerPerimetres } from '$lib/stores/perimetres';
+	import Nav from '#lib/components/Nav.svelte';
+	import { auth as authApi } from '#lib/api/index.ts';
+	import { setUser, currentUser, marquerAuthResolue } from '#lib/stores/auth.ts';
+	import { urlDeConnexion } from '#lib/redirection.ts';
+	import { loadSiteConfig, configStore } from '#lib/stores/pageConfig.ts';
+	import { chargerPerimetres } from '#lib/stores/perimetres.ts';
 	import {
 		commencerNavigation,
 		mesurerNavigation,
 		trackPageView,
 		setTelemetryOptOut,
-	} from '$lib/telemetry';
-	import { lireSourceArrivee } from '$lib/arrivees';
-	import PiedDePage from '$lib/components/PiedDePage.svelte';
-	import { lireReglagePied } from '$lib/piedDePage';
+	} from '#lib/telemetry.ts';
+	import { lireSourceArrivee } from '#lib/arrivees.ts';
+	import PiedDePage from '#lib/components/PiedDePage.svelte';
+	import { lireReglagePied } from '#lib/piedDePage.ts';
 
 	onMount(async () => {
 		const [, meResult] = await Promise.allSettled([

@@ -16,21 +16,21 @@
   composants — les fusionner effacerait la distinction que l'écran fait exprès.
 -->
 <script lang="ts">
-	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
-	import { contexteCommentaire } from '$lib/assistant';
+	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
+	import { contexteCommentaire } from '#lib/assistant.ts';
 	import { createEventDispatcher } from 'svelte';
-	import { nomAffiche } from '$lib/noms';
-	import { fmtDatetime } from '$lib/date';
-	import { safeDescription } from '$lib/sanitize';
-	import { currentUser, isCS } from '$lib/stores/auth';
-	import PiecesJointes from '$lib/components/PiecesJointes.svelte';
-	import { TICKET } from '$lib/entites/ticket';
-	import { conditionsDeLaSuite } from '$lib/formulaire-affaire';
-	import { motifWhatsappInterdit } from '$lib/options-publication';
-	import { ticketLuDuSeulConseil } from '$lib/lecture-ticket';
-	import { gesteReponse } from '$lib/tickets';
-	import type { Ticket, TicketMessage, TicketEvolution } from '$lib/api';
-	import { nomCopie } from '$lib/saisi-pour';
+	import { nomAffiche } from '#lib/noms.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { safeDescription } from '#lib/sanitize.ts';
+	import { currentUser, isCS } from '#lib/stores/auth.ts';
+	import PiecesJointes from '#lib/components/PiecesJointes.svelte';
+	import { TICKET } from '#lib/entites/ticket.ts';
+	import { conditionsDeLaSuite } from '#lib/formulaire-affaire.ts';
+	import { motifWhatsappInterdit } from '#lib/options-publication.ts';
+	import { ticketLuDuSeulConseil } from '#lib/lecture-ticket.ts';
+	import { gesteReponse } from '#lib/tickets.ts';
+	import type { Ticket, TicketMessage, TicketEvolution } from '#lib/api/index.ts';
+	import { nomCopie } from '#lib/saisi-pour.ts';
 
 	/** Le ticket, pour son auteur et sa confidentialité. */
 	export let ticket: Ticket;
@@ -116,7 +116,7 @@
 	{:else}
 		<div class="card reply-form" use:auPremierPlan>
 			{#key repondreOuvert}
-				<ChargementDiffere charger={() => import('$lib/components/EvolForm.svelte')}>
+				<ChargementDiffere charger={() => import('#lib/components/EvolForm.svelte')}>
 					{#snippet contenu(EvolForm)}
 						<EvolForm
 							entrees={evolutions}

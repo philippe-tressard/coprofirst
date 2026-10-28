@@ -16,11 +16,11 @@
   recharge après l'envoi. La règle « à relancer » vient du serveur (`a_relancer`).
 -->
 <script lang="ts">
-	import { tickets as ticketsApi, type SuiviAffaires } from '$lib/api';
-	import { confirmer } from '$lib/confirmation';
-	import { messageErreur } from '$lib/erreurs';
-	import { toast } from '$lib/components/Toast.svelte';
-	import SectionRepliee from '$lib/components/SectionRepliee.svelte';
+	import { tickets as ticketsApi, type SuiviAffaires } from '#lib/api/index.ts';
+	import { confirmer } from '#lib/confirmation.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import SectionRepliee from '#lib/components/SectionRepliee.svelte';
 	import TableauAffaires from './TableauAffaires.svelte';
 	import ApercuRelance from './ApercuRelance.svelte';
 	import ReponsesSyndic from './ReponsesSyndic.svelte';

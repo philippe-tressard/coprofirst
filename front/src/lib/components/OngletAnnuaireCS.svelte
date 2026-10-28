@@ -9,12 +9,12 @@
   « pas encore là » ne se lit pas « aucune correspondance » (#522).
 -->
 <script lang="ts">
-	import type { SourcesRapprochement } from '$lib/annuaire-rapprochement';
-	import AnnuaireConseil from '$lib/components/AnnuaireConseil.svelte';
-	import AnnuaireSyndic from '$lib/components/AnnuaireSyndic.svelte';
-	import ConsignesArrivant from '$lib/components/ConsignesArrivant.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import LienConsignes from '$lib/components/LienConsignes.svelte';
+	import type { SourcesRapprochement } from '#lib/annuaire-rapprochement.ts';
+	import AnnuaireConseil from '#lib/components/AnnuaireConseil.svelte';
+	import AnnuaireSyndic from '#lib/components/AnnuaireSyndic.svelte';
+	import ConsignesArrivant from '#lib/components/ConsignesArrivant.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import LienConsignes from '#lib/components/LienConsignes.svelte';
 
 	export let referenceLue: boolean;
 	export let sources: SourcesRapprochement;

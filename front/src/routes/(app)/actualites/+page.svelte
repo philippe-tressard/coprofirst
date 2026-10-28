@@ -21,9 +21,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { cibleDuHash } from '$lib/deepLink';
-	import { suivrePublicationPromue } from '$lib/gestes-actualite';
-	import EtatListe from '$lib/components/EtatListe.svelte';
+	import { cibleDuHash } from '#lib/deepLink.ts';
+	import { suivrePublicationPromue } from '#lib/gestes-actualite.ts';
+	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	onMount(async () => {
 		const idPub = cibleDuHash('pub');

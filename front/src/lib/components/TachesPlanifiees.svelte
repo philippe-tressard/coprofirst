@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Badge from '$lib/components/Badge.svelte';
-	import { messageErreur } from '$lib/erreurs';
-	import Icon from '$lib/components/Icon.svelte';
+	import Badge from '#lib/components/Badge.svelte';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import Icon from '#lib/components/Icon.svelte';
 	//  Extrait de `admin/+page.svelte` (2577 lignes, cinq fois le plafond de
 	//  modularité) le 11/08/2026, plutôt que d'y ajouter la colonne « Tâche ».
 	//
@@ -11,19 +11,19 @@
 	//  hebdomadaire : jamais exécutée » au-dessus d'un tableau qui semblait
 	//  montrer des maintenances quotidiennes réussies.
 	import { onMount } from 'svelte';
-	import { admin as adminApi, type ExecutionTache, type SanteMaintenance } from '$lib/api';
-	import { fmtDatetime } from '$lib/date';
-	import { toast } from '$lib/components/Toast.svelte';
-	import { LIBELLE_TACHE, LIBELLE_ACTION } from '$lib/taches';
-	//  🔴 Les trois tables de STATUT vivent dans `$lib/taches.ts`, à côté des
+	import { admin as adminApi, type ExecutionTache, type SanteMaintenance } from '#lib/api/index.ts';
+	import { fmtDatetime } from '#lib/date.ts';
+	import { toast } from '#lib/components/Toast.svelte';
+	import { LIBELLE_TACHE, LIBELLE_ACTION } from '#lib/taches.ts';
+	//  🔴 Les trois tables de STATUT vivent dans `#lib/taches.ts`, à côté des
 	//  libellés de tâches — c'est la même notion, et les libellés y étaient déjà
 	//  pour la raison qui vaut ici : les redéfinir dans un écran est ce qui les
 	//  fait diverger. Le garde-fou de modularité a refusé leur croissance dans ce
 	//  fichier (#488) ; la bonne réponse n'était pas de raboter mais de remonter.
-	import { LIBELLE_STATUT, AIDE_STATUT, CLASSE_STATUT } from '$lib/taches';
-	import ConfigSauvegarde from '$lib/components/ConfigSauvegarde.svelte';
-	import EtatListe from '$lib/components/EtatListe.svelte';
-	import TableExecutionsTache from '$lib/components/TableExecutionsTache.svelte';
+	import { LIBELLE_STATUT, AIDE_STATUT, CLASSE_STATUT } from '#lib/taches.ts';
+	import ConfigSauvegarde from '#lib/components/ConfigSauvegarde.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import TableExecutionsTache from '#lib/components/TableExecutionsTache.svelte';
 
 	//  Le bouton dit ce qu'il FAIT, pas le nom de la tâche — voir LIBELLE_ACTION.
 	//  Défaut : « Lancer <nom de la tâche> », qui reste juste là où le bouton
@@ -48,7 +48,7 @@
 	//  Détail vides : une bascule n'a ni l'une ni l'autre à déclarer.
 	//  Signalé par l'utilisateur le 11/08/2026, par aucun contrôle.
 	//
-	//  Les libellés eux-mêmes vivent dans `$lib/taches.ts` : ils servent AUSSI aux
+	//  Les libellés eux-mêmes vivent dans `#lib/taches.ts` : ils servent AUSSI aux
 	//  titres des cartes de détail, qui sont dans un autre fichier. Les redéfinir
 	//  ici est précisément ce qui les avait fait diverger.
 

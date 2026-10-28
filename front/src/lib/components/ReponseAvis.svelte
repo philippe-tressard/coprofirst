@@ -7,9 +7,9 @@
 -->
 <script lang="ts">
 	import PiedFormulaire from './PiedFormulaire.svelte';
-	import { avis as avisApi, type Avis } from '$lib/api';
-	import { fmtDate } from '$lib/date';
-	import { messageErreur } from '$lib/erreurs';
+	import { avis as avisApi, type Avis } from '#lib/api/index.ts';
+	import { fmtDate } from '#lib/date.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
 	import { toast } from './Toast.svelte';
 
 	export let avis: Avis;

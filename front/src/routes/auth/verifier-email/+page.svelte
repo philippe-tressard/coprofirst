@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { auth as authApi } from '$lib/api';
-	import { messageErreur } from '$lib/erreurs';
-	import { getSiteNom } from '$lib/stores/pageConfig';
+	import { auth as authApi } from '#lib/api/index.ts';
+	import { messageErreur } from '#lib/erreurs.ts';
+	import { getSiteNom } from '#lib/stores/pageConfig.ts';
 
 	const _siteNom = getSiteNom();
 

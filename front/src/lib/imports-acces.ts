@@ -42,11 +42,11 @@ import {
 	type RattachementImport,
 	type StatsImportAcces,
 	type StatutLigneImport,
-} from '$lib/api';
+} from '#lib/api/index.ts';
 
 //  Le type vit à côté du client qui le rend (#1572) ; réexporté pour ses lecteurs.
 export type { LotPourBadge };
-import { parAttribut } from '$lib/table-statuts';
+import { parAttribut } from '#lib/table-statuts.ts';
 
 /**  Une ligne de la liste, quel que soit le type d'import — ce que rend `api.list`. */
 export type LigneImport =

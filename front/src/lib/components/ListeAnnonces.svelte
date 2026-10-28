@@ -20,7 +20,7 @@
   calcule. Rien d'autre ne change, donc rien d'autre ne se paramètre.
 -->
 <script lang="ts">
-	import type { PetiteAnnonce } from '$lib/api';
+	import type { PetiteAnnonce } from '#lib/api/index.ts';
 	import AnnonceCard from './AnnonceCard.svelte';
 
 	/** Les annonces à rendre, déjà filtrées et triées par l'appelant. */

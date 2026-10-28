@@ -26,10 +26,10 @@
  *    geste qui défait ce qu'il sert à ajuster. Le garde est chez l'appelant, qui
  *    seul sait s'il crée ou corrige.
  */
-import type { AnnonceHall } from '$lib/api';
-//  🔴 Le plafond vient de `$lib/publications`, où il vivait déjà : le
+import type { AnnonceHall } from '#lib/api/index.ts';
+//  🔴 Le plafond vient de `#lib/publications`, où il vivait déjà : le
 //  redéclarer ici en aurait fait une seconde valeur, libre de diverger.
-import { MAX_SOURCES_PREREMPLISSAGE } from '$lib/publications';
+import { MAX_SOURCES_PREREMPLISSAGE } from '#lib/publications.ts';
 
 /**
  * Les annonces proposables — les plus récentes, et jamais une erreur.

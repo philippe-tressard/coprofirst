@@ -33,14 +33,14 @@
 -->
 <script lang="ts">
 	import AlerteEpinglage from './AlerteEpinglage.svelte';
-	//  Glyphes et libellés : la table est la source unique (`$lib/options-publication`).
+	//  Glyphes et libellés : la table est la source unique (`#lib/options-publication`).
 	//  Ils étaient écrits ici ET dans les badges de `CarteActualite`, et avaient
 	//  divergé — l'épinglage n'avait pas de glyphe ici et 📌 là-bas.
 	import {
 		actionOption,
 		optionPublication,
 		type CleOptionPublication,
-	} from '$lib/options-publication';
+	} from '#lib/options-publication.ts';
 
 	/** Épingler en tête du fil. */
 	export let epingle = false;

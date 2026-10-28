@@ -10,8 +10,8 @@
  *  libellé « en_cours sortie ».
  *
  *  Même famille que `lint:type-lot` : la forme d'une copie est le remplacement
- *  du soulignement, ici sur un champ `statut`. Les tables vivent dans `$lib`
- *  (`LIBELLE_STATUT_BAIL`, `$lib/roles`, `$lib/tickets`…).
+ *  du soulignement, ici sur un champ `statut`. Les tables vivent dans `#lib`
+ *  (`LIBELLE_STATUT_BAIL`, `#lib/roles`, `#lib/tickets`…).
  *
  *  Lancer : node scripts/check-statut-recalcule.mjs [--selftest]
  */

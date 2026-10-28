@@ -34,7 +34,7 @@
  * rapprochement automatique qui ne trouve rien. C'est plus discret qu'une liste
  * vide, donc plus durable.
  */
-import { messageErreur } from '$lib/erreurs';
+import { messageErreur } from '#lib/erreurs.ts';
 
 /**
  * Attend une promesse et rend `[valeur, erreur]` — jamais l'un sans l'autre.

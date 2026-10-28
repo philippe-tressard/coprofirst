@@ -102,7 +102,7 @@ export const PAGES_ROLES: PageDef[] = [
 		//  copropriété est réglée, quels services tournent, comment le site se
 		//  présente, comment tourne le serveur. `BarreOnglets` rend une rangée de
 		//  GROUPES, puis les onglets du groupe actif. Une clé retirée (`site`,
-		//  `import_*`) reste servie : `$lib/admin-adresses`.
+		//  `import_*`) reste servie : `#lib/admin-adresses`.
 		onglets: [
 			{
 				id: 'a_traiter',

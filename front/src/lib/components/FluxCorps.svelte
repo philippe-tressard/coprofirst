@@ -14,11 +14,11 @@
   s'afficherait deux fois sur toute carte ouverte.
 -->
 <script lang="ts">
-	import BadgeEtatAffaire from '$lib/components/BadgeEtatAffaire.svelte';
-	import type { FluxItem } from '$lib/api';
-	import { fmtDatetimeShort } from '$lib/date';
-	import { typeVoirLabel } from '$lib/flux';
-	import { safeHtml } from '$lib/sanitize';
+	import BadgeEtatAffaire from '#lib/components/BadgeEtatAffaire.svelte';
+	import type { FluxItem } from '#lib/api/index.ts';
+	import { fmtDatetimeShort } from '#lib/date.ts';
+	import { typeVoirLabel } from '#lib/flux.ts';
+	import { safeHtml } from '#lib/sanitize.ts';
 	import PiecesJointes from './PiecesJointes.svelte';
 	import FluxAffaireEtapes from './FluxAffaireEtapes.svelte';
 
@@ -30,7 +30,7 @@
 	//  Les deux listes viennent du même `meta` : les dériver ici plutôt que de les
 	//  recevoir évite deux props pour une donnée que le composant a déjà.
 	$: debut = item.meta?.debut as string | undefined;
-	//  🔴 Le badge d'état — teinte de `$lib/tickets`, repli gris pour l'état d'un
+	//  🔴 Le badge d'état — teinte de `#lib/tickets`, repli gris pour l'état d'un
 	//  autre objet (événement, idée) — est `BadgeEtatAffaire` (#2173). Ce fichier
 	//  en a porté une copie en ternaire imbriqué, puis la table lue sur place.
 	$: photos = (item.meta?.photos_urls as string[] | undefined) ?? [];

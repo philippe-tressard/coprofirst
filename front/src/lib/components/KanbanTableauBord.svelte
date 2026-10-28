@@ -27,10 +27,10 @@
 	 * affaire suivie en cours reste à l'accueil tant qu'elle n'est pas close,
 	 * quelle que soit l'année ; la visibilité est celle du serveur.
 	 */
-	import ItemKanban from '$lib/components/ItemKanban.svelte';
-	import { routeOnglet } from '$lib/routes-onglets';
-	import { basculer } from '$lib/accordeon';
-	import type { Ticket } from '$lib/api';
+	import ItemKanban from '#lib/components/ItemKanban.svelte';
+	import { routeOnglet } from '#lib/routes-onglets.ts';
+	import { basculer } from '#lib/accordeon.ts';
+	import type { Ticket } from '#lib/api/index.ts';
 	import {
 		KANBAN_COLS_ACCUEIL,
 		SEUIL_KANBAN_ETROIT,
@@ -39,7 +39,7 @@
 		MAX_CARTES_ACCUEIL,
 		MOT_COLONNE_VIDE,
 		type KanbanCtx,
-	} from '$lib/kanban';
+	} from '#lib/kanban.ts';
 
 	/** Les affaires — la page les charge, ce composant les trie. */
 	export let affaires: Ticket[] = [];
@@ -54,7 +54,7 @@
 	 *
 	 *   🔴 Révisé le 30/09/2026. C'était un `Set`, écrit exprès (« ce n'est pas
 	 *   un accordéon, c'est un tableau ») ; arbitré depuis : l'accordéon vaut
-	 *   partout, sans exception, et le kanban y entre (`$lib/accordeon`). */
+	 *   partout, sans exception, et le kanban y entre (`#lib/accordeon`). */
 	let videDepliee: string | null = null;
 
 	const lienKanban = routeOnglet('mes-demandes', 'kanban');
@@ -81,7 +81,7 @@
 	});
 
 	$: dashKanbanCols = DASH_KANBAN_COLS.filter((col) => kanbanColVisible(col.id, ctx)).map((col) => {
-		//  🔴 Le rangement vit dans `$lib/kanban` : il était écrit ici ET dans le
+		//  🔴 Le rangement vit dans `#lib/kanban` : il était écrit ici ET dans le
 		//  calendrier, et les deux ont divergé (signalé à l'écran, 02/09/2026).
 		let items: Ticket[] = dashKanbanEvs.filter((t) => colonneDuTicket(t.statut) === col.id);
 		if (col.id === 'termine') {
@@ -102,7 +102,7 @@
 	$: mobileKanbanCurrent = mobileKanbanCols[mobileKanbanIdx] ?? null;
 
 	//  Bascule par rendu conditionnel, pas par CSS — le pourquoi est avec la
-	//  constante (`$lib/kanban.ts`) : deux bascules CSS ont échoué le même soir.
+	//  constante (`#lib/kanban.ts`) : deux bascules CSS ont échoué le même soir.
 	let largeurFenetre = 0;
 	$: vueEtroite = largeurFenetre > 0 && largeurFenetre <= SEUIL_KANBAN_ETROIT;
 </script>

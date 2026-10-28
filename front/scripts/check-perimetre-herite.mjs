@@ -39,7 +39,7 @@ import { fileURLToPath } from 'node:url';
 import { chargerModule } from './lib/charger-module.mjs';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
-//  ⚠️ `$lib/perimetres` est un PAQUET depuis le 10/09/2026 (le fichier unique
+//  ⚠️ `#lib/perimetres` est un PAQUET depuis le 10/09/2026 (le fichier unique
 //  avait franchi les 500 lignes). Le chemin ci-dessous pointe le module qui
 //  porte réellement ce que ce contrôle mesure — l'`index.ts` ne fait que
 //  réexporter, et transpiler une réexportation ne donne rien à lire.
