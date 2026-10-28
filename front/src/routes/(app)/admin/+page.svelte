@@ -34,7 +34,7 @@
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import { toast } from '$lib/components/Toast.svelte';
 	import { defautsDePage } from '$lib/pages';
-	import { page } from '$app/state';
+	import { lieu } from '$lib/lieu.svelte';
 	import BarreOnglets from '$lib/components/BarreOnglets.svelte';
 	import EntetePage from '$lib/components/EntetePage.svelte';
 	import {
@@ -64,7 +64,7 @@
 	//  n'est pas administrateur n'a que ceux de l'Exploitation (#2029). Une clé
 	//  d'avant le rangement par niveau (#2062) est redirigée par `+page.ts`.
 	$: ouverts = ongletsOuverts('admin', $droitsOnglet).map((o) => o.id);
-	$: demande = page.url.searchParams.get('onglet');
+	$: demande = $lieu.url.searchParams.get('onglet');
 	$: onglet = demande && ouverts.includes(demande) ? demande : ouverts[0];
 	$: trackTabView(onglet);
 

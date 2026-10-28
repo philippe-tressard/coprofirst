@@ -14,7 +14,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/state';
+	import { lieu } from '$lib/lieu.svelte';
 	import EtatListe from '$lib/components/EtatListe.svelte';
 	import PiedFormulaire from '$lib/components/PiedFormulaire.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
@@ -28,7 +28,7 @@
 	import Badge from '$lib/components/Badge.svelte';
 
 	const siteNom = getSiteNom();
-	$: jeton = page.params.jeton ?? '';
+	$: jeton = $lieu.params.jeton ?? '';
 
 	let cr: CompteRenduParLien | null = null;
 	let chargement = true;

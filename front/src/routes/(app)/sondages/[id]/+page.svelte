@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ChargementDiffere from '$lib/components/ChargementDiffere.svelte';
 	import EtoileRequis from '$lib/components/EtoileRequis.svelte';
-	import { page } from '$app/state';
+	import { lieu } from '$lib/lieu.svelte';
 	import { sondages as sondagesApi, type SondageDetail } from '$lib/api';
 	import { confirmer, confirmerPuis, SUPPRESSION } from '$lib/confirmation';
 	import { tenter, messageErreur } from '$lib/erreurs';
@@ -37,7 +37,7 @@
 	let edition = false;
 	let deleting = false;
 
-	$: sondageId = Number(page.params.id);
+	$: sondageId = Number($lieu.params.id);
 	$: peutModerer = $isCS;
 	$: estAuteur = sondage && $currentUser?.id === sondage.auteur_id;
 	$: peutGerer = estAuteur || $isAdmin;

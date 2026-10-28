@@ -89,8 +89,18 @@ const FORMES = [
 		//  `$app/stores` — les stores de SvelteKit, dépréciés au profit de `$app/state`
 		//  (#2205, lot 1) et retirés en kit 3 : la montée casserait chaque import.
 		motif: () => /from\s+['"]\$app\/stores['"]/,
-		quoi: "`$app/stores` (API SvelteKit 2, retirée en kit 3)",
+		quoi: '`$app/stores` (API SvelteKit 2, retirée en kit 3)',
 		remede: "`import { page, navigating, updated } from '$app/state'` — des objets, plus de `$`",
+		global: true,
+	},
+	{
+		//  `$: x = page.params.id` : `page` est un import immuable, le `$:` ne s'y
+		//  abonne pas et la navigation laisse la valeur périmée, sans erreur.
+		//  ESLint ne le voit que si toutes les variables du `$:` sont immuables.
+		motif: () =>
+			/^[ \t]*\$:.*(?<![\w$.])page\.(?:url|params|route|status|error|data|state|form)\b/m,
+		quoi: '`page` de `$app/state` lu dans un `$:` (jamais réévalué)',
+		remede: "`import { lieu } from '$lib/lieu.svelte'` puis `$: id = $lieu.params.id`",
 		global: true,
 	},
 	{
