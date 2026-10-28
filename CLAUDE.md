@@ -810,6 +810,10 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   `start.sh`).
 - 🔒 `test_routeurs_nommes_par_un_test.py` : un routeur de `app/routers/` que
   **aucun** fichier de `tests/` ne nomme est refusé (#1569).
+- 🔒 **Un module de l'API s'importe seul** (#2241) : `test_imports_sans_cycle.py`
+  relève les cycles d'imports de niveau module et importe chacun de leurs modules en
+  premier, dans un interpréteur neuf — la suite, qui a déjà tout chargé, ne les voit pas.
+  Un cycle se coupe par un import dans la fonction qui s'en sert.
 - 🔒 **Clones Python** (#1564) : `scripts/ci/clones_python.py` (job `lint-backend`,
   jscpd épinglé) mesure les duplications exactes de `api/app` et échoue **dans les
   deux sens** — un clone ajouté, ou un retiré sans baisser `PLAFOND_CLONES`. Les
