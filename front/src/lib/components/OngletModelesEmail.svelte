@@ -333,7 +333,7 @@
 												</button>
 											</div>
 											{#if emailApercu}
-												<div class="apercu-email">{@html safeHtml(emailCorpsHtml)}</div>
+												<div class="apercu-email ilot-clair">{@html safeHtml(emailCorpsHtml)}</div>
 											{:else}
 												<textarea
 													id="email-corps-html"
@@ -424,12 +424,13 @@
 	}
 
 	/*  Même cause que la télémétrie : ces règles étaient restées dans la page à
-	    l'extraction. Le style part AVEC le balisage — `lint:classes-nues`. */
+	    l'extraction. Le style part AVEC le balisage — `lint:classes-nues`.
+	    Un îlot clair : le corps se lit tel que le destinataire le recevra, même
+	    au thème sombre (`ilots-clairs.css` porte son fond et son schéma). */
 	.apercu-email {
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
 		padding: 0.75rem;
-		background: var(--color-surface);
 		max-height: 340px;
 		overflow: auto;
 	}

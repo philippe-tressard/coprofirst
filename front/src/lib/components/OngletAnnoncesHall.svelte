@@ -275,7 +275,7 @@
 					Aperçu {#if ahApercuFormat}<span class="badge badge-blue">{ahApercuFormat}</span>{/if}
 				</h3>
 				{#if ahApercuHtml}
-					<div class="ah-apercu-cadre">
+					<div class="ah-apercu-cadre ilot-clair">
 						<iframe
 							class="ah-apercu-frame"
 							title="Aperçu de l'annonce"
@@ -327,11 +327,12 @@
 		font-weight: 600;
 		margin-bottom: 0.75rem;
 	}
+	/*  L'affiche telle qu'elle sortira de l'imprimante : un îlot clair, même au
+	    thème sombre (`ilots-clairs.css` porte son fond et son schéma). */
 	.ah-apercu-cadre {
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
 		overflow: hidden;
-		background: var(--color-surface);
 	}
 	.ah-apercu-frame {
 		width: 100%;

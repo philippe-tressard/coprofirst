@@ -19,6 +19,7 @@
  *  Sur bureau et sur téléphone, sans défilement horizontal.
  */
 import { boiteStable, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 import type { FicheInstallation, RapportInstallation, RegistreLu } from '../src/lib/api';
 
 const OPERATEUR = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
@@ -485,4 +486,15 @@ test('Installations : le canal et la version — la vague, la version fixée, et
 		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
 	);
 	expect(deborde, 'défilement horizontal dans l’onglet Installations').toBe(false);
+});
+
+test('@sombre — Installations : la liste et une fiche dépliée se lit au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page);
+	const carte = page.locator('#installation-CF-000003');
+	await carte.getByRole('button', { name: /CF-000003/ }).click();
+	await expect(carte.getByText(/Version 1, acceptée le/)).toBeVisible();
+	await forcerTheme(page, 'sombre');
+	await attendreLisible(page, '#contenu');
 });

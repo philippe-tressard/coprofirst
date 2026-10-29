@@ -41,8 +41,15 @@
 {/if}
 
 <style>
+	/*  Le fond du logo, et son liseré de même teinte : invisibles au clair, où le
+	    logo a été composé ; au sombre, la carte claire qu'il attend (#2174, S4d).
+	    Un liseré en `box-shadow` ne déplace rien : la mise en page ne bouge pas
+	    d'un pixel, et l'image n'est ni recopiée ni filtrée — un filtre
+	    inverserait aussi les couleurs d'un logo qui en porte. */
 	.logo-residence {
 		display: block;
 		object-fit: contain;
+		background: var(--color-fond-logo);
+		box-shadow: 0 0 0 4px var(--color-fond-logo);
 	}
 </style>

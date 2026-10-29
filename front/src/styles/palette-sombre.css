@@ -61,6 +61,8 @@
 		--color-border-champ: #6580a3;
 		--color-neutre-fond: #1b2a41;
 		--color-neutre-bordure: #263a57;
+		/* Le logo téléversé a été composé sur la carte claire : il la retrouve. */
+		--color-fond-logo: #ffffff;
 		--color-text: #e8e6e1;
 		--color-text-muted: #9fb0c6;
 		/* La marque : éclaircie pour se lire en texte sur fond sombre. */

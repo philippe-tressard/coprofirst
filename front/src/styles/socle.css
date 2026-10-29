@@ -37,7 +37,10 @@ body {
 	max-width: 100vw;
 }
 
-:root {
+/*  `.ilot-clair` : un APERÇU de support imprimé ou envoyé reprend ces valeurs
+    sous le thème sombre — `styles/ilots-clairs.css` dit pourquoi (#2174, S4d). */
+:root,
+.ilot-clair {
 	/* Témoin lu par le garde de démarrage (`src/garde-demarrage.js`) : absent du
 	   style calculé, la page s'affiche sans sa feuille principale et se recharge. */
 	--feuille-principale: chargee;
@@ -226,6 +229,10 @@ body {
 	    `--color-bg` de la page est trop chaud pour un bloc dans une carte. */
 	--color-neutre-fond: #f7f8fa;
 	--color-neutre-bordure: #e3e8ef;
+	/*  Le FOND posé sous le logo téléversé (`LogoResidence`) : rien au clair, où
+	    il a été composé ; au sombre, le blanc de la carte claire — un logo à
+	    l'encre foncée y disparaîtrait (#2174, S4d). */
+	--color-fond-logo: transparent;
 	/* Utilitaires */
 	--radius: 0.5rem;
 	--shadow-sm: 0 1px 3px rgba(30, 58, 95, 0.1);

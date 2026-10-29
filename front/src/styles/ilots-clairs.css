@@ -1,0 +1,35 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   5Hostachy — Les ÎLOTS CLAIRS (#2174, lot S4d, 29/10/2026).
+
+   Un APERÇU montre ce qui sortira de l'application : l'affiche telle que
+   l'imprimante la rendra, le courriel tel que le destinataire le lira. Il se
+   regarde POUR valider ce rendu (`standards/04` §14 : observer la chose, pas
+   son approximation). Sous le thème sombre il reste donc CLAIR — le papier et
+   la messagerie ne suivent pas le thème de l'écran qui les prépare.
+
+   ## Comment
+
+   `.ilot-clair` partage la règle `:root` de `socle.css` : l'élément reprend les
+   jetons du thème CLAIR, que ses descendants héritent à la place de ceux que
+   `palette-sombre.css` pose sur la racine. Rien n'est recopié — une valeur
+   claire réglée dans `socle.css` vaut aussitôt dans l'îlot.
+
+   Cette feuille ajoute ce que la racine ne doit pas porter : le schéma des
+   contrôles natifs (barre de défilement, et surtout le canevas d'un `<iframe>`,
+   rendu sur un fond OPAQUE quand le schéma du cadre et celui du document
+   embarqué diffèrent), et le FOND du support — le blanc de la carte, celui sur
+   lequel l'affiche et le courriel sont composés. Elle vient après `socle.css` :
+   à poids égal, son fond l'emporte sur celui de la page que la règle partagée
+   donnerait.
+
+   Au thème clair, l'îlot vaut exactement ce qui l'entoure : rien ne change.
+
+   🔒 `npm run lint:ilots-clairs` : tout `<iframe>` (les supports rendus par le
+   serveur) et chaque support déclaré porte la classe ; `e2e/sombre-zone-d`
+   mesure le fond, le texte et le schéma de l'îlot sous le sombre forcé.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.ilot-clair {
+	color-scheme: light;
+	background: var(--color-surface);
+}
