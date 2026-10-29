@@ -13,7 +13,9 @@
  *  - un logo téléversé à l'encre foncée disparaissait sur la carte sombre.
  *
  *  Éditeur riche, contenu saisi, pages de connexion et légales suivaient déjà
- *  les jetons : rien à y corriger (captures du lot).
+ *  les jetons : rien à y corriger (captures du lot) — et le relevé commun
+ *  (`contraste-ecran.ts`) le tient : aucun texte sous l'AA, aucune surface
+ *  claire hors des îlots.
  *
  *  ## Ce que ce spec tient
  *
@@ -27,17 +29,11 @@ import type { Page } from '@playwright/test';
 import type { ApercuDiffusion } from '#lib/api/index.ts';
 import type { ModeleEmail } from '#lib/api/types-administration.ts';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const BLANC = 'rgb(255, 255, 255)';
 const TEXTE_CLAIR = 'rgb(26, 26, 46)'; // --color-text du thème clair, #1a1a2e
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
-
-async function theme(page: Page, sombre: boolean) {
-	await page.evaluate((s) => {
-		if (s) document.documentElement.setAttribute('data-theme', 'dark');
-		else document.documentElement.removeAttribute('data-theme');
-	}, sombre);
-}
 
 /** Le schéma, le fond et le texte d'un élément. */
 function rendu(page: Page, selecteur: string) {
@@ -53,7 +49,7 @@ function rendu(page: Page, selecteur: string) {
 /** L'îlot rend le même aperçu clair dans les deux thèmes — et le sombre est bien allumé autour. */
 async function attendreIlotClair(page: Page, selecteur: string, texte = false) {
 	for (const sombre of [false, true]) {
-		await theme(page, sombre);
+		await forcerTheme(page, sombre ? 'sombre' : 'clair');
 		const r = await rendu(page, selecteur);
 		expect(r.schema, `${selecteur} : schéma (${sombre ? 'sombre' : 'clair'})`).toBe('light');
 		expect(r.fond, `${selecteur} : fond (${sombre ? 'sombre' : 'clair'})`).toBe(BLANC);
@@ -139,7 +135,7 @@ test('@sombre l’aperçu d’un modèle de courriel est un îlot clair, texte c
 	await expect(page.locator('.apercu-email')).toContainText('Une affaire a été ouverte.');
 	await attendreIlotClair(page, '.apercu-email', true);
 	//  Le texte injecté hérite de l'îlot, pas de la page sombre.
-	await theme(page, true);
+	await forcerTheme(page, 'sombre');
 	expect(await rendu(page, '.apercu-email blockquote')).toMatchObject({ schema: 'light' });
 });
 
@@ -186,12 +182,52 @@ test('@sombre le logo téléversé garde son fond clair au sombre, et rien au cl
 			const s = getComputedStyle(el);
 			return { fond: s.backgroundColor, liseré: s.boxShadow };
 		});
-	await theme(page, false);
+	await forcerTheme(page, 'clair');
 	const clair = await fond();
 	expect(clair.fond).toBe(TRANSPARENT);
 	expect(clair.liseré).toContain(TRANSPARENT);
-	await theme(page, true);
+	await forcerTheme(page, 'sombre');
 	const sombre = await fond();
 	expect(sombre.fond).toBe(BLANC);
 	expect(sombre.liseré).toContain(BLANC);
+});
+
+const RICHE =
+	'<h2>Titre</h2><p>Un <strong>gras</strong>, un <a href="/faq">lien</a>, du <code>code</code>.</p>' +
+	'<blockquote><p>Une citation.</p></blockquote><ul><li>Un point</li></ul>';
+
+for (const [nom, adresse] of [
+	['la connexion', '/auth/connexion'],
+	['l’inscription', '/auth/inscription'],
+	['le mot de passe oublié', '/auth/mot-de-passe-oublie'],
+	['la réinitialisation', '/auth/reinitialisation-mdp?token=essai'],
+	['la vérification d’adresse', '/auth/verifier-email?token=essai'],
+	['les mentions légales, contenu administré compris', '/mentions-legales'],
+	['la politique de confidentialité', '/politique-de-confidentialite'],
+]) {
+	test(`@sombre ${nom} : lisible au sombre`, async ({ page }) => {
+		await simulerApi(page, (chemin) => {
+			if (chemin.includes('legal'))
+				return { mentions_legales: RICHE, politique_confidentialite: RICHE };
+		});
+		await page.goto(adresse);
+		await attendreHydratation(page);
+		await forcerTheme(page, 'sombre');
+		await attendreLisible(page);
+	});
+}
+
+test('@sombre l’éditeur riche se lit au sombre, mise en forme comprise', async ({ page }) => {
+	await simulerApi(page);
+	await page.goto('/tickets');
+	await attendreHydratation(page);
+	await page.getByRole('button', { name: /Nouvelle affaire/ }).click();
+	await page.locator('.rich-content-editable .tiptap').first().click();
+	await page.keyboard.type('Texte avec ');
+	await page.keyboard.press('Control+b');
+	await page.keyboard.type('du gras');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('> Une citation');
+	await forcerTheme(page, 'sombre');
+	await attendreLisible(page, '.editeur-cadre');
 });
