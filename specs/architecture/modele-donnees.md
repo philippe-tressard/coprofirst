@@ -90,7 +90,7 @@ Les deux axes restent distincts.
 
 | Table | Champs | Rôle |
 |-------|--------|------|
-| `cle_de_charges` | code, libelle, denominateur, perimetre_id?, ordre | une répartition du règlement |
+| `cle_de_charges` | code, libelle, denominateur, perimetre_id?, ordre, description?, appelee, libelle_syndic? | une répartition du règlement ; `description` dit ce qu'elle finance (#2251), `appelee` si le syndic l'appelle en ce moment — sinon « Mes lots » la replie —, `libelle_syndic` son nom sur l'appel de fonds (#2252) |
 | `quote_part_lot` | lot_id, cle_id, numerateur — unique (lot, clé) | les tantièmes d'un lot dans une clé |
 | `lot_perimetre` | lot_id, perimetre_id, relation (`situe_dans` \| `desservi_par`), derive | les périmètres d'un lot, **dérivés** (`utils/perimetres/lots`), une ligne manuelle (`derive = faux`) survit |
 | `import_etat_descriptif` · `ligne_etat_descriptif` | — | la table de passage de l'état descriptif |
