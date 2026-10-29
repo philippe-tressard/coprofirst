@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.33.13",
+	"version": "3.34.0",
 	"private": true,
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -114,6 +114,7 @@
 		"lint:texte-avertissement": "node scripts/check-texte-avertissement.mjs --selftest && node scripts/check-texte-avertissement.mjs",
 		"lint:aplats": "node scripts/check-aplats.mjs --selftest && node scripts/check-aplats.mjs",
 		"lint:couleurs-ts": "node scripts/check-couleurs-ts.mjs --selftest && node scripts/check-couleurs-ts.mjs",
+		"lint:palette-sombre": "node scripts/check-palette-sombre.mjs --selftest && node scripts/check-palette-sombre.mjs",
 		"lint:options-en-double": "node scripts/check-options-en-double.mjs --selftest && node scripts/check-options-en-double.mjs",
 		"lint:mouvement": "node scripts/check-mouvement.mjs --selftest && node scripts/check-mouvement.mjs",
 		"lint:charte-valeurs": "node scripts/check-charte-valeurs.mjs --selftest && node scripts/check-charte-valeurs.mjs",

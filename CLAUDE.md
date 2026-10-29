@@ -663,6 +663,12 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       `--color-warning` ne sert jamais au texte (`--color-warning-texte`). Ces
       valeurs-là sont **refusées**, sans plafond (`ux-patterns` §18) — comme une
       valeur **égale** à un jeton (`#fff`, `0.8rem`) : 85 étaient revenues (#1571)
+- [ ] Le thème sombre : un jeton de couleur neuf a sa valeur dans
+      `styles/palette-sombre.css` ou se déclare identique, avec sa raison ; aucun
+      écran n'écrit `prefers-color-scheme` ni `data-theme` — `npm run
+      lint:palette-sombre` (couverture, et paires texte/fond à l'AA dans les deux
+      thèmes, #2174 S3). Le contour d'un champ : `--color-border-champ` ; le texte
+      sur l'or : `--color-sur-accent` (`ux-patterns` §18)
 - [ ] Un style s'écrit dans le `<style>` du composant ou dans `src/styles/`, jamais
       en attribut `style="…"` — sauf une valeur tirée des données (`width:{pct}%`).
       `npm run lint:styles-en-ligne` le refuse : plafond à **zéro** depuis le

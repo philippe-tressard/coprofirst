@@ -90,6 +90,8 @@ export function stylesDeFeuille(source) {
  *  faudrait le relever aussi — le contrôle ne le devinerait pas.
  */
 export const FEUILLE_DES_JETONS = 'socle.css';
+/** …et celle qui les REDÉFINIT au sombre (#2174, S3), hors relevé pour la même raison. */
+const FEUILLES_DES_JETONS = [FEUILLE_DES_JETONS, 'palette-sombre.css'];
 
 /** Couleurs hexadécimales et tailles de texte en `rem` écrites en dur. */
 export function valeursEnDur(css) {
@@ -348,7 +350,7 @@ const feuilles = readdirSync(STYLES)
 const releves = [
 	...fichiers(RACINE).map((chemin) => [chemin, stylesDe(readFileSync(chemin, 'utf8'))]),
 	...feuilles
-		.filter((chemin) => !chemin.endsWith(sep + FEUILLE_DES_JETONS))
+		.filter((chemin) => !FEUILLES_DES_JETONS.some((f) => chemin.endsWith(sep + f)))
 		.map((chemin) => [chemin, stylesDeFeuille(readFileSync(chemin, 'utf8'))]),
 ];
 for (const [chemin, css] of releves) {
