@@ -29,7 +29,7 @@
 		gap: 0.75rem;
 		padding: 0.75rem 1rem;
 		border-radius: var(--radius);
-		background: #fff7ed;
+		background: var(--color-orange-fond);
 		border: 1.5px solid var(--color-warning);
 		color: var(--color-warning-texte);
 		text-decoration: none;

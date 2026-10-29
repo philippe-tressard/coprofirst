@@ -112,8 +112,8 @@
 		font-size: var(--fs-xs);
 		padding: 0.1rem 0.4rem;
 		border-radius: 4px;
-		background: #dbeafe;
-		color: #1e40af;
+		background: var(--color-info-fond);
+		color: var(--color-info);
 	}
 	.wa-contenu {
 		resize: vertical;

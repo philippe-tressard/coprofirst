@@ -169,13 +169,13 @@
 		max-width: 90%;
 	}
 	.message-bubble.own {
-		background: #eff6ff;
+		background: var(--color-info-fond);
 		align-self: flex-end;
-		border-color: #bfdbfe;
+		border-color: var(--color-info-bordure);
 	}
 	.message-bubble.interne {
-		background: #fefce8;
-		border-color: #fef08a;
+		background: var(--color-jaune-fond);
+		border-color: var(--color-warning-bordure);
 		opacity: 0.9;
 	}
 	.msg-header {

@@ -377,7 +377,7 @@
 		background: linear-gradient(
 			90deg,
 			var(--color-border) 25%,
-			#e8edf3 37%,
+			var(--color-neutre-bordure) 37%,
 			var(--color-border) 63%
 		);
 		background-size: 800px 100%;

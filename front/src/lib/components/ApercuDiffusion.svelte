@@ -288,8 +288,8 @@
 		margin: 0 0 0.5rem;
 		padding: 0.5rem 0.6rem;
 		border-radius: 6px;
-		background: #fff7ed;
-		color: #9a3412;
+		background: var(--color-orange-fond);
+		color: var(--color-orange-texte);
 	}
 	.apercu-note {
 		font-size: var(--fs-sm);

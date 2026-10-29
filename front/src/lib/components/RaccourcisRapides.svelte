@@ -142,12 +142,12 @@
 	/*  L'Admin se distingue du CS : deux pastilles orange côte à côte se liraient
 	    comme une seule zone, alors que ce sont deux destinations différentes. */
 	.quick-pill-admin {
-		border-color: #7c3aed;
+		border-color: var(--color-violet);
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.quick-pill-admin:hover {
-			border-color: #6d28d9;
-			background: #f5f3ff;
+			border-color: var(--color-violet);
+			background: var(--color-violet-fond);
 		}
 	}
 	.quick-count-urgent {

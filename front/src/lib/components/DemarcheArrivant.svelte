@@ -169,7 +169,7 @@
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.btn-arrivant-deja:hover:not(:disabled) {
-			background: #256f47;
+			background: var(--color-success-plein-survol);
 		}
 	}
 </style>
