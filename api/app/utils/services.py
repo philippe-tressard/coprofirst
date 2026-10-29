@@ -57,6 +57,7 @@ SERVICE_DIFFUSION = "diffusion"
 SERVICE_REPONSES_COURRIEL = "reponses_courriel"
 SERVICE_VERIF_VERSION = "verification_version"
 SERVICE_CONSERVATION = "conservation_affaires"
+SERVICE_DECOR_FETES = "decor_fetes"
 INFRA_SMTP = "envoi_courriels"
 
 #: La valeur qui dit « activé ». Une seule, pour toutes les clés.
@@ -177,6 +178,20 @@ SERVICES: dict[str, Service] = {
         icone="archive",
         cle_actif="conservation_affaires_active",
     ),
+    SERVICE_DECOR_FETES: Service(
+        code=SERVICE_DECOR_FETES,
+        libelle="Décor des jours de fête",
+        description=(
+            "Pendant les grandes fêtes (Nouvel an, Saint-Valentin, 1er avril, Pâques, fête de "
+            "la musique, 14 juillet, Halloween, Noël), un décor discret se pose en haut à "
+            "droite de chaque page, derrière le contenu. Il ne capte aucun clic, et il reste "
+            "immobile si l'appareil demande moins d'animations."
+        ),
+        perte="Aucun décor ne s'affiche : le site garde son aspect habituel toute l'année.",
+        onglet="services",
+        icone="calendar",
+        cle_actif="decor_fetes_actif",
+    ),
     INFRA_SMTP: Service(
         code=INFRA_SMTP,
         libelle="Envoi des courriels",
@@ -207,9 +222,15 @@ COURRIELS_DE_SECURITE = frozenset(
 #: Les services qu'une RÉPLIQUE garde sans que la référence les autorise (§4.11,
 #: arbitré le 13/10/2026) : la vérification de la version ne coûte rien et sert à
 #: suivre les mises à jour ; la conservation des affaires (#2014) est l'obligation
-#: de la copropriété elle-même, que rien de la référence ne porte. Tous les autres
-#: passent par le bail.
-SERVICES_HORS_BAIL = frozenset({SERVICE_VERIF_VERSION, SERVICE_CONSERVATION})
+#: de la copropriété elle-même, que rien de la référence ne porte ; le décor des
+#: jours de fête (#2312) est un ornement de l'écran, qui ne coûte rien et ne sort
+#: rien de l'installation. Tous les autres passent par le bail.
+SERVICES_HORS_BAIL = frozenset({SERVICE_VERIF_VERSION, SERVICE_CONSERVATION, SERVICE_DECOR_FETES})
+
+#: La clé PUBLIQUE que `GET /config` calcule pour le front (#2312) : « le décor des
+#: jours de fête s'affiche-t-il ? ». Jamais lue en base : le front ne voit que
+#: le résultat de `service_actif`, comme le drapeau de la démonstration.
+CLE_PUBLIQUE_DECOR_FETES = "decor_fetes"
 
 #: Ce que la référence peut accorder dans un bail — la seule liste, lue par le
 #: registre (`registre/decisions.py`) comme par l'installation.
@@ -364,6 +385,7 @@ def decrire(session) -> list[dict]:
 __all__ = [
     "ACTIVE",
     "CLES_ACTIVATION",
+    "CLE_PUBLIQUE_DECOR_FETES",
     "COURRIELS_DE_SECURITE",
     "DESACTIVE",
     "ETAT_ACTIF",
@@ -373,6 +395,7 @@ __all__ = [
     "SERVICES",
     "SERVICES_AUTORISABLES",
     "SERVICES_HORS_BAIL",
+    "SERVICE_DECOR_FETES",
     "SERVICE_DE_CLE",
     "SERVICE_DIFFUSION",
     "SERVICE_IA",

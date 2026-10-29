@@ -19,11 +19,13 @@ from sqlmodel import Session
 
 from app.models.core import ConfigSite, RoleUtilisateur
 from app.utils.services import (
+    CLE_PUBLIQUE_DECOR_FETES,
     CLES_ACTIVATION,
     ETAT_ACTIF,
     ETAT_COUPE,
     ETAT_INCOMPLET,
     INFRA_SMTP,
+    SERVICE_DECOR_FETES,
     SERVICE_DIFFUSION,
     SERVICE_IA,
     SERVICE_REPONSES_COURRIEL,
@@ -84,6 +86,7 @@ def test_le_temoin_le_registre_porte_chaque_cle():
             "imap_enabled",
             "verification_version_active",
             "conservation_affaires_active",
+            "decor_fetes_actif",
         }
     )
 
@@ -223,3 +226,16 @@ def test_put_config_ramene_une_activation_a_1(moteur):
     assert http.put("/config", json={"imap_enabled": "true"}).status_code == 200
     with Session(moteur) as s:
         assert s.get(ConfigSite, "imap_enabled").valeur == "1"
+
+
+def test_le_decor_des_fetes_se_lit_dans_la_config_publique(moteur):
+    """Le front apprend par `GET /config` si le décor s'affiche (#2312) : coupé tant
+    que l'administration ne l'a pas coché, et la clé d'activation ne sort pas."""
+    http, _ = client_http(moteur, None)
+    assert http.get("/config").json()[CLE_PUBLIQUE_DECOR_FETES] == "0"
+    with Session(moteur) as s:
+        s.add(ConfigSite(cle=cle_actif(SERVICE_DECOR_FETES), valeur="1"))
+        s.commit()
+    publiques = http.get("/config").json()
+    assert publiques[CLE_PUBLIQUE_DECOR_FETES] == "1"
+    assert cle_actif(SERVICE_DECOR_FETES) not in publiques

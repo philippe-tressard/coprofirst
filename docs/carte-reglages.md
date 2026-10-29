@@ -172,6 +172,7 @@ _Aucun écart connu entre un écran et sa route._
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
 | `conservation_affaires_active` | texte | — | non |
+| `decor_fetes_actif` | texte | — | non |
 | `imap_enabled` | texte | — | non |
 | `llm_actif` | texte | — | non |
 | `verification_version_active` | texte | — | non |

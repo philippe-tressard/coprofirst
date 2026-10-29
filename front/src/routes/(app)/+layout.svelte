@@ -17,6 +17,7 @@
 	} from '#lib/telemetry.ts';
 	import { lireSourceArrivee } from '#lib/arrivees.ts';
 	import PiedDePage from '#lib/components/PiedDePage.svelte';
+	import DecorFete from '#lib/components/DecorFete.svelte';
 	import { lireReglagePied } from '#lib/piedDePage.ts';
 
 	onMount(async () => {
@@ -89,6 +90,9 @@
 		<PiedDePage reglage={reglagePied} />
 	</div>
 </div>
+
+<!--  Le décor des jours de fête (#2312) : fixe, derrière le contenu, sur toutes les pages. -->
+<DecorFete />
 
 <style>
 	.app-shell {
