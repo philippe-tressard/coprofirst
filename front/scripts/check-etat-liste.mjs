@@ -72,7 +72,8 @@ const RACINE = 'src';
  *  pour qu'on les compte, et une entrée qui ne sert plus fait échouer le
  *  contrôle — reconduite « au cas où », elle masquerait la prochaine.
  *
- *  Le suivi est la carte des plafonds, #1571 (#816 est fermé). La conversion se fait au fil de l'eau : un écran
+ *  Il n'en reste aucune (30/10/2026, clôture de la carte #1571) : la seule entrée
+ *  est un faux positif déclaré. La conversion se fait au fil de l'eau : un écran
  *  repris est un écran converti, et sa ligne disparaît d'ici.
  */
 export const DETTES = {
@@ -235,5 +236,5 @@ if (perimees.length) {
 if (echec) process.exit(1);
 
 console.log(
-	`✓ Aucun écran neuf n’annonce « aucun » sans avoir regardé — ${dettesVues.size} dette(s) déclarée(s), suivies en #1571.`,
+	`✓ Aucun écran neuf n’annonce « aucun » sans avoir regardé — ${dettesVues.size} entrée(s) déclarée(s), chacune avec sa raison.`,
 );

@@ -345,7 +345,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.45rem;
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		font-weight: 700;
 		margin: 0 0 0.9rem;
 	}

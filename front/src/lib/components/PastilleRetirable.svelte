@@ -70,7 +70,7 @@
 		background: none;
 		color: var(--color-danger);
 		cursor: pointer;
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		line-height: 1;
 		padding: 0;
 		flex-shrink: 0;

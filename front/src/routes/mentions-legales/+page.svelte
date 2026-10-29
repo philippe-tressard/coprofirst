@@ -57,7 +57,7 @@
 		border-top: 1px solid var(--color-border);
 	}
 	.oss-section h2 {
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		font-weight: 600;
 		margin-bottom: 0.5rem;
 	}

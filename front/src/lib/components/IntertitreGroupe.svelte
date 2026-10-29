@@ -30,7 +30,7 @@
 		margin-top: 0;
 	}
 	.intertitre-libelle {
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		font-weight: 700;
 	}
 	.intertitre-descriptif {

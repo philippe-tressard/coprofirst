@@ -436,7 +436,7 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 	padding: 1rem 1.1rem;
 }
 .report-card h3 {
-	font-size: 1rem;
+	font-size: var(--fs-xl);
 	font-weight: 700;
 	margin: 0 0 0.35rem;
 }
@@ -492,7 +492,7 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 		margin-bottom: 0.5rem;
 	}
 	.reporting-print-header h2 {
-		font-size: 1.1rem;
+		font-size: var(--fs-2xl);
 		margin: 0 0 0.15rem;
 	}
 	.reporting-print-header p {

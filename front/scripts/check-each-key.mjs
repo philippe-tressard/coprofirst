@@ -109,7 +109,7 @@ const RACINE = new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]
  * elle s'y écrit donc en toutes lettres (`(ti)`), ce qui ne change pas le rendu
  * — Svelte réutilise déjà les nœuds par position — et dit que c'est un choix.
  */
-//  Carte des plafonds décroissants : #1571.
+//  Refusé, sans plafond : la carte #1571 a été close à zéro le 30/10/2026.
 const PLAFOND = 0;
 
 /** En dessous, le repérage ne mord plus — le dépôt en porte ~200. */
@@ -221,5 +221,5 @@ if (sansCle.length < PLAFOND) {
 
 console.log(
 	`✓ Clés de liste : ${sansCle.length} \`{#each}\` sans clé sur ${eachLus} recensés ` +
-		`(plafond ${PLAFOND}, ${tous.length} composants) — la conversion se poursuit par lots.`,
+		`(plafond ${PLAFOND}, ${tous.length} composants) — une clé manquante est refusée.`,
 );

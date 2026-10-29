@@ -11,6 +11,7 @@ mot, et le fichier remonterait au-dessus du plafond au lot suivant.
 La liste ci-dessous est un **plafond décroissant** : elle ne fait que baisser.
 Extraire une de ces classes vers son domaine, c'est la retirer d'ici ; le test
 échoue si elle cesse de servir, pour qu'une exception éteinte ne reste pas écrite.
+Suivi des huit restantes : #2316.
 """
 
 from __future__ import annotations

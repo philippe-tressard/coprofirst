@@ -415,7 +415,7 @@
 	}
 	.nom-locataire {
 		font-weight: 700;
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 	}
 	.gestes {
 		display: flex;

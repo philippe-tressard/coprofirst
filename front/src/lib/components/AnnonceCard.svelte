@@ -331,7 +331,7 @@
 	    la charte depuis leur généralisation (24/09/2026) : ne reste ici que la
 	    taille du chevron, posé dans un bouton et non dans un en-tête. */
 	.annonce-gerer-chevron {
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		color: inherit;
 	}
 	.annonce-texte {

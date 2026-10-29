@@ -60,7 +60,7 @@
 	}
 	.nom {
 		font-weight: 700;
-		font-size: 1.1rem;
+		font-size: var(--fs-2xl);
 	}
 	.entete .nom {
 		font-size: 1.05rem;

@@ -44,7 +44,8 @@ import sys
 import tempfile
 
 #: 🔴 Ce nombre ne monte JAMAIS. Il descend quand un clone disparaît.
-#: Carte des plafonds décroissants : #1571.
+#: Déclarations permanentes : le compte ne baisse que si l'une cesse de servir
+#: (relevé de clôture de la carte #1571, 30/10/2026 — aucune dette à solder).
 PLAFOND_CLONES = 6
 
 #: ÉPINGLÉ : le compte change d'une version à l'autre de l'outil. Monter la

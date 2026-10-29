@@ -263,7 +263,7 @@ body {
 	/*  Avant d'annoncer une attente (`ChargementDiffere`) : en deçà, elle
 	    clignoterait — le morceau est le plus souvent déjà en cache (12/10/2026). */
 	--delai-annonce: 300ms;
-	/*  L'échelle du TEXTE (#1055, 27/09/2026). Six paliers, chacun à la valeur
+	/*  L'échelle du TEXTE (#1055, 27/09/2026). Six paliers (huit depuis les intertitres, plus bas), chacun à la valeur
 	    déjà la plus employée par les écrans. Une taille hors échelle se range
 	    au cran SUPÉRIEUR — aucun texte ne rétrécit en se normalisant —, arbitré
 	    sur maquette le 27/09/2026 : 0,78 → sm · 0,82 → md · 0,875 → base…
@@ -274,6 +274,13 @@ body {
 	--fs-md: 0.85rem;
 	--fs-base: 0.9rem;
 	--fs-lg: 0.95rem;
+	/*  Au-dessus du texte courant, les deux crans des INTERTITRES (30/10/2026,
+	    #1571) : `xl` pour le titre d'une section ou d'une carte de premier
+	    niveau, `2xl` pour celui d'une boîte. Chacun à la valeur déjà la plus
+	    employée hors échelle (1 rem dix-neuf fois, 1,1 rem sept fois) : poser
+	    le jeton n'a changé AUCUN rendu. */
+	--fs-xl: 1rem;
+	--fs-2xl: 1.1rem;
 	/*  Le texte d'un CHAMP au téléphone : en deçà de 16 px, iOS agrandit la page
 	    à chaque appui dans le champ, et ne la rend pas. Une taille PHYSIQUE,
 	    comme les 44 px d'une cible tactile — elle ne suit pas la racine (#2165). */
