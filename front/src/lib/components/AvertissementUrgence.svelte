@@ -108,15 +108,15 @@
 	    `.section-pliee`) — sans quoi l'avertissement ne s'ouvrirait plus au
 	    pouce, et rien ne le dirait. */
 	.urgence-disclaimer {
-		background: #fff7ed;
-		border: 1px solid #fed7aa;
-		border-left: 3px solid #ea580c;
+		background: var(--color-orange-fond);
+		border: 1px solid var(--color-orange-bordure);
+		border-left: 3px solid var(--color-orange);
 		border-radius: var(--radius);
 		padding: 0;
 		margin-bottom: 0.5rem;
 		font-size: var(--fs-sm);
 		line-height: 1.5;
-		color: #431407;
+		color: var(--color-text);
 		overflow: hidden;
 	}
 	.urgence-disclaimer-toggle {
@@ -139,17 +139,17 @@
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.urgence-disclaimer-toggle:hover {
-			background: #fed7aa44;
+			background: color-mix(in srgb, var(--color-orange-bordure) 27%, transparent);
 		}
 	}
 	.urgence-disclaimer-title {
 		font-weight: 700;
 		font-size: var(--fs-sm);
-		color: #9a3412;
+		color: var(--color-orange-texte);
 	}
 	.urgence-disclaimer-chevron {
 		font-size: 0.6rem;
-		color: #9a3412;
+		color: var(--color-orange-texte);
 		flex-shrink: 0;
 	}
 	.urgence-disclaimer p {
@@ -170,7 +170,7 @@
 		list-style: none;
 	}
 	.urgence-disclaimer a {
-		color: #9a3412;
+		color: var(--color-orange-texte);
 		text-decoration: underline;
 	}
 	.urgence-disclaimer-steps {
@@ -178,10 +178,10 @@
 	}
 	.urgence-disclaimer-legal {
 		font-size: var(--fs-sm);
-		color: #7c2d12;
+		color: var(--color-orange-texte);
 		font-style: italic;
 		margin-top: 0.3rem !important;
-		border-top: 1px solid #fed7aa;
+		border-top: 1px solid var(--color-orange-bordure);
 		padding: 0.45rem 0.75rem 0.6rem !important;
 	}
 </style>

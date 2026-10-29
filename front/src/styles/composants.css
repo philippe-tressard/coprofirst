@@ -451,7 +451,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	color: var(--color-danger);
 }
 .badge-gray {
-	background: #eaedf1;
+	background: var(--color-neutre-bordure);
 	color: var(--color-text-muted);
 }
 /*  Sur la DERNIÈRE LIGNE d'une carte, ce qui décrit sans alerter est NEUTRE :
@@ -480,8 +480,8 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
     de base, et l’état « en cours » était indistinguable de « inactif ».
     Valeurs prises dans la même échelle que `.badge-orange` (#495). */
 .badge-yellow {
-	background: #fef9e7;
-	color: #a16207;
+	background: var(--color-jaune-fond);
+	color: var(--color-jaune-texte);
 }
 
 /* ── Intitulé d'une section dans une page ──
@@ -668,12 +668,12 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 .alert-error {
 	background: var(--color-danger-fond);
 	color: var(--color-danger);
-	border: 1px solid #e8a99d;
+	border: 1px solid var(--color-danger-bordure);
 }
 .alert-success {
 	background: var(--color-success-fond);
 	color: var(--color-success);
-	border: 1px solid #9dcfb3;
+	border: 1px solid var(--color-success-bordure);
 }
 
 /* ── Empty state ── */
@@ -1084,7 +1084,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	color: var(--color-primary);
 	margin: 0.35rem 0 0.5rem;
 	padding: 0.25rem 0.5rem;
-	background: #eff6ff;
+	background: var(--color-info-fond);
 	border-radius: var(--radius);
 	display: inline-block;
 }
@@ -1112,21 +1112,19 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 .carte-membre .summary-role-badge {
 	font-size: 0.74rem;
 	font-weight: 600;
-	color: #0f766e;
-	background: #ecfeff;
-	border: 1px solid #99f6e4;
+	color: var(--color-sarcelle);
+	background: var(--color-sarcelle-fond);
+	border: 1px solid var(--color-sarcelle-bordure);
 	border-radius: 999px;
 	padding: 0.12rem 0.48rem;
 }
-.carte-membre .summary-role-badge-president {
-	color: #7c2d12;
+/*  Président du conseil et interlocuteur principal du syndic : la même mise en
+    avant, en ambre (#2174, S1 — deux bruns voisins écrits en dur). */
+.carte-membre .summary-role-badge-president,
+.carte-membre .summary-role-badge-principal {
+	color: var(--color-warning-texte);
 	background: var(--color-warning-fond);
 	border-color: var(--color-warning-bordure);
-}
-.carte-membre .summary-role-badge-principal {
-	color: #7a5a1a;
-	background: #fdf6e7;
-	border-color: #e8cf95;
 }
 .header-summary {
 	display: flex;

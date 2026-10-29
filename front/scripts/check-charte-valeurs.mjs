@@ -63,10 +63,8 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, re
  *  interlocuteur principal, gestionnaire) et leur taille ont quitté `espace-cs` pour
  *  `styles/composants.css`, où elles sont écrites une fois pour les deux
  *  composants de l'annuaire. Elles restent des valeurs en dur, dans la charte.
- *  30/09/2026 (#1460) : les feuilles de `src/styles/` (hors `socle.css`) entrent
- *  dans le relevé : 172 couleurs (+56) et 129 tailles (+68). Le plafond MONTE
- *  d’autant sans une valeur ajoutée
- *  — c’est la dette qu’elles portaient déjà, désormais comptée.
+ *  30/09/2026 (#1460) : les feuilles de `src/styles/` entrent dans le relevé :
+ *  172 couleurs et 129 tailles — leur dette déjà portée, désormais comptée.
  *  01/10/2026 (#779) : 170 couleurs. Le dégradé de la carte des consignes
  *  (deux bleus hors charte) devient `--color-primary-light` dans `LienConsignes`.
  *  01/10/2026 : 128 tailles. L’onglet « Sécurité (CSP) » de l’administration
@@ -102,9 +100,11 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, re
  *  (`--color-bg-alt`…), prennent `--color-neutre-fond` (≤ 3 unités RVB d'écart).
  *  22/10/2026 (#1571) : 81 couleurs. Les huit derniers replis sur des variables
  *  que rien ne définit partent avec elles (`lint:variables-css`).
+ *  29/10/2026 (#2174, mode sombre S1) : ZÉRO couleur — les 81 dernières (47
+ *  nuances) se rangent sur 31 jetons de `socle.css` (12 neufs) — redéfinis au sombre.
  */
 //  Carte des plafonds décroissants : #1571.
-const PLAFOND = { couleurs: 81, tailles: 69 };
+const PLAFOND = { couleurs: 0, tailles: 69 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 

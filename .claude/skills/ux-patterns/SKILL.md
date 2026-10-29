@@ -2789,8 +2789,13 @@ de kanban, d'une nature (`--nature-fort`), l'orange de l'urgence, `.badge-yellow
 
 🔒 `npm run lint:charte-valeurs` refuse ces valeurs **sans plafond** — dans les
 composants ET dans `src/styles/`, en style comme dans une chaîne JavaScript —
-et donne le jeton de remplacement. Le reste des valeurs en dur reste sous son
-plafond décroissant, qui compte les composants **et** les feuilles de
+et donne le jeton de remplacement. Une couleur hexadécimale ne s'écrit plus
+**nulle part** hors de `socle.css` (plafond à zéro, #2174 lot S1) : une teinte
+neuve se range d'abord dans une famille existante (état, `info`, `violet`,
+`sarcelle`, `orange`, `jaune` — un fond, un filet, un texte), et seulement à
+défaut prend un jeton neuf nommé par l'usage, que le mode sombre redéfinira
+(#2174 : 47 nuances écrites en dur, rangées sur 31 jetons dont 12 neufs). Les tailles
+en dur restent sous leur plafond décroissant, qui compte les composants **et** les feuilles de
 `src/styles/` hors `socle.css` (#1460) : remonter une valeur dans une feuille est
 un déménagement, pas une dette soldée — le plafond ne bouge pas.
 

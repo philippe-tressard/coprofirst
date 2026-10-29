@@ -237,13 +237,13 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 	grid-column: 2;
 }
 [data-nature='actualite'] {
-	--nature-fort: #1d4ed8;
+	--nature-fort: var(--color-info);
 }
 [data-nature='calendrier'] {
-	--nature-fort: #6d28d9;
+	--nature-fort: var(--color-violet);
 }
 [data-nature='activite'] {
-	--nature-fort: #c2410c;
+	--nature-fort: var(--color-orange);
 }
 /*  Le TYPE d'une petite annonce, que sa gouttière lit : la teinte de son
     ancien badge — vente au Bleu Seine (le défaut), don en vert, recherche en

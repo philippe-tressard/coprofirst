@@ -158,8 +158,8 @@
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.btn-icon-save:hover:not(:disabled) {
-			background: #dbeafe;
-			border-color: #3b82f6;
+			background: var(--color-info-fond);
+			border-color: var(--color-info);
 		}
 	}
 	/*  Le crayon est en couleur primaire — il est l'action principale de la rangée. */

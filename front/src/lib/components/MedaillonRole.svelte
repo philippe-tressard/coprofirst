@@ -84,10 +84,10 @@
 		z-index: 1;
 	}
 	.medaillon-gestionnaire-site {
-		background: #0f766e;
+		background: var(--color-sarcelle-plein);
 	}
 	.medaillon-president-cs {
-		background: #1e40af;
+		background: var(--color-info-plein);
 	}
 	.medaillon-gestionnaire-principal {
 		background: var(--color-accent-plein);

@@ -426,7 +426,7 @@
 
 <style>
 	.row-cs td {
-		background: #eff6ff;
+		background: var(--color-info-fond);
 	}
 	.row-inactive td {
 		opacity: 0.6;
@@ -462,12 +462,12 @@
 		line-height: 1.3;
 	}
 	.utag-ok {
-		background: #d4edda;
-		color: #155724;
+		background: var(--color-success-fond);
+		color: var(--color-success-texte);
 	}
 	.utag-manque {
-		background: #f8d7da;
-		color: #721c24;
+		background: var(--color-danger-fond);
+		color: var(--color-danger);
 	}
 	.utag-sans_objet {
 		background: var(--color-neutre-fond);
