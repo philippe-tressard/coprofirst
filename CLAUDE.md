@@ -163,7 +163,8 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   `communaute`, `prestataires`, `gouvernance`…) — **jamais dans `core.py`**.
   Repassé sous 500 lignes le 28/09/2026 (#779), le contrôle de modularité ne
   l'empêche que d'en ressortir : 🔒 `test_core_sans_modele_neuf.py` y refuse une
-  classe de plus, et sa liste ne fait que baisser.
+  classe de plus ; sa liste — l'utilisateur et ce qui lui est attaché — est
+  close depuis #2316.
   Un module neuf s'**importe dans `models/__init__.py`** : c'est ce qui enregistre
   la table auprès de SQLModel — oublié, elle manque à `create_all` sans un mot.
 - `core.py` **ré-exporte** les modèles extraits (imports `# noqa: E402` en milieu
