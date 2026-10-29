@@ -2833,7 +2833,11 @@ de couleur neuf prend sa valeur sombre dans la palette, ou se déclare identique
 avec sa raison (`IDENTIQUES`, `scripts/palette-sombre-paires.mjs`) ; un couple
 texte/fond neuf s'ajoute à la table `PAIRES`, mesurée dans les deux thèmes.
 🔒 `npm run lint:palette-sombre`, `e2e/palette-sombre.spec.ts` (forcé, Auto,
-absent, impression). Personne ne voit le sombre avant la bascule (S5).
+absent, impression). **Qui le voit** (S5, 30/10/2026) : tout appareil réglé en
+sombre — Automatique est le défaut —, ou qui a choisi Sombre dans le Profil. Le
+choix est un cookie d'appareil, lu par le serveur qui pose l'attribut et les balises
+`color-scheme` / `theme-color` ; il ne se décide qu'à `#lib/theme.ts`, et le seul
+sélecteur est `ChoixTheme` (Profil). 🔒 `e2e/bascule-theme.spec.ts`.
 Les paires ne disent pas l'ÉCRAN : un composant qui lit le mauvais jeton passe la
 table. Une zone parcourue au sombre (lot S4) se tient par un spec `@sombre` qui
 relève l'écran RENDU — `releverContrastes` (`e2e/contraste-ecran.ts`) : chaque
