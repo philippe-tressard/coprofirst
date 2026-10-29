@@ -37,9 +37,14 @@
 	text-align: center;
 	margin-bottom: 1.5rem;
 }
+/*  Centré par le conteneur, pas par `text-align` : le logo téléversé est un
+    bloc (`LogoResidence`), qui ne suit pas l'alignement du texte et restait
+    collé au bord gauche de la carte (#2305). L'émoji et l'icône se centrent
+    de même. 🔒 `e2e/logo-menu.spec.ts` */
 .auth-logo {
 	font-size: 2.5rem;
-	display: block;
+	display: flex;
+	justify-content: center;
 	margin-bottom: 0.5rem;
 }
 /*  Le CONTENU de l'en-tête, et le pied de bouton — remontés le 09/09/2026.
