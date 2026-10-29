@@ -64,6 +64,8 @@ def test_les_usages_sont_declares_et_chacun_a_un_prompt_d_origine():
         "synthese_affaires_en_cours",
         "fusion_affaires",
         "lecture_etat_descriptif",
+        #  Dix le 29/10/2026 : la transcription d'un PV d'AG.
+        "transcription_pv_ag",
     }
     for u in USAGES.values():
         assert u.prompt_defaut.strip()

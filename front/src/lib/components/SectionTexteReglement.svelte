@@ -55,23 +55,32 @@
 	export let onRecharger: () => Promise<void>;
 
 	let fichiers: Document[] = [];
+	/** Les décisions d'AG transcrites, lues après le règlement (29/10/2026). */
+	let decisions: Document[] = [];
 	let chargement = false;
 	let erreur = '';
-	let categorieLue: number | null = null;
+	/** L'état d'après lequel les fichiers ont été lus : relu par l'onglet — un
+	 *  fichier joint, une transcription validée —, il les fait relire. */
+	let etatLu: EtatReglement | null = null;
 
 	let edition = false;
 	let provenance = '';
 	let enregistrement = false;
 
-	$: if ($isAdmin && etat.categorie_id !== null && etat.categorie_id !== categorieLue) {
-		categorieLue = etat.categorie_id;
+	$: if ($isAdmin && etat.categorie_id !== null && etat !== etatLu) {
+		etatLu = etat;
 		lire(etat.categorie_id);
 	}
 
 	async function lire(categorieId: number) {
-		chargement = true;
+		//  L'attente ne se montre qu'à la première lecture : une relecture ne
+		//  doit pas démonter le formulaire ouvert.
+		chargement = !fichiers.length && !decisions.length;
 		try {
-			fichiers = await docsApi.list(categorieId);
+			[fichiers, decisions] = await Promise.all([
+				docsApi.list(categorieId),
+				typeof etat.categorie_ag_id === 'number' ? docsApi.list(etat.categorie_ag_id) : [],
+			]);
 			erreur = '';
 		} catch (e) {
 			erreur = messageErreur(e);
@@ -80,8 +89,8 @@
 		}
 	}
 
-	async function apresChangement(categorieId: number) {
-		await lire(categorieId);
+	/** L'onglet relit son état, et l'état relu fait relire les fichiers. */
+	async function apresChangement() {
 		await onRecharger();
 	}
 
@@ -149,10 +158,8 @@
 									accept={ACCEPT_FICHIERS_REGLEMENT}
 									types={TYPES_FICHIERS_REGLEMENT}
 									onAjoute={apresChangement}
-									onSupprimer={(categorieId, docId) =>
-										supprimerDocument(docId, 'ce fichier du règlement', () =>
-											apresChangement(categorieId),
-										)}
+									onSupprimer={(_, docId) =>
+										supprimerDocument(docId, 'ce fichier du règlement', apresChangement)}
 								/>
 							</div>
 						</div>
@@ -160,6 +167,29 @@
 							L'assistant lit tous les fichiers Markdown joints, mis bout à bout dans l'ordre
 							d'ajout. Un fichier part dès qu'on le choisit, et se retire d'une croix.
 						</p>
+						{#if typeof etat.categorie_ag_id === 'number'}
+							<div class="field">
+								<span class="libelle-groupe" id="reglement-decisions">Décisions d'AG</span>
+								<div role="group" aria-labelledby="reglement-decisions">
+									<DocumentsRattaches
+										cible="categorie"
+										objetId={etat.categorie_ag_id}
+										documents={decisions}
+										idChamp="reglement-decisions-fichiers"
+										accept={ACCEPT_FICHIERS_REGLEMENT}
+										types={TYPES_FICHIERS_REGLEMENT}
+										onAjoute={apresChangement}
+										onSupprimer={(_, docId) =>
+											supprimerDocument(docId, "ces décisions d'AG", apresChangement)}
+									/>
+								</div>
+							</div>
+							<p class="aide">
+								Les résolutions d'une AG, sans noms, un fichier Markdown par assemblée — le plus
+								souvent nés d'une transcription validée ci-dessous. L'assistant les lit après le
+								règlement, de la plus ancienne à la plus récente.
+							</p>
+						{/if}
 						<PiedFormulaire enCours={enregistrement} on:annule={() => (edition = false)} />
 					</form>
 				</FormulaireCreation>
@@ -169,6 +199,11 @@
 					<dd>{etat.provenance ?? 'Non renseignée — à saisir par le crayon.'}</dd>
 					<dt>Fichiers lus par l'assistant</dt>
 					<dd><ListeDocuments documents={fichiers} /></dd>
+					<dt>Décisions d'AG lues par l'assistant</dt>
+					<dd>
+						{#if decisions.length}<ListeDocuments documents={decisions} />{:else}Aucune — les PV
+							transcrits et validés s'y ajoutent.{/if}
+					</dd>
 				</dl>
 				<p class="aide">Section visible de l'administration seule.</p>
 			{/if}

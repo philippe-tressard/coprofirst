@@ -200,7 +200,8 @@ async def lire_le_reglement(session: Session, demandeur: Optional[int]) -> tuple
         session,
         usage=USAGE_LECTURE_ETAT_DESCRIPTIF,
         consigne=cfg.prompt.rstrip() + "\n\n" + FORMAT_REPONSE,
-        message=texte.contenu,
+        #  Le règlement seul : les décisions d'AG ne décrivent pas les lots.
+        message=texte.reglement,
         demandeur=demandeur,
     )
     try:

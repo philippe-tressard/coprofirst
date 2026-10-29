@@ -53,6 +53,7 @@ from app.utils.llm_usages import USAGES
 #: | `synthese_affaires_en_cours` | 0289 (16/10/2026, #2035) — le résumé de CHAQUE affaire remplace la synthèse d'ensemble ; né sans semis (la clé absente retombe sur l'origine, `config_llm`), la 0289 remplace une valeur enregistrée si elle est intacte |
 #: | `fusion_affaires` | aucune (20/10/2026, #2083) — né sans semis, comme le précédent : la clé absente retombe sur l'origine (`config_llm`) |
 #: | `lecture_etat_descriptif` | 0315 (25/10/2026, #2251) — né sans semis (#2218) ; la 0315 remplace une valeur enregistrée intacte quand la consigne demande l'« objet » de chaque clé |
+#: | `transcription_pv_ag` | aucune (29/10/2026) — né sans semis, comme `fusion_affaires` : la clé absente retombe sur l'origine (`config_llm`) |
 EMPREINTES_SEMEES = {
     "description": "a6bca9c941ff52c7b5f90108eccf8c0d0a1dbe2ced37f9ca41d621953b84528e",
     "synthese_contrat": "35d2cc4c13b269dbfa80bb197fec7ade1b27278dc7152b4c3acbf21b2036f097",
@@ -63,6 +64,7 @@ EMPREINTES_SEMEES = {
     "synthese_affaires_en_cours": "4ad57e8196cc222c81278d1ec0661cb7517d552b365b4f2da27303ba81c9a24d",
     "fusion_affaires": "9378f0059fff3f1370dba2bda2633ed0d3f439c391383070f9db867687fd75f8",
     "lecture_etat_descriptif": "9834ce6fc6cb2977e0ffc396e91302b477893806ada224cbd7229d6008490196",
+    "transcription_pv_ag": "7f1a1f87c35ace0c364880b2253bd09b01a5ed1c15c7a94909d92bdde13f7170",
 }
 
 #: 🔴 Écart connu, tracé et non corrigé ici.

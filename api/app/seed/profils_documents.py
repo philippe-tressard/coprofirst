@@ -86,4 +86,13 @@ CATEGORIES = [
         "résidence",
         False,
     ),
+    #  Les décisions d'AG transcrites — résolutions seules — que l'assistant lit
+    #  après le règlement (29/10/2026). Même réserve : un PV nomme qui a voté contre.
+    (
+        "texte_decisions_ag",
+        "Décisions d'AG (assistant)",
+        "cs_syndic_uniquement",
+        "résidence",
+        False,
+    ),
 ]

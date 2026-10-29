@@ -75,6 +75,9 @@ class Extrait:
     page: Optional[str] = None
     #: L'acte (le titre de premier niveau) qui le contient.
     acte: Optional[str] = None
+    #: `reglement` ou `ag` — déduit de sa POSITION dans le texte, jamais du modèle ;
+    #: `None` s'il n'a pas été retrouvé, ou sans décision d'AG jointe (29/10/2026).
+    source: Optional[str] = None
 
 
 def _normaliser(texte: str, sauter: list[tuple[int, int]] = ()) -> tuple[str, list[int]]:
@@ -147,8 +150,23 @@ class Index:
         return self._dernier(self.reperes, position), acte
 
 
-def verifier(texte: str, bruts: list[dict]) -> list[Extrait]:
-    """PURE. Les extraits bruts du modèle, recherchés dans le texte et situés."""
+#: Les deux sources d'un extrait — et l'ordre où l'écran les montre.
+SOURCE_REGLEMENT = "reglement"
+SOURCE_AG = "ag"
+
+
+def source_de(position: Optional[int], debut_ag: Optional[int]) -> Optional[str]:
+    """PURE. D'où vient un extrait retrouvé : le règlement, ou une AG."""
+    if position is None or debut_ag is None:
+        return None
+    return SOURCE_AG if position >= debut_ag else SOURCE_REGLEMENT
+
+
+def verifier(texte: str, bruts: list[dict], debut_ag: Optional[int] = None) -> list[Extrait]:
+    """PURE. Les extraits bruts du modèle, recherchés dans le texte et situés.
+
+    `debut_ag` : où commencent les décisions d'AG dans `texte` (`TexteAssemble`).
+    Sans décision jointe, la source reste vide — l'écran n'a qu'une liste."""
     index = Index(texte)
     sortie = []
     for b in bruts:
@@ -162,6 +180,7 @@ def verifier(texte: str, bruts: list[dict]) -> list[Extrait]:
                 verifie=position is not None,
                 page=page,
                 acte=acte,
+                source=source_de(position, debut_ag),
             )
         )
     return sortie
@@ -171,4 +190,4 @@ def en_json(extraits: list[Extrait]) -> list[dict]:
     return [asdict(e) for e in extraits]
 
 
-__all__ = ["Extrait", "Index", "en_json", "verifier"]
+__all__ = ["SOURCE_AG", "SOURCE_REGLEMENT", "Extrait", "Index", "en_json", "source_de", "verifier"]
