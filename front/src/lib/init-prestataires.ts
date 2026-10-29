@@ -32,7 +32,7 @@
  * « Pur » veut dire ici : aucun appel réseau, aucune lecture de store, aucun
  * effet. L'appelant résout le périmètre (qui dépend de données chargées) et
  * passe une source déjà normalisée. Éprouvé par
- * `node --experimental-strip-types scripts/check-init-prestataires.mjs --selftest`.
+ * `node scripts/check-init-prestataires.mjs --selftest`.
  */
 
 /**

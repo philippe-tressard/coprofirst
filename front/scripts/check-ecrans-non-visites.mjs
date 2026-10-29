@@ -12,7 +12,7 @@
  * soient toutes absolues, sans quoi la comparaison les prendrait pour des écrans
  * introuvables.
  *
- * Usage : node --experimental-strip-types scripts/check-ecrans-non-visites.mjs --selftest
+ * Usage : node scripts/check-ecrans-non-visites.mjs --selftest
  */
 import { readFileSync } from 'node:fs';
 import {

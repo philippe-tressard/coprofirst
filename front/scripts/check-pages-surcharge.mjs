@@ -20,7 +20,7 @@
  * Le pattern est celui de `check-liste-depliable.mjs` : fonction PURE +
  * `--selftest`, sur le module que le site embarque, pas une copie.
  *
- * Usage : node --experimental-strip-types scripts/check-pages-surcharge.mjs --selftest
+ * Usage : node scripts/check-pages-surcharge.mjs --selftest
  */
 import { fusionnerSurcharge } from '../src/lib/pages-surcharge.ts';
 
