@@ -2822,6 +2822,17 @@ relève l'écran RENDU — `releverContrastes` (`e2e/contraste-ecran.ts`) : chaq
 texte sur son fond réel, chaque surface claire ; un dégradé est compté non mesuré.
 La coque : `e2e/palette-sombre-coque.spec.ts`.
 
+🔒 **Un aperçu de support imprimé ou envoyé reste CLAIR** (#2174, S4d) : l'affiche
+du hall, le courriel de la Diffusion, le corps d'un modèle de courriel se
+regardent pour valider ce qui sortira — papier et messagerie ne suivent pas le
+thème. L'élément porte `class="ilot-clair"` : il partage la règle `:root` de
+`socle.css` (les jetons clairs, sans recopie) et `styles/ilots-clairs.css` lui
+donne `color-scheme: light` et le fond blanc. Tout `<iframe>`, et chaque support
+rendu sans cadre (déclaré dans `SUPPORTS`), la porte — 🔒 `npm run
+lint:ilots-clairs`, `e2e/sombre-zone-d.spec.ts`. Une image téléversée composée
+pour le clair (le logo) prend un fond par jeton, invisible au clair
+(`--color-fond-logo`), jamais un filtre ni une seconde image.
+
 🔒 `npm run lint:charte-valeurs` refuse ces valeurs **sans plafond** — dans les
 composants ET dans `src/styles/`, en style comme dans une chaîne JavaScript —
 et donne le jeton de remplacement. Une couleur hexadécimale ne s'écrit plus
