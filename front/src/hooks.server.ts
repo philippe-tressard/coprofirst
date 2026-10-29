@@ -1,4 +1,5 @@
-import type { Handle } from '@sveltejs/kit/hooks';
+import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
+import { messageDErreur } from '#lib/erreur-page.ts';
 import garde from './garde-demarrage.js?raw';
 
 //  Le garde de démarrage (#1993) prend la place de son repère dans `app.html` :
@@ -61,3 +62,17 @@ function sansCopieConservee(reponse: Response): Response {
 		reponse.headers.set('cache-control', 'no-store');
 	return reponse;
 }
+
+/**
+ *  La phrase de la page d'erreur à la place du message anglais du framework
+ *  (#2304) — la même que le hook du navigateur, par `#lib/erreur-page`.
+ *
+ *  ⚠️ Déclarer ce hook REMPLACE celui de SvelteKit, qui écrivait la pile d'une
+ *  erreur imprévue dans le journal du conteneur : on la garde, sinon une panne
+ *  d'écran rendue côté serveur ne laisserait plus de trace.
+ */
+export const handleError: HandleServerError = ({ kind, error }) => {
+	if (kind === 'unknown') console.error(error);
+	const statut = kind === 'unknown' ? 500 : error.status;
+	return messageDErreur(kind, statut);
+};
