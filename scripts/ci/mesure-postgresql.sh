@@ -22,7 +22,7 @@
 #  chaque test le sien (`tests/aides_base`).
 #
 #  Workers : `PYTEST_WORKERS`, sinon `workers_suite` (PURE) — les cœurs du poste,
-#  bornés par ce que le serveur admet de connexions.
+#  bornés par ce que le serveur admet de connexions et par sa table de verrous.
 #  Ordre : ALÉATOIRE (pytest-randomly), graine affichée et écrite au résumé ;
 #  `PYTEST_GRAINE=<n>` rejoue le même ordre.
 #
@@ -35,6 +35,12 @@ set -uo pipefail
 CONNEXIONS_PAR_WORKER=4
 #: Laissées aux autres : le rejeu d'une autre session, un psql, la supervision.
 CONNEXIONS_RESERVEES=30
+#: Verrous qu'un worker peut tenir en même temps, dans UNE instruction : 234 au pire pour
+#: le retrait d'un schéma (lots de dix tables), 629 pour un `TRUNCATE` des 94 tables — qui
+#: n'arrive pas chez tous les workers au même instant (#2279). Avant les lots, un schéma
+#: retiré d'un bloc en tenait 1 655 et `create_all` 1 465 : quatre workers épuisaient la
+#: table partagée du serveur (« increase max_locks_per_transaction »).
+VERROUS_PAR_WORKER=400
 #: Au-delà, un worker de plus ne fait plus gagner de temps : 401 s à 11 workers,
 #: 431 s à 16 sur le poste de 28 cœurs — la base y sature (#2223).
 WORKERS_PLAFOND=12
@@ -56,17 +62,24 @@ issue_suite() {
     echo "$pire"
 }
 
-# ── PURE : cœurs, connexions admises par le serveur → nombre de workers ──────
+# ── PURE : cœurs, connexions, table des verrous → nombre de workers ─────────
 #  Le plus petit de : les cœurs, ce que le serveur admet une fois la réserve
-#  ôtée, le plafond mesuré. Jamais moins d'un. Une donnée illisible compte pour
-#  un cœur, ou pour le défaut de PostgreSQL (100 connexions).
+#  ôtée, ce que sa table PARTAGÉE de verrous porte (`max_locks_per_transaction` ×
+#  (`max_connections` + `max_prepared_transactions`), divisée par ce qu'un worker
+#  y tient), le plafond mesuré. Jamais moins d'un. Une donnée illisible compte pour
+#  un cœur, pour le défaut de PostgreSQL (100 connexions), ou pour la table par
+#  défaut (64 × 100) — jamais pour « sans limite ».
+#    $1 = cœurs, $2 = max_connections, $3 = capacité en verrous (déjà multipliée)
 workers_suite() {
-    local coeurs=${1:-1} connexions=${2:-100} n par_connexions
+    local coeurs=${1:-1} connexions=${2:-100} verrous=${3:-6400} n par_connexions par_verrous
     case "$coeurs" in ''|*[!0-9]*) coeurs=1 ;; esac
     case "$connexions" in ''|*[!0-9]*) connexions=100 ;; esac
+    case "$verrous" in ''|*[!0-9]*) verrous=6400 ;; esac
     n=$coeurs
     par_connexions=$(( (connexions - CONNEXIONS_RESERVEES) / CONNEXIONS_PAR_WORKER ))
     [ "$par_connexions" -lt "$n" ] && n=$par_connexions
+    par_verrous=$(( verrous / VERROUS_PAR_WORKER ))
+    [ "$par_verrous" -lt "$n" ] && n=$par_verrous
     [ "$WORKERS_PLAFOND" -lt "$n" ] && n=$WORKERS_PLAFOND
     [ "$n" -lt 1 ] && n=1
     echo "$n"
@@ -101,7 +114,13 @@ if [ "${1:-}" = "--selftest" ]; then
     t "1 cœur"                                          "$(workers_suite 1 100)"   1
     t "serveur saturé : jamais moins d'un worker"       "$(workers_suite 28 20)"   1
     t "cœurs illisibles, serveur muet : un worker"      "$(workers_suite "" "")"   1
-    t "données illisibles : un cœur"                    "$(workers_suite x y)"     1
+    t "données illisibles : un cœur"                    "$(workers_suite x y z)"   1
+    #  #2279 : la table partagée des verrous borne aussi (6 400 par défaut → 16 workers).
+    t "28 cœurs, table par défaut : le plafond borne"  "$(workers_suite 28 100 6400)" 12
+    t "table réduite (32 × 100) : 8 workers"           "$(workers_suite 28 100 3200)" 8
+    t "table minuscule : jamais moins d'un worker"     "$(workers_suite 28 100 100)"  1
+    t "table illisible : la valeur par défaut"         "$(workers_suite 28 100 x)"    12
+    t "table absente : la valeur par défaut"           "$(workers_suite 28 100)"      12
     #  #2242 : l'assertion et la trace d'un test en échec sont gardées, pas son seul nom.
     rouge=$'.F.
 =========== FAILURES ===========
@@ -141,18 +160,22 @@ fi
 
 [ -n "${TESTS_BASE_URL:-}" ] || { echo "::error::TESTS_BASE_URL absent : la suite ne peut pas tourner."; exit 3; }
 
-#  `max_connections` du serveur des tests ; vide s'il ne répond pas — la suite
-#  le dira alors elle-même, test par test.
-connexions=$(python - <<'EOF' 2>/dev/null
+#  `max_connections` du serveur des tests et la capacité de sa table de verrous
+#  (`max_locks_per_transaction` × (connexions + transactions préparées)) ; vides s'il ne
+#  répond pas — la suite le dira alors elle-même, test par test.
+reglages=$(python - <<'EOF' 2>/dev/null
 import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.pool import NullPool
 moteur = create_engine(os.environ["TESTS_BASE_URL"], poolclass=NullPool)
 with moteur.connect() as c:
-    print(c.execute(text("SHOW max_connections")).scalar())
+    lu = {k: int(c.execute(text(f"SHOW {k}")).scalar()) for k in (
+        "max_connections", "max_locks_per_transaction", "max_prepared_transactions")}
+    print(lu["max_connections"], lu["max_locks_per_transaction"] * (lu["max_connections"] + lu["max_prepared_transactions"]))
 EOF
 )
-WORKERS=${PYTEST_WORKERS:-$(workers_suite "$(nproc 2>/dev/null)" "$connexions")}
+read -r connexions verrous <<< "$reglages"
+WORKERS=${PYTEST_WORKERS:-$(workers_suite "$(nproc 2>/dev/null)" "$connexions" "$verrous")}
 GRAINE=${PYTEST_GRAINE:-$(( (RANDOM << 15) | RANDOM ))}
 echo "Suite : $WORKERS worker(s) ; ordre aléatoire, graine $GRAINE — rejouer cet ordre : PYTEST_GRAINE=$GRAINE"
 

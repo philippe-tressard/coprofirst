@@ -794,7 +794,7 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   `TESTS_BASE_URL=postgresql+psycopg://…`.
   **En parallèle, dans un ordre tiré au sort** (#2223) : `scripts/ci/mesure-postgresql.sh`
   lance `pytest -n` (pytest-xdist, `--dist loadfile`) — workers : `PYTEST_WORKERS`, sinon
-  `workers_suite` (cœurs, `max_connections`, plafond) — et pytest-randomly, dont la
+  `workers_suite` (cœurs, `max_connections`, table de verrous, plafond) — et pytest-randomly, dont la
   **graine** s'affiche et se rejoue (`PYTEST_GRAINE=<n>`). Chaque worker pose SON schéma
   d'application (`tests/aides_processus` : il héritait de celui du maître, 545 erreurs),
   et chaque **fichier** le trouve **neuf comme en production** — toutes les tables, aucune
@@ -989,7 +989,17 @@ seul worker** (`E2E_WORKERS`, seuil et mesure dans `rejouer-ci.sh`, règle
 `ci_workers_e2e`) : les workers s'y disputaient la machine et quatre specs
 tombaient en délai d'hydratation (#1665). La CI GitHub garde le défaut.
 pytest, lui, se borne par `PYTEST_WORKERS` (lu par `mesure-postgresql.sh`) ; sans
-elle, `workers_suite` en prend au plus 12, sous ce que `max_connections` admet (#2223).
+elle, `workers_suite` en prend au plus 12, sous ce que `max_connections` admet (#2223) **et
+que la table des verrous porte** (`max_locks_per_transaction` × connexions ÷ `VERROUS_PAR_WORKER`).
+
+🔒 **Aucune transaction de la suite ne tient plus de verrous qu'un worker n'en a** (#2279,
+29/10/2026 : « mémoire partagée épuisée », deux rejeux sur quatre). Un verrou se prend par
+table ET par index et se garde jusqu'au `commit` : `create_all` dans une transaction en tenait
+1 465, `DROP SCHEMA … CASCADE` 1 655, pour une table de 6 400 PARTAGÉE par les douze workers.
+La pose des tables est en AUTOCOMMIT (`aides_base.creer_les_tables`), le retrait par lots de
+`dialecte.TABLES_PAR_LOT` tables (`instructions_de_retrait`, ≈ 230 verrous au pire), la remise
+à neuf en AUTOCOMMIT. Ne pas appeler `create_all` sur un schéma jetable ni `DROP SCHEMA` en
+direct : passer par ces portes. 🔒 `test_verrous_par_transaction.py` mesure `pg_locks`.
 
 🔒 Un worktree dont `front/node_modules` est une **jonction** vers le clone
 principal en partage le cache de Vite : les e2e y tombent au hasard dès qu'une
