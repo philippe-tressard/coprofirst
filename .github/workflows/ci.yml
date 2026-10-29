@@ -612,7 +612,6 @@ jobs:
           # des paquets que plus aucune vague ne peut servir.
           bash scripts/ci/publier-version.sh        --selftest
           bash scripts/ci/purge-paquets.sh          --selftest
-          bash scripts/ci/rappel-replica.sh         --selftest
           # La mise à jour nocturne d'une réplique (#1756) : quelle version, et
           # revenir ou restaurer après une santé KO.
           bash deploiement/standard/mise-a-jour.sh  --selftest

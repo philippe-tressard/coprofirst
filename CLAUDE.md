@@ -1285,10 +1285,9 @@ Instanciation 5Hostachy :
   décision de l'auteur, qui choisit la version. Le geste refuse une version de
   moins de 7 jours (`RODAGE_JOURS`, `scripts/ci/promotion.sh`), sauf `-f
   urgence=true`, et toute promotion tant qu'une issue `bloque-promotion` est
-  ouverte, sauf urgence. Seule une **X.0.0** part seule, la nuit, à J+7 ; la nuit
-  rappelle aussi, par une issue assignée, un retard de 10, 20, 30… versions
-  **mineures** — les correctifs ne comptent pas, comme pour l'alerte du registre
-  (`rappel-replica.sh`). Règles et ce qui a été écarté : spec §4.10, règle 5 (#1934).
+  ouverte, sauf urgence. Seule une **X.0.0** part seule, la nuit, à J+7 ; plus aucun
+  rappel de retard n'est émis (#2319 : l'installation suit son canal, le registre
+  alerte). Règles et ce qui a été écarté : spec §4.10, règle 5 (#1934).
 - **Une réplique s'installe par `deploiement/standard/`** (#1755) : la surcouche
   `compose.images.yml` (`build: !reset`, image publiée à `COPROFIRST_VERSION`)
   se pose sur le `docker-compose.yml` de la racine, qui reste la **seule**

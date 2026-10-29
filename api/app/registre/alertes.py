@@ -66,8 +66,8 @@ DISQUE_PLEIN_PCT = 80
 #: Un certificat se renouvelle 30 jours avant son échéance : à moins de 21, le
 #: renouvellement a échoué au moins une fois.
 CERTIFICAT_AVANT = timedelta(days=21)
-#: Le retard de version se compte en mineures — le pas du rappel de `replica`
-#: (`scripts/ci/rappel-replica.sh`, PAS=10) ; une majeure de retard en est toujours un.
+#: Le retard de version se compte en mineures, par pas de dix ; une majeure de retard
+#: en est toujours un.
 RETARD_MINEURES = 10
 #: Un clone signalé reste une alerte une semaine — il se signale une fois par jour au
 #: plus (`routeur._signaler_clone`), donc une semaine sans signalement le lève.
