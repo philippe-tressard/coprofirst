@@ -70,10 +70,10 @@ if [ "${1:-}" = "--selftest" ]; then
     p=$(git -C "$DEPOT" rev-parse HEAD~1); c=$(git -C "$DEPOT" rev-parse HEAD)
     notes=$(cd "$DEPOT" && composer_notes "$p" "$c" 2.0.0)
     for attendu in "# CoproFirst 2.0.0" "- v2 — ajoute B" "- 0272_neuve.py" "- ajouté : B=2" "- retiré : C=3"; do
-        if printf '%s\n' "$notes" | grep -qxF -- "$attendu"; then echo "PASS  « $attendu »"
+        if grep -qxF -- "$attendu" <<<"$notes"; then echo "PASS  « $attendu »"
         else echo "FAIL  « $attendu » absent"; fail=1; fi
     done
-    if printf '%s\n' "$notes" | grep -q "v1 — départ"; then echo "FAIL  la version précédente est recopiée"; fail=1
+    if grep -q "v1 — départ" <<<"$notes"; then echo "FAIL  la version précédente est recopiée"; fail=1
     else echo "PASS  la version précédente n'est pas recopiée"; fi
     #  L'archive : un fichier manquant au commit fait échouer `git archive`.
     (cd "$DEPOT" && for f in "${FICHIERS_DEPLOIEMENT[@]}"; do mkdir -p "$(dirname "$f")"; echo x > "$f"; done
@@ -89,12 +89,12 @@ if [ "${1:-}" = "--selftest" ]; then
     else echo "PASS  archive d'un commit incomplet : refusée"; fi
     rm -rf "$SORTIE"
     urgente=$(cd "$DEPOT" && composer_notes "$p" "$c" 2.0.1 urgence)
-    if printf '%s' "$urgente" | grep -q "Correctif urgent"; then echo "PASS  l'urgence est dite"
+    if grep -q "Correctif urgent" <<<"$urgente"; then echo "PASS  l'urgence est dite"
     else echo "FAIL  l'urgence n'est pas dite"; fail=1; fi
-    if printf '%s' "$notes" | grep -q "Correctif urgent\|automatiquement"; then echo "FAIL  une promotion manuelle se dit urgente"; fail=1
+    if grep -q "Correctif urgent\|automatiquement" <<<"$notes"; then echo "FAIL  une promotion manuelle se dit urgente"; fail=1
     else echo "PASS  une promotion manuelle ne dit rien de plus"; fi
     premiere=$(cd "$DEPOT" && composer_notes "" "$c" 1.0.0)
-    if printf '%s' "$premiere" | grep -q "Première version publiée"; then echo "PASS  première promotion"
+    if grep -q "Première version publiée" <<<"$premiere"; then echo "PASS  première promotion"
     else echo "FAIL  première promotion : « $premiere »"; fail=1; fi
     rm -rf "$DEPOT"
     exit "$fail"

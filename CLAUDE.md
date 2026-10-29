@@ -879,6 +879,13 @@ deux RPi — pattern inauguré par `boot-role-guard.sh --selftest` (15/07/2026),
 étendu à `health-watch.sh` et `check-reliability.sh` (30/07/2026).
 Lancer en local : `bash <script>.sh --selftest`.
 
+🔒 **Une décision ne se prend jamais sur `producteur | grep -q motif`** (#2298) : sous
+`pipefail`, grep qui sort au premier appariement donne 141 (SIGPIPE) au producteur et le
+test dit « non » à tort, au hasard de la charge — un self-test rouge sur une PR, vert sur
+la suivante, même arbre. On lit le producteur (`_s=$(…)`), puis `grep -q motif <<<"$_s"`.
+`python scripts/ci/pipe_grep_quiet.py` refuse le tube (exceptions déclarées, vides
+aujourd'hui) ; son `--selftest` en prouve le mécanisme avec un producteur sans fin.
+
 ### Navigateur — job CI `e2e-frontend` (depuis le 08/09/2026)
 `front/e2e/` porte les tests Playwright — squelette, lien d'évitement, absence de
 défilement horizontal, cibles tactiles — sur les profils **bureau ET mobile**.

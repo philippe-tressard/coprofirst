@@ -25,7 +25,8 @@ fi
 PAQUETS="libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 libfribidi0 libcairo2"
 manquants=""
 for p in $PAQUETS; do
-    dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "install ok installed" \
+    _st=$(dpkg-query -W -f='${Status}' "$p" 2>/dev/null)
+    grep -q "install ok installed" <<<"$_st" \
         || manquants="$manquants $p"
 done
 if [ -z "$manquants" ]; then

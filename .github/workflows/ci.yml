@@ -500,6 +500,13 @@ jobs:
         # décision se teste sur une date INJECTÉE (`${AUJOURDHUI:-$(date +%F)}`).
         run: python scripts/ci/horloge_autotests.py
 
+      - name: Aucun script ne décide sur un tube vers grep -q
+        # 29/10/2026 (#2298) : sous `set -o pipefail`, `producteur | grep -q motif` rend
+        # 141 quand grep sort avant la fin du producteur — le test dit « non » à tort,
+        # au hasard de la charge (rouge sur #2297, vert sur #2294, même arbre). Lire le
+        # producteur d'abord, puis `grep -q motif <<<"$_s"`.
+        run: python scripts/ci/pipe_grep_quiet.py
+
       - name: Syntaxe de tous les scripts shell
         run: |
           st=0
@@ -522,6 +529,7 @@ jobs:
           python scripts/ci/scans_fichiers.py --selftest
           python scripts/ci/lancer_en_parallele.py --selftest
           python scripts/ci/horloge_autotests.py --selftest
+          python scripts/ci/pipe_grep_quiet.py --selftest
           bash scripts/lib/lib-role.sh              --selftest
           bash scripts/lib/lib-applicatifs.sh       --selftest
           bash scripts/lib/lib-replication.sh       --selftest

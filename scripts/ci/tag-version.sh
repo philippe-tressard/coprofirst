@@ -33,7 +33,7 @@ set -euo pipefail
 #  pas) · $3 commit courant
 decider_tag() {
     local version="$1" commit_du_tag="$2" head="$3"
-    if ! printf '%s' "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    if ! grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' <<<"$version"; then
         echo erreur
     elif [ -z "$commit_du_tag" ]; then
         echo creer

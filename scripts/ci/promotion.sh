@@ -70,7 +70,7 @@ RODAGE_JOURS=7
 decider_promotion() {
     local version="$1" commit="$2" sur_main="$3" replica="$4" en_avant="$5"
     local age="${6:-0}" urgence="${7:-0}" blocages="${8:-}"
-    if ! printf '%s' "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then echo refus-version; return; fi
+    if ! grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' <<<"$version"; then echo refus-version; return; fi
     if [ -z "$commit" ]; then echo refus-sans-tag; return; fi
     if [ "$sur_main" != 1 ]; then echo refus-hors-main; return; fi
     if [ -n "$replica" ] && [ "$replica" = "$commit" ]; then echo deja; return; fi

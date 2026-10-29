@@ -42,7 +42,7 @@ ACCES_CADDY_PERIME_S="${ACCES_CADDY_PERIME_S:-3600}"
 #   - la fenêtre de 24 h se juge sur le `ts` de chaque ligne, jamais sur sa
 #     position : le fichier roule par taille, pas par jour.
 COLLECT_ACCES='
-if docker ps -q -f name=hostachy_caddy 2>/dev/null | grep -q .; then
+if [ -n "$(docker ps -q -f name=hostachy_caddy 2>/dev/null)" ]; then
 echo "acces_caddy=$(docker exec hostachy_caddy tail -n 50000 /var/log/caddy/access.log 2>/dev/null | awk -v m=$(date +%s) "BEGIN{n=0;a=0;b=0;t=0} { if (match(\$0, /\"ts\":[0-9]+/)) { ts=substr(\$0, RSTART+5, RLENGTH-5)+0; if (ts>t) t=ts; if (ts>=m-86400) { n++; if (match(\$0, /\"status\":[0-9]+/)) { s=substr(\$0, RSTART+9, RLENGTH-9)+0; if (s==500||s==504) a++; else if (s>=500) b++ } } } } END{ if (t==0) print \"\"; else print \"ok:\" (m-t) \":\" n \":\" a \":\" b }")"
 else
 echo "acces_caddy="

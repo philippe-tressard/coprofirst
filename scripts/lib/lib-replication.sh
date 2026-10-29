@@ -224,7 +224,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "standby muet (collecte vide)"          INCONNU    verdict_precheck_replication 1 f 1 0 "" "" "" "" "" ""
     t "psql illisible sur l'actif"            INCONNU    verdict_precheck_replication 1 "" "" "" "" 1 t "" "" streaming
     echo "== la collecte est du shell valide, sans apostrophe =="
-    if bash -n <(printf '%s' "$COLLECT_REPLICATION") 2>/dev/null && ! printf '%s' "$COLLECT_REPLICATION" | grep -q "'"; then
+    if bash -n <(printf '%s' "$COLLECT_REPLICATION") 2>/dev/null && ! grep -q "'" <<<"$COLLECT_REPLICATION"; then
         echo "PASS  COLLECT_REPLICATION"
     else echo "FAIL  COLLECT_REPLICATION invalide ou porte une apostrophe"; st=1; fi
     echo "== la collecte, exécutée avec un docker simulé =="

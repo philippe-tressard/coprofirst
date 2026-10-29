@@ -150,9 +150,9 @@ verdict_reecriture() {
 ' | grep -c .)"       != "$(printf '%s
 ' "$4" | tr ' ' '
 ' | grep -c .)" ] && { echo non; return; }
+  local _l4; _l4=$(printf '%s\n' $4)
   for c in $3; do
-    printf '%s
-' $4 | grep -qF -- "$c" || { echo non; return; }
+    grep -qF -- "$c" <<<"$_l4" || { echo non; return; }
   done
   #  Et surtout : rien de perdu. Un seul fichier non recouvert suffit à refuser.
   [ -n "${5:-}" ] && { echo non; return; }

@@ -117,7 +117,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     attendu() {  # $1 libellé · $2 motif attendu · $3… arguments du bilan
         local lib="$1" motif="$2" got; shift 2
         got=$(cache_build_bilan "$@")
-        if printf '%s' "$got" | grep -qE "$motif"; then
+        if grep -qE "$motif" <<<"$got"; then
             echo "PASS  $lib"
         else
             echo "FAIL  $lib — « $got »"; fail=1

@@ -159,8 +159,7 @@ sudoers_noeuds_cibles() {  # $1 = filtre (vide = tous), $2 = liste connue
 # imprime. On la lit, on n'interroge pas commande par commande.
 sudoers_est_nopasswd() {  # $1 = sortie de `sudo -n -l`, $2 = commande cherchée
   [ -z "${1:-}" ] && return 1          # rien lu : on ne conclut pas
-  printf '%s
-' "$1" | grep -q "NOPASSWD:.*${2}"
+  grep -q "NOPASSWD:.*${2}" <<<"$1"
 }
 
 # La surface NOPASSWD réellement en place, une commande par ligne — c'est ce
@@ -232,7 +231,7 @@ sudoers_selftest() {
   if [ -z "$corps" ]; then
     #  Cas zéro : sans corps lu, l'absence d'accent grave ne prouve rien.
     echo "FAIL  corps du heredoc introuvable — controle inoperant, pas OK"; st=1
-  elif printf '%s' "$corps" | grep -q '`'; then
+  elif grep -q '`' <<<"$corps"; then
     echo "FAIL  accent grave dans le heredoc : il ouvre une substitution"; st=1
   else
     echo "PASS  aucun accent grave dans le corps du heredoc"
@@ -241,7 +240,7 @@ sudoers_selftest() {
   local regle; regle=$(sudoers_regle ptressard)
   for besoin in "systemctl start cloudflared" "systemctl stop cloudflared" \
                 "crontab -l"; do
-    if printf '%s' "$regle" | grep -q -- "$besoin"; then
+    if grep -q -- "$besoin" <<<"$regle"; then
       echo "PASS  besoin couvert : $besoin"
     else
       echo "FAIL  besoin NON couvert : $besoin"; st=1
@@ -256,20 +255,20 @@ sudoers_selftest() {
   #  explique le retrait nomme forcément la commande retirée. Un motif trop large
   #  échouait dessus — et aurait fait retirer l'explication pour obtenir du vert,
   #  c'est-à-dire supprimer la trace de la décision pour satisfaire le contrôle.
-  if printf '%s' "$regle" | grep -qE '^[^#]*NOPASSWD:.*rsync'; then
+  if grep -qE '^[^#]*NOPASSWD:.*rsync' <<<"$regle"; then
     echo "FAIL  la regle accorde encore rsync (escalade root complete, #582)"; st=1
   else
     echo "PASS  la regle n accorde plus rsync"
   fi
   #  Une règle sans borne d'unité autoriserait toute unité systemd : c'est le
   #  défaut que ce fichier existe pour ne pas reproduire.
-  if printf '%s' "$regle" | grep -qE '^[a-z]+ ALL=\(root\) NOPASSWD: /usr/bin/systemctl (start|stop|restart|enable|disable)$'; then
+  if grep -qE '^[a-z]+ ALL=\(root\) NOPASSWD: /usr/bin/systemctl (start|stop|restart|enable|disable)$' <<<"$regle"; then
     echo "FAIL  une règle systemctl n est bornée à AUCUNE unité"; st=1
   else
     echo "PASS  toute règle systemctl est bornée à une unité"
   fi
   #  `NOPASSWD: ALL` ne doit jamais réapparaître dans la règle composée.
-  if printf '%s' "$regle" | grep -qE 'NOPASSWD:[[:space:]]*ALL'; then
+  if grep -qE 'NOPASSWD:[[:space:]]*ALL' <<<"$regle"; then
     echo "FAIL  la règle contient NOPASSWD: ALL"; st=1
   else
     echo "PASS  aucune règle sans borne de commande"
