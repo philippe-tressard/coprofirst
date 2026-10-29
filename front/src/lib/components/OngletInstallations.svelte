@@ -16,6 +16,7 @@
 	import { onMount } from 'svelte';
 	import CarteRegistreInstallation from '#lib/components/CarteRegistreInstallation.svelte';
 	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import { contientTousLesMots } from '#lib/texte.ts';
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
@@ -55,15 +56,13 @@
 	});
 
 	$: installations = lu?.installations ?? [];
-	$: mots = recherche.trim().toLowerCase();
 	$: affichees = installations.filter(
 		(i) =>
 			(!etat || i.etat === etat) &&
-			(!mots ||
-				[i.identifiant, i.administrateur ?? '', i.version_logicielle ?? '', i.canal]
-					.join(' ')
-					.toLowerCase()
-					.includes(mots)),
+			contientTousLesMots(
+				[i.identifiant, i.administrateur, i.version_logicielle, i.canal],
+				recherche,
+			),
 	);
 
 	async function ouvrir(identifiant: string) {
@@ -198,7 +197,7 @@
 			id="admin-recherche-installation"
 			bind:valeur={recherche}
 			placeholder="CF-000003, Durand, 2.144…"
-			aide="Un identifiant, un administrateur ou une version."
+			dans="identifiant, administrateur, version et canal"
 		/>
 		<ChoixPastilles
 			options={ETATS_REGISTRE}

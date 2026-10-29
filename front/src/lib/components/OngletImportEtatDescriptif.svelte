@@ -214,6 +214,7 @@
 	bind:recherche
 	idRecherche="etat-descriptif-recherche"
 	exempleRecherche="N° de lot, bâtiment, nature, porte ou place…"
+	rechercheDans="lot, bâtiment, nature, porte ou place, niveau, circulation et lot d'origine"
 	compte={affichees.length}
 	on:importer={(e) => televerser(e.detail.fichier)}
 >

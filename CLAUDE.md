@@ -683,6 +683,10 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 - [ ] Rangée de pastilles qui FILTRE une liste : `compte={<liste affichée>.length}` —
       le nombre se montre sur la pastille **retenue** seulement, jamais un par
       entrée (maquette J, 10/10/2026 ; `ux-patterns` §5). `npm run lint:compte-filtres`
+- [ ] Champ de recherche : `<ChampRecherche dans="…">` — saisie blanche, loupe,
+      croix, et l'aide « Cherche dans : … » composée par lui ; jamais un
+      `<input type="search">` écrit dans un écran. La règle d'une liste reçue :
+      `contientTousLesMots` (`#lib/texte`), sans accents (`npm run lint:recherche`, #2308)
 - [ ] Attente d'un écran : `<EtatListe chargement />`, jamais un « Chargement… »
       écrit à la main — il y en avait **23** avant #1045 (`npm run lint:chargement`)
 - [ ] En-tête de page : `<EntetePage>`, jamais `<div class="page-header">`

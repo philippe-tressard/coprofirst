@@ -75,6 +75,7 @@
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
 	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import { contientTousLesMots } from '#lib/texte.ts';
 	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
 	import { ACCES } from '#lib/entites/acces.ts';
 
@@ -287,16 +288,9 @@
 		return a.code ?? '';
 	}
 
-	$: q = recherche.trim().toLowerCase();
 	$: filtrees = toutes
 		.filter((a) => !filtreType || a.type === filtreType)
-		.filter(
-			(a) =>
-				!q ||
-				a.code.toLowerCase().includes(q) ||
-				a.porteur_nom.toLowerCase().includes(q) ||
-				(a.lot_libelle ?? '').toLowerCase().includes(q),
-		)
+		.filter((a) => contientTousLesMots([a.code, a.porteur_nom, a.lot_libelle], recherche))
 		//  ⚠️ Trié APRÈS les filtres : trier d'abord ferait le même travail sur des
 		//  lignes qu'on s'apprête à écarter.
 		//  🔴 La colonne « Porteur » classe sur le NOM DE FAMILLE, pas sur la
@@ -349,7 +343,7 @@
 			id="bc-recherche"
 			bind:valeur={recherche}
 			placeholder="4521, Dupont, appartement 12…"
-			aide="Un code, un nom ou un lot."
+			dans="code, porteur et lot"
 		/>
 		<ChoixPastilles
 			options={TYPES}

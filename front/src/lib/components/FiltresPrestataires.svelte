@@ -45,6 +45,7 @@
 		id="recherche-prestataires"
 		bind:valeur={filtres.recherche}
 		placeholder="Nom, métier, équipement, contact, téléphone…"
+		dans="nom, métier, catégorie, téléphone, e-mail, adresse, description et contacts"
 	/>
 	<ChoixPastilles
 		options={TYPES_PRESTATAIRE}

@@ -30,6 +30,7 @@
 
 	import { bailleur as bailApi, type LocataireTrouve } from '#lib/api/index.ts';
 	import { nomAffiche } from '#lib/noms.ts';
+	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
 
 	/** Racine des identifiants — l'hôte la fournit, il en a déjà une. */
 	export let uid: string;
@@ -156,20 +157,22 @@
 			</ul>
 			<p class="suggestion-intro">Ou recherchez un autre compte :</p>
 		{/if}
+		<!--  Le champ standard (#2308). La règle est au SERVEUR (`search-locataire`) :
+		      l'adresse exacte, ou un morceau du nom OU du prénom, sans les majuscules
+		      — mais AVEC les accents : l'aide le dit (`sansAccents={false}`). -->
 		<div class="search-locataire-row">
-			<div class="field champ-en-ligne">
-				<input
-					type="search"
-					id="{uid}-recherche"
-					placeholder="Nom, prénom ou email…"
-					bind:value={recherche}
-					on:keydown={(e) => e.key === 'Enter' && chercher()}
-					autocomplete="off"
-				/>
-			</div>
-			<button class="btn btn-sm" disabled={cherchant || !recherche.trim()} on:click={chercher}>
-				{cherchant ? '…' : '🔍 Chercher'}
-			</button>
+			<ChampRecherche
+				id="{uid}-recherche"
+				bind:valeur={recherche}
+				placeholder="Nom, prénom ou email…"
+				dans="adresse e-mail exacte, nom ou prénom d'un compte locataire"
+				sansAccents={false}
+				on:keydown={(e) => e.key === 'Enter' && chercher()}
+			>
+				<button class="btn btn-sm" disabled={cherchant || !recherche.trim()} on:click={chercher}>
+					{cherchant ? '…' : 'Chercher'}
+				</button>
+			</ChampRecherche>
 		</div>
 		{#if rechercheFaite && resultats.length === 0 && !cherchant}
 			<p class="search-no-result">Aucun compte trouvé — renseignez manuellement ci-dessous.</p>
@@ -212,11 +215,7 @@
 	}
 	.search-locataire-row {
 		display: flex;
-		gap: 0.5rem;
 		margin-top: 0.4rem;
-	}
-	.search-locataire-row .field {
-		flex: 1;
 	}
 	/*  Les deux intitulés des suggestions. Ils étaient en `style=` en ligne dans la
 	    page : nommés ici, ils cessent d'être à réécrire à chaque reprise. */

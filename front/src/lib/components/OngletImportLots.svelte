@@ -261,6 +261,7 @@
 	bind:recherche
 	idRecherche="imp-lots-recherche"
 	exempleRecherche="Nom, n° de copropriétaire, bâtiment, lot…"
+	rechercheDans="copropriétaire et son n°, bâtiment, lot, type, étage, statut et comptes rattachés"
 	compte={affiches.length}
 	on:importer={(e) => uploadExcel(e.detail.fichier, e.detail.remplacer)}
 	on:filtrer={reload}
