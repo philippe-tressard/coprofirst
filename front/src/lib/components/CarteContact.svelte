@@ -105,6 +105,7 @@
 	}
 	.card-principal {
 		border-left: 3px solid var(--color-accent);
-		--avatar-bg: var(--color-accent);
+		--avatar-bg: var(--color-accent-plein);
+		--avatar-color: var(--color-sur-accent);
 	}
 </style>

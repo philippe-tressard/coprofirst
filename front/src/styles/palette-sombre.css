@@ -1,0 +1,163 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   5Hostachy — La PALETTE SOMBRE (#2174, lot S3, 29/10/2026).
+
+   Les jetons de `socle.css` redéfinis pour le thème sombre, et RIEN d'autre :
+   aucun composant n'a de règle sombre propre. Les valeurs sont celles de la
+   maquette arbitrée le 29/10/2026 (variante A, « bleu nuit » de la charte),
+   publiée sur l'issue #2174 — sauf les SÉRIES, recalées dans la bande de
+   clarté du thème sombre (voir plus bas).
+
+   ## Qui le voit — PERSONNE, avant le lot S5
+
+   Le bloc ne s'applique qu'à `<html data-theme="dark">`, que rien ne pose
+   encore : S4 corrige les écrans sous cet attribut, S5 livre la bascule
+   Auto / Clair / Sombre (cookie lu par le serveur) et l'attribut lui-même.
+
+   ## Écrit UNE fois — le mode Auto est GÉNÉRÉ au build
+
+   Le thème sombre s'allume de deux façons : forcé (`data-theme="dark"`) ou
+   suivi du système (`data-theme="auto"` ET `prefers-color-scheme: dark`). Un
+   sélecteur ne peut pas porter une requête média : deux blocs, donc les mêmes
+   quatre-vingt-cinq valeurs écrites deux fois — elles divergeraient au premier réglage.
+   La règle ci-dessous est la SEULE source ; `scripts/vite-palette-sombre.mjs`
+   (greffon PostCSS de `vite.config.ts`) en ajoute la copie Auto à la feuille
+   construite, sous `@media screen and (prefers-color-scheme: dark)`.
+   Écartés : `light-dark()` (Safari 17.5 : un iPhone resté en iOS 16 perdrait
+   TOUTES ses couleurs) ; un script qui poserait l'attribut au chargement (un
+   condensat CSP de plus, et un éclair clair → sombre).
+
+   Le mode Auto vise `[data-theme='auto']` et non `:not([data-theme='light'])` :
+   ce dernier allumerait le sombre AUJOURD'HUI chez tout appareil réglé en
+   sombre, et plus tard sur toute page servie sans l'attribut (page d'erreur
+   statique) — à moitié thématisée. Un attribut absent veut dire « clair ».
+
+   ## Ce qui reste clair
+
+   - L'IMPRESSION : le bloc est sous `@media screen` — une page imprimée garde
+     la palette de la charte, quel que soit le thème de l'écran.
+   - `color-scheme` (contrôles natifs, barres de défilement) : `light` hors de
+     ce bloc. `light dark` sur `:root` assombrirait dès maintenant les contrôles
+     natifs des appareils réglés en sombre — un sombre « automatique » que S3
+     ne doit pas livrer.
+
+   ## Les garde-fous
+
+   🔒 `npm run lint:palette-sombre` : chaque jeton de thème de `socle.css` a sa
+   valeur ici, ou se déclare IDENTIQUE avec sa raison, ou DÉRIVE d'un autre
+   (`var()`, `color-mix`) ; chaque paire texte/fond de la table déclarée tient
+   l'AA en sombre (4,5 texte, 3 pictogrammes et bordures de champ). Un jeton
+   écrit ici sans exister au clair est refusé.
+   🔒 `e2e/palette-sombre.spec.ts` : forcé, Auto, absent, impression.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@media screen {
+	:root[data-theme='dark'] {
+		color-scheme: dark;
+		/* Surfaces et texte — les quatre valeurs de la charte, puis un cran au-dessus
+		   de la surface pour les encarts neutres. */
+		--color-bg: #0d1b2a;
+		--color-surface: #162236;
+		--color-border: #2a3f5a;
+		--color-border-champ: #6580a3;
+		--color-neutre-fond: #1b2a41;
+		--color-neutre-bordure: #263a57;
+		--color-text: #e8e6e1;
+		--color-text-muted: #9fb0c6;
+		/* La marque : éclaircie pour se lire en texte sur fond sombre. */
+		--color-primary: #8db4e8;
+		--color-primary-dark: #b9d1f2;
+		--color-primary-light: #1d3150;
+		--color-secondary: #6fb48c;
+		/* Les APLATS restent foncés pour porter du blanc ; le survol ÉCLAIRCIT. */
+		--color-primary-plein: #1f4474;
+		--color-primary-plein-survol: #2a5489;
+		--color-danger-plein: #c0392b;
+		--color-success-plein: #2e7d52;
+		--color-info-plein: #2563a6;
+		--color-sarcelle-plein: #0b6470;
+		--color-sur-plein-discret: rgba(255, 255, 255, 0.62);
+		/*  Les ÉTATS et les CATÉGORIES. Le texte s'éclaircit ; le fond est ce texte
+		    à 17 % sur la surface, la bordure à 40 % — calculés une fois, écrits en
+		    hexadécimal (arbitrage n° 5) : `mix(texte, #162236, p)`. */
+		--color-success: #5cc08f;
+		--color-success-texte: #7fd6a6;
+		--color-success-fond: #223d45;
+		--color-success-bordure: #32615a;
+		--color-warning: #d9a441;
+		--color-warning-texte: #ebc373;
+		--color-warning-fond: #373838;
+		--color-warning-bordure: #64563a;
+		--color-danger: #f28b82;
+		--color-danger-fond: #3b3443;
+		--color-danger-bordure: #6e4c54;
+		--color-info: #6faeee;
+		--color-info-fond: #253a55;
+		--color-info-bordure: #3a5a80;
+		--color-violet: #c6a0f0;
+		--color-violet-fond: #343756;
+		--color-sarcelle: #5cc5d1;
+		--color-sarcelle-fond: #223e50;
+		--color-sarcelle-bordure: #326374;
+		--color-orange: #f2895b;
+		--color-orange-fond: #3b343c;
+		--color-orange-bordure: #6e4b45;
+		--color-orange-texte: #f6a77c;
+		--color-jaune-fond: #393e3a;
+		--color-jaune-texte: #e5c54f;
+		--color-import-lie: #6591f1;
+		/*  Les SÉRIES : la maquette les éclaircissait au-delà de la bande de clarté
+		    du thème sombre (OKLCH L 0,48–0,67 : au-delà, elles éblouissent sur le
+		    bleu nuit). Ramenées à L 0,66, teinte et chroma gardées : écart CVD
+		    minimal 8,5 entre voisines, toutes à 3:1 sur la surface (validateur de
+		    la skill dataviz, 29/10/2026). */
+		--serie-1: #5494e3;
+		--serie-2: #dc6f3c;
+		--serie-3: #04ac7a;
+		--serie-4: #bb8908;
+		--serie-5: #ce6f95;
+		--serie-6: #39ad3a;
+		--serie-7: #8e82e6;
+		--serie-8: #e7605f;
+		/* Les PALIERS : l'ordre s'inverse, la racine est la plus claire. */
+		--palier-1: #d3d1c7;
+		--palier-2: #b4b2a9;
+		--palier-3: #8f8d85;
+		--palier-4: #6f6d66;
+		/*  Le FIL (`#lib/flux`) : la teinte gardée, la clarté montée au premier cran
+		    qui tient 4,5 sur la page, la carte et son propre fond (le texte à 17 %
+		    sur la surface) — la règle de la maquette, appliquée aux jetons de S2. */
+		--fil-rouge: #eb7b7b;
+		--fil-rouge-fond: #3a3142;
+		--fil-ambre: #ec7d39;
+		--fil-ambre-fond: #3a3137;
+		--fil-olive: #6db015;
+		--fil-olive-fond: #253a30;
+		--fil-vert: #1eb556;
+		--fil-vert-fond: #173b3b;
+		--fil-sarcelle: #16b1a5;
+		--fil-sarcelle-fond: #163a49;
+		--fil-cyan: #15acd6;
+		--fil-cyan-fond: #163951;
+		--fil-indigo: #9e98e4;
+		--fil-indigo-fond: #2d3654;
+		--fil-violet: #b28eeb;
+		--fil-violet-fond: #313455;
+		--fil-fuchsia: #de74e9;
+		--fil-fuchsia-fond: #383054;
+		--fil-rose: #ee75a7;
+		--fil-rose-fond: #3b3049;
+		--fil-inconnu: #91a0b5;
+		--fil-inconnu-fond: #2b374c;
+		/*  La 13ᵉ teinte de périmètre est un APLAT sous du blanc : elle garde le brun
+		    du clair, au lieu de suivre `--color-jaune-texte`, éclairci ci-dessus. */
+		--teinte-13: #a16207;
+		/*  Les ÉTAPES du kanban sont du TEXTE (sur leur teinte à 10 %) : celles que
+		    la teinte de périmètre ne porte pas à 4,5 sur la carte s'éclaircissent. */
+		--kanban-ag: #a47ff8;
+		--kanban-cs: #5894f6;
+		/* Ombres noires, plus nettes ; voile de modale plus dense. */
+		--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+		--shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+		--color-voile-modale: rgba(0, 0, 0, 0.6);
+	}
+}

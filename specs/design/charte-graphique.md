@@ -42,6 +42,12 @@
 | Bord sombre     | `#2A3F5A`   | Séparateurs, bordures            |
 | Texte clair     | `#E8E6E1`   | Corps de texte en mode sombre    |
 
+Ces quatre valeurs sont le socle de la palette sombre complète — 85 jetons,
+arbitrée sur maquette le 29/10/2026 (#2174, variante « bleu nuit ») — qui vit
+dans `front/src/styles/palette-sombre.css`, et nulle part ailleurs. Elle
+s'applique sous `<html data-theme="dark">` ; le choix Auto / Clair / Sombre
+offert aux utilisateurs arrive avec le lot S5.
+
 ---
 
 ## Typographie

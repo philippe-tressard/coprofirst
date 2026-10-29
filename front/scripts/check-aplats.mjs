@@ -15,7 +15,9 @@
  *     avec la valeur d'un FOND (la surface devient sombre au sombre, et son texte
  *     avec elle) — dire `--color-sur-plein` ou `--color-sur-voile` ;
  *  2. une règle dont le texte est `--color-sur-plein` et le fond un jeton NU
- *     (`background: var(--color-primary)`) : dire `--color-primary-plein`.
+ *     (`background: var(--color-primary)`) : dire `--color-primary-plein` ;
+ *  3. une règle qui pose l'OR en aplat (`background` ou `--avatar-bg`) sans dire
+ *     son texte par `--color-sur-accent` : le blanc n'y fait que 2,61:1 (#2174, S3).
  *
  *  Lancer : node scripts/check-aplats.mjs [--selftest]
  */
@@ -25,6 +27,8 @@ import { neutraliserCommentaires } from './lib-commentaires.mjs';
 const TEXTE_CLAIR = /(?<![-\w])color\s*:\s*(var\(--color-surface\)|#fff(?:fff)?\b|white\b)/i;
 const SUR_PLEIN = /(?<![-\w])color\s*:\s*var\(--color-sur-plein\)/;
 const APLAT_NU = /background(?:-color)?\s*:\s*var\(--color-(?:primary|danger|success|accent)\)/;
+const APLAT_OR = /(?:background(?:-color)?|--avatar-bg)\s*:\s*var\(--color-accent(?:-plein)?\)/;
+const SUR_ACCENT = /(?<![-\w])(?:color|--avatar-color)\s*:\s*var\(--color-sur-accent\)/;
 
 /** Les numéros de ligne fautifs d'un texte. PURE. */
 function fautes(texte) {
@@ -36,6 +40,7 @@ function fautes(texte) {
 	});
 	for (const m of t.matchAll(/\{[^{}]*\}/g)) {
 		if (SUR_PLEIN.test(m[0]) && APLAT_NU.test(m[0])) lignes.add(ligneDe(m.index));
+		if (APLAT_OR.test(m[0]) && !SUR_ACCENT.test(m[0])) lignes.add(ligneDe(m.index));
 	}
 	return [...lignes].sort((a, b) => a - b);
 }
@@ -49,6 +54,10 @@ process.exitCode = controler({
 		['.a { color: #FFFFFF; }', 1],
 		['.a { color: white; }', 1],
 		['.a { color: var(--color-sur-plein); background: var(--color-primary-plein); }', 0],
+		['.a { background: var(--color-accent-plein); color: var(--color-sur-plein); }', 1],
+		['.a { --avatar-bg: var(--color-accent); }', 1],
+		['.a { background: var(--color-accent-plein); color: var(--color-sur-accent); }', 0],
+		['.a { --avatar-bg: var(--color-accent-plein); --avatar-color: var(--color-sur-accent); }', 0],
 		['.a { color: var(--color-sur-plein); background: var(--color-primary); }', 1],
 		['.a { background: var(--color-danger);\n color: var(--color-sur-plein); }', 1],
 		['.a { color: var(--color-sur-voile); background: rgba(0, 0, 0, 0.5); }', 0],
@@ -60,5 +69,5 @@ process.exitCode = controler({
 	ok: 'Aplats : aucun texte clair écrit avec la valeur d’un fond',
 	ko: 'texte(s) clair(s) posé(s) sur un aplat sans le jeton qui convient',
 	conseil:
-		'Texte : `--color-sur-plein` (ou `--color-sur-voile` sur un voile noir) ; aplat : `--color-<état>-plein`.',
+		'Texte : `--color-sur-plein` (ou `--color-sur-voile` sur un voile noir, `--color-sur-accent` sur l’or) ; aplat : `--color-<état>-plein`.',
 });

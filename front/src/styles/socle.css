@@ -189,6 +189,10 @@ body {
 	--color-text-inverse: #f2efe9;
 	/* Surfaces */
 	--color-border: #d0d8e4;
+	/*  La bordure d'un CHAMP de saisie : `--color-border` est un filet décoratif
+	    (1,4:1), et le contour d'un champ doit se voir à 3:1 (WCAG 1.4.11) —
+	    3,6 sur la carte, 3,1 sur le fond du champ (#2174, S3, arbitré). */
+	--color-border-champ: #7a889c;
 	--color-bg: #f2efe9; /* Pierre de taille */
 	--color-surface: #ffffff;
 	/*  LES APLATS (mode sombre, #2174 — lot S0). Un jeton de la charte sert deux
@@ -209,6 +213,14 @@ body {
 	--color-accent-plein: var(--color-accent);
 	--color-sur-plein: #ffffff;
 	--color-sur-voile: #ffffff;
+	/*  Le texte posé sur l'OR (avatar, médaillon, pastille) : le blanc n'y fait
+	    que 2,61:1 ; ce bleu nuit 6,53, dans les deux thèmes (#2174, S3). Le texte
+	    clair DISCRET sur l'aplat primaire (mention de l'en-tête) : 4,66 au clair,
+	    relevé à 62 % au sombre où l'aplat s'éclaircit. */
+	--color-sur-accent: #1a1a2e;
+	--color-sur-plein-discret: rgba(255, 255, 255, 0.55);
+	/* Le voile sous une fenêtre modale — plus dense au sombre. */
+	--color-voile-modale: rgba(0, 0, 0, 0.45);
 	/*  Un fond NEUTRE posé sur la surface blanche — l'encart d'une rubrique qui
 	    n'a pas d'état à dire (« La demande », maquette G du 16/10/2026). Le
 	    `--color-bg` de la page est trop chaud pour un bloc dans une carte. */

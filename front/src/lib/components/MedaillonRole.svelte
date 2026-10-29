@@ -91,5 +91,6 @@
 	}
 	.medaillon-gestionnaire-principal {
 		background: var(--color-accent-plein);
+		color: var(--color-sur-accent);
 	}
 </style>
