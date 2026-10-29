@@ -152,7 +152,7 @@
 							<span class="kb-col-vide-mot">{MOT_COLONNE_VIDE}</span>
 						{/if}
 						{#if col.total > 0}
-							<span class="kb-col-count" style="background:{col.color}1a;color:{col.color}">
+							<span class="kb-col-count" style="--kb-teinte:{col.color}">
 								{col.total > MAX_CARTES_ACCUEIL
 									? `+${col.total - MAX_CARTES_ACCUEIL} / ${col.total}`
 									: col.total}

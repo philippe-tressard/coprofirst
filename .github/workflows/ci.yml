@@ -2061,6 +2061,14 @@ jobs:
         working-directory: front
         run: npm run lint:aplats
 
+      # Une teinte choisie par donnée (type du fil, rang d'un périmètre, étape d'un
+      # kanban, tuile d'import) se dit par son jeton : le bloc sombre la redéfinit
+      # en un seul endroit. Le manifeste, qui ne lit pas de variable, est tenu à la
+      # valeur du jeton (#2174, S2).
+      - name: Une couleur hors feuille se dit par son jeton
+        working-directory: front
+        run: npm run lint:couleurs-ts
+
       # La racine était à 12 px sur téléphone et à 16 px figés au bureau : texte à
       # 10,8 px, zoom d'iOS sur les champs, préférence du navigateur écrasée (#2165).
       - name: La taille de la racine suit la préférence du navigateur

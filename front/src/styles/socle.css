@@ -120,6 +120,68 @@ body {
 	--palier-2: #888780;
 	--palier-3: #b4b2a9;
 	--palier-4: #d3d1c7;
+	/*  LES TEINTES TENUES EN TYPESCRIPT (mode sombre, #2174 — lot S2). Une couleur
+	    CHOISIE PAR DONNÉE (le type d'une rubrique du fil, le rang d'un périmètre,
+	    l'étape d'un kanban, l'état d'un import) ne peut pas s'écrire dans une
+	    feuille : le code la désigne par son jeton (`var(--fil-rouge)`), et le bloc
+	    sombre la redéfinit ICI, en un seul endroit. Les valeurs du thème clair sont
+	    celles d'avant le lot. Contrôle : `npm run lint:couleurs-ts`. */
+	/*  Le FIL (`#lib/flux`) : un texte foncé (700/800) sur son fond clair (50), onze
+	    teintes réparties sur la roue chromatique (écart minimal 17°), toutes au
+	    contraste AA — `api/tests/test_flux_apparence.py` le mesure. L'orange
+	    (annonce) est `--color-orange`, le bleu Seine (actualité) `--color-primary`. */
+	--fil-rouge: #b91c1c;
+	--fil-rouge-fond: #fef2f2;
+	--fil-ambre: #92400e;
+	--fil-ambre-fond: #fffbeb;
+	--fil-olive: #4d7c0f;
+	--fil-olive-fond: #f7fee7;
+	--fil-vert: #15803d;
+	--fil-vert-fond: #f0fdf4;
+	--fil-sarcelle: #0f766e;
+	--fil-sarcelle-fond: #f0fdfa;
+	--fil-cyan: #0e7490;
+	--fil-cyan-fond: #ecfeff;
+	--fil-indigo: #4338ca;
+	--fil-indigo-fond: #eef2ff;
+	--fil-violet: #6d28d9;
+	--fil-violet-fond: #f5f3ff;
+	--fil-fuchsia: #a21caf;
+	--fil-fuchsia-fond: #fdf4ff;
+	--fil-rose: #be185d;
+	--fil-rose-fond: #fdf2f8;
+	--fil-inconnu: #475569;
+	--fil-inconnu-fond: #f1f5f9;
+	/*  Les PÉRIMÈTRES (`#lib/perimetres/teinte`) : treize aplats sous un texte
+	    `--color-sur-plein`, attribués PAR RANG (la n-ième tête de l'arbre prend
+	    `--teinte-n`). Plus longue que la rangée des têtes, exprès. Le gris est
+	    celui de « toute la copropriété » : hors rang, il ne se confond avec aucun
+	    lieu. */
+	--teinte-1: #ef4444;
+	--teinte-2: #3b82f6;
+	--teinte-3: #22c55e;
+	--teinte-4: #f59e0b;
+	--teinte-5: #f97316;
+	--teinte-6: #8b5cf6;
+	--teinte-7: #ec4899;
+	--teinte-8: #0ea5e9;
+	--teinte-9: #14b8a6;
+	--teinte-10: #84cc16;
+	--teinte-11: #e11d48;
+	--teinte-12: #6366f1;
+	--teinte-13: var(--color-jaune-texte);
+	--teinte-copropriete: #6b7280;
+	/*  Les ÉTAPES du kanban (`#lib/kanban`) : les mêmes teintes que la palette des
+	    périmètres, nommées par ce qu'elles disent. « Annulé » est le seul gris. */
+	--kanban-ag: var(--teinte-6);
+	--kanban-cs: var(--teinte-2);
+	--kanban-syndic: var(--teinte-4);
+	--kanban-fournisseur: var(--teinte-5);
+	--kanban-termine: var(--teinte-3);
+	--kanban-annule: #9ca3af;
+	/*  Une tuile des IMPORTS (lots, accès) qui dit « rattaché » : un bleu vif,
+	    distinct du bleu d'information. */
+	--color-import-lie: #2563eb;
 
 	/* Texte */
 	--color-text: #1a1a2e;

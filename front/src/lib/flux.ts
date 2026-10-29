@@ -36,6 +36,10 @@ import type { ClasseGouttiere } from '#lib/gouttiere.ts';
 // n'était que le cas extrême. Les textes sont passés en teintes foncées (700/800)
 // sur des fonds clairs (50) : les douze sont désormais entre 4,75 et 10,2.
 //
+// JETONS (#2174, S2). Couleurs et fonds se désignent par `var(--fil-…)` : la
+// valeur vit dans `socle.css`, où le thème sombre la redéfinit. Le contraste se
+// mesure donc sur la valeur RÉSOLUE (`api/tests/test_flux_apparence.py`).
+//
 // DIFFÉRENCIATION. Les onze teintes sont réparties sur la roue, écart minimal
 // 17°. L'émeraude 163° a été libérée avec la rubrique « devis » ; elle était à
 // 12° de la sarcelle de `prestataire`, un rapprochement voulu tant que les deux
@@ -58,29 +62,29 @@ const {
 } = parAttribut({
 	ticket_resolu: {
 		libelle: 'Affaire résolue',
-		couleur: '#B91C1C',
-		fond: '#FEF2F2',
+		couleur: 'var(--fil-rouge)',
+		fond: 'var(--fil-rouge-fond)',
 		icone: 'circle-check',
 		abrege: 'AFF.',
 	}, //   0° rouge
 	ticket_ouvert: {
 		libelle: 'Affaire',
-		couleur: '#B91C1C',
-		fond: '#FEF2F2',
+		couleur: 'var(--fil-rouge)',
+		fond: 'var(--fil-rouge-fond)',
 		icone: 'wrench',
 		abrege: 'AFF.',
 	},
 	ticket_mis_a_jour: {
 		libelle: 'Affaire mise à jour',
-		couleur: '#B91C1C',
-		fond: '#FEF2F2',
+		couleur: 'var(--fil-rouge)',
+		fond: 'var(--fil-rouge-fond)',
 		icone: 'refresh-cw',
 		abrege: 'AFF.',
 	},
 	annonce: {
 		libelle: 'Petite annonce',
-		couleur: '#C2410C',
-		fond: '#FFF7ED',
+		couleur: 'var(--color-orange)',
+		fond: 'var(--color-orange-fond)',
 		icone: 'heart-handshake',
 		abrege: 'ANN.',
 	}, //  17° orange
@@ -88,36 +92,36 @@ const {
 	//  point CS / Syndic, une entrée par point, lue du conseil et du syndic.
 	point_conseil: {
 		libelle: 'Point CS / Syndic',
-		couleur: '#92400E',
-		fond: '#FFFBEB',
+		couleur: 'var(--fil-ambre)',
+		fond: 'var(--fil-ambre-fond)',
 		icone: 'users',
 		abrege: 'CS/SYN.',
 	},
 	diagnostic: {
 		libelle: 'Diagnostic',
-		couleur: '#4D7C0F',
-		fond: '#F7FEE7',
+		couleur: 'var(--fil-olive)',
+		fond: 'var(--fil-olive-fond)',
 		icone: 'activity',
 		abrege: 'DIAG.',
 	}, //  86° olive
 	annuaire: {
 		libelle: 'Annuaire',
-		couleur: '#15803D',
-		fond: '#F0FDF4',
+		couleur: 'var(--fil-vert)',
+		fond: 'var(--fil-vert-fond)',
 		icone: 'users',
 		abrege: 'ANNU.',
 	}, // 142° vert
 	prestataire: {
 		libelle: 'Prestataire',
-		couleur: '#0F766E',
-		fond: '#F0FDFA',
+		couleur: 'var(--fil-sarcelle)',
+		fond: 'var(--fil-sarcelle-fond)',
 		icone: 'hard-hat',
 		abrege: 'PREST.',
 	}, // 175° sarcelle
 	idee: {
 		libelle: 'Boîte à idées',
-		couleur: '#0E7490',
-		fond: '#ECFEFF',
+		couleur: 'var(--fil-cyan)',
+		fond: 'var(--fil-cyan-fond)',
 		icone: 'lightbulb',
 		abrege: 'IDÉE',
 	}, // 193° cyan
@@ -125,42 +129,42 @@ const {
 	publication: {
 		libelle: 'Actualité',
 		couleur: 'var(--color-primary)',
-		fond: '#EEF2F7',
+		fond: 'var(--color-primary-light)',
 		icone: 'newspaper',
 		abrege: 'ACTU.',
 	},
 	document: {
 		libelle: 'Document',
-		couleur: '#4338CA',
-		fond: '#EEF2FF',
+		couleur: 'var(--fil-indigo)',
+		fond: 'var(--fil-indigo-fond)',
 		icone: 'file-text',
 		abrege: 'DOC.',
 	}, // 245° indigo
 	sondage_clos: {
 		libelle: 'Sondage clos',
-		couleur: '#6D28D9',
-		fond: '#F5F3FF',
+		couleur: 'var(--fil-violet)',
+		fond: 'var(--fil-violet-fond)',
 		icone: 'bar-chart-3',
 		abrege: 'SOND.',
 	}, // 263° violet
 	sondage_ouvert: {
 		libelle: 'Sondage',
-		couleur: '#6D28D9',
-		fond: '#F5F3FF',
+		couleur: 'var(--fil-violet)',
+		fond: 'var(--fil-violet-fond)',
 		icone: 'bar-chart-3',
 		abrege: 'SOND.',
 	},
 	faq: {
 		libelle: 'Question fréquente',
-		couleur: '#A21CAF',
-		fond: '#FDF4FF',
+		couleur: 'var(--fil-fuchsia)',
+		fond: 'var(--fil-fuchsia-fond)',
 		icone: 'help-circle',
 		abrege: 'FAQ',
 	}, // 295° fuchsia
 	question_reglement: {
 		libelle: 'Question au règlement',
-		couleur: '#BE185D',
-		fond: '#FDF2F8',
+		couleur: 'var(--fil-rose)',
+		fond: 'var(--fil-rose-fond)',
 		icone: 'book-open',
 		abrege: 'RÈGL.',
 	}, // 330° rose — ajouté le 11/10/2026, entre le fuchsia et le rouge
@@ -181,8 +185,8 @@ export const TYPE_BG: Record<string, string> = F;
 //  type inconnu doit se voir comme tel plutôt que passer pour une rubrique
 //  normale. Ils sont lisibles (contraste 7,6:1) — c'est le garde-fou de test,
 //  pas le repli, qui empêche un type d'y rester.
-const COULEUR_INCONNUE = '#475569';
-const FOND_INCONNU = '#F1F5F9';
+const COULEUR_INCONNUE = 'var(--fil-inconnu)';
+const FOND_INCONNU = 'var(--fil-inconnu-fond)';
 
 export function typeCouleur(type: string): string {
 	return TYPE_COLORS[type] ?? COULEUR_INCONNUE;
