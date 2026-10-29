@@ -206,7 +206,7 @@
 	@media (hover: hover) and (pointer: fine) {
 		.btn-icon-star:hover {
 			background: var(--color-accent-plein);
-			color: var(--color-sur-plein);
+			color: var(--color-sur-accent);
 		}
 	}
 </style>

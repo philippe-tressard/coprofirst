@@ -14,10 +14,9 @@
  * Le pattern est celui de `check-init-prestataires.mjs` : fonction PURE +
  * `--selftest`, sur le module que le site embarque, pas une copie.
  *
- * Usage : node --experimental-strip-types scripts/check-liste-depliable.mjs --selftest
+ * Usage : node scripts/check-liste-depliable.mjs --selftest
  *
- * ⚠️ Le drapeau est passé explicitement : sans effet sur Node 24 (le poste),
- * nécessaire sur les Node 22 antérieurs à 22.18.
+ * Le module est en TypeScript : Node le lit sans drapeau depuis 22.18 (#2293).
  */
 import {
 	REPLIE,

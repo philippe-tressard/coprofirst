@@ -2069,6 +2069,14 @@ jobs:
         working-directory: front
         run: npm run lint:couleurs-ts
 
+      # Le thème sombre redéfinit les jetons dans `palette-sombre.css` : un jeton
+      # oublié y garde sa valeur claire, une valeur sombre peut ne pas tenir l'AA.
+      # Couverture de chaque jeton du thème, et table déclarée de paires texte/fond
+      # mesurées dans les deux thèmes (#2174, S3).
+      - name: La palette sombre couvre la charte et tient l'AA
+        working-directory: front
+        run: npm run lint:palette-sombre
+
       # La racine était à 12 px sur téléphone et à 16 px figés au bureau : texte à
       # 10,8 px, zoom d'iOS sur les champs, préférence du navigateur écrasée (#2165).
       - name: La taille de la racine suit la préférence du navigateur

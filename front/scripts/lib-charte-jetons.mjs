@@ -78,6 +78,10 @@ export function repliMortsDe(css, socle) {
  *  une valeur qu'il ne sait pas résoudre le fait échouer (INCONNU, jamais OK).
  */
 export function contraste(a, b) {
+	//  Un texte TRANSLUCIDE (`#rrggbbaa`) se mesure posé sur son fond ; un fond
+	//  translucide n'a pas de couleur à lui seul — NaN, que l'appelant lit INCONNU.
+	if (b.length === 9) return NaN;
+	if (a.length === 9) a = melanger(a.slice(0, 7), b, parseInt(a.slice(7), 16) / 255);
 	const lum = (h) => {
 		const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
 		const [r, g, v] = c.map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
@@ -87,20 +91,72 @@ export function contraste(a, b) {
 	return (x + 0.05) / (y + 0.05);
 }
 
-/** `var(--x)` → la valeur hexadécimale de `--x` dans les jetons, ou null. */
+/** `p` de `a` et `1 - p` de `b`, en sRGB — le `color-mix(in srgb, …)` du navigateur. */
+export function melanger(a, b, p) {
+	const c = (h, i) => parseInt(h.slice(i, i + 2), 16);
+	return (
+		'#' +
+		[1, 3, 5]
+			.map((i) => Math.round(c(a, i) * p + c(b, i) * (1 - p)))
+			.map((x) => x.toString(16).padStart(2, '0'))
+			.join('')
+	);
+}
+
+const NOMMEES = { white: '#ffffff', black: '#000000' };
+
+/**
+ *  Une valeur de couleur → `#rrggbb`, `#rrggbbaa` si elle est translucide, ou
+ *  null si elle échappe (INCONNU, jamais OK). Lit `#rgb`, `#rrggbb`, `white`,
+ *  `black`, `rgb()`/`rgba()`, `var(--x)` dans les jetons, et — depuis le mode
+ *  sombre (#2174, S3) — `color-mix(in srgb, A p%, B)` de deux couleurs opaques.
+ */
 export function resoudre(valeur, jetons, profondeur = 0) {
 	const v = valeur.trim().toLowerCase();
+	if (profondeur > 8) return null;
 	if (/^#[0-9a-f]{6}$/.test(v)) return v;
+	if (/^#[0-9a-f]{3}$/.test(v)) return hex6(v);
+	if (v in NOMMEES) return NOMMEES[v];
+	const rgb = v.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/);
+	if (rgb) {
+		const a = rgb[4] === undefined ? 1 : parseFloat(rgb[4]);
+		const hex =
+			'#' +
+			rgb
+				.slice(1, 4)
+				.map((x) => (+x).toString(16).padStart(2, '0'))
+				.join('');
+		return a >= 1
+			? hex
+			: hex +
+					Math.round(a * 255)
+						.toString(16)
+						.padStart(2, '0');
+	}
+	const mix = v.match(/^color-mix\(\s*in srgb\s*,\s*(.+?)\s+([\d.]+)%\s*,\s*(.+?)\s*\)$/);
+	if (mix) {
+		const [a, b] = [
+			resoudre(mix[1], jetons, profondeur + 1),
+			resoudre(mix[3], jetons, profondeur + 1),
+		];
+		if (!a || !b || a.length === 9 || b.length === 9) return null;
+		return melanger(a, b, parseFloat(mix[2]) / 100);
+	}
 	const m = v.match(/^var\(\s*(--[a-z0-9-]+)\s*\)$/);
-	if (!m || profondeur > 5 || !(m[1] in jetons)) return null;
+	if (!m || !(m[1] in jetons)) return null;
 	return resoudre(jetons[m[1]], jetons, profondeur + 1);
+}
+
+/** Les déclarations `--nom: valeur;` d'un CSS, une par ligne, en objet. */
+export function declarationsDe(css) {
+	return Object.fromEntries(
+		[...css.matchAll(/^\s*(--[a-z0-9-]+)\s*:\s*([^;]+);/gm)].map((m) => [m[1], m[2].trim()]),
+	);
 }
 
 /** Les badges et leur rapport de contraste ; `null` quand une valeur échappe. */
 export function contrastesBadges(composants, socle) {
-	const jetons = Object.fromEntries(
-		[...socle.matchAll(/^\s*(--[a-z0-9-]+)\s*:\s*([^;]+);/gm)].map((m) => [m[1], m[2]]),
-	);
+	const jetons = declarationsDe(socle);
 	return [...composants.matchAll(/^\.badge-([a-z]+)\s*\{([^}]*)\}/gm)]
 		.map(([, nom, corps]) => {
 			const fond = corps.match(/background\s*:\s*([^;]+);/);

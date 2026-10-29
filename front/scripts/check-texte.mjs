@@ -32,10 +32,9 @@
  *  même lot. Une exception ajoutée plus tard devra dire pourquoi, et une
  *  exception qui ne sert plus fait échouer ce contrôle.
  *
- *  Lancer : node --experimental-strip-types scripts/check-texte.mjs [--selftest]
+ *  Lancer : node scripts/check-texte.mjs [--selftest]
  *
- *  ⚠️ Le drapeau est passé explicitement : sans effet sur Node 24 (le poste),
- *  nécessaire sur les Node 22 antérieurs à 22.18.
+ *  Le module est en TypeScript : Node le lit sans drapeau depuis 22.18 (#2293).
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, sep } from 'node:path';

@@ -50,7 +50,7 @@
  *
  * ⚠️ Aucun import de `#lib/…` ici, et ce n'est pas un oubli : le script de
  * self-test importe ce fichier par son chemin relatif, et un alias Vite ne se
- * résout pas sous `node --experimental-strip-types`.
+ * résout pas sous `node`, qui lit ce fichier en retirant ses types.
  */
 
 /**

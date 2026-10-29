@@ -18,7 +18,7 @@
  *  Node lit le module TypeScript directement : le code éprouvé est CELUI QUE LE
  *  SITE EMBARQUE, pas une copie.
  *
- *  Usage : node --experimental-strip-types scripts/check-prompt-origine.mjs --selftest
+ *  Usage : node scripts/check-prompt-origine.mjs --selftest
  */
 import { memePrompt } from '../src/lib/promptOrigine.ts';
 
