@@ -1,9 +1,9 @@
-FROM node:22-alpine
-# Node 22 (#1380, 27/09/2026) : ce conteneur tournait sur Node 20, en fin de vie
-# depuis le 30/04/2026 — cinq mois sans correctif pour celui qui tient la
-# session WhatsApp. 22 est une LTS, et la MÊME que le front : une seule image de
-# base à rafraîchir sur le daemon. Pas 25 (PR Dependabot #1290) : une version
-# impaire n'est jamais LTS, sa fin de vie arrive en quelques mois.
+FROM node:26-alpine
+# Node 26 (#1413, 29/10/2026) : LTS active depuis le 28/10/2026, la MÊME que le
+# front — une seule image de base à rafraîchir sur le daemon. Avant : Node 22
+# (#1380), lui-même venu de Node 20, en fin de vie depuis le 30/04/2026. Jamais
+# une version impaire (PR Dependabot #1290) : elle n'est jamais LTS, sa fin de
+# vie arrive en quelques mois.
 
 RUN apk add --no-cache git tzdata
 

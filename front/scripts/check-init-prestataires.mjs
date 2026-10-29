@@ -17,9 +17,10 @@
  * Usage : node --experimental-strip-types scripts/check-init-prestataires.mjs --selftest
  *
  * ⚠️ Le drapeau est passé explicitement : il est sans effet sur Node 24 (le
- * poste) et nécessaire sur les Node 22 antérieurs à 22.18. La CI épingle
- * `node-version: '22'`, qui résout la dernière 22.x — mais un contrôle ne doit
- * pas dépendre de la version que résout un jour un gestionnaire de versions.
+ * poste) et nécessaire sur les Node 22 antérieurs à 22.18. La CI épingle une
+ * majeure (`node-version` de `ci.yml`), qui résout sa dernière mineure — mais un
+ * contrôle ne doit pas dépendre de la version que résout un jour un
+ * gestionnaire de versions.
  */
 import {
 	OCCURRENCES_MAX_AN,
