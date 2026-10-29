@@ -7,6 +7,7 @@
  *  PDF envoie au serveur la synthèse affichée.
  */
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 import type { SuiviAffaires } from '../src/lib/api';
 
 const RELEVE: SuiviAffaires = {
@@ -353,4 +354,16 @@ test('les affaires liées se suivent ; « Fusionner » propose un titre, puis fu
 	expect(envois.find((e) => e.quoi === '/api/suivi-affaires/fusions')?.corps).toEqual(
 		expect.objectContaining({ ids: [31, 40], titre: 'Interphone et fuite colonne B' }),
 	);
+});
+
+test('@sombre — Espace CS › Reporting : compteurs, répartitions et tableau des affaires se lit au thème sombre', async ({
+	page,
+}) => {
+	await simulerApi(page, (chemin) => (chemin === '/api/suivi-affaires' ? RELEVE : undefined));
+	await page.goto('/espace-cs/reporting');
+	await attendreHydratation(page);
+	await expect(page.locator('.kpi-card').first()).toBeVisible();
+	await forcerTheme(page, 'sombre');
+	//  Les marques du graphique sont claires exprès au sombre : mesurées à 3:1.
+	await attendreLisible(page, '#contenu', { marques: '.tranche, .pastille[data-teinte]' });
 });

@@ -9,6 +9,7 @@ import type { ConstatPatrimoine } from '../src/lib/api/etat-descriptif';
 import type { CleDeChargesReglee } from '../src/lib/api/lots-admin';
 import type { MonLot } from '../src/lib/api/patrimoine';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -104,4 +105,14 @@ test('une clé de charges se règle comme le syndic l’appelle, chaque réglage
 	await champ.fill('CHARGES ESCALIER X');
 	await champ.blur();
 	expect((await libelle).postDataJSON()).toEqual({ libelle_syndic: 'CHARGES ESCALIER X' });
+});
+
+test('@sombre — Admin › Lots : constats, clés de charges et détail d’un lot se lit au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page);
+	await page.getByRole('button', { name: 'Périmètres du lot 902' }).click();
+	await expect(page.getByText('Tantièmes : Générales 8/10000')).toBeVisible();
+	await forcerTheme(page, 'sombre');
+	await attendreLisible(page, '#contenu');
 });

@@ -2776,7 +2776,7 @@ projet** : https://claude.ai/artifact/5EUqnbiH4HSF8wJe4khAgP
 | taille de texte | un jeton `--fs-*` ; une valeur hors échelle se range au cran **supérieur** — aucun texte ne rétrécit. La RACINE, qui les décide tous, s'écrit en pourcentage : `100 %`, `87,5 %` sous 768 px ; un champ au téléphone prend `--fs-saisie-tactile` (16 px, n° 76) | `styles/socle.css` · la table de rangement dans `scripts/check-charte-valeurs.mjs` (`TAILLES_HORS_ECHELLE`) · 🔒 `npm run lint:taille-racine` |
 | couleur d'état | `--color-danger`, `--color-success`, `--color-warning` ; un fond **se teinte depuis le jeton** (`-fond`), un filet clair aussi (`-bordure`) — jamais le rouge, le vert ou l'ambre de Tailwind | `styles/socle.css` · `COULEURS_ETAT_ETRANGERES` dans le même contrôle |
 | texte d'avertissement | `--color-warning-texte` : `--color-warning` fait 3,62 sur blanc, il sert au cadre, à l'icône, à l'aplat — **jamais au texte** ; un pictogramme (étoile, puce) se déclare | `styles/socle.css` · 🔒 `npm run lint:texte-avertissement` (#2167 : quatre textes l'avaient pris, le jeton échappait au contrôle des valeurs) |
-| texte clair sur un aplat (bouton, pastille retenue, compteur) | le texte : `--color-sur-plein` (`--color-sur-voile` sur un voile noir translucide) ; l'aplat : `--color-<état>-plein` (`primary`, `danger`, `success`, `accent`) — jamais `color: var(--color-surface)` ni `#fff`, jamais le jeton nu : au mode sombre (#2174) le texte d'un lien s'éclaircit et l'aplat reste foncé, deux valeurs | `styles/socle.css` · 🔒 `npm run lint:aplats` |
+| texte ou trait clair sur un aplat (bouton, pastille retenue, compteur, initiales d'un avatar, pointillés, quart d'un indicateur) | le texte et le trait : `--color-sur-plein` (`--color-sur-voile` sur un voile noir translucide) ; l'aplat : `--color-<état>-plein` (`primary`, `danger`, `success`, `accent`) — jamais `var(--color-surface)` ni `#fff` en `color`, `border*`, `outline*`, `stroke`, `fill` ou `--avatar-color`, jamais le jeton nu : au mode sombre (#2174) la surface devient sombre, et ce qu'on posait dessus en blanc avec elle (S4b : trois traits passaient sombre sur sombre) | `styles/socle.css` · 🔒 `npm run lint:aplats` |
 | texte sur l'OR (avatar, médaillon, pastille) | `--color-sur-accent` — le blanc n'y fait que 2,61:1 ; l'aplat, `--color-accent-plein` (#2174, S3) | `styles/socle.css` · 🔒 `npm run lint:aplats` |
 | bordure d'un CHAMP de saisie | `--color-border-champ` (3:1, WCAG 1.4.11) ; `--color-border` est un filet décoratif, jamais le contour d'un champ (#2174, S3 — `.field` et l'éditeur riche ; les champs qu'un composant habille seul suivent en S4) | `styles/champs.css` |
 | texte d'un badge | ≥ 4,5 sur son fond, **mesuré** par le contrôle pour chaque `.badge-*` ; sinon un dérivé `-texte` (`--color-success-texte`, #1410) | `styles/composants.css` |
@@ -2816,6 +2816,22 @@ avec sa raison (`IDENTIQUES`, `scripts/palette-sombre-paires.mjs`) ; un couple
 texte/fond neuf s'ajoute à la table `PAIRES`, mesurée dans les deux thèmes.
 🔒 `npm run lint:palette-sombre`, `e2e/palette-sombre.spec.ts` (forcé, Auto,
 absent, impression). Personne ne voit le sombre avant la bascule (S5).
+Les paires ne disent pas l'ÉCRAN : un composant qui lit le mauvais jeton passe la
+table. Une zone parcourue au sombre (lot S4) se tient par un spec `@sombre` qui
+relève l'écran RENDU — `releverContrastes` (`e2e/contraste-ecran.ts`) : chaque
+texte sur son fond réel, chaque surface claire ; un dégradé est compté non mesuré.
+La coque : `e2e/palette-sombre-coque.spec.ts`.
+
+🔒 **Un aperçu de support imprimé ou envoyé reste CLAIR** (#2174, S4d) : l'affiche
+du hall, le courriel de la Diffusion, le corps d'un modèle de courriel se
+regardent pour valider ce qui sortira — papier et messagerie ne suivent pas le
+thème. L'élément porte `class="ilot-clair"` : il partage la règle `:root` de
+`socle.css` (les jetons clairs, sans recopie) et `styles/ilots-clairs.css` lui
+donne `color-scheme: light` et le fond blanc. Tout `<iframe>`, et chaque support
+rendu sans cadre (déclaré dans `SUPPORTS`), la porte — 🔒 `npm run
+lint:ilots-clairs`, `e2e/sombre-zone-d.spec.ts`. Une image téléversée composée
+pour le clair (le logo) prend un fond par jeton, invisible au clair
+(`--color-fond-logo`), jamais un filtre ni une seconde image.
 
 🔒 `npm run lint:charte-valeurs` refuse ces valeurs **sans plafond** — dans les
 composants ET dans `src/styles/`, en style comme dans une chaîne JavaScript —

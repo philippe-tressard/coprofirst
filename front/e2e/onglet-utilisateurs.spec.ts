@@ -9,6 +9,7 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -106,4 +107,12 @@ test('au doigt : le tableau défile jusqu’à sa dernière colonne', async ({ p
 			return boite ? boite.x + boite.width : Infinity;
 		})
 		.toBeLessThanOrEqual(page.viewportSize()!.width + 1);
+});
+
+test('@sombre — Admin › Utilisateurs : le tableau des comptes se lit au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page);
+	await forcerTheme(page, 'sombre');
+	await attendreLisible(page, '#contenu');
 });

@@ -283,7 +283,9 @@
 			rgba(255, 255, 255, 0.28) 10px
 		);
 		border-style: dashed;
-		border-color: var(--color-surface);
+		/*  Un trait BLANC sur l'aplat : `--color-sur-plein`, jamais la surface —
+		    sombre au sombre, elle effaçait les pointillés (#2174, S4b). */
+		border-color: var(--color-sur-plein);
 	}
 	/*  `:not(.active)` (10/10/2026) : sans lui, le survol — plus spécifique
 	    que `.active` — rendait le texte SOMBRE sur l'aplat Bleu Seine de la

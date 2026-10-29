@@ -13,6 +13,7 @@
 import type { Page } from '@playwright/test';
 import type { MonLot } from '../src/lib/api/patrimoine';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const PROPRIETAIRE = { ...MEMBRE_CS, role: 'résident', roles: ['résident'] };
 const BAILLEUR = {
@@ -236,4 +237,13 @@ test('aligné sur l’appel de fonds : le libellé du syndic, les clés non appe
 		'href',
 		'/annuaire#syndic',
 	);
+});
+
+test('@sombre — Mes lots : le tableau des charges de plusieurs lots se lit au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page, PROPRIETAIRE, [lot({}), PLACE]);
+	await expect(charges(page).getByRole('table')).toBeVisible();
+	await forcerTheme(page, 'sombre');
+	await attendreLisible(page, '#contenu');
 });

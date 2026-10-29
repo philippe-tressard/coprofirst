@@ -18,6 +18,7 @@
 import type { Page } from '@playwright/test';
 import type { BilanEtatDescriptif, EtatDescriptif } from '../src/lib/api/etat-descriptif';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -265,4 +266,13 @@ test('le tableau défile dans sa carte : la dernière clé s’atteint, la page 
 	expect((await lot.boundingBox())!.x).toBeGreaterThanOrEqual(cadre!.x - 1);
 	//  La ligne Somme dit l'écart que le contrôle signale.
 	await expect(zone.locator('tfoot td.ecart').first()).toHaveText('100');
+});
+
+test('@sombre — l’atelier de l’état descriptif : lettres, contrôles et lignes lues se lit au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page, true);
+	await expect(page.getByRole('button', { name: 'Appliquer au patrimoine' })).toBeVisible();
+	await forcerTheme(page, 'sombre');
+	await attendreLisible(page, '#contenu');
 });

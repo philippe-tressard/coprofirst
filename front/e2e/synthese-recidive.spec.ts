@@ -9,6 +9,7 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const METRIQUES = {
 	version: 1,
@@ -106,4 +107,14 @@ test('sans la clé, aucun bloc : le serveur la retire pour qui n’est pas du co
 	await ouvrir(page, METRIQUES);
 	await expect(page.getByText('Les chiffres — durée')).toBeVisible();
 	await expect(page.getByText('La récidive')).toHaveCount(0);
+});
+
+test('@sombre — la synthèse d’une affaire close : chiffres, frise, rythme et récidive se lit au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page, { ...METRIQUES, recidive: RECIDIVE });
+	await page.locator('details.plies summary').click();
+	await forcerTheme(page, 'sombre');
+	//  Les marques du graphique sont claires exprès au sombre : mesurées à 3:1.
+	await attendreLisible(page, '#contenu', { marques: '.segment, .semaine, .graphique-pastille' });
 });

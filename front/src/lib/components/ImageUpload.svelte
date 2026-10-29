@@ -154,7 +154,9 @@
 		height: 24px;
 		border-width: 3px;
 		border-color: rgba(255, 255, 255, 0.4);
-		border-top-color: var(--color-surface);
+		/*  Le blanc d'un voile noir : `--color-sur-voile`, pas la surface, qui
+		    s'assombrit au thème sombre (#2174, S4b). */
+		border-top-color: var(--color-sur-voile);
 	}
 
 	.btn-link {

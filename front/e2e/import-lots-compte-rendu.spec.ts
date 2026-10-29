@@ -15,6 +15,7 @@
 import type { Page } from '@playwright/test';
 import type { ResolutionImportLots, ResultatImportLots } from '../src/lib/api/patrimoine';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -86,4 +87,12 @@ test('« Auto-résoudre » dit combien d’imports restent sans occupant ou hors
 	const messages = page.locator('.toast-info');
 	await expect(messages.filter({ hasText: /^5 import\(s\) sans occupant/ })).toBeVisible();
 	await expect(messages.filter({ hasText: /^6 import\(s\) hors périmètre/ })).toBeVisible();
+});
+
+test('@sombre — Admin › Imports › Lots : compteurs, dépôt et filtres se lit au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page);
+	await forcerTheme(page, 'sombre');
+	await attendreLisible(page, '#contenu');
 });
