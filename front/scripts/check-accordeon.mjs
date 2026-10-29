@@ -79,11 +79,9 @@ ls.liberer();
 //  Les deux existants sont des accordéons — le `Set` y est toujours remis à UN
 //  élément —, mais sous une forme qui permettrait d'en mettre deux : déclarés
 //  ici, ils ne se multiplient plus. La liste ne fait que baisser ; une entrée qui
-//  ne sert plus fait échouer le contrôle. Suivi des deux restantes : #2317.
-const EXCEPTIONS = new Set([
-	'lib/components/ListeTickets.svelte:expandedIds',
-	'lib/components/OngletDescriptifPages.svelte:expandedPages',
-]);
+//  ne sert plus fait échouer le contrôle. Vide depuis le 30/10/2026 (#2317) : les
+//  deux dernières (`ListeTickets`, `OngletDescriptifPages`) tiennent un identifiant.
+const EXCEPTIONS = new Set([]);
 const RE_SET_OUVERTURE =
 	/(?:let|const)\s+(\w*(?:ouvert|Ouvert|deplie|Deplie|depli|Depli|expanded|Expanded)\w*)\s*(?::[^=;]+)?=\s*new Set(?![A-Za-z])/g;
 const racine = new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
@@ -93,6 +91,15 @@ function fichiers(dir) {
 		if (statSync(p).isDirectory()) return fichiers(p);
 		return /\.(svelte|ts)$/.test(n) ? [p] : [];
 	});
+}
+//  Témoin : la liste vide ne prouve rien si le motif ne voit plus un `Set` d'ouverture.
+for (const temoin of [
+	'let expandedIds: Set<number> = new Set();',
+	'let ouverts = new Set<string>();',
+]) {
+	cas++;
+	if (![...temoin.matchAll(RE_SET_OUVERTURE)].length)
+		echecs.push(`témoin non reconnu : « ${temoin} » — le motif ne mesure plus rien.`);
 }
 const vus = new Set();
 for (const f of fichiers(racine)) {
