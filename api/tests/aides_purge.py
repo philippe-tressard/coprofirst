@@ -332,35 +332,37 @@ def remettre_a_neuf(url) -> int:
     from sqlmodel import SQLModel
 
     import app.models.core  # noqa: F401 — toutes les tables, comme la production
+    from app.dialecte import par_lots
 
-    moteur = create_engine(url, poolclass=NullPool)
+    #  🔴 AUTOCOMMIT : chaque instruction est sa propre transaction (#2279). Dans une
+    #  seule, le sondage des 94 tables, le `TRUNCATE` et les `setval` gardaient leurs
+    #  verrous ensemble jusqu'au `commit` — ~1 200 — et douze workers qui changeaient
+    #  de fichier au même instant épuisaient la table partagée du serveur.
+    moteur = create_engine(url, poolclass=NullPool, isolation_level="AUTOCOMMIT")
     try:
         SQLModel.metadata.create_all(moteur)
-        with moteur.begin() as c:
+        with moteur.connect() as c:
             tables = list(
                 c.execute(
                     text("SELECT tablename FROM pg_tables WHERE schemaname = current_schema()")
                 ).scalars()
             )
-            #  Noms lus au catalogue du schéma, jamais une entrée.
-            pleines = (
-                list(
-                    c.execute(
-                        text(
-                            " UNION ALL ".join(
-                                f"(SELECT '{t}' FROM \"{t}\" LIMIT 1)"  # noqa: S608
-                                for t in tables
-                            )
+            #  Noms lus au catalogue du schéma, jamais une entrée. Par lots : un
+            #  sondage de 94 tables d'un coup tenait 284 verrous.
+            pleines = []
+            for lot in par_lots(tables):
+                pleines += c.execute(
+                    text(
+                        " UNION ALL ".join(
+                            f"(SELECT '{t}' FROM \"{t}\" LIMIT 1)"  # noqa: S608
+                            for t in lot
                         )
-                    ).scalars()
-                )
-                if tables
-                else []
-            )
+                    )
+                ).scalars()
             if pleines:
                 #  Une connexion restée ouverte sur une table bloquerait le geste :
                 #  10 s, puis l'erreur le dit au lieu de figer.
-                c.execute(text("SET LOCAL lock_timeout = '10s'"))
+                c.execute(text("SET lock_timeout = '10s'"))
                 liste = ", ".join(f'"{t}"' for t in pleines)
                 c.execute(text(f"TRUNCATE TABLE {liste} CASCADE"))  # noqa: S608
             for sequence in c.execute(
