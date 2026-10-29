@@ -16,6 +16,7 @@ import {
 	TABLEAU_TELEMETRIE_VIDE,
 	test,
 } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -82,4 +83,13 @@ test('aucun compte mesuré : la section ne se déplie pas', async ({ page }) => 
 	await expect(page.locator('details', { hasText: 'Comptes dormants et arrivants' })).toHaveCount(
 		0,
 	);
+});
+
+test('@sombre — Télémétrie : les tableaux des comptes dormants et des arrivants se lit au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page);
+	await deplierSectionTelemetrie(page, 'Comptes dormants et arrivants');
+	await forcerTheme(page, 'sombre');
+	await attendreLisible(page, '#contenu');
 });

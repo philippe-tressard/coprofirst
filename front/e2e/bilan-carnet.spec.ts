@@ -16,6 +16,7 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const RESUME_VIDE = {
 	annulees: 0,
@@ -165,4 +166,14 @@ test('un exercice sans affaire le dit', async ({ page }) => {
 		page.getByText("Aucune affaire du carnet n'a été close sur l'exercice 2026."),
 	).toBeVisible();
 	await sansDefilementHorizontal(page);
+});
+
+test('@sombre — le bilan de l’exercice du carnet d’entretien, déplié se lit au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page);
+	await page.getByRole('button', { name: /Bilan de l'exercice/ }).click();
+	await expect(page.getByText('3 affaires closes, dont 1 annulée')).toBeVisible();
+	await forcerTheme(page, 'sombre');
+	await attendreLisible(page, '#contenu');
 });

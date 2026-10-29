@@ -12,7 +12,9 @@
  *    rapport de chaque nœud, pas tous ;
  *  - aucune ligne qui déborde au doigt (profil mobile).
  */
+import type { Page } from '@playwright/test';
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 //  La supervision technique est à l'OPÉRATEUR de la plateforme (#1750).
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
@@ -74,14 +76,19 @@ const SANTE = {
 	anomalies_fenetre_jours: 7,
 };
 
-test('Maintenance : les constats de check-reliability, nœud par nœud', async ({ page }) => {
+/** L'onglet Maintenance, avec les rapports de check-reliability donnés. */
+async function ouvrir(page: Page, rapports: unknown) {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;
 		if (chemin === '/api/admin/maintenance/sante') return SANTE;
-		if (chemin === '/api/admin/maintenance/historique') return RAPPORTS;
+		if (chemin === '/api/admin/maintenance/historique') return rapports;
 		return undefined;
 	});
 	await page.goto('/admin?onglet=maintenance');
+}
+
+test('Maintenance : les constats de check-reliability, nœud par nœud', async ({ page }) => {
+	await ouvrir(page, RAPPORTS);
 
 	const carte = page.locator('section.config-section', {
 		has: page.getByText('Contrôles de fiabilité', { exact: true }),
@@ -152,13 +159,7 @@ const RAPPORTS_1396 = [
 test('Maintenance : dernier contrôle, et chaque constat une seule fois (#1396)', async ({
 	page,
 }) => {
-	await simulerApi(page, (chemin) => {
-		if (chemin === '/api/auth/me') return ADMIN;
-		if (chemin === '/api/admin/maintenance/sante') return SANTE;
-		if (chemin === '/api/admin/maintenance/historique') return RAPPORTS_1396;
-		return undefined;
-	});
-	await page.goto('/admin?onglet=maintenance');
+	await ouvrir(page, RAPPORTS_1396);
 	const carte = page.locator('section.config-section', {
 		has: page.getByText('Contrôles de fiabilité', { exact: true }),
 	});
@@ -186,4 +187,13 @@ test('Maintenance : dernier contrôle, et chaque constat une seule fois (#1396)'
 	await carte.screenshot({
 		path: `test-results/controles-fiabilite-1396-${test.info().project.name}.png`,
 	});
+});
+
+test('@sombre — Admin › Maintenance : tâches planifiées et contrôles de fiabilité se lisent au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page, RAPPORTS);
+	await expect(page.getByText('Contrôles de fiabilité', { exact: true })).toBeVisible();
+	await forcerTheme(page, 'sombre');
+	await attendreLisible(page, '#contenu');
 });

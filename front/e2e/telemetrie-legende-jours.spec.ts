@@ -15,6 +15,7 @@ import {
 	TABLEAU_TELEMETRIE_VIDE,
 	test,
 } from './aides';
+import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -94,4 +95,13 @@ test('la bulle et le mois ne rallongent jamais la zone du graphe', async ({ page
 			.evaluate((el) => ({ large: el.clientWidth, contenu: el.scrollWidth }));
 		expect(contenu, `pic au ${jour}`).toBeLessThanOrEqual(Math.max(large, NATUREL) + 1);
 	}
+});
+
+test('@sombre — Télémétrie : le graphe des vues par jour, son 🏆 et sa bulle se lit au thème sombre', async ({
+	page,
+}) => {
+	await ouvrir(page, '2026-09-29');
+	await forcerTheme(page, 'sombre');
+	//  Les marques du graphique sont claires exprès au sombre : mesurées à 3:1.
+	await attendreLisible(page, '#contenu', { marques: '.tl-bar' });
 });
