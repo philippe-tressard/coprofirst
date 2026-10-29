@@ -7,11 +7,13 @@
    publiée sur l'issue #2174 — sauf les SÉRIES, recalées dans la bande de
    clarté du thème sombre (voir plus bas).
 
-   ## Qui le voit — PERSONNE, avant le lot S5
+   ## Qui le voit — depuis le lot S5 (30/10/2026)
 
-   Le bloc ne s'applique qu'à `<html data-theme="dark">`, que rien ne pose
-   encore : S4 corrige les écrans sous cet attribut, S5 livre la bascule
-   Auto / Clair / Sombre (cookie lu par le serveur) et l'attribut lui-même.
+   Le bloc s'applique à `<html data-theme="dark">` (choix « Sombre » du Profil)
+   et, par sa copie Auto, à `data-theme="auto"` sur un appareil réglé en
+   sombre — le DÉFAUT. Le serveur pose l'attribut d'après le cookie `theme`
+   (`lib/theme.ts`, `hooks.server.ts`) : la page est peinte d'emblée dans son
+   thème, sans script ni éclair.
 
    ## Écrit UNE fois — le mode Auto est GÉNÉRÉ au build
 
@@ -35,10 +37,10 @@
 
    - L'IMPRESSION : le bloc est sous `@media screen` — une page imprimée garde
      la palette de la charte, quel que soit le thème de l'écran.
-   - `color-scheme` (contrôles natifs, barres de défilement) : `light` hors de
-     ce bloc. `light dark` sur `:root` assombrirait dès maintenant les contrôles
-     natifs des appareils réglés en sombre — un sombre « automatique » que S3
-     ne doit pas livrer.
+   - `color-scheme` (contrôles natifs, barres de défilement) : `dark` dans ce
+     bloc et sa copie Auto ; ailleurs, la balise `<meta name="color-scheme">`
+     que le serveur écrit selon le choix (`light`, `dark`, ou `light dark` en
+     Auto — elle donne aussi le fond du canevas avant la feuille).
 
    ## Les garde-fous
 

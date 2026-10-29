@@ -28,7 +28,7 @@
  *  Le manifeste de l'application installée : le navigateur le lit AVANT la
  *  feuille de style et ne résout aucune variable CSS. Sa valeur est donc écrite,
  *  et `parite` l'oblige à rester celle du jeton qu'elle imite — comme la balise
- *  `<meta name="theme-color">` de `app.html` (la doubler pour le sombre est S5).
+ *  `<meta name="theme-color">` de `app.html`, claire et sombre depuis S5.
  *
  *  Lancer : node scripts/check-couleurs-ts.mjs [--selftest]
  */
@@ -61,12 +61,18 @@ const MANIFESTE = 'src/routes/manifest.webmanifest/+server.ts';
 /**
  *  Le manifeste et `app.html` portent la valeur de `--color-primary` (barre du
  *  navigateur) et de `--color-surface` (fond de lancement) : ce qu'une variable
- *  dirait, écrit faute de pouvoir la lire. PURE : rend les écarts.
+ *  dirait, écrit faute de pouvoir la lire. Depuis S5 (#2174), `app.html` porte
+ *  aussi la barre SOMBRE : le fond de page du thème sombre (`--color-bg` de
+ *  `palette-sombre.css`). PURE : rend les écarts.
  */
-export function parite({ socle, manifeste, html }) {
-	const jeton = (nom) =>
-		socle.match(new RegExp(`${nom}\\s*:\\s*(#[0-9a-fA-F]{3,8})\\s*;`))?.[1]?.toLowerCase();
-	const attendu = { theme: jeton('--color-primary'), fond: jeton('--color-surface') };
+export function parite({ socle, sombre, manifeste, html }) {
+	const jeton = (css, nom) =>
+		css.match(new RegExp(`${nom}\\s*:\\s*(#[0-9a-fA-F]{3,8})\\s*;`))?.[1]?.toLowerCase();
+	const attendu = {
+		theme: jeton(socle, '--color-primary'),
+		fond: jeton(socle, '--color-surface'),
+		barreSombre: jeton(sombre, '--color-bg'),
+	};
 	const lu = (texte, motif) => texte.match(motif)?.[1]?.toLowerCase();
 	const complet = (c) => (c?.length === 4 ? `#${[...c.slice(1)].map((x) => x + x).join('')}` : c);
 	const trouve = [
@@ -77,15 +83,20 @@ export function parite({ socle, manifeste, html }) {
 			'fond',
 		],
 		[
-			'<meta name="theme-color"> de app.html',
-			lu(html, /name="theme-color"\s+content="(#[0-9a-fA-F]{3,6})"/),
+			'<meta name="theme-color"> claire de app.html',
+			lu(html, /name="theme-color"\s+content="(#[0-9a-fA-F]{3,6})"\s+data-barre="clair"/),
 			'theme',
+		],
+		[
+			'<meta name="theme-color"> sombre de app.html',
+			lu(html, /name="theme-color"\s+content="(#[0-9a-fA-F]{3,6})"\s+data-barre="sombre"/),
+			'barreSombre',
 		],
 	];
 	const ecarts = [];
 	for (const [quoi, valeur, cle] of trouve) {
 		if (!attendu[cle])
-			ecarts.push(`${quoi} : le jeton de référence est introuvable dans socle.css`);
+			ecarts.push(`${quoi} : le jeton de référence est introuvable dans la feuille`);
 		else if (!valeur) ecarts.push(`${quoi} : valeur introuvable`);
 		else if (complet(valeur) !== attendu[cle])
 			ecarts.push(`${quoi} : ${valeur} ≠ ${attendu[cle]} (le jeton)`);
@@ -123,22 +134,31 @@ if (process.argv.includes('--selftest')) {
 	cas('les numéros de ligne restent justes', fautes("a;\n\nconst c = '#123abc';"), [3]);
 	const jetons = ':root { --color-primary: #1E3A5F; --color-surface: #ffffff; }';
 	const man = "theme_color: '#1E3A5F', background_color: '#ffffff'";
-	const html = '<meta name="theme-color" content="#1E3A5F" />';
-	cas('parité : tout est d’accord', parite({ socle: jetons, manifeste: man, html }), []);
+	const sombre = ":root[data-theme='dark'] { --color-bg: #0d1b2a; }";
+	const html =
+		'<meta name="theme-color" content="#1E3A5F" data-barre="clair" media="x" />\n' +
+		'<meta name="theme-color" content="#0d1b2a" data-barre="sombre" media="y" />';
+	const tout = { socle: jetons, sombre, manifeste: man, html };
+	cas('parité : tout est d’accord', parite(tout), []);
 	cas(
 		'parité : un manifeste qui dérive est refusé',
-		parite({ socle: jetons, manifeste: man.replace('1E3A5F', '000000'), html }).length,
+		parite({ ...tout, manifeste: man.replace('1E3A5F', '000000') }).length,
 		1,
 	);
 	cas(
-		'parité : une balise absente est refusée (cas zéro)',
-		parite({ socle: jetons, manifeste: man, html: '' }).length,
+		'parité : une barre sombre qui dérive est refusée',
+		parite({ ...tout, html: html.replace('0d1b2a', '000000') }).length,
 		1,
+	);
+	cas(
+		'parité : les balises absentes sont refusées (cas zéro)',
+		parite({ ...tout, html: '' }).length,
+		2,
 	);
 	cas(
 		'parité : un jeton de référence absent est refusé (cas zéro)',
-		parite({ socle: '', manifeste: man, html }).length,
-		3,
+		parite({ ...tout, socle: '', sombre: '' }).length,
+		4,
 	);
 	console.log(ko ? '== ÉCHECS ==' : '== TOUS OK ==');
 	process.exitCode = ko;
@@ -158,6 +178,7 @@ if (process.argv.includes('--selftest')) {
 	});
 	const ecarts = parite({
 		socle: lire('src/styles/socle.css'),
+		sombre: lire('src/styles/palette-sombre.css'),
 		manifeste: lire(MANIFESTE),
 		html: lire('src/app.html'),
 	});
