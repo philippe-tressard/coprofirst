@@ -2816,6 +2816,11 @@ avec sa raison (`IDENTIQUES`, `scripts/palette-sombre-paires.mjs`) ; un couple
 texte/fond neuf s'ajoute à la table `PAIRES`, mesurée dans les deux thèmes.
 🔒 `npm run lint:palette-sombre`, `e2e/palette-sombre.spec.ts` (forcé, Auto,
 absent, impression). Personne ne voit le sombre avant la bascule (S5).
+Les paires ne disent pas l'ÉCRAN : un composant qui lit le mauvais jeton passe la
+table. Une zone parcourue au sombre (lot S4) se tient par un spec `@sombre` qui
+relève l'écran RENDU — `releverContrastes` (`e2e/contraste-ecran.ts`) : chaque
+texte sur son fond réel, chaque surface claire ; un dégradé est compté non mesuré.
+La coque : `e2e/palette-sombre-coque.spec.ts`.
 
 🔒 `npm run lint:charte-valeurs` refuse ces valeurs **sans plafond** — dans les
 composants ET dans `src/styles/`, en style comme dans une chaîne JavaScript —
