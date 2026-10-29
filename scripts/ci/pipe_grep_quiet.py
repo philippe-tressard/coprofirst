@@ -71,6 +71,8 @@ def verifier(racine='.', ecrire=print):
     etat = 0
     utilisees = set()
     for chemin in chemins:
+        if not os.path.exists(os.path.join(racine, chemin)):
+            continue  # supprimé dans l'arbre de travail, pas encore dans l'index
         with open(os.path.join(racine, chemin), encoding='utf-8', errors='replace') as f:
             fautes = juger(f.read())
         if not fautes:
