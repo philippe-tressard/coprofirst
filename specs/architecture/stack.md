@@ -100,7 +100,7 @@ Orchestration : Docker Compose (services : caddy / front / api / postgres)
 # aperçu — les services principaux
 services:
   caddy:      # reverse proxy TLS
-  front:      # SvelteKit (node:22-alpine)
+  front:      # SvelteKit (node:26-alpine)
   api:        # FastAPI (python:3.12-slim)
   postgres:   # PostgreSQL 17
 volumes:

@@ -15,7 +15,7 @@ l'intégration continue exécute, et les contrôles qu'elles rejouent sont les m
 | Outil | Version | Où elle est décidée |
 |---|---|---|
 | Python | 3.12 | `api/Dockerfile` (`python:3.12-slim`) |
-| Node.js | 22 | `front/Dockerfile` (`node:22-alpine`) |
+| Node.js | 26 | `front/Dockerfile` (`node:26-alpine`) |
 | Docker et Docker Compose | — | `docker-compose.yml` |
 | PostgreSQL | 17 | `docker-compose.yml` (image `postgres`) — un serveur sur le poste pour les tests, désigné par `TESTS_BASE_URL` |
 

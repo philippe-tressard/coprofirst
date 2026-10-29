@@ -210,20 +210,6 @@ updates:
       interval: monthly
     commit-message:
       prefix: "chore(deps)"
-    ignore:
-      #  ── Node 26 : pas avant qu'il soit LTS (27/09/2026, #1286 et #1290) ──
-      #  Node 26 est en phase « Current » jusqu'à son passage en LTS active,
-      #  annoncé pour la fin octobre 2026 ; Node recommande une LTS en
-      #  production. Node 22 est maintenu jusqu'au 30/04/2027 : rien ne presse.
-      #  Refermer la PR ne suffisait pas — Dependabot la rouvrirait le mois
-      #  suivant, et une PR qu'on referme chaque mois cesse d'être lue.
-      #  LEVÉE : quand `curl -s https://nodejs.org/dist/index.json | jq -r
-      #  '[.[] | select(.version | startswith("v26."))][0].lts'` ne rend plus
-      #  `false`. Alors retirer cette règle : le front et le bridge montent
-      #  ENSEMBLE (une seule image de base à rafraîchir), et la CI avec eux
-      #  (`node-version` de `ci.yml`).
-      - dependency-name: "node"
-        versions: [">= 26"]
 
   # ── Images du compose qui ne se construisent pas — ajouté le 12/10/2026 (#1872)
   # `postgres:17.11` est déclaré par `image:` dans `docker-compose.yml`, sans

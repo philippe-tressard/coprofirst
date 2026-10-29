@@ -11,7 +11,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0--or--later-blue.svg" alt="Licence AGPL-3.0-or-later — logiciel libre" /></a>
   <a href="https://api.reuse.software/info/github.com/philippe-tressard/coprofirst"><img src="https://api.reuse.software/badge/github.com/philippe-tressard/coprofirst" alt="REUSE compliant" /></a>
   <img src="https://img.shields.io/badge/python-3.12-3776ab.svg" alt="Python 3.12" />
-  <img src="https://img.shields.io/badge/node-22+-339933.svg" alt="Node 22+" />
+  <img src="https://img.shields.io/badge/node-26+-339933.svg" alt="Node 26+" />
 </p>
 
 ---
