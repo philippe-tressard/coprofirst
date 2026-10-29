@@ -18,7 +18,12 @@ import {
 	perimetreLabel,
 	perimetreLabelUn,
 } from '#lib/utils.ts';
-import { codeDeTeinte, rangPremierNiveau, teinteDuCode } from '#lib/perimetres/teinte.ts';
+import {
+	codeDeTeinte,
+	rangPremierNiveau,
+	TEINTE_COPROPRIETE,
+	teinteDuCode,
+} from '#lib/perimetres/teinte.ts';
 import { codesPremierNiveau } from '#lib/perimetres/index.ts';
 
 /** Une pastille : son code (la clé), son libellé court et sa couleur. */
@@ -53,7 +58,7 @@ export function perimetreTags(p: string): PastillePerimetre[] {
 			{
 				code: '__defaut__',
 				label: '\u{1F3D8}️ ' + ' ' + perimetreLabel(perimetreDefautListe()),
-				color: '#6b7280',
+				color: TEINTE_COPROPRIETE,
 			},
 		];
 	const codes = [

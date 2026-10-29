@@ -10,9 +10,6 @@ seulement échoue ici, au lieu d'un PDF qui ne ressemble plus à l'écran.
 
 from __future__ import annotations
 
-import pathlib
-import re
-
 from app.utils.suivi_affaires.pdf_barres import TEINTES
 from app.utils.suivi_affaires.repartition import (
     Barre,
@@ -21,8 +18,7 @@ from app.utils.suivi_affaires.repartition import (
     teinte_categorie,
     teinter,
 )
-
-SOCLE = pathlib.Path(__file__).resolve().parents[2] / "front" / "src" / "styles" / "socle.css"
+from tests.aides_jetons import jetons_du_theme_clair
 
 #: La teinte → le jeton de `socle.css` qui la peint à l'écran (`BarresCroisees`).
 JETONS = {
@@ -32,15 +28,9 @@ JETONS = {
 }
 
 
-def _jetons_de_l_ecran() -> dict[str, str]:
-    texte = SOCLE.read_text(encoding="utf-8")
-    #  Le premier bloc `:root` : le thème clair, celui que le papier imite.
-    bloc = texte[texte.index(":root") :]
-    return dict(re.findall(r"(--[\w-]+):\s*(#[0-9a-fA-F]{3,8})\s*;", bloc.split("}", 1)[0]))
-
-
 def test_le_papier_peint_les_couleurs_de_l_ecran():
-    ecran = _jetons_de_l_ecran()
+    #  Le thème clair, celui que le papier imite.
+    ecran = jetons_du_theme_clair()
     assert set(TEINTES) == set(JETONS), "une teinte sans couleur, ou une couleur sans teinte"
     ecarts = {
         t: (TEINTES[t], ecran.get(j)) for t, j in JETONS.items() if TEINTES[t] != ecran.get(j)

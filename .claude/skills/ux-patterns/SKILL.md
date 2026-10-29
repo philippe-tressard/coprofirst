@@ -2787,6 +2787,23 @@ règle : la teinte d'un type du fil (`#lib/flux`), d'un périmètre, d'une colon
 de kanban, d'une nature (`--nature-fort`), l'orange de l'urgence, `.badge-yellow`
 (#495). Les confondre ferait perdre ce qui les distingue.
 
+🔒 **Une teinte choisie par donnée se dit par son jeton, jamais par une valeur**
+(#2174, lot S2 du mode sombre) : le type d'une rubrique du fil `var(--fil-rouge)`
+(+ `-fond`), le rang d'un périmètre `var(--teinte-N)`, l'étape d'un kanban
+`var(--kanban-ag)`, une tuile d'import `var(--color-import-lie)`. Le code porte
+la chaîne `'var(--…)'`, `socle.css` la valeur — le bloc sombre redéfinit donc
+chaque palette en un seul endroit. Une teinte neuve s'y ajoute, nommée par
+l'usage, jamais en doublon d'un jeton existant (`annonce` prend `--color-orange`,
+`publication` `--color-primary-light`). Un fond qui est la teinte à ~10 % ne
+s'écrit pas `{couleur}1a` (suffixe hexadécimal, faux sur une variable) : le
+composant pose `style="--kb-teinte:{couleur}"` et la feuille
+`color-mix(in srgb, var(--kb-teinte) 10.2%, transparent)`. Le manifeste de
+l'application installée, qui ne lit pas de variable CSS, est tenu à la valeur de
+`--color-primary` / `--color-surface` par le même contrôle. 🔒 `npm run
+lint:couleurs-ts`, `e2e/teintes-jetons.spec.ts` (la chaîne aboutit à une couleur
+dans le navigateur), `api/tests/test_flux_apparence.py` (contraste mesuré sur la
+valeur résolue).
+
 🔒 `npm run lint:charte-valeurs` refuse ces valeurs **sans plafond** — dans les
 composants ET dans `src/styles/`, en style comme dans une chaîne JavaScript —
 et donne le jeton de remplacement. Une couleur hexadécimale ne s'écrit plus

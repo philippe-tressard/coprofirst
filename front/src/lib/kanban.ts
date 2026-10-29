@@ -8,6 +8,7 @@ export interface KanbanCol {
 	label: string;
 	/** La forme brève, pour la brique d'accueil où la colonne est étroite. */
 	labelCourt: string;
+	/** Un jeton (`var(--kanban-…)`, `socle.css`), jamais une valeur : le thème sombre le redéfinit. */
 	color: string;
 	/** Déclaré sur les colonnes que la brique d'accueil n'affiche pas, avec la
 	 *  raison en commentaire. Une absence sans ce drapeau est un oubli. */
@@ -53,20 +54,26 @@ export interface KanbanCol {
  * personne ne sait s'il faut aligner ou préserver.
  */
 export const KANBAN_COLS: KanbanCol[] = [
-	{ id: 'ag', label: 'AG', labelCourt: 'AG', color: '#8b5cf6' },
-	{ id: 'cs', label: 'CS (en cours)', labelCourt: 'CS', color: '#3b82f6' },
-	{ id: 'syndic', label: 'Syndic (en cours)', labelCourt: 'Syndic', color: '#f59e0b' },
+	{ id: 'ag', label: 'AG', labelCourt: 'AG', color: 'var(--kanban-ag)' },
+	{ id: 'cs', label: 'CS (en cours)', labelCourt: 'CS', color: 'var(--kanban-cs)' },
+	{ id: 'syndic', label: 'Syndic (en cours)', labelCourt: 'Syndic', color: 'var(--kanban-syndic)' },
 	{
 		id: 'fournisseur',
 		label: 'Prestataire (en cours)',
 		labelCourt: 'Prestataire',
-		color: '#f97316',
+		color: 'var(--kanban-fournisseur)',
 	},
-	{ id: 'termine', label: 'Terminé', labelCourt: 'Terminé', color: '#22c55e' },
+	{ id: 'termine', label: 'Terminé', labelCourt: 'Terminé', color: 'var(--kanban-termine)' },
 	//  `masqueAccueil` : l'accueil montre ce qui AVANCE. Un événement annulé n'a
 	//  pas d'étape suivante, et la brique le filtrait déjà — la colonne y serait
 	//  restée vide en permanence.
-	{ id: 'annule', label: 'Annulé', labelCourt: 'Annulé', color: '#9ca3af', masqueAccueil: true },
+	{
+		id: 'annule',
+		label: 'Annulé',
+		labelCourt: 'Annulé',
+		color: 'var(--kanban-annule)',
+		masqueAccueil: true,
+	},
 ];
 
 /** Les colonnes de la brique d'accueil : la table unique, moins ce qui y est masqué.

@@ -238,8 +238,8 @@ verifier(
 	'a,b',
 );
 verifier('teinte stable', teinteDuCode('x', 0), teinteDuCode('x', 0));
-if (!/^#[0-9a-f]{6}$/.test(teinteDuCode('x', 0))) {
-	console.error('  ✗ la teinte n’est pas une couleur hexadécimale');
+if (!/^var\(--teinte-\d+\)$/.test(teinteDuCode('x', 0))) {
+	console.error('  ✗ la teinte n’est pas un jeton `var(--teinte-N)` (#2174, S2)');
 	echecs++;
 }
 cas++;

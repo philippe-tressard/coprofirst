@@ -292,6 +292,11 @@
 	font-weight: 700;
 	padding: 0.1rem 0.4rem;
 	border-radius: 1rem;
+	/*  La teinte de l'étape arrive par `--kb-teinte` (un jeton `--kanban-…`) : le
+	    fond est la même teinte à ~10 %, ce qu'un `#rrggbb` suivi de `1a` ne peut
+	    plus dire une fois la couleur désignée par une variable. */
+	color: var(--kb-teinte);
+	background: color-mix(in srgb, var(--kb-teinte) 10.2%, transparent);
 }
 .kb-mobile-nav {
 	display: flex;

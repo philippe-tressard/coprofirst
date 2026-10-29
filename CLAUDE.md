@@ -649,6 +649,10 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 - [ ] Libellés et nommage en français — 🔒 les mots d'interface anglais sont refusés par
       `npm run lint:vocabulaire-ecran` (`lib-mots-anglais.mjs`, #1579) ; *le reste de la langue
       reste non mesurable : `lint:texte` et `lint:champs` ne la jugent pas*
+- [ ] Teinte choisie par donnée (type du fil, périmètre, étape de kanban, tuile
+      d'import) : `'var(--fil-rouge)'`, `--teinte-N`, `--kanban-…` — jamais un
+      `#rrggbb` dans un `.ts` ou le script d'un composant (`npm run
+      lint:couleurs-ts`, #2174 S2) ; la valeur vit dans `socle.css`
 - [ ] Couleur et taille de texte : `var(--color-…)`, `var(--fs-…)` (`socle.css`),
       jamais une valeur en dur — `npm run lint:charte-valeurs` : couleurs à
       **zéro** depuis le lot S1 du mode sombre (#2174 — une couleur neuve est un
