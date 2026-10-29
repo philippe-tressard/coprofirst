@@ -12,6 +12,14 @@ ci_verrou_selftest() {
   local st=0 vd f p r s w
   t() { [ "$2" = "$3" ] && echo "PASS  $1" || { echo "FAIL  $1  attendu=[$3] obtenu=[$2]"; st=1; }; }
   vd=$(mktemp -d)
+  #  🔒 Une attente se BORNE PAR UNE CONDITION, jamais par un délai : un `sleep 1.5` suivi
+  #  d'une lecture jugeait la charge de la machine, pas le veilleur (#2298 : « il bat le
+  #  pouls » rouge sous 6 travailleurs, vert seul). `_attendre <commande…>` rejoue la commande
+  #  toutes les 0,2 s jusqu'à ce qu'elle réussisse — au plus 100 fois, soit 20 s ; elle
+  #  rend 1 si la condition n'est jamais venue, et le cas échoue alors à sa propre lecture.
+  _attendre() { local _i; for _i in $(seq 1 100); do "$@" && return 0; sleep 0.2; done; return 1; }
+  _mort() { ! kill -0 "$1" 2>/dev/null; }
+  _plein() { [ -s "$1" ]; }
 
   # ── Le verrou (#1417, #1808) — cas déplacés de lib-ci-replay.sh ──────────
   t "verrou — absent : libre"              "$(ci_verrou_etat "" non)" "libre"
@@ -73,12 +81,11 @@ ci_verrou_selftest() {
   r=$(cat "$vd/r"); s=$(cat "$vd/s")
   mkdir "$vd/v" && echo "$r" > "$vd/v/pid"
   ( REJEU_POULS_S=1; ci_veilleur "$vd/v" "$r" "$p" ) >/dev/null 2>&1 & w=$!
-  sleep 1.5
+  _attendre _plein "$vd/v/pouls"
   t "veilleur — lanceur présent : rien arrêté" "$(kill -0 "$r" 2>/dev/null && echo vivant)" "vivant"
   t "veilleur — il bat le pouls"            "$([ -s "$vd/v/pouls" ] && echo oui)" "oui"
   kill -TERM "$p" 2>/dev/null
-  for _ in $(seq 1 30); do kill -0 "$w" 2>/dev/null || break; sleep 0.2; done
-  sleep 0.5
+  _attendre _mort "$w"; _attendre _mort "$r"; _attendre _mort "$s"
   t "veilleur — lanceur tué : rejeu arrêté"  "$(kill -0 "$r" 2>/dev/null && echo vivant || echo arrete)" "arrete"
   t "veilleur — et son descendant"           "$(kill -0 "$s" 2>/dev/null && echo vivant || echo arrete)" "arrete"
   t "veilleur — l'arrêt est signé"           "$(ci_champ "$vd/v/battement" motif | cut -c1-17)" "lanceur disparu ("
@@ -92,13 +99,13 @@ ci_verrou_selftest() {
     bash -c 'python -c "import time; time.sleep(90)" -m pytest veilleur-de-test & echo $! > "$1/s2"; wait' _ "$vd" & r=$!
     sleep 30 & p=$!                                              # le lanceur : bien vivant
     for _ in $(seq 1 40); do [ -s "$vd/s2" ] && break; sleep 0.2; done
-    sleep 1.5
     mkdir "$vd/v2" && echo "$r" > "$vd/v2/pid"
     ( REJEU_POULS_S=1; CI_ORPHELINS_MOTIF='veilleur-de-test'; ci_veilleur "$vd/v2" "$r" "$p" ) >/dev/null 2>&1 & w=$!
-    sleep 1.5
+    _attendre _plein "$vd/v2/pouls"
     kill -9 "$r" 2>/dev/null                                     # le rejeu meurt, son verrou reste
-    for _ in $(seq 1 40); do kill -0 "$w" 2>/dev/null || break; sleep 0.5; done
-    sleep 1
+    _attendre _mort "$w"
+    _restes() { [ "$(ci_proc_table | awk -F'	' '$5 ~ /veilleur-de-test/ && $4 ~ /python/' | grep -c .)" = 0 ]; }
+    _attendre _restes
     t "veilleur — rejeu tué à vif : le veilleur sort" "$(kill -0 "$w" 2>/dev/null && echo vivant)" ""
     t "veilleur — rejeu tué à vif : ses restes sont tués"       "$(ci_proc_table | awk -F'	' '$5 ~ /veilleur-de-test/ && $4 ~ /python/' | grep -c .)" "0"
     #  Mort, le rejeu n'a plus d'ancêtres : le veilleur y lit d'abord « lanceur disparu » ; l'un ou l'autre motif signe.
