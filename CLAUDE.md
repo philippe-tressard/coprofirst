@@ -172,6 +172,10 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   c'est par eux qu'Alembic voit la moitié des tables. Pas un doublon à nettoyer
   en passant (#1157). 🔒 `test_modeles_enregistres.py` : chaque module de
   `app/models/` doit être chargé par `import app.models.core`.
+  ⚠️ Déplacer une classe change l'ordre des `DELETE` d'un même flush entre deux
+  tables sans `Relationship` : SQLAlchemy les trie par le nom QUALIFIÉ de la
+  classe (#2316). Supprimer l'enfant, `flush()`, puis le parent — jamais compter
+  sur l'ordre.
 - `__tablename__` = snake_case français
 - Champs en français snake_case : `statut_validation`, `date_debut`
 - Timestamps : suffixe `_le` → `cree_le`, `mis_a_jour_le` ; la valeur par

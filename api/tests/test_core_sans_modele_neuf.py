@@ -11,7 +11,8 @@ mot, et le fichier remonterait au-dessus du plafond au lot suivant.
 La liste ci-dessous est un **plafond décroissant** : elle ne fait que baisser.
 Extraire une de ces classes vers son domaine, c'est la retirer d'ici ; le test
 échoue si elle cesse de servir, pour qu'une exception éteinte ne reste pas écrite.
-Suivi des huit restantes : #2316.
+Les quatre restantes portent l'utilisateur et ses `Relationship` : un module
+`comptes` les accueillerait, décision à prendre avec #2316.
 """
 
 from __future__ import annotations
@@ -21,18 +22,15 @@ import pathlib
 
 _CORE = pathlib.Path(__file__).resolve().parents[1] / "app" / "models" / "core.py"
 
-#  Ce qui reste dans `core.py` au 28/09/2026 : l'utilisateur et ce qui lui est
-#  attaché (`TypeLien`, `UserLot`, `Mandat`), et quatre petites tables sans
-#  domaine propre à ce jour.
+#  Ce qui reste dans `core.py` : l'utilisateur et ce qui lui est attaché
+#  (`TypeLien`, `UserLot`, `Mandat`). Les quatre petites tables sans domaine
+#  (`FaqItem`, `RegleResidence`, `Notification`, `ConfigSite`) sont parties le
+#  30/10/2026 dans `residence`, `notifications` et `reglages` (#2316).
 CLASSES_ADMISES = {
     "TypeLien",
-    "FaqItem",
     "Utilisateur",
     "UserLot",
     "Mandat",
-    "RegleResidence",
-    "Notification",
-    "ConfigSite",
 }
 
 

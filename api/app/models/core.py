@@ -80,16 +80,8 @@ from app.models.tickets import (  # noqa: E402
 #  `StatutDevis` a suivi la prestation ponctuelle (#603) et n'existe plus.
 
 
-class FaqItem(SQLModel, table=True):
-    __tablename__ = "faq_item"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    categorie: str  # ex. "🗑️ Tri des déchets"
-    question: str
-    reponse: str
-    ordre: int = 0  # ordre d'affichage dans la catégorie
-    actif: bool = True
-    cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
-    mis_a_jour_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
+#  `FaqItem` et `RegleResidence` vivent dans `models/residence.py` depuis le
+#  30/10/2026 (#2316) ; ré-exportées plus bas, avec les autres.
 
 
 # ──────────────────────────────────────────────
@@ -248,16 +240,10 @@ from app.models.validations import (  # noqa: E402,F401
 # ──────────────────────────────────────────────
 
 
-class RegleResidence(SQLModel, table=True):
-    __tablename__ = "regle_residence"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    titre: str
-    contenu: str = ""
-    ordre: int = Field(default=0)
-    cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
-    cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
-    modifie_le: Optional[NaiveDatetime] = None
-
+from app.models.residence import (  # noqa: E402,F401
+    FaqItem as FaqItem,
+    RegleResidence as RegleResidence,
+)
 
 #  La délégation aidant vit dans `delegations.py` depuis le 28/09/2026 (#779).
 from app.models.delegations import (  # noqa: E402,F401
@@ -303,18 +289,8 @@ from app.models.compteurs import (  # noqa: E402,F401
 # ──────────────────────────────────────────────
 
 
-class Notification(SQLModel, table=True):
-    __tablename__ = "notification"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    destinataire_id: int = Field(foreign_key="utilisateur.id")
-    type: str  # ticket_update | publication | vigik | urgence | system
-    titre: str
-    corps: str = ""
-    lien: Optional[str] = None
-    lue: bool = False
-    urgente: bool = False
-    cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
-
+#  Dans `models/notifications.py` depuis le 30/10/2026 (#2316).
+from app.models.notifications import Notification as Notification  # noqa: E402,F401
 
 # ──────────────────────────────────────────────
 #  Import lots (staging depuis Excel)
@@ -419,14 +395,8 @@ from app.models.bailleur import (  # noqa: E402,F401
 # ──────────────────────────────────────────────
 
 
-class ConfigSite(SQLModel, table=True):
-    """Paramètres de configuration sauvegardés par l'admin (titre, descriptif, nom du site…).
-    Stockés en base pour être visibles de tous les appareils."""
-
-    __tablename__ = "config_site"
-    cle: str = Field(primary_key=True)
-    valeur: str
-
+#  Dans `models/reglages.py` depuis le 30/10/2026 (#2316).
+from app.models.reglages import ConfigSite as ConfigSite  # noqa: E402,F401
 
 # ──────────────────────────────────────────────
 #  Messages WhatsApp planifiés — extraits le 05/09/2026 dans `models/whatsapp.py`
