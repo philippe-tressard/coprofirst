@@ -23,7 +23,7 @@
 #  Une version du poste contre celle que la CI épingle. Plus ANCIENNE : refus —
 #  le 24/09/2026, un Node 20 masquait le 22 de la CI et sept contrôles du front
 #  échouaient (`fs.globSync` absent). Plus RÉCENTE : noté, le rejeu continue —
-#  c'est l'état ordinaire du poste (Python 3.14, Node 24), et le refuser
+#  c'est l'état ordinaire du poste (Python 3.14), et le refuser
 #  interdirait tout rejeu.
 #    $1 = node | python, $2 = épinglée (« 22 », '3.12'), $3 = celle du poste
 #    → "" | "NOTE <motif>" | "REFUS <motif>"

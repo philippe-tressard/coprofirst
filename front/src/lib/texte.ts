@@ -41,7 +41,7 @@
  *  (`#lib/utils`) : il ne sait que du texte. C'est ce qui lui permet de servir
  *  cinq appelants qui n'ont rien d'autre en commun.
  *
- *  Autotest : `node --experimental-strip-types scripts/check-texte.mjs --selftest`
+ *  Autotest : `node scripts/check-texte.mjs --selftest`
  */
 
 /**  La plage des signes diacritiques combinants, écrite en ÉCHAPPEMENTS.
