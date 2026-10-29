@@ -13,7 +13,8 @@
  *  la chose, pas son enregistrement).
  *
  *  La palette est lue dans `teinte.ts`, module pur sans import `#lib` : un
- *  import qui tire `$lib` casserait la collecte de toute la suite.
+ *  import qui tire le dossier des bibliothèques casserait la collecte de toute la
+ *  suite.
  *
  *  L'écran de connexion est public et charge `socle.css` comme tout écran.
  */
