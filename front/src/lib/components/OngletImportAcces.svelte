@@ -235,8 +235,8 @@
 					libelle: 'Lot à préciser',
 					couleur: 'var(--color-warning-texte)',
 				},
-				{ valeur: stats.resolu, libelle: 'Rattachés', couleur: '#2563eb' },
-				{ valeur: stats.ignore, libelle: 'Ignorés', couleur: '#6b7280' },
+				{ valeur: stats.resolu, libelle: 'Rattachés', couleur: 'var(--color-import-lie)' },
+				{ valeur: stats.ignore, libelle: 'Ignorés', couleur: 'var(--color-text-muted)' },
 			]
 		: []}
 	colonnesAttendues={modele.colonnesAttendues}

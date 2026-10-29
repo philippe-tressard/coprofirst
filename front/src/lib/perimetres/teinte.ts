@@ -77,19 +77,19 @@ export interface NoeudTeinte {
  * modulo ne recommence à confondre deux espaces.
  */
 export const PALETTE_PERIMETRE = [
-	'#ef4444',
-	'#3b82f6',
-	'#22c55e',
-	'#f59e0b',
-	'#f97316',
-	'#8b5cf6',
-	'#ec4899',
-	'#0ea5e9',
-	'#14b8a6',
-	'#84cc16',
-	'#e11d48',
-	'#6366f1',
-	'#a16207',
+	'var(--teinte-1)',
+	'var(--teinte-2)',
+	'var(--teinte-3)',
+	'var(--teinte-4)',
+	'var(--teinte-5)',
+	'var(--teinte-6)',
+	'var(--teinte-7)',
+	'var(--teinte-8)',
+	'var(--teinte-9)',
+	'var(--teinte-10)',
+	'var(--teinte-11)',
+	'var(--teinte-12)',
+	'var(--teinte-13)',
 ];
 
 /**
@@ -101,7 +101,7 @@ export const PALETTE_PERIMETRE = [
  * bâtiment-là », ce qui est exactement le défaut qu'on corrige. C'est déjà le
  * gris que porte la pastille « 🏘️ Copropriété » du périmètre par défaut.
  */
-export const TEINTE_COPROPRIETE = '#6b7280';
+export const TEINTE_COPROPRIETE = 'var(--teinte-copropriete)';
 
 /**  La même normalisation que l'arbre : un code se compare **sans casse ni
  *   espaces**. Sans elle, « Bat:1 » et « bat:1 » seraient deux périmètres. */

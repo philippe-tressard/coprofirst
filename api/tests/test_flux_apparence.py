@@ -19,6 +19,7 @@ Ajouter une rubrique au fil sans son apparence échoue désormais en CI.
 import pathlib
 import re
 
+from tests.aides_jetons import jetons_du_theme_clair, resoudre
 from tests.aides_sources import modules_app
 
 _RACINE = pathlib.Path(__file__).resolve().parents[2]
@@ -143,16 +144,17 @@ def test_chaque_pastille_est_lisible():
     couleurs, fonds = _valeurs("couleur"), _valeurs("fond")
     assert len(couleurs) >= 12, f"Seulement {len(couleurs)} teinte(s) lue(s) — détecteur cassé"
 
+    jetons = jetons_du_theme_clair()
     trop_pales = []
     for type_, couleur in couleurs.items():
-        #  `var(--color-primary)` = #1E3A5F, la couleur de charte : résolue ici
-        #  plutôt qu'exclue, sinon la seule entrée non littérale échapperait au
-        #  contrôle — exactement le genre de trou qui laisse passer un défaut.
-        if couleur.startswith("var("):
-            couleur = "#1E3A5F"
+        #  Les teintes sont des jetons (`var(--fil-rouge)`, #2174 S2) : mesurées sur
+        #  leur valeur RÉSOLUE dans `socle.css`. Aucune n'est écartée — une entrée
+        #  non littérale qui échapperait au contrôle est le trou qui laisse passer
+        #  un défaut.
         fond = fonds.get(type_)
-        if not fond or fond.startswith("var("):
-            continue
+        assert fond, f"{type_} : pas de fond déclaré"
+        couleur, fond = resoudre(couleur, jetons), resoudre(fond, jetons)
+        assert couleur.startswith("#") and fond.startswith("#"), (type_, couleur, fond)
         rapport = _contraste(couleur, fond)
         if rapport < 4.5:
             trop_pales.append(f"{type_} : {couleur} sur {fond} = {rapport:.2f}:1")

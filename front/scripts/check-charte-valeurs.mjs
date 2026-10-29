@@ -52,54 +52,17 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, re
 /**
  *  Le compte autorisé, et son historique : c'est lui qui dit à quel rythme la
  *  dette se solde.
- *  27/09/2026 (#1055) : relevé 266 couleurs, 569 tailles → 235 et 258 dans le
- *  même lot, en convertissant les seules valeurs ÉGALES à un jeton (aucun rendu
- *  changé ; un repli redondant `var(--x, #valeur-de-x)` compte parmi elles).
- *  27/09/2026, même jour, après arbitrage sur maquette : 124 et 62 — les
- *  tailles hors échelle rangées au cran supérieur, les couleurs d'état de
- *  Tailwind remplacées par la charte (voir « Ce qui est INTERDIT »).
- *  29/09/2026 (#779) : 116 couleurs et 61 tailles. ⚠️ Pas une dette SOLDÉE — un DÉPLACEMENT :
- *  les huit teintes des pastilles de rôle d'une fiche de membre (président,
- *  interlocuteur principal, gestionnaire) et leur taille ont quitté `espace-cs` pour
- *  `styles/composants.css`, où elles sont écrites une fois pour les deux
- *  composants de l'annuaire. Elles restent des valeurs en dur, dans la charte.
- *  30/09/2026 (#1460) : les feuilles de `src/styles/` entrent dans le relevé :
- *  172 couleurs et 129 tailles — leur dette déjà portée, désormais comptée.
- *  01/10/2026 (#779) : 170 couleurs. Le dégradé de la carte des consignes
- *  (deux bleus hors charte) devient `--color-primary-light` dans `LienConsignes`.
- *  01/10/2026 : 128 tailles. L’onglet « Sécurité (CSP) » de l’administration
- *  est retiré avec la collecte qu’il lisait (`OngletCsp`, `1.4rem`).
- *  Puis 169 couleurs : le sélecteur de lots de « Mes lots », qui repeignait des
- *  pastilles (`#fff` sur le bleu), passe par `ChoixPastilles` (#779).
- *  02/10/2026 (#1537) : 168 couleurs et 123 tailles. Les 23 classes des
- *  feuilles globales que plus rien n'employait sont retirées (`.alert-info`,
- *  `.imp-header`, `.kb-item-*`, `.month-label`, `.muted-sm`…).
- *  08/10/2026 (#1571) : 120 tailles. Les deux titres de l'espace CS portaient
- *  chacun `font-size:1rem` en ligne ; passés en une classe, la valeur s'écrit
- *  une fois. Une redite retirée, pas une valeur convertie.
- *  10/10/2026 : 167 couleurs. Le badge de compte des Archives, écrit deux
- *  fois, devient `Compte` — son blanc passe par `--color-surface`.
- *  10/10/2026 (#1571) : 123 couleurs et 79 tailles. 44 couleurs et 41 tailles
- *  ÉGALES à un jeton — revenues depuis le 27/09, surtout par les styles en
- *  ligne passés en classes et par les feuilles entrées dans le relevé —
- *  s'écrivent par le jeton. Aucun rendu ne change : la charte n'a ni thème
- *  sombre ni jeton qui varie avec l'écran. Elles sont désormais INTERDITES
- *  (`egalesAUnJeton`), sans plafond.
- *  10/10/2026 : 120 couleurs et 73 tailles. La gouttière des cartes d'affaire
- *  devient un composant (`GouttiereAffaire`, maquette B) : ses deux tailles en
- *  pseudo-éléments passent par l'échelle (`--fs-2xs`, `--fs-chiffre`), et les
- *  trois teintes pâles de nature, qu'elle ne peint plus, sont retirées. Son
- *  jeton `--fs-chiffre` (1.6rem) rend quatre tailles égales à lui : elles
- *  s'écrivent par lui (Lightbox, PiecesJointes, Vignette, legal.css).
- *  10/10/2026 : 70 tailles. La carte du fil passe à `CarteListe` (maquette B
- *  du fil) : l'émoji de rubrique et sa taille en dur (1,05 rem) partent dans
- *  la gouttière, qui écrit par l'échelle.
- *  21/10/2026 (#1571) : 89 couleurs. Onze REPLIS MORTS (`var(--color-border,
- *  #e5e7eb)`, jeton défini) s'écrivent sans repli — INTERDITS (`repliMortsDe`) ;
- *  seize fonds quasi-blancs, posés sur des variables que RIEN ne définit
- *  (`--color-bg-alt`…), prennent `--color-neutre-fond` (≤ 3 unités RVB d'écart).
- *  22/10/2026 (#1571) : 81 couleurs. Les huit derniers replis sur des variables
- *  que rien ne définit partent avec elles (`lint:variables-css`).
+ *  27/09/2026 (#1055) : relevé 266 couleurs et 569 tailles. Le même jour, après
+ *  arbitrage sur maquette : 124 et 62 — les tailles hors échelle rangées au cran
+ *  supérieur, les couleurs d'état de Tailwind remplacées par la charte.
+ *  30/09/2026 (#1460) : les feuilles de `src/styles/` entrent dans le relevé
+ *  (172 couleurs, 129 tailles) ; 29/09 (#779) avait DÉPLACÉ huit teintes de
+ *  rôle vers `composants.css`, sans les solder.
+ *  Octobre 2026 (#779, #1537, #1571) : 167 → 81 couleurs et 129 → 69 tailles.
+ *  Les valeurs ÉGALES à un jeton (`egalesAUnJeton`) et les repliements morts
+ *  (`repliMortsDe`) sont devenus INTERDITS, sans plafond ; les classes mortes
+ *  des feuilles globales sont retirées. Le détail ligne à ligne : `git log` de
+ *  ce fichier.
  *  29/10/2026 (#2174, mode sombre S1) : ZÉRO couleur — les 81 dernières (47
  *  nuances) se rangent sur 31 jetons de `socle.css` (12 neufs) — redéfinis au sombre.
  */
@@ -167,6 +130,13 @@ export const TAILLES_HORS_ECHELLE = {
 	0.92: '--fs-lg',
 };
 
+/**
+ *  La DÉFINITION d'un jeton de palette catégorielle (`--fil-rouge: #b91c1c;`,
+ *  #2174 S2) est la seule place où ces teintes s'écrivent : ce ne sont pas des
+ *  états. Partout ailleurs, la même valeur reste refusée.
+ */
+const DEFINITION_CATEGORIELLE = /--(?:fil|teinte|kanban)-[\w-]+\s*:\s*#[0-9a-fA-F]{6}\s*;/g;
+
 export const COULEURS_ETAT_ETRANGERES = {
 	'#dc2626': '--color-danger',
 	'#b91c1c': '--color-danger',
@@ -212,6 +182,7 @@ const RGB_ETAT =
  */
 export function interditsDe(source) {
 	const code = source
+		.replace(DEFINITION_CATEGORIELLE, '')
 		.replace(/<!--[\s\S]*?-->/g, '')
 		.replace(/\/\*[\s\S]*?\*\//g, '')
 		.replace(/(^|[^:'"])\/\/.*$/gm, '$1');
@@ -276,6 +247,11 @@ if (process.argv.includes('--selftest')) {
 			['#92400e', 'var(--color-warning-texte)'],
 			['#DC2626', 'var(--color-danger)'],
 		],
+	);
+	cas(
+		'une palette catégorielle se DÉFINIT en hexadécimal, et nulle part ailleurs',
+		interditsDe(':root{--fil-rouge:#b91c1c;--teinte-1:#ef4444;}.a{color:#b91c1c}'),
+		[['#b91c1c', 'var(--color-danger)']],
 	);
 	cas(
 		'rgba d’un rouge Tailwind',

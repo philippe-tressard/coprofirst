@@ -109,7 +109,7 @@
 	//  se rendent en pastille pleine, et la charte ne porte pas ces quatre-là.
 	const { libelle: TYPE_LIEN_LABEL, couleur: TYPE_LIEN_BADGE } = parAttribut({
 		propriétaire: { libelle: 'Propriétaire', couleur: 'var(--color-success)' },
-		bailleur: { libelle: 'Bailleur', couleur: '#2563eb' },
+		bailleur: { libelle: 'Bailleur', couleur: 'var(--color-import-lie)' },
 		locataire: { libelle: 'Locataire', couleur: 'var(--color-warning-texte)' },
 		mandataire: { libelle: 'Mandataire', couleur: 'var(--color-violet)' },
 	});
@@ -246,7 +246,7 @@
 					libelle: 'Occupant lié',
 					couleur: 'var(--color-violet)',
 				},
-				{ valeur: stats.lot_lie, libelle: 'Lot lié', couleur: '#2563eb' },
+				{ valeur: stats.lot_lie, libelle: 'Lot lié', couleur: 'var(--color-import-lie)' },
 				{ valeur: stats.resolu, libelle: 'Résolus', couleur: 'var(--color-success)' },
 				{ valeur: stats.ignore, libelle: 'Ignorés', couleur: 'var(--color-text-muted)' },
 				{ valeur: stats.avec_user, libelle: 'Copro lié' },
