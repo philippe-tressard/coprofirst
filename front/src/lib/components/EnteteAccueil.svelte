@@ -168,7 +168,7 @@
 		height: 1.05rem;
 		border-radius: 50%;
 		background: var(--color-accent-plein);
-		color: var(--color-sur-plein);
+		color: var(--color-sur-accent);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -189,7 +189,7 @@
 	.hero-role-inline {
 		font-size: var(--fs-xs);
 		font-weight: 400;
-		color: rgba(255, 255, 255, 0.55);
+		color: var(--color-sur-plein-discret);
 		letter-spacing: 0.02em;
 	}
 

@@ -320,7 +320,7 @@ label.field.case {
 .field textarea {
 	width: 100%;
 	padding: 0.45rem 0.6rem;
-	border: 1px solid var(--color-border);
+	border: 1px solid var(--color-border-champ);
 	border-radius: var(--radius);
 	font-size: var(--fs-base);
 	background: var(--color-bg);
@@ -380,7 +380,7 @@ label.field.case {
     parce qu'ils habillent un composant partagé, pas parce qu'il y en aurait
     encore deux. */
 .editeur-cadre {
-	border: 1px solid var(--color-border);
+	border: 1px solid var(--color-border-champ);
 	border-radius: var(--radius);
 	background: var(--color-bg);
 	overflow: hidden;

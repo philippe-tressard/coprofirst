@@ -18,6 +18,9 @@
    ───────────────────────────────────────── */
 
 @import './styles/socle.css';
+/*  Les jetons du thème sombre, sous `[data-theme]` (#2174, S3) : ils ne
+    redéfinissent que des variables, l'ordre ne change aucune règle. */
+@import './styles/palette-sombre.css';
 @import './styles/composants.css';
 @import './styles/kanban.css';
 @import './styles/authentification.css';

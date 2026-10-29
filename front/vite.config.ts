@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { paletteSombreAuto } from './scripts/vite-palette-sombre.mjs';
 
 //  Le condensat du garde de démarrage (#1993), calculé sur le fichier que
 //  `hooks.server.ts` injecte tel quel : le modifier suffit, rien ne se recopie.
@@ -215,6 +216,9 @@ export default defineConfig({
 	//  tombent au hasard (« Execution context was destroyed »). Les déclarer ici
 	//  les fait optimiser au démarrage. La CI nomme toute nouvelle venue : l'étape
 	//  « Tests de navigateur » échoue quand Vite recharge une page en plein test.
+	//  La palette sombre est écrite une fois ; sa copie « Auto » (système en
+	//  sombre) est GÉNÉRÉE ici (#2174, S3) — `scripts/vite-palette-sombre.mjs`.
+	css: { postcss: { plugins: [paletteSombreAuto()] } },
 	optimizeDeps: {
 		include: [
 			'dompurify', // #lib/sanitize.ts, chargé côté navigateur seulement
