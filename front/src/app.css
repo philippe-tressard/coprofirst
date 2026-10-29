@@ -33,3 +33,7 @@
     ailleurs, donc l'ordre ne peut rien changer aux quatre autres fragments. */
 @import './styles/legal.css';
 @import './styles/graphiques.css';
+/*  Les aperçus de supports imprimés ou envoyés, clairs sous le thème sombre
+    (#2174, S4d). Après `socle.css`, dont il reprend la règle `:root` : son
+    fond l'emporte sur celui de la page à poids égal. */
+@import './styles/ilots-clairs.css';

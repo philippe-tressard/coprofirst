@@ -56,9 +56,12 @@ export function blocSombre(css) {
 	return fin < 0 ? null : sans.slice(debut, fin);
 }
 
-/** Le corps de la PREMIÈRE règle `:root {` d'une feuille, ou null. PURE. */
+/** Le corps de la PREMIÈRE règle `:root {` d'une feuille, ou null — `:root, .ilot-clair {`
+ *  compris : l'îlot clair reprend les jetons du thème clair (`styles/ilots-clairs.css`). PURE. */
 export function blocRacine(css) {
-	const m = css.replace(/\/\*[\s\S]*?\*\//g, '').match(/^:root\s*\{([\s\S]*?)^\}/m);
+	const m = css
+		.replace(/\/\*[\s\S]*?\*\//g, '')
+		.match(/^:root(?:\s*,\s*\.ilot-clair)?\s*\{([\s\S]*?)^\}/m);
 	return m ? m[1] : null;
 }
 
@@ -220,6 +223,11 @@ if (process.argv.includes('--selftest')) {
 			blocRacine(':root {\n --a: #fff;\n}\n:root[x] {\n}'),
 		],
 		['\n --a: #000; ', '\n --a: #fff;\n'],
+	);
+	cas(
+		'le bloc racine partagé avec l’îlot clair est lu',
+		blocRacine(':root,\n.ilot-clair {\n --a: #fff;\n}'),
+		'\n --a: #fff;\n',
 	);
 	cas(
 		'un badge sous 4,5 au sombre échoue',

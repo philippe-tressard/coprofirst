@@ -138,7 +138,7 @@
 							      aux cookies, ni au stockage. Le `srcdoc` ne peut donc rien
 							      faire d'autre que s'afficher. -->
 						<iframe
-							class="apercu-corps-cadre"
+							class="apercu-corps-cadre ilot-clair"
 							title="Aperçu de l'e-mail"
 							sandbox=""
 							srcdoc={canal.corps_html ?? ''}
@@ -252,14 +252,15 @@
 	/*  Le corps de l'e-mail est rendu dans un IFRAME cloisonné : il apporte ses
 	    propres styles (tables, couleurs, marges), et c'est le but. La hauteur est
 	    FIXE et non `max-height` : un iframe ne s'adapte pas à son contenu depuis
-	    l'extérieur, et une hauteur trop courte transforme l'aperçu en fente. */
+	    l'extérieur, et une hauteur trop courte transforme l'aperçu en fente.
+	    Son fond et son schéma sont ceux de l'îlot clair (`ilots-clairs.css`) :
+	    au thème sombre, le courriel se montre tel que la messagerie le rendra. */
 	.apercu-corps-cadre {
 		width: 100%;
 		height: 420px;
 		display: block;
 		border: 1px solid var(--color-border);
 		border-radius: 6px;
-		background: var(--color-surface);
 	}
 	/*  Le message WhatsApp se lit en chasse fixe et EN CONSERVANT ses sauts de
 	    ligne : c'est exactement ce que le groupe verra, retours compris. */
