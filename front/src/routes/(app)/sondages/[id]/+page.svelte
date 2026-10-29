@@ -371,10 +371,10 @@
 		margin-top: 0.85rem;
 		padding: 0.75rem 1rem;
 		background: var(--color-warning-fond);
-		border: 1px solid #e8c87a;
+		border: 1px solid var(--color-warning-bordure);
 		border-radius: var(--radius);
 		font-size: var(--fs-md);
-		color: #7a5a1a;
+		color: var(--color-warning-texte);
 		cursor: pointer;
 		line-height: 1.45;
 	}

@@ -111,7 +111,7 @@
 		propriétaire: { libelle: 'Propriétaire', couleur: 'var(--color-success)' },
 		bailleur: { libelle: 'Bailleur', couleur: '#2563eb' },
 		locataire: { libelle: 'Locataire', couleur: 'var(--color-warning-texte)' },
-		mandataire: { libelle: 'Mandataire', couleur: '#7c3aed' },
+		mandataire: { libelle: 'Mandataire', couleur: 'var(--color-violet)' },
 	});
 
 	function openEdit(imp: LigneImportLot) {
@@ -241,10 +241,14 @@
 		? [
 				{ valeur: stats.total, libelle: 'Total' },
 				{ valeur: stats.en_attente, libelle: 'En attente', couleur: 'var(--color-warning-texte)' },
-				{ valeur: stats.utilisateur_lie ?? 0, libelle: 'Occupant lié', couleur: '#7c3aed' },
+				{
+					valeur: stats.utilisateur_lie ?? 0,
+					libelle: 'Occupant lié',
+					couleur: 'var(--color-violet)',
+				},
 				{ valeur: stats.lot_lie, libelle: 'Lot lié', couleur: '#2563eb' },
 				{ valeur: stats.resolu, libelle: 'Résolus', couleur: 'var(--color-success)' },
-				{ valeur: stats.ignore, libelle: 'Ignorés', couleur: '#6b7280' },
+				{ valeur: stats.ignore, libelle: 'Ignorés', couleur: 'var(--color-text-muted)' },
 				{ valeur: stats.avec_user, libelle: 'Copro lié' },
 			]
 		: []}
@@ -310,7 +314,7 @@
 										<div class="occupant-tag">
 											<span
 												class="occ-role"
-												style="color:{TYPE_LIEN_BADGE[occ.type_lien] ?? '#6b7280'}"
+												style="color:{TYPE_LIEN_BADGE[occ.type_lien] ?? 'var(--color-text-muted)'}"
 												>{TYPE_LIEN_LABEL[occ.type_lien] ?? occ.type_lien}</span
 											>
 											{#if occ.utilisateur}
@@ -391,8 +395,8 @@
 
 <style>
 	.badge-type {
-		background: #f0f4ff;
-		color: #1e40af;
+		background: var(--color-info-fond);
+		color: var(--color-info);
 		font-size: var(--fs-xs);
 		padding: 0.1rem 0.4rem;
 		border-radius: 4px;

@@ -70,6 +70,11 @@ body {
 	--color-warning-fond: #fdf3e0;
 	--color-warning-bordure: #dfcba5;
 	--color-warning-texte: #7b5815;
+	/*  L'INFORMATION — le conseil syndical, l'actualité, « mon » message, ce qui
+	    est à venir (#2174, lot S1). Six bleus de Tailwind écrits en dur s'y
+	    rangent : le fond comme ceux des états, le filet au jeton à 40 % sur blanc. */
+	--color-info-fond: #e6f1fb;
+	--color-info-bordure: #a8c1db;
 	/*  Une teinte de CATÉGORIE, pas d'état : le violet de `.badge-purple` (rôle
 	    Opérateur, statut Locataire) et du geste qui accorde l'Opérateur. */
 	--color-violet: #6b21a8;
@@ -82,6 +87,20 @@ body {
 	    teinte à 187°, entre les deux. 5,85 sur son fond. */
 	--color-sarcelle: #0b6470;
 	--color-sarcelle-fond: #ddf1f4;
+	/*  #2174 (S1) : le turquoise du gestionnaire du site (#0f766e) s'y range — à
+	    côté de la sarcelle, il ne s'en distinguait pas. Filet : le jeton à 40 %. */
+	--color-sarcelle-bordure: #9dc1c6;
+	/*  L'ORANGE de l'urgence (numéros d'urgence, relance du syndic) et de
+	    l'administrateur — une catégorie, pas l'ambre d'un avertissement. Huit
+	    nuances de Tailwind réduites à quatre (#2174, S1). */
+	--color-orange: #c2410c;
+	--color-orange-fond: #fff7ed;
+	--color-orange-bordure: #fed7aa;
+	--color-orange-texte: #9a3412;
+	/*  Le JAUNE de `.badge-yellow` (« en cours », « en attente », #495) et de la
+	    note interne d'un fil. */
+	--color-jaune-fond: #fef9e7;
+	--color-jaune-texte: #a16207;
 	/*  Les SÉRIES des répartitions croisées du Suivi des affaires (#2043) : une
 	    teinte par catégorie, dans l'ordre fixe de `#lib/repartition` — palette
 	    catégorielle à huit teintes, validée daltonisme (skill dataviz : écart
@@ -122,6 +141,9 @@ body {
 	--color-primary-plein-survol: var(--color-primary-dark);
 	--color-danger-plein: var(--color-danger);
 	--color-success-plein: var(--color-success);
+	--color-success-plein-survol: color-mix(in srgb, var(--color-success-plein) 85%, black);
+	--color-info-plein: var(--color-info);
+	--color-sarcelle-plein: var(--color-sarcelle);
 	--color-accent-plein: var(--color-accent);
 	--color-sur-plein: #ffffff;
 	--color-sur-voile: #ffffff;

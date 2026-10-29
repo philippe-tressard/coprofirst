@@ -87,12 +87,12 @@
 	/*  Qualifiés par `.btn-outline` : posées seules, ces teintes perdraient contre
 	    `.btn-outline:hover` (0,2,0) — que l'attribut `style` d'origine, lui, battait. */
 	.btn-outline.ajouter-cs {
-		color: #1d4ed8;
-		border-color: #1d4ed8;
+		color: var(--color-info);
+		border-color: var(--color-info);
 	}
 	.btn-outline.ajouter-admin {
-		color: #c2410c;
-		border-color: #c2410c;
+		color: var(--color-orange);
+		border-color: var(--color-orange);
 	}
 	.btn-outline.ajouter-operateur {
 		color: var(--color-violet);

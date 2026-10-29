@@ -341,10 +341,10 @@
 		color: var(--color-warning-texte);
 	}
 	.frise-preavis-zone.frise-urgence-futur {
-		color: #3b82f6;
+		color: var(--color-info);
 	}
 	.frise-preavis-zone.frise-urgence-reconduit {
-		color: #8b5cf6;
+		color: var(--color-violet);
 	}
 	/*  🔴 `inconnu` — une date de fin qu'on n'a pas. Elle N'AVAIT AUCUN STYLE, et
 	    personne ne le voyait : l'ancienne écriture `frise-urgence-{friseStyle}`
@@ -358,7 +358,7 @@
 
 	    Gris : on ne sait pas, et l'écran doit le dire sans alarmer. */
 	.frise-preavis-zone.frise-urgence-inconnu {
-		color: #9ca3af;
+		color: var(--color-text-muted);
 	}
 
 	.frise-marker {
@@ -376,14 +376,14 @@
 		background: var(--color-warning);
 	}
 	.frise-marker-futur {
-		background: #3b82f6;
+		background: var(--color-info);
 	}
 	.frise-marker-reconduit {
-		background: #8b5cf6;
+		background: var(--color-violet);
 	}
 	/*  Même raison que `frise-urgence-inconnu` ci-dessus. */
 	.frise-marker-inconnu {
-		background: #9ca3af;
+		background: var(--color-text-muted);
 	}
 
 	.frise-marker-label {
@@ -460,7 +460,7 @@
 		background: var(--color-warning);
 	}
 	.point-reconduit {
-		background: #8b5cf6;
+		background: var(--color-violet);
 	}
 	.legende-fin {
 		font-size: var(--fs-xs);

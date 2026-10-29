@@ -650,7 +650,9 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       `npm run lint:vocabulaire-ecran` (`lib-mots-anglais.mjs`, #1579) ; *le reste de la langue
       reste non mesurable : `lint:texte` et `lint:champs` ne la jugent pas*
 - [ ] Couleur et taille de texte : `var(--color-…)`, `var(--fs-…)` (`socle.css`),
-      jamais une valeur en dur — `npm run lint:charte-valeurs`, plafond qui ne
+      jamais une valeur en dur — `npm run lint:charte-valeurs` : couleurs à
+      **zéro** depuis le lot S1 du mode sombre (#2174 — une couleur neuve est un
+      jeton de `socle.css`, nommé par l'usage), tailles sous un plafond qui ne
       fait que baisser (#1055). Arbitré sur maquette le 27/09/2026 : une taille
       hors échelle se range au cran **supérieur**, un état (danger, succès,
       avertissement) prend son jeton et ses dérivés `-fond`, `-bordure`, et

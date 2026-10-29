@@ -452,7 +452,7 @@
 	}
 	/*  Les teintes de fond disent le TYPE d'entrée sans lire un badge. */
 	.evol-etat {
-		background: #f0f9ff;
+		background: var(--color-info-fond);
 	}
 	.evol-reponse {
 		background: var(--color-success-fond);

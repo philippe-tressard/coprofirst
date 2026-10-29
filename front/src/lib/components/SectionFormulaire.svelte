@@ -469,7 +469,7 @@
 	    ⚠️ Il n'existe qu'à côté du TITRE, jamais à droite : une valeur
 	    modifiée ouvre la section, donc il n'y a plus de ligne pliée à décorer. */
 	.badge-bleu {
-		background: #e6f1fb;
+		background: var(--color-info-fond);
 		color: var(--color-info);
 	}
 	/*  Le chevron de repli : même poids visuel que celui du dépliage, et une
