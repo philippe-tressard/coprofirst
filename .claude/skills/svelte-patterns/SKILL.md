@@ -335,6 +335,11 @@ encore comme « le fichier des règles globales », à onze endroits.
 | `src/styles/ecrans.css` | les classes partagées entre écrans |
 | les autres `src/styles/*.css` | par domaine — voir les `@import` d'`app.css` |
 
+🔴 **Jamais de `:global()` dans ces feuilles** : c'est du Svelte, que rien n'y
+traduit — le navigateur abandonne la règle sans un mot (huit règles du contenu
+riche et l'impression du reporting l'étaient, #2306). Dans une feuille globale,
+le sélecteur s'écrit nu. 🔒 `npm run lint:global-feuille-globale`.
+
 **La liste des variables n'est pas recopiée ici** : elle se lit dans
 `socle.css`, où chacune porte son usage en commentaire. Cette section en listait
 douze alors que le fichier en déclarait bien davantage — une liste recopiée est

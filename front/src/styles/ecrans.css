@@ -630,43 +630,42 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 		padding: 0 !important;
 	}
 }
-/* ⚠️ Ces règles étaient HORS de tout `@media print` : elles masquaient donc la
-   barre de navigation À L'ÉCRAN dès que la classe était posée sur <body>.
-   Tant que tout se passait bien, l'effet durait 250 ms et ne se voyait pas ;
-   le jour où le nettoyage a été sauté, l'application est restée sans
-   navigation jusqu'à un rechargement complet (04/08/2026).
-   Elles ne servent qu'à la mise en page imprimée — aucune n'a de raison de
-   toucher l'écran. Les enfermer ici supprime le rayon de dégâts : même si la
-   classe restait collée, l'affichage serait intact. */
+/* ⚠️ Ces règles étaient HORS de tout `@media print` : elles masquaient la
+   navigation À L'ÉCRAN tant que la classe restait sur <body> — jusqu'au
+   rechargement, le jour où le nettoyage a été sauté (04/08/2026). Enfermées
+   ici, une classe restée collée ne touche plus l'affichage.
+   🔴 Elles étaient ensuite écrites `:global(body.print-reporting …)` — syntaxe
+   de Svelte, que rien ne traduit dans une feuille globale : le navigateur les
+   abandonnait, et la navigation sortait sur le papier (#2306, 30/10/2026). */
 @media print {
-	:global(body.print-reporting .page-header),
-	:global(body.print-reporting .page-subtitle),
-	:global(body.print-reporting .tabs),
-	:global(body.print-reporting .tab-descriptif),
-	:global(body.print-reporting .no-print) {
+	body.print-reporting .page-header,
+	body.print-reporting .page-subtitle,
+	body.print-reporting .tabs,
+	body.print-reporting .tab-descriptif,
+	body.print-reporting .no-print {
 		display: none !important;
 	}
-	:global(body.print-reporting .sidebar),
-	:global(body.print-reporting .mobile-topbar),
-	:global(body.print-reporting .app-footer) {
+	body.print-reporting .sidebar,
+	body.print-reporting .mobile-topbar,
+	body.print-reporting .app-footer {
 		display: none !important;
 	}
-	:global(body.print-reporting .app-content) {
+	body.print-reporting .app-content {
 		margin-left: 0 !important;
 		max-width: 100% !important;
 		overflow: visible !important;
 	}
-	:global(body.print-reporting) {
+	body.print-reporting {
 		overflow: visible !important;
 	}
-	:global(body.print-reporting .app-shell) {
+	body.print-reporting .app-shell {
 		overflow: visible !important;
 		min-height: auto !important;
 	}
-	:global(body.print-reporting .app-main) {
+	body.print-reporting .app-main {
 		overflow: visible !important;
 	}
-	:global(body.print-reporting .reporting-print-header) {
+	body.print-reporting .reporting-print-header {
 		display: block !important;
 	}
 }

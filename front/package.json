@@ -111,6 +111,7 @@
 		"lint:animations-infinies": "node scripts/check-animations-infinies.mjs --selftest && node scripts/check-animations-infinies.mjs",
 		"lint:encart-avertissement": "node scripts/check-encart-avertissement.mjs --selftest && node scripts/check-encart-avertissement.mjs",
 		"lint:taille-racine": "node scripts/check-taille-racine.mjs --selftest && node scripts/check-taille-racine.mjs",
+		"lint:global-feuille-globale": "node scripts/check-global-feuille-globale.mjs --selftest && node scripts/check-global-feuille-globale.mjs",
 		"lint:texte-avertissement": "node scripts/check-texte-avertissement.mjs --selftest && node scripts/check-texte-avertissement.mjs",
 		"lint:aplats": "node scripts/check-aplats.mjs --selftest && node scripts/check-aplats.mjs",
 		"lint:couleurs-ts": "node scripts/check-couleurs-ts.mjs --selftest && node scripts/check-couleurs-ts.mjs",
