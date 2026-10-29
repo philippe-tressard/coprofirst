@@ -14,7 +14,7 @@
  * qui laisse plusieurs blocs ouverts, et c'est par elle que la règle fuyait
  * (archives par année, kanban, diagnostics — corrigés le 30/09/2026).
  *
- * Usage : node --experimental-strip-types scripts/check-accordeon.mjs --selftest
+ * Usage : node scripts/check-accordeon.mjs --selftest
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
