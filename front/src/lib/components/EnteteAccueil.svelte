@@ -128,8 +128,9 @@
 		align-items: flex-start;
 		gap: 0.75rem;
 	}
-	/* L'anneau clair détache la pastille du dégradé bleu ; le fond de repli des
-	   initiales reste translucide pour ne pas concurrencer la salutation. */
+	/* L'anneau clair détache la pastille du dégradé bleu. Les initiales gardent
+	   l'aplat par défaut d'`Avatar` (blanc sur Bleu Seine, 11:1) : sur un voile
+	   blanc translucide, le blanc n'en faisait que 2,8 au clair (#2296). */
 	.hero-avatar {
 		position: relative;
 		flex-shrink: 0;
@@ -147,8 +148,6 @@
 			background var(--duree-geste),
 			transform var(--duree-geste) var(--ease-out);
 		--avatar-size: 2.6rem;
-		--avatar-bg: rgba(255, 255, 255, 0.18);
-		--avatar-color: var(--color-surface);
 	}
 	@media (hover: hover) and (pointer: fine) {
 		.hero-avatar:hover {

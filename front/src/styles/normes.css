@@ -258,17 +258,32 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 
 /*  📦 LA CARTE ARCHIVÉE — une forme, posée par `CarteListe archive`. Elle
     s'efface tant qu'on ne la vise pas, pour que la liste courante garde le
-    premier plan, et reprend son opacité pleine dépliée ou survolée (au
-    pointeur seulement : au doigt, `:hover` reste collé et la carte lue
-    restait pleine). Il en existait CINQ rendus — annonce, actualité, contrat,
-    question de FAQ inactive (0,55, jamais pleine), affaire archivée (liseré
-    gris sans filet) : la plus disante a été retenue (`CarteListe`). */
-.carte-liste.attenue.expanded {
+    premier plan, et reprend sa carte pleine dépliée ou survolée (au pointeur
+    seulement : au doigt, `:hover` reste collé et la carte lue restait pleine).
+    Il en existait CINQ rendus — annonce, actualité, contrat, question de FAQ
+    inactive (0,55, jamais pleine), affaire archivée (liseré gris sans filet) :
+    la plus disante a été retenue (`CarteListe`).
+    🔴 Elle s'efface par son FOND, jamais par l'opacité (#2296) : à 0,8, chaque
+    texte de la carte perdait un cinquième de son contraste — 3,6:1 pour un
+    badge, 4,0 pour l'aperçu. Posée à plat sur l'encart neutre, sans ombre, elle
+    se retire derrière les cartes blanches et ses textes gardent l'AA. */
+.carte-liste.attenue {
 	opacity: 1;
+	background: var(--color-neutre-fond);
+	box-shadow: none;
+	transition:
+		background var(--duree-geste),
+		box-shadow var(--duree-geste),
+		border-left-color var(--duree-geste);
+}
+.carte-liste.attenue.expanded {
+	background: var(--color-surface);
+	box-shadow: var(--shadow-sm);
 }
 @media (hover: hover) and (pointer: fine) {
 	.carte-liste.attenue:hover {
-		opacity: 1;
+		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
 	}
 }
 /*  Au pouce, la colonne devient une ligne au-dessus du titre

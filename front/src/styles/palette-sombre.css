@@ -72,6 +72,9 @@
 		--color-primary-dark: #b9d1f2;
 		--color-primary-light: #1d3150;
 		--color-secondary: #6fb48c;
+		/*  L'Or Croissy d'origine : 6,1:1 sur la surface sombre. Le clair l'a
+		    assombri pour tenir 3:1 sur le blanc (#2296), le sombre n'en a pas besoin. */
+		--color-accent: #c9983a;
 		/* Les APLATS restent foncés pour porter du blanc ; le survol ÉCLAIRCIT. */
 		--color-primary-plein: #1f4474;
 		--color-primary-plein-survol: #2a5489;
@@ -122,11 +125,13 @@
 		--serie-6: #39ad3a;
 		--serie-7: #8e82e6;
 		--serie-8: #e7605f;
-		/* Les PALIERS : l'ordre s'inverse, la racine est la plus claire. */
+		/*  Les PALIERS : l'ordre s'inverse, la racine est la plus claire. Le dernier
+		    tient 3:1 sur la piste des barres (`--color-neutre-fond`) : il en
+		    faisait 2,79, ce que la table ne mesurait que sur la carte (#2296). */
 		--palier-1: #d3d1c7;
 		--palier-2: #b4b2a9;
 		--palier-3: #8f8d85;
-		--palier-4: #6f6d66;
+		--palier-4: #75736c;
 		/*  Le FIL (`#lib/flux`) : la teinte gardée, la clarté montée au premier cran
 		    qui tient 4,5 sur la page, la carte et son propre fond (le texte à 17 %
 		    sur la surface) — la règle de la maquette, appliquée aux jetons de S2. */
@@ -159,6 +164,12 @@
 		    la teinte de périmètre ne porte pas à 4,5 sur la carte s'éclaircissent. */
 		--kanban-ag: #a47ff8;
 		--kanban-cs: #5894f6;
+		/*  Les trois autres et le gris gardent les teintes vives d'avant #2296 : le
+		    clair les a assombries pour le fond beige, le sombre les lit telles quelles. */
+		--kanban-syndic: #f59e0b;
+		--kanban-fournisseur: #f97316;
+		--kanban-termine: #22c55e;
+		--kanban-annule: #9ca3af;
 		/* Ombres noires, plus nettes ; voile de modale plus dense. */
 		--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
 		--shadow: 0 6px 18px rgba(0, 0, 0, 0.55);

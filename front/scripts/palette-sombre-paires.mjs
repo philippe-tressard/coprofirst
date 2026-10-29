@@ -20,23 +20,16 @@
 
 const T = 4.5;
 const M = 3;
-/** Le ticket qui suit les contrastes du thème CLAIR sous l'AA. */
-const CLAIR = '#2296';
-
-const serie = (i, clair) => [
-	`Série ${i} sur carte`,
-	`var(--serie-${i})`,
-	'var(--color-surface)',
-	M,
-	clair,
+/**
+ *  Une marque des répartitions (`BarresCroisees`) : sa tranche sur la piste de la
+ *  barre, et sa pastille de légende sur la page.
+ */
+const marque = (jeton, nom) => [
+	[`${nom} sur la piste`, `var(--${jeton})`, 'var(--color-neutre-fond)', M],
+	[`${nom} sur la page`, `var(--${jeton})`, 'var(--color-bg)', M],
 ];
-const palier = (i, clair) => [
-	`Palier ${i} sur carte`,
-	`var(--palier-${i})`,
-	'var(--color-surface)',
-	M,
-	clair,
-];
+const serie = (i) => marque(`serie-${i}`, `Série ${i}`);
+const palier = (i) => marque(`palier-${i}`, `Palier ${i}`);
 const FILS = [
 	'rouge',
 	'ambre',
@@ -50,15 +43,27 @@ const FILS = [
 	'rose',
 	'inconnu',
 ];
-/** Une étape du kanban : son texte sur sa teinte à 10,2 % (`kanban.css`, `.kb-col-count`). */
-const etape = (nom, clair) => [
-	`Étape « ${nom} » du kanban`,
-	`var(--kanban-${nom})`,
-	`color-mix(in srgb, var(--kanban-${nom}) 10.2%, var(--color-surface))`,
-	T,
-	clair,
+/**
+ *  Une étape du kanban, en TEXTE : son intitulé sur l'en-tête de colonne (le fond
+ *  de page), et son compte sur sa teinte à 10,2 % posée sur ce fond (`kanban.css`,
+ *  `.kb-col-head`, `.kb-col-count`).
+ */
+const etape = (nom) => [
+	[`Étape « ${nom} » du kanban`, `var(--kanban-${nom})`, 'var(--color-bg)', T],
+	[
+		`Compte de l’étape « ${nom} »`,
+		`var(--kanban-${nom})`,
+		`color-mix(in srgb, var(--kanban-${nom}) 10.2%, var(--color-bg))`,
+		T,
+	],
 ];
-const enDessousAuClair = `les séries et les paliers clairs portent leur information par la légende et le nombre (socle.css) — ${CLAIR}`;
+/** Une pastille de périmètre : le blanc sur sa teinte (`kanban.css`, `.kb-tag`). */
+const pastille = (teinte) => [
+	`Pastille de périmètre ${teinte}`,
+	'var(--color-sur-plein)',
+	`var(--teinte-${teinte})`,
+	T,
+];
 
 export const PAIRES = [
 	['Texte courant sur la page', 'var(--color-text)', 'var(--color-bg)', T],
@@ -91,14 +96,7 @@ export const PAIRES = [
 		'var(--color-primary-plein)',
 		T,
 	],
-	['Badge succès', 'var(--color-success-texte)', 'var(--color-success-fond)', T],
-	[
-		'Toast succès',
-		'var(--color-success)',
-		'var(--color-success-fond)',
-		T,
-		`4,44 : le toast écrit le jeton d'état, pas son dérivé -texte — ${CLAIR}`,
-	],
+	['Badge et toast succès', 'var(--color-success-texte)', 'var(--color-success-fond)', T],
 	['Badge avertissement', 'var(--color-warning-texte)', 'var(--color-warning-fond)', T],
 	['Toast erreur', 'var(--color-danger)', 'var(--color-danger-fond)', T],
 	['Message d’erreur de champ', 'var(--color-danger)', 'var(--color-surface)', T],
@@ -116,32 +114,12 @@ export const PAIRES = [
 	['Liseré de danger', 'var(--color-danger)', 'var(--color-surface)', M],
 	['Liseré d’info', 'var(--color-info)', 'var(--color-surface)', M],
 	['Icône vert Parc', 'var(--color-secondary)', 'var(--color-surface)', M],
-	[
-		'Icône or',
-		'var(--color-accent)',
-		'var(--color-surface)',
-		M,
-		`2,61 : l'or de la charte — ${CLAIR}`,
-	],
-	serie(1),
-	serie(2),
-	serie(3, enDessousAuClair),
-	serie(4, enDessousAuClair),
-	serie(5, enDessousAuClair),
-	serie(6),
-	serie(7),
-	serie(8),
-	palier(1),
-	palier(2),
-	palier(3, enDessousAuClair),
-	palier(4, enDessousAuClair),
+	['Icône or', 'var(--color-accent)', 'var(--color-surface)', M],
+	...[1, 2, 3, 4, 5, 6, 7, 8].flatMap(serie),
+	...[1, 2, 3, 4].flatMap(palier),
 	...FILS.map((f) => [`Fil : ${f}`, `var(--fil-${f})`, `var(--fil-${f}-fond)`, T]),
-	etape('ag', `la teinte du périmètre n°6 en texte — ${CLAIR}`),
-	etape('cs', `la teinte du périmètre n°2 en texte — ${CLAIR}`),
-	etape('syndic', `la teinte du périmètre n°4 en texte — ${CLAIR}`),
-	etape('fournisseur', `la teinte du périmètre n°5 en texte — ${CLAIR}`),
-	etape('termine', `la teinte du périmètre n°3 en texte — ${CLAIR}`),
-	etape('annule', `un gris clair en texte — ${CLAIR}`),
+	...['ag', 'cs', 'syndic', 'fournisseur', 'termine', 'annule'].flatMap(etape),
+	...[...Array.from({ length: 13 }, (_, i) => i + 1), 'copropriete'].map(pastille),
 ];
 
 /**
@@ -166,7 +144,6 @@ export const FAMILLES = [
 const APLAT_DE_PERIMETRE =
 	'aplat de pastille sous un texte --color-sur-plein : le couple ne dépend pas du thème';
 export const IDENTIQUES = {
-	'--color-accent': 'l’or de la charte tient 6,1:1 sur la surface sombre',
 	'--color-text-inverse': 'texte clair sur l’aplat primaire, qui reste foncé',
 	'--color-sur-plein': 'texte sur un aplat, qui reste foncé au sombre',
 	'--color-sur-voile': 'texte sur un voile noir, sombre dans les deux thèmes',
@@ -176,5 +153,4 @@ export const IDENTIQUES = {
 			(n) => [n, APLAT_DE_PERIMETRE],
 		),
 	),
-	'--kanban-annule': 'gris moyen : 6,3:1 sur la carte sombre, sans retouche',
 };

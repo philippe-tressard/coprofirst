@@ -223,7 +223,7 @@
 
 	.toast-success {
 		background: var(--color-success-fond);
-		color: var(--color-success);
+		color: var(--color-success-texte);
 		border-left: 4px solid var(--color-success);
 	}
 	.toast-error {

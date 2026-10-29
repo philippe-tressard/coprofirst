@@ -102,10 +102,7 @@ process.exitCode = controler({
 		['.a { --avatar-bg: var(--color-surface); }', 0],
 		['.a { background-color: var(--color-surface); }', 0],
 	],
-	exceptions: {
-		'src/lib/components/EnteteAccueil.svelte':
-			'initiales de l’avatar sur un voile posé sur le DÉGRADÉ du héros : la surface y fait 6,1:1 au sombre, le blanc 2,6:1 (mesuré à l’écran, S4a) — l’écart est au clair (2,8:1), #2296',
-	},
+	exceptions: {},
 	ok: 'Aplats : aucun texte ni trait clair écrit avec la valeur d’un fond',
 	ko: 'texte(s) ou trait(s) clair(s) posé(s) sur un aplat sans le jeton qui convient',
 	conseil:
