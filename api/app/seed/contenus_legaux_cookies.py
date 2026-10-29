@@ -27,5 +27,7 @@ COOKIES = (
     "d'authentification (<code>access_token</code>, <code>refresh_token</code>), définis en "
     "<code>HttpOnly; Secure; SameSite=Strict</code>, et un cookie de <strong>préférence "
     "d'affichage</strong> (<code>theme</code>), qui retient sur l'appareil le thème choisi "
-    "dans le profil — automatique, clair ou sombre — et ne contient rien d'autre."
+    "dans le profil — automatique, clair ou sombre. Il n'est posé que lorsque vous faites "
+    "ce choix et ne contient rien d'autre\xa0; préférence de présentation que vous demandez, "
+    "il n'est pas soumis à votre consentement."
 )
