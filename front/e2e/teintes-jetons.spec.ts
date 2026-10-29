@@ -43,8 +43,8 @@ test.describe('Les teintes désignées par un jeton', () => {
 		expect(couleurs, 'cas zéro : la palette n’est pas vide').toHaveLength(14);
 		expect(couleurs, 'une variable sans valeur rend transparent').not.toContain('rgba(0, 0, 0, 0)');
 		expect(new Set(couleurs).size, 'quatorze teintes, toutes distinctes').toBe(14);
-		//  Les valeurs d'avant le lot : la première, le renvoi de la treizième, le gris.
-		expect(couleurs[0]).toBe('rgb(239, 68, 68)'); //  #ef4444
+		//  La première (assombrie pour porter le blanc, #2296), le renvoi de la treizième, le gris.
+		expect(couleurs[0]).toBe('rgb(222, 49, 54)'); //  #de3136
 		expect(couleurs[12]).toBe('rgb(161, 98, 7)'); //  #a16207, par `--color-jaune-texte`
 		expect(couleurs[13]).toBe('rgb(107, 114, 128)'); //  #6b7280
 	});
@@ -72,8 +72,8 @@ test.describe('Les teintes désignées par un jeton', () => {
 		});
 
 		expect(rendu.ag).toBe(rendu.palette);
-		expect(rendu.ag).toBe('rgb(139, 92, 246)'); //  #8b5cf6
-		expect(rendu.annule).toBe('rgb(156, 163, 175)'); //  #9ca3af
+		expect(rendu.ag).toBe('rgb(114, 64, 218)'); //  #7240da
+		expect(rendu.annule).toBe('rgb(94, 100, 111)'); //  #5e646f
 		expect(rendu.fil).toBe('rgb(185, 28, 28)'); //  #b91c1c
 		expect(rendu.orange).toBe('rgb(194, 65, 12)'); //  #c2410c
 	});

@@ -13,6 +13,8 @@
  *  Un écart qui existe aussi au CLAIR n'est pas un défaut du sombre : il se
  *  corrige dans son ticket, et il se déclare ici avec lui, sur l'écran où il se
  *  voit. Le test de cet écran échoue s'il ne le relève plus — on le retire alors.
+ *  Les deux de #2296 (pastilles de périmètre, colonnes vides repliées) sont
+ *  corrigés : la même zone est relevée au CLAIR, plus bas, sans aucun écart.
  */
 import { expect, simulerApi, test, attendreHydratation } from './aides';
 import { forcerTheme, releverContrastes } from './contraste-ecran';
@@ -21,15 +23,6 @@ import { AFFAIRE, ETAT_SYNTHESE, FIL } from './affaire-close-donnees';
 
 const ACCUEIL = 'l’accueil : fil, Épinglé et kanban';
 const DEPLIEE = 'une affaire dépliée, ses étapes et sa synthèse';
-
-//  Blanc sur la teinte de périmètre (`--teinte-4`, #f59e0b : 2,15:1) — les aplats
-//  de périmètre sont identiques dans les deux thèmes (S3).
-const PASTILLE_PERIMETRE =
-	'#2296 — texte blanc sur les teintes vives de périmètre, au clair comme au sombre';
-//  `.kb-col-vide` atténue la colonne repliée à 55 % : 1,98 et 2,27:1 au clair,
-//  2,63 et 3,28 au sombre. Une seule cause, l'opacité, et elle se tranche au clair.
-const COLONNE_REPLIEE =
-	'#2296 — colonne vide repliée du kanban d’accueil, atténuée à 55 % dans les deux thèmes';
 
 /**
  *  Un écart : l'écran où il se voit, ce qu'il touche (un `contraste` ou une
@@ -45,22 +38,6 @@ type Ecart = {
 	profil?: string;
 };
 const ECARTS: Ecart[] = [
-	...['le kanban', ACCUEIL].flatMap((ecran): Ecart[] => [
-		{ ecran, genre: 'contraste', motif: /span\.kb-tag « /, raison: PASTILLE_PERIMETRE },
-		{
-			ecran,
-			genre: 'surface',
-			motif: /span\.kb-tag — fond/,
-			raison: `${PASTILLE_PERIMETRE} : l’aplat vif reste clair au sombre, voulu (S3)`,
-		},
-	]),
-	{
-		ecran: ACCUEIL,
-		genre: 'contraste',
-		motif: /kb-col-vide > button[^>]* > span\.kb-col-(label|vide-mot) « /,
-		raison: COLONNE_REPLIEE,
-		profil: 'bureau',
-	},
 	{
 		ecran: DEPLIEE,
 		genre: 'surface',
@@ -284,37 +261,53 @@ const ECRANS: {
 	{ titre: 'les sondages', route: '/sondages', temoin: '.ec-tags' },
 ];
 
-test.describe('@sombre listes et cartes', () => {
-	for (const e of ECRANS) {
-		test(`${e.titre} : lisible au sombre`, async ({ page }, info) => {
-			await simuler(page);
-			await page.emulateMedia({ reducedMotion: 'reduce' });
-			await page.goto(e.route);
-			await attendreHydratation(page);
-			await forcerTheme(page, 'sombre');
-			await e.geste?.(page);
-			//  Cas zéro : l'écran a rendu ce qu'on vient mesurer.
-			await expect(page.locator(e.temoin).first()).toBeVisible();
-			await page.mouse.move(0, 0);
+/** Relève un écran au thème donné et confronte le relevé aux écarts déclarés. */
+async function releverEcran(
+	page: Page,
+	e: (typeof ECRANS)[number],
+	theme: 'clair' | 'sombre',
+	ecarts: Ecart[],
+) {
+	await simuler(page);
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.goto(e.route);
+	await attendreHydratation(page);
+	await forcerTheme(page, theme);
+	await e.geste?.(page);
+	//  Cas zéro : l'écran a rendu ce qu'on vient mesurer.
+	await expect(page.locator(e.temoin).first()).toBeVisible();
+	await page.mouse.move(0, 0);
 
-			const { contrastes, surfacesClaires, mesures } = await releverContrastes(page);
-			expect(mesures, 'aucun texte mesuré : le relevé est passé à vide').toBeGreaterThan(0);
-			const ecarts = ECARTS.filter(
-				(x) => x.ecran === e.titre && (!x.profil || x.profil === info.project.name),
-			);
-			const releve = { contraste: contrastes, surface: surfacesClaires };
-			for (const genre of ['contraste', 'surface'] as const) {
-				const declares = ecarts.filter((x) => x.genre === genre);
-				expect(
-					releve[genre].filter((l) => !declares.some((x) => x.motif.test(l))),
-					genre === 'contraste' ? 'texte(s) sous l’AA au sombre' : 'surface(s) restée(s) claire(s)',
-				).toEqual([]);
-				for (const x of declares)
-					expect(
-						releve[genre].some((l) => x.motif.test(l)),
-						`écart déclaré qui ne sert plus — le retirer : ${x.raison}`,
-					).toBe(true);
-			}
-		});
+	const { contrastes, surfacesClaires, mesures } = await releverContrastes(page);
+	expect(mesures, 'aucun texte mesuré : le relevé est passé à vide').toBeGreaterThan(0);
+	//  Une surface claire n'est une faute qu'au sombre.
+	const releve = { contraste: contrastes, surface: theme === 'sombre' ? surfacesClaires : [] };
+	for (const genre of ['contraste', 'surface'] as const) {
+		const declares = ecarts.filter((x) => x.genre === genre);
+		expect(
+			releve[genre].filter((l) => !declares.some((x) => x.motif.test(l))),
+			genre === 'contraste' ? `texte(s) sous l’AA au ${theme}` : 'surface(s) restée(s) claire(s)',
+		).toEqual([]);
+		for (const x of declares)
+			expect(
+				releve[genre].some((l) => x.motif.test(l)),
+				`écart déclaré qui ne sert plus — le retirer : ${x.raison}`,
+			).toBe(true);
 	}
+}
+
+const ecartsDe = (ecarts: Ecart[], ecran: string, profil: string) =>
+	ecarts.filter((x) => x.ecran === ecran && (!x.profil || x.profil === profil));
+
+test.describe('@sombre listes et cartes', () => {
+	for (const e of ECRANS)
+		test(`${e.titre} : lisible au sombre`, ({ page }, info) =>
+			releverEcran(page, e, 'sombre', ecartsDe(ECARTS, e.titre, info.project.name)));
+});
+
+/*  **Et au CLAIR** (#2296) : les mêmes écrans, le même relevé. Le thème clair
+    tient l'AA à l'écran comme dans la table des paires — aucun écart déclaré. */
+test.describe('@clair listes et cartes', () => {
+	for (const e of ECRANS)
+		test(`${e.titre} : lisible au clair`, ({ page }) => releverEcran(page, e, 'clair', []));
 });

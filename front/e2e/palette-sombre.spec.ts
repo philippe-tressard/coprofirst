@@ -108,7 +108,7 @@ test.describe('La palette sombre', () => {
 			champ: 'rgb(122, 136, 156)', //  #7a889c : la bordure d'un champ, à 3:1
 			surAccent: 'rgb(26, 26, 46)',
 			survolSucces: 'rgb(39, 106, 70)', //  l'aplat à 85 % sur noir
-			syndic: 'rgb(245, 158, 11)', //  #f59e0b, par `--teinte-4`
+			syndic: 'rgb(127, 93, 5)', //  #7f5d05, par `--teinte-4` (#2296)
 		});
 		//  La bordure d'un champ a une transition (`--duree-geste`) : on attend qu'elle se pose.
 		await expect
@@ -117,7 +117,7 @@ test.describe('La palette sombre', () => {
 				champ: 'rgb(101, 128, 163)', //  #6580a3
 				surAccent: 'rgb(26, 26, 46)', //  identique : texte sur l'or
 				survolSucces: 'rgb(39, 106, 70)', //  dérivé de l'aplat sombre, inchangé
-				syndic: 'rgb(245, 158, 11)', //  identique : la teinte tient 4,5 au sombre
+				syndic: 'rgb(245, 158, 11)', //  #f59e0b : la teinte vive d'avant #2296, gardée au sombre
 			});
 	});
 });

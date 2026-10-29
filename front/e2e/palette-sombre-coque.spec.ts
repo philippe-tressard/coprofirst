@@ -12,10 +12,10 @@
  *  ## Ce que le parcours a trouvé (29/10/2026)
  *
  *  Rien à corriger dans la coque : S0 à S3 avaient porté chaque couleur par son
- *  jeton. Le seul écart relevé à l'écran est au CLAIR — les initiales blanches
- *  de l'avatar sur le voile clair de l'en-tête d'accueil, 2,8:1 — et relève de
- *  #2296 ; au sombre elles font 6,1:1. L'en-tête d'accueil est un dégradé : le
- *  relevé ne le mesure pas (`nonMesures`), il ne le compte pas conforme.
+ *  jeton. Le seul écart relevé à l'écran était au CLAIR — les initiales blanches
+ *  de l'avatar sur le voile clair de l'en-tête d'accueil, 2,8:1 —, corrigé par
+ *  #2296 : l'avatar y garde son aplat Bleu Seine. L'en-tête d'accueil est un
+ *  dégradé : le relevé ne le mesure pas (`nonMesures`), il ne le compte pas conforme.
  *
  *  ## Ce qui reste aux autres zones de S4
  *
