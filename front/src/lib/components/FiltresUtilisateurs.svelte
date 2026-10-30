@@ -12,6 +12,7 @@
   Le FILTRAGE reste dans la page : ce composant ne dit que ce qu'on a choisi.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import PastilleDeroulante from '#lib/components/PastilleDeroulante.svelte';
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
 	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
@@ -70,8 +71,8 @@
 		libelleDevant
 	/>
 	<p class="aide">
-		{affiches} / {total} utilisateur{total > 1 ? 's' : ''}
-		&nbsp;·&nbsp;
-		{nbCS} membre{nbCS > 1 ? 's' : ''} CS
+		{affiches} / {total} utilisateur{total > 1 ? 's' : ''}{SEPARATEUR.point}{nbCS} membre{nbCS > 1
+			? 's'
+			: ''} CS
 	</p>
 </ReglagesListe>

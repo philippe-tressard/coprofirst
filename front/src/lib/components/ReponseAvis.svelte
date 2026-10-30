@@ -6,6 +6,7 @@
   voisins, une seule réponse, celle de qui gère le site.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import PiedFormulaire from './PiedFormulaire.svelte';
 	import { avis as avisApi, type Avis } from '#lib/api/index.ts';
 	import { fmtDate } from '#lib/date.ts';
@@ -56,7 +57,7 @@
 	<div class="avis-reponse">
 		<p class="avis-reponse-titre">
 			Réponse de l'équipe{#if avis.reponse_le}<span class="avis-reponse-date"
-					>&nbsp;· {fmtDate(avis.reponse_le)}</span
+					>{SEPARATEUR.point}{fmtDate(avis.reponse_le)}</span
 				>{/if}
 		</p>
 		<p class="avis-reponse-texte">{avis.reponse}</p>

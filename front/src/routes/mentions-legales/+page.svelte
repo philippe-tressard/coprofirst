@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import PageLegale from '#lib/components/PageLegale.svelte';
 	import {
 		LICENCE_NOM,
@@ -35,9 +36,10 @@
 		</p>
 	</section>
 
-	<svelte:fragment slot="pied">
-		&nbsp;·&nbsp;
-		<a href={sourceEnService} target="_blank" rel="noopener noreferrer">{NOM_PLATEFORME}</a>
+	<svelte:fragment slot="pied"
+		>{SEPARATEUR.point}<a href={sourceEnService} target="_blank" rel="noopener noreferrer"
+			>{NOM_PLATEFORME}</a
+		>
 	</svelte:fragment>
 </PageLegale>
 

@@ -13,6 +13,7 @@
   montrer, là où l'on vient surveiller.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { onMount } from 'svelte';
 	import SectionFormulaire from './SectionFormulaire.svelte';
 	import EtatListe from './EtatListe.svelte';
@@ -123,7 +124,7 @@
 											? ` dont ${fmtNombre(l.jetons_cache)} en cache`
 											: ''}, {fmtNombre(l.jetons_sortie)} produits)</span
 									>
-									{#if l.cout_usd !== null}· {dollars(Number(l.cout_usd))}{/if}
+									{#if l.cout_usd !== null}{SEPARATEUR.point}{dollars(Number(l.cout_usd))}{/if}
 								</span>
 								{#if l.erreurs}<span class="badge badge-red">{fmtNombre(l.erreurs)} en échec</span
 									>{/if}

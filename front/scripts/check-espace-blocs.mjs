@@ -34,15 +34,35 @@
  *  Une espace en tête de branche est retirée, même écrite `&#32;` ; seule
  *  `&nbsp;`, insécable, y survit — et `{' '}` est refusé par ESLint
  *  (`svelte/no-useless-mustaches`). L'espace sécable se pose donc AVANT le
- *  bloc, où Svelte la garde entre deux nœuds : `{prenom} {#if lot}—&nbsp;{lot}{/if}`.
- *  Devant un séparateur, la forme du dépôt est `{#if x}&nbsp;· …`. Un collage
- *  voulu (l'astérisque d'un libellé requis) s'écrit sur la ligne du bloc.
+ *  bloc, où Svelte la garde entre deux nœuds : `{prenom} {#if lot}{lot}{/if}`.
+ *  Devant un séparateur, c'est la constante de `#lib/separateurs` (ci-dessous).
+ *  Un collage voulu (l'astérisque d'un libellé requis) s'écrit sur la ligne du bloc.
  *
  *  Ce qu'il laisse : un bloc précédé d'une espace (elle subsiste, entre deux
  *  nœuds), un bloc en tête d'élément (`<td>{#if …}` : rien avant), une branche
  *  qui commence par un élément de bloc, et `{:else}`, qu'on ne juge qu'avec son
  *  `{#if}` — limite connue : une branche `{:else}` d'un `{#if}` collé n'est pas
  *  vue. Les commentaires, `<script>` et `<style>` sont blanchis.
+ *
+ *  ## Le séparateur qui finit une ligne (#2360, 30/10/2026)
+ *
+ *  Même cause, autre symptôme : `{#if x}&nbsp;· {x}{/if}` — l'espace d'avant le
+ *  séparateur ne pouvait s'écrire qu'insécable — ne laisse couper qu'APRÈS lui,
+ *  et la ligne finit sur « · ». La règle du site : espace sécable avant,
+ *  insécable après, écrites par `{SEPARATEUR.point|tiret|fleche}`
+ *  (`#lib/separateurs`), dont l'espace part avec sa branche. Le contrôle refuse :
+ *
+ *  - **collé avant** : `&nbsp;` juste devant un séparateur suivi d'une espace
+ *    sécable (`&nbsp;· x`, et `&nbsp;·&nbsp;` suivi d'un retour à la ligne) ;
+ *  - **en tête de branche** : `{#if x}· x`, `{:else}— x` — Svelte retire
+ *    l'espace d'avant, le séparateur colle au mot qui précède ;
+ *  - **recopié** : `·&nbsp;` écrit à la main — la forme juste, mais une seconde
+ *    écriture de la constante.
+ *
+ *  Ce qu'il laisse : `&nbsp;·&nbsp;` collé des deux côtés (la ligne ne s'y coupe
+ *  pas), et — limite connue, mesurée à l'écran plutôt que convertie en bloc —
+ *  le séparateur entre deux espaces sécables du texte courant (` · `), et celui
+ *  qui ouvre un élément en ligne (`<span>· x</span>`) — #2362.
  *
  *  Lancer : node scripts/check-espace-blocs.mjs [--selftest]
  */
@@ -61,6 +81,21 @@ const OUVERTURE = new RegExp(
 //  Fermeture collée : un retour à la ligne avant `{/if}`, puis du texte, une
 //  expression ou un autre bloc juste après.
 const FERMETURE = /(?<=\S)[ \t]*\r?\n\s*\{\/(?:if|key)\}(?=[^\s<{]|\{[^/:])/g;
+
+/** Les séparateurs d'une phrase (#2360). */
+const SEP = '[—·→]';
+//  Une espace sécable, puis ce qu'il sépare : du texte, une expression, une balise
+//  en ligne. Un tiret seul devant `{:else}` est une valeur absente, pas un séparateur.
+const PUIS_UN_MOT = String.raw`(?=\s+(?:[^\s<{]|\{[^#/:]|<(?:${EN_LIGNE})\b))`;
+//  Collé avant : `&nbsp;` devant, une espace sécable après (au besoin après `&nbsp;`).
+const COLLE_AVANT = new RegExp(String.raw`&nbsp;${SEP}(?:&nbsp;)?${PUIS_UN_MOT}`, 'g');
+//  En tête de branche : l'espace d'avant est retirée par Svelte.
+const TETE_DE_BRANCHE = new RegExp(
+	String.raw`\{(?:#(?:if|each|key)|:else)\b[^}]*\}\s*${SEP}${PUIS_UN_MOT}`,
+	'g',
+);
+//  Recopié : séparateur puis insécable, écrit à la main.
+const RECOPIE = new RegExp(String.raw`(?<!&nbsp;)${SEP}&nbsp;`, 'g');
 
 /** Blanchit le contenu de `<script>` et `<style>`, longueurs et lignes conservées. PURE. */
 function balisageSeul(texte) {
@@ -90,6 +125,9 @@ export function fautes(source) {
 		if (!apresBaliseOuvrante(texte, m.index)) acc.push(ligne(m.index));
 	}
 	for (const m of texte.matchAll(FERMETURE)) acc.push(ligne(m.index) + 1);
+	for (const motif of [COLLE_AVANT, TETE_DE_BRANCHE, RECOPIE]) {
+		for (const m of texte.matchAll(motif)) acc.push(ligne(m.index + m[0].length - 1));
+	}
 	return acc;
 }
 
@@ -97,8 +135,8 @@ const cas = [
 	//  Le défaut du ticket, tel qu'il était écrit.
 	['<h1>{prenom}{#if lot}\n\t<span>— {lot}</span>{/if}</h1>', 1],
 	['<h1>{a}{/if}{#if roles}\n\t<span>· {roles}</span>{/if}</h1>', 1],
-	['Vient du <strong>{o}</strong>{#if ou}\n\t— se change dans {ou}{/if}.', 1],
-	['v{x}{#if y}\n\t· mise à jour{/if}', 1],
+	['Vient du <strong>{o}</strong>{#if ou}\n\tqui se change dans {ou}{/if}.', 1],
+	['v{x}{#if y}\n\tmise à jour{/if}', 1],
 	['{titre}{#if requis}\n\t*{/if}', 1],
 	['<Icon />{#if n}\n\t({n}){/if}', 1],
 	['{#each l as x}{x}{/each}{#each m as y}\n\ttexte{/each}', 1],
@@ -109,15 +147,26 @@ const cas = [
 	['{#if a}\n\t-\n{/if}{#if b}2e étage{/if}', 1],
 	//  Une expression en tête de branche colle aussi.
 	['{a}{#if b}\n\t{c}{/if}', 1],
+	//  Le séparateur qui finit une ligne (#2360) : la forme du ticket, telle qu'écrite.
+	['v{x}{#if y}&nbsp;· mise à jour{/if}', 1],
+	['{n}/{m}{#if t}&nbsp;· {t}{/if}', 1],
+	['© {an}\n&nbsp;·&nbsp;\n<a href="/">site</a>', 1],
+	['texte\n{#if a}\n\t· b{/if}', 1],
+	['{#if a}{x}{:else}— {y}{/if}', 1],
+	['{#each l as x}→ {x}{/each}', 1],
+	['<h1>{prenom}\n{#if lot}<span>—&nbsp;{lot}</span>{/if}</h1>', 1],
 	//  Les formes justes.
-	['<h1>{prenom}{#if lot}&nbsp;<span>— {lot}</span>{/if}</h1>', 0],
-	['v{x}{#if y}&nbsp;· mise à jour{/if}', 0],
+	['<h1>{prenom}{#if lot}<span>{SEPARATEUR.tiret}{lot}</span>{/if}</h1>', 0],
+	['{n}/{m}{#if t}{SEPARATEUR.point}{t}{/if}', 0],
+	['v{x}{#if e}&nbsp;·&nbsp;<a href="/">e</a>{/if}', 0],
+	['<a href="/">GitHub&nbsp;→</a>', 0],
 	['Fixe. {#if y}Relues le {y}{/if}', 0],
-	['<h1>{prenom}\n{#if lot}<span>—&nbsp;{lot}</span>{/if}</h1>', 0],
 	['{titre}{#if requis}*{/if}', 0],
-	['texte\n{#if a}\n\t· b{/if}', 0],
-	['<td>{#if a}\n\t— b{/if}</td>', 0],
-	['<span class="x">{#if a}\n\t— b{/if}</span>', 0],
+	['<td>{#if a}\n\tb{/if}</td>', 0],
+	['<span class="x">{#if a}\n\tb{/if}</span>', 0],
+	['<td>{#if vide}\n\t—\n{:else}{v}{/if}</td>', 0],
+	//  Limite connue (#2362) : le texte courant, mesuré à l’écran plutôt que converti.
+	['{a} · {b}', 0],
 	['{a}{#if b}\n\t<div>bloc</div>{/if}', 0],
 	['{a}{#if b}\n\t{#if c}x{/if}{/if}', 0],
 	['{#if a}\n\tfoo\n{/if}\nbar', 0],
@@ -133,9 +182,9 @@ process.exit(
 		extensions: ['.svelte'],
 		fautes,
 		cas,
-		ok: 'Aucun bloc {#if} ne mange l’espace qui le sépare du texte voisin',
-		ko: 'bloc(s) collé(s) au texte voisin par un retour à la ligne que Svelte 5 retire',
+		ok: 'Aucun bloc {#if} ne mange l’espace voisine, aucun séparateur ne finit une ligne',
+		ko: 'bloc(s) collé(s) au texte voisin, ou séparateur(s) laissé(s) en bout de ligne',
 		conseil:
-			"Poser l'espace AVANT le bloc (texte {#if x}…), ou &nbsp; en tête de branche ; un collage voulu s'écrit sur la ligne du bloc.",
+			"Poser l'espace AVANT le bloc (texte {#if x}…) ; un collage voulu s'écrit sur la ligne du bloc. Un séparateur s'écrit {SEPARATEUR.point|tiret|fleche} (#lib/separateurs) : sécable avant, insécable après.",
 	}),
 );

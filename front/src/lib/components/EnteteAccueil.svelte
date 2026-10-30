@@ -8,6 +8,7 @@
   logement —, la page gardant le chargement.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import type { MonLot } from '#lib/api/index.ts';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import Icon from '#lib/components/Icon.svelte';
@@ -45,7 +46,7 @@
 		for (const r of ['conseil_syndical', 'admin']) {
 			if (allRoles.has(r)) labels.push(libelleRole(r));
 		}
-		return labels.join(' ·\u00a0');
+		return labels.join(SEPARATEUR.point);
 	})();
 
 	$: lotLabel = libelleLogement(lots, $currentUser);
@@ -59,8 +60,8 @@
 				<h1 class="hero-greeting">
 					{salutation}
 					{$currentUser?.prenom}
-					{#if lotLabel}<span class="hero-lot-inline">—&nbsp;{lotLabel}</span>{/if}
-					{#if roleLabels}<span class="hero-role-inline">·&nbsp;{roleLabels}</span>{/if}
+					{#if lotLabel}<span class="hero-lot-inline">{SEPARATEUR.tiret}{lotLabel}</span>{/if}
+					{#if roleLabels}<span class="hero-role-inline">{SEPARATEUR.point}{roleLabels}</span>{/if}
 				</h1>
 			</div>
 			<!-- Raccourci vers le profil. Sans photo, la pastille porte un
