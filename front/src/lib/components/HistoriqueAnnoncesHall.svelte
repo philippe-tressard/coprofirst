@@ -207,8 +207,9 @@
 						rel="noopener"
 						on:click|stopPropagation
 					>
-						<IconeAction icone="file-text" /> PDF{#if annonce.taille_octets}
-							<span class="ah-poids">{ahPoids(annonce.taille_octets)}</span>{/if}
+						<IconeAction icone="file-text" /> PDF {#if annonce.taille_octets}<span class="ah-poids"
+								>{ahPoids(annonce.taille_octets)}</span
+							>{/if}
 					</a>
 					<button
 						class="btn-icon"

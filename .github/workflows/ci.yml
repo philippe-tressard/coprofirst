@@ -1447,6 +1447,14 @@ jobs:
         working-directory: front
         run: npm run lint:alias-lib
 
+      # Svelte 5 retire l'espace en tête et en fin de chaque branche d'un bloc :
+      # un `{#if}` collé au texte d'avant, dont Prettier a renvoyé la branche à la
+      # ligne, la colle au mot précédent (« Prénom— Bât. 4 », #2356). L'espace
+      # voulue s'écrit `{' '}` ; le contrôle refuse la forme qui la perd.
+      - name: Aucun bloc {#if} ne mange l'espace du texte voisin
+        working-directory: front
+        run: npm run lint:espace-blocs
+
       # Le nom d'une section de formulaire écrit DEUX FOIS à l'écran : la section
       # le pose en petites capitales, et le champ qu'elle contient le repose en
       # dessous — `FichiersUpload`, `PerimetrePicker` et `DestinatairePicker`

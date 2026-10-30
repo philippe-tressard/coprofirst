@@ -82,8 +82,8 @@
 		<ul class="alertes">
 			{#each fiche.alertes as a (a.code)}
 				<li>
-					<strong>{a.libelle}</strong> — {a.message}{#if a.grave}
-						<span class="badge badge-red">courriel à l’opérateur</span>{/if}
+					<strong>{a.libelle}</strong> — {a.message}
+					{#if a.grave}<span class="badge badge-red">courriel à l’opérateur</span>{/if}
 				</li>
 			{/each}
 		</ul>
@@ -175,8 +175,8 @@
 		<dd>{fmtDatetime(fiche.dernier_rapport_le)}</dd>
 		<dt>Version</dt>
 		<dd>
-			v{r.identite.version_logicielle}{#if r.identite.derniere_mise_a_jour}
-				· dernière mise à jour : {r.identite.derniere_mise_a_jour}{/if}
+			v{r.identite.version_logicielle}{#if r.identite.derniere_mise_a_jour}&nbsp;· dernière mise à
+				jour : {r.identite.derniere_mise_a_jour}{/if}
 		</dd>
 		<dt>Hébergement</dt>
 		<dd>
