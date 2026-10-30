@@ -18,24 +18,29 @@ pas un avis juridique ; les fondements des durées sont à valider avec le syndi
 from app.utils.conservation_affaires import TYPES
 
 
+#: Comment la phrase nomme chaque type — le nombre d'années, lui, vient de `TYPES`.
+_EN_CLAIR = {
+    "breves": "les actualités et questions",
+    "entretien": "les pannes et l’entretien",
+    "travaux": "les travaux et sinistres",
+}
+
+
 def _duree(type_conservation) -> str:
-    return (
-        f"<strong>{type_conservation.exercices}\xa0exercices</strong> pour "
-        f"{type_conservation.libelle.lower()} ({type_conservation.fondement})"
-    )
+    return f"{type_conservation.exercices} ans pour {_EN_CLAIR[type_conservation.code]}"
 
 
-#: L'entrée de la section « Durée de conservation ».
+#: L'entrée de la section « Durée de conservation » — en langage courant, la rigueur
+#: (exercices, fondements) se lit dans `DUREES` et à l'écran d'administration.
 CONSERVATION_AFFAIRES = (
-    "<li>Affaires (tickets, actualités, questions)\xa0: une affaire close est conservée, avec "
-    "son texte, un nombre d'<strong>exercices complets</strong> après celui de sa clôture — "
-    + " ; ".join(_duree(t) for t in TYPES)
-    + ". L'exercice est l'année civile, sauf réglage de la copropriété. Au-delà, une affaire est "
-    "conservée <strong>sans ses auteurs ni ses pièces jointes</strong>\xa0; celles-ci sont "
-    "archivées hors ligne par le responsable du site, sans limite de durée. L'archive ne porte "
-    "aucun nom, mais une photo peut montrer des personnes\xa0; les textes ne sont pas réécrits. "
-    "Pour faire retirer un passage ou une photo qui vous identifie, écrivez à l'adresse "
-    "indiquée au point\xa01.</li>"
+    "<li><strong>Affaires (pannes, travaux, questions…)</strong>\xa0: quand une affaire est "
+    "terminée, nous la gardons un certain temps, puis nous retirons les photos et documents "
+    "joints ainsi que le nom des personnes concernées. Le texte de l’affaire reste. Les durées, "
+    "comptées en années civiles complètes après l’année de clôture\xa0: "
+    + ", ".join(_duree(t) for t in sorted(TYPES, key=lambda t: t.exercices))
+    + ". Les photos et documents retirés sont mis de côté hors ligne par le responsable du "
+    "site. Pour faire retirer un passage ou une photo qui vous identifie, écrivez à l’adresse "
+    "de contact du site.</li>"
 )
 
 #: L'entrée devant laquelle elle s'insère — telle que le gabarit la porte.

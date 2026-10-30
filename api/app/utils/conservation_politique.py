@@ -15,6 +15,9 @@ l'appelle, au passage de la clé d'activation à « 1 ».
 
 from __future__ import annotations
 
+import re
+from html import unescape
+
 from sqlmodel import Session
 
 from app.models.core import ConfigSite
@@ -32,9 +35,19 @@ def _texte_servi(session: Session) -> str:
     return ligne.valeur if ligne else DEFAULT_LEGAL[CLE]
 
 
+def _en_clair(html: str) -> str:
+    """Le texte lu : sans balises, espaces et apostrophes ramenés à une forme."""
+    texte = unescape(re.sub(r"<[^>]+>", "", html)).replace("’", "'")
+    return " ".join(texte.split()).casefold()
+
+
 def politique_annonce(session: Session) -> bool:
-    """La politique servie porte-t-elle la phrase ? Mesuré sur le texte, pas supposé."""
-    return CONSERVATION_AFFAIRES in _texte_servi(session)
+    """La politique servie porte-t-elle la phrase ? Mesuré sur le texte, pas supposé.
+
+    Sur le texte **lu**, pas sur le balisage : l'éditeur réécrit le HTML (gras, espaces
+    insécables, apostrophes), et une phrase collée et enregistrée disait « non annoncée ».
+    """
+    return _en_clair(CONSERVATION_AFFAIRES) in _en_clair(_texte_servi(session))
 
 
 def annoncer(session: Session) -> bool:
@@ -43,7 +56,7 @@ def annoncer(session: Session) -> bool:
     Ne valide pas la transaction : l'appelant l'écrit avec la clé d'activation.
     """
     texte = _texte_servi(session)
-    if CONSERVATION_AFFAIRES in texte:
+    if politique_annonce(session):
         return True
     if AVANT_CONSERVATION not in texte:
         return False
