@@ -35,10 +35,19 @@ def test_le_gabarit_ne_l_annonce_pas_et_porte_son_ancre_une_fois():
 def test_la_phrase_se_compose_de_la_table_des_durees():
     """Aucune durée recopiée : chaque type de `DUREES` y figure, avec son fondement."""
     for t in ca.TYPES:
-        assert f"{t.exercices}\xa0exercices" in CONSERVATION_AFFAIRES
-        assert t.fondement in CONSERVATION_AFFAIRES
-    assert "sans limite de durée" in CONSERVATION_AFFAIRES
-    assert "photo peut montrer des personnes" in CONSERVATION_AFFAIRES
+        assert f"{t.exercices} ans pour" in CONSERVATION_AFFAIRES
+    assert "mis de côté hors ligne" in CONSERVATION_AFFAIRES
+    assert "qui vous identifie" in CONSERVATION_AFFAIRES
+
+
+def test_une_phrase_collee_dans_l_editeur_compte_comme_annoncee(session: Session):
+    """Le constat lit le texte, pas le balisage : gras perdu, apostrophes droites, <p>."""
+    collee = "<p>Affaires (pannes, travaux, questions…) : " + CONSERVATION_AFFAIRES.split(
+        "</strong>\xa0: ", 1
+    )[1].replace("’", "'").replace("\xa0", " ").replace("</li>", "</p>")
+    session.add(ConfigSite(cle=CLE, valeur=GABARIT + collee))
+    session.commit()
+    assert politique_annonce(session)
 
 
 def test_annoncer_insere_avant_l_ancre_une_seule_fois(session: Session):
