@@ -24,6 +24,7 @@ cherche qui contacter. La nôtre a vécu ainsi jusqu'à ce qu'un lecteur le voie
 """
 
 from app.seed.contenus_legaux_avis import AVIS_SITE_PRESENTATION
+from app.seed.contenus_legaux_cookies import COOKIES
 from app.seed.contenus_legaux_decisions_ag import DECISIONS_AG
 from app.seed.contenus_legaux_etat_descriptif import LECTURE_ETAT_DESCRIPTIF
 from app.seed.contenus_legaux_licence import PARAGRAPHE_LICENCE
@@ -402,10 +403,9 @@ DEFAULT_LEGAL = {
         "écrivez à l'adresse indiquée au point 1 — cette voie doit rester ouverte même sans compte, y"
         " compris après sa suppression. "
         + DROITS_DEPUIS_LE_PROFIL
-        + " En cas de litige\xa0: <strong>CNIL</strong> — www.cnil.fr.</p><h2>7. Cookies</h2><p>L'application "
-        "utilise exclusivement des cookies techniques d'authentification (<code>access_token</code>, "
-        "<code>refresh_token</code>) définis en <code>HttpOnly; Secure; SameSite=Strict</code>. Aucun"
-        " cookie publicitaire ou de traçage.</p>"
+        + " En cas de litige\xa0: <strong>CNIL</strong> — www.cnil.fr.</p><h2>7. Cookies</h2><p>"
+        + COOKIES
+        + " Aucun cookie publicitaire ou de traçage.</p>"
     ),
 }
 

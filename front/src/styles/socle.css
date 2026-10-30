@@ -49,7 +49,10 @@ body {
 	--color-primary-dark: #16304f;
 	--color-primary-light: #eef2f7;
 	--color-secondary: #3d6b4f; /* Vert Parc */
-	--color-accent: #c9983a; /* Or Croissy */
+	/*  L'Or Croissy, au plus clair qui se voie à 3:1 sur la carte : il sert d'icône
+	    et de liseré (#2296 — il était #c9983a, 2,61:1). Le bleu nuit posé dessus
+	    (`--color-sur-accent`) y fait 5,65. Le sombre garde l'or d'origine. */
+	--color-accent: #bd8c2c; /* Or Croissy */
 	/* Couleurs fonctionnelles */
 	--color-success: #2e7d52;
 	--color-warning: #b07d1e;
@@ -107,22 +110,28 @@ body {
 	/*  Les SÉRIES des répartitions croisées du Suivi des affaires (#2043) : une
 	    teinte par catégorie, dans l'ordre fixe de `#lib/repartition` — palette
 	    catégorielle à huit teintes, validée daltonisme (skill dataviz : écart
-	    CVD ≥ 9 entre voisines). Sous 3:1 sur blanc pour trois d'entre elles :
-	    la légende et le nombre en bout de barre portent l'information. */
+	    CVD ≥ 8 entre voisines, 17 en vision normale). Toutes à 3:1 sur la page,
+	    où se pose la légende, et sur la piste des barres (#2296) : les quatre qui
+	    ne l'étaient pas (2 à 5) ont été assombries au plus juste, teinte gardée,
+	    et le relevé daltonien rejoué (il donnait 9,1 ; il donne 8,5). */
 	--serie-1: #2a78d6;
-	--serie-2: #eb6834;
-	--serie-3: #1baf7a;
-	--serie-4: #eda100;
-	--serie-5: #e87ba4;
+	--serie-2: #e3612c;
+	--serie-3: #099c6b;
+	--serie-4: #b97d04;
+	--serie-5: #d1668f;
 	--serie-6: #008300;
 	--serie-7: #4a3aa7;
 	--serie-8: #e34948;
 	/*  Les PALIERS des bâtiments, en gris : un second axe, qui ne doit pas se
-	    confondre avec les séries. Le plus foncé pour la racine. */
-	--palier-1: #444441;
-	--palier-2: #888780;
-	--palier-3: #b4b2a9;
-	--palier-4: #d3d1c7;
+	    confondre avec les séries. Le plus foncé pour la racine. Le plus clair
+	    tient 3:1 sur la page (#2296) : l'échelle entière a donc glissé vers le
+	    foncé, à un écart minimal voisin de l'ancien entre deux paliers (8,2 en
+	    OKLab, il était 9,7) — il n'y a pas quatre gris distincts entre 3:1 et
+	    le palier 2 d'avant (3,6:1). */
+	--palier-1: #2d2d2b;
+	--palier-2: #585751;
+	--palier-3: #706e66;
+	--palier-4: #8b8980;
 	/*  LES TEINTES TENUES EN TYPESCRIPT (mode sombre, #2174 — lot S2). Une couleur
 	    CHOISIE PAR DONNÉE (le type d'une rubrique du fil, le rang d'un périmètre,
 	    l'étape d'un kanban, l'état d'un import) ne peut pas s'écrire dans une
@@ -159,29 +168,34 @@ body {
 	    `--color-sur-plein`, attribués PAR RANG (la n-ième tête de l'arbre prend
 	    `--teinte-n`). Plus longue que la rangée des têtes, exprès. Le gris est
 	    celui de « toute la copropriété » : hors rang, il ne se confond avec aucun
-	    lieu. */
-	--teinte-1: #ef4444;
-	--teinte-2: #3b82f6;
-	--teinte-3: #22c55e;
-	--teinte-4: #f59e0b;
-	--teinte-5: #f97316;
-	--teinte-6: #8b5cf6;
-	--teinte-7: #ec4899;
-	--teinte-8: #0ea5e9;
-	--teinte-9: #14b8a6;
-	--teinte-10: #84cc16;
+	    lieu. Chacune porte le blanc à 4,5 au moins (#2296 — l'ambre en faisait
+	    2,15) ; les cinq que le kanban lit aussi en TEXTE, sur le fond de page et
+	    sur leur teinte à 10 %, sont plus foncées. La 4ᵉ a quitté l'ambre pour l'or :
+	    assombri, l'ambre devenait le brun de la 5ᵉ (écart 6,5, il est 8,6). */
+	--teinte-1: #de3136;
+	--teinte-2: #155cce;
+	--teinte-3: #02722f;
+	--teinte-4: #7f5d05;
+	--teinte-5: #a54602;
+	--teinte-6: #7240da;
+	--teinte-7: #d53086;
+	--teinte-8: #057db3;
+	--teinte-9: #098477;
+	--teinte-10: #5d8103;
 	--teinte-11: #e11d48;
-	--teinte-12: #6366f1;
+	--teinte-12: #6264ef;
 	--teinte-13: var(--color-jaune-texte);
 	--teinte-copropriete: #6b7280;
 	/*  Les ÉTAPES du kanban (`#lib/kanban`) : les mêmes teintes que la palette des
-	    périmètres, nommées par ce qu'elles disent. « Annulé » est le seul gris. */
+	    périmètres, nommées par ce qu'elles disent. « Annulé » est le seul gris.
+	    Elles s'écrivent en TEXTE, sur le fond de page et sur leur teinte à 10 % :
+	    4,5 au moins (#2296). */
 	--kanban-ag: var(--teinte-6);
 	--kanban-cs: var(--teinte-2);
 	--kanban-syndic: var(--teinte-4);
 	--kanban-fournisseur: var(--teinte-5);
 	--kanban-termine: var(--teinte-3);
-	--kanban-annule: #9ca3af;
+	--kanban-annule: #5e646f;
 	/*  Une tuile des IMPORTS (lots, accès) qui dit « rattaché » : un bleu vif,
 	    distinct du bleu d'information. */
 	--color-import-lie: #2563eb;

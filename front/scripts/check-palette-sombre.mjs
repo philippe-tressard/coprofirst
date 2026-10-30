@@ -41,8 +41,9 @@ import { FAMILLES, IDENTIQUES, PAIRES } from './palette-sombre-paires.mjs';
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 const STYLES = join(SRC, 'styles');
-/** Où le thème se DÉCIDE : la palette, et rien d'autre (règle 6). */
-const LIEUX_DU_THEME = ['styles/palette-sombre.css'];
+/** Où le thème se DÉCIDE : la palette, et la bascule qui choisit l'attribut (S5,
+ *  `lib/theme.ts`) — rien d'autre (règle 6). */
+const LIEUX_DU_THEME = ['styles/palette-sombre.css', 'lib/theme.ts'];
 const DECIDE_LE_THEME = /prefers-color-scheme|data-theme/;
 export const SELECTEUR_SOMBRE = ":root[data-theme='dark']";
 
@@ -238,7 +239,7 @@ if (process.argv.includes('--selftest')) {
 		1,
 	);
 	cas(
-		'un composant qui écrit son thème est refusé, un commentaire ou la palette non',
+		'un composant qui écrit son thème est refusé, un commentaire, la palette ou la bascule non',
 		fautesLieux([
 			[
 				'src/lib/A.svelte',
@@ -246,6 +247,7 @@ if (process.argv.includes('--selftest')) {
 			],
 			['src/app.css', '/* [data-theme] */'],
 			['src/styles/palette-sombre.css', ":root[data-theme='dark'] {}"],
+			['src/lib/theme.ts', "const m = '(prefers-color-scheme: dark)';"],
 		]).length,
 		1,
 	);

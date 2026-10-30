@@ -24,17 +24,17 @@ from app.utils.suivi_affaires.repartition import Barre, CLE_PLUSIEURS
 #: Les couleurs des teintes — celles de `socle.css` (écran), recopiées pour le papier.
 TEINTES: dict[str, str] = {
     "s1": "#2a78d6",
-    "s2": "#eb6834",
-    "s3": "#1baf7a",
-    "s4": "#eda100",
-    "s5": "#e87ba4",
+    "s2": "#e3612c",
+    "s3": "#099c6b",
+    "s4": "#b97d04",
+    "s5": "#d1668f",
     "s6": "#008300",
     "s7": "#4a3aa7",
     "s8": "#e34948",
-    "p1": "#444441",
-    "p2": "#888780",
-    "p3": "#b4b2a9",
-    "p4": "#d3d1c7",
+    "p1": "#2d2d2b",
+    "p2": "#585751",
+    "p3": "#706e66",
+    "p4": "#8b8980",
     #  `--color-text-muted` à l'écran.
     "autre": "#5a6070",
 }

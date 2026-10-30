@@ -48,6 +48,8 @@ from __future__ import annotations
 import pathlib
 import re
 
+from tests.aides_sources import modules_app
+
 _APP = pathlib.Path(__file__).resolve().parents[1] / "app"
 
 #: (libellé, déclencheur dans le code, mots-clés dont AU MOINS UN doit figurer)
@@ -260,6 +262,44 @@ def test_chaque_capacite_du_code_est_nommee_dans_la_politique():
         "collecté ou transmis est un défaut de RANG 1 (`standards/14`). Le "
         "gabarit (`seed/contenus_legaux.py`) doit le dire ; ce que l'instance "
         "doit renseigner elle-même s'écrit « À RENSEIGNER »."
+    )
+
+
+_FRONT = _APP.parents[1] / "front" / "src"
+
+
+def _cookies_poses() -> tuple[set[str], set[str]]:
+    """Les cookies que le code POSE : l'API (`set_cookie("nom"`) et le front, qui
+    déclare le nom de chacun par une constante `COOKIE_…` (`#lib/theme.ts`)."""
+    api = {
+        nom
+        for m in modules_app()
+        for nom in re.findall(r"set_cookie\(\s*(?:key=)?[\"']([\w-]+)[\"']", m.source)
+    }
+    front = {
+        nom
+        for f in _FRONT.rglob("*.ts")
+        for nom in re.findall(r"export const COOKIE_\w+ = '([\w-]+)'", f.read_text("utf-8"))
+    }
+    return api, front
+
+
+def test_chaque_cookie_pose_est_nomme_dans_la_politique():
+    """La rubrique « Cookies » disait « exclusivement des cookies d'authentification »
+    — vrai jusqu'au cookie de thème (#2174, S5). Chaque cookie posé y est nommé,
+    en `<code>`, par son nom."""
+    from app.seed.contenus_legaux import DEFAULT_LEGAL
+
+    api, front = _cookies_poses()
+    #  Cas zéro : une source muette (motif périmé, dossier déplacé) dirait « tout est nommé ».
+    assert api, "aucun `set_cookie` lu dans api/app : le motif ne voit plus l'API (INCONNU)"
+    assert front, f"aucune constante `COOKIE_…` lue dans {_FRONT} : INCONNU"
+    texte = DEFAULT_LEGAL["politique_confidentialite"]
+    absents = sorted(n for n in api | front if f"<code>{n}</code>" not in texte)
+    assert not absents, (
+        f"Cookies posés par le code et absents de la politique (rubrique 7) : {absents}. "
+        "Les nommer dans `seed/contenus_legaux_cookies.py`, et le texte servi par une "
+        "migration qui lit cette rédaction."
     )
 
 

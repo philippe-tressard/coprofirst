@@ -227,7 +227,8 @@
 }
 .kb-col-vide {
 	flex: 0 0 auto;
-	opacity: 0.55;
+	/*  Pas d'opacité : à 55 %, son titre et « Aucune affaire » tombaient à 2:1
+	    (#2296). La colonne vide se dit par sa largeur et par son mot. */
 	/*  La bande suit la hauteur de la plus haute colonne — par le FLEX, jamais
 	    par `height: 100%` sur son en-tête : un pourcentage résolu contre un
 	    parent lui-même étiré tourne en rond, et le navigateur retombait sur la
