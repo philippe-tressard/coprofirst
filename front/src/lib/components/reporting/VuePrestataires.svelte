@@ -94,10 +94,9 @@
 					<p><strong>Contacts :</strong></p>
 					{#each reportPrestSynth.contacts as c (c)}
 						<p class="retrait">
-							📞 {c.telephone ?? '—'}{#if c.prenom || c.nom}
-								— {nomAffiche(c)}{/if}{#if c.fonction}
-								({c.fonction}){/if}{#if c.email}
-								· {c.email}{/if}
+							📞 {c.telephone ?? '—'}{#if c.prenom || c.nom}&nbsp;— {nomAffiche(
+									c,
+								)}{/if}{#if c.fonction}&nbsp;({c.fonction}){/if}{#if c.email}&nbsp;· {c.email}{/if}
 						</p>
 					{/each}
 				{/if}

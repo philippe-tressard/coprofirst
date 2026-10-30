@@ -210,8 +210,8 @@
 						<div class="frise-compact-info">
 							<strong>{c.libelle}</strong>
 							<span class="text-muted-sm"
-								>{c.prestataireNom} · {equipLabel(c.type_equipement)}{#if c.numero_contrat}
-									· N° {c.numero_contrat}{/if}</span
+								>{c.prestataireNom} · {equipLabel(c.type_equipement)}{#if c.numero_contrat}&nbsp;·
+									N° {c.numero_contrat}{/if}</span
 							>
 						</div>
 						<div class="frise-compact-meta">

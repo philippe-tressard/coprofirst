@@ -121,8 +121,9 @@
 			<h2 class="section-title titre-annuaire">Conseil Syndical</h2>
 			{#if data.cs.ag_annee}
 				<span class="ag-info">
-					Voté en AG {data.cs.ag_annee}{#if data.cs.ag_date}
-						- {formatDate(data.cs.ag_date)}{/if}
+					Voté en AG {data.cs.ag_annee}{#if data.cs.ag_date}&nbsp;- {formatDate(
+							data.cs.ag_date,
+						)}{/if}
 				</span>
 			{/if}
 		</div>
@@ -168,9 +169,8 @@
 					<CarteContact personne={m} medaillons={medaillonsCs(m)}>
 						{#if m.batiment_nom || m.etage != null}
 							<div class="contact-loc">
-								{#if m.batiment_nom}Bât. {m.batiment_nom}{/if}{#if m.batiment_nom && m.etage != null}
-									-
-								{/if}{#if m.etage != null}{etageLabel(m.etage, { suffixe: true })}{/if}
+								{#if m.batiment_nom}Bât. {m.batiment_nom}{/if}{#if m.batiment_nom && m.etage != null}&nbsp;-{/if}
+								{#if m.etage != null}{etageLabel(m.etage, { suffixe: true })}{/if}
 							</div>
 						{/if}
 					</CarteContact>

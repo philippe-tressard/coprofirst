@@ -114,6 +114,18 @@ consommation enregistré à 0 m³, un nombre de lots à 0 (#1516, #779) ; et
 `nombreOuNull` (`#lib/utils`) ; 🔒 `npm run lint:nombre-saisi` refuse la forme
 recopiée, et `e2e/nombre-saisi` tient le comportement.
 
+### Une espace avant un `{#if}` en ligne : AVANT le bloc, jamais en tête de branche
+
+🔴 Svelte 5 retire l'espace en tête et en fin de chaque branche d'un bloc (et
+de chaque balise), même écrite `&#32;`. `{prenom}{#if lot}⏎<span>— {lot}</span>{/if}`
+— la forme que Prettier écrit — rend « Prénom— Bât. 4 » : c'était le salut de
+l'accueil, et quinze autres phrases (#2356). L'espace sécable se pose AVANT le
+bloc (`{prenom} {#if lot}…`), où Svelte la garde ; en tête de branche, seule
+`&nbsp;` survit (`{' '}` est refusé par ESLint). Un collage voulu (l'astérisque
+d'un libellé) s'écrit sur la ligne du bloc. Pour qu'un séparateur ne finisse
+jamais une ligne, l'espace insécable est celle d'APRÈS lui (`—&nbsp;`).
+🔒 `npm run lint:espace-blocs`, `e2e/salut-accueil.spec.ts`.
+
 ### Gestion d'erreurs API
 
 Un message d'erreur ne se rédige pas dans un écran : il vient de

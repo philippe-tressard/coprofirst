@@ -53,8 +53,9 @@
 		     essentielle, puisque la ligne du fil est datée de l'annonce. -->
 	{#if debut}
 		<p class="flux-meta-line">
-			🕐 {fmtDatetimeShort(String(debut))}{#if item.meta?.fin}
-				→ {fmtDatetimeShort(String(item.meta.fin))}{/if}
+			🕐 {fmtDatetimeShort(String(debut))}{#if item.meta?.fin}&nbsp;→ {fmtDatetimeShort(
+					String(item.meta.fin),
+				)}{/if}
 		</p>
 	{/if}
 	<!--  ⚠️ L'auteur n'est PLUS répété ici : il est en rangée de l'en-tête, visible

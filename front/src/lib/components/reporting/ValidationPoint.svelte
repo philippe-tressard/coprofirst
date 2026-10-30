@@ -149,8 +149,8 @@
 		{#each compteRendu.commentaires as c, i (i)}
 			<EncartAvertissement compact class="commentaire">
 				<p class="qui">
-					{c.auteur || 'Un présent'} · {fmtDatetime(c.cree_le)}{#if c.par_derogation}
-						· accord écrit par l’administration{/if}
+					{c.auteur || 'Un présent'} · {fmtDatetime(c.cree_le)}{#if c.par_derogation}&nbsp;· accord
+						écrit par l’administration{/if}
 				</p>
 				<p>{c.contenu}</p>
 			</EncartAvertissement>

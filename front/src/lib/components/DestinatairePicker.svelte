@@ -68,8 +68,7 @@
 	<!--  Badge d'état : « Tous » se lit sans dépiler les pastilles.
 	      Même règle que le périmètre (skill `ux-patterns` §9 quater). -->
 	<div class="destinataire-titre">
-		{titre}{#if requis}
-			*{/if}
+		{titre}{#if requis}*{/if}
 		{#if isTous}<span class="badge badge-green destinataire-badge">{LIBELLE_TOUS}</span>{/if}
 	</div>
 {/if}

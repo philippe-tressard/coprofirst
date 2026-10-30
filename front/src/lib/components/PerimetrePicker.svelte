@@ -301,8 +301,7 @@
 	      la résidence » quand rien n'est précisé. Inauguré par le sondage, étendu
 	      au standard à la demande de l'utilisateur (skill ux-patterns §9 quater). -->
 	<div class="perimetre-titre">
-		{titre}{#if requis}
-			*{/if}
+		{titre}{#if requis}*{/if}
 		{#if estDefaut && noeudDefaut}<span class="badge badge-green perimetre-badge"
 				>{noeudDefaut.libelle}</span
 			>{/if}

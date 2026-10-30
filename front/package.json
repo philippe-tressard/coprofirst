@@ -52,6 +52,7 @@
 		"lint:balises": "node scripts/check-balises.mjs",
 		"lint:html": "node scripts/check-html.mjs",
 		"lint:alias-lib": "node scripts/check-alias-lib.mjs --selftest && node scripts/check-alias-lib.mjs",
+		"lint:espace-blocs": "node scripts/check-espace-blocs.mjs --selftest && node scripts/check-espace-blocs.mjs",
 		"lint:titres": "node scripts/check-titre-double.mjs",
 		"lint:modales": "node scripts/check-modales.mjs",
 		"lint:couches": "node scripts/check-couches.mjs",
