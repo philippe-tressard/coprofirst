@@ -1,0 +1,188 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   5Hostachy — Les PALETTES de la copropriété (#2379, 30/10/2026).
+
+   L'administration choisit, à côté du logo (Copropriété › Identité), une palette
+   parmi celles du registre de l'API (`api/app/utils/palettes.py`). Le serveur
+   pose `data-palette` sur `<html>` (`#lib/palettes.ts`, `hooks.server.ts`) ; la
+   charte — `seine`, la palette par défaut — n'a pas de règle ici : ce sont les
+   valeurs de `socle.css` et de `palette-sombre.css`.
+
+   Seules les COULEURS de la marque changent : la principale et ses deux
+   dérivées, l'accent, le fond et les trois neutres teintés. Le reste de la
+   charte (états, catégories, séries) est commun à toutes les palettes.
+
+   ## Deux règles par palette
+
+   - le CLAIR, sur la racine et sur l'îlot clair (`styles/ilots-clairs.css` :
+     un aperçu d'affiche ou de courriel reste clair, aux couleurs de la palette) ;
+   - le SOMBRE, sous `@media screen` comme `palette-sombre.css` — dont le greffon
+     `scripts/vite-palette-sombre.mjs` génère la copie Auto, de la même façon.
+
+   ⚠️ L'ORDRE COMPTE : cette feuille est importée entre `socle.css` et
+   `palette-sombre.css` (`app.css`). La règle claire d'une palette pèse autant
+   que la règle sombre de la charte : venue AVANT, elle lui cède au sombre. La
+   règle sombre d'une palette, plus lourde d'un attribut, l'emporte partout.
+
+   ## Les garde-fous
+
+   🔒 `npm run lint:palette-sombre` : chaque palette déclare exactement les jetons
+   de `JETONS_PALETTE`, au clair et au sombre, et chaque paire de la table tient
+   son seuil dans les deux thèmes, comme la charte.
+   🔒 `api/tests/test_palettes.py` : les codes et les valeurs claires sont ceux du
+   registre de l'API, qui recolore les courriels et les affiches.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── Bordeaux & or ─────────────────────────────────────────────────────── */
+:root[data-palette='bordeaux'],
+:root[data-palette='bordeaux'] .ilot-clair {
+	--color-primary: #651d28;
+	--color-primary-dark: #51171f;
+	--color-primary-light: #f5ecec;
+	--color-accent: #aa7d30;
+	--color-bg: #f4efe8;
+	--color-text: #2a1a1d;
+	--color-text-muted: #66565a;
+	--color-border: #e2d6cf;
+}
+
+@media screen {
+	:root[data-palette='bordeaux'][data-theme='dark'] {
+		--color-bg: #1c1012;
+		--color-surface: #28181b;
+		--color-border: #4a2e33;
+		--color-border-champ: #9a7178;
+		--color-neutre-fond: #301e22;
+		--color-neutre-bordure: #42292e;
+		--color-text-muted: #c4aeb1;
+		--color-primary: #eaa3ad;
+		--color-primary-dark: #f4c9cf;
+		--color-primary-light: #3d1d23;
+		--color-accent: #c99a4a;
+		--color-primary-plein: #7a2633;
+		--color-primary-plein-survol: #8f3140;
+	}
+}
+
+/* ── Vert bouteille & laiton ───────────────────────────────────────────── */
+:root[data-palette='bouteille'],
+:root[data-palette='bouteille'] .ilot-clair {
+	--color-primary: #1b4232;
+	--color-primary-dark: #143327;
+	--color-primary-light: #eaf1ed;
+	--color-accent: #a1813a;
+	--color-bg: #eef1ec;
+	--color-text: #17241e;
+	--color-text-muted: #56625b;
+	--color-border: #d3ddd6;
+}
+
+@media screen {
+	:root[data-palette='bouteille'][data-theme='dark'] {
+		--color-bg: #0d1914;
+		--color-surface: #15241d;
+		--color-border: #2b4639;
+		--color-border-champ: #6f9583;
+		--color-neutre-fond: #1b2e25;
+		--color-neutre-bordure: #284236;
+		--color-text-muted: #a6bdb2;
+		--color-primary: #8fd1b3;
+		--color-primary-dark: #bfe6d3;
+		--color-primary-light: #1b3a2d;
+		--color-accent: #c9a050;
+		--color-primary-plein: #1c513e;
+		--color-primary-plein-survol: #23604a;
+	}
+}
+
+/* ── Bleu nuit & cuivre ────────────────────────────────────────────────── */
+:root[data-palette='cuivre'],
+:root[data-palette='cuivre'] .ilot-clair {
+	--color-primary: #1b2a41;
+	--color-primary-dark: #131f31;
+	--color-primary-light: #edf0f5;
+	--color-accent: #bc734c;
+	--color-bg: #f1f0ee;
+	--color-text: #161b24;
+	--color-text-muted: #575d68;
+	--color-border: #d8dbe0;
+}
+
+@media screen {
+	:root[data-palette='cuivre'][data-theme='dark'] {
+		--color-bg: #0f1520;
+		--color-surface: #18202e;
+		--color-border: #303b4f;
+		--color-border-champ: #74819a;
+		--color-neutre-fond: #1e2738;
+		--color-neutre-bordure: #2b364b;
+		--color-text-muted: #a8b2c3;
+		--color-primary: #a9bad6;
+		--color-primary-dark: #cfdaeb;
+		--color-primary-light: #222f45;
+		--color-accent: #d98a5e;
+		--color-primary-plein: #2a3d5c;
+		--color-primary-plein-survol: #35496b;
+	}
+}
+
+/* ── Bleu roi & moutarde ───────────────────────────────────────────────── */
+:root[data-palette='roi'],
+:root[data-palette='roi'] .ilot-clair {
+	--color-primary: #13376f;
+	--color-primary-dark: #0f2c5a;
+	--color-primary-light: #ecf1fa;
+	--color-accent: #ab7e16;
+	--color-bg: #f3f2ee;
+	--color-text: #141b2d;
+	--color-text-muted: #535b6b;
+	--color-border: #d6dbe6;
+}
+
+@media screen {
+	:root[data-palette='roi'][data-theme='dark'] {
+		--color-bg: #0b1426;
+		--color-surface: #131e36;
+		--color-border: #283a63;
+		--color-border-champ: #6a83bd;
+		--color-neutre-fond: #182645;
+		--color-neutre-bordure: #24365e;
+		--color-text-muted: #a3b3d4;
+		--color-primary: #92b4ff;
+		--color-primary-dark: #c2d5ff;
+		--color-primary-light: #1b2e57;
+		--color-accent: #e0b23a;
+		--color-primary-plein: #1c438a;
+		--color-primary-plein-survol: #234f9e;
+	}
+}
+
+/* ── Prune & rose poudré ───────────────────────────────────────────────── */
+:root[data-palette='prune'],
+:root[data-palette='prune'] .ilot-clair {
+	--color-primary: #4a2540;
+	--color-primary-dark: #3b1d33;
+	--color-primary-light: #f4edf2;
+	--color-accent: #b27670;
+	--color-bg: #f6f0ef;
+	--color-text: #26161f;
+	--color-text-muted: #69585f;
+	--color-border: #e7d9d8;
+}
+
+@media screen {
+	:root[data-palette='prune'][data-theme='dark'] {
+		--color-bg: #1a1018;
+		--color-surface: #261824;
+		--color-border: #472e43;
+		--color-border-champ: #977292;
+		--color-neutre-fond: #2e1d2b;
+		--color-neutre-bordure: #40293c;
+		--color-text-muted: #c3abbd;
+		--color-primary: #e2a6d0;
+		--color-primary-dark: #f0cbe5;
+		--color-primary-light: #3b1d34;
+		--color-accent: #d79a93;
+		--color-primary-plein: #6a3460;
+		--color-primary-plein-survol: #7d3f71;
+	}
+}

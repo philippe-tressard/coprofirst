@@ -20,6 +20,7 @@ from app.utils.config_site import config_site
 from app.utils.fichiers import nom_lisible
 from app.utils.html_sur import filtre_safe
 from app.utils.liens import adresse_du_site, nom_site
+from app.utils.palettes import CLE_PALETTE, code_palette, recolorer
 
 from .gabarit import _wrap_email
 
@@ -83,6 +84,9 @@ def _contexte_rendu(session: Session, context: dict) -> tuple[dict, str, str, st
         #  sans rien signaler. Lue ici, elle ne peut plus être oubliée.
         "reference_copro": reference,
         "prefixe_copro": _prefixe_copro(reference),
+        #  La palette de la copropriété (#2379), que `composer_email` applique :
+        #  après `context` elle aussi, un point d'appel ne la choisit pas.
+        "palette": code_palette(lignes.get(CLE_PALETTE)),
     }
     return ctx, site_nom, site_url, (lignes.get("email_footer") or "").strip()
 
@@ -171,4 +175,7 @@ def composer_email(
     #  L'étiquette d'arrivée (#1634), ici et pas dans les modèles : elle vaut pour
     #  tous, et l'aperçu la montre. Jamais sur un lien à jeton ni un courriel de compte.
     html = etiqueter_courriel(html, site_url, template.code)
+    #  Composé aux couleurs de la charte — le gabarit ET le modèle, que
+    #  l'administration édite —, recoloré en un geste (`utils/palettes`).
+    html = recolorer(html, ctx.get("palette"))
     return _sujet_sur_une_ligne(_render(template.sujet, ctx, html=False)), html

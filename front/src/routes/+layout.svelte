@@ -5,6 +5,8 @@
 	import { configStore, modeDemoStore } from '#lib/stores/pageConfig.ts';
 	import { config as configApi } from '#lib/api/index.ts';
 	import { onMount } from 'svelte';
+	import { browser } from '$app/env';
+	import { appliquerPalette, CLE_PALETTE } from '#lib/palettes.ts';
 	import { surveillerImagesProtegees } from '#lib/imagesProtegees.ts';
 	import { unSeulDetailsOuvert } from '#lib/accordeon.ts';
 	import { signalerDemarrage } from '#lib/garde-demarrage.ts';
@@ -16,6 +18,12 @@
 	$: if (data?.siteConfig && Object.keys(data.siteConfig).length > 0) {
 		configStore.set(data.siteConfig);
 	}
+
+	//  La palette de la copropriété (#2379) : le serveur l'a posée sur `<html>`.
+	//  Elle ne se repose ici que si la configuration arrive par le client — rendu
+	//  serveur sans réponse de l'API —, jamais sur une configuration encore vide,
+	//  qui ramènerait la charte un instant.
+	$: if (browser && $configStore[CLE_PALETTE]) appliquerPalette($configStore[CLE_PALETTE]);
 
 	//  🔴 UN SEUL écouteur pour toutes les images protégées (#996).
 	//

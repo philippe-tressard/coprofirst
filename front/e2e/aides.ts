@@ -209,6 +209,8 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	},
 	//  `ConsommationIA`.
 	'/api/config/llm-consommation': { mois: [], limites: [], mois_courant: '' },
+	//  `PaletteCopropriete[]` : les palettes offertes sous le logo (#2379).
+	'/api/config/palettes': [],
 	//  `ServiceCopropriete[]` : l'administration grise l'onglet d'un service coupé.
 	'/api/config/services': [],
 	//  `JournalEnvoiWhatsApp[]`, `MessagePlanifieWhatsApp[]` : l'onglet WhatsApp.
