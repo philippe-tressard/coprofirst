@@ -31,6 +31,24 @@ export async function forcerTheme(page: Page, theme: 'clair' | 'sombre'): Promis
 }
 
 /**
+ * **Attendre que les fondus de la page soient POSÉS** (#2334) — toute animation
+ * finie du document, transitions comprises (celles qui bouclent sont laissées).
+ * L'accueil entre en fondu échelonné (`.section-reveal`, gardé en mouvement
+ * réduit) : sous charge, le relevé lisait des cartes à demi opaques — un blanc
+ * à ~55 % sur `--color-bg` rendait « DIAG. » à 4,42 sur rgb(249, 248, 245).
+ */
+export async function attendreFinDesAnimations(page: Page): Promise<void> {
+	await page.evaluate(() =>
+		Promise.all(
+			document
+				.getAnimations()
+				.filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+				.map((a) => a.finished.catch(() => undefined)),
+		),
+	);
+}
+
+/**
  * **Attendre qu'une portion de l'écran se lise au thème posé** : rien sous l'AA,
  * rien de clair au sombre, et du texte LU. Une modale ou un toast entre en
  * fondu : au premier instant son texte est à opacité nulle, donc ni fautif ni
