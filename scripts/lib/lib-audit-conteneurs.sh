@@ -64,6 +64,11 @@ conteneur_verdict() {
         [ -n "$b" ] || continue
         hote=${b%%:*}
         mode=${b##*:}
+        #  Un volume NOMMÉ (`5hostachy_pg_data:/var/lib/…`) figure aussi dans
+        #  `HostConfig.Binds` : ce n'est pas un chemin de l'hôte, et le compose
+        #  les déclare. Seul un chemin absolu est un montage lié — le premier
+        #  audit en production les comptait tous en FAIL (30/10/2026).
+        case "$hote" in /*) ;; *) continue ;; esac
         case "$hote" in
             *docker.sock*) ecarts="$ecarts prise-docker=[$b];"; continue ;;
         esac
@@ -149,6 +154,12 @@ audit_conteneurs_selftest() {
     t "un montage non déclaré (/etc en lecture)" "ECART:montage-non-déclaré=[/etc:/hote/etc:ro];" \
       "$(conteneur_verdict "/x|false|||||/etc:/hote/etc:ro;|r")"
     t "deux écarts, dans l'ordre" "ECART:privilégié; réseau-de-l-hôte;" "$(conteneur_verdict "/x|true||host|||;|r")"
+    #  La ligne RÉELLE de hostachy_api au premier audit (30/10/2026) : ses volumes
+    #  nommés ne sont pas des montages de l'hôte.
+    t "volumes nommés de l'API (production, 30/10)" CONFORME \
+      "$(conteneur_verdict "/hostachy_api|false|||5hostachy_default||5hostachy_app_data:/app/data:rw;5hostachy_uploads:/app/uploads:rw;5hostachy_backups:/backups:rw;/etc/localtime:/etc/localtime:ro;|r")"
+    t "un volume nommé n'excuse pas la prise Docker à côté" "ECART:prise-docker=[/var/run/docker.sock:/s:rw];" \
+      "$(conteneur_verdict "/x|false|||||5hostachy_pg_data:/var/lib/postgresql/data:rw;/var/run/docker.sock:/s:rw;|r")"
     t "nom du conteneur" hostachy_api "$(conteneur_nom "$API")"
     t "provenance : l'image de ce commit" CI "$(conteneur_provenance "$API" "$H")"
     t "provenance : HEAD court contre révision longue" CI "$(conteneur_provenance "$API" "${H:0:7}")"

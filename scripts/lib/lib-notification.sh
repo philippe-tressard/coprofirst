@@ -33,8 +33,11 @@
 #    source /opt/5hostachy/scripts/lib/lib-notification.sh
 #    notifier_verdicts "$REPO" "$SELF" "$FAIL_LINES" "$WARN_LINES"
 #
-#  La DÉCISION (`verdict_notification`) est pure et vit dans `lib-verdicts.sh`,
-#  avec son contrat dans `verdicts_selftest`. Ce module-ci ne porte que l'envoi.
+#  La DÉCISION (`verdict_notification`) est pure et vit ICI depuis le 30/10/2026,
+#  avec l'envoi qui l'emploie ; son contrat reste éprouvé par `verdicts_selftest`.
+#  Elle vivait dans `lib-verdicts.sh`, que `audit-securite.sh` ne source pas :
+#  le premier audit en production a appelé une fonction absente, et la décision
+#  vide a envoyé un courriel au lieu de dire « critique » ou « silence ».
 #
 #  Ce module est SOURCÉ, jamais exécuté par cron → mode 100644 (le job CI
 #  `test-scripts` le vérifie ; un bit d'exécution ici serait trompeur).
@@ -56,6 +59,22 @@ NOTIFICATION_SCRIPT="${NOTIFICATION_SCRIPT:-check-reliability.sh}"
 NOTIFICATION_OBJET="${NOTIFICATION_OBJET:-contrôle(s) de fiabilité}"   # ce que compte le sujet du courriel
 NOTIFICATION_JOURNAL="${NOTIFICATION_JOURNAL:-/var/log/hostachy-reliability.log}"
 NOTIFICATION_COOLDOWN="${NOTIFICATION_COOLDOWN:-/tmp/${NOTIFICATION_SCRIPT%.sh}}"
+
+# ── Que faut-il NOTIFIER de cette exécution ? (PURE) ─────────────────────────
+# Pure. Rend `critique`, `digest` ou `silence`. Le POURQUOI, l’incident qui l’a
+# fait naître et l’envoi lui-même vivent dans `lib-notification.sh` (#449).
+verdict_notification() { # $1=fails $2=warns → critique|digest|silence
+  local fails="${1-}" warns="${2-}" v
+  #  Cas zéro : un décompte VIDE ou illisible n’est PAS un zéro. On notifie,
+  #  quitte à déranger — le contraire ferait taire le canal sur une panne du
+  #  compteur, c’est-à-dire exactement quand on ne peut plus rien conclure.
+  for v in "$fails" "$warns"; do
+    case "$v" in ''|*[!0-9]*) echo critique; return ;; esac
+  done
+  if [ "$fails" -gt 0 ]; then echo critique
+  elif [ "$warns" -gt 0 ]; then echo digest
+  else echo silence; fi
+}
 
 notifier_verdicts() { # repo self fail_lines warn_lines
     local repo="${1:-}" self="${2:-}"
@@ -278,6 +297,14 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
       "$NOTIFICATION_TACHE|$NOTIFICATION_SCRIPT|$NOTIFICATION_JOURNAL|$NOTIFICATION_COOLDOWN"
     t "un autre appelant pose les siens avant le source" "audit_securite|/tmp/audit-securite" \
       "$(NOTIFICATION_TACHE=audit_securite NOTIFICATION_SCRIPT=audit-securite.sh bash -c '. "$0"; echo "$NOTIFICATION_TACHE|$NOTIFICATION_COOLDOWN"' "$0")"
+    t "décision : un FAIL → critique"     critique "$(verdict_notification 1 0)"
+    t "décision : des WARN → digest"      digest   "$(verdict_notification 0 3)"
+    t "décision : rien → silence"         silence  "$(verdict_notification 0 0)"
+    t "décision : compteur vide → critique" critique "$(verdict_notification "" 0)"
+    #  La décision vit dans CE module : un appelant qui ne source que lui
+    #  (audit-securite.sh) doit la trouver — le premier audit ne la trouvait pas.
+    t "décision : présente sans lib-verdicts" critique \
+      "$(bash -c '. "$0"; verdict_notification 2 0' "$0" 2>&1)"
     t "premier passage"                   envoyer "$(decision_rapport_ecran a "" 0)"
     t "mêmes constats, 15 min après"      taire   "$(decision_rapport_ecran a a 900)"
     t "constats changés"                  envoyer "$(decision_rapport_ecran b a 900)"
