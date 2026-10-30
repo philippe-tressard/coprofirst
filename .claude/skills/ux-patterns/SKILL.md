@@ -2132,6 +2132,10 @@ de l'utilisateur. *Une consigne fausse fait lire l'écart comme une décision.*
 
 **Disposition, la même partout** : `[retour] titre` à gauche · actions à droite.
 
+Les écrans **sans session** (connexion, inscription, mot de passe, erreur) n'ont pas
+d'`EntetePage` : leur en-tête est `EnteteAuthentification` — la marque de la résidence,
+son nom en titre, le geste en phrase dessous, comme à la connexion (#2357).
+
 🔴 **Le descriptif de page est une prop, pas une ligne de l'écran** (#1369, 27/09/2026).
 Douze écrans écrivaient `<div class="page-subtitle">` à la main ; Résidence le posait
 **sous** ses onglets, juste au-dessus du descriptif de l'onglet « Fiche », qui portait le

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ChampMotDePasse from '#lib/components/ChampMotDePasse.svelte';
+	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 	import { auth as authApi, ApiError } from '#lib/api/index.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { getSiteNom } from '#lib/stores/pageConfig.ts';
@@ -46,10 +47,7 @@
 
 <div class="auth-page">
 	<div class="auth-card">
-		<div class="auth-header">
-			<span class="auth-logo">&#x1F511;</span>
-			<h1>Nouveau mot de passe</h1>
-		</div>
+		<EnteteAuthentification sousTitre="Nouveau mot de passe" />
 
 		{#if done}
 			<div class="alert alert-success">

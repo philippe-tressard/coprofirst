@@ -16,6 +16,7 @@
 	import { onMount } from 'svelte';
 	import { lieu } from '#lib/lieu.svelte.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import { toast } from '#lib/components/Toast.svelte';
@@ -80,9 +81,7 @@
 
 <div class="auth-page">
 	<article class="card colonne-lecture lien-cr">
-		<header class="auth-header">
-			<h1>Compte rendu du point CS / Syndic</h1>
-		</header>
+		<EnteteAuthentification sousTitre="Compte rendu du point CS / Syndic" />
 
 		{#if chargement || erreur || !cr}
 			<EtatListe {chargement} {erreur} titreErreur="Ce lien ne mène à aucun compte rendu" />

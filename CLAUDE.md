@@ -702,6 +702,9 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       écrit à la main — il y en avait **23** avant #1045 (`npm run lint:chargement`)
 - [ ] En-tête de page : `<EntetePage>`, jamais `<div class="page-header">`
       (`ux-patterns` §13)
+- [ ] En-tête d'un écran sans session (connexion, inscription, mot de passe, erreur) :
+      `<EnteteAuthentification sousTitre="…" />` — logo, nom de la résidence, phrase ;
+      jamais `auth-header` ni un émoji écrits dans la page (`npm run lint:entete-auth`, #2357)
 - [ ] Bouton d'action icône : `<IconeAction icone="…" />`, **au trait** — jamais un
       émoji (✏️ 🗑️ 📦 ↩️…). La page Affaires est le standard du site depuis le
       10/10/2026 (#1819) : une liste en cartes prend `Gouttiere` (date, puis ce qui
