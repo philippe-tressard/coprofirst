@@ -25,7 +25,9 @@ fi
 PAQUETS="libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 libfribidi0 libcairo2"
 manquants=""
 for p in $PAQUETS; do
-    _st=$(dpkg-query -W -f='${Status}' "$p" 2>/dev/null)
+    #  `|| true` : dpkg-query rend 1 pour un paquet absent, et sous `set -e` l'affectation
+    #  tuerait le script — le verdict est celui du grep qui suit, pas du producteur (#2298).
+    _st=$(dpkg-query -W -f='${Status}' "$p" 2>/dev/null || true)
     grep -q "install ok installed" <<<"$_st" \
         || manquants="$manquants $p"
 done

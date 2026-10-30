@@ -16,6 +16,14 @@ Forme attendue : le producteur se lit d'abord, la décision se prend sans tube �
     _s=$(producteur)             grep -q motif <<<"$_s"
 Un test sur une variable : `grep -q motif <<<"$x"` (jamais `printf … | grep -q`).
 
+Deuxième forme refusée — celle que la correction de la première a elle-même introduite
+(PR #2322 : `bibliotheques-pdf.sh` est mort sans un mot, `dpkg-query` rend 1 pour un
+paquet absent) : sous `set -e`, `x=$(producteur)` suivi de `grep -q motif <<<"$x"` tue
+le script quand le producteur sort non nul, alors que le tube d'avant ne regardait que
+le statut de `grep`. Il faut `x=$(producteur || true)` : le verdict est celui du grep.
+Un fichier sans `set -e`, une affectation par `local` (qui masque le code) ou déjà
+protégée par `||` passent.
+
 Hors périmètre, exprès : `| head -1` et `grep -m1`, dont la VALEUR est lue et non
 le statut ; `| grep -c`, `| grep -o`, qui lisent tout.
 
@@ -40,6 +48,13 @@ TUBE_GREP_Q = re.compile(
     r'(?:[^\n|;&\'"]*?[ \t])?(?:-[A-Za-z]*q[A-Za-z]*|--quiet)'
     r'(?=[ \t\n\\;)&|]|\Z)'
 )
+#  Forme B : `NOM=$(commande)` seul sur sa ligne, puis un `grep` qui lit "$NOM" en
+#  here-string à la ligne suivante (éventuellement niée par `!`).
+AFFECTE_PUIS_GREP = re.compile(
+    r'(?m)(?:^|;)[ \t]*(?P<nom>[A-Za-z_]\w*)=\$\((?P<cmd>[^\n]*)\)[ \t]*\n'
+    r'[ \t]*(?:!\s+)?grep\b[^\n]*?<<<[ \t]*"?\$\{?(?P=nom)\b'
+)
+SOUS_SET_E = re.compile(r'(?m)^[ \t]*set[ \t]+-[A-Za-z]*e')
 MINIMUM = 100  # moins de scripts lus : le motif git est cassé, pas « tout va bien »
 
 
@@ -49,11 +64,20 @@ def sans_commentaires(texte):
 
 
 def juger(texte):
-    """Les fautes d'un fichier : liste de (numéro de ligne, ligne)."""
+    """Les fautes d'un fichier : liste de (numéro de ligne, ligne, forme `A` ou `B`)."""
     texte = sans_commentaires(texte)
     lignes = texte.split('\n')
-    return [(texte.count('\n', 0, m.start()) + 1, lignes[texte.count('\n', 0, m.start())].strip())
-            for m in TUBE_GREP_Q.finditer(texte)]
+    fautes = []
+    for m in TUBE_GREP_Q.finditer(texte):
+        n = texte.count('\n', 0, m.start())
+        fautes.append((n + 1, lignes[n].strip(), 'A'))
+    if SOUS_SET_E.search(texte):
+        for m in AFFECTE_PUIS_GREP.finditer(texte):
+            if '||' in m.group('cmd'):
+                continue
+            n = texte.count('\n', 0, m.start('nom'))
+            fautes.append((n + 1, lignes[n].strip(), 'B'))
+    return sorted(fautes)
 
 
 def fichiers(racine='.'):
@@ -80,10 +104,15 @@ def verifier(racine='.', ecrire=print):
         if chemin in EXCEPTIONS:
             utilisees.add(chemin)
             continue
-        for numero, ligne in fautes:
-            ecrire(f"::error file={chemin},line={numero}::`| grep -q` : sous pipefail, grep qui sort tôt "
-                   f"donne 141 au producteur et le test ment (#2298) : {ligne} — lire le producteur "
-                   "(`_s=$(…)`), puis `grep -q motif <<<\"$_s\"`")
+        for numero, ligne, forme in fautes:
+            if forme == 'A':
+                ecrire(f"::error file={chemin},line={numero}::`| grep -q` : sous pipefail, grep qui sort tôt "
+                       f"donne 141 au producteur et le test ment (#2298) : {ligne} — lire le producteur "
+                       "(`_s=$(… || true)`), puis `grep -q motif <<<\"$_s\"`")
+            else:
+                ecrire(f"::error file={chemin},line={numero}::`x=$(producteur)` sans `|| true`, sous set -e : "
+                       f"un producteur non nul (dpkg-query, grep, git…) tue le script avant le grep (#2298) : "
+                       f"{ligne} — `x=$(producteur || true)`")
         etat = 1
     for chemin in sorted(set(EXCEPTIONS) - utilisees):
         ecrire(f"::error file={chemin}::exception inutile ({EXCEPTIONS[chemin]}) — la retirer de EXCEPTIONS")
@@ -105,7 +134,7 @@ def _selftest():
             echecs.append(f"{libelle} : obtenu {obtenu!r}, voulu {voulu!r}")
 
     def lignes_fautives(texte):
-        return [n for n, _ in juger(texte)]
+        return [n for n, _, _ in juger(texte)]
 
     #  Le MÉCANISME, avec un producteur qui n'en finit pas : grep -q sort au premier
     #  « y », `yes` prend SIGPIPE, pipefail rend 141 — le test dit « non » à tort.
@@ -131,6 +160,24 @@ def _selftest():
         attendre(f'refusé : {libelle}', len(lignes_fautives(texte)), 1)
     #  Les numéros de ligne désignent le tube.
     attendre('numéro de ligne', lignes_fautives('echo ok\ncmd | grep -q x\n'), [2])
+
+    #  La forme B : l'affectation nue sous set -e (PR #2322, bibliotheques-pdf.sh).
+    entete = 'set -euo pipefail\n'
+    nue = entete + '_st=$(dpkg-query -W -f=x "$p" 2>/dev/null)\ngrep -q "ok" <<<"$_st" || manquants=1\n'
+    attendre('forme B : affectation nue puis grep', [(n, f) for n, _, f in juger(nue)], [(2, 'B')])
+    attendre('forme B : grep nié par !', [f for _, _, f in juger(
+        entete + 'v=$(git log -1)\n! grep -q x <<<"$v"\n')], ['B'])
+    attendre('forme B : numéro de ligne', [n for n, _, _ in juger(nue)], [2])
+    for libelle, texte in [
+        ('|| true derrière le producteur', entete + '_st=$(dpkg-query -W x || true)\ngrep -q ok <<<"$_st"\n'),
+        ('un fichier sans set -e', '_st=$(dpkg-query -W x)\ngrep -q ok <<<"$_st"\n'),
+        ('set -u seul', 'set -u\n_st=$(dpkg-query -W x)\ngrep -q ok <<<"$_st"\n'),
+        ('local masque le code', entete + 'local _st=$(dpkg-query -W x)\ngrep -q ok <<<"$_st"\n'),
+        ('le grep lit une autre variable', entete + '_st=$(dpkg-query -W x)\ngrep -q ok <<<"$autre"\n'),
+        ('pas de grep derrière', entete + '_st=$(dpkg-query -W x)\necho "$_st"\n'),
+        ('commentaire ignoré', entete + '# _st=$(dpkg-query -W x)\n# grep -q ok <<<"$_st"\n'),
+    ]:
+        attendre(f'sain (forme B) : {libelle}', juger(texte), [])
 
     #  Les formes saines.
     for libelle, texte in [

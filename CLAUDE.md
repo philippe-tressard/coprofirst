@@ -884,7 +884,10 @@ Lancer en local : `bash <script>.sh --selftest`.
 test dit « non » à tort, au hasard de la charge — un self-test rouge sur une PR, vert sur
 la suivante, même arbre. On lit le producteur (`_s=$(…)`), puis `grep -q motif <<<"$_s"`.
 `python scripts/ci/pipe_grep_quiet.py` refuse le tube (exceptions déclarées, vides
-aujourd'hui) ; son `--selftest` en prouve le mécanisme avec un producteur sans fin.
+aujourd'hui) ; son `--selftest` en prouve le mécanisme avec un producteur sans fin. Il refuse
+aussi la conversion mal faite : sous `set -e`, `x=$(producteur)` nu puis `grep -q … <<<"$x"`
+tue le script quand le producteur sort non nul (`dpkg-query` d'un paquet absent a rendu la
+PR #2322 rouge) — `x=$(producteur || true)`.
 
 ### Navigateur — job CI `e2e-frontend` (depuis le 08/09/2026)
 `front/e2e/` porte les tests Playwright — squelette, lien d'évitement, absence de
