@@ -215,8 +215,33 @@
 	}
 }
 
+/*  Le message de fête (`DecorFeteMessage`) : il se pose à GAUCHE de l'élément
+    arrêté — le coin est à droite — et grandit depuis lui (0,96 → 1). Son
+    opacité est celle du décor, qui l'enveloppe. */
+.decor-fete .message-fete {
+	position: absolute;
+	translate: calc(-100% - 0.4rem) -50%;
+	scale: 0.96;
+	transform-origin: 100% 50%;
+	opacity: 0;
+	color: var(--color-primary);
+	font-size: var(--fs-sm);
+	font-weight: 600;
+	white-space: nowrap;
+	transition:
+		opacity var(--duree-apparition) var(--ease-out),
+		scale var(--duree-apparition) var(--ease-out);
+}
+.decor-fete .message-fete.visible {
+	opacity: 1;
+	scale: 1;
+}
+
 /*  Mobile : sous la barre fixe, et réduit pour ne pas gêner la lecture. */
 @media (max-width: 767px) {
+	.decor-fete .message-fete {
+		display: none;
+	}
 	.decor-fete {
 		top: 3.25rem;
 		transform: scale(0.7);
@@ -235,7 +260,8 @@
 		offset-distance: 50%;
 	}
 	.decor-fete .bulle,
-	.decor-fete .flocon {
+	.decor-fete .flocon,
+	.decor-fete .message-fete {
 		display: none;
 	}
 }

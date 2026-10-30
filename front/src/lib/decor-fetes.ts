@@ -1,7 +1,8 @@
 /**
  * Les tracés du DÉCOR DES JOURS DE FÊTE (#2312), partagés par le dessin
- * (`DecorFeteDessin`) et par l'élément qui le parcourt (`DecorFeteMouvement`).
+ * (`DecorFeteDessin`) et par l'élément qui le parcourt (`DecorFeteMouvement`), et l'arrêt où se pose le message (`DecorFeteMessage`).
  */
+import type { CodeFete } from '#lib/fetes.ts';
 
 //  Les tracés partagés par le décor et par l'élément qui le parcourt : une seule
 //  écriture chacun, sinon l'étoile quitterait son serpentin au premier retouché.
@@ -23,3 +24,26 @@ export const FANIONS: readonly (readonly [number, number, string])[] = [
 	[86.4, 45.9, 'bleu'],
 	[102.5, 47.4, 'blanc'],
 ];
+
+/**
+ * Où le message de fête se pose : l'élément qui bouge déjà (`cible`, dans le
+ * décor) et l'instant de SON animation où il s'arrête (`phase`, de 0 à 1 d'un
+ * tour). Le message apparaît là, le temps que l'élément reste immobile.
+ */
+export const PAUSES: Record<CodeFete, { cible: string; phase: number }> = {
+	//  L'étoile, au bout du serpentin (elle y reste de 50 à 62 % du tour).
+	'nouvel-an': { cible: '.glisse', phase: 0.56 },
+	//  Le cœur du milieu, au bout de son balancement.
+	'saint-valentin': { cible: '.balance', phase: 0.5 },
+	//  La première bulle, là où elle éclate.
+	'premier-avril': { cible: '.bulle:not(.seconde)', phase: 0.9 },
+	paques: { cible: '.balance', phase: 0.5 },
+	//  La première note, au bout de la portée, encore visible.
+	'fete-musique': { cible: '.parcourt:not(.seconde)', phase: 0.84 },
+	//  L'étincelle, à son dernier éclat.
+	'quatorze-juillet': { cible: '.scintille', phase: 0.5 },
+	//  L'araignée, en bas de son fil.
+	halloween: { cible: '.glisse', phase: 0.56 },
+	//  Le flocon, posé avant d'avoir fondu.
+	noel: { cible: '.flocon', phase: 0.55 },
+};
