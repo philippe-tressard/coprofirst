@@ -126,6 +126,7 @@ if command -v gh >/dev/null 2>&1; then
       elif git merge-base --is-ancestor "$sha" HEAD 2>/dev/null; then anc="oui"
       else anc="non"
       fi
+      anc=$(ascendance_0c "${sha:0:7}" "$anc" "$REECR0A" "${DECL0A_SHAS:-}")
       TRIPLETS="$TRIPLETS ${concl}:${sha:0:7}:$anc"
     done
     RESTE=$(echecs_bloquants "$TRIPLETS")
@@ -134,7 +135,7 @@ if command -v gh >/dev/null 2>&1; then
     if [ "$NB0C" -gt 0 ]; then
       DETAIL0C="$NB0C échec(s) que ce lot ne corrige pas :$SHAS0C"
     elif [ "$NB_ECHECS" -gt 0 ]; then
-      DETAIL0C="$NB_ECHECS échec(s), tous dépassés (succès postérieur ou corrigé ici)"
+      DETAIL0C="$NB_ECHECS échec(s), tous dépassés (succès postérieur, corrigé ici, ou commit retiré et déclaré)"
     else
       DETAIL0C="0 échec sur les 5 dernières exécutions"
     fi

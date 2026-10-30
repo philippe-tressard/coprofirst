@@ -255,7 +255,11 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   était `SKIP_PRECHECK=1`, donc désarmer tous les points pour en contourner un
   (#318, corrigé le 12/08/2026). Les **deux** conditions sont nécessaires : les
   PR étant fusionnées en squash puis `dev` réaligné, l'ascendance seule disparaît
-  au premier réalignement.
+  au premier réalignement. Une **troisième** depuis #2337 (30/10/2026) : le
+  commit en échec a été **retiré** et déclaré dans `.git/reecriture-dev`, et 0a
+  a validé la déclaration — le bump rejoué derrière un commit neuf n'est plus un
+  ancêtre de HEAD, et son échec bloquait le lot qui le remplace. Une déclaration
+  refusée par 0a ne dépasse rien (`ascendance_0c`, `lib-reecriture.sh`).
 
   ⚠️ **Deux contrôles différents portent le nom « 0c »** : celui-ci, exécuté par
   le script, et l'exigence d'**autorisation centralisée** de l'étape 0 bis

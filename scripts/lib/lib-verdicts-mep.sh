@@ -215,7 +215,7 @@ verdict_brief() {          # $1 = commit du brief, $2 = HEAD, $3 = lignes de cor
 #   - l'échec porte sur autre chose (branche divergente, commit inconnu du clone,
 #     ou HEAD lui-même) → là, il doit bloquer.
 #
-# DEUX façons pour un échec d'être dépassé, et il faut les deux :
+# TROIS façons pour un échec d'être dépassé (les deux premières sont nécessaires) :
 #
 #   1. un run PLUS RÉCENT a réussi — l'échec appartient au passé, quoi qu'ait
 #      fait le lot courant ;
@@ -226,14 +226,15 @@ verdict_brief() {          # $1 = commit du brief, $2 = HEAD, $3 = lignes de cor
 # matin, où le correctif était commité et rien n'avait encore tourné après
 # l'échec. La seconde seule ne suffit pas non plus : les PR sont fusionnées en
 # SQUASH puis `dev` est réaligné sur `main`, ce qui DÉTRUIT le lien d'ascendance
-# — le contenu est intégré, le commit en échec n'est plus un ancêtre de personne.
-# Vécu deux heures après avoir écrit la première version de ce contrôle.
+# — le contenu est intégré, le commit en échec n'est plus un ancêtre de personne
+# (vécu deux heures après la première version de ce contrôle). 3. le commit est
+# RETIRÉ, déclaré, et 0a a validé que HEAD le recouvre (`ascendance_0c`, #2337).
 #
 # L'appelant fournit les deux mesures (`gh run list` ordonné, et
 # `git merge-base --is-ancestor`) : cette fonction reste PURE, donc testable sans
 # dépôt ni CI. Une ascendance inconnue compte comme NON dépassée — on ne déduit
 # pas un vert d'une mesure qu'on n'a pas pu faire.
-echecs_bloquants() {       # $1 = runs « conclusion:sha:oui|non|? », du PLUS RÉCENT
+echecs_bloquants() {       # $1 = runs « conclusion:sha:oui|retire|non|? », du PLUS RÉCENT
                            #      au plus ancien ; anc = ancêtre strict de HEAD
                            # → « <nombre> <sha bloquants…> »
   local n=0 restants="" e concl sha anc reste vu_succes=0
@@ -243,7 +244,7 @@ echecs_bloquants() {       # $1 = runs « conclusion:sha:oui|non|? », du PLUS R
     if [ "$concl" = "success" ]; then vu_succes=1; continue; fi
     [ "$concl" = "failure" ] || continue          # annulé, en cours… : ni l un ni l autre
     [ "$vu_succes" -eq 1 ] && continue            # (1) un run plus récent a réussi
-    [ "$anc" = "oui" ] && continue                # (2) ce push descend de l échec
+    case "$anc" in oui|retire) continue ;; esac  # (2) descend de l échec, (3) l a retiré
     n=$((n + 1)); restants="$restants ${sha}"
   done
   echo "$n$restants"
