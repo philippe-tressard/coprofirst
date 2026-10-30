@@ -37,6 +37,8 @@ export interface User {
 	preferences_notifications: string;
 	/** Préférence d'AFFICHAGE, jamais un droit : n'afficher que ses bâtiments (#339). */
 	restreindre_a_mes_batiments?: boolean;
+	/** Le décor des jours de fête, pour soi — vrai par défaut (#2312). */
+	decor_fetes?: boolean;
 	demarche_arrivant?: string | null;
 	batiment_id?: number | null;
 	batiment_nom?: string | null; // "Bât. A"

@@ -49,6 +49,7 @@ class UserRead(BaseModel):
     preferences_notifications: str
     #  Préférence d'AFFICHAGE, jamais un droit — cf. models/core.py.
     restreindre_a_mes_batiments: bool = False
+    decor_fetes: bool = True
     demarche_arrivant: Optional[str] = None
     batiment_id: Optional[int] = None
     batiment_nom: Optional[str] = None  # ex. "Bât. A"

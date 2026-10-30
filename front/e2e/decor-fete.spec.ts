@@ -11,7 +11,7 @@
  *  déjà le 29 à Paris, premier jour d'Halloween.
  */
 import type { Page } from '@playwright/test';
-import { expect, simulerApi, test } from './aides';
+import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
 
 const DECOR = '.decor-fete';
 
@@ -73,4 +73,85 @@ test('moins d’animations demandées : le décor reste, rien ne bouge', async (
 	await page.emulateMedia({ reducedMotion: 'reduce' });
 	await ouvrirLe(page, '2026-12-24T10:00:00+01:00');
 	await expect(page.locator(`${DECOR} .balance`)).toHaveCSS('animation-name', 'none');
+});
+
+/*
+ *  **Chacun le garde ou l'éteint pour lui** (Profil › Apparence), sur le COMPTE :
+ *  `decor_fetes` de `/api/auth/me`, vrai tant qu'on n'y a pas touché.
+ */
+const HALLOWEEN = '2026-10-30T10:00:00+01:00';
+const CASE = { name: 'Décor des jours de fête' };
+
+/** Le Profil, le service allumé ou non ; chaque `PATCH /api/auth/me` est retenu. */
+async function ouvrirProfil(
+	page: Page,
+	{ service = '1', decor = true, refus = false } = {},
+): Promise<unknown[]> {
+	await page.clock.setFixedTime(new Date(HALLOWEEN));
+	const envois: unknown[] = [];
+	await simulerApi(page, (chemin) =>
+		chemin === '/api/config' ? { site_nom: 'Résidence témoin', decor_fetes: service } : undefined,
+	);
+	await page.route(
+		(url) => url.pathname === '/api/auth/me',
+		async (route) => {
+			const req = route.request();
+			if (req.method() !== 'PATCH')
+				return route.fulfill({ json: { ...MEMBRE_CS, decor_fetes: decor } });
+			const corps = req.postDataJSON();
+			envois.push(corps);
+			if (refus) return route.fulfill({ status: 500, json: { detail: 'Panne' } });
+			return route.fulfill({ json: { ...MEMBRE_CS, ...corps } });
+		},
+	);
+	await page.goto('/profil');
+	await attendreHydratation(page);
+	return envois;
+}
+
+test('un compte qui l’a éteint ne voit aucun décor, même à Noël', async ({ page }) => {
+	await page.clock.setFixedTime(new Date('2026-12-24T10:00:00+01:00'));
+	await simulerApi(page, (chemin) =>
+		chemin === '/api/config'
+			? { site_nom: 'Résidence témoin', decor_fetes: '1' }
+			: chemin === '/api/auth/me'
+				? { ...MEMBRE_CS, decor_fetes: false }
+				: undefined,
+	);
+	await page.goto('/tickets');
+	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+	await expect(page.locator(DECOR)).toHaveCount(0);
+});
+
+test('Profil : la case dit la fête en cours, et l’éteindre retire le décor sur-le-champ', async ({
+	page,
+}) => {
+	const envois = await ouvrirProfil(page);
+	const caseDecor = page.getByRole('checkbox', CASE);
+	await expect(caseDecor).toBeChecked();
+	await expect(page.getByText('Halloween jusqu’au 31 octobre')).toBeVisible();
+	await expect(page.locator(DECOR)).toHaveAttribute('data-fete', 'halloween');
+
+	await caseDecor.uncheck();
+	await expect(page.locator(DECOR)).toHaveCount(0);
+	await expect(page.getByText('Masqué pour vous, sur tous vos appareils.')).toBeVisible();
+	await expect.poll(() => envois).toEqual([{ decor_fetes: false }]);
+
+	await caseDecor.check();
+	await expect(page.locator(DECOR)).toHaveAttribute('data-fete', 'halloween');
+	await expect.poll(() => envois).toEqual([{ decor_fetes: false }, { decor_fetes: true }]);
+});
+
+test('Profil : un refus du serveur remet la case et le décor', async ({ page }) => {
+	await ouvrirProfil(page, { refus: true });
+	const caseDecor = page.getByRole('checkbox', CASE);
+	await caseDecor.uncheck();
+	await expect(caseDecor).toBeChecked();
+	await expect(page.locator(DECOR)).toHaveAttribute('data-fete', 'halloween');
+});
+
+test('Profil : service coupé par l’administration, aucune case à cocher', async ({ page }) => {
+	await ouvrirProfil(page, { service: '0' });
+	await expect(page.getByRole('heading', { name: 'Apparence' })).toBeVisible();
+	await expect(page.getByRole('checkbox', CASE)).toHaveCount(0);
 });

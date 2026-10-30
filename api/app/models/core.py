@@ -133,6 +133,10 @@ class Utilisateur(SQLModel, table=True):
     #  Elle ne protège rien — la confidentialité reste portée par `public_cible`
     #  et les profils d'accès aux documents, que ce lot ne touche pas.
     restreindre_a_mes_batiments: bool = Field(default=False)
+    #  Le décor des jours de fête (#2312) : l'administration l'allume pour la
+    #  copropriété (Admin › Services), chacun peut l'éteindre pour lui, sur tous
+    #  ses appareils. Préférence d'affichage, comme la précédente.
+    decor_fetes: bool = Field(default=True)
     demarche_arrivant: Optional[str] = Field(default=None)  # nouvel_arrivant | deja_resident | None
     batiment_id: Optional[int] = Field(default=None, foreign_key="batiment.id")
     nom_proprietaire: Optional[str] = None  # pour les locataires : nom du propriétaire bailleur

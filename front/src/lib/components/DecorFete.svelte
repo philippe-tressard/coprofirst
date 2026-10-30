@@ -7,7 +7,8 @@
 
   - Les dates : `#lib/fetes` (la seule écriture), lues au jour de Paris.
   - L'interrupteur : le service « Décor des jours de fête » d'Admin › Services,
-    que le serveur résume en une clé publique calculée, `decor_fetes`.
+    que le serveur résume en une clé publique calculée, `decor_fetes` — puis
+    celui de la personne, au Profil (`ChoixDecorFete`, `decor_fetes` du compte).
   - L'opacité : UNE valeur pour toutes les fêtes, `--decor-fete-opacite` (25 %).
   - Moins d'animations demandées : le décor reste, rien ne bouge.
 
@@ -17,6 +18,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { configStore } from '#lib/stores/pageConfig.ts';
+	import { currentUser } from '#lib/stores/auth.ts';
 	import { jourIso } from '#lib/date.ts';
 	import { feteDuJour, type CodeFete } from '#lib/fetes.ts';
 	import DecorFeteDessin from '#lib/components/DecorFeteDessin.svelte';
@@ -27,8 +29,13 @@
 		jour = jourIso();
 	});
 
+	//  Deux interrupteurs : la copropriété (le service), puis la personne (son
+	//  Profil, sur le compte — vrai tant qu'elle n'y a pas touché).
 	let fete: CodeFete | null = null;
-	$: fete = jour && $configStore['decor_fetes'] === '1' ? feteDuJour(jour) : null;
+	$: fete =
+		jour && $configStore['decor_fetes'] === '1' && $currentUser?.decor_fetes !== false
+			? feteDuJour(jour)
+			: null;
 </script>
 
 {#if fete}
