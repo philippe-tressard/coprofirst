@@ -1,14 +1,21 @@
 """Le nommage technique est français — l'existant figé, le suivant refusé (#1056).
 
 « Français exclusif (interface + nommage des champs) », dit CLAUDE.md. L'interface
-l'est ; le nommage technique ne l'était pas partout, et rien ne le gardait. Le
-renommer en bloc serait une série de migrations et de clients front : il se fait
-AU FIL DE L'EAU, quand un lot touche la table ou la route. Ce test tient les deux
-bouts, comme `lint:confirmation` :
+l'est ; le nommage technique ne l'était pas partout, et rien ne le gardait.
 
-- un nom anglais NOUVEAU (table, segment de route) échoue ;
-- un nom figé qui a été renommé doit SORTIR de la liste — elle ne fait que
-  décroître, et une entrée qui ne sert plus fait échouer.
+🔒 **Les noms anglais existants sont FIGÉS DÉFINITIVEMENT** (décision de l'auteur,
+30/10/2026, #2314). Les renommer coûterait, pour chaque table, une migration en
+deux versions (`CONTRACTIONS`, #1757) et, pour chaque route, le client front et
+les onglets PWA restés ouverts sur l'ancienne adresse — pour un gain que
+l'utilisateur ne voit pas. Ce ne sont plus des dettes à résorber : ce sont des
+noms établis, et les listes ci-dessous ne sont plus un plafond. Ce test tient
+les deux bouts, comme `lint:confirmation` :
+
+- un nom anglais NOUVEAU (table, segment de route) échoue — la règle reste
+  entière pour tout ce qui naît ;
+- un nom figé qui viendrait à être renommé (par exemple `whatsapp_*` au second
+  canal de diffusion, #1060) doit SORTIR de la liste — une entrée qui ne sert
+  plus fait échouer.
 
 Le vocabulaire surveillé est volontairement court : des mots sans équivalent
 français homographe. « auto » (auto-résoudre) et « vérification » le sont, donc
@@ -61,8 +68,8 @@ ANGLAIS = {
     "telemetry",
 }
 
-#: Tables anglaises existantes au 24/09/2026 — à renommer au fil de l'eau.
-#: Suivi : #2314.
+#: Tables anglaises existantes au 24/09/2026 — figées définitivement (#2314,
+#: 30/10/2026) : une table renommée, c'est une migration en deux versions.
 TABLES_FIGEES = {
     "email_verification_token",
     "password_reset_token",
@@ -75,8 +82,8 @@ TABLES_FIGEES = {
     "whatsapp_scheduled",
 }
 
-#: Routes existantes portant un mot anglais au 24/09/2026 — même régime.
-#: Suivi : #2314.
+#: Routes existantes portant un mot anglais au 24/09/2026 — figées définitivement
+#: (#2314, 30/10/2026) : une route renommée casse le client et les onglets PWA.
 ROUTES_FIGEES = {
     "/acces/admin/imports-vigik/auto-match",
     "/acces/admin/imports-vigik/stats",

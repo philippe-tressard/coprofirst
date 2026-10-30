@@ -267,9 +267,11 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
 
 - **Nommage : français, tables, routes et tags compris.** Les noms anglais
   existants — tables et routes — sont **figés** dans `api/tests/test_nommage_francais.py`
-  (`TABLES_FIGEES`, `ROUTES_FIGEES` : le compte se lit là, pas ici), qui refuse le suivant : ils se renomment **au fil de l'eau**, quand un lot touche
-  déjà la table ou la route — jamais en bloc (migration + client front) —, et on retire
-  alors l'entrée, la liste ne fait que décroître. Un **tag** OpenAPI s'écrit en
+  (`TABLES_FIGEES`, `ROUTES_FIGEES` : la liste se lit là, pas ici), qui refuse le suivant.
+  Ils sont figés **définitivement** (décision du 30/10/2026, #2314) : on ne les renomme
+  pas — une migration en deux versions par table, le client et les onglets PWA par
+  route, pour un gain invisible. Un nom figé qui viendrait à être renommé sort de la
+  liste, sinon le test échoue. Un **tag** OpenAPI s'écrit en
   minuscules à tirets (`carnet-entretien`), un **préfixe** de routeur au pluriel (#1056).
 
 ### Schémas Pydantic
