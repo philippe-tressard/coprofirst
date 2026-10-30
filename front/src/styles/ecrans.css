@@ -441,7 +441,7 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 	margin: 0 0 0.35rem;
 }
 .report-intro {
-	font-size: 0.86rem;
+	font-size: var(--fs-base);
 	color: var(--color-text-muted);
 	margin-bottom: 0.85rem;
 }
@@ -456,7 +456,7 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 .report-table {
 	width: 100%;
 	border-collapse: collapse;
-	font-size: 0.86rem;
+	font-size: var(--fs-base);
 }
 .report-table th,
 .report-table td {
@@ -466,7 +466,7 @@ qu'a un seul doit vivre dans son `<style>`, avec son balisage.
 	text-align: left;
 }
 .report-table th {
-	font-size: 0.76rem;
+	font-size: var(--fs-sm);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	color: var(--color-text-muted);

@@ -413,7 +413,7 @@
 	}
 	.diag-nom {
 		font-weight: 600;
-		font-size: 0.975rem;
+		font-size: var(--fs-xl);
 	}
 	.diag-texte {
 		font-size: var(--fs-md);

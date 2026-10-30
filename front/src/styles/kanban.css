@@ -289,7 +289,7 @@
 	letter-spacing: 0.05em;
 }
 .kb-col-count {
-	font-size: 0.62rem;
+	font-size: var(--fs-3xs);
 	font-weight: 700;
 	padding: 0.1rem 0.4rem;
 	border-radius: 1rem;
@@ -324,7 +324,7 @@
 	letter-spacing: 0.04em;
 }
 .kb-mobile-pos {
-	font-size: 0.66rem;
+	font-size: var(--fs-2xs);
 	color: var(--color-text-muted);
 }
 .kb-nav-btn {
@@ -363,7 +363,7 @@
 	overflow: hidden;
 }
 .kb-mobile-plus {
-	font-size: 0.74rem;
+	font-size: var(--fs-xs);
 	color: var(--color-text-muted);
 	text-align: center;
 	padding: 0.4rem 0.75rem;

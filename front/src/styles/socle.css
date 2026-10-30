@@ -282,6 +282,11 @@ body {
 	    au cran SUPÉRIEUR — aucun texte ne rétrécit en se normalisant —, arbitré
 	    sur maquette le 27/09/2026 : 0,78 → sm · 0,82 → md · 0,875 → base…
 	    🔒 `npm run lint:charte-valeurs` (la table de rangement y vit). */
+	/*  Sous l'échelle du texte courant, le cran des PASTILLES (#2313, arbitré
+	    sur maquette le 30/10/2026) : compteur de colonne, pastille « Nouveau »,
+	    étiquette, chevron. Elles étaient à 0,6 rem ; `2xs` les grossissait de
+	    20 %, ce cran-ci de 8 % au plus — et aucune ne rétrécit. */
+	--fs-3xs: 0.65rem;
 	--fs-2xs: 0.72rem;
 	--fs-xs: 0.75rem;
 	--fs-sm: 0.8rem;

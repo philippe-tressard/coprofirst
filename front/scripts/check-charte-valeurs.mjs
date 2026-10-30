@@ -69,9 +69,11 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, re
  *  d'intertitres aux valeurs exactes déjà les plus employées (`--fs-xl` 1 rem ×19,
  *  `--fs-2xl` 1,1 rem ×7) : aucun rendu ne change. Les 43 qui restent n'égalent
  *  aucun jeton : les ranger change le rendu, arbitrage sur maquette (#2313).
+ *  30/10/2026 (#2313, lot 1) : 43 → 27 — les seize tailles sous 1 rem, au cran
+ *  supérieur ; les pastilles à 0,6 rem sur un cran neuf, `--fs-3xs` (0,65).
  */
 //  Suivi des tailles restantes : #2313.
-const PLAFOND = { couleurs: 0, tailles: 43 };
+const PLAFOND = { couleurs: 0, tailles: 27 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
@@ -126,14 +128,22 @@ export function valeursEnDur(css) {
  *  (`--nature-fort`), l'orange de l'urgence, `.badge-yellow` (#495).
  */
 export const TAILLES_HORS_ECHELLE = {
-	0.65: '--fs-2xs',
+	0.6: '--fs-3xs',
+	0.62: '--fs-3xs',
+	0.66: '--fs-2xs',
 	0.68: '--fs-2xs',
 	0.7: '--fs-2xs',
+	0.74: '--fs-xs',
+	0.76: '--fs-sm',
 	0.78: '--fs-sm',
 	0.82: '--fs-md',
+	0.83: '--fs-md',
+	0.84: '--fs-md',
+	0.86: '--fs-base',
 	0.875: '--fs-base',
 	0.88: '--fs-base',
 	0.92: '--fs-lg',
+	0.975: '--fs-xl',
 };
 
 /**

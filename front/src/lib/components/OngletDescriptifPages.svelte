@@ -342,7 +342,7 @@
 		border: 1px solid var(--color-border);
 		border-radius: 3px;
 		cursor: pointer;
-		font-size: 0.6rem;
+		font-size: var(--fs-3xs);
 		padding: 1px 4px;
 		line-height: 1.5;
 		color: var(--color-text-muted);

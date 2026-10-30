@@ -1110,7 +1110,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	color: var(--color-text);
 }
 .carte-membre .summary-role-badge {
-	font-size: 0.74rem;
+	font-size: var(--fs-xs);
 	font-weight: 600;
 	color: var(--color-sarcelle);
 	background: var(--color-sarcelle-fond);

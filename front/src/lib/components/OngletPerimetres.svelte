@@ -454,7 +454,7 @@
 		border-top: 1px dashed var(--color-border);
 	}
 	.ref-desc {
-		font-size: 0.84rem;
+		font-size: var(--fs-md);
 		color: var(--color-text-muted);
 		line-height: 1.55;
 		margin: 0.5rem 0;

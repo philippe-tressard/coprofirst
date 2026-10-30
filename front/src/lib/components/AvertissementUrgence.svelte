@@ -148,7 +148,7 @@
 		color: var(--color-orange-texte);
 	}
 	.urgence-disclaimer-chevron {
-		font-size: 0.6rem;
+		font-size: var(--fs-3xs);
 		color: var(--color-orange-texte);
 		flex-shrink: 0;
 	}
