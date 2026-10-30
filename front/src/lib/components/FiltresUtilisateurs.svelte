@@ -50,7 +50,7 @@
 		id="admin-recherche-utilisateur"
 		bind:valeur={recherche}
 		placeholder="Dupont, dupont@…"
-		aide="Un nom ou une adresse e-mail."
+		dans="prénom, nom et adresse e-mail"
 	/>
 	<span class="libelle-groupe libelle-devant" aria-hidden="true">Type</span>
 	<div>

@@ -159,6 +159,13 @@ export const TOLERANCES = {
 	//  composant existe pour retirer (« son UX dénote à côté du filtre »).
 	'lib/components/PastilleDeroulante.svelte::style:controle-saisie':
 		'<select> habillé en pastille, jamais un champ de formulaire (l. ~87)',
+	//  ⚠️ Pas une dette : une exception VOULUE (29/10/2026, #2308, maquette B).
+	//  Le champ de RECHERCHE porte sa loupe et sa croix DANS le contour : c'est le
+	//  cadre `.recherche-cadre` qui prend la peau de `.field input` (bordure,
+	//  rayon, fond blanc, anneau de focus par `:focus-within`), et la saisie qu'il
+	//  enveloppe est transparente et sans bordure — sinon deux contours.
+	'lib/components/ChampRecherche.svelte::style:controle-saisie':
+		'<input type="search"> transparent dans le cadre qui porte la peau (l. ~128)',
 	//  ✅ Tolérance TOMBÉE le 11/09/2026 — troisième fois qu'une dette de peinture
 	//  part sans qu'un lot de style s'en occupe. Le `<select>` et l'`<input>` de
 	//  l'onglet Consommations ont suivi le balisage dans `OngletConsommations`,

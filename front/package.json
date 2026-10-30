@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.35.1",
+	"version": "3.36.0",
 	"private": true,
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -127,6 +127,7 @@
 		"lint:donnees-affichees": "node scripts/check-donnees-affichees.mjs --selftest && node scripts/check-donnees-affichees.mjs",
 		"lint:etage-libelle": "node scripts/check-etage-libelle.mjs",
 		"lint:type-lot": "node scripts/check-type-lot.mjs --selftest && node scripts/check-type-lot.mjs",
+		"lint:recherche": "node scripts/check-recherche.mjs --selftest && node scripts/check-recherche.mjs",
 		"lint:badge": "node scripts/check-badge.mjs --selftest && node scripts/check-badge.mjs",
 		"lint:identite-copropriete": "node scripts/check-identite-copropriete.mjs --selftest && node scripts/check-identite-copropriete.mjs",
 		"lint:nom-residence": "node scripts/check-nom-residence.mjs --selftest && node scripts/check-nom-residence.mjs",

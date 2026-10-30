@@ -168,6 +168,7 @@
 		id="lots-recherche"
 		bind:valeur={recherche}
 		placeholder="N° de lot, porte ou place, bâtiment…"
+		dans="n° de lot, n° de porte ou de place, et bâtiment"
 	/>
 	{#if natures.length > 1}
 		<ChoixPastilles

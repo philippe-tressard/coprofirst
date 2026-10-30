@@ -2173,6 +2173,13 @@ jobs:
         working-directory: front
         run: npm run lint:type-lot
 
+      # Un champ de RECHERCHE ne s'écrit que par `ChampRecherche` (#2308,
+      # 29/10/2026) : saisie blanche, loupe, croix, et l'aide qui dit où l'on
+      # cherche. Deux écrans écrivaient encore leur `<input>` à la main.
+      - name: Champ de recherche standard
+        working-directory: front
+        run: npm run lint:recherche
+
       # La teinte d'un badge tirée d'une TABLE passe par `Badge` (#1571) : une
       # classe interpolée rendait l'écran aveugle à `lint:css-orphelin` (25
       # fichiers). Teintes du composant, des feuilles et du code concordent.
