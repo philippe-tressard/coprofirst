@@ -337,7 +337,7 @@ if [ "$REPRENDRE" = oui ]; then
 fi
 SEUIL_LENTE="${REJEU_SEUIL_LENTE:-$CI_SEUIL_LENTE}"   # imposable, comme le budget
 ci_plan "$SEUIL_LENTE" "$TMP/reprendre" < "$TMP/a-jouer-durees" > "$TMP/plan"
-[ -s "$TMP/a-jouer-durees" ] && ! cut -f4 "$TMP/a-jouer-durees" | grep -q . \
+[ -s "$TMP/a-jouer-durees" ] && ! grep -q . <<<"$(cut -f4 "$TMP/a-jouer-durees")" \
   && echo "· Aucune durée mesurée encore : tout est « rapide » ce coup-ci ; les durées s'apprennent ($DUREES)."
 
 BUDGET=$(ci_budget_parallele "${REJEU_PARALLELE:-}" "$(nproc 2>/dev/null)" "${CHARGE:-}")

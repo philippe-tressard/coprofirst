@@ -77,7 +77,7 @@ est_lance() {  # $1 = texte du job, $2 = chemin
   #  reconnaît tout : un vert. Vu en l'écrivant ; d'où le garde-fou ci-dessous.
   motif=$(printf '%s' "$2" | sed 's|[].*^$\\[]|\\&|g')
   [ -n "$motif" ] || return 1
-  printf '%s\n' "$1" | grep -qE "(^|[[:space:]])${motif}[[:space:]]+--selftest"
+  grep -qE "(^|[[:space:]])${motif}[[:space:]]+--selftest" <<<"$1"
 }
 
 #  Le verdict. $1 = texte du job · $2 = exposeurs (un par ligne) · $3 = exceptions
@@ -88,13 +88,13 @@ verdict_selftests() {
   while IFS= read -r f; do
     [ -z "$f" ] && continue
     est_lance "$job" "$f" && continue
-    if printf '%s\n' "$exceptions" | grep -qF "${f}|"; then continue; fi
+    if grep -qF "${f}|" <<<"$exceptions"; then continue; fi
     anomalies+="MANQUE $f : expose --selftest, aucune ligne « bash $f --selftest » dans le job $JOB"$'\n'
   done <<< "$exposeurs"
   while IFS= read -r ligne; do
     [ -z "$ligne" ] && continue
     chemin="${ligne%%|*}"
-    if ! printf '%s\n' "$exposeurs" | grep -qxF "$chemin"; then
+    if ! grep -qxF "$chemin" <<<"$exposeurs"; then
       anomalies+="EXCEPTION PÉRIMÉE $chemin : n'expose plus --selftest — retirer l'entrée"$'\n'
     elif est_lance "$job" "$chemin"; then
       anomalies+="EXCEPTION PÉRIMÉE $chemin : le job $JOB le lance désormais — retirer l'entrée"$'\n'

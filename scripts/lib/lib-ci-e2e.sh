@@ -53,7 +53,8 @@ ci_node_modules_etat() {
 #  navigateurs, qui n'est jamais rejouée : un premier jet le prenait pour critère
 #  et n'attrapait donc rien. (PURE) Corps sur stdin → oui | non
 ci_sert_par_vite() {
-  grep -v '^[[:space:]]*#' | grep -Eq '(^|[^[:alnum:]_:-])(npm run e2e([^[:alnum:]:_-]|$)|playwright test)'     && echo oui || echo non
+  local _corps; _corps=$(grep -v '^[[:space:]]*#' || true)
+  grep -Eq '(^|[^[:alnum:]_:-])(npm run e2e([^[:alnum:]:_-]|$)|playwright test)' <<<"$_corps" && echo oui || echo non
 }
 
 # ── Relancer les tests tombés sur l'import dynamique de Vite ? (#1809) ───────

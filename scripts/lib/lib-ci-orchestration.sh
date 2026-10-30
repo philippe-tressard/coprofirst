@@ -244,7 +244,7 @@ ci_orchestration_cas() {
     local jobs j morts=""
     jobs=$(ci_extraire < .github/workflows/ci.yml | awk -F'\t' '/^@@STEP/{print $2}' | sort -u)
     for j in $CI_JOBS_ETAPES_INDEPENDANTES ${CI_COULOIRS_PARTAGES//:/ }; do
-      printf '%s\n' "$jobs" | grep -qx "$j" || morts="$morts $j"
+      grep -qx "$j" <<<"$jobs" || morts="$morts $j"
     done
     t "tables des couloirs — chaque job nommé existe dans ci.yml" "${morts:-aucun mort}" "aucun mort"
   fi

@@ -51,8 +51,8 @@ JETON_CLAIR_MOTIF='--token[= ]+[^ ]|TUNNEL_TOKEN=[^ ]|eyJ[A-Za-z0-9_-]{20,}'
 collecte_jeton_tunnel() {
     printf '%s' '
 _tu=$(systemctl cat cloudflared 2>/dev/null)
-if printf "%s\n" "$_tu" | grep -q "^ExecStart="; then
-if printf "%s\n" "$_tu" | grep -Eq -- "'"$JETON_CLAIR_MOTIF"'"; then echo "tunnel_jeton=clair"; else echo "tunnel_jeton=absent"; fi
+if grep -q "^ExecStart=" <<<"$_tu"; then
+if grep -Eq -- "'"$JETON_CLAIR_MOTIF"'" <<<"$_tu"; then echo "tunnel_jeton=clair"; else echo "tunnel_jeton=absent"; fi
 _tf=$(printf "%s\n" "$_tu" | sed -n "s/^ExecStart=.*--token-file[= ]\([^ ]*\).*/\1/p" | head -n 1)
 if [ -n "$_tf" ]; then echo "tunnel_jeton_mode=$(stat -c %a "$_tf" 2>/dev/null || echo "?")"; else echo "tunnel_jeton_mode="; fi
 else

@@ -47,7 +47,7 @@ if [ "${1:-}" = "--selftest" ]; then
 fi
 
 VERSION="${VERSION:?VERSION manquante (X.Y.Z)}"
-if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+if ! grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' <<<"$VERSION"; then
     echo "::error::version illisible : « $VERSION »"; exit 1
 fi
 COMMIT=$(git rev-list -n 1 "refs/tags/v$VERSION" 2>/dev/null) \

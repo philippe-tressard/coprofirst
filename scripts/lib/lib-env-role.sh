@@ -71,7 +71,7 @@ env_role_transformer() {
   #  peut l'avoir perdue, et un site sans ORIGIN refuse les envois de formulaire.
   local sortie
   sortie=$(printf '%s' "$texte" | sed "s|^ORIGIN=.*|ORIGIN=${origine}|")
-  if ! printf '%s' "$sortie" | grep -q '^ORIGIN='; then
+  if ! grep -q '^ORIGIN=' <<<"$sortie"; then
     sortie=$(printf '%s\nORIGIN=%s' "$sortie" "$origine")
   fi
 
@@ -170,7 +170,7 @@ verdict_env_lisible() {
   #  liste de ses groupes, on se contente du groupe primaire du fichier.
   case "$g" in
     4|5|6|7)
-      if [ "$groupe" = "$utilisateur" ] || printf ' %s ' "$groupes" | grep -q " $groupe "; then
+      if [ "$groupe" = "$utilisateur" ] || grep -q " $groupe " <<<" $groupes "; then
         echo OK; return
       fi
       ;;

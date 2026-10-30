@@ -89,7 +89,8 @@ if _v=$(docker ps --format "{{.Names}} {{.Status}}" 2>/dev/null); then
 echo "etrangers_lu=1"
 _m=""
 for _c in $(tail -n +2 "$_f"); do
-printf "%s\n" "$_v" | grep -v -e "unhealthy" -e "health: starting" | grep -q "^$_c " || _m="$_m${_m:+,}$_c"
+_w=$(printf "%s\n" "$_v" | grep -v -e "unhealthy" -e "health: starting" || true)
+grep -q "^$_c " <<<"$_w" || _m="$_m${_m:+,}$_c"
 done
 echo "etrangers_manquants=$_m"
 fi

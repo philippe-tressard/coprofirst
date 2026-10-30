@@ -132,7 +132,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
 
     echo "== lib-journal : la ligne datée =="
     t "format [AAAA-MM-JJ HH:MM:SS] message" OUI \
-      "$(log "Déployé: abc1234" | grep -qE '^\[[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\] Déployé: abc1234$' && echo OUI || echo NON)"
+      "$(grep -qE '^\[[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\] Déployé: abc1234$' <<<"$(log "Déployé: abc1234")" && echo OUI || echo NON)"
     t "log date chaque ligne à l'écriture" OUI "$(horodatage_a_l_ecriture log)"
     #  La faute de #1587, reconstituée : la date calculée UNE fois, au démarrage.
     D_FIGEE="[$(date '+%Y-%m-%d %H:%M:%S')]"

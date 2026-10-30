@@ -50,13 +50,6 @@ def test_la_promotion_se_lance_a_la_main_ou_la_nuit():
     assert entrees["urgence"]["default"] is False, "l'urgence ne se coche jamais d'office"
 
 
-def test_le_rappel_ne_tourne_que_la_nuit():
-    etapes = _flux()["jobs"]["promouvoir"]["steps"]
-    rappel = [e for e in etapes if "rappel-replica.sh" in e.get("run", "")]
-    assert len(rappel) == 1, rappel
-    assert "github.event_name == 'schedule'" in rappel[0]["if"], rappel[0]
-
-
 def test_la_saisie_ne_s_interpole_dans_aucun_script():
     for nom, job in _flux()["jobs"].items():
         for etape in job["steps"]:
@@ -78,7 +71,6 @@ def test_la_decision_vit_dans_un_script_eprouve_par_la_ci():
     for script in (
         "scripts/ci/promotion.sh",
         "scripts/ci/notes-de-version.sh",
-        "scripts/ci/rappel-replica.sh",
     ):
         assert (RACINE / script).exists(), script
         assert f"bash {script}" in texte, f"le workflow n'appelle pas {script}"

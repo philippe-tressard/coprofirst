@@ -439,7 +439,7 @@ verdict_csp_directives() {
   ligne=$(printf '%s' "$recus" | grep -i "^Content-Security-Policy:" | head -1)
   [ -z "$ligne" ] && { echo INCONNU; return; }
   for d in $directives; do
-    printf '%s' "$ligne" | grep -q "$d" || manquantes="${manquantes}${manquantes:+,}${d}"
+    grep -q "$d" <<<"$ligne" || manquantes="${manquantes}${manquantes:+,}${d}"
   done
   [ -z "$manquantes" ] && echo OK || echo "MANQUANT:$manquantes"
 }
@@ -474,7 +474,7 @@ verdict_script_tiers() {
   #  interdit — et celui que ce dépôt a déjà produit quatre fois.
   [ -z "$html" ] && { echo INCONNU; return; }
   for h in $hotes; do
-    printf '%s' "$html" | grep -qF "$h" && trouves="${trouves}${trouves:+,}${h}"
+    grep -qF "$h" <<<"$html" && trouves="${trouves}${trouves:+,}${h}"
   done
   [ -z "$trouves" ] && echo OK || echo "TIERS:$trouves"
 }
@@ -492,7 +492,7 @@ verdict_entetes_securite() {
   for nom in $attendus; do
     #  Les en-têtes HTTP sont insensibles à la casse : `curl` rend ce que le
     #  serveur envoie, et Caddy peut changer de casse d'une version à l'autre.
-    printf '%s' "$recus" | grep -qi "^${nom}:" || manquants="${manquants}${manquants:+,}${nom}"
+    grep -qi "^${nom}:" <<<"$recus" || manquants="${manquants}${manquants:+,}${nom}"
   done
   [ -z "$manquants" ] && echo OK || echo "MANQUANT:$manquants"
 }

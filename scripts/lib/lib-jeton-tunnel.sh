@@ -39,8 +39,8 @@ jeton_tunnel_id() {
   j=$(printf '%s' "$j" | tr -- '-_' '+/')
   while [ $(( ${#j} % 4 )) -ne 0 ]; do j="$j="; done
   json=$(printf '%s' "$j" | base64 -d 2>/dev/null | tr -d '\0')
-  printf '%s' "$json" | grep -q '"a":"' || return 0
-  printf '%s' "$json" | grep -q '"s":"' || return 0
+  grep -q '"a":"' <<<"$json" || return 0
+  grep -q '"s":"' <<<"$json" || return 0
   printf '%s' "$json" | sed -n 's/.*"t":"\([^"]*\)".*/\1/p'
 }
 
@@ -51,7 +51,7 @@ tunnel_attendu() {
   local v="${1:-}" id
   id=$(jeton_tunnel_id "$v")
   if [ -n "$id" ]; then echo "$id"; return 0; fi
-  if printf '%s' "$v" | grep -Eq '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; then
+  if grep -Eq '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' <<<"$v"; then
     echo "$v"
   fi
 }

@@ -190,7 +190,8 @@ if [ "$(id -u)" = "0" ]; then
   # faux positif permanent, et donc controle incapable de virer au vert.
   # Jumeau teste : sudo_sans_borne(), dans lib-verdicts-sudo.sh. Les deux
   # expressions doivent rester identiques (meme contrainte que le motif de C18).
-  RISK=$(echo "$RULES" | sed -n "s/.*NOPASSWD:[[:space:]]*//p" | grep -qE "^ALL([,[:space:]]|$)" && echo ALL || echo "")
+  _nopasswd=$(echo "$RULES" | sed -n "s/.*NOPASSWD:[[:space:]]*//p")
+  RISK=$(grep -qE "^ALL([,[:space:]]|$)" <<<"$_nopasswd" && echo ALL || echo "")
   for c in $(echo "$RULES" | grep -oE "/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+" | sort -u); do
     [ -e "$c" ] || continue
     M=$(stat -c %A "$c" 2>/dev/null); O=$(stat -c %U "$c" 2>/dev/null); D=$(stat -c %U "$(dirname "$c")" 2>/dev/null)

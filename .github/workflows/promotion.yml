@@ -12,10 +12,8 @@ name: Promotion
 #  rodage avec `-f urgence=true` (un correctif). Une issue ouverte au label
 #  `bloque-promotion` retient tout, sauf l'urgence (#1934, 14/10/2026).
 #
-#  Chaque nuit, deux gestes seulement se font seuls : promouvoir une version
-#  X.0.0 rodée (la seule à partir sans l'auteur, décision du 14/10/2026), et
-#  rappeler à l'auteur, par une issue qui lui est assignée, que `replica` a 10,
-#  20, 30… versions mineures de retard (`scripts/ci/rappel-replica.sh`).
+#  Chaque nuit, un seul geste se fait seul : promouvoir une version X.0.0 rodée
+#  (la seule à partir sans l'auteur, décision du 14/10/2026).
 #
 #  Le run affiche les faits et refuse ce qui casserait la règle : une version
 #  sans tag, hors de `main`, pas en avant de `replica`, pas rodée ou retenue
@@ -60,7 +58,7 @@ jobs:
     permissions:
       contents: write   # avancer `replica` et publier les notes de version
       checks: read      # afficher les contrôles du commit promu
-      issues: write     # lire `bloque-promotion`, ouvrir et fermer les rappels
+      issues: write     # lire `bloque-promotion`
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -85,11 +83,3 @@ jobs:
           PRECEDENT: ${{ steps.promotion.outputs.precedent }}
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/ci/notes-de-version.sh
-
-      #  Après la promotion de la nuit, pour compter le retard sur `replica` à
-      #  jour — et même si elle a échoué : le rappel ne dépend pas d'elle.
-      - name: Rappeler le retard de replica
-        if: ${{ !cancelled() && github.event_name == 'schedule' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: bash scripts/ci/rappel-replica.sh
