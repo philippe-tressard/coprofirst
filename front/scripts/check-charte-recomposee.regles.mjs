@@ -50,13 +50,8 @@ export const TOLERANCES = {
 	//  `.field-hint`, la plus déployée des neuf — 49 occurrences sur 79 —, et c'est
 	//  aussi celle vers laquelle les deux écrans ci-dessus convergeaient d'eux-mêmes.
 	//  Le seul écart qui reste est `.aide.sous-case`, et il porte sa raison.
-	//  ── `.auth-header h1` : un en-tête réduit sur une page longue ────────────
-	//  Le formulaire d'inscription est le plus long du site : son logo est déjà
-	//  réduit pour la même raison (#607). Seule la TAILLE diverge ; la graisse,
-	//  la couleur et la marge viennent de la charte depuis le 09/09/2026, où ces
-	//  trois-là étaient recopiées à l'identique dans quatre écrans.
-	'routes/auth/inscription/+page.svelte::auth-header h1':
-		'font-size: 1.4rem — la page est longue, son en-tête prend moins de place',
+	//  `.auth-header h1` de l'inscription n'a plus d'écart : son titre a rejoint
+	//  `--fs-titre-page`, comme celui de la charte (#2313, 30/10/2026).
 	'routes/auth/inscription/+page.svelte::checkbox-field':
 		'align-items: flex-start — le libellé des conditions tient sur plusieurs lignes',
 	//  ── `.form-grid` : la répartition en colonnes ────────────────────────────

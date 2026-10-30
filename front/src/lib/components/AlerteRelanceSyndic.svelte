@@ -45,7 +45,7 @@
 		}
 	}
 	.relance-alerte-icon {
-		font-size: 1.3rem;
+		font-size: var(--fs-picto);
 		flex-shrink: 0;
 	}
 	.relance-alerte-text {

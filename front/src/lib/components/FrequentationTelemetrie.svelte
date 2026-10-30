@@ -296,7 +296,7 @@
 		text-align: center;
 	}
 	.tl-kpi-value {
-		font-size: 2rem;
+		font-size: var(--fs-chiffre-grand);
 		font-weight: 700;
 		color: var(--color-primary);
 		line-height: 1.1;

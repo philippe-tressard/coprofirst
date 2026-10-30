@@ -298,7 +298,7 @@
 		transform: translateY(-50%);
 		width: 44px;
 		height: 44px;
-		font-size: 2rem;
+		font-size: var(--fs-picto-lg);
 	}
 	.lb-prec {
 		left: 0.75rem;

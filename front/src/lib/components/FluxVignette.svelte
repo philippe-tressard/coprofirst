@@ -107,7 +107,7 @@
 		border-style: dashed;
 	}
 	.flux-vignette-doc-icone {
-		font-size: 1.35rem;
+		font-size: var(--fs-picto);
 		line-height: 1;
 		opacity: 0.75;
 	}
@@ -117,7 +117,7 @@
 			height: 48px;
 		}
 		.flux-vignette-doc-icone {
-			font-size: 1.15rem;
+			font-size: var(--fs-picto-sm);
 		}
 	}
 </style>

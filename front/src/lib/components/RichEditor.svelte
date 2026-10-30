@@ -394,7 +394,7 @@
 	/*  Titres et filet : la barre ne les propose qu'avec `titres`, mais un texte
 	    collé peut en porter partout — ils ont donc leur rendu partout. */
 	:global(.rich-content-editable .tiptap h2) {
-		font-size: 1.15rem;
+		font-size: var(--fs-titre);
 		font-weight: 600;
 		margin: 1rem 0 0.4rem;
 	}

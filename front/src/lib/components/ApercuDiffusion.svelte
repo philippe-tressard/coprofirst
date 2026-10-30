@@ -213,7 +213,7 @@
 	    Défini ICI : `.ico` n'est pas une classe d'`app.css`, et chaque composant
 	    qui l'emploie la style lui-même — sinon elle arrive nue (v2.67.11). */
 	.ico {
-		font-size: 1.05rem;
+		font-size: var(--fs-picto-sm);
 		line-height: 1;
 	}
 

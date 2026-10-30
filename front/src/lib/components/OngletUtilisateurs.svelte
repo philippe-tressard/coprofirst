@@ -452,7 +452,7 @@
 		color: var(--color-warning-texte);
 	}
 	.utag {
-		font-size: 0.6rem;
+		font-size: var(--fs-3xs);
 		font-weight: 600;
 		padding: 0.05rem 0.35rem;
 		border-radius: 4px;
