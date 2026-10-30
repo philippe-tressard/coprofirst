@@ -95,18 +95,6 @@ export function feteDuJour(jour: string): CodeFete | null {
 	return surPlusieurs.find((p) => dans(moisJour, p))?.code ?? null;
 }
 
-/** Le nom d'une fête, tel que l'écran le dit. */
-export const LIBELLES_FETES: Record<CodeFete, string> = {
-	'nouvel-an': 'Nouvel an',
-	'saint-valentin': 'Saint-Valentin',
-	'premier-avril': '1er avril',
-	paques: 'Pâques',
-	'fete-musique': 'Fête de la musique',
-	'quatorze-juillet': '14 juillet',
-	halloween: 'Halloween',
-	noel: 'Noël',
-};
-
 /** Le jour `AAAA-MM-JJ` décalé de `n` jours — en UTC, sans heure d'été. PURE. */
 function decaler(jour: string, n: number): string {
 	const d = new Date(Date.UTC(+jour.slice(0, 4), +jour.slice(5, 7) - 1, +jour.slice(8, 10) + n));
@@ -138,4 +126,52 @@ export function feteEnCoursOuProchaine(jour: string): PeriodeFete | null {
 	let fin = debut;
 	while (feteDuJour(decaler(fin, 1)) === code) fin = decaler(fin, 1);
 	return { code, debut, fin, enCours };
+}
+
+/**
+ * Un message de fête : un texte, ou une liste `[premier jour, texte]` dans l'ordre
+ * de la période — un texte vaut de son premier jour jusqu'à la veille du suivant.
+ */
+export type MessageFete = string | readonly (readonly [MoisJour, string])[];
+
+/**
+ * La TABLE DES FÊTES : pour chacune, son nom tel que l'écran le dit et son
+ * MESSAGE (#2312, proposition n° 3 du 30/10/2026), qui apparaît de temps en temps
+ * là où s'arrête l'élément qui bouge (`DecorFeteMessage`). Lu au jour de Paris,
+ * comme la période ; au plus `LONGUEUR_MAX_MESSAGE` caractères : le coin est étroit.
+ */
+export const FETES: Record<CodeFete, { libelle: string; message: MessageFete }> = {
+	'nouvel-an': {
+		libelle: 'Nouvel an',
+		message: [
+			[[12, 29], 'Bon réveillon'],
+			[[1, 1], 'Bonne année'],
+		],
+	},
+	'saint-valentin': { libelle: 'Saint-Valentin', message: 'Joyeuse Saint-Valentin' },
+	'premier-avril': { libelle: '1er avril', message: 'Poisson d’avril' },
+	paques: { libelle: 'Pâques', message: 'Joyeuses Pâques' },
+	'fete-musique': { libelle: 'Fête de la musique', message: 'Bonne fête de la musique' },
+	'quatorze-juillet': { libelle: '14 juillet', message: 'Bonne fête nationale' },
+	halloween: { libelle: 'Halloween', message: 'Joyeux Halloween' },
+	noel: { libelle: 'Noël', message: 'Joyeux Noël' },
+};
+
+/** Le nom d'une fête, tel que l'écran le dit — lu dans `FETES`. */
+export const LIBELLES_FETES = Object.fromEntries(
+	Object.entries(FETES).map(([code, { libelle }]) => [code, libelle]),
+) as Record<CodeFete, string>;
+
+/** Ce que le coin du décor laisse lire sur ordinateur. */
+export const LONGUEUR_MAX_MESSAGE = 26;
+
+/** PURE. Le message de la fête au jour donné (`AAAA-MM-JJ`, jour de Paris). */
+export function messageDeFete(code: CodeFete, jour: string): string {
+	const message = FETES[code].message;
+	if (typeof message === 'string') return message;
+	const r = rang([+jour.slice(5, 7), +jour.slice(8, 10)]);
+	//  Le dernier texte commencé, en lisant l'année en boucle depuis le premier.
+	const depuis = (mj: MoisJour) => (rang(mj) - rang(message[0][0]) + 1300) % 1300;
+	const ecoule = (r - rang(message[0][0]) + 1300) % 1300;
+	return message.filter(([debut]) => depuis(debut) <= ecoule).at(-1)?.[1] ?? message[0][1];
 }
