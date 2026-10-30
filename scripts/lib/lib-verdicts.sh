@@ -355,20 +355,10 @@ beat_verdict() {
 }
 
 # ── Que faut-il NOTIFIER de cette exécution ? ────────────────────────────────
-# Pure. Rend `critique`, `digest` ou `silence`. Le POURQUOI, l’incident qui l’a
-# fait naître et l’envoi lui-même vivent dans `lib-notification.sh` (#449).
-verdict_notification() { # $1=fails $2=warns → critique|digest|silence
-  local fails="${1-}" warns="${2-}" v
-  #  Cas zéro : un décompte VIDE ou illisible n’est PAS un zéro. On notifie,
-  #  quitte à déranger — le contraire ferait taire le canal sur une panne du
-  #  compteur, c’est-à-dire exactement quand on ne peut plus rien conclure.
-  for v in "$fails" "$warns"; do
-    case "$v" in ''|*[!0-9]*) echo critique; return ;; esac
-  done
-  if [ "$fails" -gt 0 ]; then echo critique
-  elif [ "$warns" -gt 0 ]; then echo digest
-  else echo silence; fi
-}
+#  `verdict_notification` vit dans `lib-notification.sh` depuis le 30/10/2026,
+#  à côté de son seul appelant : `audit-securite.sh` source ce module-là sans
+#  celui-ci, et le premier audit en production a envoyé son courriel sur une
+#  décision vide (« verdict_notification: command not found »).
 
 # ── C23. Les en-têtes de sécurité sont-ils RÉELLEMENT servis ? ───────────────
 #: $1 = les en-têtes reçus (sortie brute de `curl -sI`), $2 = la liste attendue
