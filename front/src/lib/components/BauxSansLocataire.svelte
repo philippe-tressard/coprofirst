@@ -35,6 +35,7 @@
   bail dans deux cases.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { onMount } from 'svelte';
 	import { admin as adminApi, type BailSansLocataire } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
@@ -109,7 +110,7 @@
 										>{/if}
 								</td>
 								<td
-									>{l.lot}{#if l.batiment !== '—'}&nbsp;· {l.batiment}{/if}</td
+									>{l.lot}{#if l.batiment !== '—'}{SEPARATEUR.point}{l.batiment}{/if}</td
 								>
 								<td>{fmtDate(l.date_entree)}</td>
 								<td>
@@ -139,7 +140,7 @@
 							<tr>
 								<td>{l.locataire_nom}</td>
 								<td
-									>{l.lot}{#if l.batiment !== '—'}&nbsp;· {l.batiment}{/if}</td
+									>{l.lot}{#if l.batiment !== '—'}{SEPARATEUR.point}{l.batiment}{/if}</td
 								>
 								<td>{fmtDate(l.date_entree)}</td>
 							</tr>

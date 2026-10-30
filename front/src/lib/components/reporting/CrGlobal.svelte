@@ -12,6 +12,7 @@
   pour la validation et « Modifié en révision N » (#2082).
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import Badge from '#lib/components/Badge.svelte';
 	import type { AffaireOuverte, CompteRenduPoint } from '#lib/api/index.ts';
 	import { fmtDatetime, fmtTime } from '#lib/date.ts';
@@ -50,7 +51,7 @@
 
 	<h4 class="partie">1 · Le point</h4>
 	<p class="quand">
-		{fmtDatetime(point.debut)}{#if point.fin}&nbsp;→ {fmtTime(point.fin)}{/if} · {point.ou}
+		{fmtDatetime(point.debut)}{#if point.fin}{SEPARATEUR.fleche}{fmtTime(point.fin)}{/if} · {point.ou}
 	</p>
 	{#each groupes as g (g.nature)}
 		<p class="presents">

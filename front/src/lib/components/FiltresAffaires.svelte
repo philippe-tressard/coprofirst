@@ -25,6 +25,7 @@
   qui pourrait diverger. Le bilan de recherche le lit au même endroit.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
 	import { OPTIONS_PORTEE } from '#lib/me-concerne.ts';
 	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
@@ -118,10 +119,8 @@
 			Recherche…
 		{:else}
 			<strong>{pluriel(affichees, 'affaire')}</strong> pour « {etat.terme} »
-			{#if archivees && inclureArchives}
-				· dont {archivees} aux Archives
-			{:else if archivees}
-				· {pluriel(archivees, 'autre')} aux Archives
+			{#if archivees && inclureArchives}{SEPARATEUR.point}dont {archivees} aux Archives
+			{:else if archivees}{SEPARATEUR.point}{pluriel(archivees, 'autre')} aux Archives
 				<button
 					type="button"
 					class="btn btn-outline btn-sm"

@@ -7,6 +7,7 @@
   prestataire — les charger toutes d'avance n'aurait aucun sens.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { fmtNombre } from '#lib/utils.ts';
 	import { nomAffiche } from '#lib/noms.ts';
 	//  ⚠️ Cet écran affichait la valeur BRUTE — `chauffage_collectif` — parce que
@@ -95,9 +96,9 @@
 					<p><strong>Contacts :</strong></p>
 					{#each reportPrestSynth.contacts as c (c)}
 						<p class="retrait">
-							📞 {c.telephone ?? '—'}{#if c.prenom || c.nom}&nbsp;— {nomAffiche(
+							📞 {c.telephone ?? '—'}{#if c.prenom || c.nom}{SEPARATEUR.tiret}{nomAffiche(
 									c,
-								)}{/if}{#if c.fonction}&nbsp;({c.fonction}){/if}{#if c.email}&nbsp;· {c.email}{/if}
+								)}{/if}{#if c.fonction}&nbsp;({c.fonction}){/if}{#if c.email}{SEPARATEUR.point}{c.email}{/if}
 						</p>
 					{/each}
 				{/if}

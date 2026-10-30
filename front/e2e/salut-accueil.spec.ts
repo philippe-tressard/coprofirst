@@ -11,9 +11,12 @@
  *  Et en fenêtre étroite, la ligne se coupait APRÈS un séparateur :
  *  « … résident · » puis « Conseil syndical · Admin ». L'espace d'avant chaque
  *  séparateur est insécable : on mesure, sur le rendu, qu'aucun ne finit une ligne.
+ *  Depuis #2360, le séparateur s'écrit `{SEPARATEUR.…}` (`#lib/separateurs`) et la
+ *  mesure est commune (`coupure-de-ligne.ts`).
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { separateursEnFinDeLigne } from './coupure-de-ligne';
 
 const LOTS = [
 	{
@@ -52,30 +55,9 @@ test('le salut sépare le prénom, le logement et les rôles par une espace', as
 test('en fenêtre étroite, aucun séparateur ne finit une ligne', async ({ page }) => {
 	await page.setViewportSize({ width: 360, height: 740 });
 	const salut = await accueil(page);
-	//  Pour chaque séparateur, le caractère visible suivant est-il sur la même ligne ?
-	//  Un séparateur suivi d'un saut de ligne a son voisin plus bas que lui.
-	const mesure = async () =>
-		salut.evaluate((h1) => {
-			const car: { c: string; haut: number }[] = [];
-			const parcours = document.createTreeWalker(h1, NodeFilter.SHOW_TEXT);
-			for (let n = parcours.nextNode(); n; n = parcours.nextNode()) {
-				const texte = n.textContent ?? '';
-				for (let i = 0; i < texte.length; i++) {
-					if (/\s/.test(texte[i])) continue;
-					const r = document.createRange();
-					r.setStart(n, i);
-					r.setEnd(n, i + 1);
-					const rect = r.getBoundingClientRect();
-					car.push({ c: texte[i], haut: rect.top + rect.height / 2 });
-				}
-			}
-			const lignes = new Set(car.map((x) => Math.round(x.haut))).size;
-			const fautifs = car
-				.slice(0, -1)
-				.filter((x, i) => /[—·]/.test(x.c) && car[i + 1].haut - x.haut > 4)
-				.map((x) => x.c);
-			return { lignes, fautifs };
-		});
-	await expect.poll(async () => (await mesure()).lignes).toBeGreaterThan(1);
-	expect((await mesure()).fautifs).toEqual([]);
+	//  La mesure commune (#2360) : le salut rétréci pas à pas, chaque coupure jugée.
+	const mesure = await separateursEnFinDeLigne(salut);
+	expect(mesure.separateurs).toBe(4);
+	expect(mesure.largeursCoupees).toBeGreaterThan(5);
+	expect(mesure.fautifs).toEqual([]);
 });

@@ -22,6 +22,7 @@
   écrits. Viser directement l'élément du complément.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { onMount } from 'svelte';
 	import { config as configApi } from '#lib/api/index.ts';
 	import { loadSiteConfig, getSiteNom, siteNomStore, configStore } from '#lib/stores/pageConfig.ts';
@@ -66,7 +67,7 @@
 </main>
 
 <footer class="legal-footer">
-	© {year}
-	&nbsp;·&nbsp; <a href={siteUrl} target="_blank" rel="noopener noreferrer">{siteNom}</a>
+	© {year}{SEPARATEUR.point}<a href={siteUrl} target="_blank" rel="noopener noreferrer">{siteNom}</a
+	>
 	<slot name="pied" />
 </footer>

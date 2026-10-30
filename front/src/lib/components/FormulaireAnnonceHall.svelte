@@ -31,6 +31,7 @@
   réécrire ce qu'on vient de saisir.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import SectionDiffusion from '#lib/components/SectionDiffusion.svelte';
 	import { annoncesHall as annoncesHallApi } from '#lib/api/index.ts';
 	import SectionDescription from '#lib/components/SectionDescription.svelte';
@@ -247,8 +248,7 @@
 			Format imposé — le message sera mis en page en {format.toUpperCase()}.
 		{/if}
 		<strong>Prévu : {formatPrevu}</strong>
-		{#if imageSeule}
-			— photo seule, ajustée à la zone sous le titre.
+		{#if imageSeule}{SEPARATEUR.tiret}photo seule, ajustée à la zone sous le titre.
 		{:else}
 			({longueur} caractère{longueur > 1 ? 's' : ''} — titre et message)
 		{/if}

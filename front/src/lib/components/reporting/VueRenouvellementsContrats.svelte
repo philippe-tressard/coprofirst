@@ -12,6 +12,7 @@
   qu'on évite, et que `npm run lint:classes-nues` refuse depuis.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	//  ⚠️ Cet écran affichait la valeur BRUTE — `chauffage_collectif` — parce que
 	//  la table des libellés vivait dans `prestataires/+page.svelte` et qu'il n'y
 	//  avait pas accès. Une table qui vit dans UN écran, les autres s'en passent.
@@ -115,7 +116,9 @@
 							{#if c.reconduit}<span class="badge badge-purple">♻ Reconduit</span>{/if}
 							<span class="frise-row-dates">
 								{fmtDate(c.date_debut)} → {fmtDate(c.dateFin.toISOString())}
-								{#if c.datePreavis}· préavis dès {fmtDate(c.datePreavis.toISOString())}{/if}
+								{#if c.datePreavis}{SEPARATEUR.point}préavis dès {fmtDate(
+										c.datePreavis.toISOString(),
+									)}{/if}
 							</span>
 						</div>
 					</div>
@@ -210,8 +213,9 @@
 						<div class="frise-compact-info">
 							<strong>{c.libelle}</strong>
 							<span class="text-muted-sm"
-								>{c.prestataireNom} · {equipLabel(c.type_equipement)}{#if c.numero_contrat}&nbsp;·
-									N° {c.numero_contrat}{/if}</span
+								>{c.prestataireNom} · {equipLabel(
+									c.type_equipement,
+								)}{#if c.numero_contrat}{SEPARATEUR.point}N° {c.numero_contrat}{/if}</span
 							>
 						</div>
 						<div class="frise-compact-meta">

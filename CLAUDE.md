@@ -641,6 +641,9 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       `libelleModifier`), **jamais** réécrit dans un écran. « Ticket » est un
       nom de modèle (« Publication » l'était, jusqu'à sa suppression le
       30/09/2026, #1177) ; l'écran dit « Affaire » et « Actualité ». Il y en avait **20** avant #1107 (`npm run lint:vocabulaire-ecran`)
+- [ ] Séparateur (— · →) entre deux éléments d'une phrase : `{SEPARATEUR.point|tiret|fleche}`
+      (`#lib/separateurs`) — sécable avant, insécable après : il ne finit jamais une
+      ligne. `{#if x}&nbsp;· …` le collait au mot d'avant (#2360, `npm run lint:espace-blocs`)
 - [ ] Périmètre : masqué s'il est celui par défaut — le badge passe par
       `BadgePerimetre`, qui le tait (`npm run lint:pictogrammes`)
 - [ ] Archiver (pas supprimer) sur la vue principale — 📦, jamais un 🗑️ intitulé

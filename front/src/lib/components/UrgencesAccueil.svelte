@@ -32,6 +32,7 @@
   carte ; `detail` reste le repli des éléments qui n'en ont pas.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import type { FluxItem } from '#lib/api/index.ts';
 	import { fmtTime } from '#lib/date.ts';
 	import { cleFluxItem, typeCouleur, typeFond, typeLibelle, typeLink } from '#lib/flux.ts';
@@ -85,8 +86,7 @@
 			{#if u.meta?.debut && u.meta?.fin}
 				<p class="urgence-horaire">
 					Aujourd'hui {fmtTime(String(u.meta.debut))} → {fmtTime(String(u.meta.fin))}
-					{#if u.meta?.prestataire}
-						· {u.meta.prestataire}{/if}
+					{#if u.meta?.prestataire}{SEPARATEUR.point}{u.meta.prestataire}{/if}
 				</p>
 			{:else if u.meta?.full_html}
 				<div class="urgence-horaire urgence-texte rich-content clamp-3">

@@ -122,9 +122,17 @@ de chaque balise), même écrite `&#32;`. `{prenom}{#if lot}⏎<span>— {lot}</
 l'accueil, et quinze autres phrases (#2356). L'espace sécable se pose AVANT le
 bloc (`{prenom} {#if lot}…`), où Svelte la garde ; en tête de branche, seule
 `&nbsp;` survit (`{' '}` est refusé par ESLint). Un collage voulu (l'astérisque
-d'un libellé) s'écrit sur la ligne du bloc. Pour qu'un séparateur ne finisse
-jamais une ligne, l'espace insécable est celle d'APRÈS lui (`—&nbsp;`).
-🔒 `npm run lint:espace-blocs`, `e2e/salut-accueil.spec.ts`.
+d'un libellé) s'écrit sur la ligne du bloc.
+
+**Un séparateur (— · →) ne finit jamais une ligne** (#2360) : espace sécable
+AVANT lui, insécable APRÈS — il ouvre la ligne suivante avec son mot. Il s'écrit
+`{SEPARATEUR.point|tiret|fleche}` (`#lib/separateurs`), jamais à la main : dans
+une expression, l'espace d'avant survit à Svelte et part avec sa branche
+(`{nom}{#if f}{SEPARATEUR.tiret}{f}{/if}`). L'ancienne forme du dépôt,
+`{#if x}&nbsp;· …`, le collait au mot d'avant et finissait la ligne sur lui.
+🔒 `npm run lint:espace-blocs` (les deux règles), `e2e/salut-accueil.spec.ts` et
+`e2e/separateurs-fin-de-ligne.spec.ts`, qui rétrécissent le bloc pas à pas et
+jugent chaque coupure (`e2e/coupure-de-ligne.ts`, à réemployer pour un écran neuf).
 
 ### Gestion d'erreurs API
 

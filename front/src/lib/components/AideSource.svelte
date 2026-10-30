@@ -22,6 +22,7 @@
       repli="Aucun contrat de syndic désigné : c'est cette saisie qui s'affiche." />
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	/** La valeur vient-elle de l'autre source ? Faux = la saisie sert encore. */
 	export let active = false;
 	/** Ce qui fait foi, en toutes lettres : « contrat de syndic ». */
@@ -34,7 +35,7 @@
 
 <span class="aide">
 	{#if active}
-		&#x1F517; Vient du <strong>{origine}</strong>{#if ou}&nbsp;— se change dans {ou}{/if}.
+		&#x1F517; Vient du <strong>{origine}</strong>{#if ou}{SEPARATEUR.tiret}se change dans {ou}{/if}.
 	{:else}
 		&#x2139;&#xFE0F; {repli}
 	{/if}

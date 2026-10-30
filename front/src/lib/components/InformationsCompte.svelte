@@ -8,6 +8,7 @@
   déborder. Le bloc lit le compte dans le store, comme la page le faisait.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import Badge from '#lib/components/Badge.svelte';
 	import type { MonLot } from '#lib/api/index.ts';
 	import { currentUser } from '#lib/stores/auth.ts';
@@ -39,9 +40,8 @@
 					· {lotTypeLabel(lot.type)}
 					{#if lot.type_appartement}
 						({lot.type_appartement}){/if}
-					{#if lot.etage != null}· {etageLabel(lot.etage, { suffixe: true })}{/if}
-					{#if lot.superficie}
-						· {fmtNombre(lot.superficie)} m²{/if}
+					{#if lot.etage != null}{SEPARATEUR.point}{etageLabel(lot.etage, { suffixe: true })}{/if}
+					{#if lot.superficie}{SEPARATEUR.point}{fmtNombre(lot.superficie)} m²{/if}
 				</span>
 			{/each}
 		</dd>

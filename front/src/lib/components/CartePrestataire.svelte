@@ -21,6 +21,7 @@
   c'est ce qui rend la règle vraie des deux côtés.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { fmtDateShort } from '#lib/date.ts';
 	import { PRESTATAIRE } from '#lib/entites/prestataire.ts';
 	import { classeTypePrestataire } from '#lib/prestataires-gouttiere.ts';
@@ -133,7 +134,7 @@
 				{#if p.contacts && p.contacts.length > 0}
 					{#each p.contacts as c (c)}
 						<span class="prest-contact">
-							📞 {c.telephone}{#if c.prenom || c.nom}&nbsp;— {nomAffiche(
+							📞 {c.telephone}{#if c.prenom || c.nom}{SEPARATEUR.tiret}{nomAffiche(
 									c,
 								)}{/if}{#if c.fonction}&nbsp;({c.fonction}){/if}
 						</span>
