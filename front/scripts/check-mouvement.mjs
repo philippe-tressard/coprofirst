@@ -35,6 +35,10 @@ const EXCEPTIONS = {
 		'cible-lien-pulse',
 		'la surbrillance d’une cible de lien dure 2,5 s : elle dit LEQUEL, puis s’efface',
 	],
+	'styles/decor-fete.css': [
+		'decor-fete-reflet',
+		'le reflet du message de fête (#2312) traverse le texte en 2,4 s, une fois par apparition, après le fondu : un ornement lent, pas une réponse d’interface',
+	],
 };
 
 /** Fichier → propriété(s) de mise en page animée(s), séparées par un espace, et pourquoi. */
