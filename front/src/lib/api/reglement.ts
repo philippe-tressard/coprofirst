@@ -23,6 +23,9 @@ export interface EtatReglement {
 	/** Pour l'administration seule : la catégorie où joindre les fichiers
 	 *  (`documents.uploadPour('categorie', …)`). */
 	categorie_id: number | null;
+	/** Pour l'administration seule : la catégorie des décisions d'AG transcrites
+	 *  (29/10/2026), que l'assistant lit après le règlement. */
+	categorie_ag_id: number | null;
 	/** Pour l'administration seule : d'où vient le texte (« la numérisation du RCP… »). */
 	provenance: string | null;
 }
@@ -37,8 +40,11 @@ export interface ExtraitReglement {
 	verifie: boolean;
 	/** Le repère de page qui le précède dans le texte — s'il a été retrouvé. */
 	page: string | null;
-	/** L'acte (« LIVRE I ») qui le contient. */
+	/** L'acte (« LIVRE I ») qui le contient — ou l'AG (« Assemblée générale du … »). */
 	acte: string | null;
+	/** `reglement` ou `ag`, déduit de sa place dans le texte — `null` sans décision
+	 *  d'AG jointe, ou s'il n'a pas été retrouvé. */
+	source: 'reglement' | 'ag' | null;
 }
 
 /** Une question posée, et la réponse du juriste. */
@@ -48,6 +54,10 @@ export interface QuestionReglement {
 	verdict: 'oui' | 'non' | 'sous_conditions' | 'non_prevu' | 'incertain';
 	verdict_libelle: string;
 	reponse: string;
+	/** Les sections de l'avis (29/10/2026) — `null` dans un avis plus ancien. */
+	selon_reglement: string | null;
+	selon_ag: string | null;
+	synthese: string | null;
 	reserves: string | null;
 	extraits: ExtraitReglement[];
 	texte_id: number;
@@ -61,6 +71,33 @@ export interface QuestionReglement {
 	/** Son auteur et l'administration — la corbeille s'affiche d'après lui. */
 	peut_supprimer: boolean;
 	cree_le: string;
+}
+
+/** La transcription d'un PV d'AG par l'assistant — `api/app/routers/reglement_transcriptions.py`. */
+export interface TranscriptionPv {
+	id: number;
+	statut: 'en_cours' | 'a_relire' | 'validee' | 'echec';
+	statut_libelle: string;
+	/** Le Markdown rendu, puis tel que l'administration l'a relu. */
+	contenu: string | null;
+	erreur: string | null;
+	cree_le: string;
+	valide_le: string | null;
+}
+
+/** Un PV de la Fiche, et sa dernière transcription. */
+export interface PvTranscrit {
+	pv_id: number;
+	titre: string;
+	date_ag: string | null;
+	transcription: TranscriptionPv | null;
+}
+
+/** Les PV et leurs transcriptions — administration seule. */
+export interface EtatTranscriptions {
+	/** L'usage « Transcription d'un PV » est-il prêt ? */
+	disponible: boolean;
+	pvs: PvTranscrit[];
 }
 
 /** Une entrée de FAQ, telle que le conseil l'a relue. */
@@ -84,4 +121,11 @@ export const reglement = {
 	/** Administration seule — rend l'état de l'onglet relu. */
 	modifierProvenance: (provenance: string) =>
 		api.put<EtatReglement>('/reglement/provenance', { provenance }),
+	/** Les transcriptions des PV d'AG — administration seule (29/10/2026). */
+	transcriptions: () => api.get<EtatTranscriptions>('/reglement/transcriptions'),
+	transcrire: (pvId: number) =>
+		api.post<TranscriptionPv>(`/reglement/transcriptions/pv/${pvId}`, {}),
+	validerTranscription: (id: number, contenu: string) =>
+		api.post<TranscriptionPv>(`/reglement/transcriptions/${id}/valider`, { contenu }),
+	rejeterTranscription: (id: number) => api.delete(`/reglement/transcriptions/${id}`),
 };

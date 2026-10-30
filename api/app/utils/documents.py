@@ -38,6 +38,7 @@ from sqlmodel import Session
 from app.models.core import ContratEntretien, Document, Utilisateur
 from app.utils.liens import lien_element, lien_ticket, page_element
 from app.utils.question_reglement.texte import CODE_CATEGORIE as CODE_TEXTE_REGLEMENT
+from app.utils.question_reglement.texte import CODE_CATEGORIE_AG as CODE_DECISIONS_AG
 from app.auth.deps import est_moderateur
 
 #: Où un document d'une catégorie s'affiche : l'onglet, tel que le menu le nomme,
@@ -50,6 +51,7 @@ RUBRIQUES: dict[str, tuple[str, str]] = {
     "reglement_copropriete": ("Résidence › Fiche", "rubrique Règlement de copropriété"),
     "pv_ag": ("Résidence › Fiche", "rubrique Comptes-rendus d'AG"),
     CODE_TEXTE_REGLEMENT: ("Résidence › Règlement", "parmi les textes lus par l'assistant"),
+    CODE_DECISIONS_AG: ("Résidence › Règlement", "parmi les décisions d'AG lues par l'assistant"),
 }
 
 #: Les catégories qui ont une rubrique à elles sur la Fiche de /residence, où le
@@ -89,7 +91,7 @@ def lien_document(doc: Document, user: Utilisateur, session: Session) -> Optiona
         return lien_element("presta", contrat.prestataire_id) if contrat else page_element("presta")
 
     code = _code(doc)
-    if code == CODE_TEXTE_REGLEMENT:
+    if code in (CODE_TEXTE_REGLEMENT, CODE_DECISIONS_AG):
         #  L'onglet où il est joint, sans ancre : il n'y est pas listé en carte.
         #  `document_visible` l'a déjà réservé à l'administration.
         return page_element("question-reglement")

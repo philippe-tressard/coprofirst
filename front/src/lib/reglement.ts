@@ -13,3 +13,14 @@ import { ACCEPT_DOCUMENTS, LIBELLE_TYPES } from '#lib/fichiers.ts';
  */
 export const ACCEPT_FICHIERS_REGLEMENT = `${ACCEPT_DOCUMENTS},text/markdown,.md,.markdown`;
 export const TYPES_FICHIERS_REGLEMENT = `${LIBELLE_TYPES.documents}, Markdown (.md)`;
+
+/**
+ * La teinte d'un état de transcription d'un PV d'AG (29/10/2026) — le LIBELLÉ
+ * vient du serveur (`statut_libelle`, `transcription.STATUTS`).
+ */
+export const TEINTE_TRANSCRIPTION: Record<string, string> = {
+	en_cours: 'badge-blue',
+	a_relire: 'badge-orange',
+	validee: 'badge-green',
+	echec: 'badge-red',
+};

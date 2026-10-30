@@ -37,6 +37,8 @@ from dataclasses import dataclass
 from app.utils.description_format import CONSIGNE_DEFAUT as CONSIGNE_DESCRIPTION
 from app.utils.question_reglement.format import CONSIGNE as CONSIGNE_QUESTION_REGLEMENT
 from app.utils.question_reglement.format import USAGE_QUESTION_REGLEMENT
+from app.utils.question_reglement.transcription import CONSIGNE as CONSIGNE_TRANSCRIPTION_PV
+from app.utils.question_reglement.transcription import USAGE_TRANSCRIPTION_PV
 from app.utils.etat_descriptif_ia import CONSIGNE as CONSIGNE_ETAT_DESCRIPTIF
 from app.utils.etat_descriptif_ia import USAGE_LECTURE_ETAT_DESCRIPTIF
 from app.utils.fusion_en_cours_ia import CONSIGNE as CONSIGNE_FUSION_AFFAIRES
@@ -232,12 +234,14 @@ USAGES: dict[str, Usage] = {
             "Ma résidence › Règlement : le conseil syndical — et les copropriétaires si "
             "la case ci-dessous est cochée — pose une question (« ai-je le droit de… ? ») ; "
             "l'assistant, en juriste, répond d'après le texte du règlement chargé sur "
-            "cette page — verdict, réponse argumentée, extraits cités mot pour mot avec "
-            "leur page, réserves. Le texte entier et la question sont transmis, jamais "
-            "le nom de qui la pose. Délai d'attente d'au moins deux minutes."
+            "cette page et les décisions d'AG validées — verdict, ce que dit le règlement, "
+            "ce que disent les AG, leur synthèse, extraits cités mot pour mot avec leur "
+            "page ou leur résolution, réserves. Les textes entiers et la question sont "
+            "transmis, jamais le nom de qui la pose. Délai d'attente d'au moins deux minutes."
         ),
         prompt_defaut=CONSIGNE_QUESTION_REGLEMENT,
-        max_jetons_defaut=8_000,
+        #  12 000 depuis le 29/10/2026 : l'avis a trois sections de plus.
+        max_jetons_defaut=12_000,
         delai_min_s=120,
         ouvrable_aux_coproprietaires=True,
     ),
@@ -304,6 +308,25 @@ USAGES: dict[str, Usage] = {
         prompt_defaut=CONSIGNE_ETAT_DESCRIPTIF,
         max_jetons_defaut=32_000,
         delai_min_s=600,
+    ),
+    #  29/10/2026 : les résolutions d'un PV d'AG, transcrites pour les questions au
+    #  règlement (`utils/question_reglement/transcription`). Automatique pour un PV
+    #  récent, sur demande pour l'historique — jamais lu avant la relecture de
+    #  l'administration. Un PV numérisé part en fichier : délai à la mesure.
+    USAGE_TRANSCRIPTION_PV: Usage(
+        code=USAGE_TRANSCRIPTION_PV,
+        libelle="Transcription d'un PV d'assemblée générale",
+        description=(
+            "Ma résidence › Règlement : l'assistant transcrit les résolutions d'un PV "
+            "d'AG déposé dans la Fiche — d'office pour un PV déposé depuis moins de "
+            "deux mois, par « Transcrire » pour un plus ancien. Le PV entier est transmis "
+            "(son fichier s'il est numérisé) ; la transcription, sans nom de personne, "
+            "n'est lue des questions au règlement qu'une fois relue et validée par "
+            "l'administration. Délai d'attente d'au moins cinq minutes."
+        ),
+        prompt_defaut=CONSIGNE_TRANSCRIPTION_PV,
+        max_jetons_defaut=16_000,
+        delai_min_s=300,
     ),
 }
 

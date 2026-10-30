@@ -111,6 +111,13 @@ EXIGENCES = [
         ("lire l'état descriptif",),
     ),
     (
+        #  29/10/2026 : un PV d'AG part entier pour être transcrit, et les décisions
+        #  validées partent avec le règlement à chaque question.
+        "la transcription d'un procès-verbal d'AG par l'assistant",
+        ("utils/question_reglement/transcription.py", "async def remplir"),
+        ("transcrire un procès-verbal",),
+    ),
+    (
         "l'acheminement des courriels par un tiers",
         ("utils/smtp.py", "def "),
         #  ⚠️ Pas « courriel » ni « e-mail » seuls : le texte les emploie déjà

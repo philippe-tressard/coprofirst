@@ -271,6 +271,9 @@ async def lifespan(app: FastAPI):
     from app.utils.conservation_application import enregistrer as _conservation_affaires
 
     _conservation_affaires(scheduler)  # 04:45, après la purge des comptes (#2014)
+    from app.utils.question_reglement.transcription import enregistrer as _transcription_pv
+
+    _transcription_pv(scheduler)  # 05:15, les PV d'AG récents à relire (29/10/2026)
 
     #  🔴 Ce qui tourne VRAIMENT est comparé à ce qui est déclaré (#1047). Un
     #  `add_job` supprimé par mégarde — refactor, fusion, condition mal placée —

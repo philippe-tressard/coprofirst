@@ -61,7 +61,12 @@ from app.utils.question_reglement.provenance import (
     MAX_CARACTERES as MAX_CARACTERES_PROVENANCE,
 )
 from app.utils.question_reglement.provenance import enregistrer_provenance, lire_provenance
-from app.utils.question_reglement.texte import categorie, texte_disponible, texte_en_vigueur
+from app.utils.question_reglement.texte import (
+    CODE_CATEGORIE_AG,
+    categorie,
+    texte_disponible,
+    texte_en_vigueur,
+)
 from app.utils.recuperer import ou_404
 
 router = APIRouter(prefix="/reglement", tags=["reglement"])
@@ -81,6 +86,8 @@ class EtatReglement(BaseModel):
     lien_reglement: Optional[str] = None
     #: Pour l'administration seule : la catégorie où joindre les fichiers.
     categorie_id: Optional[int] = None
+    #: Pour l'administration seule : celle des décisions d'AG transcrites.
+    categorie_ag_id: Optional[int] = None
     #: Pour l'administration seule : d'où vient le texte (« la numérisation du RCP… »).
     provenance: Optional[str] = None
 
@@ -102,6 +109,8 @@ class ExtraitRead(BaseModel):
     verifie: bool
     page: Optional[str] = None
     acte: Optional[str] = None
+    #: `reglement` ou `ag` — déduit par le code (`extraits.source_de`).
+    source: Optional[str] = None
 
 
 class QuestionCreate(BaseModel):
@@ -114,6 +123,10 @@ class QuestionReglementRead(BaseModel):
     verdict: str
     verdict_libelle: str
     reponse: str
+    #: Les sections (29/10/2026) — vides dans un avis plus ancien.
+    selon_reglement: Optional[str] = None
+    selon_ag: Optional[str] = None
+    synthese: Optional[str] = None
     reserves: Optional[str] = None
     extraits: list[ExtraitRead]
     texte_id: int
@@ -189,11 +202,13 @@ def etat(
     — rien de la configuration, et les fichiers à l'administration seule."""
     admin = user.has_role(RoleUtilisateur.admin)
     cat = categorie(session) if admin else None
+    cat_ag = categorie(session, CODE_CATEGORIE_AG) if admin else None
     return EtatReglement(
         disponible=disponible(session),
         texte_disponible=texte_disponible(session),
         lien_reglement=None if admin else lien_reglement(session, user),
         categorie_id=cat.id if cat else None,
+        categorie_ag_id=cat_ag.id if cat_ag else None,
         provenance=lire_provenance(session) if admin else None,
     )
 
@@ -301,3 +316,10 @@ def supprimer_question(
     )
     session.delete(question)
     session.commit()
+
+
+#  Les transcriptions des PV d'AG, à l'administration (29/10/2026) — routes à segment
+#  FIXE (`/transcriptions/…`), sans conflit avec `/questions/{id}`.
+from app.routers.reglement_transcriptions import router as _transcriptions  # noqa: E402
+
+router.include_router(_transcriptions)
