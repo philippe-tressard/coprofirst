@@ -78,6 +78,22 @@ decider_base_au_retrait() {
     esac
 }
 
+# ── PURE : le retour arrière de la bascule relance-t-il la base LOCALE ? (#2318)
+#  $1 PROMU (true|false) · $2 rôle de la base du pair, relu APRÈS son isolement
+#  → DEMARRER | ABSTENIR:<raison>
+#  Le primaire local (arrêté en phase 3) ne reprend que si le pair ne porte plus
+#  de primaire. L'isolement ne rend pas son échec (`|| true`) : c'est la relecture
+#  qui le dit. Un pair illisible n'est pas un pair isolé — le site reste coupé,
+#  ce qui se répare ; deux primaires, non.
+decider_base_au_rollback() {
+    [ "${1:-false}" = true ] || { echo DEMARRER; return; }
+    case "${2:-}" in
+        absente|replique_ok|replique_ko) echo DEMARRER ;;
+        primaire) echo "ABSTENIR:la base promue du pair sert encore — relancer la locale ferait deux primaires" ;;
+        *)        echo "ABSTENIR:base du pair illisible après son isolement — on ne relance pas un primaire sans l'avoir lue" ;;
+    esac
+}
+
 # ── PURE : la réplique a-t-elle rejoué tout le journal du primaire ? ──────────
 #  $1 position du primaire, $2 position rejouée par la réplique (octets)
 #  → oui | non | inconnu
@@ -198,6 +214,13 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     t "réplique déconnectée : elle se rattrape" GARDER      decider_base_au_retrait replique_ko
     t "illisible (elle démarre ?) → attendre"  ATTENDRE     decider_base_au_retrait illisible
     t "rien lu → attendre, jamais effacer"     ATTENDRE     decider_base_au_retrait ""
+    echo "== retour arrière de la bascule : la base locale reprend-elle ? (#2318) =="
+    t "rien promu : le primaire local reprend"     DEMARRER decider_base_au_rollback false ""
+    t "pair promu puis isolé (arrêté)"             DEMARRER decider_base_au_rollback true absente
+    t "promotion avortée : le pair est réplique"   DEMARRER decider_base_au_rollback true replique_ok
+    t "pair promu ET encore primaire"              ABSTENIR decider_base_au_rollback true primaire
+    t "pair illisible après l'isolement"           ABSTENIR decider_base_au_rollback true illisible
+    t "rien lu chez le pair promu"                 ABSTENIR decider_base_au_rollback true ""
     echo "== rattrapage =="
     t "rejouée jusqu'au bout"              oui     decider_rattrapage 1000 1000
     t "rejouée au-delà (point final)"      oui     decider_rattrapage 1000 1040

@@ -17,7 +17,7 @@
  *  corrigés : la même zone est relevée au CLAIR, plus bas, sans aucun écart.
  */
 import { expect, simulerApi, test, attendreHydratation } from './aides';
-import { forcerTheme, releverContrastes } from './contraste-ecran';
+import { attendreFinDesAnimations, forcerTheme, releverContrastes } from './contraste-ecran';
 import type { Page } from '@playwright/test';
 import { AFFAIRE, ETAT_SYNTHESE, FIL } from './affaire-close-donnees';
 
@@ -277,6 +277,7 @@ async function releverEcran(
 	//  Cas zéro : l'écran a rendu ce qu'on vient mesurer.
 	await expect(page.locator(e.temoin).first()).toBeVisible();
 	await page.mouse.move(0, 0);
+	await attendreFinDesAnimations(page);
 
 	const { contrastes, surfacesClaires, mesures } = await releverContrastes(page);
 	expect(mesures, 'aucun texte mesuré : le relevé est passé à vide').toBeGreaterThan(0);

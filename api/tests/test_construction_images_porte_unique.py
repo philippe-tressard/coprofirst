@@ -51,7 +51,8 @@ EXPORTEURS: dict[str, tuple[str, str]] = {}
 #: lancer : `{script: nombre de lignes}`. Elles ne lancent rien ; le compte exact
 #: fait échouer l'entrée qui cesse de servir.
 MESSAGES = {
-    "scripts/exploitation/bascule.sh": 1,  # « vérifier manuellement : … docker compose up -d »
+    #  Le rollback : relance échouée, et base locale NON relancée (#2318).
+    "scripts/exploitation/bascule.sh": 2,  # « vérifier manuellement : … docker compose up -d »
     "scripts/lib/lib-mises-a-jour.sh": 1,  # consigne du contrôle C30
     "scripts/lib/lib-precheck-infra.sh": 1,  # consigne du point 18
 }

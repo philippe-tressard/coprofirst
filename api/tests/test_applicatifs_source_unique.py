@@ -43,15 +43,9 @@ DEMARRER_NU = re.compile(r"\bdemarrer_conteneurs\s*(?:$|[;&|>)]|2>|[\"'](?![$\w]
 
 #: Les démarrages SANS LISTE qui restent, et pourquoi : `{script: (nombre, raison)}`.
 #: Ils démarrent « selon le profil », juste après avoir décidé de la base. La liste
-#: ne fait que baisser : une entrée dont le compte change échoue. Suivi des deux de
-#: `bascule.sh` : #2318.
+#: ne fait que baisser : une entrée dont le compte change échoue. Les deux de
+#: `bascule.sh` (rollback, phase 5) nomment leurs services depuis #2318.
 DEMARRAGES_SANS_LISTE = {
-    "scripts/exploitation/bascule.sh": (
-        2,
-        "rollback (le primaire local reprend après l'isolement du pair promu) et "
-        "phase 5 chez le pair, dont la réplique vient d'être promue — chemin de "
-        "nuit éprouvé, à expliciter dans un lot qui le rejoue en conditions réelles",
-    ),
     "scripts/exploitation/restaurer-copie-hors-site.sh": (
         1,
         "la base neuve est déjà démarrée et importée (étape 3) : l'application suit",
@@ -168,3 +162,41 @@ def test_le_motif_voit_les_gestes_du_15_10():
     assert DEMARRER_NU.search("demarrer_conteneurs >/dev/null 2>&1 || echec")
     assert not DEMARRER_NU.search("demarrer_conteneurs $A_DEMARRER >> /dev/null")
     assert not DEMARRER_NU.search("demarrer_conteneurs() {")
+
+
+BASCULE = RACINE / "scripts" / "exploitation" / "bascule.sh"
+
+#: Le retour arrière, dans l'ordre : isoler le pair, relire sa base, puis relancer.
+ORDRE_DU_ROLLBACK = [
+    "isoler_base_pair_si_promue",
+    "decider_base_au_rollback",
+    "demarrer_conteneurs",
+]
+
+
+def _ordre_du_rollback(texte: str) -> list[str]:
+    """Les gestes du retour arrière de la bascule, dans l'ordre où il les écrit."""
+    corps = re.search(r"^rollback\(\) \{\n(.*?)^\}", texte, re.M | re.S)
+    assert corps, "`rollback()` introuvable dans bascule.sh"
+    vus: list[str] = []
+    for ligne in corps.group(1).splitlines():
+        if ligne.lstrip().startswith("#"):
+            continue
+        vus += [g for g in ORDRE_DU_ROLLBACK if re.search(rf"\b{g}\b", ligne) and g not in vus]
+    return vus
+
+
+def test_le_rollback_isole_le_pair_avant_de_relancer_le_primaire_local():
+    """#2318 : le primaire local ne reprend qu'APRÈS l'isolement du pair promu, et
+    sur la décision qui relit le pair (`decider_base_au_rollback`, lib-promotion.sh).
+    Il était relancé avant : deux primaires, le temps d'un SSH."""
+    assert _ordre_du_rollback(BASCULE.read_text(encoding="utf-8")) == ORDRE_DU_ROLLBACK
+
+
+def test_l_ordre_du_rollback_voit_l_ecriture_d_avant_2318():
+    """Cas zéro : le rollback d'avant #2318 (relance, puis isolement) est refusé."""
+    avant = (
+        "rollback() {\n  if demarrer_conteneurs; then\n    log ok\n  fi\n"
+        "  isoler_base_pair_si_promue   # jamais deux primaires\n}\n"
+    )
+    assert _ordre_du_rollback(avant) == ["demarrer_conteneurs", "isoler_base_pair_si_promue"]
