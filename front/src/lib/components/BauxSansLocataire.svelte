@@ -109,8 +109,7 @@
 										>{/if}
 								</td>
 								<td
-									>{l.lot}{#if l.batiment !== '—'}
-										· {l.batiment}{/if}</td
+									>{l.lot}{#if l.batiment !== '—'}&nbsp;· {l.batiment}{/if}</td
 								>
 								<td>{fmtDate(l.date_entree)}</td>
 								<td>
@@ -140,8 +139,7 @@
 							<tr>
 								<td>{l.locataire_nom}</td>
 								<td
-									>{l.lot}{#if l.batiment !== '—'}
-										· {l.batiment}{/if}</td
+									>{l.lot}{#if l.batiment !== '—'}&nbsp;· {l.batiment}{/if}</td
 								>
 								<td>{fmtDate(l.date_entree)}</td>
 							</tr>

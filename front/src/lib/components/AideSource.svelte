@@ -34,8 +34,7 @@
 
 <span class="aide">
 	{#if active}
-		&#x1F517; Vient du <strong>{origine}</strong>{#if ou}
-			— se change dans {ou}{/if}.
+		&#x1F517; Vient du <strong>{origine}</strong>{#if ou}&nbsp;— se change dans {ou}{/if}.
 	{:else}
 		&#x2139;&#xFE0F; {repli}
 	{/if}

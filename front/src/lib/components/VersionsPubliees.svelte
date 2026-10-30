@@ -44,8 +44,7 @@
 		</ul>
 		<p class="aide">
 			Les cinq dernières mineures, chacune à son dernier correctif : ce qu’une installation peut
-			suivre en vague Fixe.{#if versions.lues_le}
-				Relues le {fmtDatetime(versions.lues_le)}.{/if}
+			suivre en vague Fixe. {#if versions.lues_le}Relues le {fmtDatetime(versions.lues_le)}.{/if}
 			Les versions et les images que plus aucune vague ne peut servir sont purgées chaque nuit.
 		</p>
 	{:else}

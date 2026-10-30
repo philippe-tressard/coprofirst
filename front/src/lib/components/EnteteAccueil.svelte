@@ -32,6 +32,11 @@
 	//  annonce le statut, puis les rôles qui ajoutent quelque chose (conseil
 	//  syndical, admin), séparés par ` · `. `résident` et `propriétaire` n'y
 	//  figurent pas — ils ne disent rien de plus que le statut déjà affiché.
+	//
+	//  Un séparateur ne finit jamais une ligne (#2356) : l'espace d'APRÈS lui est
+	//  insécable, la ligne ne peut se couper qu'avant. Même règle dans le gabarit,
+	//  où chaque bloc est précédé d'une espace — en tête de branche, Svelte 5 la
+	//  retirerait (`npm run lint:espace-blocs`).
 	$: roleLabels = (() => {
 		const labels: string[] = [];
 		const statut = $currentUser?.statut ?? '';
@@ -40,7 +45,7 @@
 		for (const r of ['conseil_syndical', 'admin']) {
 			if (allRoles.has(r)) labels.push(libelleRole(r));
 		}
-		return labels.join(' · ');
+		return labels.join(' ·\u00a0');
 	})();
 
 	$: lotLabel = libelleLogement(lots, $currentUser);
@@ -53,9 +58,9 @@
 			<div>
 				<h1 class="hero-greeting">
 					{salutation}
-					{$currentUser?.prenom}{#if lotLabel}
-						<span class="hero-lot-inline">— {lotLabel}</span>{/if}{#if roleLabels}
-						<span class="hero-role-inline">· {roleLabels}</span>{/if}
+					{$currentUser?.prenom}
+					{#if lotLabel}<span class="hero-lot-inline">—&nbsp;{lotLabel}</span>{/if}
+					{#if roleLabels}<span class="hero-role-inline">·&nbsp;{roleLabels}</span>{/if}
 				</h1>
 			</div>
 			<!-- Raccourci vers le profil. Sans photo, la pastille porte un
