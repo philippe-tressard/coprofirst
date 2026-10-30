@@ -215,16 +215,26 @@
 	}
 }
 
-/*  Le message de fête (`DecorFeteMessage`) : il se pose à GAUCHE de l'élément
-    arrêté — le coin est à droite — et grandit depuis lui (0,96 → 1). Son
-    opacité est celle du décor, qui l'enveloppe. */
+/*  Le message de fête (`DecorFeteMessage`) : à sa place fixe, SOUS le décor et
+    aligné à droite du coin, quel que soit le mouvement. Il entre en grandissant
+    (0,96 → 1). Son opacité est celle du décor, qui l'enveloppe.
+
+    Le REFLET : un dégradé appliqué au texte (`--reflet`, à la couleur de la
+    fête), trois fois plus large que lui ; seule sa position glisse, et l'éclat
+    traverse le texte de droite à gauche, une fois par apparition. */
 .decor-fete .message-fete {
 	position: absolute;
-	translate: calc(-100% - 0.4rem) -50%;
+	top: calc(100% + 0.25rem);
+	right: 0.75rem;
 	scale: 0.96;
-	transform-origin: 100% 50%;
+	transform-origin: 100% 0;
 	opacity: 0;
 	color: var(--color-primary);
+	background-image: var(--reflet);
+	background-size: 300% 100%;
+	background-position: 0% 0;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
 	font-size: var(--fs-sm);
 	font-weight: 600;
 	white-space: nowrap;
@@ -235,6 +245,15 @@
 .decor-fete .message-fete.visible {
 	opacity: 1;
 	scale: 1;
+	animation: decor-fete-reflet 2.4s ease-in-out 0.6s both;
+}
+@keyframes decor-fete-reflet {
+	from {
+		background-position: 0% 0;
+	}
+	to {
+		background-position: 100% 0;
+	}
 }
 
 /*  Mobile : sous la barre fixe, et réduit pour ne pas gêner la lecture. */

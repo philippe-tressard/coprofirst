@@ -11,8 +11,8 @@
     celui de la personne, au Profil (`ChoixDecorFete`, `decor_fetes` du compte).
   - L'opacité : UNE valeur pour toutes les fêtes, `--decor-fete-opacite` (25 %).
   - Moins d'animations demandées : le décor reste, rien ne bouge.
-  - Le message de fête, de temps en temps, là où l'élément qui bouge s'arrête :
-    `DecorFeteMessage`.
+  - Le message de fête, de temps en temps, à sa place fixe sous le décor et
+    traversé d'un reflet : `DecorFeteMessage`, qui ne dépend pas du mouvement.
 
   Le jour se lit au montage, côté navigateur : le rendu serveur ne montre jamais
   de décor, donc rien ne change à l'hydratation.
@@ -28,7 +28,6 @@
 	import DecorFeteMessage from '#lib/components/DecorFeteMessage.svelte';
 
 	let jour = '';
-	let racine: HTMLElement | undefined;
 	onMount(() => {
 		jour = jourIso();
 	});
@@ -43,9 +42,9 @@
 </script>
 
 {#if fete}
-	<div class="decor-fete" aria-hidden="true" data-fete={fete} bind:this={racine}>
+	<div class="decor-fete" aria-hidden="true" data-fete={fete}>
 		<DecorFeteDessin {fete} />
 		<DecorFeteMouvement {fete} />
-		{#if racine}<DecorFeteMessage {fete} {jour} {racine} />{/if}
+		<DecorFeteMessage {fete} {jour} />
 	</div>
 {/if}

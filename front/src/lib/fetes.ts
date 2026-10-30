@@ -136,8 +136,8 @@ export type MessageFete = string | readonly (readonly [MoisJour, string])[];
 
 /**
  * La TABLE DES FÊTES : pour chacune, son nom tel que l'écran le dit et son
- * MESSAGE (#2312, proposition n° 3 du 30/10/2026), qui apparaît de temps en temps
- * là où s'arrête l'élément qui bouge (`DecorFeteMessage`). Lu au jour de Paris,
+ * MESSAGE (#2312, révision du 30/10/2026), qui apparaît de temps en temps sous
+ * le décor, traversé d'un reflet (`DecorFeteMessage`). Lu au jour de Paris,
  * comme la période ; au plus `LONGUEUR_MAX_MESSAGE` caractères : le coin est étroit.
  */
 export const FETES: Record<CodeFete, { libelle: string; message: MessageFete }> = {
