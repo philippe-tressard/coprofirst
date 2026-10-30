@@ -42,7 +42,7 @@
     collé au bord gauche de la carte (#2305). L'émoji et l'icône se centrent
     de même. 🔒 `e2e/logo-menu.spec.ts` */
 .auth-logo {
-	font-size: 2.5rem;
+	font-size: var(--fs-picto-xl);
 	display: flex;
 	justify-content: center;
 	margin-bottom: 0.5rem;
@@ -59,7 +59,7 @@
     ⚠️ Une copie sous un AUTRE NOM échappe à tout : les deux écrans de mot de
     passe appelaient `.auth-wrapper` ce que la charte nomme `.auth-page`. */
 .auth-header h1 {
-	font-size: 1.5rem;
+	font-size: var(--fs-titre-page);
 	font-weight: 700;
 	color: var(--color-primary);
 	margin-bottom: 0.3rem;

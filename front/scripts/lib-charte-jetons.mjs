@@ -24,7 +24,8 @@ export function jetonsDe(socle) {
 	for (const [, nom, brut] of socle.matchAll(/^\s*(--[a-z0-9-]+)\s*:\s*([^;]+);/gm)) {
 		const v = brut.trim().toLowerCase();
 		if (nom.startsWith('--color-') && /^#[0-9a-f]{6}$/.test(v)) (couleurs[v] ??= []).push(nom);
-		if (nom.startsWith('--fs-') && /^[0-9]*\.?[0-9]+rem$/.test(v)) tailles[parseFloat(v)] = nom;
+		if (nom.startsWith('--fs-') && /^[0-9]*\.?[0-9]+rem$/.test(v))
+			(tailles[parseFloat(v)] ??= []).push(nom);
 	}
 	return { couleurs, tailles };
 }
@@ -37,8 +38,8 @@ const hex6 = (h) =>
 export function egalesAUnJeton(css, { couleurs, tailles }) {
 	const trouves = [];
 	for (const m of css.matchAll(/font-size\s*:\s*([0-9]*\.?[0-9]+)rem/g)) {
-		const jeton = tailles[parseFloat(m[1])];
-		if (jeton) trouves.push([`${m[1]}rem`, `var(${jeton})`]);
+		const noms = tailles[parseFloat(m[1])];
+		if (noms) trouves.push([`${m[1]}rem`, noms.map((n) => `var(${n})`).join(' ou ')]);
 	}
 	for (const m of css.matchAll(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g)) {
 		const noms = couleurs[hex6(m[0])];

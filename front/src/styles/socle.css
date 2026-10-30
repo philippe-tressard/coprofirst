@@ -261,6 +261,10 @@ body {
 	    le jour dans la gouttière — se lit d'un coup d'œil en descendant la
 	    liste. Un seul usage aujourd'hui ; un second le prend ici. */
 	--fs-chiffre: 1.6rem;
+	/*  …et le cran au-dessus, pour l'indicateur d'un tableau de bord (#2313,
+	    30/10/2026) : les deux à 2 rem gardent leur taille ; les ramener à
+	    `--fs-chiffre` les aurait fait RÉTRÉCIR de 20 %, contre la règle. */
+	--fs-chiffre-grand: 2rem;
 	/*  La police des TITRES — et du jour de la gouttière, qui se lit comme eux.
 	    Un jeton dès le second usage : la pile était écrite ici, dans `h1, h2, h3`. */
 	--police-titres: Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
@@ -300,6 +304,23 @@ body {
 	    le jeton n'a changé AUCUN rendu. */
 	--fs-xl: 1rem;
 	--fs-2xl: 1.1rem;
+	/*  Les TITRES (#2313, arbitré sur maquette le 30/10/2026) : deux crans.
+	    `titre` pour un intertitre de contenu et le nom de la résidence,
+	    `titre-page` pour TOUT h1 de page — cinq h1 avaient quatre tailles
+	    (1,3 · 1,35 · 1,4 · 1,5), rangées au cran supérieur. */
+	--fs-titre: 1.15rem;
+	--fs-titre-page: 1.5rem;
+	/*  Les PICTOGRAMMES — émojis et glyphes (✕ ‹ ★ ⠿) — ont leur échelle, hors
+	    du texte (#2313) : seize valeurs de 1,05 à 2,5 rem rangées au cran
+	    supérieur. `sm` à côté d'une ligne, `picto` sur une carte ou une
+	    boîte, `lg` seul dans un cadre (photo, visionneuse, note), `xl` en tête
+	    des pages d'authentification. Une même VALEUR peut nommer deux notions
+	    (`titre-page` et `picto`, `picto-lg` et `chiffre-grand`) : on choisit le
+	    jeton par ce que l'élément EST, jamais par sa taille. */
+	--fs-picto-sm: 1.25rem;
+	--fs-picto: 1.5rem;
+	--fs-picto-lg: 2rem;
+	--fs-picto-xl: 2.5rem;
 	/*  Le texte d'un CHAMP au téléphone : en deçà de 16 px, iOS agrandit la page
 	    à chaque appui dans le champ, et ne la rend pas. Une taille PHYSIQUE,
 	    comme les 44 px d'une cible tactile — elle ne suit pas la racine (#2165). */

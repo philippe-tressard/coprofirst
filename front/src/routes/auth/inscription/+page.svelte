@@ -365,16 +365,13 @@
 
 	/*  Logo reduit : la page est deja longue (#607, 28/08/2026). */
 	.auth-logo {
-		font-size: 2rem;
+		font-size: var(--fs-picto-lg);
 		margin-bottom: 0.4rem;
 	}
-	/*  🔴 SEULE la taille du titre diverge, et pour la même raison que le logo
-	    réduit juste au-dessus : la page est longue, l'en-tête prend moins de
-	    place. Le reste — graisse, couleur, marge — et `.auth-header p` viennent
-	    de la charte depuis le 09/09/2026 ; ils y étaient recopiés à l'identique. */
-	.auth-header h1 {
-		font-size: 1.4rem;
-	}
+	/*  Le titre ne diverge plus : il était réduit à 1,4 rem, comme le logo
+	    ci-dessus, et prend depuis #2313 (30/10/2026) le seul cran des h1 de
+	    page, `--fs-titre-page`, posé par `styles/authentification.css`. Cinq
+	    h1 avaient quatre tailles. Le logo, lui, reste réduit. */
 
 	.grille-champs :global(.field-row) {
 		display: grid;

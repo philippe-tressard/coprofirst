@@ -174,7 +174,7 @@
 		box-shadow: 0 0 0 2px var(--color-primary-plein);
 	}
 	.hero-greeting {
-		font-size: 1.35rem;
+		font-size: var(--fs-titre-page);
 		font-weight: 700;
 		color: var(--color-text-inverse);
 		margin: 0;

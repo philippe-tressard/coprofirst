@@ -661,8 +661,10 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 - [ ] Couleur et taille de texte : `var(--color-…)`, `var(--fs-…)` (`socle.css`),
       jamais une valeur en dur — `npm run lint:charte-valeurs` : couleurs à
       **zéro** depuis le lot S1 du mode sombre (#2174 — une couleur neuve est un
-      jeton de `socle.css`, nommé par l'usage), tailles sous un plafond qui ne
-      fait que baisser (#1055). Arbitré sur maquette le 27/09/2026 : une taille
+      jeton de `socle.css`, nommé par l'usage), tailles à **zéro** depuis
+      #2313 (30/10/2026 — titres, pictogrammes et chiffres ont leurs crans ;
+      le jeton se choisit par ce que l'élément EST, jamais par sa taille).
+      Arbitré sur maquette le 27/09/2026 : une taille
       hors échelle se range au cran **supérieur**, un état (danger, succès,
       avertissement) prend son jeton et ses dérivés `-fond`, `-bordure`, et
       `--color-warning` ne sert jamais au texte (`--color-warning-texte`). Ces

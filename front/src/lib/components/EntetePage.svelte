@@ -98,7 +98,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
-		font-size: 1.4rem;
+		font-size: var(--fs-titre-page);
 		font-weight: 700;
 		min-width: 0;
 	}

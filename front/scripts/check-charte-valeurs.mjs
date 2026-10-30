@@ -71,9 +71,12 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, re
  *  aucun jeton : les ranger change le rendu, arbitrage sur maquette (#2313).
  *  30/10/2026 (#2313, lot 1) : 43 → 27 — les seize tailles sous 1 rem, au cran
  *  supérieur ; les pastilles à 0,6 rem sur un cran neuf, `--fs-3xs` (0,65).
+ *  30/10/2026 (#2313, lot 2) : ZÉRO taille — les 27 au-dessus de 1,1 rem sur
+ *  trois familles de jetons neufs : titres (`--fs-titre`, `--fs-titre-page`),
+ *  pictogrammes (`--fs-picto-*`) et `--fs-chiffre-grand`. Une taille de texte
+ *  neuve est désormais un jeton de `socle.css`, comme une couleur.
  */
-//  Suivi des tailles restantes : #2313.
-const PLAFOND = { couleurs: 0, tailles: 27 };
+const PLAFOND = { couleurs: 0, tailles: 0 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
@@ -314,14 +317,20 @@ if (process.argv.includes('--selftest')) {
 	--color-bg: #f2efe9;
 	--color-text-inverse: #f2efe9;
 	--fs-sm: 0.8rem;
+	--fs-titre-page: 1.5rem;
+	--fs-picto: 1.5rem;
 	--radius: 0.5rem;
 }`,
 	);
 	cas(
 		'valeur égale à un jeton : couleur courte ou longue, taille, et les deux noms d’une valeur',
-		egalesAUnJeton('.a{color:#FFF;background:#ffffff;font-size:.80rem}.b{color:#f2efe9}', jetons),
+		egalesAUnJeton(
+			'.a{color:#FFF;background:#ffffff;font-size:.80rem}.b{color:#f2efe9;font-size:1.5rem}',
+			jetons,
+		),
 		[
 			['.80rem', 'var(--fs-sm)'],
+			['1.5rem', 'var(--fs-titre-page) ou var(--fs-picto)'],
 			['#FFF', 'var(--color-surface)'],
 			['#ffffff', 'var(--color-surface)'],
 			['#f2efe9', 'var(--color-bg) ou var(--color-text-inverse)'],

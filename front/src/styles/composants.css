@@ -936,7 +936,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 .modal-close {
 	background: none;
 	border: none;
-	font-size: 1.5rem;
+	font-size: var(--fs-picto);
 	cursor: pointer;
 	color: var(--color-text-muted);
 	padding: 0.25rem;

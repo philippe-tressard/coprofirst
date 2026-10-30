@@ -334,7 +334,7 @@
 	width: 2rem;
 	height: 2rem;
 	flex-shrink: 0;
-	font-size: 1.25rem;
+	font-size: var(--fs-picto-sm);
 	font-weight: 700;
 	color: var(--color-text);
 	cursor: pointer;
