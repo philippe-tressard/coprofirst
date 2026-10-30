@@ -88,6 +88,7 @@ from app.installation_commune import fichiers as fichiers_commune  # /uploads/* 
 from app.routers import courriels_affaires
 from app.routers import partage
 from app.routers import assistant, config_llm, config_logo, config_services, reglement
+from app.routers import config_palette
 from app.routers import textes_legaux
 from app.routers import suivi_affaires, suivi_affaires_fusions
 from app.routers import points_conseil, points_conseil_validation
@@ -410,6 +411,7 @@ app.include_router(config.router)
 app.include_router(config_llm.router)
 app.include_router(config_services.router)
 app.include_router(config_logo.router)
+app.include_router(config_palette.router)
 app.include_router(textes_legaux.router)
 app.include_router(diagnostics.router)
 app.include_router(regles_residence.router)

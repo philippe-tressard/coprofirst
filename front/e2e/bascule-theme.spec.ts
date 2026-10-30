@@ -67,9 +67,11 @@ test.describe('Le HTML servi porte le thème', () => {
 		test(`cookie ${cookie ?? 'absent'} → data-theme="${attribut}"`, async ({ page, context }) => {
 			if (cookie !== null) await poserCookie(context, encodeURIComponent(cookie));
 			const html = await (await page.request.get('/auth/connexion')).text();
-			expect(html).toContain(`<html lang="fr" data-theme="${attribut}">`);
+			//  La palette de la copropriété (#2379) : sans configuration lue, la charte.
+			expect(html).toContain(`<html lang="fr" data-theme="${attribut}" data-palette="seine">`);
 			expect(html).toContain(`<meta name="color-scheme" content="${schema}" />`);
 			expect(html, 'aucun repère laissé en clair').not.toContain('%theme.');
+			expect(html, 'aucun repère laissé en clair').not.toContain('%palette%');
 		});
 	}
 });

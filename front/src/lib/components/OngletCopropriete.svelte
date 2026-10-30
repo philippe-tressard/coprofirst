@@ -15,6 +15,7 @@
 	import { nomResidenceEnregistre, siteNomStore } from '#lib/stores/pageConfig.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import ChampLogo from '#lib/components/ChampLogo.svelte';
+	import ChampPalette from '#lib/components/ChampPalette.svelte';
 	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
 	import SectionContratReference from '#lib/components/SectionContratReference.svelte';
 	import ChampsIdentiteCopropriete, {
@@ -125,9 +126,11 @@
 					<ChampsIdentiteCopropriete bind:valeurs={form} />
 					<!--  Le logo et l'adresse publique vivaient dans « Paramétrage site » :
 					      ils disent QUI est la copropriété, ils rejoignent son identité
-					      (#2062). Le logo se téléverse seul (`ChampLogo`), l'adresse ne se
-					      saisit pas — ni l'un ni l'autre ne part avec ce formulaire. -->
+					      (#2062). Le logo se téléverse seul (`ChampLogo`), la palette se choisit
+					      seule (`ChampPalette`, #2379), l'adresse ne se saisit pas — aucun ne
+					      part avec ce formulaire. -->
 					<ChampLogo />
+					<ChampPalette />
 					<label class="field">
 						URL publique
 						<input type="url" value={urlPublique} readonly />

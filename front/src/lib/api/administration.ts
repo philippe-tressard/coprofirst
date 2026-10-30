@@ -442,7 +442,22 @@ export const config = {
 	televerserLogo: (fichier: File) =>
 		postFormData<{ site_logo: string }>('/config/logo', { file: fichier }),
 	supprimerLogo: () => api.delete<{ site_logo: null }>('/config/logo'),
+
+	/**  Les palettes offertes à la copropriété (#2379) — le registre de l'API, dans
+	 *   l'ordre de l'écran — et le choix, vérifié contre lui. */
+	palettes: () => api.get<PaletteCopropriete[]>('/config/palettes'),
+	choisirPalette: (palette: string) =>
+		api.put<{ site_palette: string }>('/config/palette', { palette }),
 };
+
+/** Une palette du registre (`GET /config/palettes`) : de quoi la montrer et la choisir. */
+export interface PaletteCopropriete {
+	code: string;
+	nom: string;
+	primaire: string;
+	accent: string;
+	fond: string;
+}
 
 /**
  *  Un compte rendu des contrôles de fiabilité (`check-reliability.sh`).

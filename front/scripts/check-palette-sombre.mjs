@@ -29,6 +29,11 @@
  *     Un écran ne porte pas de règle sombre — il lit les jetons ; sinon la
  *     règle se disperse et la bascule de S5 doit la retrouver partout.
  *
+ *  7. une PALETTE de la copropriété (`styles/palettes.css`, #2379) qui ne
+ *     déclare pas exactement `JETONS_PALETTE_CLAIR` et `JETONS_PALETTE_SOMBRE`,
+ *     qui n'a pas ses deux règles, ou dont une paire de la table tombe sous son
+ *     seuil — mesurée sur la charte qu'elle surcharge, dans les deux thèmes.
+ *
  *  Lancer : node scripts/check-palette-sombre.mjs [--selftest]
  */
 import { readFileSync } from 'node:fs';
@@ -43,7 +48,7 @@ const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 const STYLES = join(SRC, 'styles');
 /** Où le thème se DÉCIDE : la palette, et la bascule qui choisit l'attribut (S5,
  *  `lib/theme.ts`) — rien d'autre (règle 6). */
-const LIEUX_DU_THEME = ['styles/palette-sombre.css', 'lib/theme.ts'];
+const LIEUX_DU_THEME = ['styles/palette-sombre.css', 'styles/palettes.css', 'lib/theme.ts'];
 const DECIDE_LE_THEME = /prefers-color-scheme|data-theme/;
 export const SELECTEUR_SOMBRE = ":root[data-theme='dark']";
 
@@ -120,6 +125,68 @@ export function fautesContraste(clair, sombre, paires = PAIRES) {
 			if (r >= seuil && admis)
 				fautes.push(`${usage} (clair) : ${fmt(r)}:1 tient désormais — retirer l'écart déclaré`);
 		}
+	}
+	return fautes;
+}
+
+/** Ce qu'une palette de la copropriété redéfinit — ni plus, ni moins (règle 7). */
+export const JETONS_PALETTE_CLAIR = [
+	'--color-primary',
+	'--color-primary-dark',
+	'--color-primary-light',
+	'--color-accent',
+	'--color-bg',
+	'--color-text',
+	'--color-text-muted',
+	'--color-border',
+];
+export const JETONS_PALETTE_SOMBRE = [
+	'--color-bg',
+	'--color-surface',
+	'--color-border',
+	'--color-border-champ',
+	'--color-neutre-fond',
+	'--color-neutre-bordure',
+	'--color-text-muted',
+	'--color-primary',
+	'--color-primary-dark',
+	'--color-primary-light',
+	'--color-accent',
+	'--color-primary-plein',
+	'--color-primary-plein-survol',
+];
+
+/** Les palettes de `palettes.css` : `{ code: { clair, sombre } }`, déclarations lues. PURE. */
+export function palettesDe(css) {
+	const sans = css.replace(/\/\*[\s\S]*?\*\//g, '');
+	const palettes = {};
+	const de = (code) => (palettes[code] ??= { clair: null, sombre: null });
+	const regleClaire =
+		/:root\[data-palette='([a-z]+)'\],\s*:root\[data-palette='([a-z]+)'\] \.ilot-clair\s*\{([^}]*)\}/g;
+	for (const [, code, ilot, corps] of sans.matchAll(regleClaire))
+		if (code === ilot) de(code).clair = declarationsDe(corps);
+	for (const m of sans.matchAll(
+		/:root\[data-palette='([a-z]+)'\]\[data-theme='dark'\]\s*\{([^}]*)\}/g,
+	))
+		de(m[1]).sombre = declarationsDe(m[2]);
+	return palettes;
+}
+
+/** Les fautes des palettes (règle 7). PURE. */
+export function fautesPalettes(palettes, clair, sombre, paires = PAIRES) {
+	const fautes = [];
+	const memes = (decl, attendus) =>
+		decl && [...Object.keys(decl)].sort().join() === [...attendus].sort().join();
+	for (const [code, p] of Object.entries(palettes)) {
+		if (!memes(p.clair, JETONS_PALETTE_CLAIR))
+			fautes.push(`palette ${code} : règle claire absente ou jetons ≠ JETONS_PALETTE_CLAIR`);
+		if (!memes(p.sombre, JETONS_PALETTE_SOMBRE))
+			fautes.push(`palette ${code} : règle sombre absente ou jetons ≠ JETONS_PALETTE_SOMBRE`);
+		if (!p.clair || !p.sombre) continue;
+		//  Un écart CLAIR déclaré pour la charte peut tenir dans une palette : ce
+		//  n'est pas une faute de la palette.
+		for (const f of fautesContraste({ ...clair, ...p.clair }, { ...sombre, ...p.sombre }, paires))
+			if (!f.includes("retirer l'écart")) fautes.push(`palette ${code} — ${f}`);
 	}
 	return fautes;
 }
@@ -251,6 +318,37 @@ if (process.argv.includes('--selftest')) {
 		]).length,
 		1,
 	);
+	const decl = (jetons, v) => Object.fromEntries(jetons.map((j) => [j, v]));
+	const bonne = {
+		clair: { ...decl(JETONS_PALETTE_CLAIR, '#000000'), '--color-bg': '#ffffff' },
+		sombre: decl(JETONS_PALETTE_SOMBRE, '#000000'),
+	};
+	cas(
+		'cas zéro : une palette complète et lisible',
+		fautesPalettes({ a: bonne }, clair, sombre, [paireOk]),
+		[],
+	);
+	cas(
+		'une palette sans règle sombre, et une autre illisible, échouent',
+		fautesPalettes(
+			{
+				a: { ...bonne, sombre: null },
+				b: { ...bonne, clair: { ...bonne.clair, '--color-text': '#ffffff' } },
+			},
+			clair,
+			sombre,
+			[paireOk],
+		).length,
+		2,
+	);
+	cas(
+		'les deux règles d’une palette sont lues',
+		palettesDe(
+			":root[data-palette='x'],\n:root[data-palette='x'] .ilot-clair {\n --a: #fff;\n}\n" +
+				"@media screen {\n:root[data-palette='x'][data-theme='dark'] {\n --a: #000;\n}\n}",
+		),
+		{ x: { clair: { '--a': '#fff' }, sombre: { '--a': '#000' } } },
+	);
 	console.log(ko ? '== ÉCHECS ==' : '== TOUS OK ==');
 	process.exit(ko);
 }
@@ -282,8 +380,14 @@ if (sources.length < 100) {
 `);
 	process.exit(2);
 }
+const palettes = palettesDe(lire('palettes.css'));
+if (Object.keys(palettes).length < 1) {
+	console.error('\n✗ Aucune palette lue dans palettes.css : contrôle inopérant (INCONNU).\n');
+	process.exit(2);
+}
 const fautes = [
 	...fautesCouverture(clair, sombre),
+	...fautesPalettes(palettes, clair, sombre),
 	...fautesContraste(clair, sombre),
 	...badges.fautes,
 	...fautesLieux(sources),
@@ -298,5 +402,6 @@ if (fautes.length) {
 }
 console.log(
 	`✓ Palette sombre : ${Object.keys(sombre).length} jetons redéfinis, ` +
-		`${PAIRES.length} paires et ${badges.lus} badges à l'AA.`,
+		`${PAIRES.length} paires et ${badges.lus} badges à l'AA ; ` +
+		`${Object.keys(palettes).length} palettes de copropriété à l'AA dans les deux thèmes.`,
 );

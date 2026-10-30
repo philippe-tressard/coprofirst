@@ -115,6 +115,8 @@ REFUSEES: dict[str, str] = {
     "whatsapp_api_key": "La clé du bridge WhatsApp se définit dans .env (WHATSAPP_API_KEY).",
     #  Posé par le téléversement, qui contrôle le fichier (#1728).
     "site_logo": "Le logo se téléverse par POST /config/logo.",
+    #  Vérifiée contre le registre des palettes (#2379).
+    "site_palette": "La palette se choisit par PUT /config/palette.",
     #  Un réglage de l'INSTALLATION (spec `mode-demo.md` M1).
     demo.CLE_PUBLIQUE: "Le mode démo se règle dans .env (MODE_DEMO).",
     #  Dérivée, jamais saisie (#2058) : l'adresse de l'installation (`liens.adresse_du_site`).

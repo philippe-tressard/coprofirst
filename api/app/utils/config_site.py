@@ -32,17 +32,19 @@ from sqlmodel import Session, select
 
 from app.models.core import ConfigSite
 from app.utils.liens import adresse_du_site, nom_site
+from app.utils.palettes import CLE_PALETTE
 
 
 def config_site(session: Session, *cles: str) -> dict:
-    """Valeurs de `ConfigSite`, avec `site_nom` toujours inclus — l'adresse du site,
-    elle, ne se lit plus en base : `liens.adresse_du_site()` (#2058).
+    """Valeurs de `ConfigSite`, avec `site_nom` et la palette toujours inclus —
+    l'adresse du site, elle, ne se lit plus en base : `liens.adresse_du_site()` (#2058).
 
     Ces deux clés alimentent le pied de chaque e-mail : les demander partout
     évitait déjà de les oublier, mais au prix de quatre requêtes écrites à la
-    main. Une seule écriture ici.
+    main. Une seule écriture ici. La palette (#2379) colore les mêmes supports —
+    courriels et affiches — que le nom signe.
     """
-    voulues = {"site_nom"} | set(cles)
+    voulues = {"site_nom", CLE_PALETTE} | set(cles)
     lignes = session.exec(select(ConfigSite).where(ConfigSite.cle.in_(voulues))).all()
     return {r.cle: r.valeur for r in lignes}
 

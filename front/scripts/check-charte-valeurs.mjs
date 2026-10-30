@@ -93,8 +93,9 @@ export function stylesDeFeuille(source) {
  *  faudrait le relever aussi — le contrôle ne le devinerait pas.
  */
 export const FEUILLE_DES_JETONS = 'socle.css';
-/** …et celle qui les REDÉFINIT au sombre (#2174, S3), hors relevé pour la même raison. */
-const FEUILLES_DES_JETONS = [FEUILLE_DES_JETONS, 'palette-sombre.css'];
+/** …celle qui les REDÉFINIT au sombre (#2174, S3) et celle des palettes de la copropriété
+ *  (#2379), hors relevé pour la même raison. */
+const FEUILLES_DES_JETONS = [FEUILLE_DES_JETONS, 'palette-sombre.css', 'palettes.css'];
 
 /** Couleurs hexadécimales et tailles de texte en `rem` écrites en dur. */
 export function valeursEnDur(css) {
