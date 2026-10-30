@@ -31,6 +31,7 @@
   responsable : on voit qui a noté avant de retirer.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import { createEventDispatcher } from 'svelte';
 	import { prestataires as prestApi, type Notation } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
@@ -64,7 +65,7 @@
 		const ok = await confirmer({
 			titre: 'Retirer cet avis',
 			message:
-				`Note ${n.note}/5 de ${n.auteur_nom ?? 'un membre du CS'}` +
+				`Note ${fmtNombre(n.note)}/5 de ${n.auteur_nom ?? 'un membre du CS'}` +
 				(n.commentaire ? ` — « ${n.commentaire} »` : '') +
 				'\n\nLa suppression est définitive, et la moyenne du prestataire sera recalculée.',
 			libelleConfirmer: 'Retirer l’avis',
@@ -98,7 +99,7 @@
 		{#each triees as n (n.id)}
 			<div class="not-item">
 				<div class="not-entete">
-					<span class="not-etoiles" aria-label="{n.note} sur 5">{etoiles(n.note)}</span>
+					<span class="not-etoiles" aria-label="{fmtNombre(n.note)} sur 5">{etoiles(n.note)}</span>
 					<span class="not-auteur">{n.auteur_nom ?? '—'}</span>
 					<span class="not-date">{fmtDate(n.cree_le)}</span>
 					{#if peutSupprimer}

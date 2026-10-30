@@ -68,7 +68,9 @@
 				><span class="graphique-pastille affaire" aria-hidden="true"></span>cette affaire</span
 			>
 			<span class="graphique-cle"
-				><span class="graphique-pastille moyenne-barre" aria-hidden="true"></span>moyenne des {comparaison.nombre}
+				><span class="graphique-pastille moyenne-barre" aria-hidden="true"></span>moyenne des {fmtNombre(
+					comparaison.nombre,
+				)}
 				affaires « {nomCategorie(comparaison.categorie)} » closes de l'exercice {comparaison.exercice}</span
 			>
 		</figcaption>

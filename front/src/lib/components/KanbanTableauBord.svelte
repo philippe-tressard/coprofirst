@@ -27,6 +27,7 @@
 	 * affaire suivie en cours reste à l'accueil tant qu'elle n'est pas close,
 	 * quelle que soit l'année ; la visibilité est celle du serveur.
 	 */
+	import { fmtNombre } from '#lib/utils.ts';
 	import ItemKanban from '#lib/components/ItemKanban.svelte';
 	import { routeOnglet } from '#lib/routes-onglets.ts';
 	import { basculer } from '#lib/accordeon.ts';
@@ -154,8 +155,8 @@
 						{#if col.total > 0}
 							<span class="kb-col-count" style="--kb-teinte:{col.color}">
 								{col.total > MAX_CARTES_ACCUEIL
-									? `+${col.total - MAX_CARTES_ACCUEIL} / ${col.total}`
-									: col.total}
+									? `+${fmtNombre(col.total - MAX_CARTES_ACCUEIL)} / ${fmtNombre(col.total)}`
+									: fmtNombre(col.total)}
 							</span>
 						{/if}
 					</button>

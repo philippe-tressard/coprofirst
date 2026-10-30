@@ -33,12 +33,8 @@ import ts from 'typescript';
 import { controler, lignesPortant } from './lib-source-unique.mjs';
 
 /**  Écarts déclarés, avec leur raison. Une entrée qui ne sert plus fait échouer. */
-const EXCEPTIONS = {
-	'src/lib/components/TopPages.svelte':
-		'un POURCENTAGE de fréquentation (`toFixed(1)%`), ni une taille ni un nombre entier ' +
-		'groupé : hors du périmètre de #1576, à traiter par un `fmtPourcent` le jour où il ' +
-		'servira deux fois',
-};
+//  Vide depuis #2358 : le pourcentage du Top pages passe par `fmtPartEnPourcent(…, 1)`.
+const EXCEPTIONS = {};
 
 /**
  *  Les formes d'un format écrit à la main :

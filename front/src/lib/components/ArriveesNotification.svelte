@@ -8,6 +8,7 @@
 	 * L'étiquette du lien, sa lecture et ses limites :
 	 * `api/app/utils/arrivees_notification.py` et `#lib/arrivees`.
 	 */
+	import { fmtNombre } from '#lib/utils.ts';
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import type { ArriveeNotification } from '#lib/api/index.ts';
 
@@ -42,9 +43,9 @@
 					<tr>
 						<td>{CANAUX[a.canal]}</td>
 						<td class="text-muted-sm">{type(a)}</td>
-						<td class="nombre">{a.arrivees}</td>
-						<td class="nombre">{a.comptes}</td>
-						<td class="nombre">{a.envois ?? '—'}</td>
+						<td class="nombre">{fmtNombre(a.arrivees)}</td>
+						<td class="nombre">{fmtNombre(a.comptes)}</td>
+						<td class="nombre">{fmtNombre(a.envois)}</td>
 					</tr>
 				{/each}
 			</tbody>

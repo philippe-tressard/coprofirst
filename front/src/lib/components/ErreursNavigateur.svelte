@@ -6,6 +6,7 @@
 	 *
 	 * La clé (page, code) est unique : le serveur regroupe par ce couple.
 	 */
+	import { fmtNombre } from '#lib/utils.ts';
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import { fmtDatetimeShort } from '#lib/date.ts';
 	import type { ErreurNavigateur } from '#lib/api/index.ts';
@@ -37,7 +38,7 @@
 								<code>{e.page}</code>
 								<span class="code">{e.code}</span>
 							</td>
-							<td class="nombre">{e.total}</td>
+							<td class="nombre">{fmtNombre(e.total)}</td>
 							<td class="text-muted-sm">{fmtDatetimeShort(e.derniere_le)}</td>
 						</tr>
 					{/each}

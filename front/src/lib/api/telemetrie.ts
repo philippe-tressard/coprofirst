@@ -3,6 +3,8 @@
 //  Rangées ici le 03/10/2026 : `administration.ts` passait au-dessus du plafond
 //  de modularité, et ces types ne servent qu'à l'onglet Télémétrie.
 
+import type { MoisIso } from './valeurs';
+
 /** Une erreur vue par les résidents (#1631) — `utils/erreurs_navigateur.synthese_erreurs`. */
 export interface ErreurNavigateur {
 	page: string;
@@ -117,7 +119,7 @@ export interface UtilisateurActif {
 export interface RecordTelemetrie {
 	uniques: number;
 	jour?: string;
-	mois?: string;
+	mois?: MoisIso;
 }
 
 /**
@@ -179,7 +181,7 @@ export interface RetourComptes {
 /** Ce que le profil exporte de sa mesure d'audience (`GET /auth/me/telemetrie`). */
 export interface ExportTelemetrie {
 	evenements: unknown[];
-	mois_de_presence: string[];
+	mois_de_presence: MoisIso[];
 	jour_de_derniere_visite: string | null;
 }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import { lieu } from '#lib/lieu.svelte.ts';
@@ -254,7 +255,9 @@
 									title="Cette réponse inclut un champ de précision">✏️</span
 								>{/if}
 							{#if voirResultats}
-								<span class="option-votes">{opt.nb_votes} vote{opt.nb_votes !== 1 ? 's' : ''}</span>
+								<span class="option-votes"
+									>{fmtNombre(opt.nb_votes)} vote{opt.nb_votes !== 1 ? 's' : ''}</span
+								>
 							{/if}
 						</label>
 					{/each}

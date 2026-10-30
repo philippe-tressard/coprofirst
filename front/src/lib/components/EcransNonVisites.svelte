@@ -14,6 +14,7 @@
 	 * vues **Mois** et **Année** seulement : sur une journée, presque tout écran est
 	 * « non visité », et la liste ne dirait rien.
 	 */
+	import { fmtNombre } from '#lib/utils.ts';
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import { PAGES } from '#lib/pages.ts';
 	import { PAGES_ROLES } from '#lib/pages-roles.ts';
@@ -35,12 +36,12 @@
 	<PanneauTelemetrie titre="💤 Écrans non visités" {periode} niveau="bloc">
 		{#if bilan.nonVisites.length === 0}
 			<p class="resume">
-				Les {bilan.total} écrans du site ont tous été ouverts sur la période.
+				Les {fmtNombre(bilan.total)} écrans du site ont tous été ouverts sur la période.
 			</p>
 		{:else}
 			<p class="resume">
 				<strong>{bilan.nonVisites.length}</strong> écran{bilan.nonVisites.length > 1 ? 's' : ''}
-				sur {bilan.total} n’{bilan.nonVisites.length > 1 ? 'ont' : 'a'} reçu aucune visite.
+				sur {fmtNombre(bilan.total)} n’{bilan.nonVisites.length > 1 ? 'ont' : 'a'} reçu aucune visite.
 			</p>
 			<div class="table-wrap">
 				<table class="table">

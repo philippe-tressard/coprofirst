@@ -10,6 +10,7 @@
   n'envoie pas les décomptes, et un « 0 vote » se lirait « personne n'a voté ».
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	export let options: {
 		id: number;
 		libelle: string;
@@ -44,7 +45,7 @@
 				<div class="result-bar" style="width:{pct(opt.nb_votes ?? 0)}%"></div>
 			</div>
 			<div class="result-pct">{pct(opt.nb_votes ?? 0)} %</div>
-			<div class="result-votes">{opt.nb_votes}</div>
+			<div class="result-votes">{fmtNombre(opt.nb_votes)}</div>
 		</div>
 		{#if opt.champ_libre && opt.reponses_libres?.length}
 			<div class="reponses-libres-list">

@@ -29,6 +29,7 @@
   l'autre.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import Badge from '#lib/components/Badge.svelte';
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
@@ -90,14 +91,14 @@
 				class="vote-btn"
 				class:voted={idee.mon_vote}
 				aria-pressed={!!idee.mon_vote}
-				aria-label="{idee.mon_vote
-					? 'Retirer mon vote'
-					: 'Voter pour cette idée'} — {idee.nb_votes} vote{idee.nb_votes > 1 ? 's' : ''}"
+				aria-label="{idee.mon_vote ? 'Retirer mon vote' : 'Voter pour cette idée'} — {fmtNombre(
+					idee.nb_votes,
+				)} vote{idee.nb_votes > 1 ? 's' : ''}"
 				title={idee.mon_vote ? 'Retirer mon vote' : 'Voter pour cette idée'}
 				on:click={() => onVoter(idee.id)}
 			>
 				<IconeAction icone="heart" />
-				<span class="vote-count">{idee.nb_votes}</span>
+				<span class="vote-count">{fmtNombre(idee.nb_votes)}</span>
 			</button>
 		</svelte:fragment>
 		<!--  🔴 L'EN-TÊTE DU SITE (18/08/2026, signalé à l'écran : « l'état sur une

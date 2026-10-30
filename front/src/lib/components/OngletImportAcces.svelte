@@ -20,7 +20,7 @@
 <script lang="ts">
 	import Badge from '#lib/components/Badge.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
-	import { champDe, nombreOuNull } from '#lib/utils.ts';
+	import { champDe, fmtNombre, nombreOuNull } from '#lib/utils.ts';
 	import { onMount } from 'svelte';
 	import {
 		acces as accesApi,
@@ -258,7 +258,7 @@
 		</button>
 		{#if stats?.a_rattacher}
 			<button class="btn btn-primary btn-sm" on:click={rattacherTout} disabled={enCours}>
-				Rattacher les {stats.a_rattacher} lignes reconnues
+				Rattacher les {fmtNombre(stats.a_rattacher)} lignes reconnues
 			</button>
 		{/if}
 	</svelte:fragment>

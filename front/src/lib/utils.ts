@@ -96,10 +96,12 @@ const DEUX_DECIMALES = new Intl.NumberFormat('fr-FR', {
  *
  * Deux décimales : une part de copropriété tient en dix-millièmes, que l'arrondi à l'entier
  * ferait tous valoir « 0 % ». Le format est celui de `fmtNombre`, la virgule comprise.
+ * Une part de fréquentation se lit à une décimale : `decimales = 1` (Top pages, #2358).
  */
-export function fmtPartEnPourcent(numerateur: number, denominateur: number): string {
+export function fmtPartEnPourcent(numerateur: number, denominateur: number, decimales = 2): string {
 	if (!denominateur) return '—';
-	return `${DEUX_DECIMALES.format((numerateur / denominateur) * 100)}\u00a0%`;
+	const format = decimales === 1 ? UNE_DECIMALE : DEUX_DECIMALES;
+	return `${format.format((numerateur / denominateur) * 100)}\u00a0%`;
 }
 
 /**

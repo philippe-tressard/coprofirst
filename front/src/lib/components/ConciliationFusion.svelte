@@ -18,6 +18,7 @@
   (clôture) et `FusionAffaires` (correction, Suivi).
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import type { CandidateFusion } from '#lib/api/index.ts';
 	import type { DecisionConciliation } from '#lib/fusion-conciliation.ts';
 
@@ -84,7 +85,9 @@
 							{numeroPrincipale} serait lue ainsi — {o.resultat.perimetre} · {o.resultat
 								.destinataires}
 							· {o.resultat.acces}.
-							{#if o.perdants}Perdent l'accès à un fil qu'elles lisaient : {o.perdants}.{/if}
+							{#if o.perdants}Perdent l'accès à un fil qu'elles lisaient : {fmtNombre(
+									o.perdants,
+								)}.{/if}
 						</p>
 					{/if}
 					{#if decision?.option === o.code && o.consentement}

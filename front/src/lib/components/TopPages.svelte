@@ -14,6 +14,7 @@
 	 * section : l'onglet regroupe graphe, top pages et utilisateurs actifs.
 	 */
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
+	import { fmtNombre, fmtPartEnPourcent } from '#lib/utils.ts';
 
 	export let pages: { page: string; total: number; uniques: number }[] = [];
 
@@ -49,18 +50,16 @@
 					{#each pages as p (p.page)}
 						<tr>
 							<td><code class="chemin">{p.page}</code></td>
-							<td class="num-fort">{p.total}</td>
-							<td class="num-attenue">{p.uniques}</td>
-							<td class="num-attenue">
-								{((p.total / diviseur) * 100).toFixed(1)}%
-							</td>
+							<td class="num-fort">{fmtNombre(p.total)}</td>
+							<td class="num-attenue">{fmtNombre(p.uniques)}</td>
+							<td class="num-attenue">{fmtPartEnPourcent(p.total, diviseur, 1)}</td>
 						</tr>
 					{/each}
 				</tbody>
 				<tfoot>
 					<tr class="total">
-						<td>Total — {pages.length} page{pages.length > 1 ? 's' : ''}</td>
-						<td class="num">{totalVues}</td>
+						<td>Total — {fmtNombre(pages.length)} page{pages.length > 1 ? 's' : ''}</td>
+						<td class="num">{fmtNombre(totalVues)}</td>
 						<td class="num-attenue">
 							<!--  Additionner la colonne serait FAUX : un même utilisateur compte
 						      dans chaque page qu'il a vue, et la somme dirait « 17 personnes »
@@ -72,7 +71,7 @@
 							>
 						</td>
 						<td class="num-attenue">
-							{totalVues > 0 ? '100.0%' : '—'}
+							{fmtPartEnPourcent(totalVues, totalVues, 1)}
 						</td>
 					</tr>
 				</tfoot>
@@ -81,7 +80,7 @@
 		<svelte:fragment slot="pied">
 			{#if vuesNonAttribuees > 0}
 				<p>
-					Dont <strong>{vuesNonAttribuees}</strong> vue{vuesNonAttribuees > 1 ? 's' : ''}
+					Dont <strong>{fmtNombre(vuesNonAttribuees)}</strong> vue{vuesNonAttribuees > 1 ? 's' : ''}
 					non rattachée{vuesNonAttribuees > 1 ? 's' : ''} à un utilisateur — enregistrée{vuesNonAttribuees >
 					1
 						? 's'
