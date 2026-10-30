@@ -9,6 +9,7 @@
 	 * un copropriétaire du conseil compte sous les deux —, donc leurs lignes ne
 	 * s'additionnent pas, et l'écran le dit. La règle de calcul : `utils/adoption.py`.
 	 */
+	import { fmtNombre } from '#lib/utils.ts';
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import type { Adoption, LigneAdoption } from '#lib/api/index.ts';
 
@@ -51,7 +52,9 @@
 				<tbody>
 					<tr class="global">
 						<td>{adoption.global.libelle}</td>
-						<td class="nombre">{adoption.global.actifs} / {adoption.global.comptes}</td>
+						<td class="nombre"
+							>{fmtNombre(adoption.global.actifs)} / {fmtNombre(adoption.global.comptes)}</td
+						>
 						<td class="nombre">{pourcentage(adoption.global)}</td>
 					</tr>
 				</tbody>
@@ -63,7 +66,7 @@
 						{#each g.lignes as l (l.libelle)}
 							<tr>
 								<td>{l.libelle}</td>
-								<td class="nombre">{l.actifs} / {l.comptes}</td>
+								<td class="nombre">{fmtNombre(l.actifs)} / {fmtNombre(l.comptes)}</td>
 								<td class="nombre">{pourcentage(l)}</td>
 							</tr>
 						{/each}
@@ -77,10 +80,8 @@
 			Un compte est « venu » s’il a ouvert au moins une page sur la période. Un compte peut avoir
 			plusieurs profils : leurs lignes ne s’additionnent pas.
 			{#if adoption?.refus}
-				{adoption.refus} compte{adoption.refus > 1 ? 's ont' : ' a'} refusé la mesure d’audience : exclu{adoption.refus >
-				1
-					? 's'
-					: ''} du calcul.
+				{fmtNombre(adoption.refus)} compte{adoption.refus > 1 ? 's ont' : ' a'} refusé la mesure d’audience
+				: exclu{adoption.refus > 1 ? 's' : ''} du calcul.
 			{/if}
 		</p>
 	</svelte:fragment>

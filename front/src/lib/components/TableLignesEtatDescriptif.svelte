@@ -11,7 +11,7 @@
 <script lang="ts">
 	import type { EtatDescriptif, LigneEtatDescriptif } from '#lib/api/index.ts';
 	import { abregerCle, libelleEcart, sommeDeCle } from '#lib/etat-descriptif.ts';
-	import { lotTypeLabel } from '#lib/utils.ts';
+	import { fmtNombre, lotTypeLabel } from '#lib/utils.ts';
 
 	/** Les lignes à montrer (la recherche en écarte). */
 	export let lignes: LigneEtatDescriptif[];
@@ -32,10 +32,10 @@
 				<th class="lot">Lot</th><th>Bât.</th><th>Nature</th><th>Porte / place</th>
 				<th>Niv.</th><th>Desserte</th>
 				{#each cles as cle (cle.code)}
-					<th class="nombre" title="{cle.libelle} — sur {cle.denominateur}">
+					<th class="nombre" title="{cle.libelle} — sur {fmtNombre(cle.denominateur)}">
 						<span class="sr-only">{cle.libelle}</span>
 						<span aria-hidden="true">{abregerCle(cle.libelle)}</span>
-						<span class="denominateur" aria-hidden="true">/{cle.denominateur}</span>
+						<span class="denominateur" aria-hidden="true">/{fmtNombre(cle.denominateur)}</span>
 					</th>
 				{/each}
 			</tr>

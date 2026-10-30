@@ -22,6 +22,7 @@
   ouvert. Les listes arrivent donc liées, et les gestes qui les vident vivent ici.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import Badge from '#lib/components/Badge.svelte';
 	import { nomAffiche } from '#lib/noms.ts';
 	import {
@@ -237,8 +238,8 @@
 								{#if item.lots_prevus > 0}
 									<span
 										class="badge badge-green"
-										title="{item.lots_prevus} lot(s) trouvé(s) dans l'import"
-										>✓ {item.lots_prevus}</span
+										title="{fmtNombre(item.lots_prevus)} lot(s) trouvé(s) dans l'import"
+										>✓ {fmtNombre(item.lots_prevus)}</span
 									>
 								{:else if u.statut?.startsWith('copropriétaire')}
 									<span class="badge badge-orange" title="Pas trouvé dans l'import Lots">⚠ 0</span>

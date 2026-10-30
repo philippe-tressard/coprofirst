@@ -34,6 +34,7 @@
   Philippe qui a nommé la première. Chercher la NOTION, pas le nom demandé.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import { frequenceLabel, type FormulaireContratData } from '#lib/prestataires.ts';
 	import { classeEquipement } from '#lib/prestataires-gouttiere.ts';
 	import { typeEquipementDuContrat } from '#lib/reporting.ts';
@@ -223,7 +224,9 @@
 					<span class="detail-label">Début</span>📅 {fmtDateShort(contrat.date_debut)}
 				</div>
 				{#if contrat.duree_initiale_valeur}<div>
-						<span class="detail-label">Durée initiale</span>{contrat.duree_initiale_valeur}
+						<span class="detail-label">Durée initiale</span>{fmtNombre(
+							contrat.duree_initiale_valeur,
+						)}
 						{contrat.duree_initiale_unite}
 					</div>{/if}
 				{#if contrat.frequence_type}

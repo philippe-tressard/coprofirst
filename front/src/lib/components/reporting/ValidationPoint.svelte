@@ -15,6 +15,7 @@
   (`utils/points_conseil_validation`) ; ce bloc ne fait que les montrer.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import { toast } from '#lib/components/Toast.svelte';
@@ -116,7 +117,7 @@
 	{#if point.etat === 'a_valider'}
 		<p class="etat">
 			Envoyé aux présents —
-			<strong>{v.valides} sur {v.destinataires}</strong>
+			<strong>{fmtNombre(v.valides)} sur {fmtNombre(v.destinataires)}</strong>
 			{v.destinataires > 1 ? 'ont validé' : 'a validé'}.
 			{#if v.suspendue}
 				<span class="alerte">Un commentaire attend : la validation automatique est suspendue.</span>

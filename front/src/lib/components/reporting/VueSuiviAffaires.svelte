@@ -63,6 +63,7 @@
   (`chargement`, `estVide`, `recharger`, `exporterPdf`).
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import {
 		pointsConseil,
@@ -303,18 +304,18 @@
 	<div class="tete">
 		<div class="chiffres">
 			<div class="kpi-card">
-				<div class="kpi-value">{suivi.total}</div>
+				<div class="kpi-value">{fmtNombre(suivi.total)}</div>
 				<div class="kpi-label">
 					{entretien ? 'entretien' : 'affaire'}{suivi.total > 1 ? 's' : ''} non
 					{entretien ? 'clos' : 'fermée'}{suivi.total > 1 ? 's' : ''}
 				</div>
 			</div>
 			<div class="kpi-card" class:kpi-alert={suivi.anciennes > 0}>
-				<div class="kpi-value">{suivi.anciennes}</div>
+				<div class="kpi-value">{fmtNombre(suivi.anciennes)}</div>
 				<div class="kpi-label">de plus de 90 jours</div>
 			</div>
 			<div class="kpi-card">
-				<div class="kpi-value">{suivi.fusionnees}</div>
+				<div class="kpi-value">{fmtNombre(suivi.fusionnees)}</div>
 				<div class="kpi-label">
 					affaire{suivi.fusionnees > 1 ? 's' : ''} fusionnée{suivi.fusionnees > 1 ? 's' : ''}
 				</div>

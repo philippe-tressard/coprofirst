@@ -9,6 +9,7 @@
   validé (`version`).
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import { toast } from '#lib/components/Toast.svelte';
@@ -79,7 +80,7 @@
 				<li>
 					<span class="quand">{fmtDatetime(p.debut)}</span>
 					<span class="muet">
-						{p.ou} · {p.abordees} affaire{p.abordees > 1 ? 's' : ''}
+						{p.ou} · {fmtNombre(p.abordees)} affaire{p.abordees > 1 ? 's' : ''}
 						{#if p.valide_le}· validé le {fmtDate(p.valide_le)}{/if}
 					</span>
 					<button

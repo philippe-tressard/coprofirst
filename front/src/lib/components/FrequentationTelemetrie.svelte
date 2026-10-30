@@ -19,7 +19,8 @@
 	import TopPages from '#lib/components/TopPages.svelte';
 	import EcransNonVisites from '#lib/components/EcransNonVisites.svelte';
 	import type { TableauTelemetrie } from '#lib/api/index.ts';
-	import { fmtDate, fmtDatetimeShort as fmt, fmtMoisCourt } from '#lib/date.ts';
+	import { fmtDate, fmtDatetimeShort as fmt, fmtMoisCourt, fmtMonthYear } from '#lib/date.ts';
+	import { fmtNombre } from '#lib/utils.ts';
 
 	export let donnees: TableauTelemetrie;
 	/** Section dépliée ? L'onglet décide, et reçoit `basculer` (`PanneauTelemetrie`). */
@@ -55,16 +56,23 @@
 	//  dates complètes se superposaient sur trente bâtons (04/10/2026). Le jour le plus
 	//  actif (`kpi.jour_pointe`, en utilisateurs et non en vues : ce n'est pas
 	//  forcément le plus haut) porte le 🏆 sur SON bâton, plus une ligne à part.
+	//  Vue Année : le bâton est un MOIS (`label` « AAAA-MM », #2358). Même légende à
+	//  deux lignes — le mois court, et l'année au premier bâton et en janvier —, et
+	//  la bulle dit le mois en toutes lettres (« mai 2026 »), jamais la clé.
 	$: parJour = donnees.scope === 'mois';
+	$: parMois = donnees.scope === 'annee';
 	$: jourPic = parJour ? String(kpi.jour_pointe?.jour ?? '').slice(5) : '';
 	$: batons = donnees.chart.map((d, i) => {
-		const [mois, jour] = parJour ? d.label.split('-').map(Number) : [0, 0];
+		//  « MM-JJ » (vue Mois) ou « AAAA-MM » (vue Année) : deux nombres, lus une fois.
+		const [a, b] = parJour || parMois ? d.label.split('-').map(Number) : [0, 0];
 		return {
 			d,
-			etiquette: parJour ? String(jour) : d.label,
-			mois: parJour && (i === 0 || jour === 1) ? fmtMoisCourt(mois) : '',
+			etiquette: parJour ? String(b) : parMois ? fmtMoisCourt(b) : d.label,
+			//  La seconde ligne : le mois (vue Mois) ou l'année (vue Année), au premier
+			//  bâton et à chaque changement.
+			sous: i === 0 || b === 1 ? (parJour ? fmtMoisCourt(a) : parMois ? String(a) : '') : '',
+			libelle: parJour ? `${b} ${fmtMoisCourt(a)}` : parMois ? fmtMonthYear(d.label) : d.label,
 			pic: parJour && d.label === jourPic,
-			date: parJour ? `${jour} ${fmtMoisCourt(mois)}` : '',
 			//  À droite de la moitié du graphe, la bulle s'accroche au bord droit du
 			//  bâton : à gauche elle ferait défiler la zone vers la droite.
 			aDroite: i >= donnees.chart.length / 2,
@@ -85,12 +93,12 @@
 >
 	<div class="tl-kpi-row">
 		<div class="tl-kpi">
-			<div class="tl-kpi-value">{kpi.vues ?? 0}</div>
+			<div class="tl-kpi-value">{fmtNombre(kpi.vues ?? 0)}</div>
 			<div class="tl-kpi-label">{libelleVues}</div>
 		</div>
 		{#if kpi.utilisateurs != null}
 			<div class="tl-kpi">
-				<div class="tl-kpi-value">{kpi.utilisateurs}</div>
+				<div class="tl-kpi-value">{fmtNombre(kpi.utilisateurs)}</div>
 				<div class="tl-kpi-label">
 					{donnees.scope === 'jour'
 						? "Utilisateurs actifs aujourd'hui"
@@ -99,7 +107,7 @@
 			</div>
 		{/if}
 		<div class="tl-kpi">
-			<div class="tl-kpi-value">{kpi.pages ?? 0}</div>
+			<div class="tl-kpi-value">{fmtNombre(kpi.pages ?? 0)}</div>
 			<div class="tl-kpi-label">Pages distinctes visitées</div>
 		</div>
 		{#if kpi.heure_pointe}
@@ -110,43 +118,43 @@
 		{/if}
 		{#if kpi.moy_vues_utilisateur != null}
 			<div class="tl-kpi">
-				<div class="tl-kpi-value">{kpi.moy_vues_utilisateur}</div>
+				<div class="tl-kpi-value">{fmtNombre(kpi.moy_vues_utilisateur)}</div>
 				<div class="tl-kpi-label">Moy. vues / utilisateur</div>
 			</div>
 		{/if}
 		{#if kpi.moy_vues_jour != null}
 			<div class="tl-kpi">
-				<div class="tl-kpi-value">{kpi.moy_vues_jour}</div>
+				<div class="tl-kpi-value">{fmtNombre(kpi.moy_vues_jour)}</div>
 				<div class="tl-kpi-label">Moy. vues / jour</div>
 			</div>
 		{/if}
 		{#if kpi.moy_utilisateurs_jour != null}
 			<div class="tl-kpi">
-				<div class="tl-kpi-value">{kpi.moy_utilisateurs_jour}</div>
+				<div class="tl-kpi-value">{fmtNombre(kpi.moy_utilisateurs_jour)}</div>
 				<div class="tl-kpi-label">Moy. utilisateurs / jour</div>
 			</div>
 		{/if}
 		{#if kpi.mois_actifs != null}
 			<div class="tl-kpi">
-				<div class="tl-kpi-value">{kpi.mois_actifs}</div>
+				<div class="tl-kpi-value">{fmtNombre(kpi.mois_actifs)}</div>
 				<div class="tl-kpi-label">Mois avec activité</div>
 			</div>
 		{/if}
 		{#if kpi.moy_vues_mois != null}
 			<div class="tl-kpi">
-				<div class="tl-kpi-value">{kpi.moy_vues_mois}</div>
+				<div class="tl-kpi-value">{fmtNombre(kpi.moy_vues_mois)}</div>
 				<div class="tl-kpi-label">Moy. vues / mois</div>
 			</div>
 		{/if}
 		{#if kpi.annees_actives != null}
 			<div class="tl-kpi">
-				<div class="tl-kpi-value">{kpi.annees_actives}</div>
+				<div class="tl-kpi-value">{fmtNombre(kpi.annees_actives)}</div>
 				<div class="tl-kpi-label">Années avec activité</div>
 			</div>
 		{/if}
 		{#if kpi.moy_vues_an != null}
 			<div class="tl-kpi">
-				<div class="tl-kpi-value">{kpi.moy_vues_an}</div>
+				<div class="tl-kpi-value">{fmtNombre(kpi.moy_vues_an)}</div>
 				<div class="tl-kpi-label">Moy. vues / an</div>
 			</div>
 		{/if}
@@ -160,7 +168,7 @@
 			{#if kpi.record_jour}
 				<div class="tl-kpi">
 					<div class="tl-kpi-value">
-						{kpi.record_jour.uniques}
+						{fmtNombre(kpi.record_jour.uniques)}
 						<span class="tl-kpi-unite">utilisateurs</span>
 					</div>
 					<div class="tl-kpi-label">🏆 Record jour — {fmtDate(kpi.record_jour.jour)}</div>
@@ -169,20 +177,22 @@
 			{#if kpi.record_mois}
 				<div class="tl-kpi">
 					<div class="tl-kpi-value">
-						{kpi.record_mois.uniques}
+						{fmtNombre(kpi.record_mois.uniques)}
 						<span class="tl-kpi-unite">utilisateurs</span>
 					</div>
-					<div class="tl-kpi-label">🏆 Record mois — {kpi.record_mois.mois}</div>
+					<div class="tl-kpi-label">🏆 Record mois — {fmtMonthYear(kpi.record_mois.mois)}</div>
 				</div>
 			{/if}
 		</div>
 	{/if}
 
 	<PanneauTelemetrie titre={donnees.chart_label} niveau="bloc">
-		<div class="tl-chart-wrap" class:tl-double={parJour}>
+		<div class="tl-chart-wrap" class:tl-double={parJour || parMois}>
 			<div class="tl-y-axis">
 				{#each yTicks as tick (tick)}
-					<div class="tl-y-tick" style="bottom:{(tick / (yTicks[0] || 1)) * 100}%">{tick}</div>
+					<div class="tl-y-tick" style="bottom:{(tick / (yTicks[0] || 1)) * 100}%">
+						{fmtNombre(tick)}
+					</div>
 				{/each}
 			</div>
 			<div class="tl-chart-inner">
@@ -197,8 +207,8 @@
 						<div
 							class="tl-bar-col"
 							class:tl-bar-col-large={large}
-							title="{b.d.label} — {b.d.total} vues{b.d.uniques != null
-								? `, ${b.d.uniques} uniques`
+							title="{b.libelle} — {fmtNombre(b.d.total)} vues{b.d.uniques != null
+								? `, ${fmtNombre(b.d.uniques)} uniques`
 								: ''}{b.pic ? ' — jour le plus actif' : ''}"
 						>
 							<div class="tl-bar-zone">
@@ -215,7 +225,7 @@
 												class:tl-bulle-droite={b.aDroite}
 												class:tl-bulle-dedans={b.haut}
 											>
-												{b.date} · {kpi.jour_pointe?.uniques} utilisateurs
+												{b.libelle} · {fmtNombre(kpi.jour_pointe?.uniques)} utilisateurs
 											</span>
 											<span aria-hidden="true">🏆</span>
 										</div>
@@ -223,9 +233,9 @@
 								</div>
 							</div>
 							<div class="tl-bar-label">{b.etiquette}</div>
-							{#if parJour}
+							{#if parJour || parMois}
 								<div class="tl-bar-mois" class:tl-bar-mois-fin={i >= batons.length - 2}>
-									{b.mois}
+									{b.sous}
 								</div>
 							{/if}
 						</div>
@@ -258,8 +268,8 @@
 								<td>{u.nom}</td>
 								<td class="text-muted-sm">{u.statut ?? '—'}</td>
 								<td class="text-muted-sm">{u.batiment_id ? `Bât. ${u.batiment_id}` : '—'}</td>
-								<td class="nombre">{u.total}</td>
-								<td class="nombre text-muted-sm">{u.pages}</td>
+								<td class="nombre">{fmtNombre(u.total)}</td>
+								<td class="nombre text-muted-sm">{fmtNombre(u.pages)}</td>
 								<td class="nombre text-muted-sm">
 									{u.derniere_connexion ? fmt(u.derniere_connexion) : '—'}
 								</td>
@@ -412,7 +422,8 @@
 	.tl-bar-col-large {
 		min-width: 32px;
 	}
-	/*  Le mois ne s'écrit qu'au premier bâton et au 1ᵉʳ du mois : il part du bord
+	/*  Le mois (l'année, en vue Année) ne s'écrit qu'au premier bâton et à son
+	    changement : il part du bord
 	    gauche de son bâton et déborde vers la droite — sauf aux deux derniers, qui
 	    débordent vers la gauche (sinon la zone défilerait). */
 	.tl-bar-mois {

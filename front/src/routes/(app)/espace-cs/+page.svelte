@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import { lieu } from '#lib/lieu.svelte.ts';
 	import { nomAffiche } from '#lib/noms.ts';
@@ -315,7 +316,7 @@
 							<strong>{cmd.demandeur_nom}</strong>
 							<span class="text-muted-sm">
 								{cmd.batiment ? `${cmd.batiment} · ` : ''}{cmd.lot} ·
-								{typeAccesLabel(cmd.type)} · {cmd.quantite}
+								{typeAccesLabel(cmd.type)} · {fmtNombre(cmd.quantite)}
 							</span>
 							<span class="text-muted-sm">{fmtDateShort(cmd.cree_le)}</span>
 						</div>

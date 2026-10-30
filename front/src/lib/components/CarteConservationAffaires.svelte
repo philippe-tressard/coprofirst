@@ -120,7 +120,7 @@
 		<ul class="aide fondements">
 			{#each fondements as f (f.type)}
 				<li>
-					<strong>{f.libelle}</strong>&nbsp;: {f.exercices} exercices après la clôture —
+					<strong>{f.libelle}</strong>&nbsp;: {fmtNombre(f.exercices)} exercices après la clôture —
 					{f.fondement}.
 				</li>
 			{/each}
@@ -130,8 +130,8 @@
 	{#if archives.length}
 		<SectionFormulaire titre="Archives produites" icone="archive" />
 		<p class="aide">
-			Le serveur garde une archive {constat?.delai_retrait_jours} jours après sa copie sur le PC, puis
-			la retire&nbsp;; le PC les garde toutes.
+			Le serveur garde une archive {fmtNombre(constat?.delai_retrait_jours)} jours après sa copie sur
+			le PC, puis la retire&nbsp;; le PC les garde toutes.
 		</p>
 		<div class="table-wrap">
 			<table class="table">

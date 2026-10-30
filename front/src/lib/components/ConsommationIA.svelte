@@ -125,9 +125,10 @@
 									>
 									{#if l.cout_usd !== null}· {dollars(Number(l.cout_usd))}{/if}
 								</span>
-								{#if l.erreurs}<span class="badge badge-red">{l.erreurs} en échec</span>{/if}
+								{#if l.erreurs}<span class="badge badge-red">{fmtNombre(l.erreurs)} en échec</span
+									>{/if}
 								{#if l.refus}<span class="badge badge-orange"
-										>{l.refus} refusé{l.refus > 1 ? 's' : ''} à la limite</span
+										>{fmtNombre(l.refus)} refusé{l.refus > 1 ? 's' : ''} à la limite</span
 									>{/if}
 							</li>
 						{/each}

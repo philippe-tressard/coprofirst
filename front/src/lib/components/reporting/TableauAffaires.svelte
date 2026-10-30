@@ -33,6 +33,7 @@
   (`AffaireOuverte.apercu`) ; c'est du TEXTE, jamais un `{@html}`.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import Badge from '#lib/components/Badge.svelte';
 	import BadgeEtatAffaire from '#lib/components/BadgeEtatAffaire.svelte';
 	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
@@ -147,8 +148,8 @@
 						</td>
 					{/if}
 					<td class="age">
-						<Badge teinte={TEINTE_AGE[a.anciennete]} title="{a.age_jours} jours"
-							>{a.age_jours} j</Badge
+						<Badge teinte={TEINTE_AGE[a.anciennete]} title="{fmtNombre(a.age_jours)} jours"
+							>{fmtNombre(a.age_jours)} j</Badge
 						>
 					</td>
 					<td class="date">{fmtDate(a.ouverte_le)}</td>

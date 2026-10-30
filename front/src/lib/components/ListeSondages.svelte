@@ -22,6 +22,7 @@
   l'API et recharge la liste.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import type { Sondage } from '#lib/api/index.ts';
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
@@ -93,7 +94,7 @@
 					<span class="badge badge-gray">Clôture le {fmtDateShort(s.cloture_le)}</span>
 				{/if}
 				<span class="badge badge-gray"
-					>{s.nb_votants ?? 0} votant{(s.nb_votants ?? 0) !== 1 ? 's' : ''}</span
+					>{fmtNombre(s.nb_votants ?? 0)} votant{(s.nb_votants ?? 0) !== 1 ? 's' : ''}</span
 				>
 				<MarqueIA assiste={s.assiste_ia} />
 			</svelte:fragment>
