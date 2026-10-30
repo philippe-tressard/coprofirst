@@ -17,7 +17,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import LogoResidence from '#lib/components/LogoResidence.svelte';
+	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 	import { loadSiteConfig, siteNomStore } from '#lib/stores/pageConfig.ts';
 	import { erreurDePage, erreurDuServeur } from '#lib/erreur-page.ts';
 
@@ -30,11 +30,10 @@
 
 <div class="auth-page">
 	<div class="auth-card card">
-		<div class="auth-header">
-			<span class="auth-logo"><LogoResidence taille={48} /></span>
-			<h1>{erreurDePage(page.status).titre}</h1>
-			<p>{page.error?.message || erreurDePage(page.status).phrase}</p>
-		</div>
+		<EnteteAuthentification
+			titre={erreurDePage(page.status).titre}
+			sousTitre={page.error?.message || erreurDePage(page.status).phrase}
+		/>
 		<div class="btn-wrapper">
 			<a href="/" class="btn btn-primary">Retour à l’accueil</a>
 			{#if erreurDuServeur(page.status)}

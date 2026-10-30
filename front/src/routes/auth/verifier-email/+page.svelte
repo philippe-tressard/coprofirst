@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { auth as authApi } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
+	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 	import { getSiteNom } from '#lib/stores/pageConfig.ts';
 
 	const _siteNom = getSiteNom();
@@ -50,10 +51,7 @@
 
 <div class="auth-page">
 	<div class="auth-card card">
-		<div class="auth-header">
-			<span class="auth-logo">&#x1F4E7;</span>
-			<h1>Vérification e-mail</h1>
-		</div>
+		<EnteteAuthentification sousTitre="Vérification de l’adresse e-mail" />
 
 		{#if status === 'loading'}
 			<p class="attente">Vérification en cours…</p>

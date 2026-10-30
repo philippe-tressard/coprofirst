@@ -33,37 +33,22 @@
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius);
 }
-.auth-header {
-	text-align: center;
-	margin-bottom: 1.5rem;
-}
-/*  Centré par le conteneur, pas par `text-align` : le logo téléversé est un
-    bloc (`LogoResidence`), qui ne suit pas l'alignement du texte et restait
-    collé au bord gauche de la carte (#2305). L'émoji et l'icône se centrent
-    de même. 🔒 `e2e/logo-menu.spec.ts` */
-.auth-logo {
-	font-size: var(--fs-picto-xl);
-	display: flex;
-	justify-content: center;
-	margin-bottom: 0.5rem;
-}
-/*  Le CONTENU de l'en-tête, et le pied de bouton — remontés le 09/09/2026.
+/*  L'EN-TÊTE (logo, nom de la résidence, phrase) n'est plus ici : il vit dans
+    `EnteteAuthentification`, avec son style (#2357, 30/10/2026). Chaque écran
+    l'écrivait à la main, et quatre y posaient un émoji à la place du logo.
+    🔒 `npm run lint:entete-auth`. */
+
+/*  Le pied de bouton — remonté le 09/09/2026.
 
     #495 avait consolidé le squelette (`.auth-page`, `.auth-card`, `.auth-header`,
     `.auth-logo`) et #607 avait retiré les copies qui lui étaient identiques au
-    caractère près. Ces trois règles-ci étaient restées : elles habillent le
-    contenu, pas la carte, et se trouvaient donc DEUX à TROIS fois — connexion,
+    caractère près. Celles de l'en-tête et du pied étaient restées : elles habillent
+    le contenu, pas la carte, et se trouvaient donc DEUX à TROIS fois — connexion,
     inscription, mot de passe oublié, réinitialisation — sans qu'aucun contrôle
     ne puisse le voir, `lint:charte` ne comparant que les classes de la charte.
 
     ⚠️ Une copie sous un AUTRE NOM échappe à tout : les deux écrans de mot de
     passe appelaient `.auth-wrapper` ce que la charte nomme `.auth-page`. */
-.auth-header h1 {
-	font-size: var(--fs-titre-page);
-	font-weight: 700;
-	color: var(--color-primary);
-	margin-bottom: 0.3rem;
-}
 /*  La phrase qui dit quoi faire, sous le titre d'un écran d'authentification —
     mot de passe oublié, réinitialisation. Les deux l'écrivaient en ligne, puis
     chacune dans sa feuille : `lint:css-duplique` l'a ramenée ici (#1571). */
@@ -71,10 +56,6 @@
 	font-size: var(--fs-base);
 	color: var(--color-text-muted);
 	margin-bottom: 1.5rem;
-}
-.auth-header p {
-	color: var(--color-text-muted);
-	font-size: var(--fs-base);
 }
 /*  `gap` retenu de la version la plus disante (réinitialisation) : il ne se voit
     pas avec un seul bouton, et il évite de le réintroduire au deuxième. */

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 	import { auth as authApi } from '#lib/api/index.ts';
 	import { getSiteNom } from '#lib/stores/pageConfig.ts';
 
@@ -28,10 +29,7 @@
 
 <div class="auth-page">
 	<div class="auth-card">
-		<div class="auth-header">
-			<span class="auth-logo">&#x1F511;</span>
-			<h1>Mot de passe oublié</h1>
-		</div>
+		<EnteteAuthentification sousTitre="Mot de passe oublié" />
 
 		{#if done}
 			<div class="alert alert-success">
