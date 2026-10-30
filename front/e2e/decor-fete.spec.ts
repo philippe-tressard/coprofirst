@@ -143,9 +143,13 @@ test('Profil : la case dit la fête en cours, et l’éteindre retire le décor 
 });
 
 test('Profil : un refus du serveur remet la case et le décor', async ({ page }) => {
-	await ouvrirProfil(page, { refus: true });
+	const envois = await ouvrirProfil(page, { refus: true });
 	const caseDecor = page.getByRole('checkbox', CASE);
-	await caseDecor.uncheck();
+	//  Un clic, jamais `uncheck()` : celui-ci exige que la case reste décochée, et
+	//  le refus la remet cochée avant qu'il le vérifie — la course de #2336, perdue
+	//  presque à coup sûr au profil mobile. Le refus se prouve par l'envoi observé.
+	await caseDecor.click();
+	await expect.poll(() => envois).toEqual([{ decor_fetes: false }]);
 	await expect(caseDecor).toBeChecked();
 	await expect(page.locator(DECOR)).toHaveAttribute('data-fete', 'halloween');
 });
