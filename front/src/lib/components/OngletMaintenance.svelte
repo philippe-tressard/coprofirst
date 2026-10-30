@@ -50,6 +50,9 @@
 {#if $isOperateur}
 	<TachesPlanifiees />
 	<ControlesFiabilite />
+	<!--  La même carte, pour l'audit de sécurité NOCTURNE (S1 à S6, 30/10/2026) :
+	      même canal, même forme de constats, une tâche par nuit et par nœud. -->
+	<ControlesFiabilite tache="audit_securite" />
 {/if}
 {#if $isAdmin}
 	<ConsommationIA />

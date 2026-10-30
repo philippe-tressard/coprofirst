@@ -671,6 +671,21 @@ jobs:
           # sur une sonde simulée — faute injectée `publickey,password`, cas zéro —
           # et la sonde réelle, son SSH remplacé par un témoin (lib-ssh-noeuds).
           bash scripts/lib/lib-ssh-mot-de-passe.sh  --selftest
+          # L'audit de sécurité NOCTURNE (S1 à S6, 30/10/2026) : chaque décision
+          # pure sur une faute injectée et son cas zéro — arbre déployé modifié,
+          # second UID 0, clé SSH ajoutée, conteneur privilégié, sonde de scanner
+          # servie —, puis l'assemblage du script et son lancement par C40.
+          bash scripts/lib/lib-constats.sh          --selftest
+          bash scripts/lib/lib-audit-arbre.sh       --selftest
+          bash scripts/lib/lib-audit-comptes.sh     --selftest
+          bash scripts/lib/lib-audit-persistance.sh --selftest
+          bash scripts/lib/lib-audit-conteneurs.sh  --selftest
+          bash scripts/lib/lib-audit-acces.sh       --selftest
+          bash scripts/lib/lib-audit-securite.sh    --selftest
+          bash scripts/exploitation/audit-securite.sh --selftest
+          # La veille nocturne des vulnérabilités (`veille-securite.yml`) : ce
+          # qu'elle écrit dans son issue, et quand elle l'ouvre, la commente, la ferme.
+          bash scripts/ci/veille-securite.sh         --selftest
           bash scripts/lib/lib-mises-a-jour.sh      --selftest
           bash scripts/lib/lib-notification.sh      --selftest
           bash scripts/poste/precheck-mep.sh      --selftest

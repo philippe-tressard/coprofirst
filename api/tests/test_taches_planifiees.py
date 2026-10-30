@@ -17,6 +17,8 @@ un producteur. La règle qui déclare une exécution `manquante` se teste, elle,
 où elle vit (`utils/sante_taches.py`) : `test_sante_taches_periodes.py`.
 """
 
+import re
+
 from app.models.core import HistoriqueMaintenance, PorteeExecution, TachePlanifiee
 from tests.conftest import scripts_shell_versionnes
 
@@ -78,14 +80,19 @@ def test_toute_tache_attendue_a_un_producteur():
     scripts = {p.name: p.read_text(encoding="utf-8") for p in scripts_shell_versionnes()}
     assert len(scripts) >= 10, "chemin de scan cassé — ce test serait vert à vide"
 
-    # Deux formes possibles : la charge utile mutualisée (`rapport_payload <tache>`,
-    # cf. lib-rapport.sh) ou un `printf` local. Ne chercher qu'une des deux rendrait
-    # ce test faux au premier refactor — et un test faux est pire qu'aucun test.
+    # Trois formes possibles : la charge utile mutualisée (`rapport_payload <tache>`,
+    # cf. lib-rapport.sh), un `printf` local, ou — depuis le 30/10/2026 — la tâche
+    # POSÉE par un script qui rend compte par `lib-notification.sh`
+    # (`NOTIFICATION_TACHE=<tache>`, ou son défaut `:-<tache>` dans le module).
+    # Ne chercher qu'une des formes rendrait ce test faux au premier refactor —
+    # et un test faux est pire qu'aucun test.
     for tache in _PERIODICITE_ATTENDUE_H:
         producteurs = [
             nom
             for nom, src in scripts.items()
-            if f'"tache":"{tache}"' in src or f"rapport_payload {tache} " in src
+            if f'"tache":"{tache}"' in src
+            or f"rapport_payload {tache} " in src
+            or re.search(rf'NOTIFICATION_TACHE="?(\$\{{NOTIFICATION_TACHE:-)?{tache}\b', src)
         ]
         assert producteurs, (
             f"la tâche « {tache} » est attendue toutes les "

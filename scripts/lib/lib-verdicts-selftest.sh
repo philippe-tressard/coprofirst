@@ -287,7 +287,9 @@ verdicts_selftest() {
   #  Les modules vivent dans scripts/lib/, le script contrôlé dans
   #  scripts/exploitation/ (#337). Le chemin traverse donc les deux.
   CR="$(dirname "${BASH_SOURCE[0]}")/../exploitation/check-reliability.sh"
-  L_RESUME=$(grep -n '^echo "Résumé' "$CR" 2>/dev/null | head -1 | cut -d: -f1)
+  #  Le repère est l'appel à `constats_resume` (lib-constats.sh, 30/10/2026) —
+  #  avant, un `echo "Résumé` écrit dans le script.
+  L_RESUME=$(grep -n '^constats_resume \|^echo "Résumé' "$CR" 2>/dev/null | head -1 | cut -d: -f1)
   compte_verdicts() {  # $1=fichier $2=ligne à partir de laquelle compter
     awk -v l="$2" '
       NR<=l { next }

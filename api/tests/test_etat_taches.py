@@ -215,7 +215,7 @@ def test_le_courriel_signale_une_maintenance_en_erreur(session):
 
 def test_sans_anomalie_le_courriel_n_ajoute_aucune_ligne(session, maintenant):
     """Tout est à jour : ni anomalie, ni ligne « Détail » orpheline."""
-    for tache in ("maintenance", "bascule", "export_hors_site", "reliability"):
+    for tache in ("maintenance", "bascule", "export_hors_site", "reliability", "audit_securite"):
         _ligne(session, tache, "rpi1", il_y_a=timedelta(hours=1))
     session.add(HistoriqueTelemetrie(statut="succes", noeud="rpi1", cree_le=maintenant))
     session.add(
