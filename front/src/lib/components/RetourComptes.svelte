@@ -9,6 +9,7 @@
 	 * (`require_admin` sur le tableau de bord). Les règles de calcul :
 	 * `api/app/utils/retour_comptes.py`.
 	 */
+	import { fmtNombre } from '#lib/utils.ts';
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import { fmtDate } from '#lib/date.ts';
 	import type { RetourComptes } from '#lib/api/index.ts';
@@ -37,8 +38,8 @@
 				<tbody>
 					{#each retour.dormants as d (d.seuil)}
 						<tr>
-							<td>{d.seuil} jours ou plus</td>
-							<td class="nombre">{d.nombre} / {retour.comptes_mesures}</td>
+							<td>{fmtNombre(d.seuil)} jours ou plus</td>
+							<td class="nombre">{fmtNombre(d.nombre)} / {fmtNombre(retour.comptes_mesures)}</td>
 						</tr>
 					{/each}
 				</tbody>
@@ -60,7 +61,7 @@
 								<td class="text-muted-sm">
 									{c.derniere_visite ? fmtDate(c.derniere_visite) : 'aucune depuis la validation'}
 								</td>
-								<td class="nombre">{c.jours}</td>
+								<td class="nombre">{fmtNombre(c.jours)}</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -75,23 +76,24 @@
 				<tbody>
 					<tr>
 						<td>Comptes validés</td>
-						<td class="nombre">{arrivants.valides}</td>
+						<td class="nombre">{fmtNombre(arrivants.valides)}</td>
 					</tr>
 					<tr>
-						<td>Revenus sous {arrivants.fenetre_jours} jours</td>
-						<td class="nombre">{arrivants.revenus}</td>
+						<td>Revenus sous {fmtNombre(arrivants.fenetre_jours)} jours</td>
+						<td class="nombre">{fmtNombre(arrivants.revenus)}</td>
 					</tr>
 					<tr>
 						<td>Jamais revenus</td>
-						<td class="nombre">{arrivants.jamais_revenus}</td>
+						<td class="nombre">{fmtNombre(arrivants.jamais_revenus)}</td>
 					</tr>
 					<tr>
 						<td>Délai pas encore écoulé</td>
-						<td class="nombre">{arrivants.en_attente}</td>
+						<td class="nombre">{fmtNombre(arrivants.en_attente)}</td>
 					</tr>
 					<tr class="taux">
 						<td>Taux de retour</td>
-						<td class="nombre">{arrivants.taux == null ? '—' : `${arrivants.taux} %`}</td>
+						<td class="nombre">{arrivants.taux == null ? '—' : `${fmtNombre(arrivants.taux)} %`}</td
+						>
 					</tr>
 				</tbody>
 			</table>
@@ -102,10 +104,10 @@
 		<p>
 			Un compte est dormant quand ni sa dernière visite ni sa validation n’ont moins de 60 (ou 90)
 			jours : un arrivant de la semaine ne l’est pas. Un arrivant est revenu s’il a ouvert une page
-			dans les {arrivants.fenetre_jours} jours suivant sa validation ; le taux ne compte que ceux dont
-			le délai est écoulé ou qui sont déjà revenus.
+			dans les {fmtNombre(arrivants.fenetre_jours)} jours suivant sa validation ; le taux ne compte que
+			ceux dont le délai est écoulé ou qui sont déjà revenus.
 			{#if retour.refus}
-				{retour.refus} compte{pluriel(retour.refus)}
+				{fmtNombre(retour.refus)} compte{pluriel(retour.refus)}
 				{retour.refus > 1 ? 'ont' : 'a'} refusé la mesure d’audience : exclu{pluriel(retour.refus)} du
 				calcul.
 			{/if}

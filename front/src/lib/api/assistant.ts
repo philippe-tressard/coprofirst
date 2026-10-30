@@ -9,6 +9,7 @@
  *  d'un contrat en base, celle-ci part d'un texte en cours de saisie.
  */
 import { api } from './client';
+import type { MoisIso } from './valeurs';
 
 /** Ce que la section Description envoie — voir `utils/assistant_description.py`. */
 export interface DemandeDescription {
@@ -80,9 +81,9 @@ export interface LimitesUsageIA {
 
 /**  La consommation de l'assistant IA (`GET /config/llm-consommation`). */
 export interface ConsommationIA {
-	mois: { mois: string; usages: LigneConsommationIA[] }[];
+	mois: { mois: MoisIso; usages: LigneConsommationIA[] }[];
 	limites: LimitesUsageIA[];
-	mois_courant: string;
+	mois_courant: MoisIso;
 }
 
 type ChampUsageIA =

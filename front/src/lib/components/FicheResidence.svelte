@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import type { Batiment, Copropriete } from '#lib/api/index.ts';
 	/**
 	 * Fiche d'identité de la résidence — adresse, immatriculation, lots,
@@ -86,13 +87,13 @@
 			{#if copropriete.nb_lots_principaux}
 				<div class="info-item">
 					<span class="info-label">Lots d'habitation, commerces et bureaux</span>
-					<span class="info-value">{copropriete.nb_lots_principaux}</span>
+					<span class="info-value">{fmtNombre(copropriete.nb_lots_principaux)}</span>
 				</div>
 			{/if}
 			{#if copropriete.nb_lots_total}
 				<div class="info-item">
 					<span class="info-label">Lots au total</span>
-					<span class="info-value">{copropriete.nb_lots_total}</span>
+					<span class="info-value">{fmtNombre(copropriete.nb_lots_total)}</span>
 				</div>
 			{/if}
 			{#if copropriete.mois_debut_exercice}
@@ -152,16 +153,20 @@
 						{#each batiments as b (b.id)}
 							<tr>
 								<td class="batiment">Bât. {b.numero}</td>
-								<td>{(b.nb_parkings ?? 0) > 0 ? b.nb_parkings : '—'}</td>
-								<td>{(b.nb_caves ?? 0) > 0 ? b.nb_caves : '—'}</td>
-								<td>{(b.nb_appartements ?? 0) > 0 ? b.nb_appartements : '—'}</td>
-								<td>{(b.nb_locaux_commerciaux ?? 0) > 0 ? b.nb_locaux_commerciaux : '—'}</td>
+								<td>{(b.nb_parkings ?? 0) > 0 ? fmtNombre(b.nb_parkings) : '—'}</td>
+								<td>{(b.nb_caves ?? 0) > 0 ? fmtNombre(b.nb_caves) : '—'}</td>
+								<td>{(b.nb_appartements ?? 0) > 0 ? fmtNombre(b.nb_appartements) : '—'}</td>
+								<td
+									>{(b.nb_locaux_commerciaux ?? 0) > 0
+										? fmtNombre(b.nb_locaux_commerciaux)
+										: '—'}</td
+								>
 							</tr>
 						{/each}
 						{#if hasOrphanLots}
 							<tr>
 								<td class="communs">Communs</td>
-								<td>{copropriete.nb_parkings_communs}</td>
+								<td>{fmtNombre(copropriete.nb_parkings_communs)}</td>
 								<td>—</td>
 								<td>—</td>
 								<td>—</td>

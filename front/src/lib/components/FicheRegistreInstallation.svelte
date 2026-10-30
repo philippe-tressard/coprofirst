@@ -210,8 +210,8 @@
 		{#each r.coproprietes as c (c.identifiant)}
 			<dt>Copropriété</dt>
 			<dd>
-				{c.nom} · {c.lots ?? '?'} lots · {c.utilisateurs_actifs ?? '?'} utilisateurs actifs sur {c.utilisateurs_inscrits ??
-					'?'}
+				{c.nom} · {fmtNombre(c.lots)} lots · {fmtNombre(c.utilisateurs_actifs)} utilisateurs actifs sur
+				{fmtNombre(c.utilisateurs_inscrits)}
 			</dd>
 		{/each}
 	</dl>

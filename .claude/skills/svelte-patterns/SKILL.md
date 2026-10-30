@@ -298,6 +298,9 @@ Les formats de date et de montant sont **centralisés**. Une page qui redéfinit
 | `fmtDatetime(d)` | horodatage → date + heure de Paris |
 | `fmtMontant(v)` | `1234` → `1 234 €` · `1234.5` → `1 234,50 €` · `null` → `—` |
 | `perimetreLabel(items)` | `['bat:1','parking']` → `Bât. 1 · Parking` |
+| `fmtNombre(v)` | `27054` → `27 054` · `3864.9` → `3 864,9` — **tout** nombre reçu de l'API (#2358) |
+| `fmtPartEnPourcent(n, d, 1)` | `7500, 27054, 1` → `27,7 %` (deux décimales par défaut) |
+| `fmtMonthYear(cle)` | `'2026-05'` (`MoisIso`) → `mai 2026` |
 
 **Interdits, vérifiés par `npm run lint:dates`** (sur `front/src/` **et**
 `vite.config.ts`) : `toLocaleDateString`, `toLocaleTimeString`,

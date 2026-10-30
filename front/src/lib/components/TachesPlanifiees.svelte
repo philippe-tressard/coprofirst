@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import Badge from '#lib/components/Badge.svelte';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import Icon from '#lib/components/Icon.svelte';
@@ -394,7 +395,7 @@
 		{#if sante.anomalies_recentes.length > 0}
 			<p class="muted bilan-anomalies">
 				<strong>{sante.anomalies_recentes.length}</strong> exécution(s) en échec ces
-				{sante.anomalies_fenetre_jours} derniers jours.
+				{fmtNombre(sante.anomalies_fenetre_jours)} derniers jours.
 			</p>
 		{/if}
 	{/if}

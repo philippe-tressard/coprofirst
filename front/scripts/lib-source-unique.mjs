@@ -94,7 +94,9 @@ export function releve(contenus, { sources = [], temoin = null, exceptions = {},
 	const servies = new Set();
 	let temoinSert = temoin === null;
 	for (const [rel, texte] of Object.entries(contenus)) {
-		const n = fautes(texte);
+		//  Le chemin suit le texte : un contrôle qui déclare un écart plus fin que
+		//  le fichier (un champ dans un fichier, `check-nombres-bruts`) le lit.
+		const n = fautes(texte, rel);
 		if (rel === temoin) {
 			temoinSert = n.length > 0;
 			continue;
@@ -126,7 +128,7 @@ export function releve(contenus, { sources = [], temoin = null, exceptions = {},
  * @param {string[]} [o.sources]       fichiers qui portent la notion : non relevés
  * @param {string|null} [o.temoin]     fichier qui DOIT porter la forme (la source elle-même)
  * @param {Record<string,string>} [o.exceptions]  chemin → raison ; doivent servir
- * @param {(texte: string) => number[]} o.fautes
+ * @param {(texte: string, chemin?: string) => number[]} o.fautes
  * @param {[string, number][]} o.cas
  * @param {string} o.ok       « Identité de la copropriété : saisie par … seul »
  * @param {string} o.ko       « champ(s) d'identité lié(s) à la main »

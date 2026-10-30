@@ -7,6 +7,7 @@
   prestataire — les charger toutes d'avance n'aurait aucun sens.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import { nomAffiche } from '#lib/noms.ts';
 	//  ⚠️ Cet écran affichait la valeur BRUTE — `chauffage_collectif` — parce que
 	//  la table des libellés vivait dans `prestataires/+page.svelte` et qu'il n'y
@@ -102,7 +103,7 @@
 				{/if}
 			</div>
 			<div>
-				<p><strong>Contrats actifs :</strong> {reportPrestSynth.nb_contrats}</p>
+				<p><strong>Contrats actifs :</strong> {fmtNombre(reportPrestSynth.nb_contrats)}</p>
 				<p>
 					<strong>Note moyenne :</strong>
 					{#if reportPrestSynth.note_moyenne != null}
@@ -111,7 +112,7 @@
 							nbAvis={reportPrestSynth.nb_notations}
 							surCinq
 						/>
-						<span class="text-muted-sm">({reportPrestSynth.nb_notations} avis)</span>
+						<span class="text-muted-sm">({fmtNombre(reportPrestSynth.nb_notations)} avis)</span>
 					{:else}
 						Aucune notation
 					{/if}

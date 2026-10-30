@@ -60,6 +60,7 @@
   la duplication que la table supprime. Le sujet est le CONTRÔLE, pas ce code.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import Badge from '#lib/components/Badge.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import { confirmer, SUPPRESSION } from '#lib/confirmation.ts';
@@ -301,7 +302,7 @@
 						<tr>
 							<td>{typeLabel[objet.type] ?? objet.type}</td>
 							<td>{objet.libelle}</td>
-							<td class="cellule-quantite">{objet.quantite}</td>
+							<td class="cellule-quantite">{fmtNombre(objet.quantite)}</td>
 							<td>{objet.reference ?? '—'}</td>
 							<td>
 								<Badge teinte={statutObjetBadge[objet.statut] ?? 'badge-gray'}>

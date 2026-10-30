@@ -36,6 +36,7 @@
   catégories — c'est la leçon de `BauxSansLocataire`.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import { onMount } from 'svelte';
 	import { admin as adminApi, type ReleveReclassement } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
@@ -78,7 +79,7 @@
 {:else}
 	<p class="muted bilan">
 		<strong>{propositions.length}</strong> affaire{propositions.length > 1 ? 's' : ''} sur
-		{releve?.total_tickets} pourrai{propositions.length > 1 ? 'ent' : 't'} changer de catégorie.
+		{fmtNombre(releve?.total_tickets)} pourrai{propositions.length > 1 ? 'ent' : 't'} changer de catégorie.
 		<strong>{hautes.length}</strong> proposition{hautes.length > 1 ? 's' : ''} à confiance haute.
 		<br />
 		<em

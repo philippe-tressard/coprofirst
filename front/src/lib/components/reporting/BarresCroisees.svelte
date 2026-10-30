@@ -16,6 +16,7 @@
     plus les classes du fichier.
 -->
 <script lang="ts">
+	import { fmtNombre } from '#lib/utils.ts';
 	import type { BarreRepartition } from '#lib/api/index.ts';
 	import { legende } from '#lib/repartition.ts';
 
@@ -36,8 +37,8 @@
 				<span
 					class="piste"
 					role="img"
-					aria-label="{b.libelle} : {b.nombre} — {b.tranches
-						.map((t) => `${t.libelle} ${t.nombre}`)
+					aria-label="{b.libelle} : {fmtNombre(b.nombre)} — {b.tranches
+						.map((t) => `${t.libelle} ${fmtNombre(t.nombre)}`)
 						.join(', ')}"
 				>
 					<span class="remplie" style="width:{(100 * b.nombre) / plusGrand}%">
@@ -46,12 +47,12 @@
 								class="tranche"
 								data-teinte={t.teinte}
 								style="flex-grow:{t.nombre}"
-								title="{t.libelle} : {t.nombre}"
+								title="{t.libelle} : {fmtNombre(t.nombre)}"
 							></span>
 						{/each}
 					</span>
 				</span>
-				<span class="nombre">{b.nombre}</span>
+				<span class="nombre">{fmtNombre(b.nombre)}</span>
 			</li>
 		{/each}
 	</ul>

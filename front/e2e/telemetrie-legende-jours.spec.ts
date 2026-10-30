@@ -31,9 +31,9 @@ const JOURS = VUES.map((total, i) => {
 	return { label: `${mm}-${jj}`, total, uniques: 3 };
 });
 
-//  La vue Année : un bâton LARGE par mois.
+//  La vue Année : un bâton LARGE par mois, sous la clé du serveur (« AAAA-MM »).
 const MOIS = VUES.slice(0, 12).map((total, i) => ({
-	label: `${String(i + 1).padStart(2, '0')}/2026`,
+	label: `2026-${String(i + 1).padStart(2, '0')}`,
 	total,
 	uniques: 3,
 }));
