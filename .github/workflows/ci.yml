@@ -2187,6 +2187,13 @@ jobs:
         working-directory: front
         run: npm run lint:recherche
 
+      # L'en-tête d'un écran sans session ne s'écrit que par `EnteteAuthentification`
+      # (#2357, 30/10/2026) : logo de la charte, nom de la résidence, phrase. Huit
+      # écrans l'écrivaient à la main, quatre avec un émoji à la place du logo.
+      - name: En-tête des écrans d'authentification
+        working-directory: front
+        run: npm run lint:entete-auth
+
       # La teinte d'un badge tirée d'une TABLE passe par `Badge` (#1571) : une
       # classe interpolée rendait l'écran aveugle à `lint:css-orphelin` (25
       # fichiers). Teintes du composant, des feuilles et du code concordent.

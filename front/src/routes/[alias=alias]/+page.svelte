@@ -17,7 +17,7 @@
 	import { CHEMIN_CONNEXION } from '#lib/redirection.ts';
 	import AiguillageCopropriete from '#lib/components/AiguillageCopropriete.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
-	import LogoResidence from '#lib/components/LogoResidence.svelte';
+	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 	import { NOM_PLATEFORME } from '#lib/plateforme.ts';
 
 	let echec = '';
@@ -46,10 +46,7 @@
 
 <div class="auth-page">
 	<div class="auth-card card">
-		<div class="auth-header">
-			<span class="auth-logo"><LogoResidence taille={48} /></span>
-			<h1>{NOM_PLATEFORME}</h1>
-		</div>
+		<EnteteAuthentification titre={NOM_PLATEFORME} />
 		{#if echec}
 			<AiguillageCopropriete {echec} />
 		{:else}

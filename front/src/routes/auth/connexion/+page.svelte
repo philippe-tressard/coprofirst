@@ -12,7 +12,7 @@
 		siteNomStore,
 	} from '#lib/stores/pageConfig.ts';
 	import BandeauDemo from '#lib/components/BandeauDemo.svelte';
-	import LogoResidence from '#lib/components/LogoResidence.svelte';
+	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 	import ChampMotDePasse from '#lib/components/ChampMotDePasse.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import AiguillageCopropriete from '#lib/components/AiguillageCopropriete.svelte';
@@ -85,11 +85,7 @@
 
 <div class="auth-page">
 	<div class="auth-card card">
-		<div class="auth-header">
-			<span class="auth-logo"><LogoResidence taille={48} /></span>
-			<h1>{_siteNom}</h1>
-			{#if loginSousTitre}<p>{loginSousTitre}</p>{/if}
-		</div>
+		<EnteteAuthentification titre={_siteNom} sousTitre={loginSousTitre} />
 
 		<!--  La démo publique (#1906, #1932) : le bandeau le dit, et l'on se connecte par
 		      le formulaire, avec les identifiants publiés sur la page « Démo » du site
@@ -161,11 +157,10 @@
 </div>
 
 <style>
-	/*  `.auth-page`, `.auth-card`, `.auth-header`, `.auth-logo` (28/08/2026) puis
-	    `.auth-header h1`, `.auth-header p` et `.btn-wrapper` (09/09/2026) : tous
-	    dans `styles/composants.css`. Les trois derniers étaient écrits ici, à
-	    l'inscription et dans les deux écrans de mot de passe — le squelette avait
-	    été consolidé, pas ce qui l'habille. */
+	/*  `.auth-page`, `.auth-card` (28/08/2026) et `.btn-wrapper` (09/09/2026) :
+	    dans `styles/authentification.css` ; l'en-tête, dans `EnteteAuthentification`
+	    (#2357). Ils étaient écrits ici, à l'inscription et dans les deux écrans de
+	    mot de passe — le squelette avait été consolidé, pas ce qui l'habille. */
 
 	.btn-wrapper .btn {
 		padding-left: 2.5rem;

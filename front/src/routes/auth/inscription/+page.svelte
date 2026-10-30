@@ -8,6 +8,7 @@
 	import ChampMotDePasse from '#lib/components/ChampMotDePasse.svelte';
 	import LibelleGroupe from '#lib/components/LibelleGroupe.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 
 	const _siteNom = getSiteNom();
 
@@ -97,11 +98,7 @@
 
 <div class="auth-page">
 	<div class="auth-card card">
-		<div class="auth-header">
-			<span class="auth-logo">&#x1F3E2;</span>
-			<h1>Créer un compte</h1>
-			<p>{_siteNom}</p>
-		</div>
+		<EnteteAuthentification sousTitre="Créer un compte" />
 
 		{#if success}
 			<div class="alert alert-success">
@@ -360,17 +357,8 @@
 		max-width: 480px;
 	}
 
-	/*  `.auth-header` : copie au caractère près de `styles/composants.css`,
-	    donc inerte. Retirée le 28/08/2026. */
-
-	/*  Logo reduit : la page est deja longue (#607, 28/08/2026). */
-	.auth-logo {
-		font-size: var(--fs-picto-lg);
-		margin-bottom: 0.4rem;
-	}
-	/*  Le titre n'a plus de taille propre : rangé au cran `--fs-titre-page`
-	    (#2313, 30/10/2026), il valait celui de `authentification.css`. Graisse,
-	    couleur, marge et `.auth-header p` en venaient déjà depuis le 09/09/2026. */
+	/*  L'en-tête — et le logo réduit de #607 — sont partis dans
+	    `EnteteAuthentification` (#2357, 30/10/2026) : la page ressemble à la connexion. */
 
 	.grille-champs :global(.field-row) {
 		display: grid;

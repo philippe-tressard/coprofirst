@@ -50,8 +50,6 @@ export const TOLERANCES = {
 	//  `.field-hint`, la plus déployée des neuf — 49 occurrences sur 79 —, et c'est
 	//  aussi celle vers laquelle les deux écrans ci-dessus convergeaient d'eux-mêmes.
 	//  Le seul écart qui reste est `.aide.sous-case`, et il porte sa raison.
-	//  `.auth-header h1` de l'inscription n'a plus d'écart : son titre a rejoint
-	//  `--fs-titre-page`, comme celui de la charte (#2313, 30/10/2026).
 	'routes/auth/inscription/+page.svelte::checkbox-field':
 		'align-items: flex-start — le libellé des conditions tient sur plusieurs lignes',
 	//  ── `.form-grid` : la répartition en colonnes ────────────────────────────
@@ -74,7 +72,8 @@ export const TOLERANCES = {
 		'formulaire LONG : aligné en haut au lieu d’être centré, et plus aéré',
 	'routes/auth/inscription/+page.svelte::auth-card':
 		'480 px au lieu de 400 — l’inscription porte deux fois plus de champs',
-	'routes/auth/inscription/+page.svelte::auth-logo': 'logo réduit sur une page déjà longue',
+	//  `auth-logo` (logo réduit sur une page longue) est parti avec l'en-tête dans
+	//  `EnteteAuthentification` (#2357, 30/10/2026) : l'inscription ressemble à la connexion.
 
 	//  ── Descendants par balise (lus depuis le 30/08/2026) ───────────────────
 	//  🔴 Cette forme de sélecteur — `.classe element` — échappait au contrôle, qui
