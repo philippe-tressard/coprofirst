@@ -45,7 +45,7 @@
 - **Maintenance** — rôle et version de l'installation, export vérifié de la base, tâches automatiques, contrôles de santé et suivi de la consommation de l'IA.
 - **Installations** — registre des installations CoproFirst inscrites, pour l'opérateur de la référence seulement.
 - **Liens partageables** — chaque onglet et chaque publication a son adresse propre ; le lien n'ouvre aucun droit.
-- **Thème clair ou sombre** — Automatique (suit le réglage de l'appareil), Clair ou Sombre, choisi dans le profil et retenu par appareil ; la page arrive déjà dans son thème, sans éclair, et l'impression reste claire.
+- **Thème clair ou sombre** — Automatique (suit le réglage de l'appareil), Clair ou Sombre, choisi dans le profil et retenu par appareil ; la page arrive déjà dans son thème, sans éclair, et l'impression reste claire. Le décor des jours de fête, allumé par l'administration, s'éteint pour soi au même endroit (retenu par le compte).
 - **Installation commune** — une installation sert plusieurs copropriétés, chacune dans sa base : [`deploiement/standard/commune/LISEZMOI.md`](deploiement/standard/commune/LISEZMOI.md).
 - **Démonstration publique** — `MODE_DEMO=oui` monte une résidence fictive avec trois comptes publiés, sans aucun envoi, remise à zéro chaque nuit : `specs/architecture/mode-demo.md`.
 

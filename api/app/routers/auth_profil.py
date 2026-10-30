@@ -77,6 +77,7 @@ class MeUpdate(BaseModel):
     last_seen_actualites: str | None = None
     preferences_notifications: str | None = None
     restreindre_a_mes_batiments: bool | None = None
+    decor_fetes: bool | None = None
     demarche_arrivant: str | None = None
 
     @field_validator("nom", mode="before")
@@ -157,6 +158,9 @@ def update_me(
         #  L'utilisateur se restreint LUI-MÊME : aucun contrôle de droit à faire,
         #  cette préférence ne peut que lui montrer moins.
         user.restreindre_a_mes_batiments = body.restreindre_a_mes_batiments
+    if body.decor_fetes is not None:
+        #  Une préférence pour soi : elle n'allume rien que l'administration a éteint.
+        user.decor_fetes = body.decor_fetes
     if body.demarche_arrivant is not None:
         if body.demarche_arrivant not in ("nouvel_arrivant", "deja_resident"):
             raise HTTPException(400, "Valeur invalide pour demarche_arrivant")

@@ -14,10 +14,14 @@
   ⚠️ La valeur se lit sur l'attribut que le SERVEUR a posé, au montage — et non
   dans le cookie : c'est ce que la page affiche réellement. Rien n'est écrit
   avant un vrai choix : ouvrir le Profil ne pose aucun cookie.
+
+  La carte « Apparence » porte aussi, sous le thème, le décor des jours de fête
+  (`ChoixDecorFete`, #2312) — retenu, lui, sur le COMPTE.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
+	import ChoixDecorFete from '#lib/components/ChoixDecorFete.svelte';
 	import { appliquerTheme, choixDeLAttribut, lireChoix, OPTIONS_THEME } from '#lib/theme.ts';
 
 	let valeur = '';
@@ -48,6 +52,7 @@
 	<p class="aide">
 		Ce choix vaut pour cet appareil : il est retenu par votre navigateur, pas par votre compte.
 	</p>
+	<ChoixDecorFete />
 </section>
 
 <style>

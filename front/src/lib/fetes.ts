@@ -94,3 +94,48 @@ export function feteDuJour(jour: string): CodeFete | null {
 	if (ecart >= -2 && ecart <= 1) return 'paques';
 	return surPlusieurs.find((p) => dans(moisJour, p))?.code ?? null;
 }
+
+/** Le nom d'une fête, tel que l'écran le dit. */
+export const LIBELLES_FETES: Record<CodeFete, string> = {
+	'nouvel-an': 'Nouvel an',
+	'saint-valentin': 'Saint-Valentin',
+	'premier-avril': '1er avril',
+	paques: 'Pâques',
+	'fete-musique': 'Fête de la musique',
+	'quatorze-juillet': '14 juillet',
+	halloween: 'Halloween',
+	noel: 'Noël',
+};
+
+/** Le jour `AAAA-MM-JJ` décalé de `n` jours — en UTC, sans heure d'été. PURE. */
+function decaler(jour: string, n: number): string {
+	const d = new Date(Date.UTC(+jour.slice(0, 4), +jour.slice(5, 7) - 1, +jour.slice(8, 10) + n));
+	return d.toISOString().slice(0, 10);
+}
+
+/** La période d'une fête : son code, et ses bornes incluses en `AAAA-MM-JJ`. */
+export interface PeriodeFete {
+	code: CodeFete;
+	debut: string;
+	fin: string;
+	/** Le jour donné tombe-t-il dans la période ? */
+	enCours: boolean;
+}
+
+/**
+ * PURE. La fête en cours au jour donné, sinon la prochaine — lue sur `feteDuJour`,
+ * jour après jour, pour ne jamais redire les règles (Pâques, recouvrements).
+ * Ce que le Profil annonce sous le réglage du décor.
+ */
+export function feteEnCoursOuProchaine(jour: string): PeriodeFete | null {
+	let debut = jour;
+	//  Une année et un peu plus : chaque fête revient au moins une fois.
+	for (let n = 0; n <= 400 && !feteDuJour(debut); n++) debut = decaler(jour, n + 1);
+	const code = feteDuJour(debut);
+	if (!code) return null;
+	const enCours = debut === jour;
+	if (enCours) while (feteDuJour(decaler(debut, -1)) === code) debut = decaler(debut, -1);
+	let fin = debut;
+	while (feteDuJour(decaler(fin, 1)) === code) fin = decaler(fin, 1);
+	return { code, debut, fin, enCours };
+}

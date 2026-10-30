@@ -20,6 +20,13 @@
 	z-index: -1;
 	opacity: var(--decor-fete-opacite);
 	pointer-events: none;
+	/*  Il ARRIVE au lieu d'apparaître sec — au chargement, et quand le Profil le
+	    rallume. Un fondu seul, sans déplacement : il reste permis quand
+	    l'appareil demande moins d'animations. */
+	transition: opacity var(--duree-apparition) var(--ease-out);
+	@starting-style {
+		opacity: 0;
+	}
 }
 .decor-fete .fond-decor {
 	position: absolute;
