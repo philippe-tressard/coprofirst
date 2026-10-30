@@ -59,7 +59,10 @@ def _appels() -> list[tuple[str, list[str]]]:
 def test_les_appels_sont_trouves():
     """Cas zéro : un balayage qui ne voit rien rendrait le test suivant vert à vide."""
     taches = {args[0] for _, args in _appels() if args}
-    assert {"reliability", "maintenance", "bascule", "export_hors_site"} <= taches, taches
+    #  Les contrôles de fiabilité et l'audit de sécurité nocturne passent par le
+    #  même appel, la tâche posée par l'appelant (`$NOTIFICATION_TACHE`,
+    #  lib-notification.sh, 30/10/2026) : c'est ce mot-là que le balayage voit.
+    assert {'"$NOTIFICATION_TACHE"', "maintenance", "bascule", "export_hors_site"} <= taches, taches
 
 
 def test_aucune_duree_ecrite_a_zero():
