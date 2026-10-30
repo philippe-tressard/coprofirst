@@ -1,8 +1,8 @@
 /*
- *  **Le message de fête** (#2312, proposition n° 3 du 30/10/2026) — à côté du
- *  décor, l'élément qui bouge s'arrête et le message apparaît là, environ toutes
- *  les 45 s, au plus tôt 8 s après le chargement. Rien en mouvement réduit, sur
- *  mobile, ni service coupé.
+ *  **Le message de fête** (#2312, révision du 30/10/2026) — à sa place fixe sous
+ *  le décor, alignée à droite, sans rien attendre du mouvement : environ toutes
+ *  les 45 s, au plus tôt 8 s après le chargement, traversé d'un reflet à la
+ *  couleur de la fête. Rien en mouvement réduit, sur mobile, ni service coupé.
  *
  *  L'horloge est simulée (`page.clock.install`) : les minuteurs du cycle
  *  avancent à la demande, et le jour se lit à PARIS — 23 h 30 UTC le 31 décembre
@@ -10,7 +10,8 @@
  */
 import type { Page } from '@playwright/test';
 import { expect, simulerApi, test } from './aides';
-import { FETES, LONGUEUR_MAX_MESSAGE, messageDeFete } from '../src/lib/fetes';
+import { FETES, LONGUEUR_MAX_MESSAGE, messageDeFete, type CodeFete } from '../src/lib/fetes';
+import { REFLETS, degradeReflet } from '../src/lib/decor-fetes';
 
 const MESSAGE = '.decor-fete .message-fete';
 
@@ -57,7 +58,20 @@ test('le Nouvel an change de message au 1er janvier', () => {
 	expect(messageDeFete('noel', '2026-12-24')).toBe('Joyeux Noël');
 });
 
-test('Halloween : le message se pose là où l’araignée s’arrête, pas avant 8 s', async ({
+test('chaque fête a la couleur de son reflet', () => {
+	const vues = new Map<string, CodeFete>();
+	for (const code of Object.keys(FETES) as CodeFete[]) {
+		expect(REFLETS[code].length, code).toBeGreaterThan(0);
+		for (const c of REFLETS[code]) expect(c, code).toMatch(/^var\(--[\w-]+\)$/);
+		expect(degradeReflet(code), code).toContain(REFLETS[code][0]);
+		vues.set(REFLETS[code].join(), code);
+	}
+	//  Le 14 juillet passe ses trois couleurs ; Noël et le Nouvel an partagent l'or.
+	expect(REFLETS['quatorze-juillet']).toHaveLength(3);
+	expect(vues.size).toBe(Object.keys(FETES).length - 1);
+});
+
+test('Halloween : le message paraît à sa place, sous le décor, pas avant 8 s', async ({
 	page,
 	isMobile,
 }) => {
@@ -68,12 +82,19 @@ test('Halloween : le message se pose là où l’araignée s’arrête, pas avan
 	const message = page.locator(MESSAGE);
 	await expect(message).toHaveText('Joyeux Halloween');
 	await expect(message).toHaveCSS('pointer-events', 'none');
-	//  À gauche de l'araignée arrêtée, à sa hauteur — mesuré une fois le fondu fini.
+	await expect(message).toHaveCSS('background-image', /linear-gradient/);
+	//  Sous le décor, aligné à droite — mesuré une fois le fondu fini.
 	await page.clock.runFor(300);
-	const araignee = (await page.locator('.decor-fete .glisse').boundingBox())!;
+	const decor = (await page.locator('.decor-fete').boundingBox())!;
 	const bulle = (await message.boundingBox())!;
-	expect(bulle.x + bulle.width).toBeLessThanOrEqual(araignee.x + araignee.width / 2);
-	expect(Math.abs(bulle.y + bulle.height / 2 - (araignee.y + araignee.height / 2))).toBeLessThan(4);
+	expect(bulle.y).toBeGreaterThanOrEqual(decor.y + decor.height);
+	expect(bulle.x + bulle.width).toBeLessThanOrEqual(decor.x + decor.width);
+	expect(decor.x + decor.width - (bulle.x + bulle.width)).toBeLessThan(20);
+	//  Le reflet glisse : seule la position du dégradé change.
+	const position = () => message.evaluate((e) => getComputedStyle(e).backgroundPosition);
+	const avant = await position();
+	await page.clock.runFor(1_500);
+	await expect.poll(position).not.toBe(avant);
 	//  Muet et à l'opacité du décor : c'est lui qui l'enveloppe.
 	await expect(page.locator('.decor-fete[aria-hidden="true"]')).toContainText('Joyeux Halloween');
 	//  …puis il s'efface, et le cycle reprend.
@@ -83,6 +104,21 @@ test('Halloween : le message se pose là où l’araignée s’arrête, pas avan
 			return page.locator(`${MESSAGE}.visible`).count();
 		})
 		.toBe(0);
+	const second = await attendreMessage(page);
+	expect(second).toBeGreaterThan(30_000);
+});
+
+test('le mouvement du décor arrêté : le message paraît quand même', async ({ page, isMobile }) => {
+	test.skip(!!isMobile, 'aucun message sur mobile');
+	await ouvrirLe(page, '2026-10-30T10:00:00+01:00');
+	//  Le mouvement du décor arrêté, avant la première apparition : le message ne
+	//  doit rien en attendre (la v3.40.0 attendait l'araignée, et se taisait).
+	await page.addStyleTag({
+		content: '.decor-fete [class]:not(.message-fete) { animation: none !important; }',
+	});
+	await expect(page.locator('.decor-fete .glisse')).toHaveCSS('animation-name', 'none');
+	await attendreMessage(page);
+	await expect(page.locator(MESSAGE)).toHaveText('Joyeux Halloween');
 });
 
 for (const [instant, texte] of [

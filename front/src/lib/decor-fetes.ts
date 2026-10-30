@@ -1,6 +1,7 @@
 /**
  * Les tracés du DÉCOR DES JOURS DE FÊTE (#2312), partagés par le dessin
- * (`DecorFeteDessin`) et par l'élément qui le parcourt (`DecorFeteMouvement`), et l'arrêt où se pose le message (`DecorFeteMessage`).
+ * (`DecorFeteDessin`) et par l'élément qui le parcourt (`DecorFeteMouvement`), et le reflet du
+ * message (`DecorFeteMessage`).
  */
 import type { CodeFete } from '#lib/fetes.ts';
 
@@ -26,24 +27,29 @@ export const FANIONS: readonly (readonly [number, number, string])[] = [
 ];
 
 /**
- * Où le message de fête se pose : l'élément qui bouge déjà (`cible`, dans le
- * décor) et l'instant de SON animation où il s'arrête (`phase`, de 0 à 1 d'un
- * tour). Le message apparaît là, le temps que l'élément reste immobile.
+ * La couleur du REFLET qui traverse le message de fête (`DecorFeteMessage`), par
+ * fête — des jetons de la charte, qui ont leur valeur au thème sombre. Plusieurs
+ * couleurs se suivent dans l'éclat (le 14 juillet). Le gris, et non le blanc, du
+ * drapeau : le blanc ne se verrait pas en thème clair (arbitré le 30/10/2026).
  */
-export const PAUSES: Record<CodeFete, { cible: string; phase: number }> = {
-	//  L'étoile, au bout du serpentin (elle y reste de 50 à 62 % du tour).
-	'nouvel-an': { cible: '.glisse', phase: 0.56 },
-	//  Le cœur du milieu, au bout de son balancement.
-	'saint-valentin': { cible: '.balance', phase: 0.5 },
-	//  La première bulle, là où elle éclate.
-	'premier-avril': { cible: '.bulle:not(.seconde)', phase: 0.9 },
-	paques: { cible: '.balance', phase: 0.5 },
-	//  La première note, au bout de la portée, encore visible.
-	'fete-musique': { cible: '.parcourt:not(.seconde)', phase: 0.84 },
-	//  L'étincelle, à son dernier éclat.
-	'quatorze-juillet': { cible: '.scintille', phase: 0.5 },
-	//  L'araignée, en bas de son fil.
-	halloween: { cible: '.glisse', phase: 0.56 },
-	//  Le flocon, posé avant d'avoir fondu.
-	noel: { cible: '.flocon', phase: 0.55 },
+export const REFLETS: Record<CodeFete, readonly string[]> = {
+	'nouvel-an': ['var(--color-accent)'],
+	'saint-valentin': ['var(--fil-rose)'],
+	'premier-avril': ['var(--color-primary)'],
+	paques: ['var(--fil-vert)'],
+	'fete-musique': ['var(--fil-violet)'],
+	'quatorze-juillet': ['var(--color-primary)', 'var(--color-border-champ)', 'var(--fil-rouge)'],
+	halloween: ['var(--teinte-5)'],
+	noel: ['var(--color-accent)'],
 };
+
+/**
+ * PURE. Le dégradé appliqué au texte du message : sa couleur, puis l'éclat au
+ * milieu, puis sa couleur. La feuille l'élargit et n'anime que sa position.
+ */
+export function degradeReflet(fete: CodeFete): string {
+	const couleurs = REFLETS[fete];
+	const pas = 10 / Math.max(couleurs.length - 1, 1);
+	const eclat = couleurs.map((c, i) => `${c} ${couleurs.length > 1 ? 45 + i * pas : 50}%`);
+	return `linear-gradient(100deg, var(--color-primary) 41%, ${eclat.join(', ')}, var(--color-primary) 59%)`;
+}
