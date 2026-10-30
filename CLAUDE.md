@@ -124,6 +124,10 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
    `#lib/date.ts` (`fmtDate`, `fmtDatetime`, `fmtMonthYear`…), `#lib/utils.ts`
    (`fmtMontant`, `fmtOctets`, `fmtNombre`, `perimetreLabel`), et côté API `app/utils/dates_fr.py`. Deux
    garde-fous échouent en CI : `api/tests/test_dates_fr.py` et `npm run lint:dates`.
+   Un nombre ou un mois que l'API envoie ne se rend pas **brut** non plus : `fmtNombre`,
+   `fmtMonthYear` — une clé `AAAA-MM` se type `MoisIso` (`api/valeurs.ts`). La télémétrie
+   affichait « 27054 », « 3864.9 », « 2026-05 » (#2358) ; 🔒 `lint:dates` le refuse
+   (`check-nombres-bruts.mjs`, ses écarts déclarés : `NON_QUANTITES`, `HOMONYMES`).
 3. **Accessibilité** : tout élément cliquable non-`<button>` porte `role="button"`,
    `tabindex="0"` et `on:keydown` (Enter/Space) ; `aria-label` sur les boutons
    icône-seule ; `role="dialog"` + `aria-modal="true"` sur les modales
