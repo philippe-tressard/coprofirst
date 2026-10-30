@@ -54,7 +54,7 @@ def profil_admet(user: Utilisateur, profil: ProfilAccesDocument | None) -> bool:
 #: (Ma résidence › Règlement). Le texte de travail nomme notaires et parties ; le
 #: conseil comme les copropriétaires n'en lisent que les réponses, et un lien
 #: vers le règlement publié dans la Fiche.
-CATEGORIES_ADMIN_SEUL = frozenset({"texte_reglement"})
+CATEGORIES_ADMIN_SEUL = frozenset({"texte_reglement", "texte_decisions_ag"})
 
 
 def reserve_a_l_admin(categorie) -> bool:

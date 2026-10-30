@@ -74,18 +74,29 @@ def categorie_reglement(moteur, code: str, roles: list[str]) -> int:
 @pytest.fixture()
 def assistant(monkeypatch):
     """Un assistant prêt ; `assistant.messages` garde ce qu'il a reçu, et
-    `assistant.ouvert` ouvre l'usage aux copropriétaires (fermé par défaut)."""
+    `assistant.ouvert` ouvre l'usage aux copropriétaires (fermé par défaut).
+
+    `assistant.consignes` garde les consignes, `assistant.usages` les usages
+    appelés ; `assistant.reponses`, par usage, remplace la réponse rendue (un
+    texte), et `assistant.pret` éteint l'assistant (29/10/2026)."""
     messages: list[str] = []
-    etat = SimpleNamespace(messages=messages, ouvert=False)
+    etat = SimpleNamespace(
+        messages=messages, ouvert=False, consignes=[], usages=[], reponses={}, pret=True
+    )
 
     def config(session, usage=None):
         return SimpleNamespace(
-            pret=True, prompt="PROMPT", modele="modele-test", ouvert_coproprietaires=etat.ouvert
+            pret=etat.pret,
+            prompt="PROMPT",
+            modele="modele-test",
+            ouvert_coproprietaires=etat.ouvert,
         )
 
     async def demander(session, *, usage, message, consigne=None, **_):
         messages.append(message)
-        texte = json.dumps(
+        etat.consignes.append(consigne)
+        etat.usages.append(usage)
+        texte = etat.reponses.get(usage) or json.dumps(
             {
                 "verdict": "sous_conditions",
                 "reponse": "<p>Oui, sans nuire à la tranquillité.</p>",

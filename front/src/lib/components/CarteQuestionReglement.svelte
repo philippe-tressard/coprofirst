@@ -24,6 +24,7 @@
 	import BadgeVerdict from '#lib/components/BadgeVerdict.svelte';
 	import BoutonLien from '#lib/components/BoutonLien.svelte';
 	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
+	import ExtraitsReglement from '#lib/components/ExtraitsReglement.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import type { QuestionReglement } from '#lib/api/index.ts';
 	import { fmtDatetime } from '#lib/date.ts';
@@ -39,6 +40,8 @@
 	const dispatch = createEventDispatcher<{ basculer: void; publier: void; supprimer: void }>();
 
 	$: verifies = q.extraits.filter((e) => e.verifie).length;
+	$: extraitsAg = q.extraits.filter((e) => e.source === 'ag');
+	$: extraitsReglement = q.extraits.filter((e) => e.source !== 'ag');
 </script>
 
 <!--  La GOUTTIÈRE de la page Affaires, standard du site (10/10/2026) : la date
@@ -132,27 +135,23 @@
 			</p>
 			<div class="rich-content">{@html safeHtml(q.reponse)}</div>
 
-			{#if q.extraits.length}
-				<h4 class="intertitre">Extraits du règlement</h4>
-				<ul class="extraits">
-					{#each q.extraits as e, i (i)}
-						<li>
-							<blockquote>{e.citation}</blockquote>
-							{#if e.verifie}
-								<p class="repere">
-									✓ {[e.acte, e.page].filter(Boolean).join(' — ') || e.reference}
-								</p>
-							{:else}
-								<p class="repere alerte">
-									⚠️ Non retrouvé mot pour mot dans le texte — à vérifier{e.reference
-										? ` (référence donnée : ${e.reference})`
-										: ''}
-								</p>
-							{/if}
-							{#if e.apport}<p class="aide">{e.apport}</p>{/if}
-						</li>
-					{/each}
-				</ul>
+			<!--  En SECTIONS depuis le 29/10/2026 : d'après le règlement, d'après les
+			      AG, la synthèse des deux. Un avis plus ancien n'a que sa réponse, et
+			      se lit comme avant. Un extrait va sous la source où le CODE l'a
+			      retrouvé (`source`) — un extrait non retrouvé reste avec le règlement. -->
+			{#if q.selon_reglement}
+				<h4 class="intertitre">D'après le règlement</h4>
+				<div class="rich-content">{@html safeHtml(q.selon_reglement)}</div>
+			{/if}
+			<ExtraitsReglement titre="Extraits du règlement" extraits={extraitsReglement} />
+			{#if q.selon_ag}
+				<h4 class="intertitre">D'après les assemblées générales</h4>
+				<div class="rich-content">{@html safeHtml(q.selon_ag)}</div>
+			{/if}
+			<ExtraitsReglement titre="Extraits des décisions d'AG" extraits={extraitsAg} />
+			{#if q.synthese}
+				<h4 class="intertitre">Synthèse</h4>
+				<div class="rich-content">{@html safeHtml(q.synthese)}</div>
 			{/if}
 
 			{#if q.reserves}
@@ -177,26 +176,6 @@
 	.lecture {
 		font-size: var(--fs-base);
 		line-height: 1.55;
-	}
-	.extraits {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.7rem;
-	}
-	blockquote {
-		margin: 0;
-		padding: 0.4rem 0.7rem;
-		border-left: 3px solid var(--color-primary);
-		background: var(--color-bg);
-		font-style: italic;
-	}
-	.repere {
-		margin: 0.25rem 0 0;
-		font-size: var(--fs-sm);
-		color: var(--color-text-muted);
 	}
 	.alerte {
 		color: var(--color-warning-texte);

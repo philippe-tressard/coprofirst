@@ -67,6 +67,12 @@ class QuestionReglement(SQLModel, table=True):
     #: Les réserves du juriste : ce que la loi impose par-dessus le règlement,
     #: une majorité d'assemblée, un passage illisible. HTML simple, ou vide.
     reserves: Optional[str] = None
+    #: Les sections de l'avis (29/10/2026) — d'après le règlement, d'après les
+    #: décisions d'AG, et leur synthèse. HTML simple ; vides dans un avis plus ancien,
+    #: et les deux dernières sans décision d'AG jointe (`format.SECTIONS`).
+    selon_reglement: Optional[str] = None
+    selon_ag: Optional[str] = None
+    synthese: Optional[str] = None
     #: Les extraits justificatifs, en JSON : citation, repère, vérifiée ou non
     #: (`format.Extrait`) — la vérification est faite par le CODE, à la réponse.
     extraits_json: str = "[]"
@@ -84,3 +90,37 @@ class QuestionReglement(SQLModel, table=True):
     #: L'entrée de FAQ née de cette réponse, une fois relue et publiée.
     faq_item_id: Optional[int] = Field(default=None, foreign_key="faq_item.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant, index=True)
+
+
+class TranscriptionPV(SQLModel, table=True):
+    """La transcription d'un procès-verbal d'AG par l'assistant (29/10/2026).
+
+    Le PV déposé dans la Fiche (catégorie `pv_ag`) est lu par l'assistant, qui en
+    rend les RÉSOLUTIONS en Markdown ; la transcription attend la relecture de
+    l'administration (`a_relire`) et n'entre dans ce que lisent les questions
+    (`texte_decisions_ag`) qu'une fois validée — `utils/question_reglement/transcription`.
+
+    ⚠️ `pv_id` et `document_id` sans `foreign_key` : retirer le PV ou le fichier
+    validé de la bibliothèque ne doit pas buter sur cette ligne, qui dit alors
+    « PV retiré » — la même raison que `Document.document_parent_id`.
+    """
+
+    __tablename__ = "transcription_pv"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    #: Le PV transcrit — un `Document` de la catégorie `pv_ag`.
+    pv_id: int = Field(index=True)
+    #: `en_cours` · `a_relire` · `validee` · `echec` (`transcription.STATUTS`).
+    statut: str = Field(index=True)
+    #: Le Markdown rendu par l'assistant, puis tel que l'administration l'a relu.
+    contenu: Optional[str] = None
+    #: Pourquoi la transcription a échoué — dit à l'écran tel quel.
+    erreur: Optional[str] = None
+    #: Le fichier des décisions né de la validation (`texte_decisions_ag`).
+    document_id: Optional[int] = None
+    #: Qui l'a demandée — `None` : la tâche quotidienne.
+    demande_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    valide_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    modele: Optional[str] = None
+    cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant, index=True)
+    valide_le: Optional[NaiveDatetime] = None

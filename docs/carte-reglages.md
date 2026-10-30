@@ -225,16 +225,16 @@ _Aucun écart connu entre un écran et sa route._
 | `llm_delai_s` | nombre | — | non |
 | `llm_envoi_document` | oui/non (`1`/`0`) | — | non |
 | `llm_fournisseur` | texte | — | non |
-| `llm_<usage>_actif` (9 usages) | oui/non (`1`/`0`) | — | non |
-| `llm_<usage>_modele` (9 usages) | texte | — | non |
-| `llm_<usage>_prompt` (9 usages) | texte | — | non |
-| `llm_<usage>_max_jetons` (9 usages) | nombre | — | non |
-| `llm_<usage>_appels_mois` (9 usages) | nombre | — | non |
-| `llm_<usage>_appels_heure` (9 usages) | nombre | — | non |
-| `llm_<usage>_prix_entree` (9 usages) | nombre décimal ($ / million de jetons) | — | non |
-| `llm_<usage>_prix_sortie` (9 usages) | nombre décimal ($ / million de jetons) | — | non |
-| `llm_<usage>_prix_cache` (9 usages) | nombre décimal ($ / million de jetons) | — | non |
-| `llm_<usage>_effort` (9 usages) | texte | — | non |
+| `llm_<usage>_actif` (10 usages) | oui/non (`1`/`0`) | — | non |
+| `llm_<usage>_modele` (10 usages) | texte | — | non |
+| `llm_<usage>_prompt` (10 usages) | texte | — | non |
+| `llm_<usage>_max_jetons` (10 usages) | nombre | — | non |
+| `llm_<usage>_appels_mois` (10 usages) | nombre | — | non |
+| `llm_<usage>_appels_heure` (10 usages) | nombre | — | non |
+| `llm_<usage>_prix_entree` (10 usages) | nombre décimal ($ / million de jetons) | — | non |
+| `llm_<usage>_prix_sortie` (10 usages) | nombre décimal ($ / million de jetons) | — | non |
+| `llm_<usage>_prix_cache` (10 usages) | nombre décimal ($ / million de jetons) | — | non |
+| `llm_<usage>_effort` (10 usages) | texte | — | non |
 | `llm_<usage>_coproprietaires` (1 usages) | oui/non (`1`/`0`) | — | non |
 
 ## L'environnement (`.env`) — exploitant du serveur

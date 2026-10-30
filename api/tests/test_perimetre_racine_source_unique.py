@@ -62,7 +62,7 @@ EXCEPTIONS: dict[str, tuple[int, str]] = {
     #  (`models/perimetre.py`, docstring de `Perimetre`).
     "models/documents.py": (2, "granularité documentaire, autre axe que l'arbre"),
     "routers/documents.py": (1, "granularité documentaire, autre axe que l'arbre"),
-    "seed/profils_documents.py": (6, "granularité documentaire, autre axe que l'arbre"),
+    "seed/profils_documents.py": (7, "granularité documentaire, autre axe que l'arbre"),
 }
 
 

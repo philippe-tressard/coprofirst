@@ -77,16 +77,54 @@ CONSIGNE = (
     "- C'est un avis indicatif : ne promets rien au nom du syndicat des copropriétaires."
 )
 
+#: La méthode propre aux décisions d'AG (29/10/2026) — tenue par le CODE, comme le
+#: format : le prompt de l'usage vit en base et l'administration l'a peut-être
+#: repris ; cette méthode s'ajoute quand des décisions sont jointes, et seulement alors.
+METHODE_AG = (
+    "Les décisions des assemblées générales :\n"
+    "- Le message porte aussi, après le règlement, le bloc DECISIONS_AG : les résolutions "
+    "transcrites des procès-verbaux, une assemblée par titre « # Assemblée générale du … », "
+    "de la plus ancienne à la plus récente.\n"
+    "- Cherche-y tout ce qui touche la question : autorisation ou interdiction, règlement "
+    "intérieur, travaux, modification du règlement, répartition des charges.\n"
+    "- Pour chaque décision retenue, nomme l'assemblée (la date de son titre), le numéro de "
+    "la résolution, la majorité et le résultat du vote quand ils figurent. Une résolution "
+    "REJETÉE ne crée aucune règle.\n"
+    "- Articule les deux sources : une décision d'assemblée s'applique dans les limites du "
+    "règlement et de la loi. Elle ne MODIFIE le règlement que si elle a été votée à la "
+    "majorité qu'exige la clause modifiée (articles 24 à 26 de la loi de 1965), et une "
+    "modification n'est opposable aux acquéreurs qu'une fois publiée au fichier immobilier. "
+    "Une autorisation donnée à un lot ou à un copropriétaire précis ne crée pas de droit "
+    "pour les autres. Une décision plus récente l'emporte sur une plus ancienne de même "
+    "objet. Une décision de moins de deux mois peut encore être contestée (article 42).\n"
+    "- Si aucune décision ne traite la question, dis-le en une phrase.\n"
+    "- Un extrait d'une décision se recopie mot pour mot, comme un extrait du règlement ; "
+    "sa référence donne la date de l'assemblée et le numéro de la résolution."
+)
+
 #: La forme de la réponse — tenue par le code, ajoutée APRÈS le prompt.
+#: En SECTIONS depuis le 29/10/2026 : d'après le règlement, d'après les AG, synthèse.
 FORMAT_REPONSE = (
-    "Réponds UNIQUEMENT par un objet JSON, sans texte autour, à quatre clés :\n"
+    "Réponds UNIQUEMENT par un objet JSON, sans texte autour, à sept clés :\n"
     '{"verdict": "oui" | "non" | "sous_conditions" | "non_prevu" | "incertain", '
-    '"reponse": "<la réponse argumentée, en HTML simple : <p>, <ul>, <li>, <strong>>", '
+    '"reponse": "<la réponse à la question, en deux à quatre phrases, en HTML simple : '
+    '<p>, <ul>, <li>, <strong>>", '
+    '"selon_reglement": "<ce que dit le règlement, argumenté, en HTML simple>", '
+    '"selon_ag": "<ce que disent les décisions des assemblées générales, chacune nommée '
+    "par sa date et sa résolution, en HTML simple — chaîne vide si le message n'a pas "
+    'de bloc DECISIONS_AG>", '
+    '"synthese": "<comment le règlement et les décisions s\'articulent, et ce qui '
+    "s'applique au final, en HTML simple — chaîne vide si le message n'a pas de bloc "
+    'DECISIONS_AG>", '
     '"extraits": [{"citation": "<mot pour mot>", '
-    '"reference": "<acte, chapitre ou article, page>", '
+    '"reference": "<acte, chapitre ou article, page — ou assemblée et résolution>", '
     '"apport": "<ce que l\'extrait établit, en une phrase>"}], '
     '"reserves": "<HTML simple, ou chaîne vide>"}'
 )
+
+#: Les sections de l'avis, dans l'ordre de l'écran — vides dans un avis d'avant le
+#: 29/10/2026, et `selon_ag` comme `synthese` sans décision d'AG jointe.
+SECTIONS = ("selon_reglement", "selon_ag", "synthese")
 
 #: Une question, pas un dossier.
 MAX_CARACTERES_QUESTION = 2_000
@@ -97,20 +135,30 @@ MAX_CARACTERES_EXTRAIT = 2_000
 MAX_EXTRAITS = 12
 
 
-def consigne_complete(prompt: str) -> str:
-    """Le prompt de l'usage, puis le format — que l'administration ne peut pas retirer."""
-    return prompt.rstrip() + "\n\n" + FORMAT_REPONSE
+def consigne_complete(prompt: str, *, avec_ag: bool = False) -> str:
+    """Le prompt de l'usage, la méthode des AG s'il y en a, puis le format — ce que
+    l'administration ne peut pas retirer."""
+    blocs = [prompt.rstrip()]
+    if avec_ag:
+        blocs.append(METHODE_AG)
+    blocs.append(FORMAT_REPONSE)
+    return "\n\n".join(blocs)
 
 
-def construire_message(texte: str, question: str) -> str:
-    """PURE. Le règlement en tête, la question à la fin — voir l'en-tête du module."""
-    return (
+def construire_message(texte: str, question: str, decisions_ag: str = "") -> str:
+    """PURE. Le règlement en tête, puis les décisions d'AG, la question à la fin —
+    voir l'en-tête du module : ce qui change le moins passe le premier."""
+    blocs = [
         "Texte de travail du règlement de copropriété (Markdown) :\n"
-        "<<<REGLEMENT\n"
-        f"{texte.strip()}\n"
-        "REGLEMENT>>>\n\n"
-        f"Question : {question.strip()[:MAX_CARACTERES_QUESTION]}"
-    )
+        f"<<<REGLEMENT\n{texte.strip()}\nREGLEMENT>>>"
+    ]
+    if decisions_ag.strip():
+        blocs.append(
+            "Décisions des assemblées générales (résolutions transcrites, Markdown) :\n"
+            f"<<<DECISIONS_AG\n{decisions_ag.strip()}\nDECISIONS_AG>>>"
+        )
+    blocs.append(f"Question : {question.strip()[:MAX_CARACTERES_QUESTION]}")
+    return "\n\n".join(blocs)
 
 
 def _texte(charge: dict, cle: str, *, obligatoire: bool = False) -> str:
@@ -156,6 +204,7 @@ def lire_reponse(texte: str) -> dict:
     return {
         "verdict": verdict if verdict in VERDICTS else "incertain",
         "reponse": _texte(charge, "reponse", obligatoire=True),
+        **{cle: _texte(charge, cle) for cle in SECTIONS},
         "extraits": bruts,
         "reserves": _texte(charge, "reserves"),
     }
@@ -165,6 +214,8 @@ __all__ = [
     "CONSIGNE",
     "FORMAT_REPONSE",
     "MAX_CARACTERES_QUESTION",
+    "METHODE_AG",
+    "SECTIONS",
     "USAGE_QUESTION_REGLEMENT",
     "VERDICTS",
     "consigne_complete",

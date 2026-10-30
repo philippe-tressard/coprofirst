@@ -93,6 +93,9 @@ TACHES_PERMANENTES: dict[str, str] = {
     "closes et le détachement de leurs auteurs (#2014), puis le retrait du serveur des "
     "archives copiées sur le PC depuis 30 jours — les durées de conservation redeviennent "
     "fictives, et les archives s'accumulent sur les deux nœuds",
+    "transcription_pv": "la transcription quotidienne des PV d'AG récents (29/10/2026) — le "
+    "PV de l'année n'est plus proposé à la relecture : les questions au règlement ignorent "
+    "ses décisions tant que personne ne le transcrit par le bouton",
 }
 
 
@@ -129,6 +132,7 @@ TACHES_HORS_DEMO: dict[str, str] = {
     "backup": "rien à sauvegarder : la démo se régénère chaque nuit",
     "courriel_reponses": "relève IMAP : un appel sortant",
     "synthese_affaires": "appel à l'IA et courriel au conseil",
+    "transcription_pv": "appel à l'IA",
     "whatsapp_scheduled": "messages WhatsApp",
     "health_check": "son seul effet est un courriel d'alerte",
 }

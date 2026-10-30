@@ -25,6 +25,7 @@
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import FormulaireFaq from '#lib/components/FormulaireFaq.svelte';
 	import SectionTexteReglement from '#lib/components/SectionTexteReglement.svelte';
+	import SectionTranscriptionsPv from '#lib/components/SectionTranscriptionsPv.svelte';
 	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		faq as faqApi,
@@ -171,6 +172,9 @@
 <EtatListe {chargement} {erreur}>
 	{#if etat}
 		<SectionTexteReglement {etat} onRecharger={recharger} />
+		{#if $isAdmin}
+			<SectionTranscriptionsPv onValidee={recharger} />
+		{/if}
 
 		<section class="card config-section">
 			<h3 class="config-section-title">Votre question</h3>

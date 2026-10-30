@@ -42,6 +42,7 @@ const ETAT_LECTEUR = {
 	texte_disponible: true,
 	lien_reglement: LIEN,
 	categorie_id: null,
+	categorie_ag_id: null,
 	provenance: null,
 };
 /** …et à l'administration : la catégorie où joindre les fichiers, pas de lien. */
@@ -50,6 +51,9 @@ const ETAT_ADMIN = {
 	...ETAT_LECTEUR,
 	lien_reglement: null,
 	categorie_id: 40,
+	//  Sans catégorie des décisions : `/api/documents` simulé rend le même fichier
+	//  à toute catégorie, et il s'afficherait deux fois.
+	categorie_ag_id: null,
 	provenance: PROVENANCE,
 };
 
@@ -263,4 +267,55 @@ test('l’ancienne adresse de l’Espace CS mène à Ma résidence, ancre compri
 	});
 	await expect(page).toHaveURL(/\/residence\/reglement#question-reglement-3$/);
 	await expect(page.getByText(QUESTION.question)).toBeVisible();
+});
+
+/** Un PV d'AG dont la transcription attend sa relecture (`PvTranscrit`, 29/10/2026). */
+const TRANSCRIPTION = '## Résolution n° 7 — Fermeture des balcons. Adoptée.';
+const PV_A_RELIRE = {
+	pv_id: 12,
+	titre: 'PV AG 2025',
+	date_ag: '2025-06-12',
+	transcription: {
+		id: 5,
+		statut: 'a_relire',
+		statut_libelle: 'À relire',
+		contenu: TRANSCRIPTION,
+		erreur: null,
+		cree_le: '2025-06-20T05:15:00',
+		valide_le: null,
+	},
+};
+
+test('l’administration relit une transcription de PV dans sa ligne, puis l’enregistre', async ({
+	page,
+}) => {
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return ADMIN;
+		if (chemin === '/api/reglement') return ETAT_ADMIN;
+		if (chemin === '/api/documents') return [FICHIER];
+		if (chemin === '/api/reglement/questions') return [];
+		if (chemin === '/api/reglement/transcriptions') return { disponible: true, pvs: [PV_A_RELIRE] };
+	});
+	const envois: unknown[] = [];
+	await page.route('**/api/reglement/transcriptions/5/valider', (route) => {
+		envois.push(route.request().postDataJSON());
+		return route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({ ...PV_A_RELIRE.transcription, statut: 'validee' }),
+		});
+	});
+	await page.goto('/residence/reglement');
+	await attendreHydratation(page);
+	await expect(page.getByRole('heading', { name: "Transcription des PV d'AG" })).toBeVisible();
+	await expect(page.getByText('À relire')).toBeVisible();
+	const crayon = page.getByRole('button', { name: 'Relire la transcription' });
+	await crayon.click();
+	await expect(crayon).toHaveAttribute('aria-pressed', 'true');
+	const champ = page.getByLabel('Résolutions transcrites');
+	await expect(champ).toHaveValue(TRANSCRIPTION);
+	await champ.fill(TRANSCRIPTION + ' Corrigé.');
+	await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+	await expect(champ).toHaveCount(0);
+	expect(envois).toEqual([{ contenu: TRANSCRIPTION + ' Corrigé.' }]);
 });
