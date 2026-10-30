@@ -43,6 +43,7 @@ from app.utils.perimetres import (
     perimetre_label_liste,
 )
 from app.utils.config_site import config_site
+from app.utils.palettes import CLE_PALETTE
 from app.utils.photos import parse_photos
 from app.utils.noms import nom_auteur
 
@@ -127,6 +128,7 @@ def _html_params(
         "logo_png": logo_televerse_png(session),
         "images": body.images,
         "date_affichage": date_affichage,
+        "palette": cfg.get(CLE_PALETTE),
     }
 
 

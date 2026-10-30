@@ -99,6 +99,7 @@ GESTES_FERMES: tuple[Famille, ...] = (
             ("PUT", "/config"),
             ("POST", "/config/logo"),
             ("DELETE", "/config/logo"),
+            ("PUT", "/config/palette"),
             ("POST", "/config/textes-legaux/relecture"),
             ("PATCH", "/copropriete"),
             ("POST", "/perimetres"),

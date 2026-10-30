@@ -2,6 +2,8 @@ import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
 import { messageDErreur } from '#lib/erreur-page.ts';
 import garde from './garde-demarrage.js?raw';
 import { COOKIE_THEME, lireChoix, remplirGabarit } from '#lib/theme.ts';
+import { CLE_PALETTE, remplirPalette } from '#lib/palettes.ts';
+import { lireConfigServeur } from '#lib/server/config-site.ts';
 
 //  Le garde de démarrage (#1993) prend la place de son repère dans `app.html` :
 //  premier script de la page, avant les feuilles de style. Injecté TEL QUEL — la
@@ -37,9 +39,20 @@ export const handle: Handle = async ({ event, resolve }) => {
 	//  Le thème choisi sur cet appareil (#2174, S5) : le serveur écrit l'attribut
 	//  et les balises qui en dépendent, la page se peint d'emblée dans son thème.
 	const theme = lireChoix(event.cookies.get(COOKIE_THEME));
+	//  La palette de la copropriété (#2379), pour une PAGE seulement : la
+	//  configuration lue ici sert aussi au layout racine (`locals`), qui ne la
+	//  redemande pas. Une navigation dans l'application (`__data.json`) ne
+	//  repeint rien — l'attribut est déjà posé.
+	const page =
+		!event.isDataRequest && (event.request.headers.get('accept') ?? '').includes('text/html');
+	if (page) event.locals.siteConfig = await lireConfigServeur(event.url.host);
+	const palette = event.locals.siteConfig?.[CLE_PALETTE];
 	const reponse = await resolve(event, {
 		transformPageChunk: ({ html }) =>
-			remplirGabarit(html, theme).replace(REPERE_GARDE, () => SCRIPT_GARDE),
+			remplirPalette(remplirGabarit(html, theme), palette).replace(
+				REPERE_GARDE,
+				() => SCRIPT_GARDE,
+			),
 	});
 	return sansCopieConservee(reponse);
 };

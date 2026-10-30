@@ -18,6 +18,9 @@
    ───────────────────────────────────────── */
 
 @import './styles/socle.css';
+/*  Les palettes de la copropriété (#2379) : AVANT la palette sombre, à laquelle
+    leur règle claire doit céder (en-tête de `styles/palettes.css`). */
+@import './styles/palettes.css';
 /*  Les jetons du thème sombre, sous `[data-theme]` (#2174, S3) : ils ne
     redéfinissent que des variables, l'ordre ne change aucune règle. */
 @import './styles/palette-sombre.css';

@@ -65,6 +65,7 @@ _PUBLIC_KEYS = {
     "site_nom",  # titre de l'onglet et en-tête, écran de connexion inclus
     "site_url",  # liens des pages légales
     "site_logo",  # nom du logo téléversé (#1728) : sa présence, et l'invalidation du cache
+    "site_palette",  # couleurs de la résidence (#2379) : l'écran de connexion les porte aussi
     "login_sous_titre",  # sous-titre de l'écran de connexion
     "pages_order",  # ordre des entrées de navigation
 } | pied_de_page.CLES_PUBLIQUES  # le pied de page : tout ce qu'il affiche est déjà public

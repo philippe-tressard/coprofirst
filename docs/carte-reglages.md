@@ -33,6 +33,7 @@ mindmap
       Canal WhatsApp
       Assistant IA
       Logo de la résidence
+      Palette de couleurs du site, des courriels et des affiches
       Fiche de la copropriété
       Périmètres
       Modèles de courriel
@@ -81,6 +82,7 @@ mindmap
 | Canal WhatsApp : pont, groupe, pied des messages | Admin › 🔌 Services › WhatsApp | config_site | `PUT /config` |
 | Assistant IA : fournisseur, clé, réglage de chaque usage | Admin › 🔌 Services › Assistant IA | config_site | `PUT /config` |
 | Logo de la résidence | Admin › 🏢 Copropriété › Identité | fichier + config_site (`site_logo`) | `POST /config/logo` |
+| Palette de couleurs du site, des courriels et des affiches | Admin › 🏢 Copropriété › Identité | config_site (`site_palette`) | `PUT /config/palette` |
 | Fiche de la copropriété : identité, adresse, syndic, références | Admin › 🏢 Copropriété › Identité ; Ma résidence | table `copropriete` (+ `config_site.site_nom`) | `PATCH /copropriete` |
 | Périmètres (arbre des bâtiments et espaces) et leurs accès fixes | Admin › 🏢 Copropriété › Périmètres | table `perimetre` | `PATCH /perimetres/{perimetre_id}` |
 | Modèles de courriel | Admin › 🎨 Présentation › Modèles e-mail | table `modele_email` | `PATCH /admin/modeles-email/{modele_id}` |

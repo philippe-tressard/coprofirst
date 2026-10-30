@@ -26,6 +26,7 @@ from app.utils.annonce_hall_photos import (
     html_galerie,
 )
 from app.utils.html_sur import assainir_html
+from app.utils.palettes import recolorer
 from app.utils.slug import en_slug
 from app.utils.pdf_theme import (
     FONT_SANS,
@@ -400,8 +401,10 @@ def construire_html(
     logo_png: bytes | None,
     images: list[str] | None = None,
     date_affichage: date | datetime | None = None,
+    palette: str | None = None,
 ) -> str:
-    """Assemble le HTML autonome de l'annonce (images et QR en data-URI)."""
+    """Assemble le HTML autonome de l'annonce (images et QR en data-URI), aux
+    couleurs de la `palette` de la copropriété (#2379)."""
     g = _GABARITS[format_effectif]
     #  Un instant de la base (UTC) se lit au jour de Paris : à 00:30, l'affiche
     #  portait encore la date de la veille (#1565).
@@ -428,7 +431,7 @@ def construire_html(
     qr = "" if format_effectif in _SANS_QR else qr_data_uri(url_complete)
     qr_html = f'<img class="pied-qr" src="{qr}" alt="QR {escape(site_affiche)}">' if qr else ""
 
-    return f"""<!DOCTYPE html>
+    html = f"""<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -473,6 +476,7 @@ def construire_html(
 </div>
 </body>
 </html>"""
+    return recolorer(html, palette)
 
 
 def generer_pdf(**kwargs) -> bytes:

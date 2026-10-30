@@ -199,6 +199,14 @@ NOTIONS: tuple[Notion, ...] = (
         ("POST", "/config/logo"),
     ),
     Notion(
+        "palette",
+        "Palette de couleurs du site, des courriels et des affiches",
+        Acces.ADMIN,
+        f"Admin › {G_COPROPRIETE} › Identité",
+        "config_site (`site_palette`)",
+        ("PUT", "/config/palette"),
+    ),
+    Notion(
         "fiche_copropriete",
         "Fiche de la copropriété : identité, adresse, syndic, références",
         Acces.ADMIN,

@@ -25,6 +25,11 @@ export const SELECTEUR_FORCE = ":root[data-theme='dark']";
 export const SELECTEUR_AUTO = ":root[data-theme='auto']";
 export const MEDIA_FORCE = 'screen';
 export const MEDIA_AUTO = 'screen and (prefers-color-scheme: dark)';
+const ATTRIBUT_FORCE = "[data-theme='dark']";
+const ATTRIBUT_AUTO = "[data-theme='auto']";
+/** La règle sombre de la charte, et celle de chaque palette de la copropriété
+ *  (`styles/palettes.css`, #2379) : `:root[data-palette='…'][data-theme='dark']`. */
+const FORCE = /^:root(?:\[data-palette='[a-z]+'\])?\[data-theme='dark'\]$/;
 
 /** @returns {import('postcss').Plugin} */
 export function paletteSombreAuto() {
@@ -34,7 +39,7 @@ export function paletteSombreAuto() {
 			/** @type {import('postcss').Rule[]} */
 			const regles = [];
 			racine.walkRules((regle) => {
-				if (regle.selector === SELECTEUR_FORCE) regles.push(regle);
+				if (FORCE.test(regle.selector)) regles.push(regle);
 			});
 			for (const regle of regles) {
 				const media = /** @type {import('postcss').AtRule | undefined} */ (regle.parent);
@@ -49,7 +54,8 @@ export function paletteSombreAuto() {
 							`@media ${MEDIA_FORCE} (styles/palette-sombre.css).`,
 					);
 				const copie = media.clone({ params: MEDIA_AUTO });
-				/** @type {import('postcss').Rule} */ (copie.first).selector = SELECTEUR_AUTO;
+				const regleCopie = /** @type {import('postcss').Rule} */ (copie.first);
+				regleCopie.selector = regleCopie.selector.replace(ATTRIBUT_FORCE, ATTRIBUT_AUTO);
 				media.after(copie);
 			}
 		},
