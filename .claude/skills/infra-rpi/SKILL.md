@@ -866,6 +866,58 @@ docker exec hostachy_caddy grep -E '"status":(500|504)' /var/log/caddy/access.lo
 ⚠️ Il n'y a **plus** de journal d'accès sur la sortie standard : un second `log` par
 site est ignoré par Caddy (éprouvé en 2.11), et l'ancien portait les adresses.
 
+## L'audit de sécurité NOCTURNE — S1 à S6, et C40 (30/10/2026)
+
+Les contrôles du quart d'heure disent si le service tient et si le nœud est
+conforme. L'audit pose l'autre question, celle d'une **intrusion** — menée par un
+outil, et depuis 2026 par un agent, qui cherche une brèche, s'y installe et
+revient. Il tourne **en root, sur chaque nœud, une fois par jour** : lancé par
+`check-reliability.sh` au premier passage après 04:00 (pas un cron de plus à
+poser — `lib-audit-securite.sh` dit pourquoi), journal
+`/var/log/hostachy-audit-securite.log`, rapport à l'écran sous la tâche
+**Audit de sécurité nocturne** (`audit_securite`), FAIL par courriel dans l'heure,
+WARN dans le digest. **C40** dit s'il a eu lieu (terminé, jamais, en retard, lancé
+et jamais fini).
+
+| Section | La question | Module | Écart |
+|---|---|---|---|
+| S1 | l'arbre que root exécute (`scripts/`, `infra/`, compose, Caddyfile, Dockerfiles) est-il celui du dépôt ? `git status` sur ces zones | `lib-audit-arbre.sh` | FAIL |
+| S2 | un second UID 0, un compte avec shell non déclaré, un mot de passe vide, un membre de plus dans `docker` ou `sudo` ? | `lib-audit-comptes.sh` (listes déclarées en tête) | FAIL |
+| S3 | les points de persistance (cron, systemd, `authorized_keys`, sudoers, passwd/shadow, `ld.so.preload`, profile.d, apt) ont-ils changé depuis la **référence acceptée** ? | `lib-audit-persistance.sh` | FAIL (chauds) · WARN (configuration que les mises à jour retouchent) |
+| S4 | les conteneurs sont-ils sans privilège, sans la prise Docker, sans montage hors compose ? leurs images sont-elles celles de la CI pour HEAD ? la prise Docker en 660 root:docker ? | `lib-audit-conteneurs.sh` | FAIL · WARN (image de secours ou périmée) |
+| S5 | sshd, ufw, fail2ban, apt : la configuration **servie** (`sshd -T`, `ufw show added`, `fail2ban-client`, `apt-config dump`) | `lib-durcissement.sh` (les mêmes lecteurs que `durcir-noeud.sh`) | FAIL |
+| S6 | actif seul : une sonde de scanner (`/.env`, `/.git`, `wp-login`…) a-t-elle été **servie** en 2xx ? plus de 100 connexions refusées ? le journal de sécurité de l'API a-t-il des gestes à relire (jeton rejoué, rôle ajouté, compte supprimé…) ? | `lib-audit-acces.sh` | FAIL (sonde servie) · WARN |
+
+Conduite :
+
+- **S3 « référence absente »** (première nuit, ou nœud réinstallé) : lire le relevé,
+  puis `sudo bash /opt/5hostachy/scripts/exploitation/audit-securite.sh --accepter`.
+  Un écart ensuite : lire **chaque fichier nommé** (`+` ajouté, `-` retiré, `~`
+  modifié). Voulu (une clé posée, un cron modifié par une livraison) → `--accepter`.
+  Pas voulu → c'est une intrusion : **isoler le nœud** (bascule vers l'autre si
+  c'est l'actif, puis couper son réseau), ne rien « nettoyer » avant d'avoir copié
+  les journaux. La référence vit chez root (`/var/lib/hostachy/audit-securite/`),
+  hors de l'arbre déployé : le compte de déploiement ne peut pas la réécrire.
+- **S1** : `git -C /opt/5hostachy status` ; un script modifié là tourne en root la
+  nuit. Un fichier voulu se committe ; sinon `git checkout -- <fichier>` **après**
+  avoir lu la différence.
+- **S4 image « construite-ici »** : le secours de #1758 (alerté par ailleurs) ou
+  un nœud qui n'a pas encore tiré ; « AUTRE » : une image d'un autre commit —
+  `auto-deploy` n'a pas suivi, ou quelqu'un a poussé une image à la main.
+- **S6 sonde servie** : une fuite, pas une hygiène — le chemin est dans le journal
+  de Caddy (la commande est dans le constat) ; vérifier ce que Caddy sert sous ce
+  chemin, et faire tourner le secret concerné.
+- **Tout lire sans rien envoyer** : `sudo bash …/audit-securite.sh --essai`.
+- **Un nœud neuf** : rien à poser — le premier passage de check-reliability après
+  04:00 le lance ; seule la référence S3 se pose à la main.
+
+Chaque décision est pure et auto-testée sur une faute injectée et son cas zéro
+(`--selftest` de chaque module, job `test-scripts`). Hors des nœuds, la **veille
+nocturne des vulnérabilités** (`.github/workflows/veille-securite.yml`) rejoue
+chaque nuit sur `main` l'audit Python et Node de la CI, Trivy sur les quatre images
+publiées et la vérification de leur attestation, et tient UNE issue « Veille
+sécurité nocturne » (`securite`) : ouverte au premier rouge, fermée au retour au vert.
+
 ## Monitoring APScheduler (tourne dans le conteneur API)
 
 🔴 **La liste des jobs se lit dans `api/app/main.py`** (`scheduler.add_job`), pas

@@ -45,6 +45,10 @@ _PERIODICITE_ATTENDUE_H = {
     #  une fois par jour (`lib-notification.sh`, 27/09/2026) : 24 h est donc
     #  leur battement, et son absence dit un contrôleur mort.
     "reliability": 24,
+    #  L'audit de sécurité nocturne (`audit-securite.sh`, S1 à S6) : une fois par
+    #  jour sur CHAQUE nœud, lancé par check-reliability après 04:00 — un rapport
+    #  par passage, nœud par nœud. Son absence dit un nœud qui ne s'audite plus.
+    "audit_securite": 24,
 }
 #
 #  Même principe pour l'agrégation de TÉLÉMÉTRIE : sa propre table
@@ -465,6 +469,10 @@ DEJA_SIGNALE: dict[str, tuple[frozenset, str]] = {
     "reliability": (
         frozenset({"erreur", "noeud"}),
         "check-reliability alerte de ses FAIL, et C15 de l'arrêt du contrôleur voisin",
+    ),
+    "audit_securite": (
+        frozenset({"erreur", "noeud"}),
+        "audit-securite.sh alerte de ses FAIL, et C40 du nœud où il n'a pas eu lieu",
     ),
 }
 

@@ -230,6 +230,30 @@ durcissement_apt_verdict() {
   if [ -n "$ecarts" ]; then echo "ECART:absent ou différent :${ecarts}"; else echo CONFORME; fi
 }
 
+# ── Les lectures de l'état EFFECTIF (effets de bord : lecture seule, root) ───
+#  Vides si impossibles : le verdict dit alors INCONNU. Partagées par
+#  `durcir-noeud.sh` (--etat, --appliquer) et par l'audit de sécurité nocturne
+#  (`audit-securite.sh`, S5) : une seule lecture de chaque configuration servie.
+durcissement_lire_sshd()         { sshd -T 2>/dev/null; }
+durcissement_lire_ufw_etat()     { command -v ufw >/dev/null && ufw status verbose 2>/dev/null; }
+durcissement_lire_ufw_ajoutees() { command -v ufw >/dev/null && ufw show added 2>/dev/null; }
+durcissement_lire_f2b()          { command -v fail2ban-client >/dev/null && fail2ban-client get sshd "$1" 2>/dev/null; }
+#  Le nombre d'adresses BANNIES à l'instant par la prison sshd (vide : muet) —
+#  un chiffre d'activité, pas un verdict : il se lit dans la ligne de S5.
+durcissement_lire_f2b_bannies()  {
+  command -v fail2ban-client >/dev/null && fail2ban-client status sshd 2>/dev/null \
+    | sed -n 's/.*Currently banned:[[:space:]]*\([0-9]*\).*/\1/p'
+}
+
+durcissement_etat_sshd() { durcissement_sshd_verdict "$(durcissement_lire_sshd)"; }
+durcissement_etat_ufw()  { durcissement_ufw_verdict "$(durcissement_lire_ufw_etat)" "$(durcissement_lire_ufw_ajoutees)"; }
+durcissement_etat_f2b()  { durcissement_f2b_verdict "$(durcissement_lire_f2b maxretry)" "$(durcissement_lire_f2b bantime)"; }
+durcissement_etat_apt()  {
+  local dump rc
+  dump=$(apt-config dump 2>/dev/null); rc=$?
+  durcissement_apt_verdict "$rc" "$dump"
+}
+
 # ── Self-test ────────────────────────────────────────────────────────────────
 durcissement_selftest() {
   local st=0
@@ -334,6 +358,9 @@ APT::Install-Recommends "0";'
   #  rpi2, avril → septembre 2026 : `" 1\;` dans 20auto-upgrades.
   v "apt : fichier mal formé" ECART "$(durcissement_apt_verdict 100 "")"
   v "apt : dump muet" INCONNU "$(durcissement_apt_verdict 0 "")"
+
+  #  La lecture du compte des bannies, sur la sortie réelle de fail2ban-client.
+  v "fail2ban : adresses bannies lues" 3 "$(fail2ban-client() { printf 'Status for the jail: sshd\n|- Filter\n|  |- Currently failed:\t1\n`- Actions\n   |- Currently banned:\t3\n   |- Total banned:\t42\n'; }; durcissement_lire_f2b_bannies; unset -f fail2ban-client)"
 
   [ "$st" -eq 0 ] && echo "lib-durcissement : tous les cas passent."
   return "$st"
