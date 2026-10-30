@@ -18,8 +18,6 @@ from sqlalchemy import Interval, String, cast, func, literal, text
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.pool import NullPool
 
-from app.utils import horloge
-
 # ── Les gestes d'exploitation ────────────────────────────────────────────────
 
 
@@ -84,12 +82,24 @@ _FORMAT_HEURE_SCHEMA = "%Y%m%d%H%M%S"
 _NOM_SCHEMA_JETABLE = re.compile(r"^t_(\d{14})_[0-9a-f]{12}$")
 
 
+def _heure_du_serveur(c) -> datetime:
+    """L'heure du SERVEUR (UTC naïf) : l'âge d'un schéma se mesure à elle seule.
+
+    🔴 Jamais `horloge.maintenant()`, que les tests figent : un schéma posé sous
+    une horloge figée au passé naissait « périmé », et la purge d'un autre
+    processus le retirait en plein usage — une sauvegarde se disait alors
+    « échouée » (#2350). Le serveur est la seule horloge que tous partagent.
+    """
+    return c.execute(text("SELECT clock_timestamp() AT TIME ZONE 'UTC'")).scalar_one()
+
+
 def poser_schema(url) -> str:
     """Crée un SCHÉMA neuf sur le serveur de `url` ; rend son nom."""
-    nom = f"t_{horloge.maintenant():{_FORMAT_HEURE_SCHEMA}}_{uuid.uuid4().hex[:12]}"
     admin = _creer_moteur(url, isolation_level="AUTOCOMMIT", poolclass=NullPool)
     try:
         with admin.connect() as c:
+            heure = _heure_du_serveur(c)
+            nom = f"t_{heure:{_FORMAT_HEURE_SCHEMA}}_{uuid.uuid4().hex[:12]}"
             c.execute(text(f'CREATE SCHEMA "{nom}"'))  # noqa: S608 — identifiant généré ici
     finally:
         admin.dispose()
@@ -181,13 +191,14 @@ def retirer_schemas_jetables_perimes(url, *, plus_vieux_que: timedelta) -> int:
     """Retire les schémas jetables créés il y a plus de `plus_vieux_que` ; rend leur nombre.
 
     Le geste qui borne ce qu'un processus interrompu laisse derrière lui. Seul
-    l'âge écrit dans le nom décide : un schéma sans heure lisible reste.
+    l'âge écrit dans le nom décide, mesuré à l'heure du serveur qui l'a écrit :
+    un schéma sans heure lisible reste.
     """
-    limite = horloge.maintenant() - plus_vieux_que
     admin = _creer_moteur(url, isolation_level="AUTOCOMMIT", poolclass=NullPool)
     retires = 0
     try:
         with admin.connect() as c:
+            limite = _heure_du_serveur(c) - plus_vieux_que
             noms = c.execute(text("SELECT nspname FROM pg_namespace")).scalars().all()
             for nom in noms:
                 heure = heure_du_schema_jetable(nom)

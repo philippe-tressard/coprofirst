@@ -10,7 +10,7 @@ voyait pas.
 from __future__ import annotations
 
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.pool import NullPool
@@ -78,3 +78,27 @@ def test_la_purge_retire_le_perime_et_laisse_le_recent_et_l_illisible():
     finally:
         for nom in (perime, illisible, recent):
             dialecte.retirer_schema(url, nom)
+
+
+def test_un_schema_pose_sous_une_horloge_figee_n_est_pas_perime(monkeypatch):
+    """L'âge d'un schéma se lit à l'heure du SERVEUR, que les tests ne figent pas (#2350).
+
+    Une sauvegarde testée sous une horloge figée au 09/10 posait son schéma de
+    vérification « vieux de trois semaines » ; la purge d'un autre worker le retirait
+    en plein import, et la sauvegarde se disait échouée. L'inverse — une purge sous
+    une horloge figée dans le futur — retirait les schémas vivants de tous les autres.
+    """
+    url = url_des_tests()
+    with monkeypatch.context() as figee:
+        figee.setattr(horloge, "maintenant", lambda: datetime(2026, 10, 9, 1, 0, 0))
+        nom = dialecte.poser_schema(url)
+    try:
+        assert abs(horloge.maintenant() - dialecte.heure_du_schema_jetable(nom)) < timedelta(
+            minutes=5
+        )
+        with monkeypatch.context() as figee:
+            figee.setattr(horloge, "maintenant", lambda: datetime(2099, 1, 1))
+            dialecte.retirer_schemas_jetables_perimes(url, plus_vieux_que=timedelta(hours=6))
+        assert nom in _schemas(url)
+    finally:
+        dialecte.retirer_schema(url, nom)
