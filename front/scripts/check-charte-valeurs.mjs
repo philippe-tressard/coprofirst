@@ -67,11 +67,10 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, re
  *  nuances) se rangent sur 31 jetons de `socle.css` (12 neufs) — redéfinis au sombre.
  *  30/10/2026 (#1571) : 69 → 43 tailles — l'échelle gagne ses deux crans
  *  d'intertitres aux valeurs exactes déjà les plus employées (`--fs-xl` 1 rem ×19,
- *  `--fs-2xl` 1,1 rem ×7) : aucun rendu ne change. Les 43 qui restent n'égalent
- *  aucun jeton : les ranger change le rendu, arbitrage sur maquette (#2313).
+ *  `--fs-2xl` 1,1 rem ×7) : aucun rendu ne change. Puis (#2313, sur maquette) ZÉRO
+ *  taille : cran micro, titres, pictogrammes, second cran de chiffres — aucune ne baisse.
  */
-//  Suivi des tailles restantes : #2313.
-const PLAFOND = { couleurs: 0, tailles: 43 };
+const PLAFOND = { couleurs: 0, tailles: 0 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
@@ -125,15 +124,26 @@ export function valeursEnDur(css) {
  *  (`#lib/perimetres/teinte`), d'une colonne de kanban, d'une nature
  *  (`--nature-fort`), l'orange de l'urgence, `.badge-yellow` (#495).
  */
+//  Sous 1 rem, la valeur suffit à dire le cran ; au-dessus, c'est la NATURE de
+//  l'élément (titre, pictogramme, chiffre) qui le choisit — le refus du plafond
+//  à zéro donne alors l'échelle à lire dans `socle.css` (#2313).
 export const TAILLES_HORS_ECHELLE = {
-	0.65: '--fs-2xs',
+	0.6: '--fs-3xs',
+	0.62: '--fs-3xs',
+	0.66: '--fs-2xs',
 	0.68: '--fs-2xs',
 	0.7: '--fs-2xs',
+	0.74: '--fs-xs',
+	0.76: '--fs-sm',
 	0.78: '--fs-sm',
 	0.82: '--fs-md',
+	0.83: '--fs-md',
+	0.84: '--fs-md',
+	0.86: '--fs-base',
 	0.875: '--fs-base',
 	0.88: '--fs-base',
 	0.92: '--fs-lg',
+	0.975: '--fs-xl',
 };
 
 /**
@@ -304,14 +314,20 @@ if (process.argv.includes('--selftest')) {
 	--color-bg: #f2efe9;
 	--color-text-inverse: #f2efe9;
 	--fs-sm: 0.8rem;
+	--fs-titre-page: 1.5rem;
+	--fs-picto: 1.5rem;
 	--radius: 0.5rem;
 }`,
 	);
 	cas(
 		'valeur égale à un jeton : couleur courte ou longue, taille, et les deux noms d’une valeur',
-		egalesAUnJeton('.a{color:#FFF;background:#ffffff;font-size:.80rem}.b{color:#f2efe9}', jetons),
+		egalesAUnJeton(
+			'.a{color:#FFF;background:#ffffff;font-size:.80rem}.b{color:#f2efe9;font-size:1.5rem}',
+			jetons,
+		),
 		[
 			['.80rem', 'var(--fs-sm)'],
+			['1.5rem', 'var(--fs-titre-page) ou var(--fs-picto)'],
 			['#FFF', 'var(--color-surface)'],
 			['#ffffff', 'var(--color-surface)'],
 			['#f2efe9', 'var(--color-bg) ou var(--color-text-inverse)'],

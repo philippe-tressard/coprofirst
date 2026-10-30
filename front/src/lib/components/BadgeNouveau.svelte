@@ -34,7 +34,7 @@
 		border-radius: 0.2rem;
 		background: var(--color-danger-plein);
 		color: var(--color-sur-plein);
-		font-size: 0.6rem;
+		font-size: var(--fs-3xs);
 		font-weight: 700;
 		letter-spacing: 0.06em;
 		line-height: 1.4;

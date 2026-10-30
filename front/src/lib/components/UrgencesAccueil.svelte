@@ -186,7 +186,7 @@
 		gap: 0.6rem;
 	}
 	.urgence-icon {
-		font-size: 1.15rem;
+		font-size: var(--fs-picto-sm);
 		flex-shrink: 0;
 	}
 	.urgence-title-col {

@@ -2791,7 +2791,7 @@ projet** : https://claude.ai/artifact/5EUqnbiH4HSF8wJe4khAgP
 |---|---|---|
 | valeur qui A un jeton | elle s'écrit **par le jeton** (`#fff` → `var(--color-surface)`, `0.8rem` → `var(--fs-sm)`) — sans plafond : 85 étaient revenues entre le 27/09 et le 10/10/2026 (#1571) | `egalesAUnJeton`, qui lit les jetons dans `styles/socle.css` |
 | repli sur un jeton défini | `var(--color-border, #e5e7eb)` : le jeton existe, le repli est **mort** — on écrit `var(--color-border)` (#1571, 21/10/2026). Une variable que RIEN ne définit (`--color-bg-alt`, `--color-bg-subtle`…) n'est pas un jeton : seul son repli s'applique, c'est une valeur en dur déguisée — un fond neutre s'écrit `var(--color-neutre-fond)`. Sans repli, la propriété est perdue sans un mot (la FAQ, la frise des contrats) | `repliMortsDe` (`scripts/lib-charte-jetons.mjs`) · `npm run lint:variables-css` (`scripts/check-variables-css.mjs`) : toute `var(--nom)` est définie quelque part — sans plafond |
-| taille de texte | un jeton `--fs-*` ; une valeur hors échelle se range au cran **supérieur** — aucun texte ne rétrécit. La RACINE, qui les décide tous, s'écrit en pourcentage : `100 %`, `87,5 %` sous 768 px ; un champ au téléphone prend `--fs-saisie-tactile` (16 px, n° 76) | `styles/socle.css` · la table de rangement dans `scripts/check-charte-valeurs.mjs` (`TAILLES_HORS_ECHELLE`) · 🔒 `npm run lint:taille-racine` |
+| taille de texte | un jeton `--fs-*`, choisi par ce que l'élément EST : le TEXTE (`3xs` micro → `2xl`), un TITRE (`titre` pour un intertitre de contenu, `titre-page` pour le h1 d'une page), un PICTOGRAMME posé seul (`picto-sm`, `picto`, `picto-lg`, `picto-xl`), un CHIFFRE en vedette (`chiffre`, `chiffre-grand` pour une rangée de KPI) — n° 78 ; une valeur hors échelle se range au cran **supérieur** — aucun texte ne rétrécit. La RACINE, qui les décide tous, s'écrit en pourcentage : `100 %`, `87,5 %` sous 768 px ; un champ au téléphone prend `--fs-saisie-tactile` (16 px, n° 76) | `styles/socle.css` · la table de rangement dans `scripts/check-charte-valeurs.mjs` (`TAILLES_HORS_ECHELLE`) · 🔒 `npm run lint:taille-racine` |
 | couleur d'état | `--color-danger`, `--color-success`, `--color-warning` ; un fond **se teinte depuis le jeton** (`-fond`), un filet clair aussi (`-bordure`) — jamais le rouge, le vert ou l'ambre de Tailwind | `styles/socle.css` · `COULEURS_ETAT_ETRANGERES` dans le même contrôle |
 | texte d'avertissement | `--color-warning-texte` : `--color-warning` fait 3,62 sur blanc, il sert au cadre, à l'icône, à l'aplat — **jamais au texte** ; un pictogramme (étoile, puce) se déclare | `styles/socle.css` · 🔒 `npm run lint:texte-avertissement` (#2167 : quatre textes l'avaient pris, le jeton échappait au contrôle des valeurs) |
 | texte ou trait clair sur un aplat (bouton, pastille retenue, compteur, initiales d'un avatar, pointillés, quart d'un indicateur) | le texte et le trait : `--color-sur-plein` (`--color-sur-voile` sur un voile noir translucide) ; l'aplat : `--color-<état>-plein` (`primary`, `danger`, `success`, `accent`) — jamais `var(--color-surface)` ni `#fff` en `color`, `border*`, `outline*`, `stroke`, `fill` ou `--avatar-color`, jamais le jeton nu : au mode sombre (#2174) la surface devient sombre, et ce qu'on posait dessus en blanc avec elle (S4b : trois traits passaient sombre sur sombre) | `styles/socle.css` · 🔒 `npm run lint:aplats` |
@@ -2866,9 +2866,9 @@ neuve se range d'abord dans une famille existante (état, `info`, `violet`,
 `sarcelle`, `orange`, `jaune` — un fond, un filet, un texte), et seulement à
 défaut prend un jeton neuf nommé par l'usage, que le mode sombre redéfinira
 (#2174 : 47 nuances écrites en dur, rangées sur 31 jetons dont 12 neufs). Les tailles
-en dur restent sous leur plafond décroissant, qui compte les composants **et** les feuilles de
-`src/styles/` hors `socle.css` (#1460) : remonter une valeur dans une feuille est
-un déménagement, pas une dette soldée — le plafond ne bouge pas.
+sont à **zéro** elles aussi depuis #2313 (30/10/2026, arbitrage n° 78) : un `font-size`
+en `rem` ne s'écrit plus nulle part hors de `socle.css`, composants **et** feuilles de
+`src/styles/` (#1460). Une taille neuve prend le cran de ce que l'élément EST.
 
 ## Checklist UX (à vérifier avant commit)
 

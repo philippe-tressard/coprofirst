@@ -121,7 +121,7 @@
 		background: none;
 		border: none;
 		cursor: pointer;
-		font-size: 2rem;
+		font-size: var(--fs-picto-lg);
 		line-height: 1;
 		min-width: 44px;
 		min-height: 44px;

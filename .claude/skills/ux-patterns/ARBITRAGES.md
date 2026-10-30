@@ -582,3 +582,10 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : « la fusion est parfois refusée car une section diffère, notamment le périmètre » — le conseil n'avait que « renoncer ». L'invariant de #1704 (personne ne lit sans l'avoir lu) devient une décision nominative, jamais un contournement silencieux. Les chiffres sont MESURÉS par `ticket_visible` sur la principale modifiée à blanc, jamais calculés à part.
 - **Écarté** : élargir en bloc sans noms ; ouvrir une affaire confidentielle ; inverser à la clôture (l'affaire qu'on clôt porte le bilan, #1704).
 - **Tenu par** : `api/tests/test_fusion_conciliation.py`, `e2e/fusion-conciliation.spec.ts`, `test_journal_securite.py` (geste sensible `fusion_conciliation`).
+
+### n° 78 · en vigueur — L'échelle des titres, des pictogrammes et des chiffres
+30/10/2026 · #2313 · l'utilisateur, sur maquette · §18
+- **Décidé** : sept jetons s'ajoutent à `socle.css` — `--fs-3xs` (0,65, cran micro), `--fs-titre` (1,15) et `--fs-titre-page` (1,5), `--fs-picto-sm/-/-lg/-xl` (1,25 · 1,5 · 2 · 2,5), `--fs-chiffre-grand` (2) ; les 43 tailles restantes s'y rangent, aucune ne baisse, aucune exception. Le plafond des tailles passe à zéro.
+- **Pourquoi** : au-dessus de 1,1 rem l'échelle n'avait pas de cran, et cinq h1 avaient quatre tailles ; chaque valeur rendue avant/après, en clair et en sombre, sur maquette.
+- **Écarté** : le cran supérieur strict sous 1 rem (0,6 → 0,72, +20 %) ; tout ramener à `--fs-chiffre` (les KPI à 2 rem perdaient 20 %) ; déclarer les icônes hors du contrôle.
+- **Tenu par** : `npm run lint:charte-valeurs` (`PLAFOND.tailles = 0`).

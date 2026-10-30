@@ -113,7 +113,7 @@
 	}
 
 	.placeholder {
-		font-size: 2rem;
+		font-size: var(--fs-picto-lg);
 		opacity: 0.4;
 	}
 
@@ -143,7 +143,7 @@
 	}
 
 	.overlay-label {
-		font-size: 1.5rem;
+		font-size: var(--fs-picto);
 	}
 
 	/* Base commune dans `app.css` : forme, rotation et durée viennent de là. Ne

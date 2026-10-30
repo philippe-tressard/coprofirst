@@ -424,7 +424,7 @@
 		font-size: var(--fs-base);
 	}
 	.inv-vide {
-		font-size: 0.83rem;
+		font-size: var(--fs-md);
 		color: var(--color-text-muted);
 	}
 	.inv-actions {
