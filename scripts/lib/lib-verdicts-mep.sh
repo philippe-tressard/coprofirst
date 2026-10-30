@@ -438,9 +438,9 @@ rang_attendu() {           # $1 = les sujets ET corps des commits du lot
   #  apportent une capacité. Un contrôle qui ne reconnaît jamais rien ne dit rien.
   local sujets="${1:-}"
   [ -z "$sujets" ] && { echo inconnu; return; }
-  if printf '%s' "$sujets" | grep -qE '^[a-z]+(\([^)]*\))?! *:|^BREAKING CHANGE'; then
+  if grep -qE '^[a-z]+(\([^)]*\))?! *:|^BREAKING CHANGE' <<<"$sujets"; then
     echo major
-  elif printf '%s' "$sujets" | grep -qE '^feat(\([^)]*\))? *:'; then
+  elif grep -qE '^feat(\([^)]*\))? *:' <<<"$sujets"; then
     echo minor
   else
     echo patch

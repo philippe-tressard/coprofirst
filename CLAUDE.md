@@ -879,6 +879,16 @@ deux RPi — pattern inauguré par `boot-role-guard.sh --selftest` (15/07/2026),
 étendu à `health-watch.sh` et `check-reliability.sh` (30/07/2026).
 Lancer en local : `bash <script>.sh --selftest`.
 
+🔒 **Une décision ne se prend jamais sur `producteur | grep -q motif`** (#2298) : sous
+`pipefail`, grep qui sort au premier appariement donne 141 (SIGPIPE) au producteur et le
+test dit « non » à tort, au hasard de la charge — un self-test rouge sur une PR, vert sur
+la suivante, même arbre. On lit le producteur (`_s=$(…)`), puis `grep -q motif <<<"$_s"`.
+`python scripts/ci/pipe_grep_quiet.py` refuse le tube (exceptions déclarées, vides
+aujourd'hui) ; son `--selftest` en prouve le mécanisme avec un producteur sans fin. Il refuse
+aussi la conversion mal faite : sous `set -e`, `x=$(producteur)` nu puis `grep -q … <<<"$x"`
+tue le script quand le producteur sort non nul (`dpkg-query` d'un paquet absent a rendu la
+PR #2322 rouge) — `x=$(producteur || true)`.
+
 ### Navigateur — job CI `e2e-frontend` (depuis le 08/09/2026)
 `front/e2e/` porte les tests Playwright — squelette, lien d'évitement, absence de
 défilement horizontal, cibles tactiles — sur les profils **bureau ET mobile**.
@@ -1278,10 +1288,9 @@ Instanciation 5Hostachy :
   décision de l'auteur, qui choisit la version. Le geste refuse une version de
   moins de 7 jours (`RODAGE_JOURS`, `scripts/ci/promotion.sh`), sauf `-f
   urgence=true`, et toute promotion tant qu'une issue `bloque-promotion` est
-  ouverte, sauf urgence. Seule une **X.0.0** part seule, la nuit, à J+7 ; la nuit
-  rappelle aussi, par une issue assignée, un retard de 10, 20, 30… versions
-  **mineures** — les correctifs ne comptent pas, comme pour l'alerte du registre
-  (`rappel-replica.sh`). Règles et ce qui a été écarté : spec §4.10, règle 5 (#1934).
+  ouverte, sauf urgence. Seule une **X.0.0** part seule, la nuit, à J+7 ; plus aucun
+  rappel de retard n'est émis (#2319 : l'installation suit son canal, le registre
+  alerte). Règles et ce qui a été écarté : spec §4.10, règle 5 (#1934).
 - **Une réplique s'installe par `deploiement/standard/`** (#1755) : la surcouche
   `compose.images.yml` (`build: !reset`, image publiée à `COPROFIRST_VERSION`)
   se pose sur le `docker-compose.yml` de la racine, qui reste la **seule**

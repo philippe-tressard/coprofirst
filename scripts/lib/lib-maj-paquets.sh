@@ -81,8 +81,8 @@ simulation_retraits() {
 #  l'allègement interdit.
 verdict_simulation() {
     local s=${1:-} p pr='' rv
-    printf '%s\n' "$s" | grep -q '^E:' && { echo INCONNU; return; }
-    printf '%s\n' "$s" | grep -qE '^[0-9]+ upgraded, [0-9]+ newly installed' || { echo INCONNU; return; }
+    grep -q '^E:' <<<"$s" && { echo INCONNU; return; }
+    grep -qE '^[0-9]+ upgraded, [0-9]+ newly installed' <<<"$s" || { echo INCONNU; return; }
     for p in $(simulation_nouveaux "$s"); do
         est_proscrit "$p" && pr="$pr${pr:+,}$p"
     done

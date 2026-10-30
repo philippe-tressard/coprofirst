@@ -372,7 +372,7 @@ feat(b) : deux"
       #  inverse + n). Une réécriture qui les résoudrait à l'écriture du fichier
       #  casserait le cas CRLF en silence : le test resterait vert en ne testant
       #  plus rien. C'est arrivé le 29/08/2026, en écrivant ce banc.
-      _porte_cr() { if od -c "$1" 2>/dev/null | grep -q '\\r'; then echo oui; else echo non; fi; }
+      _porte_cr() { if [ -n "$(tr -cd '\r' < "$1" 2>/dev/null)" ]; then echo oui; else echo non; fi; }
       _lire() { lire_declaration_reecriture "$1" | tr '\n' '/'; }
       printf 'commit: 601477b\n137cab0\n' > "$_banc/d1"
       t "parsing : déclaration simple"            "601477b/137cab0/" _lire "$_banc/d1"
