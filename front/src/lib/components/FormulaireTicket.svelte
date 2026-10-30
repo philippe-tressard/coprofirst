@@ -45,7 +45,7 @@
 	} from '#lib/api/index.ts';
 	import type SectionDiffusion from '#lib/components/SectionDiffusion.svelte';
 	import { toast } from '#lib/components/Toast.svelte';
-	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
+	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
 	import SectionTitre from '#lib/components/SectionTitre.svelte';
 	import SectionsSpecifiquesTicket from '#lib/components/SectionsSpecifiquesTicket.svelte';
 	import ChampsCommuns from '#lib/components/ChampsCommuns.svelte';
@@ -95,7 +95,7 @@
 	export let ticket: Ticket | null = null;
 
 	/**  Ce qui RAMÈNE le formulaire à l'écran quand il est rendu loin du geste
-	 *   qui l'ouvre — relayé jusqu'à `FormulaireCreation` (`check-geste-edition`,
+	 *   qui l'ouvre — relayé par `CadreFormulaire` jusqu'à `FormulaireCreation` (`check-geste-edition`,
 	 *   règle F, 13/09/2026). */
 	export let cle: unknown = undefined;
 	/** La catégorie d'un dépôt ouvert par un lien (`lienNouvelleAffaire`, #2075). */
@@ -361,7 +361,7 @@
 	<div class="alert alert-error largeur-saisie">{error}</div>
 {/if}
 
-<FormulaireCreation titre={titreBoite} encadre={!modeEdition} {cle}>
+<CadreFormulaire edition={modeEdition} titre={titreBoite} encadre={!modeEdition} {cle}>
 	<form on:submit|preventDefault={soumettre}>
 		<!--  Le pré-remplissage depuis une affiche vient AVANT le titre : c'est un
 		      raccourci qui REMPLIT le formulaire, pas une section de l'entité. Il
@@ -497,4 +497,4 @@
 
 		<PiedFormulaire enCours={loading} on:annule />
 	</form>
-</FormulaireCreation>
+</CadreFormulaire>
