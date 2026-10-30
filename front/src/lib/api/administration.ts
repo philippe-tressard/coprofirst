@@ -285,14 +285,16 @@ export const admin = {
 	},
 
 	/**
-	 *  Les derniers comptes rendus de `check-reliability.sh` (C1 à C30), tous
-	 *  nœuds confondus — lus par `ControlesFiabilite`. Même route que
-	 *  `historiqueTache`, mais TYPÉE : l'écran lit `details.constats`, et un
-	 *  `any` retypé dans l'écran est ce que `lint:types-locaux` refuse.
+	 *  Les derniers comptes rendus d'un passage de contrôles, tous nœuds
+	 *  confondus — `check-reliability.sh` (C1 à C40, `reliability`) ou l'audit de
+	 *  sécurité nocturne (`audit-securite.sh`, S1 à S6, `audit_securite`) —, lus
+	 *  par `ControlesFiabilite`. Même route que `historiqueTache`, mais TYPÉE :
+	 *  l'écran lit `details.constats`, et un `any` retypé dans l'écran est ce que
+	 *  `lint:types-locaux` refuse. Les deux rendent la même forme (`lib-notification.sh`).
 	 */
-	controlesFiabilite: () =>
+	controlesFiabilite: (tache: 'reliability' | 'audit_securite' = 'reliability') =>
 		api.get<RapportFiabilite[]>(
-			`/admin/maintenance/historique${buildQuery({ tache: 'reliability', limite: '20' })}`,
+			`/admin/maintenance/historique${buildQuery({ tache, limite: '20' })}`,
 		),
 
 	/**

@@ -45,6 +45,18 @@ if ! declare -f log >/dev/null 2>&1; then
     log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 fi
 
+# ── QUI rend compte (30/10/2026) ─────────────────────────────────────────────
+#  Deux passages de contrôles empruntent ce canal : `check-reliability.sh` (C1 à
+#  C40, le quart d'heure) et `audit-securite.sh` (S1 à S6, la nuit). Le second
+#  ne recopie pas ces deux cents lignes : il pose les valeurs ci-dessous AVANT
+#  de sourcer ce module. Leurs défauts sont ceux de check-reliability, mot pour
+#  mot — les fichiers de cooldown et d'état gardent leur nom d'avant.
+NOTIFICATION_TACHE="${NOTIFICATION_TACHE:-reliability}"        # la tâche rapportée à l'écran
+NOTIFICATION_SCRIPT="${NOTIFICATION_SCRIPT:-check-reliability.sh}"
+NOTIFICATION_OBJET="${NOTIFICATION_OBJET:-contrôle(s) de fiabilité}"   # ce que compte le sujet du courriel
+NOTIFICATION_JOURNAL="${NOTIFICATION_JOURNAL:-/var/log/hostachy-reliability.log}"
+NOTIFICATION_COOLDOWN="${NOTIFICATION_COOLDOWN:-/tmp/${NOTIFICATION_SCRIPT%.sh}}"
+
 notifier_verdicts() { # repo self fail_lines warn_lines
     local repo="${1:-}" self="${2:-}"
     local decision sujet corps fails warns fail_lines warn_lines
@@ -68,18 +80,18 @@ notifier_verdicts() { # repo self fail_lines warn_lines
 
     if [ "$decision" = "critique" ]; then
         # 1 h : à */15, un FAIL persistant ferait 96 e-mails par jour.
-        ALERT_COOLDOWN_FILE=/tmp/check-reliability-cooldown
+        ALERT_COOLDOWN_FILE="$NOTIFICATION_COOLDOWN-cooldown"
         ALERT_COOLDOWN_SECONDS=3600
-        sujet="[5Hostachy] ❌ $fails contrôle(s) de fiabilité en échec sur $self"
-        corps=$(printf 'check-reliability.sh sur %s a relevé %s FAIL et %s WARN à %s.\n\nDétail (cette exécution) :\n%s\nLog complet : /var/log/hostachy-reliability.log\n' \
-            "$self" "$fails" "$warns" "$(date '+%d/%m/%Y %H:%M')" "$fail_lines")
+        sujet="[5Hostachy] ❌ $fails $NOTIFICATION_OBJET en échec sur $self"
+        corps=$(printf '%s sur %s a relevé %s FAIL et %s WARN à %s.\n\nDétail (cette exécution) :\n%s\nLog complet : %s\n' \
+            "$NOTIFICATION_SCRIPT" "$self" "$fails" "$warns" "$(date '+%d/%m/%Y %H:%M')" "$fail_lines" "$NOTIFICATION_JOURNAL")
     else
         # 24 h : un point de vigilance qui dure est une dette, pas une urgence.
-        ALERT_COOLDOWN_FILE=/tmp/check-reliability-digest-cooldown
+        ALERT_COOLDOWN_FILE="$NOTIFICATION_COOLDOWN-digest-cooldown"
         ALERT_COOLDOWN_SECONDS=86400
         sujet="[5Hostachy] ⚠️ $warns point(s) de vigilance sur $self"
-        corps=$(printf 'check-reliability.sh sur %s a relevé %s WARN et aucun FAIL à %s.\n\nAucun ne coupe la production ; laissés sans suite, ils rendent la surveillance aveugle — un rapport de maintenance perdu le 16/08/2026 y a passé deux jours.\n\nDétail (cette exécution) :\n%s\nCe résumé part au plus une fois par 24 h.\nLog complet : /var/log/hostachy-reliability.log\n' \
-            "$self" "$warns" "$(date '+%d/%m/%Y %H:%M')" "$warn_lines")
+        corps=$(printf '%s sur %s a relevé %s WARN et aucun FAIL à %s.\n\nAucun ne coupe la production ; laissés sans suite, ils rendent la surveillance aveugle — un rapport de maintenance perdu le 16/08/2026 y a passé deux jours.\n\nDétail (cette exécution) :\n%s\nCe résumé part au plus une fois par 24 h.\nLog complet : %s\n' \
+            "$NOTIFICATION_SCRIPT" "$self" "$warns" "$(date '+%d/%m/%Y %H:%M')" "$warn_lines" "$NOTIFICATION_JOURNAL")
     fi
 
     ALERT_REPO="$repo"
@@ -197,7 +209,7 @@ repartir_constats() {
 
 rapporter_verdicts() { # repo self — après repartir_constats
     local repo="${1:-}" self="${2:-}"
-    local etat=${RAPPORT_ECRAN_ETAT:-/var/tmp/hostachy-reliability-rapport} sig prec="" prec_t=0
+    local etat=${RAPPORT_ECRAN_ETAT:-/var/tmp/hostachy-$NOTIFICATION_TACHE-rapport} sig prec="" prec_t=0
     local statut=succes actif=$REP_ACTIF cible="http://localhost" ip cle details erreur maintenant
     local porte=$REP_PORTE retenus=$REP_RETENUS propres=$REP_PROPRES communs=$REP_COMMUNS
     local nf=$REP_NF nw=$REP_NW
@@ -237,7 +249,7 @@ rapporter_verdicts() { # repo self — après repartir_constats
         #  (#1805) : la signature ignore les chiffres, et l'écran gardait ceux du
         #  premier relevé jusqu'à 23 h. Un 404 = plus de ligne à prolonger : on
         #  oublie, et le passage suivant renvoie un rapport complet.
-        rapport_battement "$cible" "$cle" reliability "$self" "$details" "$erreur" "$duree"
+        rapport_battement "$cible" "$cle" "$NOTIFICATION_TACHE" "$self" "$details" "$erreur" "$duree"
         [ "$RAPPORT_HTTP" = 404 ] && rm -f "$etat"
         return 0
     fi
@@ -247,7 +259,7 @@ rapporter_verdicts() { # repo self — après repartir_constats
     maintenant=$(date -u +%Y-%m-%dT%H:%M:%S)
     RAPPORT_HTTP=""
     rapport_envoyer "$cible" "$cle" \
-        "$(rapport_payload reliability "$self" applicative "$statut" "$duree" "$details" "$erreur" \
+        "$(rapport_payload "$NOTIFICATION_TACHE" "$self" applicative "$statut" "$duree" "$details" "$erreur" \
             "$maintenant" "$maintenant")" \
         "Rapport des contrôles"
     #  Mémorisé seulement s'il a ABOUTI : un envoi perdu se retente au passage
@@ -261,6 +273,11 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     . "$(dirname "$0")/lib-rapport.sh"
     st=0
     t() { [ "$2" = "$3" ] && echo "PASS  $1 → $3" || { echo "FAIL  $1  attendu=$2 obtenu=$3"; st=1; }; }
+    t "défauts : la tâche, le script, le journal et le cooldown de check-reliability" \
+      "reliability|check-reliability.sh|/var/log/hostachy-reliability.log|/tmp/check-reliability" \
+      "$NOTIFICATION_TACHE|$NOTIFICATION_SCRIPT|$NOTIFICATION_JOURNAL|$NOTIFICATION_COOLDOWN"
+    t "un autre appelant pose les siens avant le source" "audit_securite|/tmp/audit-securite" \
+      "$(NOTIFICATION_TACHE=audit_securite NOTIFICATION_SCRIPT=audit-securite.sh bash -c '. "$0"; echo "$NOTIFICATION_TACHE|$NOTIFICATION_COOLDOWN"' "$0")"
     t "premier passage"                   envoyer "$(decision_rapport_ecran a "" 0)"
     t "mêmes constats, 15 min après"      taire   "$(decision_rapport_ecran a a 900)"
     t "constats changés"                  envoyer "$(decision_rapport_ecran b a 900)"

@@ -50,11 +50,12 @@ APT_HERITE=/etc/apt/apt.conf.d/50unattended-upgrades-hostachy
 
 log() { printf '%s\n' "$*"; }
 
-# ── Lectures de l'état effectif (vides si impossibles : le verdict dit INCONNU) ─
-lire_sshd()         { sshd -T 2>/dev/null; }
-lire_ufw_etat()     { command -v ufw >/dev/null && ufw status verbose 2>/dev/null; }
-lire_ufw_ajoutees() { command -v ufw >/dev/null && ufw show added 2>/dev/null; }
-lire_f2b()          { command -v fail2ban-client >/dev/null && fail2ban-client get sshd "$1" 2>/dev/null; }
+# ── Lectures de l'état effectif ──────────────────────────────────────────────
+#  Les lecteurs (`durcissement_lire_*`) et les quatre verdicts sur l'état SERVI
+#  (`durcissement_etat_*`) vivent dans `lib-durcissement.sh` depuis le
+#  30/10/2026 : l'audit de sécurité nocturne (`audit-securite.sh`, S5) les
+#  rejoue chaque nuit en root, et les recopier aurait fait deux lectures de la
+#  même configuration destinées à diverger.
 compter_cles() {
   #  Absent → 0 (un nœud neuf sans clé) ; illisible → rien (on ne sait pas).
   [ -e "$CLES_AUTORISEES" ] || { echo 0; return; }
@@ -62,14 +63,12 @@ compter_cles() {
   grep -cE '^(ssh-|ecdsa-|sk-)' "$CLES_AUTORISEES"
 }
 
-verdict_sshd() { durcissement_sshd_verdict "$(lire_sshd)"; }
-verdict_ufw()  { durcissement_ufw_verdict "$(lire_ufw_etat)" "$(lire_ufw_ajoutees)"; }
-verdict_f2b()  { durcissement_f2b_verdict "$(lire_f2b maxretry)" "$(lire_f2b bantime)"; }
-verdict_apt()  {
-  local dump rc
-  dump=$(apt-config dump 2>/dev/null); rc=$?
-  durcissement_apt_verdict "$rc" "$dump"
-}
+verdict_sshd() { durcissement_etat_sshd; }
+verdict_ufw()  { durcissement_etat_ufw; }
+verdict_f2b()  { durcissement_etat_f2b; }
+verdict_apt()  { durcissement_etat_apt; }
+lire_ufw_etat()     { durcissement_lire_ufw_etat; }
+lire_ufw_ajoutees() { durcissement_lire_ufw_ajoutees; }
 
 # ── --etat ───────────────────────────────────────────────────────────────────
 #  Code de retour : 0 tout conforme · 1 un écart · 3 rien d'écarté mais un INCONNU.

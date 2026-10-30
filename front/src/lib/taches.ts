@@ -32,6 +32,7 @@ export const LIBELLE_TACHE: Record<string, string> = {
 	remise_a_zero_demo: 'Remise à zéro de la démo',
 	conservation_affaires: 'Conservation des affaires',
 	correctifs_systeme: 'Correctifs du système',
+	audit_securite: 'Audit de sécurité nocturne',
 };
 
 //  Libellé du BOUTON qui lance une tâche à la main — quand il diffère du nom de

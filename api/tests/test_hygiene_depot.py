@@ -197,7 +197,10 @@ FICHIERS_RACINE_EXPLOITATION = ("CLAUDE.md", "boot-role-guard.sh")
 #: 43 avec #1917 : `scripts/installation/durcir-noeud.sh` nomme le compte dont il
 #: compte les clés autorisées avant de couper le mot de passe SSH.
 #: 42 avec #2004 : les scripts de la bascule des données, devenus sans objet, sont retirés.
-FICHIERS_EXPLOITATION_ATTENDUS = 42
+#: 45 avec l'audit de sécurité nocturne (30/10/2026) : `lib-audit-comptes.sh` déclare
+#: le compte d'exploitation admis avec un shell et dans les groupes docker/sudo ;
+#: les autotests de `lib-audit-persistance.sh` et `lib-audit-conteneurs.sh` le citent.
+FICHIERS_EXPLOITATION_ATTENDUS = 45
 
 
 def _fichiers_avec_identifiants_exploitation() -> list[str]:

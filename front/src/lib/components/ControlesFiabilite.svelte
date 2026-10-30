@@ -1,6 +1,10 @@
 <!--
-  Les **contrôles de fiabilité** (`check-reliability.sh`, C1 à C30), nœud par
-  nœud, avec leurs constats en cours.
+  Les **contrôles de fiabilité** (`check-reliability.sh`, C1 à C40), nœud par
+  nœud, avec leurs constats en cours — et, par `tache="audit_securite"`, la même
+  carte pour l'**audit de sécurité nocturne** (`audit-securite.sh`, S1 à S6,
+  30/10/2026) : même canal (`lib-notification.sh`), même forme de constats, une
+  seule carte à tenir. Ce qui diffère — titre, phrase d'introduction, cadence —
+  se lit dans `TEXTES` ci-dessous.
 
   🔴 Pourquoi cette carte (27/09/2026). Ces contrôles tournent toutes les quinze
   minutes sur les deux Raspberry Pi — split-brain, tunnel, parité de code, disque,
@@ -35,6 +39,28 @@
 	//  sinon la ligne de la synthèse cesse de renvoyer à cette carte.
 	import { LIBELLE_TACHE } from '#lib/taches.ts';
 
+	/** La tâche rendue : les contrôles du quart d'heure, ou l'audit de la nuit. */
+	export let tache: 'reliability' | 'audit_securite' = 'reliability';
+
+	//  Ce qui change d'une tâche à l'autre, et rien d'autre.
+	const TEXTES = {
+		reliability: {
+			script: 'check-reliability',
+			intro:
+				'toutes les 15 minutes sur chaque Raspberry Pi : site public, split-brain, tunnel, parité du code, disque, rotation des journaux, droits sudo, en-têtes de sécurité, mises à jour système…',
+			vide: 'Les nœuds rendent compte au premier passage de check-reliability (15 min au plus) après leur mise à jour.',
+			passage: 'dernier contrôle',
+		},
+		audit_securite: {
+			script: 'audit-securite',
+			intro:
+				'chaque nuit sur chaque Raspberry Pi, en root : arbre déployé identique au dépôt, comptes et groupes qui valent root, points de persistance (cron, systemd, clés SSH, sudo, apt) comparés à une référence acceptée, conteneurs sans privilège et images de la CI, durcissement réellement servi (sshd, ufw, fail2ban), sondes de scanners et forçage de comptes dans les journaux de la nuit.',
+			vide: 'Chaque nœud rend compte à son premier audit, lancé par check-reliability après 4 h.',
+			passage: 'dernier audit',
+		},
+	} as const;
+	$: textes = TEXTES[tache];
+
 	let rapports: RapportFiabilite[] = [];
 	let chargement = true;
 	let erreur = '';
@@ -65,7 +91,7 @@
 
 	onMount(async () => {
 		try {
-			rapports = await adminApi.controlesFiabilite();
+			rapports = await adminApi.controlesFiabilite(tache);
 		} catch (e) {
 			erreur = messageErreur(e);
 		} finally {
@@ -75,13 +101,11 @@
 </script>
 
 <section class="card config-section">
-	<SectionFormulaire titre={LIBELLE_TACHE.reliability} icone="shield-check" />
+	<SectionFormulaire titre={LIBELLE_TACHE[tache]} icone="shield-check" />
 	<p class="muted config-section-intro">
-		Les vérifications de <strong>check-reliability</strong>, toutes les 15&nbsp;minutes sur chaque
-		Raspberry&nbsp;Pi&nbsp;: site public, split-brain, tunnel, parité du code, disque, rotation des
-		journaux, droits sudo, en-têtes de sécurité, <strong>mises à jour système</strong>… Un échec est
-		envoyé par courriel dans l’heure, les points de vigilance en un résumé quotidien. Ci-dessous,
-		les constats <strong>en cours</strong> de chaque nœud, puis ceux qui portent sur les deux.
+		Les vérifications de <strong>{textes.script}</strong>, {textes.intro} Un échec est envoyé par courriel
+		dans l’heure, les points de vigilance en un résumé quotidien. Ci-dessous, les constats
+		<strong>en cours</strong> de chaque nœud, puis ceux qui portent sur les deux.
 	</p>
 
 	<EtatListe
@@ -90,7 +114,7 @@
 		vide={parNoeud.length === 0}
 		titreErreur="Impossible d’afficher les contrôles"
 		titreVide="Aucun rapport reçu"
-		messageVide="Les nœuds rendent compte au premier passage de check-reliability (15 min au plus) après leur mise à jour."
+		messageVide={textes.vide}
 	>
 		{#each parNoeud as r (r.noeud)}
 			{@const constats = r.details?.constats ?? []}
@@ -109,7 +133,7 @@
 						<span class="badge badge-green">Tout est vert</span>
 					{/if}
 					<span class="muted date"
-						>dernier contrôle {heure(vuLe(r))} · constats depuis {fmtDatetime(r.cree_le)}</span
+						>{textes.passage} {heure(vuLe(r))} · constats depuis {fmtDatetime(r.cree_le)}</span
 					>
 				</div>
 				<ListeConstats {constats} />
@@ -121,7 +145,7 @@
 				<div class="noeud-entete">
 					<strong>Les deux nœuds</strong>
 					<span class="muted date"
-						>vu par {porteur.noeud?.toUpperCase()} · dernier contrôle {heure(vuLe(porteur))}</span
+						>vu par {porteur.noeud?.toUpperCase()} · {textes.passage} {heure(vuLe(porteur))}</span
 					>
 				</div>
 				<ListeConstats constats={porteur.details.communs} />

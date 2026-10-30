@@ -1,0 +1,166 @@
+name: Veille sécurité
+
+#  La veille NOCTURNE des vulnérabilités (30/10/2026). La CI audite les
+#  dépendances à chaque PR ; un avis publié entre deux PR n'était vu par
+#  personne. Chaque nuit, sur `main` tel qu'il tourne : l'audit Python et Node
+#  (les MÊMES scripts et exceptions que la CI), l'analyse Trivy des quatre
+#  images publiées pour ce commit (ce que pip et npm ne voient pas : Debian,
+#  OpenSSL, Caddy, Node), et la vérification de leur attestation de provenance.
+#  Le résultat va dans UNE issue « Veille sécurité nocturne » (`securite`) :
+#  ouverte au premier rouge, commentée tant qu'il dure, fermée au retour au
+#  vert — jamais un rouge silencieux. Règles et autotest :
+#  `scripts/ci/veille-securite.sh`.
+#      gh workflow run veille-securite.yml        # à la main, même rapport
+on:
+  workflow_dispatch:
+  schedule:
+    #  04:41 UTC : après la publication des images du dernier commit de `main`
+    #  et avant le contrôle de santé de 06:00 (Paris) ; minute décalée exprès.
+    - cron: "41 4 * * *"
+
+concurrency:
+  group: veille-securite
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  REGISTRE: ghcr.io/philippe-tressard
+  RESULTATS: ${{ github.workspace }}/.veille
+
+permissions: {}
+
+jobs:
+  veiller:
+    name: Auditer main tel qu'il tourne
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      issues: write      # l'issue de veille, son étiquette, ses commentaires
+      packages: read     # lire les images publiées
+      id-token: write    # gh attestation verify
+      attestations: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+
+      - name: Le script de veille se juge lui-même
+        run: bash scripts/ci/veille-securite.sh --selftest
+
+      # ── 1. Python : le même audit que la CI (#537), mêmes exceptions ───────
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.11"
+      - name: Audit des dépendances Python
+        #  ÉPINGLÉ comme dans ci.yml (#1584) : même version, même verdict.
+        run: |
+          pip install pip-audit==2.10.1 >/dev/null
+          s=$(cd api && python scripts/check_audit_python.py 2>&1); rc=$?
+          printf '%s\n' "$s"
+          bash scripts/ci/veille-securite.sh etape "$RESULTATS" python "$rc" "$s"
+
+      # ── 2. Node : `lint:audit` du front (#411), mêmes exceptions ───────────
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+      - name: Audit des dépendances Node
+        working-directory: front
+        run: |
+          npm ci --ignore-scripts >/dev/null 2>&1
+          s=$(npm run --silent lint:audit 2>&1); rc=$?
+          printf '%s\n' "$s"
+          bash ../scripts/ci/veille-securite.sh etape "$RESULTATS" node "$rc" "$s"
+
+      # ── 3. Les images PUBLIÉES pour ce commit (images.yml, #1753) ──────────
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      #  Une étape par image : Trivy n'en analyse qu'une par appel. `continue-on-error`
+      #  pour que les quatre soient lues et que le rapport les nomme toutes ;
+      #  le verdict est repris de `outcome` juste après.
+      - name: Trivy — api
+        id: trivy_api
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: ${{ env.REGISTRE }}/coprofirst-api:sha-${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          output: .veille/trivy-api.txt
+      - name: Trivy — front
+        id: trivy_front
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: ${{ env.REGISTRE }}/coprofirst-front:sha-${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          output: .veille/trivy-front.txt
+          skip-setup-trivy: true
+      - name: Trivy — caddy
+        id: trivy_caddy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: ${{ env.REGISTRE }}/coprofirst-caddy:sha-${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          output: .veille/trivy-caddy.txt
+          skip-setup-trivy: true
+      - name: Trivy — whatsapp-bridge
+        id: trivy_whatsapp
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: ${{ env.REGISTRE }}/coprofirst-whatsapp-bridge:sha-${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          output: .veille/trivy-whatsapp-bridge.txt
+          skip-setup-trivy: true
+      - name: Reprendre les verdicts de Trivy
+        #  `outcome` est « success » ou « failure » ; une image absente du registre
+        #  (commit pas encore publié) est une failure, et le rapport le dit.
+        env:
+          O_API: ${{ steps.trivy_api.outcome }}
+          O_FRONT: ${{ steps.trivy_front.outcome }}
+          O_CADDY: ${{ steps.trivy_caddy.outcome }}
+          O_WA: ${{ steps.trivy_whatsapp.outcome }}
+        run: |
+          for p in "api:$O_API" "front:$O_FRONT" "caddy:$O_CADDY" "whatsapp-bridge:$O_WA"; do
+            svc=${p%%:*}; o=${p#*:}
+            [ "$o" = success ] && rc=0 || rc=1
+            bash scripts/ci/veille-securite.sh etape "$RESULTATS" "trivy-$svc" "$rc" "$(cat ".veille/trivy-$svc.txt" 2>/dev/null || echo "sortie absente (image non publiée ?)")"
+          done
+
+      # ── 4. La provenance : chaque image est bien celle que la CI a attestée ─
+      - name: Vérifier les attestations de provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          s=""; rc=0
+          for svc in api front caddy whatsapp-bridge; do
+            if r=$(gh attestation verify "oci://$REGISTRE/coprofirst-$svc:sha-$GITHUB_SHA" --owner philippe-tressard 2>&1); then
+              s="$s$svc : attestée"$'\n'
+            else
+              s="$s$svc : NON VÉRIFIÉE — $r"$'\n'; rc=1
+            fi
+          done
+          printf '%s' "$s"
+          bash scripts/ci/veille-securite.sh etape "$RESULTATS" attestation "$rc" "$s"
+
+      # ── Le destinataire : l'issue de veille ──────────────────────────────────
+      - name: Rapporter dans l'issue de veille
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/ci/veille-securite.sh rapport "$RESULTATS"
