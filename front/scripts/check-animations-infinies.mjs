@@ -17,7 +17,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, sep } from 'node:path';
 
-/** Fichier → animation permise, et pourquoi : une ATTENTE en cours. */
+/** Fichier → animation(s) permise(s), et pourquoi : une ATTENTE en cours — ou un décor voulu. */
 const ATTENTES = {
 	'styles/composants.css': ['spin', 'le spinner : un chargement en cours'],
 	'routes/(app)/tableau-de-bord/+page.svelte': ['shimmer', 'le squelette pendant le chargement'],
@@ -25,7 +25,21 @@ const ATTENTES = {
 		'clignote-ia',
 		'l’assistant IA travaille : le ⏳ d’un appel de plusieurs secondes (17/10/2026)',
 	],
+	'styles/decor-fete.css': [
+		[
+			'decor-fete-balance',
+			'decor-fete-scintille',
+			'decor-fete-glisse',
+			'decor-fete-parcourt',
+			'decor-fete-monte',
+			'decor-fete-tombe',
+		],
+		'le décor des jours de fête (#2312) : un ornement lent et voulu, désactivable par l’administration, arrêté sous prefers-reduced-motion',
+	],
 };
+
+/** Les noms qu'une exception admet : un seul, ou plusieurs pour un même décor. */
+const admis = (rel) => [ATTENTES[rel]?.[0] ?? []].flat();
 
 /** Les animations `infinite` d'une source (nom de l'animation). PURE. */
 export function infinies(source) {
@@ -65,11 +79,16 @@ for (const f of fichiers('src')) {
 		.join('/')
 		.replace(/^src\//, '');
 	for (const nom of infinies(readFileSync(f, 'utf8'))) {
-		if (ATTENTES[rel]?.[0] === nom) servies.add(rel);
+		if (admis(rel).includes(nom)) servies.add(`${rel} — ${nom}`);
 		else fautifs.push(`${rel} — ${nom}`);
 	}
 }
-const mortes = Object.keys(ATTENTES).filter((f) => !servies.has(f));
+//  Chaque nom déclaré doit servir : une animation retirée retire son exception.
+const mortes = Object.keys(ATTENTES).flatMap((f) =>
+	admis(f)
+		.map((nom) => `${f} — ${nom}`)
+		.filter((cle) => !servies.has(cle)),
+);
 if (fautifs.length || mortes.length) {
 	if (fautifs.length)
 		console.error(

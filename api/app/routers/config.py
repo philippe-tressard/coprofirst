@@ -15,7 +15,9 @@ from sqlmodel import Session, select
 
 from app.auth.deps import require_admin
 from app.utils.services import (
+    CLE_PUBLIQUE_DECOR_FETES,
     CLES_ACTIVATION,
+    SERVICE_DECOR_FETES,
     SERVICE_REPONSES_COURRIEL,
     normaliser_activation,
     refus_d_activation,
@@ -127,6 +129,10 @@ def get_config(session: Session = Depends(get_session)):
     """
     rows = session.exec(select(ConfigSite)).all()
     publiques = {r.cle: r.valeur for r in rows if _est_public(r.cle)}
+    #  Calculée par la lecture unique des services (#2312) : le décor des jours de fête
+    #  s'affiche-t-il ? La clé d'activation, elle, ne sort pas.
+    actif = service_actif({r.cle: r.valeur for r in rows}, SERVICE_DECOR_FETES)
+    publiques[CLE_PUBLIQUE_DECOR_FETES] = "1" if actif else "0"
     publiques |= {"site_url": adresse_du_site()}  # dérivée, jamais lue en base (#2058)
     #  Calculée, jamais lue en base : le front apprend ainsi qu'il sert la démo (#1901).
     publiques[demo.CLE_PUBLIQUE] = "1" if demo.est_demo() else "0"

@@ -37,3 +37,6 @@
     (#2174, S4d). Après `socle.css`, dont il reprend la règle `:root` : son
     fond l'emporte sur celui de la page à poids égal. */
 @import './styles/ilots-clairs.css';
+/*  Le décor des jours de fête (#2312) : ses sélecteurs commencent tous par
+    `.decor-fete`, qui n'existe nulle part ailleurs — l'ordre n'y change rien. */
+@import './styles/decor-fete.css';
