@@ -13,6 +13,7 @@
   passe par l'assainisseur.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { onMount } from 'svelte';
 	import { lieu } from '#lib/lieu.svelte.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
@@ -87,7 +88,7 @@
 			<EtatListe {chargement} {erreur} titreErreur="Ce lien ne mène à aucun compte rendu" />
 		{:else}
 			<p class="quand">
-				{fmtDatetime(cr.debut)}{#if cr.fin}&nbsp;→ {fmtTime(cr.fin)}{/if} · {cr.ou}
+				{fmtDatetime(cr.debut)}{#if cr.fin}{SEPARATEUR.fleche}{fmtTime(cr.fin)}{/if} · {cr.ou}
 			</p>
 			<p class="presents">Présents : {cr.presents.join(', ') || '—'}</p>
 			{#if cr.revision > 1}

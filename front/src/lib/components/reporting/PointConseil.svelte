@@ -19,6 +19,7 @@
   `compteRendu`, qu'elle lit pour le tableau et le CR global.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { onMount } from 'svelte';
 	import Badge from '#lib/components/Badge.svelte';
 	import Icon from '#lib/components/Icon.svelte';
@@ -207,7 +208,7 @@
 		{:else if point && compteRendu}
 			<p class="ligne">
 				<Icon name="calendar" size={14} />
-				{fmtDatetime(point.debut)}{#if point.fin}&nbsp;→ {fmtTime(point.fin)}{/if}
+				{fmtDatetime(point.debut)}{#if point.fin}{SEPARATEUR.fleche}{fmtTime(point.fin)}{/if}
 				<span class="sep">·</span>
 				<Icon name={point.a_distance ? 'globe' : 'building-2'} size={14} />
 				{point.ou}

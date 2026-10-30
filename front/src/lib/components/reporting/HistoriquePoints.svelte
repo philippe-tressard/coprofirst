@@ -9,6 +9,7 @@
   validé (`version`).
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { fmtNombre } from '#lib/utils.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
@@ -63,7 +64,7 @@
 
 <details class="report-card historique" bind:open={ouvert}>
 	<summary>
-		Historique des comptes rendus{#if points}&nbsp;· {points.length}{/if}
+		Historique des comptes rendus{#if points}{SEPARATEUR.point}{points.length}{/if}
 	</summary>
 	{#if chargement || erreur || !points || !points.length}
 		<EtatListe
@@ -81,7 +82,7 @@
 					<span class="quand">{fmtDatetime(p.debut)}</span>
 					<span class="muet">
 						{p.ou} · {fmtNombre(p.abordees)} affaire{p.abordees > 1 ? 's' : ''}
-						{#if p.valide_le}· validé le {fmtDate(p.valide_le)}{/if}
+						{#if p.valide_le}{SEPARATEUR.point}validé le {fmtDate(p.valide_le)}{/if}
 					</span>
 					<button
 						type="button"

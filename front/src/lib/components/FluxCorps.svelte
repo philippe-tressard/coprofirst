@@ -14,6 +14,7 @@
   s'afficherait deux fois sur toute carte ouverte.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import BadgeEtatAffaire from '#lib/components/BadgeEtatAffaire.svelte';
 	import type { FluxItem } from '#lib/api/index.ts';
 	import { fmtDatetimeShort } from '#lib/date.ts';
@@ -53,7 +54,7 @@
 		     essentielle, puisque la ligne du fil est datée de l'annonce. -->
 	{#if debut}
 		<p class="flux-meta-line">
-			🕐 {fmtDatetimeShort(String(debut))}{#if item.meta?.fin}&nbsp;→ {fmtDatetimeShort(
+			🕐 {fmtDatetimeShort(String(debut))}{#if item.meta?.fin}{SEPARATEUR.fleche}{fmtDatetimeShort(
 					String(item.meta.fin),
 				)}{/if}
 		</p>

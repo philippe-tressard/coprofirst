@@ -12,6 +12,7 @@
   contrat, journal — est `FicheRegistreInstallation`, chargé au premier dépliage.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { createEventDispatcher } from 'svelte';
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
@@ -64,7 +65,7 @@
 			{#if !ouvert}
 				<p class="apercu">
 					{#if i.vue_le}Dernier contact le {fmtDatetime(i.vue_le)}{:else}Jamais revenue depuis son
-						inscription{/if}{#if i.dernier_rapport_le}&nbsp;· dernier rapport le {fmtDatetime(
+						inscription{/if}{#if i.dernier_rapport_le}{SEPARATEUR.point}dernier rapport le {fmtDatetime(
 							i.dernier_rapport_le,
 						)}{/if}.
 				</p>

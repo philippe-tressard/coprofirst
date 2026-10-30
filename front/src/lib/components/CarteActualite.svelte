@@ -22,6 +22,7 @@
   passés en slots — ils sont écrits dans la page, donc leurs styles y restent.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
@@ -185,7 +186,7 @@
 				<small class="text-muted-sm">
 					{#if pub.mis_a_jour_le}Mise à jour le {fmtDateLong(pub.mis_a_jour_le)}{:else}Publié le {fmtDateLong(
 							pub.cree_le,
-						)}{/if}{#if proprietaireNom}&nbsp;· {proprietaireNom}{/if}
+						)}{/if}{#if proprietaireNom}{SEPARATEUR.point}{proprietaireNom}{/if}
 				</small>
 				<slot name="apres-corps" />
 			{/if}

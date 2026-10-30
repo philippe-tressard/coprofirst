@@ -15,6 +15,7 @@
   (`utils/points_conseil_validation`) ; ce bloc ne fait que les montrer.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { fmtNombre } from '#lib/utils.ts';
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
@@ -150,8 +151,9 @@
 		{#each compteRendu.commentaires as c, i (i)}
 			<EncartAvertissement compact class="commentaire">
 				<p class="qui">
-					{c.auteur || 'Un présent'} · {fmtDatetime(c.cree_le)}{#if c.par_derogation}&nbsp;· accord
-						écrit par l’administration{/if}
+					{c.auteur || 'Un présent'} · {fmtDatetime(
+						c.cree_le,
+					)}{#if c.par_derogation}{SEPARATEUR.point}accord écrit par l’administration{/if}
 				</p>
 				<p>{c.contenu}</p>
 			</EncartAvertissement>

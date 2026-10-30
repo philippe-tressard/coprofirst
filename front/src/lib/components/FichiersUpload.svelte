@@ -6,10 +6,9 @@
   ⚠️ Composant UNIQUE de saisie de pièces jointes. `PhotosUpload.svelte` en était
   une seconde copie à ~80 % identique (même mise en page, même compteur, CSS de la
   croix de suppression rigoureusement identique) — et les deux avaient divergé sur
-  le point qui compte : celui-ci acceptait `multiple`, l'autre non, alors que son
-  en-tête annonçait « sélection multiple ». Résultat, on ne pouvait joindre qu'UNE
-  photo aux sondages et à l'espace CS (signalé le 10/08/2026). Fusionné ici : ne
-  pas recréer de variante, c'est la divergence qui produit le défaut, pas le code.
+  le point qui compte : `multiple`. On ne pouvait joindre qu'UNE photo aux
+  sondages et à l'espace CS (10/08/2026). Fusionné ici : ne pas recréer de
+  variante, c'est la divergence qui produit le défaut, pas le code.
 
   Le téléversement passe par défaut par l'endpoint générique
   (`POST /uploads/fichier`, qui valide le type MIME). Les rubriques qui ont leur
@@ -55,6 +54,7 @@
     - change(detail: string[]) — après ajout ou retrait (mode normal)
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import Vignette from './Vignette.svelte';
@@ -388,7 +388,7 @@
 			{/if}
 		</div>
 		<span class="fichiers-compte">
-			{nombre}/{max}{#if _types}&nbsp;· {_types}{/if}
+			{nombre}/{max}{#if _types}{SEPARATEUR.point}{_types}{/if}
 		</span>
 	{/if}
 </div>

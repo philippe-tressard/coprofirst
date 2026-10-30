@@ -20,6 +20,7 @@
   dont le texte se lit ici même : on ne s'engage pas sur un texte qu'on n'a pas vu.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { onMount } from 'svelte';
 	import pkg from '../../../package.json';
 	import SectionFormulaire from './SectionFormulaire.svelte';
@@ -149,7 +150,7 @@
 				<dt>Rôle</dt>
 				<dd>
 					<strong>{etat.libelle}</strong>
-					{#if etat.branche}— suit <code>{etat.branche}</code>{/if}
+					{#if etat.branche}{SEPARATEUR.tiret}suit <code>{etat.branche}</code>{/if}
 					{#if etat.role === 'inconnu'}
 						<p class="aide">
 							<code>ROLE_INSTALLATION</code> n’est pas déclaré dans le <code>.env</code> de
@@ -200,7 +201,8 @@
 				{#if i.identifiant}
 					<dt>Identifiant</dt>
 					<dd>
-						<code>{i.identifiant}</code>{#if i.canal}&nbsp;· canal <code>{i.canal}</code>{/if}
+						<code>{i.identifiant}</code>{#if i.canal}{SEPARATEUR.point}canal
+							<code>{i.canal}</code>{/if}
 					</dd>
 				{/if}
 				{#if i.services}

@@ -22,6 +22,7 @@
   l'installation — la référence ne pousse jamais (§4.11, règle 5), et l'écran le dit.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { createEventDispatcher } from 'svelte';
 	import CocheConformite from '#lib/components/CocheConformite.svelte';
 	import DistributionInstallation from '#lib/components/DistributionInstallation.svelte';
@@ -175,7 +176,8 @@
 		<dd>{fmtDatetime(fiche.dernier_rapport_le)}</dd>
 		<dt>Version</dt>
 		<dd>
-			v{r.identite.version_logicielle}{#if r.identite.derniere_mise_a_jour}&nbsp;· dernière mise à
+			v{r.identite
+				.version_logicielle}{#if r.identite.derniere_mise_a_jour}{SEPARATEUR.point}dernière mise à
 				jour : {r.identite.derniere_mise_a_jour}{/if}
 		</dd>
 		<dt>Hébergement</dt>
@@ -238,7 +240,7 @@
 	{#each fiche.decisions as d, n (n)}
 		<li>
 			<span class="quand">{fmtDatetime(d.cree_le)}</span>
-			<strong>{libelleDecision(d.geste)}</strong>{#if d.motif}&nbsp;— {d.motif}{/if}
+			<strong>{libelleDecision(d.geste)}</strong>{#if d.motif}{SEPARATEUR.tiret}{d.motif}{/if}
 			<span class="auteur">· {d.auteur}</span>
 		</li>
 	{:else}
