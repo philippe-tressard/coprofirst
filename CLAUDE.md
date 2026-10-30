@@ -675,7 +675,10 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       thèmes, #2174 S3). Le contour d'un champ : `--color-border-champ` ; le texte
       sur l'or : `--color-sur-accent` (`ux-patterns` §18). Un aperçu de support
       imprimé ou envoyé (affiche, courriel) reste clair : `class="ilot-clair"`
-      (`npm run lint:ilots-clairs`, #2174 S4d)
+      (`npm run lint:ilots-clairs`, #2174 S4d). Le thème CHOISI (Automatique, Clair,
+      Sombre — cookie d'appareil `theme`, lu par le serveur qui pose l'attribut) ne
+      se décide qu'à `#lib/theme.ts`, et ne se choisit qu'au Profil (`ChoixTheme`,
+      #2174 S5, `e2e/bascule-theme.spec.ts`)
 - [ ] Un style s'écrit dans le `<style>` du composant ou dans `src/styles/`, jamais
       en attribut `style="…"` — sauf une valeur tirée des données (`width:{pct}%`).
       `npm run lint:styles-en-ligne` le refuse : plafond à **zéro** depuis le

@@ -31,15 +31,23 @@ const JOURS = VUES.map((total, i) => {
 	return { label: `${mm}-${jj}`, total, uniques: 3 };
 });
 
-async function ouvrir(page: Page, jourPointe: string) {
+//  La vue Année : un bâton LARGE par mois.
+const MOIS = VUES.slice(0, 12).map((total, i) => ({
+	label: `${String(i + 1).padStart(2, '0')}/2026`,
+	total,
+	uniques: 3,
+}));
+
+async function ouvrir(page: Page, jourPointe: string, annee = false) {
+	const chart = annee ? MOIS : JOURS;
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;
 		if (chemin === '/api/telemetry/dashboard')
 			return {
 				...TABLEAU_TELEMETRIE_VIDE,
-				scope: 'mois',
-				chart: JOURS,
-				chart_label: 'Vues par jour (30 j)',
+				scope: annee ? 'annee' : 'mois',
+				chart,
+				chart_label: annee ? 'Vues par mois (12 mois)' : 'Vues par jour (30 j)',
 				kpi: {
 					vues: 12000,
 					utilisateurs: 6,
@@ -52,7 +60,7 @@ async function ouvrir(page: Page, jourPointe: string) {
 	await attendreHydratation(page);
 	//  L'onglet se charge au geste depuis la v2.133.1 : l'hydratation ne dit pas que
 	//  le graphe est rendu, et une lecture immédiate (`allTextContents`) le voyait vide.
-	await expect(page.locator('.tl-bar-label')).toHaveCount(JOURS.length);
+	await expect(page.locator('.tl-bar-label')).toHaveCount(chart.length);
 }
 
 test('le 🏆 est sur le bâton du jour le plus actif, la ligne qui le disait a disparu', async ({
@@ -105,3 +113,15 @@ test('@sombre — Télémétrie : le graphe des vues par jour, son 🏆 et sa bu
 	//  Les marques du graphique sont claires exprès au sombre : mesurées à 3:1.
 	await attendreLisible(page, '#contenu', { marques: '.tl-bar' });
 });
+
+//  Les bâtons LARGES (Année, Total) étaient en `--color-primary-light` : 1,1:1 sur la
+//  carte dans les deux thèmes (#2296). Ils se mesurent à 3:1, au clair et au sombre.
+for (const theme of ['clair', 'sombre'] as const)
+	test(`@${theme} — Télémétrie : les bâtons de la vue Année se voient sur la carte`, async ({
+		page,
+	}) => {
+		await ouvrir(page, '2026-09-29', true);
+		await expect(page.locator('.tl-bar-large')).toHaveCount(MOIS.length);
+		await forcerTheme(page, theme);
+		await attendreLisible(page, '#contenu', { marques: '.tl-bar' });
+	});

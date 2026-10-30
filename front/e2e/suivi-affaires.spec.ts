@@ -356,14 +356,16 @@ test('les affaires liées se suivent ; « Fusionner » propose un titre, puis fu
 	);
 });
 
-test('@sombre — Espace CS › Reporting : compteurs, répartitions et tableau des affaires se lit au thème sombre', async ({
-	page,
-}) => {
-	await simulerApi(page, (chemin) => (chemin === '/api/suivi-affaires' ? RELEVE : undefined));
-	await page.goto('/espace-cs/reporting');
-	await attendreHydratation(page);
-	await expect(page.locator('.kpi-card').first()).toBeVisible();
-	await forcerTheme(page, 'sombre');
-	//  Les marques du graphique sont claires exprès au sombre : mesurées à 3:1.
-	await attendreLisible(page, '#contenu', { marques: '.tranche, .pastille[data-teinte]' });
-});
+//  Au clair aussi (#2296) : trois séries et deux paliers y étaient sous 3:1.
+for (const theme of ['clair', 'sombre'] as const)
+	test(`@${theme} — Espace CS › Reporting : compteurs, répartitions et tableau des affaires se lit au thème ${theme}`, async ({
+		page,
+	}) => {
+		await simulerApi(page, (chemin) => (chemin === '/api/suivi-affaires' ? RELEVE : undefined));
+		await page.goto('/espace-cs/reporting');
+		await attendreHydratation(page);
+		await expect(page.locator('.kpi-card').first()).toBeVisible();
+		await forcerTheme(page, theme);
+		//  Les marques du graphique se mesurent à 3:1 contre leur fond (WCAG 1.4.11).
+		await attendreLisible(page, '#contenu', { marques: '.tranche, .pastille[data-teinte]' });
+	});

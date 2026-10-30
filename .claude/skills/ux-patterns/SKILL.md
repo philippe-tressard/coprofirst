@@ -849,7 +849,7 @@ NOTION, et la forme aérée est devenue la base :
 | `IconeIA` | le geste qui lance l’assistant : ✨ au repos, ⏳ Bleu Seine qui clignote pendant l’appel — le bouton porte `aria-busy` (arbitrage n° 21) | tout bouton qui appelle l’IA ; 🔒 `npm run lint:geste-ia` |
 | `.badge` | une **capsule** (coins de 6 px) sur tout le site ; `.badge-gray` neutre (pierre) sur la dernière ligne d'une carte (`.ec-tags`, `.pa`) | `composants.css` |
 
-🔴 **Une carte archivée a UNE allure** (10/10/2026, `CarteListe archive`) : atténuée à 0,8, pleine une fois dépliée et au survol (au pointeur seulement). Il y en avait cinq — `.attenue` sous trois variantes, `.item-inactive` de la FAQ (0,55, jamais pleine), `.history-item` de l'affaire (liseré gris, sans le filet de la carte). Une classe passée par `class` vit dans `CarteListe` : le `<style>` de l'appelant ne l'atteint qu'en `:global(…)` — les teintes (`[data-nature]`, `[data-type-annonce]`) et les états vivent donc dans `normes.css`.
+🔴 **Une carte archivée a UNE allure** (10/10/2026, `CarteListe archive`) : atténuée, pleine une fois dépliée et au survol (au pointeur seulement). Elle s'atténue par son FOND — l'encart neutre, à plat, sans ombre —, jamais par l'opacité : à 0,8, chacun de ses textes perdait l'AA (3,6:1 pour un badge, #2296). Il y en avait cinq — `.attenue` sous trois variantes, `.item-inactive` de la FAQ (0,55, jamais pleine), `.history-item` de l'affaire (liseré gris, sans le filet de la carte). Une classe passée par `class` vit dans `CarteListe` : le `<style>` de l'appelant ne l'atteint qu'en `:global(…)` — les teintes (`[data-nature]`, `[data-type-annonce]`) et les états vivent donc dans `normes.css`.
 
 Ce qui n'a pas d'équivalent ne s'invente pas : une gouttière sans date ne porte que le
 classement ; sans classement, que la date ; un objet sans l'un ni l'autre n'en a pas
@@ -2833,12 +2833,19 @@ de couleur neuf prend sa valeur sombre dans la palette, ou se déclare identique
 avec sa raison (`IDENTIQUES`, `scripts/palette-sombre-paires.mjs`) ; un couple
 texte/fond neuf s'ajoute à la table `PAIRES`, mesurée dans les deux thèmes.
 🔒 `npm run lint:palette-sombre`, `e2e/palette-sombre.spec.ts` (forcé, Auto,
-absent, impression). Personne ne voit le sombre avant la bascule (S5).
+absent, impression). **Qui le voit** (S5, 30/10/2026) : tout appareil réglé en
+sombre — Automatique est le défaut —, ou qui a choisi Sombre dans le Profil. Le
+choix est un cookie d'appareil, lu par le serveur qui pose l'attribut et les balises
+`color-scheme` / `theme-color` ; il ne se décide qu'à `#lib/theme.ts`, et le seul
+sélecteur est `ChoixTheme` (Profil). 🔒 `e2e/bascule-theme.spec.ts`.
 Les paires ne disent pas l'ÉCRAN : un composant qui lit le mauvais jeton passe la
 table. Une zone parcourue au sombre (lot S4) se tient par un spec `@sombre` qui
 relève l'écran RENDU — `releverContrastes` (`e2e/contraste-ecran.ts`) : chaque
 texte sur son fond réel, chaque surface claire ; un dégradé est compté non mesuré.
 La coque : `e2e/palette-sombre-coque.spec.ts`.
+Le CLAIR se relève de même (#2296) : la zone des listes et du kanban, le Reporting et la
+télémétrie ont leur passe `@clair`, sans écart déclaré. Un texte ne s'atténue jamais par
+`opacity` (il y perd l'AA) : une colonne vide, une carte archivée se disent autrement.
 
 🔒 **Un aperçu de support imprimé ou envoyé reste CLAIR** (#2174, S4d) : l'affiche
 du hall, le courriel de la Diffusion, le corps d'un modèle de courriel se

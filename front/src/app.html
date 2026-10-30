@@ -1,10 +1,13 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="%theme.attribut%">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<!-- garde-demarrage : le premier script, avant toute feuille (#1993, hooks.server.ts) -->
-		<meta name="theme-color" content="#1E3A5F" />
+		<!-- theme : attribut, schema et barres remplis par le serveur (#lib/theme.ts, #2174) -->
+		<meta name="color-scheme" content="%theme.schema%" />
+		<meta name="theme-color" content="#1E3A5F" data-barre="clair" media="%theme.barre-clair%" />
+		<meta name="theme-color" content="#0d1b2a" data-barre="sombre" media="%theme.barre-sombre%" />
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
 		<!-- Polices système : aucun chargement externe requis -->
 		%sveltekit.head%

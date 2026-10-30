@@ -1,6 +1,7 @@
 import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
 import { messageDErreur } from '#lib/erreur-page.ts';
 import garde from './garde-demarrage.js?raw';
+import { COOKIE_THEME, lireChoix, remplirGabarit } from '#lib/theme.ts';
 
 //  Le garde de démarrage (#1993) prend la place de son repère dans `app.html` :
 //  premier script de la page, avant les feuilles de style. Injecté TEL QUEL — la
@@ -33,8 +34,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 	//
 	//  ⚠️ Un commentaire qui décrit une protection inexistante est pire qu'un
 	//  silence : il se lit comme une garantie (#1083, 22/09/2026).
+	//  Le thème choisi sur cet appareil (#2174, S5) : le serveur écrit l'attribut
+	//  et les balises qui en dépendent, la page se peint d'emblée dans son thème.
+	const theme = lireChoix(event.cookies.get(COOKIE_THEME));
 	const reponse = await resolve(event, {
-		transformPageChunk: ({ html }) => html.replace(REPERE_GARDE, () => SCRIPT_GARDE),
+		transformPageChunk: ({ html }) =>
+			remplirGabarit(html, theme).replace(REPERE_GARDE, () => SCRIPT_GARDE),
 	});
 	return sansCopieConservee(reponse);
 };

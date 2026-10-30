@@ -395,8 +395,11 @@
 		min-height: 4px;
 		transition: height var(--duree-apparition) var(--ease-out);
 	}
+	/*  Le bâton LARGE (Année, Total) est plus léger que celui du jour, sans
+	    disparaître : la première série du Suivi tient 3:1 sur la carte dans les
+	    deux thèmes — `--color-primary-light` y faisait 1,1 (#2296). */
 	.tl-bar-large {
-		background: var(--color-primary-light);
+		background: var(--serie-1);
 	}
 	.tl-bar-label {
 		font-size: var(--fs-xs);

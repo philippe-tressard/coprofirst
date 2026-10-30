@@ -15,9 +15,8 @@
  *  Les raisons d'écarter `light-dark()` et un script de démarrage sont dans
  *  l'en-tête de la feuille.
  *
- *  Personne n'a `data-theme="auto"` avant le lot S5 : la copie est servie,
- *  inerte. 🔒 `e2e/palette-sombre.spec.ts` prouve sur la feuille SERVIE qu'elle
- *  existe et qu'elle s'allume (Auto + système sombre), et que rien d'autre ne
+ *  `data-theme="auto"` est le défaut depuis le lot S5 (`lib/theme.ts`).
+ *  🔒 `e2e/palette-sombre.spec.ts` prouve sur la feuille SERVIE qu'elle existe et qu'elle s'allume (Auto + système sombre), et que rien d'autre ne
  *  l'allume. Le greffon échoue au build si la règle n'a plus la forme attendue,
  *  plutôt que de laisser passer une feuille sans mode Auto.
  */

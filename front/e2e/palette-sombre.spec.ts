@@ -6,12 +6,14 @@
  *
  *  `lint:palette-sombre` lit la palette dans la SOURCE. Ce qui est servi est
  *  autre chose : la copie « Auto » n'existe que dans la feuille construite
- *  (greffon `scripts/vite-palette-sombre.mjs`), et le seul défaut qui compte
- *  avant le lot S5 — un sombre qui s'allumerait tout seul chez un appareil
- *  réglé en sombre — ne se voit que dans un navigateur au système sombre.
+ *  (greffon `scripts/vite-palette-sombre.mjs`), et un sombre qui s'allumerait
+ *  sans l'attribut qui le demande ne se voit que dans un navigateur au système
+ *  sombre.
  *
- *  L'attribut est posé à la main : rien ne le pose avant S5. L'écran de
- *  connexion est public et charge la feuille principale comme tout écran.
+ *  L'attribut est posé à la main : ce spec juge la FEUILLE. Qui pose
+ *  l'attribut — le serveur, d'après le cookie du Profil — se juge dans
+ *  `bascule-theme.spec.ts` (S5). L'écran de connexion est public et charge la
+ *  feuille principale comme tout écran.
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, test } from './aides';
@@ -42,9 +44,7 @@ async function ouvrir(page: Page, systeme: 'light' | 'dark') {
 }
 
 test.describe('La palette sombre', () => {
-	test('rien d’automatique avant S5 : un système sombre sans attribut reste au clair', async ({
-		page,
-	}) => {
+	test('sans l’attribut qui le demande, un système sombre reste au clair', async ({ page }) => {
 		await ouvrir(page, 'dark');
 		const r = await rendu(page, null);
 		expect(r).toMatchObject(CLAIR);
@@ -108,7 +108,7 @@ test.describe('La palette sombre', () => {
 			champ: 'rgb(122, 136, 156)', //  #7a889c : la bordure d'un champ, à 3:1
 			surAccent: 'rgb(26, 26, 46)',
 			survolSucces: 'rgb(39, 106, 70)', //  l'aplat à 85 % sur noir
-			syndic: 'rgb(245, 158, 11)', //  #f59e0b, par `--teinte-4`
+			syndic: 'rgb(127, 93, 5)', //  #7f5d05, par `--teinte-4` (#2296)
 		});
 		//  La bordure d'un champ a une transition (`--duree-geste`) : on attend qu'elle se pose.
 		await expect
@@ -117,7 +117,7 @@ test.describe('La palette sombre', () => {
 				champ: 'rgb(101, 128, 163)', //  #6580a3
 				surAccent: 'rgb(26, 26, 46)', //  identique : texte sur l'or
 				survolSucces: 'rgb(39, 106, 70)', //  dérivé de l'aplat sombre, inchangé
-				syndic: 'rgb(245, 158, 11)', //  identique : la teinte tient 4,5 au sombre
+				syndic: 'rgb(245, 158, 11)', //  #f59e0b : la teinte vive d'avant #2296, gardée au sombre
 			});
 	});
 });

@@ -132,11 +132,21 @@ test('les Archives s’ouvrent et rendent leur carte, atténuée', async ({ page
 	await page.getByRole('button', { name: /Archives/ }).click();
 	await expect(page.getByText('Ravalement terminé')).toBeVisible();
 	//  L'allure archivée de toute carte du site (`CarteListe archive`), plus un
-	//  voile posé sur le groupe : c'est la carte qui s'atténue.
-	const opacite = await page
+	//  voile posé sur le groupe : c'est la carte qui s'atténue — par son FOND,
+	//  jamais par l'opacité, qui retirait l'AA à chacun de ses textes (#2296).
+	const allure = await page
 		.locator('.carte-liste.attenue', { hasText: 'Ravalement terminé' })
-		.evaluate((el) => getComputedStyle(el).opacity);
-	expect(Number(opacite)).toBeLessThan(1);
+		.evaluate((el) => {
+			const s = getComputedStyle(el);
+			const sonde = document.createElement('i');
+			sonde.style.backgroundColor = 'var(--color-neutre-fond)';
+			document.body.append(sonde);
+			const neutre = getComputedStyle(sonde).backgroundColor;
+			sonde.remove();
+			return { opacite: s.opacity, fond: s.backgroundColor, neutre };
+		});
+	expect(allure.opacite).toBe('1');
+	expect(allure.fond).toBe(allure.neutre);
 });
 
 test('l’accueil porte la carte des consignes, vers la fiche', async ({ page }) => {
