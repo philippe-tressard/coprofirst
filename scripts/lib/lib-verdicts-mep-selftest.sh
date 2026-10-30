@@ -122,6 +122,18 @@ feat(b) : deux"
   #  Un run annulé ou en cours n est ni un échec ni un succès : il ne doit ni
   #  bloquer, ni servir à déclarer un échec dépassé.
   eb "run annulé ignoré"                  "1 9f1c2ab" "cancelled:ccc3333:non failure:9f1c2ab:non"
+  #  (3) Le cas du 30/10 (#2337) : le bump rejoué derrière un commit neuf — le
+  #  commit en échec est RETIRÉ, déclaré, et 0a a validé que HEAD le recouvre.
+  eb "échec d un commit retiré et déclaré" "0" "failure:9d0dbaf:retire"
+  eb "retiré déclaré, un autre échec"     "1 9f1c2ab" "failure:9d0dbaf:retire failure:9f1c2ab:non"
+  #  …et c'est 0a qui décide du « retiré » : sans sa validation, rien ne change.
+  t "retiré, déclaré, 0a validé"          retire  ascendance_0c 9d0dbaf non oui "9d0dbaf"
+  t "sha long contre déclaration courte"  retire  ascendance_0c 9d0dbaf33 non oui "9d0dbaf"
+  t "déclaration REFUSÉE par 0a"          non     ascendance_0c 9d0dbaf non non "9d0dbaf"
+  t "déclaration incomplète (inconnu)"    non     ascendance_0c 9d0dbaf non inconnu "9d0dbaf"
+  t "échec NON déclaré"                   non     ascendance_0c 9f1c2ab non oui "9d0dbaf"
+  t "ascendance inconnue reste inconnue"  "?"     ascendance_0c deadbee "?" non ""
+  t "ancêtre de HEAD reste ancêtre"       oui     ascendance_0c b003e0d oui non ""
   t "clone à jour"                       OK      verdict_clone 0 non
   t "retard sans apport (post-squash)"    OK      verdict_clone 2 oui
   t "retard avec apport manquant"        FAIL    verdict_clone 2 non

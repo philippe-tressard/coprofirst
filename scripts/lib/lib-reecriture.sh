@@ -158,3 +158,21 @@ verdict_reecriture() {
   [ -n "${5:-}" ] && { echo non; return; }
   echo oui
 }
+
+# ── PURE : l'ascendance d'un run en échec, vue par 0c (#2337) ─────────────────
+#  $1 sha du run · $2 ascendance mesurée (oui|non|?) · $3 verdict de 0a
+#  (`verdict_reecriture`) · $4 commits déclarés retirés → retire | $2
+#  Un commit RETIRÉ et déclaré n'est plus un ancêtre de HEAD : son échec bloquait
+#  le lot qui le remplace, alors que 0a venait de prouver que HEAD le recouvre
+#  (30/10/2026 : le bump rejoué derrière un commit neuf). Seule la déclaration
+#  VALIDÉE par 0a compte — refusée ou incomplète, rien ne change.
+ascendance_0c() {
+  local d
+  if [ "${3:-}" = oui ]; then
+    for d in ${4:-}; do
+      case "$1" in "$d"*) echo retire; return ;; esac
+      case "$d" in "$1"*) echo retire; return ;; esac
+    done
+  fi
+  echo "${2:-?}"
+}
