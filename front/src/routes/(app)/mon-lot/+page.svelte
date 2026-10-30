@@ -419,7 +419,7 @@
 		margin-bottom: 1.5rem;
 	}
 	.carte-lot-titre {
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		font-weight: 600;
 		margin-bottom: 1rem;
 	}

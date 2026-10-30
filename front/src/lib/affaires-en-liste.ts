@@ -40,7 +40,7 @@ import { estActualite, lienReponse, type GestesTicket } from '#lib/tickets.ts';
 
 /** Ce que les cartes lisent — les props d'état de `ListeTickets`. */
 export interface EtatAffairesEnListe {
-	expandedIds: Set<number>;
+	deplie: number | null;
 	evolsMap: Record<number, TicketEvolution[]>;
 	evolsErreurs: Record<number, string>;
 	ticketEnEdition: number | null;
@@ -102,7 +102,7 @@ export function affairesEnListe(liste: Writable<Ticket[]>, reglages: ReglagesAff
 	const etat = derived(
 		[interne, options.ouvertId, options.enCours],
 		([e, ouvertId, enCours]): EtatAffairesEnListe => ({
-			expandedIds: new Set(e.deplie === null ? [] : [e.deplie]),
+			deplie: e.deplie,
 			evolsMap: e.fils,
 			evolsErreurs: e.erreurs,
 			ticketEnEdition: e.enEdition,

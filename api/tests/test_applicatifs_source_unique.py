@@ -43,7 +43,8 @@ DEMARRER_NU = re.compile(r"\bdemarrer_conteneurs\s*(?:$|[;&|>)]|2>|[\"'](?![$\w]
 
 #: Les démarrages SANS LISTE qui restent, et pourquoi : `{script: (nombre, raison)}`.
 #: Ils démarrent « selon le profil », juste après avoir décidé de la base. La liste
-#: ne fait que baisser : une entrée dont le compte change échoue.
+#: ne fait que baisser : une entrée dont le compte change échoue. Suivi des deux de
+#: `bascule.sh` : #2318.
 DEMARRAGES_SANS_LISTE = {
     "scripts/exploitation/bascule.sh": (
         2,

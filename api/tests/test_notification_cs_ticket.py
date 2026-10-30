@@ -122,6 +122,11 @@ def conseil(batiments):
             )
         ).all():
             session.delete(notif)
+        #  …et dans un flush À PART : entre deux tables sans `Relationship`,
+        #  SQLAlchemy ordonne les DELETE d'un même flush par le nom qualifié de la
+        #  classe. `core.Notification` passait avant `core.Utilisateur` par
+        #  l'alphabet ; `notifications.Notification` passe après (#2316).
+        session.flush()
         for u in comptes:
             session.delete(u)
         session.commit()

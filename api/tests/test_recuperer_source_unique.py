@@ -52,7 +52,8 @@ RACINE = Path(__file__).resolve().parents[1] / "app"
 SOURCE = "utils/recuperer.py"
 
 #: Les 404 écrits à la main qui restent, chacun avec sa raison — clé
-#: `module::fonction`, un seul 404 par fonction. Carte : #1571.
+#: `module::fonction`, un seul 404 par fonction. Liste nominative permanente
+#: (la carte #1571 est close : chaque entrée tient à une règle propre).
 #:
 #: 🔴 Une entrée ne s'ajoute pas pour faire passer le contrôle : aller chercher un
 #: objet par son identifiant passe par `utils/recuperer` (`ou_404`,

@@ -2097,6 +2097,13 @@ jobs:
         working-directory: front
         run: npm run lint:taille-racine
 
+      # `:global()` est du Svelte : dans une feuille de `src/styles/`, rien ne le
+      # traduit et le navigateur abandonne la règle — huit règles du contenu riche
+      # et l'impression du reporting l'étaient, sans un mot (#2306).
+      - name: Aucune règle morte en :global() dans une feuille globale
+        working-directory: front
+        run: npm run lint:global-feuille-globale
+
       # 🔴 Une affaire urgente portait DEUX badges « Urgente » sur sa carte
       # (27/09/2026, signalé à l'écran) : le badge de priorité et la rangée des
       # options, qui ne retirait que la confidentialité. Exécute `optionsEnBadge`.

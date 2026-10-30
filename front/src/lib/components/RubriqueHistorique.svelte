@@ -355,7 +355,7 @@
 		margin-bottom: 0.5rem;
 	}
 	.hist-titre {
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		font-weight: 600;
 		margin: 0;
 	}

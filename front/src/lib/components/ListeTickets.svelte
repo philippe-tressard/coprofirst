@@ -54,7 +54,8 @@
 	export let tickets: Ticket[] = [];
 	/** Allure d'archive — les tickets clos depuis plus du délai de grâce. */
 	export let archive = false;
-	export let expandedIds: Set<number> = new Set();
+	/** L'affaire dépliée — une seule à la fois (`#lib/accordeon`). */
+	export let deplie: number | null = null;
 	export let evolsMap: Record<number, TicketEvolution[]> = {};
 	/** Le fil qu'on n'a pas pu charger, par affaire — dit par la carte. */
 	export let evolsErreurs: Record<number, string> = {};
@@ -89,7 +90,7 @@
 
 	let limite = PREMIERS;
 	/** Le dernier élément déplié : un lien profond l'ouvre, il doit être rendu. */
-	$: requis = tickets.reduce((dernier, t, i) => (expandedIds.has(t.id) ? i : dernier), -1);
+	$: requis = tickets.reduce((dernier, t, i) => (deplie === t.id ? i : dernier), -1);
 	$: rendus = tickets.slice(0, aRendre(tickets.length, limite, requis));
 </script>
 
@@ -102,7 +103,7 @@
 			ticket={t}
 			evolutions={evolsMap[t.id] ?? []}
 			erreurSuivi={evolsErreurs[t.id] ?? ''}
-			expanded={expandedIds.has(t.id)}
+			expanded={deplie === t.id}
 			{archive}
 			mode={modeDe(t.id)}
 			{evolutionEnCours}
@@ -123,7 +124,7 @@
 			evolutions={evolsMap[t.id] ?? []}
 			erreurSuivi={evolsErreurs[t.id] ?? ''}
 			correspondance={correspondances.get(t.id) ?? null}
-			expanded={expandedIds.has(t.id)}
+			expanded={deplie === t.id}
 			{archive}
 			{evolutionEnCours}
 			{peutAdministrer}

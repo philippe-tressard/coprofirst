@@ -62,7 +62,7 @@
 		color: var(--color-warning-texte);
 	}
 	.relance-alerte-arrow {
-		font-size: 1.1rem;
+		font-size: var(--fs-2xl);
 		flex-shrink: 0;
 		opacity: 0.7;
 	}

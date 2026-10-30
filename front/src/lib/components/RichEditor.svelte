@@ -399,7 +399,7 @@
 		margin: 1rem 0 0.4rem;
 	}
 	:global(.rich-content-editable .tiptap h3) {
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		font-weight: 600;
 		margin: 0.8rem 0 0.3rem;
 	}

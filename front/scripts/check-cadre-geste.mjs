@@ -78,7 +78,7 @@ const CADRE = join(COMPOSANTS, 'CadreFormulaire.svelte');
  */
 const EXCEPTIONS = {
 	'FormulaireTicket.svelte':
-		'#463 (fermé, l’écart subsiste ; carte des plafonds : #1571) — le quatrième ' +
+		'#463 (fermé, l’écart subsiste ; suivi : #2315) — le quatrième ' +
 		'état (`evolution`) reste à confronter à son rendu. ' +
 		'EvolForm sert cinq écrans ; les changer tous avant de les avoir regardés ' +
 		'est exactement ce que R5 interdit.',

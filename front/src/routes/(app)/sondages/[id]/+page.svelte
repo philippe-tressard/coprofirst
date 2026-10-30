@@ -458,7 +458,7 @@
 		padding-top: 1.25rem;
 	}
 	.comments-title {
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		font-weight: 600;
 		margin-bottom: 1rem;
 	}

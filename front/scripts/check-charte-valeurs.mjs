@@ -65,9 +65,13 @@ export { contraste, contrastesBadges, egalesAUnJeton, jetonsDe, repliMortsDe, re
  *  ce fichier.
  *  29/10/2026 (#2174, mode sombre S1) : ZÉRO couleur — les 81 dernières (47
  *  nuances) se rangent sur 31 jetons de `socle.css` (12 neufs) — redéfinis au sombre.
+ *  30/10/2026 (#1571) : 69 → 43 tailles — l'échelle gagne ses deux crans
+ *  d'intertitres aux valeurs exactes déjà les plus employées (`--fs-xl` 1 rem ×19,
+ *  `--fs-2xl` 1,1 rem ×7) : aucun rendu ne change. Les 43 qui restent n'égalent
+ *  aucun jeton : les ranger change le rendu, arbitrage sur maquette (#2313).
  */
-//  Carte des plafonds décroissants : #1571.
-const PLAFOND = { couleurs: 0, tailles: 69 };
+//  Suivi des tailles restantes : #2313.
+const PLAFOND = { couleurs: 0, tailles: 43 };
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 

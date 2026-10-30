@@ -10,12 +10,17 @@
  * d'écran —, et une erreur « attendue » levée par `error()` (`kind: 'app'`).
  * SvelteKit 3 passe au hook TOUTES les erreurs, étiquetées par `kind` ; SvelteKit 2
  * ne lui donnait que les imprévues et les adresses inconnues (#2205).
+ *
+ * Il rend aussi la phrase de la page d'erreur à la place du message anglais du
+ * framework (#2304) — la même que le hook du serveur, par `#lib/erreur-page`.
  */
 import type { HandleClientError } from '@sveltejs/kit/hooks';
 import { codeErreur, signalerErreur } from '#lib/telemetry.ts';
+import { messageDErreur } from '#lib/erreur-page.ts';
 
 export const handleError: HandleClientError = ({ kind, error }) => {
 	if (kind === 'app') return;
-	if (kind === 'framework' && error.status === 404) return;
-	signalerErreur(codeErreur(error));
+	const statut = kind === 'framework' ? error.status : 500;
+	if (statut !== 404) signalerErreur(codeErreur(error));
+	return messageDErreur(kind, statut);
 };
