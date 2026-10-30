@@ -30,7 +30,10 @@
 #  auto-testées ; `gh` ne sert qu'à la fin.
 #
 #  Usage (dans le workflow) :
-#    bash scripts/ci/veille-securite.sh etape <dossier> <nom> <code> <sortie>
+#    <commande> | bash scripts/ci/veille-securite.sh etape <dossier> <nom> <code>
+#      — la sortie par l'ENTRÉE STANDARD, jamais en argument : celle de Trivy
+#        dépasse la limite d'une ligne de commande (« Argument list too long »,
+#        première veille du 30/10/2026, étape tuée avant d'avoir rien écrit)
 #    bash scripts/ci/veille-securite.sh rapport <dossier>
 #    bash scripts/ci/veille-securite.sh --selftest
 # =============================================================================
@@ -142,8 +145,14 @@ if [ "${1:-}" = "--selftest" ]; then
     t "corps : la sortie du rouge, repliée" 1 "$(grep -c '^PYSEC-2026-1 cryptography$' <<< "$corps")"
     t "corps : rien de la sortie d'une étape verte" 0 "$(grep -c '^ok$' <<< "$corps")"
     #  L'étape, telle que le workflow l'écrit.
-    bash "$0" etape "$d" node 2 "npm audit : 1 high" >/dev/null
+    printf 'npm audit : 1 high\n' | bash "$0" etape "$d" node 2 >/dev/null
     t "etape : code et sortie écrits" "2|npm audit : 1 high" "$(cat "$d/node.rc")|$(cat "$d/node.txt")"
+    #  La sortie de Trivy du 30/10/2026 a tué l'étape (« Argument list too long ») :
+    #  une sortie bien au-delà de la limite d'un argument passe par l'entrée standard.
+    #  Un dossier à part : ce rouge ne doit pas entrer dans les cas du rapport.
+    head -c 3000000 /dev/zero | tr '\0' 'x' | bash "$0" etape "$d/gros" trivy-api 1 >/dev/null
+    t "etape : 3 Mo de sortie passent par l'entrée standard" "1|3000000" \
+      "$(cat "$d/gros/trivy-api.rc")|$(wc -c < "$d/gros/trivy-api.txt" | tr -d ' ')"
     #  Le rapport, gh remplacé par un témoin : ouvrir, commenter, fermer.
     #  Le témoin ne rend que les quatre premiers mots : le titre entier est un seul mot.
     gh() { case "${2:-}" in list) : ;; *) echo "gh $1 $2 ${3:-} ${4:-}" ;; esac; }
@@ -167,8 +176,10 @@ fi
 
 case "${1:-}" in
     etape)
-        #  $2 dossier · $3 nom · $4 code · $5 sortie (texte)
-        mkdir -p "$2" && printf '%s\n' "$4" > "$2/$3.rc" && printf '%s\n' "$5" > "$2/$3.txt" ;;
+        #  $2 dossier · $3 nom · $4 code ; la sortie arrive sur l'entrée standard.
+        #  Un code absent ou non entier s'écrit tel quel : le rapport le lit comme
+        #  un rouge, jamais comme un vert.
+        mkdir -p "$2" && printf '%s\n' "${4:-}" > "$2/$3.rc" && cat > "$2/$3.txt" ;;
     rapport)
         veille_rapport "$2" ;;
     *)

@@ -54,11 +54,14 @@ jobs:
           python-version: "3.11"
       - name: Audit des dépendances Python
         #  ÉPINGLÉ comme dans ci.yml (#1584) : même version, même verdict.
+        #  `rc=0; … || rc=$?` : le shell des Actions est `bash -e`, et un audit
+        #  rouge tuait l'étape AVANT qu'elle n'écrive son verdict.
+        if: always()
         run: |
-          pip install pip-audit==2.10.1 >/dev/null
-          s=$(cd api && python scripts/check_audit_python.py 2>&1); rc=$?
-          printf '%s\n' "$s"
-          bash scripts/ci/veille-securite.sh etape "$RESULTATS" python "$rc" "$s"
+          rc=0
+          { pip install pip-audit==2.10.1 >/dev/null && cd api && python scripts/check_audit_python.py; } > "$RUNNER_TEMP/python.txt" 2>&1 || rc=$?
+          cat "$RUNNER_TEMP/python.txt"
+          bash "$GITHUB_WORKSPACE/scripts/ci/veille-securite.sh" etape "$RESULTATS" python "$rc" < "$RUNNER_TEMP/python.txt"
 
       # ── 2. Node : `lint:audit` du front (#411), mêmes exceptions ───────────
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
@@ -67,12 +70,13 @@ jobs:
           cache: npm
           cache-dependency-path: front/package-lock.json
       - name: Audit des dépendances Node
+        if: always()
         working-directory: front
         run: |
-          npm ci --ignore-scripts >/dev/null 2>&1
-          s=$(npm run --silent lint:audit 2>&1); rc=$?
-          printf '%s\n' "$s"
-          bash ../scripts/ci/veille-securite.sh etape "$RESULTATS" node "$rc" "$s"
+          rc=0
+          { npm ci --ignore-scripts >/dev/null 2>&1 && npm run --silent lint:audit; } > "$RUNNER_TEMP/node.txt" 2>&1 || rc=$?
+          cat "$RUNNER_TEMP/node.txt"
+          bash ../scripts/ci/veille-securite.sh etape "$RESULTATS" node "$rc" < "$RUNNER_TEMP/node.txt"
 
       # ── 3. Les images PUBLIÉES pour ce commit (images.yml, #1753) ──────────
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
@@ -129,7 +133,10 @@ jobs:
           skip-setup-trivy: true
       - name: Reprendre les verdicts de Trivy
         #  `outcome` est « success » ou « failure » ; une image absente du registre
-        #  (commit pas encore publié) est une failure, et le rapport le dit.
+        #  (commit pas encore publié) est une failure, et le rapport le dit. La
+        #  sortie passe par l'entrée standard : en argument, celle de Trivy tuait
+        #  l'étape (« Argument list too long », 30/10/2026).
+        if: always()
         env:
           O_API: ${{ steps.trivy_api.outcome }}
           O_FRONT: ${{ steps.trivy_front.outcome }}
@@ -139,11 +146,15 @@ jobs:
           for p in "api:$O_API" "front:$O_FRONT" "caddy:$O_CADDY" "whatsapp-bridge:$O_WA"; do
             svc=${p%%:*}; o=${p#*:}
             [ "$o" = success ] && rc=0 || rc=1
-            bash scripts/ci/veille-securite.sh etape "$RESULTATS" "trivy-$svc" "$rc" "$(cat ".veille/trivy-$svc.txt" 2>/dev/null || echo "sortie absente (image non publiée ?)")"
+            f=".veille/trivy-$svc.txt"
+            [ -s "$f" ] || echo "sortie absente (image non publiée ?)" > "$RUNNER_TEMP/absente.txt"
+            if [ -s "$f" ]; then cp "$f" "$RUNNER_TEMP/trivy-$svc.txt"; else cp "$RUNNER_TEMP/absente.txt" "$RUNNER_TEMP/trivy-$svc.txt"; fi
+            bash scripts/ci/veille-securite.sh etape "$RESULTATS" "trivy-$svc" "$rc" < "$RUNNER_TEMP/trivy-$svc.txt"
           done
 
       # ── 4. La provenance : chaque image est bien celle que la CI a attestée ─
       - name: Vérifier les attestations de provenance
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -156,7 +167,7 @@ jobs:
             fi
           done
           printf '%s' "$s"
-          bash scripts/ci/veille-securite.sh etape "$RESULTATS" attestation "$rc" "$s"
+          printf '%s' "$s" | bash scripts/ci/veille-securite.sh etape "$RESULTATS" attestation "$rc"
 
       # ── Le destinataire : l'issue de veille ──────────────────────────────────
       - name: Rapporter dans l'issue de veille
