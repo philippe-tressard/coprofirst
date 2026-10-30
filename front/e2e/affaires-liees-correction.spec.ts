@@ -118,6 +118,19 @@ test('« Fusionner » ouvre la boîte du Suivi, la plus ancienne absorbe, la pri
 	await expect(page).toHaveURL(/\/tickets\/61$/);
 });
 
+test('la correction s’ouvre dans la boîte de la page, comme la création — jamais dans une fenêtre', async ({
+	page,
+}) => {
+	//  #2315 : `FormulaireTicket` pose son cadre par `CadreFormulaire` (`lint:cadre-geste`).
+	//  La correction se rend dans la carte, sans bordure ni titre de boîte (#425).
+	await corriger(page, AFFAIRE);
+	const boite = page.locator('.formulaire-creation[role="group"]');
+	await expect(boite).toHaveCount(1);
+	await expect(boite.locator('input').first()).toHaveValue(AFFAIRE.titre);
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(boite.locator('h2')).toHaveCount(0);
+});
+
 test('une affaire close ne propose pas de fusion', async ({ page }) => {
 	await corriger(page, { ...AFFAIRE, statut: 'résolu' });
 	await expect(section(page).locator('li.liee')).toHaveCount(1);

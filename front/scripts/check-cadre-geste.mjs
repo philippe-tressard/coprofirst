@@ -66,23 +66,18 @@ const COMPOSANTS = join(RACINE, 'lib', 'components');
 const CADRE = join(COMPOSANTS, 'CadreFormulaire.svelte');
 
 /**
- * Écarts connus, chacun avec son ticket. Ce ne sont PAS des tolérances de
- * confort : ce sont deux conversions qui restent à faire, et qui demandent un
- * changement visible à l'écran — donc à faire constater avant de généraliser
- * (règle R5 du cadre #430).
+ * Écarts connus, chacun avec son ticket — AUCUN depuis #2315 (30/10/2026) :
+ * `FormulaireTicket`, le dernier, pose son cadre par `CadreFormulaire`. Son
+ * exception invoquait l'état `evolution`, qu'il ne rend plus (c'est `EvolForm`,
+ * hors de ce contrôle), et un changement visible qui n'existe plus depuis que les
+ * deux gestes emploient la même boîte : le HTML rendu est identique, mesuré.
  *
  * 🔴 Une exception sans ticket serait un dépotoir. Le dernier test de ce fichier
  * échoue si l'une d'elles cesse de servir : le jour où la conversion est faite,
  * il FAUT venir retirer la ligne — sinon le contrôle laisserait passer une
  * régression au même endroit.
  */
-const EXCEPTIONS = {
-	'FormulaireTicket.svelte':
-		'#463 (fermé, l’écart subsiste ; suivi : #2315) — le quatrième ' +
-		'état (`evolution`) reste à confronter à son rendu. ' +
-		'EvolForm sert cinq écrans ; les changer tous avant de les avoir regardés ' +
-		'est exactement ce que R5 interdit.',
-};
+const EXCEPTIONS = {};
 
 if (!existsSync(CADRE)) {
 	console.error(
