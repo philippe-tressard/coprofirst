@@ -43,15 +43,9 @@ DEMARRER_NU = re.compile(r"\bdemarrer_conteneurs\s*(?:$|[;&|>)]|2>|[\"'](?![$\w]
 
 #: Les démarrages SANS LISTE qui restent, et pourquoi : `{script: (nombre, raison)}`.
 #: Ils démarrent « selon le profil », juste après avoir décidé de la base. La liste
-#: ne fait que baisser : une entrée dont le compte change échoue. Suivi des deux de
-#: `bascule.sh` : #2318.
+#: ne fait que baisser : une entrée dont le compte change échoue. Les deux de
+#: `bascule.sh` sont explicités depuis #2318.
 DEMARRAGES_SANS_LISTE = {
-    "scripts/exploitation/bascule.sh": (
-        2,
-        "rollback (le primaire local reprend après l'isolement du pair promu) et "
-        "phase 5 chez le pair, dont la réplique vient d'être promue — chemin de "
-        "nuit éprouvé, à expliciter dans un lot qui le rejoue en conditions réelles",
-    ),
     "scripts/exploitation/restaurer-copie-hors-site.sh": (
         1,
         "la base neuve est déjà démarrée et importée (étape 3) : l'application suit",
@@ -168,3 +162,48 @@ def test_le_motif_voit_les_gestes_du_15_10():
     assert DEMARRER_NU.search("demarrer_conteneurs >/dev/null 2>&1 || echec")
     assert not DEMARRER_NU.search("demarrer_conteneurs $A_DEMARRER >> /dev/null")
     assert not DEMARRER_NU.search("demarrer_conteneurs() {")
+
+
+#: Le corps de `rollback()` dans `bascule.sh`, jusqu'à l'accolade fermante en colonne 0.
+ROLLBACK = re.compile(r"^rollback\(\) \{\n(.*?)^\}", re.S | re.M)
+
+
+def fautes_d_ordre_du_retour_arriere(corps: str) -> list[str]:
+    """Ce qui relance la base locale avant que le pair soit arrêté et isolé (#2318)."""
+    code = "\n".join(
+        COMMENTAIRE_FINAL.sub("", ligne)
+        for ligne in corps.splitlines()
+        if not ligne.lstrip().startswith("#")
+    )
+    reperes = {
+        "arrêt des applications du pair": code.find("docker compose stop $SERVICES_APPLICATIFS"),
+        "isolement de la base promue du pair": code.find("isoler_base_pair_si_promue"),
+    }
+    relance = code.find("demarrer_conteneurs")
+    if relance < 0:
+        return ["aucune relance locale (`demarrer_conteneurs`) dans le retour arrière"]
+    return [f"{nom} après la relance locale" for nom, i in reperes.items() if i < 0 or i > relance]
+
+
+def test_le_retour_arriere_isole_le_pair_avant_de_relancer_le_primaire_local():
+    """#2318 : après la promotion (phase 4), relancer le primaire local AVANT d'isoler la
+    base du pair laisse deux primaires — et l'API du pair, démarrée en phase 5, y écrit."""
+    m = ROLLBACK.search((RACINE / "scripts/exploitation/bascule.sh").read_text(encoding="utf-8"))
+    assert m, "`rollback()` introuvable dans bascule.sh : le contrôle a perdu sa portée"
+    assert fautes_d_ordre_du_retour_arriere(m.group(1)) == []
+
+
+def test_l_ordre_fautif_se_voit():
+    """Cas zéro : l'ordre d'avant #2318 est refusé, l'ordre attendu passe."""
+    avant = (
+        "  if demarrer_conteneurs; then\n"
+        '  $SSH_CMD x "docker compose stop $SERVICES_APPLICATIFS"\n'
+        "  isoler_base_pair_si_promue\n"
+    )
+    apres = (
+        '  $SSH_CMD x "docker compose stop $SERVICES_APPLICATIFS"\n'
+        "  isoler_base_pair_si_promue   # demarrer_conteneurs plus bas\n"
+        "  if demarrer_conteneurs $SERVICES_DU_NOEUD; then\n"
+    )
+    assert len(fautes_d_ordre_du_retour_arriere(avant)) == 2
+    assert fautes_d_ordre_du_retour_arriere(apres) == []
