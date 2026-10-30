@@ -82,6 +82,8 @@
 	export let recherche = '';
 	/** Ce que la recherche lit, dit en exemple dans le champ. */
 	export let exempleRecherche = 'Un nom, un lot, un code…';
+	/** Ce que la recherche fouille — la phrase d'aide de `ChampRecherche` le dit. */
+	export let rechercheDans: string;
 	/** Le nombre de lignes que le tableau AFFICHE, recherche et statut appliqués. */
 	export let compte = 0;
 	/** Unique sur l'écran : relie le libellé « Recherche » à son champ. */
@@ -149,7 +151,12 @@
 </div>
 
 <ReglagesListe>
-	<ChampRecherche id={idRecherche} bind:valeur={recherche} placeholder={exempleRecherche} />
+	<ChampRecherche
+		id={idRecherche}
+		bind:valeur={recherche}
+		placeholder={exempleRecherche}
+		dans={rechercheDans}
+	/>
 	{#if options.length > 0}
 		<ChoixPastilles
 			{options}

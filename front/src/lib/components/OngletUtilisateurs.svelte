@@ -38,6 +38,7 @@
 	import ModaleAccueilArrivant from '#lib/components/ModaleAccueilArrivant.svelte';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
+	import { contientTousLesMots } from '#lib/texte.ts';
 
 	/** La liste des comptes — chargée par la page (l'onglet Site la lit aussi). */
 	export let utilisateurs: UtilisateurAdmin[] = [];
@@ -190,11 +191,7 @@
 			if (userStatutFilter && u.statut !== userStatutFilter) return false;
 			if (userCompteFilter === 'actif' && !u.actif) return false;
 			if (userCompteFilter === 'inactif' && u.actif) return false;
-			if (!userSearch.trim()) return true;
-			const q = userSearch.toLowerCase();
-			return (
-				(u.prenom + ' ' + u.nom).toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
-			);
+			return contientTousLesMots([u.prenom, u.nom, u.email], userSearch);
 		})
 		.sort(comparerParNom);
 

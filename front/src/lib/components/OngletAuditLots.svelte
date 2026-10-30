@@ -9,6 +9,8 @@
 	import BauxSansLocataire from '#lib/components/BauxSansLocataire.svelte';
 	import ReclassementTickets from '#lib/components/ReclassementTickets.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import { contientTousLesMots } from '#lib/texte.ts';
 
 	$: _siteNom = $siteNomStore;
 
@@ -104,14 +106,9 @@
 		return [...map.values()].sort((a, b) => a.user_nom.localeCompare(b.user_nom));
 	})();
 
-	$: filtered = filtre
-		? rows.filter(
-				(r) =>
-					r.user_nom.toLowerCase().includes(filtre.toLowerCase()) ||
-					r.lot_numero?.toLowerCase().includes(filtre.toLowerCase()) ||
-					r.batiment?.toLowerCase().includes(filtre.toLowerCase()),
-			)
-		: rows;
+	$: filtered = rows.filter((r) =>
+		contientTousLesMots([r.user_nom, r.lot_numero, r.batiment], filtre),
+	);
 
 	onMount(charger);
 </script>
@@ -124,15 +121,19 @@
 </p>
 
 <div class="barre-filtre">
-	<div class="field champ-en-ligne filtre-champ">
-		<input type="text" placeholder="Filtrer par nom, lot ou bâtiment…" bind:value={filtre} />
-	</div>
-	<span class="compte"
-		>{filtered.length} association{filtered.length > 1 ? 's' : ''} — {grouped.length} utilisateur{grouped.length >
-		1
-			? 's'
-			: ''}</span
+	<ChampRecherche
+		id="audit-lots-recherche"
+		bind:valeur={filtre}
+		placeholder="Nom, lot ou bâtiment…"
+		dans="nom du compte, n° de lot et bâtiment"
 	>
+		<span class="compte"
+			>{filtered.length} association{filtered.length > 1 ? 's' : ''} — {grouped.length} utilisateur{grouped.length >
+			1
+				? 's'
+				: ''}</span
+		>
+	</ChampRecherche>
 </div>
 
 {#if loading}
@@ -212,9 +213,6 @@
 		align-items: center;
 		margin-bottom: 1rem;
 		flex-wrap: wrap;
-	}
-	.filtre-champ {
-		max-width: 320px;
 	}
 	.compte {
 		color: var(--color-text-muted);

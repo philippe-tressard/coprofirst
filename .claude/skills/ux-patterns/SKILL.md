@@ -1252,6 +1252,24 @@ https://claude.ai/artifact/BRYAWNn4EZAx1EBTHHNMQu
 - Les **Archives** ne s'y mêlent que sur demande (case, ou « Les inclure » quand
   le bilan en signale).
 
+### Le champ lui-même — UN objet sur tout le site (#2308, 29/10/2026)
+
+Demandé : « standardisée sur tous les champs de saisie RECHERCHE ; l'objet doit
+être standard », puis « le champ est de la même couleur que le fond ». Cinq
+maquettes, la **B** retenue :
+
+- `ChampRecherche`, et lui seul : libellé « Recherche » devant, saisie **blanche**
+  (`--color-surface`) avec la loupe, la croix « Effacer la saisie » dès qu'il y a
+  du texte, et dessous l'aide composée par le composant à partir de `dans`
+  (obligatoire) : « Cherche dans : … — sans tenir compte des accents ni des
+  majuscules. »
+- L'aide ne promet que le vrai : une liste reçue filtre par `contientTousLesMots`
+  (`#lib/texte`) ; une recherche au serveur qui garde les accents passe
+  `sansAccents={false}` (le compte d'un locataire).
+- Un bouton (« Chercher ») se pose dans le slot ; `on:keydown` est relayé.
+- Exception déclarée : `ChoixAffaire`, un sélecteur dont le libellé nomme ce
+  qu'on choisit. 🔒 `npm run lint:recherche`.
+
 ## 6. Ligne de publication
 
 🔴 **Cette section décrivait la ligne antérieure à `PastillesAffaire`** — « urgence :

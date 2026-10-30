@@ -80,7 +80,7 @@
 		id="recherche-affaires"
 		bind:valeur={recherche}
 		placeholder="Un mot, un nom, un n° d'affaire…"
-		aide="Cherche partout : n°, titre, description, catégorie, lieu, auteur, prestataire, équipement, suites, messages et pièces jointes — sans tenir compte des accents ni des majuscules."
+		dans="n°, titre, description, catégorie, lieu, auteur, prestataire, équipement, suites, messages et pièces jointes"
 	/>
 	<ChoixPastilles
 		options={OPTIONS_FILTRE_NATURE}

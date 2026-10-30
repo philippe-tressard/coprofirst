@@ -247,6 +247,7 @@
 	bind:recherche
 	idRecherche="imp-acces-recherche"
 	exempleRecherche="{modele.colonneCle.entete}, nom, lot…"
+	rechercheDans="toutes les colonnes du tableau, propriétaire, locataire, lot et statut"
 	compte={affiches.length}
 	on:importer={(e) => televerser(e.detail.fichier, e.detail.remplacer)}
 	on:filtrer={recharger}
