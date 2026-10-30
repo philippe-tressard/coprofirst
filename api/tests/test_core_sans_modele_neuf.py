@@ -8,9 +8,13 @@ contrôle refuse qu'un tel fichier grossisse. #779 l'a ramené à 490 lignes —
 même coup rendu la consigne muette : un modèle de dix lignes y passerait sans un
 mot, et le fichier remonterait au-dessus du plafond au lot suivant.
 
-La liste ci-dessous est un **plafond décroissant** : elle ne fait que baisser.
-Extraire une de ces classes vers son domaine, c'est la retirer d'ici ; le test
-échoue si elle cesse de servir, pour qu'une exception éteinte ne reste pas écrite.
+La liste ci-dessous a été un **plafond décroissant** (8 classes le 28/09/2026) ;
+elle est CLOSE depuis le 30/10/2026 (#2316) : `core.py` porte l'utilisateur et
+ce qui lui est attaché, et rien d'autre. Les y laisser est une décision, pas une
+dette : `Utilisateur` est le centre des `Relationship` du modèle (lots,
+affaires), et le déplacer recâblerait ses `back_populates` à travers les modules
+pour un gain nul — `core` est, à la lettre, le noyau. Le test échoue toujours si
+une classe neuve y entre, ou si l'une d'elles en sort sans qu'on la retire d'ici.
 """
 
 from __future__ import annotations
@@ -20,18 +24,15 @@ import pathlib
 
 _CORE = pathlib.Path(__file__).resolve().parents[1] / "app" / "models" / "core.py"
 
-#  Ce qui reste dans `core.py` au 28/09/2026 : l'utilisateur et ce qui lui est
-#  attaché (`TypeLien`, `UserLot`, `Mandat`), et quatre petites tables sans
-#  domaine propre à ce jour.
+#  Ce qui reste dans `core.py` : l'utilisateur et ce qui lui est attaché
+#  (`TypeLien`, `UserLot`, `Mandat`). Les quatre petites tables sans domaine
+#  (`FaqItem`, `RegleResidence`, `Notification`, `ConfigSite`) sont parties le
+#  30/10/2026 dans `residence`, `notifications` et `reglages` (#2316).
 CLASSES_ADMISES = {
     "TypeLien",
-    "FaqItem",
     "Utilisateur",
     "UserLot",
     "Mandat",
-    "RegleResidence",
-    "Notification",
-    "ConfigSite",
 }
 
 

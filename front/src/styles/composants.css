@@ -243,7 +243,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
    règle locale l'emporte toujours sur celle-ci — c'est prévisible, et c'est
    ce qui rend ce découpage sûr. */
 .chevron {
-	font-size: 1.1rem;
+	font-size: var(--fs-2xl);
 	color: var(--color-text-muted);
 	transition: transform var(--duree-geste) var(--ease-out);
 	display: inline-block;
@@ -683,7 +683,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	color: var(--color-text-muted);
 }
 .empty-state h3 {
-	font-size: 1rem;
+	font-size: var(--fs-xl);
 	margin-bottom: 0.5rem;
 	color: var(--color-text);
 }
@@ -922,7 +922,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
     Rendu par `Modale.svelte` et par lui seul : un écran qui réécrit son titre
     en rouvre une quatrième. */
 .modal-titre {
-	font-size: 1.1rem;
+	font-size: var(--fs-2xl);
 	font-weight: 600;
 	margin: 0;
 }
@@ -1194,7 +1194,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	justify-content: center;
 	width: 1.25rem;
 	flex-shrink: 0;
-	font-size: 1.1rem;
+	font-size: var(--fs-2xl);
 }
 
 /*  ── Le filet qui referme un raccourci de PRÉ-REMPLISSAGE ──────────────────

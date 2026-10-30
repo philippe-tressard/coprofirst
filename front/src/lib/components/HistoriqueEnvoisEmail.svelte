@@ -62,7 +62,7 @@
 
 <style>
 	.titre-historique {
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		font-weight: 700;
 		margin-bottom: 0.75rem;
 	}

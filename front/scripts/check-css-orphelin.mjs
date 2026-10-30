@@ -318,7 +318,7 @@ const aveugles = tous.filter((f) => {
 //  règles `:global` de `Nav.svelte`. Il porte désormais son habillage : plus de
 //  classe passée, rendu mesuré identique avant/après (`e2e/liens-guide`).
 //  Le contrôle garde son rôle : il échoue dès qu'un fichier redevient aveugle.
-//  Carte des plafonds décroissants : #1571.
+//  Refusé, sans plafond : la carte #1571 a été close à zéro le 30/10/2026.
 const PLAFOND_NON_MESURES = 0;
 
 const mesures = tous.length - aveugles.length;
@@ -371,5 +371,5 @@ console.log(
 );
 console.log(
 	`  ⚠️ portée réelle des composants : ${mesures}/${tous.length} fichiers mesurés — ` +
-		`${aveugles.length} portent une classe interpolée (plafond ${PLAFOND_NON_MESURES}, #1571).`,
+		`${aveugles.length} portent une classe interpolée (plafond ${PLAFOND_NON_MESURES} : refusé).`,
 );

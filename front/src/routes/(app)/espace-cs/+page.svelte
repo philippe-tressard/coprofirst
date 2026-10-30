@@ -449,7 +449,7 @@
 		margin-bottom: 2rem;
 	}
 	.titre-file {
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		font-weight: 600;
 		margin-bottom: 0.75rem;
 	}

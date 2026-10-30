@@ -19,6 +19,7 @@
 <script lang="ts">
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import { messageErreur } from '#lib/erreurs.ts';
+	import { basculer } from '#lib/accordeon.ts';
 	import { onMount } from 'svelte';
 	import { config as configApi } from '#lib/api/index.ts';
 	import { toast } from '#lib/components/Toast.svelte';
@@ -76,9 +77,9 @@
 	// atteignables sans entrée de navigation. Elles portaient pourtant des flèches, et
 	// leur déplacement était enregistré puis écarté en silence par le menu (#401).
 	$: indicesMenu = pagesConfig.map((p, i) => (p.href !== null ? i : -1)).filter((i) => i >= 0);
-	let expandedPages = new Set<string>();
+	let pageOuverte: string | null = null;
 	function togglePage(id: string) {
-		expandedPages = expandedPages.has(id) ? new Set() : new Set([id]);
+		pageOuverte = basculer(pageOuverte, id);
 	}
 	async function savePageConfig(pg: PageDef) {
 		// Conversion partagée avec `defautsDePage` (`#lib/pages.ts`, #420) ; `pg` et non son id : ce sont les valeurs ÉDITÉES qui partent.
@@ -153,7 +154,7 @@
 </p>
 <div class="ref-list">
 	{#each pagesConfig as pg, i (pg.id)}
-		<div class="ref-item" class:expanded={expandedPages.has(pg.id)}>
+		<div class="ref-item" class:expanded={pageOuverte === pg.id}>
 			<div class="page-row">
 				<div class="order-btns">
 					{#if pg.href !== null}
@@ -183,10 +184,10 @@
 					<span class="page-row-icon"><Icon name={pg.icone || 'help-circle'} size={16} /></span>
 					<span class="page-nom">{pg.nom}</span>
 					<span class="ref-desc muted">{stripHtml(pg.descriptif)}</span>
-					<span class="chevron" class:open={expandedPages.has(pg.id)}>›</span>
+					<span class="chevron" class:open={pageOuverte === pg.id}>›</span>
 				</button>
 			</div>
-			{#if expandedPages.has(pg.id)}
+			{#if pageOuverte === pg.id}
 				<div class="ref-body">
 					<div class="pages-form-grid">
 						<div class="pages-form-section">

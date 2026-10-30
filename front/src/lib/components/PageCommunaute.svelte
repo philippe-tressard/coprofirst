@@ -495,6 +495,6 @@
 		padding: 1.5rem;
 		border-radius: 10px;
 		text-align: center;
-		font-size: 1.1rem;
+		font-size: var(--fs-2xl);
 	}
 </style>

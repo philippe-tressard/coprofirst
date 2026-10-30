@@ -349,7 +349,7 @@
 		padding: 0.75rem 1rem;
 		border-radius: var(--radius);
 		color: var(--color-text);
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		text-decoration: none;
 		border: none;
 		background: transparent;

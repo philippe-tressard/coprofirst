@@ -53,3 +53,7 @@ from app.models.points_conseil import PointConseil as PointConseil
 from app.models.points_conseil import PresentPoint as PresentPoint
 from app.models.conservation import ArchiveAffaires as ArchiveAffaires
 from app.models.avis import Avis as Avis
+from app.models.residence import FaqItem as FaqItem
+from app.models.residence import RegleResidence as RegleResidence
+from app.models.notifications import Notification as Notification
+from app.models.reglages import ConfigSite as ConfigSite

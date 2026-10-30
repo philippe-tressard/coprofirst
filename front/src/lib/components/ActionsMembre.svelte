@@ -135,7 +135,7 @@
 		height: 2rem;
 		border: 1px solid var(--color-border);
 		background: var(--color-bg);
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		display: flex;
 		align-items: center;
 		justify-content: center;

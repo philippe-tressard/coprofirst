@@ -164,7 +164,7 @@
 		scroll-margin-top: 5rem;
 	}
 	.formulaire-creation h2 {
-		font-size: 1rem;
+		font-size: var(--fs-xl);
 		font-weight: 600;
 		margin: 0 0 1rem;
 	}

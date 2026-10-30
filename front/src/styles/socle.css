@@ -263,7 +263,7 @@ body {
 	/*  Avant d'annoncer une attente (`ChargementDiffere`) : en deçà, elle
 	    clignoterait — le morceau est le plus souvent déjà en cache (12/10/2026). */
 	--delai-annonce: 300ms;
-	/*  L'échelle du TEXTE (#1055, 27/09/2026). Six paliers, chacun à la valeur
+	/*  L'échelle du TEXTE (#1055, 27/09/2026). Six paliers (huit depuis les intertitres, plus bas), chacun à la valeur
 	    déjà la plus employée par les écrans. Une taille hors échelle se range
 	    au cran SUPÉRIEUR — aucun texte ne rétrécit en se normalisant —, arbitré
 	    sur maquette le 27/09/2026 : 0,78 → sm · 0,82 → md · 0,875 → base…
@@ -274,6 +274,13 @@ body {
 	--fs-md: 0.85rem;
 	--fs-base: 0.9rem;
 	--fs-lg: 0.95rem;
+	/*  Au-dessus du texte courant, les deux crans des INTERTITRES (30/10/2026,
+	    #1571) : `xl` pour le titre d'une section ou d'une carte de premier
+	    niveau, `2xl` pour celui d'une boîte. Chacun à la valeur déjà la plus
+	    employée hors échelle (1 rem dix-neuf fois, 1,1 rem sept fois) : poser
+	    le jeton n'a changé AUCUN rendu. */
+	--fs-xl: 1rem;
+	--fs-2xl: 1.1rem;
 	/*  Le texte d'un CHAMP au téléphone : en deçà de 16 px, iOS agrandit la page
 	    à chaque appui dans le champ, et ne la rend pas. Une taille PHYSIQUE,
 	    comme les 44 px d'une cible tactile — elle ne suit pas la racine (#2165). */
@@ -403,60 +410,25 @@ a {
 	outline: none;
 }
 
-/*  🔴 LE CONTENU RICHE, rendu par `{@html safeHtml(…)}` — écrit UNE fois
-    (18/09/2026).
+/*  🔴 LE CONTENU RICHE, rendu par `{@html safeHtml(…)}` (18/09/2026).
 
-    La classe `.rich-content` était employée par QUATRE composants et stylée
-    dans UN seul (`CarteContrat`). Les trois autres — la carte d'annonce, la
-    carte d'actualité, l'aperçu — posaient la classe et n'en recevaient rien :
-    paragraphes et listes retombaient sur les marges du navigateur, qui ne sont
-    celles d'aucun autre écran du site.
+    La classe `.rich-content` était posée par quatre composants et stylée dans
+    un seul : les autres retombaient sur les marges du navigateur. Les styles
+    d'un composant n'atteignent pas le HTML injecté par `{@html}` — d'où une
+    feuille globale.
 
-    Le cas qui l'a révélé : la fenêtre de proposition de l'assistant IA. Le
-    prompt de l'usage « description » autorise désormais les mises en valeur
-    (gras, italique, souligné, listes, citation) ; encore faut-il que la
-    proposition les RENDE comme le fera l'écran une fois appliquée. Sans quoi
-    l'auteur choisit sur un aperçu qui ment.
+    Ici, le CONTENEUR seul. Ses descendants (paragraphes, listes, citation,
+    bloc dépliable) s'écrivent dans `normes.css`, « Affichage texte enrichi » —
+    une fois. Ce bloc en portait une seconde écriture en `:global(p)`… : dans
+    une feuille globale, Svelte ne traduit pas `:global()`, et le navigateur
+    abandonnait les huit règles. Retirées le 30/10/2026 (#2306) sans changer
+    un rendu ; 🔒 `npm run lint:global-feuille-globale`.
 
-    ⚠️ Les styles d'un composant Svelte ne s'appliquent PAS au HTML injecté par
-    `{@html}` : il faut `:global`, ou une feuille globale. C'est pourquoi une
-    définition par composant ne se voyait pas manquante — celui qui l'avait
-    écrite l'avait écrite en `:global`, les autres n'avaient rien du tout.
-
-    La taille et la couleur restent à l'appelant : une proposition d'assistant
-    se lit en 0.875rem, une carte de contrat en 0.85rem. C'est l'écart, il reste
-    où il se décide. */
+    ⚠️ La hauteur de ligne reste à cette place de la cascade, avant
+    `composants.css` : une classe posée à côté de `.rich-content` peut y
+    redéfinir la sienne. La taille et la couleur restent à l'appelant. */
 .rich-content {
 	line-height: 1.6;
-}
-.rich-content :global(p) {
-	margin: 0 0 0.5em;
-}
-.rich-content :global(p:last-child) {
-	margin-bottom: 0;
-}
-.rich-content :global(ul),
-.rich-content :global(ol) {
-	padding-left: 1.4em;
-	margin: 0 0 0.5em;
-}
-.rich-content :global(li) {
-	margin-bottom: 0.15em;
-}
-.rich-content :global(strong) {
-	font-weight: 600;
-}
-.rich-content :global(em) {
-	font-style: italic;
-}
-.rich-content :global(u) {
-	text-decoration: underline;
-}
-.rich-content :global(blockquote) {
-	margin: 0 0 0.5em;
-	padding-left: 0.8em;
-	border-left: 3px solid var(--color-border);
-	color: var(--color-text-muted);
 }
 
 /*  ── Apparition en cascade (27/09/2026) ───────────────────────────────────
