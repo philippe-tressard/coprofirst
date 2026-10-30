@@ -936,7 +936,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 .modal-close {
 	background: none;
 	border: none;
-	font-size: 1.5rem;
+	font-size: var(--fs-picto);
 	cursor: pointer;
 	color: var(--color-text-muted);
 	padding: 0.25rem;
@@ -1110,7 +1110,7 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	color: var(--color-text);
 }
 .carte-membre .summary-role-badge {
-	font-size: 0.74rem;
+	font-size: var(--fs-xs);
 	font-weight: 600;
 	color: var(--color-sarcelle);
 	background: var(--color-sarcelle-fond);

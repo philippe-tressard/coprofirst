@@ -80,7 +80,7 @@
 		color: var(--color-text-muted);
 	}
 	.hd-table {
-		font-size: 0.83rem;
+		font-size: var(--fs-md);
 		margin-top: 0.5rem;
 	}
 	.hd-motif {

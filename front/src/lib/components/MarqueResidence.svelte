@@ -63,6 +63,6 @@
 		font-size: var(--fs-2xl);
 	}
 	.entete .nom {
-		font-size: 1.05rem;
+		font-size: var(--fs-titre);
 	}
 </style>

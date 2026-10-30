@@ -14,8 +14,9 @@
  *  85 — le plafond comptait les valeurs en dur sans distinguer celle qui A un
  *  nom. Les jetons sont LUS dans `socle.css` (une liste recopiée divergerait au
  *  premier ajout) : `--color-*` à valeur hexadécimale, `--fs-*` en `rem`. Une
- *  valeur qui en nomme deux (`--color-bg` et `--color-text-inverse`) les
- *  propose toutes deux : le choix dépend de la propriété.
+ *  valeur qui en nomme deux (`--color-bg` et `--color-text-inverse`, ou
+ *  `--fs-titre-page` et `--fs-picto`) les propose toutes deux : le choix
+ *  dépend de ce que l'élément EST (un titre, une icône).
  *  Les couleurs à transparence (`#rrggbbaa`) ne sont pas des jetons.
  */
 export function jetonsDe(socle) {
@@ -24,7 +25,8 @@ export function jetonsDe(socle) {
 	for (const [, nom, brut] of socle.matchAll(/^\s*(--[a-z0-9-]+)\s*:\s*([^;]+);/gm)) {
 		const v = brut.trim().toLowerCase();
 		if (nom.startsWith('--color-') && /^#[0-9a-f]{6}$/.test(v)) (couleurs[v] ??= []).push(nom);
-		if (nom.startsWith('--fs-') && /^[0-9]*\.?[0-9]+rem$/.test(v)) tailles[parseFloat(v)] = nom;
+		if (nom.startsWith('--fs-') && /^[0-9]*\.?[0-9]+rem$/.test(v))
+			(tailles[parseFloat(v)] ??= []).push(nom);
 	}
 	return { couleurs, tailles };
 }
@@ -37,8 +39,8 @@ const hex6 = (h) =>
 export function egalesAUnJeton(css, { couleurs, tailles }) {
 	const trouves = [];
 	for (const m of css.matchAll(/font-size\s*:\s*([0-9]*\.?[0-9]+)rem/g)) {
-		const jeton = tailles[parseFloat(m[1])];
-		if (jeton) trouves.push([`${m[1]}rem`, `var(${jeton})`]);
+		const noms = tailles[parseFloat(m[1])];
+		if (noms) trouves.push([`${m[1]}rem`, noms.map((n) => `var(${n})`).join(' ou ')]);
 	}
 	for (const m of css.matchAll(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g)) {
 		const noms = couleurs[hex6(m[0])];

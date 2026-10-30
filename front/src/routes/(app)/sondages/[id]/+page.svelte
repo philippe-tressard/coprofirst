@@ -413,7 +413,7 @@
 		border-color: var(--color-danger);
 	}
 	.sondage-question {
-		font-size: 1.3rem;
+		font-size: var(--fs-titre-page);
 		font-weight: 700;
 		margin-bottom: 0.5rem;
 	}

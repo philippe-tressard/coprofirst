@@ -109,7 +109,7 @@
 		/*  Mise en avant FIXE (26/09/2026) : elle pulsait à chaque visite, sans fin. */
 	}
 	.consignes-icone {
-		font-size: 1.5rem;
+		font-size: var(--fs-picto);
 		flex-shrink: 0;
 	}
 	.consignes-texte {
@@ -144,7 +144,7 @@
 			padding: 0.6rem 0.75rem;
 		}
 		.consignes-icone {
-			font-size: 1.2rem;
+			font-size: var(--fs-picto-sm);
 		}
 	}
 

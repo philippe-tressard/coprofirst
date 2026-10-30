@@ -206,7 +206,7 @@
 		cursor: grabbing;
 	}
 	.reorder-handle {
-		font-size: 1.2rem;
+		font-size: var(--fs-picto-sm);
 		color: var(--color-text-muted);
 		cursor: grab;
 		flex-shrink: 0;

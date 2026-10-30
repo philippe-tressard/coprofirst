@@ -426,7 +426,7 @@
 			min-height: 24px;
 		}
 		.frise-months {
-			font-size: 0.6rem;
+			font-size: var(--fs-3xs);
 		}
 		.frise-compact-item {
 			flex-direction: column;
