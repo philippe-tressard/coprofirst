@@ -1,0 +1,234 @@
+/* ─────────────────────────────────────────
+   Le DÉCOR DES JOURS DE FÊTE (#2312) — `DecorFete`, `DecorFeteDessin`,
+   `DecorFeteMouvement`. Trois composants le rendent : sa feuille vit donc ici,
+   préfixée par `.decor-fete`, qui n'existe nulle part ailleurs.
+
+   Couleurs : les jetons de la charte (`currentColor` porté par `.bleu`, `.or`…),
+   qui ont leur valeur au thème sombre. Les animations sont SANS FIN, et c'est
+   voulu (`check-animations-infinies`) : lentes, un seul élément par fête, et
+   arrêtées si l'appareil demande moins d'animations.
+   ───────────────────────────────────────── */
+
+.decor-fete {
+	/*  UNE opacité pour toutes les fêtes, décor et mouvement compris (arbitrée à 25 %). */
+	--decor-fete-opacite: 0.25;
+	position: fixed;
+	top: 0;
+	right: 0;
+	width: 130px;
+	height: 130px;
+	z-index: -1;
+	opacity: var(--decor-fete-opacite);
+	pointer-events: none;
+}
+.decor-fete .fond-decor {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.decor-fete .bleu {
+	color: var(--color-primary);
+}
+.decor-fete .or {
+	color: var(--color-accent);
+}
+.decor-fete .rouge {
+	color: var(--fil-rouge);
+}
+.decor-fete .vert {
+	color: var(--fil-vert);
+}
+.decor-fete .ambre {
+	color: var(--fil-ambre);
+}
+.decor-fete .plein {
+	fill: currentColor;
+	fill-opacity: 0.12;
+	stroke: currentColor;
+	stroke-width: 1.3;
+}
+.decor-fete .fanion {
+	fill: currentColor;
+}
+.decor-fete .fanion.blanc {
+	fill: var(--color-sur-plein);
+	stroke: var(--color-border-champ);
+	stroke-width: 0.8;
+}
+.decor-fete .boule {
+	fill: currentColor;
+	fill-opacity: 0.25;
+	stroke: currentColor;
+	stroke-width: 1.2;
+}
+
+/*  Ce qui bouge — un seul élément par fête, lent et répétitif. */
+.decor-fete .balance,
+.decor-fete .fanion {
+	transform-box: fill-box;
+	transform-origin: 50% 0;
+	animation: decor-fete-balance 3.6s ease-in-out infinite;
+}
+.decor-fete .fanion {
+	animation-name: decor-fete-flotte;
+	animation-duration: 2.6s;
+}
+.decor-fete .delai-1 {
+	animation-delay: -0.5s;
+}
+.decor-fete .delai-2 {
+	animation-delay: -1s;
+}
+.decor-fete .delai-3 {
+	animation-delay: -1.5s;
+}
+.decor-fete .delai-4 {
+	animation-delay: -2s;
+}
+.decor-fete .scintille {
+	animation: decor-fete-scintille 2.4s ease-in-out infinite;
+}
+.decor-fete .mobile {
+	position: absolute;
+	left: 0;
+	top: 0;
+	offset-anchor: 50% 50%;
+	offset-rotate: 0deg;
+}
+.decor-fete .glisse {
+	animation: decor-fete-glisse 10s ease-in-out infinite;
+}
+.decor-fete .nage,
+.decor-fete .parcourt {
+	animation: decor-fete-parcourt 9s linear infinite;
+}
+.decor-fete .nage {
+	offset-rotate: auto;
+	transform: scaleX(-1);
+}
+.decor-fete .seconde {
+	animation-delay: -4.5s;
+}
+.decor-fete .bulle {
+	left: 52px;
+	top: 110px;
+	animation: decor-fete-monte 6s ease-in infinite;
+}
+.decor-fete .bulle.seconde {
+	left: 84px;
+	top: 118px;
+	animation-delay: -3s;
+}
+.decor-fete .flocon {
+	left: 70px;
+	top: 56px;
+	animation: decor-fete-tombe 7s linear infinite;
+}
+
+@keyframes decor-fete-balance {
+	0%,
+	100% {
+		transform: rotate(-10deg);
+	}
+	50% {
+		transform: rotate(10deg);
+	}
+}
+@keyframes decor-fete-flotte {
+	0%,
+	100% {
+		transform: rotate(-6deg);
+	}
+	50% {
+		transform: rotate(6deg);
+	}
+}
+@keyframes decor-fete-scintille {
+	0%,
+	100% {
+		opacity: 0.4;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+@keyframes decor-fete-glisse {
+	0%,
+	12% {
+		offset-distance: 4%;
+	}
+	50%,
+	62% {
+		offset-distance: 96%;
+	}
+	100% {
+		offset-distance: 4%;
+	}
+}
+@keyframes decor-fete-parcourt {
+	0% {
+		offset-distance: 0%;
+		opacity: 0;
+	}
+	12%,
+	85% {
+		opacity: 1;
+	}
+	100% {
+		offset-distance: 100%;
+		opacity: 0;
+	}
+}
+@keyframes decor-fete-monte {
+	0% {
+		transform: translateY(0);
+		opacity: 0;
+	}
+	20% {
+		opacity: 1;
+	}
+	100% {
+		transform: translateY(-70px);
+		opacity: 0;
+	}
+}
+@keyframes decor-fete-tombe {
+	0% {
+		transform: translate(0, 0) rotate(0);
+		opacity: 0;
+	}
+	15% {
+		opacity: 1;
+	}
+	100% {
+		transform: translate(-14px, 90px) rotate(90deg);
+		opacity: 0;
+	}
+}
+
+/*  Mobile : sous la barre fixe, et réduit pour ne pas gêner la lecture. */
+@media (max-width: 767px) {
+	.decor-fete {
+		top: 3.25rem;
+		transform: scale(0.7);
+		transform-origin: top right;
+	}
+}
+
+/*  Moins d'animations demandées : le décor reste, rien ne bouge. */
+@media (prefers-reduced-motion: reduce) {
+	/*  `[class]` et non `*` : le poids de `.decor-fete .balance`, et cette règle vient
+	    APRÈS — `*` ne pèse rien, et les animations continuaient (vu par l'e2e). */
+	.decor-fete [class] {
+		animation: none;
+	}
+	.decor-fete .mobile {
+		offset-distance: 50%;
+	}
+	.decor-fete .bulle,
+	.decor-fete .flocon {
+		display: none;
+	}
+}

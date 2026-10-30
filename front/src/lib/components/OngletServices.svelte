@@ -110,9 +110,13 @@
 				{:else}
 					<p class="aide">Ne se coupe pas d'ici.</p>
 				{/if}
-				<a class="reglages" href="/admin?onglet={s.onglet}">
-					Réglages <Icon name="chevron-right" size={15} />
-				</a>
+				<!--  Un service sans autre réglage que sa case (le décor des fêtes, #2312)
+				      se règle ici même : un lien vers cet onglet ne mènerait nulle part. -->
+				{#if s.onglet !== 'services'}
+					<a class="reglages" href="/admin?onglet={s.onglet}">
+						Réglages <Icon name="chevron-right" size={15} />
+					</a>
+				{/if}
 			</div>
 		</section>
 	{/each}
