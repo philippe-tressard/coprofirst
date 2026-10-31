@@ -114,7 +114,7 @@ def nom_stocke(nom_origine: str | None, extension: str) -> str:
 #  Même expression que `EXTENSIONS_IMAGE` dans front/src/lib/fichiers.ts : une
 #  règle, deux langages, et `tests/test_pieces_jointes.py` vérifie qu'elles ne
 #  divergent pas — comme pour `nom_lisible` / `nomFichier`.
-_EXTENSIONS_IMAGE = re.compile(r"\.(jpe?g|png|webp|gif)$", re.IGNORECASE)
+_EXTENSIONS_IMAGE = re.compile(r"\.(jpe?g|png|webp|gif|avif|bmp|tiff?)$", re.IGNORECASE)
 
 
 def est_image(chemin_ou_url: str | None) -> bool:
@@ -146,62 +146,9 @@ def libelle_pieces_jointes(noms: list[str]) -> str:
     return " et ".join(morceaux)
 
 
-#: Les signatures de fichier — premiers octets, par extension.
-#:
-#: 🔴 POURQUOI CE CONTRÔLE EXISTE (#773, audit du 05/09/2026)
-#:
-#: Les documents n'étaient vérifiés que par `file.content_type` — une chaîne
-#: **envoyée par le client**, qu'un `curl` fixe librement. Un exécutable renommé
-#: `.pdf` avec `Content-Type: application/pdf` était stocké, puis servi aux
-#: résidents. Les images, elles, l'étaient réellement (PIL ouvre le fichier) :
-#: le même produit avait donc deux niveaux d'exigence pour la même question.
-#:
-#: ⚠️ CE CONTRÔLE NE RESTREINT PAS LA LISTE DES TYPES ACCEPTÉS. Chaque écran
-#: garde la sienne — les compteurs acceptent des photos, les diagnostics des
-#: rapports. Il vérifie la **cohérence** : ce que le fichier dit être, et ce
-#: qu'il est. Un format sans signature stable (`.txt`, `.csv`) passe donc sans
-#: être inspecté, et c'est voulu : refuser faute de savoir reconnaître serait
-#: refuser du légitime.
-_SIGNATURES: dict[str, tuple[bytes, ...]] = {
-    ".pdf": (b"%PDF-",),
-    #  Les formats Office récents sont des archives ZIP.
-    ".docx": (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"),
-    ".xlsx": (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"),
-    ".pptx": (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"),
-    #  Les anciens (OLE2) partagent la même en-tête.
-    ".doc": (b"\xd0\xcf\x11\xe0",),
-    ".xls": (b"\xd0\xcf\x11\xe0",),
-    ".jpg": (b"\xff\xd8\xff",),
-    ".jpeg": (b"\xff\xd8\xff",),
-    ".png": (b"\x89PNG\r\n\x1a\n",),
-    ".gif": (b"GIF87a", b"GIF89a"),
-    ".webp": (b"RIFF",),
-}
-
-
-def signature_incoherente(donnees: bytes, extension: str) -> str | None:
-    """Le contenu dément-il l'extension ? Rend le motif, ou `None` si tout va bien.
-
-    Rend `None` dans deux cas qu'il ne faut pas confondre :
-
-    * l'extension **n'a pas** de signature connue (`.txt`, `.csv`) — rien à
-      vérifier, et inventer un refus ici bloquerait du contenu légitime ;
-    * l'extension a une signature, et les octets correspondent.
-
-    ⚠️ Rend un **motif**, pas un booléen : l'appelant doit pouvoir dire à
-    l'utilisateur ce qui est refusé, et le journaliser. Un refus sans motif
-    ressemble à une panne, et c'est ainsi qu'on désarme un contrôle pour
-    « débloquer » quelqu'un.
-    """
-    attendues = _SIGNATURES.get((extension or "").lower())
-    if not attendues:
-        return None
-    if any(donnees.startswith(m) for m in attendues):
-        return None
-    return (
-        f"le contenu ne correspond pas à un fichier {extension} "
-        "(signature du fichier incohérente avec son extension)"
-    )
+#  Les signatures de fichier vivent dans `signatures_fichiers` (31/10/2026, #2388) :
+#  ce module tenait sa limite de 500 lignes. Ré-exportée pour les appelants.
+from app.utils.signatures_fichiers import signature_incoherente  # noqa: E402
 
 
 #  ── Les familles de téléversement : trois règles, une table ─────────────────
@@ -255,6 +202,14 @@ _TYPES_IMAGE = {
     "image/png": ".png",
     "image/webp": ".webp",
     "image/gif": ".gif",
+    #  Ajoutés le 31/10/2026 (#2388) : toute image se joint, et toutes repartent
+    #  en JPEG (`images.enregistrer_image_recue`), métadonnées retirées. HEIC
+    #  attend son lot : `pillow-heif` est distribué sous GPLv2 (x265 embarqué).
+    #  🔴 Le SVG est REFUSÉ et doit le rester : c'est un document, qui porte du
+    #  script, et servi depuis `/uploads/` il s'exécuterait sur notre origine.
+    "image/avif": ".avif",
+    "image/bmp": ".bmp",
+    "image/tiff": ".tiff",
 }
 
 _TYPES_DOCUMENT = {

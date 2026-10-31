@@ -17,7 +17,8 @@
 /** Formats d'image acceptés par `_save_image` (ALLOWED_MIME côté API). */
 import type { CibleDocument } from '#lib/api/documents.ts';
 
-export const ACCEPT_PHOTOS = 'image/jpeg,image/png,image/webp,image/gif';
+export const ACCEPT_PHOTOS =
+	'image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp,image/tiff';
 
 /** Documents acceptés par `POST /uploads/fichier` (ALLOWED_DOC_MIME côté API). */
 export const ACCEPT_DOCUMENTS = 'application/pdf,text/plain,.pdf,.doc,.docx,.xls,.xlsx,.txt';
@@ -96,7 +97,7 @@ export function titreOuNomDuFichier(saisi: string, fichier: File): string {
 }
 
 /** Extensions produites par nos propres endpoints d'upload d'image. */
-const EXTENSIONS_IMAGE = /\.(jpe?g|png|webp|gif)$/i;
+const EXTENSIONS_IMAGE = /\.(jpe?g|png|webp|gif|avif|bmp|tiff?)$/i;
 
 /**
  * Préfixe technique posé par `nom_stocke` (api/app/utils/fichiers.py) :
