@@ -34,10 +34,14 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from email.utils import parseaddr, parsedate_to_datetime
+from typing import TYPE_CHECKING
 
 from sqlmodel import Session
 
 from app.utils import horloge
+
+if TYPE_CHECKING:  # pragma: no cover - `ia_courriel` importe ce module
+    from app.utils.ia_courriel import Conformite
 
 logger = logging.getLogger(__name__)
 
@@ -120,15 +124,10 @@ def mettre_en_forme(session: Session, nettoye: str, recu: str) -> Texte:
     repli = Texte(contenu=nettoye, origine=None, assiste=False)
     if not nettoye:
         return repli
-    from app.utils.ia_courriel import lire_un_courriel, sortie_conforme
     from app.utils.llm import ErreurLLM
 
     try:
-        #  Le courriel est un contenu NON FIABLE : il passe par la porte qui le
-        #  cadre dans l'invite (#2369), jamais par `demander` directement.
-        reponse = asyncio.run(
-            lire_un_courriel(session, usage=USAGE_REPONSE_COURRIEL, texte=nettoye)
-        )
+        lecture = lire_et_juger(session, nettoye)
     except ErreurLLM as exc:
         #  Usage coupé ou non réglé : le cas nominal tant que l'administration ne
         #  l'a pas activé. Une ligne d'information, pas une alerte.
@@ -137,17 +136,50 @@ def mettre_en_forme(session: Session, nettoye: str, recu: str) -> Texte:
     except Exception as exc:  # noqa: BLE001 — la relève ne doit jamais perdre la réponse
         logger.warning("Réponse par courriel : mise en forme en échec (%s)", type(exc).__name__)
         return repli
-    propre = (reponse.texte or "").strip()
-    if not propre:
-        return Texte(contenu=nettoye, origine=None, assiste=False, vide_selon_assistant=True)
-    conformite = sortie_conforme(nettoye, propre)
-    if not conformite.conforme:
+    if lecture.conformite is not None and not lecture.conformite.conforme:
         #  Il a écrit autre chose qu'une mise en forme : plus long, un mot qui
         #  n'est pas dans le courriel, une marque du cadre (#2369). Le motif part
         #  au journal ; le texte du courriel, jamais.
-        logger.warning("Réponse par courriel : mise en forme écartée (%s)", conformite.motif)
-        return repli
-    return Texte(contenu=propre, origine=(recu or nettoye)[:MAX_ORIGINE], assiste=True)
+        logger.warning(
+            "Réponse par courriel : mise en forme écartée (%s)", lecture.conformite.motif
+        )
+    return texte_retenu(lecture, nettoye, recu)
+
+
+@dataclass(frozen=True)
+class Lecture:
+    """Ce que l'assistant a rendu d'un courriel, et le jugement du contrat."""
+
+    #: Sa sortie, sans blancs autour — vide : « rien d'utile » selon lui.
+    brut: str
+    #: `ia_courriel.sortie_conforme` sur `brut` ; None quand il est vide.
+    conformite: Conformite | None
+
+
+def lire_et_juger(session: Session, nettoye: str) -> Lecture:
+    """Fait lire `nettoye` par la porte du courriel (#2369), et juge la sortie.
+
+    Partagée par la relève (`mettre_en_forme`) et par le canari nocturne
+    (`utils/canari_ia`) : le canari éprouve ainsi le chemin même de la relève, pas
+    une copie. Lève ce que lève l'appel au modèle (`ErreurLLM` d'abord).
+    """
+    from app.utils.ia_courriel import lire_un_courriel, sortie_conforme
+
+    #  Le courriel est un contenu NON FIABLE : il passe par la porte qui le
+    #  cadre dans l'invite, jamais par `demander` directement.
+    reponse = asyncio.run(lire_un_courriel(session, usage=USAGE_REPONSE_COURRIEL, texte=nettoye))
+    brut = (reponse.texte or "").strip()
+    return Lecture(brut=brut, conformite=sortie_conforme(nettoye, brut) if brut else None)
+
+
+def texte_retenu(lecture: Lecture, nettoye: str, recu: str) -> Texte:
+    """Ce qui entre dans le fil après une lecture : la sortie si elle est conforme,
+    le texte nettoyé sans IA sinon."""
+    if not lecture.brut:
+        return Texte(contenu=nettoye, origine=None, assiste=False, vide_selon_assistant=True)
+    if lecture.conformite is None or not lecture.conformite.conforme:
+        return Texte(contenu=nettoye, origine=None, assiste=False)
+    return Texte(contenu=lecture.brut, origine=(recu or nettoye)[:MAX_ORIGINE], assiste=True)
 
 
 def contenu_de_la_suite(

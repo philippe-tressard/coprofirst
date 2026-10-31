@@ -528,7 +528,10 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   marque du cadre, pas plus long), sinon le texte nettoyé sans IA entre. Elle ne
   rend que du texte : ni envoi, ni diffusion, ni statut ne s'y décident. Un usage
   neuf qui lit un courriel s'ajoute à `USAGES_QUI_LISENT_UN_COURRIEL` ; un cas
-  piégé neuf, à `ia_courriel_corpus.CORPUS`. 🔒 `test_ia_courriel.py`.
+  piégé neuf, à `ia_courriel_corpus.CORPUS`. 🔒 `test_ia_courriel.py`. Chaque nuit à 05:40,
+  le **canari** (`utils/canari_ia`) fait passer un cas du corpus par la porte même de la
+  relève (`reponse_courriel.lire_et_juger`) : le contrôle de 06:00 dit le modèle qui obéit,
+  la porte percée, ou INCONNU sans mesure récente. 🔒 `test_canari_ia.py`.
 - **Les leurres de l'application : un seul registre** (#2365) — `utils/leurres`
   (`ROUTES_LEURRES`, `EVENEMENTS_LEURRES`) ; leurs VALEURS (`LEURRE_ADRESSE`,
   `LEURRE_CLE_MAINTENANCE`) ne vivent que dans le `.env` du nœud, jamais dans ce
