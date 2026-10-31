@@ -68,8 +68,8 @@ def test_la_releve_verifie_les_OCTETS_recus_et_transmet_le_verdict(boite, monkey
         vus["brut"], vus["from"] = brut, from_
         return (True, "signé par syndic.fr")
 
-    def traiter(session, entetes, corps, recu_le, plancher, authentification=None):
-        vus["authentification"] = authentification
+    def traiter(session, entetes, corps, recu_le, plancher, authentification=None, pieces=None):
+        vus["authentification"], vus["pieces"] = authentification, pieces
         return courriel_boite.ACCEPTE
 
     monkeypatch.setattr(courriel_boite, "verifier_expediteur", verifier)
@@ -80,6 +80,7 @@ def test_la_releve_verifie_les_OCTETS_recus_et_transmet_le_verdict(boite, monkey
     assert vus["brut"] == _BRUT, "la vérification doit porter sur le message tel que reçu"
     assert vus["from"] == "gestion@syndic.fr"
     assert vus["authentification"] == (True, "signé par syndic.fr")
+    assert vus["pieces"] is not None, "les pièces jointes sont triées sur le message reçu"
     assert boite.acquittes == [b"1"]
 
 

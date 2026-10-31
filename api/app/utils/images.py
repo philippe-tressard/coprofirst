@@ -58,6 +58,64 @@ def reencoder_jpeg(data: bytes, max_dim: int = DIMENSION_MAX, qualite: int = QUA
         raise ValueError("image illisible") from exc
 
 
+def dimensions(data: bytes) -> tuple[int, int] | None:
+    """`(largeur, hauteur)` d'une image, sans la décoder — None si illisible."""
+    try:
+        return Image.open(io.BytesIO(data)).size
+    except Exception:  # noqa: BLE001 — toute erreur Pillow vaut « illisible »
+        return None
+
+
+def enregistrer_image_recue(
+    data: bytes,
+    nom_origine: str | None,
+    content_type: str | None,
+    dossier: str,
+    *,
+    user=None,
+    session=None,
+    max_dim: int = DIMENSION_MAX,
+) -> str:
+    """Contrôle, réencode puis écrit une image REÇUE. Rend son URL.
+
+    Le geste du téléversement (`routers/uploads`) et de la relève des courriels
+    (`utils/courriel_pieces_jointes`) : écrit une fois, sans quoi deux chemins
+    d'entrée d'une image divergeraient sur le contrôle ou le réencodage.
+
+    ⚠️ Le contrôle porte sur ce qui ARRIVE, avant réencodage : c'est l'octet reçu
+    qui peut mentir, pas celui que nous produisons. L'extension écrite est
+    `.jpg`, celle du réencodage ; le radical du nom d'origine est gardé
+    (`nom_stocke`) — une photo arrivait sinon dans l'e-mail sous un nom d'UUID.
+
+    Lève une `HTTPException` (400 ou 413) au premier refus.
+    """
+    from fastapi import HTTPException
+
+    from app.utils.fichiers import enregistrer_fichier_recu, verifier_fichier_recu
+    from app.utils.stockage import stockage
+
+    verifier_fichier_recu(data, nom_origine, content_type, "image", user)
+    try:
+        data = reencoder_jpeg(data, max_dim=max_dim)
+    except ValueError:
+        raise HTTPException(400, "Impossible de lire l'image.")
+    #  🔴 Le type ÉCRIT est celui des octets écrits : du JPEG. Avec le type reçu,
+    #  la signature du JPEG produit était confrontée à `.png` — toute image PNG,
+    #  WebP ou GIF était refusée en 400, et seules les photos JPEG passaient
+    #  (trouvé le 31/10/2026, en versant les pièces jointes des courriels).
+    nom = enregistrer_fichier_recu(
+        data,
+        nom_origine,
+        "image/jpeg",
+        "image",
+        dossier,
+        user=user,
+        extension_forcee=".jpg",
+        session=session,
+    )
+    return stockage().url(f"{dossier}/{nom}")
+
+
 def reduire_sous_budget(data: bytes, budget_octets: int) -> bytes:
     """Ramène l'image sous `budget_octets`, au mieux — rend les octets à envoyer.
 
