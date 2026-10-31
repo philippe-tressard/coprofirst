@@ -225,7 +225,7 @@
 {#each fiche.contrats as c (c.version)}
 	<p class="contrat">
 		Version {c.version}, acceptée le {fmtDatetime(c.accepte_le)} par {c.accepte_par}
-		<span class="aide">— empreinte <code>{c.empreinte.slice(0, 16)}</code></span>
+		<span class="aide">{SEPARATEUR.tiret}empreinte <code>{c.empreinte.slice(0, 16)}</code></span>
 	</p>
 	<details>
 		<summary>Lire le texte archivé</summary>
@@ -241,7 +241,7 @@
 		<li>
 			<span class="quand">{fmtDatetime(d.cree_le)}</span>
 			<strong>{libelleDecision(d.geste)}</strong>{#if d.motif}{SEPARATEUR.tiret}{d.motif}{/if}
-			<span class="auteur">· {d.auteur}</span>
+			<span class="auteur">{SEPARATEUR.point}{d.auteur}</span>
 		</li>
 	{:else}
 		<li class="aide">Aucune décision.</li>

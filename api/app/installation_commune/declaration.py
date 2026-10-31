@@ -16,12 +16,17 @@ l'hébergeur de la phase 3 soit choisi.
   "suspendue": false,
   "base": "TILLEULS_DATABASE_URL", "secret": "TILLEULS_SECRET_KEY",
   "racine_fichiers": "/app/uploads/tilleuls",
-  "expediteur": "contact@residence-tilleuls.fr", "nom_expediteur": "Les Tilleuls"
+  "expediteur": "contact@residence-tilleuls.fr", "nom_expediteur": "Les Tilleuls",
+  "operateurs": ["exploitation@hebergeur.example"]
 }]}
 ```
 
 - **Les secrets n'y sont jamais écrits** : `base` et `secret` NOMMENT les variables
   d'environnement qui les portent (le coffre de l'hébergeur, §4.2).
+- **`operateurs`** : les adresses des comptes de CETTE copropriété qui sont
+  opérateurs de l'instance — l'exploitant les désigne, jamais un administrateur
+  de copropriété (`auth/operateur`, spec §4.7). Facultatif : sans lui, personne
+  ne supervise l'instance depuis cette copropriété.
 - **L'hôte commun est celui de l'`ORIGIN`** — l'URL publique de l'installation
   (arbitrage du 17/10/2026) ; l'adresse dérivée d'une copropriété est
   `<alias>.<hôte commun>`.
@@ -44,6 +49,7 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app.auth.adresse_compte import normaliser_adresse
 from app.config import defaut_du_secret, get_settings
 from app.contexte import IDENTIFIANT_UNIQUE, Copropriete, nom_d_hote
 from app.installation_commune.alias import alias_de, est_alias, est_nom_d_hote
@@ -70,6 +76,7 @@ class _CoproprieteDeclaree(BaseModel):
     racine_fichiers: str
     expediteur: str
     nom_expediteur: str = ""
+    operateurs: list[str] = []
 
 
 class _Fichier(BaseModel):
@@ -91,6 +98,8 @@ class Entree:
     #: Le NOM de la variable qui porte l'URL de sa base — jamais sa valeur : la
     #: mise à jour nocturne exporte chaque base par `env:<nom>` (#2053).
     variable_base: str = ""
+    #: Les adresses (normalisées) de ses comptes que l'exploitant déclare opérateurs.
+    operateurs: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -206,6 +215,9 @@ def _entree(
         erreurs.append(f"{qui} : la racine des fichiers doit être un chemin absolu.")
     if "@" not in c.expediteur:
         erreurs.append(f"{qui} : expéditeur invalide.")
+    operateurs = frozenset(normaliser_adresse(a) for a in c.operateurs)
+    if any("@" not in a for a in operateurs):
+        erreurs.append(f"{qui} : adresse d'opérateur invalide.")
     return Entree(
         copropriete=Copropriete(
             identifiant=qui,
@@ -223,6 +235,7 @@ def _entree(
         hotes_propres=hotes,
         suspendue=c.suspendue,
         variable_base=c.base,
+        operateurs=operateurs,
     )
 
 

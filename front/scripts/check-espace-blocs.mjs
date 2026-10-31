@@ -57,12 +57,16 @@
  *  - **en tête de branche** : `{#if x}· x`, `{:else}— x` — Svelte retire
  *    l'espace d'avant, le séparateur colle au mot qui précède ;
  *  - **recopié** : `·&nbsp;` écrit à la main — la forme juste, mais une seconde
- *    écriture de la constante.
+ *    écriture de la constante ;
+ *  - **en tête d'élément en ligne** (#2362, 31/10/2026) : `<span class="lieu">· x</span>`
+ *    — l'espace d'avant la balise est sécable, et la ligne se coupait après « · ».
+ *    Les seize occurrences du dépôt sont passées à la constante.
  *
  *  Ce qu'il laisse : `&nbsp;·&nbsp;` collé des deux côtés (la ligne ne s'y coupe
- *  pas), et — limite connue, mesurée à l'écran plutôt que convertie en bloc —
- *  le séparateur entre deux espaces sécables du texte courant (` · `), et celui
- *  qui ouvre un élément en ligne (`<span>· x</span>`) — #2362.
+ *  pas), un séparateur en tête d'un composant (`<Badge>→ …</Badge>` : un
+ *  pictogramme dans une étiquette, pas une phrase), et — limite connue, mesurée à
+ *  l'écran plutôt que convertie en bloc — le séparateur entre deux espaces
+ *  sécables du texte courant (` · `), plusieurs centaines (#2362).
  *
  *  Lancer : node scripts/check-espace-blocs.mjs [--selftest]
  */
@@ -96,6 +100,13 @@ const TETE_DE_BRANCHE = new RegExp(
 );
 //  Recopié : séparateur puis insécable, écrit à la main.
 const RECOPIE = new RegExp(String.raw`(?<!&nbsp;)${SEP}&nbsp;`, 'g');
+//  En tête d'élément en ligne (#2362) : `<span class="lieu">· {ou}</span>` — l'espace
+//  d'avant la balise est sécable, celle d'après le séparateur aussi : la ligne se
+//  coupe APRÈS lui. `<option>` n'en est pas : une liste ne coupe pas ses lignes.
+const TETE_D_ELEMENT = new RegExp(
+	String.raw`<(?:${EN_LIGNE})\b[^>]*>[ \t]*${SEP}${PUIS_UN_MOT}`,
+	'g',
+);
 
 /** Blanchit le contenu de `<script>` et `<style>`, longueurs et lignes conservées. PURE. */
 function balisageSeul(texte) {
@@ -125,16 +136,17 @@ export function fautes(source) {
 		if (!apresBaliseOuvrante(texte, m.index)) acc.push(ligne(m.index));
 	}
 	for (const m of texte.matchAll(FERMETURE)) acc.push(ligne(m.index) + 1);
-	for (const motif of [COLLE_AVANT, TETE_DE_BRANCHE, RECOPIE]) {
+	for (const motif of [COLLE_AVANT, TETE_DE_BRANCHE, RECOPIE, TETE_D_ELEMENT]) {
 		for (const m of texte.matchAll(motif)) acc.push(ligne(m.index + m[0].length - 1));
 	}
 	return acc;
 }
 
 const cas = [
-	//  Le défaut du ticket, tel qu'il était écrit.
-	['<h1>{prenom}{#if lot}\n\t<span>— {lot}</span>{/if}</h1>', 1],
-	['<h1>{a}{/if}{#if roles}\n\t<span>· {roles}</span>{/if}</h1>', 1],
+	//  Le défaut du ticket, tel qu'il était écrit : le bloc collé, et le séparateur
+	//  en tête de `<span>` (#2362) — deux fautes.
+	['<h1>{prenom}{#if lot}\n\t<span>— {lot}</span>{/if}</h1>', 2],
+	['<h1>{a}{/if}{#if roles}\n\t<span>· {roles}</span>{/if}</h1>', 2],
 	['Vient du <strong>{o}</strong>{#if ou}\n\tqui se change dans {ou}{/if}.', 1],
 	['v{x}{#if y}\n\tmise à jour{/if}', 1],
 	['{titre}{#if requis}\n\t*{/if}', 1],
@@ -165,6 +177,13 @@ const cas = [
 	['<td>{#if a}\n\tb{/if}</td>', 0],
 	['<span class="x">{#if a}\n\tb{/if}</span>', 0],
 	['<td>{#if vide}\n\t—\n{:else}{v}{/if}</td>', 0],
+	//  En tête d'élément en ligne (#2362) : les formes du ticket, et leur conversion.
+	['{date} <span class="lieu">· {cr.ou}</span>', 1],
+	['{tel}<span\n\tclass="x"\n\t>· <a href="/">WhatsApp</a></span\n>', 1],
+	['<strong>{n}</strong> <small>— par {auteur}</small>', 1],
+	['{date} <span class="lieu">{SEPARATEUR.point}{cr.ou}</span>', 0],
+	['<option value="a">— Aucun —</option>', 0],
+	['<Badge teinte="x">→ {etat}</Badge>', 0],
 	//  Limite connue (#2362) : le texte courant, mesuré à l’écran plutôt que converti.
 	['{a} · {b}', 0],
 	['{a}{#if b}\n\t<div>bloc</div>{/if}', 0],

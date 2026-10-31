@@ -18,6 +18,7 @@
   « Vigik », ni « télécommande », ni un chemin d'API.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import Badge from '#lib/components/Badge.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import { champDe, fmtNombre, nombreOuNull } from '#lib/utils.ts';
@@ -296,7 +297,7 @@
 							<td>
 								<span class="proprietaire">{imp.nom_proprietaire}</span>
 								{#if imp.nom_locataire}
-									<span class="muted texte-sm"> · loc. {imp.nom_locataire}</span>
+									<span class="muted texte-sm">{SEPARATEUR.point}loc. {imp.nom_locataire}</span>
 								{/if}
 							</td>
 							<td><code class="texte-sm">{champDe(imp, modele.colonneCle.cle) ?? '—'}</code></td>

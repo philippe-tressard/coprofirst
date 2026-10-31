@@ -15,6 +15,7 @@
   le président.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { annuaireAdmin, type MembreConseilAdmin } from '#lib/api/index.ts';
 	import { toast } from '#lib/components/Toast.svelte';
@@ -186,7 +187,8 @@
 						: ''}</span
 				>
 				{#if whatsappUrl}<span class="lien-whatsapp"
-						>· <a href={whatsappUrl} target="_blank" rel="noopener">WhatsApp</a></span
+						>{SEPARATEUR.point}<a href={whatsappUrl} target="_blank" rel="noopener">WhatsApp</a
+						></span
 					>{/if}
 				<ActionsMembre barre={false} onModifier={() => (enTeteEdite = true)} />
 			</div>

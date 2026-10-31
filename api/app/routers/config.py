@@ -15,9 +15,7 @@ from sqlmodel import Session, select
 
 from app.auth.deps import require_admin
 from app.utils.services import (
-    CLE_PUBLIQUE_DECOR_FETES,
     CLES_ACTIVATION,
-    SERVICE_DECOR_FETES,
     SERVICE_REPONSES_COURRIEL,
     normaliser_activation,
     refus_d_activation,
@@ -27,6 +25,7 @@ from app.database import get_session
 from app.models.core import ConfigSite, Utilisateur
 from app.utils.destinataires import peut_gerer_le_site
 from app.utils import demo, pied_de_page, reglages, whatsapp
+from app.utils.config_publique import cles_calculees
 from app.utils.config_site import config_site
 from app.utils.conservation_politique import apres_ecriture
 from app.utils.liens import adresse_du_site, nom_site
@@ -130,14 +129,8 @@ def get_config(session: Session = Depends(get_session)):
     """
     rows = session.exec(select(ConfigSite)).all()
     publiques = {r.cle: r.valeur for r in rows if _est_public(r.cle)}
-    #  Calculée par la lecture unique des services (#2312) : le décor des jours de fête
-    #  s'affiche-t-il ? La clé d'activation, elle, ne sort pas.
-    actif = service_actif({r.cle: r.valeur for r in rows}, SERVICE_DECOR_FETES)
-    publiques[CLE_PUBLIQUE_DECOR_FETES] = "1" if actif else "0"
-    publiques |= {"site_url": adresse_du_site()}  # dérivée, jamais lue en base (#2058)
-    #  Calculée, jamais lue en base : le front apprend ainsi qu'il sert la démo (#1901).
-    publiques[demo.CLE_PUBLIQUE] = "1" if demo.est_demo() else "0"
-    return publiques
+    #  Et les clés CALCULÉES — décor, adresse, démo, opérateur (`utils/config_publique`).
+    return publiques | cles_calculees({r.cle: r.valeur for r in rows})
 
 
 @router.get("/admin", response_model=Dict[str, str])

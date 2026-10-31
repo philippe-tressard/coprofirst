@@ -307,6 +307,16 @@ pas les autres**. Chaque exécution est journalisée par copro.
 - **L'opérateur ne lit aucune donnée d'une copro** (D5). Sa supervision (santé,
   volumes, erreurs) ne contient **aucune donnée personnelle** : ni nom, ni
   courriel, ni contenu d'affaire dans les journaux qu'il lit.
+- **Qui désigne l'opérateur** (31/10/2026) : sur une instance **propre** à une
+  copropriété, Admin › Utilisateurs accorde le rôle à un administrateur (son
+  administrateur en est aussi l'exploitant). Sur une instance **commune**, c'est
+  l'**exploitant**, dans la déclaration (`operateurs` de chaque copropriété du
+  fichier `COPROPRIETES_FICHIER`) : le drapeau d'un compte n'y compte pas, et
+  Admin › Utilisateurs refuse le geste (409). Sans cela, l'administrateur d'une
+  copropriété hébergée se faisait opérateur de toute l'instance. Une seule
+  lecture, `auth/operateur.roles_effectifs`, pour le refus et pour l'écran.
+  🔒 `test_operateur_instance_commune.py`. En phase 3, l'opérateur quitte les
+  bases des copropriétés pour le registre.
 
 ### 4.8 Les canaux et les services (D6)
 

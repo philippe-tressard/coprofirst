@@ -105,8 +105,10 @@
 						<div class="frise-row-title">
 							<strong>{c.libelle}</strong>
 							<span class="text-muted-sm">{c.prestataireNom}</span>
-							<span class="text-muted-sm">· {equipLabel(c.type_equipement)}</span>
-							{#if c.numero_contrat}<span class="text-muted-sm">· N° {c.numero_contrat}</span>{/if}
+							<span class="text-muted-sm">{SEPARATEUR.point}{equipLabel(c.type_equipement)}</span>
+							{#if c.numero_contrat}<span class="text-muted-sm"
+									>{SEPARATEUR.point}N° {c.numero_contrat}</span
+								>{/if}
 							<NoteEtoiles note={c.noteMoy} nbAvis={c.nbNotations} />
 						</div>
 						<div class="frise-row-badges">
@@ -159,7 +161,7 @@
 								class:frise-marker-reconduit={friseStyle === 'reconduit'}
 								title="Fin : {fmtDate(c.dateFin.toISOString())} ({c.dateFin.getFullYear()})"
 							>
-								<span class="frise-marker-label">→ {c.dateFin.getFullYear()}</span>
+								<span class="frise-marker-label">{SEPARATEUR.fleche}{c.dateFin.getFullYear()}</span>
 							</div>
 						{/if}
 					</div>
@@ -170,7 +172,7 @@
 				<span><span class="frise-legend-dot point-annee"></span> Expire cette année</span>
 				<span><span class="frise-legend-dot point-reconduit"></span> Reconduit tacitement</span>
 				<span class="frise-legend-hatch">▧ Zone de préavis</span>
-				<span class="legende-fin">→ Fin en {ANNEE_COURANTE + 1}</span>
+				<span class="legende-fin">{SEPARATEUR.fleche}Fin en {ANNEE_COURANTE + 1}</span>
 			</div>
 		</div>
 	{/if}

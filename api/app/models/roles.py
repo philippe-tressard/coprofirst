@@ -57,7 +57,8 @@ class RoleUtilisateur(str, Enum):
 #: Utilisateurs l'accorde et le retire (`ajouter-role`, `retirer-role`) — par
 #: tout administrateur (15/10/2026), à un administrateur seulement, jamais à son
 #: dernier titulaire actif (`routers/admin/utilisateurs._exiger_geste_operateur`,
-#: `_exiger_un_autre_titulaire`).
+#: `_exiger_un_autre_titulaire`). Sur une instance COMMUNE, le drapeau ne compte
+#: pas : l'exploitant désigne l'opérateur (`auth/operateur`, 31/10/2026).
 ROLE_OPERATEUR = "operateur"
 
 

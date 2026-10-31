@@ -80,7 +80,9 @@
 					{:else}
 						<strong class="urgence-titre">{u.titre}</strong>
 					{/if}
-					{#if u.meta?.perimetre}<span class="urgence-perimetre">— {u.meta.perimetre}</span>{/if}
+					{#if u.meta?.perimetre}<span class="urgence-perimetre"
+							>{SEPARATEUR.tiret}{u.meta.perimetre}</span
+						>{/if}
 				</div>
 			</div>
 			{#if u.meta?.debut && u.meta?.fin}

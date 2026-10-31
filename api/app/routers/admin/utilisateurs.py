@@ -26,6 +26,7 @@ from app.utils.comptes import DESACTIVATION, condition_hors_comptes_techniques, 
 from app.utils.porteurs_acces import ids_detenteurs
 from app.utils.etiquettes_compte import etiquettes
 from app.models.copropriete import Lot
+from app.auth.operateur import designe_par_l_exploitant
 from app.models.roles import ROLE_OPERATEUR
 from app.utils.valeurs import valeur
 from app.utils.suppression_compte import supprimer_compte
@@ -152,7 +153,17 @@ def _exiger_geste_operateur(
     15/10/2026) : la règle « seul un opérateur l'accorde » (#1750) est levée. Le
     mode démo, lui, refuse toute écriture sur `/admin/utilisateurs/` — son
     administrateur publié ne se donne donc pas ce rôle (#1985).
+
+    Sur une instance COMMUNE, ni l'un ni l'autre : l'opérateur y est désigné par
+    l'exploitant (`auth/operateur`, 31/10/2026). L'administrateur d'une
+    copropriété hébergée se serait sinon fait opérateur de toute l'instance.
     """
+    if role == ROLE_OPERATEUR and designe_par_l_exploitant():
+        raise HTTPException(
+            409,
+            "L'opérateur de cette instance est désigné par son exploitant, "
+            "dans la déclaration des copropriétés.",
+        )
     if role == ROLE_OPERATEUR and not retrait and not cible.has_role(RoleUtilisateur.admin):
         raise HTTPException(
             400, "Le rôle Opérateur s'accorde à un administrateur : ajoutez d'abord le rôle Admin."

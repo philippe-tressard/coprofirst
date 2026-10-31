@@ -129,7 +129,7 @@ L'application est accessible sur `http://localhost`.
 > Docker, `cloudflared` — chaque nuit à 03:00, contrôlés chaque matin
 > (`deploiement/standard/correctifs-systeme.sh`).
 
-Au premier lancement, deux comptes sont créés avec un **mot de passe aléatoire** affiché dans les logs : l'**administrateur** de la copropriété (`admin@localhost`) et l'**opérateur** de l'installation (`operateur@localhost`, administrateur aussi — supervision, santé, inscription au registre). Séparés pour confier le premier sans livrer le second.
+Au premier lancement, deux comptes sont créés avec un **mot de passe aléatoire** affiché dans les logs : l'**administrateur** de la copropriété (`admin@localhost`) et l'**opérateur** de l'installation (`operateur@localhost`, administrateur aussi — supervision, santé, inscription au registre). Séparés pour confier le premier sans livrer le second. Sur une installation **commune**, qui sert plusieurs copropriétés, l'opérateur n'est pas accordé par un administrateur : l'exploitant du serveur le désigne dans le fichier des copropriétés (champ `operateurs`).
 
 ```bash
 docker compose logs api | grep -A5 "ADMIN INITIAL"

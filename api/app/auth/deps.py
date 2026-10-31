@@ -13,7 +13,7 @@ from app.models.core import (
     RoleUtilisateur,
     Utilisateur,
 )
-from app.models.roles import ROLE_OPERATEUR
+from app.auth.operateur import est_operateur
 
 
 def _get_current_user(
@@ -121,17 +121,6 @@ def require_admin(user: Utilisateur = Depends(get_current_user)) -> Utilisateur:
     if not user.has_role(RoleUtilisateur.admin):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Réservé à l'admin")
     return user
-
-
-def est_operateur(user: Utilisateur) -> bool:
-    """Cet utilisateur est-il l'OPÉRATEUR de la plateforme (#1750, spec §4.7) ?
-
-    Il supervise l'installation — santé, contrôles de fiabilité, base — et ne
-    lit aucune donnée personnelle (D5) : ce qu'il lit, `test_operateur_sans_donnee_personnelle.py`
-    le vérifie. Distinct de l'administrateur de copropriété, qu'il n'est pas
-    forcément, et qui n'est pas forcément lui.
-    """
-    return user.has_role(ROLE_OPERATEUR)
 
 
 def require_operateur(user: Utilisateur = Depends(get_current_user)) -> Utilisateur:

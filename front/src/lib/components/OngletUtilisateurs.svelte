@@ -31,6 +31,7 @@
 	import { compterTitulaires } from '#lib/droits.ts';
 	import GestesRolesCompte from '#lib/components/GestesRolesCompte.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import LegendeRoles from '#lib/components/LegendeRoles.svelte';
 	import FiltresUtilisateurs from '#lib/components/FiltresUtilisateurs.svelte';
 	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
 	import FormulaireUtilisateur from '#lib/components/FormulaireUtilisateur.svelte';
@@ -207,6 +208,7 @@
 {#if chargement || erreur}
 	<EtatListe {chargement} {erreur} titreErreur="Impossible d’afficher les utilisateurs" />
 {:else}
+	<LegendeRoles />
 	<!--  Recherche, filtres en pastilles, compteurs (#1329). -->
 	<FiltresUtilisateurs
 		bind:recherche={userSearch}
