@@ -16,6 +16,7 @@ from app.models.roles import ROLE_OPERATEUR
 from app.routers.admin import installation as routeur_installation
 from app.utils import installation
 from tests.aides_http import base_http, client_http
+from tests.aides_installation_commune import COPROPRIETES, installation_commune
 from tests.aides_sources import modules_app
 
 
@@ -164,3 +165,36 @@ def test_service_active_la_route_verifie(moteur, monkeypatch):
         "en_retard",
         1,
     )
+
+
+#  Une ou plusieurs copropriétés : un constat lu par `contexte.est_commune()`,
+#  jamais un réglage ni un nombre supposé (#2400, règle 5).
+def test_une_installation_propre_sert_une_seule_copropriete(monkeypatch):
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "coproprietes_fichier", "")
+    assert installation.coproprietes_servies() == installation.CoproprietesServies(
+        commune=False, nombre=1
+    )
+
+
+def test_une_installation_commune_compte_ses_coproprietes(tmp_path, monkeypatch):
+    with installation_commune(tmp_path, monkeypatch):
+        servies = installation.coproprietes_servies()
+    assert (servies.commune, servies.nombre) == (True, len(COPROPRIETES))
+
+
+def test_une_declaration_invalide_le_dit_au_lieu_d_un_nombre(tmp_path, monkeypatch):
+    with installation_commune(tmp_path, monkeypatch, coproprietes=[{"alias": "?"}]):
+        servies = installation.coproprietes_servies()
+    assert (servies.commune, servies.nombre) == (True, None)
+    assert servies.detail
+
+
+def test_la_route_dit_le_mode(moteur, monkeypatch):
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "coproprietes_fichier", "")
+    http, _ = client_http(moteur, RoleUtilisateur.admin, roles_json=f"admin,{ROLE_OPERATEUR}")
+    corps = http.get("/admin/installation").json()
+    assert (corps["commune"], corps["nombre_coproprietes"]) == (False, 1)

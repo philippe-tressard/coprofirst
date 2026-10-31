@@ -35,6 +35,7 @@
 	import { toast } from '#lib/components/Toast.svelte';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { fmtDatetime } from '#lib/date.ts';
+	import { fmtNombre } from '#lib/utils.ts';
 	import { nomAffiche } from '#lib/noms.ts';
 	import { lienSource } from '#lib/plateforme.ts';
 	import TexteMarkdown from '#lib/components/TexteMarkdown.svelte';
@@ -157,6 +158,20 @@
 							l’installation : <code>reference</code> ou <code>replique</code>.
 						</p>
 					{/if}
+				</dd>
+				<dt>Copropriétés servies</dt>
+				<dd class:ton-alerte={etat.commune && etat.nombre_coproprietes === null}>
+					{#if !etat.commune}
+						Une seule
+					{:else if etat.nombre_coproprietes === null}
+						Installation commune{SEPARATEUR.tiret}{etat.detail_coproprietes}
+					{:else}
+						Installation commune ({fmtNombre(etat.nombre_coproprietes)})
+					{/if}
+					<p class="aide">
+						Décidé par l’exploitant du serveur (<code>COPROPRIETES_FICHIER</code> dans le
+						<code>.env</code>), pas un réglage de l’administration.
+					</p>
 				</dd>
 				<dt>Version</dt>
 				<dd>

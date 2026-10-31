@@ -24,6 +24,10 @@ le master (git => main) ou une réplique (git => replica) »*.
 4. **Rien ne sort sans accord** (§4.10, règle 9) : la vérification interroge
    GitHub, donc elle est un SERVICE, coupé tant que l'administration ne l'active
    pas (`SERVICE_VERIF_VERSION`).
+5. **Une ou plusieurs copropriétés : un constat, jamais un réglage** (#2400). Le
+   mode se déclare dans le `.env` de l'exploitant (`COPROPRIETES_FICHIER`, #1894) ;
+   l'écran le lit ici (`coproprietes_servies`), par `contexte.est_commune()`, et ne
+   le recalcule pas. Une déclaration invalide le dit, au lieu d'un nombre.
 
 ⚠️ Ne pas confondre avec le rôle d'un NŒUD dans la haute disponibilité (actif /
 standby, `.active`) : les deux Raspberry Pi sont ENSEMBLE la référence.
@@ -73,6 +77,33 @@ def est_replique() -> bool:
 def est_reference() -> bool:
     """CETTE installation est-elle la référence ? La question que pose le registre (§4.11)."""
     return role_installation() == "reference"
+
+
+@dataclass(frozen=True)
+class CoproprietesServies:
+    """Combien de copropriétés CETTE installation sert (règle 5)."""
+
+    commune: bool
+    #: `None` quand la déclaration ne peut pas servir : jamais un nombre supposé.
+    nombre: Optional[int]
+    detail: str = ""
+
+
+def coproprietes_servies() -> CoproprietesServies:
+    """Une seule copropriété, ou une installation commune et son nombre (règle 5)."""
+    #  Imports dans la fonction : `contexte` lit la déclaration, qui charge la
+    #  configuration des copropriétés — rien que ce module ait à porter à l'import.
+    from app import contexte
+    from app.installation_commune.declaration import DeclarationInvalide
+
+    if not contexte.est_commune():
+        return CoproprietesServies(commune=False, nombre=1)
+    try:
+        return CoproprietesServies(commune=True, nombre=len(contexte.coproprietes()))
+    except DeclarationInvalide:
+        return CoproprietesServies(
+            commune=True, nombre=None, detail="déclaration des copropriétés invalide"
+        )
 
 
 def empreinte(valeur: Optional[str] = None) -> str:
