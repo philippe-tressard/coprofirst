@@ -8,7 +8,9 @@ date »), jamais la commande du moteur.
 
 from __future__ import annotations
 
+import os
 import re
+import socket
 import uuid
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -16,6 +18,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import Interval, String, cast, func, literal, text
 from sqlalchemy.engine import URL, make_url
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.pool import NullPool
 
 # ── Les gestes d'exploitation ────────────────────────────────────────────────
@@ -81,6 +84,18 @@ def differer_cles_etrangeres(conn) -> None:
 _FORMAT_HEURE_SCHEMA = "%Y%m%d%H%M%S"
 _NOM_SCHEMA_JETABLE = re.compile(r"^t_(\d{14})_[0-9a-f]{12}$")
 
+#: …et son CRÉATEUR, en commentaire : `createur=<pid>@<hôte>` (#2399). Un schéma
+#: dont le créateur est mort est abandonné quel que soit son âge — les restes de
+#: plusieurs suites coupées dans la même heure ne s'accumulent plus (140 schémas,
+#: 52 000 relations au catalogue le 31/10/2026 : un DDL y prenait 396 ms au lieu de
+#: 16). L'hôte, parce qu'un pid ne se juge que sur la machine qui l'a donné.
+_COMMENTAIRE_CREATEUR = re.compile(r"^createur=(\d+)@([A-Za-z0-9._-]+)$")
+
+
+def _hote() -> str:
+    """Le nom de cet hôte, réduit à ce qu'un littéral SQL porte sans échappement."""
+    return re.sub(r"[^A-Za-z0-9._-]", "", socket.gethostname()) or "inconnu"
+
 
 def _heure_du_serveur(c) -> datetime:
     """L'heure du SERVEUR (UTC naïf) : l'âge d'un schéma se mesure à elle seule.
@@ -101,6 +116,10 @@ def poser_schema(url) -> str:
             heure = _heure_du_serveur(c)
             nom = f"t_{heure:{_FORMAT_HEURE_SCHEMA}}_{uuid.uuid4().hex[:12]}"
             c.execute(text(f'CREATE SCHEMA "{nom}"'))  # noqa: S608 — identifiant généré ici
+            #  Un COMMENT ne prend pas de paramètre lié : le littéral n'est fait que d'un
+            #  entier et d'un nom d'hôte réduit à [A-Za-z0-9._-] (`_hote`).
+            createur = f"createur={os.getpid()}@{_hote()}"
+            c.execute(text(f"COMMENT ON SCHEMA \"{nom}\" IS '{createur}'"))  # noqa: S608
     finally:
         admin.dispose()
     return nom
@@ -111,8 +130,11 @@ def url_dans_schema(url, nom: str, *, cles_etrangeres: bool = True) -> URL:
 
     `cles_etrangeres=False` suspend la vérification des clés sur chaque
     connexion (`session_replication_role = replica`, rôle superutilisateur).
+
+    Chaque connexion se NOMME du schéma (`application_name`) : la purge ne retire
+    jamais le schéma d'une connexion ouverte (#2399).
     """
-    options = f"-csearch_path={nom}"
+    options = f"-csearch_path={nom} -capplication_name={nom}"
     if not cles_etrangeres:
         options += " -csession_replication_role=replica"
     return make_url(url).update_query_dict({"options": options})
@@ -187,24 +209,75 @@ def heure_du_schema_jetable(nom: str) -> datetime | None:
         return None
 
 
-def retirer_schemas_jetables_perimes(url, *, plus_vieux_que: timedelta) -> int:
-    """Retire les schémas jetables créés il y a plus de `plus_vieux_que` ; rend leur nombre.
+def schemas_jetables_a_retirer(
+    schemas: dict[str, str | None],
+    *,
+    maintenant: datetime,
+    plus_vieux_que: timedelta,
+    tenus: set[str],
+    hote: str,
+    vivant: Callable[[int], bool],
+) -> list[str]:
+    """Les schémas jetables abandonnés, parmi `schemas` (nom → commentaire). PURE.
 
-    Le geste qui borne ce qu'un processus interrompu laisse derrière lui. Seul
-    l'âge écrit dans le nom décide, mesuré à l'heure du serveur qui l'a écrit :
-    un schéma sans heure lisible reste.
+    - tenu par une connexion ouverte (`application_name`) : jamais ;
+    - plus vieux que `plus_vieux_que` : abandonné (le plafond d'avant #2399) ;
+    - créateur inscrit, sur CET hôte, et mort : abandonné, quel que soit son âge ;
+    - créateur inconnu (nom d'avant, autre hôte, conteneur) : le plafond seul.
+    Un schéma sans heure lisible n'est pas jetable : il reste.
     """
+    a_retirer = []
+    for nom, commentaire in schemas.items():
+        heure = heure_du_schema_jetable(nom)
+        if heure is None or nom in tenus:
+            continue
+        createur = _COMMENTAIRE_CREATEUR.match(commentaire or "")
+        if heure < maintenant - plus_vieux_que or (
+            createur and createur.group(2) == hote and not vivant(int(createur.group(1)))
+        ):
+            a_retirer.append(nom)
+    return sorted(a_retirer)
+
+
+def retirer_schemas_jetables_perimes(url, *, plus_vieux_que: timedelta) -> int:
+    """Retire les schémas jetables abandonnés (`schemas_jetables_a_retirer`) ; rend leur nombre.
+
+    Le geste qui borne ce qu'un processus interrompu laisse derrière lui. L'âge se
+    mesure à l'heure du serveur qui a écrit le nom ; un schéma qu'une connexion
+    retient encore (verrou au-delà de 10 s) est passé, pas attendu.
+    """
+    from app.utils.processus_vivant import processus_vivant
+
     admin = _creer_moteur(url, isolation_level="AUTOCOMMIT", poolclass=NullPool)
     retires = 0
     try:
         with admin.connect() as c:
-            limite = _heure_du_serveur(c) - plus_vieux_que
-            noms = c.execute(text("SELECT nspname FROM pg_namespace")).scalars().all()
-            for nom in noms:
-                heure = heure_du_schema_jetable(nom)
-                if heure is None or heure >= limite:
+            maintenant = _heure_du_serveur(c)
+            schemas = dict(
+                c.execute(
+                    text("SELECT nspname, obj_description(oid, 'pg_namespace') FROM pg_namespace")
+                ).all()
+            )
+            tenus = set(
+                c.execute(
+                    text(
+                        "SELECT application_name FROM pg_stat_activity"
+                        " WHERE datname = current_database() AND pid <> pg_backend_pid()"
+                    )
+                ).scalars()
+            )
+            for nom in schemas_jetables_a_retirer(
+                schemas,
+                maintenant=maintenant,
+                plus_vieux_que=plus_vieux_que,
+                tenus=tenus,
+                hote=_hote(),
+                vivant=processus_vivant,
+            ):
+                try:
+                    _retirer_schema_en_lots(c, nom)  # nom relu au motif
+                except DBAPIError:
                     continue
-                _retirer_schema_en_lots(c, nom)  # nom relu au motif
                 retires += 1
     finally:
         admin.dispose()

@@ -9,6 +9,9 @@ voyait pas.
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 import uuid
 from datetime import datetime, timedelta
 
@@ -101,4 +104,111 @@ def test_un_schema_pose_sous_une_horloge_figee_n_est_pas_perime(monkeypatch):
             dialecte.retirer_schemas_jetables_perimes(url, plus_vieux_que=timedelta(hours=6))
         assert nom in _schemas(url)
     finally:
+        dialecte.retirer_schema(url, nom)
+
+
+# ── Le créateur inscrit et la connexion ouverte (#2399) ─────────────────────
+#  Le 31/10/2026, les suites coupées dans la même heure avaient laissé 140 schémas
+#  (52 000 relations) : sous le plafond d'une heure, rien ne les retirait.
+
+_MAINTENANT = datetime(2026, 10, 31, 14, 0, 0)
+_RECENT = "t_20261031135500_0123456789ab"  # cinq minutes
+_ANCIEN = "t_20261031120000_0123456789ab"  # deux heures
+
+
+def _a_retirer(schemas, *, tenus=frozenset(), vivants=frozenset()):
+    return dialecte.schemas_jetables_a_retirer(
+        schemas,
+        maintenant=_MAINTENANT,
+        plus_vieux_que=timedelta(hours=1),
+        tenus=set(tenus),
+        hote="POSTE",
+        vivant=lambda pid: pid in vivants,
+    )
+
+
+def test_aucun_schema_rien_a_retirer():
+    assert _a_retirer({}) == []
+
+
+def test_un_createur_mort_abandonne_son_schema_sans_attendre_l_heure():
+    assert _a_retirer({_RECENT: "createur=4242@POSTE"}) == [_RECENT]
+
+
+def test_un_createur_vivant_garde_son_schema():
+    assert _a_retirer({_RECENT: "createur=4242@POSTE"}, vivants={4242}) == []
+
+
+def test_une_connexion_ouverte_garde_le_schema_meme_vieux_et_createur_mort():
+    schemas = {_ANCIEN: "createur=4242@POSTE", _RECENT: "createur=4243@POSTE"}
+    assert _a_retirer(schemas, tenus={_ANCIEN, _RECENT}) == []
+
+
+def test_un_createur_inconnu_n_est_juge_qu_au_plafond():
+    schemas = {
+        _RECENT: None,  # posé par un code d'avant #2399
+        "t_20261031135600_0123456789ac": "createur=4242@AUTRE",  # autre hôte, conteneur
+        "t_20261031135700_0123456789ad": "createur=x@POSTE",  # illisible
+        _ANCIEN: None,
+    }
+    assert _a_retirer(schemas) == [_ANCIEN]
+
+
+def test_un_schema_non_jetable_reste_quel_que_soit_son_commentaire():
+    assert _a_retirer({"public": "createur=4242@POSTE"}) == []
+
+
+def test_poser_schema_inscrit_son_createur_et_la_purge_le_garde_vivant():
+    url = url_des_tests()
+    nom = dialecte.poser_schema(url)
+    moteur = create_engine(url, poolclass=NullPool)
+    try:
+        with moteur.connect() as c:
+            commentaire = c.execute(
+                text(
+                    "SELECT obj_description(oid, 'pg_namespace') FROM pg_namespace WHERE nspname = :n"
+                ),
+                {"n": nom},
+            ).scalar_one()
+        assert commentaire == f"createur={os.getpid()}@{dialecte._hote()}"
+        dialecte.retirer_schemas_jetables_perimes(url, plus_vieux_que=timedelta(hours=1))
+        assert nom in _schemas(url)
+    finally:
+        moteur.dispose()
+        dialecte.retirer_schema(url, nom)
+
+
+def test_une_connexion_dans_le_schema_se_nomme_de_lui():
+    url = url_des_tests()
+    nom = dialecte.poser_schema(url)
+    moteur = create_engine(dialecte.url_dans_schema(url, nom), poolclass=NullPool)
+    try:
+        with moteur.connect() as c:
+            assert c.execute(text("SHOW application_name")).scalar_one() == nom
+    finally:
+        moteur.dispose()
+        dialecte.retirer_schema(url, nom)
+
+
+def test_la_purge_retire_le_schema_d_un_createur_mort():
+    url = url_des_tests()
+    nom = f"t_{horloge.maintenant():%Y%m%d%H%M%S}_{uuid.uuid4().hex[:12]}"
+    _creer(url, nom)
+    moteur = create_engine(url, isolation_level="AUTOCOMMIT", poolclass=NullPool)
+    try:
+        with moteur.connect() as c:
+            #  Le pid d'un processus lancé puis attendu : mort, à coup sûr.
+            mort = subprocess.run(
+                [sys.executable, "-c", "import os; print(os.getpid())"],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+            c.execute(text(f"COMMENT ON SCHEMA \"{nom}\" IS 'createur={mort}@{dialecte._hote()}'"))  # noqa: S608
+        assert (
+            dialecte.retirer_schemas_jetables_perimes(url, plus_vieux_que=timedelta(hours=1)) >= 1
+        )
+        assert nom not in _schemas(url)
+    finally:
+        moteur.dispose()
         dialecte.retirer_schema(url, nom)
