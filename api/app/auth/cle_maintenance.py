@@ -34,6 +34,8 @@ from typing import Optional
 from fastapi import HTTPException
 
 from app.config import get_settings
+from app.utils.journal_securite import journaliser_securite
+from app.utils.leurres import est_cle_maintenance_leurre
 
 
 def exiger_cle_maintenance(cle_recue: Optional[str]) -> None:
@@ -55,6 +57,11 @@ def exiger_cle_maintenance(cle_recue: Optional[str]) -> None:
             status_code=503,
             detail="Maintenance reporting non configuré (MAINTENANCE_KEY vide)",
         )
+    #  La fausse clé (#2365), montrée par le faux `.env.bak` : la présenter, c'est
+    #  l'avoir volée. Le même 403 qu'une clé fausse, et une ligne que S6 lit en FAIL.
+    if est_cle_maintenance_leurre(cle_recue):
+        journaliser_securite("cle_maintenance_leurre")
+        raise HTTPException(status_code=403, detail="Clé maintenance invalide")
     #  Comparaison à TEMPS CONSTANT (27/09/2026) : `!=` s'arrête au premier octet
     #  qui diffère, et la durée de la réponse dit alors combien d'octets étaient
     #  justes. En octets, pas en `str` : `compare_digest` lève sur un caractère non
