@@ -25,6 +25,10 @@ services:
       - "80:80"
     environment:
       - TZ=Europe/Paris
+      # Les leurres (#2365) que montre le faux fichier du `Caddyfile` — les MÊMES
+      # variables que lit l'API (`env_file: .env`). Absentes : fichier inerte.
+      - LEURRE_ADRESSE=${LEURRE_ADRESSE:-}
+      - LEURRE_CLE_MAINTENANCE=${LEURRE_CLE_MAINTENANCE:-}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./Caddyfile:/etc/caddy/Caddyfile:ro

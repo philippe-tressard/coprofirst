@@ -12,6 +12,27 @@
 	}
 }
 
+# ── Les LEURRES (#2365) ──────────────────────────────────────────────────────
+# Un faux fichier de configuration, servi en 200 sur les chemins qu'un scanner
+# essaie. Il ne donne RIEN : l'adresse et la clé qu'il montre sont les leurres de
+# l'API (`api/app/utils/leurres.py`), lus dans le `.env` du nœud — jamais dans ce
+# dépôt public. Les LIRE se compte (S6, ligne OK) ; les EMPLOYER est un FAIL de
+# l'audit nocturne (`connexion_leurre`, `cle_maintenance_leurre`). Leurre non
+# posé : les valeurs sont vides, le fichier reste inerte.
+# 🔒 test_leurres.py : un `handle` par chemin de `ROUTES_LEURRES`, et S6 les
+# connaît (`ACCES_CHEMINS_LEURRES`) — sans quoi `/.env` servi en 200 serait lu
+# comme une BRÈCHE.
+(leurre) {
+	header Cache-Control "private, no-store"
+	header Content-Type "text/plain; charset=utf-8"
+	respond <<LEURRE
+	# Sauvegarde de la configuration — ne pas diffuser
+	ADMIN_SECOURS_EMAIL={$LEURRE_ADRESSE}
+	ADMIN_SECOURS_PASSWORD=Secours-Copro-2026
+	MAINTENANCE_KEY={$LEURRE_CLE_MAINTENANCE}
+	LEURRE 200
+}
+
 :80 {
 	# TLS géré par Cloudflare Tunnel (pas de TLS local nécessaire)
 	encode zstd gzip
@@ -121,6 +142,18 @@
 		#  (`standards/04` §7). Pour mesurer un pas nouveau (`style-src` sans
 		#  `'unsafe-inline'`, le jour où #607 rouvre), les rétablir depuis
 		#  l'historique git (v2.90.3).
+	}
+
+	# Leurres (#2365) — voir le bloc `(leurre)` en tête de fichier. Un chemin exact
+	# l'emporte sur `/api/*` : Caddy range les `handle` par précision du chemin.
+	handle /.env {
+		import leurre
+	}
+	handle /admin/backup.zip {
+		import leurre
+	}
+	handle /api/v1/export {
+		import leurre
 	}
 
 	# API — proxy vers FastAPI
