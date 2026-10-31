@@ -275,6 +275,9 @@ async def lifespan(app: FastAPI):
     from app.utils.question_reglement.transcription import enregistrer as _transcription_pv
 
     _transcription_pv(scheduler)  # 05:15, les PV d'AG récents à relire (29/10/2026)
+    from app.utils.canari_ia import enregistrer as _canari_ia
+
+    _canari_ia(scheduler)  # 05:40, un courriel piégé par la porte de la relève (#2369)
 
     #  🔴 Ce qui tourne VRAIMENT est comparé à ce qui est déclaré (#1047). Un
     #  `add_job` supprimé par mégarde — refactor, fusion, condition mal placée —

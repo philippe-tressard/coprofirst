@@ -355,6 +355,7 @@ from app.utils.etat_taches import problemes_taches
 from app.utils.sante_mise_a_jour import problemes_mise_a_jour
 from app.utils.sante_correctifs import problemes_correctifs
 from app.utils.llm_journal import problemes_ia
+from app.utils.canari_ia import problemes_canari
 from app.utils.conservation_copie import archives_en_retard
 from app.utils.liens import adresse_du_site, nom_site
 from app.utils.sante_plateforme import disque_par_la_plateforme, probleme_disque
@@ -466,9 +467,9 @@ def collecter_problemes(session: Session) -> list[str]:
     #  en ayant modifié zéro ligne, sans erreur ni trace — et le code
     #  porte alors une version que personne ne reçoit (#850).
     problemes += controler_modeles_email(session)
-    #  Un usage de l'assistant IA refusé par sa limite d'appels du mois depuis 24 h :
-    #  l'usage automatique s'est arrêté, ou quelqu'un a buté dessus (#1383).
-    problemes += problemes_ia(session)
+    #  Un usage de l'assistant IA refusé par sa limite d'appels du mois depuis 24 h
+    #  (#1383) ; le canari de la nuit, s'il a vu le modèle obéir ou rien mesuré (#2369).
+    problemes += problemes_ia(session) + problemes_canari(session)
     return problemes
 
 

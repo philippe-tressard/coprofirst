@@ -33,6 +33,7 @@ export const LIBELLE_TACHE: Record<string, string> = {
 	conservation_affaires: 'Conservation des affaires',
 	correctifs_systeme: 'Correctifs du système',
 	audit_securite: 'Audit de sécurité nocturne',
+	canari_ia: "Canari de l'assistant IA",
 };
 
 //  Libellé du BOUTON qui lance une tâche à la main — quand il diffère du nom de
