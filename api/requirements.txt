@@ -31,7 +31,7 @@ httpx==0.28.1
 #  Lecture du texte d'un PDF — la synthèse assistée d'un contrat (#899). Pur
 #  Python, aucune bibliothèque système : rien à ajouter au Dockerfile, à la
 #  différence de WeasyPrint qui, lui, ÉCRIT des PDF et réclame GTK.
-pypdf==6.21.2
+pypdf==6.21.4
 #  Jamais importé, et pourtant nécessaire : c'est lui qui lit `env_file = ".env"`
 #  pour pydantic-settings (`app/config.py`). Sans lui, le `.env` serait ignoré.
 #  `aiofiles`, qui le suivait ici, n'était ni importé ni requis par rien : retiré.
