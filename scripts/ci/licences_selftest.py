@@ -11,6 +11,7 @@ import json
 import pathlib
 import tempfile
 
+from licences_image import etapes, juger
 from licences_inventaire import Inconnu, decider_hors_poste, paquets_npm
 from licences_spdx import admise, identifiants, licence_python
 
@@ -19,6 +20,52 @@ EXC = (
     {"source": "bridge", "paquets": ("libsignal",), "licences": ("GPL-3.0",)},
     {"source": "bridge", "paquets": ("@img/sharp-*",), "licences": ("LGPL-3.0-or-later",)},
 )
+
+
+class _Politique:
+    """La politique des images, réduite à un cas de chaque règle."""
+
+    BIBLIOTHEQUES_SYSTEME = ({"dockerfile": "D", "paquets": ("libheif1",)},)
+    INTERDITS_DANS_LES_IMAGES = {"*x265*": "GPLv2"}
+    ROUES_A_COMPILER = {"pillow-heif": {"dockerfile": "D", "exigences": "R", "raison": "-"}}
+
+
+_DOCKERFILE = (
+    "FROM a AS heif\n"
+    "RUN apt-get update && apt-get install -y --no-install-recommends \\\n"
+    "    libheif-dev && rm -rf x\n"
+    "# apt-get install libheif-plugin-x265 (un commentaire ne s'installe pas)\n"
+    "RUN pip wheel --no-binary pillow-heif x\n"
+    "FROM a\n"
+    "RUN apt-get install -y --no-install-recommends curl libheif1\n"
+    "RUN PIP_NO_BINARY=pillow-heif pip install -r requirements.txt\n"
+)
+
+
+def _images(t) -> None:
+    """`licences_image` : chaque règle refuse son cas fautif, et le conforme passe."""
+    regles, ok = _Politique(), {"R": "pillow-heif==1.8.1\n"}
+    t(
+        "images — étapes lues, commentaire ignoré",
+        etapes(_DOCKERFILE),
+        [["libheif-dev"], ["curl", "libheif1"]],
+    )
+    t("images — Dockerfile conforme", juger({"D": _DOCKERFILE}, ok, regles), [])
+    fautes = {
+        "x265 installé": _DOCKERFILE.replace("curl", "libheif-plugin-x265"),
+        "recommandés admis": _DOCKERFILE.replace(" --no-install-recommends curl", " curl"),
+        "déclaré non installé": _DOCKERFILE.replace(" libheif1\n", "\n"),
+        "roue PyPI admise": _DOCKERFILE.replace("--no-binary pillow-heif", ""),
+        "roue revenue par les exigences": _DOCKERFILE.replace("PIP_NO_BINARY=pillow-heif ", ""),
+    }
+    for nom, texte in fautes.items():
+        t(f"images — {nom} : ÉCHOUE", len(juger({"D": texte}, ok, regles)), 1)
+    t(
+        "images — roue retirée des exigences : l'entrée se retire",
+        len(juger({"D": _DOCKERFILE}, {"R": ""}, regles)),
+        1,
+    )
+    t("images — cas zéro : Dockerfile absent", len(juger({}, ok, regles)), 3)
 
 
 def _hors_poste(t) -> None:
@@ -145,6 +192,7 @@ def lancer(confronter, exceptions_inutiles) -> int:
         )
 
     _hors_poste(t)
+    _images(t)
     ko = [(n, o, a) for n, o, a in cas if o != a]
     for n, o, a in ko:
         print(f"✗ {n} : obtenu {o!r}, attendu {a!r}")

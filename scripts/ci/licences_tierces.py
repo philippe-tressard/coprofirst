@@ -38,6 +38,9 @@ octet du dépôt bouge, et un contrôle rouge sans cause se contourne
 (`standards/04` §25). Elles restent JUGÉES par la liste blanche à chaque
 passage : une transitive copyleft fait échouer la CI comme une directe.
 
+Les paquets Debian des images et les roues qui embarquent un interdit (#2389) :
+`licences_image.py`, appelé ici, confronte les Dockerfile à la politique.
+
 ## Ce qu'il ne voit pas
 Les fichiers recopiés d'un projet tiers dans le dépôt : `contenus_tiers.py`.
 
@@ -59,6 +62,7 @@ sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import licences_politique as politique  # noqa: E402
 from licences_document import rendre_document  # noqa: E402
+from licences_image import verifier as verifier_images  # noqa: E402
 from licences_inventaire import Inconnu, paquets_npm, paquets_python  # noqa: E402
 from licences_spdx import admise  # noqa: E402
 
@@ -162,6 +166,7 @@ def main(argv: list[str]) -> int:
 
     juger, figer, reserves_jugement, reserves_document, echecs, notes = mesurer()
     exceptions, admises = politique.EXCEPTIONS, politique.ADMISES
+    echecs += verifier_images(politique)
     tolerees, servies = [], set()
     for source, paquets in juger.items():
         e, t, s = confronter(source, paquets, exceptions, admises)

@@ -48,6 +48,11 @@ dkimpy==1.1.8
 cryptography==50.0.2
 dnspython==2.9.0
 Pillow==13.0.0
+#  Les photos HEIC/HEIF d'iPhone (#2389), DÉCODÉES seulement. 🔴 Dans l'image, ce
+#  paquet est compilé contre la libheif de Debian (`api/Dockerfile`, étape
+#  « heif ») : ses roues PyPI embarquent libx265 (GPLv2) et n'y entrent jamais.
+#  La CI et le poste prennent la roue pour les tests, qui ne se distribuent pas.
+pillow-heif==1.8.1
 qrcode[pil]==8.2
 jinja2==3.1.6
 #  `Markup` : un champ riche entre marqué sûr dans un courriel qui s'échappe

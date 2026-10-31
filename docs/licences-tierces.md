@@ -3,7 +3,8 @@
 # Licences tierces
 
 Inventaire des dépendances de `front/`, `whatsapp-bridge/` et `api/` et de leurs
-licences (`standards/14` §6.3), puis des fichiers repris d'un projet tiers. La CI
+licences (`standards/14` §6.3), des bibliothèques système que les images ajoutent,
+puis des fichiers repris d'un projet tiers. La CI
 le régénère et échoue s'il diffère : un paquet qui entre ou qui change de licence
 se relit ici. La politique — liste blanche, exceptions et leurs motifs — vit dans
 `scripts/ci/licences_politique.py`.
@@ -25,6 +26,18 @@ se relit ici. La politique — liste blanche, exceptions et leurs motifs — vit
 | api | `certifi` | `MPL-2.0` | Magasin de certificats racine (tiré par httpx). Copyleft faible au niveau du fichier ; utilisé sans modification. | compatible avec l'AGPL-3.0-or-later (la MPL-2.0 admet la GPL et l'AGPL comme « Secondary Licenses ») — analyse du 08/10/2026, validée par l'auteur |
 | api | `pyphen` | `GPL-2.0-or-later \| LGPL-2.0-or-later \| MPL-1.1 (classifieurs multiples)` | Césure des mots, tirée par WeasyPrint (documents PDF). Le paquet se dit « GPL 2.0+/LGPL 2.1+/MPL 1.1 tri-license » (fichier LICENSE installé) ; ses dictionnaires viennent de LibreOffice sous GPL, LGPL et/ou MPL. | compatible avec l'AGPL-3.0-or-later (par son option GPL-2.0-or-later ou LGPL-2.1-or-later) — analyse du 08/10/2026, validée par l'auteur |
 | api | `dkimpy` | `BSD-like` | Vérification DKIM des réponses par courriel. Les métadonnées disent « BSD-like » ; le fichier LICENSE installé porte le texte de la licence zlib, qui est permissive. | métadonnées imprécises — le texte installé est celui de la licence zlib |
+
+## Bibliothèques système des images
+
+Installées par un Dockerfile hors de pip et npm, donc absentes de l'inventaire ci-dessous. Seules y figurent celles qui sont entrées pour une raison nommée.
+
+| Image | Paquets Debian | Licence | Motif | Statut |
+|---|---|---|---|---|
+| `api/Dockerfile` | `libheif1`, `libheif-plugin-libde265` | `LGPL-3.0-or-later` | Décodage des photos HEIC/HEIF d'iPhone (#2389), par `pillow-heif` compilé contre elles. Tirent `libde265-0` (LGPL-3.0-or-later) et `libheif-plugin-dav1d` + `libdav1d7` (BSD-2-Clause). Debian (`copyright`) : les bibliothèques sont LGPL-3+ ; seuls scripts, tests et l'outil `dec265`, non installés, sont sous GPL-3+. Bibliothèques partagées, liées dynamiquement, non modifiées ; aucun encodeur. | compatible avec l'AGPL-3.0-or-later (la LGPL-3.0-or-later l'est par construction, comme les bibliothèques de sharp) — voie « décodage seul, sans x265 » validée par l'auteur le 31/10/2026 |
+
+Interdits dans toute image — `*x265*` : encodeur HEVC sous GPLv2, que la distribution publique des images (ghcr.io) ferait distribuer ; le site ne fait que décoder (#2389).
+
+Compilés dans l'image, jamais pris en roue PyPI — `pillow-heif` : ses roues PyPI embarquent libx265 (GPLv2).
 
 ## Fichiers repris d'un projet tiers
 
@@ -804,7 +817,7 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `yargs` | `MIT` | dependencies | oui |
 | `yargs-parser` | `ISC` | dependencies | oui |
 
-## Dépendances — `api` (29 dépendances directes)
+## Dépendances — `api` (30 dépendances directes)
 
 Seules les dépendances **directes** de l'API sont figées ici : les transitives ne sont pas épinglées dans `api/requirements.txt`, et leur métadonnée de licence changerait ce document sans que le dépôt bouge. Elles sont jugées par la liste blanche à chaque passage de la CI, comme les directes.
 
@@ -826,6 +839,7 @@ Seules les dépendances **directes** de l'API sont figées ici : les transitives
 | `openpyxl` | `MIT` | directe | oui |
 | `passlib` | `BSD` | directe | oui |
 | `pillow` | `MIT-CMU` | directe | oui |
+| `pillow-heif` | `BSD-3-Clause` | directe | oui |
 | `psycopg` | `LGPL-3.0-only` | directe | **exception** |
 | `pydantic` | `MIT` | directe | oui |
 | `pydantic-settings` | `MIT` | directe | oui |
