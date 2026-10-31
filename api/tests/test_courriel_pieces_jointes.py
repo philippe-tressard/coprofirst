@@ -88,14 +88,16 @@ def test_un_tableur_est_une_piece():
 def test_la_signature_ne_compte_pas():
     """Logo intégré au corps, icône jointe, signature électronique : rien n'est
     gardé, et rien n'est signalé — le dire ferait du bruit à chaque message."""
-    tri = pj.trier(
-        _message(
-            integrees=[_png(120), _png(48)],
-            pieces=[
-                ("logo.png", "image", "png", _png(200)),
-                ("smime.p7s", "application", "pkcs7-signature", b"\x30\x82signature"),
-                ("carte.vcf", "text", "vcard", b"BEGIN:VCARD\nEND:VCARD\n"),
-            ],
+    tri = pj.retenir(
+        pj.trier(
+            _message(
+                integrees=[_png(120), _png(48)],
+                pieces=[
+                    ("logo.png", "image", "png", _png(200)),
+                    ("smime.p7s", "application", "pkcs7-signature", b"\x30\x82signature"),
+                    ("carte.vcf", "text", "vcard", b"BEGIN:VCARD\nEND:VCARD\n"),
+                ],
+            )
         )
     )
     assert tri.pieces == [] and tri.ecarts == []
@@ -103,7 +105,7 @@ def test_la_signature_ne_compte_pas():
 
 def test_une_grande_photo_integree_au_corps_reste_une_piece():
     """L'iPhone intègre la photo au corps : c'est la taille qui tranche."""
-    tri = pj.trier(_message(integrees=[_png(1200)]))
+    tri = pj.retenir(pj.trier(_message(integrees=[_png(1200)])))
     assert [p.famille for p in tri.pieces] == ["image"]
 
 
@@ -115,9 +117,27 @@ def test_un_type_refuse_est_ecarte_et_nomme():
 
 def test_au_dela_de_dix_les_suivantes_sont_ecartees():
     pieces = [(f"p{i}.txt", "text", "plain", f"texte {i}".encode()) for i in range(12)]
-    tri = pj.trier(_message(pieces=pieces))
+    tri = pj.retenir(pj.trier(_message(pieces=pieces)))
     assert len(tri.pieces) == pj.MAX_PIECES == 10
     assert [e.nom for e in tri.au_dela] == ["p10.txt", "p11.txt"]
+
+
+def test_les_logos_ne_prennent_pas_la_place_des_pieces():
+    """Le plafond se compte APRÈS l'écart de la signature : il se juge donc à
+    `retenir`, qui mesure, et non au tri, qui n'ouvre aucune image (#2396)."""
+    logos = [(f"logo{i}.png", "image", "png", _png(40 + i)) for i in range(5)]
+    textes = [(f"p{i}.txt", "text", "plain", f"texte {i}".encode()) for i in range(10)]
+    tri = pj.retenir(pj.trier(_message(pieces=[*logos, *textes])))
+    assert [p.nom for p in tri.pieces] == [f"p{i}.txt" for i in range(10)]
+    assert tri.ecarts == []
+
+
+def test_le_tri_n_ouvre_aucune_image(monkeypatch):
+    """🔴 Le tri lit TOUT message relevé, avant de savoir qui écrit (#2396)."""
+    ouvertures = _espionner_les_decodeurs(monkeypatch)
+    tri = pj.trier(_message(pieces=[("photo.png", "image", "png", _png(900))]))
+    assert [p.nom for p in tri.pieces] == ["photo.png"]
+    assert ouvertures == [], f"le tri a ouvert une image : {ouvertures}"
 
 
 def test_un_meme_fichier_joint_deux_fois_compte_une_fois():
@@ -132,6 +152,30 @@ def test_un_meme_fichier_joint_deux_fois_compte_une_fois():
 def test_un_type_indetermine_se_juge_a_son_extension():
     tri = pj.trier(_message(pieces=[("devis.pdf", "application", "octet-stream", _PDF)]))
     assert [(p.famille, p.type) for p in tri.pieces] == [("document", "application/pdf")]
+
+
+def _espionner_les_decodeurs(monkeypatch) -> list[str]:
+    """Note chaque porte vers un décodeur d'image : Pillow dans CE process, et
+    l'enfant qui l'exécute ailleurs (`process_isole`, appelé par `images`)."""
+    from PIL import Image as Pil
+
+    from app.utils import images as images_api
+
+    vues: list[str] = []
+    ouvrir = Pil.open
+    isole = images_api.executer_isole
+
+    def _ouvrir(*a, **k):
+        vues.append("Image.open")
+        return ouvrir(*a, **k)
+
+    def _isole(module, fonction, *a, **k):
+        vues.append(f"{module}.{fonction}")
+        return isole(module, fonction, *a, **k)
+
+    monkeypatch.setattr(Pil, "open", _ouvrir)
+    monkeypatch.setattr(images_api, "executer_isole", _isole)
+    return vues
 
 
 # ── Le versement : ce qui entre dans le fil ───────────────────────────────────
@@ -217,6 +261,39 @@ def test_un_TIERS_qui_detient_l_adresse_a_jeton_n_ecrit_rien(scene, disque_jetab
     finally:
         purger_ligne(session, Utilisateur, tiers.id)
         session.commit()
+
+
+def test_un_TIERS_n_atteint_aucun_decodeur_d_image(scene, disque_jetable, monkeypatch):
+    """🔴 #2396 : la relève mesurait les images (signature) AU TRI, pour tout
+    message — un expéditeur anonyme atteignait l'analyse d'en-tête de Pillow,
+    libtiff ou libheif. Le refus d'un tiers se décide désormais avant toute
+    ouverture, dans ce process comme dans un enfant."""
+    session, ticket, _syndic, _cs = scene
+    tiers = compte(session, prefixe="voisin", prenom="V", nom="O", roles_json="résident")
+    try:
+        ouvertures = _espionner_les_decodeurs(monkeypatch)
+        message = _message(
+            integrees=[_png(60)],
+            pieces=[("photo.png", "image", "png", _png(900)), ("p.heic", "image", "heic", b"x")],
+        )
+        assert _repondre(session, ticket, tiers.email, message) == REFUSE
+        assert ouvertures == [], f"un tiers a atteint un décodeur : {ouvertures}"
+    finally:
+        purger_ligne(session, Utilisateur, tiers.id)
+        session.commit()
+
+
+def test_cas_zero_le_syndic_atteint_le_decodeur_hors_du_process(scene, disque_jetable, monkeypatch):
+    """Sans ce témoin, l'espion ci-dessus pourrait rester muet parce qu'il ne
+    voit rien — et non parce que rien n'est ouvert. Un message autorisé, lui,
+    passe par l'enfant, et JAMAIS par Pillow dans ce process."""
+    session, ticket, syndic, _cs = scene
+    ouvertures = _espionner_les_decodeurs(monkeypatch)
+    message = _message(pieces=[("photo.png", "image", "png", _png(900))])
+    assert _repondre(session, ticket, syndic.email, message) == ACCEPTE
+    assert "app.utils.images_moteur.mesurer" in ouvertures, ouvertures
+    assert "app.utils.images_moteur.reencoder" in ouvertures, ouvertures
+    assert "Image.open" not in ouvertures, "une image s'est ouverte dans le process de l'API"
 
 
 def test_l_auteur_de_l_affaire_ecrit_toujours_au_fil(scene, disque_jetable):

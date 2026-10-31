@@ -33,24 +33,15 @@ seconde. C'est le prix de l'isolation, accepté en connaissance de cause.
 
 ## 🔴 SPAWN, JAMAIS FORK
 
-Le défaut de Python 3.12 sous Linux est `fork` (vérifié sur l'image :
-`mp.get_start_method()` → `fork`). Un enfant **forké** hérite des descripteurs
-ouverts du parent, **y compris les connexions** que tient le pool SQLAlchemy :
-en se terminant, il peut fermer côté serveur une session que l'API croit encore
-ouverte — SQLAlchemy interdit de partager un pool à travers un `fork`.
-
-`spawn` démarre un interpréteur neuf qui ne partage **aucun** descripteur. Le
-prix est un import à payer (`import weasyprint` : 0,59 s mesuré sur le RPi).
+La mécanique — enfant `spawn`, délai borné, mort détectée — vit dans
+`utils/process_isole` depuis #2396, qui l'a reprise d'ici pour les images reçues :
+la raison de `spawn` (les connexions du pool SQLAlchemy) y est écrite. Le prix
+propre à ce module est l'import du moteur dans l'enfant (`import weasyprint` :
+0,59 s mesuré sur le RPi).
 
 C'est vérifié par le **comportement**, pas par la forme du code :
 `test_pdf_hors_process.py` importe `app.database` dans le parent puis exige que
 l'enfant ne l'ait pas — ce qu'un `fork` ne pourrait pas satisfaire.
-
-⚠️ Corollaire de `spawn` : le module principal de l'appelant est réimporté dans
-l'enfant. Il doit donc porter un garde `if __name__ == "__main__"`, sans quoi il
-se rejoue en entier. Le point d'entrée de production l'a (`/usr/local/bin/uvicorn`,
-vérifié), et pytest aussi ; un script maison, non — c'est ce qui est arrivé à la
-première vérification de ce module, d'où la mention dans le message d'erreur.
 
 ## Pourquoi un process jetable et non un worker résident
 
@@ -80,9 +71,9 @@ plutôt qu'au fil de l'eau.
 from __future__ import annotations
 
 import logging
-import multiprocessing
 import os
-import sys
+
+from app.utils.process_isole import EchecIsole, executer_isole
 
 logger = logging.getLogger("hostachy.pdf")
 
@@ -128,8 +119,11 @@ class RenduPdfImpossible(RuntimeError):
     """Le PDF n'a pas pu être produit — on ne rend jamais un document partiel."""
 
 
-def _rendre_dans_l_enfant(tube, html: str) -> None:
-    """Rend le PDF et le renvoie par le tube. **Exécuté dans le process enfant.**
+def _rendre_dans_l_enfant(html: str) -> tuple[str, object, list[tuple[str, int, str]]]:
+    """Rend le PDF : `(état, PDF ou message, journal)`. **Exécuté dans le process enfant.**
+
+    Elle attrape ses propres erreurs, parce que le journal doit remonter AUSSI
+    quand le rendu échoue : c'est lui qui dit pourquoi.
 
     Rien ici ne doit toucher la base : ce module n'importe volontairement que la
     bibliothèque standard et WeasyPrint, et `test_pdf_hors_process.py` vérifie
@@ -161,20 +155,7 @@ def _rendre_dans_l_enfant(tube, html: str) -> None:
         interesse.setLevel(logging.NOTSET)  # hérite du racine
         interesse.propagate = True
 
-    #  🔴 Le témoin voyage DANS le message, pas par le journal.
-    #
-    #  Il a d'abord été une ligne de log, et c'était fragile : sa remontée
-    #  dépendait alors de la configuration du logging des DEUX process. Le
-    #  contrôle est passé au vert sur le poste (WeasyPrint absent, l'enfant
-    #  échouant à l'import) et au rouge en intégration continue, où le rendu
-    #  aboutit — une propriété critique ne doit pas dépendre d'un canal qui
-    #  varie selon ce qui a été importé.
-    temoin = {"pid": os.getpid(), "base_chargee": "app.database" in sys.modules}
-    logger.info(
-        "Rendu PDF dans le process %d (base chargée : %s)",
-        temoin["pid"],
-        temoin["base_chargee"],
-    )
+    logger.info("Rendu PDF dans le process %d", os.getpid())
 
     try:
         from weasyprint import HTML
@@ -183,11 +164,8 @@ def _rendre_dans_l_enfant(tube, html: str) -> None:
         recuperateur = URLFetcher(allowed_protocols=PROTOCOLES_ADMIS)
         pdf = HTML(string=html, url_fetcher=recuperateur).write_pdf()
     except BaseException as exc:  # noqa: BLE001 — tout est remonté au parent
-        tube.send(("erreur", f"{type(exc).__name__}: {exc}", journal, temoin))
-    else:
-        tube.send(("ok", pdf, journal, temoin))
-    finally:
-        tube.close()
+        return "erreur", f"{type(exc).__name__}: {exc}", journal
+    return "ok", pdf, journal
 
 
 def _rejouer(journal: list[tuple[str, int, str]]) -> None:
@@ -232,52 +210,12 @@ def rendre_pdf(html: str, *, delai_s: float = DELAI_RENDU_S) -> bytes:
     `dernier_temoin` retient ce que l'enfant a rapporté de lui-même (son pid, et
     s'il avait la base en mémoire) : c'est ce que lisent les contrôles.
     """
-    contexte = multiprocessing.get_context("spawn")
-    lecture, ecriture = contexte.Pipe(duplex=False)
-    enfant = contexte.Process(
-        target=_rendre_dans_l_enfant,
-        args=(ecriture, html),
-        name="rendu-pdf",
-        daemon=True,
-    )
-    enfant.start()
-    #  ⚠️ Fermer NOTRE copie de l'extrémité d'écriture, sinon le tube n'atteint
-    #  jamais EOF quand l'enfant meurt : `poll()` attendrait le délai complet au
-    #  lieu de signaler la mort immédiatement.
-    ecriture.close()
-
     try:
-        if not lecture.poll(delai_s):
-            raise RenduPdfImpossible(
-                f"rendu abandonné après {delai_s:.0f} s — document trop lourd ou moteur bloqué"
-            )
-        try:
-            message = lecture.recv()
-        except EOFError as exc:
-            #  ⚠️ Deux causes très différentes, et les nommer toutes les deux
-            #  évite l'heure perdue au mauvais endroit : la première est
-            #  plausible en production sur un RPi, la seconde apparaît dès qu'on
-            #  appelle ce module depuis un script sans garde `if __name__ ==
-            #  "__main__"` — `spawn` réimporte le module principal, qui se
-            #  rejoue alors en entier dans l'enfant. Vu dès la première
-            #  vérification du correctif (16/09/2026).
-            raise RenduPdfImpossible(
-                f"le process de rendu est mort sans rien produire (code de "
-                f"sortie {enfant.exitcode}) — mémoire insuffisante, ou module "
-                f'principal sans garde `if __name__ == "__main__"` '
-                f"(voir la trace du process enfant ci-dessus)"
-            ) from exc
-    finally:
-        lecture.close()
-        enfant.join(5)
-        if enfant.is_alive():
-            enfant.terminate()
-            enfant.join(5)
-        if enfant.is_alive():
-            enfant.kill()
-            enfant.join()
-
-    etat, charge, journal, temoin = message
+        (etat, charge, journal), temoin = executer_isole(
+            __name__, "_rendre_dans_l_enfant", html, delai_s=delai_s, nom="rendu-pdf"
+        )
+    except EchecIsole as exc:
+        raise RenduPdfImpossible(f"rendu PDF : {exc}") from exc
     global dernier_temoin, dernier_journal
     dernier_temoin = temoin
     dernier_journal = journal
