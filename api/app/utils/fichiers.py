@@ -285,13 +285,38 @@ def type_annonce(content_type: str | None, nom: str | None, famille: str) -> str
     l'extension désigne parmi les types de la famille (#2156).
 
     L'extension retenue reste celle du type, que la signature du contenu confronte ;
-    une extension hors de la famille reste refusée.
+    une extension hors de la famille reste refusée. `verifier_fichier_recu` l'applique
+    à TOUT fichier reçu (#2389) : une photo HEIC jointe depuis Windows partait en
+    `application/octet-stream` et n'était refusée que pour son type.
     """
     if (content_type or "") not in TYPES_INDETERMINES:
         return content_type
     extension = extension_assainie(nom or "")
     par_extension = {ext: t for t, ext in FAMILLES[famille].types.items()}
     return par_extension.get(extension, content_type)
+
+
+def famille_du_fichier(
+    content_type: str | None, nom: str | None, familles: tuple[str, ...] = ("image", "document")
+) -> str | None:
+    """La première des `familles` qui accepte ce fichier — par son type, ou par son
+    extension s'il n'en a pas (`type_annonce`). `None` si aucune.
+
+    Un point d'entrée qui reçoit « une photo ou un document » (`/uploads/fichier`,
+    la relève des courriels) choisit ainsi sa famille sans recopier la déduction.
+    """
+    for famille in familles:
+        if type_annonce(content_type, nom, famille) in FAMILLES[famille].types:
+            return famille
+    return None
+
+
+def message_format_refuse(content_type: str | None, nom: str | None, extensions) -> str:
+    """« Format non supporté : … » — le type annoncé, ou l'extension quand le poste
+    n'en annonçait aucun : « application/octet-stream » n'apprend rien (#2389)."""
+    if (content_type or "") in TYPES_INDETERMINES:
+        content_type = extension_assainie(nom) or "type inconnu"
+    return f"Format non supporté : {content_type}. Attendu : {', '.join(sorted(extensions))}."
 
 
 def lire_fichier_recu(fichier, famille: str) -> bytes:
@@ -339,9 +364,10 @@ def verifier_fichier_recu(
     if regles is None:
         raise ValueError(f"Famille de fichier inconnue : {famille!r}")
 
+    annonce = content_type
+    content_type = type_annonce(content_type, nom_origine, famille)
     if content_type not in regles.types:
-        attendus = ", ".join(sorted(regles.extensions))
-        raise HTTPException(400, f"Format non supporté : {content_type}. Attendu : {attendus}.")
+        raise HTTPException(400, message_format_refuse(annonce, nom_origine, regles.extensions))
 
     plafond = regles.plafond_mo * 1024 * 1024
     if len(octets) > plafond:
@@ -429,7 +455,7 @@ def enregistrer_televersement(file, raw_name: str, user=None) -> str:
     nom = enregistrer_fichier_recu(
         octets,
         raw_name,
-        type_annonce(file.content_type, raw_name, "document_prive"),
+        file.content_type,
         "document_prive",
         DOSSIER_PRIVE,
         user=user,
