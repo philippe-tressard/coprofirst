@@ -521,6 +521,14 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   pas une règle : l'API s'appelle sans l'écran. 🔒 `test_html_sur.py` rend chaque
   modèle avec une charge hostile dans chaque variable, et refuse `Markup(x)` hors
   de la porte.
+- **Les leurres de l'application : un seul registre** (#2365) — `utils/leurres`
+  (`ROUTES_LEURRES`, `EVENEMENTS_LEURRES`) ; leurs VALEURS (`LEURRE_ADRESSE`,
+  `LEURRE_CLE_MAINTENANCE`) ne vivent que dans le `.env` du nœud, jamais dans ce
+  dépôt public. Une connexion sur le faux compte ou la fausse clé de maintenance
+  rend le même refus qu'une erreur ordinaire et journalise `connexion_leurre` /
+  `cle_maintenance_leurre`, que S6 fait FAIL ; Caddy sert un faux fichier sur les
+  routes leurres, dont la LECTURE se compte sans faire une brèche. 🔒 `test_leurres.py`
+  (le `Caddyfile`, compose et `lib-audit-acces.sh` confrontés au registre).
 - **La clé du bridge ne part que vers le bridge** (#2151) : `whatsapp_api_url` se
   lit par `whatsapp.adresse_du_bridge` (service Compose ou conteneur, un port, rien
   d'autre), vérifiée à l'écriture ET à chaque usage. 🔒 `test_adresse_bridge.py`.

@@ -63,6 +63,10 @@
       "cache_manuel_dir",
       "maintenance_key"
     ],
+    "Leurres de l'audit de sécurité": [
+      "leurre_adresse",
+      "leurre_cle_maintenance"
+    ],
     "Pont WhatsApp": [
       "whatsapp_api_key",
       "wa_photo_budget_ko"
@@ -72,6 +76,7 @@
     "cle_signature_baux",
     "database_url",
     "demo_admin_mot_de_passe",
+    "leurre_cle_maintenance",
     "demo_operateur_mot_de_passe",
     "mail_password",
     "maintenance_key",

@@ -21,6 +21,7 @@ from sqlmodel import Session, select
 
 from app.utils.config_site import config_site
 from app.utils.journal_securite import journaliser_securite
+from app.utils.leurres import est_adresse_leurre
 from app.auth.jwt import (
     decode_token,
     hash_password,
@@ -201,6 +202,11 @@ def login(
     response: Response,
     session: Session = Depends(get_session),
 ):
+    if est_adresse_leurre(body.email):
+        #  Le faux compte (#2365) : personne de légitime ne s'y connecte. Le même
+        #  401 qu'un mauvais mot de passe — rien ne dit au visiteur qu'il est vu.
+        journaliser_securite("connexion_leurre")
+        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect.")
     user = compte_par_adresse(session, body.email)
     if not user or not user.hashed_password:
         #  🔴 L'adresse essayée ne s'écrit PAS dans le journal (#777) : la ligne dit
