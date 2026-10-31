@@ -878,6 +878,11 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   L'image de Caddy porte une **mineure explicite** (`FROM caddy:2.11`,
   `test_image_caddy_epinglee.py`, #1602) : Dependabot propose alors ses montées. Python et
   Node restent flottants, par choix de `dependabot.yml`.
+  🔒 **Ce que Trivy voit dans une image, `npm audit` et pip-audit ne le voient pas** (#2377) :
+  une image Node d'exécution n'emporte pas npm (`test_images_sans_npm.py` — il embarque ses
+  propres dépendances), une étape Alpine d'exécution fait `apk upgrade`, et Caddy est
+  recompilé depuis sa source tant que le binaire officiel retarde (`Dockerfile.caddy` dit
+  quand y revenir). Le juge est la veille nocturne (`scripts/ci/veille-securite.sh`).
 - Lancer en local (deps requises) : `cd api && pytest tests/ -q -n 8` — ou toute la suite telle que
   la CI la joue : `bash ../scripts/ci/mesure-postgresql.sh` (6 min 40 au lieu de 12 sur le poste, #2223).
 
