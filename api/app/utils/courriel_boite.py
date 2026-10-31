@@ -52,6 +52,7 @@ from app.models.tickets import STATUTS_TICKET_CLOS
 from app.utils.destinataires import est_adresse_syndic
 from app.utils.courriel_authenticite import VerificationReportee, verifier_expediteur
 from app.utils.courriel_decodage import _corps_lisible, _texte
+from app.utils import courriel_pieces_jointes
 from app.utils.courriel_journal import journaliser_releve
 from app.utils.demo import exiger_hors_demo
 from app.utils.courriel_transfert import compte_a_l_adresse, decider_transfert
@@ -167,6 +168,7 @@ def traiter(
     recu_le: datetime | None,
     plancher: datetime | None = None,
     authentification: tuple[bool, str] | None = None,
+    pieces: courriel_pieces_jointes.Tri | None = None,
 ) -> str:
     """Applique le verdict d'UN message. Rend la décision prise, pour le journal.
 
@@ -177,7 +179,9 @@ def traiter(
     dans la MÊME transaction que lui : un IGNORE n'est plus muet, et un message
     acquitté a toujours la sienne.
     """
-    decision, motif, ticket = _decider(session, entetes, corps, recu_le, plancher, authentification)
+    decision, motif, ticket = _decider(
+        session, entetes, corps, recu_le, plancher, authentification, pieces
+    )
     journaliser_releve(session, entetes, recu_le, decision, motif, ticket)
     session.commit()
     return decision
@@ -195,12 +199,22 @@ def _refus(verdict, motif: str, *, jeton=None, numero=None):
     )
 
 
-def _decider(session, entetes, corps, recu_le, plancher, authentification):
+def _decider(session, entetes, corps, recu_le, plancher, authentification, pieces=None):
     """`(décision, motif, affaire)` — écrit ce que le verdict demande, sans valider."""
     #  Un fil TRANSFÉRÉ (29/09/2026) : découpé et versé par `courriel_transfert`,
     #  qui rend None quand le message n'est pas pour lui.
     issue = decider_transfert(session, entetes, corps, recu_le, plancher, authentification)
     if issue is not None:
+        decision, _motif, ticket = issue
+        if decision == ACCEPTE and ticket is not None:
+            #  Les pièces du transfert : une suite à elles, signée de qui a transféré.
+            de = next((v for k, v in entetes.items() if k.lower() == "from"), "")
+            qui = compte_a_l_adresse(session, de)
+            suite = courriel_pieces_jointes.joindre(
+                session, ticket, qui, None, pieces, expediteur=de, envoye_le=recu_le
+            )
+            if suite is not None:
+                session.add(suite)
         return issue
     verdict = examiner(
         entetes, recu_le=recu_le, plancher=plancher, authentification=authentification
@@ -260,15 +274,19 @@ def _decider(session, entetes, corps, recu_le, plancher, authentification):
         _prevenir_le_cs(session, ticket, refus)
         return REFUSE, refus.motif, ticket
 
-    #  🔴 LE PRIX DU REPLI PAR LE SUJET (05/09/2026). Le jeton prouvait que
-    #  l'expéditeur avait reçu un message du site sur CE ticket ; un numéro écrit
-    #  dans un sujet ne prouve rien. On exige donc, sur ce chemin seulement, que
-    #  la personne soit quelqu'un à qui le site écrit à propos de ce dossier.
-    if verdict.jeton is None and not correspondant_du_ticket(session, ticket, auteur):
+    #  🔴 SEULS L'AUTEUR, LE CONSEIL ET LE SYNDIC ÉCRIVENT AU FIL — quel que soit
+    #  le chemin. Le contrôle ne valait que pour le repli par le sujet (05/09/2026) :
+    #  on tenait que le jeton prouvait que l'expéditeur avait reçu un message du
+    #  site sur CE ticket. Il prouve qu'il a reçu l'ADRESSE — qu'un courriel
+    #  transféré à un voisin transporte avec lui. Vérifié le 31/10/2026 : un tiers
+    #  qui avait un compte et l'ancienne adresse à jeton écrivait au fil.
+    if not correspondant_du_ticket(session, ticket, auteur):
+        par = "son numéro dans le sujet" if verdict.jeton is None else "son adresse de réponse"
         refus = _refus(
             verdict,
-            "ce message désigne un ticket par son numéro dans le sujet, mais son "
-            "expéditeur n'est ni l'auteur du ticket, ni le conseil syndical, ni le syndic",
+            f"ce message désigne un ticket par {par}, mais son expéditeur "
+            "n'est ni l'auteur du ticket, ni le conseil syndical, ni le syndic",
+            jeton=verdict.jeton,
             numero=verdict.numero,
         )
         _prevenir_le_cs(session, ticket, refus)
@@ -277,6 +295,11 @@ def _decider(session, entetes, corps, recu_le, plancher, authentification):
     #  Texte nettoyé, mis en forme par l'assistant si l'usage est prêt, et daté
     #  de l'envoi — `utils/reponse_courriel` (#1322).
     suite = suite_de_reponse(session, ticket, auteur, verdict.expediteur, corps, recu_le)
+    #  Les pièces jointes (31/10/2026) : une réponse sans mot qui porte un devis
+    #  entre au fil quand même.
+    suite = courriel_pieces_jointes.joindre(
+        session, ticket, auteur, suite, pieces, expediteur=verdict.expediteur, envoye_le=recu_le
+    )
     if suite is None:
         return IGNORE, _RIEN_A_AJOUTER, ticket
     session.add(suite)
@@ -372,7 +395,13 @@ def relever() -> dict[str, int]:
                     #  dans un en-tête que l'expéditeur aurait pu écrire.
                     auth = verifier_expediteur(brut[0][1], entetes.get("From", ""))
                     decision = traiter(
-                        session, entetes, _corps_lisible(message), recu_le, plancher, auth
+                        session,
+                        entetes,
+                        _corps_lisible(message),
+                        recu_le,
+                        plancher,
+                        auth,
+                        pieces=courriel_pieces_jointes.trier(message),
                     )
                 except VerificationReportee as exc:
                     #  INCONNU, pas un refus : le message reste non lu, repris ensuite.

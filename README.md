@@ -36,7 +36,7 @@
 - **Prestataires & Contrats** — annuaire, contrats d'entretien, échéances de visite, notation, et synthèse de contrat par l'assistant IA.
 - **Annonces de hall** — affiche PDF aux couleurs de la résidence, diffusable au conseil, au syndic et au groupe WhatsApp.
 - **Reporting CS** — suivi des affaires en cours, relance groupée du syndic et comptes rendus de réunion CS / Syndic validés par les présents, exportables en PDF.
-- **Courriels affaires** — les messages reçus à l'adresse des affaires alimentent les fils ; le journal garde le verdict de chacun, jamais son texte.
+- **Courriels affaires** — les messages reçus à l'adresse des affaires alimentent les fils, avec leurs pièces jointes (documents et photos, dix au plus, hors signature) ; seuls l'auteur, le conseil et le syndic y écrivent ; le journal garde le verdict de chacun, jamais son texte.
 - **Questions au règlement** — l'assistant IA répond en juriste d'après le règlement de copropriété **et les décisions d'assemblée générale**, en sections (d'après le règlement, d'après les AG, synthèse), avec extraits cités et vérifiés ; les PV d'AG se transcrivent par l'assistant — résolutions seules, sans nom — et n'entrent qu'après relecture de l'administration.
 - **Administration** — comptes, pages légales, services (IA, WhatsApp, courriel, décor des jours de fête), nom, logo et palette de couleurs de la résidence (site, courriels, affiches).
 - **Périmètres** — arborescence de la copropriété (bâtiments, parking, espaces) pour localiser affaires, actualités, sondages et annonces.
