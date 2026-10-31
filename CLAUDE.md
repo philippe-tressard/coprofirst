@@ -521,6 +521,14 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   pas une règle : l'API s'appelle sans l'écran. 🔒 `test_html_sur.py` rend chaque
   modèle avec une charge hostile dans chaque variable, et refuse `Markup(x)` hors
   de la porte.
+- **Le texte d'un courriel reçu, lu par le modèle : une seule porte** (#2369) —
+  `utils/ia_courriel.lire_un_courriel` le cadre dans l'invite et ajoute après le
+  prompt réglé une consigne de non-obéissance que l'administration ne retire pas ;
+  sa sortie se juge par `sortie_conforme` (aucun mot absent du courriel, aucune
+  marque du cadre, pas plus long), sinon le texte nettoyé sans IA entre. Elle ne
+  rend que du texte : ni envoi, ni diffusion, ni statut ne s'y décident. Un usage
+  neuf qui lit un courriel s'ajoute à `USAGES_QUI_LISENT_UN_COURRIEL` ; un cas
+  piégé neuf, à `ia_courriel_corpus.CORPUS`. 🔒 `test_ia_courriel.py`.
 - **Les leurres de l'application : un seul registre** (#2365) — `utils/leurres`
   (`ROUTES_LEURRES`, `EVENEMENTS_LEURRES`) ; leurs VALEURS (`LEURRE_ADRESSE`,
   `LEURRE_CLE_MAINTENANCE`) ne vivent que dans le `.env` du nœud, jamais dans ce
