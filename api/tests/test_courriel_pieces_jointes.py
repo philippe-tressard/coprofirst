@@ -233,3 +233,26 @@ def test_l_auteur_de_l_affaire_ecrit_toujours_au_fil(scene, disque_jetable):
         session.add(ticket)
         purger_ligne(session, Utilisateur, auteur.id)
         session.commit()
+
+
+# ── La régression des images non JPEG (v1.48.6, cfe5f93ff, #1072) ──────────────
+
+
+def test_une_image_PNG_WEBP_ou_GIF_se_televerse(disque_jetable):
+    """🔴 Par la porte réelle, `/uploads/fichier`. Depuis v1.48.6, le JPEG réencodé
+    était confronté à l'extension d'ORIGINE : toute image non JPEG rendait 400
+    « le contenu ne correspond pas à un fichier .png ». Trouvé le 31/10/2026."""
+    from app.models.core import RoleUtilisateur
+    from tests.aides_http import base_http, client_http
+
+    with base_http() as moteur:
+        http, _ = client_http(moteur, RoleUtilisateur.résident)
+        for format_, type_ in (("PNG", "image/png"), ("WEBP", "image/webp"), ("GIF", "image/gif")):
+            sortie = io.BytesIO()
+            Image.new("RGB", (640, 480), (10, 120, 200)).save(sortie, format=format_)
+            r = http.post(
+                "/uploads/fichier",
+                files={"file": (f"photo.{format_.lower()}", sortie.getvalue(), type_)},
+            )
+            assert r.status_code == 200, (format_, r.text)
+            assert r.json()["type"] == "image" and r.json()["url"].endswith(".jpg"), r.json()
