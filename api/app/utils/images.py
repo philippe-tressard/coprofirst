@@ -11,21 +11,44 @@ Le second n'existait pas avant le 19/09/2026, et l'écrire à côté du premier 
 donné deux routines de redimensionnement libres de diverger sur l'orientation, le
 profil colorimétrique ou la qualité — `standards/02-factorisation.md` §2.
 
-⚠️ `exif_transpose` **avant** `convert("RGB")` : la conversion jette les
-métadonnées, donc l'orientation avec elles. L'ordre inverse stocke la photo de
-travers, et plus rien ensuite ne sait la redresser
-(cf. mémoire « Orientation des photos », 18/09/2026).
+🔴 **Aucune image ne se décode dans le process de l'API** (#2396). Ce module est la
+porte : chaque fonction nomme son geste dans `images_moteur`, qui s'exécute dans un
+enfant `spawn` jetable (`utils/process_isole`), avec un délai et un plafond de
+mémoire. Un fichier piégé n'emporte que l'enfant ; l'appelant reçoit « illisible ».
+Ce module n'importe pas Pillow. 🔒 `test_images_hors_process.py`.
 """
 
-import io
+import logging
 
-from PIL import Image, ImageOps
-from pillow_heif import register_heif_opener
+from app.utils.process_isole import EchecIsole, executer_isole
 
-#  Les photos HEIC/HEIF d'iPhone (#2389) : Pillow les ouvre comme les autres, et
-#  elles repartent en JPEG. Décodage seul — l'image n'embarque aucun encodeur HEVC
-#  (`api/Dockerfile`, `scripts/verifier_heif.py`).
-register_heif_opener()
+logger = logging.getLogger(__name__)
+
+#: Le module qui lit les images — nommé, jamais importé : l'enfant l'importe seul.
+MOTEUR = "app.utils.images_moteur"
+
+#: Au-delà, l'enfant est abattu. Une photo de 12 Mpx (HEIC compris) se lit en
+#: quelques secondes sur le RPi ; le délai ne protège que d'un moteur qui boucle.
+DELAI_S = 60.0
+
+#: L'espace d'adressage de l'enfant (Linux). Il couvre l'interpréteur, Pillow et
+#: ses bibliothèques, et une image au plafond de Pillow (`MAX_IMAGE_PIXELS`) ;
+#: au-delà, c'est l'enfant qui meurt, jamais le RPi. Mesure : la PR de #2396.
+MEMOIRE_MAX_OCTETS = 1536 * 1024 * 1024
+
+
+def _isole(fonction: str, *args, nom: str):
+    """`images_moteur.fonction(*args)` dans un enfant. Lève `EchecIsole`."""
+    valeur, _temoin = executer_isole(
+        MOTEUR,
+        fonction,
+        *args,
+        delai_s=DELAI_S,
+        nom=nom,
+        memoire_max_octets=MEMOIRE_MAX_OCTETS,
+    )
+    return valeur
+
 
 #: Dimension maximale d'une image stockée, en pixels (côté le plus long).
 DIMENSION_MAX = 1600
@@ -47,29 +70,35 @@ PALIERS_BUDGET: tuple[tuple[int, int], ...] = (
 def reencoder_jpeg(data: bytes, max_dim: int = DIMENSION_MAX, qualite: int = QUALITE) -> bytes:
     """Octets d'image → JPEG borné à `max_dim`, orientation redressée.
 
-    Lève `ValueError` si les octets ne sont pas une image lisible : c'est à
-    l'appelant de décider ce qu'il en dit à l'utilisateur (un routeur rend 400,
-    une diffusion se replie sur le texte seul).
+    Lève `ValueError` si les octets ne sont pas une image lisible — ou si le
+    moteur a planté, dépassé son délai ou sa mémoire : c'est à l'appelant de
+    décider ce qu'il en dit à l'utilisateur (un routeur rend 400, une diffusion
+    se replie sur le texte seul).
     """
     try:
-        img = Image.open(io.BytesIO(data))
-        img = ImageOps.exif_transpose(img) or img
-        img = img.convert("RGB")
-        if max(img.size) > max_dim:
-            img.thumbnail((max_dim, max_dim), Image.LANCZOS)
-        sortie = io.BytesIO()
-        img.save(sortie, format="JPEG", quality=qualite, optimize=True)
-        return sortie.getvalue()
-    except Exception as exc:  # noqa: BLE001 — toute erreur Pillow vaut « illisible »
+        jpeg = _isole("reencoder", data, max_dim, qualite, nom="image-reencodage")
+    except EchecIsole as exc:
+        logger.warning("Image non réencodée : %s", exc)
         raise ValueError("image illisible") from exc
+    if jpeg is None:
+        raise ValueError("image illisible")
+    return jpeg
 
 
-def dimensions(data: bytes) -> tuple[int, int] | None:
-    """`(largeur, hauteur)` d'une image, sans la décoder — None si illisible."""
+def dimensions(images: list[bytes]) -> list[tuple[int, int] | None]:
+    """`(largeur, hauteur)` de chaque image, sans la décoder — None si illisible.
+
+    Toutes dans UN enfant : la relève mesure les images d'un message d'un coup.
+    Si l'enfant meurt (une image piégée parmi d'autres), toutes valent None —
+    illisibles ici, chacune sera jugée seule au réencodage.
+    """
+    if not images:
+        return []
     try:
-        return Image.open(io.BytesIO(data)).size
-    except Exception:  # noqa: BLE001 — toute erreur Pillow vaut « illisible »
-        return None
+        return _isole("mesurer", tuple(images), nom="image-mesure")
+    except EchecIsole as exc:
+        logger.warning("Images non mesurées : %s", exc)
+        return [None] * len(images)
 
 
 def enregistrer_image_recue(
@@ -136,39 +165,33 @@ def reduire_sous_budget(data: bytes, budget_octets: int) -> bytes:
     """
     if len(data) <= budget_octets:
         return data
-    meilleur = data
-    for max_dim, qualite in PALIERS_BUDGET:
-        try:
-            candidat = reencoder_jpeg(data, max_dim=max_dim, qualite=qualite)
-        except ValueError:
-            return meilleur
-        if len(candidat) < len(meilleur):
-            meilleur = candidat
-        if len(candidat) <= budget_octets:
-            return candidat
-    return meilleur
+    try:
+        return _isole("reduire", data, budget_octets, PALIERS_BUDGET, nom="image-budget")
+    except EchecIsole as exc:
+        logger.warning("Image non réduite : %s", exc)
+        return data
 
 
-def carre_png(data: bytes, taille: int) -> bytes:
-    """Octets d'image → PNG carré de `taille` pixels, transparence conservée.
+def carres_png(data: bytes, tailles: tuple[int, ...]) -> dict[int, bytes]:
+    """Octets d'image → `{taille: PNG carré}`, transparence conservée.
 
     Le logo d'une résidence (#1728) : il sert d'icône d'application, de favicon
     et d'en-tête de document, qui sont tous CARRÉS. Une image qui ne l'est pas
-    est centrée sur un fond transparent, jamais rognée — on ne coupe pas un
-    nom écrit dans un logo. Orientation redressée comme pour une photo.
+    est centrée sur un fond transparent, jamais rognée. Toutes les tailles dans
+    UN enfant (`utils/logo` les garde ensuite en mémoire).
 
     Lève `ValueError` si les octets ne sont pas une image lisible.
     """
     try:
-        img = Image.open(io.BytesIO(data))
-        img = ImageOps.exif_transpose(img) or img
-        img = img.convert("RGBA")
-        cote = max(img.size)
-        fond = Image.new("RGBA", (cote, cote), (0, 0, 0, 0))
-        fond.paste(img, ((cote - img.width) // 2, (cote - img.height) // 2))
-        fond = fond.resize((taille, taille), Image.LANCZOS)
-        sortie = io.BytesIO()
-        fond.save(sortie, format="PNG", optimize=True)
-        return sortie.getvalue()
-    except Exception as exc:  # noqa: BLE001 — toute erreur Pillow vaut « illisible »
+        rendus = _isole("carres", data, tuple(tailles), nom="image-carres")
+    except EchecIsole as exc:
+        logger.warning("Image non mise au carré : %s", exc)
         raise ValueError("image illisible") from exc
+    if rendus is None:
+        raise ValueError("image illisible")
+    return rendus
+
+
+def carre_png(data: bytes, taille: int) -> bytes:
+    """Octets d'image → PNG carré de `taille` pixels. Lève `ValueError` si illisible."""
+    return carres_png(data, (taille,))[taille]

@@ -399,6 +399,8 @@ une règle neuve étend le contrôle d'elle-même).
   Il gardait déjà cette porte pour une **autre** raison (la dérogation de sécurité
   GHSA-jf6q-chmf-3h3v) : ne pas en écrire un second, c'est la même porte.
   `api/tests/test_pdf_hors_process.py` vérifie, lui, que l'enfant est bien `spawn`.
+  La mécanique de l'enfant (délai, mort détectée, plafond de mémoire) vit dans
+  `app/utils/process_isole.py`, partagée avec les images (#2396) — jamais recopiée.
 
 ### Destinataires CS
 
@@ -558,6 +560,13 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   Le nom stocké passe par `nom_stocke` : préfixe UUID, radical assaini, et
   **extension dérivée du type**, jamais du nom fourni — `/uploads/*` est servi
   en statique et Caddy pose le `Content-Type` d'après l'extension sur disque.
+- **Aucune image ne se décode dans le process de l'API** (#2396) : Pillow et ses
+  bibliothèques C (libtiff, libheif…) ne vivent que dans `utils/images_moteur`,
+  exécuté dans un enfant `spawn` par `utils/process_isole` (délai, plafond de
+  mémoire) ; la porte est `utils/images`, qui NOMME le moteur sans l'importer. Un
+  fichier piégé ne coûte qu'une image illisible. La relève des courriels n'ouvre
+  aucune image avant d'avoir autorisé l'expéditeur (`courriel_pieces_jointes.retenir`).
+  🔒 `test_images_hors_process.py`, `test_courriel_pieces_jointes.py`.
 - **Un fichier servi (`/uploads/*`) se lit par son PORTEUR** (#2154) :
   `utils/visibility/fichiers.exiger_fichier_lisible`, appelée par `/auth/verifier-acces`
   (le `forward_auth` de Caddy) et par la route de l'installation commune. Le fichier
