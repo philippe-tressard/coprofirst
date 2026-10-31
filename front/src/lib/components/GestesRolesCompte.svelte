@@ -14,12 +14,15 @@
 	import type { UtilisateurAdmin } from '#lib/api/index.ts';
 	import { aRole } from '#lib/stores/auth.ts';
 	import { gestesAdminOperateur, type Titulaires } from '#lib/droits.ts';
+	import { configStore } from '#lib/stores/pageConfig.ts';
+	import { CLE_OPERATEUR_PAR_EXPLOITANT } from '#lib/portee.ts';
 
 	export let u: UtilisateurAdmin;
 	export let titulaires: Titulaires;
 	export let demander: (u: UtilisateurAdmin, role: string, action: 'ajouter' | 'retirer') => void;
 
-	$: operateur = gestesAdminOperateur(u, titulaires);
+	$: parExploitant = $configStore[CLE_OPERATEUR_PAR_EXPLOITANT] === '1';
+	$: operateur = gestesAdminOperateur(u, titulaires, parExploitant);
 </script>
 
 {#if !u.actif}
@@ -76,6 +79,8 @@
 			>
 				– Opérateur
 			</button>
+		{:else if parExploitant && aRole(u, 'operateur')}
+			<span class="muted">Opérateur désigné par l’exploitant</span>
 		{/if}
 	</div>
 {/if}

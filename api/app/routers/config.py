@@ -13,6 +13,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, EmailStr
 from sqlmodel import Session, select
 
+from app.auth import operateur
 from app.auth.deps import require_admin
 from app.utils.services import (
     CLE_PUBLIQUE_DECOR_FETES,
@@ -137,6 +138,8 @@ def get_config(session: Session = Depends(get_session)):
     publiques |= {"site_url": adresse_du_site()}  # dérivée, jamais lue en base (#2058)
     #  Calculée, jamais lue en base : le front apprend ainsi qu'il sert la démo (#1901).
     publiques[demo.CLE_PUBLIQUE] = "1" if demo.est_demo() else "0"
+    #  Calculée aussi : sur une instance commune, l'exploitant désigne l'opérateur.
+    publiques[operateur.CLE_PUBLIQUE] = "1" if operateur.designe_par_l_exploitant() else "0"
     return publiques
 
 

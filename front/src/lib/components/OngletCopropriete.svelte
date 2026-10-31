@@ -24,6 +24,7 @@
 	} from '#lib/components/ChampsIdentiteCopropriete.svelte';
 	import { fmtDateShort as fmtDate } from '#lib/date.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { REGLE_PAR_L_EXPLOITANT } from '#lib/portee.ts';
 	import { estAbsent, messageErreur } from '#lib/erreurs.ts';
 
 	$: _siteNom = $siteNomStore;
@@ -136,7 +137,7 @@
 						<input type="url" value={urlPublique} readonly />
 						<span class="aide"
 							>L’adresse de l’installation, celle des liens des courriels et des pages
-							légales&nbsp;: elle ne se règle pas ici.</span
+							légales. {REGLE_PAR_L_EXPLOITANT}</span
 						>
 					</label>
 				</div>

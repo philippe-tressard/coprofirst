@@ -36,6 +36,7 @@
 	import { defautsDePage } from '#lib/pages.ts';
 	import { lieu } from '#lib/lieu.svelte.ts';
 	import BarreOnglets from '#lib/components/BarreOnglets.svelte';
+	import PorteeOnglet from '#lib/components/PorteeOnglet.svelte';
 	import EntetePage from '#lib/components/EntetePage.svelte';
 	import {
 		CONFIG_SITE_DEFAUT,
@@ -314,6 +315,7 @@
 	comptes={{ a_traiter: comptes.length + commandes.length + demandesProfil.length }}
 	eteints={ongletsEteints}
 />
+<PorteeOnglet {onglet} />
 
 {#if onglet === 'a_traiter'}
 	<OngletATraiter

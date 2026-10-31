@@ -97,3 +97,12 @@ def test_cas_zero_une_instance_propre_lit_le_drapeau_du_compte():
     assert not contexte.est_commune()
     assert est_operateur(_compte("a@exemple.example", f"admin,{ROLE_OPERATEUR}"))
     assert not est_operateur(_compte("b@exemple.example", "admin"))
+
+
+def test_l_ecran_apprend_qui_designe_l_operateur(monkeypatch):
+    """`GET /config` publie la clé calculée que lit l'écran (`#lib/portee`) — jamais saisie."""
+    with base_http() as moteur:
+        http, _ = client_http(moteur, None)
+        assert http.get("/config").json()["operateur_par_exploitant"] == "0"
+        monkeypatch.setattr("app.auth.operateur.designe_par_l_exploitant", lambda: True)
+        assert http.get("/config").json()["operateur_par_exploitant"] == "1"

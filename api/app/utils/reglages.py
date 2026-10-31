@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import re
 
+from app.auth import operateur
 from app.utils import demo, pied_de_page, whatsapp
 from app.utils.llm_usages import USAGES, champs
 from app.utils.services import CLES_ACTIVATION
@@ -119,6 +120,8 @@ REFUSEES: dict[str, str] = {
     "site_palette": "La palette se choisit par PUT /config/palette.",
     #  Un réglage de l'INSTALLATION (spec `mode-demo.md` M1).
     demo.CLE_PUBLIQUE: "Le mode démo se règle dans .env (MODE_DEMO).",
+    #  Calculée (`auth/operateur`) : sur une instance commune, l'exploitant la désigne.
+    operateur.CLE_PUBLIQUE: "L'opérateur d'une instance commune se déclare dans le fichier des copropriétés.",
     #  Dérivée, jamais saisie (#2058) : l'adresse de l'installation (`liens.adresse_du_site`).
     "site_url": "L'adresse du site est celle de son installation : elle ne se saisit pas.",
     #  Leurs routes portent des bornes que `PUT /config` n'appliquerait pas.

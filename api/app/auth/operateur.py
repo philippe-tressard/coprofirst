@@ -24,6 +24,11 @@ from app.models.core import Utilisateur
 from app.models.roles import ROLE_OPERATEUR
 
 
+#: Calculée par `GET /config`, jamais saisie : l'écran y apprend qu'il ne propose
+#: pas le geste Opérateur (`front/src/lib/portee.ts`).
+CLE_PUBLIQUE = "operateur_par_exploitant"
+
+
 def designe_par_l_exploitant() -> bool:
     """L'opérateur de cette instance se déclare-t-il dans le fichier de l'exploitant ?"""
     return contexte.est_commune()

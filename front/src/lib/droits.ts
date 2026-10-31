@@ -113,16 +113,19 @@ export function compterTitulaires(comptes: (User & { actif?: boolean })[]): Titu
  *   supervision (16/10/2026, #2029) ;
  * - tout administrateur l'accorde ou le retire, à lui-même compris (15/10/2026) ;
  * - Admin et Opérateur se retirent, à soi-même compris, sauf à leur dernier
- *   titulaire actif.
+ *   titulaire actif ;
+ * - sur une instance COMMUNE, Opérateur ne s'accorde ni ne se retire ici : l'exploitant
+ *   le désigne (`parExploitant`, 31/10/2026 — `#lib/portee`).
  */
 export function gestesAdminOperateur(
 	cible: User,
 	titulaires: Titulaires,
+	parExploitant = false,
 ): { accorder: boolean; retirer: boolean; retirerAdmin: boolean } {
 	const cibleOperateur = aRole(cible, 'operateur');
 	return {
-		accorder: !cibleOperateur && aRole(cible, 'admin'),
-		retirer: cibleOperateur && titulaires.operateur > 1,
+		accorder: !parExploitant && !cibleOperateur && aRole(cible, 'admin'),
+		retirer: !parExploitant && cibleOperateur && titulaires.operateur > 1,
 		retirerAdmin: titulaires.admin > 1,
 	};
 }
