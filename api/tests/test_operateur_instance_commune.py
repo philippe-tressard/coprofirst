@@ -41,7 +41,7 @@ def _compte(email: str, roles: str) -> Utilisateur:
     return Utilisateur(
         id=1,
         nom="Témoin",
-        prenom="Compte",
+        prenom="Alice",
         email=email,
         role=RoleUtilisateur.admin,
         roles_json=roles,
