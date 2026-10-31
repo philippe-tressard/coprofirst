@@ -549,7 +549,11 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   `utils/fichiers.enregistrer_fichier_recu` **et nulle part ailleurs** ; les
   règles — liste blanche de types, plafond de taille, cohérence de la signature —
   vivent dans `FAMILLES` (image · document · document_prive · tableur). Un
-  routeur **nomme une famille**, il ne redéfinit pas ce qu'il accepte.
+  routeur **nomme une famille**, il ne redéfinit pas ce qu'il accepte ; s'il en
+  reçoit deux, `famille_du_fichier` la choisit. Un type **indéterminé** (vide,
+  `application/octet-stream` : Windows n'en connaît pas pour `.heic`) se déduit
+  de l'extension dans la famille, puis la signature tranche (`type_annonce`,
+  appliquée par la porte, #2389). 🔒 `test_televersement_type_indetermine.py`.
   🔒 `test_televersement_source_unique.py` refuse une écriture ailleurs (le PDF
   d'affiche, qui est **produit** et non reçu, y est déclaré), une liste MIME ou
   un plafond redéclaré dans un routeur, et une famille qui oublierait l'une des

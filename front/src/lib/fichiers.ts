@@ -14,11 +14,13 @@
  * alignées — `api/tests/test_pieces_jointes.py` le vérifie.
  */
 
-/** Formats d'image acceptés par `_save_image` (ALLOWED_MIME côté API). */
 import type { CibleDocument } from '#lib/api/documents.ts';
 
+/** Formats d'image de la famille « image » (`utils/fichiers.FAMILLES`), par type
+ *  ET par extension : Windows ne connaît pas toujours de type pour `.heic`,
+ *  `.heif` ou `.avif`, et le sélecteur écartait alors la photo de l'iPhone (#2389). */
 export const ACCEPT_PHOTOS =
-	'image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp,image/tiff,image/heic,image/heif';
+	'image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp,image/tiff,image/heic,image/heif,.jpg,.png,.webp,.gif,.avif,.bmp,.tiff,.heic,.heif';
 
 /** Documents acceptés par `POST /uploads/fichier` (ALLOWED_DOC_MIME côté API). */
 export const ACCEPT_DOCUMENTS = 'application/pdf,text/plain,.pdf,.doc,.docx,.xls,.xlsx,.txt';
