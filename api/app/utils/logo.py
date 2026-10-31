@@ -20,7 +20,7 @@ vit dans `logo-neutre.svg` ; ce PNG et les icônes du front en sont les rendus.
 
 Le fichier reçu est stocké tel quel dans le volume (`uploads/logo/`), et son NOM
 dans la configuration (`site_logo`). Les tailles se dérivent à la demande
-(`images.carre_png`) : aucun fichier produit n'est écrit à côté, donc rien à
+(`images.carres_png`, aux `CRANS`) : aucun fichier produit n'est écrit à côté, donc rien à
 tenir à jour quand le logo change.
 """
 
@@ -31,7 +31,8 @@ from pathlib import Path
 from sqlmodel import Session
 
 from app.utils.config_site import config_site
-from app.utils.images import carre_png
+from app import contexte
+from app.utils.images import carres_png
 from app.utils.liens import base_site
 from app.utils.stockage import stockage
 
@@ -47,6 +48,13 @@ DOSSIER = "logo"
 #: plutôt qu'une liste : chaque écran demande la sienne (22 px dans le menu, en
 #: double densité), sans liste à recopier côté front.
 TAILLE_MIN, TAILLE_MAX = 16, 512
+
+#: Les tailles RÉELLEMENT produites : une demande prend le cran égal ou supérieur,
+#: que l'écran réduit à sa taille d'affichage (`width`/`height`). Depuis #2396, le
+#: logo se décode hors du process de l'API — un enfant par décodage : avec une
+#: taille libre, une route publique ferait démarrer un process par valeur demandée.
+#: Les crans se rendent tous ensemble, une fois par logo, puis se servent de mémoire.
+CRANS = (16, 32, 48, 64, 96, 128, 192, 256, 384, 512)
 
 #: Le logo neutre en PNG 512 px — le rendu de `logo-neutre.svg`, fait une fois (les
 #: icônes de l'application installée et les courriels ne prennent pas de SVG).
@@ -68,15 +76,45 @@ def fichier_logo(session: Session) -> Path | None:
     return st.chemin(cle) if st.existe(cle) else None
 
 
+def cran(taille: int) -> int:
+    """Le cran servi pour une taille demandée : le plus petit qui la couvre."""
+    return next((c for c in CRANS if c >= taille), CRANS[-1])
+
+
+def _carres(source: Path, place: str) -> dict[int, bytes] | None:
+    """Les crans du fichier `source`, rendus une fois puis gardés en mémoire — None
+    s'il est illisible.
+
+    La clé est le NOM du fichier : un logo remplacé porte un nom neuf
+    (`nom_stocke`), donc le cache ne sert jamais l'ancien. Un seul logo par
+    copropriété : chaque `place` (« televerse », « neutre ») ne garde que son
+    fichier courant, échec compris — sans quoi un fichier illisible referait
+    démarrer un enfant à chaque requête publique.
+    """
+    memoire = contexte.etat("logo_carres")
+    cle = str(source)
+    courant = memoire.get(place)
+    if courant is None or courant[0] != cle:
+        try:
+            rendus = carres_png(source.read_bytes(), CRANS)
+        except ValueError:
+            rendus = None
+        courant = (cle, rendus)
+        memoire[place] = courant  # un seul geste : jamais une clé sans ses rendus
+    return courant[1]
+
+
 def logo_png(session: Session, taille: int) -> bytes:
-    """Le logo en PNG carré de `taille` px — celui de la résidence, sinon le neutre."""
+    """Le logo en PNG carré au cran de `taille` — celui de la résidence, sinon le neutre.
+
+    Un fichier devenu illisible ne doit pas casser un document ni un courriel :
+    le neutre prend sa place.
+    """
     chemin = fichier_logo(session)
-    try:
-        return carre_png((chemin or NEUTRE_PNG).read_bytes(), taille)
-    except ValueError:
-        #  Un fichier devenu illisible ne doit pas casser un document ni un
-        #  courriel : le neutre prend sa place.
-        return carre_png(NEUTRE_PNG.read_bytes(), taille)
+    rendus = (_carres(chemin, "televerse") if chemin else None) or _carres(NEUTRE_PNG, "neutre")
+    if rendus is None:
+        raise ValueError("le logo neutre est illisible")
+    return rendus[cran(taille)]
 
 
 def logo_televerse_png(session: Session) -> bytes | None:

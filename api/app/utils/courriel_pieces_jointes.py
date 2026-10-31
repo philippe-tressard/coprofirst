@@ -4,12 +4,18 @@ Jusque-là, la relève de la boîte des affaires ne gardait que le TEXTE : le de
 ou la photo qu'un syndic joignait à sa réponse restait dans la boîte, et le
 conseil devait l'aller chercher pour le téléverser à la main.
 
-## Deux temps, comme le reste de la relève
+## Trois temps, comme le reste de la relève
 
-1. **`trier(message)`** — pur, sans base ni disque : quelles parties sont des
-   pièces, lesquelles s'écartent et pourquoi. Il est appelé à la lecture du
-   message, AVANT de savoir s'il sera versé.
-2. **`verser(...)`** — n'écrit que si le message est versé : chaque pièce passe
+1. **`trier(message)`** — pur, sans base ni disque, et **sans ouvrir une image** :
+   quelles parties sont candidates, lesquelles s'écartent par leur type. Il est
+   appelé à la lecture du message, AVANT de savoir qui écrit.
+2. **`retenir(tri)`** — seulement pour un message AUTORISÉ (`joindre`) : mesure
+   les images pour écarter la signature, hors du process de l'API
+   (`images.dimensions`), puis applique le plafond de `MAX_PIECES`. 🔴 Jusqu'à
+   #2396, la mesure se faisait au tri : tout expéditeur, anonyme compris,
+   atteignait l'analyse d'en-tête des décodeurs d'images.
+   🔒 `test_courriel_pieces_jointes.py` (un tiers n'atteint aucun décodeur).
+3. **`verser(...)`** — n'écrit que si le message est versé : chaque pièce passe
    par la porte unique du téléversement (`fichiers.enregistrer_fichier_recu`,
    `images.enregistrer_image_recue`), avec la famille `document` ou `image` —
    types, plafond et signature du contenu, exactement comme au formulaire.
@@ -42,7 +48,6 @@ from dataclasses import dataclass, field
 
 from app.utils.courriel_decodage import _parties, _texte
 from app.utils.fichiers import FAMILLES, type_annonce
-from app.utils.images import dimensions
 
 #: Le nombre de pièces versées pour un message (demandé le 31/10/2026).
 MAX_PIECES = 10
@@ -115,17 +120,17 @@ def _famille(type_: str, nom: str) -> tuple[str, str] | None:
     return None
 
 
-def _de_signature(type_: str, famille: str | None, octets: bytes) -> bool:
-    if type_ in TYPES_DE_SIGNATURE:
-        return True
-    if famille != "image":
-        return False
-    taille = dimensions(octets)
-    return taille is not None and max(taille) < COTE_MIN_SIGNATURE
+def _de_signature(type_: str) -> bool:
+    """Un fichier que le client ajoute à la signature, reconnu à son type seul."""
+    return type_ in TYPES_DE_SIGNATURE
 
 
 def trier(message) -> Tri:
-    """Les pièces du message, dans l'ordre où il les porte. Sans écriture."""
+    """Les pièces candidates du message, dans l'ordre où il les porte.
+
+    Sans écriture, et sans ouvrir aucune image : ce qui se lit ici l'est pour
+    TOUT expéditeur. Le plafond et la signature d'image se jugent à `retenir`.
+    """
     tri = Tri()
     vues: set[str] = set()
     propres, _joints = _parties(message)
@@ -140,16 +145,54 @@ def trier(message) -> Tri:
             continue
         vues.add(empreinte)
         type_, nom = partie.get_content_type(), _nom(partie, rang)
-        reconnue = _famille(type_, nom)
-        if _de_signature(type_, reconnue[0] if reconnue else None, octets):
+        if _de_signature(type_):
             continue
+        reconnue = _famille(type_, nom)
         if reconnue is None:
             tri.ecarts.append(Ecart(nom, MOTIF_TYPE))
-        elif len(tri.pieces) >= MAX_PIECES:
-            tri.ecarts.append(Ecart(nom, MOTIF_AU_DELA))
         else:
             tri.pieces.append(Piece(nom, reconnue[1], reconnue[0], octets))
     return tri
+
+
+def _mesurable(piece: Piece) -> bool:
+    """L'image passe les règles de sa famille (type, plafond, signature du contenu).
+
+    Elle n'est mesurée qu'à cette condition : un décodeur ne lit jamais un
+    fichier qui ment sur ce qu'il est. Celle qui échoue reste candidate, et la
+    porte du versement la refuse en le disant.
+    """
+    from fastapi import HTTPException
+
+    from app.utils.fichiers import verifier_fichier_recu
+
+    try:
+        verifier_fichier_recu(piece.octets, piece.nom, piece.type, "image")
+    except HTTPException:
+        return False
+    return True
+
+
+def retenir(tri: Tri) -> Tri:
+    """Les pièces à verser : sans les images de signature, `MAX_PIECES` au plus.
+
+    🔴 N'est appelée que pour un message AUTORISÉ : c'est ici que les images
+    s'ouvrent — toutes dans un même enfant, hors du process de l'API.
+    """
+    from app.utils.images import dimensions
+
+    images = [p for p in tri.pieces if p.famille == "image" and _mesurable(p)]
+    tailles = dict(zip(map(id, images), dimensions([p.octets for p in images]), strict=True))
+    retenu = Tri(ecarts=list(tri.ecarts))
+    for piece in tri.pieces:
+        taille = tailles.get(id(piece))
+        if taille is not None and max(taille) < COTE_MIN_SIGNATURE:
+            continue
+        if len(retenu.pieces) >= MAX_PIECES:
+            retenu.ecarts.append(Ecart(piece.nom, MOTIF_AU_DELA))
+        else:
+            retenu.pieces.append(piece)
+    return retenu
 
 
 def verser(session, tri: Tri, auteur) -> tuple[list[str], list[Ecart]]:
@@ -204,6 +247,7 @@ def joindre(session, ticket, auteur, suite, tri: Tri | None, *, expediteur: str,
     """
     if tri is None or not (tri.pieces or tri.ecarts):
         return suite
+    tri = retenir(tri)
     urls, ecarts = verser(session, tri, auteur)
     if suite is None:
         if not urls:

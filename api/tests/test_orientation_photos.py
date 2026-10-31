@@ -32,7 +32,7 @@ qu'il prévient ne se répare pas par un correctif de code.
 Ils appellent donc désormais `uploads._save_image`, la fonction de production,
 avec la racine du stockage (`uploads_dir`) détournée vers un répertoire temporaire, et relisent le
 fichier réellement écrit. `test_cas_zero_…` le prouve en neutralisant
-`exif_transpose` **dans le module de production** : si ces tests mesuraient
+`exif_transpose` **dans le moteur de production** (nommé à l'enfant, #2396) : si ces tests mesuraient
 encore une copie, il échouerait.
 
 ## ⚠️ Ce que j'ai cru, et qui était faux
@@ -173,8 +173,13 @@ def test_cas_zero_SANS_exif_transpose_dans_uploads_la_photo_reste_couchee(tmp_pa
     ⚠️ Un cas zéro antérieur a corrigé une erreur de ma part : j'avais écrit que
     l'ORDRE des deux appels décidait, et il a montré que non. Un cas zéro ne sert
     pas seulement à éprouver le contrôle — il éprouve aussi ce qu'on croit savoir.
+
+    🔴 Depuis #2396, le réencodage s'exécute dans un enfant `spawn`, où un
+    `monkeypatch` du parent n'arrive pas : ce cas zéro NOMME un moteur privé de
+    `exif_transpose` (`tests/aides_moteur_sans_orientation.py`) à la place du
+    vrai. Il échouerait si `_televerser` cessait de passer par le moteur nommé.
     """
-    monkeypatch.setattr(images.ImageOps, "exif_transpose", lambda img: img)
+    monkeypatch.setattr(images, "MOTEUR", "tests.aides_moteur_sans_orientation")
     couchee = _televerser(_image_couchee(), tmp_path, monkeypatch)
     assert couchee.size == (40, 20), (
         "l'image se redresse sans `exif_transpose` : ces tests ne prouvent plus "
