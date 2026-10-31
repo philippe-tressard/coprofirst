@@ -7,7 +7,6 @@
 	import UrgencesAccueil from '#lib/components/UrgencesAccueil.svelte';
 	import { salutation } from '#lib/date.ts';
 	import { seuilRecentMs } from '#lib/archivage.ts';
-	import AlerteRelanceSyndic from '#lib/components/AlerteRelanceSyndic.svelte';
 	import ArchivesDuFil from '#lib/components/ArchivesDuFil.svelte';
 	import {
 		authResolue,
@@ -37,7 +36,6 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import EnteteAccueil from '#lib/components/EnteteAccueil.svelte';
 	import FriseDuFil from '#lib/components/FriseDuFil.svelte';
-	import LienConsignes from '#lib/components/LienConsignes.svelte';
 	import RaccourcisRapides from '#lib/components/RaccourcisRapides.svelte';
 	import { toast } from '#lib/components/Toast.svelte';
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
@@ -246,30 +244,18 @@
 {:else}
 	<EnteteAccueil salutation={greeting} lots={userLots} visible={ready} />
 
-	<!-- ═══ CONSIGNES DE LA COPROPRIÉTÉ ═══════════════════════════════════ -->
-	<div class="section-reveal delai-1" class:section-visible={ready}>
-		<LienConsignes forme="carte" misEnAvant={$isLocataire} />
-	</div>
-
-	<!-- La relance syndic est annoncée UNE fois, par « ALERTES URGENTES » plus
-	     bas, à partir de `data.sante.tickets_relance_syndic` que le backend
-	     calcule déjà. Une seconde carte vivait ici, alimentée par un appel API
-	     distinct dont elle lisait `.length` sur un objet `{delai_jours, tickets}`
-	     — donc `undefined`, donc jamais affichée. Le doublon était invisible
-	     précisément parce qu'il était cassé. -->
-
 	<!-- ═══ RACCOURCIS RAPIDES ═════════════════════════════════════════════ -->
 	<!-- Qui voit quelle pastille, et d'où vient chaque nombre : `#lib/raccourcis.ts`,
 	     et nulle part ailleurs. La page recomposait ici la règle d'accès à
 	     l'Espace CS, que le serveur écrivait déjà de son côté (#399). -->
 	<RaccourcisRapides sante={data.sante} {ready} --delay=".08s" />
 
-	<!-- ═══ ALERTES URGENTES ══════════════════════════════════════════════ -->
-	{#if $isCS && (data.sante.tickets_relance_syndic ?? 0) > 0}
-		<div class="section-reveal delai-2" class:section-visible={ready}>
-			<AlerteRelanceSyndic nombre={data.sante.tickets_relance_syndic ?? 0} />
-		</div>
-	{/if}
+	<!-- ═══ ALERTES URGENTES ══════════════════════════════════════════════
+	     🔴 Deux bandeaux pleine largeur sont partis le 31/10/2026 (#2397,
+	     maquette A2) : « Consignes de la copropriété » est une pastille au bout
+	     de la rangée ci-dessus, et « N affaires syndic à relancer » redisait le
+	     compteur « N relances » de la pastille Espace CS, qui mène au même
+	     endroit. Les urgences restent : elles NOMMENT les affaires. -->
 	{#if urgentItems.length > 0}
 		<div class="section-reveal delai-3" class:section-visible={ready}>
 			<UrgencesAccueil items={urgentItems.slice(0, 3)} />
@@ -449,12 +435,6 @@
 	}
 	/*  La frise elle-même — celle du bandeau comme celle du fil et des Archives —
 	    est `FriseDuFil` (#779), variante `epingle` ici. */
-	.delai-1 {
-		--delay: 0.05s;
-	}
-	.delai-2 {
-		--delay: 0.08s;
-	}
 	.delai-3 {
 		--delay: 0.1s;
 	}

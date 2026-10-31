@@ -229,6 +229,65 @@ def test_le_compteur_tickets_egale_ce_que_l_ecran_montre(base):
         )
 
 
+# ── Le prochain rendez-vous — la pastille Calendrier (#2397) ────────────────
+
+
+def _affaire_datee(session: Session, auteur_id: int, titre: str, debut, fin=None, **kw):
+    t = Ticket(
+        numero=titre,
+        titre=titre,
+        description="D",
+        categorie="espaces_verts",
+        auteur_id=auteur_id,
+        debut=debut,
+        fin=fin,
+        **kw,
+    )
+    session.add(t)
+    session.commit()
+    return t
+
+
+def test_le_rendez_vous_est_l_affaire_datee_la_plus_proche_a_venir(base):
+    """Passée, annulée ou plus lointaine : aucune n'est le prochain rendez-vous."""
+    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
+    now = maintenant()
+    _affaire_datee(base, cs.id, "Passée", now - timedelta(days=2))
+    _affaire_datee(base, cs.id, "Annulée", now + timedelta(hours=1), statut="annulé")
+    _affaire_datee(base, cs.id, "Lointaine", now + timedelta(days=30))
+    proche = _affaire_datee(base, cs.id, "AG", now + timedelta(days=3))
+
+    rdv = calculer(_contexte(base, cs)).rendez_vous
+    assert rdv is not None and rdv.id == proche.id and rdv.titre == "AG"
+
+
+def test_un_rendez_vous_en_cours_reste_le_rendez_vous(base):
+    """Commencé il y a une heure, fini dans deux : c'est encore celui du jour."""
+    cs = _utilisateur(base, "cs@test.fr", "conseil_syndical")
+    now = maintenant()
+    en_cours = _affaire_datee(
+        base, cs.id, "En cours", now - timedelta(hours=1), fin=now + timedelta(hours=2)
+    )
+    _affaire_datee(base, cs.id, "Demain", now + timedelta(days=1))
+    assert calculer(_contexte(base, cs)).rendez_vous.id == en_cours.id
+
+
+def test_le_rendez_vous_suit_la_visibilite_de_l_affaire(base):
+    """La pastille ne nomme jamais une affaire que l'écran ne montrerait pas."""
+    bat1, bat2 = _batiments(base)[:2]
+    resident = _utilisateur(base, "resident@test.fr", "résident", batiment_id=bat1)
+    autre = _utilisateur(base, "autre@test.fr", "résident", batiment_id=bat2)
+    _affaire_datee(
+        base,
+        autre.id,
+        "Ailleurs",
+        maintenant() + timedelta(days=1),
+        perimetre_cible=f'["bat:{bat2}"]',
+    )
+    assert calculer(_contexte(base, resident)).rendez_vous is None
+    assert calculer(_contexte(base, autre)).rendez_vous is not None
+
+
 # ── Validations — (d) ce qu'est un compte « en attente » ─────────────────────
 
 

@@ -49,8 +49,8 @@
 	 *
 	 * 🔴 DÉRIVÉE, et non posée dans `onMount` (18/09/2026). Svelte monte les
 	 * ENFANTS avant le parent : `OngletReporting` lisait donc `vueInitiale` alors
-	 * que le parent ne l'avait pas encore renseignée, et l'alerte « ticket syndic
-	 * à relancer » du tableau de bord ouvrait le suivi des dossiers au lieu de la
+	 * que le parent ne l'avait pas encore renseignée, et le lien « à relancer »
+	 * du tableau de bord ouvrait le suivi des dossiers au lieu de la
 	 * relance. Le lien était juste, l'ordre de montage le rendait sans effet.
 	 */
 	$: vueReporting = onglet === 'reporting' ? ($lieu.url.searchParams.get('vue') ?? null) : null;
