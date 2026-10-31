@@ -1,0 +1,74 @@
+name: Image de l'API
+
+#  #2389 (31/10/2026) — l'image de l'API, construite dès la PR, sur les deux
+#  architectures qu'« Images » publie (amd64, arm64), sans rien pousser.
+#
+#  Pourquoi : `images.yml` ne construit qu'après la fusion dans `main`. Un
+#  Dockerfile cassé passait donc toute la CI de la PR, et l'image ne se publiait
+#  pas — vécu en écrivant ce lot (pillow-heif ne trouvait pas la libheif).
+#  Surtout, la construction lance `scripts/verifier_heif.py` sur l'image même :
+#  aucun x265 (GPLv2) ne doit entrer dans une image distribuée publiquement, et
+#  c'est ici qu'on le voit AVANT de la publier, architecture par architecture.
+#
+#  Déclenché seulement par ce qui change l'image de l'API ou ses vérifications.
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "api/Dockerfile"
+      - "api/requirements.txt"
+      - "api/scripts/verifier_heif.py"
+      - "api/tests/donnees/photo.heic"
+      - ".github/workflows/image-api.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions: {}
+
+jobs:
+  construire:
+    name: Image de l'API (${{ matrix.plateforme }})
+    runs-on: ${{ matrix.plateforme == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        plateforme: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      #  La vérification HEIC est une étape du Dockerfile : une image non conforme
+      #  ne se construit pas. `load` la garde pour l'étape suivante, rien n'est poussé.
+      - name: Construire (dont la vérification HEIC)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          BUILDKIT_PROGRESS: plain
+        with:
+          context: api
+          file: api/Dockerfile
+          platforms: linux/${{ matrix.plateforme }}
+          tags: coprofirst-api:pr
+          load: true
+          push: false
+
+      - name: Ce que l'image contient — paquets, liens, vérification rejouée
+        run: |
+          docker run --rm --network none coprofirst-api:pr sh -c '
+            set -e
+            echo "== paquets heif, de265, dav1d, x265"
+            paquets=$(dpkg-query -W -f "\${Package} \${Version}\n")
+            printf "%s\n" "$paquets" | grep -Ei "heif|de265|dav1d|x265" || true
+            echo "== liens du module"
+            ldd /usr/local/lib/python3.12/site-packages/_pillow_heif*.so
+            python -I scripts/verifier_heif.py tests/donnees/photo.heic
+          '

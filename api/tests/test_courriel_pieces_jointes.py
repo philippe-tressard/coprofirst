@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import json
+import pathlib
 from datetime import datetime
 from email.message import EmailMessage
 
@@ -237,8 +238,8 @@ def test_l_auteur_de_l_affaire_ecrit_toujours_au_fil(scene, disque_jetable):
 
 # ── Tous les formats d'image (#2388) ──────────────────────────────────────────
 
-#: Chaque format d'image accepté, tel que Pillow l'écrit. HEIC attend son lot
-#: (`pillow-heif` est distribué sous GPLv2) ; le SVG est refusé.
+#: Chaque format d'image accepté, tel que Pillow l'écrit — HEIC et HEIF (#2389) se
+#: lisent dans la photo témoin, l'image n'ayant aucun encodeur HEVC. Le SVG est refusé.
 FORMATS_IMAGE = (
     ("JPEG", "image/jpeg", "jpg"),
     ("PNG", "image/png", "png"),
@@ -247,12 +248,20 @@ FORMATS_IMAGE = (
     ("AVIF", "image/avif", "avif"),
     ("BMP", "image/bmp", "bmp"),
     ("TIFF", "image/tiff", "tiff"),
+    ("HEIF", "image/heic", "heic"),
+    ("HEIF", "image/heif", "heif"),
 )
+
+#: Une photo HEIC d'iPhone, 640 × 480 — la même que décode `scripts/verifier_heif.py`
+#: à la construction de l'image.
+_PHOTO_HEIC = pathlib.Path(__file__).parent / "donnees" / "photo.heic"
 
 _SVG = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
 
 
 def _image(format_: str) -> bytes:
+    if format_ == "HEIF":
+        return _PHOTO_HEIC.read_bytes()
     sortie = io.BytesIO()
     Image.new("RGB", (640, 480), (10, 120, 200)).save(sortie, format=format_)
     return sortie.getvalue()
@@ -292,5 +301,8 @@ def test_chaque_format_d_image_entre_par_courriel(scene, disque_jetable):
     assert _repondre(session, ticket, syndic.email, message) == ACCEPTE
     (suite,) = _evolutions(session, ticket)
     urls = parse_photos(suite.fichiers_urls)
-    assert len(urls) == len(FORMATS_IMAGE) and all(u.endswith(".jpg") for u in urls), urls
+    #  `.heic` et `.heif` portent la même photo témoin : une pièce répétée n'entre
+    #  qu'une fois (`trier`) — l'extension `.heif` passe par `/uploads/fichier`.
+    distinctes = len({p[3] for p in pieces})
+    assert len(urls) == distinctes and all(u.endswith(".jpg") for u in urls), urls
     assert "dessin.svg (type de fichier non accepté)" in suite.contenu

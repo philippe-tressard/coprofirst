@@ -824,7 +824,12 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   jamais tenu à la main. Un fichier ou un tracé **repris** d'un projet tiers se
   déclare dans `CONTENUS_TIERS` et dans `REUSE.toml` — `contenus_tiers.py` (job
   `lint-backend`) le vérifie : `reuse lint` dit qu'une licence est déclarée, pas
-  qu'elle est vraie.
+  qu'elle est vraie. Ce que pip ne voit pas (#2389) — un paquet Debian qu'une image
+  ajoute, une roue qui EMBARQUE un binaire interdit (`pillow-heif` se lit BSD et
+  porte x265, GPLv2) — se déclare dans `BIBLIOTHEQUES_SYSTEME`,
+  `INTERDITS_DANS_LES_IMAGES` et `ROUES_A_COMPILER`, que `licences_image.py`
+  confronte aux Dockerfile ; l'image construite, elle, se juge à sa construction
+  (`api/scripts/verifier_heif.py`, amd64 et arm64).
 - **Le code de test ne se recopie pas non plus** (#1495) : la liste des aides et
   de ce qu'elles remplacent se lit dans `MOTIFS` de
   🔒 `test_aides_de_tests_source_unique.py` — balayage de `app/`, base en mémoire

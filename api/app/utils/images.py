@@ -20,6 +20,12 @@ travers, et plus rien ensuite ne sait la redresser
 import io
 
 from PIL import Image, ImageOps
+from pillow_heif import register_heif_opener
+
+#  Les photos HEIC/HEIF d'iPhone (#2389) : Pillow les ouvre comme les autres, et
+#  elles repartent en JPEG. Décodage seul — l'image n'embarque aucun encodeur HEVC
+#  (`api/Dockerfile`, `scripts/verifier_heif.py`).
+register_heif_opener()
 
 #: Dimension maximale d'une image stockée, en pixels (côté le plus long).
 DIMENSION_MAX = 1600
