@@ -26,11 +26,11 @@
 	header Cache-Control "private, no-store"
 	header Content-Type "text/plain; charset=utf-8"
 	respond <<LEURRE
-		# Sauvegarde de la configuration — ne pas diffuser
-		ADMIN_SECOURS_EMAIL={$LEURRE_ADRESSE}
-		ADMIN_SECOURS_PASSWORD=Secours-Copro-2026
-		MAINTENANCE_KEY={$LEURRE_CLE_MAINTENANCE}
-		LEURRE 200
+	# Sauvegarde de la configuration — ne pas diffuser
+	ADMIN_SECOURS_EMAIL={$LEURRE_ADRESSE}
+	ADMIN_SECOURS_PASSWORD=Secours-Copro-2026
+	MAINTENANCE_KEY={$LEURRE_CLE_MAINTENANCE}
+	LEURRE 200
 }
 
 :80 {
