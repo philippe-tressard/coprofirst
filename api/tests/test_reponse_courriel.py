@@ -83,6 +83,8 @@ def test_une_date_absente_ou_future_date_la_suite_de_la_releve():
 
 
 def test_l_assistant_met_en_forme_et_le_recu_est_garde(monkeypatch):
+    #  Sans base : la porte des courriels lit le prompt réglé (#2369).
+    monkeypatch.setattr(llm, "config_llm", lambda session, usage: SimpleNamespace(prompt="…"))
     monkeypatch.setattr(llm, "demander", _modele("Nous intervenons jeudi 2 octobre à 9 h."))
     t = mettre_en_forme(None, "Nous intervenons jeudi 2 octobre à 9 h.\n\n\nCordialement", _RECU)
     assert t.contenu == "Nous intervenons jeudi 2 octobre à 9 h."

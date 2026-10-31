@@ -17,9 +17,13 @@ l'envoi** du courriel.
 `_sans_citation` retire d'abord, sans IA, le message cité. L'assistant ne voit
 que ce reste — ce qu'il faut pour le mettre en forme, et rien de plus : le fil
 cité porte souvent les données d'autres personnes. Si l'usage est coupé, non
-réglé, en échec, ou s'il rend quelque chose de suspect (vide, ou plus long que
-ce qu'on lui a donné : il n'a rien à ajouter), le texte nettoyé sans IA entre
-dans le fil. **Une réponse du syndic n'est jamais perdue à cause de l'assistant.**
+réglé, en échec, ou s'il rend quelque chose de suspect (vide, plus long que ce
+qu'on lui a donné, ou un mot qui n'y était pas : il n'a rien à ajouter), le texte
+nettoyé sans IA entre dans le fil. **Une réponse du syndic n'est jamais perdue à
+cause de l'assistant.**
+
+Le courriel est un contenu NON FIABLE : il n'atteint le modèle que cadré, par
+`ia_courriel.lire_un_courriel`, et sa sortie se juge par `sortie_conforme` (#2369).
 """
 
 from __future__ import annotations
@@ -116,12 +120,14 @@ def mettre_en_forme(session: Session, nettoye: str, recu: str) -> Texte:
     repli = Texte(contenu=nettoye, origine=None, assiste=False)
     if not nettoye:
         return repli
-    from app.utils.llm import ErreurLLM, demander
+    from app.utils.ia_courriel import lire_un_courriel, sortie_conforme
+    from app.utils.llm import ErreurLLM
 
     try:
-        #  Automatique : personne derrière l'appel, seule la limite du mois le borne.
+        #  Le courriel est un contenu NON FIABLE : il passe par la porte qui le
+        #  cadre dans l'invite (#2369), jamais par `demander` directement.
         reponse = asyncio.run(
-            demander(session, usage=USAGE_REPONSE_COURRIEL, message=nettoye, demandeur=None)
+            lire_un_courriel(session, usage=USAGE_REPONSE_COURRIEL, texte=nettoye)
         )
     except ErreurLLM as exc:
         #  Usage coupé ou non réglé : le cas nominal tant que l'administration ne
@@ -134,13 +140,12 @@ def mettre_en_forme(session: Session, nettoye: str, recu: str) -> Texte:
     propre = (reponse.texte or "").strip()
     if not propre:
         return Texte(contenu=nettoye, origine=None, assiste=False, vide_selon_assistant=True)
-    if len(propre) > len(nettoye) + max(40, len(nettoye) // 10):
-        #  Plus long que ce qu'on lui a donné : il a ajouté quelque chose.
-        logger.warning(
-            "Réponse par courriel : mise en forme écartée (%d caractères pour %d)",
-            len(propre),
-            len(nettoye),
-        )
+    conformite = sortie_conforme(nettoye, propre)
+    if not conformite.conforme:
+        #  Il a écrit autre chose qu'une mise en forme : plus long, un mot qui
+        #  n'est pas dans le courriel, une marque du cadre (#2369). Le motif part
+        #  au journal ; le texte du courriel, jamais.
+        logger.warning("Réponse par courriel : mise en forme écartée (%s)", conformite.motif)
         return repli
     return Texte(contenu=propre, origine=(recu or nettoye)[:MAX_ORIGINE], assiste=True)
 
