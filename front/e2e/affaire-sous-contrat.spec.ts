@@ -65,7 +65,7 @@ test('un prestataire sous contrat offre le cadre, et la fréquence devient celle
 
 	//  VISIBLE, sans ouvrir « Quand » : le rythme du contrat est une valeur, et une
 	//  valeur rouvre sa section pliée (`ux-patterns` §0) — elle restait pliée.
-	await expect(page.getByText(/Fréquence : ↺ Mensuel — celle du contrat/)).toBeVisible();
+	await expect(page.getByText(/Fréquence : ↺ Mensuel —\u00a0celle du contrat/)).toBeVisible();
 	await expect(page.getByRole('group', { name: 'Fréquence' })).toHaveCount(0);
 });
 

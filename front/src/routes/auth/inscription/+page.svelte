@@ -10,6 +10,8 @@
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 
+	import { SEPARATEUR } from '#lib/separateurs.ts';
+
 	const _siteNom = getSiteNom();
 
 	let nom = '';
@@ -301,8 +303,9 @@
 						<strong>Conservation :</strong> Durée de résidence + 3 ans.<br />
 						<a href="/politique-de-confidentialite" target="_blank" rel="noopener"
 							>Voir la politique complète</a
+						>{SEPARATEUR.point}<a href="/mentions-legales" target="_blank" rel="noopener"
+							>Mentions légales</a
 						>
-						· <a href="/mentions-legales" target="_blank" rel="noopener">Mentions légales</a>
 					</p>
 
 					<label class="checkbox-field">

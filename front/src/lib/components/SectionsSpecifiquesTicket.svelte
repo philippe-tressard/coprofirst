@@ -33,6 +33,7 @@
 	import type { Etat, IdSection } from '#lib/entites/types.ts';
 	import { sectionPresente } from '#lib/entites/types.ts';
 	import { TICKET } from '#lib/entites/ticket.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** L'état de rendu — c'est lui, et non l'écran, qui décide des sections. */
 	export let etat: Etat;
@@ -214,7 +215,8 @@
 			</label>
 			<p class="aide">
 				Coché d’office pour « Étude &amp; travaux ». La carte se range d’après le statut ci-dessus :
-				Ouvert → CS, En cours → Syndic, Résolu → Terminé, Annulé → Annulé.
+				Ouvert{SEPARATEUR.fleche}CS, En cours{SEPARATEUR.fleche}Syndic, Résolu{SEPARATEUR.fleche}Terminé,
+				Annulé{SEPARATEUR.fleche}Annulé.
 			</p>
 		</div>
 	{/if}

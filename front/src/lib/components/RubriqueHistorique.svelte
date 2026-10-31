@@ -53,6 +53,7 @@
 	import { entreesDuFil, evolutionIcone } from '#lib/evolutions.ts';
 	import { peutEditer } from '#lib/droits.ts';
 	import { confirmer } from '#lib/confirmation.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let evolutions: TicketEvolution[] = [];
 	/** Libellés du workflow — `STATUT_TICKET_LABELS` et rien d'autre (#415). */
@@ -218,7 +219,9 @@
 
 {#if filtrees.length === 0}
 	{#if filtre === 'avancees'}
-		<p class="hist-vide">Aucune avancée pour l’instant — le fil n’a que des échanges.</p>
+		<p class="hist-vide">
+			Aucune avancée pour l’instant{SEPARATEUR.tiret}le fil n’a que des échanges.
+		</p>
 	{:else if vide}<p class="hist-vide">{vide}</p>{/if}
 {:else}
 	<div class="evol-list">
@@ -293,8 +296,10 @@
 
 					{#if evol.type === 'etat'}
 						<span class="evol-text">
-							Statut : <strong>{statutLabels[evol.ancien_statut ?? ''] || 'Aucun'}</strong>
-							→ <strong>{statutLabels[evol.nouveau_statut ?? ''] || evol.nouveau_statut}</strong>
+							Statut : <strong>{statutLabels[evol.ancien_statut ?? ''] || 'Aucun'}</strong
+							>{SEPARATEUR.fleche}<strong
+								>{statutLabels[evol.nouveau_statut ?? ''] || evol.nouveau_statut}</strong
+							>
 						</span>
 					{/if}
 

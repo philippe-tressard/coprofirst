@@ -41,6 +41,7 @@
 	import { fmtDatetime } from '#lib/date.ts';
 	import { TICKET } from '#lib/entites/ticket.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let ticketId: number;
 	/** `false` dans la carte d'une liste : pas de carte dans la carte (#425). */
@@ -157,8 +158,9 @@
 		{#each transferts as t (t.id)}
 			<div class="transfert">
 				<p class="transfert-quoi">
-					{fmtDatetime(t.cree_le)} — transféré par {t.transfere_par_nom} ·
-					{suites(t)}{t.affaire_creee ? ` · ${TICKET.libelle.toLowerCase()} créée` : ''}
+					{fmtDatetime(t.cree_le)}{SEPARATEUR.tiret}transféré par {t.transfere_par_nom}{SEPARATEUR.point}{suites(
+						t,
+					)}{t.affaire_creee ? ` · ${TICKET.libelle.toLowerCase()} créée` : ''}
 				</p>
 				{#if t.bloque}
 					<p class="aide">Ne se défait pas encore : {t.bloque}.</p>

@@ -46,6 +46,7 @@
 	import type { LimitesUsageIA, UsageIA } from '#lib/api/index.ts';
 	import { fmtDate } from '#lib/date.ts';
 	import { fmtMontant, fmtNombre } from '#lib/utils.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Toutes les valeurs de configuration, liées : le composant écrit les siennes. */
 	export let valeurs: Record<string, string>;
@@ -91,8 +92,8 @@
 			/>
 			<span class="aide">
 				Les appels réussis, du premier au dernier jour du mois. Atteint, l’usage est refusé avant
-				tout envoi — l’automatique s’arrête — et le contrôle de 6&nbsp;h le signale. Vide&nbsp;:
-				aucune limite.
+				tout envoi{SEPARATEUR.tiret}l’automatique s’arrête{SEPARATEUR.tiret}et le contrôle de
+				6&nbsp;h le signale. Vide&nbsp;: aucune limite.
 			</span>
 		</label>
 		{#if gesteManuel}
@@ -131,10 +132,9 @@
 	</div>
 	{#if essai}
 		<p class="aide">
-			<strong>1er essai</strong> — {essai.modele} · effort {essai.effort}, le {fmtDate(
-				essai.le,
-			)}&nbsp;:
-			{fmtNombre(jetonsEssai)} jetons · {coutEssai === null
+			<strong>1er essai</strong>{SEPARATEUR.tiret}{essai.modele}{SEPARATEUR.point}effort {essai.effort},
+			le {fmtDate(essai.le)}&nbsp;:
+			{fmtNombre(jetonsEssai)} jetons{SEPARATEUR.point}{coutEssai === null
 				? 'renseignez les prix pour en avoir le coût'
 				: dollars(coutEssai) + estimation}.
 		</p>
@@ -152,6 +152,6 @@
 		</p>
 	{/if}
 	{#if tarifEnregistre}
-		<p class="aide">✅ Tarif enregistré — {tarifEnregistre}</p>
+		<p class="aide">✅ Tarif enregistré{SEPARATEUR.tiret}{tarifEnregistre}</p>
 	{/if}
 </SectionFormulaire>

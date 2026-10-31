@@ -16,6 +16,7 @@
 	import BadgePerimetre from '#lib/components/BadgePerimetre.svelte';
 	import PastillesRelances from './PastillesRelances.svelte';
 	import type { AffaireOuverte } from '#lib/api/index.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Les affaires cochées, dans l'ordre du tableau. */
 	export let affaires: AffaireOuverte[];
@@ -48,12 +49,12 @@
 		<p class="vide">Cochez au moins une affaire pour composer la relance.</p>
 	{:else}
 		{#each groupes as g (g.titre)}
-			<p class="groupe">{g.titre} — {g.liste.length}</p>
+			<p class="groupe">{g.titre}{SEPARATEUR.tiret}{g.liste.length}</p>
 			<ul class="liste">
 				{#each g.liste as a (a.id)}
 					<li class="item" class:deja={a.relances.length > 0}>
 						<div class="item-tete">
-							<strong>{a.numero} — {a.titre}</strong>
+							<strong>{a.numero}{SEPARATEUR.tiret}{a.titre}</strong>
 							<Badge teinte={a.relances.length ? 'badge-red' : 'badge-orange'}>{numero(a)}</Badge>
 							<BadgePerimetre perimetre={a.perimetre_cible} />
 						</div>

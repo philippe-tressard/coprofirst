@@ -25,6 +25,7 @@
 	import ConfigSauvegarde from '#lib/components/ConfigSauvegarde.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import TableExecutionsTache from '#lib/components/TableExecutionsTache.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	//  Le bouton dit ce qu'il FAIT, pas le nom de la tâche — voir LIBELLE_ACTION.
 	//  Défaut : « Lancer <nom de la tâche> », qui reste juste là où le bouton
@@ -203,8 +204,8 @@
 	</h2>
 	<p class="muted texte-md">
 		Synthèse : <strong>une ligne par tâche</strong>, portant la
-		<strong>dernière exécution réelle</strong>
-		— quel que soit le nœud qui l'a faite. En dessous,
+		<strong>dernière exécution réelle</strong>{SEPARATEUR.tiret}quel que soit le nœud qui l'a faite.
+		En dessous,
 		<strong>une sous-ligne par nœud ayant rendu compte</strong> : un nœud sain ne compense pas un
 		nœud muet, et l'on voit lequel décroche sans avoir à cliquer. La copie hors site n'en a pas :
 		c'est le poste qui l'exécute, pas un nœud. Sans ce contrôle, une absence de ligne se lirait
@@ -369,8 +370,8 @@
 										<div class="lancement">
 											{#if t.tache === 'maintenance'}
 												<span class="muted note-lancement">
-													part applicative seulement — l'hygiène du nœud en veille reste au script
-													hebdomadaire
+													part applicative seulement{SEPARATEUR.tiret}l'hygiène du nœud en veille
+													reste au script hebdomadaire
 												</span>
 											{/if}
 											<button

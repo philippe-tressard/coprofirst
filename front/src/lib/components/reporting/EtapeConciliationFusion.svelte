@@ -12,6 +12,7 @@
 	import ConciliationFusion from '#lib/components/ConciliationFusion.svelte';
 	import type { CandidateFusion } from '#lib/api/index.ts';
 	import { verrous, type Decisions } from '#lib/fusion-conciliation.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Le numéro de l'affaire qui absorberait (la plus ancienne). */
 	export let numeroPrincipale: string;
@@ -30,16 +31,18 @@
 
 <div class="etape">
 	<p class="aide">
-		Fusionner verse les suites des autres affaires dans <strong>{numeroPrincipale}</strong> : toute personne
-		qui la lit les lirait. Pour chaque affaire que cela ferait lire à quelqu'un qui ne la lisait pas,
-		décidez comment concilier — ou laissez-la hors de la fusion.
+		Fusionner verse les suites des autres affaires dans <strong>{numeroPrincipale}</strong> : toute
+		personne qui la lit les lirait. Pour chaque affaire que cela ferait lire à quelqu'un qui ne la
+		lisait pas, décidez comment concilier{SEPARATEUR.tiret}ou laissez-la hors de la fusion.
 	</p>
 	{#each horsFusion as h (h.id)}
-		<p class="aide">Hors fusion : {h.numero} — {h.titre}{h.motif ? ` (${h.motif})` : ''}.</p>
+		<p class="aide">
+			Hors fusion : {h.numero}{SEPARATEUR.tiret}{h.titre}{h.motif ? ` (${h.motif})` : ''}.
+		</p>
 	{/each}
 	{#each refusees as v (v.id)}
 		{@const verrou = verrous(refusees, decisions, v.id)}
-		<p class="intitule">{v.numero} — {v.titre}</p>
+		<p class="intitule">{v.numero}{SEPARATEUR.tiret}{v.titre}</p>
 		<ConciliationFusion
 			candidate={v}
 			{numeroPrincipale}

@@ -22,6 +22,7 @@
 	import { fmtDate, fmtDatetime } from '#lib/date.ts';
 	import { fmtNombre, fmtOctets } from '#lib/utils.ts';
 	import { LIBELLE_TACHE } from '#lib/taches.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	let constat: ConstatConservation | null = null;
 	let chargement = true;
@@ -108,7 +109,7 @@
 							<td>{e.exercice_cloture}</td>
 							<td class="nombre">{fmtNombre(e.affaires)}</td>
 							<td class="nombre">
-								{fmtNombre(e.fichiers)} · {fmtOctets(e.octets)}<span class="muted"
+								{fmtNombre(e.fichiers)}{SEPARATEUR.point}{fmtOctets(e.octets)}<span class="muted"
 									>{absentes(e.absents)}</span
 								>
 							</td>
@@ -120,8 +121,7 @@
 		<ul class="aide fondements">
 			{#each fondements as f (f.type)}
 				<li>
-					<strong>{f.libelle}</strong>&nbsp;: {fmtNombre(f.exercices)} exercices après la clôture —
-					{f.fondement}.
+					<strong>{f.libelle}</strong>&nbsp;: {fmtNombre(f.exercices)} exercices après la clôture{SEPARATEUR.tiret}{f.fondement}.
 				</li>
 			{/each}
 		</ul>
@@ -148,7 +148,7 @@
 					{#each archives as a (a.id)}
 						<tr>
 							<td>
-								{a.libelle} · {a.exercice}
+								{a.libelle}{SEPARATEUR.point}{a.exercice}
 								{#if !a.retiree_le}
 									<a class="telecharger" href={conservation.archiveUrl(a.id)} download={a.nom}
 										>Télécharger</a
@@ -156,12 +156,12 @@
 								{/if}
 							</td>
 							<td class="nombre">{fmtNombre(a.affaires)}</td>
-							<td class="nombre">{fmtNombre(a.fichiers)} · {fmtOctets(a.octets)}</td>
+							<td class="nombre">{fmtNombre(a.fichiers)}{SEPARATEUR.point}{fmtOctets(a.octets)}</td>
 							<td>{fmtDatetime(a.cree_le)}</td>
 							<td>
 								{#if a.copiee_le}
-									Copiée le {fmtDate(a.copiee_le)}{#if a.retiree_le}<span class="muted">
-											· retirée du serveur</span
+									Copiée le {fmtDate(a.copiee_le)}{#if a.retiree_le}<span class="muted"
+											>{SEPARATEUR.point}retirée du serveur</span
 										>{/if}
 								{:else}
 									<span class="muted">En attente de la sauvegarde hors site</span>

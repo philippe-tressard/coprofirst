@@ -62,19 +62,22 @@
  *    — l'espace d'avant la balise est sécable, et la ligne se coupait après « · ».
  *    Les seize occurrences du dépôt sont passées à la constante.
  *
+ *  - **dans le texte courant** (#2362, forme 1, 31/10/2026) : `{a} · {b}`, entre
+ *    deux espaces sécables — le navigateur coupe souvent APRÈS lui. La détection
+ *    vit dans `lib-separateurs-texte.mjs` ; les 198 occurrences du dépôt sont
+ *    passées à la constante.
+ *
  *  Ce qu'il laisse : `&nbsp;·&nbsp;` collé des deux côtés (la ligne ne s'y coupe
  *  pas), un séparateur en tête d'un composant (`<Badge>→ …</Badge>` : un
- *  pictogramme dans une étiquette, pas une phrase), et — limite connue, mesurée à
- *  l'écran plutôt que convertie en bloc — le séparateur entre deux espaces
- *  sécables du texte courant (` · `), plusieurs centaines (#2362).
+ *  pictogramme dans une étiquette, pas une phrase), et ce qui ne passe jamais à
+ *  la ligne ou n'est pas du texte : `<option>`, `<title>`, `<textarea>`, `<pre>`,
+ *  les attributs et les chaînes d'une expression.
  *
  *  Lancer : node scripts/check-espace-blocs.mjs [--selftest]
  */
 import { neutraliserCommentaires } from './lib-commentaires.mjs';
+import { EN_LIGNE, separateursDuTexte } from './lib-separateurs-texte.mjs';
 import { controler } from './lib-source-unique.mjs';
-
-/** Les balises qui se lisent DANS une phrase : une branche qui s'ouvre sur elles colle. */
-const EN_LIGNE = 'span|strong|a|em|small|b|i|code|abbr|time|mark|sup|sub';
 
 //  Ouverture collée : un caractère non blanc juste avant le bloc, puis un retour
 //  à la ligne, puis du texte ou une balise en ligne.
@@ -139,6 +142,8 @@ export function fautes(source) {
 	for (const motif of [COLLE_AVANT, TETE_DE_BRANCHE, RECOPIE, TETE_D_ELEMENT]) {
 		for (const m of texte.matchAll(motif)) acc.push(ligne(m.index + m[0].length - 1));
 	}
+	//  Le texte courant (#2362, forme 1) : « {a} · {b} », entre deux espaces sécables.
+	for (const { fin } of separateursDuTexte(source)) acc.push(ligne(fin - 1));
 	return acc;
 }
 
@@ -184,8 +189,20 @@ const cas = [
 	['{date} <span class="lieu">{SEPARATEUR.point}{cr.ou}</span>', 0],
 	['<option value="a">— Aucun —</option>', 0],
 	['<Badge teinte="x">→ {etat}</Badge>', 0],
-	//  Limite connue (#2362) : le texte courant, mesuré à l’écran plutôt que converti.
-	['{a} · {b}', 0],
+	//  Le texte courant (#2362, forme 1) : entre deux espaces sécables, il se coupe après.
+	['{a} · {b}', 1],
+	['<li>{e.qui} — {e.motif}</li>', 1],
+	['<p>Admin → Services → WhatsApp</p>', 2],
+	['<p>le nom — pas le nom commercial.</p>', 1],
+	['<p>{n}\n\t· <code>x</code></p>', 1],
+	['<td>{a}\n\t·\n\t<Badge>b</Badge></td>', 1],
+	['{a}{SEPARATEUR.point}{b}', 0],
+	['<svelte:head><title>Admin — {nom}</title></svelte:head>', 0],
+	['<td> — </td>', 0],
+	['<p title="a · b">x</p>', 0],
+	["<p>{x ? 'a · b' : ''}</p>", 0],
+	['<p>Suivant →</p>', 0],
+	['<div>{a} ·\n<div>bloc</div></div>', 0],
 	['{a}{#if b}\n\t<div>bloc</div>{/if}', 0],
 	['{a}{#if b}\n\t{#if c}x{/if}{/if}', 0],
 	['{#if a}\n\tfoo\n{/if}\nbar', 0],

@@ -34,6 +34,7 @@
 	import { creerApercu } from '#lib/apercu.ts';
 	import type { ApercuDiffusion } from '#lib/api/index.ts';
 	import { createEventDispatcher } from 'svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	const dispatch = createEventDispatcher<{ envoyer: void }>();
 
@@ -235,8 +236,8 @@
 
 		{#if avecNotificationCs}
 			<p class="aide sous-case">
-				ℹ️ En plus de ces cases, chacun est prévenu selon les réglages de son profil — dont le
-				conseil syndical du périmètre pour chaque nouvelle affaire.
+				ℹ️ En plus de ces cases, chacun est prévenu selon les réglages de son profil{SEPARATEUR.tiret}dont
+				le conseil syndical du périmètre pour chaque nouvelle affaire.
 			</p>
 		{/if}
 

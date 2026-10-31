@@ -14,6 +14,7 @@
 	import { siteNomStore } from '#lib/stores/pageConfig.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	$: _siteNom = $siteNomStore;
 
@@ -205,9 +206,9 @@
 <svelte:head><title>Périmètres · {_siteNom}</title></svelte:head>
 
 <p class="page-desc">
-	L’arborescence qui sert à localiser une demande — une affaire, une actualité, un événement. Elle
-	est propre à cette copropriété : renommez, réorganisez, ajoutez ou retirez ce qui n’existe pas
-	ici.
+	L’arborescence qui sert à localiser une demande{SEPARATEUR.tiret}une affaire, une actualité, un
+	événement. Elle est propre à cette copropriété : renommez, réorganisez, ajoutez ou retirez ce qui
+	n’existe pas ici.
 </p>
 
 <div class="barre">

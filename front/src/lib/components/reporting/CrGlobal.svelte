@@ -49,7 +49,7 @@
 		</span>
 	</div>
 
-	<h4 class="partie">1 · Le point</h4>
+	<h4 class="partie">1{SEPARATEUR.point}Le point</h4>
 	<p class="quand">
 		{fmtDatetime(point.debut)}{#if point.fin}{SEPARATEUR.fleche}{fmtTime(point.fin)}{/if} · {point.ou}
 	</p>
@@ -69,11 +69,13 @@
 		<p class="vide">Aucun présent indiqué.</p>
 	{/each}
 
-	<h4 class="partie">2 · Les affaires abordées · {compteRendu.abordees.length}</h4>
+	<h4 class="partie">
+		2{SEPARATEUR.point}Les affaires abordées{SEPARATEUR.point}{compteRendu.abordees.length}
+	</h4>
 	{#each compteRendu.abordees as { affaire, cr, marque } (affaire.id)}
 		<article class="abordee">
 			<p class="titre">
-				<a href={lienTicket(affaire.id)}>{affaire.numero} · {affaire.titre}</a>
+				<a href={lienTicket(affaire.id)}>{affaire.numero}{SEPARATEUR.point}{affaire.titre}</a>
 				{#if affaires.has(affaire.id)}<PastilleLecture
 						ticket={affaires.get(affaire.id) ?? null}
 					/>{/if}
@@ -92,7 +94,7 @@
 	{/each}
 
 	{#if compteRendu.non_traitees.length}
-		<h4 class="partie">Non traitées · {compteRendu.non_traitees.length}</h4>
+		<h4 class="partie">Non traitées{SEPARATEUR.point}{compteRendu.non_traitees.length}</h4>
 		<p class="non-traitees">
 			{#each compteRendu.non_traitees as a, i (a.id)}{i ? ' · ' : ''}<a href={lienTicket(a.id)}
 					>{a.numero}</a

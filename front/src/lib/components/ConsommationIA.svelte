@@ -55,11 +55,11 @@
 <section class="card config-section">
 	<SectionFormulaire titre="Consommation de l’assistant IA" icone="bar-chart-3" />
 	<p class="muted config-section-intro">
-		Chaque appel au fournisseur, compté en jetons — la question envoyée et la réponse produite. Le
-		coût est estimé au tarif saisi pour chaque usage dans <strong>Assistant IA</strong>, où se
-		règlent aussi ses <strong>limites d’appels</strong>, par mois et par heure&nbsp;: atteintes,
-		l’appel est refusé avant tout envoi, et le contrôle de 6&nbsp;h signale la limite du mois.
-		Aucune question ni réponse n’est conservée.
+		Chaque appel au fournisseur, compté en jetons{SEPARATEUR.tiret}la question envoyée et la réponse
+		produite. Le coût est estimé au tarif saisi pour chaque usage dans
+		<strong>Assistant IA</strong>, où se règlent aussi ses <strong>limites d’appels</strong>, par
+		mois et par heure&nbsp;: atteintes, l’appel est refusé avant tout envoi, et le contrôle de
+		6&nbsp;h signale la limite du mois. Aucune question ni réponse n’est conservée.
 	</p>
 
 	<EtatListe
@@ -118,7 +118,9 @@
 								<strong>{l.libelle}</strong>
 								<span class="muted">{l.modele}</span>
 								<span>
-									{fmtNombre(l.appels)} appel{l.appels > 1 ? 's' : ''} · {fmtNombre(jetons(l))} jetons
+									{fmtNombre(l.appels)} appel{l.appels > 1 ? 's' : ''}{SEPARATEUR.point}{fmtNombre(
+										jetons(l),
+									)} jetons
 									<span class="muted"
 										>({fmtNombre(l.jetons_entree)} envoyés{l.jetons_cache
 											? ` dont ${fmtNombre(l.jetons_cache)} en cache`

@@ -22,6 +22,7 @@
 	import MessagesPlanifiesWhatsApp from '#lib/components/MessagesPlanifiesWhatsApp.svelte';
 	import HistoriqueEnvoisWhatsApp from '#lib/components/HistoriqueEnvoisWhatsApp.svelte';
 	import EtatService from '#lib/components/EtatService.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Configuration publique déjà chargée par la page (préremplit le formulaire). */
 	export let cfgPublique: Record<string, string> = {};
@@ -217,9 +218,11 @@
 				<div class="qr-attente">
 					<EncartAvertissement>
 						<p class="titre-qr">
-							&#x26A0;&#xFE0F; Bridge déconnecté — scannez ce QR code avec WhatsApp
+							&#x26A0;&#xFE0F; Bridge déconnecté{SEPARATEUR.tiret}scannez ce QR code avec WhatsApp
 						</p>
-						<p class="consigne-qr">WhatsApp → Appareils connectés → Connecter un appareil</p>
+						<p class="consigne-qr">
+							WhatsApp{SEPARATEUR.fleche}Appareils connectés{SEPARATEUR.fleche}Connecter un appareil
+						</p>
 						<img src={configApi.whatsappQrUrl(waQrTimestamp)} alt="QR code WhatsApp" class="qr" />
 						<div class="actions-qr">
 							<button class="btn btn-outline btn-mini" type="button" on:click={refreshWaQr}>

@@ -43,6 +43,7 @@
 	import BlocUsageIA from '#lib/components/BlocUsageIA.svelte';
 	import EtatService from '#lib/components/EtatService.svelte';
 	import { oublierAssistant } from '#lib/stores/assistant.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Valeurs lues au chargement par la page (`adminCfg`). */
 	export let valeurs: Record<string, string> = {};
@@ -280,7 +281,8 @@
 				Délai d’attente
 				<input type="number" bind:value={cfg.delai_s} min="10" max="300" step="5" />
 				<span class="aide">
-					En secondes. Au-delà, on renonce et l’écran le dit — le champ reste saisissable à la main.
+					En secondes. Au-delà, on renonce et l’écran le dit{SEPARATEUR.tiret}le champ reste
+					saisissable à la main.
 				</span>
 			</label>
 		</div>
@@ -322,9 +324,9 @@
 								Sans lui, quatre sections de la synthèse sur sept restent vides : montants,
 								prestations incluses et exclues ne vivent que dans le PDF. Sont transmis <strong
 									>tous les documents du contrat</strong
-								> — l’initial, ses avenants, ses conditions générales : n’en lire qu’un rendrait les montants
-								faux dès le premier avenant. Rien d’autre ne part : ni pièce jointe d’une affaire, ni
-								document d’un autre contrat.
+								>{SEPARATEUR.tiret}l’initial, ses avenants, ses conditions générales : n’en lire
+								qu’un rendrait les montants faux dès le premier avenant. Rien d’autre ne part : ni
+								pièce jointe d’une affaire, ni document d’un autre contrat.
 							</span>
 						</label>
 					{/if}

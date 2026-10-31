@@ -21,6 +21,7 @@
 	import Icon from './Icon.svelte';
 	import PasswordStrength from './PasswordStrength.svelte';
 	import { capsLockActif } from '#lib/utils.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Identifiant du champ — relie le libellé (`for`) et le message d'erreur. */
 	export let id: string;
@@ -95,7 +96,8 @@
 
 	{#if alerteVerrouMaj}
 		<EncartAvertissement compact role="alert">
-			⚠️ <strong>Verr. Maj. activée</strong> — votre mot de passe pourrait être incorrect.
+			⚠️ <strong>Verr. Maj. activée</strong>{SEPARATEUR.tiret}votre mot de passe pourrait être
+			incorrect.
 		</EncartAvertissement>
 	{/if}
 </div>

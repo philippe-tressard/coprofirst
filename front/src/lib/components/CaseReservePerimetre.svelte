@@ -52,6 +52,7 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import { concerneTous } from '#lib/utils.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** La case — `reserve_perimetre`, actualité comme affaire. */
 	export let coche = false;
@@ -106,8 +107,8 @@
 	</p>
 {:else if coche}
 	<p class="aide">
-		Seuls ceux du périmètre sélectionné verront cette {objet} — ni dans le fil, ni par un lien direct
-		pour les autres. Le réglage reste modifiable après publication.
+		Seuls ceux du périmètre sélectionné verront cette {objet}{SEPARATEUR.tiret}ni dans le fil, ni
+		par un lien direct pour les autres. Le réglage reste modifiable après publication.
 	</p>
 	<!--  🔴 CE QUI SORT, canal par canal (#623, 29/08/2026). Il n'est PAS le même
 	      partout : le titre part sur WhatsApp, tout part par e-mail. Il s'affiche
@@ -117,18 +118,20 @@
 			<p class="avert-titre">&#x26A0;&#xFE0F; Ce qui sortira de l'application</p>
 			<ul class="avert-liste">
 				<li>
-					<strong>Groupe WhatsApp</strong> — le <strong>titre</strong> et le périmètre partent, avec
-					un lien vers l'application. Le contenu, lui, ne sort pas.
+					<strong>Groupe WhatsApp</strong>{SEPARATEUR.tiret}le <strong>titre</strong> et le
+					périmètre partent, avec un lien vers l'application. Le contenu, lui, ne sort pas.
 					<span class="avert-consigne"
 						>Le groupe est commun à toute la copropriété : n'écrivez rien de confidentiel dans le
 						titre.</span
 					>
 				</li>
 				<li>
-					<strong>Syndic et conseil syndical</strong> — l'e-mail part
+					<strong>Syndic et conseil syndical</strong>{SEPARATEUR.tiret}l'e-mail part
 					<strong>en entier</strong>, titre et contenu, sans restriction.
 				</li>
-				<li><strong>Affiche de hall</strong> — aucune : un hall se lit sans connexion.</li>
+				<li>
+					<strong>Affiche de hall</strong>{SEPARATEUR.tiret}aucune : un hall se lit sans connexion.
+				</li>
 			</ul>
 		</EncartAvertissement>
 	</div>

@@ -30,6 +30,7 @@
 		decisionPrete,
 		type Decisions,
 	} from '#lib/fusion-conciliation.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Le numéro de l'affaire qu'on clôt — celle qui absorbe. */
 	export let numero: string;
@@ -79,7 +80,7 @@
 							checked={cochees.includes(c.id)}
 							on:change={(e) => basculer(c.id, e.currentTarget.checked)}
 						/>
-						<span>{c.numero} — {c.titre}</span>
+						<span>{c.numero}{SEPARATEUR.tiret}{c.titre}</span>
 					</label>
 					{#if c.motif}
 						<p class="aide sous-case">Impossible : {c.motif}.</p>

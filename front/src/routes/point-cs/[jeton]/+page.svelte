@@ -97,7 +97,7 @@
 
 			{#each cr.abordees as a (a.numero)}
 				<section class="abordee">
-					<h2>{a.numero} · {a.titre}</h2>
+					<h2>{a.numero}{SEPARATEUR.point}{a.titre}</h2>
 					<p class="marques">
 						{#if a.lecture}<Badge teinte="badge-blue" compact title="Qui la lit">{a.lecture}</Badge
 							>{/if}

@@ -37,6 +37,7 @@
 	import { pliageDe, requisDe } from '#lib/pliage.ts';
 	import { acces as apiAcces, type ChoixAcces, type PorteProposee } from '#lib/api/acces.ts';
 	import { perimetreLabelUn } from '#lib/perimetres/index.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	const dispatch = createEventDispatcher<{ annule: void; enregistre: void }>();
 
@@ -229,7 +230,9 @@
 					<p class="proposition-titre">Ce que ses lots justifient</p>
 					<ul>
 						{#each proposition as porte (porte.code)}
-							<li><strong>{perimetreLabelUn(porte.code)}</strong> — {porte.raison}</li>
+							<li>
+								<strong>{perimetreLabelUn(porte.code)}</strong>{SEPARATEUR.tiret}{porte.raison}
+							</li>
 						{/each}
 					</ul>
 					<button

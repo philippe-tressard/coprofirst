@@ -42,6 +42,7 @@
 	import { safeHtml } from '#lib/sanitize.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import HistoriqueEnvoisEmail from '#lib/components/HistoriqueEnvoisEmail.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	let emailTemplates: ModeleEmail[] = [];
 	let emailsLoading = true;
@@ -310,7 +311,7 @@
 										</div>
 										<div class="field">
 											<label for="email-intention"
-												>Intention — ce que le message attend du destinataire</label
+												>Intention{SEPARATEUR.tiret}ce que le message attend du destinataire</label
 											>
 											<select id="email-intention" bind:value={emailIntention}>
 												{#each INTENTIONS as i (i.valeur)}<option value={i.valeur}>{i.label}</option

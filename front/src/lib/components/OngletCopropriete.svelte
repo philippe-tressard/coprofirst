@@ -26,6 +26,7 @@
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import { REGLE_PAR_L_EXPLOITANT } from '#lib/portee.ts';
 	import { estAbsent, messageErreur } from '#lib/erreurs.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	$: _siteNom = $siteNomStore;
 
@@ -173,8 +174,8 @@
 			>
 				<svelte:fragment slot="renvoi">
 					L'assurance est un <strong>contrat</strong> : elle se modifie dans
-					<a href="/prestataires/contrats">Prestataires → Contrats</a>, avec son prestataire, son
-					échéance et son attestation.
+					<a href="/prestataires/contrats">Prestataires{SEPARATEUR.fleche}Contrats</a>, avec son
+					prestataire, son échéance et son attestation.
 				</svelte:fragment>
 			</SectionContratReference>
 
@@ -236,10 +237,10 @@
 				</svelte:fragment>
 				<svelte:fragment slot="renvoi">
 					Le cabinet et son mandat se modifient dans
-					<a href="/prestataires/contrats">Prestataires → Contrats</a>. Ses
+					<a href="/prestataires/contrats">Prestataires{SEPARATEUR.fleche}Contrats</a>. Ses
 					<strong>membres</strong>, eux, vivent dans
-					<a href="/espace-cs">Espace CS &rsaquo; Annuaire</a> — c'est de là que partent les courriels
-					au cabinet.
+					<a href="/espace-cs">Espace CS &rsaquo; Annuaire</a>{SEPARATEUR.tiret}c'est de là que
+					partent les courriels au cabinet.
 				</svelte:fragment>
 			</SectionContratReference>
 

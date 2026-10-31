@@ -68,9 +68,9 @@
 	</div>
 
 	<p class="bsl-aide">
-		Le rattachement se fait automatiquement sur l’<strong>adresse e-mail</strong> du bail. Il échoue quand
-		le locataire s’inscrit avec une autre adresse, ou quand le bail est créé après son inscription — et
-		il échoue sans rien dire. Ce relevé est là pour le voir.
+		Le rattachement se fait automatiquement sur l’<strong>adresse e-mail</strong> du bail. Il échoue
+		quand le locataire s’inscrit avec une autre adresse, ou quand le bail est créé après son
+		inscription{SEPARATEUR.tiret}et il échoue sans rien dire. Ce relevé est là pour le voir.
 	</p>
 
 	<EtatListe
@@ -88,8 +88,7 @@
 					1
 						? 's'
 						: ''}</strong
-				>
-				— un compte existe à ce nom, mais il n’est pas lié au bail.
+				>{SEPARATEUR.tiret}un compte existe à ce nom, mais il n’est pas lié au bail.
 			</p>
 			<div class="table-wrap">
 				<table class="table bsl-table">
@@ -127,8 +126,9 @@
 
 		{#if sansCompte.length}
 			<p class="bsl-titre-groupe bsl-normal">
-				<strong>{sansCompte.length} locataire{sansCompte.length > 1 ? 's' : ''} sans compte</strong>
-				— personne ne s’est inscrit sous ce nom. C’est la situation ordinaire, rien à corriger.
+				<strong>{sansCompte.length} locataire{sansCompte.length > 1 ? 's' : ''} sans compte</strong
+				>{SEPARATEUR.tiret}personne ne s’est inscrit sous ce nom. C’est la situation ordinaire, rien
+				à corriger.
 			</p>
 			<div class="table-wrap">
 				<table class="table bsl-table">

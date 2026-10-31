@@ -49,6 +49,7 @@
 	import SyntheseAffaire from './SyntheseAffaire.svelte';
 	import { basculer } from '#lib/accordeon.ts';
 	import { isCS } from '#lib/stores/auth.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	let donnees: Carnet | null = null;
 	let erreur = '';
@@ -158,8 +159,8 @@
 	<p class="aide">
 		Ce que la copropriété a fait entretenir, réparer et contrôler. Il est constitué automatiquement
 		à partir des contrats, des entretiens terminés et des affaires résolues du bâti, rangées sous
-		l'équipement que le conseil syndical désigne — rien n'y est saisi à la main. Une question ou une
-		nuisance n'y figure pas.
+		l'équipement que le conseil syndical désigne{SEPARATEUR.tiret}rien n'y est saisi à la main. Une
+		question ou une nuisance n'y figure pas.
 	</p>
 
 	<!--  Le filtre est le composant STANDARD : il prend ses pastilles dans
@@ -204,7 +205,9 @@
 							<strong>{entree.libelle}</strong>
 						{/if}
 						<span class="concernee-detail"
-							>({libelleEquipement(entree.equipement)} · {portee(entree.perimetre)}) — {entree.alerte}</span
+							>({libelleEquipement(entree.equipement)}{SEPARATEUR.point}{portee(
+								entree.perimetre,
+							)}){SEPARATEUR.tiret}{entree.alerte}</span
 						>
 					</li>
 				{/each}

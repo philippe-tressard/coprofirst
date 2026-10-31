@@ -40,6 +40,7 @@
 	import { categorieSaisie, saisieFaqVide, type SaisieFaq } from '#lib/faq.ts';
 	import { richEmpty } from '#lib/publications.ts';
 	import { isAdmin, isCS } from '#lib/stores/auth.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	let etat: EtatReglement | null = null;
 	let questions: QuestionReglement[] = [];
@@ -162,7 +163,8 @@
 	{#if $isCS}
 		Les réponses sont un <strong>avis indicatif</strong>, rédigé par l'assistant d'après le texte de
 		travail joint ici : il ne se substitue pas aux actes authentiques, qui seuls font foi.
-		Relisez-le — et vérifiez les extraits signalés ⚠️ — avant de le relayer.
+		Relisez-le{SEPARATEUR.tiret}et vérifiez les extraits signalés ⚠️{SEPARATEUR.tiret}avant de le
+		relayer.
 	{:else}
 		Les réponses sont un <strong>avis indicatif</strong> : seuls les actes authentiques font foi. En cas
 		de doute, interrogez un juriste ou le syndic.
