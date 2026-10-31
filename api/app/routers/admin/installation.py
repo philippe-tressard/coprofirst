@@ -32,6 +32,11 @@ class EtatInstallation(BaseModel):
     etat: str
     retard: int = 0
     detail: str = ""
+    #: Une seule copropriété, ou une installation commune (#2400) — un constat.
+    commune: bool = False
+    #: `None` : la déclaration de l'installation commune ne peut pas servir.
+    nombre_coproprietes: Optional[int] = 1
+    detail_coproprietes: str = ""
 
 
 @router.get("/installation", response_model=EtatInstallation)
@@ -55,6 +60,7 @@ def etat_installation(
         )
     else:
         verif = installation.verifier(empreinte, branche)
+    servies = installation.coproprietes_servies()
     return EtatInstallation(
         role=role,
         libelle=libelle,
@@ -65,4 +71,7 @@ def etat_installation(
         etat=verif.etat,
         retard=verif.retard,
         detail=verif.detail,
+        commune=servies.commune,
+        nombre_coproprietes=servies.nombre,
+        detail_coproprietes=servies.detail,
     )
