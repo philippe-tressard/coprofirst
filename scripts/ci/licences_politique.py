@@ -197,6 +197,52 @@ LICENCES_HORS_POSTE = {
     },
 }
 
+# ── Ce que les Dockerfile installent hors de pip et npm (#2389) ─────────────
+#  L'inventaire ci-dessus ne voit ni les paquets Debian d'une image, ni ce
+#  qu'une roue EMBARQUE : `pillow-heif` se lit « BSD-3-Clause », alors que ses
+#  roues PyPI portent libx265 (GPLv2). `licences_image.py` confronte les
+#  Dockerfile à ce qui suit ; l'image construite, elle, est jugée par
+#  `api/scripts/verifier_heif.py`. Seules les bibliothèques ENTRÉES pour une
+#  raison nommée sont déclarées ici, pas tout ce que porte l'image de base.
+BIBLIOTHEQUES_SYSTEME = (
+    {
+        "dockerfile": "api/Dockerfile",
+        "paquets": ("libheif1", "libheif-plugin-libde265"),
+        "licences": ("LGPL-3.0-or-later",),
+        "motif": (
+            "Décodage des photos HEIC/HEIF d'iPhone (#2389), par `pillow-heif` compilé "
+            "contre elles. Tirent `libde265-0` (LGPL-3.0-or-later) et "
+            "`libheif-plugin-dav1d` + `libdav1d7` (BSD-2-Clause). Debian (`copyright`) : "
+            "les bibliothèques sont LGPL-3+ ; seuls scripts, tests et l'outil `dec265`, "
+            "non installés, sont sous GPL-3+. Bibliothèques partagées, liées "
+            "dynamiquement, non modifiées ; aucun encodeur."
+        ),
+        "statut": (
+            "compatible avec l'AGPL-3.0-or-later (la LGPL-3.0-or-later l'est par "
+            "construction, comme les bibliothèques de sharp) — voie « décodage seul, "
+            "sans x265 » validée par l'auteur le 31/10/2026"
+        ),
+    },
+)
+
+#: Paquets Debian qu'aucune étape d'aucune image n'installe (motifs `fnmatch`).
+INTERDITS_DANS_LES_IMAGES = {
+    "*x265*": (
+        "encodeur HEVC sous GPLv2, que la distribution publique des images "
+        "(ghcr.io) ferait distribuer ; le site ne fait que décoder (#2389)"
+    ),
+}
+
+#: Paquets pip dont la roue PyPI embarque un interdit : l'image les compile
+#: (`--no-binary`), et `PIP_NO_BINARY` empêche la roue de revenir par les exigences.
+ROUES_A_COMPILER = {
+    "pillow-heif": {
+        "dockerfile": "api/Dockerfile",
+        "exigences": "api/requirements.txt",
+        "raison": "ses roues PyPI embarquent libx265 (GPLv2)",
+    },
+}
+
 # ── Contenus tiers recopiés dans le dépôt (#1543) ───────────────────────────
 #  Ce que `reuse lint` ne peut pas voir : un fichier qui porte des tracés
 #  repris ailleurs reçoit la licence du motif `**` de REUSE.toml, et le

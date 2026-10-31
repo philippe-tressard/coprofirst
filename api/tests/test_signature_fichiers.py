@@ -78,6 +78,16 @@ def test_les_vrais_fichiers_passent():
         assert signature_incoherente(donnees, ext) is None, f"{ext} légitime refusé"
 
 
+def test_une_photo_heic_se_reconnait_a_sa_boite_ftyp():
+    """#2389 : la marque est à l'octet 4. Une vraie photo passe sous ses deux
+    extensions ; un JPEG ou un AVIF renommé `.heic` est refusé."""
+    photo = (pathlib.Path(__file__).parent / "donnees" / "photo.heic").read_bytes()
+    assert signature_incoherente(photo, ".heic") is None
+    assert signature_incoherente(photo, ".HEIF") is None
+    assert signature_incoherente(b"\xff\xd8\xff\xe0\x00\x10JFIF", ".heic") is not None
+    assert signature_incoherente(b"\x00\x00\x00\x1cftypavif", ".heic") is not None
+
+
 def test_un_format_SANS_signature_passe_sans_etre_inspecte():
     """🔴 La moitié qui empêche ce contrôle de devenir une restriction.
 

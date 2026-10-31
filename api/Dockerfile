@@ -1,3 +1,26 @@
+#  ── Étape « heif » : pillow-heif compilé contre la libheif de Debian (#2389) ──
+#
+#  🔴 LES ROUES PyPI DE `pillow-heif` NE DOIVENT JAMAIS ENTRER DANS L'IMAGE. Elles
+#  embarquent libx265, l'ENCODEUR HEVC, sous GPLv2 (`LICENSES_bundled.txt`), et
+#  l'image est distribuée publiquement sur ghcr.io. Le site ne fait que DÉCODER :
+#  libheif (LGPL-3.0+) et son greffon libde265 (LGPL-3.0+) y suffisent. Le module
+#  se compile donc ici, contre la libheif de Debian, et seule la roue produite
+#  passe à l'image ; compilateur et en-têtes restent dans cette étape.
+#  `--no-install-recommends` n'est pas une économie : `libheif1` RECOMMANDE
+#  `libheif-plugin-x265`. La version vient de `requirements.txt`, seule source.
+#  🔒 `scripts/ci/licences_image.py` (règles du Dockerfile) et
+#  `scripts/verifier_heif.py` (l'image construite, ci-dessous).
+FROM python:3.12-slim AS heif
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libc6-dev \
+    libheif-dev \
+    pkgconf \
+    && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt .
+RUN version=$(grep -oE '^pillow-heif==[0-9.]+' requirements.txt) \
+    && pip wheel --no-binary pillow-heif --no-deps --wheel-dir /roues "$version"
+
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -22,15 +45,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdk-pixbuf-2.0-0 \
     fonts-dejavu-core \
     fonts-noto-color-emoji \
+    libheif1 \
+    libheif-plugin-libde265 \
     && rm -rf /var/lib/apt/lists/*
 
 # Dépendances Python
+#  pillow-heif d'abord, depuis la roue compilée ci-dessus ; `PIP_NO_BINARY` interdit
+#  ensuite toute roue PyPI de ce paquet : une version désalignée tenterait une
+#  compilation, sans compilateur, et la construction échouerait — jamais en silence.
+COPY --from=heif /roues /roues
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -r requirements.txt
+    pip install --no-index --no-deps /roues/*.whl \
+    && PIP_NO_BINARY=pillow-heif pip install -r requirements.txt \
+    && rm -rf /roues
 
 # Code source
 COPY . .
+
+#  🔒 L'image construite, pas le Dockerfile : aucun x265, le module lié à la
+#  libheif du système, le décodage d'une vraie photo HEIC (#2389).
+RUN python -I scripts/verifier_heif.py tests/donnees/photo.heic
 
 #  🔴 UN UTILISATEUR APPLICATIF, PAS ROOT (#769, 05/09/2026).
 #

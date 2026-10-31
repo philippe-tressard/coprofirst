@@ -23,6 +23,10 @@ Extrait de `utils/fichiers` le 31/10/2026 (#2388), qui tenait sa limite de
 #:
 #: Une marque est des octets attendus EN TÊTE, ou `(décalage, octets)` quand le
 #: format la place plus loin : AVIF écrit sa boîte `ftyp` à l'octet 4.
+_MARQUES_HEIF = tuple(
+    (4, b"ftyp" + marque) for marque in (b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1")
+)
+
 _SIGNATURES: dict[str, tuple[bytes | tuple[int, bytes], ...]] = {
     ".pdf": (b"%PDF-",),
     #  Les formats Office récents sont des archives ZIP.
@@ -41,6 +45,10 @@ _SIGNATURES: dict[str, tuple[bytes | tuple[int, bytes], ...]] = {
     ".avif": ((4, b"ftypavif"), (4, b"ftypavis")),
     ".bmp": (b"BM",),
     ".tiff": (b"II*\x00", b"MM\x00*"),
+    #  HEIC/HEIF (#2389) : boîte `ftyp` à l'octet 4, comme AVIF. Une photo d'iPhone
+    #  porte `heic` ; `mif1` et `msf1` sont les marques génériques de HEIF.
+    ".heic": _MARQUES_HEIF,
+    ".heif": _MARQUES_HEIF,
 }
 
 

@@ -8,6 +8,7 @@ faudrait tenir à la main à côté du code.
 from __future__ import annotations
 
 import licences_politique as politique
+from licences_image import rendre as rendre_images
 from licences_spdx import admise
 
 EN_TETE = """\
@@ -16,7 +17,8 @@ EN_TETE = """\
 # Licences tierces
 
 Inventaire des dépendances de `front/`, `whatsapp-bridge/` et `api/` et de leurs
-licences (`standards/14` §6.3), puis des fichiers repris d'un projet tiers. La CI
+licences (`standards/14` §6.3), des bibliothèques système que les images ajoutent,
+puis des fichiers repris d'un projet tiers. La CI
 le régénère et échoue s'il diffère : un paquet qui entre ou qui change de licence
 se relit ici. La politique — liste blanche, exceptions et leurs motifs — vit dans
 `scripts/ci/licences_politique.py`.
@@ -83,6 +85,7 @@ def _dependances(source: str, paquets: list[dict], admises) -> list[str]:
 
 def rendre_document(inventaire: dict[str, list[dict]], exceptions, admises) -> str:
     """Le contenu du document pour cet inventaire. PURE."""
-    blocs = [EN_TETE.rstrip("\n").split("\n"), _exceptions(exceptions), _contenus()]
+    blocs = [EN_TETE.rstrip("\n").split("\n"), _exceptions(exceptions)]
+    blocs += [rendre_images(politique, cellule), _contenus()]
     blocs += [_dependances(s, p, admises) for s, p in inventaire.items()]
     return "\n\n".join("\n".join(b) for b in blocs) + "\n"

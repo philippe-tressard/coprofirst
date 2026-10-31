@@ -114,7 +114,7 @@ def nom_stocke(nom_origine: str | None, extension: str) -> str:
 #  Même expression que `EXTENSIONS_IMAGE` dans front/src/lib/fichiers.ts : une
 #  règle, deux langages, et `tests/test_pieces_jointes.py` vérifie qu'elles ne
 #  divergent pas — comme pour `nom_lisible` / `nomFichier`.
-_EXTENSIONS_IMAGE = re.compile(r"\.(jpe?g|png|webp|gif|avif|bmp|tiff?)$", re.IGNORECASE)
+_EXTENSIONS_IMAGE = re.compile(r"\.(jpe?g|png|webp|gif|avif|bmp|tiff?|heic|heif)$", re.IGNORECASE)
 
 
 def est_image(chemin_ou_url: str | None) -> bool:
@@ -203,13 +203,16 @@ _TYPES_IMAGE = {
     "image/webp": ".webp",
     "image/gif": ".gif",
     #  Ajoutés le 31/10/2026 (#2388) : toute image se joint, et toutes repartent
-    #  en JPEG (`images.enregistrer_image_recue`), métadonnées retirées. HEIC
-    #  attend son lot : `pillow-heif` est distribué sous GPLv2 (x265 embarqué).
+    #  en JPEG (`images.enregistrer_image_recue`), métadonnées retirées. HEIC et
+    #  HEIF (iPhone) le 31/10/2026 (#2389), en décodage seul : libheif + libde265
+    #  (LGPL), sans l'encodeur x265 (GPLv2) des roues PyPI — `api/Dockerfile`.
     #  🔴 Le SVG est REFUSÉ et doit le rester : c'est un document, qui porte du
     #  script, et servi depuis `/uploads/` il s'exécuterait sur notre origine.
     "image/avif": ".avif",
     "image/bmp": ".bmp",
     "image/tiff": ".tiff",
+    "image/heic": ".heic",
+    "image/heif": ".heif",
 }
 
 _TYPES_DOCUMENT = {
