@@ -19,6 +19,7 @@
   écran seul serait contourné par un second écran ou un appel direct.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import AideSource from '#lib/components/AideSource.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
@@ -81,7 +82,7 @@
 	<div class="header-summary">
 		<span>{nom || 'Nom du syndic non renseigné'}{adresse ? ` · ${adresse}` : ''}</span>
 		{#if siteWeb}<span class="site-syndic"
-				>· <a href={siteWeb} target="_blank" rel="noopener">Espace client</a></span
+				>{SEPARATEUR.point}<a href={siteWeb} target="_blank" rel="noopener">Espace client</a></span
 			>{/if}
 		<button
 			type="button"

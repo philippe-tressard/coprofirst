@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import { confirmer, SUPPRESSION } from '#lib/confirmation.ts';
 	import { onMount } from 'svelte';
@@ -146,7 +147,9 @@
 			<div class="entete-compte">
 				<strong>{g.user_nom}</strong>
 				<span class="badge badge-gray statut-compte">{g.user_statut}</span>
-				<span class="nb-lots">— {g.lots.length} lot{g.lots.length > 1 ? 's' : ''}</span>
+				<span class="nb-lots"
+					>{SEPARATEUR.tiret}{g.lots.length} lot{g.lots.length > 1 ? 's' : ''}</span
+				>
 				<button
 					class="btn btn-sm btn-outline suppr-tout"
 					disabled={deletingUserId === g.user_id}
