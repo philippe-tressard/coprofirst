@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import Pastille from '#lib/components/Pastille.svelte';
 	import { relire } from '#lib/utils.ts';
 	import { perimetresStore } from '#lib/stores/perimetres.ts';
@@ -402,7 +403,7 @@
 	<div class="perimetre-niveau2">
 		<p class="perimetre-precision">
 			Préciser dans {parCode.get(parentOuvert ?? '')?.libelle ?? ''}
-			<span class="perimetre-facultatif">— facultatif</span>
+			<span class="perimetre-facultatif">{SEPARATEUR.tiret}facultatif</span>
 		</p>
 		<div class="perimetre-pills">
 			{#each niveau2 as espace (espace.code)}

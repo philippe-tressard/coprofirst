@@ -11,6 +11,7 @@
   Ce composant les montre et dit ce qu'on a cliqué.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import type { Signalement } from '#lib/api/index.ts';
 	import { createEventDispatcher } from 'svelte';
 
@@ -41,7 +42,8 @@
 					<div class="moderation-meta">
 						<span class="badge badge-blue">{sig.cible_type_label}</span>
 						<strong>« {sig.apercu}</strong>
-						{#if sig.auteur_cible}<span class="muted">— par {sig.auteur_cible}</span>{/if}
+						{#if sig.auteur_cible}<span class="muted">{SEPARATEUR.tiret}par {sig.auteur_cible}</span
+							>{/if}
 					</div>
 					<div class="moderation-motif">
 						Motif : {sig.motif}

@@ -32,6 +32,7 @@
     </Pastille>
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import Compte from '#lib/components/Compte.svelte';
 
@@ -189,7 +190,7 @@
 		</span>
 		{#if compte !== null && active}<Compte n={compte} surAplat />{/if}
 		{#if chevron}<span class="pastille-chevron" aria-hidden="true">›</span>{/if}
-		{#if marquee && marqueAide}<span class="sr-only"> — {marqueAide}</span>{/if}
+		{#if marquee && marqueAide}<span class="sr-only">{SEPARATEUR.tiret}{marqueAide}</span>{/if}
 	</button>
 {/if}
 

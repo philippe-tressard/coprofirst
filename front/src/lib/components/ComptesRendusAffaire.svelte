@@ -19,6 +19,7 @@
     l'accordéon reste tenu par la carte (`ouverte`, `onBasculer`).
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { onMount } from 'svelte';
 	import RubriqueEtape from './RubriqueEtape.svelte';
 	import Badge from './Badge.svelte';
@@ -88,7 +89,7 @@
 			<article class="cr">
 				<p class="tete">
 					<strong>Point CS / Syndic du {fmtDatetime(cr.debut)}</strong>
-					<span class="lieu">· {cr.ou}</span>
+					<span class="lieu">{SEPARATEUR.point}{cr.ou}</span>
 					{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge
 						>{/if}
 					<span class="gestes">

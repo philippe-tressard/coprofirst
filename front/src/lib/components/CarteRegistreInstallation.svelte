@@ -91,7 +91,9 @@
 			{/if}
 			{#if i.version_logicielle}<span class="badge badge-gray">v{i.version_logicielle}</span>{/if}
 			{#if i.canal !== 'main'}<span title="Version cible du prochain bail"
-					>→ {libelleVersionCible(i.version_cible)}{#if vagueDe}&nbsp;({vagueDe.libelle}){/if}</span
+					>{SEPARATEUR.fleche}{libelleVersionCible(
+						i.version_cible,
+					)}{#if vagueDe}&nbsp;({vagueDe.libelle}){/if}</span
 				>{/if}
 			{#if i.conditions_acceptees}<span>Contrat v{i.conditions_acceptees}</span>{/if}
 			<span>{servicesAccordes(i.services_autorises.length)}</span>
