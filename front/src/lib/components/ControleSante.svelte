@@ -20,6 +20,7 @@
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { fmtDatetime } from '#lib/date.ts';
 	import { toast } from '#lib/components/Toast.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	type Probleme = { titre: string; details: string[] };
 
@@ -65,9 +66,9 @@
 		<div>
 			<SectionFormulaire titre="Contrôle de santé" icone="activity" />
 			<p class="muted">
-				Les mêmes vérifications que le contrôle automatique de 6&nbsp;h&nbsp;00 — base, WhatsApp,
-				sauvegardes, copie hors site, disque, référence de copropriété et modèles d’e-mail. Aucun
-				message n’est envoyé&nbsp;: le résultat s’affiche ici.
+				Les mêmes vérifications que le contrôle automatique de 6&nbsp;h&nbsp;00{SEPARATEUR.tiret}base,
+				WhatsApp, sauvegardes, copie hors site, disque, référence de copropriété et modèles
+				d’e-mail. Aucun message n’est envoyé&nbsp;: le résultat s’affiche ici.
 			</p>
 		</div>
 		<button class="btn btn-primary" type="button" on:click={lancer} disabled={chargement}>
@@ -81,11 +82,11 @@
 		<p class="muted resultat">Jamais lancé depuis cet écran.</p>
 	{:else if problemes.length === 0}
 		<p class="resultat resultat-ok">
-			Aucun problème détecté — contrôle lancé le {fmtDatetime(lanceLe)}.
+			Aucun problème détecté{SEPARATEUR.tiret}contrôle lancé le {fmtDatetime(lanceLe)}.
 		</p>
 	{:else}
 		<p class="resultat resultat-erreur">
-			{problemes.length} problème(s) — contrôle lancé le {fmtDatetime(lanceLe)}.
+			{problemes.length} problème(s){SEPARATEUR.tiret}contrôle lancé le {fmtDatetime(lanceLe)}.
 		</p>
 		<ul class="liste">
 			{#each problemes as p, i (i)}

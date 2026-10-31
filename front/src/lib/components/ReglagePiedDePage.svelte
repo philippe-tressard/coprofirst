@@ -34,6 +34,7 @@
 		TEXTE_PIED_MAX,
 		type ReglagePied,
 	} from '#lib/piedDePage.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Lié : la page porte l'état et l'enregistre. */
 	export let reglage: ReglagePied;
@@ -111,8 +112,8 @@
 		<p class="aide">
 			Une pastille pleine est affichée, une pastille vide masquée. Les éléments au cadenas restent
 			toujours : le logo et le nom signent le pied de page, la licence du logiciel et la loi
-			imposent que les trois liens soient accessibles depuis chaque page — ils se déplacent comme
-			les autres. Le logo et le nom se règlent plus haut, dans l’identité du site.
+			imposent que les trois liens soient accessibles depuis chaque page{SEPARATEUR.tiret}ils se
+			déplacent comme les autres. Le logo et le nom se règlent plus haut, dans l’identité du site.
 		</p>
 		<div class="champs-pied">
 			<label class="field">

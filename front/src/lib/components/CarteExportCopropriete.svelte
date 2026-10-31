@@ -19,6 +19,7 @@
 	import { fmtDatetime } from '#lib/date.ts';
 	import { fmtNombre, fmtOctets } from '#lib/utils.ts';
 	import { toast } from '#lib/components/Toast.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	let verification: VerificationRestauration | null = null;
 	let enVerification = false;
@@ -102,7 +103,7 @@
 			class:verdict-ko={!verification.restaurable}
 		>
 			{#if verification.restaurable}
-				Se restaure à l’identique — {fmtNombre(verification.tables)} tables, {fmtNombre(
+				Se restaure à l’identique{SEPARATEUR.tiret}{fmtNombre(verification.tables)} tables, {fmtNombre(
 					verification.lignes,
 				)}
 				lignes, en {fmtNombre(verification.duree_secondes)}&nbsp;s.
@@ -123,7 +124,9 @@
 		<p class="aide">Dernier export illisible&nbsp;: {erreurDernier}</p>
 	{:else if dernier?.archive}
 		<p class="aide">
-			Dernier export&nbsp;: <code>{dernier.archive}</code> — {fmtOctets(dernier.octets)},
+			Dernier export&nbsp;: <code>{dernier.archive}</code>{SEPARATEUR.tiret}{fmtOctets(
+				dernier.octets,
+			)},
 			{fmtNombre(dernier.lignes)} lignes, {fmtNombre(dernier.fichiers)} fichiers{#if dernier.cree_le},
 				le {fmtDatetime(dernier.cree_le)}{/if}.
 			<button class="btn btn-sm btn-outline" type="button" on:click={relireDernier}

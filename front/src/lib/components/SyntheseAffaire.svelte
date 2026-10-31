@@ -40,6 +40,7 @@
 	import SyntheseRythme from './SyntheseRythme.svelte';
 	import SyntheseTuiles from './SyntheseTuiles.svelte';
 	import { toast } from './Toast.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let synthese: SyntheseAffaire;
 	/** Le conseil : les gestes d'un brouillon. Le serveur refait le contrôle. */
@@ -232,7 +233,7 @@
 	{#if brouillon}
 		<EncartAvertissement role="status" compact>
 			{#if vide}
-				<strong>Synthèse à rédiger</strong> — {synthese.motif_vide ??
+				<strong>Synthèse à rédiger</strong>{SEPARATEUR.tiret}{synthese.motif_vide ??
 					"l'assistant n'a rien rédigé"}. Brouillon visible du conseil syndical seulement.
 			{:else}
 				<strong>Brouillon</strong>, visible du conseil syndical seulement : à relire, puis valider.
@@ -280,23 +281,23 @@
 		<!--  Chaque bloc a son sous-titre, d'après la maquette arbitrée le
 		      03/10/2026 — sans son repère de travail (M1…M5). -->
 		<section class="bloc">
-			<h5 class="bloc-titre">Les chiffres — durée, étapes, suites et relances</h5>
+			<h5 class="bloc-titre">Les chiffres{SEPARATEUR.tiret}durée, étapes, suites et relances</h5>
 			<SyntheseTuiles metriques={m} />
 		</section>
 		<section class="bloc">
-			<h5 class="bloc-titre">La frise — jours ouvrés passés à chaque étape</h5>
+			<h5 class="bloc-titre">La frise{SEPARATEUR.tiret}jours ouvrés passés à chaque étape</h5>
 			<SyntheseFrise metriques={m} />
 		</section>
 		{#if m.comparaison}
 			<section class="bloc">
 				<h5 class="bloc-titre">
-					Face à la moyenne — les affaires de même catégorie sur l'exercice
+					Face à la moyenne{SEPARATEUR.tiret}les affaires de même catégorie sur l'exercice
 				</h5>
 				<SyntheseMoyenne metriques={m} />
 			</section>
 		{/if}
 		<section class="bloc">
-			<h5 class="bloc-titre">Le rythme — suites par semaine, semaines muettes</h5>
+			<h5 class="bloc-titre">Le rythme{SEPARATEUR.tiret}suites par semaine, semaines muettes</h5>
 			<SyntheseRythme metriques={m} />
 		</section>
 		<!--  La chronologie redit la frise date par date, la récidive ne concerne
@@ -307,10 +308,12 @@
 				{m.recidive ? 'La récidive et la chronologie' : 'La chronologie'}
 			</summary>
 			{#if m.recidive}
-				<h5 class="bloc-titre">La récidive — le même équipement, déjà réparé</h5>
+				<h5 class="bloc-titre">La récidive{SEPARATEUR.tiret}le même équipement, déjà réparé</h5>
 				<SyntheseRecidive metriques={m} />
 			{/if}
-			<h5 class="bloc-titre">La chronologie — états datés, relances et réouverture</h5>
+			<h5 class="bloc-titre">
+				La chronologie{SEPARATEUR.tiret}états datés, relances et réouverture
+			</h5>
 			<SyntheseChronologie metriques={m} />
 		</details>
 	{/if}
@@ -318,13 +321,15 @@
 	{#if !edition}
 		{#if synthese.difficultes}
 			<section class="bloc">
-				<h5 class="bloc-titre">Les difficultés — ce qui a ralenti l'affaire</h5>
+				<h5 class="bloc-titre">Les difficultés{SEPARATEUR.tiret}ce qui a ralenti l'affaire</h5>
 				<div class="rich-content texte">{@html safeDescription(synthese.difficultes)}</div>
 			</section>
 		{/if}
 		{#if synthese.amelioration}
 			<section class="bloc">
-				<h5 class="bloc-titre">L'amélioration suggérée — pour la prochaine affaire</h5>
+				<h5 class="bloc-titre">
+					L'amélioration suggérée{SEPARATEUR.tiret}pour la prochaine affaire
+				</h5>
 				<div class="rich-content texte">{@html safeDescription(synthese.amelioration)}</div>
 			</section>
 		{/if}
@@ -332,7 +337,7 @@
 
 	{#if proposition}
 		<section class="bloc proposition" aria-label="Proposition de l'assistant">
-			<h5 class="bloc-titre">Proposition de l’assistant — à appliquer ou annuler</h5>
+			<h5 class="bloc-titre">Proposition de l’assistant{SEPARATEUR.tiret}à appliquer ou annuler</h5>
 			<div class="rich-content texte">{@html safeDescription(proposition.synthese)}</div>
 			{#if proposition.difficultes}
 				<h6 class="proposition-titre">Difficultés</h6>

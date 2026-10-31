@@ -35,6 +35,7 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import type { ApercuDiffusion } from '#lib/api/index.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let apercu: ApercuDiffusion | null = null;
 	/** Chargement en cours côté serveur. */
@@ -103,7 +104,7 @@
 							<strong>Ne recevront rien :</strong>
 							<ul>
 								{#each canal.ecartes as ecarte, i (i)}
-									<li>{ecarte.qui} — {ecarte.motif}</li>
+									<li>{ecarte.qui}{SEPARATEUR.tiret}{ecarte.motif}</li>
 								{/each}
 							</ul>
 						</EncartAvertissement>

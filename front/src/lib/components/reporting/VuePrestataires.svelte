@@ -79,7 +79,7 @@
 {:else if reportPrestSynth}
 	<section class="report-card bloc-espace-large">
 		<div class="entete-fiche">
-			<h3 class="titre-fiche">&#x1F4C4; Fiche — {reportPrestSynth.nom}</h3>
+			<h3 class="titre-fiche">&#x1F4C4; Fiche{SEPARATEUR.tiret}{reportPrestSynth.nom}</h3>
 			<button class="btn btn-sm btn-outline" on:click={() => (reportPrestSynth = null)}
 				>✕ Fermer</button
 			>
@@ -121,7 +121,7 @@
 				{#if reportPrestSynth.prochaines_visites && reportPrestSynth.prochaines_visites.length > 0}
 					<p><strong>Prochaines visites :</strong></p>
 					{#each reportPrestSynth.prochaines_visites as v (v)}
-						<p class="retrait">📅 {fmtDate(v.date)} — {v.contrat}</p>
+						<p class="retrait">📅 {fmtDate(v.date)}{SEPARATEUR.tiret}{v.contrat}</p>
 					{/each}
 				{/if}
 			</div>

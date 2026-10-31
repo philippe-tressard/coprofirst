@@ -27,6 +27,7 @@
 	} from '#lib/api/index.ts';
 	import { fmtDate } from '#lib/date.ts';
 	import { CANAL_URGENCE, libelleVersionCible } from '#lib/registre-installations.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let fiche: FicheInstallation;
 	export let versions: VersionsPubliees = { proposees: [], lues_le: null };
@@ -104,7 +105,7 @@
 		Le canal Urgence suit les versions publiées, jamais en arrière : Urgence prend la dernière
 		aussitôt, Pilote et Standard attendent ses 7 jours.
 	{:else}
-		Une version choisie se suit en vague Fixe : elle s’installe 7 jours après sa sortie — plus
+		Une version choisie se suit en vague Fixe : elle s’installe 7 jours après sa sortie{SEPARATEUR.tiret}plus
 		ancienne que celle qui tourne, c’est un ordre d’y revenir, sûr une version à la fois, les
 		migrations n’étant compatibles qu’avec la précédente.
 	{/if}

@@ -11,6 +11,7 @@
 -->
 <script lang="ts">
 	import type { ExtraitReglement } from '#lib/api/index.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let titre: string;
 	export let extraits: ExtraitReglement[];
@@ -28,7 +29,7 @@
 					</p>
 				{:else}
 					<p class="repere alerte">
-						⚠️ Non retrouvé mot pour mot dans le texte — à vérifier{e.reference
+						⚠️ Non retrouvé mot pour mot dans le texte{SEPARATEUR.tiret}à vérifier{e.reference
 							? ` (référence donnée : ${e.reference})`
 							: ''}
 					</p>

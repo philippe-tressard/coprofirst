@@ -45,7 +45,7 @@ test('Export vérifié : la base se restaure à l’identique', async ({ page })
 	await expect(carte.getByText(/export_copropriete_20261009_041500_paris\.tar\.gz/)).toBeVisible();
 	await expect(carte.getByText('Jamais vérifiée depuis cet écran.')).toBeVisible();
 	await carte.getByRole('button', { name: 'Vérifier la restauration' }).click();
-	await expect(carte.getByText(/Se restaure à l’identique — 86 tables/)).toBeVisible();
+	await expect(carte.getByText(/Se restaure à l’identique —\u00a086 tables/)).toBeVisible();
 	await expect(
 		carte.getByText(/Non exportées \(absentes des modèles\).*ancienne_table/),
 	).toBeVisible();

@@ -38,6 +38,7 @@
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	//  Les NOMS DU MODÈLE, pas des noms inventés : c'est ce qui manquait.
 	let heure_execution = 3;
@@ -112,9 +113,10 @@
 			<p class="avertissement">
 				⚠️ <strong>{String(heure_execution).padStart(2, '0')} h</strong> croise une autre tâche : la
 				<strong>bascule</strong>
-				entre les deux Raspberry Pi tourne à 02 h, et la <strong>maintenance hebdomadaire</strong> (purge
-				et VACUUM de la base) le dimanche à 03 h. Une sauvegarde qui démarre pendant l’une ou l’autre
-				lit une base en cours de réorganisation. Préférez une heure creuse — 01 h ou 04 h.
+				entre les deux Raspberry Pi tourne à 02 h, et la <strong>maintenance hebdomadaire</strong>
+				(purge et VACUUM de la base) le dimanche à 03 h. Une sauvegarde qui démarre pendant l’une ou l’autre
+				lit une base en cours de réorganisation. Préférez une heure creuse{SEPARATEUR.tiret}01 h ou
+				04 h.
 			</p>
 		{/if}
 		<!--  🔴 `.form-actions` — barre de soumission alignée à DROITE, comme partout

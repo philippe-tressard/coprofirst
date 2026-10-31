@@ -23,6 +23,7 @@
 	import { nomAffiche } from '#lib/noms.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import type { ConfigSite, SectionSite } from '#lib/configSite.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Lié : la page porte l'état et l'enregistre. */
 	export let siteConfig: ConfigSite;
@@ -44,8 +45,8 @@
 				{/each}
 			</select>
 			<span class="aide"
-				>Choisi parmi les administrateurs : il reçoit ce qui demande un geste dans l'administration
-				— comptes à valider, alertes système, bogues signalés si l'option est activée.</span
+				>Choisi parmi les administrateurs : il reçoit ce qui demande un geste dans l'administration{SEPARATEUR.tiret}comptes
+				à valider, alertes système, bogues signalés si l'option est activée.</span
 			>
 		</label>
 		<label class="field champ-double">
@@ -76,8 +77,9 @@
 				>Un contenu terminé quitte les listes actives et bascule dans les <strong>Archives</strong>
 				après ce délai (défaut : 30 jours). Il s'applique à <strong>tout le site</strong> :
 				actualités, affaires résolues, petites annonces vendues ou données, idées décidées, sondages
-				clôturés, événements passés et affiches de hall envoyées. Un contenu <strong>annulé</strong> est
-				archivé immédiatement, sans attendre — et le bouton 📦 archive à la main, quel que soit ce réglage.</span
+				clôturés, événements passés et affiches de hall envoyées. Un contenu <strong>annulé</strong>
+				est archivé immédiatement, sans attendre{SEPARATEUR.tiret}et le bouton 📦 archive à la main,
+				quel que soit ce réglage.</span
 			>
 		</label>
 		<label class="field champ-court champ-double">
@@ -102,7 +104,8 @@
 			<span class="aide"
 				>Envoie un e-mail au gestionnaire du site sélectionné (ou à l'adresse administrateur de
 				secours) uniquement pour les affaires de catégorie « Bug ». Une affaire marquée {GLYPHE_URGENCE}
-				Urgent ne déclenche pas cette notification — l'urgence est une case, pas une catégorie.</span
+				Urgent ne déclenche pas cette notification{SEPARATEUR.tiret}l'urgence est une case, pas une
+				catégorie.</span
 			>
 		</label>
 		<label class="field champ-double">

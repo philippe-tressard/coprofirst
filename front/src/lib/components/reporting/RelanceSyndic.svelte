@@ -24,6 +24,7 @@
 	import TableauAffaires from './TableauAffaires.svelte';
 	import ApercuRelance from './ApercuRelance.svelte';
 	import ReponsesSyndic from './ReponsesSyndic.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let suivi: SuiviAffaires;
 	/** Appelé après un envoi réussi : le parent recharge la liste. */
@@ -65,7 +66,8 @@
 
 	<section class="report-card groupe" aria-labelledby="titre-a-relancer">
 		<h3 id="titre-a-relancer" class="groupe-titre">
-			À relancer — {aRelancer.length} affaire{aRelancer.length > 1 ? 's' : ''} sans avancée depuis
+			À relancer{SEPARATEUR.tiret}{aRelancer.length} affaire{aRelancer.length > 1 ? 's' : ''} sans avancée
+			depuis
 			{delai} jours ou plus
 		</h3>
 		{#if aRelancer.length}

@@ -29,6 +29,7 @@
 	import { fmtDate } from '#lib/date.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { TEINTE_TRANSCRIPTION } from '#lib/reglement.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Une transcription validée change le texte que l'onglet décrit. */
 	export let onValidee: () => Promise<void>;
@@ -131,9 +132,9 @@
 <section class="card config-section">
 	<h3 class="config-section-title">Transcription des PV d'AG</h3>
 	<p class="aide">
-		L'assistant transcrit les résolutions d'un PV déposé dans la Fiche, sans nom de personne —
-		d'office chaque matin pour un PV déposé depuis moins de deux mois. Relisez-la, corrigez-la au
-		besoin : validée, elle rejoint les décisions d'AG lues par l'assistant.
+		L'assistant transcrit les résolutions d'un PV déposé dans la Fiche, sans nom de personne{SEPARATEUR.tiret}d'office
+		chaque matin pour un PV déposé depuis moins de deux mois. Relisez-la, corrigez-la au besoin :
+		validée, elle rejoint les décisions d'AG lues par l'assistant.
 	</p>
 	<EtatListe
 		{chargement}

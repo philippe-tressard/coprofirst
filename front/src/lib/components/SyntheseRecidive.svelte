@@ -16,6 +16,7 @@
 	import type { MetriquesSynthese } from '#lib/api/index.ts';
 	import { fmtDate } from '#lib/date.ts';
 	import { equipLabel } from '#lib/prestataires.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let metriques: MetriquesSynthese;
 
@@ -33,7 +34,7 @@
 	<ul class="autres">
 		{#each recidive.autres as a (a.id)}
 			<li>
-				<a href="/tickets/{a.id}">{a.numero}</a> — {a.titre}
+				<a href="/tickets/{a.id}">{a.numero}</a>{SEPARATEUR.tiret}{a.titre}
 				<span class="date">close le {fmtDate(a.ferme_le)}</span>
 			</li>
 		{/each}

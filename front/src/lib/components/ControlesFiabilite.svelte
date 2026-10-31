@@ -38,6 +38,7 @@
 	//  Le titre est le NOM de la tâche dans la synthèse : une seule écriture,
 	//  sinon la ligne de la synthèse cesse de renvoyer à cette carte.
 	import { LIBELLE_TACHE } from '#lib/taches.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** La tâche rendue : les contrôles du quart d'heure, ou l'audit de la nuit. */
 	export let tache: 'reliability' | 'audit_securite' = 'reliability';
@@ -133,7 +134,8 @@
 						<span class="badge badge-green">Tout est vert</span>
 					{/if}
 					<span class="muted date"
-						>{textes.passage} {heure(vuLe(r))} · constats depuis {fmtDatetime(r.cree_le)}</span
+						>{textes.passage}
+						{heure(vuLe(r))}{SEPARATEUR.point}constats depuis {fmtDatetime(r.cree_le)}</span
 					>
 				</div>
 				<ListeConstats {constats} />
@@ -145,7 +147,8 @@
 				<div class="noeud-entete">
 					<strong>Les deux nœuds</strong>
 					<span class="muted date"
-						>vu par {porteur.noeud?.toUpperCase()} · {textes.passage} {heure(vuLe(porteur))}</span
+						>vu par {porteur.noeud?.toUpperCase()}{SEPARATEUR.point}{textes.passage}
+						{heure(vuLe(porteur))}</span
 					>
 				</div>
 				<ListeConstats constats={porteur.details.communs} />

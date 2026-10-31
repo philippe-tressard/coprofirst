@@ -15,6 +15,7 @@
 	 */
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import { fmtNombre, fmtPartEnPourcent } from '#lib/utils.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let pages: { page: string; total: number; uniques: number }[] = [];
 
@@ -58,7 +59,11 @@
 				</tbody>
 				<tfoot>
 					<tr class="total">
-						<td>Total — {fmtNombre(pages.length)} page{pages.length > 1 ? 's' : ''}</td>
+						<td
+							>Total{SEPARATEUR.tiret}{fmtNombre(pages.length)} page{pages.length > 1
+								? 's'
+								: ''}</td
+						>
 						<td class="num">{fmtNombre(totalVues)}</td>
 						<td class="num-attenue">
 							<!--  Additionner la colonne serait FAUX : un même utilisateur compte
@@ -81,7 +86,7 @@
 			{#if vuesNonAttribuees > 0}
 				<p>
 					Dont <strong>{fmtNombre(vuesNonAttribuees)}</strong> vue{vuesNonAttribuees > 1 ? 's' : ''}
-					non rattachée{vuesNonAttribuees > 1 ? 's' : ''} à un utilisateur — enregistrée{vuesNonAttribuees >
+					non rattachée{vuesNonAttribuees > 1 ? 's' : ''} à un utilisateur{SEPARATEUR.tiret}enregistrée{vuesNonAttribuees >
 					1
 						? 's'
 						: ''}

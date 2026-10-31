@@ -23,6 +23,7 @@
 -->
 <script lang="ts">
 	import { CANAUX_NOTIFS } from '#lib/preferences.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let valeurs: Record<string, boolean>;
 	export let restreindre = false;
@@ -68,7 +69,8 @@
 		{/each}
 	{/each}
 	<p class="aide sous-case">
-		Ce qui concerne votre compte — validation, rôle, demande traitée — vous parvient toujours.
+		Ce qui concerne votre compte{SEPARATEUR.tiret}validation, rôle, demande traitée{SEPARATEUR.tiret}vous
+		parvient toujours.
 		{#if heritees.size > 0}
 			Les réglages marqués « par défaut » n'ont jamais été modifiés : enregistrez pour en faire
 			votre choix.

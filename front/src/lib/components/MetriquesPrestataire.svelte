@@ -21,6 +21,7 @@
 	import { fmtNombre } from '#lib/utils.ts';
 	import EtatListe from './EtatListe.svelte';
 	import MoyennesAffaires from './MoyennesAffaires.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let prestataireId: number;
 
@@ -45,7 +46,7 @@
 
 <section class="metriques-presta" aria-labelledby="metriques-presta-{prestataireId}">
 	<span class="detail-label" id="metriques-presta-{prestataireId}"
-		>📊 Affaires traitées — conseil syndical</span
+		>📊 Affaires traitées{SEPARATEUR.tiret}conseil syndical</span
 	>
 	<EtatListe
 		{chargement}

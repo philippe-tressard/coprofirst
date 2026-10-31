@@ -31,6 +31,7 @@
 	import { bailleur as bailApi, type LocataireTrouve } from '#lib/api/index.ts';
 	import { nomAffiche } from '#lib/noms.ts';
 	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Racine des identifiants — l'hôte la fournit, il en a déjà une. */
 	export let uid: string;
@@ -175,7 +176,9 @@
 			</ChampRecherche>
 		</div>
 		{#if rechercheFaite && resultats.length === 0 && !cherchant}
-			<p class="search-no-result">Aucun compte trouvé — renseignez manuellement ci-dessous.</p>
+			<p class="search-no-result">
+				Aucun compte trouvé{SEPARATEUR.tiret}renseignez manuellement ci-dessous.
+			</p>
 		{:else if resultats.length > 1}
 			<ul class="locataire-resultats">
 				{#each resultats as r (r.id)}

@@ -71,6 +71,7 @@
 	import SectionDescription from '#lib/components/SectionDescription.svelte';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Un lot proposé à la sélection. `occupe` grise la ligne et la verrouille. */
 	export let lots: { id: number; libelle: string; occupe: boolean }[] = [];
@@ -221,8 +222,9 @@
 				</div>
 				{#if lotIds.size > 0}
 					<p class="lot-selection-hint">
-						{lotIds.size} lot{lotIds.size > 1 ? 's' : ''} sélectionné{lotIds.size > 1 ? 's' : ''} — un
-						bail sera créé pour chacun
+						{lotIds.size} lot{lotIds.size > 1 ? 's' : ''} sélectionné{lotIds.size > 1
+							? 's'
+							: ''}{SEPARATEUR.tiret}un bail sera créé pour chacun
 					</p>
 				{/if}
 			</div>

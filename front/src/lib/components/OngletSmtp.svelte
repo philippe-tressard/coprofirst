@@ -25,6 +25,7 @@
 	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
 	import SectionReceptionReponses from '#lib/components/SectionReceptionReponses.svelte';
 	import ChampSecret from '#lib/components/ChampSecret.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Signature ajoutée en bas de chaque e-mail — appartient à `siteConfig`. */
 	export let emailFooter = '';
@@ -181,7 +182,7 @@
 				<input type="number" bind:value={smtpConfig.port} min="1" max="65535" placeholder="587" />
 			</label>
 			<label class="field">
-				Adresse expéditeur — messages SANS réponse attendue
+				Adresse expéditeur{SEPARATEUR.tiret}messages SANS réponse attendue
 				<input type="email" bind:value={smtpConfig.from} placeholder="noreply@example.com" />
 				<span class="aide"
 					>Employée pour ce qui informe seulement : compte activé, changement d'état, nouveau
@@ -189,7 +190,7 @@
 				>
 			</label>
 			<label class="field">
-				Adresse expéditeur — messages qui APPELLENT une réponse
+				Adresse expéditeur{SEPARATEUR.tiret}messages qui APPELLENT une réponse
 				<input
 					type="email"
 					bind:value={smtpConfig.from_reponse}
@@ -203,7 +204,7 @@
 				>
 			</label>
 			<label class="field">
-				Adresse des affaires — expédition ET réponses
+				Adresse des affaires{SEPARATEUR.tiret}expédition ET réponses
 				<input
 					type="email"
 					bind:value={smtpConfig.from_affaires}
@@ -277,9 +278,10 @@
 			</div>
 			<p class="note-essai">
 				Envoie un e-mail de test avec la configuration SMTP actuellement enregistrée en base,
-				<strong>depuis chacune des deux adresses d'expédition</strong> — celle qui n'attend pas de
-				réponse et celle qui en attend une. Un serveur peut accepter l'une et refuser l'autre,
-				surtout si la seconde est un <strong>alias</strong> : il faut recevoir les deux messages.
+				<strong>depuis chacune des deux adresses d'expédition</strong>{SEPARATEUR.tiret}celle qui
+				n'attend pas de réponse et celle qui en attend une. Un serveur peut accepter l'une et
+				refuser l'autre, surtout si la seconde est un <strong>alias</strong> : il faut recevoir les deux
+				messages.
 			</p>
 		</div>
 	</SectionFormulaire>
@@ -297,9 +299,10 @@
 	      transfère les messages le voit — il était réservé à cet écran-ci. -->
 	<SectionFormulaire icone="clipboard-list" titre="Messages relevés">
 		<p class="aide largeur-saisie">
-			Ce que la relève a fait de chaque message — ajouté à une affaire, refusé ou ignoré, et
-			pourquoi — se lit dans <a href="/espace-cs/courriels">Espace CS › Courriels</a>. Le nombre de
-			messages affichés se règle ci-dessus.
+			Ce que la relève a fait de chaque message{SEPARATEUR.tiret}ajouté à une affaire, refusé ou
+			ignoré, et pourquoi{SEPARATEUR.tiret}se lit dans
+			<a href="/espace-cs/courriels">Espace CS › Courriels</a>. Le nombre de messages affichés se
+			règle ci-dessus.
 		</p>
 	</SectionFormulaire>
 

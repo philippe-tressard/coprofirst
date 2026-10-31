@@ -104,7 +104,7 @@ test('Assistant IA : le ✨ du modèle enregistre les prix des jetons', async ({
 	await expect(prix(bloc, 'en cache')).toHaveValue('0.02');
 	//  L'unité se lit sur le libellé : des dollars, comme la grille.
 	await expect(bloc.getByText('Prix des jetons envoyés ($ / million)')).toBeVisible();
-	await expect(bloc.getByText(/Tarif enregistré — Grille platform\.openai\.com/)).toBeVisible();
+	await expect(bloc.getByText(/Tarif enregistré —\u00a0Grille platform\.openai\.com/)).toBeVisible();
 	expect(demande).toEqual({ usage: 'description', modele: 'modele-de-la-description' });
 
 	const deborde = await page.evaluate(

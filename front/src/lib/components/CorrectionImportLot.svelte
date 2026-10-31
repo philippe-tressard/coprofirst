@@ -12,6 +12,7 @@
 	import type { LigneImportLot, MonLot, UtilisateurAdmin } from '#lib/api/index.ts';
 	import { nomAffiche } from '#lib/noms.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let imp: LigneImportLot;
 	export let lots: MonLot[] = [];
@@ -41,7 +42,7 @@
 <div class="imp-edit-form card correction">
 	<h3 class="titre-correction">
 		Lier : <em
-			>{imp.nom_coproprietaire ?? '—'} — Bât. {imp.batiment_nom ?? imp.batiment_id} n°{imp.numero}
+			>{imp.nom_coproprietaire ?? '—'}{SEPARATEUR.tiret}Bât. {imp.batiment_nom ?? imp.batiment_id} n°{imp.numero}
 			({imp.type_raw})</em
 		>
 	</h3>

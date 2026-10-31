@@ -207,10 +207,10 @@
 					class:ton-ok={i.etat === 'active' || i.etat === 'reference'}
 					class:ton-alerte={i.etat === 'limitee' || i.etat === 'suspendue'}
 				>
-					<strong>{LIBELLES_INSCRIPTION[i.etat]}</strong> — {i.raison}
+					<strong>{LIBELLES_INSCRIPTION[i.etat]}</strong>{SEPARATEUR.tiret}{i.raison}
 					<p class="aide">
-						Constaté seulement — sauf les services&nbsp;: une réplique n’allume que ceux que la
-						référence autorise.
+						Constaté seulement{SEPARATEUR.tiret}sauf les services&nbsp;: une réplique n’allume que
+						ceux que la référence autorise.
 					</p>
 				</dd>
 				{#if i.identifiant}
@@ -244,7 +244,7 @@
 				{/if}
 				{#if i.contact}
 					<dt>Administrateur</dt>
-					<dd>{nomAffiche(i.contact)} — {i.contact.courriel}</dd>
+					<dd>{nomAffiche(i.contact)}{SEPARATEUR.tiret}{i.contact.courriel}</dd>
 				{/if}
 			</dl>
 			{#if i.essai_refuse}

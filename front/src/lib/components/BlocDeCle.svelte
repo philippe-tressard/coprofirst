@@ -9,6 +9,7 @@
 <script lang="ts">
 	import type { ColonneDeLot, LigneDeCle } from '#lib/charges-lots.ts';
 	import { fmtNombre, fmtPartEnPourcent } from '#lib/utils.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let ligne: LigneDeCle;
 	export let colonnes: ColonneDeLot[];
@@ -17,10 +18,8 @@
 <div class="bloc-entete">
 	<span class="cle">{ligne.libelle}</span>
 	<span
-		><strong>{fmtNombre(ligne.total)}/{fmtNombre(ligne.denominateur)}</strong> · {fmtPartEnPourcent(
-			ligne.total,
-			ligne.denominateur,
-		)}</span
+		><strong>{fmtNombre(ligne.total)}/{fmtNombre(ligne.denominateur)}</strong
+		>{SEPARATEUR.point}{fmtPartEnPourcent(ligne.total, ligne.denominateur)}</span
 	>
 </div>
 {#if ligne.description}<span class="detail">{ligne.description}</span>{/if}

@@ -26,6 +26,7 @@
 	import { VITRINE, auteurAvis, classeNote } from '#lib/avis.ts';
 	import { safeDescription } from '#lib/sanitize.ts';
 	import type { Avis } from '#lib/api/index.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let avis: Avis;
 	/** Le lecteur gère le site — servi par `GET /avis` (`gestionnaire`). */
@@ -114,7 +115,7 @@
 			<!--  Ne sort qu'à l'auteur et au gestionnaire : le serveur la tait aux autres. -->
 			<div class="avis-remarque">
 				<EncartAvertissement compact role="note">
-					<strong>Ce qui a manqué</strong> — {avis.remarque}
+					<strong>Ce qui a manqué</strong>{SEPARATEUR.tiret}{avis.remarque}
 				</EncartAvertissement>
 			</div>
 		{/if}
