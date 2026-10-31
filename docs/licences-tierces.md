@@ -35,7 +35,7 @@ se relit ici. La politique — liste blanche, exceptions et leurs motifs — vit
 
 Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `stairs` : absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur; `whatsapp` : Simple Icons.
 
-## Dépendances — `front` (574 paquets)
+## Dépendances — `front` (569 paquets)
 
 | Paquet | Licence | Déclaré | Admise |
 |---|---|---|---|
@@ -172,7 +172,7 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `@humanfs/types` | `Apache-2.0` | devDependencies | oui |
 | `@humanwhocodes/module-importer` | `Apache-2.0` | devDependencies | oui |
 | `@humanwhocodes/retry` | `Apache-2.0` | devDependencies | oui |
-| `@isaacs/cliui` | `BlueOak-1.0.0` | devDependencies | oui |
+| `@isaacs/nonrecursive-glob-match` | `BlueOak-1.0.0` | devDependencies | oui |
 | `@jridgewell/gen-mapping` | `MIT` | devDependencies | oui |
 | `@jridgewell/remapping` | `MIT` | devDependencies | oui |
 | `@jridgewell/resolve-uri` | `MIT` | devDependencies | oui |
@@ -362,7 +362,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `flat-cache` | `MIT` | devDependencies | oui |
 | `flatted` | `ISC` | devDependencies | oui |
 | `for-each` | `MIT` | devDependencies | oui |
-| `foreground-child` | `ISC` | devDependencies | oui |
 | `fs-extra` | `MIT` | devDependencies | oui |
 | `fsevents` | `MIT` | devDependencies (optionnel) | oui |
 | `function-bind` | `MIT` | devDependencies | oui |
@@ -424,7 +423,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `is-weakset` | `MIT` | devDependencies | oui |
 | `isarray` | `MIT` | devDependencies | oui |
 | `isexe` | `ISC` | devDependencies | oui |
-| `jackspeak` | `BlueOak-1.0.0` | devDependencies | oui |
 | `jake` | `Apache-2.0` | devDependencies | oui |
 | `js-tokens` | `MIT` | devDependencies | oui |
 | `jsesc` | `MIT` | devDependencies | oui |
@@ -460,7 +458,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `marked` | `MIT` | dependencies | oui |
 | `math-intrinsics` | `MIT` | devDependencies | oui |
 | `minimatch` | `BlueOak-1.0.0` | devDependencies | oui |
-| `minimatch` | `ISC` | devDependencies | oui |
 | `minipass` | `BlueOak-1.0.0` | devDependencies | oui |
 | `mri` | `MIT` | devDependencies | oui |
 | `mrmime` | `MIT` | devDependencies | oui |
@@ -477,7 +474,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `own-keys` | `MIT` | devDependencies | oui |
 | `p-limit` | `MIT` | devDependencies | oui |
 | `p-locate` | `MIT` | devDependencies | oui |
-| `package-json-from-dist` | `BlueOak-1.0.0` | devDependencies | oui |
 | `path-exists` | `MIT` | devDependencies | oui |
 | `path-key` | `MIT` | devDependencies | oui |
 | `path-parse` | `MIT` | devDependencies | oui |
@@ -540,7 +536,6 @@ Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `st
 | `side-channel-list` | `MIT` | devDependencies | oui |
 | `side-channel-map` | `MIT` | devDependencies | oui |
 | `side-channel-weakmap` | `MIT` | devDependencies | oui |
-| `signal-exit` | `ISC` | devDependencies | oui |
 | `sirv` | `MIT` | devDependencies | oui |
 | `smob` | `MIT` | devDependencies | oui |
 | `source-map` | `BSD-3-Clause` | devDependencies | oui |

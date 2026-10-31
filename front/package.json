@@ -212,7 +212,9 @@
 	"overrides": {
 		"lodash": "4.17.21",
 		"@humanfs/node": "^0.16.8",
-		"fast-uri": "^3.1.6"
+		"fast-uri": "^3.1.6",
+		"glob": "^14.0.3",
+		"minimatch": "^11.0.1"
 	},
 	"type": "module"
 }
