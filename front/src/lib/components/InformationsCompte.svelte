@@ -36,8 +36,7 @@
 				<span class="ligne-lot">
 					{#if lot.batiment_nom}{lot.batiment_nom} —
 					{/if}
-					N° {lot.numero}
-					· {lotTypeLabel(lot.type)}
+					N° {lot.numero}{SEPARATEUR.point}{lotTypeLabel(lot.type)}
 					{#if lot.type_appartement}
 						({lot.type_appartement}){/if}
 					{#if lot.etage != null}{SEPARATEUR.point}{etageLabel(lot.etage, { suffixe: true })}{/if}

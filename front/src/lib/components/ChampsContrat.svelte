@@ -57,6 +57,7 @@
 	import ChampFrequence from '#lib/components/ChampFrequence.svelte';
 	import { CONTRAT } from '#lib/entites/contrat.ts';
 	import { sectionPresente, type Etat } from '#lib/entites/types.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Le formulaire lié — l'écran porte l'état et l'enregistre. */
 	export let contratForm: FormulaireContratData;
@@ -216,7 +217,7 @@
 		bind:perimetre={contratForm.perimetre_cible}
 	>
 		<p class="aide" slot="aidePerimetre">
-			Ce que ce contrat entretient. Il apparaîtra dans le carnet d’entretien de ce périmètre — et
+			Ce que ce contrat entretient. Il apparaîtra dans le carnet d’entretien de ce périmètre{SEPARATEUR.tiret}et
 			dans celui de chacun des espaces qu’il contient.
 		</p>
 	</SectionPerimetre>

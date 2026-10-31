@@ -87,7 +87,9 @@
 			</div>
 			{#if u.meta?.debut && u.meta?.fin}
 				<p class="urgence-horaire">
-					Aujourd'hui {fmtTime(String(u.meta.debut))} → {fmtTime(String(u.meta.fin))}
+					Aujourd'hui {fmtTime(String(u.meta.debut))}{SEPARATEUR.fleche}{fmtTime(
+						String(u.meta.fin),
+					)}
 					{#if u.meta?.prestataire}{SEPARATEUR.point}{u.meta.prestataire}{/if}
 				</p>
 			{:else if u.meta?.full_html}

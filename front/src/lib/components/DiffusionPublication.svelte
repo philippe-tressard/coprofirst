@@ -43,6 +43,8 @@
   **aussi** tenue côté serveur (`visibility.hors_du_hall`), qui seul décide.
 -->
 <script lang="ts">
+	import { SEPARATEUR } from '#lib/separateurs.ts';
+
 	//  ⚠️ `whatsapp`, `syndic` et `cs` ont disparu avec le rendu des canaux (#498).
 	//  Les laisser en props inertes aurait été pire que de les retirer : l'appelant
 	//  aurait continué de les lier, en croyant que ce composant en fait quelque
@@ -75,15 +77,15 @@
 
 {#if reservee}
 	<p class="aide" id={idAideHall}>
-		&#x1F4C4; L'affiche de hall est indisponible sur une actualité réservée — au périmètre ou au
-		conseil syndical : une affiche est punaisée dans un hall et lue par n'importe qui, sans
-		connexion.
+		&#x1F4C4; L'affiche de hall est indisponible sur une actualité réservée{SEPARATEUR.tiret}au
+		périmètre ou au conseil syndical : une affiche est punaisée dans un hall et lue par n'importe
+		qui, sans connexion.
 	</p>
 {:else if annonceHall}
 	<p class="aide">
 		&#x1F4C4; Une affiche PDF sera générée à partir du titre, du contenu, du périmètre et de l'image
 		de cette actualité, puis envoyée aux membres du CS du périmètre. Elle sera consultable dans <strong
-			>Espace CS → Annonces Hall</strong
+			>Espace CS{SEPARATEUR.fleche}Annonces Hall</strong
 		>.
 	</p>
 {/if}

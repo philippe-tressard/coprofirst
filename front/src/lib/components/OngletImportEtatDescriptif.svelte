@@ -48,6 +48,7 @@
 	import { fmtDatetime } from '#lib/date.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { contientTousLesMots } from '#lib/texte.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	let etat: EtatDescriptif | null = null;
 	let chargement = true;
@@ -219,8 +220,8 @@
 	on:importer={(e) => televerser(e.detail.fichier)}
 >
 	<p slot="preparer" class="aide gabarit">
-		<a href={api.gabaritUrl()} download>Télécharger le gabarit vide</a> — les en-têtes seuls, une colonne
-		par clé de charges à ajouter sur le modèle de la dernière.
+		<a href={api.gabaritUrl()} download>Télécharger le gabarit vide</a>{SEPARATEUR.tiret}les
+		en-têtes seuls, une colonne par clé de charges à ajouter sur le modèle de la dernière.
 	</p>
 	<div slot="autrement">
 		{#if etat?.ia_disponible}
@@ -251,7 +252,8 @@
 		<h2 class="config-section-title"><Icon name="building-2" size={17} />Lettres de l'acte</h2>
 		<p class="config-section-intro muted">
 			Le règlement nomme les bâtiments par une lettre ou un numéro qui n'est pas forcément celui de
-			l'application. La correspondance se saisit ici — elle ne se déduit jamais de l'ordre.
+			l'application. La correspondance se saisit ici{SEPARATEUR.tiret}elle ne se déduit jamais de
+			l'ordre.
 		</p>
 		<div class="lettres">
 			{#each etat.batiments as b (b.id)}
@@ -292,7 +294,7 @@
 			<h3>L'assistant lit le règlement</h3>
 			<p>
 				Quelques minutes : l'écran se met à jour seul, et vous pouvez le quitter. Le tableau
-				arrivera ici, avec ses contrôles — rien ne sera appliqué sans vous.
+				arrivera ici, avec ses contrôles{SEPARATEUR.tiret}rien ne sera appliqué sans vous.
 			</p>
 		</div>
 	{:else if etat.lecture_ia === 'echec'}

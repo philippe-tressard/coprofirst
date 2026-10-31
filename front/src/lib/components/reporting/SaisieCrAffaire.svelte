@@ -36,6 +36,7 @@
 		type CrAffaire,
 		type EtatValidation,
 	} from '#lib/api/index.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let pointId: number;
 	export let affaire: AffaireOuverte;
@@ -131,7 +132,7 @@
 	<label class="case">
 		<input type="checkbox" bind:checked={conseilSeul} />
 		<Icon name="shield-check" size={14} />
-		{LIBELLE_CS_ET_PRESENTS} — lu par le conseil syndical et les présents seulement
+		{LIBELLE_CS_ET_PRESENTS}{SEPARATEUR.tiret}lu par le conseil syndical et les présents seulement
 	</label>
 	<PiedFormulaire petit {enCours} on:annule={annuler} />
 </form>

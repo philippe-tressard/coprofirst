@@ -7,6 +7,7 @@
 	import { configStore, siteNomStore } from '#lib/stores/pageConfig.ts';
 	import { CLE_OPERATEUR_PAR_EXPLOITANT } from '#lib/portee.ts';
 	import { libelleRole } from '#lib/roles.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	$: parExploitant = $configStore[CLE_OPERATEUR_PAR_EXPLOITANT] === '1';
 </script>
@@ -19,8 +20,8 @@
 	<div>
 		<dt>{libelleRole('operateur')}</dt>
 		<dd>
-			supervise l’instance — santé, tâches planifiées, base, inscription — sans lire les données des
-			résidents.{parExploitant
+			supervise l’instance{SEPARATEUR.tiret}santé, tâches planifiées, base, inscription{SEPARATEUR.tiret}sans
+			lire les données des résidents.{parExploitant
 				? ' Sur cette instance commune, l’exploitant du serveur le désigne.'
 				: ''}
 		</dd>

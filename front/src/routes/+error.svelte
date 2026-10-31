@@ -20,6 +20,7 @@
 	import EnteteAuthentification from '#lib/components/EnteteAuthentification.svelte';
 	import { loadSiteConfig, siteNomStore } from '#lib/stores/pageConfig.ts';
 	import { erreurDePage, erreurDuServeur } from '#lib/erreur-page.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	//  Le nom et le logo, si le rendu serveur ne les a pas apportés — comme
 	//  à la connexion : la configuration est publique.
@@ -42,7 +43,7 @@
 				</button>
 			{/if}
 		</div>
-		<p class="code-erreur">{$siteNomStore} · erreur {page.status}</p>
+		<p class="code-erreur">{$siteNomStore}{SEPARATEUR.point}erreur {page.status}</p>
 	</div>
 </div>
 

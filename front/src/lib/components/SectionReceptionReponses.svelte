@@ -27,6 +27,7 @@
 	import { essayer, TITRE_PARAMETRAGE_ILLISIBLE } from '#lib/chargement.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import EtatService from '#lib/components/EtatService.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Le serveur d'envoi, pour le bouton « Reprendre les paramètres d'envoi ». */
 	export let serveurSmtp = '';
@@ -159,7 +160,7 @@
 		</div>
 		<div class="largeur-saisie">
 			<EtatService actif={imapConfig.enabled}>
-				Coupé, rien n'est relevé — vous pouvez régler et tester sans conséquence.
+				Coupé, rien n'est relevé{SEPARATEUR.tiret}vous pouvez régler et tester sans conséquence.
 			</EtatService>
 		</div>
 		<div class="form-grid largeur-saisie">

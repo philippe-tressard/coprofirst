@@ -117,8 +117,9 @@
 <div class="validation">
 	{#if point.etat === 'a_valider'}
 		<p class="etat">
-			Envoyé aux présents —
-			<strong>{fmtNombre(v.valides)} sur {fmtNombre(v.destinataires)}</strong>
+			Envoyé aux présents{SEPARATEUR.tiret}<strong
+				>{fmtNombre(v.valides)} sur {fmtNombre(v.destinataires)}</strong
+			>
 			{v.destinataires > 1 ? 'ont validé' : 'a validé'}.
 			{#if v.suspendue}
 				<span class="alerte">Un commentaire attend : la validation automatique est suspendue.</span>
@@ -151,7 +152,7 @@
 		{#each compteRendu.commentaires as c, i (i)}
 			<EncartAvertissement compact class="commentaire">
 				<p class="qui">
-					{c.auteur || 'Un présent'} · {fmtDatetime(
+					{c.auteur || 'Un présent'}{SEPARATEUR.point}{fmtDatetime(
 						c.cree_le,
 					)}{#if c.par_derogation}{SEPARATEUR.point}accord écrit par l’administration{/if}
 				</p>

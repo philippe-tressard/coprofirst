@@ -49,6 +49,7 @@
 	import { supprimerDocument } from '#lib/gestes-document.ts';
 	import { ACCEPT_FICHIERS_REGLEMENT, TYPES_FICHIERS_REGLEMENT } from '#lib/reglement.ts';
 	import { isAdmin } from '#lib/stores/auth.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let etat: EtatReglement;
 	/** Relit l'état de l'onglet — un fichier joint ou retiré change le texte lu. */
@@ -185,9 +186,9 @@
 								</div>
 							</div>
 							<p class="aide">
-								Les résolutions d'une AG, sans noms, un fichier Markdown par assemblée — le plus
-								souvent nés d'une transcription validée ci-dessous. L'assistant les lit après le
-								règlement, de la plus ancienne à la plus récente.
+								Les résolutions d'une AG, sans noms, un fichier Markdown par assemblée{SEPARATEUR.tiret}le
+								plus souvent nés d'une transcription validée ci-dessous. L'assistant les lit après
+								le règlement, de la plus ancienne à la plus récente.
 							</p>
 						{/if}
 						<PiedFormulaire enCours={enregistrement} on:annule={() => (edition = false)} />
@@ -201,8 +202,9 @@
 					<dd><ListeDocuments documents={fichiers} /></dd>
 					<dt>Décisions d'AG lues par l'assistant</dt>
 					<dd>
-						{#if decisions.length}<ListeDocuments documents={decisions} />{:else}Aucune — les PV
-							transcrits et validés s'y ajoutent.{/if}
+						{#if decisions.length}<ListeDocuments
+								documents={decisions}
+							/>{:else}Aucune{SEPARATEUR.tiret}les PV transcrits et validés s'y ajoutent.{/if}
 					</dd>
 				</dl>
 				<p class="aide">Section visible de l'administration seule.</p>

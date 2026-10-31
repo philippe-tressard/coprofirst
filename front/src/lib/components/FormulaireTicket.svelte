@@ -88,6 +88,7 @@
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import { comparerParNom } from '#lib/noms.ts';
 	import { nomCopie, saisieDepuis } from '#lib/saisi-pour.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/**  L'affaire à MODIFIER, avec ses valeurs déjà saisies. `null` (défaut) =
 	 *   création. Le mode ne change pas pendant la vie du composant : l'appelant le
@@ -351,8 +352,8 @@
       `priorite = haute` — pour le résident aussi, désormais. -->
 {#if !modeEdition && !actualite && options.urgente}
 	<div class="alert alert-error largeur-saisie">
-		{GLYPHE_URGENCE} <strong>Urgent</strong> — Le conseil syndical et le syndic seront notifiés
-		immédiatement. En cas de danger immédiat, composez le
+		{GLYPHE_URGENCE} <strong>Urgent</strong>{SEPARATEUR.tiret}Le conseil syndical et le syndic
+		seront notifiés immédiatement. En cas de danger immédiat, composez le
 		<strong>15 (SAMU), 17 (Police) ou 18 (Pompiers)</strong>.
 	</div>
 {/if}

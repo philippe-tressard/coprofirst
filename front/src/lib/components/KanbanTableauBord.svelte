@@ -41,6 +41,7 @@
 		MOT_COLONNE_VIDE,
 		type KanbanCtx,
 	} from '#lib/kanban.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Les affaires — la page les charge, ce composant les trie. */
 	export let affaires: Ticket[] = [];
@@ -206,8 +207,10 @@
 					{/each}
 					{#if mobileKanbanCurrent.total > 5}
 						<p class="kb-mobile-plus">
-							+{mobileKanbanCurrent.total - 5} élément{mobileKanbanCurrent.total - 5 > 1 ? 's' : ''} —
-							<a href={lienKanban} class="kb-mobile-plus-lien">voir tout</a>
+							+{mobileKanbanCurrent.total - 5} élément{mobileKanbanCurrent.total - 5 > 1
+								? 's'
+								: ''}{SEPARATEUR.tiret}<a href={lienKanban} class="kb-mobile-plus-lien">voir tout</a
+							>
 						</p>
 					{/if}
 				</div>

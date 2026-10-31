@@ -129,10 +129,9 @@
 		dans="nom du compte, n° de lot et bâtiment"
 	>
 		<span class="compte"
-			>{filtered.length} association{filtered.length > 1 ? 's' : ''} — {grouped.length} utilisateur{grouped.length >
-			1
+			>{filtered.length} association{filtered.length > 1
 				? 's'
-				: ''}</span
+				: ''}{SEPARATEUR.tiret}{grouped.length} utilisateur{grouped.length > 1 ? 's' : ''}</span
 		>
 	</ChampRecherche>
 </div>

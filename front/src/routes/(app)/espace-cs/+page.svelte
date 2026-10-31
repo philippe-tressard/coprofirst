@@ -34,6 +34,7 @@
 	import { agitPourAutrui } from '#lib/roles.ts';
 	import { accepterCommandeAcces, refuserCommandeAcces } from '#lib/commandes-acces.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	$: _pc = getPageConfig($configStore, 'espace-cs', defautsDePage('espace-cs'));
 	$: _siteNom = $siteNomStore;
@@ -315,8 +316,11 @@
 						<div class="pending-info">
 							<strong>{cmd.demandeur_nom}</strong>
 							<span class="text-muted-sm">
-								{cmd.batiment ? `${cmd.batiment} · ` : ''}{cmd.lot} ·
-								{typeAccesLabel(cmd.type)} · {fmtNombre(cmd.quantite)}
+								{cmd.batiment
+									? `${cmd.batiment} · `
+									: ''}{cmd.lot}{SEPARATEUR.point}{typeAccesLabel(
+									cmd.type,
+								)}{SEPARATEUR.point}{fmtNombre(cmd.quantite)}
 							</span>
 							<span class="text-muted-sm">{fmtDateShort(cmd.cree_le)}</span>
 						</div>

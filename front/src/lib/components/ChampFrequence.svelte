@@ -22,6 +22,7 @@
 <script lang="ts">
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
 	import { FREQUENCES, frequenceLabel } from '#lib/prestataires.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let frequenceType: string | null | undefined = '';
 	export let frequenceValeur: number | string | null | undefined = null;
@@ -41,7 +42,7 @@
 
 {#if duContrat}
 	<p class="aide frequence">
-		Fréquence : {frequenceLabel(duContrat) || 'aucune'} — celle du contrat.
+		Fréquence : {frequenceLabel(duContrat) || 'aucune'}{SEPARATEUR.tiret}celle du contrat.
 	</p>
 {:else}
 	<div class="form-grid form-grid-2 frequence">
