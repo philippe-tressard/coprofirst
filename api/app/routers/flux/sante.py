@@ -24,6 +24,7 @@ from app.models.core import (
     Sondage,
     StatutCommande,
     StatutDemandeProfil,
+    StatutTicket,
     Ticket,
 )
 from app.routers.copropriete import contrat_de_reference
@@ -37,7 +38,7 @@ from app.utils.visibility import (
 )
 
 from .commun import ContexteFlux
-from .schemas import FluxSante
+from .schemas import FluxSante, RendezVous
 from app.utils.categories_ticket import ticket_urgent
 from app.auth.deps import est_moderateur
 
@@ -115,6 +116,28 @@ def _prochains(ctx: ContexteFlux) -> list[dict]:
 
     prochains.sort(key=lambda x: x.get("date", ""))
     return prochains[:_MAX_PROCHAINS]
+
+
+def _rendez_vous(ctx: ContexteFlux, visibles: list[Ticket]) -> RendezVous | None:
+    """Le prochain rendez-vous : l'affaire datée la plus proche qui n'est pas passée.
+
+    « Pas passée » : elle commence maintenant ou plus tard, ou elle est EN COURS
+    (une fin encore à venir) — une AG commencée il y a une heure reste le
+    rendez-vous du jour. Une affaire annulée n'en est plus un. La lecture suit
+    `ticket_visible`, déjà appliqué par l'appelant : la pastille ne nomme jamais
+    une affaire que l'écran ne montrerait pas.
+    """
+    a_venir = [
+        t
+        for t in visibles
+        if t.debut is not None
+        and t.statut != StatutTicket.annulé
+        and max(t.debut, t.fin or t.debut) >= ctx.now
+    ]
+    if not a_venir:
+        return None
+    t = min(a_venir, key=lambda x: x.debut)
+    return RendezVous(id=t.id, titre=t.titre, debut=t.debut, fin=t.fin)
 
 
 def _nb_commandes_acces(ctx: ContexteFlux) -> int:
@@ -248,4 +271,5 @@ def calculer(ctx: ContexteFlux) -> FluxSante:
         validations_admin=_validations_admin(ctx),
         tickets_relance_syndic=_relances_syndic(ctx),
         prochains=_prochains(ctx),
+        rendez_vous=_rendez_vous(ctx, tous),
     )

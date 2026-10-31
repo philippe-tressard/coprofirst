@@ -84,8 +84,8 @@ export const REPORT_VUES = [
 ] as const;
 export type ReportVue = (typeof REPORT_VUES)[number];
 
-/**  `?vue=relance` — l'adresse de la relance syndic (`HREF_RELANCE_SYNDIC`, l'alerte
- *   du tableau de bord). La vue « Relance syndic » est devenue le mode « Relancer
+/**  `?vue=relance` — l'adresse de la relance syndic (`HREF_RELANCE_SYNDIC`, le compteur
+ *   « N relances » de la pastille Espace CS). La vue « Relance syndic » est devenue le mode « Relancer
  *   le syndic » du Suivi des affaires (#2035) : l'adresse y mène, en ce mode. */
 export const VUE_RELANCE = 'relance';
 

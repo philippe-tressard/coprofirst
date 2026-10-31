@@ -373,52 +373,8 @@ export interface Notification {
 	cree_le: string;
 }
 
-export interface FluxItem {
-	id: string;
-	type: string;
-	date: string;
-	cree_le?: string;
-	titre: string;
-	detail?: string;
-	badges: string[];
-	icon: string;
-	lien?: string;
-	meta: Record<string, unknown>;
-	/** « Me concerne », posé par le serveur (#2215) ; `null` pour ce qui ne porte aucun lieu. */
-	me_concerne?: boolean | null;
-}
-export interface FluxProchain {
-	id: string;
-	date: string;
-	titre: string;
-	type: string;
-	icon: string;
-	ev_type?: string;
-	description?: string;
-	lieu?: string;
-	perimetre?: string;
-	prestataire?: string;
-	fin?: string;
-	statut_kanban?: string;
-}
-export interface FluxSante {
-	tickets_ouverts: number;
-	tickets_urgents: number;
-	resolution_moyenne_heures: number | null;
-	sondages_actifs: number;
-	/** File de l'onglet « Comptes & accès » de l'Espace CS : comptes + demandes d'accès. */
-	validations_cs: number;
-	/** File de `/admin` : les deux mêmes, plus les demandes de modification de profil. */
-	validations_admin: number;
-	tickets_relance_syndic: number;
-	prochains: FluxProchain[];
-}
-export interface FluxResponse {
-	items: FluxItem[];
-	sante: FluxSante;
-	/**  Le délai d'archivage du site, en jours : le seuil « récent » de l'accueil (#2060). */
-	delai_recent_jours: number;
-}
+//  Le fil de l'accueil et ses pastilles vivent dans leur module (#2397).
+export type { FluxItem, FluxProchain, RendezVous, FluxSante, FluxResponse } from './types-flux';
 export interface EpinglesCompte {
 	total: number;
 	publications: number;

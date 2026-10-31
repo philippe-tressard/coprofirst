@@ -14,10 +14,15 @@
 
   | `forme` | Où | Pourquoi |
   |---|---|---|
-  | `carte` | en tête de l'accueil | se lit une fois, sert tout le temps : elle mérite la place |
+  | `pastille` | au bout de la rangée de raccourcis de l'accueil | se lit une fois, sert tout le temps : un lien stable, pas un bandeau |
   | `bouton` | au pied d'un annuaire | un renvoi parmi d'autres contacts |
 
-  `misEnAvant` habille la carte en avertissement — l'appelant la pose pour un
+  🔴 La `carte` pleine largeur en tête de l'accueil est devenue une `pastille`
+  le 31/10/2026 (#2397, maquette A2 arbitrée à l'écran) : elle prenait la
+  hauteur d'un bandeau pour un lien qu'on ouvre rarement. Son sous-titre — ce que
+  la fiche contient — passe dans le nom accessible et la bulle de survol.
+
+  `misEnAvant` habille la pastille en avertissement — l'appelant la pose pour un
   locataire, qui n'a pas d'autre accès aux règles de l'immeuble.
 
   🔒 `npm run lint:lien-consignes` refuse l'adresse de la fiche écrite ailleurs.
@@ -26,31 +31,28 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import { admin as adminApi } from '#lib/api/index.ts';
 
-	export let forme: 'carte' | 'bouton' = 'bouton';
-	/** Carte seulement : habillée en avertissement. */
+	export let forme: 'pastille' | 'bouton' = 'bouton';
+	/** Pastille seulement : habillée en avertissement. */
 	export let misEnAvant = false;
 
 	//  L'adresse vient du client d'API : elle s'écrivait ici en dur (#1578).
 	const ADRESSE = adminApi.ficheArrivantUrl();
 	const LIBELLE = 'Consignes de la copropriété';
+	const CONTENU = 'Règlement intérieur, tri sélectif, accès, stationnement et contacts utiles';
 </script>
 
-{#if forme === 'carte'}
+{#if forme === 'pastille'}
 	<a
 		href={ADRESSE}
 		target="_blank"
 		rel="noopener"
-		class="consignes-carte"
+		class="consignes-pastille"
 		class:mis-en-avant={misEnAvant}
+		aria-label="{LIBELLE} — {CONTENU} (nouvel onglet)"
+		title={CONTENU}
 	>
-		<span class="consignes-icone" aria-hidden="true">📄</span>
-		<span class="consignes-texte">
-			<strong class="consignes-titre">{LIBELLE}</strong>
-			<span class="consignes-sous-titre"
-				>Règlement intérieur, tri sélectif, accès, stationnement et contacts utiles</span
-			>
-		</span>
-		<span class="consignes-fleche" aria-hidden="true"><Icon name="chevron-right" size={18} /></span>
+		<Icon name="file-text" size={14} />
+		Consignes
 	</a>
 {:else}
 	<div class="form-actions">
@@ -62,89 +64,50 @@
 {/if}
 
 <style>
-	/* ═══ Carte ═══════════════════════════════════════════════════════════
-	   L'apparition (fondu, 8 px) est celle de la section qui l'enveloppe
-	   (`.section-reveal`, socle.css) : la carte la recopiait. Elle ne garde que
-	   ce qui lui appartient — le survol et l'appui. */
-	.consignes-carte {
-		display: flex;
+	/* ═══ Pastille ═══════════════════════════════════════════════════════
+	   La forme d'une pastille de raccourci, en plus discret : sans fond tant
+	   qu'elle n'est pas mise en avant — un renvoi, pas un lieu de travail. Sa
+	   place (au bout de la rangée) est décidée par la rangée, pas ici. */
+	.consignes-pastille {
+		display: inline-flex;
 		align-items: center;
-		gap: 0.75rem;
-		margin: 0.75rem 0;
-		padding: 0.75rem 1rem;
-		border-radius: var(--radius);
-		background: var(--color-primary-light);
-		border: 1px solid var(--color-primary);
-		border-left: 4px solid var(--color-primary);
+		gap: 0.35rem;
+		padding: 0.4rem 0.8rem;
+		border-radius: 2rem;
+		border: 1px dashed var(--color-border-champ);
+		font-size: var(--fs-sm);
+		font-weight: 500;
+		color: var(--color-text-muted);
 		text-decoration: none;
-		color: inherit;
+		white-space: nowrap;
 		transition:
-			box-shadow var(--duree-geste),
+			border-color var(--duree-geste),
+			color var(--duree-geste),
 			transform var(--duree-geste) var(--ease-out);
 	}
 	@media (hover: hover) and (pointer: fine) {
-		.consignes-carte:hover {
-			box-shadow: var(--shadow);
+		.consignes-pastille:hover {
+			border-color: var(--color-primary);
+			color: var(--color-primary);
 		}
 	}
-	/*  Le soulèvement au survol : seulement pour qui accepte le mouvement. */
-	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-		.consignes-carte:hover {
-			transform: translateY(-1px);
-		}
+	.consignes-pastille:active {
+		transform: scale(0.97);
 	}
-	/*  L'appui se voit, au doigt comme à la souris. Un cran plus discret qu'un
-	    bouton (0,97) : la carte occupe toute la largeur. */
-	.consignes-carte:active {
-		transform: scale(0.99);
-	}
-	.consignes-carte:focus-visible {
+	.consignes-pastille:focus-visible {
 		outline: 2px solid var(--color-accent);
 		outline-offset: 2px;
 	}
-	.consignes-carte.mis-en-avant {
-		background: var(--color-warning-fond);
+	.consignes-pastille.mis-en-avant {
+		border-style: solid;
 		border-color: var(--color-warning);
-		border-left-color: var(--color-warning);
-		/*  Mise en avant FIXE (26/09/2026) : elle pulsait à chaque visite, sans fin. */
-	}
-	.consignes-icone {
-		font-size: var(--fs-picto);
-		flex-shrink: 0;
-	}
-	.consignes-texte {
-		flex: 1;
-		min-width: 0;
-	}
-	.consignes-titre {
-		font-size: var(--fs-base);
-		font-weight: 600;
-		color: var(--color-primary);
-		display: block;
-	}
-	.consignes-sous-titre {
-		font-size: var(--fs-xs);
-		color: var(--color-text-muted);
-		line-height: 1.3;
-	}
-	.consignes-fleche {
-		flex-shrink: 0;
-		color: var(--color-primary);
-		opacity: 0.6;
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.consignes-carte,
-		.consignes-carte:active {
-			transform: none;
-		}
+		background: var(--color-warning-fond);
+		color: var(--color-warning-texte);
 	}
 	@media (max-width: 767px) {
-		.consignes-carte {
-			gap: 0.5rem;
-			padding: 0.6rem 0.75rem;
-		}
-		.consignes-icone {
-			font-size: var(--fs-picto-sm);
+		.consignes-pastille {
+			font-size: var(--fs-2xs);
+			padding: 0.35rem 0.65rem;
 		}
 	}
 

@@ -24,11 +24,10 @@ const PORTE = 'lib/components/EncartAvertissement.svelte';
 
 /** Fichier → [occurrences, pourquoi ce n'est pas un encart]. */
 const EMPRUNTS = {
-	'lib/components/AlerteRelanceSyndic.svelte': [1, 'le SURVOL d’une carte de relance'],
 	'lib/components/RaccourcisRapides.svelte': [1, 'le SURVOL de la pastille du conseil'],
 	'lib/components/LienConsignes.svelte': [
 		1,
-		'la CARTE des consignes mise en avant, venue de l’accueil (#779)',
+		'la PASTILLE des consignes mise en avant pour un locataire (#779, #2397)',
 	],
 	'lib/components/DroitsRgpd.svelte': [1, 'une CARTE de section teintée, titre et contenu'],
 	'lib/components/PanneauModeration.svelte': [

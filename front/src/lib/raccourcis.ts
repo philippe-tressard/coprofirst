@@ -25,7 +25,7 @@
  * décidées — cf. `api/tests/test_compteurs_tableau_de_bord.py`.
  */
 import { aRole } from '#lib/stores/auth.ts';
-import type { FluxSante, User } from '#lib/api/index.ts';
+import type { FluxSante, RendezVous, User } from '#lib/api/index.ts';
 
 /** Un décompte affiché sur une pastille. `valeur === 0` → rien ne s'affiche. */
 export interface CompteurRaccourci {
@@ -61,6 +61,13 @@ export interface Raccourci {
 	visible: (user: User | null) => boolean;
 	/** D'où vient le nombre affiché. Une seule source par pastille, côté serveur. */
 	compteurs: (sante: FluxSante) => CompteurRaccourci[];
+	/**
+	 *  Une pastille d'AGENDA (#2397) : elle montre la date et le titre du prochain
+	 *  rendez-vous, et mène à SON affaire — pas à la liste filtrée. Sans
+	 *  rendez-vous, elle se tait : une pastille « Calendrier » nue menait à un
+	 *  filtre de la page Affaires, sans rien apprendre de plus que le menu.
+	 */
+	agenda?: (sante: FluxSante) => RendezVous | null | undefined;
 }
 
 /** Tout utilisateur connecté voit ce raccourci. */
@@ -69,13 +76,13 @@ const TOUS = (user: User | null) => user !== null;
 /**
  *  L'adresse de la relance syndic — **une seule écriture**.
  *
- *  Elle vit ici parce que deux endroits y mènent : la pastille de la rangée de
- *  raccourcis et l'alerte du tableau de bord. Écrite deux fois, elle aurait
- *  divergé au premier renommage d'onglet — et c'est exactement ce que
- *  `project_onglet_est_une_adresse` enseigne : un onglet EST une adresse, donc
- *  une adresse d'onglet est une donnée, pas une chaîne qu'on retape.
+ *  Deux endroits y menaient : le compteur « N relances » de la pastille Espace
+ *  CS et un bandeau d'alerte du tableau de bord. Le bandeau est parti le
+ *  31/10/2026 (#2397) — il redisait la pastille, en prenant la place d'une
+ *  carte. Un onglet EST une adresse (`project_onglet_est_une_adresse`) : la
+ *  constante reste la donnée, pas une chaîne qu'on retape.
  */
-export const HREF_RELANCE_SYNDIC = '/espace-cs/reporting?vue=relance';
+const HREF_RELANCE_SYNDIC = '/espace-cs/reporting?vue=relance';
 
 export const RACCOURCIS: Raccourci[] = [
 	{
@@ -89,16 +96,26 @@ export const RACCOURCIS: Raccourci[] = [
 		//  son fil, seul de la rangée à bouger. Le compteur serveur applique
 		//  désormais `ticket_visible` — un résident y lit ses affaires, pas celles
 		//  de la résidence.
-		compteurs: (s) => [{ valeur: s.tickets_ouverts }],
+		compteurs: (s) => [
+			{ valeur: s.tickets_ouverts },
+			//  Calculé par le serveur depuis toujours, affiché nulle part avant #2397.
+			{
+				valeur: s.tickets_urgents,
+				ton: 'urgent',
+				libelle: (n) => `${n} urgente${n > 1 ? 's' : ''}`,
+			},
+		],
 	},
 	{
 		id: 'calendrier',
 		libelle: 'Calendrier',
-		//  Le Calendrier est le filtre « Calendrier » d'Affaires (#1092, 23/09/2026).
+		//  Le Calendrier est le filtre « Calendrier » d'Affaires (#1092, 23/09/2026) ;
+		//  la pastille montre le PROCHAIN rendez-vous et mène à lui (#2397).
 		href: '/tickets?nature=calendrier',
 		icone: 'calendar',
 		visible: TOUS,
 		compteurs: () => [],
+		agenda: (s) => s.rendez_vous,
 	},
 	{
 		id: 'sondages',
@@ -108,15 +125,9 @@ export const RACCOURCIS: Raccourci[] = [
 		visible: TOUS,
 		compteurs: (s) => [{ valeur: s.sondages_actifs }],
 	},
-	{
-		id: 'actualites',
-		libelle: 'Actualités',
-		//  Le filtre « Actualité » de la vue Affaires (#1092) : la page n'existe plus.
-		href: '/tickets?nature=actualite',
-		icone: 'megaphone',
-		visible: TOUS,
-		compteurs: () => [],
-	},
+	//  🔴 La pastille « Actualités » est partie le 31/10/2026 (#2397) : elle menait
+	//  au filtre « Actualité » de la page Affaires, sans compteur — un module qui
+	//  n'existe plus depuis #1092, annoncé comme s'il existait.
 	{
 		id: 'espace-cs',
 		libelle: 'Espace CS',

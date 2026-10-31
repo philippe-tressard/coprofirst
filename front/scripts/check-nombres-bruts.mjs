@@ -71,6 +71,9 @@ const HOMONYMES = {
 	'src/lib/components/Gouttiere.svelte': {
 		mois: '`date.mois` est le morceau TEXTE de `partiesDate` (« avr. »)',
 	},
+	'src/lib/components/RaccourcisRapides.svelte': {
+		mois: '`jour.mois` est le morceau TEXTE de `partiesDate` (« nov. »)',
+	},
 	'src/lib/components/ChampFrequence.svelte': {
 		nombre: '`unite.nombre` est le LIBELLÉ du champ (« Tous les N mois »)',
 	},

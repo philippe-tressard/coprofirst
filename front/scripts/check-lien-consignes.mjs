@@ -14,8 +14,9 @@
  *
  *  Le libellé retenu est celui du manuel et du courriel d'arrivée
  *  (`routers/admin/arrivants.py`) : c'est le nom sous lequel l'arrivant les
- *  reçoit. Les deux FORMES restent — une carte en tête de l'accueil, un bouton
- *  au pied d'un annuaire — et se choisissent par la prop `forme`.
+ *  reçoit. Les deux FORMES restent — une pastille au bout des raccourcis de
+ *  l'accueil (#2397), un bouton au pied d'un annuaire — et se choisissent par
+ *  la prop `forme`.
  *
  *  Ce contrôle refuse la quatrième copie : l'adresse de la fiche écrite hors du
  *  composant.
@@ -53,6 +54,6 @@ process.exit(
 		],
 		ok: 'Consignes de la copropriété : liées par LienConsignes seul',
 		ko: 'lien(s) vers la fiche des consignes écrit(s) à la main',
-		conseil: 'Employer `<LienConsignes forme="carte" | "bouton" />`.',
+		conseil: 'Employer `<LienConsignes forme="pastille" | "bouton" />`.',
 	}),
 );
