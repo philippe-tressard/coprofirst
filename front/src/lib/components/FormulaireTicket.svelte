@@ -73,7 +73,7 @@
 	import { sectionPresente } from '#lib/entites/types.ts';
 	import { TICKET } from '#lib/entites/ticket.ts';
 	import { PUBLICATION } from '#lib/entites/publication.ts';
-	import { GLYPHE_URGENCE, motifWhatsappInterdit } from '#lib/options-publication.ts';
+	import { motifWhatsappInterdit } from '#lib/options-publication.ts';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { demanderFusion, SANS_FUSION } from '#lib/fusion-affaires.ts';
 	import {
@@ -88,6 +88,7 @@
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import { comparerParNom } from '#lib/noms.ts';
 	import { nomCopie, saisieDepuis } from '#lib/saisi-pour.ts';
+	import AlerteEnvoiUrgent from '#lib/components/AlerteEnvoiUrgent.svelte';
 
 	/**  L'affaire à MODIFIER, avec ses valeurs déjà saisies. `null` (défaut) =
 	 *   création. Le mode ne change pas pendant la vie du composant : l'appelant le
@@ -346,15 +347,9 @@
 	}
 </script>
 
-<!--  L'avertissement n'est rendu qu'en CRÉATION d'une affaire suivie : c'est
-      l'envoi qui notifie. Il suit la case « Urgent » (#820), qui pose
-      `priorite = haute` — pour le résident aussi, désormais. -->
+<!--  Rendu en CRÉATION d'une affaire suivie seulement : c'est l'envoi qui notifie. -->
 {#if !modeEdition && !actualite && options.urgente}
-	<div class="alert alert-error largeur-saisie">
-		{GLYPHE_URGENCE} <strong>Urgent</strong> — Le conseil syndical et le syndic seront notifiés
-		immédiatement. En cas de danger immédiat, composez le
-		<strong>15 (SAMU), 17 (Police) ou 18 (Pompiers)</strong>.
-	</div>
+	<AlerteEnvoiUrgent />
 {/if}
 
 {#if error}

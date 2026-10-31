@@ -304,7 +304,7 @@
 							<td>
 								{#if imp.lot_label}
 									<span class="badge badge-green"
-										>{imp.lot_label} · {porteurs(imp.lot_porteurs)}</span
+										>{imp.lot_label}{SEPARATEUR.point}{porteurs(imp.lot_porteurs)}</span
 									>
 								{:else if imp.statut !== 'ignore'}
 									<span class="badge badge-orange">à préciser</span>
@@ -377,7 +377,7 @@
 										<p class="aide">
 											Indices du fichier : <strong>{imp.nom_proprietaire}</strong>{imp.nom_locataire
 												? ` · locataire ${imp.nom_locataire}`
-												: ''} · {modele.colonneCle.entete.toLowerCase()}
+												: ''}{SEPARATEUR.point}{modele.colonneCle.entete.toLowerCase()}
 											<code>{champDe(imp, modele.colonneCle.cle) ?? '—'}</code>
 										</p>
 										<div class="imp-edit-grid">

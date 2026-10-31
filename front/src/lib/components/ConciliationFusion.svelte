@@ -21,6 +21,7 @@
 	import { fmtNombre } from '#lib/utils.ts';
 	import type { CandidateFusion } from '#lib/api/index.ts';
 	import type { DecisionConciliation } from '#lib/fusion-conciliation.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** L'affaire refusée, avec son plan (`conciliation`). */
 	export let candidate: CandidateFusion;
@@ -50,7 +51,8 @@
 		<ul class="ecarts">
 			{#each conciliation.ecarts as e (e.champ)}
 				<li>
-					<strong>{e.libelle}</strong> — {numeroPrincipale} : {e.principale} · {candidate.numero} : {e.absorbee}
+					<strong>{e.libelle}</strong>{SEPARATEUR.tiret}{numeroPrincipale} : {e.principale}{SEPARATEUR.point}{candidate.numero}
+					: {e.absorbee}
 				</li>
 			{/each}
 		</ul>
@@ -82,9 +84,9 @@
 						</p>
 					{:else if o.resultat}
 						<p class="aide sous-case">
-							{numeroPrincipale} serait lue ainsi — {o.resultat.perimetre} · {o.resultat
-								.destinataires}
-							· {o.resultat.acces}.
+							{numeroPrincipale} serait lue ainsi{SEPARATEUR.tiret}{o.resultat
+								.perimetre}{SEPARATEUR.point}{o.resultat.destinataires}{SEPARATEUR.point}{o.resultat
+								.acces}.
 							{#if o.perdants}Perdent l'accès à un fil qu'elles lisaient : {fmtNombre(
 									o.perdants,
 								)}.{/if}

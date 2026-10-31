@@ -81,7 +81,7 @@
 				<li>
 					<span class="quand">{fmtDatetime(p.debut)}</span>
 					<span class="muet">
-						{p.ou} · {fmtNombre(p.abordees)} affaire{p.abordees > 1 ? 's' : ''}
+						{p.ou}{SEPARATEUR.point}{fmtNombre(p.abordees)} affaire{p.abordees > 1 ? 's' : ''}
 						{#if p.valide_le}{SEPARATEUR.point}validé le {fmtDate(p.valide_le)}{/if}
 					</span>
 					<button

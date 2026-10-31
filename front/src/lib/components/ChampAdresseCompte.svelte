@@ -20,6 +20,7 @@
 	import ChampMotDePasse from './ChampMotDePasse.svelte';
 	import EtoileRequis from './EtoileRequis.svelte';
 	import { adresseChangee } from '#lib/comptes.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Identifiant du champ d'adresse ; celui du mot de passe en dérive. */
 	export let id: string;
@@ -52,7 +53,8 @@
 			du compte jusqu’à ce que son titulaire clique sur le lien.
 		{:else}
 			Un lien de confirmation partira à la nouvelle adresse et un avis à l’actuelle, qui reste celle
-			de votre compte — connexion comprise — jusqu’à ce que vous cliquiez sur le lien.
+			de votre compte{SEPARATEUR.tiret}connexion comprise{SEPARATEUR.tiret}jusqu’à ce que vous
+			cliquiez sur le lien.
 		{/if}
 	</p>
 {/if}

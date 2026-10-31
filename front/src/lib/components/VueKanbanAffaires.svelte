@@ -40,6 +40,8 @@
 	import { createEventDispatcher } from 'svelte';
 	import InitPrestataires from '#lib/components/InitPrestataires.svelte';
 
+	import { SEPARATEUR } from '#lib/separateurs.ts';
+
 	export let tickets: Ticket[] = [];
 	/** Le conseil glisse les cartes ; les autres lisent. */
 	export let peutDeplacer = false;
@@ -132,7 +134,9 @@
 					{#if t.prestataire_nom}<span class="kanban-card-prest">{t.prestataire_nom}</span>{/if}
 					<strong class="kanban-card-titre">{t.titre}</strong>
 					<div class="kanban-card-footer">
-						<span class="kanban-card-type">{categorieTicketLabel(t.categorie)} · #{t.numero}</span>
+						<span class="kanban-card-type"
+							>{categorieTicketLabel(t.categorie)}{SEPARATEUR.point}#{t.numero}</span
+						>
 					</div>
 				</a>
 			{:else}

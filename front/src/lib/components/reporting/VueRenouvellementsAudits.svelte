@@ -11,6 +11,7 @@
 	import { fmtDate } from '#lib/date.ts';
 	import { relire } from '#lib/utils.ts';
 	import { anneeCourante, diagnosticsAvecEcheance, type DiagType } from '#lib/reporting.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let reportDiagTypes: DiagType[] = [];
 
@@ -39,7 +40,10 @@
 
 <!-- Section 2 : Diagnostics et Contrôles Réglementaires -->
 <section class="report-card">
-	<h3>🔍 Diagnostics et Contrôles Réglementaires — {ANNEE_COURANTE}–{ANNEE_COURANTE + 10}</h3>
+	<h3>
+		🔍 Diagnostics et Contrôles Réglementaires{SEPARATEUR.tiret}{ANNEE_COURANTE}–{ANNEE_COURANTE +
+			10}
+	</h3>
 	<p class="report-intro">
 		Échéances issues de Résidence / Diagnostics et Contrôles Réglementaires, calculées depuis le
 		dernier rapport + fréquence légale.

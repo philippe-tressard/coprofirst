@@ -40,6 +40,7 @@
 	import ArriveesNotification from '#lib/components/ArriveesNotification.svelte';
 	import Pastille from '#lib/components/Pastille.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	let telemetryData: TableauTelemetrie | null = null;
 	let telemetryLoading = true;
@@ -120,7 +121,7 @@
 
 <section class="card config-section">
 	<h2 class="config-section-title">
-		<Icon name="bar-chart-3" size={17} />Télémétrie — Utilisation de l'application
+		<Icon name="bar-chart-3" size={17} />Télémétrie{SEPARATEUR.tiret}Utilisation de l'application
 	</h2>
 	<p class="aide">Statistiques d'utilisation : qui utilise quoi et quand.</p>
 

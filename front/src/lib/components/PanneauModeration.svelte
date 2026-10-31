@@ -65,7 +65,8 @@
 			{/each}
 			<p class="moderation-aide">
 				Pour retirer un contenu, utilisez le bouton 🗑️ sur le contenu concerné, puis marquez le
-				signalement « traité ». Les récidives se gèrent via Admin → bannissement Communauté.
+				signalement « traité ». Les récidives se gèrent via Admin{SEPARATEUR.fleche}bannissement
+				Communauté.
 			</p>
 		</div>
 	{/if}

@@ -83,7 +83,7 @@
 		<ul class="alertes">
 			{#each fiche.alertes as a (a.code)}
 				<li>
-					<strong>{a.libelle}</strong> — {a.message}
+					<strong>{a.libelle}</strong>{SEPARATEUR.tiret}{a.message}
 					{#if a.grave}<span class="badge badge-red">courriel à l’opérateur</span>{/if}
 				</li>
 			{/each}
@@ -114,8 +114,8 @@
 			Supprimer retire l’installation de la liste ; seul le contrat accepté reste archivé, cinq ans
 			après la résiliation.
 		{:else}
-			La décision part dans le bail au prochain renouvellement de l’installation — chaque nuit, ou
-			quand son administrateur le demande.
+			La décision part dans le bail au prochain renouvellement de l’installation{SEPARATEUR.tiret}chaque
+			nuit, ou quand son administrateur le demande.
 		{/if}
 	</p>
 {/if}
@@ -189,7 +189,9 @@
 		<dt>Disque</dt>
 		<dd>{mo(r.hebergement.disque_occupe_mo)} sur {mo(r.hebergement.disque_total_mo)}</dd>
 		<dt>Base</dt>
-		<dd>{r.hebergement.moteur_base ?? 'inconnu'} · {mo(r.hebergement.taille_bases_mo)}</dd>
+		<dd>
+			{r.hebergement.moteur_base ?? 'inconnu'}{SEPARATEUR.point}{mo(r.hebergement.taille_bases_mo)}
+		</dd>
 		<dt>Sauvegarde</dt>
 		<dd>
 			<span class="conformites">
@@ -212,7 +214,9 @@
 		{#each r.coproprietes as c (c.identifiant)}
 			<dt>Copropriété</dt>
 			<dd>
-				{c.nom} · {fmtNombre(c.lots)} lots · {fmtNombre(c.utilisateurs_actifs)} utilisateurs actifs sur
+				{c.nom}{SEPARATEUR.point}{fmtNombre(c.lots)} lots{SEPARATEUR.point}{fmtNombre(
+					c.utilisateurs_actifs,
+				)} utilisateurs actifs sur
 				{fmtNombre(c.utilisateurs_inscrits)}
 			</dd>
 		{/each}

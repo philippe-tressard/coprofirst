@@ -15,6 +15,7 @@
 	import ConsommationIA from '#lib/components/ConsommationIA.svelte';
 	import TachesPlanifiees from '#lib/components/TachesPlanifiees.svelte';
 	import { isAdmin, isOperateur } from '#lib/stores/auth.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 </script>
 
 <!--  🏢 La supervision technique (tâches, contrôles, base, santé)
@@ -31,8 +32,8 @@
 	</p>
 {:else}
 	<p class="muted intro-maintenance">
-		La supervision technique de l'installation — tâches planifiées, contrôles de fiabilité, base de
-		données — est réservée à l'opérateur de la plateforme.
+		La supervision technique de l'installation{SEPARATEUR.tiret}tâches planifiées, contrôles de
+		fiabilité, base de données{SEPARATEUR.tiret}est réservée à l'opérateur de la plateforme.
 	</p>
 {/if}
 

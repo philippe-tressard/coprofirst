@@ -11,6 +11,7 @@
 	import { fmtNombre } from '#lib/utils.ts';
 	import PanneauTelemetrie from '#lib/components/PanneauTelemetrie.svelte';
 	import type { ArriveeNotification } from '#lib/api/index.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let arrivees: ArriveeNotification[] = [];
 	export let periode: string;
@@ -54,10 +55,11 @@
 	<svelte:fragment slot="pied">
 		<p>
 			Les liens des courriels et des messages du groupe portent leur canal, et pour un courriel son
-			type — jamais l’adresse ni l’identité du destinataire, et jamais un lien à usage unique (mot
-			de passe oublié, vérification d’adresse). Une arrivée compte même si la personne doit d’abord
-			se connecter. Un courriel envoyé à plusieurs personnes compte pour un message. Seuls les liens
-			envoyés depuis la mise en place de l’étiquette sont comptés. Conservation : 30 jours.
+			type{SEPARATEUR.tiret}jamais l’adresse ni l’identité du destinataire, et jamais un lien à
+			usage unique (mot de passe oublié, vérification d’adresse). Une arrivée compte même si la
+			personne doit d’abord se connecter. Un courriel envoyé à plusieurs personnes compte pour un
+			message. Seuls les liens envoyés depuis la mise en place de l’étiquette sont comptés.
+			Conservation : 30 jours.
 		</p>
 	</svelte:fragment>
 </PanneauTelemetrie>

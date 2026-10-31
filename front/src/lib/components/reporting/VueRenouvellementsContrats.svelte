@@ -65,7 +65,7 @@
 
 <!-- Section 1 : Frise contrats -->
 <section class="report-card carte-espacee">
-	<h3>📋 Contrats prestataires — échéances {ANNEE_COURANTE}</h3>
+	<h3>📋 Contrats prestataires{SEPARATEUR.tiret}échéances {ANNEE_COURANTE}</h3>
 	<p class="report-intro">
 		Contrats dont la fin ou le préavis tombe en {ANNEE_COURANTE}. La zone hachurée indique la
 		période de préavis ({PREAVIS_MOIS} mois).
@@ -117,7 +117,7 @@
 							{/if}
 							{#if c.reconduit}<span class="badge badge-purple">♻ Reconduit</span>{/if}
 							<span class="frise-row-dates">
-								{fmtDate(c.date_debut)} → {fmtDate(c.dateFin.toISOString())}
+								{fmtDate(c.date_debut)}{SEPARATEUR.fleche}{fmtDate(c.dateFin.toISOString())}
 								{#if c.datePreavis}{SEPARATEUR.point}préavis dès {fmtDate(
 										c.datePreavis.toISOString(),
 									)}{/if}
@@ -188,7 +188,8 @@
 					<div class="frise-compact-item">
 						<div class="frise-compact-info">
 							<strong>{c.libelle}</strong>
-							<span class="text-muted-sm">{c.prestataireNom} · {equipLabel(c.type_equipement)}</span
+							<span class="text-muted-sm"
+								>{c.prestataireNom}{SEPARATEUR.point}{equipLabel(c.type_equipement)}</span
 							>
 						</div>
 						<div class="frise-compact-meta">
@@ -215,7 +216,7 @@
 						<div class="frise-compact-info">
 							<strong>{c.libelle}</strong>
 							<span class="text-muted-sm"
-								>{c.prestataireNom} · {equipLabel(
+								>{c.prestataireNom}{SEPARATEUR.point}{equipLabel(
 									c.type_equipement,
 								)}{#if c.numero_contrat}{SEPARATEUR.point}N° {c.numero_contrat}{/if}</span
 							>

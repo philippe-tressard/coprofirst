@@ -57,6 +57,6 @@ test('la croix vide le champ et rend le focus', async ({ page }) => {
 test("l'aide dit où l'on cherche, reliée au champ", async ({ page }) => {
 	const champ = page.getByRole('searchbox', { name: 'Recherche' });
 	await expect(champ).toHaveAccessibleDescription(
-		/^Cherche dans : n°, titre.* — sans tenir compte des accents ni des majuscules\.$/,
+		/^Cherche dans : n°, titre.* —\u00a0sans tenir compte des accents ni des majuscules\.$/,
 	);
 });

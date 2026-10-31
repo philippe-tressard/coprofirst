@@ -17,6 +17,7 @@
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import { ICONES_PERIMETRE } from '#lib/perimetres/index.ts';
 	import { TYPES_ACCES } from '#lib/types-acces.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** L'objet de saisie, lié dans les deux sens : l'onglet porte son cycle de vie. */
 	export let form: {
@@ -51,7 +52,8 @@
 </script>
 
 <p class="modal-code">
-	Code <code>{code}</code> — non modifiable : il est enregistré dans les contenus déjà publiés.
+	Code <code>{code}</code>{SEPARATEUR.tiret}non modifiable : il est enregistré dans les contenus
+	déjà publiés.
 </p>
 
 <label class="field"
@@ -125,9 +127,9 @@
 	<input type="checkbox" bind:checked={form.hors_copropriete} />
 	N'appartient pas à la copropriété
 	<span class="aide">
-		Un espace géré par un tiers — l'AFUL, une voie communale. Ce qui couvre « toute la copropriété »
-		ne le couvre alors pas&nbsp;: un contrat d'entretien de la résidence n'apparaîtra pas dans son
-		filtre. Sans effet sur qui le voit.
+		Un espace géré par un tiers{SEPARATEUR.tiret}l'AFUL, une voie communale. Ce qui couvre « toute
+		la copropriété » ne le couvre alors pas&nbsp;: un contrat d'entretien de la résidence
+		n'apparaîtra pas dans son filtre. Sans effet sur qui le voit.
 	</span>
 </label>
 
@@ -147,8 +149,8 @@
 		</label>
 	{/each}
 	<span class="aide">
-		Ce périmètre s’ouvre avec tout accès du type coché, sans dépendre d’aucun lot — un portillon, un
-		portail. Il est alors proposé, et accepté, pour chacun.
+		Ce périmètre s’ouvre avec tout accès du type coché, sans dépendre d’aucun lot{SEPARATEUR.tiret}un
+		portillon, un portail. Il est alors proposé, et accepté, pour chacun.
 	</span>
 </div>
 
@@ -162,15 +164,14 @@
 	Visible de tous
 	{#if concerneTousHerite && !form.portee_globale}
 		<span class="aide herite">
-			ℹ️ Ce périmètre est <strong>déjà</strong> visible de tous, par héritage de son parent — la case
-			ci-dessus est décochée, et c’est normal. La cocher n’ajouterait rien ; la laisser décochée ne retire
-			rien. Pour changer cela, il faut décocher la case du périmètre parent.
+			ℹ️ Ce périmètre est <strong>déjà</strong> visible de tous, par héritage de son parent{SEPARATEUR.tiret}la
+			case ci-dessus est décochée, et c’est normal. La cocher n’ajouterait rien ; la laisser
+			décochée ne retire rien. Pour changer cela, il faut décocher la case du périmètre parent.
 		</span>
 	{/if}
 	<span class="aide">
-		⚠️ Un contenu ciblé sur ce périmètre — ou sur l’un de ses sous-périmètres — sera visible de <strong
-			>tous</strong
-		>
+		⚠️ Un contenu ciblé sur ce périmètre{SEPARATEUR.tiret}ou sur l’un de ses sous-périmètres{SEPARATEUR.tiret}sera
+		visible de <strong>tous</strong>
 		et notifiera
 		<strong>l’ensemble du conseil syndical</strong>, quel que soit leur bâtiment.
 	</span>

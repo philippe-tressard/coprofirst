@@ -29,9 +29,9 @@
 		</p>
 		<p>
 			Chacun peut l’utiliser, l’étudier, le modifier et le redistribuer, y compris à titre
-			commercial, à condition de publier ses modifications sous la même licence — y compris
-			lorsqu’il le fait fonctionner comme service en ligne. Le code de la version en service est
-			disponible sur
+			commercial, à condition de publier ses modifications sous la même licence{SEPARATEUR.tiret}y
+			compris lorsqu’il le fait fonctionner comme service en ligne. Le code de la version en service
+			est disponible sur
 			<a href={sourceEnService} target="_blank" rel="noopener noreferrer">GitHub&nbsp;→</a>
 		</p>
 	</section>

@@ -9,6 +9,7 @@
 <script lang="ts">
 	import type { MetriquesSynthese } from '#lib/api/index.ts';
 	import { fmtJours, libelleEtape, libelleIssue, segmentsFrise } from '#lib/synthese.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let metriques: MetriquesSynthese;
 
@@ -35,7 +36,7 @@
 		{#each segments as s (s.statut)}
 			<span class="graphique-cle" class:longue={s.statut === metriques.etape_plus_longue}>
 				<span class="graphique-pastille" aria-hidden="true"></span>
-				{libelleEtape(s.statut)} · {fmtJours(s.jours)}
+				{libelleEtape(s.statut)}{SEPARATEUR.point}{fmtJours(s.jours)}
 			</span>
 		{/each}
 		<span class="graphique-cle issue" class:annulee={metriques.issue === 'annulé'}>

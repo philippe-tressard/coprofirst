@@ -192,15 +192,18 @@
 			      un événement — et on ne rédige pas une affiche pareil selon le cas. -->
 			{#each pubs as source (source.cle)}
 				<option value={source.cle}
-					>{source.epingle ? '📌 ' : ''}{source.famille} · {fmtDateShort(source.date)} · {source.titre}</option
+					>{source.epingle ? '📌 ' : ''}{source.famille}{SEPARATEUR.point}{fmtDateShort(
+						source.date,
+					)}{SEPARATEUR.point}{source.titre}</option
 				>
 			{/each}
 		</select>
 	</div>
 	<p class="aide">
-		Reprend le titre, le contenu et le périmètre de l'élément — et ses images s'il s'agit d'une
-		actualité. Tout reste modifiable ci-dessous : l'affiche est indépendante de son origine. Toutes
-		les <strong>actualités, affaires et événements</strong> encore au fil sont proposées, les
+		Reprend le titre, le contenu et le périmètre de l'élément{SEPARATEUR.tiret}et ses images s'il
+		s'agit d'une actualité. Tout reste modifiable ci-dessous : l'affiche est indépendante de son
+		origine. Toutes les <strong>actualités, affaires et événements</strong> encore au fil sont
+		proposées, les
 		<strong>épinglés</strong> (📌) en tête ; les archivés et les contenus confidentiels ne le sont pas.
 	</p>
 	<hr class="separateur-prefill" />
@@ -245,12 +248,12 @@
 			place possible dans l'afficheur du hall. Sous l'A4, des pointillés de découpe sont tracés sur
 			l'affiche.
 		{:else}
-			Format imposé — le message sera mis en page en {format.toUpperCase()}.
+			Format imposé{SEPARATEUR.tiret}le message sera mis en page en {format.toUpperCase()}.
 		{/if}
 		<strong>Prévu : {formatPrevu}</strong>
 		{#if imageSeule}{SEPARATEUR.tiret}photo seule, ajustée à la zone sous le titre.
 		{:else}
-			({longueur} caractère{longueur > 1 ? 's' : ''} — titre et message)
+			({longueur} caractère{longueur > 1 ? 's' : ''}{SEPARATEUR.tiret}titre et message)
 		{/if}
 	</p>
 </SectionFormulaire>
@@ -347,8 +350,8 @@
 />
 <p class="aide">
 	L'affiche est générée dans tous les cas et reste téléchargeable depuis l'historique. Le conseil
-	syndical reçoit le PDF en pièce jointe, pour impression — et seuls les conseillers du périmètre
-	visé sont prévenus.
+	syndical reçoit le PDF en pièce jointe, pour impression{SEPARATEUR.tiret}et seuls les conseillers
+	du périmètre visé sont prévenus.
 </p>
 
 <div class="form-actions">

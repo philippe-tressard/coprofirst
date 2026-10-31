@@ -25,6 +25,7 @@
 	import EtatListe from './EtatListe.svelte';
 	import MoyennesAffaires from './MoyennesAffaires.svelte';
 	import SectionRepliee from './SectionRepliee.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	let ouvert = false;
 	let bilan: BilanCarnet | null = null;
@@ -96,7 +97,7 @@
 			{#if bilan}
 				<p class="bilan-periode">
 					Exercice <strong>{bilan.exercice.libelle}</strong>, du {fmtDate(bilan.exercice.debut)} au
-					{fmtDate(bilan.exercice.fin)} · {libelleAffaires({
+					{fmtDate(bilan.exercice.fin)}{SEPARATEUR.point}{libelleAffaires({
 						nombre: bilan.nombre,
 						annulees: bilan.categories.reduce((n, c) => n + c.annulees, 0),
 					})}
@@ -112,7 +113,7 @@
 							<div class="table-wrap">
 								<table class="table">
 									<caption class="table-legende"
-										>Intervenants les plus lents — étape « Chez le prestataire »</caption
+										>Intervenants les plus lents{SEPARATEUR.tiret}étape « Chez le prestataire »</caption
 									>
 									<thead>
 										<tr>

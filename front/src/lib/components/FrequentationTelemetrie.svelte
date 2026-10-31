@@ -21,6 +21,7 @@
 	import type { TableauTelemetrie } from '#lib/api/index.ts';
 	import { fmtDate, fmtDatetimeShort as fmt, fmtMoisCourt, fmtMonthYear } from '#lib/date.ts';
 	import { fmtNombre } from '#lib/utils.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let donnees: TableauTelemetrie;
 	/** Section dépliée ? L'onglet décide, et reçoit `basculer` (`PanneauTelemetrie`). */
@@ -171,7 +172,9 @@
 						{fmtNombre(kpi.record_jour.uniques)}
 						<span class="tl-kpi-unite">utilisateurs</span>
 					</div>
-					<div class="tl-kpi-label">🏆 Record jour — {fmtDate(kpi.record_jour.jour)}</div>
+					<div class="tl-kpi-label">
+						🏆 Record jour{SEPARATEUR.tiret}{fmtDate(kpi.record_jour.jour)}
+					</div>
 				</div>
 			{/if}
 			{#if kpi.record_mois}
@@ -180,7 +183,9 @@
 						{fmtNombre(kpi.record_mois.uniques)}
 						<span class="tl-kpi-unite">utilisateurs</span>
 					</div>
-					<div class="tl-kpi-label">🏆 Record mois — {fmtMonthYear(kpi.record_mois.mois)}</div>
+					<div class="tl-kpi-label">
+						🏆 Record mois{SEPARATEUR.tiret}{fmtMonthYear(kpi.record_mois.mois)}
+					</div>
 				</div>
 			{/if}
 		</div>
@@ -225,7 +230,7 @@
 												class:tl-bulle-droite={b.aDroite}
 												class:tl-bulle-dedans={b.haut}
 											>
-												{b.libelle} · {fmtNombre(kpi.jour_pointe?.uniques)} utilisateurs
+												{b.libelle}{SEPARATEUR.point}{fmtNombre(kpi.jour_pointe?.uniques)} utilisateurs
 											</span>
 											<span aria-hidden="true">🏆</span>
 										</div>

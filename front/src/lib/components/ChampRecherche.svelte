@@ -34,6 +34,7 @@
 -->
 <script lang="ts">
 	import Icon from '#lib/components/Icon.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Unique sur la page : relie le libellé et l'aide à la saisie. */
 	export let id: string;
@@ -75,7 +76,7 @@
 		<slot />
 	</div>
 	<p class="aide" id="{id}-aide">
-		Cherche dans : {dans} — sans tenir compte {sansAccents
+		Cherche dans : {dans}{SEPARATEUR.tiret}sans tenir compte {sansAccents
 			? 'des accents ni des majuscules'
 			: 'des majuscules'}.
 	</p>

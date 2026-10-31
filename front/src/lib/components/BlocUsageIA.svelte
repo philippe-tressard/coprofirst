@@ -51,6 +51,7 @@
 	} from '#lib/api/index.ts';
 	import { memePrompt } from '#lib/promptOrigine.ts';
 	import { fmtNombre } from '#lib/utils.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let usage: UsageIA;
 	/** Toutes les valeurs de configuration, liées : le bloc écrit les siennes. */
@@ -193,9 +194,9 @@
 			/>
 			Activer cet usage
 			<span class="aide">
-				Désactivé, cet usage ne sert nulle part — ni icône ✨, ni traitement automatique — et aucun
-				appel n’est facturé. L’activation globale, dans le bloc Commun, coupe tous les usages d’un
-				geste.
+				Désactivé, cet usage ne sert nulle part{SEPARATEUR.tiret}ni icône ✨, ni traitement
+				automatique{SEPARATEUR.tiret}et aucun appel n’est facturé. L’activation globale, dans le
+				bloc Commun, coupe tous les usages d’un geste.
 			</span>
 		</label>
 		{#if cleCoproprietaires}
@@ -208,9 +209,9 @@
 				Ouvert aux copropriétaires
 				<span class="aide">
 					Décochée, seuls le conseil syndical et l’administration s’en servent. Cochée, tous les
-					copropriétaires aussi — ni les locataires, ni les mandataires, ni le syndic. Les limites
-					d’appels ci-dessous valent pour chacun. À décocher en cas d’abus : le conseil syndical
-					garde l’accès.
+					copropriétaires aussi{SEPARATEUR.tiret}ni les locataires, ni les mandataires, ni le
+					syndic. Les limites d’appels ci-dessous valent pour chacun. À décocher en cas d’abus : le
+					conseil syndical garde l’accès.
 				</span>
 			</label>
 		{/if}
@@ -277,7 +278,8 @@
 							: ''} avec cette clé, du plus récent au plus ancien. Chaque usage a SON modèle : un modèle
 						plus capable rend un texte plus fidèle, et coûte plus cher par appel.
 					{:else if catalogue.etat === 'indisponible'}
-						{catalogue.motif} Saisissez l’<strong>identifiant d’API</strong> à la main — pas le nom commercial.
+						{catalogue.motif} Saisissez l’<strong>identifiant d’API</strong> à la main{SEPARATEUR.tiret}pas
+						le nom commercial.
 					{:else if !clePosee}
 						Enregistrez d’abord une clé dans le bloc Commun : la liste des modèles se lit avec elle.
 					{:else}
@@ -320,8 +322,8 @@
 				<span class="aide">
 					En jetons, et c’est un plafond de <strong>coût</strong> autant que de longueur : seuls les
 					jetons réellement produits sont facturés. Un modèle récent raisonne avant d’écrire, et ce
-					raisonnement compte dans le plafond — une réponse coupée vient de ce champ, pas du modèle.
-					Valeur d’origine : {fmtNombre(usage.max_jetons_defaut)}.
+					raisonnement compte dans le plafond{SEPARATEUR.tiret}une réponse coupée vient de ce champ,
+					pas du modèle. Valeur d’origine : {fmtNombre(usage.max_jetons_defaut)}.
 				</span>
 			</label>
 		</div>
@@ -367,7 +369,8 @@
 				<p class="aide">
 					Ce texte est identique au prompt d’origine, mais il en est une <strong>copie</strong>
 					: il ne suivra pas ses évolutions. « Rétablir le prompt d’origine » vide le champ, et c’est
-					alors la version livrée par l’application qui sert — celle-là se met à jour avec elle.
+					alors la version livrée par l’application qui sert{SEPARATEUR.tiret}celle-là se met à jour
+					avec elle.
 				</p>
 			{:else if promptDivergent}
 				<p class="aide">
@@ -378,10 +381,10 @@
 			{/if}
 			<span class="aide">
 				C’est le contexte que reçoit le modèle avant le texte à traiter : le ton, les interdits, la
-				structure attendue. Vous pouvez y ajouter des consignes ou modifier le gabarit. La matière —
-				la fiche, les documents, la description saisie — est ajoutée par l’application, et le <strong
-					>format de réponse</strong
-				> que l’application sait relire est imposé par elle : un prompt réécrit ne peut pas le casser.
+				structure attendue. Vous pouvez y ajouter des consignes ou modifier le gabarit. La matière{SEPARATEUR.tiret}la
+				fiche, les documents, la description saisie{SEPARATEUR.tiret}est ajoutée par l’application,
+				et le <strong>format de réponse</strong> que l’application sait relire est imposé par elle : un
+				prompt réécrit ne peut pas le casser.
 			</span>
 		</div>
 	</SectionFormulaire>

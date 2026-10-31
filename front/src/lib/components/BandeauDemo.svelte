@@ -12,6 +12,7 @@
 <script lang="ts">
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import { modeDemoStore } from '#lib/stores/pageConfig.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** Dans la carte de connexion : pleine largeur de la carte, détaché de ce qui suit. */
 	export let dansCarte = false;
@@ -20,7 +21,7 @@
 {#if $modeDemoStore}
 	<div class="bandeau-demo" class:dans-carte={dansCarte}>
 		<EncartAvertissement role="note">
-			<strong>Démonstration — résidence fictive.</strong>
+			<strong>Démonstration{SEPARATEUR.tiret}résidence fictive.</strong>
 			Ce que vous saisissez est visible des autres visiteurs et effacé chaque nuit. Aucun courriel, message
 			WhatsApp ni appel à l'IA n'est réellement envoyé.
 		</EncartAvertissement>

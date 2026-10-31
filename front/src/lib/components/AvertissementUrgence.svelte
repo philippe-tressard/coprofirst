@@ -43,6 +43,7 @@
 -->
 <script lang="ts">
 	import { GLYPHE_URGENCE } from '#lib/options-publication.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	//  Replié par défaut : l'avertissement doit être accessible en permanence sans
 	//  occuper l'écran de quelqu'un qui vient consulter ses affaires.
 	let disclaimerOpen = false;
@@ -55,7 +56,7 @@
 		aria-expanded={disclaimerOpen}
 	>
 		<span class="urgence-disclaimer-title"
-			>{GLYPHE_URGENCE} Affaires urgentes — Avertissement légal</span
+			>{GLYPHE_URGENCE} Affaires urgentes{SEPARATEUR.tiret}Avertissement légal</span
 		>
 		<span class="urgence-disclaimer-chevron">{disclaimerOpen ? '▲' : '▼'}</span>
 	</button>
@@ -74,16 +75,18 @@
 		</p>
 		<ul>
 			<li>
-				&#x1F4DE; <strong>Alerter les secours</strong> — 15 (SAMU) · 17 (Police secours) · 18 (Sapeurs-pompiers)
-				· 112 (urgences européennes)
+				&#x1F4DE; <strong>Alerter les secours</strong>{SEPARATEUR.tiret}15 (SAMU){SEPARATEUR.point}17
+				(Police secours){SEPARATEUR.point}18 (Sapeurs-pompiers){SEPARATEUR.point}112 (urgences
+				européennes)
 			</li>
 			<li>
 				&#x1F3E2; <strong>Prévenir le syndic</strong> via ses coordonnées d'urgence (voir
 				<a href="/annuaire">Annuaire</a>)
 			</li>
 			<li>
-				&#x1F4CB; <strong>Déclarer le sinistre à votre assureur</strong> dans les délais prévus au contrat
-				(généralement 5 jours ouvrés à compter de la connaissance du sinistre — art. L113-2 Code des Assurances)
+				&#x1F4CB; <strong>Déclarer le sinistre à votre assureur</strong> dans les délais prévus au
+				contrat (généralement 5 jours ouvrés à compter de la connaissance du sinistre{SEPARATEUR.tiret}art.
+				L113-2 Code des Assurances)
 			</li>
 		</ul>
 		<p class="urgence-disclaimer-legal">
