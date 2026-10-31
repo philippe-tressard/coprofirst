@@ -5,7 +5,7 @@ FROM node:26-alpine
 # une version impaire (PR Dependabot #1290) : elle n'est jamais LTS, sa fin de
 # vie arrive en quelques mois.
 
-RUN apk add --no-cache git tzdata
+RUN apk upgrade --no-cache && apk add --no-cache git tzdata
 
 WORKDIR /app
 
@@ -15,8 +15,14 @@ WORKDIR /app
 # corrigé le 23/06/2026 sur `front/Dockerfile`, resté ici.
 # ⚠️ `libsignal` est une dépendance git (verrouillée en `git+ssh`) : npm la
 # récupère en HTTPS sans clé SSH — vérifié par `npm ci` sans clé avant la PR.
+#  Puis le gestionnaire de paquets QUITTE l'image (#2377, 31/10/2026), dans la
+#  même couche : le npm livré avec Node embarque ses propres undici et
+#  brace-expansion, qui portaient six HIGH (Trivy) que `npm audit` ne voit pas.
+#  Le bridge ne fait que `node index.js`. 🔒 `api/tests/test_images_sans_npm.py`.
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev \
+    && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-* \
+    && ! sh -c 'command -v npm || command -v npx' && node --version
 
 COPY index.js arret.js accuses.js ./
 

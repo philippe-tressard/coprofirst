@@ -1,2 +1,45 @@
+#  Caddy RECOMPILÉ depuis sa source (#2377, 31/10/2026).
+#
+#  POURQUOI — le binaire de l'image officielle `caddy:2.11` (v2.11.7, la dernière
+#  publiée) est compilé en Go 1.26.8, avec go-jose 4.1.5 et x/net 0.59.0 : six
+#  HIGH que la veille nocturne trouve (Trivy), corrigés en Go 1.26.10, go-jose
+#  4.1.6 et x/net 0.60.0 — dont un déni de service par en-têtes Range, que
+#  `file_server` sert (`/uploads/*`), et un par trames HTTP/2. Aucune version de
+#  Caddy ne les embarque encore. On compile donc la MÊME version de Caddy, avec
+#  les seuls modules standard (ceux de l'image officielle), par le Go courant de
+#  la mineure et les deux dépendances montées ; tout le reste est résolu par le
+#  go.mod de Caddy lui-même.
+#
+#  🔒 `api/tests/test_image_caddy_epinglee.py` : la version compilée et l'image
+#  d'exécution portent la même mineure, et le binaire officiel ne reste pas.
+#  Revenir au binaire officiel dès qu'une version de Caddy embarque ces
+#  correctifs : retirer l'étape `construction` et le `COPY --from`.
+FROM golang:1.26-alpine AS construction
+ARG CADDY_VERSION=v2.11.7
+WORKDIR /src
+#  Le `main` de Caddy (cmd/caddy/main.go), tel quel : c'est aussi ce qu'écrit
+#  xcaddy. Un module à part, et non un clone du dépôt : `caddy version` lit sa
+#  version dans les dépendances du binaire, un clone dirait « (devel) ».
+RUN printf '%s\n' 'package main' 'import (' '	_ "time/tzdata"' \
+        '	caddycmd "github.com/caddyserver/caddy/v2/cmd"' \
+        '	_ "github.com/caddyserver/caddy/v2/modules/standard"' ')' \
+        'func main() { caddycmd.Main() }' > main.go \
+    && go mod init caddy \
+    && go get "github.com/caddyserver/caddy/v2@${CADDY_VERSION}" \
+        github.com/go-jose/go-jose/v4@v4.1.6 \
+        golang.org/x/net@v0.60.0 \
+    && go mod tidy \
+    && CGO_ENABLED=0 go build -trimpath -ldflags '-s -w' -o /caddy . \
+    && /caddy version | grep -q "^${CADDY_VERSION} "
+
 FROM caddy:2.11
-RUN apk add --no-cache tzdata
+COPY --from=construction /caddy /usr/bin/caddy
+#  `curl` n'est appelé par rien (ni healthcheck, ni script : on n'entre dans ce
+#  conteneur que pour lire son journal) ; il est retiré plutôt que suivi.
+#  `apk upgrade` : l'image officielle retarde sur les correctifs d'Alpine
+#  (`brotli-libs` 1.2.0, CRITICAL, le 31/10/2026) ; chaque construction les prend.
+RUN apk upgrade --no-cache \
+    && apk add --no-cache tzdata \
+    && apk del --no-cache curl \
+    && ! command -v curl \
+    && caddy version

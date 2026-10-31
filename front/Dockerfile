@@ -16,7 +16,14 @@ COPY . .
 RUN npm run build
 
 FROM node:26-alpine AS runner
-RUN apk add --no-cache tzdata
+#  Le gestionnaire de paquets QUITTE l'image d'exécution (#2377, 31/10/2026) :
+#  le npm livré avec Node embarque ses propres undici et brace-expansion, qui
+#  portaient six HIGH (Trivy) que `npm audit` ne voit pas — ce n'est pas notre
+#  arbre. Le serveur ne fait que `node build` : npm n'y sert qu'à installer, et
+#  l'installation a eu lieu dans `builder`. 🔒 `api/tests/test_images_sans_npm.py`.
+RUN apk upgrade --no-cache && apk add --no-cache tzdata \
+    && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-* \
+    && ! sh -c 'command -v npm || command -v npx' && node --version
 WORKDIR /app
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/package.json .
