@@ -136,8 +136,7 @@
 						URL publique
 						<input type="url" value={urlPublique} readonly />
 						<span class="aide"
-							>L’adresse de l’installation, celle des liens des courriels et des pages
-							légales. {REGLE_PAR_L_EXPLOITANT}</span
+							>L’adresse de l’installation, celle des liens des courriels et des pages légales. {REGLE_PAR_L_EXPLOITANT}</span
 						>
 					</label>
 				</div>

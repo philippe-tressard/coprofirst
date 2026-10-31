@@ -12,11 +12,12 @@
 	export let onglet: string;
 
 	$: portee = porteeOnglet(onglet, { administrateur: $isAdmin, operateur: $isOperateur });
+	$: icone = portee === 'administrateur' ? 'building-2' : 'shield-half';
 </script>
 
 {#if portee}
 	<p class="portee-onglet" data-portee={portee}>
-		<Icon name={portee === 'operateur' ? 'shield-half' : 'building-2'} size={16} />
+		<Icon name={icone} size={16} />
 		<span>{phrasePortee(portee, $siteNomStore)}</span>
 	</p>
 {/if}
