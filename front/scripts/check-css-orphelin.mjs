@@ -90,7 +90,14 @@ import { releveDuDepot } from './lib-classes-globales.mjs';
  * ou retirée de la feuille — FAIT ÉCHOUER le contrôle. Vide au 02/10/2026 :
  * aucune des 23 orphelines du relevé n'était construite dynamiquement.
  */
-const EXCEPTIONS_GLOBALES = {};
+const EXCEPTIONS_GLOBALES = {
+	//  Le décalage des fanions d'une fête : `class="fanion {teinte} delai-{i}"`
+	//  (`DecorFeteDessin`). Les deux premières passaient pour employées tant que
+	//  l'accueil portait des `delai-1`/`delai-2` homonymes, retirés avec ses
+	//  bandeaux (#2397).
+	'delai-1': 'construite par `delai-{i}` dans DecorFeteDessin',
+	'delai-2': 'construite par `delai-{i}` dans DecorFeteDessin',
+};
 
 /**
  * Le TÉMOIN : une classe que l'on SAIT employée partout. Si le relevé ne la

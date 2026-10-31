@@ -5,9 +5,16 @@
 	//
 	//  Ce composant ne décide de RIEN : qui voit quoi et d'où vient chaque nombre
 	//  sont déclarés dans `#lib/raccourcis.ts`. Il ne fait que rendre la table.
+	//
+	//  Depuis #2397 (31/10/2026, maquette A2) elle porte aussi ce que deux
+	//  bandeaux disaient en pleine largeur : le lien vers les consignes, au bout
+	//  de la rangée, et le prochain rendez-vous à la place d'un « Calendrier » nu.
 	import Icon from '#lib/components/Icon.svelte';
-	import { currentUser } from '#lib/stores/auth.ts';
+	import LienConsignes from '#lib/components/LienConsignes.svelte';
+	import { currentUser, isLocataire } from '#lib/stores/auth.ts';
 	import { raccourcisVisibles } from '#lib/raccourcis.ts';
+	import { partiesDate } from '#lib/date.ts';
+	import { lienTicket } from '#lib/tickets.ts';
 	import type { FluxSante } from '#lib/api/index.ts';
 
 	export let sante: FluxSante;
@@ -28,37 +35,63 @@
       change est la cible sous le doigt. -->
 <nav class="quick-nav section-reveal" class:section-visible={ready} aria-label="Raccourcis">
 	{#each visibles as r (r.id)}
-		<div
-			class="quick-pill"
-			class:quick-pill-cs={r.variante === 'cs'}
-			class:quick-pill-admin={r.variante === 'admin'}
-		>
-			<a href={r.href} class="quick-pill-cible">
-				<Icon name={r.icone} size={14} />
-				{r.libelle}
-			</a>
-			{#each r.compteurs(sante) as c (c)}
-				{#if c.valeur > 0}
-					{#if c.href}
-						<a
-							href={c.href}
-							class="quick-count quick-count-lien"
-							class:quick-count-urgent={c.ton === 'urgent'}
-							class:quick-count-orange={c.ton === 'orange'}
-							>{c.libelle ? c.libelle(c.valeur) : c.valeur}</a
-						>
-					{:else}
-						<span
-							class="quick-count"
-							class:quick-count-urgent={c.ton === 'urgent'}
-							class:quick-count-orange={c.ton === 'orange'}
-							>{c.libelle ? c.libelle(c.valeur) : c.valeur}</span
-						>
+		{@const rdv = r.agenda?.(sante)}
+		{@const jour = partiesDate(rdv?.debut)}
+		{#if r.agenda}
+			{#if rdv && jour}
+				<!--  La date en médaillon, puis le titre : la pastille dit QUAND et
+				      QUOI, et mène à l'affaire. Le nom accessible dit la date en
+				      entier — le médaillon abrège. -->
+				<a
+					href={lienTicket(rdv.id)}
+					class="quick-pill quick-pill-agenda"
+					aria-label="Prochain rendez-vous : {rdv.titre}, le {jour.jour} {jour.mois} {jour.annee}"
+				>
+					<span class="quick-date" aria-hidden="true"
+						><span class="quick-date-jour">{jour.jour}</span><span class="quick-date-mois"
+							>{jour.mois}</span
+						></span
+					>
+					<span class="quick-agenda-titre">{rdv.titre}</span>
+				</a>
+			{/if}
+		{:else}
+			<div
+				class="quick-pill"
+				class:quick-pill-cs={r.variante === 'cs'}
+				class:quick-pill-admin={r.variante === 'admin'}
+			>
+				<a href={r.href} class="quick-pill-cible">
+					<Icon name={r.icone} size={14} />
+					{r.libelle}
+				</a>
+				{#each r.compteurs(sante) as c (c)}
+					{#if c.valeur > 0}
+						{#if c.href}
+							<a
+								href={c.href}
+								class="quick-count quick-count-lien"
+								class:quick-count-urgent={c.ton === 'urgent'}
+								class:quick-count-orange={c.ton === 'orange'}
+								>{c.libelle ? c.libelle(c.valeur) : c.valeur}</a
+							>
+						{:else}
+							<span
+								class="quick-count"
+								class:quick-count-urgent={c.ton === 'urgent'}
+								class:quick-count-orange={c.ton === 'orange'}
+								>{c.libelle ? c.libelle(c.valeur) : c.valeur}</span
+							>
+						{/if}
 					{/if}
-				{/if}
-			{/each}
-		</div>
+				{/each}
+			</div>
+		{/if}
 	{/each}
+	<!--  Au bout de la rangée : un renvoi, pas un lieu de travail. -->
+	<span class="quick-fin">
+		<LienConsignes forme="pastille" misEnAvant={$isLocataire} />
+	</span>
 </nav>
 
 <style>
@@ -130,6 +163,41 @@
 		min-width: 1.1rem;
 		text-align: center;
 	}
+	/*  La pastille d'agenda : un médaillon de date à gauche, le titre coupé
+	    au-delà de 18 rem — c'est une pastille, pas une carte. */
+	.quick-pill-agenda {
+		padding-left: 0.25rem;
+		max-width: 18rem;
+	}
+	.quick-date {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		border-radius: 50%;
+		background: var(--color-primary-light);
+		color: var(--color-primary);
+		line-height: 1;
+		flex-shrink: 0;
+	}
+	.quick-date-jour {
+		font-size: var(--fs-xs);
+		font-weight: 700;
+	}
+	.quick-date-mois {
+		font-size: var(--fs-3xs);
+	}
+	.quick-agenda-titre {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.quick-fin {
+		margin-left: auto;
+		display: inline-flex;
+	}
 	.quick-pill-cs {
 		border-color: var(--color-warning);
 	}
@@ -164,6 +232,11 @@
 		.quick-pill {
 			font-size: var(--fs-2xs);
 			padding: 0.35rem 0.65rem;
+		}
+		/*  Au téléphone, le titre se borne plus court : la pastille tient alors
+		    sur la ligne d'une voisine au lieu d'en prendre une entière. */
+		.quick-pill-agenda {
+			max-width: 11rem;
 		}
 	}
 </style>

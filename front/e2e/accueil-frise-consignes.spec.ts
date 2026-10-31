@@ -149,7 +149,7 @@ test('les Archives s’ouvrent et rendent leur carte, atténuée', async ({ page
 	expect(allure.fond).toBe(allure.neutre);
 });
 
-test('l’accueil porte la carte des consignes, vers la fiche', async ({ page }) => {
+test('l’accueil porte la pastille des consignes, vers la fiche', async ({ page }) => {
 	await accueil(page);
 	const lien = page.getByRole('link', { name: new RegExp(LIBELLE) });
 	await expect(lien).toHaveAttribute('href', ADRESSE);

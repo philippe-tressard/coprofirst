@@ -32,6 +32,20 @@ class FluxItem(BaseModel):
     me_concerne: Optional[bool] = None
 
 
+class RendezVous(BaseModel):
+    """Le prochain rendez-vous de l'agenda : une affaire DATÉE, visible de qui lit.
+
+    La pastille « Calendrier » de l'accueil le montre — date et titre — et mène à
+    l'affaire (#2397). Une affaire porte sa date dans `debut` (section « Quand »,
+    #1092) ; c'est ce qui la range sous le filtre Calendrier (`nature_affaire.natures`).
+    """
+
+    id: int
+    titre: str
+    debut: datetime
+    fin: Optional[datetime] = None
+
+
 class FluxSante(BaseModel):
     tickets_ouverts: int = 0
     tickets_urgents: int = 0
@@ -46,6 +60,8 @@ class FluxSante(BaseModel):
     validations_admin: int = 0
     tickets_relance_syndic: int = 0
     prochains: list[dict] = []
+    #: Le prochain rendez-vous, ou `None` s'il n'y en a pas (#2397).
+    rendez_vous: Optional[RendezVous] = None
 
 
 class FluxResponse(BaseModel):
