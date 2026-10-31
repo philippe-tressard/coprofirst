@@ -945,7 +945,8 @@ toujours ; le contrôle de 06:00 signale une sauvegarde de plus de 25 h.
 
 Ce qu'il faut savoir et qui ne se lit pas dans le code : **quel job alerte**.
 `health_check` (06:00) est le seul à envoyer un courriel de lui-même — WhatsApp
-déconnecté, sauvegarde de plus de 25 h, disque sous 15 %. `whatsapp_scheduled`
+déconnecté, sauvegarde de plus de 25 h, disque sous 15 %, et le canari de l'assistant
+IA (`canari_ia`, 05:40, #2369) qui a vu le modèle obéir ou n'a rien mesuré. `whatsapp_scheduled`
 alerte quand sa fenêtre de rattrapage s'épuise sans envoi réussi.
 
 🔒 `npm run lint:consignes` refuse qu'une consigne en énumère une partie.

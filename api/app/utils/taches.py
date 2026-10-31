@@ -96,6 +96,9 @@ TACHES_PERMANENTES: dict[str, str] = {
     "transcription_pv": "la transcription quotidienne des PV d'AG récents (29/10/2026) — le "
     "PV de l'année n'est plus proposé à la relecture : les questions au règlement ignorent "
     "ses décisions tant que personne ne le transcrit par le bouton",
+    "canari_ia": "le canari nocturne de l'assistant IA (#2369) — plus rien ne prouve que le "
+    "modèle qui lit les courriels reçus refuse d'obéir à un courriel piégé, ni que la porte "
+    "écarte ce qu'il écrirait ; le contrôle de 06:00 le dit alors INCONNU",
 }
 
 
@@ -133,6 +136,7 @@ TACHES_HORS_DEMO: dict[str, str] = {
     "courriel_reponses": "relève IMAP : un appel sortant",
     "synthese_affaires": "appel à l'IA et courriel au conseil",
     "transcription_pv": "appel à l'IA",
+    "canari_ia": "appel à l'IA",
     "whatsapp_scheduled": "messages WhatsApp",
     "health_check": "son seul effet est un courriel d'alerte",
 }
