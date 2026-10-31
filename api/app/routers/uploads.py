@@ -14,7 +14,9 @@ from app.utils.stockage import stockage
 from app.utils.fichiers import (
     FAMILLES,
     enregistrer_fichier_recu,
+    famille_du_fichier,
     lire_fichier_recu,
+    message_format_refuse,
 )
 from app.utils.images import enregistrer_image_recue
 from app.utils.limiter import LIMITE_TELEVERSEMENT, limiter
@@ -126,20 +128,16 @@ def upload_fichier(
     #  plafond et les extensions de chacune (#1026). Les deux listes qui
     #  vivaient dans ce fichier décidaient seules de ce que le routeur
     #  acceptait — et les documents privés, eux, n'avaient aucune liste.
-    is_image = file.content_type in FAMILLES["image"].types
-    is_doc = file.content_type in FAMILLES["document"].types
-
-    if not is_image and not is_doc:
-        attendus = ", ".join(
-            sorted(set(FAMILLES["image"].extensions) | set(FAMILLES["document"].extensions))
-        )
-        raise HTTPException(
-            400, f"Format non supporté : {file.content_type}. Attendu : {attendus}."
-        )
+    #  Un fichier sans type — Windows n'en connaît pas pour `.heic` — se range par
+    #  son extension, que la signature confirme ensuite (#2389).
+    famille = famille_du_fichier(file.content_type, file.filename)
+    if famille is None:
+        attendus = set(FAMILLES["image"].extensions) | set(FAMILLES["document"].extensions)
+        raise HTTPException(400, message_format_refuse(file.content_type, file.filename, attendus))
 
     original_name = file.filename or "fichier"
 
-    if is_image:
+    if famille == "image":
         url = _save_image(file, "fichiers", session, user, max_dim=1200)
         ftype = "image"
     else:

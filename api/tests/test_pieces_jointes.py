@@ -126,8 +126,11 @@ def test_liste_blanche_documents_alignee():
 
 
 def test_liste_blanche_photos_alignee():
-    types_front = set(_constante_ts("ACCEPT_PHOTOS").split(","))
-    assert types_front == set(FAMILLES["image"].types)
+    """Types ET extensions : sans l'extension, Windows écartait du sélecteur une
+    photo `.heic` dont il ne connaît pas le type (#2389)."""
+    entrees = set(_constante_ts("ACCEPT_PHOTOS").split(","))
+    assert {e for e in entrees if not e.startswith(".")} == set(FAMILLES["image"].types)
+    assert {e for e in entrees if e.startswith(".")} == set(FAMILLES["image"].extensions)
 
 
 def test_toute_image_acceptee_est_reconnue_comme_image_par_le_front():

@@ -47,7 +47,7 @@ import re
 from dataclasses import dataclass, field
 
 from app.utils.courriel_decodage import _parties, _texte
-from app.utils.fichiers import FAMILLES, type_annonce
+from app.utils.fichiers import famille_du_fichier, type_annonce
 
 #: Le nombre de pièces versées pour un message (demandé le 31/10/2026).
 MAX_PIECES = 10
@@ -111,15 +111,6 @@ def _est_le_corps(partie) -> bool:
     )
 
 
-def _famille(type_: str, nom: str) -> tuple[str, str] | None:
-    """`(famille, type à juger)` d'une pièce, ou None si aucune ne l'accepte."""
-    for famille in ("image", "document"):
-        juge = type_annonce(type_, nom, famille)
-        if juge in FAMILLES[famille].types:
-            return famille, juge
-    return None
-
-
 def _de_signature(type_: str) -> bool:
     """Un fichier que le client ajoute à la signature, reconnu à son type seul."""
     return type_ in TYPES_DE_SIGNATURE
@@ -147,11 +138,11 @@ def trier(message) -> Tri:
         type_, nom = partie.get_content_type(), _nom(partie, rang)
         if _de_signature(type_):
             continue
-        reconnue = _famille(type_, nom)
-        if reconnue is None:
+        famille = famille_du_fichier(type_, nom)
+        if famille is None:
             tri.ecarts.append(Ecart(nom, MOTIF_TYPE))
         else:
-            tri.pieces.append(Piece(nom, reconnue[1], reconnue[0], octets))
+            tri.pieces.append(Piece(nom, type_annonce(type_, nom, famille), famille, octets))
     return tri
 
 
