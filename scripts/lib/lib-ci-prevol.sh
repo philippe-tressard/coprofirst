@@ -179,13 +179,15 @@ ci_prevol() {
     else echo "base des tests jointe" >> "$faits"; fi
     #  Un arbre de rejeu mort tient la base des tests : pytest s'y figerait (#2270). Le rejeu
     #  tient le verrou, aucun autre rejeu ne peut donc en être l'auteur : ces restes sont
-    #  tués (`REJEU_ORPHELINS=signaler` : seulement nommés), puis les schémas qu'ils tenaient
-    #  — ceux de plus d'une heure — sont retirés. Un reste qui résiste refuse le rejeu.
+    #  tués (`REJEU_ORPHELINS=signaler` : seulement nommés), puis les schémas abandonnés
+    #  sont retirés (`ci_gel_schemas_purger`). Un reste qui résiste refuse le rejeu.
     if ! ci_orphelins_traiter "${REJEU_ORPHELINS:-tuer}"; then
       printf '%s	%s
 ' "$(<"$pytest/job")" "un reste de rejeu mort résiste et tient la base des tests · arrêter : taskkill //F //T //PID <pid ci-dessus>" >> "$refus"
     fi
     ci_gel_schemas_purger "$RACINE"
+    #  …puis le catalogue, mesuré et compacté d'office s'il est gonflé (#2399).
+    [ -z "$motif" ] && ci_catalogue_prevol "$pytest" "$refus" "$faits"
   fi
   if [ -n "$vite" ]; then
     job=$(<"$vite/job")
