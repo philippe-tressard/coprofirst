@@ -27,6 +27,11 @@ export interface EtatInstallation {
 	etat: 'a_jour' | 'en_retard' | 'ecart' | 'non_verifie';
 	retard: number;
 	detail: string;
+	/** Une installation commune à plusieurs copropriétés (#1894) — un constat (#2400). */
+	commune: boolean;
+	/** `null` : la déclaration de l'installation commune ne peut pas servir. */
+	nombre_coproprietes: number | null;
+	detail_coproprietes: string;
 }
 
 /**  `POST /admin/export-copropriete/verifier` (#1749) : la base exportée puis
