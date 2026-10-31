@@ -15,9 +15,8 @@ from app.utils.fichiers import (
     FAMILLES,
     enregistrer_fichier_recu,
     lire_fichier_recu,
-    verifier_fichier_recu,
 )
-from app.utils.images import reencoder_jpeg
+from app.utils.images import enregistrer_image_recue
 from app.utils.limiter import LIMITE_TELEVERSEMENT, limiter
 from sqlmodel import Session, select
 
@@ -42,57 +41,22 @@ router = APIRouter(prefix="/uploads", tags=["uploads"])
 def _save_image(
     file: UploadFile, subfolder: str, session: Session, user: Utilisateur, max_dim: int = 1600
 ) -> str:
-    """Valide, redimensionne si besoin et sauvegarde le fichier. Retourne l'URL relative."""
+    """Lit, contrôle, réencode et écrit l'image reçue. Retourne l'URL relative.
+
+    Le geste — les trois règles de la famille « image », le réencodage, le nom
+    stocké — vit dans `utils/images.enregistrer_image_recue` : la relève des
+    courriels l'appelle aussi, et deux copies divergeraient (#1026).
+    """
     data = lire_fichier_recu(file, "image")
-
-    #  Les trois règles — type, plafond, cohérence du contenu — sont appliquées
-    #  par la famille « image ». Elles étaient écrites ici, et deux autres
-    #  chemins les écrivaient à leur façon (#1026).
-    #
-    #  ⚠️ Le contrôle porte sur ce qui ARRIVE, avant réencodage : c'est l'octet
-    #  reçu qui peut mentir, pas celui que nous produisons.
-    verifier_fichier_recu(data, file.filename, file.content_type, "image")
-
-    #  Le réencodage vit dans `app/utils/images.py` — il est partagé avec la
-    #  diffusion WhatsApp, qui doit faire tenir la même photo sous un budget
-    #  d'octets. Deux routines de redimensionnement divergeraient sur
-    #  l'orientation ou la qualité (`standards/02-factorisation.md` §2).
-    try:
-        data = reencoder_jpeg(data, max_dim=max_dim)
-    except ValueError:
-        raise HTTPException(400, "Impossible de lire l'image.")
-
-    #  Le nom passe par `nom_stocke`, comme toute autre pièce jointe. Il était
-    #  fabriqué ici à la main — `f"{uuid4().hex}.jpg"`, sans radical — alors que
-    #  `app/utils/fichiers.py` annonce en tête « écrit une seule fois ». Il l'était
-    #  deux fois, et la seconde perdait le nom d'origine : une photo arrivait dans
-    #  l'e-mail sous « fb6cb1df94734926bfcd9b7f07e99ded.jpg », là où un PDF joint au
-    #  même message s'affichait « Devis-toiture.pdf ». Signalé sur un e-mail réel le
-    #  07/08/2026. L'image est réencodée en JPEG, d'où l'extension forcée — mais le
-    #  radical du fichier d'origine, lui, n'a aucune raison d'être jeté.
-    #  🔴 L'écriture passe par la source unique, seule autorisée à poser sur le
-    #  disque des octets venus du réseau. `extension_forcee=".jpg"` parce que
-    #  l'image vient d'être réencodée : le contrôle porte sur le type reçu,
-    #  l'extension sur ce qui est écrit.
-    #
-    #  Le nom passe par `nom_stocke`, comme toute autre pièce jointe. Il était
-    #  fabriqué à la main — `f"{uuid4().hex}.jpg"`, sans radical — alors que
-    #  `app/utils/fichiers.py` annonce en tête « écrit une seule fois ». Il l'était
-    #  deux fois, et la seconde perdait le nom d'origine : une photo arrivait dans
-    #  l'e-mail sous « fb6cb1df94734926bfcd9b7f07e99ded.jpg », là où un PDF joint au
-    #  même message s'affichait « Devis-toiture.pdf ». Signalé sur un e-mail réel le
-    #  07/08/2026.
-    filename = enregistrer_fichier_recu(
+    return enregistrer_image_recue(
         data,
         file.filename,
         file.content_type,
-        "image",
         subfolder,
         user=user,
-        extension_forcee=".jpg",
         session=session,
+        max_dim=max_dim,
     )
-    return stockage().url(f"{subfolder}/{filename}")
 
 
 # ── endpoints ──────────────────────────────────────────────────────────────

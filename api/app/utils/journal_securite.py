@@ -110,6 +110,12 @@ _NIVEAUX: dict[str, int] = {
     #  change de lecteurs, des personnes liront ce qu'elles ne lisaient pas, sur
     #  confirmation nominative du conseil (`utils/fusion_conciliation`).
     "fusion_conciliation": logging.WARNING,
+    #  L'EMPLOI d'un leurre (#2365, `utils/leurres`) : une connexion sur le faux
+    #  compte, la fausse clé de maintenance présentée. Personne de légitime ne le
+    #  fait — S6 de l'audit nocturne en fait un FAIL. WARNING et non ERROR : le
+    #  point 6 du pré-check compte les ERROR, et un attaquant bloquerait la MEP.
+    "connexion_leurre": logging.WARNING,
+    "cle_maintenance_leurre": logging.WARNING,
 }
 
 

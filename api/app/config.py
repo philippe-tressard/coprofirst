@@ -184,6 +184,16 @@ class Settings(BaseSettings):
     # Laisser vide pour désactiver l'enregistrement depuis le script cron
     maintenance_key: str = ""
 
+    #  Les LEURRES (#2365) : une adresse de compte et une clé de maintenance que
+    #  personne de légitime n'emploie jamais. Elles ne vivent que dans le `.env`
+    #  du nœud — le dépôt est public, une valeur écrite ici se reconnaîtrait —, et
+    #  le faux `.env.bak` ou les routes leurres de Caddy les montrent à qui fouille.
+    #  Les EMPLOYER se journalise (`connexion_leurre`, `cle_maintenance_leurre`) et
+    #  S6 de l'audit nocturne en fait un FAIL. Vides : aucun leurre, rien ne change.
+    #  Lues par `utils/leurres` et nulle part ailleurs.
+    leurre_adresse: str = ""
+    leurre_cle_maintenance: str = ""
+
     #  Clé du bridge WhatsApp — la MÊME variable que lit le bridge : compose la
     #  lui donne sous le nom `WA_API_KEY`, l'API la reçoit par `env_file: .env`.
     #

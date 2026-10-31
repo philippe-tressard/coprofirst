@@ -59,6 +59,7 @@ mindmap
       Base de données
       Courriel de l’installation
       Chemins et sauvegardes
+      Leurres de l’audit de sécurité
       Pont WhatsApp
     Personne
       Durées de conservation des données
@@ -333,6 +334,13 @@ Les champs de `Settings` (`api/app/config.py`). Un `.env` qui porte une variable
 | `BACKUP_KEEP_VERSIONS` | int | `7` |
 | `CACHE_MANUEL_DIR` | str | `/app/data/cache-manuel-pdf` |
 | `MAINTENANCE_KEY` | str | secret |
+
+### Leurres de l'audit de sécurité
+
+| Variable | Type | Défaut |
+|---|---|---|
+| `LEURRE_ADRESSE` | str | vide |
+| `LEURRE_CLE_MAINTENANCE` | str | secret |
 
 ### Pont WhatsApp
 
