@@ -874,9 +874,11 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   laisse n'atteint plus le suivant — la dépendance d'ordre du 24/10/2026. Entre les tests
   d'un MÊME fichier, l'ordre tiré au sort fait sortir ce qui reste. 🔒 Une `Session(moteur_de_test())` jamais
   fermée, un patrimoine vidé à la main sont refusés (`test_aides_de_tests_source_unique.py`).
-  Le nom d'un schéma jetable porte son heure ; la suite retire au démarrage ceux de plus
-  de 6 h, qu'un passage interrompu a laissés (1 447 rendaient chaque `create_all` 4,6 fois
-  plus lent sur le poste). Une base injoignable s'écrit `SERVEUR_INJOIGNABLE` : sous
+  Le nom d'un schéma jetable porte son heure, son commentaire son **créateur** (pid et hôte),
+  et chaque connexion s'y nomme de lui (`application_name`) : la suite retire au démarrage
+  ceux dont le créateur est mort et ceux de plus de 6 h, jamais celui d'une connexion
+  ouverte — `dialecte.schemas_jetables_a_retirer` (#2399 ; 1 447 orphelins rendaient chaque
+  `create_all` 4,6 fois plus lent sur le poste). Une base injoignable s'écrit `SERVEUR_INJOIGNABLE` : sous
   Windows, `127.0.0.1:1` attendait le délai du système (130 s pour un test).
 - **Ce qui s'écrit dans la langue du moteur vit dans `app/dialecte.py`** :
   intégrité, compactage, format SQL d'une date (`dialecte.jour`, `dialecte.mois`),
@@ -1023,7 +1025,13 @@ Un seul job : `bash scripts/poste/rejouer-ci.sh build-frontend` — mais alors a
 Avant la première étape, le rejeu sonde le poste — dépendances du lot, base des tests,
 `front/node_modules` réel, Chromium de Playwright, Node et Python, venv — et **refuse**
 en quelques secondes, avec la commande qui répare : sept rejeux sur 72 avaient fini
-INCONNU au bout de 20 min. Il joue ensuite les étapes **rapides** de tous les jobs, puis
+INCONNU au bout de 20 min. 🔒 **Le catalogue de la base des tests se mesure aussi** (#2399,
+31/10/2026 : 140 schémas abandonnés, `pg_attribute` à 7,6 Go, deux suites gelées au-delà de
+45 min) : après la purge, relations, part de tuples morts, place par ligne vivante et
+temps d'un DDL témoin ; au-delà d'un seuil, le pré-vol **compacte d'office** (`VACUUM FULL`
+du catalogue, le rôle `essai` est superutilisateur), puis refuse s'il reste gonflé ou si
+des schémas tenus le chargent ; illisible, il refuse — INCONNU, jamais OK. Seuils et sonde :
+`ci_catalogue_verdict` (`lib-ci-base.sh`). Il joue ensuite les étapes **rapides** de tous les jobs, puis
 les **lentes** — durée **mesurée** au rejeu précédent (`rejeu-ci-durees.tsv`, répertoire
 git commun), jamais une liste —, chaque job dans son couloir, plusieurs couloirs côte à
 côte (`REJEU_PARALLELE`, défaut : cœurs libres / 4, au plus 8 ; `1` = en série). Une
@@ -1045,8 +1053,9 @@ dont le père est mort ; `scripts/lib/lib-ci-arbre.sh` retrouve l'arbre par la *
 des ppid** (Windows garde le père mort ; MSYS donne le vrai père des programmes de Cygwin),
 même racine absente. Sortir du rejeu, arrêter une étape et la mort du lanceur tuent donc
 tout l'arbre ; le pré-vol **tue** les restes d'un rejeu mort (`REJEU_ORPHELINS=signaler`
-pour seulement les nommer) et retire les schémas de test de plus d'une heure qu'ils
-tenaient. Chaque rejeu,
+pour seulement les nommer) et retire les schémas de test abandonnés — créateur mort,
+quel que soit leur âge, ou inconnu et de plus d'une heure ; jamais celui d'une connexion
+ouverte. Chaque rejeu,
 complet ou non, écrit une ligne par étape et un bilan dans `rejeu-durees.log`
 (répertoire git commun) : `python scripts/poste/mesurer-rejeux.py [--jours N]` en sort
 la part du temps passée dans des rejeux non verts, les dix étapes les plus longues et

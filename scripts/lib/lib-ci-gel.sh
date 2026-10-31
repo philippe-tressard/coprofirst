@@ -93,9 +93,11 @@ ci_gel_journal_pytest() {      # $1 = sortie de l'étape (fichier)
   tail -n "$CI_GEL_LIGNES_PYTEST" "$j" | tr -d ''
 }
 
-#  Les schémas de test qu'un arbre mort a laissés : ceux de plus d'une heure (aucune suite
-#  n'en dure une, et le rejeu tient le verrou) ; la suite, elle, n'en retire que de plus de
-#  6 h. Par `app.dialecte`, jamais une seconde écriture de la règle. Une ligne de sortie.
+#  Les schémas de test qu'un arbre mort a laissés : ceux dont le CRÉATEUR, inscrit au
+#  schéma, est mort — quel que soit leur âge (#2399 : 140 schémas abandonnés dans la même
+#  heure, 52 000 relations) —, et ceux de plus d'une heure dont on ne connaît pas le
+#  créateur. Jamais celui d'une connexion ouverte. La suite applique la même règle avec un
+#  plafond de 6 h. Par `app.dialecte`, jamais une seconde écriture de la règle. Une ligne.
 ci_gel_schemas_purger() {      # $1 = racine du dépôt
   [ -n "${TESTS_BASE_URL:-}" ] || { echo "· schémas de test : TESTS_BASE_URL absent, non purgés"; return 0; }
   (cd "$1/api" && PYTHONUTF8=1 timeout 60 python - <<'PYTHON' 2>&1 | tr -d '' | tail -1)
@@ -108,7 +110,7 @@ try:
     from app.dialecte import retirer_schemas_jetables_perimes
 
     n = retirer_schemas_jetables_perimes(os.environ["TESTS_BASE_URL"], plus_vieux_que=timedelta(hours=1))
-    print(f"· schémas de test de plus d'une heure : {n} retiré(s)")
+    print(f"· schémas de test abandonnés (créateur mort, ou plus d'une heure) : {n} retiré(s)")
 except Exception as erreur:  # noqa: BLE001 — une purge manquée ne change pas le verdict
     print("· schémas de test non purgés :", (str(erreur).strip().splitlines() or ["sans message"])[0][:140])
 PYTHON
