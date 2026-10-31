@@ -82,10 +82,12 @@ class UserRead(BaseModel):
     def from_orm_with_roles(
         cls, u, batiment_nom: Optional[str] = None, delegations_aidant: list[dict] | None = None
     ) -> "UserRead":
+        from app.auth.operateur import roles_effectifs
         from app.utils.communaute import motif_de_refus
 
         data = cls.model_validate(u)
-        data.roles = u.roles
+        #  L'Opérateur jugé selon l'instance : l'écran n'offre que ce que la route admet.
+        data.roles = roles_effectifs(u)
         data.communaute_motif_refus = motif_de_refus(u)
         if batiment_nom is not None:
             data.batiment_nom = batiment_nom

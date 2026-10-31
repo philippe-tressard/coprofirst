@@ -321,7 +321,7 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
 | `get_current_user` | Tout utilisateur connecté |
 | `require_cs_or_admin` | Création/modification de contenu |
 | `require_admin` | Suppression définitive, config système |
-| `require_operateur` | Supervision technique et base (`/admin/maintenance/sante`, `/admin/db/*`…) — l'**opérateur de la plateforme**, pas l'administrateur de la copropriété (#1750) |
+| `require_operateur` | Supervision technique et base (`/admin/maintenance/sante`, `/admin/db/*`…) — l'**opérateur de la plateforme**, pas l'administrateur de la copropriété (#1750). Sur une instance **commune**, désigné par l'exploitant (`operateurs` de la déclaration), jamais par Admin › Utilisateurs : `auth/operateur.roles_effectifs` |
 | `require_proprietaire` | Fonctions propriétaires |
 | `require_questions_reglement` | Questions au règlement : `require_proprietaire`, puis la case de l'admin qui ouvre l'usage aux copropriétaires (le CS passe toujours) |
 
