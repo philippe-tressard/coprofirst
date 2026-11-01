@@ -2,6 +2,9 @@
 	import ActionsPerimetre from '#lib/components/ActionsPerimetre.svelte';
 	import BoiteCopiePerimetre from '#lib/components/BoiteCopiePerimetre.svelte';
 	import BoiteNouveauPerimetre from '#lib/components/BoiteNouveauPerimetre.svelte';
+	import BoutonNouveau from '#lib/components/BoutonNouveau.svelte';
+	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
+	import ReglagesListe from '#lib/components/ReglagesListe.svelte';
 	import BoiteDuplicationPerimetre from '#lib/components/BoiteDuplicationPerimetre.svelte';
 	import ChampsPerimetre from '#lib/components/ChampsPerimetre.svelte';
 	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
@@ -11,7 +14,12 @@
 	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import { perimetresStore, rechargerPerimetres } from '#lib/stores/perimetres.ts';
-	import { codeSousParent, type Perimetre, type SensDeplacement } from '#lib/perimetres/index.ts';
+	import {
+		codeSousParent,
+		rechercherDansArbre,
+		type Perimetre,
+		type SensDeplacement,
+	} from '#lib/perimetres/index.ts';
 	import { siteNomStore } from '#lib/stores/pageConfig.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
@@ -223,7 +231,9 @@
 		);
 	}
 
+	let recherche = '';
 	$: noeuds = $perimetresStore;
+	$: affiches = rechercherDansArbre(noeuds, recherche);
 </script>
 
 <svelte:head><title>Périmètres · {_siteNom}</title></svelte:head>
@@ -234,10 +244,25 @@
 	n’existe pas ici.
 </p>
 
-<div class="barre">
-	<button class="btn btn-primary" on:click={() => creer(null)}>+ Périmètre de premier niveau</button
-	>
+<!--  L'action primaire sur sa rangée, à gauche (`.actions-onglet`), puis la
+      recherche (`ReglagesListe`) : la forme de toute liste du site. Le « ＋ »
+      d'un nœud crée SOUS lui ; ce bouton-ci crée au premier niveau. -->
+<div class="actions-onglet">
+	<BoutonNouveau
+		ouvert={creation?.parent === null}
+		libelle="Nouveau périmètre"
+		on:basculer={() => creer(null)}
+	/>
 </div>
+
+<ReglagesListe>
+	<ChampRecherche
+		id="recherche-perimetres"
+		bind:valeur={recherche}
+		placeholder="Bâtiment 3, toit, parking…"
+		dans="le libellé, le code, la description"
+	/>
+</ReglagesListe>
 
 <!--
 	La création d'un périmètre de PREMIER NIVEAU s'ouvre ici, au ras de la liste :
@@ -259,18 +284,20 @@
 	/>
 {/if}
 
-{#if chargement || erreur || noeuds.length === 0}
+{#if chargement || erreur || affiches.length === 0}
 	<EtatListe
 		{chargement}
 		{erreur}
-		vide={noeuds.length === 0}
+		vide={affiches.length === 0}
 		titreErreur="Impossible d’afficher l’arborescence"
-		titreVide="Aucun périmètre"
-		messageVide="Créez-en un : tant que l’arborescence est vide, un contenu sans périmètre reste visible de tous."
+		titreVide={noeuds.length ? 'Aucun périmètre ne correspond' : 'Aucun périmètre'}
+		messageVide={noeuds.length
+			? 'Aucun libellé, code ni description ne contient tous ces mots.'
+			: 'Créez-en un : tant que l’arborescence est vide, un contenu sans périmètre reste visible de tous.'}
 	/>
 {:else}
 	<div class="ref-list">
-		{#each noeuds as n (n.code)}
+		{#each affiches as n (n.code)}
 			{@const deplie = estDeplie(n.code, ouvert, edite, creation, duplique, copie)}
 			<div class="ref-item" class:expanded={deplie} class:inactif={!n.actif}>
 				<div
@@ -403,9 +430,6 @@
 <style>
 	.page-desc {
 		color: var(--color-text-muted);
-		margin-bottom: 1rem;
-	}
-	.barre {
 		margin-bottom: 1rem;
 	}
 	.ref-list {

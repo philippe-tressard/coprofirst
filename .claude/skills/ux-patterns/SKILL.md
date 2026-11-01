@@ -2121,6 +2121,10 @@ Prestataires, son unique appelant, affichait donc « ✕ Annuler » **même en
 édition** — on n'annule pas une création qui n'a pas lieu — jusqu'au signalement
 de l'utilisateur. *Une consigne fausse fait lire l'écart comme une décision.*
 
+🔴 **Un onglet d'Admin n'a pas d'en-tête à lui** (« Paramétrage » est partagé) : son
+`BoutonNouveau` se pose dans `.actions-onglet` (`composants.css`), sur sa rangée, à
+gauche, au-dessus de `ReglagesListe` — jamais à côté de la recherche (arbitrage n° 79).
+
 | Prop | Rôle |
 |---|---|
 | `titre` | obligatoire |

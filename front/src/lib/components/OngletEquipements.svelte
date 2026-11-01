@@ -30,6 +30,7 @@
 	} from '#lib/equipements.ts';
 	import { equipementsStore, rechargerEquipements } from '#lib/stores/equipements.ts';
 	import { EQUIPEMENT } from '#lib/entites/equipement.ts';
+	import BoutonNouveau from './BoutonNouveau.svelte';
 	import CarteEquipement from './CarteEquipement.svelte';
 	import ChampsEquipement from './ChampsEquipement.svelte';
 	import ChampRecherche from './ChampRecherche.svelte';
@@ -37,6 +38,7 @@
 	import FormulaireCreation from './FormulaireCreation.svelte';
 	import ListeEtArchives from './ListeEtArchives.svelte';
 	import PiedFormulaire from './PiedFormulaire.svelte';
+	import ReglagesListe from './ReglagesListe.svelte';
 
 	let chargement = true;
 	let erreur = '';
@@ -146,16 +148,25 @@
 	}
 </script>
 
-<div class="barre">
-	{#if !creationOuverte}
-		<button class="btn btn-primary" on:click={ouvrirCreation}>+ {EQUIPEMENT.libelleNouveau}</button>
-	{/if}
+<!--  L'action primaire sur sa rangée, à gauche (`.actions-onglet`), puis les
+      réglages de la liste (`ReglagesListe`) : la forme de toute liste du site,
+      la page Affaires en tête (`ux-patterns` §3, §5 bis). -->
+<div class="actions-onglet">
+	<BoutonNouveau
+		ouvert={creationOuverte}
+		libelle={EQUIPEMENT.libelleNouveau}
+		on:basculer={ouvrirCreation}
+	/>
+</div>
+
+<ReglagesListe>
 	<ChampRecherche
 		id="recherche-equipements"
 		bind:valeur={recherche}
+		placeholder="Ascenseur, chauffage…"
 		dans="le libellé, le code, l’abréviation"
 	/>
-</div>
+</ReglagesListe>
 
 {#if creationOuverte}
 	<FormulaireCreation titre={EQUIPEMENT.libelleNouveau}>
@@ -204,13 +215,3 @@
 		{/each}
 	</ListeEtArchives>
 {/if}
-
-<style>
-	.barre {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-	}
-</style>
