@@ -57,7 +57,8 @@ poste_gnu_prefixer() {
   echo "$1${reste:+:$reste}"
 }
 
-# poste_gnu_poser — sur macOS, les outils GNU de Homebrew en tête du PATH. Idempotent.
+# poste_gnu_poser "$@" — sur macOS, les outils GNU de Homebrew en tête du PATH. Idempotent.
+# Reçoit les arguments du script : parti sous le bash d'Apple, il s'y relance sous celui de Homebrew.
 poste_gnu_poser() {
   [ "$(poste_systeme)" = darwin ] || return 0
   local prefixe="${HOMEBREW_PREFIX:-/opt/homebrew}"
@@ -66,9 +67,12 @@ poste_gnu_poser() {
   export PATH
   #  Le PATH ne change pas l'interpréteur DÉJÀ lancé : un script parti sous le bash 3.2
   #  d'Apple y resterait, et tomberait plus loin sur une erreur de syntaxe sans rapport.
+  #  Un hook git ou un outil sans ~/.zprofile le lance ainsi : il se relance sous celui
+  #  de Homebrew ; à défaut, il s'arrête en le disant.
   if [ "${BASH_VERSINFO[0]:-0}" -lt 4 ]; then
-    echo "✗ $(basename "$0") tourne sous bash ${BASH_VERSION:-?} (celui d'Apple) : relancer avec" \
-         "$prefixe/bin/bash $0 — ou ouvrir un terminal qui lit ~/.zprofile (#2419)" >&2
+    [ -x "$prefixe/bin/bash" ] && exec "$prefixe/bin/bash" "$0" "$@"
+    echo "✗ $(basename "$0") tourne sous bash ${BASH_VERSION:-?} (celui d'Apple), sans bash de" \
+         "Homebrew pour le relancer · réparer : brew install bash (#2419)" >&2
     exit 2
   fi
 }
@@ -131,10 +135,16 @@ _poste_gnu_selftest() {
     ( echecs=0; poste_gnu_poser; _cas "macOS : la porte posée, les témoins répondent en GNU" "" \
         "$(poste_gnu_etat darwin "$(poste_gnu_sonder)")"; exit "$echecs" ) || echecs=$((echecs + 1))
     if [ -x /bin/bash ] && [ "$(/bin/bash -c 'echo "${BASH_VERSINFO[0]}"')" -lt 4 ]; then
-      local sous32 rc32
-      sous32=$(/bin/bash -c '. "$1"; poste_gnu_poser; echo PASSE' _ "${BASH_SOURCE[0]}" 2>&1); rc32=$?
-      _cas "macOS : sous le bash 3.2 d'Apple, la porte arrête le script (code 2, nommé)" "2 oui" \
-        "$rc32 $([[ "$sous32" == *"bash 3."*"relancer avec"* && "$sous32" != *PASSE* ]] && echo oui || echo non)"
+      local banc sous32 rc32
+      banc=$(mktemp -d)
+      printf '%s\n' ". \"${BASH_SOURCE[0]}\"" 'poste_gnu_poser "$@"' \
+        'echo "bash ${BASH_VERSINFO[0]} [$*]"' > "$banc/script.sh"
+      _cas "macOS : parti sous le bash 3.2 d'Apple, relancé sous Homebrew, arguments compris" \
+        "bash 5 [a b c]" "$(/bin/bash "$banc/script.sh" a 'b c' 2>&1 | sed 's/bash [6-9]/bash 5/')"
+      sous32=$(HOMEBREW_PREFIX="$banc/sans-brew" /bin/bash "$banc/script.sh" 2>&1); rc32=$?
+      _cas "macOS : sans bash de Homebrew, la porte arrête le script (code 2, nommé)" "2 oui" \
+        "$rc32 $([[ "$sous32" == *"bash 3."*"brew install bash"* && "$sous32" != *"bash 3 ["* ]] && echo oui || echo non)"
+      rm -rf "$banc"
     fi
   else
     local avant="$PATH"; poste_gnu_poser
