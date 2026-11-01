@@ -80,6 +80,9 @@
 #  Test sans effet de bord : bash scripts/poste/export-hors-site.sh --selftest
 # =============================================================================
 set -uo pipefail
+# shellcheck source=../lib/lib-poste-gnu.sh
+. "$(dirname "$0")/../lib/lib-poste-gnu.sh"
+poste_gnu_poser "$@"   # macOS : les outils GNU en tête du PATH, comme Git Bash et la CI (#2419)
 
 EXPORT_DEST="${EXPORT_DEST:-/c/Backup}"
 #  🔴 DEUX, et pas quatorze (12/09/2026, demandé à l'écran). Une archive pèse

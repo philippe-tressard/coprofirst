@@ -56,10 +56,34 @@ ci_proc_table_windows() {
     }' f=1 <(ps -e 2>/dev/null | awk 'NR > 1 { sub(/^[^0-9]+/, ""); print $1, $2, $4 }') \
        f=2 <(powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$CI_PS1_PROCESSUS")" 2>/dev/null | tr -d '\r')
 }
+#  macOS (#2419) : `ps` n'y connaît pas `etimes`, et un mot-clé inconnu ne l'arrête
+#  pas — il sort les autres colonnes, décalées, et l'âge se lisait dans le nom.
+#  L'âge s'y lit dans `etime` ([[j-]hh:]mm:ss) ; le nom, dans le premier mot de la
+#  ligne de commande (`comm` y est un chemin, qui peut porter des espaces). PURE :
+#  $1 = maintenant (epoch), l'entrée est la sortie de `ps -A -o pid=,ppid=,etime=,args=`.
+ci_ps_bsd_lire() {
+  awk -v now="$1" '
+    function secondes(s,   j, d, a, n) {
+      j = 0
+      if (s ~ /-/) { split(s, d, "-"); j = d[1]; s = d[2] }
+      n = split(s, a, ":")
+      if (n == 3) return j * 86400 + a[1] * 3600 + a[2] * 60 + a[3]
+      if (n == 2) return j * 86400 + a[1] * 60 + a[2]
+      return -1
+    }
+    NF >= 4 {
+      e = secondes($3); if (e < 0) next
+      pid = $1; ppid = $2; nom = $4; sub(/.*\//, "", nom)
+      $1 = $2 = $3 = ""; sub(/^ +/, "")
+      printf "%s\t%s\t%d\t%s\t%s\n", pid, ppid, now - e, nom, $0
+    }'
+}
 ci_proc_table() {          # → la table de TOUS les processus (lecture seule) ; code ≠ 0 si illisible
   local t
   if ci_est_windows; then
     t=$(ci_proc_table_windows) || return 1
+  elif [ "$(uname -s)" = Darwin ]; then
+    t=$(ps -A -o pid=,ppid=,etime=,args= 2>/dev/null | ci_ps_bsd_lire "$(date +%s)")
   else
     t=$(ps -eo pid=,ppid=,etimes=,comm=,args= 2>/dev/null | awk -v now="$(date +%s)" '
       { pid = $1; ppid = $2; e = $3; nom = $4; $1 = $2 = $3 = $4 = ""; sub(/^ +/, "")

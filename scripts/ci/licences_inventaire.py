@@ -79,17 +79,28 @@ def _exigences(fichier: pathlib.Path) -> list[str]:
     return exigences
 
 
-#  Le POSTE de développement (Windows). Sert à une seule question : une
-#  dépendance de l'image y est-elle installable ? Si non (`uvloop`), son absence
-#  ici n'est pas une mesure manquée mais une impossibilité — et seule une
-#  déclaration de `LICENCES_HORS_POSTE` peut la rendre mesurable, sous le
-#  contrôle de la CI qui, elle, lit le paquet installé.
-ENVIRONNEMENT_POSTE = {
-    **ENVIRONNEMENT_IMAGE,
-    "os_name": "nt",
-    "platform_machine": "AMD64",
-    "platform_system": "Windows",
-    "sys_platform": "win32",
+#  Les POSTES de développement. Servent à une seule question : une dépendance de
+#  l'image y est-elle installable ? Si non (`uvloop` sous Windows, `greenlet` sous
+#  macOS arm64), son absence ici n'est pas une mesure manquée mais une
+#  impossibilité — et seule une déclaration de `LICENCES_HORS_POSTE` peut la rendre
+#  mesurable, sous le contrôle de la CI qui, elle, lit le paquet installé.
+#  Deux postes depuis le 01/11/2026 (#2419) : le Mac, et le PC gardé en repli. Une
+#  dépendance n'est « installable sur le poste » que si elle l'est sur TOUS ; le PC
+#  retiré, son entrée se retire, et une déclaration devenue inutile échoue.
+ENVIRONNEMENTS_POSTES = {
+    "Windows": {
+        **ENVIRONNEMENT_IMAGE,
+        "os_name": "nt",
+        "platform_machine": "AMD64",
+        "platform_system": "Windows",
+        "sys_platform": "win32",
+    },
+    "macOS": {
+        **ENVIRONNEMENT_IMAGE,
+        "platform_machine": "arm64",
+        "platform_system": "Darwin",
+        "sys_platform": "darwin",
+    },
 }
 
 
@@ -206,7 +217,9 @@ def paquets_python(fichier: pathlib.Path, hors_poste: dict) -> dict:
 
     outils = (md, Requirement, canonicalize_name)
     image, absentes = _graphe(directes, ENVIRONNEMENT_IMAGE, *outils)
-    poste, _ = _graphe(directes, ENVIRONNEMENT_POSTE, *outils)
+    poste = set.intersection(
+        *(set(_graphe(directes, env, *outils)[0]) for env in ENVIRONNEMENTS_POSTES.values())
+    )
     lues = {nom: _licence_installee(md, nom) for nom in image if nom not in absentes}
     retenues, notes, echecs, restantes = decider_hors_poste(
         hors_poste, set(image), set(poste), lues, absentes
