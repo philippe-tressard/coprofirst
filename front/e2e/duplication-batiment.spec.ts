@@ -18,32 +18,9 @@ import type { Page } from '@playwright/test';
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
 import type { Batiment } from '../src/lib/api';
 import type { Perimetre } from '../src/lib/perimetres';
+import { noeud } from './perimetres-temoins';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
-
-function noeud(champs: Partial<Perimetre> & Pick<Perimetre, 'id' | 'code' | 'libelle'>): Perimetre {
-	return {
-		parent: null,
-		libelle_court: champs.libelle,
-		description: '',
-		icone: null,
-		batiment_id: null,
-		profondeur: 0,
-		ordre: 0,
-		actif: true,
-		portee_globale: false,
-		concerne_tous: false,
-		selectionnable: true,
-		privatif: false,
-		hors_copropriete: false,
-		utilise: false,
-		nb_descendants: 0,
-		dupliquable: false,
-		copiable: false,
-		deplacements: [],
-		...champs,
-	};
-}
 
 const ARBRE: Perimetre[] = [
 	noeud({

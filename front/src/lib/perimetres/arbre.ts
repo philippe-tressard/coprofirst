@@ -1,6 +1,6 @@
 import { perimetreLabel, perimetreLabelUn } from './libelles';
 import { estRegroupement } from './teinte';
-import { slug } from '#lib/texte.ts';
+import { contientTousLesMots, slug } from '#lib/texte.ts';
 
 /**
  * Périmètres — le rendu, sans table.
@@ -189,6 +189,25 @@ export function codeSousParent(parent: string | null, libelle: string): string {
 	const code = slug(libelle);
 	if (!code) return '';
 	return parent ? `${parent}/${code}` : code;
+}
+
+/**
+ * Les nœuds qu'une recherche retient, AVEC leurs ancêtres : un « Toit » trouvé
+ * sous le bâtiment 3 se lit sous lui, jamais seul au premier niveau — l'ordre et
+ * l'indentation restent ceux de l'arbre entier. La règle des mots est celle de
+ * toute liste reçue (`contientTousLesMots`, sans accents ni casse).
+ */
+export function rechercherDansArbre(noeuds: Perimetre[], recherche: string): Perimetre[] {
+	if (!recherche.trim()) return noeuds;
+	const parentDe = new Map(noeuds.map((n) => [n.code, n.parent]));
+	const gardes = new Set<string>();
+	for (const n of noeuds) {
+		if (!contientTousLesMots([n.libelle, n.libelle_court, n.code, n.description], recherche))
+			continue;
+		for (let c: string | null = n.code; c && !gardes.has(c); c = parentDe.get(c) ?? null)
+			gardes.add(c);
+	}
+	return noeuds.filter((n) => gardes.has(n.code));
 }
 
 /** Le code qui désigne « toute la copropriété », ou `null` sur un arbre vide. */
