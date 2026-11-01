@@ -48,6 +48,16 @@ PERSISTANCE_CHAUDS="${PERSISTANCE_CHAUDS:-/etc/cron.d /etc/cron.daily /etc/cron.
 #: Les emplacements TIÈDES — la configuration, que les mises à jour retouchent.
 PERSISTANCE_TIEDES="${PERSISTANCE_TIEDES:-/etc/ssh/sshd_config /etc/ssh/sshd_config.d /etc/pam.d /etc/security /etc/fail2ban /etc/ufw/user.rules /etc/ufw/user6.rules /etc/apt/apt.conf.d /etc/apt/trusted.gpg.d /etc/apt/keyrings /usr/share/keyrings /boot/firmware/config.txt /boot/firmware/cmdline.txt}"
 
+#: Les liens d'activation qui suivent le RÔLE du nœud, « <lien>=<cible attendue> ».
+#: La bascule et le failover activent l'unité sur l'actif et la désactivent sur le
+#: standby (`lib-failover.sh`) : sa présence change à chaque bascule nocturne, et
+#: S3 criait au loup sur les deux nœuds le lendemain (01/11/2026, rpi1 « + »,
+#: rpi2 « - »). Le lien à SA cible attendue sort donc du relevé comparé ; vers une
+#: autre cible, il reste un écart CHAUD. L'activation selon le rôle est jugée par
+#: `check-reliability.sh` (`cf_enabled` : activée chez l'actif, coupée chez le
+#: standby), jamais ici.
+PERSISTANCE_SELON_ROLE="${PERSISTANCE_SELON_ROLE:-/etc/systemd/system/multi-user.target.wants/cloudflared.service=/etc/systemd/system/cloudflared.service}"
+
 #: Où vit la référence, chez root (créé en 700 par `persistance_accepter`).
 AUDIT_SECURITE_DIR="${AUDIT_SECURITE_DIR:-/var/lib/hostachy/audit-securite}"
 PERSISTANCE_REFERENCE="${PERSISTANCE_REFERENCE:-$AUDIT_SECURITE_DIR/persistance.releve}"
@@ -68,13 +78,23 @@ persistance_classe() {
     echo autre
 }
 
+#  $1 = un relevé → le même, sans les liens de PERSISTANCE_SELON_ROLE qui pointent
+#  vers leur cible attendue (un lien vers une autre cible y reste).
+persistance_sans_role() {
+    local releve=${1:-} entree
+    for entree in $PERSISTANCE_SELON_ROLE; do
+        releve=$(printf '%s\n' "$releve" | grep -vxF "L:${entree#*=}  ${entree%%=*}" || true)
+    done
+    printf '%s\n' "$releve"
+}
+
 #  $1 = la référence · $2 = le relevé courant (lignes « <empreinte>  <chemin> »)
 #  → une ligne par écart : « + chemin » (ajouté), « - chemin » (retiré),
 #    « ~ chemin » (modifié) ; rien si identiques.
 persistance_comparer() {
     local ref cur
-    ref=$(printf '%s\n' "${1:-}" | awk 'NF >= 2 { e=$1; $1=""; sub(/^ +/, ""); print $0 "\t" e }' | sort)
-    cur=$(printf '%s\n' "${2:-}" | awk 'NF >= 2 { e=$1; $1=""; sub(/^ +/, ""); print $0 "\t" e }' | sort)
+    ref=$(persistance_sans_role "${1:-}" | awk 'NF >= 2 { e=$1; $1=""; sub(/^ +/, ""); print $0 "\t" e }' | sort)
+    cur=$(persistance_sans_role "${2:-}" | awk 'NF >= 2 { e=$1; $1=""; sub(/^ +/, ""); print $0 "\t" e }' | sort)
     #  join sur le chemin : présent d'un seul côté, ou empreinte différente.
     join -t $'\t' -a1 -a2 -e MANQUE -o '0,1.2,2.2' <(printf '%s\n' "$ref") <(printf '%s\n' "$cur") \
         | awk -F'\t' '$2 == "MANQUE" { print "+ " $1; next }
@@ -171,6 +191,22 @@ ggg  /opt/inconnu")"
     t "référence absente" INCONNU "$(persistance_verdict "" "$R" | cut -d: -f1)"
     t "relevé vide" INCONNU "$(persistance_verdict "$R" "" | cut -d: -f1)"
     t "les deux vides" INCONNU "$(persistance_verdict "" "" | cut -d: -f1)"
+    #  Le lien du tunnel suit le rôle (bascule nocturne) : présent ou absent, ce
+    #  n'est pas un écart ; vers une autre cible, c'en est un (01/11/2026).
+    local LT="L:/etc/systemd/system/cloudflared.service  /etc/systemd/system/multi-user.target.wants/cloudflared.service"
+    t "tunnel activé par la bascule (absent de la référence) → CONFORME" CONFORME \
+      "$(persistance_verdict "$R" "$R
+$LT")"
+    t "tunnel coupé par la bascule (absent du relevé) → CONFORME" CONFORME \
+      "$(persistance_verdict "$R
+$LT" "$R")"
+    t "lien du tunnel vers une AUTRE cible → FAIL" \
+      "FAIL:+ /etc/systemd/system/multi-user.target.wants/cloudflared.service" \
+      "$(persistance_verdict "$R" "$R
+L:/tmp/faux.service  /etc/systemd/system/multi-user.target.wants/cloudflared.service")"
+    t "un autre lien d'activation reste jugé → FAIL" "FAIL:+ /etc/systemd/system/multi-user.target.wants/retour.service" \
+      "$(persistance_verdict "$R" "$R
+L:/etc/systemd/system/retour.service  /etc/systemd/system/multi-user.target.wants/retour.service")"
     t "un chemin avec espace survit à la comparaison" "~ /etc/cron.d/a b" \
       "$(persistance_comparer "x  /etc/cron.d/a b" "y  /etc/cron.d/a b")"
 
