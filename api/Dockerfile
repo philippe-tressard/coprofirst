@@ -10,7 +10,7 @@
 #  `libheif-plugin-x265`. La version vient de `requirements.txt`, seule source.
 #  🔒 `scripts/ci/licences_image.py` (règles du Dockerfile) et
 #  `scripts/verifier_heif.py` (l'image construite, ci-dessous).
-FROM python:3.12-slim AS heif
+FROM python:3.15-slim AS heif
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libc6-dev \
@@ -21,7 +21,7 @@ COPY requirements.txt .
 RUN version=$(grep -oE '^pillow-heif==[0-9.]+' requirements.txt) \
     && pip wheel --no-binary pillow-heif --no-deps --wheel-dir /roues "$version"
 
-FROM python:3.12-slim
+FROM python:3.15-slim
 
 WORKDIR /app
 
