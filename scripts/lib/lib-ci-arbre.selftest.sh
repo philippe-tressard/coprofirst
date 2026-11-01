@@ -123,6 +123,22 @@ ci_arbre_selftest() {
     echo "SKIP  orphelins réels — hors Windows, init adopte les orphelins (cas couvert par les tables ci-dessus)"
   fi
   rm -rf "$vd"
+  # ── macOS (#2419) : l'âge lu dans `etime`, le nom dans la ligne de commande ──
+  t "ps BSD — mm:ss, jours, chemin à espaces" \
+    "$(printf '%s\n' '  42     1    01:05 /bin/bash scripts/poste/rejouer-ci.sh' \
+                     '  43    42 2-03:04:05 /Applications/Un Outil.app/x -v' \
+                     ' 44 42 00:00 /opt/homebrew/bin/python3.12 -m pytest tests' \
+       | ci_ps_bsd_lire 1000000 | tr '\t' '|')" \
+    "$(printf '%s\n' '42|1|999935|bash|/bin/bash scripts/poste/rejouer-ci.sh' \
+                     '43|42|816155|Un|/Applications/Un Outil.app/x -v' \
+                     '44|42|1000000|python3.12|/opt/homebrew/bin/python3.12 -m pytest tests')"
+  #  Le défaut d'origine : une colonne d'âge illisible (mot-clé refusé, ligne décalée).
+  t "ps BSD — âge illisible : la ligne est écartée, jamais datée de l'epoch" \
+    "$(printf '%s\n' '  1     0 /sbin/launchd    /sbin/launchd' | ci_ps_bsd_lire 1000000)" ""
+  if [ "$(uname -s)" = Darwin ]; then
+    t "ps BSD — la table réelle porte ce shell, d'un âge plausible" \
+      "$(ci_proc_table | awk -F'\t' -v p=$$ -v now="$(date +%s)" '$1 == p { print (now - $3 >= 0 && now - $3 < 86400 * 365) ? "oui" : "non" }')" "oui"
+  fi
   #  Le cas zéro : une table illisible n'est pas « aucun processus ».
   t "table — illisible : code ≠ 0, jamais une table vide" \
     "$(PATH=/nonexistent ci_proc_table >/dev/null 2>&1 && echo ok || echo illisible)" "illisible"

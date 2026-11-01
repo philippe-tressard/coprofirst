@@ -36,6 +36,9 @@
 #    bash scripts/poste/retirer-worktree.sh --selftest
 # =============================================================================
 set -uo pipefail
+# shellcheck source=../lib/lib-poste-gnu.sh
+. "$(dirname "$0")/../lib/lib-poste-gnu.sh"
+poste_gnu_poser   # macOS : les outils GNU en tête du PATH, comme Git Bash et la CI (#2419)
 
 #  Le script ne s'exécute JAMAIS depuis la copie qu'il retire : bash tient son
 #  fichier ouvert, et sous Windows le retrait échouerait à moitié. Il se relaie

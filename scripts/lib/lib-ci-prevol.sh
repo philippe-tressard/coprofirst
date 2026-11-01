@@ -202,6 +202,15 @@ ci_prevol() {
     "$(ci_chemin_comparable "$(python -c 'import sys; print(sys.prefix)' 2>/dev/null | tr -d '\r')")")
   [ -n "$motif" ] && printf '%s\t%s\n' "tous" "${motif#REFUS }" >> "$refus"
   [ -n "${VIRTUAL_ENV:-}" ] && [ -z "$motif" ] && echo "venv en tête du PATH" >> "$faits"
+  #  macOS (#2419) : sans les outils GNU, chaque étape lirait `date -d` ou `sed` en BSD.
+  #  La porte est posée par le script du poste ; absente, rien ne le prouve : refus.
+  if declare -F poste_gnu_etat >/dev/null; then
+    motif=$(poste_gnu_etat "$(poste_systeme)" "$(poste_gnu_sonder)")
+    [ "$(poste_systeme)" = darwin ] && [ -z "$motif" ] && echo "outils GNU (macOS)" >> "$faits"
+  else
+    motif="REFUS la porte des outils GNU n'est pas chargée (scripts/lib/lib-poste-gnu.sh)"
+  fi
+  [ -n "$motif" ] && printf '%s\t%s\n' "tous" "${motif#REFUS }" >> "$refus"
 
   if [ -s "$refus" ]; then
     echo "✗ Pré-vol ($(( $(date +%s) - t0 )) s) : $(wc -l < "$refus") écart(s) — rien n'a été rejoué, ce n'est pas un échec du lot."

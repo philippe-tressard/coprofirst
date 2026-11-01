@@ -178,7 +178,7 @@ compose_montages_lies() {
         | awk '/^    [a-z_]+:/ { cle = $1 } /^      - / && cle == "volumes:"' \
         | sed -n 's/^[[:space:]]*-[[:space:]]*"\{0,1\}\(\.\{0,1\}\/[^:"]*\):[^:"]*\(:[a-z,]*\)\{0,1\}"\{0,1\}[[:space:]]*$/\1 \2/p' \
         | sed -e 's|^\./|/opt/5hostachy/|' -e 's/ :\(.*\)$/ \1/' -e 's/ $/ rw/' \
-        | sed 's/ \([a-z]*,\)*ro\(,[a-z]*\)*$/ ro/; t; s/ [a-z,]*$/ rw/'
+        | sed -e 's/ \([a-z]*,\)*ro\(,[a-z]*\)*$/ ro/' -e t -e 's/ [a-z,]*$/ rw/'   # `t` seul sur son -e : le sed BSD lit « t; s/… » comme une étiquette (#2419)
 }
 
 #  PURE. $1 = le texte d'un docker-compose.yml → une ligne par service :

@@ -1036,6 +1036,16 @@ un arbre illisible rendent INCONNU. Son format s'écrit et se lit dans `lib-depo
 Un seul job : `bash scripts/poste/rejouer-ci.sh build-frontend` — mais alors aucune trace n'est
 écrite, et le point 16 reste INCONNU.
 
+🔒 **Sur macOS, les outils GNU par une seule porte** (#2419, 01/11/2026). Les scripts du poste
+écrivent la syntaxe GNU (`date -d`, `stat -c`, `sed … t;`, `timeout`, `nproc`), celle de la CI et de
+Git Bash : chaque script de `scripts/poste/` appelle `poste_gnu_poser` (`lib-poste-gnu.sh`), qui met
+en tête du PATH les `gnubin` de Homebrew et son `bash` — celui d'Apple est un 3.2. Le PATH se
+transmet aux étapes et aux autotests. Sans eux, le pré-vol refuse et le pré-check rend INCONNU, avec
+`brew install coreutils findutils gnu-sed grep bash`. Arbitré contre une branche BSD par geste : on ne
+réécrit pas quarante appels, dont la moitié s'exécute sur les nœuds. Ce qui n'a pas d'homonyme GNU a
+sa branche `Darwin` à côté de celle de Windows : l'arbre de processus (`ci_ps_bsd_lire`, `etime`) et
+la charge (`sysctl vm.loadavg`). 🔒 L'autotest de la porte exige que chaque script du poste l'appelle.
+
 🔒 **Pré-vol, puis phases rapide et lente, en couloirs parallèles** (#2224, 24/10/2026).
 Avant la première étape, le rejeu sonde le poste — dépendances du lot, base des tests,
 `front/node_modules` réel, Chromium de Playwright, Node et Python, venv — et **refuse**

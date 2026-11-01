@@ -13,6 +13,9 @@
 #  Usage : bash scripts/poste/etat-rejeu.sh
 # =============================================================================
 set -uo pipefail
+# shellcheck source=../lib/lib-poste-gnu.sh
+. "$(dirname "$0")/../lib/lib-poste-gnu.sh"
+poste_gnu_poser   # macOS : les outils GNU en tête du PATH, comme Git Bash et la CI (#2419)
 
 RACINE_DEPOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$RACINE_DEPOT" || exit 2
