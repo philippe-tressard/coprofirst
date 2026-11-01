@@ -846,6 +846,63 @@ FAIL et non WARN : c'est une porte ouverte, pas une hygiène. fail2ban ne compte
 pas la sonde en mode `normal` (mesuré) ; ne jamais en raccourcir la cadence, un
 bannissement de l'IP du pair couperait la bascule.
 
+## La sortie en liste blanche — constat, puis refus (#2367, 01/11/2026)
+
+ufw refusait l'entrant et laissait **tout sortir**. La liste de ce qui a le droit
+de sortir s'écrit une fois, `DURCISSEMENT_UFW_SORTANT` (`lib-durcissement.sh`,
+portée `hote` ou `tous`, avec ce qui sort par là) ; le pair vient de `ROLE_TABLE`.
+Elle se pose sur l'hôte (règles `ufw allow out`) **et** sur les conteneurs : ils
+sortent par FORWARD, où Docker accepte avant ufw — seule la chaîne `DOCKER-USER`,
+posée par un bloc d'`/etc/ufw/after.rules`, les voit. Décisions et lectures :
+`lib-durcissement-sortant.sh` ; S5 juge la configuration **servie** et fait chaque
+nuit l'inventaire de ce qui est sorti hors liste (journal du noyau).
+
+| Mode | Ce qui est servi | S5 |
+|---|---|---|
+| `ouvert` | `allow (outgoing)` — l'état d'avant | WARN « sortie non filtrée » |
+| `constat` | idem + `allow out log to any` en dernier, LOG puis RETURN au bout de DOCKER-USER : **rien n'est refusé** | OK « nuit verte » si rien hors liste en 24 h, sinon WARN avec la liste (nombre, destination, port, qui) |
+| `refus` | `reject (outgoing)`, LOG puis REJECT au bout de DOCKER-USER | OK, ou WARN avec ce qui a été refusé ; FAIL si la liste servie s'écarte de la déclarée |
+
+Gestes, en root, **un nœud à la fois, le standby d'abord** (les rôles alternent
+chaque nuit : un nœud posé passe actif le lendemain) :
+
+```bash
+sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --etat               # mode, verdict, hors-liste 24 h
+sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --sortant constat    # journaliser, sans refuser
+sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --sortant refus      # fermer
+sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --sortant ouvert     # retour arrière durable
+```
+
+`--sortant refus` **refuse** tant que le nœud n'a pas `DURCISSEMENT_SORTANT_NUITS_VERTES`
+nuits de constat vertes de suite (lues dans le journal de l'audit), qu'une sortie
+hors liste reste dans les 24 h, ou que le nœud est l'actif. Après le refus, et avant
+le second nœud : un passage de C30 (`apt`), d'`auto-deploy` (tirage des images), de
+la bascule et un courriel d'alerte reçu.
+
+🔴 **Retour arrière immédiat**, une ligne, sans le dépôt :
+
+```bash
+sudo ufw default allow outgoing && sudo iptables -F DOCKER-USER
+```
+
+Il rouvre l'hôte et les conteneurs jusqu'au prochain rechargement d'ufw ;
+`--sortant ouvert` le rend durable (retire le bloc d'after.rules).
+
+⚠️ Ce qu'il faut savoir :
+- **ufw ne nomme pas un hôte** : la liste est faite de ports, 443 et 53 restent
+  ouverts vers tout. Elle ferme le reste (reverse shell, relais SMTP sur 25, tunnel).
+- **`after.rules` en ASCII seulement** : ufw réécrit ses fichiers en ASCII et plante
+  (`UnicodeEncodeError`) sur le premier caractère qui ne l'est pas — trouvé au banc,
+  un tiret cadratin dans une borne. Le self-test l'exige.
+- `git fetch` passe par **SSH** (`git@github.com`) : le port 22 n'est ouvert que vers
+  les plages « git » de GitHub déclarées ; un fetch qui sortirait ailleurs se lit dans
+  le constat.
+- **List-dons** vit sur rpi2 : DOCKER-USER filtre aussi ses conteneurs. Son besoin
+  se lit dans le constat de rpi2 avant tout refus.
+- Le banc qui a éprouvé la pose : un conteneur jetable `--cap-add NET_ADMIN` sur le
+  standby (son propre espace réseau), ufw installé dedans, `durcir-noeud.sh --sortant`
+  joué pour de vrai — refus, comportement (443 passe, 4444 refusé en 1 s), retour.
+
 ### Le journal d'accès de Caddy (#1588, 05/10/2026)
 
 Avant ce jour, les accès HTTP s'écrivaient sur la sortie standard du conteneur
@@ -885,7 +942,7 @@ et jamais fini).
 | S2 | un second UID 0, un compte avec shell non déclaré, un mot de passe vide, un membre de plus dans `docker` ou `sudo` ? | `lib-audit-comptes.sh` (listes déclarées en tête) | FAIL |
 | S3 | les points de persistance (cron, systemd, `authorized_keys`, sudoers, passwd/shadow, `ld.so.preload`, profile.d, apt) ont-ils changé depuis la **référence acceptée** ? | `lib-audit-persistance.sh` | FAIL (chauds) · WARN (configuration que les mises à jour retouchent) |
 | S4 | les conteneurs sont-ils sans privilège, sans la prise Docker, sans montage hors compose, et DURCIS comme le compose les déclare (capacités, `no-new-privileges`, racine en lecture seule — `CONTENEURS_DURCIS`, #2368) ? leurs images sont-elles celles de la CI pour HEAD ? la prise Docker en 660 root:docker ? | `lib-audit-conteneurs.sh` | FAIL · WARN (image de secours ou périmée) |
-| S5 | sshd, ufw, fail2ban, apt : la configuration **servie** (`sshd -T`, `ufw show added`, `fail2ban-client`, `apt-config dump`) | `lib-durcissement.sh` (les mêmes lecteurs que `durcir-noeud.sh`) | FAIL |
+| S5 | sshd, ufw, fail2ban, apt : la configuration **servie** (`sshd -T`, `ufw show added`, `fail2ban-client`, `apt-config dump`) ; la **sortie** en liste blanche et ce qui est sorti hors liste en 24 h (ci-dessous, #2367) | `lib-durcissement.sh`, `lib-durcissement-sortant.sh` (les mêmes lecteurs que `durcir-noeud.sh`) | FAIL · WARN (sortie ouverte, constat, hors-liste) |
 | S6 | actif seul : une sonde de scanner (`/.env`, `/.git`, `wp-login`…) a-t-elle été **servie** en 2xx ? plus de 100 connexions refusées ? le journal de sécurité de l'API a-t-il des gestes à relire (jeton rejoué, rôle ajouté, compte supprimé…) ? | `lib-audit-acces.sh` | FAIL (sonde servie) · WARN |
 
 Conduite :
