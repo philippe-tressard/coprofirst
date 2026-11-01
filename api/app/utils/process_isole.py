@@ -71,6 +71,7 @@ def _plafonner_la_memoire(octets: int | None) -> bool:
     if not octets or not sys.platform.startswith("linux"):  # Windows, macOS : le poste
         return False
     import resource
+
     resource.setrlimit(resource.RLIMIT_AS, (octets, octets))
     return True
 
