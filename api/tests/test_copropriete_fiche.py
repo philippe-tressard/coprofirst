@@ -38,7 +38,6 @@ from app.models.core import (
     ContratEntretien,
     Copropriete,
     Prestataire,
-    TypeEquipement,
 )
 from app.routers.copropriete import (
     CoproprieteUpdate,
@@ -167,7 +166,7 @@ def test_l_assurance_affichee_vient_du_CONTRAT_pas_des_colonnes(copro):
             ContratEntretien(
                 copropriete_id=copro,
                 prestataire_id=presta.id,
-                type_equipement=TypeEquipement.assurance,
+                type_equipement="assurance",
                 libelle="Assurance de la copropriété",
                 numero_contrat="POL-2026",
                 date_debut=date(2026, 1, 1),
@@ -223,7 +222,7 @@ def test_le_contrat_le_plus_recent_gagne(copro):
                 ContratEntretien(
                     copropriete_id=copro,
                     prestataire_id=presta.id,
-                    type_equipement=TypeEquipement.assurance,
+                    type_equipement="assurance",
                     libelle="Assurance de la copropriété",
                     numero_contrat=police,
                     date_debut=debut,

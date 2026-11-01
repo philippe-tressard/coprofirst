@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Component } from 'svelte';
 	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { get } from 'svelte/store';
@@ -31,6 +32,23 @@
 		'ia',
 		'copropriete',
 	];
+	//  Les onglets qui ne reçoivent RIEN de la page : leur chargeur, et rien d'autre.
+	//  Ils étaient écrits un par un, six lignes identiques chacun, et la page a
+	//  touché son plafond de 500 lignes en recevant « Équipements » (#2442).
+	//  `lint:poids-ouverture` lit cette table (`charger={TABLE[…]}`).
+	type Chargeurs = Record<string, () => Promise<{ default: Component<Record<string, never>> }>>;
+	const ONGLETS_SANS_PARAMETRE: Chargeurs = {
+		maintenance: () => import('#lib/components/OngletMaintenance.svelte'),
+		installation: () => import('#lib/components/CarteInstallation.svelte'),
+		installations: () => import('#lib/components/OngletInstallations.svelte'),
+		emails: () => import('#lib/components/OngletModelesEmail.svelte'),
+		telemetry: () => import('#lib/components/OngletTelemetrie.svelte'),
+		perimetres: () => import('#lib/components/OngletPerimetres.svelte'),
+		equipements: () => import('#lib/components/OngletEquipements.svelte'),
+		lots: () => import('#lib/components/OngletLots.svelte'),
+		audit_lots: () => import('#lib/components/OngletAuditLots.svelte'),
+		imports: () => import('#lib/components/OngletImports.svelte'),
+	};
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { defautsDePage } from '#lib/pages.ts';
@@ -343,30 +361,16 @@
 			/>
 		{/snippet}
 	</ChargementDiffere>
-{:else if onglet === 'maintenance'}
-	<ChargementDiffere charger={() => import('#lib/components/OngletMaintenance.svelte')}>
-		{#snippet contenu(OngletMaintenance)}
-			<OngletMaintenance />
-		{/snippet}
-	</ChargementDiffere>
-{:else if onglet === 'installation'}
-	<ChargementDiffere charger={() => import('#lib/components/CarteInstallation.svelte')}>
-		{#snippet contenu(CarteInstallation)}
-			<CarteInstallation />
-		{/snippet}
-	</ChargementDiffere>
-{:else if onglet === 'installations'}
-	<ChargementDiffere charger={() => import('#lib/components/OngletInstallations.svelte')}>
-		{#snippet contenu(OngletInstallations)}
-			<OngletInstallations />
-		{/snippet}
-	</ChargementDiffere>
-{:else if onglet === 'emails'}
-	<ChargementDiffere charger={() => import('#lib/components/OngletModelesEmail.svelte')}>
-		{#snippet contenu(OngletModelesEmail)}
-			<OngletModelesEmail />
-		{/snippet}
-	</ChargementDiffere>
+{:else if onglet in ONGLETS_SANS_PARAMETRE}
+	<!--  `#key` : `ChargementDiffere` charge au montage, une fois — passer d'un de
+	      ces onglets à l'autre doit en monter un neuf. -->
+	{#key onglet}
+		<ChargementDiffere charger={ONGLETS_SANS_PARAMETRE[onglet]}>
+			{#snippet contenu(Onglet)}
+				<Onglet />
+			{/snippet}
+		</ChargementDiffere>
+	{/key}
 {:else if !parametrageLu && ONGLETS_DU_PARAMETRAGE.includes(onglet)}
 	<EtatListe chargement />
 {:else if erreurParametrage && ONGLETS_DU_PARAMETRAGE.includes(onglet)}
@@ -436,12 +440,6 @@
 			<OngletIA valeurs={smtpValeurs} />
 		{/snippet}
 	</ChargementDiffere>
-{:else if onglet === 'telemetry'}
-	<ChargementDiffere charger={() => import('#lib/components/OngletTelemetrie.svelte')}>
-		{#snippet contenu(OngletTelemetrie)}
-			<OngletTelemetrie />
-		{/snippet}
-	</ChargementDiffere>
 {:else if onglet === 'copropriete'}
 	<ChargementDiffere charger={() => import('#lib/components/OngletCopropriete.svelte')}>
 		{#snippet contenu(OngletCopropriete)}
@@ -449,30 +447,6 @@
 				bind:referenceCopro={siteConfig.reference_copro}
 				urlPublique={siteConfig.url}
 			/>
-		{/snippet}
-	</ChargementDiffere>
-{:else if onglet === 'perimetres'}
-	<ChargementDiffere charger={() => import('#lib/components/OngletPerimetres.svelte')}>
-		{#snippet contenu(OngletPerimetres)}
-			<OngletPerimetres />
-		{/snippet}
-	</ChargementDiffere>
-{:else if onglet === 'lots'}
-	<ChargementDiffere charger={() => import('#lib/components/OngletLots.svelte')}>
-		{#snippet contenu(OngletLots)}
-			<OngletLots />
-		{/snippet}
-	</ChargementDiffere>
-{:else if onglet === 'audit_lots'}
-	<ChargementDiffere charger={() => import('#lib/components/OngletAuditLots.svelte')}>
-		{#snippet contenu(OngletAuditLots)}
-			<OngletAuditLots />
-		{/snippet}
-	</ChargementDiffere>
-{:else if onglet === 'imports'}
-	<ChargementDiffere charger={() => import('#lib/components/OngletImports.svelte')}>
-		{#snippet contenu(OngletImports)}
-			<OngletImports />
 		{/snippet}
 	</ChargementDiffere>
 {/if}

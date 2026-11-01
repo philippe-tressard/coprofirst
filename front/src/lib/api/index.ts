@@ -29,6 +29,7 @@ import type { EntretienPeriodiqueResponse } from './prestataires';
 //  sans créer de cycle. Il est réexporté ici pour que `from '#lib/api/index.ts'` suffise.
 
 export type { Perimetre } from '#lib/perimetres/index.ts';
+export type { Equipement } from '#lib/equipements.ts';
 
 //  Le paquet expose exactement ce que `api.ts` exposait : les 41 imports
 //  `from '#lib/api/index.ts'` du front n'ont pas à changer, et ne changent pas.

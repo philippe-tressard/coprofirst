@@ -13,7 +13,8 @@
 	//  ⚠️ Cet écran affichait la valeur BRUTE — `chauffage_collectif` — parce que
 	//  la table des libellés vivait dans `prestataires/+page.svelte` et qu'il n'y
 	//  avait pas accès. Une table qui vit dans UN écran, les autres s'en passent.
-	import { equipLabel, typePrestataireLabel } from '#lib/prestataires.ts';
+	import { typePrestataireLabel } from '#lib/prestataires.ts';
+	import { libelleEquipement } from '#lib/stores/equipements.ts';
 	import { prestataires as prestApi, type SynthesePrestataire } from '#lib/api/index.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { fmtDate } from '#lib/date.ts';
@@ -60,7 +61,7 @@
 			{#each reportPrestataires as p (p.id)}
 				<tr>
 					<td><strong>{p.nom}</strong></td>
-					<td>{equipLabel(p.specialite)}</td>
+					<td>{$libelleEquipement(p.specialite)}</td>
 					<td>{typePrestataireLabel(p.type_prestataire)}</td>
 					<td
 						><button class="btn btn-sm btn-outline" on:click={() => loadPrestSynthese(p.id)}
@@ -86,7 +87,7 @@
 		</div>
 		<div class="report-grid-2 bloc-espace">
 			<div>
-				<p><strong>Équipement :</strong> {equipLabel(reportPrestSynth.specialite)}</p>
+				<p><strong>Équipement :</strong> {$libelleEquipement(reportPrestSynth.specialite)}</p>
 				<p>
 					<strong>Catégorie :</strong>
 					{typePrestataireLabel(reportPrestSynth.type_prestataire)}
@@ -159,7 +160,7 @@
 						{#each reportPrestSynth.contrats as c (c)}
 							<tr>
 								<td>{c.libelle}</td>
-								<td>{equipLabel(c.type_equipement)}</td>
+								<td>{$libelleEquipement(c.type_equipement)}</td>
 								<td>{fmtDate(c.date_debut)}</td>
 								<td>{c.prochaine_visite ? fmtDate(c.prochaine_visite) : '—'}</td>
 							</tr>

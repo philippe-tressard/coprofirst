@@ -29,7 +29,7 @@
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import { carnet as carnetApi, type Carnet, type EntreeCarnet } from '#lib/api/index.ts';
-	import { EQUIPEMENTS } from '#lib/prestataires.ts';
+	import { libelleEquipement as libelleDuCache } from '#lib/stores/equipements.ts';
 	import { perimetreLabel } from '#lib/perimetres/index.ts';
 	import { perimetresStore } from '#lib/stores/perimetres.ts';
 	import { relire } from '#lib/utils.ts';
@@ -66,14 +66,12 @@
 
 	onMount(charger);
 
-	/**  Le libellé d'un équipement vient d'`EQUIPEMENTS`, la table unique déjà
-	 *   comparée à l'énumération du serveur par `test_types_equipement.py`. Le
-	 *   serveur envoie la valeur ; en écrire une seconde table ici en ferait la
-	 *   troisième écriture. */
-	function libelleEquipement(valeur: string | null): string {
-		if (!valeur) return 'Sans équipement rattaché';
-		return EQUIPEMENTS.find((e) => e.val === valeur)?.label ?? valeur;
-	}
+	/**  Le libellé d'un équipement vient du cache des équipements, administrés
+	 *   depuis #2442 (`#lib/equipements`). Le serveur envoie le code ; en écrire
+	 *   une table ici en ferait une seconde écriture. Citer `$libelleDuCache`
+	 *   repeint les intitulés quand la liste arrive. */
+	$: libelleEquipement = (valeur: string | null): string =>
+		valeur ? $libelleDuCache(valeur) : 'Sans équipement rattaché';
 
 	/**  La PORTÉE d'une entrée, toujours dite.
 	 *

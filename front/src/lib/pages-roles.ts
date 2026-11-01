@@ -158,6 +158,14 @@ export const PAGES_ROLES: PageDef[] = [
 				descriptif: "L'arborescence des bâtiments et des espaces que l'on peut viser.",
 			},
 			{
+				id: 'equipements',
+				route: '/admin?onglet=equipements',
+				label: 'Équipements',
+				groupe: '🏢 Copropriété',
+				descriptif:
+					'Ce sur quoi l’on intervient — ascenseur, chauffage, plomberie… : leur nom, leur icône, et les périmètres où ils se trouvent.',
+			},
+			{
 				id: 'lots',
 				route: '/admin?onglet=lots',
 				label: 'Lots',

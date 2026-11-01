@@ -175,7 +175,38 @@ export async function deplierSectionTelemetrie(
 	return section;
 }
 
+/**
+ * Quelques équipements, de la forme que rend `GET /equipements` (#2442) — ceux que
+ * les specs citent. Ils s'administrent en base : sans eux, sélecteurs et libellés
+ * resteraient vides. Une spec qui en veut d'autres les rend par `simulerApi`.
+ */
+export const EQUIPEMENTS_TEMOINS = (
+	[
+		['ascenseur', 'Ascenseur', 'arrow-up-down', 'ASC.', false],
+		['plomberie', 'Plomberie', 'droplet', 'PLOMB.', false],
+		['extincteurs', 'Extincteurs', 'shield-half', 'EXTINC.', false],
+		['toiture', 'Toiture', 'home', 'TOIT.', false],
+		['assurance', 'Assurance', 'shield', 'ASSUR.', true],
+		['syndic', 'Syndic', 'building-2', 'SYNDIC', true],
+		['autre', 'Autre', 'wrench', 'AUTRE', true],
+	] as const
+).map(([code, libelle, icone, abreviation, systeme], i) => ({
+	id: i + 1,
+	code,
+	libelle,
+	icone,
+	abreviation,
+	description: null,
+	ordre: i + 1,
+	actif: true,
+	systeme,
+	pour_affaires: code !== 'assurance' && code !== 'syndic',
+	perimetres: [] as string[],
+}));
+
 const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
+	//  `Equipement[]` : le cache des équipements, chargé par la mise en page (#2442).
+	'/api/equipements': EQUIPEMENTS_TEMOINS,
 	//  `TableauTelemetrie` : l'onglet Télémétrie lit `adoption.par_profil`…
 	'/api/telemetry/dashboard': TABLEAU_TELEMETRIE_VIDE,
 	//  `FluxResponse` : `RaccourcisRapides` lit `sante.tickets_ouverts`.

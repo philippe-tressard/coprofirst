@@ -86,6 +86,7 @@
 		type SaisieAffaire,
 	} from '#lib/formulaire-affaire.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import PropositionCroisee from '#lib/components/PropositionCroisee.svelte';
 	import { comparerParNom } from '#lib/noms.ts';
 	import { nomCopie, saisieDepuis } from '#lib/saisi-pour.ts';
 	import AlerteEnvoiUrgent from '#lib/components/AlerteEnvoiUrgent.svelte';
@@ -385,6 +386,7 @@
 			bind:options
 			bind:equipement
 		/>
+		<PropositionCroisee bind:equipement bind:perimetreCible actif={!inactives.equipement} />
 
 		<!--  4 à 13 : ordre, intitulés et séparations hérités de `ChampsCommuns`,
 		      gouvernés par la DÉCLARATION (`lint:etats`). Ce qui change avec la

@@ -15,7 +15,7 @@
 	import { fmtNombre } from '#lib/utils.ts';
 	import type { MetriquesSynthese } from '#lib/api/index.ts';
 	import { fmtDate } from '#lib/date.ts';
-	import { equipLabel } from '#lib/prestataires.ts';
+	import { libelleEquipement } from '#lib/stores/equipements.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let metriques: MetriquesSynthese;
@@ -27,7 +27,9 @@
 {#if recidive}
 	<p class="constat">
 		<strong
-			>{equipLabel(recidive.equipement)} : {total}ᵉ affaire résolue en {fmtNombre(recidive.mois)} mois</strong
+			>{$libelleEquipement(recidive.equipement)} : {total}ᵉ affaire résolue en {fmtNombre(
+				recidive.mois,
+			)} mois</strong
 		>
 		sur le même périmètre. La question du remplacement se pose, plutôt qu’une réparation de plus.
 	</p>

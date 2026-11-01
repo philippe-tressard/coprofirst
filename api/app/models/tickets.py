@@ -252,7 +252,7 @@ class IntervenantMixin(SQLModel):
     rythme, et sur quoi. Les règles vivent dans `utils/intervenant`.
 
     - `prestataire_id`, `frequence_*` : #1092, lot 5 (migration 0211) ;
-    - `equipement` : #1097 (migration 0216) — la **valeur** de `TypeEquipement`,
+    - `equipement` : #1097 (migration 0216) — le **code** d'un équipement (`models/equipements`, #2442),
       posée par le conseil et jamais demandée au résident : il voit une flaque,
       il ne sait pas si c'est la plomberie ou la toiture. C'est elle qui range
       une affaire résolue au carnet d'entretien.

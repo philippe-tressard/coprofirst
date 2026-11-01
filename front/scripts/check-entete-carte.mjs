@@ -83,7 +83,10 @@ const CORPS = /class="[^"]*(?<![\w-])carte-corps(?![\w-])/;
  *  ajoutée ici doit porter sa raison, et une entrée devenue inutile fait échouer
  *  le contrôle : une exception reconduite « au cas où » masquerait la suivante.
  */
-const EXCEPTIONS = {};
+const EXCEPTIONS = {
+	'lib/components/ApercuEquipement.svelte':
+		'un APERÇU (#2442) : la carte montre la gouttière d’un équipement en cours de saisie, elle ne se déplie pas — elle n’a pas de corps',
+};
 
 function fichiers(dir, acc = []) {
 	for (const e of readdirSync(dir)) {
