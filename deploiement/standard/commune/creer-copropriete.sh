@@ -90,7 +90,7 @@ psql_installation() { "${COMPOSE[@]}" exec -T postgres psql -v ON_ERROR_STOP=1 -
 pgq() { psql_installation -Atc "$1" 2>/dev/null; }
 
 # ── 1. Valider et nommer ──────────────────────────────────────────────────────
-NOMS=$("${COMPOSE[@]}" exec -T api python -m app.installation_commune.creer noms "$@") \
+NOMS=$("${COMPOSE[@]}" exec -T -u app api python -m app.installation_commune.creer noms "$@") \
     || { journal "✗ $NOMS"; exit 1; }
 ROLE=$(lire_nom "$NOMS" ROLE); BASE=$(lire_nom "$NOMS" BASE)
 VAR_BASE=$(lire_nom "$NOMS" VAR_BASE); VAR_SECRET=$(lire_nom "$NOMS" VAR_SECRET)
@@ -120,7 +120,7 @@ unset MDP SECRET
 [ "$(sante)" = ok ] || { journal "✗ L'API ne répond pas après sa recréation : déclaration NON écrite. Lire : docker compose logs api"; exit 1; }
 
 # ── 6–7. Préparer, semer, déclarer, vérifier ──────────────────────────────────
-"${COMPOSE[@]}" exec -T api python -m app.installation_commune.creer ajouter "$@" \
+"${COMPOSE[@]}" exec -T -u app api python -m app.installation_commune.creer ajouter "$@" \
     || { journal "✗ Copropriété non déclarée (base créée, variables dans .env) : corriger puis relancer « creer.py ajouter »."; exit 1; }
-"${COMPOSE[@]}" exec -T api python -m app.installation_commune.verifier
+"${COMPOSE[@]}" exec -T -u app api python -m app.installation_commune.verifier
 journal "Copropriété $1 créée en $(( $(date +%s) - DEBUT )) s."

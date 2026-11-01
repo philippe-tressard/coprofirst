@@ -9,7 +9,7 @@ Structure attendue du fichier (première ligne = en-tête ignorée) :
   Colonne E : N° CLÉS — référence du vigik
 
 Usage depuis le conteneur :
-  docker compose exec api python -c "
+  docker compose exec -u app api python -c "
   from app.utils.import_vigiks import importer_depuis_fichier
   importer_depuis_fichier('/chemin/vers/vigik.xlsx')
   "

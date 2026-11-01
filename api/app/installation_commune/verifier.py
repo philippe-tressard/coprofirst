@@ -1,6 +1,6 @@
 """Vérifier la déclaration d'une installation commune AVANT de la servir (#1894).
 
-    docker compose exec api python -m app.installation_commune.verifier [--bases]
+    docker compose exec -u app api python -m app.installation_commune.verifier [--bases]
 
 Rend 0 et liste chaque copropriété — alias, adresse, état — si la déclaration peut
 servir ; 1 et les règles violées sinon ; 2 sur une installation propre à une

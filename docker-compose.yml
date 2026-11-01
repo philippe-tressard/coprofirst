@@ -9,6 +9,24 @@
 #  c’est l’écart entre eux qui coûte le message.
 x-budget-photo-whatsapp: &budget_photo_whatsapp "WA_PHOTO_BUDGET_KO=400"
 
+#  🔒 UN CONTENEUR DURCI (#2368, 01/11/2026) — chaque service de l'application
+#  s'y range par `<<: *conteneur_durci`. Un compromis de l'API ou du bridge n'a
+#  plus la surface d'un conteneur ordinaire pour chercher une évasion :
+#   - AUCUNE capacité Linux, sauf celles qu'un service déclare en `cap_add`,
+#     chacune avec sa raison ici ET dans `CONTENEURS_DURCIS` de
+#     `scripts/lib/lib-audit-conteneurs.sh` ;
+#   - aucun gain de privilège par un binaire setuid (`no-new-privileges`) ;
+#   - une racine en LECTURE SEULE : le conteneur n'écrit que dans ses volumes et
+#     ses `tmpfs` — ni binaire posé, ni code modifié sous le processus.
+#  S4 de l'audit nocturne le vérifie sur ce qui TOURNE ; son autotest confronte
+#  sa liste à ce fichier, dans les deux sens. PostgreSQL n'y est pas encore :
+#  sa configuration ne s'applique qu'à la recréation de la base, à la bascule
+#  de nuit (#2429).
+x-conteneur-durci: &conteneur_durci
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  read_only: true
+
 services:
   caddy:
     build:
@@ -16,6 +34,12 @@ services:
       dockerfile: Dockerfile.caddy
     container_name: hostachy_caddy
     restart: unless-stopped
+    <<: *conteneur_durci
+    #  Caddy tourne en root DANS le conteneur, sans autre capacité qu'écouter
+    #  sur le port 80 ; ses volumes lui appartiennent en root (#2430).
+    cap_add: [NET_BIND_SERVICE] # écouter sur :80, un port privilégié
+    tmpfs:
+      - /tmp:size=16m
     logging:
       driver: "json-file"
       options:
@@ -52,6 +76,9 @@ services:
     labels:
       - "git.hash=${GIT_HASH:-dev}"
     restart: unless-stopped
+    <<: *conteneur_durci # compte `app`, posé par front/Dockerfile : aucune capacité
+    tmpfs:
+      - /tmp:size=16m
     logging:
       driver: "json-file"
       options:
@@ -83,6 +110,18 @@ services:
     container_name: hostachy_api
     restart: unless-stopped
     stop_grace_period: 30s
+    <<: *conteneur_durci
+    #  `start.sh` démarre en root le temps de rendre ses volumes au compte `app`
+    #  (la bascule les recopie sous un autre uid), puis descend par `setpriv` :
+    #  uvicorn tourne en `app`, SANS capacité (`/proc/1/status`). Ces quatre-là
+    #  ne servent qu'à ce premier pas.
+    cap_add: [CHOWN, DAC_READ_SEARCH, SETUID, SETGID] # chown -R des volumes, en lisant tout dossier ; setpriv vers `app`
+    tmpfs:
+      #  Exports de la base (sauvegarde, vérification de restauration), fichiers
+      #  reçus en cours de lecture, rendus PDF et images : borné, en mémoire.
+      - /tmp:size=512m
+      #  Le cache de fontconfig (`XDG_CACHE_HOME`, api/Dockerfile), au compte `app`.
+      - /app/.cache:size=64m,uid=10001,mode=0700
     logging:
       driver: "json-file"
       options:
@@ -185,6 +224,13 @@ services:
       dockerfile: Dockerfile
     container_name: hostachy_whatsapp
     restart: unless-stopped
+    <<: *conteneur_durci
+    #  Le bridge démarre en root le temps de rendre son état d'authentification
+    #  au compte `node` (la bascule le recopie sous un autre uid), puis descend
+    #  (`whatsapp-bridge/privileges.js`) : Baileys tourne en `node`, SANS capacité.
+    cap_add: [CHOWN, DAC_READ_SEARCH, SETUID, SETGID] # réaligner auth_state, en lisant tout dossier ; descendre vers `node`
+    tmpfs:
+      - /tmp:size=64m # le cache de compilation de Node
     # Arrêt propre (#1590) : le bridge ferme son socket et finit ses écritures
     # d'état d'authentification sur SIGTERM, bornées à 8 s (`arret.js`). Sans ce
     # délai, Docker tuait à 10 s (exit 137) ; ici, il laisse le bridge sortir.
