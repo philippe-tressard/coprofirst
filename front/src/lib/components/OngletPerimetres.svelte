@@ -1,5 +1,6 @@
 <script lang="ts">
-	import IconeAction from '#lib/components/IconeAction.svelte';
+	import ActionsPerimetre from '#lib/components/ActionsPerimetre.svelte';
+	import BoiteCopiePerimetre from '#lib/components/BoiteCopiePerimetre.svelte';
 	import BoiteNouveauPerimetre from '#lib/components/BoiteNouveauPerimetre.svelte';
 	import BoiteDuplicationPerimetre from '#lib/components/BoiteDuplicationPerimetre.svelte';
 	import ChampsPerimetre from '#lib/components/ChampsPerimetre.svelte';
@@ -10,7 +11,7 @@
 	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import { perimetresStore, rechargerPerimetres } from '#lib/stores/perimetres.ts';
-	import { codeSousParent, type Perimetre } from '#lib/perimetres/index.ts';
+	import { codeSousParent, type Perimetre, type SensDeplacement } from '#lib/perimetres/index.ts';
 	import { siteNomStore } from '#lib/stores/pageConfig.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
@@ -28,16 +29,23 @@
 	}
 
 	/**  Le nœud est-il déplié ? Il l'est aussi quand on le corrige, qu'on crée
-	 *   un sous-périmètre sous lui ou qu'on le duplique : la boîte vit DANS son
-	 *   corps, et replier emporterait ce qu'on est en train de saisir. */
+	 *   un sous-périmètre sous lui, qu'on le duplique ou qu'on le copie : la boîte
+	 *   vit DANS son corps, et replier emporterait ce qu'on est en train de saisir. */
 	function estDeplie(
 		code: string,
 		ouvertCode: string | null,
 		e: Perimetre | null,
 		c: { parent: string | null } | null,
 		d: Perimetre | null,
+		k: Perimetre | null,
 	) {
-		return ouvertCode === code || e?.code === code || c?.parent === code || d?.code === code;
+		return (
+			ouvertCode === code ||
+			e?.code === code ||
+			c?.parent === code ||
+			d?.code === code ||
+			k?.code === code
+		);
 	}
 
 	/*  🔴 `rechargerPerimetres` avalait son échec : l'arborescence restait vide et
@@ -77,6 +85,7 @@
 		//  en cours, sinon les deux boîtes se disputeraient le corps du nœud.
 		creation = null;
 		duplique = null;
+		copie = null;
 		edite = n;
 		form = {
 			libelle: n.libelle,
@@ -130,6 +139,7 @@
 	function creer(parent: string | null) {
 		edite = null;
 		duplique = null;
+		copie = null;
 		creation = { parent };
 		nouveau = { code: '', libelle: '', description: '' };
 	}
@@ -164,7 +174,18 @@
 	function dupliquer(n: Perimetre) {
 		edite = null;
 		creation = null;
+		copie = null;
 		duplique = n;
+	}
+
+	// ── Copie sous d'autres périmètres — mêmes paramètres (01/11/2026) ───────
+	let copie: Perimetre | null = null;
+
+	function copier(n: Perimetre) {
+		edite = null;
+		creation = null;
+		duplique = null;
+		copie = n;
 	}
 
 	async function supprimer(n: Perimetre) {
@@ -189,10 +210,12 @@
 		);
 	}
 
-	async function deplacer(n: Perimetre, delta: number) {
+	//  Les quatre flèches passent par le serveur, qui renumérote la fratrie :
+	//  `ordre ± 1` laissait deux frères à rang égal sans échange visible.
+	async function deplacer(n: Perimetre, sens: SensDeplacement) {
 		await tenter(
 			async () => {
-				await perimetresApi.update(n.id, { ordre: (n.ordre ?? 0) + delta });
+				await perimetresApi.deplacer(n.id, sens);
 				await rechargerPerimetres();
 			},
 			undefined,
@@ -248,7 +271,7 @@
 {:else}
 	<div class="ref-list">
 		{#each noeuds as n (n.code)}
-			{@const deplie = estDeplie(n.code, ouvert, edite, creation, duplique)}
+			{@const deplie = estDeplie(n.code, ouvert, edite, creation, duplique, copie)}
 			<div class="ref-item" class:expanded={deplie} class:inactif={!n.actif}>
 				<div
 					class="ref-tete"
@@ -352,53 +375,23 @@
 								on:annule={() => (duplique = null)}
 								on:fini={() => (duplique = null)}
 							/>
+						{:else if copie?.code === n.code}
+							<BoiteCopiePerimetre
+								source={n}
+								on:annule={() => (copie = null)}
+								on:fini={() => (copie = null)}
+							/>
 						{:else}
 							{#if n.description}<p class="ref-desc">{n.description}</p>{/if}
-							<div class="ref-actions">
-								<!--  Le mode se lit sur l'icône qui a ouvert la boîte
-								      (`ux-patterns` §13 bis) : elle est déjà là, déjà regardée. -->
-								<button
-									class="btn-icon-edit"
-									aria-label="Modifier"
-									title="Modifier"
-									aria-pressed={edite?.code === n.code}
-									on:click={() => editer(n)}><IconeAction icone="pencil" /></button
-								>
-								<button
-									class="btn-icon"
-									aria-label="Ajouter un sous-périmètre"
-									title="Ajouter un sous-périmètre"
-									aria-pressed={creation?.parent === n.code}
-									on:click={() => creer(n.code)}><IconeAction icone="plus" /></button
-								>
-								{#if n.dupliquable}
-									<button
-										class="btn-icon"
-										aria-label="Dupliquer avec ses sous-périmètres"
-										title="Dupliquer avec ses sous-périmètres"
-										aria-pressed={duplique?.code === n.code}
-										on:click={() => dupliquer(n)}><IconeAction icone="copy" /></button
-									>
-								{/if}
-								<button
-									class="btn-icon"
-									aria-label="Monter"
-									title="Monter"
-									on:click={() => deplacer(n, -1)}><IconeAction icone="arrow-up" /></button
-								>
-								<button
-									class="btn-icon"
-									aria-label="Descendre"
-									title="Descendre"
-									on:click={() => deplacer(n, 1)}><IconeAction icone="arrow-down" /></button
-								>
-								<button
-									class="btn-icon-danger"
-									aria-label="Supprimer"
-									title="Supprimer"
-									on:click={() => supprimer(n)}><IconeAction icone="trash-2" /></button
-								>
-							</div>
+							<ActionsPerimetre
+								noeud={n}
+								on:editer={() => editer(n)}
+								on:creer={() => creer(n.code)}
+								on:dupliquer={() => dupliquer(n)}
+								on:copier={() => copier(n)}
+								on:deplacer={(e) => deplacer(n, e.detail)}
+								on:supprimer={() => supprimer(n)}
+							/>
 						{/if}
 					</div>
 				{/if}
@@ -459,9 +452,5 @@
 		color: var(--color-text-muted);
 		line-height: 1.55;
 		margin: 0.5rem 0;
-	}
-	.ref-actions {
-		display: flex;
-		gap: 0.3rem;
 	}
 </style>

@@ -50,6 +50,7 @@ export * from './documents';
 export * from './communaute';
 export * from './avis';
 export * from './patrimoine';
+export * from './perimetres';
 export * from './etat-descriptif';
 export * from './lots-admin';
 export * from './bailleur';

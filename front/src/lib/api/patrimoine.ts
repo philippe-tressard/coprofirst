@@ -13,7 +13,6 @@ import { api, buildQuery, postFormData, BASE } from './client';
 import type { ConstatPatrimoine } from './etat-descriptif';
 import { uploadExcel, type CompteImportTableur } from './documents';
 import type { ExerciceLu, ResumeAffaires, SyntheseAffaire } from './synthese';
-import type { Perimetre as PerimetreDTO } from '#lib/perimetres/index.ts';
 
 //  ── Ce que le serveur RENVOIE (#1572) ───────────────────────────────────────────
 //
@@ -413,45 +412,6 @@ export const lots = {
 			{},
 		),
 	ignorerimport: (id: number) => api.post<{ ok: boolean }>(`/lots/admin/imports/${id}/ignorer`, {}),
-};
-
-/**
- * Périmètres — l'arborescence « où se situe une demande ».
- *
- * Lecture pour tout utilisateur connecté, écriture réservée à l'administration.
- * Le type `Perimetre` vit dans `#lib/perimetres`, qui n'importe rien : c'est ce
- * qui permet à `perimetreLabel()` de rester synchrone dans les gabarits.
- */
-/**  Ce qu'une écriture envoie : la lecture rend toujours un `libelle_court`, mais
- *   `PerimetreCreate` / `PerimetreUpdate` l'acceptent à `null` — un abrégé vidé. */
-type EcriturePerimetre = Partial<Omit<PerimetreDTO, 'libelle_court'>> & {
-	libelle_court?: string | null;
-};
-
-export const perimetres = {
-	list: () => api.get<PerimetreDTO[]>('/perimetres'),
-	create: (data: EcriturePerimetre & { code: string; libelle: string }) =>
-		api.post<PerimetreDTO>('/perimetres', data),
-	update: (id: number, data: EcriturePerimetre) =>
-		api.patch<PerimetreDTO>(`/perimetres/${id}`, data),
-	/**  `avecDescendants` : la branche entière, après une confirmation qui la
-	 *   compte. Sans lui, le serveur refuse un nœud qui a des enfants. */
-	remove: (id: number, avecDescendants = false) =>
-		api.delete(`/perimetres/${id}${avecDescendants ? '?avec_descendants=true' : ''}`),
-	/**  Copie le nœud et toute sa descendance. `batiment_id` est exigé quand la
-	 *   source est un bâtiment : il décide qui lit, il ne se recopie pas. */
-	dupliquer: (
-		id: number,
-		data: {
-			code: string;
-			libelle: string;
-			description: string;
-			batiment_id: number | null;
-			/**  Le numéro d'un bâtiment que le serveur crée pour la copie (#1945),
-			 *   exclusif de `batiment_id`. */
-			nouveau_batiment: string | null;
-		},
-	) => api.post<PerimetreDTO>(`/perimetres/${id}/dupliquer`, data),
 };
 
 export const reglesResidence = {

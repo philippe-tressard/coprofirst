@@ -66,10 +66,18 @@ export interface Perimetre {
 	/**  Le serveur accepterait-il de dupliquer cette branche ? Sa règle
 	 *   (`utils/perimetres/branche.refus_duplication`) ne se recopie pas ici. */
 	dupliquable: boolean;
+	/**  …de le copier sous d'autres parents (`refus_copie`), et les flèches qu'il
+	 *   accepterait (`deplacement.sens_admis`) : l'écran grise les autres. */
+	copiable: boolean;
+	deplacements: SensDeplacement[];
 	/**  Les types d'accès (`#lib/types-acces`) qui ouvrent ce nœud d'office, sans
 	 *   dépendre d'aucun lot — un portillon, un portail (#2060). */
 	acces_fixes: string[];
 }
+
+/**  Les quatre flèches d'un nœud : d'un rang (haut, bas) ou d'un niveau —
+ *   gauche le sort de son parent, droite le range dans le frère qui le précède. */
+export type SensDeplacement = 'haut' | 'bas' | 'gauche' | 'droite';
 
 export const PREFIXE_BATIMENT = 'bat:';
 
@@ -151,6 +159,24 @@ export function perimetreDuBatiment(batimentId: number | null | undefined): stri
  */
 export function noeudDuBatiment(batimentId: number): Perimetre | undefined {
 	return tousLesPerimetres().find((n) => n.batiment_id === batimentId && n.actif);
+}
+
+/**
+ * `code` est-il `tete` ou l'un de ses descendants ? Lu sur `parent`, borné : un
+ * cycle écrit à la main en base ne doit pas figer l'écran. La boîte de copie
+ * ne propose pas, comme parent d'accueil, un nœud de la branche copiée — le
+ * serveur le refuserait (`routers/patrimoine_branche.copier_perimetre`).
+ */
+export function estDansLaBranche(liste: Perimetre[], code: string, tete: string): boolean {
+	const parCode = new Map(liste.map((n) => [n.code, n]));
+	const vus = new Set<string>();
+	let courant: string | null = code;
+	while (courant && !vus.has(courant)) {
+		if (courant === tete) return true;
+		vus.add(courant);
+		courant = parCode.get(courant)?.parent ?? null;
+	}
+	return false;
 }
 
 /**
