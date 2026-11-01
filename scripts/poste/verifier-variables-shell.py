@@ -195,8 +195,26 @@ def analyser_source(brut: str, rel: str = "", modules: list[str] | None = None) 
     )
 
 
-def modules_sources(brut: str) -> list[Path]:
-    """Modules sourcés qu'on sait résoudre dans le dépôt.
+_TROUVES: dict[tuple[Path, str], list[Path]] = {}
+
+
+def _trouver(racine: Path, motif: str) -> list[Path]:
+    """Les fichiers du dépôt qui portent ce nom — un parcours par motif, pas par appel."""
+    cle = (racine, motif)
+    if cle not in _TROUVES:
+        _TROUVES[cle] = [p for p in racine.rglob(motif) if ".git" not in p.parts]
+    return _TROUVES[cle]
+
+
+def modules_sources(
+    brut: str, racine: Path = RACINE, vus: set[Path] | None = None
+) -> list[Path]:
+    """Modules sourcés qu'on sait résoudre dans le dépôt — et ceux qu'ILS sourcent.
+
+    🔴 Transitif depuis #2367 (01/11/2026) : `durcir-noeud.sh` source
+    `lib-durcissement.sh`, qui source `lib-durcissement-sortant.sh` ; ses
+    constantes étaient lues « jamais assignées », alors que le shell les a bien
+    en portée. `vus` coupe les cycles et les doublons.
 
     ⚠️ Un nom PARTIELLEMENT variable est résolu par joker : `check-reliability.sh`
     charge ses huit modules par `. "…/lib-$_mod.sh"` dans une boucle, et le nom
@@ -205,6 +223,7 @@ def modules_sources(brut: str) -> list[Path]:
     de boucle, mais l'union des tours est bien ce que le script finit par avoir
     en portée. Un nom ENTIÈREMENT variable, lui, n'est pas résolu du tout.
     """
+    vus = set() if vus is None else vus
     resolus: list[Path] = []
     for ligne in RE_SOURCE.findall(brut):
         noms = RE_NOM_SH.findall(ligne.replace('"', ""))
@@ -213,7 +232,13 @@ def modules_sources(brut: str) -> list[Path]:
         motif = re.sub(r"\$\{?[A-Za-z_][A-Za-z0-9_]*\}?", "*", Path(noms[-1]).name)
         if motif.startswith("*"):
             continue  # rien d'ancré : on ne devine pas
-        resolus += [p for p in RACINE.rglob(motif) if ".git" not in p.parts]
+        for p in _trouver(racine, motif):
+            if p in vus:
+                continue
+            vus.add(p)
+            resolus.append(p)
+            texte = p.read_text(encoding="utf-8", errors="replace")
+            resolus += modules_sources(texte, racine, vus)
     return resolus
 
 
@@ -282,6 +307,20 @@ def selftest() -> int:
         ok = obtenu == ["SANS_DEFINITION"]
         echecs += 0 if ok else 1
         print(f"{'PASS' if ok else 'ÉCHEC'}  lecture d'un vrai fichier  → {obtenu}")
+
+        #  Un module qui en source un autre (#2367) : la constante du second est en
+        #  portée du script ; un module qui source un module qui le source ne boucle pas.
+        racine = Path(tmp)
+        (racine / "lib-a.sh").write_text('. "$(dirname "$0")/lib-b.sh"\n', encoding="utf-8")
+        (racine / "lib-b.sh").write_text(
+            'LOINTAINE=x\n. "$(dirname "$0")/lib-a.sh"\n', encoding="utf-8"
+        )
+        brut = 'set -u\n. "$(dirname "$0")/lib-a.sh"\necho "$LOINTAINE"\n'
+        modules = [m.read_text(encoding="utf-8") for m in modules_sources(brut, racine)]
+        obtenu = analyser_source(brut, "cas.sh", modules)
+        ok = obtenu == [] and len(modules) == 2
+        echecs += 0 if ok else 1
+        print(f"{'PASS' if ok else 'ÉCHEC'}  module sourcé par un module  → {obtenu}")
 
     print("== TOUS OK ==" if not echecs else f"== {echecs} ÉCHEC(S) ==")
     return 0 if not echecs else 1

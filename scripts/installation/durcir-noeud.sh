@@ -1,12 +1,14 @@
 #!/bin/bash
 # =============================================================================
 #  durcir-noeud.sh — Le durcissement système d'un nœud : sshd, ufw, fail2ban,
-#  mises à jour automatiques (#1917, #1918)
+#  mises à jour automatiques (#1917, #1918), sortie en liste blanche (#2367)
 #
 #  Usage, SUR le nœud, en root :
 #    bash durcir-noeud.sh --selftest                       # éprouve les décisions, ne touche rien
 #    sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --etat       # LECTURE SEULE
 #    sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --appliquer  # pose ce qui manque
+#    sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --sortant constat|refus|ouvert
+#        # la sortie seule : journaliser le hors-liste, le refuser, ou tout rouvrir
 #
 #  Ce que le script NE fait PAS, et ne fera jamais : écrire le `.env`, poser un
 #  secret, une clé ou un jeton. Le reste de la réinstallation d'un nœud — Docker,
@@ -67,6 +69,7 @@ verdict_sshd() { durcissement_etat_sshd; }
 verdict_ufw()  { durcissement_etat_ufw; }
 verdict_f2b()  { durcissement_etat_f2b; }
 verdict_apt()  { durcissement_etat_apt; }
+verdict_sortant() { durcissement_etat_sortant; }
 lire_ufw_etat()     { durcissement_lire_ufw_etat; }
 lire_ufw_ajoutees() { durcissement_lire_ufw_ajoutees; }
 
@@ -76,7 +79,7 @@ etat() {
   local rc=0 nom v
   log "═══ Durcissement de $(hostname) — configuration EFFECTIVE ═══"
   [ "$(id -u)" -eq 0 ] || log "⚠️  Pas root : sshd -T, ufw et fail2ban-client ne répondent qu'à root → INCONNU."
-  for nom in sshd ufw f2b apt; do
+  for nom in sshd ufw f2b apt sortant; do
     v=$("verdict_$nom")
     printf '  %-9s %s\n' "$nom" "$v"
     case "$v" in
@@ -87,6 +90,8 @@ etat() {
   [ -e "$DURCISSEMENT_SSHD_HERITE" ] && log "  hérité    $DURCISSEMENT_SSHD_HERITE présent (lu APRÈS 50-cloud-init : sans effet) — --appliquer le retire"
   [ -e "$APT_HERITE" ] && log "  hérité    $APT_HERITE présent (s'ajoute aux origines Debian, ne restreint rien)"
   log "  clés      $(compter_cles || echo '?') clé(s) dans $CLES_AUTORISEES"
+  log "  sorti hors liste en 24 h (nombre, destination, port, qui) :"
+  durcissement_sortant_resume | sed 's/^/            /'
   return "$rc"
 }
 
@@ -154,6 +159,68 @@ appliquer_ufw() {
   log "   effectif : $(verdict_ufw)"
 }
 
+#  La sortie (#2367). $1 = le mode voulu : constat | refus | ouvert ; vide → celui
+#  que le nœud sert (`--appliquer` répare, il ne change pas de mode).
+#  L'ordre protège le nœud : on ROUVRE d'abord, on FERME en dernier.
+appliquer_sortant() {
+  local voulu=${1:-} servi regle apres bloc droits decision soi actif
+  log "── sortie (liste blanche, #2367)"
+  servi=$(durcissement_sortant_mode "$(lire_ufw_etat)" "$(lire_ufw_ajoutees)")
+  voulu=${voulu:-$servi}
+  case "$voulu" in constat|refus|ouvert) ;; *) log "   mode inconnu : $voulu (constat, refus ou ouvert)"; return 1 ;; esac
+
+  if [ "$voulu" = refus ]; then
+    soi=$(role_of "$(hostname)")
+    actif=$(tr -d '[:space:]' < "$REPO/.active" 2>/dev/null)
+    decision=$(durcissement_sortant_peut_refuser "$(verdict_sortant)" "$(durcissement_sortant_resume)" \
+      "$(durcissement_sortant_nuits_vertes "$(cat "$DURCISSEMENT_SORTANT_JOURNAL_AUDIT" 2>/dev/null)")" \
+      "$actif" "$soi")
+    [ "$decision" = OUI ] || { log "   ${decision#REFUS:} → sortie NON fermée."; return 1; }
+  fi
+
+  #  Rouvrir passe AVANT tout le reste : c'est le retour arrière.
+  [ "$voulu" = refus ] || ufw default allow outgoing >/dev/null
+
+  #  Les règles de l'hôte. Une règle ajoutée se place en fin de liste : derrière
+  #  le constat, elle ne servirait à rien — il se retire, puis se repose en dernier.
+  if [ -n "$(durcissement_sortant_manquantes "$(lire_ufw_ajoutees)")" ] || [ "$voulu" != constat ]; then
+    ufw delete $DURCISSEMENT_UFW_SORTANT_CONSTAT >/dev/null 2>&1
+  fi
+  while IFS= read -r regle; do
+    [ -n "$regle" ] || continue
+    # shellcheck disable=SC2086  # la règle est une suite de mots ufw, coupée exprès
+    ufw $regle comment "$DURCISSEMENT_UFW_SORTANT_COMMENTAIRE" >/dev/null && log "   ajoutée : $regle"
+  done < <(durcissement_sortant_manquantes "$(lire_ufw_ajoutees)")
+  if [ "$voulu" = constat ] && [ "$(durcissement_sortant_mode "" "$(lire_ufw_ajoutees)")" != constat ]; then
+    # shellcheck disable=SC2086
+    ufw $DURCISSEMENT_UFW_SORTANT_CONSTAT >/dev/null && log "   constat : $DURCISSEMENT_UFW_SORTANT_CONSTAT"
+  fi
+
+  #  Les conteneurs : le bloc DOCKER-USER d'after.rules, éprouvé AVANT d'être posé —
+  #  un after.rules que iptables-restore refuse ferait échouer le rechargement d'ufw.
+  bloc=""
+  [ "$voulu" = ouvert ] || bloc=$(durcissement_sortant_bloc "$voulu")
+  if [ -n "$bloc" ] && ! iptables-restore --test --noflush <<< "$bloc"; then
+    log "   🔴 iptables-restore refuse le bloc DOCKER-USER : after.rules NON modifié."; return 1
+  fi
+  apres=$(durcissement_sortant_apres_regles "$(cat "$DURCISSEMENT_UFW_APRES")" "$bloc")
+  droits=$(stat -c %a "$DURCISSEMENT_UFW_APRES" 2>/dev/null || echo 640)
+  printf '%s\n' "$apres" | poser "$DURCISSEMENT_UFW_APRES" "$droits"
+  case $? in
+    0) if [ -n "$bloc" ]; then log "   $DURCISSEMENT_UFW_APRES : bloc DOCKER-USER posé ($voulu)"
+       else log "   $DURCISSEMENT_UFW_APRES : bloc DOCKER-USER retiré"; fi ;;
+    1) ;;
+    *) log "   ÉCHEC d'écriture de $DURCISSEMENT_UFW_APRES"; return 1 ;;
+  esac
+
+  #  Fermer, en dernier.
+  [ "$voulu" != refus ] || ufw default reject outgoing >/dev/null
+  ufw reload >/dev/null || { log "   🔴 ufw reload a échoué — lire 'ufw status verbose' avant de fermer la session."; return 1; }
+  #  Un bloc retiré n'est plus reconstruit par ufw : la chaîne garderait son refus.
+  [ -n "$bloc" ] || iptables -F DOCKER-USER 2>/dev/null
+  log "   effectif : $(verdict_sortant)"
+}
+
 appliquer_f2b() {
   log "── fail2ban"
   durcissement_f2b_contenu | poser "$DURCISSEMENT_F2B_FICHIER" 0644
@@ -191,6 +258,7 @@ appliquer() {
   paquets        || rc=1
   appliquer_sshd || rc=1
   appliquer_ufw  || rc=1
+  appliquer_sortant || rc=1
   appliquer_f2b  || rc=1
   appliquer_apt  || rc=1
   log ""
@@ -201,5 +269,9 @@ appliquer() {
 case "${1:-}" in
   --etat)      etat ;;
   --appliquer) appliquer ;;
-  *)           sed -n '3,10p' "$0"; exit 2 ;;
+  --sortant)
+    [ -n "${2:-}" ] || { log "--sortant constat|refus|ouvert"; exit 2; }
+    [ "$(id -u)" -eq 0 ] || { log "--sortant s'exécute en root (sudo bash $0 --sortant $2)."; exit 2; }
+    appliquer_sortant "${2:-}" ;;
+  *)           sed -n '3,12p' "$0"; exit 2 ;;
 esac
