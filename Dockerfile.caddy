@@ -14,7 +14,7 @@
 #  d'exécution portent la même mineure, et le binaire officiel ne reste pas.
 #  Revenir au binaire officiel dès qu'une version de Caddy embarque ces
 #  correctifs : retirer l'étape `construction` et le `COPY --from`.
-FROM golang:1.26-alpine AS construction
+FROM golang:1.27-alpine AS construction
 ARG CADDY_VERSION=v2.11.7
 WORKDIR /src
 #  Le `main` de Caddy (cmd/caddy/main.go), tel quel : c'est aussi ce qu'écrit

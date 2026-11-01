@@ -49,7 +49,7 @@ jobs:
         run: bash scripts/ci/veille-securite.sh --selftest
 
       # ── 1. Python : le même audit que la CI (#537), mêmes exceptions ───────
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.11"
       - name: Audit des dépendances Python
@@ -79,7 +79,7 @@ jobs:
           bash ../scripts/ci/veille-securite.sh etape "$RESULTATS" node "$rc" < "$RUNNER_TEMP/node.txt"
 
       # ── 3. Les images PUBLIÉES pour ce commit (images.yml, #1753) ──────────
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -91,7 +91,7 @@ jobs:
       - name: Trivy — api
         id: trivy_api
         continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.REGISTRE }}/coprofirst-api:sha-${{ github.sha }}
           severity: CRITICAL,HIGH
@@ -101,7 +101,7 @@ jobs:
       - name: Trivy — front
         id: trivy_front
         continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.REGISTRE }}/coprofirst-front:sha-${{ github.sha }}
           severity: CRITICAL,HIGH
@@ -112,7 +112,7 @@ jobs:
       - name: Trivy — caddy
         id: trivy_caddy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.REGISTRE }}/coprofirst-caddy:sha-${{ github.sha }}
           severity: CRITICAL,HIGH
@@ -123,7 +123,7 @@ jobs:
       - name: Trivy — whatsapp-bridge
         id: trivy_whatsapp
         continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.REGISTRE }}/coprofirst-whatsapp-bridge:sha-${{ github.sha }}
           severity: CRITICAL,HIGH
