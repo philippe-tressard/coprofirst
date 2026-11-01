@@ -9,6 +9,7 @@
 	import { urlDeConnexion } from '#lib/redirection.ts';
 	import { loadSiteConfig, configStore } from '#lib/stores/pageConfig.ts';
 	import { chargerPerimetres } from '#lib/stores/perimetres.ts';
+	import { chargerEquipements } from '#lib/stores/equipements.ts';
 	import {
 		commencerNavigation,
 		mesurerNavigation,
@@ -43,7 +44,11 @@
 		//  l'authentification — l'endpoint exige une session — et sans `await` : les
 		//  listes de contenus arrivent elles aussi en asynchrone, et un libellé
 		//  manquant retombe sur son rendu calculé plutôt que de retarder la page.
-		if ($currentUser) chargerPerimetres();
+		//  Les équipements, de même (#2442) : `equipLabel()` lit leur cache.
+		if ($currentUser) {
+			chargerPerimetres();
+			chargerEquipements();
+		}
 
 		//  Le refus de la mesure d'audience, AVANT le premier envoi (le serveur
 		//  l'honore aussi). Dans les deux sens — sinon le refus d'un compte

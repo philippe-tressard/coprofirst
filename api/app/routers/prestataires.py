@@ -34,11 +34,11 @@ from app.models.core import (
     ContratEntretien,
     NotationPrestataire,
     Prestataire,
-    TypeEquipement,
     Utilisateur,
 )
 
 from app.utils.echeance_contrat import poser_echeance
+from app.utils.equipements import AUTRE, exiger_equipement
 from app.utils.noms import nom_affiche, nom_auteur
 from app.utils.recuperer import ou_rien
 from app.utils.archivage import est_archivable
@@ -144,7 +144,8 @@ class ContratCreate(BaseModel):
     #: `batiment_id` en est déduit par `_deriver_batiment` et n'est plus reçu.
     perimetre_cible: Optional[list[str]] = None
     prestataire_id: int
-    type_equipement: TypeEquipement = TypeEquipement.autre
+    #: Le code d'un équipement proposé à la saisie (`utils/equipements`, #2442).
+    type_equipement: str = AUTRE
     libelle: str
     numero_contrat: Optional[str] = None
     date_debut: date
@@ -322,6 +323,7 @@ def create_contrat(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
+    exiger_equipement(session, body.type_equipement, "contrat")
     donnees = body.model_dump()
     codes = donnees.pop("perimetre_cible", None)
     c = ContratEntretien(**donnees)
@@ -342,6 +344,10 @@ def update_contrat(
     c = ou_404(session, ContratEntretien, c_id, "Contrat")
     modifications = body.model_dump(exclude_unset=True)
     codes = modifications.pop("perimetre_cible", None)
+    #  Seul un équipement qui CHANGE se juge : un contrat dont l'équipement a été
+    #  retiré depuis reste modifiable sans qu'on lui en choisisse un autre (#2442).
+    if modifications.get("type_equipement", c.type_equipement) != c.type_equipement:
+        exiger_equipement(session, modifications["type_equipement"], "contrat")
     for k, v in modifications.items():
         setattr(c, k, v)
     _appliquer_perimetre(c, codes)

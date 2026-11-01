@@ -36,7 +36,6 @@
 	export let prestForm: FormulairePrestataire;
 	export let prestContacts: ContactSaisi[] = [];
 	export let typesPrestataire: readonly { val: string; label: string; desc?: string }[] = [];
-	export let equipements: readonly { val: string; label: string }[] = [];
 
 	//  Un identifiant par instance : les deux rendus — création en tête de page et
 	//  correction dans la carte — coexistent, et deux `id` identiques feraient
@@ -89,7 +88,7 @@
 	<!--  `SectionEquipement`, la section de l'affaire et du contrat (#1329). -->
 	<SectionEquipement
 		idPrefixe={idNom}
-		options={equipements}
+		pour="contrat"
 		pliable={pliageDe(PRESTATAIRE, 'equipement')}
 		requis={requisDe(PRESTATAIRE, 'equipement')}
 		aide=""

@@ -23,10 +23,10 @@ import pytest
 from fastapi import HTTPException
 
 from app.models.core import RoleUtilisateur, Ticket
-from app.models.prestataires import TypeEquipement
 from app.models.tickets import StatutTicket
 from app.utils.carnet_entretien import construire_carnet
-from app.utils.intervenant import EQUIPEMENTS_AFFAIRE
+from app.models.equipements import Equipement
+from app.utils.equipements import ASSURANCE, SYNDIC, codes_saisissables
 from tests.aides_affaire import _compte, _corriger, _creer, session  # noqa: F401
 
 
@@ -48,9 +48,7 @@ def test_le_conseil_le_designe_apres_coup_meme_une_fois_l_affaire_close(session)
     assert _corriger(session, cs, t.id, equipement="plomberie").equipement == "plomberie"
 
 
-@pytest.mark.parametrize(
-    "valeur", ["licorne", TypeEquipement.assurance.value, TypeEquipement.syndic.value]
-)
+@pytest.mark.parametrize("valeur", ["licorne", ASSURANCE, SYNDIC])
 def test_ce_qui_n_est_pas_un_equipement_est_refuse(session, valeur):
     """`assurance` et `syndic` classent des CONTRATS : on n'intervient pas dessus."""
     with pytest.raises(HTTPException) as refus:
@@ -58,9 +56,28 @@ def test_ce_qui_n_est_pas_un_equipement_est_refuse(session, valeur):
     assert refus.value.status_code == 422
 
 
-def test_la_liste_blanche_n_est_pas_vide():
+def test_la_liste_blanche_n_est_pas_vide(session):
     """🔴 Cas zéro : vide, elle refuserait tout, et les tests de refus passeraient."""
-    assert "ascenseur" in EQUIPEMENTS_AFFAIRE and "autre" in EQUIPEMENTS_AFFAIRE
+    affaires = codes_saisissables(session, "affaire")
+    assert "ascenseur" in affaires and "autre" in affaires
+
+
+def test_un_equipement_ajoute_par_l_administration_se_designe(session):
+    """#2442 : la liste n'est plus l'énumération du code — une ligne ajoutée vaut."""
+    session.add(Equipement(code="piscine", libelle="Piscine", icone="droplet"))
+    session.commit()
+    lu = _creer(session, _cs(session), categorie="panne", equipement="piscine")
+    assert lu.equipement == "piscine"
+
+
+def test_un_equipement_retire_ne_se_designe_plus(session):
+    """Retiré : absent des sélecteurs, refusé à la saisie — ce qui le citait le garde."""
+    #  Un autre code que le test d'ajout : la base d'un fichier sert à tous ses tests.
+    session.add(Equipement(code="portail", libelle="Portail", actif=False))
+    session.commit()
+    with pytest.raises(HTTPException) as refus:
+        _creer(session, _cs(session), categorie="panne", equipement="portail")
+    assert refus.value.status_code == 422
 
 
 # ── Le carnet d'entretien ───────────────────────────────────────────────────

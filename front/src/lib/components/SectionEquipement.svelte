@@ -9,23 +9,32 @@
   🔴 Elle sert aussi le CONTRAT et le PRESTATAIRE depuis le 26/09/2026 (#1329) :
   chacun écrivait sa liste déroulante à la main — trois rendus, trois options
   vides différentes (« — Aucun — », « — Sélectionner — », aucune). Ce qui varie
-  est passé en props : la liste, le requis, l'aide.
+  est passé en props : l'usage, le requis, l'aide.
+
+  🔴 Les équipements s'ADMINISTRENT depuis #2442 : la liste vient du cache
+  (`#lib/equipements`), plus d'une table du code. La section la lit elle-même
+  pour l'usage qu'on lui dit (`pour`) — la prop `options` que chaque écran
+  relayait depuis sa page est partie. Elle garde la valeur déjà posée, même
+  retirée : un contrat dont l'équipement a été retiré se corrige sans qu'on lui
+  en choisisse un autre.
 -->
 <script lang="ts">
 	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
 	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
-	import { EQUIPEMENTS_AFFAIRE, equipLabel, type TypeEquipementOption } from '#lib/prestataires.ts';
+	import { optionsEquipements, type UsageEquipement } from '#lib/equipements.ts';
+	import { equipementsStore, libelleEquipement } from '#lib/stores/equipements.ts';
 
-	/** La valeur de `TypeEquipement`, ou `''`. */
+	/** Le code d'un équipement, ou `''`. */
 	export let equipement = '';
 	export let idPrefixe = 'ticket';
 	/** Relayé depuis la déclaration (`lint:pliage-transmis`). */
 	export let pliable = false;
 	/** Le motif d'extinction (`inactivePour`), ou `''`. */
 	export let inactive = '';
-	/**  La liste proposée : celle d'une affaire par défaut, TOUS les types pour
-	 *   un contrat ou un prestataire (`EQUIPEMENTS`). */
-	export let options: readonly TypeEquipementOption[] = EQUIPEMENTS_AFFAIRE;
+	/**  Pour quoi l'on choisit : une affaire par défaut (sans assurance ni syndic),
+	 *   un contrat ou un prestataire (`'contrat'` : tous les équipements actifs). */
+	export let pour: UsageEquipement = 'affaire';
+	$: options = optionsEquipements(pour, equipement || null, $equipementsStore);
 	/** Lu dans la déclaration (`requisDe`), jamais écrit ici. */
 	export let requis = false;
 	/** L'aide sous le champ — celle de l'affaire par défaut ; `''` : aucune. */
@@ -38,7 +47,7 @@
 	{inactive}
 	{requis}
 	rempli={equipement !== ''}
-	resume={equipement ? equipLabel(equipement) : 'aucun'}
+	resume={equipement ? $libelleEquipement(equipement) : 'aucun'}
 	valeurModifiee={equipement !== ''}
 	pour="{idPrefixe}-equipement"
 >

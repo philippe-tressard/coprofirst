@@ -22,11 +22,12 @@ construit, et la récurrence la rejoint pour la seule catégorie Entretien.
 
 ## L'équipement (#1097, 24/09/2026)
 
-« Sur quoi » : la **valeur** de `TypeEquipement`, posée par le conseil et jamais
+« Sur quoi » : le **code** d'un équipement (`utils/equipements`), posé par le conseil et jamais
 demandée au résident — il voit une flaque, il ne sait pas si c'est la plomberie,
 la toiture ou la VMC. Mêmes règles que l'intervenant (conseil seul, bâti seul,
-effacé ailleurs), plus une liste blanche : `assurance` et `syndic` classent des
-**contrats**, pas un équipement sur lequel on intervient.
+effacé ailleurs), plus une liste blanche — les équipements actifs, depuis #2442
+administrés : `assurance` et `syndic` classent des **contrats**, pas un
+équipement sur lequel on intervient (`HORS_AFFAIRES`).
 
 C'est lui qui RANGE une affaire résolue au carnet d'entretien
 (`carnet_entretien._entrees_affaires`) ; sans lui, elle y figure sous « Sans
@@ -43,10 +44,11 @@ from typing import Any
 from fastapi import HTTPException
 from sqlmodel import Session
 
-from app.models.prestataires import ContratEntretien, Prestataire, TypeEquipement
+from app.models.prestataires import ContratEntretien, Prestataire
 from app.models.tickets import CategorieTicket
 from app.utils.carnet_entretien import est_du_bati
 from app.utils.corrections_texte import modification
+from app.utils.equipements import HORS_AFFAIRES, exiger_equipement, libelle_equipement
 from app.utils.recuperer import ou_404
 from app.utils.valeurs import valeur
 
@@ -63,16 +65,6 @@ CHAMPS: tuple[str, ...] = (
     "equipement",
 )
 
-#: Ce qu'une affaire peut désigner comme équipement : `TypeEquipement`, moins
-#: ce qui classe un CONTRAT sans être un équipement. Même liste côté écran :
-#: `EQUIPEMENTS_AFFAIRE` de `#lib/prestataires` (`test_types_equipement.py`).
-HORS_EQUIPEMENT: frozenset[str] = frozenset(
-    {TypeEquipement.assurance.value, TypeEquipement.syndic.value}
-)
-EQUIPEMENTS_AFFAIRE: tuple[str, ...] = tuple(
-    e.value for e in TypeEquipement if e.value not in HORS_EQUIPEMENT
-)
-
 
 def contrat_valide(
     session: Session, contrat_id: int, prestataire_id: int | None
@@ -81,7 +73,7 @@ def contrat_valide(
 
     Il doit exister (404), être EN COURS, appartenir au prestataire désigné, et
     porter sur un équipement — une assurance ou un mandat de syndic ne cadrent
-    pas une intervention (`HORS_EQUIPEMENT`). Écrit une fois : la création en
+    pas une intervention (`HORS_AFFAIRES`). Écrit une fois : la création en
     lot (`routers/tickets/lot.py`) ne passe pas par `appliquer_intervenant`.
     """
     contrat = ou_404(session, ContratEntretien, contrat_id, "Contrat")
@@ -89,7 +81,7 @@ def contrat_valide(
         raise HTTPException(422, "Ce contrat n'est plus en cours")
     if prestataire_id is None or contrat.prestataire_id != prestataire_id:
         raise HTTPException(422, "Ce contrat n'est pas celui de l'intervenant désigné")
-    if valeur(contrat.type_equipement) in HORS_EQUIPEMENT:
+    if valeur(contrat.type_equipement) in HORS_AFFAIRES:
         raise HTTPException(422, "Ce contrat ne cadre pas une intervention")
     return contrat
 
@@ -103,11 +95,6 @@ def _nom_prestataire(session: Session, prestataire_id: int | None) -> str | None
     """Le nom de l'intervenant — ce que la ligne d'historique doit dire, pas son numéro."""
     prestataire = session.get(Prestataire, prestataire_id) if prestataire_id else None
     return prestataire.nom if prestataire else None
-
-
-def _libelle_equipement(valeur_equipement: str | None) -> str | None:
-    """`vmc_ventilation` → « vmc ventilation » : le slug, sans ses tirets bas."""
-    return valeur_equipement.replace("_", " ") if valeur_equipement else None
 
 
 def _libelle_recurrence(type_: str | None, nombre: int | None) -> str | None:
@@ -170,13 +157,12 @@ def appliquer_intervenant(ticket: Any, body: Any, session: Session, *, est_cs: b
             and _envoye(body, "equipement")
             and (body.equipement or None) != ticket.equipement
         ):
-            if body.equipement and body.equipement not in EQUIPEMENTS_AFFAIRE:
-                raise HTTPException(422, "Équipement inconnu")
+            exiger_equipement(session, body.equipement, "affaire")
             changes.append(
                 modification(
                     "de l'équipement",
-                    _libelle_equipement(ticket.equipement),
-                    _libelle_equipement(body.equipement),
+                    libelle_equipement(session, ticket.equipement) or None,
+                    libelle_equipement(session, body.equipement) or None,
                 )
             )
             ticket.equipement = body.equipement or None
@@ -217,4 +203,4 @@ def appliquer_intervenant(ticket: Any, body: Any, session: Session, *, est_cs: b
     return changes
 
 
-__all__ = ["CHAMPS", "EQUIPEMENTS_AFFAIRE", "FREQUENCES", "appliquer_intervenant"]
+__all__ = ["CHAMPS", "FREQUENCES", "appliquer_intervenant"]

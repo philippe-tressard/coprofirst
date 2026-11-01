@@ -23,60 +23,21 @@
  *
  * ## Ce que le garde-fou vérifie
  *
- * `api/tests/test_types_equipement.py` compare cette liste à `TypeEquipement`.
- * Il ne compare jamais deux copies l'une à l'autre : l'énumération du serveur
- * est **l'unique arbitre**. Même forme que `test_statuts_tickets.py` (#415), née
- * du même défaut — cinq listes, chacune cohérente avec elle-même, aucune juste.
+ * `api/tests/test_types_equipement.py` compare `TYPES_PRESTATAIRE` à
+ * `TypePrestataire` : l'énumération du serveur est **l'unique arbitre**. Même
+ * forme que `test_statuts_tickets.py` (#415).
+ *
+ * ⚠️ Les ÉQUIPEMENTS ont quitté ce module le 01/11/2026 (#2442) : ils
+ * s'administrent, vivent en base et se lisent par `#lib/equipements`. Le même
+ * test refuse qu'une liste d'équipements soit réécrite dans le front.
  */
 import { contientTousLesMots, replier } from '#lib/texte.ts';
 import { stripHtml } from '#lib/utils.ts';
+import { equipement, equipLabel } from '#lib/equipements.ts';
 import type { ContactPrestataire, ContratEntretien, Prestataire } from '#lib/api/index.ts';
 
-/**  Un type d'équipement, tel que l'écran le nomme.
- *
- *   ⚠️ `val` doit correspondre EXACTEMENT à `TypeEquipement` côté serveur : c'est
- *   la valeur qui part dans la charge utile. Le libellé, lui, n'est lu que par
- *   des humains. */
-export type TypeEquipementOption = { val: string; label: string };
-
-/**  Les 18 types d'équipement, dans l'ordre de l'énumération serveur.
- *
- *   🔴 `assurance` et `syndic` ne sont pas des « équipements », et le nom de
- *   l'énumération est donc un peu court. Ce qu'elle classe réellement, c'est
- *   « de quoi parle ce contrat » — et un contrat d'assurance ou un mandat de
- *   syndic en relèvent. En créer une seconde pour deux valeurs aurait donné deux
- *   nomenclatures à tenir d'accord. */
-export const EQUIPEMENTS: readonly TypeEquipementOption[] = [
-	{ val: 'ascenseur', label: '\u{1F6D7} Ascenseur' },
-	{ val: 'chauffage_collectif', label: '\u{1F525} Chauffage collectif' },
-	{ val: 'eau', label: '\u{1F4A7} Eau' },
-	{ val: 'electricite', label: '⚡ Électricité' },
-	{ val: 'espaces_verts', label: '\u{1F33F} Espaces verts' },
-	{ val: 'extincteurs', label: '\u{1F9EF} Extincteurs' },
-	{ val: 'interphone_digicode', label: '\u{1F4DE} Interphone/Digicode' },
-	{ val: 'menuiseries', label: '\u{1FA9F} Menuiseries' },
-	{ val: 'nettoyage', label: '\u{1F9F9} Nettoyage' },
-	{ val: 'plomberie', label: '\u{1F6BF} Plomberie' },
-	{ val: 'pompe', label: '⚙️ Pompe' },
-	{ val: 'porte_parking', label: '\u{1F697} Porte parking' },
-	{ val: 'serrurerie', label: '\u{1F511} Serrurerie' },
-	{ val: 'toiture', label: '\u{1F3E0} Toiture' },
-	{ val: 'vmc', label: '\u{1F4A8} VMC' },
-	{ val: 'assurance', label: '\u{1F6E1}\u{FE0F} Assurance' },
-	{ val: 'syndic', label: '\u{1F4BC} Syndic' },
-	{ val: 'autre', label: '\u{1F527} Autre' },
-];
-
-/**  Ce qui classe un CONTRAT sans être un équipement sur lequel on intervient.
- *   Même liste côté serveur : `utils/intervenant.HORS_EQUIPEMENT`
- *   (`test_types_equipement.py` les compare). */
-export const HORS_EQUIPEMENT: readonly string[] = ['assurance', 'syndic'];
-
-/**  Les équipements qu'une AFFAIRE peut désigner (#1097) : la table des
- *   contrats, moins ce qui n'est pas un équipement. Dérivée, jamais recopiée. */
-export const EQUIPEMENTS_AFFAIRE: readonly TypeEquipementOption[] = EQUIPEMENTS.filter(
-	(e) => !HORS_EQUIPEMENT.includes(e.val),
-);
+//  Les ÉQUIPEMENTS ont quitté ce module (#2442) : ils s'administrent et vivent en
+//  base. Leur cache d'écran, leur libellé et leurs options : `#lib/equipements`.
 
 /**
  *  Un contact RENSEIGNÉ : au moins une de ses valeurs est saisie. Les contacts
@@ -142,17 +103,6 @@ export function contactsAEnvoyer<C extends Record<string, string | null | undefi
 	return { contacts, telephone: numeros.join(',') || null };
 }
 
-/**  Le libellé d'un type d'équipement.
- *
- *   ⚠️ Le repli rend la valeur BRUTE plutôt qu'un tiret : une valeur inconnue
- *   signale une divergence avec le serveur, et l'afficher telle quelle la rend
- *   visible. Un `—` la masquerait, et le garde-fou étant côté tests, l'écran
- *   serait le seul endroit où elle pourrait encore se voir. */
-export function equipLabel(val: string | null | undefined): string {
-	if (!val) return '—';
-	return EQUIPEMENTS.find((e) => e.val === val)?.label ?? val;
-}
-
 /**  Les catégories de prestataire, telles que l'écran les propose.
  *
  *   ⚠️ Même contrainte que ci-dessus : `val` correspond à `TypePrestataire`.
@@ -181,7 +131,7 @@ export const TYPES_PRESTATAIRE: readonly { val: string; label: string; desc: str
 ];
 
 /**  Le libellé d'une catégorie de prestataire — la valeur brute en repli, pour
- *   la même raison qu'`equipLabel` : une valeur inconnue signale une divergence
+ *   la même raison qu'`equipLabel` (`#lib/equipements`) : une valeur inconnue signale une divergence
  *   avec le serveur. Le reporting affichait la valeur brute en toute occasion
  *   (`contrat_recurrent`), et la page en avait sa propre copie (#1444). */
 export function typePrestataireLabel(val: string | null | undefined): string {
@@ -198,7 +148,8 @@ export function contratsDuPrestataire<
 >(contrats: C[], prestataireId: number | null): C[] {
 	if (prestataireId === null) return [];
 	return contrats.filter(
-		(c) => c.prestataire_id === prestataireId && !HORS_EQUIPEMENT.includes(c.type_equipement ?? ''),
+		(c) =>
+			c.prestataire_id === prestataireId && equipement(c.type_equipement)?.pour_affaires !== false,
 	);
 }
 

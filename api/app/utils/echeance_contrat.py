@@ -54,6 +54,7 @@ cas zéro, et il rend `None`.
 from datetime import date
 from app.utils import horloge
 from typing import NamedTuple, Optional, Protocol
+from app.utils.equipements import SYNDIC
 from app.utils.valeurs import valeur
 
 
@@ -68,7 +69,7 @@ class _Contrat(Protocol):
     date_debut: Optional[date]
     duree_initiale_valeur: Optional[int]
     duree_initiale_unite: Optional[str]
-    type_equipement: object  # `TypeEquipement` ou la chaîne équivalente
+    type_equipement: object  # le code d'un équipement (`utils/equipements`)
 
 
 #: 🔴 LES TYPES QUI NE SE RECONDUISENT PAS TACITEMENT.
@@ -88,7 +89,7 @@ class _Contrat(Protocol):
 #: pour les contrats de la copropriété (assurance, entretien, ascenseur,
 #: chaudière). C'est l'exception qui s'énumère, pas le cas général — l'inverse
 #: obligerait à penser à chaque nouveau type, et c'est celui qu'on oublie.
-SANS_RECONDUCTION_TACITE = frozenset({"syndic"})
+SANS_RECONDUCTION_TACITE = frozenset({SYNDIC})
 
 
 class Echeance(NamedTuple):
@@ -146,7 +147,6 @@ def echeance_du_contrat(contrat: _Contrat, aujourdhui: Optional[date] = None) ->
     reference = aujourdhui or horloge.aujourd_hui()
     duree = contrat.duree_initiale_valeur
     unite = contrat.duree_initiale_unite
-    #  `TypeEquipement` est un `str, Enum` : `str(...)` rendrait « TypeEquipement.syndic ».
     type_ = valeur(contrat.type_equipement)
     tacite = type_ not in SANS_RECONDUCTION_TACITE
 

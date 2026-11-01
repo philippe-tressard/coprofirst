@@ -67,12 +67,16 @@ REFERENTIELS = {
         "référentiel : un nœud de l'arbre des périmètres retiré des choix ; "
         "le contenu qui le cite garde son code"
     ),
+    ("Equipement", "actif"): (
+        "référentiel : un équipement retiré des sélecteurs (#2442) ; les contrats, "
+        "affaires et prestataires qui le citent gardent son code et son libellé"
+    ),
 }
 
 #: Le plafond des référentiels. Il ne fait que BAISSER.
 #: Déclarations permanentes : le compte ne baisse que si l'une cesse de servir
 #: (relevé de clôture de la carte #1571, 30/10/2026 — aucune dette à solder).
-PLAFOND_REFERENTIELS = 10
+PLAFOND_REFERENTIELS = 11
 
 
 def colonnes_booleennes_de_disparition(sources: dict[str, str]) -> set[tuple[str, str]]:

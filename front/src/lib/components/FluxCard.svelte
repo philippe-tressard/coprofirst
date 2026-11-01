@@ -34,7 +34,8 @@
 	import AuteurCarte from '#lib/components/AuteurCarte.svelte';
 	import MarqueIA from '#lib/components/MarqueIA.svelte';
 	import BadgeVerdict from '#lib/components/BadgeVerdict.svelte';
-	import { champDe } from '#lib/utils.ts';
+	import { champDe, relire } from '#lib/utils.ts';
+	import { equipementsStore } from '#lib/stores/equipements.ts';
 	import {
 		badgeClass,
 		badgesDuFlux,
@@ -96,6 +97,9 @@
 	 *   (`flux/commun.pastilles_affaire`) — absente sur les autres cartes. */
 	$: affaire = item.meta?.affaire as Ticket | undefined;
 	$: auteur = item.meta?.auteur as string | undefined;
+	//  Le libellé d'un équipement vient d'un cache chargé après la page (#2442) :
+	//  le citer repeint la pastille quand il arrive (`relire`).
+	$: badges = relire($equipementsStore, () => badgesDuFlux(item));
 	$: assisteIA = item.meta?.assiste_ia === true;
 	$: photos = (item.meta?.photos_urls as string[] | undefined) ?? [];
 	$: fichiers = (item.meta?.fichiers_urls as string[] | undefined) ?? [];
@@ -180,7 +184,7 @@
 			{#if affaire}
 				<PastillesAffaire {affaire} {auteur} dansLeFil />
 			{:else}
-				{#each badgesDuFlux(item) as b (b)}
+				{#each badges as b (b)}
 					<!--  Un verdict garde la teinte qu'il a dans l'onglet Règlement. -->
 					{#if item.type === 'question_reglement'}
 						<BadgeVerdict verdict={String(champDe(item.meta, 'verdict') ?? '')} libelle={b} />

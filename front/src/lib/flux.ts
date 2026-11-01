@@ -13,7 +13,7 @@
  */
 import type { FluxItem } from '#lib/api/index.ts';
 import { estTicketClos } from '#lib/tickets.ts';
-import { equipLabel } from '#lib/prestataires.ts';
+import { equipLabel } from '#lib/equipements.ts';
 import { parAttribut } from '#lib/table-statuts.ts';
 import { fmtDateLong } from '#lib/date.ts';
 import type { ClasseGouttiere } from '#lib/gouttiere.ts';

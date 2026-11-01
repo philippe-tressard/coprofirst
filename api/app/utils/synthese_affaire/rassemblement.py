@@ -45,6 +45,7 @@ from app.utils.destinataires import est_adresse_syndic
 from app.utils.jours_ouvres import libelle_jours
 from app.utils.synthese_affaire import metriques as m
 from app.utils.noms import ANCIEN_RESIDENT
+from app.utils.equipements import libelle_equipement
 from app.utils.recuperer import ou_rien
 from app.utils.synthese_affaire.lecture import TYPE_SYNTHESE
 from app.utils.synthese_affaire import recidive as r
@@ -255,7 +256,11 @@ def construire_message(
     tete = [
         f"Affaire {ticket.numero} — « {ticket.titre} »",
         f"Catégorie : {libelle_categorie(ticket.categorie)}"
-        + (f" · équipement : {ticket.equipement.replace('_', ' ')}" if ticket.equipement else ""),
+        + (
+            f" · équipement : {libelle_equipement(session, ticket.equipement)}"
+            if ticket.equipement
+            else ""
+        ),
         f"Ouverte le {date_courte(horloge.jour_civil(ouverture_effective(session, ticket)))}, "
         f"{issue} le {date_courte(horloge.jour_civil(ticket.ferme_le))}.",
     ]

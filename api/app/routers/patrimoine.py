@@ -48,6 +48,7 @@ from app.utils.lecture import lire_objet
 from app.utils.acces_choix import fixer_acces, types_fixes_par_code
 from app.utils.perimetres import invalider_cache, parse_json_perimetres, parse_perimetres
 from app.utils.perimetres.branche import descendants, enfants_par_parent, refus_duplication
+from app.utils.equipements import retirer_liens_du_perimetre
 from app.utils.recuperer import ou_404
 
 router = APIRouter(prefix="/perimetres", tags=["perimetres"])
@@ -447,6 +448,8 @@ def supprimer_perimetre(
     #  Les enfants avant leurs parents : la clé `parent_id` ne doit jamais
     #  désigner une ligne déjà retirée.
     for n in (*reversed(branche), noeud):
+        #  Un équipement qui s'y trouvait le perd, il ne disparaît pas (#2442).
+        retirer_liens_du_perimetre(session, n.id)
         session.delete(n)
         session.flush()
     session.commit()
