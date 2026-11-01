@@ -884,7 +884,7 @@ et jamais fini).
 | S1 | l'arbre que root exécute (`scripts/`, `infra/`, compose, Caddyfile, Dockerfiles) est-il celui du dépôt ? `git status` sur ces zones | `lib-audit-arbre.sh` | FAIL |
 | S2 | un second UID 0, un compte avec shell non déclaré, un mot de passe vide, un membre de plus dans `docker` ou `sudo` ? | `lib-audit-comptes.sh` (listes déclarées en tête) | FAIL |
 | S3 | les points de persistance (cron, systemd, `authorized_keys`, sudoers, passwd/shadow, `ld.so.preload`, profile.d, apt) ont-ils changé depuis la **référence acceptée** ? | `lib-audit-persistance.sh` | FAIL (chauds) · WARN (configuration que les mises à jour retouchent) |
-| S4 | les conteneurs sont-ils sans privilège, sans la prise Docker, sans montage hors compose ? leurs images sont-elles celles de la CI pour HEAD ? la prise Docker en 660 root:docker ? | `lib-audit-conteneurs.sh` | FAIL · WARN (image de secours ou périmée) |
+| S4 | les conteneurs sont-ils sans privilège, sans la prise Docker, sans montage hors compose, et DURCIS comme le compose les déclare (capacités, `no-new-privileges`, racine en lecture seule — `CONTENEURS_DURCIS`, #2368) ? leurs images sont-elles celles de la CI pour HEAD ? la prise Docker en 660 root:docker ? | `lib-audit-conteneurs.sh` | FAIL · WARN (image de secours ou périmée) |
 | S5 | sshd, ufw, fail2ban, apt : la configuration **servie** (`sshd -T`, `ufw show added`, `fail2ban-client`, `apt-config dump`) | `lib-durcissement.sh` (les mêmes lecteurs que `durcir-noeud.sh`) | FAIL |
 | S6 | actif seul : une sonde de scanner (`/.env`, `/.git`, `wp-login`…) a-t-elle été **servie** en 2xx ? plus de 100 connexions refusées ? le journal de sécurité de l'API a-t-il des gestes à relire (jeton rejoué, rôle ajouté, compte supprimé…) ? | `lib-audit-acces.sh` | FAIL (sonde servie) · WARN |
 
@@ -904,6 +904,13 @@ Conduite :
 - **S1** : `git -C /opt/5hostachy status` ; un script modifié là tourne en root la
   nuit. Un fichier voulu se committe ; sinon `git checkout -- <fichier>` **après**
   avoir lu la différence.
+- **S4 « capacités=… », « gain-de-privilège-permis », « racine-en-écriture »** : le
+  conteneur ne tourne pas comme `docker-compose.yml` le durcit — lancé à la main
+  (`docker run`), ou par un compose modifié sur place (S1 le dit) : `docker inspect
+  <conteneur>`, puis le recréer par Compose, **avec sa liste de services**. Dans un
+  conteneur durci, `docker exec` entre en root SANS `DAC_OVERRIDE` : il lit, mais
+  n'écrit plus dans les volumes — `docker exec -u app hostachy_api …`,
+  `-u node hostachy_whatsapp`.
 - **S4 image « construite-ici »** : le secours de #1758 (alerté par ailleurs) ou
   un nœud qui n'a pas encore tiré ; « AUTRE » : une image d'un autre commit —
   `auto-deploy` n'a pas suivi, ou quelqu'un a poussé une image à la main.

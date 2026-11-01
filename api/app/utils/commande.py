@@ -12,7 +12,7 @@ que l'installation ne sert jamais, ou pire, celle qu'on n'a pas voulu toucher.
   avoir ouvert.
 
 ```bash
-docker compose exec api python -m app.seed --copropriete tilleuls
+docker compose exec -u app api python -m app.seed --copropriete tilleuls
 ```
 
 🔒 `tests/test_commandes_nomment_leur_copropriete.py` : un module de `app/` qui se

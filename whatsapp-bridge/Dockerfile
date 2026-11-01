@@ -24,7 +24,12 @@ RUN npm ci --omit=dev \
     && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-* \
     && ! sh -c 'command -v npm || command -v npx' && node --version
 
-COPY index.js arret.js accuses.js ./
+COPY index.js arret.js accuses.js privileges.js ./
+
+#  Le compte vers lequel le bridge descend au démarrage (`privileges.js`, #2368) :
+#  son uid est écrit là-bas, il se VÉRIFIE ici — une image de base qui le
+#  changerait échouerait à la construction plutôt qu'au premier message.
+RUN [ "$(id -u node):$(id -g node)" = "1000:1000" ]
 
 VOLUME /app/auth_state
 
