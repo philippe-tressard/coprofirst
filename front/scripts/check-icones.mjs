@@ -30,7 +30,7 @@
  *
  * ## Ce qu'il ne lit PAS, et qui le fait
  *
- * `ICONES_PERIMETRE` et les icônes du seed sont tenues par
+ * `ICONES_PERIMETRE`, `ICONES_EQUIPEMENT` et les icônes du seed sont tenues par
  * `api/tests/test_icones_svg.py`, avec l'égalité des deux copies du catalogue.
  * Une icône choisie en administration (`site_icone`, icône d'un périmètre)
  * vient de `ChampIcone`, qui ne propose QUE les clés du catalogue.

@@ -184,7 +184,7 @@ export const EQUIPEMENTS_TEMOINS = (
 	[
 		['ascenseur', 'Ascenseur', 'arrow-up-down', 'ASC.', false],
 		['plomberie', 'Plomberie', 'droplet', 'PLOMB.', false],
-		['extincteurs', 'Extincteurs', 'shield-half', 'EXTINC.', false],
+		['extincteurs', 'Extincteurs', 'fire-extinguisher', 'EXTINC.', false],
 		['toiture', 'Toiture', 'home', 'TOIT.', false],
 		['assurance', 'Assurance', 'shield', 'ASSUR.', true],
 		['syndic', 'Syndic', 'building-2', 'SYNDIC', true],
