@@ -124,7 +124,8 @@ ci_catalogue_verdict() {
 
 #  La sonde : nombre de relations et de schémas jetables, part de tuples morts et
 #  place par ligne vivante des tables du catalogue, DDL témoin (meilleur de trois,
-#  dans une transaction ANNULÉE : interrompu, il ne laisse rien). Lecture seule.
+#  dans une transaction ANNULÉE : interrompu, il ne laisse rien). Lecture seule — sauf, sur une
+#  base neuve sans statistiques, l'ANALYZE du catalogue qui les pose (#2419).
 ci_sonder_catalogue() {
   # shellcheck disable=SC2086  # la liste des tables, mot par mot
   python - "${TESTS_BASE_URL:-}" $CI_CATALOGUE_TABLES 2>/dev/null <<'PYTHON' | tr -d '\r' | tail -1
@@ -138,11 +139,16 @@ try:
             "SELECT (SELECT count(*) FROM pg_class),"
             " (SELECT count(*) FROM pg_namespace WHERE nspname ~ '^t_[0-9]{14}_[0-9a-f]{12}$')"
         ).fetchone()
-        vivants, morts, octets, lues = c.execute(
+        stats = (
             "SELECT sum(n_live_tup), sum(n_dead_tup), sum(pg_total_relation_size(relid)), count(*)"
-            " FROM pg_stat_sys_tables WHERE schemaname = 'pg_catalog' AND relname = ANY(%s)",
-            (sys.argv[2:],),
-        ).fetchone()
+            " FROM pg_stat_sys_tables WHERE schemaname = 'pg_catalog' AND relname = ANY(%s)"
+        )
+        vivants, morts, octets, lues = c.execute(stats, (sys.argv[2:],)).fetchone()
+        if lues == len(sys.argv[2:]) and not vivants:
+            # Base neuve (poste neuf, #2419) : aucune statistique encore, rien de mesuré.
+            # ANALYZE ne pose que les statistiques ; les noms viennent de CI_CATALOGUE_TABLES.
+            c.execute("ANALYZE " + ", ".join(f"pg_catalog.{t}" for t in sys.argv[2:]))
+            vivants, morts, octets, lues = c.execute(stats, (sys.argv[2:],)).fetchone()
         if lues != len(sys.argv[2:]) or not vivants:
             raise RuntimeError(f"statistiques du catalogue incomplètes ({lues} table(s) lue(s))")
         essais = []
