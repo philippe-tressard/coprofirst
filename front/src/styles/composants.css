@@ -533,6 +533,22 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	margin-bottom: 0.75rem;
 }
 
+/* ── L’action primaire d’un ONGLET qui n’a pas d’en-tête à lui ──
+   Sur une page, « + Nouveau … » vit dans l’en-tête (`EntetePage` +
+   `BoutonNouveau`). Un onglet d’Admin partage l’en-tête « Paramétrage » : son
+   bouton prend sa propre rangée, AU-DESSUS des réglages de la liste
+   (`ReglagesListe`), jamais à côté de la recherche, dont le libellé et l’aide
+   ne s’alignent sur aucun bouton (signalé à l’écran le 01/11/2026).
+   ⚠️ À GAUCHE, sur l’axe du libellé « Recherche » et de la liste : à droite, il
+   tombait 100 px au-delà de la saisie, que `ReglagesListe` plafonne à 52 rem —
+   un second désalignement à la place du premier (mesuré sur bureau). */
+.actions-onglet {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 1rem;
+}
+
 /* ── Six notions partagées, définies dans UN fichier et employées dans PLUSIEURS ──
 
    Chacune était écrite chez un appelant, et un autre s’en servait sans l’avoir :

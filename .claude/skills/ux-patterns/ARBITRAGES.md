@@ -589,3 +589,10 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : au-dessus de 1,1 rem l'échelle n'avait pas de cran, et cinq h1 avaient quatre tailles ; chaque valeur rendue avant/après, en clair et en sombre, sur maquette.
 - **Écarté** : le cran supérieur strict sous 1 rem (0,6 → 0,72, +20 %) ; tout ramener à `--fs-chiffre` (les KPI à 2 rem perdaient 20 %) ; déclarer les icônes hors du contrôle.
 - **Tenu par** : `npm run lint:charte-valeurs` (`PLAFOND.tailles = 0`).
+
+### n° 79 · en vigueur — L'action d'un onglet d'Admin : sur sa rangée, à gauche, au-dessus de la recherche
+01/11/2026 · — · l'utilisateur, à l'écran · §5 bis, §13
+- **Décidé** : un onglet d'Admin qui crée et liste (Périmètres, Équipements) pose `BoutonNouveau` dans `.actions-onglet` — sa propre rangée, À GAUCHE —, puis la recherche dans `ReglagesListe`, puis le formulaire, puis la liste. Périmètres reçoit la recherche standard ; un nœud trouvé garde ses ancêtres (`rechercherDansArbre`).
+- **Pourquoi** : « le bouton et le champ Recherche ne sont pas alignés » — posés côte à côte dans une rangée flex, le libellé RECHERCHE et l'aide de `ChampRecherche` décalaient la saisie sous le bouton ; Périmètres n'avait pas de recherche. À droite (la place de l'action dans `EntetePage`), le bouton tombait 100 px au-delà de la saisie plafonnée à 52 rem : à gauche, il partage l'axe du libellé et de la liste.
+- **Écarté** : le bouton dans la rangée de la recherche (troisième colonne de `ReglagesListe`, que nulle autre page n'a) ; le bouton dans l'en-tête « Paramétrage » (partagé par vingt onglets, la page est à son plafond de lignes) ; à droite.
+- **Tenu par** : `e2e/admin-actions-recherche.spec.ts`.
