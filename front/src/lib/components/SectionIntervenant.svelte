@@ -23,7 +23,9 @@
 	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
 	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
 	import { prestataires as prestatairesApi } from '#lib/api/index.ts';
-	import { EQUIPEMENTS, contactRenseigne, contratsDuPrestataire } from '#lib/prestataires.ts';
+	import { contactRenseigne, contratsDuPrestataire } from '#lib/prestataires.ts';
+	import { optionsEquipements } from '#lib/equipements.ts';
+	import { equipementsStore } from '#lib/stores/equipements.ts';
 	import { tenter } from '#lib/erreurs.ts';
 
 	/** L'identifiant du prestataire retenu, ou `null`. */
@@ -135,7 +137,9 @@
 				>Équipement
 				<select bind:value={nouvelEquipement}>
 					<option value="">— Sélectionner —</option>
-					{#each EQUIPEMENTS as e (e.val)}<option value={e.val}>{e.label}</option>{/each}
+					{#each optionsEquipements('contrat', null, $equipementsStore) as e (e.val)}<option
+							value={e.val}>{e.label}</option
+						>{/each}
 				</select>
 			</label>
 			<label class="field">Nom du contact<input bind:value={contact.nom} /></label>

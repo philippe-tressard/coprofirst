@@ -81,6 +81,7 @@ from app.routers import (
 )
 from app.routers import uploads, faq, signalements, annonces_hall, patrimoine
 from app.routers import patrimoine_branche
+from app.routers import equipements
 from app.routers import manuel
 from app.registre import routeur as registre  # le registre des installations (§4.11)
 from app.installation_commune import routeur as aiguillage  # l'hôte commun (#1894)
@@ -425,6 +426,7 @@ app.include_router(flux.router)
 app.include_router(signalements.router)
 app.include_router(patrimoine.router)
 app.include_router(patrimoine_branche.router)
+app.include_router(equipements.router)
 #  L'assistant IA des formulaires (#985) : retravailler une description.
 app.include_router(assistant.router)
 app.include_router(reglement.router)

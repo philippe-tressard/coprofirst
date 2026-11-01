@@ -63,8 +63,6 @@
 	export let contratForm: FormulaireContratData;
 	/** Les prestataires proposables. */
 	export let prestataires: Prestataire[] = [];
-	/** La table des équipements (`{ val, label }`). */
-	export let equipements: readonly { val: string; label: string }[] = [];
 	/**  Création ou correction — c'est la DÉCLARATION qui en tire les sections
 	 *   présentes, jamais une condition écrite ici (`lint:etats`). */
 	export let etat: Etat = 'creation';
@@ -123,7 +121,7 @@
 	<!--  `SectionEquipement`, la section de l'affaire et du prestataire (#1329). -->
 	<SectionEquipement
 		idPrefixe={idNotes}
-		options={equipements}
+		pour="contrat"
 		pliable={pliageDe(CONTRAT, 'equipement')}
 		requis={requisDe(CONTRAT, 'equipement')}
 		aide=""

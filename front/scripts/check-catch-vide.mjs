@@ -121,6 +121,12 @@ const MUETS_DECLARES = [
 		raison:
 			'drapeau de cache laissé faux pour RÉESSAYER ; les écrans retombent sur le libellé brut',
 	},
+	{
+		fichier: 'src/lib/stores/equipements.ts',
+		affecte: 'charge',
+		raison:
+			'même cache que les périmètres (#2442) : laissé faux pour RÉESSAYER, les écrans rendent le code brut ; l’administration, elle, lit par `rechargerEquipements`, qui propage l’échec',
+	},
 ];
 
 function fichiers(dossier) {

@@ -13,7 +13,6 @@ from app.models.core import (
     ContratEntretien,
     Copropriete,
     Prestataire,
-    TypeEquipement,
     Utilisateur,
 )
 
@@ -22,6 +21,7 @@ from app.utils.destinataires import syndic_principal
 from app.utils.liens import nom_site
 from app.utils.document_contrat import id_document_designe
 from app.utils.echeance_contrat import echeance_du_contrat
+from app.utils.equipements import ASSURANCE, SYNDIC
 from app.utils.lecture import lire_objet
 from app.utils.recuperer import connu_ou_404, premier_ou_404
 from app.utils.syndic import nom_du_syndic
@@ -151,8 +151,8 @@ class BatimentRead(BaseModel):
 #: `champ_id` est la colonne qui DÉSIGNE le contrat ; `type_equipement` sert
 #: uniquement au repli et à la liste proposée à l'écran.
 SECTIONS_CONTRAT = {
-    "assurance": ("assurance_contrat_id", TypeEquipement.assurance),
-    "syndic": ("syndic_contrat_id", TypeEquipement.syndic),
+    "assurance": ("assurance_contrat_id", ASSURANCE),
+    "syndic": ("syndic_contrat_id", SYNDIC),
 }
 
 
@@ -423,8 +423,8 @@ def contrats_candidats(
     """Les contrats parmi lesquels la fiche désigne sa référence.
 
     🔴 `section` est validé contre `SECTIONS_CONTRAT` — liste blanche, jamais
-    l'entrée brute : sans elle, `TypeEquipement(section)` lèverait un `ValueError`
-    rendu en 500, et le paramètre deviendrait un moyen d'énumérer l'énumération
+    l'entrée brute : sans elle, le paramètre deviendrait un moyen de lister les
+    contrats de n'importe quel équipement
     (`standards/03` §2).
 
     Les contrats INACTIFS sont rendus, avec leur drapeau. Une copropriété désigne

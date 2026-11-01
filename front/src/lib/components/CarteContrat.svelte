@@ -36,7 +36,7 @@
 <script lang="ts">
 	import { fmtNombre } from '#lib/utils.ts';
 	import { frequenceLabel, type FormulaireContratData } from '#lib/prestataires.ts';
-	import { classeEquipement } from '#lib/prestataires-gouttiere.ts';
+	import { classeDEquipement } from '#lib/stores/equipements.ts';
 	import { typeEquipementDuContrat } from '#lib/reporting.ts';
 	import type { ContratEntretien, Document, Prestataire } from '#lib/api/index.ts';
 	import { fmtDateShort } from '#lib/date.ts';
@@ -64,7 +64,6 @@
 	export let editContratId: number | null = null;
 	export let contratForm: FormulaireContratData;
 	export let prestataires: Prestataire[] = [];
-	export let equipements: readonly { val: string; label: string }[] = [];
 	export let submitting = false;
 
 	export let onBasculer: (id: number) => void = () => {};
@@ -117,7 +116,7 @@
 	 *   l'onglet range déjà ses groupes par cette clé, par la même règle
 	 *   (`typeEquipementDuContrat`). La fréquence est un rythme, pas un
 	 *   classement : elle reste une capsule de la dernière ligne. */
-	$: classe = classeEquipement(typeEquipementDuContrat(contrat, prestataires));
+	$: classe = $classeDEquipement(typeEquipementDuContrat(contrat, prestataires));
 </script>
 
 <!--  L'ancre `contrat-{id}` : le carnet d'entretien y renvoie (#870 → carnet,
@@ -199,7 +198,6 @@
 		<FormulaireContrat
 			bind:contratForm
 			{prestataires}
-			{equipements}
 			contratId={contrat.id}
 			{documents}
 			onSupprimer={onSupprimerDoc}

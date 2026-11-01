@@ -29,7 +29,9 @@
 	} from '#lib/api/index.ts';
 	import { isCS } from '#lib/stores/auth.ts';
 	import { toast } from '#lib/components/Toast.svelte';
-	import { EQUIPEMENTS as equipements, contratDepuis, contratVierge } from '#lib/prestataires.ts';
+	import { contratDepuis, contratVierge } from '#lib/prestataires.ts';
+	import { groupesParEquipement } from '#lib/equipements.ts';
+	import { equipementsStore } from '#lib/stores/equipements.ts';
 	import { minuitDuJour, typeEquipementDuContrat } from '#lib/reporting.ts';
 	import { relire, nombreOuNull } from '#lib/utils.ts';
 	import CarteContrat from '#lib/components/CarteContrat.svelte';
@@ -303,7 +305,6 @@
 		<FormulaireContrat
 			bind:contratForm
 			{prestataires}
-			{equipements}
 			contratId={null}
 			documents={[]}
 			bind:fichiersEnAttente={contratFichiersEnAttente}
@@ -353,7 +354,7 @@
 		messageVideCourant="Les contrats archivés sont rangés dans les Archives, ci-dessous."
 		let:items
 	>
-		{#each equipements.filter( (e) => items.some((c) => typeEquipementDuContrat(c, prestataires) === e.val) ) as specGroup (specGroup.val)}
+		{#each groupesParEquipement( items.map( (c) => typeEquipementDuContrat(c, prestataires) ), $equipementsStore ) as specGroup (specGroup.val)}
 			<IntertitreGroupe libelle={specGroup.label} />
 			{#each parEcheance(items.filter((c) => typeEquipementDuContrat(c, prestataires) === specGroup.val)) as c (c.id)}
 				{@const contrat = c}
@@ -369,7 +370,6 @@
 					{editContratId}
 					bind:contratForm
 					{prestataires}
-					{equipements}
 					{submitting}
 					onBasculer={(id) => (ouvert = basculer(ouvert, id))}
 					onModifier={startEditContrat}

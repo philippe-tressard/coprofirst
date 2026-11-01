@@ -185,9 +185,9 @@ export type ContratCandidat = {
 
 /**  Une entrée du carnet d'entretien — un fait daté qui concerne le bâti.
  *
- *   `equipement` porte la VALEUR de `TypeEquipement` (`'ascenseur'`), pas son
- *   libellé : celui-ci vient d'`EQUIPEMENTS` (`#lib/prestataires`), qui est déjà
- *   la table unique et que `test_types_equipement.py` compare au serveur.
+ *   `equipement` porte le CODE d'un équipement (`'ascenseur'`), pas son
+ *   libellé : celui-ci vient du cache des équipements (`#lib/equipements`),
+ *   administrés depuis #2442.
  */
 export interface EntreeCarnet {
 	date: string;

@@ -1,7 +1,7 @@
 """Prestataires, contrats d'entretien et notations.
 
 Extrait de `core.py` le 20/08/2026, au fil de l'eau : ce fichier a dépassé son
-plafond en recevant `TypeEquipement.assurance` (#490), et le garde-fou de
+plafond en recevant la valeur `assurance` (#490), et le garde-fou de
 modularité l'a refusé — à juste titre. `core.py` porte encore mille deux cents
 lignes et huit domaines ; celui-ci en sort entier.
 
@@ -55,38 +55,11 @@ class TypePrestataire(str, Enum):
     gestion = "gestion"
 
 
-class TypeEquipement(str, Enum):
-    ascenseur = "ascenseur"
-    chauffage_collectif = "chauffage_collectif"
-    eau = "eau"
-    electricite = "electricite"
-    espaces_verts = "espaces_verts"
-    extincteurs = "extincteurs"
-    interphone_digicode = "interphone_digicode"
-    menuiseries = "menuiseries"
-    nettoyage = "nettoyage"
-    plomberie = "plomberie"
-    pompe = "pompe"
-    porte_parking = "porte_parking"
-    serrurerie = "serrurerie"
-    toiture = "toiture"
-    vmc = "vmc"
-    #  ⚠️ Une assurance n'est PAS un équipement, et ce champ est mal nommé : il
-    #  désigne en fait la CATÉGORIE d'un contrat. La notion portée par
-    #  `ContratEntretien` — un contrat avec un prestataire, un numéro, une
-    #  échéance, un document — est exactement celle d'un contrat d'assurance
-    #  (#490). Inventer une seconde table de contrats aurait recréé le doublon
-    #  que ce lot supprime ; renommer le champ toucherait quinze appels pour un
-    #  gain cosmétique. On écrit la tension plutôt que de la contourner.
-    assurance = "assurance"
-    #: Le MANDAT du syndic. Ce n'est pas un équipement, et le nom de
-    #: l'énumération est donc un peu court — mais elle porte déjà `assurance`,
-    #: qui n'en est pas un non plus. Ce qu'elle classe réellement, c'est
-    #: « de quoi parle ce contrat », et le mandat de syndic en relève.
-    #: En ajouter une seconde pour deux valeurs aurait donné deux
-    #: nomenclatures à tenir d'accord.
-    syndic = "syndic"
-    autre = "autre"
+#  `TypeEquipement` est devenu une table administrée (#2442) : `models/equipements`,
+#  et `utils/equipements` pour ce que le code en connaît encore (assurance,
+#  syndic, autre). ⚠️ Le champ `type_equipement` d'un contrat garde son nom : il
+#  désigne la CATÉGORIE du contrat — une assurance ou un mandat de syndic n'est
+#  pas un équipement (#490) —, et le renommer toucherait quinze appels.
 
 
 # ──────────────────────────────────────────────
@@ -140,7 +113,8 @@ class ContratEntretien(SQLModel, table=True):
     perimetre_cible: Optional[str] = Field(default_factory=perimetre_cible_json)
     prestataire_id: int = Field(foreign_key="prestataire.id")
 
-    type_equipement: TypeEquipement = TypeEquipement.autre
+    #: Le CODE d'un équipement (`models/equipements`), en texte depuis la 0321.
+    type_equipement: str = Field(default="autre")
     libelle: str
     numero_contrat: Optional[str] = None
     date_debut: date = Field(default_factory=horloge.aujourd_hui)

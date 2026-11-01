@@ -16,7 +16,7 @@
 	//  ⚠️ Cet écran affichait la valeur BRUTE — `chauffage_collectif` — parce que
 	//  la table des libellés vivait dans `prestataires/+page.svelte` et qu'il n'y
 	//  avait pas accès. Une table qui vit dans UN écran, les autres s'en passent.
-	import { equipLabel } from '#lib/prestataires.ts';
+	import { libelleEquipement } from '#lib/stores/equipements.ts';
 	import { relire } from '#lib/utils.ts';
 	import { fmtDate } from '#lib/date.ts';
 	import NoteEtoiles from '#lib/components/NoteEtoiles.svelte';
@@ -105,7 +105,9 @@
 						<div class="frise-row-title">
 							<strong>{c.libelle}</strong>
 							<span class="text-muted-sm">{c.prestataireNom}</span>
-							<span class="text-muted-sm">{SEPARATEUR.point}{equipLabel(c.type_equipement)}</span>
+							<span class="text-muted-sm"
+								>{SEPARATEUR.point}{$libelleEquipement(c.type_equipement)}</span
+							>
 							{#if c.numero_contrat}<span class="text-muted-sm"
 									>{SEPARATEUR.point}N° {c.numero_contrat}</span
 								>{/if}
@@ -189,7 +191,7 @@
 						<div class="frise-compact-info">
 							<strong>{c.libelle}</strong>
 							<span class="text-muted-sm"
-								>{c.prestataireNom}{SEPARATEUR.point}{equipLabel(c.type_equipement)}</span
+								>{c.prestataireNom}{SEPARATEUR.point}{$libelleEquipement(c.type_equipement)}</span
 							>
 						</div>
 						<div class="frise-compact-meta">
@@ -216,7 +218,7 @@
 						<div class="frise-compact-info">
 							<strong>{c.libelle}</strong>
 							<span class="text-muted-sm"
-								>{c.prestataireNom}{SEPARATEUR.point}{equipLabel(
+								>{c.prestataireNom}{SEPARATEUR.point}{$libelleEquipement(
 									c.type_equipement,
 								)}{#if c.numero_contrat}{SEPARATEUR.point}N° {c.numero_contrat}{/if}</span
 							>

@@ -48,7 +48,8 @@
 	import { entreesDuFil } from '#lib/evolutions.ts';
 	import { fmtDate } from '#lib/date.ts';
 	import { stripHtml } from '#lib/utils.ts';
-	import { equipLabel, intervenantAffiche } from '#lib/prestataires.ts';
+	import { intervenantAffiche } from '#lib/prestataires.ts';
+	import { libelleEquipement } from '#lib/stores/equipements.ts';
 
 	export let ticket: Ticket;
 	export let evolutions: TicketEvolution[] = [];
@@ -196,7 +197,7 @@
 			entite={TICKET}
 			description={ticket.description}
 			intervenant={intervenantAffiche(ticket)}
-			equipement={ticket.equipement ? equipLabel(ticket.equipement) : ''}
+			equipement={ticket.equipement ? $libelleEquipement(ticket.equipement) : ''}
 			photos={ticket.photos_urls ?? []}
 			documents={ticket.fichiers_urls ?? []}
 			affairesLiees={ticket.affaires_liees}

@@ -52,9 +52,11 @@ from app.models.core import (
     StatutUtilisateur,
     Utilisateur,
 )
+from app.models.equipements import Equipement
 from app.models.roles import ROLE_OPERATEUR
 from app.seed.contenus_legaux import DEFAULT_LEGAL
 from app.seed.diagnostics import DIAGNOSTICS
+from app.seed.equipements import EQUIPEMENTS
 from app.seed.emails import EMAIL_TEMPLATES, INTENTIONS_PAR_MODELE
 from app.seed.faq import FAQ_COMPLEMENTAIRE, FAQ_INITIALE
 from app.seed.patrimoine import poser_arborescence
@@ -71,6 +73,8 @@ __all__ = [
     "PROFILS",
     "CATEGORIES",
     "DIAGNOSTICS",
+    "EQUIPEMENTS",
+    "equipements_par_defaut",
     "FAQ_INITIALE",
     "FAQ_COMPLEMENTAIRE",
 ]
@@ -307,6 +311,19 @@ def _types_de_diagnostics(session: Session) -> None:
     _poser_les_absents(session, DiagnosticType, "code", DIAGNOSTICS)
 
 
+def equipements_par_defaut(session: Session) -> None:
+    """Les équipements de départ, sur une table VIDE seulement (#2442).
+
+    Comme `FAQ_INITIALE` : une proposition que l'administrateur remplace. Les
+    reposer « s'ils manquent » ferait revenir à chaque démarrage un équipement
+    qu'il a supprimé. La table n'est jamais vide une fois amorcée : les codes
+    système (`utils/equipements.CODES_SYSTEME`) ne se suppriment pas.
+    """
+    if not session.exec(select(Equipement)).first():
+        for entree in EQUIPEMENTS:
+            session.add(Equipement(**entree))
+
+
 def _arborescence_des_perimetres(session: Session) -> None:
     """Périmètres — où se situe une demande. Proposition de départ, remplaçable.
 
@@ -340,6 +357,8 @@ def seed() -> None:
         session.commit()
 
         _types_de_diagnostics(session)
+        session.commit()
+        equipements_par_defaut(session)
         session.commit()
 
         _arborescence_des_perimetres(session)

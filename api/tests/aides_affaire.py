@@ -24,6 +24,7 @@ from app.models.prestataires import ContratEntretien
 from app.routers.tickets import crud, evolutions, mise_a_jour
 from app.schemas import TicketCreate, TicketUpdate
 from app.schemas_tickets import TicketEvolutionCreate
+from app.seed import equipements_par_defaut
 from app.utils.perimetres import arbre
 from tests.aides_base import compte
 
@@ -33,6 +34,10 @@ def session(monkeypatch, batiments):
     monkeypatch.setattr(crud, "_notifier_cs_creation", lambda *a, **k: None, raising=False)
     arbre()
     with Session(engine) as s:
+        #  Les équipements de départ, comme le seed les pose en production (#2442) :
+        #  une affaire ne désigne qu'un équipement qui existe.
+        equipements_par_defaut(s)
+        s.commit()
         yield s
         #  Les contrats partent AVANT le patrimoine : la fixture `batiments`
         #  supprime la copropriété, et SQLAlchemy dénouerait alors leur
