@@ -50,6 +50,7 @@ from app.utils.perimetres.branche import (
     code_copie,
     codes_de_la_copie,
     descendants,
+    fratrie_de_la_copie,
     refus_copie,
     refus_duplication,
 )
@@ -195,7 +196,7 @@ def _recopier(
     """Pose sous `parent_id` une copie de `source` et de sa branche ; rend la tête.
 
     Chaque nœud reprend `CHAMPS_RECOPIES` et ses accès fixes ; la tête se range
-    en dernier parmi ses nouveaux frères. Ne valide pas la transaction : le
+    en dernier parmi ses nouveaux frères (la copie la replace ensuite, #2450). Ne valide pas la transaction : le
     geste appelant décide du reste, puis du `commit`.
     """
     maintenant = horloge.maintenant()
@@ -268,6 +269,9 @@ def copier_perimetre(
         plan.append((parent, codes))
 
     tetes = [_recopier(session, admin, tous, source, branche, codes, p.id) for p, codes in plan]
+    #  Chaque copie prend la place de la source parmi ses nouveaux frères (#2450).
+    for (parent, _), tete in zip(plan, tetes):
+        _renumeroter(session, admin, fratrie_de_la_copie(source, tous, parent.id, tete))
     session.commit()
     invalider_cache()
     return [_un(session, t) for t in tetes]
@@ -289,16 +293,26 @@ def deplacer_perimetre(
     if arrivee is None:
         raise HTTPException(422, refus_deplacement(noeud, tous, body.sens, racine))
 
-    maintenant = horloge.maintenant()
     noeud.parent_id = arrivee.parent_id
-    #  La fratrie d'arrivée se renumérote : deux frères à rang égal ne
-    #  s'échangeraient pas, le tri les départageant par leur code.
-    for rang, n in enumerate(arrivee.fratrie):
-        if n.ordre != rang or n is noeud:
+    noeud.modifie_par_id = admin.id
+    noeud.modifie_le = horloge.maintenant()
+    session.add(noeud)
+    _renumeroter(session, admin, arrivee.fratrie)
+    session.commit()
+    invalider_cache()
+    return _un(session, noeud)
+
+
+def _renumeroter(session: Session, admin: Utilisateur, fratrie: list[Perimetre]) -> None:
+    """Donne à chaque frère son rang (0, 1, 2…) dans l'ordre voulu.
+
+    Deux frères à rang égal ne s'échangeraient pas : le tri les départage par
+    leur code. Seuls les nœuds dont le rang change sont réécrits.
+    """
+    maintenant = horloge.maintenant()
+    for rang, n in enumerate(fratrie):
+        if n.ordre != rang:
             n.ordre = rang
             n.modifie_par_id = admin.id
             n.modifie_le = maintenant
             session.add(n)
-    session.commit()
-    invalider_cache()
-    return _un(session, noeud)
