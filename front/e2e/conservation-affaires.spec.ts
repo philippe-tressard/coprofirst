@@ -7,6 +7,7 @@
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
 import type { ConstatConservation } from '../src/lib/api';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -64,8 +65,5 @@ test('Maintenance : le constat de conservation dit ce qui partira, et que rien n
 	await expect(carte.getByText(/garantie décennale/)).toBeVisible();
 
 	await carte.screenshot({ path: `test-results/conservation-${test.info().project.name}.png` });
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal dans l’onglet Maintenance').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'dans l’onglet Maintenance');
 });

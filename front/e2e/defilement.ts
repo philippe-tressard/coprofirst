@@ -17,15 +17,19 @@ export async function elargirLeTexte(page: Page): Promise<void> {
 	await page.addStyleTag({ content: '* { letter-spacing: 0.15em !important; }' });
 }
 
-/** La page n'a rien à faire défiler en largeur — attendu, jamais lu une seule fois. */
-export async function attendreSansDefilementHorizontal(page: Page): Promise<void> {
+/**
+ *  La page n'a rien à faire défiler en largeur — attendu, jamais lu une seule fois.
+ *  C'est la seule mesure de la page entière : `npm run lint:defilement` refuse
+ *  qu'un spec la recopie. `ou` dit où l'on regarde, pour le message d'échec.
+ */
+export async function attendreSansDefilementHorizontal(page: Page, ou?: string): Promise<void> {
 	await expect
 		.poll(
 			() =>
 				page.evaluate(
 					() => document.documentElement.scrollWidth - document.documentElement.clientWidth,
 				),
-			{ message: 'la page défile en largeur (px de trop)' },
+			{ message: `la page défile en largeur${ou ? ` — ${ou}` : ''} (px de trop)` },
 		)
 		.toBeLessThanOrEqual(0);
 }

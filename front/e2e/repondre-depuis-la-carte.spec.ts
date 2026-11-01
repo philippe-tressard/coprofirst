@@ -17,6 +17,7 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const affaire = (id: number, extra: Record<string, unknown> = {}) => ({
 	id,
@@ -150,9 +151,7 @@ test('au téléphone, six icônes laissent sa place au titre', async ({ page }) 
 	const carte = page.locator('#ticket-7');
 	await expect(icone(page, 7, 'Répondre')).toBeVisible();
 	await expect(carte.locator('.ec-droite--titre button')).toHaveCount(6);
-	await expect
-		.poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-		.toBeLessThanOrEqual(360);
+	await attendreSansDefilementHorizontal(page);
 	const titre = await carte.getByRole('button', { name: /Ascenseur en panne/ }).boundingBox();
 	expect(titre?.width ?? 0).toBeGreaterThanOrEqual(160);
 	await page.screenshot({ path: 'test-results/repondre-depuis-la-carte-360.png' });

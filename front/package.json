@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.53.0",
+	"version": "3.53.1",
 	"private": true,
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -173,6 +173,7 @@
 		"lint:onglet-local": "node scripts/check-onglet-local.mjs",
 		"lint:e2e-test": "node scripts/check-e2e-test.mjs",
 		"lint:e2e-lectures": "node scripts/check-e2e-lectures.mjs --selftest && node scripts/check-e2e-lectures.mjs",
+		"lint:defilement": "node scripts/check-defilement.mjs --selftest && node scripts/check-defilement.mjs",
 		"lint:intitules-section": "node scripts/check-intitules-section.mjs",
 		"lint:section-lue": "node scripts/check-section-lue.mjs",
 		"e2e": "playwright test",

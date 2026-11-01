@@ -17,6 +17,7 @@
  */
 import type { Page } from '@playwright/test';
 import { expect, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const OTIS = {
 	id: 1,
@@ -132,8 +133,5 @@ test('sur ordinateur, la recherche en tête, puis la catégorie et le contrat', 
 	//  Les champs partent du même bord : la colonne des libellés devant eux.
 	expect(Math.abs(type.x - contrat.x)).toBeLessThan(2);
 	//  Et rien ne déborde de la page.
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde).toBe(false);
+	await attendreSansDefilementHorizontal(page);
 });

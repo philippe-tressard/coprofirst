@@ -10,6 +10,7 @@
  */
 import { expect, simulerApi, test, MEMBRE_CS } from './aides';
 import type { ServiceCopropriete } from '../src/lib/api';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -106,10 +107,7 @@ test('Admin › Services : état, manque, bascule et infrastructure sans case', 
 	await expect(page.locator('.etat-service .badge')).toHaveText('Coupé');
 	await expect(page.getByLabel(/Activer l'envoi WhatsApp/)).toHaveCount(0);
 
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde).toBe(false);
+	await attendreSansDefilementHorizontal(page);
 	await page.screenshot({ path: test.info().outputPath('services.png'), fullPage: true });
 });
 

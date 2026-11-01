@@ -6,6 +6,7 @@
  *  - le dernier export du volume des sauvegardes se lit sous les boutons.
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -49,10 +50,7 @@ test('Export vérifié : la base se restaure à l’identique', async ({ page })
 	await expect(
 		carte.getByText(/Non exportées \(absentes des modèles\).*ancienne_table/),
 	).toBeVisible();
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal dans l’onglet Maintenance').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'dans l’onglet Maintenance');
 	await carte.screenshot({
 		path: `test-results/export-copropriete-${test.info().project.name}.png`,
 	});

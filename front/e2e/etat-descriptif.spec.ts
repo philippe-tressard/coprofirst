@@ -18,6 +18,7 @@
 import type { Page } from '@playwright/test';
 import type { BilanEtatDescriptif, EtatDescriptif } from '../src/lib/api/etat-descriptif';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal, elargirLeTexte } from './defilement';
 import { attendreLisible, forcerTheme } from './contraste-ecran';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
@@ -252,10 +253,10 @@ test('le tableau défile dans sa carte : la dernière clé s’atteint, la page 
 		zone: el.clientWidth,
 		contenu: el.scrollWidth,
 		page: window.innerWidth,
-		doc: document.documentElement.scrollWidth,
 	}));
 	expect(mesure.contenu).toBeGreaterThan(mesure.zone);
-	expect(mesure.doc).toBeLessThanOrEqual(mesure.page);
+	await elargirLeTexte(page);
+	await attendreSansDefilementHorizontal(page);
 	expect(mesure.zone).toBeLessThanOrEqual(mesure.page);
 	await zone.evaluate((el) => (el.scrollLeft = el.scrollWidth));
 	const derniere = zone.locator('thead th').last();
