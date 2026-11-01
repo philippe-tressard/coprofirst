@@ -332,7 +332,7 @@ La vraie preuve est la **première bascule** : jusqu'à elle, ce nœud n'a rien 
 
 Sans pair en service, il n'y a ni primaire à copier ni `.env` à recopier : la
 résidence renaît de la **copie hors site** du poste (`scripts/poste/export-hors-site.sh`,
-destination `C:\Backup` par défaut). Son archive `hostachy_backup_*_paris.tar.gz` porte
+destination `C:\Backup` par défaut sous Windows, `/Volumes/Data/Backup` sur le Mac). Son archive `hostachy_backup_*_paris.tar.gz` porte
 l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** téléversés
 (`uploads/`). Les gestes vivent dans **un** script,
 `scripts/exploitation/restaurer-copie-hors-site.sh` (#1921) — le premier nœud renaît
@@ -352,7 +352,8 @@ l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** té
    (voulu, mais à savoir) ; les mots de passe des comptes, eux, sont dans la base.
 3. **`.active` nomme CE nœud** : `echo rpi1 > /opt/5hostachy/.active` (son propre nom).
 4. **L'archive, du poste vers le nœud** — la plus récente qui ne finit pas par `.invalide` ;
-   chez la **référence**, celle du registre aussi (`C:\Backup\plateforme\`) :
+   chez la **référence**, celle du registre aussi (`C:\Backup\plateforme\`) ; depuis le Mac,
+   `C:/Backup` se lit `/Volumes/Data/Backup` :
    ```bash
    scp C:/Backup/hostachy_backup_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/
    scp C:/Backup/plateforme/plateforme_backup_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/

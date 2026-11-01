@@ -49,8 +49,13 @@
 #
 #  LANCEMENT — MANUEL, depuis le poste, quand il est allumé :
 #    • raccourci « Sauvegarde hors site 5Hostachy » sur le Bureau, ou
-#    • double-clic sur `scripts/poste/export-hors-site.cmd`, ou
+#    • double-clic sur `scripts/poste/export-hors-site.cmd` (Windows) ou
+#      `scripts/poste/export-hors-site.command` (Mac), ou
 #    • depuis Git Bash :   bash /c/Dev/5hostachy/scripts/poste/export-hors-site.sh
+#      depuis le Terminal du Mac : bash /Volumes/Data/Dev/5hostachy/scripts/poste/export-hors-site.sh
+#
+#    Sur le Mac, le raccourci du Bureau est un LIEN vers le `.command` du dépôt :
+#    il suit ce qui est versionné au lieu d'en garder une copie.
 #
 #    ⚠ Ces trois chemins ont changé le 15/08/2026 (#350, rangement de
 #      l'outillage) : le raccourci du Bureau pointait toujours sur la racine du
@@ -69,7 +74,8 @@
 #    sans copie fraîche. Un oubli se voit ; il ne se devine pas.
 #
 #  Configuration — variables d'environnement (toutes optionnelles) :
-#    EXPORT_DEST      répertoire de destination   (défaut : /c/Backup → C:\Backup)
+#    EXPORT_DEST      répertoire de destination   (défaut : /c/Backup → C:\Backup ;
+#                                                  sur le Mac, /Volumes/Data/Backup)
 #    EXPORT_KEEP      versions conservées         (défaut : 2)
 #    EXPORT_SSH_USER  compte SSH sur les RPi      (défaut : ptressard)
 #
@@ -84,7 +90,12 @@ set -uo pipefail
 . "$(dirname "$0")/../lib/lib-poste-gnu.sh"
 poste_gnu_poser "$@"   # macOS : les outils GNU en tête du PATH, comme Git Bash et la CI (#2419)
 
-EXPORT_DEST="${EXPORT_DEST:-/c/Backup}"
+#  La destination par défaut suit le poste : C:\Backup sous Windows, le disque
+#  Data sur le Mac — hors de /Volumes/Data/Dev, où vivent les dépôts (01/11/2026).
+case "$(uname -s)" in
+  Darwin) EXPORT_DEST="${EXPORT_DEST:-/Volumes/Data/Backup}" ;;
+  *)      EXPORT_DEST="${EXPORT_DEST:-/c/Backup}" ;;
+esac
 #  🔴 DEUX, et pas quatorze (12/09/2026, demandé à l'écran). Une archive pèse
 #  ~100 Mo : quatorze en font 1,4 Go sur le poste, pour une série dont on ne
 #  restaure jamais que la dernière — ou l'avant-dernière si la dernière est
