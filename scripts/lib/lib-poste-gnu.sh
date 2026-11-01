@@ -93,10 +93,12 @@ poste_gnu_etat() {
 
 # poste_gnu_sonder — « OUTIL:oui|non » pour chaque témoin, tel que le PATH courant le résout.
 poste_gnu_sonder() {
-  local t out=""
+  local t v out=""
   for t in $POSTE_GNU_TEMOINS; do
     #  « (GNU coreutils) », « (GNU sed) »… — le grep d'Apple se dit « BSD grep, GNU compatible ».
-    if "$t" --version 2>/dev/null | head -1 | grep -qF '(GNU '; then out="$out $t:oui"
+    #  La sortie se lit d'abord, sans tube vers grep : sous pipefail, il mentirait (#2298).
+    v=$("$t" --version 2>/dev/null || true); v=${v%%$'\n'*}
+    if [[ "$v" == *"(GNU "* ]]; then out="$out $t:oui"
     else out="$out $t:non"; fi
   done
   if [ "$(bash -c 'echo "${BASH_VERSINFO[0]}"' 2>/dev/null)" -ge 4 ] 2>/dev/null; then out="$out bash:oui"
