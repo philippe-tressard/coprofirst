@@ -369,6 +369,14 @@ Default: deny (incoming), allow (outgoing), deny (routed)"
 ufw allow 22/tcp")"
   v "ufw : 'allow ssh' ouvert à tous" ECART "$(durcissement_ufw_verdict "$S_ACTIF" "$U_RPI1
 ufw allow OpenSSH")"
+  #  rpi2 le 01/11/2026, sortie en constat (#2367) : la règle SORTANTE vers GitHub
+  #  sur le port 22 a été lue « SSH ouvert hors LAN » — l'audit l'aurait dit FAIL.
+  v "ufw : règle SORTANTE vers le port 22 (git, #2367)" CONFORME "$(durcissement_ufw_verdict "$S_ACTIF" "$U_RPI2
+ufw allow out to 140.82.112.0/20 port 22 proto tcp comment 'sortie 2367'
+ufw allow out to 192.168.1.222 comment 'sortie 2367'
+ufw allow out log to any")"
+  v "ufw : 'allow in 22/tcp' reste vu" ECART "$(durcissement_ufw_verdict "$S_ACTIF" "$U_RPI1
+ufw allow in 22/tcp")"
   v "ufw : 2222/tcp n'est pas SSH" CONFORME "$(durcissement_ufw_verdict "$S_ACTIF" "$U_RPI1
 ufw allow 2222/tcp")"
   v "ufw : illisible" INCONNU "$(durcissement_ufw_verdict "" "")"
