@@ -21,6 +21,7 @@
 import { boiteStable, expect, MEMBRE_CS, simulerApi, test } from './aides';
 import { attendreLisible, forcerTheme } from './contraste-ecran';
 import type { FicheInstallation, RapportInstallation, RegistreLu } from '../src/lib/api';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const OPERATEUR = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
 
@@ -248,10 +249,7 @@ test('Installations : la carte, la fiche, et un geste motivé', async ({ page })
 		},
 	]);
 
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal dans l’onglet Installations').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'dans l’onglet Installations');
 });
 
 test('Installations : une réplique ne montre pas l’onglet', async ({ page }) => {
@@ -286,10 +284,7 @@ test('Installations : les alertes se lisent sur la carte et en tête de la fiche
 	await expect(carte.locator('h4.intertitre').nth(1)).toHaveText('Décision');
 
 	await carte.screenshot({ path: `test-results/registre-alertes-${test.info().project.name}.png` });
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal dans l’onglet Installations').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'dans l’onglet Installations');
 });
 
 test('Installations : une installation résiliée se supprime, et quitte la liste', async ({
@@ -408,10 +403,7 @@ test('Installations : la posture se lit en coches — conforme, à corriger, inc
 	await dernier.click();
 	const sienne = page.locator(`#${await dernier.getAttribute('aria-controls')}`);
 	await expect(sienne).toBeVisible();
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal avec une bulle ouverte').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'avec une bulle ouverte');
 	//  Un clic ailleurs la ferme — par la souris, sans défiler : un `click()` de
 	//  Playwright ferait défiler, et la bulle se fermerait pour une autre raison.
 	const ailleurs = await carte.locator('dt', { hasText: 'Posture' }).boundingBox();
@@ -482,10 +474,7 @@ test('Installations : le canal et la version — la vague, la version fixée, et
 	]);
 
 	await carte.screenshot({ path: `test-results/registre-canal-${test.info().project.name}.png` });
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal dans l’onglet Installations').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'dans l’onglet Installations');
 });
 
 test('@sombre — Installations : la liste et une fiche dépliée se lit au thème sombre', async ({

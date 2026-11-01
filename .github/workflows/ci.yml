@@ -2635,6 +2635,13 @@ jobs:
         working-directory: front
         run: npm run lint:e2e-lectures
 
+      # « La page ne défile pas en largeur » se mesure par `e2e/defilement.ts`
+      # seul : trente specs la recopiaient, lue à l'instant et sans pouvoir
+      # élargir le texte — le débordement d'Admin › Lots leur échappait (#2437).
+      - name: Les tests de navigateur mesurent le défilement par une seule aide
+        working-directory: front
+        run: npm run lint:defilement
+
       - name: Le contrôle du test e2e s'éprouve lui-même
         working-directory: front
         run: node scripts/check-e2e-test.mjs --selftest

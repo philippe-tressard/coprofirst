@@ -10,6 +10,7 @@
  *  Télémétrie est rangée sous « Personnes » (groupes depuis #2062).
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -88,8 +89,5 @@ test('Admin › À traiter : trois sections en accordéon, Télémétrie en gest
 	await expect(cartes).toHaveCount(20);
 	await expect(cartes.first().locator('input').first()).toHaveValue('À traiter');
 
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde).toBe(false);
+	await attendreSansDefilementHorizontal(page);
 });

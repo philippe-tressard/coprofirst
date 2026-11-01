@@ -12,6 +12,7 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const GABARIT = {
 	personnalisees: false,
@@ -53,10 +54,7 @@ test('la lecture dit que ce sont celles du modèle', async ({ page }) => {
 	await expect(bloc).toContainText('Modèle générique');
 	await expect(bloc).toContainText('📦 1. Emménagement');
 	await expect(bloc).toContainText('Aux jours fixés par la commune.');
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal de la page').toBe(false);
+	await attendreSansDefilementHorizontal(page);
 });
 
 test('le crayon ouvre la saisie en place, et le texte part tel quel', async ({ page }) => {
