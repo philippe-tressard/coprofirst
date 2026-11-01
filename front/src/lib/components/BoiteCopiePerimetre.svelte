@@ -73,8 +73,8 @@
 	</LibelleGroupe>
 	<p class="aide">
 		Chaque copie garde le nom « {source.libelle} », ses caractéristiques et ses accès fixes ; son code
-		est dérivé du périmètre choisi. Sous un bâtiment, elle en hérite : ses résidents liront ce qui la
-		cible.
+		est dérivé du périmètre choisi, et elle se range à la même place qu’ici, après le même voisin. Sous
+		un bâtiment, elle en hérite : ses résidents liront ce qui la cible.
 	</p>
 	<PiedFormulaire
 		enCours={enregistrement}

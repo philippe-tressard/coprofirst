@@ -51,12 +51,9 @@ def test_une_feuille_se_copie_sous_plusieurs_parents_avec_ses_parametres(batimen
             )
             assert copie.batiment_id is None, "le bâtiment s'hérite du nouveau parent"
             assert sorted(fixes[copie.code]) == sorted(TYPES_ACCES)
-            freres = [
-                n.ordre
-                for n in session.exec(select(Perimetre)).all()
-                if n.parent_id == copie.parent_id
-            ]
-            assert copie.ordre == max(freres), "la copie se range en dernier"
+            #  3ᵉ sous Parking ; « Voies de circulation », qui la précède, n'existe
+            #  pas dans un bâtiment : elle garde son rang (#2450).
+            assert _rangs(session, copie.parent_id).index(copie.code) == 2
         assert _noeud(session, source.code).parent_id is not None, "la source n'a pas bougé"
 
 
@@ -133,3 +130,73 @@ def test_les_parents_impossibles_sont_refuses(batiments):
                 hall.id, PerimetreCopie(parents=[f"bat:{batiments[0]}"]), session, admin
             )
         assert "ne peut pas recevoir" in refus.value.detail
+
+
+def _rangs(session: Session, parent_id: int) -> list[str]:
+    freres = session.exec(select(Perimetre).where(Perimetre.parent_id == parent_id)).all()
+    return [n.code for n in sorted(freres, key=lambda n: (n.ordre, n.code))]
+
+
+def test_la_copie_prend_la_place_de_la_source_parmi_ses_freres(batiments):
+    """Signalé à l'écran (#2450) : « Poubelles », après « Caves » dans le
+    bâtiment 1, arrivait en DERNIER dans les autres bâtiments. Elle se range
+    après leur « Caves », et la fratrie est renumérotée."""
+    with Session(engine) as session:
+        admin = compte(session, prefixe="admin")
+        bat1, bat2 = (_noeud(session, f"bat:{b}") for b in batiments[:2])
+        caves = _noeud(session, f"{bat1.code}/caves")
+        #  Même rang que « Caves », départagé par le code : juste après elle.
+        source = Perimetre(
+            code=f"{bat1.code}/zz-poubelles",
+            libelle="Poubelles",
+            parent_id=bat1.id,
+            ordre=caves.ordre,
+        )
+        session.add(source)
+        session.commit()
+        assert (
+            _rangs(session, bat1.id).index(source.code)
+            == _rangs(session, bat1.id).index(caves.code) + 1
+        )
+
+        copier_perimetre(source.id, PerimetreCopie(parents=[bat2.code]), session, admin)
+
+        rangs = _rangs(session, bat2.id)
+        assert rangs.index(f"{bat2.code}/zz-poubelles") == rangs.index(f"{bat2.code}/caves") + 1
+        ordres = sorted(
+            n.ordre
+            for n in session.exec(select(Perimetre).where(Perimetre.parent_id == bat2.id)).all()
+        )
+        assert ordres == list(range(len(rangs)))
+
+
+def test_sans_voisin_retrouve_la_copie_garde_le_rang_de_la_source():
+    """Le frère qui précède est cherché par son nom, puis par la fin de son code ;
+    à défaut, la copie garde le rang de la source ; en tête, elle reste en tête."""
+    from app.utils.perimetres.branche import fratrie_de_la_copie
+
+    def n(id_, code, libelle, parent_id, ordre):
+        return Perimetre(id=id_, code=code, libelle=libelle, parent_id=parent_id, ordre=ordre)
+
+    arbre = [
+        n(1, "a", "A", None, 0),
+        n(2, "b", "B", None, 1),
+        n(10, "a/x", "Hall", 1, 0),
+        n(11, "a/y", "Caves", 1, 1),
+        n(12, "a/z", "Poubelles", 1, 2),
+        n(20, "b/p", "Paliers", 2, 0),
+        n(21, "b/q", "Toit", 2, 1),
+        n(22, "b/caves-2", "Les caves", 2, 2),
+    ]
+    copie = Perimetre(id=99, code="b/z", libelle="Poubelles", parent_id=2)
+    par_code = {p.code: p for p in arbre}
+    #  « Caves » n'existe pas sous B, ni par nom ni par code : même rang (2).
+    rangee = fratrie_de_la_copie(par_code["a/z"], arbre, 2, copie)
+    assert [p.code for p in rangee] == ["b/p", "b/q", "b/z", "b/caves-2"]
+    #  Par le nom : « Hall » précède « Caves » ; le « Hall » de B est retrouvé.
+    arbre.append(n(23, "b/entree", "Hall", 2, 3))
+    rangee = fratrie_de_la_copie(par_code["a/y"], arbre, 2, copie)
+    assert [p.code for p in rangee][-2:] == ["b/entree", "b/z"]
+    #  En tête dans la source : en tête dans la cible.
+    rangee = fratrie_de_la_copie(par_code["a/x"], arbre, 2, copie)
+    assert rangee[0] is copie
