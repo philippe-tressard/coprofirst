@@ -894,6 +894,9 @@ Conduite :
   puis `sudo bash /opt/5hostachy/scripts/exploitation/audit-securite.sh --accepter`.
   Un écart ensuite : lire **chaque fichier nommé** (`+` ajouté, `-` retiré, `~`
   modifié). Voulu (une clé posée, un cron modifié par une livraison) → `--accepter`.
+  Le lien d'activation de `cloudflared`, qui suit le rôle à chaque bascule, n'est pas
+  un écart tant qu'il pointe vers son unité (`PERSISTANCE_SELON_ROLE`, 01/11/2026).
+  Son état selon le rôle est jugé par `check-reliability`.
   Pas voulu → c'est une intrusion : **isoler le nœud** (bascule vers l'autre si
   c'est l'actif, puis couper son réseau), ne rien « nettoyer » avant d'avoir copié
   les journaux. La référence vit chez root (`/var/lib/hostachy/audit-securite/`),
