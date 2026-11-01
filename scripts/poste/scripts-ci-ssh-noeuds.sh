@@ -28,6 +28,9 @@
 #          bash scripts-ci-ssh-noeuds.sh --selftest
 # =============================================================================
 set -uo pipefail
+# shellcheck source=../lib/lib-poste-gnu.sh
+. "$(dirname "$0")/../lib/lib-poste-gnu.sh"
+poste_gnu_poser "$@"   # macOS : les outils GNU en tête du PATH, comme Git Bash et la CI (#2419)
 MODULE=scripts/lib/lib-ssh-noeuds.sh
 #  Ce fichier-ci porte, dans son auto-test, les lignes qu'il refuse : seule
 #  exception, et elle est déclarée.

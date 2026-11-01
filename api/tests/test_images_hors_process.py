@@ -25,6 +25,7 @@ import ast
 import importlib.util
 import io
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -172,9 +173,9 @@ def test_l_enfant_n_a_pas_la_base_donc_ce_n_est_pas_un_fork():
     assert tailles == [(40, 20)]
     assert temoin["pid"] != os.getpid(), "la mesure s'est faite DANS le process de l'API"
     assert temoin["base_chargee"] is False, f"l'enfant a la base : c'est un fork ({temoin})"
-    #  Le plafond se pose là où `resource` existe (Linux : le RPi, la CI) ; sous
-    #  Windows, le témoin dit qu'il manque — il ne prétend pas l'avoir posé.
-    assert temoin["plafond_memoire"] is (importlib.util.find_spec("resource") is not None)
+    #  Le plafond se pose sous Linux (le RPi, la CI) ; sur le poste (Windows, macOS),
+    #  le témoin dit qu'il manque — il ne prétend pas l'avoir posé (#2419).
+    assert temoin["plafond_memoire"] is sys.platform.startswith("linux")
 
 
 # ── L'isolement : ce qui se passe dans l'enfant y reste ───────────────────────
@@ -196,8 +197,8 @@ def test_un_decodeur_qui_boucle_est_abattu(moteur_piege, monkeypatch):
 
 
 @pytest.mark.skipif(
-    importlib.util.find_spec("resource") is None,
-    reason="RLIMIT_AS n'existe pas sous Windows : le plafond se mesure en CI (Linux)",
+    not sys.platform.startswith("linux"),
+    reason="RLIMIT_AS ne se pose que sous Linux : le plafond se mesure en CI (#2419)",
 )
 def test_un_decodeur_qui_gonfle_bute_sur_le_plafond(moteur_piege):
     with pytest.raises(ValueError, match="illisible"):

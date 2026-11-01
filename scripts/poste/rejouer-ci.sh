@@ -44,6 +44,9 @@
 #          bash scripts/poste/rejouer-ci.sh --selftest      # éprouve l'extraction
 # =============================================================================
 set -uo pipefail
+# shellcheck source=../lib/lib-poste-gnu.sh
+. "$(dirname "$0")/../lib/lib-poste-gnu.sh"
+poste_gnu_poser "$@"   # macOS : les outils GNU en tête du PATH, comme Git Bash et la CI (#2419)
 
 CI="${CI_FICHIER:-.github/workflows/ci.yml}"
 
@@ -94,6 +97,11 @@ charge_cpu() {             # → pourcentage entier, vide si non mesurable
     MINGW*|MSYS*|CYGWIN*)
       command -v powershell.exe >/dev/null 2>&1 || return
       powershell.exe -NoProfile -Command '$s=0; 1..3 | ForEach-Object { $s += (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average; Start-Sleep -Milliseconds 500 }; [int]($s/3)' 2>/dev/null | tr -d '\r' ;;
+    Darwin)
+      #  macOS n'a pas `/proc/loadavg` : la charge sur une minute se lit par sysctl
+      #  (« { 1.23 1.10 1.05 } ») ; `nproc` vient de coreutils, par la porte GNU (#2419).
+      command -v nproc >/dev/null 2>&1 || return
+      sysctl -n vm.loadavg 2>/dev/null | awk -v n="$(nproc)" '{ printf "%d\n", $2 * 100 / n }' ;;
     *)
       [ -r /proc/loadavg ] && command -v nproc >/dev/null 2>&1 || return
       awk -v n="$(nproc)" '{ printf "%d\n", $1 * 100 / n }' /proc/loadavg ;;

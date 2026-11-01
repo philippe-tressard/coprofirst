@@ -195,6 +195,15 @@ LICENCES_HORS_POSTE = {
         ),
         "date": "2026-10-02",
     },
+    "greenlet": {
+        "licence": "MIT AND PSF-2.0",
+        "raison": (
+            "Dépendance de SQLAlchemy, exclue du Mac (arm64) par son marqueur, qui ne nomme "
+            "que aarch64, x86_64, amd64… (#2419). greenlet 3.5.6 : License-Expression "
+            "« MIT AND PSF-2.0 », lue telle quelle."
+        ),
+        "date": "2026-11-01",
+    },
 }
 
 # ── Ce que les Dockerfile installent hors de pip et npm (#2389) ─────────────

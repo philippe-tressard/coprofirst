@@ -27,6 +27,9 @@
 #          bash scripts/poste/precheck-mep.sh --selftest # éprouve les fonctions de décision
 # =============================================================================
 set -uo pipefail
+# shellcheck source=../lib/lib-poste-gnu.sh
+. "$(dirname "$0")/../lib/lib-poste-gnu.sh"
+poste_gnu_poser "$@"   # macOS : les outils GNU en tête du PATH, comme Git Bash et la CI (#2419)
 
 SITE="${SITE:-https://5hostachy.fr}"
 RPI1="${RPI1:-ptressard@192.168.1.222}"
@@ -73,6 +76,14 @@ if [ "${1:-}" = "--selftest" ]; then
 fi
 
 # ── Exécution ────────────────────────────────────────────────────────────────
+
+#  macOS (#2419) : sans les outils GNU, `timeout`, `date -d` et `stat -c` manquent ou
+#  lisent en BSD — chaque point rendrait INCONNU, ou pire, un verdict lu de travers.
+#  Rien n'est mesuré, aucune trace n'est écrite : la commande qui répare est donnée.
+if _gnu=$(poste_gnu_etat "$(poste_systeme)" "$(poste_gnu_sonder)") && [ -n "$_gnu" ]; then
+  echo "? Pré-check INCONNU — ${_gnu#REFUS }"
+  exit 2
+fi
 
 NB_OK=0; NB_FAIL=0; NB_INCONNU=0; NB_ECART=0
 POINTS_INCONNUS=""   # les NUMÉROS des points non mesurés, pour les nommer à la fin

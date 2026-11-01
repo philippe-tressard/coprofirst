@@ -40,9 +40,11 @@ Pillow, et `test_images_hors_process.py` exige qu'aucun module de l'API n'import
 
 `memoire_max_octets` borne l'espace d'adressage de l'enfant (`RLIMIT_AS`), là où
 le système le permet (Linux : le RPi, la CI). Un décodeur qui s'emballe y
-rencontre un `MemoryError` ou meurt — lui seul, jamais le RPi entier. Sous
-Windows, `resource` n'existe pas : le plafond ne s'applique pas, et le témoin le
-dit (`plafond_memoire`).
+rencontre un `MemoryError` ou meurt — lui seul, jamais le RPi entier. Hors de
+Linux, le plafond ne s'applique pas, et le témoin le dit (`plafond_memoire`) :
+sous Windows, `resource` n'existe pas ; sous macOS (le poste depuis le 01/11/2026,
+#2419), le noyau refuse un `RLIMIT_AS` sous l'espace déjà réservé et ne le ferait
+pas respecter — chaque décodage échouait sur « current limit exceeds maximum limit ».
 """
 
 from __future__ import annotations
@@ -66,12 +68,10 @@ class EchecIsole(RuntimeError):
 
 def _plafonner_la_memoire(octets: int | None) -> bool:
     """Pose `RLIMIT_AS` dans l'enfant. Rend True si le plafond est en place."""
-    if not octets:
+    if not octets or not sys.platform.startswith("linux"):  # Windows, macOS : le poste
         return False
-    try:
-        import resource
-    except ImportError:  # Windows : le poste de développement
-        return False
+    import resource
+
     resource.setrlimit(resource.RLIMIT_AS, (octets, octets))
     return True
 
