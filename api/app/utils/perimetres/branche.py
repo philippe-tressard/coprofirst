@@ -92,6 +92,38 @@ def refus_copie(noeud: Perimetre, branche: list[Perimetre]) -> Optional[str]:
     return None
 
 
+def _meme_place(a: Perimetre, b: Perimetre) -> bool:
+    """Deux nœuds désignent-ils le même espace — même nom, ou même fin de code ?"""
+    return (
+        a.libelle.strip().casefold() == b.libelle.strip().casefold()
+        or a.code.rsplit("/", 1)[-1] == b.code.rsplit("/", 1)[-1]
+    )
+
+
+def fratrie_de_la_copie(
+    source: Perimetre, noeuds: list[Perimetre], parent_id: Optional[int], copie: Perimetre
+) -> list[Perimetre]:
+    """La fratrie d'arrivée de `copie` sous `parent_id`, rangée comme la source.
+
+    Signalé à l'écran le 01/11/2026 (#2450) : « Poubelles », après « Caves » dans
+    le bâtiment 1, arrivait en DERNIER dans les bâtiments 2, 3 et 4. La copie se
+    range donc juste après le frère qui précède la source, retrouvé dans la cible
+    par son nom ou la fin de son code ; à défaut, au même rang ; en tête si la
+    source l'était. `noeuds` : l'arbre lu AVANT la copie.
+    """
+    enfants = enfants_par_parent(noeuds)
+    freres_source = enfants.get(source.parent_id, [])
+    rang = next((i for i, n in enumerate(freres_source) if n.id == source.id), 0)
+    cible = [n for n in enfants.get(parent_id, []) if n.id != copie.id]
+    if rang > 0:
+        precedent = freres_source[rang - 1]
+        for i, n in enumerate(cible):
+            if _meme_place(n, precedent):
+                return [*cible[: i + 1], copie, *cible[i + 1 :]]
+    place = min(rang, len(cible))
+    return [*cible[:place], copie, *cible[place:]]
+
+
 def code_copie(code_parent_source: str, code_parent_copie: str, code: str) -> str:
     """Le code d'un descendant dans la copie, dérivé de celui de son parent.
 
