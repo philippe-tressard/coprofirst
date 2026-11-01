@@ -20,7 +20,7 @@ Chaque ligne importée crée un enregistrement staging ``LotImport``.
 L'admin résout ensuite chaque ligne dans l'interface /admin/lots-import.
 
 Usage depuis le conteneur :
-  docker compose exec api python -c "
+  docker compose exec -u app api python -c "
   from app.utils.import_lots import importer_depuis_fichier
   importer_depuis_fichier('/import-data/213 - liste des lots.xlsx')
   "

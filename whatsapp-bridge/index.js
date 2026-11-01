@@ -27,6 +27,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const { creerArret, creerSuiviEcritures } = require("./arret");
 const { AccuseRefuse, brancherAccuses, creerSuiviAccuses } = require("./accuses");
+const { COMPTE_NODE, descendreDeRoot } = require("./privileges");
 
 const PORT = parseInt(process.env.WA_PORT || "8090", 10);
 const API_KEY = process.env.WA_API_KEY || "";
@@ -62,6 +63,20 @@ if (refusCle) {
   process.exit(1);
 }
 const AUTH_DIR = process.env.WA_AUTH_DIR || path.join(__dirname, "auth_state");
+
+// ── Descendre de root, avant tout le reste (#2368) ────────────────────────────
+// Le conteneur ne donne à root que de quoi rendre `auth_state` à `node` et
+// changer d'identité (`docker-compose.yml`) ; tout ce qui suit tourne en `node`,
+// sans capacité. Un échec arrête le démarrage, en le disant.
+try {
+  const descente = descendreDeRoot(AUTH_DIR);
+  if (descente.descendu) {
+    console.log(`Bridge WhatsApp : tourne en ${COMPTE_NODE.nom} (${descente.realignes} entrée(s) de ${AUTH_DIR} réalignée(s)).`);
+  }
+} catch (e) {
+  console.error(`Bridge WhatsApp : démarrage refusé — descente vers ${COMPTE_NODE.nom} impossible (${e.message}).`);
+  process.exit(1);
+}
 
 const logger = pino({ level: process.env.WA_LOG_LEVEL || "warn" });
 const app = express();

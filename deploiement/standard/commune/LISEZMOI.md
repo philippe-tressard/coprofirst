@@ -86,7 +86,7 @@ silence : un rôle, une base ou une variable déjà là arrêtent tout.
 3. Vérifier, avant de servir :
 
    ```bash
-   docker compose exec api python -m app.installation_commune.verifier
+   docker compose exec -u app api python -m app.installation_commune.verifier
    ```
 
    Il liste chaque copropriété, son alias et son adresse — ou les règles violées.

@@ -81,3 +81,102 @@ def test_l_api_bascule_hors_de_root_avant_d_ecrire():
     assert bascule.start() < alembic.start(), (
         "les migrations tournent AVANT la bascule : elles s'exécuteraient en root."
     )
+
+
+def test_le_bridge_descend_vers_node_avant_de_servir():
+    """Le bridge démarre en root le temps de rendre son état à `node` (#2368).
+
+    Son conteneur est durci (`docker-compose.yml`) : root n'y garde que de quoi
+    réaligner `auth_state` et changer d'identité. La descente doit donc avoir
+    lieu, et AVANT que Baileys ou le serveur HTTP ne démarrent ; le compte vers
+    lequel elle descend se vérifie à la construction de l'image.
+    """
+    index = _lire("whatsapp-bridge/index.js")
+    descente = re.search(r"^\s*const descente = descendreDeRoot\(AUTH_DIR\);", index, re.M)
+    assert descente, "index.js n'appelle plus descendreDeRoot : Baileys tourne en root"
+    for premier_usage in ("useMultiFileAuthState(AUTH_DIR)", "app.listen("):
+        assert premier_usage in index, f"repère introuvable dans index.js : {premier_usage}"
+        assert descente.start() < index.index(premier_usage), (
+            f"{premier_usage} précède la descente : il s'exécuterait en root"
+        )
+    dockerfile = _lire("whatsapp-bridge/Dockerfile")
+    assert re.search(r"^COPY .*\bprivileges\.js\b", dockerfile, re.M), (
+        "privileges.js n'est plus copié dans l'image : le bridge ne démarre pas"
+    )
+    assert '"$(id -u node):$(id -g node)" = "1000:1000"' in dockerfile, (
+        "l'uid du compte node n'est plus vérifié à la construction (privileges.js le suppose)"
+    )
+
+
+#: Une commande lancée DANS le conteneur de l'API par un opérateur ou un script —
+#: `docker exec hostachy_api python …`, `docker compose exec -T api python …`,
+#: `"${COMPOSE[@]}" exec api sh …`. Les options avant le service sont capturées.
+_EXEC_API = re.compile(
+    r"\bexec\b((?:\s+-{1,2}[\w-]+(?:[ =](?!api\b|hostachy_api\b)[\w./=-]+)?)*)"
+    r"\s+(?:api|hostachy_api)\s+(?:python\d*|sh|bash)\b"
+)
+_COMPTE_APP = re.compile(r"(?:^|\s)(?:-u|--user)[ =]app\b")
+
+
+def _commandes_dans_l_api():
+    """(fichier, numéro, ligne, options) de chaque `exec` dans l'API : scripts
+    (hors commentaires), documents d'exploitation et docstrings du code."""
+    from tests.conftest import scripts_shell_versionnes
+
+    sources = [(s, True) for s in scripts_shell_versionnes()]
+    for motif in ("deploiement/**/*.md", "docs/**/*.md", "api/app/**/*.py", "README.md"):
+        sources += [(p, False) for p in _RACINE.glob(motif)]
+    for chemin, est_script in sources:
+        for numero, ligne in enumerate(chemin.read_text(encoding="utf-8").splitlines(), 1):
+            if est_script and ligne.strip().startswith("#"):
+                continue
+            for trouve in _EXEC_API.finditer(ligne):
+                yield chemin.relative_to(_RACINE).as_posix(), numero, ligne.strip(), trouve.group(1)
+
+
+def test_une_commande_dans_l_api_tourne_sous_le_compte_app():
+    """`docker exec` entre en root — et le root du conteneur durci n'a plus
+    DAC_OVERRIDE (#2368) : il ne peut plus écrire dans `/app/data` ni
+    `/app/uploads`, qui appartiennent à `app`. Déclarer une copropriété
+    (`creer-copropriete.sh`) échouait ainsi sur le banc du standby. Sous `-u app`,
+    la commande écrit, et ses fichiers ont le propriétaire que l'API relit.
+    """
+    trouves = list(_commandes_dans_l_api())
+    #  Cas zéro : `creer-copropriete.sh` en porte trois ; une portée cassée ne
+    #  verrait rien et rendrait le test vert.
+    assert (
+        sum(f == "deploiement/standard/commune/creer-copropriete.sh" for f, *_ in trouves) >= 3
+    ), "les commandes de creer-copropriete.sh ne sont plus vues — portée ou motif cassé"
+    fautes = [
+        f"{f}:{n} : {ligne}" for f, n, ligne, options in trouves if not _COMPTE_APP.search(options)
+    ]
+    assert not fautes, (
+        "Commande lancée dans le conteneur de l'API sans `-u app` — root n'y peut plus "
+        "écrire (conteneur durci, #2368) :\n" + "\n".join(fautes)
+    )
+
+
+def test_le_motif_exec_api_voit_et_ne_voit_que_lui():
+    """Témoins du motif : chaque forme employée dans le dépôt, et ce qu'il laisse."""
+    vus = (
+        "docker compose exec api python -m app.seed --copropriete tilleuls",
+        'NOMS=$("${COMPOSE[@]}" exec -T api python -m app.installation_commune.creer noms "$@")',
+        "docker exec -i hostachy_api python3 script.py",
+        "docker exec -e X=1 hostachy_api sh -c 'ls'",
+    )
+    ignores = (
+        "docker exec hostachy_api curl -s http://localhost:8000/health",
+        'docker exec hostachy_postgres psql -U coprofirst -Atc "select 1"',
+        "docker compose logs api",
+    )
+    for ligne in vus:
+        assert _EXEC_API.search(ligne), f"le motif devrait voir : {ligne}"
+        assert not _COMPTE_APP.search(_EXEC_API.search(ligne).group(1)), ligne
+    for ligne in ignores:
+        assert not _EXEC_API.search(ligne), f"le motif voit à tort : {ligne}"
+    assert _COMPTE_APP.search(
+        _EXEC_API.search("docker compose exec -T -u app api python -m x").group(1)
+    )
+    assert _COMPTE_APP.search(
+        _EXEC_API.search("docker exec --user=app hostachy_api python x").group(1)
+    )

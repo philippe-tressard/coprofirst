@@ -7,7 +7,7 @@ Structure attendue du fichier (première ligne = en-tête ignorée) :
   Colonne C : référence de la télécommande (optionnel sur quelques lignes spéciales)
 
 Usage depuis le conteneur :
-  docker compose exec api python -c "
+  docker compose exec -u app api python -c "
   from app.utils.import_telecommandes import importer_depuis_fichier
   importer_depuis_fichier('/chemin/vers/fichier.xlsx')
   "

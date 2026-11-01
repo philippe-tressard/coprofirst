@@ -545,6 +545,15 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 - **La clé du bridge ne part que vers le bridge** (#2151) : `whatsapp_api_url` se
   lit par `whatsapp.adresse_du_bridge` (service Compose ou conteneur, un port, rien
   d'autre), vérifiée à l'écriture ET à chaque usage. 🔒 `test_adresse_bridge.py`.
+- **Un conteneur de l'application est DURCI** (#2368) : `<<: *conteneur_durci`
+  dans `docker-compose.yml` — aucune capacité hors `cap_add`, chacune déclarée avec
+  sa raison dans le compose ET dans `CONTENEURS_DURCIS` (`lib-audit-conteneurs.sh`),
+  `no-new-privileges`, racine en lecture seule (on n'écrit que dans un volume ou un
+  `tmpfs`). Un service neuf s'y range, ou se déclare dans `CONTENEURS_NON_DURCIS`
+  avec son ticket (PostgreSQL : #2429). Une commande lancée dans l'API prend
+  `-u app` (`docker compose exec -u app api python …`) : son root n'écrit plus dans
+  les volumes. 🔒 autotest de S4 (`--selftest`, compose ⇄ liste, dans les deux
+  sens) et `test_conteneurs_non_root.py`.
 - **Téléversement : une seule porte.** Un fichier reçu s'écrit sur disque par
   `utils/fichiers.enregistrer_fichier_recu` **et nulle part ailleurs** ; les
   règles — liste blanche de types, plafond de taille, cohérence de la signature —
