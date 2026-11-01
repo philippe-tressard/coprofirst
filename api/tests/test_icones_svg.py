@@ -140,28 +140,44 @@ def test_aucun_trace_n_est_dessine_dans_deux_fichiers():
     )
 
 
-def test_toutes_les_icones_proposees_existent_dans_le_catalogue():
-    """Une icône offerte au choix dans `/admin/patrimoine` doit pouvoir se dessiner.
+#: Les grilles d'icônes offertes en administration (`GrilleIcones`) : le fichier
+#: qui porte la liste, et son nom. La grille des équipements (#2442) n'était lue
+#: par aucun contrôle — `lint:icones` ne lit pas les champs `nom:`.
+GRILLES_PROPOSEES = (
+    (("perimetres", "libelles.ts"), "ICONES_PERIMETRE"),
+    (("equipements.ts",), "ICONES_EQUIPEMENT"),
+)
+
+
+@pytest.mark.parametrize(
+    ("chemin", "liste"), GRILLES_PROPOSEES, ids=[g[1] for g in GRILLES_PROPOSEES]
+)
+def test_toutes_les_icones_proposees_existent_dans_le_catalogue(chemin, liste):
+    """Une icône offerte au choix en administration doit pouvoir se dessiner.
 
     Sans quoi la pastille tombe sur le repli `help-circle` à l'écran et, sur un
     document imprimé, sur rien du tout.
     """
     catalogue = json.loads(_exige(CATALOGUE_FRONT))
-    source = _exige(RACINE / "front" / "src" / "lib" / "perimetres" / "libelles.ts")
-    bloc = source.split("ICONES_PERIMETRE", 1)[1].split("];", 1)[0]
+    source = _exige(RACINE.joinpath("front", "src", "lib", *chemin))
+    bloc = source.split(f"{liste}:", 1)[1].split("];", 1)[0]
     proposees = re.findall(r"nom:\s*'([a-z0-9-]+)'", bloc)
 
-    assert proposees, "Aucune icône lue dans ICONES_PERIMETRE — le format a changé"
+    assert proposees, f"Aucune icône lue dans {liste} — le format a changé"
     manquantes = [n for n in proposees if n not in catalogue]
     assert not manquantes, f"Icônes proposées absentes du catalogue : {manquantes}"
+    doublons = sorted({n for n in proposees if proposees.count(n) > 1})
+    assert not doublons, f"{liste} propose deux fois la même icône : {doublons}"
 
 
 def test_toutes_les_icones_du_seed_existent_dans_le_catalogue():
-    """Même exigence pour les icônes posées d'office par le seed du patrimoine."""
+    """Même exigence pour les icônes posées d'office par le seed — patrimoine et équipements."""
     catalogue = json.loads(_exige(CATALOGUE_FRONT))
+    from app.seed.equipements import EQUIPEMENTS
     from app.seed.patrimoine import ICONES_GABARIT, ICONES_INITIALES
 
     posees = set(ICONES_INITIALES.values()) | set(ICONES_GABARIT.values()) | {"building-2"}
+    posees |= {e["icone"] for e in EQUIPEMENTS}
     manquantes = sorted(n for n in posees if n and n not in catalogue)
     assert not manquantes, f"Icônes du seed absentes du catalogue : {manquantes}"
 
