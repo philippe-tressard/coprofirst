@@ -211,6 +211,8 @@ function noeud(champs: Partial<Perimetre> & Pick<Perimetre, 'id' | 'code' | 'lib
 		utilise: false,
 		nb_descendants: 0,
 		dupliquable: false,
+		copiable: false,
+		deplacements: [],
 		...champs,
 	};
 }

@@ -1,4 +1,5 @@
-"""Dupliquer une branche de l'arborescence — un nœud et tous ses descendants.
+"""Les gestes d'une branche de l'arborescence — la dupliquer, la copier sous
+d'autres parents, la déplacer d'un rang ou d'un niveau.
 
 Demandé le 13/10/2026 : « Bâtiment 1 » porte ses espaces (hall, cave, toit…) ;
 ajouter un bâtiment, c'était les recréer un par un. La copie reçoit de
@@ -20,6 +21,14 @@ reçoit soit un bâtiment existant qui n'a pas encore de périmètre, soit le
 numéro d'un bâtiment NEUF — créé dans la même transaction, avec la copropriété
 et les caractéristiques du bâtiment copié, sans aucun lot (un lot est un bien,
 il ne se recopie pas).
+
+**Copier sous d'autres parents** (01/11/2026) : *« dupliquer un périmètre sur
+plusieurs autres catégories, avec les mêmes paramètres »*. La copie garde nom,
+caractéristiques et accès fixes ; seul son code change, dérivé de chaque parent.
+Tout ou rien : un code déjà pris refuse le geste entier.
+
+**Déplacer** (01/11/2026) : les quatre flèches d'un nœud, règles dans
+`utils/perimetres/deplacement.py`.
 """
 
 from typing import Optional
@@ -34,13 +43,17 @@ from app.models.core import Batiment, Utilisateur
 from app.models.perimetre import Perimetre
 from app.routers.patrimoine import PerimetreRead, _noeud, _un
 from app.utils import horloge
-from app.utils.perimetres import invalider_cache, perimetre_du_batiment
+from app.utils.acces_choix import fixer_acces, types_fixes_par_code
+from app.utils.perimetres import code_par_defaut, invalider_cache, perimetre_du_batiment
 from app.utils.perimetres.branche import (
     CHAMPS_RECOPIES,
+    code_copie,
     codes_de_la_copie,
     descendants,
+    refus_copie,
     refus_duplication,
 )
+from app.utils.perimetres.deplacement import deplacement, refus_deplacement
 
 router = APIRouter(prefix="/perimetres", tags=["perimetres"])
 
@@ -55,6 +68,18 @@ class PerimetreDuplication(BaseModel):
     #: Le NUMÉRO d'un bâtiment à créer pour la copie (« 5 », « E ») — l'autre
     #: façon de répondre, exclusive de `batiment_id`.
     nouveau_batiment: Optional[str] = None
+
+
+class PerimetreCopie(BaseModel):
+    """Les parents sous lesquels poser une copie du nœud — par leur code."""
+
+    parents: list[str]
+
+
+class PerimetreDeplacement(BaseModel):
+    """Une des quatre flèches : `haut`, `bas`, `gauche`, `droite`."""
+
+    sens: str
 
 
 #: Ce que le bâtiment créé reprend du bâtiment copié : sa description physique.
@@ -144,29 +169,136 @@ def dupliquer_perimetre(
         raise HTTPException(422, f"Le code « {pris[0]} » est déjà utilisé.")
 
     batiment_id = _creer_batiment(session, source, numero_neuf) if numero_neuf else body.batiment_id
+    tete = _recopier(session, admin, tous, source, branche, codes, source.parent_id)
+    #  La tête prend ce que l'administrateur a saisi. Son abrégé n'est pas
+    #  repris : « Bât. 1 » ne nomme pas « Bâtiment 5 », et vide, il retombe sur
+    #  le libellé.
+    tete.libelle = libelle
+    tete.libelle_court = None
+    tete.description = body.description
+    tete.batiment_id = batiment_id
+    session.add(tete)
+    session.commit()
+    invalider_cache()
+    return _un(session, tete)
+
+
+def _recopier(
+    session: Session,
+    admin: Utilisateur,
+    tous: list[Perimetre],
+    source: Perimetre,
+    branche: list[Perimetre],
+    codes: dict[int, str],
+    parent_id: Optional[int],
+) -> Perimetre:
+    """Pose sous `parent_id` une copie de `source` et de sa branche ; rend la tête.
+
+    Chaque nœud reprend `CHAMPS_RECOPIES` et ses accès fixes ; la tête se range
+    en dernier parmi ses nouveaux frères. Ne valide pas la transaction : le
+    geste appelant décide du reste, puis du `commit`.
+    """
     maintenant = horloge.maintenant()
-    freres = [n.ordre for n in tous if n.parent_id == source.parent_id]
+    fixes = types_fixes_par_code(session)
+    freres = [n.ordre for n in tous if n.parent_id == parent_id]
     copies: dict[int, Perimetre] = {}
     for n in (source, *branche):
         copie = Perimetre(
             **{champ: getattr(n, champ) for champ in CHAMPS_RECOPIES},
             code=codes[n.id],
-            parent_id=source.parent_id if n is source else copies[n.parent_id].id,
+            parent_id=parent_id if n is source else copies[n.parent_id].id,
             modifie_par_id=admin.id,
             modifie_le=maintenant,
         )
         if n is source:
-            #  La tête prend ce que l'administrateur a saisi, et se range en
-            #  dernier parmi ses frères. Son abrégé n'est pas repris : « Bât. 1 »
-            #  ne nomme pas « Bâtiment 5 », et vide, il retombe sur le libellé.
-            copie.libelle = libelle
-            copie.libelle_court = None
-            copie.description = body.description
-            copie.batiment_id = batiment_id
             copie.ordre = max(freres, default=0) + 1
         session.add(copie)
         session.flush()
         copies[n.id] = copie
+        if fixes.get(n.code):
+            fixer_acces(session, copie.code, fixes[n.code])
+    return copies[source.id]
+
+
+@router.post("/{perimetre_id}/copier", response_model=list[PerimetreRead], status_code=201)
+def copier_perimetre(
+    perimetre_id: int,
+    body: PerimetreCopie,
+    session: Session = Depends(get_session),
+    admin: Utilisateur = Depends(require_admin),
+):
+    """Pose une copie du nœud — et de sa branche — sous chacun des `parents`."""
+    source = _noeud(session, perimetre_id)
+    tous = list(session.exec(select(Perimetre)).all())
+    branche = descendants(source, tous)
+    refus = refus_copie(source, branche)
+    if refus:
+        raise HTTPException(422, refus)
+
+    par_code = {n.code: n for n in tous}
+    exclus = {source.id, source.parent_id, *(n.id for n in branche)}
+    parents: list[Perimetre] = []
+    for code in dict.fromkeys(c.strip() for c in body.parents if c.strip()):
+        parent = par_code.get(code)
+        if parent is None:
+            raise HTTPException(422, f"Périmètre parent inconnu : {code}")
+        if parent.id in exclus:
+            raise HTTPException(
+                422, f"« {parent.libelle} » ne peut pas recevoir une copie de ce périmètre."
+            )
+        parents.append(parent)
+    if not parents:
+        raise HTTPException(422, "Choisissez au moins un périmètre où poser la copie.")
+
+    #  Tous les codes d'abord, puis l'écriture : un code pris refuse le geste
+    #  ENTIER, plutôt que de laisser la moitié des copies posées.
+    parent_source = next((n for n in tous if n.id == source.parent_id), None)
+    plan: list[tuple[Perimetre, dict[int, str]]] = []
+    pris = {n.code for n in tous}
+    for parent in parents:
+        tete = code_copie(parent_source.code if parent_source else "", parent.code, source.code)
+        codes = codes_de_la_copie(source, branche, tete)
+        deja = [c for c in codes.values() if c in pris]
+        if deja:
+            raise HTTPException(
+                422,
+                f"« {parent.libelle} » contient déjà le code « {deja[0]} » : rien n'a été copié.",
+            )
+        pris.update(codes.values())
+        plan.append((parent, codes))
+
+    tetes = [_recopier(session, admin, tous, source, branche, codes, p.id) for p, codes in plan]
     session.commit()
     invalider_cache()
-    return _un(session, copies[source.id])
+    return [_un(session, t) for t in tetes]
+
+
+@router.post("/{perimetre_id}/deplacer", response_model=PerimetreRead)
+def deplacer_perimetre(
+    perimetre_id: int,
+    body: PerimetreDeplacement,
+    session: Session = Depends(get_session),
+    admin: Utilisateur = Depends(require_admin),
+):
+    """Une des quatre flèches d'un nœud : d'un rang (haut, bas) ou d'un niveau
+    (gauche : hors de son parent ; droite : dans le frère qui le précède)."""
+    noeud = _noeud(session, perimetre_id)
+    tous = list(session.exec(select(Perimetre)).all())
+    racine = code_par_defaut()
+    arrivee = deplacement(noeud, tous, body.sens, racine)
+    if arrivee is None:
+        raise HTTPException(422, refus_deplacement(noeud, tous, body.sens, racine))
+
+    maintenant = horloge.maintenant()
+    noeud.parent_id = arrivee.parent_id
+    #  La fratrie d'arrivée se renumérote : deux frères à rang égal ne
+    #  s'échangeraient pas, le tri les départageant par leur code.
+    for rang, n in enumerate(arrivee.fratrie):
+        if n.ordre != rang or n is noeud:
+            n.ordre = rang
+            n.modifie_par_id = admin.id
+            n.modifie_le = maintenant
+            session.add(n)
+    session.commit()
+    invalider_cache()
+    return _un(session, noeud)

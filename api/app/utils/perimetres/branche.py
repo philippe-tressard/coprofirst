@@ -1,8 +1,10 @@
 """Une BRANCHE de l'arborescence — un nœud et tout ce qui vit sous lui.
 
-Deux gestes d'administration la manipulent d'un bloc : la **duplication**
-(« Bâtiment 1 » et ses espaces deviennent « Bâtiment 5 » et les mêmes espaces) et
-la **suppression en cascade** (un nœud et ses descendants, après confirmation).
+Trois gestes d'administration la manipulent d'un bloc : la **duplication**
+(« Bâtiment 1 » et ses espaces deviennent « Bâtiment 5 » et les mêmes espaces), la
+**copie sous d'autres parents** (« Local vélos » posé d'un geste sous trois
+bâtiments, même nom, mêmes caractéristiques) et la **suppression en cascade** (un
+nœud et ses descendants, après confirmation).
 Les règles vivent ici, en fonctions pures sur des lignes déjà lues, pour que la
 lecture de l'arbre (`dupliquable`, `nb_descendants`) et le geste qui refuse
 posent la MÊME question — jamais une copie de la règle dans la liste.
@@ -66,6 +68,26 @@ def refus_duplication(branche: list[Perimetre]) -> Optional[str]:
         return (
             "Cette branche contient des bâtiments : dupliquez-les un par un, chacun "
             "reçoit alors son propre bâtiment."
+        )
+    return None
+
+
+def refus_copie(noeud: Perimetre, branche: list[Perimetre]) -> Optional[str]:
+    """Pourquoi ce nœud ne se copie pas sous d'autres parents — ou `None` s'il le peut.
+
+    `branche` : les DESCENDANTS du nœud (sans lui). La copie garde le libellé et
+    toutes les caractéristiques : c'est « le local vélos » posé dans trois
+    bâtiments d'un geste (01/11/2026). Une feuille se copie donc aussi.
+
+    🔴 Rien de rattaché à un bâtiment réel : la copie le recopierait tel quel, et
+    ferait lire aux résidents d'un bâtiment ce qui est publié pour un autre — la
+    règle de `refus_duplication`. Sous son nouveau parent, la copie hérite du
+    bâtiment de celui-ci par remontée de l'arbre, ce qui est le but.
+    """
+    if noeud.batiment_id is not None or any(n.batiment_id is not None for n in branche):
+        return (
+            "Ce périmètre est (ou contient) un bâtiment : il ne se copie pas sous "
+            "d'autres périmètres. Dupliquez le bâtiment, il reçoit alors le sien."
         )
     return None
 
