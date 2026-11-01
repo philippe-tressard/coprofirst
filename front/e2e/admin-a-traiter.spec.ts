@@ -10,6 +10,7 @@
  *  Télémétrie est rangée sous « Personnes » (groupes depuis #2062).
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -84,12 +85,9 @@ test('Admin › À traiter : trois sections en accordéon, Télémétrie en gest
 	const cartes = page.locator('.onglet-card');
 	//  19 depuis l'onglet « Installations » du registre (#1880) — et toujours 19
 	//  après le rangement par niveau (#2062) : quatre partis, quatre venus. 20 depuis
-	//  l'onglet « Lots » de Copropriété (#2216).
-	await expect(cartes).toHaveCount(20);
+	//  l'onglet « Lots » de Copropriété (#2216), 21 depuis « Équipements » (#2442).
+	await expect(cartes).toHaveCount(21);
 	await expect(cartes.first().locator('input').first()).toHaveValue('À traiter');
 
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde).toBe(false);
+	await attendreSansDefilementHorizontal(page);
 });

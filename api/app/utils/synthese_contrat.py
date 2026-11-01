@@ -62,6 +62,7 @@ from app.models.prestataires import ContratEntretien, Prestataire
 from app.utils.dates_fr import datetime_longue_paris
 from app.utils.llm import ConfigLLM, ErreurLLM, PieceJointe, config_llm, demander
 from app.utils.stockage import stockage
+from app.utils.equipements import libelle_equipement
 from app.utils.llm_usages import USAGE_SYNTHESE_CONTRAT
 from app.utils.perimetres import parse_json_perimetres, perimetre_label_liste
 from app.utils.synthese_format import CONSIGNE, CONSIGNE_CITATIONS, GABARIT
@@ -185,7 +186,7 @@ def ce_que_la_base_sait(session: Session, contrat: ContratEntretien) -> str:
     )
     lignes = [
         ("Libellé", contrat.libelle),
-        ("Type d'équipement", contrat.type_equipement),
+        ("Type d'équipement", libelle_equipement(session, contrat.type_equipement)),
         ("Prestataire", prest.nom if prest else None),
         ("Téléphone du prestataire", prest.telephone if prest else None),
         ("Courriel du prestataire", prest.email if prest else None),

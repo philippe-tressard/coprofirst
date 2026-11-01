@@ -14,6 +14,7 @@
  */
 import type { Page } from '@playwright/test';
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal, elargirLeTexte } from './defilement';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 const ADMIN_OPERATEUR = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
@@ -88,6 +89,7 @@ test('administrateur : six groupes, l’Exploitation réduite à Maintenance', a
 	await expect(onglets(page)).toHaveText([
 		'Identité',
 		'Périmètres',
+		'Équipements', // ce sur quoi l'on intervient, administrés (#2442)
 		'Lots', // les lots selon le règlement (#2216)
 		'Fonctionnement',
 		'Pages légales',
@@ -151,10 +153,8 @@ test('au doigt : pas de défilement de page, cibles de 44 px', async ({ page, is
 	test.skip(!isMobile, 'mesure tactile : profil mobile seulement');
 	await ouvrir(page, '/admin?onglet=services', ADMIN_OPERATEUR);
 	await expect(onglets(page).first()).toBeVisible();
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde).toBe(false);
+	await elargirLeTexte(page);
+	await attendreSansDefilementHorizontal(page);
 	for (const cible of [groupes(page).first(), onglets(page).first()]) {
 		const boite = await cible.boundingBox();
 		expect(boite?.height ?? 0).toBeGreaterThanOrEqual(44);

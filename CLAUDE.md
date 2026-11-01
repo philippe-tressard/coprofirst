@@ -990,6 +990,11 @@ publics » : c'était vrai, et ce n'est plus une limite.
 `boiteStable` (`e2e/aides.ts`), jamais par `boundingBox()` seul : la boîte entre en 200 ms
 à 96 % de sa taille, et la mesure faussée faisait échouer un test sur trente (#1625).
 
+🔒 **« La page ne défile pas en largeur » se mesure par `attendreSansDefilementHorizontal`**
+(`e2e/defilement.ts`), précédée d'`elargirLeTexte` pour un tableau ou une longue rangée :
+le débordement d'Admin › Lots ne se voyait qu'avec les polices de macOS et d'iOS (#2437).
+Trente specs recopiaient la mesure, lue à l'instant ; `npm run lint:defilement` refuse la suivante.
+
 🔒 **Un spec prend `test` et `expect` dans `./aides`**, jamais dans
 `@playwright/test` (`npm run lint:e2e-test`) : ce `test`-là fait échouer toute
 **exception de la page**. Une réponse simulée qui ne se devine pas au chemin se

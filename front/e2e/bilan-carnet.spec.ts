@@ -17,6 +17,7 @@
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
 import { attendreLisible, forcerTheme } from './contraste-ecran';
+import { attendreSansDefilementHorizontal, elargirLeTexte } from './defilement';
 
 const RESUME_VIDE = {
 	annulees: 0,
@@ -87,13 +88,6 @@ async function ouvrir(page: Page, moi = MEMBRE_CS, bilan: object = BILAN) {
 	return demandes;
 }
 
-async function sansDefilementHorizontal(page: Page) {
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal de la page').toBe(false);
-}
-
 test.beforeEach(async ({ page }, info) => {
 	//  Le téléphone le plus étroit que le site s'engage à tenir.
 	if (info.project.name === 'mobile') await page.setViewportSize({ width: 375, height: 812 });
@@ -146,7 +140,8 @@ test('ouvert : l’exercice, puis chaque catégorie en jours ouvrés', async ({ 
 	await expect(reaction).not.toContainText('0 j');
 	await expect(sinistre.locator('table', { hasText: 'Intervenants' })).toHaveCount(0);
 
-	await sansDefilementHorizontal(page);
+	await elargirLeTexte(page);
+	await attendreSansDefilementHorizontal(page);
 });
 
 test('une autre pastille demande cet exercice', async ({ page }) => {
@@ -165,7 +160,8 @@ test('un exercice sans affaire le dit', async ({ page }) => {
 	await expect(
 		page.getByText("Aucune affaire du carnet n'a été close sur l'exercice 2026."),
 	).toBeVisible();
-	await sansDefilementHorizontal(page);
+	await elargirLeTexte(page);
+	await attendreSansDefilementHorizontal(page);
 });
 
 test('@sombre — le bilan de l’exercice du carnet d’entretien, déplié se lit au thème sombre', async ({

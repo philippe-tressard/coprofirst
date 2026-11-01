@@ -29,7 +29,8 @@ def test_le_conseil_planifie_l_affaire_d_un_resident_par_une_suite(session):
         ).all(),
         key=lambda e: e.id,
     )
-    assert "Ajout de l'équipement : toiture" in derniere.contenu
+    #  Le LIBELLÉ administré, plus le code (#2442).
+    assert "Ajout de l'équipement : Toiture" in derniere.contenu
     assert "Ajout de la date de début : 02/10/2026 à 09:00" in derniere.contenu
 
 

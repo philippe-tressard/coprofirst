@@ -12,7 +12,7 @@ carnet d'entretien : c'est la même question sur toutes les pages qui filtrent.
 Le reste est vérifié par ce qui l'entoure : `test_liens_front.py` refuse un lien
 vers une route que `pages.ts` ne déclare pas (le préfixe `contrat` a été ajouté
 avec ce lot), et `test_types_equipement.py` tient déjà la correspondance entre
-`TypeEquipement` et la table des libellés du front.
+la table des équipements (#2442) et leur cache à l'écran.
 """
 
 from __future__ import annotations

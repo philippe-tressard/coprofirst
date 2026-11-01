@@ -45,6 +45,7 @@ from app.models.prestataires import Prestataire
 from app.utils.categories_ticket import libelle_categorie
 from app.utils.conservation_affaires import Contenu, Echeance
 from app.utils.dates_fr import date_courte
+from app.utils.equipements import libelle_equipement
 from app.utils.perimetres import parse_json_perimetres, perimetre_label
 from app.utils.stockage import DOSSIER_PRIVE, stockage
 
@@ -154,7 +155,7 @@ def _ligne(session: Session, contenu: Contenu, pieces: list[Piece]) -> list[str]
         date_courte(t.cree_le),
         date_courte(contenu.cloture),
         perimetre_label(parse_json_perimetres(t.perimetre_cible)),
-        (t.equipement or "").replace("_", " "),
+        libelle_equipement(session, t.equipement),
         _prestataire(session, t.prestataire_id),
         f"n° {t.contrat_id}" if t.contrat_id else "",
         " · ".join(f"{p.nom} ({p.empreinte[:12]}…)" for p in pieces),

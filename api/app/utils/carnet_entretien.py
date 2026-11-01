@@ -113,10 +113,9 @@ def contribue_au_carnet(ticket) -> bool:
 class EntreeCarnet:
     """Un fait daté qui concerne le bâti.
 
-    `equipement` porte la **valeur** de `TypeEquipement` (`"ascenseur"`), jamais
-    son libellé : la table des libellés vit côté front (`#lib/prestataires`,
-    `EQUIPEMENTS`) et `test_types_equipement.py` la compare déjà à l'énumération
-    du serveur. En rendre une seconde ici en ferait une troisième écriture.
+    `equipement` porte le **code** d'un équipement (`"ascenseur"`), jamais son
+    libellé : l'écran le lit dans le cache des équipements (`#lib/equipements`),
+    administré depuis #2442. En rendre une copie ici en ferait une seconde écriture.
     """
 
     date_fait: date

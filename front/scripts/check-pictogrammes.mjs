@@ -56,14 +56,10 @@ export const PUNAISE = /📍|&#x1F4CD;|\\u\{1F4CD\}/gi;
 export const SIRENE = /🚨|&#x1F6A8;|\\u\{1F6A8\}/gi;
 export const ECLAIR = /⚡|&#x26A1;|\\u\{26A1\}/gi;
 const SOURCE_ECLAIR = 'lib/options-publication.ts';
-/**  ⚡ dans un AUTRE sens, déclaré : il ne paraît jamais sur une affaire. */
-const ECLAIRS_AUTRES = {
-	'lib/prestataires.ts': {
-		occurrences: 1,
-		motif:
-			'le corps de métier « Électricité » — le sens propre du glyphe, dans la liste des équipements',
-	},
-};
+/**  ⚡ dans un AUTRE sens, déclaré : il ne paraît jamais sur une affaire.
+ *   Vide depuis #2442 : « ⚡ Électricité » est parti avec la liste des équipements
+ *   écrite dans le code — ils s'administrent, avec une icône au trait. */
+const ECLAIRS_AUTRES = {};
 const MANUEL = '../docs/manuel-utilisateur.html';
 
 /**  Le seul composant qui rend le badge de périmètre. */

@@ -22,6 +22,7 @@
  *  Couvrir le lien lui-même demande une session : voir `e2e/README.md`.
  */
 import { expect, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 test.describe('Squelette et accessibilité au clavier', () => {
 	test('la racine mène à la page de connexion', async ({ page }) => {
@@ -62,10 +63,7 @@ test.describe('Squelette et accessibilité au clavier', () => {
 	for (const chemin of ['/auth/connexion', '/mentions-legales', '/politique-de-confidentialite']) {
 		test(`le corps ne défile pas horizontalement — ${chemin}`, async ({ page }) => {
 			await page.goto(chemin);
-			const deborde = await page.evaluate(
-				() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-			);
-			expect(deborde).toBe(false);
+			await attendreSansDefilementHorizontal(page);
 		});
 	}
 

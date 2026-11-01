@@ -75,8 +75,9 @@ from app.models.tickets import (  # noqa: E402
 )
 
 
-#  `TypePrestataire` et `TypeEquipement` sont parties avec leurs modèles dans
-#  `models/prestataires.py` ; elles sont réimportées plus bas, avec eux.
+#  `TypePrestataire` est partie avec son modèle dans `models/prestataires.py` ;
+#  elle est réimportée plus bas, avec lui. `TypeEquipement` est devenue une
+#  table administrée (`models/equipements`, #2442).
 #  `StatutDevis` a suivi la prestation ponctuelle (#603) et n'existe plus.
 
 
@@ -266,7 +267,6 @@ from app.models.prestataires import (  # noqa: E402,F401
     ContratEntretien as ContratEntretien,
     NotationPrestataire as NotationPrestataire,
     Prestataire as Prestataire,
-    TypeEquipement as TypeEquipement,
     TypePrestataire as TypePrestataire,
 )
 

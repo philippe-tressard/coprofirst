@@ -14,6 +14,7 @@
 import type { Page } from '@playwright/test';
 import type { Carnet, EntreeCarnet } from '../src/lib/api/patrimoine';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ENTREE: EntreeCarnet = {
 	date: '2026-03-01',
@@ -78,10 +79,7 @@ test('l’encart nomme chaque visite en retard, et elle seule', async ({ page })
 	await expect(liste).toContainText('visite attendue depuis 40 jours');
 	await expect(liste).toContainText('Ramonage des conduits');
 	await expect(liste).not.toContainText('Peinture du hall');
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal de la page').toBe(false);
+	await attendreSansDefilementHorizontal(page);
 });
 
 test('le conseil reçoit un lien vers chaque entrée, contrat compris', async ({ page }) => {

@@ -13,9 +13,9 @@
 	//  l'onglet ouvert ensuite les demande lui-même.
 	//
 	//  🔴 Le vocabulaire des prestataires vit dans `#lib/prestataires.ts`, pas
-	//  dans un écran. La table des équipements écrite ici recopiait
-	//  `TypeEquipement` et en OUBLIAIT deux valeurs — `assurance` et `syndic`,
-	//  précisément celles que la fiche de copropriété désigne (#553).
+	//  dans un écran ; les équipements, en base (`#lib/equipements`, #2442). La
+	//  table écrite ici en OUBLIAIT deux — `assurance` et `syndic`, précisément
+	//  celles que la fiche de copropriété désigne (#553).
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { tenter } from '#lib/erreurs.ts';

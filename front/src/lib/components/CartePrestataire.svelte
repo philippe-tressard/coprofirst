@@ -25,8 +25,8 @@
 	import { fmtDateShort } from '#lib/date.ts';
 	import { PRESTATAIRE } from '#lib/entites/prestataire.ts';
 	import { classeTypePrestataire } from '#lib/prestataires-gouttiere.ts';
+	import { libelleEquipement } from '#lib/stores/equipements.ts';
 	import {
-		equipLabel,
 		typePrestataireLabel,
 		type ContactSaisi,
 		type FormulairePrestataire,
@@ -59,7 +59,6 @@
 	export let prestForm: FormulairePrestataire;
 	export let prestContacts: ContactSaisi[] = [];
 	export let typesPrestataire: readonly { val: string; label: string; desc?: string }[] = [];
-	export let equipements: readonly { val: string; label: string }[] = [];
 	export let submitting = false;
 
 	export let onBasculer: (id: number) => void = () => {};
@@ -115,7 +114,7 @@
 		<!--  Capsules NEUTRES : la catégorie et la spécialité décrivent, elles ne
 		      disent aucun état (la dernière ligne d'une affaire, `ux-patterns` §3). -->
 		<span class="badge badge-gray">{typePrestataireLabel(p.type_prestataire)}</span>
-		<span class="badge badge-gray">{equipLabel(p.specialite)}</span>
+		<span class="badge badge-gray">{$libelleEquipement(p.specialite)}</span>
 		<NotationsPrestataire resume {notations} />
 		<!--  « Sous contrat » se LIT sur les contrats actifs, il ne se saisit pas
 		      (#1444) : c'était une catégorie, et une entreprise qui entretient
@@ -151,13 +150,7 @@
 
 	<svelte:fragment slot="edition">
 		<form on:submit|preventDefault={onEnregistrer}>
-			<ChampsPrestataire
-				bind:prestForm
-				bind:prestContacts
-				{typesPrestataire}
-				{equipements}
-				etat="edition"
-			/>
+			<ChampsPrestataire bind:prestForm bind:prestContacts {typesPrestataire} etat="edition" />
 			<PiedFormulaire enCours={submitting} on:annule={onAnnuler} />
 		</form>
 	</svelte:fragment>

@@ -12,6 +12,7 @@
 import type { Page } from '@playwright/test';
 import type { LigneImportLot } from '../src/lib/api';
 import { MEMBRE_CS, attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal, elargirLeTexte } from './defilement';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -71,14 +72,6 @@ async function ouvrir(page: Page, source: string) {
 	await attendreHydratation(page);
 }
 
-async function sansDefilementLateral(page: Page) {
-	const l = await page.evaluate(() => ({
-		page: document.documentElement.scrollWidth,
-		vue: document.documentElement.clientWidth,
-	}));
-	expect(l.page).toBeLessThanOrEqual(l.vue);
-}
-
 test('lots : tous les mots, sans accents ni casse, puis « Effacer la recherche »', async ({
 	page,
 }) => {
@@ -95,7 +88,8 @@ test('lots : tous les mots, sans accents ni casse, puis « Effacer la recherche 
 	);
 	//  Le compteur se lit sur la pastille retenue (« Tous »), ux-patterns §5.
 	await expect(page.getByRole('group', { name: 'Statut' })).toContainText('1');
-	await sansDefilementLateral(page);
+	await elargirLeTexte(page);
+	await attendreSansDefilementHorizontal(page);
 
 	await page.getByRole('button', { name: 'Effacer la recherche' }).click();
 	await expect(champ).toHaveValue('');
@@ -119,5 +113,6 @@ test('Vigik : la recherche lit le code et le nom, et dit quand rien ne correspon
 	await expect(page.getByRole('status').filter({ hasText: 'pour « introuvable »' })).toContainText(
 		'0 ligne',
 	);
-	await sansDefilementLateral(page);
+	await elargirLeTexte(page);
+	await attendreSansDefilementHorizontal(page);
 });

@@ -24,6 +24,8 @@ from app.models.courriel import MessageVerse as MessageVerse
 from app.models.courriel import VersementCourriel as VersementCourriel
 from app.models.perimetre import LotPerimetre as LotPerimetre
 from app.models.perimetre import Perimetre as Perimetre
+from app.models.equipements import Equipement as Equipement
+from app.models.equipements import EquipementPerimetre as EquipementPerimetre
 from app.models.charges import CleDeCharges as CleDeCharges
 from app.models.charges import QuotePartLot as QuotePartLot
 from app.models.etat_descriptif import ImportEtatDescriptif as ImportEtatDescriptif

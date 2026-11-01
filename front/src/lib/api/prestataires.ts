@@ -14,6 +14,7 @@
 //  quarante et un `from '#lib/api/index.ts'` du front ne changent pas d'une ligne.
 import { api, postFormData } from './client';
 import type { ExerciceLu, ResumeAffaires } from './synthese';
+import type { Equipement } from '#lib/equipements.ts';
 
 /**  Les affaires closes d'un prestataire (#1646) — `routers/prestataires_metriques`.
  *   L'ensemble, puis chaque exercice comptable, le plus récent d'abord. */
@@ -43,7 +44,7 @@ export interface ContactPrestataire {
 export interface Prestataire {
 	id: number;
 	nom: string;
-	/** La VALEUR d'un `TypeEquipement` — l'écran en rend le libellé. */
+	/** Le CODE d'un équipement — l'écran en rend le libellé (`#lib/equipements`). */
 	specialite: string;
 	/** La valeur de `TypePrestataire` (`maintenance_depannage`, `travaux`…). */
 	type_prestataire: string;
@@ -68,7 +69,7 @@ export interface ContratEntretien {
 	/** DÉRIVÉ du périmètre, gardé pour les lectures qui s'y appuient encore. */
 	batiment_id: number | null;
 	prestataire_id: number;
-	/** La valeur de `TypeEquipement`. */
+	/** Le code d'un équipement (`#lib/equipements`). */
 	type_equipement: string;
 	libelle: string;
 	numero_contrat: string | null;
@@ -238,3 +239,36 @@ export interface EntretienPeriodiqueResponse {
 	exercice: number;
 	visites: VisitePeriodique[];
 }
+
+//  ── Les ÉQUIPEMENTS (#2442) — `routers/equipements.py` ─────────────────────────
+//
+//  Le type vit dans `#lib/equipements`, qui n'importe rien : le cache d'affichage
+//  en a besoin sans tirer le client (même motif que `Perimetre`).
+
+/**  Ce qu'une écriture envoie — le code n'est reçu qu'à la création, puis figé. */
+export interface EcritureEquipement {
+	libelle: string;
+	abreviation: string | null;
+	icone: string;
+	description: string | null;
+	ordre: number;
+	actif?: boolean;
+	perimetres: string[];
+}
+
+/**  Ce qui cite un équipement — l'écran le dit AVANT de proposer la corbeille. */
+export interface UsagesEquipement {
+	contrats: number;
+	affaires: number;
+	prestataires: number;
+}
+
+export const equipements = {
+	list: () => api.get<Equipement[]>('/equipements'),
+	create: (data: EcritureEquipement & { code: string }) =>
+		api.post<Equipement>('/equipements', data),
+	update: (id: number, data: Partial<EcritureEquipement>) =>
+		api.patch<Equipement>(`/equipements/${id}`, data),
+	remove: (id: number) => api.delete(`/equipements/${id}`),
+	usages: (id: number) => api.get<UsagesEquipement>(`/equipements/${id}/usages`),
+};

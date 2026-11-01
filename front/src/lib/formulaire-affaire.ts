@@ -35,6 +35,7 @@ import { lotDepuisSaisie, type SaisieSaisiPour } from '#lib/saisi-pour.ts';
 import { CATEGORIES_TICKET, estActualite, optionsVersTicket } from '#lib/tickets.ts';
 import { typeEquipementDuContrat } from '#lib/reporting.ts';
 import type { ContratEnCours } from '#lib/prestataires.ts';
+import type { Equipement } from '#lib/equipements.ts';
 
 /** La nature d'une catégorie : Actualité informe, toute autre se suit. */
 export function natureDe(categorie: string): NatureAffaire {
@@ -148,7 +149,7 @@ export interface SaisieAffaire {
 	prestataireId: number | null;
 	/** Le contrat qui cadre l'intervention, `null` hors contrat (#1445). */
 	contratId: number | null;
-	/** La valeur de `TypeEquipement`, ou `''` — posée par le conseil (#1097). */
+	/** Le code d'un équipement, ou `''` — posé par le conseil (#1097). */
 	equipement: string;
 	frequenceType: string;
 	frequenceValeur: number | string | null;
@@ -353,4 +354,41 @@ export function intervenantPropose(
 		(c) => c.actif !== false && typeEquipementDuContrat(c, prestataires) === equipement,
 	);
 	return contrat ? { prestataireId: contrat.prestataire_id, contratId: contrat.id } : null;
+}
+
+/**
+ * Le périmètre qu'un ÉQUIPEMENT propose (#2442) : le seul périmètre où il se
+ * trouve, quand celui de l'affaire est encore le défaut. Plusieurs (Ascenseur A,
+ * Ascenseur B) : rien — on ne devine pas lequel.
+ *
+ * ⚠️ Une proposition, comme celle de l'intervenant : jamais par-dessus un
+ * périmètre déjà choisi, et le conseil la défait d'un geste.
+ */
+export function perimetrePropose(
+	equipement: string,
+	perimetre: readonly string[],
+	estDefaut: (codes: string[]) => boolean,
+	equipements: readonly Pick<Equipement, 'code' | 'perimetres'>[],
+): string[] | null {
+	if (!equipement || !estDefaut([...perimetre])) return null;
+	const lieux = equipements.find((e) => e.code === equipement)?.perimetres ?? [];
+	return lieux.length === 1 ? [lieux[0]] : null;
+}
+
+/**
+ * L'équipement qu'un PÉRIMÈTRE propose (#2442) : le seul équipement proposé aux
+ * affaires qui s'y trouve, quand aucun n'est encore désigné. « Bât. A ›
+ * Ascenseur » propose l'ascenseur ; un périmètre qui en porte plusieurs, ou
+ * aucun, ne propose rien.
+ */
+export function equipementPropose(
+	perimetre: readonly string[],
+	equipement: string,
+	equipements: readonly Pick<Equipement, 'code' | 'actif' | 'pour_affaires' | 'perimetres'>[],
+): string | null {
+	if (equipement || perimetre.length !== 1) return null;
+	const candidats = equipements.filter(
+		(e) => e.actif && e.pour_affaires && e.perimetres.includes(perimetre[0]),
+	);
+	return candidats.length === 1 ? candidats[0].code : null;
 }

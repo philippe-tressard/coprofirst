@@ -71,15 +71,6 @@ def test_ni_type_ni_specialite():
     assert type_equipement_resolu(_Contrat(None), None) == "autre"
 
 
-def test_un_enum_se_lit_comme_une_chaine():
-    """Les lots arrivent en `TypeEquipement` depuis la base, en `str` d'un
-    import."""
-    from app.models.prestataires import TypeEquipement
-
-    assert type_equipement_resolu(_Contrat(TypeEquipement.vmc), None) == "vmc"
-    assert type_equipement_resolu(_Contrat(TypeEquipement.autre), "toiture") == "toiture"
-
-
 def test_le_FRONT_porte_la_meme_regle():
     """Cas zéro compris : si la fonction front change de forme, ce test le dit.
 
@@ -101,12 +92,12 @@ def test_le_FRONT_porte_la_meme_regle():
 
 
 def test_les_categories_du_produit_survivent():
-    """Cas zéro de la liste : si l'énumération se vidait, les tests ci-dessus
-    passeraient encore en ne mesurant rien."""
-    from app.models.prestataires import TypeEquipement
+    """Cas zéro de la liste : si l'amorce se vidait, les tests ci-dessus passeraient
+    encore en ne mesurant rien. Depuis #2442 elle vit dans le seed, administrable."""
+    from app.seed.equipements import EQUIPEMENTS
 
-    valeurs = {t.value for t in TypeEquipement}
-    attendues = {"vmc", "ascenseur", "toiture", "plomberie"}
+    valeurs = {e["code"] for e in EQUIPEMENTS}
+    attendues = {"vmc", "ascenseur", "toiture", "plomberie", "autre"}
     assert attendues <= valeurs, (
-        f"catégories disparues de `TypeEquipement` : {sorted(attendues - valeurs)}"
+        f"catégories disparues de l'amorce des équipements : {sorted(attendues - valeurs)}"
     )

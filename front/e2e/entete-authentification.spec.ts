@@ -12,6 +12,7 @@
  *  ne déborde, et le logo se centre sous le titre.
  */
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ECRANS: [chemin: string, sousTitre: string][] = [
 	['/auth/connexion', 'Votre espace numérique de résidence'],
@@ -45,9 +46,6 @@ for (const [chemin, sousTitre] of ECRANS) {
 		const ecart = Math.abs(l.x + l.width / 2 - (t.x + t.width / 2));
 		expect(ecart, 'le logo n’est pas centré sous le titre').toBeLessThanOrEqual(1);
 
-		const deborde = await page.evaluate(
-			() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-		);
-		expect(deborde, 'la page défile à l’horizontale').toBe(false);
+		await attendreSansDefilementHorizontal(page);
 	});
 }
