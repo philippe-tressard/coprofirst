@@ -39,6 +39,8 @@ function noeud(champs: Partial<Perimetre> & Pick<Perimetre, 'id' | 'code' | 'lib
 		utilise: false,
 		nb_descendants: 0,
 		dupliquable: false,
+		copiable: false,
+		deplacements: [],
 		...champs,
 	};
 }
@@ -135,4 +137,66 @@ test('un bâtiment sans périmètre est proposé, jamais celui déjà représent
 	await expect(boite.getByLabel(/Numéro du nouveau bâtiment/)).toHaveCount(0);
 	await boite.getByRole('button', { name: 'Enregistrer' }).click();
 	await expect.poll(envoye).toMatchObject({ batiment_id: 2, nouveau_batiment: null });
+});
+
+// ── Copier sous d'autres périmètres, et les flèches de niveau (#2450) ─────────
+//
+//  Même onglet, même arbre simulé : « Hall » se copie sous « Bâtiment 2 », et
+//  sa flèche ← le sort de « Bâtiment 1 ». Ce que la boîte MONTRE est ce qui
+//  PART : la case cochée est le parent envoyé, la flèche grisée n'envoie rien.
+
+const ARBRE_COPIE: Perimetre[] = [
+	...ARBRE.slice(0, 2),
+	noeud({
+		id: 3,
+		code: 'bat:1/hall',
+		libelle: 'Hall',
+		parent: 'bat:1',
+		profondeur: 2,
+		copiable: true,
+		deplacements: ['gauche'],
+	}),
+	noeud({ id: 4, code: 'bat:2', libelle: 'Bâtiment 2', parent: 'batiments', profondeur: 1 }),
+];
+
+/** Ouvre « Hall » et rend les corps envoyés aux routes `copier` et `deplacer`. */
+async function ouvrirHall(page: Page) {
+	const envoyes: Record<string, unknown> = {};
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return ADMIN;
+		if (chemin === '/api/perimetres') return ARBRE_COPIE;
+		if (chemin === '/api/perimetres/3/copier') return [ARBRE_COPIE[2]];
+		if (chemin === '/api/perimetres/3/deplacer') return ARBRE_COPIE[2];
+		return undefined;
+	});
+	page.on('request', (r) => {
+		const geste = r.url().match(/\/api\/perimetres\/3\/(copier|deplacer)$/)?.[1];
+		if (r.method() === 'POST' && geste) envoyes[geste] = r.postDataJSON();
+	});
+	await page.goto('/admin?onglet=perimetres');
+	await page.locator('.ref-tete', { hasText: 'Hall' }).click();
+	return () => envoyes;
+}
+
+test('copier sous d’autres périmètres : la case cochée est le parent envoyé', async ({ page }) => {
+	const envoyes = await ouvrirHall(page);
+	await page.getByRole('button', { name: 'Copier sous d’autres périmètres' }).click();
+	const groupe = page.getByRole('group', { name: /Sous les périmètres/ });
+	//  Ni la source, ni son parent actuel : le serveur les refuserait.
+	await expect(groupe.getByRole('checkbox')).toHaveCount(2);
+	await expect(groupe.locator('label')).toHaveText(['Bâtiments', 'Bâtiment 2']);
+	const enregistrer = page.getByRole('button', { name: 'Enregistrer' });
+	await expect(enregistrer, 'sans case cochée, rien ne part').toBeDisabled();
+
+	await groupe.getByLabel('Bâtiment 2').check();
+	await enregistrer.click();
+	await expect.poll(() => envoyes().copier).toEqual({ parents: ['bat:2'] });
+});
+
+test('les flèches : seules celles que le serveur accepte sont actives', async ({ page }) => {
+	const envoyes = await ouvrirHall(page);
+	await expect(page.getByRole('button', { name: 'Monter', exact: true })).toBeDisabled();
+	await expect(page.getByRole('button', { name: /Descendre d’un niveau/ })).toBeDisabled();
+	await page.getByRole('button', { name: /Remonter d’un niveau/ }).click();
+	await expect.poll(() => envoyes().deplacer).toEqual({ sens: 'gauche' });
 });
