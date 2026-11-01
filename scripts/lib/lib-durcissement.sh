@@ -197,9 +197,12 @@ durcissement_ufw_manquantes() {
 }
 
 #  Une règle qui ouvre SSH au-delà du LAN (`allow 22`, `allow ssh`, `limit 22/tcp`…).
+#  Les règles SORTANTES n'ouvrent rien à l'entrée : `allow out to <GitHub> port 22`
+#  (git, #2367) était lue « SSH hors LAN » ; elles se jugent dans lib-durcissement-sortant.
 #  $1 = sortie de `ufw show added` → les règles fautives, une par ligne
 durcissement_ufw_ssh_trop_ouvert() {
   durcissement_ufw_normaliser "${1:-}" \
+    | grep -vE '^[a-z]+ out( |$)' \
     | grep -E '^(allow|limit)( in)?( .*)? (22(/tcp)?|ssh|OpenSSH)( |$)' \
     | grep -vF "from $DURCISSEMENT_LAN " || true
 }
