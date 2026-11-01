@@ -12,6 +12,7 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal, elargirLeTexte } from './defilement';
 
 const OTIS = {
 	id: 1,
@@ -92,10 +93,8 @@ test('dépliée : l’étape « Chez le prestataire », les tuiles et chaque exe
 	await expect(lignes.nth(1)).toContainText('2026');
 	await expect(lignes.nth(2)).toContainText('2025');
 
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal de la page').toBe(false);
+	await elargirLeTexte(page);
+	await attendreSansDefilementHorizontal(page);
 });
 
 test('sans affaire close, la fiche le dit', async ({ page }) => {

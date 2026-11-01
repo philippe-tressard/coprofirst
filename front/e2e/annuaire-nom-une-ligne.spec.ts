@@ -11,6 +11,7 @@
  *    carte s'y replie plutôt que de la faire déborder.
  */
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ANNUAIRE = {
 	cs: { ag_annee: null, ag_date: null, membres: [] },
@@ -62,8 +63,5 @@ test('le nom d’un contact du syndic tient sur une ligne, sans défilement hori
 	//  c'est une seule ligne (la hauteur de ligne vaut `normal`, illisible en px).
 	expect(await nom.evaluate((el) => el.getClientRects().length)).toBe(1);
 
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde).toBe(false);
+	await attendreSansDefilementHorizontal(page);
 });

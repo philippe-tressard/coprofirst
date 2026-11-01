@@ -12,6 +12,7 @@
  *  test vérifie qu'il n'a rien perdu en changeant de composant.
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -88,10 +89,7 @@ test('Espace CS › Courriels : une pliure par message, verdict et motif dessous
 	//  Le conseil lit le nom, jamais l'adresse : le serveur ne l'envoie pas.
 	await expect(page.getByText('@')).toHaveCount(0);
 
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal dans l’onglet Courriels').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'dans l’onglet Courriels');
 	//  La page peut ne pas déborder alors qu'une ligne sort de son cadre (le
 	//  conteneur coupe) : c'est la LIGNE qu'on mesure — ce contrôle a été vu
 	//  passer au vert sans `overflow-wrap` tant qu'il ne regardait que la page.

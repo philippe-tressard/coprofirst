@@ -15,6 +15,7 @@
 import type { Page } from '@playwright/test';
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
 import { attendreLisible, forcerTheme } from './contraste-ecran';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 //  La supervision technique est à l'OPÉRATEUR de la plateforme (#1750).
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
@@ -118,10 +119,7 @@ test('Maintenance : les constats de check-reliability, nœud par nœud', async (
 	).toBeVisible();
 
 	//  Rien ne déborde, au doigt comme à la souris.
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal dans l’onglet Maintenance').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'dans l’onglet Maintenance');
 
 	await carte.screenshot({
 		path: `test-results/controles-fiabilite-${test.info().project.name}.png`,

@@ -10,6 +10,7 @@
  *  - un rôle non déclaré : « Inconnu », jamais « Référence », et ce qu'il manque.
  */
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 //  La supervision technique est à l'OPÉRATEUR de la plateforme (#1750).
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
@@ -56,10 +57,7 @@ test('Installation : la référence, vérification coupée, ne se dit jamais « 
 		'href',
 		/\/tree\/79ce8c5b$/,
 	);
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal dans l’onglet Maintenance').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'dans l’onglet Maintenance');
 	await carte.screenshot({ path: `test-results/installation-${test.info().project.name}.png` });
 });
 
@@ -184,10 +182,7 @@ test('Inscription : une réplique non inscrite s’inscrit en acceptant les cond
 	await expect(carte.getByText('CF-000007')).toBeVisible();
 	await expect(carte.getByText(/en attente de validation/)).toBeVisible();
 	expect(envoye).toMatchObject({ conditions_acceptees: 1, accepte: true, prenom: 'Alix' });
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal dans la carte Installation').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'dans la carte Installation');
 	await carte.screenshot({ path: `test-results/inscription-${test.info().project.name}.png` });
 });
 

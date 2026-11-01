@@ -10,6 +10,7 @@
  */
 import { attendreLisible, forcerTheme } from './contraste-ecran';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ADRESSE_INCONNUE = '/page-qui-nexiste-pas';
 
@@ -40,10 +41,7 @@ test('une adresse inconnue rend la page d’erreur du site, en français, avec u
 	await expect(page.locator('.code-erreur')).toHaveText('Résidence témoin · erreur 404');
 
 	//  Rien ne déborde, au téléphone comme au bureau.
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'la page défile à l’horizontale').toBe(false);
+	await attendreSansDefilementHorizontal(page);
 });
 
 test('@sombre la page d’erreur se lit au sombre', async ({ page }) => {

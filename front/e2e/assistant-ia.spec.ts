@@ -10,6 +10,7 @@
  */
 import type { Locator } from '@playwright/test';
 import { expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -109,10 +110,7 @@ test('Assistant IA : le ✨ du modèle enregistre les prix des jetons', async ({
 	).toBeVisible();
 	expect(demande).toEqual({ usage: 'description', modele: 'modele-de-la-description' });
 
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'défilement horizontal dans l’onglet Assistant IA').toBe(false);
+	await attendreSansDefilementHorizontal(page, 'dans l’onglet Assistant IA');
 
 	await bloc.screenshot({ path: `test-results/assistant-ia-${test.info().project.name}.png` });
 });

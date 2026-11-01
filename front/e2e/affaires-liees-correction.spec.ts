@@ -15,6 +15,7 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 const LIEE = {
 	id: 61,
@@ -88,13 +89,10 @@ test('une affaire liée dit son numéro, son titre, son suivi et sa date — san
 	await expect(ligne.getByRole('button', { name: /Retirer le lien avec TK-A00061/ })).toBeVisible();
 
 	//  La ligne tient dans la section, et la page ne défile pas de côté.
-	const largeurs = await page.evaluate(() => ({
-		page: document.documentElement.scrollWidth,
-		vue: document.documentElement.clientWidth,
-	}));
-	expect(largeurs.page).toBeLessThanOrEqual(largeurs.vue);
+	await attendreSansDefilementHorizontal(page);
+	const vue = await page.evaluate(() => document.documentElement.clientWidth);
 	const boite = await ligne.boundingBox();
-	expect(boite && boite.x + boite.width).toBeLessThanOrEqual(largeurs.vue);
+	expect(boite && boite.x + boite.width).toBeLessThanOrEqual(vue);
 });
 
 test('« Fusionner » ouvre la boîte du Suivi, la plus ancienne absorbe, la principale s’ouvre', async ({

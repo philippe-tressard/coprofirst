@@ -19,6 +19,7 @@ import {
 	test,
 	viderLaFile,
 } from './aides';
+import { attendreSansDefilementHorizontal, elargirLeTexte } from './defilement';
 
 const erreurs = (recus: Evenement[]) => recus.filter((e) => e.action === 'erreur');
 
@@ -126,10 +127,8 @@ test('l’administrateur lit les erreurs dans l’onglet Télémétrie, sans dé
 	//  cellules ne vont pas à la ligne et la carte défile (`normes.css`, la règle
 	//  de tous les tableaux). ⚠️ Mesuré sur la page : le tableau, lui, SORT de sa
 	//  carte par construction — c'est la carte qui défile.
-	const deborde = await page.evaluate(
-		() => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-	);
-	expect(deborde, 'le panneau des erreurs fait défiler la page horizontalement').toBe(false);
+	await elargirLeTexte(page);
+	await attendreSansDefilementHorizontal(page);
 });
 
 test('une erreur sur la page de connexion part au journal, hors du squelette de l’application', async ({
