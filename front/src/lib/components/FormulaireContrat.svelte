@@ -58,7 +58,6 @@
 	/** L'état du formulaire, lié dans les deux sens par l'appelant. */
 	export let contratForm: FormulaireContratData;
 	export let prestataires: Prestataire[] = [];
-	export let equipements: readonly { val: string; label: string }[] = [];
 
 	/**
 	 * L'identifiant du contrat édité, ou `null` en création.
@@ -114,7 +113,6 @@
 	<ChampsContrat
 		bind:contratForm
 		{prestataires}
-		{equipements}
 		etat={contratId === null ? 'creation' : 'edition'}
 	/>
 	<!--  ══ 8. DOCUMENTS ══ La section vient APRÈS la description, jamais avant :

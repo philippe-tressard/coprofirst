@@ -37,6 +37,7 @@ from app.utils.noms import nom_auteur
 from app.utils.perimetres import parse_json_perimetres, perimetre_label
 from app.utils.photos import parse_photos
 from app.utils.recherche_affaires import Texte, correspondance, termes
+from app.utils.equipements import libelle_dans, libelles
 from app.utils.saisi_pour import noms_derives
 from app.utils.visibility import ticket_visible
 from app.utils.visibility.documents import document_visible
@@ -118,6 +119,7 @@ def rechercher(
             noms[(uid, qualite)] = nom_auteur(auteur, qualite)
         return noms[(uid, qualite)]
 
+    equipements = libelles(session)
     trouves = []
     for rang, t in enumerate(affaires):
         proprietaire, _ = noms_derives(session, t)
@@ -129,9 +131,8 @@ def rechercher(
             Texte("personne", nom(t)),
             Texte("personne", proprietaire or ""),
             Texte("prestataire", nom_prestataire(session, t.prestataire_id) or ""),
-            #  Le libellé de l'équipement n'existe qu'au front (`#lib/prestataires`) :
-            #  la valeur, soulignés en espaces, suffit à « vmc », « porte parking ».
-            Texte("equipement", (t.equipement or "").replace("_", " ")),
+            #  Le libellé administré (#2442) : on cherche ce que l'écran affiche.
+            Texte("equipement", libelle_dans(equipements, t.equipement)),
             Texte("description", texte_brut(t.description)),
             *_pieces(parse_photos(t.photos_urls) + parse_photos(t.fichiers_urls)),
         ]

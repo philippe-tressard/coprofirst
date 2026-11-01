@@ -26,7 +26,6 @@
 	import { isCS } from '#lib/stores/auth.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import {
-		EQUIPEMENTS as equipements,
 		TYPES_PRESTATAIRE as typesPrestataire,
 		filtresVides,
 		filtresActifs,
@@ -170,13 +169,7 @@
 {#if $isCS && creationOuverte}
 	<FormulaireCreation titre="Nouveau prestataire">
 		<form on:submit|preventDefault={savePrest}>
-			<ChampsPrestataire
-				bind:prestForm
-				bind:prestContacts
-				{typesPrestataire}
-				{equipements}
-				etat="creation"
-			/>
+			<ChampsPrestataire bind:prestForm bind:prestContacts {typesPrestataire} etat="creation" />
 			<PiedFormulaire enCours={submitting} on:annule={fermerCreation} />
 		</form>
 	</FormulaireCreation>
@@ -214,7 +207,6 @@
 					bind:prestForm
 					bind:prestContacts
 					{typesPrestataire}
-					{equipements}
 					{submitting}
 					onBasculer={(id) => (ouvert = basculer(ouvert, id))}
 					onModifier={startEditPrest}

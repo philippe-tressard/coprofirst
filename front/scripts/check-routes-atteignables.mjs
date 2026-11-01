@@ -186,6 +186,15 @@ for (const [motif, attendu] of lienTable) {
 const rendus = new Set(
 	[...srcAdmin.matchAll(/\{(?:#if|:else if) onglet === '([a-z_]+)'\}/g)].map((m) => m[1]),
 );
+//  Les onglets qui ne reçoivent rien de la page passent par UNE branche et une
+//  table de chargeurs (#2442) : `{:else if onglet in TABLE}` rend chaque clé de
+//  `const TABLE = { cle: () => import(…), … }`. Une table que nulle branche ne lit
+//  ne rend rien — ses clés restent alors « sans rendu ».
+for (const [, table] of srcAdmin.matchAll(/\{(?:#if|:else if) onglet in (\w+)\}/g)) {
+	const debut = srcAdmin.search(new RegExp(`const\\s+${table}\\b[^{]*\\{`));
+	const corps = debut < 0 ? '' : srcAdmin.slice(debut, srcAdmin.indexOf('};', debut));
+	for (const [, cle] of corps.matchAll(/^\t+([a-z_]+): \(\) => import\(/gm)) rendus.add(cle);
+}
 
 if (declares.length < ONGLETS_MINIMAUX) {
 	console.error(

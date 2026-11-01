@@ -88,6 +88,7 @@ test('administrateur : six groupes, l’Exploitation réduite à Maintenance', a
 	await expect(onglets(page)).toHaveText([
 		'Identité',
 		'Périmètres',
+		'Équipements', // ce sur quoi l'on intervient, administrés (#2442)
 		'Lots', // les lots selon le règlement (#2216)
 		'Fonctionnement',
 		'Pages légales',

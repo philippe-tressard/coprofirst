@@ -221,7 +221,7 @@ export interface Ticket extends PorteSaisiPourLu {
 		frequence_type?: string | null;
 		frequence_valeur?: number | null;
 	} | null;
-	/**  La valeur de `TypeEquipement`, posée par le conseil (#1097). */
+	/**  Le code d'un équipement (`#lib/equipements`), posé par le conseil (#1097). */
 	equipement?: string | null;
 	frequence_type?: string | null;
 	frequence_valeur?: number | null;

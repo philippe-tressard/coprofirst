@@ -54,7 +54,7 @@ export const PRESTATAIRE: EntiteDeclaree = {
 		{
 			//  🔴 La « Spécialité » ÉTAIT l'équipement (24/09/2026, question posée à
 			//  l'écran : « spécialité c'est équipement ? ») — même liste
-			//  (`TypeEquipement`), et le carnet s'en sert quand un contrat n'en
+			//  (les équipements, administrés depuis #2442), et le carnet s'en sert quand un contrat n'en
 			//  désigne pas. Elle prend le nom et le rang de la section qui le porte
 			//  partout ailleurs.
 			id: 'equipement',

@@ -68,7 +68,7 @@
 	/**  Les sections ÉTEINTES par la nature de l'affaire, avec leur motif
 	 *   (`#lib/formulaire-affaire`, 23/09/2026) : grisées, pliées, sans champ. */
 	export let inactives: Partial<Record<IdSection, string>> = {};
-	/** L'équipement concerné (#1097) — une valeur de `TypeEquipement`, ou `''`. */
+	/** L'équipement concerné (#1097) — le code d'un équipement, ou `''`. */
 	export let equipement = '';
 	//  🔁 Une ACTUALITÉ a un suivi OPTIONNEL : une case du conseil, puis ses trois
 	//  états, choisis dès l'ouverture et corrigés en modification (10/10/2026) —

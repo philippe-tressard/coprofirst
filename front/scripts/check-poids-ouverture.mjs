@@ -71,6 +71,21 @@ const IMPORT_DIFFERE =
 const CHARGEUR_NOMME =
 	/const\s+(\w+)\s*=\s*\(\)\s*=>\s*import\(\s*'#lib\/components\/([^']+\.svelte)'\s*\)/g;
 
+/**  `charger={TABLE[onglet]}` : une TABLE de chargeurs (`const TABLE = { id: () =>
+ *   import('#lib/components/X.svelte'), … }`) — les onglets d'administration qui ne
+ *   reçoivent rien de la page (#2442). Ses entrées ne comptent que si `charger` la
+ *   reçoit dans le même fichier. */
+const TABLE_PASSEE = /charger=\{\s*(\w+)\[/g;
+const ENTREE_DE_TABLE = /\w+:\s*\(\)\s*=>\s*import\(\s*'#lib\/components\/([^']+\.svelte)'\s*\)/g;
+
+/**  Le corps `{ … }` de `const NOM = {` dans `texte`, ou `''`. */
+function corpsDeTable(texte, nom) {
+	const debut = texte.search(new RegExp(`const\\s+${nom}\\b[^{]*\\{`));
+	if (debut < 0) return '';
+	const fin = texte.indexOf('};', debut);
+	return fin < 0 ? '' : texte.slice(debut, fin);
+}
+
 /**  Les composants que le SOURCE charge à la demande, sous leur clé de manifeste
  *   (`src/lib/components/X.svelte`). */
 export function composantsDifferes(sources) {
@@ -80,6 +95,11 @@ export function composantsDifferes(sources) {
 		for (const m of texte.matchAll(CHARGEUR_NOMME)) {
 			if (new RegExp(`charger=\\{\\s*${m[1]}\\s*\\}`).test(texte)) {
 				cles.add(`src/lib/components/${m[2]}`);
+			}
+		}
+		for (const [, nom] of texte.matchAll(TABLE_PASSEE)) {
+			for (const m of corpsDeTable(texte, nom).matchAll(ENTREE_DE_TABLE)) {
+				cles.add(`src/lib/components/${m[1]}`);
 			}
 		}
 	}
@@ -224,6 +244,21 @@ function selftest() {
 	cas.push([
 		"source lu : un chargeur nommé que `charger` ne reçoit pas n'est pas compté",
 		composantsDifferes([nomme.replace('charger={chargerCorps}', '')]).length === 0,
+	]);
+	//  Une TABLE de chargeurs, passée par `charger={TABLE[…]}` (#2442).
+	const table =
+		'const ONGLETS: Chargeurs = {\n' +
+		"\ta: () => import('#lib/components/OngletA.svelte'),\n" +
+		"\tb: () => import('#lib/components/OngletB.svelte'),\n" +
+		'};\n<ChargementDiffere charger={ONGLETS[onglet]}>';
+	cas.push([
+		'source lu : les entrées d’une table passée à `charger` sont trouvées',
+		composantsDifferes([table]).join() ===
+			'src/lib/components/OngletA.svelte,src/lib/components/OngletB.svelte',
+	]);
+	cas.push([
+		"source lu : une table que `charger` ne reçoit pas n'est pas comptée",
+		composantsDifferes([table.replace('charger={ONGLETS[onglet]}', '')]).length === 0,
 	]);
 	cas.push(['composant différé : aucune faute', juger(m, lire, [onglet]).fautes.length === 0]);
 	m['.svelte-kit/generated/client-optimized/nodes/1.js'].imports.push(onglet);

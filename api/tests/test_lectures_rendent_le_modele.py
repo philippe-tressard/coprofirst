@@ -40,7 +40,6 @@ from app.models.core import (
     Prestataire,
     StatutBail,
     TicketEvolution,
-    TypeEquipement,
     TypeLot,
     Vigik,
 )
@@ -326,7 +325,7 @@ def test_contrat_candidat(session):
         ContratEntretien(
             copropriete_id=copro.id,
             prestataire_id=presta.id,
-            type_equipement=TypeEquipement.assurance,
+            type_equipement="assurance",
             libelle="Multirisque",
             numero_contrat="MR-42",
             date_debut=date(2025, 3, 1),

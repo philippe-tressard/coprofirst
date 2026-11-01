@@ -13,7 +13,7 @@
   qui sait ce qu'enregistrer veut dire.
 -->
 <script lang="ts">
-	import Icon from '#lib/components/Icon.svelte';
+	import GrilleIcones from '#lib/components/GrilleIcones.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import { ICONES_PERIMETRE } from '#lib/perimetres/index.ts';
 	import { TYPES_ACCES } from '#lib/types-acces.ts';
@@ -67,28 +67,7 @@
 </label>
 <div class="field">
 	Icône
-	<div class="icones">
-		<button
-			type="button"
-			class="icone"
-			class:icone-active={!form.icone}
-			title="Aucune icône"
-			aria-label="Aucune icône"
-			on:click={() => (form.icone = '')}>—</button
-		>
-		{#each ICONES_PERIMETRE as ic (ic.nom)}
-			<button
-				type="button"
-				class="icone"
-				class:icone-active={form.icone === ic.nom}
-				title={ic.libelle}
-				aria-label={ic.libelle}
-				on:click={() => (form.icone = ic.nom)}
-			>
-				<Icon name={ic.nom} size={18} />
-			</button>
-		{/each}
-	</div>
+	<GrilleIcones icones={ICONES_PERIMETRE} bind:valeur={form.icone} aucune libelle="Icône" />
 	<span class="aide"> Affichée sur la pastille du sélecteur, devant le libellé. </span>
 </div>
 
@@ -182,36 +161,6 @@
 		font-size: var(--fs-sm);
 		color: var(--color-text-muted);
 		margin: -0.4rem 0 1rem;
-	}
-	.icones {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.3rem;
-		margin-top: 0.3rem;
-	}
-	.icone {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2rem;
-		height: 2rem;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		background: var(--color-surface);
-		cursor: pointer;
-		color: var(--color-text-muted);
-		font-size: var(--fs-sm);
-	}
-	@media (hover: hover) and (pointer: fine) {
-		.icone:hover {
-			border-color: var(--color-primary);
-			color: var(--color-text);
-		}
-	}
-	.icone-active {
-		background: var(--color-primary-plein);
-		color: var(--color-sur-plein);
-		border-color: var(--color-primary-plein);
 	}
 	.field-check {
 		display: block;

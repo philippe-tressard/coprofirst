@@ -17,10 +17,10 @@ from app.models.prestataires import (
     ContratEntretien,
     NotationPrestataire,
     Prestataire,
-    TypeEquipement,
     TypePrestataire,
 )
 from app.routers.prestataires import _appliquer_perimetre
+from app.utils.equipements import SYNDIC
 
 
 @dataclass
@@ -88,7 +88,7 @@ def poser(session: Session, pat: Patrimoine, auteur_id: int) -> Prestataires:
         (
             "ascenseurs",
             "ascenseurs",
-            TypeEquipement.ascenseur,
+            "ascenseur",
             "Maintenance des ascenseurs",
             -400,
             ("mois", 1),
@@ -98,7 +98,7 @@ def poser(session: Session, pat: Patrimoine, auteur_id: int) -> Prestataires:
         (
             "jardins",
             "jardins",
-            TypeEquipement.espaces_verts,
+            "espaces_verts",
             "Entretien des espaces verts",
             -200,
             ("mois", 1),
@@ -108,14 +108,14 @@ def poser(session: Session, pat: Patrimoine, auteur_id: int) -> Prestataires:
         (
             "extincteurs",
             "incendie",
-            TypeEquipement.extincteurs,
+            "extincteurs",
             "Vérification des extincteurs",
             -310,
             ("fois_par_an", 1),
             55,
             None,
         ),
-        ("syndic", "syndic", TypeEquipement.syndic, "Contrat de syndic", -300, None, None, None),
+        ("syndic", "syndic", SYNDIC, "Contrat de syndic", -300, None, None, None),
     ):
         contrat = ContratEntretien(
             copropriete_id=pat.copro.id,
