@@ -46,8 +46,19 @@ from app.models.core import (
 )
 from app.utils.lecture import lire_objet
 from app.utils.acces_choix import fixer_acces, types_fixes_par_code
-from app.utils.perimetres import invalider_cache, parse_json_perimetres, parse_perimetres
-from app.utils.perimetres.branche import descendants, enfants_par_parent, refus_duplication
+from app.utils.perimetres import (
+    code_par_defaut,
+    invalider_cache,
+    parse_json_perimetres,
+    parse_perimetres,
+)
+from app.utils.perimetres.branche import (
+    descendants,
+    enfants_par_parent,
+    refus_copie,
+    refus_duplication,
+)
+from app.utils.perimetres.deplacement import sens_admis
 from app.utils.equipements import retirer_liens_du_perimetre
 from app.utils.recuperer import ou_404
 
@@ -95,6 +106,10 @@ class PerimetreRead(BaseModel):
     #: Le serveur accepterait-il de dupliquer cette branche ? Lu sur la même règle
     #: que le geste qui refuse (`refus_duplication`), jamais recopié à l'écran.
     dupliquable: bool = False
+    #: …et de le copier sous d'autres parents (`refus_copie`), et lesquelles des
+    #: quatre flèches il accepterait (`sens_admis`) : l'écran grise les autres.
+    copiable: bool = False
+    deplacements: list[str] = []
     #: Les types d'accès (`types_acces.TYPES_ACCES`) qui ouvrent ce nœud d'office,
     #: sans dépendre d'aucun lot — un portillon, un portail (#2060).
     acces_fixes: list[str] = []
@@ -218,6 +233,7 @@ def _lu(
     concerne_tous: bool,
     branche: list[Perimetre],
     fixes: dict[str, list[str]],
+    deplacements: list[str],
 ) -> PerimetreRead:
     """Un nœud lu sur le modèle, avec ce que l'arbre seul sait dire.
 
@@ -236,17 +252,23 @@ def _lu(
         utilise=noeud.code.lower() in cites,
         nb_descendants=len(branche),
         dupliquable=refus_duplication(branche) is None,
+        copiable=refus_copie(noeud, branche) is None,
+        deplacements=deplacements,
         acces_fixes=fixes.get(noeud.code, []),
     )
 
 
 def _en_lecture(
-    noeuds: list[Perimetre], cites: set[str], fixes: Optional[dict[str, list[str]]] = None
+    noeuds: list[Perimetre],
+    cites: set[str],
+    fixes: Optional[dict[str, list[str]]] = None,
+    racine: Optional[str] = None,
 ) -> list[PerimetreRead]:
     """L'arborescence à plat, en ordre d'affichage (parcours en profondeur).
 
     L'ordre est calculé ici plutôt que côté front : c'est la même question pour
-    toutes les rubriques, et deux tris divergents sont un tri de trop.
+    toutes les rubriques, et deux tris divergents sont un tri de trop. `racine` :
+    le périmètre par défaut (`code_par_defaut`), qui ne change pas de niveau.
     """
     fixes = fixes or {}
     par_id = {n.id: n for n in noeuds}
@@ -272,6 +294,7 @@ def _en_lecture(
                     _concerne_tous(noeud, par_id),
                     descendants(noeud, noeuds),
                     fixes,
+                    sens_admis(noeud, noeuds, racine),
                 )
             )
             descendre(noeud.id)
@@ -290,6 +313,7 @@ def _en_lecture(
                     noeud.portee_globale,
                     descendants(noeud, noeuds),
                     fixes,
+                    [],
                 )
             )
     return sortie
@@ -302,7 +326,8 @@ def _un(session: Session, noeud: Perimetre) -> PerimetreRead:
     toujours à zéro : ces deux valeurs ne se déduisent pas d'une ligne seule.
     """
     tous = list(session.exec(select(Perimetre)).all())
-    for lu in _en_lecture(tous, _codes_cites(session), types_fixes_par_code(session)):
+    lus = _en_lecture(tous, _codes_cites(session), types_fixes_par_code(session), code_par_defaut())
+    for lu in lus:
         if lu.id == noeud.id:
             return lu
     raise HTTPException(500, "Périmètre introuvable après écriture.")
@@ -343,7 +368,9 @@ def lister_perimetres(
     user: Utilisateur = Depends(get_current_user),
 ):
     noeuds = session.exec(select(Perimetre)).all()
-    return _en_lecture(list(noeuds), _codes_cites(session), types_fixes_par_code(session))
+    return _en_lecture(
+        list(noeuds), _codes_cites(session), types_fixes_par_code(session), code_par_defaut()
+    )
 
 
 # ── Écriture (administration) ─────────────────────────────────────────────────

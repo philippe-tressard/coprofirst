@@ -21,6 +21,10 @@ champ. Les valeurs attendues sont celles de l'ancienne écriture, relevées avan
 la conversion ; seuls `assiste_ia` et `contenu_origine` de l'historique
 diffèrent, et c'est le correctif.
 
+La lecture de l'arbre des périmètres (`PerimetreRead`) vit à côté, dans
+`test_lectures_perimetres.py` — sortie le 01/11/2026 (#2450), quand les champs
+`copiable` et `deplacements` ont fait passer ce fichier au-delà de 500 lignes.
+
 La règle qui empêche la recopie de revenir est un contrôle de forme :
 `test_lecture_colonne_par_colonne.py`.
 """
@@ -43,7 +47,6 @@ from app.models.core import (
     TypeLot,
     Vigik,
 )
-from app.models.perimetre import Perimetre
 from tests.aides_base import compte
 
 QUAND = datetime(2026, 10, 1, 9, 30)
@@ -62,43 +65,6 @@ def _poser(session, *objets):
     for o in objets:
         session.refresh(o)
     return objets
-
-
-# ── patrimoine : PerimetreRead (deux écritures, dont l'orphelin) ──────────────
-
-
-def test_perimetre_read_arbre_et_orphelin():
-    from app.routers.patrimoine import _en_lecture
-
-    racine = Perimetre(
-        id=1,
-        code="residence",
-        libelle="Résidence",
-        libelle_court="Rés.",
-        description="Tout",
-        icone="maison",
-        portee_globale=True,
-        selectionnable=False,
-        ordre=0,
-    )
-    enfant = Perimetre(
-        id=2,
-        code="Bat-A",
-        parent_id=1,
-        libelle="Bâtiment A",
-        libelle_court=None,
-        description=None,
-        batiment_id=7,
-        privatif=True,
-        hors_copropriete=True,
-        actif=False,
-        ordre=3,
-    )
-    orphelin = Perimetre(
-        id=3, code="perdu", parent_id=999, libelle="Perdu", description="", portee_globale=True
-    )
-    lus = _json(_en_lecture([racine, enfant, orphelin], {"bat-a"}))
-    assert lus == ATTENDU_PERIMETRES, lus
 
 
 # ── diagnostics : DiagnosticTypeRead (liste et bascule) ───────────────────────
@@ -339,72 +305,6 @@ def test_contrat_candidat(session):
 # ── Les sorties attendues — relevées sur l'ancienne écriture ──────────────────
 
 #: Un nœud tel que l'ancienne écriture le rendait, puis ce qui change par nœud.
-_NOEUD = {
-    "parent": None,
-    "icone": None,
-    "batiment_id": None,
-    "profondeur": 0,
-    "ordre": 0,
-    "actif": True,
-    "portee_globale": False,
-    "concerne_tous": False,
-    "selectionnable": True,
-    "privatif": False,
-    "hors_copropriete": False,
-    "utilise": False,
-    #  Ajoutés le 13/10/2026 (dupliquer, supprimer une branche) : lus sur
-    #  `utils/perimetres/branche`, pas sur une colonne.
-    "nb_descendants": 0,
-    "dupliquable": False,
-    #  Ajouté le 17/10/2026 (#2060) : lu dans la configuration des accès fixes.
-    "acces_fixes": [],
-}
-ATTENDU_PERIMETRES = [
-    {
-        **_NOEUD,
-        "id": 1,
-        "code": "residence",
-        "libelle": "Résidence",
-        "libelle_court": "Rés.",
-        "description": "Tout",
-        "icone": "maison",
-        "portee_globale": True,
-        "concerne_tous": True,
-        "selectionnable": False,
-        #  Sa branche porte un bâtiment (Bat-A) : elle ne se duplique pas d'un bloc.
-        "nb_descendants": 1,
-    },
-    {
-        **_NOEUD,
-        "id": 2,
-        "code": "Bat-A",
-        "parent": "residence",
-        "libelle": "Bâtiment A",
-        #  Les deux replis : un libellé court absent prend le libellé, une
-        #  description absente sort en chaîne vide.
-        "libelle_court": "Bâtiment A",
-        "description": "",
-        "batiment_id": 7,
-        "profondeur": 1,
-        "ordre": 3,
-        "actif": False,
-        "concerne_tous": True,  # hérité de la racine
-        "privatif": True,
-        "hors_copropriete": True,
-        "utilise": True,  # cité ; la casse du code n'y fait rien
-    },
-    {
-        #  L'orphelin : rendu quand même, sans parent ni profondeur.
-        **_NOEUD,
-        "id": 3,
-        "code": "perdu",
-        "libelle": "Perdu",
-        "libelle_court": "Perdu",
-        "description": "",
-        "portee_globale": True,
-        "concerne_tous": True,
-    },
-]
 ATTENDU_DIAGNOSTIC = {
     "id": 1,
     "code": "dpe",

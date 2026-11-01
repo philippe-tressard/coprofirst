@@ -106,6 +106,8 @@ GESTES_FERMES: tuple[Famille, ...] = (
             ("PATCH", "/perimetres/{perimetre_id}"),
             ("DELETE", "/perimetres/{perimetre_id}"),
             ("POST", "/perimetres/{perimetre_id}/dupliquer"),
+            ("POST", "/perimetres/{perimetre_id}/copier"),
+            ("POST", "/perimetres/{perimetre_id}/deplacer"),
             ("PATCH", "/admin/modeles-email/{modele_id}"),
             ("POST", "/admin/modeles-email/reinitialiser"),
             ("POST", "/admin/modeles-email/{modele_id}/reinitialiser"),

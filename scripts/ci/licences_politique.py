@@ -272,6 +272,8 @@ CATALOGUE_ICONES = "front/src/lib/icones-svg.json"
 #  Le 13/10/2026, `copy` (Lucide) — dupliquer un périmètre et ses enfants.
 #  Le 17/10/2026, `external-link` (`lucide-static` 0.460.0) — les liens du pied
 #  de page qui sortent du site (#2040).
+#  Le 01/11/2026, `arrow-left` et `copy-plus` (Lucide) — la flèche qui sort un
+#  périmètre de son parent, et sa copie sous d'autres périmètres.
 ICONES_HORS_LUCIDE = {
     "whatsapp": "Simple Icons",
     "stairs": "absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur",

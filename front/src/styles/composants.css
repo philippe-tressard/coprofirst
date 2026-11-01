@@ -41,14 +41,23 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	text-decoration: none;
 }
 
-.btn:disabled {
+/*  Une icône d'action INDISPONIBLE suit la même règle (01/11/2026) : la flèche
+    d'un périmètre déjà premier, que le serveur refuserait, se lisait encore
+    cliquable — `.btn-icon` n'avait aucun état désactivé. */
+.btn:disabled,
+.btn-icon:disabled,
+.btn-icon-edit:disabled,
+.btn-icon-danger:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
 }
 /*  Un bouton qui TRAVAILLE n'est pas indisponible (17/10/2026) : désactivé pour
     qu'on ne clique pas deux fois, il garde sa pleine couleur — à demi-teinte, le
     ⏳ d'un appel à l'assistant (`IconeIA`) se lisait comme un geste refusé. */
-.btn:disabled[aria-busy='true'] {
+.btn:disabled[aria-busy='true'],
+.btn-icon:disabled[aria-busy='true'],
+.btn-icon-edit:disabled[aria-busy='true'],
+.btn-icon-danger:disabled[aria-busy='true'] {
 	opacity: 1;
 	cursor: progress;
 }
@@ -193,14 +202,14 @@ cascade. Le deplacer changerait le rendu sans changer une regle.
 	line-height: 1;
 }
 @media (hover: hover) and (pointer: fine) {
-	.btn-icon:hover,
-	.btn-icon-edit:hover {
+	.btn-icon:hover:not(:disabled),
+	.btn-icon-edit:hover:not(:disabled) {
 		background: var(--color-bg);
 		color: var(--color-text);
 	}
 }
 @media (hover: hover) and (pointer: fine) {
-	.btn-icon-danger:hover {
+	.btn-icon-danger:hover:not(:disabled) {
 		color: var(--color-danger);
 		background: var(--color-danger-fond);
 	}
