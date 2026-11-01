@@ -433,15 +433,21 @@ qu'il surcharge. C'est pour cela qu'il est ici et non dans le socle.
 		padding: 0.4rem 0.5rem;
 		white-space: nowrap;
 	}
-	/* Wrapper scrollable pour les tables */
+	/*  Wrapper scrollable pour les tables — et BLOC CONTENEUR de ce qu'il porte
+	    (#2437). Un élément en position absolue (`.sr-only` d'un en-tête de
+	    colonne) ne se rogne qu'à un conteneur qui défile ET le positionne : sans
+	    `position: relative`, il en sortait et élargissait la page entière
+	    (523 px pour 393 avec les polices de macOS, donc d'un iPhone). */
 	.card {
 		overflow-x: auto;
 		max-width: 100%;
+		position: relative;
 	}
 	.table-wrap {
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
 		max-width: 100%;
+		position: relative;
 	}
 
 	/* Inputs/selects : ne pas forcer de min-width en flex/grid */

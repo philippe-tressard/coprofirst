@@ -287,8 +287,10 @@
 </EtatListe>
 
 <style>
+	/* Bloc conteneur du `.sr-only` de l'en-tête, qui sortirait sinon (#2437, `normes.css`). */
 	.carte-lots {
 		overflow-x: auto;
+		position: relative;
 	}
 	.numero-lot {
 		font-weight: 600;
