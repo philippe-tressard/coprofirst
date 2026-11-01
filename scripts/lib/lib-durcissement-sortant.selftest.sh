@@ -16,6 +16,10 @@ durcissement_sortant_selftest() {
     else echo "FAIL  $1  attendu=$2 obtenu=$3"; st=1; fi
   }
   echo "== self-test lib-durcissement-sortant =="
+  #  Les adresses des nœuds viennent de ROLE_TABLE, comme la liste elle-même :
+  #  les recopier ici ferait un fichier de plus qui les porte (test_hygiene_depot).
+  local IP1 IP2
+  IP1=$(role_ip rpi1); IP2=$(role_ip rpi2)
 
   local ENTRANT="Added user rules (see 'ufw status' for running firewall):
 ufw allow from 192.168.1.0/24 to any port 22 proto tcp
@@ -36,8 +40,8 @@ ufw allow out to 140.82.112.0/20 port 22 proto tcp comment 'sortie 2367'
 ufw allow out to 192.30.252.0/22 port 22 proto tcp comment 'sortie 2367'
 ufw allow out to 185.199.108.0/22 port 22 proto tcp comment 'sortie 2367'
 ufw allow out to 143.55.64.0/20 port 22 proto tcp comment 'sortie 2367'
-ufw allow out to 192.168.1.222 comment 'sortie 2367'
-ufw allow out to 192.168.1.223 comment 'sortie 2367'"
+ufw allow out to $IP1 comment 'sortie 2367'
+ufw allow out to $IP2 comment 'sortie 2367'"
   local A_CONSTAT="$ENTRANT
 $LISTE
 ufw allow out log to any"
@@ -64,9 +68,10 @@ New profiles: skip"
 -A DOCKER-USER -p tcp -m tcp --dport 443 -j RETURN
 -A DOCKER-USER -p tcp -m tcp --dport 587 -j RETURN
 -A DOCKER-USER -p tcp -m tcp --dport 993 -j RETURN
--A DOCKER-USER -d 192.168.1.222/32 -j RETURN
--A DOCKER-USER -d 192.168.1.223/32 -j RETURN
+-A DOCKER-USER -d @IP1@/32 -j RETURN
+-A DOCKER-USER -d @IP2@/32 -j RETURN
 -A DOCKER-USER -m conntrack --ctstate NEW -m limit --limit 3/min --limit-burst 10 -j LOG --log-prefix "[SORTANT CONTENEUR] "'
+  DU_TETE=${DU_TETE//@IP1@/$IP1}; DU_TETE=${DU_TETE//@IP2@/$IP2}
   local DU_CONSTAT="$DU_TETE
 -A DOCKER-USER -j RETURN"
   local DU_REFUS="$DU_TETE
@@ -79,7 +84,7 @@ New profiles: skip"
   v "liste : bloc after.rules en ASCII (ufw plante sinon)" 0 \
     "$(durcissement_sortant_bloc refus | LC_ALL=C grep -c '[^ -~]')"
   v "liste : le pair est déclaré (ROLE_TABLE)" 2 \
-    "$(durcissement_sortant_regles conteneurs | grep -c '^allow out to 192\.168\.1\.22[23]$')"
+    "$(durcissement_sortant_regles conteneurs | grep -cxE "allow out to ($IP1|$IP2)")"
   v "liste : git par SSH réservé à l'hôte" 0 "$(durcissement_sortant_regles conteneurs | grep -c 'port 22')"
   v "liste : DOCKER-USER attendu = banc (constat)" OUI \
     "$( [ "$(durcissement_sortant_docker_user constat)" = "$(grep '^-A' <<< "$DU_CONSTAT")" ] && echo OUI || echo NON)"
@@ -142,9 +147,9 @@ COMMIT" a1 a2
 
   #  Le journal — la forme du noyau (nf_log), relevée sur un `[UFW BLOCK]` réel.
   local J="[UFW BLOCK] IN=eth0 OUT= MAC=01:00:5e:00:00:01:80:7d:3a:13:74:a8:08:00 SRC=192.168.1.12 DST=224.0.0.1 LEN=32 TOS=0x00 PREC=0x00 TTL=1 ID=3 PROTO=2
-[UFW ALLOW] IN= OUT=eth0 SRC=192.168.1.223 DST=203.0.113.9 LEN=60 TOS=0x00 PREC=0x00 TTL=64 ID=1 DF PROTO=TCP SPT=40000 DPT=4444 WINDOW=64240 RES=0x00 SYN URGP=0
-[UFW ALLOW] IN= OUT=eth0 SRC=192.168.1.223 DST=203.0.113.9 LEN=60 TOS=0x00 PREC=0x00 TTL=64 ID=2 DF PROTO=TCP SPT=40002 DPT=4444 WINDOW=64240 RES=0x00 SYN URGP=0
-[UFW BLOCK] IN= OUT=eth0 SRC=192.168.1.223 DST=224.0.0.22 LEN=40 TOS=0x00 PREC=0x00 TTL=1 ID=0 DF PROTO=2
+[UFW ALLOW] IN= OUT=eth0 SRC=$IP2 DST=203.0.113.9 LEN=60 TOS=0x00 PREC=0x00 TTL=64 ID=1 DF PROTO=TCP SPT=40000 DPT=4444 WINDOW=64240 RES=0x00 SYN URGP=0
+[UFW ALLOW] IN= OUT=eth0 SRC=$IP2 DST=203.0.113.9 LEN=60 TOS=0x00 PREC=0x00 TTL=64 ID=2 DF PROTO=TCP SPT=40002 DPT=4444 WINDOW=64240 RES=0x00 SYN URGP=0
+[UFW BLOCK] IN= OUT=eth0 SRC=$IP2 DST=224.0.0.22 LEN=40 TOS=0x00 PREC=0x00 TTL=1 ID=0 DF PROTO=2
 [SORTANT CONTENEUR] IN=br-29c0f5a2142a OUT=eth0 PHYSIN=veth1a2b3c MAC=aa:bb SRC=172.19.0.3 DST=198.51.100.7 LEN=60 TOS=0x00 PREC=0x00 TTL=63 ID=9 DF PROTO=TCP SPT=51000 DPT=5222 WINDOW=64240 RES=0x00 SYN URGP=0"
   local resume
   resume=$(durcissement_sortant_resume_journal "$J" "172.19.0.3 hostachy_whatsapp
