@@ -91,7 +91,7 @@ jobs:
       - name: Trivy — api
         id: trivy_api
         continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.REGISTRE }}/coprofirst-api:sha-${{ github.sha }}
           severity: CRITICAL,HIGH
@@ -101,7 +101,7 @@ jobs:
       - name: Trivy — front
         id: trivy_front
         continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.REGISTRE }}/coprofirst-front:sha-${{ github.sha }}
           severity: CRITICAL,HIGH
@@ -112,7 +112,7 @@ jobs:
       - name: Trivy — caddy
         id: trivy_caddy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.REGISTRE }}/coprofirst-caddy:sha-${{ github.sha }}
           severity: CRITICAL,HIGH
@@ -123,7 +123,7 @@ jobs:
       - name: Trivy — whatsapp-bridge
         id: trivy_whatsapp
         continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.REGISTRE }}/coprofirst-whatsapp-bridge:sha-${{ github.sha }}
           severity: CRITICAL,HIGH
