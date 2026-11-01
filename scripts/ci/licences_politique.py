@@ -274,6 +274,9 @@ CATALOGUE_ICONES = "front/src/lib/icones-svg.json"
 #  de page qui sortent du site (#2040).
 #  Le 01/11/2026, `arrow-left` et `copy-plus` (Lucide) — la flèche qui sort un
 #  périmètre de son parent, et sa copie sous d'autres périmètres.
+#  Le 01/11/2026, vingt et un tracés de `lucide-static` 0.460.0 (`trash`,
+#  `fire-extinguisher`, `wind`, `fan`, `cctv`, `mailbox`… — les grilles d'icônes
+#  des équipements et des périmètres, extraits du paquet, jamais redessinés).
 ICONES_HORS_LUCIDE = {
     "whatsapp": "Simple Icons",
     "stairs": "absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur",
