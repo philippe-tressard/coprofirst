@@ -277,6 +277,16 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   route, pour un gain invisible. Un nom figé qui viendrait à être renommé sort de la
   liste, sinon le test échoue. Un **tag** OpenAPI s'écrit en
   minuscules à tirets (`carnet-entretien`), un **préfixe** de routeur au pluriel (#1056).
+- **Le contrat de l'API ne recule pas sans annonce** (#2456) : l'app iOS génère son
+  client depuis `openapi.json`, joint à chaque release (`scripts/ci/lib-contrat-version.sh`),
+  jamais servi par le site. Une route, un champ de réponse ou une entrée requise qui
+  change se lit dans `api/app/contrat/reference.json`, GÉNÉRÉE par `python
+  scripts/ci/exporter_openapi.py --ecrire-reference`, qui calcule la version du contrat
+  (`GET /config` → `version_contrat`) — jamais éditée. Retirer une route ou un champ se
+  fait en deux temps : `deprecated` et une entrée dans `app/contrat/retraits.RETRAITS`
+  (version V), puis le retrait dans une version ultérieure ; une entrée neuve d'une route
+  existante est facultative. L'`operationId` vient du chemin (`contrat.identifiant_operation`),
+  jamais du nom de la fonction. 🔒 `test_contrat_api.py`.
 
 ### Schémas Pydantic
 - Trois formes par entité exposée : `EntiteCreate` (entrée, sans id ni

@@ -44,7 +44,7 @@ _logger = _logging.getLogger("hostachy.api")
 
 from app.utils.reponse_utc import UTCJSONResponse
 
-from app import contexte, erreurs_globales
+from app import contexte, contrat, erreurs_globales
 from app.utils import demo
 from app.routers import (
     auth,
@@ -306,21 +306,12 @@ import os as _os
 
 _enable_docs = _os.getenv("ENABLE_API_DOCS", "false").lower() == "true"
 
-#  Version du CONTRAT de l'API, délibérément distincte de celle de l'application
-#  (`front/package.json`). Elle était écrite en dur à deux endroits — ici et dans
-#  la réponse de `/health` — donc rien ne garantissait qu'ils restent d'accord.
-#
-#  ⚠️ Ne pas la faire pointer vers la version applicative : `/health` est PUBLIC et
-#  non authentifié, la rendre exacte divulguerait la version déployée sans qu'aucun
-#  besoin ne l'impose. Le post-check lit la version servie dans le bundle du front,
-#  ce qui n'expose rien de plus (décision du 03/08/2026, cf. la skill mep-precheck).
-#  Aucun script d'infra ne consomme ce champ — vérifié le 06/08/2026.
-API_VERSION = "0.2.0"
-
 app = FastAPI(
     title=f"{NOM_PLATEFORME} API",
     description="API de gestion de copropriétés",
-    version=API_VERSION,
+    #  La version du CONTRAT, pas celle de l'application : `app/contrat` (#2456).
+    version=contrat.VERSION_CONTRAT,
+    generate_unique_id_function=contrat.identifiant_operation,
     lifespan=lifespan,
     default_response_class=UTCJSONResponse,
     docs_url="/docs" if _enable_docs else None,
@@ -479,7 +470,10 @@ def health():
         except DeclarationInvalide:
             pretes, total = 0, 1
         if pretes:
-            return {"status": "ok" if pretes == total else "degrade", "version": API_VERSION}
+            return {
+                "status": "ok" if pretes == total else "degrade",
+                "version": contrat.VERSION_CONTRAT,
+            }
         _logger.error("Health check : aucune base de copropriete servable")
         return JSONResponse(
             status_code=503,
@@ -488,7 +482,7 @@ def health():
     try:
         with contexte.nouvelle_session() as _s:
             _s.exec(_text("SELECT 1"))  # type: ignore[arg-type]
-        return {"status": "ok", "version": API_VERSION}
+        return {"status": "ok", "version": contrat.VERSION_CONTRAT}
     except Exception as exc:
         _logger.error("Health check DB failed : %s", exc)
         return JSONResponse(
