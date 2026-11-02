@@ -129,6 +129,12 @@ L'application est accessible sur `http://localhost`.
 > Le serveur d'une installation y reçoit seul ses **correctifs de sécurité** — système,
 > Docker, `cloudflared` — chaque nuit à 03:00, contrôlés chaque matin
 > (`deploiement/standard/correctifs-systeme.sh`).
+> **Contrat d'API.** Chaque version taguée joint aussi `openapi.json` à sa release —
+> le schéma de l'API, exporté de son image publiée —, avec la liste des onglets
+> (`pages.ts`) et les jetons de style (`socle.css`, `palette-sombre.css`) : un client
+> hors du navigateur (l'app iOS) en génère son code. Une installation dit le contrat
+> qu'elle sert par `GET /config` (`version_contrat`) ; le schéma n'est jamais servi
+> par le site (`api/app/contrat`).
 
 Au premier lancement, deux comptes sont créés avec un **mot de passe aléatoire** affiché dans les logs : l'**administrateur** de la copropriété (`admin@localhost`) et l'**opérateur** de l'installation (`operateur@localhost`, administrateur aussi — supervision, santé, inscription au registre). Séparés pour confier le premier sans livrer le second. Sur une installation **commune**, qui sert plusieurs copropriétés, l'opérateur n'est pas accordé par un administrateur : l'exploitant du serveur le désigne dans le fichier des copropriétés (champ `operateurs`).
 

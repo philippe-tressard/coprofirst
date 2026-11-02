@@ -3,12 +3,15 @@
 Chacune dit à l'écran un fait que le serveur établit : le décor des jours de fête
 s'affiche-t-il (#2312), quelle est l'adresse du site (#2058), sert-on la démo
 (#1901), l'opérateur est-il désigné par l'exploitant (`auth/operateur`,
-31/10/2026). Sorties de `routers/config.py` pour qu'il reste sous 500 lignes : une
-clé calculée neuve s'ajoute ici, et `PUT /config` la refuse (`utils/reglages`).
+31/10/2026), quel contrat d'API l'installation sert (`app/contrat`, #2456 : l'app
+iOS adapte ses gestes à une installation plus ancienne). Sorties de
+`routers/config.py` pour qu'il reste sous 500 lignes : une clé calculée neuve
+s'ajoute ici, et `PUT /config` la refuse (`utils/reglages`).
 """
 
 from __future__ import annotations
 
+from app import contrat
 from app.auth import operateur
 from app.utils import demo
 from app.utils.liens import adresse_du_site
@@ -27,4 +30,5 @@ def cles_calculees(reglages: dict[str, str]) -> dict[str, str]:
         "site_url": adresse_du_site(),
         demo.CLE_PUBLIQUE: _drapeau(demo.est_demo()),
         operateur.CLE_PUBLIQUE: _drapeau(operateur.designe_par_l_exploitant()),
+        contrat.CLE_PUBLIQUE: contrat.VERSION_CONTRAT,
     }
