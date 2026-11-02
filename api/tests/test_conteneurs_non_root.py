@@ -180,3 +180,37 @@ def test_le_motif_exec_api_voit_et_ne_voit_que_lui():
     assert _COMPTE_APP.search(
         _EXEC_API.search("docker exec --user=app hostachy_api python x").group(1)
     )
+
+
+def test_postgresql_tourne_en_postgres_sans_capacite():
+    """PostgreSQL est durci (#2429) en tournant DIRECTEMENT sous `postgres`.
+
+    L'image officielle démarre en root pour rendre `PGDATA` à `postgres`, puis
+    descend par `gosu` ; durcie sans capacité, elle ne démarrerait plus (mesuré :
+    `chown … Operation not permitted`). Perdre `user: postgres` ne se verrait donc
+    qu'à la RECRÉATION de la base — la nuit, juste après la promotion de la
+    bascule. Le socket local est sa seule écriture hors du volume : sans `tmpfs`,
+    la racine en lecture seule l'empêche d'écouter.
+    """
+    from tests.aides_compose import COMPOSE, lire_yaml
+
+    base = lire_yaml(COMPOSE)["services"]["postgres"]
+    assert base.get("user") == "postgres", (
+        "le service postgres ne tourne plus sous `postgres` : l'image repartirait en "
+        "root, sans les capacités qu'il lui faudrait, et la base ne démarrerait pas"
+    )
+    assert base.get("cap_drop") == ["ALL"] and base.get("read_only") is True, (
+        "le service postgres n'est plus durci (`<<: *conteneur_durci`)"
+    )
+    assert not base.get("cap_add"), "le service postgres n'a besoin d'aucune capacité"
+    assert any(str(t).startswith("/var/run/postgresql:") for t in base.get("tmpfs", [])), (
+        "plus de tmpfs sur /var/run/postgresql : le socket local ne peut plus s'y créer"
+    )
+    #  La reconstruction de la réplique hérite de ce compte : un `--user` la
+    #  rendrait à root, qui n'a plus de quoi vider `PGDATA`.
+    reconstruire = _lire("scripts/exploitation/reconstruire-replique.sh")
+    runs = re.findall(r"docker compose run\b[^\n]*\bpostgres\b", reconstruire)
+    assert runs, "le `docker compose run` de reconstruire-replique.sh n'est plus vu"
+    assert not [r for r in runs if re.search(r"(?:^|\s)(?:-u|--user)\b", r)], (
+        "reconstruire-replique.sh force un compte au `run` de la base : " + "; ".join(runs)
+    )
