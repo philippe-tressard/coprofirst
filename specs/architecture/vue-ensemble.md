@@ -5,8 +5,9 @@
 ## Schéma général
 
 ```
-[Navigateur / PWA mobile]
-         │  HTTPS (TLS automatique)
+[Navigateur / PWA mobile]   [App iOS native — dépôt coprofirst-ios]
+         │  HTTPS (TLS automatique)   │  HTTPS, même API (contrat publié)
+         ├────────────────────────────┘
      [Caddy 2]          ← reverse proxy + Let's Encrypt + HTTP/3
          │
   ┌──────┴──────────────────────┐
@@ -46,19 +47,26 @@ Matériel      : Raspberry Pi 5 — 8 Go RAM, ARM64
 5. Onboarding : invitation par lien unique (pas d'inscription publique)
 ```
 
-## Stratégie PWA (mobile)
+## Clients mobiles — la PWA, et l'application iOS qui s'y ajoute
 
-- Une seule codebase front-end pour web et mobile (pas d'app native).
-- Workbox (via `@vite-pwa/sveltekit`) : cache des pages statiques et données essentielles.
-- Fonctionne hors-ligne pour la consultation ; synchronisation à la reconnexion.
-- Plateformes : iOS 16.4+ (Safari), Android 10+ (Chrome), ajout à l'écran d'accueil (A2HS).
+Arbitrage du 01/11/2026 (chantier #2460). Le détail, et ce qui relie les deux
+clients au serveur, vit **à un seul endroit** : [stack.md § Application mobile](stack.md#application-mobile).
+
+- **La PWA reste** le client du web et du mobile : aucun écran retiré. Workbox (via
+  `@vite-pwa/sveltekit`) ; iOS 16.4+ (Safari), Android 10+ (Chrome), ajout à l'écran
+  d'accueil (A2HS).
+- **L'application iOS native** (SwiftUI, dépôt `philippe-tressard/coprofirst-ios`)
+  s'y ajoute, **sans WebView**, reliée par le seul **contrat d'API publié** et sa
+  version (#2456) ; ses notifications passent par le **relais APNs** de la plateforme
+  ([notifications-push.md](notifications-push.md), #2458).
+- **Android** : hors périmètre, la PWA y suffit.
 
 ## Décisions d'architecture clés
 
 | Décision | Justification |
 |----------|---------------|
 | PostgreSQL | Réplication en continu vers le second nœud, une base par copropriété (`multi-coproprietes.md`, D4) |
-| PWA plutôt qu'app native | Une seule codebase, aucun App Store, adapté à une audience fermée et identifiée |
+| PWA pour tous, application iOS native en plus (01/11/2026) | La PWA reste le client commun et ne perd aucun écran ; l'app iOS ajoute un client natif et ses notifications push, sans code partagé : le contrat d'API publié est le seul lien (#2460) |
 | SvelteKit | Bundle < 150 Ko gzippé, SSR natif, PWA sans surcoût, tourne en Node Alpine ARM64 |
 | FastAPI | Démarre en < 1 s, < 50 Mo RAM au repos, OpenAPI auto-généré |
 | Caddy | TLS automatique en 5 lignes de config, HTTP/3 natif |
