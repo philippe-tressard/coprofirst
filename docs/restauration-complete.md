@@ -401,6 +401,15 @@ modification du script, de `lib-restauration.sh`, de l'export ou de l'import.
 `--registre /tmp/plateforme_backup_<…>_paris.tar.gz` (copiée elle aussi, et effacée en
 sortie) — sa base est créée sur le PostgreSQL jetable, puis restaurée et vérifiée (#1972).
 
+⚠️ **Limite connue** (#2476) : le PostgreSQL du banc naît d'un `docker run`, **sans** la
+configuration du service `postgres` du compose — ni son durcissement (`user: postgres`,
+aucune capacité, racine en lecture seule), ni sa `command`, ni `pg_hba.conf`. Le banc
+éprouve l'**archive** et l'**import**, pas le serveur que la restauration démarre ; il le
+rappelle à chaque passage (ligne `LIMITE`). Le serveur durci, lui, a été éprouvé sur
+un volume neuf par le banc de #2429. Faire naître le banc du compose voudrait dire lancer
+un second projet de la pile de production à côté de la réplique vivante du standby, avec
+le `.env` du nœud dans le modèle : écarté.
+
 ---
 
 ## Arborescence de référence
