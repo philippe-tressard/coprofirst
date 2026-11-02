@@ -6,7 +6,9 @@ Ce texte couvre les fichiers du logo de CoproFirst que REUSE.toml lui
 attribue : le dessin (front/static/favicon.svg et sa copie
 api/app/utils/logo-neutre.svg), ses rendus (front/static/icons/icon-192.png,
 front/static/icons/icon-512.png, api/app/utils/logo-neutre.png) et l'image du
-README (docs/images/coprofirst.png).
+README (docs/images/coprofirst.png). Il couvre de même les fichiers du logo
+que le REUSE.toml de l'application iOS CoproFirst (dépôt
+philippe-tressard/coprofirst-ios) lui attribue.
 
 Ces fichiers ne sont PAS couverts par la GNU Affero General Public License du
 reste du dépôt. Ce sont des œuvres distinctes du programme : le programme les
@@ -21,11 +23,19 @@ SANS MODIFICATION :
   2. pour les afficher dans une installation qui fait fonctionner une version
      NON MODIFIÉE de CoproFirst, telle que publiée par son auteur ;
   3. pour désigner le logiciel CoproFirst d'origine : article, documentation,
-     comparatif, lien vers le projet.
+     comparatif, lien vers le projet ;
+  4. dans l'application iOS CoproFirst telle que publiée par son auteur — son
+     icône, ses écrans, sa page dans le magasin d'applications —, et dans une
+     copie de son dépôt source, modifiée ou non, et de son historique.
+
+Changer la taille, la résolution ou le format d'un fichier, ou le poser sur le
+fond qu'exige une plateforme (icône d'application), n'est pas une modification
+au sens de ce texte ; en changer le dessin ou les couleurs en est une.
 
 Aucune autre permission n'est donnée. En particulier, ces fichiers ne
-s'affichent pas dans une version MODIFIÉE du logiciel : qui la publie ou la fait
-fonctionner remplace les fichiers ci-dessus par les siens. Ils ne se modifient
+s'affichent pas dans une version MODIFIÉE du logiciel ni de l'application iOS :
+qui la publie ou la fait fonctionner remplace les fichiers ci-dessus par les
+siens. Ils ne se modifient
 pas, et ne servent pas à désigner un autre produit, service ou organisme.
 
 Toute version de CoproFirst publiée SANS le présent fichier a distribué ces
