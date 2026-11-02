@@ -552,6 +552,8 @@ jobs:
           # La référence TIRE les images de la CI (#1758) : tirer, attendre, ou
           # construire en secours — et tout ou rien sur les quatre images.
           bash scripts/lib/lib-images-ci.sh         --selftest
+          # Le code se tire en HTTPS, remote réécrit à la volée (#2367).
+          bash scripts/lib/lib-depot-distant.sh     --selftest
           # Les traces du poste dans le répertoire git DU clone, worktree compris (#1226).
           bash scripts/lib/lib-depot.selftest.sh
           # P12 : retirer la copie d'un lot livré sans rien perdre (#1890).

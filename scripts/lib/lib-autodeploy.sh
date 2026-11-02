@@ -101,7 +101,7 @@ autodeploy_verdicts() {
       OK)   ok "auto-deploy a construit sans echec sur $n" ;;
       FAIL) fail "auto-deploy a ECHOUE a construire sur $n : le code est a jour, PAS les images (cause connue : /opt/5hostachy/.env illisible par ptressard ; comparer le proprietaire sur les deux noeuds)" ;;
       INTERROMPU) fail "auto-deploy s est INTERROMPU sur $n sans sortie prevue (${d#*] }) — lire /var/log/hostachy-deploy.log autour de cette ligne (#1587)" ;;
-      REPORTE) warn "auto-deploy sur $n n a pas pu joindre GitHub a son dernier passage (git fetch) : rien ne se deploie tant que ca dure — isole, c est transitoire ; durable, verifier la cle de deploiement de ptressard (#1587)" ;;
+      REPORTE) warn "auto-deploy sur $n n a pas pu joindre GitHub a son dernier passage (git fetch) : rien ne se deploie tant que ca dure — isole, c est transitoire ; durable, lire le message de git dans /var/log/hostachy-deploy.log : le code se tire en HTTPS, la sortie 443 doit rester ouverte vers github.com (#1587, #2367)" ;;
       *)    warn "auto-deploy sur $n : aucune ligne horodatee lisible, son silence ne prouve rien" ;;
     esac
   done

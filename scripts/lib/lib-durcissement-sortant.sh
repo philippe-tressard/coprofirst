@@ -169,12 +169,27 @@ durcissement_sortant_manquantes() {
   return 0
 }
 
+#  Une règle que NOUS avons posée (elle porte notre commentaire) et que la liste
+#  ne déclare plus — les plages SSH de GitHub, quand le code est passé en HTTPS.
+#  Elle est à retirer (`durcir-noeud.sh`), pas à traiter en intrusion : seule une
+#  règle sans notre commentaire est « hors liste ».
+#  $1 = `ufw show added` → les règles obsolètes, une par ligne
+durcissement_sortant_obsoletes() {
+  local declarees r posees
+  declarees=$(durcissement_sortant_regles hote)
+  posees=$(printf '%s\n' "${1:-}" | grep -F -- "comment '$DURCISSEMENT_UFW_SORTANT_COMMENTAIRE'" || true)
+  while IFS= read -r r; do
+    [ -n "$r" ] && ! grep -qxF -- "$r" <<< "$declarees" && printf '%s\n' "$r"
+  done < <(durcissement_ufw_normaliser "$posees" | grep -E '^(allow|limit) out( |$)')
+  return 0
+}
+
 #  Une règle qui laisse SORTIR sans être déclarée — `allow out to any`, un port
 #  ajouté à la main. Les `deny out` restreignent : ils ne se jugent pas ici.
 #  $1 = `ufw show added` → les règles fautives, une par ligne
 durcissement_sortant_hors_liste() {
   local declarees r
-  declarees=$(durcissement_sortant_regles hote; echo "$DURCISSEMENT_UFW_SORTANT_CONSTAT")
+  declarees=$(durcissement_sortant_regles hote; echo "$DURCISSEMENT_UFW_SORTANT_CONSTAT"; durcissement_sortant_obsoletes "${1:-}")
   while IFS= read -r r; do
     [ -n "$r" ] && ! grep -qxF -- "$r" <<< "$declarees" && printf '%s\n' "$r"
   done < <(durcissement_ufw_normaliser "${1:-}" | grep -E '^(allow|limit) out( |$)')
@@ -208,13 +223,14 @@ durcissement_sortant_conteneurs() {
 #  → CONFORME (refus servi) · CONSTAT:<notes, vide si complet> · OUVERT:<pourquoi>
 #    · ECART:<…> · INCONNU:<…>
 durcissement_sortant_verdict() {
-  local etat=${1:-} ajoutees=${2:-} du=${3:-} fw=${4:-} mode h m c notes=""
+  local etat=${1:-} ajoutees=${2:-} du=${3:-} fw=${4:-} mode h m c o notes=""
   [ -n "$etat" ] || { echo "INCONNU:ufw illisible (absent, ou root requis)"; return 0; }
   grep -q '^Status: active' <<< "$etat" || { echo "OUVERT:ufw inactif, rien n'est filtré"; return 0; }
   h=$(durcissement_sortant_hors_liste "$ajoutees" | paste -sd ',' -)
   [ -z "$h" ] || { echo "ECART:règle(s) de sortie non déclarée(s)=[$h]"; return 0; }
   mode=$(durcissement_sortant_mode "$etat" "$ajoutees")
   m=$(durcissement_sortant_manquantes "$ajoutees" | paste -sd ',' -)
+  o=$(durcissement_sortant_obsoletes "$ajoutees" | paste -sd ',' -)
   case "$mode" in
     ouvert)
       #  Un retour arrière qui n'a rouvert que l'hôte laisse les conteneurs refusés.
@@ -226,6 +242,7 @@ durcissement_sortant_verdict() {
     constat)
       c=$(durcissement_sortant_conteneurs "$du" "$fw" constat)
       [ -z "$m" ] || notes="$notes manquantes=[$m];"
+      [ -z "$o" ] || notes="$notes obsolètes=[$o] (plus déclarées : les retirer);"
       [ "$c" = OUI ] || notes="$notes conteneurs-non-journalisés=${c#*:};"
       echo "CONSTAT:${notes# }" ;;
     refus)
@@ -235,6 +252,7 @@ durcissement_sortant_verdict() {
       c=$(durcissement_sortant_conteneurs "$du" "$fw" refus)
       case "$c" in INCONNU:*) echo "$c"; return 0 ;; esac
       [ -z "$m" ] || notes="$notes manquantes=[$m] (ce qui en dépend est refusé);"
+      [ -z "$o" ] || notes="$notes obsolètes=[$o] (laissent sortir sans être déclarées);"
       [ "$c" = OUI ] || notes="$notes conteneurs-non-filtrés=${c#*:};"
       if [ -n "$notes" ]; then echo "ECART:${notes# }"; else echo CONFORME; fi ;;
   esac

@@ -36,10 +36,6 @@ ufw allow out 443/tcp comment 'sortie 2367'
 ufw allow out 7844 comment 'sortie 2367'
 ufw allow out 587/tcp comment 'sortie 2367'
 $L993
-ufw allow out to 140.82.112.0/20 port 22 proto tcp comment 'sortie 2367'
-ufw allow out to 192.30.252.0/22 port 22 proto tcp comment 'sortie 2367'
-ufw allow out to 185.199.108.0/22 port 22 proto tcp comment 'sortie 2367'
-ufw allow out to 143.55.64.0/20 port 22 proto tcp comment 'sortie 2367'
 ufw allow out to $IP1 comment 'sortie 2367'
 ufw allow out to $IP2 comment 'sortie 2367'"
   local A_CONSTAT="$ENTRANT
@@ -47,6 +43,12 @@ $LISTE
 ufw allow out log to any"
   local A_REFUS="$ENTRANT
 $LISTE"
+  #  rpi2 au 02/11/2026 : les quatre plages SSH de GitHub, posées avant que le code
+  #  passe en HTTPS, que la liste ne déclare plus.
+  local ANCIENNES="ufw allow out to 140.82.112.0/20 port 22 proto tcp comment 'sortie 2367'
+ufw allow out to 192.30.252.0/22 port 22 proto tcp comment 'sortie 2367'
+ufw allow out to 185.199.108.0/22 port 22 proto tcp comment 'sortie 2367'
+ufw allow out to 143.55.64.0/20 port 22 proto tcp comment 'sortie 2367'"
   local S_OUVERT="Status: active
 Logging: on (low)
 Default: deny (incoming), allow (outgoing), deny (routed)
@@ -85,7 +87,7 @@ New profiles: skip"
     "$(durcissement_sortant_bloc refus | LC_ALL=C grep -c '[^ -~]')"
   v "liste : le pair est déclaré (ROLE_TABLE)" 2 \
     "$(durcissement_sortant_regles conteneurs | grep -cxE "allow out to ($IP1|$IP2)")"
-  v "liste : git par SSH réservé à l'hôte" 0 "$(durcissement_sortant_regles conteneurs | grep -c 'port 22')"
+  v "liste : aucun SSH sortant, GitHub compris (le code se tire en HTTPS)" 0 "$(durcissement_sortant_regles hote | grep -c 'port 22')"
   v "liste : DOCKER-USER attendu = banc (constat)" OUI \
     "$( [ "$(durcissement_sortant_docker_user constat)" = "$(grep '^-A' <<< "$DU_CONSTAT")" ] && echo OUI || echo NON)"
 
@@ -125,6 +127,22 @@ ufw allow out 4444/tcp" "$DU_REFUS" "$FW")"
     "$(durcissement_sortant_verdict "$S_REFUS" "$(grep -vxF "$L53" <<< "$A_REFUS")" "$DU_REFUS" "$FW")"
   v "faute : retour arrière inachevé (conteneurs refusés)" ECART \
     "$(durcissement_sortant_verdict "$S_OUVERT" "$A_REFUS" "$DU_REFUS" "$FW")"
+  #  Les règles qu'une liste plus ancienne a posées : à retirer, pas une intrusion.
+  v "obsolètes : les quatre plages SSH, et elles seules" 4 "$(durcissement_sortant_obsoletes "$A_CONSTAT
+$ANCIENNES" | grep -c 'port 22')"
+  v "obsolètes : la liste à jour n'en a aucune" 0 "$(durcissement_sortant_obsoletes "$A_CONSTAT" | grep -c .)"
+  v "obsolètes : le constat (sans commentaire) n'en est pas une" 0 "$(durcissement_sortant_obsoletes "$A_CONSTAT" | grep -c 'log to any')"
+  r=$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT
+$ANCIENNES" "$DU_CONSTAT" "$FW")
+  v "verdict : constat avec les anciennes plages = à nettoyer, pas ECART" OUI \
+    "$( [[ $r == CONSTAT:*"obsolètes=[allow out to 140.82.112.0/20 port 22 proto tcp"* ]] && echo OUI || echo "$r")"
+  v "refuser : des règles obsolètes restent" REFUS "$(durcissement_sortant_peut_refuser "$r" "" 3 rpi1 rpi2)"
+  v "verdict : refus avec les anciennes plages" ECART \
+    "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS
+$ANCIENNES" "$DU_REFUS" "$FW")"
+  v "faute : la même règle SANS notre commentaire est hors liste" ECART \
+    "$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT
+ufw allow out to 140.82.112.0/20 port 22 proto tcp" "$DU_CONSTAT" "$FW")"
   v "un deny out ne se juge pas hors liste" "CONSTAT:" "$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT
 ufw deny out 25/tcp" "$DU_CONSTAT" "$FW")"
   #  LE CAS ZÉRO.
