@@ -7,8 +7,8 @@ sqlmodel==0.0.48
 #  transitivité (fastapi, sqlmodel, fastapi-mail). Une montée de l'un de ceux-là
 #  changeait donc leur version sans que ce fichier bouge (#1048, 24/09/2026).
 #  Épinglés à la version que ce fichier résolvait ce jour-là : aucun changement.
-pydantic==2.14.1
-pydantic-settings==2.16.1
+pydantic==2.14.2
+pydantic-settings==2.16.2
 #  `EmailStr` (routers/config, routers/partage) charge `email_validator` à
 #  l'exécution, sans `import` qu'un contrôle verrait : il n'arrivait que par
 #  `fastapi-mail`. Épinglé à la version que l'image installait déjà (2.3.0,
@@ -46,7 +46,7 @@ dkimpy==1.1.8
 #  #1877). Déjà dans l'image par `fastapi-mail`, à la même version : épinglé ici
 #  parce que le code l'importe désormais directement (#1048). Apache-2.0 ou BSD.
 cryptography==50.0.2
-dnspython==2.9.0
+dnspython==2.9.1
 Pillow==13.0.0
 #  Les photos HEIC/HEIF d'iPhone (#2389), DÉCODÉES seulement. 🔴 Dans l'image, ce
 #  paquet est compilé contre la libheif de Debian (`api/Dockerfile`, étape
