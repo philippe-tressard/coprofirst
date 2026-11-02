@@ -14,6 +14,8 @@
 #  Elle joint l'archive du DÉPLOIEMENT STANDARD de la version (#1755) :
 #  `coprofirst-deploiement-X.Y.Z.tar.gz`, tirée du commit promu par
 #  `git archive` — les fichiers exacts de cette version, rien du poste.
+#  Et, si `PIECES_JOINTES` nomme un dossier, chacun de ses fichiers (le contrat
+#  d'API d'une version taguée, `lib-contrat-version.sh`, #2456).
 #
 #  Entrées (environnement) : VERSION, COMMIT, PRECEDENT (vide pour la première
 #  version), MODE (`urgence`, `automatique` ou vide, #1934), GH_TOKEN. Une release déjà publiée n'est pas réécrite.
@@ -102,6 +104,7 @@ fi
 
 VERSION="${VERSION:?VERSION manquante}"
 COMMIT="${COMMIT:?COMMIT manquant}"
+PIECES_JOINTES="${PIECES_JOINTES:-}"   # facultative : la promotion n'en joint pas
 if gh release view "v$VERSION" >/dev/null 2>&1; then
     echo "Release v$VERSION déjà publiée : laissée telle quelle."
     exit 0
@@ -109,4 +112,10 @@ fi
 notes=$(mktemp)
 composer_notes "${PRECEDENT:-}" "$COMMIT" "$VERSION" "${MODE:-}" > "$notes"
 archive=$(archiver_deploiement "$COMMIT" "$VERSION" "$(mktemp -d)")
-gh release create "v$VERSION" --verify-tag --title "CoproFirst $VERSION" --notes-file "$notes" "$archive"
+#  Les pièces jointes de plus — le contrat d'API (`publier-version.sh`, #2456).
+pieces=()
+if [ -n "$PIECES_JOINTES" ]; then
+    mapfile -t pieces < <(find "$PIECES_JOINTES" -maxdepth 1 -type f | sort)
+fi
+gh release create "v$VERSION" --verify-tag --title "CoproFirst $VERSION" --notes-file "$notes" \
+    "$archive" "${pieces[@]}"

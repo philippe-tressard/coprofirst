@@ -238,11 +238,20 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write   # créer la release et y joindre l'archive
+      packages: read    # l'image de l'API, d'où s'exporte le contrat (#2456)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0   # les tags : la version qui précède, pour les notes
 
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      #  Le contrat d'API part avec la release (#2456) : `openapi.json` exporté de
+      #  l'image publiée de l'API, sans réseau — `lib-contrat-version.sh`.
       - name: Publier la release de la version
         env:
           VERSION: ${{ needs.version.outputs.version }}

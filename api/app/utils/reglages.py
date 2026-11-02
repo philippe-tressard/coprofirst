@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import re
 
+from app import contrat
 from app.auth import operateur
 from app.utils import demo, pied_de_page, whatsapp
 from app.utils.llm_usages import USAGES, champs
@@ -124,6 +125,8 @@ REFUSEES: dict[str, str] = {
     operateur.CLE_PUBLIQUE: "L'opérateur d'une instance commune se déclare dans le fichier des copropriétés.",
     #  Dérivée, jamais saisie (#2058) : l'adresse de l'installation (`liens.adresse_du_site`).
     "site_url": "L'adresse du site est celle de son installation : elle ne se saisit pas.",
+    #  Calculée (`app/contrat`, #2456) : la version du contrat de l'API que le code sert.
+    contrat.CLE_PUBLIQUE: "La version du contrat de l'API est celle du code servi : elle ne se saisit pas.",
     #  Leurs routes portent des bornes que `PUT /config` n'appliquerait pas.
     "consignes_arrivant": "Les consignes aux arrivants se modifient par PUT /admin/consignes-arrivant.",
     "reglement_provenance": "La provenance du règlement se modifie par PUT /reglement/provenance.",
