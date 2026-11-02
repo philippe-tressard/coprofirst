@@ -214,3 +214,69 @@ def test_postgresql_tourne_en_postgres_sans_capacite():
     assert not [r for r in runs if re.search(r"(?:^|\s)(?:-u|--user)\b", r)], (
         "reconstruire-replique.sh force un compte au `run` de la base : " + "; ".join(runs)
     )
+
+
+def test_caddy_sert_sous_son_compte_sans_capacite():
+    """Caddy ne sert plus en root (#2430) — et sans descente : sous `USER caddy`.
+
+    L'image officielle n'a pas de compte : Caddy tournait en uid 0, sans autre
+    capacité que `NET_BIND_SERVICE`. Ses volumes d'avant, écrits par root, ne
+    s'ouvrent pas à un autre compte sans `DAC_OVERRIDE` ; les lui rendre au
+    démarrage (la descente de l'API) casserait le retour à l'image d'avant, qui ne
+    les ouvrirait plus non plus (mesuré sur le banc du standby : sortie 1,
+    « opening log writer »). Ses volumes sont donc NEUFS, et naissent au compte de
+    l'image : Docker recopie le point de montage, propriétaire compris. Ce test
+    tient les trois moitiés du geste :
+
+    1. le compte existe à un uid FIXE, vérifié à la construction, et l'image
+       l'endosse — ses trois dossiers d'écriture lui appartenant dans l'image ;
+    2. le compose ne lui rend ni root (`user:`) ni capacité, et ouvre :80 par le
+       sysctl de son espace réseau ;
+    3. ses volumes ne sont plus ceux d'avant : remonter `caddy_data` ou
+       `caddy_logs` le ferait tomber au premier déploiement (« permission denied »).
+    """
+    from tests.aides_compose import COMPOSE, lire_yaml
+
+    dockerfile = _lire("Dockerfile.caddy")
+    finale = dockerfile.rsplit("\nFROM ", 1)[-1]
+    assert re.search(r"\badduser\b.*-u 10002\b.*\bcaddy\s*\\?$", finale, re.M), (
+        "Dockerfile.caddy ne crée plus le compte `caddy` (uid 10002) dans l'image servie"
+    )
+    assert '[ "$(id -u caddy):$(id -g caddy)" = "10002:10002" ]' in finale, (
+        "l'uid du compte caddy n'est plus vérifié à la construction"
+    )
+    assert re.search(r"chown -R caddy:caddy /data /config /var/log/caddy\b", finale), (
+        "les dossiers d'écriture de Caddy ne sont plus rendus à `caddy` dans l'image : "
+        "un volume neuf naîtrait à root, et Caddy ne pourrait pas y écrire"
+    )
+    users = re.findall(r"^\s*USER\s+(\S+)\s*$", finale, re.M)
+    assert users and users[-1] == "caddy", (
+        "Dockerfile.caddy n'endosse plus le compte `caddy` (`USER caddy`) : Caddy sert en root"
+    )
+
+    caddy = lire_yaml(COMPOSE)["services"]["caddy"]
+    assert "user" not in caddy, (
+        "le compose impose un compte à Caddy : c'est l'image qui le porte (`USER caddy`)"
+    )
+    assert caddy.get("cap_drop") == ["ALL"] and caddy.get("read_only") is True, (
+        "le service caddy n'est plus durci (`<<: *conteneur_durci`)"
+    )
+    assert not caddy.get("cap_add"), (
+        "Caddy n'a besoin d'aucune capacité : :80 s'ouvre par le sysctl, et rien ne "
+        "se réaligne au démarrage"
+    )
+    assert "net.ipv4.ip_unprivileged_port_start=80" in (caddy.get("sysctls") or []), (
+        "plus de seuil des ports privilégiés à 80 dans l'espace réseau de Caddy"
+    )
+    montes = {str(v).split(":")[0]: str(v).split(":")[1] for v in (caddy.get("volumes") or [])}
+    for ancien in ("caddy_data", "caddy_config", "caddy_logs"):
+        assert ancien not in montes, (
+            f"le volume {ancien}, écrit par root, est remonté dans Caddy : `caddy` ne "
+            "l'ouvrirait pas — un volume neuf naît à son compte"
+        )
+    for neuf, cible in (
+        ("caddy_donnees", "/data"),
+        ("caddy_configuration", "/config"),
+        ("caddy_journal", "/var/log/caddy"),
+    ):
+        assert montes.get(neuf) == cible, f"le volume {neuf} n'est plus monté sur {cible}"

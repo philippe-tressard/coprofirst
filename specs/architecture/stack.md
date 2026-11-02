@@ -104,8 +104,8 @@ services:
   api:        # FastAPI (python:3.12-slim)
   postgres:   # PostgreSQL 17
 volumes:
-  caddy_data:
-  caddy_logs: # journal d'accès anonyme de Caddy, 7 jours (#1588)
+  caddy_donnees: # nés au compte `caddy` (#2430)
+  caddy_journal: # journal d'accès anonyme de Caddy, 7 jours (#1588)
   app_data:   # identité au registre, cache du manuel PDF
   backups:
   pg_data:    # la base

@@ -553,7 +553,11 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   avec son ticket (vide depuis #2429). PostgreSQL tourne sous `postgres` (`user:`),
   SANS capacité : sa configuration ne prend effet qu'à la recréation de la base
   (bascule de nuit, reconstruction), chaque chemin éprouvé sur le banc du standby
-  avant de la changer. Une commande lancée dans l'API prend
+  avant de la changer. Caddy sert sous `caddy` (uid 10002, `USER` de l'image),
+  SANS capacité, :80 par le sysctl de son espace réseau, sur des volumes NEUFS nés
+  à son compte (`caddy_donnees`, `caddy_configuration`, `caddy_journal`, #2430) :
+  rendre à `caddy` les volumes écrits par root casserait le retour à l'image
+  d'avant ; ceux-là restent sur le disque pour lui. Une commande lancée dans l'API prend
   `-u app` (`docker compose exec -u app api python …`) : son root n'écrit plus dans
   les volumes. 🔒 autotest de S4 (`--selftest`, compose ⇄ liste, dans les deux
   sens) et `test_conteneurs_non_root.py`.
