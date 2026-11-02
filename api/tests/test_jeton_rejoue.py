@@ -36,6 +36,7 @@ from app.models.core import RefreshToken, Utilisateur
 from app.routers.auth import logout, refresh
 from app.utils import horloge
 from app.utils.mots_de_passe import poser_mot_de_passe
+from tests.aides_rafraichissement import sessions_ouvertes, vieillir_l_echange
 from tests.aides_sources import modules_app
 from tests.conftest import requete_de_test
 
@@ -63,28 +64,6 @@ def _rafraichir(session: Session, jeton: str) -> None:
     )
 
 
-def _actifs(session: Session, user_id: int) -> set[str]:
-    session.expire_all()
-    return {
-        t.token
-        for t in session.exec(
-            select(RefreshToken).where(
-                RefreshToken.user_id == user_id,
-                RefreshToken.revoked == False,  # noqa: E712
-            )
-        ).all()
-    }
-
-
-def _vieillir_l_echange(session: Session, jeton: str, de: timedelta) -> None:
-    """Recule l'échange de `jeton` : c'est l'horloge qu'on simule, pas la règle."""
-    stocke = session.exec(select(RefreshToken).where(RefreshToken.token == empreinte(jeton))).one()
-    assert stocke.remplace_le is not None, "l'échange n'a pas marqué le jeton remplacé"
-    stocke.remplace_le -= de
-    session.add(stocke)
-    session.commit()
-
-
 def _refuse(session: Session, jeton: str) -> None:
     with pytest.raises(HTTPException) as refus:
         _rafraichir(session, jeton)
@@ -97,12 +76,12 @@ def test_un_jeton_echange_qui_revient_ferme_TOUTES_les_sessions(utilisateur):
         vole = _ouvrir(session, utilisateur.id)
         _ouvrir(session, utilisateur.id)  # un autre appareil
         _rafraichir(session, vole)
-        assert len(_actifs(session, utilisateur.id)) == 2  # le neuf, et l'autre appareil
+        assert len(sessions_ouvertes(session, utilisateur.id)) == 2  # le neuf, et l'autre appareil
 
-        _vieillir_l_echange(session, vole, DELAI_GRACE_ROTATION + timedelta(minutes=1))
+        vieillir_l_echange(session, vole, DELAI_GRACE_ROTATION + timedelta(minutes=1))
         _refuse(session, vole)
 
-        assert _actifs(session, utilisateur.id) == set(), (
+        assert sessions_ouvertes(session, utilisateur.id) == set(), (
             "Un jeton déjà échangé est revenu, et des sessions restent ouvertes : "
             "celle du voleur en fait peut-être partie."
         )
@@ -113,12 +92,12 @@ def test_dans_le_delai_de_grace_rien_ne_ferme(utilisateur):
     with Session(engine) as session:
         jeton = _ouvrir(session, utilisateur.id)
         _rafraichir(session, jeton)
-        neufs = _actifs(session, utilisateur.id)
+        neufs = sessions_ouvertes(session, utilisateur.id)
         assert len(neufs) == 1
 
         _refuse(session, jeton)
 
-        assert _actifs(session, utilisateur.id) == neufs, (
+        assert sessions_ouvertes(session, utilisateur.id) == neufs, (
             "Un appel concurrent a fermé la session : chaque chargement de page "
             "déconnecterait son visiteur."
         )
@@ -134,7 +113,7 @@ def test_un_jeton_ferme_par_deconnexion_ne_ferme_rien_d_autre(utilisateur):
 
         _refuse(session, deconnecte)
 
-        assert _actifs(session, utilisateur.id) == {empreinte(autre_appareil)}
+        assert sessions_ouvertes(session, utilisateur.id) == {empreinte(autre_appareil)}
 
 
 def test_un_mot_de_passe_pose_ne_fait_pas_passer_l_autre_appareil_pour_un_voleur(utilisateur):
@@ -148,7 +127,7 @@ def test_un_mot_de_passe_pose_ne_fait_pas_passer_l_autre_appareil_pour_un_voleur
 
         _refuse(session, ancien)
 
-        assert _actifs(session, utilisateur.id) == {empreinte(courant)}, (
+        assert sessions_ouvertes(session, utilisateur.id) == {empreinte(courant)}, (
             "Changer son mot de passe puis rouvrir l'autre appareil a fermé la "
             "session qu'on venait de garder."
         )
