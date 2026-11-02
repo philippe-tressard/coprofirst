@@ -4,7 +4,7 @@
 #  `pytest` était installé à part, non épinglé, dans `ci.yml` — la version des
 #  tests changeait donc d'un run à l'autre sans que le dépôt bouge.
 -r requirements.txt
-pytest==9.1.1
+pytest==9.2.0
 #  `cryptography` — qui tire des clés RSA dans `test_courriel_authenticite` — est
 #  désormais dans `requirements.txt` : le registre des installations l'importe (#1877).
 #  Pose un sceau ARC (`dkim.arc_sign`) dans `test_courriel_authenticite` : la
