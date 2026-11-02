@@ -32,6 +32,8 @@ CHEMINS = {
 }
 #  Un remote SSH : `git@github.com:proprietaire/depot` ou `ssh://git@…`.
 REMOTE_SSH = re.compile(r"git@github\.com:[\w.-]+/|ssh://git@")
+#  Seul le self-test de la lib écrit un remote SSH : c'est l'ancien état qu'il réécrit.
+SSH_ADMIS = {"scripts/lib/lib-depot-distant.sh"}
 
 
 def _constante(chemin, nom: str) -> str:
@@ -66,6 +68,7 @@ def test_aucun_script_ne_nomme_un_remote_ssh():
         for dossier in ("scripts", "deploiement", "infra")
         for f in (RACINE / dossier).rglob("*")
         if f.is_file() and f.suffix in {".sh", ".py", ".service", ".crontab", ".yml"}
+        if str(f.relative_to(RACINE)) not in SSH_ADMIS
         if REMOTE_SSH.search(f.read_text(encoding="utf-8", errors="replace"))
     ]
     assert not trouves, (
