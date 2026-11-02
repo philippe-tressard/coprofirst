@@ -68,11 +68,17 @@ def test_aucun_script_ne_nomme_un_remote_ssh():
         if f.is_file() and f.suffix in {".sh", ".py", ".service", ".crontab", ".yml"}
         if REMOTE_SSH.search(f.read_text(encoding="utf-8", errors="replace"))
     ]
-    assert not trouves, f"remote SSH dans {trouves} : le code se tire en HTTPS (lib-depot-distant.sh)"
+    assert not trouves, (
+        f"remote SSH dans {trouves} : le code se tire en HTTPS (lib-depot-distant.sh)"
+    )
 
 
 def test_la_liste_de_sortie_n_ouvre_aucun_port_22():
     """GitHub change d'adresse : toute plage figée re-casserait le déploiement un jour."""
-    bloc = LISTE.read_text(encoding="utf-8").split('DURCISSEMENT_UFW_SORTANT="', 1)[1].split('"\n', 1)[0]
+    bloc = (
+        LISTE.read_text(encoding="utf-8")
+        .split('DURCISSEMENT_UFW_SORTANT="', 1)[1]
+        .split('"\n', 1)[0]
+    )
     ssh = [ligne for ligne in bloc.splitlines() if re.search(r"port 22\b|\b22/tcp", ligne)]
     assert not ssh, f"SSH sortant déclaré : {ssh}"
