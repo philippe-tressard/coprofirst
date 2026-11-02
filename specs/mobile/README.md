@@ -10,8 +10,12 @@
 
 ## Approche technique
 
-L'application mobile est une **Progressive Web App (PWA)** — pas d'application native séparée.  
-Une seule codebase SvelteKit couvre le web et le mobile.
+L'application mobile est une **Progressive Web App (PWA)** : une seule codebase
+SvelteKit couvre le web et le mobile — et c'est le cas de ces exigences.
+
+> 🧭 **Depuis le 01/11/2026**, une **application iOS native** s'ajoute à la PWA (qui
+> reste, sans écran retiré), dans un dépôt distinct : [architecture/stack.md
+> § Application mobile](../architecture/stack.md#application-mobile) fait foi (#2460).
 
 ## Plateformes cibles
 

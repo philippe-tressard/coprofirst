@@ -28,7 +28,7 @@ La **Résidence du Parc** est une copropriété située au 5 boulevard Fernand H
 
 - Gestion comptable et appels de charges (outil syndic dédié)
 - Tenue des assemblées générales (outil tiers ou présentiel)
-- Application native iOS/Android (App Store / Play Store)
+- Application native Android (Play Store) — l'application **iOS** native, elle, entre dans le périmètre le 01/11/2026 : [architecture/stack.md § Application mobile](../architecture/stack.md#application-mobile) (#2460)
 
 ---
 
