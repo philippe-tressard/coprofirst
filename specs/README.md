@@ -24,11 +24,13 @@ du manuel.
 | [`design/`](design/) | Charte graphique, principes UX, parcours utilisateurs |
 | [`architecture/`](architecture/) | Vue d'ensemble, pile technique, modèle de données, API |
 
-> 🧭 **Deux exceptions**, qui ne sont pas historiques et se tiennent à jour à
+> 🧭 **Des exceptions**, qui ne sont pas historiques et se tiennent à jour à
 > chaque arbitrage : [`architecture/multi-coproprietes.md`](architecture/multi-coproprietes.md),
-> l'architecture **cible** du chantier multi-copropriétés, et
+> l'architecture **cible** du chantier multi-copropriétés,
 > [`architecture/mode-demo.md`](architecture/mode-demo.md), l'installation de
-> démonstration publique.
+> démonstration publique, et, pour le chantier de l'application iOS (#2460),
+> [`architecture/stack.md` § Application mobile](architecture/stack.md#application-mobile)
+> et [`architecture/notifications-push.md`](architecture/notifications-push.md).
 
 La partie qui vieillit le plus vite est la **navigation** (`web/navigation.md`,
 `mobile/navigation.md`) : l'arborescence des écrans change à chaque lot.

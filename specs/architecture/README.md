@@ -13,4 +13,5 @@
 ## Cible
 
 - [Conservation des affaires](conservation-affaires.md) — **en conception** (16/10/2026, #2014) : à l'échéance (10, 5 ou 2 exercices selon la catégorie), une affaire perd ses pièces jointes, archivées sur le PC, et ses auteurs, et garde son texte.
+- [Notifications push](notifications-push.md) — **en conception** (02/11/2026, #2458) : le relais APNs de la plateforme, seul détenteur de la clé d'Apple ; une installation l'appelle par une requête signée et son bail, la charge ne porte aucune donnée personnelle. Pour l'application iOS native, qui s'ajoute à la PWA ([stack.md § Application mobile](stack.md#application-mobile), #2460).
 - [Multi-copropriétés](multi-coproprietes.md) — **architecture cible, en conception** (07/10/2026) : une application, une base PostgreSQL par copropriété, chaque copropriété un caisson étanche. Ce fichier, lui, n'est pas historique : il se tient à jour à chaque arbitrage.
