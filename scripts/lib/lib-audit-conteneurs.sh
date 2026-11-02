@@ -54,17 +54,17 @@ CONTENEURS_FORMAT='{{.Name}}|{{.HostConfig.Privileged}}|{{join .HostConfig.CapAd
 #:                      ses volumes à `app` puis descend par `setpriv` : uvicorn
 #:                      n'en garde aucune ;
 #:   hostachy_whatsapp  les mêmes — `privileges.js` rend auth_state à `node`,
-#:                      puis descend : Baileys n'en garde aucune.
+#:                      puis descend : Baileys n'en garde aucune ;
+#:   hostachy_postgres  aucune — `user: postgres` : l'image n'a plus à rendre
+#:                      `PGDATA` à `postgres` ni à descendre par `gosu` (#2429).
 #: S4 refuse un conteneur de cette liste qui n'a pas exactement ces capacités,
 #: les autres retirées, `no-new-privileges` et une racine en lecture seule.
-CONTENEURS_DURCIS="${CONTENEURS_DURCIS:-hostachy_caddy=NET_BIND_SERVICE hostachy_front= hostachy_api=CHOWN,DAC_READ_SEARCH,SETGID,SETUID hostachy_whatsapp=CHOWN,DAC_READ_SEARCH,SETGID,SETUID}"
+CONTENEURS_DURCIS="${CONTENEURS_DURCIS:-hostachy_caddy=NET_BIND_SERVICE hostachy_front= hostachy_api=CHOWN,DAC_READ_SEARCH,SETGID,SETUID hostachy_whatsapp=CHOWN,DAC_READ_SEARCH,SETGID,SETUID hostachy_postgres=}"
 #: Ceux qui ne le sont PAS encore, chacun avec son ticket — jugés sur la règle
 #: d'avant : aucune capacité ajoutée. L'autotest échoue si l'un d'eux devient
 #: durci dans le compose sans quitter cette liste, et pour un service du compose
-#: qui ne figure dans aucune des deux.
-#:   hostachy_postgres  #2429 — sa configuration ne s'applique qu'à la recréation
-#:                      de la base, à la bascule de nuit : elle s'éprouve à part.
-CONTENEURS_NON_DURCIS="${CONTENEURS_NON_DURCIS:-hostachy_postgres}"
+#: qui ne figure dans aucune des deux. Vide depuis #2429 (PostgreSQL).
+CONTENEURS_NON_DURCIS="${CONTENEURS_NON_DURCIS:-}"
 
 #: Les montages LIÉS que `docker-compose.yml` demande (chemin sur l'hôte), tous
 #: en lecture seule. L'autotest les confronte au fichier du dépôt : un montage
@@ -298,10 +298,17 @@ audit_conteneurs_selftest() {
       "$(conteneur_verdict "/hostachy_caddy|false|CAP_NET_BIND_SERVICE|5hostachy_hostachy||no-new-privileges:true|/etc/localtime:/etc/localtime:ro;/opt/5hostachy/Caddyfile:/etc/caddy/Caddyfile:ro;5hostachy_caddy_data:/data:rw;5hostachy_caddy_config:/config:rw;5hostachy_caddy_logs:/var/log/caddy:rw;5hostachy_uploads:/srv/uploads:ro;|ALL|true|ca22e76c4d4569d36834e679c4a4ecef130aa16a")"
     t "durci : une ligne d'avant #2368 (sans CapDrop ni racine) n'est pas lue conforme" INCONNU \
       "$(conteneur_verdict "/hostachy_api|false|||n||||r" | cut -d: -f1)"
-    t "non durci déclaré (PostgreSQL, #2429) : la règle d'avant" CONFORME \
+    #  PostgreSQL durci (#2429), relevé sur le banc du standby le 02/11/2026 (nom,
+    #  réseau et volume ramenés à ceux de la production) : aucune capacité ajoutée.
+    t "ligne réelle : PostgreSQL durci (banc, 02/11)" CONFORME \
+      "$(conteneur_verdict "/hostachy_postgres|false||5hostachy_hostachy||no-new-privileges:true|5hostachy_pg_data:/var/lib/postgresql/data:rw;/opt/5hostachy/infra/postgresql/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro;/opt/5hostachy/infra/postgresql/initdb:/docker-entrypoint-initdb.d:ro;|ALL|true|")"
+    #  Le conteneur d'AVANT #2429, tel qu'il tourne jusqu'à sa recréation à la
+    #  bascule : S4 le dit, au lieu de le lire conforme.
+    t "PostgreSQL d'avant #2429 (ni CapDrop ni racine en lecture seule)" \
+      "ECART:capacités-non-retirées=[]; gain-de-privilège-permis; racine-en-écriture;" \
       "$(conteneur_verdict "/hostachy_postgres|false||n|||5hostachy_pg_data:/var/lib/postgresql/data:rw;||false|r")"
     t "non durci : une capacité ajoutée reste un écart" "ECART:capacités=[SYS_ADMIN];" \
-      "$(conteneur_verdict "/hostachy_postgres|false|SYS_ADMIN|n|||||false|r")"
+      "$(conteneur_verdict "/x|false|SYS_ADMIN|n|||||false|r")"
     t "Caddy et son Caddyfile en lecture seule" CONFORME "$(conteneur_verdict "$CADDY")"
     t "privilégié" "ECART:privilégié;" "$(conteneur_verdict "${API/|false|/|true|}")"
     t "capacité ajoutée" "ECART:capacités=[SYS_ADMIN];" "$(conteneur_verdict "/x|false|SYS_ADMIN||default||;|r")"

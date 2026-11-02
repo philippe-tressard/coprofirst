@@ -19,9 +19,10 @@ x-budget-photo-whatsapp: &budget_photo_whatsapp "WA_PHOTO_BUDGET_KO=400"
 #   - une racine en LECTURE SEULE : le conteneur n'écrit que dans ses volumes et
 #     ses `tmpfs` — ni binaire posé, ni code modifié sous le processus.
 #  S4 de l'audit nocturne le vérifie sur ce qui TOURNE ; son autotest confronte
-#  sa liste à ce fichier, dans les deux sens. PostgreSQL n'y est pas encore :
-#  sa configuration ne s'applique qu'à la recréation de la base, à la bascule
-#  de nuit (#2429).
+#  sa liste à ce fichier, dans les deux sens. PostgreSQL l'est aussi depuis
+#  #2429 : sa configuration ne s'applique qu'à la RECRÉATION de la base (bascule
+#  de nuit, reconstruction de la réplique), et chacun de ces chemins a été
+#  éprouvé sur un banc du standby avant de la poser.
 x-conteneur-durci: &conteneur_durci
   cap_drop: [ALL]
   security_opt: [no-new-privileges:true]
@@ -168,6 +169,19 @@ services:
     image: postgres:17.11
     container_name: hostachy_postgres
     restart: unless-stopped
+    <<: *conteneur_durci
+    #  L'image démarrerait en root pour rendre `PGDATA` à `postgres`, puis
+    #  descendrait par `gosu` : il lui faudrait CHOWN, DAC_READ_SEARCH, FOWNER,
+    #  SETUID, SETGID — et DAC_OVERRIDE pour la reconstruction de la réplique
+    #  (mesuré sur le banc, #2429). Elle tourne donc DIRECTEMENT en `postgres`
+    #  (uid 999), SANS capacité : chaque volume qu'elle a déjà démarré lui
+    #  appartient entier (l'entrypoint en root le lui rendait à chaque démarrage),
+    #  un volume neuf naît à lui (`PGDATA` de l'image). Le `compose run` de
+    #  `reconstruire-replique.sh` hérite du même compte ; `docker exec` y entre
+    #  en `postgres`.
+    user: postgres
+    tmpfs:
+      - /var/run/postgresql:size=1m # le socket local et son verrou — seule écriture hors du volume
     stop_grace_period: 60s
     shm_size: 256mb
     logging:

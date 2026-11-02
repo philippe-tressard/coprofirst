@@ -974,7 +974,15 @@ Conduite :
   <conteneur>`, puis le recréer par Compose, **avec sa liste de services**. Dans un
   conteneur durci, `docker exec` entre en root SANS `DAC_OVERRIDE` : il lit, mais
   n'écrit plus dans les volumes — `docker exec -u app hostachy_api …`,
-  `-u node hostachy_whatsapp`.
+  `-u node hostachy_whatsapp`. `hostachy_postgres` tourne, lui, sous `postgres`
+  (uid 999, aucune capacité, #2429) : `docker exec` y entre sous ce compte.
+- **S4 sur `hostachy_postgres` seul**, après une livraison qui a touché son
+  service : la base n'a pas été RECRÉÉE — `auto-deploy` ne la recrée jamais
+  (`--no-recreate`), seules la bascule (promotion, puis reconstruction de
+  l'ancien primaire) et `reconstruire-replique.sh` le font. Lire
+  `/var/log/hostachy-bascule.log` : la bascule suivante le corrige. La recréer de
+  jour, c'est arrêter le primaire quelques secondes (`docker compose up -d
+  postgres` sur l'actif) : geste de Philippe, jamais en passant.
 - **S4 image « construite-ici »** : le secours de #1758 (alerté par ailleurs) ou
   un nœud qui n'a pas encore tiré ; « AUTRE » : une image d'un autre commit —
   `auto-deploy` n'a pas suivi, ou quelqu'un a poussé une image à la main.
