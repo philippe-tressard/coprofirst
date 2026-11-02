@@ -77,20 +77,11 @@ conteneur, et les **images** sont tirées du registre de la CI (`lib-images-ci.s
 ## Étape 3 — Cloner le dépôt
 
 ```bash
-# Clé de déploiement — sa partie publique va dans GitHub > Settings > Deploy keys
-ssh-keygen -t ed25519 -C "hostachy-rpi5-deploy" -f ~/.ssh/hostachy_deploy -N ""
-cat ~/.ssh/hostachy_deploy.pub
-
-cat >> ~/.ssh/config << 'EOF'
-Host github.com
-    IdentityFile ~/.ssh/hostachy_deploy
-EOF
-# Au premier clonage, ssh affiche l'empreinte de github.com : la comparer à
-# celle que GitHub publie (docs.github.com, « GitHub's SSH key fingerprints »)
-# AVANT de répondre yes. Jamais de confiance d'office (#1598).
-
+# Le dépôt est public : le code se tire en HTTPS, sans clé de déploiement
+# (`lib-depot-distant.sh`, #2367). La sortie des nœuds est en liste blanche, et
+# le 443 est le seul port qu'il leur faut vers GitHub.
 sudo mkdir -p /opt/5hostachy && sudo chown ptressard:ptressard /opt/5hostachy
-git clone git@github.com:philippe-tressard/coprofirst.git /opt/5hostachy
+git clone https://github.com/philippe-tressard/coprofirst.git /opt/5hostachy
 ```
 
 ---

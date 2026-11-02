@@ -894,9 +894,16 @@ Il rouvre l'hôte et les conteneurs jusqu'au prochain rechargement d'ufw ;
 - **`after.rules` en ASCII seulement** : ufw réécrit ses fichiers en ASCII et plante
   (`UnicodeEncodeError`) sur le premier caractère qui ne l'est pas — trouvé au banc,
   un tiret cadratin dans une borne. Le self-test l'exige.
-- `git fetch` passe par **SSH** (`git@github.com`) : le port 22 n'est ouvert que vers
-  les plages « git » de GitHub déclarées ; un fetch qui sortirait ailleurs se lit dans
-  le constat.
+- **`git fetch` passe par HTTPS** (`lib-depot-distant.sh`, dépôt public, aucune clé) :
+  le port 22 n'est ouvert vers personne. Il passait par SSH jusqu'au 02/11/2026 ; ufw
+  ne nomme pas un hôte, et `github.com` se résout parfois vers l'une des ~55 adresses
+  isolées d'`api.github.com/meta` (rpi2 : `20.250.119.67`, 62 sorties hors liste en 24 h) :
+  les plages déclarées n'auraient jamais suffi. Le remote d'un nœud se réécrit au
+  premier passage d'`auto-deploy` ; la bascule le réécrit chez le pair avant son fetch.
+- **Une règle que la liste ne déclare plus** (posée par une version plus ancienne) est
+  dite « obsolètes=[…] » par S5 — constat incomplet, WARN, pas une intrusion — et
+  `durcir-noeud.sh --sortant constat` la retire (seulement celles qui portent
+  notre commentaire `sortie 2367` ; une règle identique SANS ce commentaire reste « hors liste »).
 - **List-dons** vit sur rpi2 : DOCKER-USER filtre aussi ses conteneurs. Son besoin
   se lit dans le constat de rpi2 avant tout refus.
 - Le banc qui a éprouvé la pose : un conteneur jetable `--cap-add NET_ADMIN` sur le

@@ -75,7 +75,8 @@ allow 443/udp"
 #: ⚠️ ufw ne nomme pas un hôte : la liste est faite de PORTS, et 443 reste ouvert
 #: vers tout — GitHub, Docker Hub, l'IA, WhatsApp n'ont pas d'adresses fixes. Ce
 #: qu'elle ferme : tout autre port (un reverse shell sur 4444, un relais sur 25,
-#: un tunnel SSH ailleurs que chez GitHub). Inventaire mesuré : issue #2367.
+#: tout SSH sortant). Le code se tire en HTTPS (`lib-depot-distant.sh`) : le port
+#: 22 n'est ouvert vers personne, GitHub compris. Inventaire mesuré : issue #2367.
 DURCISSEMENT_UFW_SORTANT="tous|allow out 53|DNS : les résolveurs que la box annonce (9.9.9.9, 1.1.1.2, la box)
 hote|allow out 67/udp|DHCP : le renouvellement du bail auprès de la box (mesuré)
 hote|allow out 123/udp|NTP : systemd-timesyncd, pool Debian
@@ -83,11 +84,7 @@ tous|allow out 80/tcp|apt en http (deb.debian.org, archive.raspberrypi.com) ; le
 tous|allow out 443/tcp|HTTPS : ghcr.io et GitHub, Docker Hub, apt https (Docker, Cloudflare, NodeSource), sondes du site et DoH, IA, WhatsApp (mesuré), registre
 hote|allow out 7844|tunnel Cloudflare : QUIC en udp (mesuré), http2 en tcp en repli
 tous|allow out 587/tcp|SMTP d'OVH (MAIL_PORT) : courriels de l'API, alertes des scripts
-tous|allow out 993/tcp|IMAP d'OVH : relève des réponses par courriel
-hote|allow out to 140.82.112.0/20 port 22 proto tcp|git fetch par SSH (remote git@github.com) : plages « git » de api.github.com/meta
-hote|allow out to 192.30.252.0/22 port 22 proto tcp|idem
-hote|allow out to 185.199.108.0/22 port 22 proto tcp|idem
-hote|allow out to 143.55.64.0/20 port 22 proto tcp|idem"
+tous|allow out 993/tcp|IMAP d'OVH : relève des réponses par courriel"
 
 #: fail2ban sur sshd : 5 essais, 1 h de bannissement — ce qui tourne depuis
 #: avril sur les deux nœuds. `bantime` se lit en secondes chez fail2ban-client.

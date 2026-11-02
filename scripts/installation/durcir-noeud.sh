@@ -191,6 +191,15 @@ appliquer_sortant() {
     # shellcheck disable=SC2086  # la règle est une suite de mots ufw, coupée exprès
     ufw $regle comment "$DURCISSEMENT_UFW_SORTANT_COMMENTAIRE" >/dev/null && log "   ajoutée : $regle"
   done < <(durcissement_sortant_manquantes "$(lire_ufw_ajoutees)")
+  #  Une règle que nous avons posée et que la liste ne déclare plus se RETIRE : sinon
+  #  elle laisse sortir sans que rien ne la justifie (les plages SSH de GitHub, quand
+  #  le code est passé en HTTPS). Seules celles qui portent notre commentaire.
+  while IFS= read -r regle; do
+    [ -n "$regle" ] || continue
+    # shellcheck disable=SC2086
+    if ufw delete $regle >/dev/null; then log "   retirée (plus déclarée) : $regle"
+    else log "   ÉCHEC du retrait de : $regle (ufw status numbered, ufw delete N)"; fi
+  done < <(durcissement_sortant_obsoletes "$(lire_ufw_ajoutees)")
   if [ "$voulu" = constat ] && [ "$(durcissement_sortant_mode "" "$(lire_ufw_ajoutees)")" != constat ]; then
     # shellcheck disable=SC2086
     ufw $DURCISSEMENT_UFW_SORTANT_CONSTAT >/dev/null && log "   constat : $DURCISSEMENT_UFW_SORTANT_CONSTAT"
