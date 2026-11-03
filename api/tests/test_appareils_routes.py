@@ -4,9 +4,9 @@ Spécification : `specs/architecture/notifications-push.md` §6.2 et §6.3. Les 
 passent par la VRAIE authentification (`aides_http`) : un anonyme est refusé, et
 l'abonnement d'un autre compte rend 404.
 
-⚠️ Un recouvrement attendu : la spec veut aussi que `revoquer_sessions` retire les
-appareils (rejeu d'un jeton, mot de passe changé). Son module est en chantier dans
-#2481 ; l'appel s'y ajoutera après sa fusion — ce fichier le tiendra alors.
+Fermer les sessions d'un compte (`revoquer_sessions` : rejeu d'un jeton, mot de passe
+changé ou réinitialisé) retire aussi ses appareils — tous : rien ne relie un appareil à
+une session, et le téléphone qui a changé le mot de passe se ré-enregistre à l'ouverture.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ from app.models.appareils import Appareil
 from app.models.core import RoleUtilisateur, Utilisateur
 from app.utils import horloge
 from app.utils.push.appareils import ABANDON_JOURS, purger_abandonnes, retirer_appareils
+from app.auth.jetons_rafraichissement import fermer_apres_rejeu, revoquer_sessions
 from app.utils.suppression_compte import supprimer_compte
 from tests.aides_base import compte
 from tests.aides_http import base_http, client_http
@@ -154,3 +155,16 @@ def test_la_purge_retire_les_seuls_appareils_abandonnes(session):
     assert purger_abandonnes(session) == 1
     session.commit()
     assert [a.id for a in session.exec(select(Appareil)).all()] == [garde.id]
+
+
+@pytest.mark.parametrize("fermer", [revoquer_sessions, fermer_apres_rejeu])
+def test_fermer_les_sessions_retire_les_appareils(session, fermer):
+    """Une session fermée ne laisse pas un téléphone sonner (spec §6.3)."""
+    personne, autre = (
+        compte(session, prefixe="appareil-sessions"),
+        compte(session, prefixe="appareil-x"),
+    )
+    _poser(session, personne.id), _poser(session, autre.id)
+    fermer(session, personne.id)
+    session.commit()
+    assert [a.utilisateur_id for a in session.exec(select(Appareil)).all()] == [autre.id]

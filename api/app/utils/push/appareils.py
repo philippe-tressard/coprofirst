@@ -7,6 +7,7 @@ téléphone sonner :
 | Quand | Qui retire |
 |---|---|
 | déconnexion | l'application, `DELETE /appareils/{abonnement}` |
+| sessions fermées (rejeu, mot de passe) | `auth/jetons_rafraichissement.revoquer_sessions` |
 | compte désactivé | `retirer_appareils`, appelée par la désactivation |
 | compte supprimé | `utils/suppression_compte` (`CONTENUS_PERSONNELS`) |
 | jeton périmé chez Apple | la porte d'envoi, sur la réponse du relais |

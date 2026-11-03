@@ -4,15 +4,15 @@ Lot P2 des notifications push (`specs/architecture/notifications-push.md` §6.1)
 Une table NEUVE, rien d'autre : la version précédente du code ne la connaît pas et
 ne la lit pas — revenir à son image ne demande aucune restauration (#1757).
 
-Revision ID: 0322
-Revises: 0321
+Revision ID: 0323
+Revises: 0322
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0322"
-down_revision = "0321"
+revision = "0323"
+down_revision = "0322"
 branch_labels = None
 depends_on = None
 

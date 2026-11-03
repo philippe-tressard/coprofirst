@@ -60,6 +60,7 @@ from typing import Optional
 from sqlmodel import Session, and_, delete, or_, select, update
 
 from app.auth.empreinte_jeton import empreinte
+from app.utils.push.appareils import retirer_appareils
 from app.models.core import Utilisateur
 from app.models.jetons import RefreshToken
 
@@ -91,8 +92,13 @@ def revoquer_sessions(session: Session, user_id: int, sauf: Optional[str] = None
     `sauf` est le jeton BRUT de la session appelante (son cookie) : la base ne
     garde que les empreintes (#1389), on compare donc la sienne.
 
+    Retire aussi TOUS les appareils du compte (#2493, spec push §6.3) : une session
+    fermée ne laisse pas un téléphone sonner, et rien ne relie un appareil à une
+    session — celui de la session gardée se ré-enregistre à l'ouverture de l'application.
+
     Ne valide pas la transaction : c'est l'appelant qui décide quand elle se termine.
     """
+    retirer_appareils(session, user_id)
     actifs = session.exec(
         select(RefreshToken).where(
             RefreshToken.user_id == user_id,
