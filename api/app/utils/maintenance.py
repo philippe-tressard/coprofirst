@@ -8,6 +8,7 @@ from sqlmodel import select
 
 from app.auth.jetons_rafraichissement import purger as purger_jetons
 from app.utils.noeud import noeud_courant
+from app.utils.push.appareils import purger_abandonnes as purger_appareils
 from app.utils.requete_liee import requete_liee
 from app.utils.declenchement import AUTOMATIQUE
 from app.utils.llm_journal import limite_conservation
@@ -58,6 +59,7 @@ def purger() -> tuple[dict[str, int], list[str]]:
             "ia",
             "whatsapp",
             "releves",
+            "appareils",
         ),
         0,
     )
@@ -71,6 +73,14 @@ def purger() -> tuple[dict[str, int], list[str]]:
             s.commit()
     except Exception as exc:
         erreurs.append(f"purge tokens: {exc}")
+
+    #  Les appareils muets depuis 60 jours (#2493) : la règle vit avec eux.
+    try:
+        with contexte.nouvelle_session() as s:
+            comptes["appareils"] = purger_appareils(s)
+            s.commit()
+    except Exception as exc:
+        erreurs.append(f"purge appareils: {exc}")
 
     #  `TRUE`, jamais `1` : PostgreSQL ne compare pas un booléen à un entier.
     etapes = (
