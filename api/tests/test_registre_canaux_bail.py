@@ -59,7 +59,7 @@ def _bail_pour_la_maj() -> dict:
 def _distribuer(http, **corps):
     return http.put(
         f"/admin/installations/{REPLIQUE}/distribution",
-        json={"canal": "urgence", "vague": canaux.VAGUE_PILOTE, "motif": "essai", **corps},
+        json={"canal": "urgence", "vague": canaux.VAGUE_STANDARD, "motif": "essai", **corps},
     )
 
 
@@ -97,7 +97,7 @@ def test_validee_elle_suit_standard(operateur):
 
 @pytest.mark.parametrize(
     "vague, attendue",
-    [(canaux.VAGUE_URGENCE, "2.172.0"), (canaux.VAGUE_PILOTE, "2.171.0")],
+    [(canaux.VAGUE_URGENCE, "2.172.0"), (canaux.VAGUE_STANDARD, "2.171.0")],
 )
 def test_les_vagues_du_canal_urgence_partent_dans_le_bail(operateur, vague, attendue):
     http, _ = operateur
@@ -139,8 +139,9 @@ def test_l_operateur_fixe_une_version_puis_ordonne_le_retour(operateur):
         ({"canal": "main"}, "référence seule"),
         ({"canal": "replica"}, "Urgence, ou une version"),
         ({"canal": "2.150.0", "vague": canaux.VAGUE_FIXE}, "Version non publiée"),
-        ({"canal": "2.170.0", "vague": canaux.VAGUE_PILOTE}, "vague Fixe"),
-        ({"vague": canaux.VAGUE_FIXE}, "Urgence, Pilote ou Standard"),
+        ({"canal": "2.170.0", "vague": canaux.VAGUE_STANDARD}, "vague Fixe"),
+        ({"vague": canaux.VAGUE_FIXE}, "Urgence ou Standard"),
+        ({"vague": 1}, "Vague inconnue"),  # Pilote, retirée
         ({"vague": 7}, "Vague inconnue"),
     ],
 )
@@ -154,7 +155,7 @@ def test_la_reference_ne_se_distribue_pas(operateur):
     http, _ = operateur
     r = http.put(
         "/admin/installations/CF-000000/distribution",
-        json={"canal": "urgence", "vague": canaux.VAGUE_PILOTE, "motif": "essai"},
+        json={"canal": "urgence", "vague": canaux.VAGUE_STANDARD, "motif": "essai"},
     )
     assert r.status_code == 409
 
@@ -171,12 +172,11 @@ def test_la_liste_montre_les_versions_et_les_vagues(operateur):
     ]
     assert versions["lues_le"] is not None
     assert [v["code"] for v in liste["vagues"]] == list(canaux.VAGUES)
-    assert [v["avec_urgence"] for v in liste["vagues"]] == [True, True, True, False]
+    assert [v["avec_urgence"] for v in liste["vagues"]] == [True, True, False]
     assert [v["code"] for v in liste["vagues"] if v["defaut"]] == [canaux.VAGUE_STANDARD]
     #  Ce que chaque vague du canal Urgence installe aujourd'hui ; Fixe n'en a pas.
     assert [(v["cible"] or {}).get("version") for v in liste["vagues"]] == [
         "2.172.0",
-        "2.171.0",
         "2.171.0",
         None,
     ]

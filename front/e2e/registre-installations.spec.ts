@@ -13,9 +13,9 @@
  *    repliée, liste en tête de la fiche, les graves dites « courriel à l'opérateur » ;
  *  - le DERNIER RAPPORT : chaque point de conformité en coche — conforme, à corriger,
  *    inconnu (jamais ✓) —, une phrase qui dit le fait, l'explication au clavier.
- *  - le CANAL ET LA VERSION (#2210) : la version cible que le serveur calcule, le
- *    canal (Urgence ou une version publiée) et la vague réglés avec un motif — seules
- *    les vagues du canal retenu s'offrent —, et les versions publiées en tête.
+ *  - le CANAL ET LA VERSION (#2210) : la version cible que le serveur calcule, la
+ *    vague réglée avec un motif (Urgence, Standard, ou Fixe et sa version publiée —
+ *    le canal en découle), et les versions publiées en tête.
  *  Sur bureau et sur téléphone, sans défilement horizontal.
  */
 import { boiteStable, expect, MEMBRE_CS, simulerApi, test } from './aides';
@@ -101,14 +101,6 @@ const REGISTRE: RegistreLu = {
 			avec_urgence: true,
 			defaut: false,
 			cible: { version: '2.172.0', publiee_le: '2026-10-16T03:50:00' },
-		},
-		{
-			code: 1,
-			libelle: 'Pilote',
-			detail: 'la dernière version publiée depuis 7 jours',
-			avec_urgence: true,
-			defaut: false,
-			cible: { version: '2.171.2', publiee_le: '2026-10-10T03:50:00' },
 		},
 		{
 			code: 2,
@@ -453,13 +445,15 @@ test('Installations : le canal et la version — la vague, la version fixée, et
 	await expect(carte.locator('h4.intertitre', { hasText: 'Canal et version' })).toBeVisible();
 	await expect(carte.getByText('Version cible du prochain bail :')).toContainText('v2.172.0');
 
-	//  Canal Urgence : Urgence, Pilote et Standard s'offrent, pas Fixe.
+	//  Trois vagues — Urgence, Standard, Fixe —, plus de Pilote ni de liste de canal.
+	await expect(carte.getByRole('radio')).toHaveCount(3);
+	await expect(carte.getByRole('radio', { name: /Pilote/ })).toHaveCount(0);
+	await expect(carte.getByLabel('Canal suivi')).toHaveCount(0);
 	await expect(carte.getByRole('radio', { name: /Standard/ })).toBeChecked();
-	await expect(carte.getByRole('radio', { name: /Fixe/ })).toHaveCount(0);
-	//  Une version choisie : seule Fixe s'offre, et elle est retenue.
-	await carte.getByLabel('Canal suivi').selectOption('2.170.4');
-	await expect(carte.getByRole('radio', { name: /Urgence/ })).toHaveCount(0);
-	await expect(carte.getByRole('radio', { name: /Fixe/ })).toBeChecked();
+	//  La liste des versions n'apparaît qu'avec Fixe, et le canal en découle.
+	await expect(carte.getByLabel('Version fixée')).toHaveCount(0);
+	await carte.getByText('Fixe', { exact: true }).click();
+	await carte.getByLabel('Version fixée').selectOption('2.170.4');
 	await carte.getByRole('button', { name: 'Enregistrer' }).click();
 	const saisie = page.getByRole('dialog');
 	await saisie.getByRole('textbox').fill('régression du 2.172');

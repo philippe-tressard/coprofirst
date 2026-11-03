@@ -14,7 +14,7 @@ import httpx
 import pytest
 
 from app.registre import canaux, versions as registre_versions
-from app.registre.canaux import VAGUE_FIXE, VAGUE_PILOTE, VAGUE_STANDARD, VAGUE_URGENCE
+from app.registre.canaux import VAGUE_FIXE, VAGUE_STANDARD, VAGUE_URGENCE
 from app.registre.contrat import Bail
 from app.registre.modeles import EtatInscription, Installation, VersionDisponible
 from app.utils import taches
@@ -86,7 +86,6 @@ def test_le_bail_garde_ses_champs():
     "vague, attendu",
     [
         (VAGUE_URGENCE, "2.172.0"),  # la dernière, aussitôt
-        (VAGUE_PILOTE, "2.171.3"),  # la dernière de plus de 7 jours
         (VAGUE_STANDARD, "2.171.3"),  # 2.172 est la dernière mineure : y-1 = 2.171
     ],
 )
@@ -152,10 +151,10 @@ def test_fixe_sur_une_version_plus_publiee_ne_bouge_rien():
 
 
 def test_les_vagues_du_canal_urgence_ne_font_jamais_reculer():
-    inst = _inst(vague=VAGUE_PILOTE, version_logicielle="2.172.0")
+    inst = _inst(vague=VAGUE_STANDARD, version_logicielle="2.172.0")
     assert _cible(inst) == "2.172.0"
     #  Une version qui ne se compare pas (un commit) ne retient rien.
-    assert _cible(_inst(vague=VAGUE_PILOTE, version_logicielle="5aa41dad0242")) == "2.171.3"
+    assert _cible(_inst(vague=VAGUE_STANDARD, version_logicielle="5aa41dad0242")) == "2.171.3"
 
 
 def test_sans_version_publiee_aucune():
@@ -189,6 +188,9 @@ def test_la_reference_n_a_pas_de_version_cible():
         ({"canal": "replica", "version_epinglee": "2.169.4"}, ("2.169.4", VAGUE_FIXE)),
         ({"canal": "2.170.0", "vague": VAGUE_URGENCE}, ("2.170.0", VAGUE_FIXE)),
         ({"canal": "urgence", "vague": VAGUE_FIXE}, ("urgence", VAGUE_STANDARD)),
+        #  la vague Pilote (code 1) est retirée : elle se lit comme Standard
+        ({"canal": "urgence", "vague": 1}, ("urgence", VAGUE_STANDARD)),
+        ({"canal": "2.170.0", "vague": 1}, ("2.170.0", VAGUE_FIXE)),
     ],
 )
 def test_le_suivi_ramene_toute_valeur_a_une_combinaison_permise(champs, attendu):
@@ -303,7 +305,7 @@ def test_la_lecture_des_versions_est_une_tache_de_la_plateforme():
 def test_la_purge_garde_ce_qu_une_vague_peut_servir():
     vieilles = {f"2.{m}.{z}": 220 - m for m in range(150, 160) for z in range(2)}
     gardees = registre_versions.versions_a_garder(_versions({**vieilles, **AGES}), MAINTENANT)
-    #  la liste proposée, les cibles d'Urgence, Pilote et Standard, les moins de 8 jours
+    #  la liste proposée, les cibles d'Urgence et de Standard, les moins de 8 jours
     assert gardees == {"2.172.0", "2.171.4", "2.170.2", "2.169.4", "2.168.0", "2.171.3"}
     assert "2.159.1" not in gardees and "2.150.0" not in gardees
 

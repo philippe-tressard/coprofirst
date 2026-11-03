@@ -2,14 +2,17 @@
 
 Une installation suit soit le canal **Urgence** — la dernière version publiée de
 `main` —, soit **une version** choisie dans la liste des versions publiées. La vague
-dit QUAND elle la reçoit :
+dit QUAND elle la reçoit ; l'opérateur ne choisit que la vague (et, en Fixe, la
+version) — le canal en découle :
 
 | Canal     | Vague      | Version cible                                              |
 |-----------|------------|------------------------------------------------------------|
 | Urgence   | Urgence    | la dernière version publiée, aussitôt                      |
-| Urgence   | Pilote     | la dernière version publiée depuis au moins 7 jours        |
 | Urgence   | Standard   | le dernier correctif de 7 jours de la mineure qui PRÉCÈDE la dernière (y-1) ; à défaut, d'une mineure antérieure |
 | X.Y.Z     | Fixe       | X.Y.Z, une fois publiée depuis 7 jours ; d'ici là, rien ne bouge |
+
+La vague **Pilote** (code 1, « la dernière version publiée depuis 7 jours ») est
+retirée : un code inconnu se lit comme la vague par défaut, Standard — sans migration.
 
 Une version est PUBLIÉE quand elle a sa release — l'archive de déploiement que la
 mise à jour télécharge, jointe par le workflow « Images » après ses images
@@ -28,7 +31,7 @@ mise à jour télécharge, jointe par le workflow « Images » après ses images
    lecture seule ne prive pas les syndicats de leurs correctifs de sécurité.
 4. **Une version choisie s'installe, plus ancienne comprise** : c'est l'**ordre de
    revenir à une version**, signé avec le bail — le SEUL chemin d'un retour.
-5. **Urgence, Pilote et Standard ne font jamais reculer** une installation : la
+5. **Urgence et Standard ne font jamais reculer** une installation : la
    version retenue, ou celle qui tourne si elle est en avance.
 6. **`main` n'est le canal que de la référence** : aucune installation ne s'y met.
 
@@ -59,7 +62,6 @@ from app.registre.modeles import EtatInscription, Installation, VersionDisponibl
 from app.registre.versions import (
     ATTENTE_STANDARD,
     derniere,
-    derniere_rodee,
     derniere_standard,
     plus_recente,
     version_valide,
@@ -79,7 +81,9 @@ PAGES_MAX = 10
 #: Le geste du journal qui règle la distribution d'une installation.
 GESTE_DISTRIBUTION = "distribution"
 
-VAGUE_URGENCE, VAGUE_PILOTE, VAGUE_STANDARD, VAGUE_FIXE = 0, 1, 2, 3
+#  Le code 1 était la vague Pilote, retirée : ne pas le réutiliser (une image
+#  précédente peut encore l'écrire, `suivi_de` le lit alors comme Standard).
+VAGUE_URGENCE, VAGUE_STANDARD, VAGUE_FIXE = 0, 2, 3
 
 
 @dataclass(frozen=True)
@@ -96,9 +100,6 @@ class Vague:
 VAGUES: dict[int, Vague] = {
     VAGUE_URGENCE: Vague(
         "urgence", "Urgence", "la dernière version, aussitôt publiée", avec_urgence=True
-    ),
-    VAGUE_PILOTE: Vague(
-        "pilote", "Pilote", "la dernière version publiée depuis 7 jours", avec_urgence=True
     ),
     VAGUE_STANDARD: Vague(
         "standard",
@@ -153,7 +154,6 @@ def version_cible(
 #: Ce que retient chaque vague du canal Urgence.
 CIBLES: dict[int, Callable[[list[VersionDisponible], datetime], Optional[VersionDisponible]]] = {
     VAGUE_URGENCE: lambda versions, _maintenant: derniere(versions),
-    VAGUE_PILOTE: derniere_rodee,
     VAGUE_STANDARD: derniere_standard,
 }
 
@@ -185,7 +185,7 @@ def regler_distribution(
     if canal == CANAL_URGENCE:
         if not VAGUES[vague].avec_urgence:
             raise decisions.DecisionRefusee(
-                "Le canal Urgence se suit en vague Urgence, Pilote ou Standard."
+                "Le canal Urgence se suit en vague Urgence ou Standard."
             )
     elif version_valide(canal):
         if vague != VAGUE_FIXE:

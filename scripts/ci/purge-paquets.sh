@@ -9,7 +9,7 @@
 #  ou servir à une installation — la règle de `api/app/registre/versions.py`,
 #  exécutée ici telle quelle, jamais recopiée :
 #  - la liste proposée (les 5 dernières mineures, chacune à son dernier correctif) ;
-#  - la cible de chaque vague du canal Urgence (Urgence, Pilote, Standard) ;
+#  - la cible de chaque vague du canal Urgence (Urgence, Standard) ;
 #  - toute version, et toute image, plus jeune que la fenêtre de garde (8 jours) :
 #    les cibles de demain, et les images `sha-<commit>` que tire la référence.
 #
