@@ -12,27 +12,22 @@
  *  « … résident · » puis « Conseil syndical · Admin ». L'espace d'avant chaque
  *  séparateur est insécable : on mesure, sur le rendu, qu'aucun ne finit une ligne.
  *  Depuis #2360, le séparateur s'écrit `{SEPARATEUR.…}` (`#lib/separateurs`) et la
- *  mesure est commune (`coupure-de-ligne.ts`).
+ *  mesure est commune (`coupure-de-ligne.ts`). Depuis #2500, le logement est servi
+ *  par le compte (`libelle_logement`).
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
 import { separateursEnFinDeLigne } from './coupure-de-ligne';
 
-const LOTS = [
-	{
-		id: 1,
-		type: 'appartement',
-		batiment_nom: 'Bât. 4 (A)',
-		type_appartement: 'T4',
-		etage: 2,
-	},
-];
-
-const ADMIN_CS = { ...MEMBRE_CS, roles: ['conseil_syndical', 'admin'] };
+//  Le logement vient du compte, nommé par le serveur (`libelle_logement`, #2500).
+const ADMIN_CS = {
+	...MEMBRE_CS,
+	roles: ['conseil_syndical', 'admin'],
+	libelle_logement: 'Bât. 4 (A), T4, 2ème',
+};
 
 async function accueil(page: Page) {
 	await simulerApi(page, (chemin) => {
-		if (chemin === '/api/lots/mes-lots') return LOTS;
 		if (chemin === '/api/auth/me') return ADMIN_CS;
 		return undefined;
 	});

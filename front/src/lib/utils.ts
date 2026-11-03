@@ -390,57 +390,10 @@ export function etageDuLot(
 	return reference?.etage ?? null;
 }
 
-/**
- * « Bât. 4, T4, 2ème » — où habite un membre, tel que la salutation le dit.
- *
- * 🔴 Elle rendait une chaîne VIDE dès que le compte n'avait aucun lot rattaché :
- * un résident inscrit la veille lisait « Bonsoir Thomas · Copropriétaire
- * résident » quand son voisin lisait son bâtiment, son type et son étage.
- * Signalé par Philippe le 09/09/2026, sur un compte de test.
- *
- * Rien ne manquait pourtant : son bâtiment ET son étage étaient saisis à
- * l'inscription, sur le COMPTE. Cette règle ne lisait que le PATRIMOINE, comme
- * les autres écrans passés à `Lot.etage` — **un compte sans lot devenait
- * invisible à lui-même**, et rien ne pouvait le signaler : une chaîne vide n'est
- * pas une erreur, c'est une ligne un peu plus courte.
- *
- * ⚠️ Elle vit ICI et non dans le tableau de bord : c'est une règle du PRODUIT —
- * comment le site nomme le logement de quelqu'un —, pas une règle d'écran, et le
- * second écran qui en aura besoin l'aurait recopiée.
- */
-export function libelleLogement(
-	lots: {
-		type?: string;
-		batiment_nom?: string | null;
-		type_appartement?: string | null;
-		etage?: number | null;
-	}[],
-	compte: { batiment_nom?: string | null; etage?: number | null } | null | undefined,
-): string {
-	const appt = lots.find((l) => l.type === 'appartement');
-	if (appt) {
-		const parts: string[] = [];
-		if (appt.batiment_nom) parts.push(appt.batiment_nom);
-		else if (compte?.batiment_nom) parts.push(compte.batiment_nom);
-		if (appt.type_appartement) parts.push(appt.type_appartement);
-		if (appt.etage != null) parts.push(etageLabel(appt.etage));
-		return parts.join(', ');
-	}
-	//  Le repli sur le COMPTE. Le séparateur diffère exprès de celui du cas
-	//  nominal : ce n'est pas la même phrase — elle porte un ÉTAT en son milieu, et
-	//  « Bât. 3, sans lot, RDC » se lirait comme une énumération de trois choses de
-	//  même nature.
-	const parts: string[] = [];
-	if (compte?.batiment_nom) parts.push(compte.batiment_nom);
-	parts.push('sans lot');
-	//  ⚠️ `!= null` : `0` est le rez-de-chaussée. Rien n'est écrit quand l'étage
-	//  n'a pas été saisi — une mention « étage inconnu » n'apprendrait rien à qui
-	//  la lit sur SON écran.
-	if (compte?.etage != null) parts.push(etageLabel(compte.etage));
-	//  Ni bâtiment ni étage : « sans lot » tout seul est un reproche, pas une
-	//  information. Mieux vaut ne rien dire.
-	return parts.length > 1 ? parts.join(' — ') : '';
-}
+//  🔴 `libelleLogement` (« Bât. 4, T4, 2ème ») a quitté ce fichier le 03/11/2026
+//  (#2500) : le serveur nomme le logement (`api/app/utils/logement.py`) et le sert
+//  dans `GET /auth/me` (`libelle_logement`), que l'accueil du site ET l'app iOS
+//  lisent. 🔒 `api/tests/test_libelle_logement.py` refuse son retour ici.
 
 /**
  * Les bornes d'un étage saisi — au-delà, c'est une faute de frappe.

@@ -19,6 +19,8 @@ from sqlmodel import Session
 from app.models.core import Batiment, Utilisateur
 from app.schemas import UserRead
 from app.utils.batiments import libelle_batiment
+from app.utils.logement import libelle_logement
+from app.utils.lots_rattaches import lots_de
 from app.utils.noms import nom_affiche
 
 
@@ -43,6 +45,11 @@ def construire_user_read(user: Utilisateur, session: Session) -> UserRead:
                     "mandant_nom": nom_affiche(mandant.prenom, mandant.nom),
                 }
             )
-    return UserRead.from_orm_with_roles(
+    lecture = UserRead.from_orm_with_roles(
         user, batiment_nom=batiment_nom, delegations_aidant=delegations_aidant
     )
+    #  Le logement, nommé par le serveur pour le site ET l'app iOS (#2500).
+    lecture.libelle_logement = (
+        libelle_logement(lots_de(session, user), batiment_nom or "", user.etage) or None
+    )
+    return lecture

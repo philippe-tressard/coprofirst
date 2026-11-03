@@ -20,11 +20,9 @@
 	import { goto } from '$app/navigation';
 	import {
 		flux,
-		lots,
 		tickets as ticketsApi,
 		type FluxItem,
 		type FluxResponse,
-		type MonLot,
 		type Ticket,
 	} from '#lib/api/index.ts';
 	import {
@@ -61,7 +59,6 @@
 	$: if ($authResolue && $isAdminOnly) goto('/admin', { replaceState: true });
 
 	let data: FluxResponse | null = null;
-	let userLots: MonLot[] = [];
 	let loading = true;
 	let ready = false;
 	let kanbanAffaires: Ticket[] = [];
@@ -76,14 +73,11 @@
 
 	onMount(async () => {
 		try {
-			const [fluxRes, lotsRes, calRes] = await Promise.allSettled([
-				flux.get(),
-				lots.mesList(),
-				ticketsApi.list(),
-			]);
+			//  Le logement de l'en-tête vient du compte (`libelle_logement`, #2500) :
+			//  l'accueil ne lit plus `lots.mesList()`.
+			const [fluxRes, calRes] = await Promise.allSettled([flux.get(), ticketsApi.list()]);
 			if (fluxRes.status === 'fulfilled') data = fluxRes.value;
 			else toast('error', 'Erreur chargement du flux');
-			if (lotsRes.status === 'fulfilled') userLots = lotsRes.value;
 			if (calRes.status === 'fulfilled') kanbanAffaires = calRes.value;
 		} catch (e) {
 			toast('error', 'Erreur chargement : ' + messageErreur(e));
@@ -242,7 +236,7 @@
 		<p>Vérifiez votre connexion et réessayez.</p>
 	</div>
 {:else}
-	<EnteteAccueil salutation={greeting} lots={userLots} visible={ready} />
+	<EnteteAccueil salutation={greeting} visible={ready} />
 
 	<!-- ═══ RACCOURCIS RAPIDES ═════════════════════════════════════════════ -->
 	<!-- Qui voit quelle pastille, et d'où vient chaque nombre : `#lib/raccourcis.ts`,
