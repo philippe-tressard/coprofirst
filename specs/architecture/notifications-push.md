@@ -1,10 +1,10 @@
 # Notifications push — le relais APNs de la plateforme (#2458)
 
-> 🧭 **Spécification de CIBLE, en conception — à valider par Philippe.** Écrite le
+> 🧭 **Spécification de CIBLE, validée par Philippe le 03/11/2026** (§10). Écrite le
 > 02/11/2026 pour le chantier de l'application iOS native (#2460) ; comme
 > [`multi-coproprietes.md`](multi-coproprietes.md), elle n'est pas historique et se
-> tient à jour **à chaque arbitrage**, daté. **Aucun code ne l'applique encore** : les
-> lots d'implémentation (§9) s'ouvrent une fois la spécification validée.
+> tient à jour **à chaque arbitrage**, daté. Les lots d'implémentation (§9) sont
+> ouverts ; ce qu'ils ont livré se lit dans leurs tickets.
 >
 > **Où la vérité se lit** : l'avancement, dans les tickets (#2458, chapeauté par
 > #2460) ; les décisions et leurs raisons, ici ; une fois le code écrit, les règles
@@ -52,15 +52,15 @@ et la transmet à APNs.
 dans telle installation ». L'application lit le détail **par l'API**, à l'ouverture,
 avec la session de la personne — la même porte que la cloche.
 
-## 3. Les décisions proposées
+## 3. Les décisions
 
 | # | Sujet | Proposition | Raison |
 |---|---|---|---|
 | N1 | Détenteur de la clé `.p8` | **la référence seule**, comme la clé des baux (`CLE_SIGNATURE_BAUX`) : un réglage de son environnement (§4.8 bis), créé sur l'actif, jamais sur le poste ni dans le dépôt | la seule pièce secrète ; tout le reste tient avec le code lu |
-| N2 | Où répond le relais | sous le **nom dédié du registre**, préfixe `/plateforme/` — `POST /plateforme/notifications` | le tunnel n'ouvre déjà que `/api/plateforme/` sous ce nom (règle 8 du §4.11) ; un second nom (`push.coprofirst.fr`) ne s'impose que si le relais déménage — le nom dédié le permet déjà |
+| N2 | Où répond le relais | sous le **nom dédié du registre**, préfixe `/plateforme/` — `POST /plateforme/notifications` ; un nom propre viendra avec la sortie de l'application (§10, décision 1) | le tunnel n'ouvre déjà que `/api/plateforme/` sous ce nom (règle 8 du §4.11) ; un second nom (`push.coprofirst.fr`) ne s'impose que si le relais déménage — le nom dédié le permet déjà |
 | N3 | Qui le relais admet | une installation dont le **bail se croit** (signé par la clé des baux de son époque, non échu, état `active`) et qui **autorise le service** `notifications_push` ; la requête est signée par la clé dont le bail porte l'empreinte | le levier est le bail (D23) ; le relais n'a pas besoin de lire la base `plateforme` : il juge sur pièces, et peut déménager sans elle |
 | N4 | La charge | **composée par le relais**, jamais par l'installation : un texte générique fixe et l'**abonnement** opaque (§5) | une installation modifiée ne peut rien glisser vers Apple : la garantie tient chez qui détient la clé, pas dans le code d'autrui |
-| N5 | Ce que l'installation envoie | un schéma **fermé** (champs inconnus refusés) : l'appareil (jeton, environnement), l'abonnement, l'horodatage et un nonce — rien d'autre | la minimisation se contrôle par le contrat, pas par la bonne foi |
+| N5 | Ce que l'installation envoie | un schéma **fermé** (champs inconnus refusés) : l'appareil (jeton, environnement), l'abonnement, le **niveau** (`normal` ou `urgent`, §10 décision 2), l'horodatage et un nonce — rien d'autre | la minimisation se contrôle par le contrat, pas par la bonne foi ; le niveau est la seule information sur le contenu, et elle est arbitrée |
 | N6 | Où naît l'envoi | **une seule porte** : là où se pose une notification de cloche (`utils/cloche._poser`), après le commit de la transaction | la cloche suit déjà le profil (#1187) ; un appel dispersé dans les routeurs recréerait les vingt-deux copies d'avant #1187 |
 | N7 | Le service | `notifications_push` dans `utils/services.SERVICES` : **coupé par défaut** partout, et sur une réplique soumis au bail (il n'entre pas dans `SERVICES_HORS_BAIL`) | rien ne sort de l'installation sans accord (§4.8) ; en démo, aucun service ne s'allume (#1902) |
 | N8 | Le journal | des **identifiants** : l'installation, l'`appareil.id`, l'`apns-id` rendu par Apple et le statut — **jamais** un jeton d'appareil, même tronqué | un jeton d'appareil est un identifiant d'une personne ; la règle de `utils/journal_securite` (#777) vaut ici |
@@ -117,6 +117,10 @@ pas.
   "a": "<abonnement>" }
 ```
 
+Pour un avis **urgent** seulement (`Notification.urgente` : fuite, ascenseur bloqué),
+`aps` porte en plus `"interruption-level": "time-sensitive"` — il traverse le mode
+Concentration (§10, décision 2). Tous les autres partent au niveau normal.
+
 - **L'abonnement** est un identifiant aléatoire **tiré par l'application** à
   l'enregistrement de l'appareil, un par installation où la personne est connectée.
   Il ne signifie rien hors du téléphone : c'est l'application qui sait à quelle
@@ -130,6 +134,8 @@ pas.
   un même fait » vaut aussi ici).
 - Le texte est **fixé par le relais**, en français ; il n'est pas un réglage d'une
   installation (N4).
+- **Aucune pastille** (`badge`) : aucun nombre ne part chez Apple ; l'application
+  calcule ses non-lues à l'ouverture (§10, décision 3).
 
 ## 6. L'installation
 
@@ -149,7 +155,8 @@ jeton se stocke par son empreinte » (#1389) : celle-ci vise les jetons qu'on
 **vérifie** (rafraîchissement, liens), qu'une copie de la base rendrait utilisables. Un
 jeton APNs ne s'utilise qu'avec la clé `.p8`, que l'installation n'a pas ; et on doit
 le **transmettre**, pas le comparer — une empreinte ne servirait à rien. L'exception
-s'écrira avec sa raison dans le contrôle qui la tient, jamais en silence.
+est écrite avec sa raison dans le modèle (`models/appareils.py`), et sa contrepartie
+— le jeton n'entre jamais dans un journal — est tenue par un test.
 
 La table est une **donnée de la copropriété** (base de l'installation, §4.3) : elle
 part dans l'export (#1749) et dans l'export des données d'une personne, et ne
@@ -166,6 +173,10 @@ ne les nomme pas.
 Préfixe au pluriel, tag `appareils`, nommage français (#1056). Client TypeScript : aucun
 — la PWA n'enregistre pas d'appareil ; le client Swift se génère du contrat publié
 (#2456).
+
+**Aucun réglage par personne** (§10, décision 4) : ni choix « sur mon téléphone »
+dans le Profil, ni route pour en écrire un. Le profil de la cloche décide déjà ce qui
+sonne (§6.4), et les réglages de notifications d'iOS décident du reste.
 
 ### 6.3 Quand un appareil disparaît
 
@@ -194,10 +205,12 @@ système** (`sonner_systeme`). Une cloche qui ne sonne pas ne pousse rien.
    notification annulée par un `rollback` n'a pas averti un téléphone.
 3. Un envoi par **appareil** du destinataire ; un échec est journalisé (N8), jamais
    remonté à la requête qui a posé la notification.
-4. Rien ne part si le service est coupé (`service_actif(cfg, SERVICE_NOTIFICATIONS_PUSH)`)
+4. Rien ne part si le service est coupé (`service_actif(cfg, SERVICE_PUSH)`)
    — en démo, jamais.
 5. Hors requête, l'envoi se fait dans le contexte de la copropriété
    (`contexte.dans(copro)`) : la configuration et les appareils lus sont les siens.
+6. Le **niveau** de l'envoi est `urgent` si l'une des notifications du commit pour ce
+   destinataire l'est (`urgente`), `normal` sinon — rien d'autre du contenu ne la suit.
 
 ### 6.5 Le service
 
@@ -245,7 +258,10 @@ liste :
 - une dépendance neuve pour HTTP/2 (`h2`, via `httpx[http2]`) passe la liste blanche
   des licences (`scripts/ci/licences_politique.py`).
 
-## 9. Les lots d'implémentation (proposés, à ouvrir après validation)
+## 9. Les lots d'implémentation
+
+Ouverts le 03/11/2026 : P1 #2494, P2 #2493, P4 #2495 ; P3 vit dans le dépôt de
+l'application.
 
 | Lot | Contenu | Dépend de |
 |---|---|---|
@@ -254,15 +270,17 @@ liste :
 | P3 | **L'application** (dépôt `coprofirst-ios`) : demande d'autorisation, enregistrement à la connexion, retrait à la déconnexion, lecture de `GET /notifications` à l'ouverture | P2 et le contrat publié (#2456) |
 | P4 | **Politique de confidentialité** et fiche de l'App Store | P2 |
 
-## 10. Les questions ouvertes (à trancher par Philippe)
+## 10. Les décisions de Philippe (03/11/2026)
 
-1. **Nom du relais** : le nom dédié du registre (proposé, N2), ou un nom propre
-   (`push.coprofirst.fr`) dès maintenant ?
-2. **Urgence** : une notification `urgente` (fuite, ascenseur bloqué) mérite-t-elle le
-   niveau *time-sensitive* d'iOS ? Il traverse le mode Concentration, mais il apprend
-   à Apple qu'un avertissement est urgent — une information de plus.
-3. **Pastille de l'icône** (nombre de non-lues) : la v1 n'en porte pas (§5). La
-   compter ferait sortir un nombre vers Apple ; l'application peut la calculer
-   elle-même à l'ouverture.
-4. **Réglage par personne** : faut-il, dans le Profil, un choix « sur mon téléphone »
-   distinct de la cloche, ou les réglages d'iOS suffisent-ils ?
+Les quatre questions posées par cette spécification ont été tranchées le
+03/11/2026 (#2458), en suivant les recommandations :
+
+1. **Nom du relais** : le **nom dédié du registre** pour l'instant (N2) ; un nom
+   propre quand l'application sortira.
+2. **Urgence** : le niveau *time-sensitive* d'iOS pour les seuls avis **urgents**
+   (fuite, ascenseur bloqué) ; tous les autres au niveau normal (N5, §5, §6.4).
+   Apple apprend qu'un avertissement est urgent, rien de plus.
+3. **Pastille** : **non** en v1 — l'application la calcule à l'ouverture, aucun
+   nombre ne part chez Apple (§5).
+4. **Réglage par personne** : **non** — les réglages de notifications d'iOS
+   suffisent, pas de doublon avec le profil de la cloche (§6.2).
