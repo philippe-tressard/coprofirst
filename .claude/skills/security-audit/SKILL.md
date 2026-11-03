@@ -163,9 +163,10 @@ hachage, révocation des autres sessions, et la session appelante conservée qua
 elle se présente. `api/tests/test_reinitialisation_mot_de_passe.py` refuse qu'une
 route hache un mot de passe elle-même.
 
-⚠️ **Ce que la révocation ne couvre pas** : le jeton d'accès est un JWT
-autoporteur de 120 minutes, que rien ne révoque côté serveur. La fenêtre passe de
-sept jours à deux heures, pas à zéro — #1063 porte la décision.
+Les jetons d'accès tombent aussi : ils portent l'**empreinte du compte**
+(`auth/jwt.empreinte_du_compte` — le condensé du mot de passe et
+`generation_sessions`), que `_get_current_user` compare à chaque requête (#1063).
+Un mot de passe neuf la change ; un rejeu détecté aussi (§7). 🔒 `test_jeton_revocable.py`.
 
 ### 5. CORS (A05:2021)
 
@@ -222,6 +223,9 @@ prudent.
 3. Retourne le nouveau token en cookie
 4. **Ferme toutes les sessions du compte** quand un jeton déjà **échangé** revient
    après le délai de grâce : c'est le seul signal d'un vol de session (27/09/2026).
+   Les **jetons d'accès** du compte tombent au geste suivant : le rejeu incrémente
+   `generation_sessions`, qui entre dans leur empreinte (`fermer_apres_rejeu`,
+   #2481 — 🔒 `test_client_hors_navigateur.py`).
    Un jeton fermé par une déconnexion ou un mot de passe posé ne déclenche rien.
    La règle, la purge qui garde les jetons échangés et le délai vivent dans
    `app/auth/jetons_rafraichissement.py` — 🔒 `test_jeton_rejoue.py` éprouve les

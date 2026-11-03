@@ -31,11 +31,18 @@ suivants arrivent avec l'ancien quelques millisecondes plus tard. Ce n'est pas
 un vol, et ils reçoivent un 401 simple, comme avant ce lot.
 `DELAI_GRACE_ROTATION` fixe la limite.
 
-⚠️ **Ce que cela ne couvre pas.** Le jeton d'accès est un JWT autoporteur de
-120 minutes : fermer les sessions n'invalide pas celui que le voleur tient déjà
-(#1063 porte cette limite). Et si la réponse d'un échange se perd, le navigateur
-garde l'ancien jeton : passé le délai de grâce, il est lu comme un vol et toutes
-les sessions ferment. C'est un faux positif rare, et son coût est une
+## Les jetons d'accès tombent aussi (#2481, 03/11/2026)
+
+Le voleur tient la PAIRE : fermer les sessions refusait ses rafraîchissements,
+pas ses requêtes, et son jeton d'accès valait encore jusqu'à 120 minutes.
+`fermer_apres_rejeu` incrémente donc `Utilisateur.generation_sessions`, qui entre
+dans l'empreinte du jeton d'accès (`jwt.empreinte_du_compte`) : la mécanique de
+#1063, sans liste de révocation. La valeur vit en base, donc vaut pour tous les
+processus et les deux nœuds.
+
+⚠️ **Ce que cela ne couvre pas.** Si la réponse d'un échange se perd, le
+navigateur garde l'ancien jeton : passé le délai de grâce, il est lu comme un vol
+et toutes les sessions ferment. C'est un faux positif rare, et son coût est une
 reconnexion.
 
 ## La purge garde les jetons échangés jusqu'à leur expiration
@@ -50,9 +57,10 @@ supprimé au plus sept jours après.
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlmodel import Session, and_, delete, or_, select
+from sqlmodel import Session, and_, delete, or_, select, update
 
 from app.auth.empreinte_jeton import empreinte
+from app.models.core import Utilisateur
 from app.models.jetons import RefreshToken
 
 #: Au-delà, un jeton échangé qui revient est un jeton rejoué, pas un appel
@@ -100,6 +108,21 @@ def revoquer_sessions(session: Session, user_id: int, sauf: Optional[str] = None
         session.add(jeton)
         revoques += 1
     return revoques
+
+
+def fermer_apres_rejeu(session: Session, user_id: int) -> int:
+    """Un jeton échangé est revenu : ferme TOUTES les sessions du compte, jetons
+    d'accès compris. Rend le nombre de jetons de rafraîchissement révoqués.
+
+    L'incrément s'écrit en SQL (`generation_sessions + 1`) : deux rejeux
+    simultanés en font deux, jamais un seul perdu. Ne valide pas la transaction.
+    """
+    session.exec(
+        update(Utilisateur)
+        .where(Utilisateur.id == user_id)
+        .values(generation_sessions=Utilisateur.generation_sessions + 1)
+    )
+    return revoquer_sessions(session, user_id)
 
 
 def purger(session: Session, maintenant: datetime) -> int:

@@ -904,6 +904,11 @@ Il rouvre l'hôte et les conteneurs jusqu'au prochain rechargement d'ufw ;
   dite « obsolètes=[…] » par S5 — constat incomplet, WARN, pas une intrusion — et
   `durcir-noeud.sh --sortant constat` la retire (seulement celles qui portent
   notre commentaire `sortie 2367` ; une règle identique SANS ce commentaire reste « hors liste »).
+- **L'IGMP est déclaré** (`allow out to 224.0.0.0/24 proto igmp`, portée hôte) : le noyau
+  annonce ses adhésions multicast à `224.0.0.22` (TTL 1, protocole 2 — la colonne « port »
+  du constat S5 dit `2`, pas un port). Rien n'en dépend, mais le refuser n'apporterait que
+  du bruit. Sa forme canonique est lue dans la source d'ufw 0.36.2, pas relevée sur un banc :
+  si S5 la dit « manquante » après la pose, c'est que la forme servie diffère.
 - **List-dons** vit sur rpi2 : DOCKER-USER filtre aussi ses conteneurs. Son besoin
   se lit dans le constat de rpi2 avant tout refus.
 - Le banc qui a éprouvé la pose : un conteneur jetable `--cap-add NET_ADMIN` sur le

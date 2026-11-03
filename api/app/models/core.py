@@ -98,6 +98,11 @@ class Utilisateur(SQLModel, table=True):
     email: str = Field(unique=True, index=True)
     telephone: Optional[str] = None
     hashed_password: Optional[str] = None
+    #  Entre dans l'empreinte du jeton d'accès avec le mot de passe (#1063) : un
+    #  jeton de rafraîchissement rejoué l'incrémente, et tous les jetons d'accès
+    #  du compte tombent (#2481). Écrite par `jetons_rafraichissement.fermer_apres_rejeu`
+    #  seule ; l'empreinte se compose par `jwt.empreinte_du_compte`.
+    generation_sessions: int = Field(default=0)
     statut: StatutUtilisateur = StatutUtilisateur.copropriétaire_résident
     role: RoleUtilisateur = RoleUtilisateur.résident  # rôle principal (legacy + fallback)
     roles_json: str = Field(

@@ -92,7 +92,8 @@ durcissement_sortant_regles() {
 
 #  Une règle canonique → ses lignes `iptables -S` dans DOCKER-USER (RETURN : rendue
 #  à Docker). Grammaire : `allow out PORT[/PROTO]` · `allow out to ADRESSE[/N]` ·
-#  `allow out to ADRESSE[/N] port PORT proto PROTO`. Une autre forme rend une
+#  `allow out to ADRESSE[/N] port PORT proto PROTO` · `allow out to ADRESSE[/N]
+#  proto PROTO` (IGMP : un protocole sans port). Une autre forme rend une
 #  ligne `?` : le self-test exige que chaque règle déclarée se traduise.
 durcissement_sortant_iptables_de() {
   local -a m
@@ -106,6 +107,8 @@ durcissement_sortant_iptables_de() {
     a=${m[3]}; [[ $a == */* ]] || a="$a/32"
     if [ "${#m[@]}" -eq 4 ]; then
       echo "$c -d $a -j RETURN"
+    elif [ "${#m[@]}" -eq 6 ] && [ "${m[4]}" = proto ]; then
+      echo "$c -d $a -p ${m[5]} -j RETURN"
     elif [ "${#m[@]}" -eq 8 ] && [ "${m[4]} ${m[6]}" = "port proto" ]; then
       echo "$c -d $a -p ${m[7]} -m ${m[7]} --dport ${m[5]} -j RETURN"
     else

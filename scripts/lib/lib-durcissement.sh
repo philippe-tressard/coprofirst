@@ -84,7 +84,8 @@ tous|allow out 80/tcp|apt en http (deb.debian.org, archive.raspberrypi.com) ; le
 tous|allow out 443/tcp|HTTPS : ghcr.io et GitHub, Docker Hub, apt https (Docker, Cloudflare, NodeSource), sondes du site et DoH, IA, WhatsApp (mesuré), registre
 hote|allow out 7844|tunnel Cloudflare : QUIC en udp (mesuré), http2 en tcp en repli
 tous|allow out 587/tcp|SMTP d'OVH (MAIL_PORT) : courriels de l'API, alertes des scripts
-tous|allow out 993/tcp|IMAP d'OVH : relève des réponses par courriel"
+tous|allow out 993/tcp|IMAP d'OVH : relève des réponses par courriel
+hote|allow out to 224.0.0.0/24 proto igmp|IGMP : les rapports d'adhésion multicast du noyau vers 224.0.0.22 (TTL 1, ne quitte pas le LAN ; mesuré sur rpi1, 14 en 24 h)"
 
 #: fail2ban sur sshd : 5 essais, 1 h de bannissement — ce qui tourne depuis
 #: avril sur les deux nœuds. `bantime` se lit en secondes chez fail2ban-client.
