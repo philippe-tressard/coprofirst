@@ -9,8 +9,10 @@ par la skill `mep-precheck`, mis de côté à l'époque parce qu'il fallait déc
 
 Deux tests, et le second est le plus important.
 
-Le premier interdit la **duplication** de revenir : un seul littéral de version dans
-`main.py`, celui de `API_VERSION`.
+Le premier interdit la **duplication** de revenir : aucun littéral de version dans
+`main.py`. Depuis #2456, c'est la version du CONTRAT de l'API (`app/contrat`), lue
+dans `app/contrat/reference.json` et calculée par son générateur — jamais écrite à
+la main ; `test_contrat_api.py` en tient les règles.
 
 Le second verrouille une **décision de sécurité**, pas un détail de style. `/health`
 est public et non authentifié. Faire pointer sa version vers `front/package.json`
@@ -30,6 +32,7 @@ import re
 _API_DIR = pathlib.Path(__file__).resolve().parents[1]
 _RACINE = _API_DIR.parent
 _MAIN = _API_DIR / "app" / "main.py"
+_REFERENCE = _API_DIR / "app" / "contrat" / "reference.json"
 _PACKAGE_JSON = _RACINE / "front" / "package.json"
 
 #  Un numéro de version sémantique entre guillemets, tel qu'on l'écrirait par
@@ -39,25 +42,12 @@ _LITTERAL_VERSION = re.compile(r"""["'](\d+\.\d+\.\d+)["']""")
 
 
 def _version_api() -> str:
-    """Lit `API_VERSION` par analyse du source, sans importer l'application.
-
-    Importer `app.main` démarrerait le moteur SQLAlchemy et donc ouvrirait la base :
-    interdit ici (règle d'or anti-corruption DB), et inutile pour ce que l'on
-    vérifie.
-    """
-    m = re.search(
-        r"""^API_VERSION\s*=\s*["']([^"']+)["']""", _MAIN.read_text(encoding="utf-8"), re.MULTILINE
-    )
-    assert m, (
-        "`API_VERSION` introuvable dans main.py — la constante a été renommée "
-        "ou supprimée. Ce test ne peut alors rien garantir : le corriger, ne "
-        "pas le supprimer."
-    )
-    return m.group(1)
+    """Lit la version du contrat dans sa référence, sans importer l'application."""
+    return json.loads(_REFERENCE.read_text(encoding="utf-8"))["version"]
 
 
-def test_un_seul_litteral_de_version_dans_main():
-    """La version n'est écrite qu'une fois : dans `API_VERSION`.
+def test_aucun_litteral_de_version_dans_main():
+    """La version n'est pas écrite dans `main.py` : elle y vient de `app/contrat`.
 
     Deux littéraux identiques ne se contredisent pas le jour où on les écrit — ils
     se contredisent le jour où l'un des deux est modifié.
@@ -68,13 +58,11 @@ def test_un_seul_litteral_de_version_dans_main():
         for n, ligne in enumerate(source.splitlines(), start=1)
         if _LITTERAL_VERSION.search(ligne) and not ligne.lstrip().startswith("#")
     ]
-    assert len(trouves) == 1, (
-        "La version de l'API doit être écrite UNE seule fois, dans `API_VERSION`, et "
-        f"réutilisée ailleurs. Littéraux trouvés dans main.py : {trouves}"
+    assert not trouves, (
+        "La version de l'API vient de `contrat.VERSION_CONTRAT`, jamais d'un littéral. "
+        f"Littéraux trouvés dans main.py : {trouves}"
     )
-    assert trouves[0][1].startswith("API_VERSION"), (
-        f"Le seul littéral de version doit être celui d'`API_VERSION` ; trouvé : {trouves[0]}"
-    )
+    assert "version=contrat.VERSION_CONTRAT" in source
 
 
 def test_health_ne_divulgue_pas_la_version_applicative():
@@ -88,7 +76,7 @@ def test_health_ne_divulgue_pas_la_version_applicative():
     """
     version_app = json.loads(_PACKAGE_JSON.read_text(encoding="utf-8"))["version"]
     assert _version_api() != version_app, (
-        f"`API_VERSION` ({_version_api()}) est devenue égale à la version de "
+        f"La version du contrat ({_version_api()}) est devenue égale à celle de "
         f"l'application ({version_app}) : `/health`, qui est PUBLIC et non "
         "authentifié, divulgue désormais la version déployée. Le post-check P3 lit "
         "la version dans le bundle du front, il n'a pas besoin de celle-ci."
@@ -96,13 +84,13 @@ def test_health_ne_divulgue_pas_la_version_applicative():
 
 
 def test_la_version_publiee_est_bien_la_constante():
-    """La réponse de `/health` réutilise `API_VERSION`, sans le réécrire.
+    """La réponse de `/health` réutilise `contrat.VERSION_CONTRAT`, sans la réécrire.
 
     Vérifié par le source plutôt qu'en appelant l'endpoint : le contrat testé ici
     est « il n'y a qu'une source de vérité », pas « le serveur démarre » — ce
     dernier est déjà couvert par `test_demarrage.py`.
     """
     source = _MAIN.read_text(encoding="utf-8")
-    assert re.search(r'"version":\s*API_VERSION', source), (
-        "La réponse de `/health` doit réutiliser `API_VERSION` et non un littéral."
+    assert len(re.findall(r'"version":\s*contrat\.VERSION_CONTRAT', source)) == 2, (
+        "La réponse de `/health` doit réutiliser `contrat.VERSION_CONTRAT` et non un littéral."
     )

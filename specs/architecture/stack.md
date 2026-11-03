@@ -10,8 +10,9 @@ Contrainte : Le choix des logiciels est Opensource avec des licences non copylef
 ## Vue d'ensemble
 
 ```
-[Navigateur / PWA]
-       │  HTTPS
+[Navigateur / PWA]   [App iOS — dépôt coprofirst-ios]
+       │  HTTPS        │  HTTPS (même API, contrat publié)
+       ├───────────────┘
   [Caddy] ← reverse proxy + TLS automatique (Let's Encrypt)
        │
   ┌────┴────────────────────┐
@@ -46,12 +47,52 @@ Orchestration : Docker Compose (services : caddy / front / api / postgres)
 
 ## Application mobile
 
-- **Approche : Progressive Web App (PWA)** — pas d'application native séparée
-- **Plateformes :** iOS 16.4+ (Safari), Android 10+ (Chrome)
-- **Installation :** ajout à l'écran d'accueil via le navigateur (A2HS)
-- **Fonctionnement hors-ligne :** Workbox (intégré via vite-pwa) — cache des pages statiques et des données essentielles
-- **Notifications push :** Web Push API (optionnel, phase 2)
-- **Justification :** une seule codebase front = zéro complexité iOS/Android, aucun App Store requis, adapté à une audience fermée (résidents identifiés).
+> 🧭 **Révisé le 01/11/2026** (arbitrage de l'auteur, chantier #2460) : cette section
+> n'est plus historique, elle se tient à jour à chaque arbitrage. Elle disait jusque-là
+> que la PWA serait le seul client mobile, sans application native ni App Store :
+> c'est faux depuis cette date.
+
+Deux clients, **un seul serveur** :
+
+| Client | Ce qu'il est | Où il vit |
+|---|---|---|
+| **PWA** | le site, installable sur l'écran d'accueil (A2HS) — iOS 16.4+ (Safari), Android 10+ (Chrome) | ce dépôt, `front/` |
+| **Application iOS native** | SwiftUI, publiée sur l'App Store ; vitrine, entrée dans une installation, puis les écrans du site **par étapes** jusqu'à la parité | dépôt distinct `philippe-tressard/coprofirst-ios` |
+
+- **La PWA reste** : aucun écran n'en est retiré, et elle reste le seul client sur
+  Android et sur ordinateur. L'application iOS **s'ajoute**, elle ne remplace rien.
+- **Pas de WebView** : l'application ne charge pas le site dans un cadre ; chaque
+  écran est natif. Un écran pas encore porté n'existe pas dans l'application — il
+  reste servi par la PWA.
+- **Android est hors périmètre** : la PWA y suffit. Une application Android serait
+  un nouvel arbitrage, pas une suite de celui-ci.
+
+**Ce qui relie l'application au serveur — et rien d'autre** :
+
+1. **Le contrat d'API publié** (#2456) : `openapi.json` produit par `app.openapi()`,
+   joint à la release de chaque version ; l'application en **génère** son client
+   (`swift-openapi-generator`). Jamais une route recopiée à la main, jamais du code
+   partagé entre les deux dépôts. La documentation d'API reste **fermée** en
+   production (`ENABLE_API_DOCS=false`) : le contrat se publie comme fichier.
+2. **La version du contrat** (#2456), rendue par `GET /config` : une installation
+   peut être plus ancienne que l'application (vague *Fixe*, `registre/versions`) ;
+   l'application y adapte ses gestes au lieu d'échouer.
+3. **La même porte d'authentification que le navigateur** (#2457) : cookies
+   `httponly`, rafraîchissement et sa rotation — pas de second mode (Bearer).
+4. **Le relais de notifications** (#2458) : les notifications push APNs passent par
+   un relais de la plateforme, la clé d'Apple ne quittant jamais la référence —
+   spécification : [`notifications-push.md`](notifications-push.md).
+5. **Les liens universels** (#2459) : `/.well-known/apple-app-site-association`,
+   servi par chaque installation, ouvre l'application sur la bonne installation.
+
+**Où la vérité se lit** : l'état de chaque lot dans ses tickets (#2455 à #2459,
+chapeautés par #2460) ; ce que le serveur expose, dans le contrat publié ; ce que
+l'application fait, dans son propre dépôt. Ce paragraphe ne dit que leur lien.
+
+- **Fonctionnement hors-ligne de la PWA :** Workbox (intégré via vite-pwa) — cache
+  des pages statiques et des données essentielles.
+- **Notifications push de la PWA (Web Push) :** non prévues ; l'application iOS a
+  les siennes (APNs, ci-dessus).
 
 ---
 

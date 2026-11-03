@@ -9,9 +9,13 @@
 #  (`deploiement/standard/mise-a-jour.sh`). Chaque version taguée est donc publiée,
 #  et plus seulement les versions promues sur `replica`.
 #
+#  Elle joint aussi le CONTRAT D'API de la version (#2456) — `openapi.json`, exporté
+#  de l'image de l'API publiée, et les fichiers que l'app iOS en génère
+#  (`lib-contrat-version.sh`).
+#
 #  Appelé par le workflow « Images », une fois les images de la version publiées ;
 #  à la main pour une version déjà taguée (rattrapage) :
-#      VERSION=X.Y.Z GH_TOKEN=… bash scripts/ci/publier-version.sh
+#      VERSION=X.Y.Z REGISTRE=ghcr.io/philippe-tressard GH_TOKEN=… bash scripts/ci/publier-version.sh
 #
 #  Les notes comparent la version au tag de version qui la précède
 #  (`notes-de-version.sh`, qui ne réécrit jamais une release déjà publiée).
@@ -53,5 +57,8 @@ fi
 COMMIT=$(git rev-list -n 1 "refs/tags/v$VERSION" 2>/dev/null) \
     || { echo "::error::tag v$VERSION absent"; exit 1; }
 PRECEDENT=$(tag_precedent "$COMMIT")
-export VERSION COMMIT PRECEDENT
+source "$(dirname "${BASH_SOURCE[0]}")/lib-contrat-version.sh"
+PIECES_JOINTES=$(mktemp -d)
+preparer_contrat "$COMMIT" "${REGISTRE:?REGISTRE manquant (env du workflow)}/coprofirst-api:sha-$COMMIT" "$PIECES_JOINTES"
+export VERSION COMMIT PRECEDENT PIECES_JOINTES
 bash "$(dirname "${BASH_SOURCE[0]}")/notes-de-version.sh"

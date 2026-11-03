@@ -33,7 +33,7 @@
 
 - Installation A2HS (Add to Home Screen) supportée sur les deux plateformes.
 - Notifications push PWA supportées : iOS 16.4+ (Safari), Android (Chrome).
-- Pas d'application native (App Store / Play Store) — PWA uniquement.
+- Ces exigences sont celles de la PWA. Une application iOS native s'y ajoute depuis le 01/11/2026 (App Store ; Play Store hors périmètre) : [architecture/stack.md § Application mobile](../architecture/stack.md#application-mobile).
 
 ---
 
