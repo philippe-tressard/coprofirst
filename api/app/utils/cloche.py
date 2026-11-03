@@ -31,6 +31,7 @@ from sqlmodel import Session
 
 from app.models.core import Notification, Utilisateur
 from app.utils.preferences_mail import cloche_autorisee
+from app.utils.push.porte import noter
 
 #: Les envois qui ne se règlent PAS dans le profil — chacun avec sa raison.
 #: Un motif ajouté ici est une décision : le contrôle refuse un motif inconnu.
@@ -51,6 +52,9 @@ MOTIFS_SYSTEME: dict[str, str] = {
 
 def _poser(session: Session, destinataire_id: int, champs: dict) -> None:
     session.add(Notification(destinataire_id=destinataire_id, **champs))
+    #  La seule porte des notifications push (#2493) : une cloche qui sonne
+    #  avertit les téléphones du destinataire, après le commit, si le service est allumé.
+    noter(session, destinataire_id, urgente=bool(champs.get("urgente", False)))
 
 
 def sonner(

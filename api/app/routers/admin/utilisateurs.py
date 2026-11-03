@@ -30,6 +30,7 @@ from app.auth.operateur import designe_par_l_exploitant
 from app.models.roles import ROLE_OPERATEUR
 from app.utils.valeurs import valeur
 from app.utils.suppression_compte import supprimer_compte
+from app.utils.push.appareils import retirer_appareils
 from app.utils.types_acces import TELECOMMANDE, VIGIK
 from app.utils.roles_libelles import libelle_role
 from app.utils import horloge
@@ -328,6 +329,9 @@ def modifier_utilisateur(
     #  ne le distinguait d'une inscription du jour (#399).
     if body.actif is not None:
         marquer_decide(user, None if body.actif else DESACTIVATION)
+    #  Un compte désactivé ne fait plus sonner de téléphone (#2493, spec push §6.3).
+    if bascule_actif and not body.actif:
+        retirer_appareils(session, user.id)
     session.add(user)
     session.commit()
     #  Seulement si l'état CHANGE (#1548) : renvoyer le même état n'ouvre ni ne

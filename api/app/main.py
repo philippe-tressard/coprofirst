@@ -57,6 +57,7 @@ from app.routers import (
     lots,
     admin,
     notifications,
+    appareils,
     acces,
     calendrier,
     prestataires,
@@ -376,6 +377,7 @@ app.include_router(publications.router)
 app.include_router(documents.router)
 app.include_router(admin.router)
 app.include_router(notifications.router)
+app.include_router(appareils.router)  # 📱 notifications push (#2493)
 app.include_router(acces.router)
 #  Le calendrier n'est plus qu'une REDIRECTION des anciens liens (#1092, lot 5) :
 #  ses événements sont des affaires, son historique et son aperçu sont partis.

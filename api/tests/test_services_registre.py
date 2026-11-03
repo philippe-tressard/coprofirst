@@ -87,6 +87,7 @@ def test_le_temoin_le_registre_porte_chaque_cle():
             "verification_version_active",
             "conservation_affaires_active",
             "decor_fetes_actif",
+            "push_actif",
         }
     )
 
