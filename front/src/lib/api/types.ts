@@ -49,6 +49,8 @@ export interface User {
 	prenom_aide?: string | null;
 	/** L'étage où la personne HABITE — distinct de `Lot.etage`, qui décrit un bien. */
 	etage?: number | null;
+	/** « Bât. A, T3, 2ème » — le logement nommé par le serveur (`utils/logement`, #2500), vide s'il n'y a rien à dire. */
+	libelle_logement?: string | null;
 	last_seen_actualites?: string | null;
 	delegations_aidant?: { delegation_id: number; mandant_id: number; mandant_nom: string }[];
 	cree_le: string;

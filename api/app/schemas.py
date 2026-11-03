@@ -56,6 +56,10 @@ class UserRead(BaseModel):
     #  L'étage où la personne HABITE. Sans lui, le profil ne pourrait pas
     #  afficher la valeur qu'il vient d'enregistrer.
     etage: Optional[int] = None
+    #  « Bât. A, T3, 2ème » — le logement tel que l'accueil le nomme (#2500), par
+    #  `utils/logement`. Calculé pour la lecture de SON compte (`/auth/me`, la
+    #  connexion, `PATCH /auth/me`) ; `None` ailleurs, et quand il n'y a rien à dire.
+    libelle_logement: Optional[str] = None
     nom_proprietaire: Optional[str] = None
     nom_aide: Optional[str] = None
     prenom_aide: Optional[str] = None
