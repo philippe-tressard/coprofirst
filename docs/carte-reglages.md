@@ -178,6 +178,7 @@ _Aucun écart connu entre un écran et sa route._
 | `decor_fetes_actif` | texte | — | non |
 | `imap_enabled` | texte | — | non |
 | `llm_actif` | texte | — | non |
+| `push_actif` | texte | — | non |
 | `verification_version_active` | texte | — | non |
 | `whatsapp_enabled` | texte | — | non |
 

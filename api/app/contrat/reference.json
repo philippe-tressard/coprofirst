@@ -1,6 +1,6 @@
 {
-"version": "1.0.0",
-"empreinte": "a7aa0dc3402000f4fae806bfab37113cf7c36124110fc88d470e6672ffd632cf",
+"version": "1.1.0",
+"empreinte": "c7e48676e4dbd97d432197d406d697502b3d3fbd3a46d81f4e141fcd6fc1093e",
 "operations": {
   "GET /acces/admin/choix-acces": {"deprecie": false, "entree": [], "reponse": {"$": "dictionnaire", "$.{}": "objet", "$.{}.codes": "liste", "$.{}.codes[]": "string", "$.{}.suit_le_lot": "boolean"}},
   "GET /acces/admin/constats-badges": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].code": "string", "$[].gravite": "string", "$[].lots": "liste?", "$[].lots[]": "string", "$[].message": "string"}},
@@ -127,6 +127,8 @@
   "GET /annonces/{cible_id}/reponses": {"deprecie": false, "entree": ["path:cible_id"], "reponse": {"$": "libre"}},
   "POST /annonces/{cible_id}/reponses": {"deprecie": false, "entree": ["corps", "corps.contenu", "path:cible_id"], "reponse": {"$": "libre"}},
   "DELETE /annonces/{cible_id}/reponses/{rep_id}": {"deprecie": false, "entree": ["path:cible_id", "path:rep_id"], "reponse": {}},
+  "POST /appareils": {"deprecie": false, "entree": ["corps", "corps.abonnement", "corps.environnement", "corps.jeton"], "reponse": {}},
+  "DELETE /appareils/{abonnement}": {"deprecie": false, "entree": ["path:abonnement"], "reponse": {}},
   "POST /assistant/description": {"deprecie": false, "entree": ["corps", "corps.entite"], "reponse": {"$": "objet", "$.description": "string", "$.description_modifiee": "boolean", "$.titre": "string?", "$.titre_modifie": "boolean"}},
   "GET /assistant/disponible": {"deprecie": false, "entree": [], "reponse": {"$": "dictionnaire", "$.{}": "boolean"}},
   "GET /auth/batiments": {"deprecie": false, "entree": [], "reponse": {"$": "libre"}},

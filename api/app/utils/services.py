@@ -58,6 +58,7 @@ SERVICE_REPONSES_COURRIEL = "reponses_courriel"
 SERVICE_VERIF_VERSION = "verification_version"
 SERVICE_CONSERVATION = "conservation_affaires"
 SERVICE_DECOR_FETES = "decor_fetes"
+SERVICE_PUSH = "notifications_push"
 INFRA_SMTP = "envoi_courriels"
 
 #: La valeur qui dit « activé ». Une seule, pour toutes les clés.
@@ -191,6 +192,23 @@ SERVICES: dict[str, Service] = {
         onglet="services",
         icone="calendar",
         cle_actif="decor_fetes_actif",
+    ),
+    SERVICE_PUSH: Service(
+        code=SERVICE_PUSH,
+        libelle="Notifications sur téléphone (iOS)",
+        description=(
+            "Quand la cloche sonne pour une personne qui a installé l'application iOS, son "
+            "téléphone l'avertit — par le relais de la plateforme, qui seul parle à Apple. "
+            "Rien de personnel ne part : ni nom, ni résidence, ni titre, seulement « Vous avez "
+            "une nouvelle notification » ; l'application lit le détail à l'ouverture."
+        ),
+        perte=(
+            "Les téléphones ne sonnent plus ; la cloche de l'application reste, et "
+            "l'application iOS la montre à l'ouverture."
+        ),
+        onglet="services",
+        icone="bell",
+        cle_actif="push_actif",
     ),
     INFRA_SMTP: Service(
         code=INFRA_SMTP,
@@ -399,6 +417,7 @@ __all__ = [
     "SERVICE_DE_CLE",
     "SERVICE_DIFFUSION",
     "SERVICE_IA",
+    "SERVICE_PUSH",
     "SERVICE_REPONSES_COURRIEL",
     "SERVICE_VERIF_VERSION",
     "Service",
