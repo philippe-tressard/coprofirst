@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from fastapi import Depends, HTTPException, Cookie, status
 from sqlmodel import Session
 
-from app.auth.jwt import decode_token, empreinte_secret
+from app.auth.jwt import decode_token, empreinte_du_compte
 from app.database import get_session
 from app.utils.nature_affaire import est_actualite
 from app.utils.recuperer import ou_404
@@ -37,13 +37,14 @@ def _get_current_user(
     #  🔴 Le jeton d'accès est AUTOPORTEUR : sans cette comparaison, rien côté
     #  serveur ne peut l'invalider avant ses 120 minutes — ni un changement de
     #  mot de passe, ni une déconnexion (#1063). Le compte vient d'être chargé
-    #  pour vérifier qu'il est actif : l'empreinte est donc gratuite.
+    #  pour vérifier qu'il est actif : l'empreinte est donc gratuite. Un jeton
+    #  de rafraîchissement rejoué la change aussi (`generation_sessions`, #2481).
     #
     #  ⚠️ Un jeton émis avant le 22/09/2026 n'en porte pas : il est refusé, et
     #  le front renouvelle en silence sur 401. Accepter l'absence rouvrirait le
     #  trou pour 120 minutes — et pour toujours, le jour où quelqu'un
     #  réintroduirait un appelant qui ne pose pas l'empreinte.
-    if payload.get("pwd") != empreinte_secret(user.hashed_password):
+    if payload.get("pwd") != empreinte_du_compte(user.hashed_password, user.generation_sessions):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Session invalidée — reconnectez-vous.",

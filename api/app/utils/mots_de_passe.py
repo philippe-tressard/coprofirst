@@ -56,11 +56,9 @@ def poser_mot_de_passe(
         réinitialise parce qu'on craint que quelqu'un d'autre soit entré.
     :return: le nombre de sessions révoquées.
 
-    ⚠️ **Ce que cette fonction ne peut pas faire.** Le jeton d'accès est un JWT
-    autoporteur, valable 120 minutes, que rien ne révoque côté serveur. La
-    fenêtre d'un attaquant passe donc de 7 jours à **2 heures au plus**, pas à
-    zéro. La fermer entièrement demanderait une liste de révocation par `jti` —
-    un autre chantier, et il est nommé dans #1063 plutôt que laissé à deviner.
+    Les jetons d'accès du compte tombent aussi, sans geste de plus : ils portent
+    l'empreinte du condensé, que le nouveau mot de passe change (#1063,
+    `jwt.empreinte_du_compte`).
     """
     from app.auth.jetons_rafraichissement import revoquer_sessions
     from app.auth.jwt import hash_password

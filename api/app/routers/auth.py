@@ -31,7 +31,7 @@ from app.auth.adresse_compte import compte_par_adresse
 from app.auth.session_ouverte import ouvrir_session
 from app.auth.deps import get_current_user
 from app.auth.empreinte_jeton import empreinte
-from app.auth.jetons_rafraichissement import est_rejoue, remplacer, revoquer_sessions
+from app.auth.jetons_rafraichissement import est_rejoue, fermer_apres_rejeu, remplacer
 from app.config import get_settings
 from app.database import get_session
 from app.models.core import (
@@ -253,9 +253,10 @@ def refresh(
     maintenant = horloge.maintenant()
     if stored and est_rejoue(stored, maintenant):
         #  Un jeton déjà échangé qui revient : le porteur légitime ou un voleur,
-        #  on ne sait pas lequel — toutes les sessions ferment. Même réponse
-        #  qu'une session expirée : le voleur n'apprend pas qu'il est repéré.
-        revoquees = revoquer_sessions(session, stored.user_id)
+        #  on ne sait pas lequel — toutes les sessions ferment, jetons d'accès
+        #  compris (#2481). Même réponse qu'une session expirée : le voleur
+        #  n'apprend pas qu'il est repéré.
+        revoquees = fermer_apres_rejeu(session, stored.user_id)
         session.commit()
         journaliser_securite(
             "jeton_rejoue", cible_id=stored.user_id, detail=f"sessions_fermees={revoquees}"

@@ -37,7 +37,14 @@ import pathlib
 
 import pytest
 
-from app.auth.jwt import create_access_token, decode_token, empreinte_secret, hash_password
+from app.auth.jwt import (
+    create_access_token,
+    creer_jeton_acces,
+    decode_token,
+    empreinte_du_compte,
+    empreinte_secret,
+    hash_password,
+)
 from tests.aides_sources import modules_app
 
 
@@ -126,6 +133,7 @@ class _Compte:
         self.id = 1
         self.hashed_password = hashed_password
         self.actif = actif
+        self.generation_sessions = 0
 
 
 def _appel(jeton: str, compte: _Compte):
@@ -158,3 +166,31 @@ def test_un_jeton_sans_empreinte_est_REFUSE():
     jeton = create_access_token({"sub": "1"})
     with pytest.raises(Exception):
         _appel(jeton, compte)
+
+
+# ── Un jeton de rafraîchissement rejoué change l'empreinte (#2481) ──────────
+
+
+def test_la_generation_zero_garde_l_empreinte_d_avant():
+    """🔴 Sinon la mise en production de #2481 refusait tous les jetons d'accès en
+    cours : la colonne naît à 0 pour tout le monde."""
+    condense = hash_password("mot-de-passe")
+    assert empreinte_du_compte(condense, 0) == empreinte_secret(condense)
+
+
+def test_la_generation_change_l_empreinte():
+    condense = hash_password("mot-de-passe")
+    empreintes = {empreinte_du_compte(condense, g) for g in (0, 1, 2)}
+    assert len(empreintes) == 3
+
+
+def test_un_jeton_emis_avant_le_rejeu_est_REFUSE():
+    """La comparaison réelle de `_get_current_user` lit la génération du compte."""
+    compte = _Compte(hash_password("mot-de-passe"))
+    avant = creer_jeton_acces(1, compte.hashed_password, compte.generation_sessions)
+    assert _appel(avant, compte) is compte
+    compte.generation_sessions += 1  # ce que fait `fermer_apres_rejeu`
+    with pytest.raises(Exception):
+        _appel(avant, compte)
+    apres = creer_jeton_acces(1, compte.hashed_password, compte.generation_sessions)
+    assert _appel(apres, compte) is compte
