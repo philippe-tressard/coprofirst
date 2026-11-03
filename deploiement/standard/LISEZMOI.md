@@ -250,6 +250,15 @@ Les données vivent dans des volumes Docker : `pg_data` (la base), `app_data`
 planifiées (Administration › Sauvegarde). Copier ces archives **hors de la
 machine** : une sauvegarde qui vit à côté de ce qu'elle protège disparaît avec.
 
+Caddy, lui, ne garde rien qui se sauvegarde : son journal d'accès (7 jours) et sa
+configuration. Il sert sous son propre compte, sans privilège, et ses volumes
+`caddy_donnees`, `caddy_configuration` et `caddy_journal` naissent à ce compte
+(#2430). Les volumes `caddy_data`, `caddy_config` et `caddy_logs` d'une
+installation plus ancienne ne sont plus montés : ils ne servent qu'au retour à
+une version d'avant, qui les rouvre telle quelle. Les garder tant qu'un tel retour
+reste possible ; les retirer ensuite (`docker volume rm`) ne perd rien d'autre que
+l'ancien journal d'accès.
+
 🔴 `app_data` porte aussi l'**identité** de l'installation au registre de la
 référence — sa clé et son inscription (`/app/data/installation`). Ne jamais
 l'effacer : `docker compose down -v` le supprime, et l'installation devrait se

@@ -43,3 +43,23 @@ RUN apk upgrade --no-cache \
     && apk del --no-cache curl \
     && ! command -v curl \
     && caddy version
+#  Caddy NE SERT PAS EN ROOT (#2430, 02/11/2026) : il tournait en uid 0 dans son
+#  conteneur — sans autre capacité qu'écouter sur :80 (#2368), mais une évasion
+#  par une faille du noyau serait partie de l'uid 0 de l'hôte.
+#
+#  Un compte à uid et gid FIXES, vérifiés ici, jamais supposés : ses volumes lui
+#  appartiennent par ce numéro, d'une image à la suivante. 10002 : libre sur les
+#  deux nœuds, distinct de l'`app` de l'API (10001). Ses trois dossiers
+#  d'écriture lui sont rendus dans l'IMAGE : un volume nommé NEUF en hérite à sa
+#  création (Docker y recopie le contenu et les propriétés du point de montage),
+#  d'où les noms neufs de docker-compose.yml — les anciens, écrits par root,
+#  restent intacts pour le retour arrière. Aucune descente au démarrage, donc
+#  aucune capacité : `CHOWN` et `SETUID` n'existent pas dans ce conteneur.
+#  🔒 api/tests/test_conteneurs_non_root.py
+RUN addgroup -S -g 10002 caddy \
+    && adduser -S -D -H -u 10002 -G caddy -h /nonexistent -s /sbin/nologin caddy \
+    && [ "$(id -u caddy):$(id -g caddy)" = "10002:10002" ] \
+    && mkdir -p /var/log/caddy \
+    && chown -R caddy:caddy /data /config /var/log/caddy \
+    && chmod -R u=rwX,go= /data /config /var/log/caddy
+USER caddy

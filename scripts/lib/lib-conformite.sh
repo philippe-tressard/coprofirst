@@ -233,7 +233,7 @@ conformite_verdicts() {
 
   # ── C36. Le journal d'accès de Caddy, sur l'ACTIF (#1588) ────────────────────
   #  Il disparaissait à chaque déploiement ; il est désormais un fichier du volume
-  #  `caddy_logs`. Mesure, seuil et constats : `lib-journal-acces.sh`.
+  #  `caddy_journal`. Mesure, seuil et constats : `lib-journal-acces.sh`.
   acces_caddy_verdicts
 
   # ── C37. La base PostgreSQL est-elle répliquée vers le standby ? (#1781) ─────

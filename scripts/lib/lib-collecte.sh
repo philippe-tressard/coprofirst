@@ -274,7 +274,7 @@ COLLECT="$COLLECT$COLLECT_PORTS"
 . "$(dirname "${BASH_SOURCE[0]}")/lib-fichiers-parasites.sh"
 COLLECT="$COLLECT$(collecte_env_copies "$REPO")$(collecte_db_volume)"
 
-# C36 (#1588) : le journal d acces de Caddy (fichier du volume `caddy_logs`,
+# C36 (#1588) : le journal d acces de Caddy (fichier du volume `caddy_journal`,
 # anonyme) est-il ecrit, et combien d erreurs serveur en 24 h ? Mesure et
 # decision vivent ensemble, dans `lib-journal-acces.sh`.
 . "$(dirname "${BASH_SOURCE[0]}")/lib-journal-acces.sh"

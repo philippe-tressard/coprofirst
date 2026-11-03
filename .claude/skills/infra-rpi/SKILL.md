@@ -915,7 +915,7 @@ Il rouvre l'hôte et les conteneurs jusqu'au prochain rechargement d'ufw ;
 Avant ce jour, les accès HTTP s'écrivaient sur la sortie standard du conteneur
 `hostachy_caddy`, que `docker compose up -d` recrée à chaque déploiement : aucun
 5xx de la veille n'était observable. Ils vont dans un **fichier du volume
-`caddy_logs`** (`/var/log/caddy/access.log`, JSON), roulé par taille (10 Mo × 5) et
+`caddy_journal`** (`/var/log/caddy/access.log`, JSON ; `caddy_logs` jusqu'à #2430), roulé par taille (10 Mo × 5) et
 par âge (7 jours). Il est **anonyme** : ni adresse, ni en-têtes, ni chaîne de
 requête (`?token=…`) — même arbitrage que #1300 pour uvicorn, et c'est ce qui
 dispense de déclarer sa durée dans la politique de confidentialité.
@@ -975,7 +975,15 @@ Conduite :
   conteneur durci, `docker exec` entre en root SANS `DAC_OVERRIDE` : il lit, mais
   n'écrit plus dans les volumes — `docker exec -u app hostachy_api …`,
   `-u node hostachy_whatsapp`. `hostachy_postgres` tourne, lui, sous `postgres`
-  (uid 999, aucune capacité, #2429) : `docker exec` y entre sous ce compte.
+  (uid 999, aucune capacité, #2429) : `docker exec` y entre sous ce compte — comme
+  `hostachy_caddy` sous `caddy` (uid 10002, aucune capacité, #2430), qui lit donc
+  son journal sans rien de plus.
+- **Les anciens volumes de Caddy** (`5hostachy_caddy_data`, `_config`, `_logs`,
+  écrits par root) ne sont plus montés depuis #2430 : Caddy écrit dans
+  `caddy_donnees`, `caddy_configuration`, `caddy_journal`, nés à son compte. Ils
+  restent pour le retour à une image d'avant (qui ne s'ouvrirait plus sur des
+  volumes rendus à `caddy` — mesuré au banc) ; leur journal d'accès d'avant la MEP
+  s'y lit encore (`docker run --rm -v 5hostachy_caddy_logs:/v:ro alpine tail /v/access.log`).
 - **S4 sur `hostachy_postgres` seul**, après une livraison qui a touché son
   service : la base n'a pas été RECRÉÉE — `auto-deploy` ne la recrée jamais
   (`--no-recreate`), seules la bascule (promotion, puis reconstruction de
