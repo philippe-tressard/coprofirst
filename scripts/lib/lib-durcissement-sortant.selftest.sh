@@ -9,6 +9,10 @@
 #  `iptables -S DOCKER-USER` d'un banc ufw 0.36.2-9 (Debian 13, la version des
 #  nœuds) où `durcir-noeud.sh --sortant` a posé la liste, le 01/11/2026 ;
 #  `iptables -S FORWARD` et DOCKER-USER vide relevés sur rpi2 le même jour.
+#  Seule exception : la ligne IGMP (`allow out to 224.0.0.0/24 proto igmp`) est
+#  la forme que `UFWCommandRule.get_command` d'ufw 0.36.2 écrit pour cette règle,
+#  lue dans sa source, pas relevée sur un banc — S5 la dirait « manquante » à la
+#  première pose si la forme servie différait.
 durcissement_sortant_selftest() {
   local st=0 r x
   v() {  # $1 libellé · $2 verdict attendu (préfixe, ou valeur exacte) · $3 obtenu
@@ -36,6 +40,7 @@ ufw allow out 443/tcp comment 'sortie 2367'
 ufw allow out 7844 comment 'sortie 2367'
 ufw allow out 587/tcp comment 'sortie 2367'
 $L993
+ufw allow out to 224.0.0.0/24 proto igmp comment 'sortie 2367'
 ufw allow out to $IP1 comment 'sortie 2367'
 ufw allow out to $IP2 comment 'sortie 2367'"
   local A_CONSTAT="$ENTRANT
@@ -88,6 +93,12 @@ New profiles: skip"
   v "liste : le pair est déclaré (ROLE_TABLE)" 2 \
     "$(durcissement_sortant_regles conteneurs | grep -cxE "allow out to ($IP1|$IP2)")"
   v "liste : aucun SSH sortant, GitHub compris (le code se tire en HTTPS)" 0 "$(durcissement_sortant_regles hote | grep -c 'port 22')"
+  v "liste : l'IGMP du noyau est déclaré (224.0.0.22, sans port)" 1 \
+    "$(durcissement_sortant_regles hote | grep -cxF 'allow out to 224.0.0.0/24 proto igmp')"
+  v "liste : l'IGMP ne passe pas aux conteneurs (portée hôte)" 0 \
+    "$(durcissement_sortant_regles conteneurs | grep -c 'igmp')"
+  v "liste : une règle sans port traduite pour iptables" "-A DOCKER-USER -d 224.0.0.0/24 -p igmp -j RETURN" \
+    "$(durcissement_sortant_iptables_de 'allow out to 224.0.0.0/24 proto igmp')"
   v "liste : DOCKER-USER attendu = banc (constat)" OUI \
     "$( [ "$(durcissement_sortant_docker_user constat)" = "$(grep '^-A' <<< "$DU_CONSTAT")" ] && echo OUI || echo NON)"
 

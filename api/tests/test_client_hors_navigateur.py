@@ -152,6 +152,42 @@ def test_le_rejeu_d_un_ancien_jeton_ferme_toutes_les_sessions(moteur):
         )
 
 
+def test_le_rejeu_refuse_aussi_les_jetons_d_acces_deja_emis(moteur):
+    """#2481 : fermer les sessions ne suffit pas — le voleur tient la PAIRE.
+
+    Son jeton d'accès, émis avant le rejeu, valait encore jusqu'à 120 minutes :
+    la porte refusait ses rafraîchissements, pas ses requêtes. Le rejeu change
+    l'empreinte du compte (`generation_sessions`), comme un mot de passe changé
+    (#1063) : tous les jetons d'accès du compte tombent au geste suivant.
+    """
+    ident, email = _compte(moteur)
+    telephone = _connecter(email)
+    tablette = _connecter(email)
+
+    vole = telephone.cookies["refresh_token"]
+    voleur = _app_mobile()
+    voleur.cookies.set("access_token", telephone.cookies["access_token"])
+    assert voleur.get("/auth/me").status_code == 200, "la paire volée n'ouvre pas la porte"
+
+    assert telephone.post("/auth/refresh").status_code == 200
+    with Session(moteur) as s:
+        vieillir_l_echange(s, vole, DELAI_GRACE_ROTATION + timedelta(minutes=1))
+    rejoueur = _app_mobile()
+    rejoueur.cookies.set("refresh_token", vole)
+    assert rejoueur.post("/auth/refresh").status_code == 401
+
+    for nom, appareil in (("voleur", voleur), ("téléphone", telephone), ("tablette", tablette)):
+        assert appareil.get("/auth/me").status_code == 401, (
+            f"le jeton d'accès du {nom}, émis avant le rejeu, ouvre encore la porte"
+        )
+
+    #  Le porteur légitime se reconnecte : son jeton neuf porte la nouvelle empreinte.
+    revenu = _connecter(email)
+    assert revenu.get("/auth/me").status_code == 200, "la reconnexion après un rejeu est refusée"
+    assert revenu.post("/auth/refresh").status_code == 200
+    assert revenu.get("/auth/me").status_code == 200, "le rafraîchissement perd l'empreinte"
+
+
 def test_la_limite_de_debit_vaut_pour_le_client_hors_navigateur(moteur):
     """La limite se compte par visiteur, pas par navigateur : l'app la reçoit aussi."""
     plafond = int(LIMITE_SESSION.split("/")[0])
