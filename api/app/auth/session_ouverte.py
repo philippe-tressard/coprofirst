@@ -61,7 +61,7 @@ def ouvrir_session(
 
     response.set_cookie(
         "access_token",
-        creer_jeton_acces(user.id, user.hashed_password),
+        creer_jeton_acces(user.id, user.hashed_password, user.generation_sessions),
         max_age=settings.access_token_expire_minutes * 60,
         **COOKIE_OPTS,
     )

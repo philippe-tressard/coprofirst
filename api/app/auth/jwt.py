@@ -50,6 +50,22 @@ def empreinte_secret(secret: str) -> str:
     ).hexdigest()
 
 
+def empreinte_du_compte(hashed_password: str, generation: int = 0) -> str:
+    """L'empreinte que porte le jeton d'accès, et que `_get_current_user` compare.
+
+    Elle change quand le mot de passe change (#1063) ET quand un jeton de
+    rafraîchissement rejoué incrémente `generation_sessions` (#2481) : dans les
+    deux cas, tous les jetons d'accès du compte tombent au geste suivant. Une
+    seule valeur, une seule comparaison — pas de liste de révocation.
+
+    ⚠️ La génération 0 rend l'empreinte d'avant #2481, le condensé seul : sans
+    cela, la mise en production aurait refusé tous les jetons d'accès en cours.
+    """
+    if not generation:
+        return empreinte_secret(hashed_password)
+    return empreinte_secret(f"{hashed_password}#{generation}")
+
+
 def create_access_token(
     data: dict, expires_delta: Optional[timedelta] = None, empreinte: str | None = None
 ) -> str:
@@ -63,7 +79,7 @@ def create_access_token(
     return jwt.encode(to_encode, contexte.courante().secret, algorithm=settings.algorithm)
 
 
-def creer_jeton_acces(user_id: int, hashed_password: str) -> str:
+def creer_jeton_acces(user_id: int, hashed_password: str, generation: int = 0) -> str:
     """LA porte d'émission d'un jeton d'accès (#1063, 22/09/2026).
 
     ## Pourquoi une porte, et pas deux appels qui composent leur charge
@@ -80,9 +96,12 @@ def creer_jeton_acces(user_id: int, hashed_password: str) -> str:
     l'invalider avant ses 120 minutes — ni un changement de mot de passe, ni une
     déconnexion. Il porte désormais l'empreinte du condensé du mot de passe, que
     `_get_current_user` compare à celle du compte qu'il charge **déjà**. Coût :
-    nul. Effet : un mot de passe changé invalide d'un coup tous les jetons.
+    nul. Effet : un mot de passe changé — ou un jeton de rafraîchissement rejoué,
+    qui incrémente `generation` (#2481) — invalide d'un coup tous les jetons.
     """
-    return create_access_token({"sub": str(user_id)}, empreinte=empreinte_secret(hashed_password))
+    return create_access_token(
+        {"sub": str(user_id)}, empreinte=empreinte_du_compte(hashed_password, generation)
+    )
 
 
 def create_refresh_token(data: dict) -> str:
