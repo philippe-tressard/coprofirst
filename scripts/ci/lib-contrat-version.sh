@@ -49,8 +49,11 @@ preparer_contrat() {
             || { echo "::error::$f absent de $commit" >&2; return 1; }
     done
     #  L'exportateur DU COMMIT, pas celui du dépôt courant (rattrapage d'une version).
-    outils=$(mktemp -d)
+    #  `mktemp -d` naît en 0700 au compte du runner : l'image, qui lit sous `app`,
+    #  ne le traverserait pas (#2489, release de v3.58.0 non publiée).
+    outils=$(mktemp -d) && chmod 0755 "$outils"
     git show "$commit:scripts/ci/exporter_openapi.py" > "$outils/exporter_openapi.py" || return 1
+    chmod 0644 "$outils/exporter_openapi.py"
     schema=$(mktemp -d) && chmod 0777 "$schema"   # l'image écrit sous `app`
     exporter_dans_image "$image" "$outils" "$schema" \
         || { echo "::error::export du schéma depuis $image impossible" >&2; return 1; }
@@ -98,6 +101,15 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
     essai "schéma d'une autre version que la référence : refusé" refus "$(commit 1)"
     SCHEMA_SIMULE='{"info": {"version": "1.2.0"}, "paths": {"/x": {}}}'
     essai "schéma sans le préfixe servi : refusé"             refus "$(commit 1)"
+    #  L'image lit les outils sous `app`, qui n'est pas le compte du runner (#2489) :
+    #  le dossier monté doit se traverser, et le script se lire, par « les autres ».
+    SCHEMA_SIMULE='{"info": {"version": "1.2.0"}, "servers": [{"url": "/api"}], "paths": {"/x": {}}}'
+    exporter_dans_image() {
+        [ -n "$(find "$2" -maxdepth 0 -perm -005)" ] \
+            && [ -n "$(find "$2/exporter_openapi.py" -perm -004)" ] \
+            && echo "$SCHEMA_SIMULE" > "$3/openapi.json"
+    }
+    essai "les outils se lisent par le compte de l'image"     ok    "$(commit 1)"
     exporter_dans_image() { return 1; }
     essai "l'image ne s'exécute pas : refusé"                 refus "$(commit 1)"
     s=$(mktemp -d); exporter_dans_image() { echo "$SCHEMA_SIMULE" > "$3/openapi.json"; }
