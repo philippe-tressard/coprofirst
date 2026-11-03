@@ -6,7 +6,7 @@
 #  Né de #1588 (audit du 02/10/2026) : le journal d'accès vivait sur la sortie
 #  standard du conteneur, recréé à chaque déploiement (70 lignes au moment de
 #  l'audit) — aucun 5xx de la veille n'était observable. Il est désormais un
-#  fichier du volume `caddy_logs` (`Caddyfile`, bloc `log journal`), anonyme et
+#  fichier du volume `caddy_journal` (`Caddyfile`, bloc `log journal`), anonyme et
 #  roulé sur 7 jours au plus. Un journal que personne ne lit ne sert à rien
 #  (`standards/04` §7) : ce contrôle est son destinataire.
 #
@@ -87,7 +87,7 @@ acces_caddy_verdicts() {
     case "$(verdict_acces_caddy "${S_acces_caddy:-}" "$ACCES_CADDY_PERIME_S")" in
         OK)      ok   "Journal d'accès de Caddy sur $SELF : $n requêtes en 24 h, aucune erreur 500/504, $o réponse(s) 502/503 (redémarrages de conteneurs)" ;;
         ERREURS) warn "Journal d'accès de Caddy sur $SELF : $e erreur(s) serveur 500/504 en 24 h sur $n requêtes (+ $o réponse(s) 502/503) — une exception non gérée de l'API : 'docker exec hostachy_caddy grep -E \"\\\"status\\\":(500|504)\" /var/log/caddy/access.log' donne le chemin et l'heure (#1588)" ;;
-        PERIME)  warn "Journal d'accès de Caddy sur $SELF : dernière ligne il y a $(( a / 60 )) min (> $(( ACCES_CADDY_PERIME_S / 60 ))) — il n'est plus écrit alors que le site est servi ; 'docker exec hostachy_caddy ls -l /var/log/caddy' et le volume caddy_logs (#1588)" ;;
+        PERIME)  warn "Journal d'accès de Caddy sur $SELF : dernière ligne il y a $(( a / 60 )) min (> $(( ACCES_CADDY_PERIME_S / 60 ))) — il n'est plus écrit alors que le site est servi ; 'docker exec hostachy_caddy ls -l /var/log/caddy' et le volume caddy_journal (#1588, #2430)" ;;
         *)       warn "Journal d'accès de Caddy sur $SELF INCONNU (Caddy arrêté, fichier absent ou sans ligne datée : '${S_acces_caddy:-vide}') — ni vert ni rouge ; normal juste après le premier déploiement de #1588" ;;
     esac
 }

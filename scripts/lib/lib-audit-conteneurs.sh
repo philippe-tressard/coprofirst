@@ -48,7 +48,8 @@ CONTENEURS_FORMAT='{{.Name}}|{{.HostConfig.Privileged}}|{{join .HostConfig.CapAd
 
 #: Les conteneurs DURCIS (#2368) — `<<: *conteneur_durci` dans docker-compose.yml —
 #: et les capacités que chacun reçoit, avec la MÊME raison que le compose :
-#:   hostachy_caddy     NET_BIND_SERVICE — écouter sur :80, un port privilégié ;
+#:   hostachy_caddy     aucune — le compte `caddy` est posé par l'image, et :80
+#:                      s'ouvre par le sysctl de son espace réseau (#2430) ;
 #:   hostachy_front     aucune — le compte `app` est posé par l'image ;
 #:   hostachy_api       CHOWN, DAC_READ_SEARCH, SETUID, SETGID — `start.sh` rend
 #:                      ses volumes à `app` puis descend par `setpriv` : uvicorn
@@ -59,7 +60,7 @@ CONTENEURS_FORMAT='{{.Name}}|{{.HostConfig.Privileged}}|{{join .HostConfig.CapAd
 #:                      `PGDATA` à `postgres` ni à descendre par `gosu` (#2429).
 #: S4 refuse un conteneur de cette liste qui n'a pas exactement ces capacités,
 #: les autres retirées, `no-new-privileges` et une racine en lecture seule.
-CONTENEURS_DURCIS="${CONTENEURS_DURCIS:-hostachy_caddy=NET_BIND_SERVICE hostachy_front= hostachy_api=CHOWN,DAC_READ_SEARCH,SETGID,SETUID hostachy_whatsapp=CHOWN,DAC_READ_SEARCH,SETGID,SETUID hostachy_postgres=}"
+CONTENEURS_DURCIS="${CONTENEURS_DURCIS:-hostachy_caddy= hostachy_front= hostachy_api=CHOWN,DAC_READ_SEARCH,SETGID,SETUID hostachy_whatsapp=CHOWN,DAC_READ_SEARCH,SETGID,SETUID hostachy_postgres=}"
 #: Ceux qui ne le sont PAS encore, chacun avec son ticket — jugés sur la règle
 #: d'avant : aucune capacité ajoutée. L'autotest échoue si l'un d'eux devient
 #: durci dans le compose sans quitter cette liste, et pour un service du compose
@@ -265,18 +266,21 @@ audit_conteneurs_selftest() {
     local H=abc123def456
     local DURCI="|ALL|true"
     local API="/hostachy_api|false|CAP_CHOWN,CAP_DAC_READ_SEARCH,CAP_SETGID,CAP_SETUID|5hostachy_default||no-new-privileges:true|/etc/localtime:/etc/localtime:ro;${DURCI}|${H}000"
-    local CADDY="/hostachy_caddy|false|NET_BIND_SERVICE|5hostachy_default||no-new-privileges:true|/etc/localtime:/etc/localtime:ro;/opt/5hostachy/Caddyfile:/etc/caddy/Caddyfile:ro;${DURCI}|${H}000"
+    local CADDY="/hostachy_caddy|false||5hostachy_default||no-new-privileges:true|/etc/localtime:/etc/localtime:ro;/opt/5hostachy/Caddyfile:/etc/caddy/Caddyfile:ro;${DURCI}|${H}000"
     t "l'API telle que compose la lance" CONFORME "$(conteneur_verdict "$API")"
     #  Le DURCISSEMENT (#2368) : chaque propriété de l'ancre, retirée une à une.
     t "durci : les capacités dans un autre ordre, sans CAP_" CONFORME \
       "$(conteneur_verdict "${API/CAP_CHOWN,CAP_DAC_READ_SEARCH,CAP_SETGID,CAP_SETUID/setuid,SETGID,DAC_READ_SEARCH,chown}")"
     t "durci : une capacité de plus que déclaré" \
-      "ECART:capacités=[NET_BIND_SERVICE,SYS_ADMIN] (déclarées : [NET_BIND_SERVICE]);" \
-      "$(conteneur_verdict "${CADDY/|NET_BIND_SERVICE|/|NET_BIND_SERVICE,SYS_ADMIN|}")"
+      "ECART:capacités=[CAP_CHOWN,CAP_DAC_READ_SEARCH,CAP_SETGID,CAP_SETUID,CAP_SYS_ADMIN] (déclarées : [CHOWN,DAC_READ_SEARCH,SETGID,SETUID]);" \
+      "$(conteneur_verdict "${API/CAP_SETUID|/CAP_SETUID,CAP_SYS_ADMIN|}")"
+    t "durci : Caddy retrouve NET_BIND_SERVICE (#2430 : il n'en a plus aucune)" \
+      "ECART:capacités=[NET_BIND_SERVICE] (déclarées : []);" \
+      "$(conteneur_verdict "${CADDY/|false||/|false|NET_BIND_SERVICE|}")"
     t "durci : une capacité de moins (le front n'en a aucune)" CONFORME \
       "$(conteneur_verdict "/hostachy_front|false||n||no-new-privileges:true|${DURCI}|r")"
-    t "durci : la capacité déclarée manque" "ECART:capacités=[] (déclarées : [NET_BIND_SERVICE]);" \
-      "$(conteneur_verdict "${CADDY/|NET_BIND_SERVICE|/||}")"
+    t "durci : une capacité déclarée manque" "ECART:capacités=[CAP_CHOWN,CAP_DAC_READ_SEARCH,CAP_SETGID] (déclarées : [CHOWN,DAC_READ_SEARCH,SETGID,SETUID]);" \
+      "$(conteneur_verdict "${API/,CAP_SETUID|/|}")"
     t "durci : les capacités par défaut gardées" "ECART:capacités-non-retirées=[];" \
       "$(conteneur_verdict "${CADDY/|ALL|true/||true}")"
     t "durci : no-new-privileges absent" "ECART:gain-de-privilège-permis;" \
@@ -294,7 +298,11 @@ audit_conteneurs_selftest() {
       "$(conteneur_verdict "/hostachy_front|false||5hostachy_hostachy||no-new-privileges:true||ALL|true|ca22e76c4d4569d36834e679c4a4ecef130aa16a")"
     t "ligne réelle : le bridge durci (banc, 01/11)" CONFORME \
       "$(conteneur_verdict "/hostachy_whatsapp|false|CAP_CHOWN,CAP_DAC_READ_SEARCH,CAP_SETGID,CAP_SETUID|5hostachy_hostachy||no-new-privileges:true|/etc/localtime:/etc/localtime:ro;5hostachy_whatsapp_auth:/app/auth_state:rw;|ALL|true|")"
-    t "ligne réelle : Caddy durci (banc, 01/11)" CONFORME \
+    t "ligne réelle : Caddy sous \`caddy\`, sans capacité (banc, 02/11, #2430)" CONFORME \
+      "$(conteneur_verdict "/hostachy_caddy|false||5hostachy_hostachy||no-new-privileges:true|/etc/localtime:/etc/localtime:ro;/opt/5hostachy/Caddyfile:/etc/caddy/Caddyfile:ro;5hostachy_caddy_donnees:/data:rw;5hostachy_caddy_configuration:/config:rw;5hostachy_caddy_journal:/var/log/caddy:rw;5hostachy_uploads:/srv/uploads:ro;|ALL|true|")"
+    #  Le Caddy d'avant #2430, tel qu'il tourne jusqu'à sa recréation par la MEP.
+    t "ligne réelle : le Caddy d'avant #2430 (NET_BIND_SERVICE) est un écart" \
+      "ECART:capacités=[CAP_NET_BIND_SERVICE] (déclarées : []);" \
       "$(conteneur_verdict "/hostachy_caddy|false|CAP_NET_BIND_SERVICE|5hostachy_hostachy||no-new-privileges:true|/etc/localtime:/etc/localtime:ro;/opt/5hostachy/Caddyfile:/etc/caddy/Caddyfile:ro;5hostachy_caddy_data:/data:rw;5hostachy_caddy_config:/config:rw;5hostachy_caddy_logs:/var/log/caddy:rw;5hostachy_uploads:/srv/uploads:ro;|ALL|true|ca22e76c4d4569d36834e679c4a4ecef130aa16a")"
     t "durci : une ligne d'avant #2368 (sans CapDrop ni racine) n'est pas lue conforme" INCONNU \
       "$(conteneur_verdict "/hostachy_api|false|||n||||r" | cut -d: -f1)"
@@ -396,8 +404,11 @@ audit_conteneurs_selftest() {
         else
             t "le durcissement du compose est celui de CONTENEURS_DURCIS et CONTENEURS_NON_DURCIS" "" \
               "$(durcissement_ecarts "$c")"
-            t "faute injectée : une capacité de plus au compose est vue" "hostachy_caddy : cap_add du compose [NET_BIND_SERVICE,SYS_ADMIN], CONTENEURS_DURCIS [NET_BIND_SERVICE]" \
-              "$(durcissement_ecarts "${c/"cap_add: [NET_BIND_SERVICE]"/cap_add: [NET_BIND_SERVICE,SYS_ADMIN]}")"
+            t "faute injectée : une capacité de plus au compose est vue" "hostachy_api : cap_add du compose [CHOWN,DAC_READ_SEARCH,SETUID,SETGID,SYS_ADMIN], CONTENEURS_DURCIS [CHOWN,DAC_READ_SEARCH,SETGID,SETUID]" \
+              "$(durcissement_ecarts "${c/"cap_add: [CHOWN, DAC_READ_SEARCH, SETUID, SETGID] # chown -R"/cap_add: [CHOWN, DAC_READ_SEARCH, SETUID, SETGID, SYS_ADMIN] # chown -R}")"
+            #  Caddy n'a plus aucune capacité (#2430) : lui en rendre une se voit.
+            t "faute injectée : Caddy retrouve NET_BIND_SERVICE au compose" "hostachy_caddy : cap_add du compose [NET_BIND_SERVICE], CONTENEURS_DURCIS []" \
+              "$(durcissement_ecarts "${c/"container_name: hostachy_caddy"/container_name: hostachy_caddy$'\n'    cap_add: [NET_BIND_SERVICE]}")"
         fi
     fi
     [ "$st" -eq 0 ] && echo "lib-audit-conteneurs : tous les cas passent."

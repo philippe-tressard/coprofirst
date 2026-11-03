@@ -297,7 +297,7 @@
 	#  Il était écrit sur la sortie standard du conteneur, que `docker compose up -d`
 	#  recrée à chaque déploiement : 70 lignes au moment de l'audit du 02/10/2026,
 	#  donc aucun 5xx de la veille n'était observable. Il va dans un fichier du
-	#  volume `caddy_logs`, roulé par taille et par âge — au plus 7 jours.
+	#  volume `caddy_journal` (#2430), roulé par taille et par âge — au plus 7 jours.
 	#
 	#  🔴 Aucune donnée personnelle n'y entre (même arbitrage que #1300, uvicorn) :
 	#  ni l'adresse du visiteur, ni les en-têtes (cookie de session, agent), ni la

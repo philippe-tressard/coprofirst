@@ -36,9 +36,18 @@ services:
     container_name: hostachy_caddy
     restart: unless-stopped
     <<: *conteneur_durci
-    #  Caddy tourne en root DANS le conteneur, sans autre capacité qu'écouter
-    #  sur le port 80 ; ses volumes lui appartiennent en root (#2430).
-    cap_add: [NET_BIND_SERVICE] # écouter sur :80, un port privilégié
+    #  Caddy sert sous son compte `caddy` (uid 10002, `USER` de l'image), sans
+    #  AUCUNE capacité (#2430). Ses volumes sont NEUFS et naissent à `caddy` :
+    #  `caddy_data`, `caddy_config` et `caddy_logs`, écrits par root, ne
+    #  s'ouvriraient plus sans `DAC_OVERRIDE` — et les lui rendre casserait le
+    #  retour à l'image d'avant, qui ne les ouvrirait plus non plus (mesuré sur le
+    #  banc du standby). Ils restent sur le disque, intacts, pour ce retour.
+    sysctls:
+      #  Écouter sur :80 (et :443 chez une réplique sans tunnel) sans
+      #  NET_BIND_SERVICE : le seuil des ports privilégiés de l'espace réseau DU
+      #  CONTENEUR, jamais celui de l'hôte. Docker le met à 0 par défaut ; le
+      #  déclarer le borne à 80 et ne dépend plus du moteur.
+      - net.ipv4.ip_unprivileged_port_start=80
     tmpfs:
       - /tmp:size=16m
     logging:
@@ -57,9 +66,9 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-      - caddy_logs:/var/log/caddy # journal d'accès anonyme, survit aux déploiements (#1588)
+      - caddy_donnees:/data
+      - caddy_configuration:/config
+      - caddy_journal:/var/log/caddy # journal d'accès anonyme, survit aux déploiements (#1588)
       - uploads:/srv/uploads:ro
     depends_on:
       - front
@@ -275,9 +284,12 @@ services:
       - hostachy
 
 volumes:
-  caddy_data:
-  caddy_config:
-  caddy_logs:
+  #  Ceux de Caddy, nés à son compte (#2430) — `caddy_data`, `caddy_config` et
+  #  `caddy_logs`, qu'ils remplacent, ne sont plus déclarés : Compose ne retire
+  #  jamais un volume, ils restent pour le retour à l'image d'avant.
+  caddy_donnees:
+  caddy_configuration:
+  caddy_journal:
   app_data:
   uploads:
   backups:

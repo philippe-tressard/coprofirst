@@ -7,7 +7,7 @@ recrée à chaque déploiement : au moment de l'audit du 02/10/2026, `docker log
 hostachy_caddy` comptait 70 lignes (conteneur créé le matin, 12 déploiements le
 30/09). Aucun 5xx de la veille n'était observable.
 
-Il va dans un fichier du volume `caddy_logs`, roulé par taille et par âge. Et il
+Il va dans un fichier du volume `caddy_journal`, roulé par taille et par âge. Et il
 ne porte aucune donnée personnelle — même arbitrage que #1300 pour uvicorn
 (`test_journal_acces.py`) : ni l'adresse du visiteur, ni les en-têtes (cookie de
 session), ni la chaîne de requête (`?token=…` d'un lien à usage unique). Un
@@ -111,7 +111,7 @@ def _ecarts(contenu: str) -> list[str]:
     if bloc is None:
         return ecarts + ["bloc `log journal { … }` introuvable"]
     if not re.search(r"output file /var/log/caddy/\S+", bloc):
-        ecarts.append("le journal n'est pas écrit dans /var/log/caddy (volume `caddy_logs`)")
+        ecarts.append("le journal n'est pas écrit dans /var/log/caddy (volume `caddy_journal`)")
     for regle in ("roll_size", "roll_keep ", "roll_keep_for"):
         if regle not in bloc:
             ecarts.append(f"rotation absente : `{regle.strip()}` (le fichier grossirait sans fin)")
@@ -132,11 +132,14 @@ def test_le_journal_d_acces_est_persistant_et_anonyme():
 
 def test_le_volume_du_journal_est_declare_et_monte():
     compose = (racine_depot() / "docker-compose.yml").read_text(encoding="utf-8")
-    assert re.search(r"^\s+- caddy_logs:/var/log/caddy\b", compose, re.M), (
-        "le volume caddy_logs n'est pas monté sur /var/log/caddy : le journal retomberait "
+    #  `caddy_journal` depuis #2430 : né au compte `caddy`, il remplace `caddy_logs`.
+    assert re.search(r"^\s+- caddy_journal:/var/log/caddy\b", compose, re.M), (
+        "le volume caddy_journal n'est pas monté sur /var/log/caddy : le journal retomberait "
         "dans la couche du conteneur, recréée à chaque déploiement"
     )
-    assert re.search(r"^  caddy_logs:\s*$", compose, re.M), "le volume caddy_logs n'est pas déclaré"
+    assert re.search(r"^  caddy_journal:\s*$", compose, re.M), (
+        "le volume caddy_journal n'est pas déclaré"
+    )
 
 
 def test_le_motif_voit_les_journaux_d_avant():
