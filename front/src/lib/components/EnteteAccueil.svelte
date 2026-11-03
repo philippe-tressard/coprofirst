@@ -4,23 +4,19 @@
 
   Extrait de `tableau-de-bord/+page.svelte` le 01/10/2026 (#779). C'est une
   DÉCOUPE, pas une factorisation : l'en-tête n'est écrit qu'ici. Il emporte ce
-  qui ne parlait que de lui — la composition des rôles et le libellé du
-  logement —, la page gardant le chargement.
+  qui ne parlait que de lui — la composition des rôles —, la page gardant le
+  chargement. Le libellé du logement vient du compte, nommé par le serveur (#2500).
 -->
 <script lang="ts">
 	import { SEPARATEUR } from '#lib/separateurs.ts';
-	import type { MonLot } from '#lib/api/index.ts';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import { libelleLogement } from '#lib/utils.ts';
 	import { libelleRole, libelleStatut, LIBELLES_STATUT } from '#lib/roles.ts';
 	import { currentUser } from '#lib/stores/auth.ts';
 
 	/**  Calculée par la page, qui la relit au chargement des données
 	 *   (`relire`) : ici, elle serait figée au montage. */
 	export let salutation: string;
-	/** Les lots de l'utilisateur (`lots.mesList()`). */
-	export let lots: MonLot[] = [];
 	/** Vrai quand la page a chargé : l'en-tête entre alors en fondu. */
 	export let visible = false;
 
@@ -49,7 +45,9 @@
 		return labels.join(SEPARATEUR.point);
 	})();
 
-	$: lotLabel = libelleLogement(lots, $currentUser);
+	//  « Bât. A, T3, 2ème » : nommé par le SERVEUR (`utils/logement`, #2500), que
+	//  l'app iOS lit aussi — l'écran ne recompose pas la règle.
+	$: lotLabel = $currentUser?.libelle_logement ?? '';
 </script>
 
 <div class="hero" class:hero-visible={visible}>
