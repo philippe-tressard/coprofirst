@@ -16,7 +16,8 @@ Par opération (`GET /tickets/{ticket_id}`) :
 
 Ajouter une opération ou un champ : libre. Retirer une opération ou un champ,
 changer son type, le rendre facultatif : un client décodait ce champ — refusé,
-sauf retrait annoncé (`retraits.py`). Le resserrer (`string?` → `string`) : libre.
+sauf retrait annoncé (`retraits.py`). Le resserrer (`string?` → `string`, ou typer une
+réponse libre) : libre.
 Exiger une entrée neuve d'une opération existante : refusé — elle est facultative,
 ou c'est une opération neuve.
 
@@ -169,11 +170,15 @@ def _sans_marque(type_: str) -> str:
 def _compatible(ancien: str, nouveau: str) -> bool:
     """Un champ qui change de type reste lisible : même type, ou resserré (`T?` → `T`).
 
-    Une réponse LIBRE qui se type (`libre` → `objet`, #2508) est un resserrement
-    aussi : un client qui décodait n'importe quel JSON décode celui-là.
+    Une réponse LIBRE (aucun schéma, `{}`) qui se type est un resserrement aussi
+    (#2506) : le client la décodait en JSON quelconque, il lit la forme typée. Ce qui
+    était libre et facultatif (`libre?`) peut devenir présent et typé. L'inverse — un
+    type qui redevient libre — reste un retrait.
     """
     a, n = _sans_marque(ancien), _sans_marque(nouveau)
-    return a == n or (a.endswith("?") and a[:-1] == n) or a.rstrip("?") == "libre"
+    if a == "libre?" or (a == "libre" and not n.endswith("?")):
+        return True
+    return a == n or (a.endswith("?") and a[:-1] == n)
 
 
 def comparer(reference: dict[str, dict], courant: dict[str, dict]) -> Ecarts:

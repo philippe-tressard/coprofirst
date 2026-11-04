@@ -61,7 +61,7 @@
 	export let evolutionEnCours = false;
 	export let evolEnEdition: number | null = null;
 	export let evolCorrectionEnCours = false;
-	/** Le lecteur peut-il suivre cette affaire ? Calculé par la carte (`peutCommenter`). */
+	/** Le lecteur peut-il suivre cette affaire ? Servi par l'API (`peut_repondre`, #2508). */
 	export let peutSuivre = false;
 	export let gestes: GestesTicket;
 	/**  L'étape dépliée À L'OUVERTURE : « La demande » dans la liste Affaires,

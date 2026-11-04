@@ -7,13 +7,7 @@
 	import { confirmer, confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
 	import { tenter, messageErreur } from '#lib/erreurs.ts';
 	import { signaler } from '#lib/signalements.ts';
-	import {
-		currentUser,
-		isAdmin,
-		isCS,
-		isGestionnaire,
-		quandAuthResolue,
-	} from '#lib/stores/auth.ts';
+	import { currentUser, isAdmin, isGestionnaire, quandAuthResolue } from '#lib/stores/auth.ts';
 	import { refuserLaCommunaute } from '#lib/communaute.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
 	import { siteNomStore } from '#lib/stores/pageConfig.ts';
@@ -45,7 +39,6 @@
 	let deleting = false;
 
 	$: sondageId = Number($lieu.params.id);
-	$: peutModerer = $isCS;
 	$: estAuteur = sondage && $currentUser?.id === sondage.auteur_id;
 	$: peutGerer = estAuteur || $isAdmin;
 
@@ -327,7 +320,6 @@
 			<Reponses
 				reponses={sondage.commentaires ?? []}
 				currentUserId={$currentUser?.id}
-				isCS={peutModerer}
 				placeholder="Votre commentaire sur ce sondage…"
 				expanded={true}
 				onSubmit={repondreSondage}

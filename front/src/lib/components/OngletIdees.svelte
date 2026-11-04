@@ -37,7 +37,6 @@
 	export let showForm = false;
 	export let currentUserId: number | undefined = undefined;
 	export let estCS = false;
-	export let estAdmin = false;
 	export let statutClass: (s: string) => string;
 
 	//  Les gestes vivent chez le parent : c'est lui qui parle à l'API et qui
@@ -129,7 +128,6 @@
 				idees={items}
 				{currentUserId}
 				{estCS}
-				{estAdmin}
 				{statutClass}
 				{onVoter}
 				{onChangerStatut}

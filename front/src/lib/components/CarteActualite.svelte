@@ -114,7 +114,7 @@
 	      déplie pas la carte au même instant. -->
 	<EnteteCarte titre={pub.titre} basculable on:toggle={basculer}>
 		<svelte:fragment slot="titre-suffixe">
-			<BadgeNouveau le={pub.cree_le} si={estFil} />
+			<BadgeNouveau si={estFil && pub.nouveau} />
 		</svelte:fragment>
 		<svelte:fragment slot="tags">
 			<!--  La MÊME ligne que la carte d'affaire (27/09/2026) : une actualité est

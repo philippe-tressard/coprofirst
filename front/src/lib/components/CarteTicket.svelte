@@ -98,8 +98,10 @@
 	//  🔴 Les deux droits, calculés SUR CE TICKET — l'appelant ne peut pas les
 	//  fournir : ils dépendent de qui l'a déposé, et une liste en affiche vingt.
 	//
-	//  Avant, le crayon n'apparaissait JAMAIS à l'auteur ni au « saisi pour »,
-	//  que le serveur accepte depuis la v2.85.0.
+	//  ⚠️ Le crayon n'est PAS `peut_modifier` (#2508) : celui-ci dit « corriger le
+	//  CONTENU », que l'auteur perd quand l'affaire est engagée ; la correction
+	//  ouverte par le crayon porte aussi les liées, la diffusion et le suivi, que la
+	//  route accepte encore. Le geste du crayon reste à servir (#2511).
 	//
 	//  ⚠️ `peutAdministrer` reste ce qu'il est pour la SUPPRESSION : effacer
 	//  définitivement n'est pas éditer, et cela reste réservé à l'admin.
@@ -140,7 +142,7 @@
 	      déplie pas la carte au même instant. -->
 	<EnteteCarte titre={ticket.titre} basculable on:toggle={() => gestes.basculer(ticket)}>
 		<svelte:fragment slot="titre-suffixe">
-			<BadgeNouveau le={ticket.cree_le} />
+			<BadgeNouveau si={ticket.nouveau} />
 		</svelte:fragment>
 		<!--  🔴 L'EN-TÊTE PORTE LE PÉRIMÈTRE ET LE NUMÉRO (18/08/2026, signalé à
 		      l'écran) : *« le périmètre devrait s'afficher dans l'état sous le titre

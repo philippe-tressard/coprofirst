@@ -78,7 +78,7 @@
 		      déplier. Sa date est dans la gouttière : un seul fait, une place. -->
 		<EnteteCarte titre={s.question}>
 			<svelte:fragment slot="titre-suffixe">
-				<BadgeNouveau le={s.cree_le} />
+				<BadgeNouveau si={s.nouveau} />
 			</svelte:fragment>
 			<svelte:fragment slot="tags">
 				<span class="badge" class:badge-gray={s.cloture} class:badge-green={!s.cloture}

@@ -252,6 +252,8 @@ export interface Ticket extends PorteSaisiPourLu {
 	colonne_kanban: string | null;
 	/** Le nom AFFICHÉ : la personne « saisie pour », sinon le rédacteur (#1104). */
 	nom_proprietaire: string;
+	/** Le badge NEW : créée depuis moins de 48 h (`nouveaute.est_nouveau`). */
+	nouveau: boolean;
 	/** 🔹 Le lieu lisible, vide pour le périmètre par défaut. */
 	perimetre_libelle?: string;
 	/** Les gestes de CE lecteur (`auth/gestes_affaire`) — fermés par défaut. */

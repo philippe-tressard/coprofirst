@@ -205,3 +205,18 @@ def test_l_envoi_de_fichier_est_type_et_decrit_par_la_regle_meme():
     for famille in ("image", "document"):
         assert f"{FAMILLES[famille].plafond_mo} Mo" in operation["description"]
         assert all(ext in operation["description"] for ext in FAMILLES[famille].extensions)
+
+
+# ── nouveau — `isNouveau` ──────────────────────────────────────────────────────
+
+
+def test_nouveau_une_affaire_de_trois_jours_n_a_plus_de_badge():
+    from datetime import timedelta
+
+    from app.utils import horloge
+
+    il_y_a = lambda heures: (horloge.maintenant() - timedelta(hours=heures)).isoformat()  # noqa: E731
+    #  Le cas fautif : la carte jugeait l'horloge du NAVIGATEUR, l'app la sienne.
+    assert _servie(cree_le=il_y_a(72)).nouveau is False
+    assert _servie(cree_le=il_y_a(49)).nouveau is False
+    assert _servie(cree_le=il_y_a(1)).nouveau is True

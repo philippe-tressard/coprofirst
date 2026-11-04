@@ -28,7 +28,7 @@ from app.utils.recuperer import ou_rien
 from app.utils.html_sur import html_riche
 from app.utils.roles_libelles import libelle_role, libelle_statut_court
 from app.utils.liens import adresse_du_site
-from app.auth.deps import est_moderateur
+from app.auth.deps import est_moderateur, peut_commenter
 from app.utils.cloche import sonner
 from app.utils.valeurs import valeur
 
@@ -98,8 +98,15 @@ def auteur_meta(auteur: Optional[Utilisateur], session: Session) -> dict:
     }
 
 
-def enrich_reponse(rep, session: Session) -> dict:
-    """Sérialise une réponse (ReponseCommunaute ou CommentaireSondage) + auteur."""
+def enrich_reponse(rep, session: Session, *, lecteur: Utilisateur) -> dict:
+    """Sérialise une réponse (ReponseCommunaute ou CommentaireSondage) + auteur,
+    telle que `lecteur` la lit.
+
+    `peut_supprimer` porte la CONCLUSION de `peut_commenter` — le prédicat de la
+    route qui supprime (#2506) : le site et l'app iOS lisent le champ, ni l'un ni
+    l'autre ne recompose « l'auteur, le conseil ou l'admin ». `lecteur` n'a pas de
+    défaut : une réponse lue sans savoir par qui ne dit rien de ses gestes.
+    """
     auteur = ou_rien(session, Utilisateur, rep.auteur_id)
     return {
         "id": rep.id,
@@ -107,6 +114,7 @@ def enrich_reponse(rep, session: Session) -> dict:
         "contenu": rep.contenu,
         "cree_le": rep.cree_le,
         **auteur_meta(auteur, session),
+        "peut_supprimer": peut_commenter(rep, lecteur),
     }
 
 

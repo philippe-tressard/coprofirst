@@ -76,7 +76,7 @@ const FORMES = [
 		nom: 'appartenance recomposée sur `auteur_id`',
 		motif: /\.auteur_id\s*===/,
 		remede:
-			'appeler `peutEditer` / `peutCommenter` de `#lib/droits`. Une comparaison ' +
+			'appeler `peutEditer` de `#lib/droits`, ou lire le geste servi (`peut_*`). Une comparaison ' +
 			'directe oublie le champ « saisi pour » : le crayon disparaît pour le résident ' +
 			'au nom de qui le conseil a déposé la demande.',
 	},

@@ -135,6 +135,8 @@ const COMMUNAUTE: Record<string, unknown> = {
 			photos: [],
 			auteur_prenom: 'Jeanne',
 			auteur_nom: 'MARTIN',
+			auteur_affiche: 'Jeanne MARTIN',
+			gratuit: true,
 			auteur_email: null,
 			est_auteur: false,
 			archivee: false,

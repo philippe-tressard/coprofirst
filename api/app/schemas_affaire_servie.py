@@ -3,8 +3,8 @@
 ## Pourquoi ces champs
 
 Le site calculait dans son front l'urgence (⚡), la colonne du Kanban, le libellé
-de la catégorie et de l'état, l'affaire close, le nom affiché d'une affaire
-« saisie pour », et les gestes offerts. L'app iOS ne lit que le contrat : elle les
+de la catégorie et de l'état, l'affaire close, le badge NEW, le nom affiché d'une
+affaire « saisie pour », et les gestes offerts. L'app iOS ne lit que le contrat : elle les
 recopiait depuis le front publié (`standards/09` §8, règle 1). Ils sont désormais
 servis ici, et les deux clients LISENT.
 
@@ -33,6 +33,7 @@ from pydantic import BaseModel, computed_field
 from app.models.tickets import STATUTS_TICKET_CLOS
 from app.utils.categories_ticket import libelle_categorie, ticket_urgent
 from app.utils.kanban_tickets import colonne_du_ticket
+from app.utils.nouveaute import est_nouveau
 from app.utils.valeurs import valeur
 
 
@@ -88,6 +89,12 @@ class AffaireServie(BaseModel):
     def colonne_kanban(self) -> Optional[str]:
         """La colonne du Kanban (`kanban_tickets.colonne_du_ticket`), `None` hors tableau."""
         return colonne_du_ticket(getattr(self, "statut", None))
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def nouveau(self) -> bool:
+        """Le badge NEW : créée depuis moins de 48 h (`nouveaute.est_nouveau`, #2506)."""
+        return est_nouveau(getattr(self, "cree_le", None))
 
     @computed_field  # type: ignore[prop-decorator]
     @property
