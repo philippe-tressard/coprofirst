@@ -197,6 +197,16 @@ function selftest() {
 		],
 		['aucun fichier lu se compte zéro', releve({}, { fautes }).lus, 0],
 	];
+	return rejouerAttendus(cas);
+}
+
+/**
+ * Rejoue `[quoi, obtenu, attendu]`, comparés en JSON. Rend 0 si tous passent.
+ *
+ * La forme des auto-tests qui éprouvent un relevé et non une ligne : celui de
+ * ce module, et `check-regles-partagees` (#2501).
+ */
+export function rejouerAttendus(cas) {
 	let ko = 0;
 	for (const [quoi, obtenu, attendu] of cas) {
 		const ok = JSON.stringify(obtenu) === JSON.stringify(attendu);

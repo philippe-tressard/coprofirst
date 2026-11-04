@@ -5,14 +5,13 @@
 La règle vivait dans `front/src/lib/utils.ts::libelleLogement`. L'app iOS lit la
 même API et n'avait pas le libellé : elle aurait dû recopier la règle, et elle
 n'affichait rien. La règle est passée côté serveur, à l'identique, et chaque cas
-de l'ancienne fonction a ici son test. Le dernier verrouille qu'elle ne revient
-pas dans le front : une seconde écriture divergerait au premier cas limite.
+de l'ancienne fonction a ici son test. Qu'elle ne revienne pas dans le front, une
+seconde écriture qui divergerait au premier cas limite, est tenu par
+`npm run lint:regles-partagees` (#2501), avec les autres règles partagées.
 """
 
 from __future__ import annotations
 
-import pathlib
-import re
 from types import SimpleNamespace
 
 import pytest
@@ -22,10 +21,6 @@ from app.models.core import Batiment, Copropriete, TypeLien, UserLot
 from app.utils.lecture_utilisateur import construire_user_read
 from app.utils.logement import libelle_logement
 from tests.aides_base import compte
-
-_FRONT_SRC = pathlib.Path(__file__).resolve().parents[2] / "front" / "src"
-#: Une définition ou un appel — le commentaire qui dit son départ (`utils.ts`) passe.
-_APPEL = re.compile(r"\blibelleLogement\s*\(")
 
 
 def _lot(type_="appartement", *, batiment=None, type_appartement=None, etage=None):
@@ -130,13 +125,3 @@ def test_un_lien_INACTIF_ne_fait_pas_le_logement(session):
 def test_rien_a_dire_rend_None(session):
     user = compte(session, prefixe="logement")
     assert construire_user_read(user, session).libelle_logement is None
-
-
-def test_le_front_ne_compose_plus_le_libelle():
-    """Une seule source : le front lit `libelle_logement`, il ne le recalcule pas."""
-    fautifs = [
-        str(p.relative_to(_FRONT_SRC))
-        for p in _FRONT_SRC.rglob("*")
-        if p.suffix in {".ts", ".svelte"} and _APPEL.search(p.read_text(encoding="utf-8"))
-    ]
-    assert fautifs == [], f"la règle du logement est recomposée dans le front : {fautifs}"
