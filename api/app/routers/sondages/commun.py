@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from app.utils.assiste_ia import AssisteIACorrection, AssisteIAEntree, AssisteIASortie
 
 from app.schemas import ListeJson
+from app.schemas_communaute import ReponseCommunauteRead
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -75,6 +76,8 @@ class SondageRead(AssisteIASortie):
     #: rejoindre les Archives — c'est le délai unique, réglable en
     #: administration, et non une valeur propre à cet écran.
     archivee: bool = False
+    #: Le badge NEW — `utils/nouveaute.est_nouveau`, la règle du serveur (#2506).
+    nouveau: bool = False
 
     class Config:
         from_attributes = True
@@ -128,8 +131,46 @@ class SondageUpdate(AssisteIACorrection):
     options: Optional[List[OptionCorrection]] = None
 
 
-class SondageDetail(SondageRead):
-    options: list[OptionRead] = []
+class OptionFiche(BaseModel):
+    """Une option sur la FICHE d'un sondage.
+
+    `nb_votes` et `reponses_libres` sont ABSENTS — pas à zéro — quand les
+    résultats ne sont pas visibles : « 0 vote » se lirait « personne n'a voté ».
+    La route rend donc sans les champs non posés (`response_model_exclude_unset`).
+    """
+
+    id: int
+    libelle: str
+    ordre: int
+    champ_libre: bool = False
+    nb_votes: Optional[int] = None
+    reponses_libres: Optional[List[str]] = None
+
+
+class SondageDetail(BaseModel):
+    """La FICHE d'un sondage — `GET /sondages/{id}` (#2506).
+
+    🔴 Ce schéma existait sans qu'aucune route le déclare, et il ne disait pas ce
+    que la fiche rend : elle ne porte ni `nb_votants`, ni `archivee`, ni
+    `assiste_ia` de la liste, et ajoute ses options, ses commentaires et la
+    décision d'afficher les résultats. Le contrat la déclarait `{}`.
+    """
+
+    id: int
+    question: str
+    description: Optional[str] = None
+    cloture_le: Optional[datetime] = None
+    resultats_publics: bool
+    auteur_id: Optional[int] = None  # compte supprimé (#1821)
+    cree_le: datetime
+    perimetre_cible: List[str] = []
+    public_cible: List[str] = []
+    options: List[OptionFiche] = []
+    #: L'option votée par le lecteur, ou `None` s'il n'a pas voté.
     mon_vote: Optional[int] = None
-    #  `cloture` est HÉRITÉ de `SondageRead` depuis le 19/08/2026 — il y était
-    #  déclaré deux fois.
+    cloture: bool = False
+    cloture_forcee: bool = False
+    commentaires: List[ReponseCommunauteRead] = []
+    #: Source UNIQUE de la décision d'afficher les résultats (#397).
+    resultats_visibles: bool = False
+    nouveau: bool = False

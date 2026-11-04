@@ -47,39 +47,45 @@ const RECIDIVE = {
 async function ouvrir(page: Page, metriques: Record<string, unknown>) {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return MEMBRE_CS;
-		if (chemin === '/api/carnet-entretien')
+		if (chemin === '/api/carnet-entretien') {
+			//  Le carnet tel que le serveur le sert (#2505) : ses entrées, et les
+			//  mêmes rangées par équipement — l'écran lit les groupes.
+			const entree = {
+				date: '2026-10-03',
+				libelle: 'Ascenseur en panne',
+				origine: 'affaire',
+				detail: '',
+				categorie: 'panne',
+				categorie_libelle: 'Panne',
+				equipement: 'ascenseur',
+				perimetre: ['bat:1'],
+				perimetre_libelle: 'Bât. 1',
+				lien: '/tickets/40',
+				alerte: null,
+				synthese: {
+					id: 1,
+					ticket_id: 40,
+					evolution_id: 5,
+					statut: 'validee',
+					metriques,
+					synthese: '<p>Récit.</p>',
+					difficultes: null,
+					amelioration: null,
+					prompt_complement: null,
+					assiste_ia: false,
+					motif_vide: null,
+					produite_le: '2026-10-03T10:30:00',
+					validee_le: '2026-10-03T11:00:00',
+					validee_par_nom: 'CS Témoin',
+				},
+			};
 			return {
 				total: 1,
-				entrees: [
-					{
-						date: '2026-10-03',
-						libelle: 'Ascenseur en panne',
-						origine: 'affaire',
-						detail: '',
-						categorie: 'panne',
-						equipement: 'ascenseur',
-						perimetre: ['bat:1'],
-						lien: '/tickets/40',
-						alerte: null,
-						synthese: {
-							id: 1,
-							ticket_id: 40,
-							evolution_id: 5,
-							statut: 'validee',
-							metriques,
-							synthese: '<p>Récit.</p>',
-							difficultes: null,
-							amelioration: null,
-							prompt_complement: null,
-							assiste_ia: false,
-							motif_vide: null,
-							produite_le: '2026-10-03T10:30:00',
-							validee_le: '2026-10-03T11:00:00',
-							validee_par_nom: 'CS Témoin',
-						},
-					},
-				],
+				entrees: [entree],
+				groupes: [{ equipement: 'ascenseur', equipement_libelle: 'Ascenseur', entrees: [entree] }],
+				annees: ['2026'],
 			};
+		}
 	});
 	await page.goto('/residence/carnet');
 	await attendreHydratation(page);

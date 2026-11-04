@@ -22,11 +22,13 @@ l'adresse des affaires un fil transféré. Elles portaient toutes deux le nom
 
 from __future__ import annotations
 
+import io
 import logging
 import uuid
 from datetime import datetime
 
 import pytest
+from PIL import Image
 from sqlmodel import Session, SQLModel, select
 
 from app.database import engine
@@ -45,6 +47,14 @@ from app.utils.courriel_boite import traiter
 from app.utils.courriel_entrant import nouveau_jeton
 from tests.aides_base import compte
 from tests.aides_purge import purger_ligne
+
+
+def image_png(largeur: int, hauteur: int | None = None) -> bytes:
+    """Une image PNG de cette taille — une photo, un logo, un bandeau de signature."""
+    sortie = io.BytesIO()
+    Image.new("RGB", (largeur, hauteur or largeur), (200, 30, 30)).save(sortie, format="PNG")
+    return sortie.getvalue()
+
 
 # ── Répondre à un ticket ──────────────────────────────────────────────────────
 

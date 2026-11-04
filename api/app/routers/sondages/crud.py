@@ -31,9 +31,11 @@ from app.utils.diffusion import config_diffusion
 from .groupe import diffuser_le_sondage
 from .commun import (
     SondageCreate,
+    SondageDetail,
     SondageRead,
     SondageUpdate,
 )
+from app.utils.nouveaute import est_nouveau
 from app.utils.communaute import exiger_acces
 from app.utils.liens import adresse_du_site, nom_site, lien_sondage
 from app.utils.noms import contexte_personne
@@ -79,11 +81,12 @@ def list_sondages(
         #  lu UNE fois hors de la boucle — deux sondages du même appel ne
         #  peuvent pas être tranchés sur des seuils différents.
         d.archivee = est_archivable("sondage", s, seuil_jours=seuil_jours)
+        d.nouveau = est_nouveau(s.cree_le)
         result.append(d)
     return result
 
 
-@router.get("/{sondage_id}")
+@router.get("/{sondage_id}", response_model=SondageDetail, response_model_exclude_unset=True)
 def get_sondage(
     sondage_id: int,
     session: Session = Depends(get_session),
@@ -145,7 +148,9 @@ def get_sondage(
     commentaires_db = session.exec(
         select(CommentaireSondage).where(CommentaireSondage.sondage_id == sondage_id)
     ).all()
-    commentaires_out = tri_reponses([enrich_reponse(c, session) for c in commentaires_db])
+    commentaires_out = tri_reponses(
+        [enrich_reponse(c, session, lecteur=user) for c in commentaires_db]
+    )
 
     return {
         "id": s.id,
@@ -170,6 +175,7 @@ def get_sondage(
         #  contredisait d'une ligne à l'autre. Il ne la recompose plus : il ne peut
         #  de toute façon plus afficher ce qui n'est pas envoyé.
         "resultats_visibles": resultats_visibles,
+        "nouveau": est_nouveau(s.cree_le),
     }
 
 

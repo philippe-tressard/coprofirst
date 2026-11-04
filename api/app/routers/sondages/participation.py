@@ -27,6 +27,7 @@ from app.utils.reponses import auteur_meta, notifier_nouvelle_reponse
 from app.utils.visibility import sondage_accessible, sondage_clos
 from app.utils.communaute import exiger_acces
 from app.utils.recuperer import ou_404
+from app.schemas_communaute import MessageRead, ReponseCommunauteRead
 
 
 router = APIRouter()
@@ -38,7 +39,7 @@ class VoteBody(BaseModel):
     reponse_libre: Optional[str] = None
 
 
-@router.post("/{sondage_id}/voter", status_code=201)
+@router.post("/{sondage_id}/voter", status_code=201, response_model=MessageRead)
 def voter(
     sondage_id: int,
     body: VoteBody,
@@ -105,7 +106,7 @@ class CommentaireBody(BaseModel):
     contenu: str
 
 
-@router.post("/{sondage_id}/commenter", status_code=201)
+@router.post("/{sondage_id}/commenter", status_code=201, response_model=ReponseCommunauteRead)
 def commenter(
     sondage_id: int,
     body: CommentaireBody,
@@ -138,6 +139,7 @@ def commenter(
         "cree_le": c.cree_le,
         "auteur_id": c.auteur_id,
         **auteur_meta(user, session),
+        "peut_supprimer": peut_commenter(c, user),
     }
 
 

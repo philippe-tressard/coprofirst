@@ -34,6 +34,9 @@ export interface Copropriete {
 	nb_lots_principaux: number | null;
 	numero_immatriculation: string | null;
 	mois_debut_exercice: number | null;
+	/** L'exercice en clair (« de juillet à juin », « année civile ») — servi
+	 *  (`dates_fr.libelle_exercice`, #2505) : la fiche le LIT. */
+	exercice_libelle: string;
 	assurance_compagnie: string | null;
 	assurance_numero_police: string | null;
 	assurance_echeance: string | null;
@@ -199,11 +202,15 @@ export interface EntreeCarnet {
 	numero?: string | null;
 	/**  La VALEUR de la catégorie d'une affaire — l'écran rend son libellé. */
 	categorie?: string | null;
+	/**  Son libellé (« Panne ») — `""` sans catégorie (#2505). */
+	categorie_libelle: string;
 	equipement: string | null;
 	/**  Les codes de périmètre de la ligne — rendus par `perimetreLabel`, comme
 	 *   partout ailleurs. Remplace `batiment_id` : un contrat sur « Parking » n'a
 	 *   pas de bâtiment, et n'en est pas moins situé. */
 	perimetre: string[];
+	/**  La portée en clair, toujours dite — servie (#2505). */
+	perimetre_libelle: string;
 	lien: string;
 	alerte: string | null;
 	/**  La synthèse VALIDÉE de l'affaire (#1643) — rendue dans la partie pliée. */
@@ -214,9 +221,25 @@ export interface EntreeCarnet {
 	extrait: string;
 }
 
+/**  Les entrées d'un équipement, dans l'ordre où l'écran les montre. */
+export interface GroupeCarnet {
+	equipement: string | null;
+	/** Le libellé administré de l'équipement, « Sans équipement rattaché » sinon. */
+	equipement_libelle: string;
+	entrees: EntreeCarnet[];
+}
+
+/**  Le carnet — `routers/carnet.CarnetLu`. Le filtre par année, les années
+ *   proposées et le regroupement par équipement sont SERVIS (#2505,
+ *   `utils/carnet_affichage`) : le site et l'app iOS les lisent. */
 export interface Carnet {
+	/** Du fait le plus récent au plus ancien, filtrées par l'année demandée. */
 	entrees: EntreeCarnet[];
 	total: number;
+	/** Les mêmes, rangées par équipement, le groupe le plus récent d'abord. */
+	groupes: GroupeCarnet[];
+	/** Les années qu'on peut choisir, la plus récente d'abord. */
+	annees: string[];
 }
 
 /**  Un intervenant et la durée moyenne de son étape « Chez le prestataire ». */
@@ -249,10 +272,15 @@ export const carnet = {
 	/**  `perimetre` est un CODE de l'arborescence (`'bat:3'`, `'parking'`), pas un
 	 *   identifiant de bâtiment : c'est ce qui rend le filtre dynamique — un
 	 *   périmètre créé en administration devient filtrable sans rien déployer. */
-	lire: (perimetre?: string | null) =>
-		api.get<Carnet>(
-			`/carnet-entretien${perimetre ? `?perimetre=${encodeURIComponent(perimetre)}` : ''}`,
-		),
+	lire: (perimetre?: string | null, annee?: string | null) => {
+		//  `annee` : une année civile (« 2025 ») ; absente, tout le carnet. Les
+		//  contrats en vigueur restent quelle que soit l'année (décret n° 2001-477).
+		const params = new URLSearchParams();
+		if (perimetre) params.set('perimetre', perimetre);
+		if (annee) params.set('annee', annee);
+		const requete = params.toString();
+		return api.get<Carnet>(`/carnet-entretien${requete ? `?${requete}` : ''}`);
+	},
 	/**  Le bilan d'un exercice — RÉSERVÉ au conseil syndical (`require_cs_or_admin`,
 	 *   arbitré le 04/10/2026). `exercice` est l'année où il commence ; absent,
 	 *   l'exercice en cours. */

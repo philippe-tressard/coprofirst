@@ -32,89 +32,91 @@ export const REGLES_PARTAGEES = {
 
 	//  ── Ma résidence et Annuaire (#2505) ─────────────────────────────────────
 	libelleExercice: {
-		quoi: "l'exercice comptable de la fiche (« 1er juillet → 30 juin »)",
-		migration: {
-			ticket: '#2505',
-			raison: "la Fiche de l'app n'en montre rien : `exercice_libelle` à servir",
-		},
+		quoi: "l'exercice comptable de la fiche (« de juillet à juin »)",
+		api: 'api/app/utils/dates_fr.py#libelle_exercice',
+		//  Servie par `CoproprieteRead.exercice_libelle` depuis #2505.
 	},
 	nomAffiche: {
 		quoi: '« Prénom NOM » d’une personne (annuaire, annonces, auteurs)',
 		api: 'api/app/utils/noms.py#nom_affiche',
 		migration: {
-			ticket: '#2505',
+			ticket: '#2508',
 			raison:
-				"le serveur la calcule pour ses courriels et ses PDF sans la servir ; l'app montre les champs bruts (`nom_affiche`, `auteur_affiche` à servir — #2506 aussi)",
+				"l'annuaire la sert depuis #2505 (`nom_affiche`, lu par `CarteContact`) ; restent les auteurs des affaires et des annonces (`auteur_affiche`), et les écrans d'administration qui nomment un compte",
 		},
 	},
 	etageLabel: {
-		quoi: "l'étage en clair (« RDC », « 2e étage »)",
+		quoi: "l'étage en clair (« RDC », « 2ème étage »)",
 		api: 'api/app/utils/etages.py#etage_label',
 		migration: {
-			ticket: '#2505',
+			ticket: '#2507',
 			raison:
-				"calculée au serveur pour l'annonce d'arrivée, non servie : annuaire (#2505) et lots (#2507) l'attendent en `etage_libelle`",
+				"l'annuaire la sert depuis #2505 (`etage_libelle`, avec `suffixe`) ; restent les lots, le profil et l'import (`etage_libelle` dans `LotRead`)",
 		},
 	},
 	telephonesDe: {
 		quoi: 'les numéros d’un champ téléphone découpés sur les virgules',
+		api: 'api/app/utils/telephones.py#telephones_de',
 		migration: {
-			ticket: '#2505',
-			raison: "l'app recoupe la donnée elle-même : `telephones: [string]` à servir",
+			ticket: '#2507',
+			raison:
+				"l'annuaire la sert depuis #2505 (`telephones`) ; reste la carte d'un prestataire (`OngletPrestataires`) : `telephones` à servir dans `PrestataireRead`",
 		},
 	},
 	perimetreLabel: {
 		quoi: 'le lieu lisible d’un périmètre (🔹, muet pour celui par défaut)',
 		api: 'api/app/utils/perimetres/libelles.py#perimetre_label',
 		migration: {
-			ticket: '#2505',
+			ticket: '#2508',
 			raison:
-				"le serveur la calcule (recherche, parc, affiches) sans la servir aux listes ; CR d'AG, fil et cartes d'affaire de l'app ne montrent pas le lieu (#2506, #2508 aussi)",
+				"CR d'AG et carnet le servent depuis #2505 (`perimetre_libelle`, lu par `BadgePerimetre libelle=`, `perimetres.perimetre_badge`) ; restent le fil, les cartes d'affaire (#2508) et les sélecteurs de périmètre",
 		},
 	},
 
 	//  ── Communauté, FAQ, Profil, Notifications (#2506) ──────────────────────
-	isNouveau: {
-		quoi: 'le badge « NEW » d’un élément de moins de 48 h',
-		migration: {
-			ticket: '#2506',
-			raison: "aucun pendant au serveur ; l'app ne le montre pas : `nouveau: bool` à servir",
-		},
-	},
 	categoriesPourStatut: {
 		quoi: 'les catégories de la FAQ montrées selon le statut du lecteur',
-		migration: {
-			ticket: '#2506',
-			raison: "l'app montre toutes les catégories : filtrer dans `GET /faq`",
-		},
+		api: 'api/app/utils/faq_categories.py#categorie_lue_par',
+		//  Servie par `GET /faq`, qui ne rend que ce que le lecteur lit (#2506).
 	},
 	normalizeCategorieLabel: {
 		quoi: 'le libellé d’une catégorie de FAQ (« 📋 Copropriétaire bailleur »)',
-		migration: { ticket: '#2506', raison: 'servir le libellé avec la catégorie' },
+		api: 'api/app/utils/faq_categories.py#libelle_categorie_faq',
+		//  Servie par `FaqItemRead.categorie_libelle` (#2506).
+	},
+	isNouveau: {
+		quoi: 'le badge « NEW » d’un élément de moins de 48 h',
+		api: 'api/app/utils/nouveaute.py#est_nouveau',
+		migration: {
+			ticket: '#2508',
+			raison:
+				'servie en `nouveau` sur les idées, annonces et sondages (#2506) ; les cartes d’affaire et d’actualité la calculent encore : `TicketRead.nouveau` à servir',
+		},
 	},
 	lectureDe: {
 		quoi: 'la pastille « qui le lit » d’un contenu',
 		migration: {
-			ticket: '#2506',
+			ticket: '#2508',
 			raison:
-				"le serveur n'en a que le mot court des PDF (`lecture_affaire.lecture_courte`) ; l'app ne montre rien : `lecture_libelle` à servir",
+				"tenue contre le serveur par `test_lecture_pastille.py`, sans être servie ; l'aperçu du formulaire d'affaire (`SectionDestinataires`) la calcule sur une saisie non enregistrée : `lecture_libelle` à servir aux listes",
 		},
 	},
 	peutEditer: {
 		quoi: 'le crayon d’un contenu (auteur, « saisi pour », admin)',
 		api: 'api/app/auth/deps.py#peut_editer',
 		migration: {
-			ticket: '#2506',
+			ticket: '#2508',
 			raison:
-				"le prédicat du serveur décide, le front le recopie pour offrir le geste ; l'app le recompose depuis les rôles : `peut_modifier` à servir avec chaque élément",
+				"servie en `peut_modifier` sur les idées et les annonces (#2506) ; les cartes d'affaire et l'Historique la recopient encore : `peut_modifier` à servir avec l'affaire et ses entrées",
 		},
 	},
 	peutCommenter: {
 		quoi: 'le geste « Répondre » d’un contenu',
 		api: 'api/app/auth/deps.py#peut_commenter',
 		migration: {
-			ticket: '#2506',
-			raison: 'même cas que `peutEditer` ; `peut_commenter` à servir (affaires : #2508)',
+			ticket: '#2508',
+			raison:
+				"servie en `peut_supprimer` sur les réponses de la Communauté (#2506) ; la carte d'affaire la recopie encore : `peut_commenter` à servir avec l'affaire",
 		},
 	},
 

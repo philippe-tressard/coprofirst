@@ -41,7 +41,7 @@ from app.models.core import (
     RoleUtilisateur,
     Batiment,
 )
-from app.routers.auth_schemas import LoginRequest, UserCreate
+from app.routers.auth_schemas import BatimentPublic, LoginRequest, UserCreate
 from app.schemas import UserRead
 from app.utils.lecture_utilisateur import construire_user_read
 from app.utils.limiter import (
@@ -69,7 +69,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
 
-@router.get("/batiments")
+@router.get("/batiments", response_model=list[BatimentPublic])
 @limiter.limit(LIMITE_LECTURE_PUBLIQUE)
 def list_batiments(request: Request, session: Session = Depends(get_session)):
     """Liste publique des bâtiments pour le formulaire d'inscription."""

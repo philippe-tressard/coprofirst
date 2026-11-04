@@ -14,7 +14,7 @@
 	import { messageErreur } from '#lib/erreurs.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
-	import { grouperParCategorie, normalizeCategorieLabel } from '#lib/faq.ts';
+	import { grouperParCategorie } from '#lib/faq.ts';
 
 	export let items: EntreeFaq[];
 
@@ -46,9 +46,7 @@
 			it.ordre = idx;
 		});
 		let k = 0;
-		copie = copie.map((i) =>
-			normalizeCategorieLabel(i.categorie) === category ? ordonnes[k++] : i,
-		);
+		copie = copie.map((i) => (i.categorie_libelle === category ? ordonnes[k++] : i));
 	}
 
 	function handleDragStart(item: EntreeFaq, category: string) {

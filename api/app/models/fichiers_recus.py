@@ -31,6 +31,10 @@ class FichierRecu(SQLModel, table=True):
     cle: str = Field(index=True, unique=True)
     auteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
+    #: SHA-256 des octets REÇUS, avant tout réencodage — posée pour une pièce
+    #: jointe d'un courriel, qui ne se verse pas deux fois dans une même affaire
+    #: (`courriel_pieces_jointes`, #2515). None : non mesurée (formulaire, avant).
+    empreinte: Optional[str] = Field(default=None, index=True)
 
 
 def noter_auteur(session: Session | None, user: object, cle: str) -> None:

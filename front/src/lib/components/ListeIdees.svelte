@@ -46,12 +46,9 @@
 	import type { Idee } from '#lib/api/index.ts';
 
 	/** Les idées à rendre, déjà filtrées et triées par l'appelant. */
-	import { peutEditer } from '#lib/droits.ts';
-
 	export let idees: Idee[] = [];
 	export let currentUserId: number | undefined = undefined;
 	export let estCS = false;
-	export let estAdmin = false;
 	export let statutClass: (s: string) => string;
 
 	export let onVoter: (id: number) => void;
@@ -107,7 +104,7 @@
 		      n'est plus passée à l'en-tête — un seul fait, une place. -->
 		<EnteteCarte titre={idee.titre}>
 			<svelte:fragment slot="titre-suffixe">
-				<BadgeNouveau le={idee.cree_le} />
+				<BadgeNouveau si={idee.nouveau} />
 			</svelte:fragment>
 			<svelte:fragment slot="tags">
 				<Badge teinte={statutClass(idee.statut)}
@@ -131,7 +128,10 @@
 				      — elle sauterait d'un cran selon qu'on est l'auteur ou non. Même ordre
 				      que la petite annonce. -->
 				<BoutonLien ancre="idee-{idee.id}" quoi="l'idée" />
-				{#if peutEditer(idee, currentUserId, estAdmin)}
+				<!--  Le crayon et la corbeille sont DÉCIDÉS par le serveur (#2506) :
+				      `peut_modifier` (`peut_editer`) et `peut_supprimer` — l'app iOS
+				      lit les mêmes champs, aucun des deux ne recompose les rôles. -->
+				{#if idee.peut_modifier}
 					<button
 						class="btn-icon"
 						title="Modifier"
@@ -149,9 +149,8 @@
 						><IconeAction icone="flag" /></button
 					>
 				{/if}
-				<!--  Réservée à l'administrateur, comme dans la rangée du conseil où elle
-				      vivait (`$isCS` inclut l'admin : la condition était la même). -->
-				{#if estAdmin}
+				<!--  Réservée à l'administrateur (`peut_supprimer`, servi). -->
+				{#if idee.peut_supprimer}
 					<button
 						class="btn-icon-danger"
 						aria-label="Supprimer cette idée"
@@ -194,7 +193,6 @@
 			<Reponses
 				reponses={idee.reponses ?? []}
 				{currentUserId}
-				isCS={estCS}
 				placeholder="Votre réponse à cette idée…"
 				onSubmit={(c) => onRepondre(idee.id, c)}
 				onDelete={(rid) => onSupprimerReponse(idee.id, rid)}
