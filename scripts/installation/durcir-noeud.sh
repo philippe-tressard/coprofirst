@@ -28,12 +28,22 @@
 #  added`, `fail2ban-client`, `apt-config dump`) et non sur un fichier posé :
 #  c'est en lisant le fichier qu'on a cru, d'avril à octobre 2026, que le mot de
 #  passe était coupé (#1918). Les décisions vivent dans `lib-durcissement.sh`.
+#
+#  QUI ÉCRIT, DÉCLARE (#2521) : ce que ce script écrit est un point de
+#  persistance que l'audit nocturne (S3, `lib-audit-persistance.sh`) compare à
+#  une référence acceptée. À la fin d'un passage, il déclare les chemins qu'il
+#  écrit — et eux seuls — à la référence ; sinon S3 demandait le lendemain, en
+#  root sur chaque nœud, d'accepter ce que ce script avait écrit la veille. Le
+#  lancement en root est la décision. La déclaration refuse si un écart existe
+#  ailleurs : rien ne s'accepte en passant.
 # =============================================================================
 set -uo pipefail
 
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 # shellcheck source=../lib/lib-durcissement.sh
 . "$REPO/scripts/lib/lib-durcissement.sh"
+# shellcheck source=../lib/lib-audit-persistance.sh
+. "$REPO/scripts/lib/lib-audit-persistance.sh"
 #  `poser` (écriture idempotente d'un fichier root) : partagée avec le contrôle des
 #  correctifs d'une installation standard (`deploiement/standard/correctifs-systeme.sh`).
 # shellcheck source=../../deploiement/standard/lib-installation.sh
@@ -51,6 +61,15 @@ CLES_AUTORISEES=/home/$COMPTE/.ssh/authorized_keys
 APT_HERITE=/etc/apt/apt.conf.d/50unattended-upgrades-hostachy
 
 log() { printf '%s\n' "$*"; }
+
+#: Les chemins que ce script écrit, déclarés à S3 à la fin du passage (#2521).
+#: `/etc/ufw` entier : chaque commande ufw réécrit user.rules, user6.rules et ufw.conf.
+ECRITS_SORTANT="/etc/ufw"
+ECRITS_APPLIQUER="$DURCISSEMENT_SSHD_FICHIER $DURCISSEMENT_SSHD_HERITE $ECRITS_SORTANT $DURCISSEMENT_F2B_FICHIER $DURCISSEMENT_APT_FICHIER"
+declarer() {  # $1 = les chemins écrits · $2 = le geste (« --sortant constat »)
+  log "── audit S3 (points de persistance)"
+  log "   $(persistance_declarer_ecriture "$1" "durcir-noeud.sh $2")"
+}
 
 # ── Lectures de l'état effectif ──────────────────────────────────────────────
 #  Les lecteurs (`durcissement_lire_*`) et les quatre verdicts sur l'état SERVI
@@ -272,6 +291,7 @@ appliquer() {
   appliquer_apt  || rc=1
   log ""
   etat || rc=1
+  declarer "$ECRITS_APPLIQUER" --appliquer
   return "$rc"
 }
 
@@ -281,6 +301,8 @@ case "${1:-}" in
   --sortant)
     [ -n "${2:-}" ] || { log "--sortant constat|refus|ouvert"; exit 2; }
     [ "$(id -u)" -eq 0 ] || { log "--sortant s'exécute en root (sudo bash $0 --sortant $2)."; exit 2; }
-    appliquer_sortant "${2:-}" ;;
+    appliquer_sortant "${2:-}"; rc=$?
+    declarer "$ECRITS_SORTANT" "--sortant $2"
+    exit "$rc" ;;
   *)           sed -n '3,12p' "$0"; exit 2 ;;
 esac

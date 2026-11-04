@@ -39,7 +39,7 @@
 	import {
 		badgeClass,
 		badgesDuFlux,
-		classeFlux,
+		classeDuFlux,
 		estTicketUrgent,
 		isNew,
 		typeCouleur,
@@ -133,7 +133,7 @@
 <CarteListe
 	quand={item.date}
 	{heure}
-	classe={classeFlux(item.type)}
+	classe={classeDuFlux(item)}
 	{expanded}
 	urgent={estTicketUrgent(item)}
 	{archive}
