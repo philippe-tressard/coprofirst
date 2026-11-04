@@ -46,6 +46,7 @@ from sqlmodel import Session, select
 from app.auth.deps import exiger_non_externe, get_current_user, peut_commenter
 from app.database import get_session
 from app.models.core import ReponseCommunaute, Utilisateur
+from app.schemas_communaute import ReponseCommunauteRead
 from app.utils.communaute import exiger_acces
 from app.utils.recuperer import ou_404
 from app.utils.reponses import (
@@ -68,8 +69,17 @@ class ReponseCreate(BaseModel):
     contenu: str
 
 
-def reponses_de(rubrique: str, cible_id: int, session: Session) -> list[dict]:
-    """Les réponses d'une cible : CS/admin en tête (plus de poids), puis chronologique.
+class ReponseCommunauteCreeeRead(ReponseCommunauteRead):
+    """La réponse qu'on vient de publier sur une idée ou une annonce : plus sa cible."""
+
+    cible_id: int
+
+
+def reponses_de(
+    rubrique: str, cible_id: int, session: Session, *, lecteur: Utilisateur
+) -> list[dict]:
+    """Les réponses d'une cible, telles que `lecteur` les lit : CS/admin en tête
+    (plus de poids), puis chronologique.
 
     Écrite une fois : `annonces` et `idees` en avaient chacune leur copie, sous
     le même nom `_reponses_for`, à la rubrique près.
@@ -80,7 +90,7 @@ def reponses_de(rubrique: str, cible_id: int, session: Session) -> list[dict]:
             ReponseCommunaute.cible_id == cible_id,
         )
     ).all()
-    return tri_reponses([enrich_reponse(r, session) for r in reps])
+    return tri_reponses([enrich_reponse(r, session, lecteur=lecteur) for r in reps])
 
 
 #  La règle « existe-t-il ET puis-je le voir ? » vit dans `auth/appartenance`
@@ -124,7 +134,7 @@ def enregistrer_routes_reponses(
     puisque l'erreur ne surviendrait qu'à la première notification.
     """
 
-    @router.get("/{cible_id}/reponses")
+    @router.get("/{cible_id}/reponses", response_model=list[ReponseCommunauteRead])
     def list_reponses(
         cible_id: int,
         session: Session = Depends(get_session),
@@ -132,9 +142,9 @@ def enregistrer_routes_reponses(
     ):
         exiger_acces(user)
         exiger_cible_visible(session, modele, cible_id, libelle, user, visible_de)
-        return reponses_de(rubrique, cible_id, session)
+        return reponses_de(rubrique, cible_id, session, lecteur=user)
 
-    @router.post("/{cible_id}/reponses", status_code=201)
+    @router.post("/{cible_id}/reponses", status_code=201, response_model=ReponseCommunauteCreeeRead)
     def create_reponse(
         cible_id: int,
         body: ReponseCreate,
@@ -176,6 +186,7 @@ def enregistrer_routes_reponses(
             "contenu": rep.contenu,
             "cree_le": rep.cree_le,
             **auteur_meta(user, session),
+            "peut_supprimer": peut_commenter(rep, user),
         }
 
     @router.delete("/{cible_id}/reponses/{rep_id}", status_code=204)

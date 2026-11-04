@@ -55,3 +55,19 @@ class LoginRequest(BaseModel):
     @classmethod
     def lowercase_email(cls, v: str) -> str:
         return normaliser_adresse(v)
+
+
+class BatimentPublic(BaseModel):
+    """Un bâtiment de la liste PUBLIQUE de l'inscription (`GET /auth/batiments`).
+
+    🔒 Le numéro seul, avec son identifiant : c'est tout ce que le formulaire
+    d'inscription lit, sur le site comme dans l'app iOS (#2506). La route rendait
+    la ligne entière — nombre d'étages, de caves, spécificités — à qui que ce
+    soit, sans session, alors que le contrat la déclarait `{}`.
+    """
+
+    id: int
+    numero: str
+
+    class Config:
+        from_attributes = True

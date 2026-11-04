@@ -15,7 +15,7 @@ from sqlmodel import Session, select
 from app.auth.deps import get_current_user, ma_notification
 from app.database import get_session
 from app.models.core import Notification, Utilisateur
-from app.routers.notifications_schemas import NotificationRead
+from app.routers.notifications_schemas import NotificationRead, ToutMarquerLu
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -44,7 +44,7 @@ def marquer_lue(
     return notif
 
 
-@router.post("/tout-marquer-lu")
+@router.post("/tout-marquer-lu", response_model=ToutMarquerLu)
 def tout_marquer_lu(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),

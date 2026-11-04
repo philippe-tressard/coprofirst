@@ -357,3 +357,7 @@ from app.schemas_synthese import SyntheseLue as SyntheseLue  # noqa: E402,F401
 from app.schemas_synthese import EtapeMoyenne as EtapeMoyenne  # noqa: E402,F401
 from app.schemas_synthese import ExerciceLu as ExerciceLu  # noqa: E402,F401
 from app.schemas_synthese import ResumeAffaires as ResumeAffaires  # noqa: E402,F401
+
+#  Les réponses de la Communauté (#2506) — idées, annonces, sondages.
+from app.schemas_communaute import MessageRead as MessageRead  # noqa: E402,F401
+from app.schemas_communaute import ReponseCommunauteRead as ReponseCommunauteRead  # noqa: E402,F401
