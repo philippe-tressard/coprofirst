@@ -173,3 +173,56 @@ def test_l_ecran_marque_exactement_les_categories_du_carnet():
         f"marquées à l'écran mais hors du carnet : {sorted(front - serveur)} ; "
         f"au carnet mais non marquées : {sorted(serveur - front)}"
     )
+
+
+#  ── La grille servie à l'app (#2508) ─────────────────────────────────────────
+#
+#  `GET /tickets/referentiels` sert l'ordre, le pictogramme et la description de
+#  chaque catégorie, et les libellés des natures. Ils sont recopiés du front
+#  (`CATEGORIES_TICKET`, `NATURES`) : la grille de l'app et celle du site doivent
+#  rester la même grille.
+
+
+def _decoder_js(texte: str) -> str:
+    """`'\\u{1F6E0}️'` → le caractère : la table du front écrit ses pictogrammes échappés."""
+    return re.sub(r"\\u\{([0-9A-Fa-f]+)\}", lambda m: chr(int(m.group(1), 16)), texte)
+
+
+def _source_decodee() -> str:
+    """La table du front, échappements décodés et commentaires retirés : `\\u{…}`
+    porte une accolade, et un commentaire entre deux entrées en porterait d'autres."""
+    source = _decoder_js(_FRONT.read_text(encoding="utf-8"))
+    source = re.sub(r"/\*.*?\*/", "", source, flags=re.S)
+    return re.sub(r"^\s*//.*$", "", source, flags=re.M)
+
+
+def _grille_du_front() -> list[tuple[str, str, str]]:
+    """`(value, emoji, description)` de chaque entrée de `CATEGORIES_TICKET`, dans l'ordre."""
+    source = _source_decodee()
+    debut = source.index("export const CATEGORIES_TICKET")
+    bloc = source[debut : source.index("\n];", debut)]
+    grille = []
+    for entree in re.findall(r"\{[^{}]*?value:\s*'[a-z_]+'[^{}]*?\}", bloc, re.S):
+        champ = lambda nom: re.search(rf"{nom}:\s*'([^']*)'", entree).group(1)  # noqa: E731
+        grille.append((champ("value"), champ("emoji"), champ("description")))
+    return grille
+
+
+def test_la_grille_servie_est_celle_du_front_ordre_pictogramme_description():
+    from app.utils.categories_ticket import GRILLE_CATEGORIES
+
+    front = _grille_du_front()
+    assert len(front) >= 8, f"{len(front)} entrée(s) lue(s) : le motif ne correspond plus."
+    assert [c for c, _, _ in GRILLE_CATEGORIES] == [c for c, _, _ in front], "ordre"
+    assert list(GRILLE_CATEGORIES) == front
+
+
+def test_les_natures_servies_sont_celles_du_front():
+    from app.utils.nature_affaire import LIBELLES_NATURE
+
+    source = _source_decodee()
+    debut = source.index("export const NATURES")
+    bloc = source[debut : source.index("] as const", debut)]
+    front = dict(re.findall(r"val:\s*'([a-z]+)'[^}]*?libelle:\s*'([^']+)'", bloc, re.S))
+    assert len(front) == 3, f"{len(front)} nature(s) lue(s) : le motif ne correspond plus."
+    assert list(LIBELLES_NATURE.items()) == list(front.items())

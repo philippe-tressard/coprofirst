@@ -20,6 +20,17 @@ export const AFFAIRE = {
 	archivee: false,
 	synthese_validee: true,
 	natures: ['activite'],
+	//  Ce que l'API SERT avec une affaire (#2508) — lu par l'écran, jamais recalculé.
+	urgente: false,
+	categorie_libelle: 'Panne',
+	statut_libelle: 'Résolu',
+	close: true,
+	colonne_kanban: 'termine',
+	nom_proprietaire: 'CS Témoin',
+	peut_archiver: true,
+	peut_changer_etat: true,
+	peut_repondre: true,
+	peut_modifier: true,
 	cree_le: '2026-10-12T09:00:00',
 	mis_a_jour_le: '2026-10-21T09:00:00',
 };

@@ -165,3 +165,18 @@ def test_la_colonne_accepte_l_enumeration():
     from app.utils.kanban_tickets import colonne_du_ticket
 
     assert colonne_du_ticket(StatutTicket.ouvert) == colonne_du_ticket("ouvert") is not None
+
+
+def test_les_colonnes_servies_sont_celles_du_front():
+    """`GET /tickets/referentiels` sert `COLONNES_KANBAN` (#2508) : l'ordre, le
+    libellé et le mot court de `KANBAN_COLS`, que l'app ne recopie plus."""
+    from app.utils.kanban_tickets import COLONNES_KANBAN
+
+    source = _KANBAN_TS.read_text(encoding="utf-8")
+    debut = source.index("export const KANBAN_COLS")
+    corps = source[debut : source.index("];", debut)]
+    front = re.findall(
+        r"id:\s*'([^']+)',\s*label:\s*'([^']+)',\s*labelCourt:\s*'([^']+)'", corps, re.S
+    )
+    assert len(front) == 6, f"{len(front)} colonne(s) lue(s) : le motif ne correspond plus."
+    assert list(COLONNES_KANBAN) == front

@@ -114,36 +114,25 @@ export interface ResidentProposable {
 	email: string;
 }
 
-/** Ce qu'un objet déjà enregistré sait de son propriétaire. */
-export interface PorteProprietaire {
-	proprietaire_nom?: string | null;
-	auteur_nom?: string | null;
-}
-
 /**
- * **À QUI cet objet appartient** — le nom que l'écran AFFICHE.
+ * Ce qu'un objet déjà enregistré sait de son propriétaire : **le nom AFFICHÉ**.
  *
- * ## 🔴 Pourquoi elle existe à côté de `nomCopie` (21/09/2026, #1104)
+ * ## 🔴 Servi par l'API depuis #2508
  *
- * Les deux rendent le même nom dans le cas courant, et ce sont deux questions :
- * celle-ci dit *« de qui est cette affaire ? »*, `nomCopie` dit *« à qui part
- * le courriel ? »*. `nomCopie` tient compte d'une saisie **en cours** — elle
- * doit annoncer ce qui partira au prochain clic —, ce qu'un affichage de liste
- * n'a pas à connaître.
- *
- * Leur fondre en une seule ferait porter deux questions à une fonction dont le
- * nom n'en annonce qu'une, et il faudrait un paramètre pour les départager.
- * Elles partagent en revanche leur **repli**, écrit ici seulement.
+ * « À qui cet objet appartient » — la personne « saisie pour » s'il y en a une,
+ * le rédacteur sinon (#1104) — se composait ici (`nomProprietaire`). L'app iOS
+ * devait le recomposer à son tour : le serveur le sert (`nom_proprietaire`,
+ * `schemas_affaire_servie`), et les deux clients le LISENT. La règle est écrite
+ * une fois, côté serveur ; `npm run lint:regles-partagees` refuse son retour ici.
  *
  * ⚠️ C'est le défaut que ce module portait depuis sa naissance : sa propre
  * en-tête signalait que `CarteTicket` composait `proprietaire_nom ?? auteur_nom`
  * à la main — la remarque est restée, l'expression aussi, et les cartes ont
- * continué d'afficher le rédacteur pendant six jours.
- *
- * @returns Le nom, ou `''` — jamais `undefined`, pour qu'un `{#if}` tranche.
+ * continué d'afficher le rédacteur pendant six jours. `npm run
+ * lint:nom-proprietaire` refuse toujours un `auteur_nom` affiché à sa place.
  */
-export function nomProprietaire(objet: PorteProprietaire | null | undefined): string {
-	return objet?.proprietaire_nom ?? objet?.auteur_nom ?? '';
+export interface PorteProprietaire {
+	nom_proprietaire?: string | null;
 }
 
 /**
@@ -172,8 +161,8 @@ export function nomProprietaire(objet: PorteProprietaire | null | undefined): st
  * qui l'intéressait, la copie ; les cartes ont continué d'afficher
  * `auteur_nom` brut, trois lignes sous un appel à `nomCopie`. Une remarque au
  * passé sur un défaut présent est pire qu'un silence : elle donne l'impression
- * que quelqu'un s'en est occupé. Le nom affiché passe désormais par
- * `nomProprietaire`, et `npm run lint:nom-proprietaire` refuse la récidive.
+ * que quelqu'un s'en est occupé. Le nom affiché est désormais servi
+ * (`nom_proprietaire`), et `npm run lint:nom-proprietaire` refuse la récidive.
  *
  * 🔴 Et en CRÉATION, aucun des deux ne convenait : rien n'est encore
  * enregistré, mais le rédacteur vient de désigner quelqu'un. La case doit dire
@@ -206,10 +195,9 @@ export function nomCopie(
 		//  que le libellé nommé existe pour lever.
 		if (p) return [p.prenom, (p.nom ?? '').toUpperCase()].filter(Boolean).join(' ');
 	}
-	//  🔴 Le repli n'est PAS réécrit ici : `nomProprietaire` le porte, une fois.
-	//  Les deux fonctions répondent à deux questions, elles ne composent pas
-	//  deux fois le même nom.
-	return nomProprietaire(objet);
+	//  🔴 Le repli n'est PAS réécrit ici : le serveur le compose, une fois
+	//  (`nom_proprietaire`, #2508). Cette fonction ne répond qu'à la saisie en cours.
+	return objet?.nom_proprietaire ?? '';
 }
 
 /**

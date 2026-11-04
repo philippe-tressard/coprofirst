@@ -29,6 +29,17 @@ const affaire = (id: number, extra: Record<string, unknown> = {}) => ({
 	priorite: 'normale',
 	auteur_id: 1,
 	auteur_nom: 'CS Témoin',
+	nom_proprietaire: 'CS Témoin',
+	categorie_libelle: 'Panne',
+	statut_libelle: 'Ouvert',
+	colonne_kanban: 'cs',
+	//  Ce que l'API SERT avec une affaire (#2508) — lu par l'écran, jamais recalculé.
+	urgente: false,
+	close: false,
+	peut_archiver: true,
+	peut_changer_etat: true,
+	peut_repondre: true,
+	peut_modifier: false,
 	cree_le: '2026-10-20T10:00:00',
 	mis_a_jour_le: '2026-10-20T10:00:00',
 	perimetre_cible: [],
@@ -40,9 +51,19 @@ const affaire = (id: number, extra: Record<string, unknown> = {}) => ({
 //  Épinglée : le bouton d'options ne se montre que sur une option active —
 //  c'est la rangée la plus longue, celle du test au téléphone.
 const OUVERTE = affaire(7, { epingle: true });
-const CLOSE = affaire(8, { statut: 'résolu' });
-const ABSORBEE = affaire(9, { fusionnee: true });
-const ACTUALITE = affaire(10, { categorie: 'actualite', natures: ['actualite'] });
+const CLOSE = affaire(8, {
+	statut: 'résolu',
+	statut_libelle: 'Résolu',
+	close: true,
+	colonne_kanban: 'termine',
+});
+//  Absorbée : l'API ne sert plus de Suite (`peut_repondre`, `peut_changer_etat`).
+const ABSORBEE = affaire(9, { fusionnee: true, peut_repondre: false, peut_changer_etat: false });
+const ACTUALITE = affaire(10, {
+	categorie: 'actualite',
+	categorie_libelle: 'Actualité',
+	natures: ['actualite'],
+});
 const TOUTES = [OUVERTE, CLOSE, ABSORBEE, ACTUALITE];
 
 /** La liste et la page de l'affaire 7 simulées ; rend les messages postés. */

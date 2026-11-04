@@ -23,7 +23,7 @@
 	 *
 	 * Les événements du calendrier sont devenus des affaires. Paraissent les
 	 * affaires suivies, non archivées et non annulées, rangées par leur état
-	 * (`colonneDuTicket`). Le filtre par exercice est parti avec eux : une
+	 * (`colonne_kanban`, servie par l'API — #2508). Le filtre par exercice est parti avec eux : une
 	 * affaire suivie en cours reste à l'accueil tant qu'elle n'est pas close,
 	 * quelle que soit l'année ; la visibilité est celle du serveur.
 	 */
@@ -35,7 +35,6 @@
 	import {
 		KANBAN_COLS_ACCUEIL,
 		SEUIL_KANBAN_ETROIT,
-		colonneDuTicket,
 		kanbanColVisible,
 		MAX_CARTES_ACCUEIL,
 		MOT_COLONNE_VIDE,
@@ -78,14 +77,14 @@
 	//  un fichier de mille lignes — exactement ce qui se recopie (13/09/2026).
 
 	$: dashKanbanEvs = affaires.filter((t) => {
-		const colonne = colonneDuTicket(t.statut);
+		const colonne = t.colonne_kanban;
 		return t.suivi_kanban && !t.archivee && colonne !== null && colonne !== 'annule';
 	});
 
 	$: dashKanbanCols = DASH_KANBAN_COLS.filter((col) => kanbanColVisible(col.id, ctx)).map((col) => {
 		//  🔴 Le rangement vit dans `#lib/kanban` : il était écrit ici ET dans le
 		//  calendrier, et les deux ont divergé (signalé à l'écran, 02/09/2026).
-		let items: Ticket[] = dashKanbanEvs.filter((t) => colonneDuTicket(t.statut) === col.id);
+		let items: Ticket[] = dashKanbanEvs.filter((t) => t.colonne_kanban === col.id);
 		if (col.id === 'termine') {
 			items = [...items].sort(
 				(a, b) =>

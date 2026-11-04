@@ -284,7 +284,7 @@
 	//  l'auteur, là où `CarteTicket` annonçait le propriétaire. La même case
 	//  disait deux noms selon l'écran.
 	$: nomDeLaCopie = avecSaisiPour
-		? nomCopie({ proprietaire_nom: auteurNom }, { ...saisiPour, residents: residentsSaisiPour })
+		? nomCopie({ nom_proprietaire: auteurNom }, { ...saisiPour, residents: residentsSaisiPour })
 		: auteurNom;
 	export let aideWhatsapp = '';
 	/** Motif interdisant le groupe WhatsApp — relayé jusqu'à `CanauxNotification`. */

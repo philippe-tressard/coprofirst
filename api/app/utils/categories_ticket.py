@@ -46,6 +46,28 @@ LIBELLES_CATEGORIE: dict[str, str] = {
     "actualite": "Actualité",
 }
 
+#: La grille « Nouvelle affaire », servie par `GET /tickets/referentiels` (#2508) —
+#: dans l'ORDRE de la grille, qui est une décision (fréquence attendue, arbitrée au
+#: front : `CATEGORIES_TICKET`, `tickets-categories.ts`). Chaque entrée : la valeur,
+#: son pictogramme, ce qu'elle recouvre. 🔒 `test_categories_ticket_concordance.py`
+#: compare ordre, pictogramme et description à la table du front.
+GRILLE_CATEGORIES: tuple[tuple[str, str, str], ...] = (
+    ("panne", "🛠️", "Ascenseur, chauffage, éclairage, fuite, porte — à réparer"),
+    ("nuisance", "📢", "Bruit, odeurs, stationnement…"),
+    ("acces_accueil", "🔑", "Interphone, boîte aux lettres, emménagement"),
+    ("espaces_verts", "🌳", "Élagage, haies, arrosage, allées…"),
+    ("sinistre", "💧", "Dégât constaté : eau, incendie, vandalisme…"),
+    ("etude_travaux", "🏗️", "Diagnostic, sondage, devis, chantier suivi par le conseil"),
+    ("entretien", "🧰", "Visite ou maintenance d’un prestataire, récurrente ou non"),
+    ("question", "❓", "Information, procédure…"),
+    ("bug", "🐛", "Pb technique sur le site"),
+    ("actualite", "📰", "Information — suivi optionnel"),
+)
+
+#: Les catégories posées EN TÊTE de la grille, pleine ligne : on choisit d'abord
+#: entre informer et faire traiter (#1092).
+CATEGORIES_EN_TETE: tuple[str, ...] = ("actualite",)
+
 
 def libelle_categorie(categorie) -> str:
     """« panne » → « Panne ». Rend la valeur telle quelle si elle est inconnue.

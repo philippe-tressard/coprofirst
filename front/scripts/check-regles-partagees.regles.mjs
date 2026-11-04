@@ -163,62 +163,57 @@ export const REGLES_PARTAGEES = {
 	},
 
 	//  ── Affaires (#2508) ─────────────────────────────────────────────────────
-	isCS: {
-		quoi: 'les gestes du modérateur (archiver, déplacer au Kanban, catégories réservées)',
-		api: 'api/app/auth/deps.py#est_moderateur',
-		migration: {
-			ticket: '#2508',
-			raison:
-				"l'app recompose « conseil ou admin » depuis `/auth/me` : `peut_archiver`, `peut_changer_etat` à servir avec l'affaire",
-		},
-	},
+	//  Servies par `TicketRead` (`schemas_affaire_servie`) depuis #2508 : urgence,
+	//  colonne du Kanban, nom affiché. Les gestes (`auth/gestes_affaire`) et les tables
+	//  (`GET /tickets/referentiels`) le sont aussi ; ce qui reste au front l'est HORS
+	//  des affaires, et sa migration est portée par #2511.
 	ticketUrgent: {
 		quoi: "l'urgence d'une affaire (⚡)",
 		api: 'api/app/utils/categories_ticket.py#ticket_urgent',
-		migration: {
-			ticket: '#2508',
-			raison:
-				'le serveur la calcule pour la suite groupée, le front la recopie pour la carte : `urgente` à servir dans `TicketRead`',
-		},
+		//  Servie par `TicketRead.urgente` (#2508).
 	},
 	colonneDuTicket: {
 		quoi: 'la colonne du Kanban d’une affaire selon son statut',
 		api: 'api/app/utils/kanban_tickets.py#colonne_du_ticket',
+		//  Servie par `TicketRead.colonne_kanban` (#2508).
+	},
+	nomProprietaire: {
+		quoi: 'le nom d’un objet « saisi pour » (le propriétaire, sinon le rédacteur)',
+		api: 'api/app/schemas_affaire_servie.py#nom_proprietaire',
+		//  Servie par `TicketRead.nom_proprietaire` (#2508).
+	},
+	isCS: {
+		quoi: 'les gestes du modérateur (archiver, déplacer au Kanban, catégories réservées)',
+		api: 'api/app/auth/deps.py#est_moderateur',
 		migration: {
-			ticket: '#2508',
-			raison: "l'app la génère depuis `kanban.ts` : servir la colonne, ou la table avec le contrat",
+			ticket: '#2511',
+			raison:
+				"servis pour les affaires (`peut_archiver`, `peut_deplacer_au_kanban`, `referentiels.categories[].permise`, #2508) ; le site garde `$isCS` pour une cinquantaine d'écrans hors affaires",
 		},
 	},
 	categorieTicketLabel: {
 		quoi: 'le libellé d’une catégorie d’affaire (carnet, cartes)',
 		api: 'api/app/utils/categories_ticket.py#libelle_categorie',
 		migration: {
-			ticket: '#2508',
+			ticket: '#2511',
 			raison:
-				"l'app la génère depuis `tickets-categories.ts` : `categorie_libelle` à servir (carnet : #2505)",
-		},
-	},
-	nomProprietaire: {
-		quoi: 'le nom d’un objet « saisi pour » (le propriétaire, sinon le rédacteur)',
-		migration: {
-			ticket: '#2508',
-			raison:
-				"l'app choisit elle-même entre `proprietaire_nom` et `auteur_nom` : un seul champ affiché à servir",
+				"servi avec l'affaire (`categorie_libelle`) et le référentiel (#2508) ; le front l'applique encore au carnet, au reporting et au pied de carte, que l'API ne sert pas avec ce champ",
 		},
 	},
 	statutTicketLabel: {
 		quoi: 'le libellé d’un statut d’affaire',
 		migration: {
-			ticket: '#2508',
-			raison: "aucun pendant au serveur ; l'app le génère depuis `tickets.ts`",
+			ticket: '#2511',
+			raison:
+				"servi avec l'affaire (`statut_libelle`) et le référentiel (#2508) ; le front l'applique encore aux états du fil et des CR, servis en codes",
 		},
 	},
 	estTicketClos: {
 		quoi: 'une affaire close (résolue ou annulée)',
 		migration: {
-			ticket: '#2508',
+			ticket: '#2511',
 			raison:
-				"la liste des statuts clos vit au serveur (`STATUTS_TICKET_CLOS`), le prédicat dans le front : l'app le génère",
+				"servie avec l'affaire (`close`) et le référentiel (`statuts[].clos`, #2508) ; le front l'applique encore au fil, aux affaires liées et à l'état choisi d'une fusion",
 		},
 	},
 };

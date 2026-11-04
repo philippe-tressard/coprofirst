@@ -43,14 +43,13 @@
 	import type { Ticket } from '#lib/api/index.ts';
 	import { SUITE } from '#lib/gestes.ts';
 	import { isCS, isAdmin } from '#lib/stores/auth.ts';
-	import { ticketUrgent } from '#lib/tickets.ts';
 	import BoutonOptions from './BoutonOptions.svelte';
 	import IconeAction from './IconeAction.svelte';
 
 	export let pub: Ticket;
 	//  Les options d'une actualité — épinglage et urgence (#1096). L'urgence
-	//  d'une affaire EST sa priorité : lue par `ticketUrgent`, jamais redérivée.
-	$: options = { epingle: pub.epingle, urgente: ticketUrgent(pub) };
+	//  d'une affaire EST sa priorité, et le serveur la sert (`urgente`, #2508).
+	$: options = { epingle: pub.epingle, urgente: pub.urgente };
 	/** La publication dont le formulaire de commentaire est ouvert, ou `null`. */
 	export let commentaireOuvertId: number | null = null;
 	/** Celle dont le formulaire de correction est ouvert, ou `null`. */
@@ -110,12 +109,15 @@
 		ouvert={optionsOuvertesId === pub.id}
 		onOuvrir={() => onOptions(pub)}
 	/>
-	<button
-		class="btn-icon"
-		aria-label="Archiver"
-		title="Archiver — rejoint l'onglet Archives"
-		on:click|stopPropagation={() => onArchiver(pub)}><IconeAction icone="archive" /></button
-	>
+	{#if pub.peut_archiver}
+		<!--  📦 Le geste que la route accepte pour CE lecteur (`peut_archiver`, #2508). -->
+		<button
+			class="btn-icon"
+			aria-label="Archiver"
+			title="Archiver — rejoint l'onglet Archives"
+			on:click|stopPropagation={() => onArchiver(pub)}><IconeAction icone="archive" /></button
+		>
+	{/if}
 {:else if archive && $isAdmin}
 	<button
 		class="btn-icon-danger"

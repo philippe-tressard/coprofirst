@@ -26,7 +26,6 @@
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
-	import { nomProprietaire } from '#lib/saisi-pour.ts';
 	import { createEventDispatcher } from 'svelte';
 	import ApercuCarte from '#lib/components/ApercuCarte.svelte';
 	import ExtraitRecherche from '#lib/components/ExtraitRecherche.svelte';
@@ -41,7 +40,7 @@
 		type Ticket,
 	} from '#lib/api/index.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
-	import { attributsNature, gouttiereAffaire, lienTicket, ticketUrgent } from '#lib/tickets.ts';
+	import { attributsNature, gouttiereAffaire, lienTicket } from '#lib/tickets.ts';
 	//  Glyphes et intitulés des quatre options : source unique. Ils étaient
 	//  écrits ici ET dans les cases du formulaire, et avaient divergé.
 	import { optionPublication } from '#lib/options-publication.ts';
@@ -49,8 +48,9 @@
 
 	export let pub: Ticket;
 	//  À QUI l'actualité appartient — le « Saisi pour » s'il existe, l'auteur
-	//  sinon (#1104). C'est le même nom sur la carte et dans le corps déplié.
-	$: proprietaireNom = nomProprietaire(pub);
+	//  sinon (#1104). C'est le même nom sur la carte et dans le corps déplié ;
+	//  le serveur le compose (`nom_proprietaire`, #2508).
+	$: proprietaireNom = pub.nom_proprietaire;
 	//  Photos et documents, en URLs comme toute affaire.
 	$: pieces = [...(pub.photos_urls ?? []), ...(pub.fichiers_urls ?? [])];
 	export let expanded = false;
@@ -92,7 +92,7 @@
 	id="ticket-{pub.id}"
 	{...gouttiereAffaire(pub)}
 	{expanded}
-	urgent={ticketUrgent(pub)}
+	urgent={pub.urgente}
 	archive={!estFil}
 	onDeplier={basculer}
 	{onApprocher}

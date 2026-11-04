@@ -167,9 +167,13 @@ def _sans_marque(type_: str) -> str:
 
 
 def _compatible(ancien: str, nouveau: str) -> bool:
-    """Un champ qui change de type reste lisible : même type, ou resserré (`T?` → `T`)."""
+    """Un champ qui change de type reste lisible : même type, ou resserré (`T?` → `T`).
+
+    Une réponse LIBRE qui se type (`libre` → `objet`, #2508) est un resserrement
+    aussi : un client qui décodait n'importe quel JSON décode celui-là.
+    """
     a, n = _sans_marque(ancien), _sans_marque(nouveau)
-    return a == n or (a.endswith("?") and a[:-1] == n)
+    return a == n or (a.endswith("?") and a[:-1] == n) or a.rstrip("?") == "libre"
 
 
 def comparer(reference: dict[str, dict], courant: dict[str, dict]) -> Ecarts:

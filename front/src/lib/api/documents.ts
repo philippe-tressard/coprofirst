@@ -208,9 +208,9 @@ export const fichiersApi = {
 	 * un ticket, une affaire ou un commentaire. Ne demande aucun élément parent :
 	 * l'URL est connue avant la création, ce qui permet de la passer dans le
 	 * payload — et donc de la joindre à l'e-mail envoyé au syndic.
-	 * Retourne { url, nom, type }
+	 * Retourne { url, nom, type } — typé dans le contrat (`PieceJointeRecue`, #2508).
 	 */
-	upload: (file: File): Promise<{ url: string; nom: string; type: string }> =>
+	upload: (file: File): Promise<{ url: string; nom: string; type: 'image' | 'document' }> =>
 		postFormData('/uploads/fichier', { file }),
 };
 

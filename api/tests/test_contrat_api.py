@@ -99,6 +99,14 @@ def test_un_champ_resserre_ou_deprecie_reste_lisible():
     assert inv.version_suivante("1.4.0", ecarts) == "1.5.0"
 
 
+def test_une_reponse_libre_qui_se_type_reste_lisible_l_inverse_non():
+    """`POST /uploads/fichier` rendait un dictionnaire non typé (#2508)."""
+    libre = {**_REF, "GET /x": _op({"$": "libre"})}
+    typee = {**_REF, "GET /x": _op({"$": "objet", "$.url": "string"})}
+    assert inv.comparer(libre, typee).retraits == []
+    assert inv.comparer(typee, libre).retraits == ["GET /x → $", "GET /x → $.url"]
+
+
 def test_une_entree_requise_neuve_est_refusee_une_entree_relachee_passe():
     exige = {**_REF, "POST /y": _op(entree=["corps", "corps.titre", "corps.lot_id"])}
     assert inv.refus(inv.comparer(_REF, exige), {}, "3.0.0") == [

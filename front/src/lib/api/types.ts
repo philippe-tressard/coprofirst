@@ -234,16 +234,38 @@ export interface Ticket extends PorteSaisiPourLu {
 	fin?: string | null;
 	/**  📌 Épinglé — maintenu en tête de la liste (05/09/2026).
 	 *
-	 *   ⚠️ Il n'y a pas de champ `urgente` en face : l'urgence d'un ticket EST sa
-	 *   `priorite`, que la catégorie « Urgence » met à `haute`. La case 🚨 de
-	 *   l'écran pilote celle-là — voir `optionsDuTicket()`. */
+	 *   ⚠️ `urgente` (plus bas) n'est pas une colonne : l'urgence d'un ticket EST sa
+	 *   `priorite`, que le serveur lit pour la servir. La case 🚨 de l'écran pilote
+	 *   `priorite` — voir `optionsDuTicket()`. */
 	epingle?: boolean;
+	//  ── Servis par l'API (#2508, `schemas_affaire_servie`) : le site et l'app iOS
+	//  les LISENT, aucun ne les recalcule. Toujours présents dans une réponse.
+	/** ⚡ L'affaire presse (`categories_ticket.ticket_urgent`). */
+	urgente: boolean;
+	/** « Étude & travaux » — la valeur brute si elle est inconnue. */
+	categorie_libelle: string;
+	/** « Chez le syndic » — la valeur brute si elle est inconnue. */
+	statut_libelle: string;
+	/** Résolue ou annulée : elle quitte le suivi. */
+	close: boolean;
+	/** La colonne du Kanban, `null` hors tableau (`kanban_tickets.colonne_du_ticket`). */
+	colonne_kanban: string | null;
+	/** Le nom AFFICHÉ : la personne « saisie pour », sinon le rédacteur (#1104). */
+	nom_proprietaire: string;
+	/** 🔹 Le lieu lisible, vide pour le périmètre par défaut. */
+	perimetre_libelle?: string;
+	/** Les gestes de CE lecteur (`auth/gestes_affaire`) — fermés par défaut. */
+	peut_archiver?: boolean;
+	peut_changer_etat?: boolean;
+	peut_deplacer_au_kanban?: boolean;
+	peut_repondre?: boolean;
+	peut_modifier?: boolean;
 	/**  Le ticket paraît-il au KANBAN ? Coché d'office pour « Étude & travaux »,
 	 *   décochable par le conseil (#833).
 	 *
-	 *   ⚠️ Elle dit SI, jamais OÙ : la colonne se déduit du `statut`. Un second
-	 *   champ d'état créerait deux notions de suivi sur le même objet.
-	 *   Correspondance : `colonneDuTicket()` dans `#lib/kanban`. */
+	 *   ⚠️ Elle dit SI, jamais OÙ : la colonne se déduit du `statut`, par le
+	 *   serveur (`colonne_kanban`, #2508). Un second champ d'état créerait deux
+	 *   notions de suivi sur le même objet. */
 	suivi_kanban?: boolean;
 	/**  Le suivi d'une ACTUALITÉ (10/10/2026) : `null` sans suivi, sinon « ouvert »,
 	 *   « résolu » ou « annulé » — un repère, `statut` restant « publie »

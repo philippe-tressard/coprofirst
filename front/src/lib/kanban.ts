@@ -179,18 +179,7 @@ export const COLONNE_PAR_STATUT_TICKET: Record<string, string> = {
 	annulé: 'annule',
 };
 
-/**
- * La colonne d'un ticket, ou `null` si son statut n'en désigne aucune.
- *
- * ⚠️ `null` plutôt qu'un repli sur `cs` : un statut inconnu doit SORTIR le
- * ticket du tableau, pas l'y ranger arbitrairement. Une carte posée dans la
- * mauvaise colonne se lit comme une information, et personne ne la remet en
- * cause.
- *
- * ⚠️ La colonne `fournisseur` est inatteignable depuis un ticket, et c'est un
- * constat : aucun statut de ticket ne dit « chez le prestataire ».
- */
-export function colonneDuTicket(statut: string | null | undefined): string | null {
-	if (!statut) return null;
-	return COLONNE_PAR_STATUT_TICKET[statut] ?? null;
-}
+//  La colonne d'un ticket ne se calcule plus ici : le serveur la sert
+//  (`colonne_kanban`, `kanban_tickets.colonne_du_ticket`, #2508) — `null` pour un
+//  statut qui n'en désigne aucune, jamais un repli sur `cs`. La table ci-dessus
+//  reste celle du GESTE : la colonne où l'on lâche une carte → l'état demandé.

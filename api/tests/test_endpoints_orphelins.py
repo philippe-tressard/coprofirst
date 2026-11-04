@@ -44,6 +44,8 @@ SANS_CONSOMMATEUR_FRONT = {
     "/appareils": "appelée par l'application iOS seule, dont le client se génère du contrat "
     "publié (#2456) — la PWA n'enregistre pas d'appareil (spec notifications-push §6.2, #2493)",
     "/appareils/{abonnement}": "idem : le retrait de l'appareil à la déconnexion de l'application iOS",
+    "/tickets/referentiels": "lue par l'application iOS, dont la grille « Nouvelle affaire » et le "
+    "Kanban la générait depuis le front (#2508) ; le site garde ses tables, concordantes",
     "/prestataires/releves/{r_id}/photo/{nom}": "idem, pour `releve_compteur.photo_url` — le GET passait auparavant par "
     "coïncidence, le POST d'upload partageant son chemin (cf. limite de "
     "`_motif`) ; les chemins diffèrent depuis la 0126, il est donc vu",
