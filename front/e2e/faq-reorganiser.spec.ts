@@ -14,6 +14,7 @@ const QUESTIONS = [
 	{
 		id: 1,
 		categorie: 'Général',
+		categorie_libelle: 'Général',
 		question: 'Première question',
 		reponse: '<p>a</p>',
 		ordre: 0,
@@ -22,6 +23,7 @@ const QUESTIONS = [
 	{
 		id: 2,
 		categorie: 'Général',
+		categorie_libelle: 'Général',
 		question: 'Deuxième question',
 		reponse: '<p>b</p>',
 		ordre: 1,
@@ -30,6 +32,7 @@ const QUESTIONS = [
 	{
 		id: 3,
 		categorie: 'Tri des déchets',
+		categorie_libelle: 'Tri des déchets',
 		question: 'Où jeter le verre ?',
 		reponse: '<p>c</p>',
 		ordre: 0,

@@ -119,6 +119,8 @@ export interface EntreeFaq {
 	actif: boolean;
 	cree_le: string;
 	mis_a_jour_le: string;
+	/** Le libellé affiché de la catégorie — `faq_categories.libelle_categorie_faq` (#2506). */
+	categorie_libelle: string;
 }
 
 /**  Un membre du conseil syndical dans l'annuaire — `utils/annuaire.membres_du_conseil`.

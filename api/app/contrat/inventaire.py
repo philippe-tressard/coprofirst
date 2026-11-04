@@ -16,7 +16,8 @@ Par opération (`GET /tickets/{ticket_id}`) :
 
 Ajouter une opération ou un champ : libre. Retirer une opération ou un champ,
 changer son type, le rendre facultatif : un client décodait ce champ — refusé,
-sauf retrait annoncé (`retraits.py`). Le resserrer (`string?` → `string`) : libre.
+sauf retrait annoncé (`retraits.py`). Le resserrer (`string?` → `string`, ou typer une
+réponse libre) : libre.
 Exiger une entrée neuve d'une opération existante : refusé — elle est facultative,
 ou c'est une opération neuve.
 
@@ -173,20 +174,22 @@ def _sans_marque(type_: str) -> str:
 def _compatible(ancien: str, nouveau: str) -> bool:
     """Un champ qui change de type reste lisible : même type, ou resserré (`T?` → `T`).
 
-    Une valeur `libre` qu'on TYPE est resserrée aussi (#2505) : le client la
-    décodait comme n'importe quel JSON, il décode encore ce qu'on lui précise —
-    un objet, une liste, ou le `fichier` qu'elle a toujours été. Ses champs neufs
-    sont des ajouts. Un dictionnaire libre qui devient un objet de même : ses
-    valeurs typées, s'il en avait, restent gardées par leur chemin (`$.{}`).
+    Une réponse LIBRE (aucun schéma, `{}`) qui se type est un resserrement aussi
+    (#2506) : le client la décodait en JSON quelconque, il lit la forme typée. Ce qui
+    était libre et facultatif (`libre?`) peut devenir présent et typé. L'inverse — un
+    type qui redevient libre — reste un retrait.
+
+    De même un DICTIONNAIRE libre (`list[dict]`) qui devient un objet (#2505) : le
+    client le lisait en table de valeurs quelconques, il lit l'objet ; des valeurs
+    typées, s'il en avait, restent gardées par leur chemin (`$.{}`). Une réponse
+    libre qui devient un `fichier` (`REPONSE_FICHIER`) suit la règle du libre.
     """
     a, n = _sans_marque(ancien), _sans_marque(nouveau)
-    if a == n or (a.endswith("?") and a[:-1] == n):
+    if a == "libre?" or (a == "libre" and not n.endswith("?")):
         return True
-    #  Jamais relâché : un champ toujours présent ne devient pas facultatif.
-    if n.endswith("?") and not a.endswith("?"):
-        return False
-    base_a, base_n = a.removesuffix("?"), n.removesuffix("?")
-    return base_a == "libre" or (base_a == "dictionnaire" and base_n == "objet")
+    if a.removesuffix("?") == "dictionnaire" and n in ("objet", a.replace("dictionnaire", "objet")):
+        return True
+    return a == n or (a.endswith("?") and a[:-1] == n)
 
 
 def comparer(reference: dict[str, dict], courant: dict[str, dict]) -> Ecarts:

@@ -59,8 +59,6 @@
 	export let showForm = false;
 	/** L'annonce dépliée — liée aussi : un lien profond (`#annonce-12`) la désigne. */
 	export let expandedAnnonce: number | null = null;
-	export let estCS = false;
-	export let estAdmin = false;
 	export let currentUserId: number | undefined = undefined;
 	export let onSignaler: (cibleType: string, cibleId: number) => void;
 
@@ -275,8 +273,6 @@
 				liste={items}
 				expandedId={expandedAnnonce}
 				gestionPhotosId={gestionPhotos}
-				{estCS}
-				{estAdmin}
 				{currentUserId}
 				onToggle={basculer}
 				onToggleGestion={basculerGestion}
