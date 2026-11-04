@@ -28,8 +28,14 @@ from app.models.core import (
     Utilisateur,
     Lot,
 )
-from app.routers.acces.resident_schemas import CommandeAccesCreate, CommandeAccesRead
-from app.routers.acces.vues import AccesOut
+from app.routers.acces.resident_schemas import (
+    AccesSignalePerdu,
+    BadgeDeclare,
+    CommandeAccesCreate,
+    CommandeAccesRead,
+    DeclarerBadgeBody,
+)
+from app.routers.acces.vues import AccesPorteur
 from app.utils.types_acces import TELECOMMANDE, TYPES_ACCES, TypeAcces, VIGIK
 from app.utils.destinataires import membres_cs_notifiables
 from app.utils.noms import contexte_personne, nom_affiche
@@ -58,7 +64,7 @@ router = APIRouter()
 #  divergent volontairement.
 
 
-def _mes_acces(session: Session, type_acces: TypeAcces, user: Utilisateur) -> list[AccesOut]:
+def _mes_acces(session: Session, type_acces: TypeAcces, user: Utilisateur) -> list[AccesPorteur]:
     """Les accès d'un porteur : les siens, plus ceux qui lui sont attribués.
 
     ⚠️ Le dédoublonnage n'est pas décoratif : un copropriétaire peut être à la
@@ -69,24 +75,24 @@ def _mes_acces(session: Session, type_acces: TypeAcces, user: Utilisateur) -> li
     la colonne Accès »*). La liste rendait `session.exec(select(Vigik))` tel
     quel, donc `perimetre_cible` sous sa forme de stockage — la chaîne
     `'["bat:2"]'` là où l'écran attend une liste de codes. Parser côté écran
-    aurait fait une seconde lecture du même champ ; `AccesOut` la fait une fois,
+    aurait fait une seconde lecture du même champ ; `AccesPorteur` la fait une fois,
     et la vue du conseil syndical en dérive.
     """
     #  🔴 Les porteurs se DÉDUISENT du lot depuis #1194 — conjoint compris. La
     #  liste lisait `user_id` plus les tables d'attribution, que sept chemins
     #  écrivaient et dont un seul servait le conjoint inscrit après coup.
     sortie = acces_de(session, type_acces, user.id)
-    return AccesOut.depuis(session, type_acces, sortie)
+    return AccesPorteur.depuis(session, type_acces, sortie)
 
 
 def _signaler_perdu(
     session: Session, type_acces: TypeAcces, objet_id: int, user: Utilisateur
-) -> dict:
+) -> AccesSignalePerdu:
     objet = exiger_acces_du_porteur(session, type_acces, objet_id, user)
     objet.statut = StatutAcces.perdu
     session.add(objet)
     session.commit()
-    return {"statut": objet.statut}
+    return AccesSignalePerdu(statut=objet.statut)
 
 
 #  🔴 `_supprimer_acces` A ÉTÉ RETIRÉ LE 15/09/2026, avec ses deux routes —
@@ -111,7 +117,9 @@ def _signaler_perdu(
 #  `utils/acces_detachement`, et c'est pour cela qu'il n'était pas écrit ici.
 
 
-def _declarer_acces(session: Session, type_acces: TypeAcces, code: str, user: Utilisateur) -> dict:
+def _declarer_acces(
+    session: Session, type_acces: TypeAcces, code: str, user: Utilisateur
+) -> BadgeDeclare:
     """Un porteur déclare un accès qu'il détient déjà.
 
     Si le code correspond à une ligne d'import non résolue, celle-ci est marquée
@@ -160,18 +168,15 @@ def _declarer_acces(session: Session, type_acces: TypeAcces, code: str, user: Ut
 
     session.commit()
     session.refresh(objet)
-    return {
-        "type": type_acces.cle,
-        "id": objet.id,
-        "code": code,
-        "import_resolu": ligne is not None,
-    }
+    return BadgeDeclare(
+        type=type_acces.cle, id=objet.id, code=code, import_resolu=ligne is not None
+    )
 
 
 # ── Vue résident ────────────────────────────────────────────────────────────
 
 
-@router.get("/mes-vigiks")
+@router.get("/mes-vigiks", response_model=list[AccesPorteur])
 def mes_vigiks(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
@@ -179,7 +184,7 @@ def mes_vigiks(
     return _mes_acces(session, VIGIK, user)
 
 
-@router.get("/mes-telecommandes")
+@router.get("/mes-telecommandes", response_model=list[AccesPorteur])
 def mes_telecommandes(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
@@ -272,7 +277,7 @@ class SignalerPerduBody(BaseModel):
     raison: str = ""
 
 
-@router.patch("/vigiks/{vigik_id}/perdu")
+@router.patch("/vigiks/{vigik_id}/perdu", response_model=AccesSignalePerdu)
 def signaler_vigik_perdu(
     vigik_id: int,
     body: SignalerPerduBody,
@@ -282,7 +287,7 @@ def signaler_vigik_perdu(
     return _signaler_perdu(session, VIGIK, vigik_id, user)
 
 
-@router.patch("/telecommandes/{tc_id}/perdu")
+@router.patch("/telecommandes/{tc_id}/perdu", response_model=AccesSignalePerdu)
 def signaler_tc_perdu(
     tc_id: int,
     body: SignalerPerduBody,
@@ -292,12 +297,7 @@ def signaler_tc_perdu(
     return _signaler_perdu(session, TELECOMMANDE, tc_id, user)
 
 
-class DeclarerBadgeBody(BaseModel):
-    type: str  # 'vigik' | 'telecommande'
-    code: str
-
-
-@router.post("/declarer-badge", status_code=201)
+@router.post("/declarer-badge", response_model=BadgeDeclare, status_code=201)
 def declarer_badge(
     body: DeclarerBadgeBody,
     session: Session = Depends(get_session),
@@ -305,13 +305,7 @@ def declarer_badge(
 ):
     """Un résident déclare un badge / TC qu'il possède déjà.
 
-    ⚠️ Le type est cherché dans `TYPES_ACCES`, jamais comparé à des chaînes
-    écrites ici : une seconde liste des types connus diverge au troisième accès.
+    Le code vide et le type inconnu sont refusés par `DeclarerBadgeBody` : un 422
+    de la forme que le contrat annonce (#2507).
     """
-    code = body.code.strip()
-    if not code:
-        raise HTTPException(422, "Code vide")
-    type_acces = TYPES_ACCES.get(body.type)
-    if type_acces is None:
-        raise HTTPException(422, "Type invalide : " + " ou ".join(TYPES_ACCES))
-    return _declarer_acces(session, type_acces, code, user)
+    return _declarer_acces(session, TYPES_ACCES[body.type], body.code, user)

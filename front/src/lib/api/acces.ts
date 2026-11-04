@@ -27,6 +27,7 @@ export type StatutAcces = 'actif' | 'suspendu' | 'perdu';
  *  ouvre, son lot, et s'il a été confié au locataire.
  */
 export interface AccesPorteur {
+	//  `AccesPorteur` aussi au serveur depuis #2507 (`routers/acces/vues.py`).
 	id: number;
 	code: string;
 	statut: StatutAcces;
@@ -89,7 +90,12 @@ export interface CommandeAcces {
 	cree_le: string;
 }
 
-/**  Ce que rend la déclaration d'un badge par son porteur (`resident._declarer_acces`). */
+/**  Ce que rend le signalement d'une perte — `AccesSignalePerdu` (`resident_schemas`). */
+export interface AccesSignalePerdu {
+	statut: StatutAcces;
+}
+
+/**  Ce que rend la déclaration d'un badge par son porteur — `BadgeDeclare` (`resident_schemas`). */
 export interface BadgeDeclare {
 	/** La clé du type (`vigik`, `telecommande`). */
 	type: string;
@@ -210,10 +216,9 @@ export const acces = {
 	mesVigiks: () => api.get<AccesPorteur[]>('/acces/mes-vigiks'),
 	mesTelecommandes: () => api.get<AccesPorteur[]>('/acces/mes-telecommandes'),
 	creerCommande: (data: unknown) => api.post<CommandeAcces>('/acces/commandes', data),
-	signalerVigiKPerdu: (id: number) =>
-		api.patch<{ statut: StatutAcces }>(`/acces/vigiks/${id}/perdu`, {}),
+	signalerVigiKPerdu: (id: number) => api.patch<AccesSignalePerdu>(`/acces/vigiks/${id}/perdu`, {}),
 	signalerTcPerdu: (id: number) =>
-		api.patch<{ statut: StatutAcces }>(`/acces/telecommandes/${id}/perdu`, {}),
+		api.patch<AccesSignalePerdu>(`/acces/telecommandes/${id}/perdu`, {}),
 	//  🔴 `supprimerVigik` et `supprimerTc` sont partis le 15/09/2026, avec
 	//  leurs routes : un résident ne supprime pas un accès, il signale une perte.
 	//  La suppression définitive reste à l'administrateur (`supprimerAcces`).

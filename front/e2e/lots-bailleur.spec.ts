@@ -3,9 +3,10 @@
  *
  *  Extraite de `mon-lot/+page.svelte` en `LotsBailleur`. Ce test tient ce que
  *  l'extraction devait conserver : les lots possédés (occupé · vacant), la carte
- *  du locataire avec ses baux, les lots vacants, et le libellé du type d'un lot
- *  désormais écrit une fois (`lotTypeComplet`) — y compris pour un type inconnu,
- *  que la fonction partagée rendait brut avant ce lot.
+ *  du locataire avec ses baux, les lots vacants, et le libellé du type d'un lot.
+ *  Depuis #2507 ce libellé est SERVI par l'API (`libelle_type_complet`, règle et cas
+ *  du type inconnu éprouvés par `api/tests/test_libelles_lot_servis.py`) : l'écran
+ *  le lit tel quel, il ne le recompose plus.
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
@@ -28,8 +29,16 @@ const LOTS = [
 		type: 'appartement',
 		type_appartement: 'T3',
 		etage: 2,
+		libelle_type_complet: 'Appartement – T3',
 	},
-	{ id: 2, numero: '40', batiment_nom: 'Bât. 2', type: 'local_commercial', etage: 0 },
+	{
+		id: 2,
+		numero: '40',
+		batiment_nom: 'Bât. 2',
+		type: 'local_commercial',
+		etage: 0,
+		libelle_type_complet: 'Local commercial',
+	},
 ];
 
 const BAIL = {
@@ -64,12 +73,12 @@ test('lots possédés, locataire et lots vacants', async ({ page }) => {
 	await expect(page.getByText('🔓 Lots vacants (1)')).toBeVisible();
 });
 
-test('le type d’un lot : une écriture, y compris pour un type inconnu', async ({ page }) => {
+test('le type d’un lot : l’écran lit le libellé que l’API sert', async ({ page }) => {
 	await ouvrir(page);
 	const cartes = page.locator('.lot-possede-card');
 	await expect(cartes.filter({ hasText: '12' })).toContainText('Appartement – T3');
-	//  `local_commercial` : la fonction partagée le rendait brut avant ce lot.
-	await expect(cartes.filter({ hasText: '40' })).toContainText(/Local commercial/i);
+	//  `local_commercial` : le code n'est jamais montré, le libellé servi l'est.
+	await expect(cartes.filter({ hasText: '40' })).toContainText('Local commercial');
 	await expect(cartes.filter({ hasText: '40' })).not.toContainText('local_commercial');
 });
 

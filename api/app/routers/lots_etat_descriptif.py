@@ -50,6 +50,7 @@ from app.utils.etat_descriptif_application import (
 from app.utils.etat_descriptif_ia import USAGE_LECTURE_ETAT_DESCRIPTIF, remplir_en_tache_de_fond
 from app.utils.fichiers import lire_tableur_recu
 from app.utils.import_xlsx import feuille_du_classeur, lignes_du_classeur
+from app.utils.libelles_lot import libelle_type_lot
 from app.utils.recuperer import ou_404
 
 router = APIRouter()
@@ -60,6 +61,15 @@ _TYPE_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 class LigneLue(Ligne):
     #: La nature reconnue (`NatureLot`), `None` si la mention est illisible.
     nature_lue: Optional[str] = None
+    #: Ce que l'écran affiche : la nature reconnue en clair, sinon la mention telle
+    #: que l'acte l'écrit, sinon « — » (#2507, `utils/libelles_lot`).
+    nature_libelle: str = "—"
+
+
+def _ligne_lue(ligne: Ligne, nature_lue: Optional[str]) -> LigneLue:
+    """Une ligne de l'état descriptif, sa nature reconnue et son libellé servis."""
+    libelle = libelle_type_lot(nature_lue) if nature_lue else (ligne.nature or "—")
+    return LigneLue(**ligne.model_dump(), nature_lue=nature_lue, nature_libelle=libelle)
 
 
 class BatimentLettre(BaseModel):
@@ -133,9 +143,7 @@ def _etat(session: Session) -> EtatDescriptifLu:
         applique_le=imp.applique_le,
         cles=lecture.cles,
         lignes=[
-            LigneLue(
-                **lu.model_dump(), nature_lue=nature[lu.rang].value if nature[lu.rang] else None
-            )
+            _ligne_lue(lu, nature[lu.rang].value if nature[lu.rang] else None)
             for lu in lecture.lignes
         ],
         constats=trouves,

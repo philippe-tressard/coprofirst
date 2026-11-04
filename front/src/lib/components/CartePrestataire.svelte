@@ -43,7 +43,6 @@
 
 	export let p: Prestataire;
 	export let cs: ContratEntretien[] = [];
-	export let nextVisit: string | null = null;
 	export let notations: Notation[] = [];
 	export let expanded = false;
 	export let compactPrests = false;
@@ -98,7 +97,7 @@
 	ancreId="presta-{p.id}"
 	quoi="la fiche prestataire"
 	titre={p.nom}
-	quand={nextVisit}
+	quand={p.prochaine_visite}
 	classe={classeTypePrestataire(p.type_prestataire)}
 	{expanded}
 	enEdition={editPrestId === p.id}
@@ -115,7 +114,7 @@
 		      disent aucun état (la dernière ligne d'une affaire, `ux-patterns` §3). -->
 		<span class="badge badge-gray">{typePrestataireLabel(p.type_prestataire)}</span>
 		<span class="badge badge-gray">{$libelleEquipement(p.specialite)}</span>
-		<NotationsPrestataire resume {notations} />
+		<NotationsPrestataire resume moyenne={p.note_moyenne} nbAvis={p.nb_notations} />
 		<!--  « Sous contrat » se LIT sur les contrats actifs, il ne se saisit pas
 		      (#1444) : c'était une catégorie, et une entreprise qui entretient
 		      sous contrat et dépanne hors contrat n'y tenait pas. Rien quand il
@@ -170,9 +169,9 @@
 					<span class="detail-label">Adresse</span><span class="adresse">📮 {p.adresse}</span>
 				</div>{/if}
 			<div><span class="detail-label">Contrats</span>{cs.length}</div>
-			{#if nextVisit}<div>
+			{#if p.prochaine_visite}<div>
 					<span class="detail-label">Prochaine visite</span><span class="prochaine-visite"
-						>🗓 {fmtDateShort(nextVisit)}</span
+						>🗓 {fmtDateShort(p.prochaine_visite)}</span
 					>
 				</div>{/if}
 		</div>

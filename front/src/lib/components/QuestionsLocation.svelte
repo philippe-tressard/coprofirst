@@ -21,7 +21,6 @@
 	import { toast } from '#lib/components/Toast.svelte';
 	import { lots as lotsApi, type LotPropose, type PropositionsLocation } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
-	import { lotTypeLabel } from '#lib/utils.ts';
 	import { onMount } from 'svelte';
 
 	/** Appelé une fois le locataire rattaché : la page relit ses lots. */
@@ -65,7 +64,7 @@
 
 	/** « Parking 462 », « Appartement 13 (Bât. 4) » : la nature d'abord, un numéro seul ne dit rien. */
 	function libelleLot(l: LotPropose): string {
-		return `${lotTypeLabel(l.type)} ${numeroLot(l)}`;
+		return `${l.libelle_type} ${numeroLot(l)}`;
 	}
 	const numeroLot = (l: LotPropose) => `${l.numero}${l.batiment_nom ? ` (${l.batiment_nom})` : ''}`;
 

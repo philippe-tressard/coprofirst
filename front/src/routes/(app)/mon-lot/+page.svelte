@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { lotTypeLabel } from '#lib/utils.ts';
 	import EntetePage from '#lib/components/EntetePage.svelte';
 	import CaracteristiquesLot from '#lib/components/CaracteristiquesLot.svelte';
 	import TableauCharges from '#lib/components/TableauCharges.svelte';
@@ -92,7 +91,7 @@
 	$: selectedLot = lots.find((l) => String(l.id) === lotChoisi) ?? null;
 	$: optionsLots = lots.map((l) => ({
 		val: String(l.id),
-		label: `${l.batiment_nom ?? '—'} / ${lotTypeLabel(l.type)} - ${l.numero}`,
+		label: `${l.batiment_nom ?? '—'} / ${l.libelle_type} - ${l.numero}`,
 	}));
 	$: bailAccesLot = bailAcces
 		? (lots.find((l) => l.id === (bailAcces?.lot_id ?? -1)) ?? null)
@@ -319,15 +318,14 @@
 
 			<!--  Mes charges, lot par lot et au total (#2251, maquette A). -->
 			<div class="largeur-saisie">
-				<TableauCharges {lots} />
+				<TableauCharges />
 			</div>
 
 			{#if selectedLot}
 				<div class="card largeur-saisie carte-lot">
 					<h2 class="carte-lot-titre">Caractéristiques</h2>
 					<CaracteristiquesLot
-						type={selectedLot.type}
-						typeAppartement={selectedLot.type_appartement}
+						typeComplet={selectedLot.libelle_type_complet}
 						etage={selectedLot.etage}
 						superficie={selectedLot.superficie}
 						designation={selectedLot}

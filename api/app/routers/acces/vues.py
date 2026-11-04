@@ -22,7 +22,7 @@ comparait un libellé à une chaîne écrite en dur (14/09/2026).
 
 ## L'héritage, et ce qu'il évite
 
-`AccesAdminOut` **dérive** de `AccesOut` : les champs communs sont déclarés une
+`AccesAdminOut` **dérive** de `AccesPorteur` : les champs communs sont déclarés une
 fois, et `champs_communs()` les remplit une fois. Deux modèles jumeaux auraient
 divergé au premier ajout — c'est ce qui était arrivé au `lot_id` entre vigik et
 télécommande, et ce que le descripteur `utils/types_acces` a corrigé.
@@ -88,12 +88,17 @@ def libelle_lots(session: Session, type_acces: TypeAcces, objet) -> Optional[str
     return SEPARATEUR_ELEMENT.join(x for x in libelles if x) or None
 
 
-class AccesOut(BaseModel):
+class AccesPorteur(BaseModel):
     """Un accès tel que son PORTEUR a besoin de le voir.
 
     ⚠️ `bail_id` et `chez_locataire` en font partie : un bailleur lit cette même
     liste pour savoir ce qu'il a confié, et les retirer casserait sa vue par
     locataire sans qu'aucun test ne le dise.
+
+    Nommée `AccesOut` jusqu'au 04/11/2026 : homonyme du schéma du bailleur
+    (`routers/bailleur/acces.py`), elle aurait donné à l'un et l'autre un nom de
+    module dans le contrat, dès qu'une route la déclare (#2507). C'est le nom que
+    le client du site lui donnait déjà.
     """
 
     id: int
@@ -134,6 +139,6 @@ class AccesOut(BaseModel):
         }
 
     @classmethod
-    def depuis(cls, session: Session, type_acces: TypeAcces, objets) -> list["AccesOut"]:
+    def depuis(cls, session: Session, type_acces: TypeAcces, objets) -> list["AccesPorteur"]:
         """La liste, dans l'ordre reçu — le tri appartient à l'appelant."""
         return [cls(**cls.champs_communs(session, type_acces, o)) for o in objets]

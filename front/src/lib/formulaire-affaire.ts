@@ -33,7 +33,6 @@ import { lectureDuTicket, natureLue, perimetreRestreint } from '#lib/lecture-tic
 import { depuisChampLocal } from '#lib/date.ts';
 import { lotDepuisSaisie, type SaisieSaisiPour } from '#lib/saisi-pour.ts';
 import { CATEGORIES_TICKET, estActualite, optionsVersTicket } from '#lib/tickets.ts';
-import { typeEquipementDuContrat } from '#lib/reporting.ts';
 import type { ContratEnCours } from '#lib/prestataires.ts';
 import type { Equipement } from '#lib/equipements.ts';
 
@@ -338,21 +337,18 @@ export function alerteCorrection(
  *
  * ⚠️ Une proposition, jamais une décision : l'écran ne l'applique que si aucun
  * intervenant n'est déjà désigné, et le conseil la change d'un geste.
- * L'équipement d'un contrat se lit par `typeEquipementDuContrat` — la règle de
- * tous les écrans, « autre » laissant parler la spécialité du prestataire.
+ * L'équipement d'un contrat est celui que l'API sert (`equipement_effectif`, #2507) —
+ * « autre » laissant parler la spécialité du prestataire, au serveur.
  */
 export function intervenantPropose(
 	equipement: string,
 	contrats: ContratEnCours[],
-	prestataires: { id: number; specialite?: string | null }[],
 	//  Déjà désigné : rien n'est proposé — la règle que les deux appelants
 	//  recopiaient chacun devant l'appel.
 	designe: number | null = null,
 ): { prestataireId: number; contratId: number } | null {
 	if (!equipement || designe !== null) return null;
-	const contrat = contrats.find(
-		(c) => c.actif !== false && typeEquipementDuContrat(c, prestataires) === equipement,
-	);
+	const contrat = contrats.find((c) => c.actif !== false && c.equipement_effectif === equipement);
 	return contrat ? { prestataireId: contrat.prestataire_id, contratId: contrat.id } : null;
 }
 

@@ -5,8 +5,8 @@
  *  Ce que le lot a réuni, tenu par ce que l'utilisateur VOIT :
  *
  *  - le copropriétaire choisit son lot dans des pastilles (`ChoixPastilles`) ;
- *    le type s'y écrit par `lotTypeLabel` — « Local commercial », et non
- *    « Local_commercial », que la capitale posée à la main donnait ;
+ *    le type s'y lit tel que l'API le sert (`libelle_type`, #2507) — « Local
+ *    commercial », et non « Local_commercial », que la capitale posée à la main donnait ;
  *  - les caractéristiques passent par `CaracteristiquesLot` ;
  *  - le locataire voit l'état de son bail par `BadgeStatutBail` : un bail en
  *    cours de sortie n'est plus « vert » ;
@@ -25,8 +25,18 @@ const LOTS = [
 		type_appartement: 'T3',
 		etage: 2,
 		superficie: 64,
+		libelle_type: 'Appartement',
+		libelle_type_complet: 'Appartement – T3',
 	},
-	{ id: 2, numero: '40', batiment_nom: 'Bât. 2', type: 'local_commercial', etage: 0 },
+	{
+		id: 2,
+		numero: '40',
+		batiment_nom: 'Bât. 2',
+		type: 'local_commercial',
+		etage: 0,
+		libelle_type: 'Local commercial',
+		libelle_type_complet: 'Local commercial',
+	},
 ];
 
 const BAIL = {
