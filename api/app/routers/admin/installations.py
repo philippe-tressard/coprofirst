@@ -87,7 +87,7 @@ class ResumeInstallation(BaseModel):
     #: les services que la référence lui accorde — le bail les porte
     services_autorises: list[str] = []
     #: quand elle reçoit la version de son canal (`registre/canaux.VAGUES`)
-    vague: int = 1
+    vague: int = 2
     #: la version que son prochain bail portera ; vide : aucune mise à jour
     version_cible: Optional[str] = None
     #: ce que la référence lui reproche, dans l'ordre de la spec (R4b #1960)

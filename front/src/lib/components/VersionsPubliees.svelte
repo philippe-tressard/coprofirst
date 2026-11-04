@@ -3,8 +3,8 @@
 
   Une version est publiée quand son tag a sa release et l'archive de déploiement
   (workflow « Images ») ; la référence relit ces releases chaque nuit
-  (`registre/canaux.relire_versions`). C'est d'ici que se choisit le canal d'une
-  installation — Urgence, ou l'une des versions proposées —, et ce que chaque vague
+  (`registre/canaux.relire_versions`). C'est d'ici que se choisit la version d'une
+  installation en vague Fixe — l'une des versions proposées —, et ce que chaque vague
   du canal Urgence installe se lit sur la première ligne. Rien ne se règle ici :
   le serveur décide (`registre/versions`), l'écran le dit.
 

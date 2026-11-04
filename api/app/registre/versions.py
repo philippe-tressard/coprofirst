@@ -23,12 +23,12 @@ from typing import Iterable, Optional, Protocol, TypeVar
 
 #: Une version : `X.Y.Z`, celle d'un tag de `main` — jamais un commit.
 MOTIF_VERSION = re.compile(r"^\d+\.\d+\.\d+$")
-#: L'attente standard : Pilote, Standard et Fixe ne reçoivent qu'une version de 7 jours.
+#: L'attente standard : Standard et Fixe ne reçoivent qu'une version de 7 jours.
 ATTENTE_STANDARD = timedelta(days=7)
 #: Le nombre de mineures proposées à l'opérateur, chacune à son dernier correctif.
 VERSIONS_PROPOSEES = 5
-#: Une version plus jeune se garde : elle sera la cible de Pilote ou de Standard
-#: quand elle aura ses 7 jours. Le jour de plus couvre l'écart entre la lecture
+#: Une version plus jeune se garde : elle sera la cible de Standard ou d'une version
+#: figée quand elle aura ses 7 jours. Le jour de plus couvre l'écart entre la lecture
 #: nocturne des versions et la purge.
 FENETRE_DE_GARDE = ATTENTE_STANDARD + timedelta(days=1)
 
@@ -67,7 +67,7 @@ def derniere(versions: Iterable[V]) -> Optional[V]:
 
 
 def derniere_rodee(versions: Iterable[V], maintenant: datetime) -> Optional[V]:
-    """La dernière version publiée depuis l'attente standard — la cible de Pilote."""
+    """La dernière version publiée depuis l'attente standard (base de Standard)."""
     return derniere(v for v in versions if maintenant - v.publiee_le >= ATTENTE_STANDARD)
 
 
@@ -110,11 +110,7 @@ def versions_a_garder(versions: Iterable[V], maintenant: datetime) -> set[str]:
     du canal Urgence, et toute version plus jeune que `FENETRE_DE_GARDE`."""
     versions = [v for v in versions if version_valide(v.version)]
     gardees = {v.version for v in versions_proposees(versions)}
-    for cible in (
-        derniere(versions),
-        derniere_rodee(versions, maintenant),
-        derniere_standard(versions, maintenant),
-    ):
+    for cible in (derniere(versions), derniere_standard(versions, maintenant)):
         if cible is not None:
             gardees.add(cible.version)
     gardees |= {v.version for v in versions if maintenant - v.publiee_le < FENETRE_DE_GARDE}

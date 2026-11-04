@@ -539,11 +539,13 @@ revient à son exploitant — la référence n'y a aucun accès.
      plus une branche mais **Urgence** (la dernière version publiée de `main`) ou
      **une version choisie** parmi les publiées (les 5 dernières mineures, chacune
      à son dernier correctif) ; la **vague** dit quand : *Urgence* aussitôt,
-     *Pilote* la dernière de plus de 7 jours, *Standard* (le défaut) le dernier
+     *Standard* (le défaut) le dernier
      correctif de plus de 7 jours de la mineure y-1 (à défaut, d'une antérieure), *Fixe* la version choisie
      7 jours après sa publication — plus ancienne, c'est l'**ordre de revenir**,
-     le seul chemin d'un retour. Urgence, Pilote et Standard ne font jamais
-     reculer une installation. La règle est PURE (`registre/versions`) ;
+     le seul chemin d'un retour. Urgence et Standard ne font jamais
+     reculer une installation. **Révisé le 04/11/2026** : la vague *Pilote* est retirée
+     (code 1 lu comme Standard) et l'opérateur ne règle plus que la vague — le canal
+     en découle, la version ne se choisit qu'en *Fixe*. La règle est PURE (`registre/versions`) ;
    - les versions **publiées** — celles qui ont leur release et l'archive de
      déploiement — sont relues par la référence au démarrage et chaque nuit
      (03:50, avant les baux) ; `main` n'est le canal que de la référence. La

@@ -145,8 +145,7 @@ signé par la référence : il installe la **version cible** que le bail porte, 
 revient seul en arrière si elle ne démarre pas. Le **canal** — *Urgence*, la
 dernière version publiée, ou une version choisie parmi les cinq dernières
 mineures — et la **vague** se décident à la référence, dans son registre des
-installations : *Urgence* (la dernière version, aussitôt), *Pilote* (la
-dernière de plus de 7 jours), *Standard* (le défaut : le dernier correctif de plus
+installations : *Urgence* (la dernière version, aussitôt), *Standard* (le défaut : le dernier correctif de plus
 de 7 jours de la mineure qui précède la dernière, à défaut d'une mineure antérieure) ou *Fixe* (la version
 choisie, 7 jours après sa publication — plus ancienne que celle qui tourne,
 c'est l'ordre d'y revenir). Chaque version taguée est publiée avec son archive de
