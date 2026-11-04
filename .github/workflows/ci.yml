@@ -1634,6 +1634,13 @@ jobs:
         working-directory: front
         run: npm run lint:droits
 
+      # Le site et l'app iOS affichent les mêmes règles : elles se calculent au
+      # serveur. Une règle déclarée partagée que le front définit encore échoue,
+      # sauf dérogation nommée (ticket, raison) qui doit servir (#2501).
+      - name: Règle d'affichage partagée calculée par l'API
+        working-directory: front
+        run: npm run lint:regles-partagees
+
       - name: Onglet réservé masqué sur le prédicat de sa route d'API
         working-directory: front
         run: npm run lint:onglets-reserves
