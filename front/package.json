@@ -78,7 +78,6 @@
 		"lint:perimetre-herite": "node scripts/check-perimetre-herite.mjs",
 		"lint:noms": "node scripts/check-noms.mjs",
 		"lint:filtre-statuts": "node scripts/check-filtre-statuts.mjs",
-		"lint:carnet-annee": "node scripts/check-carnet-annee.mjs",
 		"lint:detail-erreur": "node scripts/check-detail-erreur.mjs",
 		"lint:diffusion-auteur": "node scripts/check-diffusion-auteur.mjs",
 		"lint:version-servie": "node scripts/check-version-servie.mjs",

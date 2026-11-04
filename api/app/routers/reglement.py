@@ -29,10 +29,10 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from sqlmodel import Session, col, select
 
 from app.auth.appartenance import exiger_objet_autorise
@@ -55,7 +55,7 @@ from app.utils.limiter import LIMITE_APPEL_FACTURE, limiter
 from app.utils.lecture import lire_objet
 from app.utils.noms import nom_affiche
 from app.utils.question_reglement.documents import lien_reglement
-from app.utils.question_reglement.format import MAX_CARACTERES_QUESTION, VERDICTS
+from app.utils.question_reglement.format import MAX_CARACTERES_QUESTION, VERDICTS, ton_verdict
 from app.utils.question_reglement.production import disponible, repondre
 from app.utils.question_reglement.provenance import (
     MAX_CARACTERES as MAX_CARACTERES_PROVENANCE,
@@ -142,6 +142,12 @@ class QuestionReglementRead(BaseModel):
     #: montre la corbeille d'après le serveur, il ne recalcule rien.
     peut_supprimer: bool = False
     cree_le: datetime
+
+    @computed_field
+    @property
+    def verdict_ton(self) -> Literal["succes", "danger", "alerte", "neutre", "incertain"]:
+        """Ce que la capsule du verdict signale (#2505) — `format.TONS_VERDICT`."""
+        return ton_verdict(self.verdict)
 
     class Config:
         from_attributes = True

@@ -187,7 +187,7 @@
 				{#each badges as b (b)}
 					<!--  Un verdict garde la teinte qu'il a dans l'onglet Règlement. -->
 					{#if item.type === 'question_reglement'}
-						<BadgeVerdict verdict={String(champDe(item.meta, 'verdict') ?? '')} libelle={b} />
+						<BadgeVerdict ton={String(champDe(item.meta, 'verdict_ton') ?? '')} libelle={b} />
 					{:else}
 						<Badge teinte={badgeClass(item.type, b)}>{b}</Badge>
 					{/if}

@@ -99,6 +99,43 @@ def test_un_champ_resserre_ou_deprecie_reste_lisible():
     assert inv.version_suivante("1.4.0", ecarts) == "1.5.0"
 
 
+def test_un_type_precis_ne_redevient_pas_libre():
+    """Le cas fautif d'abord (#2505) : un client qui décodait un objet ne lit pas « n'importe quoi »."""
+    libre = {**_REF, "GET /x": _op({**_REF["GET /x"]["reponse"], "$.c": "libre"})}
+    assert "GET /x → $.c" in inv.comparer(_REF, libre).retraits
+    #  …ni un fichier, ni un champ toujours présent rendu facultatif en passant.
+    ref = {"GET /f": _op({"$": "libre"})}
+    assert inv.comparer(ref, {"GET /f": _op({"$": "objet?"})}).retraits == ["GET /f → $"]
+
+
+def test_typer_une_reponse_libre_la_resserre():
+    """L'objet, la liste ou le fichier qu'une réponse `libre` a toujours été (#2505)."""
+    ref = {"GET /f": _op({"$": "libre"}), "GET /l": _op({"$": "liste", "$[]": "dictionnaire"})}
+    for type_ in ("objet", "liste", "fichier"):
+        courant = {**ref, "GET /f": _op({"$": type_, "$.neuf": "string"})}
+        assert inv.comparer(ref, courant).retraits == [], type_
+    courant = {**ref, "GET /l": _op({"$": "liste", "$[]": "objet", "$[].id": "integer"})}
+    ecarts = inv.comparer(ref, courant)
+    assert ecarts.retraits == [] and inv.version_suivante("1.2.0", ecarts) == "1.3.0"
+
+
+def test_une_reponse_en_octets_se_lit_fichier():
+    schema = {
+        "paths": {
+            "/t": {
+                "get": {
+                    "responses": {
+                        "200": {
+                            "content": {"application/octet-stream": {"schema": {"type": "string"}}}
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert inv.inventaire(schema)["GET /t"]["reponse"] == {"$": "fichier"}
+
+
 def test_une_entree_requise_neuve_est_refusee_une_entree_relachee_passe():
     exige = {**_REF, "POST /y": _op(entree=["corps", "corps.titre", "corps.lot_id"])}
     assert inv.refus(inv.comparer(_REF, exige), {}, "3.0.0") == [

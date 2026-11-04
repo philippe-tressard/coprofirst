@@ -29,10 +29,6 @@
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import { carnet as carnetApi, type Carnet, type EntreeCarnet } from '#lib/api/index.ts';
-	import { libelleEquipement as libelleDuCache } from '#lib/stores/equipements.ts';
-	import { perimetreLabel } from '#lib/perimetres/index.ts';
-	import { perimetresStore } from '#lib/stores/perimetres.ts';
-	import { relire } from '#lib/utils.ts';
 	import FiltrePerimetre from './FiltrePerimetre.svelte';
 	import ChoixPastilles from './ChoixPastilles.svelte';
 	import ReglagesListe from './ReglagesListe.svelte';
@@ -40,7 +36,6 @@
 	import ApercuCarte from './ApercuCarte.svelte';
 	import IconeAction from './IconeAction.svelte';
 	import LienAction from './LienAction.svelte';
-	import { anneesDuCarnet, entreesDeLAnnee } from '#lib/carnet.ts';
 	import { NATURES } from '#lib/tickets.ts';
 	import PiedCarte from './PiedCarte.svelte';
 	import BadgePerimetre from './BadgePerimetre.svelte';
@@ -58,57 +53,42 @@
 	 *   bâtiment : c'est ce qui permet de filtrer sur un espace qui n'en a pas. */
 	let perimetreChoisi: string | null = null;
 
+	//  📅 Le filtre par ANNÉE (24/09/2026), les années proposées et le
+	//  regroupement par équipement sont SERVIS (`utils/carnet_affichage`, #2505) :
+	//  l'app iOS les lit aussi. Choisir une année redemande le carnet — les
+	//  contrats en vigueur y restent (décret n° 2001-477, art. 3 et 4).
+	let anneeChoisie = '';
+
 	async function charger() {
 		chargement = true;
-		[donnees, erreur] = await essayer<Carnet | null>(carnetApi.lire(perimetreChoisi), null);
+		[donnees, erreur] = await essayer<Carnet | null>(
+			carnetApi.lire(perimetreChoisi, anneeChoisie),
+			null,
+		);
 		chargement = false;
 	}
 
 	onMount(charger);
 
-	/**  Le libellé d'un équipement vient du cache des équipements, administrés
-	 *   depuis #2442 (`#lib/equipements`). Le serveur envoie le code ; en écrire
-	 *   une table ici en ferait une seconde écriture. Citer `$libelleDuCache`
-	 *   repeint les intitulés quand la liste arrive. */
-	$: libelleEquipement = (valeur: string | null): string =>
-		valeur ? $libelleDuCache(valeur) : 'Sans équipement rattaché';
+	//  Une autre année choisie : le carnet se redemande. La première lecture est
+	//  celle de `onMount` — les deux valent `''` jusqu'au premier choix.
+	let anneeChargee = '';
+	$: if (anneeChoisie !== anneeChargee) {
+		anneeChargee = anneeChoisie;
+		charger();
+	}
 
-	/**  La PORTÉE d'une entrée, toujours dite.
-	 *
-	 *   🔴 Elle est écrite même sous un filtre — surtout sous un filtre : un
-	 *   contrat qui couvre toute la résidence apparaît sous « Bât. 3 », parce
-	 *   qu'il l'entretient aussi. Sans sa portée, il s'y lirait comme propre à ce
-	 *   bâtiment, et le filtre mentirait plus discrètement que celui qu'il
-	 *   remplace.
-	 *
-	 *   `perimetreLabel` est la source unique du libellé — celle qui qualifie un
-	 *   espace par son parent et trie par l'arbre, jamais par l'ordre des clics. */
-	//  ⚠️ Une FONCTION appelée dans le gabarit ne crée aucune dépendance : Svelte
-	//  ne la rappelle que si l'expression qui l'entoure change. `relire` la relie à
-	//  l'arbre, qui arrive après le premier rendu (#947).
-	$: portee = relire($perimetresStore, () => (codes: string[]) => perimetreLabel(codes ?? []));
+	//  Les années ne dépendent pas de celle qui est choisie : le serveur les
+	//  calcule sur tout le carnet du périmètre.
+	$: annees = (donnees?.annees ?? []).map((a) => ({ val: a, label: a }));
+	$: entreesVues = donnees?.entrees ?? [];
+	//  Les groupes arrivent rangés : le plus récent d'abord, chacun du fait le plus
+	//  récent au plus ancien — ce qui a bougé se lit en premier.
+	$: groupes = donnees?.groupes ?? [];
 
-	/**  Les entrées rangées par équipement, chaque groupe gardant l'ordre du
-	 *   serveur — du fait le plus récent au plus ancien.
-	 *
-	 *   ⚠️ Les groupes sont triés par leur entrée la plus RÉCENTE, pas par ordre
-	 *   alphabétique : ce qui a bougé récemment se lit en premier, et l'équipement
-	 *   dont plus rien ne bouge tombe en bas — où il se remarque. */
-	//  📅 Le filtre par ANNÉE (24/09/2026) — la règle, et ce que le décret
-	//  n° 2001-477 en dit, vivent dans `#lib/carnet`.
-	let anneeChoisie = '';
-	$: annees = anneesDuCarnet(donnees?.entrees ?? []).map((a) => ({ val: a, label: a }));
-	$: entreesVues = entreesDeLAnnee(donnees?.entrees ?? [], anneeChoisie);
-
-	$: groupes = (() => {
-		const par = new Map<string, EntreeCarnet[]>();
-		for (const entree of entreesVues) {
-			const cle = entree.equipement ?? '';
-			if (!par.has(cle)) par.set(cle, []);
-			par.get(cle)!.push(entree);
-		}
-		return [...par.entries()].sort((a, b) => (a[1][0].date < b[1][0].date ? 1 : -1));
-	})();
+	/**  Le libellé d'un équipement, tel que le serveur l'a servi avec son groupe :
+	 *   l'encart des alertes nomme l'équipement de chaque entrée. */
+	$: libellesDesGroupes = new Map(groupes.map((g) => [g.equipement, g.equipement_libelle]));
 
 	/**  Les entrées en alerte — l'encart les NOMME : un compte sans les noms oblige à
 	 *   chercher dans la liste ce que l'encart vient d'annoncer. */
@@ -203,9 +183,8 @@
 							<strong>{entree.libelle}</strong>
 						{/if}
 						<span class="concernee-detail"
-							>({libelleEquipement(entree.equipement)}{SEPARATEUR.point}{portee(
-								entree.perimetre,
-							)}){SEPARATEUR.tiret}{entree.alerte}</span
+							>({libellesDesGroupes.get(entree.equipement) ??
+								''}{SEPARATEUR.point}{entree.perimetre_libelle}){SEPARATEUR.tiret}{entree.alerte}</span
 						>
 					</li>
 				{/each}
@@ -220,11 +199,11 @@
 		messageVide="Aucun contrat, aucune intervention terminée ni aucun ticket résolu pour ce périmètre."
 	>
 		<div class="groupes">
-			{#each groupes as [equipement, entrees] (equipement)}
+			{#each groupes as groupe (groupe.equipement ?? '')}
 				<section>
-					<h3 class="groupe-titre">{libelleEquipement(equipement)}</h3>
+					<h3 class="groupe-titre">{groupe.equipement_libelle}</h3>
 					<ol class="entrees">
-						{#each entrees as entree (entree.origine + entree.lien + entree.date)}
+						{#each groupe.entrees as entree (entree.origine + entree.lien + entree.date)}
 							<li>
 								<!--  Une carte ne se DÉPLIE que si elle a une synthèse validée
 								      (#1643) ; sinon le titre reste un texte, et c'est la flèche
@@ -282,7 +261,8 @@
 												{#if entree.alerte}
 													<span class="badge badge-orange">⚠️ {entree.alerte}</span>
 												{/if}
-												<BadgePerimetre perimetre={entree.perimetre} toujours />
+												<!--  La portée, toujours dite — servie (#2505). -->
+												<BadgePerimetre libelle={entree.perimetre_libelle} />
 											</PiedCarte>
 										</svelte:fragment>
 									</EnteteCarte>

@@ -55,8 +55,11 @@
 	export let erreur = '';
 	export let messageVide: string;
 	export let peutModifier = false;
-	/** L'ordre d'affichage ; la liste elle-même garde l'ordre d'arrivée. */
-	export let trier: (docs: Document[]) => Document[] = (docs) => docs;
+	/**  Relire la rubrique après un dépôt ou une correction. Son ORDRE est servi
+	 *   (`utils/ordre_documents`, #2505) — plans par bâtiment, CR d'AG par année :
+	 *   l'écran ne le recalcule pas, il redemande la liste rangée. Sans lui, un
+	 *   dépôt s'ajoute en tête. */
+	export let recharger: (() => Promise<Document[]>) | null = null;
 	/** Le formulaire de dépôt. */
 	export let intitule: string;
 	export let placeholderTitre: string;
@@ -146,7 +149,6 @@
 		};
 	}
 
-	$: affiches = trier(documents);
 	//  Le titre est facultatif : sans lui, chaque fichier prend le sien (#1479).
 	$: complet =
 		!!saisie.fichiers?.length &&
@@ -168,7 +170,7 @@
 				const deposes: Document[] = [];
 				for (const fichier of fichiers) deposes.push(await deposer(s, categorie, fichier));
 				aboutirGeste('document.deposer');
-				documents = [...deposes, ...documents];
+				documents = recharger ? await recharger() : [...deposes, ...documents];
 				ouvert = false;
 				saisie = saisieVide();
 			},
@@ -229,7 +231,9 @@
 				date_ag: correction.dateAg || null,
 				...(avecDate ? { date_document: correction.dateDocument || null } : {}),
 			});
-			documents = documents.map((d) => (d.id === docId ? corrige : d));
+			documents = recharger
+				? await recharger()
+				: documents.map((d) => (d.id === docId ? corrige : d));
 			correction = correctionVide();
 		}, 'Document mis à jour');
 		enregistrementCorrection = false;
@@ -241,7 +245,7 @@
 
 <SectionDocuments
 	{titre}
-	documents={affiches}
+	{documents}
 	{erreur}
 	{messageVide}
 	{peutModifier}
