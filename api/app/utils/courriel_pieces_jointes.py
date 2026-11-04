@@ -62,6 +62,10 @@ pièce semblait perdue par le site.
 
 Un même fichier joint deux fois (le logo d'un fil cité, un envoi doublé) ne
 compte qu'une fois : les pièces se dédoublonnent par empreinte.
+Et une pièce IDENTIQUE à une pièce que le fil de l'affaire porte déjà n'y entre
+pas une seconde fois (demandé le 04/11/2026, #2515) : l'empreinte des octets
+reçus est notée sur la trace du fichier (`FichierRecu.empreinte`), puisqu'une
+image est réencodée à l'écriture.
 """
 
 from __future__ import annotations
@@ -94,6 +98,8 @@ class Piece:
     octets: bytes = field(repr=False)
     #: Intégrée au corps (`Content-ID`), et non jointe : un logo de signature l'est.
     integree: bool = False
+    #: SHA-256 des octets reçus : une pièce déjà dans l'affaire n'y entre pas deux fois.
+    empreinte: str = ""
     #: La taille d'AFFICHAGE que le HTML déclare (largeur, hauteur), en pixels —
     #: None pour un côté non déclaré, et pour une image que le corps ne montre pas.
     affichee: tuple[int | None, int | None] | None = None
@@ -165,6 +171,7 @@ def trier(message) -> Tri:
                     famille,
                     octets,
                     integree=bool(cid) and partie.get_content_disposition() != "attachment",
+                    empreinte=empreinte,
                     affichee=affichees.get(cid) if cid else None,
                 )
             )
@@ -210,6 +217,46 @@ def retenir(tri: Tri) -> Tri:
     return retenu
 
 
+def _noter_empreinte(session, url: str, empreinte: str) -> None:
+    """L'empreinte des octets REÇUS, sur la trace que la porte vient de poser."""
+    from sqlmodel import select
+
+    from app.models.fichiers_recus import FichierRecu
+    from app.utils.stockage import cle_de_url
+
+    trace = session.exec(select(FichierRecu).where(FichierRecu.cle == cle_de_url(url))).first()
+    if trace is not None and empreinte:
+        trace.empreinte = empreinte
+        session.add(trace)
+
+
+def _deja_dans_l_affaire(session, ticket) -> set[str]:
+    """Les empreintes des pièces que le fil de l'affaire porte déjà (#2515).
+
+    Une pièce versée avant ce lot n'a pas d'empreinte : elle ne se reconnaît pas.
+    """
+    from sqlmodel import select
+
+    from app.models.core import TicketEvolution
+    from app.models.fichiers_recus import FichierRecu
+    from app.utils.photos import parse_photos
+    from app.utils.stockage import cle_de_url
+
+    listes = session.exec(
+        select(TicketEvolution.fichiers_urls).where(TicketEvolution.ticket_id == ticket.id)
+    ).all()
+    cles = {cle_de_url(u) for liste in listes for u in parse_photos(liste)} - {None}
+    if not cles:
+        return set()
+    return set(
+        session.exec(
+            select(FichierRecu.empreinte).where(
+                FichierRecu.cle.in_(cles), FichierRecu.empreinte.is_not(None)
+            )
+        ).all()
+    )
+
+
 def verser(session, tri: Tri, auteur) -> tuple[list[str], list[Ecart]]:
     """Écrit les pièces retenues. Rend leurs URLs, et TOUS les écarts.
 
@@ -245,6 +292,7 @@ def verser(session, tri: Tri, auteur) -> tuple[list[str], list[Ecart]]:
         except HTTPException as exc:
             ecarts.append(Ecart(piece.nom, str(exc.detail).rstrip(".")))
             continue
+        _noter_empreinte(session, url, piece.empreinte)
         urls.append(url)
     return urls, ecarts
 
@@ -269,9 +317,14 @@ def joindre(
     if tri is None or not (tri.pieces or tri.ecarts):
         _dire_les_pieces_absentes(annonces)
         return suite
-    tri = retenir(tri)
+    #  Une pièce IDENTIQUE déjà dans l'affaire n'y entre pas deux fois (demandé le
+    #  04/11/2026) : le rejeu d'un message, un devis rejoint à chaque réponse.
+    deja = _deja_dans_l_affaire(session, ticket)
+    nouvelles = [p for p in tri.pieces if p.empreinte not in deja]
+    redites = len(tri.pieces) - len(nouvelles)
+    tri = retenir(Tri(pieces=nouvelles, ecarts=tri.ecarts))
     urls, ecarts = verser(session, tri, auteur)
-    if not urls:
+    if not urls and not redites:
         _dire_les_pieces_absentes(annonces)
     if suite is None:
         if not urls:

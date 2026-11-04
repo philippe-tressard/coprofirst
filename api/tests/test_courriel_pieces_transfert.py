@@ -111,3 +111,35 @@ def test_cas_zero_une_piece_annoncee_et_versee_ne_dit_rien(monde, disque_jetable
     )
     assert _transferer(session, cs, objet, corps, pdf=True) == ACCEPTE
     assert all(pj.PIECE_ABSENTE not in e.contenu for e in _suites(session, objet))
+
+
+def test_une_piece_IDENTIQUE_deja_dans_l_affaire_n_y_entre_pas_deux_fois(monde, disque_jetable):
+    """Demandé le 04/11/2026 : rejouer le transfert qui a déjà versé le PV ne le
+    double pas — le transfert n'apporte alors rien, et le dit."""
+    session, _ticket, syndic, cs, objet = monde
+    _transferer(session, cs, objet, _fil(syndic.email, objet), pdf=True)
+    assert _transferer(session, cs, objet, _fil(syndic.email, objet), pdf=True) != ACCEPTE
+    urls = [u for e in _suites(session, objet) for u in parse_photos(e.fichiers_urls)]
+    assert len(urls) == 1
+
+
+def test_cas_zero_une_piece_DIFFERENTE_entre(monde, disque_jetable):
+    session, _ticket, syndic, cs, objet = monde
+    _transferer(session, cs, objet, _fil(syndic.email, objet), pdf=True)
+    assert _transferer_photo(session, cs, objet, _fil(syndic.email, objet)) == ACCEPTE
+    urls = [u for e in _suites(session, objet) for u in parse_photos(e.fichiers_urls)]
+    assert len(urls) == 2
+
+
+def _transferer_photo(session, cs, objet, corps):
+    m = EmailMessage()
+    m.set_content(corps)
+    m.add_attachment(image_png(900), maintype="image", subtype="png", filename="vue.png")
+    return traiter(
+        session,
+        _entetes_transfert(cs.email, f"TR: RE: {objet}"),
+        corps,
+        _RELEVE,
+        authentification=_AUTH_OK,
+        pieces=pj.trier(m),
+    )

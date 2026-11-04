@@ -260,6 +260,22 @@ def test_les_pieces_du_syndic_entrent_dans_la_suite(scene, disque_jetable):
         assert stockage().chemin(cle_de_url(url)).exists(), url
 
 
+def test_le_meme_devis_renvoye_n_entre_pas_deux_fois(scene, disque_jetable):
+    """Demandé le 04/11/2026 : une pièce IDENTIQUE déjà dans le fil n'y entre plus —
+    ni la photo, réencodée à l'écriture, ni le document."""
+    session, ticket, syndic, _cs = scene
+    pieces = [
+        ("devis.pdf", "application", "pdf", _PDF),
+        ("photo.png", "image", "png", image_png(900)),
+    ]
+    _repondre(session, ticket, syndic.email, _message("Voici le devis.", pieces=pieces))
+    _repondre(session, ticket, syndic.email, _message("Je vous le renvoie.", pieces=pieces))
+    premiere, seconde = sorted(_evolutions(session, ticket), key=lambda e: e.id)
+    assert len(parse_photos(premiere.fichiers_urls)) == 2
+    assert parse_photos(seconde.fichiers_urls) == []
+    assert "renvoie" in seconde.contenu, "le texte, lui, entre"
+
+
 def test_une_piece_qui_ment_sur_son_type_est_ecartee_et_dite(scene, disque_jetable):
     """La porte du téléversement juge le CONTENU : un exécutable nommé .pdf ne
     passe pas, et la suite le dit — les autres pièces entrent quand même."""
