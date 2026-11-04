@@ -31,13 +31,7 @@
 		type Sondage,
 		type SondageDetail,
 	} from '#lib/api/index.ts';
-	import {
-		currentUser,
-		isAdmin,
-		isCS,
-		isGestionnaire,
-		quandAuthResolue,
-	} from '#lib/stores/auth.ts';
+	import { currentUser, isCS, isGestionnaire, quandAuthResolue } from '#lib/stores/auth.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		getPageConfig,
@@ -455,7 +449,6 @@
 			showForm={showFormIdee}
 			currentUserId={$currentUser?.id}
 			estCS={$isCS}
-			estAdmin={$isAdmin}
 			{statutClass}
 			onVoter={voter}
 			onChangerStatut={changeStatut}
@@ -475,8 +468,6 @@
 			erreur={erreurAnnonces}
 			bind:showForm={showFormAnnonce}
 			bind:expandedAnnonce
-			estCS={$isCS}
-			estAdmin={$isAdmin}
 			currentUserId={$currentUser?.id}
 			onSignaler={signaler}
 		/>

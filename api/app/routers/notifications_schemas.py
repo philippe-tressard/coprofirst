@@ -21,3 +21,9 @@ class NotificationRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ToutMarquerLu(BaseModel):
+    """`POST /notifications/tout-marquer-lu` — combien de notifications ont été marquées."""
+
+    marquees: int

@@ -35,8 +35,6 @@
 	export let expandedId: number | null = null;
 	export let gestionPhotosId: number | null = null;
 
-	export let estCS = false;
-	export let estAdmin = false;
 	export let currentUserId: number | undefined = undefined;
 
 	export let onToggle: (a: PetiteAnnonce) => void;
@@ -63,8 +61,6 @@
 		{annonce}
 		expanded={expandedId === annonce.id}
 		gestionOuverte={gestionPhotosId === annonce.id}
-		{estCS}
-		{estAdmin}
 		{currentUserId}
 		onToggle={() => onToggle(annonce)}
 		onToggleGestion={() => onToggleGestion(annonce)}

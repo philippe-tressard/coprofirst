@@ -12,7 +12,7 @@
 	import { marquerDonneesAffichees } from '#lib/telemetry.ts';
 	import { cibleDuHash, revelerCible } from '#lib/deepLink.ts';
 	import { faq as faqApi, manuel, type EntreeFaq } from '#lib/api/index.ts';
-	import { isCS, currentUser } from '#lib/stores/auth.ts';
+	import { isCS } from '#lib/stores/auth.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		getPageConfig,
@@ -21,11 +21,9 @@
 		defautsDePage,
 	} from '#lib/stores/pageConfig.ts';
 	import {
-		categoriesPourStatut,
 		categorieSaisie,
 		estQuestionPrixBadge,
 		grouperParCategorie,
-		normalizeCategorieLabel,
 		saisieFaqDepuis,
 		saisieFaqVide,
 		type SaisieFaq,
@@ -57,9 +55,9 @@
 
 	$: canEdit = $isCS;
 
-	$: grouped = grouperParCategorie(items);
-	// Masquer les catégories FAQ non pertinentes selon le statut
-	$: filteredGrouped = canEdit ? grouped : categoriesPourStatut(grouped, $currentUser?.statut);
+	//  Les catégories qu'un statut ne lit pas ne sont pas SERVIES (`GET /faq`,
+	//  #2506) : il n'y a plus rien à masquer ici.
+	$: filteredGrouped = grouperParCategorie(items);
 
 	onMount(async () => {
 		await loadFaq();
@@ -134,10 +132,10 @@
 		}
 		saving = true;
 		try {
-			// Calcul auto de l'ordre : dernier de la catégorie + 1
-			const catItems = items.filter(
-				(i) => normalizeCategorieLabel(i.categorie) === normalizeCategorieLabel(categorie),
-			);
+			// Calcul auto de l'ordre : dernier de la catégorie + 1 — rangée sous le
+			// libellé que sert l'API, comme la liste (`categorie_libelle`).
+			const libelle = items.find((i) => i.categorie === categorie)?.categorie_libelle ?? categorie;
+			const catItems = items.filter((i) => i.categorie_libelle === libelle);
 			const maxOrdre = catItems.length ? Math.max(...catItems.map((i) => i.ordre ?? 0)) : -1;
 			const ordre = editingItem ? editingItem.ordre : maxOrdre + 1;
 
@@ -210,10 +208,10 @@
 		savingCategory = true;
 		try {
 			await faqApi.renameCategory(editingCategory, editCategoryName.trim());
-			// Mettre à jour localement
-			const oldName = editingCategory;
-			const newName = editCategoryName.trim();
-			items = items.map((i) => (i.categorie === oldName ? { ...i, categorie: newName } : i));
+			//  Relue au serveur, et non recopiée ici : le LIBELLÉ d'une catégorie est
+			//  une règle du serveur (`categorie_libelle`, #2506), qu'un nom neuf peut
+			//  changer. Le renommage est réservé au conseil, qui lit la liste entière.
+			items = await faqApi.listAll();
 			toast('success', 'Catégorie renommée.');
 			cancelEditCategory();
 		} catch (e) {

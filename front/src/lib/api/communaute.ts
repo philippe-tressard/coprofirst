@@ -36,6 +36,8 @@ export interface ReponseCommunaute {
 	auteur_role: string | null;
 	/** CS ou admin : réponse mise en avant, et triée en tête par le serveur. */
 	est_cs: boolean;
+	/** Le lecteur peut la supprimer — `peut_commenter` du serveur (#2506). */
+	peut_supprimer: boolean;
 }
 
 /**  La réponse qu'on vient de publier sur une idée ou une annonce
@@ -63,6 +65,8 @@ export interface Sondage {
 	/** La règle d'archivage du site (`utils/archivage`, #515). */
 	archivee: boolean;
 	assiste_ia: boolean;
+	/** Le badge NEW — `utils/nouveaute.est_nouveau` (#2506). */
+	nouveau: boolean;
 }
 
 /**  Une option sur la FICHE d'un sondage. `nb_votes` et `reponses_libres` sont
@@ -77,12 +81,12 @@ export interface OptionSondage {
 	reponses_libres?: string[];
 }
 
-/**  La FICHE d'un sondage — `GET /sondages/{id}`, un dict composé à la main.
+/**  La FICHE d'un sondage — `GET /sondages/{id}`, le schéma `SondageDetail` du
+ *   serveur (déclaré par la route depuis #2506).
  *
- *   ⚠️ Ce n'est PAS le schéma `SondageDetail` du serveur, qu'aucune route ne
- *   déclare : la fiche ne porte ni `nb_votants`, ni `archivee`, ni `assiste_ia`
- *   de la liste, et ajoute ses options, ses commentaires et la décision
- *   d'affichage des résultats. */
+ *   ⚠️ La fiche ne porte ni `nb_votants`, ni `archivee`, ni `assiste_ia` de la
+ *   liste, et ajoute ses options, ses commentaires et la décision d'affichage des
+ *   résultats. */
 export interface SondageDetail extends Omit<Sondage, 'nb_votants' | 'archivee' | 'assiste_ia'> {
 	options: OptionSondage[];
 	/** L'option votée par l'utilisateur, ou `null` s'il n'a pas voté. */
@@ -143,6 +147,12 @@ export interface Idee {
 	assiste_ia: boolean;
 	reponses: ReponseCommunaute[];
 	nb_reponses: number;
+	/** Le badge NEW — `utils/nouveaute.est_nouveau` (#2506). */
+	nouveau: boolean;
+	/** Le crayon : `peut_editer` du serveur (l'auteur, l'admin). */
+	peut_modifier: boolean;
+	/** La corbeille : l'administrateur. */
+	peut_supprimer: boolean;
 }
 
 /**  `POST /idees` — la LIGNE `idee` telle quelle (ciblage en JSON texte). */
@@ -200,12 +210,22 @@ export interface PetiteAnnonce {
 	assiste_ia: boolean;
 	auteur_prenom: string;
 	auteur_nom: string;
+	/** « Prénom NOM » — `utils/noms.nom_affiche` (#2506). */
+	auteur_affiche: string;
 	/** `null` quand l'auteur masque son contact. */
 	auteur_email: string | null;
 	est_auteur: boolean;
 	archivee: boolean;
 	reponses: ReponseCommunaute[];
 	nb_reponses: number;
+	/** Le badge NEW — `utils/nouveaute.est_nouveau` (#2506). */
+	nouveau: boolean;
+	/** Un don sans prix : la carte dit « Gratuit » (#2506). */
+	gratuit: boolean;
+	/** Le crayon : l'auteur. */
+	peut_modifier: boolean;
+	/** La corbeille : l'auteur, le conseil, l'admin — la règle de la route. */
+	peut_supprimer: boolean;
 }
 
 export type CibleSignalement = 'idee' | 'annonce' | 'sondage' | 'reponse' | 'commentaire';

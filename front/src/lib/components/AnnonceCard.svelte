@@ -37,7 +37,6 @@
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import BadgeNouveau from '#lib/components/BadgeNouveau.svelte';
 	import MarqueIA from '#lib/components/MarqueIA.svelte';
-	import { nomAffiche } from '#lib/noms.ts';
 	import EnteteCarte from './EnteteCarte.svelte';
 	import IconeAction from './IconeAction.svelte';
 	import BoutonLien from './BoutonLien.svelte';
@@ -80,8 +79,6 @@
 	export let formulaireOuvert = false;
 	/** L'auteur a-t-il ouvert la zone de gestion des photos ? */
 	export let gestionOuverte = false;
-	export let estCS = false;
-	export let estAdmin = false;
 	export let currentUserId: number | undefined = undefined;
 	export let onToggle: () => void;
 	export let onToggleGestion: () => void;
@@ -97,9 +94,10 @@
 
 	//  ⚠️ Le serveur refait ce contrôle (`_can_manage`) : ce qui suit n'est qu'un
 	//  confort d'écran. Une interface qui cache un bouton n'a jamais protégé quoi
-	//  que ce soit (`standards/03` §1).
-	$: peutModifier = annonce.est_auteur;
-	$: peutSupprimer = annonce.est_auteur || estCS || estAdmin;
+	//  que ce soit (`standards/03` §1). Les deux droits sont SERVIS (#2506) : l'app
+	//  iOS lit les mêmes champs, l'écran ne recompose plus les rôles.
+	$: peutModifier = annonce.peut_modifier;
+	$: peutSupprimer = annonce.peut_supprimer;
 </script>
 
 <!--  🗂️ QUAND puis QUOI, dans la colonne de gauche — la carte d'affaire est le
@@ -120,7 +118,7 @@
 	      les cartes du site. Elle vit dans `EnteteCarte`. -->
 	<EnteteCarte titre={annonce.titre} basculable on:toggle={onToggle}>
 		<svelte:fragment slot="titre-suffixe">
-			<BadgeNouveau le={annonce.cree_le} si={!annonce.archivee} />
+			<BadgeNouveau si={annonce.nouveau && !annonce.archivee} />
 		</svelte:fragment>
 
 		<svelte:fragment slot="tags">
@@ -138,12 +136,12 @@
 							class="badge badge-gray annonce-nego">Négociable</span
 						>{/if}</span
 				>
-			{:else if annonce.type_annonce === 'don'}
+			{:else if annonce.gratuit}
 				<span class="annonce-prix annonce-gratuit">Gratuit</span>
 			{/if}
 			<!--  ✍️ puis ✨ en fin de ligne, comme partout. Le nom est celui que
 			      l'API sert déjà à tout lecteur (le contact, lui, reste au corps). -->
-			<AuteurCarte nom={nomAffiche(annonce.auteur_prenom, annonce.auteur_nom)} />
+			<AuteurCarte nom={annonce.auteur_affiche} />
 			<MarqueIA assiste={annonce.assiste_ia} />
 		</svelte:fragment>
 
@@ -252,12 +250,10 @@
 				<div class="annonce-contact">
 					{#if annonce.auteur_email}
 						<small
-							>&#x1F4EC; <a href="mailto:{annonce.auteur_email}"
-								>{nomAffiche(annonce.auteur_prenom, annonce.auteur_nom)}</a
-							></small
+							>&#x1F4EC; <a href="mailto:{annonce.auteur_email}">{annonce.auteur_affiche}</a></small
 						>
 					{:else}
-						<small>&#x1F464; {nomAffiche(annonce.auteur_prenom, annonce.auteur_nom)}</small>
+						<small>&#x1F464; {annonce.auteur_affiche}</small>
 					{/if}
 				</div>
 
@@ -295,7 +291,6 @@
 				<Reponses
 					reponses={annonce.reponses ?? []}
 					{currentUserId}
-					isCS={estCS}
 					placeholder="Une question sur cette annonce ?"
 					onSubmit={onRepondre}
 					onDelete={onSupprimerReponse}

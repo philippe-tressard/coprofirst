@@ -5,7 +5,7 @@ from app.utils import horloge
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, NaiveDatetime
 from sqlmodel import Session, select
 
 from app.auth.appartenance import exiger_objet_autorise
@@ -39,6 +39,9 @@ from app.utils.assiste_ia import (
     marquer as marquer_assiste_ia,
 )
 from app.utils.recuperer import ou_404
+from app.utils.noms import nom_affiche
+from app.utils.nouveaute import est_nouveau
+from app.schemas_communaute import ReponseCommunauteRead
 
 router = APIRouter(prefix="/annonces", tags=["annonces"])
 
@@ -66,14 +69,14 @@ def est_archivee(annonce: PetiteAnnonce, jours: int = ARCHIVAGE_DELAI_JOURS) -> 
     return est_archivable("annonce", annonce, seuil_jours=jours)
 
 
-def _reponses_for(cible_id: int, session: Session) -> list[dict]:
+def _reponses_for(cible_id: int, session: Session, lecteur: Utilisateur) -> list[dict]:
     """Les réponses de cette rubrique — la règle vit dans `reponses_communaute`.
 
     Ce corps était identique à celui de l'autre rubrique, au discriminant
     près. Il ne reste qu'un nom local, gardé parce que la fiche détaillée
     l'appelle : le supprimer déplacerait la question sans y répondre.
     """
-    return reponses_de(RUBRIQUE, cible_id, session)
+    return reponses_de(RUBRIQUE, cible_id, session, lecteur=lecteur)
 
 
 def _can_manage(annonce: PetiteAnnonce, user: Utilisateur) -> bool:
@@ -92,7 +95,7 @@ def _can_manage(annonce: PetiteAnnonce, user: Utilisateur) -> bool:
 
 def _enrich(annonce: PetiteAnnonce, user: Utilisateur, session: Session) -> dict:
     auteur = session.get(Utilisateur, annonce.auteur_id)
-    reponses = _reponses_for(annonce.id, session)
+    reponses = _reponses_for(annonce.id, session, user)
     return {
         **annonce.model_dump(),
         "photos": json.loads(annonce.photos_json),
@@ -111,6 +114,9 @@ def _enrich(annonce: PetiteAnnonce, user: Utilisateur, session: Session) -> dict
         "public_cible": json.loads(annonce.public_cible or "[]"),
         "auteur_prenom": auteur.prenom if auteur else "",
         "auteur_nom": auteur.nom if auteur else "",
+        #  « Prénom NOM » composé par la règle du serveur (#2506) : les mêmes
+        #  champs que ci-dessus, rien de plus — le site et l'app le lisent.
+        "auteur_affiche": nom_affiche(auteur.prenom, auteur.nom) if auteur else "",
         #  Le nom se lit toujours ; l'adresse, si l'auteur l'a permis (#2145).
         "auteur_email": adresse_de_contact(annonce, auteur),
         #  Calculé par la règle centrale, pas recomparé ici : le drapeau que
@@ -123,7 +129,64 @@ def _enrich(annonce: PetiteAnnonce, user: Utilisateur, session: Session) -> dict
         "archivee": est_archivee(annonce, seuil_archivage_jours(session)),
         "reponses": reponses,
         "nb_reponses": len(reponses),
+        #  Les règles d'affichage de la carte, servies (#2506) : l'app iOS les lit
+        #  telles quelles, le site aussi.
+        "nouveau": est_nouveau(annonce.cree_le),
+        "gratuit": est_gratuite(annonce),
+        #  Le crayon : l'AUTEUR, comme l'écran l'offrait. La route admet aussi le
+        #  conseil (`_can_manage`) ; l'écran, plus étroit, ne lui tend pas la
+        #  réécriture de l'annonce d'un voisin.
+        "peut_modifier": est_auteur(annonce, user),
+        #  La corbeille : la règle même de la route qui supprime.
+        "peut_supprimer": _can_manage(annonce, user),
     }
+
+
+def est_gratuite(annonce: PetiteAnnonce) -> bool:
+    """Un DON sans prix se lit « Gratuit » — un prix posé, même sur un don, se lit
+    tel quel (la règle de la carte, servie depuis #2506)."""
+    return annonce.prix is None and annonce.type_annonce == TypeAnnonce.don
+
+
+class AnnonceRead(BaseModel):
+    """Une petite annonce — ce que rendent la liste, la création et la correction
+    (#2506 : déclarée `{}` jusque-là, l'app la relisait en miroir du front)."""
+
+    id: int
+    titre: str
+    #: Texte riche (HTML), assaini à l'affichage.
+    description: str
+    type_annonce: TypeAnnonce
+    categorie: CategorieAnnonce
+    prix: Optional[float] = None
+    negotiable: bool = False
+    #: La colonne brute ; `photos` en est la lecture.
+    photos_json: str = "[]"
+    photos: List[str] = []
+    perimetre_cible: List[str] = []
+    #: Vide = tous les résidents.
+    public_cible: List[str] = []
+    statut: StatutAnnonce
+    statut_change_le: Optional[NaiveDatetime] = None
+    contact_visible: bool = True
+    auteur_id: int
+    cree_le: NaiveDatetime
+    mis_a_jour_le: Optional[NaiveDatetime] = None
+    assiste_ia: bool = False
+    auteur_prenom: str = ""
+    auteur_nom: str = ""
+    #: « Prénom NOM » — `utils/noms.nom_affiche`.
+    auteur_affiche: str = ""
+    #: `None` quand l'auteur masque son contact (`adresse_de_contact`).
+    auteur_email: Optional[str] = None
+    est_auteur: bool = False
+    archivee: bool = False
+    reponses: List[ReponseCommunauteRead] = []
+    nb_reponses: int = 0
+    nouveau: bool = False
+    gratuit: bool = False
+    peut_modifier: bool = False
+    peut_supprimer: bool = False
 
 
 # ── Schémas ────────────────────────────────────────────────────────────────
@@ -169,7 +232,7 @@ class AnnonceStatutUpdate(BaseModel):
 # ── Endpoints ──────────────────────────────────────────────────────────────
 
 
-@router.get("")
+@router.get("", response_model=List[AnnonceRead])
 def list_annonces(
     type_annonce: Optional[str] = None,
     categorie: Optional[str] = None,
@@ -197,7 +260,7 @@ def list_annonces(
     return [_enrich(a, user, session) for a in annonces]
 
 
-@router.post("")
+@router.post("", response_model=AnnonceRead)
 def create_annonce(
     data: AnnonceCreate,
     session: Session = Depends(get_session),
@@ -229,7 +292,7 @@ def create_annonce(
     return _enrich(annonce, user, session)
 
 
-@router.patch("/{annonce_id}")
+@router.patch("/{annonce_id}", response_model=AnnonceRead)
 def update_annonce(
     annonce_id: int,
     data: AnnonceUpdate,
