@@ -176,6 +176,10 @@
 		align-items: center;
 		gap: 0.4rem;
 		flex-shrink: 0;
+		/*  Un objet long fait passer le verdict à la ligne : seul dans sa rangée,
+		    `space-between` le collait à gauche. La marge auto le tient à droite,
+		    sur une ligne comme sur deux. */
+		margin-left: auto;
 	}
 	.jv-date {
 		color: var(--color-text-muted);

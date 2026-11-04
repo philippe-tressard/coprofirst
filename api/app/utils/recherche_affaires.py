@@ -116,7 +116,11 @@ def termes(requete: str | None) -> list[str]:
     """Les mots cherchés : repliés, dédoublonnés, dans l'ordre de la frappe."""
     vus: list[str] = []
     for mot in replier(requete).split():
-        if mot not in vus:
+        #  « #TK-237133 » : le dièse s'écrit devant un numéro à l'écran, et se
+        #  copie avec lui. Il ne fait pas partie du numéro (pendant front :
+        #  `termeAffaire`, `#lib/tickets.ts`).
+        mot = mot.lstrip("#")
+        if mot and mot not in vus:
             vus.append(mot)
     return vus[:TERMES_MAX]
 
@@ -207,6 +211,8 @@ def _selftest() -> int:
     verifier("replier garde la longueur", len(replier("Dégât ß œ")), len("Dégât ß œ"))
     verifier("replier", replier("DÉGÂT"), "degat")
     verifier("termes", termes("  Fuite  fuite PLAFOND "), ["fuite", "plafond"])
+    verifier("le dièse d'un numéro ne se tape pas", termes("#TK-237133 fuite"), ["tk-237133", "fuite"])
+    verifier("un dièse seul n'est pas un mot", termes("# ##"), [])
     fiche = [
         Texte("titre", "Tache au plafond"),
         Texte("suite", "Le plombier confirme une fuite sur la colonne"),

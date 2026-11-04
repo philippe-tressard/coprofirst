@@ -99,6 +99,19 @@ test('Espace CS › Courriels : une pliure par message, verdict et motif dessous
 	);
 	expect(lignesDebordent, 'une ligne du journal déborde de son cadre').toBe(false);
 
+	//  Un objet très long fait passer le verdict à la ligne : il reste CADRÉ À DROITE
+	//  (il se collait à gauche, seul dans sa rangée).
+	const tete = lignes.nth(1).locator('summary');
+	await tete.evaluate((el) => {
+		el.querySelector('.jv-titre')!.textContent =
+			'Re: ' + 'Objet très long de l’affaire '.repeat(12);
+	});
+	const { cadre, verdict } = await tete.evaluate((el) => ({
+		cadre: el.getBoundingClientRect().right,
+		verdict: el.querySelector('.jv-meta')!.getBoundingClientRect().right,
+	}));
+	expect(Math.abs(cadre - verdict), 'le verdict n’est plus cadré à droite').toBeLessThan(2);
+
 	await bloc.screenshot({
 		path: `test-results/journal-releves-${test.info().project.name}.png`,
 	});
