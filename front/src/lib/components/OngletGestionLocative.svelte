@@ -32,7 +32,6 @@
 	import FormulaireBail from '#lib/components/FormulaireBail.svelte';
 	import InventaireBail from '#lib/components/InventaireBail.svelte';
 	import { fmtDateShort as fmt } from '#lib/date.ts';
-	import { lotTypeComplet } from '#lib/utils.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
 	import GesteEnPlace from '#lib/components/GesteEnPlace.svelte';
 	import Onglet from '#lib/components/Onglet.svelte';
@@ -43,7 +42,7 @@
 	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
 	import { messageErreur, tenter } from '#lib/erreurs.ts';
 	import { toast } from '#lib/components/Toast.svelte';
-	import { etageLabel, lotTypeLabel } from '#lib/utils.ts';
+	import { etageLabel } from '#lib/utils.ts';
 
 	//  Les routes viennent de la TABLE, jamais écrites ici (`lint:pages`).
 	const ROUTE_BAUX_ACTIFS = routeSousOnglet('mon-lot', 'location', 'actif');
@@ -182,9 +181,8 @@
 	//  même chose : ils se déclarent ensemble, dans `#lib/bail`.
 
 	//  Les lots tels que `FormulaireBail` les attend : un libellé et un état.
-	//  🔴 La préparation vit ICI, pas dans le composant : `lotLabel` s'appuie sur
-	//  `lotTypeLabel`, qui sert encore à l'affichage des accès plus bas. L'emporter
-	//  dans le composant en aurait fait une deuxième écriture.
+	//  La préparation vit ICI, pas dans le composant : le libellé lit le type que
+	//  l'API sert en clair (`libelle_type_complet`, #2507).
 	$: lotsACocher = lots.map((l) => ({
 		id: l.id,
 		libelle: lotLabel(l),
@@ -193,15 +191,14 @@
 
 	function lotLabel(lot: MonLot): string {
 		const bat = lot.batiment_nom ?? '—';
-		const type = lotTypeLabel(lot.type);
-		const sub = lot.type_appartement ? ` ${lot.type_appartement}` : '';
+		const type = lot.libelle_type_complet;
 		//  ⚠️ SEPTIÈME écriture du libellé d'étage, et quatrième rendu (« Ét. 2 »).
 		//  Trouvée par `lint:etage-libelle`, pas par ma relecture : elle est dans
 		//  une fonction, pas dans le gabarit, et le relevé à la main l'avait sautée.
 		const etiquette = etageLabel(lot.etage);
 		const etage = etiquette ? ` · ${etiquette}` : '';
 		const surface = lot.superficie ? ` · ${lot.superficie} m²` : '';
-		return `${bat} — ${type}${sub} n°${lot.numero}${etage}${surface}`;
+		return `${bat} — ${type} n°${lot.numero}${etage}${surface}`;
 	}
 </script>
 
@@ -308,9 +305,7 @@
 								<div class="lot-bail">
 									{#if lot}
 										<span class="lbc-lot-badge">{lot.batiment_nom ?? '—'} / {lot.numero}</span>
-										<span class="badge badge-gray type-lot"
-											>{lotTypeComplet(lot.type, lot.type_appartement)}</span
-										>
+										<span class="badge badge-gray type-lot">{lot.libelle_type_complet}</span>
 									{/if}
 									{#if group.baux.length > 1}
 										<BadgeStatutBail statut={bail.statut} compact />

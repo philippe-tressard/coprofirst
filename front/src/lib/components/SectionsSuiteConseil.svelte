@@ -72,12 +72,7 @@
 	let equipementVu = $etat.equipement;
 	$: if ($etat.equipement !== equipementVu) {
 		equipementVu = $etat.equipement;
-		const propose = intervenantPropose(
-			$etat.equipement,
-			contrats,
-			prestataires,
-			$etat.prestataireId,
-		);
+		const propose = intervenantPropose($etat.equipement, contrats, $etat.prestataireId);
 		if (propose)
 			[$etat.prestataireId, $etat.contratId] = [propose.prestataireId, propose.contratId];
 	}

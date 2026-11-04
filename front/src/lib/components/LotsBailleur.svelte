@@ -16,7 +16,7 @@
 	import TableauCharges from '#lib/components/TableauCharges.svelte';
 	import { designationDuLot } from '#lib/charges-lots.ts';
 	import { fmtDateShort as fmt } from '#lib/date.ts';
-	import { etageLabel, fmtNombre, lotTypeComplet } from '#lib/utils.ts';
+	import { etageLabel, fmtNombre } from '#lib/utils.ts';
 
 	export let lots: MonLot[] = [];
 	export let bauxActifs: Bail[] = [];
@@ -45,7 +45,7 @@
 </script>
 
 <!-- Mes charges, lot par lot et au total (#2251, maquette A) -->
-<TableauCharges {lots} />
+<TableauCharges />
 
 <!-- Section 1 : Tous les lots possédés -->
 <div class="lots-section-label">🏢 Lots possédés ({lots.length})</div>
@@ -61,9 +61,7 @@
 				{/if}
 			</div>
 			<div class="lpc-details">
-				<span class="badge badge-gray type-lot"
-					>{lotTypeComplet(lot.type, lot.type_appartement)}</span
-				>
+				<span class="badge badge-gray type-lot">{lot.libelle_type_complet}</span>
 				{#if lot.etage !== null}<span class="text-muted-sm"
 						>{etageLabel(lot.etage, { suffixe: true })}</span
 					>{/if}
@@ -116,9 +114,7 @@
 					{#if lot}
 						<div class="loc-lot-row">
 							<span class="lbc-lot-badge">{lot.batiment_nom ?? '—'} / {lot.numero}</span>
-							<span class="badge badge-gray type-lot"
-								>{lotTypeComplet(lot.type, lot.type_appartement)}</span
-							>
+							<span class="badge badge-gray type-lot">{lot.libelle_type_complet}</span>
 							<span class="text-muted-sm"
 								>Depuis le {fmt(bail.date_entree)}{bail.date_sortie_prevue
 									? ` · Sortie prévue ${fmt(bail.date_sortie_prevue)}`

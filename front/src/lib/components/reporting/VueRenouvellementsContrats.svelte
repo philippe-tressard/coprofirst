@@ -32,7 +32,6 @@
 	export let reportContrats: ReportContrat[] = [];
 	export let reportPrestataires: ReportPrestataire[] = [];
 	/** Note moyenne et nombre d'avis par prestataire, calculés une fois en amont. */
-	export let reportNoteMoyParPrest: Map<number, { moy: number; nb: number }> = new Map();
 
 	//  🔴 Relue à chaque rafraîchissement des DONNÉES — c'est `anneeDeReference`
 	//  qui porte le pourquoi. Cette ligne était `anneeCourante()` seule : un `$:`
@@ -43,11 +42,7 @@
 	//  La dérivation vit dans `#lib/reporting.ts` : le parent en a besoin pour ses
 	//  compteurs, ce composant pour sa frise. La recopier serait la duplication
 	//  que ce découpage existe pour retirer.
-	$: contratsAvecFin = contratsAvecEcheance(
-		reportContrats,
-		reportPrestataires,
-		reportNoteMoyParPrest,
-	);
+	$: contratsAvecFin = contratsAvecEcheance(reportContrats, reportPrestataires);
 
 	$: contratsAnneeCourante = contratsAvecFin.filter((c) => {
 		if (!c.dateFin) return false;

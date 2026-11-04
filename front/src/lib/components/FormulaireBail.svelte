@@ -48,7 +48,7 @@
   Il ne connaît ni `LotDetail`, ni la façon d'étiqueter un lot, ni quels baux sont
   actifs : il reçoit des **lots à cocher** (`{ id, libelle, occupe }`), préparés par
   la page. Lui passer la structure de données de l'écran l'aurait rendu inutilisable
-  ailleurs, et aurait recopié `lotTypeLabel` — qui sert encore deux fois là-bas.
+  ailleurs : le libellé d'un lot se compose dans la page, depuis ce que l'API sert.
 
   La recherche de locataire, en revanche, lui appartient : elle n'existe que dans ce
   formulaire, et la laisser dans la page l'obligeait à porter six variables d'état

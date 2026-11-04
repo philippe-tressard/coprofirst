@@ -71,6 +71,8 @@ export interface AccesBail {
 	type: 'vigik' | 'telecommande';
 	lot_id: number | null;
 	lot_type: 'appartement' | 'parking' | 'cave' | string | null;
+	/** Le type du lot en clair — « Appartement » (#2507, servi par l'API). */
+	lot_libelle_type: string | null;
 	lot_label: string | null;
 	statut: string;
 	chez_locataire: boolean;
@@ -102,6 +104,8 @@ export interface BailLocataire {
 	lot_numero: string | null;
 	lot_type: string | null;
 	lot_type_appartement: string | null;
+	/** Le type du lot et sa précision en clair — « Appartement – T3 » (#2507). */
+	lot_libelle_type_complet: string | null;
 	lot_etage: number | null;
 	lot_superficie: number | null;
 	lot_batiment_nom: string | null;

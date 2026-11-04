@@ -18,10 +18,8 @@
   duplication que le découpage doit retirer. Il n'a besoin que de ces trois
   choses ; il ne demande que ces trois choses.
 
-  ⚠️ `lotTypeLabel` est parti dans `#lib/utils` : il servait ICI et à la
-  préparation de `FormulaireBail`, restée dans la page. L'emporter en aurait
-  fait une deuxième écriture — c'est le défaut que `mon-lot` avait déjà nommé en
-  commentaire, et qui se serait produit à cette extraction-ci.
+  Le type du lot d'un badge est SERVI en clair (`lot_libelle_type`, #2507) : il se
+  composait dans `#lib/utils` (`lotTypeLabel`), que l'app iOS ne lit pas.
 -->
 <script lang="ts">
 	import { statutAccesLabel } from '#lib/types-acces.ts';
@@ -29,7 +27,6 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { bailleur as bailApi, type AccesBail } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
-	import { lotTypeLabel } from '#lib/utils.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import Modale from '#lib/components/Modale.svelte';
@@ -292,7 +289,7 @@
 								</td>
 								<td
 									>{acces.lot_label ?? '—'}
-									<span class="badge badge-gray type-lot">{lotTypeLabel(acces.lot_type)}</span></td
+									<span class="badge badge-gray type-lot">{acces.lot_libelle_type ?? '—'}</span></td
 								>
 								<td>{acces.type === 'vigik' ? '\u{1F3F7}️ Vigik' : '\u{1F4E1} Télécommande'}</td>
 								<td class="texte-code">{acces.code}</td>

@@ -14,7 +14,7 @@
 	import { currentUser } from '#lib/stores/auth.ts';
 	import { badgesDeRoles, LIBELLES_STATUT } from '#lib/roles.ts';
 	import { fmtDateShort as fmtDate, fmtDatetimeShort as fmtDatetime } from '#lib/date.ts';
-	import { etageLabel, fmtNombre, lotTypeLabel } from '#lib/utils.ts';
+	import { etageLabel, fmtNombre } from '#lib/utils.ts';
 
 	/** Les lots du compte (`lots.mesList()`), chargés par la page. */
 	export let lots: MonLot[] = [];
@@ -36,7 +36,7 @@
 				<span class="ligne-lot">
 					{#if lot.batiment_nom}{lot.batiment_nom} —
 					{/if}
-					N° {lot.numero}{SEPARATEUR.point}{lotTypeLabel(lot.type)}
+					N° {lot.numero}{SEPARATEUR.point}{lot.libelle_type}
 					{#if lot.type_appartement}
 						({lot.type_appartement}){/if}
 					{#if lot.etage != null}{SEPARATEUR.point}{etageLabel(lot.etage, { suffixe: true })}{/if}

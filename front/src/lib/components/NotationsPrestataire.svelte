@@ -38,7 +38,7 @@
 	import { toast } from '#lib/components/Toast.svelte';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { fmtDate } from '#lib/date.ts';
-	import { etoiles, moyenneNotes } from '#lib/notations.ts';
+	import { etoiles } from '#lib/notations.ts';
 	import IconeAction from './IconeAction.svelte';
 
 	/** Les notations de CE prestataire, déjà filtrées par l'appelant. */
@@ -50,8 +50,10 @@
 	 *   un seul composant : les séparer aurait donné deux endroits où changer la
 	 *   façon d'écrire une note. */
 	export let resume = false;
-
-	$: moyenne = moyenneNotes(notations);
+	/**  La moyenne de ses avis et leur nombre, SERVIS par l'API avec le prestataire
+	 *   (`note_moyenne`, `nb_notations`, #2507) — `null` sans avis, jamais 0. */
+	export let moyenne: number | null = null;
+	export let nbAvis = 0;
 
 	const dispatch = createEventDispatcher<{ supprimee: number }>();
 
@@ -88,9 +90,9 @@
 	      composent au même endroit : c'est la même notion, vue de deux
 	      distances. -->
 	{#if moyenne !== null}
-		<span class="not-badge badge" title="{moyenne}/5 ({notations.length} avis)">
+		<span class="not-badge badge" title="{fmtNombre(moyenne)}/5 ({nbAvis} avis)">
 			{etoiles(moyenne)}
-			{moyenne}
+			{fmtNombre(moyenne)}
 		</span>
 	{/if}
 {:else if triees.length}

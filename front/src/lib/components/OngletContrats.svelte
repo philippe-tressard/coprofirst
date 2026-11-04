@@ -32,8 +32,7 @@
 	import { contratDepuis, contratVierge } from '#lib/prestataires.ts';
 	import { groupesParEquipement } from '#lib/equipements.ts';
 	import { equipementsStore } from '#lib/stores/equipements.ts';
-	import { minuitDuJour, typeEquipementDuContrat } from '#lib/reporting.ts';
-	import { relire, nombreOuNull } from '#lib/utils.ts';
+	import { nombreOuNull } from '#lib/utils.ts';
 	import CarteContrat from '#lib/components/CarteContrat.svelte';
 	import FormulaireContrat from '#lib/components/FormulaireContrat.svelte';
 	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
@@ -119,12 +118,10 @@
 	//  calendrier, `frequence_type` réparti sur les mois de l'exercice. Le
 	//  décompte reste, l'écran séparé part.
 	//
-	//  ⚠️ Minuit, pas l'instant ; `contrats` cité pour relire (`utils.relire`).
-	$: minuit = relire(contrats, minuitDuJour);
-	$: contratEnRetard = (c: ContratEntretien) =>
-		!!c.prochaine_visite && new Date(c.prochaine_visite) < minuit;
-	$: echeancesEnRetard = contrats.filter(contratEnRetard);
-	$: echeancesAVenir = contrats.filter((c) => c.prochaine_visite && !contratEnRetard(c));
+	//  Le retard d'une visite est SERVI par l'API (`en_retard`, #2507) : le jour même
+	//  n'en est pas un (`echeance_contrat.visite_en_retard`).
+	$: echeancesEnRetard = contrats.filter((c) => c.en_retard);
+	$: echeancesAVenir = contrats.filter((c) => c.prochaine_visite && !c.en_retard);
 	$: contratsSansEcheance = contrats.filter((c) => !c.prochaine_visite);
 
 	/**  Les contrats d'un groupe, la prochaine échéance d'abord.
@@ -210,11 +207,7 @@
 	}
 
 	function startEditContrat(c: ContratEntretien) {
-		contratForm = contratDepuis(
-			c,
-			perimetreDefautListe(),
-			typeEquipementDuContrat(c, prestataires),
-		);
+		contratForm = contratDepuis(c, perimetreDefautListe(), c.equipement_effectif);
 		editContratId = c.id;
 		creationOuverte = false;
 	}
@@ -225,16 +218,10 @@
 			return;
 		}
 		submitting = true;
-		//  La règle vit dans `reporting.ts` — elle était écrite ici, dans le
-		//  groupement des cartes et dans le chargement du formulaire, avec trois
-		//  résultats différents sur le même contrat (29/08/2026).
-		const resolvedType = typeEquipementDuContrat(
-			{ ...contratForm, prestataire_id: Number(contratForm.prestataire_id) },
-			prestataires,
-		);
+		//  « autre » prend la spécialité du prestataire AU SERVEUR, qui enregistre
+		//  (`prestataires._resoudre_equipement`, #2507) : l'app iOS passe par lui aussi.
 		const payload = {
 			...contratForm,
-			type_equipement: resolvedType,
 			prestataire_id: Number(contratForm.prestataire_id),
 			duree_initiale_valeur: nombreOuNull(contratForm.duree_initiale_valeur),
 			duree_initiale_unite: contratForm.duree_initiale_valeur
@@ -354,9 +341,9 @@
 		messageVideCourant="Les contrats archivés sont rangés dans les Archives, ci-dessous."
 		let:items
 	>
-		{#each groupesParEquipement( items.map( (c) => typeEquipementDuContrat(c, prestataires) ), $equipementsStore ) as specGroup (specGroup.val)}
+		{#each groupesParEquipement( items.map((c) => c.equipement_effectif), $equipementsStore ) as specGroup (specGroup.val)}
 			<IntertitreGroupe libelle={specGroup.label} />
-			{#each parEcheance(items.filter((c) => typeEquipementDuContrat(c, prestataires) === specGroup.val)) as c (c.id)}
+			{#each parEcheance(items.filter((c) => c.equipement_effectif === specGroup.val)) as c (c.id)}
 				{@const contrat = c}
 				{@const prest = prestataires.find((p) => p.id === c.prestataire_id)}
 				<CarteContrat
@@ -364,7 +351,7 @@
 					archive={c.archivee}
 					{prest}
 					expanded={ouvert === c.id}
-					enRetard={!c.archivee && contratEnRetard(c)}
+					enRetard={!c.archivee && c.en_retard}
 					documents={contratDocsMap[contrat.id] ?? []}
 					peutModifier={$isCS}
 					{editContratId}

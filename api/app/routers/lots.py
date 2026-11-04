@@ -32,9 +32,17 @@ from app.utils.recuperer import ou_404
 from app.utils.etages import (
     ETAGE_HORS_BORNES,
     etage_hors_bornes,
+    etage_label,
     logement_de_reference,
     type_de_lot,
 )
+from app.utils.libelles_lot import (
+    libelle_type_complet,
+    libelle_type_lot,
+    nature_ou_type,
+    nom_du_lot,
+)
+from app.utils.tableau_charges import TableauCharges, tableau_des_charges
 from app.models.core import (
     Lot,
     Utilisateur,
@@ -86,11 +94,24 @@ class LotRead(Designation):
     nature: Optional[str] = None
     #: La porte ou la place (« 5 & 6 »), ce que le résident dit.
     numero_usage: Optional[str] = None
+    #  ── Les libellés SERVIS (#2507) : le site et l'app iOS les lisent, aucun ne
+    #  les compose (`standards/09` §8, règle 1 ; règles dans `utils/libelles_lot`).
+    #: Le type en clair — « Appartement », « Local commercial ».
+    libelle_type: str = ""
+    #: Le type et sa précision — « Appartement – T3 ».
+    libelle_type_complet: str = ""
+    #: La nature du règlement en clair, sinon le type — « Logement », « Cave ».
+    libelle_nature: str = ""
+    #: Le lot nommé par sa nature et son numéro — « Logement 15 », « Place 450 ».
+    nom_du_lot: str = ""
+    #: L'étage en clair — « RDC », « 2ème », « SS 1 » ; vide sans étage
+    #: (`utils/etages.etage_label`).
+    etage_libelle: str = ""
 
 
 def _lot_read(lot: Lot, designation: Optional[Designation] = None) -> LotRead:
     nature = nature_du_lot(lot)
-    return lire_objet(
+    lu = lire_objet(
         LotRead,
         lot,
         type=type_de_lot(lot),
@@ -98,16 +119,19 @@ def _lot_read(lot: Lot, designation: Optional[Designation] = None) -> LotRead:
         nature=nature.value if nature else None,
         **(designation or Designation()).model_dump(),
     )
+    lu.libelle_type = libelle_type_lot(lu.type)
+    lu.libelle_type_complet = libelle_type_complet(lu.type, lu.type_appartement)
+    lu.libelle_nature = libelle_type_lot(nature_ou_type(lu))
+    lu.nom_du_lot = nom_du_lot(lu)
+    lu.etage_libelle = etage_label(lu.etage)
+    return lu
 
 
 #  Endpoints publics
 
 
-@router.get("/mes-lots")
-def mes_lots(
-    session: Session = Depends(get_session),
-    user: Utilisateur = Depends(get_current_user),
-):
+def _mes_lectures(session: Session, user: Utilisateur) -> list[LotRead]:
+    """Mes lots, lus : la liste de `/lots/mes-lots`, que le tableau des charges range."""
     #  Les lots du COMPTE, et seulement eux — un administrateur sans lot en a
     #  zéro. Le patrimoine entier est `/lots/admin/tous` : le repli qui le
     #  rendait ici faisait lire « mes lots » à trente lots (`utils/lots_rattaches`).
@@ -127,6 +151,28 @@ def mes_lots(
         lecture.type_lien = valeur(lien.type_lien)
         lectures.append(lecture)
     return lectures
+
+
+@router.get("/mes-lots", response_model=list[LotRead])
+def mes_lots(
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(get_current_user),
+):
+    return _mes_lectures(session, user)
+
+
+@router.get("/mes-charges", response_model=TableauCharges)
+def mes_charges(
+    session: Session = Depends(get_session),
+    user: Utilisateur = Depends(get_current_user),
+):
+    """Le tableau de mes charges selon le règlement, rangé et additionné (#2507).
+
+    Il ne lit que MES lots (`rattachements_actifs`), et seulement ceux dont le lien
+    montre les tantièmes (`lit_les_tantiemes`) : un locataire reçoit un tableau vide.
+    Aucun `lot_id` n'est reçu — il n'y a pas d'autre lot à demander.
+    """
+    return tableau_des_charges(_mes_lectures(session, user))
 
 
 class MesPerimetres(BaseModel):
@@ -150,7 +196,7 @@ def mes_perimetres(user: Utilisateur = Depends(get_current_user)):
     )
 
 
-@router.get("/admin/tous")
+@router.get("/admin/tous", response_model=list[LotRead])
 def tous_les_lots(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),

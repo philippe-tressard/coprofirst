@@ -36,15 +36,10 @@
 	export let reportPrestataires: ReportPrestataire[] = [];
 	export let reportDiagTypes: DiagType[] = [];
 	/** Note moyenne et nombre d'avis par prestataire, calculés une fois en amont. */
-	export let reportNoteMoyParPrest: Map<number, { moy: number; nb: number }> = new Map();
 
 	$: ANNEE_COURANTE = relire(reportContrats, anneeCourante);
 
-	$: contratsAvecFin = contratsAvecEcheance(
-		reportContrats,
-		reportPrestataires,
-		reportNoteMoyParPrest,
-	);
+	$: contratsAvecFin = contratsAvecEcheance(reportContrats, reportPrestataires);
 	$: diagsAvecNext = diagnosticsAvecEcheance(reportDiagTypes);
 
 	$: renKpiContrats = contratsAvecFin.filter((c) => {
@@ -77,7 +72,7 @@
 	</div>
 </div>
 
-<VueRenouvellementsContrats {reportContrats} {reportPrestataires} {reportNoteMoyParPrest} />
+<VueRenouvellementsContrats {reportContrats} {reportPrestataires} />
 
 <VueRenouvellementsAudits {reportDiagTypes} />
 

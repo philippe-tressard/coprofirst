@@ -51,8 +51,7 @@
 			<BadgeStatutBail statut={bail.statut} compact />
 		</div>
 		<CaracteristiquesLot
-			type={bail.lot_type}
-			typeAppartement={bail.lot_type_appartement}
+			typeComplet={bail.lot_libelle_type_complet}
 			etage={bail.lot_etage}
 			superficie={bail.lot_superficie}
 		>
@@ -88,14 +87,13 @@
 	</div>
 	<!--  Les charges des lots qu'il possède (#2251) — ceux qu'il loue n'en montrent aucune. -->
 	{#if section.enPropre}<div class="largeur-saisie">
-			<TableauCharges lots={section.lots} />
+			<TableauCharges />
 		</div>{/if}
 	{#each section.lots as lot (lot.id)}
 		<div class="card largeur-saisie carte-lot">
 			<h2 class="carte-lot-titre">{lot.batiment_nom ?? '—'} / {lot.numero}</h2>
 			<CaracteristiquesLot
-				type={lot.type}
-				typeAppartement={lot.type_appartement}
+				typeComplet={lot.libelle_type_complet}
 				etage={lot.etage}
 				superficie={lot.superficie}
 				designation={lot}
