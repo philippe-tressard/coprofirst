@@ -5,13 +5,14 @@ from app.utils import horloge
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 from sqlalchemy import distinct
 from sqlmodel import Session, select
 
-from app.auth.deps import get_current_user, require_cs_or_admin
+from app.auth.deps import est_moderateur, get_current_user, require_cs_or_admin
 from app.database import get_session
 from app.models.core import FaqItem, Utilisateur
+from app.utils.faq_categories import categorie_lue_par, libelle_categorie_faq
 from app.utils.recuperer import ou_404, present_ou_404
 
 router = APIRouter(prefix="/faq", tags=["faq"])
@@ -58,6 +59,20 @@ class FaqItemRead(BaseModel):
     class Config:
         from_attributes = True
 
+    @computed_field
+    @property
+    def categorie_libelle(self) -> str:
+        """Le libellé affiché de la catégorie — la règle du serveur (#2506), que le
+        site et l'app iOS lisent : « 📋 Copropriétaire bailleur »."""
+        return libelle_categorie_faq(self.categorie)
+
+
+class FaqRenommage(BaseModel):
+    """`PATCH /faq/categories/rename` — combien d'entrées, sous quel nom."""
+
+    count: int
+    new_name: str
+
 
 def creer_entree(session: Session, body: FaqItemCreate) -> FaqItem:
     """Crée une entrée — la seule écriture d'une entrée neuve : la route ci-dessous
@@ -77,12 +92,20 @@ def list_faq(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
 ):
-    """Retourne toutes les entrées FAQ actives, triées par catégorie puis ordre."""
-    return session.exec(
+    """Les entrées actives, triées par catégorie puis ordre — celles que le lecteur lit.
+
+    🔒 Le tri de pertinence se fait ICI (#2506) : un locataire ne reçoit pas les
+    catégories des copropriétaires (`categorie_lue_par`). Le conseil et l'admin
+    reçoivent tout, comme l'écran le leur montrait.
+    """
+    items = session.exec(
         select(FaqItem)
         .where(FaqItem.actif == True)  # noqa: E712
         .order_by(FaqItem.categorie, FaqItem.ordre, FaqItem.id)
     ).all()
+    if est_moderateur(user):
+        return items
+    return [i for i in items if categorie_lue_par(i.categorie, user.statut)]
 
 
 @router.get("/categories", response_model=list[str])
@@ -99,7 +122,7 @@ def list_categories(
     return [r for r in rows if r]
 
 
-@router.patch("/categories/rename", status_code=200)
+@router.patch("/categories/rename", status_code=200, response_model=FaqRenommage)
 def rename_category(
     body: FaqCategoryRename,
     session: Session = Depends(get_session),

@@ -18,9 +18,11 @@ from app.database import get_session
 from app.models.core import (
     Idee,
     ReponseCommunaute,
+    RoleUtilisateur,
     Utilisateur,
     VoteIdee,
 )
+from app.schemas_communaute import MessageRead, ReponseCommunauteRead
 from app.utils.archivage import est_archivable, seuil_archivage_jours
 from app.utils.communaute import exiger_acces
 from app.utils.perimetres import parse_json_perimetres, perimetre_cible_json
@@ -38,6 +40,7 @@ from app.utils.assiste_ia import (
     marquer as marquer_assiste_ia,
 )
 from app.utils.lecture import lire_objet
+from app.utils.nouveaute import est_nouveau
 from app.utils.recuperer import ou_404
 from app.utils.reponses import (
     notifier_votants_idee,
@@ -51,9 +54,9 @@ RUBRIQUE = "idee"
 _STATUT_NOTIF_LABELS = {"retenue": "Retenue", "realisee": "Réalisée"}
 
 
-def _reponses_for(cible_id: int, session: Session) -> list[dict]:
+def _reponses_for(cible_id: int, session: Session, lecteur: Utilisateur) -> list[dict]:
     """Les réponses de cette rubrique — la règle vit dans la fabrique."""
-    return reponses_de(RUBRIQUE, cible_id, session)
+    return reponses_de(RUBRIQUE, cible_id, session, lecteur=lecteur)
 
 
 class IdeeCreate(AssisteIAEntree):
@@ -113,8 +116,16 @@ class IdeeRead(AssisteIASortie):
     #: Calculé par la règle du site (`utils/archivage`), jamais stocké : l'archivage
     #: automatique est une conséquence du temps, pas un état qu'on pose.
     archivee: bool = False
-    reponses: list[dict] = []
+    reponses: list[ReponseCommunauteRead] = []
     nb_reponses: int = 0
+    #: Le badge NEW — `utils/nouveaute.est_nouveau`, la règle du serveur (#2506).
+    nouveau: bool = False
+    #: Le crayon : la conclusion de `peut_editer`, le prédicat de `PATCH` (#2506).
+    peut_modifier: bool = False
+    #: La corbeille : l'administrateur seul, comme l'écran l'offrait. La route
+    #: admet aussi le conseil ; l'écran, plus étroit, ne lui tend pas la
+    #: suppression définitive d'une idée et de ses votes.
+    peut_supprimer: bool = False
 
 
 def _perimetre_liste(brut: Optional[str]) -> list[str]:
@@ -137,7 +148,7 @@ def _perimetre_liste(brut: Optional[str]) -> list[str]:
     return parse_json_perimetres(brut)
 
 
-def _enrich(idees: list, user_id: int, session: Session) -> list[dict]:
+def _enrich(idees: list, user: Utilisateur, session: Session) -> list[dict]:
     #  🔴 LU UNE FOIS, hors de la boucle. `seuil_archivage_jours` interroge la
     #  configuration : le lire par idée ferait N requêtes pour une valeur du site,
     #  et surtout deux idées du même appel pourraient être tranchées sur des
@@ -148,10 +159,10 @@ def _enrich(idees: list, user_id: int, session: Session) -> list[dict]:
         nb = len(session.exec(select(VoteIdee).where(VoteIdee.idee_id == idee.id)).all())
         mon_vote = bool(
             session.exec(
-                select(VoteIdee).where(VoteIdee.idee_id == idee.id, VoteIdee.user_id == user_id)
+                select(VoteIdee).where(VoteIdee.idee_id == idee.id, VoteIdee.user_id == user.id)
             ).first()
         )
-        reponses = _reponses_for(idee.id, session)
+        reponses = _reponses_for(idee.id, session, user)
         lue = lire_objet(
             IdeeRead,
             idee,
@@ -170,12 +181,15 @@ def _enrich(idees: list, user_id: int, session: Session) -> list[dict]:
             archivee=est_archivable("idee", idee, seuil_jours=seuil_jours),
             reponses=reponses,
             nb_reponses=len(reponses),
+            nouveau=est_nouveau(idee.cree_le),
+            peut_modifier=peut_editer(idee, user),
+            peut_supprimer=user.has_role(RoleUtilisateur.admin),
         )
         result.append(lue.model_dump())
     return result
 
 
-@router.get("")
+@router.get("", response_model=list[IdeeRead])
 def list_idees(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
@@ -186,7 +200,7 @@ def list_idees(
     #  carte masquée par le navigateur reste dans la charge utile. Même
     #  appel que l'annonce, le sondage et la publication (`cible_visible`).
     idees = [i for i in idees if idee_visible(i, user)]
-    return _enrich(idees, user.id, session)
+    return _enrich(idees, user, session)
 
 
 @router.post("", status_code=201)
@@ -218,7 +232,7 @@ def create_idee(
     return idee
 
 
-@router.post("/{idee_id}/voter", status_code=201)
+@router.post("/{idee_id}/voter", status_code=201, response_model=MessageRead)
 def voter(
     idee_id: int,
     session: Session = Depends(get_session),
@@ -250,7 +264,7 @@ class StatutUpdate(BaseModel):
     statut: str  # ouverte | retenue | rejetee | realisee
 
 
-@router.patch("/{idee_id}")
+@router.patch("/{idee_id}", response_model=IdeeRead)
 def update_idee(
     idee_id: int,
     body: IdeeUpdate,
@@ -294,7 +308,7 @@ def update_idee(
     session.add(idee)
     session.commit()
     session.refresh(idee)
-    return _enrich([idee], user.id, session)[0]
+    return _enrich([idee], user, session)[0]
 
 
 @router.patch("/{idee_id}/statut")

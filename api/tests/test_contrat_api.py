@@ -99,6 +99,27 @@ def test_un_champ_resserre_ou_deprecie_reste_lisible():
     assert inv.version_suivante("1.4.0", ecarts) == "1.5.0"
 
 
+def test_une_reponse_libre_qui_se_type_est_un_resserrement():
+    """#2506 : `GET /idees` était déclarée `{}` (« libre ») ; la typer était lu comme
+    un retrait de `$`. Un client qui décodait du JSON libre lit la réponse typée — et
+    l'inverse, un type qui redevient libre, reste un retrait."""
+    ref = {"GET /z": _op({"$": "libre"}), "GET /w": _op({"$": "libre?"})}
+    type_ = {
+        "GET /z": _op({"$": "liste", "$[]": "objet", "$[].id": "integer"}),
+        "GET /w": _op({"$": "objet", "$.n": "integer"}),
+    }
+    ecarts = inv.comparer(ref, type_)
+    assert ecarts.retraits == [] and ecarts.modifie
+    assert inv.version_suivante("1.4.0", ecarts) == "1.5.0"
+    assert sorted(inv.comparer(type_, ref).retraits) == [
+        "GET /w → $",
+        "GET /w → $.n",
+        "GET /z → $",
+        "GET /z → $[]",
+        "GET /z → $[].id",
+    ]
+
+
 def test_une_entree_requise_neuve_est_refusee_une_entree_relachee_passe():
     exige = {**_REF, "POST /y": _op(entree=["corps", "corps.titre", "corps.lot_id"])}
     assert inv.refus(inv.comparer(_REF, exige), {}, "3.0.0") == [

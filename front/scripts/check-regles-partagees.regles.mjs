@@ -74,47 +74,49 @@ export const REGLES_PARTAGEES = {
 	},
 
 	//  ── Communauté, FAQ, Profil, Notifications (#2506) ──────────────────────
-	isNouveau: {
-		quoi: 'le badge « NEW » d’un élément de moins de 48 h',
-		migration: {
-			ticket: '#2506',
-			raison: "aucun pendant au serveur ; l'app ne le montre pas : `nouveau: bool` à servir",
-		},
-	},
 	categoriesPourStatut: {
 		quoi: 'les catégories de la FAQ montrées selon le statut du lecteur',
-		migration: {
-			ticket: '#2506',
-			raison: "l'app montre toutes les catégories : filtrer dans `GET /faq`",
-		},
+		api: 'api/app/utils/faq_categories.py#categorie_lue_par',
+		//  Servie par `GET /faq`, qui ne rend que ce que le lecteur lit (#2506).
 	},
 	normalizeCategorieLabel: {
 		quoi: 'le libellé d’une catégorie de FAQ (« 📋 Copropriétaire bailleur »)',
-		migration: { ticket: '#2506', raison: 'servir le libellé avec la catégorie' },
+		api: 'api/app/utils/faq_categories.py#libelle_categorie_faq',
+		//  Servie par `FaqItemRead.categorie_libelle` (#2506).
+	},
+	isNouveau: {
+		quoi: 'le badge « NEW » d’un élément de moins de 48 h',
+		api: 'api/app/utils/nouveaute.py#est_nouveau',
+		migration: {
+			ticket: '#2508',
+			raison:
+				'servie en `nouveau` sur les idées, annonces et sondages (#2506) ; les cartes d’affaire et d’actualité la calculent encore : `TicketRead.nouveau` à servir',
+		},
 	},
 	lectureDe: {
 		quoi: 'la pastille « qui le lit » d’un contenu',
 		migration: {
-			ticket: '#2506',
+			ticket: '#2508',
 			raison:
-				"le serveur n'en a que le mot court des PDF (`lecture_affaire.lecture_courte`) ; l'app ne montre rien : `lecture_libelle` à servir",
+				"tenue contre le serveur par `test_lecture_pastille.py`, sans être servie ; l'aperçu du formulaire d'affaire (`SectionDestinataires`) la calcule sur une saisie non enregistrée : `lecture_libelle` à servir aux listes",
 		},
 	},
 	peutEditer: {
 		quoi: 'le crayon d’un contenu (auteur, « saisi pour », admin)',
 		api: 'api/app/auth/deps.py#peut_editer',
 		migration: {
-			ticket: '#2506',
+			ticket: '#2508',
 			raison:
-				"le prédicat du serveur décide, le front le recopie pour offrir le geste ; l'app le recompose depuis les rôles : `peut_modifier` à servir avec chaque élément",
+				"servie en `peut_modifier` sur les idées et les annonces (#2506) ; les cartes d'affaire et l'Historique la recopient encore : `peut_modifier` à servir avec l'affaire et ses entrées",
 		},
 	},
 	peutCommenter: {
 		quoi: 'le geste « Répondre » d’un contenu',
 		api: 'api/app/auth/deps.py#peut_commenter',
 		migration: {
-			ticket: '#2506',
-			raison: 'même cas que `peutEditer` ; `peut_commenter` à servir (affaires : #2508)',
+			ticket: '#2508',
+			raison:
+				"servie en `peut_supprimer` sur les réponses de la Communauté (#2506) ; la carte d'affaire la recopie encore : `peut_commenter` à servir avec l'affaire",
 		},
 	},
 

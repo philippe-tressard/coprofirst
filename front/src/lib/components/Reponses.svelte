@@ -11,7 +11,6 @@
 	import type { ReponseCommunaute } from '#lib/api/index.ts';
 	import { fmtDateShort } from '#lib/date.ts';
 
-	import { peutCommenter } from '#lib/droits.ts';
 	import { confirmer, SUPPRESSION } from '#lib/confirmation.ts';
 	import { onDestroy } from 'svelte';
 	import { membre } from '#lib/accordeon.ts';
@@ -19,7 +18,6 @@
 
 	export let reponses: ReponseCommunaute[] = [];
 	export let currentUserId: number | undefined = undefined;
-	export let isCS = false;
 	export let canRespond = true;
 	export let placeholder = 'Votre réponse…';
 	export let onSubmit: (contenu: string) => Promise<void> | void;
@@ -103,7 +101,8 @@
 								on:click={() => onReport?.(rep.id)}><IconeAction icone="flag" /></button
 							>
 						{/if}
-						{#if peutCommenter(rep, currentUserId, false, isCS)}
+						<!--  `peut_supprimer` : la conclusion de `peut_commenter`, servie (#2506). -->
+						{#if rep.peut_supprimer}
 							<button
 								class="btn-icon-danger reponse-suppr"
 								title="Supprimer cette réponse"
