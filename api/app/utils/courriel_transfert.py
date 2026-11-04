@@ -57,13 +57,19 @@ from __future__ import annotations
 from sqlalchemy import func
 from sqlmodel import Session, select
 
-from app.auth.adresse_compte import compte_par_adresse, normaliser_adresse
+from app.auth.adresse_compte import normaliser_adresse
 from app.auth.deps import est_moderateur
 from app.models.core import Ticket, TicketEvolution, Utilisateur
 from app.models.courriel import FilCourriel, MessageVerse
-from app.models.tickets import STATUTS_TICKET_CLOS, CategorieTicket
+from app.models.tickets import STATUTS_TICKET_CLOS
 from app.utils import horloge
 from app.utils.cloche import sonner_systeme
+from app.utils.courriel_affaire_du_fil import (  # ré-exportés : leurs lecteurs les cherchent ici
+    CATEGORIE_PAR_DEFAUT,
+    PUBLIC_CONSEIL_SEUL,
+    compte_a_l_adresse,
+    creer_affaire_du_fil,
+)
 from app.utils.courriel_authenticite import domaine_de
 from app.utils.courriel_decodage import (
     Transfert,
@@ -89,6 +95,7 @@ from app.utils.courriel_ingestion import (
     examiner,
 )
 from app.utils.courriel_numero import aide_au_numero
+from app.utils.courriel_pieces_jointes import joindre_au_transfert
 from app.utils.liens import LIEN_COURRIELS_AFFAIRES, lien_ticket
 from app.utils.noms import nom_affiche
 from app.utils.reponse_courriel import (
@@ -100,13 +107,6 @@ from app.utils.reponse_courriel import (
 from app.utils.valeurs import valeur
 from app.utils.versement_transfert import etat_avant, ouvrir_versement
 
-#: La catégorie d'une affaire créée par transfert — le conseil la corrige ensuite.
-CATEGORIE_PAR_DEFAUT = CategorieTicket.etude_travaux
-#: « Conseil syndical seul », CHOISI et non hérité de la catégorie : il tient
-#: quand le conseil corrige la catégorie.
-PUBLIC_CONSEIL_SEUL = '["conseil_syndical"]'
-#: Un titre d'affaire reste lisible dans une liste.
-LONGUEUR_TITRE = 200
 #: Ce que dit la notification quand l'objet annonce un transfert que le corps ne
 #: porte pas : c'est la forme du message qui manque, pas l'affaire.
 _TRANSFERT_NON_RECONNU = (
@@ -122,17 +122,6 @@ LONGUEUR_COMPARABLE = 40
 DEBUT_COMPARE = 200
 
 
-def compte_a_l_adresse(session: Session, adresse: str | None) -> Utilisateur | None:
-    """Le compte ACTIF à cette adresse (« Nom <a@b.fr> » accepté), sans égard à la casse.
-
-    Ce module ne fait qu'extraire l'adresse de l'en-tête : la question « quel
-    compte ? » est celle de `auth.adresse_compte`, posée partout de la même façon.
-    """
-    from email.utils import parseaddr
-
-    return compte_par_adresse(session, parseaddr(adresse or "")[1], actif_seulement=True)
-
-
 def domaines_du_site(session: Session) -> set[str]:
     """Les domaines d'où le site écrit : un message qui en vient est déjà dans l'affaire."""
     from app import contexte
@@ -143,7 +132,7 @@ def domaines_du_site(session: Session) -> set[str]:
     return {domaine_de(a) for a in adresses} - {""}
 
 
-def decider_transfert(session, entetes, corps, recu_le, plancher, authentification):
+def decider_transfert(session, entetes, corps, recu_le, plancher, authentification, pieces=None):
     """`(décision, motif, affaire)` si ce message est un transfert que ce module
     verse — sinon None, et la relève ordinaire (`courriel_boite`) en décide."""
     from app.utils.courriel_boite import _ticket_de, correspondant_du_ticket
@@ -176,7 +165,7 @@ def decider_transfert(session, entetes, corps, recu_le, plancher, authentificati
             or not correspondant_du_ticket(session, designe, qui)
         ):
             return None
-        return verser(session, transfert, sujet, qui, designe, creer=False)
+        return verser(session, transfert, sujet, qui, designe, creer=False, pieces=pieces)
 
     ok, motif = authentification or (False, "aucune vérification d'authenticité")
     if not ok:
@@ -198,7 +187,7 @@ def decider_transfert(session, entetes, corps, recu_le, plancher, authentificati
                     None,
                     f"l'affaire {numero} n'existe pas{aide_au_numero(session, numero)}",
                 )
-    return verser(session, transfert, sujet, qui, designe, creer=True)
+    return verser(session, transfert, sujet, qui, designe, creer=True, pieces=pieces)
 
 
 def verser(
@@ -209,8 +198,13 @@ def verser(
     designe: Ticket | None,
     *,
     creer: bool,
+    pieces=None,
 ):
-    """Découpe le fil et le verse. Rend `(décision, motif, affaire)`."""
+    """Découpe le fil et le verse. Rend `(décision, motif, affaire)`.
+
+    Les `pieces` du courriel vont dans la Suite du message transféré — le plus
+    récent du fil —, qu'il soit versé à l'instant ou déjà là (#2515).
+    """
     try:
         messages = messages_du_fil(transfert)
     except FilIllisible as exc:
@@ -254,14 +248,16 @@ def verser(
     ajoutees = _ecrire_les_suites(session, ticket, qui, prets, versement)
     if creer and cle:
         _retenir_le_fil(session, cle, ticket)
+    jointes = joindre_au_transfert(session, ticket, qui, pieces, messages[-1], versement)
 
-    if not creee and not ajoutees:
+    #  Le rejeu d'un message déjà versé qui porte sa pièce (#2515) : la pièce entre.
+    if not creee and not ajoutees and not jointes:
         motif = f"rien de nouveau : les {deja} message(s) du fil sont déjà dans l'affaire"
         _prevenir(session, qui, ticket, f"Transfert déjà versé — #{ticket.numero}", motif)
         return IGNORE, motif, ticket
     ticket.mis_a_jour_le = horloge.maintenant()
     session.add(ticket)
-    motif = _bilan(creee, ajoutees, deja)
+    motif = _bilan(creee, ajoutees, deja, jointes)
     titre = f"Affaire #{ticket.numero} créée" if creee else f"Transfert versé — #{ticket.numero}"
     _prevenir(session, qui, ticket, titre, f"{motif}. {_SI_ERREUR}")
     return ACCEPTE, motif, ticket
@@ -315,12 +311,14 @@ def _ecrire_les_suites(session, ticket, qui, prets, versement) -> int:
     return ajoutees
 
 
-def _bilan(creee: bool, ajoutees: int, deja: int) -> str:
+def _bilan(creee: bool, ajoutees: int, deja: int, jointes: int = 0) -> str:
     morceaux = ["affaire créée — Étude & travaux, conseil syndical seul"] if creee else []
     if ajoutees:
         morceaux.append(f"{ajoutees} suite(s) ajoutée(s)")
     if deja:
         morceaux.append(f"{deja} message(s) déjà présent(s), non doublé(s)")
+    if jointes:
+        morceaux.append(f"{jointes} pièce(s) jointe(s) versée(s)")
     return " ; ".join(morceaux) or "affaire créée"
 
 
@@ -416,58 +414,6 @@ def _creer_affaire(session: Session, qui: Utilisateur, m: MessageDuFil, mis, tit
         assiste=mis.assiste,
         titre=titre or f"Courriel de {m.nom}",
     )
-
-
-def creer_affaire_du_fil(
-    session: Session,
-    qui: Utilisateur,
-    *,
-    nom: str,
-    adresse: str | None,
-    description: str,
-    quand,
-    assiste: bool,
-    titre: str,
-) -> Ticket:
-    """Une affaire du conseil, au nom de l'auteur du message qui la décrit —
-    celle d'un transfert, ou celle qu'on en détache (`versement_transfert`)."""
-    from app.routers.tickets.commun import generer_numero
-    from app.utils.courriel_entrant import nouveau_jeton
-    from app.utils.kanban_tickets import suivi_par_defaut
-    from app.models.tickets import StatutTicket
-    from app.utils.destinataires import est_adresse_syndic
-    from app.utils.nature_affaire import statut_pour
-
-    #  Le syndic a déjà écrit : l'affaire naît chez lui (demandé le 29/09/2026,
-    #  même règle que pour une Suite — `suite_d_un_message`).
-    demande = StatutTicket.en_cours.value if est_adresse_syndic(session, adresse) else None
-    auteur = compte_a_l_adresse(session, adresse)
-    if auteur is not None:
-        #  « Au nom de » soi-même, c'est « en mon nom » : rien à poser.
-        pour = {"saisi_pour_user_id": auteur.id} if auteur.id != qui.id else {}
-    else:
-        pour = {"saisi_pour_nom": nom, "saisi_pour_email": adresse or None}
-    ticket = Ticket(
-        numero=generer_numero(session),
-        jeton_courriel=nouveau_jeton(),
-        titre=titre[:LONGUEUR_TITRE],
-        description=description,
-        categorie=CATEGORIE_PAR_DEFAUT,
-        statut=statut_pour(CATEGORIE_PAR_DEFAUT, demande, est_cs=True),
-        priorite="normale",
-        auteur_id=qui.id,
-        public_cible=PUBLIC_CONSEIL_SEUL,
-        suivi_kanban=suivi_par_defaut(CATEGORIE_PAR_DEFAUT),
-        assiste_ia=assiste,
-        #  Datée du courriel : ses Suites le sont aussi, et le fil doit se lire
-        #  dans l'ordre où les choses ont été écrites.
-        cree_le=quand,
-        mis_a_jour_le=horloge.maintenant(),
-        **pour,
-    )
-    session.add(ticket)
-    session.flush()
-    return ticket
 
 
 def _prevenir(session: Session, qui: Utilisateur, ticket: Ticket | None, titre: str, corps: str):
