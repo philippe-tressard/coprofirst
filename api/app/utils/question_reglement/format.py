@@ -34,6 +34,23 @@ VERDICTS: dict[str, str] = {
     "incertain": "Incertain",
 }
 
+#: Le TON de la capsule d'un verdict (#2505) — ce qu'il signale, pas une couleur :
+#: chaque client le peint avec sa charte (le site : `BadgeVerdict`). Servi avec la
+#: question (`verdict_ton`) et au fil ; l'app iOS le lisait comme une capsule neutre.
+TONS_VERDICT: dict[str, str] = {
+    "oui": "succes",
+    "non": "danger",
+    "sous_conditions": "alerte",
+    "non_prevu": "neutre",
+    "incertain": "incertain",
+}
+
+
+def ton_verdict(verdict: str) -> str:
+    """Le ton d'un verdict ; un verdict inconnu se lit comme incertain."""
+    return TONS_VERDICT.get(verdict, TONS_VERDICT["incertain"])
+
+
 #: Le prompt d'origine de l'usage — modifiable depuis l'administration.
 CONSIGNE = (
     "Tu es juriste, spécialiste du droit français de la copropriété (loi n° 65-557 du "
@@ -217,8 +234,10 @@ __all__ = [
     "METHODE_AG",
     "SECTIONS",
     "USAGE_QUESTION_REGLEMENT",
+    "TONS_VERDICT",
     "VERDICTS",
     "consigne_complete",
     "construire_message",
     "lire_reponse",
+    "ton_verdict",
 ]

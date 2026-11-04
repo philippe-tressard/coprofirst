@@ -29,8 +29,12 @@ def etage_hors_bornes(etage: int) -> bool:
     return not ETAGE_MIN <= etage <= ETAGE_MAX
 
 
-def etage_label(etage) -> str:
+def etage_label(etage, *, suffixe: bool = False) -> str:
     """« RDC », « 1er », « 2ème », « SS 1 » — le libellé d'un étage, côté serveur.
+
+    `suffixe` ajoute « étage » à un étage au-dessus du sol (« 2ème étage ») : le
+    paramètre de même nom du front, pour une ligne de texte plutôt qu'une valeur
+    de définition. L'annuaire le sert ainsi (`etage_libelle`, #2505).
 
     ## Pourquoi ici, et pourquoi une copie (08/09/2026)
 
@@ -75,7 +79,8 @@ def etage_label(etage) -> str:
         return "RDC"
     if niveau < 0:
         return f"SS {abs(niveau)}"
-    return "1er" if niveau == 1 else f"{niveau}ème"
+    rang = "1er" if niveau == 1 else f"{niveau}ème"
+    return f"{rang} étage" if suffixe else rang
 
 
 def type_de_lot(lot) -> str:

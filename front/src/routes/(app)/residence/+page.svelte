@@ -100,24 +100,11 @@
 	// ── Derived ────────────────────────────────────────────────────────────────
 	// Composition depuis les champs stockés sur Batiment et Copropriete
 
-	//  Réactif : le tri des plans lit `batiments`, qui arrive après eux.
-	$: trierPlans = (docs: Document[]) =>
-		[...docs].sort((a, b) => {
-			if (!a.batiment_id && b.batiment_id) return -1;
-			if (a.batiment_id && !b.batiment_id) return 1;
-			const bA = batiments.find((x) => x.id === a.batiment_id);
-			const bB = batiments.find((x) => x.id === b.batiment_id);
-			return (bA?.numero ?? '').localeCompare(bB?.numero ?? '');
-		});
-	const trierCrAg = (docs: Document[]) =>
-		[...docs].sort((a, b) => {
-			const anneeB = b.annee ?? 0;
-			const anneeA = a.annee ?? 0;
-			if (anneeB !== anneeA) return anneeB - anneeA;
-			const dateB = b.date_ag ?? b.publie_le ?? '';
-			const dateA = a.date_ag ?? a.publie_le ?? '';
-			return dateB.localeCompare(dateA);
-		});
+	//  L'ORDRE des plans (copropriété, puis par bâtiment) et des CR d'AG (année,
+	//  puis date d'assemblée) est servi par `GET /documents?categorie=…`
+	//  (`utils/ordre_documents`, #2505) : l'app iOS le montre aussi. Après un
+	//  dépôt, la rubrique redemande sa liste rangée.
+	const recharger = (code: string) => () => documentsApi.listParCode(code);
 
 	function batimentLabel(id: number | null | undefined): string {
 		if (!id) return 'Résidence';
@@ -349,7 +336,7 @@
 		categorieId={catIdPlan}
 		bind:documents={plans}
 		erreur={ePlans}
-		trier={trierPlans}
+		recharger={recharger('plan_residence')}
 		messageVide="Aucun plan ajouté."
 		peutModifier={$isCS}
 		intitule="Ajouter un plan"
@@ -390,7 +377,7 @@
 			categorieId={catIdCrAg}
 			bind:documents={crAg}
 			erreur={eCrAg}
-			trier={trierCrAg}
+			recharger={recharger('pv_ag')}
 			messageVide="Aucun compte-rendu ajouté."
 			peutModifier={$isCS}
 			intitule="Ajouter un CR d'AG"
@@ -413,7 +400,7 @@
 				<!--  Neutre, comme tout ce qui DÉCRIT (10/10/2026) : la couleur propre
 				      aux documents (`purple`) était l'écart que `BadgePerimetre`
 				      rendait visible pour qu'on le tranche — la page Affaires l'a fait. -->
-				<BadgePerimetre perimetre={doc.perimetre_cible}>
+				<BadgePerimetre libelle={doc.perimetre_libelle}>
 					<span class="badge badge-gray">Copropriété</span>
 				</BadgePerimetre>
 			</svelte:fragment>

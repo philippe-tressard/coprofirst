@@ -330,8 +330,9 @@ const LISTES_A_CLE_COMPOSITE = [
 	},
 	{
 		fichier: 'src/routes/(app)/annuaire/+page.svelte',
-		collection: 'telephonesDe(m.telephone)',
-		raison: 'idem, côté annuaire',
+		collection: 'm.telephones',
+		raison:
+			'idem, côté annuaire — dédoublonnés au serveur (`utils/telephones`, #2505), la clé reste composite : une saisie libre ne se garantit pas',
 	},
 ];
 

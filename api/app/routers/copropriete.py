@@ -4,7 +4,7 @@ from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from sqlmodel import Session, select
 
 from app.auth.deps import get_current_user, require_admin
@@ -17,6 +17,7 @@ from app.models.core import (
 )
 
 from app.utils.config_site import config_site, ecrire_cle
+from app.utils.dates_fr import libelle_exercice
 from app.utils.destinataires import syndic_principal
 from app.utils.liens import nom_site
 from app.utils.document_contrat import id_document_designe
@@ -122,6 +123,13 @@ class CoproprieteRead(BaseModel):
 
     photo_url: Optional[str] = None
     nb_parkings_communs: int = 0
+
+    @computed_field
+    @property
+    def exercice_libelle(self) -> str:
+        """L'exercice en clair (« de juillet à juin ») — `dates_fr.libelle_exercice`,
+        lu par la fiche du site et par l'app iOS (#2505)."""
+        return libelle_exercice(self.mois_debut_exercice)
 
     class Config:
         from_attributes = True

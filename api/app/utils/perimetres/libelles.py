@@ -19,7 +19,14 @@ from __future__ import annotations
 
 from typing import Optional
 
-from .arbre import _PREFIXE_BATIMENT, Noeud, _avec_defaut, arbre, parse_json_perimetres
+from .arbre import (
+    _PREFIXE_BATIMENT,
+    Noeud,
+    _avec_defaut,
+    arbre,
+    est_perimetre_par_defaut,
+    parse_json_perimetres,
+)
 
 
 #: Sépare deux éléments de même niveau : « Bât. 1 · Parking ».
@@ -203,6 +210,19 @@ def perimetre_label(perims: list[str]) -> str:
         corps = SEPARATEUR_ELEMENT.join(libelles)
         sortie += f"{_court(parent)} › {corps}" if parent is not None else corps
     return sortie
+
+
+def perimetre_badge(codes: Optional[list[str]]) -> str:
+    """Le libellé du badge 🔹 d'un contenu — `""` quand il ne se montre pas.
+
+    La règle de `BadgePerimetre` (front) : le périmètre par défaut, ou une liste
+    vide, se TAIT ; tout autre se nomme par `perimetre_label`. Servie avec chaque
+    contenu (`perimetre_libelle`, #2505) pour que le site et l'app iOS montrent
+    le même lieu sans recomposer l'arbre.
+    """
+    if est_perimetre_par_defaut(codes):
+        return ""
+    return perimetre_label(codes)
 
 
 def perimetre_label_liste(codes: list[str]) -> str:
