@@ -240,7 +240,7 @@ def test_bail_locataire_out(session):
     acces = {**ATTENDU_ACCES, "id": badge.id, "lot_id": lot.id, "bail_id": bail.id}
     #  `mon-bail` passe une carte de lots VIDE : le badge y sort sans type ni
     #  libellé de lot. C'est l'existant, relevé tel quel — pas l'objet de #1563.
-    acces |= {"lot_type": None, "lot_label": None}
+    acces |= {"lot_type": None, "lot_libelle_type": None, "lot_label": None}
     attendu = {
         **ATTENDU_BAIL,
         "id": bail.id,
@@ -361,11 +361,18 @@ ATTENDU_LOT = {
     "quotes_parts": None,
     "explication": None,
     "alertes": [],
+    #  Les libellés servis au site et à l'app iOS (#2507, `utils/libelles_lot`).
+    "libelle_type": "Appartement",
+    "libelle_type_complet": "Appartement – T3",
+    "libelle_nature": "Logement",
+    "nom_du_lot": "Logement 12",
+    "etage_libelle": "2ème",
 }
 ATTENDU_ACCES = {
     "code": "V-9",
     "type": "vigik",
     "lot_type": "appartement",
+    "lot_libelle_type": "Appartement",
     "lot_label": "Bât. B — Lot 12",
     "statut": "actif",
     "chez_locataire": True,
@@ -378,6 +385,7 @@ ATTENDU_BAIL = {
     "lot_numero": "12",
     "lot_type": "appartement",
     "lot_type_appartement": "T3",
+    "lot_libelle_type_complet": "Appartement – T3",
     "lot_etage": 2,
     "lot_superficie": 61.5,
     #  🔴 L'ancienne écriture lisait `Batiment.nom`, qui n'existe pas : la route

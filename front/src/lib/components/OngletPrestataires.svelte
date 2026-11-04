@@ -77,17 +77,20 @@
 		return contrats.filter((c) => c.prestataire_id === prestId);
 	}
 
-	function nextVisitForPrest(prestId: number): string | null {
-		const dates = contrats
-			.filter((c) => c.prestataire_id === prestId && c.prochaine_visite)
-			.map((c) => c.prochaine_visite as string)
-			.sort();
-		return dates[0] ?? null;
+	//  La prochaine visite et la note d'un prestataire sont SERVIES avec lui
+	//  (`prochaine_visite`, `note_moyenne`, #2507). L'onglet les relit quand il
+	//  s'ouvre et quand un avis part : un contrat ou une note posés dans l'onglet
+	//  Contrats les ont peut-être changées.
+	async function relirePrestataires() {
+		const [liste, erreur] = await essayer(prestApi.list(), prestataires);
+		prestataires = liste;
+		if (erreur) toast('error', erreur);
 	}
 
 	//  Lien profond `#presta-<id>` : la page a déjà conduit ici l'adresse qui le
 	//  portait (elle s'ouvre sur « Contrats » par défaut — signalé le 28/07/2026).
 	onMount(() => {
+		relirePrestataires();
 		//  Sans message : un échec laisse simplement la section absente.
 		if (archives === null) essayer(prestApi.archives(), []).then(([a]) => (archives = a));
 		const idPresta = cibleDuHash('presta');
@@ -197,7 +200,6 @@
 					{p}
 					archive={p.archivee}
 					cs={contratsForPrest(p.id)}
-					nextVisit={nextVisitForPrest(p.id)}
 					notations={notations.filter((n) => n.prestataire_id === p.id)}
 					expanded={ouvert === p.id}
 					{compactPrests}
@@ -213,7 +215,10 @@
 					onArchiver={archiver}
 					onAnnuler={fermerCreation}
 					onEnregistrer={savePrest}
-					on:supprimee={(e) => (notations = notations.filter((n) => n.id !== e.detail))}
+					on:supprimee={(e) => {
+						notations = notations.filter((n) => n.id !== e.detail);
+						relirePrestataires();
+					}}
 				/>
 			{/each}
 		{/each}

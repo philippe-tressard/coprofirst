@@ -224,11 +224,10 @@ def type_equipement_resolu(contrat, specialite_prestataire: Optional[str]) -> Op
     spécialité `vmc`, apparaissait donc « VMC » dans l'onglet Contrats et
     « Autre » dans le carnet. Signalé à l'écran le 10/09/2026.
 
-    La règle vit côté front depuis longtemps (`#lib/reporting`,
-    `typeEquipementDuContrat`) et servait quatre écrans. Le carnet est le premier
-    lecteur SERVEUR de cette notion : la copie est obligatoire — les contextes de
-    build sont `./api` et `./front` —, et `test_type_equipement_resolu.py` refuse
-    qu'elles divergent, comme pour le libellé d'étage et celui des périmètres.
+    Elle vivait aussi côté front (`#lib/reporting`, `typeEquipementDuContrat`),
+    tenue par un test de concordance. Depuis #2507 (04/11/2026), c'est la seule
+    écriture : l'API la sert (`ContratRead.equipement_effectif`) et la pose à
+    l'enregistrement d'un contrat ; le site et l'app iOS la lisent.
 
     ⚠️ « autre » n'est pas une catégorie, c'est une ABSENCE de catégorie : c'est
     pour cela qu'elle laisse la spécialité du prestataire prendre le relais. Une

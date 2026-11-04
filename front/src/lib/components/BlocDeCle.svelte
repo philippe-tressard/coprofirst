@@ -7,7 +7,8 @@
   n'appelle pas en ce moment.
 -->
 <script lang="ts">
-	import type { ColonneDeLot, LigneDeCle } from '#lib/charges-lots.ts';
+	import type { ColonneDeLot, LigneDeCle } from '#lib/api/index.ts';
+	import { partDuLot } from '#lib/charges-lots.ts';
 	import { fmtNombre, fmtPartEnPourcent } from '#lib/utils.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 
@@ -23,13 +24,13 @@
 	>
 </div>
 {#if ligne.description}<span class="detail">{ligne.description}</span>{/if}
-{#if ligne.libelleSyndic}
-	<span class="detail">Sur l’appel de fonds : {ligne.libelleSyndic}</span>
+{#if ligne.libelle_syndic}
+	<span class="detail">Sur l’appel de fonds : {ligne.libelle_syndic}</span>
 {/if}
 <span class="detail">
 	{colonnes
-		.filter((c) => ligne.parts[c.id] !== undefined)
-		.map((c) => `${c.nom} : ${fmtNombre(ligne.parts[c.id])}`)
+		.filter((c) => partDuLot(ligne, c.lot_id) !== undefined)
+		.map((c) => `${c.nom} : ${fmtNombre(partDuLot(ligne, c.lot_id))}`)
 		.join(' · ')}
 </span>
 

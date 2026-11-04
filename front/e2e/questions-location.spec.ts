@@ -11,10 +11,18 @@ import { expect, MEMBRE_CS, simulerApi, test } from './aides';
 
 const LOCATAIRE = { ...MEMBRE_CS, statut: 'locataire', role: 'résident', roles: ['résident'] };
 
+//  Le type en clair est SERVI par l'API (`libelle_type`, #2507) : le simulé le porte.
+const LIBELLES: Record<string, string> = {
+	appartement: 'Appartement',
+	cave: 'Cave',
+	parking: 'Parking',
+};
+
 const lot = (id: number, numero: string, type: string, acces: Record<string, number>) => ({
 	id,
 	numero,
 	type,
+	libelle_type: LIBELLES[type],
 	type_appartement: null,
 	etage: null,
 	superficie: null,

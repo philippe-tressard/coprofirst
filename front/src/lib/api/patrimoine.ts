@@ -10,6 +10,7 @@
 //  ⚠️ La surface publique NE BOUGE PAS : `index.ts` réexporte tout, et les
 //  quarante et un `from '#lib/api/index.ts'` du front ne changent pas d'une ligne.
 import { api, buildQuery, postFormData, BASE } from './client';
+import type { TableauDesCharges } from './charges';
 import type { ConstatPatrimoine } from './etat-descriptif';
 import { uploadExcel, type CompteImportTableur } from './documents';
 import type { ExerciceLu, ResumeAffaires, SyntheseAffaire } from './synthese';
@@ -304,6 +305,18 @@ export interface MonLot {
 	explication: string | null;
 	/** Ce que le propriétaire doit savoir de son lot (`utils/alertes_lot`) — jamais bloquant. */
 	alertes: ConstatPatrimoine[];
+	//  ── Les libellés SERVIS (#2507, `utils/libelles_lot`) : le site et l'app iOS
+	//  les lisent, aucun ne les compose (`lint:regles-partagees`).
+	/** Le type en clair — « Appartement », « Local commercial », « — » sans type. */
+	libelle_type: string;
+	/** Le type et sa précision — « Appartement – T3 ». */
+	libelle_type_complet: string;
+	/** La nature du règlement en clair, sinon le type — « Logement », « Cave ». */
+	libelle_nature: string;
+	/** Le lot nommé par sa nature et son numéro — « Logement 15 », « Place 450 ». */
+	nom_du_lot: string;
+	/** L'étage en clair — « RDC », « 2ème », « SS 1 » ; vide sans étage. */
+	etage_libelle: string;
 }
 
 /** Un périmètre d'un lot — `PerimetreDuLot` (`utils/lecture_lots.py`). */
@@ -373,6 +386,8 @@ export interface MesPerimetres {
 export const lots = {
 	mesList: () => api.get<MonLot[]>('/lots/mes-lots'),
 	mesPerimetres: () => api.get<MesPerimetres>('/lots/mes-perimetres'),
+	//  Le tableau de mes charges, prêt à afficher (#2507) : le serveur le range.
+	mesCharges: () => api.get<TableauDesCharges>('/lots/mes-charges'),
 	//  Le locataire dit ce qu'il loue, d'après le fichier des lots du syndic
 	//  (04/10/2026) : les lots proposés, puis sa réponse.
 	propositionsLocation: () => api.get<PropositionsLocation>('/lots/ma-location/propositions'),

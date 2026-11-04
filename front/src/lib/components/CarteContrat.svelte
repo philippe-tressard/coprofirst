@@ -35,9 +35,8 @@
 -->
 <script lang="ts">
 	import { fmtNombre } from '#lib/utils.ts';
-	import { frequenceLabel, type FormulaireContratData } from '#lib/prestataires.ts';
+	import { type FormulaireContratData } from '#lib/prestataires.ts';
 	import { classeDEquipement } from '#lib/stores/equipements.ts';
-	import { typeEquipementDuContrat } from '#lib/reporting.ts';
 	import type { ContratEntretien, Document, Prestataire } from '#lib/api/index.ts';
 	import { fmtDateShort } from '#lib/date.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
@@ -113,10 +112,10 @@
 	/**  🗂️ La gouttière (10/10/2026, la page Affaires devenue le standard) : la
 	 *   date que la carte affichait — la prochaine visite, sinon le début du
 	 *   contrat —, puis le TYPE D'ÉQUIPEMENT. C'est lui qui classe un contrat :
-	 *   l'onglet range déjà ses groupes par cette clé, par la même règle
-	 *   (`typeEquipementDuContrat`). La fréquence est un rythme, pas un
+	 *   l'onglet range déjà ses groupes par cette clé, que l'API sert
+	 *   (`equipement_effectif`, #2507). La fréquence est un rythme, pas un
 	 *   classement : elle reste une capsule de la dernière ligne. */
-	$: classe = $classeDEquipement(typeEquipementDuContrat(contrat, prestataires));
+	$: classe = $classeDEquipement(contrat.equipement_effectif);
 </script>
 
 <!--  L'ancre `contrat-{id}` : le carnet d'entretien y renvoie (#870 → carnet,
@@ -172,8 +171,8 @@
 		{:else if !contrat.prochaine_visite}
 			<span class="badge badge-gray">Sans échéance</span>
 		{/if}
-		{#if contrat.frequence_type}
-			<span class="badge badge-gray">{frequenceLabel(contrat)}</span>
+		{#if contrat.frequence_libelle}
+			<span class="badge badge-gray">{contrat.frequence_libelle}</span>
 		{/if}
 		<span class="badge badge-gray">📄 {documents?.length ?? 0}</span>
 	</svelte:fragment>
@@ -228,7 +227,7 @@
 						{contrat.duree_initiale_unite}
 					</div>{/if}
 				{#if contrat.frequence_type}
-					<div><span class="detail-label">Fréquence</span>{frequenceLabel(contrat)}</div>
+					<div><span class="detail-label">Fréquence</span>{contrat.frequence_libelle}</div>
 				{/if}
 				{#if contrat.prochaine_visite}<div>
 						<span class="detail-label">Prochaine visite</span><span class="prochaine-visite"

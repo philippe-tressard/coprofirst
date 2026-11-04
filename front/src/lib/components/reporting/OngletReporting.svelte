@@ -60,7 +60,6 @@
 	let reportPrestataires: ReportPrestataire[] = [];
 	let reportContrats: ReportContrat[] = [];
 	let reportDiagTypes: DiagType[] = [];
-	let reportNoteMoyParPrest: Map<number, { moy: number; nb: number }> = new Map();
 
 	//  La vue AUTONOME — « Suivi des affaires », qui porte la relance du syndic
 	//  (#2035) et le suivi des entretiens périodiques (#2043) — charge ses propres
@@ -158,28 +157,16 @@
 		if (reportingLoaded && !force) return;
 		reportingLoading = true;
 		try {
-			const [prestataires, contrats, diagTypes, notations] = await Promise.all([
+			const [prestataires, contrats, diagTypes] = await Promise.all([
 				prestApi.list(),
 				prestApi.contrats(),
 				diagnosticsApi.listTypes(),
-				prestApi.notations(),
 			]);
 			reportPrestataires = prestataires as ReportPrestataire[];
 			reportContrats = contrats as ReportContrat[];
 			reportDiagTypes = diagTypes as DiagType[];
-			// Calcul note moyenne par prestataire
-			const noteMap = new Map<number, number[]>();
-			for (const n of notations as { prestataire_id: number; note: number }[]) {
-				if (!noteMap.has(n.prestataire_id)) noteMap.set(n.prestataire_id, []);
-				noteMap.get(n.prestataire_id)!.push(n.note);
-			}
-			reportNoteMoyParPrest = new Map();
-			for (const [pid, notes] of noteMap) {
-				reportNoteMoyParPrest.set(pid, {
-					moy: Math.round((notes.reduce((a, b) => a + b, 0) / notes.length) * 10) / 10,
-					nb: notes.length,
-				});
-			}
+			//  La note moyenne de chaque prestataire est SERVIE avec lui (`note_moyenne`,
+			//  #2507) : elle se recalculait ici, à la main, des notations.
 			reportingLoaded = true;
 		} catch (e) {
 			toast('error', messageErreur(e, 'Erreur chargement reporting'));
@@ -271,11 +258,6 @@
 	{:else if reportView === 'prestataires'}
 		<VuePrestataires {reportPrestataires} />
 	{:else if reportView === 'renouvellements'}
-		<VueRenouvellements
-			{reportContrats}
-			{reportPrestataires}
-			{reportDiagTypes}
-			{reportNoteMoyParPrest}
-		/>
+		<VueRenouvellements {reportContrats} {reportPrestataires} {reportDiagTypes} />
 	{/if}
 </div>

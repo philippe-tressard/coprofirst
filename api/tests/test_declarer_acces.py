@@ -80,8 +80,8 @@ def test_le_lot_de_l_import_est_repris_sur_l_objet(session, porteur, type_acces)
 
     resultat = _declarer_acces(session, type_acces, "A-42", porteur)
 
-    assert resultat["import_resolu"] is True
-    objet = session.get(type_acces.modele, resultat["id"])
+    assert resultat.import_resolu is True
+    objet = session.get(type_acces.modele, resultat.id)
     assert objet.lot_id == lot_id, (
         f"{type_acces.libelle} : le lot connu de l'import n'a pas été repris — "
         "c'est exactement la divergence de #779"
@@ -89,7 +89,7 @@ def test_le_lot_de_l_import_est_repris_sur_l_objet(session, porteur, type_acces)
     assert objet.statut == StatutAcces.actif
     ligne = session.exec(select(type_acces.modele_import)).one()
     assert ligne.statut == StatutImport.resolu
-    assert getattr(ligne, type_acces.colonne_import) == resultat["id"]
+    assert getattr(ligne, type_acces.colonne_import) == resultat.id
     assert isinstance(ligne.resolu_le, datetime)
 
 
@@ -121,7 +121,7 @@ def test_sans_lot_connu_le_badge_prend_le_lot_unique_du_porteur(session, porteur
     lot_id = _lot_du_porteur(session, porteur, type_acces)
     resultat = _declarer_acces(session, type_acces, "C-9", porteur)
 
-    assert session.get(type_acces.modele, resultat["id"]).lot_id == lot_id
+    assert session.get(type_acces.modele, resultat.id).lot_id == lot_id
 
 
 @pytest.mark.parametrize("type_acces", TYPES)
@@ -131,8 +131,8 @@ def test_sans_ligne_d_import_l_objet_existe_quand_meme(session, porteur, type_ac
 
     resultat = _declarer_acces(session, type_acces, "INCONNU-1", porteur)
 
-    assert resultat["import_resolu"] is False
-    objet = session.get(type_acces.modele, resultat["id"])
+    assert resultat.import_resolu is False
+    objet = session.get(type_acces.modele, resultat.id)
     assert objet.code == "INCONNU-1"
     assert objet.lot_id is None
 
@@ -164,5 +164,5 @@ def test_un_acces_qui_n_est_pas_le_sien_est_introuvable(session, porteur, type_a
     autre = compte(session, prefixe="autre", prenom="C", nom="D")
 
     with pytest.raises(HTTPException) as erreur:
-        exiger_acces_du_porteur(session, type_acces, resultat["id"], autre)
+        exiger_acces_du_porteur(session, type_acces, resultat.id, autre)
     assert erreur.value.status_code == 404

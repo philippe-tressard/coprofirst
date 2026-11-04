@@ -119,47 +119,52 @@ export const REGLES_PARTAGEES = {
 	},
 
 	//  ── Mes lots et accès, prestataires (#2507) ─────────────────────────────
+	//  Servies depuis #2507 : `LotRead`, `GET /lots/mes-charges`, `ContratRead`,
+	//  `PrestataireRead` les portent, le site les lit.
 	lotTypeLabel: {
 		quoi: 'le type d’un lot en clair (« Appartement », « Cave »)',
-		migration: {
-			ticket: '#2507',
-			raison:
-				'`type_de_lot` du serveur rend le code, pas le libellé : `libelle_type` à servir dans `LotRead`',
-		},
+		api: 'api/app/utils/libelles_lot.py#libelle_type_lot',
 	},
 	lotTypeComplet: {
-		quoi: 'le type complet d’un lot (« Appartement T3 »)',
-		migration: { ticket: '#2507', raison: 'même champ `libelle_type`' },
+		quoi: 'le type complet d’un lot (« Appartement – T3 »)',
+		api: 'api/app/utils/libelles_lot.py#libelle_type_complet',
 	},
 	nomDuLot: {
 		quoi: 'le nom d’un lot dans le tableau des charges',
-		migration: { ticket: '#2507', raison: 'servi avec le tableau des charges' },
+		api: 'api/app/utils/libelles_lot.py#nom_du_lot',
 	},
 	tableauDesCharges: {
-		quoi: 'le tableau des charges (pivot par clé, totaux, pourcentages)',
-		migration: {
-			ticket: '#2507',
-			raison: "l'app renvoie au site : `GET /lots/mes-charges` prêt à afficher",
-		},
+		quoi: 'le tableau des charges (pivot par clé, totaux)',
+		api: 'api/app/utils/tableau_charges.py#tableau_des_charges',
 	},
 	frequenceLabel: {
 		quoi: 'la fréquence d’un contrat en clair',
-		migration: { ticket: '#2507', raison: '`frequence_libelle` à servir dans `ContratRead`' },
+		api: 'api/app/utils/frequence_contrat.py#frequence_libelle',
+		migration: {
+			ticket: '#2508',
+			raison:
+				"servie dans `ContratRead.frequence_libelle` (#2507), que l'onglet Contrats lit ; le front la calcule encore pour une affaire sous contrat (`intervenantAffiche`, `ChampFrequence` sur `ticket.contrat`) : à servir avec l'affaire",
+		},
 	},
 	contratUrgence: {
 		quoi: 'l’échéance d’un contrat (préavis passé, cette année, plus tard)',
-		migration: { ticket: '#2507', raison: '`en_retard` à servir dans `ContratRead`' },
+		api: 'api/app/utils/echeance_contrat.py#urgence_echeance',
+	},
+	contratEnRetard: {
+		quoi: 'la visite d’un contrat en retard (le jour même n’en est pas une)',
+		api: 'api/app/utils/echeance_contrat.py#visite_en_retard',
 	},
 	typeEquipementDuContrat: {
 		quoi: 'l’équipement effectif d’un contrat (le sien, sinon la spécialité du prestataire)',
-		migration: {
-			ticket: '#2507',
-			raison: "l'app en garde une copie provisoire (`Fonctions/Prestataires/Provisoire/`)",
-		},
+		api: 'api/app/utils/carnet_entretien.py#type_equipement_resolu',
 	},
 	moyenneNotes: {
 		quoi: 'la note moyenne d’un prestataire',
-		migration: { ticket: '#2507', raison: '`note_moyenne` à servir dans `PrestataireRead`' },
+		api: 'api/app/utils/notes_prestataires.py#note_moyenne',
+	},
+	nextVisitForPrest: {
+		quoi: 'la prochaine visite d’un prestataire (la plus proche de ses contrats en cours)',
+		api: 'api/app/routers/prestataires_lecture.py#lire_prestataires',
 	},
 
 	//  ── Affaires (#2508) ─────────────────────────────────────────────────────

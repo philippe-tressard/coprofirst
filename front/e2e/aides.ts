@@ -258,6 +258,10 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	},
 	//  `bailleur.monBail()` rend `null` sans bail — une liste vide passerait pour un bail.
 	'/api/bailleur/mon-bail': null,
+	//  `TableauDesCharges` : « Mes lots » lit le tableau de ses charges (#2507) — vide,
+	//  comme pour un compte sans part lisible. Un spec qui en montre un le simule
+	//  par `chargesSimulees`.
+	'/api/lots/mes-charges': { colonnes: [], lignes: [], non_appelees: [] },
 	//  `InscriptionInstallation` : la carte Installation lit `etat` et `raison` (#1878).
 	'/api/admin/installation/inscription': {
 		etat: 'limitee',

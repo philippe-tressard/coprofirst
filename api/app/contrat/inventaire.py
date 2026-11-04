@@ -111,10 +111,14 @@ def _descendre(sch: dict, defs: dict, chemin: str, pile: frozenset, sortie: dict
 def _reponse(op: dict, defs: dict) -> dict[str, str]:
     sortie: dict[str, str] = {}
     for code, reponse in sorted(op.get("responses", {}).items()):
-        sch = reponse.get("content", {}).get("application/json", {}).get("schema")
+        contenu = reponse.get("content", {})
+        sch = contenu.get("application/json", {}).get("schema")
         if code.startswith("2") and sch is not None:
             sortie.setdefault("$", _type(sch, defs, False))
             _descendre(sch, defs, "$", frozenset(), sortie)
+        elif code.startswith("2") and contenu:
+            #  Un fichier (PDF, image…) : le client le lit en octets (#2505).
+            sortie.setdefault("$", "fichier")
     return dict(sorted(sortie.items()))
 
 
@@ -167,9 +171,22 @@ def _sans_marque(type_: str) -> str:
 
 
 def _compatible(ancien: str, nouveau: str) -> bool:
-    """Un champ qui change de type reste lisible : même type, ou resserré (`T?` → `T`)."""
+    """Un champ qui change de type reste lisible : même type, ou resserré (`T?` → `T`).
+
+    Une valeur `libre` qu'on TYPE est resserrée aussi (#2505) : le client la
+    décodait comme n'importe quel JSON, il décode encore ce qu'on lui précise —
+    un objet, une liste, ou le `fichier` qu'elle a toujours été. Ses champs neufs
+    sont des ajouts. Un dictionnaire libre qui devient un objet de même : ses
+    valeurs typées, s'il en avait, restent gardées par leur chemin (`$.{}`).
+    """
     a, n = _sans_marque(ancien), _sans_marque(nouveau)
-    return a == n or (a.endswith("?") and a[:-1] == n)
+    if a == n or (a.endswith("?") and a[:-1] == n):
+        return True
+    #  Jamais relâché : un champ toujours présent ne devient pas facultatif.
+    if n.endswith("?") and not a.endswith("?"):
+        return False
+    base_a, base_n = a.removesuffix("?"), n.removesuffix("?")
+    return base_a == "libre" or (base_a == "dictionnaire" and base_n == "objet")
 
 
 def comparer(reference: dict[str, dict], courant: dict[str, dict]) -> Ecarts:

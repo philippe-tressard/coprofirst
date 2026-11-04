@@ -17,6 +17,12 @@
  *  .toUpperCase() + lot.type.slice(1)`, le sélecteur de lots de « Mes lots », qui
  *  écrivait « Local_commercial ». Le motif couvre désormais cette forme aussi.
  *
+ *  04/11/2026 (#2507) : `lotTypeLabel` et `lotTypeComplet` ont quitté le front. Le
+ *  type en clair est SERVI par l'API (`libelle_type`, `libelle_type_complet`,
+ *  `libelle_nature`, `lot_libelle_type` — `api/app/utils/libelles_lot.py`), que l'app
+ *  iOS lit aussi ; `lint:regles-partagees` refuse le retour des deux fonctions, ce
+ *  contrôle-ci la recomposition à la main.
+ *
  *  Lancer : node scripts/check-type-lot.mjs [--selftest]
  */
 import { controler, lignesPortant } from './lib-source-unique.mjs';
@@ -29,23 +35,23 @@ const COPIE =
 process.exit(
 	controler({
 		extensions: ['.svelte', '.ts'],
-		sources: ['src/lib/utils.ts'],
+		sources: [],
 		fautes: lignesPortant(COPIE),
 		cas: [
 			["\t\t\t\t>{lot.type.replace('_', ' ')}{lot.type_appartement", 1],
 			["\t\t{monBailData.lot_type.replace('_', ' ')}{monBailData.lot_type_appartement", 1],
 			['\t\tconst t = lot.type.replaceAll(/_/g, " ");', 1],
 			['\t\t{lot.type.charAt(0).toUpperCase() + lot.type.slice(1)} - {lot.numero}', 1],
-			//  La forme voulue, jamais signalée.
-			['\t\t\t{lotTypeComplet(lot.type, lot.type_appartement)}', 0],
+			//  La forme voulue, jamais signalée : le champ servi.
+			['\t\t\t{lot.libelle_type_complet}', 0],
 			//  Un `replace('_')` sur autre chose qu'un type de lot : hors portée.
 			["\t\t\t{statut.replace('_', ' ')}", 0],
 			//  Un commentaire qui cite la forme refusée.
 			["\t// on écrivait lot.type.replace('_', ' ') ici", 0],
 		],
-		ok: 'Type de lot : aucun libellé recalculé hors de `lotTypeLabel` / `lotTypeComplet`',
+		ok: 'Type de lot : aucun libellé recalculé — le front lit celui que l’API sert',
 		ko: 'libellé(s) de type de lot recalculé(s) à la main',
 		conseil:
-			'Employer `lotTypeComplet(type, typeAppartement)` ou `lotTypeLabel(type)` (`#lib/utils`).',
+			'Lire le champ servi : `libelle_type`, `libelle_type_complet`, `libelle_nature` (`LotRead`) ou `lot_libelle_type` (`AccesBail`).',
 	}),
 );

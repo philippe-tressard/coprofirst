@@ -54,7 +54,7 @@ from app.models.core import (
     Utilisateur,
     Vigik,
 )
-from app.routers.acces.vues import AccesOut
+from app.routers.acces.vues import AccesPorteur
 from app.utils.acces_choix import valider_acces
 from app.utils.acces_detachement import detacher_acces
 from app.utils.acces_gestes import (
@@ -93,7 +93,7 @@ def type_acces_demande(type_cle: str) -> TypeAcces:
     return type_acces
 
 
-class AccesAdminOut(AccesOut):
+class AccesAdminOut(AccesPorteur):
     """Un badge tel que le conseil syndical a besoin de le VOIR.
 
     🔴 Les deux listes rendaient l'objet BRUT (`select(Vigik)`), donc `user_id`
@@ -135,7 +135,7 @@ def _acces_admin_out(objets, session: Session, type_acces: TypeAcces) -> list[Ac
     for o in objets:
         sortie.append(
             AccesAdminOut(
-                **AccesOut.champs_communs(session, type_acces, o),
+                **AccesPorteur.champs_communs(session, type_acces, o),
                 porteur_nom=noms[o.id],
                 porteur_id=o.user_id,
             )

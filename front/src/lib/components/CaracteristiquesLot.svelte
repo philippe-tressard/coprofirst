@@ -30,10 +30,10 @@
 <script lang="ts">
 	import DetailReglementLot from '#lib/components/DetailReglementLot.svelte';
 	import type { MonLot } from '#lib/api/index.ts';
-	import { etageLabel, lotTypeComplet } from '#lib/utils.ts';
+	import { etageLabel, fmtNombre } from '#lib/utils.ts';
 
-	export let type: string | null | undefined = null;
-	export let typeAppartement: string | null | undefined = null;
+	/** Le type et sa précision, tels que l'API les sert (`libelle_type_complet`, #2507). */
+	export let typeComplet: string | null | undefined = null;
 	export let etage: number | null | undefined = null;
 	export let superficie: number | null | undefined = null;
 	/** Le lot tel que `/lots/mes-lots` le rend — sa désignation du règlement. */
@@ -48,9 +48,9 @@
 
 <dl class="caracteristiques-lot">
 	<slot name="avant" />
-	{#if type}
+	{#if typeComplet}
 		<dt>Type</dt>
-		<dd class="type-lot">{lotTypeComplet(type, typeAppartement)}</dd>
+		<dd class="type-lot">{typeComplet}</dd>
 	{/if}
 	{#if etage !== null && etage !== undefined}
 		<dt>Étage</dt>
@@ -58,7 +58,7 @@
 	{/if}
 	{#if superficie}
 		<dt>Superficie</dt>
-		<dd>{superficie} m²</dd>
+		<dd>{fmtNombre(superficie)} m²</dd>
 	{/if}
 	{#if designation?.numero_usage}
 		<dt>Porte ou place</dt>

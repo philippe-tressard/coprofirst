@@ -36,7 +36,7 @@
 	import { messageErreur } from '#lib/erreurs.ts';
 	import type { Perimetre } from '#lib/perimetres/index.ts';
 	import { contientTousLesMots } from '#lib/texte.ts';
-	import { etageLabel, lotTypeLabel } from '#lib/utils.ts';
+	import { etageLabel } from '#lib/utils.ts';
 
 	let lots: MonLot[] = [];
 	let constats: ConstatPatrimoine[] = [];
@@ -120,9 +120,11 @@
 		}
 	}
 
-	$: natures = [...new Set(lots.map((l) => l.nature).filter((n): n is string => !!n))]
-		.sort()
-		.map((n) => ({ val: n, label: lotTypeLabel(n) }));
+	//  Le libellé d'une nature est SERVI avec chaque lot (`libelle_nature`, #2507) :
+	//  la pastille prend celui du premier lot qui la porte.
+	$: natures = [...new Map(lots.filter((l) => l.nature).map((l) => [l.nature, l.libelle_nature]))]
+		.sort(([a], [b]) => String(a).localeCompare(String(b)))
+		.map(([n, label]) => ({ val: String(n), label }));
 	$: affiches = lots
 		.filter((l) => !nature || l.nature === nature)
 		.filter((l) => contientTousLesMots([l.numero, l.numero_usage, l.batiment_nom], recherche))
@@ -199,7 +201,7 @@
 						<tr>
 							<td class="numero-lot">{l.numero}</td>
 							<td>{l.batiment_nom ?? '—'}</td>
-							<td>{lotTypeLabel(l.nature ?? l.type)}</td>
+							<td>{l.libelle_nature}</td>
 							<td>{l.numero_usage ?? '—'}</td>
 							<td>{l.etage === null ? '—' : etageLabel(l.etage)}</td>
 							<td>{desservi(l)}</td>
