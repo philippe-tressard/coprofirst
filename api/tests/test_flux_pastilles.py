@@ -44,7 +44,17 @@ def _affaire(**kwargs) -> Ticket:
 
 def test_les_champs_de_la_ligne_sont_TOUS_rendus():
     rendu = pastilles_affaire(_affaire())
-    assert set(rendu) == set(CHAMPS_PASTILLES)
+    assert set(rendu) == set(CHAMPS_PASTILLES) | {"natures"}
+
+
+def test_la_nature_suit_la_date_de_l_affaire():
+    """Une affaire à laquelle on ajoute une date devient « Calendrier » : le fil
+    doit le dire comme la liste des affaires (4/11/2026, « AFF. » restait au fil)."""
+    from datetime import datetime
+
+    assert pastilles_affaire(_affaire())["natures"] == ["activite"]
+    datee = _affaire(debut=datetime(2026, 11, 9, 14, 30))
+    assert pastilles_affaire(datee)["natures"] == ["calendrier"]
 
 
 def test_les_listes_sont_DECODEES_comme_par_l_API():
