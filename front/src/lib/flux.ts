@@ -16,6 +16,7 @@ import { estTicketClos } from '#lib/tickets.ts';
 import { equipLabel } from '#lib/equipements.ts';
 import { parAttribut } from '#lib/table-statuts.ts';
 import { fmtDateLong } from '#lib/date.ts';
+import { natureDe } from '#lib/tickets-categories.ts';
 import type { ClasseGouttiere } from '#lib/gouttiere.ts';
 
 // ── Apparence par type d'élément ──────────────────────────────────────────
@@ -177,6 +178,17 @@ export const TYPE_LABELS: Record<string, string> = L;
  *   libellé et la teinte — une rubrique neuve sans marque ne compile pas. */
 export function classeFlux(type: string): ClasseGouttiere | null {
 	return I[type] ? { icone: I[type], abrege: A[type], libelle: typeLibelle(type) } : null;
+}
+/**  Ce qui classe une CARTE du fil. Une affaire se classe par sa NATURE — celle que
+ *   le serveur dérive (`meta.affaire.natures`, la même que la liste des affaires) —
+ *   et non par le type de l'événement : une affaire à laquelle on ajoute une date
+ *   devient « CAL. » au fil comme aux Affaires, au lieu de rester « AFF. ». Les
+ *   autres rubriques gardent leur table (`classeFlux`). */
+export function classeDuFlux(item: FluxItem): ClasseGouttiere | null {
+	const affaire = item.meta?.affaire as { natures?: string[] } | undefined;
+	if (!affaire?.natures?.length) return classeFlux(item.type);
+	const { icone, abrege, libelle } = natureDe(affaire);
+	return { icone, abrege, libelle };
 }
 export const TYPE_COLORS: Record<string, string> = C;
 export const TYPE_BG: Record<string, string> = F;
