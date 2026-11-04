@@ -287,6 +287,14 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   (version V), puis le retrait dans une version ultérieure ; une entrée neuve d'une route
   existante est facultative. L'`operationId` vient du chemin (`contrat.identifiant_operation`),
   jamais du nom de la fonction. 🔒 `test_contrat_api.py`.
+- **Une règle d'affichage que le site ET l'app iOS montrent se calcule dans l'API** (#2501,
+  `standards/09` §8, règle 1) : libellé composé, état dérivé, droit affiché vivent dans
+  `app/utils/` (ou un prédicat d'`auth/`), servis en champ que le front LIT — jamais une
+  fonction de `#lib` seule (`libelle_logement`, #2500). Chacune se déclare dans
+  `front/scripts/check-regles-partagees.regles.mjs` ; celles que le front calcule encore y
+  portent leur ticket de migration et sa raison. L'inventaire, et ce qui reste au front par
+  décision (tables générées par l'app, formats d'une valeur typée), se lit dans #2501.
+  🔒 `npm run lint:regles-partagees`.
 
 ### Schémas Pydantic
 - Trois formes par entité exposée : `EntiteCreate` (entrée, sans id ni
