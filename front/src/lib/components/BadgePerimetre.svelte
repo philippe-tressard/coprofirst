@@ -49,6 +49,14 @@
 	export let perimetre: string | string[] | null | undefined = null;
 
 	/**
+	 * Le libellé SERVI par l'API (`perimetre_libelle`, `utils/perimetres.perimetre_badge`,
+	 * #2505) — `""` quand le périmètre est celui par défaut. Donné, il remplace le
+	 * calcul : le site montre alors exactement ce que montre l'app iOS. Les écrans
+	 * dont l'API ne sert pas encore le libellé passent `perimetre`.
+	 */
+	export let libelle: string | null | undefined = undefined;
+
+	/**
 	 * La couleur du badge, telle que la charte la nomme.
 	 *
 	 * ⚠️ Elle varie d'un écran à l'autre — `gray` sur les cartes, `blue` sur les
@@ -70,9 +78,11 @@
 
 	//  Un seul calcul, une seule dépendance : le libellé, ou la chaîne vide quand
 	//  il n'y a rien à dire — ni périmètre, ni autre chose que celui par défaut.
-	$: texte = relire($perimetresStore, () =>
-		perimetre && (toujours || !estPerimetreParDefaut(perimetre)) ? perimetreLabel(perimetre) : '',
-	);
+	$: texte =
+		libelle ??
+		relire($perimetresStore, () =>
+			perimetre && (toujours || !estPerimetreParDefaut(perimetre)) ? perimetreLabel(perimetre) : '',
+		);
 </script>
 
 {#if texte}

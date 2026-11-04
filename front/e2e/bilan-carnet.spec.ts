@@ -77,7 +77,8 @@ async function ouvrir(page: Page, moi = MEMBRE_CS, bilan: object = BILAN) {
 	const demandes: string[] = [];
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return moi;
-		if (chemin === '/api/carnet-entretien') return { entrees: [], total: 0 };
+		if (chemin === '/api/carnet-entretien')
+			return { entrees: [], total: 0, groupes: [], annees: [] };
 		if (chemin === '/api/carnet-entretien/metriques') return bilan;
 	});
 	page.on('request', (r) => {

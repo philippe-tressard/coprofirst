@@ -64,8 +64,9 @@ from app.models.core import Ticket, Utilisateur
 from app.models.prestataires import ContratEntretien, Prestataire
 from app.models.tickets import CategorieTicket, StatutTicket
 from app.utils.affaire_absorbee import pas_absorbee
+from app.utils.categories_ticket import libelle_categorie
 from app.utils.liens import lien_element, lien_ticket
-from app.utils.perimetres import couvre, parse_json_perimetres
+from app.utils.perimetres import couvre, parse_json_perimetres, perimetre_label
 from app.utils.valeurs import valeur
 from app.utils.visibility import ticket_visible
 
@@ -155,8 +156,12 @@ class EntreeCarnet:
             "detail": self.detail,
             "numero": self.numero,
             "categorie": self.categorie,
+            #  Le libellé de la catégorie, pour l'app iOS (#2505).
+            "categorie_libelle": libelle_categorie(self.categorie),
             "equipement": self.equipement,
             "perimetre": self.perimetre,
+            #  La portée en clair, toujours dite — même la copropriété entière.
+            "perimetre_libelle": perimetre_label(self.perimetre),
             "lien": self.lien,
             "alerte": self.alerte,
             "synthese": self.synthese,

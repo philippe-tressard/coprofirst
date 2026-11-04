@@ -29,6 +29,7 @@ from .arbre import (
 from .libelles import (
     SEPARATEUR_ELEMENT,
     SEPARATEUR_GROUPE,
+    perimetre_badge,
     perimetre_label,
     perimetre_label_json,
     perimetre_label_liste,
@@ -52,6 +53,7 @@ __all__ = [
     "perimetre_defaut_liste",
     "perimetre_defaut_texte",
     "perimetre_du_batiment",
+    "perimetre_badge",
     "perimetre_label",
     "perimetre_label_json",
     "perimetre_label_liste",

@@ -13,6 +13,7 @@ from sqlmodel import Session, select
 from app.utils.config_site import config_site
 from app.auth.appartenance import exiger_objet_autorise
 from app.auth.deps import est_moderateur, get_current_user, require_cs_or_admin
+from app.contrat import REPONSE_FICHIER
 from app.database import get_session
 from app.models.core import (
     CategorieDocument,
@@ -35,8 +36,8 @@ from app.utils.html_sur import html_riche
 
 # Toute règle de visibilité — documents compris — vient du module central.
 from app.utils.visibility import document_visible, peut_ecrire_dans, profil_admet
-from app.utils.liens import adresse_du_site
-from app.utils.liens import nom_site
+from app.utils.liens import adresse_du_site, nom_site
+from app.utils.ordre_documents import ordonner
 from app.utils.recuperer import connu_ou_404, fichier_ou_404, ou_404
 from app.utils.cloche import sonner
 
@@ -237,11 +238,10 @@ def list_documents(
     #  passe en tête de `document_visible`, sauf sur les catégories réservées à
     #  l'administration (`CATEGORIES_ADMIN_SEUL`, le texte du règlement).
     docs = [d for d in docs if document_visible(user, d, session)]
+    return ordonner(session, categorie, docs)  # l'ordre de la rubrique (#2505)
 
-    return docs
 
-
-@router.get("/{doc_id}/télécharger")
+@router.get("/{doc_id}/télécharger", response_class=FileResponse, responses=REPONSE_FICHIER)
 def download_document(
     doc_id: int,
     session: Session = Depends(get_session),

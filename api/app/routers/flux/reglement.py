@@ -18,7 +18,7 @@ from sqlmodel import col, select
 from app.auth.deps import question_reglement_visible
 from app.models.reglement import QuestionReglement
 from app.utils.liens import lien_element
-from app.utils.question_reglement.format import VERDICTS
+from app.utils.question_reglement.format import VERDICTS, ton_verdict
 
 from .commun import ContexteFlux, auteur_nom, strip_html
 from .schemas import FluxItem
@@ -46,6 +46,8 @@ def collecter(ctx: ContexteFlux) -> list[FluxItem]:
                 #  Le CODE du verdict : la capsule prend sa teinte, comme dans
                 #  l'onglet (`#lib/reglement`, `CLASSE_VERDICT`).
                 "verdict": q.verdict,
+                #  …et son TON, que la capsule lit (#2505) : l'app iOS aussi.
+                "verdict_ton": ton_verdict(q.verdict),
                 "auteur": auteur_nom(ctx.session, q.auteur_id),
             },
         )

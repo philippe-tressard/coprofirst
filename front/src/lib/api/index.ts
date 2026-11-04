@@ -133,10 +133,14 @@ export interface MembreAnnuaireCS {
 	genre: string;
 	prenom: string;
 	nom: string;
+	/** « Prénom NOM » — servi (`utils/noms.nom_affiche`, #2505), la civilité à part. */
+	nom_affiche: string;
 	batiment_id: number | null;
 	/** Le NUMÉRO du bâtiment (« A »), pas son libellé. */
 	batiment_nom: string | null;
 	etage: number | null;
+	/** « RDC », « 2ème étage » — `""` sans étage (`utils/etages`, #2505). */
+	etage_libelle: string;
 	est_gestionnaire_site: boolean;
 	est_president: boolean;
 	photo_url: string | null;
@@ -152,11 +156,15 @@ export interface MembreAnnuaireSyndic {
 	fonction: string | null;
 	email: string | null;
 	telephone: string | null;
+	/** Les numéros du champ, découpés sur les virgules (`utils/telephones`, #2505). */
+	telephones: string[];
+	nom_affiche: string;
 	est_principal: boolean;
 	photo_url: string | null;
 }
 
-/**  L'annuaire des résidents — `GET /admin/annuaire` (`routers/admin/annuaire.py`). */
+/**  L'annuaire des résidents — `GET /admin/annuaire` (`routers/admin/annuaire.AnnuaireLu`).
+ *   Les membres du conseil arrivent CLASSÉS (bâtiment, civilité, nom). */
 export interface Annuaire {
 	cs: { ag_annee: number | null; ag_date: string | null; membres: MembreAnnuaireCS[] };
 	syndic: {

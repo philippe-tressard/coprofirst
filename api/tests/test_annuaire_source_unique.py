@@ -22,9 +22,12 @@ qu'elles vivent sur deux écrans différents (`standards/11` §14).
 
 ## Ce que ce fichier verrouille
 
-Le **tri** et la composition, par leur marqueur le plus distinctif : la sentinelle
-`9999` qui range les membres sans bâtiment en dernier. Un fichier qui la réécrit
-vient de recopier le tri, et le tri est la moitié de la composition. L'autre
+Le **tri** et la composition, par leur marqueur le plus distinctif : l'ordre des
+civilités (« Mme », puis « Mlle »), écrit en dictionnaire. Un fichier qui le
+réécrit vient de recopier le tri, et le tri est la moitié de la composition.
+Jusqu'au 04/11/2026 c'était la sentinelle `9999` des membres sans bâtiment : le
+tri suit depuis le NUMÉRO du bâtiment, la règle de l'écran (#2505), et n'en a
+plus besoin. L'autre
 moitié est le **dictionnaire de membre** : un balayage unique de `app/` cherche
 les deux formes, et ne les tolère que dans la source.
 """
@@ -37,21 +40,24 @@ from tests.aides_sources import module_app, modules_app
 
 SOURCE = "utils/annuaire.py"
 
-#: La sentinelle du tri : « pas de bâtiment » se range après tous les bâtiments.
-SENTINELLE = 9999
+#: Le marqueur du tri : un dictionnaire qui ordonne ces civilités.
+CIVILITES_ORDONNEES = {"Mme", "Mlle"}
 
 
-def _emploie_la_sentinelle(source: str) -> bool:
-    """Cherche la VALEUR dans le code, jamais le texte : la prose la cite."""
+def _ordonne_les_civilites(source: str) -> bool:
+    """Cherche un DICTIONNAIRE dans le code, jamais le texte : la prose le cite."""
     return any(
-        isinstance(n, ast.Constant) and n.value == SENTINELLE for n in ast.walk(ast.parse(source))
+        isinstance(n, ast.Dict)
+        and CIVILITES_ORDONNEES
+        <= {c.value for c in n.keys if isinstance(c, ast.Constant) and isinstance(c.value, str)}
+        for n in ast.walk(ast.parse(source))
     )
 
 
 def test_les_deux_ecrans_rendent_la_MEME_composition():
     """Le fait, pas la forme : les deux appelants passent-ils par la source ?
 
-    Un test qui ne regarderait que la sentinelle resterait vert si l'un des deux
+    Un test qui ne regarderait que l'ordre des civilités resterait vert si l'un des deux
     reconstituait la liste autrement — mêmes clés, autre tri.
     """
     import inspect
@@ -103,7 +109,7 @@ def _dictionnaires_de_membre(source: str) -> list[str]:
     return trouves
 
 
-FORME_TRI = f"tri (sentinelle {SENTINELLE})"
+FORME_TRI = "tri (ordre des civilités)"
 
 
 def _forme_dictionnaire(nom: str) -> str:
@@ -112,7 +118,7 @@ def _forme_dictionnaire(nom: str) -> str:
 
 def _formes_recopiees(source: str) -> list[str]:
     """Les deux moitiés de la composition qu'un module aurait recopiées."""
-    formes = [FORME_TRI] if _emploie_la_sentinelle(source) else []
+    formes = [FORME_TRI] if _ordonne_les_civilites(source) else []
     return formes + [
         _forme_dictionnaire(nom) for nom in sorted(set(_dictionnaires_de_membre(source)))
     ]
@@ -122,7 +128,7 @@ def test_aucun_module_ne_recopie_la_composition_du_conseil():
     """🔴 La portée décrit la notion, pas la liste des appelants connus.
 
     Le test précédent énumère les appelants : il ne peut rien dire du cinquième.
-    Celui-ci cherche les deux FORMES de la composition — la sentinelle du tri, et
+    Celui-ci cherche les deux FORMES de la composition — l'ordre des civilités, et
     un littéral de dictionnaire portant les clés d'un membre — partout dans
     `app/`, et ne les tolère que dans la source.
 

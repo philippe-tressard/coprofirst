@@ -15,7 +15,7 @@
 	 * une seconde source pour les mêmes règles. Elles ne servaient nulle part
 	 * ailleurs dans la page — la coupe est donc nette, sans duplication.
 	 */
-	import { fmtDateShort as fmt, libelleExercice } from '#lib/date.ts';
+	import { fmtDateShort as fmt } from '#lib/date.ts';
 
 	/**  Comment s'écrit l'échéance d'un contrat sur cette fiche.
 	 *
@@ -99,7 +99,7 @@
 			{#if copropriete.mois_debut_exercice}
 				<div class="info-item">
 					<span class="info-label">Exercice comptable</span>
-					<span class="info-value">{libelleExercice(copropriete.mois_debut_exercice)}</span>
+					<span class="info-value">{copropriete.exercice_libelle}</span>
 				</div>
 			{/if}
 		</div>

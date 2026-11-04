@@ -7,7 +7,9 @@ import json
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, computed_field, field_validator
+
+from app.utils.perimetres import perimetre_badge
 
 
 class DocumentRead(BaseModel):
@@ -65,6 +67,13 @@ class DocumentRead(BaseModel):
         except (ValueError, TypeError):
             return None
         return valeur if isinstance(valeur, list) else None
+
+    @computed_field
+    @property
+    def perimetre_libelle(self) -> str:
+        """Le lieu du badge 🔹, `""` pour le périmètre par défaut — la règle de
+        `BadgePerimetre`, servie au site et à l'app iOS (#2505)."""
+        return perimetre_badge(self.perimetre_cible)
 
     class Config:
         from_attributes = True

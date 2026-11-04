@@ -39,6 +39,7 @@ function document(id: number, categorie: number, titre: string, champs: object =
 		date_ag: null,
 		date_document: null,
 		perimetre_cible: [],
+		perimetre_libelle: '',
 		...champs,
 	};
 }
