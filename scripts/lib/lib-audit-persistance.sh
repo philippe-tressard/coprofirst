@@ -37,8 +37,23 @@
 #  Elle se pose à la main, après avoir lu le relevé — pas par l'audit lui-même,
 #  qui accepterait alors l'état qu'il doit juger.
 #
-#  Fonctions PURES, sauf `persistance_relever` (lit le disque) et
-#  `persistance_accepter` (écrit la référence), isolées plus bas.
+#  ── QUI ÉCRIT, DÉCLARE (#2521, 04/11/2026) ──────────────────────────────────
+#
+#  Trois constats S3 en quatre nuits, aucune intrusion : chaque fois, un script
+#  du dépôt lancé en root par l'exploitant (`durcir-noeud.sh --sortant`) avait
+#  réécrit `/etc/ufw/user.rules` la veille, et l'audit demandait le lendemain
+#  d'accepter, en root, sur chaque nœud, ce que ce script avait écrit. Relire le
+#  fichier n'apportait rien : la décision humaine, c'est le lancement du script.
+#  Un ÉCRIVAIN (`PERSISTANCE_ECRIVAINS`) déclare donc ce qu'il vient d'écrire
+#  (`persistance_declarer_ecriture`) : la référence est mise à jour pour ces
+#  chemins-là, et pour eux seuls, et la ligne va au journal de l'audit. La
+#  déclaration REFUSE une référence absente (la première se lit) et tout écart
+#  HORS des chemins écrits : l'acceptation ne couvre jamais ce que personne n'a
+#  lu. `audit-securite.sh --accepter <chemin…>` suit la même règle.
+#
+#  Fonctions PURES, sauf `persistance_relever` (lit le disque),
+#  `persistance_accepter` (écrit la référence), `persistance_journaliser` et
+#  `persistance_declarer_ecriture` (les deux), isolées plus bas.
 # =============================================================================
 
 #: Les emplacements CHAUDS — qui donnent la main. Un glob est admis (étendu par
@@ -61,6 +76,14 @@ PERSISTANCE_SELON_ROLE="${PERSISTANCE_SELON_ROLE:-/etc/systemd/system/multi-user
 #: Où vit la référence, chez root (créé en 700 par `persistance_accepter`).
 AUDIT_SECURITE_DIR="${AUDIT_SECURITE_DIR:-/var/lib/hostachy/audit-securite}"
 PERSISTANCE_REFERENCE="${PERSISTANCE_REFERENCE:-$AUDIT_SECURITE_DIR/persistance.releve}"
+#: Le journal de l'audit, où chaque acceptation et chaque déclaration s'inscrit
+#: (même défaut que `lib-audit-securite.sh`, qui le lit pour C40).
+AUDIT_SECURITE_JOURNAL="${AUDIT_SECURITE_JOURNAL:-/var/log/hostachy-audit-securite.log}"
+#: Les scripts du dépôt qui ÉCRIVENT un point de persistance, relatifs à la
+#: racine : chacun doit appeler `persistance_declarer_ecriture` (autotest).
+#: `durcir-sudoers.sh` n'y est pas : il tourne depuis le poste, sans root sur le
+#: nœud, et sudoers est CHAUD — sa lecture le lendemain est voulue.
+PERSISTANCE_ECRIVAINS="${PERSISTANCE_ECRIVAINS:-scripts/installation/durcir-noeud.sh}"
 
 # ── Décisions PURES ──────────────────────────────────────────────────────────
 
@@ -124,6 +147,33 @@ persistance_verdict() {
 #  Le nombre d'écarts d'un verdict (pour la ligne de constat).
 persistance_compte() { printf '%s' "${1:-}" | grep -o '[-+~] /' | grep -c .; }
 
+#  $1 = un chemin · $2 = les chemins écrits (espace ; un fichier, ou un répertoire
+#  dont tout le contenu compte) → oui | non. `/etc/ufw` couvre `/etc/ufw/user.rules`,
+#  jamais `/etc/ufwx`.
+persistance_sous() {
+    local c=${1:-} e
+    for e in ${2:-}; do case "$c" in "$e"|"$e"/*) echo oui; return 0 ;; esac; done
+    echo non
+}
+
+#  $1 = la référence · $2 = le relevé · $3 = les chemins écrits
+#  → ECRIT:<écarts sous les chemins> | RIEN | REFUS:<pourquoi>
+#  Un écart hors des chemins écrits refuse TOUT : rien ne s'accepte en passant.
+persistance_declaration() {
+    local ref=${1:-} cur=${2:-} chemins=${3:-} ecarts ligne dedans="" dehors=""
+    [ -n "$chemins" ] || { echo "REFUS:aucun chemin écrit"; return 0; }
+    [ -n "$ref" ] || { echo "REFUS:référence absente — la première se lit, puis '--accepter' sans chemin"; return 0; }
+    [ -n "$cur" ] || { echo "REFUS:relevé vide (root requis)"; return 0; }
+    ecarts=$(persistance_comparer "$ref" "$cur")
+    while IFS= read -r ligne; do
+        [ -n "$ligne" ] || continue
+        if [ "$(persistance_sous "${ligne:2}" "$chemins")" = oui ]; then dedans="$dedans${dedans:+ }$ligne"
+        else dehors="$dehors${dehors:+ }$ligne"; fi
+    done <<< "$ecarts"
+    [ -z "$dehors" ] || { echo "REFUS:écart(s) hors des chemins écrits, à lire d'abord — $dehors"; return 0; }
+    if [ -n "$dedans" ]; then echo "ECRIT:$dedans"; else echo RIEN; fi
+}
+
 # ── Le relevé (effet de bord : lit le disque, en root) ───────────────────────
 #  Une ligne par fichier (« <sha256>  <chemin> ») et par lien (« L:<cible>  <chemin> ») ;
 #  les répertoires sont parcourus, un glob étendu. Un chemin absent ne produit rien :
@@ -150,6 +200,31 @@ persistance_accepter() {
     mkdir -p -m 700 "$AUDIT_SECURITE_DIR" && chmod 700 "$AUDIT_SECURITE_DIR" || return 1
     printf '%s\n' "$1" > "$PERSISTANCE_REFERENCE.tmp" && chmod 600 "$PERSISTANCE_REFERENCE.tmp" \
         && mv -f "$PERSISTANCE_REFERENCE.tmp" "$PERSISTANCE_REFERENCE"
+}
+
+# ── Le journal et la déclaration (effets de bord, en root) ───────────────────
+#  $1 = la ligne. Une acceptation ou une déclaration laisse sa trace datée dans le
+#  journal de l'audit : qui a mis la référence à jour, et pour quels écarts.
+persistance_journaliser() {
+    printf '[%s] [S3] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${1:-}" >> "$AUDIT_SECURITE_JOURNAL" 2>/dev/null \
+        || echo "(journal $AUDIT_SECURITE_JOURNAL non inscriptible)"
+}
+
+#  $1 = les chemins écrits · $2 = qui déclare (« durcir-noeud.sh --sortant constat »)
+#  → une ligne lisible ; code 0 si la référence est à jour pour ces chemins
+#  (écrite, ou rien à écrire), 1 sinon — le refus dit ce qui reste à lire.
+persistance_declarer_ecriture() {
+    local chemins=${1:-} par=${2:-?} releve v
+    releve=$(persistance_relever)
+    v=$(persistance_declaration "$(cat "$PERSISTANCE_REFERENCE" 2>/dev/null)" "$releve" "$chemins")
+    case "$v" in
+        ECRIT:*)
+            persistance_accepter "$releve" || { echo "référence S3 : ÉCHEC d'écriture de $PERSISTANCE_REFERENCE"; return 1; }
+            persistance_journaliser "référence mise à jour par $par : ${v#ECRIT:}"
+            echo "référence S3 mise à jour (${v#ECRIT:})" ;;
+        RIEN) echo "référence S3 : rien à déclarer sous $chemins" ;;
+        *)    echo "référence S3 NON mise à jour : ${v#REFUS:} — après lecture, 'audit-securite.sh --accepter [chemin…]'"; return 1 ;;
+    esac
 }
 
 # ── Auto-test (job CI `test-scripts`) ─────────────────────────────────────────
@@ -210,6 +285,35 @@ L:/etc/systemd/system/retour.service  /etc/systemd/system/multi-user.target.want
     t "un chemin avec espace survit à la comparaison" "~ /etc/cron.d/a b" \
       "$(persistance_comparer "x  /etc/cron.d/a b" "y  /etc/cron.d/a b")"
 
+    #  Qui écrit, déclare (#2521) : la référence suit les chemins écrits, et eux seuls.
+    t "sous : un fichier du répertoire écrit" oui "$(persistance_sous /etc/ufw/user.rules "/etc/ssh/x /etc/ufw")"
+    t "sous : le fichier écrit lui-même" oui "$(persistance_sous /etc/ufw/user.rules /etc/ufw/user.rules)"
+    t "sous : /etc/ufwx n'est pas sous /etc/ufw" non "$(persistance_sous /etc/ufwx/a /etc/ufw)"
+    t "déclaration : fail2ban réécrit par durcir-noeud → ECRIT" "ECRIT:~ /etc/fail2ban/jail.d/5hostachy.conf" \
+      "$(persistance_declaration "$R" "${R/ddd/dd2}" /etc/fail2ban)"
+    t "déclaration : rien n'a bougé → RIEN" RIEN "$(persistance_declaration "$R" "$R" /etc/fail2ban)"
+    t "déclaration : le lien du tunnel (rôle) n'est pas un écart → RIEN" RIEN \
+      "$(persistance_declaration "$R" "$R
+$LT" /etc/ufw)"
+    t "déclaration : un écart AILLEURS refuse tout, et le nomme" \
+      "REFUS:écart(s) hors des chemins écrits, à lire d'abord — + /etc/cron.d/retour" \
+      "$(persistance_declaration "$R" "${R/ddd/dd2}
+eee  /etc/cron.d/retour" /etc/fail2ban)"
+    t "déclaration : un écart tiède ailleurs refuse aussi" REFUS \
+      "$(persistance_declaration "$R" "${R/ddd/dd2}
+zzz  /etc/ssh/sshd_config.d/50-x.conf" /etc/fail2ban | cut -d: -f1)"
+    #  LE CAS ZÉRO : jamais ECRIT sans référence, sans relevé, sans chemin.
+    t "déclaration : référence absente → REFUS" REFUS "$(persistance_declaration "" "$R" /etc/ufw | cut -d: -f1)"
+    t "déclaration : relevé vide → REFUS" REFUS "$(persistance_declaration "$R" "" /etc/ufw | cut -d: -f1)"
+    t "déclaration : aucun chemin → REFUS" REFUS "$(persistance_declaration "$R" "${R/ddd/dd2}" "" | cut -d: -f1)"
+    #  Chaque écrivain déclaré appelle la déclaration : un script du dépôt qui
+    #  écrirait un point de persistance sans le dire referait le constat du lendemain.
+    local racine e; racine=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+    for e in $PERSISTANCE_ECRIVAINS; do
+        t "écrivain $e : appelle persistance_declarer_ecriture" oui \
+          "$(grep -q 'persistance_declarer_ecriture ' "$racine/$e" 2>/dev/null && echo oui || echo non)"
+    done
+
     #  Le relevé RÉEL, sur une arborescence jetable, et l'acceptation.
     #  ⚠️ Un lien symbolique et un mode 700 ne se posent pas sur tout poste
     #  (MSYS sous Windows) : ces cas se disent SAUT, jamais PASS — la CI (Linux)
@@ -240,6 +344,24 @@ L:/etc/systemd/system/retour.service  /etc/systemd/system/multi-user.target.want
     echo k2 >> "$d/home/u/.ssh/authorized_keys"; echo s2 > "$d/sshd.d/01.conf"
     verdict=$(PERSISTANCE_CHAUDS="$L" PERSISTANCE_TIEDES="$T"         persistance_verdict "$releve" "$(PERSISTANCE_CHAUDS="$L" PERSISTANCE_TIEDES="$T" persistance_relever)")
     t "relevé réel : clé ajoutée (FAIL) et sshd retouché (tiède)"       "FAIL:~ $d/home/u/.ssh/authorized_keys · tièdes : ~ $d/sshd.d/01.conf" "$verdict"
+    #  La déclaration RÉELLE : une référence posée, l'écrivain réécrit sshd.d — la
+    #  référence suit et le journal le dit ; une clé ajoutée en plus, et rien ne bouge.
+    local ref_d="$d/ref/c" journal="$d/journal" avant
+    mkdir -p "$ref_d"; echo s > "$d/sshd.d/01.conf"; printf 'k\n' > "$d/home/u/.ssh/authorized_keys"
+    AUDIT_SECURITE_DIR="$ref_d" PERSISTANCE_REFERENCE="$ref_d/p" \
+        persistance_accepter "$(PERSISTANCE_CHAUDS="$L" PERSISTANCE_TIEDES="$T" persistance_relever)"
+    echo s3 > "$d/sshd.d/01.conf"
+    t "déclaration réelle : sshd.d réécrit → référence mise à jour, code 0" "0 CONFORME" \
+      "$(AUDIT_SECURITE_DIR="$ref_d" PERSISTANCE_REFERENCE="$ref_d/p" AUDIT_SECURITE_JOURNAL="$journal" \
+         PERSISTANCE_CHAUDS="$L" PERSISTANCE_TIEDES="$T" persistance_declarer_ecriture "$d/sshd.d" "essai --x" >/dev/null; printf '%s ' $?
+         PERSISTANCE_CHAUDS="$L" PERSISTANCE_TIEDES="$T" persistance_verdict "$(cat "$ref_d/p")" "$(PERSISTANCE_CHAUDS="$L" PERSISTANCE_TIEDES="$T" persistance_relever)")"
+    t "déclaration réelle : le journal dit qui et quoi" 1 \
+      "$(grep -c "^\[[0-9-]* [0-9:]*\] \[S3\] référence mise à jour par essai --x : ~ $d/sshd.d/01.conf$" "$journal")"
+    echo s4 > "$d/sshd.d/01.conf"; echo k9 >> "$d/home/u/.ssh/authorized_keys"; avant=$(cat "$ref_d/p")
+    t "déclaration réelle : une clé ajoutée à côté → refus, code 1, référence intacte" "1 oui" \
+      "$(AUDIT_SECURITE_DIR="$ref_d" PERSISTANCE_REFERENCE="$ref_d/p" AUDIT_SECURITE_JOURNAL="$journal" \
+         PERSISTANCE_CHAUDS="$L" PERSISTANCE_TIEDES="$T" persistance_declarer_ecriture "$d/sshd.d" "essai" >/dev/null; printf '%s ' $?
+         [ "$(cat "$ref_d/p")" = "$avant" ] && echo oui || echo non)"
     rm -rf "$d"
     [ "$st" -eq 0 ] && echo "lib-audit-persistance : tous les cas passent."
     return "$st"
