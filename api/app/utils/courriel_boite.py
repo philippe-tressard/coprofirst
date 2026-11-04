@@ -203,18 +203,9 @@ def _decider(session, entetes, corps, recu_le, plancher, authentification, piece
     """`(décision, motif, affaire)` — écrit ce que le verdict demande, sans valider."""
     #  Un fil TRANSFÉRÉ (29/09/2026) : découpé et versé par `courriel_transfert`,
     #  qui rend None quand le message n'est pas pour lui.
-    issue = decider_transfert(session, entetes, corps, recu_le, plancher, authentification)
+    #  Ses pièces vont dans la Suite du message transféré (#2515).
+    issue = decider_transfert(session, entetes, corps, recu_le, plancher, authentification, pieces)
     if issue is not None:
-        decision, _motif, ticket = issue
-        if decision == ACCEPTE and ticket is not None:
-            #  Les pièces du transfert : une suite à elles, signée de qui a transféré.
-            de = next((v for k, v in entetes.items() if k.lower() == "from"), "")
-            qui = compte_a_l_adresse(session, de)
-            suite = courriel_pieces_jointes.joindre(
-                session, ticket, qui, None, pieces, expediteur=de, envoye_le=recu_le
-            )
-            if suite is not None:
-                session.add(suite)
         return issue
     verdict = examiner(
         entetes, recu_le=recu_le, plancher=plancher, authentification=authentification

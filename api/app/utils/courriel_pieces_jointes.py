@@ -24,17 +24,41 @@ conseil devait l'aller chercher pour le téléverser à la main.
 
 ## Ce qui n'est pas une pièce
 
+(La règle s'écrit dans `courriel_signature`, ses constantes avec elle.)
+
 - **La signature du message** : un logo, une icône de réseau social, un pixel de
   suivi — des images de moins de `COTE_MIN_SIGNATURE` pixels de côté, qu'elles
   soient jointes ou intégrées au corps (`Content-ID`). Une photo intégrée par
   l'iPhone ou Mail est grande, et elle reste une pièce : c'est la taille qui
-  tranche, pas la façon dont le client l'a jointe. Les fichiers de signature
+  tranche, pas la façon dont le client l'a jointe.
+  🔴 Le plus grand côté ne suffit pas (#2515, 04/11/2026) : le BANDEAU d'une
+  signature Outlook (« La gestion immobilière… », 501 × 146 px) est entré dans
+  une affaire. Une image intégrée au corps est aussi une signature quand son
+  petit côté est sous `COTE_MIN_BANDEAU`, ou quand le HTML l'AFFICHE en petit
+  (`<img src="cid:…" height="93">`) — un logo en haute définition s'affiche à
+  la taille d'un logo, quelle que soit la sienne. Les fichiers de signature
   électronique et les cartes de visite (`TYPES_DE_SIGNATURE`) aussi. Tout cela
   s'écarte EN SILENCE : le signaler ferait du bruit à chaque message.
 - **Un type que les familles n'acceptent pas** (archive, exécutable, invitation…) :
   écarté, et la suite le DIT, nom et raison.
 - **Au-delà de `MAX_PIECES`** : les premières sont gardées, les suivantes
   écartées, et le conseil est prévenu (`courriel_boite`).
+
+## Où vont les pièces d'un TRANSFERT
+
+Dans la Suite du message transféré — le plus récent du fil, celui dont le
+courriel porte les pièces —, et non dans une Suite à part signée de qui
+transfère : « Pièces jointes transmises par courriel » laissait croire que le
+texte manquait (#2515). Le message est-il déjà versé (on transfère à nouveau
+celui qui porte le PV) ? Sa pièce rejoint sa Suite, le texte n'est pas doublé.
+
+## Une pièce annoncée, absente
+
+Une réponse cite le message d'origine SANS sa pièce jointe : transférer la
+réponse du syndic ne transfère pas le PV que le premier message joignait. Un
+message qui annonce une pièce (« ci-joint », « en annexe »…) quand le courriel
+n'en porte aucune le dit dans sa Suite (`ANNONCE_DE_PIECE`) : sans cela, la
+pièce semblait perdue par le site.
 
 Un même fichier joint deux fois (le logo d'un fil cité, un envoi doublé) ne
 compte qu'une fois : les pièces se dédoublonnent par empreinte.
@@ -47,26 +71,16 @@ import re
 from dataclasses import dataclass, field
 
 from app.utils.courriel_decodage import _parties, _texte
+from app.utils.courriel_signature import (
+    _cid,
+    _de_signature,
+    _image_de_signature,
+    _tailles_affichees,
+)
 from app.utils.fichiers import famille_du_fichier, type_annonce
 
 #: Le nombre de pièces versées pour un message (demandé le 31/10/2026).
 MAX_PIECES = 10
-
-#: En deçà, sur son plus grand côté, une image est un élément de signature.
-COTE_MIN_SIGNATURE = 300
-
-#: Des fichiers que les clients de messagerie ajoutent d'eux-mêmes à la signature.
-TYPES_DE_SIGNATURE = frozenset(
-    {
-        "application/pkcs7-signature",
-        "application/x-pkcs7-signature",
-        "application/pgp-signature",
-        "application/pgp-keys",
-        "text/vcard",
-        "text/x-vcard",
-        "text/directory",
-    }
-)
 
 MOTIF_TYPE = "type de fichier non accepté"
 MOTIF_AU_DELA = f"au-delà de {MAX_PIECES} pièces jointes"
@@ -78,6 +92,11 @@ class Piece:
     type: str
     famille: str  # « image » ou « document »
     octets: bytes = field(repr=False)
+    #: Intégrée au corps (`Content-ID`), et non jointe : un logo de signature l'est.
+    integree: bool = False
+    #: La taille d'AFFICHAGE que le HTML déclare (largeur, hauteur), en pixels —
+    #: None pour un côté non déclaré, et pour une image que le corps ne montre pas.
+    affichee: tuple[int | None, int | None] | None = None
 
 
 @dataclass(frozen=True)
@@ -111,11 +130,6 @@ def _est_le_corps(partie) -> bool:
     )
 
 
-def _de_signature(type_: str) -> bool:
-    """Un fichier que le client ajoute à la signature, reconnu à son type seul."""
-    return type_ in TYPES_DE_SIGNATURE
-
-
 def trier(message) -> Tri:
     """Les pièces candidates du message, dans l'ordre où il les porte.
 
@@ -125,6 +139,7 @@ def trier(message) -> Tri:
     tri = Tri()
     vues: set[str] = set()
     propres, _joints = _parties(message)
+    affichees = _tailles_affichees(propres)
     for rang, partie in enumerate(propres, start=1):
         if _est_le_corps(partie) or partie.get_content_maintype() == "multipart":
             continue
@@ -142,7 +157,17 @@ def trier(message) -> Tri:
         if famille is None:
             tri.ecarts.append(Ecart(nom, MOTIF_TYPE))
         else:
-            tri.pieces.append(Piece(nom, type_annonce(type_, nom, famille), famille, octets))
+            cid = _cid(partie.get("Content-ID", ""))
+            tri.pieces.append(
+                Piece(
+                    nom,
+                    type_annonce(type_, nom, famille),
+                    famille,
+                    octets,
+                    integree=bool(cid) and partie.get_content_disposition() != "attachment",
+                    affichee=affichees.get(cid) if cid else None,
+                )
+            )
     return tri
 
 
@@ -176,8 +201,7 @@ def retenir(tri: Tri) -> Tri:
     tailles = dict(zip(map(id, images), dimensions([p.octets for p in images]), strict=True))
     retenu = Tri(ecarts=list(tri.ecarts))
     for piece in tri.pieces:
-        taille = tailles.get(id(piece))
-        if taille is not None and max(taille) < COTE_MIN_SIGNATURE:
+        if piece.famille == "image" and _image_de_signature(piece, tailles.get(id(piece))):
             continue
         if len(retenu.pieces) >= MAX_PIECES:
             retenu.ecarts.append(Ecart(piece.nom, MOTIF_AU_DELA))
@@ -229,17 +253,26 @@ def verser(session, tri: Tri, auteur) -> tuple[list[str], list[Ecart]]:
 PIECES_SEULES = "Pièces jointes transmises par courriel."
 
 
-def joindre(session, ticket, auteur, suite, tri: Tri | None, *, expediteur: str, envoye_le):
+def joindre(
+    session, ticket, auteur, suite, tri: Tri | None, *, expediteur: str, envoye_le, annonces=None
+):
     """Verse les pièces du message dans `suite` — ou dans une suite à elles.
 
     Rend la suite à écrire, ou None s'il n'y a rien à ajouter au fil. Une suite
     neuve n'est créée que si au moins une pièce a été reprise : un message sans
     mot dont toutes les pièces sont écartées n'apporte rien au fil.
+
+    Sans pièce reprise, les Suites qui en ANNONCENT une le disent : `annonces`,
+    par défaut `suite` seule (un transfert en passe toutes celles qu'il a versées).
     """
+    annonces = [suite] if annonces is None else annonces
     if tri is None or not (tri.pieces or tri.ecarts):
+        _dire_les_pieces_absentes(annonces)
         return suite
     tri = retenir(tri)
     urls, ecarts = verser(session, tri, auteur)
+    if not urls:
+        _dire_les_pieces_absentes(annonces)
     if suite is None:
         if not urls:
             return None
@@ -252,6 +285,77 @@ def joindre(session, ticket, auteur, suite, tri: Tri | None, *, expediteur: str,
     if tri.au_dela:
         _prevenir_le_conseil(session, ticket, expediteur, len(tri.au_dela))
     return suite
+
+
+def joindre_au_transfert(session, ticket, qui, tri: Tri | None, message, versement) -> int:
+    """Verse les pièces d'un transfert dans la Suite de `message` — le message
+    transféré, le plus récent du fil. Rend le nombre de pièces versées.
+
+    Cette Suite vient d'être écrite, ou l'avait été par un transfert précédent
+    (`MessageVerse.evolution_id`) : on transfère à nouveau le message qui porte le
+    PV, et le PV rejoint son texte (#2515). Sans Suite — le message DÉCRIT
+    l'affaire créée, ou il a été écarté —, les pièces ont une Suite à elles.
+    """
+    from sqlmodel import select
+
+    from app.models.core import TicketEvolution
+    from app.models.courriel import MessageVerse
+    from app.utils.courriel_fil import empreinte
+    from app.utils.photos import parse_photos
+
+    marque = session.exec(
+        select(MessageVerse)
+        .where(MessageVerse.ticket_id == ticket.id, MessageVerse.empreinte == empreinte(message))
+        .order_by(MessageVerse.id.desc())
+    ).first()
+    cible = (
+        session.get(TicketEvolution, marque.evolution_id)
+        if marque and marque.evolution_id
+        else None
+    )
+    versees = (
+        session.exec(
+            select(TicketEvolution).where(TicketEvolution.versement_id == versement.id)
+        ).all()
+        if versement is not None
+        else []
+    )
+    avant = len(parse_photos(cible.fichiers_urls)) if cible is not None else 0
+    suite = joindre(
+        session,
+        ticket,
+        qui,
+        cible,
+        tri,
+        expediteur=message.expediteur,
+        envoye_le=message.envoye_le,
+        annonces=versees,
+    )
+    if suite is None:
+        return 0
+    session.add(suite)
+    return len(parse_photos(suite.fichiers_urls)) - (avant if suite is cible else 0)
+
+
+#: « Ci-joint », « en annexe », « en pièce jointe », « en PJ » : le message
+#: annonce une pièce.
+ANNONCE_DE_PIECE = re.compile(
+    r"\b(ci-?joint(e|s|es)?|en annexe|en pi[eè]ces? jointes?|en p\.?\s?j\b\.?)", re.I
+)
+
+#: Ce que dit la Suite d'un message qui annonce une pièce que le courriel ne porte pas.
+PIECE_ABSENTE = (
+    "<p><em>Ce message annonce une pièce jointe que le courriel reçu ne portait pas "
+    "(une réponse cite le message d'origine sans ses pièces). Pour la verser, "
+    "transférez le message qui la contient à l'adresse des affaires.</em></p>"
+)
+
+
+def _dire_les_pieces_absentes(suites) -> None:
+    for suite in suites:
+        if suite is not None and ANNONCE_DE_PIECE.search(suite.contenu or ""):
+            if PIECE_ABSENTE not in suite.contenu:
+                suite.contenu += PIECE_ABSENTE
 
 
 def _suite_des_pieces(ticket, auteur, expediteur: str, envoye_le):

@@ -31,18 +31,13 @@ from tests.aides_courriel import (  # noqa: F401 — `scene` est une fixture
     _entetes_reponse,
     _evolutions,
     _notifs,
+    image_png,
     scene,
 )
 from tests.aides_purge import purger_ligne
 
 _PDF = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
 _RECU = datetime(2026, 10, 31, 9, 0)
-
-
-def _png(cote: int) -> bytes:
-    sortie = io.BytesIO()
-    Image.new("RGB", (cote, cote), (200, 30, 30)).save(sortie, format="PNG")
-    return sortie.getvalue()
 
 
 def _message(texte: str = "Voici le devis.", *, pieces=(), integrees=()) -> EmailMessage:
@@ -70,7 +65,7 @@ def test_documents_et_photos_sont_des_pieces():
             pieces=[
                 ("devis.pdf", "application", "pdf", _PDF),
                 ("note.txt", "text", "plain", b"bonjour"),
-                ("photo.png", "image", "png", _png(800)),
+                ("photo.png", "image", "png", image_png(800)),
             ]
         )
     )
@@ -91,9 +86,9 @@ def test_la_signature_ne_compte_pas():
     tri = pj.retenir(
         pj.trier(
             _message(
-                integrees=[_png(120), _png(48)],
+                integrees=[image_png(120), image_png(48)],
                 pieces=[
-                    ("logo.png", "image", "png", _png(200)),
+                    ("logo.png", "image", "png", image_png(200)),
                     ("smime.p7s", "application", "pkcs7-signature", b"\x30\x82signature"),
                     ("carte.vcf", "text", "vcard", b"BEGIN:VCARD\nEND:VCARD\n"),
                 ],
@@ -105,8 +100,64 @@ def test_la_signature_ne_compte_pas():
 
 def test_une_grande_photo_integree_au_corps_reste_une_piece():
     """L'iPhone intègre la photo au corps : c'est la taille qui tranche."""
-    tri = pj.retenir(pj.trier(_message(integrees=[_png(1200)])))
+    tri = pj.retenir(pj.trier(_message(integrees=[image_png(1200)])))
     assert [p.famille for p in tri.pieces] == ["image"]
+
+
+def _signe(*images, html: str) -> EmailMessage:
+    """Un message Outlook : `html` montre les `images` intégrées (cid:img0, img1…)."""
+    m = EmailMessage()
+    m["From"], m["Subject"] = "x@exemple.test", "Re: ticket"
+    m.set_content("Merci pour ces informations.")
+    m.add_alternative(html, subtype="html")
+    for i, octets in enumerate(images):
+        m.get_payload()[1].add_related(octets, "image", "png", cid=f"<img{i}@exemple.test>")
+    return m
+
+
+def test_le_BANDEAU_d_une_signature_n_est_pas_une_piece():
+    """#2515 : le bandeau Outlook du syndic (501 × 146 px) est entré dans une
+    affaire — son plus grand côté passait le seuil du logo."""
+    tri = pj.retenir(pj.trier(_signe(image_png(501, 146), html="<p>Merci.</p>")))
+    assert tri.pieces == [] and tri.ecarts == []
+
+
+def test_une_image_que_le_corps_AFFICHE_en_petit_est_la_signature():
+    """Un logo en haute définition s'affiche à la taille d'un logo — ici celle,
+    relevée, du courriel de #2515 (3,32 × 0,97 pouce, 93 px)."""
+    html = (
+        '<p>Merci.</p><img border="0" height="93" style="width: 3.3229in; '
+        'height: 0.9687in;" src="cid:img0@exemple.test">'
+    )
+    tri = pj.retenir(pj.trier(_signe(image_png(1600, 600), html=html)))
+    assert tri.pieces == []
+
+
+def test_cas_zero_une_photo_integree_affichee_en_grand_reste_une_piece():
+    html = '<p>La fuite :</p><img width="640" height="480" src="cid:img0@exemple.test">'
+    tri = pj.retenir(pj.trier(_signe(image_png(1600, 1200), html=html)))
+    assert [p.famille for p in tri.pieces] == ["image"]
+
+
+def test_un_document_PLAT_joint_reste_une_piece():
+    """Le bandeau ne se juge que pour une image INTÉGRÉE au corps : un plan en
+    long, joint au message, reste une pièce."""
+    tri = pj.retenir(pj.trier(_message(pieces=[("plan.png", "image", "png", image_png(900, 150))])))
+    assert [p.nom for p in tri.pieces] == ["plan.png"]
+
+
+def test_les_mesures_d_affichage_se_lisent_en_pixels():
+    from app.utils.courriel_signature import _en_pixels
+
+    assert [_en_pixels(m) for m in ("93", "3.3229in", "120px", "2.54cm", "50%", "auto", "")] == [
+        93,
+        319,
+        120,
+        96,
+        None,
+        None,
+        None,
+    ]
 
 
 def test_un_type_refuse_est_ecarte_et_nomme():
@@ -125,7 +176,7 @@ def test_au_dela_de_dix_les_suivantes_sont_ecartees():
 def test_les_logos_ne_prennent_pas_la_place_des_pieces():
     """Le plafond se compte APRÈS l'écart de la signature : il se juge donc à
     `retenir`, qui mesure, et non au tri, qui n'ouvre aucune image (#2396)."""
-    logos = [(f"logo{i}.png", "image", "png", _png(40 + i)) for i in range(5)]
+    logos = [(f"logo{i}.png", "image", "png", image_png(40 + i)) for i in range(5)]
     textes = [(f"p{i}.txt", "text", "plain", f"texte {i}".encode()) for i in range(10)]
     tri = pj.retenir(pj.trier(_message(pieces=[*logos, *textes])))
     assert [p.nom for p in tri.pieces] == [f"p{i}.txt" for i in range(10)]
@@ -135,7 +186,7 @@ def test_les_logos_ne_prennent_pas_la_place_des_pieces():
 def test_le_tri_n_ouvre_aucune_image(monkeypatch):
     """🔴 Le tri lit TOUT message relevé, avant de savoir qui écrit (#2396)."""
     ouvertures = _espionner_les_decodeurs(monkeypatch)
-    tri = pj.trier(_message(pieces=[("photo.png", "image", "png", _png(900))]))
+    tri = pj.trier(_message(pieces=[("photo.png", "image", "png", image_png(900))]))
     assert [p.nom for p in tri.pieces] == ["photo.png"]
     assert ouvertures == [], f"le tri a ouvert une image : {ouvertures}"
 
@@ -195,7 +246,10 @@ def _repondre(session, ticket, de, message):
 def test_les_pieces_du_syndic_entrent_dans_la_suite(scene, disque_jetable):
     session, ticket, syndic, _cs = scene
     message = _message(
-        pieces=[("devis.pdf", "application", "pdf", _PDF), ("photo.png", "image", "png", _png(900))]
+        pieces=[
+            ("devis.pdf", "application", "pdf", _PDF),
+            ("photo.png", "image", "png", image_png(900)),
+        ]
     )
     assert _repondre(session, ticket, syndic.email, message) == ACCEPTE
     (suite,) = _evolutions(session, ticket)
@@ -273,8 +327,11 @@ def test_un_TIERS_n_atteint_aucun_decodeur_d_image(scene, disque_jetable, monkey
     try:
         ouvertures = _espionner_les_decodeurs(monkeypatch)
         message = _message(
-            integrees=[_png(60)],
-            pieces=[("photo.png", "image", "png", _png(900)), ("p.heic", "image", "heic", b"x")],
+            integrees=[image_png(60)],
+            pieces=[
+                ("photo.png", "image", "png", image_png(900)),
+                ("p.heic", "image", "heic", b"x"),
+            ],
         )
         assert _repondre(session, ticket, tiers.email, message) == REFUSE
         assert ouvertures == [], f"un tiers a atteint un décodeur : {ouvertures}"
@@ -289,7 +346,7 @@ def test_cas_zero_le_syndic_atteint_le_decodeur_hors_du_process(scene, disque_je
     passe par l'enfant, et JAMAIS par Pillow dans ce process."""
     session, ticket, syndic, _cs = scene
     ouvertures = _espionner_les_decodeurs(monkeypatch)
-    message = _message(pieces=[("photo.png", "image", "png", _png(900))])
+    message = _message(pieces=[("photo.png", "image", "png", image_png(900))])
     assert _repondre(session, ticket, syndic.email, message) == ACCEPTE
     assert "app.utils.images_moteur.mesurer" in ouvertures, ouvertures
     assert "app.utils.images_moteur.reencoder" in ouvertures, ouvertures
