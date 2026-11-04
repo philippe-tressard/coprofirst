@@ -1,6 +1,7 @@
 """Router règles & recommandations de la résidence."""
 
 from app.utils import horloge
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends
@@ -27,26 +28,34 @@ class RegleUpdate(BaseModel):
     ordre: Optional[int] = None
 
 
-@router.get("", response_model=list[dict])
+class RegleResidenceLue(BaseModel):
+    """Une règle de la résidence — typée au contrat le 04/11/2026 (#2505).
+
+    Elle était rendue en `list[dict]` : l'app iOS la décodait d'après le front.
+    Les champs sont ceux que la route rendait déjà, sans un de plus.
+    """
+
+    id: int
+    titre: str
+    #: Le texte de la règle, tel que le conseil l'a rédigé.
+    contenu: str
+    ordre: int
+    cree_par_id: Optional[int] = None
+    cree_le: Optional[datetime] = None
+    modifie_le: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("", response_model=list[RegleResidenceLue])
 def list_regles(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(get_current_user),
 ):
-    regles = session.exec(
+    return session.exec(
         select(RegleResidence).order_by(RegleResidence.ordre, RegleResidence.id)
     ).all()
-    return [
-        {
-            "id": r.id,
-            "titre": r.titre,
-            "contenu": r.contenu,
-            "ordre": r.ordre,
-            "cree_par_id": r.cree_par_id,
-            "cree_le": r.cree_le.isoformat() if r.cree_le else None,
-            "modifie_le": r.modifie_le.isoformat() if r.modifie_le else None,
-        }
-        for r in regles
-    ]
 
 
 @router.post("", status_code=201)

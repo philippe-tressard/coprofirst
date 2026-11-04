@@ -48,11 +48,16 @@ export interface ExtraitReglement {
 }
 
 /** Une question posée, et la réponse du juriste. */
+/** Le ton d'un verdict : ce qu'il signale, que chaque client peint à sa charte. */
+export type TonVerdict = 'succes' | 'danger' | 'alerte' | 'neutre' | 'incertain';
+
 export interface QuestionReglement {
 	id: number;
 	question: string;
 	verdict: 'oui' | 'non' | 'sous_conditions' | 'non_prevu' | 'incertain';
 	verdict_libelle: string;
+	/** Ce que la capsule signale — servi (`format.TONS_VERDICT`, #2505). */
+	verdict_ton: TonVerdict;
 	reponse: string;
 	/** Les sections de l'avis (29/10/2026) — `null` dans un avis plus ancien. */
 	selon_reglement: string | null;

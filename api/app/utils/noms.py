@@ -32,6 +32,7 @@ qu'il a été saisi : c'est un rendu, pas une normalisation. Une particule
 
 from __future__ import annotations
 
+import unicodedata
 from typing import Optional
 
 from app.utils.valeurs import valeur
@@ -52,6 +53,25 @@ def nom_affiche(prenom: Optional[str], nom: Optional[str], civilite=None) -> str
     prenom = (prenom or "").strip()
     nom = (nom or "").strip().upper()
     return " ".join(p for p in (civilite, prenom, nom) if p)
+
+
+def _cle_sans_casse(texte: Optional[str]) -> str:
+    """« Ébert » → « ebert » : la casse et les accents ne classent pas."""
+    plat = unicodedata.normalize("NFKD", (texte or "").strip().casefold())
+    return "".join(c for c in plat if not unicodedata.combining(c))
+
+
+def cle_de_classement(prenom: Optional[str], nom: Optional[str]) -> tuple:
+    """Comment on CLASSE des personnes — le nom de famille, puis le prénom.
+
+    Le pendant de `comparerParNom` (`#lib/noms`) : le nom d'abord, le prénom en
+    départage, sans tenir compte de la casse ni des accents (« Ébert » après
+    « Dupont », « MOREL » vaut « Morel ») ; une personne sans nom se range à la
+    fin. Le serveur sert ses listes déjà classées (annuaire, #2505) : l'app iOS
+    les affiche dans l'ordre reçu.
+    """
+    cle_nom = _cle_sans_casse(nom)
+    return (not cle_nom, cle_nom, _cle_sans_casse(prenom))
 
 
 def nom_abrege(prenom: Optional[str], nom: Optional[str]) -> str:

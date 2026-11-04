@@ -112,10 +112,14 @@ def _descendre(sch: dict, defs: dict, chemin: str, pile: frozenset, sortie: dict
 def _reponse(op: dict, defs: dict) -> dict[str, str]:
     sortie: dict[str, str] = {}
     for code, reponse in sorted(op.get("responses", {}).items()):
-        sch = reponse.get("content", {}).get("application/json", {}).get("schema")
+        contenu = reponse.get("content", {})
+        sch = contenu.get("application/json", {}).get("schema")
         if code.startswith("2") and sch is not None:
             sortie.setdefault("$", _type(sch, defs, False))
             _descendre(sch, defs, "$", frozenset(), sortie)
+        elif code.startswith("2") and contenu:
+            #  Un fichier (PDF, image…) : le client le lit en octets (#2505).
+            sortie.setdefault("$", "fichier")
     return dict(sorted(sortie.items()))
 
 
@@ -174,9 +178,16 @@ def _compatible(ancien: str, nouveau: str) -> bool:
     (#2506) : le client la décodait en JSON quelconque, il lit la forme typée. Ce qui
     était libre et facultatif (`libre?`) peut devenir présent et typé. L'inverse — un
     type qui redevient libre — reste un retrait.
+
+    De même un DICTIONNAIRE libre (`list[dict]`) qui devient un objet (#2505) : le
+    client le lisait en table de valeurs quelconques, il lit l'objet ; des valeurs
+    typées, s'il en avait, restent gardées par leur chemin (`$.{}`). Une réponse
+    libre qui devient un `fichier` (`REPONSE_FICHIER`) suit la règle du libre.
     """
     a, n = _sans_marque(ancien), _sans_marque(nouveau)
     if a == "libre?" or (a == "libre" and not n.endswith("?")):
+        return True
+    if a.removesuffix("?") == "dictionnaire" and n in ("objet", a.replace("dictionnaire", "objet")):
         return True
     return a == n or (a.endswith("?") and a[:-1] == n)
 

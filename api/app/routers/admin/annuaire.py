@@ -19,15 +19,83 @@ from app.models.core import (
 )
 from app.utils.annuaire import membres_du_conseil, membres_du_syndic, reconcilier_membres
 from app.utils.syndic import nom_du_syndic, source_du_nom
-from typing import Optional
+from typing import Literal, Optional
 
 router = APIRouter()
 
 
 # ── Annuaire public ──────────────────────────────────────────────────────────
+#
+#  Typé le 04/11/2026 (#2505) : le contrat le déclarait `{}`, et l'app iOS le
+#  décodait champ par champ d'après le front. Les schémas déclarent EXACTEMENT ce
+#  que `utils/annuaire` rendait déjà, plus les règles d'affichage servies — aucune
+#  donnée personnelle de plus : `nom_affiche`, `etage_libelle` et `telephones` se
+#  déduisent de champs déjà rendus, sous le même droit (tout résident connecté).
 
 
-@router.get("/annuaire")
+class MembreConseilLu(BaseModel):
+    """Un membre du conseil syndical, tel que l'annuaire des résidents le montre."""
+
+    id: int
+    genre: str
+    prenom: str
+    nom: str
+    #: « Prénom NOM » — `utils/noms.nom_affiche`, la civilité à part (`genre`).
+    nom_affiche: str
+    batiment_id: Optional[int] = None
+    #: Le NUMÉRO du bâtiment (« A »), pas son libellé.
+    batiment_nom: Optional[str] = None
+    etage: Optional[int] = None
+    #: « RDC », « 2ème étage » — `""` sans étage (`utils/etages.etage_label`).
+    etage_libelle: str
+    est_gestionnaire_site: bool
+    est_president: bool
+    photo_url: Optional[str] = None
+
+
+class MembreSyndicLu(BaseModel):
+    """Un interlocuteur du syndic, tel que l'annuaire des résidents le montre."""
+
+    id: int
+    genre: str
+    prenom: str
+    nom: str
+    nom_affiche: str
+    fonction: Optional[str] = None
+    email: Optional[str] = None
+    telephone: Optional[str] = None
+    #: Les numéros du champ, découpés sur les virgules (`utils/telephones`).
+    telephones: list[str]
+    est_principal: bool
+    photo_url: Optional[str] = None
+
+
+class ConseilLu(BaseModel):
+    ag_annee: Optional[int] = None
+    #: La date de l'AG qui a élu le conseil, ISO.
+    ag_date: Optional[str] = None
+    #: Classés comme l'écran les montre : bâtiment, civilité, puis nom.
+    membres: list[MembreConseilLu]
+
+
+class SyndicLu(BaseModel):
+    #: Celui du contrat désigné, sinon la saisie ; `""` si ni l'un ni l'autre.
+    nom_syndic: str
+    nom_syndic_source: Literal["contrat", "saisie", "aucune"]
+    adresse: str
+    site_web: Optional[str] = None
+    membres: list[MembreSyndicLu]
+
+
+class AnnuaireLu(BaseModel):
+    """L'annuaire des résidents : le conseil, le syndic, le groupe WhatsApp."""
+
+    cs: ConseilLu
+    syndic: SyndicLu
+    whatsapp_url: Optional[str] = None
+
+
+@router.get("/annuaire", response_model=AnnuaireLu)
 def annuaire(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(get_current_user),

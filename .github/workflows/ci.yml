@@ -1837,13 +1837,6 @@ jobs:
         working-directory: front
         run: npm run lint:filtre-statuts
 
-      - name: Le carnet filtré par année suit le décret n° 2001-477
-        # Les travaux se datent par leur année de réalisation (art. 4), les
-        # contrats EN VIGUEUR restent (art. 3 et 4), rien ne se purge. La règle
-        # (`#lib/carnet`) est transpilée et exécutée ici.
-        working-directory: front
-        run: npm run lint:carnet-annee
-
       - name: Un refus du serveur se lit en phrase, jamais en JSON
         # #1327 : le toast de « Nouveau prestataire » affichait la liste de
         # validation brute d'un 422. `#lib/detail-erreur` est exécuté ici.

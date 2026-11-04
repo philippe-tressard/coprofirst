@@ -26,10 +26,9 @@
   autres `Carte*` du dossier : la structure appartient au composant, le contenu
   variable arrive par les props et le slot.
 
-  ⚠️ `nomAffiche` n'est PAS recopié ici : il vient de `#lib/noms`, comme partout
-  ailleurs. Une carte qui composerait elle-même « Prénom NOM » divergerait du
-  reste du site au premier changement de convention — et `npm run lint:noms` le
-  refuse.
+  ⚠️ « Prénom NOM » n'est PAS composé ici : le serveur le sert (`nom_affiche`,
+  `utils/noms.nom_affiche`, #2505), pour le site et l'app iOS. Une carte qui le
+  composerait elle-même divergerait de l'app au premier changement de convention.
 -->
 <script context="module" lang="ts">
 	/**
@@ -50,14 +49,15 @@
 <script lang="ts">
 	import Avatar from '#lib/components/Avatar.svelte';
 	import MedaillonRole from '#lib/components/MedaillonRole.svelte';
-	import { nomAffiche } from '#lib/noms.ts';
 
-	/** La personne : ce qu'il faut pour l'avatar et le nom. */
+	/** La personne : ce qu'il faut pour l'avatar et le nom — servi tel quel. */
 	export let personne: {
 		photo_url?: string | null;
 		prenom?: string | null;
 		nom?: string | null;
 		genre?: string | null;
+		/** « Prénom NOM », composé par le serveur. */
+		nom_affiche: string;
 	};
 
 	/** Les médaillons à afficher, dans l'ordre voulu. */
@@ -73,7 +73,7 @@
 	{/each}
 	<Avatar photoUrl={personne.photo_url} prenom={personne.prenom} nom={personne.nom} />
 	<div>
-		<strong class="contact-nom">{personne.genre ?? ''} {nomAffiche(personne)}</strong>
+		<strong class="contact-nom">{personne.genre ?? ''} {personne.nom_affiche}</strong>
 		<slot />
 	</div>
 </div>

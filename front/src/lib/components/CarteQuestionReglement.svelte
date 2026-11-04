@@ -89,7 +89,7 @@
 			{/if}
 		</svelte:fragment>
 		<svelte:fragment slot="tags">
-			<BadgeVerdict verdict={q.verdict} libelle={q.verdict_libelle} />
+			<BadgeVerdict ton={q.verdict_ton} libelle={q.verdict_libelle} />
 			{#if q.extraits.length}
 				<span class:alerte={verifies < q.extraits.length}
 					>{verifies}/{q.extraits.length} extrait{q.extraits.length > 1 ? 's' : ''} vérifié{verifies >

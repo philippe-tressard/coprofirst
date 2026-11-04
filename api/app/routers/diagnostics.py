@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.auth.deps import get_current_user, require_cs_or_admin
+from app.contrat import REPONSE_FICHIER
 from app.database import get_session
 from app.models.core import DiagnosticRapport, DiagnosticType, Utilisateur
 from app.utils.annexes import retirer_fichier_principal, supprimer_annexes
@@ -220,7 +221,11 @@ def delete_rapport(
     session.commit()
 
 
-@router.get("/rapports/{rapport_id}/télécharger")
+@router.get(
+    "/rapports/{rapport_id}/télécharger",
+    response_class=FileResponse,
+    responses=REPONSE_FICHIER,
+)
 def download_rapport(
     rapport_id: int,
     session: Session = Depends(get_session),
