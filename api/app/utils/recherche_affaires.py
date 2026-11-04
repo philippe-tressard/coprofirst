@@ -211,7 +211,9 @@ def _selftest() -> int:
     verifier("replier garde la longueur", len(replier("Dégât ß œ")), len("Dégât ß œ"))
     verifier("replier", replier("DÉGÂT"), "degat")
     verifier("termes", termes("  Fuite  fuite PLAFOND "), ["fuite", "plafond"])
-    verifier("le dièse d'un numéro ne se tape pas", termes("#TK-237133 fuite"), ["tk-237133", "fuite"])
+    verifier(
+        "le dièse d'un numéro ne se tape pas", termes("#TK-237133 fuite"), ["tk-237133", "fuite"]
+    )
     verifier("un dièse seul n'est pas un mot", termes("# ##"), [])
     fiche = [
         Texte("titre", "Tache au plafond"),
