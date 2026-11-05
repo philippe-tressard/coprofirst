@@ -34,7 +34,11 @@ ENV GIT_HASH=$GIT_HASH
 # Dépendances système
 # libpango/libcairo/libharfbuzz(+subset) + polices : rendu PDF WeasyPrint
 # (fiche arrivant, annonces de hall). Aucune compilation : install rapide sur ARM64.
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# `apt-get upgrade` d'abord : l'image officielle retarde sur les correctifs de Debian,
+# et l'installation seule laisse les paquets déjà présents à leur version (#2543 :
+# CVE-2026-109518, apt 3.0.3). 🔒 test_images_paquets_a_jour.py
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends \
     curl \
     libpango-1.0-0 \
     libpangoft2-1.0-0 \
