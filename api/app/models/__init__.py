@@ -22,6 +22,7 @@ from app.models.courriel import ReponseRelance as ReponseRelance
 from app.models.courriel import FilCourriel as FilCourriel
 from app.models.courriel import MessageVerse as MessageVerse
 from app.models.courriel import VersementCourriel as VersementCourriel
+from app.models.courriel import CourrielAClasser as CourrielAClasser
 from app.models.perimetre import LotPerimetre as LotPerimetre
 from app.models.perimetre import Perimetre as Perimetre
 from app.models.equipements import Equipement as Equipement

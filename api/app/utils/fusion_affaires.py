@@ -56,7 +56,13 @@ from app.auth.deps import est_moderateur
 from app.models.affaires_liees import AffaireLiee
 from app.models.core import STATUTS_TICKET_CLOS, Ticket, TicketEvolution, Utilisateur
 from app.utils.recuperer import ou_rien
-from app.models.courriel import CourrielReleve, FilCourriel, MessageVerse, VersementCourriel
+from app.models.courriel import (
+    CourrielAClasser,
+    CourrielReleve,
+    FilCourriel,
+    MessageVerse,
+    VersementCourriel,
+)
 from app.models.documents import Document
 from app.models.tickets import MessageTicket
 from app.utils import horloge
@@ -77,7 +83,14 @@ MOTIF_LECTEURS = "lue par moins de monde que l'affaire qui l'absorberait"
 #: Les tables qui suivent l'affaire, par leur colonne `ticket_id`. La Suite et
 #: le message ont leur traitement (marque, Suite d'ouverture) ; celles-ci
 #: changent seulement de porteur.
-_RATTACHEES = (Document, CourrielReleve, FilCourriel, MessageVerse, VersementCourriel)
+_RATTACHEES = (
+    Document,
+    CourrielReleve,
+    CourrielAClasser,
+    FilCourriel,
+    MessageVerse,
+    VersementCourriel,
+)
 
 
 def principale_lue(session: Session, ticket: Ticket, lecteur: Utilisateur | None):
