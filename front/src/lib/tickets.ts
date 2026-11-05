@@ -205,6 +205,17 @@ export function idAffaireDepuisLien(texte: string): number | null {
 	return nombreOuNull(m?.[1]);
 }
 
+/**
+ * Ce qu'on cherche, débarrassé du « # » que l'écran écrit devant un numéro
+ * (« Affaire #TK-237133 », dans les courriels et les titres) : le numéro se
+ * COPIE avec son dièse, et la recherche ne le rencontrait nulle part. Seul le
+ * dièse en tête de mot saute. Pendant serveur : `termes` de
+ * `api/app/utils/recherche_affaires.py`.
+ */
+export function termeAffaire(texte: string): string {
+	return texte.replace(/(^|\s)#+/g, '$1').trim();
+}
+
 /** Libellé affichable d'un statut, valeur brute à défaut (jamais vide). */
 export function statutTicketLabel(statut: string | undefined | null): string {
 	return STATUT_TICKET_LABELS[statut ?? ''] ?? statut ?? '';

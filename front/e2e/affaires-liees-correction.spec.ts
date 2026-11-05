@@ -155,3 +155,24 @@ test('un lien collé dans la recherche propose l’affaire qu’il désigne', as
 	await expect(propositions.getByRole('button')).toHaveCount(1);
 	await expect(propositions).toContainText(AUTRE.numero);
 });
+
+test('un numéro collé avec son « # » propose l’affaire, comme sans', async ({ page }) => {
+	const AUTRE = { ...LIEE, id: 465, numero: 'TK-E00036', titre: 'Vote du changement de laine' };
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/tickets') return [AFFAIRE];
+		if (chemin === '/api/tickets/60') return { ...AFFAIRE, affaires_liees: [] };
+		if (chemin === '/api/tickets/choix') return [LIEE, AUTRE];
+	});
+	await page.goto('/tickets');
+	await attendreHydratation(page);
+	await page.locator('.carte-liste').first().getByText(AFFAIRE.titre).click();
+	await page.getByRole('button', { name: 'Modifier', exact: true }).first().click();
+	const champ = section(page).getByPlaceholder('Numéro ou mots du titre');
+	const propositions = section(page).getByRole('list', { name: 'Affaires proposées' });
+	//  Le numéro se copie tel qu'on le lit (« Affaire #TK-E00036 ») : le dièse ne se retape pas.
+	for (const saisie of ['#TK-E00036', 'TK-E00036', '#tk-e00036']) {
+		await champ.fill(saisie);
+		await expect(propositions.getByRole('button'), saisie).toHaveCount(1);
+		await expect(propositions).toContainText(AUTRE.numero);
+	}
+});
