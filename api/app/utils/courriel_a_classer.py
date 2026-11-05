@@ -48,7 +48,9 @@ from app.utils import horloge
 from app.utils.courriel_affaire_du_fil import compte_a_l_adresse, creer_affaire_du_fil
 from app.utils.courriel_decodage import _corps_lisible, _sans_citation
 from app.utils.courriel_fil import _sans_accent, titre_du_fil
+from app.utils.config_site import config_site
 from app.utils.destinataires import membre_syndic_a_l_adresse
+from app.utils.liens import nom_site
 from app.utils.noms import nom_affiche
 from app.utils.valeurs import valeur
 
@@ -67,7 +69,7 @@ SUGGESTIONS_MAX = 3
 #: Les mots qui ne disent rien d'un sujet : ils ne rapprochent pas deux titres.
 _MOTS_VIDES = frozenset(
     "les des une pour par sur dans avec sans aux est sont pas que qui son ses leur "
-    "vos votre nos notre affaire courriel message hostachy residence".split()
+    "vos votre nos notre affaire courriel message residence".split()
 )
 
 
@@ -115,7 +117,8 @@ def _mots(texte: str) -> set[str]:
 def suggestions(session: Session, item: CourrielAClasser) -> list[Ticket]:
     """Les affaires OUVERTES les plus proches : mots de l'objet en commun avec leur
     titre, puis celles de l'expéditeur. Jamais une décision — une proposition."""
-    mots = _mots(titre_du_fil(item.objet))
+    #  Le nom de la résidence est dans la moitié des titres : il ne rapproche rien.
+    mots = _mots(titre_du_fil(item.objet)) - _mots(nom_site(config_site(session).get("site_nom")))
     auteur = compte_a_l_adresse(session, item.expediteur)
     ouvertes = session.exec(
         select(Ticket).where(
