@@ -41,6 +41,7 @@ ufw allow out 7844 comment 'sortie 2367'
 ufw allow out 587/tcp comment 'sortie 2367'
 $L993
 ufw allow out to 224.0.0.0/24 proto igmp comment 'sortie 2367'
+ufw allow out to 172.16.0.0/12 port 8080 proto tcp comment 'sortie 2367'
 ufw allow out to $IP1 comment 'sortie 2367'
 ufw allow out to $IP2 comment 'sortie 2367'"
   local A_CONSTAT="$ENTRANT
@@ -99,6 +100,10 @@ New profiles: skip"
     "$(durcissement_sortant_regles conteneurs | grep -c 'igmp')"
   v "liste : une règle sans port traduite pour iptables" "-A DOCKER-USER -d 224.0.0.0/24 -p igmp -j RETURN" \
     "$(durcissement_sortant_iptables_de 'allow out to 224.0.0.0/24 proto igmp')"
+  v "liste : le port publié de List-dons (pont Docker, 8080) est déclaré à l'hôte" 1 \
+    "$(durcissement_sortant_regles hote | grep -cxF 'allow out to 172.16.0.0/12 port 8080 proto tcp')"
+  v "liste : et ne s'ouvre pas aux conteneurs (portée hôte)" 0 \
+    "$(durcissement_sortant_regles conteneurs | grep -c '172.16.0.0/12')"
   v "liste : DOCKER-USER attendu = banc (constat)" OUI \
     "$( [ "$(durcissement_sortant_docker_user constat)" = "$(grep '^-A' <<< "$DU_CONSTAT")" ] && echo OUI || echo NON)"
 
