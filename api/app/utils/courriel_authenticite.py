@@ -31,6 +31,10 @@ DKIM, elle, voyage dans le message et survit à la redirection.
 son nom. Son message est refusé, et le conseil est prévenu avec le motif — le
 refus n'est jamais silencieux (`courriel_boite._prevenir_le_cs`).
 
+Sauf **délégation déclarée** (#2554) : l'administrateur admet un signataire pour
+UN domaine, à l'identique (`courriel_delegation`) — le cabinet sous Microsoft 365
+qui signe du nom de son abonnement. Jamais un suffixe, jamais un signataire partagé.
+
 ## 🔴 La redirection ABÎME la signature — le constat scellé d'OVH (28/09/2026)
 
 Premier passage réel, le soir même : les réponses signées par iCloud et Orange
@@ -207,9 +211,18 @@ def constat_de_redirection(brut: bytes, *, dnsfunc=_txt) -> tuple[str, list[str]
     return scelleur, domaines
 
 
-def verifier_expediteur(brut: bytes, from_: str, *, dnsfunc=_txt) -> tuple[bool, str]:
+def repond_de(signataire: str, expediteur: str, delegues: frozenset = frozenset()) -> bool:
+    """Le signataire répond-il de l'expéditeur — aligné, ou DÉLÉGUÉ pour lui à l'identique ?"""
+    s, e = signataire.lower().rstrip("."), expediteur.lower().rstrip(".")
+    return aligne(s, e) or (e, s) in delegues
+
+
+def verifier_expediteur(
+    brut: bytes, from_: str, *, dnsfunc=_txt, delegues: frozenset = frozenset()
+) -> tuple[bool, str]:
     """Rend `(vrai, motif)` : le message porte-t-il une signature DKIM valide et
-    alignée sur son `From:` ?
+    alignée sur son `From:` — ou d'un signataire délégué pour lui (`delegues`,
+    paires `(domaine, signataire)` de `courriel_delegation`) ?
 
     Le motif est écrit pour un membre du conseil syndical, qui le lira dans une
     notification — il dit ce qui manque, jamais « échec de la validation ».
@@ -220,7 +233,7 @@ def verifier_expediteur(brut: bytes, from_: str, *, dnsfunc=_txt) -> tuple[bool,
     if not expediteur:
         return False, "l'expéditeur du message est illisible"
 
-    ok, motif = _signature_directe(brut, expediteur, dnsfunc)
+    ok, motif = _signature_directe(brut, expediteur, dnsfunc, delegues)
     if ok:
         return ok, motif
     #  Le repli : la signature a pu être valide à l'arrivée et cassée par la
@@ -229,7 +242,7 @@ def verifier_expediteur(brut: bytes, from_: str, *, dnsfunc=_txt) -> tuple[bool,
     if constat:
         scelleur, domaines = constat
         for signataire in domaines:
-            if aligne(signataire, expediteur):
+            if repond_de(signataire, expediteur, delegues):
                 return True, f"signé par {signataire}, constaté par {scelleur} avant la redirection"
     return False, motif
 
@@ -280,7 +293,7 @@ def _ecart(champs: dict, entetes_signes, cle_absente: bool, valide: bool) -> str
     return None
 
 
-def _signature_directe(brut: bytes, expediteur: str, dnsfunc) -> tuple[bool, str]:
+def _signature_directe(brut: bytes, expediteur: str, dnsfunc, delegues) -> tuple[bool, str]:
     """La signature DKIM lue sur les octets reçus, sans intermédiaire."""
     message = dkim.DKIM(brut, logger=_journal_dkim)
     nombre = sum(1 for nom, _ in message.headers if nom.lower() == b"dkim-signature")
@@ -322,10 +335,14 @@ def _signature_directe(brut: bytes, expediteur: str, dnsfunc) -> tuple[bool, str
         signataires.append(signataire)
         if aligne(signataire, expediteur):
             return True, f"signé par {signataire}"
+        if repond_de(signataire, expediteur, delegues):
+            return True, f"signé par {signataire}, signataire admis pour {expediteur}"
 
     if signataires:
         return False, (
             f"le message est signé par {', '.join(sorted(set(signataires)))}, "
-            f"et non par le domaine de l'expéditeur ({expediteur})"
+            f"et non par le domaine de l'expéditeur ({expediteur}) — un administrateur "
+            "peut admettre ce signataire pour ce domaine (Admin › Services › Courriel, "
+            "signataires délégués)"
         )
     return False, MOTIFS_ECART[min(ecarts, key=_ORDRE_ECARTS.index)]

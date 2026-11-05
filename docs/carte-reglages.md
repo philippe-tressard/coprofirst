@@ -203,6 +203,7 @@ _Aucun écart connu entre un écran et sa route._
 
 | Clé | Type | Défaut d'amorce | Lisible sans connexion |
 |---|---|---|---|
+| `courriel_signataires_delegues` | texte | — | non |
 | `courriels_affiches` | nombre | — | non |
 | `imap_dossier` | texte | — | non |
 | `imap_password` | secret | — | non |
