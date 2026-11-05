@@ -31,7 +31,11 @@
 	import Pastille from '#lib/components/Pastille.svelte';
 	import { TICKET } from '#lib/entites/ticket.ts';
 	import { onMount, onDestroy, tick } from 'svelte';
-	import { prestataires as prestApi, diagnostics as diagnosticsApi } from '#lib/api/index.ts';
+	import {
+		prestataires as prestApi,
+		reporting as reportingApi,
+		type ReleveRenouvellements,
+	} from '#lib/api/index.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { fmtDatetime } from '#lib/date.ts';
 	import {
@@ -40,8 +44,6 @@
 		VUE_RELANCE,
 		type ReportVue,
 		type ReportPrestataire,
-		type ReportContrat,
-		type DiagType,
 	} from '#lib/reporting.ts';
 	import VueSuiviAffaires from './VueSuiviAffaires.svelte';
 	import VuePrestataires from './VuePrestataires.svelte';
@@ -58,8 +60,8 @@
 	let reportingLoaded = false;
 	let reportPrintTitle = '';
 	let reportPrestataires: ReportPrestataire[] = [];
-	let reportContrats: ReportContrat[] = [];
-	let reportDiagTypes: DiagType[] = [];
+	/**  Renouvellements : le relevé SERVI (#2525) — l'écran n'en recalcule rien. */
+	let releveRenouvellements: ReleveRenouvellements | null = null;
 
 	//  La vue AUTONOME — « Suivi des affaires », qui porte la relance du syndic
 	//  (#2035) et le suivi des entretiens périodiques (#2043) — charge ses propres
@@ -157,14 +159,12 @@
 		if (reportingLoaded && !force) return;
 		reportingLoading = true;
 		try {
-			const [prestataires, contrats, diagTypes] = await Promise.all([
+			const [prestataires, releve] = await Promise.all([
 				prestApi.list(),
-				prestApi.contrats(),
-				diagnosticsApi.listTypes(),
+				reportingApi.renouvellements(),
 			]);
 			reportPrestataires = prestataires as ReportPrestataire[];
-			reportContrats = contrats as ReportContrat[];
-			reportDiagTypes = diagTypes as DiagType[];
+			releveRenouvellements = releve;
 			//  La note moyenne de chaque prestataire est SERVIE avec lui (`note_moyenne`,
 			//  #2507) : elle se recalculait ici, à la main, des notations.
 			reportingLoaded = true;
@@ -258,6 +258,6 @@
 	{:else if reportView === 'prestataires'}
 		<VuePrestataires {reportPrestataires} />
 	{:else if reportView === 'renouvellements'}
-		<VueRenouvellements {reportContrats} {reportPrestataires} {reportDiagTypes} />
+		<VueRenouvellements releve={releveRenouvellements} />
 	{/if}
 </div>

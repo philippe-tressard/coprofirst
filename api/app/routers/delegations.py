@@ -1,6 +1,6 @@
 """Router délégations aidant — gestion des accès délégués pour les proches."""
 
-from datetime import date
+from datetime import date, datetime
 from app.utils.statuts_lus import invalider_cache as invalider_statuts_lus
 from app.utils import horloge
 from typing import Optional
@@ -13,10 +13,16 @@ from app.auth.deps import est_moderateur, get_current_user, require_cs_or_admin
 from app.database import get_session
 from app.models.core import Delegation, StatutDelegation, Utilisateur
 from app.utils.noms import nom_affiche
+from app.utils.lecture import lire_objet
 from app.utils.recuperer import ou_404
 from app.utils.valeurs import valeur
 from app.utils.journal_securite import journaliser_securite
-from app.auth.appartenance import exiger_aidant_de_la_delegation
+from app.auth.appartenance import (
+    exiger_aidant_de_la_delegation,
+    exiger_partie_de_la_delegation,
+    peut_accepter_la_delegation,
+    peut_revoquer_la_delegation,
+)
 
 router = APIRouter(prefix="/delegations", tags=["délégations-aidant"])
 
@@ -32,6 +38,12 @@ class DelegationCreate(BaseModel):
 
 
 class DelegationRead(BaseModel):
+    """Une délégation, et les deux gestes que CE lecteur peut y faire (#2525).
+
+    Typée depuis #2525 : elle était déclarée ici sans servir, et les routes
+    rendaient des `dict` que le contrat annonçait `{}`.
+    """
+
     id: int
     mandant_id: int
     mandant_nom: str
@@ -39,41 +51,56 @@ class DelegationRead(BaseModel):
     aidant_nom: str
     statut: str
     motif: str
-    date_debut: str
-    date_fin: Optional[str]
-    cree_le: str
-    revoque_le: Optional[str]
+    date_debut: date
+    date_fin: Optional[date] = None
+    cree_le: datetime
+    revoque_le: Optional[datetime] = None
+    #: « Accepter » : l'aidant désigné, tant qu'elle attend (`POST …/accepter`).
+    peut_accepter: bool = False
+    #: « Révoquer » : ses deux parties ou le conseil, tant qu'elle n'est pas
+    #: terminée (`POST …/revoquer`).
+    peut_revoquer: bool = False
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
+
+#: Les délégations qu'on ne révoque plus : la route répond 400, le geste se tait.
+TERMINEES = (StatutDelegation.revoquee, StatutDelegation.expiree)
+
+
+def _en_attente(d: Delegation) -> bool:
+    """Seule une délégation en attente s'accepte : la route répond 400, le geste se tait."""
+    return d.statut == StatutDelegation.en_attente
 
 
 def _user_display(u: Utilisateur) -> str:
     return nom_affiche(u.prenom, u.nom)
 
 
-def _to_read(d: Delegation, session: Session) -> dict:
+def _lire(d: Delegation, session: Session, lecteur: Utilisateur) -> DelegationRead:
+    """La délégation, et ses gestes pour `lecteur` — par les prédicats des refus.
+
+    🔴 Le site décidait les deux gestes lui-même (`statut === 'en_attente' &&
+    aidant_id === moi`) ; l'app iOS ne recopie pas cette règle. Les servir par les
+    prédicats que les routes appellent garde le bouton et la route d'accord.
+    """
     mandant = session.get(Utilisateur, d.mandant_id)
     aidant = session.get(Utilisateur, d.aidant_id)
-    return {
-        "id": d.id,
-        "mandant_id": d.mandant_id,
-        "mandant_nom": _user_display(mandant) if mandant else "?",
-        "aidant_id": d.aidant_id,
-        "aidant_nom": _user_display(aidant) if aidant else "?",
-        "statut": valeur(d.statut),
-        "motif": d.motif,
-        "date_debut": d.date_debut.isoformat() if d.date_debut else None,
-        "date_fin": d.date_fin.isoformat() if d.date_fin else None,
-        "cree_le": d.cree_le.isoformat() if d.cree_le else None,
-        "revoque_le": d.revoque_le.isoformat() if d.revoque_le else None,
-    }
+    return lire_objet(
+        DelegationRead,
+        d,
+        mandant_nom=_user_display(mandant) if mandant else "?",
+        aidant_nom=_user_display(aidant) if aidant else "?",
+        statut=valeur(d.statut),
+        peut_accepter=_en_attente(d) and peut_accepter_la_delegation(d, lecteur),
+        peut_revoquer=d.statut not in TERMINEES and peut_revoquer_la_delegation(d, lecteur),
+    )
 
 
 # ── Endpoints CS/Admin ──────────────────────────────────────────────────────
 
 
-@router.get("", response_model=list[dict])
+@router.get("", response_model=list[DelegationRead])
 def list_delegations(
     session: Session = Depends(get_session),
     user: Utilisateur = Depends(get_current_user),
@@ -91,10 +118,10 @@ def list_delegations(
             .where(or_(Delegation.aidant_id == user.id, Delegation.mandant_id == user.id))
             .order_by(Delegation.cree_le.desc())
         ).all()
-    return [_to_read(d, session) for d in delegations]
+    return [_lire(d, session, user) for d in delegations]
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, response_model=DelegationRead)
 def create_delegation(
     body: DelegationCreate,
     session: Session = Depends(get_session),
@@ -136,7 +163,7 @@ def create_delegation(
         cible_id=delegation.mandant_id,
         detail=f"aidant={delegation.aidant_id}",
     )
-    return _to_read(delegation, session)
+    return _lire(delegation, session, user)
 
 
 #  🔴 `PATCH /delegations/{id}` A ÉTÉ RETIRÉ LE 13/09/2026, SUR ARBITRAGE (#934).
@@ -165,7 +192,7 @@ def create_delegation(
 # ── Acceptation par l'aidant ────────────────────────────────────────────────
 
 
-@router.post("/{delegation_id}/accepter")
+@router.post("/{delegation_id}/accepter", response_model=DelegationRead)
 def accepter_delegation(
     delegation_id: int,
     session: Session = Depends(get_session),
@@ -174,7 +201,7 @@ def accepter_delegation(
     """L'aidant accepte la délégation."""
     d = ou_404(session, Delegation, delegation_id, "Délégation")
     exiger_aidant_de_la_delegation(d, user)
-    if d.statut != StatutDelegation.en_attente:
+    if not _en_attente(d):
         #  Une phrase, pas la valeur de l'énumération (« StatutDelegation.active »), #1350.
         raise HTTPException(400, "Impossible d'accepter : cette délégation n'est plus en attente.")
     d.statut = StatutDelegation.active
@@ -188,13 +215,13 @@ def accepter_delegation(
         detail=f"aidant={d.aidant_id}",
     )
     session.refresh(d)
-    return _to_read(d, session)
+    return _lire(d, session, user)
 
 
 # ── Révocation ──────────────────────────────────────────────────────────────
 
 
-@router.post("/{delegation_id}/revoquer")
+@router.post("/{delegation_id}/revoquer", response_model=DelegationRead)
 def revoquer_delegation(
     delegation_id: int,
     session: Session = Depends(get_session),
@@ -203,12 +230,8 @@ def revoquer_delegation(
     """Révoquer une délégation (par le mandant, l'aidant, ou un CS/Admin)."""
     d = ou_404(session, Delegation, delegation_id, "Délégation")
 
-    is_cs_admin = est_moderateur(user)
-    is_party = user.id in (d.mandant_id, d.aidant_id)
-    if not is_cs_admin and not is_party:
-        raise HTTPException(403, "Non autorisé")
-
-    if d.statut in (StatutDelegation.revoquee, StatutDelegation.expiree):
+    exiger_partie_de_la_delegation(d, user)
+    if d.statut in TERMINEES:
         raise HTTPException(400, "Délégation déjà terminée")
 
     d.statut = StatutDelegation.revoquee
@@ -224,7 +247,7 @@ def revoquer_delegation(
         detail=f"aidant={d.aidant_id}",
     )
     session.refresh(d)
-    return _to_read(d, session)
+    return _lire(d, session, user)
 
 
 # ── « Agir en tant que » — retiré (#1534) ───────────────────────────────────

@@ -45,10 +45,32 @@ from app.utils.verification_adresse import demander_changement_adresse
 router = APIRouter()
 
 
+class EtiquettesCompte(BaseModel):
+    """Loti, TC, Vigik, Bail : `ok`, `manque` ou `sans_objet` (`utils/etiquettes_compte`)."""
+
+    loti: str
+    tc: str
+    vigik: str
+    bail: str
+
+
+class UtilisateurAdminRead(UserRead):
+    """Un compte dans la liste de l'administration — et les menus mandant / aidant.
+
+    Typé depuis #2525 : la route rendait des `dict`, que le contrat annonçait `{}`.
+    """
+
+    has_lots: bool
+    has_tc: bool
+    has_vigik: bool
+    has_bail: bool
+    etiquettes: EtiquettesCompte
+
+
 # ── Gestion des utilisateurs (rôles) ────────────────────────────────────────────
 
 
-@router.get("/utilisateurs")
+@router.get("/utilisateurs", response_model=list[UtilisateurAdminRead])
 def list_utilisateurs(
     session: Session = Depends(get_session),
     appelant: Utilisateur = Depends(require_cs_or_admin),

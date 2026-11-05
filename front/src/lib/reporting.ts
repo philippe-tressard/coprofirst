@@ -9,6 +9,12 @@
 //  ⚠️ Aucune fonction d'ici ne touche au réseau ni au DOM. Les chargements
 //  vivent dans `OngletReporting.svelte`, la mise en forme dans les vues.
 
+import type {
+	ContratARenouveler,
+	DiagnosticAEcheance,
+	ReleveRenouvellements,
+} from '#lib/api/index.ts';
+
 //  🔴 Le « Suivi des dossiers » (affaires suivies au kanban, rangées par
 //  colonne) vivait ici — `ReportDossier`, `dossiersSuivis`, les colonnes et leurs
 //  teintes. Il est devenu le « Suivi des affaires » le 16/10/2026 : TOUTES les
@@ -25,46 +31,8 @@ export interface ReportPrestataire {
 	note_moyenne: number | null;
 	nb_notations: number;
 }
-export interface ReportContrat {
-	id: number;
-	prestataire_id: number;
-	type_equipement: string;
-	libelle: string;
-	numero_contrat?: string | null;
-	date_debut: string;
-	duree_initiale_valeur?: number | null;
-	duree_initiale_unite?: string | null;
-	frequence_type?: string | null;
-	frequence_valeur?: number | null;
-	prochaine_visite?: string | null;
-	/**  L'échéance DÉDUITE par l'API (`utils/echeance_contrat.py`), reportée d'un
-	 *   an tant qu'elle est passée. À ne pas confondre avec `prochaine_visite`,
-	 *   qui est une date de visite saisie à la main. */
-	date_fin?: string | null;
-	/**  Le terme initial est passé : le contrat court par reconduction tacite. */
-	reconduit?: boolean;
-	/**  Le terme est passé et RIEN ne l'a prolongé — un mandat de syndic qui a
-	 *   cessé. Exclusif de `reconduit` : voir `SANS_RECONDUCTION_TACITE`. */
-	echu?: boolean;
-	/**  Le début du préavis et où en est le terme — SERVIS par l'API (#2507). */
-	date_preavis: string | null;
-	urgence_echeance: 'preavis' | 'annee' | 'futur' | null;
-	actif: boolean;
-}
-export interface DiagRapport {
-	id: number;
-	titre: string;
-	date_rapport?: string | null;
-}
-export interface DiagType {
-	id: number;
-	code: string;
-	nom: string;
-	texte_legislatif: string;
-	frequence?: string | null;
-	non_applicable: boolean;
-	rapports: DiagRapport[];
-}
+//  🔴 `ReportContrat` et `DiagType` sont PARTIS le 05/11/2026 (#2525) : la vue
+//  Renouvellements lit le RELEVÉ servi (`ReleveRenouvellements`, `#lib/api/reporting.ts`).
 
 /**  Les vues du reporting — la liste sert aussi à valider un `?vue=` d'URL,
  *   et c'est ce qui fait retomber sans bruit un lien `?vue=devis` d'avant le
@@ -114,19 +82,14 @@ export function motifEvolution(motif: string | null): string {
 	return (motif && MOTIFS_EVOLUTION[motif]) || 'Du nouveau depuis le dernier résumé';
 }
 
-/* ── Renouvellements : calculs ────────────────────────────────────────────
-   L'année de référence est une FONCTION, pas une constante. Elle était figée au
-   chargement de la page, qui ne vivait que le temps d'un onglet ; ce module-ci
-   est chargé une fois pour toute la session — un onglet laissé ouvert la nuit du
-   réveillon aurait continué d'annoncer les échéances de l'année passée. */
-export const PREAVIS_MOIS = 3;
-export function anneeCourante(): number {
-	return new Date().getFullYear();
-}
-
-//  🔴 `minuitDuJour` est PARTI le 04/11/2026 (#2507) : le retard d'une visite est SERVI
-//  par l'API (`ContratRead.en_retard`, `echeance_contrat.visite_en_retard`), le jour de
-//  Paris faisant la borne — le jour même n'est pas un retard.
+/* ── Renouvellements : le relevé, LU ─────────────────────────────────────────
+   🔴 Le relevé se calculait ici (#453) : l'année de référence (`anneeCourante`,
+   celle du navigateur), le préavis (`PREAVIS_MOIS`), l'échéance et l'urgence d'un
+   diagnostic (`diagNextDate`, `diagUrgence`), l'ordre des contrats et des
+   diagnostics (`contratsAvecEcheance`, `diagnosticsAvecEcheance`). Ils sont SERVIS
+   par `GET /reporting/renouvellements` depuis le 05/11/2026 (#2525) — l'app iOS
+   lit le même relevé. Ne reste ici que la conversion des dates ISO en `Date`,
+   dont la frise a besoin pour placer ses barres. */
 
 export const MOIS_LABELS = [
 	'Janv.',
@@ -143,156 +106,40 @@ export const MOIS_LABELS = [
 	'Déc.',
 ];
 
-/**
- * L'échéance du contrat — LUE, non plus calculée ici.
- *
- * 🔴 Ce calcul vivait dans ce fichier, et l'API en ignorait tout : la fiche de la
- * résidence affichait `prochaine_visite` sous le mot « échéance » et le tableau
- * de bord lisait une colonne héritée. Trois valeurs pour une même question, sur
- * le même contrat (relevé le 29/08/2026, sur une remarque de l'utilisateur à
- * propos de la reconduction tacite).
- *
- * La règle vit maintenant dans `api/app/utils/echeance_contrat.py`, seule
- * écriture, éprouvée par `api/tests/test_echeance_contrat.py` — y compris les
- * cas que cette version-ci traitait mal : le 31 janvier + 1 mois, et le terme
- * qui tombe le jour même.
- *
- * ⚠️ Cette fonction reste, et c'est délibéré : elle est le point où l'on
- * convertit la chaîne ISO en `Date`, ce dont le reste du module a besoin. La
- * supprimer aurait dispersé ce `new Date(…)` dans les appelants.
- */
-export function contratDateFin(c: ReportContrat): { date: Date; reconduit: boolean } | null {
-	if (!c.date_fin) return null;
-	return { date: new Date(c.date_fin), reconduit: c.reconduit ?? false };
-}
+const enDate = (iso: string | null | undefined): Date | null => (iso ? new Date(iso) : null);
 
-//  🔴 `contratDatePreavis` et `contratUrgence` sont PARTIS le 04/11/2026 (#2507) : le
-//  début du préavis et l'urgence du terme sont SERVIS par l'API (`date_preavis`,
-//  `urgence_echeance` — `api/app/utils/echeance_contrat.py`), que l'app iOS lit aussi.
-
-export function diagNextDate(dt: DiagType): Date | null {
-	if (!dt.frequence || dt.non_applicable) return null;
-	const match = dt.frequence.match(/(\d+)/);
-	if (!match) return null;
-	const freqAns = parseInt(match[1]);
-	const lastRapport = dt.rapports.find((r) => r.date_rapport);
-	if (!lastRapport || !lastRapport.date_rapport) return null;
-	const d = new Date(lastRapport.date_rapport);
-	d.setFullYear(d.getFullYear() + freqAns);
-	return d;
-}
-
-export function diagUrgence(nextDate: Date): 'depasse' | 'annee' | 'futur' {
-	const now = new Date();
-	if (nextDate <= now) return 'depasse';
-	if (nextDate.getFullYear() === anneeCourante()) return 'annee';
-	return 'futur';
-}
-
-// ── Dérivations partagées (#453, 27/08/2026) ─────────────────────────────────
-//
-// Ces deux fonctions vivaient en `$:` dans `VueRenouvellements.svelte`. Le
-// découpage de ce fichier en trois — les compteurs, la frise, les audits — les
-// aurait fait recopier DEUX fois : le parent en a besoin pour ses compteurs,
-// chaque enfant pour son tableau.
-//
-// ⚠️ Un découpage qui duplique n'est pas un découpage. Elles montent donc ici,
-// avec le reste des calculs purs : lisibles et testables sans écran, comme le
-// dit l'en-tête de ce module.
-
-/** Un contrat enrichi de son échéance, de son préavis et de sa note. */
-export interface ContratAvecEcheance extends ReportContrat {
+/** Un contrat du relevé, ses dates converties pour la frise. */
+export interface ContratAvecEcheance extends ContratARenouveler {
 	dateFin: Date | null;
 	datePreavis: Date | null;
+	/** `inconnu` quand le terme ne se déduit pas (`urgence_echeance` nul). */
 	urgence: 'preavis' | 'annee' | 'futur' | 'inconnu';
-	reconduit: boolean;
-	prestataireNom: string;
-	noteMoy: number | null;
-	nbNotations: number;
 }
 
-/**
- * Les contrats, enrichis et TRIÉS — la pire note d'abord, puis par date de fin.
- *
- * Le tri par note est délibéré et vient avant la date : un contrat mal noté qui
- * arrive à échéance est la décision la plus urgente à prendre, pas la plus
- * proche. Une note absente vaut 6, donc passe en dernier — jamais devant un
- * prestataire réellement mal noté.
- */
-export function contratsAvecEcheance(
-	contrats: ReportContrat[],
-	prestataires: ReportPrestataire[],
-): ContratAvecEcheance[] {
-	return contrats
-		.map((c) => {
-			const result = contratDateFin(c);
-			const fin = result?.date ?? null;
-			const reconduit = result?.reconduit ?? false;
-			const prest = prestataires.find((p) => p.id === c.prestataire_id);
-			return {
-				...c,
-				dateFin: fin as Date | null,
-				datePreavis: c.date_preavis ? new Date(c.date_preavis) : null,
-				//  Servie par l'API ; « inconnu » quand le terme ne se déduit pas.
-				urgence: c.urgence_echeance ?? ('inconnu' as const),
-				reconduit,
-				prestataireNom: prest?.nom ?? `#${c.prestataire_id}`,
-				noteMoy: prest?.note_moyenne ?? null,
-				nbNotations: prest?.nb_notations ?? 0,
-			};
-		})
-		.sort((a, b) => {
-			//  Pire note en premier ; `null` = pas de note = en dernier.
-			const noteA = a.noteMoy ?? 6;
-			const noteB = b.noteMoy ?? 6;
-			if (noteA !== noteB) return noteA - noteB;
-			if (!a.dateFin && !b.dateFin) return 0;
-			if (!a.dateFin) return 1;
-			if (!b.dateFin) return -1;
-			return a.dateFin.getTime() - b.dateFin.getTime();
-		});
+/** Les contrats du relevé, DANS SON ORDRE (la pire note d'abord). */
+export function contratsDuReleve(releve: ReleveRenouvellements | null): ContratAvecEcheance[] {
+	return (releve?.contrats ?? []).map((c) => ({
+		...c,
+		dateFin: enDate(c.date_fin),
+		datePreavis: enDate(c.date_preavis),
+		urgence: c.urgence_echeance ?? 'inconnu',
+	}));
 }
 
-/** Un diagnostic enrichi de sa prochaine échéance. */
-export interface DiagAvecEcheance extends DiagType {
+/** Un diagnostic du relevé, son échéance convertie. */
+export interface DiagAvecEcheance extends DiagnosticAEcheance {
 	nextDate: Date | null;
+	/** `inconnu` sans échéance connue (permanent, ou sans rapport daté). */
 	urgence: 'depasse' | 'annee' | 'futur' | 'inconnu';
-	lastRapportDate: string | null;
-	isPermanent: boolean;
 }
 
-/**
- * Les diagnostics APPLICABLES, enrichis et triés par prochaine échéance.
- *
- * ⚠️ Un diagnostic « permanent » n'a pas d'échéance : il est marqué comme tel
- * plutôt qu'écarté, sinon il disparaîtrait de l'écran sans que rien ne dise
- * pourquoi. Les non applicables, eux, sont bien exclus — c'est une décision de
- * la copropriété, pas une absence de donnée.
- */
-export function diagnosticsAvecEcheance(types: DiagType[]): DiagAvecEcheance[] {
-	return types
-		.filter((dt) => !dt.non_applicable)
-		.map((dt) => {
-			const isPermanent = dt.frequence ? dt.frequence.toLowerCase().includes('permanent') : false;
-			const next = isPermanent ? null : diagNextDate(dt);
-			const urgence: 'depasse' | 'annee' | 'futur' | 'inconnu' = next
-				? diagUrgence(next)
-				: 'inconnu';
-			const lastRapport = dt.rapports.find((r) => r.date_rapport);
-			return {
-				...dt,
-				nextDate: next as Date | null,
-				urgence,
-				lastRapportDate: lastRapport?.date_rapport ?? null,
-				isPermanent,
-			};
-		})
-		.sort((a, b) => {
-			if (!a.nextDate && !b.nextDate) return 0;
-			if (!a.nextDate) return 1;
-			if (!b.nextDate) return -1;
-			return a.nextDate.getTime() - b.nextDate.getTime();
-		});
+/** Les diagnostics APPLICABLES du relevé, dans son ordre (l'échéance la plus proche d'abord). */
+export function diagnosticsDuReleve(releve: ReleveRenouvellements | null): DiagAvecEcheance[] {
+	return (releve?.diagnostics ?? []).map((d) => ({
+		...d,
+		nextDate: enDate(d.prochaine_echeance),
+		urgence: d.urgence_echeance ?? 'inconnu',
+	}));
 }
 
 //  🔴 `typeEquipementDuContrat` est PARTI le 04/11/2026 (#2507) : l'équipement qu'un

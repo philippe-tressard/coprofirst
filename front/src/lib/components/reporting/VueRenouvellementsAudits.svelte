@@ -9,22 +9,20 @@
 -->
 <script lang="ts">
 	import { fmtDate } from '#lib/date.ts';
-	import { relire } from '#lib/utils.ts';
-	import { anneeCourante, diagnosticsAvecEcheance, type DiagType } from '#lib/reporting.ts';
+	import type { ReleveRenouvellements } from '#lib/api/index.ts';
+	import { diagnosticsDuReleve } from '#lib/reporting.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 
-	export let reportDiagTypes: DiagType[] = [];
+	/**  Le relevé SERVI (#2525) : l'échéance et l'urgence de chaque diagnostic
+	 *   applicable, rangés, et l'année de référence — le jour de Paris. */
+	export let releve: ReleveRenouvellements | null = null;
 
-	//  Relue à chaque recalcul, pour la même raison que la frise : un onglet resté
-	//  ouvert la nuit du réveillon rangerait les audits sous l'année passée.
-	$: ANNEE_COURANTE = relire(reportDiagTypes, anneeCourante);
-
-	//  Dérivation partagée avec le parent, qui en compte les urgences.
-	$: diagsAvecNext = diagnosticsAvecEcheance(reportDiagTypes);
+	$: ANNEE_COURANTE = releve?.annee ?? 0;
+	$: diagsAvecNext = diagnosticsDuReleve(releve);
 
 	$: diagsAvecEcheance = diagsAvecNext.filter((d) => d.nextDate !== null);
-	$: diagsSansEcheance = diagsAvecNext.filter((d) => d.nextDate === null && !d.isPermanent);
-	$: diagsPermanents = diagsAvecNext.filter((d) => d.isPermanent);
+	$: diagsSansEcheance = diagsAvecNext.filter((d) => d.nextDate === null && !d.permanent);
+	$: diagsPermanents = diagsAvecNext.filter((d) => d.permanent);
 
 	$: diagsParAnnee = (() => {
 		const map = new Map<number, typeof diagsAvecEcheance>();
@@ -82,8 +80,8 @@
 									<td><strong>{d.nom}</strong></td>
 									<td>{d.code}</td>
 									<td>{d.frequence ?? 'N/A'}</td>
-									<td>{d.lastRapportDate ? fmtDate(d.lastRapportDate) : 'N/A'}</td>
-									<td>{d.nextDate ? fmtDate(d.nextDate.toISOString()) : 'N/A'}</td>
+									<td>{d.dernier_rapport_le ? fmtDate(d.dernier_rapport_le) : 'N/A'}</td>
+									<td>{d.prochaine_echeance ? fmtDate(d.prochaine_echeance) : 'N/A'}</td>
 									<td>
 										{#if d.urgence === 'depasse'}<span class="badge badge-red">Dépassé</span>
 										{:else if d.urgence === 'annee'}<span class="badge badge-orange"
@@ -123,7 +121,7 @@
 									<td><strong>{d.nom}</strong></td>
 									<td>{d.code}</td>
 									<td>{d.frequence ?? 'N/A'}</td>
-									<td>{d.lastRapportDate ? fmtDate(d.lastRapportDate) : 'N/A'}</td>
+									<td>{d.dernier_rapport_le ? fmtDate(d.dernier_rapport_le) : 'N/A'}</td>
 									<td><span class="badge badge-green">✓ Permanent</span></td>
 								</tr>
 							{/each}
@@ -156,7 +154,7 @@
 									<td><strong>{d.nom}</strong></td>
 									<td>{d.code}</td>
 									<td>{d.frequence ?? 'N/A'}</td>
-									<td>{d.lastRapportDate ? fmtDate(d.lastRapportDate) : 'N/A'}</td>
+									<td>{d.dernier_rapport_le ? fmtDate(d.dernier_rapport_le) : 'N/A'}</td>
 									<td>
 										{#if d.rapports.length === 0}<span class="badge badge-gray">Aucun rapport</span>
 										{:else}<span class="badge badge-gray">À planifier</span>

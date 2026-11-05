@@ -46,7 +46,7 @@ def _archiver(session, annonce_id: int, corps: dict):
     admin = compte(session, prefixe="admin", roles_json=RoleUtilisateur.admin.value)
     body = AnnonceHallArchive.model_validate(corps)
     return annonces_hall.archiver_annonce(
-        annonce_id=annonce_id, body=body, session=session, _=admin
+        annonce_id=annonce_id, body=body, session=session, user=admin
     )
 
 
@@ -58,13 +58,13 @@ def test_archiver_puis_restaurer_avec_le_corps_du_site(contexte):
     session, cs = contexte
     annonce = creer(session, cs)
     rendu = _archiver(session, annonce.id, _corps_du_site())
-    assert rendu["archivee"] is True and rendu["archivee_manuellement"] is True
+    assert rendu.archivee is True and rendu.archivee_manuellement is True
     rendu = _archiver(session, annonce.id, {"archivee": False})
-    assert rendu["archivee_manuellement"] is False
+    assert rendu.archivee_manuellement is False
 
 
 def test_un_client_qui_envoie_encore_les_deux_champs_reste_accepte(contexte):
     session, cs = contexte
     annonce = creer(session, cs)
     rendu = _archiver(session, annonce.id, {"archivee": True, "archivee_manuellement": False})
-    assert rendu["archivee_manuellement"] is True, "seul `archivee` décide"
+    assert rendu.archivee_manuellement is True, "seul `archivee` décide"
