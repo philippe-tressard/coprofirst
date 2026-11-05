@@ -27,7 +27,12 @@ Formes repérées :
   français, partout — et un prénom composé suivi d'un nom à casse mixte
   (« Jean-Hervé ForT »), qui avait échappé au premier passage ;
 - la valeur d'un champ de nom (`nom=`, `prenom=`, `auteur_nom:`…), dans les
-  tests et l'e2e — dans l'application, ces champs portent des libellés.
+  tests et l'e2e — dans l'application, ces champs portent des libellés ;
+- un mot en CAPITALES seul entre parenthèses (« … rouge (ZORGLUB) »), partout,
+  quand ce mot ne s'écrit nulle part ailleurs dans le dépôt comme un mot
+  ordinaire : c'est la forme d'un récit d'arbitrage qui citait deux comptes réels
+  dans une docstring (#2560). Un sigle (« (SMTP) ») s'écrit aussi en minuscules
+  ou se déclare dans `PAS_DES_NOMS`.
 
 Portée (`PORTEE`, `DOCUMENTS_RACINE`) : le code et les tests, les migrations
 (`api/alembic`) et les documents (`docs/`, `specs/`, `infra/`, `.claude/skills/`,
@@ -36,7 +41,8 @@ docstring de migration nommait deux employées du syndic, hors de toute portée.
 
 ⚠️ Ce qu'il ne voit pas : un nom isolé hors de ces formes — « Prénom Nom » sans
 civilité ni capitales, par exemple : à casse mixte, la forme attraperait chaque
-paire de mots entre guillemets —, ni ce qui est public sans être un fichier :
+paire de mots entre guillemets —, un nom dans un IDENTIFIANT (`test_zorglub_…` :
+les deux noms de #2560 nommaient aussi des tests), ni ce qui est public sans être un fichier :
 messages de commit, tickets et PR GitHub. La consigne qui couvre le reste :
 `.claude/skills/security-audit`. L'attribution légale (`NOTICE.md`,
 `LICENSE`, SPDX) est hors de sa portée, et c'est voulu : elle doit
@@ -97,6 +103,9 @@ PAS_DES_NOMS = frozenset(
     NOYAU OSI OTIS PARC PARTI PDF PLANS PLOMBERIE PRENOM PROPRIO REGLEMENT
     REJEU RESIDENCE RESIDENT SANS SANSBAT SCAN SECURITE SERIE SERVICES SICLI SITE
     SONDAGE SOURCE STOCK SYNDIC TEMOIN TEST TILLEULS UNUSED VERTS
+    AAAA-MM-JJ AAAAMMJJ ANAH DAPP DSFR ECONNREFUSED EINVAL ERESOLVE HSTS ISCL LCEN
+    LGPL ONDE RGESN SAMU SIGPIPE SSRF WSAENOBUFS WYSIWYG ENF FCP MVP OOM PWA RGPD SCA
+    SSR TTI
     """.split()
 )
 
@@ -126,10 +135,26 @@ CHAMP = re.compile(
     r"|auteur_nom|porteur_nom)\s*[=:]\s*[\"']([^\"'{}\n]+)[\"']"
 )
 _MOT = re.compile(rf"[{_MAJ}{_MIN}][{_MAJ}{_MIN}'-]{{2,}}")
+#: Un mot en capitales seul entre parenthèses (#2560).
+PARENTHESES = re.compile(rf"\(\s*({_NOM})\s*\)")
+#: Un identifiant à tiret bas (`test_zorglub_x`) : ses morceaux ne sont pas des
+#: mots ORDINAIRES, ils ne blanchissent pas un nom.
+_IDENTIFIANT = re.compile(r"\b\w*_\w*\b")
 
 #: Occurrences repérées sur l'arbre du 01/10/2026 : environ 330. Sous ce
 #: plancher, une portée ou un motif a cassé, et le contrôle ne lit plus rien.
 PLANCHER = 200
+
+
+def capitales_entre_parentheses(source: str) -> list[str]:
+    """Les mots en CAPITALES seuls entre parenthèses, normalisés (#2560)."""
+    return [_normaliser(m.group(1)) for m in PARENTHESES.finditer(source)]
+
+
+def mots_ordinaires(source: str) -> set[str]:
+    """Les mots écrits autrement qu'en capitales, hors identifiants, normalisés."""
+    texte = _IDENTIFIANT.sub(" ", source)
+    return {_normaliser(m) for m in _MOT.findall(texte) if not m.isupper()}
 
 
 def _normaliser(mot: str) -> str:
@@ -189,8 +214,11 @@ def _sources() -> list[tuple[str, str, bool]]:
 def _releve() -> dict[str, set[str]]:
     vus: dict[str, set[str]] = defaultdict(set)
     total = 0
-    for rel, source, donnees in _sources():
-        for nom in noms_dans(source, donnees=donnees):
+    sources = _sources()
+    ordinaires = set().union(*(mots_ordinaires(source) for _, source, _ in sources))
+    for rel, source, donnees in sources:
+        entre_parentheses = [m for m in capitales_entre_parentheses(source) if m not in ordinaires]
+        for nom in noms_dans(source, donnees=donnees) + entre_parentheses:
             vus[nom].add(rel)
             total += 1
     assert total >= PLANCHER, (
@@ -218,6 +246,12 @@ def test_chaque_forme_est_reperee():
     assert noms_dans("Mme LeZorglub a répondu", donnees=False) == ["LEZORGLUB"]
     assert noms_dans("Madame de Zorglub,", donnees=False) == ["ZORGLUB"]
     assert noms_dans("M. Paul d'Zorglub", donnees=False) == ["PAUL", "ZORGLUB"]
+    #  Un nom en capitales seul entre parenthèses, dans le récit d'un arbitrage
+    #  (#2560) : il n'est pas un mot ordinaire du texte, il est relevé.
+    recit = "un « TC » rouge (ZORGLUB), un sigle (SMTP), et smtp en minuscules"
+    assert capitales_entre_parentheses(recit) == ["ZORGLUB", "SMTP"]
+    assert "SMTP" in mots_ordinaires(recit) and "ZORGLUB" not in mots_ordinaires(recit)
+    assert "ZORGLUB" not in mots_ordinaires("def test_zorglub_sans_parking(): ...")
 
 
 def test_aucun_nom_reel_dans_le_code_ni_les_tests():
