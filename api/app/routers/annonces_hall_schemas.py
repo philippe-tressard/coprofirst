@@ -47,11 +47,15 @@ class AnnonceHallCreate(AnnonceHallBase, AssisteIAEntree):
 
 
 class AnnonceHallArchive(BaseModel):
-    #: État EFFECTIF : archivée à la main, **ou** par la règle du site — 30 jours
-    #: après l'envoi (`utils/archivage`, #515). C'est lui que les deux listes
-    #: emploient, et c'est ce qu'un lecteur voit.
+    """« Archiver » ou « Restaurer » une affiche : la DÉCISION HUMAINE, et elle seule.
+
+    En LECTURE (`_to_read`), une affiche porte deux états : `archivee`, l'état
+    EFFECTIF (archivée à la main, **ou** par la règle du site 30 jours après l'envoi,
+    `utils/archivage`, #515), et `archivee_manuellement`, la décision humaine qui dit
+    si « Restaurer » a un effet. En ENTRÉE, le geste ne porte que la décision :
+    `archivee_manuellement` avait été recopié ici, requis, et le site, qui n'envoie
+    que `{ archivee }`, recevait 422 (#2524). Un client qui l'envoie encore est
+    accepté : le champ en trop est ignoré. 🔒 test_annonce_hall_archiver.py
+    """
+
     archivee: bool
-    #: La DÉCISION HUMAINE, seule. Elle sert à savoir si « Restaurer » a un effet :
-    #: retirer un archivage manuel ramène l'affiche ; sur une affiche archivée par
-    #: le temps, le même geste ne ferait rien, et l'écran ne le propose donc pas.
-    archivee_manuellement: bool

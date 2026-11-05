@@ -1,6 +1,6 @@
 {
-"version": "1.6.0",
-"empreinte": "398caf92a9b57318ade726f641ab56d34f06257fa9920b34960da71db169b81f",
+"version": "1.7.0",
+"empreinte": "eb4e5b4e03494df6d423b50fe781e229cf66f7748df656ddd3690e854b9318e9",
 "operations": {
   "GET /acces/admin/choix-acces": {"deprecie": false, "entree": [], "reponse": {"$": "dictionnaire", "$.{}": "objet", "$.{}.codes": "liste", "$.{}.codes[]": "string", "$.{}.suit_le_lot": "boolean"}},
   "GET /acces/admin/constats-badges": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].code": "string", "$[].gravite": "string", "$[].lots": "liste?", "$[].lots[]": "string", "$[].message": "string"}},
@@ -116,7 +116,7 @@
   "POST /annonces-hall/previsualiser": {"deprecie": false, "entree": ["corps", "corps.message", "corps.titre"], "reponse": {"$": "libre"}},
   "GET /annonces-hall/sources": {"deprecie": false, "entree": [], "reponse": {"$": "libre"}},
   "DELETE /annonces-hall/{annonce_id}": {"deprecie": false, "entree": ["path:annonce_id"], "reponse": {}},
-  "PATCH /annonces-hall/{annonce_id}": {"deprecie": false, "entree": ["corps", "corps.archivee", "corps.archivee_manuellement", "path:annonce_id"], "reponse": {"$": "libre"}},
+  "PATCH /annonces-hall/{annonce_id}": {"deprecie": false, "entree": ["corps", "corps.archivee", "path:annonce_id"], "reponse": {"$": "libre"}},
   "GET /annonces-hall/{annonce_id}/pdf": {"deprecie": false, "entree": ["path:annonce_id"], "reponse": {"$": "libre"}},
   "POST /annonces-hall/{annonce_id}/renvoyer-email": {"deprecie": false, "entree": ["path:annonce_id"], "reponse": {}},
   "DELETE /annonces/{annonce_id}": {"deprecie": false, "entree": ["path:annonce_id"], "reponse": {"$": "libre"}},
