@@ -103,6 +103,11 @@ AJUSTEMENTS_DECLARES: dict[tuple[str, str], str] = {
     ("essai-mise-a-jour.sh", '"$1" "$2" >> .env'): (
         "essai de bout en bout : le .env d'une installation jetable, tirée de .env.example"
     ),
+    #  L'autotest de la remise à zéro de la démo (#2546) joue le script réel dans un
+    #  dossier JETABLE : le `.env` de trois lignes de cette installation factice.
+    ("essai-reinitialiser-demo.sh", '> "$d/.env"'): (
+        "autotest : le .env d'une installation factice, dans un dossier jetable"
+    ),
     ("lib-env-base.sh", "cat > /opt/5hostachy/.env.tmp"): (
         "DATABASE_URL du pair, réécrit en 600 (bascule des données DI-7c et son retour)"
     ),

@@ -299,11 +299,18 @@ installée :
 1. arrêter l'API (aucune écriture pendant la remise à zéro) ;
 2. vider la base et le volume `uploads` ;
 3. poser le schéma (`utils/schema_initial`), puis `python -m app.demo.charger`
-   (le seed, puis le jeu), en conteneur ponctuel (`run --rm --no-deps`) ;
+   (le seed, puis le jeu), en conteneur ponctuel (`run --rm --no-deps -u app`) —
+   jamais en root : le conteneur de l'API est durci, et son root ne peut supprimer
+   aucun fichier de `app` (#2546) ;
 4. relancer l'API, sonder `/api/health`, rendre compte à l'administration
    (`POST /admin/maintenance/rapport`) ;
-5. en échec : le rapport le dit, et la démo reste arrêtée plutôt que de servir une
-   base à moitié chargée.
+5. en échec du chargement : la base est vidée de nouveau, l'API relancée sur cette
+   base vide, et le rapport le dit — jamais une base à moitié chargée, jamais une
+   démo arrêtée. Toute autre sortie, l'API arrêtée, la relance aussi (piège `EXIT`).
+   🔴 Ce point disait jusqu'au 05/11/2026 « la démo reste arrêtée » : ce matin-là,
+   le vidage des fichiers a échoué, et la démo a servi 502 de 05:15 à 07:00 sans
+   que personne d'autre que le journal du script le sache — une API arrêtée ne
+   reçoit pas le rapport (#2546).
 
 - **Moteur** : PostgreSQL pour la démo de CoproFirst (§11, question 4) — vider la
   base, c'est supprimer et recréer le schéma `public` dans le serveur qui tourne,
