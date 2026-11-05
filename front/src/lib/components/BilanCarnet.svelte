@@ -19,7 +19,6 @@
 	import { essayer } from '#lib/chargement.ts';
 	import { fmtDate } from '#lib/date.ts';
 	import { fmtJours, libelleAffaires } from '#lib/synthese.ts';
-	import { categorieTicketEmoji } from '#lib/tickets.ts';
 	import { fmtNombre, nombreOuNull } from '#lib/utils.ts';
 	import ChoixPastilles from './ChoixPastilles.svelte';
 	import EtatListe from './EtatListe.svelte';
@@ -105,7 +104,6 @@
 				{#each bilan.categories as c (c.categorie)}
 					<section class="bilan-categorie" aria-labelledby="bilan-{c.categorie}">
 						<h3 class="bilan-titre" id="bilan-{c.categorie}">
-							{categorieTicketEmoji(c.categorie)}
 							{c.categorie_libelle}
 							<span class="bilan-compte">{libelleAffaires(c)}</span>
 						</h3>

@@ -25,7 +25,7 @@
 	 * sans gestes, pas une autre brique.
 	 */
 	import { goto } from '$app/navigation';
-	import { categorieTicketEmoji, lienTicket } from '#lib/tickets.ts';
+	import { lienTicket } from '#lib/tickets.ts';
 	import { perimetreTags } from '#lib/perimetres-pastilles.ts';
 	import { perimetresStore } from '#lib/stores/perimetres.ts';
 	import { relire } from '#lib/utils.ts';
@@ -34,7 +34,6 @@
 	 *  que l'identifiant, le libellé de la catégorie, le titre et le périmètre. */
 	export let item: {
 		id: number;
-		categorie: string;
 		/** Le libellé servi (`TicketRead.categorie_libelle`, #2511). */
 		categorie_libelle: string;
 		titre: string;
@@ -65,8 +64,6 @@
 	</div>
 	<strong class="kanban-card-titre">{item.titre}</strong>
 	<div class="kanban-card-footer">
-		<span class="kanban-card-type"
-			>{categorieTicketEmoji(item.categorie)} {item.categorie_libelle}</span
-		>
+		<span class="kanban-card-type">{item.categorie_libelle}</span>
 	</div>
 </div>
