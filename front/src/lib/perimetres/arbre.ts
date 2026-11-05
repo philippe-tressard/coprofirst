@@ -73,6 +73,9 @@ export interface Perimetre {
 	/**  Les types d'accès (`#lib/types-acces`) qui ouvrent ce nœud d'office, sans
 	 *   dépendre d'aucun lot — un portillon, un portail (#2060). */
 	acces_fixes: string[];
+	/**  Le seul nœud que désigne un contenu sans périmètre explicite — « toute la
+	 *   copropriété ». Servi par `GET /perimetres` (`code_par_defaut`, #2514). */
+	par_defaut: boolean;
 }
 
 /**  Les quatre flèches d'un nœud : d'un rang (haut, bas) ou d'un niveau —
@@ -97,10 +100,10 @@ export function definirPerimetres(liste: Perimetre[]): void {
 	ordreCodes = liste.map((n) => n.code);
 	//  Le périmètre « tout le monde » est une DONNÉE, pas la chaîne « résidence »
 	//  écrite dans le code : une autre copropriété peut l'avoir renommé ou supprimé.
-	//  C'est la racine à portée globale la plus prioritaire, comme côté serveur
-	//  (`api/app/utils/perimetres.py`, `code_par_defaut`).
-	const racines = liste.filter((n) => n.parent === null && n.portee_globale && n.actif);
-	codeDefaut = racines.length ? racines[0].code : null;
+	//  Le serveur le DÉSIGNE (`par_defaut`, lu sur `code_par_defaut`) : le site
+	//  refaisait le tri des racines, une copie que l'app iOS refusait d'écrire
+	//  une troisième fois (#2514). 🔒 `e2e/affaire-equipement-perimetre.spec.ts`.
+	codeDefaut = liste.find((n) => n.par_defaut)?.code ?? null;
 }
 
 /** L'arborescence connue, dans l'ordre d'affichage rendu par l'API. */
