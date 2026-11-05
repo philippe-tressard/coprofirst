@@ -131,6 +131,12 @@ test('Paramétrage › SMTP : le journal renvoie vers Espace CS, le nombre affic
 	);
 	await expect(page.getByLabel('Messages affichés dans Espace CS › Courriels')).toBeVisible();
 	await expect(page.locator('.jv-liste')).toHaveCount(0);
+	//  Les signataires délégués (#2554) se règlent dans la même grille.
+	const delegues = page.getByLabel('Signataires délégués');
+	await expect(delegues).toBeVisible();
+	await delegues.locator('xpath=ancestor::div[contains(@class,"form-grid")]').screenshot({
+		path: `test-results/reception-delegues-${test.info().project.name}.png`,
+	});
 });
 
 test('WhatsApp : l’historique des envois garde ses trois issues', async ({ page }) => {
