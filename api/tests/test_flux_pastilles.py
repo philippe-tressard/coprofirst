@@ -47,6 +47,14 @@ def test_les_champs_de_la_ligne_sont_TOUS_rendus():
     assert set(rendu) == set(CHAMPS_PASTILLES) | {"natures"}
 
 
+def test_la_ligne_sert_le_libelle_de_la_categorie():
+    """Le pied de carte du fil lit le libellé servi, sans table à lui (#2511)."""
+    from app.utils.categories_ticket import libelle_categorie
+
+    assert pastilles_affaire(_affaire())["categorie_libelle"] == libelle_categorie("panne")
+    assert libelle_categorie("panne") != "panne"
+
+
 def test_la_nature_suit_la_date_de_l_affaire():
     """Une affaire à laquelle on ajoute une date devient « Calendrier » : le fil
     doit le dire comme la liste des affaires (4/11/2026, « AFF. » restait au fil)."""

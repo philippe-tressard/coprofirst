@@ -253,6 +253,8 @@ export interface PrestataireLent {
 /**  Les moyennes d'une catégorie d'affaire du carnet sur l'exercice. */
 export interface CategorieBilan extends ResumeAffaires {
 	categorie: string;
+	/**  Son libellé (« Panne ») — servi (#2511). */
+	categorie_libelle: string;
 	prestataires: PrestataireLent[];
 }
 

@@ -19,8 +19,8 @@
  *    title={ticket.categorie}          aria-label={t.categorie}
  *    <td>{row.categorie}</td>          <span>{t.categorie}</span>
  *
- *  La forme conforme : `categorieTicketLabel(x.categorie)`, et pour un statut
- *  le libellé de SA table — `statutTicketLabel`, `statutAccesLabel`…
+ *  La forme conforme : le libellé SERVI (`x.categorie_libelle`, #2511), et pour
+ *  un statut le libellé de SA table — `statutTicketLabel`, `statutAccesLabel`…
  *
  *  ⚠️ Il ne regarde pas une catégorie passée à une fonction, comparée ou
  *  servant de clé — c'est son usage normal. Seul l'AFFICHAGE est en cause.
@@ -34,7 +34,7 @@ import { neutraliserCommentaires } from './lib-commentaires.mjs';
 const RACINE = 'src';
 const ATTRIBUT = /\b(?:title|aria-label|alt)=\{[\w.?$]+\.(?:categorie|statut)\}/g;
 const TEXTE = />\s*\{[\w.?$]+\.(?:categorie|statut)\}\s*</g;
-const EMPLOI = /(?:categorieTicketLabel|statut\w*Label)\(/;
+const EMPLOI = /(?:\.categorie_libelle\b|\.libelle_categorie\b|statut\w*Label\()/;
 
 /**  Les catégories rendues brutes dans une source. PURE. */
 export function categoriesBrutes(source) {
@@ -57,8 +57,8 @@ if (process.argv.includes('--selftest')) {
 	//  🔴 #1345 : le statut d'un accès, rendu brut dans un badge.
 	t('statut brut', 1, '<span class="badge">{a.statut}</span>');
 	t('statut conforme', 0, '<span class="badge">{statutAccesLabel(a.statut)}</span>');
-	t('libellé conforme', 0, '<span title={categorieTicketLabel(ticket.categorie)}>🏗️</span>');
-	t('texte conforme', 0, '<td>{categorieTicketLabel(row.categorie)}</td>');
+	t('libellé conforme', 0, '<span title={ticket.categorie_libelle}>🏗️</span>');
+	t('texte conforme', 0, '<td>{row.categorie_libelle}</td>');
 	t(
 		'clé et comparaison',
 		0,
@@ -104,7 +104,7 @@ if (fautifs.length) {
 	console.error(`\n✗ ${fautifs.length} fichier(s) affichent une catégorie ou un statut bruts :\n`);
 	for (const f of fautifs) console.error(`  ${f}`);
 	console.error(
-		'\n  → le libellé de sa table : `categorieTicketLabel`, `statutTicketLabel`, `statutAccesLabel`…\n',
+		'\n  → le libellé servi (`categorie_libelle`) ou celui de sa table : `statutTicketLabel`, `statutAccesLabel`…\n',
 	);
 	process.exit(1);
 }

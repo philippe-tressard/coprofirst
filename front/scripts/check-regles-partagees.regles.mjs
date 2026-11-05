@@ -194,11 +194,8 @@ export const REGLES_PARTAGEES = {
 	categorieTicketLabel: {
 		quoi: 'le libellé d’une catégorie d’affaire (carnet, cartes)',
 		api: 'api/app/utils/categories_ticket.py#libelle_categorie',
-		migration: {
-			ticket: '#2511',
-			raison:
-				"servi avec l'affaire (`categorie_libelle`) et le référentiel (#2508) ; le front l'applique encore au carnet, au reporting et au pied de carte, que l'API ne sert pas avec ce champ",
-		},
+		//  Servie en `categorie_libelle` : l'affaire et le référentiel (#2508), la
+		//  ligne du fil, le carnet, son bilan et le relevé du suivi (#2511).
 	},
 	statutTicketLabel: {
 		quoi: 'le libellé d’un statut d’affaire',

@@ -48,6 +48,7 @@ from app.models.tickets import STATUTS_TICKET_CLOS, StatutTicket
 from app.utils import horloge
 from app.utils.affaire_absorbee import ouverture_effective, pas_absorbee
 from app.utils.carnet_entretien import contribue_au_carnet
+from app.utils.categories_ticket import libelle_categorie
 from app.utils.jours_ouvres import au_demi_jour
 from app.utils.synthese_affaire import metriques as m
 from app.utils.synthese_affaire.rassemblement import (
@@ -234,7 +235,12 @@ def bilan_carnet(session: Session, annee: Optional[int] = None) -> dict:
     for x in mesurer(session, dans):
         categories.setdefault(x.categorie, []).append(x)
     lignes = [
-        {"categorie": c, **resumer(ms), "prestataires": plus_lents(session, ms)}
+        {
+            "categorie": c,
+            "categorie_libelle": libelle_categorie(c),
+            **resumer(ms),
+            "prestataires": plus_lents(session, ms),
+        }
         for c, ms in categories.items()
     ]
     lignes.sort(key=lambda ligne: (-ligne["nombre"], ligne["categorie"]))
