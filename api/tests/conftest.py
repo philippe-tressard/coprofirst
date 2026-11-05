@@ -18,6 +18,12 @@ import os
 import tempfile
 
 os.environ.setdefault("SECRET_KEY", "x" * 40)
+#  Aucun `.env` de développement du poste ne se lit pendant la suite (#2539) : la CI
+#  n'en a pas, et un `COOKIE_SECURE=false` local faisait rougir le rejeu à tort.
+#  🔒 test_env_du_poste_ignore.py
+_ENV_VIDE = os.path.join(tempfile.mkdtemp(prefix="env-vide-"), "vide.env")
+open(_ENV_VIDE, "w").close()
+os.environ["HOSTACHY_ENV_FILE"] = _ENV_VIDE
 _URL_TESTS = os.environ.get("TESTS_BASE_URL")
 _SCHEMA_DU_PROCESSUS = None
 #  Un worker de `pytest -n` hérite du `DATABASE_URL` du maître : il pose le
