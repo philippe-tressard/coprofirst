@@ -48,6 +48,21 @@ def site_manager_user_id(session: Session) -> Optional[int]:
     return int(valeur) if peut_gerer_le_site(session.get(Utilisateur, int(valeur))) else None
 
 
+def gestionnaire_ou_premier_admin(session: Session) -> Optional[Utilisateur]:
+    """Le gestionnaire du site, sinon le premier administrateur actif — ou None.
+
+    Le compte sous lequel se note ce qu'un correspondant SANS compte apporte : les
+    pièces jointes d'une réponse du syndic (#2554). Un fichier reçu note son auteur
+    (`models/fichiers_recus.noter_auteur`), qui le lit seul tant qu'aucun objet ne
+    le cite.
+    """
+    gestionnaire = site_manager_user_id(session)
+    if gestionnaire is not None:
+        return session.get(Utilisateur, gestionnaire)
+    actifs = select(Utilisateur).where(Utilisateur.actif == True).order_by(Utilisateur.id)  # noqa: E712
+    return next((c for c in session.exec(actifs).all() if peut_gerer_le_site(c)), None)
+
+
 def peut_gerer_le_site(user: Optional[Utilisateur]) -> bool:
     """Le gestionnaire du site est un administrateur — la règle, lue ici et à l'écriture."""
     return user is not None and user.has_role(RoleUtilisateur.admin)
@@ -255,18 +270,23 @@ def syndic_principal(session: Session) -> Optional[MembreSyndic]:
     ).first()
 
 
-def est_adresse_syndic(session: Session, adresse: str) -> bool:
-    """Cette adresse est-elle celle d'un membre du cabinet syndic ?
+def membre_syndic_a_l_adresse(session: Session, adresse: str) -> Optional[MembreSyndic]:
+    """Le membre du cabinet syndic à cette adresse, ou None.
 
     Le syndic se reconnaît à son ADRESSE dans la fiche du cabinet, pas à un rôle :
     `RoleUtilisateur` n'en a pas, et le gestionnaire n'a souvent pas de compte.
     """
     adresse = normaliser_adresse(adresse)
     if not adresse:
-        return False
-    return bool(
-        session.exec(select(MembreSyndic).where(func.lower(MembreSyndic.email) == adresse)).first()
-    )
+        return None
+    return session.exec(
+        select(MembreSyndic).where(func.lower(MembreSyndic.email) == adresse)
+    ).first()
+
+
+def est_adresse_syndic(session: Session, adresse: str) -> bool:
+    """Cette adresse est-elle celle d'un membre du cabinet syndic ?"""
+    return membre_syndic_a_l_adresse(session, adresse) is not None
 
 
 def membres_cs_avec_email(session: Session) -> list[tuple[int, str]]:
