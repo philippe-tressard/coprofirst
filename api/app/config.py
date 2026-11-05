@@ -219,11 +219,11 @@ class Settings(BaseSettings):
     wa_photo_budget_ko: int = 400
 
     class Config:
-        #  `HOSTACHY_ENV_FILE` ne sert qu'à la suite de tests (#2539) : son conftest
+        #  `FICHIER_ENV` ne sert qu'à la suite de tests (#2539) : son conftest
         #  le pointe vers un fichier vide, pour qu'un `.env` de développement du
         #  poste (COOKIE_SECURE=false…) ne change pas ce que les tests jugent. En
         #  production il est absent : `.env` reste lu.
-        env_file = os.environ.get("HOSTACHY_ENV_FILE", ".env")
+        env_file = os.environ.get("FICHIER_ENV", ".env")
         case_sensitive = False
 
 

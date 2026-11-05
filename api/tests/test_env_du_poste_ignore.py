@@ -13,7 +13,7 @@ refuse.
 
 Pendant la suite, `Settings` ne lit aucun fichier `.env` : un `.env` posé dans le
 répertoire courant, qui demande `COOKIE_SECURE=false`, reste sans effet. Le conftest
-pose `HOSTACHY_ENV_FILE` vers un fichier vide avant d'importer l'application ; en
+pose `FICHIER_ENV` vers un fichier vide avant d'importer l'application ; en
 production, la variable est absente et `.env` reste lu.
 """
 
@@ -32,6 +32,6 @@ def test_un_env_du_repertoire_courant_est_ignore(tmp_path, monkeypatch):
 
 
 def test_le_fichier_lu_pendant_la_suite_est_vide():
-    fichier = os.environ.get("HOSTACHY_ENV_FILE")
-    assert fichier, "le conftest doit poser HOSTACHY_ENV_FILE avant d'importer l'application"
+    fichier = os.environ.get("FICHIER_ENV")
+    assert fichier, "le conftest doit poser FICHIER_ENV avant d'importer l'application"
     assert os.path.getsize(fichier) == 0
