@@ -59,6 +59,7 @@ def purger() -> tuple[dict[str, int], list[str]]:
             "ia",
             "whatsapp",
             "releves",
+            "a_classer",
             "appareils",
         ),
         0,
@@ -128,6 +129,13 @@ def purger() -> tuple[dict[str, int], list[str]]:
             "releves",
             "purge journal des relèves",
             "DELETE FROM courriel_releve WHERE releve_le < :cutoff",
+            {"cutoff": maintenant - timedelta(days=CONSERVATION_RELEVES_JOURS)},
+        ),
+        #  …et un message à classer, qui le porte entier (#2555) — classé ou non.
+        (
+            "a_classer",
+            "purge des messages à classer",
+            "DELETE FROM courriel_a_classer WHERE cree_le < :cutoff",
             {"cutoff": maintenant - timedelta(days=CONSERVATION_RELEVES_JOURS)},
         ),
     )

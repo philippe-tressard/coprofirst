@@ -293,3 +293,41 @@ def test_une_signature_soulignee_n_est_pas_un_transfert():
     texte = "Bonjour\n________________\nPhilippe\n\n" + _TETE_WINDOWS + "\nTexte du syndic.\n"
     transfert = transfert_dans(SUJET, texte)
     assert transfert.note.startswith("Bonjour") and transfert.adresse == "gestion@syndic.test"
+
+
+# ── Aucune expression lente sur un texte reçu (CodeQL, 05/11/2026) ────────────
+
+
+@pytest.mark.parametrize(
+    "piege", [" " * 50_000, "#" + " " * 50_000, "affaire" + " " * 50_000, "re" + " " * 50_000]
+)
+def test_le_repere_se_cherche_en_temps_lineaire(piege):
+    """Un objet ou un numéro fait d'espaces ne coûte pas un temps quadratique.
+
+    `#?\\s*` en tête de motif se rejouait à chaque position : 50 000 espaces
+    prenaient plusieurs secondes. Le numéro saisi au classement d'un courriel
+    (#2555) et l'objet de tout courriel reçu passent par ces deux fonctions.
+    """
+    import time
+
+    from app.utils.courriel_fil import repere_ecrit, titre_du_fil
+
+    debut = time.perf_counter()
+    assert repere_ecrit(piege + "TK-570894") == "TK-570894"
+    titre_du_fil(piege + "Affaire #TK-570894 Portillon")
+    assert time.perf_counter() - debut < 0.5
+
+
+@pytest.mark.parametrize(
+    ("objet", "titre"),
+    [
+        ("RE: Affaire #TK-121048 — Porte du hall", "Porte du hall"),
+        ("TR: Fuite au 3e TK-570894", "Fuite au 3e"),
+        ("Re: #TK-570894 Portillon", "Portillon"),
+        ("Ticket TK-570894 : ascenseur", "ascenseur"),
+    ],
+)
+def test_le_titre_du_fil_garde_sa_forme(objet, titre):
+    from app.utils.courriel_fil import titre_du_fil
+
+    assert titre_du_fil(objet) == titre

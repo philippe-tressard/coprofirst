@@ -27,7 +27,7 @@ from app.models.courriel import CourrielReleve, RelanceCourriel
 from app.utils import horloge
 from app.utils.courriel_boite import traiter
 from app.utils.courriel_entrant import nouveau_jeton
-from app.utils.courriel_ingestion import ACCEPTE, IGNORE, REFUSE, RELANCE
+from app.utils.courriel_ingestion import A_CLASSER, ACCEPTE, IGNORE, REFUSE, RELANCE
 from app.utils.courriel_journal import CONSERVATION_RELEVES_JOURS
 from tests.aides_courriel import _AUTH_OK, _entetes_reponse, scene  # noqa: F401 — fixture
 from tests.aides_purge import purger_ligne
@@ -39,6 +39,10 @@ def _lignes(session: Session, adresse: str) -> list[CourrielReleve]:
     return session.exec(
         select(CourrielReleve).where(CourrielReleve.expediteur.contains(adresse))
     ).all()
+
+
+#: Un expéditeur authentifié sans compte ni fiche du syndic : rien ne l'attend.
+_INCONNU = "inconnu@ailleurs.test"
 
 
 def _purger(session: Session, adresse: str) -> None:
@@ -72,7 +76,8 @@ def test_chacun_des_QUATRE_verdicts_laisse_sa_ligne(scene):  # noqa: F811
             traiter(
                 session, _entetes_reponse(ticket.jeton_courriel, de=syndic.email), "Fermez.", _RECU
             ),
-            #  Ni jeton, ni référence, ni numéro : ignoré.
+            #  Ni jeton, ni référence, ni numéro, d'un correspondant connu : à
+            #  classer par le conseil (#2555) — il était ignoré sans un mot.
             traiter(
                 session,
                 {"From": syndic.email, "Subject": "Bonjour"},
@@ -81,7 +86,7 @@ def test_chacun_des_QUATRE_verdicts_laisse_sa_ligne(scene):  # noqa: F811
                 authentification=_AUTH_OK,
             ),
         ]
-        assert rendus == [ACCEPTE, RELANCE, REFUSE, IGNORE]
+        assert rendus == [ACCEPTE, RELANCE, REFUSE, A_CLASSER]
 
         lignes = sorted(_lignes(session, syndic.email), key=lambda ligne: ligne.id)
         assert [ligne.decision for ligne in lignes] == rendus
@@ -103,12 +108,14 @@ def test_les_IGNORE_disent_POURQUOI_et_pas_tous_la_meme_chose(scene):  # noqa: F
     """Les trois silences du 28/09 : sans rapport, jeton inconnu, affaire close."""
     session, ticket, syndic, _cs = scene
     try:
+        #  D'un INCONNU : d'un correspondant connu, ces deux messages attendraient
+        #  d'être classés (#2555, `test_courriel_a_classer`).
         sans_rapport = traiter(
-            session, {"From": syndic.email, "Subject": "Pub"}, "…", _RECU, authentification=_AUTH_OK
+            session, {"From": _INCONNU, "Subject": "Pub"}, "…", _RECU, authentification=_AUTH_OK
         )
         inconnu = traiter(
             session,
-            _entetes_reponse(nouveau_jeton(), de=syndic.email),
+            _entetes_reponse(nouveau_jeton(), de=_INCONNU),
             "…",
             _RECU,
             authentification=_AUTH_OK,
@@ -125,11 +132,13 @@ def test_les_IGNORE_disent_POURQUOI_et_pas_tous_la_meme_chose(scene):  # noqa: F
         )
         assert [sans_rapport, inconnu, close] == [IGNORE] * 3
 
-        motifs = [ligne.motif for ligne in _lignes(session, syndic.email)]
+        lignes = _lignes(session, syndic.email) + _lignes(session, _INCONNU)
+        motifs = [ligne.motif for ligne in lignes]
         assert len(motifs) == 3 and len(set(motifs)) == 3, motifs
         assert any(ticket.numero in m and "close" in m for m in motifs), motifs
     finally:
         _purger(session, syndic.email)
+        _purger(session, _INCONNU)
 
 
 def test_la_ligne_ne_porte_JAMAIS_le_corps_du_message():
