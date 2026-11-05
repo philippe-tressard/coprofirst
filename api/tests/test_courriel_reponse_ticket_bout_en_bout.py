@@ -24,7 +24,7 @@ from app.models.core import (
 from app.models.courriel import RelanceCourriel
 from app.utils.courriel_boite import traiter
 from app.utils.courriel_entrant import nouveau_jeton
-from app.utils.courriel_ingestion import ACCEPTE, IGNORE, REFUSE, RELANCE
+from app.utils.courriel_ingestion import A_CLASSER, ACCEPTE, IGNORE, REFUSE, RELANCE
 from tests.aides_base import compte
 from tests.aides_courriel import (  # noqa: F401 — `scene` est une fixture
     _AUTH_OK,
@@ -160,11 +160,15 @@ def test_un_expediteur_authentifie_SANS_COMPTE_ne_signe_rien(scene):
 
 
 def test_un_jeton_FORGE_ne_touche_a_aucun_ticket(scene):
-    """Deviner un jeton ne mène nulle part — et ne réveille personne."""
-    session, ticket, syndic, cs = scene
+    """Deviner un jeton ne mène nulle part — et ne réveille personne.
+
+    D'un INCONNU : d'un correspondant connu et authentifié, qui ne peut pas être
+    forgé, le message attend d'être classé (#2555, `test_courriel_a_classer`).
+    """
+    session, ticket, _syndic, cs = scene
     decision = traiter(
         session,
-        _entetes_reponse(nouveau_jeton(), de=syndic.email),
+        _entetes_reponse(nouveau_jeton(), de="inconnu@ailleurs.test"),
         "Fermez ce ticket.",
         datetime(2026, 9, 3),
         authentification=_AUTH_OK,
@@ -278,6 +282,9 @@ def test_un_message_authentifie_qui_repond_SANS_jeton_ne_se_perd_plus(scene):
     pour chaque publicité était trop large, et elle avalait les vraies réponses :
     un fil transféré, un client qui réécrit le destinataire, une passerelle qui
     perd le `To`.
+
+    Depuis #2555, il attend d'être classé par le conseil — rattaché, ou une
+    affaire créée — au lieu d'un refus qui le perdait pour le site.
     """
     session, _ticket, syndic, cs = scene
     entetes = {
@@ -288,10 +295,10 @@ def test_un_message_authentifie_qui_repond_SANS_jeton_ne_se_perd_plus(scene):
     decision = traiter(
         session, entetes, "C'est noté.", datetime(2026, 9, 3), authentification=_AUTH_OK
     )
-    assert decision == REFUSE
+    assert decision == A_CLASSER
     notifs = _notifs(session, cs)
     assert notifs, "une réponse authentifiée non rattachable disparaît encore"
-    assert "rien ne permet de dire à quel ticket" in notifs[0].corps
+    assert "classé" in notifs[0].titre
 
 
 def test_un_prospectus_ne_reveille_toujours_personne(scene):
