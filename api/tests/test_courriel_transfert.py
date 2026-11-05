@@ -150,6 +150,23 @@ def test_un_fil_RENVOYE_ne_double_rien(monde):
     assert any("déjà versé" in n.titre for n in _notifs(session, cs))
 
 
+def test_un_fil_dont_les_suites_ont_ete_SUPPRIMEES_se_verse_de_nouveau(monde):
+    """#2536 : les Suites d'un transfert supprimées depuis l'écran, le même fil
+    transféré de nouveau était ignoré — « rien de nouveau » —, leur marque restant.
+    Le message qui DÉCRIT l'affaire, lui, n'a pas de Suite : il n'est pas doublé."""
+    session, _ticket, syndic, cs, objet = monde
+    _transferer(session, cs, objet, _fil(syndic.email, objet))
+    (affaire,) = _affaires(session, objet)
+    versees = _evolutions(session, affaire)
+    for suite in versees:
+        session.delete(suite)
+    session.commit()
+
+    assert _transferer(session, cs, objet, _fil(syndic.email, objet)) == ACCEPTE
+    assert len(_evolutions(session, affaire)) == len(versees)
+    assert len(_affaires(session, objet)) == 1, "la description n'ouvre pas une autre affaire"
+
+
 # ── Une affaire désignée ──────────────────────────────────────────────────────
 
 
