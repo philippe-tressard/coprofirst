@@ -114,6 +114,9 @@ _NIVEAUX: dict[str, int] = {
     #  compte, la fausse clé de maintenance présentée. Personne de légitime ne le
     #  fait — S6 de l'audit nocturne en fait un FAIL. WARNING et non ERROR : le
     #  point 6 du pré-check compte les ERROR, et un attaquant bloquerait la MEP.
+    #  Un signataire admis pour le domaine d'un autre (#2554) : un tiers de plus à
+    #  qui l'on confie l'authenticité des réponses par courriel.
+    "signataires_delegues_modifies": logging.WARNING,
     "connexion_leurre": logging.WARNING,
     "cle_maintenance_leurre": logging.WARNING,
 }
