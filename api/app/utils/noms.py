@@ -74,6 +74,19 @@ def cle_de_classement(prenom: Optional[str], nom: Optional[str]) -> tuple:
     return (not cle_nom, cle_nom, _cle_sans_casse(prenom))
 
 
+def rangs_de_classement(personnes: dict) -> dict:
+    """`{clé: (prénom, nom)}` → `{clé: rang}`, dans l'ordre de `cle_de_classement`.
+
+    Pour une liste que le serveur ne rend PAS dans cet ordre (le parc des accès se
+    lit par code) mais que l'écran sait reclasser par personne : le rang se trie
+    comme un nombre, sans que le client recompose la règle (#2522). Deux personnes
+    de même nom et prénom partagent leur rang ; `(None, None)` se range en dernier.
+    """
+    cles = {k: cle_de_classement(*p) for k, p in personnes.items()}
+    ordre = {c: i for i, c in enumerate(sorted(set(cles.values())))}
+    return {k: ordre[c] for k, c in cles.items()}
+
+
 def nom_abrege(prenom: Optional[str], nom: Optional[str]) -> str:
     """« Jean-Baptiste », « fort » → « Jean-Baptiste F. » — la forme PUBLIQUE.
 

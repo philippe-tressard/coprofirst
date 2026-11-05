@@ -6,8 +6,10 @@ Voir `__init__.py` pour la règle de découpage.
 
 import json
 
+from typing import Any, Optional
+
 from fastapi import APIRouter, BackgroundTasks, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, NaiveDatetime
 from sqlmodel import Session, select
 from app.utils.batiments import libelle_batiment_ou, libelle_lot
 from app.auth.deps import require_cs_or_admin
@@ -22,7 +24,6 @@ from app.models.core import (
     Utilisateur,
 )
 from app.utils import horloge
-from typing import Any
 from app.utils.noms import nom_affiche
 from app.utils.recuperer import ou_404
 from app.utils.valeurs import valeur
@@ -34,7 +35,40 @@ router = APIRouter()
 # ── Commandes d'accès (vigik / télécommande) ────────────────────────────────
 
 
-@router.get("/commandes-acces")
+class CommandeAccesEnAttente(BaseModel):
+    """Une commande de badge en attente : la ligne, plus ce qui la rend lisible.
+
+    Typée le 05/11/2026 (#2522) : le contrat la déclarait `{}`, et l'app iOS la
+    relisait d'après le type du front (`types-administration.ts`).
+    """
+
+    id: int
+    user_id: int
+    lot_id: int
+    #: `vigik` ou `telecommande`.
+    type: str
+    quantite: int
+    motif: Optional[str] = None
+    statut: StatutCommande
+    traite_par_id: Optional[int] = None
+    motif_refus: Optional[str] = None
+    cree_le: NaiveDatetime
+    traite_le: Optional[NaiveDatetime] = None
+    #: « Prénom NOM », « ? » quand le compte a disparu.
+    demandeur_nom: str
+    #: « Parking 12 », « ? » quand le lot a disparu.
+    lot: str
+    #: « Bât. 4 », `None` pour un lot sans bâtiment.
+    batiment: Optional[str] = None
+
+
+class CommandeTraitee(BaseModel):
+    """Ce que rend le traitement d'une commande : son nouvel état."""
+
+    statut: StatutCommande
+
+
+@router.get("/commandes-acces", response_model=list[CommandeAccesEnAttente])
 def list_commandes_acces(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),
@@ -99,7 +133,7 @@ def _poser_les_badges(session: Session, cmd: CommandeAcces, codes: list[str]) ->
         synchroniser_import(session, type_acces, objet)
 
 
-@router.post("/commandes-acces/{cmd_id}/traiter")
+@router.post("/commandes-acces/{cmd_id}/traiter", response_model=CommandeTraitee)
 def traiter_commande(
     cmd_id: int,
     body: CommandeAction,
