@@ -69,7 +69,9 @@ def test_la_releve_verifie_les_OCTETS_recus_et_transmet_le_verdict(boite, monkey
         vus["delegues"] = options.get("delegues")  # les délégations du site (#2554)
         return (True, "signé par syndic.fr")
 
-    def traiter(session, entetes, corps, recu_le, plancher, authentification=None, pieces=None):
+    def traiter(
+        session, entetes, corps, recu_le, plancher, authentification=None, pieces=None, brut=None
+    ):
         vus["authentification"], vus["pieces"] = authentification, pieces
         return courriel_boite.ACCEPTE
 
