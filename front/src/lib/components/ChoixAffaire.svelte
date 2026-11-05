@@ -16,7 +16,12 @@
 	import { createEventDispatcher } from 'svelte';
 	import { tickets as ticketsApi } from '#lib/api/index.ts';
 	import type { AffaireLiee } from '#lib/api/types.ts';
-	import { estTicketActif, estTicketClos, idAffaireDepuisLien } from '#lib/tickets.ts';
+	import {
+		estTicketActif,
+		estTicketClos,
+		idAffaireDepuisLien,
+		termeAffaire,
+	} from '#lib/tickets.ts';
 
 	/** L'`id` du champ — le titre de section de l'appelant peut s'y associer. */
 	export let id: string;
@@ -50,7 +55,8 @@
 		}
 	}
 
-	$: terme = recherche.trim().toLowerCase();
+	//  « #TK-237133 » se colle tel qu'il s'écrit à l'écran : le dièse ne se tape pas.
+	$: terme = termeAffaire(recherche).toLowerCase();
 	//  Un lien collé (« …/tickets/465?src=whatsapp ») désigne une affaire par son id.
 	$: idLien = idAffaireDepuisLien(recherche);
 	$: ecartees = new Set(exclure);
