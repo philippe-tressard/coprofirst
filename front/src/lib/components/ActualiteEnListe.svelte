@@ -36,7 +36,7 @@
 	import { supprimerDocument } from '#lib/gestes-document.ts';
 	import { promouvoirActualite } from '#lib/gestes-actualite.ts';
 	import { isCS } from '#lib/stores/auth.ts';
-	import { OPTIONS_TICKET, ticketUrgent, type GestesTicket } from '#lib/tickets.ts';
+	import { OPTIONS_TICKET, type GestesTicket } from '#lib/tickets.ts';
 	import ActionsActualite from './ActionsActualite.svelte';
 	import CarteActualite from './CarteActualite.svelte';
 	import EtatListe from './EtatListe.svelte';
@@ -64,7 +64,7 @@
 	//  travail — on n'écrit dans l'affaire qu'après la réponse du serveur.
 	const optionsInitiales = () => ({
 		epingle: ticket.epingle ?? false,
-		urgente: ticketUrgent(ticket),
+		urgente: ticket.urgente,
 		brouillon: false,
 		confidentiel: false,
 	});

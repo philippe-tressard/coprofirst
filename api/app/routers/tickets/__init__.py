@@ -71,6 +71,7 @@ from . import (
     messages,
     mise_a_jour,
     recherche,
+    referentiels,
     relance,
     synthese,
     transferts,
@@ -87,6 +88,7 @@ for _sous_router in (
     apercu.router,
     liees.router,  # `/choix` : littéral, avant `crud` (#1342)
     recherche.router,  # `/recherche` : littéral, avant `crud` — sinon 422
+    referentiels.router,  # `/referentiels` : littéral, avant `crud` (#2508)
     depuis_annonce.router,
     relance.router,
     entretien_periodique.router,  # `/entretiens-periodiques` : littéral, avant `crud`

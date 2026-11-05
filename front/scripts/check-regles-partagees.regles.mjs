@@ -40,9 +40,9 @@ export const REGLES_PARTAGEES = {
 		quoi: '« Prénom NOM » d’une personne (annuaire, annonces, auteurs)',
 		api: 'api/app/utils/noms.py#nom_affiche',
 		migration: {
-			ticket: '#2508',
+			ticket: '#2511',
 			raison:
-				"l'annuaire la sert depuis #2505 (`nom_affiche`, lu par `CarteContact`) ; restent les auteurs des affaires et des annonces (`auteur_affiche`), et les écrans d'administration qui nomment un compte",
+				"l'annuaire la sert depuis #2505 (`nom_affiche`, lu par `CarteContact`), une affaire son `nom_proprietaire` (#2508) ; restent les annonces, les baux, les points du conseil et les écrans d'administration qui nomment un compte",
 		},
 	},
 	etageLabel: {
@@ -67,9 +67,9 @@ export const REGLES_PARTAGEES = {
 		quoi: 'le lieu lisible d’un périmètre (🔹, muet pour celui par défaut)',
 		api: 'api/app/utils/perimetres/libelles.py#perimetre_label',
 		migration: {
-			ticket: '#2508',
+			ticket: '#2511',
 			raison:
-				"CR d'AG et carnet le servent depuis #2505 (`perimetre_libelle`, lu par `BadgePerimetre libelle=`, `perimetres.perimetre_badge`) ; restent le fil, les cartes d'affaire (#2508) et les sélecteurs de périmètre",
+				"CR d'AG et carnet le servent depuis #2505, une affaire depuis #2508 (`perimetre_libelle`, `perimetres.perimetre_badge`) ; restent la ligne du fil, qui ne le porte pas encore, et les sélecteurs de périmètre",
 		},
 	},
 
@@ -87,16 +87,12 @@ export const REGLES_PARTAGEES = {
 	isNouveau: {
 		quoi: 'le badge « NEW » d’un élément de moins de 48 h',
 		api: 'api/app/utils/nouveaute.py#est_nouveau',
-		migration: {
-			ticket: '#2508',
-			raison:
-				'servie en `nouveau` sur les idées, annonces et sondages (#2506) ; les cartes d’affaire et d’actualité la calculent encore : `TicketRead.nouveau` à servir',
-		},
+		//  Servie en `nouveau` : idées, annonces, sondages (#2506), affaires (#2508).
 	},
 	lectureDe: {
 		quoi: 'la pastille « qui le lit » d’un contenu',
 		migration: {
-			ticket: '#2508',
+			ticket: '#2511',
 			raison:
 				"tenue contre le serveur par `test_lecture_pastille.py`, sans être servie ; l'aperçu du formulaire d'affaire (`SectionDestinataires`) la calcule sur une saisie non enregistrée : `lecture_libelle` à servir aux listes",
 		},
@@ -105,19 +101,16 @@ export const REGLES_PARTAGEES = {
 		quoi: 'le crayon d’un contenu (auteur, « saisi pour », admin)',
 		api: 'api/app/auth/deps.py#peut_editer',
 		migration: {
-			ticket: '#2508',
+			ticket: '#2511',
 			raison:
-				"servie en `peut_modifier` sur les idées et les annonces (#2506) ; les cartes d'affaire et l'Historique la recopient encore : `peut_modifier` à servir avec l'affaire et ses entrées",
+				"servie en `peut_modifier` sur les idées, les annonces (#2506) et les affaires (#2508)  ; la carte d'affaire et l'Historique la recopient encore : leur crayon ouvre une correction plus large que le contenu (liées, diffusion, suivi), un geste à servir",
 		},
 	},
 	peutCommenter: {
 		quoi: 'le geste « Répondre » d’un contenu',
 		api: 'api/app/auth/deps.py#peut_commenter',
-		migration: {
-			ticket: '#2508',
-			raison:
-				"servie en `peut_supprimer` sur les réponses de la Communauté (#2506) ; la carte d'affaire la recopie encore : `peut_commenter` à servir avec l'affaire",
-		},
+		//  Servie en `peut_supprimer` (réponses de la Communauté, #2506) et en
+		//  `peut_repondre` / `peut_changer_etat` (affaires, `auth/gestes_affaire`, #2508).
 	},
 
 	//  ── Mes lots et accès, prestataires (#2507) ─────────────────────────────
@@ -143,7 +136,7 @@ export const REGLES_PARTAGEES = {
 		quoi: 'la fréquence d’un contrat en clair',
 		api: 'api/app/utils/frequence_contrat.py#frequence_libelle',
 		migration: {
-			ticket: '#2508',
+			ticket: '#2511',
 			raison:
 				"servie dans `ContratRead.frequence_libelle` (#2507), que l'onglet Contrats lit ; le front la calcule encore pour une affaire sous contrat (`intervenantAffiche`, `ChampFrequence` sur `ticket.contrat`) : à servir avec l'affaire",
 		},
@@ -170,62 +163,57 @@ export const REGLES_PARTAGEES = {
 	},
 
 	//  ── Affaires (#2508) ─────────────────────────────────────────────────────
-	isCS: {
-		quoi: 'les gestes du modérateur (archiver, déplacer au Kanban, catégories réservées)',
-		api: 'api/app/auth/deps.py#est_moderateur',
-		migration: {
-			ticket: '#2508',
-			raison:
-				"l'app recompose « conseil ou admin » depuis `/auth/me` : `peut_archiver`, `peut_changer_etat` à servir avec l'affaire",
-		},
-	},
+	//  Servies par `TicketRead` (`schemas_affaire_servie`) depuis #2508 : urgence,
+	//  colonne du Kanban, nom affiché. Les gestes (`auth/gestes_affaire`) et les tables
+	//  (`GET /tickets/referentiels`) le sont aussi ; ce qui reste au front l'est HORS
+	//  des affaires, et sa migration est portée par #2511.
 	ticketUrgent: {
 		quoi: "l'urgence d'une affaire (⚡)",
 		api: 'api/app/utils/categories_ticket.py#ticket_urgent',
-		migration: {
-			ticket: '#2508',
-			raison:
-				'le serveur la calcule pour la suite groupée, le front la recopie pour la carte : `urgente` à servir dans `TicketRead`',
-		},
+		//  Servie par `TicketRead.urgente` (#2508).
 	},
 	colonneDuTicket: {
 		quoi: 'la colonne du Kanban d’une affaire selon son statut',
 		api: 'api/app/utils/kanban_tickets.py#colonne_du_ticket',
+		//  Servie par `TicketRead.colonne_kanban` (#2508).
+	},
+	nomProprietaire: {
+		quoi: 'le nom d’un objet « saisi pour » (le propriétaire, sinon le rédacteur)',
+		api: 'api/app/schemas_affaire_servie.py#nom_proprietaire',
+		//  Servie par `TicketRead.nom_proprietaire` (#2508).
+	},
+	isCS: {
+		quoi: 'les gestes du modérateur (archiver, déplacer au Kanban, catégories réservées)',
+		api: 'api/app/auth/deps.py#est_moderateur',
 		migration: {
-			ticket: '#2508',
-			raison: "l'app la génère depuis `kanban.ts` : servir la colonne, ou la table avec le contrat",
+			ticket: '#2511',
+			raison:
+				"servis pour les affaires (`peut_archiver`, `peut_deplacer_au_kanban`, `referentiels.categories[].permise`, #2508) ; le site garde `$isCS` pour une cinquantaine d'écrans hors affaires",
 		},
 	},
 	categorieTicketLabel: {
 		quoi: 'le libellé d’une catégorie d’affaire (carnet, cartes)',
 		api: 'api/app/utils/categories_ticket.py#libelle_categorie',
 		migration: {
-			ticket: '#2508',
+			ticket: '#2511',
 			raison:
-				"l'app la génère depuis `tickets-categories.ts` : `categorie_libelle` à servir (carnet : #2505)",
-		},
-	},
-	nomProprietaire: {
-		quoi: 'le nom d’un objet « saisi pour » (le propriétaire, sinon le rédacteur)',
-		migration: {
-			ticket: '#2508',
-			raison:
-				"l'app choisit elle-même entre `proprietaire_nom` et `auteur_nom` : un seul champ affiché à servir",
+				"servi avec l'affaire (`categorie_libelle`) et le référentiel (#2508) ; le front l'applique encore au carnet, au reporting et au pied de carte, que l'API ne sert pas avec ce champ",
 		},
 	},
 	statutTicketLabel: {
 		quoi: 'le libellé d’un statut d’affaire',
 		migration: {
-			ticket: '#2508',
-			raison: "aucun pendant au serveur ; l'app le génère depuis `tickets.ts`",
+			ticket: '#2511',
+			raison:
+				"servi avec l'affaire (`statut_libelle`) et le référentiel (#2508) ; le front l'applique encore aux états du fil et des CR, servis en codes",
 		},
 	},
 	estTicketClos: {
 		quoi: 'une affaire close (résolue ou annulée)',
 		migration: {
-			ticket: '#2508',
+			ticket: '#2511',
 			raison:
-				"la liste des statuts clos vit au serveur (`STATUTS_TICKET_CLOS`), le prédicat dans le front : l'app le génère",
+				"servie avec l'affaire (`close`) et le référentiel (`statuts[].clos`, #2508) ; le front l'applique encore au fil, aux affaires liées et à l'état choisi d'une fusion",
 		},
 	},
 };

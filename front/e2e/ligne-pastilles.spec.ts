@@ -18,6 +18,8 @@ const LIGNE = {
 	categorie: 'panne',
 	statut: 'en_cours',
 	priorite: 'haute',
+	//  ⚡ servie par l'API avec la ligne (`urgente`, #2508) : l'écran ne la recalcule pas.
+	urgente: true,
 	debut: null,
 	perimetre_cible: ['bat:1'],
 	public_cible: null,
@@ -34,6 +36,8 @@ const AFFAIRE = {
 	description: 'Elle ne ferme plus',
 	auteur_id: 2,
 	auteur_nom: AUTEUR,
+	//  Le nom affiché, servi par l'API (#2508).
+	nom_proprietaire: AUTEUR,
 	cree_le: '2026-09-26T10:00:00',
 	mis_a_jour_le: '2026-09-26T10:00:00',
 	photos_urls: [],

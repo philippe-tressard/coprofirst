@@ -58,7 +58,13 @@ const affaire = (id: number, extra: Record<string, unknown>) => ({
 });
 const AFFAIRES = [
 	{ ...AFFAIRE, photos_urls: ['/uploads/demande.jpg'] },
-	affaire(43, { titre: 'Ascenseur bloqué', statut: 'ouvert', priorite: 'haute', epingle: true }),
+	affaire(43, {
+		titre: 'Ascenseur bloqué',
+		statut: 'ouvert',
+		priorite: 'haute',
+		urgente: true,
+		epingle: true,
+	}),
 	affaire(44, {
 		titre: 'Ravalement',
 		categorie: 'etude_travaux',
@@ -76,6 +82,8 @@ const AFFAIRES = [
 		categorie: 'espaces_verts',
 		statut: 'chez_prestataire',
 		suivi_kanban: true,
+		colonne_kanban: 'fournisseur',
+		peut_deplacer_au_kanban: true,
 	}),
 	affaire(47, {
 		titre: 'Coupure d’eau',

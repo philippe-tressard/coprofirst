@@ -25,6 +25,7 @@ from app.schemas_communs import (  # noqa: F401
 #  qu'elle s'applique aussi aux actualités et aux événements (15/09/2026).
 from app.utils.assiste_ia import AssisteIACorrection, AssisteIAEntree, AssisteIASortie
 from app.utils.saisi_pour import SaisiPourEntree, SaisiPourSortie
+from app.schemas_affaire_servie import AffaireServie
 
 #  Ne vivent ici que les schémas PARTAGÉS par plusieurs routeurs. Un schéma propre
 #  à un seul routeur est déclaré à côté de lui (`<routeur>_schemas.py`) — #1566.
@@ -180,7 +181,9 @@ class TicketCreate(SaisiPourEntree, AssisteIAEntree, ChampsIntervenant):
     #  Intervenant, récurrence, équipement : `ChampsIntervenant` — conseil seul.
 
 
-class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant):
+#  Les champs SERVIS aux deux clients — urgence, colonne, libellés, gestes (#2508) :
+#  `schemas_affaire_servie`, qui dit lesquels se calculent et lesquels se posent.
+class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant, AffaireServie):
     id: int
     numero: str
     titre: str

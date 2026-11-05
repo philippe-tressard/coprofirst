@@ -37,13 +37,13 @@
 	import AuteurCarte from '#lib/components/AuteurCarte.svelte';
 	import MarqueIA from '#lib/components/MarqueIA.svelte';
 	import PiedCarte from '#lib/components/PiedCarte.svelte';
-	import { BADGE_PRIORITE, PRIORITE_BREVE, optionsEnBadge, ticketUrgent } from '#lib/tickets.ts';
+	import { BADGE_PRIORITE, PRIORITE_BREVE, optionsEnBadge } from '#lib/tickets.ts';
 	import type { Ticket } from '#lib/api/index.ts';
 	import { etatAffiche } from '#lib/suivi-actualite.ts';
 
 	/** L'affaire — une carte la passe entière, le fil ses seuls champs de ligne. */
 	export let affaire: Ticket;
-	/** Le PROPRIÉTAIRE à nommer (`nomProprietaire`, ou le nom que le fil reçoit). */
+	/** Le PROPRIÉTAIRE à nommer (`nom_proprietaire`, ou le nom que le fil reçoit). */
 	export let auteur: string | null | undefined = null;
 	/** Le fil a son bandeau « Épinglé » : pas de 📌 sur la ligne. */
 	export let dansLeFil = false;
@@ -61,7 +61,7 @@
 	{/if}
 	<BadgePerimetre perimetre={affaire.perimetre_cible} />
 	<PastilleLecture ticket={affaire} />
-	{#if ticketUrgent(affaire)}
+	{#if affaire.urgente}
 		<Badge teinte={BADGE_PRIORITE[affaire.priorite] ?? 'badge-gray'}
 			>{PRIORITE_BREVE[affaire.priorite]}</Badge
 		>

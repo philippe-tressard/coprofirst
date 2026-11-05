@@ -436,15 +436,9 @@ export const PRIORITE_BREVE: Record<string, string> = PRIORITE.bref;
 /** La teinte de la priorité. */
 export const BADGE_PRIORITE: Record<string, string> = PRIORITE.badge;
 
-/** Un ticket presse-t-il ? La priorité le dit, et elle seule.
- *
- *  ⚠️ `CarteTicket` écrivait `ticket.priorite === 'haute'` en toutes lettres —
- *  dans le composant le plus vu du produit, et sous une fonction qui se déclare
- *  le seul endroit où la question se pose. Une règle qui s'annonce unique et
- *  qu'un appelant contourne n'est pas unique : elle est ignorée. */
-export function ticketUrgent(ticket: { priorite?: string | null } | null | undefined): boolean {
-	return ticket?.priorite === 'haute';
-}
+//  « Un ticket presse-t-il ? » — la priorité le dit, et elle seule. La question ne
+//  se pose plus ici : le serveur sert la réponse (`urgente`, #2508), et le site comme
+//  l'app iOS la LISENT (`categories_ticket.ticket_urgent`).
 
 /**
  * L'adresse de la FICHE d'une affaire — actualités comprises (#1091).

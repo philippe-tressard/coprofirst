@@ -259,9 +259,7 @@
 				peutDeplacer={$isCS}
 				on:cree={async () => ($ticketList = await ticketsApi.list())}
 				on:deplace={(e) =>
-					($ticketList = $ticketList.map((x) =>
-						x.id === e.detail.id ? { ...x, statut: e.detail.statut } : x,
-					))}
+					($ticketList = $ticketList.map((x) => (x.id === e.detail.id ? e.detail : x)))}
 			/>
 		{/snippet}
 	</ChargementDiffere>

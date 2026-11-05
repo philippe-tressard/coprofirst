@@ -52,21 +52,16 @@
 	import EnteteCarte from './EnteteCarte.svelte';
 	import PastillesAffaire from './PastillesAffaire.svelte';
 	import ActionsTicket from './ActionsTicket.svelte';
-	import { currentUser, isAdmin, isCS } from '#lib/stores/auth.ts';
-	import { peutCommenter as peutCommenterCe, peutEditer } from '#lib/droits.ts';
-	import {
-		ticketUrgent,
-		attributsNature,
-		gouttiereAffaire,
-		type GestesTicket,
-	} from '#lib/tickets.ts';
+	import { currentUser, isAdmin } from '#lib/stores/auth.ts';
+	import { peutEditer } from '#lib/droits.ts';
+	import { attributsNature, gouttiereAffaire, type GestesTicket } from '#lib/tickets.ts';
 	import { type CorrespondanceAffaire, type Ticket, type TicketEvolution } from '#lib/api/index.ts';
-	import { nomProprietaire } from '#lib/saisi-pour.ts';
 
 	export let ticket: Ticket;
 	//  À QUI l'affaire appartient — le « Saisi pour » s'il existe, l'auteur
-	//  sinon. Réactif : la carte se rafraîchit quand le ticket change.
-	$: proprietaireNom = nomProprietaire(ticket);
+	//  sinon — composé par le serveur (`nom_proprietaire`, #2508). Réactif : la
+	//  carte se rafraîchit quand le ticket change.
+	$: proprietaireNom = ticket.nom_proprietaire;
 	export let evolutions: TicketEvolution[] = [];
 	/** Le fil n'a pas pu être chargé : on le DIT, au lieu d'un fil vide. */
 	export let erreurSuivi = '';
@@ -103,15 +98,17 @@
 	//  🔴 Les deux droits, calculés SUR CE TICKET — l'appelant ne peut pas les
 	//  fournir : ils dépendent de qui l'a déposé, et une liste en affiche vingt.
 	//
-	//  Avant, le crayon n'apparaissait JAMAIS à l'auteur ni au « saisi pour »,
-	//  que le serveur accepte depuis la v2.85.0.
+	//  ⚠️ Le crayon n'est PAS `peut_modifier` (#2508) : celui-ci dit « corriger le
+	//  CONTENU », que l'auteur perd quand l'affaire est engagée ; la correction
+	//  ouverte par le crayon porte aussi les liées, la diffusion et le suivi, que la
+	//  route accepte encore. Le geste du crayon reste à servir (#2511).
 	//
 	//  ⚠️ `peutAdministrer` reste ce qu'il est pour la SUPPRESSION : effacer
 	//  définitivement n'est pas éditer, et cela reste réservé à l'admin.
 	$: peutEditerCeTicket = peutEditer(ticket, $currentUser?.id, $isAdmin);
-	//  Une affaire absorbée n'a plus de Suite : son fil vit dans la principale (#1704).
-	$: peutSuivreCeTicket =
-		!ticket.fusionnee && peutCommenterCe(ticket, $currentUser?.id, $isAdmin, $isCS);
+	//  La Suite : servie par le serveur pour CE lecteur (`peut_repondre`, #2508) —
+	//  une affaire absorbée n'en a plus, son fil vit dans la principale (#1704).
+	$: peutSuivreCeTicket = ticket.peut_repondre ?? false;
 
 	/**  Les gestes de la page, en UN objet — le contrat d'`ActualiteEnListe`
 	 *   (`GestesTicket`). La carte les relayait en dix-sept événements, que
@@ -132,7 +129,7 @@
 	id="ticket-{ticket.id}"
 	{...gouttiereAffaire(ticket)}
 	{expanded}
-	urgent={ticketUrgent(ticket)}
+	urgent={ticket.urgente}
 	{archive}
 	onDeplier={() => gestes.basculer(ticket)}
 	onApprocher={chargerCorps}
@@ -145,7 +142,7 @@
 	      déplie pas la carte au même instant. -->
 	<EnteteCarte titre={ticket.titre} basculable on:toggle={() => gestes.basculer(ticket)}>
 		<svelte:fragment slot="titre-suffixe">
-			<BadgeNouveau le={ticket.cree_le} />
+			<BadgeNouveau si={ticket.nouveau} />
 		</svelte:fragment>
 		<!--  🔴 L'EN-TÊTE PORTE LE PÉRIMÈTRE ET LE NUMÉRO (18/08/2026, signalé à
 		      l'écran) : *« le périmètre devrait s'afficher dans l'état sous le titre
