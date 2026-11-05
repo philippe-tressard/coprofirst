@@ -10,7 +10,6 @@ from sqlmodel import Session, select
 from app.utils.affaires_liees import poser_liens, supprimer_liens_de
 from app.utils.intervenant import appliquer_intervenant
 from app.utils.nature_affaire import (
-    categorie_reservee,
     est_actualite,
     est_bug,
     perimetre_bug,
@@ -22,6 +21,7 @@ from app.utils.quand import exiger_description
 from app.utils.suivi_actualite import normaliser_suivi, poser_etat_saisi
 
 from app.auth.appartenance import exiger_objet_autorise
+from app.auth.gestes_affaire import categorie_permise
 from app.auth.deps import (
     exiger_non_externe,
     get_current_user,
@@ -133,7 +133,8 @@ def create_ticket(
     est_cs = est_moderateur(user)
     #  Une actualité est publiée par le conseil (#1091) — refusée, pas neutralisée :
     #  la retomber en « panne » publierait sous une autre catégorie que celle choisie.
-    if categorie_reservee(body.categorie) and not est_cs:
+    #  La règle est celle que la grille de l'app lit (`gestes_affaire`, #2508).
+    if not categorie_permise(body.categorie, user):
         raise HTTPException(403, "Cette catégorie est réservée au conseil syndical")
     #  Même règle que pour une actualité, et au même endroit (#1092).
     exiger_description(body.description, debut=body.debut)

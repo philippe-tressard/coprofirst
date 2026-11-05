@@ -24,9 +24,9 @@
  * ## Ce qui est vérifié
  *
  * Aucun `<objet>.auteur_nom` dans un écran, **quand `<objet>` est d'un type
- * porteur de « Saisi pour »**. Le nom affiché passe par `nomProprietaire`
- * (`#lib/saisi-pour`), le nom de la copie par `nomCopie` — deux questions, un
- * seul module.
+ * porteur de « Saisi pour »**. Le nom affiché est servi par l'API
+ * (`nom_proprietaire`, #2508), le nom de la copie se lit par `nomCopie`
+ * (`#lib/saisi-pour`) — deux questions, une seule composition, au serveur.
  *
  * 🔴 **La liste des types porteurs n'est pas écrite ici** : elle se lit dans
  * `src/lib/api/types.ts`, où ce sont les interfaces qui `extends
@@ -215,9 +215,9 @@ function selftest() {
 	);
 	//  Et le correctif passe.
 	verifier(
-		'nomProprietaire passe',
+		'le nom servi passe',
 		occurrencesFautives(
-			'export let ticket: Ticket;\n{@const n = nomProprietaire(ticket)}',
+			'export let ticket: Ticket;\n{ticket.nom_proprietaire}',
 			identifiantsPorteurs('export let ticket: Ticket;', ['Ticket', 'Publication']),
 		),
 		[],
@@ -350,9 +350,9 @@ if (fautifs.length) {
 		'\n  🔴 Un objet « Saisi pour » appartient à celui pour QUI il a été ouvert,' +
 			'\n  pas à celui qui a tapé (arbitrage du 12/09/2026). C’est le défaut #1104 :' +
 			'\n  la carte annonçait le rédacteur, et la FAQ promettait l’inverse.' +
-			'\n\n  Employer `nomProprietaire(objet)` pour ce qui s’AFFICHE, et `nomCopie()`' +
-			'\n  pour ce que la case « Envoyer une copie à … » annonce — les deux dans' +
-			'\n  `#lib/saisi-pour`, jamais réécrites dans un écran.\n',
+			'\n\n  Lire `objet.nom_proprietaire` (servi par l’API, #2508) pour ce qui s’AFFICHE,' +
+			'\n  et `nomCopie()` (`#lib/saisi-pour`) pour ce que la case « Envoyer une copie' +
+			'\n  à … » annonce — jamais recomposés dans un écran.\n',
 	);
 	process.exit(1);
 }

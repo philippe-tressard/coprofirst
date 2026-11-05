@@ -65,6 +65,18 @@ COLONNE_PAR_STATUT: dict[str, str] = {
     "annulé": "annule",
 }
 
+#: Les six colonnes, dans l'ordre du tableau : la valeur, le libellé, et le mot
+#: court de la brique d'accueil. Servies par `GET /tickets/referentiels` (#2508) ;
+#: 🔒 `test_kanban_tickets.py` les compare à `KANBAN_COLS` (`#lib/kanban`).
+COLONNES_KANBAN: tuple[tuple[str, str, str], ...] = (
+    ("ag", "AG", "AG"),
+    ("cs", "CS (en cours)", "CS"),
+    ("syndic", "Syndic (en cours)", "Syndic"),
+    ("fournisseur", "Prestataire (en cours)", "Prestataire"),
+    ("termine", "Terminé", "Terminé"),
+    ("annule", "Annulé", "Annulé"),
+)
+
 
 def colonne_du_ticket(statut: Optional[str]) -> Optional[str]:
     """La colonne d'un ticket, ou `None` si son statut n'en désigne aucune.
@@ -93,6 +105,7 @@ def suivi_par_defaut(categorie: Optional[str]) -> bool:
 __all__ = [
     "CATEGORIES_SUIVIES",
     "COLONNE_PAR_STATUT",
+    "COLONNES_KANBAN",
     "colonne_du_ticket",
     "suivi_par_defaut",
 ]

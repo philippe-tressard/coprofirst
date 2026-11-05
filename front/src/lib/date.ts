@@ -9,28 +9,8 @@
  * - il a été créé il y a moins de 48h
  * - il n'a pas été mis à jour (mis_a_jour_le absent ou identique à cree_le)
  */
-/**
- * « Nouveau » se juge sur la CRÉATION, et sur rien d'autre.
- *
- * 🔴 La règle exigeait auparavant que l'élément n'ait **jamais été modifié** :
- * `notUpdated && récent`. Corriger une faute de frappe deux heures après avoir
- * publié faisait donc disparaître la pastille — l'élément cessait d'être nouveau
- * parce qu'on l'avait relu.
- *
- * Signalé le 01/09/2026 : *« l'édition ne change pas la date de modification
- * (correction d'erreurs) »*. Une correction ne dit rien au lecteur ; elle ne
- * doit donc rien changer à ce qu'il voit.
- *
- * ⚠️ Le second paramètre a été **retiré**, pas ignoré : une quinzaine d'écrans
- * le passaient, et une signature qui accepte un argument sans s'en servir est un
- * mensonge poli — le prochain lecteur croirait que la date de modification
- * compte encore.
- */
-export function isNouveau(cree_le: string): boolean {
-	if (!cree_le) return false;
-	const QUARANTE_HUIT_HEURES = 48 * 60 * 60 * 1000;
-	return Date.now() - new Date(cree_le).getTime() < QUARANTE_HUIT_HEURES;
-}
+//  « Ce contenu est-il nouveau ? » (48 h) ne se calcule plus ici : le serveur le sert
+//  (`nouveau`, `utils/nouveaute.est_nouveau` — #2506, #2508), et `BadgeNouveau` le lit.
 /**
  * Utilitaires de formatage de dates — Europe/Paris
  *

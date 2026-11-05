@@ -184,7 +184,9 @@ export function affairesEnListe(liste: Writable<Ticket[]>, reglages: ReglagesAff
 			//  ce qu'il ne nommait pas — le périmètre (#529), puis les options, puis
 			//  les destinataires d'une actualité (#1091).
 			await ticketsApi.addEvolution(t.id, { ...data, contenu: data.contenu || undefined });
-			if (data.type === 'etat') recoudre({ id: t.id, statut: data.nouveau_statut ?? t.statut });
+			//  L'état change : sa colonne, son libellé, « close » et les gestes avec — relus
+			//  au serveur, qui les sert (#2508), jamais recalculés ici.
+			if (data.type === 'etat') recoudre(await ticketsApi.get(t.id));
 			await chargerFil(t.id);
 			poser({ enEvolution: null });
 			toast('success', data.type === 'etat' ? 'Statut mis à jour' : 'Commentaire ajouté');

@@ -27,6 +27,9 @@ const AFFAIRE = {
 	fichiers_urls: [],
 	archivee: false,
 	suivi_kanban: true,
+	//  Servis par l'API (#2508) : la colonne de la carte, et le glissement pour CE lecteur.
+	colonne_kanban: 'cs',
+	peut_deplacer_au_kanban: true,
 	natures: ['activite'],
 	cree_le: '2026-09-20T10:00:00',
 	mis_a_jour_le: '2026-09-20T10:00:00',
@@ -39,6 +42,8 @@ test('la colonne survolée se marque pendant le glissement, et s’éteint au l�
 }) => {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/tickets') return [AFFAIRE];
+		//  Relue au lâcher (#2508) : la page reprend ce que le serveur sert.
+		if (chemin === '/api/tickets/7') return AFFAIRE;
 	});
 	await page.goto('/tickets/kanban');
 	await attendreHydratation(page);

@@ -41,6 +41,16 @@ def est_actualite(objet: Any) -> bool:
     return valeur(getattr(objet, "categorie", None)) == ACTUALITE
 
 
+#: Les trois natures et leur libellé — le filtre de la vue Affaires, dans son
+#: ordre. Servies par `GET /tickets/referentiels` (#2508) ; 🔒
+#: `test_categories_ticket_concordance.py` les compare à `NATURES` (front).
+LIBELLES_NATURE: dict[str, str] = {
+    "actualite": "Actualité",
+    "calendrier": "Calendrier",
+    "activite": "Affaire",
+}
+
+
 def natures(ticket: Any) -> list[str]:
     """Les filtres sous lesquels l'affaire paraît : `actualite`, `calendrier`, `activite`."""
     datee = getattr(ticket, "debut", None) is not None
@@ -104,6 +114,7 @@ def statut_pour(categorie: Any, demande: Optional[str] = None, *, est_cs: bool =
 
 __all__ = [
     "ACTUALITE",
+    "LIBELLES_NATURE",
     "categorie_reservee",
     "change_de_nature",
     "est_actualite",

@@ -114,6 +114,7 @@ CHAMPS_PASTILLES = (
     "confidentiel",
     "epingle",
     "assiste_ia",
+    "urgente",  # ⚡ servi par `TicketRead` (#2508) : la ligne ne le recalcule pas
 )
 
 

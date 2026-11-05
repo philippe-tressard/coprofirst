@@ -21,7 +21,6 @@
 <script lang="ts">
 	import { SUITE } from '#lib/gestes.ts';
 	import { gesteReponse } from '#lib/tickets.ts';
-	import { isCS } from '#lib/stores/auth.ts';
 	import { createEventDispatcher } from 'svelte';
 	import BoutonLien from './BoutonLien.svelte';
 	import BoutonOptions from './BoutonOptions.svelte';
@@ -102,7 +101,7 @@
 	<BoutonOptions
 		objet={{
 			epingle: ticket.epingle ?? false,
-			urgente: ticket.priorite === 'haute',
+			urgente: ticket.urgente,
 			brouillon: ticket.confidentiel ?? false,
 		}}
 		ouvert={mode === 'options'}
@@ -113,7 +112,8 @@
 	      définitivement est irréversible, et cela reste à l'administrateur.
 	      🔴 Et seulement aux ARCHIVES (24/09/2026) : dans la liste, le conseil
 	      ARCHIVE (📦) — un clic de trop n'y efface plus rien. -->
-{#if !archive && $isCS}
+<!--  📦 Le geste que la route accepte pour CE lecteur (`peut_archiver`, #2508). -->
+{#if !archive && ticket.peut_archiver}
 	<button
 		class="btn-icon"
 		aria-label="Archiver"

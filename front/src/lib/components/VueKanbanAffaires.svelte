@@ -23,13 +23,8 @@
   de dire ce qui vient de l'être. Les archives ont leur onglet.
 -->
 <script lang="ts">
-	import {
-		KANBAN_COLS,
-		MOT_COLONNE_VIDE,
-		colonneDuTicket,
-		COLONNE_PAR_STATUT_TICKET,
-	} from '#lib/kanban.ts';
-	import { categorieTicketLabel, lienTicket } from '#lib/tickets.ts';
+	import { KANBAN_COLS, MOT_COLONNE_VIDE, COLONNE_PAR_STATUT_TICKET } from '#lib/kanban.ts';
+	import { lienTicket } from '#lib/tickets.ts';
 	import { perimetreTags } from '#lib/perimetres-pastilles.ts';
 	import { perimetresStore } from '#lib/stores/perimetres.ts';
 	import { relire } from '#lib/utils.ts';
@@ -43,20 +38,23 @@
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	export let tickets: Ticket[] = [];
-	/** Le conseil glisse les cartes ; les autres lisent. */
+	/** Le conseil pré-remplit l'exercice (`InitPrestataires`). Le glissement, lui,
+	 *  se lit carte par carte : `peut_deplacer_au_kanban`, servi par l'API (#2508). */
 	export let peutDeplacer = false;
 	//  La page tient la liste : elle y reporte le nouvel état.
-	const dispatch = createEventDispatcher<{ deplace: { id: number; statut: string } }>();
+	const dispatch = createEventDispatcher<{ deplace: Ticket }>();
 
-	//  La colonne → l'état : l'inverse de la table de `#lib/kanban`, dérivé, jamais recopié.
+	//  La colonne où l'on lâche → l'état demandé : le GESTE, l'inverse de la table de
+	//  `#lib/kanban`, dérivé, jamais recopié. La colonne d'une carte, elle, est lue
+	//  sur l'affaire (`colonne_kanban`, servie par l'API, #2508).
 	const STATUT_PAR_COLONNE: Record<string, string> = Object.fromEntries(
 		Object.entries(COLONNE_PAR_STATUT_TICKET).map(([statut, col]) => [col, statut]),
 	);
 
-	$: suivis = tickets.filter((t) => t.suivi_kanban && !t.archivee && colonneDuTicket(t.statut));
+	$: suivis = tickets.filter((t) => t.suivi_kanban && !t.archivee && t.colonne_kanban);
 	$: colonnes = KANBAN_COLS.map((c) => ({
 		...c,
-		cartes: suivis.filter((t) => colonneDuTicket(t.statut) === c.id),
+		cartes: suivis.filter((t) => t.colonne_kanban === c.id),
 	}));
 	$: pastilles = relire($perimetresStore, () => perimetreTags);
 
@@ -87,7 +85,9 @@
 				notifier: false,
 				...demande,
 			});
-			for (const id of [t.id, ...demande.fusionner]) dispatch('deplace', { id, statut });
+			//  Relues au serveur : la colonne, le libellé et les gestes suivent l'état qu'il
+			//  a posé (#2508) — ni la vue ni la page ne les recalculent.
+			for (const id of [t.id, ...demande.fusionner]) dispatch('deplace', await ticketsApi.get(id));
 		} catch (e) {
 			toast('error', messageErreur(e));
 		}
@@ -108,7 +108,7 @@
 			role="group"
 			aria-label={col.label}
 			class:kanban-col-cible={cible === col.id}
-			on:dragenter={() => saisie && colonneDuTicket(saisie.statut) !== col.id && (cible = col.id)}
+			on:dragenter={() => saisie && saisie.colonne_kanban !== col.id && (cible = col.id)}
 			on:dragleave={(e) => quitter(e, col.id)}
 			on:dragover|preventDefault
 			on:drop|preventDefault={() => deposer(col.id)}
@@ -121,9 +121,9 @@
 				<a
 					class="kanban-card card"
 					href={lienTicket(t.id)}
-					draggable={peutDeplacer ? 'true' : 'false'}
+					draggable={t.peut_deplacer_au_kanban ? 'true' : 'false'}
 					class:kanban-card-saisie={saisie?.id === t.id}
-					on:dragstart={() => (saisie = t)}
+					on:dragstart={() => t.peut_deplacer_au_kanban && (saisie = t)}
 					on:dragend={lacher}
 				>
 					<div class="kanban-card-tags">
@@ -134,9 +134,7 @@
 					{#if t.prestataire_nom}<span class="kanban-card-prest">{t.prestataire_nom}</span>{/if}
 					<strong class="kanban-card-titre">{t.titre}</strong>
 					<div class="kanban-card-footer">
-						<span class="kanban-card-type"
-							>{categorieTicketLabel(t.categorie)}{SEPARATEUR.point}#{t.numero}</span
-						>
+						<span class="kanban-card-type">{t.categorie_libelle}{SEPARATEUR.point}#{t.numero}</span>
 					</div>
 				</a>
 			{:else}

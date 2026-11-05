@@ -4,7 +4,10 @@ Les fichiers sont enregistrés dans /app/uploads/{type}/{uuid}.ext
 et servis en statique via /uploads/*.
 """
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from pydantic import BaseModel
 import logging
 
 from app.auth.deps import get_current_user, require_cs_or_admin
@@ -108,7 +111,43 @@ def upload_residence(
 # « créer puis téléverser » construisait l'e-mail avant les photos.
 
 
-@router.post("/fichier", summary="Upload une pièce jointe (photo ou document)")
+class PieceJointeRecue(BaseModel):
+    """Ce que rend `POST /uploads/fichier` — typé dans le contrat (#2508)."""
+
+    #: L'adresse à passer dans `photos_urls` ou `fichiers_urls` de la création.
+    url: str
+    #: Le nom fourni par le client, pour l'affichage seulement : l'extension
+    #: écrite sur disque vient du type, jamais de lui.
+    nom: str
+    #: `image` (réencodée en JPEG, 1200 px au plus) ou `document` (tel quel).
+    type: Literal["image", "document"]
+
+
+def _decrire_familles(*noms: str) -> str:
+    """Ce que la route accepte, lu dans `FAMILLES` — jamais recopié (#2508).
+
+    Un client natif (l'app iOS) n'a pas l'écran du site pour le lui dire : la
+    description du contrat porte les extensions et les plafonds de la règle même
+    qui refuse.
+    """
+    lignes = [
+        f"- {nom} : {', '.join(FAMILLES[nom].extensions)} — {FAMILLES[nom].plafond_mo} Mo au plus"
+        for nom in noms
+    ]
+    return (
+        "Une photo ou un document, en `multipart/form-data` (champ `file`), AVANT la "
+        "création : l'adresse rendue se passe dans `photos_urls` ou `fichiers_urls`.\n\n"
+        + "\n".join(lignes)
+        + "\n\nLe contenu doit correspondre à son type (signature) ; refusé sinon (400)."
+    )
+
+
+@router.post(
+    "/fichier",
+    summary="Upload une pièce jointe (photo ou document)",
+    response_model=PieceJointeRecue,
+    description=_decrire_familles("image", "document"),
+)
 @limiter.limit(LIMITE_TELEVERSEMENT)
 def upload_fichier(
     request: Request,

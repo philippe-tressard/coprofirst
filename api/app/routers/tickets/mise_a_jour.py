@@ -30,11 +30,11 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlmodel import Session
 
 from app.auth.deps import est_moderateur, get_current_user, peut_commenter, peut_editer
+from app.auth.gestes_affaire import ETATS_CORRIGEABLES, categorie_permise
 from app.database import get_session
 from app.models.core import (
     STATUTS_TICKET_CLOS,
     RoleUtilisateur,
-    StatutTicket,
     Ticket,
     TicketEvolution,
     Utilisateur,
@@ -47,7 +47,6 @@ from app.utils.prochaine_visite import apres_cloture
 from app.utils.synthese_affaire.file import inscrire_si_eligible
 from app.utils.nature_affaire import (
     ACTUALITE,
-    categorie_reservee,
     change_de_nature,
     est_actualite,
     est_bug,
@@ -190,7 +189,7 @@ def update_ticket(
     vers_reservee = body.categorie is not None and valeur(body.categorie) != valeur(
         ticket.categorie
     )
-    if vers_reservee and categorie_reservee(body.categorie) and not is_cs_admin:
+    if vers_reservee and not categorie_permise(body.categorie, user):
         raise HTTPException(403, "Cette catégorie est réservée au conseil syndical")
     #  🔴 Jugé sur la catégorie FINALE, jamais sur celle d'avant : l'écran qui
     #  fait d'une actualité une Étude & travaux envoie « Ouvert » avec la
@@ -252,9 +251,9 @@ def update_ticket(
         #  le suivi engagé, corriger le texte ferait mentir ce que le CS a lu
         #  avant d'agir. L'admin, lui, intervient précisément quand il y a un
         #  problème — c'est sa raison d'être dans cette règle.
-        if not user.has_role(RoleUtilisateur.admin) and ticket.statut not in (
-            StatutTicket.ouvert,
-            StatutTicket.publie,
+        #  Les états sont ceux que l'écran lit (`peut_modifier`, #2508).
+        if not user.has_role(RoleUtilisateur.admin) and (
+            valeur(ticket.statut) not in ETATS_CORRIGEABLES
         ):
             raise HTTPException(403, "Modification impossible : le ticket n'est plus ouvert")
         changes += _appliquer_contenu(body, ticket, est_cs=is_cs_admin)

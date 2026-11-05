@@ -72,21 +72,10 @@ export function peutEditer(
 	return objet.auteur_id === userId || objet.saisi_pour_user_id === userId;
 }
 
-/**
- * Ajouter une entrée d'Historique, et faire avancer le workflow.
- *
- * Les mêmes, **plus le conseil syndical** — c'est lui qui suit les dossiers.
- * Écrit en appelant `peutEditer`, comme côté serveur : les deux listes ne
- * peuvent alors pas diverger.
- */
-export function peutCommenter(
-	objet: ObjetPossede | null | undefined,
-	userId: number | undefined,
-	estAdmin: boolean,
-	estCS: boolean,
-): boolean {
-	return peutEditer(objet, userId, estAdmin) || estCS;
-}
+//  « Commenter, faire avancer le workflow » (les mêmes, plus le conseil) ne se
+//  recopie plus ici : le serveur le sert avec l'objet — `peut_repondre` d'une
+//  affaire (#2508), `peut_supprimer` d'une réponse (#2506) —, calculé par
+//  `auth/deps.peut_commenter`.
 
 /** Combien de comptes ACTIFS portent les rôles qui ne restent jamais vacants. */
 export interface Titulaires {

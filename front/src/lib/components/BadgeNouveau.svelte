@@ -6,22 +6,21 @@
   son propre « NEW » rouge. Arbitré à l'écran le 26/09/2026 : **un seul badge,
   le NEW rouge du fil**. Le fil l'emploie désormais aussi.
 
-  La règle de fraîcheur est `isNouveau` (`#lib/date`) quand on donne une date ;
-  le fil, qui a la sienne (`isNew`, `#lib/flux`), passe son verdict par `si`.
+  La règle de fraîcheur est au SERVEUR (`utils/nouveaute.est_nouveau`, 48 h) : chaque
+  objet sert son `nouveau` (idées, annonces, sondages #2506, affaires #2508), que le
+  badge reçoit par `si` ; le fil passe le verdict de `isNew` (`#lib/flux`). Il ne
+  calcule plus rien — `isNouveau` a quitté `#lib/date`.
 
   Fixe, sans pulsation : le fil le faisait battre en continu. Une animation
   permanente sur une liste parcourue plusieurs fois par jour fatigue sans rien
   apprendre (`emil-design-eng` : ce qu'on voit souvent ne s'anime pas).
 -->
 <script lang="ts">
-	import { isNouveau } from '#lib/date.ts';
+	/** Le verdict servi (`nouveau`), et ce que l'écran y ajoute (une annonce archivée
+	 *  n'est plus nouvelle). Défaut FERMÉ : sans verdict, pas de badge. */
+	export let si = false;
 
-	/** La date de création de l'objet ; absente, `si` décide seul (le fil). */
-	export let le: string | null | undefined = undefined;
-	/** Une condition de plus, propre à l'écran (une annonce archivée n'est plus nouvelle). */
-	export let si = true;
-
-	$: visible = si && (le === undefined || (!!le && isNouveau(le)));
+	$: visible = si;
 </script>
 
 {#if visible}<span class="badge-nouveau">NEW</span>{/if}
