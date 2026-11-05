@@ -90,7 +90,8 @@ def detacher(session: Session, contenu: Contenu, maintenant: datetime) -> None:
     t.conservee_le = maintenant
     session.add(t)
     for porteur in (*contenu.messages, *contenu.evolutions):
-        porteur.auteur_qualite = qualite(session, porteur.auteur_id)
+        #  Sans compte, la qualité posée à l'écriture se garde (le syndic, #2554).
+        porteur.auteur_qualite = qualite(session, porteur.auteur_id) or porteur.auteur_qualite
         porteur.auteur_id = None
         porteur.fichiers_urls = "[]"
         session.add(porteur)

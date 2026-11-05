@@ -27,6 +27,7 @@ from app.utils.destinataires import peut_gerer_le_site
 from app.utils import demo, pied_de_page, reglages, whatsapp
 from app.utils.config_publique import cles_calculees
 from app.utils.config_site import config_site
+from app.utils import courriel_delegation
 from app.utils.conservation_politique import apres_ecriture
 from app.utils.liens import adresse_du_site, nom_site
 from app.utils.recuperer import ou_404
@@ -104,6 +105,7 @@ def _valeur_pour_admin(cle: str, valeur: str) -> str:
 #: Les clés dont la VALEUR se normalise à l'enregistrement. `site_url` en était la
 #: première (11/09/2026, un lien en `//tickets/34`) ; il ne s'enregistre plus (#2058).
 _NORMALISEURS = {
+    courriel_delegation.CLE_DELEGATIONS: courriel_delegation.normaliser_delegations,
     **pied_de_page.NORMALISEURS,
     #  L'activation d'un service ne s'écrit que `"1"` ou `"0"` (#1718) : la
     #  lecture unique (`service_actif`) n'en accepte pas d'autre.
@@ -115,6 +117,8 @@ _NORMALISEURS = {
 #: à chaque usage (`whatsapp.adresse_du_bridge`), une valeur ancienne comprise.
 _VALIDATEURS = {
     "whatsapp_api_url": lambda v: whatsapp.refus_adresse_bridge(v) if v.strip() else None,
+    #  Un signataire délégué : exact, jamais partagé (#2554).
+    courriel_delegation.CLE_DELEGATIONS: courriel_delegation.refus_des_delegations,
 }
 
 
@@ -177,6 +181,7 @@ def save_config(
         else:
             session.add(ConfigSite(cle=cle, valeur=str(valeur)))
         apres_ecriture(session, cle, str(valeur))
+        courriel_delegation.apres_ecriture(session, cle, str(valeur), user.id)
     session.commit()
     return {"ok": True}
 

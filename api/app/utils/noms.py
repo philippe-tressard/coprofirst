@@ -100,7 +100,15 @@ ANCIEN_RESIDENT = "Ancien résident"
 #: Ce que dit d'un auteur DÉTACHÉ par la conservation des affaires (#2014) la
 #: qualité qu'il avait à l'échéance (`auteur_qualite`) : son compte existe peut-être
 #: encore, mais l'affaire ne dit plus qui il était.
-QUALITES_AUTEUR = {"resident": "Un résident", "conseil": "Le conseil syndical"}
+#: Et la qualité d'une Suite écrite par un membre du cabinet syndic SANS compte
+#: (#2554) : sa réponse par courriel entre au fil, son nom dans l'en-tête de la
+#: Suite, et l'auteur affiché est « Le syndic » — jamais « Ancien résident ».
+QUALITE_SYNDIC = "syndic"
+QUALITES_AUTEUR = {
+    "resident": "Un résident",
+    "conseil": "Le conseil syndical",
+    QUALITE_SYNDIC: "Le syndic",
+}
 
 
 def nom_auteur(auteur, qualite: str | None = None) -> str:

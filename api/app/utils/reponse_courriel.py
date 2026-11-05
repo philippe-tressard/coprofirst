@@ -220,8 +220,14 @@ def contenu_de_la_suite(
     return entete + corps
 
 
-def suite_de_reponse(session: Session, ticket, auteur, expediteur: str, corps: str, envoye_le):
+def suite_de_reponse(
+    session: Session, ticket, auteur, expediteur: str, corps: str, envoye_le, *, syndic=None
+):
     """La Suite d'une réponse DIRECTE, ou None si elle n'a rien à apporter au fil.
+
+    `auteur` est le compte qui a répondu ; sans compte, `syndic` est le membre du
+    cabinet reconnu à son adresse (#2554) — la Suite n'a pas de signataire, et
+    porte la qualité « syndic ».
 
     Le message d'un fil TRANSFÉRÉ ne passe plus par ici depuis le 29/09/2026 :
     `courriel_transfert` le découpe et appelle `suite_d_un_message` pour chacun.
@@ -230,16 +236,17 @@ def suite_de_reponse(session: Session, ticket, auteur, expediteur: str, corps: s
     from app.utils.courriel_decodage import _sans_citation
     from app.utils.noms import nom_affiche
 
+    qui = auteur or syndic
     return suite_d_un_message(
         session,
         ticket,
         auteur,
         expediteur=expediteur,
-        nom=nom_affiche(auteur.prenom, auteur.nom),
+        nom=nom_affiche(qui.prenom, qui.nom),
         texte=_sans_citation(corps),
         recu=corps,
         envoye_le=envoye_le,
-        ecartable=est_moderateur(auteur),
+        ecartable=auteur is not None and est_moderateur(auteur),
     )
 
 
@@ -261,7 +268,9 @@ def suite_d_un_message(
 
     `signataire` est le compte qui signe la Suite (qui a répondu, ou qui a
     transféré) ; `expediteur` et `nom` disent qui a ÉCRIT le message, et c'est
-    lui que la ligne d'en-tête nomme. `texte` est déjà sans citation.
+    lui que la ligne d'en-tête nomme. `texte` est déjà sans citation. Sans
+    signataire, l'expéditeur DOIT être le syndic (#2554) : c'est le seul
+    correspondant sans compte dont une réponse entre au fil.
 
     Deux règles demandées le 28/09/2026 :
 
@@ -311,9 +320,12 @@ def suite_mise_en_forme(
     from app.models.tickets import StatutTicket
     from app.utils.destinataires import est_adresse_syndic
     from app.utils.nature_affaire import est_actualite
+    from app.utils.noms import QUALITE_SYNDIC
     from app.utils.valeurs import valeur
 
     syndic = est_adresse_syndic(session, parseaddr(expediteur or "")[1])
+    if signataire is None and not syndic:
+        raise ValueError("une Suite sans signataire ne s'écrit que pour le syndic (#2554)")
     if not mis.contenu:
         return None
     if mis.vide_selon_assistant and ecartable and not syndic:
@@ -330,6 +342,7 @@ def suite_mise_en_forme(
         contenu=contenu,
         contenu_origine=mis.origine,
         assiste_ia=mis.assiste,
-        auteur_id=signataire.id,
+        auteur_id=signataire.id if signataire else None,
+        auteur_qualite=None if signataire else QUALITE_SYNDIC,
         cree_le=quand,
     )

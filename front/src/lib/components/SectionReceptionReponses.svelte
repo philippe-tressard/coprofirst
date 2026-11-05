@@ -60,6 +60,8 @@
 		plancher: '2026-09-02',
 		//  Combien de messages l'onglet Espace CS › Courriels en montre (20 par défaut).
 		affiches: 20 as number | null,
+		//  `domaine = signataire`, une par ligne (#2554) — `utils/courriel_delegation`.
+		delegues: '',
 	};
 	let imapSaving = false;
 	let imapPasswordSet = false;
@@ -91,6 +93,7 @@
 				imap_plancher: imapConfig.plancher,
 				//  Vide = la valeur par défaut du serveur, jamais « null » écrit en base.
 				courriels_affiches: imapConfig.affiches == null ? '' : String(imapConfig.affiches),
+				courriel_signataires_delegues: imapConfig.delegues,
 			};
 			//  Le mot de passe n'est envoyé QUE s'il a été saisi : l'API renvoie un
 			//  marqueur à sa place, et le réexpédier l'écraserait par des points.
@@ -141,6 +144,7 @@
 		imapConfig.dossier = lues['imap_dossier'] || 'INBOX';
 		imapConfig.plancher = lues['imap_plancher'] || '2026-09-02';
 		imapConfig.affiches = parseInt(lues['courriels_affiches'] ?? '') || 20;
+		imapConfig.delegues = lues['courriel_signataires_delegues'] ?? '';
 		imapPasswordSet = !!lues['imap_password'];
 	}
 
@@ -200,6 +204,22 @@
 				Messages affichés dans Espace CS › Courriels
 				<input type="number" bind:value={imapConfig.affiches} min="1" max="100" placeholder="20" />
 				<span class="aide">Les plus récents ; de 1 à 100.</span>
+			</label>
+			<!--  #2554 : un cabinet sous Microsoft 365 signe du nom de son abonnement
+			      (`…onmicrosoft.com`), et sa réponse était refusée. L'admettre est un
+			      geste de confiance : correspondance exacte, journalisée. -->
+			<label class="field champ-large">
+				Signataires délégués
+				<textarea
+					bind:value={imapConfig.delegues}
+					rows="3"
+					spellcheck="false"
+					placeholder="syndic.fr = cabinet.onmicrosoft.com"></textarea>
+				<span class="aide">
+					Une ligne par domaine : « domaine de l'expéditeur = domaine qui signe pour lui ». À
+					remplir quand une réponse est refusée parce qu'elle est « signée par … et non par le
+					domaine de l'expéditeur ». Un service grand public (gmail.com…) n'est jamais admis.
+				</span>
 			</label>
 		</div>
 		<div class="largeur-saisie form-actions">

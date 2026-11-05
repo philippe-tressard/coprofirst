@@ -20,6 +20,12 @@ facultatif depuis #1688, mais un auteur vide y veut dire « compte supprimé » 
 s'affiche « Ancien résident » : y ranger un tiers mentirait sur qui a écrit. Le conseil syndical est prévenu, et recopie s'il le veut : c'est un
 clic de plus, pas une donnée perdue.
 
+**Sauf le SYNDIC** (#2554, 05/11/2026) : un membre du cabinet reconnu à son adresse
+(fiche du syndic) n'a presque jamais de compte, et c'est pour lui que la relève
+existe — aucune de ses réponses n'était entrée. Sa Suite n'a pas de signataire et
+porte la qualité « syndic » (`noms.QUALITE_SYNDIC`) : l'auteur affiché est « Le
+syndic », son nom dans l'en-tête de la Suite. Un autre tiers sans compte reste refusé.
+
 ## Le silence est ce qui rend un filtre dangereux
 
 Chaque refus produit une notification nommant le ticket et **la raison**. Un
@@ -40,6 +46,7 @@ import email
 import imaplib
 import logging
 from datetime import datetime
+from email.utils import parseaddr
 from app.utils import horloge
 
 from sqlalchemy import func
@@ -49,8 +56,9 @@ from app.utils.liens import LIEN_COURRIELS_AFFAIRES, lien_ticket
 from app.auth.deps import peut_commenter
 from app.models.core import ConfigSite, Ticket, Utilisateur
 from app.models.tickets import STATUTS_TICKET_CLOS
-from app.utils.destinataires import est_adresse_syndic
+from app.utils.destinataires import est_adresse_syndic, membre_syndic_a_l_adresse
 from app.utils.courriel_authenticite import VerificationReportee, verifier_expediteur
+from app.utils.courriel_delegation import delegations_du_site
 from app.utils.courriel_decodage import _corps_lisible, _texte
 from app.utils import courriel_pieces_jointes
 from app.utils.courriel_journal import journaliser_releve
@@ -187,6 +195,11 @@ def traiter(
     return decision
 
 
+def _adresse(en_tete: str) -> str:
+    """L'adresse d'un `From:` (« Nom <a@b.fr> » → « a@b.fr »)."""
+    return parseaddr(en_tete or "")[1]
+
+
 def _refus(verdict, motif: str, *, jeton=None, numero=None):
     """Le verdict d'un refus décidé ICI, après l'examen — avec son propre motif."""
     return verdict.__class__(
@@ -255,7 +268,11 @@ def _decider(session, entetes, corps, recu_le, plancher, authentification, piece
         return REFUSE, verdict.motif, ticket
 
     auteur = compte_a_l_adresse(session, verdict.expediteur)
-    if auteur is None:
+    #  🔴 Le SYNDIC sans compte (#2554) : reconnu à son adresse dans la fiche du
+    #  cabinet, il est correspondant de toute affaire — c'est pour lui que la
+    #  relève existe. Sa Suite n'a pas de signataire et dit « Le syndic ».
+    syndic = None if auteur else membre_syndic_a_l_adresse(session, _adresse(verdict.expediteur))
+    if auteur is None and syndic is None:
         #  Voir l'en-tête : pas de compte, pas d'écriture — mais on le DIT.
         refus = _refus(
             verdict,
@@ -271,7 +288,7 @@ def _decider(session, entetes, corps, recu_le, plancher, authentification, piece
     #  site sur CE ticket. Il prouve qu'il a reçu l'ADRESSE — qu'un courriel
     #  transféré à un voisin transporte avec lui. Vérifié le 31/10/2026 : un tiers
     #  qui avait un compte et l'ancienne adresse à jeton écrivait au fil.
-    if not correspondant_du_ticket(session, ticket, auteur):
+    if auteur is not None and not correspondant_du_ticket(session, ticket, auteur):
         par = "son numéro dans le sujet" if verdict.jeton is None else "son adresse de réponse"
         refus = _refus(
             verdict,
@@ -285,11 +302,20 @@ def _decider(session, entetes, corps, recu_le, plancher, authentification, piece
 
     #  Texte nettoyé, mis en forme par l'assistant si l'usage est prêt, et daté
     #  de l'envoi — `utils/reponse_courriel` (#1322).
-    suite = suite_de_reponse(session, ticket, auteur, verdict.expediteur, corps, recu_le)
+    suite = suite_de_reponse(
+        session, ticket, auteur, verdict.expediteur, corps, recu_le, syndic=syndic
+    )
     #  Les pièces jointes (31/10/2026) : une réponse sans mot qui porte un devis
     #  entre au fil quand même.
     suite = courriel_pieces_jointes.joindre(
-        session, ticket, auteur, suite, pieces, expediteur=verdict.expediteur, envoye_le=recu_le
+        session,
+        ticket,
+        auteur,
+        suite,
+        pieces,
+        expediteur=verdict.expediteur,
+        envoye_le=recu_le,
+        syndic=syndic,
     )
     if suite is None:
         return IGNORE, _RIEN_A_AJOUTER, ticket
@@ -356,6 +382,7 @@ def relever() -> dict[str, int]:
             return comptes
 
         plancher = plancher_de_releve(session, cfg)
+        delegues = delegations_du_site(session)  # #2554
 
         exiger_hors_demo("Relève des courriels")  # (#1902)
         boite = imaplib.IMAP4_SSL(cfg.get("imap_server", ""), int(cfg.get("imap_port") or 993))
@@ -384,7 +411,9 @@ def relever() -> dict[str, int]:
                 try:
                     #  DKIM vérifié ICI, sur les octets reçus (28/09/2026) — jamais lu
                     #  dans un en-tête que l'expéditeur aurait pu écrire.
-                    auth = verifier_expediteur(brut[0][1], entetes.get("From", ""))
+                    auth = verifier_expediteur(
+                        brut[0][1], entetes.get("From", ""), delegues=delegues
+                    )
                     decision = traiter(
                         session,
                         entetes,
