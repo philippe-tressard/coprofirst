@@ -16,6 +16,8 @@ export interface AffaireLiee {
 	titre: string;
 	/** L'état — le « Suivi » de l'écran. */
 	statut: string;
+	/** Résolue ou annulée — servi (`etat_affaire.affaire_close`, #2511). */
+	close: boolean;
 	/** ISO, rendu en UTC (`Z`) — `fmtDate` le lit (#2173). */
 	cree_le: string;
 	/** 🔀 Absorbée par une autre affaire (#2186) : son état est HÉRITÉ de la

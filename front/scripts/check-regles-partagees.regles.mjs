@@ -207,10 +207,9 @@ export const REGLES_PARTAGEES = {
 	},
 	estTicketClos: {
 		quoi: 'une affaire close (résolue ou annulée)',
-		migration: {
-			ticket: '#2511',
-			raison:
-				"servie avec l'affaire (`close`) et le référentiel (`statuts[].clos`, #2508) ; le front l'applique encore au fil, aux affaires liées et à l'état choisi d'une fusion",
-		},
+		api: 'api/app/utils/etat_affaire.py#affaire_close',
+		//  Servie en `close` : l'affaire (#2508), la ligne du fil et les affaires
+		//  liées (#2511) ; l'état CHOISI d'une fusion se lit au référentiel
+		//  (`statuts[].clos`, `fusion-affaires.etatQuiClot`).
 	},
 };

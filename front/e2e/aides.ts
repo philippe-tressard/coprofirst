@@ -2,6 +2,7 @@
  *  Aides partagées des tests de navigateur.
  */
 import { test as base, expect, type Locator, type Page, type Route } from '@playwright/test';
+import { REFERENTIELS_TEMOINS } from './referentiels-temoins';
 
 /**
  * **Le `test` de tous les specs — une exception de la page le fait échouer.**
@@ -207,6 +208,8 @@ export const EQUIPEMENTS_TEMOINS = (
 const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	//  `Equipement[]` : le cache des équipements, chargé par la mise en page (#2442).
 	'/api/equipements': EQUIPEMENTS_TEMOINS,
+	//  `ReferentielsAffaires` : l'état qui clôt une affaire (fusion, #2511).
+	'/api/tickets/referentiels': REFERENTIELS_TEMOINS,
 	//  `TableauTelemetrie` : l'onglet Télémétrie lit `adoption.par_profil`…
 	'/api/telemetry/dashboard': TABLEAU_TELEMETRIE_VIDE,
 	//  `FluxResponse` : `RaccourcisRapides` lit `sante.tickets_ouverts`.

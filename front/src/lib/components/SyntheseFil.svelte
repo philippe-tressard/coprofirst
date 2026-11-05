@@ -31,13 +31,12 @@
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { isCS } from '#lib/stores/auth.ts';
 	import { fmtJours } from '#lib/synthese.ts';
-	import { estTicketClos } from '#lib/tickets.ts';
 	import EtatListe from './EtatListe.svelte';
 	import RubriqueEtape from './RubriqueEtape.svelte';
 	import SyntheseAffaire from './SyntheseAffaire.svelte';
 	import { toast } from './Toast.svelte';
 
-	export let ticket: Pick<Ticket, 'id' | 'statut'> | null;
+	export let ticket: Pick<Ticket, 'id' | 'statut' | 'close'> | null;
 	/** Le fil : relu à chaque écriture, il fait relire la synthèse avec lui. */
 	export let evolutions: unknown[] = [];
 	/** La rubrique est-elle dépliée ? L'accordéon est tenu par la carte. */
@@ -50,7 +49,7 @@
 
 	let erreur = '';
 	let enCours = false;
-	$: cle = ticket && estTicketClos(ticket.statut) ? `${ticket.id}:${evolutions.length}` : null;
+	$: cle = ticket?.close ? `${ticket.id}:${evolutions.length}` : null;
 	$: if (cle) recharger();
 	$: if (!cle) etat = null;
 
