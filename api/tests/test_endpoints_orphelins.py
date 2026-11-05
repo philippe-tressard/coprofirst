@@ -44,6 +44,8 @@ SANS_CONSOMMATEUR_FRONT = {
     "/appareils": "appelée par l'application iOS seule, dont le client se génère du contrat "
     "publié (#2456) — la PWA n'enregistre pas d'appareil (spec notifications-push §6.2, #2493)",
     "/appareils/{abonnement}": "idem : le retrait de l'appareil à la déconnexion de l'application iOS",
+    "/notifications/supprimer-selection": "la sélection de l'application iOS (« Supprimer (n) », "
+    "#2535) ; le site n'offre que « Supprimer les lues » et la corbeille d'une ligne",
     "/tickets/referentiels": "lue par l'application iOS, dont la grille « Nouvelle affaire » et le "
     "Kanban la générait depuis le front (#2508) ; le site garde ses tables, concordantes",
     "/prestataires/releves/{r_id}/photo/{nom}": "idem, pour `releve_compteur.photo_url` — le GET passait auparavant par "
