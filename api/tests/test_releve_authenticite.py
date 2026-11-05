@@ -64,11 +64,14 @@ def boite(monkeypatch, imap_actif):  # noqa: F811
 def test_la_releve_verifie_les_OCTETS_recus_et_transmet_le_verdict(boite, monkeypatch):
     vus: dict = {}
 
-    def verifier(brut, from_):
+    def verifier(brut, from_, **options):
         vus["brut"], vus["from"] = brut, from_
+        vus["delegues"] = options.get("delegues")  # les délégations du site (#2554)
         return (True, "signé par syndic.fr")
 
-    def traiter(session, entetes, corps, recu_le, plancher, authentification=None, pieces=None):
+    def traiter(
+        session, entetes, corps, recu_le, plancher, authentification=None, pieces=None, brut=None
+    ):
         vus["authentification"], vus["pieces"] = authentification, pieces
         return courriel_boite.ACCEPTE
 
@@ -79,13 +82,14 @@ def test_la_releve_verifie_les_OCTETS_recus_et_transmet_le_verdict(boite, monkey
 
     assert vus["brut"] == _BRUT, "la vérification doit porter sur le message tel que reçu"
     assert vus["from"] == "gestion@syndic.fr"
+    assert vus["delegues"] == frozenset(), "les délégations du site sont transmises (#2554)"
     assert vus["authentification"] == (True, "signé par syndic.fr")
     assert vus["pieces"] is not None, "les pièces jointes sont triées sur le message reçu"
     assert boite.acquittes == [b"1"]
 
 
 def test_un_DNS_injoignable_laisse_le_message_NON_LU(boite, journal, monkeypatch):  # noqa: F811
-    def verifier(_brut, _from):
+    def verifier(_brut, _from, **_options):
         raise VerificationReportee("DNS injoignable (Timeout)")
 
     def traiter(*_a, **_k):
