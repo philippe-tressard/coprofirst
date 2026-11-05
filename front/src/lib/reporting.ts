@@ -20,6 +20,10 @@ export interface ReportPrestataire {
 	nom: string;
 	specialite?: string | null;
 	type_prestataire?: string | null;
+	/**  La moyenne de ses avis, SERVIE par l'API (`PrestataireRead.note_moyenne`, #2507) —
+	 *   l'onglet la recalculait des notations, à la main. */
+	note_moyenne: number | null;
+	nb_notations: number;
 }
 export interface ReportContrat {
 	id: number;
@@ -42,6 +46,9 @@ export interface ReportContrat {
 	/**  Le terme est passé et RIEN ne l'a prolongé — un mandat de syndic qui a
 	 *   cessé. Exclusif de `reconduit` : voir `SANS_RECONDUCTION_TACITE`. */
 	echu?: boolean;
+	/**  Le début du préavis et où en est le terme — SERVIS par l'API (#2507). */
+	date_preavis: string | null;
+	urgence_echeance: 'preavis' | 'annee' | 'futur' | null;
 	actif: boolean;
 }
 export interface DiagRapport {
@@ -117,21 +124,9 @@ export function anneeCourante(): number {
 	return new Date().getFullYear();
 }
 
-/**
- * Minuit du jour — la borne d'un « en retard », qui n'est PAS l'instant.
- *
- * ⚠️ Une échéance prévue aujourd'hui n'est pas en retard, et elle l'aurait été
- * dès 00 h 01 avec un `new Date()` nu.
- *
- * ⚠️ À employer via `relire(donnees, minuitDuJour)` : appelée dans un `$:` qui
- * ne cite aucune variable réactive, elle serait figée au chargement de l'onglet
- * (`#lib/utils.relire`).
- */
-export function minuitDuJour(): Date {
-	const d = new Date();
-	d.setHours(0, 0, 0, 0);
-	return d;
-}
+//  🔴 `minuitDuJour` est PARTI le 04/11/2026 (#2507) : le retard d'une visite est SERVI
+//  par l'API (`ContratRead.en_retard`, `echeance_contrat.visite_en_retard`), le jour de
+//  Paris faisant la borne — le jour même n'est pas un retard.
 
 export const MOIS_LABELS = [
 	'Janv.',
@@ -171,21 +166,9 @@ export function contratDateFin(c: ReportContrat): { date: Date; reconduit: boole
 	return { date: new Date(c.date_fin), reconduit: c.reconduit ?? false };
 }
 
-export function contratDatePreavis(dateFin: Date): Date {
-	const d = new Date(dateFin);
-	d.setMonth(d.getMonth() - PREAVIS_MOIS);
-	return d;
-}
-
-export function contratUrgence(dateFin: Date): 'preavis' | 'annee' | 'futur' {
-	const now = new Date();
-	const preavis = contratDatePreavis(dateFin);
-	if (preavis <= now) return 'preavis';
-	if (dateFin.getFullYear() === anneeCourante()) return 'annee';
-	// Préavis dans l'année courante même si fin l'année suivante
-	if (preavis.getFullYear() === anneeCourante()) return 'annee';
-	return 'futur';
-}
+//  🔴 `contratDatePreavis` et `contratUrgence` sont PARTIS le 04/11/2026 (#2507) : le
+//  début du préavis et l'urgence du terme sont SERVIS par l'API (`date_preavis`,
+//  `urgence_echeance` — `api/app/utils/echeance_contrat.py`), que l'app iOS lit aussi.
 
 export function diagNextDate(dt: DiagType): Date | null {
 	if (!dt.frequence || dt.non_applicable) return null;
@@ -239,28 +222,23 @@ export interface ContratAvecEcheance extends ReportContrat {
 export function contratsAvecEcheance(
 	contrats: ReportContrat[],
 	prestataires: ReportPrestataire[],
-	notes: Map<number, { moy: number; nb: number }>,
 ): ContratAvecEcheance[] {
 	return contrats
 		.map((c) => {
 			const result = contratDateFin(c);
 			const fin = result?.date ?? null;
 			const reconduit = result?.reconduit ?? false;
-			const preavis = fin ? contratDatePreavis(fin) : null;
-			const urgence: 'preavis' | 'annee' | 'futur' | 'inconnu' = fin
-				? contratUrgence(fin)
-				: 'inconnu';
 			const prest = prestataires.find((p) => p.id === c.prestataire_id);
-			const noteInfo = notes.get(c.prestataire_id) ?? null;
 			return {
 				...c,
 				dateFin: fin as Date | null,
-				datePreavis: preavis,
-				urgence,
+				datePreavis: c.date_preavis ? new Date(c.date_preavis) : null,
+				//  Servie par l'API ; « inconnu » quand le terme ne se déduit pas.
+				urgence: c.urgence_echeance ?? ('inconnu' as const),
 				reconduit,
 				prestataireNom: prest?.nom ?? `#${c.prestataire_id}`,
-				noteMoy: noteInfo?.moy ?? (null as number | null),
-				nbNotations: noteInfo?.nb ?? 0,
+				noteMoy: prest?.note_moyenne ?? null,
+				nbNotations: prest?.nb_notations ?? 0,
 			};
 		})
 		.sort((a, b) => {
@@ -317,34 +295,8 @@ export function diagnosticsAvecEcheance(types: DiagType[]): DiagAvecEcheance[] {
 		});
 }
 
-/**
- * De quel ÉQUIPEMENT parle un contrat — une seule règle, pour tous les usages.
- *
- * 🔴 Il y en avait TROIS, et elles se contredisaient (signalé à l'écran le
- * 29/08/2026, sur deux symptômes qui n'avaient pas l'air liés) :
- *
- * | Endroit | Règle appliquée | Ce que ça donnait |
- * |---|---|---|
- * | Groupement des cartes | `prestataire.specialite ?? contrat.type_equipement` | un contrat **Syndic** rangé sous « Autre », le cabinet ayant gardé sa spécialité `autre` |
- * | Formulaire d'édition | `contrat.type_equipement`, brut | un contrat de **VMC** affiché « Autre » en édition, alors que sa carte disait VMC |
- * | Enregistrement | le contrat, sauf `autre` → la spécialité | la seule des trois qui était juste |
- *
- * ⚠️ **Le CONTRAT fait foi, le prestataire est un repli.** Un contrat dit ce
- * qu'il couvre ; une entreprise dit ce qu'elle sait faire. Quand l'utilisateur
- * range un contrat sous « Syndic », c'est une décision — la spécialité du
- * cabinet ne doit pas la recouvrir. Le groupement faisait l'inverse, si bien
- * qu'aucune correction du contrat ne pouvait se voir.
- *
- * ⚠️ Le repli reste utile : la plupart des contrats sont créés avec la valeur
- * par défaut `autre`, et la spécialité du prestataire est alors la meilleure
- * information disponible. Il ne s'applique QUE là — jamais par-dessus un choix.
- */
-export function typeEquipementDuContrat(
-	contrat: { type_equipement?: string | null; prestataire_id?: number | null },
-	prestataires: { id: number; specialite?: string | null }[],
-): string {
-	const propre = contrat.type_equipement;
-	if (propre && propre !== 'autre') return propre;
-	const prest = prestataires.find((p) => p.id === contrat.prestataire_id);
-	return prest?.specialite || propre || 'autre';
-}
+//  🔴 `typeEquipementDuContrat` est PARTI le 04/11/2026 (#2507) : l'équipement qu'un
+//  contrat couvre — le sien, sinon (« autre ») la spécialité du prestataire — est SERVI
+//  par l'API (`equipement_effectif`, `carnet_entretien.type_equipement_resolu`), et
+//  l'enregistrement le résout au serveur. Trois règles s'étaient contredites ici le
+//  29/08/2026 ; la dernière vivait en deux langues, tenue par un test de concordance.

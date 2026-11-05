@@ -22,6 +22,8 @@ export interface LigneEtatDescriptif {
 	nature: string | null;
 	/** La nature reconnue, `null` si la mention est illisible. */
 	nature_lue: string | null;
+	/** Ce que l'écran affiche : la nature reconnue en clair, sinon la mention, sinon « — » (#2507). */
+	nature_libelle: string;
 	numero_usage: string | null;
 	niveau: string | null;
 	circulation: string | null;

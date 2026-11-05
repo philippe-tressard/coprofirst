@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { comparerParNom } from '#lib/noms.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import EntetePage from '#lib/components/EntetePage.svelte';
 	import CarteContact, { type Medaillon } from '#lib/components/CarteContact.svelte';
@@ -16,7 +15,6 @@
 	} from '#lib/stores/pageConfig.ts';
 	import { fmtDateLong as formatDate } from '#lib/date.ts';
 	import { revelerCible } from '#lib/deepLink.ts';
-	import { etageLabel, telephonesDe } from '#lib/utils.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import LienConsignes from '#lib/components/LienConsignes.svelte';
 
@@ -83,6 +81,10 @@
 		}
 	});
 
+	//  Les membres arrivent CLASSÉS par le serveur — bâtiment (par son numéro, sans
+	//  bâtiment en dernier), civilité (Mme, Mlle, puis les autres), nom
+	//  (`utils/annuaire.membres_du_conseil`, #2505) : l'app iOS les montre dans le
+	//  même ordre. L'écran ne fait que les regrouper, dans l'ordre reçu.
 	$: batimentsCS = (() => {
 		const groups = new Map<string, MembreAnnuaireCS[]>();
 		for (const m of data.cs.membres) {
@@ -90,22 +92,7 @@
 			if (!groups.has(key)) groups.set(key, []);
 			groups.get(key)!.push(m);
 		}
-		const genreOrder = (g: string) => (g === 'Mme' ? 0 : g === 'Mlle' ? 1 : 2);
-		return [...groups.entries()]
-			.sort(([a], [b]) => {
-				if (!a && b) return 1; // sans bâtiment en dernier
-				if (a && !b) return -1;
-				return a.localeCompare(b, 'fr');
-			})
-			.map(([key, membres]) => ({
-				batiment: key || null,
-				membres: [...membres].sort((a, b) => {
-					const gd = genreOrder(a.genre) - genreOrder(b.genre);
-					if (gd !== 0) return gd;
-					//  Puis la règle commune — nom, puis prénom (`#lib/noms`).
-					return comparerParNom(a, b);
-				}),
-			}));
+		return [...groups.entries()].map(([key, membres]) => ({ batiment: key || null, membres }));
 	})();
 </script>
 
@@ -155,8 +142,8 @@
 							      voulue — avant l'extraction elle se perdait dans trente lignes
 							      recopiées. -->
 							<CarteContact personne={m} medaillons={medaillonsCs(m)}>
-								{#if m.etage != null}
-									<div class="contact-loc">{etageLabel(m.etage, { suffixe: true })}</div>
+								{#if m.etage_libelle}
+									<div class="contact-loc">{m.etage_libelle}</div>
 								{/if}
 							</CarteContact>
 						{/each}
@@ -167,10 +154,10 @@
 			<div class="contact-grid">
 				{#each data.cs.membres as m (m.id)}
 					<CarteContact personne={m} medaillons={medaillonsCs(m)}>
-						{#if m.batiment_nom || m.etage != null}
+						{#if m.batiment_nom || m.etage_libelle}
 							<div class="contact-loc">
-								{#if m.batiment_nom}Bât. {m.batiment_nom}{/if}{#if m.batiment_nom && m.etage != null}&nbsp;-{/if}
-								{#if m.etage != null}{etageLabel(m.etage, { suffixe: true })}{/if}
+								{#if m.batiment_nom}Bât. {m.batiment_nom}{/if}{#if m.batiment_nom && m.etage_libelle}&nbsp;-{/if}
+								{#if m.etage_libelle}{m.etage_libelle}{/if}
 							</div>
 						{/if}
 					</CarteContact>
@@ -212,11 +199,9 @@
 						{#if m.email}
 							<a href="mailto:{m.email}" class="contact-email">{m.email}</a>
 						{/if}
-						{#if m.telephone}
-							{#each telephonesDe(m.telephone) as tel, ti (`${ti}|${tel}`)}
-								<a href="tel:{tel}" class="contact-email">&#x1F4DE; {tel}</a>
-							{/each}
-						{/if}
+						{#each m.telephones as tel, ti (`${ti}|${tel}`)}
+							<a href="tel:{tel}" class="contact-email">&#x1F4DE; {tel}</a>
+						{/each}
 					</CarteContact>
 				{/each}
 			</div>

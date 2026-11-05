@@ -962,7 +962,18 @@ Conduite :
 - **S3 « référence absente »** (première nuit, ou nœud réinstallé) : lire le relevé,
   puis `sudo bash /opt/5hostachy/scripts/exploitation/audit-securite.sh --accepter`.
   Un écart ensuite : lire **chaque fichier nommé** (`+` ajouté, `-` retiré, `~`
-  modifié). Voulu (une clé posée, un cron modifié par une livraison) → `--accepter`.
+  modifié). Voulu (une clé posée, un cron modifié par une livraison) →
+  `--accepter <chemin…>` : les écarts sous ces chemins seuls, refusé s'il en reste
+  ailleurs ; sans chemin, tout l'état. Chaque acceptation s'inscrit dans le journal
+  de l'audit (`[S3] référence …`).
+  **Qui écrit, déclare** (#2521, 04/11/2026) : `durcir-noeud.sh --appliquer|--sortant`
+  met lui-même la référence à jour pour les chemins qu'il écrit (sshd_config.d,
+  `/etc/ufw`, fail2ban, apt.conf.d), à la fin de son passage, et le dit — « référence
+  S3 mise à jour ». Avant, chaque pose de la liste de sortie coûtait un `--accepter`
+  en root sur chaque nœud le lendemain (02/11, 04/11). Il refuse si un écart existe
+  ailleurs, et le nomme : lire, puis `--accepter`. Les écrivains se déclarent dans
+  `PERSISTANCE_ECRIVAINS` ; `durcir-sudoers.sh` n'y est pas (poste, sans root ; sudoers
+  est CHAUD, sa lecture le lendemain est voulue).
   Le lien d'activation de `cloudflared`, qui suit le rôle à chaque bascule, n'est pas
   un écart tant qu'il pointe vers son unité (`PERSISTANCE_SELON_ROLE`, 01/11/2026).
   Son état selon le rôle est jugé par `check-reliability`.

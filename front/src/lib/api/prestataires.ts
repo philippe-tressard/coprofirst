@@ -58,6 +58,11 @@ export interface Prestataire {
 	/** Calculé par la règle d'archivage (`REGLES["prestataire"]`, #1538). */
 	archivee: boolean;
 	assiste_ia: boolean;
+	/** La moyenne de ses avis, au dixième — `null` sans avis (#2507, `utils/notes_prestataires`). */
+	note_moyenne: number | null;
+	nb_notations: number;
+	/** La plus proche visite prévue de ses contrats en cours (#2507). */
+	prochaine_visite: string | null;
 }
 
 /**  Un contrat d'entretien — `ContratRead` (`routers/prestataires.py`). */
@@ -93,6 +98,17 @@ export interface ContratEntretien {
 	echu: boolean;
 	/** Le geste ✨ est-il proposable ? Le SERVEUR répond, pas l'écran. */
 	synthese_disponible: boolean;
+	//  ── Ce qui s'en DÉDUIT, servi au site et à l'app iOS (#2507) ─────────────
+	/** Le début du préavis — trois mois avant le terme. */
+	date_preavis: string | null;
+	/** Où en est le terme — `null` sans terme connu. */
+	urgence_echeance: 'preavis' | 'annee' | 'futur' | null;
+	/** La visite prévue est passée (le jour même n'en est pas une). */
+	en_retard: boolean;
+	/** « ↺ Mensuel », « ↺ 2×/an » — vide sans fréquence. */
+	frequence_libelle: string;
+	/** L'équipement couvert : le sien, sinon (« autre ») la spécialité du prestataire. */
+	equipement_effectif: string;
 }
 
 /**  Un relevé de compteur — `ReleveRead` (`routers/compteurs.py`). */

@@ -55,6 +55,17 @@ CLE_PUBLIQUE = "version_contrat"
 PREFIXE_SERVI = "/api"
 
 
+#: La réponse d'une route qui rend un FICHIER (`FileResponse`) : sans elle, le
+#: contrat la déclarait en JSON et le client généré tentait de la décoder (#2505).
+#: `@router.get(…, response_class=FileResponse, responses=REPONSE_FICHIER)`.
+REPONSE_FICHIER: dict = {
+    200: {
+        "description": "Le fichier, avec son type",
+        "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}},
+    }
+}
+
+
 def lire_reference() -> dict:
     """La référence du contrat : `version`, `empreinte`, `operations`."""
     return json.loads(FICHIER_REFERENCE.read_text(encoding="utf-8"))

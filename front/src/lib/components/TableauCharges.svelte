@@ -19,28 +19,29 @@
     le conseil l'a saisi ; les clés que le syndic n'appelle pas en ce moment passent dans un
     bloc replié, avec leur part — repliées, jamais cachées.
 
-  Rien n'est calculé ici au-delà d'une addition (`#lib/charges-lots`) : les parts, les
-  définitions et les notes viennent du serveur. Rien ne s'affiche sans part lisible (un
-  locataire reçoit `null`).
+  Rien n'est calculé ici : le serveur sert le tableau rangé et additionné
+  (`GET /lots/mes-charges`, `api/app/utils/tableau_charges.py`, #2507) — l'app iOS le lit
+  aussi. Rien ne s'affiche sans part lisible (un locataire reçoit un tableau vide) ; un
+  échec se dit, il ne se rend pas comme une absence de charges.
 -->
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import BlocDeCle from '#lib/components/BlocDeCle.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import {
-		AVIS_CHARGES,
-		FICHE_DU_SYNDIC,
-		lotSurligne,
-		tableauDesCharges,
-	} from '#lib/charges-lots.ts';
-	import type { MonLot } from '#lib/api/index.ts';
+	import { AVIS_CHARGES, FICHE_DU_SYNDIC, lotSurligne, partDuLot } from '#lib/charges-lots.ts';
+	import { lots as lotsApi, type TableauDesCharges } from '#lib/api/index.ts';
+	import { essayer } from '#lib/chargement.ts';
 	import { fmtNombre, fmtPartEnPourcent } from '#lib/utils.ts';
 
-	export let lots: Pick<MonLot, 'id' | 'numero' | 'nature' | 'type' | 'quotes_parts'>[];
+	const VIDE: TableauDesCharges = { colonnes: [], lignes: [], non_appelees: [] };
+	let tableau: TableauDesCharges = VIDE;
+	let erreur = '';
+	onMount(async () => {
+		[tableau, erreur] = await essayer(lotsApi.mesCharges(), VIDE);
+	});
 
-	$: tableau = tableauDesCharges(lots);
 	$: plusieurs = tableau.colonnes.length > 1;
-	$: notes = [...tableau.lignes, ...tableau.nonAppelees].filter((l) => l.note);
+	$: notes = [...tableau.lignes, ...tableau.non_appelees].filter((l) => l.note);
 
 	//  Le surlignage demandé par une carte s'éteint seul : il désigne, il ne marque pas.
 	let minuterie: ReturnType<typeof setTimeout> | undefined;
@@ -58,7 +59,11 @@
 		n === undefined ? '—' : sur ? `${fmtNombre(n)}/${fmtNombre(sur)}` : fmtNombre(n);
 </script>
 
-{#if tableau.lignes.length || tableau.nonAppelees.length}
+{#if erreur}
+	<p class="aide" role="alert">
+		Le tableau de vos charges n’a pas pu être chargé : {erreur}
+	</p>
+{:else if tableau.lignes.length || tableau.non_appelees.length}
 	<section
 		id="mes-charges"
 		class="card mes-charges"
@@ -77,8 +82,8 @@
 				<thead>
 					<tr>
 						<th scope="col">Clé de charges</th>
-						{#each tableau.colonnes as col (col.id)}
-							<th scope="col" class="nombre" class:surligne={$lotSurligne === col.id}>
+						{#each tableau.colonnes as col (col.lot_id)}
+							<th scope="col" class="nombre" class:surligne={$lotSurligne === col.lot_id}>
 								{col.nom}
 							</th>
 						{/each}
@@ -92,18 +97,19 @@
 							<th scope="row">
 								<span class="cle">{l.libelle}</span>
 								{#if l.description}<span class="finance">{l.description}</span>{/if}
-								{#if l.libelleSyndic}<span class="finance"
-										>Sur l’appel de fonds : {l.libelleSyndic}</span
+								{#if l.libelle_syndic}<span class="finance"
+										>Sur l’appel de fonds : {l.libelle_syndic}</span
 									>{/if}
-								{#if l.nbLots > 1}<span class="contributeurs">{l.nbLots} lots y contribuent</span
+								{#if l.nb_lots > 1}<span class="contributeurs"
+										>{fmtNombre(l.nb_lots)} lots y contribuent</span
 									>{/if}
 							</th>
-							{#each tableau.colonnes as col (col.id)}
+							{#each tableau.colonnes as col (col.lot_id)}
 								<td
 									class="nombre"
-									class:absent={l.parts[col.id] === undefined}
-									class:surligne={$lotSurligne === col.id}
-									>{part(l.parts[col.id], plusieurs ? null : l.denominateur)}</td
+									class:absent={partDuLot(l, col.lot_id) === undefined}
+									class:surligne={$lotSurligne === col.lot_id}
+									>{part(partDuLot(l, col.lot_id), plusieurs ? null : l.denominateur)}</td
 								>
 							{/each}
 							{#if plusieurs}
@@ -124,17 +130,17 @@
 			{/each}
 		</ul>
 
-		{#if tableau.nonAppelees.length}
+		{#if tableau.non_appelees.length}
 			<details class="non-appelees">
 				<summary
-					>Prévues au règlement, non appelées actuellement ({tableau.nonAppelees.length})</summary
+					>Prévues au règlement, non appelées actuellement ({tableau.non_appelees.length})</summary
 				>
 				<p class="aide">
 					Le syndic n’appelle pas ces clés en ce moment : elles ne figurent pas sur votre appel de
 					fonds. Votre part, celle de l’acte, reste la même le jour où il les appelle.
 				</p>
 				<ul class="blocs">
-					{#each tableau.nonAppelees as l (l.cle)}
+					{#each tableau.non_appelees as l (l.cle)}
 						<li><BlocDeCle ligne={l} colonnes={tableau.colonnes} /></li>
 					{/each}
 				</ul>

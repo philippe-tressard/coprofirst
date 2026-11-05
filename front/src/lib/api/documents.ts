@@ -34,6 +34,8 @@ export interface Document {
 	/** De quoi PARLE le document, en codes de périmètre — descriptif, jamais un
 	 *  droit ; `null` quand le ciblage est absent ou illisible. */
 	perimetre_cible: string[] | null;
+	/** Le lieu du badge 🔹, `""` pour le périmètre par défaut — servi (#2505). */
+	perimetre_libelle: string;
 }
 
 /**

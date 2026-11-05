@@ -34,7 +34,7 @@
 	import { auth as authApi, lots as lotsApi, type MonLot, type User } from '#lib/api/index.ts';
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import { currentUser } from '#lib/stores/auth.ts';
-	import { ETAGE_MAX, ETAGE_MIN, etageDuLot, etageLabel, lotTypeLabel } from '#lib/utils.ts';
+	import { ETAGE_MAX, ETAGE_MIN, etageDuLot, etageLabel } from '#lib/utils.ts';
 
 	/**  L'étage de CHAQUE logement, par identifiant — donnée de patrimoine. */
 	export let etagesLot: Record<number, number | null> = {};
@@ -178,7 +178,7 @@
 						      recollée par le navigateur — le libellé rendait « Bât. 4 —N° 15 ».
 						      Une espace insécable ne se réduit ni ne se replie. -->
 						{#if lot.batiment_nom}{lot.batiment_nom}&nbsp;—&nbsp;{/if}N° {lot.numero}
-						<span class="etage-lot-type">{lotTypeLabel(lot.type)}</span>
+						<span class="etage-lot-type">{lot.libelle_type}</span>
 					</label>
 					<input
 						id={`p-etage-lot-${lot.id}`}

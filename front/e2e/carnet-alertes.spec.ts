@@ -22,37 +22,48 @@ const ENTREE: EntreeCarnet = {
 	origine: 'intervention',
 	detail: '',
 	categorie: null,
+	categorie_libelle: '',
 	equipement: null,
 	perimetre: [],
+	perimetre_libelle: '',
 	lien: '',
 	alerte: null,
 	extrait: '',
 };
 
-const CARNET: Carnet = {
-	total: 3,
-	entrees: [
-		{
-			...ENTREE,
-			libelle: 'Contrat ascenseur Témoin',
-			origine: 'contrat',
-			lien: '/prestataires/contrats/7',
-			alerte: 'visite attendue depuis 40 jours',
-		},
-		{
-			...ENTREE,
-			libelle: 'Ramonage des conduits',
-			lien: '/interventions/12',
-			alerte: 'visite attendue depuis 12 jours',
-		},
-		{
-			...ENTREE,
-			libelle: 'Peinture du hall',
-			lien: '/interventions/13',
-			extrait: '<p>Les murs du hall sont écaillés.</p>',
-		},
-	],
-};
+/**  Le carnet tel que le serveur le sert (#2505) : sans équipement, un seul groupe. */
+function carnetDe(entrees: EntreeCarnet[]): Carnet {
+	return {
+		total: entrees.length,
+		entrees,
+		groupes: entrees.length
+			? [{ equipement: null, equipement_libelle: 'Sans équipement rattaché', entrees }]
+			: [],
+		annees: [],
+	};
+}
+
+const CARNET: Carnet = carnetDe([
+	{
+		...ENTREE,
+		libelle: 'Contrat ascenseur Témoin',
+		origine: 'contrat',
+		lien: '/prestataires/contrats/7',
+		alerte: 'visite attendue depuis 40 jours',
+	},
+	{
+		...ENTREE,
+		libelle: 'Ramonage des conduits',
+		lien: '/interventions/12',
+		alerte: 'visite attendue depuis 12 jours',
+	},
+	{
+		...ENTREE,
+		libelle: 'Peinture du hall',
+		lien: '/interventions/13',
+		extrait: '<p>Les murs du hall sont écaillés.</p>',
+	},
+]);
 
 const PROPRIETAIRE = { ...MEMBRE_CS, role: 'propriétaire', roles: ['propriétaire'] };
 
@@ -112,7 +123,7 @@ test('le n° d’affaire est dans le pied de la carte, pas sur une ligne à lui'
 		lien: '/tickets/601',
 		extrait: '<p>Le bras de rappel ne ferme plus.</p>',
 	};
-	await ouvrir(page, MEMBRE_CS, { total: 1, entrees: [affaire] });
+	await ouvrir(page, MEMBRE_CS, carnetDe([affaire]));
 	const carte = page.locator('.carte-liste', { hasText: 'Portillon en panne' });
 	//  Le pied commun des cartes d'affaire (`PiedCarte`) : l'emoji de catégorie
 	//  puis « #TK-… » — comme au fil et sur la page Affaires.

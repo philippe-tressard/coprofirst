@@ -13,24 +13,10 @@
  * deux usages est une indirection, pas une factorisation.
  */
 
-/** Une notation, réduite à ce dont le calcul a besoin. */
-export interface Notable {
-	note: number;
-}
-
-/**
- * La moyenne des notes, arrondie au dixième — ou `null` quand il n'y a **aucun**
- * avis.
- *
- * 🔴 `null` et non `0` : « pas encore noté » et « noté zéro » sont deux choses
- * différentes, et `0` ferait afficher zéro étoile sur un prestataire que
- * personne n'a jugé. C'est le cas zéro appliqué à un affichage.
- */
-export function moyenneNotes(notations: Notable[]): number | null {
-	if (!notations.length) return null;
-	const somme = notations.reduce((s, n) => s + n.note, 0);
-	return Math.round((somme / notations.length) * 10) / 10;
-}
+//  🔴 `moyenneNotes` est PARTIE le 04/11/2026 (#2507) : la moyenne des avis est SERVIE
+//  avec le prestataire (`note_moyenne`, `api/app/utils/notes_prestataires.py`), que
+//  l'app iOS lit aussi. L'onglet Reporting en portait une seconde copie, à la main,
+//  et la synthèse une troisième, dont l'arrondi différait.
 
 /** `4.2` → `★★★★☆`. La note est arrondie à l'entier le plus proche. */
 export function etoiles(note: number): string {

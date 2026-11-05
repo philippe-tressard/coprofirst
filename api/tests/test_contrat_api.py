@@ -120,6 +120,45 @@ def test_une_reponse_libre_qui_se_type_est_un_resserrement():
     ]
 
 
+def test_un_type_precis_ne_redevient_pas_libre_ni_facultatif():
+    """Le cas fautif d'abord (#2505) : un objet ne redevient pas « n'importe quoi »,
+    et une réponse libre toujours présente ne se type pas en facultatif."""
+    libre = {**_REF, "GET /x": _op({**_REF["GET /x"]["reponse"], "$.c": "libre"})}
+    assert "GET /x → $.c" in inv.comparer(_REF, libre).retraits
+    ref = {"GET /f": _op({"$": "libre"})}
+    assert inv.comparer(ref, {"GET /f": _op({"$": "objet?"})}).retraits == ["GET /f → $"]
+
+
+def test_un_dictionnaire_libre_qui_devient_un_objet_et_un_fichier_se_resserrent():
+    """#2505 : `GET /regles-residence` rendait `list[dict]`, les téléchargements un `{}`."""
+    ref = {"GET /l": _op({"$": "liste", "$[]": "dictionnaire"}), "GET /f": _op({"$": "libre"})}
+    courant = {
+        "GET /l": _op({"$": "liste", "$[]": "objet", "$[].id": "integer"}),
+        "GET /f": _op({"$": "fichier"}),
+    }
+    ecarts = inv.comparer(ref, courant)
+    assert ecarts.retraits == [] and inv.version_suivante("1.2.0", ecarts) == "1.3.0"
+    #  L'inverse reste un retrait.
+    assert inv.comparer(courant, ref).retraits
+
+
+def test_une_reponse_en_octets_se_lit_fichier():
+    schema = {
+        "paths": {
+            "/t": {
+                "get": {
+                    "responses": {
+                        "200": {
+                            "content": {"application/octet-stream": {"schema": {"type": "string"}}}
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert inv.inventaire(schema)["GET /t"]["reponse"] == {"$": "fichier"}
+
+
 def test_une_entree_requise_neuve_est_refusee_une_entree_relachee_passe():
     exige = {**_REF, "POST /y": _op(entree=["corps", "corps.titre", "corps.lot_id"])}
     assert inv.refus(inv.comparer(_REF, exige), {}, "3.0.0") == [

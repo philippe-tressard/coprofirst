@@ -225,7 +225,7 @@ export function starsDisplay(note: number): string {
  * Relie un calcul SANS dépendance réactive à ce qui doit le déclencher.
  *
  * ```svelte
- * $: minuit = relire(contrats, minuitDuJour);
+ * $: annee = relire(contrats, anneeCourante);
  * ```
  *
  * 🔴 **Le défaut qu'il corrige.** Un `$:` ne se réexécute que si l'une des
@@ -286,42 +286,10 @@ export function telephonesDe(champ: string | null | undefined): string[] {
 	return [...vus];
 }
 
-/**
- * Libellé français du type d'un lot — « Appartement », « Parking », « Cave ».
- *
- * 🔴 Écrit dans `mon-lot/+page.svelte`, où un commentaire signalait déjà le
- * piège : *« `lotLabel` s'appuie sur `lotTypeLabel`, qui sert encore à
- * l'affichage des accès plus bas. L'emporter dans le composant en aurait fait
- * une deuxième écriture. »* L'extraction de `ModaleAccesBail` (#779) est
- * exactement le geste que ce commentaire redoutait — d'où le passage ici,
- * plutôt qu'une copie de plus.
- *
- * ⚠️ Une valeur inconnue n'est pas remplacée par « — » : un type ajouté côté API
- * doit s'afficher plutôt que disparaître derrière un tiret que personne ne saura
- * interpréter. Elle est seulement mise en forme — soulignés en espaces, initiale
- * en majuscule (`local_commercial` → « Local commercial ») : c'est ce que les six
- * copies recalculées à la main faisaient, et ce que cette fonction taisait
- * jusqu'au 30/09/2026 (#779). 🔒 `npm run lint:type-lot`.
- */
-export function lotTypeLabel(t: string | null | undefined): string {
-	if (!t) return '—';
-	if (t === 'appartement') return 'Appartement';
-	if (t === 'parking') return 'Parking';
-	if (t === 'cave') return 'Cave';
-	const lisible = t.replace(/_/g, ' ');
-	return lisible.charAt(0).toUpperCase() + lisible.slice(1);
-}
-
-/**
- * Le type d'un lot avec sa précision — « Appartement – T3 ». Six écrans la
- * recomposaient à la main (#779) ; `lotTypeLabel` seul ne dit pas le « T3 ».
- */
-export function lotTypeComplet(
-	type: string | null | undefined,
-	typeAppartement?: string | null,
-): string {
-	return `${lotTypeLabel(type)}${typeAppartement ? ` – ${typeAppartement}` : ''}`;
-}
+//  🔴 `lotTypeLabel` et `lotTypeComplet` sont PARTIS le 04/11/2026 (#2507) : le type
+//  d'un lot en clair est SERVI par l'API (`libelle_type`, `libelle_type_complet`,
+//  `libelle_nature` — `api/app/utils/libelles_lot.py`), que l'app iOS lit aussi.
+//  🔒 `npm run lint:regles-partagees` refuse leur retour.
 
 /**
  * Le libellé d'un étage — « RDC », « 1er », « 2ème », « SS 1 ».

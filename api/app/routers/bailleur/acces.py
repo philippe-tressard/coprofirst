@@ -24,6 +24,7 @@ from pydantic import BaseModel
 from app.auth.appartenance import exiger_bail_du_bailleur
 from app.utils.acces_bail import confies, remettre, rendre_au_bailleur
 from app.utils.lecture import lire_objet
+from app.utils.libelles_lot import libelle_type_complet, libelle_type_lot
 from app.utils.porteurs_acces import acces_de
 from app.utils.types_acces import TYPES_ACCES
 from app.utils.valeurs import valeur
@@ -65,6 +66,8 @@ class AccesOut(BaseModel):
     type: str  # vigik | telecommande
     lot_id: Optional[int]
     lot_type: Optional[str] = None
+    #: Le type du lot en clair — « Appartement », « Cave » (#2507, `utils/libelles_lot`).
+    lot_libelle_type: Optional[str] = None
     lot_label: Optional[str] = None
     statut: StatutAcces
     chez_locataire: bool
@@ -91,7 +94,15 @@ _CHAMP_IDS = {"vigik": "vigik_ids", "telecommande": "tc_ids"}
 def _sortie(session: Session, lot_map: dict, cle: str, o, **extra) -> AccesOut:
     """Un badge tel que les écrans du bail le lisent — une écriture pour les deux types."""
     lot_type, lot_label = _lot_info(lot_map, session, o.lot_id)
-    return lire_objet(AccesOut, o, type=cle, lot_type=lot_type, lot_label=lot_label, **extra)
+    return lire_objet(
+        AccesOut,
+        o,
+        type=cle,
+        lot_type=lot_type,
+        lot_libelle_type=libelle_type_lot(lot_type) if lot_type else None,
+        lot_label=lot_label,
+        **extra,
+    )
 
 
 def _motif_non_transferable(cle: str, o, bail, nature_bail: str, lot_map: dict) -> Optional[str]:
@@ -247,6 +258,8 @@ class BailLocataireOut(BaseModel):
     lot_numero: Optional[str] = None
     lot_type: Optional[str] = None
     lot_type_appartement: Optional[str] = None
+    #: Le type du lot et sa précision en clair — « Appartement – T3 » (#2507).
+    lot_libelle_type_complet: Optional[str] = None
     lot_etage: Optional[int] = None
     lot_superficie: Optional[float] = None
     lot_batiment_nom: Optional[str] = None
@@ -289,6 +302,9 @@ def mon_bail(
         lot_numero=bail_lot.numero if bail_lot else None,
         lot_type=valeur(bail_lot.type) if bail_lot else None,
         lot_type_appartement=bail_lot.type_appartement if bail_lot else None,
+        lot_libelle_type_complet=(
+            libelle_type_complet(bail_lot.type, bail_lot.type_appartement) if bail_lot else None
+        ),
         lot_etage=bail_lot.etage if bail_lot else None,
         lot_superficie=bail_lot.superficie if bail_lot else None,
         #  🔴 `bail_bat.nom` jusqu'au 02/10/2026 (#1563) : `Batiment` n'a pas de

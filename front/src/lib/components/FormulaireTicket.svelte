@@ -188,7 +188,7 @@
 	let equipementVu = equipement;
 	$: if (equipement !== equipementVu) {
 		equipementVu = equipement;
-		const propose = intervenantPropose(equipement, contrats, prestataires, prestataireId);
+		const propose = intervenantPropose(equipement, contrats, prestataireId);
 		if (propose) ({ prestataireId, contratId } = propose);
 	}
 

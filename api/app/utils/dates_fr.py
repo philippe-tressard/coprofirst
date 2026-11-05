@@ -39,6 +39,21 @@ MOIS = (
 JOURS = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
 
 
+def libelle_exercice(mois_debut: int | None) -> str:
+    """L'exercice comptable d'une copropriété, d'après son mois de début (#1643).
+
+    « année civile », « de juillet à juin ». `None` (ou un mois hors de 1 à 12)
+    vaut janvier, comme partout au serveur (`synthese_affaire.metriques`).
+
+    Servi par `CoproprieteRead.exercice_libelle` (#2505) : la fiche du site et
+    celle de l'app iOS le LISENT — le front le composait seul (`libelleExercice`).
+    """
+    m = mois_debut if mois_debut and 1 <= mois_debut <= 12 else 1
+    if m == 1:
+        return "année civile"
+    return f"de {MOIS[m - 1]} à {MOIS[(m - 2) % 12]}"
+
+
 def date_longue(d: date | datetime) -> str:
     """`date(2026, 7, 25)` → `25 juillet 2026`."""
     return f"{d.day} {MOIS[d.month - 1]} {d.year}"

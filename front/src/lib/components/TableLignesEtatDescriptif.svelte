@@ -11,7 +11,7 @@
 <script lang="ts">
 	import type { EtatDescriptif, LigneEtatDescriptif } from '#lib/api/index.ts';
 	import { abregerCle, libelleEcart, sommeDeCle } from '#lib/etat-descriptif.ts';
-	import { fmtNombre, lotTypeLabel } from '#lib/utils.ts';
+	import { fmtNombre } from '#lib/utils.ts';
 
 	/** Les lignes à montrer (la recherche en écarte). */
 	export let lignes: LigneEtatDescriptif[];
@@ -49,7 +49,7 @@
 					</td>
 					<td>{l.batiment ?? '—'}</td>
 					<td class:illisible={!l.nature_lue}>
-						{l.nature_lue ? lotTypeLabel(l.nature_lue) : (l.nature ?? '—')}
+						{l.nature_libelle}
 					</td>
 					<td>{l.numero_usage ?? '—'}</td>
 					<td>{l.niveau ?? '—'}</td>

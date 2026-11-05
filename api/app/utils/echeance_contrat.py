@@ -179,6 +179,52 @@ def echeance_du_contrat(contrat: _Contrat, aujourdhui: Optional[date] = None) ->
     return Echeance(fin, reconduit)
 
 
+#: Le préavis de résiliation : trois mois avant le terme (#2507 — il vivait dans
+#: `reporting.ts`, `PREAVIS_MOIS`).
+PREAVIS_MOIS = 3
+
+
+def date_preavis(fin: Optional[date]) -> Optional[date]:
+    """Le jour où le préavis commence — `None` sans terme connu."""
+    return _ajouter_mois(fin, -PREAVIS_MOIS) if fin else None
+
+
+def urgence_echeance(fin: Optional[date], aujourdhui: Optional[date] = None) -> Optional[str]:
+    """Où en est le terme d'un contrat : `preavis`, `annee` ou `futur` — `None` sans terme.
+
+    - `preavis` : le préavis a commencé (ou le terme est passé) ;
+    - `annee` : le terme, ou le début du préavis, tombe dans l'année civile ;
+    - `futur` : plus tard.
+
+    🔴 Calculée dans le front jusqu'au 04/11/2026 (`contratUrgence`,
+    `reporting.ts`) ; l'app iOS ne recopie aucune règle du site, elle ne pouvait
+    pas la montrer (#2507). `aujourdhui` en paramètre : un test ne voyage pas
+    dans le temps.
+    """
+    if fin is None:
+        return None
+    jour = aujourdhui or horloge.aujourd_hui()
+    preavis = date_preavis(fin)
+    if preavis <= jour:
+        return "preavis"
+    if fin.year == jour.year or preavis.year == jour.year:
+        return "annee"
+    return "futur"
+
+
+def visite_en_retard(prochaine_visite: Optional[date], aujourdhui: Optional[date] = None) -> bool:
+    """La visite prévue est-elle passée ? Le jour même n'est PAS un retard.
+
+    La borne est le jour de Paris (`horloge.aujourd_hui`) : une visite prévue
+    aujourd'hui peut encore avoir lieu cet après-midi — c'est la règle du carnet
+    (`carnet_entretien.alerte_visite`) et de l'écran (`minuitDuJour`, retiré du
+    calcul le 04/11/2026, #2507).
+    """
+    if prochaine_visite is None:
+        return False
+    return prochaine_visite < (aujourdhui or horloge.aujourd_hui())
+
+
 def poser_echeance(lu, contrat):
     """Pose `date_fin` et `reconduit` sur un schéma lu, et le rend.
 
@@ -190,4 +236,8 @@ def poser_echeance(lu, contrat):
     lu.date_fin, lu.reconduit, lu.echu = (
         (e.date, e.reconduit, e.echu) if e else (None, False, False)
     )
+    #  Ce qui s'en déduit, servi au site et à l'app iOS (#2507).
+    lu.date_preavis = date_preavis(lu.date_fin)
+    lu.urgence_echeance = urgence_echeance(lu.date_fin)
+    lu.en_retard = visite_en_retard(contrat.prochaine_visite)
     return lu

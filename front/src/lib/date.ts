@@ -106,13 +106,9 @@ export const NOMS_MOIS = [
 	'décembre',
 ] as const;
 
-/**  L'exercice comptable d'une copropriété, d'après son mois de début (#1643) :
- *   « année civile », « de juillet à juin ». `null` vaut janvier, comme au serveur. */
-export function libelleExercice(moisDebut: number | null | undefined): string {
-	const m = moisDebut && moisDebut >= 1 && moisDebut <= 12 ? moisDebut : 1;
-	if (m === 1) return 'année civile';
-	return `de ${NOMS_MOIS[m - 1]} à ${NOMS_MOIS[(m + 10) % 12]}`;
-}
+//  L'exercice comptable en clair (« de juillet à juin ») n'est plus composé ici :
+//  le serveur le sert (`Copropriete.exercice_libelle`, `dates_fr.libelle_exercice`)
+//  pour le site et l'app iOS (#2505, `lint:regles-partagees`).
 
 /** Le mois court d'un numéro (1 à 12) : "sept.", "oct." — légende d'un graphe par jour. */
 export function fmtMoisCourt(mois: number): string {

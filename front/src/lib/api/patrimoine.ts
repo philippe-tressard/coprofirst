@@ -10,6 +10,7 @@
 //  ⚠️ La surface publique NE BOUGE PAS : `index.ts` réexporte tout, et les
 //  quarante et un `from '#lib/api/index.ts'` du front ne changent pas d'une ligne.
 import { api, buildQuery, postFormData, BASE } from './client';
+import type { TableauDesCharges } from './charges';
 import type { ConstatPatrimoine } from './etat-descriptif';
 import { uploadExcel, type CompteImportTableur } from './documents';
 import type { ExerciceLu, ResumeAffaires, SyntheseAffaire } from './synthese';
@@ -33,6 +34,9 @@ export interface Copropriete {
 	nb_lots_principaux: number | null;
 	numero_immatriculation: string | null;
 	mois_debut_exercice: number | null;
+	/** L'exercice en clair (« de juillet à juin », « année civile ») — servi
+	 *  (`dates_fr.libelle_exercice`, #2505) : la fiche le LIT. */
+	exercice_libelle: string;
 	assurance_compagnie: string | null;
 	assurance_numero_police: string | null;
 	assurance_echeance: string | null;
@@ -198,11 +202,15 @@ export interface EntreeCarnet {
 	numero?: string | null;
 	/**  La VALEUR de la catégorie d'une affaire — l'écran rend son libellé. */
 	categorie?: string | null;
+	/**  Son libellé (« Panne ») — `""` sans catégorie (#2505). */
+	categorie_libelle: string;
 	equipement: string | null;
 	/**  Les codes de périmètre de la ligne — rendus par `perimetreLabel`, comme
 	 *   partout ailleurs. Remplace `batiment_id` : un contrat sur « Parking » n'a
 	 *   pas de bâtiment, et n'en est pas moins situé. */
 	perimetre: string[];
+	/**  La portée en clair, toujours dite — servie (#2505). */
+	perimetre_libelle: string;
 	lien: string;
 	alerte: string | null;
 	/**  La synthèse VALIDÉE de l'affaire (#1643) — rendue dans la partie pliée. */
@@ -213,9 +221,25 @@ export interface EntreeCarnet {
 	extrait: string;
 }
 
+/**  Les entrées d'un équipement, dans l'ordre où l'écran les montre. */
+export interface GroupeCarnet {
+	equipement: string | null;
+	/** Le libellé administré de l'équipement, « Sans équipement rattaché » sinon. */
+	equipement_libelle: string;
+	entrees: EntreeCarnet[];
+}
+
+/**  Le carnet — `routers/carnet.CarnetLu`. Le filtre par année, les années
+ *   proposées et le regroupement par équipement sont SERVIS (#2505,
+ *   `utils/carnet_affichage`) : le site et l'app iOS les lisent. */
 export interface Carnet {
+	/** Du fait le plus récent au plus ancien, filtrées par l'année demandée. */
 	entrees: EntreeCarnet[];
 	total: number;
+	/** Les mêmes, rangées par équipement, le groupe le plus récent d'abord. */
+	groupes: GroupeCarnet[];
+	/** Les années qu'on peut choisir, la plus récente d'abord. */
+	annees: string[];
 }
 
 /**  Un intervenant et la durée moyenne de son étape « Chez le prestataire ». */
@@ -248,10 +272,15 @@ export const carnet = {
 	/**  `perimetre` est un CODE de l'arborescence (`'bat:3'`, `'parking'`), pas un
 	 *   identifiant de bâtiment : c'est ce qui rend le filtre dynamique — un
 	 *   périmètre créé en administration devient filtrable sans rien déployer. */
-	lire: (perimetre?: string | null) =>
-		api.get<Carnet>(
-			`/carnet-entretien${perimetre ? `?perimetre=${encodeURIComponent(perimetre)}` : ''}`,
-		),
+	lire: (perimetre?: string | null, annee?: string | null) => {
+		//  `annee` : une année civile (« 2025 ») ; absente, tout le carnet. Les
+		//  contrats en vigueur restent quelle que soit l'année (décret n° 2001-477).
+		const params = new URLSearchParams();
+		if (perimetre) params.set('perimetre', perimetre);
+		if (annee) params.set('annee', annee);
+		const requete = params.toString();
+		return api.get<Carnet>(`/carnet-entretien${requete ? `?${requete}` : ''}`);
+	},
 	/**  Le bilan d'un exercice — RÉSERVÉ au conseil syndical (`require_cs_or_admin`,
 	 *   arbitré le 04/10/2026). `exercice` est l'année où il commence ; absent,
 	 *   l'exercice en cours. */
@@ -304,6 +333,18 @@ export interface MonLot {
 	explication: string | null;
 	/** Ce que le propriétaire doit savoir de son lot (`utils/alertes_lot`) — jamais bloquant. */
 	alertes: ConstatPatrimoine[];
+	//  ── Les libellés SERVIS (#2507, `utils/libelles_lot`) : le site et l'app iOS
+	//  les lisent, aucun ne les compose (`lint:regles-partagees`).
+	/** Le type en clair — « Appartement », « Local commercial », « — » sans type. */
+	libelle_type: string;
+	/** Le type et sa précision — « Appartement – T3 ». */
+	libelle_type_complet: string;
+	/** La nature du règlement en clair, sinon le type — « Logement », « Cave ». */
+	libelle_nature: string;
+	/** Le lot nommé par sa nature et son numéro — « Logement 15 », « Place 450 ». */
+	nom_du_lot: string;
+	/** L'étage en clair — « RDC », « 2ème », « SS 1 » ; vide sans étage. */
+	etage_libelle: string;
 }
 
 /** Un périmètre d'un lot — `PerimetreDuLot` (`utils/lecture_lots.py`). */
@@ -373,6 +414,8 @@ export interface MesPerimetres {
 export const lots = {
 	mesList: () => api.get<MonLot[]>('/lots/mes-lots'),
 	mesPerimetres: () => api.get<MesPerimetres>('/lots/mes-perimetres'),
+	//  Le tableau de mes charges, prêt à afficher (#2507) : le serveur le range.
+	mesCharges: () => api.get<TableauDesCharges>('/lots/mes-charges'),
 	//  Le locataire dit ce qu'il loue, d'après le fichier des lots du syndic
 	//  (04/10/2026) : les lots proposés, puis sa réponse.
 	propositionsLocation: () => api.get<PropositionsLocation>('/lots/ma-location/propositions'),

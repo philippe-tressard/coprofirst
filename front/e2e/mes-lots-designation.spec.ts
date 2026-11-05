@@ -10,6 +10,7 @@
 import type { Page } from '@playwright/test';
 import type { MonLot } from '../src/lib/api/patrimoine';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { chargesSimulees } from './charges-simulees';
 
 const RESIDENT = { ...MEMBRE_CS, role: 'résident', roles: ['résident'] };
 const BAILLEUR = {
@@ -50,6 +51,12 @@ function lot(champs: Partial<MonLot>): MonLot {
 		quotes_parts: [],
 		explication: 'Ce logement est desservi par Bât. 1 › Escaliers.',
 		alertes: [],
+		//  Les libellés que l'API sert (#2507).
+		libelle_type: 'Appartement',
+		libelle_type_complet: 'Appartement – T3',
+		libelle_nature: 'Logement',
+		nom_du_lot: 'Logement 901',
+		etage_libelle: '1er',
 		...champs,
 	};
 }
@@ -65,6 +72,11 @@ const PLACE = lot({
 	est_logement_de_reference: false,
 	nature: 'parking',
 	numero_usage: '5 & 6',
+	libelle_type: 'Parking',
+	libelle_type_complet: 'Parking',
+	libelle_nature: 'Parking',
+	nom_du_lot: 'Place 902',
+	etage_libelle: 'SS 2',
 	perimetres: [
 		{
 			code: 'bat:3/ascenseur',
@@ -99,6 +111,7 @@ async function ouvrir(page: Page, compte: object) {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return compte;
 		if (chemin === '/api/lots/mes-lots') return [lot({}), PLACE];
+		if (chemin === '/api/lots/mes-charges') return chargesSimulees([lot({}), PLACE]);
 	});
 	await page.goto('/mon-lot');
 	await attendreHydratation(page);

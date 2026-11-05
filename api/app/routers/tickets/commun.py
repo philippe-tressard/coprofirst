@@ -28,11 +28,7 @@ from app.utils.affaires_liees import liees_lisibles
 from app.utils.fusion_affaires import principale_lue
 from app.utils.nature_affaire import natures
 from app.utils.batiments import libelle_batiment_ou
-from app.utils.perimetres import (
-    est_perimetre_par_defaut,
-    parse_json_perimetres,
-    perimetre_label,
-)
+from app.utils.perimetres import parse_json_perimetres, perimetre_badge
 from app.utils.visibility import concerne
 from app.models.core import (
     Batiment,
@@ -305,9 +301,7 @@ def ticket_read(
         me_concerne=concerne(lecteur, perimetres) if lecteur else None,
         #  Ce que les deux clients affichent sans le recalculer (#2508) : le lieu
         #  lisible, et les gestes de CE lecteur — `auth/gestes_affaire`.
-        perimetre_libelle=""
-        if est_perimetre_par_defaut(perimetres)
-        else perimetre_label(perimetres),
+        perimetre_libelle=perimetre_badge(perimetres),
         **gestes_servis(ticket, lecteur),
     )
 

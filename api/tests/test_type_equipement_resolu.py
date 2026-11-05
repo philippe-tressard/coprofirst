@@ -21,12 +21,12 @@ pouvait le voir.
 ajouter une ?*, et la réponse est non. Ajouter une catégorie aurait laissé le
 défaut intact, avec une entrée de plus dans la liste.
 
-## Pourquoi une copie, et pourquoi ce test
+## Une règle, une écriture (#2507, 04/11/2026)
 
-Les contextes de build sont `./api` et `./front` : rien de la racine n'entre dans
-les images, donc la règle ne peut pas être partagée — seulement copiée. C'est le
-même régime que `etage_label` et que le libellé de périmètre, et le même remède :
-un test qui refuse que les deux dérivent.
+La règle avait une copie dans le front, tenue par un test de concordance. L'app
+iOS ne recopie aucune règle du site : l'API sert désormais l'équipement effectif
+(`ContratRead.equipement_effectif`) et résout « autre » à l'enregistrement. La
+copie du front est retirée ; ce test vérifie qu'elle ne revient pas.
 """
 
 from __future__ import annotations
@@ -71,23 +71,21 @@ def test_ni_type_ni_specialite():
     assert type_equipement_resolu(_Contrat(None), None) == "autre"
 
 
-def test_le_FRONT_porte_la_meme_regle():
-    """Cas zéro compris : si la fonction front change de forme, ce test le dit.
+def test_le_FRONT_ne_porte_plus_de_copie():
+    """Depuis #2507 (04/11/2026), la règle n'a plus de copie : l'API sert
+    `equipement_effectif`, et l'enregistrement résout « autre » au serveur.
 
-    On ne compare pas deux implémentations ligne à ligne — on vérifie que la
-    règle DÉCISIVE y est : « autre » cède, une vraie catégorie non.
+    Cas zéro compris : le fichier qui portait la copie doit exister, sinon ce
+    contrôle ne mesure rien. Le retour de la copie, n'importe où dans le front,
+    est refusé par `npm run lint:regles-partagees`.
     """
     assert FRONT.exists(), (
         f"{FRONT} est introuvable : ce contrôle ne peut plus rien établir. "
         "Ne pas lire son silence comme un succès."
     )
     source = FRONT.read_text(encoding="utf-8")
-    assert "typeEquipementDuContrat" in source, "la fonction front a changé de nom"
-    #  La condition qui porte toute la règle, aux espaces près.
-    condition = re.search(r"if\s*\(\s*propre\s*&&\s*propre\s*!==\s*'autre'\s*\)", source)
-    assert condition, (
-        "la règle front ne teste plus « propre !== 'autre' » — les deux côtés "
-        "vont diverger, et l'écart se verra sur un écran, pas ici."
+    assert not re.search(r"function\s+typeEquipementDuContrat\b", source), (
+        "la règle est revenue dans le front : les deux côtés vont diverger"
     )
 
 

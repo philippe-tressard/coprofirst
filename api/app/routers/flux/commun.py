@@ -29,6 +29,7 @@ from app.utils.perimetres import parse_json_perimetres, parse_perimetres
 from app.utils.noms import nom_auteur
 from app.utils.categories_ticket import libelle_categorie, ticket_urgent
 from app.utils.fichiers import est_image
+from app.utils.nature_affaire import natures
 from app.utils.photos import parse_photos
 
 
@@ -127,7 +128,14 @@ def pastilles_affaire(ticket) -> dict:
     décodent `perimetre_cible` et `public_cible`, et une copie en oublierait un
     (CLAUDE.md, « lire un objet pour le RENDRE »). 🔒 `test_flux_pastilles.py`.
     """
-    return TicketRead.model_validate(ticket).model_dump(mode="json", include=set(CHAMPS_PASTILLES))
+    rendu = TicketRead.model_validate(ticket).model_dump(mode="json", include=set(CHAMPS_PASTILLES))
+    #  🔴 La NATURE (Affaire, Calendrier, Actualité) se DÉRIVE — `natures(ticket)`,
+    #  jamais lue de `TicketRead`, qui ne la porte qu'une fois rendue par le routeur
+    #  des affaires. Le fil classait par TYPE d'événement : une affaire à laquelle on
+    #  ajoutait une date restait « AFF. » alors que sa carte, aux Affaires, passait
+    #  en « CAL. » (4/11/2026). 🔒 `test_flux_pastilles.py`.
+    rendu["natures"] = natures(ticket)
+    return rendu
 
 
 def badges_ticket(ticket) -> list[str]:

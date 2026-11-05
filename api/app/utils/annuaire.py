@@ -38,11 +38,23 @@ from sqlmodel import Session, select
 
 from app.models.core import Batiment, MembreCS, MembreSyndic, Utilisateur
 from app.utils.destinataires import site_manager_user_id as _site_manager_user_id
+from app.utils import noms
+from app.utils.etages import etage_label
+from app.utils.telephones import telephones_de
+from app.utils.valeurs import valeur
 
 
-def _ordre_genre(genre: str) -> int:
-    """« Mme » et « Mlle » avant « M. », à bâtiment égal."""
-    return 0 if genre in ("Mme", "Mlle") else 1
+#: L'ordre des civilités à bâtiment égal : « Mme », puis « Mlle », puis les autres.
+#: C'était la règle de l'ÉCRAN (`annuaire/+page.svelte`) ; le serveur, lui, mettait
+#: « Mme » et « Mlle » à égalité et rangeait les bâtiments par identifiant — l'app
+#: iOS, qui affiche l'ordre reçu, n'aurait pas montré le conseil comme le site.
+#: Une seule règle désormais, servie (#2505).
+ORDRE_GENRE = {"Mme": 0, "Mlle": 1}
+
+
+def _ordre_genre(genre) -> int:
+    """« Mme », puis « Mlle », puis toute autre civilité."""
+    return ORDRE_GENRE.get(valeur(genre) or "", len(ORDRE_GENRE))
 
 
 class _Caches:
@@ -83,7 +95,7 @@ class _Caches:
 
 
 def membres_du_conseil(session: Session, *, pour_administration: bool = False) -> list[dict]:
-    """Le conseil syndical, trié par bâtiment puis genre puis nom.
+    """Le conseil syndical, trié par bâtiment, puis civilité, puis nom.
 
     `pour_administration` change deux choses, et rien d'autre : le tri devient
     celui que l'administration a fixé (`ordre`), et deux champs de gestion
@@ -101,13 +113,20 @@ def membres_du_conseil(session: Session, *, pour_administration: bool = False) -
     """
     caches = _Caches(session)
     gestionnaire = _site_manager_user_id(session)
+
+    def cle_annuaire(m: MembreCS) -> tuple:
+        """Bâtiment (par son numéro, sans bâtiment en dernier), civilité, puis nom."""
+        numero = caches.batiment_nom(m.batiment_id)
+        return (
+            numero is None,
+            noms.cle_de_classement(None, numero),
+            _ordre_genre(m.genre),
+            noms.cle_de_classement(m.prenom, m.nom),
+        )
+
     membres = sorted(
         session.exec(select(MembreCS)).all(),
-        key=(
-            (lambda m: m.ordre or 0)
-            if pour_administration
-            else (lambda m: (m.batiment_id or 9999, _ordre_genre(m.genre), m.nom.lower()))
-        ),
+        key=(lambda m: m.ordre or 0) if pour_administration else cle_annuaire,
     )
     return [
         {
@@ -121,6 +140,10 @@ def membres_du_conseil(session: Session, *, pour_administration: bool = False) -
             "batiment_id": m.batiment_id,
             "batiment_nom": caches.batiment_nom(m.batiment_id),
             "etage": m.etage,
+            #  Servis à l'écran ET à l'app iOS (#2505) : « Prénom NOM » et l'étage
+            #  en clair, composés ici plutôt que dans chaque client.
+            "nom_affiche": noms.nom_affiche(m.prenom, m.nom),
+            "etage_libelle": etage_label(m.etage, suffixe=True),
             #  `is not None` et non la valeur de vérité : les deux copies ne
             #  disaient déjà pas la même chose pour l'identifiant 0.
             "est_gestionnaire_site": bool(
@@ -150,6 +173,10 @@ def membres_du_syndic(session: Session, *, pour_administration: bool = False) ->
             "fonction": m.fonction,
             "email": m.email,
             "telephone": m.telephone,
+            #  Les numéros du champ, découpés (#2505) : chaque client en fait un
+            #  lien d'appel sans analyser la saisie.
+            "telephones": telephones_de(m.telephone),
+            "nom_affiche": noms.nom_affiche(m.prenom, m.nom),
             "est_principal": m.est_principal,
             "photo_url": caches.photo(m.user_id),
             **({"ordre": m.ordre, "user_id": m.user_id} if pour_administration else {}),

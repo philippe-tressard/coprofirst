@@ -32,44 +32,44 @@ export const REGLES_PARTAGEES = {
 
 	//  ── Ma résidence et Annuaire (#2505) ─────────────────────────────────────
 	libelleExercice: {
-		quoi: "l'exercice comptable de la fiche (« 1er juillet → 30 juin »)",
-		migration: {
-			ticket: '#2505',
-			raison: "la Fiche de l'app n'en montre rien : `exercice_libelle` à servir",
-		},
+		quoi: "l'exercice comptable de la fiche (« de juillet à juin »)",
+		api: 'api/app/utils/dates_fr.py#libelle_exercice',
+		//  Servie par `CoproprieteRead.exercice_libelle` depuis #2505.
 	},
 	nomAffiche: {
 		quoi: '« Prénom NOM » d’une personne (annuaire, annonces, auteurs)',
 		api: 'api/app/utils/noms.py#nom_affiche',
 		migration: {
-			ticket: '#2505',
+			ticket: '#2511',
 			raison:
-				"le serveur la calcule pour ses courriels et ses PDF sans la servir ; l'app montre les champs bruts (`nom_affiche`, `auteur_affiche` à servir — #2506 aussi)",
+				"l'annuaire la sert depuis #2505 (`nom_affiche`, lu par `CarteContact`), une affaire son `nom_proprietaire` (#2508) ; restent les annonces, les baux, les points du conseil et les écrans d'administration qui nomment un compte",
 		},
 	},
 	etageLabel: {
-		quoi: "l'étage en clair (« RDC », « 2e étage »)",
+		quoi: "l'étage en clair (« RDC », « 2ème étage »)",
 		api: 'api/app/utils/etages.py#etage_label',
 		migration: {
-			ticket: '#2505',
+			ticket: '#2507',
 			raison:
-				"calculée au serveur pour l'annonce d'arrivée, non servie : annuaire (#2505) et lots (#2507) l'attendent en `etage_libelle`",
+				"l'annuaire la sert depuis #2505 (`etage_libelle`, avec `suffixe`) ; restent les lots, le profil et l'import (`etage_libelle` dans `LotRead`)",
 		},
 	},
 	telephonesDe: {
 		quoi: 'les numéros d’un champ téléphone découpés sur les virgules',
+		api: 'api/app/utils/telephones.py#telephones_de',
 		migration: {
-			ticket: '#2505',
-			raison: "l'app recoupe la donnée elle-même : `telephones: [string]` à servir",
+			ticket: '#2507',
+			raison:
+				"l'annuaire la sert depuis #2505 (`telephones`) ; reste la carte d'un prestataire (`OngletPrestataires`) : `telephones` à servir dans `PrestataireRead`",
 		},
 	},
 	perimetreLabel: {
 		quoi: 'le lieu lisible d’un périmètre (🔹, muet pour celui par défaut)',
 		api: 'api/app/utils/perimetres/libelles.py#perimetre_label',
 		migration: {
-			ticket: '#2505',
+			ticket: '#2511',
 			raison:
-				"le serveur la calcule (recherche, parc, affiches) sans la servir aux listes ; CR d'AG, fil et cartes d'affaire de l'app ne montrent pas le lieu (#2506, #2508 aussi)",
+				"CR d'AG et carnet le servent depuis #2505, une affaire depuis #2508 (`perimetre_libelle`, `perimetres.perimetre_badge`) ; restent la ligne du fil, qui ne le porte pas encore, et les sélecteurs de périmètre",
 		},
 	},
 
@@ -114,47 +114,52 @@ export const REGLES_PARTAGEES = {
 	},
 
 	//  ── Mes lots et accès, prestataires (#2507) ─────────────────────────────
+	//  Servies depuis #2507 : `LotRead`, `GET /lots/mes-charges`, `ContratRead`,
+	//  `PrestataireRead` les portent, le site les lit.
 	lotTypeLabel: {
 		quoi: 'le type d’un lot en clair (« Appartement », « Cave »)',
-		migration: {
-			ticket: '#2507',
-			raison:
-				'`type_de_lot` du serveur rend le code, pas le libellé : `libelle_type` à servir dans `LotRead`',
-		},
+		api: 'api/app/utils/libelles_lot.py#libelle_type_lot',
 	},
 	lotTypeComplet: {
-		quoi: 'le type complet d’un lot (« Appartement T3 »)',
-		migration: { ticket: '#2507', raison: 'même champ `libelle_type`' },
+		quoi: 'le type complet d’un lot (« Appartement – T3 »)',
+		api: 'api/app/utils/libelles_lot.py#libelle_type_complet',
 	},
 	nomDuLot: {
 		quoi: 'le nom d’un lot dans le tableau des charges',
-		migration: { ticket: '#2507', raison: 'servi avec le tableau des charges' },
+		api: 'api/app/utils/libelles_lot.py#nom_du_lot',
 	},
 	tableauDesCharges: {
-		quoi: 'le tableau des charges (pivot par clé, totaux, pourcentages)',
-		migration: {
-			ticket: '#2507',
-			raison: "l'app renvoie au site : `GET /lots/mes-charges` prêt à afficher",
-		},
+		quoi: 'le tableau des charges (pivot par clé, totaux)',
+		api: 'api/app/utils/tableau_charges.py#tableau_des_charges',
 	},
 	frequenceLabel: {
 		quoi: 'la fréquence d’un contrat en clair',
-		migration: { ticket: '#2507', raison: '`frequence_libelle` à servir dans `ContratRead`' },
+		api: 'api/app/utils/frequence_contrat.py#frequence_libelle',
+		migration: {
+			ticket: '#2511',
+			raison:
+				"servie dans `ContratRead.frequence_libelle` (#2507), que l'onglet Contrats lit ; le front la calcule encore pour une affaire sous contrat (`intervenantAffiche`, `ChampFrequence` sur `ticket.contrat`) : à servir avec l'affaire",
+		},
 	},
 	contratUrgence: {
 		quoi: 'l’échéance d’un contrat (préavis passé, cette année, plus tard)',
-		migration: { ticket: '#2507', raison: '`en_retard` à servir dans `ContratRead`' },
+		api: 'api/app/utils/echeance_contrat.py#urgence_echeance',
+	},
+	contratEnRetard: {
+		quoi: 'la visite d’un contrat en retard (le jour même n’en est pas une)',
+		api: 'api/app/utils/echeance_contrat.py#visite_en_retard',
 	},
 	typeEquipementDuContrat: {
 		quoi: 'l’équipement effectif d’un contrat (le sien, sinon la spécialité du prestataire)',
-		migration: {
-			ticket: '#2507',
-			raison: "l'app en garde une copie provisoire (`Fonctions/Prestataires/Provisoire/`)",
-		},
+		api: 'api/app/utils/carnet_entretien.py#type_equipement_resolu',
 	},
 	moyenneNotes: {
 		quoi: 'la note moyenne d’un prestataire',
-		migration: { ticket: '#2507', raison: '`note_moyenne` à servir dans `PrestataireRead`' },
+		api: 'api/app/utils/notes_prestataires.py#note_moyenne',
+	},
+	nextVisitForPrest: {
+		quoi: 'la prochaine visite d’un prestataire (la plus proche de ses contrats en cours)',
+		api: 'api/app/routers/prestataires_lecture.py#lire_prestataires',
 	},
 
 	//  ── Affaires (#2508) ─────────────────────────────────────────────────────

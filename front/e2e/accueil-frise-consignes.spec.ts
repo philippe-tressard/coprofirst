@@ -161,7 +161,13 @@ test('l’annuaire dit la même chose, sous forme de bouton', async ({ page }) =
 		chemin === '/api/admin/annuaire'
 			? {
 					cs: { ag_annee: null, ag_date: null, membres: [] },
-					syndic: { nom_syndic: '', adresse: '', site_web: null, membres: [] },
+					syndic: {
+						nom_syndic: '',
+						nom_syndic_source: 'aucune',
+						adresse: '',
+						site_web: null,
+						membres: [],
+					},
 					whatsapp_url: null,
 				}
 			: undefined,

@@ -161,6 +161,8 @@ export interface ContratEnCours {
 	libelle: string;
 	actif?: boolean;
 	type_equipement?: string | null;
+	/** L'équipement couvert, SERVI par l'API (`ContratRead.equipement_effectif`, #2507). */
+	equipement_effectif: string;
 	frequence_type?: string | null;
 	frequence_valeur?: number | null;
 }
