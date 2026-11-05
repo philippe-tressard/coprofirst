@@ -82,6 +82,7 @@ PAR_ONGLET: dict[str, frozenset[str]] = {
             "imap_dossier",
             "imap_plancher",
             "courriels_affiches",
+            "courriel_signataires_delegues",  # #2554, `utils/courriel_delegation`
         }
     ),
     #  Les clés du canal se lisent dans `utils/whatsapp.CLES_CONFIG`, leur seule

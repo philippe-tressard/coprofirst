@@ -75,6 +75,7 @@ import re
 from dataclasses import dataclass, field
 
 from app.utils.courriel_decodage import _parties, _texte
+from app.utils.destinataires import gestionnaire_ou_premier_admin
 from app.utils.courriel_signature import (
     _cid,
     _de_signature,
@@ -297,12 +298,24 @@ def verser(session, tri: Tri, auteur) -> tuple[list[str], list[Ecart]]:
     return urls, ecarts
 
 
+#: Pourquoi la pièce d'un correspondant sans compte n'est pas reprise (#2554).
+_SANS_DEPOSANT = "aucun administrateur du site pour la recevoir, elle reste dans la boîte"
+
 #: Le texte d'une suite qui ne porte QUE des pièces (un transfert, un envoi sans mot).
 PIECES_SEULES = "Pièces jointes transmises par courriel."
 
 
 def joindre(
-    session, ticket, auteur, suite, tri: Tri | None, *, expediteur: str, envoye_le, annonces=None
+    session,
+    ticket,
+    auteur,
+    suite,
+    tri: Tri | None,
+    *,
+    expediteur: str,
+    envoye_le,
+    annonces=None,
+    syndic=None,
 ):
     """Verse les pièces du message dans `suite` — ou dans une suite à elles.
 
@@ -312,6 +325,8 @@ def joindre(
 
     Sans pièce reprise, les Suites qui en ANNONCENT une le disent : `annonces`,
     par défaut `suite` seule (un transfert en passe toutes celles qu'il a versées).
+
+    Sans compte, `syndic` est le membre du cabinet qui a répondu (#2554).
     """
     annonces = [suite] if annonces is None else annonces
     if tri is None or not (tri.pieces or tri.ecarts):
@@ -323,13 +338,18 @@ def joindre(
     nouvelles = [p for p in tri.pieces if p.empreinte not in deja]
     redites = len(tri.pieces) - len(nouvelles)
     tri = retenir(Tri(pieces=nouvelles, ecarts=tri.ecarts))
-    urls, ecarts = verser(session, tri, auteur)
+    #  Le syndic sans compte (#2554) : ses pièces se notent sous un administrateur —
+    #  ce n'est pas une signature, la Suite qui les cite aussitôt dit « Le syndic ».
+    deposant = auteur or gestionnaire_ou_premier_admin(session)
+    if deposant is None:  # aucun administrateur : les pièces restent dans la boîte
+        tri = Tri(ecarts=[*tri.ecarts, *(Ecart(p.nom, _SANS_DEPOSANT) for p in tri.pieces)])
+    urls, ecarts = verser(session, tri, deposant)
     if not urls and not redites:
         _dire_les_pieces_absentes(annonces)
     if suite is None:
         if not urls:
             return None
-        suite = _suite_des_pieces(ticket, auteur, expediteur, envoye_le)
+        suite = _suite_des_pieces(ticket, auteur, expediteur, envoye_le, syndic=syndic)
     if urls:
         from app.utils.photos import parse_photos, photos_json
 
@@ -411,18 +431,21 @@ def _dire_les_pieces_absentes(suites) -> None:
                 suite.contenu += PIECE_ABSENTE
 
 
-def _suite_des_pieces(ticket, auteur, expediteur: str, envoye_le):
+def _suite_des_pieces(ticket, auteur, expediteur: str, envoye_le, *, syndic=None):
     from app.models.core import TicketEvolution
-    from app.utils.noms import nom_affiche
+    from app.utils.noms import QUALITE_SYNDIC, nom_affiche
     from app.utils.reponse_courriel import contenu_de_la_suite, moment_de_la_suite
 
     quand = moment_de_la_suite(envoye_le)
-    nom = nom_affiche(auteur.prenom, auteur.nom)
+    qui = auteur or syndic
     return TicketEvolution(
         ticket_id=ticket.id,
         type="commentaire",
-        contenu=contenu_de_la_suite(expediteur, nom, quand, PIECES_SEULES),
-        auteur_id=auteur.id,
+        contenu=contenu_de_la_suite(
+            expediteur, nom_affiche(qui.prenom, qui.nom), quand, PIECES_SEULES
+        ),
+        auteur_id=auteur.id if auteur else None,
+        auteur_qualite=None if auteur else QUALITE_SYNDIC,
         cree_le=quand,
     )
 
