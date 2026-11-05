@@ -34,7 +34,7 @@ import re
 
 import pytest
 
-from tests.aides_compose import COMPOSE, RACINE, lire_yaml, services_construits
+from tests.aides_compose import COMPOSE, RACINE, etape_finale, lire_yaml, services_construits
 
 RETRAIT_NPM = (
     "rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx "
@@ -44,33 +44,9 @@ PREUVE = "! sh -c 'command -v npm || command -v npx'"
 _APPEL = re.compile(r"(?<![\w/.-])(npm|npx|corepack|yarn)(?![\w-])")
 
 
-def _instructions(source: str) -> list[tuple[str, str]]:
-    """Les instructions d'un Dockerfile, continuations jointes et commentaires ôtés."""
-    lignes, courante = [], ""
-    for brute in source.replace("\r\n", "\n").split("\n"):
-        if brute.lstrip().startswith("#"):
-            continue
-        if brute.rstrip().endswith("\\"):
-            courante += brute.rstrip()[:-1] + " "
-            continue
-        courante += brute
-        if courante.strip():
-            lignes.append(courante.strip())
-        courante = ""
-    return [
-        (m.group(1).upper(), m.group(2)) for m in (re.match(r"(\S+)\s*(.*)", x) for x in lignes)
-    ]
-
-
-def _etape_finale(source: str) -> list[tuple[str, str]]:
-    instructions = _instructions(source)
-    debuts = [i for i, (mot, _) in enumerate(instructions) if mot == "FROM"]
-    return instructions[debuts[-1] :] if debuts else []
-
-
 def _ecarts(source: str, compose: dict | None = None) -> list[str]:
     """Ce qui manque ou ce qui rappelle npm dans l'étape finale (vide : conforme)."""
-    etape = _etape_finale(source)
+    etape = etape_finale(source)
     retrait = next(
         (i for i, (mot, arg) in enumerate(etape) if mot == "RUN" and RETRAIT_NPM in arg), None
     )
@@ -93,7 +69,7 @@ def _services_node() -> dict[str, str]:
     retenus = {}
     for nom, (_, fichier) in services_construits().items():
         source = (RACINE / fichier).read_text(encoding="utf-8")
-        etape = _etape_finale(source)
+        etape = etape_finale(source)
         image = (
             next((t for t in etape[0][1].split() if not t.startswith("--")), "") if etape else ""
         )
