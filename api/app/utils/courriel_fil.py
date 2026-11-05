@@ -333,11 +333,17 @@ def messages_du_fil(transfert: Transfert) -> list[MessageDuFil]:
 #: ouvrait une SECONDE affaire au lieu de rejoindre la sienne. Le « : » est exigé,
 #: donc « Réparation », « Repas » ou « Report » restent dans le titre.
 _PREFIXES = re.compile(
-    r"^\s*((re|r[ée]p\.?|r[ée]ponse|tr|fwd?|fw|transf\.?|réf|aw|wg)\s*(\[\d+\])?\s*:\s*)+", re.I
+    r"^\s*((re|r[ée]p\.?|r[ée]ponse|tr|fwd?|fw|transf\.?|réf|aw|wg)\s*(?:\[\d+\]\s*)?:\s*)+", re.I
 )
 #: Le repère d'une affaire écrit par le conseil (« TK-109008 », « Affaire #TK-… »).
-_REPERE = re.compile(r"(?:affaire|ticket)?\s*#?\s*\bTK-[0-9A-Za-z]{4,12}\b", re.I)
-_REPERE_SEUL = re.compile(r"#?\s*\b(TK-[0-9A-Za-z]{4,12})\b", re.I)
+#: 🔴 Aucune répétition d'espaces en TÊTE de motif (CodeQL, 05/11/2026) : un
+#: `\s*` facultatif au début se rejoue à chaque position d'une longue suite
+#: d'espaces — un objet ou un numéro de 50 000 espaces coûtait un temps
+#: quadratique. Le préfixe exige désormais un mot (« affaire », « ticket ») ou un
+#: « # » AVANT ses espaces, et deux suites d'espaces ne se suivent jamais sans
+#: un « # » entre elles ; la recherche seule n'en a pas besoin du tout.
+_REPERE = re.compile(r"(?:(?:affaire|ticket)\s*(?:#\s*)?|#\s*)?\bTK-[0-9A-Za-z]{4,12}\b", re.I)
+_REPERE_SEUL = re.compile(r"\b(TK-[0-9A-Za-z]{4,12})\b", re.I)
 
 
 def repere_ecrit(*textes: str | None) -> str | None:
