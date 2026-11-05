@@ -18,7 +18,7 @@ from sqlmodel import select, text
 
 from app.models.core import Notification, StatutTicket, Utilisateur
 from app.models.courriel import FilCourriel
-from app.utils.courriel_ingestion import ACCEPTE, IGNORE, REFUSE
+from app.utils.courriel_ingestion import A_CLASSER, ACCEPTE, IGNORE, REFUSE
 from tests.aides_base import compte
 from tests.aides_courriel import (  # noqa: F401 — `monde` et `scene` sont des fixtures
     _affaires,
@@ -267,11 +267,12 @@ def test_un_transfert_NON_RECONNU_le_dit_au_conseil(monde):
 
 
 def test_un_RESIDENT_qui_transfere_sans_repere_ne_cree_rien(monde):
-    """Créer une affaire du conseil est un geste du conseil."""
+    """Créer une affaire du conseil est un geste du conseil — le message attend
+    d'être classé par lui (#2555)."""
     session, _ticket, syndic, _cs, objet = monde
     resident = compte(session, prefixe="resident", prenom="R", nom="R", roles_json="résident")
     try:
-        assert _transferer(session, resident, objet, _fil(syndic.email, objet)) == IGNORE
+        assert _transferer(session, resident, objet, _fil(syndic.email, objet)) == A_CLASSER
         assert _affaires(session, objet) == []
     finally:
         for n in _notifs(session, resident):

@@ -76,6 +76,11 @@ IGNORE = "ignore"  # sans rapport avec un ticket → ne rien faire
 #: exactement ce qu'il fallait. Le journal disait « refusées=1 » sur un
 #: traitement réussi, et c'est le journal qu'on lit pour savoir si la relève va
 #: bien.
+#: Le motif d'un message qui ne désigne rien — seul cas d'IGNORE qu'un correspondant
+#: connu fait passer « à classer » (`courriel_boite`, #2555).
+SANS_RATTACHEMENT = "ne répond à aucun ticket"
+#: Ni affaire ni relance, d'un correspondant connu et authentifié : en attente (#2555).
+A_CLASSER = "a_classer"
 RELANCE = "relance"  # rattachée à une relance groupée → conservée, non ventilée
 
 
@@ -153,7 +158,7 @@ def examiner(
     #  elle, prouve quelque chose.
     numero = numero_dans_sujet(lire.get("subject")) if not jeton else None
     if not jeton and not reference and not numero:
-        return Verdict(IGNORE, expediteur=from_, motif="ne répond à aucun ticket")
+        return Verdict(IGNORE, expediteur=from_, motif=SANS_RATTACHEMENT)
 
     ok, motif = authentification or (
         False,
