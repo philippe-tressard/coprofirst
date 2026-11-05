@@ -389,11 +389,23 @@ def texte_du_fil(session: Session, ticket: Ticket) -> str:
 
 
 def _deja_verse(session: Session, ticket: Ticket, m: MessageDuFil, fil: str) -> bool:
-    if session.exec(
+    """Le message est-il déjà dans l'affaire ? Par sa marque, ou par son texte.
+
+    🔴 Une marque dont la Suite a été SUPPRIMÉE ne compte plus (#2536, 05/11/2026) :
+    supprimer une Suite ne retire pas sa marque, et le fil transféré de nouveau
+    était ignoré — « rien de nouveau » — alors que l'affaire ne portait plus rien.
+    Une marque sans Suite par construction (message écarté, message qui décrit
+    l'affaire créée) compte toujours.
+    """
+    marques = session.exec(
         select(MessageVerse).where(
             MessageVerse.ticket_id == ticket.id, MessageVerse.empreinte == empreinte(m)
         )
-    ).first():
+    ).all()
+    if any(
+        marque.evolution_id is None or session.get(TicketEvolution, marque.evolution_id)
+        for marque in marques
+    ):
         return True
     norme = texte_normalise(m.texte)
     return len(norme) >= LONGUEUR_COMPARABLE and norme[:DEBUT_COMPARE] in fil
