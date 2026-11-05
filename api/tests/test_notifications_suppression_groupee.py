@@ -86,7 +86,9 @@ def test_supprimer_une_selection_ignore_celles_d_autrui(moteur):
     gardee = _poser(moteur, moi, lue=True)
     chez_le_voisin = _poser(moteur, voisin, lue=False)
 
-    r = http.post("/notifications/supprimer-selection", json={"ids": [a, b, chez_le_voisin, 999_999]})
+    r = http.post(
+        "/notifications/supprimer-selection", json={"ids": [a, b, chez_le_voisin, 999_999]}
+    )
 
     assert r.status_code == 200, r.text
     assert r.json() == {"supprimees": 2}, "le compte ne dit que les siennes"
