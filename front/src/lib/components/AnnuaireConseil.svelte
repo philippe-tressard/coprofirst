@@ -4,10 +4,9 @@
 
   Sorti d'`espace-cs/+page.svelte` le 29/09/2026 (#779, modularité) : la page
   faisait 1 356 lignes, et l'onglet Annuaire en portait la moitié. Il s'amorce
-  seul, comme `OngletAnnoncesHall` ; la page ne lui passe que les données de
-  RÉFÉRENCE qu'elle charge de toute façon (inscrits, lots, registre importé),
-  qui servent à rapprocher un nom saisi d'un inscrit et d'un logement
-  (`#lib/annuaire-rapprochement`). Son pendant : `AnnuaireSyndic`.
+  seul, comme `OngletAnnoncesHall`. Un nom saisi se rapproche d'un inscrit et
+  d'un logement en le demandant au serveur (`#lib/annuaire-rapprochement`,
+  #2522). Son pendant : `AnnuaireSyndic`.
 
   La LISTE — chargement, fiches, gestes, ajout — vit dans `AnnuaireMembres`
   depuis le 02/10/2026 (#1539) : les deux annuaires la recopiaient. Ne reste
@@ -22,18 +21,11 @@
 	import { fmtDateShort } from '#lib/date.ts';
 	import { comparerParNom, nomAffiche } from '#lib/noms.ts';
 	import { localisationMembre } from '#lib/utils.ts';
-	import {
-		inscritParNom,
-		localisationParNom,
-		type SourcesRapprochement,
-	} from '#lib/annuaire-rapprochement.ts';
+	import { rapprochementParNom } from '#lib/annuaire-rapprochement.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import ActionsMembre from '#lib/components/ActionsMembre.svelte';
 	import AnnuaireMembres from '#lib/components/AnnuaireMembres.svelte';
 	import { type MembreBase } from '#lib/components/CarteMembre.svelte';
-
-	/** Les données de référence du rapprochement par le nom. */
-	export let sources: SourcesRapprochement;
 
 	//  🔴 La forme DÉRIVE de `MembreBase` (civilité, prénom, NOM, inscrit lié),
 	//  qui vit dans `CarteMembre` — le composant qui la rend. L'identifiant vient
@@ -94,15 +86,21 @@
 		est_president: false,
 	});
 
-	/** Le nom saisi localise le membre (registre importé) et le lie à un inscrit. */
-	function surNom(i: number) {
-		const nom = membresCS[i].nom;
-		const logement = localisationParNom(sources, nom);
-		if (logement) membresCS[i] = { ...membresCS[i], ...logement };
-		if (!membresCS[i].user_id) {
-			const inscrit = inscritParNom(sources.inscrits, nom);
-			if (inscrit) membresCS[i] = { ...membresCS[i], user_id: inscrit.id };
-		}
+	/** Le nom saisi localise le membre (registre importé) et le lie à un inscrit —
+	 *  le SERVEUR le dit (`GET /admin/annuaire/rapprochement`, #2522). */
+	const rapprocher = rapprochementParNom(true);
+	async function surNom(i: number) {
+		const membre = membresCS[i];
+		const trouve = await rapprocher(membre.nom);
+		//  La fiche a pu changer pendant la question : on ne touche qu'à la même.
+		if (!trouve || membresCS[i] !== membre) return;
+		const { batiment_id, batiment_nom, etage, user_id } = trouve;
+		const logement = batiment_id !== null || etage !== null;
+		membresCS[i] = {
+			...membre,
+			...(logement ? { batiment_id, batiment_nom, etage } : {}),
+			user_id: membre.user_id ?? user_id,
+		};
 		membresCS = [...membresCS];
 	}
 

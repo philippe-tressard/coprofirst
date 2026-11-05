@@ -59,6 +59,9 @@ export interface AccesPorteur {
 export interface AccesAdmin extends AccesPorteur {
 	porteur_nom: string;
 	porteur_id: number | null;
+	/** Le rang du porteur par NOM puis prénom — la colonne « Porteur » se trie
+	 *  sur lui, jamais sur `porteur_nom`, qui commence par le prénom (#2522). */
+	porteur_rang: number;
 }
 
 /**  Un badge tel que sa TABLE le porte (`Vigik`, `Telecommande`) — ce que rend la

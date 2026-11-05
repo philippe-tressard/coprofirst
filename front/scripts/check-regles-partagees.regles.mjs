@@ -216,4 +216,27 @@ export const REGLES_PARTAGEES = {
 				"servie avec l'affaire (`close`) et le référentiel (`statuts[].clos`, #2508) ; le front l'applique encore au fil, aux affaires liées et à l'état choisi d'une fusion",
 		},
 	},
+
+	//  ── Espace CS (#2522) ────────────────────────────────────────────────────
+	//  Comptes, parc des accès, annuaire : ce que l'app iOS porte dans ses trois
+	//  premiers onglets. Le front ne définit plus aucune de ces règles.
+	annonceValidation: {
+		quoi: 'la phrase d’une validation de compte (« 3 lot(s) résolu(s) automatiquement »)',
+		api: 'api/app/utils/annonce_compte.py#annonce_validation',
+		//  Servie par `CompteTraiteResult.annonce` (#2522).
+	},
+	annonceLocataire: {
+		quoi: 'ce que l’appariement a fait d’un locataire (validation et relance)',
+		api: 'api/app/utils/annonce_compte.py#annonce_relance',
+		//  Servie par `annonce` à la validation et par `AutoMatchRelance.annonce`.
+	},
+	inscritParNom: {
+		quoi: 'l’inscrit que désigne le nom saisi dans une fiche de l’annuaire',
+		api: 'api/app/utils/annuaire.py#rapprochement',
+		//  Servie par `GET /admin/annuaire/rapprochement`, appliquée par le `PUT`.
+	},
+	localisationParNom: {
+		quoi: 'le logement d’un membre du conseil d’après le registre importé',
+		api: 'api/app/utils/annuaire.py#rapprochement',
+	},
 };
