@@ -90,6 +90,8 @@ def test_le_choix_ne_montre_que_numero_titre_statut_et_date(moteur):
             "numero": t.numero,
             "titre": "Porte du garage",
             "statut": "ouvert",
+            #  Servi (#2511) : le choix ne recalcule pas « close ».
+            "close": False,
             #  UTC naïf en base, rendu avec son `Z` comme toute date servie.
             "cree_le": f"{t.cree_le.isoformat()}Z",
             #  🔀 Absorbée ou non (#2186) : ce que la fiche de l'affaire, déjà
