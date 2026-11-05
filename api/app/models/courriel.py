@@ -14,6 +14,7 @@ sa décision.
 from app.utils import horloge
 from typing import Optional
 
+from sqlalchemy import Column, LargeBinary
 from sqlmodel import Field, SQLModel
 from pydantic import NaiveDatetime
 
@@ -209,3 +210,35 @@ class VersementCourriel(SQLModel, table=True):
     #: quitte la liste. Colonnes simples, sans clé étrangère : 0286.
     valide_le: Optional[NaiveDatetime] = None
     valide_par_id: Optional[int] = None
+
+
+class CourrielAClasser(SQLModel, table=True):
+    """Un message AUTHENTIFIÉ, d'un correspondant connu, qu'aucune affaire ne désigne (#2555).
+
+    Il était refusé — « rien ne permet de dire à quel ticket » — et perdu pour le
+    site : le journal ne garde pas le corps. Il attend ici qu'un membre du conseil
+    le **rattache** à une affaire, en **crée** une, ou l'**écarte**
+    (`utils/courriel_a_classer`). Jamais de rattachement automatique.
+
+    🔴 `brut` porte le message entier — texte, pièces jointes, adresse : une donnée
+    personnelle. Il s'efface au classement, et la ligne avec le journal, à 90 jours
+    (`maintenance.purger`) ; la politique de confidentialité le dit.
+    """
+
+    __tablename__ = "courriel_a_classer"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    #: La ligne du journal des relèves qui l'annonce (`CourrielReleve`).
+    releve_id: int = Field(index=True)
+    cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant, index=True)
+    envoye_le: Optional[NaiveDatetime] = None
+    expediteur: str = ""
+    objet: str = ""
+    #: Les octets reçus, tels que la relève les a lus — None une fois classé.
+    brut: Optional[bytes] = Field(default=None, sa_column=Column(LargeBinary, nullable=True))
+    #: `a_classer` · `rattache` · `cree` · `ecarte` (`courriel_a_classer.STATUTS`).
+    statut: str = Field(default="a_classer", index=True)
+    classe_le: Optional[NaiveDatetime] = None
+    classe_par_id: Optional[int] = None
+    #: L'affaire où il est entré, sans clé étrangère, comme le journal.
+    ticket_id: Optional[int] = Field(default=None, index=True)

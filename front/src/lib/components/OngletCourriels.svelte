@@ -14,7 +14,8 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { courriels, type CourrielReleve } from '#lib/api/index.ts';
+	import { courriels, type CourrielAClasser, type CourrielReleve } from '#lib/api/index.ts';
+	import ClasserCourriel from '#lib/components/ClasserCourriel.svelte';
 	import { fmtDatetimeShort } from '#lib/date.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
@@ -31,7 +32,29 @@
 		relance: { libelle: 'Transmis au conseil', ton: 'info' },
 		refuse: { libelle: 'Refusé', ton: 'attention' },
 		ignore: { libelle: 'Ignoré', ton: 'neutre' },
+		//  Aucune affaire désignée, d'un correspondant connu : le conseil le classe (#2555).
+		a_classer: { libelle: 'À classer', ton: 'attention' },
 	};
+
+	//  Une fois classé, la ligne dit ce qui a été fait — le motif le précise.
+	const CLASSES: Record<string, { libelle: string; ton: TonVerdict }> = {
+		rattache: { libelle: 'Rattaché', ton: 'succes' },
+		cree: { libelle: 'Affaire créée', ton: 'succes' },
+		ecarte: { libelle: 'Écarté', ton: 'neutre' },
+	};
+
+	function verdictDe(r: CourrielReleve): { libelle: string; ton: TonVerdict } {
+		const statut = r.a_classer?.statut;
+		if (statut && statut !== 'a_classer') return CLASSES[statut];
+		return VERDICTS[r.decision] ?? { libelle: r.decision, ton: 'neutre' };
+	}
+
+	/**  Les messages qui attendent un geste, par ligne du journal. */
+	$: enAttente = new Map(
+		releves
+			.filter((r) => r.a_classer?.statut === 'a_classer')
+			.map((r) => [r.id, r.a_classer as CourrielAClasser]),
+	);
 
 	let releves: CourrielReleve[] = [];
 	let limite = 0;
@@ -58,8 +81,8 @@
 		sousTitre: r.envoye_le
 			? `${r.expediteur} · envoyé le ${fmtDatetimeShort(r.envoye_le)}`
 			: r.expediteur,
-		verdict: VERDICTS[r.decision]?.libelle ?? r.decision,
-		ton: VERDICTS[r.decision]?.ton ?? 'neutre',
+		verdict: verdictDe(r).libelle,
+		ton: verdictDe(r).ton,
 		date: r.releve_le,
 		texte: r.motif,
 		lien: r.ticket_id
@@ -76,7 +99,8 @@
 	<p class="aide largeur-saisie">
 		Les {limite} derniers messages reçus à l'adresse des affaires, du plus récent au plus ancien. Un message
 		refusé n'est pas perdu : corrigez ce que le motif indique (le plus souvent le numéro d'affaire dans
-		l'objet), puis transférez-le de nouveau.
+		l'objet), puis transférez-le de nouveau. Un message <strong>à classer</strong> vient d'un correspondant
+		connu sans désigner d'affaire : ouvrez-le pour le rattacher à une affaire, en créer une ou l'écarter.
 	</p>
 	<JournalVerdicts
 		{entrees}
@@ -84,5 +108,12 @@
 		recharger={charger}
 		vide="Aucun message relevé pour l’instant."
 		libelleRecharger="Rafraîchir la liste des courriels"
-	/>
+	>
+		<svelte:fragment slot="gestes" let:cle>
+			{@const message = enAttente.get(cle)}
+			{#if message}
+				<ClasserCourriel {message} on:classe={charger} />
+			{/if}
+		</svelte:fragment>
+	</JournalVerdicts>
 {/if}
