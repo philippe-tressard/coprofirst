@@ -27,7 +27,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlmodel import Session, select
 
@@ -125,7 +125,8 @@ def _a_classer_lu(session: Session, item: CourrielAClasser) -> AClasserRead:
 
 class Rattachement(BaseModel):
     #: Le numéro de l'affaire, tel qu'on l'écrit (« TK-570894 », « #TK-570894 »).
-    numero: str
+    #: Borné : il passe par une expression régulière (`repere_ecrit`).
+    numero: str = Field(max_length=40)
 
 
 class Classement(BaseModel):

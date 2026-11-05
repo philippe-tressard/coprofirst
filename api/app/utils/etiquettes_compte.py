@@ -3,8 +3,8 @@ Vigik, Bail — et leur TROISIÈME état : « sans objet » (26/09/2026).
 
 Chaque étiquette était verte ou rouge. Rouge disait « non » — et se lisait
 « anomalie » : une copropriétaire sans parking portait un « TC » rouge alors
-qu'il n'y avait aucune télécommande à lui rattacher (GILLIOT), un propriétaire
-d'un seul parking un « Vigik » rouge (DESMOTTES). Signalé à l'écran, capture à
+qu'il n'y avait aucune télécommande à lui rattacher, un propriétaire
+d'un seul parking un « Vigik » rouge. Signalé à l'écran, capture à
 l'appui ; arbitré : une pastille grise « sans objet ».
 
 La règle, et elle seule :
