@@ -576,9 +576,12 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
   à son compte (`caddy_donnees`, `caddy_configuration`, `caddy_journal`, #2430) :
   rendre à `caddy` les volumes écrits par root casserait le retour à l'image
   d'avant ; ceux-là restent sur le disque pour lui. Une commande lancée dans l'API prend
-  `-u app` (`docker compose exec -u app api python …`) : son root n'écrit plus dans
-  les volumes. 🔒 autotest de S4 (`--selftest`, compose ⇄ liste, dans les deux
-  sens) et `test_conteneurs_non_root.py`.
+  `-u app` (`docker compose exec -u app api python …`), un `run --entrypoint` aussi —
+  il saute la descente de `start.sh` : son root n'écrit ni ne supprime dans les volumes
+  (démo hors service le 05/11/2026, #2546) ; celle qui écrit chez qui lance le script
+  prend son compte (`-u "$(id -u):$(id -g)"`). 🔒 autotest de S4 (`--selftest`, compose
+  ⇄ liste, dans les deux sens) et `test_conteneurs_non_root.py` (`DESCENTE`,
+  `EXCEPTIONS_COMPTE`).
 - **Téléversement : une seule porte.** Un fichier reçu s'écrit sur disque par
   `utils/fichiers.enregistrer_fichier_recu` **et nulle part ailleurs** ; les
   règles — liste blanche de types, plafond de taille, cohérence de la signature —
