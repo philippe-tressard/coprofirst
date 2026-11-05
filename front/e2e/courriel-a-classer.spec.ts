@@ -60,7 +60,7 @@ test('Espace CS › Courriels : un message à classer se rattache à l’affaire
 	await expect(lignes.nth(0).locator('blockquote')).toHaveText(
 		'Le portillon est de nouveau bloqué ce matin.',
 	);
-	const proposee = lignes.nth(0).getByRole('button', { name: /Rattacher à #TK-570894/ });
+	const proposee = lignes.nth(0).getByRole('button', { name: /#TK-570894/ });
 	await expect(proposee).toBeVisible();
 	await expect(lignes.nth(0).getByRole('button', { name: 'Créer une affaire' })).toBeVisible();
 	await expect(lignes.nth(0).getByRole('button', { name: 'Écarter' })).toBeVisible();
@@ -69,6 +69,29 @@ test('Espace CS › Courriels : un message à classer se rattache à l’affaire
 	).toBeDisabled();
 
 	await attendreSansDefilementHorizontal(page, 'dans l’onglet Courriels, message à classer ouvert');
+
+	//  L'alignement, mesuré (demandé le 05/11/2026) : le champ et son bouton ont la
+	//  même hauteur et le même bas ; la proposition et la rangée du numéro, le même
+	//  bord droit ; les deux autres issues, la même hauteur.
+	const bloc = lignes.nth(0).locator('.classer');
+	const mesures = await bloc.evaluate((el) => {
+		const r = (s: string) => el.querySelector(s)!.getBoundingClientRect();
+		const champ = r('.saisie-numero input');
+		const bouton = r('.saisie-numero .btn');
+		const issues = [...el.querySelectorAll('.autres-issues .btn')].map((b) =>
+			b.getBoundingClientRect(),
+		);
+		return {
+			hauteurs: [champ.height, bouton.height],
+			bas: [champ.bottom, bouton.bottom],
+			droites: [r('.suggestion').right, r('.saisie-numero').right],
+			issues: issues.map((b) => b.height),
+		};
+	});
+	expect(Math.abs(mesures.hauteurs[0] - mesures.hauteurs[1]), 'champ ≠ bouton').toBeLessThan(1);
+	expect(Math.abs(mesures.bas[0] - mesures.bas[1]), 'bas décalés').toBeLessThan(1);
+	expect(Math.abs(mesures.droites[0] - mesures.droites[1]), 'bords droits').toBeLessThan(1);
+	expect(Math.abs(mesures.issues[0] - mesures.issues[1]), 'issues inégales').toBeLessThan(1);
 	await lignes.nth(0).screenshot({
 		path: `test-results/courriel-a-classer-${test.info().project.name}.png`,
 	});

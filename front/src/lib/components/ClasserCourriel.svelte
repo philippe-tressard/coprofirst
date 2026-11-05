@@ -15,6 +15,7 @@
 	import { confirmer } from '#lib/confirmation.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { toast } from '#lib/components/Toast.svelte';
+	import LibelleGroupe from '#lib/components/LibelleGroupe.svelte';
 
 	export let message: CourrielAClasser;
 
@@ -54,107 +55,154 @@
 	{#if message.apercu}
 		<blockquote class="apercu">{message.apercu}</blockquote>
 	{/if}
-	{#if message.suggestions.length}
-		<p class="aide intitule">Affaires ouvertes proches</p>
-		<ul class="suggestions">
-			{#each message.suggestions as s (s.id)}
-				<li>
-					<button
-						class="btn btn-outline btn-sm"
-						type="button"
-						disabled={enCours}
-						on:click={() => rattacher(s.numero)}
-						>Rattacher à #{s.numero}<span class="titre-suggestion">{s.titre}</span></button
-					>
-				</li>
-			{/each}
-		</ul>
-	{/if}
-	<!--  Pas un `<form>` : ce n'est pas un enregistrement (`lint:soumission`), c'est un
-	      geste — Entrée dans le champ le lance aussi. -->
-	<div class="autre">
-		<label class="field champ-court">
-			Autre affaire
-			<input
-				type="text"
-				bind:value={numero}
-				placeholder="TK-123456"
-				autocomplete="off"
-				on:keydown={(e) => e.key === 'Enter' && numero.trim() && rattacher(numero)}
-			/>
-		</label>
+	<!--  UN geste, deux façons : une affaire proposée, ou un numéro tapé. Une seule
+	      colonne, un seul bord gauche et droit, une seule hauteur de contrôle. -->
+	<LibelleGroupe titre="Rattacher à une affaire" id="classer-{message.id}" classe="groupe">
+		{#each message.suggestions as s, i (s.id)}
+			<button
+				class="btn suggestion"
+				class:btn-primary={i === 0}
+				class:btn-outline={i > 0}
+				type="button"
+				disabled={enCours}
+				on:click={() => rattacher(s.numero)}
+				><span class="numero">#{s.numero}</span><span class="titre-suggestion">{s.titre}</span
+				></button
+			>
+		{/each}
+		<div class="field champ-en-ligne champ-numero">
+			<label for="classer-{message.id}-numero" class="libelle-numero">
+				{message.suggestions.length ? 'Autre affaire' : 'Numéro de l’affaire'}
+			</label>
+			<div class="saisie-numero">
+				<input
+					id="classer-{message.id}-numero"
+					type="text"
+					bind:value={numero}
+					placeholder="TK-123456"
+					autocomplete="off"
+					spellcheck="false"
+					on:keydown={(e) => e.key === 'Enter' && numero.trim() && rattacher(numero)}
+				/>
+				<button
+					class="btn btn-outline"
+					type="button"
+					disabled={enCours || !numero.trim()}
+					on:click={() => rattacher(numero)}>Rattacher</button
+				>
+			</div>
+		</div>
+	</LibelleGroupe>
+	<!--  Les autres issues, séparées : elles ne rattachent rien. -->
+	<div class="autres-issues">
 		<button
-			class="btn btn-outline btn-sm"
+			class="btn"
+			class:btn-primary={!message.suggestions.length}
+			class:btn-outline={message.suggestions.length > 0}
 			type="button"
-			disabled={enCours || !numero.trim()}
-			on:click={() => rattacher(numero)}>Rattacher</button
+			disabled={enCours}
+			on:click={creer}>Créer une affaire</button
 		>
-	</div>
-	<div class="gestes">
-		<button class="btn btn-primary btn-sm" type="button" disabled={enCours} on:click={creer}
-			>Créer une affaire</button
-		>
-		<button class="btn btn-outline btn-sm" type="button" disabled={enCours} on:click={ecarter}
+		<button class="btn btn-outline" type="button" disabled={enCours} on:click={ecarter}
 			>Écarter</button
 		>
 	</div>
 </div>
 
 <style>
+	/*  Une seule hauteur pour tout ce qui se touche du doigt dans ce bloc : la
+	    cible tactile de la charte (44 px au doigt, `composants.css`) en minimum,
+	    et 2,5 rem à la souris — le champ s'aligne dessus par l'étirement. */
 	.classer {
+		--hauteur-geste: 2.5rem;
 		margin-top: 0.6rem;
-		padding-top: 0.6rem;
+		padding-top: 0.75rem;
 		border-top: 1px solid var(--color-border);
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.75rem;
+	}
+	/*  Le contenu tient dans une colonne lisible ; les filets, eux, vont d'un bord
+	    à l'autre de la ligne, comme celui du journal au-dessus. */
+	.apercu,
+	.classer :global(.groupe) {
+		max-width: 36rem;
+	}
+	.classer .btn {
+		min-height: var(--hauteur-geste);
+		justify-content: center;
 	}
 	.apercu {
 		margin: 0;
-		padding: 0.4rem 0.6rem;
+		padding: 0.4rem 0.75rem;
 		border-left: 3px solid var(--color-border);
 		color: var(--color-text-muted);
 		font-size: var(--fs-sm);
 	}
-	.intitule {
-		margin: 0;
-	}
-	.suggestions {
+	.classer :global(.groupe) {
 		display: flex;
 		flex-direction: column;
-		gap: 0.3rem;
-		margin: 0;
-		padding: 0;
-		list-style: none;
+		gap: 0.5rem;
+		margin-top: 0.4rem;
 	}
-	.suggestions .btn {
-		display: flex;
+	/*  Une proposition : numéro en tête, titre à la suite — le texte part du bord
+	    gauche, comme une ligne de liste, et le bouton prend toute la colonne. */
+	.classer .suggestion {
+		justify-content: flex-start;
 		flex-wrap: wrap;
-		gap: 0 0.4rem;
+		gap: 0 0.5rem;
+		width: 100%;
 		text-align: left;
-		max-width: 100%;
+	}
+	.numero {
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
 	}
 	.titre-suggestion {
+		font-weight: 400;
+		opacity: 0.85;
+	}
+	/*  Un cran SOUS le titre du groupe : c'est une variante du même geste, pas un
+	    second intitulé — en capitales, il pesait autant que « Rattacher à une affaire ». */
+	.classer .libelle-numero {
+		font-size: var(--fs-sm);
+		font-weight: 400;
+		text-transform: none;
+		letter-spacing: 0;
 		color: var(--color-text-muted);
-		font-weight: normal;
 	}
-	.autre {
+	/*  Plus d'air AU-DESSUS qu'entre le libellé et sa saisie : le libellé se lit
+	    avec le champ qu'il nomme, pas avec la proposition qui le précède. */
+	.champ-numero {
+		margin-top: 0.5rem;
+	}
+	/*  Le champ et son bouton sont UNE commande : même rangée, même hauteur
+	    (étirement), le bouton à sa largeur naturelle. */
+	.saisie-numero {
+		display: flex;
+		align-items: stretch;
+		gap: 0.5rem;
+		margin-top: 0.25rem;
+	}
+	.saisie-numero input {
+		flex: 1 1 auto;
+		min-width: 0;
+		min-height: var(--hauteur-geste);
+		margin: 0;
+	}
+	.saisie-numero .btn {
+		flex: 0 0 auto;
+	}
+	.autres-issues {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: flex-end;
 		gap: 0.5rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--color-border);
 	}
-	/*  La marge basse d'un champ décalait le bouton sous la saisie : ils se
-	    tiennent sur la même ligne de base. */
-	.autre .field {
-		margin-bottom: 0;
-	}
-	.autre .btn {
-		min-height: 2.5rem;
-	}
-	.gestes {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
+	@media (pointer: coarse) {
+		.classer {
+			--hauteur-geste: 44px;
+		}
 	}
 </style>
