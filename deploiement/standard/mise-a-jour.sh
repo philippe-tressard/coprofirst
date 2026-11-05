@@ -274,7 +274,7 @@ COPROFIRST_VERSION="$CIBLE" "${COMPOSE[@]}" pull --quiet || echouer "images de $
 #  `DATABASE_URL`, ou chacune de la déclaration d'une installation commune — lue par
 #  la NOUVELLE image, qui la servira ; invalide, rien n'est changé.
 if [ -n "$(lire_env COPROPRIETES_FICHIER)" ]; then
-    LISTE_BASES=$(COPROFIRST_VERSION="$CIBLE" "${COMPOSE[@]}" run --rm --no-deps -T --entrypoint python api \
+    LISTE_BASES=$(COPROFIRST_VERSION="$CIBLE" "${COMPOSE[@]}" run --rm --no-deps -T -u app --entrypoint python api \
         -m app.installation_commune.verifier --bases) \
         || echouer "déclaration des copropriétés invalide ou illisible : pas de mise à jour."
 else
@@ -292,7 +292,15 @@ VOLUMES=(-v "${PROJET}_app_data:/donnees/app_data" -v "${PROJET}_uploads:/donnee
 #  La base ne vit pas dans ces volumes : elle part dans un EXPORT à côté,
 #  réimporté dans une base jetable pour être déclaré bon (P2-7).
 BASE="${ARCHIVE%.tar.gz}-base.tar.gz"
-PONCTUEL=("${COMPOSE[@]}" run --rm --no-deps -T -v "$SAUVEGARDES:/sortie" --entrypoint python api)
+#  🔴 Sous le compte de QUI LANCE ce script (#2546) : l'export s'écrit dans
+#  `COPROFIRST_SAUVEGARDES`, qui lui appartient. `--entrypoint` saute la descente
+#  de `start.sh` vers `app`, et le conteneur de l'API est DURCI (#2368) : resté
+#  root, il n'a ni DAC_OVERRIDE ni FOWNER, et n'écrit pas dans le dossier d'un
+#  autre — chaque nuit, la sauvegarde était refusée et rien ne s'installait plus
+#  (mesuré sur la démo le 05/11/2026). `app` n'y écrirait pas davantage. Lancé par
+#  root, le compte est root, propriétaire du dossier : le cas marche aussi.
+#  🔒 `scripts/ci/commandes_ponctuelles.py` refuse un `run|exec` sans compte.
+PONCTUEL=("${COMPOSE[@]}" run --rm --no-deps -T -u "$(id -u):$(id -g)" -v "$SAUVEGARDES:/sortie" --entrypoint python api)
 "${COMPOSE[@]}" stop api >/dev/null
 sauvegarder() {
     local id var exp

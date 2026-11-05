@@ -108,78 +108,143 @@ def test_le_bridge_descend_vers_node_avant_de_servir():
     )
 
 
-#: Une commande lancée DANS le conteneur de l'API par un opérateur ou un script —
-#: `docker exec hostachy_api python …`, `docker compose exec -T api python …`,
-#: `"${COMPOSE[@]}" exec api sh …`. Les options avant le service sont capturées.
-_EXEC_API = re.compile(
-    r"\bexec\b((?:\s+-{1,2}[\w-]+(?:[ =](?!api\b|hostachy_api\b)[\w./=-]+)?)*)"
-    r"\s+(?:api|hostachy_api)\s+(?:python\d*|sh|bash)\b"
-)
-_COMPTE_APP = re.compile(r"(?:^|\s)(?:-u|--user)[ =]app\b")
+#: Service durci qui DÉMARRE en root → le compte vers lequel son point d'entrée
+#: descend. Confronté au compose et aux Dockerfile : la table ne se croit pas.
+DESCENTE = {"api": "app", "whatsapp-bridge": "node"}
+
+#: (fichier, service) → raison et ticket. Le test échoue si l'une cesse de servir.
+EXCEPTIONS_COMPTE = {
+    ("scripts/exploitation/restaurer-copie-hors-site.sh", "api"): (
+        "`lancer_fichiers` en `--user root` extrait l'archive dans un volume neuf qui "
+        "appartient à `app` : même défaut, à éprouver sur le banc avant de changer un "
+        "geste de reprise après sinistre (#2547)"
+    ),
+}
 
 
-def _commandes_dans_l_api():
-    """(fichier, numéro, ligne, options) de chaque `exec` dans l'API : scripts
-    (hors commentaires), documents d'exploitation et docstrings du code."""
+def _racines() -> dict[str, str]:
+    from tests.aides_commandes_ponctuelles import demarrent_en_root
+    from tests.aides_compose import COMPOSE, instructions_dockerfile, lire_yaml, services_construits
+
+    images = {}
+    for nom, (_contexte, dockerfile) in services_construits().items():
+        users = [v for i, v in instructions_dockerfile(_lire(dockerfile)) if i == "USER"]
+        images[nom] = users[-1].strip() if users else None
+    return demarrent_en_root(lire_yaml(COMPOSE)["services"], images)
+
+
+def _sources():
+    """(chemin relatif, texte, est un script) : les scripts shell versionnés (hors
+    commentaires), les documents d'exploitation et les docstrings du code."""
     from tests.conftest import scripts_shell_versionnes
 
     sources = [(s, True) for s in scripts_shell_versionnes()]
     for motif in ("deploiement/**/*.md", "docs/**/*.md", "api/app/**/*.py", "README.md"):
         sources += [(p, False) for p in _RACINE.glob(motif)]
     for chemin, est_script in sources:
-        for numero, ligne in enumerate(chemin.read_text(encoding="utf-8").splitlines(), 1):
-            if est_script and ligne.strip().startswith("#"):
-                continue
-            for trouve in _EXEC_API.finditer(ligne):
-                yield chemin.relative_to(_RACINE).as_posix(), numero, ligne.strip(), trouve.group(1)
+        yield chemin.relative_to(_RACINE).as_posix(), chemin.read_text(encoding="utf-8"), est_script
 
 
-def test_une_commande_dans_l_api_tourne_sous_le_compte_app():
-    """`docker exec` entre en root — et le root du conteneur durci n'a plus
-    DAC_OVERRIDE (#2368) : il ne peut plus écrire dans `/app/data` ni
-    `/app/uploads`, qui appartiennent à `app`. Déclarer une copropriété
-    (`creer-copropriete.sh`) échouait ainsi sur le banc du standby. Sous `-u app`,
-    la commande écrit, et ses fichiers ont le propriétaire que l'API relit.
+def test_les_services_qui_demarrent_en_root_sont_ceux_de_la_table():
+    """`DESCENTE` dit vers quel compte chacun descend : un service durci neuf qui
+    démarre en root s'y déclare, et la règle ci-dessous le couvre d'elle-même."""
+    assert set(_racines()) == set(DESCENTE), (
+        f"services durcis qui démarrent en root : {sorted(_racines())}, "
+        f"déclarés dans DESCENTE : {sorted(DESCENTE)}"
+    )
+
+
+def test_une_commande_ponctuelle_nomme_son_compte():
+    """`run`, `exec` ou `docker exec` sur un service qui démarre en root, sans `-u`.
+
+    La commande saute le point d'entrée, donc sa descente : elle reste root, mais
+    le root d'un conteneur durci n'a ni DAC_OVERRIDE ni FOWNER (#2368). Déclarer une
+    copropriété échouait ainsi sur le banc du standby (`exec`) ; le 05/11/2026, la
+    remise à zéro de la démo n'a pu supprimer aucun fichier (`run --entrypoint`),
+    l'API arrêtée et la base vide, et la sauvegarde de `mise-a-jour.sh` était
+    refusée chaque nuit (#2546). Sous `-u app` — ou le compte de qui lance le
+    script, quand il écrit chez lui —, la commande a les droits qu'elle croit avoir.
     """
-    trouves = list(_commandes_dans_l_api())
-    #  Cas zéro : `creer-copropriete.sh` en porte trois ; une portée cassée ne
-    #  verrait rien et rendrait le test vert.
-    assert (
-        sum(f == "deploiement/standard/commune/creer-copropriete.sh" for f, *_ in trouves) >= 3
-    ), "les commandes de creer-copropriete.sh ne sont plus vues — portée ou motif cassé"
-    fautes = [
-        f"{f}:{n} : {ligne}" for f, n, ligne, options in trouves if not _COMPTE_APP.search(options)
-    ]
-    assert not fautes, (
-        "Commande lancée dans le conteneur de l'API sans `-u app` — root n'y peut plus "
-        "écrire (conteneur durci, #2368) :\n" + "\n".join(fautes)
+    from tests.aides_commandes_ponctuelles import commandes, fautes, lignes_logiques
+
+    racines = _racines()
+    conteneurs = {c: s for s, c in racines.items()}
+    vues, trouvees, servies = 0, [], set()
+    for chemin, texte, script in _sources():
+        vues += sum(
+            len(commandes(ligne, conteneurs)) for _n, ligne in lignes_logiques(texte, script=script)
+        )
+        for numero, service, compte in fautes(texte, racines, script=script):
+            if (chemin, service) in EXCEPTIONS_COMPTE:
+                servies.add((chemin, service))
+                continue
+            dit = f"en `{compte}`" if compte else "sans compte"
+            trouvees.append(f"{chemin}:{numero} : `{service}` {dit} → `-u {DESCENTE[service]}`")
+    #  Cas zéro : `creer-copropriete.sh`, `mise-a-jour.sh` et la remise à zéro en
+    #  portent à eux trois plus de dix ; une portée cassée ne verrait rien.
+    assert vues >= 10, f"{vues} commande(s) vue(s) seulement : portée ou découpage cassé"
+    assert not trouvees, (
+        "Commande ponctuelle dans un conteneur durci qui démarre en root, sans compte :\n"
+        + "\n".join(trouvees)
+    )
+    assert servies == set(EXCEPTIONS_COMPTE), (
+        f"exception(s) qui ne servent plus : {sorted(set(EXCEPTIONS_COMPTE) - servies)}"
     )
 
 
-def test_le_motif_exec_api_voit_et_ne_voit_que_lui():
-    """Témoins du motif : chaque forme employée dans le dépôt, et ce qu'il laisse."""
-    vus = (
+def test_le_decoupage_des_commandes_voit_et_ne_voit_que_elles():
+    """Témoins : chaque forme employée dans le dépôt, et ce qui se laisse."""
+    from tests.aides_commandes_ponctuelles import demarrent_en_root, fautes
+
+    services = {
+        "api": {"cap_drop": ["ALL"], "container_name": "hostachy_api"},
+        "postgres": {
+            "cap_drop": ["ALL"],
+            "user": "postgres",
+            "container_name": "hostachy_postgres",
+        },
+        "front": {"cap_drop": ["ALL"], "container_name": "hostachy_front"},
+        "libre": {"image": "alpine"},
+    }
+    racines = demarrent_en_root(services, {"front": "app"})
+    assert racines == {"api": "hostachy_api"}
+
+    def n(texte: str) -> int:
+        return len(fautes(texte, racines, script=True))
+
+    refusees = (
+        'P=("${COMPOSE[@]}" run --rm --no-deps -T --entrypoint sh api -c)',  # l'incident
+        "docker compose run --rm --user root -v a:/b api x",
+        "docker compose exec -u 0 api x",
+        '"${COMPOSE[@]}" exec -T api python -m x',
         "docker compose exec api python -m app.seed --copropriete tilleuls",
-        'NOMS=$("${COMPOSE[@]}" exec -T api python -m app.installation_commune.creer noms "$@")',
         "docker exec -i hostachy_api python3 script.py",
-        "docker exec -e X=1 hostachy_api sh -c 'ls'",
-    )
-    ignores = (
         "docker exec hostachy_api curl -s http://localhost:8000/health",
-        'docker exec hostachy_postgres psql -U coprofirst -Atc "select 1"',
+        "docker compose run --rm \\\n    --entrypoint sh api -c x",
+    )
+    admises = (
+        '"${COMPOSE[@]}" run --rm --no-deps -T -u app --entrypoint sh api -c',
+        "docker compose run --rm --user app api python -V",
+        "docker compose run --rm --user=app api python -V",
+        "docker compose exec -uapp api python -V",
+        "docker exec --user=app hostachy_api python x",
+        '"${COMPOSE[@]}" run --rm -T -u "$(id -u):$(id -g)" -v "$S:/sortie" --entrypoint python api',
+        "docker compose run --rm \\\n    -u app api python -V",
+        '"${COMPOSE[@]}" exec -T postgres psql -c x',  # `user:` dans le compose
+        "docker exec hostachy_front node -v",  # `USER` dans l'image
+        'docker run --rm "$IMAGE" sh -c x',  # une image, pas un service
+        "# docker compose run --entrypoint sh api",
+        "echo run api ; make run api",
+        "docker compose ps && run api",
         "docker compose logs api",
     )
-    for ligne in vus:
-        assert _EXEC_API.search(ligne), f"le motif devrait voir : {ligne}"
-        assert not _COMPTE_APP.search(_EXEC_API.search(ligne).group(1)), ligne
-    for ligne in ignores:
-        assert not _EXEC_API.search(ligne), f"le motif voit à tort : {ligne}"
-    assert _COMPTE_APP.search(
-        _EXEC_API.search("docker compose exec -T -u app api python -m x").group(1)
-    )
-    assert _COMPTE_APP.search(
-        _EXEC_API.search("docker exec --user=app hostachy_api python x").group(1)
-    )
+    for ligne in refusees:
+        assert n(ligne) == 1, f"devrait être refusée : {ligne}"
+    for ligne in admises:
+        assert n(ligne) == 0, f"devrait passer : {ligne}"
+    assert fautes("docker compose run --rm \\\n  --entrypoint sh api", racines, script=True) == [
+        (1, "api", None)
+    ], "une ligne coupée se signale à sa première ligne"
 
 
 def test_postgresql_tourne_en_postgres_sans_capacite():

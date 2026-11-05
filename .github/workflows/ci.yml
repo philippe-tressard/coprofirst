@@ -623,6 +623,9 @@ jobs:
           # Ajouter une copropriété à une installation commune (#2053).
           bash deploiement/standard/commune/creer-copropriete.sh --selftest
           bash deploiement/demo/reinitialiser.sh    --selftest
+          # La remise à zéro entière, contre un docker factice : l'API relancée dans
+          # chaque échec, chaque commande sous -u app (incident du 05/11/2026, #2546).
+          bash scripts/ci/essai-reinitialiser-demo.sh --selftest
           # Les correctifs du système d'une installation standard : la configuration
           # SERVIE (apt-config dump, minuteur), le redémarrage en attente, INCONNU
           # jamais vert — sur la décision apt de C30 (lib-apt.sh).
