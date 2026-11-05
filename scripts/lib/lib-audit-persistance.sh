@@ -88,8 +88,14 @@ PERSISTANCE_ECRIVAINS="${PERSISTANCE_ECRIVAINS:-scripts/installation/durcir-noeu
 # ── Décisions PURES ──────────────────────────────────────────────────────────
 
 #  $1 = un chemin → chaud | tiede | autre (un chemin hors des deux listes)
+#  🔴 Sans expansion (#2533) : `for e in $PERSISTANCE_CHAUDS` étendait le motif
+#  `/home/*/.ssh/authorized_keys` en les fichiers RÉELS du nœud (/home/ptressard/…),
+#  et le compte d'un intrus sortait `autre`. Ici les motifs restent des motifs
+#  (`local -` rend l'option à l'appelant) ; le relevé, lui, DOIT les étendre.
 persistance_classe() {
     local c=${1:-} e
+    local -
+    set -f
     for e in $PERSISTANCE_CHAUDS; do
         # shellcheck disable=SC2254  # le glob de la liste doit rester un motif
         case "$c" in $e|$e/*) echo chaud; return 0 ;; esac
@@ -325,6 +331,11 @@ zzz  /etc/ssh/sshd_config.d/50-x.conf" /etc/fail2ban | cut -d: -f1)"
     ln -s /nulle/part "$d/cron.d/lien" 2>/dev/null || liens=non
     mkdir -p "$d/sonde" && chmod 700 "$d/sonde" 2>/dev/null && [ "$(stat -c %a "$d/sonde")" = 700 ] || modes=non
     local releve verdict L="$d/cron.d $d/home/*/.ssh/authorized_keys" T="$d/sshd.d"
+    #  #2533 : le motif `home/*/…` correspond ici à un VRAI fichier (`home/u`), comme
+    #  sur un nœud (`/home/ptressard`). La classe ne doit pas l'étendre : le compte
+    #  d'un intrus (`home/intrus`) reste chaud. Vert sur le poste, rouge sur un nœud.
+    t "classe : le glob ne s'étend pas sur un compte réel (#2533)" chaud \
+      "$(PERSISTANCE_CHAUDS="$L" persistance_classe "$d/home/intrus/.ssh/authorized_keys")"
     releve=$(PERSISTANCE_CHAUDS="$L $d/absent" PERSISTANCE_TIEDES="$T" persistance_relever)
     if [ "$liens" = oui ]; then
         t "relevé : 4 entrées (3 fichiers, 1 lien), l'absent ignoré" 4 "$(grep -c . <<< "$releve")"
