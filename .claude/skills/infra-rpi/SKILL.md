@@ -911,6 +911,13 @@ Il rouvre l'hôte et les conteneurs jusqu'au prochain rechargement d'ufw ;
   si S5 la dit « manquante » après la pose, c'est que la forme servie diffère.
 - **List-dons** vit sur rpi2 : DOCKER-USER filtre aussi ses conteneurs. Son besoin
   se lit dans le constat de rpi2 avant tout refus.
+- **Un port publié par Docker, joint depuis l'hôte, sort vers le pont** (05/11/2026) :
+  `localhost:8080` (List-dons) est traduit en `172.19.0.2:8080` AVANT la chaîne OUTPUT,
+  donc S5 le voit comme une destination hors liste (« 172.19.0.2 8080/tcp hôte »).
+  Déclaré : `allow out to 172.16.0.0/12 port 8080 proto tcp`, portée hôte — la plage des
+  ponts Docker (l'adresse du conteneur change à sa recréation), injoignable de
+  l'extérieur. Un autre port publié joint depuis l'hôte se déclare de même, avec son
+  port : la plage ne s'ouvre pas à tout.
 - Le banc qui a éprouvé la pose : un conteneur jetable `--cap-add NET_ADMIN` sur le
   standby (son propre espace réseau), ufw installé dedans, `durcir-noeud.sh --sortant`
   joué pour de vrai — refus, comportement (443 passe, 4444 refusé en 1 s), retour.
