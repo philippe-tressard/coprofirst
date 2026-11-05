@@ -37,20 +37,20 @@ def journaliser_releve(
     decision: str,
     motif: str,
     ticket=None,
-) -> None:
+) -> CourrielReleve:
     """Ajoute la ligne à la session — c'est l'appelant qui valide, avec le verdict."""
     lire = {k.lower(): v for k, v in entetes.items()}
-    session.add(
-        CourrielReleve(
-            envoye_le=envoye_le,
-            expediteur=(lire.get("from") or "")[:_OBJET_MAX],
-            objet=(lire.get("subject") or "")[:_OBJET_MAX],
-            decision=decision,
-            motif=motif or "motif non renseigné",
-            ticket_id=ticket.id if ticket is not None else None,
-            affaire=ticket.numero if ticket is not None else None,
-        )
+    ligne = CourrielReleve(
+        envoye_le=envoye_le,
+        expediteur=(lire.get("from") or "")[:_OBJET_MAX],
+        objet=(lire.get("subject") or "")[:_OBJET_MAX],
+        decision=decision,
+        motif=motif or "motif non renseigné",
+        ticket_id=ticket.id if ticket is not None else None,
+        affaire=ticket.numero if ticket is not None else None,
     )
+    session.add(ligne)
+    return ligne
 
 
 #: Combien de lignes l'onglet « Courriels » d'Espace CS en montre : un paramètre
