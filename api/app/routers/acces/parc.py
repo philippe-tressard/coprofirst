@@ -63,6 +63,8 @@ from app.utils.acces_gestes import (
     _tracer_sur_ticket,
     journaliser_acces,
 )
+from app.contrat import REPONSE_CSV
+from app.utils.noms import rangs_de_classement
 from app.utils.porteurs_acces import noms_des_porteurs
 from app.utils.resolution_acces import exiger_code_libre, synchroniser_import
 from app.utils.dates_fr import date_courte
@@ -117,6 +119,11 @@ class AccesAdminOut(AccesPorteur):
     porteur_nom: str
     #: Qui l'a en main — inconnu pour un badge rattaché à un lot sans compte (#1194).
     porteur_id: Optional[int] = None
+    #: Le rang du porteur parmi les comptes, par NOM puis prénom — sans porteur, en
+    #: dernier (`utils/noms.rangs_de_classement`) :
+    #: `porteur_nom` commence par le prénom, et trier dessus rangeait « Alain FAURE »
+    #: à A. Servi pour que l'app classe comme le site sans recomposer (#2522).
+    porteur_rang: int
     lot_libelle: Optional[str] = None
 
 
@@ -132,12 +139,18 @@ def _acces_admin_out(objets, session: Session, type_acces: TypeAcces) -> list[Ac
     #  Les PORTEURS, déduits du lot (#1194) — le conjoint aussi ; sans compte,
     #  le copropriétaire du fichier ; sans lot, « En stock ».
     noms = noms_des_porteurs(session, objets)
+    #  Le rang parmi TOUS les comptes : l'écran mêle Vigik et télécommandes dans une
+    #  table, et deux rangs calculés chacun sur sa liste ne se comparent pas.
+    comptes = session.exec(select(Utilisateur)).all()
+    rangs = rangs_de_classement({u.id: (u.prenom, u.nom) for u in comptes})
+    sans_porteur = max(rangs.values(), default=-1) + 1
     for o in objets:
         sortie.append(
             AccesAdminOut(
                 **AccesPorteur.champs_communs(session, type_acces, o),
                 porteur_nom=noms[o.id],
                 porteur_id=o.user_id,
+                porteur_rang=rangs.get(o.user_id, sans_porteur),
             )
         )
     #  Par code : c'est ce qu'on a sous les yeux quand on cherche « à qui est ce
@@ -425,7 +438,7 @@ def _csv_du_parc(session: Session, type_acces: TypeAcces) -> str:
     return "\ufeff" + tampon.getvalue()
 
 
-@router.get("/admin/{type_cle}/export.csv")
+@router.get("/admin/{type_cle}/export.csv", response_class=StreamingResponse, responses=REPONSE_CSV)
 def exporter_parc(
     type_acces: TypeAcces = Depends(type_acces_demande),
     session: Session = Depends(get_session),

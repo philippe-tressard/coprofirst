@@ -34,7 +34,6 @@
 	import { fmtDatetimeShort as fmtDatetime } from '#lib/date.ts';
 	import { basculer } from '#lib/accordeon.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
-	import { isAdmin } from '#lib/stores/auth.ts';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { fmtOctets } from '#lib/utils.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
@@ -219,9 +218,9 @@
 						><IconeAction icone="mail" /></button
 					>
 					<!--  Le geste n'est offert que s'il a un effet (#515, 02/09/2026) :
-					      une affiche archivée par le TEMPS ne se restaure pas, et un
-					      bouton qui ne ferait rien ne s'affiche pas. -->
-					{#if !annonce.archivee || annonce.archivee_manuellement}
+					      une affiche archivée par le TEMPS ne se restaure pas. La règle
+					      est SERVIE (`peut_archiver`, `peut_restaurer`, #2525). -->
+					{#if annonce.peut_archiver || annonce.peut_restaurer}
 						<button
 							class="btn-icon"
 							title={annonce.archivee ? 'Restaurer' : 'Archiver'}
@@ -230,7 +229,7 @@
 							><IconeAction icone={annonce.archivee ? 'undo-2' : 'archive'} /></button
 						>
 					{/if}
-					{#if $isAdmin}
+					{#if annonce.peut_supprimer}
 						<button
 							class="btn-icon-danger"
 							title="Supprimer définitivement"

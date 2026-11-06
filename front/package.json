@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.69.0",
+	"version": "3.73.0",
 	"private": true,
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -93,7 +93,6 @@
 		"lint:prompt-origine": "node scripts/check-prompt-origine.mjs --selftest",
 		"lint:liste-depliable": "node scripts/check-liste-depliable.mjs --selftest",
 		"lint:accordeon": "node scripts/check-accordeon.mjs --selftest",
-		"lint:annuaire-rapprochement": "node scripts/check-annuaire-rapprochement.mjs --selftest",
 		"lint:editeur": "node scripts/check-editeur-riche.mjs",
 		"lint:editeur-unique": "node scripts/check-editeur-unique.mjs --selftest && node scripts/check-editeur-unique.mjs",
 		"lint:annuaire-membres": "node scripts/check-annuaire-membres.mjs --selftest && node scripts/check-annuaire-membres.mjs",

@@ -4,20 +4,16 @@
 
   Extrait de `espace-cs/+page.svelte` le 12/10/2026 (#1844) : l'onglet se charge
   au geste, en UN morceau, plutôt que trois composants différés côte à côte — la
-  page repassait au-dessus de 500 lignes. La page garde la lecture des données
-  de référence (#1843) : les deux annuaires les attendent (`referenceLue`), car
-  « pas encore là » ne se lit pas « aucune correspondance » (#522).
+  page repassait au-dessus de 500 lignes.
+
+  Il n'attend plus de données de référence (#2522) : le rapprochement d'un nom
+  saisi se demande au serveur, fiche par fiche (`#lib/annuaire-rapprochement`).
 -->
 <script lang="ts">
-	import type { SourcesRapprochement } from '#lib/annuaire-rapprochement.ts';
 	import AnnuaireConseil from '#lib/components/AnnuaireConseil.svelte';
 	import AnnuaireSyndic from '#lib/components/AnnuaireSyndic.svelte';
 	import ConsignesArrivant from '#lib/components/ConsignesArrivant.svelte';
-	import EtatListe from '#lib/components/EtatListe.svelte';
 	import LienConsignes from '#lib/components/LienConsignes.svelte';
-
-	export let referenceLue: boolean;
-	export let sources: SourcesRapprochement;
 </script>
 
 <LienConsignes />
@@ -34,22 +30,14 @@
 	<div class="annuaire-section-header">
 		<h2 class="section-title">Conseil Syndical</h2>
 	</div>
-	{#if referenceLue}
-		<AnnuaireConseil {sources} />
-	{:else}
-		<EtatListe chargement />
-	{/if}
+	<AnnuaireConseil />
 </section>
 
 <section class="annuaire-section">
 	<div class="annuaire-section-header">
 		<h2 class="section-title">Syndic</h2>
 	</div>
-	{#if referenceLue}
-		<AnnuaireSyndic {sources} />
-	{:else}
-		<EtatListe chargement />
-	{/if}
+	<AnnuaireSyndic />
 </section>
 
 <style>

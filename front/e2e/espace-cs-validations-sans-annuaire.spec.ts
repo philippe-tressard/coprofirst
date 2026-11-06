@@ -7,9 +7,10 @@
  *  ouverture. Ce test RETIENT les imports : les Validations s'affichent quand
  *  même, et aucune lecture de l'Annuaire n'est demandée tant qu'on ne l'ouvre pas.
  *
- *  Et le verrou de #522 : à l'ouverture de l'Annuaire, ses deux annuaires
- *  attendent les données de référence — « pas encore là » ne se lit pas
- *  « aucune correspondance » —, puis se rendent.
+ *  Depuis #2522, l'Annuaire ne les demande plus non plus : le rapprochement d'un
+ *  nom saisi se demande au serveur, fiche par fiche. Le verrou de #522 — « pas
+ *  encore là » ne se lit pas « aucune correspondance » — n'a donc plus d'objet :
+ *  il n'y a plus rien à attendre.
  */
 import type { Page } from '@playwright/test';
 import { expect, retenirApi, simulerApi, test } from './aides';
@@ -51,19 +52,11 @@ test('Espace CS › Validations : affichées sans attendre l’Annuaire', async 
 	relacher();
 });
 
-test('Espace CS › Annuaire : il attend ses données de référence, puis se rend', async ({
-	page,
-}) => {
+test('Espace CS › Annuaire : il se rend sans aucune donnée de référence', async ({ page }) => {
 	const { demandes, relacher } = await retenirImports(page);
 	await page.goto('/espace-cs/annuaire');
-	const conseil = page.locator('section.annuaire-section', {
-		has: page.getByRole('heading', { name: 'Conseil Syndical', exact: true }),
-	});
-	//  La référence est demandée, les imports sont retenus : l'annuaire du conseil
-	//  attend, et ne s'est pas monté — il demanderait sinon ses membres.
-	await expect.poll(() => demandes.includes('/api/lots/admin/imports')).toBe(true);
-	await expect(conseil.locator('.etat-chargement')).toBeVisible();
-	expect(demandes).not.toContain('/api/admin/annuaire/cs');
-	relacher();
 	await expect.poll(() => demandes.includes('/api/admin/annuaire/cs')).toBe(true);
+	await expect.poll(() => demandes.includes('/api/admin/annuaire/syndic')).toBe(true);
+	expect(demandes.filter((d) => REFERENCE.includes(d))).toEqual([]);
+	relacher();
 });

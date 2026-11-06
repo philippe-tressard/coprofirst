@@ -14,46 +14,21 @@
   bandeau, qui lisent les deux jeux de données à la fois. C'est la seule raison
   pour laquelle ce composant existe encore.
 
-  ⚠️ Les dérivations (`contratsAvecEcheance`, `diagnosticsAvecEcheance`) vivent
-  dans `#lib/reporting.ts` et non ici : ce fichier ET ses deux enfants en ont
-  besoin. Les recopier aurait rendu le découpage plus coûteux que le fichier
-  unique — un découpage qui duplique n'est pas un découpage.
+  Depuis le 05/11/2026 (#2525), le relevé — échéances, ordre, compteurs, année
+  de référence — est SERVI par `GET /reporting/renouvellements`, que l'app iOS
+  lit aussi : ce fichier et ses deux enfants le lisent, sans rien recalculer.
 -->
 <script lang="ts">
 	import VueRenouvellementsContrats from './VueRenouvellementsContrats.svelte';
-	import { relire } from '#lib/utils.ts';
 	import VueRenouvellementsAudits from './VueRenouvellementsAudits.svelte';
-	import {
-		anneeCourante,
-		contratsAvecEcheance,
-		diagnosticsAvecEcheance,
-		type DiagType,
-		type ReportContrat,
-		type ReportPrestataire,
-	} from '#lib/reporting.ts';
+	import type { ReleveRenouvellements } from '#lib/api/index.ts';
 
-	export let reportContrats: ReportContrat[] = [];
-	export let reportPrestataires: ReportPrestataire[] = [];
-	export let reportDiagTypes: DiagType[] = [];
-	/** Note moyenne et nombre d'avis par prestataire, calculés une fois en amont. */
+	export let releve: ReleveRenouvellements | null = null;
 
-	$: ANNEE_COURANTE = relire(reportContrats, anneeCourante);
-
-	$: contratsAvecFin = contratsAvecEcheance(reportContrats, reportPrestataires);
-	$: diagsAvecNext = diagnosticsAvecEcheance(reportDiagTypes);
-
-	$: renKpiContrats = contratsAvecFin.filter((c) => {
-		if (!c.dateFin) return false;
-		if (c.dateFin.getFullYear() === ANNEE_COURANTE) return true;
-		if (c.datePreavis && c.datePreavis.getFullYear() === ANNEE_COURANTE) return true;
-		return false;
-	}).length;
-	$: renKpiPreavis = contratsAvecFin.filter(
-		(c) => c.urgence === 'preavis' || c.urgence === 'inconnu',
-	).length;
-	$: renKpiDiags = diagsAvecNext.filter(
-		(d) => d.urgence === 'depasse' || d.urgence === 'annee' || d.urgence === 'inconnu',
-	).length;
+	$: compteurs = releve?.compteurs;
+	$: renKpiPreavis = compteurs?.contrats_en_preavis ?? 0;
+	$: renKpiContrats = compteurs?.echeances_contrats_annee ?? 0;
+	$: renKpiDiags = compteurs?.audits_a_planifier ?? 0;
 </script>
 
 <!-- ── Renouvellement contrats & audits ──────────────────────────── -->
@@ -64,7 +39,7 @@
 	</div>
 	<div class="kpi-card">
 		<div class="kpi-value">{renKpiContrats}</div>
-		<div class="kpi-label">Échéances contrats en {ANNEE_COURANTE}</div>
+		<div class="kpi-label">Échéances contrats en {releve?.annee ?? ''}</div>
 	</div>
 	<div class="kpi-card" class:kpi-alert={renKpiDiags > 0}>
 		<div class="kpi-value">{renKpiDiags}</div>
@@ -72,9 +47,9 @@
 	</div>
 </div>
 
-<VueRenouvellementsContrats {reportContrats} {reportPrestataires} />
+<VueRenouvellementsContrats {releve} />
 
-<VueRenouvellementsAudits {reportDiagTypes} />
+<VueRenouvellementsAudits {releve} />
 
 <style>
 	.kpi-espaces {

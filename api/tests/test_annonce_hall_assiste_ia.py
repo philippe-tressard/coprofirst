@@ -20,14 +20,14 @@ def test_une_annonce_redigee_avec_l_assistant_en_porte_la_marque(contexte):
     session, cs = contexte
     annonce = creer(session, cs, assiste_ia=True)
     assert annonce.assiste_ia is True
-    assert annonces_hall._to_read(annonce, session)["assiste_ia"] is True
+    assert annonces_hall._to_read(annonce, session, cs).assiste_ia is True
 
 
 def test_sans_l_assistant_la_marque_n_apparait_pas(contexte):
     session, cs = contexte
     annonce = creer(session, cs)
     assert annonce.assiste_ia is False
-    assert annonces_hall._to_read(annonce, session)["assiste_ia"] is False
+    assert annonces_hall._to_read(annonce, session, cs).assiste_ia is False
 
 
 def test_la_route_transmet_la_marque():

@@ -24,6 +24,7 @@ from datetime import date, datetime
 import pytest
 from sqlmodel import Session
 
+from app.utils.categories_ticket import libelle_categorie
 from app.models.copropriete import Copropriete
 from app.models.core import RoleUtilisateur, Ticket, TicketEvolution
 from app.models.prestataires import Prestataire
@@ -251,6 +252,12 @@ def test_le_bilan_de_l_exercice_en_cours_moyenne_les_affaires_du_carnet(moteur):
     cats = _par_categorie(bilan)
     assert set(cats) == {"panne", "sinistre"}
     assert [c["categorie"] for c in bilan["categories"]] == ["panne", "sinistre"]
+    #  Le libellé est SERVI (#2511) : le site et l'app le lisent, sans table à eux.
+    assert [c["categorie_libelle"] for c in bilan["categories"]] == [
+        libelle_categorie("panne"),
+        libelle_categorie("sinistre"),
+    ]
+    assert cats["panne"]["categorie_libelle"] != "panne"
 
     panne = cats["panne"]
     assert panne["nombre"] == 2 and panne["annulees"] == 0

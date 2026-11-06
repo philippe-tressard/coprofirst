@@ -65,6 +65,16 @@ REPONSE_FICHIER: dict = {
     }
 }
 
+#: La réponse d'une route qui rend un CSV (`StreamingResponse`) : déclarée JSON, le
+#: client généré ne pouvait pas la lire (#2522).
+#: `@router.get(…, response_class=Response, responses=REPONSE_CSV)`.
+REPONSE_CSV: dict = {
+    200: {
+        "description": "Le fichier CSV, séparé par des points-virgules",
+        "content": {"text/csv": {"schema": {"type": "string"}}},
+    }
+}
+
 
 def lire_reference() -> dict:
     """La référence du contrat : `version`, `empreinte`, `operations`."""

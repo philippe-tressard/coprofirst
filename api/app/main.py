@@ -93,6 +93,7 @@ from app.routers import assistant, config_llm, config_logo, config_services, reg
 from app.routers import config_palette
 from app.routers import textes_legaux
 from app.routers import suivi_affaires, suivi_affaires_fusions
+from app.routers import reporting_renouvellements
 from app.routers import points_conseil, points_conseil_validation
 from app.demarrage import preparer_les_coproprietes
 from app.utils.backup import setup_scheduler
@@ -425,6 +426,8 @@ app.include_router(assistant.router)
 app.include_router(reglement.router)
 app.include_router(suivi_affaires.router)
 app.include_router(suivi_affaires_fusions.router)
+#  Reporting › Renouvellements : le relevé servi au site et à l'app iOS (#2525).
+app.include_router(reporting_renouvellements.router)
 app.include_router(points_conseil.router)
 app.include_router(points_conseil_validation.router)
 app.include_router(registre.router)

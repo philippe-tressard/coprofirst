@@ -230,4 +230,136 @@ def reconcilier_membres(session: Session, modele, entrees) -> None:
             session.delete(membre)
 
 
-__all__ = ["membres_du_conseil", "membres_du_syndic", "reconcilier_membres"]
+# ── La saisie d'un annuaire : ce que le serveur rapproche et refuse (#2522) ──
+#
+#  🔴 Ces règles vivaient dans l'ÉCRAN seul (`#lib/annuaire-rapprochement.ts`,
+#  `AnnuaireSyndic.svelte`) : le nom saisi liait la fiche à un inscrit et la
+#  localisait par le registre importé, un interlocuteur du syndic sans téléphone
+#  était refusé, un second interlocuteur principal remplaçait le premier. L'app
+#  iOS enregistre par le même `PUT` sans en tenir aucune — et un appel direct non
+#  plus. Le serveur les tient désormais ; l'écran les lit (`GET …/rapprochement`).
+
+#: Le nom le plus court qui se rapproche : une lettre trouverait tout le monde.
+NOM_MIN = 2
+
+
+def _hors_logement(imp, lot) -> bool:
+    """Une cave ou un parking ne dit pas où l'on habite — par la colonne TYPE
+    (fiable même si le lot n'est pas résolu), puis par le lot résolu."""
+    from app.utils.import_xlsx import TYPE_CAVE, TYPE_PARKING
+
+    brut = (imp.type_raw or "").upper().strip()
+    if any(brut.startswith(t) for t in TYPE_CAVE | TYPE_PARKING):
+        return True
+    return lot is not None and valeur(lot.type) != "appartement"
+
+
+def rapprochement(session: Session, nom: Optional[str], *, localiser: bool = True) -> dict:
+    """Ce qu'un NOM saisi dans l'annuaire désigne : l'inscrit, et son logement.
+
+    - l'inscrit : un compte ACTIF de même nom — casse, accents et ponctuation
+      ignorés (`rapprochement_noms._cle_de_nom`, la clé de l'appariement des
+      comptes) ;
+    - le logement (`localiser`, le conseil seulement — le syndic n'habite pas
+      ici) : la ligne du registre importé qui porte ce nom, l'APPARTEMENT
+      l'emportant sur ce qui est non résolu ; caves et parkings écartés.
+
+    Rend toujours les quatre clés, `None` pour ce qui n'est pas trouvé.
+    """
+    from app.models.core import LotImport
+    from app.models.copropriete import Lot
+    from app.utils.import_xlsx import etage_de_lot
+    from app.utils.rapprochement_noms import _cle_de_nom
+
+    trouve: dict = {"user_id": None, "batiment_id": None, "batiment_nom": None, "etage": None}
+    cle = _cle_de_nom(nom)
+    if len(cle) < NOM_MIN:
+        return trouve
+    inscrit = next(
+        (
+            u
+            for u in session.exec(
+                select(Utilisateur).where(Utilisateur.actif == True).order_by(Utilisateur.id)  # noqa: E712
+            ).all()
+            if _cle_de_nom(u.nom) == cle
+        ),
+        None,
+    )
+    trouve["user_id"] = inscrit.id if inscrit else None
+    if not localiser:
+        return trouve
+
+    lignes = [
+        imp
+        for imp in session.exec(select(LotImport).order_by(LotImport.id)).all()
+        if cle in _cle_de_nom(imp.nom_coproprietaire)
+    ]
+    lots = {imp.lot_id: session.get(Lot, imp.lot_id) for imp in lignes if imp.lot_id}
+    logements = [imp for imp in lignes if not _hors_logement(imp, lots.get(imp.lot_id))]
+    ligne = next((imp for imp in logements if lots.get(imp.lot_id)), None) or next(
+        iter(logements), None
+    )
+    if ligne is None:
+        return trouve
+    lot = lots.get(ligne.lot_id)
+    batiment_id = (lot.batiment_id if lot else None) or ligne.batiment_id
+    trouve["batiment_id"] = batiment_id
+    trouve["batiment_nom"] = _Caches(session).batiment_nom(batiment_id)
+    trouve["etage"] = etage_de_lot(ligne.etage_raw)
+    return trouve
+
+
+def rapprocher_les_saisies(session: Session, modele, entrees, *, localiser: bool) -> None:
+    """Complète, AVANT `reconcilier_membres`, les entrées dont le NOM vient d'être saisi.
+
+    Un nom est saisi pour une arrivée, ou quand il change : un membre inchangé ne
+    se rapproche pas — une correction à la main survit au `PUT` suivant. Le lien à
+    un inscrit ne remplace jamais un lien posé ; le logement ne remplace pas un
+    champ que la même requête modifie (la saisie du conseil prime sur le registre).
+    """
+    from app.utils.rapprochement_noms import _cle_de_nom
+
+    existants = {m.id: m for m in session.exec(select(modele)).all()}
+    for entree in entrees:
+        ancien = existants.get(entree.id) if entree.id is not None else None
+        if ancien is not None and _cle_de_nom(ancien.nom) == _cle_de_nom(entree.nom):
+            continue
+        trouve = rapprochement(session, entree.nom, localiser=localiser)
+        if entree.user_id is None:
+            entree.user_id = trouve["user_id"]
+        for champ in ("batiment_id", "etage") if localiser else ():
+            avant = getattr(ancien, champ) if ancien is not None else None
+            if trouve[champ] is not None and getattr(entree, champ) == avant:
+                setattr(entree, champ, trouve[champ])
+
+
+def exiger_un_seul(entrees, champ: str, message: str) -> None:
+    """Un seul président du conseil, un seul interlocuteur principal du syndic."""
+    from fastapi import HTTPException
+
+    if sum(1 for e in entrees if getattr(e, champ)) > 1:
+        raise HTTPException(status_code=400, detail=message)
+
+
+def exiger_un_telephone(entrees) -> None:
+    """Un interlocuteur du syndic s'enregistre avec au moins un téléphone : c'est
+    ce qu'un arrivant vient chercher dans l'annuaire."""
+    from fastapi import HTTPException
+
+    for e in entrees:
+        if not telephones_de(e.telephone):
+            raise HTTPException(
+                status_code=422,
+                detail=f"Au moins un téléphone requis pour {noms.nom_affiche(e.prenom, e.nom)}",
+            )
+
+
+__all__ = [
+    "exiger_un_seul",
+    "exiger_un_telephone",
+    "membres_du_conseil",
+    "membres_du_syndic",
+    "rapprochement",
+    "rapprocher_les_saisies",
+    "reconcilier_membres",
+]

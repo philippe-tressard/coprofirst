@@ -12,7 +12,6 @@
  * Une seule fonction décide donc de chaque appartenance.
  */
 import type { FluxItem } from '#lib/api/index.ts';
-import { estTicketClos } from '#lib/tickets.ts';
 import { equipLabel } from '#lib/equipements.ts';
 import { parAttribut } from '#lib/table-statuts.ts';
 import { fmtDateLong } from '#lib/date.ts';
@@ -326,9 +325,9 @@ export function estNonResolu(item: FluxItem): boolean {
 	if (item.type === 'ticket_ouvert') {
 		//  La cinquième liste de statuts de tickets, et la seule qui oubliait
 		//  `annulé` : un ticket annulé restait donc en tête de la chronologie
-		//  indéfiniment, comme s'il attendait encore quelque chose. `#lib/tickets`
-		//  porte la question une fois pour toutes (#415).
-		return !estTicketClos((item.meta?.statut as string) ?? '');
+		//  indéfiniment (#415). La question est désormais SERVIE avec la ligne de
+		//  l'affaire (`meta.affaire.close`, #2511) : ni le site ni l'app ne la refont.
+		return !(item.meta?.affaire as { close?: boolean } | undefined)?.close;
 	}
 	return false;
 }

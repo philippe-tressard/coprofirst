@@ -139,6 +139,7 @@ def test_une_candidate_porte_la_forme_d_une_affaire_nommee(trois):
         "numero",
         "titre",
         "statut",
+        "close",  # servi (#2511) : le choix d'une affaire ne le recalcule pas
         "cree_le",
         "fusionnee",
         "fusionnable",

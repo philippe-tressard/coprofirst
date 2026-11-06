@@ -162,6 +162,29 @@ export const REGLES_PARTAGEES = {
 		api: 'api/app/routers/prestataires_lecture.py#lire_prestataires',
 	},
 
+	//  ── Reporting › Renouvellements (#2525) ──────────────────────────────────
+	//  Servies par `GET /reporting/renouvellements` : le site et l'app iOS lisent le
+	//  même relevé (échéances, ordre, compteurs, année de référence).
+	diagNextDate: {
+		quoi: 'la prochaine échéance d’un diagnostic (dernier rapport + périodicité)',
+		api: 'api/app/utils/echeance_diagnostic.py#prochaine_echeance',
+	},
+	diagUrgence: {
+		quoi: 'l’urgence d’un diagnostic (dépassé, cette année, plus tard)',
+		api: 'api/app/utils/echeance_diagnostic.py#urgence_diagnostic',
+	},
+	contratsAvecEcheance: {
+		quoi: 'les contrats à renouveler, la pire note d’abord, et ce qui tombe dans l’année',
+		api: 'api/app/routers/reporting_renouvellements.py#releve_renouvellements',
+	},
+	diagnosticsAvecEcheance: {
+		quoi: 'les diagnostics applicables rangés par échéance, et les audits à planifier',
+		api: 'api/app/routers/reporting_renouvellements.py#releve_renouvellements',
+	},
+	//  L'année de référence (le jour de Paris) est servie aussi (`releve.annee`) ;
+	//  elle ne se déclare pas sous `anneeCourante`, que le pied de page emploie pour
+	//  son copyright — un homonyme, pas la règle.
+
 	//  ── Affaires (#2508) ─────────────────────────────────────────────────────
 	//  Servies par `TicketRead` (`schemas_affaire_servie`) depuis #2508 : urgence,
 	//  colonne du Kanban, nom affiché. Les gestes (`auth/gestes_affaire`) et les tables
@@ -194,11 +217,8 @@ export const REGLES_PARTAGEES = {
 	categorieTicketLabel: {
 		quoi: 'le libellé d’une catégorie d’affaire (carnet, cartes)',
 		api: 'api/app/utils/categories_ticket.py#libelle_categorie',
-		migration: {
-			ticket: '#2511',
-			raison:
-				"servi avec l'affaire (`categorie_libelle`) et le référentiel (#2508) ; le front l'applique encore au carnet, au reporting et au pied de carte, que l'API ne sert pas avec ce champ",
-		},
+		//  Servie en `categorie_libelle` : l'affaire et le référentiel (#2508), la
+		//  ligne du fil, le carnet, son bilan et le relevé du suivi (#2511).
 	},
 	statutTicketLabel: {
 		quoi: 'le libellé d’un statut d’affaire',
@@ -210,10 +230,32 @@ export const REGLES_PARTAGEES = {
 	},
 	estTicketClos: {
 		quoi: 'une affaire close (résolue ou annulée)',
-		migration: {
-			ticket: '#2511',
-			raison:
-				"servie avec l'affaire (`close`) et le référentiel (`statuts[].clos`, #2508) ; le front l'applique encore au fil, aux affaires liées et à l'état choisi d'une fusion",
-		},
+		api: 'api/app/utils/etat_affaire.py#affaire_close',
+		//  Servie en `close` : l'affaire (#2508), la ligne du fil et les affaires
+		//  liées (#2511) ; l'état CHOISI d'une fusion se lit au référentiel
+		//  (`statuts[].clos`, `fusion-affaires.etatQuiClot`).
+	},
+
+	//  ── Espace CS (#2522) ────────────────────────────────────────────────────
+	//  Comptes, parc des accès, annuaire : ce que l'app iOS porte dans ses trois
+	//  premiers onglets. Le front ne définit plus aucune de ces règles.
+	annonceValidation: {
+		quoi: 'la phrase d’une validation de compte (« 3 lot(s) résolu(s) automatiquement »)',
+		api: 'api/app/utils/annonce_compte.py#annonce_validation',
+		//  Servie par `CompteTraiteResult.annonce` (#2522).
+	},
+	annonceLocataire: {
+		quoi: 'ce que l’appariement a fait d’un locataire (validation et relance)',
+		api: 'api/app/utils/annonce_compte.py#annonce_relance',
+		//  Servie par `annonce` à la validation et par `AutoMatchRelance.annonce`.
+	},
+	inscritParNom: {
+		quoi: 'l’inscrit que désigne le nom saisi dans une fiche de l’annuaire',
+		api: 'api/app/utils/annuaire.py#rapprochement',
+		//  Servie par `GET /admin/annuaire/rapprochement`, appliquée par le `PUT`.
+	},
+	localisationParNom: {
+		quoi: 'le logement d’un membre du conseil d’après le registre importé',
+		api: 'api/app/utils/annuaire.py#rapprochement',
 	},
 };

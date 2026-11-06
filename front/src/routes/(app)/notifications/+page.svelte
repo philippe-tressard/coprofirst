@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { confirmer, SUPPRESSION } from '#lib/confirmation.ts';
+	import { confirmer, confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
 	//  🔴 Les deux `class:` du gabarit remplacent un ternaire INTERPOLÉ (#810).
 	//  Devant `class="… {cond ? 'a' : 'b'}"`, Svelte cesse de déclarer les
 	//  sélecteurs inutilisés pour TOUT le fichier — le contrôle devenait aveugle
@@ -61,6 +61,16 @@
 		}
 	}
 
+	/*  Les lues partent en UNE requête (#2535) — l'app iOS en envoyait une par alerte.
+	    La liste ne garde que les non lues : c'est ce que la route a laissé en base. */
+	async function supprimerLues() {
+		const quoi = lues > 1 ? `Les ${lues} notifications lues` : 'La notification lue';
+		await confirmerPuis(SUPPRESSION(quoi), 'Notifications lues supprimées', async () => {
+			await notifApi.supprimerLues();
+			items = items.filter((n) => !n.lue);
+		});
+	}
+
 	async function remove(id: number) {
 		if (!(await confirmer(SUPPRESSION('Cette notification')))) return;
 		deleting = new Set([...deleting, id]);
@@ -76,6 +86,7 @@
 	}
 
 	$: unread = items.filter((n) => !n.lue).length;
+	$: lues = items.length - unread;
 	$: sections = grouper(items);
 
 	/**
@@ -117,6 +128,9 @@
 	{#if unread > 0}
 		<span class="text-muted-md">{unread} non lue{unread > 1 ? 's' : ''}</span>
 		<button class="btn btn-outline btn-sm" on:click={markAll}>Tout marquer lu</button>
+	{/if}
+	{#if lues > 0}
+		<button class="btn btn-outline btn-sm" on:click={supprimerLues}>Supprimer les lues</button>
 	{/if}
 </EntetePage>
 
