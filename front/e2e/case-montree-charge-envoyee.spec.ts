@@ -25,6 +25,7 @@
  */
 import type { Locator, Page } from '@playwright/test';
 import type { Perimetre } from '../src/lib/perimetres';
+import { noeud } from './perimetres-temoins';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
 
 const AFFAIRE = {
@@ -193,30 +194,6 @@ test('« Répondre » : l’adresse externe saisie part dans la charge', async (
 //  Ce sont elles que l'incident du 22/10 a trompées : chacune doit partir dans
 //  le champ qu'elle nomme, et elle seule.
 
-function noeud(champs: Partial<Perimetre> & Pick<Perimetre, 'id' | 'code' | 'libelle'>): Perimetre {
-	return {
-		parent: null,
-		libelle_court: champs.libelle,
-		description: '',
-		icone: null,
-		batiment_id: null,
-		profondeur: 0,
-		ordre: 0,
-		actif: true,
-		portee_globale: false,
-		concerne_tous: false,
-		selectionnable: true,
-		privatif: false,
-		hors_copropriete: false,
-		utilise: false,
-		nb_descendants: 0,
-		dupliquable: false,
-		copiable: false,
-		deplacements: [],
-		...champs,
-	};
-}
-
 const ARBRE: Perimetre[] = [
 	noeud({
 		id: 1,
@@ -224,6 +201,7 @@ const ARBRE: Perimetre[] = [
 		libelle: 'Résidence',
 		portee_globale: true,
 		concerne_tous: true,
+		par_defaut: true,
 	}),
 	noeud({
 		id: 2,

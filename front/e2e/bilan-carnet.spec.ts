@@ -41,6 +41,7 @@ const BILAN = {
 		{
 			...RESUME_VIDE,
 			categorie: 'panne',
+			categorie_libelle: 'Panne',
 			nombre: 2,
 			duree_totale: 4,
 			etapes: [
@@ -61,6 +62,7 @@ const BILAN = {
 		{
 			...RESUME_VIDE,
 			categorie: 'sinistre',
+			categorie_libelle: 'Sinistre',
 			nombre: 1,
 			annulees: 1,
 			duree_totale: 1,

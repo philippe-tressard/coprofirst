@@ -1908,9 +1908,13 @@ Structure pour les tickets/publications avec historique :
 
 **Les états proposables ne s'écrivent jamais dans un écran.** Pour un ticket, ils
 viennent de `#lib/tickets` (`STATUT_TICKET_OPTIONS`, `…_LABELS`, `…_BADGE`,
-`STATUTS_TICKET_FILTRE`, `estTicketActif`, `estTicketClos`), qui répond à
+`STATUTS_TICKET_FILTRE`, `estTicketActif`), qui répond à
 `StatutTicket` côté serveur. `api/tests/test_statuts_tickets.py` échoue sur toute
 liste réécrite — y compris dans un fichier qui importe déjà le module.
+« Cette affaire est close » ne se calcule pas à l'écran : elle est SERVIE (`close`
+de l'affaire, de la ligne du fil et des affaires liées ; `statuts[].clos` du
+référentiel pour un état choisi), comme le libellé d'une catégorie
+(`categorie_libelle`, #2511, `npm run lint:regles-partagees`).
 
 **Où se change l'état :**
 

@@ -30,8 +30,8 @@ from typing import Optional
 
 from pydantic import BaseModel, computed_field
 
-from app.models.tickets import STATUTS_TICKET_CLOS
 from app.utils.categories_ticket import libelle_categorie, ticket_urgent
+from app.utils.etat_affaire import affaire_close
 from app.utils.kanban_tickets import colonne_du_ticket
 from app.utils.nouveaute import est_nouveau
 from app.utils.valeurs import valeur
@@ -81,8 +81,8 @@ class AffaireServie(BaseModel):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def close(self) -> bool:
-        """Résolue ou annulée (`STATUTS_TICKET_CLOS`) — elle quitte le suivi."""
-        return valeur(getattr(self, "statut", None)) in STATUTS_TICKET_CLOS
+        """Résolue ou annulée (`etat_affaire.affaire_close`) — elle quitte le suivi."""
+        return affaire_close(getattr(self, "statut", None))
 
     @computed_field  # type: ignore[prop-decorator]
     @property

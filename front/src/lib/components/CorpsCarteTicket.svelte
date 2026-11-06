@@ -40,7 +40,6 @@
 		optionsDuTicket,
 		optionsVersTicket,
 		STATUT_TICKET_LABELS,
-		estTicketClos,
 		statutTicketLabel,
 		type GestesTicket,
 	} from '#lib/tickets.ts';
@@ -112,7 +111,7 @@
 	}
 	//  La clôture se lit dans le fil : la dernière transition vers un état clos.
 	//  Le modèle n'en garde pas la date (pas de `statut_change_le` sur l'affaire).
-	$: cloture = estTicketClos(ticket.statut)
+	$: cloture = ticket.close
 		? suites
 				.filter((e) => e.type === 'etat' && e.nouveau_statut === ticket.statut)
 				.sort((a, b) => b.cree_le.localeCompare(a.cree_le))[0]

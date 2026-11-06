@@ -78,6 +78,9 @@ class AffaireLieeLue(BaseModel):
     numero: str
     titre: str
     statut: str
+    #: Résolue ou annulée — posé par `affaires_liees._lue` sur
+    #: `etat_affaire.affaire_close` (#2511) : les clients ne le recalculent pas.
+    close: bool
     cree_le: datetime
     #: 🔀 Absorbée par une autre affaire (#2186) : son état est celui qu'elle a
     #: hérité, et l'écran ne la propose plus à la fusion.

@@ -11,31 +11,8 @@
  */
 import type { Locator, Page } from '@playwright/test';
 import type { Perimetre } from '../src/lib/perimetres';
+import { noeud } from './perimetres-temoins';
 import { attendreHydratation, EQUIPEMENTS_TEMOINS, expect, simulerApi, test } from './aides';
-
-function noeud(champs: Partial<Perimetre> & Pick<Perimetre, 'id' | 'code' | 'libelle'>): Perimetre {
-	return {
-		parent: null,
-		libelle_court: champs.libelle,
-		description: '',
-		icone: null,
-		batiment_id: null,
-		profondeur: 0,
-		ordre: 0,
-		actif: true,
-		portee_globale: false,
-		concerne_tous: false,
-		selectionnable: true,
-		privatif: false,
-		hors_copropriete: false,
-		utilise: false,
-		nb_descendants: 0,
-		dupliquable: false,
-		copiable: false,
-		deplacements: [],
-		...champs,
-	};
-}
 
 const ARBRE: Perimetre[] = [
 	noeud({
@@ -44,6 +21,7 @@ const ARBRE: Perimetre[] = [
 		libelle: 'Résidence',
 		portee_globale: true,
 		concerne_tous: true,
+		par_defaut: true,
 	}),
 	noeud({ id: 2, code: 'bat:1', libelle: 'Bâtiment 1', ordre: 1, batiment_id: 1 }),
 ];
@@ -53,9 +31,12 @@ const EQUIPEMENTS = EQUIPEMENTS_TEMOINS.map((e) =>
 	e.code === 'ascenseur' ? { ...e, perimetres: ['bat:1'] } : e,
 );
 
-async function nouvellePanne(page: Page): Promise<{ batiment: Locator; equipement: Locator }> {
+async function nouvellePanne(
+	page: Page,
+	arbre: Perimetre[] = ARBRE,
+): Promise<{ batiment: Locator; equipement: Locator }> {
 	await simulerApi(page, (chemin) => {
-		if (chemin === '/api/perimetres') return ARBRE;
+		if (chemin === '/api/perimetres') return arbre;
 		if (chemin === '/api/equipements') return EQUIPEMENTS;
 		return undefined;
 	});
@@ -103,4 +84,18 @@ test('jamais par-dessus un choix déjà fait, dans un sens comme dans l’autre'
 	await expect(batiment).toHaveClass(/active/);
 	await equipement.selectOption('toiture');
 	await expect(batiment).toHaveClass(/active/);
+});
+
+/*
+ *  🔒 **Le périmètre par défaut est SERVI, jamais recalculé** (#2514). L'AFUL est
+ *  aussi une racine à portée globale : seul le serveur les départage
+ *  (`code_par_defaut`), et il le dit par `par_defaut`. Le site prenait la première
+ *  racine servie — ici l'AFUL, et le formulaire s'ouvrait sur elle.
+ */
+test('le formulaire s’ouvre sur le périmètre que le serveur désigne', async ({ page }) => {
+	const aful = noeud({ id: 3, code: 'aful', libelle: 'AFUL', portee_globale: true });
+	await nouvellePanne(page, [aful, ...ARBRE]);
+	const formulaire = page.getByRole('group', { name: /^Nouvelle affaire$/ });
+	await expect(formulaire.getByRole('button', { name: 'Résidence' })).toHaveClass(/active/);
+	await expect(formulaire.getByRole('button', { name: 'AFUL' })).not.toHaveClass(/active/);
 });

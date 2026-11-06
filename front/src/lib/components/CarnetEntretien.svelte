@@ -257,7 +257,11 @@
 										      puis le n° d'affaire. Son origine est déjà dans la
 										      gouttière. -->
 										<svelte:fragment slot="tags">
-											<PiedCarte categorie={entree.categorie} numero={entree.numero}>
+											<PiedCarte
+												categorie={entree.categorie}
+												libelle={entree.categorie_libelle}
+												numero={entree.numero}
+											>
 												{#if entree.alerte}
 													<span class="badge badge-orange">⚠️ {entree.alerte}</span>
 												{/if}

@@ -10,7 +10,9 @@
  *  Le geste au DOIGT (glisser-déposer HTML5 sur un téléphone) ne se prouve pas
  *  ici : c'est le contrôle visuel du ticket.
  */
+import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { REFERENTIELS_TEMOINS } from './referentiels-temoins';
 
 const AFFAIRE = {
 	id: 7,
@@ -71,4 +73,62 @@ test('la colonne survolée se marque pendant le glissement, et s’éteint au l�
 	await page.mouse.up();
 	await expect(cible).not.toHaveClass(/kanban-col-cible/);
 	await expect(carte).not.toHaveClass(/kanban-card-saisie/);
+});
+
+/*
+ *  🔒 **L'état qui CLÔT se lit au serveur** (#2511) : glisser une carte en
+ *  « Terminé » propose la fusion de ses liées si le référentiel dit que l'état
+ *  posé clôt l'affaire (`statuts[].clos`) — le site ne le recalcule plus.
+ */
+const LIEE = {
+	id: 8,
+	numero: 'TK-124302',
+	titre: 'Gâche du local poussettes',
+	statut: 'ouvert',
+	close: false,
+	cree_le: '2026-09-21T10:00:00',
+	fusionnee: false,
+	fusionnable: true,
+	motif: null,
+	conciliation: null,
+};
+
+async function glisserEnTermine(
+	page: Page,
+	referentiel?: (r: typeof REFERENTIELS_TEMOINS) => typeof REFERENTIELS_TEMOINS,
+): Promise<string[]> {
+	const appels: string[] = [];
+	await simulerApi(page, (chemin) => {
+		appels.push(chemin);
+		if (chemin === '/api/tickets') return [AFFAIRE];
+		if (chemin === '/api/tickets/7') return AFFAIRE;
+		if (chemin === '/api/tickets/7/fusion') return [LIEE];
+		if (chemin === '/api/tickets/referentiels' && referentiel)
+			return referentiel(REFERENTIELS_TEMOINS);
+	});
+	await page.goto('/tickets/kanban');
+	await attendreHydratation(page);
+	const carte = page.locator('.kanban-card', { hasText: AFFAIRE.titre });
+	await expect(carte).toBeVisible();
+	await carte.dragTo(page.getByRole('group', { name: 'Terminé' }));
+	return appels;
+}
+
+test('glisser en « Terminé » propose la fusion des liées : l’état clôt, dit le serveur', async ({
+	page,
+}) => {
+	await glisserEnTermine(page);
+	const dialogue = page.getByRole('dialog');
+	await expect(dialogue).toContainText(LIEE.numero);
+	await expect(dialogue).toContainText('(Résolu)');
+});
+
+test('un état que le serveur ne dit pas clos ne propose aucune fusion', async ({ page }) => {
+	const appels = await glisserEnTermine(page, (r) => ({
+		...r,
+		statuts: r.statuts.map((s) => (s.code === 'résolu' ? { ...s, clos: false } : s)),
+	}));
+	await expect.poll(() => appels.includes('/api/tickets/7/evolutions')).toBe(true);
+	expect(appels).not.toContain('/api/tickets/7/fusion');
+	await expect(page.getByRole('dialog')).toHaveCount(0);
 });

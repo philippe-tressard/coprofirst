@@ -223,11 +223,6 @@ export const CATEGORIE_TICKET_EMOJI: Record<string, string> = Object.fromEntries
 	CATEGORIES_TICKET.map((c) => [c.value, c.emoji]),
 );
 
-//: « 🛠️ Panne » — la forme complète, celle des filtres, des badges et des choix.
-export const CATEGORIE_TICKET_LABELS: Record<string, string> = Object.fromEntries(
-	CATEGORIES_TICKET.map((c) => [c.value, `${c.emoji} ${c.label}`]),
-);
-
 //  Elles vivaient en QUATRE endroits le 17/08/2026 : la grille de choix de
 //  `FormulaireTicket` (valeur + libellé + description), la table `CATEGORIES` de
 //  la fiche d'un ticket, la table `CAT_ICON` de la liste, et six boutons de
@@ -243,10 +238,10 @@ export function categorieTicketEmoji(categorie: string | undefined | null): stri
 	return CATEGORIE_TICKET_EMOJI[categorie ?? ''] ?? '\u{1F4CB}';
 }
 
-/** « 🛠️ Panne », valeur brute à défaut (jamais vide). */
-export function categorieTicketLabel(categorie: string | undefined | null): string {
-	return CATEGORIE_TICKET_LABELS[categorie ?? ''] ?? categorie ?? '';
-}
+//  « Le libellé d'une catégorie » n'a plus de fonction ici (#2511) : l'API le
+//  SERT partout où une affaire se lit — `categorie_libelle` de l'affaire, de la
+//  ligne du fil, du carnet et de son bilan, `libelle_categorie` du suivi. L'app
+//  iOS le lit au même endroit. 🔒 `npm run lint:regles-partagees`.
 
 /**
  *  Les catégories telles que `ChoixPastilles` les attend — `val`/`label`/`desc`,

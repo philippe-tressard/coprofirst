@@ -75,3 +75,41 @@ def test_arbre_vide_aucun_code_invente(arbre_vide):
     assert P.perimetre_defaut_texte() == ""
     assert P.est_perimetre_par_defaut([]) is True
     assert P.est_perimetre_par_defaut(["résidence"]) is False
+
+
+# ── Servi aux clients (#2514) ─────────────────────────────────────────────────
+#
+#  L'app iOS ne recopie pas la règle (`standards/09` §8, règle 1) : elle lit le
+#  drapeau `par_defaut` que `GET /perimetres` pose sur le seul nœud que rend
+#  `code_par_defaut()`. Le site le lit aussi (`front/src/lib/perimetres/arbre.ts`).
+
+
+def _servis() -> list:
+    from app.routers.patrimoine import lister_perimetres
+
+    with Session(engine) as session:
+        return lister_perimetres(session=session, user=None)
+
+
+def test_get_perimetres_sert_le_defaut_sur_un_seul_noeud(batiments):
+    servis = _servis()
+    assert [n.code for n in servis if n.par_defaut] == [P.code_par_defaut()] == ["résidence"]
+
+
+def test_le_drapeau_suit_une_autre_racine(batiments):
+    """L'AFUL est aussi une racine à portée globale : seul l'ordre les départage."""
+    with Session(engine) as session:
+        ancienne = session.exec(select(Perimetre).where(Perimetre.code == "résidence")).one()
+        ancienne.actif = False
+        session.add(ancienne)
+        session.add(
+            Perimetre(code="copro", libelle="Toute la copropriété", portee_globale=True, ordre=-1)
+        )
+        session.commit()
+    P.invalider_cache()
+
+    assert [n.code for n in _servis() if n.par_defaut] == ["copro"]
+
+
+def test_arbre_vide_aucun_noeud_par_defaut(arbre_vide):
+    assert not any(n.par_defaut for n in _servis())

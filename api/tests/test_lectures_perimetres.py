@@ -72,6 +72,9 @@ _NOEUD = {
     #  `utils/perimetres/branche` et `deplacement`.
     "copiable": True,
     "deplacements": [],
+    #  Ajouté le 05/11/2026 (#2514) : faux sans racine désignée — `_en_lecture`
+    #  le pose sur le nœud de `code_par_defaut` (`test_perimetre_par_defaut.py`).
+    "par_defaut": False,
 }
 ATTENDU_PERIMETRES = [
     {

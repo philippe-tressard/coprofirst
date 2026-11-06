@@ -5,17 +5,20 @@ import DialogueFusion from '#lib/components/DialogueFusion.svelte';
 import ModaleFusionAffaires from '#lib/components/ModaleFusionAffaires.svelte';
 import { toast } from '#lib/components/Toast.svelte';
 import {
+	lireReferentielsAffaires,
 	suiviAffaires,
 	tickets as ticketsApi,
 	type AffaireLiee,
 	type CandidateFusion,
 	type ChoixConciliation,
+	type ReferentielsAffaires,
+	type StatutServi,
 	type Ticket,
 } from '#lib/api/index.ts';
 import { messageErreur } from '#lib/erreurs.ts';
 import { modaleImperative } from '#lib/modale-imperative.ts';
 import { isCS } from '#lib/stores/auth.ts';
-import { STATUT_TICKET_LABELS, estActualite, estTicketClos, lienTicket } from '#lib/tickets.ts';
+import { estActualite, lienTicket } from '#lib/tickets.ts';
 
 /**
  * **À la clôture, demander s'il faut fusionner les affaires liées** (#1704).
@@ -48,11 +51,33 @@ export interface DemandeFusion {
 /** Rien à fusionner : la clôture part seule. */
 export const SANS_FUSION: DemandeFusion = { fusionner: [], conciliations: [] };
 
+/**
+ *  Le référentiel des états, lu une fois par chargement de page : un état qui
+ *  CLÔT se lit au serveur (`statuts[].clos`, #2511), comme l'app iOS le lit.
+ *  Ses états ne dépendent pas du compte ; un échec n'est pas retenu.
+ */
+let referentiel: Promise<ReferentielsAffaires> | null = null;
+
+/**  L'état CHOISI, tel que le serveur le sert ; `null` s'il n'a pas pu être lu. */
+async function etatQuiClot(statut: string): Promise<StatutServi | undefined | null> {
+	referentiel ??= lireReferentielsAffaires();
+	try {
+		return (await referentiel).statuts.find((s) => s.code === statut && s.clos);
+	} catch (e) {
+		referentiel = null;
+		toast('error', messageErreur(e));
+		return null;
+	}
+}
+
 export async function demanderFusion(
-	ticket: { id: number; numero: string; statut: string },
+	ticket: { id: number; numero: string; close: boolean },
 	statut: string | undefined,
 ): Promise<DemandeFusion | null> {
-	if (!get(isCS) || !estTicketClos(statut) || estTicketClos(ticket.statut)) return SANS_FUSION;
+	if (!get(isCS) || !statut || ticket.close) return SANS_FUSION;
+	const etat = await etatQuiClot(statut);
+	if (etat === null) return null;
+	if (!etat) return SANS_FUSION;
 	let candidates: CandidateFusion[];
 	try {
 		candidates = await ticketsApi.candidatesFusion(ticket.id);
@@ -63,7 +88,7 @@ export async function demanderFusion(
 	if (!candidates.length) return SANS_FUSION;
 	return modaleImperative<DemandeFusion | null>(
 		DialogueFusion,
-		{ numero: ticket.numero, etat: STATUT_TICKET_LABELS[statut ?? ''] ?? statut, candidates },
+		{ numero: ticket.numero, etat: etat.libelle, candidates },
 		null,
 	);
 }
@@ -97,10 +122,10 @@ export type AffaireCorrigee = AffaireLiee & {
 export function fusionPossible(affaire: AffaireCorrigee | null | undefined): boolean {
 	return (
 		!!affaire &&
-		!estTicketClos(affaire.statut) &&
+		!affaire.close &&
 		!estActualite(affaire) &&
 		!affaire.fusionnee &&
-		(affaire.affaires_liees ?? []).some((l) => !estTicketClos(l.statut) && !l.fusionnee)
+		(affaire.affaires_liees ?? []).some((l) => !l.close && !l.fusionnee)
 	);
 }
 
