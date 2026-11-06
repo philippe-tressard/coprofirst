@@ -352,7 +352,7 @@ def _alerter_bug(
                 "numero": ticket.numero,
                 "titre": ticket.titre,
                 "description": html_riche(ticket.description),
-                "categorie": ticket.categorie,
+                "categorie": libelle_categorie(ticket.categorie),
             },
             "auteur": contexte_personne(user, email=user.email),
             "residence": {"nom": nom_site(site_cfg.get("site_nom"), cfg.get("site_nom"))},

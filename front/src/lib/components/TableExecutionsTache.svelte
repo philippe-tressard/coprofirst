@@ -9,7 +9,7 @@
 -->
 <script lang="ts">
 	import type { ExecutionTache } from '#lib/api/index.ts';
-	import { colonnesVisibles, motifEchec } from '#lib/taches-colonnes.ts';
+	import { colonnesVisibles, libelleResultat, motifEchec } from '#lib/taches-colonnes.ts';
 
 	export let lignes: ExecutionTache[] = [];
 </script>
@@ -39,7 +39,7 @@
 									class:badge-red={l.statut === 'erreur' || l.statut === 'echouee'}
 									class:badge-green={l.statut !== 'erreur' && l.statut !== 'echouee'}
 								>
-									{l.statut ?? '—'}
+									{libelleResultat(l.statut)}
 								</span>
 								<!--  Le motif de l'échec était porté par la carte supprimée
 								      avec #299 : sans lui, un statut « erreur » ne dit pas

@@ -163,6 +163,28 @@ export const COLONNES: {
 export const motifEchec = (l: ExecutionTache): string | null =>
 	('message_erreur' in l ? l.message_erreur : l.erreur) ?? null;
 
+/**
+ *  Le RÉSULTAT d'une exécution, en clair — quelle que soit la table qui l'a écrit.
+ *
+ *  🔴 L'écran rendait la valeur brute (« succes », « echouee ») : un nom interne
+ *  sans accent, pas un mot de l'interface (05/11/2026, `lint:categorie-brute`).
+ *  Trois tables, trois vocabulaires : la maintenance et l'agrégation disent
+ *  `succes | erreur | ignore` (`models/exploitation`, `models/telemetrie`), la
+ *  sauvegarde `en_cours | reussie | echouee` (`models/sauvegarde`). Normalisé
+ *  ICI, une fois. Une valeur inconnue est rendue telle quelle : elle se voit.
+ */
+const LIBELLES_RESULTAT: Record<string, string> = {
+	succes: 'Réussie',
+	reussie: 'Réussie',
+	erreur: 'En échec',
+	echouee: 'En échec',
+	ignore: 'Ignorée',
+	en_cours: 'En cours',
+};
+
+export const libelleResultat = (statut: string | null | undefined): string =>
+	statut ? (LIBELLES_RESULTAT[statut] ?? statut) : '—';
+
 /** Celles qui ont quelque chose à montrer pour ce jeu de lignes. */
 export const colonnesVisibles = (lignes: ExecutionTache[]) =>
 	COLONNES.filter((c) => !c.visible || c.visible(lignes));

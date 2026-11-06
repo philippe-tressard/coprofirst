@@ -53,7 +53,7 @@
 			<option value="">— Non lié —</option>
 			{#each lots as l (l.id)}
 				<option value={String(l.id)}
-					>{l.batiment_nom ?? `Bât.${l.batiment_id}`} — {l.numero} ({l.type})</option
+					>{l.batiment_nom ?? `Bât.${l.batiment_id}`} — {l.numero} ({l.libelle_type})</option
 				>
 			{/each}
 		</select>

@@ -22,6 +22,7 @@
 	import { fmtDate, fmtDatetimeShort as fmt, fmtMoisCourt, fmtMonthYear } from '#lib/date.ts';
 	import { fmtNombre } from '#lib/utils.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
+	import { libelleStatut } from '#lib/roles.ts';
 
 	export let donnees: TableauTelemetrie;
 	/** Section dépliée ? L'onglet décide, et reçoit `basculer` (`PanneauTelemetrie`). */
@@ -271,7 +272,7 @@
 						{#each donnees.top_users as u (u.nom)}
 							<tr>
 								<td>{u.nom}</td>
-								<td class="text-muted-sm">{u.statut ?? '—'}</td>
+								<td class="text-muted-sm">{u.statut ? libelleStatut(u.statut) : '—'}</td>
 								<td class="text-muted-sm">{u.batiment_id ? `Bât. ${u.batiment_id}` : '—'}</td>
 								<td class="nombre">{fmtNombre(u.total)}</td>
 								<td class="nombre text-muted-sm">{fmtNombre(u.pages)}</td>

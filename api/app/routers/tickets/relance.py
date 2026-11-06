@@ -22,6 +22,7 @@ from app.models.core import (
     TicketEvolution,
     Utilisateur,
 )
+from app.utils.categories_ticket import libelle_categorie, libelle_priorite
 from app.utils.dates_fr import date_courte, formule_anciennete, mois_ecoules
 from app.models.courriel import RelanceCourriel
 from app.utils.courriel_entrant import nouveau_jeton
@@ -73,8 +74,8 @@ def _contexte_ticket(session: Session, ticket: Ticket) -> dict:
     return {
         "numero": ticket.numero,
         "titre": ticket.titre,
-        "categorie": ticket.categorie,
-        "priorite": ticket.priorite,
+        "categorie": libelle_categorie(ticket.categorie),
+        "priorite": libelle_priorite(ticket.priorite),
         #  `vide=""` : un ticket sans périmètre n'affiche aucune ligne, là où le
         #  fil d'activité afficherait « Copropriété entière ». Cf. utils/perimetres.
         "perimetre": perimetre_label_json(ticket.perimetre_cible),
