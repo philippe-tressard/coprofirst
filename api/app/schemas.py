@@ -31,6 +31,14 @@ from app.schemas_affaire_servie import AffaireServie
 #  à un seul routeur est déclaré à côté de lui (`<routeur>_schemas.py`) — #1566.
 
 
+class DelegationAidant(BaseModel):
+    """Une délégation active vue par son aidant : qui il aide (`utils/lecture_utilisateur`)."""
+
+    delegation_id: int
+    mandant_id: int
+    mandant_nom: str
+
+
 class UserRead(BaseModel):
     id: int
     nom: str
@@ -73,7 +81,9 @@ class UserRead(BaseModel):
     #  portait sa propre copie, avec un troisième libellé (29/08/2026).
     communaute_motif_refus: Optional[str] = None
     last_seen_actualites: Optional[datetime] = None
-    delegations_aidant: list[dict] = []  # délégations actives où l'utilisateur est aidant
+    #  Les délégations ACTIVES où ce compte est l'aidant — c'est ce qui ouvre la page
+    #  Délégations à l'aidant (`Nav.svelte`). Typées depuis #2525 : des `dict` au contrat.
+    delegations_aidant: list[DelegationAidant] = []
     cree_le: datetime
     derniere_connexion: Optional[datetime] = None
     #  L'avertissement avant purge pour inactivité (#1580) : l'écran des
@@ -85,7 +95,10 @@ class UserRead(BaseModel):
 
     @classmethod
     def from_orm_with_roles(
-        cls, u, batiment_nom: Optional[str] = None, delegations_aidant: list[dict] | None = None
+        cls,
+        u,
+        batiment_nom: Optional[str] = None,
+        delegations_aidant: list[DelegationAidant] | None = None,
     ) -> "UserRead":
         from app.auth.operateur import roles_effectifs
         from app.utils.communaute import motif_de_refus

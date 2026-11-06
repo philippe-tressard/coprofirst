@@ -43,6 +43,11 @@ export interface Delegation {
 	date_fin: string | null;
 	cree_le: string | null;
 	revoque_le: string | null;
+	/**  « Accepter » : l'aidant désigné, tant qu'elle attend — SERVI par l'API pour
+	 *   qui lit (#2525), par le prédicat qui refuse ; l'écran ne le recompose pas. */
+	peut_accepter: boolean;
+	/**  « Révoquer » : ses deux parties ou le conseil, tant qu'elle n'est pas terminée. */
+	peut_revoquer: boolean;
 }
 
 //  ── Comptes (`routers/admin/comptes.py`, `routers/admin/utilisateurs.py`) ──────

@@ -16,6 +16,9 @@
   « un seul ouvert à la fois » (`unSeulDetailsOuvert`, posé par le layout) sont
   déjà là. Le même balisage sert les deux formes — une seule écriture des
   pastilles et du corps, jamais une seconde liste.
+
+  Le créneau `gestes` (#2555) : sous le corps d'une ligne, ce que l'écran appelant
+  offre d'en faire — il reçoit la clé de la ligne (`let:cle`).
 -->
 <script context="module" lang="ts">
 	export type TonVerdict = 'succes' | 'info' | 'attention' | 'danger' | 'neutre';
@@ -89,6 +92,8 @@
 						<p class="jv-texte">{e.texte}</p>
 						{#if e.alerte}<p class="jv-alerte">&#x26A0;&#xFE0F; {e.alerte}</p>{/if}
 						{#if e.lien}<a class="jv-lien" href={e.lien.href}>{e.lien.libelle}</a>{/if}
+						<!--  Ce que l'écran appelant offre de faire de la ligne (#2555 : classer un courriel). -->
+						<slot name="gestes" cle={e.cle} />
 					</svelte:element>
 				</li>
 			{/each}

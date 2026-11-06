@@ -2,6 +2,7 @@
  *  Aides partagées des tests de navigateur.
  */
 import { test as base, expect, type Locator, type Page, type Route } from '@playwright/test';
+import { REFERENTIELS_TEMOINS } from './referentiels-temoins';
 
 /**
  * **Le `test` de tous les specs — une exception de la page le fait échouer.**
@@ -207,6 +208,7 @@ export const EQUIPEMENTS_TEMOINS = (
 const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 	//  `Equipement[]` : le cache des équipements, chargé par la mise en page (#2442).
 	'/api/equipements': EQUIPEMENTS_TEMOINS,
+	'/api/tickets/referentiels': REFERENTIELS_TEMOINS, // l'état qui clôt (fusion, #2511)
 	//  `TableauTelemetrie` : l'onglet Télémétrie lit `adoption.par_profil`…
 	'/api/telemetry/dashboard': TABLEAU_TELEMETRIE_VIDE,
 	//  `FluxResponse` : `RaccourcisRapides` lit `sante.tickets_ouverts`.
@@ -230,6 +232,15 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 		categories_seance: [],
 	},
 	'/api/points-conseil/historique': [],
+	//  `ReleveRenouvellements` : Reporting › Renouvellements lit le relevé servi
+	//  (#2525) — aucun contrat, aucun diagnostic.
+	'/api/reporting/renouvellements': {
+		annee: 2026,
+		preavis_mois: 3,
+		compteurs: { contrats_en_preavis: 0, echeances_contrats_annee: 0, audits_a_planifier: 0 },
+		contrats: [],
+		diagnostics: [],
+	},
 	//  `TextesLegauxSource` : l'administration lit la source des textes légaux et
 	//  leur constat (#2065) — relus, rien à signaler.
 	'/api/config/textes-legaux': {

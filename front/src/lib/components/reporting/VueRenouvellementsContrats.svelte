@@ -17,43 +17,25 @@
 	//  la table des libellés vivait dans `prestataires/+page.svelte` et qu'il n'y
 	//  avait pas accès. Une table qui vit dans UN écran, les autres s'en passent.
 	import { libelleEquipement } from '#lib/stores/equipements.ts';
-	import { relire } from '#lib/utils.ts';
 	import { fmtDate } from '#lib/date.ts';
 	import NoteEtoiles from '#lib/components/NoteEtoiles.svelte';
-	import {
-		MOIS_LABELS,
-		PREAVIS_MOIS,
-		anneeCourante,
-		contratsAvecEcheance,
-		type ReportContrat,
-		type ReportPrestataire,
-	} from '#lib/reporting.ts';
+	import type { ReleveRenouvellements } from '#lib/api/index.ts';
+	import { MOIS_LABELS, contratsDuReleve } from '#lib/reporting.ts';
 
-	export let reportContrats: ReportContrat[] = [];
-	export let reportPrestataires: ReportPrestataire[] = [];
-	/** Note moyenne et nombre d'avis par prestataire, calculés une fois en amont. */
+	/**  Le relevé SERVI (`GET /reporting/renouvellements`, #2525) : l'année de
+	 *   référence (le jour de Paris), le préavis, l'échéance, l'ordre — la pire note
+	 *   d'abord — et ce qui tombe dans l'année. L'écran n'en recalcule rien. */
+	export let releve: ReleveRenouvellements | null = null;
 
-	//  🔴 Relue à chaque rafraîchissement des DONNÉES — c'est `anneeDeReference`
-	//  qui porte le pourquoi. Cette ligne était `anneeCourante()` seule : un `$:`
-	//  sans variable réactive citée ne se réexécute jamais, et le commentaire
-	//  d'alors décrivait un remède qui n'avait pas lieu (#549, 29/08/2026).
-	$: ANNEE_COURANTE = relire(reportContrats, anneeCourante);
+	$: ANNEE_COURANTE = releve?.annee ?? 0;
+	$: PREAVIS_MOIS = releve?.preavis_mois ?? 0;
+	$: contratsAvecFin = contratsDuReleve(releve);
 
-	//  La dérivation vit dans `#lib/reporting.ts` : le parent en a besoin pour ses
-	//  compteurs, ce composant pour sa frise. La recopier serait la duplication
-	//  que ce découpage existe pour retirer.
-	$: contratsAvecFin = contratsAvecEcheance(reportContrats, reportPrestataires);
-
-	$: contratsAnneeCourante = contratsAvecFin.filter((c) => {
-		if (!c.dateFin) return false;
-		// Inclure si la fin OU le préavis tombe dans l'année courante
-		if (c.dateFin.getFullYear() === ANNEE_COURANTE) return true;
-		if (c.datePreavis && c.datePreavis.getFullYear() === ANNEE_COURANTE) return true;
-		return false;
-	});
+	//  « La fin OU le préavis tombe dans l'année » : servi (`echeance_dans_l_annee`).
+	$: contratsAnneeCourante = contratsAvecFin.filter((c) => c.echeance_dans_l_annee);
 
 	$: contratsFuturs = contratsAvecFin.filter(
-		(c) => c.dateFin && c.urgence === 'futur' && !contratsAnneeCourante.includes(c),
+		(c) => c.dateFin && c.urgence === 'futur' && !c.echeance_dans_l_annee,
 	);
 	$: contratsInconnus = contratsAvecFin.filter((c) => c.urgence === 'inconnu');
 </script>
@@ -99,14 +81,14 @@
 					<div class="frise-row-header">
 						<div class="frise-row-title">
 							<strong>{c.libelle}</strong>
-							<span class="text-muted-sm">{c.prestataireNom}</span>
+							<span class="text-muted-sm">{c.prestataire_nom}</span>
 							<span class="text-muted-sm"
 								>{SEPARATEUR.point}{$libelleEquipement(c.type_equipement)}</span
 							>
 							{#if c.numero_contrat}<span class="text-muted-sm"
 									>{SEPARATEUR.point}N° {c.numero_contrat}</span
 								>{/if}
-							<NoteEtoiles note={c.noteMoy} nbAvis={c.nbNotations} />
+							<NoteEtoiles note={c.note_moyenne} nbAvis={c.nb_notations} />
 						</div>
 						<div class="frise-row-badges">
 							{#if c.urgence === 'preavis'}<span class="badge badge-orange">Préavis en cours</span>
@@ -186,11 +168,11 @@
 						<div class="frise-compact-info">
 							<strong>{c.libelle}</strong>
 							<span class="text-muted-sm"
-								>{c.prestataireNom}{SEPARATEUR.point}{$libelleEquipement(c.type_equipement)}</span
+								>{c.prestataire_nom}{SEPARATEUR.point}{$libelleEquipement(c.type_equipement)}</span
 							>
 						</div>
 						<div class="frise-compact-meta">
-							<NoteEtoiles note={c.noteMoy} />
+							<NoteEtoiles note={c.note_moyenne} />
 							<span>Fin : {c.dateFin ? fmtDate(c.dateFin.toISOString()) : 'N/A'}</span>
 							<span>Préavis : {c.datePreavis ? fmtDate(c.datePreavis.toISOString()) : 'N/A'}</span>
 							{#if c.reconduit}<span class="badge badge-purple">♻ Reconduit</span>{/if}
@@ -213,13 +195,13 @@
 						<div class="frise-compact-info">
 							<strong>{c.libelle}</strong>
 							<span class="text-muted-sm"
-								>{c.prestataireNom}{SEPARATEUR.point}{$libelleEquipement(
+								>{c.prestataire_nom}{SEPARATEUR.point}{$libelleEquipement(
 									c.type_equipement,
 								)}{#if c.numero_contrat}{SEPARATEUR.point}N° {c.numero_contrat}{/if}</span
 							>
 						</div>
 						<div class="frise-compact-meta">
-							<NoteEtoiles note={c.noteMoy} />
+							<NoteEtoiles note={c.note_moyenne} />
 							<span>Début : {c.date_debut ? fmtDate(c.date_debut) : 'N/A'}</span>
 							<span class="badge badge-gray">Durée non renseignée</span>
 						</div>

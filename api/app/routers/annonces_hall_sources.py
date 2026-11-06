@@ -14,12 +14,17 @@ from sqlmodel import Session
 from app.auth.deps import require_cs_or_admin
 from app.database import get_session
 from app.models.core import Utilisateur
+from app.routers.annonces_hall_schemas import PrefillAffiche, SourceReprenable
 from app.utils.recuperer import connu_ou_404, present_ou_404
 
 router = APIRouter()
 
 
-@router.get("/sources", summary="Ce qu'on peut reprendre au hall (CS/Admin)")
+@router.get(
+    "/sources",
+    response_model=list[SourceReprenable],
+    summary="Ce qu'on peut reprendre au hall (CS/Admin)",
+)
 def sources_reprenables(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),
@@ -49,6 +54,7 @@ def sources_reprenables(
 
 @router.get(
     "/depuis/{type_source}/{id_source}",
+    response_model=PrefillAffiche,
     summary="Pré-remplissage depuis un élément du fil (CS/Admin)",
 )
 def prefill_depuis_element(

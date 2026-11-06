@@ -17,7 +17,7 @@ et sa concordance avec le front est tenue par un test.
 - catégories : `categories_ticket` (`GRILLE_CATEGORIES`, `LIBELLES_CATEGORIE`),
   `carnet_entretien.est_du_bati`, `nature_affaire.categorie_reservee` —
   🔒 `test_categories_ticket_concordance.py` ;
-- états : `tickets/commun.STATUT_LABELS`, `STATUTS_TICKET_CLOS`,
+- états : `tickets/commun.STATUT_LABELS`, `etat_affaire.affaire_close`,
   `kanban_tickets.colonne_du_ticket` — 🔒 `test_statuts_tickets.py` ;
 - colonnes du Kanban : `kanban_tickets.COLONNES_KANBAN` — 🔒 `test_kanban_tickets.py` ;
 - natures : `nature_affaire.LIBELLES_NATURE` — 🔒 `test_categories_ticket_concordance.py`.
@@ -35,8 +35,9 @@ from pydantic import BaseModel
 from app.auth.deps import get_current_user
 from app.auth.gestes_affaire import categorie_permise
 from app.models.core import StatutTicket, Utilisateur
-from app.models.tickets import STATUTS_TICKET_CLOS, STATUTS_TICKET_SANS_CYCLE
+from app.models.tickets import STATUTS_TICKET_SANS_CYCLE
 from app.utils.carnet_entretien import est_du_bati
+from app.utils.etat_affaire import affaire_close
 from app.utils.categories_ticket import CATEGORIES_EN_TETE, GRILLE_CATEGORIES, libelle_categorie
 from app.utils.kanban_tickets import COLONNES_KANBAN, colonne_du_ticket
 from app.utils.nature_affaire import LIBELLES_NATURE, categorie_reservee
@@ -116,7 +117,7 @@ def referentiels_pour(user: Utilisateur) -> ReferentielsAffaires:
             StatutServi(
                 code=code,
                 libelle=libelle,
-                clos=code in STATUTS_TICKET_CLOS,
+                clos=affaire_close(code),
                 colonne_kanban=colonne_du_ticket(code),
                 proposable=_proposable(code),
             )

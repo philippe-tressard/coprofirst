@@ -135,7 +135,7 @@ def domaines_du_site(session: Session) -> set[str]:
 def decider_transfert(session, entetes, corps, recu_le, plancher, authentification, pieces=None):
     """`(décision, motif, affaire)` si ce message est un transfert que ce module
     verse — sinon None, et la relève ordinaire (`courriel_boite`) en décide."""
-    from app.utils.courriel_boite import _ticket_de, correspondant_du_ticket
+    from app.utils.courriel_rattachement import _ticket_de, correspondant_du_ticket
 
     lire = {k.lower(): v for k, v in entetes.items()}
     sujet = lire.get("subject", "")

@@ -55,7 +55,11 @@
 
 <!--  Le squelette — catégorie, numéro, créneau de fin — est `PiedCarte` (24/10/2026),
       que le carnet d'entretien rend aussi : ici, seulement ce que dit une affaire. -->
-<PiedCarte categorie={affaire.categorie} numero={affaire.numero}>
+<PiedCarte
+	categorie={affaire.categorie}
+	libelle={affaire.categorie_libelle}
+	numero={affaire.numero}
+>
 	{#if etat}
 		<BadgeEtatAffaire statut={etat} fusionnee={affaire.fusionnee} />
 	{/if}

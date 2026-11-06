@@ -107,8 +107,11 @@ CONSERVATION_COURRIELS = (
 #: changement.
 CONSERVATION_RELEVES = (
     "<li>Journal des réponses reçues par courriel : adresse de l'expéditeur, objet, date "
-    "et suite donnée — ajoutée à l'affaire, refusée ou écartée —, <strong>jamais le texte du "
-    f"message</strong>. Conservé <strong>{CONSERVATION_RELEVES_JOURS} jours</strong> pour "
+    "et suite donnée — ajoutée à l'affaire, refusée, écartée ou à classer —, <strong>jamais "
+    "le texte du message</strong>, sauf pour un message authentifié d'un correspondant connu "
+    "qu'aucune affaire ne désigne : il est gardé entier, pièces jointes comprises, "
+    "jusqu'à ce que le conseil syndical le classe — dans une affaire ou à l'écart —, puis "
+    f"effacé. Conservé <strong>{CONSERVATION_RELEVES_JOURS} jours</strong> pour "
     "vérifier qu'une réponse a bien été reçue, puis <strong>supprimé automatiquement</strong>."
     "</li>"
 )

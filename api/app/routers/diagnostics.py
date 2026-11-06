@@ -80,10 +80,10 @@ def list_types(
         .where(DiagnosticType.actif == True)  # noqa: E712
         .order_by(DiagnosticType.ordre)
     ).all()
-    return [_type_lu(session, t) for t in types]
+    return [lire_type_diagnostic(session, t) for t in types]
 
 
-def _type_lu(session: Session, t: DiagnosticType) -> DiagnosticTypeRead:
+def lire_type_diagnostic(session: Session, t: DiagnosticType) -> DiagnosticTypeRead:
     """Un type de diagnostic et ses rapports, le plus récent d'abord.
 
     🔴 Écrit DEUX FOIS, colonne par colonne — la liste et la bascule « non
@@ -113,7 +113,7 @@ def toggle_non_applicable(
     session.add(diag_type)
     session.commit()
     session.refresh(diag_type)
-    return _type_lu(session, diag_type)
+    return lire_type_diagnostic(session, diag_type)
 
 
 @router.post("/types/{type_id}/rapports", response_model=RapportRead, status_code=201)

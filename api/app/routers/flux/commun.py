@@ -104,7 +104,9 @@ def strip_html(text: Optional[str], max_len: int = 120) -> Optional[str]:
 CHAMPS_PASTILLES = (
     "numero",
     "categorie",
+    "categorie_libelle",  # servi par `TicketRead` (#2511) : le pied de carte le lit
     "statut",
+    "close",  # servi par `TicketRead` (#2511) : le fil ne recalcule pas « close »
     "suivi_actualite",  # l'état d'une actualité suivie (10/10/2026)
     "priorite",
     "debut",

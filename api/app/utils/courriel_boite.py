@@ -49,14 +49,16 @@ from datetime import datetime
 from email.utils import parseaddr
 from app.utils import horloge
 
-from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.utils.liens import LIEN_COURRIELS_AFFAIRES, lien_ticket
-from app.auth.deps import peut_commenter
-from app.models.core import ConfigSite, Ticket, Utilisateur
+from app.utils.courriel_rattachement import (  # ré-exportés : leurs lecteurs les cherchent ici
+    _ticket_de,
+    correspondant_du_ticket,
+)
+from app.models.core import ConfigSite, Ticket
 from app.models.tickets import STATUTS_TICKET_CLOS
-from app.utils.destinataires import est_adresse_syndic, membre_syndic_a_l_adresse
+from app.utils.destinataires import membre_syndic_a_l_adresse
 from app.utils.courriel_authenticite import VerificationReportee, verifier_expediteur
 from app.utils.courriel_delegation import delegations_du_site
 from app.utils.courriel_decodage import _corps_lisible, _texte
@@ -67,12 +69,16 @@ from app.utils.courriel_transfert import compte_a_l_adresse, decider_transfert
 from app.utils.courriel_relance import reponse_a_une_relance, relance_de
 from app.utils.echecs_repetes import CompteurEchecs
 from app.utils.courriel_ingestion import (
+    A_CLASSER,
     ACCEPTE,
     IGNORE,
     REFUSE,
     RELANCE,
+    SANS_RATTACHEMENT,
+    Verdict,
     examiner,
 )
+from app.utils import courriel_a_classer
 from app.utils.cloche import sonner_systeme
 from app.utils.reponse_courriel import date_d_envoi, suite_de_reponse
 from app.utils.services import SERVICE_REPONSES_COURRIEL, cle_actif, service_actif
@@ -101,51 +107,7 @@ def config_imap(session: Session) -> dict:
     return {r.cle: r.valeur for r in lignes}
 
 
-def _ticket_de(session: Session, verdict) -> Ticket | None:
-    """Le ticket visé : le jeton d'abord, le numéro du sujet en REPLI (05/09/2026).
-
-    L'ordre porte la sécurité. Le jeton est opaque et non devinable : le tenir
-    prouve qu'on a reçu un message du site à propos de CE ticket. Le numéro, lui,
-    figure dans tous les courriels déjà envoyés — il désigne, il ne prouve pas.
-    C'est pourquoi le repli ne donne pas le même droit : voir
-    `correspondant_du_ticket`, qui n'est exigé QUE sur ce chemin.
-    """
-    if verdict.jeton:
-        return session.exec(select(Ticket).where(Ticket.jeton_courriel == verdict.jeton)).first()
-    if verdict.numero:
-        #  Comparaison insensible à la casse : un client de messagerie peut
-        #  remettre le sujet en capitales, et le numéro y perdrait sa forme.
-        return session.exec(
-            select(Ticket).where(func.lower(Ticket.numero) == verdict.numero.lower())
-        ).first()
-    return None
-
-
-def correspondant_du_ticket(session: Session, ticket: Ticket, auteur: Utilisateur) -> bool:
-    """Le site aurait-il ÉCRIT à cette personne à propos de ce ticket ?
-
-    C'est le prix du repli par le sujet, et il est calculé sur ce que le jeton
-    prouvait tout seul : *avoir reçu un message du site sur ce dossier*. Sans lui,
-    n'importe quel titulaire de compte pourrait commenter n'importe quel ticket
-    en écrivant son numéro dans un sujet — un droit que l'écran ne donne pas.
-
-    Quatre cas, et ce sont exactement ceux à qui l'application envoie les
-    courriels d'un ticket :
-
-    - son **auteur**, et la personne pour qui il a été saisi ;
-    - un membre du **conseil syndical**, qui suit tous les dossiers ;
-    - un **administrateur** ;
-    - le **syndic**, reconnu à son adresse dans la fiche du cabinet — il n'a
-      souvent pas d'autre lien avec le site, et c'est POUR LUI que ce repli a été
-      demandé.
-
-    ⚠️ Le syndic est cherché par l'ADRESSE, pas par un rôle : `RoleUtilisateur`
-    n'en a pas, et le gestionnaire vit dans `MembreSyndic`.
-    """
-    return peut_commenter(ticket, auteur) or est_adresse_syndic(session, auteur.email)
-
-
-def _prevenir_le_cs(session: Session, ticket: Ticket | None, verdict) -> None:
+def _prevenir_le_cs(session: Session, ticket: Ticket | None, verdict, titre=None) -> None:
     """Une notification par membre du conseil syndical — jamais un silence."""
     #  🔴 `membres_cs_ou_admin` et non `membres_cs_avec_email` : c'est une
     #  notification IN-APP. L'autre vise la boîte aux lettres et exige une
@@ -159,7 +121,7 @@ def _prevenir_le_cs(session: Session, ticket: Ticket | None, verdict) -> None:
             "tache_du_conseil",
             destinataire_id=membre.id,
             type="ticket_update",
-            titre=f"Réponse par courriel non prise en compte sur {ou}",
+            titre=titre or f"Réponse par courriel non prise en compte sur {ou}",
             corps=(
                 f"Un message de « {verdict.expediteur} » est arrivé en réponse à {ou}, "
                 f"mais il n'a pas été ajouté au fil : {verdict.motif}. "
@@ -177,6 +139,7 @@ def traiter(
     plancher: datetime | None = None,
     authentification: tuple[bool, str] | None = None,
     pieces: courriel_pieces_jointes.Tri | None = None,
+    brut: bytes | None = None,
 ) -> str:
     """Applique le verdict d'UN message. Rend la décision prise, pour le journal.
 
@@ -190,7 +153,17 @@ def traiter(
     decision, motif, ticket = _decider(
         session, entetes, corps, recu_le, plancher, authentification, pieces
     )
-    journaliser_releve(session, entetes, recu_le, decision, motif, ticket)
+    ligne = journaliser_releve(session, entetes, recu_le, decision, motif, ticket)
+    if decision == A_CLASSER:
+        #  Le message entier, pour que le conseil le classe (#2555) — `brut` est
+        #  ce que la relève a lu ; un appel sans lui garde la ligne, sans contenu.
+        courriel_a_classer.retenir(session, ligne, entetes, brut, recu_le)
+        _prevenir_le_cs(
+            session,
+            None,
+            Verdict(A_CLASSER, expediteur=ligne.expediteur, motif=courriel_a_classer.MOTIF),
+            titre="Un courriel attend d'être classé",
+        )
     session.commit()
     return decision
 
@@ -224,6 +197,15 @@ def _decider(session, entetes, corps, recu_le, plancher, authentification, piece
         entetes, recu_le=recu_le, plancher=plancher, authentification=authentification
     )
     if verdict.decision == IGNORE:
+        #  Un correspondant connu, authentifié, qui écrit sans rien désigner : à
+        #  classer (#2555). Un prospectus d'inconnu reste muet.
+        authentifie = bool(authentification and authentification[0])
+        if (
+            verdict.motif == SANS_RATTACHEMENT
+            and authentifie
+            and courriel_a_classer.correspondant_connu(session, verdict.expediteur)
+        ):
+            return A_CLASSER, courriel_a_classer.MOTIF, None
         return IGNORE, verdict.motif, None
 
     ticket = _ticket_de(session, verdict)
@@ -241,16 +223,22 @@ def _decider(session, entetes, corps, recu_le, plancher, authentification, piece
             reponse_a_une_relance(session, relance, verdict, corps)
             return RELANCE, "réponse à une relance groupée, transmise au conseil syndical", None
 
-        #  Ni ticket ni relance. Deux situations très différentes :
+        #  Ni ticket ni relance. D'un correspondant CONNU et authentifié, le
+        #  message attend d'être classé par le conseil (#2555) : il était refusé,
+        #  et perdu pour le site — le journal ne garde pas le corps.
+        if verdict.decision == ACCEPTE and courriel_a_classer.correspondant_connu(
+            session, verdict.expediteur
+        ):
+            return A_CLASSER, courriel_a_classer.MOTIF, None
         if verdict.decision == ACCEPTE and verdict.reference:
-            #  🔴 Un message AUTHENTIFIÉ qui répond visiblement à un envoi du
-            #  site, sans qu'on sache à quoi. Le taire, c'est perdre une réponse
-            #  qu'on a sollicitée — le défaut même que le jeton de relance vient
-            #  corriger, et il en resterait d'autres formes (un fil transféré,
-            #  un client qui réécrit le destinataire).
+            #  🔴 Un message AUTHENTIFIÉ qui cite un message, sans qu'on sache à
+            #  quoi il répond, d'un inconnu : le conseil est prévenu. Le motif
+            #  disait « répond à un envoi du site » — `reference_citee` retient
+            #  n'importe quel `In-Reply-To`, jamais vérifié comme venant du site.
             refus = _refus(
                 verdict,
-                "ce message répond à un envoi du site, mais rien ne permet de dire à quel ticket",
+                "ce message ne désigne aucune affaire, et son expéditeur n'a pas de compte "
+                "sur le site",
                 jeton=verdict.jeton,
             )
             _prevenir_le_cs(session, None, refus)
@@ -365,7 +353,7 @@ def relever() -> dict[str, int]:
     """
     from app import contexte
 
-    comptes = {ACCEPTE: 0, RELANCE: 0, REFUSE: 0, IGNORE: 0}
+    comptes = {ACCEPTE: 0, RELANCE: 0, REFUSE: 0, IGNORE: 0, A_CLASSER: 0}
     #: Vrai si la relève n'a PAS pu avoir lieu — à distinguer d'une boîte vide.
     echec = False
     derniere_erreur: Exception | None = None
@@ -422,6 +410,7 @@ def relever() -> dict[str, int]:
                         plancher,
                         auth,
                         pieces=courriel_pieces_jointes.trier(message),
+                        brut=brut[0][1],
                     )
                 except VerificationReportee as exc:
                     #  INCONNU, pas un refus : le message reste non lu, repris ensuite.

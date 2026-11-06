@@ -130,6 +130,15 @@ def exiger_lots_proposes_au_locataire(
     return [proposes[i] for i in dict.fromkeys(lot_ids)]
 
 
+def peut_accepter_la_delegation(delegation, user: Utilisateur) -> bool:
+    """Ce lecteur est-il l'aidant désigné ? — le PRÉDICAT, que le refus appelle.
+
+    Servi avec chaque délégation (`DelegationRead.peut_accepter`, #2525) : le site
+    décidait « Accepter » par `aidant_id === moi`, et l'app iOS n'en savait rien.
+    """
+    return delegation.aidant_id == user.id
+
+
 def exiger_aidant_de_la_delegation(delegation, user: Utilisateur) -> None:
     """Seul l'aidant désigné accepte une délégation — **403** sinon.
 
@@ -138,14 +147,26 @@ def exiger_aidant_de_la_delegation(delegation, user: Utilisateur) -> None:
     une délégation engage l'aidant personnellement, personne ne peut le faire à
     sa place — mais le refus dit « interdit », parce que la délégation existe
     bel et bien et que le demandeur le sait : il en est le mandant.
-
-    ⚠️ La **révocation**, elle, admet le mandant, l'aidant ET le conseil : on
-    peut avoir besoin de défaire ce qu'on n'a pas le droit de faire. Elle reste
-    chez son routeur — elle ne compare pas une propriété, elle vérifie une
-    appartenance à un ensemble de trois, ce qui est une autre question.
     """
-    if delegation.aidant_id != user.id:
+    if not peut_accepter_la_delegation(delegation, user):
         raise HTTPException(403, "Seul l'aidant désigné peut accepter")
+
+
+def peut_revoquer_la_delegation(delegation, user: Utilisateur) -> bool:
+    """Le mandant, l'aidant ou le conseil — le PRÉDICAT, que le refus appelle.
+
+    ⚠️ La révocation admet plus que l'acceptation : on peut avoir besoin de
+    défaire ce qu'on n'a pas le droit de faire. Elle vivait chez son routeur
+    (`is_cs_admin or is_party`) ; servie avec la délégation (#2525), elle monte
+    ici pour que la liste et le geste lisent la même règle.
+    """
+    return est_moderateur(user) or user.id in (delegation.mandant_id, delegation.aidant_id)
+
+
+def exiger_partie_de_la_delegation(delegation, user: Utilisateur) -> None:
+    """Révoquer une délégation : ses deux parties ou le conseil — **403** sinon."""
+    if not peut_revoquer_la_delegation(delegation, user):
+        raise HTTPException(403, "Non autorisé")
 
 
 def exiger_acces_du_porteur(session: Session, type_acces, objet_id: int, user: Utilisateur):

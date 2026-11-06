@@ -11,6 +11,7 @@ export const AFFAIRE = {
 	description: '<p>Une tache s’étend au plafond du hall.</p>',
 	categorie: 'panne',
 	statut: 'résolu',
+	close: true,
 	priorite: 'normale',
 	auteur_id: 1,
 	auteur_nom: 'CS Témoin',

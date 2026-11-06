@@ -398,3 +398,13 @@ def ma_notification(
     return ou_404(
         session, Notification, notif_id, "Notification", sous={"destinataire_id": user.id}
     )
+
+
+def mes_notifications(user: Utilisateur):
+    """La condition SQL « adressée à cet utilisateur » — celle des gestes sur PLUSIEURS
+    notifications (la liste, tout marquer lu, supprimer les lues ou une sélection, #2535).
+
+    Le pendant groupé de `ma_notification` : un identifiant d'autrui glissé dans une
+    sélection ne passe pas ce filtre, il est ignoré — jamais supprimé, jamais compté.
+    """
+    return Notification.destinataire_id == user.id

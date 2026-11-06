@@ -20,10 +20,12 @@
   passe ici ; l'emoji de catégorie ne s'écrit nulle part ailleurs.
 -->
 <script lang="ts">
-	import { categorieTicketEmoji, categorieTicketLabel } from '#lib/tickets.ts';
+	import { categorieTicketEmoji } from '#lib/tickets.ts';
 
 	/** La VALEUR de la catégorie de l'affaire (`panne`) ; rien, pas de pictogramme. */
 	export let categorie: string | null | undefined = null;
+	/** Son libellé SERVI (`categorie_libelle`, #2511), dit au survol du pictogramme. */
+	export let libelle: string | null | undefined = null;
 	/** Le numéro d'affaire, sans le « # » (`TK-109008`). */
 	export let numero: string | null | undefined = null;
 </script>
@@ -33,9 +35,7 @@
       passer à la ligne. L'enveloppe ne sert qu'à borner l'habillage ci-dessous. -->
 <span class="pa">
 	{#if categorie}
-		<span class="pa-cat" title={categorieTicketLabel(categorie)}
-			>{categorieTicketEmoji(categorie)}</span
-		>
+		<span class="pa-cat" title={libelle || undefined}>{categorieTicketEmoji(categorie)}</span>
 	{/if}
 	<slot />
 	{#if numero}<span>#{numero}</span>{/if}

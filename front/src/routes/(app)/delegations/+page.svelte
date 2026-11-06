@@ -5,7 +5,7 @@
 	import { nomAffiche } from '#lib/noms.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import EntetePage from '#lib/components/EntetePage.svelte';
-	import { currentUser, isCS, quandAuthResolue } from '#lib/stores/auth.ts';
+	import { isCS, quandAuthResolue } from '#lib/stores/auth.ts';
 	import {
 		delegations as delegationsApi,
 		admin as adminApi,
@@ -181,12 +181,12 @@
 						{/if}
 					</div>
 					<div class="deleg-actions">
-						{#if d.statut === 'en_attente' && d.aidant_id === $currentUser?.id}
+						{#if d.peut_accepter}
 							<button class="btn btn-sm btn-primary" on:click={() => accepter(d.id)}
 								>Accepter</button
 							>
 						{/if}
-						{#if d.statut === 'en_attente' || d.statut === 'active'}
+						{#if d.peut_revoquer}
 							<button class="btn btn-sm btn-danger" on:click={() => revoquer(d.id)}>Révoquer</button
 							>
 						{/if}
