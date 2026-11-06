@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
@@ -218,7 +219,11 @@ class Settings(BaseSettings):
     wa_photo_budget_ko: int = 400
 
     class Config:
-        env_file = ".env"
+        #  `FICHIER_ENV` ne sert qu'à la suite de tests (#2539) : son conftest
+        #  le pointe vers un fichier vide, pour qu'un `.env` de développement du
+        #  poste (COOKIE_SECURE=false…) ne change pas ce que les tests jugent. En
+        #  production il est absent : `.env` reste lu.
+        env_file = os.environ.get("FICHIER_ENV", ".env")
         case_sensitive = False
 
 
