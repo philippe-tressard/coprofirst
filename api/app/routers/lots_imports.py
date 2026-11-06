@@ -32,6 +32,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.utils.batiments import libelle_batiment
+from app.utils.libelles_lot import libelle_type_lot
 from app.auth.deps import require_cs_or_admin
 from app.database import get_session
 from app.models.core import (
@@ -163,7 +164,7 @@ def _imp_row(imp: LotImport, session: Session) -> dict:
         "statut": valeur(imp.statut),
         "lot_id": imp.lot_id,
         "lot_label": (
-            f"{libelle_batiment(lot.batiment)} — {lot.numero} ({valeur(lot.type)})"
+            f"{libelle_batiment(lot.batiment)} — {lot.numero} ({libelle_type_lot(lot.type)})"
             if lot and lot.batiment
             else (f"#{imp.lot_id}" if imp.lot_id else None)
         ),

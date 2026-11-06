@@ -106,6 +106,19 @@ def libelle_categorie(categorie) -> str:
 #  ══════════════════════════════════════════════════════════════════════════
 
 
+#: Comment une PRIORITÉ se dit — `PrioriteTicket` (`models/tickets.py`). Le site
+#: n'en montre que l'urgence (« ⚡ Urgente », `#lib/tickets.PRIORITE_BREVE`) ;
+#: un courriel qui l'écrit en toutes lettres (la relance au syndic) la prend ICI,
+#: jamais brute (05/11/2026, `test_enumerations_en_clair`).
+LIBELLES_PRIORITE: dict[str, str] = {"basse": "Basse", "normale": "Normale", "haute": "Haute"}
+
+
+def libelle_priorite(priorite) -> str:
+    """« haute » → « Haute ». Une valeur inconnue est rendue telle quelle : elle se voit."""
+    cle = str(valeur(priorite) or "")
+    return LIBELLES_PRIORITE.get(cle, cle)
+
+
 def ticket_urgent(ticket) -> bool:
     """Un ticket presse-t-il ? La priorité le dit, et elle seule.
 

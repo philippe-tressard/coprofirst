@@ -256,6 +256,12 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
 - La valeur d'une énumération (`categorie`, `statut`…) : `utils/valeurs.valeur(x)`,
   jamais `str(x)` — qui rend « CategorieTicket.etude_travaux » — ni un
   `getattr(x, "value", x)` recopié (il l'était neuf fois ; 🔒 `test_valeur_source_unique`).
+- Une énumération écrite POUR UNE PERSONNE — titre de notification, `context=`
+  d'un courriel — prend son libellé (`libelle_statut`, `libelle_categorie`,
+  `libelle_priorite`, `libelle_type_acces`, `libelle_type_lot`), jamais `x.type`
+  ni `valeur(x.statut)` : « Commande vigik : acceptee » partait en notification
+  (05/11/2026). 🔒 `test_enumerations_en_clair.py` lit les f-strings et les
+  contextes de `send_email` (exceptions déclarées).
 - Lire un objet pour le RENDRE : `Schema.model_validate(objet)`, ou
   `utils/lecture.lire_objet(Schema, objet, **dérivés)` quand des champs se
   calculent — jamais une recopie colonne par colonne, où tout oubli part à sa
@@ -731,6 +737,10 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       jamais `titre="… *"` (#1329, 27/09/2026). Les
       libellés de champ sont en MAJUSCULES par le style (`champs.css`), comme
       les intitulés de section — jamais tapées (`npm run lint:champs`)
+- [ ] Valeur d'une énumération — statut, type, catégorie, rôle — rendue par son
+      LIBELLÉ, jamais brute, même derrière un repli `?? '—'` : Admin › Télémétrie
+      affichait « copropriétaire_résident » (05/11/2026). Un champ qui porte déjà le
+      libellé servi par l'API se déclare dans `EXCEPTIONS` (`npm run lint:categorie-brute`)
 - [ ] Libellés et nommage en français — 🔒 les mots d'interface anglais sont refusés par
       `npm run lint:vocabulaire-ecran` (`lib-mots-anglais.mjs`, #1579) ; *le reste de la langue
       reste non mesurable : `lint:texte` et `lint:champs` ne la jugent pas*

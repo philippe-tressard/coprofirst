@@ -35,6 +35,8 @@ moitié — c'est précisément ce qui est arrivé au ``lot_id``.
 
 from dataclasses import dataclass
 
+from app.models.validations import StatutCommande
+from app.utils.valeurs import valeur
 from app.models.core import (
     Telecommande,
     TelecommandeImport,
@@ -128,3 +130,30 @@ TELECOMMANDE = TypeAcces(
 #: existent ». Un écran ou un routeur qui énumérerait « vigik ou telecommande »
 #: à la main serait une seconde liste, libre de diverger.
 TYPES_ACCES = {t.cle: t for t in (VIGIK, TELECOMMANDE)}
+
+
+def libelle_type_acces(cle) -> str:
+    """« vigik » → « Vigik » — ce qu'un résident lit dans une notification ou un courriel.
+
+    Une notification disait « Nouvelle demande de vigik » et un courriel « Votre
+    demande de telecommande » : la clé d'URL, pas un mot (05/11/2026). Une clé
+    inconnue est rendue telle quelle — un libellé manquant doit se voir.
+    """
+    brut = str(valeur(cle))
+    type_acces = TYPES_ACCES.get(brut)
+    return type_acces.libelle if type_acces else brut
+
+
+#: Comment le SORT d'une commande d'accès se dit — `StatutCommande`
+#: (`models/validations`). En minuscules : il suit « Commande Vigik : … ».
+LIBELLES_STATUT_COMMANDE: dict[str, str] = {
+    StatutCommande.en_attente.value: "en attente",
+    StatutCommande.acceptee.value: "acceptée",
+    StatutCommande.refusee.value: "refusée",
+}
+
+
+def libelle_statut_commande(statut) -> str:
+    """« acceptee » → « acceptée ». Une clé inconnue est rendue telle quelle."""
+    cle = str(valeur(statut))
+    return LIBELLES_STATUT_COMMANDE.get(cle, cle)
