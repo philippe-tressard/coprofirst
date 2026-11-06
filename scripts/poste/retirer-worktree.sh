@@ -36,8 +36,13 @@
 #    bash scripts/poste/retirer-worktree.sh --selftest
 # =============================================================================
 set -uo pipefail
+#  Le répertoire des bibliothèques se résout depuis le DÉPÔT, jamais depuis `$0` seul :
+#  la copie relayée (ci-dessous) vit dans un dossier temporaire, où `$0/../lib`
+#  n'existe pas — la porte GNU n'était plus posée, et le reste tournait avec les
+#  outils BSD du Mac sans le dire (#2534). Le relais transmet le chemin.
+RETIRER_WT_LIB="${RETIRER_WT_LIB:-$(cd "$(dirname "$0")/../lib" 2>/dev/null && pwd -P)}"
 # shellcheck source=../lib/lib-poste-gnu.sh
-. "$(dirname "$0")/../lib/lib-poste-gnu.sh"
+. "$RETIRER_WT_LIB/lib-poste-gnu.sh"
 poste_gnu_poser "$@"   # macOS : les outils GNU en tête du PATH, comme Git Bash et la CI (#2419)
 
 #  Le script ne s'exécute JAMAIS depuis la copie qu'il retire : bash tient son
@@ -53,7 +58,7 @@ if [ "${1:-}" != "--selftest" ] && [ -z "${RETIRER_WT_RELAYE:-}" ]; then
   done
   copie=$(mktemp) && cp "$0" "$copie" || exit 2
   cd "$racine" || exit 2
-  RETIRER_WT_RELAYE="$copie" APPELANT_PWD="$(cd "$OLDPWD" && pwd -P)" \
+  RETIRER_WT_RELAYE="$copie" RETIRER_WT_LIB="$RETIRER_WT_LIB" APPELANT_PWD="$(cd "$OLDPWD" && pwd -P)" \
     exec bash "$copie" "${args[@]}"
 fi
 [ -n "${RETIRER_WT_RELAYE:-}" ] && trap 'rm -f "$RETIRER_WT_RELAYE"' EXIT
@@ -92,6 +97,18 @@ retirer_selftest() {
   t "nommée : l'âge ne compte pas"      "RETIRER"                                   0 0 1 0 0 0
   #  Le refus le plus grave l'emporte : non committé ET détaché → le non committé.
   t "plusieurs refus, le premier dit"   "GARDER|1 modification(s) non committée(s)" 0 1 0 0 900 24
+  #  #2534 : la copie relayée, hors de scripts/poste/, trouve la porte GNU par le
+  #  chemin que le relais lui transmet. Jouée pour de vrai : une copie dans un
+  #  dossier temporaire, un usage faux (code 2), et aucun « No such file ».
+  local copie err code
+  copie="$(mktemp -d)/relais.sh"; cp "$0" "$copie"
+  err=$(RETIRER_WT_RELAYE=essai RETIRER_WT_LIB="$RETIRER_WT_LIB" bash "$copie" -x 2>&1 >/dev/null); code=$?
+  if [ "$code" = 2 ] && ! grep -qE "No such file|introuvable" <<< "$err"; then
+    echo "  OK  copie relayée hors de scripts/poste : la porte GNU est posée"
+  else
+    echo "  KO  copie relayée hors de scripts/poste — code $code : ${err:0:160}"; ko=1
+  fi
+  rm -rf "$(dirname "$copie")"
   [ "$ko" = 0 ] && echo "retirer-worktree : TOUS OK" || echo "retirer-worktree : ÉCHEC"
   return "$ko"
 }
