@@ -71,7 +71,7 @@
 	import TableParcAcces from '#lib/components/TableParcAcces.svelte';
 	import { confirmerPuis } from '#lib/confirmation.ts';
 	import { messageErreur, tenter } from '#lib/erreurs.ts';
-	import { comparerParNom, nomAffiche } from '#lib/noms.ts';
+	import { nomAffiche } from '#lib/noms.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
 	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
@@ -101,11 +101,9 @@
 	//  qu'enregistrer un badge était déjà couvert deux fois. Le choix est renversé
 	//  sur demande explicite — le conseil syndical remet des badges en main
 	//  propre, et rien ne le lui permettait.
-	//  La PERSONNE, pas seulement son rendu : `affiche` sert au sélecteur,
-	//  `prenom` et `nom` au classement — qui se fait sur le nom de famille
-	//  (`comparerParNom`, `#lib/noms`). Les confondre revenait à classer
-	//  « Alain FAURE » à la lettre A.
-	let porteurs: { id: number; affiche: string; prenom: string; nom: string }[] = [];
+	//  Les porteurs proposés au sélecteur. Le CLASSEMENT par porteur ne les lit
+	//  plus : il vient du serveur (`porteur_rang`, #2522).
+	let porteurs: { id: number; affiche: string }[] = [];
 	/**  🔒 Ce que chaque type d'accès a le droit d'ouvrir, par clé de type.
 	 *
 	 *   Demandé le 15/09/2026 : un vigik ouvre la copropriété, un bâtiment ou un
@@ -227,8 +225,6 @@
 			porteurs = (await adminApi.utilisateurs()).map((u) => ({
 				id: u.id,
 				affiche: nomAffiche(u),
-				prenom: u.prenom ?? '',
-				nom: u.nom ?? '',
 			}));
 			choixAcces = await accesApi.choixAcces();
 			lots = await accesApi.lotsImports();
@@ -271,10 +267,6 @@
 		}
 	}
 
-	//  Le porteur d'une ligne, retrouvé par son identifiant : la ligne ne porte
-	//  que « Prénom NOM » composé, et le classement a besoin des deux morceaux.
-	$: parId = new Map(porteurs.map((p) => [p.id, p]));
-
 	/**  La valeur comparée pour une ligne. `localeCompare` avec `sensitivity`
 	 *   pour que « Ébert » se range après « Dupont » et non en fin de liste. */
 	function cle(a: (typeof toutes)[number]): string {
@@ -297,13 +289,14 @@
 		//  chaîne affichée : `porteur_nom` vaut « Alain FAURE », et trier dessus
 		//  rangeait Alain à la lettre A (signalé à l'écran le 15/09/2026).
 		//
-		//  La règle est celle de `#lib/noms.comparerParNom` — la plus déployée du
-		//  produit (annuaire, administration, espace CS) —, pas une comparaison
-		//  écrite ici.
+		//  Le RANG vient du serveur (`porteur_rang`, nom puis prénom, #2522) : l'app
+		//  iOS classe de même sans recomposer la règle. Une ligne sans porteur reste
+		//  à la fin dans les deux sens — elle n'a pas à ouvrir la liste.
 		.sort((x, y) => {
 			const ordre = triAsc ? 1 : -1;
 			if (triCol === 'porteur') {
-				return ordre * comparerParNom(parId.get(x.porteur_id ?? -1), parId.get(y.porteur_id ?? -1));
+				if (!x.porteur_id !== !y.porteur_id) return x.porteur_id ? -1 : 1;
+				return ordre * (x.porteur_rang - y.porteur_rang);
 			}
 			return ordre * cle(x).localeCompare(cle(y), 'fr', { sensitivity: 'base' });
 		});

@@ -3,7 +3,6 @@
 	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import { lieu } from '#lib/lieu.svelte.ts';
 	import { nomAffiche } from '#lib/noms.ts';
-	import type { Inscrit, LigneImport, LotRapproche } from '#lib/annuaire-rapprochement.ts';
 	import type { User } from '#lib/api/types.ts';
 	import EntetePage from '#lib/components/EntetePage.svelte';
 	//  ⏱ L'onglet Annuaire et la boîte de validation attendent un geste :
@@ -17,7 +16,6 @@
 	import {
 		admin as adminApi,
 		auth as authApi,
-		lots as lotsApi,
 		type CommandeAccesEnAttente,
 	} from '#lib/api/index.ts';
 	import { typeAccesLabel } from '#lib/types-acces.ts';
@@ -70,17 +68,12 @@
 
 	// -- Annuaire -----------------------------------------------------------
 	//  L'onglet vit dans `AnnuaireConseil` et `AnnuaireSyndic` (#779, 29/09/2026),
-	//  qui s'amorcent seuls. La page ne garde que les données de RÉFÉRENCE qu'elle
-	//  charge de toute façon : elles servent aux deux à rapprocher un nom saisi
-	//  d'un inscrit et d'un logement (`#lib/annuaire-rapprochement`).
-	/** Non vide = une donnée de référence manque : l'écran est faux, pas vide. */
+	//  qui s'amorcent seuls. 🔴 La page ne charge plus pour eux les inscrits, les
+	//  lots ni le registre importé (#2522) : le rapprochement d'un nom saisi se
+	//  demande au serveur (`#lib/annuaire-rapprochement`).
+	/** Non vide = la liste des bâtiments manque : l'écran est faux, pas vide. */
 	let erreurBatiments = '';
-	let erreurAnnuaire = '';
-	$: erreurReference = messagePartiel(erreurBatiments, erreurAnnuaire);
-	let allUsers: Inscrit[] = [];
-	let allLots: LotRapproche[] = [];
-	let lotImports: LigneImport[] = [];
-	$: sources = { inscrits: allUsers, lots: allLots, imports: lotImports, batiments: batimentsMap };
+	$: erreurReference = messagePartiel(erreurBatiments);
 	//  🔴 Refuser sur un « non » AVÉRÉ, jamais sur un « pas encore » : le pourquoi est dans `check-gardes-auth.mjs`.
 	$: if ($authResolue && !$isCS) goto('/tableau-de-bord');
 	quandAuthResolue(() => {
@@ -111,41 +104,6 @@
 			loading = false;
 			marquerDonneesAffichees();
 		}
-	}
-
-	//  Les données de RÉFÉRENCE de l'Annuaire se lisent à l'ouverture de
-	//  l'Annuaire, une fois (#1843) — et ses deux annuaires ne se montent qu'une
-	//  fois LUES : une donnée « pas encore là » ne doit pas se lire « aucune
-	//  correspondance » (#522).
-	let referenceDemandee = false;
-	let referenceLue = false;
-	$: if (onglet === 'annuaire' && $authResolue && $isCS && !referenceDemandee) {
-		referenceDemandee = true;
-		chargerReference();
-	}
-	async function chargerReference() {
-		//  🔴 Trois données de RÉFÉRENCE (#522) : elles ne s'affichent nulle
-		//  part, elles garnissent les rapprochements d'un nom saisi avec un inscrit
-		//  et un logement. Un échec ne vidait aucune liste — il rendait le
-		//  rapprochement automatique muet, sans que rien ne distingue « aucune
-		//  correspondance » de « je n'ai pas cherché ».
-		const [[users, eUsers], [lotsData, eLots], [importsData, eImports]] = await Promise.all([
-			essayer(adminApi.utilisateurs(), []),
-			essayer(lotsApi.tous(), []),
-			essayer(lotsApi.listImports(), []),
-		]);
-		erreurAnnuaire = messagePartiel(eUsers, eLots, eImports);
-		allUsers = users.map((u) => ({
-			id: u.id,
-			prenom: u.prenom,
-			nom: u.nom,
-			email: u.email,
-			telephone: u.telephone ?? null,
-			batiment_id: u.batiment_id ?? null,
-		}));
-		allLots = lotsData as LotRapproche[];
-		lotImports = importsData;
-		referenceLue = true;
 	}
 
 	// -- Validations handlers -----------------------------------------------
@@ -217,7 +175,7 @@
 
 <ChargementPartiel
 	erreur={erreurReference}
-	consequence="Les numéros de bâtiment peuvent s'afficher « Bât. ? », et le rapprochement automatique des lots ne trouvera rien — faute d'avoir pu chercher."
+	consequence="Les numéros de bâtiment peuvent s'afficher « Bât. ? » — faute d'avoir pu les lire."
 />
 
 <!-- Onglets -->
@@ -371,7 +329,7 @@
 {:else if onglet === 'annuaire'}
 	<ChargementDiffere charger={() => import('#lib/components/OngletAnnuaireCS.svelte')}>
 		{#snippet contenu(OngletAnnuaireCS)}
-			<OngletAnnuaireCS {referenceLue} {sources} />
+			<OngletAnnuaireCS />
 		{/snippet}
 	</ChargementDiffere>
 {/if}

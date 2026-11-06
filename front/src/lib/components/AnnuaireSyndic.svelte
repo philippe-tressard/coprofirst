@@ -4,7 +4,7 @@
   arrivant les lit.
 
   Sorti d'`espace-cs/+page.svelte` le 29/09/2026 (#779, modularité), avec son
-  pendant `AnnuaireConseil` : même amorçage, mêmes données de référence.
+  pendant `AnnuaireConseil` : même amorçage, même rapprochement servi (#2522).
 
   La LISTE vit dans `AnnuaireMembres` depuis le 02/10/2026 (#1539), avec
   l'ordre (`ordonnable`) et le refus d'un membre sans téléphone (`refus`)
@@ -13,14 +13,11 @@
 -->
 <script lang="ts">
 	import { annuaireAdmin, type MembreSyndicAdmin } from '#lib/api/index.ts';
-	import { inscritParNom, type SourcesRapprochement } from '#lib/annuaire-rapprochement.ts';
+	import { rapprochementParNom } from '#lib/annuaire-rapprochement.ts';
 	import EnteteSyndic from '#lib/components/EnteteSyndic.svelte';
 	import { type Geste } from '#lib/components/ActionsMembre.svelte';
 	import AnnuaireMembres from '#lib/components/AnnuaireMembres.svelte';
 	import { type MembreBase } from '#lib/components/CarteMembre.svelte';
-
-	/** Les données de référence du rapprochement par le nom. */
-	export let sources: SourcesRapprochement;
 
 	//  L'identifiant, comme `AnnuaireConseil` : absent pour un membre ajouté à
 	//  l'écran ; présent, il fait mettre à jour le membre EN PLACE. Sans lui, le
@@ -76,14 +73,16 @@
 		user_id: null,
 	});
 
-	/** Le nom saisi lie le membre à un inscrit — sans logement : il n'habite pas ici. */
-	function surNom(i: number) {
-		if (membresSyndic[i].user_id) return;
-		const inscrit = inscritParNom(sources.inscrits, membresSyndic[i].nom);
-		if (inscrit) {
-			membresSyndic[i] = { ...membresSyndic[i], user_id: inscrit.id };
-			membresSyndic = [...membresSyndic];
-		}
+	/** Le nom saisi lie le membre à un inscrit — sans logement : il n'habite pas ici.
+	 *  Le SERVEUR le dit (`GET /admin/annuaire/rapprochement`, #2522). */
+	const rapprocher = rapprochementParNom(false);
+	async function surNom(i: number) {
+		const membre = membresSyndic[i];
+		if (membre.user_id) return;
+		const trouve = await rapprocher(membre.nom);
+		if (!trouve?.user_id || membresSyndic[i] !== membre) return;
+		membresSyndic[i] = { ...membre, user_id: trouve.user_id };
+		membresSyndic = [...membresSyndic];
 	}
 
 	/**
@@ -112,7 +111,9 @@
 			})),
 		});
 
-	/** Un membre du syndic s'enregistre avec au moins un téléphone. */
+	/** Un membre du syndic s'enregistre avec au moins un téléphone. Le SERVEUR en est
+	 *  juge (`utils/annuaire.exiger_un_telephone`, #2522) : ce refus-ci ne fait
+	 *  qu'épargner l'aller-retour, et garder la fiche ouverte. */
 	const refus = (m: MembreSyndicForm) =>
 		m.telephones.some((t) => t.trim()) ? null : 'Au moins un téléphone requis';
 

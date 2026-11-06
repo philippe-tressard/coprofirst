@@ -60,6 +60,7 @@ export * from './bailleur';
 export * from './acces';
 export * from './prestataires';
 export * from './administration';
+export * from './annuaire-admin';
 export * from './textes-legaux';
 export * from './courriels';
 export * from './telemetrie';

@@ -326,13 +326,13 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
  */
 export async function simulerApi(
 	page: Page,
-	reponses: (chemin: string) => unknown = () => undefined,
+	reponses: (chemin: string, adresse: string) => unknown = () => undefined, // adresse : `?nom=`…
 ): Promise<void> {
 	await page.route(
 		(url) => url.pathname.startsWith('/api/'),
 		(route) => {
 			const chemin = new URL(route.request().url()).pathname;
-			let corps = reponses(chemin);
+			let corps = reponses(chemin, route.request().url());
 			if (corps === undefined) {
 				if (chemin === '/api/auth/me') corps = MEMBRE_CS;
 				else if (chemin in REPONSES_PAR_DEFAUT) corps = REPONSES_PAR_DEFAUT[chemin];

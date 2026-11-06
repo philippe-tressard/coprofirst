@@ -4,7 +4,7 @@ Extrait de `admin.py` (2057 lignes) le 06/08/2026, sans modification de logique.
 Voir `__init__.py` pour la règle de découpage.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
 from app.auth.deps import get_current_user, require_cs_or_admin
@@ -17,7 +17,15 @@ from app.models.core import (
     SyndicInfo,
     Utilisateur,
 )
-from app.utils.annuaire import membres_du_conseil, membres_du_syndic, reconcilier_membres
+from app.utils.annuaire import (
+    exiger_un_seul,
+    exiger_un_telephone,
+    membres_du_conseil,
+    membres_du_syndic,
+    rapprochement,
+    rapprocher_les_saisies,
+    reconcilier_membres,
+)
 from app.utils.syndic import nom_du_syndic, source_du_nom
 from typing import Literal, Optional
 
@@ -142,6 +150,69 @@ def annuaire(
 
 
 # ── Annuaire CS — gestion (CS + admin) ──────────────────────────────────────
+#
+#  Typé le 05/11/2026 (#2522) : l'administration lit ce que les résidents lisent,
+#  plus les deux champs de gestion (`ordre`, `user_id`) — `pour_administration`
+#  de `utils/annuaire`. Les écritures rendent la composition ENREGISTRÉE : le lien
+#  à un inscrit et le logement que le serveur vient de rapprocher s'y lisent.
+
+
+class MembreConseilAdmin(MembreConseilLu):
+    ordre: int
+    user_id: Optional[int] = None
+
+
+class MembreSyndicAdmin(MembreSyndicLu):
+    ordre: int
+    user_id: Optional[int] = None
+
+
+class CompositionConseil(ConseilLu):
+    """`GET /admin/annuaire/cs` : le conseil dans l'ordre fixé par l'administration."""
+
+    #: `""` quand aucun lien n'est posé — jamais `None` ici.
+    whatsapp_url: str
+    membres: list[MembreConseilAdmin]
+
+
+class InfoSyndicAdmin(SyndicLu):
+    """`GET /admin/annuaire/syndic` : le nom vient du CONTRAT quand il y en a un (#535)."""
+
+    membres: list[MembreSyndicAdmin]
+
+
+class ConseilEnregistre(CompositionConseil):
+    ok: bool = True
+
+
+class SyndicEnregistre(InfoSyndicAdmin):
+    ok: bool = True
+
+
+class Rapprochement(BaseModel):
+    """Ce qu'un nom saisi désigne (`utils/annuaire.rapprochement`)."""
+
+    #: L'inscrit actif de même nom, s'il y en a un.
+    user_id: Optional[int] = None
+    batiment_id: Optional[int] = None
+    #: Le NUMÉRO du bâtiment (« A »).
+    batiment_nom: Optional[str] = None
+    etage: Optional[int] = None
+
+
+@router.get("/annuaire/rapprochement", response_model=Rapprochement)
+def rapprocher_un_nom(
+    nom: str,
+    localiser: bool = True,
+    session: Session = Depends(get_session),
+    _: Utilisateur = Depends(require_cs_or_admin),
+):
+    """Le nom qu'on saisit dans une fiche : l'inscrit qu'il désigne, et son logement.
+
+    L'écran le montre dès la frappe ; le `PUT` applique la même règle à ce qu'il
+    reçoit — l'app iOS n'a rien à rapprocher elle-même (#2522).
+    """
+    return rapprochement(session, nom, localiser=localiser)
 
 
 class MembreCSIn(BaseModel):
@@ -166,11 +237,15 @@ class CompositionCSIn(BaseModel):
     membres: list[MembreCSIn] = []
 
 
-@router.get("/annuaire/cs")
+@router.get("/annuaire/cs", response_model=CompositionConseil)
 def get_composition_cs(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
+    return _composition_cs(session)
+
+
+def _composition_cs(session: Session) -> dict:
     ag = session.exec(select(AgCsInfo)).first()
     return {
         "ag_annee": ag.ag_annee if ag else None,
@@ -191,18 +266,17 @@ def get_composition_cs(
     }
 
 
-@router.put("/annuaire/cs")
+@router.put("/annuaire/cs", response_model=ConseilEnregistre)
 def put_composition_cs(
     body: CompositionCSIn,
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
-    # Valider qu'il y a au maximum 1 président
-    presidents_count = sum(1 for mb in body.membres if mb.est_president)
-    if presidents_count > 1:
-        raise HTTPException(
-            status_code=400, detail="Il ne peut y avoir qu'un seul président du Conseil Syndical."
-        )
+    exiger_un_seul(
+        body.membres,
+        "est_president",
+        "Il ne peut y avoir qu'un seul président du Conseil Syndical.",
+    )
 
     # Upsert AgCsInfo
     from datetime import date as date_type
@@ -230,10 +304,11 @@ def put_composition_cs(
     #  et ça a ajouté tous les membres du CS qui n'ont pas été modifiés »*. La
     #  règle vit dans `utils/annuaire.reconcilier_membres`, prise aussi par le
     #  syndic — qui avait gardé le remplacement jusqu'au 09/10/2026.
+    rapprocher_les_saisies(session, MembreCS, body.membres, localiser=True)
     reconcilier_membres(session, MembreCS, body.membres)
 
     session.commit()
-    return {"ok": True}
+    return {"ok": True, **_composition_cs(session)}
 
 
 # ── Annuaire Syndic — gestion (CS + admin) ──────────────────────────────────
@@ -260,11 +335,15 @@ class SyndicIn(BaseModel):
     membres: list[MembreSyndicIn] = []
 
 
-@router.get("/annuaire/syndic")
+@router.get("/annuaire/syndic", response_model=InfoSyndicAdmin)
 def get_syndic_info(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
+    return _info_syndic(session)
+
+
+def _info_syndic(session: Session) -> dict:
     syndic = session.exec(select(SyndicInfo)).first()
     return {
         "nom_syndic": nom_du_syndic(session),
@@ -275,12 +354,18 @@ def get_syndic_info(
     }
 
 
-@router.put("/annuaire/syndic")
+@router.put("/annuaire/syndic", response_model=SyndicEnregistre)
 def put_syndic_info(
     body: SyndicIn,
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
+    exiger_un_telephone(body.membres)
+    exiger_un_seul(
+        body.membres,
+        "est_principal",
+        "Il ne peut y avoir qu'un seul interlocuteur principal du syndic.",
+    )
     # Upsert SyndicInfo
     syndic = session.exec(select(SyndicInfo)).first()
     if syndic is None:
@@ -304,7 +389,8 @@ def put_syndic_info(
 
     #  Réconcilier, jamais remplacer : un membre inchangé garde son `cree_le`,
     #  et le fil n'annonce que les vraies arrivées (09/10/2026).
+    rapprocher_les_saisies(session, MembreSyndic, body.membres, localiser=False)
     reconcilier_membres(session, MembreSyndic, body.membres)
 
     session.commit()
-    return {"ok": True}
+    return {"ok": True, **_info_syndic(session)}

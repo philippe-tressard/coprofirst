@@ -58,6 +58,20 @@ class AccueilArrivantBody(BaseModel):
     ancien_resident_inconnu: bool = False
 
 
+class AccueilArrivantResultat(BaseModel):
+    """Ce que l'accueil d'un arrivant a déclenché — typé le 05/11/2026 (#2522)."""
+
+    ok: bool = True
+    notifications_envoyees: int
+    email_syndic: bool
+    #: Le NUMÉRO du ticket de suivi, `None` s'il existait déjà.
+    ticket_suivi: Optional[str] = None
+    annonce_publiee: bool
+    #: Les consignes sont sorties de l'application : c'est ce qui coupe la
+    #: diffusion du ticket.
+    consignes_transmises: bool
+
+
 def _declencher_accueil_arrivant(
     user: Utilisateur,
     body: AccueilArrivantBody,
@@ -270,7 +284,7 @@ def _declencher_accueil_arrivant(
     }
 
 
-@router.post("/utilisateurs/{user_id}/accueil-arrivant")
+@router.post("/utilisateurs/{user_id}/accueil-arrivant", response_model=AccueilArrivantResultat)
 def accueil_arrivant(
     user_id: int,
     body: AccueilArrivantBody,
@@ -283,7 +297,7 @@ def accueil_arrivant(
     return _declencher_accueil_arrivant(user, body, background_tasks, session, allow_repeat=True)
 
 
-@router.post("/me/accueil-arrivant")
+@router.post("/me/accueil-arrivant", response_model=AccueilArrivantResultat)
 def accueil_arrivant_me(
     body: AccueilArrivantBody,
     background_tasks: BackgroundTasks,
