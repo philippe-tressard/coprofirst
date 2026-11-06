@@ -13,6 +13,7 @@ import type {
 	EpinglesCompte,
 	FluxResponse,
 	Notification,
+	NotificationsSupprimees,
 	ReponseRelance,
 	SourceAffiche,
 	Ticket,
@@ -69,6 +70,7 @@ export * from './services';
 export * from './instance';
 export * from './conservation';
 export * from './suivi-affaires';
+export * from './reporting';
 export * from './points-conseil';
 export * from './registre';
 export * from './consignes';
@@ -378,6 +380,7 @@ export const notifications = {
 	list: () => api.get<Notification[]>('/notifications'),
 	markRead: (id: number) => api.patch<Notification>(`/notifications/${id}/lue`),
 	markAllRead: () => api.post('/notifications/tout-marquer-lu'),
+	supprimerLues: () => api.post<NotificationsSupprimees>('/notifications/supprimer-lues'),
 	delete: (id: number) => api.delete(`/notifications/${id}`),
 };
 

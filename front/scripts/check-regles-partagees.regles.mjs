@@ -162,6 +162,29 @@ export const REGLES_PARTAGEES = {
 		api: 'api/app/routers/prestataires_lecture.py#lire_prestataires',
 	},
 
+	//  ── Reporting › Renouvellements (#2525) ──────────────────────────────────
+	//  Servies par `GET /reporting/renouvellements` : le site et l'app iOS lisent le
+	//  même relevé (échéances, ordre, compteurs, année de référence).
+	diagNextDate: {
+		quoi: 'la prochaine échéance d’un diagnostic (dernier rapport + périodicité)',
+		api: 'api/app/utils/echeance_diagnostic.py#prochaine_echeance',
+	},
+	diagUrgence: {
+		quoi: 'l’urgence d’un diagnostic (dépassé, cette année, plus tard)',
+		api: 'api/app/utils/echeance_diagnostic.py#urgence_diagnostic',
+	},
+	contratsAvecEcheance: {
+		quoi: 'les contrats à renouveler, la pire note d’abord, et ce qui tombe dans l’année',
+		api: 'api/app/routers/reporting_renouvellements.py#releve_renouvellements',
+	},
+	diagnosticsAvecEcheance: {
+		quoi: 'les diagnostics applicables rangés par échéance, et les audits à planifier',
+		api: 'api/app/routers/reporting_renouvellements.py#releve_renouvellements',
+	},
+	//  L'année de référence (le jour de Paris) est servie aussi (`releve.annee`) ;
+	//  elle ne se déclare pas sous `anneeCourante`, que le pied de page emploie pour
+	//  son copyright — un homonyme, pas la règle.
+
 	//  ── Affaires (#2508) ─────────────────────────────────────────────────────
 	//  Servies par `TicketRead` (`schemas_affaire_servie`) depuis #2508 : urgence,
 	//  colonne du Kanban, nom affiché. Les gestes (`auth/gestes_affaire`) et les tables
