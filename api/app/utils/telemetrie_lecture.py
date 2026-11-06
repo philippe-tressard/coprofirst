@@ -35,6 +35,7 @@ from app.models.core import (
 from app.utils import horloge
 from app.utils.adoption import Fenetre, adoption
 from app.utils.arrivees_notification import synthese_arrivees
+from app.utils.echeance_contrat import ajouter_mois
 from app.utils.erreurs_navigateur import CONSERVATION_JOURS, synthese_erreurs
 from app.utils.gestes_formulaire import synthese_gestes
 from app.utils.mesures_affichage import synthese_mesures
@@ -86,12 +87,10 @@ class Lecture:
 # ── Fenêtres de chaque portée ────────────────────────────────────────────────
 
 
-def mois_il_y_a(now_paris: datetime, n: int) -> str:
-    """Le mois `n` mois avant celui de `now_paris`, « YYYY-MM »."""
-    y, m = now_paris.year, now_paris.month - n
-    while m <= 0:
-        y, m = y - 1, m + 12
-    return f"{y}-{m:02d}"
+def mois_il_y_a(now_paris: date, n: int) -> str:
+    """Le mois `n` mois avant celui de `now_paris`, « YYYY-MM » (la clé des tables mensuelles)."""
+    mois = ajouter_mois(now_paris.replace(day=1), -n)
+    return f"{mois.year}-{mois.month:02d}"
 
 
 def _depuis_detail(scope: str):

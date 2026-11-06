@@ -51,6 +51,31 @@ def test_la_date_suit_la_frequence_du_contrat(unite, nombre, attendu):
     assert date_prochaine_visite(contrat, date(2026, 9, 23)) == attendu
 
 
+@pytest.mark.parametrize(
+    "unite, nombre, depuis, attendu",
+    [
+        #  Le jour se garde : une visite du 30 ou du 31 ne glisse plus au 28 (#2561).
+        ("mois", 1, date(2026, 3, 30), date(2026, 4, 30)),
+        ("mois", 2, date(2026, 3, 31), date(2026, 5, 31)),
+        ("ans", 1, date(2026, 1, 30), date(2027, 1, 30)),
+        ("fois_par_an", 4, date(2026, 8, 31), date(2026, 11, 30)),
+        #  …et ne déborde que vers le dernier jour du mois d'arrivée.
+        ("mois", 1, date(2027, 1, 31), date(2027, 2, 28)),
+        ("mois", 1, date(2028, 1, 30), date(2028, 2, 29)),
+    ],
+)
+def test_une_visite_du_30_ou_du_31_garde_son_jour(unite, nombre, depuis, attendu):
+    contrat = ContratEntretien(
+        prestataire_id=1,
+        libelle="x",
+        type_equipement="autre",
+        date_debut=date(2020, 1, 1),
+        frequence_type=unite,
+        frequence_valeur=nombre,
+    )
+    assert date_prochaine_visite(contrat, depuis) == attendu
+
+
 def test_un_entretien_sous_contrat_resolu_avance_la_visite_du_contrat(
     session: Session, lecteur: Utilisateur
 ):
