@@ -74,11 +74,11 @@ async function ouvrir(page: Page, syndic: typeof SYNDIC = SYNDIC): Promise<Envoi
 		if (r.method() === 'PUT' && chemin.startsWith('/api/'))
 			envois.push({ chemin, corps: r.postDataJSON() });
 	});
-	await simulerApi(page, (chemin, url) => {
+	await simulerApi(page, (chemin, adresse) => {
 		if (chemin === '/api/admin/annuaire/cs') return CS;
 		if (chemin === '/api/admin/annuaire/syndic') return syndic;
 		if (chemin === '/api/admin/annuaire/rapprochement')
-			return url.searchParams.get('nom') === 'Bernard' ? RAPPROCHE : RIEN;
+			return new URL(adresse).searchParams.get('nom') === 'Bernard' ? RAPPROCHE : RIEN;
 		if (chemin === '/api/auth/batiments') return [{ id: 4, numero: '4' }];
 	});
 	await page.goto('/espace-cs/annuaire');
