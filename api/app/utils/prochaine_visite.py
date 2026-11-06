@@ -32,12 +32,8 @@ from sqlmodel import Session
 
 from app.models.prestataires import ContratEntretien
 from app.models.tickets import CategorieTicket, StatutTicket
+from app.utils.echeance_contrat import ajouter_mois
 from app.utils.valeurs import valeur
-
-
-def _ajouter_mois(depuis: date, mois: int) -> date:
-    m = depuis.month + mois
-    return date(depuis.year + (m - 1) // 12, (m - 1) % 12 + 1, min(depuis.day, 28))
 
 
 def date_prochaine_visite(contrat: ContratEntretien, depuis: date) -> Optional[date]:
@@ -48,11 +44,11 @@ def date_prochaine_visite(contrat: ContratEntretien, depuis: date) -> Optional[d
     if ft == "semaines":
         return depuis + timedelta(weeks=fv)
     if ft == "mois":
-        return _ajouter_mois(depuis, fv)
+        return ajouter_mois(depuis, fv)
     if ft == "fois_par_an":
-        return _ajouter_mois(depuis, max(1, 12 // fv))
+        return ajouter_mois(depuis, max(1, 12 // fv))
     if ft == "ans":
-        return _ajouter_mois(depuis, 12 * fv)
+        return ajouter_mois(depuis, 12 * fv)
     return None
 
 

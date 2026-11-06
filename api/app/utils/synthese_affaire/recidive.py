@@ -39,6 +39,7 @@ from sqlmodel import Session, col, select
 from app.models.core import Ticket
 from app.models.tickets import StatutTicket
 from app.utils.affaire_absorbee import pas_absorbee
+from app.utils.echeance_contrat import ajouter_mois
 from app.utils.perimetres import parse_json_perimetres
 
 #: Le nombre d'AUTRES affaires à partir duquel on parle de récidive.
@@ -47,19 +48,6 @@ SEUIL_AUTRES = 2
 FENETRE_MOIS = 24
 #: La clé du relevé dans `metriques_json`.
 CLE = "recidive"
-
-
-def il_y_a_mois(quand: datetime, mois: int) -> datetime:
-    """PURE. `quand` reculé de `mois` mois civils ; un jour qui n'existe pas dans le
-    mois d'arrivée (le 29/02) retombe sur le dernier jour de ce mois."""
-    total = quand.year * 12 + (quand.month - 1) - mois
-    annee, mois_d_arrivee = divmod(total, 12)
-    jour = quand.day
-    while True:
-        try:
-            return quand.replace(year=annee, month=mois_d_arrivee + 1, day=jour)
-        except ValueError:
-            jour -= 1
 
 
 def perimetre_de(ticket: Ticket) -> tuple[str, ...]:
@@ -77,7 +65,7 @@ def recidive_de(session: Session, ticket: Ticket, cloture_le: datetime) -> Optio
             Ticket.id != ticket.id,
             Ticket.equipement == ticket.equipement,
             col(Ticket.statut).in_([StatutTicket.résolu.value]),
-            col(Ticket.ferme_le) >= il_y_a_mois(cloture_le, FENETRE_MOIS),
+            col(Ticket.ferme_le) >= ajouter_mois(cloture_le, -FENETRE_MOIS),
             col(Ticket.ferme_le) <= cloture_le,
             pas_absorbee(),  # comptée dans sa principale (#1704)
         )
@@ -102,4 +90,4 @@ def recidive_de(session: Session, ticket: Ticket, cloture_le: datetime) -> Optio
     }
 
 
-__all__ = ["CLE", "FENETRE_MOIS", "SEUIL_AUTRES", "il_y_a_mois", "perimetre_de", "recidive_de"]
+__all__ = ["CLE", "FENETRE_MOIS", "SEUIL_AUTRES", "perimetre_de", "recidive_de"]

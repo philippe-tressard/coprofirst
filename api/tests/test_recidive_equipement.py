@@ -21,13 +21,13 @@ import pytest
 from app.models.core import RoleUtilisateur, StatutUtilisateur, Ticket
 from app.models.synthese import BROUILLON, SyntheseAffaire
 from app.utils import horloge
+from app.utils.echeance_contrat import ajouter_mois
 from app.utils.synthese_affaire.lecture import metriques, synthese_lue
 from app.utils.synthese_affaire.rassemblement import construire_message, metriques_de
 from app.utils.synthese_affaire.recidive import (
     CLE,
     FENETRE_MOIS,
     SEUIL_AUTRES,
-    il_y_a_mois,
     recidive_de,
 )
 from tests.aides_base import compte
@@ -62,14 +62,14 @@ def auteur(session):
 
 # ── La fenêtre ──────────────────────────────────────────────────────────────────
 def test_il_y_a_vingt_quatre_mois():
-    assert il_y_a_mois(datetime(2026, 10, 3, 12, 0), 24) == datetime(2024, 10, 3, 12, 0)
-    assert il_y_a_mois(datetime(2026, 1, 15), 2) == datetime(2025, 11, 15)
+    assert ajouter_mois(datetime(2026, 10, 3, 12, 0), -24) == datetime(2024, 10, 3, 12, 0)
+    assert ajouter_mois(datetime(2026, 1, 15), -2) == datetime(2025, 11, 15)
 
 
 def test_un_jour_qui_n_existe_pas_retombe_sur_le_dernier_du_mois():
     #  Le 29/02/2028 reculé de 24 mois : février 2026 n'a que 28 jours.
-    assert il_y_a_mois(datetime(2028, 2, 29), 24) == datetime(2026, 2, 28)
-    assert il_y_a_mois(datetime(2026, 3, 31), 1) == datetime(2026, 2, 28)
+    assert ajouter_mois(datetime(2028, 2, 29), -24) == datetime(2026, 2, 28)
+    assert ajouter_mois(datetime(2026, 3, 31), -1) == datetime(2026, 2, 28)
 
 
 def test_les_valeurs_arbitrees_sont_celles_du_conseil():
@@ -101,7 +101,7 @@ def test_ce_qui_ne_compte_pas(session, auteur):
     #  annulée : pas une intervention
     _affaire(session, auteur, 4, ferme_le=CLOTURE - timedelta(days=50), statut="annulé")
     #  hors fenêtre : il y a plus de 24 mois
-    _affaire(session, auteur, 5, ferme_le=il_y_a_mois(CLOTURE, 24) - timedelta(days=1))
+    _affaire(session, auteur, 5, ferme_le=ajouter_mois(CLOTURE, -24) - timedelta(days=1))
     #  close APRÈS celle-ci : ce n'est pas du passé
     _affaire(session, auteur, 6, ferme_le=CLOTURE + timedelta(days=5))
     #  un autre équipement

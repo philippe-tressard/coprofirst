@@ -51,11 +51,15 @@ un repli sur « aujourd'hui + 1 an » afficherait une échéance inventée. C'es
 cas zéro, et il rend `None`.
 """
 
+import calendar
 from datetime import date
 from app.utils import horloge
-from typing import NamedTuple, Optional, Protocol
+from typing import NamedTuple, Optional, Protocol, TypeVar
 from app.utils.equipements import SYNDIC
 from app.utils.valeurs import valeur
+
+#: Une `date` ou une `datetime` : `ajouter_mois` rend le type qu'il reçoit.
+_D = TypeVar("_D", bound=date)
 
 
 class _Contrat(Protocol):
@@ -106,30 +110,22 @@ class Echeance(NamedTuple):
     echu: bool = False
 
 
-def ajouter_mois(depart: date, mois: int) -> date:
-    """`depart` + `mois`, en ramenant le jour au dernier du mois s'il déborde.
+def ajouter_mois(depart: _D, mois: int) -> _D:
+    """`depart` + `mois` (négatif : recule), en ramenant le jour au dernier du mois s'il déborde.
+
+    La SEULE écriture de « une date plus N mois » (#2561) : échéances, préavis,
+    prochaine visite, diagnostics, fenêtre de récidive, mois de la télémétrie.
+    Une `datetime` garde son heure. 🔒 `test_ajouter_mois_source_unique.py`.
 
     ⚠️ 31 janvier + 1 mois n'existe pas. Sans ce ramené, la dérivation lèverait
     `ValueError` sur un contrat commencé un 31 — un défaut qui ne se
-    manifesterait que sur sept jours de l'année, donc jamais en essai.
+    manifesterait que sur sept jours de l'année, donc jamais en essai. Le jour
+    n'est JAMAIS borné plus bas : une copie qui le bornait à 28 faisait glisser
+    pour toujours au 28 les visites d'un contrat commencé un 29, 30 ou 31.
     """
-    total = (depart.year * 12 + depart.month - 1) + mois
-    annee, mois_final = divmod(total, 12)
-    dernier = [
-        31,
-        29 if (annee % 4 == 0 and annee % 100 != 0) or annee % 400 == 0 else 28,
-        31,
-        30,
-        31,
-        30,
-        31,
-        31,
-        30,
-        31,
-        30,
-        31,
-    ][mois_final]
-    return date(annee, mois_final + 1, min(depart.day, dernier))
+    annee, mois_final = divmod(depart.year * 12 + depart.month - 1 + mois, 12)
+    dernier = calendar.monthrange(annee, mois_final + 1)[1]
+    return depart.replace(year=annee, month=mois_final + 1, day=min(depart.day, dernier))
 
 
 def echeance_du_contrat(contrat: _Contrat, aujourdhui: Optional[date] = None) -> Optional[Echeance]:
