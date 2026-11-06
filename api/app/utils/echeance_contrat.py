@@ -106,7 +106,7 @@ class Echeance(NamedTuple):
     echu: bool = False
 
 
-def _ajouter_mois(depart: date, mois: int) -> date:
+def ajouter_mois(depart: date, mois: int) -> date:
     """`depart` + `mois`, en ramenant le jour au dernier du mois s'il déborde.
 
     ⚠️ 31 janvier + 1 mois n'existe pas. Sans ce ramené, la dérivation lèverait
@@ -151,12 +151,12 @@ def echeance_du_contrat(contrat: _Contrat, aujourdhui: Optional[date] = None) ->
     tacite = type_ not in SANS_RECONDUCTION_TACITE
 
     if duree and unite == "ans":
-        fin = _ajouter_mois(contrat.date_debut, 12 * duree)
+        fin = ajouter_mois(contrat.date_debut, 12 * duree)
     elif duree and unite == "mois":
-        fin = _ajouter_mois(contrat.date_debut, duree)
+        fin = ajouter_mois(contrat.date_debut, duree)
     elif tacite:
         #  Durée inconnue → annuel. Voir l'avertissement du module.
-        fin = _ajouter_mois(contrat.date_debut, 12)
+        fin = ajouter_mois(contrat.date_debut, 12)
     else:
         #  🔴 Durée inconnue ET pas de reconduction : on ne sait RIEN du terme.
         #
@@ -174,7 +174,7 @@ def echeance_du_contrat(contrat: _Contrat, aujourdhui: Optional[date] = None) ->
 
     reconduit = False
     while fin <= reference:
-        fin = _ajouter_mois(fin, 12)
+        fin = ajouter_mois(fin, 12)
         reconduit = True
     return Echeance(fin, reconduit)
 
@@ -186,7 +186,7 @@ PREAVIS_MOIS = 3
 
 def date_preavis(fin: Optional[date]) -> Optional[date]:
     """Le jour où le préavis commence — `None` sans terme connu."""
-    return _ajouter_mois(fin, -PREAVIS_MOIS) if fin else None
+    return ajouter_mois(fin, -PREAVIS_MOIS) if fin else None
 
 
 def urgence_echeance(fin: Optional[date], aujourdhui: Optional[date] = None) -> Optional[str]:

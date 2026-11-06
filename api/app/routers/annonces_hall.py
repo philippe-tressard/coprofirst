@@ -20,7 +20,7 @@ from sqlmodel import Session, select
 
 from app.auth.deps import require_admin, require_cs_or_admin
 from app.database import get_session
-from app.models.core import AnnonceHall, Document, Utilisateur
+from app.models.core import AnnonceHall, Document, RoleUtilisateur, Utilisateur
 from app.utils.archivage import est_archivable, seuil_archivage_jours
 from app.utils.annonce_hall import (
     APERCU_MAX,
@@ -75,11 +75,13 @@ DOSSIER_PDF = DOSSIER_AFFICHES
 #  modularité) : ce qui DÉCLARE part, ce qui DÉCIDE reste.
 from app.utils.liens import adresse_du_site, nom_site
 from app.utils.logo import logo_televerse_png
+from app.utils.lecture import lire_objet
 from app.utils.recuperer import fichier_ou_404, ou_404, ou_rien
 from app.routers.annonces_hall_schemas import (  # noqa: E402
     AnnonceHallArchive,
     AnnonceHallBase,
     AnnonceHallCreate,
+    AnnonceHallRead,
 )
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -132,35 +134,29 @@ def _html_params(
     }
 
 
-def _to_read(annonce: AnnonceHall, session: Session) -> dict:
+def _to_read(annonce: AnnonceHall, session: Session, lecteur: Utilisateur) -> AnnonceHallRead:
     auteur = ou_rien(session, Utilisateur, annonce.auteur_id)
     perimetres = parse_json_perimetres(annonce.perimetre_cible)
-    return {
-        "id": annonce.id,
-        "titre": annonce.titre,
-        "message": annonce.message,
-        "assiste_ia": annonce.assiste_ia,
-        "apercu": texte_brut(annonce.message)[:APERCU_MAX],
-        "perimetre_cible": perimetres,
-        "perimetre_label": perimetre_label_liste(perimetres),
-        "format_demande": annonce.format_demande,
-        "format_effectif": annonce.format_effectif,
-        "format_label": format_libelle(annonce.format_effectif),
-        "images": json.loads(annonce.images_json or "[]"),
-        "pdf_nom": annonce.pdf_nom,
-        "taille_octets": annonce.taille_octets,
-        "destinataires": json.loads(annonce.destinataires or "[]"),
-        "envoye_le": annonce.envoye_le.isoformat() if annonce.envoye_le else None,
-        #  🔴 EFFECTIF, et non la colonne : la règle du site archive une affiche
-        #  30 jours après son envoi, que personne n'ait rien coché.
-        "archivee": est_archivable(
-            "annonce_hall", annonce, seuil_jours=seuil_archivage_jours(session)
-        ),
-        "archivee_manuellement": annonce.archivee,
-        "ticket_id": annonce.ticket_id,
-        "cree_le": annonce.cree_le.isoformat(),
-        "auteur_nom": nom_auteur(auteur),
-    }
+    #  🔴 EFFECTIF, et non la colonne : la règle du site archive une affiche
+    #  30 jours après son envoi, que personne n'ait rien coché.
+    archivee = est_archivable("annonce_hall", annonce, seuil_jours=seuil_archivage_jours(session))
+    return lire_objet(
+        AnnonceHallRead,
+        annonce,
+        apercu=texte_brut(annonce.message)[:APERCU_MAX],
+        perimetre_cible=perimetres,
+        perimetre_label=perimetre_label_liste(perimetres),
+        format_label=format_libelle(annonce.format_effectif),
+        images=json.loads(annonce.images_json or "[]"),
+        destinataires=json.loads(annonce.destinataires or "[]"),
+        archivee=archivee,
+        archivee_manuellement=annonce.archivee,
+        auteur_nom=nom_auteur(auteur),
+        #  Les gestes de l'Historique, servis à l'app iOS comme au site (#2525).
+        peut_archiver=not archivee,
+        peut_restaurer=archivee and annonce.archivee,
+        peut_supprimer=lecteur.has_role(RoleUtilisateur.admin),  # = `require_admin`
+    )
 
 
 def images_de(ticket, session: Session) -> list[str]:
@@ -202,11 +198,13 @@ def _supprimer_fichier(annonce: AnnonceHall) -> None:
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 
-@router.get("", summary="Historique des annonces de hall (CS/Admin)")
+@router.get(
+    "", response_model=list[AnnonceHallRead], summary="Historique des annonces de hall (CS/Admin)"
+)
 def list_annonces_hall(
     archivees: bool = False,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    user: Utilisateur = Depends(require_cs_or_admin),
 ):
     #  🔴 LE TRI SE FAIT EN PYTHON, plus en SQL (#515, 02/09/2026).
     #
@@ -225,7 +223,7 @@ def list_annonces_hall(
     retenues = [
         a for a in toutes if est_archivable("annonce_hall", a, seuil_jours=seuil_jours) == archivees
     ]
-    return [_to_read(a, session) for a in retenues]
+    return [_to_read(a, session, user) for a in retenues]
 
 
 @router.post("/previsualiser", summary="Aperçu HTML de l'annonce avant envoi (CS/Admin)")
@@ -376,7 +374,12 @@ def creer_annonce_hall(
     return annonce
 
 
-@router.post("", status_code=201, summary="Créer une annonce de hall (CS/Admin)")
+@router.post(
+    "",
+    status_code=201,
+    response_model=AnnonceHallRead,
+    summary="Créer une annonce de hall (CS/Admin)",
+)
 def create_annonce_hall(
     body: AnnonceHallCreate,
     background_tasks: BackgroundTasks,
@@ -399,7 +402,7 @@ def create_annonce_hall(
         envoyer_auteur=body.envoyer_auteur,
         assiste_ia=body.assiste_ia,
     )
-    return _to_read(annonce, session)
+    return _to_read(annonce, session, user)
 
 
 @router.get("/{annonce_id}/pdf", summary="Télécharger le PDF d'une annonce (CS/Admin)")
@@ -442,19 +445,23 @@ def renvoyer_email(
     session.commit()
 
 
-@router.patch("/{annonce_id}", summary="Archiver / désarchiver une annonce (CS/Admin)")
+@router.patch(
+    "/{annonce_id}",
+    response_model=AnnonceHallRead,
+    summary="Archiver / désarchiver une annonce (CS/Admin)",
+)
 def archiver_annonce(
     annonce_id: int,
     body: AnnonceHallArchive,
     session: Session = Depends(get_session),
-    _: Utilisateur = Depends(require_cs_or_admin),
+    user: Utilisateur = Depends(require_cs_or_admin),
 ):
     annonce = ou_404(session, AnnonceHall, annonce_id, "Annonce")
     annonce.archivee = body.archivee
     session.add(annonce)
     session.commit()
     session.refresh(annonce)
-    return _to_read(annonce, session)
+    return _to_read(annonce, session, user)
 
 
 @router.delete(

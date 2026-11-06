@@ -6,10 +6,14 @@ découpage du même fichier, après `annonces_hall_courriels` et
 `annonces_hall_apercu` — la couture est la même à chaque fois : ce qui DÉCLARE
 part, ce qui DÉCIDE reste.
 
-⚠️ `AnnonceHallRead` n'existe pas : la lecture est construite à la main par
-`_to_read`, qui compose le PDF, les destinataires et l'état d'archivage. La
-déclarer ici en ferait une seconde description de la même sortie.
+`AnnonceHallRead` est la SEULE description de la lecture depuis #2525 : elle
+n'existait pas (« la déclarer ferait une seconde description de `_to_read` »), et
+le contrat annonçait donc `{}` à l'app iOS. `_to_read` la remplit, sans se décrire
+à côté.
 """
+
+from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -59,3 +63,58 @@ class AnnonceHallArchive(BaseModel):
     """
 
     archivee: bool
+
+
+class AnnonceHallRead(BaseModel):
+    """Une affiche de hall telle que l'Historique la montre, ses gestes compris (#2525)."""
+
+    id: int
+    titre: str
+    message: str
+    assiste_ia: bool = False
+    apercu: str
+    perimetre_cible: list[str]
+    perimetre_label: str
+    format_demande: str
+    format_effectif: str
+    format_label: str
+    images: list[str]
+    pdf_nom: str
+    taille_octets: Optional[int] = None
+    destinataires: list[str]
+    envoye_le: Optional[datetime] = None
+    #: EFFECTIF : archivée à la main, ou par la règle du site (#515).
+    archivee: bool
+    #: La décision humaine seule — ce que « Restaurer » défait.
+    archivee_manuellement: bool
+    ticket_id: Optional[int] = None
+    cree_le: datetime
+    auteur_nom: str
+    #: 📦 « Archiver » : tant qu'elle n'est pas rangée.
+    peut_archiver: bool
+    #: ↩️ « Restaurer » : rangée À LA MAIN — rangée par le temps, le geste n'aurait
+    #: aucun effet, et il ne s'offre pas (#515).
+    peut_restaurer: bool
+    #: 🗑️ « Supprimer définitivement » : l'administrateur (`require_admin`).
+    peut_supprimer: bool
+
+
+class SourceReprenable(BaseModel):
+    """Un élément du fil qu'une affiche peut reprendre (`utils/sources_affiche`)."""
+
+    cle: str
+    type: str
+    famille: str
+    id: int
+    titre: str
+    date: datetime
+    epingle: bool
+
+
+class PrefillAffiche(BaseModel):
+    """Les champs d'un élément du fil, prêts à garnir le formulaire d'affiche."""
+
+    titre: str
+    message: str
+    perimetre_cible: list[str]
+    images: list[str]
