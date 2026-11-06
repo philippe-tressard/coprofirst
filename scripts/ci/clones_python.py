@@ -10,11 +10,11 @@ n'empêchait d'en écrire de nouvelles. Ce contrôle est le garde-fou
 DISPARAÎT sans que le plafond baisse — sinon la marge libérée servirait à en
 réintroduire un autre.
 
-## Ce qui reste (6 au 02/10/2026) — des jumeaux légitimes, pas de la dette
+## Ce qui reste (5 au 05/11/2026) — des jumeaux légitimes, pas de la dette
 
 Rien de ce qui reste n'est une règle écrite deux fois : ce sont des **déclarations**
 que le langage force à répéter — le bloc d'imports d'un routeur voisin
-(`admin/annuaire` ↔ `admin/profils`, `admin/arrivants` ↔ `admin/comptes`,
+(`admin/arrivants` ↔ `admin/comptes`,
 `calendrier` ↔ `publications`), l'en-tête d'un module jumeau
 (`import_telecommandes` ↔ `import_vigiks`) et
 deux signatures de fonctions qui doivent rester identiques
@@ -46,7 +46,9 @@ import tempfile
 #: 🔴 Ce nombre ne monte JAMAIS. Il descend quand un clone disparaît.
 #: Déclarations permanentes : le compte ne baisse que si l'une cesse de servir
 #: (relevé de clôture de la carte #1571, 30/10/2026 — aucune dette à solder).
-PLAFOND_CLONES = 6
+#: 6 → 5 le 05/11/2026 (#2522) : le bloc d'imports `admin/annuaire` ↔ `admin/profils`
+#: a cessé d'être identique quand l'annuaire a pris ses règles de saisie.
+PLAFOND_CLONES = 5
 
 #: ÉPINGLÉ : le compte change d'une version à l'autre de l'outil. Monter la
 #: version = un lot dédié, qui relit le plafond.

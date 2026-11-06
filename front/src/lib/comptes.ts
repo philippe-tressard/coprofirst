@@ -21,99 +21,17 @@
  * 🔴 `standards/02` §4 bis : quand deux implémentations coexistent, on retient
  * **la plus disante**. C'est elle qui est ici, et les deux écrans l'obtiennent.
  */
-import {
-	admin as adminApi,
-	type CompteTraite,
-	type ResultatAutoMatch,
-	type User,
-} from '#lib/api/index.ts';
-import { nomAffiche } from '#lib/noms.ts';
+import { admin as adminApi, type Annonce, type User } from '#lib/api/index.ts';
 
-/** Un message à afficher, et le ton sur lequel le dire. */
-export interface Annonce {
-	ton: 'success' | 'warning' | 'error';
-	texte: string;
-}
+//  🔴 `annonceValidation` et `annonceLocataire` ont QUITTÉ ce module le 05/11/2026
+//  (#2522) : la phrase que rend une validation — « 3 lot(s) résolu(s)
+//  automatiquement », « ⚠️ Aucun lot trouvé dans l'import » — se compose au serveur
+//  (`utils/annonce_compte`), et les deux clients la lisent dans `annonce`. L'app iOS,
+//  qui ne recopie aucune règle du site, disait « Compte activé. » et perdait
+//  l'avertissement. Les textes sont restés les mêmes, au caractère près.
 
-/**
- * Ce que le serveur vient de faire, traduit en une phrase.
- *
- * ⚠️ Séparée de l'appel réseau pour être vérifiable sans rien monter : c'est la
- * partie qui porte les six cas, donc celle qui peut se tromper.
- */
-/**  Ce que la validation lit du compte : identifiant, statut, nom de l'aidé(e). */
-type CompteAValider = Pick<User, 'id' | 'statut' | 'nom_aide' | 'prenom_aide'>;
-
-export function annonceValidation(reponse: CompteTraite, utilisateur: CompteAValider): Annonce {
-	const auto = reponse?.auto_match;
-	const aide = auto?.aide_match;
-	if (aide?.aide_trouve) {
-		const parts = [`Compte activé — aidé(e) : ${aide.aide_nom}`];
-		if (aide.lots > 0) parts.push(`${aide.lots} lot(s)`);
-		if (aide.tc > 0) parts.push(`${aide.tc} TC`);
-		if (aide.vigik > 0) parts.push(`${aide.vigik} vigik`);
-		if (aide.delegation) parts.push('délégation créée');
-		return { ton: 'success', texte: parts.join(' — ') };
-	}
-	if (aide && !aide.aide_trouve) {
-		const nom = nomAffiche(utilisateur?.prenom_aide, utilisateur?.nom_aide);
-		return {
-			ton: 'warning',
-			texte: `Compte activé — ⚠️ Copropriétaire aidé(e) « ${nom} » non trouvé(e). Affectation manuelle requise.`,
-		};
-	}
-	const locataire = annonceLocataire(auto, utilisateur?.statut);
-	if (locataire) return { ton: locataire.ton, texte: `Compte activé — ${locataire.texte}` };
-	const resolus = auto?.lots_resolus ?? 0;
-	if (resolus > 0) {
-		return {
-			ton: 'success',
-			texte: `Compte activé — ${resolus} lot(s) résolu(s) automatiquement.`,
-		};
-	}
-	const trouves = auto?.lots ?? 0;
-	if (trouves > 0) {
-		return { ton: 'success', texte: `Compte activé — ${trouves} lot(s) trouvé(s) dans l'import.` };
-	}
-	//  ⚠️ Un AVERTISSEMENT, pas un succès : un copropriétaire sans lot ne pourra
-	//  rien consulter. Le silence de l'espace CS sur ce cas est le défaut que ce
-	//  module supprime.
-	if (utilisateur?.statut?.startsWith('copropriétaire')) {
-		return { ton: 'warning', texte: "Compte activé — ⚠️ Aucun lot trouvé dans l'import." };
-	}
-	return { ton: 'success', texte: 'Compte activé.' };
-}
-
-/**
- * Ce que l'appariement a fait d'un LOCATAIRE — `null` pour tout autre statut.
- *
- * Lue par la validation ET par « Relancer l'appariement » : un locataire resté
- * sans lot se taisait, et l'administration le rattachait à la main sans savoir
- * pourquoi (#2267).
- */
-export function annonceLocataire(
-	auto: Partial<ResultatAutoMatch> | undefined,
-	statut: string | undefined,
-): Annonce | null {
-	if (statut !== 'locataire' || !auto) return null;
-	const office = auto.lots_d_office ?? 0;
-	if (office > 0) {
-		return {
-			ton: 'success',
-			texte: `rattaché d'office à ${office} lot(s) du fichier des lots, badges remis.`,
-		};
-	}
-	const badges = auto.badges_remis ?? 0;
-	if (badges > 0) return { ton: 'success', texte: `${badges} badge(s) de ses lots remis.` };
-	if ((auto.baux ?? 0) > 0 || (auto.rattache ?? 0) > 0) {
-		return { ton: 'success', texte: 'rattaché à son bail ou à son bailleur.' };
-	}
-	return {
-		ton: 'warning',
-		texte:
-			'⚠️ aucun lot désigné sans ambiguïté : il le déclarera dans « Mes lots », ou à rattacher à la main.',
-	};
-}
+/**  Ce que la validation lit du compte : son identifiant. */
+type CompteAValider = Pick<User, 'id'>;
 
 /** Ce que l'accueil d'un nouvel arrivant déclenche — dit en toutes lettres. */
 export const ANNONCE_ACCUEIL =
@@ -139,7 +57,7 @@ export async function validerCompte(
 	demande: ValidationDemandee,
 ): Promise<Annonce[]> {
 	const reponse = await adminApi.traiterCompte(utilisateur.id, { action: 'valider' });
-	const annonces: Annonce[] = [annonceValidation(reponse, utilisateur)];
+	const annonces: Annonce[] = reponse.annonce ? [reponse.annonce] : [];
 	if (demande.nouvelArrivant) {
 		await adminApi.accueilArrivant(utilisateur.id, {
 			batiment: demande.batiment || null,

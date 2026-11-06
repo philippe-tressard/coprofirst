@@ -1423,10 +1423,6 @@ jobs:
           # `#lib/accordeon` (groupes, correction qui reste ouverte, main rendue à
           # la destruction) et le refus d'un nouvel état d'ouverture en `Set`.
           npm run lint:accordeon
-          # Retrouver l'inscrit et le logement d'un membre de l'annuaire par son
-          # NOM (#779) : ces règles vivaient dans une page, sans aucun test. Un
-          # parking ou une cave ne localise pas ; le lot résolu l'emporte.
-          npm run lint:annuaire-rapprochement
           # « Ce prompt est-il celui d'origine ? » (#994) : l'écran comparait au
           # VIDE, donc un texte collé identique s'annonçait « modifié » et une
           # origine plus récente ne se signalait jamais. Ce qui est fragile n'est

@@ -17,68 +17,13 @@
 import type { User } from './types';
 import type { CommandeAcces } from './acces';
 
-/**  Un « OK » sans autre contenu — les écritures de l'annuaire, d'un message
+/**  Un « OK » sans autre contenu — la correction d'un message
  *   WhatsApp planifié. */
 export interface Accuse {
 	ok: true;
 }
 
-//  ── Annuaire du conseil et du syndic (`routers/admin/annuaire.py`) ─────────────
-
-/**  Un membre du conseil, tel que l'ADMINISTRATION le lit
- *   (`utils/annuaire.membres_du_conseil(pour_administration=True)`). */
-export interface MembreConseilAdmin {
-	id: number;
-	genre: string;
-	prenom: string;
-	nom: string;
-	batiment_id: number | null;
-	/** Le NUMÉRO du bâtiment (« A »), pas son libellé (« Bât. A »). */
-	batiment_nom: string | null;
-	etage: number | null;
-	est_gestionnaire_site: boolean;
-	est_president: boolean;
-	photo_url: string | null;
-	ordre: number;
-	user_id: number | null;
-}
-
-/**  `GET /admin/annuaire/cs`. */
-export interface CompositionConseil {
-	ag_annee: number | null;
-	/** ISO « AAAA-MM-JJ », ou `null`. */
-	ag_date: string | null;
-	/** `""` quand aucun lien n'est posé — jamais `null` ici. */
-	whatsapp_url: string;
-	membres: MembreConseilAdmin[];
-}
-
-/**  Un interlocuteur du syndic, tel que l'ADMINISTRATION le lit
- *   (`utils/annuaire.membres_du_syndic(pour_administration=True)`). */
-export interface MembreSyndicAdmin {
-	id: number;
-	genre: string;
-	prenom: string;
-	nom: string;
-	fonction: string | null;
-	email: string | null;
-	/** Plusieurs numéros séparés par des virgules, s'il y en a. */
-	telephone: string | null;
-	est_principal: boolean;
-	photo_url: string | null;
-	ordre: number;
-	user_id: number | null;
-}
-
-/**  `GET /admin/annuaire/syndic`. Le nom vient du CONTRAT quand il y en a un
- *   (#535) : `nom_syndic_source` dit si la saisie sert encore. */
-export interface InfoSyndicAdmin {
-	nom_syndic: string;
-	nom_syndic_source: 'contrat' | 'saisie' | 'aucune';
-	adresse: string;
-	site_web: string | null;
-	membres: MembreSyndicAdmin[];
-}
+//  ── Annuaire du conseil et du syndic : `./types-annuaire` (#2522) ────────────
 
 //  ── Délégations d'aidant (`routers/delegations.py`, `_to_read`) ────────────────
 
@@ -144,12 +89,22 @@ export interface AppariementAide {
 export interface CompteTraite {
 	user: User;
 	auto_match: Partial<ResultatAutoMatch> & { aide_match?: AppariementAide };
+	/** La phrase à afficher, composée par le serveur (#2522) — `null` sur un refus. */
+	annonce: Annonce | null;
+}
+
+/**  Un message à afficher, et le ton sur lequel le dire (`utils/annonce_compte`). */
+export interface Annonce {
+	ton: 'success' | 'warning' | 'error' | 'info';
+	texte: string;
 }
 
 /**  `POST /admin/utilisateurs/{id}/auto-match`. */
 export interface AutoMatchRelance {
 	ok: true;
 	auto_match: ResultatAutoMatch;
+	/** « Prénom NOM — 2 lot(s) résolu(s) automatiquement. » (#2522). */
+	annonce: Annonce;
 }
 
 /**  `GET /admin/comptes-en-attente/enrichis` (`CompteEnAttenteItem`). */
@@ -207,6 +162,11 @@ export interface CommandeAccesEnAttente extends CommandeAcces {
 	lot: string;
 	/** « Bât. 4 », `null` pour un lot sans bâtiment. */
 	batiment: string | null;
+}
+
+/**  `POST /admin/commandes-acces/{id}/traiter` : le nouvel état (#2522). */
+export interface CommandeTraitee {
+	statut: 'en_attente' | 'acceptee' | 'refusee';
 }
 
 /**  Une demande de modification de profil en attente : la ligne

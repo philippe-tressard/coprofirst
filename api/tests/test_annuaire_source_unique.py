@@ -73,8 +73,10 @@ def test_les_deux_ecrans_rendent_la_MEME_composition():
     #  NOTION, et n'a pas ce défaut.
     attendus = (
         (annuaire, "annuaire", ("membres_du_conseil", "membres_du_syndic")),
-        (annuaire, "get_composition_cs", ("membres_du_conseil",)),
-        (annuaire, "get_syndic_info", ("membres_du_syndic",)),
+        #  La lecture ET l'écriture rendent la composition (#2522) : elle se compose
+        #  une fois, chez ces deux fonctions, que le GET et le PUT appellent.
+        (annuaire, "_composition_cs", ("membres_du_conseil",)),
+        (annuaire, "_info_syndic", ("membres_du_syndic",)),
         (arrivants, "get_fiche_arrivant", ("membres_du_conseil", "membres_du_syndic")),
     )
     for module, fonction, sources in attendus:

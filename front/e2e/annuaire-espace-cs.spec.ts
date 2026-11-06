@@ -9,8 +9,8 @@
  *  • les deux sections s'amorcent seules et rendent leurs membres, avec les
  *    pastilles de rôle HABILLÉES (leur style a changé de fichier : une pastille
  *    nue ne lèverait rien, v2.67.11) ;
- *  • un NOM saisi lie le membre à un inscrit et le localise par le registre
- *    importé, et c'est ce qui PART au serveur ;
+ *  • un NOM saisi lie le membre à un inscrit et le localise — le SERVEUR le dit
+ *    depuis #2522 (`GET /admin/annuaire/rapprochement`) —, et c'est ce qui PART ;
  *  • le syndic refuse un membre sans téléphone, sans rien envoyer.
  *
  *  Depuis le 02/10/2026 (#1539), les deux listes passent par `AnnuaireMembres`,
@@ -59,15 +59,10 @@ const SYNDIC = {
 		},
 	],
 };
-const INSCRITS = [
-	{ id: 42, prenom: 'Luc', nom: 'Bernard', email: 'l@b.fr', telephone: null, batiment_id: 4 },
-];
-const LOTS = [
-	{ id: 9, numero: '41', type: 'appartement', etage: 1, batiment_id: 4, batiment_nom: 'Bât. 4' },
-];
-const IMPORTS = [
-	{ nom_coproprietaire: 'BERNARD Luc', type_raw: 'AP', etage_raw: '1ER', lot_id: 9 },
-];
+//  Ce que le serveur rapproche d'un nom (`Rapprochement`) : l'inscrit 42, au
+//  1er étage du bâtiment 4 — pour « Bernard » seulement.
+const RAPPROCHE = { user_id: 42, batiment_id: 4, batiment_nom: '4', etage: 1 };
+const RIEN = { user_id: null, batiment_id: null, batiment_nom: null, etage: null };
 
 //  Ce que l'écran envoie, tel que les assertions le lisent.
 type Envoi = { chemin: string; corps: { membres: { id?: number; nom: string }[] } };
@@ -79,12 +74,11 @@ async function ouvrir(page: Page, syndic: typeof SYNDIC = SYNDIC): Promise<Envoi
 		if (r.method() === 'PUT' && chemin.startsWith('/api/'))
 			envois.push({ chemin, corps: r.postDataJSON() });
 	});
-	await simulerApi(page, (chemin) => {
+	await simulerApi(page, (chemin, adresse) => {
 		if (chemin === '/api/admin/annuaire/cs') return CS;
 		if (chemin === '/api/admin/annuaire/syndic') return syndic;
-		if (chemin === '/api/admin/utilisateurs') return INSCRITS;
-		if (chemin === '/api/lots/admin/tous') return LOTS;
-		if (chemin === '/api/lots/admin/imports') return IMPORTS;
+		if (chemin === '/api/admin/annuaire/rapprochement')
+			return new URL(adresse).searchParams.get('nom') === 'Bernard' ? RAPPROCHE : RIEN;
 		if (chemin === '/api/auth/batiments') return [{ id: 4, numero: '4' }];
 	});
 	await page.goto('/espace-cs/annuaire');

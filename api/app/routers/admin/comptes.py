@@ -17,6 +17,7 @@ from app.models.core import (
     Utilisateur,
 )
 from app.schemas import UserRead
+from app.utils.annonce_compte import Annonce, annonce_relance, annonce_validation
 from app.utils.comptes import (
     REFUS,
     comptes_en_attente as lister_comptes_en_attente,
@@ -47,6 +48,18 @@ class CompteTraiteResult(BaseModel):
 
     user: UserRead
     auto_match: dict[str, Any] = {}
+    #: La phrase que l'écran affiche — composée ici, lue par le site ET l'app iOS
+    #: (#2522) : « Compte activé — 3 lot(s) résolu(s) automatiquement. ». Sur un
+    #: refus : `None`, il n'y a rien à annoncer de plus que le refus.
+    annonce: Annonce | None = None
+
+
+class AutoMatchRelance(BaseModel):
+    """`POST /admin/utilisateurs/{id}/auto-match` : l'appariement rejoué, et sa phrase."""
+
+    ok: bool = True
+    auto_match: dict[str, Any]
+    annonce: Annonce
 
 
 @router.get("/comptes-en-attente", response_model=list[UserRead])
@@ -252,10 +265,14 @@ def traiter_compte(
             detail=f"aidant={user.id} automatique",
         )
     session.refresh(user)
-    return CompteTraiteResult(user=UserRead.model_validate(user), auto_match=auto_match_result)
+    return CompteTraiteResult(
+        user=UserRead.model_validate(user),
+        auto_match=auto_match_result,
+        annonce=annonce_validation(auto_match_result, user) if body.action == "valider" else None,
+    )
 
 
-@router.post("/utilisateurs/{user_id}/auto-match", status_code=200)
+@router.post("/utilisateurs/{user_id}/auto-match", status_code=200, response_model=AutoMatchRelance)
 def relancer_auto_match(
     user_id: int,
     session: Session = Depends(get_session),
@@ -268,4 +285,4 @@ def relancer_auto_match(
 
     result = auto_match_pour_utilisateur(user, session)
     session.commit()
-    return {"ok": True, "auto_match": result}
+    return AutoMatchRelance(auto_match=result, annonce=annonce_relance(result, user))

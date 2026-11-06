@@ -20,7 +20,7 @@ import type {
 	AutoMatchRelance,
 	BailSansLocataire,
 	CommandeAccesEnAttente,
-	CompositionConseil,
+	CommandeTraitee,
 	CompteEnAttenteEnrichi,
 	CompteTraite,
 	ConfigSauvegarde,
@@ -34,7 +34,6 @@ import type {
 	ExecutionSauvegarde,
 	ExecutionTache,
 	ExecutionTelemetrie,
-	InfoSyndicAdmin,
 	LancementTache,
 	LienCompteLot,
 	ModeleEmail,
@@ -47,13 +46,6 @@ import type {
 //  Les types de ce que ces routes RENDENT vivent à côté (#1572) : réexportés ici,
 //  ils parviennent à `index.ts`, donc à tout `from '#lib/api/index.ts'`.
 export type * from './types-administration';
-
-export const annuaireAdmin = {
-	getCS: () => api.get<CompositionConseil>('/admin/annuaire/cs'),
-	putCS: (data: unknown) => api.put<Accuse>('/admin/annuaire/cs', data),
-	getSyndic: () => api.get<InfoSyndicAdmin>('/admin/annuaire/syndic'),
-	putSyndic: (data: unknown) => api.put<Accuse>('/admin/annuaire/syndic', data),
-};
 
 export const delegations = {
 	list: () => api.get<Delegation[]>('/delegations'),
@@ -105,7 +97,7 @@ export const admin = {
 	traiterCommandeAcces: (
 		id: number,
 		data: { action: string; motif_refus?: string; codes?: string[] },
-	) => api.post(`/admin/commandes-acces/${id}/traiter`, data),
+	) => api.post<CommandeTraitee>(`/admin/commandes-acces/${id}/traiter`, data),
 	// Sauvegardes
 	backupConfig: () => api.get<ConfigSauvegarde | null>('/admin/sauvegardes/config'),
 	//  L'API n'écrit que ces deux réglages (#2055) : la sauvegarde est quotidienne.
