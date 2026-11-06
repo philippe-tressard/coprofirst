@@ -23,7 +23,8 @@
  *  ## Ce qu'il refuse
  *
  *  Dans le balisage d'un `.svelte`, un `X.categorie`, `X.statut`, `X.type` ou
- *  `X.role` rendu TEL QUEL — avec ou sans repli `?? '—'` :
+ *  `X.role` — ou un champ composé sur l'un d'eux (`X.lot_type`, `X.type_lien`,
+ *  `X.user_statut`) — rendu TEL QUEL, avec ou sans repli `?? '—'` :
  *
  *    title={ticket.categorie}          aria-label={t.categorie}
  *    <td>{row.categorie}</td>          <span>{t.categorie}</span>
@@ -51,7 +52,11 @@ import { neutraliserCommentaires } from './lib-commentaires.mjs';
 
 const RACINE = 'src';
 //  Le champ, puis un repli facultatif : `?? '—'`, `?? "N/A"`, `?? autre.chose`.
-const EXPRESSION = String.raw`[\w.?$]+\.(?:categorie|statut|type|role)(?:\s*\?\?\s*(?:'[^']*'|"[^"]*"|[\w.]+))?`;
+//  Le champ peut être COMPOSÉ — `lot_type`, `type_lien`, `user_statut` (06/11/2026 :
+//  Admin › Audit des lots les rendait bruts, hors du motif) — sauf s'il se dit
+//  lui-même un libellé (`libelle_type`, `statut_label`).
+const CHAMP = String.raw`(?!\w*(?:libelle|label))(?:\w+_)?(?:categorie|statut|type|role)(?:_\w+)?`;
+const EXPRESSION = String.raw`[\w.?$]+\.${CHAMP}(?:\s*\?\?\s*(?:'[^']*'|"[^"]*"|[\w.]+))?`;
 const ATTRIBUT = new RegExp(String.raw`\b(?:title|aria-label|alt)=\{${EXPRESSION}\}`, 'g');
 const TEXTE = new RegExp(String.raw`>\s*\{${EXPRESSION}\}\s*<`, 'g');
 //  « … (appartement) » : la valeur entre parenthèses dans une phrase.
@@ -66,6 +71,30 @@ const EXCEPTIONS = new Map([
 		{
 			nombre: 1,
 			raison: '`type` est le libellé du statut, servi par l’API (`retour_comptes.libelle_statut`)',
+		},
+	],
+	[
+		'lib/components/Reponses.svelte',
+		{
+			nombre: 1,
+			raison:
+				'`auteur_role` est la signature en clair, servie par l’API (`reponses.role_signature`)',
+		},
+	],
+	[
+		'lib/components/OngletImportLots.svelte',
+		{
+			nombre: 1,
+			raison:
+				'`type_raw` est la cellule du tableur telle qu’importée : l’écran la montre pour la corriger',
+		},
+	],
+	[
+		'lib/components/CorrectionImportLot.svelte',
+		{
+			nombre: 1,
+			raison:
+				'`type_raw` est la cellule du tableur telle qu’importée : l’écran la montre pour la corriger',
 		},
 	],
 ]);
@@ -112,6 +141,13 @@ if (process.argv.includes('--selftest')) {
 	t('type brut entre parenthèses', 1, '<option>{l.numero} ({l.type})</option>');
 	t('libellé servi entre parenthèses', 0, '<option>{l.numero} ({l.libelle_type})</option>');
 	t('rôle brut', 1, '<li>{m.role}</li>');
+	//  🔴 06/11/2026 : Admin › Audit des lots, trois champs composés rendus bruts.
+	t('type composé brut', 1, '<td>{ul.lot_type}</td>');
+	t('lien composé brut', 1, '<span class="badge badge-blue">{ul.type_lien}</span>');
+	t('statut composé brut', 1, '<span class="badge">{g.user_statut}</span>');
+	t('type composé entre parenthèses', 1, '<span>N° 3 ({lot.type_appartement})</span>');
+	t('libellé composé servi', 0, '<td>{ul.lot_libelle_type}</td>');
+	t('libellé servi en suffixe', 0, '<td>{l.type_lien_libelle}</td>');
 	t('libellé conforme', 0, '<span title={ticket.categorie_libelle}>🏗️</span>');
 	t('texte conforme', 0, '<td>{row.categorie_libelle}</td>');
 	t(
