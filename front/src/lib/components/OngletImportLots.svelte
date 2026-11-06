@@ -18,6 +18,7 @@
 	import BarreImport from '#lib/components/BarreImport.svelte';
 	import CorrectionImportLot from '#lib/components/CorrectionImportLot.svelte';
 	import { parAttribut } from '#lib/table-statuts.ts';
+	import { COULEUR_TYPE_LIEN, typeLienAbrege } from '#lib/liens-lot.ts';
 	import { contientTousLesMots } from '#lib/texte.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 
@@ -104,15 +105,6 @@
 	let editOccupants: { user_id: string; type_lien: string }[] = [];
 	let editNotes = '';
 	let saving = false;
-
-	//  ⚠️ La teinte est ici un CODE COULEUR, pas une classe de badge : ces liens
-	//  se rendent en pastille pleine, et la charte ne porte pas ces quatre-là.
-	const { libelle: TYPE_LIEN_LABEL, couleur: TYPE_LIEN_BADGE } = parAttribut({
-		propriétaire: { libelle: 'Propriétaire', couleur: 'var(--color-success)' },
-		bailleur: { libelle: 'Bailleur', couleur: 'var(--color-import-lie)' },
-		locataire: { libelle: 'Locataire', couleur: 'var(--color-warning-texte)' },
-		mandataire: { libelle: 'Mandataire', couleur: 'var(--color-violet)' },
-	});
 
 	function openEdit(imp: LigneImportLot) {
 		editId = imp.id;
@@ -223,7 +215,7 @@
 				imp.lot_label,
 				statutLabel[imp.statut] ?? imp.statut,
 				...(imp.utilisateurs ?? []).flatMap((o) => [
-					TYPE_LIEN_LABEL[o.type_lien] ?? o.type_lien,
+					typeLienAbrege(o.type_lien),
 					o.utilisateur ? nomAffiche(o.utilisateur) : '',
 				]),
 			],
@@ -315,8 +307,8 @@
 										<div class="occupant-tag">
 											<span
 												class="occ-role"
-												style="color:{TYPE_LIEN_BADGE[occ.type_lien] ?? 'var(--color-text-muted)'}"
-												>{TYPE_LIEN_LABEL[occ.type_lien] ?? occ.type_lien}</span
+												style="color:{COULEUR_TYPE_LIEN[occ.type_lien] ??
+													'var(--color-text-muted)'}">{typeLienAbrege(occ.type_lien)}</span
 											>
 											{#if occ.utilisateur}
 												<span class="occupant-lie">{nomAffiche(occ.utilisateur)}</span>

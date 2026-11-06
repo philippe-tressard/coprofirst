@@ -12,6 +12,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel, NaiveDatetime
 from sqlmodel import Session, select
 from app.utils.batiments import libelle_batiment_ou, libelle_lot
+from app.utils.libelles_lot import SANS_TYPE, libelle_type_lot
 from app.auth.deps import require_cs_or_admin
 from app.database import get_session
 from app.models.core import (
@@ -218,6 +219,8 @@ def audit_user_lots(
                 "lot_id": ul.lot_id,
                 "lot_numero": lot.numero if lot else "?",
                 "lot_type": valeur(lot.type) if lot else "?",
+                #  Le type en clair (#2562) : l'écran d'audit rendait « appartement ».
+                "lot_libelle_type": libelle_type_lot(lot.type) if lot else SANS_TYPE,
                 "batiment": libelle_batiment_ou(bat, "—"),
                 "type_lien": valeur(ul.type_lien),
             }
