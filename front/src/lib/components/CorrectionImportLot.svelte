@@ -13,6 +13,7 @@
 	import { nomAffiche } from '#lib/noms.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
+	import { TYPES_LIEN } from '#lib/liens-lot.ts';
 
 	export let imp: LigneImportLot;
 	export let lots: MonLot[] = [];
@@ -22,13 +23,6 @@
 	export let lot = '';
 	export let occupants: { user_id: string; type_lien: string }[] = [];
 	export let notes = '';
-
-	const TYPES_LIEN = [
-		{ value: 'propriétaire', label: 'Copropriétaire résident' },
-		{ value: 'bailleur', label: 'Copropriétaire bailleur' },
-		{ value: 'locataire', label: 'Locataire' },
-		{ value: 'mandataire', label: 'Mandataire (gestion)' },
-	];
 
 	function ajouterOccupant() {
 		occupants = [...occupants, { user_id: '', type_lien: 'locataire' }];
@@ -70,7 +64,7 @@
 			<div class="occupant-row">
 				<select bind:value={occ.type_lien} class="select-role">
 					{#each TYPES_LIEN as tl (tl.value)}
-						<option value={tl.value}>{tl.label}</option>
+						<option value={tl.value}>{tl.libelle}</option>
 					{/each}
 				</select>
 				<select bind:value={occ.user_id} class="select-user">

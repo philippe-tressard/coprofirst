@@ -12,6 +12,8 @@
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
 	import { contientTousLesMots } from '#lib/texte.ts';
+	import { libelleStatut } from '#lib/roles.ts';
+	import { typeLienAbrege } from '#lib/liens-lot.ts';
 
 	$: _siteNom = $siteNomStore;
 
@@ -145,7 +147,7 @@
 		<div class="card carte-compte">
 			<div class="entete-compte">
 				<strong>{g.user_nom}</strong>
-				<span class="badge badge-gray statut-compte">{g.user_statut}</span>
+				<span class="badge badge-gray statut-compte">{libelleStatut(g.user_statut)}</span>
 				<span class="nb-lots"
 					>{SEPARATEUR.tiret}{g.lots.length} lot{g.lots.length > 1 ? 's' : ''}</span
 				>
@@ -170,9 +172,9 @@
 					{#each g.lots as ul (ul.user_lot_id)}
 						<tr>
 							<td class="texte-code">{ul.lot_numero}</td>
-							<td>{ul.lot_type}</td>
+							<td>{ul.lot_libelle_type}</td>
 							<td>{ul.batiment}</td>
-							<td><span class="badge badge-blue">{ul.type_lien}</span></td>
+							<td><span class="badge badge-blue">{typeLienAbrege(ul.type_lien)}</span></td>
 							<td class="cellule-action">
 								<button
 									class="btn-icon-danger"

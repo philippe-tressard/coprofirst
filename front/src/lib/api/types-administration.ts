@@ -202,6 +202,8 @@ export interface LienCompteLot {
 	lot_id: number;
 	lot_numero: string;
 	lot_type: string;
+	/** Le type en clair — « Appartement », « — » sans type ni lot (#2562). */
+	lot_libelle_type: string;
 	/** Le libellé du bâtiment, « — » s'il n'y en a pas. */
 	batiment: string;
 	type_lien: string;
