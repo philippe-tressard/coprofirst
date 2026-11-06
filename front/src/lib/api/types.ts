@@ -436,6 +436,12 @@ export interface AnnonceHall {
 	     une affiche archivée par le TEMPS, retirer le drapeau manuel ne la
 	     ramènerait pas, et l'écran ne propose donc pas le geste. */
 	archivee_manuellement?: boolean;
+	/**  Les gestes de l'Historique, SERVIS par l'API pour qui lit (#2525) : archiver
+	 *   tant qu'elle n'est pas rangée, restaurer ce qui a été rangé À LA MAIN (#515),
+	 *   supprimer pour l'administrateur (`require_admin`). */
+	peut_archiver: boolean;
+	peut_restaurer: boolean;
+	peut_supprimer: boolean;
 	/**  L'actualité reprise, s'il y en a une — c'est ce qui donne son lien au
 	 *   message WhatsApp de l'affiche. `publication_id` avant le 23/09/2026. */
 	ticket_id: number | null;

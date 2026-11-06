@@ -17,7 +17,7 @@ from __future__ import annotations
 from sqlmodel import Session
 
 from app.models.core import Batiment, Utilisateur
-from app.schemas import UserRead
+from app.schemas import DelegationAidant, UserRead
 from app.utils.batiments import libelle_batiment
 from app.utils.logement import libelle_logement
 from app.utils.lots_rattaches import lots_de
@@ -39,11 +39,11 @@ def construire_user_read(user: Utilisateur, session: Session) -> UserRead:
         mandant = session.get(Utilisateur, d.mandant_id)
         if mandant:
             delegations_aidant.append(
-                {
-                    "delegation_id": d.id,
-                    "mandant_id": mandant.id,
-                    "mandant_nom": nom_affiche(mandant.prenom, mandant.nom),
-                }
+                DelegationAidant(
+                    delegation_id=d.id,
+                    mandant_id=mandant.id,
+                    mandant_nom=nom_affiche(mandant.prenom, mandant.nom),
+                )
             )
     lecture = UserRead.from_orm_with_roles(
         user, batiment_nom=batiment_nom, delegations_aidant=delegations_aidant

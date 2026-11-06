@@ -69,6 +69,7 @@ export * from './services';
 export * from './instance';
 export * from './conservation';
 export * from './suivi-affaires';
+export * from './reporting';
 export * from './points-conseil';
 export * from './registre';
 export * from './consignes';
