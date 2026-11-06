@@ -399,6 +399,11 @@ export interface Notification {
 	cree_le: string;
 }
 
+/** `POST /notifications/supprimer-lues` (et `…/supprimer-selection`, de l'app iOS) — #2535. */
+export interface NotificationsSupprimees {
+	supprimees: number;
+}
+
 //  Le fil de l'accueil et ses pastilles vivent dans leur module (#2397).
 export type { FluxItem, FluxProchain, RendezVous, FluxSante, FluxResponse } from './types-flux';
 export interface EpinglesCompte {

@@ -1,6 +1,6 @@
 {
-"version": "1.9.0",
-"empreinte": "55c4b7eb5b28b8974fe3b47724aff8e22e81c01f0847a0769200c32707219f03",
+"version": "1.10.0",
+"empreinte": "907ca26237463b17421b82e14bc01b73beecf74efc7e2242c8fc2e75b6f6a64d",
 "operations": {
   "GET /acces/admin/choix-acces": {"deprecie": false, "entree": [], "reponse": {"$": "dictionnaire", "$.{}": "objet", "$.{}.codes": "liste", "$.{}.codes[]": "string", "$.{}.suit_le_lot": "boolean"}},
   "GET /acces/admin/constats-badges": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].code": "string", "$[].gravite": "string", "$[].lots": "liste?", "$[].lots[]": "string", "$[].message": "string"}},
@@ -286,6 +286,8 @@
   "PATCH /lots/{lot_id}/etage": {"deprecie": false, "entree": ["corps", "path:lot_id"], "reponse": {"$": "libre"}},
   "GET /manuel/pdf": {"deprecie": false, "entree": [], "reponse": {"$": "libre"}},
   "GET /notifications": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].corps": "string", "$[].cree_le": "string(date-time)", "$[].id": "integer", "$[].lien": "string?", "$[].lue": "boolean", "$[].titre": "string", "$[].type": "string", "$[].urgente": "boolean"}},
+  "POST /notifications/supprimer-lues": {"deprecie": false, "entree": [], "reponse": {"$": "objet", "$.supprimees": "integer"}},
+  "POST /notifications/supprimer-selection": {"deprecie": false, "entree": ["corps", "corps.ids"], "reponse": {"$": "objet", "$.supprimees": "integer"}},
   "POST /notifications/tout-marquer-lu": {"deprecie": false, "entree": [], "reponse": {"$": "objet", "$.marquees": "integer"}},
   "DELETE /notifications/{notif_id}": {"deprecie": false, "entree": ["path:notif_id"], "reponse": {}},
   "PATCH /notifications/{notif_id}/lue": {"deprecie": false, "entree": ["path:notif_id"], "reponse": {"$": "objet", "$.corps": "string", "$.cree_le": "string(date-time)", "$.id": "integer", "$.lien": "string?", "$.lue": "boolean", "$.titre": "string", "$.type": "string", "$.urgente": "boolean"}},
