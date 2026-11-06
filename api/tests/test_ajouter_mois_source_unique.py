@@ -25,7 +25,9 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-API = Path(__file__).resolve().parents[1]
+from tests.aides_sources import modules_app
+
+TESTS = Path(__file__).resolve().parent
 
 #: La seule écriture admise : (fichier, fonction).
 LIEU = ("app/utils/echeance_contrat.py", "ajouter_mois")
@@ -64,7 +66,7 @@ def _forme(n: ast.AST) -> str | None:
     return None
 
 
-def _ecritures(racine: Path, relatif: str, source: str) -> list[tuple[tuple[str, str], int, str]]:
+def _ecritures(relatif: str, source: str) -> list[tuple[tuple[str, str], int, str]]:
     """Chaque forme trouvée, rattachée à la fonction qui la porte."""
     trouvees = []
 
@@ -84,10 +86,10 @@ def _ecritures(racine: Path, relatif: str, source: str) -> list[tuple[tuple[str,
 
 def _toutes() -> list[tuple[tuple[str, str], int, str]]:
     toutes = []
-    for dossier in ("app", "tests"):
-        for f in sorted((API / dossier).rglob("*.py")):
-            relatif = f.relative_to(API).as_posix()
-            toutes += _ecritures(API, relatif, f.read_text(encoding="utf-8"))
+    for m in modules_app():
+        toutes += _ecritures(f"app/{m.rel}", m.source)
+    for f in sorted(TESTS.glob("*.py")):
+        toutes += _ecritures(f"tests/{f.name}", f.read_text(encoding="utf-8"))
     return toutes
 
 
@@ -119,6 +121,6 @@ def test_le_controle_voit_chaque_forme():
         "divmod": "def f(t):\n    return divmod(t, 12)\n",
     }
     for nom, source in fautives.items():
-        assert _ecritures(API, "x.py", source), f"forme non vue : {nom}"
+        assert _ecritures("x.py", source), f"forme non vue : {nom}"
     #  Un index de liste n'est pas une arithmétique des mois.
-    assert not _ecritures(API, "x.py", "def f(d):\n    return MOIS[d.month - 1]\n")
+    assert not _ecritures("x.py", "def f(d):\n    return MOIS[d.month - 1]\n")
