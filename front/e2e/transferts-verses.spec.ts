@@ -56,9 +56,9 @@ const BLOQUE = {
 	bloque: "un transfert suivant a été versé dans cette affaire : annulez-le d'abord",
 };
 const CHOIX = [
-	{ id: 7, numero: 'TK-109008', titre: 'Portillon bloqué', statut: 'en_cours' },
-	{ id: 8, numero: 'TK-200001', titre: 'Portail du parking', statut: 'ouvert' },
-	{ id: 9, numero: 'TK-200002', titre: 'Portillon ancien', statut: 'résolu' },
+	{ id: 7, numero: 'TK-109008', titre: 'Portillon bloqué', statut: 'en_cours', close: false },
+	{ id: 8, numero: 'TK-200001', titre: 'Portail du parking', statut: 'ouvert', close: false },
+	{ id: 9, numero: 'TK-200002', titre: 'Portillon ancien', statut: 'résolu', close: true },
 ];
 
 /** Les gestes du bloc, interceptés : ce qu'ils appellent, et rien d'autre. */

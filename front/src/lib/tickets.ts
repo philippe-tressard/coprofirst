@@ -191,10 +191,10 @@ export function estTicketActif(statut: string | undefined | null): boolean {
 	return STATUTS_TICKET_ACTIFS.includes(statut ?? '');
 }
 
-/** Ce ticket est-il clos ? — la seule écriture de cette question côté front. */
-export function estTicketClos(statut: string | undefined | null): boolean {
-	return STATUTS_TICKET_CLOS.includes(statut ?? '');
-}
+//  « Ce ticket est-il clos ? » n'a plus de fonction ici (#2511) : l'API la SERT
+//  (`close` de l'affaire, de la ligne du fil et des affaires liées ; `statuts[].clos`
+//  du référentiel), et l'app iOS la lit au même endroit.
+//  🔒 `npm run lint:regles-partagees`.
 
 /**
  * L'identifiant d'une affaire que désigne un lien collé (`…/tickets/465?src=whatsapp`),
@@ -478,7 +478,7 @@ export function gesteReponse(
 	t: Ticket,
 ): { libelle: string; glyphe: string; icone: 'message-square-text' | 'undo-2' } | null {
 	if (t.fusionnee || estActualite(t)) return null;
-	return estTicketClos(t.statut)
+	return t.close
 		? { libelle: 'Rouvrir la discussion', glyphe: '↩️', icone: 'undo-2' }
 		: { libelle: 'Répondre', glyphe: '💬', icone: 'message-square-text' };
 }

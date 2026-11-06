@@ -26,6 +26,7 @@ const LIGNE = {
 	numero: 'TK-142',
 	categorie: 'panne',
 	statut: 'résolu',
+	close: true,
 	priorite: 'normale',
 	debut: null,
 	perimetre_cible: [],

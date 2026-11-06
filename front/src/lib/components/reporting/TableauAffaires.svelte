@@ -45,7 +45,7 @@
 	import { ETATS_VISITE } from '#lib/entretien-periodique.ts';
 	import { motifEvolution } from '#lib/reporting.ts';
 	import { fmtDate } from '#lib/date.ts';
-	import { categorieTicketLabel, lienTicket, statutTicketLabel } from '#lib/tickets.ts';
+	import { lienTicket, statutTicketLabel } from '#lib/tickets.ts';
 
 	export let affaires: AffaireOuverte[];
 	/** Le mode « Relancer le syndic » : une case par ligne, et les relances envoyées. */
@@ -217,7 +217,7 @@
 								>{ETATS_VISITE[a.etat_visite].libelle}</Badge
 							>
 						{:else}
-							{categorieTicketLabel(a.categorie)}
+							{a.libelle_categorie}
 						{/if}
 					</td>
 					{#if relance}

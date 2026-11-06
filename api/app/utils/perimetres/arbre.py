@@ -384,6 +384,9 @@ def code_par_defaut() -> Optional[str]:
 
     Renvoie `None` sur un arbre vide, et alors `parse_perimetres` rend une liste
     vide — que `perimetre_visible` traite déjà comme « visible de tous ».
+
+    Servie aux clients par `PerimetreRead.par_defaut` (#2514) : ni le site ni
+    l'app iOS ne refont ce tri.
     """
     candidats = [n for n in arbre().values() if n.portee_globale and n.parent is None and n.actif]
     if not candidats:

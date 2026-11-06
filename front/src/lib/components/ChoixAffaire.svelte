@@ -16,12 +16,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { tickets as ticketsApi } from '#lib/api/index.ts';
 	import type { AffaireLiee } from '#lib/api/types.ts';
-	import {
-		estTicketActif,
-		estTicketClos,
-		idAffaireDepuisLien,
-		termeAffaire,
-	} from '#lib/tickets.ts';
+	import { estTicketActif, idAffaireDepuisLien, termeAffaire } from '#lib/tickets.ts';
 
 	/** L'`id` du champ — le titre de section de l'appelant peut s'y associer. */
 	export let id: string;
@@ -66,7 +61,7 @@
 				.filter(
 					(a) =>
 						!ecartees.has(a.id) &&
-						!(sansCloses && estTicketClos(a.statut)) &&
+						!(sansCloses && a.close) &&
 						(idLien !== null
 							? a.id === idLien
 							: terme

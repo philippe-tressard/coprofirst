@@ -113,6 +113,10 @@ class PerimetreRead(BaseModel):
     #: Les types d'accès (`types_acces.TYPES_ACCES`) qui ouvrent ce nœud d'office,
     #: sans dépendre d'aucun lot — un portillon, un portail (#2060).
     acces_fixes: list[str] = []
+    #: Le SEUL nœud que désigne un contenu sans périmètre explicite — « toute la
+    #: copropriété » (`code_par_defaut`). Les clients le présélectionnent et le
+    #: taisent en pastille sans refaire le tri (#2514, `standards/09` §8).
+    par_defaut: bool = False
 
 
 class PerimetreCreate(BaseModel):
@@ -234,6 +238,7 @@ def _lu(
     branche: list[Perimetre],
     fixes: dict[str, list[str]],
     deplacements: list[str],
+    racine: Optional[str],
 ) -> PerimetreRead:
     """Un nœud lu sur le modèle, avec ce que l'arbre seul sait dire.
 
@@ -255,6 +260,7 @@ def _lu(
         copiable=refus_copie(noeud, branche) is None,
         deplacements=deplacements,
         acces_fixes=fixes.get(noeud.code, []),
+        par_defaut=racine is not None and noeud.code == racine,
     )
 
 
@@ -295,6 +301,7 @@ def _en_lecture(
                     descendants(noeud, noeuds),
                     fixes,
                     sens_admis(noeud, noeuds, racine),
+                    racine,
                 )
             )
             descendre(noeud.id)
@@ -314,6 +321,7 @@ def _en_lecture(
                     descendants(noeud, noeuds),
                     fixes,
                     [],
+                    racine,
                 )
             )
     return sortie

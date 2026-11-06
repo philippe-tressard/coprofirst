@@ -130,7 +130,7 @@ test('la correction s’ouvre dans la boîte de la page, comme la création — 
 });
 
 test('une affaire close ne propose pas de fusion', async ({ page }) => {
-	await corriger(page, { ...AFFAIRE, statut: 'résolu' });
+	await corriger(page, { ...AFFAIRE, statut: 'résolu', close: true });
 	await expect(section(page).locator('li.liee')).toHaveCount(1);
 	await expect(section(page).getByRole('button', { name: 'Fusionner', exact: true })).toHaveCount(
 		0,

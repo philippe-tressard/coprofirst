@@ -95,6 +95,7 @@ const AFFAIRES = [
 		titre: 'Badge perdu',
 		categorie: 'acces_accueil',
 		statut: 'annulé',
+		close: true,
 		confidentiel: true,
 	}),
 	affaire(49, {

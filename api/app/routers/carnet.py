@@ -69,6 +69,8 @@ class CategorieBilan(ResumeAffaires):
     """Les moyennes d'une catégorie d'affaire du carnet sur l'exercice."""
 
     categorie: str
+    #: …et son libellé (« Panne ») — `categories_ticket.libelle_categorie` (#2511).
+    categorie_libelle: str
     prestataires: list[PrestataireLent] = []
 
 

@@ -26,6 +26,7 @@ export function noeud(
 		dupliquable: false,
 		copiable: false,
 		deplacements: [],
+		par_defaut: false,
 		...champs,
 	};
 }

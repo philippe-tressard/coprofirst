@@ -47,6 +47,7 @@ export type {
 	PersonneConcernee,
 	ResultatConciliation,
 } from './affaires-liees';
+export * from './referentiels-affaires';
 export * from './documents';
 export * from './communaute';
 export * from './avis';
