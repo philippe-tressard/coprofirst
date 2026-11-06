@@ -738,8 +738,10 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       libellés de champ sont en MAJUSCULES par le style (`champs.css`), comme
       les intitulés de section — jamais tapées (`npm run lint:champs`)
 - [ ] Valeur d'une énumération — statut, type, catégorie, rôle — rendue par son
-      LIBELLÉ, jamais brute, même derrière un repli `?? '—'` : Admin › Télémétrie
-      affichait « copropriétaire_résident » (05/11/2026). Un champ qui porte déjà le
+      LIBELLÉ, jamais brute, même derrière un repli `?? '—'` ni dans un champ composé
+      (`lot_type`, `type_lien`, `user_statut`, 06/11/2026) : Admin › Télémétrie
+      affichait « copropriétaire_résident » (05/11/2026). Le lien d'un compte à un lot :
+      `#lib/liens-lot`. Un champ qui porte déjà le
       libellé servi par l'API se déclare dans `EXCEPTIONS` (`npm run lint:categorie-brute`)
 - [ ] Libellés et nommage en français — 🔒 les mots d'interface anglais sont refusés par
       `npm run lint:vocabulaire-ecran` (`lib-mots-anglais.mjs`, #1579) ; *le reste de la langue
