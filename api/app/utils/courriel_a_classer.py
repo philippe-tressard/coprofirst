@@ -182,6 +182,42 @@ def _classer(session, item: CourrielAClasser, statut: str, qui: Utilisateur, tic
         session.add(releve)
 
 
+def _texte(corps: str) -> str:
+    """Le texte du message sans sa citation — ou le corps ENTIER quand la citation
+    est tout le message : une description vide perdait ce qu'on venait classer."""
+    return _sans_citation(corps) or corps.strip()
+
+
+def _verser_le_transfert(session, item, message, corps, qui, ticket, *, creer: bool):
+    """Un message RÉEXPÉDIÉ se verse comme un transfert, quel que soit son objet.
+
+    🔴 06/11/2026 : un membre du conseil avait réécrit l'objet d'un courriel qui
+    portait le message d'une résidente. Classé « créer une affaire », il avait
+    perdu le texte de la résidente — retiré comme une citation —, nommé l'auteur
+    de la note au lieu du sien, et rangé la photo dans une Suite à part. La
+    mécanique du transfert (`courriel_transfert.verser`) découpe le fil : l'affaire
+    est décrite par le plus ancien message, au nom de son auteur, et les pièces
+    entrent dans la Suite du message transféré.
+
+    Rend `(affaire, bilan)`, ou None si le message n'est pas un transfert ou ne
+    se verse pas — la voie ordinaire le classe alors.
+    """
+    from app.utils import courriel_pieces_jointes as pj
+    from app.utils.courriel_decodage import transfert_dans
+    from app.utils.courriel_ingestion import REFUSE
+    from app.utils.courriel_transfert import verser
+
+    transfert = transfert_dans(item.objet, corps, objet_exige=False)
+    if transfert is None:
+        return None
+    decision, bilan, versee = verser(
+        session, transfert, item.objet, qui, ticket, creer=creer, pieces=pj.trier(message)
+    )
+    if decision == REFUSE or versee is None:
+        return None
+    return versee, bilan
+
+
 def rattacher(session: Session, item: CourrielAClasser, ticket: Ticket, qui: Utilisateur) -> str:
     """Verse le message au fil de `ticket`, comme un transfert de `qui`. Rend le bilan."""
     from app.utils import courriel_pieces_jointes as pj
@@ -192,15 +228,20 @@ def rattacher(session: Session, item: CourrielAClasser, ticket: Ticket, qui: Uti
         raise NonClassable(f"l'affaire #{ticket.numero} est close")
     message = email.message_from_bytes(item.brut)
     corps = _corps_lisible(message)
-    nom, _adresse = _nom(session, item)
     classe_par = nom_affiche(qui.prenom, qui.nom)
+    transfere = _verser_le_transfert(session, item, message, corps, qui, ticket, creer=False)
+    if transfere is not None:
+        bilan = f"rattaché à l'affaire #{ticket.numero} par {classe_par} — {transfere[1]}"
+        _classer(session, item, RATTACHE, qui, ticket, bilan)
+        return bilan
+    nom, _adresse = _nom(session, item)
     suite = suite_d_un_message(
         session,
         ticket,
         qui,
         expediteur=item.expediteur,
         nom=nom,
-        texte=_sans_citation(corps),
+        texte=_texte(corps),
         recu=corps,
         envoye_le=item.envoye_le,
         transfere_par=classe_par,
@@ -237,10 +278,17 @@ def creer(session: Session, item: CourrielAClasser, qui: Utilisateur) -> Ticket:
     _exiger_a_classer(item)
     message = email.message_from_bytes(item.brut)
     corps = _corps_lisible(message)
-    texte = _sans_citation(corps)
+    classe_par = nom_affiche(qui.prenom, qui.nom)
+    transfere = _verser_le_transfert(session, item, message, corps, qui, None, creer=True)
+    if transfere is not None:
+        ticket = transfere[0]
+        _classer(
+            session, item, CREE, qui, ticket, f"affaire #{ticket.numero} créée par {classe_par}"
+        )
+        return ticket
+    texte = _texte(corps)
     mis = mettre_en_forme(session, texte, corps)
     nom, adresse = _nom(session, item)
-    classe_par = nom_affiche(qui.prenom, qui.nom)
     quand = moment_de_la_suite(item.envoye_le)
     ticket = creer_affaire_du_fil(
         session,

@@ -199,3 +199,56 @@ def test_le_journal_porte_l_apercu_et_les_suggestions(file):
     assert ligne.decision == A_CLASSER
     assert ligne.a_classer.apercu == "Bloqué depuis hier."
     assert ligne.a_classer.suggestions[0].numero == ticket.numero
+
+
+# ── Un message RÉEXPÉDIÉ, l'objet réécrit (06/11/2026) ────────────────────────
+
+#: Le cas réel : un membre du conseil réexpédie le courriel d'une résidente en
+#: réécrivant l'objet — rien n'annonce un transfert, et le message attend d'être
+#: classé. Noms et adresses fictifs.
+_REEXPEDIE = (
+    "\n\nDébut du message réexpédié :\n\n"
+    "De: Alice Martin <alice.martin@exemple.test>\n"
+    "Objet: Portillon Hostachy\n"
+    "Date: 5 novembre 2026 à 11:11:00 UTC+1\n"
+    "À: Paul Morel <paul.morel@exemple.test>\n\n"
+    "Bonjour Paul,\n\n"
+    "À quoi sert le trou sur le mur à gauche du portillon ?\n"
+    "J'ai vu ce matin un technicien y introduire une clé.\n\n"
+    "Merci\nAlice\n"
+)
+
+
+def test_creer_depuis_un_message_reexpedie_garde_le_texte_et_son_auteur(file):
+    """🔴 La description était vide (le message de la résidente, lu comme une
+    citation, était retiré) et nommait qui réexpédiait au lieu de qui écrivait."""
+    session, _ticket, _syndic, cs = file
+    _recevoir(session, cs.email, sujet=" trou sur le mur à gauche du portillon ?", texte=_REEXPEDIE)
+    neuve = session.get(Ticket, route.creer(_item(session).id, cs, session).ticket_id)
+    assert "À quoi sert le trou sur le mur" in neuve.description
+    assert "Alice Martin" in neuve.description
+    assert neuve.saisi_pour_nom == "Alice Martin"
+    for evol in session.exec(
+        select(TicketEvolution).where(TicketEvolution.ticket_id == neuve.id)
+    ).all():
+        purger_ligne(session, TicketEvolution, evol.id)
+    purger_ligne(session, Ticket, neuve.id)
+    session.commit()
+
+
+def test_rattacher_un_message_reexpedie_verse_le_message_d_origine(file):
+    session, ticket, _syndic, cs = file
+    _recevoir(session, cs.email, sujet="Re: Portillon", texte=_REEXPEDIE)
+    route.rattacher(_item(session).id, route.Rattachement(numero=ticket.numero), cs, session)
+    (suite,) = _evolutions(session, ticket)
+    assert "À quoi sert le trou sur le mur" in suite.contenu
+    assert "Alice Martin" in suite.contenu
+
+
+def test_un_message_fait_d_une_seule_citation_ne_donne_jamais_une_description_vide(file):
+    session, _ticket, _syndic, cs = file
+    _recevoir(session, cs.email, sujet="Portillon", texte="> Le portillon reste bloqué.\n")
+    neuve = session.get(Ticket, route.creer(_item(session).id, cs, session).ticket_id)
+    assert "Le portillon reste bloqué." in neuve.description
+    purger_ligne(session, Ticket, neuve.id)
+    session.commit()
