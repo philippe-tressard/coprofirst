@@ -17,6 +17,7 @@ from app.models.copropriete import Batiment
 from app.models.core import PresenceMensuelle, RoleUtilisateur, StatutUtilisateur, TelemetryEvent
 from app.utils import horloge
 from app.utils.adoption import SANS_BATIMENT, Fenetre, adoption
+from app.utils.telemetrie_lecture import mois_il_y_a
 from tests.aides_base import compte, moteur_de_test
 
 JOURS = 30
@@ -27,11 +28,7 @@ def _fenetre_mois() -> Fenetre:
 
 
 def _mois_il_y_a(n: int) -> str:
-    j = horloge.aujourd_hui()
-    y, m = j.year, j.month - n
-    while m <= 0:
-        y, m = y - 1, m + 12
-    return f"{y}-{m:02d}"
+    return mois_il_y_a(horloge.aujourd_hui(), n)
 
 
 def _jeu(s: Session) -> None:
