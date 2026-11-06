@@ -158,10 +158,10 @@ def test_le_cycle_d_une_delegation_laisse_trois_traces(session, journal):
     mandant, aidant = compte(session, prefixe="mandant"), compte(session, prefixe="aidant")
     corps = DelegationCreate(mandant_id=mandant.id, aidant_id=aidant.id, motif="hospitalisation")
     creee = create_delegation(corps, session, cs)
-    accepter_delegation(creee["id"], session, aidant)
-    revoquer_delegation(creee["id"], session, mandant)
+    accepter_delegation(creee.id, session, aidant)
+    revoquer_delegation(creee.id, session, mandant)
 
-    d = session.get(Delegation, creee["id"])
+    d = session.get(Delegation, creee.id)
     assert d.statut == StatutDelegation.revoquee
     suffixe = f"cible={mandant.id} aidant={aidant.id}"
     assert journal() == [
