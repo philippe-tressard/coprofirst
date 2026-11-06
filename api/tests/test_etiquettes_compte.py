@@ -25,17 +25,17 @@ def _etats(**kw):
     return etiquettes(**base)
 
 
-def test_gilliot_sans_parking_la_tc_est_sans_objet():
+def test_coproprietaire_sans_parking_la_tc_est_sans_objet():
     e = _etats(a_vigik=True, types_lots={"appartement", "cave"}, statut="copropriétaire_bailleur")
     assert (e["tc"], e["vigik"], e["bail"]) == (SANS_OBJET, OK, MANQUE)
 
 
-def test_desmottes_un_seul_parking_le_vigik_est_sans_objet():
+def test_proprietaire_d_un_seul_parking_le_vigik_est_sans_objet():
     e = _etats(a_tc=True, types_lots={"parking"}, statut="copropriétaire_bailleur")
     assert (e["tc"], e["vigik"]) == (OK, SANS_OBJET)
 
 
-def test_adelise_locataire_d_un_appartement_sans_vigik_remis_reste_rouge():
+def test_locataire_d_un_appartement_sans_vigik_remis_reste_rouge():
     """Le Vigik est attendu (il a un appartement) : rouge, c'est l'écart à corriger."""
     e = _etats(a_tc=True, types_lots={"parking", "appartement", "cave"}, statut="locataire")
     assert (e["vigik"], e["bail"]) == (MANQUE, MANQUE)
