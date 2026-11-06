@@ -173,8 +173,8 @@
 						</div>
 						<div class="frise-compact-meta">
 							<NoteEtoiles note={c.note_moyenne} />
-							<span>Fin : {c.dateFin ? fmtDate(c.dateFin.toISOString()) : 'N/A'}</span>
-							<span>Préavis : {c.datePreavis ? fmtDate(c.datePreavis.toISOString()) : 'N/A'}</span>
+							<span>Fin : {c.dateFin ? fmtDate(c.dateFin.toISOString()) : '—'}</span>
+							<span>Préavis : {c.datePreavis ? fmtDate(c.datePreavis.toISOString()) : '—'}</span>
 							{#if c.reconduit}<span class="badge badge-purple">♻ Reconduit</span>{/if}
 						</div>
 					</div>
@@ -202,7 +202,7 @@
 						</div>
 						<div class="frise-compact-meta">
 							<NoteEtoiles note={c.note_moyenne} />
-							<span>Début : {c.date_debut ? fmtDate(c.date_debut) : 'N/A'}</span>
+							<span>Début : {c.date_debut ? fmtDate(c.date_debut) : '—'}</span>
 							<span class="badge badge-gray">Durée non renseignée</span>
 						</div>
 					</div>

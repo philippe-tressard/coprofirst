@@ -22,6 +22,7 @@ from app.utils.noms import contexte_personne
 from app.models.core import StatutImport
 from app.utils.types_acces import TELECOMMANDE, TypeAcces, VIGIK
 from app.utils.valeurs import valeur
+from app.utils.roles_libelles import libelle_statut
 from app.utils.rapprochement_noms import (
     _cle_de_nom,
     _matches_user,
@@ -463,7 +464,7 @@ def notifier_gestionnaire_appariement(
     if not destinataire:
         return
 
-    statut = str(valeur(user.statut))
+    statut = libelle_statut(user.statut)
     total = tc + vigik
     background_tasks.add_task(
         send_email,

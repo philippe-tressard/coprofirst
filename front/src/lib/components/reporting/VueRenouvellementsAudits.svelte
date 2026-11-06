@@ -79,9 +79,9 @@
 								<tr>
 									<td><strong>{d.nom}</strong></td>
 									<td>{d.code}</td>
-									<td>{d.frequence ?? 'N/A'}</td>
-									<td>{d.dernier_rapport_le ? fmtDate(d.dernier_rapport_le) : 'N/A'}</td>
-									<td>{d.prochaine_echeance ? fmtDate(d.prochaine_echeance) : 'N/A'}</td>
+									<td>{d.frequence ?? '—'}</td>
+									<td>{d.dernier_rapport_le ? fmtDate(d.dernier_rapport_le) : '—'}</td>
+									<td>{d.prochaine_echeance ? fmtDate(d.prochaine_echeance) : '—'}</td>
 									<td>
 										{#if d.urgence === 'depasse'}<span class="badge badge-red">Dépassé</span>
 										{:else if d.urgence === 'annee'}<span class="badge badge-orange"
@@ -120,8 +120,8 @@
 								<tr>
 									<td><strong>{d.nom}</strong></td>
 									<td>{d.code}</td>
-									<td>{d.frequence ?? 'N/A'}</td>
-									<td>{d.dernier_rapport_le ? fmtDate(d.dernier_rapport_le) : 'N/A'}</td>
+									<td>{d.frequence ?? '—'}</td>
+									<td>{d.dernier_rapport_le ? fmtDate(d.dernier_rapport_le) : '—'}</td>
 									<td><span class="badge badge-green">✓ Permanent</span></td>
 								</tr>
 							{/each}
@@ -153,8 +153,8 @@
 								<tr>
 									<td><strong>{d.nom}</strong></td>
 									<td>{d.code}</td>
-									<td>{d.frequence ?? 'N/A'}</td>
-									<td>{d.dernier_rapport_le ? fmtDate(d.dernier_rapport_le) : 'N/A'}</td>
+									<td>{d.frequence ?? '—'}</td>
+									<td>{d.dernier_rapport_le ? fmtDate(d.dernier_rapport_le) : '—'}</td>
 									<td>
 										{#if d.rapports.length === 0}<span class="badge badge-gray">Aucun rapport</span>
 										{:else}<span class="badge badge-gray">À planifier</span>

@@ -33,6 +33,7 @@
 		type User,
 	} from '#lib/api/index.ts';
 	import { badgeRole, badgeStatut, libelleRole, LIBELLES_STATUT_ABREGE } from '#lib/roles.ts';
+	import { typeAccesLabel } from '#lib/types-acces.ts';
 	import { basculer } from '#lib/accordeon.ts';
 	import { validerCompte } from '#lib/comptes.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
@@ -323,7 +324,7 @@
 					{#each commandes as cmd (cmd.id)}
 						<tr>
 							<td class="nom-compte">#{cmd.user_id}</td>
-							<td><span class="badge badge-blue">{cmd.type}</span></td>
+							<td><span class="badge badge-blue">{typeAccesLabel(cmd.type)}</span></td>
 							<td class="muted">{cmd.lot_id ?? ''}</td>
 							<td class="text-muted-sm">{fmt(cmd.cree_le)}</td>
 							<td>

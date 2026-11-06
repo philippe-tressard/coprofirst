@@ -36,7 +36,7 @@ from app.routers.acces.resident_schemas import (
     DeclarerBadgeBody,
 )
 from app.routers.acces.vues import AccesPorteur
-from app.utils.types_acces import TELECOMMANDE, TYPES_ACCES, TypeAcces, VIGIK
+from app.utils.types_acces import TELECOMMANDE, TYPES_ACCES, TypeAcces, VIGIK, libelle_type_acces
 from app.utils.destinataires import membres_cs_notifiables
 from app.utils.noms import contexte_personne, nom_affiche
 from app.auth.appartenance import exiger_acces_du_porteur
@@ -243,7 +243,7 @@ def creer_commande(
             session,
             destinataire_id=membre.id,
             type="vigik",
-            titre=f"Nouvelle demande de {body.type}",
+            titre=f"Nouvelle demande de {libelle_type_acces(body.type)}",
             corps=f"{nom_affiche(user.prenom, user.nom)} — lot {lot_numero}",
             lien="/espace-cs",
         )
@@ -262,7 +262,7 @@ def creer_commande(
             code="vigik_commande_recue",
             to_recipients=destinataires_cs,
             context={
-                "type": body.type,
+                "type": libelle_type_acces(body.type),
                 "lot": {"numero": lot_numero},
                 "demandeur": contexte_personne(user),
             },

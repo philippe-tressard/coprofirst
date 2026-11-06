@@ -27,6 +27,7 @@ from app.utils import horloge
 from app.utils.noms import nom_affiche
 from app.utils.recuperer import ou_404
 from app.utils.valeurs import valeur
+from app.utils.types_acces import libelle_statut_commande, libelle_type_acces
 from app.utils.cloche import sonner_systeme
 
 router = APIRouter()
@@ -155,7 +156,7 @@ def traiter_commande(
         "sa_demande",
         destinataire_id=cmd.user_id,
         type="vigik",
-        titre=f"Commande {cmd.type} : {valeur(cmd.statut)}",
+        titre=f"Commande {libelle_type_acces(cmd.type)} : {libelle_statut_commande(cmd.statut)}",
         corps=body.motif_refus or "Votre demande a été traitée.",
         lien="/mon-lot",
     )
@@ -174,7 +175,7 @@ def traiter_commande(
 
         ctx_vigik: dict[str, Any] = {
             "destinataire": {"prenom": demandeur.prenom, "nom": demandeur.nom},
-            "type": cmd.type,
+            "type": libelle_type_acces(cmd.type),
         }
         if not accepte:
             ctx_vigik["motif"] = body.motif_refus or "Aucun motif précisé."
