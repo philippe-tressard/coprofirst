@@ -308,13 +308,17 @@ def _debut_d_entete(lignes: list[str], n: int) -> int | None:
     return None
 
 
-def transfert_dans(sujet: str, texte: str) -> Transfert | None:
+def transfert_dans(sujet: str, texte: str, *, objet_exige: bool = True) -> Transfert | None:
     """Le message transféré, si ce courriel en est un — sinon None.
 
     L'objet décide d'abord : une RÉPONSE à un transfert (« RE: TR : … ») cite la
     marque de transfert dans son historique, et n'est pas un transfert.
+
+    `objet_exige=False` : le corps seul décide — quand un membre du conseil CLASSE
+    à la main un courriel dont il a réécrit l'objet (#2555, 06/11/2026 : « trou
+    sur le mur à gauche du portillon ? » portait le message d'une résidente).
     """
-    if not est_objet_de_transfert(sujet):
+    if objet_exige and not est_objet_de_transfert(sujet):
         return None
     lignes = [sans_chevrons(ligne) for ligne in texte.splitlines()]
     for n in range(len(lignes)):
