@@ -54,6 +54,8 @@ permissions:
 #  signalé. Un job qui PEND ne dit rien ; un job qui ÉCHOUE se relance d'un clic.
 #  C'est la règle du projet : un contrôle qui ne peut pas s'exécuter doit le DIRE
 #  (`standards/04`, INCONNU jamais OK). Les durées observées vont de 7 s à 57 s.
+#  Un plafond trop JUSTE annule aussi : chaque semaine, `plafonds-jobs.yml` le
+#  confronte au p95 mesuré de son job, sous une marge déclarée (#2576).
 
 jobs:
   # ── Backend: lint Python avec Ruff ───────────────────────────
@@ -531,6 +533,7 @@ jobs:
           python scripts/ci/horloge_autotests.py --selftest
           python scripts/ci/pipe_grep_quiet.py --selftest
           python scripts/ci/codeql_nouvelles_alertes.py --selftest
+          python scripts/ci/plafonds_jobs.py --selftest
           bash scripts/lib/lib-role.sh              --selftest
           bash scripts/lib/lib-applicatifs.sh       --selftest
           bash scripts/lib/lib-replication.sh       --selftest
