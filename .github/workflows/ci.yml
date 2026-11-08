@@ -2701,7 +2701,11 @@ jobs:
     #  25, pas 15 (#2276) : mesuré le 28/10/2026, le job dure 10 à 15 min et la
     #  suite grossit à chaque lot ; trois tentatives de suite ont été tuées au
     #  plafond, à l'avant-dernière étape — un check requis annulé bloque la PR.
-    timeout-minutes: 25
+    #  40, pas 25 (#2576) : mesuré le 08/11/2026 sur les 40 dernières exécutions,
+    #  médiane 19,4 min, p95 24,1 min — le plafond ne laissait plus une minute ;
+    #  #2574 a été coupé deux fois au plafond, tests verts. L'installation peut à
+    #  elle seule prendre 12 min sur un miroir lent (#1865) : p95 + 15 min.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
