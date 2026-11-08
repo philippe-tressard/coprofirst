@@ -951,6 +951,10 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   deux sens** — un clone ajouté, ou un retiré sans baisser `PLAFOND_CLONES`. Les
   six qui restent sont des déclarations que le langage force à répéter (blocs
   d'imports, signatures), nommées dans l'en-tête du script.
+- 🔒 **CodeQL juge dès la PR vers `dev`** (#2571) : la configuration par défaut de GitHub
+  ne garde que `main` ; `codeql-avant-dev.yml` refait l'analyse sans l'envoyer et ne bloque
+  que les alertes NEUVES face à la dernière analyse de `main`, au seuil du contrôle de GitHub
+  (`scripts/ci/codeql_nouvelles_alertes.py`). Pas un check requis. 🔒 `test_codeql_avant_dev.py`.
 - 🔒 **La CI se rejoue à l'identique** (#1584) : tout `pip install` s'épingle
   (`test_ci_installations_epinglees.py`) et chaque `uses:` s'écrit par **SHA** avec
   sa version en commentaire (`test_ci_actions_epinglees.py` — Dependabot suit les

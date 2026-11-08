@@ -530,6 +530,7 @@ jobs:
           python scripts/ci/lancer_en_parallele.py --selftest
           python scripts/ci/horloge_autotests.py --selftest
           python scripts/ci/pipe_grep_quiet.py --selftest
+          python scripts/ci/codeql_nouvelles_alertes.py --selftest
           bash scripts/lib/lib-role.sh              --selftest
           bash scripts/lib/lib-applicatifs.sh       --selftest
           bash scripts/lib/lib-replication.sh       --selftest
