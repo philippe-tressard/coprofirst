@@ -30,6 +30,15 @@ def lire_yaml(chemin: Path) -> dict:
     return yaml.safe_load(chemin.read_text(encoding="utf-8"))
 
 
+def declencheurs(flux: dict) -> dict:
+    """Les déclencheurs (`on:`) d'un workflow lu par `lire_yaml`.
+
+    PyYAML lit la clé `on` comme le booléen True (YAML 1.1). Recopiée dans trois
+    tests de workflows avant #2571.
+    """
+    return flux.get("on") or flux.get(True) or {}
+
+
 def services_construits() -> dict[str, tuple[str, str]]:
     """Chaque service qui se CONSTRUIT : nom → (contexte, Dockerfile relatif à la racine)."""
     construits = {}

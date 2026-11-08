@@ -24,15 +24,10 @@ from __future__ import annotations
 import re
 
 
-from tests.aides_compose import RACINE, services_construits
+from tests.aides_compose import RACINE, declencheurs, services_construits
 from tests.aides_compose import lire_yaml as _yaml
 
 WORKFLOW = RACINE / ".github" / "workflows" / "images.yml"
-
-
-def _declencheurs(flux: dict) -> dict:
-    #  PyYAML lit la clé `on:` comme le booléen True (YAML 1.1).
-    return flux.get("on") or flux.get(True) or {}
 
 
 def services_publies() -> dict[str, tuple[str, str]]:
@@ -59,9 +54,9 @@ def test_la_publication_suit_les_services_dans_les_deux_jobs():
 
 
 def test_seul_main_publie():
-    declencheurs = _declencheurs(_yaml(WORKFLOW))
-    assert set(declencheurs) == {"push", "workflow_dispatch"}, declencheurs
-    assert declencheurs["push"] == {"branches": ["main"]}
+    on = declencheurs(_yaml(WORKFLOW))
+    assert set(on) == {"push", "workflow_dispatch"}, on
+    assert on["push"] == {"branches": ["main"]}
 
 
 def test_aucun_droit_par_defaut_et_chaque_job_dit_les_siens():
