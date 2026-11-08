@@ -961,6 +961,10 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   deux). Un workflow se mesure comme du code (500 lignes) ; `ci.yml` seul est admis
   au-dessus, par une **exception nominative** de `scripts-ci-modularite.sh`
   (`EXCEPTIONS_PLAFOND`, #1547) qui échoue quand elle ne sert plus.
+  Le `timeout-minutes` d'un job tient sa **durée mesurée** : chaque semaine,
+  `plafonds-jobs.yml` le confronte au p95 des exécutions réussies, sous la marge
+  déclarée dans `scripts/ci/plafonds_jobs.py`, et rend compte dans une issue —
+  un check requis coupé à son plafond bloque une PR sans un mot (#2576).
   L'image de Caddy porte une **mineure explicite** (`FROM caddy:2.11`,
   `test_image_caddy_epinglee.py`, #1602) : Dependabot propose alors ses montées. Python et
   Node restent flottants, par choix de `dependabot.yml`.
