@@ -70,11 +70,9 @@
 		{destinatairesParDefaut}
 		bind:brouillon={confidentiel}
 	>
-		<!--  `svelte:fragment` et non un `{#if}` autour du `<p slot>` : un élément
-		      porteur de `slot=` doit être enfant DIRECT du composant. -->
-		<svelte:fragment slot="aidePerimetre">
+		{#snippet creneauAidePerimetre()}
 			{#if aidePerimetre}<p class="aide">{aidePerimetre}</p>{/if}
-		</svelte:fragment>
+		{/snippet}
 	</ChampsCommuns>
 {/if}
 

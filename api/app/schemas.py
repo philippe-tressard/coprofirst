@@ -59,6 +59,10 @@ class UserRead(BaseModel):
     #  Préférence d'AFFICHAGE, jamais un droit — cf. models/core.py.
     restreindre_a_mes_batiments: bool = False
     decor_fetes: bool = True
+    #  La saisie d'une affaire (#2595) : le CHOIX (`None` = selon le rôle) et le mode
+    #  qui s'applique, calculé par `utils/saisie_affaire` — le front lit, ne dérive pas.
+    saisie_affaire: Optional[str] = None
+    saisie_affaire_effective: str = "essentielle"
     demarche_arrivant: Optional[str] = None
     batiment_id: Optional[int] = None
     batiment_nom: Optional[str] = None  # ex. "Bât. A"
@@ -102,11 +106,13 @@ class UserRead(BaseModel):
     ) -> "UserRead":
         from app.auth.operateur import roles_effectifs
         from app.utils.communaute import motif_de_refus
+        from app.utils.saisie_affaire import mode_effectif
 
         data = cls.model_validate(u)
         #  L'Opérateur jugé selon l'instance : l'écran n'offre que ce que la route admet.
         data.roles = roles_effectifs(u)
         data.communaute_motif_refus = motif_de_refus(u)
+        data.saisie_affaire_effective = mode_effectif(u)
         if batiment_nom is not None:
             data.batiment_nom = batiment_nom
         if delegations_aidant is not None:
