@@ -1,0 +1,55 @@
+name: Plafonds des jobs
+
+#  #2576 (08/11/2026) — le plafond de chaque job (`timeout-minutes`) confronté au
+#  p95 MESURÉ de sa durée. Un job coupé à son plafond est annulé, et un check requis
+#  annulé bloque une PR sans un mot : « Tests de navigateur (Playwright) » l'a été
+#  deux fois de suite à 25 min, tests verts, quand la suite avait grossi.
+#
+#  L'historique ne se lit que par l'API : le contrôle tourne ici, chaque semaine,
+#  hors de la CI des PR (son autotest, lui, y est joué). Le résultat va dans UNE
+#  issue « Plafonds des jobs de CI : marge franchie » — ouverte au premier écart ou
+#  INCONNU, commentée tant qu'il dure, fermée au retour au vert. Marge, règles et
+#  autotest : `scripts/ci/plafonds_jobs.py`.
+#      gh workflow run plafonds-jobs.yml          # à la main, même rapport
+on:
+  workflow_dispatch:
+  schedule:
+    #  Lundi 06:37 UTC : après la semaine de PR, hors des créneaux de nuit
+    #  (promotion 02:17, veille 04:41, purge 05:23) ; minute décalée exprès.
+    - cron: "37 6 * * 1"
+
+concurrency:
+  group: plafonds-jobs
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions: {}
+
+jobs:
+  mesurer:
+    name: Plafonds confrontés aux durées mesurées
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read      # l'historique des exécutions et de leurs jobs
+      issues: write      # l'issue du contrôle, ses commentaires, sa fermeture
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.11"
+
+      - name: Le contrôle se juge lui-même
+        run: python scripts/ci/plafonds_jobs.py --selftest
+
+      #  Code 1 (marge franchie) ou 2 (INCONNU) : l'issue est écrite PUIS l'étape
+      #  échoue — le rouge se voit dans l'onglet Actions comme dans l'issue.
+      - name: Mesurer et rapporter dans l'issue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/ci/plafonds_jobs.py --rapport
