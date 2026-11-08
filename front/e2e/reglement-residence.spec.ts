@@ -86,6 +86,8 @@ const QUESTION = {
 	verdict_libelle: 'Oui, sous conditions',
 	verdict_ton: 'alerte',
 	reponse: '<p>Oui, après autorisation de l’assemblée.</p>',
+	reponse_sans_renvois: '<p>Oui, après autorisation de l’assemblée.</p>',
+	renvois_sans_extrait: [],
 	reserves: null,
 	extraits: [],
 	texte_id: 1,

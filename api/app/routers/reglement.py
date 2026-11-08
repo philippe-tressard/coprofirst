@@ -55,6 +55,7 @@ from app.utils.limiter import LIMITE_APPEL_FACTURE, limiter
 from app.utils.lecture import lire_objet
 from app.utils.noms import nom_affiche
 from app.utils.question_reglement.documents import lien_reglement
+from app.utils.question_reglement.extraits import renvois_sans_extrait, sans_renvois
 from app.utils.question_reglement.format import MAX_CARACTERES_QUESTION, VERDICTS, ton_verdict
 from app.utils.question_reglement.production import disponible, repondre
 from app.utils.question_reglement.provenance import (
@@ -111,6 +112,11 @@ class ExtraitRead(BaseModel):
     acte: Optional[str] = None
     #: `reglement` ou `ag` — déduit par le code (`extraits.source_de`).
     source: Optional[str] = None
+    #: Le chapitre, puis la section qui le contiennent (le « § » du recueil) — déduit
+    #: du texte par le code, `None` dans un avis d'avant le 08/11/2026.
+    rubrique: Optional[str] = None
+    #: Par quoi l'avis le cite : `R1`, `AG2` — `None` dans un avis d'avant.
+    renvoi: Optional[str] = None
 
 
 class QuestionCreate(BaseModel):
@@ -142,6 +148,20 @@ class QuestionReglementRead(BaseModel):
     #: montre la corbeille d'après le serveur, il ne recalcule rien.
     peut_supprimer: bool = False
     cree_le: datetime
+
+    @computed_field
+    @property
+    def reponse_sans_renvois(self) -> str:
+        """La synthèse sans ses « [R2] » — l'aperçu de la carte et la FAQ la lisent
+        ainsi (la règle est ici : le site et l'app iOS montrent la même)."""
+        return sans_renvois(self.reponse)
+
+    @computed_field
+    @property
+    def renvois_sans_extrait(self) -> list[str]:
+        """Les renvois que l'avis cite sans extrait derrière — l'écran le dit."""
+        textes = [self.reponse, self.selon_reglement, self.selon_ag, self.reserves]
+        return renvois_sans_extrait(textes, [e.model_dump() for e in self.extraits])
 
     @computed_field
     @property

@@ -18,6 +18,7 @@ from sqlmodel import col, select
 from app.auth.deps import question_reglement_visible
 from app.models.reglement import QuestionReglement
 from app.utils.liens import lien_element
+from app.utils.question_reglement.extraits import sans_renvois
 from app.utils.question_reglement.format import VERDICTS, ton_verdict
 
 from .commun import ContexteFlux, auteur_nom, strip_html
@@ -37,7 +38,7 @@ def collecter(ctx: ContexteFlux) -> list[FluxItem]:
             date=q.cree_le,
             cree_le=q.cree_le,
             titre=q.question,
-            detail=f"Question au règlement — {strip_html(q.reponse, 200)}",
+            detail=f"Question au règlement — {strip_html(sans_renvois(q.reponse), 200)}",
             icon="⚖️",
             badges=[VERDICTS.get(q.verdict, q.verdict)],
             lien=lien_element("question-reglement", q.id),

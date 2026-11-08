@@ -13,6 +13,18 @@ texte, et l'acte celui du dernier titre de premier niveau (`# LIVRE I — …`).
 La référence donnée par le modèle reste affichée à côté — deux sources, et
 leur désaccord se voit.
 
+## La rubrique et le renvoi (08/11/2026, #2597)
+
+Le recueil n'a pas d'articles numérotés : le « § » d'un extrait est le chemin
+des titres qui le contiennent — le chapitre (`## CHAPITRE DEUX : CHARGES`), puis
+la section (`### ASSURANCES`) ; pour une AG, la résolution
+(`## Résolution n° 7 — …`). Il est DÉDUIT du texte, comme la page.
+
+Le renvoi (`R1`, `AG2`) relie une phrase de l'avis à son extrait. Le modèle le
+propose, le code le garde s'il est cohérent — préfixe conforme à la source
+retrouvée, numéro libre —, sinon en attribue un (`attribuer_renvois`). Un renvoi
+cité dans l'avis sans extrait derrière se relève (`renvois_sans_extrait`).
+
 ## Ce que la recherche tolère, et pourquoi
 
 | Écart | Exemple | Raison |
@@ -38,6 +50,8 @@ from typing import Optional
 _REPERE = re.compile(r"⟦([^⟧]*)⟧")
 #: Un titre de premier niveau — l'acte (« # LIVRE I — … »).
 _TITRE_1 = re.compile(r"^# +(.+?)\s*$", re.MULTILINE)
+#: Un titre de chapitre ou de section — niveaux 2 à 4 (`## CHAPITRE…`, `### ASSURANCES`).
+_TITRE_RUBRIQUE = re.compile(r"^(#{2,4}) +(.+?)\s*$", re.MULTILINE)
 #: Une coupure dans une citation.
 _COUPURE = re.compile(r"\[\s*(?:…|\.\.\.)\s*\]|…|\.\.\.")
 #: Un morceau plus court ne prouve rien : « de la » se trouve partout.
@@ -78,6 +92,11 @@ class Extrait:
     #: `reglement` ou `ag` — déduit de sa POSITION dans le texte, jamais du modèle ;
     #: `None` s'il n'a pas été retrouvé, ou sans décision d'AG jointe (29/10/2026).
     source: Optional[str] = None
+    #: Le chapitre, puis la section qui le contiennent — ou la résolution d'une AG.
+    #: Déduit du texte, comme la page (08/11/2026).
+    rubrique: Optional[str] = None
+    #: Le renvoi par lequel l'avis le cite : `R1`, `AG2`… (`attribuer_renvois`).
+    renvoi: Optional[str] = None
 
 
 def _normaliser(texte: str, sauter: list[tuple[int, int]] = ()) -> tuple[str, list[int]]:
@@ -106,6 +125,11 @@ def _normaliser(texte: str, sauter: list[tuple[int, int]] = ()) -> tuple[str, li
     return "".join(sortie), positions
 
 
+def _titre_propre(titre: str) -> str:
+    """Un titre sans emphase Markdown ni deux-points final, borné."""
+    return titre.replace("*", "").strip(" :")[:200]
+
+
 class Index:
     """Le texte d'un règlement, préparé une fois pour toutes ses citations."""
 
@@ -113,6 +137,10 @@ class Index:
         self.texte = texte
         self.reperes = [(m.start(), m.group(1).strip()) for m in _REPERE.finditer(texte)]
         self.titres = [(m.start(), m.group(1).strip()) for m in _TITRE_1.finditer(texte)]
+        self.rubriques = [
+            (m.start(), len(m.group(1)), _titre_propre(m.group(2)))
+            for m in _TITRE_RUBRIQUE.finditer(texte)
+        ]
         sauter = [(m.start(), m.end()) for m in _REPERE.finditer(texte)]
         self.normal, self.positions = _normaliser(texte, sauter)
 
@@ -149,6 +177,19 @@ class Index:
             acte = acte.split(" — ", 1)[0]
         return self._dernier(self.reperes, position), acte
 
+    def rubrique_de(self, position: int) -> Optional[str]:
+        """Le chemin des titres qui contiennent une position : le dernier titre de
+        niveau 2 (chapitre, résolution), puis le dernier plus fin qui le suit."""
+        avant = [r for r in self.rubriques if r[0] <= position]
+        chapitres = [r for r in avant if r[1] == 2]
+        if not chapitres:
+            return avant[-1][2] if avant else None
+        chapitre = chapitres[-1]
+        sections = [r for r in avant if r[1] > 2 and r[0] > chapitre[0]]
+        if not sections:
+            return chapitre[2]
+        return f"{chapitre[2]} › {sections[-1][2]}"[:300]
+
 
 #: Les deux sources d'un extrait — et l'ordre où l'écran les montre.
 SOURCE_REGLEMENT = "reglement"
@@ -181,13 +222,93 @@ def verifier(texte: str, bruts: list[dict], debut_ag: Optional[int] = None) -> l
                 page=page,
                 acte=acte,
                 source=source_de(position, debut_ag),
+                rubrique=index.rubrique_de(position) if position is not None else None,
+                renvoi=b.get("renvoi") or None,
             )
         )
-    return sortie
+    return attribuer_renvois(sortie)
+
+
+# ── Les renvois ────────────────────────────────────────────────────────────
+
+_RENVOI = re.compile(r"^(R|AG)([1-9][0-9]?)$")
+#: Un renvoi dans le texte de l'avis : `[R2]`, `[AG1]`, `[R1, R3]`.
+_GROUPE_RENVOIS = re.compile(r"\[\s*((?:R|AG)\d+(?:\s*[,;]\s*(?:R|AG)\d+)*)\s*\]")
+_CODE_RENVOI = re.compile(r"(?:R|AG)\d+")
+
+
+def _prefixe(source: Optional[str]) -> str:
+    return "AG" if source == SOURCE_AG else "R"
+
+
+def _renvoi_propre(brut: Optional[str]) -> str:
+    return (brut or "").strip().strip("[]").replace(" ", "").upper()
+
+
+def attribuer_renvois(extraits: list[Extrait]) -> list[Extrait]:
+    """PURE. Un renvoi unique et cohérent par extrait.
+
+    Le renvoi proposé par le modèle est gardé quand son préfixe dit la source que
+    le CODE a retrouvée (`R` pour le règlement, `AG` pour une décision) et que son
+    numéro n'est pas déjà pris ; sinon l'extrait reçoit le premier numéro libre de
+    son préfixe. Un extrait non retrouvé se range avec le règlement, comme à l'écran."""
+    pris: set[str] = set()
+    for e in extraits:
+        voulu = _renvoi_propre(e.renvoi)
+        coherent = _RENVOI.match(voulu) and voulu.startswith(_prefixe(e.source))
+        if coherent and voulu not in pris:
+            e.renvoi = voulu
+            pris.add(voulu)
+        else:
+            e.renvoi = None
+    for e in extraits:
+        if e.renvoi is None:
+            prefixe, n = _prefixe(e.source), 1
+            while f"{prefixe}{n}" in pris:
+                n += 1
+            e.renvoi = f"{prefixe}{n}"
+            pris.add(e.renvoi)
+    return extraits
+
+
+def renvois_cites(*textes: Optional[str]) -> list[str]:
+    """PURE. Les renvois écrits dans les textes d'un avis, sans doublon, dans l'ordre."""
+    vus: list[str] = []
+    for texte in textes:
+        for groupe in _GROUPE_RENVOIS.findall(texte or ""):
+            for code in _CODE_RENVOI.findall(groupe):
+                if code not in vus:
+                    vus.append(code)
+    return vus
+
+
+def sans_renvois(texte: Optional[str]) -> str:
+    """PURE. Le texte d'un avis sans ses renvois — pour l'aperçu d'une carte, le fil
+    et la FAQ, où « [R2] » ne renverrait à rien. L'espace qui les précède part avec eux."""
+    return re.sub(r"\s*" + _GROUPE_RENVOIS.pattern, "", texte or "")
+
+
+def renvois_sans_extrait(textes: list[Optional[str]], extraits: list[dict]) -> list[str]:
+    """PURE. Les renvois cités par l'avis qu'aucun extrait ne porte — l'écran le dit
+    plutôt que de laisser un [R4] qui ne mène nulle part."""
+    portes = {e.get("renvoi") for e in extraits}
+    return [c for c in renvois_cites(*textes) if c not in portes]
 
 
 def en_json(extraits: list[Extrait]) -> list[dict]:
     return [asdict(e) for e in extraits]
 
 
-__all__ = ["SOURCE_AG", "SOURCE_REGLEMENT", "Extrait", "Index", "en_json", "source_de", "verifier"]
+__all__ = [
+    "SOURCE_AG",
+    "SOURCE_REGLEMENT",
+    "Extrait",
+    "Index",
+    "attribuer_renvois",
+    "en_json",
+    "renvois_cites",
+    "renvois_sans_extrait",
+    "sans_renvois",
+    "source_de",
+    "verifier",
+]
