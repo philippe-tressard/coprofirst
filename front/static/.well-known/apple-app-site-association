@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["GUX8KASNTG.fr.coprofirst.app"],
+        "components": [
+          { "/": "/" },
+          { "/": "/tickets" },
+          { "/": "/tickets/*" },
+          { "/": "/actualites" },
+          { "/": "/actualites/*" },
+          { "/": "/auth/connexion" },
+          { "/": "/auth/verifier-email" },
+          { "/": "/auth/reinitialisation-mdp" }
+        ]
+      }
+    ]
+  }
+}
