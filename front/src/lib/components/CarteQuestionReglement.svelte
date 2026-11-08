@@ -13,6 +13,12 @@
   NON retrouvé le dit en clair, avec la référence que le modèle a donnée — un
   avis dont une citation est fausse a l'air vérifiable, et c'est le pire cas.
 
+  ## Deux lectures d'un même avis (08/11/2026, #2597)
+
+  Un avis à RENVOIS (`renvoi` sur ses extraits) se lit en synthèse courte, puis en
+  sections pliées — `AvisReglement`. Un avis d'avant n'a pas de renvois : il se
+  rend comme il a toujours été rendu, section après section.
+
   La publication dans la FAQ s'ouvre DANS la carte (créneau `formulaire`) : le
   geste est sur la question, la boîte aussi (`ux-patterns` §14 ter).
 -->
@@ -21,6 +27,7 @@
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import ApercuCarte from '#lib/components/ApercuCarte.svelte';
 	import AuteurCarte from '#lib/components/AuteurCarte.svelte';
+	import AvisReglement from '#lib/components/AvisReglement.svelte';
 	import BadgeVerdict from '#lib/components/BadgeVerdict.svelte';
 	import BoutonLien from '#lib/components/BoutonLien.svelte';
 	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
@@ -40,6 +47,7 @@
 	const dispatch = createEventDispatcher<{ basculer: void; publier: void; supprimer: void }>();
 
 	$: verifies = q.extraits.filter((e) => e.verifie).length;
+	$: avecRenvois = q.extraits.some((e) => e.renvoi);
 	$: extraitsAg = q.extraits.filter((e) => e.source === 'ag');
 	$: extraitsReglement = q.extraits.filter((e) => e.source !== 'ag');
 </script>
@@ -85,7 +93,7 @@
 		</svelte:fragment>
 		<svelte:fragment slot="apercu">
 			{#if !ouvert && !publication}
-				<ApercuCarte contenu={q.reponse} />
+				<ApercuCarte contenu={q.reponse_sans_renvois} />
 			{/if}
 		</svelte:fragment>
 		<svelte:fragment slot="tags">
@@ -133,30 +141,34 @@
 				{:else if q.modele}Rédigé par {q.modele}.
 				{:else if q.provenance}Rédigé d'après {q.provenance}.{/if}
 			</p>
-			<div class="rich-content">{@html safeHtml(q.reponse)}</div>
+			{#if avecRenvois}
+				<AvisReglement {q} />
+			{:else}
+				<div class="rich-content">{@html safeHtml(q.reponse)}</div>
 
-			<!--  En SECTIONS depuis le 29/10/2026 : d'après le règlement, d'après les
+				<!--  En SECTIONS depuis le 29/10/2026 : d'après le règlement, d'après les
 			      AG, la synthèse des deux. Un avis plus ancien n'a que sa réponse, et
 			      se lit comme avant. Un extrait va sous la source où le CODE l'a
 			      retrouvé (`source`) — un extrait non retrouvé reste avec le règlement. -->
-			{#if q.selon_reglement}
-				<h4 class="intertitre">D'après le règlement</h4>
-				<div class="rich-content">{@html safeHtml(q.selon_reglement)}</div>
-			{/if}
-			<ExtraitsReglement titre="Extraits du règlement" extraits={extraitsReglement} />
-			{#if q.selon_ag}
-				<h4 class="intertitre">D'après les assemblées générales</h4>
-				<div class="rich-content">{@html safeHtml(q.selon_ag)}</div>
-			{/if}
-			<ExtraitsReglement titre="Extraits des décisions d'AG" extraits={extraitsAg} />
-			{#if q.synthese}
-				<h4 class="intertitre">Synthèse</h4>
-				<div class="rich-content">{@html safeHtml(q.synthese)}</div>
-			{/if}
+				{#if q.selon_reglement}
+					<h4 class="intertitre">D'après le règlement</h4>
+					<div class="rich-content">{@html safeHtml(q.selon_reglement)}</div>
+				{/if}
+				<ExtraitsReglement titre="Extraits du règlement" extraits={extraitsReglement} />
+				{#if q.selon_ag}
+					<h4 class="intertitre">D'après les assemblées générales</h4>
+					<div class="rich-content">{@html safeHtml(q.selon_ag)}</div>
+				{/if}
+				<ExtraitsReglement titre="Extraits des décisions d'AG" extraits={extraitsAg} />
+				{#if q.synthese}
+					<h4 class="intertitre">Synthèse</h4>
+					<div class="rich-content">{@html safeHtml(q.synthese)}</div>
+				{/if}
 
-			{#if q.reserves}
-				<h4 class="intertitre">Réserves</h4>
-				<div class="rich-content">{@html safeHtml(q.reserves)}</div>
+				{#if q.reserves}
+					<h4 class="intertitre">Réserves</h4>
+					<div class="rich-content">{@html safeHtml(q.reserves)}</div>
+				{/if}
 			{/if}
 		</div>
 	{/if}

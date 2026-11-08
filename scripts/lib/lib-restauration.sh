@@ -18,8 +18,15 @@
 #    lequel chaque geste s'exécute —, que l'appelant définit :
 #      lancer_base     : en `app`, `DATABASE_URL` dans l'environnement, le
 #                        dossier de l'export monté sur /restauration (lecture seule) ;
-#      lancer_fichiers : en root, le volume des fichiers sur /app/uploads,
-#                        l'archive montée sur /restauration/archive.tar.gz.
+#      lancer_fichiers : en `app`, le volume des fichiers sur /app/uploads,
+#                        l'entrée standard ouverte (`-i`, `-T` sous Compose) :
+#                        l'archive y arrive en FLUX (#2547). Le root d'un
+#                        conteneur durci n'a ni DAC_OVERRIDE ni FOWNER, et ne
+#                        peut pas écrire dans un volume neuf, né à `app` ; une
+#                        archive montée resterait illisible à `app` (elle est à
+#                        root ou à qui l'a tirée), et la copier doublerait le
+#                        disque le jour où il compte. Lue par l'hôte, elle
+#                        traverse sans être ni copiée ni ouverte à tous.
 #
 #  L'archive est celle de `utils/backup.py` :
 #    base-export.tar.gz   l'export vérifié (format neutre, `export_copropriete`) ;
@@ -102,18 +109,23 @@ restauration_poser_base() {
         "/restauration/$RESTAURATION_EXPORT" env:DATABASE_URL
 }
 
-#  Python de l'image de l'API (3.12) : `filter="data"` refuse un membre qui
-#  sortirait du dossier (`../`, lien absolu) — l'archive vient d'un disque que l'on
-#  n'a pas sous les yeux. Puis l'inventaire : chaque fichier de l'archive est dans
+#  Python de l'image de l'API (3.12), l'archive lue en FLUX sur l'entrée standard
+#  (`r|gz` : un seul passage, chaque membre extrait à son tour) : `filter="data"`
+#  refuse un membre qui sortirait du dossier (`../`, lien absolu) — l'archive vient
+#  d'un disque que l'on n'a pas sous les yeux. Puis l'inventaire : chaque fichier de l'archive est dans
 #  le volume, à sa taille, et rien d'autre n'y est.
 # shellcheck disable=SC2016
 RESTAURATION_PY_FICHIERS='
 import os, sys, tarfile
 RACINE = "/app/uploads"
-with tarfile.open("/restauration/archive.tar.gz") as t:
-    membres = [m for m in t.getmembers() if m.name == "uploads" or m.name.startswith("uploads/")]
-    t.extractall("/app", members=membres, filter="data")
-attendu = sorted((m.name[len("uploads/"):], m.size) for m in membres if m.isfile())
+attendu = []
+with tarfile.open(fileobj=sys.stdin.buffer, mode="r|gz") as t:
+    for m in t:
+        if m.name == "uploads" or m.name.startswith("uploads/"):
+            t.extract(m, "/app", filter="data")
+            if m.isfile():
+                attendu.append((m.name[len("uploads/"):], m.size))
+attendu.sort()
 vu = sorted(
     (os.path.relpath(os.path.join(r, f), RACINE), os.path.getsize(os.path.join(r, f)))
     for r, _, fs in os.walk(RACINE) for f in fs
@@ -127,10 +139,11 @@ print(f"FICHIERS {len(vu)}")
 '
 
 # ── Geste 3 : installer les fichiers téléversés dans leur volume ──────────────
-#  → « FICHIERS <n> » sur la sortie, code 1 sur un écart. Les propriétés sont
-#  reprises par `api/start.sh` au démarrage (`chown -R app:app /app/uploads`).
+#  $1 archive (lue ici, par l'hôte) → « FICHIERS <n> » sur la sortie, code 1 sur
+#  un écart. Écrits par `app`, ils sont déjà au compte que `api/start.sh` reprend
+#  au démarrage (`chown -R app:app /app/uploads`).
 restauration_installer_fichiers() {
-    lancer_fichiers python -c "$RESTAURATION_PY_FICHIERS"
+    lancer_fichiers python -c "$RESTAURATION_PY_FICHIERS" < "$1"
 }
 
 # ── Geste 4 (référence seulement) : le registre des installations (#1972) ─────

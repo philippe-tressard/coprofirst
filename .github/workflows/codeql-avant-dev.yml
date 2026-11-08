@@ -1,0 +1,82 @@
+name: CodeQL avant dev
+
+#  #2571 (08/11/2026) — l'analyse CodeQL dès la PR vers `dev`, plus seulement à dev→main.
+#
+#  Pourquoi : CodeQL tourne en « configuration par défaut » de GitHub, qui n'analyse
+#  que les PR vers la branche par défaut (`main`). L'alerte de ReDoS de #2569 n'est
+#  donc apparue qu'à la PR dev→main, et a coûté un cycle de MEP complet (~45 min).
+#
+#  Comment : la même analyse (mêmes langages, suite par défaut, `build-mode: none`),
+#  mais SANS envoi — GitHub refuse l'envoi d'une analyse « avancée » tant que la
+#  configuration par défaut est active, et c'est elle qui garde `main`. Le résultat se
+#  compare à la dernière analyse de `main`, lue par l'API : seules les alertes NEUVES
+#  comptent, au seuil du contrôle de GitHub (`scripts/ci/codeql_nouvelles_alertes.py`).
+#  Ce job n'est pas un check requis de `main` : il ne remplace rien, il avance le constat.
+on:
+  pull_request:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions: {}
+
+jobs:
+  analyser:
+    name: CodeQL avant dev (${{ matrix.langage }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      #  Lire l'analyse de référence de `main` (API code-scanning) ; rien ne s'écrit.
+      security-events: read
+    strategy:
+      fail-fast: false
+      matrix:
+        #  Les langages de la configuration par défaut (`code-scanning/default-setup`).
+        langage: [actions, javascript-typescript, python]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: ${{ matrix.langage }}
+          build-mode: none
+
+      - name: Analyser, sans envoyer
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          category: /language:${{ matrix.langage }}
+          upload: never
+          output: resultats-codeql
+
+      #  La dernière analyse de `main` pour ce langage, au format SARIF. Absente ou
+      #  illisible : le script rend INCONNU (code 2), jamais « rien de neuf ».
+      - name: Lire la référence (dernière analyse de main)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CATEGORIE: /language:${{ matrix.langage }}
+        run: |
+          id=$(gh api "repos/${GITHUB_REPOSITORY}/code-scanning/analyses?ref=refs/heads/main&tool_name=CodeQL&per_page=50" \
+            --jq "[.[] | select(.category == \"${CATEGORIE}\")][0].id // empty")
+          if [ -z "$id" ]; then
+            echo "::error title=CodeQL avant dev — INCONNU::aucune analyse de main pour ${CATEGORIE}"
+            exit 2
+          fi
+          gh api -H "Accept: application/sarif+json" \
+            "repos/${GITHUB_REPOSITORY}/code-scanning/analyses/${id}" > reference.sarif
+
+      - name: Juger les alertes neuves
+        run: |
+          shopt -s nullglob
+          sarifs=(resultats-codeql/*.sarif)
+          if [ "${#sarifs[@]}" -ne 1 ]; then
+            echo "::error title=CodeQL avant dev — INCONNU::${#sarifs[@]} fichier(s) SARIF produit(s), un attendu"
+            exit 2
+          fi
+          python3 -I scripts/ci/codeql_nouvelles_alertes.py "${sarifs[0]}" reference.sarif

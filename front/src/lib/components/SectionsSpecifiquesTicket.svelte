@@ -1,7 +1,7 @@
 <!--
-  SectionsSpecifiquesTicket.svelte — les sections 2 et 3 du cadre #430 pour un
-  ticket : « Catégorie », « Saisi pour », les options de publication, et le
-  workflow.
+  SectionsSpecifiquesTicket.svelte — la section 2 du cadre #430 pour un ticket :
+  la « Catégorie ». L'Équipement et le Suivi, qui la suivaient ici, vivent dans
+  `SectionsEquipementSuiviTicket` depuis le 08/11/2026 (#2595).
 
   ## Pourquoi ce fichier existe (05/09/2026)
 
@@ -18,22 +18,13 @@
   `lint:etats` la refuse.
 -->
 <script lang="ts">
-	import { pliageDe, requisDe } from '#lib/pliage.ts';
+	import { requisDe } from '#lib/pliage.ts';
 	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
-	import SectionWorkflow from '#lib/components/SectionWorkflow.svelte';
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
-	import { isCS } from '#lib/stores/auth.ts';
-	import { LEGENDE_CARNET, STATUT_TICKET_OPTIONS, estActualite } from '#lib/tickets.ts';
-	import {
-		AIDE_SUIVI_ACTUALITE,
-		ETAT_SUIVI_DEFAUT,
-		SUIVI_ACTUALITE_OPTIONS,
-	} from '#lib/suivi-actualite.ts';
-	import SectionEquipement from '#lib/components/SectionEquipement.svelte';
-	import type { Etat, IdSection } from '#lib/entites/types.ts';
+	import { LEGENDE_CARNET } from '#lib/tickets.ts';
+	import type { Etat } from '#lib/entites/types.ts';
 	import { sectionPresente } from '#lib/entites/types.ts';
 	import { TICKET } from '#lib/entites/ticket.ts';
-	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	/** L'état de rendu — c'est lui, et non l'écran, qui décide des sections. */
 	export let etat: Etat;
@@ -45,37 +36,7 @@
 		marque?: string;
 		marqueAide?: string;
 	}[] = [];
-	/** Le formulaire est-il en correction ? Change le seul texte d'aide du workflow. */
-	export let modeEdition = false;
-
 	export let categorie = '';
-	export let statut = 'ouvert';
-	/**  🔴 LES TROIS OPTIONS DE PUBLICATION, en un objet lié (05/09/2026).
-	 *
-	 *   Un objet plutôt que trois `bind:` séparés : c'est LUI que l'écran reprend
-	 *   du ticket (`optionsDuTicket`) et renvoie tel quel (`optionsVersTicket`).
-	 *   Trois liaisons distinctes obligeraient chaque hôte à défaire puis refaire
-	 *   le même objet — et le premier qui en oublierait une la remettrait à son
-	 *   défaut sans que personne le voie. */
-	export let options = {
-		epingle: false,
-		urgente: false,
-		brouillon: false,
-		suiviKanban: false,
-		suiviActualite: false,
-		etatSuivi: null as string | null,
-	};
-	/**  Les sections ÉTEINTES par la nature de l'affaire, avec leur motif
-	 *   (`#lib/formulaire-affaire`, 23/09/2026) : grisées, pliées, sans champ. */
-	export let inactives: Partial<Record<IdSection, string>> = {};
-	/** L'équipement concerné (#1097) — le code d'un équipement, ou `''`. */
-	export let equipement = '';
-	//  🔁 Une ACTUALITÉ a un suivi OPTIONNEL : une case du conseil, puis ses trois
-	//  états, choisis dès l'ouverture et corrigés en modification (10/10/2026) —
-	//  une Suite trace ensuite l'avancée au fil. Facultatif, il se plie ; coché, il
-	//  se déplie d'office (une valeur autre que le défaut).
-	$: actualite = estActualite({ categorie });
-	$: suiviCoche = actualite && options.suiviActualite;
 </script>
 
 <!--  2. NATURE — la catégorie de l'affaire, et elle seule.
@@ -146,81 +107,6 @@
       Elles viennent maintenant de `ChampsCommuns` (`avecSaisiPour`,
       `avecOptions`), qui rend dans l'ordre de `SECTIONS_ORDRE` — la même
       porte que pour l'actualité, l'idée et l'événement. -->
-
-<!--  L'ÉQUIPEMENT (section 3, #1097) : le conseil le désigne, pour une
-      catégorie du bâti. Ailleurs, grisé avec son motif (`inactivePour`). -->
-{#if sectionPresente(TICKET, etat, 'equipement')}
-	<SectionEquipement
-		pliable={pliageDe(TICKET, 'equipement')}
-		inactive={inactives.equipement ?? ''}
-		bind:equipement
-	/>
-{/if}
-
-<!--  3. Suivi — où en est l'affaire. IDENTIQUE en création et en édition
-	      depuis le cadre #430 : une correction corrige l'état comme elle corrige
-	      un titre. 🔴 `SectionWorkflow`, la section de la Suite : elle était
-	      réécrite ici à la main, et les deux avaient divergé (#1329).
-	      Un résident ne peut pas faire avancer le suivi : la rangée est en
-	      lecture, et le serveur refait le contrôle (liste blanche CS). -->
-<SectionWorkflow
-	idTitre="ticket-workflow-titre"
-	options={actualite ? (suiviCoche ? SUIVI_ACTUALITE_OPTIONS : []) : STATUT_TICKET_OPTIONS}
-	valeur={actualite ? (suiviCoche ? (options.etatSuivi ?? ETAT_SUIVI_DEFAUT) : '') : statut}
-	lecture={!$isCS}
-	pliable={actualite ? !suiviCoche : pliageDe(TICKET, 'suivi')}
-	requis={!actualite && requisDe(TICKET, 'suivi')}
-	inactive={inactives.suivi ?? ''}
-	on:choisir={(e) => (actualite ? (options.etatSuivi = e.detail) : (statut = e.detail))}
->
-	{#if actualite}
-		{#if $isCS}
-			<div class="field champ-large">
-				<label class="checkbox-field">
-					<input type="checkbox" bind:checked={options.suiviActualite} />
-					<span>Activer le suivi</span>
-				</label>
-				<p class="aide">{AIDE_SUIVI_ACTUALITE}</p>
-			</div>
-		{:else}
-			<p class="aide">Seul le conseil syndical suit une actualité.</p>
-		{/if}
-	{:else if !$isCS}
-		<p class="aide">
-			{modeEdition
-				? `Seul le conseil syndical fait avancer le suivi d’une ${TICKET.libelle.toLowerCase()}.`
-				: 'Votre demande part en « Ouvert ». Le conseil syndical fait ensuite avancer son suivi.'}
-		</p>
-	{/if}
-
-	<!--  🔴 LE SUIVI KANBAN EST DANS LE WORKFLOW, pas dans la Diffusion (#833).
-
-	      Arbitré ainsi : les trois canaux de diffusion NOTIFIENT des gens ;
-	      celui-ci INSCRIT l'objet dans un tableau. Ce n'est pas la même nature,
-	      et l'ajouter à `CanauxNotification` l'aurait fait paraître sur les neuf
-	      écrans qui portent la Diffusion — annonce de hall, sondage, calendrier —
-	      où « inscrire au kanban » ne veut rien dire. C'est l'héritage partiel
-	      dont l'en-tête de `SectionDiffusion` met en garde (#498).
-
-	      Sa place est ici : le kanban répond à « où en est cet objet ? », qui est
-	      exactement la question de la section 3 du cadre #430.
-
-	      ⚠️ Réservé au conseil, et le serveur le refait
-	      (`OPTIONS_RESERVEES_AU_CS`) : le tableau ordonne SON travail. -->
-	{#if $isCS && categorie === 'etude_travaux'}
-		<div class="field champ-large">
-			<label class="checkbox-field">
-				<input type="checkbox" bind:checked={options.suiviKanban} />
-				<span>Suivre cette affaire au <strong>kanban</strong></span>
-			</label>
-			<p class="aide">
-				Coché d’office pour « Étude &amp; travaux ». La carte se range d’après le statut ci-dessus :
-				Ouvert{SEPARATEUR.fleche}CS, En cours{SEPARATEUR.fleche}Syndic, Résolu{SEPARATEUR.fleche}Terminé,
-				Annulé{SEPARATEUR.fleche}Annulé.
-			</p>
-		</div>
-	{/if}
-</SectionWorkflow>
 
 <style>
 	/*  Le style PART AVEC le balisage (05/09/2026) : il est resté ici quand les

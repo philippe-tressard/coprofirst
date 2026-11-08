@@ -45,6 +45,7 @@ from app.utils.limiter import (
 from app.utils.etages import ETAGE_HORS_BORNES, etage_hors_bornes
 from app.utils.demandes_profil import DemandeModifRead, lire_demande
 from app.utils.lecture_utilisateur import construire_user_read
+from app.utils.saisie_affaire import choix_a_enregistrer
 from app.utils.verification_adresse import demander_changement_adresse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -78,6 +79,8 @@ class MeUpdate(BaseModel):
     preferences_notifications: str | None = None
     restreindre_a_mes_batiments: bool | None = None
     decor_fetes: bool | None = None
+    #  « essentielle », « complete » ou « role » (selon mon rôle) — #2595.
+    saisie_affaire: str | None = None
     demarche_arrivant: str | None = None
 
     @field_validator("nom", mode="before")
@@ -161,6 +164,10 @@ def update_me(
     if body.decor_fetes is not None:
         #  Une préférence pour soi : elle n'allume rien que l'administration a éteint.
         user.decor_fetes = body.decor_fetes
+    if body.saisie_affaire is not None:
+        #  Une préférence pour soi : elle ne change que ce que SON formulaire montre,
+        #  jamais ce que le serveur accepte (#2595).
+        user.saisie_affaire = choix_a_enregistrer(body.saisie_affaire)
     if body.demarche_arrivant is not None:
         if body.demarche_arrivant not in ("nouvel_arrivant", "deja_resident"):
             raise HTTPException(400, "Valeur invalide pour demarche_arrivant")

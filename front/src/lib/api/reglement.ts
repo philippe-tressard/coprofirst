@@ -45,6 +45,12 @@ export interface ExtraitReglement {
 	/** `reglement` ou `ag`, déduit de sa place dans le texte — `null` sans décision
 	 *  d'AG jointe, ou s'il n'a pas été retrouvé. */
 	source: 'reglement' | 'ag' | null;
+	/** Le chapitre, puis la section qui le contiennent — le « § » du recueil, déduit
+	 *  du texte par le code. `null` dans un avis d'avant le 08/11/2026. */
+	rubrique: string | null;
+	/** Par quoi l'avis le cite (`R1`, `AG2`) — `null` dans un avis d'avant : il se lit
+	 *  alors comme avant, sans renvois. */
+	renvoi: string | null;
 }
 
 /** Une question posée, et la réponse du juriste. */
@@ -59,6 +65,10 @@ export interface QuestionReglement {
 	/** Ce que la capsule signale — servi (`format.TONS_VERDICT`, #2505). */
 	verdict_ton: TonVerdict;
 	reponse: string;
+	/** La synthèse sans ses « [R2] » — l'aperçu de la carte et la FAQ la lisent ainsi. */
+	reponse_sans_renvois: string;
+	/** Les renvois cités par l'avis qu'aucun extrait ne porte (`[]` quand tout tient). */
+	renvois_sans_extrait: string[];
 	/** Les sections de l'avis (29/10/2026) — `null` dans un avis plus ancien. */
 	selon_reglement: string | null;
 	selon_ag: string | null;

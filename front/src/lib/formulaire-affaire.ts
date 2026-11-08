@@ -23,6 +23,7 @@
  * base une valeur qu'aucun écran ne montre plus.
  */
 import { nombreOuNull } from '#lib/utils.ts';
+import { richEmpty } from '#lib/publications.ts';
 import type { Ticket } from '#lib/api/index.ts';
 import type { ConditionInactive, Etat, IdSection, NatureAffaire } from '#lib/entites/types.ts';
 import { motifInactif } from '#lib/entites/types.ts';
@@ -245,6 +246,41 @@ export function chargeUtileAffaire(
 		});
 	}
 	return charge;
+}
+
+/**
+ * Pourquoi la saisie ne peut pas partir — `''` si elle le peut. Commune à la soumission
+ * directe et à l'aperçu.
+ *
+ * La catégorie est déclarée `requis` : l'exiger à l'écran et laisser le serveur en poser une
+ * à notre place serait le plus trompeur des deux.
+ */
+export function erreurDeSaisie(s: SaisieAffaire, estCS: boolean): string {
+	if (!s.titre.trim() || richEmpty(s.description)) return 'Titre et description sont obligatoires.';
+	if (!s.categorie) return 'Choisissez une catégorie : c’est elle qui décide de qui traite.';
+	if (estCS && s.saisiPour.mode === 'exterieur' && !s.saisiPour.nom.trim())
+		return 'Veuillez saisir le nom de la personne.';
+	return '';
+}
+
+/** Ce que l'aperçu avant diffusion reçoit (#498) — dérivé de la saisie, jamais recopié par l'écran. */
+export function chargeApercu(s: SaisieAffaire, ticketId?: number): Record<string, unknown> {
+	return {
+		ticket_id: ticketId,
+		titre: s.titre.trim(),
+		description: s.description,
+		categorie: s.categorie,
+		urgente: s.options.urgente,
+		public_cible: s.publicCible,
+		reserve_perimetre: s.reservePerimetre,
+		perimetre_cible: s.perimetreCible,
+		photos_urls: s.photosUrls,
+		fichiers_urls: s.fichiersUrls,
+		destinataire_syndic: s.destinataireSyndic,
+		destinataire_cs: s.destinataireCs,
+		partager_whatsapp: s.partagerWhatsapp,
+		envoyer_auteur: s.envoyerAuteur,
+	};
 }
 
 /**

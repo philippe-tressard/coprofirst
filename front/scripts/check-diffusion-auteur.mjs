@@ -73,6 +73,13 @@ if (tous.length < 50) {
 	process.exit(1);
 }
 
+//  Le module qui compose la charge utile d'une affaire : un écran qui l'appelle envoie ce
+//  qu'il cite. Lu ici, et exigé — un module qui ne citerait plus `envoyer_auteur` ferait
+//  échouer l'écran qui s'y fie, au lieu de le laisser passer sur la foi d'un nom.
+const DELEGUE = /\bchargeUtileAffaire\(/;
+const chargeAffaireEnvoie = /envoyer_auteur/.test(
+	sansCommentaires(readFileSync(join(SOURCE, 'lib/formulaire-affaire.ts'), 'utf8')),
+);
 const lient = [];
 const fautifs = [];
 //  🔴 LE TROU QUE CE CONTRÔLE N'A PAS VU (31/08/2026).
@@ -114,7 +121,9 @@ for (const chemin of tous) {
 	//  hôte invisible — la case reviendrait à ne rien faire, par un chemin de plus.
 	if (!/bind:auteur\b|bind:envoyerAuteur\b/.test(source)) continue;
 	lient.push(rel);
-	if (!/envoyer_auteur/.test(source)) {
+	//  Citer `envoyer_auteur` dans sa charge utile, OU composer celle-ci par
+	//  `chargeUtileAffaire` — qui l'écrit (#2595 : le formulaire d'affaire ne la compose plus).
+	if (!/envoyer_auteur/.test(source) && !(DELEGUE.test(source) && chargeAffaireEnvoie)) {
 		fautifs.push(rel);
 	}
 }

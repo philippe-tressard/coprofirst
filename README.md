@@ -37,7 +37,7 @@
 - **Annonces de hall** — affiche PDF aux couleurs de la résidence, diffusable au conseil, au syndic et au groupe WhatsApp.
 - **Reporting CS** — suivi des affaires en cours, relance groupée du syndic et comptes rendus de réunion CS / Syndic validés par les présents, exportables en PDF.
 - **Courriels affaires** — les messages reçus à l'adresse des affaires alimentent les fils, avec leurs pièces jointes (documents et photos, dix au plus, hors signature) ; seuls l'auteur, le conseil et le syndic y écrivent ; le journal garde le verdict de chacun, jamais son texte.
-- **Questions au règlement** — l'assistant IA répond en juriste d'après le règlement de copropriété **et les décisions d'assemblée générale**, en sections (d'après le règlement, d'après les AG, synthèse), avec extraits cités et vérifiés ; les PV d'AG se transcrivent par l'assistant — résolutions seules, sans nom — et n'entrent qu'après relecture de l'administration.
+- **Questions au règlement** — l'assistant IA répond en juriste d'après le règlement de copropriété **et les décisions d'assemblée générale**, en synthèse courte dont chaque affirmation renvoie à un extrait (acte, rubrique, page), détaillée en sections pliées (règlement, AG, réserves), extraits cités et vérifiés ; les PV d'AG se transcrivent par l'assistant — résolutions seules, sans nom — et n'entrent qu'après relecture de l'administration.
 - **Administration** — comptes, pages légales, services (IA, WhatsApp, courriel, décor des jours de fête), nom, logo et palette de couleurs de la résidence (site, courriels, affiches).
 - **Périmètres** — arborescence de la copropriété (bâtiments, parking, espaces) pour localiser affaires, actualités, sondages et annonces.
 - **Équipements** — ce sur quoi l'on intervient (ascenseur, chauffage, plomberie…, et l'assurance ou le syndic pour les contrats), administrés dans Admin › Copropriété › Équipements : libellé, icône, abréviation, périmètres concernés. Ils rangent les contrats, le carnet d'entretien et les prestataires ; dans une affaire, l'équipement et le périmètre se proposent l'un l'autre.
@@ -47,6 +47,7 @@
 - **Installations** — registre des installations CoproFirst inscrites, pour l'opérateur de la référence seulement.
 - **Liens partageables** — chaque onglet et chaque publication a son adresse propre ; le lien n'ouvre aucun droit.
 - **Thème clair ou sombre** — Automatique (suit le réglage de l'appareil), Clair ou Sombre, choisi dans le profil et retenu par appareil ; la page arrive déjà dans son thème, sans éclair, et l'impression reste claire. Le décor des jours de fête, allumé par l'administration, s'éteint pour soi au même endroit (retenu par le compte).
+- **Saisie d'une affaire, Essentielle ou Complète** — réglée dans le profil, pour tout le compte : la saisie essentielle ne montre que les champs qu'il faut selon la catégorie et range les autres dans « Plus de détails » ; la complète montre tout. Par défaut, Complète pour le conseil syndical et Essentielle pour les autres.
 - **Installation commune** — une installation sert plusieurs copropriétés, chacune dans sa base : [`deploiement/standard/commune/LISEZMOI.md`](deploiement/standard/commune/LISEZMOI.md).
 - **Démonstration publique** — `MODE_DEMO=oui` monte une résidence fictive avec trois comptes publiés, sans aucun envoi, remise à zéro chaque nuit : `specs/architecture/mode-demo.md`.
 

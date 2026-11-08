@@ -6,6 +6,7 @@
 	import { LIBELLES_STATUT, STATUTS_DEMANDABLES } from '#lib/roles.ts';
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
 	import ChoixTheme from '#lib/components/ChoixTheme.svelte';
+	import ChoixSaisieAffaire from '#lib/components/ChoixSaisieAffaire.svelte';
 	import PreferencesAffichageNotifs from '#lib/components/PreferencesAffichageNotifs.svelte';
 	import { onMount } from 'svelte';
 	import { currentUser, setUser } from '#lib/stores/auth.ts';
@@ -404,6 +405,9 @@
 	<DemarcheArrivant {batiments} />
 
 	<ChangementMotDePasse />
+
+	<!-- ── La saisie d'une affaire, pour tous mes appareils (#2595) ────────── -->
+	<ChoixSaisieAffaire />
 
 	<!-- ── Le thème de cet appareil (#2174, S5) ───────────────────────────── -->
 	<ChoixTheme />

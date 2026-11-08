@@ -122,7 +122,7 @@
 			publication = null;
 			return;
 		}
-		formFaq = { ...saisieFaqVide(), question: q.question, reponse: q.reponse };
+		formFaq = { ...saisieFaqVide(), question: q.question, reponse: q.reponse_sans_renvois };
 		publication = q.id;
 		ouvert = null;
 		erreurCategories = '';

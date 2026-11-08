@@ -74,6 +74,8 @@
 	import { pliageDe, requisDe } from '#lib/pliage.ts';
 	import { MAX_FICHIERS } from '#lib/fichiers.ts';
 	import SectionDiffusion from './SectionDiffusion.svelte';
+	import PlusDeDetails from '#lib/components/PlusDeDetails.svelte';
+	import type { Snippet } from 'svelte';
 	import SectionOptionsPublication from './SectionOptionsPublication.svelte';
 	import SectionPerimetre from './SectionPerimetre.svelte';
 	import SectionDestinataires from './SectionDestinataires.svelte';
@@ -100,6 +102,39 @@
 	 */
 	export let entite: EntiteDeclaree | null = null;
 
+	/**  Les sections de ce composant, DANS l'ordre du cadre (`SECTIONS_ORDRE`, privé de
+	 *   Titre, Nature, Équipement et Suivi, que l'appelant rend). `lint:ordre-sections` la tient. */
+	const ORDRE: readonly IdSection[] = [
+		'quand',
+		'intervenant',
+		'perimetre',
+		'description',
+		'pieces_jointes',
+		'affaires_liees',
+		'au_nom_de',
+		'destinataires',
+		'mise_en_avant',
+		'diffusion',
+	];
+	/**  La saisie ESSENTIELLE (#2595) : les sections RANGÉES dans « Plus de détails » (rendues à
+	 *   leur rang dans le groupe), et celles MASQUÉES (éteintes : sans objet, ni montrées ni rangées).
+	 *   `#lib/saisie-affaire` les calcule ; vides, c'est la saisie Complète. */
+	export let replies: readonly IdSection[] = [];
+	export let masquees: readonly IdSection[] = [];
+	/**  Les CRÉNEAUX que l'appelant remplit : des snippets, et non des `<slot>` — le groupe
+	 *   « Plus de détails » rend chaque section à l'endroit voulu, ce qu'un `<slot>` ne peut pas
+	 *   (Svelte refuse `<slot>` et `{@render}` dans un même composant). */
+	export let creneauQuand: Snippet | undefined = undefined;
+	export let creneauIntervenant: Snippet | undefined = undefined;
+	export let creneauAidePerimetre: Snippet | undefined = undefined;
+	export let creneauDocuments: Snippet | undefined = undefined;
+	export let creneauAffairesLiees: Snippet | undefined = undefined;
+	export let creneauDiffusion: Snippet | undefined = undefined;
+	/** Équipement et Suivi, en tête du groupe (saisie Essentielle). */
+	export let creneauRepliees: Snippet | undefined = undefined;
+	/** Le groupe est-il ouvert ? Lié : l'appelant l'ouvre quand une valeur autre que le défaut s'y trouve. */
+	export let detailsOuverts = false;
+
 	const plie = (id: IdSection) => pliageDe(entite, id);
 	//  L'astérisque vient de la DÉCLARATION, comme le pliage — et pour la même
 	//  raison : les deux doivent s'accorder, et un composant qui écrirait l'un
@@ -107,22 +142,10 @@
 	const exige = (id: IdSection) => requisDe(entite, id);
 
 	//  ── 2. Saisi pour ─────────────────────────────────────────────────────────
-	//
-	//  🔴 Section à part entière depuis le 15/09/2026, sur arbitrage :
-	//
-	//  > « j'ai sorti la section Saisi pour de Champs spécifiques (enregistre le
-	//  >   nouveau standard des sections) »
-	//
-	//  Elle vivait DANS les champs spécifiques du ticket, ce qui la rendait
-	//  invisible aux autres écrans : l'étendre aux actualités et aux événements
-	//  l'aurait recopiée deux fois de plus. Elle est ici, donc son rang ne se
-	//  négocie plus par écran — comme les options, pour la même raison, depuis le
-	//  12/09.
-	//
-	//  ⚠️ `FormulaireTicket` continue de la poser lui-même, et c'est DÉCLARÉ :
-	//  ses options dépendent du rôle et sont rendues avant `ChampsCommuns`, si
-	//  bien que passer par ici les intercalerait dans le mauvais ordre.
-	//  `lint:ordre-sections` vérifie que sa rangée reste juste.
+	//  🔴 Section à part entière depuis le 15/09/2026 (« j'ai sorti la section Saisi pour
+	//  de Champs spécifiques ») : elle vivait dans les champs du ticket, invisible aux
+	//  autres écrans. Ici, son rang ne se négocie plus par écran — comme les options.
+	//  `lint:ordre-sections` vérifie que la rangée reste juste.
 	export let avecSaisiPour = false;
 	/** Les résidents proposables — chargés par l'appelant, qui connaît ses droits. */
 	export let residentsSaisiPour: {
@@ -272,17 +295,9 @@
 	 *   à … ». Relais pur : ce composant ne sait pas non plus qui a écrit
 	 *   l'objet — seul l'écran tient l'objet. */
 	export let auteurNom = '';
-	//  🔴 Le nom annoncé par « Envoyer une copie à … » doit dire ce qui PARTIRA,
-	//  pas ce qui était enregistré. Ce composant a tout sous la main : il rend la
-	//  section « Saisi pour » ET la case de diffusion. Le faire composer par les
-	//  trois formulaires l'aurait écrit trois fois — et deux d'entre eux sont au
-	//  plafond de modularité.
-	//
-	//  ⚠️ Signalé à l'écran le 15/09/2026 : « quand on change Saisi pour avec une
-	//  personne ayant un email, ça change envoyer une copie à X ». C'est le
-	//  comportement VOULU (arbitré le 12/09) — mais les formulaires annonçaient
-	//  l'auteur, là où `CarteTicket` annonçait le propriétaire. La même case
-	//  disait deux noms selon l'écran.
+	//  🔴 Le nom annoncé par « Envoyer une copie à … » dit ce qui PARTIRA, pas ce qui était
+	//  enregistré (arbitré le 12/09, signalé à l'écran le 15/09) : ce composant rend « Saisi
+	//  pour » ET la case de diffusion, il le compose une fois pour les trois formulaires.
 	$: nomDeLaCopie = avecSaisiPour
 		? nomCopie({ nom_proprietaire: auteurNom }, { ...saisiPour, residents: residentsSaisiPour })
 		: auteurNom;
@@ -297,189 +312,186 @@
 	export let refDiffusion: SectionDiffusion | null = null;
 	export let envoiEnCours = false;
 
-	//  🔴 Les badges d'état vivaient ICI, avec les deux sections écrites en
-	//  ligne. Ils sont partis AVEC elles (`SectionPerimetre`,
-	//  `SectionDestinataires`, 22/09/2026) : un badge calculé loin de la section
-	//  qu'il décore est la première étape vers deux calculs qui divergent.
+	//  Les badges d'état vivent avec leur section (`SectionPerimetre`, `SectionDestinataires`).
 
-	//  Le filet du haut n'appartient pas au Périmètre : il appartient à la
-	//  PREMIÈRE section rendue, quelle qu'elle soit. Sans ce calcul, ouvrir un
-	//  formulaire par les options doublait le trait du cadre — le « double trait »
-	//  signalé à l'écran le 05/09/2026, une section plus haut.
-	//  ⚠️ « Saisi pour » entre dans ce calcul comme les autres : le filet du haut
-	//  appartient à la première section RENDUE, et elle passe avant les options.
-	//  L'oublier redonnerait le « double trait » du 05/09.
+	//  Le filet du haut appartient à la PREMIÈRE section rendue, quelle qu'elle soit — « Saisi
+	//  pour » compris, qui passe avant les options : l'oublier redonne le « double trait » du 05/09.
 	$: premiereWorkflow = premiere && !avecSaisiPour && !avecOptions;
 	$: premiereQuand = premiereWorkflow;
 	$: premierePerimetre = premiereQuand && !avecQuand;
 </script>
 
-{#if avecQuand}
-	<!--  5. Quand — QUAND ÇA SE PASSE, et pour quand c'est attendu. Placée
-	      avant le Périmètre : on sait ce qui arrive avant de dire où. -->
-	<SectionQuand
-		{idPrefixe}
-		premiere={premiereQuand}
-		pliable={plie('quand')}
-		autreValeur={quandAutreValeur}
-		inactive={inactives.quand ?? ''}
-		bind:debut
-		bind:fin
-	>
-		<slot name="quand" />
-	</SectionQuand>
-{/if}
+{#snippet bloc(id: IdSection)}
+	{#if id === 'quand'}
+		{#if avecQuand}
+			<!--  5. Quand — QUAND ÇA SE PASSE, et pour quand c'est attendu. Placée
+		      avant le Périmètre : on sait ce qui arrive avant de dire où. -->
+			<SectionQuand
+				{idPrefixe}
+				premiere={premiereQuand}
+				pliable={plie('quand')}
+				autreValeur={quandAutreValeur}
+				inactive={inactives.quand ?? ''}
+				bind:debut
+				bind:fin
+			>
+				{@render creneauQuand?.()}
+			</SectionQuand>
+		{/if}
+	{:else if id === 'intervenant'}
+		<!--  6. L'INTERVENANT, à son rang : rendu par l'appelant (créneau), ou grisé
+	      avec son motif quand la déclaration l'éteint (#1092). -->
+		{#if inactives.intervenant}
+			<SectionFormulaire
+				titre={SECTIONS_LIBELLE.intervenant}
+				pliable={plie('intervenant')}
+				inactive={inactives.intervenant}
+			/>
+		{:else}
+			{@render creneauIntervenant?.()}
+		{/if}
+	{:else if id === 'perimetre'}
+		{#if avecPerimetre}
+			<SectionPerimetre
+				{idPrefixe}
+				premiere={premierePerimetre}
+				pliable={plie('perimetre')}
+				bind:perimetre
+				mode={perimetreMode}
+				requis={exige('perimetre')}
+				badgeImpose={perimetreBadge}
+				reservable={avecReservePerimetre}
+				bind:reserve={reservePerimetre}
+				reserveObjet={lecture && !lecture.actualite ? 'affaire' : 'actualité'}
+				reserveSansObjet={lecture && brouillon ? 'Sans objet : elle est confidentielle.' : ''}
+				inactive={inactives.perimetre ?? ''}
+			>
+				<svelte:fragment slot="aidePerimetre">{@render creneauAidePerimetre?.()}</svelte:fragment>
+			</SectionPerimetre>
+		{/if}
+	{:else if id === 'description'}
+		{#if avecDescription}
+			<SectionDescription
+				{idPrefixe}
+				pliable={plie('description')}
+				titre={descriptionTitre}
+				requis={descriptionRequise}
+				placeholder={descriptionPlaceholder}
+				hauteur={descriptionHauteur}
+				bind:valeur={description}
+				{assistant}
+				bind:titreObjet
+				bind:assisteIA
+			/>
+		{/if}
+	{:else if id === 'pieces_jointes'}
+		<!--  7. Photos · 8. Documents — DEUX sections, écrites une seule fois pour ce
+	      composant ET `EvolForm`, qui les portait à l'identique (01/09/2026). -->
+		<SectionsPiecesJointes
+			{idPrefixe}
+			pliable={plie('pieces_jointes')}
+			{avecPhotos}
+			bind:photos
+			{avecDocuments}
+			{documentsControle}
+			{differes}
+			max={piecesMax}
+			bind:documents
+			bind:fichiersDifferes
+		>
+			<svelte:fragment slot="documents">{@render creneauDocuments?.()}</svelte:fragment>
+		</SectionsPiecesJointes>
+	{:else if id === 'affaires_liees'}
+		<!--  Affaires liées (#1342) : un créneau, à son rang — seule l'affaire en porte. -->
+		{@render creneauAffairesLiees?.()}
+	{:else if id === 'au_nom_de'}
+		{#if avecSaisiPour}
+			<!--  2. Au nom de QUI l'entrée est ouverte. Le composant est celui des
+		      tickets (`ChampSaisiPour`) : il portait déjà la saisie, il ne lui
+		      manquait qu'un appelant de plus. -->
+			<ChampSaisiPour
+				pliable={plie('au_nom_de')}
+				requis={exige('au_nom_de')}
+				inactive={inactives.au_nom_de ?? ''}
+				bind:mode={saisiPour.mode}
+				bind:userId={saisiPour.userId}
+				bind:nom={saisiPour.nom}
+				bind:email={saisiPour.email}
+				residents={residentsSaisiPour}
+				{erreurResidents}
+			/>
+		{/if}
+	{:else if id === 'destinataires'}
+		{#if avecDestinataires || inactives.destinataires}
+			<SectionDestinataires
+				{idPrefixe}
+				premiere={premiere && !avecPerimetre}
+				pliable={plie('destinataires')}
+				requis={exige('destinataires')}
+				inactive={inactives.destinataires ?? ''}
+				bind:destinataires
+				{lecture}
+				bind:confidentiel={brouillon}
+				{perimetre}
+				{reservePerimetre}
+				parDefaut={destinatairesParDefaut}
+				concerne={nomDeLaCopie}
+			/>
+		{/if}
+	{:else if id === 'mise_en_avant'}
+		{#if avecOptions}
+			<!--  3. Les options qui DÉCRIVENT l'objet — épinglage, urgence, brouillon.
+		      La réserve au périmètre vit en tête du Périmètre. Toujours ici, jamais dans la Diffusion : elles se
+		      corrigent, elles ne s'envoient pas. -->
+			<SectionOptionsPublication
+				{objet}
+				{premiere}
+				pliable={plie('mise_en_avant')}
+				inactive={inactives.mise_en_avant ?? ''}
+				options={optionsRendues}
+				{dejaEpingle}
+				{epingleInterdit}
+				bind:epingle
+				bind:urgente
+				bind:brouillon
+			/>
+		{/if}
+	{:else if id === 'diffusion'}
+		{#if avecDiffusion}
+			<SectionDiffusion
+				pliable={plie('diffusion')}
+				inactive={inactives.diffusion ?? ''}
+				{avecCanaux}
+				{avecNotificationCs}
+				bind:whatsapp
+				bind:syndic
+				bind:cs
+				bind:auteur
+				auteurNom={nomDeLaCopie}
+				{aideWhatsapp}
+				{whatsappInterdit}
+				bind:this={refDiffusion}
+				{demanderApercu}
+				{envoiEnCours}
+				on:envoyer
+			>
+				<svelte:fragment slot="options">{@render creneauDiffusion?.()}</svelte:fragment>
+			</SectionDiffusion>
+		{/if}
+	{/if}
+{/snippet}
 
-<!--  6. L'INTERVENANT, à son rang : rendu par l'appelant (créneau), ou grisé
-      avec son motif quand la déclaration l'éteint (#1092). -->
-{#if inactives.intervenant}
-	<SectionFormulaire
-		titre={SECTIONS_LIBELLE.intervenant}
-		pliable={plie('intervenant')}
-		inactive={inactives.intervenant}
-	/>
-{:else}
-	<slot name="intervenant" />
-{/if}
+{#each ORDRE as id (id)}
+	{#if !masquees.includes(id) && !replies.includes(id)}{@render bloc(id)}{/if}
+{/each}
 
-{#if avecPerimetre}
-	<SectionPerimetre
-		{idPrefixe}
-		premiere={premierePerimetre}
-		pliable={plie('perimetre')}
-		bind:perimetre
-		mode={perimetreMode}
-		requis={exige('perimetre')}
-		badgeImpose={perimetreBadge}
-		reservable={avecReservePerimetre}
-		bind:reserve={reservePerimetre}
-		reserveObjet={lecture && !lecture.actualite ? 'affaire' : 'actualité'}
-		reserveSansObjet={lecture && brouillon ? 'Sans objet : elle est confidentielle.' : ''}
-		inactive={inactives.perimetre ?? ''}
-	>
-		<slot name="aidePerimetre" slot="aidePerimetre" />
-	</SectionPerimetre>
-{/if}
-
-{#if avecDescription}
-	<SectionDescription
-		{idPrefixe}
-		pliable={plie('description')}
-		titre={descriptionTitre}
-		requis={descriptionRequise}
-		placeholder={descriptionPlaceholder}
-		hauteur={descriptionHauteur}
-		bind:valeur={description}
-		{assistant}
-		bind:titreObjet
-		bind:assisteIA
-	/>
-{/if}
-
-<!--  7. Photos · 8. Documents — DEUX sections, écrites une seule fois pour ce
-      composant ET `EvolForm`, qui les portait à l'identique (01/09/2026). -->
-<SectionsPiecesJointes
-	{idPrefixe}
-	pliable={plie('pieces_jointes')}
-	{avecPhotos}
-	bind:photos
-	{avecDocuments}
-	{documentsControle}
-	{differes}
-	max={piecesMax}
-	bind:documents
-	bind:fichiersDifferes
->
-	<svelte:fragment slot="documents"><slot name="documents" /></svelte:fragment>
-</SectionsPiecesJointes>
-
-<!--  Affaires liées (#1342) : un créneau, à son rang — seule l'affaire en porte. -->
-<slot name="affairesLiees" />
-
-{#if avecSaisiPour}
-	<!--  2. Au nom de QUI l'entrée est ouverte. Le composant est celui des
-	      tickets (`ChampSaisiPour`) : il portait déjà la saisie, il ne lui
-	      manquait qu'un appelant de plus. -->
-	<ChampSaisiPour
-		pliable={plie('au_nom_de')}
-		requis={exige('au_nom_de')}
-		inactive={inactives.au_nom_de ?? ''}
-		bind:mode={saisiPour.mode}
-		bind:userId={saisiPour.userId}
-		bind:nom={saisiPour.nom}
-		bind:email={saisiPour.email}
-		residents={residentsSaisiPour}
-		{erreurResidents}
-	/>
-{/if}
-
-{#if avecDestinataires || inactives.destinataires}
-	<SectionDestinataires
-		{idPrefixe}
-		premiere={premiere && !avecPerimetre}
-		pliable={plie('destinataires')}
-		requis={exige('destinataires')}
-		inactive={inactives.destinataires ?? ''}
-		bind:destinataires
-		{lecture}
-		bind:confidentiel={brouillon}
-		{perimetre}
-		{reservePerimetre}
-		parDefaut={destinatairesParDefaut}
-		concerne={nomDeLaCopie}
-	/>
-{/if}
-
-{#if avecOptions}
-	<!--  3. Les options qui DÉCRIVENT l'objet — épinglage, urgence, brouillon.
-	      La réserve au périmètre vit en tête du Périmètre. Toujours ici, jamais dans la Diffusion : elles se
-	      corrigent, elles ne s'envoient pas. -->
-	<SectionOptionsPublication
-		{objet}
-		{premiere}
-		pliable={plie('mise_en_avant')}
-		inactive={inactives.mise_en_avant ?? ''}
-		options={optionsRendues}
-		{dejaEpingle}
-		{epingleInterdit}
-		bind:epingle
-		bind:urgente
-		bind:brouillon
-	/>
-{/if}
-
-<!--  🔴 La section 9 vient de `SectionDiffusion`, elle n'est plus réécrite ici
-      (#498, 20/08/2026).
-
-      L'objet Diffusion existait en DOUBLE : `SectionDiffusion.svelte` d'un côté,
-      ces onze lignes de l'autre — et c'est la seconde que servaient les six
-      formulaires de création. D'où la question posée à l'écran : « je ne
-      comprends pas qu'une fonction dans un objet ne soit pas accessible sur
-      toutes ses implémentations ». Réponse : il y avait deux objets, et l'aperçu
-      n'avait été ajouté qu'à l'un des deux.
-
-      ⚠️ `demanderApercu` n'est PAS transmis ici : aucun de ces six écrans n'a
-      encore d'endpoint d'aperçu (seuls les tickets en ont un). L'objet le porte
-      désormais — le jour où un écran fournit sa fonction, il obtient l'aperçu
-      sans une ligne de plus. -->
-{#if avecDiffusion}
-	<SectionDiffusion
-		pliable={plie('diffusion')}
-		inactive={inactives.diffusion ?? ''}
-		{avecCanaux}
-		{avecNotificationCs}
-		bind:whatsapp
-		bind:syndic
-		bind:cs
-		bind:auteur
-		auteurNom={nomDeLaCopie}
-		{aideWhatsapp}
-		{whatsappInterdit}
-		bind:this={refDiffusion}
-		{demanderApercu}
-		{envoiEnCours}
-		on:envoyer
-	>
-		<svelte:fragment slot="options"><slot name="diffusion" /></svelte:fragment>
-	</SectionDiffusion>
+<!--  « Plus de détails » (#2595) : les sections que la saisie Essentielle ne montre pas,
+      à leur rang, après celles de l'appelant (équipement, suivi) — le créneau `repliees`. -->
+{#if replies.length}
+	<PlusDeDetails {idPrefixe} nombre={replies.length} bind:ouvert={detailsOuverts}>
+		{@render creneauRepliees?.()}
+		{#each ORDRE as id (id)}
+			{#if replies.includes(id)}{@render bloc(id)}{/if}
+		{/each}
+	</PlusDeDetails>
 {/if}

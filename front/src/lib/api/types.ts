@@ -39,6 +39,10 @@ export interface User {
 	restreindre_a_mes_batiments?: boolean;
 	/** Le décor des jours de fête, pour soi — vrai par défaut (#2312). */
 	decor_fetes?: boolean;
+	/** La saisie d'une affaire choisie au profil : `null` = selon le rôle (#2595). */
+	saisie_affaire?: 'essentielle' | 'complete' | null;
+	/** Le mode qui s'applique — choix du profil, sinon défaut du rôle, calculé par l'API (#2595). */
+	saisie_affaire_effective?: 'essentielle' | 'complete';
 	demarche_arrivant?: string | null;
 	batiment_id?: number | null;
 	batiment_nom?: string | null; // "Bât. A"
