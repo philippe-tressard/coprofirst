@@ -201,6 +201,33 @@ compose_durcissement() {
         END { sortir() }'
 }
 
+#  PURE. $1 = le texte d'un docker-compose.yml, $2 = un service → les options de
+#  `docker run` qui le DURCISSENT comme le compose (#2547), une par ligne : l'ancre,
+#  ses `cap_add`, ses `tmpfs`. Le banc de restauration les passe à ses conteneurs,
+#  pour éprouver ce qui tournera. Code 1, la raison sur la sortie, si le service
+#  n'est pas durci, si l'ancre est amputée ou s'il ne se lit pas : un banc sans
+#  ces options éprouverait autre chose — jamais un conteneur ordinaire en repli.
+compose_options_durcies() {
+    local nom etat caps manque c tmpfs
+    manque=$(compose_ancre_manquante "${1:-}")
+    [ -z "$manque" ] || { echo "ancre conteneur_durci : $(paste -sd' ' - <<< "$manque")"; return 1; }
+    read -r nom tmpfs <<< "$(printf '%s\n' "${1:-}" | tr -d '\r' | awk -v svc="  ${2:-}:" '
+        /^[^ #]/ { dans = ($0 ~ /^services:/); next }
+        !dans { next }
+        /^  [A-Za-z0-9_-]+:[[:space:]]*$/ { ici = ($0 ~ "^" svc "[[:space:]]*$"); vu = vu || ici; next }
+        !ici { next }
+        /^    container_name:/ { nom = $2; next }
+        /^    [a-z_]+:/ { cle = $1; next }
+        cle == "tmpfs:" && /^      - / { v = $0; sub(/^      - /, "", v); sub(/[[:space:]]+#.*$/, "", v); gsub(/"/, "", v); t = t " " v }
+        END { if (vu) print (nom == "" ? substr(svc, 3, length(svc) - 3) : nom) t }')"
+    [ -n "$nom" ] || { echo "service ${2:-?} absent du compose"; return 1; }
+    read -r _ etat caps <<< "$(grep "^$nom " <<< "$(compose_durcissement "${1:-}")")"
+    [ "$etat" = durci ] || { echo "$nom : ${etat:-illisible} — pas durci par le compose"; return 1; }
+    printf '%s\n' --cap-drop=ALL --security-opt=no-new-privileges:true --read-only
+    for c in ${caps//,/ }; do echo "--cap-add=$c"; done
+    for c in $tmpfs; do echo "--tmpfs=$c"; done
+}
+
 #  PURE. $1 = le texte d'un docker-compose.yml → les clés de l'ancre
 #  `conteneur_durci` qui MANQUENT, une par ligne (rien : l'ancre est entière).
 compose_ancre_manquante() {
@@ -378,6 +405,18 @@ audit_conteneurs_selftest() {
     t "écarts : rien quand tout concorde" "" \
       "$(CONTENEURS_DURCIS="c_a=CHOWN,SETUID" CONTENEURS_NON_DURCIS="" durcissement_ecarts "${D%%  b:*}")"
     t "écarts : compose illisible" "aucun service lu dans le compose" "$(durcissement_ecarts "")"
+    #  Les options de `docker run` du banc de restauration (#2547) : celles du
+    #  compose, ou un refus — jamais un conteneur ordinaire.
+    local T=$'\r\n    tmpfs:\r\n      #  commentaire\r\n      - /tmp:size=8m # raison\r\n      - "/x:uid=1"\r\n    volumes:\r\n      - v:/v\r\n'
+    t "options : ancre, cap_add, tmpfs (CRLF, commentaire, guillemets)" \
+      "--cap-drop=ALL --security-opt=no-new-privileges:true --read-only --cap-add=SETUID --cap-add=CHOWN --tmpfs=/tmp:size=8m --tmpfs=/x:uid=1" \
+      "$(compose_options_durcies "${D/"# raison"$'\r\n'/"# raison$T"}" a | paste -sd' ' -)"
+    r() { local o; o=$(compose_options_durcies "$@"); echo "$o|$?"; }
+    t "options : un service non durci est refusé" "b : non — pas durci par le compose|1" "$(r "$D" b)"
+    t "options : une surcharge de l'ancre est refusée" "c : surcharge-de-l-ancre — pas durci par le compose|1" \
+      "$(r "${D/"# sans container_name"/$'\r\n    container_name: c'}" c)"
+    t "options : ancre amputée" "ancre conteneur_durci : read_only|1" "$(r "${D/read_only: true/read_only: false}" a)"
+    t "options : service absent (cas zéro)" "service z absent du compose|1" "$(r "$D" z)"
     #  La liste des montages admis EST celle du compose : lue dans le fichier du
     #  dépôt (chemin relatif à ce module, aucun outil hors coreutils), dans les
     #  deux sens. 🔴 Une lecture vide n'est pas « rien à déclarer » : le cas zéro

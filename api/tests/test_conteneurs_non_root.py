@@ -113,13 +113,10 @@ def test_le_bridge_descend_vers_node_avant_de_servir():
 DESCENTE = {"api": "app", "whatsapp-bridge": "node"}
 
 #: (fichier, service) → raison et ticket. Le test échoue si l'une cesse de servir.
-EXCEPTIONS_COMPTE = {
-    ("scripts/exploitation/restaurer-copie-hors-site.sh", "api"): (
-        "`lancer_fichiers` en `--user root` extrait l'archive dans un volume neuf qui "
-        "appartient à `app` : même défaut, à éprouver sur le banc avant de changer un "
-        "geste de reprise après sinistre (#2547)"
-    ),
-}
+#: Vide depuis #2547 : la restauration hors site installait ses fichiers en root.
+#: Ses lanceurs `docker run` du banc, que ce contrôle ne lit pas (une image, pas un
+#: service), sont tenus par `test_restauration_hors_site_durcie.py`.
+EXCEPTIONS_COMPTE: dict[tuple[str, str], str] = {}
 
 
 def _racines() -> dict[str, str]:
