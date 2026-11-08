@@ -287,6 +287,16 @@
 		reverse_proxy front:3000
 	}
 
+	# Liens universels d'Apple (#2459) : l'app iOS s'ouvre depuis un lien de courriel
+	# ou le QR de la fiche arrivant. Le fichier n'a PAS d'extension, donc le serveur du
+	# front ne lui pose aucun type ; Apple exige `application/json` et refuse toute
+	# redirection. Les chemins couverts : `front/static/.well-known/` (🔒
+	# `test_apple_app_site_association.py` les confronte aux liens de nos courriels).
+	handle /.well-known/apple-app-site-association {
+		header >Content-Type "application/json"
+		reverse_proxy front:3000
+	}
+
 	# Frontend SvelteKit (SSR)
 	handle {
 		reverse_proxy front:3000
