@@ -19,6 +19,8 @@ from pathlib import Path
 
 import yaml
 
+from tests.aides_compose import declencheurs
+
 WORKFLOWS = Path(__file__).resolve().parents[2] / ".github" / "workflows"
 SCRIPT = "scripts/ci/mesure-postgresql.sh"
 CONDITION_CI = "github.base_ref == 'dev' || github.event_name == 'workflow_dispatch'"
@@ -26,11 +28,6 @@ CONDITION_CI = "github.base_ref == 'dev' || github.event_name == 'workflow_dispa
 
 def _flux(nom: str) -> dict:
     return yaml.safe_load((WORKFLOWS / nom).read_text(encoding="utf-8"))
-
-
-def _declencheurs(flux: dict) -> dict:
-    #  PyYAML lit la clé `on` comme le booléen True (YAML 1.1).
-    return flux.get("on") or flux.get(True) or {}
 
 
 def _job(flux: dict, nom: str) -> dict:
@@ -47,9 +44,9 @@ def _etape_suite(job: dict) -> dict:
 
 def test_postgresql_yml_joue_la_suite_pour_main_seulement():
     flux = _flux("postgresql.yml")
-    declencheurs = _declencheurs(flux)
-    assert declencheurs["push"]["branches"] == ["main"]
-    assert declencheurs["pull_request"]["branches"] == ["main"]
+    on = declencheurs(flux)
+    assert on["push"]["branches"] == ["main"]
+    assert on["pull_request"]["branches"] == ["main"]
     job = _job(flux, "Suite pytest sur PostgreSQL")
     etape = _etape_suite(job)
     assert "if" not in etape and "if" not in job, "la suite y tourne sans condition"
@@ -58,7 +55,7 @@ def test_postgresql_yml_joue_la_suite_pour_main_seulement():
 
 def test_ci_yml_joue_la_suite_quand_postgresql_yml_ne_tourne_pas():
     flux = _flux("ci.yml")
-    assert "dev" in _declencheurs(flux)["pull_request"]["branches"]
+    assert "dev" in declencheurs(flux)["pull_request"]["branches"]
     job = _job(flux, "Tests Python (pytest)")
     etape = _etape_suite(job)
     assert etape.get("if") == CONDITION_CI, (

@@ -31,6 +31,8 @@ from pathlib import Path
 
 import yaml
 
+from tests.aides_compose import declencheurs
+
 RACINE = Path(__file__).resolve().parents[2]
 WORKFLOW = RACINE / ".github" / "workflows" / "promotion.yml"
 CI = RACINE / ".github" / "workflows" / "ci.yml"
@@ -42,9 +44,9 @@ def _flux() -> dict:
 
 def test_la_promotion_se_lance_a_la_main_ou_la_nuit():
     flux = _flux()
-    declencheurs = flux.get("on") or flux.get(True)
-    assert set(declencheurs) == {"workflow_dispatch", "schedule"}, declencheurs
-    entrees = declencheurs["workflow_dispatch"]["inputs"]
+    on = declencheurs(flux)
+    assert set(on) == {"workflow_dispatch", "schedule"}, on
+    entrees = on["workflow_dispatch"]["inputs"]
     assert entrees["version"]["required"] is True
     assert entrees["urgence"]["type"] == "boolean"
     assert entrees["urgence"]["default"] is False, "l'urgence ne se coche jamais d'office"
