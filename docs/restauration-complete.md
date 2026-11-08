@@ -401,6 +401,12 @@ modification du script, de `lib-restauration.sh`, de l'export ou de l'import.
 `--registre /tmp/plateforme_backup_<…>_paris.tar.gz` (copiée elle aussi, et effacée en
 sortie) — sa base est créée sur le PostgreSQL jetable, puis restaurée et vérifiée (#1972).
 
+Les conteneurs de l'**API** du banc, eux, tournent comme ceux de la restauration :
+en `app`, durcis par les options que le compose donne au service `api` (aucune
+capacité hors `cap_add`, `no-new-privileges`, racine en lecture seule, ses `tmpfs`),
+lues dans `docker-compose.yml` et jamais recopiées. Les fichiers de l'archive y
+arrivent **en flux**, sur l'entrée standard : ni copiés, ni montés (#2547).
+
 ⚠️ **Limite connue** (#2476) : le PostgreSQL du banc naît d'un `docker run`, **sans** la
 configuration du service `postgres` du compose — ni son durcissement (`user: postgres`,
 aucune capacité, racine en lecture seule), ni sa `command`, ni `pg_hba.conf`. Le banc
