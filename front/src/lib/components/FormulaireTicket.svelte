@@ -21,15 +21,16 @@
 
   ## Pourquoi il sert aussi l'édition (17/08/2026, #425)
 
-  > « je préfère que tu rendes paramétrable avec les valeurs déjà saisies le
-  >   formulaire d'édition plutôt que de le dupliquer »
+  « je préfère que tu rendes paramétrable avec les valeurs déjà saisies le formulaire
+  d'édition plutôt que de le dupliquer » : la prop `ticket` (`null` = création, une
+  affaire = correction). La catégorie s'y corrige aussi — c'est ainsi qu'une affaire
+  devient une actualité ou l'inverse —, et ce qui s'efface est annoncé avant d'enregistrer.
+  « Annuler » est À CÔTÉ d'« Enregistrer », dans les deux gestes (#367).
 
-  D'où la prop `ticket` : `null` = création, une affaire = correction. La
-  catégorie s'y corrige aussi — c'est ainsi qu'une affaire devient une actualité
-  ou l'inverse —, et ce qui s'efface alors est annoncé avant d'enregistrer.
+  ## Deux saisies, un formulaire (#2595)
 
-  ⚠️ « Annuler » est À CÔTÉ d'« Enregistrer », dans les deux gestes : la page ne
-  porte plus de « ✕ Annuler » quand le formulaire est ouvert (#367).
+  Essentielle ou Complète (`#lib/saisie-affaire`) : la première range les sections non
+  essentielles dans « Plus de détails ».
 -->
 <script lang="ts">
 	import { messageErreur } from '#lib/erreurs.ts';
@@ -48,6 +49,9 @@
 	import CadreFormulaire from '#lib/components/CadreFormulaire.svelte';
 	import SectionTitre from '#lib/components/SectionTitre.svelte';
 	import SectionsSpecifiquesTicket from '#lib/components/SectionsSpecifiquesTicket.svelte';
+	import SectionsEquipementSuiviTicket from '#lib/components/SectionsEquipementSuiviTicket.svelte';
+	import PhraseModeSaisie from '#lib/components/PhraseModeSaisie.svelte';
+	import { estEssentielle, repartition } from '#lib/saisie-affaire.ts';
 	import ChampsCommuns from '#lib/components/ChampsCommuns.svelte';
 	import DiffusionPublication from '#lib/components/DiffusionPublication.svelte';
 	import RepriseAnnonceHall from '#lib/components/RepriseAnnonceHall.svelte';
@@ -55,12 +59,11 @@
 	import SectionAffairesLiees from '#lib/components/SectionAffairesLiees.svelte';
 	import SectionIntervenant from '#lib/components/SectionIntervenant.svelte';
 	import { contratDeLaSaisie, type ContratEnCours } from '#lib/prestataires.ts';
-	import { richEmpty } from '#lib/publications.ts';
 	import ChampFrequence from '#lib/components/ChampFrequence.svelte';
 	import { essayer } from '#lib/chargement.ts';
 	import { pliageDe } from '#lib/pliage.ts';
 	import type { PrefillActualite } from '#lib/actualite-prefill.ts';
-	import { isCS, quandAuthResolue } from '#lib/stores/auth.ts';
+	import { currentUser, isCS, quandAuthResolue } from '#lib/stores/auth.ts';
 	import {
 		CATEGORIE_ACTUALITE,
 		OPTIONS_CATEGORIE,
@@ -83,6 +86,8 @@
 		natureDe,
 		alerteCorrection,
 		sectionsInactives,
+		chargeApercu,
+		erreurDeSaisie,
 		type SaisieAffaire,
 	} from '#lib/formulaire-affaire.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
@@ -126,8 +131,7 @@
 	//  Les options, reprises de l'affaire : le pont écran ⇄ objet vit dans
 	//  `#lib/tickets` (`brouillon` écrit `confidentiel`, `urgente` la priorité).
 	let options = optionsDuTicket(ticket);
-	//  Copies défensives : les tableaux viennent de la carte affichée, et une
-	//  sélection abandonnée y resterait visible sans avoir été enregistrée.
+	//  Copies défensives : une sélection abandonnée resterait visible sur la carte affichée.
 	let perimetreCible: string[] = [...(ticket?.perimetre_cible ?? perimetreDefautListe())];
 	//  À qui l'on parle — une actualité (#1091, #1096) comme une affaire (#1343) :
 	//  vide, la règle de sa nature. Puis l'Accès 🔒 et l'affiche, d'une actualité.
@@ -138,17 +142,15 @@
 	//  décoché → coché envoie, et c'est le serveur qui le décide (14/08/2026).
 	let destinataireSyndic = ticket?.destinataire_syndic ?? false;
 	let destinataireCs = ticket?.destinataire_cs ?? false;
-	//  🔴 Une AFFAIRE neuve est adressée au conseil par défaut (03/10/2026) : le courriel
-	//  « Nouvelle affaire » ne part plus de lui-même quand le conseil diffuse, la case
-	//  décide — décochée, rien ne lui est envoyé. Une actualité, c'est le conseil qui la
-	//  publie : elle repart décochée. En correction, la valeur enregistrée fait foi.
+	//  🔴 Une AFFAIRE neuve est adressée au conseil par défaut (03/10/2026) : la case décide du
+	//  courriel « Nouvelle affaire ». Une actualité repart décochée ; en correction, la valeur
+	//  enregistrée fait foi.
 	$: if (!modeEdition) destinataireCs = !actualite;
 	let envoyerAuteur = false;
 	//  Un ACTE, pas une colonne : la case repart décochée à chaque ouverture.
 	let partagerWhatsapp = false;
-	//  Téléversés dès leur sélection, avant l'enregistrement : c'est ce qui permet
-	//  au courriel et à l'affiche de partir AVEC eux. Rechargés en correction :
-	//  `PATCH` remplace la liste entière.
+	//  Téléversés dès leur sélection (le courriel et l'affiche partent AVEC eux) ; rechargés
+	//  en correction, car `PATCH` remplace la liste entière.
 	let photosUrls: string[] = [...(ticket?.photos_urls ?? [])];
 	let fichiersUrls: string[] = [...(ticket?.fichiers_urls ?? [])];
 	let affairesLiees = [...(ticket?.affaires_liees ?? [])];
@@ -173,6 +175,19 @@
 	$: nature = natureDe(categorie);
 	$: actualite = nature === 'actualite';
 	$: inactives = sectionsInactives(etat, categorie, $isCS);
+	//  La saisie ESSENTIELLE (#2595) : les sections rangées dans « Plus de détails », et celles
+	//  qu'elle éteint, ni montrées ni rangées. Le mode est celui que l'API sert (`#lib/saisie-affaire`).
+	$: essentielle = estEssentielle($currentUser?.saisie_affaire_effective);
+	$: ({ replies, masquees, ouvert } = repartition(
+		$currentUser?.saisie_affaire_effective,
+		etat,
+		categorie,
+		$isCS,
+		ticket,
+	));
+	//  Une correction ne cache jamais ce qui a été saisi : le groupe s'ouvre d'office, une fois.
+	let [detailsOuverts, detailsVus] = [false, false];
+	$: if (!detailsVus && replies.length) [detailsVus, detailsOuverts] = [true, ouvert];
 	//  Réservée au conseil : « Confidentielle », Destinataires = CS seul, ou sa catégorie (#1436).
 	$: reservee = lueDuSeulConseil(categorie, statut, options.brouillon, publicCible);
 	//  Une actualité réservée — au périmètre ou au conseil — n'a pas d'affiche.
@@ -247,23 +262,7 @@
 
 	//  ── L'aperçu avant diffusion (#498), au gabarit de la NATURE (`publication_syndic`…).
 	let refDiffusion: SectionDiffusion | null = null;
-	const brouillonApercu = () =>
-		ticketsApi.apercuDiffusion({
-			ticket_id: ticket?.id,
-			titre: titre.trim(),
-			description,
-			categorie,
-			urgente: options.urgente,
-			public_cible: publicCible,
-			reserve_perimetre: reservePerimetre,
-			perimetre_cible: perimetreCible,
-			photos_urls: photosUrls,
-			fichiers_urls: fichiersUrls,
-			destinataire_syndic: destinataireSyndic,
-			destinataire_cs: destinataireCs,
-			partager_whatsapp: partagerWhatsapp,
-			envoyer_auteur: envoyerAuteur,
-		});
+	const brouillonApercu = () => ticketsApi.apercuDiffusion(chargeApercu(saisie, ticket?.id));
 
 	//  Le vocabulaire vient des DÉCLARATIONS (#1107). Une actualité n'affiche pas
 	//  de numéro ; une affaire suivie le garde, c'est ce qui la distingue.
@@ -286,22 +285,8 @@
 
 	/** Contrôles de saisie — communs à la soumission directe et à l'aperçu. */
 	function saisieValide(): boolean {
-		if (!titre.trim() || richEmpty(description)) {
-			error = 'Titre et description sont obligatoires.';
-			return false;
-		}
-		//  Déclarée `requis` : l'exiger à l'écran et laisser le serveur en poser
-		//  une à notre place serait le plus trompeur des deux.
-		if (!categorie) {
-			error = 'Choisissez une catégorie : c’est elle qui décide de qui traite.';
-			return false;
-		}
-		if ($isCS && saisiPour.mode === 'exterieur' && !saisiPour.nom.trim()) {
-			error = 'Veuillez saisir le nom de la personne.';
-			return false;
-		}
-		error = '';
-		return true;
+		error = erreurDeSaisie(saisie, $isCS);
+		return !error;
 	}
 
 	/**  Le geste de soumission : aperçu d'abord si un canal est coché. `submit`
@@ -366,6 +351,8 @@
 			<RepriseAnnonceHall {modeEdition} on:reprise={(e) => appliquerReprise(e.detail)} />
 		{/if}
 
+		<PhraseModeSaisie />
+
 		<SectionTitre
 			id="titre"
 			bind:valeur={titre}
@@ -376,25 +363,28 @@
 		<!--  2 et 3 — Catégorie (« Actualité » en tête), Équipement, Suivi : ce
 		      que l'affaire a de PROPRE. Les sections éteintes par la nature y sont
 		      rendues grisées, à leur rang. -->
-		<SectionsSpecifiquesTicket
-			{etat}
-			OPTIONS_CATEGORIE={optionsCat}
-			{modeEdition}
-			{inactives}
-			bind:categorie
-			bind:statut
-			bind:options
-			bind:equipement
-		/>
+		<SectionsSpecifiquesTicket {etat} OPTIONS_CATEGORIE={optionsCat} bind:categorie />
+		{#if !essentielle}
+			<SectionsEquipementSuiviTicket
+				{etat}
+				{modeEdition}
+				{inactives}
+				bind:categorie
+				bind:statut
+				bind:options
+				bind:equipement
+			/>
+		{/if}
 		<PropositionCroisee bind:equipement bind:perimetreCible actif={!inactives.equipement} />
 
-		<!--  4 à 13 : ordre, intitulés et séparations hérités de `ChampsCommuns`,
-		      gouvernés par la DÉCLARATION (`lint:etats`). Ce qui change avec la
-		      nature — les options rendues, la case 🔒, les Destinataires, l'affiche
-		      — se lit sur `actualite`, dérivée de la catégorie. -->
+		<!--  4 à 13 : ordre, intitulés et séparations hérités de `ChampsCommuns`, gouvernés par
+		      la DÉCLARATION (`lint:etats`) ; ce que la nature change se lit sur `actualite`. -->
 		<ChampsCommuns
 			entite={TICKET}
 			{inactives}
+			{replies}
+			{masquees}
+			bind:detailsOuverts
 			bind:refDiffusion
 			demanderApercu={brouillonApercu}
 			envoiEnCours={loading}
@@ -449,10 +439,22 @@
 		>
 			<!--  L'affiche de hall n'est pas un canal : c'est l'option d'une ACTUALITÉ,
 			      rendue dans le créneau de la Diffusion (#498). -->
-			<!--  6. Intervenant, et la récurrence d'un Entretien dans « Quand » :
-			      rendus à LEUR rang par `ChampsCommuns`, qui les grise quand la
-			      déclaration les éteint (hors bâti, résident, actualité). -->
-			<svelte:fragment slot="intervenant">
+			<!--  Les créneaux : Intervenant, récurrence (Quand), liens, Diffusion — rendus à LEUR rang
+			      par `ChampsCommuns`, qui grise ce que la déclaration éteint ; `creneauRepliees`
+			      pose Équipement et Suivi en tête de « Plus de détails » (saisie Essentielle). -->
+			{#snippet creneauRepliees()}
+				<SectionsEquipementSuiviTicket
+					{etat}
+					{modeEdition}
+					{inactives}
+					sections={replies}
+					bind:categorie
+					bind:statut
+					bind:options
+					bind:equipement
+				/>
+			{/snippet}
+			{#snippet creneauIntervenant()}
 				{#if sectionPresente(TICKET, etat, 'intervenant')}
 					<SectionIntervenant
 						idPrefixe="ticket"
@@ -465,17 +467,18 @@
 						bind:contratId
 					/>
 				{/if}
-			</svelte:fragment>
-			<SectionAffairesLiees
-				slot="affairesLiees"
-				bind:liees={affairesLiees}
-				exclure={ticket?.id ?? null}
-				affaire={ticket}
-				on:fusionnee={(e) => dispatch('modifie', e.detail)}
-				pliable={pliageDe(TICKET, 'affaires_liees')}
-				inactive={inactives.affaires_liees ?? ''}
-			/>
-			<svelte:fragment slot="quand">
+			{/snippet}
+			{#snippet creneauAffairesLiees()}
+				<SectionAffairesLiees
+					bind:liees={affairesLiees}
+					exclure={ticket?.id ?? null}
+					affaire={ticket}
+					on:fusionnee={(e) => dispatch('modifie', e.detail)}
+					pliable={pliageDe(TICKET, 'affaires_liees')}
+					inactive={inactives.affaires_liees ?? ''}
+				/>
+			{/snippet}
+			{#snippet creneauQuand()}
 				{#if $isCS && categorie === CATEGORIE_ENTRETIEN}
 					<ChampFrequence
 						idPrefixe="ticket-frequence"
@@ -484,12 +487,12 @@
 						bind:frequenceValeur
 					/>
 				{/if}
-			</svelte:fragment>
-			<svelte:fragment slot="diffusion">
+			{/snippet}
+			{#snippet creneauDiffusion()}
 				{#if actualite}
 					<DiffusionPublication reservee={reservePerimetre || reservee} bind:annonceHall />
 				{/if}
-			</svelte:fragment>
+			{/snippet}
 		</ChampsCommuns>
 
 		<PiedFormulaire enCours={loading} on:annule />

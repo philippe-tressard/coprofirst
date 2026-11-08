@@ -321,14 +321,14 @@
 			avecDiffusion={sectionPresente(ANNONCE, etat, 'diffusion')}
 			avecCanaux={false}
 		>
-			<svelte:fragment slot="diffusion">
+			{#snippet creneauDiffusion()}
 				<div class="field champ-large">
 					<label class="case">
 						<input type="checkbox" bind:checked={contactVisible} />
 						<span>Afficher mes coordonnées aux autres résidents</span>
 					</label>
 				</div>
-			</svelte:fragment>
+			{/snippet}
 		</ChampsCommuns>
 
 		<!--  « Annuler » est À CÔTÉ d'« Enregistrer » — norme du 18/08/2026, posée

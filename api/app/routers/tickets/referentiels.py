@@ -41,6 +41,7 @@ from app.utils.etat_affaire import affaire_close
 from app.utils.categories_ticket import CATEGORIES_EN_TETE, GRILLE_CATEGORIES, libelle_categorie
 from app.utils.kanban_tickets import COLONNES_KANBAN, colonne_du_ticket
 from app.utils.nature_affaire import LIBELLES_NATURE, categorie_reservee
+from app.utils.saisie_affaire import sections_essentielles
 from .commun import STATUT_LABELS
 
 router = APIRouter()
@@ -59,6 +60,9 @@ class CategorieServie(BaseModel):
     permise: bool
     #: Posée en tête de la grille, pleine ligne (« Actualité »).
     en_tete: bool
+    #: Les sections que la saisie ESSENTIELLE montre pour cette catégorie (#2595) ;
+    #: les autres se rangent dans « Plus de détails ». Identifiants du cadre.
+    sections_essentielles: list[str]
 
 
 class StatutServi(BaseModel):
@@ -110,6 +114,7 @@ def referentiels_pour(user: Utilisateur) -> ReferentielsAffaires:
                 reservee=categorie_reservee(code),
                 permise=categorie_permise(code, user),
                 en_tete=code in CATEGORIES_EN_TETE,
+                sections_essentielles=sections_essentielles(code),
             )
             for code, emoji, description in GRILLE_CATEGORIES
         ],

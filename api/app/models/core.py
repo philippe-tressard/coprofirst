@@ -143,6 +143,9 @@ class Utilisateur(SQLModel, table=True):
     #  copropriété (Admin › Services), chacun peut l'éteindre pour lui, sur tous
     #  ses appareils. Préférence d'affichage, comme la précédente.
     decor_fetes: bool = Field(default=True)
+    #  La saisie d'une affaire, Essentielle ou Complète (#2595) : `NULL` = selon le
+    #  rôle. Le défaut se CALCULE (`utils/saisie_affaire.mode_effectif`), il ne s'écrit pas.
+    saisie_affaire: Optional[str] = Field(default=None)
     demarche_arrivant: Optional[str] = Field(default=None)  # nouvel_arrivant | deja_resident | None
     batiment_id: Optional[int] = Field(default=None, foreign_key="batiment.id")
     nom_proprietaire: Optional[str] = None  # pour les locataires : nom du propriétaire bailleur

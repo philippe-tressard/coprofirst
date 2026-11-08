@@ -47,6 +47,7 @@
 - **Installations** — registre des installations CoproFirst inscrites, pour l'opérateur de la référence seulement.
 - **Liens partageables** — chaque onglet et chaque publication a son adresse propre ; le lien n'ouvre aucun droit.
 - **Thème clair ou sombre** — Automatique (suit le réglage de l'appareil), Clair ou Sombre, choisi dans le profil et retenu par appareil ; la page arrive déjà dans son thème, sans éclair, et l'impression reste claire. Le décor des jours de fête, allumé par l'administration, s'éteint pour soi au même endroit (retenu par le compte).
+- **Saisie d'une affaire, Essentielle ou Complète** — réglée dans le profil, pour tout le compte : la saisie essentielle ne montre que les champs qu'il faut selon la catégorie et range les autres dans « Plus de détails » ; la complète montre tout. Par défaut, Complète pour le conseil syndical et Essentielle pour les autres.
 - **Installation commune** — une installation sert plusieurs copropriétés, chacune dans sa base : [`deploiement/standard/commune/LISEZMOI.md`](deploiement/standard/commune/LISEZMOI.md).
 - **Démonstration publique** — `MODE_DEMO=oui` monte une résidence fictive avec trois comptes publiés, sans aucun envoi, remise à zéro chaque nuit : `specs/architecture/mode-demo.md`.
 
