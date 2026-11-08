@@ -120,27 +120,37 @@ METHODE_AG = (
 )
 
 #: La forme de la réponse — tenue par le code, ajoutée APRÈS le prompt.
-#: En SECTIONS depuis le 29/10/2026 : d'après le règlement, d'après les AG, synthèse.
+#: En SYNTHÈSE COURTE À RENVOIS depuis le 08/11/2026 (#2597) : la synthèse répond et
+#: tranche en quelques phrases, chaque affirmation renvoie à un extrait ([R1], [AG1]),
+#: et le détail se range sous le règlement, sous les AG, sous les réserves — que
+#: l'écran plie. Le modèle ne produit plus de section « synthese » : la réponse EST
+#: la synthèse. Un avis d'avant garde la sienne (`SECTIONS`).
 FORMAT_REPONSE = (
-    "Réponds UNIQUEMENT par un objet JSON, sans texte autour, à sept clés :\n"
+    "Réponds UNIQUEMENT par un objet JSON, sans texte autour, à six clés :\n"
     '{"verdict": "oui" | "non" | "sous_conditions" | "non_prevu" | "incertain", '
-    '"reponse": "<la réponse à la question, en deux à quatre phrases, en HTML simple : '
-    '<p>, <ul>, <li>, <strong>>", '
-    '"selon_reglement": "<ce que dit le règlement, argumenté, en HTML simple>", '
-    '"selon_ag": "<ce que disent les décisions des assemblées générales, chacune nommée '
-    "par sa date et sa résolution, en HTML simple — chaîne vide si le message n'a pas "
-    'de bloc DECISIONS_AG>", '
-    '"synthese": "<comment le règlement et les décisions s\'articulent, et ce qui '
-    "s'applique au final, en HTML simple — chaîne vide si le message n'a pas de bloc "
-    'DECISIONS_AG>", '
-    '"extraits": [{"citation": "<mot pour mot>", '
+    '"reponse": "<la SYNTHÈSE : la réponse à la question et ce qui s\'applique au final, '
+    "en trois ou quatre phrases au plus (600 caractères), en HTML simple : <p>, <strong>. "
+    "Chaque affirmation sur le règlement ou sur une décision d'assemblée se termine par son "
+    "renvoi entre crochets, par exemple [R2] ou [AG1]. Si le règlement et une décision "
+    "d'assemblée divergent, dis ici laquelle l'emporte et pourquoi>\", "
+    '"selon_reglement": "<le raisonnement fondé sur le règlement : une liste <ul> d\'un à '
+    "cinq <li>, chacun d'une ou deux phrases et terminé par son renvoi [Rn]. Ne recopie pas "
+    'les extraits ici>", '
+    '"selon_ag": "<la même chose pour les décisions des assemblées générales : chaque <li> '
+    "nomme l'assemblée (sa date) et la résolution, et se termine par [AGn]. Chaîne vide si "
+    "le message n'a pas de bloc DECISIONS_AG>\", "
+    '"extraits": [{"renvoi": "R1" | "AG1", "citation": "<mot pour mot>", '
     '"reference": "<acte, chapitre ou article, page — ou assemblée et résolution>", '
     '"apport": "<ce que l\'extrait établit, en une phrase>"}], '
-    '"reserves": "<HTML simple, ou chaîne vide>"}'
+    '"reserves": "<au plus trois <li> dans une <ul>, ou chaîne vide>"}\n'
+    "Numérote les extraits du règlement R1, R2… et ceux des décisions d'assemblée AG1, "
+    "AG2…, dans l'ordre où tu les cites. Chaque renvoi écrit dans le texte désigne un "
+    "extrait de la liste, et chaque extrait est cité au moins une fois."
 )
 
 #: Les sections de l'avis, dans l'ordre de l'écran — vides dans un avis d'avant le
-#: 29/10/2026, et `selon_ag` comme `synthese` sans décision d'AG jointe.
+#: 29/10/2026, `selon_ag` sans décision d'AG jointe, et `synthese` dans tout avis
+#: d'après le 08/11/2026 (la réponse est alors la synthèse).
 SECTIONS = ("selon_reglement", "selon_ag", "synthese")
 
 #: Une question, pas un dossier.
@@ -216,6 +226,7 @@ def lire_reponse(texte: str) -> dict:
                 "citation": citation,
                 "reference": str(e.get("reference") or "").strip()[:300],
                 "apport": str(e.get("apport") or "").strip()[:600],
+                "renvoi": str(e.get("renvoi") or "").strip()[:10],
             }
         )
     return {
