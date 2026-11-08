@@ -2,10 +2,11 @@
   ChoixSaisieAffaire.svelte — la saisie d'une affaire, Essentielle ou Complète,
   dans le Profil (#2595, 08/11/2026).
 
-  Trois entrées, comme le thème : « Selon mon rôle » (cochée tant qu'on n'a rien
-  choisi), « Essentielle » et « Complète ». Le défaut se calcule côté serveur
+  Deux entrées : « Essentielle » (cochée tant qu'on n'a rien choisi, pour tout le
+  monde) et « Complète ». Le défaut se calcule côté serveur
   (`UserRead.saisie_affaire_effective`) : la phrase d'aide dit ce qui s'applique
-  AUJOURD'HUI, elle ne le dérive pas.
+  AUJOURD'HUI, elle ne le dérive pas. Le titre n'est écrit qu'une fois : celui de la
+  carte ; le groupe de pastilles garde son nom accessible, sans le répéter à l'écran.
 
   Le choix vit sur le COMPTE, pour tous les appareils — au contraire du thème
   (cookie) : la saisie ne doit pas différer entre le téléphone et l'ordinateur.
@@ -23,7 +24,7 @@
 		type ChoixSaisie,
 	} from '#lib/saisie-affaire.ts';
 
-	$: choisi = ($currentUser?.saisie_affaire ?? 'role') as ChoixSaisie;
+	$: choisi = ($currentUser?.saisie_affaire_effective ?? 'essentielle') as ChoixSaisie;
 	$: effectif = $currentUser?.saisie_affaire_effective ?? 'essentielle';
 
 	//  `valeur` suit les pastilles ; `vu` est ce qui a déjà été relu du compte ou envoyé.
@@ -52,7 +53,6 @@
 			tous={false}
 			radio="saisie-affaire"
 			libelle="Saisie d’une affaire"
-			libelleVisible
 			defilante={false}
 			avecDetail
 		/>
