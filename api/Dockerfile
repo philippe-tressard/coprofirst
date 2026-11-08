@@ -37,6 +37,8 @@ ENV GIT_HASH=$GIT_HASH
 # `apt-get upgrade` d'abord : l'image officielle retarde sur les correctifs de Debian,
 # et l'installation seule laisse les paquets déjà présents à leur version (#2543 :
 # CVE-2026-109518, apt 3.0.3). 🔒 test_images_paquets_a_jour.py
+# Une image n'est à jour qu'à sa construction : zlib1g 1.3.1-1+deb13u1 (CVE-2026-76844,
+# CVE-2026-85091, HIGH) est sortie après celle du 07/11, d'où la reconstruction (#2592).
 RUN apt-get update && apt-get upgrade -y --no-install-recommends \
     && apt-get install -y --no-install-recommends \
     curl \
