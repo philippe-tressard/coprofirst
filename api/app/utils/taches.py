@@ -73,6 +73,7 @@ TACHES_PERMANENTES: dict[str, str] = {
     "purge_comptes_inactifs": "la purge quotidienne des comptes inactifs (#1580) — plus "
     "aucun avertissement ni aucune suppression : la durée de conservation annoncée par la "
     "politique de confidentialité redevient fictive",
+    "purge_notifications_lues": "la purge nocturne des notifications LUES de plus de douze mois (#2535, `utils/purge_notifications`) — la cloche et la page Notifications regrossissent sans fin, et la durée de conservation annoncée par la politique de confidentialité redevient fictive",
     "sante_plateforme": "le contrôle du disque à partir de la deuxième copropriété "
     "(#1814) — un disque plein n'est plus signalé par l'application ; seule "
     "l'infrastructure le voit encore (`check-reliability.sh`) — et celui de la copie "

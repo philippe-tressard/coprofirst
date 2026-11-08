@@ -272,6 +272,9 @@ async def lifespan(app: FastAPI):
         id="purge_comptes_inactifs",
     )
 
+    from app.utils.purge_notifications import enregistrer as _purge_notifications
+
+    _purge_notifications(scheduler)  # 04:38, les notifications lues de plus d'un an (#2535)
     from app.utils.conservation_application import enregistrer as _conservation_affaires
 
     _conservation_affaires(scheduler)  # 04:45, après la purge des comptes (#2014)
