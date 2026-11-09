@@ -52,4 +52,30 @@ def remplacer_passage(
     return 1
 
 
-__all__ = ["remplacer_si_intact", "remplacer_passage"]
+def inserer_apres(
+    conn, table: str, cle: dict[str, str], colonne: str, ancre: str, ajout: str
+) -> int:
+    """Insère `ajout` juste après `ancre`, si l'ancre figure telle quelle ; rend 0 ou 1.
+
+    Le pendant de `remplacer_passage` pour une phrase NEUVE : la migration ne connaît
+    que son voisinage. Déjà posée (l'ancre suivie de l'ajout), rien ne change — une
+    seconde passe n'écrit pas deux fois. Le retour arrière est `remplacer_passage`
+    de `ancre + ajout` vers `ancre`.
+    """
+    t = sa.table(table, *(sa.column(c) for c in sorted({*cle, colonne})))
+    filtre = sa.and_(*(t.c[c] == v for c, v in cle.items()))
+    actuel = conn.execute(sa.select(t.c[colonne]).where(filtre)).scalar()
+    if not actuel or ancre not in actuel or ancre + ajout in actuel:
+        return 0
+    return remplacer_passage(conn, table, cle, colonne, ancre, ancre + ajout)
+
+
+def forme_editeur(puce: str) -> str:
+    """Une puce du gabarit (`<li>…</li>`, espaces insécables) telle que l'éditeur
+    d'Admin › Pages légales la réécrit : un paragraphe dans la puce, l'espace
+    insécable en entité (constaté en base le 05/11/2026, migration 0327)."""
+    corps = puce.removeprefix("<li>").removesuffix("</li>").replace("\xa0", "&nbsp;")
+    return f"<li><p>{corps}</p></li>"
+
+
+__all__ = ["forme_editeur", "inserer_apres", "remplacer_passage", "remplacer_si_intact"]
