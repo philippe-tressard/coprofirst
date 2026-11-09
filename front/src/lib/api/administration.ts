@@ -349,6 +349,10 @@ export interface JournalEnvoiWhatsApp {
 	envoye_le: string | null;
 }
 
+/** Le logo, ou son dessin pour un fond sombre — et la clé de configuration de chacun. */
+export type VarianteLogo = 'clair' | 'sombre';
+export type CleLogo = 'site_logo' | 'site_logo_sombre';
+
 export const config = {
 	//  ⚠️ Appelée par `loadSiteConfig()` (`stores/pageConfig`), qui écrivait
 	//  `fetch('/api/config')` en dur jusqu'au 12/09/2026 — un contournement du
@@ -429,11 +433,15 @@ export const config = {
 	/**  Le logo de la résidence (#1728), servi PUBLIQUEMENT — le logo neutre s'il
 	 *   n'y en a pas. `version` (le nom du fichier, clé `site_logo`) change
 	 *   l'adresse quand le logo change : sans elle, le navigateur garderait l'ancien. */
-	logoUrl: (taille: number, version?: string | null): string =>
-		`${BASE}/config/logo.png?taille=${taille}${version ? `&v=${encodeURIComponent(version)}` : ''}`,
-	televerserLogo: (fichier: File) =>
-		postFormData<{ site_logo: string }>('/config/logo', { file: fichier }),
-	supprimerLogo: () => api.delete<{ site_logo: null }>('/config/logo'),
+	logoUrl: (taille: number, version?: string | null, variante: VarianteLogo = 'clair'): string =>
+		`${BASE}/config/logo.png?taille=${taille}${variante === 'sombre' ? '&variante=sombre' : ''}${version ? `&v=${encodeURIComponent(version)}` : ''}`,
+	/**  `variante` : le logo, ou son dessin pour le thème sombre (`site_logo_sombre`). */
+	televerserLogo: (fichier: File, variante: VarianteLogo = 'clair') =>
+		postFormData<Partial<Record<CleLogo, string>>>(`/config/logo?variante=${variante}`, {
+			file: fichier,
+		}),
+	supprimerLogo: (variante: VarianteLogo = 'clair') =>
+		api.delete<Partial<Record<CleLogo, null>>>(`/config/logo?variante=${variante}`),
 
 	/**  Les palettes offertes à la copropriété (#2379) — le registre de l'API, dans
 	 *   l'ordre de l'écran — et le choix, vérifié contre lui. */

@@ -118,6 +118,7 @@ REFUSEES: dict[str, str] = {
     "whatsapp_api_key": "La clé du bridge WhatsApp se définit dans .env (WHATSAPP_API_KEY).",
     #  Posé par le téléversement, qui contrôle le fichier (#1728).
     "site_logo": "Le logo se téléverse par POST /config/logo.",
+    "site_logo_sombre": "Le logo du thème sombre se téléverse par POST /config/logo?variante=sombre.",
     #  Vérifiée contre le registre des palettes (#2379).
     "site_palette": "La palette se choisit par PUT /config/palette.",
     #  Un réglage de l'INSTALLATION (spec `mode-demo.md` M1).
@@ -130,6 +131,7 @@ REFUSEES: dict[str, str] = {
     contrat.CLE_PUBLIQUE: "La version du contrat de l'API est celle du code servi : elle ne se saisit pas.",
     #  Leurs routes portent des bornes que `PUT /config` n'appliquerait pas.
     "consignes_arrivant": "Les consignes aux arrivants se modifient par PUT /admin/consignes-arrivant.",
+    "accueil_arrivant": "La phrase d'accueil de la fiche se modifie par PUT /admin/consignes-arrivant.",
     "reglement_provenance": "La provenance du règlement se modifie par PUT /reglement/provenance.",
     "whatsapp_community_url": "Le lien de la communauté WhatsApp se modifie dans l'annuaire du CS.",
     #  Une seule source pour le nom de la résidence (#2056) : la fiche de la copropriété.

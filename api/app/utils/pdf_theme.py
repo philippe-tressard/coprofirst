@@ -110,8 +110,11 @@ def regle_page(
 #: racine n'entre dans les images. `test_logo_neutre.py` tient les deux égaux.
 LOGO_NEUTRE_SVG = Path(__file__).with_name("logo-neutre.svg")
 
+#: Le même dessin pour un FOND SOMBRE — sans tuile blanche, traits ivoire (09/11/2026).
+LOGO_NEUTRE_SOMBRE_SVG = Path(__file__).with_name("logo-neutre-sombre.svg")
 
-def logo_svg(size: int = 36) -> str:
+
+def logo_svg(size: int = 36, sombre: bool = False) -> str:
     """Le logo NEUTRE du logiciel en SVG inline, à `size` px de côté.
 
     C'est le repli quand la résidence n'a pas téléversé le sien (#1728) : un
@@ -121,16 +124,21 @@ def logo_svg(size: int = 36) -> str:
 
     Le commentaire du fichier (provenance, couleurs) ne part pas dans le document.
     """
-    svg = re.sub(r"\s*<!--.*?-->", "", LOGO_NEUTRE_SVG.read_text(encoding="utf-8"), flags=re.S)
+    source = LOGO_NEUTRE_SOMBRE_SVG if sombre else LOGO_NEUTRE_SVG
+    svg = re.sub(r"\s*<!--.*?-->", "", source.read_text(encoding="utf-8"), flags=re.S)
     return svg.strip().replace("<svg ", f'<svg width="{size}" height="{size}" ', 1)
 
 
-def logo_html(logo_png: bytes | None, size: int = 36) -> str:
+def logo_html(logo_png: bytes | None, size: int = 36, sombre: bool = False) -> str:
     """Le logo d'un document HTML autonome — **la seule écriture** (#1728).
 
     `logo_png` est celui que la résidence a téléversé (`utils/logo.logo_televerse_png`),
     ou None : le dessin neutre, en SVG, net à toute taille. Le PNG part en
     data-URI, car un document se rend hors requête, sans rien charger.
+
+    `sombre` : le document pose le logo sur un fond SOMBRE (en-tête bleu marine).
+    Le dessin neutre est alors celui de ce fond ; le PNG, lui, doit avoir été
+    demandé dans cette variante (`logo_televerse_png(session, "sombre")`).
 
     🔴 La taille s'écrit AUSSI en `style` : WeasyPrint ignore les attributs
     `width`/`height` d'un `<img>` (sans `presentational_hints`, que
@@ -139,7 +147,7 @@ def logo_html(logo_png: bytes | None, size: int = 36) -> str:
     du manuel (08/10/2026). Le SVG, lui, porte sa taille dans son élément.
     """
     if logo_png is None:
-        return logo_svg(size)
+        return logo_svg(size, sombre)
     donnees = base64.b64encode(logo_png).decode()
     return (
         f'<img src="data:image/png;base64,{donnees}" width="{size}" height="{size}" '

@@ -192,6 +192,52 @@ test('@sombre le logo téléversé garde son fond clair au sombre, et rien au cl
 	expect(sombre.liseré).toContain(BLANC);
 });
 
+test('@sombre avec son dessin du fond sombre, le logo change d’image et perd sa carte blanche', async ({
+	page,
+}) => {
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return undefined;
+		if (chemin.startsWith('/api/config')) return { site_logo: 'v1', site_logo_sombre: 's1' };
+	});
+	const demandes: string[] = [];
+	await page.route(
+		(url) => url.pathname.startsWith('/api/config/logo'),
+		(route) => {
+			demandes.push(new URL(route.request().url()).search);
+			return route.fulfill({
+				contentType: 'image/svg+xml',
+				body: '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="40" height="40"/></svg>',
+			});
+		},
+	);
+	await page.goto('/auth/connexion');
+	const clair = page.locator('.logo-residence.du-clair');
+	const sombre = page.locator('.logo-residence.du-sombre');
+	//  Cas zéro : les deux images sont rendues, la palette choisit.
+	await expect(clair).toHaveCount(1);
+	await expect(sombre).toHaveCount(1);
+
+	await forcerTheme(page, 'clair');
+	await expect(clair).toBeVisible();
+	await expect(sombre).toBeHidden();
+
+	await forcerTheme(page, 'sombre');
+	await expect(sombre).toBeVisible();
+	await expect(clair).toBeHidden();
+	//  Le dessin du fond sombre est transparent : ni carte blanche, ni liseré.
+	const fond = await sombre.evaluate((el) => {
+		const s = getComputedStyle(el);
+		return { fond: s.backgroundColor, liseré: s.boxShadow };
+	});
+	expect(fond.fond).toBe(TRANSPARENT);
+	expect(fond.liseré).toBe('none');
+	//  Il est demandé dans SA variante, avec son nom pour version.
+	await expect
+		.poll(() => demandes.some((d) => d.includes('variante=sombre') && d.includes('v=s1')))
+		.toBe(true);
+	expect(demandes.some((d) => d.includes('v=v1') && !d.includes('variante'))).toBe(true);
+});
+
 const RICHE =
 	'<h2>Titre</h2><p>Un <strong>gras</strong>, un <a href="/faq">lien</a>, du <code>code</code>.</p>' +
 	'<blockquote><p>Une citation.</p></blockquote><ul><li>Un point</li></ul>';
