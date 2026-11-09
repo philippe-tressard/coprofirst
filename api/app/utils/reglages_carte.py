@@ -260,7 +260,7 @@ NOTIONS: tuple[Notion, ...] = (
         "Consignes aux arrivants",
         Acces.CS,
         "Espace CS › Annuaire CS & Syndic (consignes aux arrivants)",
-        "`config_site.consignes_arrivant`",
+        "`config_site.consignes_arrivant`, `config_site.accueil_arrivant`",
         ("PUT", "/admin/consignes-arrivant"),
     ),
     Notion(

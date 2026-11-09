@@ -6,6 +6,8 @@ from collections import defaultdict
 from html import escape
 from typing import Optional
 
+from app.seed.consignes_arrivant import ACCUEIL_GABARIT
+from app.utils.consignes_arrivant import texte_en_html
 from app.utils.dates_fr import date_longue
 from app.utils.fiche_arrivant_css import CSS
 from app.utils.liens import adresse_lisible
@@ -278,6 +280,7 @@ def generer_fiche_arrivant(
     logo_png: bytes | None,
     whatsapp_url: str | None = None,
     consignes: list[tuple[str, str]],
+    accueil: str | None = None,
     annee: int = 2026,
 ) -> str:
     """Génère le HTML complet de la fiche arrivant à partir des données annuaire.
@@ -290,6 +293,8 @@ def generer_fiche_arrivant(
     site_qr = _qr_data_uri(site_url)
     adresse = adresse_lisible(site_url)
     nom = escape(site_nom)
+    #  La phrase d'accueil est du TEXTE saisi par le CS : échappée ici, comme les consignes.
+    accueil_html = texte_en_html(accueil or ACCUEIL_GABARIT, "", adresse)
     wa_qr = _qr_data_uri(whatsapp_url) if whatsapp_url else ""
     globe_svg = icone_svg("globe")
     wa_svg = icone_svg("whatsapp")
@@ -339,7 +344,7 @@ def generer_fiche_arrivant(
   <div class="accent-bar"></div>
   <div class="content">
     <h2>Bonjour et bienvenue&nbsp;!</h2>
-    <p>Vous venez d'emménager à la <strong>{nom}</strong>. Créez votre compte sur le portail pour accéder aux documents, calendrier, tickets et toutes les infos de la résidence.</p>
+    <p class="accueil">{accueil_html}</p>
     <div class="dual-cta">
       <div class="cta-banner">
         <div class="cta-banner-text">

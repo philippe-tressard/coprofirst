@@ -8,7 +8,8 @@
  *  2. le crayon ouvre la saisie EN PLACE ; on ajoute et on retire une rubrique ;
  *  3. ce qui PART au serveur est le texte saisi, tel quel (le serveur l'échappe) ;
  *  4. une rubrique vide empêche d'enregistrer, sans rien envoyer ;
- *  5. au bureau comme au téléphone, la page ne défile pas en largeur.
+ *  5. au bureau comme au téléphone, la page ne défile pas en largeur ;
+ *  6. la phrase d'accueil se lit, se corrige en tête du formulaire, et PART avec les rubriques.
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
@@ -16,13 +17,14 @@ import { attendreSansDefilementHorizontal } from './defilement';
 
 const GABARIT = {
 	personnalisees: false,
+	accueil: 'Vous venez d’emménager. Les actualités sont sur {site}.',
 	consignes: [
 		{ titre: '📦 1. Emménagement', contenu: 'Prévenez le conseil **1 semaine** avant.' },
 		{ titre: '🗑 2. Encombrants', contenu: 'Aux jours fixés par la commune.' },
 	],
 };
 
-type Envoi = { consignes: { titre: string; contenu: string }[] };
+type Envoi = { accueil: string; consignes: { titre: string; contenu: string }[] };
 
 async function ouvrir(page: Page): Promise<Envoi[]> {
 	const envois: Envoi[] = [];
@@ -52,6 +54,7 @@ test('la lecture dit que ce sont celles du modèle', async ({ page }) => {
 	await ouvrir(page);
 	const bloc = section(page);
 	await expect(bloc).toContainText('Modèle générique');
+	await expect(bloc).toContainText(GABARIT.accueil);
 	await expect(bloc).toContainText('📦 1. Emménagement');
 	await expect(bloc).toContainText('Aux jours fixés par la commune.');
 	await attendreSansDefilementHorizontal(page);
@@ -73,8 +76,13 @@ test('le crayon ouvre la saisie en place, et le texte part tel quel', async ({ p
 		.nth(1)
 		.fill('Au **sous-sol**, syndic {syndic}.');
 
+	const accueil = bloc.getByRole('textbox', { name: /Phrase d’accueil/ });
+	await expect(accueil).toHaveValue(GABARIT.accueil);
+	await accueil.fill('Bienvenue chez **nous**, voyez {site}.');
+
 	await bloc.getByRole('button', { name: 'Enregistrer' }).click();
 	await expect.poll(() => envois.length).toBe(1);
+	expect(envois[0].accueil).toBe('Bienvenue chez **nous**, voyez {site}.');
 	expect(envois[0].consignes).toEqual([
 		GABARIT.consignes[0],
 		{ titre: '🚲 Vélos', contenu: 'Au **sous-sol**, syndic {syndic}.' },

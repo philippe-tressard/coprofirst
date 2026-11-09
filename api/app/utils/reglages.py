@@ -130,6 +130,7 @@ REFUSEES: dict[str, str] = {
     contrat.CLE_PUBLIQUE: "La version du contrat de l'API est celle du code servi : elle ne se saisit pas.",
     #  Leurs routes portent des bornes que `PUT /config` n'appliquerait pas.
     "consignes_arrivant": "Les consignes aux arrivants se modifient par PUT /admin/consignes-arrivant.",
+    "accueil_arrivant": "La phrase d'accueil de la fiche se modifie par PUT /admin/consignes-arrivant.",
     "reglement_provenance": "La provenance du règlement se modifie par PUT /reglement/provenance.",
     "whatsapp_community_url": "Le lien de la communauté WhatsApp se modifie dans l'annuaire du CS.",
     #  Une seule source pour le nom de la résidence (#2056) : la fiche de la copropriété.

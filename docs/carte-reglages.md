@@ -95,7 +95,7 @@ mindmap
 |---|---|---|---|
 | Annuaire du syndic | Espace CS › Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/syndic` |
 | Annuaire du conseil syndical (composition) | Espace CS › Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/cs` |
-| Consignes aux arrivants | Espace CS › Annuaire CS & Syndic (consignes aux arrivants) | `config_site.consignes_arrivant` | `PUT /admin/consignes-arrivant` |
+| Consignes aux arrivants | Espace CS › Annuaire CS & Syndic (consignes aux arrivants) | `config_site.consignes_arrivant`, `config_site.accueil_arrivant` | `PUT /admin/consignes-arrivant` |
 | Compteurs (relevés) | Espace CS › Compteurs (configuration des catégories) | table `compteur_config` | `POST /prestataires/compteurs-config` |
 
 ### Opérateur de la plateforme

@@ -11,6 +11,13 @@ consigne, et `{syndic}` pour le nom du syndic, lu au rendu dans le contrat
 (`utils/syndic.nom_du_syndic`). Le pourquoi : `utils/consignes_arrivant`.
 """
 
+#: La phrase d'accueil, sous « Bonjour et bienvenue ! » : même format de texte que les
+#: consignes, et `{site}` pour l'adresse du site de la résidence (lue au rendu).
+ACCUEIL_GABARIT = (
+    "Vous venez d'emménager dans notre résidence. Ne restez pas sur le carreau\u202f! "
+    "Consultez régulièrement les actualités sur le site {site} de la copropriété."
+)
+
 GABARIT: list[dict[str, str]] = [
     {
         "titre": "📦 1. Emménagement / déménagement",
