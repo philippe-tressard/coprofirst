@@ -13,8 +13,13 @@
  *  À l'écran de connexion, le même logo se centre sous le titre (#2305) : il
  *  est un bloc, et `.auth-logo` le centrait par `text-align`, qu'un bloc ne
  *  suit pas — il restait collé au bord gauche de la carte.
+ *
+ *  Dans Admin › Copropriété › Identité, le logo et son dessin du fond sombre se
+ *  règlent CÔTE À CÔTE (demandé à l'écran, 10/11/2026) : empilés, on ne les
+ *  comparait pas d'un regard. Au téléphone ils retombent l'un sous l'autre.
  */
-import { expect, simulerApi, test } from './aides';
+import { attendreHydratation, boiteStable, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { attendreSansDefilementHorizontal } from './defilement';
 
 test('le logo téléversé s’affiche en grand dans le menu, et tient dans sa barre', async ({
 	page,
@@ -51,4 +56,33 @@ test('à la connexion, le logo téléversé est centré sous le titre', async ({
 	const t = (await page.locator('.auth-header h1').boundingBox())!;
 	const ecart = Math.abs(l.x + l.width / 2 - (t.x + t.width / 2));
 	expect(ecart, 'le logo n’est pas centré sous le titre').toBeLessThanOrEqual(1);
+});
+
+test('en administration, les deux logos se règlent côte à côte, et s’empilent au téléphone', async ({
+	page,
+}, info) => {
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
+		if (chemin === '/api/config' || chemin === '/api/config/admin')
+			return { site_nom: 'Résidence témoin', site_logo: 'logo.png' };
+	});
+	await page.goto('/admin?onglet=copropriete');
+	await attendreHydratation(page);
+	const normal = page.locator('.field', { has: page.getByText('Logo sur fond normal') });
+	const sombre = page.locator('.field', { has: page.getByText('Logo sur fond sombre') });
+	//  Cas zéro : les deux champs sont rendus, chacun avec son geste.
+	await expect(normal.getByRole('button', { name: 'Changer le logo' })).toBeVisible();
+	await expect(sombre.getByRole('button', { name: 'Ajouter un logo' })).toBeVisible();
+	const [n, s] = [await boiteStable(normal), await boiteStable(sombre)];
+	if (info.project.name === 'mobile') {
+		expect(s.y, 'au téléphone, le fond sombre passe SOUS le fond normal').toBeGreaterThan(
+			n.y + n.height - 1,
+		);
+	} else {
+		expect(Math.abs(s.y - n.y), 'les deux logos ne sont pas sur la même ligne').toBeLessThanOrEqual(
+			1,
+		);
+		expect(s.x, 'le fond sombre est à droite du fond normal').toBeGreaterThan(n.x + n.width - 1);
+	}
+	await attendreSansDefilementHorizontal(page);
 });
