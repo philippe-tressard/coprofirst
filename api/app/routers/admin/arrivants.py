@@ -384,7 +384,8 @@ def get_fiche_arrivant(
         },
         site_nom=nom_site(site.get("site_nom")),
         site_url=adresse_du_site(),
-        logo_png=logo_televerse_png(session),
+        #  L'en-tête de la fiche est bleu marine : le logo du fond sombre.
+        logo_png=logo_televerse_png(session, "sombre"),
         whatsapp_url=whatsapp_url,
         #  Éditables par le CS, rendues échappées ; le syndic y est NOMMÉ par le
         #  contrat, comme dans l'encart ci-dessus (#1727).

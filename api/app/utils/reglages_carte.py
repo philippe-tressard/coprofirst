@@ -195,7 +195,7 @@ NOTIONS: tuple[Notion, ...] = (
         "Logo de la résidence",
         Acces.ADMIN,
         f"Admin › {G_COPROPRIETE} › Identité",
-        "fichier + config_site (`site_logo`)",
+        "fichier + config_site (`site_logo`, `site_logo_sombre`)",
         ("POST", "/config/logo"),
     ),
     Notion(

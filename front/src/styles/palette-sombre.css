@@ -65,6 +65,9 @@
 		--color-neutre-bordure: #263a57;
 		/* Le logo téléversé a été composé sur la carte claire : il la retrouve. */
 		--color-fond-logo: #ffffff;
+		/* … sauf si la résidence a téléversé son dessin du fond sombre : il le remplace. */
+		--affichage-logo-clair: none;
+		--affichage-logo-sombre: block;
 		--color-text: #e8e6e1;
 		--color-text-muted: #9fb0c6;
 		/* La marque : éclaircie pour se lire en texte sur fond sombre. */

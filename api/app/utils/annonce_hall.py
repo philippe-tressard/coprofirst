@@ -444,7 +444,7 @@ def construire_html(
 <div class="page">
 
   <div class="entete">
-    {logo_html(logo_png, int(g["logo"]))}
+    {logo_html(logo_png, int(g["logo"]), sombre=True)}
     <div class="entete-texte">
       <div class="surtitre">Avis aux résidents</div>
       <div class="residence">{escape(site_nom)}</div>

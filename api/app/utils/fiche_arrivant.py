@@ -335,7 +335,7 @@ def generer_fiche_arrivant(
 <body>
 <div class="page">
   <div class="header">
-    {logo_html(logo_png)}
+    {logo_html(logo_png, sombre=True)}
     <div class="header-text">
       <div class="header-title">Bienvenue dans votre résidence !</div>
       <div class="header-sub">Consignes de la copropriété</div>
