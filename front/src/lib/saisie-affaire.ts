@@ -11,7 +11,7 @@
  * ## Qui décide du mode
  *
  * Le SERVEUR : `UserRead.saisie_affaire_effective` (`api/app/utils/saisie_affaire`),
- * le choix du profil sinon le défaut du rôle. Ce module le LIT, il ne le dérive pas
+ * le choix du profil sinon Essentielle, pour tous. Ce module le LIT, il ne le dérive pas
  * (`standards/09` §8, `lint:regles-partagees`).
  *
  * ## Les sections essentielles — une table, deux écritures
@@ -39,8 +39,8 @@ import { concerneTousLesResidents } from '#lib/destinataires.ts';
 
 export type ModeSaisie = 'essentielle' | 'complete';
 
-/** Ce que le profil enregistre : un mode, ou `role` pour revenir au défaut du rôle. */
-export type ChoixSaisie = ModeSaisie | 'role';
+/** Ce que le profil enregistre : l'un des deux modes. Sans choix, l'API sert Essentielle. */
+export type ChoixSaisie = ModeSaisie;
 
 /** Toujours montrées, quelle que soit la catégorie. */
 export const SECTIONS_DE_BASE: readonly IdSection[] = [
@@ -70,11 +70,6 @@ export const SECTIONS_ESSENTIELLES_PAR_CATEGORIE: Readonly<Record<string, readon
 
 /** Les entrées du sélecteur du Profil, dans leur ordre d'affichage. */
 export const OPTIONS_SAISIE: readonly { val: ChoixSaisie; label: string; desc: string }[] = [
-	{
-		val: 'role',
-		label: 'Selon mon rôle',
-		desc: 'Essentielle, ou Complète pour le conseil syndical',
-	},
 	{ val: 'essentielle', label: 'Essentielle', desc: 'Les champs qu’il faut, rien de plus' },
 	{ val: 'complete', label: 'Complète', desc: 'Toutes les sections, pour qualifier et suivre' },
 ];

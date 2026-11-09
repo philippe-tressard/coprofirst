@@ -1,7 +1,7 @@
 """La saisie d'une affaire, Essentielle ou Complète (#2595, 08/11/2026).
 
-Le choix vit sur le COMPTE ; `NULL` veut dire « selon mon rôle », et le défaut se
-calcule à la lecture : Complète pour qui modère, Essentielle pour les autres.
+Le choix vit sur le COMPTE ; `NULL` veut dire « rien choisi », et le défaut se
+calcule à la lecture : Essentielle, pour tous les rôles.
 """
 
 from __future__ import annotations
@@ -41,20 +41,20 @@ def _conseil(session: Session, **champs):
     )
 
 
-def test_sans_choix_le_defaut_est_celui_du_role(session: Session):
+def test_sans_choix_le_defaut_est_essentielle_pour_tous_les_roles(session: Session):
     resident = aides_base.compte(session, prefixe="saisie-res")
     assert resident.saisie_affaire is None
     assert mode_effectif(resident) == ESSENTIELLE
-    assert mode_effectif(_conseil(session)) == COMPLETE
+    assert mode_effectif(_conseil(session)) == ESSENTIELLE
 
 
-def test_le_choix_prime_sur_le_role(session: Session):
-    assert mode_effectif(_conseil(session, saisie_affaire=ESSENTIELLE)) == ESSENTIELLE
+def test_le_choix_prime_sur_le_defaut(session: Session):
+    assert mode_effectif(_conseil(session, saisie_affaire=COMPLETE)) == COMPLETE
     resident = aides_base.compte(session, prefixe="saisie-res", saisie_affaire=COMPLETE)
     assert mode_effectif(resident) == COMPLETE
 
 
-def test_une_valeur_inconnue_en_base_retombe_sur_le_role(session: Session):
+def test_une_valeur_inconnue_en_base_retombe_sur_le_defaut(session: Session):
     """Une colonne altérée à la main ne doit pas produire un mode que l'écran ignore."""
     resident = aides_base.compte(session, prefixe="saisie-res", saisie_affaire="bizarre")
     assert mode_effectif(resident) == ESSENTIELLE
@@ -69,13 +69,15 @@ def test_le_profil_enregistre_le_choix_et_le_sert_relu(session: Session):
     assert lu.saisie_affaire == COMPLETE and lu.saisie_affaire_effective == COMPLETE
 
 
-def test_revenir_selon_mon_role_efface_le_choix(session: Session):
+def test_selon_mon_role_n_existe_plus(session: Session):
+    """Retiré du Profil le 08/11/2026 : un client resté sur l'ancien écran est refusé."""
     user = aides_base.compte(session, prefixe="saisie-res", saisie_affaire=COMPLETE)
 
-    lu = _modifier(session, user, saisie_affaire="role")
+    with pytest.raises(HTTPException) as e:
+        _modifier(session, user, saisie_affaire="role")
+    assert e.value.status_code == 400
     session.refresh(user)
-    assert user.saisie_affaire is None
-    assert lu.saisie_affaire is None and lu.saisie_affaire_effective == ESSENTIELLE
+    assert user.saisie_affaire == COMPLETE
 
 
 def test_un_autre_reglage_ne_touche_pas_au_choix(session: Session):
@@ -96,8 +98,7 @@ def test_un_mot_inconnu_est_refuse_en_400(session: Session):
 
 
 def test_choix_a_enregistrer_cas_zero():
-    """Cas zéro : les trois mots valides rendent chacun leur valeur."""
-    assert choix_a_enregistrer("role") is None
+    """Cas zéro : les deux mots valides rendent chacun leur valeur."""
     assert choix_a_enregistrer("essentielle") == ESSENTIELLE
     assert choix_a_enregistrer("complete") == COMPLETE
 

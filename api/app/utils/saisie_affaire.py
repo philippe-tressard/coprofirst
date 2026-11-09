@@ -10,9 +10,9 @@ différer entre le téléphone et l'ordinateur.
 ## Le défaut ne se stocke pas, il se calcule
 
 `Utilisateur.saisie_affaire` vaut `NULL` tant que la personne n'a pas choisi : le
-mode est alors celui de son rôle — Complète pour qui modère (`est_moderateur`),
-Essentielle pour les autres. Un résident élu au conseil passe donc en Complète sans
-rien faire, ce qu'un défaut écrit à l'inscription n'aurait pas permis.
+mode est alors **Essentielle, pour tout le monde**, conseil syndical compris (arbitré
+le 08/11/2026 : « selon mon rôle » est retiré du Profil). Le défaut reste calculé, pas
+écrit à l'inscription : le changer un jour ne demande aucune migration de données.
 
 C'est une règle d'affichage que le site ET l'app iOS montrent : elle se calcule
 ici et se sert dans `UserRead.saisie_affaire_effective`, le front la LIT
@@ -21,11 +21,8 @@ ici et se sert dans `UserRead.saisie_affaire_effective`, le front la LIT
 
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import HTTPException
 
-from app.auth.deps import est_moderateur
 from app.models.core import Utilisateur
 
 ESSENTIELLE = "essentielle"
@@ -34,25 +31,22 @@ COMPLETE = "complete"
 #: Les deux modes qui s'enregistrent.
 MODES: tuple[str, ...] = (ESSENTIELLE, COMPLETE)
 
-#: Ce que le profil envoie pour revenir au défaut « selon mon rôle » : rien ne
-#: s'enregistre, la colonne repasse à `NULL`.
-SELON_LE_ROLE = "role"
+#: Le mode de qui n'a rien choisi — le même pour tous les rôles.
+DEFAUT = ESSENTIELLE
 
 
 def mode_effectif(user: Utilisateur) -> str:
-    """Le mode qui s'applique à cette personne : son choix, sinon celui de son rôle."""
+    """Le mode qui s'applique à cette personne : son choix, sinon le défaut."""
     if user.saisie_affaire in MODES:
         return user.saisie_affaire
-    return COMPLETE if est_moderateur(user) else ESSENTIELLE
+    return DEFAUT
 
 
-def choix_a_enregistrer(demande: str) -> Optional[str]:
-    """La valeur à écrire pour ce que le profil demande — `None` = selon le rôle.
+def choix_a_enregistrer(demande: str) -> str:
+    """La valeur à écrire pour ce que le profil demande.
 
     Lève 400 sur tout autre mot : une préférence se poste directement, sans l'écran.
     """
-    if demande == SELON_LE_ROLE:
-        return None
     if demande in MODES:
         return demande
     raise HTTPException(400, "Valeur invalide pour saisie_affaire")
