@@ -295,7 +295,7 @@ const REPONSES_PAR_DEFAUT: Record<string, unknown> = {
 		registre_url: 'https://registre.example',
 	},
 	//  `ConsignesArrivant` : Espace CS › Annuaire lit `consignes` (#1727).
-	'/api/admin/consignes-arrivant': { consignes: [], personnalisees: false },
+	'/api/admin/consignes-arrivant': { consignes: [], personnalisees: false, accueil: '' },
 	//  `reglement.acces()` : Ma résidence le lit pour montrer l'onglet Règlement.
 	'/api/reglement/acces': { acces: true },
 	//  `EtatReglement` : l'onglet Règlement lit `texte_disponible` et `lien_reglement`.

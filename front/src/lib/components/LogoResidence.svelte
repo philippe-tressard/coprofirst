@@ -14,6 +14,15 @@
   serait recopiée trois fois à son tour.
 
   `alt` est vide : le nom de la résidence est toujours écrit à côté.
+
+  ## La variante du fond sombre (09/11/2026)
+
+  Un logo composé sur fond blanc porte ce fond : au thème sombre, la carte claire
+  qu'on lui rend faisait un cadre blanc. Si la résidence a téléversé son dessin du
+  fond sombre (`site_logo_sombre`), les DEUX images sont rendues et la palette
+  choisit laquelle se montre (`--affichage-logo-*`) — ce composant ne lit pas le
+  thème. Elles sont paresseuses : celle qui ne se montre pas ne se charge pas.
+  🔒 `e2e/sombre-zone-d.spec.ts`
 -->
 <script lang="ts">
 	import Icon from '#lib/components/Icon.svelte';
@@ -24,6 +33,8 @@
 	export let taille: number;
 
 	$: logo = $configStore['site_logo'] ?? '';
+	//  La variante ACCOMPAGNE le logo : sans lui, elle ne se montre pas.
+	$: logoSombre = logo ? ($configStore['site_logo_sombre'] ?? '') : '';
 	const ICONE_NEUTRE = 'building-2';
 </script>
 
@@ -31,11 +42,23 @@
 	<!--  Demandé en double densité : net sur un écran de téléphone. -->
 	<img
 		class="logo-residence"
+		class:du-clair={!!logoSombre}
 		src={configApi.logoUrl(taille * 2, logo)}
 		width={taille}
 		height={taille}
+		loading={logoSombre ? 'lazy' : undefined}
 		alt=""
 	/>
+	{#if logoSombre}
+		<img
+			class="logo-residence du-sombre"
+			src={configApi.logoUrl(taille * 2, logoSombre, 'sombre')}
+			width={taille}
+			height={taille}
+			loading="lazy"
+			alt=""
+		/>
+	{/if}
 {:else}
 	<Icon name={ICONE_NEUTRE} size={taille} />
 {/if}
@@ -51,5 +74,15 @@
 		object-fit: contain;
 		background: var(--color-fond-logo);
 		box-shadow: 0 0 0 4px var(--color-fond-logo);
+	}
+	/*  Avec une variante du fond sombre, la palette montre l'une OU l'autre. Le
+	    dessin du fond sombre est transparent : ni carte, ni liseré. */
+	.du-clair {
+		display: var(--affichage-logo-clair);
+	}
+	.du-sombre {
+		display: var(--affichage-logo-sombre);
+		background: none;
+		box-shadow: none;
 	}
 </style>

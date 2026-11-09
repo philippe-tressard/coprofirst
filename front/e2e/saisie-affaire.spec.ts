@@ -98,9 +98,8 @@ test('le Profil enregistre le choix sur le compte et affiche le mode qui s’app
 			envois.push(corps);
 			compte = {
 				...compte,
-				saisie_affaire: corps.saisie_affaire === 'role' ? null : corps.saisie_affaire,
-				saisie_affaire_effective:
-					corps.saisie_affaire === 'role' ? 'complete' : corps.saisie_affaire,
+				saisie_affaire: corps.saisie_affaire,
+				saisie_affaire_effective: corps.saisie_affaire,
 			};
 			return route.fulfill({
 				status: 200,
@@ -113,6 +112,11 @@ test('le Profil enregistre le choix sur le compte et affiche le mode qui s’app
 	await attendreHydratation(page);
 
 	const carte = page.locator('section', { hasText: /Saisie d’une affaire/ });
+	//  Deux pastilles seulement, Essentielle cochée d'office ; le titre n'est écrit qu'une fois.
+	await expect(carte.getByRole('radio')).toHaveCount(2);
+	await expect(carte.getByRole('radio', { name: /^Essentielle/ })).toBeChecked();
+	await expect(carte.getByText(/Selon mon rôle/)).toHaveCount(0);
+	await expect(carte.getByText(/^Saisie d’une affaire$/)).toHaveCount(1);
 	await expect(carte.getByText(/Saisie essentielle aujourd’hui/)).toBeVisible();
 	await carte.getByRole('radio', { name: /^Complète/ }).check({ force: true });
 

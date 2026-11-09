@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 40 512 512" aria-label="CoproFirst">
+  <!--
+    Le logo neutre du logiciel, dessiné pour un FOND SOMBRE (09/11/2026) : les
+    mêmes tracés que `logo-neutre.svg`, sans la tuile blanche — traits et
+    fenêtres en ivoire, la fenêtre allumée et la ligne de sol en or. Sur un
+    en-tête bleu marine ou au thème sombre, la tuile blanche faisait un cadre.
+
+    Variante « Ivoire », retenue sur maquette parmi cinq le 09/11/2026.
+    Hors de l'AGPL : LICENSES/LicenseRef-CoproFirst-Logo.txt (MARQUE.md).
+
+    Couleurs : ivoire #E8E6E1 (le texte du thème sombre), or #C9983A et #E0B050.
+    🔒 api/tests/test_logo_neutre.py : son rendu PNG en dérive.
+  -->
+  <g fill="none" stroke="#E8E6E1" stroke-width="29" stroke-linejoin="round">
+    <path d="M137.5 487V137.5a32 32 0 0 1 32-32h173a32 32 0 0 1 32 32V487"/>
+    <path d="M137.5 285.5H74.5a28 28 0 0 0-28 28V487"/>
+    <path d="M374.5 245.5h63a28 28 0 0 1 28 28V487"/>
+  </g>
+  <g fill="#E8E6E1">
+    <rect x="200" y="160" width="39" height="34" rx="6"/>
+    <rect x="200" y="227" width="39" height="34" rx="6"/><rect x="273" y="227" width="39" height="34" rx="6"/>
+    <rect x="200" y="294" width="39" height="34" rx="6"/><rect x="273" y="294" width="39" height="34" rx="6"/>
+    <rect x="200" y="361" width="39" height="34" rx="6"/><rect x="273" y="361" width="39" height="34" rx="6"/>
+    <rect x="76" y="348" width="32" height="29" rx="6"/><rect x="76" y="407" width="32" height="29" rx="6"/>
+    <rect x="404" y="300" width="32" height="28" rx="6"/><rect x="404" y="359" width="32" height="28" rx="6"/>
+    <rect x="404" y="418" width="32" height="29" rx="6"/>
+  </g>
+  <rect x="273" y="160" width="39" height="34" rx="6" fill="#E0B050"/>
+  <path d="M24.5 487.5H487.5" stroke="#C9983A" stroke-width="29" stroke-linecap="round"/>
+</svg>

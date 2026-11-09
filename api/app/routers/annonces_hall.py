@@ -127,7 +127,7 @@ def _html_params(
         "format_effectif": format_effectif,
         "site_nom": nom_site(cfg.get("site_nom")),
         "site_url": adresse_du_site(),
-        "logo_png": logo_televerse_png(session),
+        "logo_png": logo_televerse_png(session, "sombre"),  # en-tête bleu marine
         "images": body.images,
         "date_affichage": date_affichage,
         "palette": cfg.get(CLE_PALETTE),

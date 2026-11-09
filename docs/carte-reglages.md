@@ -82,7 +82,7 @@ mindmap
 | Relève des réponses par courriel (IMAP) | Admin › 🔌 Services › Courriel | config_site | `PUT /config` |
 | Canal WhatsApp : pont, groupe, pied des messages | Admin › 🔌 Services › WhatsApp | config_site | `PUT /config` |
 | Assistant IA : fournisseur, clé, réglage de chaque usage | Admin › 🔌 Services › Assistant IA | config_site | `PUT /config` |
-| Logo de la résidence | Admin › 🏢 Copropriété › Identité | fichier + config_site (`site_logo`) | `POST /config/logo` |
+| Logo de la résidence | Admin › 🏢 Copropriété › Identité | fichier + config_site (`site_logo`, `site_logo_sombre`) | `POST /config/logo` |
 | Palette de couleurs du site, des courriels et des affiches | Admin › 🏢 Copropriété › Identité | config_site (`site_palette`) | `PUT /config/palette` |
 | Fiche de la copropriété : identité, adresse, syndic, références | Admin › 🏢 Copropriété › Identité ; Ma résidence | table `copropriete` (+ `config_site.site_nom`) | `PATCH /copropriete` |
 | Périmètres (arbre des bâtiments et espaces) et leurs accès fixes | Admin › 🏢 Copropriété › Périmètres | table `perimetre` | `PATCH /perimetres/{perimetre_id}` |
@@ -95,7 +95,7 @@ mindmap
 |---|---|---|---|
 | Annuaire du syndic | Espace CS › Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/syndic` |
 | Annuaire du conseil syndical (composition) | Espace CS › Annuaire CS & Syndic | table / `config_site` | `PUT /admin/annuaire/cs` |
-| Consignes aux arrivants | Espace CS › Annuaire CS & Syndic (consignes aux arrivants) | `config_site.consignes_arrivant` | `PUT /admin/consignes-arrivant` |
+| Consignes aux arrivants | Espace CS › Annuaire CS & Syndic (consignes aux arrivants) | `config_site.consignes_arrivant`, `config_site.accueil_arrivant` | `PUT /admin/consignes-arrivant` |
 | Compteurs (relevés) | Espace CS › Compteurs (configuration des catégories) | table `compteur_config` | `POST /prestataires/compteurs-config` |
 
 ### Opérateur de la plateforme

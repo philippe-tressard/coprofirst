@@ -138,6 +138,7 @@ body {
   border-top: 1px solid var(--border);
 }
 .footer p { font-size: 10px; color: var(--light-muted); }
+.accueil { white-space: pre-wrap; }
 .consignes-intro {
   background: linear-gradient(135deg, #F7F5F0, #F0EDE6);
   border-radius: 6px; padding: 8px 12px; margin-bottom: 6px;

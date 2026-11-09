@@ -33,7 +33,7 @@ def garde(
     )
     return f"""
 <section class="garde">
-  <div class="garde-logo"><div class="garde-medaillon">{logo_html(logo_png, 64)}</div></div>
+  <div class="garde-logo"><div class="garde-medaillon">{logo_html(logo_png, 64, sombre=True)}</div></div>
   <p class="garde-surtitre">{escape(site_nom)}</p>
   <h1 class="garde-titre">Manuel<br>utilisateur</h1>
   <p class="garde-sous">{f"{escape(sous_titre)}<br>" if sous_titre else ""}
