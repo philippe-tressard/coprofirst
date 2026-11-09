@@ -159,6 +159,25 @@ export function jourIso(d: string | Date = new Date()): string {
 	}).format(new Date(d));
 }
 
+/**
+ * "mar. 17 nov." — le jour d'un rendez-vous dans une colonne étroite (la
+ * vignette d'échéance de la gouttière). L'année ne s'ajoute que si elle n'est
+ * pas celle en cours : "ven. 15 janv. 2027". `semaine: false` retire le jour de
+ * la semaine ("19 nov.") — la seconde date d'une plage.
+ */
+export function fmtJourCourt(d: string | null | undefined, semaine = true): string {
+	if (!d) return '—';
+	const date = new Date(d);
+	const annee = (x: Date) => x.toLocaleDateString(LOCALE, { year: 'numeric', timeZone: TZ });
+	return date.toLocaleDateString(LOCALE, {
+		...(semaine ? { weekday: 'short' as const } : {}),
+		day: 'numeric',
+		month: 'short',
+		...(annee(date) === annee(new Date()) ? {} : { year: 'numeric' as const }),
+		timeZone: TZ,
+	});
+}
+
 /** "2 avril" (jour + mois long, sans année) */
 export function fmtDayMonth(d: string | null | undefined): string {
 	if (!d) return '—';
