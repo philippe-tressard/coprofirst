@@ -20,6 +20,7 @@ from app.utils import logo
 from app.utils.images import carre_png
 from app.utils.pdf_theme import logo_html, logo_svg
 from tests.aides_http import base_http, client_http
+from tests.aides_sources import modules_app
 
 
 def _png(couleur=(200, 30, 30, 255), taille=(40, 20)) -> bytes:
@@ -39,8 +40,11 @@ def moteur(disque_jetable):
         yield m
 
 
-def _televerser(http, octets: bytes, type_mime: str = "image/png", nom: str = "logo.png"):
-    return http.post("/config/logo", files={"file": (nom, octets, type_mime)})
+def _televerser(
+    http, octets: bytes, type_mime: str = "image/png", nom: str = "logo.png", variante: str = ""
+):
+    params = {"variante": variante} if variante else None
+    return http.post("/config/logo", params=params, files={"file": (nom, octets, type_mime)})
 
 
 # ── La route publique ────────────────────────────────────────────────────────
@@ -175,3 +179,164 @@ def test_le_courriel_charge_le_logo_par_son_adresse_publique():
         == "https://residence.example/api/config/logo.png?taille=96"
     )
     assert logo.TAILLE_MIN <= 96 <= logo.TAILLE_MAX, "le courriel demande une taille refusée"
+
+
+# ── La variante du thème sombre (09/11/2026) ─────────────────────────────────
+#
+#  Un logo composé sur fond blanc porte ce fond : au sombre, on voyait un cadre
+#  blanc. L'administration téléverse un second dessin, servi à l'écran seulement.
+
+IVOIRE = (232, 230, 225, 255)
+
+
+def _servi(moteur, variante: str) -> tuple:
+    anonyme, _ = client_http(moteur, None)
+    r = anonyme.get("/config/logo.png", params={"taille": 128, "variante": variante})
+    assert r.status_code == 200, r.text
+    return _pixel_central(r.content)
+
+
+def test_la_variante_sombre_se_televerse_et_se_sert_a_part(moteur, tmp_path):
+    admin, _ = client_http(moteur, RoleUtilisateur.admin)
+    clair = _televerser(admin, _png()).json()[logo.CLE_LOGO]
+    r = _televerser(admin, _png(IVOIRE), variante="sombre")
+    assert r.status_code == 200, r.text
+    sombre = r.json()[logo.CLE_LOGO_SOMBRE]
+    assert (tmp_path / logo.DOSSIER / sombre).is_file()
+    assert (tmp_path / logo.DOSSIER / clair).is_file(), "la variante a écrasé le logo"
+
+    assert _servi(moteur, "sombre") == IVOIRE
+    assert _servi(moteur, "clair") == (200, 30, 30, 255)
+    publique = client_http(moteur, None)[0].get("/config").json()
+    assert publique.get(logo.CLE_LOGO_SOMBRE) == sombre, "le front ne saurait pas qu'elle existe"
+    #  Un document sur fond blanc garde le logo ; sur fond sombre, il reçoit la variante.
+    with Session(moteur) as s:
+        assert _pixel_central(logo.logo_televerse_png(s)) == (200, 30, 30, 255)
+        assert _pixel_central(logo.logo_televerse_png(s, "sombre")) == IVOIRE
+
+
+def test_sans_variante_sombre_la_demande_rend_le_logo(moteur):
+    """Une adresse qui la demande ne casse jamais.
+
+    Sans aucun logo : le neutre du fond sombre (sans tuile blanche). Avec un logo
+    sans sa variante : le logo lui-même — on ne devine pas le dessin d'une résidence.
+    """
+    anonyme, _ = client_http(moteur, None)
+    r = anonyme.get("/config/logo.png", params={"taille": 64, "variante": "sombre"})
+    assert r.content == carre_png(logo.NEUTRE_SOMBRE_PNG.read_bytes(), 64)
+    assert r.content != anonyme.get("/config/logo.png", params={"taille": 64}).content
+    admin, _ = client_http(moteur, RoleUtilisateur.admin)
+    _televerser(admin, _png())
+    assert _servi(moteur, "sombre") == (200, 30, 30, 255)
+
+
+def test_la_variante_sombre_accompagne_le_logo(moteur, tmp_path):
+    admin, _ = client_http(moteur, RoleUtilisateur.admin)
+    #  Seule, aucun écran ne la montrerait : refusée, et rien ne reste sur disque.
+    assert _televerser(admin, _png(IVOIRE), variante="sombre").status_code == 409
+    assert not list((tmp_path / logo.DOSSIER).glob("*"))
+
+    _televerser(admin, _png())
+    sombre = _televerser(admin, _png(IVOIRE), variante="sombre").json()[logo.CLE_LOGO_SOMBRE]
+    #  La retirer seule laisse le logo…
+    assert admin.delete("/config/logo", params={"variante": "sombre"}).status_code == 200
+    assert not (tmp_path / logo.DOSSIER / sombre).exists()
+    assert _servi(moteur, "clair") == (200, 30, 30, 255)
+    #  … et retirer le logo l'emporte avec lui.
+    sombre = _televerser(admin, _png(IVOIRE), variante="sombre").json()[logo.CLE_LOGO_SOMBRE]
+    assert admin.delete("/config/logo").status_code == 200
+    assert not list((tmp_path / logo.DOSSIER).glob("*")), "un fichier de logo reste sur disque"
+    publique = client_http(moteur, None)[0].get("/config").json()
+    assert logo.CLE_LOGO not in publique and logo.CLE_LOGO_SOMBRE not in publique
+
+
+@pytest.mark.parametrize("role", [None, RoleUtilisateur.conseil_syndical])
+def test_seul_l_administrateur_change_la_variante_sombre(moteur, role):
+    http, _ = client_http(moteur, role)
+    assert _televerser(http, _png(), variante="sombre").status_code in (401, 403)
+    assert http.delete("/config/logo", params={"variante": "sombre"}).status_code in (401, 403)
+
+
+# ── Partout où le fond est sombre, sans exception ────────────────────────────
+
+#: Le trait ivoire du dessin neutre du fond sombre, et la tuile blanche de l'autre.
+_TRAIT_IVOIRE, _TUILE_BLANCHE = 'stroke="#E8E6E1"', 'fill="#FFFFFF"'
+
+#: Qui pose le logo sur un fond SOMBRE : (le module qui DEMANDE le PNG, celui qui
+#: le REND). Les deux gestes vont ensemble — `"sombre"` à la demande, `sombre=True`
+#: au rendu ; un lieu de plus sur fond sombre s'ajoute ici.
+SUR_FOND_SOMBRE = (
+    ("routers/admin/arrivants.py", "utils/fiche_arrivant.py"),
+    ("routers/annonces_hall.py", "utils/annonce_hall.py"),
+    ("utils/manuel_pdf.py", "utils/manuel_pdf_pages.py"),
+)
+#: Qui le pose sur un fond BLANC : le logo, jamais la variante.
+SUR_FOND_BLANC = ("routers/suivi_affaires.py", "utils/points_conseil_expedition.py")
+
+
+def _source(rel: str) -> str:
+    return next(m.source for m in modules_app(minimum=100) if m.rel == rel)
+
+
+def test_le_dessin_neutre_du_fond_sombre_n_a_pas_de_tuile_blanche():
+    sombre = logo_html(None, 40, sombre=True)
+    assert sombre == logo_svg(40, sombre=True)
+    assert _TRAIT_IVOIRE in sombre and _TUILE_BLANCHE not in sombre
+    assert _TUILE_BLANCHE in logo_svg(40), "témoin : le dessin du fond clair garde sa tuile"
+
+
+@pytest.mark.parametrize("demande, rendu", SUR_FOND_SOMBRE)
+def test_chaque_document_sur_fond_sombre_demande_et_rend_la_variante(demande, rendu):
+    assert 'logo_televerse_png(session, "sombre")' in _source(demande), demande
+    assert "sombre=True" in _source(rendu) and "logo_html(" in _source(rendu), rendu
+
+
+@pytest.mark.parametrize("rel", SUR_FOND_BLANC)
+def test_un_document_sur_fond_blanc_garde_le_logo(rel):
+    assert "logo_televerse_png(session)" in _source(rel), rel
+
+
+def test_aucun_appel_au_logo_n_echappe_a_la_declaration():
+    """Un lieu neuf qui montre le logo se range dans l'une des deux listes."""
+    appelants = {
+        m.rel
+        for m in modules_app(minimum=100)
+        if "logo_televerse_png(" in m.source
+        #  `logo.py` la définit, `pdf_theme.py` la cite dans une docstring.
+    } - {"utils/logo.py", "utils/pdf_theme.py"}
+    assert appelants, "cas zéro : aucun appelant trouvé"
+    assert appelants == {d for d, _ in SUR_FOND_SOMBRE} | set(SUR_FOND_BLANC)
+
+
+def test_la_fiche_arrivant_servie_porte_la_variante_sombre(moteur):
+    import base64
+
+    admin, _ = client_http(moteur, RoleUtilisateur.admin)
+    #  Sans logo : le dessin neutre du fond sombre, dans l'en-tête bleu marine.
+    fiche = admin.get("/admin/fiche-arrivant").text
+    assert _TRAIT_IVOIRE in fiche and _TUILE_BLANCHE not in fiche
+    _televerser(admin, _png())
+    _televerser(admin, _png(IVOIRE), variante="sombre")
+    with Session(moteur) as s:
+        attendu = base64.b64encode(logo.logo_png(s, 512, "sombre")).decode()
+    assert attendu in admin.get("/admin/fiche-arrivant").text
+
+
+def test_le_courriel_charge_la_variante_sombre_dans_son_en_tete_bleu():
+    from app.utils.email import gabarit
+
+    assert (
+        logo.adresse_logo("https://residence.example/", 96, "sombre")
+        == "https://residence.example/api/config/logo.png?taille=96&variante=sombre"
+    )
+    assert 'adresse_logo(site_url, TAILLE_LOGO_COURRIEL * 2, "sombre")' in _source(
+        "utils/email/gabarit.py"
+    )
+    assert gabarit.TAILLE_LOGO_COURRIEL * 2 <= logo.TAILLE_MAX
+
+
+def test_une_variante_inconnue_est_refusee(moteur):
+    anonyme, _ = client_http(moteur, None)
+    assert anonyme.get("/config/logo.png", params={"variante": "rose"}).status_code == 422
+    admin, _ = client_http(moteur, RoleUtilisateur.admin)
+    assert admin.put("/config", json={logo.CLE_LOGO_SOMBRE: "x.png"}).status_code == 422

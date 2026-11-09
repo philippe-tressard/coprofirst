@@ -7,48 +7,77 @@
   le serveur seul pose `site_logo` (`PUT /config` le refuse), après avoir
   contrôlé le fichier, et ce composant reporte son nom dans le `configStore` —
   le menu, l'écran de connexion et l'onglet changent aussitôt.
+
+  ## Le logo sur fond sombre (09/11/2026)
+
+  Un second champ, dès qu'un logo existe : son aperçu montre, sur le bleu plein de
+  la charte, CE QUI EST SERVI sur un fond sombre — le dessin téléversé pour lui,
+  sinon le logo tel quel, avec son cadre blanc. L'administrateur voit donc le
+  défaut avant de le corriger. Les deux champs partagent leurs gestes : seule la
+  variante change.
 -->
 <script lang="ts">
 	import ImageUpload from '#lib/components/ImageUpload.svelte';
-	import { config as configApi } from '#lib/api/index.ts';
+	import { config as configApi, type CleLogo, type VarianteLogo } from '#lib/api/index.ts';
 	import { configStore } from '#lib/stores/pageConfig.ts';
 	import { tenter } from '#lib/erreurs.ts';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { NOM_PLATEFORME } from '#lib/plateforme.ts';
 
-	let envoi = false;
-	$: logo = $configStore['site_logo'] ?? '';
+	const CLES: Record<VarianteLogo, CleLogo> = { clair: 'site_logo', sombre: 'site_logo_sombre' };
 
-	function poser(valeur: string | null) {
+	let envoi: VarianteLogo | null = null;
+	$: logo = $configStore['site_logo'] ?? '';
+	$: logoSombre = $configStore['site_logo_sombre'] ?? '';
+
+	/** Reporte dans le store ce que le serveur vient d'écrire — retirer le logo retire sa variante. */
+	function poser(variante: VarianteLogo, valeur: string | null) {
 		configStore.update((c) => {
 			const suite = { ...c };
-			if (valeur) suite['site_logo'] = valeur;
-			else delete suite['site_logo'];
+			if (valeur) suite[CLES[variante]] = valeur;
+			else delete suite[CLES[variante]];
+			if (!valeur && variante === 'clair') delete suite[CLES.sombre];
 			return suite;
 		});
 	}
 
-	async function televerser(e: CustomEvent<File>) {
-		envoi = true;
+	async function televerser(variante: VarianteLogo, fichier: File) {
+		envoi = variante;
 		await tenter(
-			async () => poser((await configApi.televerserLogo(e.detail)).site_logo),
+			async () =>
+				poser(
+					variante,
+					(await configApi.televerserLogo(fichier, variante))[CLES[variante]] ?? null,
+				),
 			'Logo enregistré',
 			'Logo refusé',
 		);
-		envoi = false;
+		envoi = null;
 	}
 
-	async function retirer() {
-		const oui = await confirmer({
-			titre: 'Retirer le logo',
-			message: `Le logo de la résidence sera supprimé, et celui de ${NOM_PLATEFORME} reprendra sa place partout.`,
-			libelleConfirmer: 'Retirer',
-		});
+	async function retirer(variante: VarianteLogo) {
+		const oui = await confirmer(
+			variante === 'clair'
+				? {
+						titre: 'Retirer le logo',
+						message: `Le logo de la résidence sera supprimé, et celui de ${NOM_PLATEFORME} reprendra sa place partout.`,
+						libelleConfirmer: 'Retirer',
+					}
+				: {
+						titre: 'Retirer le logo sur fond sombre',
+						message:
+							'Ce dessin sera supprimé : sur un fond sombre, le logo de la résidence s’affichera de nouveau tel quel.',
+						libelleConfirmer: 'Retirer',
+					},
+		);
 		if (!oui) return;
-		await tenter(async () => {
-			await configApi.supprimerLogo();
-			poser(null);
-		}, 'Logo neutre rétabli');
+		await tenter(
+			async () => {
+				await configApi.supprimerLogo(variante);
+				poser(variante, null);
+			},
+			variante === 'clair' ? 'Logo neutre rétabli' : 'Logo sur fond sombre retiré',
+		);
 	}
 </script>
 
@@ -66,12 +95,12 @@
 				label="Changer le logo"
 				accept="image/png,image/jpeg"
 				previewSize="96px"
-				uploading={envoi}
-				on:change={televerser}
+				uploading={envoi === 'clair'}
+				on:change={(e) => televerser('clair', e.detail)}
 			/>
 		{/key}
 		{#if logo}
-			<button type="button" class="btn btn-outline btn-sm" on:click={retirer}
+			<button type="button" class="btn btn-outline btn-sm" on:click={() => retirer('clair')}
 				>Revenir au logo neutre</button
 			>
 		{/if}
@@ -82,6 +111,38 @@
 		les documents et en tête des courriels. Sans logo, celui de {NOM_PLATEFORME}.</span
 	>
 </div>
+
+{#if logo}
+	<div class="field champ-large">
+		<label for="logo-residence-sombre">Logo sur fond sombre</label>
+		<div class="logo-gestes">
+			{#key `${logo}/${logoSombre}`}
+				<ImageUpload
+					id="logo-residence-sombre"
+					currentUrl={configApi.logoUrl(256, logoSombre || logo, 'sombre')}
+					label={logoSombre ? 'Changer ce logo' : 'Ajouter un logo pour fond sombre'}
+					accept="image/png"
+					previewSize="96px"
+					fondSombre
+					uploading={envoi === 'sombre'}
+					on:change={(e) => televerser('sombre', e.detail)}
+				/>
+			{/key}
+			{#if logoSombre}
+				<button type="button" class="btn btn-outline btn-sm" on:click={() => retirer('sombre')}
+					>Retirer</button
+				>
+			{/if}
+		</div>
+		<span class="aide"
+			>Facultatif. Le même dessin en traits clairs, sur fond transparent (PNG, 2 Mo au plus). Il
+			remplace le logo partout où le fond est sombre : le site au thème sombre, l’en-tête des
+			courriels, de la fiche arrivant et des affiches de hall, le manuel.
+			{#if !logoSombre}L’aperçu montre ce qui s’y affiche aujourd’hui : le logo tel quel, avec son
+				fond.{/if}</span
+		>
+	</div>
+{/if}
 
 <style>
 	.logo-gestes {

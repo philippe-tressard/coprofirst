@@ -31,6 +31,7 @@ from app.utils.consignes_arrivant import (
     Consignes,
     consignes_en_html,
     enregistrer_consignes,
+    lire_accueil,
     lire_consignes,
 )
 from html import escape
@@ -383,11 +384,13 @@ def get_fiche_arrivant(
         },
         site_nom=nom_site(site.get("site_nom")),
         site_url=adresse_du_site(),
-        logo_png=logo_televerse_png(session),
+        #  L'en-tête de la fiche est bleu marine : le logo du fond sombre.
+        logo_png=logo_televerse_png(session, "sombre"),
         whatsapp_url=whatsapp_url,
         #  Éditables par le CS, rendues échappées ; le syndic y est NOMMÉ par le
         #  contrat, comme dans l'encart ci-dessus (#1727).
         consignes=consignes_en_html(lire_consignes(session), nom_du_syndic(session)),
+        accueil=lire_accueil(session),
         annee=horloge.aujourd_hui().year,
     )
     # Jamais de cache : la fiche est régénérée à chaque appel depuis l'annuaire
@@ -409,6 +412,8 @@ class _ConsignesSaisies(BaseModel):
     """Le corps de l'enregistrement : les rubriques, rien d'autre."""
 
     consignes: list[Consigne] = Field(min_length=1, max_length=12)
+    #  Absente : la phrase d'accueil reste telle qu'elle est (un client d'avant ne l'envoie pas).
+    accueil: str | None = Field(default=None, min_length=1, max_length=1000)
 
 
 @router.get("/consignes-arrivant", response_model=Consignes)
@@ -427,4 +432,4 @@ def put_consignes_arrivant(
     _: Utilisateur = Depends(require_cs_or_admin),
 ):
     """Enregistre les consignes de la résidence. Du texte : la fiche l'échappe."""
-    return enregistrer_consignes(session, body.consignes)
+    return enregistrer_consignes(session, body.consignes, body.accueil)

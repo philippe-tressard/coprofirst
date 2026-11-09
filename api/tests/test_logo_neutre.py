@@ -9,6 +9,9 @@ Rien ne les tenait ensemble : `pdf_theme.logo_svg` recopiait le dessin en
 chaîne Python, et changer le logo neutre demandait de penser aux quatre
 autres. Ce contrôle refuse qu'ils divergent.
 
+Le 09/11/2026 s'y ajoute le dessin du FOND SOMBRE (`logo-neutre-sombre.svg`, variante
+« Ivoire », sans tuile blanche) et son rendu PNG : les mêmes tracés, tenus de même.
+
 Les PNG ne se rendent pas en CI (aucun moteur SVG n'y est installé) : on vérifie
 qu'ils SONT le rendu du dessin en lisant leurs pixels aux endroits que le dessin
 définit. Pour les refaire après avoir changé le SVG, le rendre à 512 et 192 px
@@ -86,6 +89,43 @@ def test_chaque_png_est_le_rendu_du_dessin(nom, cote):
     assert _proche(image.getpixel((cote // 2, 2)), BLANC), f"{nom} : la tuile n'est pas blanche"
 
 
+IVOIRE, OR_CLAIR = (0xE8, 0xE6, 0xE1), (0xE0, 0xB0, 0x50)
+
+#: Les mêmes points, dans le repère du dessin sombre (`viewBox="0 40 512 512"`, sans
+#: tuile ni mise à l'échelle) : (x, y − 40).
+POINTS_SOMBRE = (
+    ((292.5, 177.0), OR_CLAIR, "la fenêtre allumée"),
+    ((137.5, 350.0), IVOIRE, "le mur gauche de la tour"),
+    ((219.5, 244.0), IVOIRE, "une fenêtre éteinte"),
+    ((256.0, 487.5), OR, "la ligne de sol"),
+)
+
+
+def test_le_dessin_sombre_reprend_les_traces_sans_la_tuile():
+    clair = _exige(pdf_theme.LOGO_NEUTRE_SVG).read_text(encoding="utf-8")
+    sombre = _exige(pdf_theme.LOGO_NEUTRE_SOMBRE_SVG).read_text(encoding="utf-8")
+    import re
+
+    traces = re.findall(r'<path d="([^"]+)"', clair)
+    assert len(traces) == 4, "cas zéro : les tracés du dessin clair ne se lisent plus"
+    assert re.findall(r'<path d="([^"]+)"', sombre) == traces, "les deux dessins divergent"
+    assert len(re.findall(r"<rect ", sombre)) == len(re.findall(r"<rect ", clair)) - 1, (
+        "le dessin sombre porte les mêmes fenêtres, sans la tuile"
+    )
+    assert 'fill="#FFFFFF"' not in sombre
+
+
+def test_le_png_sombre_est_le_rendu_du_dessin_sombre():
+    image = Image.open(_exige(logo.NEUTRE_SOMBRE_PNG)).convert("RGBA")
+    assert image.size == (512, 512)
+    for (x, y), couleur, quoi in POINTS_SOMBRE:
+        pixel = image.getpixel((round(x), round(y - 40)))
+        assert _proche(pixel, couleur), f"{quoi} vaut {pixel}, attendu {couleur}"
+    #  Pas de tuile : le coin ET l'intérieur de la tour sont transparents.
+    assert image.getpixel((1, 1))[3] == 0
+    assert image.getpixel((256, 400))[3] == 0, "l'intérieur de la tour n'est pas transparent"
+
+
 def test_les_documents_recoivent_le_dessin_a_leur_taille_sans_son_commentaire():
     svg = pdf_theme.logo_svg(48)
     assert svg.startswith('<svg width="48" height="48" ')
@@ -128,7 +168,9 @@ def test_le_logo_et_chacun_de_ses_rendus_sont_hors_de_l_agpl():
         for c in (
             SVG_FRONT,
             pdf_theme.LOGO_NEUTRE_SVG,
+            pdf_theme.LOGO_NEUTRE_SOMBRE_SVG,
             logo.NEUTRE_PNG,
+            logo.NEUTRE_SOMBRE_PNG,
             ICONES / "icon-192.png",
             ICONES / "icon-512.png",
             IMAGE_README,

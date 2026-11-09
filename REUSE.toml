@@ -69,6 +69,8 @@ path = [
   "front/static/icons/icon-512.png",
   "api/app/utils/logo-neutre.svg",
   "api/app/utils/logo-neutre.png",
+  "api/app/utils/logo-neutre-sombre.svg",
+  "api/app/utils/logo-neutre-sombre.png",
   "docs/images/coprofirst.png",
 ]
 precedence = "override"

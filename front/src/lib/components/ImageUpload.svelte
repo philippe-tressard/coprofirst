@@ -23,6 +23,8 @@
 	export let shape: 'circle' | 'rect' = 'rect';
 	export let uploading = false;
 	export let previewSize = '120px';
+	/** L'aperçu se pose sur un fond SOMBRE : une image dessinée pour lui (logo du thème sombre). */
+	export let fondSombre = false;
 
 	const dispatch = createEventDispatcher<{ change: File }>();
 
@@ -44,6 +46,7 @@
 	<div
 		class="preview"
 		class:circle={shape === 'circle'}
+		class:fond-sombre={fondSombre}
 		role="button"
 		tabindex="0"
 		on:click={() => input.click()}
@@ -95,6 +98,11 @@
 		align-items: center;
 		justify-content: center;
 		transition: border-color var(--duree-geste);
+	}
+	/*  Le bleu plein de la charte, sombre dans les deux thèmes : celui des en-têtes
+	    de courriel et de document, où ce logo se posera. */
+	.preview.fond-sombre {
+		background: var(--color-primary-plein);
 	}
 
 	@media (hover: hover) and (pointer: fine) {

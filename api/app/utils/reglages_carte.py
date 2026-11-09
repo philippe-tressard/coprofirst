@@ -195,7 +195,7 @@ NOTIONS: tuple[Notion, ...] = (
         "Logo de la résidence",
         Acces.ADMIN,
         f"Admin › {G_COPROPRIETE} › Identité",
-        "fichier + config_site (`site_logo`)",
+        "fichier + config_site (`site_logo`, `site_logo_sombre`)",
         ("POST", "/config/logo"),
     ),
     Notion(
@@ -260,7 +260,7 @@ NOTIONS: tuple[Notion, ...] = (
         "Consignes aux arrivants",
         Acces.CS,
         "Espace CS › Annuaire CS & Syndic (consignes aux arrivants)",
-        "`config_site.consignes_arrivant`",
+        "`config_site.consignes_arrivant`, `config_site.accueil_arrivant`",
         ("PUT", "/admin/consignes-arrivant"),
     ),
     Notion(
