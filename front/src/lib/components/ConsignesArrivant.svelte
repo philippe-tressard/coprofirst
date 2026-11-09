@@ -11,9 +11,16 @@
   ## Du texte, jamais du HTML
 
   La fiche est une page servie à tout utilisateur connecté, et le serveur échappe
-  ce qu'on écrit ici. Deux conventions seulement, rappelées sous le formulaire :
-  `**gras**`, et `{syndic}` pour le nom du syndic — lu dans le contrat au moment
-  d'imprimer, jamais recopié : il périmerait au premier changement de syndic.
+  ce qu'on écrit ici. Trois conventions seulement, rappelées sous le formulaire :
+  `**gras**`, `{syndic}` pour le nom du syndic — lu dans le contrat au moment
+  d'imprimer, jamais recopié : il périmerait au premier changement de syndic —,
+  et `{site}` pour l'adresse du site.
+
+  ## La phrase d'accueil
+
+  Le paragraphe sous « Bonjour et bienvenue ! » était écrit en dur dans la fiche :
+  le conseil ne pouvait pas le corriger (09/11/2026). Il se saisit en tête du
+  même formulaire, et part avec les rubriques.
 
   ## Le geste
 
@@ -44,8 +51,9 @@
 	let edition = false;
 	let enregistrement = false;
 	let saisie: ConsigneArrivant[] = [];
+	let saisieAccueil = '';
 
-	$: incomplete = saisie.some((c) => !c.titre.trim() || !c.contenu.trim());
+	$: incomplete = !saisieAccueil.trim() || saisie.some((c) => !c.titre.trim() || !c.contenu.trim());
 
 	onMount(async () => {
 		try {
@@ -59,6 +67,7 @@
 
 	function modifier() {
 		saisie = (lues?.consignes ?? []).map((c) => ({ ...c }));
+		saisieAccueil = lues?.accueil ?? '';
 		edition = true;
 	}
 
@@ -67,6 +76,7 @@
 		try {
 			lues = await consignesApi.enregistrer(
 				saisie.map((c) => ({ titre: c.titre.trim(), contenu: c.contenu.trim() })),
+				saisieAccueil.trim(),
 			);
 			edition = false;
 			toast('success', 'Consignes enregistrées');
@@ -81,6 +91,12 @@
 <EtatListe {chargement} {erreur} vide={!lues?.consignes.length}>
 	{#if edition}
 		<form on:submit|preventDefault={enregistrer}>
+			<div class="rubrique">
+				<label class="field">
+					<span>Phrase d’accueil<EtoileRequis vide={!saisieAccueil.trim()} /></span>
+					<textarea rows="3" maxlength="1000" bind:value={saisieAccueil}></textarea>
+				</label>
+			</div>
 			{#each saisie as _rubrique, i (_rubrique)}
 				<div class="rubrique">
 					<label class="field">
@@ -111,7 +127,8 @@
 			{/if}
 			<p class="consignes-aide">
 				Une ligne par consigne. <code>**texte**</code> s’imprime en gras ;
-				<code>{'{syndic}'}</code> est remplacé par le nom du syndic du contrat en cours.
+				<code>{'{syndic}'}</code> est remplacé par le nom du syndic du contrat en cours,
+				<code>{'{site}'}</code> par l’adresse du site.
 			</p>
 			<PiedFormulaire
 				enCours={enregistrement}
@@ -126,6 +143,10 @@
 					Modèle générique : la résidence n’a pas encore écrit les siennes.
 				</p>
 			{/if}
+			<div class="rubrique">
+				<strong>Phrase d’accueil</strong>
+				<p class="rubrique-texte">{lues.accueil}</p>
+			</div>
 			{#each lues.consignes as rubrique (rubrique)}
 				<div class="rubrique">
 					<strong>{rubrique.titre}</strong>

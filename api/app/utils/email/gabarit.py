@@ -201,7 +201,7 @@ def _wrap_email(
   <!-- Header -->
   <tr><td style="background:linear-gradient(135deg,#1E3A5F 0%,#16304F 100%);padding:28px 32px;text-align:center">
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto"><tr>
-      <td style="vertical-align:middle;padding-right:14px"><img src="{adresse_logo(site_url, TAILLE_LOGO_COURRIEL * 2)}" width="{TAILLE_LOGO_COURRIEL}" height="{TAILLE_LOGO_COURRIEL}" alt="" style="display:block;border:0"></td>
+      <td style="vertical-align:middle;padding-right:14px"><img src="{adresse_logo(site_url, TAILLE_LOGO_COURRIEL * 2, "sombre")}" width="{TAILLE_LOGO_COURRIEL}" height="{TAILLE_LOGO_COURRIEL}" alt="" style="display:block;border:0"></td>
       <td style="vertical-align:middle;text-align:left">
         <div style="font-family:Georgia,'Palatino Linotype','Book Antiqua',Palatino,serif;font-size:22px;font-weight:700;color:#FFFFFF;letter-spacing:0.3px">{site_nom}</div>
         <div style="font-size:12px;color:#C9983A;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;font-weight:600">Espace numérique de résidence</div>

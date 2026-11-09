@@ -258,7 +258,7 @@ def identite_du_manuel(session: Session) -> dict:
     return {
         "site_nom": nom_site(cfg.get("site_nom")),
         "site_url": adresse_du_site(),
-        "logo_png": logo_televerse_png(session),
+        "logo_png": logo_televerse_png(session, "sombre"),  # page de garde bleu marine
         "sous_titre": (cfg.get("login_sous_titre") or "").strip(),
     }
 

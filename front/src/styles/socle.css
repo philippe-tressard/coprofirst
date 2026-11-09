@@ -247,6 +247,10 @@ body {
 	    il a été composé ; au sombre, le blanc de la carte claire — un logo à
 	    l'encre foncée y disparaîtrait (#2174, S4d). */
 	--color-fond-logo: transparent;
+	/*  Lequel des deux logos se MONTRE quand la résidence a téléversé sa variante
+	    du fond sombre (`LogoResidence`) : la palette sombre les inverse. */
+	--affichage-logo-clair: block;
+	--affichage-logo-sombre: none;
 	/* Utilitaires */
 	--radius: 0.5rem;
 	--shadow-sm: 0 1px 3px rgba(30, 58, 95, 0.1);
