@@ -79,7 +79,7 @@ class MeUpdate(BaseModel):
     preferences_notifications: str | None = None
     restreindre_a_mes_batiments: bool | None = None
     decor_fetes: bool | None = None
-    #  « essentielle », « complete » ou « role » (selon mon rôle) — #2595.
+    #  « essentielle » ou « complete » — #2595.
     saisie_affaire: str | None = None
     demarche_arrivant: str | None = None
 
