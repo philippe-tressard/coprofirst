@@ -154,8 +154,8 @@
 	//  Demandes de modification de profil
 	async function approuverDemande(id: number) {
 		try {
-			await adminApi.traiterDemandeProfil(id, { action: 'approuver' });
-			toast('success', 'Demande approuvée.');
+			const { annonce } = await adminApi.traiterDemandeProfil(id, { action: 'approuver' });
+			toast(annonce.ton, annonce.texte);
 			demandesProfil = demandesProfil.filter((d) => d.id !== id);
 		} catch (e) {
 			toast('error', messageErreur(e));
@@ -164,11 +164,11 @@
 
 	async function rejeterDemande(id: number, motif: string) {
 		try {
-			await adminApi.traiterDemandeProfil(id, {
+			const { annonce } = await adminApi.traiterDemandeProfil(id, {
 				action: 'rejeter',
 				motif_refus: motif || null,
 			});
-			toast('info', 'Demande rejetée.');
+			toast(annonce.ton, annonce.texte);
 			demandesProfil = demandesProfil.filter((d) => d.id !== id);
 		} catch (e) {
 			toast('error', messageErreur(e));

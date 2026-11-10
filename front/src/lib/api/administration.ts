@@ -26,6 +26,7 @@ import type {
 	ConfigSauvegarde,
 	Delegation,
 	DemandeProfil,
+	DemandeProfilTraitee,
 	EnvoiEmail,
 	EssaiImap,
 	EssaiSmtp,
@@ -152,7 +153,7 @@ export const admin = {
 	//  type aurait obligé l'écran à changer ce qu'il transmet — le client suit le
 	//  contrat réel, il ne le réécrit pas (#801).
 	traiterDemandeProfil: (id: number, data: { action: string; motif_refus?: string | null }) =>
-		api.post(`/admin/demandes-profil/${id}/traiter`, data),
+		api.post<DemandeProfilTraitee>(`/admin/demandes-profil/${id}/traiter`, data),
 	//  🔴 `baux` ET `lierLocataire` ONT ÉTÉ RETIRÉES le 13/09/2026 (#808), avec
 	//  leurs endpoints. L'arbitrage du 06/09 était « garder et observer » ; le
 	//  relevé livré le 07/09 a observé, et a répondu : **tous les baux en cours

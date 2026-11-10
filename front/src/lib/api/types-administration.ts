@@ -190,6 +190,13 @@ export interface DemandeProfil {
 	batiment_nom_souhaite: string | null;
 }
 
+/**  `POST /admin/demandes-profil/{id}/traiter` (#2618) : le nouvel état, et la
+ *   phrase que le serveur compose — l'écran l'affiche, il ne la réécrit pas. */
+export interface DemandeProfilTraitee {
+	statut: 'approuvee' | 'rejetee';
+	annonce: Annonce;
+}
+
 //  ── Relevés d'audit (`routers/admin/acces.py`) ──────────────────────────────────
 
 /**  `GET /admin/audit/user-lots` — un lien actif compte ↔ lot. */

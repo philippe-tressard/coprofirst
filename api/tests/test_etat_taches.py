@@ -252,3 +252,48 @@ def test_l_ecran_recoit_la_fenetre_qu_il_affiche():
         reponse = http.get("/admin/maintenance/sante")
     assert reponse.status_code == 200
     assert reponse.json()["anomalies_fenetre_jours"] == FENETRE_ANOMALIES_J
+
+
+def test_la_reponse_typee_ne_perd_rien_de_la_lecture(monkeypatch):
+    """#2618 : `response_model=SanteMaintenance` filtre — la réponse porte tout ce
+    que `etat_des_taches` et `anomalies_recentes` produisent, une tâche jamais
+    exécutée (sans `portee`) comme une tâche exécutée sur deux nœuds."""
+    from app.database import get_session
+    from app.main import app
+    from tests.aides_reponse_servie import ecarts
+
+    with base_http() as moteur:
+        http, _ = client_http(moteur, RoleUtilisateur.admin, roles_json=ROLE_OPERATEUR)
+        maintenant = horloge.maintenant()
+        s = next(app.dependency_overrides[get_session]())
+        _ligne(s, "maintenance", "rpi1", il_y_a=timedelta(hours=2))
+        _ligne(s, "maintenance", "rpi2", il_y_a=timedelta(hours=3))
+        _ligne(s, "bascule", "rpi1", statut="erreur", il_y_a=timedelta(hours=1))
+        s.commit()
+        monkeypatch.setattr(horloge, "maintenant", lambda: maintenant)
+        servi = http.get("/admin/maintenance/sante")
+        assert servi.status_code == 200, servi.text
+        lu = {
+            "taches": etat_des_taches(s, maintenant),
+            "anomalies_recentes": [
+                {"tache": a.tache, "noeud": a.noeud, "cree_le": a.cree_le, "erreur": a.erreur}
+                for a in anomalies_recentes(s, maintenant)
+            ],
+            "anomalies_fenetre_jours": FENETRE_ANOMALIES_J,
+            "genere_le": maintenant,
+        }
+    assert any("portee" not in t for t in lu["taches"]), "aucune tâche jamais exécutée"
+    assert any(t["noeuds"] for t in lu["taches"]), "aucune tâche exécutée par nœud"
+    assert ecarts(lu, servi.json()) == []
+
+
+def test_le_contrat_annonce_le_schema_de_la_reponse():
+    """#2618 : l'app iOS se génère depuis `openapi.json` — la réponse y porte
+    `SanteMaintenance` (`app.routers.admin.sante_schemas`), et non `{}`."""
+    from app.main import app
+    from app.routers.admin.sante_schemas import SanteMaintenance
+
+    reponse = app.openapi()["paths"]["/admin/maintenance/sante"]["get"]["responses"]["200"]
+    assert reponse["content"]["application/json"]["schema"] == {
+        "$ref": f"#/components/schemas/{SanteMaintenance.__name__}"
+    }
