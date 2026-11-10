@@ -29,6 +29,7 @@ from app.utils.perimetres import parse_json_perimetres, parse_perimetres
 from app.utils.noms import nom_auteur
 from app.utils.categories_ticket import libelle_categorie, ticket_urgent
 from app.utils.fichiers import est_image
+from app.utils.echeance_affaire import echeance
 from app.utils.nature_affaire import natures
 from app.utils.photos import parse_photos
 
@@ -110,6 +111,7 @@ CHAMPS_PASTILLES = (
     "suivi_actualite",  # l'état d'une actualité suivie (10/10/2026)
     "priorite",
     "debut",
+    "fin",  # avec `debut`, les dates de la vignette d'échéance (gouttière du fil)
     "perimetre_cible",
     "public_cible",
     "reserve_perimetre",
@@ -137,6 +139,10 @@ def pastilles_affaire(ticket) -> dict:
     #  ajoutait une date restait « AFF. » alors que sa carte, aux Affaires, passait
     #  en « CAL. » (4/11/2026). 🔒 `test_flux_pastilles.py`.
     rendu["natures"] = natures(ticket)
+    #  ⏳ L'ÉCHÉANCE d'une affaire datée (« J-8 », « Jour J »…) : dérivée en jours
+    #  civils de Paris, le fil LIT son libellé (`utils/echeance_affaire`). `None`
+    #  sans date. 🔒 `test_echeance_affaire.py`.
+    rendu["echeance"] = echeance(ticket)
     return rendu
 
 

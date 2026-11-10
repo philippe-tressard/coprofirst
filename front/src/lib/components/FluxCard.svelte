@@ -36,6 +36,7 @@
 	import BadgeVerdict from '#lib/components/BadgeVerdict.svelte';
 	import { champDe, relire } from '#lib/utils.ts';
 	import { equipementsStore } from '#lib/stores/equipements.ts';
+	import EcheanceGouttiere from '#lib/components/EcheanceGouttiere.svelte';
 	import {
 		badgeClass,
 		badgesDuFlux,
@@ -141,6 +142,11 @@
 	onApprocher={affaire ? chargerCorpsAffaire : null}
 	style="--nature-fort: {typeColor}"
 >
+	<!--  ⏳ Une affaire DATÉE dit quand elle a lieu, sous son classement : le délai
+	      servi par le fil, puis la ou les dates (maquette C, 10/11/2026). -->
+	<svelte:fragment slot="gouttiere">
+		<EcheanceGouttiere echeance={affaire?.echeance} debut={affaire?.debut} fin={affaire?.fin} />
+	</svelte:fragment>
 	<EnteteCarte titre={item.titre} basculable on:toggle={basculer}>
 		<svelte:fragment slot="titre-suffixe"><BadgeNouveau si={nouveau} /></svelte:fragment>
 		<svelte:fragment slot="actions">

@@ -61,3 +61,12 @@ export interface FluxResponse {
 	/**  Le délai d'archivage du site, en jours : le seuil « récent » de l'accueil (#2060). */
 	delai_recent_jours: number;
 }
+
+/**  L'échéance d'une affaire datée, telle que le fil la sert (maquette C,
+ *   10/11/2026). `libelle` est absent pour une affaire close : la date seule. */
+export interface EcheanceAffaire {
+	etat: 'a_venir' | 'jour_j' | 'en_cours' | 'passee' | 'close';
+	jours: number;
+	libelle: string | null;
+	plusieurs_jours: boolean;
+}
