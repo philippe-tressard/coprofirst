@@ -36,7 +36,10 @@ conseil devait l'aller chercher pour le téléverser à la main.
   une affaire. Une image intégrée au corps est aussi une signature quand son
   petit côté est sous `COTE_MIN_BANDEAU`, ou quand le HTML l'AFFICHE en petit
   (`<img src="cid:…" height="93">`) — un logo en haute définition s'affiche à
-  la taille d'un logo, quelle que soit la sienne. Les fichiers de signature
+  la taille d'un logo, quelle que soit la sienne. « Intégrée » se lit au
+  `Content-ID` ou à la disposition `inline` (Mail d'Apple n'en pose pas d'autre,
+  10/11/2026), et une image intégrée de moins de `COTE_MIN_INTEGREE` pixels de
+  côté est un logo. Les fichiers de signature
   électronique et les cartes de visite (`TYPES_DE_SIGNATURE`) aussi. Tout cela
   s'écarte EN SILENCE : le signaler ferait du bruit à chaque message.
 - **Un type que les familles n'acceptent pas** (archive, exécutable, invitation…) :
@@ -80,6 +83,7 @@ from app.utils.courriel_signature import (
     _cid,
     _de_signature,
     _image_de_signature,
+    _integree,
     _tailles_affichees,
 )
 from app.utils.fichiers import famille_du_fichier, type_annonce
@@ -171,7 +175,7 @@ def trier(message) -> Tri:
                     type_annonce(type_, nom, famille),
                     famille,
                     octets,
-                    integree=bool(cid) and partie.get_content_disposition() != "attachment",
+                    integree=_integree(partie, cid),
                     empreinte=empreinte,
                     affichee=affichees.get(cid) if cid else None,
                 )
