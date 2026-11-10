@@ -43,13 +43,25 @@ def remplacer_passage(
     pas — et ne doit pas recopier — le reste. Même garde, à l'échelle de la
     phrase : si elle a été reformulée depuis l'administration, rien ne change.
     """
-    t = sa.table(table, *(sa.column(c) for c in sorted({*cle, colonne})))
-    filtre = sa.and_(*(t.c[c] == v for c, v in cle.items()))
-    actuel = conn.execute(sa.select(t.c[colonne]).where(filtre)).scalar()
+    t, filtre = _ligne(table, cle, colonne)
+    actuel = lire_texte(conn, table, cle, colonne)
     if not actuel or avant not in actuel:
         return 0
     conn.execute(sa.update(t).where(filtre).values({colonne: actuel.replace(avant, apres)}))
     return 1
+
+
+def _ligne(table: str, cle: dict[str, str], colonne: str):
+    """La table et le filtre de la ligne visée — composés par SQLAlchemy, jamais à la main."""
+    t = sa.table(table, *(sa.column(c) for c in sorted({*cle, colonne})))
+    return t, sa.and_(*(t.c[c] == v for c, v in cle.items()))
+
+
+def lire_texte(conn, table: str, cle: dict[str, str], colonne: str) -> str | None:
+    """Le texte en base de la ligne visée, ou `None` — pour qu'une migration décide
+    sur ce qui est SERVI (forme de l'éditeur, puce déjà présente), jamais sur le gabarit."""
+    t, filtre = _ligne(table, cle, colonne)
+    return conn.execute(sa.select(t.c[colonne]).where(filtre)).scalar()
 
 
 def inserer_apres(
@@ -62,9 +74,7 @@ def inserer_apres(
     seconde passe n'écrit pas deux fois. Le retour arrière est `remplacer_passage`
     de `ancre + ajout` vers `ancre`.
     """
-    t = sa.table(table, *(sa.column(c) for c in sorted({*cle, colonne})))
-    filtre = sa.and_(*(t.c[c] == v for c, v in cle.items()))
-    actuel = conn.execute(sa.select(t.c[colonne]).where(filtre)).scalar()
+    actuel = lire_texte(conn, table, cle, colonne)
     if not actuel or ancre not in actuel or ancre + ajout in actuel:
         return 0
     return remplacer_passage(conn, table, cle, colonne, ancre, ancre + ajout)
@@ -78,4 +88,10 @@ def forme_editeur(puce: str) -> str:
     return f"<li><p>{corps}</p></li>"
 
 
-__all__ = ["forme_editeur", "inserer_apres", "remplacer_passage", "remplacer_si_intact"]
+__all__ = [
+    "forme_editeur",
+    "inserer_apres",
+    "lire_texte",
+    "remplacer_passage",
+    "remplacer_si_intact",
+]
