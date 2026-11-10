@@ -247,6 +247,19 @@
 .field.champ-en-ligne {
 	margin-bottom: 0;
 }
+/*  …et deux champs côte à côte ont la MÊME hauteur (10/11/2026, signalé à l'écran
+    sur Admin › Maintenance : une liste d'heures et un nombre, bord bas aligné, bord
+    haut décalé). Le navigateur borne seul la hauteur d'un `<select>` natif — Safari
+    ignore en partie le `padding` — alors qu'un `<input>` la tire du sien : à
+    padding identique, deux hauteurs. Un plancher commun, sur la rangée seulement :
+    dans une pile, l'écart ne se voit pas et la hauteur naturelle reste juste.
+
+    ⚠️ En `em`, pas en `rem` : au téléphone le champ passe à 16 px quand la racine
+    descend à 87,5 % — un plancher en `rem` y tomberait SOUS la hauteur naturelle
+    de la liste, et l'écart reviendrait. 🔒 `e2e/champs-en-ligne-hauteur.spec.ts`. */
+.field.champ-en-ligne :is(input:not([type='checkbox'], [type='radio']), select) {
+	min-height: 2.6em;
+}
 
 /*  Le <label> peut ENVELOPPER son champ — c'est même la forme la plus sûre :
     l'association label/champ est alors implicite et native, rien ne peut la
