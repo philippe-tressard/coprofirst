@@ -7,24 +7,24 @@ sqlmodel==0.0.48
 #  transitivité (fastapi, sqlmodel, fastapi-mail). Une montée de l'un de ceux-là
 #  changeait donc leur version sans que ce fichier bouge (#1048, 24/09/2026).
 #  Épinglés à la version que ce fichier résolvait ce jour-là : aucun changement.
-pydantic==2.14.2
+pydantic==2.14.3
 pydantic-settings==2.16.2
 #  `EmailStr` (routers/config, routers/partage) charge `email_validator` à
 #  l'exécution, sans `import` qu'un contrôle verrait : il n'arrivait que par
 #  `fastapi-mail`. Épinglé à la version que l'image installait déjà (2.3.0,
 #  dernière publiée) : aucun changement (#1570, même cas que #1048).
 email-validator==2.3.0
-sqlalchemy==2.0.55
+sqlalchemy==2.0.57
 #  Le pilote PostgreSQL (#1759, DI-7) : l'image sait se brancher sur PostgreSQL
 #  dès que `DATABASE_URL` le désigne. Roues binaires (libpq embarquée, aarch64
 #  compris) ; LGPL-3.0. Celui des tests depuis P2-5 — pg8000 rendait une clé
 #  violée en `ProgrammingError`, et non en `IntegrityError`.
-psycopg[binary]==3.3.6
+psycopg[binary]==3.3.8
 alembic==1.20.1
 PyJWT==2.15.1
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
-python-multipart==0.0.32
+python-multipart==0.0.33
 fastapi-mail==1.6.8
 apscheduler==3.11.3
 httpx==0.28.1
@@ -46,7 +46,7 @@ dkimpy==1.1.8
 #  #1877). Déjà dans l'image par `fastapi-mail`, à la même version : épinglé ici
 #  parce que le code l'importe désormais directement (#1048). Apache-2.0 ou BSD.
 cryptography==50.0.2
-dnspython==2.9.1
+dnspython==2.9.2
 Pillow==13.0.0
 #  Les photos HEIC/HEIF d'iPhone (#2389), DÉCODÉES seulement. 🔴 Dans l'image, ce
 #  paquet est compilé contre la libheif de Debian (`api/Dockerfile`, étape
