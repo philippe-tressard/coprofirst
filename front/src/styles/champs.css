@@ -260,6 +260,28 @@
 .field.champ-en-ligne :is(input:not([type='checkbox'], [type='radio']), select) {
 	min-height: 2.6em;
 }
+/*  🔴 …et Safari ne l'honore PAS sur une liste native (10/11/2026, 2ᵉ signalement :
+    le plancher ci-dessus passait sous Chromium, et WebKit laissait la liste à 22 px
+    contre 37 pour le champ voisin). Un `<select>` en `menulist` — `menulist-button`
+    aussi, mesuré — remet `padding` à 0 et ramène `min-height` à ~18 px. Seule
+    `appearance: none` rend la boîte dimensionnable ; la flèche, que la liste
+    n'emporte plus, se dessine en dégradés sur les jetons du texte (elle suit le
+    thème sombre). Sur la rangée seulement, comme le plancher.
+    ⚠️ Mesuré sous WebKit (Playwright `webkit`, à la main) : la CI ne joue que Chromium,
+    qui n'avait jamais montré l'écart — `e2e/champs-en-ligne-hauteur.spec.ts` ne le voit pas. */
+.field.champ-en-ligne select {
+	-webkit-appearance: none;
+	appearance: none;
+	padding-right: 2em;
+	background-image:
+		linear-gradient(45deg, transparent 50%, var(--color-text-muted) 50%),
+		linear-gradient(135deg, var(--color-text-muted) 50%, transparent 50%);
+	background-position:
+		calc(100% - 1.1em) 50%,
+		calc(100% - 0.8em) 50%;
+	background-size: 0.3em 0.3em;
+	background-repeat: no-repeat;
+}
 
 /*  Le <label> peut ENVELOPPER son champ — c'est même la forme la plus sûre :
     l'association label/champ est alors implicite et native, rien ne peut la
