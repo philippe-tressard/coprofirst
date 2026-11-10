@@ -29,12 +29,19 @@
 #
 #  DÉROULEMENT (#2224) : un PRÉ-VOL d'abord (dépendances, base des tests,
 #  node_modules, Playwright, versions, venv — un écart refuse le rejeu en
-#  quelques secondes), puis les étapes RAPIDES de tous les jobs, puis les
-#  LENTES (pytest, e2e…), chaque job dans son couloir, plusieurs couloirs côte
-#  à côte. Un rouge arrête le rejeu à la fin de sa phase. Les règles :
-#  `lib-ci-orchestration.sh` (pures) ; les gestes : `lib-ci-execution.sh`.
+#  quelques secondes), puis les étapes RAPIDES de tous les jobs, chaque job dans
+#  son couloir, plusieurs couloirs côte à côte. Un rouge arrête le rejeu à la
+#  fin de sa phase. Les règles : `lib-ci-orchestration.sh` (pures) ; les gestes :
+#  `lib-ci-execution.sh`.
 #
-#  Usage : bash scripts/poste/rejouer-ci.sh                 # tous les jobs, écrit la trace
+#  LES ÉTAPES LENTES (pytest, e2e… : mesurées au-dessus du seuil) sont CONFIÉES
+#  à la CI de la PR (#2571) : elle les joue de toute façon, gratuitement et côte
+#  à côte, et le rejeu complet tenait le verrou une vingtaine de minutes par lot.
+#  La trace le dit (`MODE=rapide`), et le point 16 du pré-check ne rend OK que
+#  si la CI de la PR est verte sur le même arbre. `--complet` les joue ici.
+#
+#  Usage : bash scripts/poste/rejouer-ci.sh                 # tous les jobs, phase rapide, écrit la trace
+#          bash scripts/poste/rejouer-ci.sh --complet       # les lentes aussi, sur le poste
 #          bash scripts/poste/rejouer-ci.sh lint-backend …  # un ou plusieurs jobs, sans trace
 #          bash scripts/poste/rejouer-ci.sh --attendre …    # prend son tour dans la file (#2225)
 #          bash scripts/poste/rejouer-ci.sh --reprendre     # les rouges d'avant en tête
@@ -200,14 +207,16 @@ export TESTS_BASE_URL="${TESTS_BASE_URL:-$CI_BASE_TESTS_DEFAUT}"
 #  ── Les options (#2224) — tout le reste est le filtre de jobs ──────────────
 #    --tout       joue la phase suivante même après un rouge ;
 #    --reprendre  rejoue d'abord les rouges du rejeu précédent de ce lot ;
-#    --venv       rejoue dans un venv aligné sur le lot (construit au besoin).
-TOUT=non; REPRENDRE=non; VENV=non; FILTRE=""
+#    --venv       rejoue dans un venv aligné sur le lot (construit au besoin) ;
+#    --complet    joue aussi les étapes lentes, sinon confiées à la CI de la PR (#2571).
+TOUT=non; REPRENDRE=non; VENV=non; COMPLET=non; FILTRE=""
 for arg in "$@"; do
   case "$arg" in
     --tout)      TOUT=oui ;;
     --reprendre) REPRENDRE=oui ;;
     --venv)      VENV=oui ;;
-    --*) echo "✗ Option inconnue : $arg (connues : --tout, --reprendre, --venv, --selftest) — rien n'a été rejoué."; exit 2 ;;
+    --complet)   COMPLET=oui ;;
+    --*) echo "✗ Option inconnue : $arg (connues : --tout, --reprendre, --venv, --complet, --selftest) — rien n'a été rejoué."; exit 2 ;;
     *)   FILTRE="${FILTRE:+$FILTRE }$arg" ;;
   esac
 done
@@ -313,9 +322,6 @@ done 3< "$TMP/flux"
 echo "Rejeu de $CI sur $SHA_COURT — $ECRIT commande(s) extraite(s)"
 [ -n "$FILTRE" ] && echo "Jobs retenus : $FILTRE"
 
-# ── Pré-vol : le poste peut-il mesurer le lot ? (#2224) — `ci_prevol` ────────
-ci_prevol "$TMP/e" || { ci_journaliser "$JOURNAL_DUREES" REFUS "$PORTEE"; exit 2; }
-
 # ── Le plan : phases, couloirs, priorité — `ci_plan` ─────────────────────────
 for d in "$TMP"/e/*/; do
   d=${d%/}
@@ -348,16 +354,38 @@ ci_plan "$SEUIL_LENTE" "$TMP/reprendre" < "$TMP/a-jouer-durees" > "$TMP/plan"
 [ -s "$TMP/a-jouer-durees" ] && ! grep -q . <<<"$(cut -f4 "$TMP/a-jouer-durees")" \
   && echo "· Aucune durée mesurée encore : tout est « rapide » ce coup-ci ; les durées s'apprennent ($DUREES)."
 
+#  ── Les étapes lentes, confiées à la CI de la PR (#2571) — `ci_phase_confiee` ──
+#  Marquées AVANT le pré-vol : il ne sonde ni la base des tests ni Chromium pour
+#  une étape qui ne se joue pas ici. Un rejeu partiel (un job nommé) joue tout.
+[ -n "$FILTRE" ] && COMPLET=oui
+NB_LENTES=$(awk -F'\t' '$1 == "lente"' "$TMP/plan" | grep -c .)
+: > "$TMP/plan-retenu"
+while IFS=$'\t' read -r phase idx reste_du_plan; do
+  if [ "$(ci_phase_confiee "$phase" "$COMPLET")" = oui ]; then
+    echo CONFIEE > "$TMP/e/$idx/genre"
+    mesuree=$(<"$TMP/e/$idx/mesuree")
+    printf 'CONFIÉE\tjugée par la CI de la PR%s\n' "${mesuree:+ (mesurée ${mesuree%.*} s ici)}" > "$TMP/e/$idx/res"
+  else
+    printf '%s\t%s\t%s\n' "$phase" "$idx" "$reste_du_plan" >> "$TMP/plan-retenu"
+  fi
+done < "$TMP/plan"
+mv -f "$TMP/plan-retenu" "$TMP/plan"
+[ "$COMPLET" = non ] && [ "$NB_LENTES" -gt 0 ] && PORTEE="rapide"
+
+# ── Pré-vol : le poste peut-il mesurer le lot ? (#2224) — `ci_prevol` ────────
+ci_prevol "$TMP/e" || { ci_journaliser "$JOURNAL_DUREES" REFUS "$PORTEE"; exit 2; }
+
 BUDGET=$(ci_budget_parallele "${REJEU_PARALLELE:-}" "$(nproc 2>/dev/null)" "${CHARGE:-}")
 compte_phase() { awk -F'\t' -v p="$1" '$1 == p' "$TMP/plan" | grep -c .; }
-printf 'Plan : %d étape(s) à jouer — reprise %d · rapide %d · lente %d (mesurée ≥ %d s) · %d côte à côte (%s cœurs, charge %s %%, imposable par REJEU_PARALLELE)\n' \
+printf 'Plan : %d étape(s) à jouer — reprise %d · rapide %d · lente %d (mesurée ≥ %d s%s) · %d côte à côte (%s cœurs, charge %s %%, imposable par REJEU_PARALLELE)\n' \
   "$(grep -c . "$TMP/plan")" "$(compte_phase reprise)" "$(compte_phase rapide)" "$(compte_phase lente)" \
-  "$SEUIL_LENTE" "$BUDGET" "$(nproc 2>/dev/null || echo ?)" "${CHARGE:-?}"
+  "$SEUIL_LENTE" "$([ "$PORTEE" = rapide ] && echo " ; $NB_LENTES confiée(s) à la CI de la PR, \`--complet\` les joue ici")" \
+  "$BUDGET" "$(nproc 2>/dev/null || echo ?)" "${CHARGE:-?}"
 echo "───────────────────────────────────────────────────────────────────────────────"
 
 #  Ce qui n'est pas joué ici (installations, expressions GitHub), dans l'ordre.
 for d in "$TMP"/e/*/; do
-  case "$(<"${d%/}/genre")" in PREPARATION|INCONNU) ci_afficher_etape "${d%/}" ;; esac
+  case "$(<"${d%/}/genre")" in PREPARATION|INCONNU|CONFIEE) ci_afficher_etape "${d%/}" ;; esac
 done
 
 # ── Déroulement : reprise, rapide, lente — `ci_jouer` ────────────────────────
@@ -369,7 +397,7 @@ done
 ci_jouer "$TMP/plan" "$TOUT"
 
 # ── Conclusion ───────────────────────────────────────────────────────────────
-NB_OK=0; NB_FAIL=0; NB_INCONNU=0; NB_PREP=0; NB_SAUTS=0; NB_RELANCES=0; NB_NON_JOUEES=0
+NB_OK=0; NB_FAIL=0; NB_INCONNU=0; NB_PREP=0; NB_SAUTS=0; NB_RELANCES=0; NB_NON_JOUEES=0; NB_CONFIEES=0
 : > "$TMP/mesures"; : > "$TMP/jouees"; : > "$TMP/rouges"
 for d in "$TMP"/e/*/; do
   d=${d%/}
@@ -379,6 +407,7 @@ for d in "$TMP"/e/*/; do
   case "$verdict" in
     OK) NB_OK=$((NB_OK + 1)) ;; FAIL) NB_FAIL=$((NB_FAIL + 1)) ;;
     INCONNU) NB_INCONNU=$((NB_INCONNU + 1)) ;; PRÉP) NB_PREP=$((NB_PREP + 1)) ;;
+    CONFIÉE) NB_CONFIEES=$((NB_CONFIEES + 1)) ;;
   esac
   #  `$(<f)`, jamais `$(cat f)` : une fourche coûte ~50 ms sous Windows.
   [ -f "$d/nb_sauts" ] && NB_SAUTS=$((NB_SAUTS + $(<"$d/nb_sauts")))
@@ -408,6 +437,7 @@ printf "%d étape(s) rejouée(s) sur %d extraite(s) — OK=%d ÉCHEC=%d INCONNU=
        "$REJOUEES" "$ECRIT" "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_PREP" "$(ci_horloge)"
 [ "$NB_SAUTS" -gt 0 ] && echo "· $NB_SAUTS test(s) sauté(s) ici, que seule la CI GitHub joue — le détail est sur la ligne de leur étape (#1734)."
 [ "$NB_RELANCES" -gt 0 ] && echo "· $NB_RELANCES test(s) e2e relancé(s) sur une cause propre au poste (#1809, #1989) — journal : $JOURNAL_RELANCES"
+[ "$NB_CONFIEES" -gt 0 ] && echo "· $NB_CONFIEES étape(s) lente(s) confiée(s) à la CI de la PR (#2571) : pousser la branche et ouvrir la PR — le point 16 du pré-check lit ses checks. \`--complet\` les joue ici."
 [ -n "$ARRET" ] && [ "$NB_NON_JOUEES" -gt 0 ] && \
   echo "· Arrêté après la phase $ARRET : $NB_NON_JOUEES étape(s) non jouée(s). Corriger, puis \`--reprendre\` ; \`--tout\` joue tout malgré un rouge."
 
@@ -417,16 +447,18 @@ if [ "$REJOUEES" -eq 0 ]; then
 fi
 
 if [ -n "$FILTRE" ]; then
-  echo "  (rejeu partiel : aucune trace écrite — le point 16 du pré-check exige le rejeu complet.)"
+  echo "  (rejeu partiel : aucune trace écrite — le point 16 du pré-check exige tous les jobs.)"
 elif [ "$NB_NON_JOUEES" -gt 0 ]; then
-  echo "  (rejeu incomplet : aucune trace écrite — le point 16 du pré-check exige le rejeu complet.)"
+  echo "  (rejeu incomplet : aucune trace écrite — le point 16 du pré-check exige tous les jobs.)"
 else
   mkdir -p "$(dirname "$MARQUEUR")"
   trace_rejeu_ecrire "$MARQUEUR" "$SHA" "$(date +%s)" \
-    "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_SAUTS" "$NB_RELANCES" "$ARBRE"
+    "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_SAUTS" "$NB_RELANCES" "$ARBRE" \
+    "$([ "$NB_CONFIEES" -gt 0 ] && echo rapide || echo complet)" "$NB_CONFIEES"
 fi
 
 [ "$NB_FAIL" -gt 0 ] && { echo "✗ La CI échouerait — corriger avant de pousser."; exit 1; }
 [ "$NB_INCONNU" -gt 0 ] && { echo "? Des étapes n'ont pas pu être rejouées ici : un INCONNU n'est pas un vert."; exit 2; }
+[ "$NB_CONFIEES" -gt 0 ] && { echo "✓ Phase rapide verte — la suite complète reste à la CI de la PR."; exit 0; }
 echo "✓ Toutes les étapes rejouables sont passées."
 exit 0
