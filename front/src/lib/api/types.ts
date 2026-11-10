@@ -236,6 +236,8 @@ export interface Ticket extends PorteSaisiPourLu {
 	 *   objet. */
 	debut?: string | null;
 	fin?: string | null;
+	/**  ⏳ Le délai d'une affaire datée, DÉRIVÉ par le serveur sur la ligne du fil. */
+	echeance?: import('./types-flux').EcheanceAffaire | null;
 	/**  📌 Épinglé — maintenu en tête de la liste (05/09/2026).
 	 *
 	 *   ⚠️ `urgente` (plus bas) n'est pas une colonne : l'urgence d'un ticket EST sa
@@ -409,7 +411,14 @@ export interface NotificationsSupprimees {
 }
 
 //  Le fil de l'accueil et ses pastilles vivent dans leur module (#2397).
-export type { FluxItem, FluxProchain, RendezVous, FluxSante, FluxResponse } from './types-flux';
+export type {
+	EcheanceAffaire,
+	FluxItem,
+	FluxProchain,
+	RendezVous,
+	FluxSante,
+	FluxResponse,
+} from './types-flux';
 export interface EpinglesCompte {
 	total: number;
 	publications: number;

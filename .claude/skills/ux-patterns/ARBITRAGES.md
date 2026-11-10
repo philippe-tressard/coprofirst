@@ -603,3 +603,10 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Pourquoi** : « rendre plus facile la saisie d'une nouvelle affaire » — les champs essentiels d'abord, par type d'affaire. Les sections grisées du n° 51 resteraient 8 à 10 à l'écran : rien ne serait simplifié.
 - **Écarté** : les sections grisées à leur rang (n° 51 reste en vigueur pour la saisie Complète et pour les sections sans objet selon la nature) ; un défaut écrit à l'inscription ; « Selon mon rôle » (Complète d'office pour le conseil, retiré le 08/11/2026) ; un mode par appareil (cookie, comme le thème) ; « Simplifiée / Standard » (« simplifiée » sous-entend que l'autre est compliquée).
 - **Tenu par** : `api/tests/test_saisie_affaire.py`, `test_saisie_affaire_concordance.py` (table du front ⇄ de l'API), `e2e/saisie-affaire.spec.ts`.
+
+### n° 81 · en vigueur — Au fil, une affaire datée porte sa vignette d'ÉCHÉANCE dans la gouttière
+10/11/2026 · — · l'utilisateur, sur maquette (C « Échéance », parmi cinq) · §3
+- **Décidé** : la gouttière d'une carte du fil dont l'affaire a une date se lit de haut en bas — l'heure de la nouvelle, le classement (« CAL. »), puis la vignette : le DÉLAI d'abord (« J-8 », « Jour J », « En cours », « Passé »), la ou les dates dessous (« mar. 17 nov. », puis « → 19 nov. » si la fin tombe un autre jour). Une affaire CLOSE n'a plus de délai, la date seule. Au téléphone, la vignette se couche sur la ligne de la gouttière. Le délai est SERVI (`meta.affaire.echeance`, `utils/echeance_affaire`, jours civils de Paris) ; l'écran ne compte pas les jours.
+- **Pourquoi** : « fais apparaître la ou les dates en vignette » — la carte disait quand on en avait parlé, pas quand ça se passe ; le délai répond d'abord à « est-ce bientôt ? ».
+- **Écarté** : A, la feuille d'éphéméride (un étage de plus, une plage l'élargit) ; B, la pastille teintée (peu de relief) ; D, la frise (la plus haute) ; E, l'icône qui porte le jour (dérogeait à l'ordre demandé, « +1 » pour une plage) ; un délai compté dans l'écran (l'app iOS ne l'aurait pas, #2501).
+- **Tenu par** : `api/tests/test_echeance_affaire.py`, `front/e2e/echeance-gouttiere-fil.spec.ts`.
