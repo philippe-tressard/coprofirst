@@ -81,45 +81,46 @@
 	<!--  🔴 Titre par `SectionFormulaire` (12/09/2026) : ce `<h3>` local était la
 	      deuxième des trois façons de titrer un bloc de cet onglet. Le composant
 	      partagé porte l'intitulé, le filet et l'espacement — et l'icône. -->
-	<SectionFormulaire titre="Réglage de la sauvegarde quotidienne" icone="sliders-horizontal" />
-	<p class="aide">
-		La sauvegarde s’exécute <strong>tous les jours</strong>. Son historique et son déclenchement
-		manuel sont dans le tableau ci-dessus, avec les autres tâches.
-	</p>
-
-	{#if chargement}
-		<EtatListe chargement />
-	{:else}
-		<form id="config-sauvegarde" on:submit|preventDefault={enregistrer} class="grille">
-			<label class="field champ-en-ligne">
-				<span>Heure d’exécution</span>
-				<select bind:value={heure_execution}>
-					<!--  La clé est l'heure elle-même : 0 à 23, distinctes par construction.
-					      Ce n'est pas l'index déguisé — `h` EST la valeur rendue. -->
-					{#each Array.from({ length: 24 }, (_, h) => h) as h (h)}
-						<option value={h}>{String(h).padStart(2, '0')} h 00</option>
-					{/each}
-				</select>
-			</label>
-			<label class="field champ-en-ligne">
-				<span>Versions conservées</span>
-				<input type="number" min="1" max="99" bind:value={nb_versions_conservees} />
-			</label>
-		</form>
-		<p class="aide note">
-			Au-delà de {nb_versions_conservees} versions, la plus ancienne est effacée.
+	<SectionFormulaire titre="Réglage de la sauvegarde quotidienne" icone="sliders-horizontal">
+		<p class="aide">
+			La sauvegarde s’exécute <strong>tous les jours</strong>. Son historique et son déclenchement
+			manuel sont dans le tableau ci-dessus, avec les autres tâches.
 		</p>
-		{#if heure_execution === 2 || heure_execution === 3}
-			<p class="avertissement">
-				⚠️ <strong>{String(heure_execution).padStart(2, '0')} h</strong> croise une autre tâche : la
-				<strong>bascule</strong>
-				entre les deux Raspberry Pi tourne à 02 h, et la <strong>maintenance hebdomadaire</strong>
-				(purge et VACUUM de la base) le dimanche à 03 h. Une sauvegarde qui démarre pendant l’une ou l’autre
-				lit une base en cours de réorganisation. Préférez une heure creuse{SEPARATEUR.tiret}01 h ou
-				04 h.
+
+		{#if chargement}
+			<EtatListe chargement />
+		{:else}
+			<form id="config-sauvegarde" on:submit|preventDefault={enregistrer} class="grille">
+				<label class="field champ-en-ligne">
+					<span>Heure d’exécution</span>
+					<select bind:value={heure_execution}>
+						<!--  La clé est l'heure elle-même : 0 à 23, distinctes par construction.
+					      Ce n'est pas l'index déguisé — `h` EST la valeur rendue. -->
+						{#each Array.from({ length: 24 }, (_, h) => h) as h (h)}
+							<option value={h}>{String(h).padStart(2, '0')} h 00</option>
+						{/each}
+					</select>
+				</label>
+				<label class="field champ-en-ligne">
+					<span>Versions conservées</span>
+					<input type="number" min="1" max="99" bind:value={nb_versions_conservees} />
+				</label>
+			</form>
+			<p class="aide note">
+				Au-delà de {nb_versions_conservees} versions, la plus ancienne est effacée.
 			</p>
-		{/if}
-		<!--  🔴 `.form-actions` — barre de soumission alignée à DROITE, comme partout
+			{#if heure_execution === 2 || heure_execution === 3}
+				<p class="avertissement">
+					⚠️ <strong>{String(heure_execution).padStart(2, '0')} h</strong> croise une autre tâche :
+					la
+					<strong>bascule</strong>
+					entre les deux Raspberry Pi tourne à 02 h, et la <strong>maintenance hebdomadaire</strong>
+					(purge et VACUUM de la base) le dimanche à 03 h. Une sauvegarde qui démarre pendant l’une ou
+					l’autre lit une base en cours de réorganisation. Préférez une heure creuse{SEPARATEUR.tiret}01
+					h ou 04 h.
+				</p>
+			{/if}
+			<!--  🔴 `.form-actions` — barre de soumission alignée à DROITE, comme partout
 		      (`ux-patterns` §9 quinquies). Le bouton vivait DANS la grille des
 		      champs, donc collé au dernier champ et calé à gauche : il ne se lisait
 		      pas comme la validation du formulaire mais comme un troisième champ.
@@ -131,17 +132,18 @@
 		      ⚠️ Et il vient EN DERNIER, après les deux explications : on lit ce que
 		      les champs font, puis on valide. Placé juste sous la grille, il coupait
 		      la note qui explique le champ qu'on vient de régler. -->
-		<div class="form-actions">
-			<button
-				class="btn btn-primary"
-				type="submit"
-				form="config-sauvegarde"
-				disabled={enregistrement}
-			>
-				{enregistrement ? 'Enregistrement…' : 'Enregistrer'}
-			</button>
-		</div>
-	{/if}
+			<div class="form-actions">
+				<button
+					class="btn btn-primary"
+					type="submit"
+					form="config-sauvegarde"
+					disabled={enregistrement}
+				>
+					{enregistrement ? 'Enregistrement…' : 'Enregistrer'}
+				</button>
+			</div>
+		{/if}
+	</SectionFormulaire>
 </section>
 
 <style>
@@ -168,5 +170,6 @@
 		flex-wrap: wrap;
 		gap: 0.8rem;
 		align-items: flex-end;
+		margin-top: 0.7rem; /* comme `.note` : la rangée ne colle pas à la phrase d'aide */
 	}
 </style>
