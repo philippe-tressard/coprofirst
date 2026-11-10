@@ -29,7 +29,20 @@ async function ouvrir(page: Page, adresse: string, moi: object, commune = false)
 			return { site_nom: 'Les Tilleuls', operateur_par_exploitant: commune ? '1' : '0' };
 		if (chemin === '/api/admin/installation')
 			return { role: 'reference', libelle: 'Référence', branche: 'main', etat: 'non_verifie' };
-		if (chemin === '/api/admin/utilisateurs') return [moi, AUTRE_ADMIN];
+		//  Les gestes viennent du serveur (`gestes_roles`, #2618) : sur une instance
+		//  commune, il ne sert pas « + Opérateur » — l'exploitant le désigne.
+		if (chemin === '/api/admin/utilisateurs')
+			return [
+				moi,
+				{
+					...AUTRE_ADMIN,
+					gestes_roles: {
+						conseil_syndical: 'ajouter',
+						admin: 'retirer',
+						operateur: commune ? null : 'ajouter',
+					},
+				},
+			];
 		return undefined;
 	});
 	await page.goto(adresse);
