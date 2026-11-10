@@ -45,6 +45,7 @@ trace_rejeu_lire "$TMP/trace"
 [ "$R_SHA" = "$SHA_AVANT" ] && [ "$R_OK" = 185 ] && [ "$R_FAIL" = 0 ] && [ "$R_INC" = 0 ] \
     && [ "$R_SAUTS" = 2 ] && [ "$R_REL" = 1 ] && [ "$R_TREE" = "$ARBRE_AVANT" ]
 check "trace : ce qui est écrit se relit, champ par champ" $?
+[ "$R_MODE" = complet ] && [ "$R_CONF" = 0 ]; check "trace sans mode donné : complète, rien de confié" $?
 v() {  # verdict du point 16 pour la trace lue, devant le HEAD courant
     verdict_rejeu_ci "$R_SHA" "$($G rev-parse HEAD)" "$R_FAIL" "$R_INC" "$R_TREE" "$($G rev-parse 'HEAD^{tree}')"
 }
@@ -64,8 +65,31 @@ trace_rejeu_lire "$TMP/ancienne"
 #  On revient au commit reword : même arbre que la trace, autre sha — mais la trace n'a pas d'arbre à comparer.
 $G checkout -q --detach "$SHA_REWORD"
 [ "$(v)" = INCONNU ]; check "ancienne trace, autre sha → INCONNU (jamais OK sans arbre)" $?
+[ "$R_MODE" = complet ]; check "ancienne trace (sans mode) : complète par construction" $?
 trace_rejeu_lire "$TMP/absente"
 [ -z "$R_SHA" ] && [ "$R_OK" = "?" ]; check "trace absente : vide, jamais un sha inventé" $?
+
+#  ── La trace RAPIDE (#2571) : elle ne vaut qu'avec la CI de la PR ──────────────
+echo "== self-test trace rapide : la suite complète se lit sur la CI de la PR =="
+trace_rejeu_ecrire "$TMP/rapide" "$SHA_AVANT" 1700000000 170 0 0 0 0 "$ARBRE_AVANT" rapide 12
+trace_rejeu_lire "$TMP/rapide"
+[ "$R_MODE" = rapide ] && [ "$R_CONF" = 12 ] && [ "$R_TREE" = "$ARBRE_AVANT" ]
+check "trace rapide : mode et étapes confiées se relisent" $?
+e() { [ "$(etat_checks_pr "$1" "$2" "$3")" = "$4" ]; check "checks $1/$2/$3 → $4" $?; }
+e 8 0 0 VERT; e 8 2 0 EN_COURS; e 8 0 1 ROUGE; e 8 2 1 ROUGE
+e 0 0 0 ABSENT; e "" "" "" ABSENT; e 8 "" 0 ABSENT; e x 0 0 ABSENT
+s() { [ "$(verdict_suite_complete "$1" "$2" "$3")" = "$4" ]; check "trace $1, $2, CI ${3:-—} → $4" $?; }
+s OK complet ABSENT OK
+s OK rapide VERT OK
+#  Le cas que ce verdict existe pour fermer : une phase rapide verte lue comme un rejeu.
+s OK rapide ABSENT INCONNU
+s OK rapide EN_COURS INCONNU
+s OK rapide "" INCONNU
+s OK rapide ROUGE FAIL
+s FAIL rapide VERT FAIL
+s INCONNU rapide VERT INCONNU
+s OK "" VERT INCONNU
+s "" complet VERT INCONNU
 
 [ $fail -eq 0 ] && echo "== TOUS OK ==" || echo "== ÉCHECS =="
 exit $fail

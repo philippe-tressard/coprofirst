@@ -204,7 +204,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 | 0g | **Rang du bump conforme** à ce que le lot apporte (lu dans les préfixes de commit) | OK · ÉCART · FAIL |
 | 0f | **Titre et descriptif de PR préparés** (`.git/pr-brief.md`) | OK · FAIL · INCONNU |
 | 15 | Aucun endpoint orphelin | OK · FAIL |
-| 16 | **CI rejouée en local sur ce commit** (`scripts/poste/rejouer-ci.sh`) | OK · FAIL · INCONNU |
+| 16 | **Suite de la CI verte sur cet arbre** : phase rapide au poste (`scripts/poste/rejouer-ci.sh`), pytest et e2e sur la CI de la PR | OK · FAIL · INCONNU |
 | 1 | Site public répond | OK · FAIL · INCONNU |
 | 2 | Rôle actif cohérent **et conforme au réel** | OK · FAIL |
 | 3 | Standby sans conteneur (pas de split-brain) | OK · FAIL |
@@ -342,6 +342,12 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   (« même arbre », #2245) ; une trace sans arbre, ou un contenu modifié, rend INCONNU.
   Il reprend aussi le nombre de tests **sautés** sur le poste (`SAUTS=`, #1734) :
   ceux-là — le rendu PDF, faute de WeasyPrint — seule la CI de la PR les joue.
+  🔴 **Depuis #2571, le rejeu ordinaire s'arrête à la phase rapide** : les étapes lentes
+  (pytest, tests de navigateur) sont **confiées à la CI de la PR**, et la trace le dit
+  (`MODE=rapide`). Sur une telle trace, le point lit par `gh` les checks de la PR ouverte
+  pour la branche : même arbre et tous verts → OK ; un check rouge → FAIL ; en cours, PR
+  absente, autre arbre ou `gh` muet → INCONNU. L'ordre d'un lot est donc : rejeu, pousser,
+  ouvrir la PR, attendre sa CI, **puis** le pré-check. `--complet` joue tout au poste.
 
   ```bash
   bash scripts/poste/rejouer-ci.sh
@@ -352,8 +358,9 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   ajouté — et c'est le job ajouté qu'on oublie de rejouer. Il commence par un
   **pré-vol** (dépendances, base des tests, Playwright, versions, venv) qui refuse
   en quelques secondes au lieu de finir INCONNU, puis joue les étapes **rapides**
-  de tous les jobs avant les **lentes** (qui démarrent sur les créneaux libres),
-  en couloirs parallèles ; un rouge l'arrête à la fin de sa phase, sans trace (#2224). Après une correction :
+  de tous les jobs, en couloirs parallèles — et, avec `--complet` seulement, les
+  **lentes** (qui démarrent sur les créneaux libres) ; un rouge l'arrête à la fin
+  de sa phase, sans trace (#2224). Après une correction :
   `bash scripts/poste/rejouer-ci.sh --reprendre` rejoue d'abord ce qui était rouge.
   Dépendances du poste en écart : `--venv` (venv aligné sur le lot, réutilisé).
   Où passe le temps des rejeux : `python scripts/poste/mesurer-rejeux.py`.
