@@ -23,16 +23,41 @@ from app.utils.recuperer import ou_404
 from app.utils.cloche import sonner_systeme
 from app.utils.journal_securite import journaliser_securite
 from app.utils.roles_du_statut import poser_roles_du_statut
-from app.utils.demandes_profil import lire_demande
+from app.utils.annonce_compte import Annonce
+from app.utils.demandes_profil import DemandeModifRead, lire_demande
 from app.utils.valeurs import valeur
 
 router = APIRouter()
 
 
+class DemandeProfilEnAttente(DemandeModifRead):
+    """Une demande de la file du conseil : la demande, plus ce qui identifie le demandeur.
+
+    Typée depuis #2618 : la route rendait des `dict` que le contrat annonçait `{}`,
+    et l'app iOS les relisait « en miroir ».
+    """
+
+    utilisateur_nom: str
+    utilisateur_email: str | None = None
+    statut_actuel: str | None = None
+    batiment_actuel: str | None = None
+
+
+class DemandeProfilTraitee(BaseModel):
+    """`POST /admin/demandes-profil/{id}/traiter` : le nouvel état, et la phrase à afficher.
+
+    `annonce` est composée ICI et lue par le site ET l'app iOS (#2618), comme celle
+    d'un compte traité (`CompteTraiteResult`, #2522).
+    """
+
+    statut: str
+    annonce: Annonce
+
+
 # ── Demandes de modification de profil ─────────────────────────────────
 
 
-@router.get("/demandes-profil")
+@router.get("/demandes-profil", response_model=list[DemandeProfilEnAttente])
 def list_demandes_profil(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_cs_or_admin),
@@ -67,7 +92,7 @@ class DemandeProfilAction(BaseModel):
     motif_refus: str | None = None
 
 
-@router.post("/demandes-profil/{demande_id}/traiter")
+@router.post("/demandes-profil/{demande_id}/traiter", response_model=DemandeProfilTraitee)
 def traiter_demande_profil(
     demande_id: int,
     body: DemandeProfilAction,
@@ -128,4 +153,11 @@ def traiter_demande_profil(
     session.add(demande)
     session.add(utilisateur)
     session.commit()
-    return {"statut": demande.statut_demande}
+    approuvee = demande.statut_demande == StatutDemandeProfil.approuvee
+    return DemandeProfilTraitee(
+        statut=valeur(demande.statut_demande),
+        annonce=Annonce(
+            ton="success" if approuvee else "info",
+            texte="Demande approuvée." if approuvee else "Demande rejetée.",
+        ),
+    )
