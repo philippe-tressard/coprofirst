@@ -146,8 +146,20 @@ ci_suite_apres_phase() {
 #  côte à côte ; ici, ils tenaient le verrou du rejeu une vingtaine de minutes,
 #  seul goulot entre les sessions. `--complet` les joue sur le poste. Une étape
 #  de la REPRISE (un rouge d'avant) se rejoue toujours : c'est elle qu'on corrige.
-#    $1 = phase de l'étape, $2 = `--complet` (oui|non) → oui | non
-ci_phase_confiee() { [ "${2:-non}" != oui ] && [ "$1" = lente ] && echo oui || echo non; }
+#  🔴 Confiée par sa NATURE, jamais par sa durée mesurée : la durée suit la charge
+#  du poste. Le 10/11/2026, trois rejeux chargés ont porté « set -u », prettier et
+#  ESLint au-dessus du seuil des lentes ; par contagion de couloir, le rejeu suivant
+#  a confié 174 étapes sur 197 et n'en a joué que 23 — un vert qui ne mesurait
+#  presque rien. Seules partent l'étape qui lance pytest ou les tests de navigateur
+#  (`ci_lance_pytest`, `ci_sert_par_vite`) et ce qui la suit dans son couloir.
+#    $1 = phase de l'étape, $2 = `--complet` (oui|non),
+#    $3 = lourde (oui : elle lance pytest ou les e2e, ou en suit une dans son couloir)
+#    → oui | non
+ci_phase_confiee() {
+  [ "${2:-non}" = oui ] && { echo non; return; }
+  [ "$1" = reprise ] && { echo non; return; }
+  [ "${3:-non}" = oui ] && echo oui || echo non
+}
 
 ci_reprise_valable() {
   [ "${3:-non}" = oui ] && { echo oui; return; }
@@ -224,11 +236,13 @@ ci_orchestration_cas() {
   t "suite — un rouge arrête"             "$(ci_suite_apres_phase 2 non)" "arreter"
   t "suite — --tout joue tout"            "$(ci_suite_apres_phase 2 oui)" "continuer"
 
-  t "confiée — lente, rejeu ordinaire"     "$(ci_phase_confiee lente non)" "oui"
-  t "confiée — lente, --complet : jouée"  "$(ci_phase_confiee lente oui)" "non"
-  t "confiée — rapide : jamais"           "$(ci_phase_confiee rapide non)" "non"
-  t "confiée — reprise : jamais (le rouge qu'on corrige)" "$(ci_phase_confiee reprise non)" "non"
-  t "confiée — option absente : ordinaire" "$(ci_phase_confiee lente)" "oui"
+  t "confiée — pytest ou e2e, rejeu ordinaire" "$(ci_phase_confiee lente non oui)" "oui"
+  t "confiée — pytest ou e2e mesuré rapide : confiée quand même" "$(ci_phase_confiee rapide non oui)" "oui"
+  t "confiée — --complet : jouée"         "$(ci_phase_confiee lente oui oui)" "non"
+  t "confiée — reprise : jamais (le rouge qu'on corrige)" "$(ci_phase_confiee reprise non oui)" "non"
+  #  Le cas du 10/11 : un lint mesuré lent sous la charge reste joué ici.
+  t "confiée — lint mesuré lent : JOUÉ"    "$(ci_phase_confiee lente non non)" "non"
+  t "confiée — nature absente : jouée"     "$(ci_phase_confiee lente non)" "non"
 
   t "reprise valable — ancêtre"           "$(ci_reprise_valable autre ma-branche oui)" "oui"
   t "reprise valable — même branche, rebasée" "$(ci_reprise_valable ma-branche ma-branche non)" "oui"

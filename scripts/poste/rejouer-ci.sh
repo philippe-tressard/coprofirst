@@ -354,14 +354,26 @@ ci_plan "$SEUIL_LENTE" "$TMP/reprendre" < "$TMP/a-jouer-durees" > "$TMP/plan"
 [ -s "$TMP/a-jouer-durees" ] && ! grep -q . <<<"$(cut -f4 "$TMP/a-jouer-durees")" \
   && echo "· Aucune durée mesurée encore : tout est « rapide » ce coup-ci ; les durées s'apprennent ($DUREES)."
 
-#  ── Les étapes lentes, confiées à la CI de la PR (#2571) — `ci_phase_confiee` ──
+#  ── pytest et les tests de navigateur, confiés à la CI de la PR (#2571) ──────
+#  `ci_phase_confiee` : par NATURE (l'étape lance pytest ou les e2e, ou en suit une
+#  dans son couloir), jamais par sa durée mesurée, qui suit la charge du poste.
 #  Marquées AVANT le pré-vol : il ne sonde ni la base des tests ni Chromium pour
 #  une étape qui ne se joue pas ici. Un rejeu partiel (un job nommé) joue tout.
 [ -n "$FILTRE" ] && COMPLET=oui
-NB_LENTES=$(awk -F'\t' '$1 == "lente"' "$TMP/plan" | grep -c .)
+: > "$TMP/lourdes"
+declare -A LOURDE_VUE=()
+while IFS=$'\t' read -r _ idx couloir _; do
+  if [ -n "${LOURDE_VUE[$couloir]:-}" ] \
+     || [ "$(ci_lance_pytest < "$TMP/e/$idx/corps")" = oui ] \
+     || [ "$(ci_sert_par_vite < "$TMP/e/$idx/corps")" = oui ]; then
+    LOURDE_VUE[$couloir]=1; echo "$idx" >> "$TMP/lourdes"
+  fi
+done < <(sort -t$'\t' -k2,2n "$TMP/plan")
+NB_LENTES=$(grep -c . "$TMP/lourdes")
 : > "$TMP/plan-retenu"
 while IFS=$'\t' read -r phase idx reste_du_plan; do
-  if [ "$(ci_phase_confiee "$phase" "$COMPLET")" = oui ]; then
+  lourde=non; grep -qx "$idx" "$TMP/lourdes" && lourde=oui
+  if [ "$(ci_phase_confiee "$phase" "$COMPLET" "$lourde")" = oui ]; then
     echo CONFIEE > "$TMP/e/$idx/genre"
     mesuree=$(<"$TMP/e/$idx/mesuree")
     printf 'CONFIÉE\tjugée par la CI de la PR%s\n' "${mesuree:+ (mesurée ${mesuree%.*} s ici)}" > "$TMP/e/$idx/res"
@@ -437,7 +449,7 @@ printf "%d étape(s) rejouée(s) sur %d extraite(s) — OK=%d ÉCHEC=%d INCONNU=
        "$REJOUEES" "$ECRIT" "$NB_OK" "$NB_FAIL" "$NB_INCONNU" "$NB_PREP" "$(ci_horloge)"
 [ "$NB_SAUTS" -gt 0 ] && echo "· $NB_SAUTS test(s) sauté(s) ici, que seule la CI GitHub joue — le détail est sur la ligne de leur étape (#1734)."
 [ "$NB_RELANCES" -gt 0 ] && echo "· $NB_RELANCES test(s) e2e relancé(s) sur une cause propre au poste (#1809, #1989) — journal : $JOURNAL_RELANCES"
-[ "$NB_CONFIEES" -gt 0 ] && echo "· $NB_CONFIEES étape(s) lente(s) confiée(s) à la CI de la PR (#2571) : pousser la branche et ouvrir la PR — le point 16 du pré-check lit ses checks. \`--complet\` les joue ici."
+[ "$NB_CONFIEES" -gt 0 ] && echo "· $NB_CONFIEES étape(s) de pytest et des tests de navigateur confiée(s) à la CI de la PR (#2571) : pousser la branche et ouvrir la PR — le point 16 du pré-check lit ses checks. \`--complet\` les joue ici."
 [ -n "$ARRET" ] && [ "$NB_NON_JOUEES" -gt 0 ] && \
   echo "· Arrêté après la phase $ARRET : $NB_NON_JOUEES étape(s) non jouée(s). Corriger, puis \`--reprendre\` ; \`--tout\` joue tout malgré un rouge."
 
