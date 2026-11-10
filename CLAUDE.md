@@ -1093,8 +1093,8 @@ la branche → PR → **CI verte** → pré-check → fusion. La trace dit son m
 de la branche porte le **même arbre** et que tous ses checks sont verts : en cours,
 absente ou illisible, INCONNU (`verdict_suite_complete`, `lib-depot.sh`). `--complet`
 joue tout au poste — pour un lot qui touche le rejeu lui-même, ou sans réseau. Les tests
-du lot se lancent à la main pendant le développement (`pytest tests/test_x.py`,
-`npx playwright test e2e/x.spec.ts`).
+du lot se lancent à la main pendant le développement (`pytest tests/<fichier du lot>`,
+`npx playwright test e2e/<spec du lot>`).
 Sa trace (`.git/rejeu-ci.ok`) est lue par le **point 16** du pré-check. Elle porte le sha **et
 l'arbre** (`HEAD^{tree}`) : le rejeu mesure le code, pas l'historique — un reword ou un squash à
 arbre identique ne coûte pas un rejeu (#2245) ; un contenu modifié, une trace d'avant l'arbre ou
