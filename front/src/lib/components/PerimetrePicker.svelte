@@ -3,12 +3,16 @@
 	import Pastille from '#lib/components/Pastille.svelte';
 	import { relire } from '#lib/utils.ts';
 	import { perimetresStore } from '#lib/stores/perimetres.ts';
+	import { perimetreParDefaut, perimetresNiveau1 } from '#lib/perimetres/index.ts';
 	import {
-		SEPARATEUR_ELEMENT,
-		perimetreParDefaut,
-		perimetresNiveau1,
-		type Perimetre,
-	} from '#lib/perimetres/index.ts';
+		basculer as basculerSelection,
+		noeudOuvert,
+		ouvreUneRangee,
+		rangeesOuvertes,
+		resumeSous,
+		retenusSous,
+		type ArbreSelection,
+	} from '#lib/perimetres/selection.ts';
 
 	/** Valeurs sélectionnées — tableau de codes. Ex : ['résidence'] ou ['bat:1','parking'] */
 	export let value: string[] = [];
@@ -114,58 +118,21 @@
 				)
 		: [];
 
-	const codesNiveau1 = (liste: Perimetre[]) => new Set(liste.map((n) => n.code));
-
-	/** Le nœud de premier niveau dont dépend une valeur sélectionnée, s'il y en a un. */
-	function racineDe(code: string, n1: Set<string>): string | null {
-		let courant = parCode.get(code);
-		const vus = new Set<string>();
-		while (courant && !vus.has(courant.code)) {
-			if (n1.has(courant.code)) return courant.code;
-			vus.add(courant.code);
-			courant = courant.parent ? parCode.get(courant.parent) : undefined;
-		}
-		return null;
-	}
-
-	//  Le second niveau ne s'affiche que pour UN parent à la fois : proposer les
-	//  espaces de quatre bâtiments simultanément produirait une rangée illisible,
-	//  et le geste attendu est « je précise dans celui-ci ».
-	$: n1 = codesNiveau1(niveau1);
-	//  Rien n'indiquait qu'un bâtiment cachait neuf espaces : il fallait cliquer
-	//  pour le découvrir, et personne ne cliquait (signalé le 12/08/2026). Le
-	//  chevron dit qu'il y a un second niveau, sans l'imposer.
-	$: aDesEnfants = new Set(
-		actifs.filter((n) => n.selectionnable && n.parent && n1.has(n.parent)).map((n) => n.parent!),
-	);
-	//  🔴 Le second niveau suit le DERNIER nœud touché, pas le premier de la
-	//  sélection (18/08/2026, signalé à l'écran).
-	//
-	//  `value.map(racineDe).find(Boolean)` retenait la PREMIÈRE valeur qui a une
-	//  racine. Après « Bât. 3 › Caves, Toit » puis un clic sur « Bât. 4 », la
-	//  sélection vaut ['caves:3','toit:3','bat:4'] : la première a pour racine le
-	//  bâtiment 3, et la rangée de précision restait donc bloquée sur lui — on
-	//  cliquait sur un bâtiment et on voyait les espaces d'un autre.
+	//  🔢 Le sélecteur descend jusqu'au NIVEAU 3 (10/11/2026) : « Bât. 1 ›
+	//  Logement › Terrasses Balcons ». Ce qu'un clic retient, et quelles rangées
+	//  s'ouvrent, se décide dans `#lib/perimetres/selection` — une règle, la même
+	//  à chaque niveau ; ce composant rend.
+	$: arbre = { parCode, actifs, tetes: new Set(niveau1.map((n) => n.code)) } as ArbreSelection;
+	//  🔴 Les rangées suivent le DERNIER nœud touché, pas le premier de la
+	//  sélection (18/08/2026, signalé à l'écran) : après « Bât. 3 › Toit » puis un
+	//  clic sur « Bât. 4 », on voyait encore les espaces du bâtiment 3.
 	//
 	//  ⚠️ L'état est nécessaire : `value` ne dit pas dans quel ORDRE on a cliqué.
-	//  Il reste dérivé quand personne n'a encore touché la rangée — à l'ouverture
-	//  d'un formulaire d'édition, le second niveau s'ouvre sur ce qui est
+	//  Il reste dérivé quand personne n'a encore touché les rangées — à
+	//  l'ouverture d'un formulaire d'édition, elles s'ouvrent sur ce qui est
 	//  enregistré.
-	let parentTouche: string | null = null;
-	$: parentOuvert =
-		parentTouche && aDesEnfants.has(parentTouche)
-			? parentTouche
-			: (value.map((v) => racineDe(v, n1)).find(Boolean) ?? null);
-	$: niveau2 = parentOuvert
-		? actifs.filter((n) => n.parent === parentOuvert && n.selectionnable)
-		: [];
-
-	//  Ce qu'un nœud de premier niveau porte de sélectionné en second niveau.
-	//  Sert à le CONTRACTER quand sa rangée se referme : sans cela, choisir un
-	//  autre bâtiment faisait disparaître « Caves, Toit » de l'écran alors qu'ils
-	//  restent sélectionnés — la valeur était juste, l'écran mentait.
-	$: enfantsChoisis = (code: string) =>
-		actifs.filter((n) => n.parent === code && selection.has(n.code));
+	let touche: string | null = null;
+	$: rangees = rangeesOuvertes(noeudOuvert(touche, value, arbre), arbre);
 
 	$: noeudDefaut = defaut ? parCode.get(defaut) : undefined;
 	$: estDefaut = value.length === 0 || (value.length === 1 && value[0] === defaut);
@@ -187,7 +154,7 @@
 		//  `parentTouche` survivait au geste qui le rendait faux. Un état qu'on pose
 		//  se remet à zéro dans TOUS les chemins qui le contredisent — ici il n'y en
 		//  a qu'un, et il avait été oublié.
-		parentTouche = null;
+		touche = null;
 		value = defaut ? [defaut] : [];
 		dispatch('change', value);
 	}
@@ -212,15 +179,12 @@
 	 * problème n'était pas dans le calcul : **deux intentions ne tiennent pas dans
 	 * un seul geste.**
 	 *
-	 * ## La règle, en entier — cinq lignes, aucun cas implicite
+	 * ## La règle, en entier — aucun cas implicite
 	 *
-	 * | Clic sur | Sélection | Rangée |
-	 * |---|---|---|
-	 * | un nœud de 1ᵉʳ niveau **qui a des espaces retenus** | *inchangée* | s'ouvre |
-	 * | un nœud de 1ᵉʳ niveau sans espace retenu, non retenu | il est **ajouté** | s'ouvre |
-	 * | un nœud de 1ᵉʳ niveau **retenu lui-même** | il est **retiré** | se ferme |
-	 * | un **espace** | il est basculé ; son bâtiment entier est retiré | reste ouverte |
-	 * | « toute la copropriété » | tout est vidé | se ferme |
+	 * Elle vit dans `#lib/perimetres/selection` (`basculer`), écrite UNE fois pour
+	 * les trois niveaux depuis le 10/11/2026 : un nœud de niveau 2 qui porte des
+	 * espaces de niveau 3 se comporte exactement comme un bâtiment qui porte des
+	 * espaces de niveau 2.
 	 *
 	 * **La première ligne est la clé** : quand un bâtiment porte déjà des espaces
 	 * précisés, le clic sur lui ne veut plus dire « je choisis tout le bâtiment »,
@@ -238,47 +202,21 @@
 	 * rien ne rattrape un chemin qu'on n'avait pas prévu.
 	 */
 	function basculer(code: string) {
-		const racine = racineDe(code, n1);
-		const estNiveau1 = racine === code;
-
 		if (mode === 'single') {
-			parentTouche = racine;
+			touche = code;
 			value = [code];
 			dispatch('change', value);
 			return;
 		}
-
-		const s = new Set(value.filter((v) => v !== defaut));
-		const espacesRetenus = [...s].filter((v) => v !== code && racineDe(v, n1) === code);
-
-		if (estNiveau1 && espacesRetenus.length > 0 && !s.has(code)) {
-			//  1. Le nœud porte des espaces précisés : on vient les REVOIR, pas les
-			//     remplacer. La sélection ne bouge pas d'un iota.
-			parentTouche = code;
-			return;
-		}
-
-		if (s.has(code)) {
-			//  2 & 3. Retirer ce qui était retenu. Retirer le nœud de premier niveau
-			//     referme sa rangée ; retirer un espace la laisse ouverte — on en
-			//     précise souvent plusieurs à la suite, et refermer sous le doigt
-			//     obligerait à rouvrir.
-			s.delete(code);
-			if (estNiveau1) parentTouche = null;
-		} else {
-			parentTouche = racine;
-			//  4. Un espace remplace son bâtiment : « Bât. 2 › Hall » veut dire le
-			//     hall, pas les deux. Le cas inverse — un bâtiment par-dessus ses
-			//     espaces — ne peut plus se produire : il est intercepté en 1.
-			if (!estNiveau1 && racine) s.delete(racine);
-			s.add(code);
-		}
-
 		//  🔴 Sous restriction, vider veut dire VIDE : retomber sur « Copropriété
 		//  entière » poserait un périmètre que la liste n'autorise peut-être pas —
 		//  une télécommande ne l'ouvre pas — et l'enregistrement se ferait refuser
 		//  pour une valeur que personne n'a choisie.
-		value = s.size > 0 ? [...s] : restreint ? [] : defaut ? [defaut] : [];
+		const vide = restreint ? [] : defaut ? [defaut] : [];
+		const clic = basculerSelection(code, value, defaut, vide, arbre);
+		touche = clic.touche;
+		if (clic.value === null) return;
+		value = clic.value;
 		dispatch('change', value);
 	}
 </script>
@@ -349,7 +287,6 @@
 	      `libelle_court` pour les enfants : la pastille est en `nowrap`, et trois
 	      libellés longs la feraient déborder de la largeur du téléphone. -->
 		{#each niveau1 as n (n.code)}
-			{@const choisis = enfantsChoisis(n.code)}
 			<!--  🔴 LE RÉSUMÉ EST PERMANENT (18/08/2026, signalé à l'écran). Il
 		      n'apparaissait qu'une fois la rangée refermée : en précisant « Toit »
 		      dans le bâtiment 3, on ne voyait donc RIEN changer sur le bâtiment 3
@@ -365,7 +302,7 @@
 		      résumé et dans la rangée. Ce n'est pas une redite mais un RETOUR — la
 		      rangée dit ce qu'on PEUT choisir, le résumé ce qui EST retenu. C'est
 		      justement leur écart qui manquait. -->
-			{@const contracte = choisis.length > 0}
+			{@const contracte = retenusSous(n.code, selection, arbre).length > 0}
 			<!--  🔴 LA MÈRE RESTE PLEINE dès qu'un de ses espaces est retenu, rangée
 		      ouverte ou non (18/08/2026, ARBITRAGE CORRIGÉ PAR L'ÉCRAN).
 
@@ -386,36 +323,47 @@
 		      quand on précise un espace (`s.delete(racine)`). C'est bien l'ascenseur
 		      qui est ciblé, pas le bâtiment entier — seule la lecture est corrigée. -->
 			<Pastille
-				active={!estDefaut && (selection.has(n.code) || choisis.length > 0)}
+				active={!estDefaut && (selection.has(n.code) || contracte)}
 				icone={n.icone ?? ''}
-				chevron={aDesEnfants.has(n.code) && !contracte}
+				chevron={ouvreUneRangee(n.code, arbre) && !contracte}
 				privatif={n.privatif && !contracte}
 				on:click={() => basculer(n.code)}
 				>{n.libelle}{#if contracte}<span class="perimetre-resume">
-						› {choisis.map((e) => e.libelle_court || e.libelle).join(SEPARATEUR_ELEMENT)}</span
+						› {resumeSous(n.code, selection, arbre)}</span
 					>{/if}</Pastille
 			>
 		{/each}
 	</div>
 {/if}
 
-{#if niveau2.length > 0 && !restreint}
-	<div class="perimetre-niveau2">
-		<p class="perimetre-precision">
-			Préciser dans {parCode.get(parentOuvert ?? '')?.libelle ?? ''}
-			<span class="perimetre-facultatif">{SEPARATEUR.tiret}facultatif</span>
-		</p>
-		<div class="perimetre-pills">
-			{#each niveau2 as espace (espace.code)}
-				<Pastille
-					petite
-					privatif={espace.privatif}
-					active={selection.has(espace.code)}
-					on:click={() => basculer(espace.code)}>{espace.libelle}</Pastille
-				>
-			{/each}
+<!--  Une rangée par niveau ouvert — sous la tête, puis sous le niveau 2 : même
+      phrase, mêmes pastilles, même règle (10/11/2026, « un niveau 3 similaire au
+      niveau précédent »). Une pastille de niveau 2 qui porte des espaces a son
+      chevron et son résumé, comme une tête ; le niveau 3 n'en a pas. -->
+{#if !restreint}
+	{#each rangees as rangee (rangee.parent.code)}
+		<div class="perimetre-niveau2">
+			<p class="perimetre-precision">
+				Préciser dans {rangee.parent.libelle}
+				<span class="perimetre-facultatif">{SEPARATEUR.tiret}facultatif</span>
+			</p>
+			<div class="perimetre-pills">
+				{#each rangee.enfants as espace (espace.code)}
+					{@const contracte = retenusSous(espace.code, selection, arbre).length > 0}
+					<Pastille
+						petite
+						privatif={espace.privatif && !contracte}
+						chevron={ouvreUneRangee(espace.code, arbre) && !contracte}
+						active={selection.has(espace.code) || contracte}
+						on:click={() => basculer(espace.code)}
+						>{espace.libelle}{#if contracte}<span class="perimetre-resume">
+								› {resumeSous(espace.code, selection, arbre)}</span
+							>{/if}</Pastille
+					>
+				{/each}
+			</div>
 		</div>
-	</div>
+	{/each}
 {/if}
 
 {#if descriptionActive}
@@ -449,6 +397,10 @@
 	    une classe posée sur le contenu d'un slot appartient à l'appelant, jamais
 	    au composant qui l'accueille (v2.67.11). */
 	.perimetre-resume {
+		/*  L'espace avant « › » est avalé : la pastille est un `inline-flex`, et
+		    l'espace en tête d'un élément flex ne se rend pas — « Bâtiment 1› Caves »
+		    (vu le 10/11/2026 sur la capture du niveau 3). */
+		margin-left: 0.3em;
 		opacity: 0.85;
 		font-weight: 500;
 	}

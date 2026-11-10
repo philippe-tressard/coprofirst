@@ -32,22 +32,52 @@ dossier_git() {
 #  divergeaient au premier champ ajouté (SAUTS en #1734, RELANCES en #1809, TREE en
 #  #2245). Elle porte le sha du commit rejoué ET l'arbre git (`HEAD^{tree}`) : le
 #  rejeu mesure le code, pas l'historique — un reword ou un squash change le premier
-#  et laisse le second (#2245).
+#  et laisse le second (#2245). Depuis #2571, elle porte aussi son MODE : le rejeu
+#  ordinaire s'arrête à la phase rapide et CONFIE les étapes lentes (pytest, e2e) à la
+#  CI de la PR — `rapide`, avec leur nombre ; `--complet` les joue ici — `complet`.
 
-# trace_rejeu_ecrire fichier sha epoch ok fail inconnu sauts relances arbre
+# trace_rejeu_ecrire fichier sha epoch ok fail inconnu sauts relances arbre [mode confiées]
 trace_rejeu_ecrire() {
-    printf '%s %s OK=%d FAIL=%d INCONNU=%d SAUTS=%d RELANCES=%d TREE=%s\n' \
-        "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" > "$1"
+    printf '%s %s OK=%d FAIL=%d INCONNU=%d SAUTS=%d RELANCES=%d TREE=%s MODE=%s CONFIEES=%d\n' \
+        "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10:-complet}" "${11:-0}" > "$1"
 }
 
-# trace_rejeu_lire fichier — pose R_SHA R_OK R_FAIL R_INC R_SAUTS R_REL R_TREE.
+# trace_rejeu_lire fichier — pose R_SHA R_OK R_FAIL R_INC R_SAUTS R_REL R_TREE R_MODE R_CONF.
+#  Une trace d'avant #2571 n'a pas de mode : elle était complète par construction.
 #  Trace absente : tout vide, R_OK="?". Une trace d'avant un champ le laisse vide
 #  (le verdict lit alors la trace pour son seul sha) ; `read` le fait seul, mais la
 #  suite de noms doit rester COMPLÈTE : sans le dernier, R_REL avalerait le reste.
 trace_rejeu_lire() {
-    R_SHA=""; R_OK="?"; R_FAIL=""; R_INC=""; R_SAUTS=""; R_REL=""; R_TREE=""
+    R_SHA=""; R_OK="?"; R_FAIL=""; R_INC=""; R_SAUTS=""; R_REL=""; R_TREE=""; R_MODE=""; R_CONF=""
     [ -f "$1" ] || return 0
-    read -r R_SHA _ R_OK R_FAIL R_INC R_SAUTS R_REL R_TREE _ < "$1"
+    read -r R_SHA _ R_OK R_FAIL R_INC R_SAUTS R_REL R_TREE R_MODE R_CONF _ < "$1"
     R_FAIL=${R_FAIL#FAIL=}; R_INC=${R_INC#INCONNU=}; R_OK=${R_OK#OK=}
     R_SAUTS=${R_SAUTS#SAUTS=}; R_REL=${R_REL#RELANCES=}; R_TREE=${R_TREE#TREE=}
+    R_MODE=${R_MODE#MODE=}; R_CONF=${R_CONF#CONFIEES=}
+    R_MODE=${R_MODE:-complet}; R_CONF=${R_CONF:-0}
+}
+
+# ── Ce qu'une trace RAPIDE vaut : rien sans la CI de la PR (#2571) — PURES ─────
+#  La phase rapide ne joue ni pytest ni les tests de navigateur : la suite complète
+#  est jugée par la CI de la PR, sur le MÊME arbre. Une trace rapide sans CI verte
+#  rend INCONNU, jamais OK — et une CI illisible ne se lit pas comme verte.
+
+# etat_checks_pr checks en_cours rouges → VERT | ROUGE | EN_COURS | ABSENT
+etat_checks_pr() {
+    [ -n "${1:-}" ] && [ -n "${2:-}" ] && [ -n "${3:-}" ] || { echo ABSENT; return; }
+    case "$1$2$3" in *[!0-9]*) echo ABSENT; return ;; esac
+    [ "$1" -eq 0 ] && { echo ABSENT; return; }
+    [ "$3" -gt 0 ] && { echo ROUGE; return; }
+    [ "$2" -gt 0 ] && { echo EN_COURS; return; }
+    echo VERT
+}
+
+# verdict_suite_complete verdict_de_la_trace mode etat_de_la_ci → OK | FAIL | INCONNU
+verdict_suite_complete() {
+    case "${1:-}" in OK) ;; FAIL) echo FAIL; return ;; *) echo INCONNU; return ;; esac
+    case "${2:-}" in
+        complet) echo OK ;;
+        rapide)  case "${3:-}" in VERT) echo OK ;; ROUGE) echo FAIL ;; *) echo INCONNU ;; esac ;;
+        *)       echo INCONNU ;;
+    esac
 }

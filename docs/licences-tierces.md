@@ -46,7 +46,7 @@ Compilés dans l'image, jamais pris en roue PyPI — `pillow-heif` : ses roues P
 | Lucide | ISC AND MIT | `front/src/lib/icones-svg.json`<br>`api/app/utils/icones-svg.json`<br>`docs/manuel-utilisateur.html`<br>`front/static/manuel-utilisateur.html`<br>`infra/cloudflare-worker.js` | https://lucide.dev — tracés recopiés à la main, aucune dépendance npm. ISC pour Lucide ; MIT pour les icônes dérivées de Feather (Cole Bemis), dont la licence de Lucide donne la liste — `calendar`, `clock`, `lock`, `search`, `trash-2`… en font partie. |
 | Simple Icons — logo WhatsApp | CC0-1.0 | `front/src/lib/icones-svg.json`<br>`api/app/utils/icones-svg.json` | https://simpleicons.org — tracé de l'icône `whatsapp`. Le TRACÉ est versé au domaine public (CC0-1.0), mais CC0 ne cède aucun droit de marque : le logo reste une marque de son titulaire. Son usage pour désigner le canal WhatsApp de la résidence est À VALIDER par l'auteur. |
 
-Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `stairs` : absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur; `whatsapp` : Simple Icons.
+Icônes de `front/src/lib/icones-svg.json` qui ne viennent pas de Lucide — `balcony` : absente de Lucide — dessinée pour le projet le 10/11/2026; `stairs` : absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur; `whatsapp` : Simple Icons.
 
 ## Dépendances — `front` (569 paquets)
 

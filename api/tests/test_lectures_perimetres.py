@@ -75,6 +75,10 @@ _NOEUD = {
     #  Ajouté le 05/11/2026 (#2514) : faux sans racine désignée — `_en_lecture`
     #  le pose sur le nœud de `code_par_defaut` (`test_perimetre_par_defaut.py`).
     "par_defaut": False,
+    #  Ajoutés le 10/11/2026 (plafond au niveau 3) : lus sur `utils/perimetres/niveaux`.
+    "niveau": 1,
+    "niveaux_libres": 2,
+    "hauteur": 0,
 }
 ATTENDU_PERIMETRES = [
     {
@@ -92,6 +96,10 @@ ATTENDU_PERIMETRES = [
         #  ni ne se copie ailleurs. Seule à la racine : aucune flèche.
         "nb_descendants": 1,
         "copiable": False,
+        #  Un regroupement ne compte pas de niveau : ses enfants sont au niveau 1.
+        "niveau": 0,
+        "niveaux_libres": 3,
+        "hauteur": 1,
     },
     {
         **_NOEUD,

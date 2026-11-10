@@ -1078,10 +1078,23 @@ un cache NEUF : 🔒 `npm run lint:optimize-deps` le refuse dès le source, sur 
 poste (#1956).
 
 ### Rejouer la CI en local — `bash scripts/poste/rejouer-ci.sh` (depuis le 13/08/2026)
-Les **cinq** jobs ci-dessus se rejouent en une à deux minutes sur le poste, sans rien
-recopier : le script **extrait** les commandes de `.github/workflows/ci.yml`. Une
-liste tenue à la main divergerait au premier job ajouté — et c'est justement le job
-ajouté, ou celui qu'on ne pense pas à lancer, qui échoue (#319 : Ruff, le 12/08).
+Les jobs ci-dessus se rejouent sur le poste sans rien recopier : le script **extrait**
+les commandes de `.github/workflows/ci.yml`. Une liste tenue à la main divergerait au
+premier job ajouté — et c'est justement le job ajouté, ou celui qu'on ne pense pas à
+lancer, qui échoue (#319 : Ruff, le 12/08).
+
+🔴 **Le rejeu ordinaire s'arrête à la phase rapide ; pytest et les tests de navigateur
+sont CONFIÉS à la CI de la PR** (#2571, 10/11/2026). Elle les joue de toute façon,
+gratuitement et côte à côte, et elle joue ce que le poste saute (le rendu PDF) ; le rejeu
+complet, lui, tenait le verrou une vingtaine de minutes par lot — le seul goulot entre les
+sessions, pour juger une troisième fois le même arbre. L'ordre devient : rejeu → pousser
+la branche → PR → **CI verte** → pré-check → fusion. La trace dit son mode
+(`MODE=rapide`, `CONFIEES=`), et le point 16 ne rend OK sur une trace rapide que si la PR
+de la branche porte le **même arbre** et que tous ses checks sont verts : en cours,
+absente ou illisible, INCONNU (`verdict_suite_complete`, `lib-depot.sh`). `--complet`
+joue tout au poste — pour un lot qui touche le rejeu lui-même, ou sans réseau. Les tests
+du lot se lancent à la main pendant le développement (`pytest tests/<fichier du lot>`,
+`npx playwright test e2e/<spec du lot>`).
 Sa trace (`.git/rejeu-ci.ok`) est lue par le **point 16** du pré-check. Elle porte le sha **et
 l'arbre** (`HEAD^{tree}`) : le rejeu mesure le code, pas l'historique — un reword ou un squash à
 arbre identique ne coûte pas un rejeu (#2245) ; un contenu modifié, une trace d'avant l'arbre ou

@@ -280,6 +280,9 @@ CATALOGUE_ICONES = "front/src/lib/icones-svg.json"
 ICONES_HORS_LUCIDE = {
     "whatsapp": "Simple Icons",
     "stairs": "absente de Lucide — présumée dessinée pour le projet, à confirmer par l'auteur",
+    #  Le 10/11/2026 : une porte-fenêtre sur un garde-corps — l'icône
+    #  « Terrasse, balcon » des périmètres. Lucide n'a ni balcon ni terrasse.
+    "balcony": "absente de Lucide — dessinée pour le projet le 10/11/2026",
 }
 
 CONTENUS_TIERS = (

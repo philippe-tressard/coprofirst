@@ -78,6 +78,27 @@ function court(n: Perimetre): string {
 }
 
 /**
+ * Le chemin qui précède les enfants de `parent` : « Bât. 1 », « Bât. 1 › Logement ».
+ *
+ * 🔴 **Le parent est lui-même qualifié** (10/11/2026) : un espace de niveau 3 se
+ * lit « Bât. 1 › Logement › Terrasses Balcons ». Sans cela, les terrasses de deux
+ * bâtiments s'écrivaient toutes deux « Logement › Terrasses Balcons » — le défaut
+ * des toits du 18/08/2026, un niveau plus bas. Même règle que le serveur
+ * (`libelles._prefixe`). Borné par `vus`.
+ */
+function prefixe(parent: Perimetre): string {
+	const morceaux: string[] = [];
+	const vus = new Set<string>();
+	let courant: Perimetre | undefined = parent;
+	while (courant && !vus.has(cle(courant.code))) {
+		vus.add(cle(courant.code));
+		morceaux.unshift(court(courant));
+		courant = parentQualifiant(courant);
+	}
+	return morceaux.join(' › ');
+}
+
+/**
  * Le chemin d'`ordre` de la racine jusqu'au nœud — sa position dans l'arbre.
  *
  * ⚠️ `ordre` n'est unique qu'entre FRÈRES : le seed donne 0 à « Copropriété
@@ -129,7 +150,7 @@ export function perimetreLabelUn(code: string): string {
 	const n = carte[cle(code)];
 	if (n) {
 		const parent = parentQualifiant(n);
-		return parent ? `${court(parent)} › ${n.libelle}` : n.libelle;
+		return parent ? `${prefixe(parent)} › ${n.libelle}` : n.libelle;
 	}
 	//  Repli d'affichage, identique à celui du serveur : un contenu peut citer un
 	//  nœud supprimé depuis, et l'arborescence peut n'être pas encore chargée.
@@ -190,10 +211,32 @@ export function perimetreLabel(items: string[] | string | null | undefined): str
 	}
 	for (const c of inconnus) groupes.push({ parent: undefined, libelles: [perimetreLabelUn(c)] });
 
+	return joindreGroupes(
+		groupes.map((g) => ({
+			prefixe: g.parent ? prefixe(g.parent) : undefined,
+			libelles: g.libelles,
+		})),
+	);
+}
+
+/** Un groupe d'éléments contigus, et le chemin qui les précède (« Bât. 4 »). */
+export interface GroupeLibelles {
+	prefixe?: string;
+	libelles: string[];
+}
+
+/**
+ * Écrit des groupes : « Bât. 4 › Logement · Jardin Bâtiment — AFUL › Voie d'accès ».
+ *
+ * Exportée le 10/11/2026 pour le RÉSUMÉ d'une pastille du sélecteur, qui écrit
+ * depuis un niveau 3 « Logement › Terrasses — Jardin » : la règle des deux
+ * séparateurs ne s'écrit qu'ici.
+ */
+export function joindreGroupes(groupes: GroupeLibelles[]): string {
 	return groupes
 		.map((g, i) => {
 			const corps = g.libelles.join(SEPARATEUR_ELEMENT);
-			const rendu = g.parent ? `${court(g.parent)} › ${corps}` : corps;
+			const rendu = g.prefixe ? `${g.prefixe} › ${corps}` : corps;
 			if (i === 0) return rendu;
 			//  Le séparateur fort UNIQUEMENT là où le « · » deviendrait ambigu :
 			//  dès que l'un des deux groupes voisins en contient déjà un.
@@ -220,7 +263,8 @@ export const ICONES_PERIMETRE: { nom: string; libelle: string }[] = [
 	{ nom: 'trees', libelle: 'Espaces verts' },
 	{ nom: 'sprout', libelle: 'Jardin' },
 	{ nom: 'footprints', libelle: 'Cheminement' },
-	{ nom: 'sun', libelle: 'Toiture, terrasse' },
+	{ nom: 'sun', libelle: 'Toiture' },
+	{ nom: 'balcony', libelle: 'Terrasse, balcon' },
 	{ nom: 'waves', libelle: 'Piscine' },
 	{ nom: 'lightbulb', libelle: 'Éclairage' },
 	{ nom: 'zap', libelle: 'Électricité' },

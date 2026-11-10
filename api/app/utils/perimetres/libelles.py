@@ -93,6 +93,24 @@ def _court(n: Noeud) -> str:
     return n.libelle_court or n.libelle
 
 
+def _prefixe(parent: Noeud, noeuds: dict[str, Noeud]) -> str:
+    """Le chemin qui précède les enfants de `parent` : « Bât. 1 », « Bât. 1 › Logement ».
+
+    🔴 **Le parent est lui-même qualifié** (10/11/2026) : un espace de niveau 3 se
+    lit « Bât. 1 › Logement › Terrasses Balcons ». Sans cela, les terrasses de
+    deux bâtiments s'écrivaient toutes deux « Logement › Terrasses Balcons » —
+    le défaut des toits du 18/08/2026, un niveau plus bas. Borné par `vus`.
+    """
+    morceaux: list[str] = []
+    vus: set[str] = set()
+    courant: Optional[Noeud] = parent
+    while courant is not None and courant.code.lower() not in vus:
+        vus.add(courant.code.lower())
+        morceaux.append(_court(courant))
+        courant = _parent_qualifiant(courant, noeuds)
+    return " › ".join(reversed(morceaux))
+
+
 def _chemin_ordre(n: Noeud, noeuds: dict[str, Noeud]) -> tuple[int, ...]:
     """Le chemin d'`ordre` de la racine jusqu'au nœud — sa position dans l'arbre.
 
@@ -142,7 +160,7 @@ def perimetre_label_un(perim: str) -> str:
     if n is not None:
         parent = _parent_qualifiant(n, noeuds)
         if parent is not None:
-            return f"{_court(parent)} › {n.libelle}"
+            return f"{_prefixe(parent, noeuds)} › {n.libelle}"
         return n.libelle
     #  Repli d'affichage pour un contenu qui cite un nœud supprimé depuis. Ce n'est
     #  **pas** une source de vérité : la convention `bat:N` est posée par le seed,
@@ -208,7 +226,7 @@ def perimetre_label(perims: list[str]) -> str:
             ambigu = len(groupes[i - 1][1]) > 1 or len(libelles) > 1
             sortie += SEPARATEUR_GROUPE if ambigu else SEPARATEUR_ELEMENT
         corps = SEPARATEUR_ELEMENT.join(libelles)
-        sortie += f"{_court(parent)} › {corps}" if parent is not None else corps
+        sortie += f"{_prefixe(parent, noeuds)} › {corps}" if parent is not None else corps
     return sortie
 
 

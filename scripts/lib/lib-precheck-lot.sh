@@ -241,27 +241,57 @@ else
 fi
 rapporter 15 "$V15" "Aucun endpoint orphelin" "$ORPH"
 
-# 16 — la CI rejouée EN LOCAL sur ce commit (#319)
+# 16 — la suite de la CI est verte sur CET arbre : au poste, ou sur la PR (#319, #2571)
 #      Le 12/08/2026, pytest, svelte-check, le build, les six lints du front et
 #      les self-tests avaient été rejoués à la main : le seul job non lancé —
-#      Ruff — est le seul qui a échoué. La consigne de tout rejouer existe
-#      (skill `avant-commit` §7) et n'a pas tenu. `rejouer-ci.sh` EXTRAIT les
-#      commandes de ci.yml et écrit sa trace ; ce point la lit.
-#  Le format de la trace (champs, ordre) est écrit et lu dans `lib-depot.sh` — une
-#  seule fois : SAUTS (#1734), RELANCES (#1809) et TREE (#2245) y sont ajoutés.
+#      Ruff — est le seul qui a échoué. `rejouer-ci.sh` EXTRAIT les commandes de
+#      ci.yml et écrit sa trace ; ce point la lit.
+#      Depuis #2571, le rejeu ordinaire s'arrête à la phase rapide : pytest et les
+#      tests de navigateur sont CONFIÉS à la CI de la PR, qui les joue de toute
+#      façon. Une trace `rapide` ne vaut donc OK que si la PR de la branche porte
+#      le MÊME arbre et que tous ses checks sont verts ; en cours, absente ou
+#      illisible : INCONNU. `--complet` garde le rejeu entier au poste.
+#  Le format de la trace (champs, ordre) et les deux verdicts purs sont dans
+#  `lib-depot.sh` — une seule fois.
 trace_rejeu_lire "$GIT_DEPOT/rejeu-ci.ok"
-H_SHA=$(git rev-parse HEAD 2>/dev/null)
-V16=$(verdict_rejeu_ci "${R_SHA:-}" "$H_SHA" "${R_FAIL:-}" "${R_INC:-}" "${R_TREE:-}" "$(git rev-parse 'HEAD^{tree}' 2>/dev/null)")
-case "$V16" in
+H_SHA=$(git rev-parse HEAD 2>/dev/null); H_ARBRE=$(git rev-parse 'HEAD^{tree}' 2>/dev/null)
+V16T=$(verdict_rejeu_ci "${R_SHA:-}" "$H_SHA" "${R_FAIL:-}" "${R_INC:-}" "${R_TREE:-}" "$H_ARBRE")
+ETAT_PR16=ABSENT; D16PR="aucune PR ouverte pour $BRANCHE : pousser et ouvrir la PR, ou \`rejouer-ci.sh --complet\`"
+if [ "$V16T" = OK ] && [ "$R_MODE" = rapide ]; then
+  if command -v gh >/dev/null 2>&1; then
+    #  Mêmes comptes que le conducteur de la MEP : un check non terminé est « en cours »,
+    #  un check terminé autrement que SUCCESS, SKIPPED ou NEUTRAL est rouge.
+    PR16=$(gh pr list --head "$BRANCHE" --state open --limit 1 --json number,headRefOid,statusCheckRollup \
+             --jq '.[0] | select(.) | [.number, .headRefOid, (.statusCheckRollup | length),
+                     ([.statusCheckRollup[] | select(.status != "COMPLETED")] | length),
+                     ([.statusCheckRollup[] | select(.status == "COMPLETED" and .conclusion != "SUCCESS"
+                        and .conclusion != "SKIPPED" and .conclusion != "NEUTRAL")] | length)]
+                   | map(tostring) | join(" ")' 2>/dev/null)
+    read -r N16 OID16 NB16 COURS16 ROUGES16 <<< "${PR16:-}"
+    if [ -n "${OID16:-}" ]; then
+      if [ -n "$H_ARBRE" ] && [ "$(git rev-parse "${OID16}^{tree}" 2>/dev/null)" = "$H_ARBRE" ]; then
+        ETAT_PR16=$(etat_checks_pr "${NB16:-}" "${COURS16:-}" "${ROUGES16:-}")
+        D16PR="CI de la PR #$N16 : ${NB16:-?} check(s), ${COURS16:-?} en cours, ${ROUGES16:-?} en échec"
+      else
+        D16PR="la PR #$N16 porte un autre arbre que HEAD : pousser d'abord"
+      fi
+    fi
+  else
+    D16PR="gh absent — CI de la PR non mesurable ; \`rejouer-ci.sh --complet\` joue tout ici"
+  fi
+fi
+V16=$(verdict_suite_complete "$V16T" "$R_MODE" "$ETAT_PR16")
+case "$V16T" in
   #  Un saut n'est pas une faute, mais il se DIT (#1734) : ces tests-là, seule la
   #  CI de la PR les joue — et c'est elle qui a vu ce que le rejeu taisait.
   OK)   D16="$R_OK étape(s) rejouée(s) sur ce commit"
         #  Autre sha, même arbre (#2245) : l'historique a été réécrit, le code est celui qui a été testé.
         [ "${R_SHA:-}" != "$H_SHA" ] && D16="$R_OK étape(s) rejouée(s) sur le même arbre (${R_SHA:0:9} → ${H_SHA:0:9} : historique réécrit, code identique)"
         case "${R_SAUTS:-0}" in 0|*[!0-9]*) ;; *) D16="$D16, dont $R_SAUTS test(s) sauté(s) ici — joué(s) par la CI de la PR" ;; esac
-        case "${R_REL:-0}" in 0|*[!0-9]*) ;; *) D16="$D16, $R_REL e2e vert(s) à la relance (#1809)" ;; esac ;;
+        case "${R_REL:-0}" in 0|*[!0-9]*) ;; *) D16="$D16, $R_REL e2e vert(s) à la relance (#1809)" ;; esac
+        [ "$R_MODE" = rapide ] && D16="phase rapide : $D16 ; $R_CONF étape(s) lente(s) confiée(s) — $D16PR" ;;
   FAIL) D16="$R_FAIL étape(s) en échec — la CI échouerait" ;;
   *)    D16="lancer \`bash scripts/poste/rejouer-ci.sh\` (trace absente ou d'un autre commit)" ;;
 esac
-rapporter 16 "$V16" "CI rejouée en local sur ce commit" "$D16"
+rapporter 16 "$V16" "Suite de la CI verte sur cet arbre (poste, ou PR)" "$D16"
 }

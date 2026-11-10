@@ -555,7 +555,8 @@ est vrai (c'est le défaut, le redire n'apprend rien).
 ### Comment un périmètre S'ÉCRIT — trois règles, portées par `perimetreLabel()`
 
 1. **Un espace est qualifié par son parent** — « Bât. 3 › Toit », « AFUL › Voie
-   d'accès ». Sans cela, le gabarit posant les mêmes neuf espaces sous chaque
+   d'accès » — **et le parent par le sien** : « Bât. 1 › Logement › Terrasses Balcons »
+   (10/11/2026). Sans cela, le gabarit posant les mêmes neuf espaces sous chaque
    bâtiment, un ticket visant deux toits affichait « Toit · Toit » (18/08/2026).
    ⚠️ La qualification s'est arrêtée aux **bâtiments** pendant neuf jours, au motif
    que les enfants du parking ou des locaux techniques « portent déjà des libellés
@@ -580,8 +581,13 @@ exécute la forme serveur ; `npm run lint:libelle-perimetre` transpile et exécu
 forme front, puis vérifie que le test Python attend la même chaîne.
 
 **Sélecteur** : `PerimetrePicker.svelte`, alimenté par le store — premier niveau de
-pastilles, second niveau facultatif quand un bâtiment est choisi, et la
-**description** du nœud affichée sous la sélection.
+pastilles, puis une rangée « Préciser dans … » facultative par niveau ouvert, **trois
+niveaux au plus** (10/11/2026 : « Bât. 1 › Logement › Terrasses Balcons »), et la
+**description** du nœud affichée sous la sélection. Ce qu'un clic retient et quelles
+rangées s'ouvrent se décide dans `#lib/perimetres/selection` — **une** règle, la même
+à chaque niveau. L'arborescence elle-même s'arrête au niveau 3 : le serveur refuse tout
+geste qui en poserait un quatrième (`utils/perimetres/niveaux`, un regroupement comme
+« Bâtiments » ne compte pas).
 
 Rendu — l'icône du périmètre est **🔹**, jamais 📍 (cf. §1), et il s'écrit **une
 seule fois** : `<BadgePerimetre perimetre={…} />` (prop `perimetre`, un code ou
@@ -1415,7 +1421,10 @@ et elles seules :
 rangée où le `gap` du parent porte déjà l’espacement. Il y donne aussi la **même
 hauteur** à une liste déroulante et à un champ de saisie voisins (plancher en `em`,
 10/11/2026 : sans lui, le navigateur leur en donne deux, et leurs libellés se
-décalent — 🔒 `e2e/champs-en-ligne-hauteur.spec.ts`).
+décalent — 🔒 `e2e/champs-en-ligne-hauteur.spec.ts`). ⚠️ **Sous Safari, un
+`<select>` natif ignore `min-height` et `padding`** (22 px contre 37) : la liste de la
+rangée passe en `appearance: none`, flèche dessinée par les jetons — mesuré en WebKit
+à la main, la CI ne joue que Chromium (2ᵉ signalement, même jour).
 
 🔒 **Garde-fou : `npm run lint:champs`** (`front/scripts/check-champs.mjs`), en CI
 depuis le 19/08/2026. Tout `<input>` de saisie, `<select>` ou `<textarea>`

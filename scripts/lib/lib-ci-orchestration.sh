@@ -141,6 +141,14 @@ ci_suite_apres_phase() {
 #  le SHA d'alors est un ancêtre de HEAD (on a corrigé par-dessus), ou la
 #  branche est la même (on a rebasé, les SHA ont changé).
 #    $1 = branche d'alors, $2 = branche courante, $3 = ancêtre oui|non → oui | non
+#  Le rejeu ORDINAIRE confie la phase lente à la CI de la PR (#2571) — PURE.
+#  pytest et les tests de navigateur y tournent de toute façon, gratuitement et
+#  côte à côte ; ici, ils tenaient le verrou du rejeu une vingtaine de minutes,
+#  seul goulot entre les sessions. `--complet` les joue sur le poste. Une étape
+#  de la REPRISE (un rouge d'avant) se rejoue toujours : c'est elle qu'on corrige.
+#    $1 = phase de l'étape, $2 = `--complet` (oui|non) → oui | non
+ci_phase_confiee() { [ "${2:-non}" != oui ] && [ "$1" = lente ] && echo oui || echo non; }
+
 ci_reprise_valable() {
   [ "${3:-non}" = oui ] && { echo oui; return; }
   [ -n "${1:-}" ] && [ "$1" != HEAD ] && [ "$1" = "${2:-}" ] && echo oui || echo non
@@ -215,6 +223,12 @@ ci_orchestration_cas() {
   t "suite — phase verte"                 "$(ci_suite_apres_phase 0 non)" "continuer"
   t "suite — un rouge arrête"             "$(ci_suite_apres_phase 2 non)" "arreter"
   t "suite — --tout joue tout"            "$(ci_suite_apres_phase 2 oui)" "continuer"
+
+  t "confiée — lente, rejeu ordinaire"     "$(ci_phase_confiee lente non)" "oui"
+  t "confiée — lente, --complet : jouée"  "$(ci_phase_confiee lente oui)" "non"
+  t "confiée — rapide : jamais"           "$(ci_phase_confiee rapide non)" "non"
+  t "confiée — reprise : jamais (le rouge qu'on corrige)" "$(ci_phase_confiee reprise non)" "non"
+  t "confiée — option absente : ordinaire" "$(ci_phase_confiee lente)" "oui"
 
   t "reprise valable — ancêtre"           "$(ci_reprise_valable autre ma-branche oui)" "oui"
   t "reprise valable — même branche, rebasée" "$(ci_reprise_valable ma-branche ma-branche non)" "oui"

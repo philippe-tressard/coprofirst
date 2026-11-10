@@ -32,7 +32,6 @@ from app.utils import horloge
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.auth.deps import get_current_user, require_admin
@@ -59,98 +58,24 @@ from app.utils.perimetres.branche import (
     refus_duplication,
 )
 from app.utils.perimetres.deplacement import sens_admis
+from app.utils.perimetres.niveaux import (
+    hauteur,
+    niveau,
+    niveaux_libres,
+    nouveaux_trop_profonds,
+    refus_niveau,
+    trop_profonds,
+)
 from app.utils.equipements import retirer_liens_du_perimetre
 from app.utils.recuperer import ou_404
 
+from app.routers.patrimoine_schemas import (  # noqa: F401 — ré-exportés (patrimoine_branche, tests)
+    PerimetreCreate,
+    PerimetreRead,
+    PerimetreUpdate,
+)
+
 router = APIRouter(prefix="/perimetres", tags=["perimetres"])
-
-
-# ── Schémas ───────────────────────────────────────────────────────────────────
-
-
-class PerimetreRead(BaseModel):
-    """Un nœud, tel que le front en a besoin pour afficher ET pour faire choisir."""
-
-    id: int
-    code: str
-    parent: Optional[str]
-    libelle: str
-    libelle_court: str
-    description: str
-    icone: Optional[str]
-    batiment_id: Optional[int]
-    profondeur: int
-    ordre: int
-    actif: bool
-
-    #: Le drapeau porté par ce nœud — ce que l'écran édite.
-    portee_globale: bool
-    #: Le drapeau **effectif**, héritage compris. C'est lui qui répond à « ce contenu
-    #: sera-t-il visible de tous les résidents ? », donc lui que l'aide affiche.
-    concerne_tous: bool
-    #: Un regroupement ne se cible pas, et un nœud retiré de la saisie non plus. Le
-    #: front doit tout de même les connaître pour afficher le libellé des contenus
-    #: déjà publiés qui les citent — d'où un seul point de lecture et des drapeaux
-    #: plutôt que deux listes.
-    selectionnable: bool
-    privatif: bool
-    #: Ce nœud appartient à un tiers (AFUL, voie communale) : ce qui couvre
-    #: « toute la copropriété » ne le couvre pas (#943).
-    hors_copropriete: bool
-    #: Vrai si un contenu cite ce code : l'écran propose alors de désactiver plutôt
-    #: que de supprimer, et dit pourquoi.
-    utilise: bool
-    #: Combien de nœuds la suppression emporterait avec lui — ce que la
-    #: confirmation annonce.
-    nb_descendants: int = 0
-    #: Le serveur accepterait-il de dupliquer cette branche ? Lu sur la même règle
-    #: que le geste qui refuse (`refus_duplication`), jamais recopié à l'écran.
-    dupliquable: bool = False
-    #: …et de le copier sous d'autres parents (`refus_copie`), et lesquelles des
-    #: quatre flèches il accepterait (`sens_admis`) : l'écran grise les autres.
-    copiable: bool = False
-    deplacements: list[str] = []
-    #: Les types d'accès (`types_acces.TYPES_ACCES`) qui ouvrent ce nœud d'office,
-    #: sans dépendre d'aucun lot — un portillon, un portail (#2060).
-    acces_fixes: list[str] = []
-    #: Le SEUL nœud que désigne un contenu sans périmètre explicite — « toute la
-    #: copropriété » (`code_par_defaut`). Les clients le présélectionnent et le
-    #: taisent en pastille sans refaire le tri (#2514, `standards/09` §8).
-    par_defaut: bool = False
-
-
-class PerimetreCreate(BaseModel):
-    code: str
-    libelle: str
-    parent: Optional[str] = None
-    libelle_court: Optional[str] = None
-    description: str = ""
-    icone: Optional[str] = None
-    batiment_id: Optional[int] = None
-    portee_globale: bool = False
-    selectionnable: bool = True
-    privatif: bool = False
-    hors_copropriete: bool = False
-    ordre: int = 0
-
-
-class PerimetreUpdate(BaseModel):
-    """Tout est optionnel — sauf `code`, qui n'y figure pas du tout."""
-
-    libelle: Optional[str] = None
-    parent: Optional[str] = None
-    libelle_court: Optional[str] = None
-    description: Optional[str] = None
-    icone: Optional[str] = None
-    batiment_id: Optional[int] = None
-    portee_globale: Optional[bool] = None
-    selectionnable: Optional[bool] = None
-    privatif: Optional[bool] = None
-    hors_copropriete: Optional[bool] = None
-    ordre: Optional[int] = None
-    actif: Optional[bool] = None
-    #: Remplace la liste des types d'accès fixes de ce nœud (#2060).
-    acces_fixes: Optional[list[str]] = None
 
 
 # ── Aides internes ────────────────────────────────────────────────────────────
@@ -239,6 +164,8 @@ def _lu(
     fixes: dict[str, list[str]],
     deplacements: list[str],
     racine: Optional[str],
+    par_id: dict[int, Perimetre],
+    noeuds: list[Perimetre],
 ) -> PerimetreRead:
     """Un nœud lu sur le modèle, avec ce que l'arbre seul sait dire.
 
@@ -251,6 +178,9 @@ def _lu(
         noeud,
         parent=parent,
         profondeur=profondeur,
+        niveau=niveau(noeud, par_id),
+        niveaux_libres=niveaux_libres(noeud, par_id),
+        hauteur=hauteur(noeud, noeuds),
         concerne_tous=concerne_tous,
         libelle_court=noeud.libelle_court or noeud.libelle,
         description=noeud.description or "",
@@ -302,6 +232,8 @@ def _en_lecture(
                     fixes,
                     sens_admis(noeud, noeuds, racine),
                     racine,
+                    par_id,
+                    noeuds,
                 )
             )
             descendre(noeud.id)
@@ -322,6 +254,8 @@ def _en_lecture(
                     fixes,
                     [],
                     racine,
+                    par_id,
+                    noeuds,
                 )
             )
     return sortie
@@ -395,10 +329,16 @@ def creer_perimetre(
         raise HTTPException(422, "Le code est obligatoire.")
     if session.exec(select(Perimetre).where(Perimetre.code == code)).first():
         raise HTTPException(422, f"Le code « {code} » est déjà utilisé.")
+    parent_id = _resoudre_parent(session, body.parent)
+    trop_bas = refus_niveau(
+        None, body.selectionnable, parent_id, list(session.exec(select(Perimetre)).all())
+    )
+    if trop_bas:
+        raise HTTPException(422, trop_bas)
 
     noeud = Perimetre(
         code=code,
-        parent_id=_resoudre_parent(session, body.parent),
+        parent_id=parent_id,
         libelle=body.libelle,
         libelle_court=body.libelle_court,
         description=body.description,
@@ -427,6 +367,10 @@ def modifier_perimetre(
 ):
     noeud = _noeud(session, perimetre_id)
     donnees = body.dict(exclude_unset=True)
+    #  Le parent et `selectionnable` (un regroupement qui devient une cible fait
+    #  descendre toute sa branche d'un niveau) changent des niveaux : on compare
+    #  l'arbre avant et après, sans rien écrire tant que l'écart n'est pas jugé.
+    avant = trop_profonds(list(session.exec(select(Perimetre)).all()))
 
     if "parent" in donnees:
         parent_id = _resoudre_parent(session, donnees.pop("parent"))
@@ -438,6 +382,11 @@ def modifier_perimetre(
     for champ, valeur in donnees.items():
         setattr(noeud, champ, valeur)
 
+    session.add(noeud)
+    trop_bas = nouveaux_trop_profonds(avant, list(session.exec(select(Perimetre)).all()))
+    if trop_bas:
+        session.rollback()
+        raise HTTPException(422, trop_bas)
     noeud.modifie_par_id = admin.id
     noeud.modifie_le = horloge.maintenant()
     session.add(noeud)
