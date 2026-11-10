@@ -27,7 +27,6 @@
 	import { comparerParNom, nomAffiche } from '#lib/noms.ts';
 	import { badgeStatut, badgesDeRoles, libelleRole, LIBELLES_STATUT_ABREGE } from '#lib/roles.ts';
 	import { aRole, currentUser, setUser } from '#lib/stores/auth.ts';
-	import { compterTitulaires } from '#lib/droits.ts';
 	import GestesRolesCompte from '#lib/components/GestesRolesCompte.svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import LegendeRoles from '#lib/components/LegendeRoles.svelte';
@@ -50,7 +49,6 @@
 	/** Relit la liste (la page la charge : l'onglet Site en lit aussi les comptes). */
 	export let recharger: () => unknown = () => {};
 
-	$: titulaires = compterTitulaires(utilisateurs);
 	$: pourSoi = roleEnCours?.user.id === $currentUser?.id;
 
 	let userSearch = '';
@@ -97,7 +95,10 @@
 				'success',
 				`Rôle ${libelleRole(role)} ${action === 'ajouter' ? 'ajouté à' : 'retiré de'} ${nomAffiche(user)}.`,
 			);
-			utilisateurs = utilisateurs.map((u) => (u.id === user.id ? { ...u, ...updated } : u));
+			//  Relire la LISTE, pas la seule ligne : les gestes servis d'un compte
+			//  dépendent des autres (« jamais retiré à son dernier titulaire »,
+			//  `gestes_roles`, #2618) — retirer Admin à l'un change ce qu'on offre à l'autre.
+			await recharger();
 			//  Un rôle qu'on se retire à soi-même vaut aussitôt : sans Admin, la garde
 			//  d'`admin/+layout.svelte` ramène au tableau de bord — ou, à l'opérateur,
 			//  `BarreOnglets` ramène sur sa supervision (#2029).
@@ -158,13 +159,11 @@
 	}
 
 	async function toggleBanCommunaute(u: UtilisateurAdmin) {
-		const isBanned =
-			u.communaute_interdit ||
-			(u.communaute_ban_jusqu_au && new Date(u.communaute_ban_jusqu_au) > new Date());
-		const interdit = !isBanned;
+		//  Jugé à l'heure du SERVEUR (`communaute_banni`, #2618), plus à celle du navigateur.
+		const interdit = !u.communaute_banni;
 		try {
 			const updated = await adminApi.banCommunaute(u.id, { interdit });
-			utilisateurs = utilisateurs.map((x) => (x.id === u.id ? { ...x, ...updated } : x));
+			await recharger();
 			if (interdit) {
 				const msg = updated.communaute_interdit
 					? `${nomAffiche(u)} banni définitivement de la communauté.`
@@ -286,7 +285,7 @@
 								</div>
 							</td>
 							<td>
-								<GestesRolesCompte {u} {titulaires} demander={demanderRole} />
+								<GestesRolesCompte {u} demander={demanderRole} />
 							</td>
 							<td>
 								<div class="action-row">
@@ -312,18 +311,13 @@
 										>
 									{/if}
 									<button
-										class={u.communaute_interdit ||
-										(u.communaute_ban_jusqu_au && new Date(u.communaute_ban_jusqu_au) > new Date())
-											? 'btn-icon-success'
-											: 'btn-icon-warn'}
-										aria-label={u.communaute_interdit ||
-										(u.communaute_ban_jusqu_au && new Date(u.communaute_ban_jusqu_au) > new Date())
+										class={u.communaute_banni ? 'btn-icon-success' : 'btn-icon-warn'}
+										aria-label={u.communaute_banni
 											? 'Autoriser la communauté'
 											: 'Interdire la communauté'}
 										title={u.communaute_interdit
 											? 'Banni définitivement — cliquer pour débannir'
-											: u.communaute_ban_jusqu_au &&
-												  new Date(u.communaute_ban_jusqu_au) > new Date()
+											: u.communaute_banni
 												? 'Banni 1 mois (probatoire) — cliquer pour débannir'
 												: 'Interdire la communauté'}
 										on:click={() => toggleBanCommunaute(u)}
@@ -335,8 +329,7 @@
 										<IconeAction
 											icone={u.communaute_interdit
 												? 'ban'
-												: u.communaute_ban_jusqu_au &&
-													  new Date(u.communaute_ban_jusqu_au) > new Date()
+												: u.communaute_banni
 													? 'hourglass'
 													: 'lock'}
 										/>

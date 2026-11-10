@@ -1,45 +1,43 @@
 <!--
   Les gestes de rôle d'un compte (Admin › Comptes) : donner ou retirer le
-  conseil syndical, l'administration et l'opérateur de la plateforme — ces deux
-  derniers selon `gestesAdminOperateur` (`#lib/droits`), pendant écran de la
-  règle du serveur : jamais retirés à leur dernier titulaire actif, que l'onglet
-  compte (`titulaires`). Le geste lui-même — la confirmation, puis l'appel —
-  reste à l'onglet, qui le reçoit par `demander`.
+  conseil syndical, l'administration et l'opérateur de la plateforme.
 
-  Extrait d'`OngletUtilisateurs` le 08/10/2026 (#1571) : l'onglet frôlait les
-  500 lignes, et ses styles en ligne ne pouvaient passer en classes sans le faire
-  déborder.
+  🔴 La règle n'est plus ici (#2618, 10/11/2026) : l'API la SERT avec chaque
+  compte (`gestes_roles`, `utils/gestes_roles`) — « + CS » et « + Admin » aux
+  copropriétaires, jamais retirés à leur dernier titulaire actif, l'opérateur à
+  un administrateur et hors instance commune. L'app iOS lit la même chose ;
+  l'écran recomposait la règle (`gestesAdminOperateur`, `compterTitulaires`).
+  Le geste lui-même — la confirmation, puis l'appel — reste à l'onglet, qui le
+  reçoit par `demander`.
 -->
 <script lang="ts">
 	import type { UtilisateurAdmin } from '#lib/api/index.ts';
 	import { aRole } from '#lib/stores/auth.ts';
-	import { gestesAdminOperateur, type Titulaires } from '#lib/droits.ts';
 	import { configStore } from '#lib/stores/pageConfig.ts';
 	import { CLE_OPERATEUR_PAR_EXPLOITANT } from '#lib/portee.ts';
 
 	export let u: UtilisateurAdmin;
-	export let titulaires: Titulaires;
 	export let demander: (u: UtilisateurAdmin, role: string, action: 'ajouter' | 'retirer') => void;
 
+	//  Ce que l'écran DIT, pas ce qu'il offre : l'opérateur désigné par l'exploitant.
 	$: parExploitant = $configStore[CLE_OPERATEUR_PAR_EXPLOITANT] === '1';
-	$: operateur = gestesAdminOperateur(u, titulaires, parExploitant);
+	//  Sans gestes servis (une réponse d'avant #2618), aucun : un défaut FERMÉ,
+	//  l'écran n'offre jamais un geste que la route n'a pas annoncé.
+	$: g = u.gestes_roles ?? { conseil_syndical: null, admin: null, operateur: null };
 </script>
 
 {#if !u.actif}
 	<span class="muted inactif">Compte inactif</span>
 {:else}
 	<div class="action-row">
-		<!-- Ajouter CS si pas déjà — réservé aux propriétaires -->
-		{#if !aRole(u, 'conseil_syndical')}
-			{#if u.statut?.startsWith('copropriétaire')}
-				<button
-					class="btn btn-outline btn-sm ajouter-cs"
-					on:click={() => demander(u, 'conseil_syndical', 'ajouter')}
-				>
-					+ CS
-				</button>
-			{/if}
-		{:else}
+		{#if g.conseil_syndical === 'ajouter'}
+			<button
+				class="btn btn-outline btn-sm ajouter-cs"
+				on:click={() => demander(u, 'conseil_syndical', 'ajouter')}
+			>
+				+ CS
+			</button>
+		{:else if g.conseil_syndical === 'retirer'}
 			<button
 				class="btn btn-outline btn-sm retirer"
 				on:click={() => demander(u, 'conseil_syndical', 'retirer')}
@@ -47,17 +45,14 @@
 				– CS
 			</button>
 		{/if}
-		<!-- Ajouter Admin si pas déjà — réservé aux propriétaires -->
-		{#if !aRole(u, 'admin')}
-			{#if u.statut?.startsWith('copropriétaire')}
-				<button
-					class="btn btn-outline btn-sm ajouter-admin"
-					on:click={() => demander(u, 'admin', 'ajouter')}
-				>
-					+ Admin
-				</button>
-			{/if}
-		{:else if operateur.retirerAdmin}
+		{#if g.admin === 'ajouter'}
+			<button
+				class="btn btn-outline btn-sm ajouter-admin"
+				on:click={() => demander(u, 'admin', 'ajouter')}
+			>
+				+ Admin
+			</button>
+		{:else if g.admin === 'retirer'}
 			<button
 				class="btn btn-outline btn-sm retirer"
 				on:click={() => demander(u, 'admin', 'retirer')}
@@ -65,14 +60,14 @@
 				– Admin
 			</button>
 		{/if}
-		{#if operateur.accorder}
+		{#if g.operateur === 'ajouter'}
 			<button
 				class="btn btn-outline btn-sm ajouter-operateur"
 				on:click={() => demander(u, 'operateur', 'ajouter')}
 			>
 				+ Opérateur
 			</button>
-		{:else if operateur.retirer}
+		{:else if g.operateur === 'retirer'}
 			<button
 				class="btn btn-outline btn-sm retirer"
 				on:click={() => demander(u, 'operateur', 'retirer')}

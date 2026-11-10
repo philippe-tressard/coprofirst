@@ -84,6 +84,11 @@ class UserRead(BaseModel):
     #  Le front l'affiche telle quelle au lieu de refaire le raisonnement : il en
     #  portait sa propre copie, avec un troisième libellé (29/08/2026).
     communaute_motif_refus: Optional[str] = None
+    #  Exclu de la Communauté À CET INSTANT — définitivement ou pour son mois
+    #  probatoire —, jugé à l'heure du serveur (`utils/communaute.ban_en_cours`,
+    #  #2618). Le motif ci-dessus dit aussi « pas pour votre profil » : ce n'est pas
+    #  un bannissement, d'où un champ à part.
+    communaute_banni: bool = False
     last_seen_actualites: Optional[datetime] = None
     #  Les délégations ACTIVES où ce compte est l'aidant — c'est ce qui ouvre la page
     #  Délégations à l'aidant (`Nav.svelte`). Typées depuis #2525 : des `dict` au contrat.
@@ -105,13 +110,14 @@ class UserRead(BaseModel):
         delegations_aidant: list[DelegationAidant] | None = None,
     ) -> "UserRead":
         from app.auth.operateur import roles_effectifs
-        from app.utils.communaute import motif_de_refus
+        from app.utils.communaute import ban_en_cours, motif_de_refus
         from app.utils.saisie_affaire import mode_effectif
 
         data = cls.model_validate(u)
         #  L'Opérateur jugé selon l'instance : l'écran n'offre que ce que la route admet.
         data.roles = roles_effectifs(u)
         data.communaute_motif_refus = motif_de_refus(u)
+        data.communaute_banni = ban_en_cours(u) is not None
         data.saisie_affaire_effective = mode_effectif(u)
         if batiment_nom is not None:
             data.batiment_nom = batiment_nom

@@ -26,7 +26,6 @@ from app.utils.comptes import DESACTIVATION, condition_hors_comptes_techniques, 
 from app.utils.porteurs_acces import ids_detenteurs
 from app.utils.etiquettes_compte import etiquettes
 from app.models.copropriete import Lot
-from app.auth.operateur import designe_par_l_exploitant
 from app.models.roles import ROLE_OPERATEUR
 from app.utils.valeurs import valeur
 from app.utils.suppression_compte import supprimer_compte
@@ -41,6 +40,14 @@ from app.utils.etages import ETAGE_HORS_BORNES, etage_hors_bornes
 from app.schemas_communs import NomMajuscules
 from app.utils.cloche import sonner_systeme
 from app.utils.verification_adresse import demander_changement_adresse
+
+from app.utils.gestes_roles import (
+    ROLES_JAMAIS_VACANTS,
+    GestesRoles,
+    gestes_roles,
+    refus_operateur,
+    titulaires,
+)
 
 router = APIRouter()
 
@@ -65,6 +72,9 @@ class UtilisateurAdminRead(UserRead):
     has_vigik: bool
     has_bail: bool
     etiquettes: EtiquettesCompte
+    #: Les gestes de rôle que l'écran offre sur ce compte, servis (#2618) — le site
+    #: et l'app iOS les LISENT (`utils/gestes_roles`).
+    gestes_roles: GestesRoles
 
 
 # ── Gestion des utilisateurs (rôles) ────────────────────────────────────────────
@@ -85,6 +95,8 @@ def list_utilisateurs(
     if not appelant.has_role(RoleUtilisateur.admin):
         requete = requete.where(condition_hors_comptes_techniques())
     users = session.exec(requete).all()
+    comptes_par_role = titulaires(session)
+    par_admin = appelant.has_role(RoleUtilisateur.admin)
 
     # Batch : user_ids ayant au moins 1 lot lié
     loti_ids = set(
@@ -131,6 +143,7 @@ def list_utilisateurs(
             types_tc=TELECOMMANDE.types_lot,
             types_vigik=VIGIK.types_lot,
         )
+        d["gestes_roles"] = gestes_roles(u, comptes_par_role, par_admin=par_admin)
         result.append(d)
     return result
 
@@ -154,43 +167,16 @@ def _role_demande(nom: str) -> RoleUtilisateur | str:
         raise HTTPException(400, f"Rôle invalide : {nom}")
 
 
-#: Les rôles qui ne restent jamais VACANTS : sans administrateur, plus personne
-#: ne gère les comptes ; sans opérateur, plus personne ne supervise l'installation.
-#: Chacun se retire — à soi-même compris —, sauf à son dernier titulaire actif.
-ROLES_JAMAIS_VACANTS = (RoleUtilisateur.admin.value, ROLE_OPERATEUR)
-
-
 def _exiger_geste_operateur(
     cible: Utilisateur, role: RoleUtilisateur | str, *, retrait: bool
 ) -> None:
-    """Les règles du rôle Opérateur, accordé ou retiré depuis Admin › Utilisateurs.
-
-    Il s'**accorde** à un administrateur : c'est parmi eux qu'on choisit qui
-    supervise l'installation. Il se **garde** ensuite sans lui : un opérateur
-    qui se retire — ou à qui l'on retire — le rôle Admin ouvre encore ses écrans
-    de supervision, et eux seuls (arbitrage du 16/10/2026, #2029, spec §4.7).
-    Ce refus-là, « retirer Admin à un opérateur », a existé de #1750 à v2.167.0 :
-    il interdisait de quitter l'administration sans quitter la supervision.
-
-    Tout administrateur l'accorde ou le retire, à lui-même compris (arbitrage du
-    15/10/2026) : la règle « seul un opérateur l'accorde » (#1750) est levée. Le
-    mode démo, lui, refuse toute écriture sur `/admin/utilisateurs/` — son
-    administrateur publié ne se donne donc pas ce rôle (#1985).
-
-    Sur une instance COMMUNE, ni l'un ni l'autre : l'opérateur y est désigné par
-    l'exploitant (`auth/operateur`, 31/10/2026). L'administrateur d'une
-    copropriété hébergée se serait sinon fait opérateur de toute l'instance.
-    """
-    if role == ROLE_OPERATEUR and designe_par_l_exploitant():
-        raise HTTPException(
-            409,
-            "L'opérateur de cette instance est désigné par son exploitant, "
-            "dans la déclaration des copropriétés.",
-        )
-    if role == ROLE_OPERATEUR and not retrait and not cible.has_role(RoleUtilisateur.admin):
-        raise HTTPException(
-            400, "Le rôle Opérateur s'accorde à un administrateur : ajoutez d'abord le rôle Admin."
-        )
+    """Les refus du rôle Opérateur — la règle vit dans `utils/gestes_roles.refus_operateur`,
+    que la liste des comptes sert aussi en gestes (#2618)."""
+    if role != ROLE_OPERATEUR:
+        return
+    refus = refus_operateur(cible, retrait=retrait)
+    if refus:
+        raise HTTPException(*refus)
 
 
 def _exiger_un_autre_titulaire(

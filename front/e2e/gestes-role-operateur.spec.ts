@@ -1,13 +1,13 @@
 /*
  *  **Accorder ou retirer les rôles Opérateur et Admin** dans Admin › Utilisateurs.
  *
- *  L'écran propose ce que le serveur accepte, ni plus ni moins —
- *  `gestesAdminOperateur` (`#lib/droits`) contre `_exiger_geste_operateur` et
- *  `_exiger_un_autre_titulaire` (`api/app/routers/admin/utilisateurs.py`,
- *  éprouvés par `api/tests/test_role_operateur_attribution.py`) :
- *  tout admin accorde Opérateur à un admin, lui-même compris ; Admin et
- *  Opérateur se retirent, à soi-même compris — Admin à un opérateur aussi
- *  (#2029) —, sauf à leur dernier titulaire actif.
+ *  🔴 Depuis #2618 (10/11/2026), l'écran ne décide plus : il AFFICHE les gestes
+ *  que l'API sert avec chaque compte (`gestes_roles`, `api/app/utils/gestes_roles.py`).
+ *  La règle — tout admin accorde Opérateur à un admin, lui-même compris ; Admin et
+ *  Opérateur se retirent, à soi-même compris, sauf à leur dernier titulaire actif
+ *  (#2029) — s'éprouve contre la route dans `api/tests/test_gestes_roles.py`.
+ *  Ce fichier vérifie que l'écran rend ce qui est servi, ni plus ni moins, et le
+ *  geste lui-même (confirmation, avertissement à soi-même).
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
@@ -15,8 +15,21 @@ import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aide
 const OPERATEUR = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
 const ADMIN_SEUL = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
-function ligne(id: number, prenom: string, roles: string[]) {
+type Geste = 'ajouter' | 'retirer' | null;
+
+/**  Ce que le serveur SERT pour ce compte — écrit par cas, jamais recalculé ici. */
+function gestes(admin: Geste, operateur: Geste, cs: Geste = 'ajouter') {
+	return { conseil_syndical: cs, admin, operateur };
+}
+
+function ligne(
+	id: number,
+	prenom: string,
+	roles: string[],
+	gestes_roles: ReturnType<typeof gestes>,
+) {
 	return {
+		gestes_roles,
 		id,
 		prenom,
 		nom: 'Durand',
@@ -29,15 +42,19 @@ function ligne(id: number, prenom: string, roles: string[]) {
 	};
 }
 
+//  Deux opérateurs (Moi, Bruno) et trois administrateurs : rien n'est « dernier ».
 const COMPTES = [
-	ligne(OPERATEUR.id, 'Moi', OPERATEUR.roles),
-	ligne(31, 'Alice', ['propriétaire', 'admin']),
-	ligne(32, 'Bruno', ['propriétaire', 'admin', 'operateur']),
-	ligne(33, 'Chloe', ['propriétaire', 'résident']),
+	ligne(OPERATEUR.id, 'Moi', OPERATEUR.roles, gestes('retirer', 'retirer')),
+	ligne(31, 'Alice', ['propriétaire', 'admin'], gestes('retirer', 'ajouter')),
+	ligne(32, 'Bruno', ['propriétaire', 'admin', 'operateur'], gestes('retirer', 'retirer')),
+	ligne(33, 'Chloe', ['propriétaire', 'résident'], gestes('ajouter', null)),
 ];
 
 /** Moi, seul administrateur et seul opérateur : rien ne se retire. */
-const SEUL_TITULAIRE = [ligne(OPERATEUR.id, 'Moi', OPERATEUR.roles), COMPTES[3]];
+const SEUL_TITULAIRE = [
+	ligne(OPERATEUR.id, 'Moi', OPERATEUR.roles, gestes(null, null)),
+	COMPTES[3],
+];
 
 async function ouvrir(page: Page, moi: typeof OPERATEUR, comptes = COMPTES) {
 	await simulerApi(page, (chemin) => {
@@ -102,8 +119,11 @@ test('le geste demande confirmation et nomme le rôle', async ({ page }) => {
 
 test('un admin qui n’est pas opérateur accorde le rôle, à lui-même compris', async ({ page }) => {
 	await ouvrir(page, ADMIN_SEUL, [
-		ligne(ADMIN_SEUL.id, 'Moi', ADMIN_SEUL.roles),
-		...COMPTES.slice(1),
+		ligne(ADMIN_SEUL.id, 'Moi', ADMIN_SEUL.roles, gestes('retirer', 'ajouter')),
+		COMPTES[1],
+		//  Bruno est alors le SEUL opérateur : le serveur ne sert pas son retrait.
+		ligne(32, 'Bruno', ['propriétaire', 'admin', 'operateur'], gestes('retirer', null)),
+		COMPTES[3],
 	]);
 	await expect(page.locator('table tbody tr')).toHaveCount(4);
 	await expect(rangee(page, 'Moi').getByRole('button', { name: '+ Opérateur' })).toBeVisible();
