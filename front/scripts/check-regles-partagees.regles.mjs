@@ -30,6 +30,18 @@ export const REGLES_PARTAGEES = {
 		//  Servie par `UserRead.libelle_logement` depuis v3.61.0 (#2500).
 	},
 
+	//  ── Admin › Utilisateurs (#2618) ─────────────────────────────────────────
+	gestesAdminOperateur: {
+		quoi: 'les gestes de rôle offerts sur un compte (+ CS, – Admin, + Opérateur…)',
+		api: 'api/app/utils/gestes_roles.py#gestes_roles',
+		//  Servie par `UtilisateurAdminRead.gestes_roles` depuis #2618.
+	},
+	compterTitulaires: {
+		quoi: 'les titulaires actifs des rôles jamais vacants (Admin, Opérateur)',
+		api: 'api/app/utils/gestes_roles.py#titulaires',
+		//  Lue par `gestes_roles` : l'écran ne compte plus les titulaires (#2618).
+	},
+
 	//  ── Ma résidence et Annuaire (#2505) ─────────────────────────────────────
 	libelleExercice: {
 		quoi: "l'exercice comptable de la fiche (« de juillet à juin »)",

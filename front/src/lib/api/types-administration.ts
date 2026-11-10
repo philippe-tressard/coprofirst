@@ -132,6 +132,21 @@ export interface UtilisateurAdmin extends User {
 	has_vigik: boolean;
 	has_bail: boolean;
 	etiquettes: Record<'loti' | 'tc' | 'vigik' | 'bail', EtatEtiquette>;
+	/**  Les gestes de rôle que l'écran offre sur ce compte, SERVIS par l'API
+	 *   (`utils/gestes_roles`, #2618) — l'écran ne recompose pas la règle. */
+	gestes_roles: GestesRoles;
+	/**  Exclu de la Communauté à cet instant, jugé à l'heure du serveur (#2618). */
+	communaute_banni?: boolean;
+}
+
+/**  Un geste de rôle : l'ajouter, le retirer, ou rien à offrir. */
+export type GesteRole = 'ajouter' | 'retirer' | null;
+
+/**  `UtilisateurAdminRead.gestes_roles`. */
+export interface GestesRoles {
+	conseil_syndical: GesteRole;
+	admin: GesteRole;
+	operateur: GesteRole;
 }
 
 /**  `POST /admin/utilisateurs/{id}/accueil-arrivant`. */

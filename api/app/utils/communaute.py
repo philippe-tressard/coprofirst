@@ -100,10 +100,26 @@ def motif_de_refus(
     maintenant = maintenant or horloge.maintenant()
     if profil and user.statut in (StatutUtilisateur.syndic, StatutUtilisateur.mandataire):
         return MOTIF_PROFIL
-    if user.communaute_interdit:
+    ban = ban_en_cours(user, maintenant)
+    if ban == "definitif":
         return MOTIF_BAN_DEFINITIF
-    if user.communaute_ban_jusqu_au and user.communaute_ban_jusqu_au > maintenant:
+    if ban == "probatoire":
         return MOTIF_BAN_PROBATOIRE
+    return None
+
+
+def ban_en_cours(user: Utilisateur, maintenant: Optional[datetime] = None) -> Optional[str]:
+    """`"definitif"`, `"probatoire"` (le mois n'est pas écoulé), ou `None`.
+
+    Lue par `motif_de_refus` ET servie par `UserRead.communaute_banni` (#2618) :
+    l'écran comparait `communaute_ban_jusqu_au` à l'horloge du NAVIGATEUR — celle
+    d'un téléphone mal réglé disait « autorisé » à un compte suspendu.
+    """
+    maintenant = maintenant or horloge.maintenant()
+    if user.communaute_interdit:
+        return "definitif"
+    if user.communaute_ban_jusqu_au and user.communaute_ban_jusqu_au > maintenant:
+        return "probatoire"
     return None
 
 

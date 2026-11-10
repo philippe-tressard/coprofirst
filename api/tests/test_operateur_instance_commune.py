@@ -23,7 +23,7 @@ from app.auth.operateur import est_operateur, roles_effectifs
 from app.installation_commune.declaration import DeclarationInvalide, declaration
 from app.models.core import RoleUtilisateur, Utilisateur
 from app.models.roles import ROLE_OPERATEUR
-from app.routers.admin import utilisateurs
+from app.utils import gestes_roles
 from app.schemas import UserRead
 from tests.aides_http import base_http, client_http
 from tests.aides_installation_commune import COPROPRIETES, installation_commune
@@ -87,7 +87,8 @@ def test_admin_utilisateurs_ne_donne_ni_ne_retire_l_operateur_d_une_commune(gest
     with base_http() as moteur:
         http, moi = client_http(moteur, RoleUtilisateur.admin, roles_json=f"admin,{ROLE_OPERATEUR}")
         #  Le geste seul : la résolution de l'hôte d'une vraie commune n'est pas l'objet ici.
-        monkeypatch.setattr(utilisateurs, "designe_par_l_exploitant", lambda: True)
+        #  La règle vit dans `utils/gestes_roles` (#2618) : c'est là qu'elle lit le drapeau.
+        monkeypatch.setattr(gestes_roles, "designe_par_l_exploitant", lambda: True)
         r = http.post(f"/admin/utilisateurs/{moi}/{geste}", json={"role": ROLE_OPERATEUR})
         assert r.status_code == 409, r.text
         assert "exploitant" in r.json()["detail"]

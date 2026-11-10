@@ -41,9 +41,6 @@
  * une actualité est **la parole du conseil**.
  */
 
-import type { User } from '#lib/api/index.ts';
-import { aRole } from '#lib/stores/auth.ts';
-
 /** Ce que ces fonctions savent lire d'un objet — rien de plus. */
 export interface ObjetPossede {
 	auteur_id?: number | null;
@@ -77,44 +74,6 @@ export function peutEditer(
 //  affaire (#2508), `peut_supprimer` d'une réponse (#2506) —, calculé par
 //  `auth/deps.peut_commenter`.
 
-/** Combien de comptes ACTIFS portent les rôles qui ne restent jamais vacants. */
-export interface Titulaires {
-	admin: number;
-	operateur: number;
-}
-
-/** Le décompte que `gestesAdminOperateur` attend, lu dans la liste des comptes. */
-export function compterTitulaires(comptes: (User & { actif?: boolean })[]): Titulaires {
-	const actifs = comptes.filter((c) => c.actif !== false);
-	return {
-		admin: actifs.filter((c) => aRole(c, 'admin')).length,
-		operateur: actifs.filter((c) => aRole(c, 'operateur')).length,
-	};
-}
-
-/**
- * Les gestes sur les rôles **Admin** et **Opérateur** (Admin › Utilisateurs) —
- * le pendant écran de `_exiger_geste_operateur` et `_exiger_un_autre_titulaire`
- * (`api/app/routers/admin/utilisateurs.py`), dans le même ordre :
- *
- * - Opérateur ne s'accorde qu'à un administrateur, mais se garde sans lui :
- *   Admin se retire à un opérateur, qui n'ouvre plus de `/admin` que sa
- *   supervision (16/10/2026, #2029) ;
- * - tout administrateur l'accorde ou le retire, à lui-même compris (15/10/2026) ;
- * - Admin et Opérateur se retirent, à soi-même compris, sauf à leur dernier
- *   titulaire actif ;
- * - sur une instance COMMUNE, Opérateur ne s'accorde ni ne se retire ici : l'exploitant
- *   le désigne (`parExploitant`, 31/10/2026 — `#lib/portee`).
- */
-export function gestesAdminOperateur(
-	cible: User,
-	titulaires: Titulaires,
-	parExploitant = false,
-): { accorder: boolean; retirer: boolean; retirerAdmin: boolean } {
-	const cibleOperateur = aRole(cible, 'operateur');
-	return {
-		accorder: !parExploitant && !cibleOperateur && aRole(cible, 'admin'),
-		retirer: !parExploitant && cibleOperateur && titulaires.operateur > 1,
-		retirerAdmin: titulaires.admin > 1,
-	};
-}
+//  Les gestes de rôle d'Admin › Utilisateurs (`gestesAdminOperateur`,
+//  `compterTitulaires`) ne se recomposent plus ici : le serveur les SERT avec
+//  chaque compte (`gestes_roles`, `api/app/utils/gestes_roles.py`, #2618).
