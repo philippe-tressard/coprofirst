@@ -28,6 +28,10 @@ from app.seed.contenus_legaux_cookies import COOKIES
 from app.seed.contenus_legaux_decisions_ag import DECISIONS_AG
 from app.seed.contenus_legaux_etat_descriptif import LECTURE_ETAT_DESCRIPTIF
 from app.seed.contenus_legaux_licence import PARAGRAPHE_LICENCE
+from app.seed.contenus_legaux_notifications import (
+    CONSERVATION_NOTIFICATIONS,
+    NOTIFICATIONS_PUSH,
+)
 from app.seed.contenus_legaux_identite import (
     DESTINATAIRES,
     HEBERGEMENT,
@@ -271,7 +275,7 @@ FONCTIONS_TIERS_ANCIEN = (
     "Trois fonctions transmettent des informations hors de l'application lorsqu'elles sont activées"
 )
 FONCTIONS_TIERS = (
-    "Quatre fonctions font passer des informations par un service tiers lorsqu'elles sont activées"
+    "Cinq fonctions font passer des informations par un service tiers lorsqu'elles sont activées"
 )
 ACHEMINEMENT_COURRIELS = (
     "<li><strong>Acheminement des courriels</strong> — les notifications partent par un "
@@ -390,6 +394,7 @@ DEFAULT_LEGAL = {
         + "</li>"
         + ACHEMINEMENT_COURRIELS
         + RECEPTION_COURRIELS
+        + NOTIFICATIONS_PUSH
         + "</ul><h2>5. Durée de conservation</h2><ul><li>"
         + CONSERVATION_COMPTES
         + ANONYMISATION_CONTENUS
@@ -400,6 +405,7 @@ DEFAULT_LEGAL = {
         + CONSERVATION_COURRIELS
         + "</li>"
         + CONSERVATION_RELEVES
+        + CONSERVATION_NOTIFICATIONS
         + "</ul><h2>6. Vos droits</h2><p>Conformément au RGPD vous disposez "
         "des droits d'accès (art.\xa015), rectification (art.\xa016), effacement (art.\xa017), portabilité "
         "(art.\xa020), opposition (art.\xa021) et retrait du consentement (art.\xa07-3). Pour les exercer, "
@@ -467,6 +473,7 @@ AJOUTS_1034 = [
         + "</li>"
         + ACHEMINEMENT_COURRIELS
         + RECEPTION_COURRIELS
+        + NOTIFICATIONS_PUSH
         + "</ul>",
     ),
     (
@@ -476,6 +483,7 @@ AJOUTS_1034 = [
         + CONSERVATION_COURRIELS
         + "</li>"
         + CONSERVATION_RELEVES
+        + CONSERVATION_NOTIFICATIONS
         + "</ul>",
     ),
     (

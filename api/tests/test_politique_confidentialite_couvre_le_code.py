@@ -196,6 +196,19 @@ EXIGENCES = [
         ("utils/purge_comptes/tache.py", "def purger_comptes_inactifs"),
         ("sans connexion",),
     ),
+    (
+        #  #2495 : le jeton d'un téléphone part au relais, puis chez Apple, quand les
+        #  notifications sur téléphone sont actives (spec `notifications-push.md` §5).
+        "les notifications sur téléphone, transmises à Apple",
+        ("models/appareils.py", "jeton"),
+        ("service de notifications d'Apple",),
+    ),
+    (
+        #  #2535 : la purge des notifications lues annonce sa durée.
+        "la durée de conservation des notifications, appliquée par leur purge",
+        ("utils/purge_notifications.py", "def purger_notifications_lues"),
+        ("notification lue",),
+    ),
 ]
 
 
