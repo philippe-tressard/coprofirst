@@ -534,6 +534,7 @@ jobs:
           python scripts/ci/pipe_grep_quiet.py --selftest
           python scripts/ci/codeql_nouvelles_alertes.py --selftest
           python scripts/ci/plafonds_jobs.py --selftest
+          python scripts/poste/verifier_migrations_texte.py --selftest
           bash scripts/lib/lib-role.sh              --selftest
           bash scripts/lib/lib-applicatifs.sh       --selftest
           bash scripts/lib/lib-replication.sh       --selftest
