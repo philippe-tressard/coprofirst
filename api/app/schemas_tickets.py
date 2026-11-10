@@ -120,6 +120,11 @@ class TicketEvolutionRead(EvolutionLue):
     #  tout le fil (`suivi_fil.statuts_avant`) : c'est la pastille qui, choisie
     #  en correction, ramène la Suite à un commentaire. L'écran n'en a pas de copie.
     statut_avant: Optional[str] = None
+    #  ✏️ 🗑️ Ce que CE lecteur peut faire de CETTE entrée — servi, jamais recomposé
+    #  par l'écran ni par l'app iOS (#2646, `auth/gestes_evolution`). Fermés par
+    #  défaut : une entrée rendue sans lecteur n'offre aucun geste.
+    peut_modifier: bool = False
+    peut_supprimer: bool = False
 
     class Config:
         from_attributes = True

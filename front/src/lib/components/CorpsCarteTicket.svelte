@@ -33,7 +33,7 @@
 	import MentionFusion from './MentionFusion.svelte';
 	import MentionConservation from './MentionConservation.svelte';
 	import type { Ticket, TicketEvolution } from '#lib/api/index.ts';
-	import { currentUser, isAdmin, isCS } from '#lib/stores/auth.ts';
+	import { isCS } from '#lib/stores/auth.ts';
 	import { TICKET } from '#lib/entites/ticket.ts';
 	import {
 		OPTIONS_TICKET,
@@ -252,8 +252,6 @@
 				apercu={3}
 				statutLabels={STATUT_TICKET_LABELS}
 				peutModifier={peutSuivre}
-				currentUserId={$currentUser?.id}
-				estAdmin={$isAdmin}
 				avecSuppression
 				enEdition={evolEnEdition}
 				on:modifier={(e) => gestes.evolModifier(e.detail)}

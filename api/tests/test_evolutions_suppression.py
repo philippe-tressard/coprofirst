@@ -36,7 +36,6 @@ from __future__ import annotations
 
 import ast
 import pathlib
-import re
 
 import pytest
 
@@ -144,23 +143,21 @@ def test_effacer_est_reserve_a_l_administrateur(fil):
     )
 
 
-def test_les_types_effacables_sont_les_memes_des_deux_cotes():
-    """⚠️ Une copie assumée, mais surveillée.
+def test_l_ecran_lit_les_gestes_servis_et_ne_garde_aucune_copie_de_la_regle():
+    """⚠️ La copie assumée a disparu (#2646) : l'écran LIT `peut_supprimer`.
 
-    Les contextes de build sont `./api` et `./front` : rien de la racine n'entre
-    dans les images, le partage d'un fichier est impossible. La liste vit donc
-    en deux exemplaires — et sans ce test, l'écran proposerait un jour une
-    corbeille sur une entrée que le serveur refuse en 422, ou la cacherait sur
-    une entrée qu'il accepte. Dans les deux cas l'utilisateur se heurte à un
-    désaccord qu'il ne peut pas comprendre.
+    Les contextes de build sont `./api` et `./front` : rien de la racine
+    n'entre dans les images, la liste des types effaçables vivait donc en deux
+    exemplaires, surveillés par un test de concordance. Le serveur sert désormais
+    le droit par entrée (`auth/gestes_evolution`) : l'écran, comme l'app iOS, le
+    lit. Le cas fautif que ce test refuse — une liste de types, une identité ou un
+    rôle recopiés dans le composant — est ce que la concordance ne faisait que
+    comparer.
     """
     rubrique = (FRONT / "src/lib/components/RubriqueHistorique.svelte").read_text(encoding="utf-8")
-    m = re.search(r"const TYPES_EFFACABLES\s*=\s*\[([^\]]*)\]", rubrique)
-    assert m, "TYPES_EFFACABLES introuvable dans RubriqueHistorique.svelte"
-    cote_ecran = tuple(re.findall(r"'([^']+)'", m.group(1)))
-    assert cote_ecran == TYPES_EFFACABLES, (
-        f"écran={cote_ecran} serveur={TYPES_EFFACABLES} — les deux listes ont divergé."
-    )
+    assert "evol.peut_supprimer" in rubrique and "evol.peut_modifier" in rubrique
+    for copie in ("TYPES_EFFACABLES", "TYPES_CORRIGEABLES", "peutEditer(", "estAdmin"):
+        assert copie not in rubrique, f"RubriqueHistorique recopie la règle du serveur : {copie}"
 
 
 def test_une_reponse_n_est_jamais_effacable():

@@ -107,7 +107,6 @@
 			{archive}
 			mode={modeDe(t.id)}
 			{evolutionEnCours}
-			{peutAdministrer}
 			{optionsRapidesEnCours}
 			{evolEnEdition}
 			{evolCorrectionEnCours}
