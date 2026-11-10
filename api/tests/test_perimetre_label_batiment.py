@@ -266,6 +266,21 @@ def arbre_du_ticket():
         }
         session.add_all(espaces.values())
         session.commit()
+        #  Un espace de NIVEAU 3, sous « Logement » (10/11/2026).
+        session.refresh(espaces["logement"])
+        espaces["terrasses"] = Perimetre(
+            code=f"{bat.code}/logement/terrasses",
+            parent_id=espaces["logement"].id,
+            libelle="Terrasses Balcons",
+            libelle_court="Terrasses",
+            description="",
+            profondeur=3,
+            ordre=0,
+            actif=True,
+            selectionnable=True,
+        )
+        session.add(espaces["terrasses"])
+        session.commit()
         codes = {nom: n.code for nom, n in espaces.items()}
         codes["bat"] = bat.code
         codes["aful"] = aful.code
@@ -297,6 +312,23 @@ def test_le_rendu_du_ticket_signale(arbre_du_ticket):
     codes = [arbre_du_ticket["logement"], arbre_du_ticket["voie"], arbre_du_ticket["jardin"]]
 
     assert P.perimetre_label(codes) == ("Bât. 4 › Logement · Jardin Bâtiment — AFUL › Voie d'accès")
+
+
+def test_un_espace_de_niveau_3_porte_tout_son_chemin(arbre_du_ticket):
+    """« Terrasses Balcons » sous « Logement » se lit avec son bâtiment (10/11/2026).
+
+    Qualifié par son seul parent, il s'écrivait « Logement › Terrasses Balcons » —
+    les terrasses de tous les bâtiments, indistinctes. Même chaîne attendue que
+    `front/scripts/check-libelle-perimetre.mjs` (`ATTENDU_NIVEAU_3`).
+    """
+    codes = [arbre_du_ticket["terrasses"], arbre_du_ticket["jardin"]]
+
+    assert P.perimetre_label_un(arbre_du_ticket["terrasses"]) == (
+        "Bât. 4 › Logement › Terrasses Balcons"
+    )
+    assert P.perimetre_label(codes) == (
+        "Bât. 4 › Logement › Terrasses Balcons · Bât. 4 › Jardin Bâtiment"
+    )
 
 
 def test_l_ordre_des_clics_n_a_plus_d_effet(arbre_du_ticket):

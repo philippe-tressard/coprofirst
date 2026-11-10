@@ -46,12 +46,16 @@
 		title="Modifier"
 		on:click={() => dispatch('editer')}><IconeAction icone="pencil" /></button
 	>
-	<button
-		class="btn-icon"
-		aria-label="Ajouter un sous-périmètre"
-		title="Ajouter un sous-périmètre"
-		on:click={() => dispatch('creer')}><IconeAction icone="plus" /></button
-	>
+	<!--  Au niveau 3, plus de sous-périmètre : l'arborescence s'y arrête
+	      (`niveaux_libres`, servi par `utils/perimetres/niveaux`, 10/11/2026). -->
+	{#if noeud.niveaux_libres > 0}
+		<button
+			class="btn-icon"
+			aria-label="Ajouter un sous-périmètre"
+			title="Ajouter un sous-périmètre"
+			on:click={() => dispatch('creer')}><IconeAction icone="plus" /></button
+		>
+	{/if}
 	{#if noeud.dupliquable}
 		<button
 			class="btn-icon"

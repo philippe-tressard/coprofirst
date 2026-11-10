@@ -42,6 +42,8 @@ const TEST_PYTHON = resolve(ICI, '..', '..', 'api', 'tests', 'test_perimetre_lab
 
 /** La chaîne validée par l'utilisateur, au caractère près. Une seule attente. */
 const ATTENDU = "Bât. 4 › Logement · Jardin Bâtiment — AFUL › Voie d'accès";
+/** Un espace de NIVEAU 3 porte tout son chemin (10/11/2026) — même double attente. */
+const ATTENDU_NIVEAU_3 = 'Bât. 4 › Logement › Terrasses Balcons · Bât. 4 › Jardin Bâtiment';
 
 function echouer(message) {
 	console.error(`✗ ${message}`);
@@ -96,6 +98,7 @@ definirPerimetres([
 	noeud('bat', 'groupe', 'Bâtiment 4', 'Bât. 4', 3, { batiment_id: 4 }),
 	noeud('bat/logement', 'bat', 'Logement', 'Logement', 1),
 	noeud('bat/jardin', 'bat', 'Jardin Bâtiment', 'Jardin Bât.', 7),
+	noeud('bat/logement/terrasses', 'bat/logement', 'Terrasses Balcons', 'Terrasses', 0),
 	noeud('aful', null, 'AFUL', 'AFUL', 40, { portee_globale: true }),
 	noeud('aful/voie', 'aful', "Voie d'accès", "Voie d'accès", 0),
 ]);
@@ -112,6 +115,12 @@ verifier("un espace de l'AFUL", perimetreLabelUn('aful/voie'), "AFUL › Voie d'
 verifier('un bâtiment entier', perimetreLabelUn('bat'), 'Bâtiment 4');
 //  3. Le rendu complet, trié et regroupé.
 verifier('le ticket signalé', perimetreLabel(['bat/logement', 'aful/voie', 'bat/jardin']), ATTENDU);
+//  3 bis. Un espace de niveau 3 se lit avec son bâtiment, pas avec son seul parent.
+verifier(
+	'un espace de niveau 3',
+	perimetreLabel(['bat/jardin', 'bat/logement/terrasses']),
+	ATTENDU_NIVEAU_3,
+);
 //  4. Le FAIT, pas le symptôme : l'ordre des clics ne doit plus rien changer.
 const codes = ['bat/logement', 'aful/voie', 'bat/jardin'];
 const permutations = [
@@ -143,12 +152,15 @@ if (echecs.length > 0) {
 //  Sans cela, chacun des deux tests pourrait être « corrigé » vers un rendu
 //  différent, et rester vert : c'est exactement ainsi que les deux
 //  implémentations avaient divergé.
-if (!readFileSync(TEST_PYTHON, 'utf8').includes(ATTENDU)) {
-	echouer(
-		`Le test côté API n'attend plus « ${ATTENDU} ». Les deux implémentations ` +
-			'doivent rester tenues par une seule attente, sinon elles divergeront ' +
-			'sans que rien ne le dise.',
-	);
+const testPython = readFileSync(TEST_PYTHON, 'utf8');
+for (const attendu of [ATTENDU, ATTENDU_NIVEAU_3]) {
+	if (!testPython.includes(attendu)) {
+		echouer(
+			`Le test côté API n'attend plus « ${attendu} ». Les deux implémentations ` +
+				'doivent rester tenues par une seule attente, sinon elles divergeront ' +
+				'sans que rien ne le dise.',
+		);
+	}
 }
 
 console.log(`✓ Périmètres : rendu exécuté et identique des deux côtés — « ${ATTENDU} ».`);

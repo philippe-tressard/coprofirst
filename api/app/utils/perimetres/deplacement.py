@@ -30,6 +30,7 @@ from typing import Optional
 from app.models.perimetre import Perimetre
 
 from .branche import descendants, enfants_par_parent
+from .niveaux import refus_niveau
 
 SENS = ("haut", "bas", "gauche", "droite")
 
@@ -125,4 +126,8 @@ def _calculer(
         _ancetres(nouveau_parent_id, par_id)
     ):
         return None, "Un bâtiment ne se range pas dans un autre bâtiment."
+    #  🔴 Ni au-delà du niveau 3, branche comprise (10/11/2026, `niveaux.py`).
+    refus = refus_niveau(noeud, noeud.selectionnable, nouveau_parent_id, noeuds)
+    if refus:
+        return None, refus
     return Deplacement(nouveau_parent_id, fratrie), None
