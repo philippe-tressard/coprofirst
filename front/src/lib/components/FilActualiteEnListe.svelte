@@ -15,13 +15,12 @@
 <script lang="ts">
 	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import type { Ticket, TicketEvolution } from '#lib/api/index.ts';
-	import { currentUser, isCS } from '#lib/stores/auth.ts';
+	import { isCS } from '#lib/stores/auth.ts';
 	import type { GestesTicket } from '#lib/tickets.ts';
 	import RubriqueHistorique from './RubriqueHistorique.svelte';
 
 	export let ticket: Ticket;
 	export let evolutions: TicketEvolution[];
-	export let peutAdministrer = false;
 	export let evolEnEdition: number | null = null;
 	export let evolCorrectionEnCours = false;
 	export let gestes: GestesTicket;
@@ -31,8 +30,6 @@
 	<RubriqueHistorique
 		{evolutions}
 		peutModifier={$isCS}
-		currentUserId={$currentUser?.id}
-		estAdmin={peutAdministrer}
 		avecSuppression
 		enEdition={evolEnEdition}
 		on:modifier={(e) => gestes.evolModifier(e.detail)}

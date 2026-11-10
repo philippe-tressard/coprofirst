@@ -51,7 +51,6 @@
 	import { fmtDate, fmtDatetime } from '#lib/date.ts';
 	import { perimetreLabel } from '#lib/perimetres/index.ts';
 	import { entreesDuFil, evolutionIcone } from '#lib/evolutions.ts';
-	import { peutEditer } from '#lib/droits.ts';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 
@@ -66,21 +65,14 @@
 	export let seuil = 7;
 	export let apercu = 5;
 	/**  L'écran autorise-t-il la correction ? Interrupteur GÉNÉRAL : un écran de
-	 *   pure lecture le laisse à `false`. Il ne dit pas QUI peut corriger — cela
-	 *   se décide par entrée, ci-dessous. */
-	export let peutModifier = false;
-	/**  Qui regarde, et est-il administrateur ? La règle du serveur est « l'auteur
-	 *   de l'entrée, ou un admin » ; sans ces deux valeurs, l'écran ne peut que
-	 *   l'approximer — et il l'approximait par « membre du CS », donc trop large :
-	 *   le crayon s'affichait sur l'entrée d'un autre, le clic partait, le serveur
-	 *   répondait 403, et l'écran annonçait « Accès refusé » pour un geste qu'il
-	 *   avait lui-même proposé.
+	 *   pure lecture le laisse à `false`. Il ne dit pas QUI peut corriger — le serveur
+	 *   le sert par entrée (`peut_modifier`, `auth/gestes_evolution`, #2646).
 	 *
-	 *   ⚠️ Le serveur refait le contrôle : ceci n'est qu'un confort d'écran
-	 *   (`standards/03` §1). Cacher un bouton n'a jamais protégé quoi que ce soit.
-	 */
-	export let currentUserId: number | undefined = undefined;
-	export let estAdmin = false;
+	 *   🔴 La règle (type saisi, auteur, « saisi pour », administrateur, affaire
+	 *   absorbée) n'est PLUS écrite ici : l'écran l'approximait, le crayon
+	 *   s'affichait parfois sur l'entrée d'un autre et le clic finissait en 403, et
+	 *   l'app iOS aurait dû la recopier à son tour (`standards/09` §8, règle 1). */
+	export let peutModifier = false;
 	/** Entrée actuellement ouverte en correction — le parent porte l'état. */
 	export let enEdition: number | null = null;
 
@@ -99,7 +91,7 @@
 
 	/**  🔴 L'écran DÉCLARE qu'il sait effacer. Défaut `false` (#505, 19/08/2026).
 	 *
-	 *   Le bouton 🗑️ ne dépendait que de `estAdmin`. Or ce composant sert CINQ
+	 *   Le bouton 🗑️ ne dépendait que du rôle de l'administrateur. Or ce composant sert CINQ
 	 *   écrans, et seuls les deux du ticket écoutent `on:supprimer` — parce que
 	 *   seuls les tickets ont une route `DELETE /tickets/{id}/evolutions/{evolId}`.
 	 *   Sur le Calendrier, les Actualités et l'Espace CS, tout administrateur
@@ -118,33 +110,6 @@
 
 	const dispatch = createEventDispatcher<{ modifier: number; supprimer: number }>();
 
-	//  🔴 Les MÊMES MOTS que le serveur, et dans le même ordre — types puis
-	//  identité. Une règle d'écran qui paraphrase une règle de serveur finit
-	//  toujours par en dire autre chose ; ici on peut au moins les comparer.
-	//
-	//  `reponse` est exclu : une réponse du CS n'est pas une entrée de suivi, et
-	//  le serveur la refuse déjà (« ce type d'évolution ne peut pas être modifié »).
-	const TYPES_CORRIGEABLES = ['commentaire', 'etat'];
-
-	/**  Ce qui s'EFFACE — les MÊMES types que le serveur, et dans le même ordre.
-	 *
-	 *   ⚠️ Les transitions d'état en font partie depuis le 18/08/2026, et c'est un
-	 *   arbitrage CORRIGÉ : je les avais exclues de moi-même (« un mouvement de
-	 *   workflow est un fait, pas un texte qu'on rature »), alors que la demande
-	 *   était « une suppression pour les historiques », sans distinction. L'absence
-	 *   a été constatée dès la première entrée d'état rencontrée.
-	 *
-	 *   Ce qui la rend acceptable : supprimer l'entrée NE CHANGE PAS l'état du
-	 *   ticket — `statut` vit dans sa propre colonne, le fil n'en est que le récit.
-	 *   Le coût est une perte de traçabilité, pas une incohérence.
-	 *
-	 *   ⚠️ Les RÉPONSES restent hors de portée : elles appartiennent à leur auteur,
-	 *   souvent un résident. Les effacer supprimerait la parole de quelqu'un
-	 *   d'autre — ce n'est pas la même chose que retirer une ligne écrite par le
-	 *   système ou par soi-même. Le serveur les refuse (`422`), et l'écran dit la
-	 *   même chose que lui, ni plus ni moins (ux-patterns §15). */
-	const TYPES_EFFACABLES = ['commentaire', 'etat'];
-
 	/**  🔴 Effacer est réservé à l'ADMINISTRATEUR (18/08/2026, demandé à l'écran :
 	 *   « bon pour l'admin seul »).
 	 *
@@ -158,18 +123,17 @@
 	 *   et RIEN ne permettait de les retirer — pas même à l'admin. Un fil est une
 	 *   mémoire ; une mémoire qui garde des faits inventés vaut moins qu'une mémoire
 	 *   trouée. */
+	//  Servi par entrée (`peut_supprimer`, #2646) : administrateur, type effaçable.
+	//  Un champ absent (installation plus ancienne) vaut « non ».
 	function peutEffacer(evol: TicketEvolution): boolean {
-		return avecSuppression && estAdmin && TYPES_EFFACABLES.includes(evol.type);
+		return avecSuppression && evol.peut_supprimer === true;
 	}
 
+	//  Servi par entrée (`peut_modifier`, #2646) : le conseil ou l'administration,
+	//  sur une entrée saisie dont il est l'auteur, le « saisi pour » ou l'admin.
+	//  Absent ou `false` : le crayon n'est pas proposé (`standards/04` §2).
 	function peutCorriger(evol: TicketEvolution): boolean {
-		if (!peutModifier || !TYPES_CORRIGEABLES.includes(evol.type)) return false;
-		//  `peutEditer` porte les trois cas — l'admin, l'auteur, et le « saisi pour ».
-		//  Cette fonction les réécrivait à la ligne près, moins le dernier : deux
-		//  écritures d'une même règle, dont une qui en savait moins (#1041).
-		//  Sans `auteur_id` elle rend `false` : on n'affiche pas un bouton dont on
-		//  ignore s'il aboutira (`standards/04` §2).
-		return peutEditer(evol, currentUserId, estAdmin);
+		return peutModifier && evol.peut_modifier === true;
 	}
 
 	/**  Effacer se CONFIRME (15/10/2026, maquette A de la carte dépliée) : le geste

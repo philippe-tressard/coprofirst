@@ -56,6 +56,8 @@ const SUITE = {
 	auteur_nom: 'CS Témoin',
 	cree_le: '2026-09-21T10:00:00',
 	fichiers_urls: [],
+	//  Servi par le serveur, jamais recomposé par l'écran (#2646).
+	peut_modifier: true,
 };
 
 async function ouvrirLaCorrection(page: Page): Promise<unknown[]> {

@@ -115,7 +115,7 @@ export const REGLES_PARTAGEES = {
 		migration: {
 			ticket: '#2511',
 			raison:
-				"servie en `peut_modifier` sur les idées, les annonces (#2506) et les affaires (#2508)  ; la carte d'affaire et l'Historique la recopient encore : leur crayon ouvre une correction plus large que le contenu (liées, diffusion, suivi), un geste à servir",
+				"servie en `peut_modifier` sur les idées, les annonces (#2506) et les affaires (#2508)  ; l'Historique la lit servie depuis #2646 (`auth/gestes_evolution`) ; la carte d'affaire la recopie encore : son crayon ouvre une correction plus large que le contenu (liées, diffusion, suivi), un geste à servir",
 		},
 	},
 	peutCommenter: {

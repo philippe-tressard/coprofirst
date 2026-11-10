@@ -95,7 +95,7 @@ def get_evolutions(
     #  L'état d'avant chaque entrée : la pastille qui, en correction, ramène la
     #  Suite à un commentaire (`suivi_fil.py`) — calculé ici, une fois.
     avant = statuts_avant(evols, etat_de_la_suite(ticket))
-    return [evol_read(e, session, avant.get(e.id)) for e in evols]
+    return [evol_read(e, session, avant.get(e.id), ticket=ticket, lecteur=user) for e in evols]
 
 
 @router.patch("/{ticket_id}/evolutions/{evol_id}", response_model=TicketEvolutionRead)
@@ -155,7 +155,13 @@ def update_evolution(
         .where(TicketEvolution.ticket_id == ticket_id)
         .order_by(TicketEvolution.cree_le)
     ).all()
-    return evol_read(evol, session, statuts_avant(fil, etat_de_la_suite(ticket)).get(evol.id))
+    return evol_read(
+        evol,
+        session,
+        statuts_avant(fil, etat_de_la_suite(ticket)).get(evol.id),
+        ticket=ticket,
+        lecteur=user,
+    )
 
 
 @router.delete("/{ticket_id}/evolutions/{evol_id}", status_code=204)
@@ -357,7 +363,7 @@ def add_evolution(
                 commentaire=body.contenu,
                 fichiers_urls=body.fichiers_urls,
             )
-        return evol_read(evol, session)
+        return evol_read(evol, session, ticket=ticket, lecteur=user)
 
     # ── Notifications WhatsApp / syndic / CS optionnelles ──────────────────
     #  🔴 Un ticket réservé au conseil ne part pas sur le groupe des résidents
@@ -445,4 +451,4 @@ def add_evolution(
             fichiers_urls=body.fichiers_urls,
         )
 
-    return evol_read(evol, session)
+    return evol_read(evol, session, ticket=ticket, lecteur=user)
