@@ -55,6 +55,7 @@ from app.utils.perimetres.branche import (
     refus_duplication,
 )
 from app.utils.perimetres.deplacement import deplacement, refus_deplacement
+from app.utils.perimetres.niveaux import refus_niveau
 
 router = APIRouter(prefix="/perimetres", tags=["perimetres"])
 
@@ -247,6 +248,9 @@ def copier_perimetre(
             raise HTTPException(
                 422, f"« {parent.libelle} » ne peut pas recevoir une copie de ce périmètre."
             )
+        trop_bas = refus_niveau(source, source.selectionnable, parent.id, tous)
+        if trop_bas:
+            raise HTTPException(422, f"Sous « {parent.libelle} » : {trop_bas}")
         parents.append(parent)
     if not parents:
         raise HTTPException(422, "Choisissez au moins un périmètre où poser la copie.")

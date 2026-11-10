@@ -33,8 +33,13 @@
 	let choisis: string[] = [];
 	let enregistrement = false;
 
+	//  Un parent trop bas est écarté : la copie et sa branche y passeraient le
+	//  niveau 3 (`niveaux_libres` et `hauteur`, servis ; le serveur refuse aussi).
 	$: candidats = $perimetresStore.filter(
-		(n) => n.code !== source.parent && !estDansLaBranche($perimetresStore, n.code, source.code),
+		(n) =>
+			n.code !== source.parent &&
+			n.niveaux_libres > source.hauteur &&
+			!estDansLaBranche($perimetresStore, n.code, source.code),
 	);
 	$: titre = source.nb_descendants
 		? `Copier ${source.libelle} et ses ${source.nb_descendants} sous-périmètre(s)`
