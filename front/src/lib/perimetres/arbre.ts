@@ -39,6 +39,14 @@ export interface Perimetre {
 	icone: string | null;
 	batiment_id: number | null;
 	profondeur: number;
+	/**  Le niveau lu par l'administrateur — 1 pour une tête de rangée (« Bâtiment 1 »,
+	 *   « Parking »), 0 pour un regroupement — et combien de niveaux le nœud peut
+	 *   encore porter sous lui (plafond 3, `utils/perimetres/niveaux`, 10/11/2026).
+	 *   Servis par le serveur : l'écran ne recompte pas l'arbre. */
+	niveau: number;
+	niveaux_libres: number;
+	/**  Combien de niveaux sa branche compte SOUS lui (0 pour une feuille). */
+	hauteur: number;
 	ordre: number;
 	actif: boolean;
 	portee_globale: boolean;

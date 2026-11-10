@@ -555,7 +555,8 @@ est vrai (c'est le défaut, le redire n'apprend rien).
 ### Comment un périmètre S'ÉCRIT — trois règles, portées par `perimetreLabel()`
 
 1. **Un espace est qualifié par son parent** — « Bât. 3 › Toit », « AFUL › Voie
-   d'accès ». Sans cela, le gabarit posant les mêmes neuf espaces sous chaque
+   d'accès » — **et le parent par le sien** : « Bât. 1 › Logement › Terrasses Balcons »
+   (10/11/2026). Sans cela, le gabarit posant les mêmes neuf espaces sous chaque
    bâtiment, un ticket visant deux toits affichait « Toit · Toit » (18/08/2026).
    ⚠️ La qualification s'est arrêtée aux **bâtiments** pendant neuf jours, au motif
    que les enfants du parking ou des locaux techniques « portent déjà des libellés
@@ -580,8 +581,13 @@ exécute la forme serveur ; `npm run lint:libelle-perimetre` transpile et exécu
 forme front, puis vérifie que le test Python attend la même chaîne.
 
 **Sélecteur** : `PerimetrePicker.svelte`, alimenté par le store — premier niveau de
-pastilles, second niveau facultatif quand un bâtiment est choisi, et la
-**description** du nœud affichée sous la sélection.
+pastilles, puis une rangée « Préciser dans … » facultative par niveau ouvert, **trois
+niveaux au plus** (10/11/2026 : « Bât. 1 › Logement › Terrasses Balcons »), et la
+**description** du nœud affichée sous la sélection. Ce qu'un clic retient et quelles
+rangées s'ouvrent se décide dans `#lib/perimetres/selection` — **une** règle, la même
+à chaque niveau. L'arborescence elle-même s'arrête au niveau 3 : le serveur refuse tout
+geste qui en poserait un quatrième (`utils/perimetres/niveaux`, un regroupement comme
+« Bâtiments » ne compte pas).
 
 Rendu — l'icône du périmètre est **🔹**, jamais 📍 (cf. §1), et il s'écrit **une
 seule fois** : `<BadgePerimetre perimetre={…} />` (prop `perimetre`, un code ou
