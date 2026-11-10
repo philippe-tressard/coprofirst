@@ -1412,7 +1412,10 @@ et elles seules :
 **Le champ ne porte aucune classe** : `.field input`, `.field select` et
 `.field textarea` le gouvernent. Deux modificateurs nommés, et rien d’autre :
 `champ-large` (§9 bis) et **`champ-en-ligne`**, pour un champ posé dans une
-rangée où le `gap` du parent porte déjà l’espacement.
+rangée où le `gap` du parent porte déjà l’espacement. Il y donne aussi la **même
+hauteur** à une liste déroulante et à un champ de saisie voisins (plancher en `em`,
+10/11/2026 : sans lui, le navigateur leur en donne deux, et leurs libellés se
+décalent — 🔒 `e2e/champs-en-ligne-hauteur.spec.ts`).
 
 🔒 **Garde-fou : `npm run lint:champs`** (`front/scripts/check-champs.mjs`), en CI
 depuis le 19/08/2026. Tout `<input>` de saisie, `<select>` ou `<textarea>`
