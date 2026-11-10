@@ -30,6 +30,10 @@ COTE_MIN_SIGNATURE = 300
 #: logo de signature (#2515 : 501 × 146 px). Un document ou une photo n'est
 #: jamais aussi plat.
 COTE_MIN_BANDEAU = 200
+#: En deçà, sur son plus grand côté, une image INTÉGRÉE au corps est un logo ou
+#: un pictogramme de signature (10/11/2026 : quatre de 367 × 345 px). Une photo,
+#: une numérisation ou une capture d'écran posée dans le texte est plus grande.
+COTE_MIN_INTEGREE = 400
 
 #: Des fichiers que les clients de messagerie ajoutent d'eux-mêmes à la signature.
 TYPES_DE_SIGNATURE = frozenset(
@@ -97,6 +101,19 @@ def _tailles_affichees(propres) -> dict[str, tuple[int | None, int | None]]:
     return lecteur.tailles
 
 
+def _integree(partie, cid: str) -> bool:
+    """L'image est posée DANS le corps, et non jointe au message.
+
+    Par un `Content-ID` que le HTML cite (Outlook, Gmail), ou — sans lui — par la
+    disposition `inline` : Mail d'Apple découpe le corps d'un transfert en
+    fragments HTML entre lesquels il pose chaque image, sans `Content-ID`
+    (relevé le 10/11/2026 : les six logos d'une signature sont entrés dans une
+    affaire, bandeau de 501 × 146 px compris). Lue dans les en-têtes : permise au tri.
+    """
+    disposition = partie.get_content_disposition()
+    return disposition != "attachment" and (bool(cid) or disposition == "inline")
+
+
 def _de_signature(type_: str) -> bool:
     """Un fichier que le client ajoute à la signature, reconnu à son type seul."""
     return type_ in TYPES_DE_SIGNATURE
@@ -115,12 +132,13 @@ def _image_de_signature(piece: Piece, taille: tuple[int, int] | None) -> bool:
 
     Toute image sous `COTE_MIN_SIGNATURE` sur son plus grand côté. Et pour une
     image INTÉGRÉE au corps — c'est ainsi que les clients posent une signature —
-    un petit côté sous `COTE_MIN_BANDEAU`, ou un affichage déclaré aussi petit.
+    un plus grand côté sous `COTE_MIN_INTEGREE`, un petit côté sous
+    `COTE_MIN_BANDEAU`, ou un affichage déclaré aussi petit.
     """
     if taille is not None and max(taille) < COTE_MIN_SIGNATURE:
         return True
     if not piece.integree:
         return False
-    return (taille is not None and min(taille) < COTE_MIN_BANDEAU) or (
-        piece.affichee is not None and _petite(*piece.affichee)
-    )
+    return (
+        taille is not None and (max(taille) < COTE_MIN_INTEGREE or min(taille) < COTE_MIN_BANDEAU)
+    ) or (piece.affichee is not None and _petite(*piece.affichee))
