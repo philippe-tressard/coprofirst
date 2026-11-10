@@ -60,3 +60,25 @@ test('la liste des heures et le nombre de versions ont la même hauteur', async 
 		})
 		.toBeLessThan(0.5);
 });
+
+//  …et leurs libellés ont la typographie des libellés de section du site
+//  (10/11/2026, signalé à l'écran juste après l'alignement) : le bloc posait son
+//  titre par `SectionFormulaire` sans l'envelopper, donc ses libellés sortaient
+//  en taille de texte courant, noirs — PLUS GRANDS que la phrase d'aide au-dessus.
+test('les libellés de la rangée sont plus petits que la phrase d’aide', async ({ page }) => {
+	await simulerApi(page, (chemin) => {
+		if (chemin === '/api/auth/me') return ADMIN;
+		if (chemin === '/api/admin/maintenance/sante') return SANTE;
+		if (chemin === '/api/admin/sauvegardes/config') return REGLAGE;
+		return undefined;
+	});
+	await page.goto('/admin?onglet=maintenance');
+
+	const libelle = page.locator('#config-sauvegarde label.field').first();
+	await expect(libelle).toBeVisible();
+	const aide = page.locator('section.config-section p.aide').first();
+
+	const taille = (cible: typeof libelle) =>
+		cible.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+	await expect.poll(async () => (await taille(libelle)) < (await taille(aide))).toBe(true);
+});
