@@ -116,7 +116,7 @@ MODE_POST_MEP=""; [ "${1:-}" = "--post-mep" ] && MODE_POST_MEP=1
 echo "═══ $([ -n "$MODE_POST_MEP" ] && echo 'Post-check' || echo 'Pré-check') MEP — $(date '+%Y-%m-%d %H:%M') ═══"
 echo
 
-#  ── Points du LOT (0a à 0g, 15, 16) : ils jugent ce qui PART ────────────────
+#  ── Points du LOT (0a à 0h, 15, 16) : ils jugent ce qui PART ────────────────
 #  Déplacés dans `lib-precheck-lot.sh` le 25/09/2026 (#1282). Après la fusion ils
 #  échouent par construction : le mode `--post-mep` ne les lance donc pas.
 if [ -z "$MODE_POST_MEP" ]; then
