@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  lib-precheck-lot.sh — les points du LOT, avant le push : 0a à 0g, 15 et 16
+#  lib-precheck-lot.sh — les points du LOT, avant le push : 0a à 0h, 15 et 16
 #
 #  Extraits de `precheck-mep.sh` le 25/09/2026 (#1282) : le mode `--post-mep`
 #  ne doit PAS les exécuter, et le fichier était à 500 lignes pile — son propre
@@ -217,6 +217,18 @@ case "$V0F" in
   *)       D0F="aucun $BRIEF — rédiger titre et descriptif AVANT de pousser" ;;
 esac
 rapporter 0f "$V0F" "Titre et descriptif de PR préparés" "$D0F"
+
+# 0h — une migration de texte légal du lot prend-elle sur le texte SERVI ? (#2571)
+#      La 0329 (v3.80.0) cherchait une puce que la référence avait reformulée : sans
+#      prise, et la politique servie annonçait cinq services tiers pour quatre listés.
+#      Les essais de CI jouent sur le gabarit ; ce point joue chaque migration du lot,
+#      en mémoire, sur `/api/config/legal` (public) — rien n'est écrit nulle part.
+L0H=$( (python scripts/poste/verifier_migrations_texte.py --site "$SITE" 2>/dev/null | tail -1) )
+case "$L0H" in
+  OK\|*|FAIL\|*|INCONNU\|*) V0H=${L0H%%|*}; D0H=${L0H#*|} ;;
+  *) V0H=INCONNU; D0H="contrôle non exécuté — lancer avec le venv du rejeu (python du lot)" ;;
+esac
+rapporter 0h "$V0H" "Migrations de texte légal : prise sur le servi" "$D0H"
 
 # 15 — endpoints orphelins (poste de dev, avant le push)
 if [ -d api/tests ]; then

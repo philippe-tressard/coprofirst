@@ -179,7 +179,7 @@ SKIP_PRECHECK=1 git push -u origin dev   # recrée `dev` distante (piège 2)
    `test_documentation.py` refuse un SHA absent de l'historique.
 
 🔴 **Après la MEP : `bash scripts/poste/precheck-mep.sh --post-mep`** (#1282,
-25/09/2026). Il ne lance pas les points du LOT (0a à 0g, 15, 16), qui échouent
+25/09/2026). Il ne lance pas les points du LOT (0a à 0h, 15, 16), qui échouent
 par construction une fois le lot fusionné — version inchangée, brief d'un commit
 déjà parti, trace d'un autre commit — et il ajoute **P1** (la ligne `Déployé:` de
 l'actif porte le commit de `origin/main` — ou, pour un actif démarré par la
@@ -203,6 +203,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 | 0d | **Un seul bump de version dans le lot** | OK · ÉCART · FAIL |
 | 0g | **Rang du bump conforme** à ce que le lot apporte (lu dans les préfixes de commit) | OK · ÉCART · FAIL |
 | 0f | **Titre et descriptif de PR préparés** (`.git/pr-brief.md`) | OK · FAIL · INCONNU |
+| 0h | **Migrations de texte légal : prise sur le texte servi** — chaque migration du lot qui nomme un texte légal, jouée en mémoire sur `/api/config/legal` ; un passage ni pris ni déjà servi = FAIL (#2571, le cas de la 0329) | OK · FAIL · INCONNU |
 | 15 | Aucun endpoint orphelin | OK · FAIL |
 | 16 | **Suite de la CI verte sur cet arbre** : phase rapide au poste (`scripts/poste/rejouer-ci.sh`), pytest et e2e sur la CI de la PR | OK · FAIL · INCONNU |
 | 1 | Site public répond | OK · FAIL · INCONNU |
