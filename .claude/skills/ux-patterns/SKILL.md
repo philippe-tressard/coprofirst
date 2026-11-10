@@ -1415,7 +1415,10 @@ et elles seules :
 rangée où le `gap` du parent porte déjà l’espacement. Il y donne aussi la **même
 hauteur** à une liste déroulante et à un champ de saisie voisins (plancher en `em`,
 10/11/2026 : sans lui, le navigateur leur en donne deux, et leurs libellés se
-décalent — 🔒 `e2e/champs-en-ligne-hauteur.spec.ts`).
+décalent — 🔒 `e2e/champs-en-ligne-hauteur.spec.ts`). ⚠️ **Sous Safari, un
+`<select>` natif ignore `min-height` et `padding`** (22 px contre 37) : la liste de la
+rangée passe en `appearance: none`, flèche dessinée par les jetons — mesuré en WebKit
+à la main, la CI ne joue que Chromium (2ᵉ signalement, même jour).
 
 🔒 **Garde-fou : `npm run lint:champs`** (`front/scripts/check-champs.mjs`), en CI
 depuis le 19/08/2026. Tout `<input>` de saisie, `<select>` ou `<textarea>`
