@@ -259,3 +259,33 @@ def test_le_retour_des_comptes_est_reserve_a_l_administrateur():
         for role in (RoleUtilisateur.conseil_syndical, RoleUtilisateur.résident):
             http, _ = client_http(moteur, role)
             assert http.get("/telemetry/dashboard?scope=jour").status_code == 403
+
+
+@pytest.mark.parametrize("portee", ["jour", "mois", "annee", "total"])
+def test_la_reponse_typee_ne_perd_rien_de_la_lecture(admin_http, portee):
+    """#2618 : `response_model=TableauTelemetrie` filtre — chaque clé que
+    `tableau()` produit, à chaque portée, doit sortir telle quelle."""
+    from app.utils.telemetrie_tableau import tableau
+    from tests.aides_reponse_servie import ecarts
+
+    servi = admin_http.get(f"/telemetry/dashboard?scope={portee}")
+    assert servi.status_code == 200, servi.text
+    from app.database import get_session
+    from app.main import app
+
+    #  La session de la base de test, celle que la route vient de lire.
+    s = next(app.dependency_overrides[get_session]())
+    lu = tableau(s, portee, "avec")
+    assert ecarts(lu, servi.json()) == []
+
+
+def test_le_contrat_annonce_le_schema_de_la_reponse():
+    """#2618 : l'app iOS se génère depuis `openapi.json` — la réponse y porte
+    `TableauTelemetrie` (`app.routers.telemetry_schemas`), et non `{}`."""
+    from app.main import app
+    from app.routers.telemetry_schemas import TableauTelemetrie
+
+    reponse = app.openapi()["paths"]["/telemetry/dashboard"]["get"]["responses"]["200"]
+    assert reponse["content"]["application/json"]["schema"] == {
+        "$ref": f"#/components/schemas/{TableauTelemetrie.__name__}"
+    }

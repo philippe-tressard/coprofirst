@@ -15,6 +15,7 @@ from sqlmodel import Session
 from app.auth.deps import require_admin
 from app.database import get_session
 from app.models.core import Utilisateur
+from app.routers.telemetry_schemas import TableauTelemetrie
 from app.utils import horloge
 from app.utils.telemetrie_calculs import _palmares
 from app.utils.telemetrie_tableau import fiches_utilisateurs, tableau, top_utilisateurs
@@ -22,7 +23,7 @@ from app.utils.telemetrie_tableau import fiches_utilisateurs, tableau, top_utili
 router = APIRouter(prefix="/telemetry", tags=["telemetry"])
 
 
-@router.get("/dashboard")
+@router.get("/dashboard", response_model=TableauTelemetrie)
 def dashboard(
     session: Session = Depends(get_session),
     _: Utilisateur = Depends(require_admin),

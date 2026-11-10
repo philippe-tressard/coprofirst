@@ -86,6 +86,42 @@ def test_la_file_d_admin_relit_la_demande_comme_le_resident(moteur):
     )
 
 
+@pytest.mark.parametrize(
+    ("action", "statut", "ton", "texte"),
+    [
+        ("approuver", "approuvee", "success", "Demande approuvée."),
+        ("rejeter", "rejetee", "info", "Demande rejetée."),
+    ],
+)
+def test_traiter_rend_le_statut_et_la_phrase_servie(moteur, action, statut, ton, texte):
+    """#2618 : la réponse est typée, et la phrase vient du serveur — le site et
+    l'app iOS la LISENT, aucun des deux ne la compose (`standards/09` §8)."""
+    resident, _ = client_http(moteur, RoleUtilisateur.résident)
+    cree = resident.post("/auth/me/demande-modification", json={"statut_souhaite": "locataire"})
+    assert cree.status_code == 201, cree.text
+
+    cs, _ = client_http(moteur, RoleUtilisateur.conseil_syndical)
+    rep = cs.post(f"/admin/demandes-profil/{cree.json()['id']}/traiter", json={"action": action})
+    assert rep.status_code == 200, rep.text
+    assert rep.json() == {"statut": statut, "annonce": {"ton": ton, "texte": texte}}
+
+
+def test_les_deux_routes_de_la_file_sont_typees_dans_le_contrat():
+    """#2618 : l'app iOS se génère depuis `openapi.json` — une réponse sans schéma
+    s'y lit `{}`, et l'app la relisait « en miroir »."""
+    from app.main import app
+
+    chemins = app.openapi()["paths"]
+    for chemin, methode in (
+        ("/admin/demandes-profil", "get"),
+        ("/admin/demandes-profil/{demande_id}/traiter", "post"),
+    ):
+        schema = chemins[chemin][methode]["responses"]["200"]["content"]["application/json"][
+            "schema"
+        ]
+        assert schema, f"{methode.upper()} {chemin} n'a pas de schéma de réponse"
+
+
 #: Le libellé du bâtiment souhaité s'écrit dans la lecture unique — `lire_demande`.
 PORTE = "utils/demandes_profil.py"
 
