@@ -341,6 +341,9 @@ ATTENDU_EVOLUTION = {
     "ticket_id": 41,
     "perimetre_cible": ["bat-a"],
     "statut_avant": "ouvert",
+    #  Sans lecteur ni affaire, aucun geste n'est offert (#2646).
+    "peut_modifier": False,
+    "peut_supprimer": False,
 }
 ATTENDU_LOT = {
     "numero": "12",

@@ -333,6 +333,12 @@ export interface TicketEvolution {
 	 *   le fil (`suivi_fil.statuts_avant`) : la pastille qui, en correction,
 	 *   ramène la Suite à un commentaire (01/10/2026). */
 	statut_avant?: string | null;
+	/**  ✏️ Ce que CE lecteur peut faire de CETTE entrée — servi par le serveur
+	 *   (`auth/gestes_evolution`, #2646), jamais recomposé. Absent (installation plus
+	 *   ancienne) = « non ». */
+	peut_modifier?: boolean;
+	/**  🗑️ L'administrateur, sur une entrée saisie (jamais une réponse). */
+	peut_supprimer?: boolean;
 }
 
 /**  La CORRECTION d'une Suite (`PATCH`) — toutes ses sections sauf la Diffusion
