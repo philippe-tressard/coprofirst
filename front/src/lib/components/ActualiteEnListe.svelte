@@ -55,7 +55,6 @@
 	export let evolutionEnCours = false;
 	export let evolEnEdition: number | null = null;
 	export let evolCorrectionEnCours = false;
-	export let peutAdministrer = false;
 	export let gestes: GestesTicket;
 	export let correspondance: CorrespondanceAffaire | null = null;
 
@@ -202,7 +201,6 @@
 					<FilActualiteEnListe
 						{ticket}
 						{evolutions}
-						{peutAdministrer}
 						{evolEnEdition}
 						{evolCorrectionEnCours}
 						{gestes}

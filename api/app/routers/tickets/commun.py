@@ -24,6 +24,7 @@ from sqlmodel import Session, select
 
 from app.auth.deps import est_moderateur
 from app.auth.gestes_affaire import gestes_servis
+from app.auth.gestes_evolution import gestes_evolution_servis
 from app.utils.affaires_liees import liees_lisibles
 from app.utils.fusion_affaires import principale_lue
 from app.utils.nature_affaire import natures
@@ -181,7 +182,12 @@ def libelle_evolution(e: TicketEvolution, *, avec_extrait: bool = False) -> str:
 
 
 def evol_read(
-    e: TicketEvolution, session: Session, statut_avant: Optional[str] = None
+    e: TicketEvolution,
+    session: Session,
+    statut_avant: Optional[str] = None,
+    *,
+    ticket: Optional[Ticket] = None,
+    lecteur: Optional[Utilisateur] = None,
 ) -> TicketEvolutionRead:
     auteur = ou_rien(session, Utilisateur, e.auteur_id)
     #  🔴 Lu sur le modèle depuis le 02/10/2026 (#1563). La recopie colonne par
@@ -203,6 +209,9 @@ def evol_read(
         #  c'est une décision, pas un oubli.
         perimetre_cible=json.loads(e.perimetre_cible) if e.perimetre_cible else None,
         statut_avant=statut_avant,
+        #  ✏️ 🗑️ Les gestes que CE lecteur peut faire de cette entrée (#2646) —
+        #  fermés sans lecteur ou sans l'affaire, jamais devinés.
+        **gestes_evolution_servis(e, ticket, lecteur),
         #  Une ancienne correction (« Correction : Date de fin », écrite par le
         #  calendrier avant v2.23.0) le DIT, au lieu de laisser croire que le
         #  détail existe — `utils/corrections_texte.py`.

@@ -24,7 +24,14 @@ async function ouvrir(page: Page, moi = MEMBRE_CS) {
 		if (chemin === '/api/auth/me') return moi;
 		if (chemin === '/api/tickets') return [AFFAIRE];
 		if (chemin === '/api/tickets/42') return AFFAIRE;
-		if (chemin === '/api/tickets/42/evolutions') return FIL;
+		//  Les gestes que le serveur sert par entrée (#2646) : la corbeille est à
+		//  l'administrateur, sur une entrée saisie — jamais une réponse ni la synthèse.
+		if (chemin === '/api/tickets/42/evolutions')
+			return FIL.map((e) => ({
+				...e,
+				peut_modifier: e.type !== 'synthese',
+				peut_supprimer: moi.role === 'admin' && e.type !== 'synthese',
+			}));
 		if (chemin === '/api/tickets/42/synthese') return ETAT_SYNTHESE;
 	});
 	await page.goto('/tickets');
