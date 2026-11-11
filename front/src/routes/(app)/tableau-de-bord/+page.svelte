@@ -13,7 +13,7 @@
 		currentUser,
 		isAdmin,
 		isAdminOnly,
-		isCS,
+		estModerateur,
 		isLocataire,
 		isProprioOuCS,
 	} from '#lib/stores/auth.ts';
@@ -193,7 +193,7 @@
 	//  de lui. La page garde ce qui lui appartient — le CHARGEMENT des
 	//  événements, et le contexte de droits, qu'elle calcule déjà pour le fil.
 	$: _dashKanbanCtx = {
-		isCS: $isCS,
+		estModerateur: $estModerateur,
 		isAdmin: $isAdmin,
 		canSeeAG: $isProprioOuCS,
 		statut: $currentUser?.statut ?? '',

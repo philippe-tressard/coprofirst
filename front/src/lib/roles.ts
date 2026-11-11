@@ -369,19 +369,20 @@ export const estGestionnaire = (p: PorteurDeStatut): boolean => aLeProfil(p, 'ge
 export const agitPourAutrui = (p: PorteurDeStatut): boolean => aLeProfil(p, 'pourAutrui');
 
 /**  Qui porte chaque DROIT D'AFFICHAGE : les rôles que `aRole` reçoit dans les
- *   dérivées de `stores/auth.ts` (`isAdmin`, `isCS`…). Une seule écriture : les
- *   dérivées la lisent, l'app iOS aussi. `adminSeul` sans aucun de `sansAdminSeul` :
- *   le compte technique de l'installation (`isAdminOnly`).
+ *   dérivées de `stores/auth.ts` (`isAdmin`, `isOperateur`…). Une seule écriture :
+ *   les dérivées la lisent, l'app iOS aussi. `adminSeul` sans aucun de
+ *   `sansAdminSeul` : le compte technique de l'installation (`isAdminOnly`).
+ *   `proprietaire` : la part « rôle » d'`isProprioOuCS`, dont le modérateur est
+ *   SERVI (`est_moderateur`, #2633) — le modérateur n'est donc pas ici.
  *
  *   ⚠️ Ce qu'on AFFICHE, jamais ce qu'on autorise : le serveur tranche (`auth/deps`). */
 //  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
 //  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
 export const ROLES_DU_DROIT = {
 	admin: ['admin'],
-	cs: ['conseil_syndical', 'admin'],
 	operateur: ['operateur'],
 	adminOuOperateur: ['admin', 'operateur'],
-	proprioOuCS: ['propriétaire', 'conseil_syndical', 'admin'],
+	proprietaire: ['propriétaire'],
 	adminSeul: ['admin'],
 	sansAdminSeul: ['propriétaire', 'résident', 'conseil_syndical'],
 } as const;

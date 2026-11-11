@@ -43,7 +43,7 @@
 	import EtatListe from './EtatListe.svelte';
 	import SyntheseAffaire from './SyntheseAffaire.svelte';
 	import { basculer } from '#lib/accordeon.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	let donnees: Carnet | null = null;
@@ -177,7 +177,7 @@
 			<ul class="concernees">
 				{#each enAlerte as entree (entree.origine + entree.lien + entree.date)}
 					<li>
-						{#if lienOuvert(entree, $isCS)}
+						{#if lienOuvert(entree, $estModerateur)}
 							<a href={entree.lien}>{entree.libelle}</a>
 						{:else}
 							<strong>{entree.libelle}</strong>

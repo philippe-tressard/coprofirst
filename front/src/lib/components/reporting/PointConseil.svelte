@@ -40,6 +40,7 @@
 	} from '#lib/api/index.ts';
 	import { champLocalMaintenant, fmtDatetime, fmtTime } from '#lib/date.ts';
 	import { ETATS_POINT, entreesDepuisPresents, moyenDe, nomPresent } from '#lib/points-conseil.ts';
+	import { nomsConnus } from '#lib/apercu-nom.ts';
 
 	export let mode: ModePoint;
 	/** Le point du mode et son CR global — lu par la vue (tableau, CR global). */
@@ -78,7 +79,9 @@
 
 	/** Ce que le formulaire propose à l'ouverture : la reprise, sinon maintenant. */
 	function proposition(): PointEntree {
-		if (reprise)
+		if (reprise) {
+			//  Les invités repris gardent le nom que le serveur leur a servi (#2633).
+			nomsConnus(reprise.presents);
 			return {
 				debut: reprise.debut,
 				fin: reprise.fin,
@@ -86,6 +89,7 @@
 				lieu: reprise.lieu,
 				presents: entreesDepuisPresents(reprise.presents),
 			};
+		}
 		return {
 			debut: champLocalMaintenant(),
 			fin: null,
@@ -97,6 +101,7 @@
 
 	function actuel(): PointEntree {
 		const cr = compteRendu as CompteRenduPoint;
+		nomsConnus(cr.presents);
 		return {
 			debut: cr.point.debut,
 			fin: cr.point.fin,

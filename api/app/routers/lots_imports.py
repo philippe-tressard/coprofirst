@@ -33,6 +33,7 @@ from sqlmodel import Session, select
 
 from app.utils.batiments import libelle_batiment
 from app.utils.libelles_lot import libelle_type_lot
+from app.utils.noms import nom_affiche
 from app.auth.deps import require_cs_or_admin
 from app.database import get_session
 from app.models.core import (
@@ -148,7 +149,16 @@ def _imp_row(imp: LotImport, session: Session) -> dict:
             {
                 "user_id": uid,
                 "type_lien": tl,
-                "utilisateur": {"id": u.id, "prenom": u.prenom, "nom": u.nom} if u else None,
+                "utilisateur": (
+                    {
+                        "id": u.id,
+                        "prenom": u.prenom,
+                        "nom": u.nom,
+                        "nom_affiche": nom_affiche(u.prenom, u.nom),
+                    }
+                    if u
+                    else None
+                ),
             }
         )
 

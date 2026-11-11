@@ -24,7 +24,7 @@
 		formulaireCompte,
 	} from '#lib/comptes.ts';
 	import { fmtDate } from '#lib/date.ts';
-	import { comparerParNom, nomAffiche } from '#lib/noms.ts';
+	import { comparerParNom } from '#lib/noms.ts';
 	import { badgeStatut, badgesDeRoles, libelleRole, LIBELLES_STATUT_ABREGE } from '#lib/roles.ts';
 	import { aRole, currentUser, setUser } from '#lib/stores/auth.ts';
 	import GestesRolesCompte from '#lib/components/GestesRolesCompte.svelte';
@@ -93,7 +93,7 @@
 				: adminApi.retirerRole(user.id, role));
 			toast(
 				'success',
-				`Rôle ${libelleRole(role)} ${action === 'ajouter' ? 'ajouté à' : 'retiré de'} ${nomAffiche(user)}.`,
+				`Rôle ${libelleRole(role)} ${action === 'ajouter' ? 'ajouté à' : 'retiré de'} ${user.nom_affiche}.`,
 			);
 			//  Relire la LISTE, pas la seule ligne : les gestes servis d'un compte
 			//  dépendent des autres (« jamais retiré à son dernier titulaire »,
@@ -149,8 +149,8 @@
 	 *   expliquait pourquoi : `confirmerPuis` passe par `messageErreur`. */
 	function supprimerUtilisateur(u: UtilisateurAdmin) {
 		return confirmerPuis(
-			SUPPRESSION(`Le compte de ${nomAffiche(u)} (${u.email}).`),
-			`${nomAffiche(u)} supprimé.`,
+			SUPPRESSION(`Le compte de ${u.nom_affiche} (${u.email}).`),
+			`${u.nom_affiche} supprimé.`,
 			async () => {
 				await adminApi.supprimerUtilisateur(u.id);
 				utilisateurs = utilisateurs.filter((x) => x.id !== u.id);
@@ -166,11 +166,11 @@
 			await recharger();
 			if (interdit) {
 				const msg = updated.communaute_interdit
-					? `${nomAffiche(u)} banni définitivement de la communauté.`
-					: `${nomAffiche(u)} banni de la communauté pour 1 mois (probatoire).`;
+					? `${u.nom_affiche} banni définitivement de la communauté.`
+					: `${u.nom_affiche} banni de la communauté pour 1 mois (probatoire).`;
 				toast('success', msg);
 			} else {
-				toast('success', `${nomAffiche(u)} réautorisé à la communauté.`);
+				toast('success', `${u.nom_affiche} réautorisé à la communauté.`);
 			}
 		} catch (e) {
 			toast('error', messageErreur(e));
@@ -227,7 +227,7 @@
 					{#each filteredUsers as u (u.id)}
 						<tr class:row-cs={aRole(u, 'conseil_syndical')} class:row-inactive={!u.actif}>
 							<td class="nom-compte">
-								{nomAffiche(u)}
+								{u.nom_affiche}
 								{#if u.statut === 'locataire' && u.nom_proprietaire}
 									<div class="precision-compte">
 										🏠 Bailleur : {u.nom_proprietaire}
@@ -362,7 +362,7 @@
 			{roleEnCours.action === 'ajouter' ? 'Ajouter' : 'Retirer'} le rôle
 			<strong>{libelleRole(roleEnCours.role)}</strong>
 			{roleEnCours.action === 'ajouter' ? 'à' : 'de'}
-			<strong>{pourSoi ? 'votre compte' : nomAffiche(roleEnCours.user)}</strong> ?
+			<strong>{pourSoi ? 'votre compte' : roleEnCours.user.nom_affiche}</strong> ?
 			<br />
 			{#if pourSoi && roleEnCours.action === 'retirer' && roleEnCours.role === 'admin'}
 				<span class="text-muted-sm">

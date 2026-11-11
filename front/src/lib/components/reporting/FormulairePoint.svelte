@@ -32,6 +32,7 @@
 	} from '#lib/api/index.ts';
 	import { depuisChampLocal, pourChampLocal } from '#lib/date.ts';
 	import { GROUPES_PRESENTS, cleMembre, nomPresent } from '#lib/points-conseil.ts';
+	import { nomSaisi, nomSaisiImmediat } from '#lib/apercu-nom.ts';
 
 	export let idPrefixe: string;
 	export let participants: ParticipantsPoint;
@@ -145,7 +146,7 @@
 						{#each invites as inv, i (i)}
 							<PastilleRetirable
 								prefixe={prefixeInvite(inv)}
-								nom={nomPresent(inv)}
+								nom={nomPresent({ ...inv, nom_affiche: $nomSaisi(inv, `invite-${i}`) })}
 								aideRetirer="Retirer cet invité"
 								on:click={() => (invites = invites.filter((_, j) => j !== i))}
 							/>
@@ -177,7 +178,9 @@
 		{#if inviteOuvert}
 			<InvitePoint
 				{idPrefixe}
-				onAjoute={(inv) => {
+				onAjoute={async (inv) => {
+					//  Nommé par le serveur avant d'entrer : la pastille ne passe pas par « Invité ».
+					await nomSaisiImmediat(inv);
 					invites = [...invites, inv];
 					inviteOuvert = false;
 				}}

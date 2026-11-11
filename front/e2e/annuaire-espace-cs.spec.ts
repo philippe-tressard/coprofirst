@@ -21,6 +21,7 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
+import { nomServi } from './noms-servis';
 
 const CS = {
 	ag_annee: 2025,
@@ -34,6 +35,7 @@ const CS = {
 			genre: 'Mme',
 			prenom: 'Anne',
 			nom: 'Durand',
+			nom_affiche: nomServi({ prenom: 'Anne', nom: 'Durand' }),
 			batiment_id: 2,
 			batiment_nom: '2',
 			etage: 3,
@@ -53,6 +55,7 @@ const SYNDIC = {
 			genre: 'M.',
 			prenom: 'Paul',
 			nom: 'Martin',
+			nom_affiche: nomServi({ prenom: 'Paul', nom: 'Martin' }),
 			fonction: 'Gestionnaire',
 			telephone: '0102030405',
 			est_principal: true,
@@ -184,7 +187,13 @@ test('déplié, le conseil montre son détail et le syndic son résumé', async 
 });
 
 test('le syndic se réordonne, l’ordre part au serveur, un seul principal', async ({ page }) => {
-	const morel = { ...SYNDIC.membres[0], prenom: 'Zoé', nom: 'Morel', est_principal: false };
+	const morel = {
+		...SYNDIC.membres[0],
+		prenom: 'Zoé',
+		nom: 'Morel',
+		nom_affiche: nomServi({ prenom: 'Zoé', nom: 'Morel' }),
+		est_principal: false,
+	};
 	const envois = await ouvrir(page, { ...SYNDIC, membres: [...SYNDIC.membres, morel] });
 	const syndic = section(page, 'Syndic');
 	await syndic.getByRole('button', { name: 'Descendre' }).first().click();

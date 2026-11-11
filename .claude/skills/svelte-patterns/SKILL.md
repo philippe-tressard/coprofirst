@@ -16,7 +16,7 @@ Conventions et patterns pour créer des pages et composants SvelteKit dans le pr
 <script lang="ts">
 	import Icon from '#lib/components/Icon.svelte';
 	import { onMount } from 'svelte';
-	import { isCS, isAdmin, currentUser } from '#lib/stores/auth.ts';
+	import { estModerateur, isAdmin, currentUser } from '#lib/stores/auth.ts';
 	import { entity as entityApi, ApiError, type Entity } from '#lib/api/index.ts';
 	import { getPageConfig, configStore, siteNomStore } from '#lib/stores/pageConfig.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
@@ -94,7 +94,7 @@ porte les trois états, et `messageErreur` (`#lib/erreurs.ts`) porte le texte.
 
 🔴 Svelte monte la **page avant le layout** : l'`onMount` d'un écran précède
 celui de `(app)/+layout.svelte`, qui charge l'utilisateur. Sur un chargement
-direct ou un rechargement, `$isCS`, `$isLocataire`, `$currentUser`… y valent
+direct ou un rechargement, `$estModerateur`, `$isLocataire`, `$currentUser`… y valent
 encore `false` / `null` — seule une navigation interne rend l'écran juste, et
 c'est la seule qu'on essaie à la main (#1486 : huit écrans, dont un bailleur qui
 voyait tous ses lots « Vacant »).

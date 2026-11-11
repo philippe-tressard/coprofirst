@@ -62,10 +62,12 @@ GESTES = [
 
 
 def roles_du_magasin() -> dict[str, frozenset[str]]:
-    """`$isCS` → {conseil_syndical, admin} : la dérivée de `#lib/stores/auth.ts` nomme
-    son droit (`aRole($u, ...ROLES_DU_DROIT.cs)`), la table de `#lib/roles.ts` en
-    donne les rôles (#2634 : une seule écriture, publiée à l'app iOS)."""
-    auth = (FRONT / "lib/stores/auth.ts").read_text(encoding="utf-8")
+    """`$isAdmin` → {admin} : la dérivée de `#lib/stores/auth.ts` nomme son droit
+    (`aRole($u, ...ROLES_DU_DROIT.admin)`), la table de `#lib/roles.ts` en donne les
+    rôles (#2634 : une seule écriture, publiée à l'app iOS) ; `$estModerateur` →
+    {conseil_syndical, admin}, lu dans le PRÉDICAT du serveur dont il lit le champ
+    servi (`$u?.est_moderateur` ← `auth/deps.est_moderateur`, #2633)."""
+    source = (FRONT / "lib/stores/auth.ts").read_text(encoding="utf-8")
     roles_ts = (FRONT / "lib/roles.ts").read_text(encoding="utf-8")
     debut = roles_ts.index("export const ROLES_DU_DROIT = {")
     table = {
@@ -76,14 +78,23 @@ def roles_du_magasin() -> dict[str, frozenset[str]]:
             re.M,
         )
     }
-    return {
+    magasin = {
         nom: table[droit]
         for nom, droit in re.findall(
             r"export const (is\w+) = derived\(currentUser, \(\$u\) => "
             r"aRole\(\$u, \.\.\.ROLES_DU_DROIT\.(\w+)\)\)",
-            auth,
+            source,
         )
     }
+    deps = (FRONT.parent.parent / "api/app/auth/deps.py").read_text(encoding="utf-8")
+    for nom, champ in re.findall(
+        r"export const (\w+) = derived\(currentUser, \(\$u\) => \$u\?\.(\w+) \?\? false\)",
+        source,
+    ):
+        corps = re.search(rf"def {champ}\(.*?\n(?=def |\Z)", deps, re.S)
+        assert corps, f"${nom} lit `{champ}`, que `auth/deps.py` ne définit pas"
+        magasin[nom] = frozenset(re.findall(r"RoleUtilisateur\.(\w+)", corps.group(0)))
+    return magasin
 
 
 def gardes_de(source: str, marqueur: str) -> list[str]:
@@ -114,7 +125,7 @@ def roles_offerts(conditions: list[str], magasin: dict[str, frozenset[str]]) -> 
     offerts: frozenset[str] | None = None
     for condition in conditions:
         assert "||" not in condition, f"condition non analysable : {condition}"
-        for negation, nom in re.findall(r"(!?)\$(is\w+)", condition):
+        for negation, nom in re.findall(r"(!?)\$((?:is|est)[A-Z]\w*)", condition):
             if negation:
                 continue
             assert nom in magasin, f"prédicat inconnu du magasin : ${nom}"
@@ -157,10 +168,10 @@ def ecart(geste: Geste, magasin: dict[str, frozenset[str]]) -> frozenset[str]:
 
 
 def test_le_controle_refuse_le_cas_fautif_d_origine():
-    """Le cas fautif d'abord : `$isCS` devant une route réservée à l'administrateur."""
+    """Le cas fautif d'abord : `$estModerateur` devant une route réservée à l'administrateur."""
     magasin = roles_du_magasin()
     marqueur = "on:click={startEdit}"
-    fautif = "{#if $isCS && !editing}<button on:click={startEdit}></button>{/if}"
+    fautif = "{#if $estModerateur && !editing}<button on:click={startEdit}></button>{/if}"
     offerts = roles_offerts(gardes_de(fautif, marqueur), magasin)
     assert offerts - ROLES_DE_LA_ROUTE["require_admin"] == {"conseil_syndical"}
     juste = "{#if $isAdmin && !editing}<button on:click={startEdit}></button>{/if}"
@@ -169,7 +180,7 @@ def test_le_controle_refuse_le_cas_fautif_d_origine():
 
 def test_le_magasin_et_la_route_sont_lus():
     magasin = roles_du_magasin()
-    assert magasin["isCS"] == {"conseil_syndical", "admin"}
+    assert magasin["estModerateur"] == {"conseil_syndical", "admin"}
     assert magasin["isAdmin"] == {"admin"}
     assert roles_de_la_route("PATCH", "/copropriete") == {"admin"}
 

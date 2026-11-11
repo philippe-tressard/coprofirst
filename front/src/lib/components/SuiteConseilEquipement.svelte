@@ -8,7 +8,7 @@
 <script lang="ts">
 	import type { Writable } from 'svelte/store';
 	import type { Ticket } from '#lib/api/index.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { equipementDansLaSuite, etatSuite } from '#lib/suite-conseil.ts';
 	import SectionEquipement from './SectionEquipement.svelte';
 	import { pliageDe } from '#lib/pliage.ts';
@@ -20,7 +20,7 @@
 	const etat = etatSuite(partage, ticket);
 </script>
 
-{#if equipementDansLaSuite(ticket, $isCS)}
+{#if equipementDansLaSuite(ticket, $estModerateur)}
 	<!--  Le pliage de la DÉCLARATION, comme en édition — il était écrit en dur (#1329). -->
 	<SectionEquipement
 		idPrefixe="suite-{ticket.id}"

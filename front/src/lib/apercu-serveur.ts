@@ -29,6 +29,8 @@ export interface ApercuServi<S, R> {
 	store: Readable<LireApercu<S, R>>;
 	/** La réponse de cette saisie, sans délai — pour un geste qui l'attend. */
 	immediat: (saisie: S) => Promise<R>;
+	/** Range une réponse déjà servie avec l'objet : sa saisie ne se redemande pas. */
+	connue: (saisie: S, reponse: R) => void;
 }
 
 /** Un aperçu servi : `demander` interroge le serveur, `cle` dit quand deux saisies sont la même. */
@@ -94,5 +96,9 @@ export function apercuServi<S, R>(
 		return lue;
 	}
 
-	return { store, immediat };
+	const connue = (saisie: S, reponse: R) => {
+		reponses.set(cle(saisie), reponse);
+	};
+
+	return { store, immediat, connue };
 }

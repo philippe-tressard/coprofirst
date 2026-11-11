@@ -3,7 +3,7 @@
  *
  *  Signalé à l'écran le 13/10/2026 : l'administrateur créé à l'installation
  *  (admin seul — ni lot, ni conseil syndical) voyait « Prestataires » dans son
- *  menu. `Nav.svelte` le réservait à `$isCS`, qui INCLUT l'admin, quand
+ *  menu. `Nav.svelte` le réservait à `$estModerateur`, qui INCLUT l'admin, quand
  *  l'Espace CS excluait déjà l'admin seul. Le manuel, lui, l'annonçait
  *  « Conseil syndical » : c'est le code qui divergeait. Délégations suit la
  *  même règle depuis le 14/10/2026 (demandé à l'écran) : ce compte n'aide ni

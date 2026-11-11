@@ -57,8 +57,8 @@
   | le lien vers un inscrit : « Inscrit lié », « Délier », « Aucun inscrit » | qui est lié, par `membre.user_id` |
   | le pied Enregistrer / Annuler | ce que « enregistrer » veut dire, par `on:enregistrer` |
 
-  ⚠️ `nomAffiche` n'est PAS recopié ici : il vient de `#lib/noms`, comme partout
-  ailleurs (`npm run lint:noms` le refuse).
+  ⚠️ Le « Prénom NOM » du titre n'est PAS composé ici : la saisie le demande au
+  serveur (`#lib/apercu-nom`, #2633), qui applique la règle de l'objet enregistré.
 -->
 <script context="module" lang="ts">
 	import CarteListe from '#lib/components/CarteListe.svelte';
@@ -87,13 +87,15 @@
 	import ActionsMembre, { type Geste } from '#lib/components/ActionsMembre.svelte';
 	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
-	import { nomAffiche } from '#lib/noms.ts';
 	import { CIVILITES } from '#lib/annuaire.ts';
+	import { nomSaisi } from '#lib/apercu-nom.ts';
 
 	/** Le membre édité — lié par `bind:membre` pour que la saisie remonte. */
 	export let membre: MembreBase;
 	//  Le nom du groupe radio de la civilité, propre à CETTE carte : plusieurs
 	//  cartes peuvent être en édition à la fois.
+	//  Il sert aussi de PLACE à l'aperçu du nom : le titre de cette carte garde son
+	//  dernier nom pendant que le serveur rend celui qu'on tape.
 	const idCivilite = `membre-civilite-${Math.random().toString(36).slice(2, 8)}`;
 	/** La carte est dépliée. */
 	export let ouvert = false;
@@ -147,7 +149,7 @@
 	onDeplier={() => dispatch('basculer')}
 >
 	<EnteteCarte
-		titre={`${membre.genre} ${nomAffiche(membre) || '…'}`}
+		titre={`${membre.genre} ${$nomSaisi(membre, idCivilite) || '…'}`}
 		basculable
 		on:toggle={() => dispatch('basculer')}
 	>

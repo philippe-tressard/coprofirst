@@ -30,7 +30,7 @@
 <script lang="ts">
 	import SectionOptionsPublication from '#lib/components/SectionOptionsPublication.svelte';
 	import { OPTIONS_TICKET } from '#lib/tickets.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { TICKET } from '#lib/entites/ticket.ts';
 	import { pliageDe } from '#lib/pliage.ts';
 
@@ -42,7 +42,7 @@
 	export let options = { epingle: false, urgente: false, brouillon: false };
 </script>
 
-{#if $isCS}
+{#if $estModerateur}
 	<SectionOptionsPublication
 		{premiere}
 		pliable={pliageDe(TICKET, 'mise_en_avant')}

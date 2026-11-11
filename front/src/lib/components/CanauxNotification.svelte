@@ -31,7 +31,6 @@
   décochées côté appelant. Envoyer une notification est une action délibérée.
 -->
 <script lang="ts">
-	import { nomAffiche } from '#lib/noms.ts';
 	import { currentUser } from '#lib/stores/auth.ts';
 	import Icon from '#lib/components/Icon.svelte';
 
@@ -95,7 +94,7 @@
 	export let whatsappInterdit = '';
 
 	//  Le nom réellement affiché : celui de l'auteur de l'objet, sinon le nôtre.
-	$: nomCopie = auteurNom || nomAffiche($currentUser);
+	$: nomCopie = auteurNom || ($currentUser?.nom_affiche ?? '');
 
 	//  Cocher puis interdire laisserait une case cochée et grisée, c'est-à-dire
 	//  la promesse d'un envoi qui n'aura pas lieu. On décoche.

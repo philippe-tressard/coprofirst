@@ -4,7 +4,6 @@
 	import { nombreOuNull } from '#lib/utils.ts';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	import { onMount } from 'svelte';
 	import { lots as lotsApi, admin as adminApi } from '#lib/api/index.ts';
 	import type {
@@ -216,7 +215,7 @@
 				statutLabel[imp.statut] ?? imp.statut,
 				...(imp.utilisateurs ?? []).flatMap((o) => [
 					typeLienAbrege(o.type_lien),
-					o.utilisateur ? nomAffiche(o.utilisateur) : '',
+					o.utilisateur ? o.utilisateur.nom_affiche : '',
 				]),
 			],
 			recherche,
@@ -311,7 +310,7 @@
 													'var(--color-text-muted)'}">{typeLienAbrege(occ.type_lien)}</span
 											>
 											{#if occ.utilisateur}
-												<span class="occupant-lie">{nomAffiche(occ.utilisateur)}</span>
+												<span class="occupant-lie">{occ.utilisateur.nom_affiche}</span>
 											{:else}
 												<span class="non-lie">Non lié</span>
 											{/if}

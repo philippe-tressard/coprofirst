@@ -1,0 +1,49 @@
+{
+	"_lisez_moi": "Ce que le SERVEUR sert en `est_moderateur` (`auth/deps.est_moderateur`) pour les rôles des comptes simulés — vérifié par api/tests/test_moderateurs_servis_e2e.py (#2633).",
+	"comptes": [
+		{
+			"roles": ["admin"],
+			"est_moderateur": true
+		},
+		{
+			"roles": ["résident"],
+			"est_moderateur": false
+		},
+		{
+			"roles": ["admin", "operateur"],
+			"est_moderateur": true
+		},
+		{
+			"roles": ["propriétaire"],
+			"est_moderateur": false
+		},
+		{
+			"roles": ["operateur", "résident"],
+			"est_moderateur": false
+		},
+		{
+			"roles": ["conseil_syndical"],
+			"est_moderateur": true
+		},
+		{
+			"roles": ["admin", "conseil_syndical"],
+			"est_moderateur": true
+		},
+		{
+			"roles": ["externe"],
+			"est_moderateur": false
+		},
+		{
+			"roles": ["operateur"],
+			"est_moderateur": false
+		},
+		{
+			"roles": ["conseil_syndical", "propriétaire"],
+			"est_moderateur": true
+		},
+		{
+			"roles": ["admin", "propriétaire"],
+			"est_moderateur": true
+		}
+	]
+}

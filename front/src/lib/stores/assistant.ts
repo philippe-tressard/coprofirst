@@ -9,7 +9,7 @@
  *
  *  🔴 Ne s'appelle QUE pour le conseil syndical et l'administration : la route
  *  refuse aux autres, et interroger pour recevoir un 403 serait une requête
- *  par formulaire ouvert, pour rien. L'appelant vérifie `$isCS` avant.
+ *  par formulaire ouvert, pour rien. L'appelant vérifie `$estModerateur` avant.
  */
 import { writable } from 'svelte/store';
 import { assistant as assistantApi } from '#lib/api/index.ts';

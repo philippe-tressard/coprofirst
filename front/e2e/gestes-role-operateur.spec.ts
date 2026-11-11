@@ -11,6 +11,7 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { nomServi } from './noms-servis';
 
 const OPERATEUR = { ...MEMBRE_CS, role: 'admin', roles: ['admin', 'operateur'] };
 const ADMIN_SEUL = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
@@ -33,6 +34,7 @@ function ligne(
 		id,
 		prenom,
 		nom: 'Durand',
+		nom_affiche: nomServi({ prenom, nom: 'Durand' }),
 		email: `${prenom.toLowerCase()}@exemple.test`,
 		statut: 'copropriétaire_résident',
 		role: roles.includes('admin') ? 'admin' : 'résident',

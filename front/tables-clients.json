@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "1.2.0",
+  "version": "1.0.0",
   "tables": {
     "attributsAdmis": {
       "source": "front/src/lib/sanitize.ts#ALLOWED_ATTR",
@@ -1613,10 +1613,6 @@
         "admin": [
           "admin"
         ],
-        "cs": [
-          "conseil_syndical",
-          "admin"
-        ],
         "operateur": [
           "operateur"
         ],
@@ -1624,10 +1620,8 @@
           "admin",
           "operateur"
         ],
-        "proprioOuCS": [
-          "propriétaire",
-          "conseil_syndical",
-          "admin"
+        "proprietaire": [
+          "propriétaire"
         ],
         "adminSeul": [
           "admin"

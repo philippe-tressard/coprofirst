@@ -691,9 +691,11 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 - [ ] un assainisseur de `#lib/sanitize` sur tout `{@html}` — jamais un helper
       local, même correct (`npm run lint:html` le refuse)
 - [ ] Accessibilité : `role`, `tabindex`, `aria-label`, `on:keydown`
-- [ ] Droits : jamais recomposés dans un écran — `$isCS` (il **inclut** admin),
-      `$isProprioOuCS`, `aRole(u, …)`, ou le geste SERVI avec l'objet (`peut_*` ; le
-      crayon d'une affaire : `peut_corriger`, #2633). Ils l'étaient
+- [ ] Droits : jamais recomposés dans un écran — `$estModerateur` (il **inclut** admin ;
+      il LIT `UserRead.est_moderateur`, servi par `auth/deps.est_moderateur` — l'app
+      iOS lit le même champ, #2633), `$isProprioOuCS`, `aRole(u, …)`, ou le geste
+      SERVI avec l'objet (`peut_*` ; le crayon d'une affaire : `peut_corriger`, #2633).
+      Ils l'étaient
       **22 fois** avant #1041 (`npm run lint:droits` le refuse)
 - [ ] Un geste d'écriture n'est offert qu'aux rôles que sa route accepte : le prédicat de
       l'écran ne peut pas être plus large que la dépendance de la route (la fiche de la

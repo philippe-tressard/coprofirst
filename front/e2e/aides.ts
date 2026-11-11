@@ -2,7 +2,7 @@
  *  Aides partagées des tests de navigateur.
  */
 import { test as base, expect, type Locator, type Page, type Route } from '@playwright/test';
-import { REFERENTIELS_TEMOINS, reponseApercu } from './referentiels-temoins';
+import { REFERENTIELS_TEMOINS, compteServi, reponseApercu } from './referentiels-temoins';
 
 /**
  * **Le `test` de tous les specs — une exception de la page le fait échouer.**
@@ -342,7 +342,7 @@ export async function simulerApi(
 			return route.fulfill({
 				status: 200,
 				contentType: 'application/json',
-				body: JSON.stringify(corps),
+				body: JSON.stringify(chemin === '/api/auth/me' ? compteServi(corps) : corps),
 			});
 		},
 	);
