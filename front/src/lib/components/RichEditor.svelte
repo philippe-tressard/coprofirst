@@ -33,6 +33,8 @@
 -->
 <script lang="ts">
 	import IconeAction from '#lib/components/IconeAction.svelte';
+	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { MORCEAU_NON_CHARGE } from '#lib/chargement.ts';
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	//  🔴 TIPTAP SE CHARGE À LA DEMANDE, jamais par un import statique (04/10/2026).
 	//
@@ -86,25 +88,35 @@
 	 *   monte alors plus rien — l'élément n'existe plus. */
 	let detruit = false;
 
+	/**  Vrai si Tiptap n'a pas pu se charger : la zone resterait muette, on le DIT. */
+	let nonCharge = false;
+
 	onMount(async () => {
-		const [{ Editor }, { default: StarterKit }, { default: Placeholder }, blocs] =
-			await Promise.all([
-				import('@tiptap/core'),
-				import('@tiptap/starter-kit'),
-				//  🔴 `Underline` N'EST PLUS IMPORTÉ (Tiptap 3, 03/09/2026) : StarterKit 3
-				//  l'inclut. Le garder aurait chargé l'extension DEUX fois — Tiptap
-				//  avertit à l'exécution et n'en garde qu'une, mais un avertissement de
-				//  console n'est lu par personne. Vérifié en listant les extensions du
-				//  StarterKit installé, jamais supposé d'après le guide de migration.
-				import('@tiptap/extension-placeholder'),
-				//  🔴 Deux nœuds pour que les blocs dépliables SURVIVENT à l'éditeur
-				//  (#992) : ProseMirror ne garde que ce que son schéma connaît, et le
-				//  texte proposé par l'assistant traverse ce formulaire avant d'être
-				//  enregistré. Sans eux, un `<details>` serait aplati sans un mot.
-				//  Voir `#lib/blocDepliable` — chargé ici aussi : il importe Tiptap.
-				import('#lib/blocDepliable.ts'),
-			]);
+		//  Rattrapé (#2683) : `onMount` ne lit pas la promesse d'une fonction async, et
+		//  un import qui échoue — ou que WebKit interrompt quand la page s'en va —
+		//  devenait une exception non rattrapée de la page.
+		const charges = await Promise.all([
+			import('@tiptap/core'),
+			import('@tiptap/starter-kit'),
+			//  🔴 `Underline` N'EST PLUS IMPORTÉ (Tiptap 3, 03/09/2026) : StarterKit 3
+			//  l'inclut. Le garder aurait chargé l'extension DEUX fois — Tiptap
+			//  avertit à l'exécution et n'en garde qu'une, mais un avertissement de
+			//  console n'est lu par personne. Vérifié en listant les extensions du
+			//  StarterKit installé, jamais supposé d'après le guide de migration.
+			import('@tiptap/extension-placeholder'),
+			//  🔴 Deux nœuds pour que les blocs dépliables SURVIVENT à l'éditeur
+			//  (#992) : ProseMirror ne garde que ce que son schéma connaît, et le
+			//  texte proposé par l'assistant traverse ce formulaire avant d'être
+			//  enregistré. Sans eux, un `<details>` serait aplati sans un mot.
+			//  Voir `#lib/blocDepliable` — chargé ici aussi : il importe Tiptap.
+			import('#lib/blocDepliable.ts'),
+		]).catch(() => null);
 		if (detruit) return;
+		if (!charges) {
+			nonCharge = true;
+			return;
+		}
+		const [{ Editor }, { default: StarterKit }, { default: Placeholder }, blocs] = charges;
 		editor = new Editor({
 			element: editorEl,
 			extensions: [
@@ -297,6 +309,9 @@
 		{/if}
 	</div>
 
+	{#if nonCharge}
+		<EtatListe erreur={MORCEAU_NON_CHARGE.erreur} titreErreur={MORCEAU_NON_CHARGE.titre} />
+	{/if}
 	<!-- Editor area — masquée, et non démontée, en mode source : Tiptap y reste
 	     attaché et reprend la valeur corrigée au retour. -->
 	<div
