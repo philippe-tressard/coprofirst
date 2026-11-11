@@ -10,7 +10,7 @@
   suffisait de s'aligner dessus.
 
   ⚠️ Elle ne décide de rien : chaque icône émet, la carte relaie, la page agit.
-  Les DROITS arrivent calculés (`peutSuivre`, `peutEditer`, `peutAdministrer`) —
+  Les DROITS arrivent calculés (`peutSuivre`, `peutCorriger`, `peutAdministrer`) —
   les recalculer ici en ferait une seconde lecture de la même règle.
 
   🔴 L'ORDRE des icônes est celui de tout le site — 🔗 · 🔄 · ✏️ · options · 🗑️ —
@@ -31,7 +31,8 @@
 	/** Le mode ouvert sur la carte — il inverse l'icône qui l'a ouvert. */
 	export let mode: 'lecture' | 'edition' | 'evolution' | 'options' = 'lecture';
 	export let peutSuivre = false;
-	export let peutEditer = false;
+	/** ✏️ Le crayon, SERVI avec l'affaire (`peut_corriger`, #2633). */
+	export let peutCorriger = false;
 	export let peutAdministrer = false;
 	/** Rendue aux Archives : 🗑️ y remplace 📦 (`ux-patterns` §8). */
 	export let archive = false;
@@ -78,7 +79,7 @@
 		><IconeAction icone="refresh-cw" /></button
 	>
 {/if}
-{#if peutEditer}
+{#if peutCorriger}
 	<!--  « Modifier » tout court, comme l'actualité (21/09/2026, signalé à
 	      l'écran) : l'infobulle disait « Modifier le ticket », le mot du
 	      modèle. Nommer l'objet ici n'apprend rien — on est sur sa carte. -->
@@ -97,7 +98,7 @@
 <!--  Les options ACTIVES, et le chemin court pour les changer. Le crayon
 	      ouvre tout — périmètre, description, pièces jointes — là où
 	      dépingler ne touche qu'une case. Même bouton qu'aux actualités. -->
-{#if peutEditer}
+{#if peutCorriger}
 	<BoutonOptions
 		objet={{
 			epingle: ticket.epingle ?? false,

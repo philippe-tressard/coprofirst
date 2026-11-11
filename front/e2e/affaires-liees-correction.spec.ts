@@ -22,6 +22,8 @@ const LIEE = {
 	numero: 'TK-A00061',
 	titre: 'Tache au plafond du logement du dessous',
 	statut: 'ouvert',
+	//  L'état en clair est SERVI avec l'affaire liée (`statut_libelle`, #2633).
+	statut_libelle: 'Ouvert',
 	//  Plus ancienne que l'affaire corrigée : c'est elle qui absorbera.
 	cree_le: '2026-09-10T08:00:00Z',
 };
@@ -35,6 +37,8 @@ const AFFAIRE = {
 	statut: 'en_cours',
 	priorite: 'normale',
 	auteur_id: 1,
+	//  ✏️ Le crayon est SERVI (`peut_corriger`, #2633) : l'auteur le reçoit.
+	peut_corriger: true,
 	auteur_nom: 'CS Témoin',
 	perimetre_cible: ['résidence'],
 	public_cible: [],

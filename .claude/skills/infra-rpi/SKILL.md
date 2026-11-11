@@ -206,6 +206,10 @@ cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abo
   dernière archive qui le porte (#2659). Deux préfixes mêlés : l'ordre des noms n'est
   plus celui du temps — on trie par l'horodatage lu (`backup.archives`, `trier_archives`
   côté poste), jamais par `sorted(glob(…))` ni `ls | sort`.
+  Depuis #2667, le nom dit aussi la RÉSIDENCE : `<préfixe><qui>_<horodatage>`, `<qui>`
+  = `site_nom` réduit (`backup.qui_nomme_l_archive`), sinon l'identifiant du contexte
+  (`principale` sur les RPi). Ni tri ni rotation ne le lisent (`cle_archive` côté poste) :
+  une résidence renommée garde ses anciennes archives dans la même série.
   ⚠️ La copie hors site n'est PAS planifiée : Philippe la lance à la main, par le
   raccourci du Bureau — un lien vers `scripts/poste/export-hors-site.command` du
   **clone principal** (`/Volumes/Data/Dev/5hostachy`, branche `dev` ; `C:\Dev\5hostachy`

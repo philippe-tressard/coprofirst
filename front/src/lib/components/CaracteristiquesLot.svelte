@@ -30,11 +30,12 @@
 <script lang="ts">
 	import DetailReglementLot from '#lib/components/DetailReglementLot.svelte';
 	import type { MonLot } from '#lib/api/index.ts';
-	import { etageLabel, fmtNombre } from '#lib/utils.ts';
+	import { fmtNombre } from '#lib/utils.ts';
 
 	/** Le type et sa précision, tels que l'API les sert (`libelle_type_complet`, #2507). */
 	export let typeComplet: string | null | undefined = null;
-	export let etage: number | null | undefined = null;
+	/** L'étage en clair, SERVI (`etage_libelle`, #2633) — vide : la ligne se tait. */
+	export let etageLibelle: string | null | undefined = '';
 	export let superficie: number | null | undefined = null;
 	/** Le lot tel que `/lots/mes-lots` le rend — sa désignation du règlement. */
 	export let designation: Pick<
@@ -52,9 +53,9 @@
 		<dt>Type</dt>
 		<dd class="type-lot">{typeComplet}</dd>
 	{/if}
-	{#if etage !== null && etage !== undefined}
+	{#if etageLibelle}
 		<dt>Étage</dt>
-		<dd>{etageLabel(etage)}</dd>
+		<dd>{etageLibelle}</dd>
 	{/if}
 	{#if superficie}
 		<dt>Superficie</dt>

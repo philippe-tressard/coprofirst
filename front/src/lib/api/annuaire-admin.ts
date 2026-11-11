@@ -86,6 +86,8 @@ export interface Rapprochement {
 	/** Le NUMÉRO du bâtiment (« A »). */
 	batiment_nom: string | null;
 	etage: number | null;
+	/** « RDC », « 2ème étage » — `""` sans étage, comme la fiche du membre (#2633). */
+	etage_libelle: string;
 }
 
 export const annuaireAdmin = {

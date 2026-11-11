@@ -40,7 +40,6 @@
 		optionsDuTicket,
 		optionsVersTicket,
 		STATUT_TICKET_LABELS,
-		statutTicketLabel,
 		type GestesTicket,
 	} from '#lib/tickets.ts';
 	import { basculer } from '#lib/accordeon.ts';
@@ -105,7 +104,7 @@
 		const texte = e.contenu ? stripHtml(e.contenu) : '';
 		const tete =
 			e.type === 'etat' && e.nouveau_statut
-				? `${statutTicketLabel(e.nouveau_statut)} le ${fmtDate(e.cree_le)}`
+				? `${e.nouveau_statut_libelle} le ${fmtDate(e.cree_le)}`
 				: fmtDate(e.cree_le);
 		return texte ? `${tete} — ${texte}` : tete;
 	}
@@ -295,7 +294,7 @@
 	<!--  Le NUMÉRO est dans l'en-tête : pas deux fois le même fait. -->
 	<p class="tk-meta">
 		Créée le {fmtDate(ticket.cree_le)}{cloture
-			? ` · ${statutTicketLabel(ticket.statut)} le ${fmtDate(cloture.cree_le)}`
+			? ` · ${ticket.statut_libelle} le ${fmtDate(cloture.cree_le)}`
 			: ''}
 	</p>
 {/if}

@@ -39,7 +39,7 @@
 	import PiedCarte from '#lib/components/PiedCarte.svelte';
 	import { BADGE_PRIORITE, PRIORITE_BREVE, optionsEnBadge } from '#lib/tickets.ts';
 	import type { Ticket } from '#lib/api/index.ts';
-	import { etatAffiche } from '#lib/suivi-actualite.ts';
+	import { etatAffiche, libelleEtatAffiche } from '#lib/suivi-actualite.ts';
 
 	/** L'affaire — une carte la passe entière, le fil ses seuls champs de ligne. */
 	export let affaire: Ticket;
@@ -61,7 +61,11 @@
 	numero={affaire.numero}
 >
 	{#if etat}
-		<BadgeEtatAffaire statut={etat} fusionnee={affaire.fusionnee} />
+		<BadgeEtatAffaire
+			statut={etat}
+			libelle={libelleEtatAffiche(affaire)}
+			fusionnee={affaire.fusionnee}
+		/>
 	{/if}
 	<BadgePerimetre perimetre={affaire.perimetre_cible} />
 	<PastilleLecture ticket={affaire} />

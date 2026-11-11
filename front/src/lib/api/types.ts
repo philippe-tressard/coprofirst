@@ -256,6 +256,8 @@ export interface Ticket extends PorteSaisiPourLu {
 	categorie_libelle: string;
 	/** « Chez le syndic » — la valeur brute si elle est inconnue. */
 	statut_libelle: string;
+	/** L'état du suivi d'une actualité en clair — vide sans suivi (#2633). */
+	suivi_actualite_libelle: string;
 	/** Résolue ou annulée : elle quitte le suivi. */
 	close: boolean;
 	/** La colonne du Kanban, `null` hors tableau (`kanban_tickets.colonne_du_ticket`). */
@@ -272,6 +274,8 @@ export interface Ticket extends PorteSaisiPourLu {
 	peut_deplacer_au_kanban?: boolean;
 	peut_repondre?: boolean;
 	peut_modifier?: boolean;
+	/** ✏️ Le crayon : ouvrir la correction (`auth/deps.peut_editer`, #2633). */
+	peut_corriger?: boolean;
 	/**  Le ticket paraît-il au KANBAN ? Coché d'office pour « Étude & travaux »,
 	 *   décochable par le conseil (#833).
 	 *

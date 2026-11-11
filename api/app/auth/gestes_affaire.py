@@ -21,6 +21,14 @@ chaque rôle, et confronte la réponse au champ servi.
 c'est un arbitrage (23/09/2026, `VueKanbanAffaires`) : le conseil seul glisse
 une carte, alors que la Suite d'état reste ouverte à l'auteur. Elle s'écrit donc
 sur `peut_changer_etat`, qu'elle restreint — jamais à côté.
+
+✏️ `peut_corriger` (#2633) est le geste du CRAYON : il ouvre la correction de
+l'affaire — contenu, liées, diffusion, suivi —, et se lit sur `auth/deps.peut_editer`,
+le droit que la route `PATCH` exige pour toucher au contenu. Il est plus LARGE que
+`peut_modifier`, qui ajoute « tant qu'elle est ouverte » au contenu seul : l'auteur
+d'une affaire engagée garde son crayon (la diffusion, les options passent encore).
+Arbitré le 11/11/2026 : le conseil syndical le reçoit aussi sur une actualité,
+comme la route l'accepte depuis #1091 ; l'écran le taisait.
 """
 
 from __future__ import annotations
@@ -112,6 +120,7 @@ def gestes_servis(ticket: Any, lecteur: Utilisateur | None) -> dict[str, bool]:
         "peut_deplacer_au_kanban": peut_deplacer_au_kanban,
         "peut_repondre": peut_repondre,
         "peut_modifier": peut_modifier,
+        "peut_corriger": peut_editer,
     }
     return {nom: lecteur is not None and regle(ticket, lecteur) for nom, regle in gestes.items()}
 

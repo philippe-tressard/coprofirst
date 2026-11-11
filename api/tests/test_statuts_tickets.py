@@ -214,9 +214,10 @@ def test_les_exceptions_declarees_servent_encore():
         )
 
 
-#: Le routeur autorisé à écrire les états en toutes lettres : la table des
-#: libellés, vérifiée par `test_tout_etat_affichable_a_un_libelle…`.
-_AUTORISES_API = {"routers/tickets/commun.py"}
+#: Le module autorisé à écrire les états en toutes lettres : la table des
+#: libellés, vérifiée par `test_tout_etat_affichable_a_un_libelle…`. Elle vit
+#: avec sa règle (`libelle_etat`) depuis #2633 ; `tickets/commun` la ré-exporte.
+_AUTORISES_API = {"utils/etat_affaire.py"}
 
 
 def _code_python(src: str) -> str:

@@ -61,8 +61,21 @@ const SYNDIC = {
 };
 //  Ce que le serveur rapproche d'un nom (`Rapprochement`) : l'inscrit 42, au
 //  1er étage du bâtiment 4 — pour « Bernard » seulement.
-const RAPPROCHE = { user_id: 42, batiment_id: 4, batiment_nom: '4', etage: 1 };
-const RIEN = { user_id: null, batiment_id: null, batiment_nom: null, etage: null };
+//  L'étage en clair est SERVI (`etage_libelle`, #2633) : l'écran le lit.
+const RAPPROCHE = {
+	user_id: 42,
+	batiment_id: 4,
+	batiment_nom: '4',
+	etage: 1,
+	etage_libelle: '1er étage',
+};
+const RIEN = {
+	user_id: null,
+	batiment_id: null,
+	batiment_nom: null,
+	etage: null,
+	etage_libelle: '',
+};
 
 //  Ce que l'écran envoie, tel que les assertions le lisent.
 type Envoi = { chemin: string; corps: { membres: { id?: number; nom: string }[] } };
@@ -116,7 +129,7 @@ test('un nom saisi lie l’inscrit, localise le membre, et c’est ce qui part',
 	const nom = conseil.getByPlaceholder('NOM', { exact: true });
 	await nom.fill('Bernard');
 	await nom.dispatchEvent('input');
-	await expect(conseil.locator('.localisation-info')).toContainText('1');
+	await expect(conseil.locator('.localisation-info')).toContainText('Bât. 4 — 1er étage');
 	await expect(conseil.getByText(/Inscrit lié/).first()).toBeVisible();
 
 	await conseil.getByRole('button', { name: 'Enregistrer', exact: true }).click();
