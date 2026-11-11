@@ -23,6 +23,7 @@ from app.models.core import LocationBail, Lot, Batiment, StatutBail, Utilisateur
 from pydantic import BaseModel
 from app.auth.appartenance import exiger_bail_du_bailleur
 from app.utils.acces_bail import confies, remettre, rendre_au_bailleur
+from app.utils.etages import etage_label
 from app.utils.lecture import lire_objet
 from app.utils.libelles_lot import libelle_type_complet, libelle_type_lot
 from app.utils.porteurs_acces import acces_de
@@ -261,6 +262,8 @@ class BailLocataireOut(BaseModel):
     #: Le type du lot et sa précision en clair — « Appartement – T3 » (#2507).
     lot_libelle_type_complet: Optional[str] = None
     lot_etage: Optional[int] = None
+    #: L'étage en clair — « RDC », « 2ème », « SS 1 » ; vide sans étage (#2633).
+    lot_etage_libelle: str = ""
     lot_superficie: Optional[float] = None
     lot_batiment_nom: Optional[str] = None
     bailleur_nom: str
@@ -306,6 +309,7 @@ def mon_bail(
             libelle_type_complet(bail_lot.type, bail_lot.type_appartement) if bail_lot else None
         ),
         lot_etage=bail_lot.etage if bail_lot else None,
+        lot_etage_libelle=etage_label(bail_lot.etage) if bail_lot else "",
         lot_superficie=bail_lot.superficie if bail_lot else None,
         #  🔴 `bail_bat.nom` jusqu'au 02/10/2026 (#1563) : `Batiment` n'a pas de
         #  `nom`, et la route levait dès que le lot du bail avait un bâtiment —

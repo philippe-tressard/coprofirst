@@ -36,7 +36,6 @@
 	import { messageErreur } from '#lib/erreurs.ts';
 	import type { Perimetre } from '#lib/perimetres/index.ts';
 	import { contientTousLesMots } from '#lib/texte.ts';
-	import { etageLabel } from '#lib/utils.ts';
 
 	let lots: MonLot[] = [];
 	let constats: ConstatPatrimoine[] = [];
@@ -203,7 +202,7 @@
 							<td>{l.batiment_nom ?? '—'}</td>
 							<td>{l.libelle_nature}</td>
 							<td>{l.numero_usage ?? '—'}</td>
-							<td>{l.etage === null ? '—' : etageLabel(l.etage)}</td>
+							<td>{l.etage === null ? '—' : l.etage_libelle}</td>
 							<td>{desservi(l)}</td>
 							<td>
 								<button

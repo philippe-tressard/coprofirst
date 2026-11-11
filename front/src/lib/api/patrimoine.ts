@@ -347,6 +347,8 @@ export interface MonLot {
 	nom_du_lot: string;
 	/** L'étage en clair — « RDC », « 2ème », « SS 1 » ; vide sans étage. */
 	etage_libelle: string;
+	/** Le même dans une phrase — « RDC », « 2ème étage », « SS 1 » (#2633). */
+	etage_libelle_complet: string;
 }
 
 /** Un périmètre d'un lot — `PerimetreDuLot` (`utils/lecture_lots.py`). */

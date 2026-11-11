@@ -370,6 +370,7 @@ ATTENDU_LOT = {
     "libelle_nature": "Logement",
     "nom_du_lot": "Logement 12",
     "etage_libelle": "2ème",
+    "etage_libelle_complet": "2ème étage",
 }
 ATTENDU_ACCES = {
     "code": "V-9",
@@ -390,6 +391,7 @@ ATTENDU_BAIL = {
     "lot_type_appartement": "T3",
     "lot_libelle_type_complet": "Appartement – T3",
     "lot_etage": 2,
+    "lot_etage_libelle": "2ème",
     "lot_superficie": 61.5,
     #  🔴 L'ancienne écriture lisait `Batiment.nom`, qui n'existe pas : la route
     #  levait (500) dès que le lot du bail avait un bâtiment.

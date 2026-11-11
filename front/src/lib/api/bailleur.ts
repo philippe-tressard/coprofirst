@@ -107,6 +107,8 @@ export interface BailLocataire {
 	/** Le type du lot et sa précision en clair — « Appartement – T3 » (#2507). */
 	lot_libelle_type_complet: string | null;
 	lot_etage: number | null;
+	/** L'étage en clair — « RDC », « 2ème », « SS 1 » ; vide sans étage (#2633). */
+	lot_etage_libelle: string;
 	lot_superficie: number | null;
 	lot_batiment_nom: string | null;
 	bailleur_nom: string;

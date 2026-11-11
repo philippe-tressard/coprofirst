@@ -107,6 +107,8 @@ class LotRead(Designation):
     #: L'étage en clair — « RDC », « 2ème », « SS 1 » ; vide sans étage
     #: (`utils/etages.etage_label`).
     etage_libelle: str = ""
+    #: Le même dans une phrase — « RDC », « 2ème étage », « SS 1 » (#2633).
+    etage_libelle_complet: str = ""
 
 
 def _lot_read(lot: Lot, designation: Optional[Designation] = None) -> LotRead:
@@ -124,6 +126,7 @@ def _lot_read(lot: Lot, designation: Optional[Designation] = None) -> LotRead:
     lu.libelle_nature = libelle_type_lot(nature_ou_type(lu))
     lu.nom_du_lot = nom_du_lot(lu)
     lu.etage_libelle = etage_label(lu.etage)
+    lu.etage_libelle_complet = etage_label(lu.etage, suffixe=True)
     return lu
 
 

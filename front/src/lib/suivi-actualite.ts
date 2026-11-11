@@ -31,6 +31,14 @@ export function etatAffiche(t: Suivable): string | null {
 	return estActualite(t) ? (t.suivi_actualite ?? null) : t.statut;
 }
 
+/** Le même, en clair — SERVI par l'API (`statut_libelle`, `suivi_actualite_libelle`,
+ *  #2633) : l'écran choisit lequel, il ne compose pas le libellé. */
+export function libelleEtatAffiche(
+	t: Suivable & Pick<Ticket, 'statut_libelle' | 'suivi_actualite_libelle'>,
+): string {
+	return (estActualite(t) ? t.suivi_actualite_libelle : t.statut_libelle) ?? '';
+}
+
 /** L'état que la Suite fait avancer — pendant de `etat_de_la_suite`. */
 export function etatDeLaSuite(t: Suivable): string {
 	return etatAffiche(t) ?? t.statut;

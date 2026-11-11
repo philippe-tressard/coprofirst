@@ -16,7 +16,7 @@
 	import TableauCharges from '#lib/components/TableauCharges.svelte';
 	import { designationDuLot } from '#lib/charges-lots.ts';
 	import { fmtDateShort as fmt } from '#lib/date.ts';
-	import { etageLabel, fmtNombre } from '#lib/utils.ts';
+	import { fmtNombre } from '#lib/utils.ts';
 
 	export let lots: MonLot[] = [];
 	export let bauxActifs: Bail[] = [];
@@ -62,9 +62,7 @@
 			</div>
 			<div class="lpc-details">
 				<span class="badge badge-gray type-lot">{lot.libelle_type_complet}</span>
-				{#if lot.etage !== null}<span class="text-muted-sm"
-						>{etageLabel(lot.etage, { suffixe: true })}</span
-					>{/if}
+				{#if lot.etage !== null}<span class="text-muted-sm">{lot.etage_libelle_complet}</span>{/if}
 				{#if lot.superficie}<span class="text-muted-sm">{fmtNombre(lot.superficie)} m²</span>{/if}
 			</div>
 			<!--  Où est le lot et ce qui le dessert, puis le chemin vers sa colonne du tableau des

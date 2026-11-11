@@ -99,6 +99,8 @@ test('le locataire voit l’état de son bail par la table des états', async ({
 				lot_batiment_nom: 'Bât. 2',
 				lot_type: 'appartement',
 				lot_etage: 2,
+				//  Servi par l'API (`lot_etage_libelle`, #2633) : l'écran le lit.
+				lot_etage_libelle: '2ème',
 			};
 	});
 	await page.goto('/mon-lot');
@@ -110,6 +112,7 @@ test('le locataire voit l’état de son bail par la table des états', async ({
 	await expect(badge).toHaveClass(/badge-yellow/);
 	await expect(page.getByText('en_cours sortie')).toHaveCount(0);
 	await expect(page.locator('dl')).toContainText('Étage');
+	await expect(page.locator('dl')).toContainText('2ème');
 });
 
 test('supprimer un bail : confirmation partagée, rien n’est envoyé sans elle', async ({ page }) => {
