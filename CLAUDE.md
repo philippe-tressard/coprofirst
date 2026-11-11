@@ -1360,12 +1360,13 @@ d'urgence : `ALLOW_STALE=1 git commit …`.
   La contrepartie demandée n'est pas une validation *avant*, c'est un **compte rendu
   après** : à chaque MEP, **la version et les fonctionnalités apportées**.
   Le pré-check ne s'allège pas pour autant : c'est lui qui remplace la relecture.
-  `gh pr create` → attendre **tous les checks requis** → `gh pr merge --squash
-  --delete-branch` → **réaligner `dev` sur `origin/main`** (la fusion est un squash
-  et supprime la branche distante).
-  ⚠️ `gh pr merge --delete-branch` supprime aussi la branche **locale** et bascule
-  sur `main` : committer sans regarder `git branch --show-current` met le lot suivant
-  sur `main`, où le push est refusé.
+  🔴 **La MEP se conduit par `bash scripts/poste/conduire-mep.sh`** (#2631) — fusion
+  du lot sur checks verts ET état `CLEAN`, version du train posée, une seule PR
+  `dev → main`, fenêtre de bascule respectée, `dev` recréée et les PR qui la visaient
+  ramenées (rouvertes si GitHub les a fermées), `Déployé:` sur l'actif, `--post-mep`.
+  Tué, il se relance avec les mêmes arguments ; `--a-blanc` décide sans rien écrire.
+  Usage et pièges : skill `mep-precheck`. Il ne touche à aucune copie de travail :
+  après lui, une copie restée sur `dev` se réaligne (`checkout -B dev origin/main`).
 - MEP : elle n'est **pas** la fusion. `auto-deploy.sh` (cron utilisateur, toutes les quelques minutes) fait le `git pull`
   **puis** le build : entre les deux, les points 12 et 18 du pré-check échouent
   légitimement — le code est à jour, l'image ne l'est pas. Attendre la ligne
@@ -1377,10 +1378,9 @@ d'urgence : `ALLOW_STALE=1 git commit …`.
 - **Session cloud** (claude.ai/code) : aucun SSH vers les RPi, et le site public
   est hors de la politique réseau de la session. 🔴 **La MEP s'y enchaîne SANS
   validation intermédiaire** (arbitré le 25/09/2026) : PR du lot vers `dev` →
-  fusion dès les checks requis verts → bump de version en **dernier commit** du lot →
-  PR `dev → main` → fusion dès ses checks requis verts → **recréer `dev` depuis `main`**
-  (la fusion la supprime ; par l'API GitHub, le hook `pre-push` refusant un push
-  sans trace de pré-check). Une seule demande de l'utilisateur couvre toute la
+  fusion dès les checks requis verts → PR `dev → main` → fusion dès ses checks requis
+  verts → **recréer `dev` depuis `main`** — la même chaîne que `conduire-mep.sh`, qui
+  pose la version et s'arrête, faute de SSH, à la lecture du nœud actif : attendu. Une seule demande de l'utilisateur couvre toute la
   chaîne, et le compte rendu arrive **après** — version et fonctionnalités, comme
   au poste.
   Ce qui ne s'improvise pas : le **pré-check** est INCONNU et la PR le dit ; le
@@ -1429,7 +1429,12 @@ Instanciation 5Hostachy :
   racine (`packages[""]`) : deux lignes, jamais une dépendance. `npm run lint:lock`
   refuse l'écart en CI — cette ligne ne nommait que `package.json`, et un bump
   l'a suivie à la lettre le 30/09/2026 (rattrapé au rejeu, pas avant).
-- Bump **avant** le push final sur `dev`, commit dédié `chore(version): bump vX.Y.Z`.
+- 🔴 **La version se pose À LA MEP, jamais dans un lot** (#2631) : `conduire-mep.sh` la
+  calcule de `main` et des préfixes des commits du train, et la commit sur `dev`
+  (`chore(version): bump vX.Y.Z`, par `npm version`). Un lot qui porte un bump est
+  refusé par le point 0d ; « outillage seul » ne demande rien de plus — le train
+  le compte en correctif. Trois collisions de numéro le 10/11 venaient de la
+  version posée lot par lot.
 - **Chaque commit de `main` publie ses images, le bump y ajoute le tag** (#1753) :
   le workflow `images.yml` publie les images signées des quatre services sur
   `ghcr.io/philippe-tressard/coprofirst-*` (amd64 et arm64, publiques d'office :
