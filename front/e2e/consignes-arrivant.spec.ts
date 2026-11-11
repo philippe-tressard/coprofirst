@@ -50,7 +50,7 @@ test.beforeEach(async ({ page }, info) => {
 	if (info.project.name === 'mobile') await page.setViewportSize({ width: 375, height: 812 });
 });
 
-test('la lecture dit que ce sont celles du modèle', async ({ page }) => {
+test('la lecture dit que ce sont celles du modèle @mise-en-page', async ({ page }) => {
 	await ouvrir(page);
 	const bloc = section(page);
 	await expect(bloc).toContainText('Modèle générique');

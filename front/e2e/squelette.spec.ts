@@ -61,7 +61,7 @@ test.describe('Squelette et accessibilité au clavier', () => {
 	//  débordement horizontal est le défaut qu'on ne voit JAMAIS sur un écran
 	//  large. Mesuré, pas supposé — et sur les deux profils, bureau et mobile.
 	for (const chemin of ['/auth/connexion', '/mentions-legales', '/politique-de-confidentialite']) {
-		test(`le corps ne défile pas horizontalement — ${chemin}`, async ({ page }) => {
+		test(`le corps ne défile pas horizontalement — ${chemin} @mise-en-page`, async ({ page }) => {
 			await page.goto(chemin);
 			await attendreSansDefilementHorizontal(page);
 		});

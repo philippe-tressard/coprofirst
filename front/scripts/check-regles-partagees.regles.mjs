@@ -219,7 +219,7 @@ export const REGLES_PARTAGEES = {
 		migration: {
 			ticket: '#2633',
 			raison:
-				"servis pour les affaires (`peut_archiver`, `peut_deplacer_au_kanban`, `referentiels.categories[].permise`, #2508) ; le site garde `$isCS` pour une cinquantaine d'écrans hors affaires",
+				"servis pour les affaires (`peut_archiver`, `peut_deplacer_au_kanban`, `referentiels.categories[].permise`, #2508), la FAQ (`GET /faq/gestes`) et les sondages (`GET /sondages/gestes`, #2654) ; le site garde `$isCS` pour une cinquantaine d'écrans hors affaires",
 		},
 	},
 	categorieTicketLabel: {

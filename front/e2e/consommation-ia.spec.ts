@@ -48,7 +48,9 @@ const CONSOMMATION = {
 	],
 };
 
-test('Maintenance : la consommation de l’assistant, sa limite et son coût', async ({ page }) => {
+test('Maintenance : la consommation de l’assistant, sa limite et son coût @mise-en-page', async ({
+	page,
+}) => {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;
 		if (chemin === '/api/config/llm-consommation') return CONSOMMATION;

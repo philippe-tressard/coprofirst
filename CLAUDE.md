@@ -1020,6 +1020,14 @@ PR #2322 rouge) — `x=$(producteur || true)`.
 ### Navigateur — job CI `e2e-frontend` (depuis le 08/09/2026)
 `front/e2e/` porte les tests Playwright — squelette, lien d'évitement, absence de
 défilement horizontal, cibles tactiles — sur les profils **bureau ET mobile**.
+**En tranches** depuis #2632 : quatre tranches Chromium (`--shard`) et une WebKit
+côte à côte ; le check requis « Tests de navigateur (Playwright) » est le job
+d'agrégat `e2e-verdict`, rouge dès qu'une tranche n'est pas verte. 🔒 **Un test
+qui mesure la mise en page se joue aussi sous WebKit** (#2640, le moteur de tous
+les iPhone : #2639 passait Chromium) : son titre finit par `@mise-en-page`
+(`e2e/mise-en-page.ts`) ; une mesure du défilement sans elle est refusée
+(`npm run lint:e2e-mise-en-page`). Le profil se lit par `info.project.use.isMobile`
+ou `hasTouch`, jamais par son nom : `webkit-mobile` n'est pas `mobile`.
 
 🔴 **Ils existaient depuis le 06/09 et ne tournaient dans aucun job** : le dépôt
 contenait les tests, `npm run e2e` les passait sur le poste de qui y pensait, et
