@@ -59,11 +59,11 @@ def test_l_archive_porte_le_registre_et_rien_de_la_residence(registre, alertes):
 
 
 def test_les_archives_de_la_residence_ne_sont_pas_melees(registre, alertes):
-    """Rotation, fraîcheur et copie hors site de la résidence lisent `hostachy_backup_*`
+    """Rotation, fraîcheur et copie hors site de la résidence lisent `backup.PREFIXES_LUS`
     à la racine : celles du registre vivent dans un sous-dossier, sous un autre nom."""
     sauvegarde.run_sauvegarde_plateforme()
     racine = sauvegarde.dossier().parent
-    assert not list(racine.glob(backup.MOTIF_ARCHIVE))
+    assert not backup.archives(racine)
 
 
 def test_on_garde_les_dernieres(registre, monkeypatch):

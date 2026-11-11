@@ -99,16 +99,43 @@ verdict_export_base() { # $1 = résumé
 # sous-dossier — mêmes valeurs que `registre/sauvegarde.PREFIXE` et `.dossier()`,
 # tenues par `test_sauvegarde_hors_site_plateforme.py`. Un préfixe hors de cette
 # liste est refusé : il viendrait de l'appelant, pas d'une décision.
-PREFIXE_RESIDENCE="hostachy_backup_"
+#
+# La résidence a DEUX préfixes pendant la transition de #2653 : l'écrit, qui ne
+# nomme pas la résidence, et l'historique, que portent les archives déjà sur disque
+# jusqu'à leur rotation — lu, jamais écrit. Mêmes valeurs que `backup.PREFIXE_ARCHIVE`
+# et `backup.PREFIXE_HISTORIQUE`. Le second se retire avec #2659.
+PREFIXE_RESIDENCE="sauvegarde_copropriete_"
+PREFIXE_RESIDENCE_HISTORIQUE="hostachy_backup_"
 PREFIXE_PLATEFORME="plateforme_backup_"
 DOSSIER_PLATEFORME="plateforme"
-nom_valide() { # $1 = nom candidat · $2 = préfixe (défaut : la résidence) → 0 si acceptable
-  local n=${1:-} prefixe=${2:-$PREFIXE_RESIDENCE}
-  case "$prefixe" in "$PREFIXE_RESIDENCE"|"$PREFIXE_PLATEFORME") ;; *) return 1 ;; esac
+nom_valide() { # $1 = nom candidat · $2 = préfixe (défaut : ceux de la résidence) → 0 si acceptable
+  local n=${1:-} prefixe=${2:-}
+  if [ -z "$prefixe" ]; then
+    nom_valide "$n" "$PREFIXE_RESIDENCE" || nom_valide "$n" "$PREFIXE_RESIDENCE_HISTORIQUE"
+    return
+  fi
+  case "$prefixe" in "$PREFIXE_RESIDENCE"|"$PREFIXE_RESIDENCE_HISTORIQUE"|"$PREFIXE_PLATEFORME") ;; *) return 1 ;; esac
   [ -n "$n" ] || return 1
   [[ "$n" =~ ^${prefixe}[A-Za-z0-9._-]+\.tar\.gz$ ]] || return 1
   case "$n" in */*|*'\'*|*..*) return 1 ;; esac
   return 0
+}
+
+# ── PURE : l'ordre CHRONOLOGIQUE d'une série d'archives ──────────────────────
+# 🔴 #2653 : avec deux préfixes, l'ordre alphabétique n'est plus l'ordre du temps —
+# tout `hostachy_…` passerait avant tout `sauvegarde_…`, faux dès qu'un retour à
+# l'image d'avant réécrit l'historique. Le tri porte sur le nom SANS son préfixe
+# (l'horodatage, `_paris`
+# compris, comme `backup.archives`) ; à horodatage égal, le nom départage.
+# Noms sur stdin, un par ligne → mêmes noms, du plus ancien au plus récent.
+trier_archives() {
+  local n cle
+  while IFS= read -r n; do
+    [ -n "$n" ] || continue
+    cle=${n#"$PREFIXE_RESIDENCE"}
+    cle=${cle#"$PREFIXE_RESIDENCE_HISTORIQUE"}
+    printf '%s\t%s\n' "$cle" "$n"
+  done | LC_ALL=C sort -u | cut -f2-
 }
 
 # ── L'archive tirée est-elle exploitable ? ───────────────────────────────────
@@ -139,10 +166,10 @@ verdict_archive() { # $1=octets $2=empreintes_identiques $3=contient_export $4=i
 }
 
 # ── Quelles copies locales supprimer ? ───────────────────────────────────────
-# Reçoit la liste des noms DÉJÀ TRIÉE par ordre chronologique croissant (le nom
-# porte l'horodatage : hostachy_backup_YYYYmmdd_HHMMSS_paris.tar.gz (heure de Paris,
-# #1611 ; les anciennes, sans `_paris`, sont en UTC) — même convention
-# que _rotate_backups() côté API). Rend les noms excédentaires, les plus anciens
+# Reçoit la liste des noms DÉJÀ TRIÉE par `trier_archives` (le nom porte
+# l'horodatage : <préfixe>YYYYmmdd_HHMMSS_paris.tar.gz (heure de Paris, #1611 ; les
+# anciennes, sans `_paris`, sont en UTC) — même convention que `backup.archives`
+# côté API). Rend les noms excédentaires, les plus anciens
 # d'abord. `keep <= 0` ne supprime RIEN : une valeur de configuration aberrante
 # ne doit jamais effacer les sauvegardes.
 archives_a_supprimer() { # $1=keep, liste sur stdin → noms à supprimer
@@ -167,16 +194,16 @@ archives_a_supprimer() { # $1=keep, liste sur stdin → noms à supprimer
 #
 # La règle est simple et se lit d'une phrase : **on ne tire que ce qu'on
 # garderait**. On prend l'union (local + distant), on n'en retient que les `keep`
-# plus récentes — le nom porte l'horodatage, donc l'ordre alphabétique EST
-# l'ordre chronologique, même convention que `archives_a_supprimer` — et on ne
-# demande que celles-là qui manquent ici.
+# plus récentes — dans l'ordre de `trier_archives`, le même que la rotation
+# (#2653 : l'ordre alphabétique ne l'est plus) — et on ne demande que celles-là
+# qui manquent ici.
 #
 # ⚠️ `keep <= 0` ne tire RIEN : même garde que la rotation. Une valeur aberrante
 # ne doit ni effacer ni téléverser.
 archives_a_rattraper() { # $1=keep $2=noms_locaux $3=noms_distants → noms à tirer
   local keep="${1:-0}" locaux="${2:-}" distants="${3:-}" retenues n
   [ "$keep" -gt 0 ] 2>/dev/null || return 0
-  retenues=$(printf '%s\n%s\n' "$locaux" "$distants" | grep -v '^[[:space:]]*$' | sort -u | tail -n "$keep")
+  retenues=$(printf '%s\n%s\n' "$locaux" "$distants" | trier_archives | tail -n "$keep")
   while IFS= read -r n; do
     [ -n "$n" ] || continue
     #  Déjà ici : rien à tirer. La comparaison porte sur la ligne ENTIÈRE —
@@ -208,13 +235,17 @@ jours_manquants() { # $1=jours_a_couvrir $2=date_du_jour(AAAAMMJJ) puis noms sur
   # à J-1..J-keep réclamait alors J-2 — que la rotation venait d'effacer — et
   # signalait chaque jour un « jour absent » qui n'en était pas un. La fenêtre
   # commence au jour le plus récent qu'on puisse détenir.
-  case "$noms" in *"${PREFIXE_RESIDENCE}${aujourdhui}_"*) debut=0 ;; esac
+  #  Un jour est couvert par une archive de l'un OU l'autre préfixe (#2653).
+  _jour_present() {
+    case "$noms" in
+      *"${PREFIXE_RESIDENCE}${1}_"*|*"${PREFIXE_RESIDENCE_HISTORIQUE}${1}_"*) return 0 ;;
+    esac
+    return 1
+  }
+  _jour_present "$aujourdhui" && debut=0
   for ((i = debut; i < debut + fenetre; i++)); do
     jour=$(date -d "$aujourdhui -$i day" +%Y%m%d 2>/dev/null) || return 0
-    case "$noms" in
-      *"${PREFIXE_RESIDENCE}${jour}_"*) ;;
-      *) manquants="$manquants $jour" ;;
-    esac
+    _jour_present "$jour" || manquants="$manquants $jour"
   done
   echo "${manquants# }"
 }
