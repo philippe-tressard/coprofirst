@@ -59,6 +59,10 @@ GIT_DEPOT="$(dossier_git)"
 MARQUEUR="${MARQUEUR:-$GIT_DEPOT/precheck-mep.ok}"
 # shellcheck source=../lib/lib-reecriture.sh
 . "$RACINE_DEPOT/scripts/lib/lib-reecriture.sh"
+. "$RACINE_DEPOT/scripts/lib/lib-mep-conduite.sh"        # 0d, 0g : la version d'un lot (#2631)
+. "$RACINE_DEPOT/scripts/lib/lib-precheck-exception.sh"  # l'exception DATÉE d'un point (#2631)
+#  Le poste entier, tous les worktrees : un incident déclaré l'est pour toutes les MEP.
+EXCEPTIONS_PRECHECK="${EXCEPTIONS_PRECHECK:-$(dossier_git_commun)/exceptions-precheck}"
 
 #  Ce que le point 6 compte comme une erreur de l'API — écrit UNE fois, lu par
 #  ses deux requêtes et par son auto-test. Les niveaux de log, et les erreurs de
@@ -284,7 +288,11 @@ REP9=$(sur "$ACTIF" 'MK=$(grep -E "^MAINTENANCE_KEY=" /opt/5hostachy/.env 2>/dev
 case "${REP9:-}" in
   *"|200") NB9=$(echo "$REP9" | grep -oE '"total"[[:space:]]*:[[:space:]]*[0-9]+' | grep -oE '[0-9]+$')
            CODES9=$(echo "$REP9" | grep -oE '"par_code"[[:space:]]*:[[:space:]]*\{[^}]*\}' | cut -c1-90)
-           rapporter 9 "$(verdict_compte "${NB9:-}" 0)" "E-mails sans échec (7 j)"                      "échecs=${NB9:-?}${CODES9:+ — $CODES9}" ;;
+           #  Un incident clos se déclare, daté, dans `$EXCEPTIONS_PRECHECK` (#2631) : le
+           #  point le vérifie par le dernier échec que la route rend, jamais de mémoire.
+           DERNIER9=$(echo "$REP9" | grep -oE '"dernier"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
+           juger_exception "$EXCEPTIONS_PRECHECK" 9 "$(verdict_compte "${NB9:-}" 0)" "$DERNIER9"
+           rapporter 9 "$EXC_V" "E-mails sans échec (7 j)" "échecs=${NB9:-?}${CODES9:+ — $CODES9}$EXC_D" ;;
   *)       rapporter 9 INCONNU "E-mails sans échec (7 j)"                      "canal machine muet (clé absente ou API injoignable) — vérifier Admin → Modèles e-mail" ;;
 esac
 
@@ -319,9 +327,10 @@ precheck_point_liens
 precheck_point_pages
 . "$RACINE_DEPOT/scripts/lib/lib-precheck-legal.sh"   # 21 — les textes légaux servis (#1585)
 precheck_point_legal
-. "$RACINE_DEPOT/scripts/lib/lib-precheck-pr.sh"      # 23-24 — PR vers main, alertes Dependabot
+. "$RACINE_DEPOT/scripts/lib/lib-precheck-pr.sh"      # 23-25 — PR vers main, alertes, porteurs
 precheck_point_pr
 precheck_point_alertes
+precheck_point_porteurs
 
 . "$RACINE_DEPOT/scripts/lib/lib-precheck-infra.sh"
 precheck_points_infra

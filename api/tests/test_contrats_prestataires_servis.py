@@ -35,6 +35,13 @@ from app.utils.notes_prestataires import note_moyenne
         ("fois_par_an", 4, "↺ 4×/an"),
         ("ans", 1, "↺ tous les 1 an"),
         ("ans", 2, "↺ tous les 2 ans"),
+        #  Les cas limites du calcul que le front faisait (`frequenceLabel`, retiré
+        #  par #2633) — relevés sur lui avant son retrait : 49 cas, aucun écart.
+        ("semaines", None, "↺ 0 sem."),
+        ("mois", 3, "↺ Mensuel"),
+        ("ans", None, "↺ tous les 0 an"),
+        ("autre", 2, ""),
+        ("", 1, ""),
     ],
 )
 def test_la_frequence_en_clair(type_, valeur, attendu):
@@ -175,3 +182,25 @@ def test_un_contrat_enregistre_en_autre_prend_la_specialite():
     assert (corps["type_equipement"], corps["equipement_effectif"]) == ("toiture", "toiture")
     #  La création rend la lecture entière : l'échéance n'y reste pas à sa valeur par défaut.
     assert corps["date_fin"] is not None
+
+
+#  ── telephonesDe → `PrestataireRead.telephones` (#2633) ────────────────────
+
+
+@pytest.mark.parametrize(
+    "champ, attendu",
+    [
+        (None, []),
+        ("", []),
+        (",,,", []),
+        (" 01 23 , 06 45 ,01 23,", ["01 23", "06 45"]),
+        ("06\u00a012 , 06 12", ["06\u00a012", "06 12"]),
+    ],
+)
+def test_la_fiche_sert_ses_numeros_decoupes(session, champ, attendu):
+    """Ce que la carte d'un prestataire découpait (`telephonesDe`) : l'ordre de
+    saisie, sans vide ni doublon — la liste sert de clé de rendu sans collision."""
+    session.add(Prestataire(nom="Plomberie Martin", specialite="plomberie", telephone=champ))
+    session.commit()
+    (lu,) = lister_prestataires(session, archivees=False)
+    assert lu.model_dump()["telephones"] == attendu

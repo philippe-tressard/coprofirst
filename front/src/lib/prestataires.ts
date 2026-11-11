@@ -165,6 +165,8 @@ export interface ContratEnCours {
 	equipement_effectif: string;
 	frequence_type?: string | null;
 	frequence_valeur?: number | null;
+	/** « ↺ Mensuel » — SERVI (`ContratRead.frequence_libelle`, #2507). */
+	frequence_libelle?: string;
 }
 
 /**  Le contrat dont un formulaire d'affaire lit le rythme (#1445) : celui de
@@ -284,19 +286,21 @@ export const FREQUENCES: readonly { val: string; label: string; nombre?: string 
  *
  *   Sous contrat (#1445), le rythme est celui du contrat, et le cadre se dit :
  *   « Otis · ↺ Mensuel · sous contrat n° C-42 » — le numéro pour le conseil
- *   seul, que le serveur ne sert qu'à lui. */
+ *   seul, que le serveur ne sert qu'à lui.
+ *
+ *   Le rythme en clair est SERVI (`frequence_libelle`, #2633) : celui du contrat
+ *   fait foi, celui de l'affaire sinon. */
 export function intervenantAffiche(t: {
 	prestataire_nom?: string | null;
-	frequence_type?: string | null;
-	frequence_valeur?: number | null;
-	contrat?:
-		| ({ numero_contrat?: string | null; libelle?: string | null } & Parameters<
-				typeof frequenceLabel
-		  >[0])
-		| null;
+	frequence_libelle?: string;
+	contrat?: {
+		numero_contrat?: string | null;
+		libelle?: string | null;
+		frequence_libelle?: string;
+	} | null;
 }): string {
 	if (!t.prestataire_nom) return '';
-	const rythme = frequenceLabel(t.contrat ?? t);
+	const rythme = (t.contrat ?? t).frequence_libelle ?? '';
 	return [t.prestataire_nom, rythme, t.contrat ? cadreSousContrat(t.contrat) : '']
 		.filter(Boolean)
 		.join(' · ');
@@ -313,21 +317,10 @@ export function cadreSousContrat(c: {
 	return c.libelle ? `sous contrat « ${c.libelle} »` : 'sous contrat';
 }
 
-/**  La fréquence d'un contrat, en une expression courte.
- *
- *   Rend une chaîne vide quand aucune fréquence n'est définie : l'appelant
- *   n'affiche alors pas de pastille, plutôt qu'une pastille vide. */
-export function frequenceLabel(c: {
-	frequence_type?: string | null;
-	frequence_valeur?: number | null;
-}): string {
-	const n = c.frequence_valeur ?? 0;
-	if (c.frequence_type === 'semaines') return `↺ ${n} sem.`;
-	if (c.frequence_type === 'mois') return '↺ Mensuel';
-	if (c.frequence_type === 'fois_par_an') return `↺ ${n}×/an`;
-	if (c.frequence_type === 'ans') return `↺ tous les ${n} an${n > 1 ? 's' : ''}`;
-	return '';
-}
+//  🔴 `frequenceLabel` est PARTIE le 11/11/2026 (#2633) : la fréquence en clair est
+//  SERVIE (`frequence_libelle` du contrat, de l'affaire et du contrat de l'affaire —
+//  `api/app/utils/frequence_contrat.py`), que l'app iOS lit aussi.
+//  🔒 `npm run lint:regles-partagees` refuse son retour.
 
 /**
  * **La forme du formulaire d'un contrat** — vierge, ou repris d'un existant.
