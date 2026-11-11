@@ -222,8 +222,8 @@ if ! $SSH_CMD "$SSH_CIBLE" "$LIRE true" >/dev/null 2>&1; then
 fi
 
 # Ici seulement une liste vide est un FAIT : la lecture a réussi.
-ARCHIVE=$($SSH_CMD "$SSH_CIBLE"   "$LIRE sh -c 'ls -1 /b/hostachy_backup_*.tar.gz 2>/dev/null'" 2>/dev/null   | tr -d '
-' | sed 's#.*/##' | sort | tail -1)
+#  Les deux préfixes de la résidence (#2653), puis l'ordre du temps, jamais celui des lettres.
+ARCHIVE=$($SSH_CMD "$SSH_CIBLE"   "$LIRE sh -c 'ls -1 /b/${PREFIXE_RESIDENCE}*.tar.gz /b/${PREFIXE_RESIDENCE_HISTORIQUE}*.tar.gz 2>/dev/null'" 2>/dev/null   | tr -d '\r' | sed 's#.*/##' | trier_archives | tail -1)
 if [ -z "$ARCHIVE" ]; then
   log "ERREUR: aucune archive sur $SOURCE_NOEUD — la sauvegarde de 03:00 ne produit rien."
   exit 1
@@ -323,7 +323,7 @@ elif LISTE_AUTRE=$($SSH_CMD "$EXPORT_SSH_USER@$AUTRE_IP" "$LIRE ls /b" 2>/dev/nu
   for nom in $LISTE_AUTRE; do
     nom_valide "$nom" && DISTANTES="$DISTANTES$nom"$'\n'
   done
-  LOCALES=$(ls -1 "$EXPORT_DEST"/hostachy_backup_*.tar.gz 2>/dev/null | xargs -r -n1 basename | sort)
+  LOCALES=$(archives_locales)
   #  On ne tire QUE ce qu'on garderait : sans cette borne, le rattrapage
   #  téléchargeait six archives que la rotation effaçait juste après.
   A_TIRER=$(archives_a_rattraper "$EXPORT_KEEP" "$LOCALES" "$DISTANTES")
@@ -346,7 +346,7 @@ if [ "$STATUT" = "succes" ]; then
   while IFS= read -r vieux; do
     [ -n "$vieux" ] || continue
     rm -f "$EXPORT_DEST/$vieux" && SUPPRIMEES=$((SUPPRIMEES + 1))
-  done < <(ls -1 "$EXPORT_DEST"/hostachy_backup_*.tar.gz 2>/dev/null | xargs -r -n1 basename | sort | archives_a_supprimer "$EXPORT_KEEP")
+  done < <(archives_locales | archives_a_supprimer "$EXPORT_KEEP")
   log "  Rotation : $SUPPRIMEES ancienne(s) copie(s) supprimée(s), $EXPORT_KEEP conservée(s)."
 fi
 

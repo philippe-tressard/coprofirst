@@ -40,6 +40,14 @@ transferer_archive() { # $1=ip $2=relatif $3=destination [$4=lecture $5=montage]
   return 1
 }
 
+# ── Les copies de la RÉSIDENCE déjà détenues dans la destination ─────────────
+# Les deux préfixes (#2653), dans l'ordre du temps (`trier_archives`) : la
+# rotation et le rattrapage lisent cette liste, écrite une fois pour les deux.
+archives_locales() { # → noms, du plus ancien au plus récent
+  ls -1 "$EXPORT_DEST/$PREFIXE_RESIDENCE"*.tar.gz "$EXPORT_DEST/$PREFIXE_RESIDENCE_HISTORIQUE"*.tar.gz 2>/dev/null \
+    | xargs -r -n1 basename | trier_archives
+}
+
 # ── Relire un EXPORT vérifié : chaque table compte-t-elle ses lignes ? ──────
 # L'export est celui de `app.utils.export_copropriete` : un manifeste et une
 # table par fichier `.jsonl`. La résidence le range DANS son archive
