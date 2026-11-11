@@ -537,10 +537,10 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 
 ### n° 71 · en vigueur — Au reporting, l'affaire dit son état de suivi et « qui la lit » comme sur la page Affaires
 20/10/2026 · #2089 · l'utilisateur · §3
-- **Décidé** : sous le titre de chaque affaire du Suivi (tableau, CR global, relecture, PDF), l'état de suivi en vignette et la pastille « qui la lit » de la page Affaires (`PastilleLecture`) ; au PDF, son mot, calculé par la règle du serveur (`lecture_affaire`).
+- **Décidé** : sous le titre de chaque affaire du Suivi (tableau, CR global, relecture, PDF), l'état de suivi en vignette et la pastille « qui la lit » de la page Affaires (`PastilleLecture`) ; au PDF, son mot : le libellé court de la pastille servie (`lecture_du_ticket(t).court`, `utils/lecture_pastille`, #2669).
 - **Pourquoi** : « la vignette Privé/public n'est pas un bon choix : reprendre l'objet destinataires tel qu'il apparaît sur la page affaire ».
 - **Écarté** : la vignette Public / Privé (n° 68).
-- **Tenu par** : `test_lecture_affaire.py`.
+- **Tenu par** : `test_lecture_au_pdf.py`.
 
 ### n° 72 · en vigueur — Le PDF du point : la maquette B, et « Exporter en PDF » le tire pendant un point
 20/10/2026 · #2089 · l'utilisateur, sur maquette · §3
