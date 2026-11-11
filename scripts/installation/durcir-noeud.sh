@@ -178,11 +178,30 @@ appliquer_ufw() {
   log "   effectif : $(verdict_ufw)"
 }
 
+#  Un bloc d'un fichier de règles d'ufw, ÉPROUVÉ avant d'être posé : un fichier que
+#  *-restore refuse ferait échouer le rechargement d'ufw. $1 = le fichier · $2 = le
+#  bloc (vide : le retirer) · $3 $4 = ses bornes · $5 = iptables-restore ou
+#  ip6tables-restore · $6 = son nom, pour le journal.
+poser_bloc_ufw() {
+  local fichier=$1 bloc=$2 apres droits
+  if [ -n "$bloc" ] && ! "$5" --test --noflush <<< "$bloc"; then
+    log "   🔴 $5 refuse le bloc $6 : $fichier NON modifié."; return 1
+  fi
+  apres=$(durcissement_sortant_apres_regles "$(cat "$fichier")" "$bloc" "$3" "$4")
+  droits=$(stat -c %a "$fichier" 2>/dev/null || echo 640)
+  printf '%s\n' "$apres" | poser "$fichier" "$droits"
+  case $? in
+    0) if [ -n "$bloc" ]; then log "   $fichier : bloc $6 posé"; else log "   $fichier : bloc $6 retiré"; fi ;;
+    1) ;;
+    *) log "   ÉCHEC d'écriture de $fichier"; return 1 ;;
+  esac
+}
+
 #  La sortie (#2367). $1 = le mode voulu : constat | refus | ouvert ; vide → celui
 #  que le nœud sert (`--appliquer` répare, il ne change pas de mode).
 #  L'ordre protège le nœud : on ROUVRE d'abord, on FERME en dernier.
 appliquer_sortant() {
-  local voulu=${1:-} servi regle apres bloc droits decision soi actif
+  local voulu=${1:-} servi regle bloc bloc6 decision soi actif
   log "── sortie (liste blanche, #2367)"
   servi=$(durcissement_sortant_mode "$(lire_ufw_etat)" "$(lire_ufw_ajoutees)")
   voulu=${voulu:-$servi}
@@ -193,7 +212,7 @@ appliquer_sortant() {
     actif=$(tr -d '[:space:]' < "$REPO/.active" 2>/dev/null)
     decision=$(durcissement_sortant_peut_refuser "$(verdict_sortant)" "$(durcissement_sortant_resume)" \
       "$(durcissement_sortant_nuits_vertes "$(cat "$DURCISSEMENT_SORTANT_JOURNAL_AUDIT" 2>/dev/null)")" \
-      "$actif" "$soi")
+      "$actif" "$soi" "$servi")
     [ "$decision" = OUI ] || { log "   ${decision#REFUS:} → sortie NON fermée."; return 1; }
   fi
 
@@ -224,22 +243,14 @@ appliquer_sortant() {
     ufw $DURCISSEMENT_UFW_SORTANT_CONSTAT >/dev/null && log "   constat : $DURCISSEMENT_UFW_SORTANT_CONSTAT"
   fi
 
-  #  Les conteneurs : le bloc DOCKER-USER d'after.rules, éprouvé AVANT d'être posé —
-  #  un after.rules que iptables-restore refuse ferait échouer le rechargement d'ufw.
-  bloc=""
-  [ "$voulu" = ouvert ] || bloc=$(durcissement_sortant_bloc "$voulu")
-  if [ -n "$bloc" ] && ! iptables-restore --test --noflush <<< "$bloc"; then
-    log "   🔴 iptables-restore refuse le bloc DOCKER-USER : after.rules NON modifié."; return 1
-  fi
-  apres=$(durcissement_sortant_apres_regles "$(cat "$DURCISSEMENT_UFW_APRES")" "$bloc")
-  droits=$(stat -c %a "$DURCISSEMENT_UFW_APRES" 2>/dev/null || echo 640)
-  printf '%s\n' "$apres" | poser "$DURCISSEMENT_UFW_APRES" "$droits"
-  case $? in
-    0) if [ -n "$bloc" ]; then log "   $DURCISSEMENT_UFW_APRES : bloc DOCKER-USER posé ($voulu)"
-       else log "   $DURCISSEMENT_UFW_APRES : bloc DOCKER-USER retiré"; fi ;;
-    1) ;;
-    *) log "   ÉCHEC d'écriture de $DURCISSEMENT_UFW_APRES"; return 1 ;;
-  esac
+  #  Les conteneurs : le bloc DOCKER-USER d'after.rules. L'ICMPv6 de l'hôte qu'ufw
+  #  ne sait pas écrire (MLDv2) : le bloc d'after6.rules. Retirés tous deux en `ouvert`.
+  bloc=""; bloc6=""
+  [ "$voulu" = ouvert ] || { bloc=$(durcissement_sortant_bloc "$voulu"); bloc6=$(durcissement_sortant_bloc6); }
+  poser_bloc_ufw "$DURCISSEMENT_UFW_APRES" "$bloc" "$DURCISSEMENT_SORTANT_DEBUT" "$DURCISSEMENT_SORTANT_FIN" \
+    iptables-restore "DOCKER-USER ($voulu)" || return 1
+  poser_bloc_ufw "$DURCISSEMENT_UFW_APRES6" "$bloc6" "$DURCISSEMENT_SORTANT_DEBUT6" "$DURCISSEMENT_SORTANT_FIN6" \
+    ip6tables-restore "ICMPv6" || return 1
 
   #  Fermer, en dernier.
   [ "$voulu" != refus ] || ufw default reject outgoing >/dev/null

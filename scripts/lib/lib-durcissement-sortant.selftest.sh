@@ -12,7 +12,9 @@
 #  Seule exception : la ligne IGMP (`allow out to 224.0.0.0/24 proto igmp`) est
 #  la forme que `UFWCommandRule.get_command` d'ufw 0.36.2 écrit pour cette règle,
 #  lue dans sa source, pas relevée sur un banc — S5 la dirait « manquante » à la
-#  première pose si la forme servie différait.
+#  première pose si la forme servie différait. `ip6tables -S ufw6-after-output`
+#  (A6) est relevé au banc du 11/11/2026 (conteneur jetable sur le standby, ufw
+#  0.36.2-9, iptables 1.8.11) après `durcir-noeud.sh --sortant constat`.
 durcissement_sortant_selftest() {
   local st=0 r x
   v() {  # $1 libellé · $2 verdict attendu (préfixe, ou valeur exacte) · $3 obtenu
@@ -84,6 +86,10 @@ New profiles: skip"
 -A DOCKER-USER -j RETURN"
   local DU_REFUS="$DU_TETE
 -A DOCKER-USER -j REJECT --reject-with icmp-port-unreachable"
+  #  `ip6tables -S ufw6-after-output` : sans le bloc d'after6.rules, puis avec.
+  local A6_VIDE="-N ufw6-after-output"
+  local A6="$A6_VIDE
+-A ufw6-after-output -d ff02::16/128 -p ipv6-icmp -m icmp6 --icmpv6-type 143 -m hl --hl-eq 1 -j ACCEPT"
 
   #  La liste elle-même : chaque règle se traduit, le bloc est en ASCII.
   r=$(while IFS= read -r x; do durcissement_sortant_iptables_de "$x"; done < <(durcissement_sortant_regles hote) | grep -c '^?')
@@ -104,6 +110,12 @@ New profiles: skip"
     "$(durcissement_sortant_regles hote | grep -cxF 'allow out to 172.16.0.0/12 port 8080 proto tcp')"
   v "liste : et ne s'ouvre pas aux conteneurs (portée hôte)" 0 \
     "$(durcissement_sortant_regles conteneurs | grep -c '172.16.0.0/12')"
+  v "liste : bloc after6.rules en ASCII (ufw plante sinon)" 0 \
+    "$(durcissement_sortant_bloc6 | LC_ALL=C grep -c '[^ -~]')"
+  v "liste : l'ICMPv6 de l'hôte = MLDv2 seul, vers ff02::16, limite de saut 1" 1 \
+    "$(durcissement_sortant_icmpv6 | grep -c -- '-d ff02::16/128 .*--icmpv6-type 143 -m hl --hl-eq 1 -j ACCEPT$')"
+  v "liste : ICMPv6 attendu = banc" OUI \
+    "$( [ "$(durcissement_sortant_icmpv6)" = "$(grep '^-A' <<< "$A6")" ] && echo OUI || echo NON)"
   v "liste : DOCKER-USER attendu = banc (constat)" OUI \
     "$( [ "$(durcissement_sortant_docker_user constat)" = "$(grep '^-A' <<< "$DU_CONSTAT")" ] && echo OUI || echo NON)"
 
@@ -115,55 +127,73 @@ New profiles: skip"
 
   #  Le verdict — la production du 01/11/2026, puis chaque mode.
   v "verdict : les deux nœuds au 01/11 (ouvert)" OUVERT \
-    "$(durcissement_sortant_verdict "$S_OUVERT" "$ENTRANT" "$DU_VIDE" "$FW")"
-  v "verdict : constat complet" "CONSTAT:" "$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT" "$DU_CONSTAT" "$FW")"
-  r=$(durcissement_sortant_verdict "$S_OUVERT" "$(grep -vxF "$L993" <<< "$A_CONSTAT")" "$DU_CONSTAT" "$FW")
+    "$(durcissement_sortant_verdict "$S_OUVERT" "$ENTRANT" "$DU_VIDE" "$FW" "$A6")"
+  v "verdict : constat complet" "CONSTAT:" "$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT" "$DU_CONSTAT" "$FW" "$A6")"
+  r=$(durcissement_sortant_verdict "$S_OUVERT" "$(grep -vxF "$L993" <<< "$A_CONSTAT")" "$DU_CONSTAT" "$FW" "$A6")
   v "verdict : constat, une règle manquante" OUI "$( [[ $r == *"manquantes=[allow out 993/tcp]"* ]] && echo OUI || echo "$r")"
-  r=$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT" "$DU_VIDE" "$FW")
+  r=$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT" "$DU_VIDE" "$FW" "$A6")
   v "verdict : constat sans DOCKER-USER (bloc absent)" OUI "$( [[ $r == *conteneurs-non-journalisés* ]] && echo OUI || echo "$r")"
-  v "verdict : refus servi" CONFORME "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_REFUS" "$FW")"
+  v "verdict : refus servi" CONFORME "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_REFUS" "$FW" "$A6")"
   v "verdict : refus, Docker a laissé un RETURN derrière" CONFORME \
     "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_REFUS
--A DOCKER-USER -j RETURN" "$FW")"
+-A DOCKER-USER -j RETURN" "$FW" "$A6")"
   #  LES FAUTES INJECTÉES.
   v "faute : allow out to any (hôte ouvert à tout)" ECART \
     "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS
-ufw allow out to any" "$DU_REFUS" "$FW")"
+ufw allow out to any" "$DU_REFUS" "$FW" "$A6")"
   v "faute : un port ajouté à la main" ECART \
     "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS
-ufw allow out 4444/tcp" "$DU_REFUS" "$FW")"
-  v "faute : le constat laissé en mode refus" ECART "$(durcissement_sortant_verdict "$S_REFUS" "$A_CONSTAT" "$DU_REFUS" "$FW")"
-  v "faute : refus, conteneurs en constat" ECART "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_CONSTAT" "$FW")"
+ufw allow out 4444/tcp" "$DU_REFUS" "$FW" "$A6")"
+  v "faute : le constat laissé en mode refus" ECART "$(durcissement_sortant_verdict "$S_REFUS" "$A_CONSTAT" "$DU_REFUS" "$FW" "$A6")"
+  v "faute : refus, conteneurs en constat" ECART "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_CONSTAT" "$FW" "$A6")"
   v "faute : refus, une acceptation ajoutée à DOCKER-USER" ECART \
     "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_REFUS
--A DOCKER-USER -j ACCEPT" "$FW")"
+-A DOCKER-USER -j ACCEPT" "$FW" "$A6")"
   v "faute : refus, Docker passé devant DOCKER-USER" ECART \
-    "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_REFUS" "$(grep -vxF -- '-A FORWARD -j DOCKER-USER' <<< "$FW")")"
+    "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_REFUS" "$(grep -vxF -- '-A FORWARD -j DOCKER-USER' <<< "$FW")" "$A6")"
   v "faute : refus, une règle manquante" ECART \
-    "$(durcissement_sortant_verdict "$S_REFUS" "$(grep -vxF "$L53" <<< "$A_REFUS")" "$DU_REFUS" "$FW")"
+    "$(durcissement_sortant_verdict "$S_REFUS" "$(grep -vxF "$L53" <<< "$A_REFUS")" "$DU_REFUS" "$FW" "$A6")"
   v "faute : retour arrière inachevé (conteneurs refusés)" ECART \
-    "$(durcissement_sortant_verdict "$S_OUVERT" "$A_REFUS" "$DU_REFUS" "$FW")"
+    "$(durcissement_sortant_verdict "$S_OUVERT" "$A_REFUS" "$DU_REFUS" "$FW" "$A6")"
+  #  L'ICMPv6 que seul after6.rules pose (MLDv2, rpi1 le 11/11/2026).
+  r=$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_REFUS" "$FW" "$A6_VIDE")
+  v "faute : refus, MLDv2 non servi (after6.rules sans le bloc)" OUI \
+    "$( [[ $r == ECART:*icmpv6-manquant=* ]] && echo OUI || echo "$r")"
+  r=$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT" "$DU_CONSTAT" "$FW" "$A6_VIDE")
+  v "verdict : constat, MLDv2 non servi = constat incomplet" OUI \
+    "$( [[ $r == CONSTAT:*icmpv6-non-servi=* ]] && echo OUI || echo "$r")"
+  v "refuser : MLDv2 non servi" REFUS "$(durcissement_sortant_peut_refuser "$r" "" 3 rpi1 rpi2)"
+  r=$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_REFUS" "$FW" "$A6_VIDE")
+  v "refuser : déjà en refus, MLDv2 manquant, sur l'actif → réparer" OUI \
+    "$(durcissement_sortant_peut_refuser "$r" "1 ff02::16 icmpv6-type143 hôte" 0 rpi1 rpi1 refus)"
+  v "refuser : le même écart depuis le constat ne suffit pas" REFUS \
+    "$(durcissement_sortant_peut_refuser "$r" "" 3 rpi1 rpi2 constat)"
+  v "icmpv6 : servi" OUI "$(durcissement_sortant_icmpv6_servi "$A6")"
+  v "icmpv6 : une autre règle ne la remplace pas" NON "$(durcissement_sortant_icmpv6_servi "$A6_VIDE
+-A ufw6-after-output -p ipv6-icmp -m icmp6 --icmpv6-type 143 -j ACCEPT")"
   #  Les règles qu'une liste plus ancienne a posées : à retirer, pas une intrusion.
   v "obsolètes : les quatre plages SSH, et elles seules" 4 "$(durcissement_sortant_obsoletes "$A_CONSTAT
 $ANCIENNES" | grep -c 'port 22')"
   v "obsolètes : la liste à jour n'en a aucune" 0 "$(durcissement_sortant_obsoletes "$A_CONSTAT" | grep -c .)"
   v "obsolètes : le constat (sans commentaire) n'en est pas une" 0 "$(durcissement_sortant_obsoletes "$A_CONSTAT" | grep -c 'log to any')"
   r=$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT
-$ANCIENNES" "$DU_CONSTAT" "$FW")
+$ANCIENNES" "$DU_CONSTAT" "$FW" "$A6")
   v "verdict : constat avec les anciennes plages = à nettoyer, pas ECART" OUI \
     "$( [[ $r == CONSTAT:*"obsolètes=[allow out to 140.82.112.0/20 port 22 proto tcp"* ]] && echo OUI || echo "$r")"
   v "refuser : des règles obsolètes restent" REFUS "$(durcissement_sortant_peut_refuser "$r" "" 3 rpi1 rpi2)"
   v "verdict : refus avec les anciennes plages" ECART \
     "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS
-$ANCIENNES" "$DU_REFUS" "$FW")"
+$ANCIENNES" "$DU_REFUS" "$FW" "$A6")"
   v "faute : la même règle SANS notre commentaire est hors liste" ECART \
     "$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT
-ufw allow out to 140.82.112.0/20 port 22 proto tcp" "$DU_CONSTAT" "$FW")"
+ufw allow out to 140.82.112.0/20 port 22 proto tcp" "$DU_CONSTAT" "$FW" "$A6")"
   v "un deny out ne se juge pas hors liste" "CONSTAT:" "$(durcissement_sortant_verdict "$S_OUVERT" "$A_CONSTAT
-ufw deny out 25/tcp" "$DU_CONSTAT" "$FW")"
+ufw deny out 25/tcp" "$DU_CONSTAT" "$FW" "$A6")"
   #  LE CAS ZÉRO.
   v "zéro : ufw illisible" INCONNU "$(durcissement_sortant_verdict "" "" "" "")"
   v "zéro : refus, iptables illisible" INCONNU "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "" "")"
+  v "zéro : refus, ip6tables illisible" INCONNU "$(durcissement_sortant_verdict "$S_REFUS" "$A_REFUS" "$DU_REFUS" "$FW" "")"
+  v "zéro : icmpv6 illisible" INCONNU "$(durcissement_sortant_icmpv6_servi "")"
   v "zéro : ufw inactif" OUVERT "$(durcissement_sortant_verdict "Status: inactive" "$A_REFUS" "" "")"
 
   #  after.rules : posé, reposé à l'identique, remplacé, retiré.
@@ -178,12 +208,23 @@ COMMIT" a1 a2
     "$(durcissement_sortant_apres_regles "$a1" "$(durcissement_sortant_bloc refus)" | grep -c 'REJECT')"
   v "after.rules : retiré, le fichier d'origine" OUI \
     "$( [ "$(durcissement_sortant_apres_regles "$a1" "")" = "$APRES" ] && echo OUI || echo NON)"
+  #  after6.rules : ses bornes à lui — le bloc DOCKER-USER n'y est pas touché.
+  local D6="$DURCISSEMENT_SORTANT_DEBUT6" F6="$DURCISSEMENT_SORTANT_FIN6" b1
+  b1=$(durcissement_sortant_apres_regles "$APRES" "$(durcissement_sortant_bloc6)" "$D6" "$F6")
+  v "after6.rules : bloc posé une fois" 1 "$(grep -cxF "$D6" <<< "$b1")"
+  v "after6.rules : reposer ne change rien" OUI \
+    "$( [ "$(durcissement_sortant_apres_regles "$b1" "$(durcissement_sortant_bloc6)" "$D6" "$F6")" = "$b1" ] && echo OUI || echo NON)"
+  v "after6.rules : retiré, le fichier d'origine" OUI \
+    "$( [ "$(durcissement_sortant_apres_regles "$b1" "" "$D6" "$F6")" = "$APRES" ] && echo OUI || echo NON)"
+  v "after6.rules : ses bornes ne retirent pas le bloc DOCKER-USER" 1 \
+    "$(durcissement_sortant_apres_regles "$a1" "" "$D6" "$F6" | grep -cxF "$DURCISSEMENT_SORTANT_DEBUT")"
 
   #  Le journal — la forme du noyau (nf_log), relevée sur un `[UFW BLOCK]` réel.
   local J="[UFW BLOCK] IN=eth0 OUT= MAC=01:00:5e:00:00:01:80:7d:3a:13:74:a8:08:00 SRC=192.168.1.12 DST=224.0.0.1 LEN=32 TOS=0x00 PREC=0x00 TTL=1 ID=3 PROTO=2
 [UFW ALLOW] IN= OUT=eth0 SRC=$IP2 DST=203.0.113.9 LEN=60 TOS=0x00 PREC=0x00 TTL=64 ID=1 DF PROTO=TCP SPT=40000 DPT=4444 WINDOW=64240 RES=0x00 SYN URGP=0
 [UFW ALLOW] IN= OUT=eth0 SRC=$IP2 DST=203.0.113.9 LEN=60 TOS=0x00 PREC=0x00 TTL=64 ID=2 DF PROTO=TCP SPT=40002 DPT=4444 WINDOW=64240 RES=0x00 SYN URGP=0
 [UFW BLOCK] IN= OUT=eth0 SRC=$IP2 DST=224.0.0.22 LEN=40 TOS=0x00 PREC=0x00 TTL=1 ID=0 DF PROTO=2
+[UFW BLOCK] IN= OUT=eth0 SRC=fe80:0000:0000:0000:0000:0000:0000:0001 DST=ff02:0000:0000:0000:0000:0000:0000:0016 LEN=96 TC=0 HOPLIMIT=1 FLOWLBL=0 PROTO=ICMPv6 TYPE=143 CODE=0
 [SORTANT CONTENEUR] IN=br-29c0f5a2142a OUT=eth0 PHYSIN=veth1a2b3c MAC=aa:bb SRC=172.19.0.3 DST=198.51.100.7 LEN=60 TOS=0x00 PREC=0x00 TTL=63 ID=9 DF PROTO=TCP SPT=51000 DPT=5222 WINDOW=64240 RES=0x00 SYN URGP=0"
   local resume
   resume=$(durcissement_sortant_resume_journal "$J" "172.19.0.3 hostachy_whatsapp
@@ -192,6 +233,8 @@ COMMIT" a1 a2
   v "journal : deux sorties vers 4444 comptées ensemble" "2 203.0.113.9 4444/tcp hôte" "$(head -n 1 <<< "$resume")"
   v "journal : un conteneur nommé" 1 "$(grep -c '198.51.100.7 5222/tcp hostachy_whatsapp' <<< "$resume")"
   v "journal : sans port (IGMP)" 1 "$(grep -c '224.0.0.22 2 hôte' <<< "$resume")"
+  v "journal : MLDv2 (ICMPv6 sans port)" 1 \
+    "$(grep -c '^1 ff02:0000:0000:0000:0000:0000:0000:0016 icmpv6-type143 hôte$' <<< "$resume")"
   v "journal : vide, rien" "" "$(durcissement_sortant_resume_journal "" "")"
 
   #  Les nuits vertes et la décision de refuser.

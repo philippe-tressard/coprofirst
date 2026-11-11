@@ -893,7 +893,9 @@ sudo bash /opt/5hostachy/scripts/installation/durcir-noeud.sh --sortant ouvert  
 
 `--sortant refus` **refuse** tant que le nœud n'a pas `DURCISSEMENT_SORTANT_NUITS_VERTES`
 nuits de constat vertes de suite (lues dans le journal de l'audit), qu'une sortie
-hors liste reste dans les 24 h, ou que le nœud est l'actif. Après le refus, et avant
+hors liste reste dans les 24 h, ou que le nœud est l'actif — sauf sur un nœud qui
+**sert déjà** le refus : il le repose toujours, actif compris, pour réparer un écart
+(une règle déclarée depuis : MLDv2, 11/11/2026). Après le refus, et avant
 le second nœud : un passage de C30 (`apt`), d'`auto-deploy` (tirage des images), de
 la bascule et un courriel d'alerte reçu.
 
@@ -927,6 +929,13 @@ Il rouvre l'hôte et les conteneurs jusqu'au prochain rechargement d'ufw ;
   du constat S5 dit `2`, pas un port). Rien n'en dépend, mais le refuser n'apporterait que
   du bruit. Sa forme canonique est lue dans la source d'ufw 0.36.2, pas relevée sur un banc :
   si S5 la dit « manquante » après la pose, c'est que la forme servie diffère.
+- **MLDv2 est déclaré, hors d'ufw** (11/11/2026) : le noyau annonce ses adhésions
+  multicast IPv6 à `ff02::16` (ICMPv6 type 143, limite de saut 1) ; en refus, S5 en
+  comptait une douzaine par nuit (« ff02:…:0016 icmpv6-type143 hôte »). `ufw allow` ne
+  sait pas écrire ICMPv6 : la règle vit dans `DURCISSEMENT_ICMPV6_SORTANT`, posée par un
+  bloc d'`/etc/ufw/after6.rules` (`ufw6-after-output`, avant le LOG et le REJECT). Un
+  nœud dont le bloc manque est dit « icmpv6-manquant » (FAIL en refus) :
+  `durcir-noeud.sh --sortant refus` le pose sur un nœud déjà en refus, actif compris.
 - **List-dons** vit sur rpi2 : DOCKER-USER filtre aussi ses conteneurs. Son besoin
   se lit dans le constat de rpi2 avant tout refus.
 - **Un port publié par Docker, joint depuis l'hôte, sort vers le pont** (05/11/2026) :

@@ -88,6 +88,15 @@ tous|allow out 993/tcp|IMAP d'OVH : relève des réponses par courriel
 hote|allow out to 224.0.0.0/24 proto igmp|IGMP : les rapports d'adhésion multicast du noyau vers 224.0.0.22 (TTL 1, ne quitte pas le LAN ; mesuré sur rpi1, 14 en 24 h)
 hote|allow out to 172.16.0.0/12 port 8080 proto tcp|List-dons sur rpi2 : l'hôte joint son port publié (localhost:8080) et Docker le traduit en l'adresse du conteneur (172.19.0.2) avant la sortie ; plage des ponts Docker, injoignable de l'extérieur (mesuré sur rpi2, 1 en 24 h)"
 
+#: La sortie ICMPv6 de l'HÔTE qu'ufw ne sait pas écrire : `ufw allow … proto` ne
+#: connaît pas ICMPv6. Ces règles se posent par un bloc d'`/etc/ufw/after6.rules`
+#: (`durcissement_sortant_bloc6`), dans `ufw6-after-output` — avant le LOG et le
+#: REJECT du refus. Une ligne : `règle|ce qui sort par là` ; la règle est la forme
+#: que sert `ip6tables -S ufw6-after-output` (relevée au banc), c'est elle que S5
+#: compare. Le reste de l'ICMPv6 sortant (découverte des voisins, echo, erreurs)
+#: est déjà admis par `before6.rules` d'ufw.
+DURCISSEMENT_ICMPV6_SORTANT="-A ufw6-after-output -d ff02::16/128 -p ipv6-icmp -m icmp6 --icmpv6-type 143 -m hl --hl-eq 1 -j ACCEPT|MLDv2 : les rapports d'adhésion multicast IPv6 du noyau vers ff02::16 (limite de saut 1, ne quitte pas le lien ; mesuré sur rpi1 en refus, 12 en 24 h le 11/11/2026)"
+
 #: fail2ban sur sshd : 5 essais, 1 h de bannissement — ce qui tourne depuis
 #: avril sur les deux nœuds. `bantime` se lit en secondes chez fail2ban-client.
 DURCISSEMENT_F2B_MAXRETRY=5
