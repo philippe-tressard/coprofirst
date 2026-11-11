@@ -610,6 +610,7 @@ jobs:
           python scripts/ci/codeql_nouvelles_alertes.py --selftest
           python scripts/ci/plafonds_jobs.py --selftest
           python scripts/ci/arbre_deja_vert.py --selftest
+          bash scripts/ci/apt-ci.sh --selftest
           python scripts/poste/verifier_migrations_texte.py --selftest
           bash scripts/lib/lib-role.sh              --selftest
           bash scripts/lib/lib-applicatifs.sh       --selftest
@@ -2932,8 +2933,14 @@ jobs:
             echo "$conf" | sudo tee /etc/apt/apt.conf.d/99-cache-playwright > /dev/null
           fi
           debut=$(date +%s)
+          #  Les dépendances système passent par la porte d'apt de la CI (#2694) :
+          #  le 11/11/2026, une panne de RÉSOLUTION des miroirs Ubuntu a tenu la
+          #  tranche WebKit rouge des heures, avant le moindre test. Hors Debian (le
+          #  poste), la porte lance la commande telle quelle.
           # shellcheck disable=SC2086 # la liste se coupe en mots, voulu
-          npx playwright install --with-deps ${E2E_NAVIGATEURS:-chromium webkit}
+          bash ../scripts/ci/apt-ci.sh executer -- npx playwright install-deps ${E2E_NAVIGATEURS:-chromium webkit}
+          # shellcheck disable=SC2086 # la liste se coupe en mots, voulu
+          npx playwright install ${E2E_NAVIGATEURS:-chromium webkit}
           #  La mesure que #1865 demande : la durée, job après job.
           echo "Installation de Playwright : $(( $(date +%s) - debut )) s"
           #  🔴 apt laisse dans le dossier gardé son verrou et `partial/`, à root
