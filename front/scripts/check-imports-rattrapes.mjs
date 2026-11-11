@@ -61,7 +61,7 @@ const EXCEPTIONS = [];
  *  ⚠️ Lecture d'un source, pas un assainissement : on BLANCHIT par positions
  *  (`blanchir`), jamais par `.replace` — CodeQL y lirait un filtre de balises.
  */
-const SCRIPT = /(<script\b[^>]*>)([\s\S]*?)<\/script\s*>/gi;
+const SCRIPT = /(<script\b[^>]*>)([\s\S]*?)<\/script\b[^>]*>/gi;
 const COMMENTAIRE_HTML = /<!--[\s\S]*?-->/g;
 
 function scripts(source) {
