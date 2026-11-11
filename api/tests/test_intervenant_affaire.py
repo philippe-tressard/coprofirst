@@ -52,6 +52,8 @@ def test_le_conseil_designe_l_intervenant_et_la_recurrence(session):
     )
     assert (lu.prestataire_id, lu.prestataire_nom) == (p.id, p.nom)
     assert (lu.frequence_type, lu.frequence_valeur) == ("mois", 3)
+    #  Le rythme en clair est SERVI (#2633) : le front ne le compose plus.
+    assert (lu.frequence_libelle, lu.contrat) == ("↺ Mensuel", None)
 
 
 def test_mensuelle_n_attend_pas_de_nombre(session):
@@ -240,6 +242,8 @@ def test_sous_contrat_le_rythme_est_celui_du_contrat(session):
     assert lu.contrat_id == c.id
     assert (lu.frequence_type, lu.frequence_valeur) == (None, None)
     assert (lu.contrat.frequence_type, lu.contrat.frequence_valeur) == ("mois", 3)
+    #  Servi des deux côtés (#2633) : celui du contrat fait foi, l'affaire n'en a pas.
+    assert (lu.contrat.frequence_libelle, lu.frequence_libelle) == ("↺ Mensuel", "")
 
 
 @pytest.mark.parametrize(

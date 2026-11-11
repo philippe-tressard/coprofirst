@@ -22,6 +22,8 @@ const CONTRAT = {
 	type_equipement: 'ascenseur',
 	frequence_type: 'mois',
 	frequence_valeur: 1,
+	//  Servie par l'API (`ContratRead.frequence_libelle`) : l'écran la LIT (#2633).
+	frequence_libelle: '↺ Mensuel',
 	actif: true,
 };
 

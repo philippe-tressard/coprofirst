@@ -257,34 +257,10 @@ export function relire<T>(dependance: unknown, calcul: () => T): T {
 	return calcul();
 }
 
-/**
- * Les numéros de téléphone d'un champ libre — découpés, nettoyés, DÉDOUBLONNÉS.
- *
- * 🔴 Écrit deux fois avant le 03/09/2026 : `splitTels()` dans les prestataires,
- * et `m.telephone.split(',').filter((t) => t.trim())` recopié dans l'annuaire.
- * Deux écritures de la même notion, qui auraient divergé au premier changement
- * de séparateur.
- *
- * ⚠️ Le dédoublonnage est ce qui manquait aux deux, et il règle DEUX choses à la
- * fois :
- *
- * 1. **le rendu** — un numéro saisi deux fois dans le même champ s'affichait
- *    deux fois, sans que personne y voie autre chose qu'une saisie maladroite ;
- * 2. **la clé de liste** — sans unicité, `{#each … as tel (tel)}` fait lever
- *    `each_key_duplicate` à Svelte et **l'écran entier tombe**. C'est pourquoi
- *    ces cinq boucles étaient restées sans clé : la corriger par la forme aurait
- *    été plus dangereux que le défaut. Dédoublonner à la SOURCE rend la clé
- *    sûre, au lieu de choisir entre les deux.
- */
-export function telephonesDe(champ: string | null | undefined): string[] {
-	if (!champ) return [];
-	const vus = new Set<string>();
-	for (const brut of champ.split(',')) {
-		const numero = brut.trim();
-		if (numero) vus.add(numero);
-	}
-	return [...vus];
-}
+//  🔴 `telephonesDe` est PARTIE le 11/11/2026 (#2633) : les numéros d'un champ
+//  téléphone sont SERVIS découpés et dédoublonnés (`telephones` — annuaire, fiche
+//  d'un prestataire ; `api/app/utils/telephones.py`), que l'app iOS lit aussi.
+//  🔒 `npm run lint:regles-partagees` refuse son retour.
 
 //  🔴 `lotTypeLabel` et `lotTypeComplet` sont PARTIS le 04/11/2026 (#2507) : le type
 //  d'un lot en clair est SERVI par l'API (`libelle_type`, `libelle_type_complet`,

@@ -298,9 +298,9 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   `app/utils/` (ou un prédicat d'`auth/`), servis en champ que le front LIT — jamais une
   fonction de `#lib` seule (`libelle_logement`, #2500). Chacune se déclare dans
   `front/scripts/check-regles-partagees.regles.mjs` ; celles que le front calcule encore y
-  portent leur ticket de migration et sa raison. L'inventaire, et ce qui reste au front par
-  décision (tables générées par l'app, formats d'une valeur typée), se lit dans #2501.
-  🔒 `npm run lint:regles-partagees`.
+  portent leur ticket de migration, OUVERT, et sa raison. L'inventaire, et ce qui reste au
+  front par décision (tables générées par l'app, formats d'une valeur typée), se lit dans #2501.
+  🔒 `npm run lint:regles-partagees` ; le porteur fermé, le point 25 du pré-check (#2633).
 
 ### Schémas Pydantic
 - Trois formes par entité exposée : `EntiteCreate` (entrée, sans id ni
