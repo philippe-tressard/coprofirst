@@ -154,7 +154,11 @@ l'unique PR `dev → main`, la fusionne **hors de la fenêtre de bascule**
 (`FENETRE_BASCULE_*`, confrontée par son autotest à la crontab), recrée `dev`, y
 ramène les PR qui la visaient — reciblées, ou **rouvertes** si GitHub les a fermées
 (un brouillon l'est, #2619) —, attend `Déployé:` sur l'actif, joue `--post-mep` et
-relance la veille. **Tué, il se relance avec les mêmes arguments** : son état
+relance la veille. ⚠️ GitHub supprime `dev` **après** la fusion, de façon
+asynchrone : lue une seconde après, elle est encore là — le conducteur attend le
+fait (`attendre_dev_supprimee`, délai borné), relit chaque PR reciblée et s'arrête
+en la nommant si elle n'est pas sur `dev` (#2676, vécu à la v3.86.0).
+**Tué, il se relance avec les mêmes arguments** : son état
 (`conduite-mep.etat`) et son verrou vivent dans le répertoire git commun, et chaque
 étape vérifie son fait avant d'agir. Ses décisions sont des fonctions pures de
 `scripts/lib/lib-mep-conduite.sh` (`--selftest`, job `test-scripts`).
