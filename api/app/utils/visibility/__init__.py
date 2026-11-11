@@ -81,9 +81,11 @@ from .fichiers import (
     porteurs_du_fichier,
 )
 from .defauts_affaire import (
+    CODES_COPROPRIETAIRES,
     CONCERNE,
     DEFAUT_INCONNU,
     DEFAUT_PAR_CATEGORIE,
+    defauts_de_nature,
     destinataires_par_defaut,
     lus_dans_toute_la_residence,
 )
@@ -115,9 +117,11 @@ __all__ = [
     "evenement_visible",
     "can_see_ag",
     "ticket_visible",
+    "CODES_COPROPRIETAIRES",
     "CONCERNE",
     "DEFAUT_INCONNU",
     "DEFAUT_PAR_CATEGORIE",
+    "defauts_de_nature",
     "destinataires_par_defaut",
     "lus_dans_toute_la_residence",
     "reservee_au_conseil",

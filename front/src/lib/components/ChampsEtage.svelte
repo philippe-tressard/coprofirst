@@ -16,7 +16,7 @@
   🔴 Quand un logement de référence existe, sa valeur est PROPOSÉE dans le champ
   personnel : personne ne devrait ressaisir ce que le site détient déjà. La
   désignation de ce logement vient de l'API (`est_logement_de_reference`), jamais
-  d'un calcul refait ici — voir `etageDuLot` dans `#lib/utils`.
+  d'un calcul refait ici — voir `logementDeReference` dans `#lib/utils`.
 
   ⚠️ PAS d'indication sous ce bloc. Elle disait « Facultatif. L'étage du bien
   lui-même — il apparaît sur les fiches et les affiches ». Retirée le 09/09/2026 :
@@ -34,7 +34,7 @@
 	import { auth as authApi, lots as lotsApi, type MonLot, type User } from '#lib/api/index.ts';
 	import EncartAvertissement from '#lib/components/EncartAvertissement.svelte';
 	import { currentUser } from '#lib/stores/auth.ts';
-	import { ETAGE_MAX, ETAGE_MIN, etageDuLot, etageLabel } from '#lib/utils.ts';
+	import { ETAGE_MAX, ETAGE_MIN, logementDeReference } from '#lib/utils.ts';
 
 	/**  L'étage de CHAQUE logement, par identifiant — donnée de patrimoine. */
 	export let etagesLot: Record<number, number | null> = {};
@@ -54,7 +54,8 @@
 	let etage: number | null = $currentUser?.etage ?? null;
 
 	/**  L'étage que le classeur de la copropriété connaît, ou `null`. */
-	$: etageLot = etageDuLot(lots);
+	$: reference = logementDeReference(lots);
+	$: etageLot = reference?.etage ?? null;
 
 	/**  Proposé, jamais imposé : une valeur SAISIE ne se remplace pas par une
 	 *   déduction, même juste — c'est l'utilisateur qui a raison sur où il vit.
@@ -149,9 +150,8 @@
 		<p class="aide">0 = rez-de-chaussée, 2 = 2ème étage.</p>
 		{#if divergence}
 			<EncartAvertissement compact id="p-etage-divergence" role="status">
-				⚠️ Votre logement est enregistré au <strong
-					>{etageLabel(etageLot, { suffixe: true })}</strong
-				>. C'est cette valeur qui s'affiche dans l'annuaire. Votre saisie est conservée et le
+				⚠️ Votre logement est enregistré au <strong>{reference?.etage_libelle_complet}</strong>.
+				C'est cette valeur qui s'affiche dans l'annuaire. Votre saisie est conservée et le
 				gestionnaire du site est prévenu pour vérifier.
 			</EncartAvertissement>
 		{/if}

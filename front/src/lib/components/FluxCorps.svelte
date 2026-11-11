@@ -67,7 +67,10 @@
 	{#if item.meta?.statut && !estAffaire}
 		<p class="flux-meta-line">
 			État :
-			<BadgeEtatAffaire statut={String(item.meta.statut)} />
+			<BadgeEtatAffaire
+				statut={String(item.meta.statut)}
+				libelle={String(item.meta.statut_libelle ?? '')}
+			/>
 		</p>
 	{/if}
 	<!--  🔴 LA DERNIÈRE MISE À JOUR D'ABORD, le texte d'origine ensuite

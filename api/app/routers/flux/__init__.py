@@ -77,6 +77,7 @@ from app.auth.deps import get_current_user, require_admin
 from app.database import get_session
 from app.models.core import FluxMasque, Utilisateur
 from app.utils.archivage import seuil_archivage_jours
+from app.utils.perimetres.libelles import perimetre_badge
 from app.utils.visibility import concerne
 
 from . import (
@@ -155,6 +156,8 @@ def get_flux(
     for item in items:
         if codes := item.meta.get("perimetre_codes"):
             item.me_concerne = concerne(user, codes)
+            #  Le badge 🔹 de la ligne, servi (#2633) : le front ne nomme plus le lieu.
+            item.meta["perimetre_libelle"] = perimetre_badge(codes)
 
     items.sort(key=lambda x: x.date, reverse=True)
 

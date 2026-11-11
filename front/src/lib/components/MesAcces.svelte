@@ -64,6 +64,7 @@
 		code: string;
 		statut: string;
 		perimetre_cible?: string[];
+		perimetre_libelle?: string;
 	}[] = [];
 
 	export let onSignalerPerdu: (id: number) => void;
@@ -92,7 +93,7 @@
 							<!--  🔹 Le MÊME composant que l'écran du conseil syndical : ce que
 							      le badge ouvre se lit d'une seule façon sur tout le site. -->
 							<td>
-								<BadgePerimetre perimetre={item.perimetre_cible ?? []}>
+								<BadgePerimetre libelle={item.perimetre_libelle}>
 									<span class="mes-acces-vide">—</span>
 								</BadgePerimetre>
 							</td>

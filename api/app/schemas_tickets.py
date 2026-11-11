@@ -17,9 +17,13 @@ l'importe. Un cycle ferait dépendre le démarrage de l'ordre des imports.
 from datetime import datetime
 from typing import List, Optional
 
+from pydantic import computed_field
+
 from app.models.core import StatutTicket
 from app.schemas_communs import ChampsIntervenant, ChoixConciliation, EvolutionLue, ListeJson
 from app.utils.assiste_ia import AssisteIACorrection, AssisteIAEntree
+from app.utils.etat_affaire import libelle_etat
+from app.utils.perimetres.servi import libelle_complet
 
 
 class ChampsSuiteAffaire(ChampsIntervenant):
@@ -125,6 +129,19 @@ class TicketEvolutionRead(EvolutionLue):
     #  défaut : une entrée rendue sans lecteur n'offre aucun geste.
     peut_modifier: bool = False
     peut_supprimer: bool = False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def nouveau_statut_libelle(self) -> str:
+        """L'état qu'une Suite donne, en clair — vide sans changement d'état (#2633)."""
+        return libelle_etat(self.nouveau_statut)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def perimetre_precise_libelle(self) -> str:
+        """« Périmètre précisé : 🔹 Bât. 2 » — le lieu que la Suite déclare, MÊME par
+        défaut ; vide quand elle n'en parle pas (#2633)."""
+        return libelle_complet(self.perimetre_cible)
 
     class Config:
         from_attributes = True

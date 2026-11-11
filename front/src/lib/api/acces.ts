@@ -36,12 +36,11 @@ export interface AccesPorteur {
 	/** Le bail au titre duquel il a été confié — la vue du bailleur s'en sert. */
 	bail_id: number | null;
 	lot_id: number | null;
-	/**  🔹 Ce que le badge OUVRE — des CODES, jamais un libellé.
-	 *
-	 *   ⚠️ L'écran les met en forme (`BadgePerimetre`), comme partout ailleurs :
-	 *   un libellé venu du serveur obligerait celui-ci à décider d'un rendu, et
-	 *   c'est le défaut que le fil d'activité portait jusqu'au 14/09/2026. */
+	/**  🔹 Ce que le badge OUVRE — des CODES. Le lieu en clair est servi à côté
+	 *   (`perimetre_libelle`, #2633) : l'écran ne le compose plus. */
 	perimetre_cible: string[];
+	/** Le badge 🔹, SERVI (`perimetre_libelle`, #2633) — `""` pour le défaut. */
+	perimetre_libelle?: string;
 	/** Le ou les lots de sa NATURE (`libelle_lots`), séparés comme partout ailleurs. */
 	lot_libelle: string | null;
 	cree_le: string;

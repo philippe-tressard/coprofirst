@@ -195,6 +195,7 @@ OUVERTS_EXPRES: dict[tuple[str, str], str] = {
     ("DELETE", "/auth/me/telemetrie"): "le droit d'effacement reste ouvert",
     ("POST", "/admin/utilisateurs/{user_id}/accueil-arrivant"): "geste de l'accueil, montré",
     ("POST", "/admin/utilisateurs/{user_id}/auto-match"): "rattachement aux lots, montré",
+    ("POST", "/perimetres/libelle"): "nomme une sélection, sans rien écrire (#2633)",
     ("GET", "/config/whatsapp-logs"): "lecture du journal local",
     ("GET", "/config/whatsapp-scheduled"): "lecture des messages planifiés",
     ("GET", "/config/llm-consommation"): "lecture locale de la consommation",

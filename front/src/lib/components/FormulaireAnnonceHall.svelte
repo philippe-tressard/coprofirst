@@ -284,7 +284,7 @@
 	requis={photos.length === 0}
 	placeholder="Rédigez l'annonce telle qu'elle sera affichée…"
 	bind:valeur={message}
-	assistant={contexteAssistant('annonce de hall', { Périmètre: perimetreContexte(perimetre) })}
+	assistant={contexteAssistant('annonce de hall', { Périmètre: $perimetreContexte(perimetre) })}
 	bind:titreObjet={titre}
 	bind:assisteIA
 />

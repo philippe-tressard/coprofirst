@@ -31,11 +31,11 @@ from typing import Optional
 from pydantic import BaseModel, computed_field
 
 from app.utils.categories_ticket import libelle_categorie, ticket_urgent
-from app.utils.etat_affaire import affaire_close
+from app.utils.etat_affaire import affaire_close, libelle_etat
 from app.utils.frequence_contrat import frequence_libelle as _frequence_libelle
+from app.utils.lecture_pastille.modele import Lecture
 from app.utils.kanban_tickets import colonne_du_ticket
 from app.utils.nouveaute import est_nouveau
-from app.utils.valeurs import valeur
 
 
 class AffaireServie(BaseModel):
@@ -44,6 +44,12 @@ class AffaireServie(BaseModel):
     #: 🔹 Le lieu lisible (« Bât. 2 › Toit »), VIDE pour le périmètre par défaut —
     #: que le badge tait (`est_perimetre_par_defaut`). Posé par la lecture.
     perimetre_libelle: str = ""
+    #: Qui la lit — la pastille de lecture (`utils/lecture_pastille`, #2633). Posé
+    #: par la lecture : il dépend de l'arbre des périmètres.
+    lecture: Optional[Lecture] = None
+    #: Les Destinataires qu'une Suite présélectionne selon l'état qu'elle donne
+    #: (`lecture_pastille.objets.destinataires_par_etat`) — `None` pour une actualité.
+    destinataires_par_etat: Optional[dict[str, list[str]]] = None
     #: 📦 Archiver (`gestes_affaire.peut_archiver`).
     peut_archiver: bool = False
     #: Une Suite qui change l'état (`gestes_affaire.peut_changer_etat`).
@@ -54,6 +60,9 @@ class AffaireServie(BaseModel):
     peut_repondre: bool = False
     #: ✏️ Corriger le contenu (`gestes_affaire.peut_modifier`).
     peut_modifier: bool = False
+    #: ✏️ Le CRAYON : ouvrir la correction (`auth/deps.peut_editer`, #2633) — plus
+    #: large que `peut_modifier`, qui ne vaut que tant que l'affaire est ouverte.
+    peut_corriger: bool = False
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -71,13 +80,13 @@ class AffaireServie(BaseModel):
     @property
     def statut_libelle(self) -> str:
         """« Chez le syndic » — la valeur brute si elle est inconnue, jamais vide."""
-        #  Import différé : la table vit avec les courriels qu'elle sert
-        #  (`routers/tickets/commun.STATUT_LABELS`, gardée par `test_statuts_tickets`),
-        #  et ce module est chargé par `schemas`, que `commun` importe.
-        from app.routers.tickets.commun import STATUT_LABELS
+        return libelle_etat(getattr(self, "statut", None))
 
-        brut = str(valeur(getattr(self, "statut", None)) or "")
-        return STATUT_LABELS.get(brut, brut)
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def suivi_actualite_libelle(self) -> str:
+        """L'état du suivi d'une actualité en clair — vide sans suivi (#2633)."""
+        return libelle_etat(getattr(self, "suivi_actualite", None))
 
     @computed_field  # type: ignore[prop-decorator]
     @property

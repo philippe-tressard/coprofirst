@@ -44,6 +44,8 @@ const QUESTION = {
 	statut: 'ouvert',
 	priorite: 'normale',
 	auteur_id: 1,
+	//  ✏️ Le crayon est SERVI (`peut_corriger`, #2633) : l'auteur le reçoit.
+	peut_corriger: true,
 	auteur_nom: 'CS Témoin',
 	perimetre_cible: ['résidence'],
 	public_cible: null,

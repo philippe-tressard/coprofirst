@@ -20,8 +20,18 @@ type EcriturePerimetre = Partial<Omit<PerimetreDTO, 'libelle_court'>> & {
 	libelle_court?: string | null;
 };
 
+/**  Le lieu d'une sélection, nommé par le serveur — `LibellePerimetre` (#2633). */
+export interface LibellePerimetre {
+	/** Le lieu, MÊME par défaut (`perimetre_label`) — vide sans code. */
+	libelle: string;
+	/** Le badge 🔹 : vide pour le périmètre par défaut (`perimetre_badge`). */
+	badge: string;
+}
+
 export const perimetres = {
 	list: () => api.get<PerimetreDTO[]>('/perimetres'),
+	/**  Le lieu d'une SAISIE (`#lib/apercu-perimetre`) : un objet enregistré sert le sien. */
+	libelle: (codes: string[]) => api.post<LibellePerimetre>('/perimetres/libelle', { codes }),
 	create: (data: EcriturePerimetre & { code: string; libelle: string }) =>
 		api.post<PerimetreDTO>('/perimetres', data),
 	update: (id: number, data: EcriturePerimetre) =>

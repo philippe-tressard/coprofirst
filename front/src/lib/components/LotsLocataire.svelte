@@ -52,7 +52,7 @@
 		</div>
 		<CaracteristiquesLot
 			typeComplet={bail.lot_libelle_type_complet}
-			etage={bail.lot_etage}
+			etageLibelle={bail.lot_etage_libelle}
 			superficie={bail.lot_superficie}
 		>
 			<svelte:fragment slot="avant">
@@ -94,7 +94,7 @@
 			<h2 class="carte-lot-titre">{lot.batiment_nom ?? '—'} / {lot.numero}</h2>
 			<CaracteristiquesLot
 				typeComplet={lot.libelle_type_complet}
-				etage={lot.etage}
+				etageLibelle={lot.etage_libelle}
 				superficie={lot.superficie}
 				designation={lot}
 			/>

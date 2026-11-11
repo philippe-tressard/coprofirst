@@ -16,14 +16,21 @@
   son suivi s'affiche — sa carte aux Archives comme sa ligne d'affaire liée.
 
   ⚠️ `badge-gray` en repli : le fil montre aussi des états d'autres objets (un
-  événement, une idée) que la table ne connaît pas — `statutTicketLabel` rend
-  alors la valeur brute, jamais une chaîne vide.
+  événement, une idée) que la table ne connaît pas — le serveur sert alors la
+  valeur brute en libellé, jamais une chaîne vide.
+
+  🔤 Le LIBELLÉ est SERVI (#2633) : `statut_libelle`, `nouveau_statut_libelle`,
+  `etat_cible_libelle`… (`api/app/utils/etat_affaire.libelle_etat`) — l'écran ne
+  le compose plus, l'app iOS le lit au même endroit. Le code reste pour la teinte.
 -->
 <script lang="ts">
 	import Badge from '#lib/components/Badge.svelte';
-	import { STATUT_TICKET_BADGE, statutTicketLabel } from '#lib/tickets.ts';
+	import { STATUT_TICKET_BADGE } from '#lib/tickets.ts';
 
+	/** Le CODE de l'état — il choisit la teinte. */
 	export let statut: string | null | undefined;
+	/** L'état en clair, tel que l'API le sert. */
+	export let libelle: string | null | undefined;
 	/** Un cran sous le corps du badge, pour une liste dense (`Badge`). */
 	export let compact = false;
 	/** Absorbée par une autre affaire : l'état reçu n'est pas le sien. */
@@ -33,7 +40,5 @@
 {#if fusionnee}
 	<Badge teinte="badge-gray" {compact}>🔀 Fusionnée</Badge>
 {:else}
-	<Badge teinte={STATUT_TICKET_BADGE[statut ?? ''] ?? 'badge-gray'} {compact}
-		>{statutTicketLabel(statut)}</Badge
-	>
+	<Badge teinte={STATUT_TICKET_BADGE[statut ?? ''] ?? 'badge-gray'} {compact}>{libelle}</Badge>
 {/if}

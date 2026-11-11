@@ -46,14 +46,14 @@ CONCERNE = "concerné"
 #: « Copropriétaires » : occupants et bailleurs — les deux codes que proposent
 #: les pastilles (`copropriétaires` ne l'est plus depuis #1301), et que l'écran
 #: nomme d'un mot. Ni locataires, ni mandataires.
-_COPROPRIETAIRES = ["copropriétaires_occupants", "bailleurs"]
+CODES_COPROPRIETAIRES = ["copropriétaires_occupants", "bailleurs"]
 
 #: Une Panne sans choix du conseil : tous les copropriétaires, et les locataires
 #: de son périmètre (30/09/2026). Elle lisait ceux qui vivent dans le bâtiment
 #: — occupants et locataires, pas les bailleurs — depuis #1343, et tous hors
 #: bâtiment : le carnet la montrait pourtant à tous les copropriétaires.
 #: Ni les mandataires, que « tous » comprenait hors bâtiment.
-_DEFAUT_PANNE = [*_COPROPRIETAIRES, "locataires"]
+_DEFAUT_PANNE = [*CODES_COPROPRIETAIRES, "locataires"]
 
 #  Les états où une Étude & travaux sort du conseil — `STATUTS_ETUDE_OUVERTE`,
 #  déclarés avec les autres listes d'états (`models/tickets.py`) : en AG, les
@@ -91,7 +91,7 @@ DEFAUT_PAR_CATEGORIE: dict[str, list[str]] = {
     "espaces_verts": ["résidents"],
     "sinistre": [CONCERNE],
     "etude_travaux": ["conseil_syndical"],
-    "entretien": _COPROPRIETAIRES,
+    "entretien": CODES_COPROPRIETAIRES,
     "question": [CONCERNE],
     "bug": [CONCERNE],
 }
@@ -105,6 +105,21 @@ DEFAUT_INCONNU = ["conseil_syndical"]
 _DEFAUTS_FERMES = ([CONCERNE], ["conseil_syndical"])
 
 
+def defauts_de_nature(actualite: bool, categorie, statut) -> list[str]:
+    """Les Destinataires sans choix du conseil, d'après la NATURE seule — celle
+    d'une affaire enregistrée comme d'une saisie en cours (l'aperçu de la
+    pastille de lecture, #2633). `destinataires_par_defaut` l'applique à un ticket.
+    """
+    if actualite:
+        return ["résidents"]
+    categorie = valeur(categorie)
+    if categorie == "panne":
+        return _DEFAUT_PANNE
+    if categorie == "etude_travaux" and valeur(statut) in STATUTS_ETUDE_OUVERTE:
+        return CODES_COPROPRIETAIRES
+    return DEFAUT_PAR_CATEGORIE.get(categorie, DEFAUT_INCONNU)
+
+
 def destinataires_par_defaut(ticket: Ticket) -> list[str]:
     """Les Destinataires qu'une affaire a SANS choix du conseil : ceux de sa
     catégorie (#1343, #1436) — et de son état pour une Étude & travaux
@@ -116,14 +131,7 @@ def destinataires_par_defaut(ticket: Ticket) -> list[str]:
     #  Une actualité s'adresse à tous (`actualite_visible` en décide, pas
     #  cette table) — miroir de l'écran. Sans ce cas, elle tomberait sur
     #  `DEFAUT_INCONNU` et `reservee_au_conseil` la retiendrait du hall.
-    if est_actualite(ticket):
-        return ["résidents"]
-    categorie = valeur(ticket.categorie)
-    if categorie == "panne":
-        return _DEFAUT_PANNE
-    if categorie == "etude_travaux" and valeur(ticket.statut) in STATUTS_ETUDE_OUVERTE:
-        return _COPROPRIETAIRES
-    return DEFAUT_PAR_CATEGORIE.get(categorie, DEFAUT_INCONNU)
+    return defauts_de_nature(est_actualite(ticket), ticket.categorie, ticket.statut)
 
 
 def lus_dans_toute_la_residence(ticket: Ticket) -> list[str]:
@@ -144,4 +152,4 @@ def lus_dans_toute_la_residence(ticket: Ticket) -> list[str]:
     """
     if est_actualite(ticket) or ticket.reserve_perimetre:
         return []
-    return [c for c in destinataires_par_defaut(ticket) if c in _COPROPRIETAIRES]
+    return [c for c in destinataires_par_defaut(ticket) if c in CODES_COPROPRIETAIRES]

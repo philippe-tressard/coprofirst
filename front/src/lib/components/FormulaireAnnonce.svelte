@@ -118,7 +118,7 @@
 	$: assistant = contexteAssistant('petite annonce', {
 		Type: typeAnnonceLabel(typeAnnonce),
 		Catégorie: categorieAnnonceLabel(categorie),
-		Périmètre: perimetreContexte(perimetreCible),
+		Périmètre: $perimetreContexte(perimetreCible),
 	});
 	let contactVisible = annonce?.contact_visible ?? true;
 

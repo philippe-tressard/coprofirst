@@ -189,12 +189,12 @@
 	let [detailsOuverts, detailsVus] = [false, false];
 	$: if (!detailsVus && replies.length) [detailsVus, detailsOuverts] = [true, ouvert];
 	//  Réservée au conseil : « Confidentielle », Destinataires = CS seul, ou sa catégorie (#1436).
-	$: reservee = lueDuSeulConseil(categorie, statut, options.brouillon, publicCible);
+	$: reservee = $lueDuSeulConseil(categorie, statut, options.brouillon, publicCible);
 	//  Une actualité réservée — au périmètre ou au conseil — n'a pas d'affiche.
 	$: if ((reservePerimetre || reservee) && annonceHall) annonceHall = false;
 	$: assistant = contexteAssistant(actualite ? 'actualité' : 'ticket', {
 		Catégorie: OPTIONS_CATEGORIE.find((o) => o.val === categorie)?.label ?? categorie,
-		Périmètre: perimetreContexte(perimetreCible),
+		Périmètre: $perimetreContexte(perimetreCible),
 		...(actualite ? {} : { État: STATUT_TICKET_LABELS[statut] ?? statut }),
 	});
 
@@ -303,7 +303,7 @@
 		const contexte = { creation: !modeEdition, estCS: $isCS };
 		//  🔴 Ce qu'une correction EFFACE (23/09/2026) et QUI LIRA l'affaire et tout
 		//  son fil (29/09/2026) : dit avant, rien ne part sans accord.
-		const alerte = ticket && alerteCorrection(ticket, saisie);
+		const alerte = ticket && (await alerteCorrection(ticket, saisie));
 		if (alerte && !(await confirmer({ ...alerte, libelleConfirmer: 'Enregistrer' }))) return;
 		const demande = ticket ? await demanderFusion(ticket, statut) : SANS_FUSION; // à la clôture (#1704)
 		if (demande === null) return;

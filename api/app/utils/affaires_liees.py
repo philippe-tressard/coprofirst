@@ -40,7 +40,7 @@ from sqlmodel import Session, or_, select
 from app.auth.deps import est_moderateur
 from app.models.affaires_liees import AffaireLiee
 from app.models.core import Ticket, Utilisateur
-from app.utils.etat_affaire import affaire_close
+from app.utils.etat_affaire import affaire_close, libelle_etat
 from app.utils.valeurs import valeur
 from app.utils.visibility import ticket_visible
 
@@ -107,6 +107,7 @@ def _lue(t: Ticket) -> dict:
         "numero": t.numero,
         "titre": t.titre,
         "statut": valeur(t.statut),
+        "statut_libelle": libelle_etat(t.statut),
         "close": affaire_close(t.statut),
         "cree_le": t.cree_le,
         #  L'état d'une absorbée est celui de sa principale (#2186) : sans ce

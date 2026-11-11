@@ -16,10 +16,9 @@ rez-de-chaussée n'avait donc **aucun étage** sur la fiche d'accueil remise aux
 nouveaux arrivants — pas un étage faux, un étage **absent**. Le seul cas où
 l'information manquait est celui où elle est la plus simple à donner.
 
-⚠️ La table est écrite deux fois — `app/utils/etages.py` et
-`front/src/lib/utils.ts` — parce que les contextes de build sont `./api` et
-`./front` : le partage d'un fichier est impossible, seule la copie l'est. C'est
-ce test qui rend la copie tenable.
+✅ Depuis #2633 (11/11/2026), le libellé n'est plus écrit qu'ici : l'API le SERT
+(`etage_libelle`), le site et l'app iOS le lisent. Seules les BORNES de saisie
+restent copiées dans `front/src/lib/utils.ts`, et ce test les tient.
 """
 
 from __future__ import annotations
@@ -97,31 +96,43 @@ def test_la_fiche_arrivant_ne_teste_plus_la_VERITE_de_l_etage():
     assert "etage_label(" in source, "la fiche n'emploie plus la source unique"
 
 
-def test_le_FRONT_rend_EXACTEMENT_la_meme_chose():
-    """🔴 Le garde-fou de la copie assumée.
+#  ── Le libellé SERVI (#2633) ─────────────────────────────────────────────
+#
+#  Le front n'a plus de copie (`etageLabel` est partie le 11/11/2026) : il lit le
+#  champ servi, et l'app iOS aussi. Ces cas sont ceux de l'ancien calcul du front,
+#  relevés sur lui avant son retrait (24 cas, aucun écart avec `etage_label`).
+_RELEVES = [
+    (None, "", ""),
+    (-2, "SS 2", "SS 2"),
+    (0, "RDC", "RDC"),
+    (1, "1er", "1er étage"),
+    (2, "2ème", "2ème étage"),
+    (12, "12ème", "12ème étage"),
+]
 
-    ⚠️ On ne peut pas exécuter du TypeScript ici : ce test lit les quatre
-    littéraux de `etageLabel` dans sa source et les confronte à ceux du serveur.
-    C'est grossier, et c'est ce qui empêche l'un des deux de dériver en silence —
-    un « SS » devenu « -1 » d'un côté ne se verrait sur aucun écran de l'autre.
-    """
-    source = _UTILS_TS.read_text(encoding="utf-8")
-    debut = source.index("export function etageLabel")
-    corps = source[debut : source.index("\n}", debut)]
 
-    #  Cas zéro : une extraction qui ne trouve rien conclurait au vert sur zéro
-    #  comparaison (`standards/04` §2).
-    assert len(corps) > 100, "extraction de `etageLabel` cassée"
+@pytest.mark.parametrize("etage,court,complet", _RELEVES)
+def test_un_lot_sert_son_etage_en_clair(etage, court, complet):
+    from app.models.copropriete import Lot, TypeLot
+    from app.routers.lots import _lot_read
 
-    for attendu, motif in (
-        ("RDC", r"'RDC'"),
-        ("SS", r"`SS \$\{Math\.abs\(etage\)\}`"),
-        ("1er", r"'1er'"),
-        ("ème", r"`\$\{etage\}ème`"),
-    ):
-        assert re.search(motif, corps), (
-            f"le front n'écrit plus « {attendu} » comme le serveur :\n{corps}"
-        )
+    lu = _lot_read(Lot(id=1, numero="12", type=TypeLot.appartement, etage=etage))
+    assert (lu.etage_libelle, lu.etage_libelle_complet) == (court, complet)
+
+
+@pytest.mark.parametrize("etage,court,complet", _RELEVES)
+def test_le_rapprochement_d_un_nom_sert_l_etage_comme_la_fiche(etage, court, complet):
+    from app.routers.admin.annuaire import Rapprochement
+
+    assert Rapprochement(etage=etage).model_dump()["etage_libelle"] == complet
+
+
+def test_le_front_ne_recopie_plus_le_libelle():
+    """🔴 Le cas fautif : `etageLabel` revenue dans `utils.ts` ferait deux sources.
+
+    `npm run lint:regles-partagees` le refuse aussi ; ce test le dit côté serveur,
+    là où la règle vit désormais seule."""
+    assert "export function etageLabel" not in _UTILS_TS.read_text(encoding="utf-8")
 
 
 def test_les_BORNES_de_l_etage_ne_derivent_pas_non_plus():

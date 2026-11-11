@@ -12,7 +12,7 @@
  * ⚠️ Le paquet réexporte tout : `#lib/perimetres` continue de servir, et aucun
  * import du dépôt n'a changé.
  */
-import { PREFIXE_BATIMENT, carte, cle, normaliser, type Perimetre } from './arbre';
+import { PREFIXE_BATIMENT, carte, cle, type Perimetre } from './arbre';
 
 /** Sépare deux éléments de même niveau : « Bât. 1 · Parking ». */
 export const SEPARATEUR_ELEMENT = ' · ';
@@ -99,41 +99,6 @@ function prefixe(parent: Perimetre): string {
 }
 
 /**
- * Le chemin d'`ordre` de la racine jusqu'au nœud — sa position dans l'arbre.
- *
- * ⚠️ `ordre` n'est unique qu'entre FRÈRES : le seed donne 0 à « Copropriété
- * entière » comme au premier bâtiment. Trier sur ce seul entier mélangerait les
- * niveaux. Le chemin, lui, se compare terme à terme comme un numéro de chapitre :
- * `[10]` < `[10,0]` < `[20]`. Un parent précède ses enfants, et deux enfants d'un
- * même parent restent **contigus** — ce dont le regroupement de `perimetreLabel`
- * dépend entièrement.
- *
- * La remontée est bornée par `vus` : une boucle dans l'arbre ne doit pas figer
- * l'interface (même garde-fou que `batimentsCibles`).
- */
-function cheminOrdre(n: Perimetre): number[] {
-	const chemin: number[] = [];
-	const vus = new Set<string>();
-	let courant: Perimetre | undefined = n;
-	while (courant && !vus.has(cle(courant.code))) {
-		chemin.unshift(courant.ordre ?? 0);
-		vus.add(cle(courant.code));
-		courant = courant.parent ? carte[cle(courant.parent)] : undefined;
-	}
-	return chemin;
-}
-
-/** `-1` pour la position absente : un parent passe avant ses enfants. */
-function comparerChemins(a: number[], b: number[]): number {
-	for (let i = 0; i < Math.max(a.length, b.length); i++) {
-		const x = a[i] ?? -1;
-		const y = b[i] ?? -1;
-		if (x !== y) return x - y;
-	}
-	return 0;
-}
-
-/**
  * Libellé d'un périmètre isolé. Ne rend jamais un code brut à l'écran.
  *
  * 🔴 **Un espace est QUALIFIÉ par son parent** — « Bât. 3 › Toit », « AFUL › Voie
@@ -162,62 +127,11 @@ export function perimetreLabelUn(code: string): string {
 	return code;
 }
 
-/**
- * Périmètres → libellé affichable, **trié puis regroupé par parent**.
- * Ex : ['bat:1','parking'] → 'Bât. 1 · Parking'
- *
- * Accepte les DEUX formes que porte réellement le produit : le tableau
- * `perimetre_cible` (publications, tickets) et la chaîne `perimetre` des
- * événements. Le calendrier réimplémentait la fonction pour cette seule raison,
- * avec une table recopiée à l'identique — une correction faite ici ne l'atteignait
- * pas (#316).
- *
- * 🔴 **L'ordre affiché ne suit plus l'ordre des clics** (27/08/2026, signalé à
- * l'écran). Les codes sont stockés dans l'ordre où l'utilisateur a touché les
- * pastilles (`PerimetrePicker`, `value = [...s]`), et personne ne les triait
- * ensuite : deux espaces d'un même bâtiment se retrouvaient séparés par un
- * périmètre étranger, et le bâtiment répété —
- *
- *     Bât. 4 › Logement · Voie d'accès · Bât. 4 › Jardin Bâtiment
- *
- * On trie par la position dans l'arbre, on fusionne les éléments contigus qui
- * partagent un parent qualifiant, et on rend :
- *
- *     Bât. 4 › Logement · Jardin Bâtiment — AFUL › Voie d'accès
- *
- * Les codes INCONNUS de l'arbre (nœud supprimé depuis, arborescence pas encore
- * chargée) sont conservés — un contenu ne perd pas son badge — mais rangés à la
- * fin, dans leur ordre d'origine : ils n'ont pas de position dans un arbre où ils
- * ne figurent plus.
- *
- * Le `trim()` de `normaliser` n'est pas cosmétique : sur `'bat:1, parking'`, une
- * clé avec espace de tête ne correspond à rien et ressortirait brute à l'écran.
- */
-export function perimetreLabel(items: string[] | string | null | undefined): string {
-	const codes = normaliser(items);
-	const connus = codes.map((c) => carte[cle(c)]).filter(Boolean);
-	const inconnus = codes.filter((c) => !carte[cle(c)]);
-	connus.sort((a, b) => comparerChemins(cheminOrdre(a), cheminOrdre(b)));
-
-	//  Un « groupe » = des éléments CONTIGUS partageant le même parent qualifiant.
-	//  Contigus suffit : le tri par chemin garantit qu'aucun nœud étranger ne peut
-	//  s'intercaler entre deux enfants d'un même parent.
-	const groupes: { parent?: Perimetre; libelles: string[] }[] = [];
-	for (const n of connus) {
-		const parent = parentQualifiant(n);
-		const dernier = groupes[groupes.length - 1];
-		if (dernier && parent && dernier.parent === parent) dernier.libelles.push(n.libelle);
-		else groupes.push({ parent, libelles: [n.libelle] });
-	}
-	for (const c of inconnus) groupes.push({ parent: undefined, libelles: [perimetreLabelUn(c)] });
-
-	return joindreGroupes(
-		groupes.map((g) => ({
-			prefixe: g.parent ? prefixe(g.parent) : undefined,
-			libelles: g.libelles,
-		})),
-	);
-}
+//  🔴 `perimetreLabel` est PARTIE le 11/11/2026 (#2633) : le lieu d'un contenu est
+//  SERVI avec lui (`perimetre_libelle`, `api/app/utils/perimetres/servi.py`), celui
+//  d'une saisie par `POST /perimetres/libelle` (`#lib/apercu-perimetre`). La règle
+//  — tri par l'arbre, regroupement par parent — ne s'écrit plus qu'au serveur
+//  (`perimetre_label`), que l'app iOS lit aussi. 🔒 `npm run lint:regles-partagees`.
 
 /** Un groupe d'éléments contigus, et le chemin qui les précède (« Bât. 4 »). */
 export interface GroupeLibelles {

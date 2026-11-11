@@ -139,7 +139,7 @@
 			avecDescription={sectionPresente(IDEE, etat, 'description')}
 			descriptionRequise
 			bind:description={form.description}
-			assistant={contexteAssistant('idée', { Périmètre: perimetreContexte(perimetreCible) })}
+			assistant={contexteAssistant('idée', { Périmètre: $perimetreContexte(perimetreCible) })}
 			bind:titreObjet={form.titre}
 			bind:assisteIA
 			descriptionPlaceholder="Décrivez votre idée…"

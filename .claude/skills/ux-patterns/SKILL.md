@@ -652,8 +652,9 @@ n'est pas résident. »* Les libellés sont **au pluriel**.
     des Destinataires, **affaires comprises**. Cela renverse le « sous les
     pastilles » de #1096. Elles ont quitté la Mise en avant (📌 🚨 seuls).
   - 🔒 **tenue contre le serveur** : `api/tests/donnees/lecture_pastille.json`,
-    exécuté par `test_lecture_pastille.py` (règle) et `npm run lint:lecture`
-    (résumé). Une règle d'accès qui change fait tomber les deux.
+    exécuté par `test_lecture_pastille.py` (règle) et `test_lecture_pastille_servie.py`
+    (la pastille SERVIE, `utils/lecture_pastille`, #2633). Une règle d'accès qui change
+    fait tomber les deux ; le front ne compose plus la pastille, il la lit.
   - ✅ la pastille « Copropriétaires » a quitté le sélecteur (#1301, migration
     0221 : ses données portent désormais les deux codes). Le serveur et la
     pastille de lecture LISENT encore l'ancien code, aucun écran ne l'offre.

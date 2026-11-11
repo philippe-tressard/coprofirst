@@ -332,6 +332,7 @@ ATTENDU_EVOLUTION = {
     "contenu": "Voici",
     "ancien_statut": "ouvert",
     "nouveau_statut": "en_cours",
+    "nouveau_statut_libelle": "Chez le syndic",
     "auteur_nom": "Jeanne DURAND",
     "cree_le": "2026-10-01T09:30:00",
     "fichiers_urls": ["/uploads/a.pdf"],
@@ -340,6 +341,9 @@ ATTENDU_EVOLUTION = {
     "assiste_ia": True,
     "ticket_id": 41,
     "perimetre_cible": ["bat-a"],
+    #  Le lieu précisé, nommé par le serveur (#2633) — un code hors de l'arbre se
+    #  rend tel quel (`perimetre_label_un`).
+    "perimetre_precise_libelle": "bat-a",
     "statut_avant": "ouvert",
     #  Sans lecteur ni affaire, aucun geste n'est offert (#2646).
     "peut_modifier": False,
@@ -370,6 +374,7 @@ ATTENDU_LOT = {
     "libelle_nature": "Logement",
     "nom_du_lot": "Logement 12",
     "etage_libelle": "2ème",
+    "etage_libelle_complet": "2ème étage",
 }
 ATTENDU_ACCES = {
     "code": "V-9",
@@ -390,6 +395,7 @@ ATTENDU_BAIL = {
     "lot_type_appartement": "T3",
     "lot_libelle_type_complet": "Appartement – T3",
     "lot_etage": 2,
+    "lot_etage_libelle": "2ème",
     "lot_superficie": 61.5,
     #  🔴 L'ancienne écriture lisait `Batiment.nom`, qui n'existe pas : la route
     #  levait (500) dès que le lot du bail avait un bâtiment.

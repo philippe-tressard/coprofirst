@@ -56,7 +56,7 @@
 						<div class="item-tete">
 							<strong>{a.numero}{SEPARATEUR.tiret}{a.titre}</strong>
 							<Badge teinte={a.relances.length ? 'badge-red' : 'badge-orange'}>{numero(a)}</Badge>
-							<BadgePerimetre perimetre={a.perimetre_cible} />
+							<BadgePerimetre libelle={a.perimetre_libelle} />
 						</div>
 						{#if a.relances.length}<PastillesRelances relances={a.relances} />{/if}
 						{#if a.apercu}<p class="texte clamp-rapport">{a.apercu}</p>{/if}

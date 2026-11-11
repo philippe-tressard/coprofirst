@@ -88,8 +88,8 @@
 				      n'est plus teinté en bleu, et la pastille de lecture a remplacé le
 				      badge orange des destinataires. 🔴 PAS D'AUTEUR : un sondage reste
 				      anonyme pour ses lecteurs (arbitré le 27/09/2026, `lint:pastilles`). -->
-				<BadgePerimetre perimetre={s.perimetre_cible} />
-				<PastilleLecture cible={s} masculin />
+				<BadgePerimetre libelle={s.perimetre_libelle} />
+				<PastilleLecture lecture={s.lecture} masculin />
 				{#if s.cloture_le && !s.cloture}
 					<span class="badge badge-gray">Clôture le {fmtDateShort(s.cloture_le)}</span>
 				{/if}

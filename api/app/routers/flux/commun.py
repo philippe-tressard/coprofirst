@@ -30,6 +30,8 @@ from app.utils.noms import nom_auteur
 from app.utils.categories_ticket import libelle_categorie, ticket_urgent
 from app.utils.fichiers import est_image
 from app.utils.echeance_affaire import echeance
+from app.utils.lecture_pastille.objets import lecture_du_ticket
+from app.utils.perimetres.libelles import perimetre_badge
 from app.utils.nature_affaire import natures
 from app.utils.photos import parse_photos
 
@@ -107,8 +109,10 @@ CHAMPS_PASTILLES = (
     "categorie",
     "categorie_libelle",  # servi par `TicketRead` (#2511) : le pied de carte le lit
     "statut",
+    "statut_libelle",  # servi par `TicketRead` (#2633) : le badge d'état le lit
     "close",  # servi par `TicketRead` (#2511) : le fil ne recalcule pas « close »
     "suivi_actualite",  # l'état d'une actualité suivie (10/10/2026)
+    "suivi_actualite_libelle",  # …en clair (#2633)
     "priorite",
     "debut",
     "fin",  # avec `debut`, les dates de la vignette d'échéance (gouttière du fil)
@@ -143,6 +147,11 @@ def pastilles_affaire(ticket) -> dict:
     #  civils de Paris, le fil LIT son libellé (`utils/echeance_affaire`). `None`
     #  sans date. 🔒 `test_echeance_affaire.py`.
     rendu["echeance"] = echeance(ticket)
+    #  👁 QUI LA LIT — la pastille de la ligne, servie (#2633) : elle dépend de
+    #  l'arbre des périmètres, que `TicketRead` seul ne lit pas.
+    rendu["lecture"] = lecture_du_ticket(ticket).model_dump()
+    #  🔹 Le lieu de la ligne, servi comme sur la carte (`perimetre_badge`, #2633).
+    rendu["perimetre_libelle"] = perimetre_badge(rendu.get("perimetre_cible") or [])
     return rendu
 
 

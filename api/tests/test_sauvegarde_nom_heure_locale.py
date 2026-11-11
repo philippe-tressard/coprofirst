@@ -105,14 +105,20 @@ def test_le_nom_est_accepte_par_les_lecteurs_shell():
 
 
 def test_run_backup_ecrit_le_nom_a_l_heure_de_paris(tmp_path, monkeypatch):
-    """Bout en bout : l'archive posée sur le disque porte le nom à l'heure de Paris."""
+    """Bout en bout : l'archive posée sur le disque porte le nom à l'heure de Paris — et
+    celui de la résidence, lu en base (#2667)."""
     from sqlmodel import SQLModel
 
     from app.config import get_settings
     from app.database import engine
+    from app import contexte
     from app.utils import backup
+    from app.utils.config_site import ecrire_cle
 
     SQLModel.metadata.create_all(engine)
+    with contexte.nouvelle_session() as s:
+        ecrire_cle(s, "site_nom", "Résidence des Essais")
+        s.commit()
     #  Le dossier se lit par le contexte (`contexte.dossier_des_sauvegardes`, #2053).
     monkeypatch.setattr(get_settings(), "backup_dir", str(tmp_path))
     monkeypatch.setattr(horloge, "maintenant", lambda: datetime(2026, 10, 5, 2, 0, 0))
@@ -120,4 +126,5 @@ def test_run_backup_ecrit_le_nom_a_l_heure_de_paris(tmp_path, monkeypatch):
     backup.run_backup()
 
     archives = [os.path.basename(c) for c in backup.archives(tmp_path)]
-    assert archives == [f"{PREFIXE_ARCHIVE}20261005_040000_paris.tar.gz"], archives
+    attendu = f"{PREFIXE_ARCHIVE}residence-des-essais_20261005_040000_paris.tar.gz"
+    assert archives == [attendu], archives

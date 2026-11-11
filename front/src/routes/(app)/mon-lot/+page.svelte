@@ -326,7 +326,7 @@
 					<h2 class="carte-lot-titre">Caractéristiques</h2>
 					<CaracteristiquesLot
 						typeComplet={selectedLot.libelle_type_complet}
-						etage={selectedLot.etage}
+						etageLibelle={selectedLot.etage_libelle}
 						superficie={selectedLot.superficie}
 						designation={selectedLot}
 					>

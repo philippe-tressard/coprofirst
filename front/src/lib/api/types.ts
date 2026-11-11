@@ -90,6 +90,7 @@ export interface PorteSaisiPourLu {
 //  Les affaires liées et les candidates d'une fusion vivent dans leur module
 //  (#2173) ; ré-exportées ici pour les écrans qui les lisent dans `types`.
 import type { AffaireLiee } from './affaires-liees';
+import type { Lecture } from './lectures';
 export type { AffaireLiee, CandidateFusion } from './affaires-liees';
 
 /**  Un transfert de courriel versé dans une affaire (#1482), tel que le voit qui
@@ -256,6 +257,8 @@ export interface Ticket extends PorteSaisiPourLu {
 	categorie_libelle: string;
 	/** « Chez le syndic » — la valeur brute si elle est inconnue. */
 	statut_libelle: string;
+	/** L'état du suivi d'une actualité en clair — vide sans suivi (#2633). */
+	suivi_actualite_libelle: string;
 	/** Résolue ou annulée : elle quitte le suivi. */
 	close: boolean;
 	/** La colonne du Kanban, `null` hors tableau (`kanban_tickets.colonne_du_ticket`). */
@@ -266,12 +269,18 @@ export interface Ticket extends PorteSaisiPourLu {
 	nouveau: boolean;
 	/** 🔹 Le lieu lisible, vide pour le périmètre par défaut. */
 	perimetre_libelle?: string;
+	/** Qui la lit — la pastille servie (`utils/lecture_pastille`, #2633). */
+	lecture?: Lecture | null;
+	/** Ce qu'une Suite présélectionne, selon l'état — `null` pour une actualité. */
+	destinataires_par_etat?: Record<string, string[]> | null;
 	/** Les gestes de CE lecteur (`auth/gestes_affaire`) — fermés par défaut. */
 	peut_archiver?: boolean;
 	peut_changer_etat?: boolean;
 	peut_deplacer_au_kanban?: boolean;
 	peut_repondre?: boolean;
 	peut_modifier?: boolean;
+	/** ✏️ Le crayon : ouvrir la correction (`auth/deps.peut_editer`, #2633). */
+	peut_corriger?: boolean;
 	/**  Le ticket paraît-il au KANBAN ? Coché d'office pour « Étude & travaux »,
 	 *   décochable par le conseil (#833).
 	 *
@@ -396,6 +405,8 @@ export interface AnnonceHall {
 	assiste_ia?: boolean;
 	apercu: string;
 	perimetre_cible: string[];
+	/** Le badge 🔹, SERVI (`perimetre_libelle`, #2633) — `""` pour le défaut. */
+	perimetre_libelle?: string;
 	perimetre_label: string;
 	format_demande: string;
 	format_effectif: string;
