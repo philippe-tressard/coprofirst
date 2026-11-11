@@ -20,7 +20,6 @@ from __future__ import annotations
 import ast
 import itertools
 import json
-import pathlib
 
 import pytest
 from sqlmodel import Session
@@ -33,9 +32,9 @@ from app.utils.lecture_pastille.objets import lecture_du_ticket
 from app.utils.suivi_affaires.releve import lire_affaire
 from tests.aides_http import base_http, client_http
 from tests.aides_points_conseil import intercepter_envois, point_termine
+from tests.aides_sources import modules_app
 
-APP = pathlib.Path(__file__).resolve().parents[1] / "app"
-PASTILLE = APP / "utils" / "lecture_pastille"
+PASTILLE = "utils/lecture_pastille"
 
 #: Destinataires : aucun choix (la nature décide), le conseil seul, des profils, tous.
 PUBLICS = (
@@ -120,8 +119,7 @@ def test_le_pdf_du_cr_s_offre_sur_une_affaire_que_la_pastille_dit_cs(
 PROPRES = {"Copro-bailleurs", "Copropriétaires + locataires", "Concerné", "Occupants"}
 
 
-def _libelles_ecrits(chemin: pathlib.Path) -> set[str]:
-    arbre = ast.parse(chemin.read_text(encoding="utf-8"))
+def _libelles_ecrits(arbre: ast.Module) -> set[str]:
     return {
         n.value
         for n in ast.walk(arbre)
@@ -135,15 +133,15 @@ def test_les_libelles_temoins_sont_ceux_de_la_pastille():
     courts = {p.court for p in V.PROFILS} | {v.court for _, v in V.NOMMEES}
     courts |= {V.CS.court, V.CONCERNE.court}
     assert PROPRES <= courts, sorted(PROPRES - courts)
-    vus = set().union(*(_libelles_ecrits(f) for f in PASTILLE.glob("*.py")))
+    vus = set().union(*(_libelles_ecrits(m.arbre) for m in modules_app(PASTILLE)))
     assert vus == PROPRES, sorted(PROPRES - vus)
 
 
 def test_aucun_module_ne_recopie_les_libelles_de_la_pastille():
     fautifs = {
-        str(f.relative_to(APP)): sorted(ecrits)
-        for f in APP.rglob("*.py")
-        if PASTILLE not in f.parents and (ecrits := _libelles_ecrits(f))
+        m.rel: sorted(ecrits)
+        for m in modules_app()
+        if not m.rel.startswith(f"{PASTILLE}/") and (ecrits := _libelles_ecrits(m.arbre))
     }
     assert fautifs == {}, (
         "« qui la lit » se demande à `utils/lecture_pastille` (`lecture_du_ticket(t).court`), "
