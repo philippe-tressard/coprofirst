@@ -95,12 +95,8 @@
 	import BarresCroisees from './BarresCroisees.svelte';
 	import BilanVisites from './BilanVisites.svelte';
 	import VisitesRealisees from './VisitesRealisees.svelte';
+	import { MODES_SUIVI } from '#lib/reporting.ts';
 
-	const MODES = [
-		{ valeur: 'suivi', libelle: 'Suivi affaires' },
-		{ valeur: 'entretien', libelle: 'Suivi entretiens périodiques' },
-		{ valeur: 'relance', libelle: 'Relancer le syndic' },
-	];
 	/**  `suivi`, `entretien` ou `relance` — `?vue=relance` (l'alerte du tableau de
 	 *   bord) ouvre le troisième, `?vue=periodique` le deuxième. */
 	export let mode = 'suivi';
@@ -279,7 +275,7 @@
 			{redaction ? 'Rédaction…' : `Résumer ${aResumer} affaire${aResumer > 1 ? 's' : ''}`}
 		</button>
 	{/if}
-	<SelecteurMode libelle="Mode du suivi des affaires" options={MODES} bind:valeur={mode} />
+	<SelecteurMode libelle="Mode du suivi des affaires" options={MODES_SUIVI} bind:valeur={mode} />
 </div>
 
 {#if entretien}

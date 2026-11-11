@@ -10,6 +10,7 @@
 //  vivent dans `OngletReporting.svelte`, la mise en forme dans les vues.
 
 import type {
+	AffaireOuverte,
 	ContratARenouveler,
 	DiagnosticAEcheance,
 	ReleveRenouvellements,
@@ -147,3 +148,22 @@ export function diagnosticsDuReleve(releve: ReleveRenouvellements | null): DiagA
 //  par l'API (`equipement_effectif`, `carnet_entretien.type_equipement_resolu`), et
 //  l'enregistrement le résout au serveur. Trois règles s'étaient contredites ici le
 //  29/08/2026 ; la dernière vivait en deux langues, tenue par un test de concordance.
+
+/** La teinte de l'âge d'une affaire — la tranche vient du serveur, qui garde les seuils
+ *  (`TableauAffaires`). */
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const TEINTE_AGE: Record<AffaireOuverte['anciennete'], string> = {
+	ancienne: 'badge-red',
+	moyenne: 'badge-orange',
+	recente: 'badge-gray',
+};
+
+/** Les modes du Suivi des affaires, dans leur ordre (`VueSuiviAffaires`). */
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const MODES_SUIVI = [
+	{ valeur: 'suivi', libelle: 'Suivi affaires' },
+	{ valeur: 'entretien', libelle: 'Suivi entretiens périodiques' },
+	{ valeur: 'relance', libelle: 'Relancer le syndic' },
+];

@@ -44,6 +44,7 @@
 	import { stripHtml, perimetreDefautListe } from '#lib/utils.ts';
 	import { fichiersApi } from '#lib/api/index.ts';
 	import { essayer } from '#lib/chargement.ts';
+	import { AH_FORMATS, type AhFormat } from '#lib/annonces-hall.ts';
 
 	//  L'onglet s'amorce SEUL. Avant, la page appelait `loadAnnoncesHall()` et
 	//  `loadAhPublications()` à deux endroits (au montage et au clic d'onglet) :
@@ -83,15 +84,6 @@
 	let ahPubs: SourceAffiche[] = [];
 	let ahPubsLoaded = false;
 	let ahSourceId = '';
-
-	type AhFormat = 'auto' | 'a4' | 'a5' | 'a6' | 'a7';
-	const AH_FORMATS: { val: AhFormat; label: string }[] = [
-		{ val: 'auto', label: 'Auto' },
-		{ val: 'a4', label: 'A4' },
-		{ val: 'a5', label: 'A5' },
-		{ val: 'a6', label: 'A6' },
-		{ val: 'a7', label: 'A7' },
-	];
 
 	//  ⚠️ L'A8 a été RETIRÉ le 10/09/2026 : mesuré au navigateur, son gabarit
 	//  (52 × 74 mm, en-tête et pied compris) déborde dès 59 caractères. Il ne

@@ -43,7 +43,7 @@
 	import type { AffaireOuverte, CrAffaire } from '#lib/api/index.ts';
 	import { etatCr } from '#lib/points-conseil.ts';
 	import { ETATS_VISITE } from '#lib/entretien-periodique.ts';
-	import { motifEvolution } from '#lib/reporting.ts';
+	import { motifEvolution, TEINTE_AGE } from '#lib/reporting.ts';
 	import { fmtDate } from '#lib/date.ts';
 	import { lienTicket, statutTicketLabel } from '#lib/tickets.ts';
 
@@ -77,13 +77,6 @@
 	}, new Map<number, AffaireOuverte[]>());
 
 	$: colonnes = relance ? 6 : 4;
-
-	/** La teinte de l'âge — la tranche vient du serveur, qui garde les seuils. */
-	const TEINTE_AGE: Record<AffaireOuverte['anciennete'], string> = {
-		ancienne: 'badge-red',
-		moyenne: 'badge-orange',
-		recente: 'badge-gray',
-	};
 
 	function basculer(id: number) {
 		const s = new Set(choisies);

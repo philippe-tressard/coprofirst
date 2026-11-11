@@ -21,7 +21,7 @@
   offre d'en faire — il reçoit la clé de la ligne (`let:cle`).
 -->
 <script context="module" lang="ts">
-	export type TonVerdict = 'succes' | 'info' | 'attention' | 'danger' | 'neutre';
+	import type { TonVerdict } from '#lib/journal-verdicts.ts';
 
 	/** Une ligne de journal, telle que l'écran appelant la décrit. */
 	export interface EntreeJournal {
@@ -45,6 +45,8 @@
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import { fmtDatetimeShort } from '#lib/date.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import Badge from '#lib/components/Badge.svelte';
+	import { TEINTE_DU_TON } from '#lib/journal-verdicts.ts';
 
 	export let entrees: EntreeJournal[] = [];
 	/** Non vide = le journal n'a pas pu être lu : il ne se dit pas « vide » (#1459). */
@@ -75,14 +77,7 @@
 						<svelte:element this={pliable ? 'summary' : 'div'} class="jv-tete">
 							<span class="jv-titre">{e.titre}</span>
 							<span class="jv-meta">
-								<span
-									class="badge"
-									class:badge-green={e.ton === 'succes'}
-									class:badge-blue={e.ton === 'info'}
-									class:badge-orange={e.ton === 'attention'}
-									class:badge-red={e.ton === 'danger'}
-									class:badge-gray={e.ton === 'neutre'}>{e.verdict}</span
-								>
+								<Badge teinte={TEINTE_DU_TON[e.ton]}>{e.verdict}</Badge>
 								{#if e.date}<time class="jv-date" datetime={e.date}>{fmtDatetimeShort(e.date)}</time
 									>{/if}
 								{#if pliable}<span class="jv-chevron" aria-hidden="true">&#x203A;</span>{/if}

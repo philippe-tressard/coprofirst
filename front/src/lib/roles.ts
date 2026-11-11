@@ -149,6 +149,12 @@ const LIBELLES_HERITES: Record<string, string> = {
 
 /** « conseil_syndical » → « Conseil syndical ». Une clé inconnue est rendue
  *  **telle quelle** : un libellé manquant doit se voir, pas s'effacer. */
+/**  Les rôles que l'en-tête de l'accueil ajoute au statut, dans cet ordre (`EnteteAccueil`).
+ *   `résident` et `propriétaire` n'y figurent pas : ils ne disent rien de plus que le statut. */
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const ROLES_MIS_EN_AVANT = ['conseil_syndical', 'admin'] as const;
+
 export function libelleRole(role: string | null | undefined): string {
 	if (!role) return '';
 	return LIBELLES_ROLE[role] ?? LIBELLES_HERITES[role] ?? LIBELLES_STATUT[role] ?? role;

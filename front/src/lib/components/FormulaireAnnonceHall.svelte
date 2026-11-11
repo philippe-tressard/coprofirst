@@ -43,8 +43,7 @@
 	import { fmtDateShort } from '#lib/date.ts';
 	import type { SourceAffiche } from '#lib/api/index.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
-
-	type AhFormat = 'auto' | 'a4' | 'a5' | 'a6' | 'a7';
+	import type { AhFormat } from '#lib/annonces-hall.ts';
 
 	//  Liés en deux sens : la page porte leur cycle de vie.
 	export let titre = '';
