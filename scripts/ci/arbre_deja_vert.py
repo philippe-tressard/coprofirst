@@ -25,8 +25,11 @@ l'exécution elle-même, relue par l'API ; un job n'est sauté que si TOUT ceci 
    base d'alors se lit dans le journal des mouvements de la branche (API `activity`),
    jamais dans `pull_requests[].base.sha` de l'exécution, qui donne la base ACTUELLE
    (constaté le 11/11 : trois exécutions d'avant la réécriture de `dev` y montraient
-   toutes la pointe d'après). Toute pointe de la base à ±`MARGE_BASE_S` de la
-   création de l'exécution doit être un ancêtre de la tête.
+   toutes la pointe d'après). La fusion jugée (`GITHUB_SHA`) est fixée à l'ÉVÉNEMENT,
+   qui précède la création de l'exécution : toute pointe de la base dans les
+   `MARGE_BASE_S` secondes qui la précèdent doit être un ancêtre de la tête ; un
+   mouvement postérieur ne la change plus (11/11 : `dev` a bougé 73 s après, et une
+   marge symétrique refusait une preuve juste).
 
 Dans le doute — API muette, exécution introuvable, arbre différent, champ absent —, le
 job JOUE, et le script dit pourquoi. Jamais un vert par absence de mesure
@@ -62,8 +65,8 @@ EVENEMENTS = ("pull_request", "push", "workflow_dispatch")
 #: Combien d'exécutions indexées relire au plus, par job.
 CANDIDATS_MAX = 5
 _SHA = re.compile(r"^[0-9a-f]{40}$")
-#: La fusion d'une PR se calcule autour de la création de l'exécution : toute pointe
-#: de la base dans cette marge (secondes) doit être un ancêtre de la tête.
+#: La fusion d'une PR est fixée à l'événement, juste AVANT la création de l'exécution :
+#: toute pointe de la base dans cette marge (secondes) doit être un ancêtre de la tête.
 MARGE_BASE_S = 120
 
 #: Le nom, dans l'exécution, de chaque job requis — confronté à `ci.yml` par
@@ -109,10 +112,11 @@ def _secondes(horodatage: str) -> float | None:
 
 
 def bases_du_moment(activites: list[dict], instant: str, marge_s: int = MARGE_BASE_S):
-    """Les pointes qu'a eues la base autour d'`instant`, ou None si on ne peut pas
-    le dire. PURE. `activites` : le journal `activity` de la branche de base.
+    """Les pointes qu'a pu avoir la base pour une fusion fixée juste avant `instant`,
+    ou None si on ne peut pas le dire. PURE. `activites` : le journal `activity`.
 
-    La pointe d'avant la marge, puis chaque pointe posée dedans. Une branche
+    La pointe d'avant la marge, puis chaque pointe posée dedans, jusqu'à `instant`
+    compris ; ce qui suit ne change plus la fusion. Une branche
     supprimée dans la marge, un journal qui ne remonte pas jusqu'avant elle, un
     horodatage illisible : None — l'ancestralité n'est pas établie.
     """
@@ -129,7 +133,7 @@ def bases_du_moment(activites: list[dict], instant: str, marge_s: int = MARGE_BA
     avant = [apres for s, apres in datees if s <= t - marge_s]
     if not avant:
         return None
-    pointes = [avant[-1]] + [apres for s, apres in datees if t - marge_s < s <= t + marge_s]
+    pointes = [avant[-1]] + [apres for s, apres in datees if t - marge_s < s <= t]
     if any(not _SHA.match(x or "") or set(x) == {"0"} for x in pointes):
         return None
     return list(dict.fromkeys(pointes))
@@ -393,8 +397,13 @@ def _selftest() -> int:
         ),
         (
             "branche supprimée dans la marge : inconnu",
-            bases_du_moment(journal, "2026-11-11T09:46:00Z"),
+            bases_du_moment(journal, "2026-11-11T09:47:03Z"),
             None,
+        ),
+        (
+            "un mouvement APRÈS la création ne change plus la fusion",
+            bases_du_moment(journal, "2026-11-11T09:26:00Z"),
+            ["1" * 40],
         ),
         ("journal trop court : inconnu", bases_du_moment(journal, "2026-11-11T08:00:00Z"), None),
         ("instant illisible : inconnu", bases_du_moment(journal, ""), None),
