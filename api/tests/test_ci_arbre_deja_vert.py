@@ -73,6 +73,11 @@ def test_la_marque_est_la_derniere_etape_et_porte_job_et_arbre():
             f"{cle} : pas de marque en fin"
         )
         assert derniere["with"]["name"] == MARQUE.format(job=cle)
+        #  Un fichier absent n'est qu'un avertissement par défaut : la marque de
+        #  Playwright a manqué ainsi, l'agrégat n'ayant pas de checkout.
+        assert derniere["with"].get("if-no-files-found") == "error", f"{cle} : marque muette"
+        if not any("actions/checkout@" in str(e.get("uses", "")) for e in porteur["steps"]):
+            assert "runner.temp" in derniere["with"]["path"], f"{cle} : fichier hors du dépôt"
         assert "needs.arbre.outputs.arbre != ''" in derniere.get("if", ""), (
             f"{cle} : sans arbre lu, aucune marque"
         )

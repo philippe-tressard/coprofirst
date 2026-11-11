@@ -302,6 +302,9 @@ jobs:
           name: arbre-vert-lint-backend-${{ needs.arbre.outputs.arbre }}
           path: .github/workflows/ci.yml
           retention-days: 30
+          #  Un fichier absent ne fait qu'AVERTIR par défaut : aucune marque, sans un
+          #  mot — c'est ainsi que celle de Playwright a manqué au premier passage.
+          if-no-files-found: error
 
   # ── Backend: la suite pytest, sur PostgreSQL ─
   test-backend:
@@ -382,6 +385,9 @@ jobs:
           name: arbre-vert-test-backend-${{ needs.arbre.outputs.arbre }}
           path: .github/workflows/ci.yml
           retention-days: 30
+          #  Un fichier absent ne fait qu'AVERTIR par défaut : aucune marque, sans un
+          #  mot — c'est ainsi que celle de Playwright a manqué au premier passage.
+          if-no-files-found: error
 
   # ── Infra: syntaxe, self-tests et modes des scripts d'exploitation ─
   # Ajouté après l'incident du 30/07/2026. Les scripts d'infra (bascule,
@@ -968,6 +974,9 @@ jobs:
           name: arbre-vert-test-scripts-${{ needs.arbre.outputs.arbre }}
           path: .github/workflows/ci.yml
           retention-days: 30
+          #  Un fichier absent ne fait qu'AVERTIR par défaut : aucune marque, sans un
+          #  mot — c'est ainsi que celle de Playwright a manqué au premier passage.
+          if-no-files-found: error
 
   # ── Frontend: vérification build SvelteKit ───────────────────
   build-frontend:
@@ -2775,6 +2784,9 @@ jobs:
           name: arbre-vert-build-frontend-${{ needs.arbre.outputs.arbre }}
           path: .github/workflows/ci.yml
           retention-days: 30
+          #  Un fichier absent ne fait qu'AVERTIR par défaut : aucune marque, sans un
+          #  mot — c'est ainsi que celle de Playwright a manqué au premier passage.
+          if-no-files-found: error
 
   # ══════════════════════════════════════════════════════════════════════════
   # 🔴 LES TESTS DE NAVIGATEUR NE TOURNAIENT NULLE PART (#839, 08/09/2026)
@@ -3001,11 +3013,16 @@ jobs:
             exit 0
           fi
           [ "$RESULTAT_TRANCHES" = success ] || { echo "✗ Au moins une tranche n'est pas verte : la lire ci-dessus."; exit 1; }
+          #  Ce job n'a pas de checkout : la marque téléverse ce fichier-ci.
+          echo "$GITHUB_RUN_ID" > "$RUNNER_TEMP/arbre-vert.txt"
 
       - name: Marque « arbre jugé vert »
         if: needs.arbre.outputs.arbre != '' && needs.e2e-frontend.result == 'success'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: arbre-vert-e2e-frontend-${{ needs.arbre.outputs.arbre }}
-          path: .github/workflows/ci.yml
+          path: ${{ runner.temp }}/arbre-vert.txt
           retention-days: 30
+          #  Un fichier absent ne fait qu'AVERTIR par défaut : aucune marque, sans un
+          #  mot — c'est ainsi que celle de Playwright a manqué au premier passage.
+          if-no-files-found: error
