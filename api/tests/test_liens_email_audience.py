@@ -54,7 +54,7 @@ _ROUTES = _RACINE / "front" / "src" / "routes"
 #: la négation suive immédiatement la parenthèse, ne trouvait plus rien. Son cas
 #: zéro a correctement rendu INCONNU plutôt que vert : c'est ce qui a permis de
 #: le voir (#1083).
-_MOTIF_GARDE = re.compile(r"if\s*\([^)]*!\$is[A-Za-z]+\)\s*\{?\s*(?:\r?\n\s*)?goto\(")
+_MOTIF_GARDE = re.compile(r"if\s*\([^)]*!\$(?:is|est)[A-Z][A-Za-z]*\)\s*\{?\s*(?:\r?\n\s*)?goto\(")
 
 
 def _pages_gardees() -> set[pathlib.Path]:

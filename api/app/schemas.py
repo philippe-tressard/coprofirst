@@ -92,6 +92,10 @@ class UserRead(NomServi):
     #  #2618). Le motif ci-dessus dit aussi « pas pour votre profil » : ce n'est pas
     #  un bannissement, d'où un champ à part.
     communaute_banni: bool = False
+    #  Modère-t-il — conseil syndical ou administration ? Calculé par LE prédicat
+    #  (`auth/deps.est_moderateur`, #2633) : le site et l'app LISENT ce champ, aucun
+    #  client ne recompose le rôle. Défaut FERMÉ hors de `from_orm_with_roles`.
+    est_moderateur: bool = False
     last_seen_actualites: Optional[datetime] = None
     #  Les délégations ACTIVES où ce compte est l'aidant — c'est ce qui ouvre la page
     #  Délégations à l'aidant (`Nav.svelte`). Typées depuis #2525 : des `dict` au contrat.
@@ -118,6 +122,7 @@ class UserRead(NomServi):
         batiment_nom: Optional[str] = None,
         delegations_aidant: list[DelegationAidant] | None = None,
     ) -> "UserRead":
+        from app.auth.deps import est_moderateur
         from app.auth.operateur import roles_effectifs
         from app.utils.communaute import ban_en_cours, motif_de_refus
         from app.utils.saisie_affaire import mode_effectif
@@ -127,6 +132,7 @@ class UserRead(NomServi):
         data.roles = roles_effectifs(u)
         data.communaute_motif_refus = motif_de_refus(u)
         data.communaute_banni = ban_en_cours(u) is not None
+        data.est_moderateur = est_moderateur(u)
         data.saisie_affaire_effective = mode_effectif(u)
         if batiment_nom is not None:
             data.batiment_nom = batiment_nom

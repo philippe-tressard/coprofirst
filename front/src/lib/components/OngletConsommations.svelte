@@ -32,7 +32,7 @@
 		type ReleveCompteur,
 	} from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { SUPPRESSION, confirmerPuis } from '#lib/confirmation.ts';
@@ -206,7 +206,7 @@
 	compte={releveLoading ? null : releves.length}
 />
 
-{#if showReleveForm && $isCS}
+{#if showReleveForm && $estModerateur}
 	<FormulaireCreation
 		cle={editReleveId}
 		titre={editReleveId
@@ -277,7 +277,7 @@
 			<CarteListe id="releve-{r.id}" quand={r.date_releve}>
 				<EnteteCarte titre={titreReleve(r)}>
 					<svelte:fragment slot="actions">
-						{#if $isCS}
+						{#if $estModerateur}
 							<button
 								class="btn-icon-edit"
 								aria-label="Modifier"

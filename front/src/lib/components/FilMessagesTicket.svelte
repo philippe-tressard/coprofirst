@@ -21,7 +21,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { fmtDatetime } from '#lib/date.ts';
 	import { safeDescription } from '#lib/sanitize.ts';
-	import { currentUser, isCS } from '#lib/stores/auth.ts';
+	import { currentUser, estModerateur } from '#lib/stores/auth.ts';
 	import PiecesJointes from '#lib/components/PiecesJointes.svelte';
 	import { TICKET } from '#lib/entites/ticket.ts';
 	import { conditionsDeLaSuite } from '#lib/formulaire-affaire.ts';
@@ -78,7 +78,7 @@
 <div class="messages colonne-lecture">
 	{#each messages as msg (msg.id)}
 		{@const isOwn = msg.auteur?.id === $currentUser?.id}
-		{#if !msg.interne || $isCS}
+		{#if !msg.interne || $estModerateur}
 			<div
 				id="msg-{msg.id}"
 				class="message-bubble"
@@ -130,8 +130,8 @@
 								!!ticket && ticketLuDuSeulConseil(ticket),
 								'ticket',
 							)}
-							showEmail={$isCS && !newInterne}
-							avecInterne={$isCS}
+							showEmail={$estModerateur && !newInterne}
+							avecInterne={$estModerateur}
 							bind:interne={newInterne}
 							saving={sending}
 							on:submit={(e) => dispatch('envoyer', e.detail)}

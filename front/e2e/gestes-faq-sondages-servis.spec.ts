@@ -1,11 +1,11 @@
 /*
  *  **La FAQ et les sondages offrent leurs gestes de rédaction selon le droit SERVI** (#2654).
  *
- *  Les deux écrans décidaient par `$isCS` (les rôles du compte) ; l'app iOS relisait
+ *  Les deux écrans décidaient par `$estModerateur` (les rôles du compte) ; l'app iOS relisait
  *  cette règle générée depuis le front. Ils lisent désormais `GET /faq/gestes`
  *  (`peut_rediger`) et `GET /sondages/gestes` (`peut_creer`), que l'API calcule par
  *  le prédicat même de ses routes. La concordance rôle par rôle — et l'égalité avec
- *  ce que `$isCS` ouvrait — est tenue côté serveur
+ *  ce que `$estModerateur` ouvrait — est tenue côté serveur
  *  (`api/tests/test_gestes_faq_sondages_servis.py`) ; ici, que l'écran SUIT le champ :
  *  un membre du conseil à qui le serveur ne l'ouvre pas ne voit rien, un résident à
  *  qui il l'ouvre voit les gestes. Les deux écrans ne lisent plus les rôles.

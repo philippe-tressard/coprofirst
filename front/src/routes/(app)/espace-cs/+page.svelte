@@ -10,7 +10,7 @@
 	import { messageErreur, tenter } from '#lib/erreurs.ts';
 	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
 	import { essayer, messagePartiel } from '#lib/chargement.ts';
-	import { isCS, authResolue, quandAuthResolue } from '#lib/stores/auth.ts';
+	import { estModerateur, authResolue, quandAuthResolue } from '#lib/stores/auth.ts';
 	import { goto } from '$app/navigation';
 	import {
 		admin as adminApi,
@@ -74,9 +74,9 @@
 	let erreurBatiments = '';
 	$: erreurReference = messagePartiel(erreurBatiments);
 	//  🔴 Refuser sur un « non » AVÉRÉ, jamais sur un « pas encore » : le pourquoi est dans `check-gardes-auth.mjs`.
-	$: if ($authResolue && !$isCS) goto('/tableau-de-bord');
+	$: if ($authResolue && !$estModerateur) goto('/tableau-de-bord');
 	quandAuthResolue(() => {
-		if ($isCS) charger();
+		if ($estModerateur) charger();
 	});
 	//  🔴 L'onglet Validations n'attend que SES lectures (#1843). Il attendait
 	//  aussi les inscrits, les lots et les imports de lots, qui ne servent qu'à

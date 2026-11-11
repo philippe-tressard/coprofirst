@@ -2120,7 +2120,7 @@ conteneur, le titre (icône + libellé + taille), le retour et la zone d'actions
 
 ```svelte
 <EntetePage titre={_pc.titre} icone={_pc.icone || 'newspaper'}>
-  {#if $isCS}
+  {#if $estModerateur}
     <BoutonNouveau ouvert={showForm} libelle="Nouvelle publication" on:basculer={() => (showForm = true)} />
   {/if}
 </EntetePage>
@@ -2278,7 +2278,7 @@ sont le modèle, désigné par l'utilisateur.
 
 ```svelte
 <EntetePage titre={_pc.titre} icone={_pc.icone} alignerSaisie={showForm}>
-  {#if $isCS}
+  {#if $estModerateur}
     <button class="btn btn-primary page-header-btn" on:click={() => (showForm = !showForm)}>
       {showForm ? '✕ Annuler' : '+ Nouvelle publication'}
     </button>

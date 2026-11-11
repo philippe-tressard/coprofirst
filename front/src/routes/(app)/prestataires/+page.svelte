@@ -26,7 +26,7 @@
 		type Notation,
 		type Prestataire,
 	} from '#lib/api/index.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import {
 		getPageConfig,
 		configStore,
@@ -123,7 +123,7 @@
 	icone={_pc.icone || 'hard-hat'}
 	alignerSaisie={creationPrestataire || creationContrat || showReleveForm}
 >
-	{#if $isCS}
+	{#if $estModerateur}
 		{#if onglet === 'prestataires'}
 			<BoutonNouveau
 				ouvert={creationPrestataire}

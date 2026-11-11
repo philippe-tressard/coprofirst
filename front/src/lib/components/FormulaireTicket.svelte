@@ -63,7 +63,7 @@
 	import { essayer } from '#lib/chargement.ts';
 	import { pliageDe } from '#lib/pliage.ts';
 	import type { PrefillActualite } from '#lib/actualite-prefill.ts';
-	import { currentUser, isCS, quandAuthResolue } from '#lib/stores/auth.ts';
+	import { currentUser, estModerateur, quandAuthResolue } from '#lib/stores/auth.ts';
 	import {
 		CATEGORIE_ACTUALITE,
 		OPTIONS_CATEGORIE,
@@ -174,7 +174,7 @@
 	//  ── Ce que la NATURE décide (formulaire unique, 23/09/2026) ─────────────
 	$: nature = natureDe(categorie);
 	$: actualite = nature === 'actualite';
-	$: inactives = sectionsInactives(etat, categorie, $isCS);
+	$: inactives = sectionsInactives(etat, categorie, $estModerateur);
 	//  La saisie ESSENTIELLE (#2595) : les sections rangées dans « Plus de détails », et celles
 	//  qu'elle éteint, ni montrées ni rangées. Le mode est celui que l'API sert (`#lib/saisie-affaire`).
 	$: essentielle = estEssentielle($currentUser?.saisie_affaire_effective);
@@ -182,7 +182,7 @@
 		$currentUser?.saisie_affaire_effective,
 		etat,
 		categorie,
-		$isCS,
+		$estModerateur,
 		ticket,
 	));
 	//  Une correction ne cache jamais ce qui a été saisi : le groupe s'ouvre d'office, une fois.
@@ -209,12 +209,12 @@
 
 	//  Pas `onMount` : il précède le layout qui charge l'utilisateur (#1486).
 	quandAuthResolue(async () => {
-		if ($isCS && sectionPresente(TICKET, etat, 'intervenant')) {
+		if ($estModerateur && sectionPresente(TICKET, etat, 'intervenant')) {
 			[prestataires, erreurPrestataires] = await essayer(prestatairesApi.list(), []);
 			//  Pour PROPOSER l'intervenant sous contrat (#1097) — sans eux, rien n'est proposé.
 			[contrats] = await essayer(prestatairesApi.contrats(), []);
 		}
-		if ($isCS && sectionPresente(TICKET, etat, 'au_nom_de')) {
+		if ($estModerateur && sectionPresente(TICKET, etat, 'au_nom_de')) {
 			const [tous, e] = await essayer(adminApi.utilisateurs(), []);
 			usersActifs = tous.filter((u) => u.actif).sort(comparerParNom);
 			erreurResidents = e;
@@ -279,13 +279,13 @@
 	//  une affaire suivie ouverte par lui repartirait sans état. Il ne voit donc
 	//  que la sienne — la taire laisserait une catégorie cochée invisible.
 	const optionsCat =
-		!$isCS && estActualiteAvant
+		!$estModerateur && estActualiteAvant
 			? OPTIONS_CATEGORIE.filter((o) => o.val === 'actualite')
-			: optionsCategorie($isCS);
+			: optionsCategorie($estModerateur);
 
 	/** Contrôles de saisie — communs à la soumission directe et à l'aperçu. */
 	function saisieValide(): boolean {
-		error = erreurDeSaisie(saisie, $isCS);
+		error = erreurDeSaisie(saisie, $estModerateur);
 		return !error;
 	}
 
@@ -300,7 +300,7 @@
 	async function submit() {
 		if (!saisieValide()) return;
 		refDiffusion?.fermerApercu();
-		const contexte = { creation: !modeEdition, estCS: $isCS };
+		const contexte = { creation: !modeEdition, estCS: $estModerateur };
 		//  🔴 Ce qu'une correction EFFACE (23/09/2026) et QUI LIRA l'affaire et tout
 		//  son fil (29/09/2026) : dit avant, rien ne part sans accord.
 		const alerte = ticket && (await alerteCorrection(ticket, saisie));
@@ -347,7 +347,7 @@
 		<!--  Le pré-remplissage depuis une affiche vient AVANT le titre : c'est un
 		      raccourci qui REMPLIT le formulaire, pas une section de l'entité. Il
 		      produit une actualité — le conseil seul la publie. -->
-		{#if $isCS}
+		{#if $estModerateur}
 			<RepriseAnnonceHall {modeEdition} on:reprise={(e) => appliquerReprise(e.detail)} />
 		{/if}
 
@@ -390,13 +390,13 @@
 			envoiEnCours={loading}
 			on:envoyer={() => void submit()}
 			idPrefixe="ticket"
-			avecSaisiPour={$isCS && sectionPresente(TICKET, etat, 'au_nom_de')}
+			avecSaisiPour={$estModerateur && sectionPresente(TICKET, etat, 'au_nom_de')}
 			residentsSaisiPour={usersActifs}
 			{erreurResidents}
 			bind:saisiPour
 			avecOptions={sectionPresente(TICKET, etat, 'mise_en_avant')}
 			objet={actualite ? 'actualité' : 'ticket'}
-			optionsRendues={!$isCS ? ['urgente'] : OPTIONS_TICKET}
+			optionsRendues={!$estModerateur ? ['urgente'] : OPTIONS_TICKET}
 			dejaEpingle={ticket?.epingle ?? false}
 			bind:epingle={options.epingle}
 			bind:urgente={options.urgente}
@@ -407,10 +407,10 @@
 			quandAutreValeur={!!(frequenceType || duContrat?.frequence_type)}
 			avecPerimetre={sectionPresente(TICKET, etat, 'perimetre')}
 			bind:perimetre={perimetreCible}
-			avecReservePerimetre={$isCS}
-			lecture={$isCS ? natureLue({ categorie, statut }) : null}
+			avecReservePerimetre={$estModerateur}
+			lecture={$estModerateur ? natureLue({ categorie, statut }) : null}
 			bind:reservePerimetre
-			avecDestinataires={$isCS && sectionPresente(TICKET, etat, 'destinataires')}
+			avecDestinataires={$estModerateur && sectionPresente(TICKET, etat, 'destinataires')}
 			bind:destinataires={publicCible}
 			avecDescription={sectionPresente(TICKET, etat, 'description')}
 			avecNotificationCs
@@ -426,7 +426,7 @@
 			bind:photos={photosUrls}
 			avecDocuments={sectionPresente(TICKET, etat, 'pieces_jointes')}
 			bind:documents={fichiersUrls}
-			avecDiffusion={$isCS && sectionPresente(TICKET, etat, 'diffusion')}
+			avecDiffusion={$estModerateur && sectionPresente(TICKET, etat, 'diffusion')}
 			bind:whatsapp={partagerWhatsapp}
 			bind:syndic={destinataireSyndic}
 			bind:cs={destinataireCs}
@@ -479,7 +479,7 @@
 				/>
 			{/snippet}
 			{#snippet creneauQuand()}
-				{#if $isCS && categorie === CATEGORIE_ENTRETIEN}
+				{#if $estModerateur && categorie === CATEGORIE_ENTRETIEN}
 					<ChampFrequence
 						idPrefixe="ticket-frequence"
 						{duContrat}

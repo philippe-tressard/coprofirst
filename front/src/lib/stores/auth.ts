@@ -38,7 +38,13 @@ export function aRole(user: User | null, ...roles: string[]): boolean {
 
 export const isAdmin = derived(currentUser, ($u) => aRole($u, 'admin'));
 
-export const isCS = derived(currentUser, ($u) => aRole($u, 'conseil_syndical', 'admin'));
+/**
+ * Modère-t-il — conseil syndical ou administration ? Le SERVEUR le dit
+ * (`UserRead.est_moderateur`, calculé par `auth/deps.est_moderateur`, #2633) : le
+ * site et l'app iOS lisent le même champ, aucun ne recompose le rôle. Il inclut
+ * l'administrateur. Ce store s'appelait `isCS` : renommé, pas aliasé.
+ */
+export const estModerateur = derived(currentUser, ($u) => $u?.est_moderateur ?? false);
 
 /**
  * L'opérateur de la plateforme (#1750, spec §4.7) : il supervise l'installation
@@ -77,8 +83,10 @@ export const hasResidentRole = derived(
  * Un nom qui décrit un usage n'est appelé que par cet usage (`standards/02`
  * §4 septies).
  */
-export const isProprioOuCS = derived(currentUser, ($u) =>
-	aRole($u, 'propriétaire', 'conseil_syndical', 'admin'),
+export const isProprioOuCS = derived(
+	currentUser,
+	//  Le modérateur est SERVI (`est_moderateur`, #2633) ; le propriétaire se lit au rôle.
+	($u) => aRole($u, 'propriétaire') || ($u?.est_moderateur ?? false),
 );
 
 // Vrai si l'utilisateur n'est QUE admin (sans rôle résidentiel ni CS)
@@ -98,7 +106,7 @@ export const isAdminOnly = derived(
 //
 //  …écrit tel quel dans SIX fichiers (`OngletAcces`, `AccesConnexes`,
 //  `calendrier`, `mon-lot`, `residence`, `tableau-de-bord`), alors que
-//  `isCS`, `isAdmin` et `isProprio` vivaient ICI depuis toujours. La règle la
+//  `estModerateur` (alors `isCS`), `isAdmin` et `isProprio` vivaient ICI depuis toujours. La règle la
 //  plus déployée existait ; ces écrans ne la suivaient pas.
 //
 //  ⚠️ Et `mon-lot` définissait sa propre `isLocataire` tout en recomposant le
@@ -170,7 +178,7 @@ export function marquerAuthResolue() {
  *
  * 🔴 Svelte monte la PAGE avant le LAYOUT : l'`onMount` d'un écran s'exécute avant
  * celui de `(app)/+layout.svelte`, qui charge l'utilisateur. Sur un chargement
- * direct ou un rechargement, `$isCS`, `$isLocataire`, `$currentUser`… y valent
+ * direct ou un rechargement, `$estModerateur`, `$isLocataire`, `$currentUser`… y valent
  * encore `false` / `null`, et seule une navigation interne rend l'écran juste.
  * Deux récidives le même jour (#1486, 30/09/2026) : la file de modération jamais
  * demandée, et un bailleur qui voyait tous ses lots « Vacant ».

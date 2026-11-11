@@ -7,6 +7,8 @@ export interface User {
 	prenom: string;
 	/** « Prénom NOM » rendu par le serveur (`utils/noms`, #2633) — l'écran le lit. */
 	nom_affiche: string;
+	/** Modère-t-il — CS ou admin ? Servi par `auth/deps.est_moderateur` (#2633), lu par `estModerateur`. */
+	est_moderateur: boolean;
 	email: string;
 	telephone?: string | null;
 	societe?: string | null;

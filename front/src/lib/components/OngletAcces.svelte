@@ -50,7 +50,7 @@
 	//  il ne reste ici aucun geste irréversible à faire confirmer en rouge.
 	import { confirmerPuis } from '#lib/confirmation.ts';
 	import { toast } from '#lib/components/Toast.svelte';
-	//  `isCS` n'est plus lu : il ne servait qu'à ouvrir la suppression au conseil
+	//  `estModerateur` n'est plus lu : il ne servait qu'à ouvrir la suppression au conseil
 	//  syndical sur CET écran — un geste qui vit désormais chez l'administrateur,
 	//  sur l'écran du parc.
 	import { isBailleur, isLocataire, quandAuthResolue } from '#lib/stores/auth.ts';
@@ -342,7 +342,7 @@
 	      badges, ses demandes — et le CS y ajoute un niveau de lecture, il ne le
 	      remplace pas.
 	
-	      ⚠️ Réservée à `$isCS`, comme l'endpoint (`require_cs_or_admin`) : l'écran
+	      ⚠️ Réservée à `$estModerateur`, comme l'endpoint (`require_cs_or_admin`) : l'écran
 	      dit ce que le serveur fait, ni plus ni moins (`ux-patterns` §15). -->
 
 	<AccesConnexes {accesRecus} />

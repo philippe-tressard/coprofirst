@@ -35,7 +35,7 @@
 	import { safeHtml } from '#lib/sanitize.ts';
 	import GesteEnPlace from '#lib/components/GesteEnPlace.svelte';
 	import Onglet from '#lib/components/Onglet.svelte';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { TITRE_ARCHIVES } from '#lib/archives.ts';
 	import { bailleur as bailApi, type Bail, type MonLot, type ObjetRemis } from '#lib/api/index.ts';
 	import { bailVierge, nomLocataire } from '#lib/bail.ts';
@@ -331,7 +331,7 @@
 										{bailATerminer?.id === bail.id ? 'Annuler' : 'Terminer'}
 									</button>
 								{/if}
-								{#if $isCS}
+								{#if $estModerateur}
 									<button
 										class="btn btn-xs btn-danger"
 										on:click={() => {

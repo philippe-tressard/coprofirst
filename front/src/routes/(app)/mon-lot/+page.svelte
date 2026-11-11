@@ -17,7 +17,7 @@
 	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		isBailleur,
-		isCS,
+		estModerateur,
 		isCoproprietaire,
 		isLocataire,
 		isResident,
@@ -68,7 +68,7 @@
 		accesDeclare = false;
 	}
 	$: bailTab = data.sous ?? 'actif';
-	$: peutGererLocation = $isBailleur || $isCS || ($isResident && bauxTermines.length > 0);
+	$: peutGererLocation = $isBailleur || $estModerateur || ($isResident && bauxTermines.length > 0);
 	$: if (browser && !bauxLoading && mainTab === 'location' && !peutGererLocation) {
 		goto(routeOnglet('mon-lot', 'lots'), { replaceState: true });
 	}
@@ -154,7 +154,7 @@
 	 *   des accès le recopiaient (#779). */
 	function lireBaux(): Promise<Bail[]> | null {
 		if ($isCoproprietaire) return bailApi.mesBaux();
-		if ($isCS) return bailApi.tousBaux();
+		if ($estModerateur) return bailApi.tousBaux();
 		return null;
 	}
 

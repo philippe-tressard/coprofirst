@@ -36,7 +36,7 @@
 	import CarteModifiable from './CarteModifiable.svelte';
 	import NotationsPrestataire from './NotationsPrestataire.svelte';
 	import MetriquesPrestataire from './MetriquesPrestataire.svelte';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import ChampsPrestataire from './ChampsPrestataire.svelte';
 	import PiedFormulaire from './PiedFormulaire.svelte';
 
@@ -184,7 +184,7 @@
 		<NotationsPrestataire {notations} peutSupprimer={peutModifier} on:supprimee />
 		<!--  📊 Les affaires qu'il a traitées, en chiffres (#1646) — le conseil seul,
 		      comme les avis. Chargées à l'ouverture de la fiche, pas avant. -->
-		{#if $isCS}
+		{#if $estModerateur}
 			<MetriquesPrestataire prestataireId={p.id} />
 		{/if}
 	</svelte:fragment>

@@ -36,7 +36,7 @@
 	import type { QuestionReglement } from '#lib/api/index.ts';
 	import { fmtDatetime } from '#lib/date.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 
 	export let q: QuestionReglement;
 	/** La carte est-elle dépliée ? L'état vit dans l'onglet : une seule ouverte. */
@@ -70,7 +70,7 @@
 			<BoutonLien ancre="question-reglement-{q.id}" quoi="la question" />
 			<!--  Le conseil seul publie (11/10/2026) : le copropriétaire lit sa réponse,
 			      il ne la verse pas à la FAQ. Le serveur refuse aussi. -->
-			{#if $isCS && !q.faq_item_id}
+			{#if $estModerateur && !q.faq_item_id}
 				<button
 					class="btn-icon-edit"
 					aria-label="Publier dans la FAQ"

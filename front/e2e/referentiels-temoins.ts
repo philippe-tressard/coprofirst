@@ -8,6 +8,9 @@ import type { ReferentielsAffaires, StatutServi } from '../src/lib/api/referenti
 import { reponseApercu as apercuLecture } from './apercus-lecture';
 import { reponseNom } from './noms-servis';
 
+//  Le compte simulé reçoit le `est_moderateur` que le serveur lui sert (#2633).
+export { compteServi } from './comptes-servis';
+
 const etat = (
 	code: string,
 	libelle: string,

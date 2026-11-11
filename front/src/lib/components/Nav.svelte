@@ -2,7 +2,7 @@
 	import { lieu } from '#lib/lieu.svelte.ts';
 	import {
 		currentUser,
-		isCS,
+		estModerateur,
 		isAdminOuOperateur,
 		hasResidentRole,
 		isAdminOnly,
@@ -115,11 +115,11 @@
 	$: _pagesOrderJson = $configStore['pages_order'];
 	$: orderedHrefs = computeOrderedHrefs(_pagesOrderJson);
 
-	//  Les outils du conseil — Prestataires, Espace CS, Délégations. `$isCS` inclut l'admin ;
+	//  Les outils du conseil — Prestataires, Espace CS, Délégations. `$estModerateur` inclut l'admin ;
 	//  le compte technique créé à l'installation (admin seul, sans lot ni CS)
 	//  n'a pas à les voir. Prestataires et Délégations ne l'excluaient pas,
 	//  l'Espace CS si : une seule règle, posée ici, pour les trois.
-	$: outilDuConseil = $isCS && !$isAdminOnly;
+	$: outilDuConseil = $estModerateur && !$isAdminOnly;
 
 	$: allNav = orderedHrefs
 		.filter((href) => {

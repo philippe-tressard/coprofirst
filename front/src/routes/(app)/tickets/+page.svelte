@@ -11,7 +11,7 @@
 	//  ⏱ Le Kanban attend le passage sur son onglet (#1844).
 	import { routeOnglet } from '#lib/routes-onglets.ts';
 	import { revelerCible } from '#lib/deepLink.ts';
-	import { isAdmin, isCS } from '#lib/stores/auth.ts';
+	import { isAdmin, estModerateur } from '#lib/stores/auth.ts';
 	import { writable } from 'svelte/store';
 	import { tickets as ticketsApi, type Ticket } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
@@ -256,7 +256,7 @@
 		{#snippet contenu(VueKanbanAffaires)}
 			<VueKanbanAffaires
 				tickets={$ticketList}
-				peutDeplacer={$isCS}
+				peutDeplacer={$estModerateur}
 				on:cree={async () => ($ticketList = await ticketsApi.list())}
 				on:deplace={(e) =>
 					($ticketList = $ticketList.map((x) => (x.id === e.detail.id ? e.detail : x)))}

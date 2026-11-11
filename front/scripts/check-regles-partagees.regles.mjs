@@ -203,12 +203,10 @@ export const REGLES_PARTAGEES = {
 	isCS: {
 		quoi: 'les gestes du modérateur (archiver, déplacer au Kanban, catégories réservées)',
 		api: 'api/app/auth/deps.py#est_moderateur',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"servis pour les affaires (`peut_archiver`, `peut_deplacer_au_kanban`, `referentiels.categories[].permise`, #2508), la FAQ (`GET /faq/gestes`) et les sondages (`GET /sondages/gestes`, #2654) ; le site garde `$isCS` pour une cinquantaine d'écrans hors affaires",
-		},
+		//  Servie en `UserRead.est_moderateur` (#2633) : le store `estModerateur` LIT le
+		//  champ ; les gestes fins le sont aussi (affaires #2508, FAQ et sondages #2654).
 	},
+
 	categorieTicketLabel: {
 		quoi: 'le libellé d’une catégorie d’affaire (carnet, cartes)',
 		api: 'api/app/utils/categories_ticket.py#libelle_categorie',

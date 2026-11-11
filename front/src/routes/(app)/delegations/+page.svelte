@@ -4,7 +4,7 @@
 	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import EntetePage from '#lib/components/EntetePage.svelte';
-	import { isCS, quandAuthResolue } from '#lib/stores/auth.ts';
+	import { estModerateur, quandAuthResolue } from '#lib/stores/auth.ts';
 	import {
 		delegations as delegationsApi,
 		admin as adminApi,
@@ -51,7 +51,7 @@
 	quandAuthResolue(async () => {
 		try {
 			delegations = await delegationsApi.list();
-			if ($isCS) {
+			if ($estModerateur) {
 				//  Donnée de RÉFÉRENCE : elle garnit deux menus déroulants. Un
 				//  échec les laissait vides, et l'écran donnait à croire qu'aucun
 				//  résident n'était délégable (#522).
@@ -143,7 +143,7 @@
 {#if loading}
 	<EtatListe chargement />
 {:else}
-	{#if $isCS}
+	{#if $estModerateur}
 		<div class="barre-delegation">
 			<button class="btn btn-primary" on:click={() => (showForm = true)}
 				>+ Nouvelle délégation</button
