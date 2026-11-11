@@ -206,6 +206,15 @@ cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abo
   dernière archive qui le porte (#2659). Deux préfixes mêlés : l'ordre des noms n'est
   plus celui du temps — on trie par l'horodatage lu (`backup.archives`, `trier_archives`
   côté poste), jamais par `sorted(glob(…))` ni `ls | sort`.
+  ⚠️ La copie hors site n'est PAS planifiée : Philippe la lance à la main, par le
+  raccourci du Bureau — un lien vers `scripts/poste/export-hors-site.command` du
+  **clone principal** (`/Volumes/Data/Dev/5hostachy`, branche `dev` ; `C:\Dev\5hostachy`
+  sous Windows). Elle exécute donc le script de ce clone, jamais celui d'un worktree :
+  après une MEP qui change un nom lu par elle, le geste qui la met à jour est
+  `git -C /Volumes/Data/Dev/5hostachy fetch origin && git -C /Volumes/Data/Dev/5hostachy merge --ff-only origin/dev`.
+  Un clone resté en arrière ne lit que l'ancien préfixe : il recopie une archive
+  vieillissante, puis n'en trouve plus — la santé le dit (« périmée » au-delà de
+  7 j + 6 h, `sante_taches`).
 - **`.active` peut disparaître** → le recréer manuellement sur les 2 RPi si absent
 - **Clé d'hôte du pair non épinglée** (#1598, 02/10/2026) : le SSH inter-nœuds
   (`scripts/lib/lib-ssh-noeuds.sh`, seule source) exige `StrictHostKeyChecking=yes`
