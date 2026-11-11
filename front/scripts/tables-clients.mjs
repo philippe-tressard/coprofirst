@@ -13,7 +13,8 @@
  * ## Ce qu'il fait
  *
  * Il lit les tables DÉCLARÉES (`tables-clients.registre.mjs`) dans l'arbre syntaxique
- * de leur seul fichier — il n'exécute rien et n'ouvre aucun autre fichier —, et :
+ * de leur fichier et des modules de `src/lib` qu'elles importent — il n'exécute rien
+ * et n'ouvre aucun autre fichier (`tables-clients.lecture.mjs`) —, et :
  *
  * - `--ecrire` : écrit `front/tables-clients.json`, la référence versionnée que la
  *   release joint (`scripts/ci/lib-contrat-version.sh`). La version suit celle du
@@ -29,82 +30,51 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import ts from 'typescript';
+import {
+	Refus,
+	SOURCE,
+	constanteExportee,
+	lecteur,
+	moduleImporte,
+} from './tables-clients.lecture.mjs';
 import { RETRAITS, TABLES } from './tables-clients.registre.mjs';
 
 const FRONT = fileURLToPath(new URL('../', import.meta.url));
 const REFERENCE = `${FRONT}tables-clients.json`;
 const FORMAT = 1;
-const SOURCE = /^src\/lib\/[\w/-]+\.ts#[A-Z][A-Z0-9_]*$/;
-
-/** Une erreur qui se dit sans pile : c'est une faute de déclaration, pas un bogue. */
-class Refus extends Error {}
-
-/** La valeur JSON d'un initialiseur LITTÉRAL ; tout autre nœud est refusé. PURE. */
-export function litteral(noeud, ou) {
-	while (
-		ts.isAsExpression(noeud) ||
-		ts.isSatisfiesExpression(noeud) ||
-		ts.isParenthesizedExpression(noeud)
-	)
-		noeud = noeud.expression;
-	if (ts.isStringLiteral(noeud) || ts.isNoSubstitutionTemplateLiteral(noeud)) return noeud.text;
-	if (ts.isNumericLiteral(noeud)) return Number(noeud.text);
-	if (
-		ts.isPrefixUnaryExpression(noeud) &&
-		noeud.operator === ts.SyntaxKind.MinusToken &&
-		ts.isNumericLiteral(noeud.operand)
-	)
-		return -Number(noeud.operand.text);
-	if (noeud.kind === ts.SyntaxKind.TrueKeyword) return true;
-	if (noeud.kind === ts.SyntaxKind.FalseKeyword) return false;
-	if (noeud.kind === ts.SyntaxKind.NullKeyword) return null;
-	if (ts.isArrayLiteralExpression(noeud)) return noeud.elements.map((e) => litteral(e, ou));
-	if (ts.isObjectLiteralExpression(noeud)) {
-		const objet = {};
-		for (const p of noeud.properties) {
-			const nom =
-				p.name && (ts.isIdentifier(p.name) || ts.isStringLiteral(p.name)) ? p.name.text : null;
-			if (!ts.isPropertyAssignment(p) || nom === null)
-				throw new Refus(`${ou} : propriété non littérale (« ${p.getText()} »)`);
-			objet[nom] = litteral(p.initializer, ou);
-		}
-		return objet;
-	}
-	throw new Refus(`${ou} : valeur non littérale (« ${noeud.getText().slice(0, 60)} »)`);
+/** Une source déclarée : `src/lib/<module>.ts#EXPORT`, ou un objet de sources. PURE. */
+function sourcesDe(nom, source) {
+	const liste = typeof source === 'string' ? [source] : Object.values(source ?? {});
+	if (!liste.length || liste.some((s) => !SOURCE.test(s ?? '')))
+		throw new Refus(
+			`${nom} : source « ${JSON.stringify(source)} » hors de src/lib/<module>.ts#EXPORT`,
+		);
+	return liste;
 }
 
-/** La valeur de la constante EXPORTÉE `nom` du texte TypeScript `texte`. PURE. */
-export function constanteExportee(texte, nom, ou) {
-	const fichier = ts.createSourceFile(ou, texte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-	for (const instr of fichier.statements) {
-		if (!ts.isVariableStatement(instr)) continue;
-		const exportee = instr.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
-		const constante = (instr.declarationList.flags & ts.NodeFlags.Const) !== 0;
-		for (const d of instr.declarationList.declarations) {
-			if (!ts.isIdentifier(d.name) || d.name.text !== nom) continue;
-			if (!exportee || !constante || !d.initializer)
-				throw new Refus(`${ou}#${nom} : pas une constante exportée initialisée`);
-			return litteral(d.initializer, `${ou}#${nom}`);
-		}
-	}
-	throw new Refus(`${ou}#${nom} : introuvable`);
-}
-
-/** Les tables du registre, lues par `lire(chemin)` — rien d'autre n'est ouvert. PURE. */
+/** Les tables du registre, lues par `lire(chemin)` — seuls les fichiers de `src/lib`
+ *  qu'elles nomment ou importent sont ouverts. PURE. */
 export function lireTables(tables, lire) {
 	const noms = Object.keys(tables).sort();
 	if (noms.length === 0) throw new Refus('aucune table déclarée : le registre est vide');
+	const valeur = lecteur(lire);
+	const une = (s, sans = null) => {
+		const [chemin, exportee] = s.split('#');
+		return valeur(chemin, exportee, true, sans);
+	};
 	const sortie = {};
 	for (const nom of noms) {
-		const { source } = tables[nom];
-		if (!SOURCE.test(source ?? ''))
-			throw new Refus(`${nom} : source « ${source} » hors de src/lib/<module>.ts#EXPORT`);
-		const [chemin, exportee] = source.split('#');
-		sortie[nom] = {
-			source: `front/${source}`,
-			valeur: constanteExportee(lire(chemin), exportee, chemin),
-		};
+		const { source, sans } = tables[nom];
+		sourcesDe(nom, source);
+		if (sans !== undefined && (typeof source !== 'string' || !Array.isArray(sans) || !sans.length))
+			throw new Refus(`${nom} : « sans » se déclare en liste non vide, sur une source unique`);
+		sortie[nom] =
+			typeof source === 'string'
+				? { source: `front/${source}`, valeur: une(source, sans ?? null) }
+				: {
+						source: Object.fromEntries(Object.entries(source).map(([c, s]) => [c, `front/${s}`])),
+						valeur: Object.fromEntries(Object.entries(source).map(([c, s]) => [c, une(s)])),
+					};
 	}
 	return sortie;
 }
@@ -241,8 +211,77 @@ function selftest() {
 		leve(() => constanteExportee(src, 'F', 'm.ts')),
 	);
 	cas(
-		'décomposition refusée',
-		leve(() => constanteExportee(src, 'S', 'm.ts')),
+		'étalement d’un objet lu',
+		JSON.stringify(constanteExportee(src, 'S', 'm.ts')) ===
+			JSON.stringify(constanteExportee(src, 'T', 'm.ts')),
+	);
+	//  ── Le lecteur : identifiants, imports, gabarits, exclusions (lot B) ──────
+	const modules = {
+		'src/lib/a.ts':
+			"import { NOM, LISTE } from '#lib/b.ts';\nimport { AILLEURS } from 'svelte/store';\n" +
+			"const LOCAL = 'loc';\nexport const R = { nom: NOM, gabarit: `${NOM} v${2}`, plus: 'a' + LOCAL, " +
+			'liste: [...LISTE, 3], LOCAL };\n' +
+			'export const H = { x: AILLEURS };\nexport const C1 = { y: C2 };\nexport const C2 = { z: C1 };\n' +
+			"export const P = [{ code: 'a', lien: { cible: () => '/', aide: 'x' } }];\n" +
+			'export const U = { v: undefined };\nexport const N = { n: NON_EXPORTE };\n',
+		'src/lib/b.ts':
+			"export const NOM = 'Copro';\nexport const LISTE = [1, 2];\nconst NON_EXPORTE = 1;\n",
+	};
+	const lire = (c) => {
+		if (!(c in modules)) throw new Error(`non déclaré : ${c}`);
+		return modules[c];
+	};
+	const val = (nom, sans) => lecteur(lire)('src/lib/a.ts', nom, true, sans);
+	cas(
+		'identifiant, import de #lib, gabarit, concaténation, étalement, propriété abrégée',
+		JSON.stringify(val('R')) ===
+			'{"nom":"Copro","gabarit":"Copro v2","plus":"aloc","liste":[1,2,3],"LOCAL":"loc"}',
+	);
+	cas(
+		'import hors de src/lib refusé',
+		leve(() => val('H')),
+	);
+	cas(
+		'définition circulaire refusée',
+		leve(() => val('C1')),
+	);
+	cas(
+		'fonction refusée sans exclusion',
+		leve(() => val('P')),
+	);
+	cas(
+		'exclusion déclarée : la fonction sautée, le reste lu',
+		JSON.stringify(val('P', ['[].lien.cible'])) === '[{"code":"a","lien":{"aide":"x"}}]',
+	);
+	cas(
+		'exclusion qui ne sert plus refusée',
+		leve(() => val('P', ['[].lien.cible', '[].autre'])),
+	);
+	cas(
+		'« undefined » refusé',
+		leve(() => val('U')),
+	);
+	cas(
+		'identifiant inconnu refusé',
+		leve(() => val('N')),
+	);
+	cas(
+		'module importé : chemin borné à src/lib',
+		moduleImporte('#lib/b.ts', 'src/lib/a.ts') === 'src/lib/b.ts' &&
+			moduleImporte('./pages-roles', 'src/lib/pages.ts') === 'src/lib/pages-roles.ts' &&
+			moduleImporte('../../x', 'src/lib/a.ts') === null &&
+			moduleImporte('svelte', 'src/lib/a.ts') === null,
+	);
+	cas(
+		'source en objet de sources lue',
+		JSON.stringify(
+			lireTables({ t: { source: { a: 'src/lib/b.ts#NOM', b: 'src/lib/b.ts#LISTE' } } }, lire).t
+				.valeur,
+		) === '{"a":"Copro","b":[1,2]}',
+	);
+	cas(
+		'« sans » sur un objet de sources refusé',
+		leve(() => lireTables({ t: { source: { a: 'src/lib/b.ts#NOM' }, sans: ['.x'] } }, lire)),
 	);
 	cas(
 		'export introuvable refusé',
