@@ -300,8 +300,10 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   (`lib-contrat-version.sh`) — jamais éditée. Une table que l'app lit vit dans `#lib`,
   jamais dans un composant, en constante NOMMÉE (une table passée à `parAttribut` se
   déclare d'abord, puis se bascule : `parAttribut(ATTRIBUTS_ROLE)`), et le code qui la
-  sert la LIT (`aRole($u, ...ROLES_DU_DROIT.cs)`) ; la retirer ou en changer la forme
-  s'annonce dans `RETRAITS`. 🔒 `npm run lint:tables-clients`.
+  sert la LIT (`aRole($u, ...ROLES_DU_DROIT.cs)`) ; les jetons de la charte et les
+  palettes se publient par leur RÈGLE CSS (`<feuille>.css@<sélecteur>`, un `*` pour une
+  famille) ; la retirer ou en changer la forme s'annonce dans `RETRAITS` — un jeton retiré
+  en est un. 🔒 `npm run lint:tables-clients`.
 - **Une règle d'affichage que le site ET l'app iOS montrent se calcule dans l'API** (#2501,
   `standards/09` §8, règle 1) : libellé composé, état dérivé, droit affiché vivent dans
   `app/utils/` (ou un prédicat d'`auth/`), servis en champ que le front LIT — jamais une

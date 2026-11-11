@@ -20,6 +20,10 @@
  * - `quoi` — ce que la table dit, en une ligne ;
  * - `lecteur` — le générateur de coprofirst-ios qui la lit.
  *
+ * Une source peut aussi être une règle CSS : `src/styles/<feuille>.css@<sélecteur>` ou
+ * le `<style>` d'un composant, `src/lib/…/X.svelte@<sélecteur>` — ses déclarations ;
+ * un `*` dans le sélecteur publie une famille, par code (`tables-clients.css.mjs`).
+ *
  * Ce qui n'est PAS ici : ce que l'API peut servir en champ (#2501, règles partagées).
  *
  * `RETRAITS` — une table retirée, ou dont la forme recule (un champ retiré, un type
@@ -330,6 +334,46 @@ export const TABLES = {
 		source: 'src/lib/piedDePage.ts#CLES_PIED',
 		quoi: 'les clés de GET /config qui règlent le pied de page',
 		lecteur: 'scripts/generateurs/a_propos.py',
+	},
+
+	//  ── Lot C : la charte visuelle (jetons CSS, palettes, tracé) ──────────────
+	//  Une valeur garde son texte (`var(--…)`, `color-mix(…)`) : l'app résout elle-même
+	//  la cascade — au sombre, la charte sombre sur la palette claire, puis la palette
+	//  sombre par-dessus.
+	jetonsCharte: {
+		source: 'src/styles/socle.css@:root',
+		quoi: 'les jetons de la charte au clair (couleurs, tailles, rayons…), palette « seine »',
+		lecteur: 'scripts/generateurs/palettes.py',
+	},
+	jetonsCharteSombre: {
+		source: "src/styles/palette-sombre.css@:root[data-theme='dark']",
+		quoi: 'les jetons que le thème sombre redéfinit',
+		lecteur: 'scripts/generateurs/palettes.py',
+	},
+	palettesClaires: {
+		source: "src/styles/palettes.css@:root[data-palette='*']",
+		quoi: "les jetons que chaque palette d'une résidence redéfinit au clair, par code",
+		lecteur: 'scripts/generateurs/palettes.py',
+	},
+	palettesSombres: {
+		source: "src/styles/palettes.css@:root[data-palette='*'][data-theme='dark']",
+		quoi: 'les jetons que chaque palette redéfinit au sombre, par code',
+		lecteur: 'scripts/generateurs/palettes.py',
+	},
+	teinteNature: {
+		source: "src/styles/normes.css@[data-nature='*']",
+		quoi: "la teinte forte de la gouttière de chaque nature d'affaire",
+		lecteur: 'scripts/generateurs/affaires.py',
+	},
+	tranchesRepartition: {
+		source: "src/lib/components/reporting/BarresCroisees.svelte@[data-teinte='*']",
+		quoi: "la couleur de chaque tranche d'une répartition du Reporting, selon la teinte servie",
+		lecteur: 'scripts/generateurs/delegations_cs.py',
+	},
+	attributsTrace: {
+		source: 'src/lib/icones.ts#ATTRIBUTS_TRACE',
+		quoi: 'les attributs du <svg> autour de chaque pictogramme (le trait du site)',
+		lecteur: 'scripts/generateurs/pictogrammes.py',
 	},
 };
 

@@ -37,17 +37,20 @@ import {
 	lecteur,
 	moduleImporte,
 } from './tables-clients.lecture.mjs';
+import { SOURCE_CSS, valeurCss } from './tables-clients.css.mjs';
 import { RETRAITS, TABLES } from './tables-clients.registre.mjs';
 
 const FRONT = fileURLToPath(new URL('../', import.meta.url));
 const REFERENCE = `${FRONT}tables-clients.json`;
 const FORMAT = 1;
-/** Une source déclarée : `src/lib/<module>.ts#EXPORT`, ou un objet de sources. PURE. */
+/** Une source déclarée : `src/lib/<module>.ts#EXPORT`, une règle CSS
+ *  (`src/styles/<feuille>.css@<sélecteur>`, `src/lib/…/X.svelte@<sélecteur>`), ou un
+ *  objet de sources. PURE. */
 function sourcesDe(nom, source) {
 	const liste = typeof source === 'string' ? [source] : Object.values(source ?? {});
-	if (!liste.length || liste.some((s) => !SOURCE.test(s ?? '')))
+	if (!liste.length || liste.some((s) => !SOURCE.test(s ?? '') && !SOURCE_CSS.test(s ?? '')))
 		throw new Refus(
-			`${nom} : source « ${JSON.stringify(source)} » hors de src/lib/<module>.ts#EXPORT`,
+			`${nom} : source « ${JSON.stringify(source)} » ni src/lib/<module>.ts#EXPORT ni <feuille>@<sélecteur>`,
 		);
 	return liste;
 }
@@ -59,6 +62,11 @@ export function lireTables(tables, lire) {
 	if (noms.length === 0) throw new Refus('aucune table déclarée : le registre est vide');
 	const valeur = lecteur(lire);
 	const une = (s, sans = null) => {
+		if (SOURCE_CSS.test(s)) {
+			if (sans) throw new Refus(`${s} : « sans » ne vaut que pour une constante TypeScript`);
+			const arobase = s.indexOf('@');
+			return valeurCss(lire(s.slice(0, arobase)), s.slice(0, arobase), s.slice(arobase + 1));
+		}
 		const [chemin, exportee] = s.split('#');
 		return valeur(chemin, exportee, true, sans);
 	};
@@ -278,6 +286,47 @@ function selftest() {
 			lireTables({ t: { source: { a: 'src/lib/b.ts#NOM', b: 'src/lib/b.ts#LISTE' } } }, lire).t
 				.valeur,
 		) === '{"a":"Copro","b":[1,2]}',
+	);
+	//  ── Les règles CSS (lot C) ─────────────────────────────────────────────
+	const css = {
+		'src/styles/f.css':
+			"/* :root { --x: faux; } */\n:root,\n.ilot { --a: #fff; --b: var(--a); content: 'x;y'; }\n" +
+			"@media screen { :root[data-p='un'] { --a: #000; } }\n:root[data-p='deux'], .z { --a: #111; }\n" +
+			':root[data-p="un"] .ilot { --a: #222; }\n.d { --a: 1; }\n.d { --a: 2; }\n',
+		'src/lib/C.svelte':
+			"<div></div>\n<style>\n\t[data-t='s1'] { background: var(--s-1); }\n</style>\n",
+	};
+	const lireCss = (c) => css[c];
+	const t = (source, sans) => lireTables({ t: { source, sans } }, lireCss).t.valeur;
+	cas(
+		'règle CSS lue : sélecteur dans une liste, commentaire sauté, « ; » dans une chaîne',
+		JSON.stringify(t('src/styles/f.css@:root')) ===
+			'{"--a":"#fff","--b":"var(--a)","content":"\'x;y\'"}',
+	);
+	cas(
+		'famille : un code par règle, @media traversé, guillemets indifférents',
+		JSON.stringify(t("src/styles/f.css@:root[data-p='*']")) ===
+			'{"un":{"--a":"#000"},"deux":{"--a":"#111"}}',
+	);
+	cas(
+		'<style> d’un composant lu',
+		JSON.stringify(t("src/lib/C.svelte@[data-t='*']")) === '{"s1":{"background":"var(--s-1)"}}',
+	);
+	cas(
+		'deux règles pour un sélecteur refusées',
+		leve(() => t('src/styles/f.css@.d')),
+	);
+	cas(
+		'sélecteur absent refusé',
+		leve(() => t('src/styles/f.css@.absente')),
+	);
+	cas(
+		'« sans » sur une règle CSS refusé',
+		leve(() => t('src/styles/f.css@:root', ['.x'])),
+	);
+	cas(
+		'feuille hors de src/styles refusée',
+		leve(() => t('src/autre/f.css@:root')),
 	);
 	cas(
 		'« sans » sur un objet de sources refusé',
