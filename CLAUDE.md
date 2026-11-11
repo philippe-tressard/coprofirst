@@ -951,6 +951,14 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   deux sens** — un clone ajouté, ou un retiré sans baisser `PLAFOND_CLONES`. Les
   six qui restent sont des déclarations que le langage force à répéter (blocs
   d'imports, signatures), nommées dans l'en-tête du script.
+- 🔒 **Un arbre déjà jugé vert ne se rejoue pas** (#2632) : le job `arbre` saute un job
+  requis de `ci.yml` quand une exécution PRÉCÉDENTE le prouve, relue par l'API — même
+  fichier de workflow et même dépôt, job `success` réellement joué (pytest compris),
+  arbre de son commit RECALCULÉ égal à `HEAD^{tree}`, et pour une PR la base d'alors (lue
+  au journal `activity`) ancêtre de la tête. L'artefact `arbre-vert-<job>-<arbre>` n'est
+  qu'un index, jamais une preuve ; dans le doute, le job joue. La suite PostgreSQL et
+  CodeQL n'en dépendent pas. Un job requis neuf passe par lui ; 🔒
+  `test_ci_arbre_deja_vert.py`, règles et cas forgés : `scripts/ci/arbre_deja_vert.py`.
 - 🔒 **CodeQL juge dès la PR vers `dev`** (#2571) : la configuration par défaut de GitHub
   ne garde que `main` ; `codeql-avant-dev.yml` refait l'analyse sans l'envoyer et ne bloque
   que les alertes NEUVES face à la dernière analyse de `main`, au seuil du contrôle de GitHub
