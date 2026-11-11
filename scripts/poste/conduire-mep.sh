@@ -47,8 +47,9 @@ cd "$RACINE_DEPOT" || exit 1
 . "$RACINE_DEPOT/scripts/lib/lib-mep-conduite.sh"   # décisions ; charge lib-verdicts-mep (rang, parité)
 . "$RACINE_DEPOT/scripts/lib/lib-depot.sh"          # répertoire commun, comptes des checks
 
-RPI1="${RPI1:-ptressard@192.168.1.222}"
-RPI2="${RPI2:-ptressard@192.168.1.223}"
+. "$RACINE_DEPOT/scripts/lib/lib-role.sh"           # les nœuds : une table, jamais recopiée
+RPI1="${RPI1:-$(noeud_ssh rpi1)}"
+RPI2="${RPI2:-$(noeud_ssh rpi2)}"
 DELAI_CHECKS_MIN=${DELAI_CHECKS_MIN:-90}     # la CI d'une PR : ~20 min, « Images » comprise
 DELAI_DEPLOYE_MIN=${DELAI_DEPLOYE_MIN:-60}   # images de la CI ~15 min, secours local à 30 min
 PAUSE_S=${PAUSE_S:-60}
