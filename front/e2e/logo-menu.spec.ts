@@ -32,10 +32,10 @@ test('le logo téléversé s’affiche en grand dans le menu, et tient dans sa b
 	const logo = page.locator('.marque:visible img.logo-residence');
 	await expect(logo).toHaveCount(1);
 	const boite = await logo.boundingBox();
-	const attendu = info.project.name === 'mobile' ? 30 : 64;
+	const attendu = info.project.use.isMobile ? 30 : 64;
 	expect(boite!.width).toBe(attendu);
 	expect(boite!.height).toBe(attendu);
-	if (info.project.name === 'mobile') {
+	if (info.project.use.isMobile) {
 		const barre = (await page.locator('.mobile-topbar').boundingBox())!;
 		expect(boite!.y, 'le logo sort de l’en-tête par le haut').toBeGreaterThanOrEqual(barre.y);
 		expect(boite!.y + boite!.height, 'le logo sort de l’en-tête par le bas').toBeLessThanOrEqual(
@@ -58,7 +58,7 @@ test('à la connexion, le logo téléversé est centré sous le titre', async ({
 	expect(ecart, 'le logo n’est pas centré sous le titre').toBeLessThanOrEqual(1);
 });
 
-test('en administration, les deux logos se règlent côte à côte, et s’empilent au téléphone', async ({
+test('en administration, les deux logos se règlent côte à côte, et s’empilent au téléphone @mise-en-page', async ({
 	page,
 }, info) => {
 	await simulerApi(page, (chemin) => {
@@ -74,7 +74,7 @@ test('en administration, les deux logos se règlent côte à côte, et s’empil
 	await expect(normal.getByRole('button', { name: 'Changer le logo' })).toBeVisible();
 	await expect(sombre.getByRole('button', { name: 'Ajouter un logo' })).toBeVisible();
 	const [n, s] = [await boiteStable(normal), await boiteStable(sombre)];
-	if (info.project.name === 'mobile') {
+	if (info.project.use.isMobile) {
 		expect(s.y, 'au téléphone, le fond sombre passe SOUS le fond normal').toBeGreaterThan(
 			n.y + n.height - 1,
 		);

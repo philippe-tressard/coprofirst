@@ -44,6 +44,8 @@ env:
 #  de PR, ni dépôt d'artefact par API) : la lecture du contenu suffit au
 #  `checkout` — et à l'étape du descriptif (#1771), seule à passer le jeton,
 #  pour LIRE le dépôt. Un job qui devra écrire déclarera SA permission, dans le job.
+#  Le job `arbre` (#2632) déclare la sienne : `actions: read`, pour LISTER les
+#  marques des arbres déjà jugés. Les déposer ne demande aucun droit du jeton.
 permissions:
   contents: read
 
@@ -58,9 +60,50 @@ permissions:
 #  confronte au p95 mesuré de son job, sous une marge déclarée (#2576).
 
 jobs:
+  # ── Un arbre déjà jugé vert ne se rejoue pas (#2632, 11/11/2026) ─────────
+  #  Le même arbre était jugé trois fois, ~20 min chacune : PR du lot vers
+  #  `dev`, PR `dev → main` (le squash donne l'arbre que la PR du lot a jugé),
+  #  push de `main`. Chaque job requis dépose à son succès une marque
+  #  `arbre-vert-<job>-<arbre>` (un artefact : le cache d'Actions est cloisonné
+  #  par branche, la PR `dev → main` ne lirait pas celui de la PR du lot) ; ce
+  #  job les cherche, et un job dont l'arbre est déjà vert est SAUTÉ — GitHub
+  #  compte un check requis sauté comme un succès. Le résumé de l'exécution
+  #  nomme celle qui l'avait jugé. Sans marque valable, API muette ou job
+  #  `arbre` en échec : chaque job JOUE (`!cancelled()`, jamais un vert par
+  #  absence de mesure). Règles et cas refusés : `scripts/ci/arbre_deja_vert.py`.
+  #  🔒 `api/tests/test_ci_arbre_deja_vert.py` : chaque job requis passe par lui.
+  arbre:
+    name: Arbre déjà jugé ?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    #  Lister les artefacts du dépôt : la seule lecture que ce job ajoute.
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      arbre: ${{ steps.marques.outputs.arbre }}
+      lint-backend: ${{ steps.marques.outputs['lint-backend'] }}
+      test-backend: ${{ steps.marques.outputs['test-backend'] }}
+      test-scripts: ${{ steps.marques.outputs['test-scripts'] }}
+      build-frontend: ${{ steps.marques.outputs['build-frontend'] }}
+      e2e-frontend: ${{ steps.marques.outputs['e2e-frontend'] }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Marques des jobs requis pour cet arbre
+        id: marques
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/ci/arbre_deja_vert.py --selftest
+          ARBRE=$(git rev-parse 'HEAD^{tree}') JOBS="lint-backend test-backend test-scripts build-frontend e2e-frontend" \
+            python3 scripts/ci/arbre_deja_vert.py chercher
+
   # ── Backend: lint Python avec Ruff ───────────────────────────
   lint-backend:
     name: Lint Python (Ruff)
+    needs: arbre
+    if: ${{ !cancelled() && needs.arbre.outputs['lint-backend'] != 'oui' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -250,9 +293,24 @@ jobs:
         # déclaré dans l'en-tête de `scripts/ci/clones_python.py`.
         run: python scripts/ci/clones_python.py
 
+      #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
+      #  seulement si toutes les autres ont réussi.
+      - name: Marque « arbre jugé vert »
+        if: needs.arbre.outputs.arbre != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: arbre-vert-lint-backend-${{ needs.arbre.outputs.arbre }}
+          path: .github/workflows/ci.yml
+          retention-days: 30
+          #  Un fichier absent ne fait qu'AVERTIR par défaut : aucune marque, sans un
+          #  mot — c'est ainsi que celle de Playwright a manqué au premier passage.
+          if-no-files-found: error
+
   # ── Backend: la suite pytest, sur PostgreSQL ─
   test-backend:
     name: Tests Python (pytest)
+    needs: arbre
+    if: ${{ !cancelled() && needs.arbre.outputs['test-backend'] != 'oui' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -316,6 +374,21 @@ jobs:
         env:
           SECRET_KEY: "ci-secret-key-placeholder-0123456789abcdef"
 
+      #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
+      #  seulement si toutes les autres ont réussi.
+      - name: Marque « arbre jugé vert »
+        #  Seulement quand pytest a tourné : une marque d'un passage SANS la suite
+        #  (vers `main`, où `postgresql.yml` la joue) ne vaut pas pour une PR vers `dev`.
+        if: needs.arbre.outputs.arbre != '' && (github.base_ref == 'dev' || github.event_name == 'workflow_dispatch')
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: arbre-vert-test-backend-${{ needs.arbre.outputs.arbre }}
+          path: .github/workflows/ci.yml
+          retention-days: 30
+          #  Un fichier absent ne fait qu'AVERTIR par défaut : aucune marque, sans un
+          #  mot — c'est ainsi que celle de Playwright a manqué au premier passage.
+          if-no-files-found: error
+
   # ── Infra: syntaxe, self-tests et modes des scripts d'exploitation ─
   # Ajouté après l'incident du 30/07/2026. Les scripts d'infra (bascule,
   # failover, contrôles de fiabilité) ne passaient par AUCUN test : ils ne sont
@@ -325,6 +398,8 @@ jobs:
   # les deux sont désormais couverts par un self-test qui échoue en CI.
   test-scripts:
     name: Scripts d'infra (syntaxe + self-tests)
+    needs: arbre
+    if: ${{ !cancelled() && needs.arbre.outputs['test-scripts'] != 'oui' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -534,6 +609,7 @@ jobs:
           python scripts/ci/pipe_grep_quiet.py --selftest
           python scripts/ci/codeql_nouvelles_alertes.py --selftest
           python scripts/ci/plafonds_jobs.py --selftest
+          python scripts/ci/arbre_deja_vert.py --selftest
           python scripts/poste/verifier_migrations_texte.py --selftest
           bash scripts/lib/lib-role.sh              --selftest
           bash scripts/lib/lib-applicatifs.sh       --selftest
@@ -574,6 +650,14 @@ jobs:
           # Le mode --post-mep (#1282) : P1 (déployé) et P3 (version servie),
           # dont les cas zéro — un journal illisible ne rend jamais OK.
           bash scripts/lib/lib-precheck-post.sh     --selftest
+          # Le conducteur de MEP (#2631) : fusion sur CLEAN seulement (jamais UNKNOWN),
+          # fenêtre de bascule confrontée à la crontab, version du train, reprise.
+          bash scripts/lib/lib-mep-conduite.sh      --selftest
+          # …et le relais du script, qui doit charger la même bibliothèque.
+          bash scripts/poste/conduire-mep.sh        --selftest
+          # L'exception DATÉE d'un point du pré-check : vérifiée par le point, FAIL
+          # passée l'échéance ou au premier fait plus récent (#2631).
+          bash scripts/lib/lib-precheck-exception.sh --selftest
           # Point 20 : la sonde de l'ordre du menu servi (#1114), décision pure.
           node front/scripts/sonde-pages-order.mjs  --selftest
           # 🔒 Vérifie la FORME du geste d'installation dans un volume du peer :
@@ -889,9 +973,24 @@ jobs:
           done < <(git ls-files -s -- '*.sh' '.githooks/*')
           exit $st
 
+      #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
+      #  seulement si toutes les autres ont réussi.
+      - name: Marque « arbre jugé vert »
+        if: needs.arbre.outputs.arbre != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: arbre-vert-test-scripts-${{ needs.arbre.outputs.arbre }}
+          path: .github/workflows/ci.yml
+          retention-days: 30
+          #  Un fichier absent ne fait qu'AVERTIR par défaut : aucune marque, sans un
+          #  mot — c'est ainsi que celle de Playwright a manqué au premier passage.
+          if-no-files-found: error
+
   # ── Frontend: vérification build SvelteKit ───────────────────
   build-frontend:
     name: Build SvelteKit
+    needs: arbre
+    if: ${{ !cancelled() && needs.arbre.outputs['build-frontend'] != 'oui' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -2651,6 +2750,12 @@ jobs:
         working-directory: front
         run: npm run lint:defilement
 
+      #  Une mesure du défilement neuve, sans l'étiquette, ne serait jouée que
+      #  sous Chromium : le défaut propre à Safari repasserait (#2639, #2640).
+      - name: Les tests de mise en page sont joués aussi sous WebKit
+        working-directory: front
+        run: npm run lint:e2e-mise-en-page
+
       - name: Le contrôle du test e2e s'éprouve lui-même
         working-directory: front
         run: node scripts/check-e2e-test.mjs --selftest
@@ -2678,6 +2783,19 @@ jobs:
         working-directory: front
         run: node scripts/check-section-lue.mjs --selftest
 
+      #  La marque de l'arbre jugé vert (#2632) : la dernière étape, donc posée
+      #  seulement si toutes les autres ont réussi.
+      - name: Marque « arbre jugé vert »
+        if: needs.arbre.outputs.arbre != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: arbre-vert-build-frontend-${{ needs.arbre.outputs.arbre }}
+          path: .github/workflows/ci.yml
+          retention-days: 30
+          #  Un fichier absent ne fait qu'AVERTIR par défaut : aucune marque, sans un
+          #  mot — c'est ainsi que celle de Playwright a manqué au premier passage.
+          if-no-files-found: error
+
   # ══════════════════════════════════════════════════════════════════════════
   # 🔴 LES TESTS DE NAVIGATEUR NE TOURNAIENT NULLE PART (#839, 08/09/2026)
   #
@@ -2700,17 +2818,57 @@ jobs:
   # navigateurs de Playwright (~300 Mo) et un serveur qui démarre. Les mêler
   # ferait payer ce temps à chaque lint de style.
   # ══════════════════════════════════════════════════════════════════════════
+  #
+  # ✂️ EN TRANCHES (#2632, 11/11/2026). Un seul runner fixait la durée de toute
+  # la CI : 16,3 min de Playwright sur une médiane de 19 min (20 PR vertes,
+  # mesuré le 10/11). Le dépôt est public : les runners sont gratuits et
+  # tournent côte à côte. Quatre tranches Chromium (`--shard`, bureau et mobile
+  # mêlés), plus une tranche WebKit (#2640). Le check REQUIS garde son nom :
+  # c'est le job d'agrégat `e2e-verdict`, plus bas, qui le porte.
+  #
+  # 🧭 WebKit (#2640) : le moteur de Safari, donc de tous les iPhone. Un défaut
+  # propre à lui (#2639, un `<select>` qui ignore `min-height`) passait la CI,
+  # qui ne jouait que Chromium. Il ne joue que les tests ÉTIQUETÉS `@mise-en-page`
+  # (`e2e/mise-en-page.ts`) : hauteurs, alignements, défilement, cibles tactiles.
+  #
+  # ⚠️ Les paramètres d'une tranche passent par l'`env:` DU JOB, jamais par un
+  # `${{ matrix… }}` dans une commande : le rejeu du poste lit les commandes de
+  # ce fichier et rendrait INCONNU une expression qu'il ne résout pas. Sur le
+  # poste, ces variables sont absentes : la suite entière, tous profils.
   e2e-frontend:
-    name: Tests de navigateur (Playwright)
+    name: Tests de navigateur — ${{ matrix.tranche.nom }}
+    needs: arbre
+    if: ${{ !cancelled() && needs.arbre.outputs['e2e-frontend'] != 'oui' }}
     runs-on: ubuntu-latest
-    #  25, pas 15 (#2276) : mesuré le 28/10/2026, le job dure 10 à 15 min et la
-    #  suite grossit à chaque lot ; trois tentatives de suite ont été tuées au
-    #  plafond, à l'avant-dernière étape — un check requis annulé bloque la PR.
-    #  40, pas 25 (#2576) : mesuré le 08/11/2026 sur les 40 dernières exécutions,
-    #  médiane 19,4 min, p95 24,1 min — le plafond ne laissait plus une minute ;
-    #  #2574 a été coupé deux fois au plafond, tests verts. L'installation peut à
-    #  elle seule prendre 12 min sur un miroir lent (#1865) : p95 + 15 min.
-    timeout-minutes: 40
+    #  Un plafond par tranche, et non celui de la suite entière (40 min, #2576) :
+    #  une tranche joue le quart des tests. L'installation peut à elle seule
+    #  prendre 12 min sur un miroir lent (#1865), d'où la marge.
+    timeout-minutes: 25
+    strategy:
+      #  Toutes les tranches vont au bout : un rouge dans l'une ne cache pas ceux
+      #  des autres.
+      fail-fast: false
+      matrix:
+        tranche:
+          - nom: Chromium 1/4
+            navigateurs: chromium
+            arguments: --project=bureau --project=mobile --shard=1/4
+            service_worker: true
+          - nom: Chromium 2/4
+            navigateurs: chromium
+            arguments: --project=bureau --project=mobile --shard=2/4
+          - nom: Chromium 3/4
+            navigateurs: chromium
+            arguments: --project=bureau --project=mobile --shard=3/4
+          - nom: Chromium 4/4
+            navigateurs: chromium
+            arguments: --project=bureau --project=mobile --shard=4/4
+          - nom: WebKit, mise en page
+            navigateurs: webkit
+            arguments: --project=webkit-bureau --project=webkit-mobile
+    env:
+      E2E_NAVIGATEURS: ${{ matrix.tranche.navigateurs }}
+      E2E_ARGUMENTS: ${{ matrix.tranche.arguments }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -2727,8 +2885,8 @@ jobs:
         # l'image — la CI doit installer exactement comme elle.
         run: npm ci --legacy-peer-deps
 
-      # Chromium seul : les deux profils (bureau et mobile) l'emploient, et
-      # installer Firefox et WebKit pour rien coûterait deux minutes par PR.
+      # Le navigateur de SA tranche (`E2E_NAVIGATEURS`) ; Firefox n'est joué
+      # nulle part. Sur le poste, la variable est absente : Chromium et WebKit.
       # 📦 Les paquets système de Playwright, gardés d'un job à l'autre (#1865).
       #  Depuis la 1.64, `--with-deps` télécharge ~21 Mo de polices absentes de
       #  l'image. Le 12/10/2026, un miroir Ubuntu à 28 ko/s y a passé 12 min 38 s :
@@ -2740,7 +2898,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/apt-playwright
-          key: apt-playwright-${{ runner.os }}-${{ hashFiles('front/node_modules/playwright-core/package.json') }}
+          key: apt-playwright-${{ runner.os }}-${{ matrix.tranche.navigateurs }}-${{ hashFiles('front/node_modules/playwright-core/package.json') }}
 
       - name: Install Playwright browsers
         working-directory: front
@@ -2775,7 +2933,8 @@ jobs:
             echo "$conf" | sudo tee /etc/apt/apt.conf.d/99-cache-playwright > /dev/null
           fi
           debut=$(date +%s)
-          npx playwright install --with-deps chromium
+          # shellcheck disable=SC2086 # la liste se coupe en mots, voulu
+          npx playwright install --with-deps ${E2E_NAVIGATEURS:-chromium webkit}
           #  La mesure que #1865 demande : la durée, job après job.
           echo "Installation de Playwright : $(( $(date +%s) - debut )) s"
           #  🔴 apt laisse dans le dossier gardé son verrou et `partial/`, à root
@@ -2795,7 +2954,7 @@ jobs:
         working-directory: front
         run: npm run lint:e2e-serveur
 
-      - name: Tests de navigateur (bureau et mobile)
+      - name: Tests de navigateur (la tranche, ou toute la suite sur le poste)
         working-directory: front
         # 🔒 Aucun rechargement de Vite pendant les tests (#1421, 28/09/2026). À
         # cache froid, une dépendance chargée par un `import()` dynamique n'est
@@ -2805,7 +2964,8 @@ jobs:
         # six l'avaient subi. La dépendance nommée va dans `optimizeDeps.include`.
         run: |
           set +e
-          npm run e2e 2>&1 | tee e2e-sortie.log
+          # shellcheck disable=SC2086 # les arguments se coupent en mots, voulu
+          npm run e2e -- $E2E_ARGUMENTS 2>&1 | tee e2e-sortie.log
           code=${PIPESTATUS[0]}
           if grep -q "optimized dependencies changed" e2e-sortie.log; then
             grep "new dependencies optimized" e2e-sortie.log
@@ -2819,10 +2979,58 @@ jobs:
       # vu du navigateur, le 26/07 ; accents graves de Rolldown pris pour une
       # disparition, le 24/10). Ceci lance l'application CONSTRUITE et demande au
       # navigateur. Le service worker n'existe qu'au build : `vite dev` n'en sert pas.
+      #  Une seule tranche le joue (`service_worker`) : quatre fois le même
+      #  build ne mesurerait rien de plus. Le poste, qui ignore `if:`, le joue.
       - name: Construire l'application (le service worker n'existe qu'au build)
+        if: matrix.tranche.service_worker
         working-directory: front
         run: npm run build
 
       - name: Service worker enregistré (Chromium, application construite)
+        if: matrix.tranche.service_worker
         working-directory: front
         run: npm run e2e:sw
+
+  # ── Le verdict des tranches, sous le nom du check REQUIS (#2632) ──────────
+  #  La protection de `main` exige « Tests de navigateur (Playwright) » : le
+  #  nom passe des tranches à ce job, qui ne fait que les juger. `always()` :
+  #  sans lui, une tranche rouge SAUTERAIT ce job — et GitHub compte un check
+  #  requis sauté comme un succès. Toute tranche autre que `success` (rouge,
+  #  annulée, sautée) le rend rouge.
+  e2e-verdict:
+    name: Tests de navigateur (Playwright)
+    needs: [arbre, e2e-frontend]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      RESULTAT_TRANCHES: ${{ needs.e2e-frontend.result }}
+      DEJA_VERT: ${{ needs.arbre.outputs['e2e-frontend'] }}
+    steps:
+      - name: Toutes les tranches sont vertes
+        run: |
+          if [ -z "${RESULTAT_TRANCHES:-}" ]; then
+            echo "· Hors d'Actions : pas de tranches, l'étape des tests joue la suite entière."
+            exit 0
+          fi
+          echo "Tranches de Playwright : $RESULTAT_TRANCHES"
+          #  Sautées parce que l'arbre est déjà vert (#2632) : le job « arbre »
+          #  nomme l'exécution qui l'a jugé. Sautées pour toute autre raison : rouge.
+          if [ "$RESULTAT_TRANCHES" = skipped ] && [ "${DEJA_VERT:-}" = oui ]; then
+            echo "✓ Arbre déjà jugé vert : l'exécution qui l'a jugé est nommée par le job « Arbre déjà jugé ? »."
+            exit 0
+          fi
+          [ "$RESULTAT_TRANCHES" = success ] || { echo "✗ Au moins une tranche n'est pas verte : la lire ci-dessus."; exit 1; }
+          #  Ce job n'a pas de checkout : la marque téléverse ce fichier-ci.
+          echo "$GITHUB_RUN_ID" > "$RUNNER_TEMP/arbre-vert.txt"
+
+      - name: Marque « arbre jugé vert »
+        if: needs.arbre.outputs.arbre != '' && needs.e2e-frontend.result == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: arbre-vert-e2e-frontend-${{ needs.arbre.outputs.arbre }}
+          path: ${{ runner.temp }}/arbre-vert.txt
+          retention-days: 30
+          #  Un fichier absent ne fait qu'AVERTIR par défaut : aucune marque, sans un
+          #  mot — c'est ainsi que celle de Playwright a manqué au premier passage.
+          if-no-files-found: error

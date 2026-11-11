@@ -50,7 +50,6 @@
 	/**  Rendue aux Archives : ↩️ y remplace 📦, et le crayon se tait — on
 	 *   ressort une fiche avant de la corriger (#1538). */
 	export let archive = false;
-	export let telephonesDe: (t: string) => string[] = () => [];
 
 	/**  Le prestataire en cours de correction — la carte cède sa place au
 	 *   formulaire quand c'est le sien. */
@@ -138,8 +137,10 @@
 						</span>
 					{/each}
 				{:else if p.telephone}
-					{#each telephonesDe(p.telephone) as tel, ti (`${ti}|${tel}`)}
-						<span class="prest-contact">📞 {tel.trim()}</span>
+					<!--  Découpés et dédoublonnés par le SERVEUR (`telephones`, #2633) ; la
+					      clé reste composite, comme à l'annuaire (`check-cles-listes`). -->
+					{#each p.telephones as tel, ti (`${ti}|${tel}`)}
+						<span class="prest-contact">📞 {tel}</span>
 					{/each}
 				{/if}
 				{#if p.email}<span class="prest-contact">✉️ {p.email}</span>{/if}
@@ -159,8 +160,8 @@
 			{#if p.telephone}
 				<div>
 					<span class="detail-label">Téléphone</span>
-					{#each telephonesDe(p.telephone) as tel, ti (`${ti}|${tel}`)}
-						<span class="ligne-telephone">📞 {tel.trim()}</span>
+					{#each p.telephones as tel, ti (`${ti}|${tel}`)}
+						<span class="ligne-telephone">📞 {tel}</span>
 					{/each}
 				</div>
 			{/if}

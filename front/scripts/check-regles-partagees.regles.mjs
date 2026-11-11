@@ -10,6 +10,10 @@
  * - `migration` — `{ ticket, raison }` : le front la calcule encore. Le ticket
  *   porte la migration (le serveur la sert, le front lit le champ, puis la
  *   dérogation se retire — elle fait échouer le contrôle dès qu'elle ne sert plus).
+ *   🔴 Le ticket est OUVERT : une dérogation dont le porteur est fermé n'a plus
+ *   personne pour la résorber (#2511 et #2507 l'ont été avec neuf dérogations,
+ *   #2633). `lint` est hors ligne et ne le voit pas : le pré-check le demande à
+ *   GitHub (point 25, `--tickets`), API muette → INCONNU.
  *
  * Trois règles, celles des autres listes déclarées du dépôt :
  *   1. **Une raison, toujours.**
@@ -52,7 +56,7 @@ export const REGLES_PARTAGEES = {
 		quoi: '« Prénom NOM » d’une personne (annuaire, annonces, auteurs)',
 		api: 'api/app/utils/noms.py#nom_affiche',
 		migration: {
-			ticket: '#2511',
+			ticket: '#2633',
 			raison:
 				"l'annuaire la sert depuis #2505 (`nom_affiche`, lu par `CarteContact`), une affaire son `nom_proprietaire` (#2508) ; restent les annonces, les baux, les points du conseil et les écrans d'administration qui nomment un compte",
 		},
@@ -61,7 +65,7 @@ export const REGLES_PARTAGEES = {
 		quoi: "l'étage en clair (« RDC », « 2ème étage »)",
 		api: 'api/app/utils/etages.py#etage_label',
 		migration: {
-			ticket: '#2507',
+			ticket: '#2633',
 			raison:
 				"l'annuaire la sert depuis #2505 (`etage_libelle`, avec `suffixe`) ; restent les lots, le profil et l'import (`etage_libelle` dans `LotRead`)",
 		},
@@ -69,17 +73,13 @@ export const REGLES_PARTAGEES = {
 	telephonesDe: {
 		quoi: 'les numéros d’un champ téléphone découpés sur les virgules',
 		api: 'api/app/utils/telephones.py#telephones_de',
-		migration: {
-			ticket: '#2507',
-			raison:
-				"l'annuaire la sert depuis #2505 (`telephones`) ; reste la carte d'un prestataire (`OngletPrestataires`) : `telephones` à servir dans `PrestataireRead`",
-		},
+		//  Servie par l'annuaire (#2505) et `PrestataireRead.telephones` (#2633).
 	},
 	perimetreLabel: {
 		quoi: 'le lieu lisible d’un périmètre (🔹, muet pour celui par défaut)',
 		api: 'api/app/utils/perimetres/libelles.py#perimetre_label',
 		migration: {
-			ticket: '#2511',
+			ticket: '#2633',
 			raison:
 				"CR d'AG et carnet le servent depuis #2505, une affaire depuis #2508 (`perimetre_libelle`, `perimetres.perimetre_badge`) ; restent la ligne du fil, qui ne le porte pas encore, et les sélecteurs de périmètre",
 		},
@@ -104,7 +104,7 @@ export const REGLES_PARTAGEES = {
 	lectureDe: {
 		quoi: 'la pastille « qui le lit » d’un contenu',
 		migration: {
-			ticket: '#2511',
+			ticket: '#2633',
 			raison:
 				"tenue contre le serveur par `test_lecture_pastille.py`, sans être servie ; l'aperçu du formulaire d'affaire (`SectionDestinataires`) la calcule sur une saisie non enregistrée : `lecture_libelle` à servir aux listes",
 		},
@@ -113,7 +113,7 @@ export const REGLES_PARTAGEES = {
 		quoi: 'le crayon d’un contenu (auteur, « saisi pour », admin)',
 		api: 'api/app/auth/deps.py#peut_editer',
 		migration: {
-			ticket: '#2511',
+			ticket: '#2633',
 			raison:
 				"servie en `peut_modifier` sur les idées, les annonces (#2506) et les affaires (#2508)  ; l'Historique la lit servie depuis #2646 (`auth/gestes_evolution`) ; la carte d'affaire la recopie encore : son crayon ouvre une correction plus large que le contenu (liées, diffusion, suivi), un geste à servir",
 		},
@@ -147,11 +147,7 @@ export const REGLES_PARTAGEES = {
 	frequenceLabel: {
 		quoi: 'la fréquence d’un contrat en clair',
 		api: 'api/app/utils/frequence_contrat.py#frequence_libelle',
-		migration: {
-			ticket: '#2511',
-			raison:
-				"servie dans `ContratRead.frequence_libelle` (#2507), que l'onglet Contrats lit ; le front la calcule encore pour une affaire sous contrat (`intervenantAffiche`, `ChampFrequence` sur `ticket.contrat`) : à servir avec l'affaire",
-		},
+		//  Servie par `ContratRead` (#2507), l'affaire et son contrat (#2633).
 	},
 	contratUrgence: {
 		quoi: 'l’échéance d’un contrat (préavis passé, cette année, plus tard)',
@@ -221,9 +217,9 @@ export const REGLES_PARTAGEES = {
 		quoi: 'les gestes du modérateur (archiver, déplacer au Kanban, catégories réservées)',
 		api: 'api/app/auth/deps.py#est_moderateur',
 		migration: {
-			ticket: '#2511',
+			ticket: '#2633',
 			raison:
-				"servis pour les affaires (`peut_archiver`, `peut_deplacer_au_kanban`, `referentiels.categories[].permise`, #2508) ; le site garde `$isCS` pour une cinquantaine d'écrans hors affaires",
+				"servis pour les affaires (`peut_archiver`, `peut_deplacer_au_kanban`, `referentiels.categories[].permise`, #2508), la FAQ (`GET /faq/gestes`) et les sondages (`GET /sondages/gestes`, #2654) ; le site garde `$isCS` pour une cinquantaine d'écrans hors affaires",
 		},
 	},
 	categorieTicketLabel: {
@@ -235,7 +231,7 @@ export const REGLES_PARTAGEES = {
 	statutTicketLabel: {
 		quoi: 'le libellé d’un statut d’affaire',
 		migration: {
-			ticket: '#2511',
+			ticket: '#2633',
 			raison:
 				"servi avec l'affaire (`statut_libelle`) et le référentiel (#2508) ; le front l'applique encore aux états du fil et des CR, servis en codes",
 		},

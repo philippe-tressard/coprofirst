@@ -44,7 +44,7 @@ const CONSTAT: ConstatConservation = {
 	],
 };
 
-test('Maintenance : le constat de conservation dit ce qui partira, et que rien ne part encore', async ({
+test('Maintenance : le constat de conservation dit ce qui partira, et que rien ne part encore @mise-en-page', async ({
 	page,
 }) => {
 	await simulerApi(page, (chemin) => {

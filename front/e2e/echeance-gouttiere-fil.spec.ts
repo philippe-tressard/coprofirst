@@ -127,7 +127,9 @@ test('une plage montre ses deux dates, une affaire close perd son délai', async
 	await expect(sansDate.locator('.echeance')).toHaveCount(0);
 });
 
-test('la vignette tient dans la colonne, et la page ne défile pas en largeur', async ({ page }) => {
+test('la vignette tient dans la colonne, et la page ne défile pas en largeur @mise-en-page', async ({
+	page,
+}) => {
 	await ouvrir(page);
 	for (const titre of ['Vérification incendie', 'Ravalement de la façade']) {
 		const g = gouttiere(page, titre);

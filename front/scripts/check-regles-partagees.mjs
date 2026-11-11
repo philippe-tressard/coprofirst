@@ -25,12 +25,22 @@
  *
  * Cas zéro : aucun fichier lu, ou aucune règle déclarée, rend un échec.
  *
+ * ## Le ticket porteur est OUVERT (#2633)
+ *
+ * Neuf dérogations sont restées portées par deux tickets FERMÉS (#2511, #2507) :
+ * la dette n'avait plus de porteur, et ce contrôle, qui ne jugeait que la forme
+ * `#NNNN`, ne le voyait pas. `--tickets` demande à GitHub l'état de chaque
+ * porteur — hors de `lint`, qui reste hors ligne : c'est le point 25 du
+ * pré-check qui l'appelle. Un porteur fermé rend FAIL ; GitHub muet, INCONNU,
+ * jamais OK (`standards/04` §1).
+ *
  * ⚠️ Il ne DÉCOUVRE pas une règle : il tient celles qu'on a déclarées partagées.
  * L'inventaire de départ, et ce qui reste au front par décision, est écrit dans
  * #2501 ; une règle neuve qu'un second client affiche s'ajoute à la déclaration.
  *
- * Lancer : node scripts/check-regles-partagees.mjs [--selftest]
+ * Lancer : node scripts/check-regles-partagees.mjs [--selftest | --tickets]
  */
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { neutraliserCommentaires } from './lib-commentaires.mjs';
@@ -114,6 +124,63 @@ export function releveRegles(regles, front, api) {
 	return r;
 }
 
+/** Les porteurs des dérogations : `#NNNN` → noms des règles, triés. PURE. */
+export function porteursDesDerogations(regles) {
+	const porteurs = {};
+	for (const [nom, d] of Object.entries(regles)) {
+		if (!d.migration?.ticket) continue;
+		(porteurs[d.migration.ticket] ??= []).push(nom);
+	}
+	return porteurs;
+}
+
+/**
+ * Le verdict du point 25, sur l'état que GitHub a rendu pour chaque porteur
+ * (`OPEN`, `CLOSED`, ou `null` quand il n'a pas répondu). PURE.
+ *
+ * Un porteur fermé est un fait PROUVÉ : il l'emporte sur un état inconnu.
+ */
+export function verdictPorteurs(porteurs, etats) {
+	const tickets = Object.keys(porteurs).sort();
+	if (!tickets.length) return { verdict: 'OK', detail: 'aucune dérogation à porter' };
+	const fermes = tickets.filter((t) => etats[t] === 'CLOSED');
+	if (fermes.length) {
+		const quoi = fermes.map((t) => `${t} (${porteurs[t].join(', ')})`).join(' ; ');
+		return { verdict: 'FAIL', detail: `porteur fermé : ${quoi} — repointer ou migrer` };
+	}
+	const muets = tickets.filter((t) => etats[t] !== 'OPEN');
+	if (muets.length) return { verdict: 'INCONNU', detail: `GitHub muet pour ${muets.join(', ')}` };
+	const n = Object.values(porteurs).flat().length;
+	return {
+		verdict: 'OK',
+		detail: `${n} dérogation(s), porteur(s) ouvert(s) : ${tickets.join(', ')}`,
+	};
+}
+
+/** L'état d'un ticket selon GitHub — `null` si `gh` ne répond pas. */
+function etatGithub(ticket) {
+	try {
+		const sortie = execFileSync(
+			'gh',
+			['issue', 'view', ticket.slice(1), '--json', 'state', '-q', '.state'],
+			{ cwd: RACINE_DEPOT, encoding: 'utf8', timeout: 20000, stdio: ['ignore', 'pipe', 'ignore'] },
+		);
+		const etat = sortie.trim();
+		return etat === 'OPEN' || etat === 'CLOSED' ? etat : null;
+	} catch {
+		return null;
+	}
+}
+
+/** `--tickets` : une ligne `VERDICT détail`, lue par le pré-check (point 25). */
+function tickets() {
+	const porteurs = porteursDesDerogations(REGLES_PARTAGEES);
+	const etats = Object.fromEntries(Object.keys(porteurs).map((t) => [t, etatGithub(t)]));
+	const { verdict, detail } = verdictPorteurs(porteurs, etats);
+	console.log(`${verdict} ${detail}`);
+	return 0;
+}
+
 /** Les cas : le premier est la faute que ce contrôle existe pour relever. */
 function selftest() {
 	const ecran = { 'src/lib/t.ts': 'export function estUrgent(t) { return t.p === "haute"; }' };
@@ -192,6 +259,36 @@ function selftest() {
 			[],
 		],
 		['aucun fichier lu se compte zéro', releveRegles({}, {}, {}).lus, 0],
+		[
+			'🔴 une dérogation dont le porteur est FERMÉ échoue (#2633)',
+			verdictPorteurs({ '#2511': ['nomAffiche'] }, { '#2511': 'CLOSED' }).verdict,
+			'FAIL',
+		],
+		[
+			'un porteur fermé l’emporte sur un GitHub muet pour un autre',
+			verdictPorteurs({ '#1': ['a'], '#2': ['b'] }, { '#1': null, '#2': 'CLOSED' }).verdict,
+			'FAIL',
+		],
+		[
+			'GitHub muet : INCONNU, jamais OK',
+			verdictPorteurs({ '#1': ['a'] }, { '#1': null }).verdict,
+			'INCONNU',
+		],
+		[
+			'tous les porteurs ouverts : OK',
+			verdictPorteurs({ '#1': ['a', 'b'] }, { '#1': 'OPEN' }),
+			{ verdict: 'OK', detail: '2 dérogation(s), porteur(s) ouvert(s) : #1' },
+		],
+		['aucune dérogation : rien à demander, OK', verdictPorteurs({}, {}).verdict, 'OK'],
+		[
+			'les porteurs se lisent sur les dérogations seules',
+			porteursDesDerogations({
+				a: { migration: { ticket: '#7' } },
+				b: { api: 'x' },
+				c: { migration: { ticket: '#7' } },
+			}),
+			{ '#7': ['a', 'c'] },
+		],
 	];
 	return rejouerAttendus(cas);
 }
@@ -251,4 +348,10 @@ function principal() {
 	return ko;
 }
 
-process.exit(process.argv.includes('--selftest') ? selftest() : principal());
+process.exit(
+	process.argv.includes('--selftest')
+		? selftest()
+		: process.argv.includes('--tickets')
+			? tickets()
+			: principal(),
+);

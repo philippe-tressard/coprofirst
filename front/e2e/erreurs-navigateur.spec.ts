@@ -96,7 +96,7 @@ test('une erreur d’un script étranger ne s’impute pas au site', async ({ pa
 	expect(erreurs(recus)[0].detail).toBe('TypeError: erreur du site');
 });
 
-test('l’administrateur lit les erreurs dans l’onglet Télémétrie, sans défilement horizontal', async ({
+test('l’administrateur lit les erreurs dans l’onglet Télémétrie, sans défilement horizontal @mise-en-page', async ({
 	page,
 }) => {
 	const codeLong = 'svelte:each_key_duplicate_avec_un_nom_tres_long_qui_ne_se_coupe_nulle_part';

@@ -49,6 +49,8 @@ export interface Prestataire {
 	/** La valeur de `TypePrestataire` (`maintenance_depannage`, `travaux`…). */
 	type_prestataire: string;
 	telephone: string | null;
+	/** Les numéros du champ, découpés et sans doublon — SERVIS (`utils/telephones`, #2633). */
+	telephones: string[];
 	email: string | null;
 	contacts: ContactPrestataire[];
 	adresse: string | null;

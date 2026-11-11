@@ -33,7 +33,7 @@ async function ouvrir(page, verification) {
 	return carte;
 }
 
-test('Export vérifié : la base se restaure à l’identique', async ({ page }) => {
+test('Export vérifié : la base se restaure à l’identique @mise-en-page', async ({ page }) => {
 	const carte = await ouvrir(page, {
 		restaurable: true,
 		tables: 86,

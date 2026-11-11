@@ -29,7 +29,9 @@ const DEMANDES = [
 	},
 ];
 
-test('Admin › À traiter : trois sections en accordéon, Télémétrie en gestion', async ({ page }) => {
+test('Admin › À traiter : trois sections en accordéon, Télémétrie en gestion @mise-en-page', async ({
+	page,
+}) => {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;
 		if (chemin === '/api/admin/comptes-en-attente/enrichis') return [];

@@ -298,9 +298,9 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   `app/utils/` (ou un prédicat d'`auth/`), servis en champ que le front LIT — jamais une
   fonction de `#lib` seule (`libelle_logement`, #2500). Chacune se déclare dans
   `front/scripts/check-regles-partagees.regles.mjs` ; celles que le front calcule encore y
-  portent leur ticket de migration et sa raison. L'inventaire, et ce qui reste au front par
-  décision (tables générées par l'app, formats d'une valeur typée), se lit dans #2501.
-  🔒 `npm run lint:regles-partagees`.
+  portent leur ticket de migration, OUVERT, et sa raison. L'inventaire, et ce qui reste au
+  front par décision (tables générées par l'app, formats d'une valeur typée), se lit dans #2501.
+  🔒 `npm run lint:regles-partagees` ; le porteur fermé, le point 25 du pré-check (#2633).
 
 ### Schémas Pydantic
 - Trois formes par entité exposée : `EntiteCreate` (entrée, sans id ni
@@ -951,6 +951,14 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   deux sens** — un clone ajouté, ou un retiré sans baisser `PLAFOND_CLONES`. Les
   six qui restent sont des déclarations que le langage force à répéter (blocs
   d'imports, signatures), nommées dans l'en-tête du script.
+- 🔒 **Un arbre déjà jugé vert ne se rejoue pas** (#2632) : le job `arbre` saute un job
+  requis de `ci.yml` quand une exécution PRÉCÉDENTE le prouve, relue par l'API — même
+  fichier de workflow et même dépôt, job `success` réellement joué (pytest compris),
+  arbre de son commit RECALCULÉ égal à `HEAD^{tree}`, et pour une PR la base d'alors (lue
+  au journal `activity`) ancêtre de la tête. L'artefact `arbre-vert-<job>-<arbre>` n'est
+  qu'un index, jamais une preuve ; dans le doute, le job joue. La suite PostgreSQL et
+  CodeQL n'en dépendent pas. Un job requis neuf passe par lui ; 🔒
+  `test_ci_arbre_deja_vert.py`, règles et cas forgés : `scripts/ci/arbre_deja_vert.py`.
 - 🔒 **CodeQL juge dès la PR vers `dev`** (#2571) : la configuration par défaut de GitHub
   ne garde que `main` ; `codeql-avant-dev.yml` refait l'analyse sans l'envoyer et ne bloque
   que les alertes NEUVES face à la dernière analyse de `main`, au seuil du contrôle de GitHub
@@ -1020,6 +1028,14 @@ PR #2322 rouge) — `x=$(producteur || true)`.
 ### Navigateur — job CI `e2e-frontend` (depuis le 08/09/2026)
 `front/e2e/` porte les tests Playwright — squelette, lien d'évitement, absence de
 défilement horizontal, cibles tactiles — sur les profils **bureau ET mobile**.
+**En tranches** depuis #2632 : quatre tranches Chromium (`--shard`) et une WebKit
+côte à côte ; le check requis « Tests de navigateur (Playwright) » est le job
+d'agrégat `e2e-verdict`, rouge dès qu'une tranche n'est pas verte. 🔒 **Un test
+qui mesure la mise en page se joue aussi sous WebKit** (#2640, le moteur de tous
+les iPhone : #2639 passait Chromium) : son titre finit par `@mise-en-page`
+(`e2e/mise-en-page.ts`) ; une mesure du défilement sans elle est refusée
+(`npm run lint:e2e-mise-en-page`). Le profil se lit par `info.project.use.isMobile`
+ou `hasTouch`, jamais par son nom : `webkit-mobile` n'est pas `mobile`.
 
 🔴 **Ils existaient depuis le 06/09 et ne tournaient dans aucun job** : le dépôt
 contenait les tests, `npm run e2e` les passait sur le poste de qui y pensait, et
@@ -1345,12 +1361,13 @@ d'urgence : `ALLOW_STALE=1 git commit …`.
   La contrepartie demandée n'est pas une validation *avant*, c'est un **compte rendu
   après** : à chaque MEP, **la version et les fonctionnalités apportées**.
   Le pré-check ne s'allège pas pour autant : c'est lui qui remplace la relecture.
-  `gh pr create` → attendre **tous les checks requis** → `gh pr merge --squash
-  --delete-branch` → **réaligner `dev` sur `origin/main`** (la fusion est un squash
-  et supprime la branche distante).
-  ⚠️ `gh pr merge --delete-branch` supprime aussi la branche **locale** et bascule
-  sur `main` : committer sans regarder `git branch --show-current` met le lot suivant
-  sur `main`, où le push est refusé.
+  🔴 **La MEP se conduit par `bash scripts/poste/conduire-mep.sh`** (#2631) — fusion
+  du lot sur checks verts ET état `CLEAN`, version du train posée, une seule PR
+  `dev → main`, fenêtre de bascule respectée, `dev` recréée et les PR qui la visaient
+  ramenées (rouvertes si GitHub les a fermées), `Déployé:` sur l'actif, `--post-mep`.
+  Tué, il se relance avec les mêmes arguments ; `--a-blanc` décide sans rien écrire.
+  Usage et pièges : skill `mep-precheck`. Il ne touche à aucune copie de travail :
+  après lui, une copie restée sur `dev` se réaligne (`checkout -B dev origin/main`).
 - MEP : elle n'est **pas** la fusion. `auto-deploy.sh` (cron utilisateur, toutes les quelques minutes) fait le `git pull`
   **puis** le build : entre les deux, les points 12 et 18 du pré-check échouent
   légitimement — le code est à jour, l'image ne l'est pas. Attendre la ligne
@@ -1362,10 +1379,9 @@ d'urgence : `ALLOW_STALE=1 git commit …`.
 - **Session cloud** (claude.ai/code) : aucun SSH vers les RPi, et le site public
   est hors de la politique réseau de la session. 🔴 **La MEP s'y enchaîne SANS
   validation intermédiaire** (arbitré le 25/09/2026) : PR du lot vers `dev` →
-  fusion dès les checks requis verts → bump de version en **dernier commit** du lot →
-  PR `dev → main` → fusion dès ses checks requis verts → **recréer `dev` depuis `main`**
-  (la fusion la supprime ; par l'API GitHub, le hook `pre-push` refusant un push
-  sans trace de pré-check). Une seule demande de l'utilisateur couvre toute la
+  fusion dès les checks requis verts → PR `dev → main` → fusion dès ses checks requis
+  verts → **recréer `dev` depuis `main`** — la même chaîne que `conduire-mep.sh`, qui
+  pose la version et s'arrête, faute de SSH, à la lecture du nœud actif : attendu. Une seule demande de l'utilisateur couvre toute la
   chaîne, et le compte rendu arrive **après** — version et fonctionnalités, comme
   au poste.
   Ce qui ne s'improvise pas : le **pré-check** est INCONNU et la PR le dit ; le
@@ -1414,7 +1430,12 @@ Instanciation 5Hostachy :
   racine (`packages[""]`) : deux lignes, jamais une dépendance. `npm run lint:lock`
   refuse l'écart en CI — cette ligne ne nommait que `package.json`, et un bump
   l'a suivie à la lettre le 30/09/2026 (rattrapé au rejeu, pas avant).
-- Bump **avant** le push final sur `dev`, commit dédié `chore(version): bump vX.Y.Z`.
+- 🔴 **La version se pose À LA MEP, jamais dans un lot** (#2631) : `conduire-mep.sh` la
+  calcule de `main` et des préfixes des commits du train, et la commit sur `dev`
+  (`chore(version): bump vX.Y.Z`, par `npm version`). Un lot qui porte un bump est
+  refusé par le point 0d ; « outillage seul » ne demande rien de plus — le train
+  le compte en correctif. Trois collisions de numéro le 10/11 venaient de la
+  version posée lot par lot.
 - **Chaque commit de `main` publie ses images, le bump y ajoute le tag** (#1753) :
   le workflow `images.yml` publie les images signées des quatre services sur
   `ghcr.io/philippe-tressard/coprofirst-*` (amd64 et arm64, publiques d'office :

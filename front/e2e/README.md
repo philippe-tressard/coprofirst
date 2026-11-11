@@ -8,7 +8,7 @@ ni si une page déborde horizontalement sur un téléphone.
 
 ```bash
 cd front
-npm run e2e            # tous les tests, profils bureau ET mobile
+npm run e2e            # tous les tests : bureau, mobile, et WebKit (mise en page)
 npm run e2e:ui         # le mode interactif, pour écrire un test
 npx playwright test --project=bureau e2e/squelette.spec.ts
 ```
@@ -82,11 +82,19 @@ vérification que ces tests existent pour automatiser.
 ## En CI : le job `e2e-frontend` (depuis le 08/09/2026, #839)
 
 Ils tournent à chaque PR, dans un job **à part** de `.github/workflows/ci.yml`
-(`e2e-frontend`, « Tests de navigateur (Playwright) ») : Chromium seul — les deux
-profils, bureau et mobile, l'emploient — installé par
-`npx playwright install --with-deps chromium`, puis `npm run e2e`. Job séparé et
-non une étape de `build-frontend`, pour ne pas faire payer l'installation des
-navigateurs à chaque lint de style.
+(`e2e-frontend`), **en tranches** depuis #2632 : quatre tranches Chromium
+(`--shard=i/4`, profils bureau et mobile) et une tranche WebKit (profils
+`webkit-bureau` et `webkit-mobile`), chacune n'installant que son navigateur.
+Le check requis « Tests de navigateur (Playwright) » est le job d'agrégat
+`e2e-verdict`, qui juge les cinq. Job séparé et non une étape de `build-frontend`,
+pour ne pas faire payer l'installation des navigateurs à chaque lint de style.
+
+**WebKit (#2640)** ne joue que les tests dont le titre finit par `@mise-en-page`
+(`e2e/mise-en-page.ts`) — hauteurs, alignements, défilement horizontal, cibles
+tactiles. `npm run lint:e2e-mise-en-page` refuse une mesure du défilement sans
+l'étiquette. Un test qui distingue le téléphone lit `info.project.use.isMobile`
+(ou `hasTouch`), jamais `info.project.name === 'mobile'`. Sur le poste :
+`npx playwright install webkit`, que le pré-vol du rejeu sonde comme Chromium.
 
 ⚠️ Cette section a dit « Ces tests ne sont pas encore dans la CI » jusqu'au
 24/09/2026, seize jours après le branchement du job (#1045) : une consigne fausse
