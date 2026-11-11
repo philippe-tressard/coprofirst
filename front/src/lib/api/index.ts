@@ -129,6 +129,11 @@ export interface EntreeFaq {
 	categorie_libelle: string;
 }
 
+/**  `GET /faq/gestes` — ce que CE lecteur peut faire de la FAQ (`GestesFaq`, #2654). */
+export interface GestesFaq {
+	peut_rediger: boolean;
+}
+
 /**  Un membre du conseil syndical dans l'annuaire — `utils/annuaire.membres_du_conseil`.
  *
  *   Monté de l'écran `annuaire` (#1044), qui le déclarait sous le nom `MembreCS`
@@ -413,6 +418,7 @@ export const flux = {
 export const faq = {
 	list: () => api.get<EntreeFaq[]>('/faq'),
 	listAll: () => api.get<EntreeFaq[]>('/faq/all'),
+	gestes: () => api.get<GestesFaq>('/faq/gestes'),
 	categories: () => api.get<string[]>('/faq/categories'),
 	create: (data: unknown) => api.post<EntreeFaq>('/faq', data),
 	update: (id: number, data: unknown) => api.patch<EntreeFaq>(`/faq/${id}`, data),

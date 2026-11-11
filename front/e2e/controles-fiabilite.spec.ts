@@ -88,7 +88,9 @@ async function ouvrir(page: Page, rapports: unknown) {
 	await page.goto('/admin?onglet=maintenance');
 }
 
-test('Maintenance : les constats de check-reliability, nœud par nœud', async ({ page }) => {
+test('Maintenance : les constats de check-reliability, nœud par nœud @mise-en-page', async ({
+	page,
+}) => {
 	await ouvrir(page, RAPPORTS);
 
 	const carte = page.locator('section.config-section', {

@@ -239,7 +239,7 @@ test('un « à savoir » ne ferme pas l’application, et la confirmation le rap
 	await expect(page.getByRole('dialog')).toContainText('1 point(s) à savoir ne bloquent pas');
 });
 
-test('le tableau défile dans sa carte : la dernière clé s’atteint, la page ne déborde pas', async ({
+test('le tableau défile dans sa carte : la dernière clé s’atteint, la page ne déborde pas @mise-en-page', async ({
 	page,
 }) => {
 	await ouvrir(page, true, true);

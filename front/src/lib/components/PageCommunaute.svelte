@@ -81,6 +81,9 @@
 	//  la recalculer ici en ferait une seconde règle (délai réglable en admin).
 	let sondagesLoading = true;
 	let showFormSondage = false;
+	//  Le droit de créer un sondage est SERVI (`GET /sondages/gestes`, #2654) — le
+	//  site et l'app iOS lisent le même champ. Fermé tant qu'il n'est pas lu.
+	let peutCreerSondage = false;
 
 	//  « Clos ? » se lit dans `s.cloture`, que le SERVEUR calcule (#468) : comparer
 	//  `cloture_le` à l'heure du navigateur le rendait fonction du fuseau (§16).
@@ -284,11 +287,13 @@
 		//
 		//  C'est la règle 1 du projet, côté écran : une sortie vide n'est pas un
 		//  constat (`standards/04`). On distingue donc les deux, et on le DIT.
-		const [rS, rI, rA] = await Promise.allSettled([
+		const [rS, rI, rA, rG] = await Promise.allSettled([
 			sondagesApi.list(),
 			ideesApi.list(),
 			annoncesApi.list(),
+			sondagesApi.gestes(),
 		]);
+		if (rG.status === 'fulfilled') peutCreerSondage = rG.value.peut_creer;
 		if (rS.status === 'fulfilled') sondages = rS.value;
 		else erreurSondages = messageErreur(rS.reason);
 		if (rI.status === 'fulfilled') idees = rI.value;
@@ -332,7 +337,7 @@
 <!--  L'en-tête n'OUVRE plus : l'annulation vit à côté d'« Enregistrer » (norme du
       18/08/2026). Deux commandes pour un formulaire, c'est #367. -->
 <EntetePage titre={_pc.titre} descriptif={_pc.descriptif} icone={_pc.icone || 'users-round'}>
-	{#if onglet === 'sondages' && $isCS && !showFormSondage}
+	{#if onglet === 'sondages' && peutCreerSondage && !showFormSondage}
 		<button class="btn btn-primary page-header-btn" on:click={() => (showFormSondage = true)}>
 			+ Nouveau sondage
 		</button>
@@ -368,7 +373,7 @@
 	{/if}
 
 	{#if onglet === 'sondages'}
-		{#if showFormSondage && $isCS}
+		{#if showFormSondage && peutCreerSondage}
 			<ChargementDiffere charger={() => import('#lib/components/FormulaireSondage.svelte')}>
 				{#snippet contenu(FormulaireSondage)}
 					<FormulaireSondage

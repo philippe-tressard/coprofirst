@@ -80,7 +80,7 @@ async function corriger(page: Page, affaire: typeof AFFAIRE) {
 	await expect(section(page)).toBeVisible();
 }
 
-test('une affaire liée dit son numéro, son titre, son suivi et sa date — sans déborder', async ({
+test('une affaire liée dit son numéro, son titre, son suivi et sa date — sans déborder @mise-en-page', async ({
 	page,
 }) => {
 	await corriger(page, AFFAIRE);

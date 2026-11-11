@@ -52,7 +52,7 @@ const ANNUAIRE = {
 	whatsapp_url: null,
 };
 
-test('le nom d’un contact du syndic tient sur une ligne, sans défilement horizontal', async ({
+test('le nom d’un contact du syndic tient sur une ligne, sans défilement horizontal @mise-en-page', async ({
 	page,
 }) => {
 	await simulerApi(page, (chemin) => {

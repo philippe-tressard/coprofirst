@@ -201,13 +201,17 @@ def test_on_ne_garde_que_les_derniers_exports(http_admin, monkeypatch):
     sauvegardes.mkdir()
     for i in range(5):
         (sauvegardes / f"{routes.PREFIXE}2026010{i}_000000_paris.tar.gz").write_bytes(b"x")
-    (sauvegardes / "hostachy_backup_20260101_000000_paris.tar.gz").write_bytes(b"x")
+    #  Les deux préfixes des sauvegardes (#2653) : ni l'un ni l'autre n'est compté.
+    sauvegardes_residence = [
+        "hostachy_backup_20260101_000000_paris.tar.gz",
+        "sauvegarde_copropriete_20260101_000000_paris.tar.gz",
+    ]
+    for nom in sauvegardes_residence:
+        (sauvegardes / nom).write_bytes(b"x")
     http.post("/admin/export-copropriete")
     restants = sorted(p.name for p in sauvegardes.iterdir())
     assert len([n for n in restants if n.startswith(routes.PREFIXE)]) == routes.GARDER
-    assert "hostachy_backup_20260101_000000_paris.tar.gz" in restants, (
-        "les sauvegardes ne sont pas touchées"
-    )
+    assert set(sauvegardes_residence) <= set(restants), "les sauvegardes ne sont pas touchées"
 
 
 def _ligne_de_commande(*arguments: str):

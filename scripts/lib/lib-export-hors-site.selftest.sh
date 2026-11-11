@@ -166,6 +166,36 @@
   check "rattrapage : anciennes et nouvelles mêlées" "$P6" \
         "$(archives_a_rattraper 2 "$P5" "$(printf '%s\n%s' "$U4" "$P6")")"
 
+  # ── Deux préfixes pour la résidence (#2653) ────────────────────────────
+  # Le neuf est écrit, l'historique reste lu jusqu'à sa rotation. Les cas
+  # ci-dessus gardent `hostachy_backup_` : c'est l'historique qu'ils éprouvent.
+  N6=sauvegarde_copropriete_20261006_040000_paris.tar.gz
+  N7=sauvegarde_copropriete_20261007_040000_paris.tar.gz
+  tn "nom neuf de la résidence"         "$N6" ok
+  tn "nom neuf : remontée"              "sauvegarde_copropriete_../x.tar.gz" refuse
+  tn "nom neuf pris pour le registre"   "$N6" refuse "$PREFIXE_PLATEFORME"
+  tn "historique nommé explicitement"   "$P5" ok "$PREFIXE_RESIDENCE_HISTORIQUE"
+  check "le préfixe écrit ne nomme pas la résidence" "" \
+        "$(printf '%s' "$PREFIXE_RESIDENCE" | grep -i 'hostachy' || true)"
+  # 🔴 Le piège : si les LETTRES décident, tout `hostachy_…` passe avant tout
+  # `sauvegarde_…`. Un retour à l'image d'avant écrit de nouveau l'historique, APRÈS
+  # des archives neuves : l'ordre doit rester celui du temps, sinon la rotation
+  # efface la plus récente et la santé juge une ancienne.
+  P7=hostachy_backup_20261007_040000_paris.tar.gz
+  check "tri mêlé : l'ordre du temps" "$(printf '%s\n%s\n%s\n%s' "$P4" "$N6" "$P7" "$N7")" \
+        "$(printf '%s\n%s\n%s\n%s\n' "$N7" "$N6" "$P7" "$P4" | trier_archives)"
+  check "rotation après un retour arrière : le plus récent reste" "$N6" \
+        "$(printf '%s\n%s\n%s\n' "$N6" "$P7" "$N7" | trier_archives | archives_a_supprimer 2)"
+  check "tri : doublons et lignes vides retirés" "$N6" "$(printf '%s\n\n%s\n' "$N6" "$N6" | trier_archives)"
+  check "rotation mêlée : l'historique part, le neuf reste" "$P4" \
+        "$(printf '%s\n%s\n%s\n' "$P4" "$P5" "$N6" | trier_archives | archives_a_supprimer 2)"
+  check "rattrapage mêlé : les plus récentes, quel que soit le préfixe" "$N7" \
+        "$(archives_a_rattraper 2 "$N6" "$(printf '%s\n%s' "$P5" "$N7")")"
+  check "série mêlée, complète" "" \
+        "$(printf '%s\n%s' "$N6" "$P5" | jours_manquants 2 20261007)"
+  check "jour du neuf détenu : la fenêtre part du jour" "20261005" \
+        "$(printf '%s\n%s' "$N7" "$N6" | jours_manquants 3 20261007)"
+
   # ── Archives d'affaires échues (#2014) ──────────────────────────────────
   # La liste blanche : le nom vient du serveur et repart dans une commande.
   nav() { nom_archive_affaires_valide "$1" && echo ok || echo refus; }

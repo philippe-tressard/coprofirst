@@ -195,7 +195,7 @@ async function ouvrir(
 	return ecrits;
 }
 
-test('Installations : la carte, la fiche, et un geste motivé', async ({ page }) => {
+test('Installations : la carte, la fiche, et un geste motivé @mise-en-page', async ({ page }) => {
 	const ecrits = await ouvrir(page);
 	const onglet = page.getByRole('link', { name: /Installations/ });
 	await expect(onglet).toBeVisible();
@@ -250,7 +250,7 @@ test('Installations : une réplique ne montre pas l’onglet', async ({ page }) 
 	await expect(page.getByRole('link', { name: /^Installations$/ })).toHaveCount(0);
 });
 
-test('Installations : les alertes se lisent sur la carte et en tête de la fiche', async ({
+test('Installations : les alertes se lisent sur la carte et en tête de la fiche @mise-en-page', async ({
 	page,
 }) => {
 	await ouvrir(page, 'reference', ALERTES);
@@ -333,7 +333,7 @@ function rapport(
 	};
 }
 
-test('Installations : la posture se lit en coches — conforme, à corriger, inconnu', async ({
+test('Installations : la posture se lit en coches — conforme, à corriger, inconnu @mise-en-page', async ({
 	page,
 }) => {
 	await ouvrir(page, 'reference', [], {
@@ -426,7 +426,7 @@ test('Installations : une documentation d’API publiée est à corriger', async
 	).toHaveAttribute('data-etat', 'conforme');
 });
 
-test('Installations : le canal et la version — la vague, la version fixée, et la cible du bail', async ({
+test('Installations : le canal et la version — la vague, la version fixée, et la cible du bail @mise-en-page', async ({
 	page,
 }) => {
 	const ecrits = await ouvrir(page, 'reference', [], {

@@ -117,7 +117,7 @@ test('la recherche retrouve un prestataire par son équipement, ses contacts, sa
  *  la recherche EN TÊTE, puis la catégorie et le contrat, chaque libellé devant
  *  sa rangée — les « deux lignes » du 28/09 cèdent la place à cette grille.
  */
-test('sur ordinateur, la recherche en tête, puis la catégorie et le contrat', async ({
+test('sur ordinateur, la recherche en tête, puis la catégorie et le contrat @mise-en-page', async ({
 	page,
 }, info) => {
 	test.skip(info.project.name !== 'bureau', 'la grille à deux colonnes vaut pour un ordinateur');

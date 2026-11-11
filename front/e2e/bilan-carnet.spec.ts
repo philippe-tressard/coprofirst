@@ -93,7 +93,7 @@ async function ouvrir(page: Page, moi = MEMBRE_CS, bilan: object = BILAN) {
 
 test.beforeEach(async ({ page }, info) => {
 	//  Le téléphone le plus étroit que le site s'engage à tenir.
-	if (info.project.name === 'mobile') await page.setViewportSize({ width: 375, height: 812 });
+	if (info.project.use.isMobile) await page.setViewportSize({ width: 375, height: 812 });
 });
 
 test('le conseil voit le bandeau replié — et rien n’est demandé avant de l’ouvrir', async ({
@@ -114,7 +114,9 @@ test('un copropriétaire qui n’est pas du conseil ne voit pas le bilan', async
 	expect(demandes).toEqual([]);
 });
 
-test('ouvert : l’exercice, puis chaque catégorie en jours ouvrés', async ({ page }) => {
+test('ouvert : l’exercice, puis chaque catégorie en jours ouvrés @mise-en-page', async ({
+	page,
+}) => {
 	await ouvrir(page);
 	await page.getByRole('button', { name: /Bilan de l'exercice/ }).click();
 
@@ -157,7 +159,7 @@ test('une autre pastille demande cet exercice', async ({ page }) => {
 	expect(demandes[0]).not.toContain('exercice=');
 });
 
-test('un exercice sans affaire le dit', async ({ page }) => {
+test('un exercice sans affaire le dit @mise-en-page', async ({ page }) => {
 	await ouvrir(page, MEMBRE_CS, { ...BILAN, categories: [], nombre: 0 });
 	await page.getByRole('button', { name: /Bilan de l'exercice/ }).click();
 	await expect(

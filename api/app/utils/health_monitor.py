@@ -3,7 +3,6 @@
 Le disque est une donnée de la PLATEFORME : `utils/sante_plateforme` (#1814).
 """
 
-import glob
 import json
 import logging
 import os
@@ -157,11 +156,11 @@ def _check_archive_locale() -> list[str]:
     effectivement pas — et le signaler est correct, pas excessif : cela veut dire
     que si l'autre nœud est perdu, l'archive la plus récente a deux jours.
     """
-    from app.utils.backup import MOTIF_ARCHIVE, horodatage_archive
+    from app.utils.backup import archives, horodatage_archive
 
     repertoire = contexte.dossier_des_sauvegardes()
     try:
-        chemins = sorted(glob.glob(os.path.join(repertoire, MOTIF_ARCHIVE)))
+        chemins = archives(repertoire)
     except OSError as exc:
         return [f"Répertoire de sauvegarde illisible ({repertoire}) : {exc}."]
 
