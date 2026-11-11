@@ -325,8 +325,9 @@ const LISTES_A_CLE_COMPOSITE = [
 	},
 	{
 		fichier: 'src/lib/components/CartePrestataire.svelte',
-		collection: 'telephonesDe(p.telephone)',
-		raison: 'un numéro peut être saisi deux fois dans le même champ',
+		collection: 'p.telephones',
+		raison:
+			'un numéro peut être saisi deux fois dans le même champ — dédoublonnés au serveur depuis #2633, la clé reste composite comme à l’annuaire',
 	},
 	{
 		fichier: 'src/routes/(app)/annuaire/+page.svelte',

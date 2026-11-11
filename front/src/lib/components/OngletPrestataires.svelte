@@ -34,7 +34,6 @@
 		contactsDepuis,
 		prestataireDepuis,
 	} from '#lib/prestataires.ts';
-	import { telephonesDe } from '#lib/utils.ts';
 	import { cibleDuHash, revelerCible } from '#lib/deepLink.ts';
 	import FiltresPrestataires from '#lib/components/FiltresPrestataires.svelte';
 	import ChampsPrestataire from '#lib/components/ChampsPrestataire.svelte';
@@ -204,7 +203,6 @@
 					expanded={ouvert === p.id}
 					{compactPrests}
 					peutModifier={$isCS}
-					{telephonesDe}
 					{editPrestId}
 					bind:prestForm
 					bind:prestContacts

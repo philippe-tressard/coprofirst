@@ -32,6 +32,7 @@ from pydantic import BaseModel, computed_field
 
 from app.utils.categories_ticket import libelle_categorie, ticket_urgent
 from app.utils.etat_affaire import affaire_close
+from app.utils.frequence_contrat import frequence_libelle as _frequence_libelle
 from app.utils.kanban_tickets import colonne_du_ticket
 from app.utils.nouveaute import est_nouveau
 from app.utils.valeurs import valeur
@@ -89,6 +90,18 @@ class AffaireServie(BaseModel):
     def colonne_kanban(self) -> Optional[str]:
         """La colonne du Kanban (`kanban_tickets.colonne_du_ticket`), `None` hors tableau."""
         return colonne_du_ticket(getattr(self, "statut", None))
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def frequence_libelle(self) -> str:
+        """« ↺ Mensuel » — le rythme SAISI sur l'affaire, vide sans fréquence (#2633).
+
+        Sous contrat, le rythme qui fait foi est celui du contrat
+        (`contrat.frequence_libelle`) : le client lit celui-là d'abord.
+        """
+        return _frequence_libelle(
+            getattr(self, "frequence_type", None), getattr(self, "frequence_valeur", None)
+        )
 
     @computed_field  # type: ignore[prop-decorator]
     @property
