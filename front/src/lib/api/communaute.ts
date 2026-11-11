@@ -84,6 +84,12 @@ export interface OptionSondage {
 	reponses_libres?: string[];
 }
 
+/**  `GET /sondages/gestes` — ce que CE lecteur peut faire de la rubrique
+ *   (`GestesSondages`, #2654). Modifier ou stopper reste un geste par sondage. */
+export interface GestesSondages {
+	peut_creer: boolean;
+}
+
 /**  La FICHE d'un sondage — `GET /sondages/{id}`, le schéma `SondageDetail` du
  *   serveur (déclaré par la route depuis #2506).
  *
@@ -261,6 +267,7 @@ interface Message {
 
 export const sondages = {
 	list: () => api.get<Sondage[]>('/sondages'),
+	gestes: () => api.get<GestesSondages>('/sondages/gestes'),
 	get: (id: number) => api.get<SondageDetail>(`/sondages/${id}`),
 	create: (data: unknown) => api.post<SondageCree>('/sondages', data),
 	modifier: (id: number, data: unknown) => api.patch<SondageCorrige>(`/sondages/${id}`, data),

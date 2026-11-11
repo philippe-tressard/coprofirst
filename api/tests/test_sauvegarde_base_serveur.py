@@ -48,7 +48,7 @@ def _derniere() -> HistoriqueSauvegarde:
 def test_l_archive_porte_l_export_et_se_dit_reussie(sauvegarde):
     backup.run_backup()
     assert _derniere().statut == StatutSauvegarde.reussie
-    (archive,) = sauvegarde.glob(backup.MOTIF_ARCHIVE)
+    (archive,) = map(Path, backup.archives(sauvegarde))
     with tarfile.open(archive) as tar:
         assert backup.NOM_EXPORT_BASE in tar.getnames()
 
@@ -70,13 +70,13 @@ def test_une_base_abimee_n_est_pas_sauvegardee(sauvegarde, monkeypatch):
     monkeypatch.setattr(backup, "_integrite", lambda: "2 page(s) en échec de somme de contrôle")
     backup.run_backup()
     assert _derniere().statut == StatutSauvegarde.echouee
-    assert not list(sauvegarde.glob(backup.MOTIF_ARCHIVE)), "aucune archive d'une base abîmée"
+    assert not backup.archives(sauvegarde), "aucune archive d'une base abîmée"
 
 
 def test_le_poste_relit_l_export_avec_son_propre_code(sauvegarde):
     """Le Python que la copie hors site exécute (`relire_export`), sur l'export réellement produit."""
     backup.run_backup()
-    (archive,) = sauvegarde.glob(backup.MOTIF_ARCHIVE)
+    (archive,) = map(Path, backup.archives(sauvegarde))
     with tarfile.open(archive) as tar:
         export = sauvegarde / "base-export.tar.gz"
         export.write_bytes(tar.extractfile(backup.NOM_EXPORT_BASE).read())

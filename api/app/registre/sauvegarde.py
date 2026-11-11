@@ -16,7 +16,7 @@ n'est pas une sauvegarde.
 
 - Archives : `<BACKUP_DIR>/plateforme/plateforme_backup_<AAAAMMJJ_HHMMSS>_paris.tar.gz`,
   à part de celles de la résidence (rien ne les mêle : rotation, contrôle de
-  fraîcheur et copie hors site lisent `hostachy_backup_*` à la racine).
+  fraîcheur et copie hors site lisent `backup.PREFIXES_LUS` à la racine).
 - On en garde `BACKUP_KEEP_VERSIONS`.
 - Un échec prévient l'OPÉRATEUR (`sante_plateforme.alerter`, #1814) — jamais une
   copropriété : le registre n'est pas une donnée de la résidence (§4.11, règle 7).
@@ -39,7 +39,6 @@ personnelle (D5).
 from __future__ import annotations
 
 import logging
-import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -49,7 +48,7 @@ from app.config import get_settings
 from app.registre import base
 from app.registre.modeles import registre_plateforme
 from app.utils import horloge
-from app.utils.backup import garder_les_dernieres, horodatage_archive, nom_archive
+from app.utils.backup import archives, garder_les_dernieres, horodatage_archive, nom_archive
 
 logger = logging.getLogger("hostachy.registre")
 
@@ -93,9 +92,7 @@ def sauvegarder() -> Path:
         verifier_archive(export, moteur.url, metadata=metadata, cles_differees=CLES_DIFFEREES)
         archive = destination / nom
         shutil.move(export, archive)
-    garder_les_dernieres(
-        os.path.join(destination, f"{PREFIXE}*.tar.gz"), get_settings().backup_keep_versions
-    )
+    garder_les_dernieres(archives(destination, (PREFIXE,)), get_settings().backup_keep_versions)
     return archive
 
 

@@ -14,7 +14,7 @@ import { attendreSansDefilementHorizontal } from './defilement';
 
 const ADRESSE_INCONNUE = '/page-qui-nexiste-pas';
 
-test('une adresse inconnue rend la page d’erreur du site, en français, avec un retour', async ({
+test('une adresse inconnue rend la page d’erreur du site, en français, avec un retour @mise-en-page', async ({
 	page,
 }) => {
 	await simulerApi(page, (chemin) =>

@@ -38,7 +38,7 @@ const CLASSE = {
 	a_classer: { id: 2, statut: 'cree', apercu: '', suggestions: [] },
 };
 
-test('Espace CS › Courriels : un message à classer se rattache à l’affaire proposée', async ({
+test('Espace CS › Courriels : un message à classer se rattache à l’affaire proposée @mise-en-page', async ({
 	page,
 }) => {
 	await simulerApi(page, (chemin) => {

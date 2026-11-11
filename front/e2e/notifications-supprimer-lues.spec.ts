@@ -30,7 +30,7 @@ async function ouvrir(page: Page, liste: ReturnType<typeof notif>[]) {
 	await page.goto('/notifications');
 }
 
-test('les lues partent en une requête, les non lues restent', async ({ page }) => {
+test('les lues partent en une requête, les non lues restent @mise-en-page', async ({ page }) => {
 	await ouvrir(page, [notif(1, false), notif(2, true), notif(3, true)]);
 	await expect(page.getByText('Avis 1')).toBeVisible(); //  cas zéro
 	await expect(page.getByText('Avis 2')).toBeVisible();

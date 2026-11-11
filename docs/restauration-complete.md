@@ -323,7 +323,7 @@ La vraie preuve est la **première bascule** : jusqu'à elle, ce nœud n'a rien 
 
 Sans pair en service, il n'y a ni primaire à copier ni `.env` à recopier : la
 résidence renaît de la **copie hors site** du poste (`scripts/poste/export-hors-site.sh`,
-destination `C:\Backup` par défaut sous Windows, `/Volumes/Data/Backup` sur le Mac). Son archive `hostachy_backup_*_paris.tar.gz` porte
+destination `C:\Backup` par défaut sous Windows, `/Volumes/Data/Backup` sur le Mac). Son archive `sauvegarde_copropriete_*_paris.tar.gz` (`hostachy_backup_*` avant #2653) porte
 l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** téléversés
 (`uploads/`). Les gestes vivent dans **un** script,
 `scripts/exploitation/restaurer-copie-hors-site.sh` (#1921) — le premier nœud renaît
@@ -346,14 +346,14 @@ l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** té
    chez la **référence**, celle du registre aussi (`C:\Backup\plateforme\`) ; depuis le Mac,
    `C:/Backup` se lit `/Volumes/Data/Backup` :
    ```bash
-   scp C:/Backup/hostachy_backup_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/
+   scp C:/Backup/sauvegarde_copropriete_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/
    scp C:/Backup/plateforme/plateforme_backup_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/
    ```
 5. **Restaurer**, **avant** de poser les crons (sinon `auto-deploy` démarrerait
    l'application sur une base vide, et le script refuse) :
    ```bash
-   sudo bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh /tmp/hostachy_backup_….tar.gz        # dit ce qu'il ferait
-   sudo bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh /tmp/hostachy_backup_….tar.gz --oui  # exécute
+   sudo bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh /tmp/sauvegarde_copropriete_….tar.gz        # dit ce qu'il ferait
+   sudo bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh /tmp/sauvegarde_copropriete_….tar.gz --oui  # exécute
    ```
    Chez la **référence** (`PLATEFORME_DATABASE_URL` dans le `.env`), ajouter
    `--registre /tmp/plateforme_backup_….tar.gz` : le rôle et la base du registre sont
@@ -372,7 +372,7 @@ l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** té
 7. **Crons et unité systemd** (étape 11), puis l'étape 12.
 8. **WhatsApp** : l'appairage n'est pas dans les sauvegardes — Admin › WhatsApp ›
    Statut, un seul essai (voir `.claude/skills/infra-rpi`).
-9. `rm /tmp/hostachy_backup_*.tar.gz /tmp/plateforme_backup_*.tar.gz` : l'archive porte
+9. `rm /tmp/sauvegarde_copropriete_*.tar.gz /tmp/plateforme_backup_*.tar.gz` : l'archive porte
    les données des résidents, celle du registre les contacts des installations.
 
 ### Nœud B — il rejoint la paire
@@ -388,8 +388,8 @@ réseau et des volumes **jetables** (`banc_restau_*`), détruits en sortie — s
 **standby**, sans sudo, sans toucher à rien de `5hostachy_*` :
 
 ```bash
-scp C:/Backup/hostachy_backup_<…>_paris.tar.gz ptressard@<standby>:/tmp/
-ssh ptressard@<standby> 'bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh --banc /tmp/hostachy_backup_<…>_paris.tar.gz; rm /tmp/hostachy_backup_*.tar.gz'
+scp C:/Backup/sauvegarde_copropriete_<…>_paris.tar.gz ptressard@<standby>:/tmp/
+ssh ptressard@<standby> 'bash /opt/5hostachy/scripts/exploitation/restaurer-copie-hors-site.sh --banc /tmp/sauvegarde_copropriete_<…>_paris.tar.gz; rm /tmp/sauvegarde_copropriete_*.tar.gz'
 ```
 
 Éprouvé le **14/10/2026** sur rpi2 avec l'archive du jour : 82 tables et 16 869 lignes

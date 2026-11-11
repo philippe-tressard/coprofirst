@@ -108,7 +108,7 @@ test('une clé de charges se règle comme le syndic l’appelle, chaque réglage
 	expect((await libelle).postDataJSON()).toEqual({ libelle_syndic: 'CHARGES ESCALIER X' });
 });
 
-test('le tableau défile seul : la page ne s’élargit pas, même en texte large (#2437)', async ({
+test('le tableau défile seul : la page ne s’élargit pas, même en texte large (#2437) @mise-en-page', async ({
 	page,
 }) => {
 	await ouvrir(page);

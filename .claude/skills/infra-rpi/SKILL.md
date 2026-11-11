@@ -195,12 +195,26 @@ cloudflared` tel quel dans une réponse, un ticket ou un journal : masquer d'abo
   ses fichiers locaux → 7 versions ≈ 14 jours **à trous**, aucun nœud n'ayant celle de
   la veille. Copie hors site : `scripts/poste/export-hors-site.cmd` (voir ci-dessous)
 - **Le nom d'une archive dit l'heure de PARIS** (#1611, 05/10/2026) :
-  `hostachy_backup_AAAAMMJJ_HHMMSS_paris.tar.gz`. Avant, l'horloge UTC y était écrite
+  `<préfixe>AAAAMMJJ_HHMMSS_paris.tar.gz`. Avant, l'horloge UTC y était écrite
   sans le dire (`…_020000` pour une sauvegarde prise à 04:00) ; les anciennes archives
   (sans suffixe) restent en UTC jusqu'à leur rotation. `backup.nom_archive` écrit,
   `backup.horodatage_archive` relit les deux formats en UTC naïf — c'est le seul parseur.
   « Restaurer celle de 02:00 » se lit donc au suffixe : sans `_paris`, ajouter deux
   heures (une l'hiver) pour l'heure de Paris.
+- **Le préfixe ne nomme pas la résidence** (#2653) : écrit `backup.PREFIXE_ARCHIVE`,
+  l'ancien `hostachy_backup_` reste LU (`PREFIXES_LUS`) jusqu'à la rotation de la
+  dernière archive qui le porte (#2659). Deux préfixes mêlés : l'ordre des noms n'est
+  plus celui du temps — on trie par l'horodatage lu (`backup.archives`, `trier_archives`
+  côté poste), jamais par `sorted(glob(…))` ni `ls | sort`.
+  ⚠️ La copie hors site n'est PAS planifiée : Philippe la lance à la main, par le
+  raccourci du Bureau — un lien vers `scripts/poste/export-hors-site.command` du
+  **clone principal** (`/Volumes/Data/Dev/5hostachy`, branche `dev` ; `C:\Dev\5hostachy`
+  sous Windows). Elle exécute donc le script de ce clone, jamais celui d'un worktree :
+  après une MEP qui change un nom lu par elle, le geste qui la met à jour est
+  `git -C /Volumes/Data/Dev/5hostachy fetch origin && git -C /Volumes/Data/Dev/5hostachy merge --ff-only origin/dev`.
+  Un clone resté en arrière ne lit que l'ancien préfixe : il recopie une archive
+  vieillissante, puis n'en trouve plus — la santé le dit (« périmée » au-delà de
+  7 j + 6 h, `sante_taches`).
 - **`.active` peut disparaître** → le recréer manuellement sur les 2 RPi si absent
 - **Clé d'hôte du pair non épinglée** (#1598, 02/10/2026) : le SSH inter-nœuds
   (`scripts/lib/lib-ssh-noeuds.sh`, seule source) exige `StrictHostKeyChecking=yes`

@@ -14,12 +14,13 @@ croyait, et une sauvegarde prise entre 00:00 et 02:00 se nommait du JOUR D'AVANT
   lui, rien ne dirait laquelle des deux on lit pendant la rétention ;
 - `horodatage_archive` rend toujours de l'**UTC naïf** (ce que comparent la santé et
   l'export) pour l'un comme pour l'autre format ;
-- le tri alphabétique reste le tri chronologique, sur lequel reposent la rotation
-  (`_rotate_backups`) et l'export hors site (`archives_a_supprimer`,
-  `archives_a_rattraper`) — anciennes et nouvelles archives mêlées ;
+- sous un même préfixe, le tri alphabétique reste le tri chronologique — anciennes
+  et nouvelles archives mêlées ; entre les deux préfixes de #2653, la rotation et
+  l'export hors site trient par l'horodatage lu (`backup.archives`, `trier_archives`) ;
 - une archive prise à 00:30 à Paris porte la date de Paris, pas celle de la veille.
 """
 
+import os
 from datetime import datetime
 
 from app.utils import horloge
@@ -76,7 +77,9 @@ def test_un_suffixe_de_fuseau_inconnu_est_refuse():
 
 
 def test_le_tri_alphabetique_reste_chronologique_anciennes_et_nouvelles_melees():
-    """La rotation et l'export trient les NOMS : l'ordre des noms est l'ordre du temps."""
+    """Sous UN préfixe, l'ordre des noms est l'ordre du temps, anciennes et nouvelles
+    mêlées. Entre deux préfixes il ne l'est plus : `backup.archives` trie par
+    l'horodatage lu (#2653, `test_sauvegarde_deux_prefixes.py`)."""
     instants = [
         datetime(2026, 10, 2, 2, 0, 0),  # ancienne (UTC) — nommée sans suffixe
         datetime(2026, 10, 4, 2, 0, 0),  # ancienne (UTC)
@@ -98,7 +101,7 @@ def test_le_nom_est_accepte_par_les_lecteurs_shell():
     import re
 
     nom = nom_archive(horloge.maintenant())
-    assert re.fullmatch(r"hostachy_backup_[A-Za-z0-9._-]+\.tar\.gz", nom), nom
+    assert re.fullmatch(rf"{PREFIXE_ARCHIVE}[A-Za-z0-9._-]+\.tar\.gz", nom), nom
 
 
 def test_run_backup_ecrit_le_nom_a_l_heure_de_paris(tmp_path, monkeypatch):
@@ -116,5 +119,5 @@ def test_run_backup_ecrit_le_nom_a_l_heure_de_paris(tmp_path, monkeypatch):
 
     backup.run_backup()
 
-    archives = sorted(p.name for p in tmp_path.glob(backup.MOTIF_ARCHIVE))
+    archives = [os.path.basename(c) for c in backup.archives(tmp_path)]
     assert archives == [f"{PREFIXE_ARCHIVE}20261005_040000_paris.tar.gz"], archives

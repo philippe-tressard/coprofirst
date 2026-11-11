@@ -12,7 +12,7 @@ from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.auth.appartenance import exiger_objet_autorise
-from app.auth.deps import get_current_user, peut_editer, require_cs_or_admin
+from app.auth.deps import est_moderateur, get_current_user, peut_editer, require_cs_or_admin
 from app.database import get_session
 from app.models.core import (
     CommentaireSondage,
@@ -30,6 +30,7 @@ from app.utils.diffusion import config_diffusion
 
 from .groupe import diffuser_le_sondage
 from .commun import (
+    GestesSondages,
     SondageCreate,
     SondageDetail,
     SondageRead,
@@ -86,6 +87,20 @@ def list_sondages(
         d.lecture = lecture_du_ciblage(s, masculin=True)
         result.append(d)
     return result
+
+
+#  `/gestes` est un segment FIXE : déclaré avant `/{sondage_id}`, que FastAPI
+#  essaierait sinon en premier (et refuserait en 422).
+@router.get("/gestes", response_model=GestesSondages)
+def gestes_sondages(user: Utilisateur = Depends(get_current_user)):
+    """Le droit de créer un sondage, servi au lecteur (#2654) : le site et l'app iOS
+    le LISENT, aucun ne le recompose depuis les rôles (`standards/09` §8, règle 1).
+
+    🔒 `est_moderateur` est le prédicat que `require_cs_or_admin` (`POST /sondages`)
+    refuse — appelé, jamais recopié ; `test_gestes_faq_sondages_servis.py` confronte
+    la route au champ servi, rôle par rôle.
+    """
+    return GestesSondages(peut_creer=est_moderateur(user))
 
 
 @router.get("/{sondage_id}", response_model=SondageDetail, response_model_exclude_unset=True)

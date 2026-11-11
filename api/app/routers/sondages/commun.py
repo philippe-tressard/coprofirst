@@ -49,6 +49,15 @@ class SondageCreate(AssisteIAEntree):
     envoyer_auteur: bool = False
 
 
+class GestesSondages(BaseModel):
+    """`GET /sondages/gestes` — ce que CE lecteur peut faire de la rubrique (#2654).
+
+    Modifier ou stopper un sondage reste un geste PAR sondage (`peut_editer` :
+    l'auteur ou l'administrateur) ; seul celui de créer se sert ici."""
+
+    peut_creer: bool
+
+
 class SondageRead(AssisteIASortie):
     id: int
     question: str
