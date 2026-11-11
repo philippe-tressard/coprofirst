@@ -53,13 +53,9 @@ import type { ClasseGouttiere } from '#lib/gouttiere.ts';
     celui du produit : deux rubriques voisines dans le fil ne doivent pas se
     ressembler. Les degrés restent notés parce que c'est la seule chose qui
     permet d'insérer une quinzième teinte sans refaire le tour.                */
-const {
-	libelle: L,
-	couleur: C,
-	fond: F,
-	icone: I,
-	abrege: A,
-} = parAttribut({
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const NATURES_DU_FIL = {
 	ticket_resolu: {
 		libelle: 'Affaire résolue',
 		couleur: 'var(--fil-rouge)',
@@ -168,7 +164,9 @@ const {
 		icone: 'book-open',
 		abrege: 'RÈGL.',
 	}, // 330° rose — ajouté le 11/10/2026, entre le fuchsia et le rouge
-});
+};
+
+const { libelle: L, couleur: C, fond: F, icone: I, abrege: A } = parAttribut(NATURES_DU_FIL);
 
 export const TYPE_LABELS: Record<string, string> = L;
 /**  Ce qui CLASSE une carte du fil dans sa gouttière (10/10/2026, maquette B du
@@ -396,6 +394,11 @@ export function dateDeReference(item: FluxItem): number {
 	//  qui ne portent pas de date propre.
 	return new Date(item.date || item.cree_le || 0).getTime();
 }
+
+/**  Le titre de la section du fil au tableau de bord — celui que le fil de l'app reprend. */
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const TITRE_FIL = "Fil d'activité";
 
 /** Plafond SOUPLE : on avertit celui qui épingle, on ne masque jamais un
  *  élément épinglé — le cacher trahirait la promesse du marqueur. Au-delà,

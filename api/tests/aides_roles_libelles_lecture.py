@@ -51,7 +51,7 @@ _ATTRIBUT = re.compile(r"(\w+):\s*'([^']*)'")
 
 
 def table_ts(source: str, ancre: str, attribut: str) -> dict[str, str]:
-    """Un attribut de la table `const <ancre> = parAttribut({ … })` du fichier TS.
+    """Un attribut de la table `export const <ancre> = { … }` du fichier TS.
 
     🔴 Le front déclarait ces valeurs en tables PARALLÈLES — les libellés, les
     abrégés, les teintes — aux mêmes clés, et le commentaire de chacune devait
@@ -66,8 +66,10 @@ def table_ts(source: str, ancre: str, attribut: str) -> dict[str, str]:
     la fonte — et c'est exactement ce qu'elles ont fait pendant celle-ci, en
     annonçant une extraction incomplète plutôt qu'un vert sur zéro comparaison.
     """
-    debut = source.index(f"const {ancre} = parAttribut({{")
-    corps = source[debut : source.index("});", debut)]
+    #  La table nommée qu'on bascule ensuite par `parAttribut(<ancre>)` — nommée et
+    #  exportée depuis #2634 : l'app iOS la lit, publiée (`tables-clients.json`).
+    debut = source.index(f"export const {ancre} = {{")
+    corps = source[debut : source.index("\n};", debut)]
     table = {}
     for m in _ENTREE.finditer(corps):
         attributs = dict(_ATTRIBUT.findall(m.group(2)))

@@ -125,16 +125,17 @@ export function categorieAnnonceLabel(val: string) {
 	return CATEGORIES_ANNONCE.find((c) => c.val === val)?.label ?? val;
 }
 
+/**  La pastille de chaque statut d'une annonce ; un statut inconnu est gris. */
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const TEINTE_STATUT_ANNONCE: Record<string, string> = {
+	en_cours: 'badge-green',
+	reserve: 'badge-orange',
+	vendu: 'badge-blue',
+	donne: 'badge-blue',
+	annule: 'badge-gray',
+};
+
 export function statutAnnonceClass(val: string) {
-	return (
-		(
-			{
-				en_cours: 'badge-green',
-				reserve: 'badge-orange',
-				vendu: 'badge-blue',
-				donne: 'badge-blue',
-				annule: 'badge-gray',
-			} as Record<string, string>
-		)[val] ?? 'badge-gray'
-	);
+	return TEINTE_STATUT_ANNONCE[val] ?? 'badge-gray';
 }

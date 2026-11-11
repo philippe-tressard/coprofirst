@@ -62,13 +62,26 @@ GESTES = [
 
 
 def roles_du_magasin() -> dict[str, frozenset[str]]:
-    """`$isCS` → {conseil_syndical, admin}, lu dans `#lib/stores/auth.ts`."""
-    source = (FRONT / "lib/stores/auth.ts").read_text(encoding="utf-8")
+    """`$isCS` → {conseil_syndical, admin} : la dérivée de `#lib/stores/auth.ts` nomme
+    son droit (`aRole($u, ...ROLES_DU_DROIT.cs)`), la table de `#lib/roles.ts` en
+    donne les rôles (#2634 : une seule écriture, publiée à l'app iOS)."""
+    auth = (FRONT / "lib/stores/auth.ts").read_text(encoding="utf-8")
+    roles_ts = (FRONT / "lib/roles.ts").read_text(encoding="utf-8")
+    debut = roles_ts.index("export const ROLES_DU_DROIT = {")
+    table = {
+        droit: frozenset(re.findall(r"'([a-z_]+)'", roles))
+        for droit, roles in re.findall(
+            r"^\t(\w+): \[([^\]]*)\],$",
+            roles_ts[debut : roles_ts.index("\n}", debut)],
+            re.M,
+        )
+    }
     return {
-        nom: frozenset(re.findall(r"'([a-z_]+)'", roles))
-        for nom, roles in re.findall(
-            r"export const (is\w+) = derived\(currentUser, \(\$u\) => aRole\(\$u, ([^)]*)\)\)",
-            source,
+        nom: table[droit]
+        for nom, droit in re.findall(
+            r"export const (is\w+) = derived\(currentUser, \(\$u\) => "
+            r"aRole\(\$u, \.\.\.ROLES_DU_DROIT\.(\w+)\)\)",
+            auth,
         )
     }
 

@@ -15,7 +15,9 @@ if (typeof window !== 'undefined') {
 	});
 }
 
-const ALLOWED_TAGS = [
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const ALLOWED_TAGS = [
 	'p',
 	'br',
 	'b',
@@ -58,7 +60,9 @@ const ALLOWED_TAGS = [
 	'summary',
 ];
 
-const ALLOWED_ATTR = ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'];
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const ALLOWED_ATTR = ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'];
 
 const _allowedTagSet = new Set(ALLOWED_TAGS);
 //  Les débuts d'URL admis par l'assainisseur de SECOURS (rendu serveur, premier

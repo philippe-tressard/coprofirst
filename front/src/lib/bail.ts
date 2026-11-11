@@ -86,11 +86,15 @@ export function bailVierge(): ChampsBailNeuf {
     La contrepartie serveur est `StatutBail` (`api/app/models/core.py`).
     ══════════════════════════════════════════════════════════════════════════ */
 
-const ETAT = parAttribut({
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const ETATS_BAIL = {
 	actif: { libelle: 'Actif', badge: 'badge-green' },
 	en_cours_sortie: { libelle: 'En cours de sortie', badge: 'badge-yellow' },
 	termine: { libelle: 'Terminé', badge: 'badge-gray' },
-});
+};
+
+const ETAT = parAttribut(ETATS_BAIL);
 
 /** « en_cours_sortie » → « En cours de sortie ». Valeur brute à défaut : un
  *  libellé manquant doit se voir, pas s'effacer. */

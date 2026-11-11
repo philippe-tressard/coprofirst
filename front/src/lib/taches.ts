@@ -68,7 +68,9 @@ export const LIBELLE_ACTION: Record<string, string> = {
     différait de l'une à l'autre, ce qui rendait la comparaison à l'œil presque
     impossible. L'aide contextuelle est le cas qui le montre : elle est ce qu'on
     lit quand le libellé ne suffit pas, donc l'attribut qu'on oublie.          */
-const { libelle, aide, classe } = parAttribut({
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const STATUTS_TACHE = {
 	ok: {
 		libelle: 'À jour',
 		aide: 'Un rapport est arrivé dans le délai attendu.',
@@ -129,7 +131,9 @@ const { libelle, aide, classe } = parAttribut({
 			'Vérifier le journal du nœud avant de conclure.',
 		classe: 'badge-red',
 	},
-});
+};
+
+const { libelle, aide, classe } = parAttribut(STATUTS_TACHE);
 
 export const LIBELLE_STATUT: Record<string, string> = libelle;
 export const AIDE_STATUT: Record<string, string> = aide;
