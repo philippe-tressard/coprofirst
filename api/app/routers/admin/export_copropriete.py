@@ -26,7 +26,7 @@ from app.utils import horloge
 router = APIRouter()
 
 #: Préfixe des archives d'export : distinct de celui des sauvegardes
-#: (`hostachy_backup_`), que leur rotation ne doit ni compter ni effacer.
+#: (`backup.PREFIXES_LUS`), que leur rotation ne doit ni compter ni effacer.
 PREFIXE = "export_copropriete_"
 #: Les exports gardés dans le volume des sauvegardes — les plus récents.
 GARDER = 3
