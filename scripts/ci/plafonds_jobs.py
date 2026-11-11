@@ -61,6 +61,15 @@ MIN_MESURES = 5
 #: Exécutions réussies lues par workflow — assez récentes pour suivre une suite qui grossit.
 EXECUTIONS_PAR_WORKFLOW = 40
 
+#: Un job qui REPREND le nom d'un autre — le nom d'un check requis ne change pas —
+#: ne se mesure qu'à partir de sa date de naissance : avant, l'historique est celui
+#: de l'ancien job. « Tests de navigateur (Playwright) » durait 19 min ; depuis les
+#: tranches (#2632), ce nom est l'agrégat `e2e-verdict`, qui dure quelques
+#: secondes. Sans la rupture, le rapport aurait lu 40 exécutions de l'ancien job.
+#: Une entrée se retire quand les EXECUTIONS_PAR_WORKFLOW dernières lui sont
+#: postérieures. (fichier, clé) → date ISO de la première exécution du job neuf.
+RUPTURES: dict[tuple[str, str], str] = {("ci.yml", "e2e-verdict"): "2026-11-11"}
+
 TITRE_ISSUE = "Plafonds des jobs de CI : marge franchie"
 ETIQUETTE_ISSUE = "bug"
 
@@ -220,6 +229,12 @@ def _minutes(job: dict) -> float | None:
     return (fin - debut).total_seconds() / 60
 
 
+def mesure_retenue(fichier: str, cle: str, cree_le: str) -> bool:
+    """L'exécution créée à `cree_le` (ISO) mesure-t-elle ce job, et non son homonyme d'avant ?"""
+    rupture = RUPTURES.get((fichier, cle))
+    return rupture is None or cree_le[:10] >= rupture
+
+
 def mesurer(jobs: list[dict], jeton: str) -> dict[tuple[str, str], list[float]]:
     """Durées (minutes) des jobs réussis, par (fichier, clé)."""
     depot = _depot()
@@ -238,7 +253,9 @@ def mesurer(jobs: list[dict], jeton: str) -> dict[tuple[str, str], list[float]]:
                     continue
                 job = job_du_nom(jr.get("name", ""), du_fichier)
                 duree = _minutes(jr)
-                if job and duree is not None:
+                if job and duree is not None and mesure_retenue(
+                    fichier, job["cle"], run.get("created_at", "")
+                ):
                     durees[(fichier, job["cle"])].append(duree)
     return durees
 
@@ -391,6 +408,15 @@ def _selftest() -> int:
     reels = [j for f in sorted(WORKFLOWS.glob("*.yml"))
              for j in lire_jobs(f.read_text(encoding="utf-8"), f.name)]
     cas.append(("les workflows du dépôt se lisent (cas zéro)", len(reels) >= 10, True))
+    cas.append(("rupture : l'exécution d'avant ne mesure pas l'homonyme",
+                mesure_retenue("ci.yml", "e2e-verdict", "2026-11-10T23:30:52Z"), False))
+    cas.append(("rupture : celle du jour même compte",
+                mesure_retenue("ci.yml", "e2e-verdict", "2026-11-11T08:00:00Z"), True))
+    cas.append(("rupture : date illisible, rien de retenu",
+                mesure_retenue("ci.yml", "e2e-verdict", ""), False))
+    cas.append(("sans rupture : tout compte", mesure_retenue("ci.yml", "lint-backend", ""), True))
+    cas.append(("chaque rupture nomme un job qui existe",
+                sorted(set(RUPTURES) - {(j["fichier"], j["cle"]) for j in reels}), []))
     cas.append(("chaque job du dépôt porte un plafond",
                 [f"{j['fichier']}:{j['cle']}" for j in reels if j["plafond"] is None], []))
     echecs = 0
