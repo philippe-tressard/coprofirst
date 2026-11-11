@@ -650,6 +650,14 @@ jobs:
           # Le mode --post-mep (#1282) : P1 (déployé) et P3 (version servie),
           # dont les cas zéro — un journal illisible ne rend jamais OK.
           bash scripts/lib/lib-precheck-post.sh     --selftest
+          # Le conducteur de MEP (#2631) : fusion sur CLEAN seulement (jamais UNKNOWN),
+          # fenêtre de bascule confrontée à la crontab, version du train, reprise.
+          bash scripts/lib/lib-mep-conduite.sh      --selftest
+          # …et le relais du script, qui doit charger la même bibliothèque.
+          bash scripts/poste/conduire-mep.sh        --selftest
+          # L'exception DATÉE d'un point du pré-check : vérifiée par le point, FAIL
+          # passée l'échéance ou au premier fait plus récent (#2631).
+          bash scripts/lib/lib-precheck-exception.sh --selftest
           # Point 20 : la sonde de l'ordre du menu servi (#1114), décision pure.
           node front/scripts/sonde-pages-order.mjs  --selftest
           # 🔒 Vérifie la FORME du geste d'installation dans un volume du peer :
