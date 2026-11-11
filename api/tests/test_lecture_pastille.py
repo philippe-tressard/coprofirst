@@ -13,7 +13,7 @@ pastille qui dit « Tous » sur une affaire que les locataires ne lisent pas men
 Les deux côtés sont donc tenus par **une seule attente** :
 `tests/donnees/lecture_pastille.json`. Ce test la vérifie contre la règle du
 serveur, en l'EXÉCUTANT pour chaque statut, dans le périmètre et hors de lui ;
-`npm run lint:lecture` la vérifie contre le résumé de l'écran. Ni l'un ni
+`test_lecture_pastille_servie.py` la vérifie contre la pastille servie (#2633). Ni l'un ni
 l'autre ne peut changer sans que le fichier change — et alors l'autre tombe.
 
 ⚠️ Il a déjà servi : #1269, fusionné pendant ce lot, ouvre les affaires DATÉES

@@ -100,11 +100,9 @@ export const REGLES_PARTAGEES = {
 	},
 	lectureDe: {
 		quoi: 'la pastille « qui le lit » d’un contenu',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"tenue contre le serveur par `test_lecture_pastille.py`, sans être servie ; l'aperçu du formulaire d'affaire (`SectionDestinataires`) la calcule sur une saisie non enregistrée : `lecture_libelle` à servir aux listes",
-		},
+		api: 'api/app/utils/lecture_pastille/regle.py#lecture_de',
+		//  Servie en `lecture` (affaire, ligne du fil, Suivi des affaires, annonces,
+		//  idées, sondages) et par `POST /lectures/apercu` pour une saisie (#2633).
 	},
 	peutEditer: {
 		quoi: 'le crayon d’un contenu (auteur, « saisi pour », admin)',

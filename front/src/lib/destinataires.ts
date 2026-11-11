@@ -85,6 +85,18 @@ export function reserveAuConseil(codes: string[] | null | undefined): boolean {
 }
 
 /**
+ * « Résident concerné » : l'auteur, la personne pour qui l'affaire a été saisie,
+ * et le conseil. Un DÉFAUT servi par l'API (`destinataires_par_defaut`), jamais un
+ * code envoyé : le conseil qui le choisit coche `confidentiel`. Miroir du code
+ * `CONCERNE` au serveur (`visibility/defauts_affaire`).
+ */
+export const CONCERNE = 'concerné';
+
+/** Le défaut servi est-il « Résident concerné » ? */
+export const estConcerne = (codes: string[] | null | undefined): boolean =>
+	!!codes && codes.length === 1 && codes[0] === CONCERNE;
+
+/**
  * Les CODES d'un public cible, qu'il arrive en tableau ou en chaîne JSON — ce
  * que rend l'API. Écrite une fois : la pastille de lecture (`#lib/lecture`) la
  * lit, et deux lectures d'une chaîne abîmée divergeraient sur le cas limite.

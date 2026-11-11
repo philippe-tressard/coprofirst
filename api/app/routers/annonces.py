@@ -40,6 +40,8 @@ from app.utils.assiste_ia import (
 )
 from app.utils.recuperer import ou_404
 from app.utils.noms import nom_affiche
+from app.utils.lecture_pastille.modele import Lecture
+from app.utils.lecture_pastille.objets import lecture_du_ciblage
 from app.utils.nouveaute import est_nouveau
 from app.schemas_communaute import ReponseCommunauteRead
 
@@ -137,6 +139,8 @@ def _enrich(annonce: PetiteAnnonce, user: Utilisateur, session: Session) -> dict
         #  conseil (`_can_manage`) ; l'écran, plus étroit, ne lui tend pas la
         #  réécriture de l'annonce d'un voisin.
         "peut_modifier": est_auteur(annonce, user),
+        #  Qui la lit — la pastille, servie (#2633).
+        "lecture": lecture_du_ciblage(annonce),
         #  La corbeille : la règle même de la route qui supprime.
         "peut_supprimer": _can_manage(annonce, user),
     }
@@ -187,6 +191,8 @@ class AnnonceRead(BaseModel):
     gratuit: bool = False
     peut_modifier: bool = False
     peut_supprimer: bool = False
+    #: Qui la lit (`utils/lecture_pastille`, #2633).
+    lecture: Optional[Lecture] = None
 
 
 # ── Schémas ────────────────────────────────────────────────────────────────

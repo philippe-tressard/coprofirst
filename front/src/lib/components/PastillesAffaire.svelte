@@ -68,7 +68,7 @@
 		/>
 	{/if}
 	<BadgePerimetre perimetre={affaire.perimetre_cible} />
-	<PastilleLecture ticket={affaire} />
+	<PastilleLecture lecture={affaire.lecture} />
 	{#if affaire.urgente}
 		<Badge teinte={BADGE_PRIORITE[affaire.priorite] ?? 'badge-gray'}
 			>{PRIORITE_BREVE[affaire.priorite]}</Badge

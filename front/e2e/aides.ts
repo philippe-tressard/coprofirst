@@ -2,7 +2,7 @@
  *  Aides partagées des tests de navigateur.
  */
 import { test as base, expect, type Locator, type Page, type Route } from '@playwright/test';
-import { REFERENTIELS_TEMOINS } from './referentiels-temoins';
+import { REFERENTIELS_TEMOINS, reponseApercu } from './referentiels-temoins';
 
 /**
  * **Le `test` de tous les specs — une exception de la page le fait échouer.**
@@ -332,7 +332,7 @@ export async function simulerApi(
 		(url) => url.pathname.startsWith('/api/'),
 		(route) => {
 			const chemin = new URL(route.request().url()).pathname;
-			let corps = reponses(chemin, route.request().url());
+			let corps = reponses(chemin, route.request().url()) ?? reponseApercu(chemin, route.request());
 			if (corps === undefined) {
 				if (chemin === '/api/auth/me') corps = MEMBRE_CS;
 				else if (chemin in REPONSES_PAR_DEFAUT) corps = REPONSES_PAR_DEFAUT[chemin];

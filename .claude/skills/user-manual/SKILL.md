@@ -201,8 +201,9 @@ Arbitré à l'écran : le manuel nommait « la pastille bleue » en texte brut, 
 survoler ne montrait rien. Une pastille se montre telle que le site la rend —
 `<span class="pastille-lecture-ex" data-lecture="…" title="…">` avec l'icône SVG
 du catalogue (`#lib/icones-svg.json`) — et sa phrase au survol n'est **jamais
-écrite à la main** : `npm run lint:manuel-pastilles` la recalcule avec `#lib/lecture`
-et refuse tout écart. Un nouveau cas s'ajoute dans `CAS` du contrôle.
+écrite à la main** : `api/tests/test_manuel_pastilles_lecture.py` la recalcule avec la
+règle servie (`utils/lecture_pastille`, #2633) et refuse tout écart. Un nouveau cas
+s'ajoute dans `CAS` du test.
 
 ⚠️ Pour éprouver un contrôle sur le manuel, **ne jamais le muter par `sed -i`** :
 il réécrit le CRLF en LF (vécu le 27/09/2026, 3 432 lignes de diff). Muter en

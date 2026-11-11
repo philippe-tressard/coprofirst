@@ -431,7 +431,7 @@ vers un numéro absent, et un `lint:*` ou un fichier de test de « Tenu par » q
 - **Décidé** : libellés au pluriel ; « Tous », jamais « Tous les résidents » ; un résident habite (occupant ou locataire). « Résident concerné » entre Locataires et Conseil syndical ; chaque catégorie d'affaire a son défaut.
 - **Pourquoi** : « Tous les résidents était faux, car un copropriétaire bailleur ou un bailleur n'est pas résident ».
 - **Écarté** : renommer le code `résidents` (une migration) ; retirer la pastille « Conseil syndical » (26/09, à l'écran : trois degrés de restriction, pas un doublon).
-- **Tenu par** : `test_libelle_tous.py`, `test_lecture_pastille.py`, `npm run lint:lecture`, `e2e/destinataires-panne.spec.ts`.
+- **Tenu par** : `test_libelle_tous.py`, `test_lecture_pastille.py`, `test_lecture_pastille_servie.py`, `e2e/destinataires-panne.spec.ts`.
 
 ### n° 56 · en vigueur — Le NEW rouge, partout
 26/09/2026 · non retrouvé · l'utilisateur · §3
