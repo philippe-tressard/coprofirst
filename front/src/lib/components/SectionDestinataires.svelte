@@ -38,12 +38,10 @@
 	import DestinatairePicker from '#lib/components/DestinatairePicker.svelte';
 	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
 	import CaseConfidentielle from '#lib/components/CaseConfidentielle.svelte';
-	import { LIBELLE_TOUS, concerneTousLesResidents } from '#lib/destinataires.ts';
+	import { LIBELLE_TOUS, concerneTousLesResidents, estConcerne } from '#lib/destinataires.ts';
 	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
-	import { destinatairesParDefaut, estConcerne, lectureDe, titreLecture } from '#lib/lecture.ts';
-	import { perimetreRestreint, type NatureLue } from '#lib/lecture-ticket.ts';
-	import { perimetresStore } from '#lib/stores/perimetres.ts';
-	import { relire } from '#lib/utils.ts';
+	import type { NatureLue } from '#lib/lecture-ticket.ts';
+	import { apercuLecture } from '#lib/apercu-lecture.ts';
 
 	/** Préfixe des identifiants — l'écran en ouvre parfois plusieurs à la fois. */
 	export let idPrefixe: string;
@@ -86,7 +84,27 @@
 	export let parDefaut: string[] | null = null;
 	/** Le « Résident concerné » — l'auteur, ou pour qui elle a été saisie. */
 	export let concerne = '';
-	$: defaut = lecture && !lecture.actualite ? destinatairesParDefaut(lecture) : parDefaut;
+	/*  « Qui la lira » est DEMANDÉ au serveur (`POST /lectures/apercu`, #2633) — la
+	    règle de l'affaire enregistrée, sur la saisie : 150 ms après le dernier choix,
+	    la phrase d'avant gardée pendant l'attente (`#lib/apercu-lecture`). La
+	    vignette lit la MÊME nature que les pastilles — catégorie et bâtiments
+	    compris (#1434, signalé à l'écran le 28/09/2026). 🔒 `e2e/destinataires-panne.spec.ts`. */
+	$: apercu = lecture
+		? $apercuLecture(
+				{
+					categorie: lecture.categorie ?? null,
+					statut: lecture.statut ?? null,
+					confidentiel,
+					public_cible: destinataires,
+					perimetre_cible: perimetre,
+					reserve_perimetre: reservePerimetre,
+				},
+				`${idPrefixe}-lue`,
+			)
+		: null;
+	$: lue = apercu?.lecture ?? null;
+	$: defaut =
+		lecture && !lecture.actualite ? (apercu?.destinataires_par_defaut ?? null) : parDefaut;
 	/**  Le défaut de la catégorie est « Résident concerné » (#1436) : la pastille
 	 *   est cochée tant que le conseil ne choisit rien — sans poser le drapeau. */
 	$: defautConcerne = estConcerne(defaut);
@@ -102,20 +120,7 @@
 	function choisir(e: CustomEvent<string[]>) {
 		destinataires = defaut && cle(e.detail) === cle(defaut) ? [] : e.detail;
 	}
-	/*  La vignette lit la MÊME nature que les pastilles — catégorie et bâtiments
-	    compris. Elle ne recevait que `actualite` : sur une Panne, « Tous » était
-	    coché et la vignette disait « Copropriétaires » (#1434, signalé à l'écran
-	    le 28/09/2026). 🔒 `e2e/destinataires-panne.spec.ts`. */
-	$: lue = relire($perimetresStore, () =>
-		lectureDe({
-			...lecture,
-			actualite: !!lecture?.actualite,
-			confidentiel,
-			publicCible: destinataires,
-			perimetreRestreint: perimetreRestreint(perimetre),
-			reservePerimetre,
-		}),
-	);
+
 	/*  « Rempli » (l'étoile noire) — une valeur par défaut ACTIVE en est une :
 	    la liste vide vaut « Tous », et la pastille l'affiche sélectionnée.
 	    L'étoile était rouge sur ce « Tous » (27/09/2026, signalé à l'écran :
@@ -126,24 +131,25 @@
 	/*  Une Suite n'a pas de `lecture`, mais un défaut (`parDefaut`) : liste vide, le
 	    badge disait « Tous » alors que la pastille cochée était « Résident concerné »
 	    (signalé à l'écran le 03/10/2026). Le badge lit ce que la rangée coche. */
-	$: luePar = relire($perimetresStore, () =>
-		lectureDe({
-			actualite: false,
-			confidentiel: concerneActif,
-			publicCible: destinataires.length ? destinataires : defautConcerne ? [] : (defaut ?? []),
-			perimetreRestreint: false,
-			reservePerimetre: false,
-		}),
-	);
-	$: sansLecture = !lecture && !!defaut && !concerneTousLesResidents(defaut) ? luePar : null;
+	$: sansLecture =
+		!lecture && !!defaut && !concerneTousLesResidents(defaut)
+			? ($apercuLecture(
+					{
+						categorie: null,
+						confidentiel: concerneActif,
+						public_cible: destinataires.length ? destinataires : defautConcerne ? [] : defaut,
+					},
+					`${idPrefixe}-par`,
+				)?.lecture ?? null)
+			: null;
 </script>
 
 <SectionFormulaire
 	{premiere}
 	{pliable}
-	badge={lecture ? titreLecture(lue) : sansLecture ? titreLecture(sansLecture) : badge}
-	badgeIcones={lecture ? lue.icones : (sansLecture?.icones ?? [])}
-	badgeIconeFin={lecture && lue.perimetreReserve ? 'lock' : ''}
+	badge={lecture ? (lue?.titre ?? '') : sansLecture ? sansLecture.titre : badge}
+	badgeIcones={lecture ? (lue?.icones ?? []) : (sansLecture?.icones ?? [])}
+	badgeIconeFin={lecture && lue?.perimetre_reserve ? 'lock' : ''}
 	titre={SECTIONS_LIBELLE.destinataires}
 	{inactive}
 	{requis}
@@ -187,7 +193,7 @@
 			<DestinatairePicker bind:value={destinataires} titre="" />
 		</fieldset>
 	{/if}
-	{#if lecture}
+	{#if lecture && lue}
 		<p class="aide">
 			{lue.phrase}
 			{lue.exclus}

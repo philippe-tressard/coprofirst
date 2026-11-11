@@ -11,9 +11,12 @@
 import { api } from './client';
 import type { CandidateFusion, ChoixConciliation } from './affaires-liees';
 import type { EtatVisite } from './prestataires';
+import type { Lecture } from './lectures';
 
 export interface AffaireOuverte {
 	id: number;
+	/** Qui la lit — la pastille servie (`utils/lecture_pastille`, #2633). */
+	lecture?: Lecture | null;
 	numero: string;
 	titre: string;
 	/** Du TEXTE (le HTML de la description, aplati par le serveur) — jamais `{@html}`. */

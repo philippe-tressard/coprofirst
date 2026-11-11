@@ -7,6 +7,7 @@
 //  fichier qui expose vingt-six domaines n'a pas un problème de taille, il a un
 //  problème de découpage — et `documents.ts` avait déjà montré la voie.
 import { api, postFormData } from './client';
+import type { Lecture } from './lectures';
 
 //  ── Ce que le serveur RENVOIE (#1572) ───────────────────────────────────────────
 //
@@ -49,6 +50,8 @@ export interface ReponseCommunauteCreee extends ReponseCommunaute {
 /**  Un sondage de la LISTE — `SondageRead`, le seul `response_model` du domaine. */
 export interface Sondage {
 	id: number;
+	/** Qui la lit — la pastille servie (`utils/lecture_pastille`, #2633). */
+	lecture?: Lecture | null;
 	question: string;
 	description: string | null;
 	cloture_le: string | null;
@@ -130,6 +133,8 @@ export interface SondageCorrige {
  *   `IdeeRead`, lu sur le modèle (#1660). */
 export interface Idee {
 	id: number;
+	/** Qui la lit — la pastille servie (`utils/lecture_pastille`, #2633). */
+	lecture?: Lecture | null;
 	titre: string;
 	description: string;
 	/** Vide quand le compte de l'auteur a été supprimé (#1821). */
@@ -188,6 +193,8 @@ export type StatutAnnonce = 'en_cours' | 'reserve' | 'vendu' | 'donne' | 'annule
  *   liste, la création et la correction rendent la même. */
 export interface PetiteAnnonce {
 	id: number;
+	/** Qui la lit — la pastille servie (`utils/lecture_pastille`, #2633). */
+	lecture?: Lecture | null;
 	titre: string;
 	/** Texte riche (HTML). */
 	description: string;

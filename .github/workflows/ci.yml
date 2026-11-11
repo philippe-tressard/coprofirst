@@ -1061,14 +1061,9 @@ jobs:
         working-directory: front
         run: npm run lint:libelle-perimetre
 
-      # Et QUI LIT une affaire, exécuté (pastille de lecture, 25/09/2026). La
-      # carte résume à l'écran une règle qui vit au serveur (`ticket_visible`) ;
-      # un écart ne casse rien, il ment à chaque lecteur. Même montage : une
-      # attente, `api/tests/donnees/lecture_pastille.json`, que le test Python
-      # exécute contre la règle et ce contrôle contre `lib/lecture.ts`.
-      - name: Pastille de lecture conforme à la règle du serveur
-        working-directory: front
-        run: npm run lint:lecture
+      # QUI LIT une affaire n'est plus composé par le front depuis #2633 : la
+      # pastille est servie (`api/app/utils/lecture_pastille`), et
+      # `test_lecture_pastille_servie.py` la tient contre `lecture_pastille.json`.
 
       # L'en-tête de page était écrit de DOUZE façons : `.page-header` redéfini en
       # CSS local dans six pages, surchargé en ligne dans six autres, et le style du
@@ -2181,11 +2176,8 @@ jobs:
         working-directory: front
         run: npm run lint:pastilles
 
-      # Le manuel montre les VRAIES pastilles « qui la lit », avec leur phrase au
-      # survol (27/09/2026) : recalculées par `#lib/lecture`, jamais recopiées.
-      - name: Les pastilles du manuel disent ce que le site dit
-        working-directory: front
-        run: npm run lint:manuel-pastilles
+      # Les pastilles « qui la lit » du manuel sont recalculées par la règle servie
+      # depuis #2633 : `api/tests/test_manuel_pastilles_lecture.py` (job pytest).
 
       # 🔴 L'infobulle de catégorie disait « etude_travaux » sur la liste des
       # affaires (26/09/2026, signalé à l'écran) ; deux reportings rendaient la

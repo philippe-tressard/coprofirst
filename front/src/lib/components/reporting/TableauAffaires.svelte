@@ -157,7 +157,7 @@
 						<a href={lienTicket(a.id)} class="titre">{a.titre}</a>
 						<span class="vignettes">
 							<BadgeEtatAffaire statut={a.statut} libelle={a.libelle_statut} compact />
-							<PastilleLecture ticket={a} />
+							<PastilleLecture lecture={a.lecture} />
 						</span>
 						{#if a.fusionnees.length}
 							<!--  L'historique de fusion, cité au point (#2083). -->

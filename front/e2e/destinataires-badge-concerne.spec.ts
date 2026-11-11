@@ -15,6 +15,14 @@ const AFFAIRE = {
 	description: 'Musique tard le soir.',
 	categorie: 'nuisance',
 	statut: 'en_cours',
+	//  Ce qu'une Suite présélectionne, SERVI avec l'affaire (#2633) : une Nuisance
+	//  reste « Résident concerné » quel que soit l'état (`defauts_affaire`).
+	destinataires_par_etat: Object.fromEntries(
+		['ouvert', 'en_ag', 'en_cours', 'chez_prestataire', 'résolu', 'annulé'].map((e) => [
+			e,
+			['concerné'],
+		]),
+	),
 	priorite: 'normale',
 	auteur_id: 1,
 	auteur_nom: 'CS Témoin',

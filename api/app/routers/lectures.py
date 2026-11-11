@@ -21,11 +21,9 @@ from pydantic import BaseModel, Field
 
 from app.auth.deps import get_current_user
 from app.models.core import Utilisateur
-from app.utils.lecture_pastille.modele import Lecture
-from app.utils.lecture_pastille.objets import lecture_de_saisie
-from app.utils.nature_affaire import ACTUALITE
-from app.utils.valeurs import valeur
-from app.utils.visibility.defauts_affaire import defauts_de_nature
+from app.utils.lecture_pastille.modele import ApercuLecture
+from app.utils.lecture_pastille.objets import perimetre_restreint_de
+from app.utils.lecture_pastille.regle import apercu_de
 
 router = APIRouter(prefix="/lectures", tags=["lectures"])
 
@@ -46,43 +44,17 @@ class ApercuLectureEntree(BaseModel):
     reserve_perimetre: bool = False
 
 
-class ApercuLecture(BaseModel):
-    """La pastille de la saisie, et ce que sa nature décide sans choix du conseil."""
-
-    lecture: Lecture
-    #: Les Destinataires d'une affaire SANS choix du conseil — vide pour une actualité.
-    destinataires_par_defaut: list[str]
-    #: Personne d'autre que le conseil (et l'auteur) ne la lit, périmètre mis à part :
-    #: rien ne sort, ni sur le groupe ni au hall.
-    lue_du_seul_conseil: bool
-
-
 @router.post("/apercu", response_model=ApercuLecture)
 def apercu_lecture(
     corps: ApercuLectureEntree,
     _: Utilisateur = Depends(get_current_user),
 ) -> ApercuLecture:
     """Qui lirait cette saisie — la règle de l'objet enregistré, sur ce qu'elle dit."""
-    actualite = valeur(corps.categorie) == ACTUALITE
-    sans_perimetre = lecture_de_saisie(
+    return apercu_de(
         categorie=corps.categorie,
         statut=corps.statut,
         confidentiel=corps.confidentiel,
         public_cible=corps.public_cible,
-        perimetre_cible=[],
-        reserve_perimetre=False,
-    )
-    return ApercuLecture(
-        lecture=lecture_de_saisie(
-            categorie=corps.categorie,
-            statut=corps.statut,
-            confidentiel=corps.confidentiel,
-            public_cible=corps.public_cible,
-            perimetre_cible=corps.perimetre_cible,
-            reserve_perimetre=corps.reserve_perimetre,
-        ),
-        destinataires_par_defaut=(
-            [] if actualite else defauts_de_nature(False, corps.categorie, corps.statut)
-        ),
-        lue_du_seul_conseil=not sans_perimetre.profils,
+        perimetre_restreint=perimetre_restreint_de(corps.perimetre_cible),
+        reserve_perimetre=corps.reserve_perimetre,
     )

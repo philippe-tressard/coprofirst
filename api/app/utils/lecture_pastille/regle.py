@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Optional, Union
 
-from app.utils.lecture_pastille.modele import Lecture
+from app.utils.lecture_pastille.modele import ApercuLecture, Lecture
 from app.utils.lecture_pastille.vocabulaire import (
     CONCERNE as VOCABLE_CONCERNE,
     CS,
@@ -16,6 +16,8 @@ from app.utils.lecture_pastille.vocabulaire import (
     qui_de,
     vocable_de,
 )
+from app.utils.nature_affaire import ACTUALITE
+from app.utils.valeurs import valeur
 from app.utils.visibility.defauts_affaire import (
     CODES_COPROPRIETAIRES,
     CONCERNE,
@@ -166,4 +168,34 @@ def lecture_ciblee(
     )
 
 
-__all__ = ["Lecture", "codes_destinataires", "lecture_ciblee", "lecture_de"]
+__all__ = ["apercu_de", "codes_destinataires", "lecture_ciblee", "lecture_de"]
+
+
+def apercu_de(
+    *,
+    categorie: Optional[str],
+    statut: Optional[str],
+    confidentiel: bool,
+    public_cible: Union[list[str], str, None],
+    perimetre_restreint: bool,
+    reserve_perimetre: bool,
+) -> ApercuLecture:
+    """L'aperçu d'une saisie (`POST /lectures/apercu`) : sa pastille, ses
+    Destinataires par défaut, et « lue du seul conseil » — périmètre mis à part.
+    PURE : le périmètre arrive tranché."""
+    actualite = valeur(categorie) == ACTUALITE
+    nature = dict(
+        actualite=actualite,
+        confidentiel=confidentiel,
+        public_cible=public_cible,
+        categorie=valeur(categorie),
+        statut=valeur(statut),
+    )
+    sans_perimetre = lecture_de(**nature, perimetre_restreint=False, reserve_perimetre=False)
+    return ApercuLecture(
+        lecture=lecture_de(
+            **nature, perimetre_restreint=perimetre_restreint, reserve_perimetre=reserve_perimetre
+        ),
+        destinataires_par_defaut=[] if actualite else defauts_de_nature(False, categorie, statut),
+        lue_du_seul_conseil=not sans_perimetre.profils,
+    )

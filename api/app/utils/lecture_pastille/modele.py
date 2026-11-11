@@ -38,3 +38,14 @@ class Lecture(BaseModel):
     par_defaut: bool
     #: Le piège d'une actualité : un périmètre choisi mais non réservé.
     avertissement: str
+
+
+class ApercuLecture(BaseModel):
+    """La pastille d'une SAISIE, et ce que sa nature décide sans choix du conseil."""
+
+    lecture: Lecture
+    #: Les Destinataires d'une affaire SANS choix du conseil — vide pour une actualité.
+    destinataires_par_defaut: list[str]
+    #: Personne d'autre que le conseil (et l'auteur) ne la lit, périmètre mis à part :
+    #: rien ne sort, ni sur le groupe ni au hall.
+    lue_du_seul_conseil: bool
