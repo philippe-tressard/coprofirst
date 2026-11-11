@@ -497,6 +497,272 @@
 				"destinataires_par_defaut": [],
 				"lue_du_seul_conseil": false
 			}
+		},
+		{
+			"saisie": {
+				"categorie": "",
+				"statut": "ouvert",
+				"confidentiel": false,
+				"public_cible": [],
+				"perimetre_cible": ["résidence"],
+				"reserve_perimetre": false
+			},
+			"perimetre_restreint": true,
+			"apercu": {
+				"lecture": {
+					"cle": "cs",
+					"icones": ["shield-check"],
+					"court": "CS",
+					"long": "Conseil syndical seul",
+					"titre": "Conseil syndical seul",
+					"profils": [],
+					"perimetre_reserve": false,
+					"hors_perimetre": [],
+					"du_perimetre": "",
+					"phrase": "Personne d’autre que le conseil syndical ne la lit, à part son auteur.",
+					"exclus": "",
+					"par_defaut": false,
+					"avertissement": ""
+				},
+				"destinataires_par_defaut": ["conseil_syndical"],
+				"lue_du_seul_conseil": true
+			}
+		},
+		{
+			"saisie": {
+				"categorie": "actualite",
+				"statut": "ouvert",
+				"confidentiel": false,
+				"public_cible": [],
+				"perimetre_cible": ["bat:1"],
+				"reserve_perimetre": false
+			},
+			"perimetre_restreint": true,
+			"apercu": {
+				"lecture": {
+					"cle": "tous",
+					"icones": ["users-round"],
+					"court": "Tous",
+					"long": "Tous",
+					"titre": "Tous",
+					"profils": ["occupants", "copro_bailleurs", "bailleurs", "locataires"],
+					"perimetre_reserve": false,
+					"hors_perimetre": ["occupants", "copro_bailleurs", "bailleurs", "locataires"],
+					"du_perimetre": "",
+					"phrase": "Lue par tous.",
+					"exclus": "",
+					"par_defaut": true,
+					"avertissement": "Le périmètre est choisi mais pas réservé : toute la copropriété la lira."
+				},
+				"destinataires_par_defaut": [],
+				"lue_du_seul_conseil": false
+			}
+		},
+		{
+			"saisie": {
+				"categorie": "actualite",
+				"statut": "ouvert",
+				"confidentiel": false,
+				"public_cible": [],
+				"perimetre_cible": ["résidence"],
+				"reserve_perimetre": false
+			},
+			"perimetre_restreint": true,
+			"apercu": {
+				"lecture": {
+					"cle": "tous",
+					"icones": ["users-round"],
+					"court": "Tous",
+					"long": "Tous",
+					"titre": "Tous",
+					"profils": ["occupants", "copro_bailleurs", "bailleurs", "locataires"],
+					"perimetre_reserve": false,
+					"hors_perimetre": ["occupants", "copro_bailleurs", "bailleurs", "locataires"],
+					"du_perimetre": "",
+					"phrase": "Lue par tous.",
+					"exclus": "",
+					"par_defaut": true,
+					"avertissement": "Le périmètre est choisi mais pas réservé : toute la copropriété la lira."
+				},
+				"destinataires_par_defaut": [],
+				"lue_du_seul_conseil": false
+			}
+		},
+		{
+			"saisie": {
+				"categorie": "actualite",
+				"statut": "ouvert",
+				"confidentiel": false,
+				"public_cible": []
+			},
+			"perimetre_restreint": false,
+			"apercu": {
+				"lecture": {
+					"cle": "tous",
+					"icones": ["users-round"],
+					"court": "Tous",
+					"long": "Tous",
+					"titre": "Tous",
+					"profils": ["occupants", "copro_bailleurs", "bailleurs", "locataires"],
+					"perimetre_reserve": false,
+					"hors_perimetre": ["occupants", "copro_bailleurs", "bailleurs", "locataires"],
+					"du_perimetre": "",
+					"phrase": "Lue par tous.",
+					"exclus": "",
+					"par_defaut": true,
+					"avertissement": ""
+				},
+				"destinataires_par_defaut": [],
+				"lue_du_seul_conseil": false
+			}
+		},
+		{
+			"saisie": {
+				"categorie": "panne",
+				"statut": "ouvert",
+				"confidentiel": false,
+				"public_cible": [],
+				"perimetre_cible": ["bat:1"],
+				"reserve_perimetre": false
+			},
+			"perimetre_restreint": true,
+			"apercu": {
+				"lecture": {
+					"cle": "copro_locataires",
+					"icones": ["key-round", "user"],
+					"court": "Copropriétaires + locataires",
+					"long": "Copropriétaires et locataires",
+					"titre": "Copropriétaires et locataires · locataires du périmètre seulement",
+					"profils": ["occupants", "copro_bailleurs", "locataires"],
+					"perimetre_reserve": false,
+					"hors_perimetre": ["occupants", "copro_bailleurs"],
+					"du_perimetre": "locataires",
+					"phrase": "Lue par les copropriétaires (occupants et bailleurs) dans toute la copropriété, et par les locataires du périmètre seulement.",
+					"exclus": "Pas les bailleurs (mandataires), ni les locataires hors du périmètre.",
+					"par_defaut": false,
+					"avertissement": ""
+				},
+				"destinataires_par_defaut": ["copropriétaires_occupants", "bailleurs", "locataires"],
+				"lue_du_seul_conseil": false
+			}
+		},
+		{
+			"saisie": {
+				"categorie": "panne",
+				"statut": "ouvert",
+				"confidentiel": false,
+				"public_cible": [],
+				"perimetre_cible": ["bat:1"],
+				"reserve_perimetre": true
+			},
+			"perimetre_restreint": true,
+			"apercu": {
+				"lecture": {
+					"cle": "copro_locataires",
+					"icones": ["key-round", "user"],
+					"court": "Copropriétaires + locataires",
+					"long": "Copropriétaires et locataires",
+					"titre": "Copropriétaires et locataires · du périmètre seulement",
+					"profils": ["occupants", "copro_bailleurs", "locataires"],
+					"perimetre_reserve": true,
+					"hors_perimetre": [],
+					"du_perimetre": "",
+					"phrase": "Lue par les copropriétaires et locataires, dans le périmètre seulement.",
+					"exclus": "Pas les bailleurs (mandataires), ni les personnes hors du périmètre.",
+					"par_defaut": false,
+					"avertissement": ""
+				},
+				"destinataires_par_defaut": ["copropriétaires_occupants", "bailleurs", "locataires"],
+				"lue_du_seul_conseil": false
+			}
+		},
+		{
+			"saisie": {
+				"categorie": "panne",
+				"statut": "ouvert",
+				"confidentiel": false,
+				"public_cible": [],
+				"perimetre_cible": ["résidence"],
+				"reserve_perimetre": false
+			},
+			"perimetre_restreint": true,
+			"apercu": {
+				"lecture": {
+					"cle": "copro_locataires",
+					"icones": ["key-round", "user"],
+					"court": "Copropriétaires + locataires",
+					"long": "Copropriétaires et locataires",
+					"titre": "Copropriétaires et locataires · locataires du périmètre seulement",
+					"profils": ["occupants", "copro_bailleurs", "locataires"],
+					"perimetre_reserve": false,
+					"hors_perimetre": ["occupants", "copro_bailleurs"],
+					"du_perimetre": "locataires",
+					"phrase": "Lue par les copropriétaires (occupants et bailleurs) dans toute la copropriété, et par les locataires du périmètre seulement.",
+					"exclus": "Pas les bailleurs (mandataires), ni les locataires hors du périmètre.",
+					"par_defaut": false,
+					"avertissement": ""
+				},
+				"destinataires_par_defaut": ["copropriétaires_occupants", "bailleurs", "locataires"],
+				"lue_du_seul_conseil": false
+			}
+		},
+		{
+			"saisie": {
+				"categorie": "question",
+				"statut": "en_cours",
+				"confidentiel": false,
+				"public_cible": [],
+				"perimetre_cible": ["résidence"],
+				"reserve_perimetre": false
+			},
+			"perimetre_restreint": true,
+			"apercu": {
+				"lecture": {
+					"cle": "concerne",
+					"icones": ["lock"],
+					"court": "Concerné",
+					"long": "Résident concerné",
+					"titre": "Résident concerné",
+					"profils": [],
+					"perimetre_reserve": false,
+					"hors_perimetre": [],
+					"du_perimetre": "",
+					"phrase": "Lue par la personne concernée — son auteur, ou celle pour qui elle a été saisie — et par le conseil syndical, personne d’autre.",
+					"exclus": "",
+					"par_defaut": false,
+					"avertissement": ""
+				},
+				"destinataires_par_defaut": ["concerné"],
+				"lue_du_seul_conseil": true
+			}
+		},
+		{
+			"saisie": {
+				"categorie": "question",
+				"statut": "en_cours",
+				"confidentiel": false,
+				"public_cible": []
+			},
+			"perimetre_restreint": false,
+			"apercu": {
+				"lecture": {
+					"cle": "concerne",
+					"icones": ["lock"],
+					"court": "Concerné",
+					"long": "Résident concerné",
+					"titre": "Résident concerné",
+					"profils": [],
+					"perimetre_reserve": false,
+					"hors_perimetre": [],
+					"du_perimetre": "",
+					"phrase": "Lue par la personne concernée — son auteur, ou celle pour qui elle a été saisie — et par le conseil syndical, personne d’autre.",
+					"exclus": "",
+					"par_defaut": false,
+					"avertissement": ""
+				},
+				"destinataires_par_defaut": ["concerné"],
+				"lue_du_seul_conseil": true
+			}
 		}
 	]
 }
