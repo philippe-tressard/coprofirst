@@ -78,6 +78,9 @@ class AffaireLieeLue(BaseModel):
     numero: str
     titre: str
     statut: str
+    #: L'état en clair — posé par `affaires_liees._lue` (`etat_affaire.libelle_etat`,
+    #: #2633) : ce module n'importe rien du projet.
+    statut_libelle: str = ""
     #: Résolue ou annulée — posé par `affaires_liees._lue` sur
     #: `etat_affaire.affaire_close` (#2511) : les clients ne le recalculent pas.
     close: bool
@@ -116,6 +119,9 @@ class ContratDeLAffaire(BaseModel):
     numero_contrat: Optional[str] = None
     frequence_type: Optional[str] = None
     frequence_valeur: Optional[int] = None
+    #: « ↺ Mensuel » — vide sans fréquence. POSÉ par la lecture
+    #: (`utils/frequence_contrat`) : ce module n'importe rien du projet (#2633).
+    frequence_libelle: str = ""
 
 
 class ChampsIntervenant(BaseModel):

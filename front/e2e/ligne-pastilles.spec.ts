@@ -17,6 +17,8 @@ const LIGNE = {
 	numero: 'TK-109008',
 	categorie: 'panne',
 	statut: 'en_cours',
+	//  L'état en clair est SERVI avec la ligne (`statut_libelle`, #2633).
+	statut_libelle: 'Chez le syndic',
 	priorite: 'haute',
 	//  ⚡ servie par l'API avec la ligne (`urgente`, #2508) : l'écran ne la recalcule pas.
 	urgente: true,

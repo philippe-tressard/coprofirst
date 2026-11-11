@@ -85,7 +85,8 @@ test('le conseil active le suivi d’une actualité en la corrigeant', async ({ 
 test('une actualité suivie montre son état, et sa Suite ne propose que trois états', async ({
 	page,
 }) => {
-	const suivie = { ...ACTUALITE, suivi_actualite: 'ouvert' };
+	//  L'état du suivi en clair est SERVI (`suivi_actualite_libelle`, #2633).
+	const suivie = { ...ACTUALITE, suivi_actualite: 'ouvert', suivi_actualite_libelle: 'Ouvert' };
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/tickets') return [suivie];
 		if (chemin === '/api/tickets/51') return suivie;

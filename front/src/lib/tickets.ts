@@ -220,10 +220,11 @@ export function termeAffaire(texte: string): string {
 	return texte.replace(/(^|\s)#+/g, '$1').trim();
 }
 
-/** Libellé affichable d'un statut, valeur brute à défaut (jamais vide). */
-export function statutTicketLabel(statut: string | undefined | null): string {
-	return STATUT_TICKET_LABELS[statut ?? ''] ?? statut ?? '';
-}
+//  🔴 `statutTicketLabel` est PARTIE le 11/11/2026 (#2633) : l'état en clair est
+//  SERVI partout où un écran le montre (`statut_libelle` de l'affaire, de la ligne
+//  du fil et des affaires liées, `nouveau_statut_libelle` d'une Suite,
+//  `etat_cible_libelle` d'un compte rendu — `api/app/utils/etat_affaire.libelle_etat`),
+//  que l'app iOS lit aussi. 🔒 `npm run lint:regles-partagees` refuse son retour.
 
 /**
  * Au nom de qui le conseil syndical ouvre un ticket.

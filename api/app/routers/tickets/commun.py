@@ -43,29 +43,13 @@ from app.schemas import AffaireLieeLue, ContratDeLAffaire, TicketEvolutionRead, 
 from app.utils.archivage import est_archivable, perime_le
 from app.utils.lecture import lire_objet
 from app.utils.corrections_texte import expliciter_ancienne
+from app.utils.frequence_contrat import frequence_libelle
 from app.utils.photos import parse_photos
 from .lecture_groupee import LectureGroupee, lecture_groupee
 
-#: Libellé lisible de chaque état — e-mails, notifications, fil d'évolutions.
-#:
-#: Les quatre premières clés sont les états du workflow (`StatutTicket`) ;
-#: `fermé` n'en est plus un depuis le 17/08/2026 (#415, migration 0149) mais
-#: reste **affichable** : le fil de tickets anciens raconte « Ouvert → Fermé »,
-#: et une ligne d'histoire ne se réécrit pas. Sans ce libellé, ces évolutions
-#: afficheraient la valeur brute.
-#:
-#: Un couvercle vérifie que ce dictionnaire couvre l'énumération et rien de
-#: fantaisiste : `api/tests/test_statuts_tickets.py`.
-STATUT_LABELS = {
-    "ouvert": "Ouvert",
-    "en_ag": "À l’AG",
-    "en_cours": "Chez le syndic",
-    "chez_prestataire": "Chez le prestataire",
-    "résolu": "Résolu",
-    "annulé": "Annulé",
-    "fermé": "Fermé",  # historique seulement — cf. STATUTS_TICKET_HISTORIQUES
-    "publie": "Publiée",  # sans cycle — une actualité (#1091)
-}
+#: La table des libellés d'état vit avec sa règle (`utils/etat_affaire`, #2633) :
+#: ré-exportée ici pour les courriels, les notifications et le fil, qui la lisent.
+from app.utils.etat_affaire import STATUT_LABELS  # noqa: F401  (ré-export volontaire)
 
 
 def pieces_du_ticket(ticket) -> list[str]:
@@ -334,6 +318,7 @@ def contrat_de_l_affaire(
         numero_contrat=c.numero_contrat if conseil else None,
         frequence_type=c.frequence_type,
         frequence_valeur=c.frequence_valeur,
+        frequence_libelle=frequence_libelle(c.frequence_type, c.frequence_valeur),
     )
 
 

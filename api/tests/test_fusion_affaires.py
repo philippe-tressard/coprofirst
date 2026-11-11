@@ -140,6 +140,7 @@ def test_une_candidate_porte_la_forme_d_une_affaire_nommee(trois):
         "titre",
         "statut",
         "close",  # servi (#2511) : le choix d'une affaire ne le recalcule pas
+        "statut_libelle",  # servi (#2633) : l'écran ne compose plus le libellé
         "cree_le",
         "fusionnee",
         "fusionnable",

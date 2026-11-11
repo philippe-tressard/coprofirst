@@ -5,7 +5,7 @@ Voir `__init__.py` pour la règle de découpage.
 """
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 from sqlmodel import Session, select
 from app.auth.deps import get_current_user, require_cs_or_admin
 from app.database import get_session
@@ -26,6 +26,7 @@ from app.utils.annuaire import (
     rapprocher_les_saisies,
     reconcilier_membres,
 )
+from app.utils.etages import etage_label
 from app.utils.syndic import nom_du_syndic, source_du_nom
 from typing import Literal, Optional
 
@@ -198,6 +199,12 @@ class Rapprochement(BaseModel):
     #: Le NUMÉRO du bâtiment (« A »).
     batiment_nom: Optional[str] = None
     etage: Optional[int] = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def etage_libelle(self) -> str:
+        """« RDC », « 2ème étage » — comme la fiche du membre (#2633)."""
+        return etage_label(self.etage, suffixe=True)
 
 
 @router.get("/annuaire/rapprochement", response_model=Rapprochement)

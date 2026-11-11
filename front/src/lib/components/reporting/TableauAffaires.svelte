@@ -45,7 +45,7 @@
 	import { ETATS_VISITE } from '#lib/entretien-periodique.ts';
 	import { motifEvolution, TEINTE_AGE } from '#lib/reporting.ts';
 	import { fmtDate } from '#lib/date.ts';
-	import { lienTicket, statutTicketLabel } from '#lib/tickets.ts';
+	import { lienTicket } from '#lib/tickets.ts';
 
 	export let affaires: AffaireOuverte[];
 	/** Le mode « Relancer le syndic » : une case par ligne, et les relances envoyées. */
@@ -149,7 +149,7 @@
 					<td class="affaire">
 						<a href={lienTicket(a.id)} class="titre">{a.titre}</a>
 						<span class="vignettes">
-							<BadgeEtatAffaire statut={a.statut} compact />
+							<BadgeEtatAffaire statut={a.statut} libelle={a.libelle_statut} compact />
 							<PastilleLecture ticket={a} />
 						</span>
 						{#if a.fusionnees.length}
@@ -184,7 +184,7 @@
 											teinte="badge-blue"
 											compact
 											title="État posé à la validation du compte rendu"
-											>→ {statutTicketLabel(crs.get(a.id)?.etat_cible)}</Badge
+											>→ {crs.get(a.id)?.etat_cible_libelle}</Badge
 										>
 									{/if}
 									{#if marques.get(a.id)}

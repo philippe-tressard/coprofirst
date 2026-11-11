@@ -119,7 +119,12 @@
 					<span class="liee-titre clamp-2">{l.titre}</span>
 					<span class="liee-meta">
 						<span class="liee-suivi"
-							><BadgeEtatAffaire statut={l.statut} fusionnee={l.fusionnee} compact /></span
+							><BadgeEtatAffaire
+								statut={l.statut}
+								libelle={l.statut_libelle}
+								fusionnee={l.fusionnee}
+								compact
+							/></span
 						>
 						<span class="liee-date">créée le {fmtDate(l.cree_le)}</span>
 					</span>

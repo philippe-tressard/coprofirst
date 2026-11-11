@@ -11,6 +11,7 @@ from sqlalchemy import func
 from sqlmodel import select
 
 from app.models.core import Idee, OptionSondage, PetiteAnnonce, Sondage, VoteIdee, VoteSondage
+from app.utils.etat_affaire import libelle_etat
 from app.utils.liens import lien_element, lien_sondage
 from app.utils.montants import montant_fr
 from app.utils.photos import parse_photos
@@ -162,6 +163,8 @@ def _collecter_annonces(ctx: ContexteFlux) -> list[FluxItem]:
                     "annonce_id": a.id,
                     "type_annonce": a.type_annonce,
                     "statut": a.statut,
+                    #  En clair, comme le badge d'état le rend (#2633).
+                    "statut_libelle": libelle_etat(a.statut),
                     "prix": a.prix,
                     #  Le nom, comme la page de l'annonce : « coordonnées »
                     #  ne règle que l'adresse (`adresse_de_contact`, #2145).
@@ -205,6 +208,7 @@ def _collecter_idees(ctx: ContexteFlux) -> list[FluxItem]:
                 meta={
                     "idee_id": idee.id,
                     "statut": idee.statut,
+                    "statut_libelle": libelle_etat(idee.statut),
                     "assiste_ia": idee.assiste_ia,
                     "nb_votes": nb_votes,
                     "resume": strip_html(idee.description),

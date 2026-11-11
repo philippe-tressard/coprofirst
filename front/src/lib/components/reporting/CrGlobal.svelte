@@ -17,7 +17,7 @@
 	import type { AffaireOuverte, CompteRenduPoint } from '#lib/api/index.ts';
 	import { fmtDatetime, fmtTime } from '#lib/date.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
-	import { lienTicket, statutTicketLabel } from '#lib/tickets.ts';
+	import { lienTicket } from '#lib/tickets.ts';
 	import {
 		ETATS_POINT,
 		GROUPES_PRESENTS,
@@ -83,7 +83,7 @@
 				{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge
 					>{/if}
 				{#if cr.etat_cible}<Badge teinte="badge-blue" compact title="À la validation"
-						>→ {statutTicketLabel(cr.etat_cible)}</Badge
+						>→ {cr.etat_cible_libelle}</Badge
 					>{/if}
 				{#if marque}<Badge teinte="badge-orange" compact>{marque}</Badge>{/if}
 			</p>

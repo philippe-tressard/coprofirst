@@ -40,6 +40,8 @@ const affaire = (id: number, extra: Record<string, unknown> = {}) => ({
 	peut_changer_etat: true,
 	peut_repondre: true,
 	peut_modifier: false,
+	//  ✏️ Le crayon : l'auteur le garde, affaire engagée ou non (`peut_corriger`, #2633).
+	peut_corriger: true,
 	cree_le: '2026-10-20T10:00:00',
 	mis_a_jour_le: '2026-10-20T10:00:00',
 	perimetre_cible: [],

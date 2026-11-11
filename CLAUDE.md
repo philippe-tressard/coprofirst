@@ -309,9 +309,9 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   `app/utils/` (ou un prédicat d'`auth/`), servis en champ que le front LIT — jamais une
   fonction de `#lib` seule (`libelle_logement`, #2500). Chacune se déclare dans
   `front/scripts/check-regles-partagees.regles.mjs` ; celles que le front calcule encore y
-  portent leur ticket de migration et sa raison. L'inventaire, et ce qui reste au front par
-  décision (tables générées par l'app, formats d'une valeur typée), se lit dans #2501.
-  🔒 `npm run lint:regles-partagees`.
+  portent leur ticket de migration, OUVERT, et sa raison. L'inventaire, et ce qui reste au
+  front par décision (tables générées par l'app, formats d'une valeur typée), se lit dans #2501.
+  🔒 `npm run lint:regles-partagees` ; le porteur fermé, le point 25 du pré-check (#2633).
 
 ### Schémas Pydantic
 - Trois formes par entité exposée : `EntiteCreate` (entrée, sans id ni
@@ -692,7 +692,8 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       local, même correct (`npm run lint:html` le refuse)
 - [ ] Accessibilité : `role`, `tabindex`, `aria-label`, `on:keydown`
 - [ ] Droits : jamais recomposés dans un écran — `$isCS` (il **inclut** admin),
-      `$isProprioOuCS`, `aRole(u, …)`, `peutEditer`/`peutCommenter`. Ils l'étaient
+      `$isProprioOuCS`, `aRole(u, …)`, ou le geste SERVI avec l'objet (`peut_*` ; le
+      crayon d'une affaire : `peut_corriger`, #2633). Ils l'étaient
       **22 fois** avant #1041 (`npm run lint:droits` le refuse)
 - [ ] Un geste d'écriture n'est offert qu'aux rôles que sa route accepte : le prédicat de
       l'écran ne peut pas être plus large que la dépendance de la route (la fiche de la
@@ -962,6 +963,14 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   deux sens** — un clone ajouté, ou un retiré sans baisser `PLAFOND_CLONES`. Les
   six qui restent sont des déclarations que le langage force à répéter (blocs
   d'imports, signatures), nommées dans l'en-tête du script.
+- 🔒 **Un arbre déjà jugé vert ne se rejoue pas** (#2632) : le job `arbre` saute un job
+  requis de `ci.yml` quand une exécution PRÉCÉDENTE le prouve, relue par l'API — même
+  fichier de workflow et même dépôt, job `success` réellement joué (pytest compris),
+  arbre de son commit RECALCULÉ égal à `HEAD^{tree}`, et pour une PR la base d'alors (lue
+  au journal `activity`) ancêtre de la tête. L'artefact `arbre-vert-<job>-<arbre>` n'est
+  qu'un index, jamais une preuve ; dans le doute, le job joue. La suite PostgreSQL et
+  CodeQL n'en dépendent pas. Un job requis neuf passe par lui ; 🔒
+  `test_ci_arbre_deja_vert.py`, règles et cas forgés : `scripts/ci/arbre_deja_vert.py`.
 - 🔒 **CodeQL juge dès la PR vers `dev`** (#2571) : la configuration par défaut de GitHub
   ne garde que `main` ; `codeql-avant-dev.yml` refait l'analyse sans l'envoyer et ne bloque
   que les alertes NEUVES face à la dernière analyse de `main`, au seuil du contrôle de GitHub

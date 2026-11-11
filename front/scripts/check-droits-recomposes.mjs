@@ -6,15 +6,17 @@
  *
  * ## Pourquoi ce contrôle (#1041, audit du 19/09/2026)
  *
- * `#lib/droits.ts` et `#lib/stores/auth.ts` sont la source déclarée de « qui peut
- * quoi » côté écran. Les écrans la recomposaient quand même — **vingt-deux fois**,
+ * `#lib/stores/auth.ts` et les gestes SERVIS avec chaque objet (`peut_*`) sont la
+ * source déclarée de « qui peut quoi » côté écran — `#lib/droits.ts` l'était aussi,
+ * jusqu'à ce que son dernier droit, le crayon d'une affaire, soit servi
+ * (`peut_corriger`, #2633). Les écrans la recomposaient quand même — **vingt-deux fois**,
  * de quatre façons :
  *
  * | Forme | Ce qu'elle dit |
  * |---|---|
  * | `$isCS \|\| $isAdmin` | une **tautologie** : `isCS` inclut déjà `admin` (`auth.ts`). Celui qui l'écrit ne connaît pas la définition de ce qu'il appelle |
  * | `['propriétaire','conseil_syndical','admin'].includes(r)` | la cascade littérale, écrite deux fois à l'identique |
- * | `objet.auteur_id === userId` | `peutEditer` réécrite à la main, sans le « saisi pour » ni l'admin |
+ * | `objet.auteur_id === userId` | le droit d'éditer réécrit à la main, sans le « saisi pour » ni l'admin |
  * | `userRoles(u).includes('admin')` | `aRole(u, 'admin')` existe et prend un `User` |
  *
  * 🔴 **Aucune n'était fausse au moment où elle a été écrite.** C'est le motif :
@@ -26,12 +28,12 @@
  * ⚠️ **Le front n'est jamais le gardien d'un droit** : le serveur tranche, et
  * `test_autorisation.py` le vérifie. Mais l'écran doit dire **la même chose** que
  * lui, ni plus (un bouton qui finit en 403), ni moins (une capacité introuvable).
- * C'est écrit en toutes lettres dans `droits.ts`, et c'est ce que ce contrôle tient.
+ * C'est ce que ce contrôle tient.
  *
  * ## Ce qu'il ne regarde PAS
  *
- * Les trois fichiers qui DÉFINISSENT ces règles — `stores/auth.ts`, `droits.ts`,
- * `roles.ts`. Ils ont le droit d'écrire la cascade : c'est leur travail, et c'est
+ * Les deux fichiers qui DÉFINISSENT ces règles — `stores/auth.ts` et `roles.ts`.
+ * Ils ont le droit d'écrire la cascade : c'est leur travail, et c'est
  * même tout leur contenu.
  */
 import { readFileSync } from 'node:fs';
@@ -44,7 +46,7 @@ const ICI = dirname(fileURLToPath(import.meta.url));
 const SRC = join(ICI, '..', 'src');
 
 /** Les fichiers qui DÉFINISSENT les droits — la cascade y est chez elle. */
-const SOURCES = ['lib/stores/auth.ts', 'lib/droits.ts', 'lib/roles.ts'];
+const SOURCES = ['lib/stores/auth.ts', 'lib/roles.ts'];
 
 /**
  * Chaque forme interdite, avec ce qu'il faut appeler à la place.
@@ -76,7 +78,7 @@ const FORMES = [
 		nom: 'appartenance recomposée sur `auteur_id`',
 		motif: /\.auteur_id\s*===/,
 		remede:
-			'appeler `peutEditer` de `#lib/droits`, ou lire le geste servi (`peut_*`). Une comparaison ' +
+			'lire le geste servi avec l’objet (`peut_*` — le crayon : `peut_corriger`). Une comparaison ' +
 			'directe oublie le champ « saisi pour » : le crayon disparaît pour le résident ' +
 			'au nom de qui le conseil a déposé la demande.',
 	},
@@ -107,11 +109,7 @@ const CAS = [
 	['{#if idee.auteur_id === currentUserId}', 'appartenance recomposée sur `auteur_id`'],
 	["userRoles(u).includes('admin')", '`userRoles(...).includes(...)`'],
 ];
-const SAINS = [
-	'{#if $isCS}',
-	'peutEditer(ticket, $currentUser?.id, $isAdmin)',
-	"aRole(u, 'admin')",
-];
+const SAINS = ['{#if $isCS}', 'ticket.peut_corriger ?? false', "aRole(u, 'admin')"];
 
 let autotestOk = true;
 for (const [source, attendu] of CAS) {

@@ -31,6 +31,7 @@ from app.models.core import (
 from app.models.synthese import VALIDEE
 from app.utils.nature_affaire import ACTUALITE
 from app.utils.dates_fr import duree_jhm
+from app.utils.etat_affaire import libelle_etat
 from app.utils.affaire_absorbee import pas_absorbee
 from app.utils.archivage import est_archivable, seuil_archivage_jours
 from app.utils.photos import parse_photos
@@ -162,6 +163,7 @@ def _carte_mise_a_jour(ctx: ContexteFlux, evol, tk, *, ident, detail, icon, stat
         meta={
             **_meta_ticket(ctx, tk),
             "statut": statut,
+            "statut_libelle": libelle_etat(statut),
             **pieces_de_evolution(evol, tk),
             **_derniere_suite(ctx, evol),
         },
@@ -217,6 +219,7 @@ def _carte_resolue(ctx: ContexteFlux, evol, tk) -> FluxItem:
         meta={
             **_meta_ticket(ctx, tk),
             "statut": "résolu",
+            "statut_libelle": libelle_etat("résolu"),
             #  Le nom dit désormais ce que la valeur EST : plus des heures
             #  décimales, mais `00j23h54'`. Aucun écran ne la lisait — le
             #  renommer maintenant évite qu'un futur lecteur croie à un nombre.
@@ -245,6 +248,7 @@ def _carte_ouverte(ctx: ContexteFlux, _evol, tk) -> FluxItem:
         meta={
             **_meta_ticket(ctx, tk),
             "statut": tk.statut,
+            "statut_libelle": libelle_etat(tk.statut),
             "photos_urls": parse_photos(tk.photos_urls),
             "fichiers_urls": parse_photos(tk.fichiers_urls),
         },

@@ -257,79 +257,26 @@ export function relire<T>(dependance: unknown, calcul: () => T): T {
 	return calcul();
 }
 
-/**
- * Les numéros de téléphone d'un champ libre — découpés, nettoyés, DÉDOUBLONNÉS.
- *
- * 🔴 Écrit deux fois avant le 03/09/2026 : `splitTels()` dans les prestataires,
- * et `m.telephone.split(',').filter((t) => t.trim())` recopié dans l'annuaire.
- * Deux écritures de la même notion, qui auraient divergé au premier changement
- * de séparateur.
- *
- * ⚠️ Le dédoublonnage est ce qui manquait aux deux, et il règle DEUX choses à la
- * fois :
- *
- * 1. **le rendu** — un numéro saisi deux fois dans le même champ s'affichait
- *    deux fois, sans que personne y voie autre chose qu'une saisie maladroite ;
- * 2. **la clé de liste** — sans unicité, `{#each … as tel (tel)}` fait lever
- *    `each_key_duplicate` à Svelte et **l'écran entier tombe**. C'est pourquoi
- *    ces cinq boucles étaient restées sans clé : la corriger par la forme aurait
- *    été plus dangereux que le défaut. Dédoublonner à la SOURCE rend la clé
- *    sûre, au lieu de choisir entre les deux.
- */
-export function telephonesDe(champ: string | null | undefined): string[] {
-	if (!champ) return [];
-	const vus = new Set<string>();
-	for (const brut of champ.split(',')) {
-		const numero = brut.trim();
-		if (numero) vus.add(numero);
-	}
-	return [...vus];
-}
+//  🔴 `telephonesDe` est PARTIE le 11/11/2026 (#2633) : les numéros d'un champ
+//  téléphone sont SERVIS découpés et dédoublonnés (`telephones` — annuaire, fiche
+//  d'un prestataire ; `api/app/utils/telephones.py`), que l'app iOS lit aussi.
+//  🔒 `npm run lint:regles-partagees` refuse son retour.
 
 //  🔴 `lotTypeLabel` et `lotTypeComplet` sont PARTIS le 04/11/2026 (#2507) : le type
 //  d'un lot en clair est SERVI par l'API (`libelle_type`, `libelle_type_complet`,
 //  `libelle_nature` — `api/app/utils/libelles_lot.py`), que l'app iOS lit aussi.
 //  🔒 `npm run lint:regles-partagees` refuse leur retour.
 
-/**
- * Le libellé d'un étage — « RDC », « 1er », « 2ème », « SS 1 ».
- *
- * 🔴 Écrit **six fois** dans trois écrans, en **trois rendus différents** (#835,
- * 08/09/2026) :
- *
- * | Écran | Rendu d'un sous-sol | Rendu du 2ᵉ |
- * |---|---|---|
- * | `mon-lot` (4 fois) | `-1` | `2` |
- * | `profil` | `SS 1` | `2ème étage` |
- * | `tableau-de-bord` | `-1` | `2ème` |
- *
- * Le même lot s'affichait donc « -1 » sur un écran et « SS 1 » sur un autre. Ce
- * n'est pas une variante de présentation assumée : c'est ce que trois personnes
- * ont écrit séparément en croyant chacune être seule.
- *
- * ⚠️ Le **suffixe** est laissé à l'appelant (`suffixe: false` par défaut). Une
- * ligne de définition affiche « Étage : 2ème » — répéter le mot dans la valeur
- * donnerait « Étage : 2ème étage ». Un fil de texte, lui, en a besoin. C'est la
- * seule divergence légitime des six, et elle devient un paramètre plutôt qu'une
- * copie.
- *
- * ⚠️ `null` et `undefined` rendent une chaîne **vide**, pas « — » : l'appelant
- * décide de ce qu'il affiche à la place, et plusieurs entourent déjà la valeur
- * d'un `{#if}`.
- */
-export function etageLabel(
-	etage: number | null | undefined,
-	{ suffixe = false }: { suffixe?: boolean } = {},
-): string {
-	if (etage === null || etage === undefined) return '';
-	if (etage === 0) return 'RDC';
-	if (etage < 0) return `SS ${Math.abs(etage)}`;
-	const rang = etage === 1 ? '1er' : `${etage}ème`;
-	return suffixe ? `${rang} étage` : rang;
-}
+//  🔴 `etageLabel` est PARTIE le 11/11/2026 (#2633) : l'étage en clair est SERVI
+//  (`etage_libelle`, `etage_libelle_complet` d'un lot, `lot_etage_libelle` d'un
+//  bail, `etage_libelle` d'un membre et d'un rapprochement — `api/app/utils/etages.py`),
+//  que l'app iOS lit aussi. Ce qui en reste ici : les bornes de saisie.
+//  🔒 `npm run lint:regles-partagees` refuse son retour, `lint:etage-libelle` sa recopie.
 
 /**
- * L'étage à AFFICHER pour un membre : le LOT fait autorité, la saisie prend le relais.
+ * Le logement de RÉFÉRENCE d'un compte — celui dont l'étage s'affiche pour lui :
+ * le LOT fait autorité, la saisie prend le relais. Son étage, en nombre et en
+ * clair (`etage_libelle_complet`), se lit sur lui (#2633 ; `etageDuLot` avant).
  *
  * Arbitré par Philippe le 09/09/2026 : *« préférer celle du Lot »*. L'étage d'un
  * lot vient du classeur de la copropriété ; celui que le résident saisit est un
@@ -348,14 +295,13 @@ export function etageLabel(
  * suppression : vingt-six lignes décrivant une fonction absente et citant un test
  * effacé. C'est ce commentaire-ci qui les remplace.
  *
- * ⚠️ `0` est un étage — le rez-de-chaussée. D'où `!= null` et jamais un test de
- * vérité, qui effacerait le RDC.
+ * ⚠️ `0` est un étage — le rez-de-chaussée. L'appelant lit `reference?.etage ?? null`,
+ * jamais un test de vérité, qui effacerait le RDC.
  */
-export function etageDuLot(
-	lots: { est_logement_de_reference?: boolean; etage?: number | null }[],
-): number | null {
-	const reference = lots.find((l) => l.est_logement_de_reference);
-	return reference?.etage ?? null;
+export function logementDeReference<L extends { est_logement_de_reference?: boolean }>(
+	lots: L[],
+): L | undefined {
+	return lots.find((l) => l.est_logement_de_reference);
 }
 
 //  🔴 `libelleLogement` (« Bât. 4, T4, 2ème ») a quitté ce fichier le 03/11/2026
@@ -395,12 +341,14 @@ export const ETAGE_MAX = 50;
  */
 export function localisationMembre(m: {
 	batiment_nom?: string | null;
-	etage?: number | null;
+	/** « RDC », « 2ème étage » — SERVI (`etage_libelle`, #2633), vide sans étage. */
+	etage_libelle?: string | null;
 }): string {
 	const parts = [];
 	if (m.batiment_nom) parts.push(`Bât. ${m.batiment_nom}`);
-	//  ⚠️ `!= null` et non un test de vérité : `0` est le rez-de-chaussée.
-	if (m.etage != null) parts.push(etageLabel(m.etage, { suffixe: true }));
+	//  Vide sans étage, jamais pour le rez-de-chaussée (« RDC ») : le serveur lit
+	//  `0` comme un étage (`etage_label`).
+	if (m.etage_libelle) parts.push(m.etage_libelle);
 	return parts.join(' — ');
 }
 
