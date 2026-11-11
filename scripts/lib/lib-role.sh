@@ -34,6 +34,17 @@
 ROLE_TABLE="PhT-RB5:rpi1:192.168.1.222
 PhT-RB5i2:rpi2:192.168.1.223"
 
+#: Le compte d'exploitation qui se connecte aux nœuds depuis le poste (`standards/03`
+#: §8 : jamais un autre). Un script du poste écrit `$(noeud_ssh rpi1)`, jamais l'adresse
+#: recopiée — c'est le conducteur de MEP qui l'a demandé (#2631).
+COMPTE_EXPLOITATION="${COMPTE_EXPLOITATION:-ptressard}"
+
+# ── rôle → adresse SSH « compte@ip » ─────────────────────────────────────────
+noeud_ssh() {
+  local ip; ip=$(role_ip "${1:-}")
+  [ -n "$ip" ] && echo "$COMPTE_EXPLOITATION@$ip" || echo ""
+}
+
 # ── hostname → rôle ──────────────────────────────────────────────────────────
 role_of() {
   local want="$1" host role ip
@@ -82,6 +93,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   check "hostname inconnu → vide"   ""              "$(role_of PhT-RB9)"
   check "hostname vide → vide"      ""              "$(role_of '')"
   check "rôle rpi1 → IP"            "192.168.1.222" "$(role_ip rpi1)"
+  check "rôle rpi2 → adresse SSH"   "ptressard@192.168.1.223" "$(noeud_ssh rpi2)"
+  check "rôle inconnu → adresse vide" "" "$(noeud_ssh rpi9)"
   check "rôle rpi2 → IP"            "192.168.1.223" "$(role_ip rpi2)"
   check "rôle inconnu → IP vide"    ""              "$(role_ip rpi9)"
   check "peer de rpi1"              "rpi2"          "$(role_peer rpi1)"
