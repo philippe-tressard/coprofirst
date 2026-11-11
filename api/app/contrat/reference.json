@@ -1,5 +1,5 @@
 {
-"version": "1.26.0",
+"version": "1.25.0",
 "empreinte": "1b61aedbf35516a41e4fec16bc90bb18030d74b9b93e46cbea11f51ee7204c49",
 "operations": {
   "GET /acces/admin/choix-acces": {"deprecie": false, "entree": [], "reponse": {"$": "dictionnaire", "$.{}": "objet", "$.{}.codes": "liste", "$.{}.codes[]": "string", "$.{}.suit_le_lot": "boolean"}},
