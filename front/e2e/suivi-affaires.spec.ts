@@ -98,6 +98,9 @@ const RELEVE: SuiviAffaires = {
 			age_jours: 106,
 			anciennete: 'ancienne',
 			perimetre_cible: ['bâtiment C'],
+			//  Le badge 🔹, SERVI (`perimetre_libelle`, #2633) — un code hors de l'arbre
+			//  se rend tel quel (`perimetre_label_un`).
+			perimetre_libelle: 'bâtiment C',
 			jours_sans_avancee: 40,
 			a_relancer: true,
 			relances: [],
@@ -185,7 +188,7 @@ test('le suivi montre toutes les affaires ouvertes, leur nombre et leur réparti
 	await expect(lignes.nth(0).locator('.ia-signe')).toBeVisible();
 	await expect(lignes.nth(1).locator('.ia-signe')).toHaveCount(0);
 	//  Le périmètre se dit, sauf celui par défaut (règle 4).
-	await expect(lignes.nth(1)).toContainText('bâtiment C');
+	await expect(lignes.nth(1).locator('.badge-perimetre')).toContainText('bâtiment C');
 	await expect(lignes.nth(0).locator('.badge-perimetre')).toHaveCount(0);
 	//  En mode Suivre, ni case ni colonne de relances : la maquette D2, telle quelle.
 	await expect(page.locator('table.affaires input[type=checkbox]')).toHaveCount(0);

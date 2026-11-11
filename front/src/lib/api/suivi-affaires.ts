@@ -32,6 +32,8 @@ export interface AffaireOuverte {
 	anciennete: 'ancienne' | 'moyenne' | 'recente';
 	/** Les codes du périmètre — `BadgePerimetre` tait celui par défaut. */
 	perimetre_cible: string[];
+	/** Le badge 🔹, SERVI (`perimetre_libelle`, #2633) — `""` pour le défaut. */
+	perimetre_libelle?: string;
 	/** Depuis la dernière avancée — le repère de la relance. */
 	jours_sans_avancee: number;
 	/** Au-delà du délai de relance : cochée d'office. */

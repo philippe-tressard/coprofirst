@@ -17,7 +17,9 @@
  *  valeurs vides sont écartées ICI, une fois — sinon chaque écran testerait
  *  ses champs avant de les passer.
  */
-import { perimetreLabel, stripHtml } from '#lib/utils.ts';
+import { derived } from 'svelte/store';
+import { libellePerimetre } from '#lib/apercu-perimetre.ts';
+import { stripHtml } from '#lib/utils.ts';
 
 /**
  *  La nature d'un commentaire, telle que le modele la lit.
@@ -55,10 +57,12 @@ export function contexteAssistant(
 	return { entite, contexte };
 }
 
-/** Le périmètre, rendu comme l'écran le lit — jamais les codes bruts. */
-export function perimetreContexte(codes: string[] | null | undefined): string {
-	return codes && codes.length ? perimetreLabel(codes) : '';
-}
+/** Le périmètre, rendu comme l'écran le lit — jamais les codes bruts. NOMMÉ par le
+ *  serveur (`POST /perimetres/libelle`, #2633) : `$perimetreContexte(codes)`. */
+export const perimetreContexte = derived(
+	libellePerimetre,
+	(nommer) => (codes: string[] | null | undefined) => nommer(codes, 'assistant'),
+);
 
 /** Le geste a-t-il quelque chose à retravailler ? — désactivé si TOUT est vide. */
 export function peutSolliciter(

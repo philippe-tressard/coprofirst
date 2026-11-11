@@ -44,6 +44,7 @@ from app.utils.lecture_pastille.modele import Lecture
 from app.utils.lecture_pastille.objets import lecture_du_ciblage
 from app.utils.nouveaute import est_nouveau
 from app.schemas_communaute import ReponseCommunauteRead
+from app.utils.perimetres.servi import AvecPerimetreLibelle
 
 router = APIRouter(prefix="/annonces", tags=["annonces"])
 
@@ -152,7 +153,7 @@ def est_gratuite(annonce: PetiteAnnonce) -> bool:
     return annonce.prix is None and annonce.type_annonce == TypeAnnonce.don
 
 
-class AnnonceRead(BaseModel):
+class AnnonceRead(AvecPerimetreLibelle):
     """Une petite annonce — ce que rendent la liste, la création et la correction
     (#2506 : déclarée `{}` jusque-là, l'app la relisait en miroir du front)."""
 

@@ -23,9 +23,7 @@
 		type Equipement,
 		type FormulaireEquipement,
 	} from '#lib/equipements.ts';
-	import { perimetreLabel } from '#lib/perimetres/index.ts';
-	import { perimetresStore } from '#lib/stores/perimetres.ts';
-	import { relire, fmtNombre } from '#lib/utils.ts';
+	import { fmtNombre } from '#lib/utils.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import type { UsagesEquipement } from '#lib/api/index.ts';
 
@@ -52,9 +50,8 @@
 		libelle: equipement.libelle,
 		abrege: equipement.code.toUpperCase(),
 	};
-	$: lieux = relire($perimetresStore, () =>
-		equipement.perimetres.length ? perimetreLabel(equipement.perimetres) : '',
-	);
+	//  Où il se trouve — SERVI avec l'équipement (`perimetres_libelle`, #2633).
+	$: lieux = equipement.perimetres_libelle ?? '';
 	$: total = usages ? usages.contrats + usages.affaires + usages.prestataires : null;
 </script>
 

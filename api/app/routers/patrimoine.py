@@ -32,6 +32,7 @@ from app.utils import horloge
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from app.auth.deps import get_current_user, require_admin
@@ -67,6 +68,8 @@ from app.utils.perimetres.niveaux import (
     trop_profonds,
 )
 from app.utils.equipements import retirer_liens_du_perimetre
+from app.utils.perimetres.libelles import perimetre_badge
+from app.utils.perimetres.servi import libelle_complet
 from app.utils.recuperer import ou_404
 
 from app.routers.patrimoine_schemas import (  # noqa: F401 — ré-exportés (patrimoine_branche, tests)
@@ -312,6 +315,31 @@ def lister_perimetres(
     noeuds = session.exec(select(Perimetre)).all()
     return _en_lecture(
         list(noeuds), _codes_cites(session), types_fixes_par_code(session), code_par_defaut()
+    )
+
+
+class LibellePerimetreEntree(BaseModel):
+    """Une sélection de périmètres — celle d'une saisie en cours."""
+
+    codes: list[str] = Field(default_factory=list, max_length=64)
+
+
+class LibellePerimetre(BaseModel):
+    #: Le lieu nommé, MÊME par défaut (`perimetre_label`) — vide sans code.
+    libelle: str
+    #: Le badge 🔹 : vide pour le périmètre par défaut (`perimetre_badge`).
+    badge: str
+
+
+@router.post("/libelle", response_model=LibellePerimetre)
+def nommer_une_selection(
+    corps: LibellePerimetreEntree,
+    _: Utilisateur = Depends(get_current_user),
+):
+    """Comment se nomme cette sélection (#2633) — l'aperçu d'une saisie : le
+    formulaire ne compose plus le lieu, il le demande (arbitrage du 11/11/2026)."""
+    return LibellePerimetre(
+        libelle=libelle_complet(corps.codes), badge=perimetre_badge(corps.codes)
     )
 
 

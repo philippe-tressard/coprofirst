@@ -22,7 +22,7 @@
 	import { SECTIONS_LIBELLE, sectionPresente, type Etat } from '#lib/entites/types.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { pliageDe, requisDe } from '#lib/pliage.ts';
-	import { perimetreLabel } from '#lib/perimetres/index.ts';
+	import { libellePerimetre } from '#lib/apercu-perimetre.ts';
 	import { slug } from '#lib/texte.ts';
 	import {
 		ABREVIATION_MAX,
@@ -41,7 +41,8 @@
 
 	//  Le code que le serveur posera — même règle que lui (`en_slug`, tirets bas).
 	$: codePropose = code ?? slug(form.libelle, '_');
-	$: perimetresChoisis = form.perimetres.length ? perimetreLabel(form.perimetres) : '';
+	//  Le lieu choisi, nommé par le serveur (`#lib/apercu-perimetre`, #2633).
+	$: perimetresChoisis = $libellePerimetre(form.perimetres, `${id}-lieux`);
 </script>
 
 <div class="fiche">

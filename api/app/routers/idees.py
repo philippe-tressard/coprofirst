@@ -47,6 +47,7 @@ from app.utils.recuperer import ou_404
 from app.utils.reponses import (
     notifier_votants_idee,
 )
+from app.utils.perimetres.servi import AvecPerimetreLibelle
 
 router = APIRouter(prefix="/idees", tags=["idées"])
 
@@ -98,7 +99,7 @@ class IdeeUpdate(AssisteIACorrection):
     description: Optional[str] = None
 
 
-class IdeeRead(AssisteIASortie):
+class IdeeRead(AssisteIASortie, AvecPerimetreLibelle):
     """Ce que `GET /idees` rend — lu SUR le modèle par `lire_objet` (#1660).
 
     Ce schéma existait sans que rien le rende : la liste assemblait un dictionnaire

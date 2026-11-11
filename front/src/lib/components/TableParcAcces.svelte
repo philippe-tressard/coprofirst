@@ -88,7 +88,7 @@
 					      un accès vide veut dire « on ne sait pas », ce que le tiret
 					      dit mieux qu'une pastille. -->
 					<td>
-						<BadgePerimetre perimetre={a.perimetre_cible ?? []}>
+						<BadgePerimetre libelle={a.perimetre_libelle}>
 							<span class="bc-vide">—</span>
 						</BadgePerimetre>
 					</td>

@@ -75,11 +75,8 @@ export const REGLES_PARTAGEES = {
 	perimetreLabel: {
 		quoi: 'le lieu lisible d’un périmètre (🔹, muet pour celui par défaut)',
 		api: 'api/app/utils/perimetres/libelles.py#perimetre_label',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"CR d'AG et carnet le servent depuis #2505, une affaire depuis #2508 (`perimetre_libelle`, `perimetres.perimetre_badge`) ; restent la ligne du fil, qui ne le porte pas encore, et les sélecteurs de périmètre",
-		},
+		//  Servie en `perimetre_libelle` (contenus à badge, ligne du fil), `perimetre_precise_libelle`
+		//  (une Suite), `perimetres_libelle` (un équipement) et par `POST /perimetres/libelle` (#2633).
 	},
 
 	//  ── Communauté, FAQ, Profil, Notifications (#2506) ──────────────────────
