@@ -109,11 +109,8 @@ export const REGLES_PARTAGEES = {
 	peutEditer: {
 		quoi: 'le crayon d’un contenu (auteur, « saisi pour », admin)',
 		api: 'api/app/auth/deps.py#peut_editer',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"servie en `peut_modifier` sur les idées, les annonces (#2506) et les affaires (#2508)  ; l'Historique la lit servie depuis #2646 (`auth/gestes_evolution`) ; la carte d'affaire la recopie encore : son crayon ouvre une correction plus large que le contenu (liées, diffusion, suivi), un geste à servir",
-		},
+		//  Servie en `peut_modifier` (idées, annonces, #2506 ; affaires, #2508), dans
+		//  l'Historique (#2646), et le CRAYON d'une affaire en `peut_corriger` (#2633).
 	},
 	peutCommenter: {
 		quoi: 'le geste « Répondre » d’un contenu',

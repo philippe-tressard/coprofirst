@@ -274,6 +274,8 @@ export interface Ticket extends PorteSaisiPourLu {
 	peut_deplacer_au_kanban?: boolean;
 	peut_repondre?: boolean;
 	peut_modifier?: boolean;
+	/** ✏️ Le crayon : ouvrir la correction (`auth/deps.peut_editer`, #2633). */
+	peut_corriger?: boolean;
 	/**  Le ticket paraît-il au KANBAN ? Coché d'office pour « Étude & travaux »,
 	 *   décochable par le conseil (#833).
 	 *

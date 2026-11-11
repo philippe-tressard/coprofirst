@@ -332,6 +332,7 @@ ATTENDU_EVOLUTION = {
     "contenu": "Voici",
     "ancien_statut": "ouvert",
     "nouveau_statut": "en_cours",
+    "nouveau_statut_libelle": "Chez le syndic",
     "auteur_nom": "Jeanne DURAND",
     "cree_le": "2026-10-01T09:30:00",
     "fichiers_urls": ["/uploads/a.pdf"],

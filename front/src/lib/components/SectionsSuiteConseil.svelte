@@ -6,7 +6,7 @@
 
   Un membre du conseil qui n'est pas administrateur n'avait AUCUN chemin
   d'écran pour dater l'affaire d'un résident, désigner son intervenant ou son
-  équipement : le crayon ne lui est pas montré (`droits.peutEditer`), et le
+  équipement : le crayon ne lui est pas montré (`peut_corriger`, servi), et le
   serveur refuse qu'il réécrive le texte d'un autre. Ces sections sont pourtant
   les siennes (`inactivePour.resident`). Arbitré : « via la Suite » — chaque
   changement laisse sa trace au fil de l'affaire.

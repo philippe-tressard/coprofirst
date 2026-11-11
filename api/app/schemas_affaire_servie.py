@@ -53,6 +53,9 @@ class AffaireServie(BaseModel):
     peut_repondre: bool = False
     #: ✏️ Corriger le contenu (`gestes_affaire.peut_modifier`).
     peut_modifier: bool = False
+    #: ✏️ Le CRAYON : ouvrir la correction (`auth/deps.peut_editer`, #2633) — plus
+    #: large que `peut_modifier`, qui ne vaut que tant que l'affaire est ouverte.
+    peut_corriger: bool = False
 
     @computed_field  # type: ignore[prop-decorator]
     @property

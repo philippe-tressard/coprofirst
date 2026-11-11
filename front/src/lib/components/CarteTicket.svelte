@@ -52,8 +52,7 @@
 	import EnteteCarte from './EnteteCarte.svelte';
 	import PastillesAffaire from './PastillesAffaire.svelte';
 	import ActionsTicket from './ActionsTicket.svelte';
-	import { currentUser, isAdmin } from '#lib/stores/auth.ts';
-	import { peutEditer } from '#lib/droits.ts';
+
 	import { attributsNature, gouttiereAffaire, type GestesTicket } from '#lib/tickets.ts';
 	import { type CorrespondanceAffaire, type Ticket, type TicketEvolution } from '#lib/api/index.ts';
 
@@ -101,11 +100,13 @@
 	//  ⚠️ Le crayon n'est PAS `peut_modifier` (#2508) : celui-ci dit « corriger le
 	//  CONTENU », que l'auteur perd quand l'affaire est engagée ; la correction
 	//  ouverte par le crayon porte aussi les liées, la diffusion et le suivi, que la
-	//  route accepte encore. Le geste du crayon reste à servir (#2511).
+	//  route accepte encore. Le geste du crayon est SERVI (`peut_corriger`, #2633,
+	//  `auth/deps.peut_editer`), que l'app iOS lit aussi : depuis le 11/11/2026, le
+	//  conseil syndical le reçoit sur une actualité, comme la route l'accepte (#1091).
 	//
 	//  ⚠️ `peutAdministrer` reste ce qu'il est pour la SUPPRESSION : effacer
 	//  définitivement n'est pas éditer, et cela reste réservé à l'admin.
-	$: peutEditerCeTicket = peutEditer(ticket, $currentUser?.id, $isAdmin);
+	$: peutCorrigerCeTicket = ticket.peut_corriger ?? false;
 	//  La Suite : servie par le serveur pour CE lecteur (`peut_repondre`, #2508) —
 	//  une affaire absorbée n'en a plus, son fil vit dans la principale (#1704).
 	$: peutSuivreCeTicket = ticket.peut_repondre ?? false;
@@ -172,7 +173,7 @@
 				{ticket}
 				{mode}
 				peutSuivre={peutSuivreCeTicket}
-				peutEditer={peutEditerCeTicket}
+				peutCorriger={peutCorrigerCeTicket}
 				{peutAdministrer}
 				{archive}
 				on:repondre={() => gestes.repondre(ticket)}
