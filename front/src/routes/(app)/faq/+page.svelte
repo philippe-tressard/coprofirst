@@ -12,7 +12,6 @@
 	import { marquerDonneesAffichees } from '#lib/telemetry.ts';
 	import { cibleDuHash, revelerCible } from '#lib/deepLink.ts';
 	import { faq as faqApi, manuel, type EntreeFaq } from '#lib/api/index.ts';
-	import { isCS } from '#lib/stores/auth.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		getPageConfig,
@@ -53,13 +52,19 @@
 	//  Le mode « Réorganiser » vit dans `ReorganisationFaq` (#779).
 	let reorderMode = false;
 
-	$: canEdit = $isCS;
+	//  Le droit de rédiger est SERVI (`GET /faq/gestes`, #2654) — le site et l'app
+	//  iOS lisent le même champ, aucun ne le recompose depuis les rôles. Fermé tant
+	//  qu'il n'est pas lu, et s'il ne peut pas l'être : la liste reste lisible.
+	let canEdit = false;
 
 	//  Les catégories qu'un statut ne lit pas ne sont pas SERVIES (`GET /faq`,
 	//  #2506) : il n'y a plus rien à masquer ici.
 	$: filteredGrouped = grouperParCategorie(items);
 
 	onMount(async () => {
+		//  Lu AVANT la liste : il choisit `listAll` (inactives comprises) ou `list`.
+		const [gestes] = await essayer(faqApi.gestes(), { peut_rediger: false });
+		canEdit = gestes.peut_rediger;
 		await loadFaq();
 		// `#faq-<id>` : question visée par le fil d'activité ou une notification.
 		const idFaq = cibleDuHash('faq');
