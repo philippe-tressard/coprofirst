@@ -35,7 +35,8 @@ if [ -z "$manquants" ]; then
     echo "✓ Les bibliothèques de rendu PDF sont déjà sur le runner — rien à installer."
 else
     echo "→ Manquant(s) :$manquants — installation depuis les miroirs."
-    sudo apt-get update -qq
+    #  Par la porte d'apt de la CI : elle résiste à une panne de résolution des
+    #  miroirs, et le dit si elle n'y suffit pas (#2694).
     # shellcheck disable=SC2086 # une bibliothèque par mot
-    sudo apt-get install -y --no-install-recommends $manquants
+    bash "$(dirname "$0")/apt-ci.sh" installer $manquants
 fi

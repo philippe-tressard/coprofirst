@@ -977,6 +977,13 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   ne garde que `main` ; `codeql-avant-dev.yml` refait l'analyse sans l'envoyer et ne bloque
   que les alertes NEUVES face à la dernière analyse de `main`, au seuil du contrôle de GitHub
   (`scripts/ci/codeql_nouvelles_alertes.py`). Pas un check requis. 🔒 `test_codeql_avant_dev.py`.
+- 🔒 **apt de la CI : une seule porte, `scripts/ci/apt-ci.sh`** (#2694) — `installer <paquets>`
+  ou `executer -- <commande>`. Un miroir Ubuntu que le résolveur du runner ne connaît plus
+  (11/11/2026 : pytest et WebKit rouges des heures, avant le moindre test) prend un repli DÉCLARÉ :
+  son adresse demandée en DNS-sur-HTTPS (1.1.1.1, 8.8.8.8), posée dans `/etc/hosts` le temps de
+  la commande, puis une nouvelle tentative ; sinon l'étape échoue en disant « panne de miroir ».
+  apt vérifie toujours signatures et empreintes. Aucun `apt-get` ni `--with-deps` ailleurs dans
+  la CI ; décision pure et panne simulée : `bash scripts/ci/apt-ci.sh --selftest`.
 - 🔒 **La CI se rejoue à l'identique** (#1584) : tout `pip install` s'épingle
   (`test_ci_installations_epinglees.py`) et chaque `uses:` s'écrit par **SHA** avec
   sa version en commentaire (`test_ci_actions_epinglees.py` — Dependabot suit les
