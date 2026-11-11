@@ -196,6 +196,33 @@
   check "jour du neuf détenu : la fenêtre part du jour" "20261005" \
         "$(printf '%s\n%s' "$N7" "$N6" | jours_manquants 3 20261007)"
 
+  # ── Le nom de la résidence dans le nom (#2667) ─────────────────────────
+  # Trois formes se lisent : l'historique, le neuf sans nom, le neuf avec. Le nom
+  # n'entre ni dans le tri ni dans la continuité ; une résidence renommée garde ses
+  # anciennes archives dans la même série.
+  Q7=sauvegarde_copropriete_les-tilleuls_20261007_040000_paris.tar.gz
+  Q8=sauvegarde_copropriete_les-amandiers_20261008_040000_paris.tar.gz  # renommée : passe AVANT dans l'alphabet
+  tn "nom de la résidence accepté"      "$Q7" ok
+  tn "nom de la résidence : remontée"   "sauvegarde_copropriete_../_20261007_040000.tar.gz" refuse
+  check "clé : le nom s'écarte"         "20261007_040000_paris.tar.gz" "$(cle_archive "$Q7")"
+  check "clé : sans nom, inchangée"     "20261006_040000_paris.tar.gz" "$(cle_archive "$N6")"
+  check "clé : historique"              "20261005_040000_paris.tar.gz" "$(cle_archive "$P5")"
+  check "tri des trois formes et d'un renommage" \
+        "$(printf '%s\n%s\n%s\n%s' "$P5" "$N6" "$Q7" "$Q8")" \
+        "$(printf '%s\n%s\n%s\n%s\n' "$Q8" "$Q7" "$N6" "$P5" | trier_archives)"
+  check "rotation : l'ancien nom tourne comme les autres" "$P5"$'\n'"$N6" \
+        "$(printf '%s\n%s\n%s\n%s\n' "$P5" "$N6" "$Q7" "$Q8" | trier_archives | archives_a_supprimer 2)"
+  check "continuité : trois formes, aucun trou" "" \
+        "$(printf '%s\n%s\n%s\n%s' "$P5" "$N6" "$Q7" "$Q8" | jours_manquants 4 20261008)"
+  check "continuité : un jour manque malgré les noms" "20261006" \
+        "$(printf '%s\n%s\n%s' "$P5" "$Q7" "$Q8" | jours_manquants 4 20261008)"
+  # Un motif sur la liste entière enjamberait deux lignes : un nom étranger qui finit
+  # par la date d'un jour absent ne doit pas le couvrir.
+  check "continuité : un nom étranger ne couvre rien" "20261007" \
+        "$(printf '%s\n%s' "$Q8" "x_20261007_040000.tar.gz" | jours_manquants 2 20261008)"
+  check "rattrapage : le nom ne décide pas" "$Q8" \
+        "$(archives_a_rattraper 1 "$Q7" "$Q8")"
+
   # ── Archives d'affaires échues (#2014) ──────────────────────────────────
   # La liste blanche : le nom vient du serveur et repart dans une commande.
   nav() { nom_archive_affaires_valide "$1" && echo ok || echo refus; }
