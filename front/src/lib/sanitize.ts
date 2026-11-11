@@ -10,9 +10,18 @@
 let _purify: { sanitize: (html: string, cfg: object) => string } | null = null;
 
 if (typeof window !== 'undefined') {
-	import('dompurify').then((mod) => {
-		_purify = mod.default;
-	});
+	//  Rattrapé (#2683) : sous WebKit, une navigation pendant le chargement le fait
+	//  échouer, et le rejet devenait une exception non rattrapée de la page. En
+	//  échec, le repli à liste blanche reste en service — celui du rendu serveur,
+	//  le même qu'avant l'arrivée de DOMPurify ; l'API assainit de son côté (#2150).
+	import('dompurify').then(
+		(mod) => {
+			_purify = mod.default;
+		},
+		() => {
+			/* le repli reste en service */
+		},
+	);
 }
 
 //  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
