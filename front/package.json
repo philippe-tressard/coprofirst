@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.88.0",
+	"version": "3.88.1",
 	"private": true,
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -47,6 +47,7 @@
 		"lint:modificateurs": "node scripts/check-modificateurs.mjs",
 		"lint:evenements": "node scripts/check-evenements.mjs",
 		"lint:catch-vide": "node scripts/check-catch-vide.mjs",
+		"lint:imports-rattrapes": "node scripts/check-imports-rattrapes.mjs --selftest && node scripts/check-imports-rattrapes.mjs",
 		"lint:cles-listes": "node scripts/check-cles-listes.mjs",
 		"lint:archives": "node scripts/check-archives.mjs",
 		"lint:charge-utile": "node scripts/check-charge-utile.mjs",

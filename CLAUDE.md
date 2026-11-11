@@ -977,6 +977,13 @@ Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
   ne garde que `main` ; `codeql-avant-dev.yml` refait l'analyse sans l'envoyer et ne bloque
   que les alertes NEUVES face à la dernière analyse de `main`, au seuil du contrôle de GitHub
   (`scripts/ci/codeql_nouvelles_alertes.py`). Pas un check requis. 🔒 `test_codeql_avant_dev.py`.
+- 🔒 **apt de la CI : une seule porte, `scripts/ci/apt-ci.sh`** (#2694) — `installer <paquets>`
+  ou `executer -- <commande>`. Un miroir Ubuntu que le résolveur du runner ne connaît plus
+  (11/11/2026 : pytest et WebKit rouges des heures, avant le moindre test) prend un repli DÉCLARÉ :
+  son adresse demandée en DNS-sur-HTTPS (1.1.1.1, 8.8.8.8), posée dans `/etc/hosts` le temps de
+  la commande, puis une nouvelle tentative ; sinon l'étape échoue en disant « panne de miroir ».
+  apt vérifie toujours signatures et empreintes. Aucun `apt-get` ni `--with-deps` ailleurs dans
+  la CI ; décision pure et panne simulée : `bash scripts/ci/apt-ci.sh --selftest`.
 - 🔒 **La CI se rejoue à l'identique** (#1584) : tout `pip install` s'épingle
   (`test_ci_installations_epinglees.py`) et chaque `uses:` s'écrit par **SHA** avec
   sa version en commentaire (`test_ci_actions_epinglees.py` — Dependabot suit les
@@ -1050,6 +1057,15 @@ les iPhone : #2639 passait Chromium) : son titre finit par `@mise-en-page`
 (`e2e/mise-en-page.ts`) ; une mesure du défilement sans elle est refusée
 (`npm run lint:e2e-mise-en-page`). Le profil se lit par `info.project.use.isMobile`
 ou `hasTouch`, jamais par son nom : `webkit-mobile` n'est pas `mobile`.
+
+🔒 **Un `import()` a toujours un destinataire** (#2683, 11/11/2026) : rattrapé
+(`.catch`, `try`), ou rendu à qui y répond (`charger={() => import(…)}` de `ChargementDiffere`).
+Sous WebKit, une navigation pendant son chargement le fait échouer, et un rejet sans
+destinataire devient une exception de la page — « Importing a module script failed. », qui
+faisait tomber la tranche WebKit au hasard. Les `ECONNREFUSED` du journal n'y sont pour rien :
+c'est le proxy de `/telemetry/collect`, sans API derrière. `npm run lint:imports-rattrapes`
+(AST) ; `e2e/import-interrompu.spec.ts`, étiqueté `@moteur` — l'autre étiquette jouée sous
+WebKit —, retient les modules, navigue, et échoue sans le rattrapage.
 
 🔴 **Ils existaient depuis le 06/09 et ne tournaient dans aucun job** : le dépôt
 contenait les tests, `npm run e2e` les passait sur le poste de qui y pensait, et
