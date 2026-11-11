@@ -53,6 +53,7 @@ RPI2="${RPI2:-$(noeud_ssh rpi2)}"
 DELAI_CHECKS_MIN=${DELAI_CHECKS_MIN:-90}     # la CI d'une PR : ~20 min, « Images » comprise
 DELAI_DEPLOYE_MIN=${DELAI_DEPLOYE_MIN:-60}   # images de la CI ~15 min, secours local à 30 min
 PAUSE_S=${PAUSE_S:-60}
+ESSAIS_DEV=${ESSAIS_DEV:-24}; PAUSE_DEV_S=${PAUSE_DEV_S:-5}   # suppression asynchrone de dev : 2 min au plus (#2676)
 
 LOT=""; TITRE=""; CORPS=""; A_BLANC=""
 while [ $# -gt 0 ]; do
@@ -128,14 +129,52 @@ fusionner() {
   stop "PR #$n : MERGED non constaté après la fusion"
 }
 
-# assurer_dev — `dev` supprimée par la fusion du train : recréée depuis `main`, par l'API
-#  (le hook `pre-push` refuse un push sans trace de pré-check, et il n'y a rien à vérifier).
+# lire_dev — le sha de `dev` sur GitHub, `absent` si la lecture réussit sans la trouver,
+#  vide si le dépôt distant ne répond pas (jamais lu comme « absente »).
+lire_dev() {
+  local l
+  l=$(timeout 30 git ls-remote --heads origin dev 2>/dev/null) || { echo ""; return; }
+  [ -z "$l" ] && echo absent || echo "${l%%[[:space:]]*}"
+}
+
+# recreer_dev — `dev` supprimée : recréée sur origin/main par l'API (le hook `pre-push`
+#  refuse un push sans trace de pré-check, et il n'y a rien à vérifier), puis RELUE.
+recreer_dev() {
+  local m; m=$(git rev-parse origin/main)
+  agir "dev absente : recréée sur origin/main (${m:0:8})" \
+    g api -X POST "repos/{owner}/{repo}/git/refs" -f ref=refs/heads/dev -f sha="$m" --jq .ref >/dev/null \
+    || stop "recréation de dev refusée par GitHub"
+  [ -n "$A_BLANC" ] && return 0
+  [ "$(lire_dev)" = "$m" ] || stop "dev relue après sa recréation : « $(lire_dev) », attendu ${m:0:8}"
+  synchroniser
+}
+
+# assurer_dev — avant le train et avant chaque reciblage : `dev` doit exister.
 assurer_dev() {
-  timeout 30 git ls-remote --exit-code --heads origin dev >/dev/null 2>&1 && return 0
-  agir "dev absente : recréée sur origin/main ($(git rev-parse --short origin/main))" \
-    g api -X POST "repos/{owner}/{repo}/git/refs" -f ref=refs/heads/dev -f sha="$(git rev-parse origin/main)" --jq .ref
-  [ -z "$A_BLANC" ] && synchroniser
-  return 0
+  case "$(lire_dev)" in
+    "")     stop "dépôt distant muet : dev illisible" ;;
+    absent) recreer_dev ;;
+  esac
+}
+
+# ramener_pr n° — une PR suivie revient sur `dev`, et le FAIT se relit (#2676) : un
+#  reciblage refusé arrête le conducteur en nommant la PR, il ne continue jamais.
+ramener_pr() {
+  local n=$1 st base
+  read -r st base <<<"$(etat_pr "$n")"
+  [ "$(verdict_recible "${st:-}" "${base:-}")" = OK ] && return 0
+  case "$(geste_pr_suivie "${st:-}" "${base:-}")" in
+    ROUVRIR)  agir "PR #$n fermée par la suppression de dev : rouverte" g pr reopen "$n" >/dev/null \
+                || stop "PR #$n : réouverture refusée — la rouvrir et la recibler sur dev à la main" ;;
+    RECIBLER) ;;
+    *)        stop "PR #$n : état illisible (« ${st:-?} ${base:-?} »)" ;;
+  esac
+  assurer_dev
+  agir "PR #$n reciblée sur dev (elle visait ${base:-?})" g pr edit "$n" --base dev >/dev/null \
+    || stop "PR #$n : reciblage sur dev refusé par GitHub — elle vise ${base:-?}"
+  [ -n "$A_BLANC" ] && return 0
+  read -r st base <<<"$(etat_pr "$n")"
+  [ "$(verdict_recible "${st:-}" "${base:-}")" = OK ] || stop "PR #$n : relue « ${st:-?} vers ${base:-?} » après reciblage"
 }
 
 # poser_version cible — commit `chore(version)` sur origin/dev, dans une copie JETABLE
@@ -236,24 +275,42 @@ if [ "$ETAPE" = TRAIN ]; then
   fi
   [ "$(dans_fenetre "$(date +%H:%M)")" = non ] \
     || stop "fenêtre de bascule ($FENETRE_BASCULE_DEBUT-$FENETRE_BASCULE_FIN) : relancer après $FENETRE_BASCULE_FIN, la reprise lit l'état"
+  #  Le commit de `dev` qui part : c'est lui que la suppression asynchrone laisse lisible.
+  [ -n "$PR_MAIN" ] && DEV_AVANT=$(g pr view "$PR_MAIN" --json headRefOid --jq .headRefOid) && etat_ecrire dev_avant "$DEV_AVANT"
   [ -n "$PR_MAIN" ] && fusionner "$PR_MAIN"
 fi
 
 # ── 5. Après la fusion : dev, les PR suivies, le déploiement ──
 synchroniser
 M=$(git rev-parse origin/main)
-assurer_dev
+DEV_AVANT=${DEV_AVANT:-$(etat_lire dev_avant)}
 SUIVIES=${SUIVIES:-$(etat_lire suivies)}
-for n in $SUIVIES $(g pr list --base main --state open --json number,headRefName --jq '.[]|select(.headRefName!="dev")|.number'); do
-  read -r ST BASE <<<"$(etat_pr "$n")"
-  [ -n "$A_BLANC" ] && { dire "PR #$n : ${ST:-?} vers ${BASE:-?} — ramenée sur dev si la fusion la recible ou la ferme"; continue; }
-  case "$(geste_pr_suivie "${ST:-}" "${BASE:-}")" in
-    ROUVRIR)  agir "PR #$n fermée par la suppression de dev : rouverte et reciblée" g pr reopen "$n" >/dev/null \
-                && agir "PR #$n → dev" g pr edit "$n" --base dev >/dev/null || dire "⚠ PR #$n : réouverture refusée — à rouvrir à la main" ;;
-    RECIBLER) agir "PR #$n reciblée sur dev" g pr edit "$n" --base dev >/dev/null ;;
-    INCONNU)  dire "⚠ PR #$n : état illisible — à vérifier" ;;
+if [ -n "$A_BLANC" ]; then
+  dire "À BLANC — après la fusion : attendre que GitHub supprime dev (${DEV_AVANT:0:8}), au plus $((ESSAIS_DEV * PAUSE_DEV_S)) s, puis la recréer sur main"
+  for n in $SUIVIES; do read -r ST BASE <<<"$(etat_pr "$n")"; dire "PR #$n : ${ST:-?} vers ${BASE:-?} — ramenée sur dev et relue"; done
+else
+  #  GitHub supprime `dev` APRÈS la fusion, quand il veut (#2676) : on attend le fait.
+  case "$(attendre_dev_supprimee lire_dev "$ESSAIS_DEV" "$PAUSE_DEV_S" "$DEV_AVANT" "$M")" in
+    RECREER)       recreer_dev ;;
+    PRETE)         dire "dev déjà recréée sur main (${M:0:8})" ;;
+    NON_SUPPRIMEE) dire "⚠ dev non supprimée après $((ESSAIS_DEV * PAUSE_DEV_S)) s : elle porte encore l'historique d'avant le squash — les PR qui la visent restent valides" ;;
+    AUTRE)         stop "dev porte un commit inconnu ($(lire_dev | cut -c1-8)) — quelqu'un y a poussé pendant la fusion : vérifier à la main" ;;
+    *)             stop "dev illisible après la fusion (dépôt distant muet)" ;;
   esac
-done
+  #  Trois passes : GitHub recible lui aussi de façon asynchrone. Une PR qui reste hors de
+  #  `dev` à la dernière passe arrête le conducteur, nommée.
+  for passe in 1 2 3; do
+    A_RAMENER=""
+    for n in $SUIVIES $(g pr list --base main --state open --json number,headRefName --jq '.[]|select(.headRefName!="dev")|.number'); do
+      read -r ST BASE <<<"$(etat_pr "$n")"
+      [ "$(verdict_recible "${ST:-}" "${BASE:-}")" = OK ] || A_RAMENER="$A_RAMENER $n"
+    done
+    [ -z "$A_RAMENER" ] && [ "$passe" -ge 2 ] && { dire "PR suivies : toutes sur dev"; break; }
+    [ -n "$A_RAMENER" ] && [ "$passe" = 3 ] && stop "PR toujours hors de dev :$A_RAMENER"
+    for n in $A_RAMENER; do ramener_pr "$n"; done
+    sleep 15
+  done
+fi
 A=$(sur "$RPI1" 'cat /opt/5hostachy/.active')
 case "$A" in rpi1) ACTIF=$RPI1 ;; rpi2) ACTIF=$RPI2 ;; *) stop "nœud actif illisible (« ${A:-?} »)" ;; esac
 dire "actif=$A — attente de « Déployé: ${M:0:8} »"

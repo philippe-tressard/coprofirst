@@ -161,6 +161,47 @@ geste_pr_suivie() {
   esac
 }
 
+# verdict_recible etat base → OK | ECHEC
+#  Le FAIT après un reciblage : la PR relue est ouverte sur `dev` (ou a été fusionnée
+#  entre-temps). Le code de retour de `gh pr edit` ne suffit pas (#2676).
+verdict_recible() {
+  case "${1:-}:${2:-}" in
+    OPEN:dev|MERGED:*) echo OK ;;
+    *)                 echo ECHEC ;;
+  esac
+}
+
+# decision_dev_apres_fusion sha_lu sha_avant sha_main → ATTENDRE | RECREER | PRETE | AUTRE | INCONNU
+#  🔴 GitHub supprime la branche source d'une PR fusionnée de façon ASYNCHRONE
+#  (`delete_branch_on_merge`) : lue une seconde après la fusion, `dev` est encore là,
+#  sur le commit d'avant. Le premier conducteur réel (v3.86.0, 11/11) l'a lue
+#  « présente », n'a rien recréé, et ses sept reciblages ont échoué (#2676).
+#  `sha_lu` : un sha, `absent` (lecture réussie, aucune branche), ou vide (illisible).
+#  `sha_avant` vide (état d'un conducteur d'avant #2676) : on ne sait pas, on attend.
+decision_dev_apres_fusion() {
+  case "${1:-}" in
+    "")     echo INCONNU; return ;;
+    absent) echo RECREER; return ;;
+  esac
+  if [ -n "${3:-}" ] && [ "$1" = "$3" ]; then echo PRETE           # déjà recréée sur main
+  elif [ -z "${2:-}" ] || [ "$1" = "$2" ]; then echo ATTENDRE      # pas encore supprimée
+  else echo AUTRE; fi                                              # un commit inconnu y est arrivé
+}
+
+# attendre_dev_supprimee lecteur essais pause sha_avant sha_main
+#   → RECREER | PRETE | AUTRE | NON_SUPPRIMEE | INCONNU
+#  Le LECTEUR est injecté (une fonction qui rend ce que `decision_dev_apres_fusion`
+#  attend) : le conducteur lit le dépôt distant, l'autotest une suite d'observations.
+attendre_dev_supprimee() {
+  local lecteur=$1 essais=$2 pause=$3 avant=${4:-} main=${5:-} i d=INCONNU
+  for ((i = 1; i <= essais; i++)); do
+    d=$(decision_dev_apres_fusion "$("$lecteur")" "$avant" "$main")
+    case "$d" in ATTENDRE|INCONNU) ;; *) echo "$d"; return ;; esac
+    [ "$i" -lt "$essais" ] && sleep "$pause"
+  done
+  [ "$d" = ATTENDRE ] && echo NON_SUPPRIMEE || echo INCONNU
+}
+
 # verdict_verrou pid_lu vivant(oui|non) → PRENDRE | REPRENDRE | REFUSER
 #  Un conducteur à la fois ; celui qu'on a tué (pkill, fermeture de la session) laisse
 #  un verrou que le suivant REPREND — la reprise lit l'état, elle ne recommence rien.
@@ -236,6 +277,30 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   t "🔴 brouillon fermé (#2619)"                ROUVRIR  geste_pr_suivie CLOSED main
   t "PR fusionnée entre-temps"                 RIEN     geste_pr_suivie MERGED dev
   t "état illisible"                           INCONNU  geste_pr_suivie "" ""
+  t "reciblée : ouverte sur dev"               OK       verdict_recible OPEN dev
+  t "🔴 restée sur main (#2676)"                 ECHEC    verdict_recible OPEN main
+  t "fusionnée entre-temps"                    OK       verdict_recible MERGED main
+  t "toujours fermée"                          ECHEC    verdict_recible CLOSED dev
+  t "lecture illisible"                        ECHEC    verdict_recible "" ""
+  t "dev absente : recréer"                    RECREER  decision_dev_apres_fusion absent aaa bbb
+  t "🔴 dev encore là, sur l'avant : attendre"   ATTENDRE decision_dev_apres_fusion aaa aaa bbb
+  t "dev déjà recréée sur main"                PRETE    decision_dev_apres_fusion bbb aaa bbb
+  t "dev sur un commit inconnu"                AUTRE    decision_dev_apres_fusion ccc aaa bbb
+  t "avant inconnu (état ancien) : attendre"   ATTENDRE decision_dev_apres_fusion aaa "" bbb
+  t "lecture illisible"                        INCONNU  decision_dev_apres_fusion "" aaa bbb
+  #  Le cas du 11/11, rejoué : `dev` lue présente deux fois, puis supprimée.
+  OBS=$(mktemp -d); trap 'rm -rf "$OBS"' EXIT
+  lecteur_faux() { local k; k=$(cat "$OBS/k" 2>/dev/null || echo 1); echo $((k + 1)) > "$OBS/k"
+                   sed -n "${k}p" "$OBS/suite"; }
+  observer() { printf '%s\n' "$@" > "$OBS/suite"; rm -f "$OBS/k"; }
+  observer aaa aaa absent
+  t "🔴 présente, présente, supprimée → recréer" RECREER attendre_dev_supprimee lecteur_faux 5 0 aaa bbb
+  observer aaa aaa aaa
+  t "jamais supprimée dans le délai"           NON_SUPPRIMEE attendre_dev_supprimee lecteur_faux 3 0 aaa bbb
+  observer "" "" ""
+  t "dépôt distant muet"                       INCONNU  attendre_dev_supprimee lecteur_faux 3 0 aaa bbb
+  observer aaa "" bbb
+  t "recréée par un autre entre deux lectures" PRETE    attendre_dev_supprimee lecteur_faux 5 0 aaa bbb
   t "aucun verrou"                             PRENDRE   verdict_verrou "" ""
   t "verrou d'un conducteur vivant"            REFUSER   verdict_verrou 4242 oui
   t "verrou d'un conducteur tué"               REPRENDRE verdict_verrou 4242 non
