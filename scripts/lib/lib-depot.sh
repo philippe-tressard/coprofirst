@@ -27,6 +27,20 @@ dossier_git() {
     git -C "${1:-.}" rev-parse --absolute-git-dir 2>/dev/null
 }
 
+# dossier_git_commun [répertoire] — le répertoire git PARTAGÉ par le clone et tous ses
+# worktrees, absolu ; vide et code ≠ 0 hors d'un dépôt. Ce qui vaut pour le poste
+# entier s'y range — la déclaration d'une exception du pré-check, l'état du
+# conducteur de MEP (#2631) —, ce qui vaut pour un lot va dans `dossier_git`.
+dossier_git_commun() {
+    git -C "${1:-.}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null
+}
+
+# Les trois comptes des checks d'une PR, en filtre jq sur `statusCheckRollup` :
+# tous, en cours (non terminés), rouges (terminés autrement que SUCCESS, SKIPPED ou
+# NEUTRAL). Lus par le point 16 du pré-check ET par le conducteur de MEP : écrits
+# une fois, ils ne peuvent pas compter deux choses différentes.
+COMPTES_CHECKS_JQ='(.statusCheckRollup | length), ([.statusCheckRollup[] | select(.status != "COMPLETED")] | length), ([.statusCheckRollup[] | select(.status == "COMPLETED" and .conclusion != "SUCCESS" and .conclusion != "SKIPPED" and .conclusion != "NEUTRAL")] | length)'
+
 # ── La trace du rejeu de la CI (`rejeu-ci.ok`) : UN format, écrit et lu ici ────
 #  `rejouer-ci.sh` l'écrit, le point 16 du pré-check la lit : deux copies du format
 #  divergeaient au premier champ ajouté (SAUTS en #1734, RELANCES en #1809, TREE en
