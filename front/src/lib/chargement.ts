@@ -76,3 +76,14 @@ export function messagePartiel(...erreurs: string[]): string {
  * réception des réponses le disent (#1475).
  */
 export const TITRE_PARAMETRAGE_ILLISIBLE = 'Paramétrage illisible — rien n’a été modifié';
+
+/**
+ * Ce que dit une partie d'écran chargée à la demande (`import()`) qui n'est pas
+ * arrivée. Le cas réel : une version publiée entre l'ouverture de la page et le
+ * clic — le fichier d'avant n'existe plus. Écrit une fois : `ChargementDiffere`
+ * et l'éditeur riche le disent (#2683).
+ */
+export const MORCEAU_NON_CHARGE = {
+	titre: 'Cette partie de l’écran n’a pas pu se charger',
+	erreur: 'Rechargez la page : une nouvelle version du site a peut-être été publiée entre-temps.',
+} as const;

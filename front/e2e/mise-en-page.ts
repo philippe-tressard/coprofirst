@@ -24,5 +24,13 @@
  */
 export const ETIQUETTE_MISE_EN_PAGE = '@mise-en-page';
 
-/** Ce que les profils WebKit retiennent : les tests qui portent l'étiquette. */
-export const RETENUS_SOUS_WEBKIT = new RegExp(`${ETIQUETTE_MISE_EN_PAGE}\\b`);
+/**
+ *  L'étiquette d'un test qui juge un comportement PROPRE AU MOTEUR, hors mise en
+ *  page (#2683, 11/11/2026) : WebKit lève une exception de la page quand une
+ *  navigation interrompt un `import()` que rien ne rattrape — Chromium se tait.
+ *  Joué sous Chromium aussi, comme `@mise-en-page`.
+ */
+export const ETIQUETTE_MOTEUR = '@moteur';
+
+/** Ce que les profils WebKit retiennent : les tests qui portent l'une des étiquettes. */
+export const RETENUS_SOUS_WEBKIT = new RegExp(`(${ETIQUETTE_MISE_EN_PAGE}|${ETIQUETTE_MOTEUR})\\b`);
