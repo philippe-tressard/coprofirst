@@ -251,7 +251,7 @@
 				      ✍️ auteur · ✨ en fin de ligne. -->
 				<svelte:fragment slot="tags">
 					{#if annonce.archivee}<span class="badge badge-gray">Archivée</span>{/if}
-					<BadgePerimetre perimetre={annonce.perimetre_cible} />
+					<BadgePerimetre libelle={annonce.perimetre_libelle} />
 					{#if annonce.ticket_id}<span class="badge badge-gray" title="Générée depuis une actualité"
 							>&#x1F4F0; Actualité</span
 						>{/if}

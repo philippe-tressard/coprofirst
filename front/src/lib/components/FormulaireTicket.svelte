@@ -194,7 +194,7 @@
 	$: if ((reservePerimetre || reservee) && annonceHall) annonceHall = false;
 	$: assistant = contexteAssistant(actualite ? 'actualité' : 'ticket', {
 		Catégorie: OPTIONS_CATEGORIE.find((o) => o.val === categorie)?.label ?? categorie,
-		Périmètre: perimetreContexte(perimetreCible),
+		Périmètre: $perimetreContexte(perimetreCible),
 		...(actualite ? {} : { État: STATUT_TICKET_LABELS[statut] ?? statut }),
 	});
 

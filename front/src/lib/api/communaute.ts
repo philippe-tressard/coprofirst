@@ -61,6 +61,8 @@ export interface Sondage {
 	auteur_id: number | null;
 	cree_le: string;
 	perimetre_cible: string[];
+	/** Le badge 🔹, SERVI (`perimetre_libelle`, #2633) — `""` pour le défaut. */
+	perimetre_libelle?: string;
 	public_cible: string[];
 	nb_votants: number;
 	/** Tranché par le serveur (`sondage_clos`), jamais par l'écran (#468). */
@@ -148,6 +150,8 @@ export interface Idee {
 	/** `ouverte | retenue | rejetee | realisee` — une chaîne libre côté serveur. */
 	statut: string;
 	perimetre_cible: string[];
+	/** Le badge 🔹, SERVI (`perimetre_libelle`, #2633) — `""` pour le défaut. */
+	perimetre_libelle?: string;
 	/** Vide = tous les résidents. */
 	public_cible: string[];
 	cree_le: string;
@@ -212,6 +216,8 @@ export interface PetiteAnnonce {
 	photos_json: string;
 	photos: string[];
 	perimetre_cible: string[];
+	/** Le badge 🔹, SERVI (`perimetre_libelle`, #2633) — `""` pour le défaut. */
+	perimetre_libelle?: string;
 	/** Vide = tous les résidents. */
 	public_cible: string[];
 	statut: StatutAnnonce;

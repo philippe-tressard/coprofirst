@@ -15,7 +15,6 @@ import {
 	estPerimetreParDefaut,
 	noeudPerimetre,
 	perimetreDefautListe,
-	perimetreLabel,
 	perimetreLabelUn,
 } from '#lib/utils.ts';
 import {
@@ -57,7 +56,9 @@ export function perimetreTags(p: string): PastillePerimetre[] {
 		return [
 			{
 				code: '__defaut__',
-				label: '\u{1F3D8}️ ' + ' ' + perimetreLabel(perimetreDefautListe()),
+				//  La racine seule : son libellé de nœud (servi par l'arbre), sans
+				//  composition — le lieu d'une SÉLECTION est servi (#2633).
+				label: '\u{1F3D8}️ ' + ' ' + perimetreDefautListe().map(perimetreLabelUn).join(''),
 				color: TEINTE_COPROPRIETE,
 			},
 		];

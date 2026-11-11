@@ -172,7 +172,7 @@
 							>
 						{/if}
 						<!--  Le périmètre — tu quand c'est celui par défaut (règle 4). -->
-						<BadgePerimetre perimetre={a.perimetre_cible} />
+						<BadgePerimetre libelle={a.perimetre_libelle} />
 						{#if a.apercu}
 							<p class="descriptif clamp-rapport">
 								{#if a.apercu_ia}<span class="ia-signe" title="Résumé de l’assistant"

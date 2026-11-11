@@ -405,6 +405,8 @@ export interface AnnonceHall {
 	assiste_ia?: boolean;
 	apercu: string;
 	perimetre_cible: string[];
+	/** Le badge 🔹, SERVI (`perimetre_libelle`, #2633) — `""` pour le défaut. */
+	perimetre_libelle?: string;
 	perimetre_label: string;
 	format_demande: string;
 	format_effectif: string;

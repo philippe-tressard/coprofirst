@@ -49,7 +49,7 @@
 	import IconeAction from './IconeAction.svelte';
 	import { safeDescription } from '#lib/sanitize.ts';
 	import { fmtDate, fmtDatetime } from '#lib/date.ts';
-	import { perimetreLabel } from '#lib/perimetres/index.ts';
+
 	import { entreesDuFil, evolutionIcone } from '#lib/evolutions.ts';
 	import { confirmer } from '#lib/confirmation.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
@@ -277,7 +277,7 @@
 					      élargir un ticket à toute la résidence est un fait qui se dit. -->
 					{#if evol.perimetre_cible?.length}
 						<span class="evol-text evol-perimetre">
-							Périmètre précisé : <strong>&#x1F539; {perimetreLabel(evol.perimetre_cible)}</strong>
+							Périmètre précisé : <strong>&#x1F539; {evol.perimetre_precise_libelle}</strong>
 						</span>
 					{/if}
 
