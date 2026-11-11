@@ -771,6 +771,10 @@ Journal : `/var/log/hostachy-bascule.log`, lignes `[noyau]`. Banc sans effet :
 Les deux nœuds étaient des Pi OS **Desktop** (navigateurs, VNC, CUPS, `rpcbind` sur le LAN) :
 `scripts/exploitation/alleger-noeud.sh` retire cette pile **et elle seule** ; la liste s'écrit
 une fois, dans `lib-paquets-proscrits.sh`, que **C35** relit pour dire si elle est revenue.
+La pile **caméra** (`libcamera*`, `rpicam-apps*`, `libpisp*`, `libtensorflow-lite*`) y est
+aussi depuis #2692 : sans caméra, elle restait « retenue » (C30) à chaque version de libcamera,
+dont le paquet change de nom. ⚠️ Le script est resté mort de v2.127.0 au 11/11/2026 (`ICI` lu
+avant d'être posé) : 🔒 `test_alleger_noeud.py` l'exécute désormais en simulation.
 Au moindre doute un composant reste : tous les noyaux, `plymouth` (l'initramfs ne doit pas bouger),
 `nodejs`, `build-essential`, `mkvtoolnix`, `bluez`. Le principe générique et son incident :
 `standards/04-fiabilite-des-controles.md` §51 (une simulation lit TOUTE la transaction).
