@@ -44,7 +44,8 @@ def _affaire(**kwargs) -> Ticket:
 
 def test_les_champs_de_la_ligne_sont_TOUS_rendus():
     rendu = pastilles_affaire(_affaire())
-    assert set(rendu) == set(CHAMPS_PASTILLES) | {"natures", "echeance"}
+    #  `lecture` (#2633) : la pastille « qui la lit », qui lit l'arbre des périmètres.
+    assert set(rendu) == set(CHAMPS_PASTILLES) | {"natures", "echeance", "lecture"}
 
 
 def test_la_ligne_sert_le_libelle_de_la_categorie():
