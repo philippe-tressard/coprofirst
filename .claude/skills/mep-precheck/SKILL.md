@@ -137,18 +137,40 @@ il n'était qu'un préalable à une relecture. La contrepartie demandée est un
 recréée par l'API GitHub. La règle vit dans `CLAUDE.md`, « Session cloud » : elle
 n'est pas recopiée ici.
 
-Le déroulé complet, une fois le pré-check vert :
+Le déroulé complet, une fois le pré-check du lot vert, est **conduit par un script
+versionné** (#2631) — jamais par des gestes enchaînés de mémoire, ni par un script
+du dossier temporaire d'une session, qui disparaît avec elle :
 
 ```
-gh pr create --base main --head dev …
-gh pr checks <n> --watch          # TOUS les checks requis (liste : protection de main), pas un de moins
-bash scripts/ci/relancer-annules.sh <n>   # un check requis ANNULÉ par GitHub bloque sans un mot (#2225)
-gh pr merge <n> --squash --delete-branch
-git fetch --prune && git checkout -B dev origin/main
-SKIP_PRECHECK=1 git push -u origin dev   # recrée `dev` distante (piège 2)
+bash scripts/poste/conduire-mep.sh --lot <n° de la PR vers dev | -> \
+     --titre "<préfixe>: {version} — <ce que le train apporte>" --corps <fichier>
+bash scripts/poste/conduire-mep.sh … --a-blanc    # tout est mesuré et décidé, rien n'est écrit
+bash scripts/ci/relancer-annules.sh <n>           # un check requis ANNULÉ bloque sans un mot (#2225)
 ```
 
-⚠️ **Quatre pièges — les trois premiers rencontrés le 28/08, le quatrième le 25/09 :**
+Il fusionne le lot (checks verts **et** état `CLEAN` — jamais pendant `UNKNOWN`,
+le défaut du 10/11), **pose la version** du train sur `dev`, ouvre ou retitre
+l'unique PR `dev → main`, la fusionne **hors de la fenêtre de bascule**
+(`FENETRE_BASCULE_*`, confrontée par son autotest à la crontab), recrée `dev`, y
+ramène les PR qui la visaient — reciblées, ou **rouvertes** si GitHub les a fermées
+(un brouillon l'est, #2619) —, attend `Déployé:` sur l'actif, joue `--post-mep` et
+relance la veille. **Tué, il se relance avec les mêmes arguments** : son état
+(`conduite-mep.etat`) et son verrou vivent dans le répertoire git commun, et chaque
+étape vérifie son fait avant d'agir. Ses décisions sont des fonctions pures de
+`scripts/lib/lib-mep-conduite.sh` (`--selftest`, job `test-scripts`).
+
+🔴 **La version se pose À LA MEP, plus dans le lot** (#2631) : `conduire-mep.sh` la
+calcule de `main` et des préfixes des commits du train (`feat` → mineure, `!` →
+majeure, sinon correctif — `rang_attendu`, la lecture de 0g) et la commit sur `dev`
+par `npm version`, dans une copie jetable. Un lot n'emporte plus de
+`chore(version)` : 0d le refuse sur la branche d'un lot ; sur `dev`, 0d et 0g
+jugent le train. Le titre porte la marque `{version}`, et son préfixe doit annoncer
+le rang du train — c'est lui qui devient le commit de `main`. Trois collisions de
+numéro le 10/11 (3.79.0, deux fois 3.81.0) venaient de la version posée lot par lot.
+
+⚠️ **Quatre pièges — les trois premiers rencontrés le 28/08, le quatrième le 25/09 ;
+les trois premiers sont tenus par `conduire-mep.sh`, qui ne touche à aucune copie
+de travail :**
 
 1. `--delete-branch` supprime aussi la branche **locale** et bascule sur `main`.
    Committer ensuite sans regarder `git branch --show-current` met le lot suivant
@@ -200,8 +222,8 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 | 0a | Clone à jour sur `origin/dev` | OK · FAIL |
 | 0b | Modularité — ce que la CI vérifiera | OK · FAIL |
 | 0c | **CI de la branche**, hors échecs que ce lot corrige | OK · FAIL · INCONNU |
-| 0d | **Un seul bump de version dans le lot** | OK · ÉCART · FAIL |
-| 0g | **Rang du bump conforme** à ce que le lot apporte (lu dans les préfixes de commit) | OK · ÉCART · FAIL |
+| 0d | **Version** : aucun bump sur la branche d'un lot ; un seul sur `dev` (le train) | OK · ÉCART · FAIL |
+| 0g | **Rang du bump conforme** à ce que le train apporte (lu dans les préfixes de commit) ; sur un lot, le rang annoncé | OK · ÉCART · FAIL |
 | 0f | **Titre et descriptif de PR préparés** (`.git/pr-brief.md`) | OK · FAIL · INCONNU |
 | 0h | **Migrations de texte légal : prise sur le texte servi** — chaque migration du lot qui nomme un texte légal, jouée en mémoire sur `/api/config/legal` ; un passage ni pris ni déjà servi = FAIL (#2571, le cas de la 0329) | OK · FAIL · INCONNU |
 | 15 | Aucun endpoint orphelin | OK · FAIL |
@@ -214,7 +236,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 | 6 | Aucune ERROR/CRITICAL (1 h), **hors celle que ce lot corrige** | OK · FAIL · INCONNU |
 | 7 | Scripts cron exécutables | OK · FAIL |
 | 8 | Battement d'auto-deploy sur le standby | OK · FAIL |
-| 9 | **E-mails en échec** | **INCONNU — voir ci-dessous** |
+| 9 | **E-mails en échec** (7 j), **exception datée** d'un incident clos comprise | OK · ÉCART · FAIL · INCONNU |
 | 10 | Parité de code entre les 2 nœuds | OK · ÉCART |
 | 11 | Auto-deploy de l'actif vivant | OK · FAIL |
 | 12 | **Chaque conteneur sert l'image bâtie sur SON commit** (api, front, bridge, Caddy) — deux faits par service, jamais une date : les images contiennent-elles le dernier commit de son répertoire, et le conteneur tourne-t-il sur le manifeste de l'image étiquetée ? Le détail donne la commande de recréation ; pourquoi pas l'ID d'image : `lib-images-servies.sh` (#1675) | OK · FAIL · INCONNU |
@@ -246,7 +268,7 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
 - **ÉCART** (points 10, 0d et 0g) → toléré, mais à lire. Point 10 : le standby se
   aligne seul sous 5 minutes (`auto-deploy.sh`, #448 — depuis le 19/08/2026 ;
   avant, la bascule de 02:00 n'alignait que le nœud ENTRANT, donc le standby
-  accumulait le retard après chaque déploiement). Point 0d : un lot
+  accumulait le retard après chaque déploiement). Point 0d, sur `dev` : un train
   **sans** bump se déploie quand même — c'est P3 qui devient incapable de prouver
   que le déploiement a eu lieu, la version servie étant identique avant et après.
 - **0c** → il ne compte que les échecs de CI que ce lot **ne corrige pas**. Un
@@ -329,7 +351,9 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   11/08/2026 après deux oublis dans la même journée, le second juste après
   s'être fait reprendre sur le premier : la consigne de la skill `avant-commit`
   ne tenait pas seule.
-- **0d en FAIL** → le lot porte **deux bumps ou plus**. N'en garder qu'un, posé
+- **0d en FAIL sur la branche d'un lot** → le lot porte un bump : le retirer, la
+  version se pose par `conduire-mep.sh` à la MEP (#2631).
+- **0d en FAIL sur `dev`** → le train porte **deux bumps ou plus**. N'en garder qu'un, posé
   en dernier : `git reset --soft <avant le 1er bump>` puis recommit et
   `push --force-with-lease` — `dev` n'est pas protégée et le force-push y est
   déjà le geste normal après chaque squash. Ne **jamais** empiler un second bump
@@ -386,10 +410,21 @@ AUTOUR d'un verdict faux est un contrôle qu'on finit par ne plus lire.
   lanceur disparaît s'arrête de lui-même et libère le verrou.
 - **INCONNU** → le contrôle n'a **pas pu** mesurer. Ce n'est jamais un vert. Le
   script sort en 2 au-delà d'un seul INCONNU.
-- **Point 9 est INCONNU par construction** : l'historique des e-mails s'interroge
-  in-process (`GET /admin/emails/historique`) et exige une session admin. Le
-  vérifier à la main dans **Admin → E-mails → Historique**, filtre `erreur`,
-  7 jours. Repli sans interface : voir `HISTORIQUE.md`.
+- **Point 9 — un incident clos se DÉCLARE, daté** (#2631). Le point lit les échecs
+  par le canal machine (`GET /admin/emails/echecs-recents`, total, codes et date du
+  `dernier`) ; un échec connu et clos ne se redéclare plus à la main dans chaque PR :
+  une ligne dans `exceptions-precheck`, au répertoire git **commun** (tous les
+  worktrees du poste la lisent) —
+
+      # point|ticket|borne : aucun fait après|échéance|motif
+      9|#2528|2026-11-04 21:30 +0100|2026-11-11 21:00 +0100|26 courriels de l'incident clos
+
+  Le point la vérifie lui-même : OK « déclaré » tant que le `dernier` échec n'est
+  pas postérieur à la borne et que l'échéance n'est pas passée ; **FAIL** au premier
+  échec plus récent ou passé l'échéance ; INCONNU si la date est illisible ; ÉCART
+  « à retirer » quand le point est redevenu vert. Règle et cas : `juger_exception`
+  (`scripts/lib/lib-precheck-exception.sh`, `--selftest`) — tout point qui mesure un
+  fait daté peut l'appeler ; seul le 9 le fait aujourd'hui.
 
 ### Avant même le script — l'étape 0 bis
 
