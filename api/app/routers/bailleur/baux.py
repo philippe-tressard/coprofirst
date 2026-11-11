@@ -30,8 +30,6 @@ from app.utils.comptes import condition_hors_comptes_techniques, est_compte_tech
 from app.utils.lecture import lire_objet
 from app.utils.limiter import LIMITE_RECHERCHE_DE_PERSONNES, limiter
 from app.utils.recuperer import ou_404
-from pydantic import BaseModel
-
 from app.schemas_nom_servi import NomServi
 
 from .commun import BailCreateMulti, BailOut, BailTerminer, BailUpdate
