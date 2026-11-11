@@ -72,7 +72,7 @@ async function ouvrir(page: Page, source: string) {
 	await attendreHydratation(page);
 }
 
-test('lots : tous les mots, sans accents ni casse, puis « Effacer la recherche »', async ({
+test('lots : tous les mots, sans accents ni casse, puis « Effacer la recherche » @mise-en-page', async ({
 	page,
 }) => {
 	await ouvrir(page, 'lots');
@@ -96,7 +96,7 @@ test('lots : tous les mots, sans accents ni casse, puis « Effacer la recherche 
 	await expect(lignes).toHaveCount(2);
 });
 
-test('Vigik : la recherche lit le code et le nom, et dit quand rien ne correspond', async ({
+test('Vigik : la recherche lit le code et le nom, et dit quand rien ne correspond @mise-en-page', async ({
 	page,
 }) => {
 	await ouvrir(page, 'vigik');

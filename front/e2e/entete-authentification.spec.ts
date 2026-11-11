@@ -23,7 +23,7 @@ const ECRANS: [chemin: string, sousTitre: string][] = [
 ];
 
 for (const [chemin, sousTitre] of ECRANS) {
-	test(`${chemin.split('?')[0]} : logo, nom de la résidence, puis « ${sousTitre} »`, async ({
+	test(`${chemin.split('?')[0]} : logo, nom de la résidence, puis « ${sousTitre} » @mise-en-page`, async ({
 		page,
 	}) => {
 		await simulerApi(page);

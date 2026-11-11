@@ -77,7 +77,7 @@ test('rien n’est demandé avant de déplier la fiche', async ({ page }) => {
 	expect(demandes).toEqual([]);
 });
 
-test('dépliée : l’étape « Chez le prestataire », les tuiles et chaque exercice', async ({
+test('dépliée : l’étape « Chez le prestataire », les tuiles et chaque exercice @mise-en-page', async ({
 	page,
 }) => {
 	await ouvrir(page);

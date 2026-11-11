@@ -62,7 +62,9 @@ const CONFIG = {
 const prix = (bloc: Locator, nom: string) =>
 	bloc.getByRole('spinbutton', { name: new RegExp(`^Prix des jetons ${nom} \\(\\$`) });
 
-test('Assistant IA : le ✨ du modèle enregistre les prix des jetons', async ({ page }) => {
+test('Assistant IA : le ✨ du modèle enregistre les prix des jetons @mise-en-page', async ({
+	page,
+}) => {
 	let demande: unknown = null;
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;

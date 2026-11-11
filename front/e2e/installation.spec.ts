@@ -36,7 +36,7 @@ async function ouvrir(page, installation, inscription?: unknown) {
 	return carte;
 }
 
-test('Installation : la référence, vérification coupée, ne se dit jamais « à jour »', async ({
+test('Installation : la référence, vérification coupée, ne se dit jamais « à jour » @mise-en-page', async ({
 	page,
 }) => {
 	const carte = await ouvrir(page, {
@@ -123,7 +123,7 @@ const REPLIQUE = {
 	detail: 'service « Vérification de la version » coupé',
 };
 
-test('Inscription : une réplique non inscrite s’inscrit en acceptant les conditions lues', async ({
+test('Inscription : une réplique non inscrite s’inscrit en acceptant les conditions lues @mise-en-page', async ({
 	page,
 }) => {
 	const carte = await ouvrir(page, REPLIQUE);

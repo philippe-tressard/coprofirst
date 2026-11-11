@@ -47,15 +47,17 @@ async function mesurerBoutonIcone(page: import('@playwright/test').Page) {
 	return boite!;
 }
 
-test('au doigt, un bouton icône fait au moins 44 × 44 px', async ({ page }, info) => {
-	test.skip(info.project.name !== 'mobile', 'la règle ne vise que `pointer: coarse`');
+test('au doigt, un bouton icône fait au moins 44 × 44 px @mise-en-page', async ({ page }, info) => {
+	test.skip(!info.project.use.hasTouch, 'la règle ne vise que `pointer: coarse`');
 	const boite = await mesurerBoutonIcone(page);
 	expect(boite.width, 'largeur de la cible tactile').toBeGreaterThanOrEqual(44);
 	expect(boite.height, 'hauteur de la cible tactile').toBeGreaterThanOrEqual(44);
 });
 
-test('à la souris, la densité des rangées d’actions est intacte', async ({ page }, info) => {
-	test.skip(info.project.name !== 'bureau', 'le pendant : rien ne change au pointeur fin');
+test('à la souris, la densité des rangées d’actions est intacte @mise-en-page', async ({
+	page,
+}, info) => {
+	test.skip(!!info.project.use.hasTouch, 'le pendant : rien ne change au pointeur fin');
 	const boite = await mesurerBoutonIcone(page);
 	expect(
 		boite.height,
@@ -98,8 +100,8 @@ async function mesurerSectionPliee(page: import('@playwright/test').Page) {
 	return boite!;
 }
 
-test('une section pliée reste atteignable au doigt', async ({ page }, info) => {
-	test.skip(info.project.name !== 'mobile', 'la règle ne vise que `pointer: coarse`');
+test('une section pliée reste atteignable au doigt @mise-en-page', async ({ page }, info) => {
+	test.skip(!info.project.use.hasTouch, 'la règle ne vise que `pointer: coarse`');
 	const boite = await mesurerSectionPliee(page);
 	expect(
 		boite.height,
@@ -120,8 +122,10 @@ test('une section pliée reste atteignable au doigt', async ({ page }, info) => 
  *  ⚠️ Sans ce second cas, remettre la règle pour tout le monde repasserait au
  *  vert et rendrait la densité au bureau à son défaut de départ.
  */
-test('à la souris, une section pliée a la hauteur d’une ligne', async ({ page }, info) => {
-	test.skip(info.project.name !== 'bureau', 'le pendant : rien ne change au pointeur fin');
+test('à la souris, une section pliée a la hauteur d’une ligne @mise-en-page', async ({
+	page,
+}, info) => {
+	test.skip(!!info.project.use.hasTouch, 'le pendant : rien ne change au pointeur fin');
 	const boite = await mesurerSectionPliee(page);
 	expect(
 		boite.height,
@@ -162,15 +166,19 @@ async function mesurerBoutonsTexte(page: import('@playwright/test').Page) {
 	return boites as Record<string, { width: number; height: number }>;
 }
 
-test('au doigt, tout bouton texte fait au moins 44 px de haut', async ({ page }, info) => {
-	test.skip(info.project.name !== 'mobile', 'la règle ne vise que `pointer: coarse`');
+test('au doigt, tout bouton texte fait au moins 44 px de haut @mise-en-page', async ({
+	page,
+}, info) => {
+	test.skip(!info.project.use.hasTouch, 'la règle ne vise que `pointer: coarse`');
 	for (const [nom, boite] of Object.entries(await mesurerBoutonsTexte(page))) {
 		expect(boite.height, `hauteur de « ${nom} » au doigt`).toBeGreaterThanOrEqual(44);
 	}
 });
 
-test('à la souris, un bouton texte garde sa hauteur de ligne', async ({ page }, info) => {
-	test.skip(info.project.name !== 'bureau', 'le pendant : rien ne change au pointeur fin');
+test('à la souris, un bouton texte garde sa hauteur de ligne @mise-en-page', async ({
+	page,
+}, info) => {
+	test.skip(!!info.project.use.hasTouch, 'le pendant : rien ne change au pointeur fin');
 	for (const [nom, boite] of Object.entries(await mesurerBoutonsTexte(page))) {
 		expect(boite.height, `la règle tactile déborde sur le bureau (« ${nom} »)`).toBeLessThan(44);
 	}

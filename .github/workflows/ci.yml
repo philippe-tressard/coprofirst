@@ -2651,6 +2651,12 @@ jobs:
         working-directory: front
         run: npm run lint:defilement
 
+      #  Une mesure du défilement neuve, sans l'étiquette, ne serait jouée que
+      #  sous Chromium : le défaut propre à Safari repasserait (#2639, #2640).
+      - name: Les tests de mise en page sont joués aussi sous WebKit
+        working-directory: front
+        run: npm run lint:e2e-mise-en-page
+
       - name: Le contrôle du test e2e s'éprouve lui-même
         working-directory: front
         run: node scripts/check-e2e-test.mjs --selftest
@@ -2700,17 +2706,55 @@ jobs:
   # navigateurs de Playwright (~300 Mo) et un serveur qui démarre. Les mêler
   # ferait payer ce temps à chaque lint de style.
   # ══════════════════════════════════════════════════════════════════════════
+  #
+  # ✂️ EN TRANCHES (#2632, 11/11/2026). Un seul runner fixait la durée de toute
+  # la CI : 16,3 min de Playwright sur une médiane de 19 min (20 PR vertes,
+  # mesuré le 10/11). Le dépôt est public : les runners sont gratuits et
+  # tournent côte à côte. Quatre tranches Chromium (`--shard`, bureau et mobile
+  # mêlés), plus une tranche WebKit (#2640). Le check REQUIS garde son nom :
+  # c'est le job d'agrégat `e2e-verdict`, plus bas, qui le porte.
+  #
+  # 🧭 WebKit (#2640) : le moteur de Safari, donc de tous les iPhone. Un défaut
+  # propre à lui (#2639, un `<select>` qui ignore `min-height`) passait la CI,
+  # qui ne jouait que Chromium. Il ne joue que les tests ÉTIQUETÉS `@mise-en-page`
+  # (`e2e/mise-en-page.ts`) : hauteurs, alignements, défilement, cibles tactiles.
+  #
+  # ⚠️ Les paramètres d'une tranche passent par l'`env:` DU JOB, jamais par un
+  # `${{ matrix… }}` dans une commande : le rejeu du poste lit les commandes de
+  # ce fichier et rendrait INCONNU une expression qu'il ne résout pas. Sur le
+  # poste, ces variables sont absentes : la suite entière, tous profils.
   e2e-frontend:
-    name: Tests de navigateur (Playwright)
+    name: Tests de navigateur — ${{ matrix.tranche.nom }}
     runs-on: ubuntu-latest
-    #  25, pas 15 (#2276) : mesuré le 28/10/2026, le job dure 10 à 15 min et la
-    #  suite grossit à chaque lot ; trois tentatives de suite ont été tuées au
-    #  plafond, à l'avant-dernière étape — un check requis annulé bloque la PR.
-    #  40, pas 25 (#2576) : mesuré le 08/11/2026 sur les 40 dernières exécutions,
-    #  médiane 19,4 min, p95 24,1 min — le plafond ne laissait plus une minute ;
-    #  #2574 a été coupé deux fois au plafond, tests verts. L'installation peut à
-    #  elle seule prendre 12 min sur un miroir lent (#1865) : p95 + 15 min.
-    timeout-minutes: 40
+    #  Un plafond par tranche, et non celui de la suite entière (40 min, #2576) :
+    #  une tranche joue le quart des tests. L'installation peut à elle seule
+    #  prendre 12 min sur un miroir lent (#1865), d'où la marge.
+    timeout-minutes: 25
+    strategy:
+      #  Toutes les tranches vont au bout : un rouge dans l'une ne cache pas ceux
+      #  des autres.
+      fail-fast: false
+      matrix:
+        tranche:
+          - nom: Chromium 1/4
+            navigateurs: chromium
+            arguments: --project=bureau --project=mobile --shard=1/4
+            service_worker: true
+          - nom: Chromium 2/4
+            navigateurs: chromium
+            arguments: --project=bureau --project=mobile --shard=2/4
+          - nom: Chromium 3/4
+            navigateurs: chromium
+            arguments: --project=bureau --project=mobile --shard=3/4
+          - nom: Chromium 4/4
+            navigateurs: chromium
+            arguments: --project=bureau --project=mobile --shard=4/4
+          - nom: WebKit, mise en page
+            navigateurs: webkit
+            arguments: --project=webkit-bureau --project=webkit-mobile
+    env:
+      E2E_NAVIGATEURS: ${{ matrix.tranche.navigateurs }}
+      E2E_ARGUMENTS: ${{ matrix.tranche.arguments }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -2727,8 +2771,8 @@ jobs:
         # l'image — la CI doit installer exactement comme elle.
         run: npm ci --legacy-peer-deps
 
-      # Chromium seul : les deux profils (bureau et mobile) l'emploient, et
-      # installer Firefox et WebKit pour rien coûterait deux minutes par PR.
+      # Le navigateur de SA tranche (`E2E_NAVIGATEURS`) ; Firefox n'est joué
+      # nulle part. Sur le poste, la variable est absente : Chromium et WebKit.
       # 📦 Les paquets système de Playwright, gardés d'un job à l'autre (#1865).
       #  Depuis la 1.64, `--with-deps` télécharge ~21 Mo de polices absentes de
       #  l'image. Le 12/10/2026, un miroir Ubuntu à 28 ko/s y a passé 12 min 38 s :
@@ -2740,7 +2784,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/apt-playwright
-          key: apt-playwright-${{ runner.os }}-${{ hashFiles('front/node_modules/playwright-core/package.json') }}
+          key: apt-playwright-${{ runner.os }}-${{ matrix.tranche.navigateurs }}-${{ hashFiles('front/node_modules/playwright-core/package.json') }}
 
       - name: Install Playwright browsers
         working-directory: front
@@ -2775,7 +2819,8 @@ jobs:
             echo "$conf" | sudo tee /etc/apt/apt.conf.d/99-cache-playwright > /dev/null
           fi
           debut=$(date +%s)
-          npx playwright install --with-deps chromium
+          # shellcheck disable=SC2086 # la liste se coupe en mots, voulu
+          npx playwright install --with-deps ${E2E_NAVIGATEURS:-chromium webkit}
           #  La mesure que #1865 demande : la durée, job après job.
           echo "Installation de Playwright : $(( $(date +%s) - debut )) s"
           #  🔴 apt laisse dans le dossier gardé son verrou et `partial/`, à root
@@ -2795,7 +2840,7 @@ jobs:
         working-directory: front
         run: npm run lint:e2e-serveur
 
-      - name: Tests de navigateur (bureau et mobile)
+      - name: Tests de navigateur (la tranche, ou toute la suite sur le poste)
         working-directory: front
         # 🔒 Aucun rechargement de Vite pendant les tests (#1421, 28/09/2026). À
         # cache froid, une dépendance chargée par un `import()` dynamique n'est
@@ -2805,7 +2850,8 @@ jobs:
         # six l'avaient subi. La dépendance nommée va dans `optimizeDeps.include`.
         run: |
           set +e
-          npm run e2e 2>&1 | tee e2e-sortie.log
+          # shellcheck disable=SC2086 # les arguments se coupent en mots, voulu
+          npm run e2e -- $E2E_ARGUMENTS 2>&1 | tee e2e-sortie.log
           code=${PIPESTATUS[0]}
           if grep -q "optimized dependencies changed" e2e-sortie.log; then
             grep "new dependencies optimized" e2e-sortie.log
@@ -2819,10 +2865,38 @@ jobs:
       # vu du navigateur, le 26/07 ; accents graves de Rolldown pris pour une
       # disparition, le 24/10). Ceci lance l'application CONSTRUITE et demande au
       # navigateur. Le service worker n'existe qu'au build : `vite dev` n'en sert pas.
+      #  Une seule tranche le joue (`service_worker`) : quatre fois le même
+      #  build ne mesurerait rien de plus. Le poste, qui ignore `if:`, le joue.
       - name: Construire l'application (le service worker n'existe qu'au build)
+        if: matrix.tranche.service_worker
         working-directory: front
         run: npm run build
 
       - name: Service worker enregistré (Chromium, application construite)
+        if: matrix.tranche.service_worker
         working-directory: front
         run: npm run e2e:sw
+
+  # ── Le verdict des tranches, sous le nom du check REQUIS (#2632) ──────────
+  #  La protection de `main` exige « Tests de navigateur (Playwright) » : le
+  #  nom passe des tranches à ce job, qui ne fait que les juger. `always()` :
+  #  sans lui, une tranche rouge SAUTERAIT ce job — et GitHub compte un check
+  #  requis sauté comme un succès. Toute tranche autre que `success` (rouge,
+  #  annulée, sautée) le rend rouge.
+  e2e-verdict:
+    name: Tests de navigateur (Playwright)
+    needs: e2e-frontend
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      RESULTAT_TRANCHES: ${{ needs.e2e-frontend.result }}
+    steps:
+      - name: Toutes les tranches sont vertes
+        run: |
+          if [ -z "${RESULTAT_TRANCHES:-}" ]; then
+            echo "· Hors d'Actions : pas de tranches, l'étape des tests joue la suite entière."
+            exit 0
+          fi
+          echo "Tranches de Playwright : $RESULTAT_TRANCHES"
+          [ "$RESULTAT_TRANCHES" = success ] || { echo "✗ Au moins une tranche n'est pas verte : la lire ci-dessus."; exit 1; }
