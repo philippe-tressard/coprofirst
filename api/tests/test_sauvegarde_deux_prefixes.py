@@ -29,6 +29,10 @@ from app.utils.backup import (
     horodatage_archive,
     nom_archive,
 )
+from tests.aides_horloge import il_y_a_jours
+
+#: Une ancienneté se pose en jours civils (`il_y_a_jours`) : rejouée à l'heure hostile.
+pytestmark = pytest.mark.usefixtures("heure_hostile")
 
 LIB = Path(__file__).resolve().parents[2] / "scripts" / "lib" / "lib-export-hors-site.sh"
 
@@ -154,7 +158,7 @@ def test_apres_un_retour_arriere_la_rotation_garde_l_historique_le_plus_recent(d
 def test_la_sante_juge_l_archive_neuve_quand_l_historique_est_plus_vieux(dossier):
     poser(
         dossier,
-        historique(horloge.maintenant() - timedelta(days=5)),
+        historique(il_y_a_jours(5)),
         nom_archive(horloge.maintenant() - timedelta(hours=3)),
     )
     assert health_monitor._check_archive_locale() == []
@@ -168,7 +172,7 @@ def test_la_sante_lit_encore_un_dossier_d_historique_seul(dossier):
 def test_la_sante_dit_perimee_une_neuve_vieille_meme_avec_un_historique_plus_vieux(dossier):
     poser(
         dossier,
-        historique(horloge.maintenant() - timedelta(days=9)),
+        historique(il_y_a_jours(9)),
         nom_archive(horloge.maintenant() - timedelta(hours=50)),
     )
     (anomalie,) = health_monitor._check_archive_locale()
