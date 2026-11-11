@@ -1,6 +1,6 @@
 {
-"version": "1.19.0",
-"empreinte": "f32bc7102bea0984bdcfb3870a82f5b9cf06cff7dd3eeb12b436e3d15ec1ea4d",
+"version": "1.20.0",
+"empreinte": "e6d294ac8374357fa89eb4c3541e9f627b6634aec2f21f0bb5f54d6776a967b6",
 "operations": {
   "GET /acces/admin/choix-acces": {"deprecie": false, "entree": [], "reponse": {"$": "dictionnaire", "$.{}": "objet", "$.{}.codes": "liste", "$.{}.codes[]": "string", "$.{}.suit_le_lot": "boolean"}},
   "GET /acces/admin/constats-badges": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].code": "string", "$[].gravite": "string", "$[].lots": "liste?", "$[].lots[]": "string", "$[].message": "string"}},
@@ -242,6 +242,7 @@
   "GET /faq/all": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].actif": "boolean", "$[].categorie": "string", "$[].categorie_libelle": "string", "$[].cree_le": "string(date-time)", "$[].id": "integer", "$[].mis_a_jour_le": "string(date-time)", "$[].ordre": "integer", "$[].question": "string", "$[].reponse": "string"}},
   "GET /faq/categories": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "string"}},
   "PATCH /faq/categories/rename": {"deprecie": false, "entree": ["corps", "corps.new_name", "corps.old_name"], "reponse": {"$": "objet", "$.count": "integer", "$.new_name": "string"}},
+  "GET /faq/gestes": {"deprecie": false, "entree": [], "reponse": {"$": "objet", "$.peut_rediger": "boolean"}},
   "PATCH /faq/reorder": {"deprecie": false, "entree": ["corps"], "reponse": {}},
   "DELETE /faq/{item_id}": {"deprecie": false, "entree": ["path:item_id"], "reponse": {}},
   "PATCH /faq/{item_id}": {"deprecie": false, "entree": ["corps", "path:item_id"], "reponse": {"$": "objet", "$.actif": "boolean", "$.categorie": "string", "$.categorie_libelle": "string", "$.cree_le": "string(date-time)", "$.id": "integer", "$.mis_a_jour_le": "string(date-time)", "$.ordre": "integer", "$.question": "string", "$.reponse": "string"}},
@@ -374,6 +375,7 @@
   "PATCH /signalements/{sig_id}": {"deprecie": false, "entree": ["corps", "corps.statut", "path:sig_id"], "reponse": {"$": "libre"}},
   "GET /sondages": {"deprecie": false, "entree": [], "reponse": {"$": "liste", "$[]": "objet", "$[].archivee": "boolean?", "$[].assiste_ia": "boolean?", "$[].auteur_id": "integer?", "$[].cloture": "boolean?", "$[].cloture_forcee": "boolean?", "$[].cloture_le": "string(date-time)?", "$[].cree_le": "string(date-time)", "$[].description": "string?", "$[].id": "integer", "$[].nb_votants": "integer?", "$[].nouveau": "boolean?", "$[].perimetre_cible": "liste?", "$[].perimetre_cible[]": "string", "$[].public_cible": "liste?", "$[].public_cible[]": "string", "$[].question": "string", "$[].resultats_publics": "boolean"}},
   "POST /sondages": {"deprecie": false, "entree": ["corps", "corps.options", "corps.question"], "reponse": {"$": "libre"}},
+  "GET /sondages/gestes": {"deprecie": false, "entree": [], "reponse": {"$": "objet", "$.peut_creer": "boolean"}},
   "DELETE /sondages/{sondage_id}": {"deprecie": false, "entree": ["path:sondage_id"], "reponse": {}},
   "GET /sondages/{sondage_id}": {"deprecie": false, "entree": ["path:sondage_id"], "reponse": {"$": "objet", "$.auteur_id": "integer?", "$.cloture": "boolean?", "$.cloture_forcee": "boolean?", "$.cloture_le": "string(date-time)?", "$.commentaires": "liste?", "$.commentaires[]": "objet", "$.commentaires[].auteur_batiment": "string?", "$.commentaires[].auteur_id": "integer?", "$.commentaires[].auteur_nom": "string", "$.commentaires[].auteur_role": "string?", "$.commentaires[].contenu": "string", "$.commentaires[].cree_le": "string(date-time)", "$.commentaires[].est_cs": "boolean?", "$.commentaires[].id": "integer", "$.commentaires[].peut_supprimer": "boolean?", "$.cree_le": "string(date-time)", "$.description": "string?", "$.id": "integer", "$.mon_vote": "integer?", "$.nouveau": "boolean?", "$.options": "liste?", "$.options[]": "objet", "$.options[].champ_libre": "boolean?", "$.options[].id": "integer", "$.options[].libelle": "string", "$.options[].nb_votes": "integer?", "$.options[].ordre": "integer", "$.options[].reponses_libres": "liste?", "$.options[].reponses_libres[]": "string", "$.perimetre_cible": "liste?", "$.perimetre_cible[]": "string", "$.public_cible": "liste?", "$.public_cible[]": "string", "$.question": "string", "$.resultats_publics": "boolean", "$.resultats_visibles": "boolean?"}},
   "PATCH /sondages/{sondage_id}": {"deprecie": false, "entree": ["corps", "path:sondage_id"], "reponse": {"$": "libre"}},
