@@ -149,7 +149,10 @@ test('chaque adresse d’avant le rangement ouvre un onglet, et le bon', async (
 	await expect(page.getByRole('radio', { name: 'Télécommandes' })).toBeChecked();
 });
 
-test('au doigt : pas de défilement de page, cibles de 44 px', async ({ page, isMobile }) => {
+test('au doigt : pas de défilement de page, cibles de 44 px @mise-en-page', async ({
+	page,
+	isMobile,
+}) => {
 	test.skip(!isMobile, 'mesure tactile : profil mobile seulement');
 	await ouvrir(page, '/admin?onglet=services', ADMIN_OPERATEUR);
 	await expect(onglets(page).first()).toBeVisible();

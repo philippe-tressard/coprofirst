@@ -20,7 +20,9 @@ const SANTE = { taches: [], anomalies_recentes: [], anomalies_fenetre_jours: 7 }
 
 const REGLAGE = { heure_execution: 4, nb_versions_conservees: 7 };
 
-test('la liste des heures et le nombre de versions ont la même hauteur', async ({ page }) => {
+test('la liste des heures et le nombre de versions ont la même hauteur @mise-en-page', async ({
+	page,
+}) => {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;
 		if (chemin === '/api/admin/maintenance/sante') return SANTE;
@@ -65,7 +67,9 @@ test('la liste des heures et le nombre de versions ont la même hauteur', async 
 //  (10/11/2026, signalé à l'écran juste après l'alignement) : le bloc posait son
 //  titre par `SectionFormulaire` sans l'envelopper, donc ses libellés sortaient
 //  en taille de texte courant, noirs — PLUS GRANDS que la phrase d'aide au-dessus.
-test('les libellés de la rangée sont plus petits que la phrase d’aide', async ({ page }) => {
+test('les libellés de la rangée sont plus petits que la phrase d’aide @mise-en-page', async ({
+	page,
+}) => {
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/auth/me') return ADMIN;
 		if (chemin === '/api/admin/maintenance/sante') return SANTE;

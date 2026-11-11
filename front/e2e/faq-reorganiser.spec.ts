@@ -50,6 +50,8 @@ async function ouvrir(page: Page): Promise<unknown[]> {
 	});
 	await simulerApi(page, (chemin) => {
 		if (chemin === '/api/faq/all' || chemin === '/api/faq') return QUESTIONS;
+		//  Le droit de rédiger est SERVI (#2654) : sans lui, pas de « Réorganiser ».
+		if (chemin === '/api/faq/gestes') return { peut_rediger: true };
 		if (chemin === '/api/faq/reorder') return null;
 	});
 	await page.goto('/faq');

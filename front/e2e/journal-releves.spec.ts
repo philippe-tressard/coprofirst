@@ -48,7 +48,7 @@ const RELEVES = [
 	}),
 ];
 
-test('Espace CS › Courriels : une pliure par message, verdict et motif dessous', async ({
+test('Espace CS › Courriels : une pliure par message, verdict et motif dessous @mise-en-page', async ({
 	page,
 }) => {
 	await simulerApi(page, (chemin) => {

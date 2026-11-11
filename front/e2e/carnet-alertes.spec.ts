@@ -79,10 +79,10 @@ async function ouvrir(page: Page, moi = MEMBRE_CS, carnet: Carnet = CARNET) {
 
 test.beforeEach(async ({ page }, info) => {
 	//  Le téléphone le plus étroit que le site s'engage à tenir.
-	if (info.project.name === 'mobile') await page.setViewportSize({ width: 375, height: 812 });
+	if (info.project.use.isMobile) await page.setViewportSize({ width: 375, height: 812 });
 });
 
-test('l’encart nomme chaque visite en retard, et elle seule', async ({ page }) => {
+test('l’encart nomme chaque visite en retard, et elle seule @mise-en-page', async ({ page }) => {
 	const liste = await ouvrir(page);
 	await expect(page.getByText(/2 visites attendues/)).toBeVisible();
 	await expect(liste.locator('li')).toHaveCount(2);

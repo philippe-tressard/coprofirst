@@ -67,6 +67,16 @@ class FaqItemRead(BaseModel):
         return libelle_categorie_faq(self.categorie)
 
 
+class GestesFaq(BaseModel):
+    """`GET /faq/gestes` — ce que CE lecteur peut faire de la FAQ (#2654).
+
+    `peut_rediger` ouvre tout ce que l'écran offre au rédacteur : créer, modifier,
+    retirer, réorganiser une entrée, renommer une catégorie, lire les entrées
+    inactives. Ces routes prennent toutes `require_cs_or_admin`."""
+
+    peut_rediger: bool
+
+
 class FaqRenommage(BaseModel):
     """`PATCH /faq/categories/rename` — combien d'entrées, sous quel nom."""
 
@@ -106,6 +116,18 @@ def list_faq(
     if est_moderateur(user):
         return items
     return [i for i in items if categorie_lue_par(i.categorie, user.statut)]
+
+
+@router.get("/gestes", response_model=GestesFaq)
+def gestes_faq(user: Utilisateur = Depends(get_current_user)):
+    """Le droit de rédiger la FAQ, servi au lecteur (#2654) : le site et l'app iOS le
+    LISENT, aucun ne le recompose depuis les rôles (`standards/09` §8, règle 1).
+
+    🔒 `est_moderateur` est le prédicat que `require_cs_or_admin` refuse — appelé,
+    jamais recopié ; `test_gestes_faq_sondages_servis.py` joue les routes de
+    rédaction pour chaque rôle et les confronte au champ servi.
+    """
+    return GestesFaq(peut_rediger=est_moderateur(user))
 
 
 @router.get("/categories", response_model=list[str])

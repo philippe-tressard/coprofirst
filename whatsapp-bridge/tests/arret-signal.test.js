@@ -106,9 +106,27 @@ test("sans signal, rien ne s'arrête et la connexion se tient", async () => {
   assert.ok(!lireTrace(trace).includes("socket-end"));
 });
 
+// Attend qu'une ligne paraisse dans la trace — un FAIT, jamais une durée (#2656).
+// Le plafond, large, ne sert qu'à ne pas pendre : sous une charge de 588 sur 12
+// cœurs, 500 ms fixes ne suffisaient plus à l'enfant pour poser ses écouteurs,
+// et le test mesurait la vitesse du poste au lieu de l'arrêt propre.
+async function attendreLigne(trace, ligne, enfant, plafondMs = 30000) {
+  const debut = Date.now();
+  while (!lireTrace(trace).includes(ligne)) {
+    if (enfant.exitCode !== null || enfant.signalCode !== null) {
+      throw new Error(`l'enfant est sorti avant « ${ligne} » (code ${enfant.exitCode}, signal ${enfant.signalCode})`);
+    }
+    if (Date.now() - debut > plafondMs) throw new Error(`« ${ligne} » absente de la trace après ${plafondMs} ms`);
+    await new Promise((ok) => setTimeout(ok, 20));
+  }
+}
+
 test("un VRAI SIGTERM de l'OS (Linux)", { skip: process.platform === "win32" }, async () => {
-  const { enfant } = lancer({ SIMULE_ECRITURE_MS: "300" }, "silent");
-  await new Promise((ok) => setTimeout(ok, 500)); // le temps d'ouvrir la connexion simulée
+  const { enfant, trace } = lancer({ SIMULE_ECRITURE_MS: "300" }, "silent");
+  // `index.js` pose ses écouteurs de SIGTERM AVANT d'ouvrir le port ; la socket
+  // simulée ne naît qu'une fois le port ouvert. Sa ligne dit donc que l'arrêt
+  // propre est prêt.
+  await attendreLigne(trace, "socket-cree", enfant);
   const fin = new Promise((ok) => enfant.on("exit", (code, signal) => ok({ code, signal })));
   enfant.kill("SIGTERM");
   const garde = setTimeout(() => enfant.kill("SIGKILL"), 4000);
