@@ -145,7 +145,7 @@ else
 fi
 rapporter 0c "$V0C" "CI de la branche $BRANCHE" "$DETAIL0C"
 
-# 0d — un seul bump de version par lot, et posé en dernier
+# 0d — un seul bump de version par TRAIN, et aucun dans un lot (#2631)
 #      Ajouté le 11/08/2026 sur remarque de l'utilisateur : la PR #297 portait
 #      DEUX `chore(version)` — v2.49.1 puis v2.50.0 — et la v2.49.1 n'a jamais
 #      été servie. J'avais bumpé en croyant le lot fini, les retours ont
@@ -163,15 +163,26 @@ lire_version() {  # $1 = révision git
   git show "$1:front/package.json" 2>/dev/null | grep -m1 '"version"' | cut -d'"' -f4
 }
 V_MAIN=$(lire_version origin/main); V_HEAD=$(lire_version HEAD)
+#  Depuis #2631, la version se pose par `conduire-mep.sh`, au moment de la MEP : un LOT
+#  n'en porte pas (0d le refuse), seul le TRAIN — `dev`, la PR `dev → main` — se juge
+#  sur son bump. La branche dit lequel des deux part.
+MODE0D=$(mode_version_branche "$BRANCHE")
 V0D=$(verdict_bumps "${NB_BUMPS:-}" "${V_MAIN:-}" "${V_HEAD:-}")
-case "$V0D" in
+V_BASE=$(lire_version "$(git merge-base origin/main HEAD 2>/dev/null)")
+[ "$MODE0D" = LOT ] && V0D=$(verdict_version_du_lot "${V_BASE:-}" "${V_HEAD:-}")
+if [ "$MODE0D" = LOT ]; then case "$V0D" in
+  OK)   D0D="${V_HEAD:-?} inchangée depuis la base du lot — la version se pose par conduire-mep.sh à la MEP"
+        [ "${V_HEAD:-}" != "${V_MAIN:-}" ] && D0D="$D0D (main porte ${V_MAIN:-?} : la branche est partie avant)" ;;
+  FAIL) D0D="le lot porte ${V_BASE:-?} → ${V_HEAD:-?} : retirer le bump, conduire-mep.sh la pose depuis les préfixes du train" ;;
+  *)    D0D="version illisible" ;;
+esac; else case "$V0D" in
   OK)    D0D="${V_MAIN:-?} → ${V_HEAD:-?}$(
            [ "$NB_BUMPS" = "1" ] && echo " — $(git log origin/main..HEAD --grep='^chore(version)' --format='%s' 2>/dev/null | head -1)" \
                                  || echo " (bump replié dans un commit fonctionnel, pas de commit dédié)")" ;;
   ECART) D0D="version inchangée (${V_MAIN:-?}) : P3 ne prouvera rien" ;;
   FAIL)  D0D="$NB_BUMPS bumps — n'en garder qu'un : reset --soft puis push --force-with-lease" ;;
   *)     D0D="comptage impossible" ;;
-esac
+esac; fi
 rapporter 0d "$V0D" "Un seul bump de version dans le lot" "$D0D"
 
 # 0g — le RANG du bump correspond à ce que le lot apporte (07/09/2026)
@@ -180,7 +191,10 @@ rapporter 0d "$V0D" "Un seul bump de version dans le lot" "$D0D"
 #      complet vit avec les deux fonctions, dans `lib-verdicts-mep.sh`.
 SUJETS=$(git log origin/main..HEAD --format='%s%n%b' 2>/dev/null | grep -v '^chore(version)')
 V0G=$(verdict_rang_version "$(rang_attendu "$SUJETS")" "${V_MAIN:-}" "${V_HEAD:-}")
+#  Un lot n'a pas de bump à juger : son rang ANNONCÉ entre dans le calcul du conducteur.
+[ "$MODE0D" = LOT ] && [ "$V0D" = OK ] && V0G=LOT
 case "$V0G" in
+  LOT)   D0G="le lot annonce un $(rang_attendu "$SUJETS") — conduire-mep.sh en tient compte en posant la version du train"; V0G=OK ;;
   OK)    D0G="${V_MAIN:-?} → ${V_HEAD:-?} — $(rang_attendu "$SUJETS"), conforme aux préfixes du lot" ;;
   ECART) D0G="version inchangée : rien à juger (0d le dit déjà)" ;;
   FAIL)  D0G="le lot annonce un $(rang_attendu "$SUJETS"), or ${V_MAIN:-?} → ${V_HEAD:-?} — corriger le bump, ou le préfixe s'il ment" ;;
@@ -259,14 +273,9 @@ V16T=$(verdict_rejeu_ci "${R_SHA:-}" "$H_SHA" "${R_FAIL:-}" "${R_INC:-}" "${R_TR
 ETAT_PR16=ABSENT; D16PR="aucune PR ouverte pour $BRANCHE : pousser et ouvrir la PR, ou \`rejouer-ci.sh --complet\`"
 if [ "$V16T" = OK ] && [ "$R_MODE" = rapide ]; then
   if command -v gh >/dev/null 2>&1; then
-    #  Mêmes comptes que le conducteur de la MEP : un check non terminé est « en cours »,
-    #  un check terminé autrement que SUCCESS, SKIPPED ou NEUTRAL est rouge.
+    #  Mêmes comptes que le conducteur de la MEP (`COMPTES_CHECKS_JQ`, lib-depot.sh).
     PR16=$(gh pr list --head "$BRANCHE" --state open --limit 1 --json number,headRefOid,statusCheckRollup \
-             --jq '.[0] | select(.) | [.number, .headRefOid, (.statusCheckRollup | length),
-                     ([.statusCheckRollup[] | select(.status != "COMPLETED")] | length),
-                     ([.statusCheckRollup[] | select(.status == "COMPLETED" and .conclusion != "SUCCESS"
-                        and .conclusion != "SKIPPED" and .conclusion != "NEUTRAL")] | length)]
-                   | map(tostring) | join(" ")' 2>/dev/null)
+             --jq ".[0] | select(.) | [.number, .headRefOid, $COMPTES_CHECKS_JQ] | map(tostring) | join(\" \")" 2>/dev/null)
     read -r N16 OID16 NB16 COURS16 ROUGES16 <<< "${PR16:-}"
     if [ -n "${OID16:-}" ]; then
       if [ -n "$H_ARBRE" ] && [ "$(git rev-parse "${OID16}^{tree}" 2>/dev/null)" = "$H_ARBRE" ]; then
