@@ -33,7 +33,9 @@ function service(champs: Partial<ServiceCopropriete> & { code: string }): Servic
 	};
 }
 
-test('Admin › Services : état, manque, bascule et infrastructure sans case', async ({ page }) => {
+test('Admin › Services : état, manque, bascule et infrastructure sans case @mise-en-page', async ({
+	page,
+}) => {
 	let whatsapp: ServiceCopropriete['etat'] = 'incomplet';
 	const ecrits: Record<string, string>[] = [];
 	page.on('request', (r) => {

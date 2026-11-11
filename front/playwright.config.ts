@@ -27,6 +27,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
+import { RETENUS_SOUS_WEBKIT } from './e2e/mise-en-page';
 
 /** Le processus existe-t-il encore ? `kill(pid, 0)` interroge sans rien envoyer. */
 function vivant(pid: number): boolean {
@@ -157,6 +158,11 @@ export default defineConfig({
 		//  permanente (`standards/11` §10), et c'est sur téléphone que le titre des
 		//  cartes disparaissait (#453, `EnteteCarte`).
 		{ name: 'mobile', use: { ...devices['Pixel 5'] } },
+		//  🧭 WebKit, le moteur de Safari et de tous les iPhone (#2640) : seulement
+		//  les tests de mise en page, étiquetés (`e2e/mise-en-page.ts`). Un défaut
+		//  propre à Safari passait la CI, qui ne jouait que Chromium (#2639).
+		{ name: 'webkit-bureau', use: { ...devices['Desktop Safari'] }, grep: RETENUS_SOUS_WEBKIT },
+		{ name: 'webkit-mobile', use: { ...devices['iPhone 13'] }, grep: RETENUS_SOUS_WEBKIT },
 	],
 	webServer: {
 		command: `npm run dev -- --host 127.0.0.1 --port ${PORT} --strictPort`,

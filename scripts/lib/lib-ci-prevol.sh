@@ -43,13 +43,17 @@ ci_version_etat() {
 }
 
 #  Les navigateurs de Playwright du lot sont-ils installés ? Le lot épingle une
-#  RÉVISION de Chromium (`playwright-core/browsers.json`) ; un dossier d'une
-#  autre révision ne la remplace pas.
-#    $1 = révision attendue (vide : illisible), $2 = présente oui|non
+#  RÉVISION par navigateur (`playwright-core/browsers.json`) ; un dossier d'une
+#  autre révision ne la remplace pas. Deux navigateurs : Chromium (bureau et
+#  mobile) et WebKit, pour les tests de mise en page (#2640) — sans lui, ses
+#  profils échoueraient au lancement, au bout de la suite.
+#    $1 = navigateur (chromium|webkit), $2 = révision attendue (vide : illisible),
+#    $3 = présente oui|non
+CI_NAVIGATEURS_E2E="chromium webkit"
 ci_playwright_etat() {
-  [ -z "${1:-}" ] && { echo "REFUS révision de Chromium illisible (front/node_modules absent ?) · réparer : (cd front && npm ci --legacy-peer-deps)"; return; }
-  [ "${2:-non}" = oui ] && echo "" \
-    || echo "REFUS Chromium $1 de Playwright absent du poste · réparer : (cd front && npx playwright install chromium)"
+  [ -z "${2:-}" ] && { echo "REFUS révision de $1 illisible (front/node_modules absent ?) · réparer : (cd front && npm ci --legacy-peer-deps)"; return; }
+  [ "${3:-non}" = oui ] && echo "" \
+    || echo "REFUS $1 $2 de Playwright absent du poste · réparer : (cd front && npx playwright install $1)"
 }
 
 #  Un venv ANNONCÉ (`VIRTUAL_ENV`) est-il celui qui répond ? Écrit `C:/…` dans
@@ -83,13 +87,13 @@ ci_installations_python() {
 }
 
 # ── Sondes (lisent, n'écrivent rien) ────────────────────────────────────────
-#  La révision de Chromium que le lot attend, ou vide.
-ci_revision_chromium() {
-  python - "$1/front/node_modules/playwright-core/browsers.json" 2>/dev/null <<'PYTHON' | tr -d '\r'
+#  La révision d'un navigateur ($2) que le lot attend, ou vide.
+ci_revision_navigateur() {
+  python - "$1/front/node_modules/playwright-core/browsers.json" "$2" 2>/dev/null <<'PYTHON' | tr -d '\r'
 import json, sys
 try:
     for b in json.load(open(sys.argv[1], encoding="utf-8"))["browsers"]:
-        if b.get("name") == "chromium":
+        if b.get("name") == sys.argv[2]:
             print(b["revision"])
 except Exception:
     pass
@@ -193,10 +197,13 @@ ci_prevol() {
     job=$(<"$vite/job")
     motif=$(ci_node_modules_etat "$(ci_genre_node_modules "$RACINE")")
     [ -n "$motif" ] && printf '%s\t%s · réparer : cmd //c "rmdir front\\node_modules" && (cd front && npm ci --legacy-peer-deps) — rmdir retire le LIEN, jamais le node_modules partagé\n' "$job" "$motif" >> "$refus"
-    version=$(ci_revision_chromium "$RACINE")
-    motif=$(ci_playwright_etat "$version" "$([ -n "$version" ] && [ -d "$(ci_dossier_navigateurs)/chromium-$version" ] && echo oui || echo non)")
-    if [ -n "$motif" ]; then printf '%s\t%s\n' "$job" "${motif#REFUS }" >> "$refus"
-    else echo "node_modules du worktree, Chromium $version" >> "$faits"; fi
+    for nav in $CI_NAVIGATEURS_E2E; do
+      version=$(ci_revision_navigateur "$RACINE" "$nav")
+      motif=$(ci_playwright_etat "$nav" "$version" "$([ -n "$version" ] && [ -d "$(ci_dossier_navigateurs)/$nav-$version" ] && echo oui || echo non)")
+      if [ -n "$motif" ]; then printf '%s\t%s\n' "$job" "${motif#REFUS }" >> "$refus"
+      else echo "$nav $version" >> "$faits"; fi
+    done
+    echo "node_modules du worktree" >> "$faits"
   fi
   motif=$(ci_venv_etat "$([ -n "${VIRTUAL_ENV:-}" ] && ci_chemin_comparable "$VIRTUAL_ENV")" \
     "$(ci_chemin_comparable "$(python -c 'import sys; print(sys.prefix)' 2>/dev/null | tr -d '\r')")")
@@ -299,10 +306,13 @@ ci_prevol_cas() {
   t "version — 3.9 n'est pas plus récent que 3.12" "$(ci_version_etat python 3.12 3.9.1 | cut -c1-5)" "REFUS"
   #  🔴 Le cas zéro : pas de version lue, pas de rejeu.
   t "version — introuvable : refus"   "$(ci_version_etat node '"22"' "")" "REFUS node introuvable sur le poste (CI : 22)"
-  t "playwright — présent"            "$(ci_playwright_etat 1248 oui)" ""
-  t "playwright — absent : la commande qui répare" "$(ci_playwright_etat 1248 non)" \
-    "REFUS Chromium 1248 de Playwright absent du poste · réparer : (cd front && npx playwright install chromium)"
-  t "playwright — révision illisible : refus, jamais OK" "$(ci_playwright_etat "" oui | cut -c1-5)" "REFUS"
+  t "playwright — présent"            "$(ci_playwright_etat chromium 1248 oui)" ""
+  t "playwright — absent : la commande qui répare" "$(ci_playwright_etat chromium 1248 non)" \
+    "REFUS chromium 1248 de Playwright absent du poste · réparer : (cd front && npx playwright install chromium)"
+  t "playwright — WebKit absent : refus nommé (#2640)" "$(ci_playwright_etat webkit 2388 non)" \
+    "REFUS webkit 2388 de Playwright absent du poste · réparer : (cd front && npx playwright install webkit)"
+  t "playwright — révision illisible : refus, jamais OK" "$(ci_playwright_etat webkit "" oui | cut -c1-5)" "REFUS"
+  t "playwright — les deux navigateurs sondés" "$CI_NAVIGATEURS_E2E" "chromium webkit"
   t "venv — aucun annoncé"            "$(ci_venv_etat "" c:/python)" ""
   t "venv — celui qui répond"         "$(ci_venv_etat c:/v c:/v)" ""
   t "venv — le Python du poste répond à sa place" "$(ci_venv_etat c:/v c:/python314 | cut -c1-5)" "REFUS"

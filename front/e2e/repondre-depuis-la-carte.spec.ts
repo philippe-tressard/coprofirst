@@ -163,7 +163,7 @@ test('sur la page de l’affaire : l’icône ouvre le formulaire sur place', as
 	await expect(page.locator('.carte-repondre')).toHaveCount(0);
 });
 
-test('au téléphone, six icônes laissent sa place au titre', async ({ page }) => {
+test('au téléphone, six icônes laissent sa place au titre @mise-en-page', async ({ page }) => {
 	await page.setViewportSize({ width: 360, height: 740 });
 	await simuler(page);
 	await page.goto('/tickets');
