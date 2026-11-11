@@ -226,11 +226,15 @@ export interface Ticket extends PorteSaisiPourLu {
 		numero_contrat?: string | null;
 		frequence_type?: string | null;
 		frequence_valeur?: number | null;
+		/** « ↺ Mensuel », vide sans fréquence — SERVI (#2633). */
+		frequence_libelle?: string;
 	} | null;
 	/**  Le code d'un équipement (`#lib/equipements`), posé par le conseil (#1097). */
 	equipement?: string | null;
 	frequence_type?: string | null;
 	frequence_valeur?: number | null;
+	/** Le rythme SAISI en clair, vide sans fréquence — SERVI (#2633). */
+	frequence_libelle?: string;
 	/**  Section « Quand » (#1092), en ISO — quand ça se passe. C'est ce qui
 	 *   fait paraître l'objet au calendrier, devenu une vue et non plus un
 	 *   objet. */

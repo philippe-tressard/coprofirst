@@ -3,6 +3,8 @@
 #  lib-precheck-pr.sh — l'état du dépôt GITHUB vu par le pré-check :
 #    23 — aucune PR ouverte vers `main` hors de `dev` (#1870)
 #    24 — aucune alerte Dependabot haute ou critique ouverte (#2148)
+#    25 — chaque règle d'affichage que le front calcule encore est portée par
+#         un ticket OUVERT (#2633)
 #
 #  Chaque MEP supprime `dev` (squash + `delete_branch_on_merge`) ; GitHub
 #  réoriente alors vers `main` les PR qui la visaient — Dependabot compris, sept
@@ -19,6 +21,12 @@
 #  graphe de dépendances de `main` ne porte plus que des versions corrigées —
 #  l'alerte attend alors la ré-analyse de Dependabot (ÉCART, #2180) —
 #  décision `verdict_alertes`, même script, même autotest.
+#
+#  Point 25 : neuf dérogations de `check-regles-partagees.regles.mjs` sont restées
+#  portées par deux tickets fermés (#2511, #2507) — la dette n'avait plus de
+#  porteur, et `lint`, hors ligne, ne juge que la forme `#NNNN`. FAIL qui nomme le
+#  porteur fermé et ses règles ; GitHub muet, INCONNU. Décision et autotest :
+#  `front/scripts/check-regles-partagees.mjs --tickets` (`verdictPorteurs`).
 #
 #  Sourcé par `scripts/poste/precheck-mep.sh`, qui fournit `rapporter`.
 # =============================================================================
@@ -43,4 +51,16 @@ precheck_point_pr() {
 
 precheck_point_alertes() {
   _point_github 24 "Aucune alerte de sécurité haute ouverte" --alertes "OK ECART FAIL INCONNU"
+}
+
+precheck_point_porteurs() {
+  local libelle="Dérogations des règles partagées portées par un ticket ouvert" sortie verdict
+  if ! command -v node >/dev/null 2>&1; then
+    rapporter 25 INCONNU "$libelle" "node absent du poste"
+    return
+  fi
+  sortie=$(node "$RACINE_DEPOT/front/scripts/check-regles-partagees.mjs" --tickets 2>/dev/null | tail -1)
+  verdict="${sortie%% *}"
+  case "$verdict" in OK|FAIL|INCONNU) ;; *) verdict=INCONNU; sortie="x vérificateur muet" ;; esac
+  rapporter 25 "$verdict" "$libelle" "${sortie#* }"
 }

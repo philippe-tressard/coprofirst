@@ -11,12 +11,13 @@ import json
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, computed_field, field_validator
 
 from app.models.core import TypePrestataire
 from app.utils.assiste_ia import AssisteIACorrection, AssisteIAEntree, AssisteIASortie
 from app.utils.equipements import AUTRE
 from app.utils.perimetres.arbre import parse_json_perimetres
+from app.utils.telephones import telephones_de
 
 
 class PrestataireContact(BaseModel):
@@ -71,6 +72,12 @@ class PrestataireRead(AssisteIASortie):
     nb_notations: int = 0
     #: La plus proche visite prévue de ses contrats en cours — `None` s'il n'en a pas.
     prochaine_visite: Optional[date] = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def telephones(self) -> list[str]:
+        """Les numéros du champ, découpés sur les virgules et sans doublon (#2633)."""
+        return telephones_de(self.telephone)
 
     class Config:
         from_attributes = True

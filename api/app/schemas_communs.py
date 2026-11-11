@@ -116,6 +116,9 @@ class ContratDeLAffaire(BaseModel):
     numero_contrat: Optional[str] = None
     frequence_type: Optional[str] = None
     frequence_valeur: Optional[int] = None
+    #: « ↺ Mensuel » — vide sans fréquence. POSÉ par la lecture
+    #: (`utils/frequence_contrat`) : ce module n'importe rien du projet (#2633).
+    frequence_libelle: str = ""
 
 
 class ChampsIntervenant(BaseModel):

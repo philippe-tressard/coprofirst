@@ -43,6 +43,7 @@ from app.schemas import AffaireLieeLue, ContratDeLAffaire, TicketEvolutionRead, 
 from app.utils.archivage import est_archivable, perime_le
 from app.utils.lecture import lire_objet
 from app.utils.corrections_texte import expliciter_ancienne
+from app.utils.frequence_contrat import frequence_libelle
 from app.utils.photos import parse_photos
 from .lecture_groupee import LectureGroupee, lecture_groupee
 
@@ -334,6 +335,7 @@ def contrat_de_l_affaire(
         numero_contrat=c.numero_contrat if conseil else None,
         frequence_type=c.frequence_type,
         frequence_valeur=c.frequence_valeur,
+        frequence_libelle=frequence_libelle(c.frequence_type, c.frequence_valeur),
     )
 
 
