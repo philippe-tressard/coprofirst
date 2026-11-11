@@ -328,6 +328,8 @@ export interface TicketMessage {
 	/** Le nom affiché de l'auteur, SERVI (`nom_auteur` : sa qualité s'il a été détaché,
 	 *  « Ancien résident » sans compte) — jamais composé ici (#2680). */
 	auteur_nom: string;
+	/** CE lecteur en est l'auteur (`auth/deps.est_auteur`) — sa bulle se range à droite. */
+	est_auteur: boolean;
 	cree_le: string;
 	fichiers_urls?: string[];
 }

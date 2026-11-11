@@ -9,7 +9,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.auth.appartenance import exiger_objet_autorise
-from app.auth.deps import est_moderateur, get_current_user, lit_les_notes_internes
+from app.auth.deps import est_auteur, est_moderateur, get_current_user, lit_les_notes_internes
 from app.database import get_session
 from app.models.core import (
     MessageTicket,
@@ -35,15 +35,21 @@ from app.utils.fusion_affaires import refuser_si_absorbee
 router = APIRouter()
 
 
-def message_lu(m: MessageTicket, session: Session) -> MessageRead:
-    """Un message tel que le fil le rend, avec le nom de son auteur (#2680).
+def message_lu(m: MessageTicket, session: Session, lecteur: Utilisateur) -> MessageRead:
+    """Un message tel que `lecteur` le lit dans le fil : le nom de son auteur, et si
+    c'est le sien (#2680).
 
     Le nom est SERVI (#2633) : l'écran ne le compose pas. `nom_auteur` dit la
     qualité d'un auteur détaché par la conservation (#2014), « Ancien résident »
     quand le compte n'existe plus — la règle de l'Historique (`commun.evol_read`).
     """
     auteur = ou_rien(session, Utilisateur, m.auteur_id)
-    return lire_objet(MessageRead, m, auteur_nom=nom_auteur(auteur, m.auteur_qualite))
+    return lire_objet(
+        MessageRead,
+        m,
+        auteur_nom=nom_auteur(auteur, m.auteur_qualite),
+        est_auteur=est_auteur(m, lecteur),
+    )
 
 
 @router.get("/{ticket_id}/messages", response_model=list[MessageRead])
@@ -57,7 +63,9 @@ def get_messages(
     # Messages internes réservés CS/admin
     if not lit_les_notes_internes(user):
         stmt = stmt.where(MessageTicket.interne == False)  # noqa: E712
-    return [message_lu(m, session) for m in session.exec(stmt.order_by(MessageTicket.cree_le))]
+    return [
+        message_lu(m, session, user) for m in session.exec(stmt.order_by(MessageTicket.cree_le))
+    ]
 
 
 def _prevenir(
@@ -222,4 +230,4 @@ def add_message(
             fichiers_urls=body.fichiers_urls,
         )
 
-    return message_lu(msg, session)
+    return message_lu(msg, session, user)

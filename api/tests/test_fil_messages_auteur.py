@@ -11,7 +11,8 @@ nom VIDE, et ses propres messages n'étaient jamais marqués comme les siens.
 Le nom est SERVI, comme le reste des noms (#2633) : `auteur_nom`, calculé par
 `utils/noms.nom_auteur` — « Prénom NOM », la qualité d'un auteur détaché par la
 conservation (#2014), « Ancien résident » quand le compte n'existe plus. Le front
-le lit ; il ne compose rien. On le relit par HTTP : c'est la sérialisation de la
+le lit ; il ne compose rien. « Ce message est-il le mien ? » est servi de même
+(`est_auteur`, `auth/deps.est_auteur`) : l'écran ne compare pas les identifiants. On le relit par HTTP : c'est la sérialisation de la
 réponse qui perdait le champ, un appel direct de la route ne l'aurait pas vu.
 """
 
@@ -76,14 +77,20 @@ def test_chaque_message_du_fil_porte_le_nom_de_son_auteur(moteur):
     #  La réponse au POST est elle-même rendue dans le fil (le front l'y ajoute).
     assert envoye.json()["auteur_nom"] == "Alice DURAND"
     assert envoye.json()["auteur_id"] == resident_id
+    assert envoye.json()["est_auteur"] is True
     assert cs.post(f"/tickets/{ticket_id}/messages", json={"contenu": "Vu."}).status_code == 201
 
     fil = resident.get(f"/tickets/{ticket_id}/messages")
     assert fil.status_code == 200, fil.text
-    lus = [(m["auteur_id"], m["auteur_nom"]) for m in fil.json()]
+    lus = [(m["auteur_id"], m["auteur_nom"], m["est_auteur"]) for m in fil.json()]
     assert lus == [
-        (resident_id, "Alice DURAND"),
-        (cs_id, "Bruno MARTIN"),
+        (resident_id, "Alice DURAND", True),
+        (cs_id, "Bruno MARTIN", False),
+    ]
+    #  Le même fil lu par le conseil : chacun ne reconnaît que les siens.
+    assert [m["est_auteur"] for m in cs.get(f"/tickets/{ticket_id}/messages").json()] == [
+        False,
+        True,
     ]
 
 
@@ -103,3 +110,4 @@ def test_un_auteur_detache_se_nomme_par_sa_qualite(moteur, qualite, attendu):
     (message,) = resident.get(f"/tickets/{ticket_id}/messages").json()
     assert message["auteur_id"] is None
     assert message["auteur_nom"] == attendu
+    assert message["est_auteur"] is False  # un auteur détaché n'est personne

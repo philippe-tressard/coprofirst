@@ -5,7 +5,8 @@
  *  sur `/tickets/{id}`, toutes les bulles avaient un nom VIDE, et ses propres
  *  messages n'étaient jamais posés à droite (`own`). Le nom est désormais SERVI
  *  (`auteur_nom`, `utils/noms.nom_auteur`, tenu par `test_fil_messages_auteur.py`) ;
- *  l'écran le lit tel quel, et reconnaît les siens à `auteur_id`.
+ *  l'écran le lit tel quel, et range à droite ceux que le serveur dit siens
+ *  (`est_auteur`) — il ne compare pas les identifiants lui-même (`lint:droits`).
  *
  *  API simulée, compte témoin (`MEMBRE_CS`, id 1).
  */
@@ -30,9 +31,19 @@ const AFFAIRE = {
 
 /** Trois messages tels que le serveur les sert : un voisin, le témoin, un auteur détaché. */
 const MESSAGES = [
-	{ auteur_id: 2, auteur_nom: 'Alice DURAND', contenu: '<p>Il bloque encore.</p>' },
-	{ auteur_id: MEMBRE_CS.id, auteur_nom: 'CS TÉMOIN', contenu: '<p>Devis demandé.</p>' },
-	{ auteur_id: null, auteur_nom: 'Un résident', contenu: '<p>Merci.</p>' },
+	{
+		auteur_id: 2,
+		auteur_nom: 'Alice DURAND',
+		est_auteur: false,
+		contenu: '<p>Il bloque encore.</p>',
+	},
+	{
+		auteur_id: MEMBRE_CS.id,
+		auteur_nom: 'CS TÉMOIN',
+		est_auteur: true,
+		contenu: '<p>Devis demandé.</p>',
+	},
+	{ auteur_id: null, auteur_nom: 'Un résident', est_auteur: false, contenu: '<p>Merci.</p>' },
 ].map((m, i) => ({
 	...m,
 	id: 80 + i,

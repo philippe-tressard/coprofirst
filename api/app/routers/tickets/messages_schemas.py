@@ -28,6 +28,9 @@ class MessageRead(BaseModel):
     #: le nom AFFICHÉ de l'auteur, servi par `routers/tickets/messages.message_lu`
     #: (`utils/noms.nom_auteur`, qui tient compte de la qualité) — le fil le lit (#2680)
     auteur_nom: str = ""
+    #: CE lecteur en est-il l'auteur ? (`auth/deps.est_auteur`) — la bulle se range
+    #: à droite ; l'écran ne compare pas les identifiants lui-même (#2680)
+    est_auteur: bool = False
     contenu: str
     interne: bool
     cree_le: datetime
