@@ -2,7 +2,6 @@
 	import { fmtNombre } from '#lib/utils.ts';
 	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import { lieu } from '#lib/lieu.svelte.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	import type { User } from '#lib/api/types.ts';
 	import EntetePage from '#lib/components/EntetePage.svelte';
 	//  ⏱ L'onglet Annuaire et la boîte de validation attendent un geste :
@@ -210,16 +209,14 @@
 				{#each comptesEnAttente as user (user.id)}
 					<div class="pending-row card" class:pending-row--edition={cvModal?.id === user.id}>
 						<div class="pending-info">
-							<strong>{nomAffiche(user)}</strong>
+							<strong>{user.nom_affiche}</strong>
 							<span class="text-muted-sm">
 								{user.statut?.replace(/_/g, ' ') ?? '…'}{user.batiment_id
 									? ` — ${batimentsMap[user.batiment_id] ?? `Bât. #${user.batiment_id}`}`
 									: ''}
 							</span>
 							{#if agitPourAutrui(user) && user.nom_aide}
-								<span class="text-muted-sm"
-									>👤 Aidé : {nomAffiche(user.prenom_aide, user.nom_aide)}</span
-								>
+								<span class="text-muted-sm">👤 Aidé : {user.nom_aide_affiche}</span>
 							{/if}
 							<span class="text-muted-sm">{fmtDateShort(user.cree_le)}</span>
 						</div>

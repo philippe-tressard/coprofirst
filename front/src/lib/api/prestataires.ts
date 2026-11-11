@@ -39,6 +39,11 @@ export interface ContactPrestataire {
 	email: string | null;
 }
 
+/**  Un contact LU — `PrestataireContactLu` : son « Prénom NOM » rendu par le serveur (#2633). */
+export interface ContactPrestataireLu extends ContactPrestataire {
+	nom_affiche: string;
+}
+
 /**  Un prestataire — `PrestataireRead`, que rendent la liste, les archives, la
  *   création et la correction. */
 export interface Prestataire {
@@ -52,7 +57,7 @@ export interface Prestataire {
 	/** Les numéros du champ, découpés et sans doublon — SERVIS (`utils/telephones`, #2633). */
 	telephones: string[];
 	email: string | null;
-	contacts: ContactPrestataire[];
+	contacts: ContactPrestataireLu[];
 	adresse: string | null;
 	/** Texte riche (HTML). */
 	description: string | null;

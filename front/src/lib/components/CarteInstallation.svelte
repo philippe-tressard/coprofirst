@@ -36,7 +36,6 @@
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { fmtDatetime } from '#lib/date.ts';
 	import { fmtNombre } from '#lib/utils.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	import { lienSource } from '#lib/plateforme.ts';
 	import TexteMarkdown from '#lib/components/TexteMarkdown.svelte';
 
@@ -244,7 +243,7 @@
 				{/if}
 				{#if i.contact}
 					<dt>Administrateur</dt>
-					<dd>{nomAffiche(i.contact)}{SEPARATEUR.tiret}{i.contact.courriel}</dd>
+					<dd>{i.contact.nom_affiche}{SEPARATEUR.tiret}{i.contact.courriel}</dd>
 				{/if}
 			</dl>
 			{#if i.essai_refuse}

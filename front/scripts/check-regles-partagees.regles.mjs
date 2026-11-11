@@ -55,11 +55,9 @@ export const REGLES_PARTAGEES = {
 	nomAffiche: {
 		quoi: '« Prénom NOM » d’une personne (annuaire, annonces, auteurs)',
 		api: 'api/app/utils/noms.py#nom_affiche',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"l'annuaire la sert depuis #2505 (`nom_affiche`, lu par `CarteContact`), une affaire son `nom_proprietaire` (#2508) ; restent les annonces, les baux, les points du conseil et les écrans d'administration qui nomment un compte",
-		},
+		//  Servie en `nom_affiche` (`schemas_nom_servi.NomServi` : comptes, présents,
+		//  contacts, locataires trouvés), `locataire_nom_affiche`, `bailleur_nom_affiche`,
+		//  `nom_aide_affiche` ; une saisie, par `POST /noms/affiche` (#2633).
 	},
 	etageLabel: {
 		quoi: "l'étage en clair (« RDC », « 2ème étage »)",

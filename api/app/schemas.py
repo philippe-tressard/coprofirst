@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, date
 from typing import Optional, List
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, computed_field, field_validator
 
 from app.models.core import StatutTicket, StatutUtilisateur, RoleUtilisateur
 from app.models.tickets import CategorieTicket
@@ -26,6 +26,8 @@ from app.schemas_communs import (  # noqa: F401
 from app.utils.assiste_ia import AssisteIACorrection, AssisteIAEntree, AssisteIASortie
 from app.utils.saisi_pour import SaisiPourEntree, SaisiPourSortie
 from app.schemas_affaire_servie import AffaireServie
+from app.schemas_nom_servi import NomServi
+from app.utils import noms
 
 #  Ne vivent ici que les schémas PARTAGÉS par plusieurs routeurs. Un schéma propre
 #  à un seul routeur est déclaré à côté de lui (`<routeur>_schemas.py`) — #1566.
@@ -39,7 +41,8 @@ class DelegationAidant(BaseModel):
     mandant_nom: str
 
 
-class UserRead(BaseModel):
+class UserRead(NomServi):
+    #  « Prénom NOM » servi (`nom_affiche`, `NomServi`) : le site et l'app le lisent (#2633).
     id: int
     nom: str
     prenom: str
@@ -101,6 +104,12 @@ class UserRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def nom_aide_affiche(self) -> str:
+        """La personne aidée déclarée à l'inscription, « Prénom NOM » — `''` sans elle."""
+        return noms.nom_affiche(self.prenom_aide, self.nom_aide)
 
     @classmethod
     def from_orm_with_roles(

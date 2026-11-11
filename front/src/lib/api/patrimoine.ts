@@ -100,7 +100,7 @@ export interface LigneImportLot {
 		user_id: number | null;
 		/** `propriétaire` ou `locataire`. */
 		type_lien: string;
-		utilisateur: { id: number; prenom: string; nom: string } | null;
+		utilisateur: { id: number; prenom: string; nom: string; nom_affiche: string } | null;
 	}[];
 	notes_admin: string | null;
 	importe_le: string | null;

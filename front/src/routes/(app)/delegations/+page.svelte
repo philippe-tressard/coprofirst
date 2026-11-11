@@ -2,7 +2,6 @@
 	import Badge from '#lib/components/Badge.svelte';
 	import { confirmer } from '#lib/confirmation.ts';
 	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
-	import { nomAffiche } from '#lib/noms.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import EntetePage from '#lib/components/EntetePage.svelte';
 	import { isCS, quandAuthResolue } from '#lib/stores/auth.ts';
@@ -211,7 +210,7 @@
 				<select id="d-mandant" bind:value={formMandantId}>
 					<option value={0} disabled>Choisir…</option>
 					{#each users.filter((u) => u.actif) as u (u.id)}
-						<option value={u.id}>{nomAffiche(u)} ({u.email})</option>
+						<option value={u.id}>{u.nom_affiche} ({u.email})</option>
 					{/each}
 				</select>
 			</div>
@@ -220,7 +219,7 @@
 				<select id="d-aidant" bind:value={formAidantId}>
 					<option value={0} disabled>Choisir…</option>
 					{#each users.filter((u) => u.actif && u.id !== formMandantId) as u (u.id)}
-						<option value={u.id}>{nomAffiche(u)} ({u.email})</option>
+						<option value={u.id}>{u.nom_affiche} ({u.email})</option>
 					{/each}
 				</select>
 			</div>

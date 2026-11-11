@@ -71,7 +71,6 @@
 	import TableParcAcces from '#lib/components/TableParcAcces.svelte';
 	import { confirmerPuis } from '#lib/confirmation.ts';
 	import { messageErreur, tenter } from '#lib/erreurs.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 	import ChoixPastilles from '#lib/components/ChoixPastilles.svelte';
 	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
@@ -224,7 +223,7 @@
 			//  premier rendu ferait clignoter le sélecteur.
 			porteurs = (await adminApi.utilisateurs()).map((u) => ({
 				id: u.id,
-				affiche: nomAffiche(u),
+				affiche: u.nom_affiche,
 			}));
 			choixAcces = await accesApi.choixAcces();
 			lots = await accesApi.lotsImports();

@@ -16,7 +16,6 @@
 	import { admin as adminApi, type User } from '#lib/api/index.ts';
 	import Modale from '#lib/components/Modale.svelte';
 	import { toast } from '#lib/components/Toast.svelte';
-	import { nomAffiche } from '#lib/noms.ts';
 
 	export let utilisateur: User;
 	export let batimentsMap: Record<number, string> = {};
@@ -35,7 +34,7 @@
 				batiment: batiment || null,
 				ancien_resident: ancienResident || null,
 			});
-			toast('success', `Actions d'accueil envoyées pour ${nomAffiche(utilisateur)}.`);
+			toast('success', `Actions d'accueil envoyées pour ${utilisateur.nom_affiche}.`);
 			fermer();
 		} catch (e) {
 			toast('error', messageErreur(e));
@@ -53,7 +52,7 @@
 	on:fermer={fermer}
 >
 	<p class="nom-arrivant">
-		<strong>{nomAffiche(utilisateur)}</strong>
+		<strong>{utilisateur.nom_affiche}</strong>
 	</p>
 	<p class="effet-envoi">
 		Déclenche : bienvenue, consignes de copropriété, demande d'étiquette BAL (syndic), demande

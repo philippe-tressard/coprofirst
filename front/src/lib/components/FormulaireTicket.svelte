@@ -92,8 +92,8 @@
 	} from '#lib/formulaire-affaire.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import PropositionCroisee from '#lib/components/PropositionCroisee.svelte';
-	import { comparerParNom } from '#lib/noms.ts';
-	import { nomCopie, saisieDepuis } from '#lib/saisi-pour.ts';
+	import { comparerParNom, type Nommable } from '#lib/noms.ts';
+	import { nomCopie, saisieDepuis, type ResidentProposable } from '#lib/saisi-pour.ts';
 	import AlerteEnvoiUrgent from '#lib/components/AlerteEnvoiUrgent.svelte';
 
 	/**  L'affaire à MODIFIER, avec ses valeurs déjà saisies. `null` (défaut) =
@@ -158,7 +158,7 @@
 	let loading = false;
 	//  « Au nom de » (CS/admin) — la saisie vit dans `ChampSaisiPour`.
 	let saisiPour = saisieDepuis(ticket);
-	let usersActifs: { id: number; prenom: string; nom: string; email: string }[] = [];
+	let usersActifs: (ResidentProposable & Nommable)[] = [];
 	//  Section « Intervenant » et récurrence d'un Entretien (#1092, lot 5).
 	let prestataireId: number | null = ticket?.prestataire_id ?? null;
 	let contratId: number | null = ticket?.contrat_id ?? null; // le cadre (#1445)

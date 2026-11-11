@@ -33,7 +33,6 @@
 	} from '#lib/prestataires.ts';
 	import type { ContratEntretien, Notation, Prestataire } from '#lib/api/index.ts';
 	import { safeDescription } from '#lib/sanitize.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	import CarteModifiable from './CarteModifiable.svelte';
 	import NotationsPrestataire from './NotationsPrestataire.svelte';
 	import MetriquesPrestataire from './MetriquesPrestataire.svelte';
@@ -131,9 +130,7 @@
 				{#if p.contacts && p.contacts.length > 0}
 					{#each p.contacts as c (c)}
 						<span class="prest-contact">
-							📞 {c.telephone}{#if c.prenom || c.nom}{SEPARATEUR.tiret}{nomAffiche(
-									c,
-								)}{/if}{#if c.fonction}&nbsp;({c.fonction}){/if}
+							📞 {c.telephone}{#if c.nom_affiche}{SEPARATEUR.tiret}{c.nom_affiche}{/if}{#if c.fonction}&nbsp;({c.fonction}){/if}
 						</span>
 					{/each}
 				{:else if p.telephone}

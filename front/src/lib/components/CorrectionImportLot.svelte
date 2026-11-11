@@ -10,7 +10,6 @@
 <script lang="ts">
 	import IconeAction from '#lib/components/IconeAction.svelte';
 	import type { LigneImportLot, MonLot, UtilisateurAdmin } from '#lib/api/index.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { TYPES_LIEN } from '#lib/liens-lot.ts';
@@ -70,7 +69,7 @@
 				<select bind:value={occ.user_id} class="select-user">
 					<option value="">— Non lié —</option>
 					{#each utilisateurs as u (u.id)}
-						<option value={String(u.id)}>{nomAffiche(u)} ({u.email})</option>
+						<option value={String(u.id)}>{u.nom_affiche} ({u.email})</option>
 					{/each}
 				</select>
 				<button

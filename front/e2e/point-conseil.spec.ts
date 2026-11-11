@@ -13,6 +13,7 @@
  */
 import { attendreHydratation, expect, simulerApi, test } from './aides';
 import type { CompteRenduPoint, CrAffaire, ParticipantsPoint, SuiviAffaires } from '../src/lib/api';
+import { avecNomServi, nomServi } from './noms-servis';
 
 const AFFAIRE = {
 	id: 31,
@@ -79,8 +80,10 @@ const RELEVE: SuiviAffaires = {
 };
 
 const ANNUAIRE: ParticipantsPoint = {
-	conseil: [{ id: 3, prenom: 'Reine', nom: 'Martin', fonction: null }],
-	syndic: [{ id: 7, prenom: 'Paul', nom: 'Bernard', fonction: 'Gestionnaire' }],
+	conseil: [{ id: 3, ...avecNomServi({ prenom: 'Reine', nom: 'Martin' }), fonction: null }],
+	syndic: [
+		{ id: 7, ...avecNomServi({ prenom: 'Paul', nom: 'Bernard' }), fonction: 'Gestionnaire' },
+	],
 	lieux: [{ libelle: 'Résidence', adresse: '1 rue Test' }],
 	moyens: [
 		{ cle: 'sur_place', libelle: 'Sur place', avec_lieu: true },
@@ -122,6 +125,7 @@ function compteRendu(cr: CrAffaire | null): CompteRenduPoint {
 				membre_syndic_id: null,
 				prenom: 'Reine',
 				nom: 'Martin',
+				nom_affiche: nomServi({ prenom: 'Reine', nom: 'Martin' }),
 				entreprise: null,
 				fonction: null,
 				telephone: null,
@@ -137,6 +141,7 @@ function compteRendu(cr: CrAffaire | null): CompteRenduPoint {
 				membre_syndic_id: null,
 				prenom: 'Jean',
 				nom: 'Durand',
+				nom_affiche: nomServi({ prenom: 'Jean', nom: 'Durand' }),
 				entreprise: 'Étanchéité Sud',
 				fonction: null,
 				telephone: null,

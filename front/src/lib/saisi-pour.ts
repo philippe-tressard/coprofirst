@@ -109,8 +109,8 @@ export function champsSaisiPour(
 /** Une personne proposable dans le sélecteur « pour un résident inscrit ». */
 export interface ResidentProposable {
 	id: number;
-	prenom: string;
-	nom: string;
+	/** « Prénom NOM » rendu par le serveur (`UserRead.nom_affiche`, #2633). */
+	nom_affiche: string;
 	email: string;
 }
 
@@ -193,7 +193,7 @@ export function nomCopie(
 		//  sur l'enregistré plutôt que d'afficher un nom vide : une case muette
 		//  redeviendrait « Envoyer une copie à l'auteur », c'est-à-dire l'ambiguïté
 		//  que le libellé nommé existe pour lever.
-		if (p) return [p.prenom, (p.nom ?? '').toUpperCase()].filter(Boolean).join(' ');
+		if (p) return p.nom_affiche;
 	}
 	//  🔴 Le repli n'est PAS réécrit ici : le serveur le compose, une fois
 	//  (`nom_proprietaire`, #2508). Cette fonction ne répond qu'à la saisie en cours.

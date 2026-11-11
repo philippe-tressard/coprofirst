@@ -10,12 +10,14 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { nomServi } from './noms-servis';
 
 const BAILLEUR = {
 	...MEMBRE_CS,
 	id: 30,
 	prenom: 'Claire',
 	nom: 'Bailleur',
+	nom_affiche: nomServi({ prenom: 'Claire', nom: 'Bailleur' }),
 	statut: 'copropriétaire_bailleur',
 	role: 'propriétaire',
 	roles: ['propriétaire'],
@@ -51,6 +53,7 @@ const BAIL = {
 	locataire_id: 55,
 	locataire_prenom: 'Paul',
 	locataire_nom: 'Durand',
+	locataire_nom_affiche: nomServi({ prenom: 'Paul', nom: 'Durand' }),
 	locataire_email: 'paul@exemple.test',
 	date_entree: '2026-01-01',
 };

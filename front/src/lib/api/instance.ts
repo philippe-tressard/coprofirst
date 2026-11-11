@@ -66,6 +66,11 @@ export interface ContactInstallation {
 	telephone?: string | null;
 }
 
+/**  Le contact LU — `ContactLu` : son « Prénom NOM » rendu par le serveur (#2633). */
+export interface ContactInstallationLu extends ContactInstallation {
+	nom_affiche: string;
+}
+
 /**  `GET /admin/installation/inscription` (`routers/admin/inscription.py`, R2 #1878) :
  *   l'inscription de l'installation au registre de la référence, CONSTATÉE — rien
  *   ne l'applique encore (R6). */
@@ -88,7 +93,7 @@ export interface InscriptionInstallation {
 	/** Le dernier rapport nocturne accepté par la référence (R3 #1879). */
 	dernier_rapport_le: string | null;
 	derniere_erreur: string | null;
-	contact: ContactInstallation | null;
+	contact: ContactInstallationLu | null;
 	conditions_acceptees: number | null;
 	conditions_en_vigueur: number;
 	/** Ni la référence, ni une installation d'essai ne s'inscrivent. */

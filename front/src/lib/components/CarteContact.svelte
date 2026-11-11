@@ -71,7 +71,12 @@
 	{#each medaillons as m, i (`${i}|${m.role}`)}
 		<MedaillonRole role={m.role} titre={m.titre} icone={m.icone} />
 	{/each}
-	<Avatar photoUrl={personne.photo_url} prenom={personne.prenom} nom={personne.nom} />
+	<Avatar
+		photoUrl={personne.photo_url}
+		prenom={personne.prenom}
+		nom={personne.nom}
+		nomComplet={personne.nom_affiche}
+	/>
 	<div>
 		<strong class="contact-nom">{personne.genre ?? ''} {personne.nom_affiche}</strong>
 		<slot />

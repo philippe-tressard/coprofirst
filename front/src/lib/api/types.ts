@@ -5,6 +5,8 @@ export interface User {
 	id: number;
 	nom: string;
 	prenom: string;
+	/** « Prénom NOM » rendu par le serveur (`utils/noms`, #2633) — l'écran le lit. */
+	nom_affiche: string;
 	email: string;
 	telephone?: string | null;
 	societe?: string | null;
@@ -51,6 +53,8 @@ export interface User {
 	/** Pour un aidant ou mandataire : le copropriétaire aidé, saisi à l'inscription (`UserRead`). */
 	nom_aide?: string | null;
 	prenom_aide?: string | null;
+	/** Le copropriétaire aidé, « Prénom NOM » rendu par le serveur — vide sans lui (#2633). */
+	nom_aide_affiche?: string;
 	/** L'étage où la personne HABITE — distinct de `Lot.etage`, qui décrit un bien. */
 	etage?: number | null;
 	/** « Bât. A, T3, 2ème » — le logement nommé par le serveur (`utils/logement`, #2500), vide s'il n'y a rien à dire. */
@@ -318,7 +322,7 @@ export interface TicketMessage {
 	id: number;
 	contenu: string;
 	interne: boolean;
-	auteur: { id: number; prenom: string; nom: string; role: string };
+	auteur: { id: number; prenom: string; nom: string; nom_affiche: string; role: string };
 	cree_le: string;
 	fichiers_urls?: string[];
 }

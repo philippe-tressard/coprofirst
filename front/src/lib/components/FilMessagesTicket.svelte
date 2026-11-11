@@ -19,7 +19,6 @@
 	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import { contexteCommentaire } from '#lib/assistant.ts';
 	import { createEventDispatcher } from 'svelte';
-	import { nomAffiche } from '#lib/noms.ts';
 	import { fmtDatetime } from '#lib/date.ts';
 	import { safeDescription } from '#lib/sanitize.ts';
 	import { currentUser, isCS } from '#lib/stores/auth.ts';
@@ -88,7 +87,7 @@
 				class:message-vise={msgVise === msg.id}
 			>
 				<div class="msg-header">
-					<strong>{nomAffiche(msg.auteur)}</strong>
+					<strong>{msg.auteur?.nom_affiche ?? ''}</strong>
 					{#if msg.interne}<span class="badge badge-yellow msg-badge">interne</span>{/if}
 					<span class="msg-time">{fmtDatetime(msg.cree_le)}</span>
 				</div>

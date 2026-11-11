@@ -56,6 +56,7 @@ export * from './carnet';
 export * from './lectures';
 export * from './charges';
 export * from './perimetres';
+export * from './noms';
 export * from './etat-descriptif';
 export * from './lots-admin';
 export * from './bailleur';

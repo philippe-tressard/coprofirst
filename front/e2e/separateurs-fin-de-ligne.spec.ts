@@ -13,13 +13,22 @@
  */
 import { separateursEnFinDeLigne } from './coupure-de-ligne';
 import { expect, simulerApi, test } from './aides';
+import { nomServi } from './noms-servis';
 
 const PLOMBIER = {
 	id: 2,
 	nom: 'Plomberie Martin',
 	specialite: 'plomberie',
 	type_prestataire: 'maintenance_depannage',
-	contacts: [{ telephone: '01 23 45 67 89', prenom: 'Hélène', nom: 'Dupré', fonction: 'Gérante' }],
+	contacts: [
+		{
+			telephone: '01 23 45 67 89',
+			prenom: 'Hélène',
+			nom: 'Dupré',
+			nom_affiche: nomServi({ prenom: 'Hélène', nom: 'Dupré' }),
+			fonction: 'Gérante',
+		},
+	],
 	actif: true,
 };
 
