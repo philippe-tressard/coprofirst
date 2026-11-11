@@ -9,11 +9,13 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from app.models.tickets import StatutTicket
 from app.utils.lecture_pastille.modele import Lecture
 from app.utils.lecture_pastille.regle import lecture_ciblee, lecture_de
 from app.utils.nature_affaire import ACTUALITE
 from app.utils.perimetres.arbre import a_portee_globale, parse_json_perimetres
 from app.utils.valeurs import valeur
+from app.utils.visibility.defauts_affaire import defauts_de_nature
 
 
 def perimetre_restreint_de(perimetre: Any) -> bool:
@@ -53,6 +55,15 @@ def lecture_du_ticket(ticket: Any) -> Lecture:
         perimetre_cible=ticket.perimetre_cible,
         reserve_perimetre=ticket.reserve_perimetre is True,
     )
+
+
+def destinataires_par_etat(ticket: Any) -> Optional[dict[str, list[str]]]:
+    """Les Destinataires qu'une Suite présélectionne, selon l'état qu'elle donne —
+    une Étude & travaux mise en AG s'ouvre aux copropriétaires. `None` pour une
+    actualité, qui a les siens (#1343, servi depuis #2633)."""
+    if valeur(ticket.categorie) == ACTUALITE:
+        return None
+    return {s.value: defauts_de_nature(False, ticket.categorie, s.value) for s in StatutTicket}
 
 
 def lecture_du_ciblage(objet: Any, *, masculin: bool = False) -> Lecture:

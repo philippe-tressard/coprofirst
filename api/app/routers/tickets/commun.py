@@ -44,6 +44,7 @@ from app.utils.archivage import est_archivable, perime_le
 from app.utils.lecture import lire_objet
 from app.utils.corrections_texte import expliciter_ancienne
 from app.utils.frequence_contrat import frequence_libelle
+from app.utils.lecture_pastille.objets import destinataires_par_etat, lecture_du_ticket
 from app.utils.photos import parse_photos
 from .lecture_groupee import LectureGroupee, lecture_groupee
 
@@ -295,6 +296,8 @@ def ticket_read(
         #  Ce que les deux clients affichent sans le recalculer (#2508) : le lieu
         #  lisible, et les gestes de CE lecteur — `auth/gestes_affaire`.
         perimetre_libelle=perimetre_badge(perimetres),
+        lecture=lecture_du_ticket(ticket),
+        destinataires_par_etat=destinataires_par_etat(ticket),
         **gestes_servis(ticket, lecteur),
     )
 

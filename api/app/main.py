@@ -83,7 +83,7 @@ from app.routers import (
 from app.routers import uploads, faq, signalements, annonces_hall, patrimoine
 from app.routers import patrimoine_branche
 from app.routers import equipements
-from app.routers import manuel
+from app.routers import lectures, manuel
 from app.registre import routeur as registre  # le registre des installations (§4.11)
 from app.installation_commune import routeur as aiguillage  # l'hôte commun (#1894)
 from app.installation_commune import fichiers as fichiers_commune  # /uploads/* (#2053)
@@ -432,6 +432,7 @@ app.include_router(suivi_affaires_fusions.router)
 #  Reporting › Renouvellements : le relevé servi au site et à l'app iOS (#2525).
 app.include_router(reporting_renouvellements.router)
 app.include_router(points_conseil.router)
+app.include_router(lectures.router)
 app.include_router(points_conseil_validation.router)
 app.include_router(registre.router)
 app.include_router(aiguillage.router)

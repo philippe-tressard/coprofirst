@@ -40,6 +40,7 @@ from app.utils.communaute import exiger_acces
 from app.utils.liens import adresse_du_site, nom_site, lien_sondage
 from app.utils.noms import contexte_personne
 from app.utils.assiste_ia import marquer as marquer_assiste_ia
+from app.utils.lecture_pastille.objets import lecture_du_ciblage
 from app.utils.recuperer import ou_404
 from app.utils.cloche import sonner
 
@@ -82,6 +83,7 @@ def list_sondages(
         #  peuvent pas être tranchés sur des seuils différents.
         d.archivee = est_archivable("sondage", s, seuil_jours=seuil_jours)
         d.nouveau = est_nouveau(s.cree_le)
+        d.lecture = lecture_du_ciblage(s, masculin=True)
         result.append(d)
     return result
 

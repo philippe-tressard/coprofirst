@@ -30,6 +30,7 @@ from app.utils.noms import nom_auteur
 from app.utils.categories_ticket import libelle_categorie, ticket_urgent
 from app.utils.fichiers import est_image
 from app.utils.echeance_affaire import echeance
+from app.utils.lecture_pastille.objets import lecture_du_ticket
 from app.utils.nature_affaire import natures
 from app.utils.photos import parse_photos
 
@@ -145,6 +146,9 @@ def pastilles_affaire(ticket) -> dict:
     #  civils de Paris, le fil LIT son libellé (`utils/echeance_affaire`). `None`
     #  sans date. 🔒 `test_echeance_affaire.py`.
     rendu["echeance"] = echeance(ticket)
+    #  👁 QUI LA LIT — la pastille de la ligne, servie (#2633) : elle dépend de
+    #  l'arbre des périmètres, que `TicketRead` seul ne lit pas.
+    rendu["lecture"] = lecture_du_ticket(ticket).model_dump()
     return rendu
 
 
