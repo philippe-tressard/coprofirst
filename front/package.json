@@ -18,6 +18,7 @@
 		"lint:eslint-ignore": "node scripts/check-eslint-ignore.mjs",
 		"lint:droits": "node scripts/check-droits-recomposes.mjs",
 		"lint:regles-partagees": "node scripts/check-regles-partagees.mjs --selftest && node scripts/check-regles-partagees.mjs",
+		"lint:tables-clients": "node scripts/tables-clients.mjs --selftest && node scripts/tables-clients.mjs",
 		"lint:onglets-reserves": "node scripts/check-onglets-reserves.mjs",
 		"lint:en-tetes-lus": "node scripts/check-en-tetes-lus.mjs --selftest && node scripts/check-en-tetes-lus.mjs",
 		"lint:gardes-auth": "node scripts/check-gardes-auth.mjs",

@@ -8,6 +8,7 @@ import {
 	estGestionnaire,
 	estLocataire,
 	estResident,
+	ROLES_DU_DROIT,
 } from '#lib/roles.ts';
 
 export const currentUser = writable<User | null>(null);
@@ -36,7 +37,7 @@ export function aRole(user: User | null, ...roles: string[]): boolean {
 	return roles.some((r) => portes.includes(r));
 }
 
-export const isAdmin = derived(currentUser, ($u) => aRole($u, 'admin'));
+export const isAdmin = derived(currentUser, ($u) => aRole($u, ...ROLES_DU_DROIT.admin));
 
 /**
  * Modère-t-il — conseil syndical ou administration ? Le SERVEUR le dit
@@ -53,14 +54,16 @@ export const estModerateur = derived(currentUser, ($u) => $u?.est_moderateur ?? 
  * deux. Le serveur refuse les routes de supervision à qui ne l'est pas
  * (`require_operateur`) : ce dérivé n'en est que le reflet.
  */
-export const isOperateur = derived(currentUser, ($u) => aRole($u, 'operateur'));
+export const isOperateur = derived(currentUser, ($u) => aRole($u, ...ROLES_DU_DROIT.operateur));
 
 /**
  * Qui ouvre l'administration (`/admin`) : l'administrateur, et l'opérateur qui
  * ne l'est pas — réduite alors à sa supervision (`#lib/onglets-ouverts`, #2029).
  * Le menu et la garde d'`admin/+layout.svelte` posent cette question-ci.
  */
-export const isAdminOuOperateur = derived(currentUser, ($u) => aRole($u, 'admin', 'operateur'));
+export const isAdminOuOperateur = derived(currentUser, ($u) =>
+	aRole($u, ...ROLES_DU_DROIT.adminOuOperateur),
+);
 
 //  🔴 Ces trois dérivées recomposaient la cascade `roles ?? [role]` à la main,
 //  DEUX LIGNES sous `aRole` qui la porte (#1041). Le fichier qui définit la règle
@@ -86,14 +89,13 @@ export const hasResidentRole = derived(
 export const isProprioOuCS = derived(
 	currentUser,
 	//  Le modérateur est SERVI (`est_moderateur`, #2633) ; le propriétaire se lit au rôle.
-	($u) => aRole($u, 'propriétaire') || ($u?.est_moderateur ?? false),
+	($u) => aRole($u, ...ROLES_DU_DROIT.proprietaire) || ($u?.est_moderateur ?? false),
 );
 
 // Vrai si l'utilisateur n'est QUE admin (sans rôle résidentiel ni CS)
 export const isAdminOnly = derived(
 	currentUser,
-	($u) =>
-		aRole($u, 'admin') && !aRole($u, 'propriétaire', 'résident') && !aRole($u, 'conseil_syndical'),
+	($u) => aRole($u, ...ROLES_DU_DROIT.adminSeul) && !aRole($u, ...ROLES_DU_DROIT.sansAdminSeul),
 );
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -47,6 +47,7 @@
 		estNonResolu,
 		estUrgent,
 		grouperParJour,
+		TITRE_FIL,
 	} from '#lib/flux.ts';
 
 	$: _pc = getPageConfig($configStore, 'tableau-de-bord', defautsDePage('tableau-de-bord'));
@@ -288,7 +289,8 @@
 	<!-- ═══ FIL D'ACTIVITÉ ════════════════════════════════════════════════ -->
 	<div class="section-reveal delai-6" class:section-visible={ready}>
 		<h2 class="section-title titre-fil">
-			<Icon name="newspaper" size={16} /> Fil d'activité
+			<Icon name="newspaper" size={16} />
+			{TITRE_FIL}
 		</h2>
 		{#if offrirMeConcerne}
 			<ReglagesListe>

@@ -45,3 +45,9 @@ src/lib/icones-svg.json
 # fichier HTML généré de 500 Ko : le reformater n'apprend rien et masque le reste.
 e2e-rapport/
 test-results/
+
+# ── Tables publiées aux clients : une SORTIE, pas une source (#2634) ──────────
+# GÉNÉRÉE par `node scripts/tables-clients.mjs --ecrire` et comparée à l'octet par
+# `npm run lint:tables-clients` : reformatée, elle ne serait plus ce que les
+# sources produisent. Jamais éditée à la main.
+tables-clients.json

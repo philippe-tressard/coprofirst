@@ -19,34 +19,15 @@
 	import { fmtDatetimeShort } from '#lib/date.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
-	import JournalVerdicts, {
-		type EntreeJournal,
-		type TonVerdict,
-	} from '#lib/components/JournalVerdicts.svelte';
+	import JournalVerdicts, { type EntreeJournal } from '#lib/components/JournalVerdicts.svelte';
+	import { CLASSES_RELEVE, VERDICTS_RELEVE } from '#lib/courriels-affaires.ts';
+	import type { TonVerdict } from '#lib/journal-verdicts.ts';
 	import { lienTicket } from '#lib/tickets.ts';
-
-	//  La gravité, pas le nom : un refus est orange — le conseil a été prévenu,
-	//  rien n'est cassé —, un message ignoré est gris.
-	const VERDICTS: Record<CourrielReleve['decision'], { libelle: string; ton: TonVerdict }> = {
-		accepte: { libelle: 'Ajouté au fil', ton: 'succes' },
-		relance: { libelle: 'Transmis au conseil', ton: 'info' },
-		refuse: { libelle: 'Refusé', ton: 'attention' },
-		ignore: { libelle: 'Ignoré', ton: 'neutre' },
-		//  Aucune affaire désignée, d'un correspondant connu : le conseil le classe (#2555).
-		a_classer: { libelle: 'À classer', ton: 'attention' },
-	};
-
-	//  Une fois classé, la ligne dit ce qui a été fait — le motif le précise.
-	const CLASSES: Record<string, { libelle: string; ton: TonVerdict }> = {
-		rattache: { libelle: 'Rattaché', ton: 'succes' },
-		cree: { libelle: 'Affaire créée', ton: 'succes' },
-		ecarte: { libelle: 'Écarté', ton: 'neutre' },
-	};
 
 	function verdictDe(r: CourrielReleve): { libelle: string; ton: TonVerdict } {
 		const statut = r.a_classer?.statut;
-		if (statut && statut !== 'a_classer') return CLASSES[statut];
-		return VERDICTS[r.decision] ?? { libelle: r.decision, ton: 'neutre' };
+		if (statut && statut !== 'a_classer') return CLASSES_RELEVE[statut];
+		return VERDICTS_RELEVE[r.decision] ?? { libelle: r.decision, ton: 'neutre' };
 	}
 
 	/**  Les messages qui attendent un geste, par ligne du journal. */

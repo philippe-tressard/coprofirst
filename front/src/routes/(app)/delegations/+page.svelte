@@ -25,6 +25,7 @@
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import { parAttribut } from '#lib/table-statuts.ts';
+	import { STATUTS_DELEGATION } from '#lib/delegations.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	// Cette page importait déjà getPageConfig sans s'en servir : son titre était en
@@ -70,12 +71,7 @@
 	//  commentaire qui l'accompagnait disait « la charte ne la porte pas » —
 	//  c'était vrai de `grey`, et faux de la classe qu'il fallait. Une faute
 	//  d'orthographe avait fait conclure à l'absence du composant partagé.
-	const { libelle, badge } = parAttribut({
-		en_attente: { libelle: 'En attente', badge: 'badge-orange' },
-		active: { libelle: 'Active', badge: 'badge-green' },
-		revoquee: { libelle: 'Révoquée', badge: 'badge-red' },
-		expiree: { libelle: 'Expirée', badge: 'badge-gray' },
-	});
+	const { libelle, badge } = parAttribut(STATUTS_DELEGATION);
 
 	function statutLabel(s: string): string {
 		return libelle[s] ?? s;

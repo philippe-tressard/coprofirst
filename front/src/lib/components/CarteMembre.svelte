@@ -79,12 +79,6 @@
 		/** L'inscrit rapproché de ce membre, ou `null` s'il n'en a pas. */
 		user_id: number | null;
 	}
-
-	/**  Les civilités proposées, dans leur ordre.
-	 *
-	 *   Écrites ici et non dans chaque appel : les deux copies les listaient, et
-	 *   une troisième fiche les aurait listées une troisième fois. */
-	export const CIVILITES = ['Mme', 'Mlle', 'Mr'] as const;
 </script>
 
 <script lang="ts">
@@ -93,6 +87,7 @@
 	import ActionsMembre, { type Geste } from '#lib/components/ActionsMembre.svelte';
 	import EnteteCarte from '#lib/components/EnteteCarte.svelte';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
+	import { CIVILITES } from '#lib/annuaire.ts';
 	import { nomSaisi } from '#lib/apercu-nom.ts';
 
 	/** Le membre édité — lié par `bind:membre` pour que la saisie remonte. */

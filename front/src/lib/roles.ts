@@ -58,7 +58,9 @@ import { parAttribut } from '#lib/table-statuts.ts';
      devait rappeler « une clé par entrée de `LIBELLES_ROLE`, sans exception ».
      Un contrat qu'un commentaire doit énoncer est un contrat que la structure
      ne porte pas.  */
-const ROLE = parAttribut({
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const ATTRIBUTS_ROLE = {
 	résident: { libelle: 'Résident', badge: 'badge-gray' },
 	propriétaire: { libelle: 'Propriétaire', badge: 'badge-teal' },
 	conseil_syndical: { libelle: 'Conseil syndical', badge: 'badge-blue' },
@@ -67,7 +69,9 @@ const ROLE = parAttribut({
 	//  L'opérateur de la plateforme (#1750) : pas un rôle de la copropriété, mais
 	//  un compte le porte — `ROLE_OPERATEUR` côté serveur (`models/roles.py`).
 	operateur: { libelle: 'Opérateur', badge: 'badge-purple' },
-});
+};
+
+const ROLE = parAttribut(ATTRIBUTS_ROLE);
 
 export const LIBELLES_ROLE: Record<string, string> = ROLE.libelle;
 
@@ -78,7 +82,9 @@ export const LIBELLES_ROLE: Record<string, string> = ROLE.libelle;
      et c'est la copie de la table ABRÉGÉE qui avait perdu `admin_technique`
      (cf. plus bas) — un état sur sept, dans la seule des trois qu'on relit le
      moins.  */
-const STATUT = parAttribut({
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const ATTRIBUTS_STATUT = {
 	copropriétaire_résident: {
 		libelle: 'Copropriétaire résident',
 		abrege: 'Copro. résident',
@@ -98,7 +104,9 @@ const STATUT = parAttribut({
 		abrege: 'Compte technique',
 		badge: 'badge-orange',
 	},
-});
+};
+
+const STATUT = parAttribut(ATTRIBUTS_STATUT);
 
 export const LIBELLES_STATUT: Record<string, string> = STATUT.libelle;
 
@@ -143,12 +151,20 @@ export const LIBELLES_STATUT_ABREGE: Record<string, string> = STATUT.abrege;
  *  obligerait à ajouter ces clés côté serveur pour faire passer le test, donc à
  *  ressusciter ce qu'on est en train de retirer.
  */
-const LIBELLES_HERITES: Record<string, string> = {
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const LIBELLES_HERITES: Record<string, string> = {
 	bailleur: 'Copropriétaire bailleur',
 };
 
 /** « conseil_syndical » → « Conseil syndical ». Une clé inconnue est rendue
  *  **telle quelle** : un libellé manquant doit se voir, pas s'effacer. */
+/**  Les rôles que l'en-tête de l'accueil ajoute au statut, dans cet ordre (`EnteteAccueil`).
+ *   `résident` et `propriétaire` n'y figurent pas : ils ne disent rien de plus que le statut. */
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const ROLES_MIS_EN_AVANT = ['conseil_syndical', 'admin'] as const;
+
 export function libelleRole(role: string | null | undefined): string {
 	if (!role) return '';
 	return LIBELLES_ROLE[role] ?? LIBELLES_HERITES[role] ?? LIBELLES_STATUT[role] ?? role;
@@ -290,16 +306,37 @@ type PorteurDeStatut = { statut?: string | null } | null | undefined;
 
 const statutDe = (p: PorteurDeStatut): string => p?.statut ?? '';
 
+/**  Les statuts que chaque prédicat ci-dessous reconnaît — la seule écriture de ces
+ *   chaînes dans les prédicats : un prédicat se lit dans cette table, il ne compare
+ *   jamais un littéral (`lint:statuts` le refuse).
+ *
+ *   🔒 `npm run lint:statuts` vérifie que chaque statut nommé ici est une clé de
+ *   `ATTRIBUTS_STATUT` : un accent oublié dans « copropriétaire_résident » rendrait
+ *   un prédicat TOUJOURS faux, et l'écran afficherait simplement moins de choses. */
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const STATUTS_DU_PROFIL: Record<
+	'locataire' | 'bailleur' | 'resident' | 'gestionnaire' | 'pourAutrui',
+	readonly string[]
+> = {
+	locataire: ['locataire'],
+	bailleur: ['copropriétaire_bailleur'],
+	resident: ['copropriétaire_résident'],
+	gestionnaire: ['syndic', 'mandataire'],
+	pourAutrui: ['aidant', 'mandataire'],
+};
+
+const aLeProfil = (p: PorteurDeStatut, profil: keyof typeof STATUTS_DU_PROFIL): boolean =>
+	STATUTS_DU_PROFIL[profil].includes(statutDe(p));
+
 /**  Locataire — il occupe sans posséder. */
-export const estLocataire = (p: PorteurDeStatut): boolean => statutDe(p) === 'locataire';
+export const estLocataire = (p: PorteurDeStatut): boolean => aLeProfil(p, 'locataire');
 
 /**  Copropriétaire qui LOUE son lot. */
-export const estBailleur = (p: PorteurDeStatut): boolean =>
-	statutDe(p) === 'copropriétaire_bailleur';
+export const estBailleur = (p: PorteurDeStatut): boolean => aLeProfil(p, 'bailleur');
 
 /**  Copropriétaire qui HABITE son lot. */
-export const estResident = (p: PorteurDeStatut): boolean =>
-	statutDe(p) === 'copropriétaire_résident';
+export const estResident = (p: PorteurDeStatut): boolean => aLeProfil(p, 'resident');
 
 /**  Copropriétaire, qu'il habite son lot ou le loue.
  *
@@ -313,8 +350,7 @@ export const estCoproprietaire = (p: PorteurDeStatut): boolean => estBailleur(p)
  *  Ce n'est pas un résident de la copropriété : il gère pour le compte du
  *  syndicat. C'est ce qui lui ferme la Communauté, dont l'API porte la règle et
  *  le motif de refus. */
-export const estGestionnaire = (p: PorteurDeStatut): boolean =>
-	statutDe(p) === 'syndic' || statutDe(p) === 'mandataire';
+export const estGestionnaire = (p: PorteurDeStatut): boolean => aLeProfil(p, 'gestionnaire');
 
 /**  Celui qui agit POUR quelqu'un d'autre — aidant (proche) ou mandataire.
  *
@@ -330,24 +366,23 @@ export const estGestionnaire = (p: PorteurDeStatut): boolean =>
  *
  *  🔴 Trouvée par `lint:statuts` lui-même, dans `espace-cs` : mon relevé à la
  *  main l'avait manquée. Un contrôle voit ce qu'une lecture ne voit pas. */
-export const agitPourAutrui = (p: PorteurDeStatut): boolean =>
-	statutDe(p) === 'aidant' || statutDe(p) === 'mandataire';
+export const agitPourAutrui = (p: PorteurDeStatut): boolean => aLeProfil(p, 'pourAutrui');
 
-/**  Les clés sur lesquelles ces prédicats se prononcent.
+/**  Qui porte chaque DROIT D'AFFICHAGE : les rôles que `aRole` reçoit dans les
+ *   dérivées de `stores/auth.ts` (`isAdmin`, `isOperateur`…). Une seule écriture :
+ *   les dérivées la lisent, l'app iOS aussi. `adminSeul` sans aucun de
+ *   `sansAdminSeul` : le compte technique de l'installation (`isAdminOnly`).
+ *   `proprietaire` : la part « rôle » d'`isProprioOuCS`, dont le modérateur est
+ *   SERVI (`est_moderateur`, #2633) — le modérateur n'est donc pas ici.
  *
- *  🔒 Lue par `npm run lint:statuts`, qui vérifie qu'aucune n'est inconnue de
- *  `LIBELLES_STATUT` ET que cette liste est exactement l'ensemble des chaînes
- *  que les prédicats ci-dessus comparent (`statutDe(p) === '…'`) : ajouter un
- *  prédicat, c'est donc l'ajouter ici. Un prédicat bâti sur une chaîne fautive —
- *  un accent oublié dans « copropriétaire_résident » — serait **toujours faux**,
- *  et rien ne le signalerait : l'écran afficherait simplement moins de choses.
- *  (Rétabli le 02/10/2026, #1577 : ce commentaire l'affirmait déjà, et plus
- *  aucun contrôle ne lisait la liste.) */
-export const STATUTS_TESTES = [
-	'locataire',
-	'copropriétaire_bailleur',
-	'copropriétaire_résident',
-	'syndic',
-	'mandataire',
-	'aidant',
-] as const;
+ *   ⚠️ Ce qu'on AFFICHE, jamais ce qu'on autorise : le serveur tranche (`auth/deps`). */
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const ROLES_DU_DROIT = {
+	admin: ['admin'],
+	operateur: ['operateur'],
+	adminOuOperateur: ['admin', 'operateur'],
+	proprietaire: ['propriétaire'],
+	adminSeul: ['admin'],
+	sansAdminSeul: ['propriétaire', 'résident', 'conseil_syndical'],
+} as const;

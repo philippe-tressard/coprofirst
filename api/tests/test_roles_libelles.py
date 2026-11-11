@@ -112,8 +112,8 @@ def test_le_front_ecrit_EXACTEMENT_les_memes_chaines():
     assert ROLES_TS.exists(), f"jumeau front introuvable : {ROLES_TS}"
     source = ROLES_TS.read_text(encoding="utf-8")
 
-    ts_roles = table_ts(source, "ROLE", "libelle")
-    ts_statuts = table_ts(source, "STATUT", "libelle")
+    ts_roles = table_ts(source, "ATTRIBUTS_ROLE", "libelle")
+    ts_statuts = table_ts(source, "ATTRIBUTS_STATUT", "libelle")
 
     #  🔴 Cas zéro : sans ce garde, un extracteur cassé rendrait deux dictionnaires
     #  vides et le test passerait au vert en ne comparant rien.

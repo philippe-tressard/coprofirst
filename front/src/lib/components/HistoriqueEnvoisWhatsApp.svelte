@@ -8,10 +8,8 @@
 -->
 <script lang="ts">
 	import type { JournalEnvoiWhatsApp } from '#lib/api/index.ts';
-	import JournalVerdicts, {
-		type EntreeJournal,
-		type TonVerdict,
-	} from '#lib/components/JournalVerdicts.svelte';
+	import JournalVerdicts, { type EntreeJournal } from '#lib/components/JournalVerdicts.svelte';
+	import type { TonVerdict } from '#lib/journal-verdicts.ts';
 
 	export let journaux: JournalEnvoiWhatsApp[] = [];
 	export let erreur = '';
