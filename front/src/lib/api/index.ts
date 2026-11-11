@@ -52,6 +52,7 @@ export * from './documents';
 export * from './communaute';
 export * from './avis';
 export * from './patrimoine';
+export * from './carnet';
 export * from './charges';
 export * from './perimetres';
 export * from './etat-descriptif';
