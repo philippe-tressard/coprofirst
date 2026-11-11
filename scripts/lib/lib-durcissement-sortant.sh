@@ -34,6 +34,15 @@
 #  DURCISSEMENT_SORTANT_NUITS_VERTES de suite, sur le nœud lui-même, et ne se
 #  pose que sur le standby (`durcissement_sortant_peut_refuser`).
 #
+#  ── L'ICMPv6 QU'UFW NE SAIT PAS ÉCRIRE ───────────────────────────────────────
+#
+#  `ufw allow … proto` ne connaît pas ICMPv6, et `before6.rules` n'admet en sortie
+#  que la découverte des voisins, l'echo et les erreurs : les rapports MLDv2 du
+#  noyau (ff02::16) étaient refusés, et S5 les comptait chaque nuit (rpi1, le
+#  11/11/2026). DURCISSEMENT_ICMPV6_SORTANT se pose par un bloc d'after6.rules dans
+#  `ufw6-after-output`, que le paquet traverse avant le LOG et le REJECT du refus.
+#  Banc du 11/11/2026 : sans le bloc, deux rapports au REJECT ; avec, acceptés.
+#
 #  ── LES CONTENEURS ───────────────────────────────────────────────────────────
 #
 #  Ils ne sortent pas par OUTPUT : leur trafic traverse FORWARD, où Docker
@@ -69,6 +78,11 @@ DURCISSEMENT_SORTANT_PREFIXE="[SORTANT CONTENEUR] "
 DURCISSEMENT_UFW_APRES=/etc/ufw/after.rules
 DURCISSEMENT_SORTANT_DEBUT="# BEGIN hostachy-sortant - pose par durcir-noeud.sh (#2367), ne pas editer a la main"
 DURCISSEMENT_SORTANT_FIN="# END hostachy-sortant"
+#: Le fichier d'ufw qui porte l'ICMPv6 de l'hôte (DURCISSEMENT_ICMPV6_SORTANT), et
+#: les bornes de son bloc — ASCII aussi.
+DURCISSEMENT_UFW_APRES6=/etc/ufw/after6.rules
+DURCISSEMENT_SORTANT_DEBUT6="# BEGIN hostachy-sortant-icmpv6 - pose par durcir-noeud.sh (#2367), ne pas editer a la main"
+DURCISSEMENT_SORTANT_FIN6="# END hostachy-sortant-icmpv6"
 #: Les nuits de constat vertes, de suite, avant le refus (sur le nœud lui-même :
 #: les rôles alternent chaque nuit, trois nuits voient les deux rôles).
 DURCISSEMENT_SORTANT_NUITS_VERTES=3
@@ -142,11 +156,25 @@ durcissement_sortant_bloc() {
   printf '%s\n' "COMMIT" "$DURCISSEMENT_SORTANT_FIN"
 }
 
-#  after.rules réécrit : l'ancien bloc retiré, le nouveau ($2, vide : aucun) en fin.
-#  $1 = le contenu actuel du fichier
+#  Les règles ICMPv6 déclarées (DURCISSEMENT_ICMPV6_SORTANT), une par ligne.
+durcissement_sortant_icmpv6() {
+  printf '%s\n' "$DURCISSEMENT_ICMPV6_SORTANT" | awk -F'|' '$1 != "" { print $1 }'
+}
+
+#  Le bloc d'after6.rules qui pose l'ICMPv6 de l'hôte. Le même en constat et en
+#  refus : en constat, il ne fait que taire ce que la liste admet déjà.
+durcissement_sortant_bloc6() {
+  printf '%s\n' "$DURCISSEMENT_SORTANT_DEBUT6" "*filter"
+  durcissement_sortant_icmpv6
+  printf '%s\n' "COMMIT" "$DURCISSEMENT_SORTANT_FIN6"
+}
+
+#  after.rules (ou after6.rules) réécrit : l'ancien bloc retiré, le nouveau ($2,
+#  vide : aucun) en fin. $1 = le contenu actuel du fichier · $3 $4 = les bornes du
+#  bloc (défaut : celles de DOCKER-USER).
 durcissement_sortant_apres_regles() {
   #  Les lignes vides laissées en fin par l'ancien bloc ne s'accumulent pas.
-  printf '%s\n' "${1:-}" | awk -v d="$DURCISSEMENT_SORTANT_DEBUT" -v f="$DURCISSEMENT_SORTANT_FIN" '
+  printf '%s\n' "${1:-}" | awk -v d="${3:-$DURCISSEMENT_SORTANT_DEBUT}" -v f="${4:-$DURCISSEMENT_SORTANT_FIN}" '
     $0 == d { dedans = 1; next }
     dedans { if ($0 == f) dedans = 0; next }
     $0 == "" { vides++; next }
@@ -220,13 +248,24 @@ durcissement_sortant_conteneurs() {
   echo OUI
 }
 
+#  L'ICMPv6 de l'hôte. $1 = `ip6tables -S ufw6-after-output`
+#  → OUI · NON:<règles absentes, séparées par des virgules> · INCONNU:<raison>
+durcissement_sortant_icmpv6_servi() {
+  local servi=${1:-} r manque=""
+  [ -n "$servi" ] || { echo "INCONNU:ip6tables illisible (root requis, ou ufw sans IPv6)"; return 0; }
+  while IFS= read -r r; do
+    [ -n "$r" ] && ! grep -qxF -- "$r" <<< "$servi" && manque="$manque${manque:+,}$r"
+  done < <(durcissement_sortant_icmpv6)
+  if [ -z "$manque" ]; then echo OUI; else echo "NON:$manque"; fi
+}
+
 # ── Le verdict de la sortie ──────────────────────────────────────────────────
 #  $1 = `ufw status verbose` · $2 = `ufw show added` · $3 = `iptables -S
-#  DOCKER-USER` · $4 = `iptables -S FORWARD`
+#  DOCKER-USER` · $4 = `iptables -S FORWARD` · $5 = `ip6tables -S ufw6-after-output`
 #  → CONFORME (refus servi) · CONSTAT:<notes, vide si complet> · OUVERT:<pourquoi>
 #    · ECART:<…> · INCONNU:<…>
 durcissement_sortant_verdict() {
-  local etat=${1:-} ajoutees=${2:-} du=${3:-} fw=${4:-} mode h m c o notes=""
+  local etat=${1:-} ajoutees=${2:-} du=${3:-} fw=${4:-} a6=${5:-} mode h m c i o notes=""
   [ -n "$etat" ] || { echo "INCONNU:ufw illisible (absent, ou root requis)"; return 0; }
   grep -q '^Status: active' <<< "$etat" || { echo "OUVERT:ufw inactif, rien n'est filtré"; return 0; }
   h=$(durcissement_sortant_hors_liste "$ajoutees" | paste -sd ',' -)
@@ -244,9 +283,11 @@ durcissement_sortant_verdict() {
       fi ;;
     constat)
       c=$(durcissement_sortant_conteneurs "$du" "$fw" constat)
+      i=$(durcissement_sortant_icmpv6_servi "$a6")
       [ -z "$m" ] || notes="$notes manquantes=[$m];"
       [ -z "$o" ] || notes="$notes obsolètes=[$o] (plus déclarées : les retirer);"
       [ "$c" = OUI ] || notes="$notes conteneurs-non-journalisés=${c#*:};"
+      [ "$i" = OUI ] || notes="$notes icmpv6-non-servi=[${i#*:}];"
       echo "CONSTAT:${notes# }" ;;
     refus)
       if grep -qxF -- "$DURCISSEMENT_UFW_SORTANT_CONSTAT" <<< "$(durcissement_ufw_normaliser "$ajoutees")"; then
@@ -254,9 +295,12 @@ durcissement_sortant_verdict() {
       fi
       c=$(durcissement_sortant_conteneurs "$du" "$fw" refus)
       case "$c" in INCONNU:*) echo "$c"; return 0 ;; esac
+      i=$(durcissement_sortant_icmpv6_servi "$a6")
+      case "$i" in INCONNU:*) echo "$i"; return 0 ;; esac
       [ -z "$m" ] || notes="$notes manquantes=[$m] (ce qui en dépend est refusé);"
       [ -z "$o" ] || notes="$notes obsolètes=[$o] (laissent sortir sans être déclarées);"
       [ "$c" = OUI ] || notes="$notes conteneurs-non-filtrés=${c#*:};"
+      [ "$i" = OUI ] || notes="$notes icmpv6-manquant=[${i#*:}] (refusé, et compté par S5 à chaque nuit);"
       if [ -n "$notes" ]; then echo "ECART:${notes# }"; else echo CONFORME; fi ;;
   esac
 }
@@ -298,10 +342,16 @@ durcissement_sortant_nuits_vertes() {
 }
 
 #  Passer en refus. $1 = verdict servi · $2 = résumé du journal (24 h) · $3 = nuits
-#  vertes · $4 = le nœud actif (.active) · $5 = ce nœud → OUI ou REFUS:<pourquoi>
+#  vertes · $4 = le nœud actif (.active) · $5 = ce nœud · $6 = le mode servi
+#  (`durcissement_sortant_mode`) → OUI ou REFUS:<pourquoi>
+#  Un nœud qui SERT déjà le refus le repose toujours, écart compris : c'est la
+#  réparation (une règle déclarée depuis, comme MLDv2 le 11/11/2026), elle ne
+#  ferme rien de plus. Sans cela, le geste qui pose la règle manquante serait
+#  refusé à cause d'elle.
 durcissement_sortant_peut_refuser() {
-  local verdict=${1:-} resume=${2:-} nuits=${3:-0} actif=${4:-} soi=${5:-}
+  local verdict=${1:-} resume=${2:-} nuits=${3:-0} actif=${4:-} soi=${5:-} servi=${6:-}
   [ "$verdict" = CONFORME ] && { echo OUI; return 0; }   # déjà en refus : réparer
+  [ "$servi" = refus ] && { echo OUI; return 0; }
   case "$verdict" in
     CONSTAT:) ;;
     CONSTAT:*) echo "REFUS:constat incomplet (${verdict#CONSTAT:})"; return 0 ;;
@@ -319,6 +369,7 @@ durcissement_sortant_peut_refuser() {
 # ── Les lectures de l'état EFFECTIF (lecture seule, root) ────────────────────
 durcissement_lire_docker_user() { command -v iptables >/dev/null && iptables -S DOCKER-USER 2>/dev/null; }
 durcissement_lire_forward()     { command -v iptables >/dev/null && iptables -S FORWARD 2>/dev/null; }
+durcissement_lire_ufw6_apres()  { command -v ip6tables >/dev/null && ip6tables -S ufw6-after-output 2>/dev/null; }
 durcissement_lire_sortant_journal() { journalctl -k --since -24h -o cat -q --no-pager 2>/dev/null; }
 #  « IP nom » de chaque conteneur en marche, pour nommer qui sort.
 durcissement_lire_ip_conteneurs() {
@@ -330,7 +381,7 @@ durcissement_lire_ip_conteneurs() {
 
 durcissement_etat_sortant() {
   durcissement_sortant_verdict "$(durcissement_lire_ufw_etat)" "$(durcissement_lire_ufw_ajoutees)" \
-    "$(durcissement_lire_docker_user)" "$(durcissement_lire_forward)"
+    "$(durcissement_lire_docker_user)" "$(durcissement_lire_forward)" "$(durcissement_lire_ufw6_apres)"
 }
 durcissement_sortant_resume() {
   durcissement_sortant_resume_journal "$(durcissement_lire_sortant_journal)" "$(durcissement_lire_ip_conteneurs)"

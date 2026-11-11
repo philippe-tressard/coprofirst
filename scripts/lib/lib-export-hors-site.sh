@@ -121,20 +121,31 @@ nom_valide() { # $1 = nom candidat · $2 = préfixe (défaut : ceux de la résid
   return 0
 }
 
+# ── PURE : la clé de TEMPS d'une archive de la résidence ────────────────────
+# Le nom sans son préfixe ni le nom de la résidence (`<qui>_`, #2667, en
+# `[a-z0-9-]` — jamais `_`) : `AAAAMMJJ_HHMMSS[_paris].tar.gz`. Même coupure que
+# `backup.horodatage_archive`. Un nom d'un autre préfixe est rendu tel quel.
+cle_archive() { # $1 = nom → clé
+  local cle=${1:-}
+  cle=${cle#"$PREFIXE_RESIDENCE"}
+  cle=${cle#"$PREFIXE_RESIDENCE_HISTORIQUE"}
+  [[ "$cle" =~ ^[a-z0-9][a-z0-9-]{0,39}_([0-9]{8}_.*)$ ]] && cle=${BASH_REMATCH[1]}
+  printf '%s' "$cle"
+}
+
 # ── PURE : l'ordre CHRONOLOGIQUE d'une série d'archives ──────────────────────
 # 🔴 #2653 : avec deux préfixes, l'ordre alphabétique n'est plus l'ordre du temps —
 # tout `hostachy_…` passerait avant tout `sauvegarde_…`, faux dès qu'un retour à
 # l'image d'avant réécrit l'historique. Le tri porte sur le nom SANS son préfixe
 # (l'horodatage, `_paris`
-# compris, comme `backup.archives`) ; à horodatage égal, le nom départage.
+# compris, comme `backup.archives`) ; à horodatage égal, le nom départage. Le nom
+# de la résidence n'entre pas dans le tri (`cle_archive`, #2667).
 # Noms sur stdin, un par ligne → mêmes noms, du plus ancien au plus récent.
 trier_archives() {
-  local n cle
+  local n
   while IFS= read -r n; do
     [ -n "$n" ] || continue
-    cle=${n#"$PREFIXE_RESIDENCE"}
-    cle=${cle#"$PREFIXE_RESIDENCE_HISTORIQUE"}
-    printf '%s\t%s\n' "$cle" "$n"
+    printf '%s\t%s\n' "$(cle_archive "$n")" "$n"
   done | LC_ALL=C sort -u | cut -f2-
 }
 
@@ -235,13 +246,15 @@ jours_manquants() { # $1=jours_a_couvrir $2=date_du_jour(AAAAMMJJ) puis noms sur
   # à J-1..J-keep réclamait alors J-2 — que la rotation venait d'effacer — et
   # signalait chaque jour un « jour absent » qui n'en était pas un. La fenêtre
   # commence au jour le plus récent qu'on puisse détenir.
-  #  Un jour est couvert par une archive de l'un OU l'autre préfixe (#2653).
-  _jour_present() {
-    case "$noms" in
-      *"${PREFIXE_RESIDENCE}${1}_"*|*"${PREFIXE_RESIDENCE_HISTORIQUE}${1}_"*) return 0 ;;
-    esac
-    return 1
-  }
+  #  Un jour est couvert par une archive de la résidence, quels que soient son
+  #  préfixe (#2653) et son nom (#2667) : on lit le JOUR de chaque nom, ligne à
+  #  ligne — un motif sur la liste entière enjamberait deux lignes.
+  local n jours=" "
+  while IFS= read -r n; do
+    case "$n" in "$PREFIXE_RESIDENCE"*|"$PREFIXE_RESIDENCE_HISTORIQUE"*) ;; *) continue ;; esac
+    jours="$jours$(cle_archive "$n" | cut -c1-8) "
+  done <<< "$noms"
+  _jour_present() { case "$jours" in *" $1 "*) return 0 ;; esac; return 1; }
   _jour_present "$aujourdhui" && debut=0
   for ((i = debut; i < debut + fenetre; i++)); do
     jour=$(date -d "$aujourdhui -$i day" +%Y%m%d 2>/dev/null) || return 0
