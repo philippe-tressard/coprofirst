@@ -72,10 +72,13 @@ mode_version_branche() {
   esac
 }
 
-# verdict_version_du_lot v_main v_head → OK | FAIL | INCONNU
+# verdict_version_du_lot v_base v_head → OK | FAIL | INCONNU
 #  Depuis #2631, un lot ne porte PAS de numéro : le conducteur le pose au moment de
 #  la MEP. Un lot qui en porte un recrée la collision du 10/11 (3.79.0, deux fois
 #  3.81.0) — chaque fusion du précédent l'obligeait à le reposer.
+#  On compare à la BASE COMMUNE du lot et de `main`, jamais à `main` : une branche
+#  partie avant la MEP précédente a la version d'avant, et elle n'a rien bumpé —
+#  la première écriture le lui reprochait (rejouée sur #2665, 11/11).
 verdict_version_du_lot() {
   [ -n "${1:-}" ] && [ -n "${2:-}" ] || { echo INCONNU; return; }
   [ "$1" = "$2" ] && echo OK || echo FAIL
@@ -202,7 +205,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   t "branche illisible"                        INCONNU mode_version_branche ""
   t "lot sans bump"                            OK      verdict_version_du_lot 3.84.1 3.84.1
   t "lot qui porte un bump (collision du 10/11)" FAIL  verdict_version_du_lot 3.84.1 3.85.0
-  t "version de main illisible"                INCONNU verdict_version_du_lot "" 3.84.1
+  t "version de la base illisible"             INCONNU verdict_version_du_lot "" 3.84.1
   t "titre : marque remplacée"   "feat(mep): v3.85.0 — conducteur" titre_avec_version "feat(mep): {version} — conducteur" 3.85.0
   t "titre sans marque refusé"                 ""      titre_avec_version "feat(mep): v3.85.0" 3.85.0
   t "titre sans version calculée"              ""      titre_avec_version "feat: {version}" ""

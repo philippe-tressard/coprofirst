@@ -168,10 +168,12 @@ V_MAIN=$(lire_version origin/main); V_HEAD=$(lire_version HEAD)
 #  sur son bump. La branche dit lequel des deux part.
 MODE0D=$(mode_version_branche "$BRANCHE")
 V0D=$(verdict_bumps "${NB_BUMPS:-}" "${V_MAIN:-}" "${V_HEAD:-}")
-[ "$MODE0D" = LOT ] && V0D=$(verdict_version_du_lot "${V_MAIN:-}" "${V_HEAD:-}")
+V_BASE=$(lire_version "$(git merge-base origin/main HEAD 2>/dev/null)")
+[ "$MODE0D" = LOT ] && V0D=$(verdict_version_du_lot "${V_BASE:-}" "${V_HEAD:-}")
 if [ "$MODE0D" = LOT ]; then case "$V0D" in
-  OK)   D0D="${V_MAIN:-?} inchangée — la version se pose par conduire-mep.sh à la MEP" ;;
-  FAIL) D0D="le lot porte ${V_MAIN:-?} → ${V_HEAD:-?} : retirer le bump, conduire-mep.sh la pose depuis les préfixes du train" ;;
+  OK)   D0D="${V_HEAD:-?} inchangée depuis la base du lot — la version se pose par conduire-mep.sh à la MEP"
+        [ "${V_HEAD:-}" != "${V_MAIN:-}" ] && D0D="$D0D (main porte ${V_MAIN:-?} : la branche est partie avant)" ;;
+  FAIL) D0D="le lot porte ${V_BASE:-?} → ${V_HEAD:-?} : retirer le bump, conduire-mep.sh la pose depuis les préfixes du train" ;;
   *)    D0D="version illisible" ;;
 esac; else case "$V0D" in
   OK)    D0D="${V_MAIN:-?} → ${V_HEAD:-?}$(
