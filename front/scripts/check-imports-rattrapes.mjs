@@ -56,13 +56,34 @@ const SRC = join(RACINE, 'src');
  */
 const EXCEPTIONS = [];
 
-/** Les blocs `<script>` d'un composant, avec leur décalage dans le fichier. */
+/**
+ *  Les blocs `<script>` d'un composant, avec leur décalage dans le fichier.
+ *  ⚠️ Lecture d'un source, pas un assainissement : on BLANCHIT par positions
+ *  (`blanchir`), jamais par `.replace` — CodeQL y lirait un filtre de balises.
+ */
+const SCRIPT = /(<script\b[^>]*>)([\s\S]*?)<\/script\s*>/gi;
+const COMMENTAIRE_HTML = /<!--[\s\S]*?-->/g;
+
 function scripts(source) {
-	return [...source.matchAll(/(<script[^>]*>)([\s\S]*?)<\/script>/g)].map((m) => ({
+	return [...source.matchAll(SCRIPT)].map((m) => ({
 		code: m[2],
 		debut: m.index + m[1].length,
 	}));
 }
+
+/** Le texte, chaque correspondance du motif remplacée par autant d'espaces (positions gardées). */
+function blanchir(texte, motif) {
+	let sortie = '';
+	let fin = 0;
+	for (const m of texte.matchAll(motif)) {
+		sortie += texte.slice(fin, m.index) + ' '.repeat(m[0].length);
+		fin = m.index + m[0].length;
+	}
+	return sortie + texte.slice(fin);
+}
+
+/** Le balisage d'un composant : sans ses scripts ni ses commentaires, positions gardées. */
+const balisageDe = (source) => blanchir(blanchir(source, SCRIPT), COMMENTAIRE_HTML);
 
 /** Le numéro de ligne d'une position. */
 const ligneDe = (source, pos) => source.slice(0, pos).split('\n').length;
@@ -152,8 +173,7 @@ export function importsSansDestinataire(code) {
 
 /** Le balisage d'un composant : seul `charger={() => import(…)}` y est admis. */
 export function importsDuBalisage(source) {
-	const balisage = source.replace(/<script[^>]*>[\s\S]*?<\/script>/g, (b) => ' '.repeat(b.length));
-	const sansCommentaires = balisage.replace(/<!--[\s\S]*?-->/g, (b) => ' '.repeat(b.length));
+	const sansCommentaires = balisageDe(source);
 	const fautes = [];
 	for (const m of sansCommentaires.matchAll(/\bimport\(/g)) {
 		const avant = sansCommentaires.slice(Math.max(0, m.index - 40), m.index);
@@ -171,8 +191,7 @@ export function juger(source, chemin) {
 			vus += (code.match(/\bimport\(/g) ?? []).length;
 			for (const pos of importsSansDestinataire(code)) fautes.push(ligneDe(source, debut + pos));
 		}
-		const balisage = source.replace(/<script[^>]*>[\s\S]*?<\/script>/g, '');
-		vus += (balisage.replace(/<!--[\s\S]*?-->/g, '').match(/\bimport\(/g) ?? []).length;
+		vus += (balisageDe(source).match(/\bimport\(/g) ?? []).length;
 		for (const pos of importsDuBalisage(source)) fautes.push(ligneDe(source, pos));
 	} else {
 		vus += (source.match(/\bimport\(/g) ?? []).length;
