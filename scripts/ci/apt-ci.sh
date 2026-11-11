@@ -287,8 +287,9 @@ apt_ci_autotest() {
     contournements=$(grep -nE 'apt-get|--with-deps' "$racine"/.github/workflows/*.yml "$racine"/scripts/ci/*.sh 2>/dev/null \
         | grep -vE '^[^:]+:[0-9]+:\s*#' | grep -v '/scripts/ci/apt-ci.sh:' || true)
     _v "aucun apt hors de la porte" "${contournements:-aucun}" aucun
-    _v "la porte lit des workflows (cas zéro)" \
-        "$(find "$racine/.github/workflows" -name '*.yml' 2>/dev/null | wc -l | tr -d ' ' | grep -qv '^0$' && echo oui || echo non)" oui
+    local nb_workflows
+    nb_workflows=$(find "$racine/.github/workflows" -name '*.yml' 2>/dev/null | wc -l | tr -d ' ')
+    _v "la porte lit des workflows (cas zéro)" "$([ "${nb_workflows:-0}" -gt 0 ] && echo oui || echo non)" oui
     return "$ko"
 }
 
