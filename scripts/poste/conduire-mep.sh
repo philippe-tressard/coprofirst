@@ -12,6 +12,7 @@
 #       `CLEAN`, hors de la fenêtre de bascule de la nuit ;
 #    4. après la fusion : `dev` recréée depuis `main`, les PR qui visaient `dev`
 #       ramenées dessus — reciblées, ou ROUVERTES si GitHub les a fermées (#2619) ;
+#       une PR fermée à la main reste fermée, et le journal la nomme (#2688) ;
 #    5. « Déployé: <sha> » attendu sur le nœud ACTIF, puis `precheck-mep.sh
 #       --post-mep`, puis la veille de sécurité relancée sur `main`.
 #
@@ -157,16 +158,36 @@ assurer_dev() {
   esac
 }
 
+# fermeture_pr n° → « closedAt derniers » : l'heure de la dernière fermeture, et les deux
+#  derniers événements de la PR parmi fermeture, suppression de sa base et réouverture
+#  (`fermee_par_suppression` dit ce qu'on y lit). Vide si GitHub ne répond pas.
+fermeture_pr() {
+  g api graphql -F owner='{owner}' -F name='{repo}' -F n="$1" -f query='
+    query($owner:String!,$name:String!,$n:Int!){repository(owner:$owner,name:$name){pullRequest(number:$n){
+      closedAt timelineItems(last:2,itemTypes:[CLOSED_EVENT,BASE_REF_DELETED_EVENT,REOPENED_EVENT]){nodes{__typename}}}}}' \
+    --jq '.data.repository.pullRequest|(.closedAt // "-")+" "+([.timelineItems.nodes[].__typename]|join("+"))' 2>/dev/null
+}
+
+# geste_pour n° etat base → le geste de `geste_pr_suivie`. Une PR FERMÉE se juge sur
+#  quand et par quoi elle l'a été, face à l'heure de fusion du train (#2688) : fermée à
+#  la main, ou une mesure illisible, elle rend LAISSER et personne n'y touche.
+geste_pour() {
+  local n=$1 st=${2:-} base=${3:-} ferme="" derniers=""
+  [ "$st" = CLOSED ] && read -r ferme derniers <<<"$(fermeture_pr "$n")"
+  geste_pr_suivie "$st" "$base" "$ferme" "${FUSION_LE:-}" "$derniers"
+}
+
 # ramener_pr n° — une PR suivie revient sur `dev`, et le FAIT se relit (#2676) : un
 #  reciblage refusé arrête le conducteur en nommant la PR, il ne continue jamais.
 ramener_pr() {
   local n=$1 st base
   read -r st base <<<"$(etat_pr "$n")"
   [ "$(verdict_recible "${st:-}" "${base:-}")" = OK ] && return 0
-  case "$(geste_pr_suivie "${st:-}" "${base:-}")" in
+  case "$(geste_pour "$n" "${st:-}" "${base:-}")" in
     ROUVRIR)  agir "PR #$n fermée par la suppression de dev : rouverte" g pr reopen "$n" >/dev/null \
                 || stop "PR #$n : réouverture refusée — la rouvrir et la recibler sur dev à la main" ;;
     RECIBLER) ;;
+    LAISSER)  return 0 ;;   # fermée autrement que par la suppression de dev : on n'y touche pas
     *)        stop "PR #$n : état illisible (« ${st:-?} ${base:-?} »)" ;;
   esac
   assurer_dev
@@ -297,15 +318,27 @@ else
     AUTRE)         stop "dev porte un commit inconnu ($(lire_dev | cut -c1-8)) — quelqu'un y a poussé pendant la fusion : vérifier à la main" ;;
     *)             stop "dev illisible après la fusion (dépôt distant muet)" ;;
   esac
+  #  L'heure de fusion du train : une PR suivie fermée AVANT elle l'a été à la main (#2688).
+  FUSION_LE=""; [ -n "$PR_MAIN" ] && FUSION_LE=$(g pr view "$PR_MAIN" --json mergedAt --jq '.mergedAt // ""' 2>/dev/null)
+  dire "train fusionné le ${FUSION_LE:-? (heure illisible : aucune PR fermée ne sera rouverte)}"
   #  Trois passes : GitHub recible lui aussi de façon asynchrone. Une PR qui reste hors de
   #  `dev` à la dernière passe arrête le conducteur, nommée.
+  LAISSEES=""
   for passe in 1 2 3; do
     A_RAMENER=""
     for n in $SUIVIES $(g pr list --base main --state open --json number,headRefName --jq '.[]|select(.headRefName!="dev")|.number'); do
       read -r ST BASE <<<"$(etat_pr "$n")"
-      [ "$(verdict_recible "${ST:-}" "${BASE:-}")" = OK ] || A_RAMENER="$A_RAMENER $n"
+      [ "$(verdict_recible "${ST:-}" "${BASE:-}")" = OK ] && continue
+      if [ "$(geste_pour "$n" "${ST:-}" "${BASE:-}")" = LAISSER ]; then
+        case " $LAISSEES " in *" $n "*) ;; *)
+          LAISSEES="$LAISSEES $n"
+          dire "⚠ PR #$n fermée, mais pas par la suppression de dev après la fusion du train (ou la mesure est illisible) : laissée fermée. Si elle devait revenir : gh pr reopen $n && gh pr edit $n --base dev" ;;
+        esac
+        continue
+      fi
+      A_RAMENER="$A_RAMENER $n"
     done
-    [ -z "$A_RAMENER" ] && [ "$passe" -ge 2 ] && { dire "PR suivies : toutes sur dev"; break; }
+    [ -z "$A_RAMENER" ] && [ "$passe" -ge 2 ] && { dire "PR suivies : toutes sur dev${LAISSEES:+ — laissées fermées :$LAISSEES}"; break; }
     [ -n "$A_RAMENER" ] && [ "$passe" = 3 ] && stop "PR toujours hors de dev :$A_RAMENER"
     for n in $A_RAMENER; do ramener_pr "$n"; done
     sleep 15

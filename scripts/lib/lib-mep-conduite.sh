@@ -147,16 +147,47 @@ heure_cron_bascule() {
   printf '%02d:%02d\n' "$hr" "$mn"
 }
 
-# geste_pr_suivie etat base → RIEN | RECIBLER | ROUVRIR | INCONNU
+# instant_num 2026-11-11T13:19:01Z → 20261111131901, vide si ce n'est pas cette forme
+#  Les instants de GitHub (UTC, à la seconde) se comparent en nombres ; une autre forme
+#  ne se compare pas — elle rend vide, et l'appelant ne décide rien dessus.
+instant_num() {
+  [[ "${1:-}" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})Z$ ]] || { echo ""; return; }
+  echo "${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}${BASH_REMATCH[4]}${BASH_REMATCH[5]}${BASH_REMATCH[6]}"
+}
+
+# fermee_par_suppression derniers → oui | non
+#  `derniers` : les deux derniers événements de la PR parmi fermeture, suppression de sa
+#  base et réouverture, joints par `+`. GitHub qui ferme une PR dont la base disparaît
+#  écrit `BaseRefDeletedEvent` puis `ClosedEvent`, à une seconde d'écart (#2619, relu le
+#  11/11) — l'ordre des deux n'est pas exigé. Une fermeture à la main n'a pas le premier ;
+#  une PR rouverte puis refermée a `ReopenedEvent` devant sa fermeture.
+fermee_par_suppression() {
+  case "${1:-}" in
+    BaseRefDeletedEvent+ClosedEvent|ClosedEvent+BaseRefDeletedEvent) echo oui ;;
+    *) echo non ;;
+  esac
+}
+
+# geste_pr_suivie etat base [ferme_le fusion_le derniers] → RIEN | RECIBLER | ROUVRIR | LAISSER | INCONNU
 #  Les PR qui visaient `dev` AVANT la fusion du train : la suppression de `dev` par
 #  GitHub les recible sur `main`, ou FERME celles qui sont en brouillon (#2619).
 #  Après la recréation de `dev`, chacune y revient.
+#  🔴 Une PR fermée n'est pas toujours fermée par GitHub : le 11/11, la coordination en a
+#  fermé deux À LA MAIN pendant que le train attendait ses checks (leur contenu était
+#  entré par une autre), et le conducteur les a rouvertes (#2688). `ROUVRIR` exige donc
+#  deux faits : la fermeture n'est pas ANTÉRIEURE à la fusion du train (`fusion_le`, le
+#  `mergedAt` de la PR `dev → main`), et elle suit la suppression de la base. Une heure
+#  ou une chronologie illisible : `LAISSER` — l'appelant nomme la PR et n'y touche pas.
 geste_pr_suivie() {
+  local ferme fusion
   case "${1:-}:${2:-}" in
     OPEN:dev)      echo RIEN ;;
     OPEN:*)        echo RECIBLER ;;
-    CLOSED:*)      echo ROUVRIR ;;
     MERGED:*)      echo RIEN ;;
+    CLOSED:*)      ferme=$(instant_num "${3:-}"); fusion=$(instant_num "${4:-}")
+                   if [ -n "$ferme" ] && [ -n "$fusion" ] && [ "$ferme" -ge "$fusion" ] \
+                      && [ "$(fermee_par_suppression "${5:-}")" = oui ]; then echo ROUVRIR
+                   else echo LAISSER; fi ;;
     *)             echo INCONNU ;;
   esac
 }
@@ -274,9 +305,36 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   t "crontab absente : rien de lu"             ""      heure_cron_bascule /nonexistent
   t "PR suivie toujours sur dev"               RIEN     geste_pr_suivie OPEN dev
   t "PR reciblée sur main par la suppression"  RECIBLER geste_pr_suivie OPEN main
-  t "🔴 brouillon fermé (#2619)"                ROUVRIR  geste_pr_suivie CLOSED main
   t "PR fusionnée entre-temps"                 RIEN     geste_pr_suivie MERGED dev
   t "état illisible"                           INCONNU  geste_pr_suivie "" ""
+  #  Une PR FERMÉE ne se rouvre que sur deux faits : fermée APRÈS la fusion du train, ET
+  #  par la suppression de sa base. Les heures sont celles des deux incidents, relues.
+  SUPPR="BaseRefDeletedEvent+ClosedEvent"
+  t "🔴 brouillon fermé par la suppression de dev (#2619)" ROUVRIR \
+    geste_pr_suivie CLOSED dev 2026-11-10T00:11:57Z 2026-11-10T00:11:50Z "$SUPPR"
+  t "fermée à la seconde de la fusion, par la suppression" ROUVRIR \
+    geste_pr_suivie CLOSED dev 2026-11-10T00:11:50Z 2026-11-10T00:11:50Z "$SUPPR"
+  t "les deux événements à la même seconde, dans l'autre ordre" ROUVRIR \
+    geste_pr_suivie CLOSED dev 2026-11-10T00:11:57Z 2026-11-10T00:11:50Z "ClosedEvent+BaseRefDeletedEvent"
+  t "🔴 fermée À LA MAIN avant la fusion du train (#2688)" LAISSER \
+    geste_pr_suivie CLOSED dev 2026-11-11T13:05:40Z 2026-11-11T13:19:01Z ClosedEvent
+  t "🔒 fermée avant la fusion : jamais rouverte, quoi que dise la chronologie" LAISSER \
+    geste_pr_suivie CLOSED dev 2026-11-11T13:05:40Z 2026-11-11T13:19:01Z "$SUPPR"
+  t "fermée à la main APRÈS la fusion : aucune base supprimée" LAISSER \
+    geste_pr_suivie CLOSED main 2026-11-11T13:20:00Z 2026-11-11T13:19:01Z ClosedEvent
+  t "rouverte par le conducteur, refermée à la main" LAISSER \
+    geste_pr_suivie CLOSED dev 2026-11-11T13:35:46Z 2026-11-11T13:19:01Z "ReopenedEvent+ClosedEvent"
+  t "heure de fermeture illisible : dans le doute, laisser" LAISSER \
+    geste_pr_suivie CLOSED dev "" 2026-11-11T13:19:01Z "$SUPPR"
+  t "heure de fusion du train illisible : laisser" LAISSER \
+    geste_pr_suivie CLOSED dev 2026-11-11T13:20:00Z "" "$SUPPR"
+  t "heure dans une autre forme : laisser"     LAISSER \
+    geste_pr_suivie CLOSED dev "2026-11-11 14:20:00" 2026-11-11T13:19:01Z "$SUPPR"
+  t "chronologie illisible : laisser"          LAISSER \
+    geste_pr_suivie CLOSED dev 2026-11-11T13:20:00Z 2026-11-11T13:19:01Z ""
+  t "fermée, rien de mesuré : laisser"         LAISSER  geste_pr_suivie CLOSED main
+  t "instant ISO lu en nombre"                 20261111131901 instant_num 2026-11-11T13:19:01Z
+  t "instant illisible"                        ""       instant_num "hier"
   t "reciblée : ouverte sur dev"               OK       verdict_recible OPEN dev
   t "🔴 restée sur main (#2676)"                 ECHEC    verdict_recible OPEN main
   t "fusionnée entre-temps"                    OK       verdict_recible MERGED main
@@ -309,7 +367,7 @@ if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "${1:-}" = "--selftest" ]; then
   t "rien de mémorisé : le train"              TRAIN   etape_reprise ""
   t "rang du train lu aux préfixes (feat)"     minor   rang_attendu "$(printf 'fix: a\nfeat(mep) : b')"
   if [ "$echecs" -eq 0 ]; then
-    echo "✓ conducteur de MEP : fusion sur CLEAN seulement, fenêtre de bascule, version du train, reprise."
+    echo "✓ conducteur de MEP : fusion sur CLEAN seulement, fenêtre de bascule, version du train, reprise, PR fermée à la main jamais rouverte."
     exit 0
   fi
   echo "✗ $echecs décision(s) du conducteur en défaut."

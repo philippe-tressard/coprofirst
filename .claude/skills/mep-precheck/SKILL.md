@@ -153,7 +153,8 @@ le défaut du 10/11), **pose la version** du train sur `dev`, ouvre ou retitre
 l'unique PR `dev → main`, la fusionne **hors de la fenêtre de bascule**
 (`FENETRE_BASCULE_*`, confrontée par son autotest à la crontab), recrée `dev`, y
 ramène les PR qui la visaient — reciblées, ou **rouvertes** si GitHub les a fermées
-(un brouillon l'est, #2619) —, attend `Déployé:` sur l'actif, joue `--post-mep` et
+(un brouillon l'est, #2619 ; une PR fermée **à la main** reste fermée, nommée au
+journal : `geste_pr_suivie`, #2688) —, attend `Déployé:` sur l'actif, joue `--post-mep` et
 relance la veille. ⚠️ GitHub supprime `dev` **après** la fusion, de façon
 asynchrone : lue une seconde après, elle est encore là — le conducteur attend le
 fait (`attendre_dev_supprimee`, délai borné), relit chaque PR reciblée et s'arrête
