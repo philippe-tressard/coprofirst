@@ -38,7 +38,6 @@
 	} from '#lib/api/index.ts';
 	import { fmtDatetime } from '#lib/date.ts';
 	import { fmtNombre } from '#lib/utils.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	import {
 		COPIE_HORS_MACHINE,
 		GESTES_REGISTRE,
@@ -155,7 +154,7 @@
 {#if fiche.contact}
 	<dl class="faits">
 		<dt>Nom</dt>
-		<dd>{nomAffiche(fiche.contact)}</dd>
+		<dd>{fiche.administrateur}</dd>
 		<dt>Courriel</dt>
 		<dd><a href="mailto:{fiche.contact.courriel}">{fiche.contact.courriel}</a></dd>
 		{#if fiche.contact.telephone}

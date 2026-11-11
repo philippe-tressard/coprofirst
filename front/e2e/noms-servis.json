@@ -1,0 +1,105 @@
+{
+	"_lisez_moi": "Les noms que le SERVEUR sert (`utils/noms.nom_affiche`) aux personnes des e2e — vérifiés par api/tests/test_noms_servis_e2e.py (#2633).",
+	"noms": [
+		{
+			"prenom": "Anne",
+			"nom": "Durand",
+			"nom_affiche": "Anne DURAND"
+		},
+		{
+			"prenom": "Paul",
+			"nom": "Martin",
+			"nom_affiche": "Paul MARTIN"
+		},
+		{
+			"prenom": "Zoé",
+			"nom": "Morel",
+			"nom_affiche": "Zoé MOREL"
+		},
+		{
+			"prenom": "Hélène",
+			"nom": "Dupré",
+			"nom_affiche": "Hélène DUPRÉ"
+		},
+		{
+			"prenom": "Moi",
+			"nom": "Durand",
+			"nom_affiche": "Moi DURAND"
+		},
+		{
+			"prenom": "Alice",
+			"nom": "Durand",
+			"nom_affiche": "Alice DURAND"
+		},
+		{
+			"prenom": "Bruno",
+			"nom": "Durand",
+			"nom_affiche": "Bruno DURAND"
+		},
+		{
+			"prenom": "Chloe",
+			"nom": "Durand",
+			"nom_affiche": "Chloe DURAND"
+		},
+		{
+			"prenom": "Claire",
+			"nom": "Bailleur",
+			"nom_affiche": "Claire BAILLEUR"
+		},
+		{
+			"prenom": "Paul",
+			"nom": "Durand",
+			"nom_affiche": "Paul DURAND"
+		},
+		{
+			"prenom": "Jeanne",
+			"nom": "Martin",
+			"nom_affiche": "Jeanne MARTIN"
+		},
+		{
+			"prenom": "Reine",
+			"nom": "Martin",
+			"nom_affiche": "Reine MARTIN"
+		},
+		{
+			"prenom": "Paul",
+			"nom": "Bernard",
+			"nom_affiche": "Paul BERNARD"
+		},
+		{
+			"prenom": "Jean",
+			"nom": "Durand",
+			"nom_affiche": "Jean DURAND"
+		},
+		{
+			"prenom": "Jean",
+			"nom": "",
+			"nom_affiche": "Jean"
+		},
+		{
+			"prenom": "Lise",
+			"nom": "",
+			"nom_affiche": "Lise"
+		},
+		{
+			"prenom": "CS",
+			"nom": "Témoin",
+			"nom_affiche": "CS TÉMOIN"
+		},
+		{
+			"prenom": "",
+			"nom": "Petit",
+			"nom_affiche": "PETIT"
+		},
+		{
+			"prenom": "",
+			"nom": "Bernard",
+			"nom_affiche": "BERNARD"
+		},
+		{
+			"prenom": "",
+			"nom": "",
+			"nom_affiche": ""
+		}
+	]
+}

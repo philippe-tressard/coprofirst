@@ -68,8 +68,8 @@ def _apparences() -> dict[str, dict[str, str]]:
     n'a pas changé.
     """
     source = _FLUX_TS.read_text(encoding="utf-8")
-    debut = source.index("} = parAttribut({")
-    corps = source[debut : source.index("});", debut)]
+    debut = source.index("export const NATURES_DU_FIL = {")
+    corps = source[debut : source.index("\n};", debut)]
     apparences = {m.group(1): dict(_ATTRIBUT.findall(m.group(2))) for m in _ENTREE.finditer(corps)}
     #  Cas zéro : un motif cassé rendrait une table vide, et toutes les
     #  inclusions ci-dessous seraient vraies à vide (`standards/04` §2).

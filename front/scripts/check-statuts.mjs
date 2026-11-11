@@ -46,21 +46,23 @@
  *
  * Un prédicat bâti sur une chaîne fautive — un accent oublié dans
  * « copropriétaire_résident » — serait **toujours faux**, et rien ne le
- * signalerait : l'écran afficherait simplement moins de choses. `STATUTS_TESTES`
- * (`#lib/roles`) nomme ces chaînes et son commentaire disait que ce contrôle la
- * lisait : ce n'était plus vrai, et la liste n'était lue par personne — un export
- * mort qui affirmait un garde-fou. Il est rétabli, dans les deux sens :
+ * signalerait : l'écran afficherait simplement moins de choses.
  *
- * - chaque clé de `STATUTS_TESTES` est une clé de `LIBELLES_STATUT` ;
- * - `STATUTS_TESTES` est exactement l'ensemble des chaînes que `roles.ts`
- *   compare (`statutDe(p) === '…'`) — sans cela une faute de frappe dans le
- *   PRÉDICAT, avec la liste restée juste, passerait.
+ * Depuis #2634 (11/11/2026), les prédicats LISENT leurs chaînes dans une table,
+ * `STATUTS_DU_PROFIL` (`#lib/roles`, publiée à l'app iOS) — la liste `STATUTS_TESTES`
+ * qui les recopiait pour ce contrôle n'a plus lieu d'être. Il vérifie donc :
+ *
+ * - chaque statut de `STATUTS_DU_PROFIL` est une clé d'`ATTRIBUTS_STATUT`, donc de
+ *   `LIBELLES_STATUT` ;
+ * - aucun prédicat ne compare un littéral (`statutDe(p) === '…'`) : il contournerait
+ *   la table, et sa chaîne ne serait plus vérifiée.
  *
  * Auto-test : node scripts/check-statuts.mjs --selftest
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { neutraliserCommentaires as sansCommentaires } from './lib-commentaires.mjs';
+import { constanteExportee } from './tables-clients.lecture.mjs';
 
 const RACINE = new URL('../src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const SOURCE = join(RACINE, 'lib', 'roles.ts');
@@ -95,63 +97,49 @@ function fichiers(dossier) {
 }
 
 //  ── Les chaînes de statut : lues dans `roles.ts`, jamais recopiées ici ───────
+//  Les deux tables se lisent sur l'arbre syntaxique, sans rien exécuter — le lecteur
+//  des tables publiées (`tables-clients.lecture.mjs`, #2634), pas un motif.
 
-/** Les clés de la déclaration `STATUT` (`parAttribut({ … })`) — donc de `LIBELLES_STATUT`. */
-function clesDeStatut(source) {
-	const debut = source.indexOf('const STATUT = parAttribut({');
-	if (debut < 0) return [];
-	const fin = source.indexOf('\n});', debut);
-	//  Une tabulation puis un identifiant : la clé. Les attributs (`libelle:`,
-	//  `badge:`) sont à deux tabulations et ne sont pas des clés.
-	return [...source.slice(debut, fin).matchAll(/^\t(\p{L}[\p{L}_]*):/gmu)].map((m) => m[1]);
-}
-
-/** Le contenu déclaré de `STATUTS_TESTES`. */
-function statutsTestes(source) {
-	const m = /export const STATUTS_TESTES = \[([\s\S]*?)\] as const/.exec(source);
-	return m ? [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]) : [];
-}
-
-/** Les chaînes que les prédicats comparent réellement. */
-function statutsComparesParLesPredicats(source) {
-	return [...new Set([...source.matchAll(/statutDe\(p\)\s*===\s*'([^']+)'/g)].map((m) => m[1]))];
+/** Les clés d'une table littérale de `roles.ts`, ou ses valeurs réunies ; `[]` illisible. */
+function lireTable(source, nom) {
+	try {
+		return constanteExportee(source, nom, 'src/lib/roles.ts');
+	} catch {
+		return null;
+	}
 }
 
 /** Les écarts d'un source `roles.ts` — liste vide si tout concorde. PURE. */
 function ecartsStatuts(source) {
-	const code = sansCommentaires(source);
-	const cles = new Set(clesDeStatut(code));
-	const testes = statutsTestes(code);
-	const compares = statutsComparesParLesPredicats(code);
+	const statuts = lireTable(source, 'ATTRIBUTS_STATUT');
+	const profils = lireTable(source, 'STATUTS_DU_PROFIL');
+	const cles = new Set(Object.keys(statuts ?? {}));
+	const nommes = Object.values(profils ?? {}).flat();
 	//  🔴 CAS ZÉRO — ne rien lire n'est pas « tout concorde ».
-	if (cles.size < 7 || testes.length === 0 || compares.length === 0) {
+	if (cles.size < 7 || nommes.length === 0) {
 		return [
-			`relevé vide (${cles.size} clé(s) de STATUT, ${testes.length} dans STATUTS_TESTES, ` +
-				`${compares.length} comparée(s)) : le contrôle ne lit plus rien`,
+			`relevé vide (${cles.size} clé(s) d'ATTRIBUTS_STATUT, ${nommes.length} statut(s) dans ` +
+				'STATUTS_DU_PROFIL) : le contrôle ne lit plus rien',
 		];
 	}
 	const ecarts = [];
-	for (const t of testes) {
-		if (!cles.has(t)) ecarts.push(`STATUTS_TESTES nomme « ${t} », inconnu de LIBELLES_STATUT`);
-	}
-	for (const c of compares) {
-		if (!cles.has(c)) ecarts.push(`un prédicat compare « ${c} », inconnu de LIBELLES_STATUT`);
-		else if (!testes.includes(c))
-			ecarts.push(`un prédicat compare « ${c} », absent de STATUTS_TESTES`);
-	}
-	for (const t of testes) {
-		if (!compares.includes(t))
-			ecarts.push(`STATUTS_TESTES nomme « ${t} » : aucun prédicat ne le compare`);
-	}
+	for (const [profil, liste] of Object.entries(profils))
+		for (const s of liste)
+			if (!cles.has(s))
+				ecarts.push(`STATUTS_DU_PROFIL.${profil} nomme « ${s} », inconnu de LIBELLES_STATUT`);
+	//  Un prédicat qui compare un littéral contourne la table : sa chaîne n'est
+	//  plus vérifiée, et elle est écrite deux fois.
+	for (const m of sansCommentaires(source).matchAll(/statutDe\(p\)\s*[!=]==\s*['"`]([^'"`]+)/g))
+		ecarts.push(`un prédicat compare « ${m[1]} » au lieu de lire STATUTS_DU_PROFIL`);
 	return ecarts;
 }
 
 if (process.argv.includes('--selftest')) {
-	const ROLES = (cles, testes, comparaisons) =>
-		`const STATUT = parAttribut({\n${cles
+	const ROLES = (cles, profils, comparaisons = []) =>
+		`export const ATTRIBUTS_STATUT = {\n${cles
 			.map((c) => `\t${c}: { libelle: 'x', abrege: 'x', badge: 'y' },`)
-			.join('\n')}\n});\n` +
-		`export const STATUTS_TESTES = [${testes.map((t) => `'${t}'`).join(', ')}] as const;\n` +
+			.join('\n')}\n};\n` +
+		`export const STATUTS_DU_PROFIL = ${JSON.stringify(profils)};\n` +
 		comparaisons.map((c) => `const f = (p) => statutDe(p) === '${c}';`).join('\n');
 	const SEPT = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
 	let ko = 0;
@@ -160,34 +148,25 @@ if (process.argv.includes('--selftest')) {
 		if (!ok) ko++;
 		console.log(`${ok ? 'PASS' : 'ÉCHEC'}  ${nom} → ${obtenu} (attendu ${attendu})`);
 	};
-	verifier('tout concorde', ecartsStatuts(ROLES(SEPT, ['a', 'b'], ['a', 'b'])).length, 0);
+	verifier('tout concorde', ecartsStatuts(ROLES(SEPT, { x: ['a'], y: ['b', 'c'] })).length, 0);
 	//  🔴 LE CAS FAUTIF : l'accent oublié que le commentaire de roles.ts cite.
 	verifier(
-		'chaîne fautive dans la liste',
-		ecartsStatuts(ROLES(SEPT, ['a', 'zz'], ['a', 'zz'])).length,
-		2,
-	);
-	verifier(
-		'chaîne fautive dans le PRÉDICAT, liste restée juste',
-		ecartsStatuts(ROLES(SEPT, ['a', 'b'], ['a', 'zz'])).length,
-		2, // « zz » inconnu de LIBELLES_STATUT, et « b » que plus aucun prédicat ne compare
-	);
-	verifier(
-		'prédicat juste mais absent de la liste',
-		ecartsStatuts(ROLES(SEPT, ['a'], ['a', 'b'])).length,
+		'chaîne fautive dans la table',
+		ecartsStatuts(ROLES(SEPT, { x: ['a', 'zz'] })).length,
 		1,
 	);
 	verifier(
-		'liste qui nomme un statut que personne ne compare',
-		ecartsStatuts(ROLES(SEPT, ['a', 'b'], ['a'])).length,
+		'prédicat qui compare un littéral',
+		ecartsStatuts(ROLES(SEPT, { x: ['a'] }, ['a'])).length,
 		1,
 	);
 	verifier('cas zéro : source vide', ecartsStatuts('').length, 1);
-	verifier('cas zéro : aucune clé de STATUT', ecartsStatuts(ROLES([], ['a'], ['a'])).length, 1);
+	verifier('cas zéro : aucune clé de statut', ecartsStatuts(ROLES([], { x: ['a'] })).length, 1);
+	verifier('cas zéro : table des profils vide', ecartsStatuts(ROLES(SEPT, {})).length, 1);
 	//  Un commentaire qui cite la forme n'est pas une comparaison.
 	verifier(
 		'commentaire qui cite un prédicat : ignoré',
-		ecartsStatuts(ROLES(SEPT, ['a'], ['a']) + "\n// statutDe(p) === 'zz'\n").length,
+		ecartsStatuts(ROLES(SEPT, { x: ['a'] }) + "\n// statutDe(p) === 'zz'\n").length,
 		0,
 	);
 	console.log(ko ? `== ${ko} ÉCHEC(S) ==` : '== TOUS OK ==');
@@ -214,7 +193,7 @@ if (absents.length) {
 const ecarts = ecartsStatuts(source);
 if (ecarts.length) {
 	console.error(
-		`✗ #lib/roles — ${ecarts.length} écart(s) entre STATUTS_TESTES, les prédicats et LIBELLES_STATUT :\n  ` +
+		`✗ #lib/roles — ${ecarts.length} écart(s) entre STATUTS_DU_PROFIL, les prédicats et LIBELLES_STATUT :\n  ` +
 			ecarts.join('\n  ') +
 			'\n\n  Un prédicat bâti sur une chaîne fautive est TOUJOURS faux, et rien ne le dit (#1577).',
 	);

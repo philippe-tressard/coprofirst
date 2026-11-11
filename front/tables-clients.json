@@ -1,0 +1,2081 @@
+{
+  "format": 1,
+  "version": "1.0.0",
+  "tables": {
+    "attributsAdmis": {
+      "source": "front/src/lib/sanitize.ts#ALLOWED_ATTR",
+      "valeur": [
+        "href",
+        "src",
+        "alt",
+        "title",
+        "class",
+        "target",
+        "rel"
+      ]
+    },
+    "attributsRole": {
+      "source": "front/src/lib/roles.ts#ATTRIBUTS_ROLE",
+      "valeur": {
+        "résident": {
+          "libelle": "Résident",
+          "badge": "badge-gray"
+        },
+        "propriétaire": {
+          "libelle": "Propriétaire",
+          "badge": "badge-teal"
+        },
+        "conseil_syndical": {
+          "libelle": "Conseil syndical",
+          "badge": "badge-blue"
+        },
+        "admin": {
+          "libelle": "Admin",
+          "badge": "badge-orange"
+        },
+        "externe": {
+          "libelle": "Externe",
+          "badge": "badge-yellow"
+        },
+        "operateur": {
+          "libelle": "Opérateur",
+          "badge": "badge-purple"
+        }
+      }
+    },
+    "attributsStatut": {
+      "source": "front/src/lib/roles.ts#ATTRIBUTS_STATUT",
+      "valeur": {
+        "copropriétaire_résident": {
+          "libelle": "Copropriétaire résident",
+          "abrege": "Copro. résident",
+          "badge": "badge-green"
+        },
+        "copropriétaire_bailleur": {
+          "libelle": "Copropriétaire bailleur",
+          "abrege": "Copro. bailleur",
+          "badge": "badge-blue"
+        },
+        "locataire": {
+          "libelle": "Locataire",
+          "abrege": "Locataire",
+          "badge": "badge-purple"
+        },
+        "syndic": {
+          "libelle": "Syndic",
+          "abrege": "Syndic",
+          "badge": "badge-orange"
+        },
+        "mandataire": {
+          "libelle": "Mandataire",
+          "abrege": "Mandataire",
+          "badge": "badge-gray"
+        },
+        "aidant": {
+          "libelle": "Aidant (proche)",
+          "abrege": "Aidant (proche)",
+          "badge": "badge-yellow"
+        },
+        "admin_technique": {
+          "libelle": "Compte technique",
+          "abrege": "Compte technique",
+          "badge": "badge-orange"
+        }
+      }
+    },
+    "attributsTrace": {
+      "source": "front/src/lib/icones.ts#ATTRIBUTS_TRACE",
+      "valeur": {
+        "viewBox": "0 0 24 24",
+        "fill": "none",
+        "stroke-width": "1.5",
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round"
+      }
+    },
+    "balisesAdmises": {
+      "source": "front/src/lib/sanitize.ts#ALLOWED_TAGS",
+      "valeur": [
+        "p",
+        "br",
+        "b",
+        "i",
+        "u",
+        "s",
+        "strong",
+        "em",
+        "ul",
+        "ol",
+        "li",
+        "blockquote",
+        "pre",
+        "code",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "a",
+        "img",
+        "hr",
+        "span",
+        "div",
+        "details",
+        "summary"
+      ]
+    },
+    "canauxNotifications": {
+      "source": "front/src/lib/preferences.ts#CANAUX_NOTIFS",
+      "valeur": [
+        {
+          "titre": "Notifications par e-mail",
+          "mon": "mon_batiment_mail",
+          "autres": "autres_batiments_mail"
+        },
+        {
+          "titre": "Notifications dans l'application",
+          "mon": "mon_batiment_app",
+          "autres": "autres_batiments_app"
+        }
+      ]
+    },
+    "categorieActualite": {
+      "source": "front/src/lib/tickets.ts#CATEGORIE_ACTUALITE",
+      "valeur": "actualite"
+    },
+    "categoriesAnnonce": {
+      "source": "front/src/lib/annonces.ts#CATEGORIES_ANNONCE",
+      "valeur": [
+        {
+          "val": "appartement",
+          "label": "🏠 Appartement"
+        },
+        {
+          "val": "parking_cave",
+          "label": "🅿️ Parking / Cave"
+        },
+        {
+          "val": "mobilier",
+          "label": "🛋️ Mobilier"
+        },
+        {
+          "val": "electromenager",
+          "label": "🫙 Électroménager"
+        },
+        {
+          "val": "high_tech",
+          "label": "💻 High-tech"
+        },
+        {
+          "val": "vehicule",
+          "label": "🚗 Véhicule"
+        },
+        {
+          "val": "vetements",
+          "label": "👗 Vêtements"
+        },
+        {
+          "val": "services",
+          "label": "🛠️ Services"
+        },
+        {
+          "val": "divers",
+          "label": "📦 Divers"
+        }
+      ]
+    },
+    "categoriesTicket": {
+      "source": "front/src/lib/tickets-categories.ts#CATEGORIES_TICKET",
+      "valeur": [
+        {
+          "value": "panne",
+          "label": "Panne",
+          "carnet": true,
+          "emoji": "🛠️",
+          "description": "Ascenseur, chauffage, éclairage, fuite, porte — à réparer"
+        },
+        {
+          "value": "nuisance",
+          "label": "Nuisance & propreté",
+          "emoji": "📢",
+          "description": "Bruit, odeurs, stationnement…"
+        },
+        {
+          "value": "acces_accueil",
+          "label": "Accès & accueil",
+          "emoji": "🔑",
+          "description": "Interphone, boîte aux lettres, emménagement"
+        },
+        {
+          "value": "espaces_verts",
+          "label": "Espaces verts",
+          "carnet": true,
+          "emoji": "🌳",
+          "description": "Élagage, haies, arrosage, allées…"
+        },
+        {
+          "value": "sinistre",
+          "label": "Sinistre",
+          "carnet": true,
+          "emoji": "💧",
+          "description": "Dégât constaté : eau, incendie, vandalisme…"
+        },
+        {
+          "value": "etude_travaux",
+          "label": "Étude & travaux",
+          "carnet": true,
+          "reserveCS": true,
+          "emoji": "🏗️",
+          "description": "Diagnostic, sondage, devis, chantier suivi par le conseil"
+        },
+        {
+          "value": "entretien",
+          "label": "Entretien",
+          "carnet": true,
+          "reserveCS": true,
+          "emoji": "🧰",
+          "description": "Visite ou maintenance d’un prestataire, récurrente ou non"
+        },
+        {
+          "value": "question",
+          "label": "Question",
+          "emoji": "❓",
+          "description": "Information, procédure…"
+        },
+        {
+          "value": "bug",
+          "label": "Bug",
+          "emoji": "🐛",
+          "description": "Pb technique sur le site"
+        },
+        {
+          "value": "actualite",
+          "label": "Actualité",
+          "emoji": "📰",
+          "description": "Information — suivi optionnel",
+          "reserveCS": true,
+          "enTete": true
+        }
+      ]
+    },
+    "civilites": {
+      "source": "front/src/lib/annuaire.ts#CIVILITES",
+      "valeur": [
+        "Mme",
+        "Mlle",
+        "Mr"
+      ]
+    },
+    "classesReleve": {
+      "source": "front/src/lib/courriels-affaires.ts#CLASSES_RELEVE",
+      "valeur": {
+        "rattache": {
+          "libelle": "Rattaché",
+          "ton": "succes"
+        },
+        "cree": {
+          "libelle": "Affaire créée",
+          "ton": "succes"
+        },
+        "ecarte": {
+          "libelle": "Écarté",
+          "ton": "neutre"
+        }
+      }
+    },
+    "clesPied": {
+      "source": "front/src/lib/piedDePage.ts#CLES_PIED",
+      "valeur": {
+        "masques": "pied_de_page_masques",
+        "anneeDebut": "pied_de_page_annee_debut",
+        "texte": "pied_de_page_texte",
+        "ordre": "pied_de_page_ordre",
+        "prefixeNom": "pied_de_page_prefixe_nom"
+      }
+    },
+    "colonneParStatutTicket": {
+      "source": "front/src/lib/kanban.ts#COLONNE_PAR_STATUT_TICKET",
+      "valeur": {
+        "ouvert": "cs",
+        "en_ag": "ag",
+        "en_cours": "syndic",
+        "chez_prestataire": "fournisseur",
+        "résolu": "termine",
+        "annulé": "annule"
+      }
+    },
+    "colonnesKanban": {
+      "source": "front/src/lib/kanban.ts#KANBAN_COLS",
+      "valeur": [
+        {
+          "id": "ag",
+          "label": "AG",
+          "labelCourt": "AG",
+          "color": "var(--kanban-ag)"
+        },
+        {
+          "id": "cs",
+          "label": "CS (en cours)",
+          "labelCourt": "CS",
+          "color": "var(--kanban-cs)"
+        },
+        {
+          "id": "syndic",
+          "label": "Syndic (en cours)",
+          "labelCourt": "Syndic",
+          "color": "var(--kanban-syndic)"
+        },
+        {
+          "id": "fournisseur",
+          "label": "Prestataire (en cours)",
+          "labelCourt": "Prestataire",
+          "color": "var(--kanban-fournisseur)"
+        },
+        {
+          "id": "termine",
+          "label": "Terminé",
+          "labelCourt": "Terminé",
+          "color": "var(--kanban-termine)"
+        },
+        {
+          "id": "annule",
+          "label": "Annulé",
+          "labelCourt": "Annulé",
+          "color": "var(--kanban-annule)",
+          "masqueAccueil": true
+        }
+      ]
+    },
+    "cookieTheme": {
+      "source": "front/src/lib/theme.ts#COOKIE_THEME",
+      "valeur": "theme"
+    },
+    "dureeToastMs": {
+      "source": "front/src/lib/toast.ts#DUREE_TOAST_MS",
+      "valeur": 4000
+    },
+    "elementsPied": {
+      "source": "front/src/lib/piedDePage.ts#ELEMENTS_PIED",
+      "valeur": [
+        {
+          "code": "residence",
+          "libelle": "Logo et nom de la résidence",
+          "place": "marque",
+          "verrouille": "ils signent le pied de page"
+        },
+        {
+          "code": "annee",
+          "libelle": "© Année",
+          "place": "mention"
+        },
+        {
+          "code": "texte",
+          "libelle": "Texte libre",
+          "place": "mention"
+        },
+        {
+          "code": "version",
+          "libelle": "Version",
+          "place": "mention"
+        },
+        {
+          "code": "serveur",
+          "libelle": "Serveur (RPi)",
+          "place": "mention"
+        },
+        {
+          "code": "site",
+          "libelle": "À propos de CoproFirst",
+          "place": "lien",
+          "lien": {
+            "externe": true,
+            "infobulle": "Le site de présentation de CoproFirst, le logiciel qui fait tourner ce site"
+          }
+        },
+        {
+          "code": "source",
+          "libelle": "Logiciel libre",
+          "place": "lien",
+          "verrouille": "la licence AGPL impose d’offrir le code source de la version en service à qui utilise le site",
+          "lien": {
+            "externe": true,
+            "infobulle": "Le code source de la version en service"
+          }
+        },
+        {
+          "code": "mentions",
+          "libelle": "Mentions légales",
+          "place": "lien",
+          "verrouille": "elles doivent rester accessibles depuis chaque page (LCEN, art. 6)",
+          "lien": {}
+        },
+        {
+          "code": "confidentialite",
+          "libelle": "Confidentialité",
+          "place": "lien",
+          "verrouille": "l’information des personnes doit rester accessible (RGPD, art. 13)",
+          "lien": {}
+        }
+      ]
+    },
+    "etatsBail": {
+      "source": "front/src/lib/bail.ts#ETATS_BAIL",
+      "valeur": {
+        "actif": {
+          "libelle": "Actif",
+          "badge": "badge-green"
+        },
+        "en_cours_sortie": {
+          "libelle": "En cours de sortie",
+          "badge": "badge-yellow"
+        },
+        "termine": {
+          "libelle": "Terminé",
+          "badge": "badge-gray"
+        }
+      }
+    },
+    "etatsVisite": {
+      "source": "front/src/lib/entretien-periodique.ts#ETATS_VISITE",
+      "valeur": {
+        "realisee": {
+          "libelle": "✅ Réalisée",
+          "teinte": "badge-green"
+        },
+        "non_realisee": {
+          "libelle": "⚠️ Non réalisée",
+          "teinte": "badge-red"
+        },
+        "a_venir": {
+          "libelle": "⏳ À venir",
+          "teinte": "badge-blue"
+        },
+        "a_planifier": {
+          "libelle": "📅 À planifier",
+          "teinte": "badge-orange"
+        },
+        "annulee": {
+          "libelle": "Annulée",
+          "teinte": "badge-gray"
+        }
+      }
+    },
+    "filtresContrat": {
+      "source": "front/src/lib/prestataires.ts#FILTRES_CONTRAT",
+      "valeur": [
+        {
+          "val": "sous_contrat",
+          "label": "📄 Sous contrat"
+        },
+        {
+          "val": "sans_contrat",
+          "label": "Sans contrat"
+        }
+      ]
+    },
+    "formatsAffiche": {
+      "source": "front/src/lib/annonces-hall.ts#AH_FORMATS",
+      "valeur": [
+        {
+          "val": "auto",
+          "label": "Auto"
+        },
+        {
+          "val": "a4",
+          "label": "A4"
+        },
+        {
+          "val": "a5",
+          "label": "A5"
+        },
+        {
+          "val": "a6",
+          "label": "A6"
+        },
+        {
+          "val": "a7",
+          "label": "A7"
+        }
+      ]
+    },
+    "groupesSuivi": {
+      "source": "front/src/lib/tickets.ts#GROUPES_SUIVI",
+      "valeur": [
+        {
+          "value": "en_cours",
+          "label": "🟡 En cours",
+          "statuts": [
+            "en_ag",
+            "en_cours",
+            "chez_prestataire"
+          ]
+        }
+      ]
+    },
+    "jetonsCharte": {
+      "source": "front/src/styles/socle.css@:root",
+      "valeur": {
+        "--feuille-principale": "chargee",
+        "--color-primary": "#1e3a5f",
+        "--color-primary-dark": "#16304f",
+        "--color-primary-light": "#eef2f7",
+        "--color-secondary": "#3d6b4f",
+        "--color-accent": "#bd8c2c",
+        "--color-success": "#2e7d52",
+        "--color-warning": "#b07d1e",
+        "--color-danger": "#c0392b",
+        "--color-info": "#2563a6",
+        "--color-danger-fond": "#fdedec",
+        "--color-danger-bordure": "#e6b0aa",
+        "--color-success-fond": "#e6f4ee",
+        "--color-success-bordure": "#abcbba",
+        "--color-success-texte": "#276a46",
+        "--color-warning-fond": "#fdf3e0",
+        "--color-warning-bordure": "#dfcba5",
+        "--color-warning-texte": "#7b5815",
+        "--color-info-fond": "#e6f1fb",
+        "--color-info-bordure": "#a8c1db",
+        "--color-violet": "#6b21a8",
+        "--color-violet-fond": "#f3e8ff",
+        "--color-sarcelle": "#0b6470",
+        "--color-sarcelle-fond": "#ddf1f4",
+        "--color-sarcelle-bordure": "#9dc1c6",
+        "--color-orange": "#c2410c",
+        "--color-orange-fond": "#fff7ed",
+        "--color-orange-bordure": "#fed7aa",
+        "--color-orange-texte": "#9a3412",
+        "--color-jaune-fond": "#fef9e7",
+        "--color-jaune-texte": "#a16207",
+        "--serie-1": "#2a78d6",
+        "--serie-2": "#e3612c",
+        "--serie-3": "#099c6b",
+        "--serie-4": "#b97d04",
+        "--serie-5": "#d1668f",
+        "--serie-6": "#008300",
+        "--serie-7": "#4a3aa7",
+        "--serie-8": "#e34948",
+        "--palier-1": "#2d2d2b",
+        "--palier-2": "#585751",
+        "--palier-3": "#706e66",
+        "--palier-4": "#8b8980",
+        "--fil-rouge": "#b91c1c",
+        "--fil-rouge-fond": "#fef2f2",
+        "--fil-ambre": "#92400e",
+        "--fil-ambre-fond": "#fffbeb",
+        "--fil-olive": "#4d7c0f",
+        "--fil-olive-fond": "#f7fee7",
+        "--fil-vert": "#15803d",
+        "--fil-vert-fond": "#f0fdf4",
+        "--fil-sarcelle": "#0f766e",
+        "--fil-sarcelle-fond": "#f0fdfa",
+        "--fil-cyan": "#0e7490",
+        "--fil-cyan-fond": "#ecfeff",
+        "--fil-indigo": "#4338ca",
+        "--fil-indigo-fond": "#eef2ff",
+        "--fil-violet": "#6d28d9",
+        "--fil-violet-fond": "#f5f3ff",
+        "--fil-fuchsia": "#a21caf",
+        "--fil-fuchsia-fond": "#fdf4ff",
+        "--fil-rose": "#be185d",
+        "--fil-rose-fond": "#fdf2f8",
+        "--fil-inconnu": "#475569",
+        "--fil-inconnu-fond": "#f1f5f9",
+        "--teinte-1": "#de3136",
+        "--teinte-2": "#155cce",
+        "--teinte-3": "#02722f",
+        "--teinte-4": "#7f5d05",
+        "--teinte-5": "#a54602",
+        "--teinte-6": "#7240da",
+        "--teinte-7": "#d53086",
+        "--teinte-8": "#057db3",
+        "--teinte-9": "#098477",
+        "--teinte-10": "#5d8103",
+        "--teinte-11": "#e11d48",
+        "--teinte-12": "#6264ef",
+        "--teinte-13": "var(--color-jaune-texte)",
+        "--teinte-copropriete": "#6b7280",
+        "--kanban-ag": "var(--teinte-6)",
+        "--kanban-cs": "var(--teinte-2)",
+        "--kanban-syndic": "var(--teinte-4)",
+        "--kanban-fournisseur": "var(--teinte-5)",
+        "--kanban-termine": "var(--teinte-3)",
+        "--kanban-annule": "#5e646f",
+        "--color-import-lie": "#2563eb",
+        "--color-text": "#1a1a2e",
+        "--color-text-muted": "#5a6070",
+        "--color-text-inverse": "#f2efe9",
+        "--color-border": "#d0d8e4",
+        "--color-border-champ": "#7a889c",
+        "--color-bg": "#f2efe9",
+        "--color-surface": "#ffffff",
+        "--color-primary-plein": "var(--color-primary)",
+        "--color-primary-plein-survol": "var(--color-primary-dark)",
+        "--color-danger-plein": "var(--color-danger)",
+        "--color-success-plein": "var(--color-success)",
+        "--color-success-plein-survol": "color-mix(in srgb, var(--color-success-plein) 85%, black)",
+        "--color-info-plein": "var(--color-info)",
+        "--color-sarcelle-plein": "var(--color-sarcelle)",
+        "--color-accent-plein": "var(--color-accent)",
+        "--color-sur-plein": "#ffffff",
+        "--color-sur-voile": "#ffffff",
+        "--color-sur-accent": "#1a1a2e",
+        "--color-sur-plein-discret": "rgba(255, 255, 255, 0.55)",
+        "--color-voile-modale": "rgba(0, 0, 0, 0.45)",
+        "--color-neutre-fond": "#f7f8fa",
+        "--color-neutre-bordure": "#e3e8ef",
+        "--color-fond-logo": "transparent",
+        "--affichage-logo-clair": "block",
+        "--affichage-logo-sombre": "none",
+        "--radius": "0.5rem",
+        "--shadow-sm": "0 1px 3px rgba(30, 58, 95, 0.1)",
+        "--shadow": "0 4px 12px rgba(30, 58, 95, 0.12)",
+        "--largeur-gouttiere": "5rem",
+        "--fs-chiffre": "1.6rem",
+        "--fs-chiffre-grand": "2rem",
+        "--fs-picto-sm": "1.25rem",
+        "--fs-picto": "1.5rem",
+        "--fs-picto-lg": "2rem",
+        "--fs-picto-xl": "2.5rem",
+        "--police-titres": "Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+        "--ease-out": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "--duree-geste": "120ms",
+        "--duree-apparition": "200ms",
+        "--delai-annonce": "300ms",
+        "--fs-3xs": "0.65rem",
+        "--fs-2xs": "0.72rem",
+        "--fs-xs": "0.75rem",
+        "--fs-sm": "0.8rem",
+        "--fs-md": "0.85rem",
+        "--fs-base": "0.9rem",
+        "--fs-lg": "0.95rem",
+        "--fs-xl": "1rem",
+        "--fs-2xl": "1.1rem",
+        "--fs-titre": "1.15rem",
+        "--fs-titre-page": "1.5rem",
+        "--fs-saisie-tactile": "16px",
+        "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "font-size": "100%",
+        "color": "var(--color-text)",
+        "background": "var(--color-bg)"
+      }
+    },
+    "jetonsCharteSombre": {
+      "source": "front/src/styles/palette-sombre.css@:root[data-theme='dark']",
+      "valeur": {
+        "color-scheme": "dark",
+        "--color-bg": "#0d1b2a",
+        "--color-surface": "#162236",
+        "--color-border": "#2a3f5a",
+        "--color-border-champ": "#6580a3",
+        "--color-neutre-fond": "#1b2a41",
+        "--color-neutre-bordure": "#263a57",
+        "--color-fond-logo": "#ffffff",
+        "--affichage-logo-clair": "none",
+        "--affichage-logo-sombre": "block",
+        "--color-text": "#e8e6e1",
+        "--color-text-muted": "#9fb0c6",
+        "--color-primary": "#8db4e8",
+        "--color-primary-dark": "#b9d1f2",
+        "--color-primary-light": "#1d3150",
+        "--color-secondary": "#6fb48c",
+        "--color-accent": "#c9983a",
+        "--color-primary-plein": "#1f4474",
+        "--color-primary-plein-survol": "#2a5489",
+        "--color-danger-plein": "#c0392b",
+        "--color-success-plein": "#2e7d52",
+        "--color-info-plein": "#2563a6",
+        "--color-sarcelle-plein": "#0b6470",
+        "--color-sur-plein-discret": "rgba(255, 255, 255, 0.62)",
+        "--color-success": "#5cc08f",
+        "--color-success-texte": "#7fd6a6",
+        "--color-success-fond": "#223d45",
+        "--color-success-bordure": "#32615a",
+        "--color-warning": "#d9a441",
+        "--color-warning-texte": "#ebc373",
+        "--color-warning-fond": "#373838",
+        "--color-warning-bordure": "#64563a",
+        "--color-danger": "#f28b82",
+        "--color-danger-fond": "#3b3443",
+        "--color-danger-bordure": "#6e4c54",
+        "--color-info": "#6faeee",
+        "--color-info-fond": "#253a55",
+        "--color-info-bordure": "#3a5a80",
+        "--color-violet": "#c6a0f0",
+        "--color-violet-fond": "#343756",
+        "--color-sarcelle": "#5cc5d1",
+        "--color-sarcelle-fond": "#223e50",
+        "--color-sarcelle-bordure": "#326374",
+        "--color-orange": "#f2895b",
+        "--color-orange-fond": "#3b343c",
+        "--color-orange-bordure": "#6e4b45",
+        "--color-orange-texte": "#f6a77c",
+        "--color-jaune-fond": "#393e3a",
+        "--color-jaune-texte": "#e5c54f",
+        "--color-import-lie": "#6591f1",
+        "--serie-1": "#5494e3",
+        "--serie-2": "#dc6f3c",
+        "--serie-3": "#04ac7a",
+        "--serie-4": "#bb8908",
+        "--serie-5": "#ce6f95",
+        "--serie-6": "#39ad3a",
+        "--serie-7": "#8e82e6",
+        "--serie-8": "#e7605f",
+        "--palier-1": "#d3d1c7",
+        "--palier-2": "#b4b2a9",
+        "--palier-3": "#8f8d85",
+        "--palier-4": "#75736c",
+        "--fil-rouge": "#eb7b7b",
+        "--fil-rouge-fond": "#3a3142",
+        "--fil-ambre": "#ec7d39",
+        "--fil-ambre-fond": "#3a3137",
+        "--fil-olive": "#6db015",
+        "--fil-olive-fond": "#253a30",
+        "--fil-vert": "#1eb556",
+        "--fil-vert-fond": "#173b3b",
+        "--fil-sarcelle": "#16b1a5",
+        "--fil-sarcelle-fond": "#163a49",
+        "--fil-cyan": "#15acd6",
+        "--fil-cyan-fond": "#163951",
+        "--fil-indigo": "#9e98e4",
+        "--fil-indigo-fond": "#2d3654",
+        "--fil-violet": "#b28eeb",
+        "--fil-violet-fond": "#313455",
+        "--fil-fuchsia": "#de74e9",
+        "--fil-fuchsia-fond": "#383054",
+        "--fil-rose": "#ee75a7",
+        "--fil-rose-fond": "#3b3049",
+        "--fil-inconnu": "#91a0b5",
+        "--fil-inconnu-fond": "#2b374c",
+        "--teinte-13": "#a16207",
+        "--kanban-ag": "#a47ff8",
+        "--kanban-cs": "#5894f6",
+        "--kanban-syndic": "#f59e0b",
+        "--kanban-fournisseur": "#f97316",
+        "--kanban-termine": "#22c55e",
+        "--kanban-annule": "#9ca3af",
+        "--shadow-sm": "0 1px 3px rgba(0, 0, 0, 0.5)",
+        "--shadow": "0 6px 18px rgba(0, 0, 0, 0.55)",
+        "--color-voile-modale": "rgba(0, 0, 0, 0.6)"
+      }
+    },
+    "libellesHerites": {
+      "source": "front/src/lib/roles.ts#LIBELLES_HERITES",
+      "valeur": {
+        "bailleur": "Copropriétaire bailleur"
+      }
+    },
+    "libellesTache": {
+      "source": "front/src/lib/taches.ts#LIBELLE_TACHE",
+      "valeur": {
+        "maintenance": "Maintenance hebdomadaire",
+        "backup": "Sauvegarde quotidienne",
+        "bascule": "Bascule actif/standby",
+        "telemetrie": "Agrégation télémétrie",
+        "health_watch": "Surveillance du site",
+        "reliability": "Contrôles de fiabilité",
+        "auto_deploy": "Déploiement automatique",
+        "export_hors_site": "Copie hors site (manuelle)",
+        "mise_a_jour": "Mise à jour de la version",
+        "remise_a_zero_demo": "Remise à zéro de la démo",
+        "conservation_affaires": "Conservation des affaires",
+        "correctifs_systeme": "Correctifs du système",
+        "audit_securite": "Audit de sécurité nocturne",
+        "canari_ia": "Canari de l'assistant IA"
+      }
+    },
+    "modesSuivi": {
+      "source": "front/src/lib/reporting.ts#MODES_SUIVI",
+      "valeur": [
+        {
+          "valeur": "suivi",
+          "libelle": "Suivi affaires"
+        },
+        {
+          "valeur": "entretien",
+          "libelle": "Suivi entretiens périodiques"
+        },
+        {
+          "valeur": "relance",
+          "libelle": "Relancer le syndic"
+        }
+      ]
+    },
+    "motColonneVide": {
+      "source": "front/src/lib/kanban.ts#MOT_COLONNE_VIDE",
+      "valeur": "Aucune affaire"
+    },
+    "motifEvolutionParDefaut": {
+      "source": "front/src/lib/reporting.ts#MOTIF_EVOLUTION_PAR_DEFAUT",
+      "valeur": "Du nouveau depuis le dernier résumé"
+    },
+    "motifsEvolution": {
+      "source": "front/src/lib/reporting.ts#MOTIFS_EVOLUTION",
+      "valeur": {
+        "nouvelle": "Nouvelle affaire, jamais résumée",
+        "commentaire": "Nouvelle suite depuis le dernier résumé",
+        "etat": "Changement d’état depuis le dernier résumé",
+        "reponse": "Nouveau message depuis le dernier résumé",
+        "relance": "Relance envoyée depuis le dernier résumé"
+      }
+    },
+    "naturesAffaire": {
+      "source": "front/src/lib/tickets-categories.ts#NATURES",
+      "valeur": [
+        {
+          "val": "actualite",
+          "emoji": "📰",
+          "icone": "newspaper",
+          "libelle": "Actualité",
+          "abrege": "ACTU."
+        },
+        {
+          "val": "calendrier",
+          "emoji": "📅",
+          "icone": "calendar-days",
+          "libelle": "Calendrier",
+          "abrege": "CAL."
+        },
+        {
+          "val": "activite",
+          "emoji": "🛠️",
+          "icone": "wrench",
+          "libelle": "Affaire",
+          "abrege": "AFF."
+        }
+      ]
+    },
+    "naturesDuFil": {
+      "source": "front/src/lib/flux.ts#NATURES_DU_FIL",
+      "valeur": {
+        "ticket_resolu": {
+          "libelle": "Affaire résolue",
+          "couleur": "var(--fil-rouge)",
+          "fond": "var(--fil-rouge-fond)",
+          "icone": "circle-check",
+          "abrege": "AFF."
+        },
+        "ticket_ouvert": {
+          "libelle": "Affaire",
+          "couleur": "var(--fil-rouge)",
+          "fond": "var(--fil-rouge-fond)",
+          "icone": "wrench",
+          "abrege": "AFF."
+        },
+        "ticket_mis_a_jour": {
+          "libelle": "Affaire mise à jour",
+          "couleur": "var(--fil-rouge)",
+          "fond": "var(--fil-rouge-fond)",
+          "icone": "refresh-cw",
+          "abrege": "AFF."
+        },
+        "annonce": {
+          "libelle": "Petite annonce",
+          "couleur": "var(--color-orange)",
+          "fond": "var(--color-orange-fond)",
+          "icone": "heart-handshake",
+          "abrege": "ANN."
+        },
+        "point_conseil": {
+          "libelle": "Point CS / Syndic",
+          "couleur": "var(--fil-ambre)",
+          "fond": "var(--fil-ambre-fond)",
+          "icone": "users",
+          "abrege": "CS/SYN."
+        },
+        "diagnostic": {
+          "libelle": "Diagnostic",
+          "couleur": "var(--fil-olive)",
+          "fond": "var(--fil-olive-fond)",
+          "icone": "activity",
+          "abrege": "DIAG."
+        },
+        "annuaire": {
+          "libelle": "Annuaire",
+          "couleur": "var(--fil-vert)",
+          "fond": "var(--fil-vert-fond)",
+          "icone": "users",
+          "abrege": "ANNU."
+        },
+        "prestataire": {
+          "libelle": "Prestataire",
+          "couleur": "var(--fil-sarcelle)",
+          "fond": "var(--fil-sarcelle-fond)",
+          "icone": "hard-hat",
+          "abrege": "PREST."
+        },
+        "idee": {
+          "libelle": "Boîte à idées",
+          "couleur": "var(--fil-cyan)",
+          "fond": "var(--fil-cyan-fond)",
+          "icone": "lightbulb",
+          "abrege": "IDÉE"
+        },
+        "publication": {
+          "libelle": "Actualité",
+          "couleur": "var(--color-primary)",
+          "fond": "var(--color-primary-light)",
+          "icone": "newspaper",
+          "abrege": "ACTU."
+        },
+        "document": {
+          "libelle": "Document",
+          "couleur": "var(--fil-indigo)",
+          "fond": "var(--fil-indigo-fond)",
+          "icone": "file-text",
+          "abrege": "DOC."
+        },
+        "sondage_clos": {
+          "libelle": "Sondage clos",
+          "couleur": "var(--fil-violet)",
+          "fond": "var(--fil-violet-fond)",
+          "icone": "bar-chart-3",
+          "abrege": "SOND."
+        },
+        "sondage_ouvert": {
+          "libelle": "Sondage",
+          "couleur": "var(--fil-violet)",
+          "fond": "var(--fil-violet-fond)",
+          "icone": "bar-chart-3",
+          "abrege": "SOND."
+        },
+        "faq": {
+          "libelle": "Question fréquente",
+          "couleur": "var(--fil-fuchsia)",
+          "fond": "var(--fil-fuchsia-fond)",
+          "icone": "help-circle",
+          "abrege": "FAQ"
+        },
+        "question_reglement": {
+          "libelle": "Question au règlement",
+          "couleur": "var(--fil-rose)",
+          "fond": "var(--fil-rose-fond)",
+          "icone": "book-open",
+          "abrege": "RÈGL."
+        }
+      }
+    },
+    "optionsPublication": {
+      "source": "front/src/lib/options-publication.ts#OPTIONS_PUBLICATION",
+      "valeur": [
+        {
+          "cle": "epingle",
+          "icone": "pin",
+          "glyphe": "📌",
+          "action": "Épingler",
+          "etat": "Épinglée",
+          "aide": "Maintenue en tête du fil d’activité."
+        },
+        {
+          "cle": "urgente",
+          "icone": "zap",
+          "glyphe": "⚡",
+          "action": "Marquer urgente",
+          "etat": "Urgente",
+          "aide": "Signalée par un bord rouge sur la carte."
+        },
+        {
+          "cle": "brouillon",
+          "icone": "shield",
+          "glyphe": "🛡️",
+          "action": "Visibilité réservée au conseil syndical",
+          "etat": "Conseil syndical",
+          "aide": "Seul le conseil syndical le voit. La notification du conseil à la création, elle, ne dépend pas de cette case."
+        }
+      ]
+    },
+    "optionsTheme": {
+      "source": "front/src/lib/theme.ts#OPTIONS_THEME",
+      "valeur": [
+        {
+          "val": "auto",
+          "label": "Automatique",
+          "desc": "Suit le réglage de l’appareil"
+        },
+        {
+          "val": "clair",
+          "label": "Clair",
+          "desc": "Toujours clair"
+        },
+        {
+          "val": "sombre",
+          "label": "Sombre",
+          "desc": "Toujours sombre"
+        }
+      ]
+    },
+    "optionsTicket": {
+      "source": "front/src/lib/tickets.ts#OPTIONS_TICKET",
+      "valeur": [
+        "epingle",
+        "urgente"
+      ]
+    },
+    "pages": {
+      "source": "front/src/lib/pages.ts#PAGES",
+      "valeur": [
+        {
+          "id": "tableau-de-bord",
+          "href": "/tableau-de-bord",
+          "nom": "Tableau de bord",
+          "titre": "Tableau de bord",
+          "navLabel": "Accueil",
+          "icone": "layout-dashboard",
+          "descriptif": "Votre espace numérique de résidence : actualités, demandes, accès et gouvernance de votre copropriété en un seul endroit."
+        },
+        {
+          "id": "residence",
+          "href": "/residence",
+          "nom": "Ma résidence",
+          "titre": "Ma résidence",
+          "navLabel": "Résidence",
+          "icone": "building-2",
+          "descriptif": "Informations, plans et documents de la copropriété.",
+          "onglets": [
+            {
+              "id": "fiche",
+              "route": "/residence",
+              "label": "🏢 Fiche",
+              "descriptif": "Informations, plans et documents de la copropriété."
+            },
+            {
+              "id": "carnet",
+              "route": "/residence/carnet",
+              "reserve": "proprioOuCS",
+              "label": "📒 Carnet d’entretien",
+              "descriptif": "Ce qui a été entretenu, réparé et contrôlé dans la résidence — et ce qui ne l’a pas été."
+            },
+            {
+              "id": "reglement",
+              "route": "/residence/reglement",
+              "reserve": "proprioOuCS",
+              "label": "⚖️ Règlement",
+              "descriptif": "Posez la question sur le règlement de copropriété (« ai-je le droit de… ? ») : l'assistant répond en juriste, d'après le texte chargé ici, avec les extraits et les pages qui justifient sa réponse. Une réponse relue pourra rejoindre la FAQ par le CS."
+            }
+          ]
+        },
+        {
+          "id": "mes-demandes",
+          "href": "/tickets",
+          "nom": "Affaires",
+          "titre": "Mes affaires",
+          "navLabel": "Affaires",
+          "icone": "message-square-text",
+          "descriptif": "Les actualités du conseil syndical et les affaires de la résidence : signalez un problème, posez une question, suivez l’avancement.",
+          "onglets": [
+            {
+              "id": "liste",
+              "route": "/tickets",
+              "label": "📋 Liste",
+              "descriptif": "Les actualités et les affaires en cours."
+            },
+            {
+              "id": "kanban",
+              "route": "/tickets/kanban",
+              "reserve": "nonLocataire",
+              "label": "🗃️ Kanban",
+              "descriptif": "Les affaires suivies, par état."
+            },
+            {
+              "id": "archives",
+              "route": "/tickets/archives",
+              "label": "📁 Archives",
+              "descriptif": "Les affaires closes et les actualités passées."
+            }
+          ]
+        },
+        {
+          "id": "mon-lot",
+          "href": "/mon-lot",
+          "nom": "Mes lots & accès",
+          "titre": "Mes lots & accès",
+          "navLabel": "Mes lots & accès",
+          "icone": "key-round",
+          "descriptif": "Vos lots (appartement, cave & parkings), vos badges Vigik et télécommandes de parking, et la gestion locative pour les copropriétaires mandataires.",
+          "onglets": [
+            {
+              "id": "lots",
+              "route": "/mon-lot",
+              "label": "🏠 Mes lots",
+              "descriptif": "Situation de vos lots dans la résidence : appartements, caves et parkings."
+            },
+            {
+              "id": "badges",
+              "route": "/mon-lot/badges",
+              "label": "🏷️ Mes badges d’accès (Vigik)",
+              "descriptif": "Vos badges Vigik : ceux que vous détenez (tableau ci-dessous), vos demandes (bouton « + Nouvel accès », en haut à droite, pour obtenir un badge supplémentaire) et vos déclarations (bouton « + Déclarer un accès », pour signaler un badge que vous détenez déjà). <a href=\"/faq#badge-prix\" style=\"font-size:.85rem\">Quel prix pour un badge ou une télécommande ?</a>"
+            },
+            {
+              "id": "telecommandes",
+              "route": "/mon-lot/telecommandes",
+              "label": "📡 Télécommandes de parking",
+              "descriptif": "Vos télécommandes de parking : celles que vous détenez (tableau ci-dessous), vos demandes (bouton « + Nouvel accès », en haut à droite, pour obtenir une télécommande supplémentaire) et vos déclarations (bouton « + Déclarer un accès », pour signaler une télécommande que vous détenez déjà). <a href=\"/faq#badge-prix\" style=\"font-size:.85rem\">Quel prix pour un badge ou une télécommande ?</a>"
+            },
+            {
+              "id": "location",
+              "route": "/mon-lot/location",
+              "sous": [
+                {
+                  "id": "actif",
+                  "route": "/mon-lot/location"
+                },
+                {
+                  "id": "archives",
+                  "route": "/mon-lot/location/archives"
+                }
+              ],
+              "label": "📋 Gestion locative",
+              "descriptif": "Suivi de vos baux, locataires et documents de gestion locative."
+            }
+          ]
+        },
+        {
+          "id": "annuaire",
+          "href": "/annuaire",
+          "nom": "Annuaire",
+          "titre": "Annuaire",
+          "navLabel": "Annuaire",
+          "icone": "users",
+          "descriptif": "Coordonnées des membres du Conseil Syndical et du Syndic. En cas d'urgence, contactez le syndic directement par téléphone. Sinon, faites une demande depuis la plateforme."
+        },
+        {
+          "id": "prestataires",
+          "href": "/prestataires",
+          "nom": "Prestataires",
+          "titre": "Prestataires",
+          "navLabel": "Prestataires",
+          "icone": "hard-hat",
+          "descriptif": "Intervenants de la résidence et leurs contrats de maintenance (avec synthèse IA du contrat) et documents contractuels.",
+          "onglets": [
+            {
+              "id": "prestataires",
+              "route": "/prestataires",
+              "label": "🔧 Prestataires",
+              "descriptif": "Intervenants et contrats d'entretien de la résidence."
+            },
+            {
+              "id": "contrats",
+              "route": "/prestataires/contrats",
+              "label": "📄 Contrats",
+              "descriptif": "Contrats d'entretien en cours, leur échéance et leurs documents."
+            },
+            {
+              "id": "consommations",
+              "route": "/prestataires/consommations",
+              "label": "💧 Consommations",
+              "descriptif": "Suivi des relevés de compteurs et abonnements de la résidence."
+            }
+          ]
+        },
+        {
+          "id": "communaute",
+          "href": "/sondages",
+          "nom": "Communauté",
+          "titre": "Communauté",
+          "navLabel": "Communauté",
+          "icone": "users-round",
+          "descriptif": "Sondages, boîte à idées, petites annonces entre résidents, et votre avis sur l’application.",
+          "onglets": [
+            {
+              "id": "sondages",
+              "route": "/sondages",
+              "reserve": "nonGestionnaire",
+              "label": "📊 Sondages",
+              "descriptif": "Participez aux votes et consultations de la copropriété."
+            },
+            {
+              "id": "idees",
+              "route": "/idees",
+              "reserve": "nonGestionnaire",
+              "label": "💡 Boîte à idées",
+              "descriptif": "Proposez et soutenez des idées pour améliorer la vie en résidence."
+            },
+            {
+              "id": "annonces",
+              "route": "/annonces",
+              "reserve": "nonGestionnaire",
+              "label": "🏷️ Petites annonces",
+              "descriptif": "Achetez, vendez ou donnez des objets entre résidents."
+            },
+            {
+              "id": "avis",
+              "route": "/avis",
+              "label": "⭐ Avis",
+              "descriptif": "Votre avis sur l’application : ce qui vous aide, ce qui vous manque."
+            }
+          ]
+        },
+        {
+          "id": "faq",
+          "href": "/faq",
+          "nom": "FAQ",
+          "titre": "FAQ",
+          "navLabel": "FAQ",
+          "icone": "help-circle",
+          "descriptif": "Réponses aux questions fréquentes sur la vie en résidence, les services et la réglementation de la copropriété."
+        },
+        {
+          "id": "espace-cs",
+          "href": "/espace-cs",
+          "nom": "Espace CS",
+          "titre": "Espace Conseil Syndical (CS)",
+          "navLabel": "Espace CS",
+          "icone": "shield-half",
+          "descriptif": "Tableau de bord des membres du Conseil Syndical (CS) : suivi des comptes, reporting, relance syndic et demandes d'accès — réservé au Conseil Syndical. Les affaires de la résidence se traitent depuis la page <a href=\"/tickets\">Affaires</a>.",
+          "onglets": [
+            {
+              "id": "validations",
+              "route": "/espace-cs",
+              "label": "✅ Comptes & accès",
+              "descriptif": "Comptes en attente, demandes d'accès et validations à traiter."
+            },
+            {
+              "id": "badges",
+              "route": "/espace-cs/badges",
+              "label": "🏷️ Badges & télécommandes",
+              "descriptif": "Tous les badges Vigik et télécommandes de la copropriété, avec leur porteur et leur lot. Vue de consultation : un badge s’enregistre par l’import du syndic, ou par son porteur."
+            },
+            {
+              "id": "reporting",
+              "route": "/espace-cs/reporting",
+              "label": "📊 Reporting",
+              "descriptif": "Synthèses et indicateurs du conseil syndical, de l’état des affaires ouvertes aux échéances des contrats — à consulter ou à exporter."
+            },
+            {
+              "id": "annonces-hall",
+              "route": "/espace-cs/annonces-hall",
+              "label": "📄 Annonces Hall",
+              "descriptif": "Créez une annonce à afficher dans le hall des bâtiments : PDF à la charte de la résidence, envoyé par mail aux membres du CS concernés, puis conservé dans l'historique."
+            },
+            {
+              "id": "annuaire",
+              "route": "/espace-cs/annuaire",
+              "label": "📒 Annuaire CS & Syndic",
+              "descriptif": "Coordonnées des membres du CS et du syndic."
+            },
+            {
+              "id": "courriels",
+              "route": "/espace-cs/courriels",
+              "label": "📨 Courriels affaires",
+              "descriptif": "Ce que le site a fait de chaque message reçu à l'adresse des affaires — réponses du syndic, fils transférés par le conseil : ajouté à une affaire, refusé ou ignoré, et pourquoi. Un message refusé se corrige puis se transfère de nouveau."
+            }
+          ]
+        },
+        {
+          "id": "admin",
+          "href": "/admin",
+          "nom": "Paramétrage",
+          "titre": "Paramétrage",
+          "navLabel": "Admin",
+          "icone": "sliders-horizontal",
+          "reserveeAdmin": true,
+          "descriptif": "Administration de la plateforme, réservée aux admins : ce qui attend un geste, les utilisateurs et leur activité, la configuration du site et ses référentiels.",
+          "onglets": [
+            {
+              "id": "a_traiter",
+              "route": "/admin",
+              "label": "À traiter",
+              "groupe": "👥 Personnes",
+              "descriptif": "Ce qui attend un geste de l'administrateur : comptes à valider, commandes d'accès, demandes de modification de profil."
+            },
+            {
+              "id": "utilisateurs",
+              "route": "/admin?onglet=utilisateurs",
+              "label": "Utilisateurs",
+              "groupe": "👥 Personnes",
+              "descriptif": "Tous les comptes : statut, bâtiment, rôles, modification et suppression."
+            },
+            {
+              "id": "audit_lots",
+              "route": "/admin?onglet=audit_lots",
+              "label": "Audit lots",
+              "groupe": "👥 Personnes",
+              "descriptif": "Les associations entre comptes et lots, pour repérer et retirer les affectations erronées."
+            },
+            {
+              "id": "telemetry",
+              "route": "/admin?onglet=telemetry",
+              "label": "Télémétrie",
+              "groupe": "👥 Personnes",
+              "descriptif": "Statistiques d'utilisation : qui utilise quoi, et quand — par jour, sur 30 jours, sur 12 mois ou par année."
+            },
+            {
+              "id": "imports",
+              "route": "/admin?onglet=imports",
+              "label": "Imports",
+              "groupe": "📥 Imports",
+              "descriptif": "Charger un tableur du syndic — lots et copropriétaires, télécommandes ou badges Vigik — et le rapprocher des lots."
+            },
+            {
+              "id": "copropriete",
+              "route": "/admin?onglet=copropriete",
+              "label": "Identité",
+              "groupe": "🏢 Copropriété",
+              "descriptif": "L'identité et les références de la copropriété : nom, adresse, logo, syndic."
+            },
+            {
+              "id": "perimetres",
+              "route": "/admin?onglet=perimetres",
+              "label": "Périmètres",
+              "groupe": "🏢 Copropriété",
+              "descriptif": "L'arborescence des bâtiments et des espaces que l'on peut viser."
+            },
+            {
+              "id": "equipements",
+              "route": "/admin?onglet=equipements",
+              "label": "Équipements",
+              "groupe": "🏢 Copropriété",
+              "descriptif": "Ce sur quoi l’on intervient — ascenseur, chauffage, plomberie… : leur nom, leur icône, et les périmètres où ils se trouvent."
+            },
+            {
+              "id": "lots",
+              "route": "/admin?onglet=lots",
+              "label": "Lots",
+              "groupe": "🏢 Copropriété",
+              "descriptif": "Les lots selon le règlement — ce qui les dessert, leurs périmètres, et ce qui ne tombe pas juste."
+            },
+            {
+              "id": "fonctionnement",
+              "route": "/admin?onglet=fonctionnement",
+              "label": "Fonctionnement",
+              "groupe": "🏢 Copropriété",
+              "descriptif": "Les délais d’archivage et de relance, le gestionnaire du site et les alertes qu’il reçoit."
+            },
+            {
+              "id": "legal",
+              "route": "/admin?onglet=legal",
+              "label": "Pages légales",
+              "groupe": "🏢 Copropriété",
+              "descriptif": "Les mentions légales et la politique de confidentialité."
+            },
+            {
+              "id": "services",
+              "route": "/admin?onglet=services",
+              "label": "Services",
+              "groupe": "🔌 Services",
+              "descriptif": "Les services de la copropriété sur un seul écran : ce qui est activé, ce qu'on perd en le coupant, et le lien vers ses réglages."
+            },
+            {
+              "id": "smtp",
+              "route": "/admin?onglet=smtp",
+              "label": "Courriel",
+              "groupe": "🔌 Services",
+              "descriptif": "L'envoi des courriels et la relève des réponses par courriel."
+            },
+            {
+              "id": "whatsapp",
+              "route": "/admin?onglet=whatsapp",
+              "label": "WhatsApp",
+              "groupe": "🔌 Services",
+              "descriptif": "Le canal de diffusion de la résidence : connexion du groupe et pied des messages."
+            },
+            {
+              "id": "ia",
+              "route": "/admin?onglet=ia",
+              "label": "Assistant IA",
+              "groupe": "🔌 Services",
+              "descriptif": "Le fournisseur, la clé et le réglage de chaque usage de l'assistant."
+            },
+            {
+              "id": "pages",
+              "route": "/admin?onglet=pages",
+              "label": "Menu et pages",
+              "groupe": "🎨 Présentation",
+              "descriptif": "L'icône, le libellé de menu, le titre, la description et les onglets de chaque page, et leur ordre dans le menu."
+            },
+            {
+              "id": "connexion",
+              "route": "/admin?onglet=connexion",
+              "label": "Connexion et pied de page",
+              "groupe": "🎨 Présentation",
+              "descriptif": "Le sous-titre de la page de connexion, et ce que dit le pied de chaque page."
+            },
+            {
+              "id": "emails",
+              "route": "/admin?onglet=emails",
+              "label": "Modèles e-mail",
+              "groupe": "🎨 Présentation",
+              "descriptif": "Le texte et la mise en page de chaque courriel envoyé par le site, avec l'historique des envois."
+            },
+            {
+              "id": "installation",
+              "route": "/admin?onglet=installation",
+              "label": "Installation",
+              "groupe": "🛠 Exploitation",
+              "descriptif": "Cette installation : son rôle, sa version, son inscription au registre et son bail.",
+              "reserve": "operateur",
+              "ouvertOperateur": true
+            },
+            {
+              "id": "maintenance",
+              "route": "/admin?onglet=maintenance",
+              "label": "Maintenance",
+              "groupe": "🛠 Exploitation",
+              "descriptif": "Les tâches automatiques, leur historique et leur déclenchement manuel.",
+              "ouvertOperateur": true
+            },
+            {
+              "id": "installations",
+              "route": "/admin?onglet=installations",
+              "label": "Installations",
+              "groupe": "🛠 Exploitation",
+              "descriptif": "Les installations CoproFirst inscrites au registre de la référence : leur état, leur contrat, leurs services.",
+              "reserve": "operateur",
+              "ouvertOperateur": true
+            }
+          ]
+        },
+        {
+          "id": "delegations",
+          "href": "/delegations",
+          "nom": "Délégations",
+          "titre": "Délégations aidant",
+          "navLabel": "Délégations",
+          "icone": "heart-handshake",
+          "descriptif": "Gestion des accès délégués pour les proches aidants : un proche peut consulter à votre place ce qui vous est adressé, sans pouvoir agir en votre nom ni que cela constitue une procuration d'assemblée générale."
+        },
+        {
+          "id": "profil",
+          "href": null,
+          "nom": "Mon profil",
+          "titre": "Mon profil",
+          "navLabel": "Profil",
+          "icone": "user",
+          "descriptif": "Vos informations personnelles (mot de passe, lots...), sécurité du compte et préférences de notifications."
+        },
+        {
+          "id": "notifications",
+          "href": null,
+          "nom": "Notifications",
+          "titre": "Notifications",
+          "navLabel": "Notifications",
+          "icone": "bell",
+          "descriptif": "Vos alertes et messages."
+        }
+      ]
+    },
+    "palettesClaires": {
+      "source": "front/src/styles/palettes.css@:root[data-palette='*']",
+      "valeur": {
+        "bordeaux": {
+          "--color-primary": "#651d28",
+          "--color-primary-dark": "#51171f",
+          "--color-primary-light": "#f5ecec",
+          "--color-accent": "#aa7d30",
+          "--color-bg": "#f4efe8",
+          "--color-text": "#2a1a1d",
+          "--color-text-muted": "#66565a",
+          "--color-border": "#e2d6cf"
+        },
+        "bouteille": {
+          "--color-primary": "#1b4232",
+          "--color-primary-dark": "#143327",
+          "--color-primary-light": "#eaf1ed",
+          "--color-accent": "#a1813a",
+          "--color-bg": "#eef1ec",
+          "--color-text": "#17241e",
+          "--color-text-muted": "#56625b",
+          "--color-border": "#d3ddd6"
+        },
+        "cuivre": {
+          "--color-primary": "#1b2a41",
+          "--color-primary-dark": "#131f31",
+          "--color-primary-light": "#edf0f5",
+          "--color-accent": "#bc734c",
+          "--color-bg": "#f1f0ee",
+          "--color-text": "#161b24",
+          "--color-text-muted": "#575d68",
+          "--color-border": "#d8dbe0"
+        },
+        "roi": {
+          "--color-primary": "#13376f",
+          "--color-primary-dark": "#0f2c5a",
+          "--color-primary-light": "#ecf1fa",
+          "--color-accent": "#ab7e16",
+          "--color-bg": "#f3f2ee",
+          "--color-text": "#141b2d",
+          "--color-text-muted": "#535b6b",
+          "--color-border": "#d6dbe6"
+        },
+        "prune": {
+          "--color-primary": "#4a2540",
+          "--color-primary-dark": "#3b1d33",
+          "--color-primary-light": "#f4edf2",
+          "--color-accent": "#b27670",
+          "--color-bg": "#f6f0ef",
+          "--color-text": "#26161f",
+          "--color-text-muted": "#69585f",
+          "--color-border": "#e7d9d8"
+        }
+      }
+    },
+    "palettesSombres": {
+      "source": "front/src/styles/palettes.css@:root[data-palette='*'][data-theme='dark']",
+      "valeur": {
+        "bordeaux": {
+          "--color-bg": "#1c1012",
+          "--color-surface": "#28181b",
+          "--color-border": "#4a2e33",
+          "--color-border-champ": "#9a7178",
+          "--color-neutre-fond": "#301e22",
+          "--color-neutre-bordure": "#42292e",
+          "--color-text-muted": "#c4aeb1",
+          "--color-primary": "#eaa3ad",
+          "--color-primary-dark": "#f4c9cf",
+          "--color-primary-light": "#3d1d23",
+          "--color-accent": "#c99a4a",
+          "--color-primary-plein": "#7a2633",
+          "--color-primary-plein-survol": "#8f3140"
+        },
+        "bouteille": {
+          "--color-bg": "#0d1914",
+          "--color-surface": "#15241d",
+          "--color-border": "#2b4639",
+          "--color-border-champ": "#6f9583",
+          "--color-neutre-fond": "#1b2e25",
+          "--color-neutre-bordure": "#284236",
+          "--color-text-muted": "#a6bdb2",
+          "--color-primary": "#8fd1b3",
+          "--color-primary-dark": "#bfe6d3",
+          "--color-primary-light": "#1b3a2d",
+          "--color-accent": "#c9a050",
+          "--color-primary-plein": "#1c513e",
+          "--color-primary-plein-survol": "#23604a"
+        },
+        "cuivre": {
+          "--color-bg": "#0f1520",
+          "--color-surface": "#18202e",
+          "--color-border": "#303b4f",
+          "--color-border-champ": "#74819a",
+          "--color-neutre-fond": "#1e2738",
+          "--color-neutre-bordure": "#2b364b",
+          "--color-text-muted": "#a8b2c3",
+          "--color-primary": "#a9bad6",
+          "--color-primary-dark": "#cfdaeb",
+          "--color-primary-light": "#222f45",
+          "--color-accent": "#d98a5e",
+          "--color-primary-plein": "#2a3d5c",
+          "--color-primary-plein-survol": "#35496b"
+        },
+        "roi": {
+          "--color-bg": "#0b1426",
+          "--color-surface": "#131e36",
+          "--color-border": "#283a63",
+          "--color-border-champ": "#6a83bd",
+          "--color-neutre-fond": "#182645",
+          "--color-neutre-bordure": "#24365e",
+          "--color-text-muted": "#a3b3d4",
+          "--color-primary": "#92b4ff",
+          "--color-primary-dark": "#c2d5ff",
+          "--color-primary-light": "#1b2e57",
+          "--color-accent": "#e0b23a",
+          "--color-primary-plein": "#1c438a",
+          "--color-primary-plein-survol": "#234f9e"
+        },
+        "prune": {
+          "--color-bg": "#1a1018",
+          "--color-surface": "#261824",
+          "--color-border": "#472e43",
+          "--color-border-champ": "#977292",
+          "--color-neutre-fond": "#2e1d2b",
+          "--color-neutre-bordure": "#40293c",
+          "--color-text-muted": "#c3abbd",
+          "--color-primary": "#e2a6d0",
+          "--color-primary-dark": "#f0cbe5",
+          "--color-primary-light": "#3b1d34",
+          "--color-accent": "#d79a93",
+          "--color-primary-plein": "#6a3460",
+          "--color-primary-plein-survol": "#7d3f71"
+        }
+      }
+    },
+    "plateforme": {
+      "source": {
+        "nom": "front/src/lib/plateforme.ts#NOM_PLATEFORME",
+        "site": "front/src/lib/plateforme.ts#SITE_PLATEFORME",
+        "depotSource": "front/src/lib/plateforme.ts#DEPOT_SOURCE",
+        "licenceSpdx": "front/src/lib/plateforme.ts#LICENCE_SPDX",
+        "licenceNom": "front/src/lib/plateforme.ts#LICENCE_NOM",
+        "licenceUrl": "front/src/lib/plateforme.ts#LICENCE_URL"
+      },
+      "valeur": {
+        "nom": "CoproFirst",
+        "site": "https://coprofirst.fr",
+        "depotSource": "https://github.com/philippe-tressard/coprofirst",
+        "licenceSpdx": "AGPL-3.0-or-later",
+        "licenceNom": "GNU Affero General Public License, version 3 ou ultérieure",
+        "licenceUrl": "https://github.com/philippe-tressard/coprofirst/blob/main/LICENSE"
+      }
+    },
+    "rolesDuDroit": {
+      "source": "front/src/lib/roles.ts#ROLES_DU_DROIT",
+      "valeur": {
+        "admin": [
+          "admin"
+        ],
+        "operateur": [
+          "operateur"
+        ],
+        "adminOuOperateur": [
+          "admin",
+          "operateur"
+        ],
+        "proprietaire": [
+          "propriétaire"
+        ],
+        "adminSeul": [
+          "admin"
+        ],
+        "sansAdminSeul": [
+          "propriétaire",
+          "résident",
+          "conseil_syndical"
+        ]
+      }
+    },
+    "rolesMisEnAvant": {
+      "source": "front/src/lib/roles.ts#ROLES_MIS_EN_AVANT",
+      "valeur": [
+        "conseil_syndical",
+        "admin"
+      ]
+    },
+    "statutsAcces": {
+      "source": "front/src/lib/types-acces.ts#STATUTS_ACCES",
+      "valeur": [
+        {
+          "val": "actif",
+          "label": "Actif",
+          "emoji": "✅",
+          "badge": "badge-green"
+        },
+        {
+          "val": "suspendu",
+          "label": "Suspendu",
+          "emoji": "⏸️",
+          "badge": "badge-orange"
+        },
+        {
+          "val": "perdu",
+          "label": "Perdu",
+          "emoji": "🔎",
+          "badge": "badge-red"
+        }
+      ]
+    },
+    "statutsAnnonce": {
+      "source": "front/src/lib/annonces.ts#STATUTS_ANNONCE",
+      "valeur": [
+        {
+          "val": "en_cours",
+          "label": "En cours"
+        },
+        {
+          "val": "reserve",
+          "label": "Réservé"
+        },
+        {
+          "val": "vendu",
+          "label": "Vendu"
+        },
+        {
+          "val": "donne",
+          "label": "Donné"
+        },
+        {
+          "val": "annule",
+          "label": "Annulé"
+        }
+      ]
+    },
+    "statutsDelegation": {
+      "source": "front/src/lib/delegations.ts#STATUTS_DELEGATION",
+      "valeur": {
+        "en_attente": {
+          "libelle": "En attente",
+          "badge": "badge-orange"
+        },
+        "active": {
+          "libelle": "Active",
+          "badge": "badge-green"
+        },
+        "revoquee": {
+          "libelle": "Révoquée",
+          "badge": "badge-red"
+        },
+        "expiree": {
+          "libelle": "Expirée",
+          "badge": "badge-gray"
+        }
+      }
+    },
+    "statutsDemandables": {
+      "source": "front/src/lib/roles.ts#STATUTS_DEMANDABLES",
+      "valeur": [
+        "copropriétaire_résident",
+        "copropriétaire_bailleur",
+        "locataire",
+        "mandataire",
+        "syndic"
+      ]
+    },
+    "statutsDuProfil": {
+      "source": "front/src/lib/roles.ts#STATUTS_DU_PROFIL",
+      "valeur": {
+        "locataire": [
+          "locataire"
+        ],
+        "bailleur": [
+          "copropriétaire_bailleur"
+        ],
+        "resident": [
+          "copropriétaire_résident"
+        ],
+        "gestionnaire": [
+          "syndic",
+          "mandataire"
+        ],
+        "pourAutrui": [
+          "aidant",
+          "mandataire"
+        ]
+      }
+    },
+    "statutsIdee": {
+      "source": "front/src/lib/idees.ts#STATUTS_IDEE",
+      "valeur": [
+        {
+          "value": "ouverte",
+          "label": "💡 Ouverte",
+          "badge": "badge-blue"
+        },
+        {
+          "value": "retenue",
+          "label": "✅ Retenue",
+          "badge": "badge-green"
+        },
+        {
+          "value": "realisee",
+          "label": "🎉 Réalisée",
+          "badge": "badge-purple"
+        },
+        {
+          "value": "rejetee",
+          "label": "❌ Rejetée",
+          "badge": "badge-gray"
+        }
+      ]
+    },
+    "statutsTache": {
+      "source": "front/src/lib/taches.ts#STATUTS_TACHE",
+      "valeur": {
+        "ok": {
+          "libelle": "À jour",
+          "aide": "Un rapport est arrivé dans le délai attendu.",
+          "classe": "badge-green"
+        },
+        "en_cours": {
+          "libelle": "En cours",
+          "aide": "La tâche a signalé son démarrage et n’a pas encore rendu son compte rendu.",
+          "classe": "badge-green"
+        },
+        "pas_actif": {
+          "libelle": "Pas actif à l’heure",
+          "aide": "Ce nœud n’a pas exécuté la tâche depuis plus de deux nuits, mais l’autre nœud l’a fait : la tâche ne tourne que sur le nœud actif, et après un failover un nœud peut ne pas être actif deux nuits de suite. Au-delà de trois nuits, ou si la tâche elle-même est en retard, la ligne passe au rouge.",
+          "classe": "badge-gray"
+        },
+        "rapport_perdu": {
+          "libelle": "Rapport non reçu",
+          "aide": "La tâche a DÉMARRÉ — elle a écrit son battement de début — mais son compte rendu n'est jamais arrivé. Le ménage a donc bien eu lieu ; c'est la chaîne de remontée qui est rompue. Chercher du côté du réseau, de la clé de maintenance ou du format de la charge utile, pas du côté de la tâche.",
+          "classe": "badge-orange"
+        },
+        "vigilance": {
+          "libelle": "Points de vigilance",
+          "aide": "Le dernier rapport relève des points à surveiller, sans échec. Leur liste est dans « Contrôles de fiabilité », plus bas.",
+          "classe": "badge-orange"
+        },
+        "manquante": {
+          "libelle": "Exécution manquante",
+          "aide": "Aucun rapport depuis plus longtemps que la périodicité de la tâche.",
+          "classe": "badge-red"
+        },
+        "erreur": {
+          "libelle": "En échec",
+          "aide": "Le dernier rapport signale un échec.",
+          "classe": "badge-red"
+        },
+        "aucune_execution": {
+          "libelle": "Aucun rapport reçu",
+          "aide": "Aucun rapport en base pour cette tâche. Cela ne prouve pas qu'elle n'a pas tourné : un rapport peut avoir échoué à remonter, ou avoir été purgé. Vérifier le journal du nœud avant de conclure.",
+          "classe": "badge-red"
+        }
+      }
+    },
+    "statutsTicket": {
+      "source": "front/src/lib/tickets.ts#STATUTS_TICKET",
+      "valeur": [
+        {
+          "value": "ouvert",
+          "label": "Ouvert",
+          "emoji": "🔵",
+          "badge": "badge-blue"
+        },
+        {
+          "value": "en_ag",
+          "label": "À l’AG",
+          "emoji": "🟣",
+          "badge": "badge-purple"
+        },
+        {
+          "value": "en_cours",
+          "label": "Chez le syndic",
+          "emoji": "🟡",
+          "badge": "badge-orange"
+        },
+        {
+          "value": "chez_prestataire",
+          "label": "Chez le prestataire",
+          "emoji": "🟠",
+          "badge": "badge-yellow"
+        },
+        {
+          "value": "résolu",
+          "label": "Résolu",
+          "emoji": "🟢",
+          "badge": "badge-green"
+        },
+        {
+          "value": "annulé",
+          "label": "Annulé",
+          "emoji": "⚫",
+          "badge": "badge-gray"
+        }
+      ]
+    },
+    "statutsTicketClos": {
+      "source": "front/src/lib/tickets.ts#STATUTS_TICKET_CLOS",
+      "valeur": [
+        "résolu",
+        "annulé",
+        "fermé"
+      ]
+    },
+    "statutsTicketHistoriques": {
+      "source": "front/src/lib/tickets.ts#STATUTS_TICKET_HISTORIQUES",
+      "valeur": {
+        "fermé": {
+          "label": "Fermé",
+          "badge": "badge-gray"
+        }
+      }
+    },
+    "statutsTicketSansCycle": {
+      "source": "front/src/lib/tickets.ts#STATUTS_TICKET_SANS_CYCLE",
+      "valeur": {
+        "publie": {
+          "label": "Publiée",
+          "badge": "badge-blue"
+        }
+      }
+    },
+    "teinteAge": {
+      "source": "front/src/lib/reporting.ts#TEINTE_AGE",
+      "valeur": {
+        "ancienne": "badge-red",
+        "moyenne": "badge-orange",
+        "recente": "badge-gray"
+      }
+    },
+    "teinteDuTon": {
+      "source": "front/src/lib/journal-verdicts.ts#TEINTE_DU_TON",
+      "valeur": {
+        "succes": "badge-green",
+        "info": "badge-blue",
+        "attention": "badge-orange",
+        "danger": "badge-red",
+        "neutre": "badge-gray"
+      }
+    },
+    "teinteNature": {
+      "source": "front/src/styles/normes.css@[data-nature='*']",
+      "valeur": {
+        "actualite": {
+          "--nature-fort": "var(--color-info)"
+        },
+        "calendrier": {
+          "--nature-fort": "var(--color-violet)"
+        },
+        "activite": {
+          "--nature-fort": "var(--color-orange)"
+        }
+      }
+    },
+    "teinteStatutAnnonce": {
+      "source": "front/src/lib/annonces.ts#TEINTE_STATUT_ANNONCE",
+      "valeur": {
+        "en_cours": "badge-green",
+        "reserve": "badge-orange",
+        "vendu": "badge-blue",
+        "donne": "badge-blue",
+        "annule": "badge-gray"
+      }
+    },
+    "themeParDefaut": {
+      "source": "front/src/lib/theme.ts#THEME_PAR_DEFAUT",
+      "valeur": "auto"
+    },
+    "titreFil": {
+      "source": "front/src/lib/flux.ts#TITRE_FIL",
+      "valeur": "Fil d'activité"
+    },
+    "tranchesRepartition": {
+      "source": "front/src/lib/components/reporting/BarresCroisees.svelte@[data-teinte='*']",
+      "valeur": {
+        "s1": {
+          "background": "var(--serie-1)"
+        },
+        "s2": {
+          "background": "var(--serie-2)"
+        },
+        "s3": {
+          "background": "var(--serie-3)"
+        },
+        "s4": {
+          "background": "var(--serie-4)"
+        },
+        "s5": {
+          "background": "var(--serie-5)"
+        },
+        "s6": {
+          "background": "var(--serie-6)"
+        },
+        "s7": {
+          "background": "var(--serie-7)"
+        },
+        "s8": {
+          "background": "var(--serie-8)"
+        },
+        "autre": {
+          "background": "var(--color-text-muted)"
+        },
+        "p1": {
+          "background": "var(--palier-1)"
+        },
+        "p2": {
+          "background": "var(--palier-2)"
+        },
+        "p3": {
+          "background": "var(--palier-3)"
+        },
+        "p4": {
+          "background": "var(--palier-4)"
+        },
+        "plusieurs": {
+          "background": "repeating-linear-gradient( 45deg, var(--palier-2) 0 2px, var(--color-neutre-fond) 2px 5px )"
+        }
+      }
+    },
+    "trisAnnonce": {
+      "source": "front/src/lib/annonces.ts#TRIS_ANNONCE",
+      "valeur": [
+        {
+          "val": "recent",
+          "label": "Plus récentes"
+        },
+        {
+          "val": "prix_asc",
+          "label": "Prix croissant"
+        },
+        {
+          "val": "prix_desc",
+          "label": "Prix décroissant"
+        }
+      ]
+    },
+    "typesAcces": {
+      "source": "front/src/lib/types-acces.ts#TYPES_ACCES",
+      "valeur": [
+        {
+          "val": "vigik",
+          "label": "🏷️ Badge Vigik"
+        },
+        {
+          "val": "telecommande",
+          "label": "📡 Télécommande parking"
+        }
+      ]
+    },
+    "typesAnnonce": {
+      "source": "front/src/lib/annonces.ts#TYPES_ANNONCE",
+      "valeur": [
+        {
+          "val": "vente",
+          "label": "🏷️ Vente"
+        },
+        {
+          "val": "don",
+          "label": "🎁 Don"
+        },
+        {
+          "val": "recherche",
+          "label": "🔍 Recherche"
+        }
+      ]
+    },
+    "typesPrestataire": {
+      "source": "front/src/lib/prestataires.ts#TYPES_PRESTATAIRE",
+      "valeur": [
+        {
+          "val": "maintenance_depannage",
+          "label": "🔧 Maintenance & dépannage",
+          "desc": "Entretien, réparations"
+        },
+        {
+          "val": "travaux",
+          "label": "🏗️ Travaux",
+          "desc": "Interventions importantes"
+        },
+        {
+          "val": "reglementaire",
+          "label": "📋 Réglementaire",
+          "desc": "Contrôles obligatoires"
+        },
+        {
+          "val": "etudes_expertise",
+          "label": "📐 Études & expertise",
+          "desc": "Diagnostics, maîtrise d’œuvre"
+        },
+        {
+          "val": "gestion",
+          "label": "🏢 Gestion",
+          "desc": "Syndic, gestion locative"
+        }
+      ]
+    },
+    "verdictsReleve": {
+      "source": "front/src/lib/courriels-affaires.ts#VERDICTS_RELEVE",
+      "valeur": {
+        "accepte": {
+          "libelle": "Ajouté au fil",
+          "ton": "succes"
+        },
+        "relance": {
+          "libelle": "Transmis au conseil",
+          "ton": "info"
+        },
+        "refuse": {
+          "libelle": "Refusé",
+          "ton": "attention"
+        },
+        "ignore": {
+          "libelle": "Ignoré",
+          "ton": "neutre"
+        },
+        "a_classer": {
+          "libelle": "À classer",
+          "ton": "attention"
+        }
+      }
+    }
+  }
+}

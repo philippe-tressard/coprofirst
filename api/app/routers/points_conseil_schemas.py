@@ -12,6 +12,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, computed_field
 
 from app.models.points_conseil import IdentitePresent
+from app.schemas_nom_servi import NomServi
 from app.utils.etat_affaire import libelle_etat
 
 #: Une ligne de bandeau, pas un texte : les champs de l'invité et le lieu.
@@ -65,7 +66,8 @@ class CrEntree(BaseModel):
     etat_cible: Optional[str] = None
 
 
-class PresentRead(IdentitePresent):
+class PresentRead(IdentitePresent, NomServi):
+    #  « Prénom NOM » servi (`nom_affiche`, vide pour un invité sans nom) — #2633.
     id: int
     #: A reçu la demande de validation (#2042), et quand il a validé.
     destinataire: bool = False
@@ -182,7 +184,7 @@ class CourantRead(BaseModel):
     reprise: Optional[RepriseRead] = None
 
 
-class MembreRead(BaseModel):
+class MembreRead(NomServi):
     id: int
     prenom: str
     nom: str

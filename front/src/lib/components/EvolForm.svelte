@@ -121,7 +121,7 @@
 	export let entite: EntiteDeclaree;
 	/**  Ce que l'objet EST et qui éteint une section — `sectionDeLaSuite`. */
 	export let conditions: ConditionInactive[] = [];
-	/**  Trois DROITS, pas des sections — `$isCS` sur la fiche, l'auteur sur sa carte —,
+	/**  Trois DROITS, pas des sections — `$estModerateur` sur la fiche, l'auteur sur sa carte —,
 	 *   à défaut FERMÉ (#2142) : « Répondre » ne les passait pas et montrait ce
 	 *   qu'aucune route n'emporte. Périmètre et Destinataires disent qui lit l'objet. */
 	export let peutDiffuser = false;

@@ -20,7 +20,6 @@
 <script lang="ts">
 	import type { UtilisateurAdmin } from '#lib/api/index.ts';
 	import { GLYPHE_URGENCE } from '#lib/options-publication.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import type { ConfigSite, SectionSite } from '#lib/configSite.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
@@ -41,7 +40,7 @@
 			<select bind:value={siteConfig.site_manager_user_id}>
 				<option value="">Aucun (utiliser l'e-mail administrateur)</option>
 				{#each siteManagerUsers as u (u.id)}
-					<option value={String(u.id)}>{nomAffiche(u)} — {u.email}</option>
+					<option value={String(u.id)}>{u.nom_affiche} — {u.email}</option>
 				{/each}
 			</select>
 			<span class="aide"

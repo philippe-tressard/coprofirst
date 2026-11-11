@@ -30,7 +30,7 @@
 	import { depuisChampLocal } from '#lib/date.ts';
 	import { intervenantPropose } from '#lib/formulaire-affaire.ts';
 	import type { ContratEnCours } from '#lib/prestataires.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { conseilDansLaSuite, equipementDansLaSuite, etatSuite } from '#lib/suite-conseil.ts';
 	import SectionIntervenant from './SectionIntervenant.svelte';
 	import SectionQuand from './SectionQuand.svelte';
@@ -55,8 +55,8 @@
 
 	const etat = etatSuite(partage, ticket);
 
-	$: conseil = conseilDansLaSuite(ticket, $isCS);
-	$: bati = equipementDansLaSuite(ticket, $isCS);
+	$: conseil = conseilDansLaSuite(ticket, $estModerateur);
+	$: bati = equipementDansLaSuite(ticket, $estModerateur);
 
 	let prestataires: { id: number; nom: string; actif?: boolean; specialite?: string | null }[] = [];
 	let contrats: ContratEnCours[] = [];

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { nomAffiche } from '#lib/noms.ts';
 	/**
 	 * Pastille ronde d'identité : la photo de profil si elle existe, sinon les
 	 * initiales, sinon une silhouette générique.
@@ -17,15 +16,16 @@
 	export let photoUrl: string | null | undefined = null;
 	export let prenom: string | null | undefined = '';
 	export let nom: string | null | undefined = '';
+	/** « Prénom NOM » rendu par le serveur (`nom_affiche`, #2633) — le nom accessible. */
+	export let nomComplet: string | null | undefined = '';
 
-	$: nomComplet = nomAffiche(prenom, nom);
 	$: initiales = ((prenom?.[0] ?? '') + (nom?.[0] ?? '')).toUpperCase();
 </script>
 
 {#if photoUrl}
-	<img class="avatar" src={photoUrl} alt={nomComplet} />
+	<img class="avatar" src={photoUrl} alt={nomComplet ?? ''} />
 {:else if initiales}
-	<div class="avatar" role="img" aria-label={nomComplet}>{initiales}</div>
+	<div class="avatar" role="img" aria-label={nomComplet ?? ''}>{initiales}</div>
 {:else}
 	<div class="avatar avatar-generique" role="img" aria-label="Utilisateur sans photo">
 		<Icon name="user" size={20} />

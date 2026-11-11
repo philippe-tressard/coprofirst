@@ -45,6 +45,8 @@ export interface Bail {
 	locataire_id: number | null;
 	locataire_nom: string | null;
 	locataire_prenom: string | null;
+	/** « Prénom NOM » du locataire saisi, rendu par le serveur — vide s'il manque (#2633). */
+	locataire_nom_affiche: string;
 	locataire_email: string | null;
 	locataire_telephone: string | null;
 	date_entree: string;
@@ -92,6 +94,8 @@ export interface LocataireTrouve {
 	id: number;
 	nom: string;
 	prenom: string;
+	/** « Prénom NOM » rendu par le serveur (#2633). */
+	nom_affiche: string;
 	email_masque: string;
 	actif: boolean;
 }
@@ -113,6 +117,8 @@ export interface BailLocataire {
 	lot_batiment_nom: string | null;
 	bailleur_nom: string;
 	bailleur_prenom: string;
+	/** « Prénom NOM » du bailleur, rendu par le serveur (#2633). */
+	bailleur_nom_affiche: string;
 	bailleur_email: string | null;
 	bailleur_telephone: string | null;
 	date_entree: string;

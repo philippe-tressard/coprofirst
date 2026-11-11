@@ -208,9 +208,9 @@ def test_le_garde_fou_des_LIBELLES_ABREGES_refuse_bien_une_reecriture():
 #: Le minimum est le cas zéro de chaque ligne : un extracteur qui ne trouve plus
 #: rien conclurait au vert sur zéro comparaison (`standards/04` §2).
 COLONNES = (
-    ("ROLE", "libelle", "badge", 5),
-    ("STATUT", "libelle", "badge", 7),
-    ("STATUT", "libelle", "abrege", 7),
+    ("ATTRIBUTS_ROLE", "libelle", "badge", 5),
+    ("ATTRIBUTS_STATUT", "libelle", "badge", 7),
+    ("ATTRIBUTS_STATUT", "libelle", "abrege", 7),
 )
 
 
@@ -237,11 +237,13 @@ def test_chaque_colonne_de_roles_ts_couvre_tous_les_etats():
 
 
 def _cles_roles_et_statuts(ts: str) -> set[str]:
-    return set(table_ts(ts, "ROLE", "libelle")) | set(table_ts(ts, "STATUT", "libelle"))
+    return set(table_ts(ts, "ATTRIBUTS_ROLE", "libelle")) | set(
+        table_ts(ts, "ATTRIBUTS_STATUT", "libelle")
+    )
 
 
 def _cles_statuts_sans_type_lien(ts: str) -> set[str]:
-    return set(table_ts(ts, "STATUT", "libelle")) - _CLES_PARTAGEES_AVEC_TYPE_LIEN
+    return set(table_ts(ts, "ATTRIBUTS_STATUT", "libelle")) - _CLES_PARTAGEES_AVEC_TYPE_LIEN
 
 
 #: Les tables qu'aucun écran ne réécrit : (ce que la table porte, seul fichier

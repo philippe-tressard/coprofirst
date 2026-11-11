@@ -13,7 +13,7 @@
 		currentUser,
 		isAdmin,
 		isAdminOnly,
-		isCS,
+		estModerateur,
 		isLocataire,
 		isProprioOuCS,
 	} from '#lib/stores/auth.ts';
@@ -47,6 +47,7 @@
 		estNonResolu,
 		estUrgent,
 		grouperParJour,
+		TITRE_FIL,
 	} from '#lib/flux.ts';
 
 	$: _pc = getPageConfig($configStore, 'tableau-de-bord', defautsDePage('tableau-de-bord'));
@@ -192,7 +193,7 @@
 	//  de lui. La page garde ce qui lui appartient — le CHARGEMENT des
 	//  événements, et le contexte de droits, qu'elle calcule déjà pour le fil.
 	$: _dashKanbanCtx = {
-		isCS: $isCS,
+		estModerateur: $estModerateur,
 		isAdmin: $isAdmin,
 		canSeeAG: $isProprioOuCS,
 		statut: $currentUser?.statut ?? '',
@@ -288,7 +289,8 @@
 	<!-- ═══ FIL D'ACTIVITÉ ════════════════════════════════════════════════ -->
 	<div class="section-reveal delai-6" class:section-visible={ready}>
 		<h2 class="section-title titre-fil">
-			<Icon name="newspaper" size={16} /> Fil d'activité
+			<Icon name="newspaper" size={16} />
+			{TITRE_FIL}
 		</h2>
 		{#if offrirMeConcerne}
 			<ReglagesListe>

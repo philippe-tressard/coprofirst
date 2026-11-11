@@ -16,6 +16,7 @@
 	//  icône Lucide mais une marque. Son `fill` (vert officiel) et son `stroke="none"`
 	//  neutralisent les attributs de l'enveloppe <svg> plus bas.
 	import icones from '#lib/icones-svg.json';
+	import { ATTRIBUTS_TRACE } from '#lib/icones.ts';
 
 	const icons = icones as Record<string, string>;
 </script>
@@ -24,12 +25,8 @@
 	xmlns="http://www.w3.org/2000/svg"
 	width={size}
 	height={size}
-	viewBox="0 0 24 24"
-	fill="none"
+	{...ATTRIBUTS_TRACE}
 	stroke="currentColor"
-	stroke-width="1.5"
-	stroke-linecap="round"
-	stroke-linejoin="round"
 	aria-hidden="true"
 >
 	{@html icons[name] ?? icons['help-circle']}

@@ -19,7 +19,8 @@
 	import { annuaireAdmin, type MembreConseilAdmin } from '#lib/api/index.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { fmtDateShort } from '#lib/date.ts';
-	import { comparerParNom, nomAffiche } from '#lib/noms.ts';
+	import { comparerParNom } from '#lib/noms.ts';
+	import { nomsConnus, nomSaisiImmediat } from '#lib/apercu-nom.ts';
 	import { localisationMembre } from '#lib/utils.ts';
 	import { rapprochementParNom } from '#lib/annuaire-rapprochement.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
@@ -52,6 +53,8 @@
 		agAnnee = donnees.ag_annee ?? null;
 		agDate = donnees.ag_date ?? '';
 		whatsappUrl = donnees.whatsapp_url ?? '';
+		//  Les noms servis (`nom_affiche`) : les cartes s'ouvrent nommées, sans attendre (#2633).
+		nomsConnus(donnees.membres ?? []);
 		//  🔴 L'IDENTIFIANT est rendu tel quel (#1680) : sans lui, `PUT
 		//  /admin/annuaire/cs` ne reconnaît personne, supprime et recrée tout le
 		//  conseil — `cree_le` remis à l'instant, et autant de « nouveau membre »
@@ -116,12 +119,12 @@
 			return;
 		}
 		const actuel = membresCS.findIndex((m, j) => m.est_president && j !== i);
-		const nouveau = nomAffiche(membresCS[i]);
+		const nouveau = await nomSaisiImmediat(membresCS[i]);
 		const remplacer =
 			actuel === -1 ||
 			(await confirmer({
 				titre: 'Remplacer le président',
-				message: `Un président existe déjà (${nomAffiche(membresCS[actuel])}).\n\nVoulez-vous remplacer par ${nouveau} ?`,
+				message: `Un président existe déjà (${await nomSaisiImmediat(membresCS[actuel])}).\n\nVoulez-vous remplacer par ${nouveau} ?`,
 				libelleConfirmer: 'Remplacer',
 			}));
 		if (remplacer && actuel !== -1)

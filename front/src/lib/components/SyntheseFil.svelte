@@ -29,7 +29,7 @@
 	} from '#lib/api/index.ts';
 	import { fmtDate } from '#lib/date.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { fmtJours } from '#lib/synthese.ts';
 	import EtatListe from './EtatListe.svelte';
 	import RubriqueEtape from './RubriqueEtape.svelte';
@@ -64,8 +64,8 @@
 		}
 	}
 
-	$: produisible = $isCS && !!etat?.produisible;
-	$: enAttente = $isCS && !produisible && !!etat?.en_attente;
+	$: produisible = $estModerateur && !!etat?.produisible;
+	$: enAttente = $estModerateur && !produisible && !!etat?.en_attente;
 	$: visible = !!etat?.synthese || produisible || enAttente;
 	$: resume = resumeSynthese(etat?.synthese ?? null, produisible, enAttente);
 
@@ -125,7 +125,7 @@
 		{#if etat?.synthese}
 			<SyntheseAffaire
 				synthese={etat.synthese}
-				gestes={$isCS}
+				gestes={$estModerateur}
 				titre={false}
 				on:change={recharger}
 			/>

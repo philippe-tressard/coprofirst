@@ -11,7 +11,7 @@
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import { libelleRole, libelleStatut, LIBELLES_STATUT } from '#lib/roles.ts';
+	import { libelleRole, libelleStatut, LIBELLES_STATUT, ROLES_MIS_EN_AVANT } from '#lib/roles.ts';
 	import { currentUser } from '#lib/stores/auth.ts';
 
 	/**  Calculée par la page, qui la relit au chargement des données
@@ -39,7 +39,7 @@
 		const statut = $currentUser?.statut ?? '';
 		if (LIBELLES_STATUT[statut]) labels.push(libelleStatut(statut));
 		const allRoles = new Set([...($currentUser?.roles ?? []), $currentUser?.role ?? '']);
-		for (const r of ['conseil_syndical', 'admin']) {
+		for (const r of ROLES_MIS_EN_AVANT) {
 			if (allRoles.has(r)) labels.push(libelleRole(r));
 		}
 		return labels.join(SEPARATEUR.point);
@@ -77,6 +77,7 @@
 					photoUrl={$currentUser?.photo_url}
 					prenom={$currentUser?.prenom}
 					nom={$currentUser?.nom}
+					nomComplet={$currentUser?.nom_affiche}
 				/>
 				{#if !$currentUser?.photo_url}
 					<span class="hero-avatar-badge" aria-hidden="true"><Icon name="pencil" size={9} /></span>

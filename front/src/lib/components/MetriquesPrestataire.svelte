@@ -7,7 +7,7 @@
   comptable, le plus récent d'abord.
 
   🔴 RÉSERVÉ au conseil syndical, comme la notation de l'intervenant : la carte
-  le monte sous `$isCS`, le serveur refuse tout autre lecteur
+  le monte sous `$estModerateur`, le serveur refuse tout autre lecteur
   (`require_cs_or_admin`).
 
   Monté dans le corps DÉPLIÉ de `CartePrestataire` : il ne demande rien au

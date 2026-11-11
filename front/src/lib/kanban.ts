@@ -85,7 +85,7 @@ export const KANBAN_COLS: KanbanCol[] = [
 export const KANBAN_COLS_ACCUEIL: KanbanCol[] = KANBAN_COLS.filter((c) => !c.masqueAccueil);
 
 export interface KanbanCtx {
-	isCS: boolean;
+	estModerateur: boolean;
 	isAdmin: boolean;
 	canSeeAG: boolean;
 	statut: string; // copropriétaire_résident, copropriétaire_bailleur, syndic, mandataire…

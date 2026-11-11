@@ -17,7 +17,7 @@
 <script lang="ts">
 	import { pliageDe, requisDe } from '#lib/pliage.ts';
 	import SectionWorkflow from '#lib/components/SectionWorkflow.svelte';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { STATUT_TICKET_OPTIONS, estActualite } from '#lib/tickets.ts';
 	import {
 		AIDE_SUIVI_ACTUALITE,
@@ -73,14 +73,14 @@
 		idTitre="ticket-workflow-titre"
 		options={actualite ? (suiviCoche ? SUIVI_ACTUALITE_OPTIONS : []) : STATUT_TICKET_OPTIONS}
 		valeur={actualite ? (suiviCoche ? (options.etatSuivi ?? ETAT_SUIVI_DEFAUT) : '') : statut}
-		lecture={!$isCS}
+		lecture={!$estModerateur}
 		pliable={actualite ? !suiviCoche : pliageDe(TICKET, 'suivi')}
 		requis={!actualite && requisDe(TICKET, 'suivi')}
 		inactive={inactives.suivi ?? ''}
 		on:choisir={(e) => (actualite ? (options.etatSuivi = e.detail) : (statut = e.detail))}
 	>
 		{#if actualite}
-			{#if $isCS}
+			{#if $estModerateur}
 				<div class="field champ-large">
 					<label class="checkbox-field">
 						<input type="checkbox" bind:checked={options.suiviActualite} />
@@ -91,7 +91,7 @@
 			{:else}
 				<p class="aide">Seul le conseil syndical suit une actualité.</p>
 			{/if}
-		{:else if !$isCS}
+		{:else if !$estModerateur}
 			<p class="aide">
 				{modeEdition
 					? `Seul le conseil syndical fait avancer le suivi d’une ${TICKET.libelle.toLowerCase()}.`
@@ -113,7 +113,7 @@
 
 	      ⚠️ Réservé au conseil, et le serveur le refait
 	      (`OPTIONS_RESERVEES_AU_CS`) : le tableau ordonne SON travail. -->
-		{#if $isCS && categorie === 'etude_travaux'}
+		{#if $estModerateur && categorie === 'etude_travaux'}
 			<div class="field champ-large">
 				<label class="checkbox-field">
 					<input type="checkbox" bind:checked={options.suiviKanban} />

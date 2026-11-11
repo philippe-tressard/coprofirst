@@ -20,10 +20,11 @@ from app.utils.batiments import libelle_batiment_ou
 from app.auth.deps import get_current_user, require_proprietaire
 from app.database import get_session
 from app.models.core import LocationBail, Lot, Batiment, StatutBail, Utilisateur, StatutAcces
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 from app.auth.appartenance import exiger_bail_du_bailleur
 from app.utils.acces_bail import confies, remettre, rendre_au_bailleur
 from app.utils.etages import etage_label
+from app.utils import noms
 from app.utils.lecture import lire_objet
 from app.utils.libelles_lot import libelle_type_complet, libelle_type_lot
 from app.utils.porteurs_acces import acces_de
@@ -277,6 +278,12 @@ class BailLocataireOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def bailleur_nom_affiche(self) -> str:
+        """« Prénom NOM » du bailleur (`utils/noms.nom_affiche`), servi au locataire (#2633)."""
+        return noms.nom_affiche(self.bailleur_prenom, self.bailleur_nom)
 
 
 @router.get("/mon-bail", response_model=Optional[BailLocataireOut])

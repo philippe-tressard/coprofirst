@@ -293,6 +293,17 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   (version V), puis le retrait dans une version ultérieure ; une entrée neuve d'une route
   existante est facultative. L'`operationId` vient du chemin (`contrat.identifiant_operation`),
   jamais du nom de la fonction. 🔒 `test_contrat_api.py`.
+- **Les tables du site que l'app iOS génère se publient comme le contrat** (#2634) :
+  `front/tables-clients.json`, GÉNÉRÉE par `node front/scripts/tables-clients.mjs --ecrire`
+  depuis son registre (`tables-clients.registre.mjs` : des constantes LITTÉRALES de `#lib`,
+  lues dans l'arbre syntaxique, rien n'est exécuté), jointe à la release
+  (`lib-contrat-version.sh`) — jamais éditée. Une table que l'app lit vit dans `#lib`,
+  jamais dans un composant, en constante NOMMÉE (une table passée à `parAttribut` se
+  déclare d'abord, puis se bascule : `parAttribut(ATTRIBUTS_ROLE)`), et le code qui la
+  sert la LIT (`aRole($u, ...ROLES_DU_DROIT.cs)`) ; les jetons de la charte et les
+  palettes se publient par leur RÈGLE CSS (`<feuille>.css@<sélecteur>`, un `*` pour une
+  famille) ; la retirer ou en changer la forme s'annonce dans `RETRAITS` — un jeton retiré
+  en est un. 🔒 `npm run lint:tables-clients`.
 - **Une règle d'affichage que le site ET l'app iOS montrent se calcule dans l'API** (#2501,
   `standards/09` §8, règle 1) : libellé composé, état dérivé, droit affiché vivent dans
   `app/utils/` (ou un prédicat d'`auth/`), servis en champ que le front LIT — jamais une
@@ -680,9 +691,11 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
 - [ ] un assainisseur de `#lib/sanitize` sur tout `{@html}` — jamais un helper
       local, même correct (`npm run lint:html` le refuse)
 - [ ] Accessibilité : `role`, `tabindex`, `aria-label`, `on:keydown`
-- [ ] Droits : jamais recomposés dans un écran — `$isCS` (il **inclut** admin),
-      `$isProprioOuCS`, `aRole(u, …)`, ou le geste SERVI avec l'objet (`peut_*` ; le
-      crayon d'une affaire : `peut_corriger`, #2633). Ils l'étaient
+- [ ] Droits : jamais recomposés dans un écran — `$estModerateur` (il **inclut** admin ;
+      il LIT `UserRead.est_moderateur`, servi par `auth/deps.est_moderateur` — l'app
+      iOS lit le même champ, #2633), `$isProprioOuCS`, `aRole(u, …)`, ou le geste
+      SERVI avec l'objet (`peut_*` ; le crayon d'une affaire : `peut_corriger`, #2633).
+      Ils l'étaient
       **22 fois** avant #1041 (`npm run lint:droits` le refuse)
 - [ ] Un geste d'écriture n'est offert qu'aux rôles que sa route accepte : le prédicat de
       l'écran ne peut pas être plus large que la dépendance de la route (la fiche de la

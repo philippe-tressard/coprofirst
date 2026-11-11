@@ -15,7 +15,13 @@
 	import { browser } from '$app/env';
 	import { marquerDonneesAffichees } from '#lib/telemetry.ts';
 	import { afterNavigate } from '$app/navigation';
-	import { isAdmin, isCS, isLocataire, isProprioOuCS, quandAuthResolue } from '#lib/stores/auth.ts';
+	import {
+		isAdmin,
+		estModerateur,
+		isLocataire,
+		isProprioOuCS,
+		quandAuthResolue,
+	} from '#lib/stores/auth.ts';
 	import {
 		copropriete as coproprieteApi,
 		documents as documentsApi,
@@ -251,7 +257,7 @@
 	<!--  📊 Le bilan de l'exercice (#1645) : le conseil syndical seul, replié à
 	      l'arrivée. À côté du carnet et non dedans — le carnet est la lecture de
 	      tous les copropriétaires, le bilan celle du conseil. -->
-	{#if $isCS}
+	{#if $estModerateur}
 		<ChargementDiffere charger={() => import('#lib/components/BilanCarnet.svelte')}>
 			{#snippet contenu(BilanCarnet)}
 				<BilanCarnet />
@@ -276,7 +282,7 @@
 {:else if onglet === 'fiche' && loading}
 	<EtatListe chargement />
 {:else if onglet === 'fiche' && copropriete}
-	<BanniereResidence bind:copropriete peutModifier={$isCS} />
+	<BanniereResidence bind:copropriete peutModifier={$estModerateur} />
 
 	<!-- ── Section : Résidence ───────────────────────────────────────────── -->
 	<section class="section-residence">
@@ -338,7 +344,7 @@
 		erreur={ePlans}
 		recharger={recharger('plan_residence')}
 		messageVide="Aucun plan ajouté."
-		peutModifier={$isCS}
+		peutModifier={$estModerateur}
 		intitule="Ajouter un plan"
 		placeholderTitre="ex : Plan de masse résidence"
 		placeholderDescription="Ce que ce plan montre, à quelle date il a été relevé…"
@@ -362,7 +368,7 @@
 		bind:documents={reglements}
 		erreur={eReglements}
 		messageVide="Aucun règlement ajouté."
-		peutModifier={$isCS}
+		peutModifier={$estModerateur}
 		intitule="Ajouter un règlement"
 		placeholderTitre="ex : Règlement de copropriété 2024"
 		placeholderDescription="Ce qu'il remplace, ce qu'il ne couvre pas, où sont les annexes…"
@@ -379,7 +385,7 @@
 			erreur={eCrAg}
 			recharger={recharger('pv_ag')}
 			messageVide="Aucun compte-rendu ajouté."
-			peutModifier={$isCS}
+			peutModifier={$estModerateur}
 			intitule="Ajouter un CR d'AG"
 			placeholderTitre="ex : PV AG ordinaire 2025"
 			placeholderDescription="Les points saillants, les résolutions votées, ce qui reste en suspens…"
@@ -414,7 +420,11 @@
 	      trois autres partagent `SectionDocuments` depuis #522. Le garde-fou
 	      de modularité l'a refusée quand les formulaires y sont rentrés. -->
 	{#if !$isLocataire}
-		<SectionDiagnostics bind:types={diagnosticTypes} erreur={eDiagnostics} peutModifier={$isCS} />
+		<SectionDiagnostics
+			bind:types={diagnosticTypes}
+			erreur={eDiagnostics}
+			peutModifier={$estModerateur}
+		/>
 	{/if}
 {:else}
 	<div class="empty-state">

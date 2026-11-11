@@ -78,14 +78,18 @@ export const STATUT_TICKET_OPTIONS = STATUTS_TICKET.map((s) => ({
 //: d'évolutions d'un ticket ancien raconte encore « Ouvert → Fermé ». Il reste
 //: donc **affichable**, et n'est jamais proposable : il n'apparaît ni dans
 //: `STATUTS_TICKET`, ni dans les options, ni dans les états clos.
-const STATUTS_TICKET_HISTORIQUES: Record<string, { label: string; badge: string }> = {
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const STATUTS_TICKET_HISTORIQUES: Record<string, { label: string; badge: string }> = {
 	fermé: { label: 'Fermé', badge: 'badge-gray' },
 };
 
 //: L'état SANS CYCLE d'une affaire de catégorie « Actualité » (#1091) : affichable,
 //: jamais proposé — seule la catégorie y mène. Pendant de `STATUTS_TICKET_SANS_CYCLE`
 //: côté serveur ; `test_statuts_tickets.py` tient la concordance.
-const STATUTS_TICKET_SANS_CYCLE: Record<string, { label: string; badge: string }> = {
+//  🔒 Table PUBLIÉE aux clients (`tables-clients.json`, #2634) — littérale ; la retirer
+//  ou en changer la forme s'annonce (`npm run lint:tables-clients`).
+export const STATUTS_TICKET_SANS_CYCLE: Record<string, { label: string; badge: string }> = {
 	publie: { label: 'Publiée', badge: 'badge-blue' },
 };
 

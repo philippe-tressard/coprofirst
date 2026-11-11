@@ -272,6 +272,7 @@ def test_locataire_info(session):
         "id": locataire.id,
         "nom": "LOCATAIRE",
         "prenom": "Alice",
+        "nom_affiche": "Alice LOCATAIRE",
         "email_masque": adresse_masquee(locataire.email),
     }
     assert lus == [{**attendu, "actif": False}], lus
@@ -402,6 +403,8 @@ ATTENDU_BAIL = {
     "lot_batiment_nom": "Bât. B",
     "bailleur_nom": "BAILLEUR",
     "bailleur_prenom": "Paul",
+    #  « Prénom NOM » servi (#2633).
+    "bailleur_nom_affiche": "Paul BAILLEUR",
     "bailleur_telephone": "0102",
     "date_entree": "2026-01-01",
     "date_sortie_prevue": "2027-01-01",

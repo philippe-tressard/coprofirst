@@ -46,7 +46,7 @@
 	import { motifWhatsappInterdit } from '#lib/options-publication.ts';
 	import { reserveAuConseil } from '#lib/destinataires.ts';
 	import { nomCopie } from '#lib/saisi-pour.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { equipementDansLaSuite } from '#lib/suite-conseil.ts';
 	import { demanderFusion, SANS_FUSION } from '#lib/fusion-affaires.ts';
 	import {
@@ -119,12 +119,12 @@
 	initialFichiers={fichiersDepuisUrls(evol?.fichiers_urls)}
 	initialPerimetre={evol?.perimetre_cible ?? []}
 	demanderApercu={correction || actu ? null : apercu}
-	statutOptions={etatsDeLaSuite(ticket, $isCS)}
+	statutOptions={etatsDeLaSuite(ticket, $estModerateur)}
 	statutLabels={STATUT_TICKET_LABELS}
 	currentStatut={evol ? (evol.statut_avant ?? etatCourant) : etatCourant}
 	initialStatut={evol?.type === 'etat' ? (evol.nouveau_statut ?? '') : ''}
 	entite={TICKET}
-	affaireLiable={$isCS ? ticket.id : null}
+	affaireLiable={$estModerateur ? ticket.id : null}
 	initialDestinataires={ticket.public_cible ?? []}
 	destinatairesParDefaut={actu ? null : destinatairesParDefautDuTicket(ticket)}
 	defaultEnvoyerSyndic={actu && (ticket.destinataire_syndic ?? false)}
@@ -141,11 +141,11 @@
 		: ''}
 	{entrees}
 	{whatsappInterdit}
-	peutDiffuser={$isCS}
-	peutCibler={$isCS}
-	showEmail={$isCS && !correction}
+	peutDiffuser={$estModerateur}
+	peutCibler={$estModerateur}
+	showEmail={$estModerateur && !correction}
 	{saving}
-	avantSuivi={equipementDansLaSuite(ticket, $isCS)}
+	avantSuivi={equipementDansLaSuite(ticket, $estModerateur)}
 	on:submit={(e) => soumettre({ ...e.detail, ...optionsVersTicket(options) })}
 	on:cancel={() => dispatch('cancel')}
 >

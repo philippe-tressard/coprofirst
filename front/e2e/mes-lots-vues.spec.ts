@@ -15,6 +15,7 @@
  */
 import type { Page } from '@playwright/test';
 import { attendreHydratation, boiteStable, expect, MEMBRE_CS, simulerApi, test } from './aides';
+import { nomServi } from './noms-servis';
 
 const LOTS = [
 	{
@@ -46,6 +47,7 @@ const BAIL = {
 	locataire_id: 55,
 	locataire_prenom: 'Paul',
 	locataire_nom: 'Durand',
+	locataire_nom_affiche: nomServi({ prenom: 'Paul', nom: 'Durand' }),
 	locataire_email: 'paul@exemple.test',
 	date_entree: '2026-01-01',
 	objets: [],
@@ -160,6 +162,7 @@ test('supprimer un compte : la même confirmation', async ({ page }) => {
 		id: 21,
 		prenom: 'Jeanne',
 		nom: 'Martin',
+		nom_affiche: nomServi({ prenom: 'Jeanne', nom: 'Martin' }),
 		email: 'jeanne@exemple.test',
 		statut: 'copropriétaire_résident',
 		role: 'résident',

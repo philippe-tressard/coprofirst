@@ -30,7 +30,6 @@
 		type StatsImportAcces,
 		type UtilisateurAdmin,
 	} from '#lib/api/index.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { siteNomStore } from '#lib/stores/pageConfig.ts';
 	import { isAdmin } from '#lib/stores/auth.ts';
@@ -407,7 +406,7 @@
 													<select id="imp-locataire" bind:value={editLocataire}>
 														<option value="">— sans compte —</option>
 														{#each comptes as u (u.id)}
-															<option value={String(u.id)}>{nomAffiche(u)}</option>
+															<option value={String(u.id)}>{u.nom_affiche}</option>
 														{/each}
 													</select>
 												</div>

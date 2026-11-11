@@ -2,10 +2,9 @@
 	import Badge from '#lib/components/Badge.svelte';
 	import { confirmer } from '#lib/confirmation.ts';
 	import FormulaireCreation from '#lib/components/FormulaireCreation.svelte';
-	import { nomAffiche } from '#lib/noms.ts';
 	import Icon from '#lib/components/Icon.svelte';
 	import EntetePage from '#lib/components/EntetePage.svelte';
-	import { isCS, quandAuthResolue } from '#lib/stores/auth.ts';
+	import { estModerateur, quandAuthResolue } from '#lib/stores/auth.ts';
 	import {
 		delegations as delegationsApi,
 		admin as adminApi,
@@ -26,6 +25,7 @@
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
 	import { parAttribut } from '#lib/table-statuts.ts';
+	import { STATUTS_DELEGATION } from '#lib/delegations.ts';
 	import EtatListe from '#lib/components/EtatListe.svelte';
 
 	// Cette page importait déjà getPageConfig sans s'en servir : son titre était en
@@ -52,7 +52,7 @@
 	quandAuthResolue(async () => {
 		try {
 			delegations = await delegationsApi.list();
-			if ($isCS) {
+			if ($estModerateur) {
 				//  Donnée de RÉFÉRENCE : elle garnit deux menus déroulants. Un
 				//  échec les laissait vides, et l'écran donnait à croire qu'aucun
 				//  résident n'était délégable (#522).
@@ -71,12 +71,7 @@
 	//  commentaire qui l'accompagnait disait « la charte ne la porte pas » —
 	//  c'était vrai de `grey`, et faux de la classe qu'il fallait. Une faute
 	//  d'orthographe avait fait conclure à l'absence du composant partagé.
-	const { libelle, badge } = parAttribut({
-		en_attente: { libelle: 'En attente', badge: 'badge-orange' },
-		active: { libelle: 'Active', badge: 'badge-green' },
-		revoquee: { libelle: 'Révoquée', badge: 'badge-red' },
-		expiree: { libelle: 'Expirée', badge: 'badge-gray' },
-	});
+	const { libelle, badge } = parAttribut(STATUTS_DELEGATION);
 
 	function statutLabel(s: string): string {
 		return libelle[s] ?? s;
@@ -144,7 +139,7 @@
 {#if loading}
 	<EtatListe chargement />
 {:else}
-	{#if $isCS}
+	{#if $estModerateur}
 		<div class="barre-delegation">
 			<button class="btn btn-primary" on:click={() => (showForm = true)}
 				>+ Nouvelle délégation</button
@@ -211,7 +206,7 @@
 				<select id="d-mandant" bind:value={formMandantId}>
 					<option value={0} disabled>Choisir…</option>
 					{#each users.filter((u) => u.actif) as u (u.id)}
-						<option value={u.id}>{nomAffiche(u)} ({u.email})</option>
+						<option value={u.id}>{u.nom_affiche} ({u.email})</option>
 					{/each}
 				</select>
 			</div>
@@ -220,7 +215,7 @@
 				<select id="d-aidant" bind:value={formAidantId}>
 					<option value={0} disabled>Choisir…</option>
 					{#each users.filter((u) => u.actif && u.id !== formMandantId) as u (u.id)}
-						<option value={u.id}>{nomAffiche(u)} ({u.email})</option>
+						<option value={u.id}>{u.nom_affiche} ({u.email})</option>
 					{/each}
 				</select>
 			</div>

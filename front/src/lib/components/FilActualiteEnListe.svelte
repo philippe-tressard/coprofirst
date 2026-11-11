@@ -15,7 +15,7 @@
 <script lang="ts">
 	import ChargementDiffere from '#lib/components/ChargementDiffere.svelte';
 	import type { Ticket, TicketEvolution } from '#lib/api/index.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import type { GestesTicket } from '#lib/tickets.ts';
 	import RubriqueHistorique from './RubriqueHistorique.svelte';
 
@@ -29,7 +29,7 @@
 <div class="actu-fil">
 	<RubriqueHistorique
 		{evolutions}
-		peutModifier={$isCS}
+		peutModifier={$estModerateur}
 		avecSuppression
 		enEdition={evolEnEdition}
 		on:modifier={(e) => gestes.evolModifier(e.detail)}

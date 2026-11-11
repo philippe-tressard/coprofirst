@@ -1,6 +1,7 @@
 <script module lang="ts">
 	import { tick } from 'svelte';
 	import { get, writable } from 'svelte/store';
+	import { DUREE_TOAST_MS } from '#lib/toast.ts';
 
 	export interface ToastMessage {
 		id: number;
@@ -33,7 +34,7 @@
 	//  🔴 Un message SIMPLE, à une place fixe (arbitré le 26/09/2026). La suite
 	//  d'un geste sur un élément naît de l'élément (`BoutonLien`) : ce n'est pas
 	//  un message, et ce toast n'en porte plus — il l'a porté un jour (#1357).
-	export function toast(type: ToastMessage['type'], message: string, duration = 4000) {
+	export function toast(type: ToastMessage['type'], message: string, duration = DUREE_TOAST_MS) {
 		const liste = get(toasts);
 		//  Le même message déjà affiché ne s'empile pas une seconde fois.
 		if (liste.some((t) => !t.sortant && t.type === type && t.message === message)) return;

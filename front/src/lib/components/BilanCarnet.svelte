@@ -7,7 +7,7 @@
   au syndic et délai de réaction, intervenants les plus lents.
 
   🔴 RÉSERVÉ au conseil syndical (arbitré le 04/10/2026). La page le monte sous
-  `$isCS`, et le serveur refuse tout autre lecteur (`require_cs_or_admin`) :
+  `$estModerateur`, et le serveur refuse tout autre lecteur (`require_cs_or_admin`) :
   masquer répond à ce qui s'affiche, refuser à ce qui s'atteint.
 
   Monté par la page Résidence, à côté de `CarnetEntretien` et non dedans : le

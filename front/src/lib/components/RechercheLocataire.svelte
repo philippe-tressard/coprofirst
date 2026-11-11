@@ -29,7 +29,6 @@
 	import { onMount } from 'svelte';
 
 	import { bailleur as bailApi, type LocataireTrouve } from '#lib/api/index.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	import ChampRecherche from '#lib/components/ChampRecherche.svelte';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 
@@ -132,7 +131,7 @@
 	{#if trouve}
 		<div class="locataire-selected">
 			<div class="locataire-selected-info">
-				<span class="locataire-selected-name">✓ {nomAffiche(trouve)}</span>
+				<span class="locataire-selected-name">✓ {trouve.nom_affiche}</span>
 				<span class="locataire-selected-email">{trouve.email_masque}</span>
 				{#if !trouve.actif}
 					<span class="badge badge-yellow en-attente">En attente d'activation</span>
@@ -149,7 +148,7 @@
 				{#each suggestions as sug (sug.id)}
 					<li>
 						<button class="locataire-resultat-btn" on:click={() => selectionner(sug)}>
-							<span class="lr-name">{nomAffiche(sug)}</span>
+							<span class="lr-name">{sug.nom_affiche}</span>
 							<span class="lr-email">{sug.email_masque}</span>
 							{#if !sug.actif}<span class="badge badge-yellow en-attente">En attente</span>{/if}
 						</button>
@@ -187,7 +186,7 @@
 							class="locataire-resultat-btn"
 							on:click={() => selectionner(r, adresseCherchee)}
 						>
-							<span class="lr-name">{nomAffiche(r)}</span>
+							<span class="lr-name">{r.nom_affiche}</span>
 							<span class="lr-email">{r.email_masque}</span>
 							{#if !r.actif}<span class="badge badge-yellow en-attente">En attente</span>{/if}
 						</button>

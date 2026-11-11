@@ -14,7 +14,7 @@
  *
  * | Forme | Ce qu'elle dit |
  * |---|---|
- * | `$isCS \|\| $isAdmin` | une **tautologie** : `isCS` inclut déjà `admin` (`auth.ts`). Celui qui l'écrit ne connaît pas la définition de ce qu'il appelle |
+ * | `$estModerateur \|\| $isAdmin` | une **tautologie** : `estModerateur` inclut déjà `admin` (`auth.ts`). Celui qui l'écrit ne connaît pas la définition de ce qu'il appelle |
  * | `['propriétaire','conseil_syndical','admin'].includes(r)` | la cascade littérale, écrite deux fois à l'identique |
  * | `objet.auteur_id === userId` | le droit d'éditer réécrit à la main, sans le « saisi pour » ni l'admin |
  * | `userRoles(u).includes('admin')` | `aRole(u, 'admin')` existe et prend un `User` |
@@ -58,21 +58,32 @@ const FORMES = [
 	{
 		nom: 'tautologie « CS ou admin »',
 		//  Les DEUX écritures de la même chose : l'alternative, et sa négation par
-		//  De Morgan (`!isCS && !isAdmin`). Ne chercher que la première aurait laissé
+		//  De Morgan (`!estModerateur && !isAdmin`). Ne chercher que la première aurait laissé
 		//  passer la moitié des cas — un motif décrit la NOTION, pas la forme sous
 		//  laquelle on l'a rencontrée d'abord (`standards/04` §40).
 		motif:
-			/\$?\bisCS\b\s*\|\|\s*\$?\bisAdmin\b|\$?\bisAdmin\b\s*\|\|\s*\$?\bisCS\b|!\s*\$?\bisCS\b\s*&&\s*!\s*\$?\bisAdmin\b|!\s*\$?\bisAdmin\b\s*&&\s*!\s*\$?\bisCS\b/,
+			/\$?\bestModerateur\b\s*\|\|\s*\$?\bisAdmin\b|\$?\bisAdmin\b\s*\|\|\s*\$?\bestModerateur\b|!\s*\$?\bestModerateur\b\s*&&\s*!\s*\$?\bisAdmin\b|!\s*\$?\bisAdmin\b\s*&&\s*!\s*\$?\bestModerateur\b/,
 		remede:
-			"`isCS` inclut déjà `admin` (stores/auth.ts) — écrire `$isCS` seul. L'alternative " +
+			"`estModerateur` inclut déjà `admin` (stores/auth.ts) — écrire `$estModerateur` seul. L'alternative " +
 			"révèle que la définition du store n'est pas connue de l'écran.",
 	},
 	{
 		nom: 'cascade de rôles écrite en clair',
 		motif: /\[[^\]]*'(?:propriétaire|conseil_syndical|résident)'[^\]]*\]\s*\.includes/,
 		remede:
-			'appeler un store dérivé (`$isProprioOuCS`, `$isCS`…) ou `aRole(user, …)` de ' +
+			'appeler un store dérivé (`$isProprioOuCS`, `$estModerateur`…) ou `aRole(user, …)` de ' +
 			'`stores/auth.ts`. Une liste de rôles recopiée dérive de sa jumelle.',
+	},
+	{
+		//  Le MODÉRATEUR (conseil syndical ou administration) est servi par l'API
+		//  (`UserRead.est_moderateur`, `auth/deps.est_moderateur`, #2633) : l'app iOS
+		//  lit le même champ. Le rôle CS SEUL (un style de rangée, un libellé) n'est
+		//  pas cette question, et passe.
+		nom: 'modérateur recomposé depuis les rôles',
+		motif: /aRole\([^)]*'conseil_syndical'[^)]*'admin'|aRole\([^)]*'admin'[^)]*'conseil_syndical'/,
+		remede:
+			'lire le champ servi : `$estModerateur` pour le compte courant, `utilisateur.est_moderateur` ' +
+			'pour un `User` (#2633). Le site et l’app iOS lisent la même réponse.',
 	},
 	{
 		nom: 'appartenance recomposée sur `auteur_id`',
@@ -98,18 +109,28 @@ function fichiersAnalyses() {
 //  Auto-test : chaque forme doit reconnaître son cas fautif ET laisser passer le
 //  cas sain. Un motif qui n'attrape plus rien passerait au vert en silence.
 const CAS = [
-	['{#if $isCS || $isAdmin}', 'tautologie « CS ou admin »'],
-	['{#if $isAdmin || $isCS}', 'tautologie « CS ou admin »'],
-	['if (!$isCS && !$isAdmin) return;', 'tautologie « CS ou admin »'],
-	['if (!$isAdmin && !$isCS) return;', 'tautologie « CS ou admin »'],
+	['{#if $estModerateur || $isAdmin}', 'tautologie « CS ou admin »'],
+	['{#if $isAdmin || $estModerateur}', 'tautologie « CS ou admin »'],
+	['if (!$estModerateur && !$isAdmin) return;', 'tautologie « CS ou admin »'],
+	['if (!$isAdmin && !$estModerateur) return;', 'tautologie « CS ou admin »'],
 	[
 		"roles.some((r) => ['propriétaire', 'conseil_syndical', 'admin'].includes(r))",
 		'cascade de rôles écrite en clair',
 	],
+	[
+		"visible: (u) => aRole(u, 'conseil_syndical', 'admin'),",
+		'modérateur recomposé depuis les rôles',
+	],
+	["aRole($u, 'admin', 'conseil_syndical')", 'modérateur recomposé depuis les rôles'],
 	['{#if idee.auteur_id === currentUserId}', 'appartenance recomposée sur `auteur_id`'],
 	["userRoles(u).includes('admin')", '`userRoles(...).includes(...)`'],
 ];
-const SAINS = ['{#if $isCS}', 'ticket.peut_corriger ?? false', "aRole(u, 'admin')"];
+const SAINS = [
+	'{#if $estModerateur}',
+	'ticket.peut_corriger ?? false',
+	"aRole(u, 'admin')",
+	"class:row-cs={aRole(u, 'conseil_syndical')}",
+];
 
 let autotestOk = true;
 for (const [source, attendu] of CAS) {

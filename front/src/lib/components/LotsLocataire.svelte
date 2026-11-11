@@ -19,7 +19,6 @@
 	import QuestionsLocation from '#lib/components/QuestionsLocation.svelte';
 	import type { BailLocataire, MonLot } from '#lib/api/index.ts';
 	import { fmtDateShort as fmt } from '#lib/date.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 
 	/** Le bail du locataire (`bailleur.monBail()`), ou `null` s'il n'en a pas. */
 	export let bail: BailLocataire | null = null;
@@ -70,7 +69,7 @@
 		</CaracteristiquesLot>
 		{#if bail.bailleur_nom || bail.bailleur_prenom}
 			<div class="proprietaire">
-				🏢 Propriétaire : <strong>{nomAffiche(bail.bailleur_prenom, bail.bailleur_nom)}</strong>
+				🏢 Propriétaire : <strong>{bail.bailleur_nom_affiche}</strong>
 				{#if bail.bailleur_email}<br />📬
 					<a href="mailto:{bail.bailleur_email}">{bail.bailleur_email}</a>{/if}
 				{#if bail.bailleur_telephone}<br />📞 {bail.bailleur_telephone}{/if}
