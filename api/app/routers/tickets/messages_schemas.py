@@ -25,6 +25,9 @@ class MessageRead(BaseModel):
     auteur_id: Optional[int] = None  # #1688
     #: l'auteur détaché par la conservation (#2014) : « Un résident », « Le conseil syndical »
     auteur_qualite: Optional[str] = None
+    #: le nom AFFICHÉ de l'auteur, servi par `routers/tickets/messages.message_lu`
+    #: (`utils/noms.nom_auteur`, qui tient compte de la qualité) — le fil le lit (#2680)
+    auteur_nom: str = ""
     contenu: str
     interne: bool
     cree_le: datetime

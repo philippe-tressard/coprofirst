@@ -26,12 +26,24 @@ from .commun import config_site, contexte_site
 from .courriels import envoyer_email_externe
 from app.utils.destinataires import membres_cs_ou_admin
 from app.utils.html_sur import html_riche
-from app.utils.noms import contexte_personne
+from app.utils.lecture import lire_objet
+from app.utils.noms import contexte_personne, nom_auteur
 from app.utils.recuperer import ou_rien
 from app.utils.cloche import sonner
 from app.utils.fusion_affaires import refuser_si_absorbee
 
 router = APIRouter()
+
+
+def message_lu(m: MessageTicket, session: Session) -> MessageRead:
+    """Un message tel que le fil le rend, avec le nom de son auteur (#2680).
+
+    Le nom est SERVI (#2633) : l'écran ne le compose pas. `nom_auteur` dit la
+    qualité d'un auteur détaché par la conservation (#2014), « Ancien résident »
+    quand le compte n'existe plus — la règle de l'Historique (`commun.evol_read`).
+    """
+    auteur = ou_rien(session, Utilisateur, m.auteur_id)
+    return lire_objet(MessageRead, m, auteur_nom=nom_auteur(auteur, m.auteur_qualite))
 
 
 @router.get("/{ticket_id}/messages", response_model=list[MessageRead])
@@ -45,7 +57,7 @@ def get_messages(
     # Messages internes réservés CS/admin
     if not lit_les_notes_internes(user):
         stmt = stmt.where(MessageTicket.interne == False)  # noqa: E712
-    return session.exec(stmt.order_by(MessageTicket.cree_le)).all()
+    return [message_lu(m, session) for m in session.exec(stmt.order_by(MessageTicket.cree_le))]
 
 
 def _prevenir(
@@ -210,4 +222,4 @@ def add_message(
             fichiers_urls=body.fichiers_urls,
         )
 
-    return msg
+    return message_lu(msg, session)

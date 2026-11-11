@@ -77,7 +77,7 @@
 
 <div class="messages colonne-lecture">
 	{#each messages as msg (msg.id)}
-		{@const isOwn = msg.auteur?.id === $currentUser?.id}
+		{@const isOwn = msg.auteur_id === $currentUser?.id}
 		{#if !msg.interne || $estModerateur}
 			<div
 				id="msg-{msg.id}"
@@ -87,7 +87,7 @@
 				class:message-vise={msgVise === msg.id}
 			>
 				<div class="msg-header">
-					<strong>{msg.auteur?.nom_affiche ?? ''}</strong>
+					<strong>{msg.auteur_nom}</strong>
 					{#if msg.interne}<span class="badge badge-yellow msg-badge">interne</span>{/if}
 					<span class="msg-time">{fmtDatetime(msg.cree_le)}</span>
 				</div>
