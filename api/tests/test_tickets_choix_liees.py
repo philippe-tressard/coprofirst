@@ -90,6 +90,8 @@ def test_le_choix_ne_montre_que_numero_titre_statut_et_date(moteur):
             "numero": t.numero,
             "titre": "Porte du garage",
             "statut": "ouvert",
+            #  Servi (#2633) : l'écran ne compose plus le libellé de l'état.
+            "statut_libelle": "Ouvert",
             #  Servi (#2511) : le choix ne recalcule pas « close ».
             "close": False,
             #  UTC naïf en base, rendu avec son `Z` comme toute date servie.

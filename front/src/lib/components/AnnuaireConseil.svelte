@@ -35,6 +35,8 @@
 		batiment_id: number | null;
 		batiment_nom: string | null;
 		etage: number | null;
+		/** « 2ème étage » — SERVI avec la fiche ou le rapprochement (#2633). */
+		etage_libelle: string;
 		est_gestionnaire_site: boolean;
 		est_president: boolean;
 	}
@@ -63,6 +65,7 @@
 			batiment_id: m.batiment_id ?? null,
 			batiment_nom: m.batiment_nom ?? null,
 			etage: m.etage ?? null,
+			etage_libelle: m.etage_libelle ?? '',
 			user_id: m.user_id ?? null,
 			est_gestionnaire_site: m.est_gestionnaire_site ?? false,
 			est_president: m.est_president ?? false,
@@ -81,6 +84,7 @@
 		batiment_id: null,
 		batiment_nom: null,
 		etage: null,
+		etage_libelle: '',
 		user_id: null,
 		est_gestionnaire_site: false,
 		est_president: false,
@@ -94,11 +98,11 @@
 		const trouve = await rapprocher(membre.nom);
 		//  La fiche a pu changer pendant la question : on ne touche qu'à la même.
 		if (!trouve || membresCS[i] !== membre) return;
-		const { batiment_id, batiment_nom, etage, user_id } = trouve;
+		const { batiment_id, batiment_nom, etage, etage_libelle, user_id } = trouve;
 		const logement = batiment_id !== null || etage !== null;
 		membresCS[i] = {
 			...membre,
-			...(logement ? { batiment_id, batiment_nom, etage } : {}),
+			...(logement ? { batiment_id, batiment_nom, etage, etage_libelle } : {}),
 			user_id: membre.user_id ?? user_id,
 		};
 		membresCS = [...membresCS];

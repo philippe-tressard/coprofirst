@@ -76,6 +76,8 @@ export interface CrAffaire {
 	conseil_seul: boolean;
 	/** L'état que l'affaire prend À LA VALIDATION — `null` : inchangé. */
 	etat_cible: string | null;
+	/** …en clair — vide sans état à la validation (`etat_affaire.libelle_etat`, #2633). */
+	etat_cible_libelle: string;
 	mis_a_jour_le: string;
 }
 

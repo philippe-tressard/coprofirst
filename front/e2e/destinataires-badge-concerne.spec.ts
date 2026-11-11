@@ -46,6 +46,7 @@ const SUITE = {
 	contenu: '<p>Voisin prévenu.</p>',
 	ancien_statut: 'ouvert',
 	nouveau_statut: 'en_cours',
+	nouveau_statut_libelle: 'Chez le syndic', // servi (#2633)
 	statut_avant: 'ouvert',
 	auteur_id: 1,
 	auteur_nom: 'CS Témoin',

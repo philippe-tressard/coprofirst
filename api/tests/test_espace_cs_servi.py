@@ -359,9 +359,17 @@ def test_le_rapprochement_se_demande_avant_d_enregistrer(moteur):
         "batiment_id": bat_id,
         "batiment_nom": "4",
         "etage": 1,
+        #  En clair, comme la fiche du membre : l'écran le lit (#2633).
+        "etage_libelle": "1er étage",
     }
     vide = http.get("/admin/annuaire/rapprochement", params={"nom": "B"}).json()
-    assert vide == {"user_id": None, "batiment_id": None, "batiment_nom": None, "etage": None}
+    assert vide == {
+        "user_id": None,
+        "batiment_id": None,
+        "batiment_nom": None,
+        "etage": None,
+        "etage_libelle": "",
+    }
 
 
 def test_le_rapprochement_reste_au_conseil(moteur):

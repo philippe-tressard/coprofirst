@@ -16,6 +16,8 @@ export interface TicketEvolution {
 	contenu?: string;
 	ancien_statut?: string;
 	nouveau_statut?: string;
+	/** L'état donné, en clair — servi (`etat_affaire.libelle_etat`, #2633). */
+	nouveau_statut_libelle?: string;
 	/** Vide quand le compte de l'auteur a été supprimé : « Ancien résident » (#1688). */
 	auteur_id: number | null;
 	auteur_nom?: string;

@@ -14,6 +14,9 @@
  *  à zéro qui décide d'un texte, c'est-à-dire exactement ce que les six
  *  écritures avaient en commun.
  *
+ *  Depuis #2633 (11/11/2026), le libellé est SERVI par l'API (`etage_libelle`) :
+ *  le front n'a plus de fonction à appeler, il lit le champ.
+ *
  *  Lancer : node scripts/check-etage-libelle.mjs [--selftest]
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -88,6 +91,10 @@ function selftest() {
 		["\t\t\tif (appt.etage === 0) parts.push('RDC');", 1],
 		//  L'appel au module partagé : la forme voulue, jamais signalée.
 		['\t\t\t<dd>{etageLabel(lot.etage)}</dd>', 0],
+		//  Le libellé SERVI (#2633) : la forme voulue aujourd'hui.
+		['\t\t\t<dd>{lot.etage_libelle}</dd>', 0],
+		['\t\t\tÉtage : {lot.etage_libelle_complet}', 0],
+		['\t\t\tetageLibelle={bail.lot_etage_libelle}', 0],
 		//  Une comparaison d'étage qui ne décide PAS d'un texte — un tri, un filtre.
 		['\t\t\tconst rdc = lots.filter((l) => l.etage === 0);', 0],
 		//  🔴 Le contrôle ne doit pas se déclencher sur sa PROPRE prose.
@@ -134,7 +141,7 @@ if (fautifs.length) {
 	console.error(
 		"\n  Il était écrit SIX fois, en trois rendus : un sous-sol s'affichait « -1 »\n" +
 			'  sur un écran et « SS 1 » sur un autre.\n' +
-			'  → employer `etageLabel(etage, { suffixe })` de `#lib/utils`.\n',
+			'  → lire le libellé SERVI par l’API (`etage_libelle`, `etage_libelle_complet`, #2633).\n',
 	);
 	process.exit(1);
 }

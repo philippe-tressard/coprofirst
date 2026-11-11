@@ -29,6 +29,8 @@ const LOTS = [
 		type: 'appartement',
 		type_appartement: 'T3',
 		etage: 2,
+		//  L'étage en clair est SERVI (#2633) : l'écran le lit tel quel.
+		etage_libelle_complet: '2ème étage',
 		libelle_type_complet: 'Appartement – T3',
 	},
 	{
@@ -37,6 +39,7 @@ const LOTS = [
 		batiment_nom: 'Bât. 2',
 		type: 'local_commercial',
 		etage: 0,
+		etage_libelle_complet: 'RDC',
 		libelle_type_complet: 'Local commercial',
 	},
 ];
@@ -66,6 +69,7 @@ test('lots possédés, locataire et lots vacants', async ({ page }) => {
 	await ouvrir(page);
 	await expect(page.getByText('🏢 Lots possédés (2)')).toBeVisible();
 	await expect(page.locator('.lot-possede-card.lot-occupe')).toHaveCount(1);
+	await expect(page.locator('.lot-possede-card.lot-occupe')).toContainText('2ème étage');
 	await expect(page.locator('.lot-possede-card.lot-vacant')).toHaveCount(1);
 	await expect(page.getByRole('button', { name: '+ Créer un bail' })).toHaveCount(1);
 	await expect(page.locator('.locataire-card')).toContainText('Paul DURAND');
