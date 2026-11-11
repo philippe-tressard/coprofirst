@@ -43,8 +43,9 @@ _SOURCE = APP / "utils" / "liens.py"
 EXCEPTIONS_HOSTACHY: dict[str, tuple[int, str]] = {
     "utils/backup.py": (
         1,
-        "`hostachy_backup_` : le préfixe des archives DÉJÀ sur disque, que la rotation "
-        "et la restauration reconnaissent",
+        "`PREFIXE_HISTORIQUE` : le préfixe des archives DÉJÀ sur disque, lu jamais écrit "
+        "(#2653), que la rotation, la santé et la copie hors site reconnaissent — retiré "
+        "avec #2659",
     ),
     "utils/whatsapp.py": (
         1,

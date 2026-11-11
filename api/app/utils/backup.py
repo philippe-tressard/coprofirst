@@ -24,8 +24,18 @@ from app.utils.noeud import noeud_courant
 #  l'API, et `health_monitor` le relit pour distinguer « l'export tourne » de
 #  « la copie hors site est fraîche ». Trois lecteurs, donc UN SEUL endroit où
 #  la convention est écrite, et un seul parseur.
-PREFIXE_ARCHIVE = "hostachy_backup_"
-MOTIF_ARCHIVE = f"{PREFIXE_ARCHIVE}*.tar.gz"
+#
+#  🔴 Le préfixe ne nomme pas la résidence (#2653) : une réplique d'une autre
+#  copropriété écrivait `hostachy_backup_…`, le nom de la nôtre chez elle. Il est
+#  écrit ici, et `scripts/lib/lib-export-hors-site.sh` le relit (même valeur,
+#  tenue par `test_sauvegarde_hors_site_plateforme.py`).
+PREFIXE_ARCHIVE = "sauvegarde_copropriete_"
+#  L'ancien préfixe n'est plus jamais ÉCRIT, il reste LU : les archives déjà sur
+#  disque (nœuds, copie hors site) le portent jusqu'à leur rotation. Ni la rotation
+#  ni la santé ne doivent les ignorer — ni les garder à tort. À retirer quand plus
+#  aucune archive ne le porte (#2659).
+PREFIXE_HISTORIQUE = "hostachy_backup_"
+PREFIXES_LUS = (PREFIXE_ARCHIVE, PREFIXE_HISTORIQUE)
 _FORMAT_HORODATAGE = "%Y%m%d_%H%M%S"
 _SUFFIXE_ARCHIVE = ".tar.gz"
 #  🔴 Le nom ÉCRIT son fuseau (#1611). Il portait l'horloge UTC sans le dire :
@@ -48,12 +58,15 @@ def nom_archive(instant: datetime, prefixe: str = PREFIXE_ARCHIVE) -> str:
     return f"{prefixe}{heure}{SUFFIXE_FUSEAU}{_SUFFIXE_ARCHIVE}"
 
 
-def horodatage_archive(nom_fichier: str, prefixe: str = PREFIXE_ARCHIVE) -> datetime | None:
+def horodatage_archive(
+    nom_fichier: str, prefixe: str | tuple[str, ...] = PREFIXES_LUS
+) -> datetime | None:
     """Date de création (UTC naïf) lue dans le nom d'une archive, ou None si illisible.
 
     Deux formats coexistent pendant la rétention (#1611) : `…_HHMMSS_paris` (heure de
     Paris, converti ici) et `…_HHMMSS` (l'ancien, déjà en UTC). Un suffixe de fuseau
-    inconnu est refusé : lire autre chose en UTC serait deviner.
+    inconnu est refusé : lire autre chose en UTC serait deviner. `prefixe` : un seul,
+    ou plusieurs — par défaut ceux de la résidence, l'écrit et l'historique (#2653).
 
     Rend None plutôt que de lever : un nom non conforme (fichier déposé à la
     main, archive renommée) ne doit pas faire échouer un contrôle de santé —
@@ -63,9 +76,11 @@ def horodatage_archive(nom_fichier: str, prefixe: str = PREFIXE_ARCHIVE) -> date
     if not nom_fichier:
         return None
     base = os.path.basename(nom_fichier)
-    if not base.startswith(prefixe) or not base.endswith(_SUFFIXE_ARCHIVE):
+    prefixes = (prefixe,) if isinstance(prefixe, str) else prefixe
+    lu_par = next((p for p in prefixes if base.startswith(p)), None)
+    if lu_par is None or not base.endswith(_SUFFIXE_ARCHIVE):
         return None
-    brut = base[len(prefixe) : -len(_SUFFIXE_ARCHIVE)]
+    brut = base[len(lu_par) : -len(_SUFFIXE_ARCHIVE)]
     paris = brut.endswith(SUFFIXE_FUSEAU)
     if paris:
         brut = brut[: -len(SUFFIXE_FUSEAU)]
@@ -176,13 +191,33 @@ def run_backup(history_id: int | None = None):
         session.commit()
 
 
-def garder_les_dernieres(motif: str, garder: int) -> list[str]:
-    """Supprime les archives de `motif` au-delà des `garder` plus récentes ; rend les retirées.
+def archives(dossier: str | os.PathLike, prefixes: tuple[str, ...] = PREFIXES_LUS) -> list[str]:
+    """Les archives de `dossier` portant l'un des `prefixes`, de la plus ancienne à la
+    plus récente — l'ordre que lisent la rotation et le contrôle de santé.
 
-    Le tri alphabétique est le tri chronologique : l'horodatage est dans le nom.
+    🔴 Triées par l'horodatage LU, jamais par le nom (#2653) : avec deux préfixes,
+    l'ordre alphabétique n'est plus l'ordre chronologique — après un retour à l'image
+    d'avant, qui réécrit l'historique, la rotation aurait effacé la plus récente et la
+    santé aurait jugé une ancienne. Un nom illisible va en FIN, comme le rangeait le
+    tri alphabétique : la santé le dit non conforme (INCONNU, jamais OK) au lieu de
+    juger une archive datée qui le précède.
     """
-    archives = sorted(glob.glob(motif))
-    retirees = archives[: max(0, len(archives) - garder)]
+    motifs = [f"{glob.escape(prefixe)}*{_SUFFIXE_ARCHIVE}" for prefixe in prefixes]
+    chemins = [chemin for motif in motifs for chemin in glob.glob(os.path.join(dossier, motif))]
+
+    def cle(chemin: str) -> tuple:
+        quand = horodatage_archive(chemin, prefixes)
+        return (1, datetime.min, os.path.basename(chemin)) if quand is None else (0, quand, "")
+
+    return sorted(chemins, key=cle)
+
+
+def garder_les_dernieres(archives_triees: list[str], garder: int) -> list[str]:
+    """Supprime les archives au-delà des `garder` plus récentes ; rend les retirées.
+
+    `archives_triees` vient d'`archives()` : de la plus ancienne à la plus récente.
+    """
+    retirees = archives_triees[: max(0, len(archives_triees) - garder)]
     for chemin in retirees:
         try:
             os.remove(chemin)
@@ -195,8 +230,7 @@ def _rotate_backups(session: Session):
     """Supprime les sauvegardes au-delà du nombre de versions à conserver."""
     cfg = reglage_de_sauvegarde(session)
     to_delete = garder_les_dernieres(
-        os.path.join(contexte.dossier_des_sauvegardes(), MOTIF_ARCHIVE),
-        cfg.nb_versions_conservees,
+        archives(contexte.dossier_des_sauvegardes()), cfg.nb_versions_conservees
     )
 
     # Marquer comme supprimées dans l'historique
