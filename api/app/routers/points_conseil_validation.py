@@ -40,7 +40,8 @@ from app.utils import points_conseil as regles
 from app.utils import points_conseil_expedition as expedition
 from app.utils import points_conseil_validation as validation
 from app.utils.lecture import lire_objet
-from app.utils.lecture_affaire import CS, lecture_courte
+from app.utils.lecture_pastille.objets import lecture_du_ticket
+from app.utils.lecture_pastille.vocabulaire import CS
 from app.utils.limiter import LIMITE_SESSION, limiter
 from app.utils.points_conseil_ou import ou_du_point
 from app.utils.recuperer import ou_404
@@ -142,7 +143,7 @@ def _lien_read(session: Session, jeton: str) -> LienRead:
                 contenu=c.contenu,
                 conseil_seul=c.conseil_seul,
                 marque=validation.marque_revision(c, revision),
-                lecture=lecture_courte(tickets[a.id]) if a.id in tickets else "",
+                lecture=lecture_du_ticket(tickets[a.id]).court if a.id in tickets else "",
             )
             for a, c in cr.abordees
         ],
@@ -294,7 +295,7 @@ def crs_de_l_affaire(
     user: Utilisateur = Depends(get_current_user),
 ):
     ticket = exiger_objet_autorise(session, Ticket, ticket_id, "Affaire", user, ticket_visible)
-    du_seul_conseil = lecture_courte(ticket) == CS
+    du_seul_conseil = lecture_du_ticket(ticket).cle == CS.cle
     return [
         CrPublieRead(
             point_id=p.id,

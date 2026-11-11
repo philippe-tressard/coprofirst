@@ -57,7 +57,7 @@ from app.utils.batiments import libelle_batiment
 from app.utils.categories_ticket import libelle_categorie
 from app.utils import fusion_en_cours
 from app.utils.affaire_absorbee import pas_absorbee
-from app.utils.lecture_affaire import lecture_courte
+from app.utils.lecture_pastille.objets import lecture_du_ticket
 from app.utils.entretien_periodique import conditions_entretien_en_cours, etat_visite
 from app.utils.perimetres import (
     batiments_cibles,
@@ -122,7 +122,7 @@ class AffaireOuverte:
     a_evolue: bool = False
     motif_evolution: Optional[str] = None
     #: « Qui la lit » (#2089) : ce que la pastille de la page Affaires lit
-    #: (`PastilleLecture`) — et son libellé court, pour le PDF (`lecture_affaire`).
+    #: (`PastilleLecture`) — et son libellé court servi, pour le PDF (`lecture_pastille`, #2669).
     confidentiel: bool = False
     public_cible: list[str] = field(default_factory=list)
     reserve_perimetre: bool = False
@@ -275,7 +275,7 @@ def lire_affaire(
         confidentiel=bool(ticket.confidentiel),
         public_cible=parse_json_perimetres(ticket.public_cible),
         reserve_perimetre=bool(ticket.reserve_perimetre),
-        lecture=lecture_courte(ticket),
+        lecture=lecture_du_ticket(ticket).court,
     )
 
 

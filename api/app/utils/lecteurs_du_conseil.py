@@ -7,7 +7,7 @@ Ceux à qui le fil annonce un compte rendu validé (arbitré le 17/10/2026, #204
 et qui lisent les CR « CS et présents » dans la rubrique d'une affaire.
 
 La vignette Public / Privé qui vivait ici a été retirée le 20/10/2026 (#2089) :
-« qui la lit » se dit par la pastille de la page Affaires (`utils/lecture_affaire`).
+« qui la lit » se dit par la pastille de la page Affaires (`utils/lecture_pastille`).
 """
 
 from __future__ import annotations
