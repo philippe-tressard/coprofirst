@@ -90,6 +90,7 @@ export interface PorteSaisiPourLu {
 //  Les affaires liées et les candidates d'une fusion vivent dans leur module
 //  (#2173) ; ré-exportées ici pour les écrans qui les lisent dans `types`.
 import type { AffaireLiee } from './affaires-liees';
+import type { Lecture } from './lectures';
 export type { AffaireLiee, CandidateFusion } from './affaires-liees';
 
 /**  Un transfert de courriel versé dans une affaire (#1482), tel que le voit qui
@@ -268,6 +269,10 @@ export interface Ticket extends PorteSaisiPourLu {
 	nouveau: boolean;
 	/** 🔹 Le lieu lisible, vide pour le périmètre par défaut. */
 	perimetre_libelle?: string;
+	/** Qui la lit — la pastille servie (`utils/lecture_pastille`, #2633). */
+	lecture?: Lecture | null;
+	/** Ce qu'une Suite présélectionne, selon l'état — `null` pour une actualité. */
+	destinataires_par_etat?: Record<string, string[]> | null;
 	/** Les gestes de CE lecteur (`auth/gestes_affaire`) — fermés par défaut. */
 	peut_archiver?: boolean;
 	peut_changer_etat?: boolean;
@@ -400,6 +405,8 @@ export interface AnnonceHall {
 	assiste_ia?: boolean;
 	apercu: string;
 	perimetre_cible: string[];
+	/** Le badge 🔹, SERVI (`perimetre_libelle`, #2633) — `""` pour le défaut. */
+	perimetre_libelle?: string;
 	perimetre_label: string;
 	format_demande: string;
 	format_effectif: string;

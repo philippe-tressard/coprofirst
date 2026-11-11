@@ -77,7 +77,7 @@
 			<p class="titre">
 				<a href={lienTicket(affaire.id)}>{affaire.numero}{SEPARATEUR.point}{affaire.titre}</a>
 				{#if affaires.has(affaire.id)}<PastilleLecture
-						ticket={affaires.get(affaire.id) ?? null}
+						lecture={affaires.get(affaire.id)?.lecture}
 					/>{/if}
 				{#if cr.brouillon}<Badge teinte="badge-gray" compact>Brouillon</Badge>{/if}
 				{#if cr.conseil_seul}<Badge teinte="badge-purple" compact>{LIBELLE_CS_ET_PRESENTS}</Badge

@@ -29,3 +29,7 @@ export const REFERENTIELS_TEMOINS: ReferentielsAffaires = {
 	colonnes_kanban: [],
 	natures: [],
 };
+
+//  L'aperçu de la pastille de lecture : les réponses du SERVEUR, rangées à part
+//  (`apercus-lecture.ts`, #2633) — réexportées ici, que `simulerApi` lit déjà.
+export { reponseApercu } from './apercus-lecture';

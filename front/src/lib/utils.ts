@@ -178,7 +178,6 @@ export function fmtDuree(ms: number | null | undefined): string {
  * d'import n'est pas la question que ce lot traite.
  */
 export {
-	perimetreLabel,
 	perimetreLabelUn,
 	estPerimetreParDefaut,
 	perimetreParDefaut,

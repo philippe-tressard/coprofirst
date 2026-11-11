@@ -150,7 +150,7 @@
 						<a href={lienTicket(a.id)} class="titre">{a.titre}</a>
 						<span class="vignettes">
 							<BadgeEtatAffaire statut={a.statut} libelle={a.libelle_statut} compact />
-							<PastilleLecture ticket={a} />
+							<PastilleLecture lecture={a.lecture} />
 						</span>
 						{#if a.fusionnees.length}
 							<!--  L'historique de fusion, cité au point (#2083). -->
@@ -165,7 +165,7 @@
 							>
 						{/if}
 						<!--  Le périmètre — tu quand c'est celui par défaut (règle 4). -->
-						<BadgePerimetre perimetre={a.perimetre_cible} />
+						<BadgePerimetre libelle={a.perimetre_libelle} />
 						{#if a.apercu}
 							<p class="descriptif clamp-rapport">
 								{#if a.apercu_ia}<span class="ia-signe" title="Résumé de l’assistant"

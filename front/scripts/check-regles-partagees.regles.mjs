@@ -75,11 +75,8 @@ export const REGLES_PARTAGEES = {
 	perimetreLabel: {
 		quoi: 'le lieu lisible d’un périmètre (🔹, muet pour celui par défaut)',
 		api: 'api/app/utils/perimetres/libelles.py#perimetre_label',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"CR d'AG et carnet le servent depuis #2505, une affaire depuis #2508 (`perimetre_libelle`, `perimetres.perimetre_badge`) ; restent la ligne du fil, qui ne le porte pas encore, et les sélecteurs de périmètre",
-		},
+		//  Servie en `perimetre_libelle` (contenus à badge, ligne du fil), `perimetre_precise_libelle`
+		//  (une Suite), `perimetres_libelle` (un équipement) et par `POST /perimetres/libelle` (#2633).
 	},
 
 	//  ── Communauté, FAQ, Profil, Notifications (#2506) ──────────────────────
@@ -100,11 +97,9 @@ export const REGLES_PARTAGEES = {
 	},
 	lectureDe: {
 		quoi: 'la pastille « qui le lit » d’un contenu',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"tenue contre le serveur par `test_lecture_pastille.py`, sans être servie ; l'aperçu du formulaire d'affaire (`SectionDestinataires`) la calcule sur une saisie non enregistrée : `lecture_libelle` à servir aux listes",
-		},
+		api: 'api/app/utils/lecture_pastille/regle.py#lecture_de',
+		//  Servie en `lecture` (affaire, ligne du fil, Suivi des affaires, annonces,
+		//  idées, sondages) et par `POST /lectures/apercu` pour une saisie (#2633).
 	},
 	peutEditer: {
 		quoi: 'le crayon d’un contenu (auteur, « saisi pour », admin)',

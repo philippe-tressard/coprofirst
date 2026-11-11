@@ -1,4 +1,4 @@
-import { perimetreLabel, perimetreLabelUn } from './libelles';
+import { perimetreLabelUn } from './libelles';
 import { estRegroupement } from './teinte';
 import { contientTousLesMots, slug } from '#lib/texte.ts';
 
@@ -412,12 +412,12 @@ export function perimetreEntree(
 	entrees: { perimetre_cible?: string[] | null }[],
 	choisi: string[],
 	sectionActive: boolean,
+	nommer: (codes: string[]) => string,
 ): { declare: string[] | undefined; libelleActuel: string } {
 	const depart = perimetreHerite(perimetreCourant, entrees);
 	return {
 		declare: sectionActive && choisi.length && !memePerimetre(choisi, depart) ? choisi : undefined,
-		libelleActuel: depart.length
-			? perimetreLabel(depart)
-			: perimetreLabelUn(perimetreParDefaut() ?? ''),
+		//  Le lieu hérité, NOMMÉ par le serveur (`nommer`, #2633) ; sans lieu, la racine.
+		libelleActuel: depart.length ? nommer(depart) : perimetreLabelUn(perimetreParDefaut() ?? ''),
 	};
 }

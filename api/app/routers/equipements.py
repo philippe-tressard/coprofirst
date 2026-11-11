@@ -15,7 +15,7 @@ import re
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 from sqlmodel import Session, select
 
 from app.auth.deps import get_current_user, require_admin
@@ -32,6 +32,7 @@ from app.utils.equipements import (
     usages,
 )
 from app.utils.lecture import lire_objet
+from app.utils.perimetres.servi import libelle_complet
 from app.utils.recuperer import ou_404
 from app.utils.slug import en_slug
 
@@ -56,6 +57,12 @@ class EquipementRead(BaseModel):
     systeme: bool = False
     pour_affaires: bool = True
     perimetres: list[str] = []
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def perimetres_libelle(self) -> str:
+        """Où l'équipement se trouve, nommé — vide sans lieu lié (#2633)."""
+        return libelle_complet(self.perimetres)
 
     class Config:
         from_attributes = True

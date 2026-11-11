@@ -11,9 +11,12 @@
 import { api } from './client';
 import type { CandidateFusion, ChoixConciliation } from './affaires-liees';
 import type { EtatVisite } from './prestataires';
+import type { Lecture } from './lectures';
 
 export interface AffaireOuverte {
 	id: number;
+	/** Qui la lit — la pastille servie (`utils/lecture_pastille`, #2633). */
+	lecture?: Lecture | null;
 	numero: string;
 	titre: string;
 	/** Du TEXTE (le HTML de la description, aplati par le serveur) — jamais `{@html}`. */
@@ -29,6 +32,8 @@ export interface AffaireOuverte {
 	anciennete: 'ancienne' | 'moyenne' | 'recente';
 	/** Les codes du périmètre — `BadgePerimetre` tait celui par défaut. */
 	perimetre_cible: string[];
+	/** Le badge 🔹, SERVI (`perimetre_libelle`, #2633) — `""` pour le défaut. */
+	perimetre_libelle?: string;
 	/** Depuis la dernière avancée — le repère de la relance. */
 	jours_sans_avancee: number;
 	/** Au-delà du délai de relance : cochée d'office. */

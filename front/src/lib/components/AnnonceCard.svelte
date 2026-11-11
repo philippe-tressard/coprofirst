@@ -128,8 +128,8 @@
 			<!--  🔹 puis QUI LA LIT — l'ordre de la carte d'affaire (#1373). La
 			      pastille bleue a remplacé le badge orange des destinataires, arbitré
 			      par l'utilisateur le 27/09/2026 ; elle se tait quand tout le monde lit. -->
-			<BadgePerimetre perimetre={annonce.perimetre_cible} />
-			<PastilleLecture cible={annonce} />
+			<BadgePerimetre libelle={annonce.perimetre_libelle} />
+			<PastilleLecture lecture={annonce.lecture} />
 			{#if annonce.prix !== null && annonce.prix !== undefined}
 				<span class="annonce-prix"
 					>{fmtMontant(annonce.prix)}{#if annonce.negotiable}&nbsp;<span

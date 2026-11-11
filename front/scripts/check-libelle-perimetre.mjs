@@ -27,7 +27,7 @@
  * Le contrôle s'auto-contrôle : source absente, test Python absent, transpilation
  * impossible → il ÉCHOUE, il ne conclut pas au vert (`standards/04` §2, cas zéro).
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { chargerModule } from './lib/charger-module.mjs';
 import { dirname, resolve } from 'node:path';
@@ -39,11 +39,6 @@ const ICI = dirname(fileURLToPath(import.meta.url));
 //  réexporter, et transpiler une réexportation ne donne rien à lire.
 const SOURCE = resolve(ICI, '..', 'src', 'lib', 'perimetres', 'index.ts');
 const TEST_PYTHON = resolve(ICI, '..', '..', 'api', 'tests', 'test_perimetre_label_batiment.py');
-
-/** La chaîne validée par l'utilisateur, au caractère près. Une seule attente. */
-const ATTENDU = "Bât. 4 › Logement · Jardin Bâtiment — AFUL › Voie d'accès";
-/** Un espace de NIVEAU 3 porte tout son chemin (10/11/2026) — même double attente. */
-const ATTENDU_NIVEAU_3 = 'Bât. 4 › Logement › Terrasses Balcons · Bât. 4 › Jardin Bâtiment';
 
 function echouer(message) {
 	console.error(`✗ ${message}`);
@@ -63,10 +58,10 @@ for (const [chemin, quoi] of [
 //  ── Le front, EXÉCUTÉ ───────────────────────────────────────────────────────
 const module = await chargerModule(SOURCE, echouer);
 
-const { definirPerimetres, perimetreLabel, perimetreLabelUn } = module;
-if (typeof definirPerimetres !== 'function' || typeof perimetreLabel !== 'function') {
+const { definirPerimetres, perimetreLabelUn } = module;
+if (typeof definirPerimetres !== 'function' || typeof perimetreLabelUn !== 'function') {
 	echouer(
-		"Cas zéro : lib/perimetres.ts n'exporte plus definirPerimetres/perimetreLabel — " +
+		"Cas zéro : lib/perimetres.ts n'exporte plus definirPerimetres/perimetreLabelUn — " +
 			'le rendu a changé de forme, mettre ce contrôle à jour.',
 	);
 }
@@ -113,34 +108,10 @@ const verifier = (quoi, obtenu, attendu) => {
 verifier("un espace de l'AFUL", perimetreLabelUn('aful/voie'), "AFUL › Voie d'accès");
 //  2. Un regroupement ne se dit pas : la borne de l'élargissement.
 verifier('un bâtiment entier', perimetreLabelUn('bat'), 'Bâtiment 4');
-//  3. Le rendu complet, trié et regroupé.
-verifier('le ticket signalé', perimetreLabel(['bat/logement', 'aful/voie', 'bat/jardin']), ATTENDU);
-//  3 bis. Un espace de niveau 3 se lit avec son bâtiment, pas avec son seul parent.
-verifier(
-	'un espace de niveau 3',
-	perimetreLabel(['bat/jardin', 'bat/logement/terrasses']),
-	ATTENDU_NIVEAU_3,
-);
-//  4. Le FAIT, pas le symptôme : l'ordre des clics ne doit plus rien changer.
-const codes = ['bat/logement', 'aful/voie', 'bat/jardin'];
-const permutations = [
-	[0, 1, 2],
-	[0, 2, 1],
-	[1, 0, 2],
-	[1, 2, 0],
-	[2, 0, 1],
-	[2, 1, 0],
-];
-const rendus = new Set(permutations.map((p) => perimetreLabel(p.map((i) => codes[i]))));
-if (rendus.size !== 1) {
-	echecs.push(`le rendu dépend encore de l'ordre de saisie : ${[...rendus].join(' | ')}`);
-}
-//  5. Un nœud supprimé depuis ne fait pas perdre son badge au contenu.
-verifier(
-	'un code inconnu',
-	perimetreLabel(['aful/voie', 'bat:99']),
-	"AFUL › Voie d'accès · Bât. 99",
-);
+//  3. Le rendu d'une SÉLECTION (tri, regroupement, ordre des clics, code inconnu)
+//  n'est plus calculé par le front depuis #2633 : il est servi
+//  (`perimetre_label`), et `test_perimetre_label_batiment.py` tient ses cas —
+//  le ticket signalé, le niveau 3, les permutations, le code inconnu.
 
 if (echecs.length > 0) {
 	console.error('✗ Le rendu des périmètres côté front ne correspond plus :');
@@ -148,19 +119,6 @@ if (echecs.length > 0) {
 	process.exit(1);
 }
 
-//  ── Et le jumeau Python attend la MÊME chaîne ───────────────────────────────
-//  Sans cela, chacun des deux tests pourrait être « corrigé » vers un rendu
-//  différent, et rester vert : c'est exactement ainsi que les deux
-//  implémentations avaient divergé.
-const testPython = readFileSync(TEST_PYTHON, 'utf8');
-for (const attendu of [ATTENDU, ATTENDU_NIVEAU_3]) {
-	if (!testPython.includes(attendu)) {
-		echouer(
-			`Le test côté API n'attend plus « ${attendu} ». Les deux implémentations ` +
-				'doivent rester tenues par une seule attente, sinon elles divergeront ' +
-				'sans que rien ne le dise.',
-		);
-	}
-}
-
-console.log(`✓ Périmètres : rendu exécuté et identique des deux côtés — « ${ATTENDU} ».`);
+console.log(
+	'✓ Périmètres : le libellé d’un nœud, exécuté — qualifié par son parent, sans regroupement.',
+);

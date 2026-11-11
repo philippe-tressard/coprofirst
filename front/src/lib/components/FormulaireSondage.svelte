@@ -337,7 +337,7 @@
 			bind:destinataires={publicCible}
 			avecDescription={sectionPresente(SONDAGE, etat, 'description')}
 			bind:description
-			assistant={contexteAssistant('sondage', { Périmètre: perimetreContexte(perimetreCible) })}
+			assistant={contexteAssistant('sondage', { Périmètre: $perimetreContexte(perimetreCible) })}
 			bind:titreObjet={question}
 			bind:assisteIA
 			descriptionPlaceholder="Description du sondage…"

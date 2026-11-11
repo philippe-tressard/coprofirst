@@ -41,11 +41,14 @@ from app.utils.suivi_affaires.pdf import generer_pdf
 from app.utils.suivi_affaires.releve import MODE_AFFAIRES, MODE_ENTRETIEN, releve
 from app.utils.points_conseil import point_courant, releve_du_point
 from app.utils.points_conseil_etats import etat_par_defaut
+from app.utils.lecture_pastille.modele import Lecture
+from app.utils.lecture_pastille.objets import lecture_du_ticket
+from app.utils.perimetres.servi import AvecPerimetreLibelle
 
 router = APIRouter(prefix="/suivi-affaires", tags=["suivi-affaires"])
 
 
-class AffaireOuverteRead(BaseModel):
+class AffaireOuverteRead(AvecPerimetreLibelle):
     id: int
     numero: str
     titre: str
@@ -79,6 +82,8 @@ class AffaireOuverteRead(BaseModel):
     confidentiel: bool = False
     public_cible: list[str] = []
     reserve_perimetre: bool = False
+    #: …et ce qu'elle en dit, servi (`utils/lecture_pastille`, #2633).
+    lecture: Optional[Lecture] = None
     #: L'état coché d'office à la saisie de son CR — « À l'AG » reste à l'AG (#2082).
     etat_par_defaut: str = ""
     #: Le groupe des affaires liées rassemblées (#2083) — `None` pour une affaire seule.
@@ -164,7 +169,12 @@ def lire_suivi(
         par_categorie=[BarreRead.model_validate(c) for c in r.par_categorie],
         par_batiment=[BarreRead.model_validate(c) for c in r.par_batiment],
         affaires=[
-            lire_objet(AffaireOuverteRead, a, etat_par_defaut=etat_par_defaut(a.statut))
+            lire_objet(
+                AffaireOuverteRead,
+                a,
+                etat_par_defaut=etat_par_defaut(a.statut),
+                lecture=lecture_du_ticket(a),
+            )
             for a in r.affaires
         ],
         #  Pas de résumé en mode entretien : une visite se dit par son état (#2043).
