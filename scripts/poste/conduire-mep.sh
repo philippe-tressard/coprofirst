@@ -171,7 +171,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" || { jeter; stop "commi
   return 0
 }
 
-dire "═══ Conduite de MEP$([ -n "$A_BLANC" ] && echo ' — À BLANC (rien n'"'"'est écrit)') ═══"
+dire "═══ Conduite de MEP$([ -n "$A_BLANC" ] && echo " — À BLANC (rien n’est écrit)") ═══"
 synchroniser
 PR_MAIN=$(etat_lire pr_main)
 ETAT_MEMO=""; [ -n "$PR_MAIN" ] && ETAT_MEMO=$(etat_pr "$PR_MAIN" | cut -d' ' -f1)
