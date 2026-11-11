@@ -97,3 +97,32 @@ def test_l_autotest_du_script_passe():
     r = subprocess.run([sys.executable, str(SCRIPT), "--selftest"], capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
     assert "ÉCHEC" not in r.stdout, r.stdout
+
+
+def _juge():
+    sys.path.insert(0, str(SCRIPT.parent))
+    try:
+        import arbre_deja_vert
+    finally:
+        sys.path.pop(0)
+    return arbre_deja_vert
+
+
+def test_le_juge_connait_chaque_job_requis_sous_son_nom_reel():
+    """Le juge relit l'exécution par le NOM des jobs : un nom changé dans `ci.yml` sans
+    lui ferait refuser toute preuve (le job jouerait — sûr, mais le raccourci mourrait
+    sans un mot) ; un job requis neuf hors de sa table ne sauterait jamais."""
+    jobs, regles = _jobs(), _juge().JOBS_REQUIS
+    assert sorted(regles) == _guettes(jobs)
+    for cle, regle in regles.items():
+        porteur = jobs[MARQUE_POSEE_PAR.get(cle, cle)]
+        assert porteur["name"] == regle["nom"], f"{cle} : le juge attend « {regle['nom']} »"
+        if "etape" in regle:
+            noms = [e.get("name") for e in jobs[cle]["steps"]]
+            assert regle["etape"] in noms, f"{cle} : étape « {regle['etape']} » absente"
+        if "tranches" in regle:
+            assert jobs[cle]["name"].startswith(regle["tranches"]), f"{cle} : préfixe des tranches"
+
+
+def test_le_juge_ne_lit_que_ci_yml():
+    assert _juge().WORKFLOW == ".github/workflows/ci.yml"
