@@ -24,7 +24,6 @@
 <script lang="ts">
 	import { fmtNombre } from '#lib/utils.ts';
 	import Badge from '#lib/components/Badge.svelte';
-	import { nomAffiche } from '#lib/noms.ts';
 	import {
 		admin as adminApi,
 		type CommandeAccesEnAttente,
@@ -207,7 +206,7 @@
 						{@const u = item.user}
 						<tr>
 							<td class="nom-compte"
-								>{nomAffiche(u)}
+								>{u.nom_affiche}
 								{#if u.statut === 'locataire' && u.nom_proprietaire}
 									<div class="precision">
 										&#x1F464; Prop. : {u.nom_proprietaire}

@@ -23,6 +23,8 @@ export interface PresentPoint {
 	membre_syndic_id: number | null;
 	prenom: string | null;
 	nom: string | null;
+	/** « Prénom NOM » rendu par le serveur — vide pour un invité sans nom (#2633). */
+	nom_affiche: string;
 	entreprise: string | null;
 	fonction: string | null;
 	telephone: string | null;
@@ -178,6 +180,8 @@ export interface MembrePoint {
 	id: number;
 	prenom: string;
 	nom: string;
+	/** « Prénom NOM » rendu par le serveur (#2633). */
+	nom_affiche: string;
 	fonction: string | null;
 }
 

@@ -20,11 +20,16 @@ from app.config import get_settings
 from app.inscription import client, depot
 from app.inscription.depot import Contact
 from app.models.core import Utilisateur
+from app.schemas_nom_servi import NomServi
 from app.registre import conditions
 from app.utils.lecture import lire_objet
 from app.utils.services import SERVICES
 
 router = APIRouter()
+
+
+class ContactLu(Contact, NomServi):
+    """L'administrateur déclaré, LU : son « Prénom NOM » servi (#2633) — jamais rangé."""
 
 
 class VueInscription(BaseModel):
@@ -44,7 +49,7 @@ class VueInscription(BaseModel):
     dernier_renouvellement_le: Optional[str] = None
     dernier_rapport_le: Optional[str] = None
     derniere_erreur: Optional[str] = None
-    contact: Optional[Contact] = None
+    contact: Optional[ContactLu] = None
     conditions_acceptees: Optional[int] = None
     conditions_en_vigueur: int
     #: l'opérateur peut-il (re)déclarer l'installation ? Ni la référence, ni un essai
@@ -85,6 +90,7 @@ def _vue() -> VueInscription:
                 else None
             ),
             "identifiant": verdict.identifiant or etat.identifiant,
+            "contact": etat.contact.model_dump() if etat.contact else None,
             "conditions_en_vigueur": conditions.version_en_vigueur(),
             "peut_s_inscrire": verdict.etat not in ("reference", "essai"),
             "essai_refuse": client.essai_declare() and not client.essai_admis(),

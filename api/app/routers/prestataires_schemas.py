@@ -14,6 +14,7 @@ from typing import Optional
 from pydantic import BaseModel, computed_field, field_validator
 
 from app.models.core import TypePrestataire
+from app.schemas_nom_servi import NomServi
 from app.utils.assiste_ia import AssisteIACorrection, AssisteIAEntree, AssisteIASortie
 from app.utils.equipements import AUTRE
 from app.utils.perimetres.arbre import parse_json_perimetres
@@ -26,6 +27,11 @@ class PrestataireContact(BaseModel):
     nom: Optional[str] = None
     fonction: Optional[str] = None
     email: Optional[str] = None
+
+
+class PrestataireContactLu(PrestataireContact, NomServi):
+    """Un contact LU : son « Prénom NOM » servi (#2633). Jamais en entrée — le
+    contact saisi s'écrit tel quel dans `contacts_json`, sans champ calculé."""
 
 
 class PrestataireCreate(AssisteIAEntree):
@@ -60,7 +66,7 @@ class PrestataireRead(AssisteIASortie):
     type_prestataire: TypePrestataire = TypePrestataire.maintenance_depannage
     telephone: Optional[str] = None
     email: Optional[str] = None
-    contacts: list[PrestataireContact] = []
+    contacts: list[PrestataireContactLu] = []
     adresse: Optional[str] = None
     description: Optional[str] = None
     actif: bool

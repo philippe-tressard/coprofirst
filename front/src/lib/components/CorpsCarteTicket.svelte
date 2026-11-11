@@ -33,7 +33,7 @@
 	import MentionFusion from './MentionFusion.svelte';
 	import MentionConservation from './MentionConservation.svelte';
 	import type { Ticket, TicketEvolution } from '#lib/api/index.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { TICKET } from '#lib/entites/ticket.ts';
 	import {
 		OPTIONS_TICKET,
@@ -91,7 +91,9 @@
 	//  qui quand le conseil l'a saisie (lui seul le lit, comme la mention dépliée).
 	$: resumeDemande = [
 		fmtDate(ticket.cree_le),
-		$isCS && ticket.saisi_pour_affichage ? `saisie pour ${ticket.saisi_pour_affichage}` : '',
+		$estModerateur && ticket.saisi_pour_affichage
+			? `saisie pour ${ticket.saisi_pour_affichage}`
+			: '',
 	]
 		.filter(Boolean)
 		.join(' · ');
@@ -206,7 +208,7 @@
 		      vivait que sur la fiche du lien direct, que la carte remplace
 		      (15/10/2026). -->
 			<svelte:fragment slot="specifiques">
-				{#if ticket.saisi_pour_affichage && $isCS}
+				{#if ticket.saisi_pour_affichage && $estModerateur}
 					<p class="tk-saisi-pour">
 						👤 Saisi par <strong>{ticket.auteur_nom ?? 'inconnu'}</strong> pour
 						<strong>{ticket.saisi_pour_affichage}</strong>

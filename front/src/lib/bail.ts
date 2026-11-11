@@ -24,7 +24,6 @@
  */
 
 import { parAttribut } from '#lib/table-statuts.ts';
-import { nomAffiche } from '#lib/noms.ts';
 
 /** Ce qui identifie et joint un locataire — commun aux deux gestes. */
 export interface ChampsLocataire {
@@ -117,12 +116,7 @@ export function bailEnCours(bail: { statut?: string | null } | null | undefined)
  *  Écrit une fois le 30/09/2026 (#779) : `mon-lot` le portait en fonction
  *  locale, `OngletAcces` en expression recopiée dans son balisage.
  */
-export function nomLocataire(bail: {
-	locataire_prenom?: string | null;
-	locataire_nom?: string | null;
-}): string {
-	if (bail.locataire_prenom || bail.locataire_nom) {
-		return nomAffiche(bail.locataire_prenom, bail.locataire_nom);
-	}
-	return 'Locataire non renseigné';
+export function nomLocataire(bail: { locataire_nom_affiche?: string | null }): string {
+	//  « Prénom NOM » rendu par le serveur (`BailOut.locataire_nom_affiche`, #2633).
+	return bail.locataire_nom_affiche || 'Locataire non renseigné';
 }

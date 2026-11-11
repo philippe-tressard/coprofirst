@@ -42,7 +42,7 @@
 <script lang="ts">
 	import type { Ticket } from '#lib/api/index.ts';
 	import { SUITE } from '#lib/gestes.ts';
-	import { isCS, isAdmin } from '#lib/stores/auth.ts';
+	import { estModerateur, isAdmin } from '#lib/stores/auth.ts';
 	import BoutonOptions from './BoutonOptions.svelte';
 	import IconeAction from './IconeAction.svelte';
 
@@ -73,7 +73,7 @@
 	export let archive = false;
 </script>
 
-{#if !archive && $isCS}
+{#if !archive && $estModerateur}
 	<button
 		class="btn-icon"
 		aria-pressed={commentaireOuvertId === pub.id}

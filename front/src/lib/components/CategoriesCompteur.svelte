@@ -26,7 +26,7 @@
 	} from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { slug } from '#lib/texte.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { SUPPRESSION, confirmerPuis } from '#lib/confirmation.ts';
 	import EtoileRequis from '#lib/components/EtoileRequis.svelte';
@@ -120,7 +120,7 @@
 		/>
 	{/if}
 
-	{#if $isCS}
+	{#if $estModerateur}
 		<!--  Le fournisseur du compteur choisi, et l'ajout d'une catégorie : dans la
 		      colonne des champs, sous la rangée qu'ils complètent. -->
 		<div class="compteur-config-row ligne-config">

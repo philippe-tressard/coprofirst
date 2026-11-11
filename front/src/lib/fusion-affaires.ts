@@ -17,7 +17,7 @@ import {
 } from '#lib/api/index.ts';
 import { messageErreur } from '#lib/erreurs.ts';
 import { modaleImperative } from '#lib/modale-imperative.ts';
-import { isCS } from '#lib/stores/auth.ts';
+import { estModerateur } from '#lib/stores/auth.ts';
 import { estActualite, lienTicket } from '#lib/tickets.ts';
 
 /**
@@ -39,7 +39,7 @@ import { estActualite, lienTicket } from '#lib/tickets.ts';
  *   passer « je n'ai pas pu regarder » pour « il n'y avait rien ».
  *
  * ⚠️ Le CONSEIL seul fusionne (`utils/fusion_affaires`) — la liste des
- * candidates lui est réservée, d'où la garde sur `isCS`.
+ * candidates lui est réservée, d'où la garde sur `estModerateur`.
  */
 export interface DemandeFusion {
 	/** Les affaires à absorber. */
@@ -74,7 +74,7 @@ export async function demanderFusion(
 	ticket: { id: number; numero: string; close: boolean },
 	statut: string | undefined,
 ): Promise<DemandeFusion | null> {
-	if (!get(isCS) || !statut || ticket.close) return SANS_FUSION;
+	if (!get(estModerateur) || !statut || ticket.close) return SANS_FUSION;
 	const etat = await etatQuiClot(statut);
 	if (etat === null) return null;
 	if (!etat) return SANS_FUSION;
@@ -116,8 +116,8 @@ export type AffaireCorrigee = AffaireLiee & {
  * correction ne comptent pas tant qu'ils ne sont pas enregistrés : le serveur ne
  * fusionne que des affaires liées entre elles.
  *
- * ⚠️ Le CONSEIL seul fusionne : la garde `isCS` est chez l'appelant, qui la lit
- * en store (`$isCS`) pour que le bouton suive l'utilisateur chargé.
+ * ⚠️ Le CONSEIL seul fusionne : la garde `estModerateur` est chez l'appelant, qui la lit
+ * en store (`$estModerateur`) pour que le bouton suive l'utilisateur chargé.
  */
 export function fusionPossible(affaire: AffaireCorrigee | null | undefined): boolean {
 	return (
@@ -151,7 +151,7 @@ const parAnciennete = (a: AffaireLiee, b: AffaireLiee) =>
  * aussi).
  */
 export async function fusionnerLiees(affaire: AffaireLiee): Promise<FusionFaite | null> {
-	if (!get(isCS)) return null;
+	if (!get(estModerateur)) return null;
 	let candidates: CandidateFusion[];
 	try {
 		candidates = await ticketsApi.candidatesFusion(affaire.id);

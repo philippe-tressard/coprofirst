@@ -36,7 +36,7 @@
 	import { listeMembre } from '#lib/accordeon.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { tenter } from '#lib/erreurs.ts';
-	import { nomAffiche } from '#lib/noms.ts';
+	import { nomSaisiImmediat } from '#lib/apercu-nom.ts';
 	import {
 		REPLIE,
 		ajouter,
@@ -147,7 +147,7 @@
 	async function enregistrerEnTete(succes: string): Promise<boolean> {
 		const fautif = membres.find((m) => refus(m));
 		if (fautif) {
-			toast('error', `${refus(fautif)} pour ${nomAffiche(fautif) || '…'}`);
+			toast('error', `${refus(fautif)} pour ${(await nomSaisiImmediat(fautif)) || '…'}`);
 			return false;
 		}
 		enregistrement = true;
@@ -163,7 +163,8 @@
 			return;
 		}
 		enregistrementIdx = i;
-		if (await tenter(() => envoyer(membres), `${nomAffiche(membres[i])} enregistré`)) etat = REPLIE;
+		const nom = await nomSaisiImmediat(membres[i]);
+		if (await tenter(() => envoyer(membres), `${nom} enregistré`)) etat = REPLIE;
 		enregistrementIdx = null;
 	}
 </script>

@@ -23,7 +23,7 @@
 		type Notation,
 		type Prestataire,
 	} from '#lib/api/index.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		TYPES_PRESTATAIRE as typesPrestataire,
@@ -168,7 +168,7 @@
       contrats le 10/09/2026 et signalé ici le 11/09 : le crayon est dans la
       carte, la boîte s'ouvrait en tête de liste.
       Aucune `cle` : rien n'a bougé, il n'y a rien à ramener à l'écran. -->
-{#if $isCS && creationOuverte}
+{#if $estModerateur && creationOuverte}
 	<FormulaireCreation titre="Nouveau prestataire">
 		<form on:submit|preventDefault={savePrest}>
 			<ChampsPrestataire bind:prestForm bind:prestContacts {typesPrestataire} etat="creation" />
@@ -202,7 +202,7 @@
 					notations={notations.filter((n) => n.prestataire_id === p.id)}
 					expanded={ouvert === p.id}
 					{compactPrests}
-					peutModifier={$isCS}
+					peutModifier={$estModerateur}
 					{editPrestId}
 					bind:prestForm
 					bind:prestContacts

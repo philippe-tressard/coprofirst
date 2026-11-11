@@ -77,7 +77,7 @@
 	import CarteListe from '#lib/components/CarteListe.svelte';
 	import type { ClasseGouttiere } from '#lib/gouttiere.ts';
 	import { toast } from '#lib/components/Toast.svelte';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import EtatListe from './EtatListe.svelte';
 	import ApercuCarte from './ApercuCarte.svelte';
 	import EnteteCarte from './EnteteCarte.svelte';
@@ -196,7 +196,7 @@
 <section class="section-regles">
 	<div class="section-header">
 		<h2 class="section-title">&#x1F4CB; Règles & Recommandations</h2>
-		{#if $isCS}
+		{#if $estModerateur}
 			<button class="btn btn-sm" on:click={() => openRegleForm()}>+ Ajouter</button>
 		{/if}
 	</div>
@@ -249,7 +249,7 @@
 					on:toggle={() => (deplie = basculer(deplie, regle.id))}
 				>
 					<svelte:fragment slot="actions">
-						{#if $isCS}
+						{#if $estModerateur}
 							<button
 								class="btn-icon-edit"
 								aria-label="Modifier"

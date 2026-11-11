@@ -83,7 +83,7 @@ from app.routers import (
 from app.routers import uploads, faq, signalements, annonces_hall, patrimoine
 from app.routers import patrimoine_branche
 from app.routers import equipements
-from app.routers import lectures, manuel
+from app.routers import lectures, manuel, noms
 from app.registre import routeur as registre  # le registre des installations (§4.11)
 from app.installation_commune import routeur as aiguillage  # l'hôte commun (#1894)
 from app.installation_commune import fichiers as fichiers_commune  # /uploads/* (#2053)
@@ -395,7 +395,7 @@ app.include_router(prestataires_archivage.router)
 #  Les métriques des affaires d'un prestataire (#1646), même préfixe.
 app.include_router(prestataires_metriques.router)
 #  Les routeurs sans particularité de montage : un `include_router` chacun.
-for _routeur in (sondages, idees, avis, annonces, annonces_hall, courriels_affaires, manuel):
+for _routeur in (sondages, idees, avis, annonces, annonces_hall, courriels_affaires, manuel, noms):
     app.include_router(_routeur.router)
 app.include_router(copropriete.router)
 #  Les bâtiments et les lots — extraits le 22/09/2026 (modularité, rang 1). Même

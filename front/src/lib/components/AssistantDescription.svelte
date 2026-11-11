@@ -26,7 +26,7 @@
   - Il SIGNALE ce qui change (« Titre modifié », « Description modifiée ») pour
     que l'auteur pense à relire — c'est le SERVEUR qui l'a calculé, sur du
     texte normalisé ; comparer du HTML ici dirait « modifié » à chaque espace.
-  - Il ne se montre qu'au conseil syndical et à l'administration (`$isCS`), et
+  - Il ne se montre qu'au conseil syndical et à l'administration (`$estModerateur`), et
     seulement si le serveur dit l'usage disponible (`stores/assistant`). Le
     droit, lui, est tenu par la route : l'icône masquée n'est qu'un confort.
   - Le titre et la description sont LIÉS (`bind:`) : la section Description
@@ -36,7 +36,7 @@
     en `assiste_ia`, et ce que la carte rend ensuite par `MarqueIA`.
 -->
 <script lang="ts">
-	import { isCS, quandAuthResolue } from '#lib/stores/auth.ts';
+	import { estModerateur, quandAuthResolue } from '#lib/stores/auth.ts';
 	import { assistantStore, chargerAssistant } from '#lib/stores/assistant.ts';
 	import { assistant as assistantApi, type PropositionDescription } from '#lib/api/index.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
@@ -88,14 +88,14 @@
 
 	//  🔴 Visible pour le CS seulement, et seulement si le serveur dit oui. Le
 	//  store n'est interrogé QUE pour le CS : la route refuse aux autres.
-	$: visible = $isCS && $assistantStore?.description === true;
+	$: visible = $estModerateur && $assistantStore?.description === true;
 	$: solliciteable = peutSolliciter(avecTitre ? titre : '', description) && !enCours;
 	$: rienChange =
 		proposition !== null && !proposition.titre_modifie && !proposition.description_modifiee;
 
 	//  Pas `onMount` : il précède le layout qui charge l'utilisateur (#1486).
 	quandAuthResolue(() => {
-		if ($isCS && $assistantStore === null) void chargerAssistant();
+		if ($estModerateur && $assistantStore === null) void chargerAssistant();
 	});
 
 	async function solliciter() {

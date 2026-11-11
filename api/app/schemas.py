@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, date
 from typing import Optional, List
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, computed_field, field_validator
 
 from app.models.core import StatutTicket, StatutUtilisateur, RoleUtilisateur
 from app.models.tickets import CategorieTicket
@@ -26,6 +26,8 @@ from app.schemas_communs import (  # noqa: F401
 from app.utils.assiste_ia import AssisteIACorrection, AssisteIAEntree, AssisteIASortie
 from app.utils.saisi_pour import SaisiPourEntree, SaisiPourSortie
 from app.schemas_affaire_servie import AffaireServie
+from app.schemas_nom_servi import NomServi
+from app.utils import noms
 
 #  Ne vivent ici que les schémas PARTAGÉS par plusieurs routeurs. Un schéma propre
 #  à un seul routeur est déclaré à côté de lui (`<routeur>_schemas.py`) — #1566.
@@ -39,7 +41,8 @@ class DelegationAidant(BaseModel):
     mandant_nom: str
 
 
-class UserRead(BaseModel):
+class UserRead(NomServi):
+    #  « Prénom NOM » servi (`nom_affiche`, `NomServi`) : le site et l'app le lisent (#2633).
     id: int
     nom: str
     prenom: str
@@ -89,6 +92,10 @@ class UserRead(BaseModel):
     #  #2618). Le motif ci-dessus dit aussi « pas pour votre profil » : ce n'est pas
     #  un bannissement, d'où un champ à part.
     communaute_banni: bool = False
+    #  Modère-t-il — conseil syndical ou administration ? Calculé par LE prédicat
+    #  (`auth/deps.est_moderateur`, #2633) : le site et l'app LISENT ce champ, aucun
+    #  client ne recompose le rôle. Défaut FERMÉ hors de `from_orm_with_roles`.
+    est_moderateur: bool = False
     last_seen_actualites: Optional[datetime] = None
     #  Les délégations ACTIVES où ce compte est l'aidant — c'est ce qui ouvre la page
     #  Délégations à l'aidant (`Nav.svelte`). Typées depuis #2525 : des `dict` au contrat.
@@ -102,6 +109,12 @@ class UserRead(BaseModel):
     class Config:
         from_attributes = True
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def nom_aide_affiche(self) -> str:
+        """La personne aidée déclarée à l'inscription, « Prénom NOM » — `''` sans elle."""
+        return noms.nom_affiche(self.prenom_aide, self.nom_aide)
+
     @classmethod
     def from_orm_with_roles(
         cls,
@@ -109,6 +122,7 @@ class UserRead(BaseModel):
         batiment_nom: Optional[str] = None,
         delegations_aidant: list[DelegationAidant] | None = None,
     ) -> "UserRead":
+        from app.auth.deps import est_moderateur
         from app.auth.operateur import roles_effectifs
         from app.utils.communaute import ban_en_cours, motif_de_refus
         from app.utils.saisie_affaire import mode_effectif
@@ -118,6 +132,7 @@ class UserRead(BaseModel):
         data.roles = roles_effectifs(u)
         data.communaute_motif_refus = motif_de_refus(u)
         data.communaute_banni = ban_en_cours(u) is not None
+        data.est_moderateur = est_moderateur(u)
         data.saisie_affaire_effective = mode_effectif(u)
         if batiment_nom is not None:
             data.batiment_nom = batiment_nom

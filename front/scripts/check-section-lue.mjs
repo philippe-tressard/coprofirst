@@ -6,7 +6,7 @@
  *
  * `FormulaireTicket` écrivait :
  *
- *     avecSaisiPour={$isCS && sectionPresente(TICKET, etat, 'nature')}
+ *     avecSaisiPour={$estModerateur && sectionPresente(TICKET, etat, 'nature')}
  *     avecOptions={sectionPresente(TICKET, etat, 'nature')}
  *
  * — alors que ces deux props activent « Au nom de » (10) et « Mise en avant »
@@ -88,13 +88,13 @@ export function lecturesFautives(source) {
 if (process.argv.includes('--selftest')) {
 	//  🔴 Le cas fautif AVANT tout : un contrôle se prouve sur ce qu'il refuse.
 	const cas = [
-		["avecSaisiPour={$isCS && sectionPresente(TICKET, etat, 'nature')}", 1],
-		["avecSaisiPour={$isCS && sectionPresente(TICKET, etat, 'au_nom_de')}", 0],
+		["avecSaisiPour={$estModerateur && sectionPresente(TICKET, etat, 'nature')}", 1],
+		["avecSaisiPour={$estModerateur && sectionPresente(TICKET, etat, 'au_nom_de')}", 0],
 		["avecOptions={sectionPresente(TICKET, etat, 'nature')}", 1],
 		["avecOptions={sectionPresente(PUBLICATION, etat, 'mise_en_avant')}", 0],
 		//  Une prop qui ne lit aucune section n'est pas jugée : certains écrans
 		//  activent une section par un booléen à eux (`avecSaisiPour` tout court).
-		['avecDiffusion={$isCS}', 0],
+		['avecDiffusion={$estModerateur}', 0],
 		["avecPhotos={sectionPresente(TICKET, etat, 'pieces_jointes')}", 0],
 	];
 	let ko = 0;

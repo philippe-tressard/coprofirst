@@ -1,4 +1,4 @@
-"""« Prénom NOM » — la règle d'affichage d'une personne, et son jumeau front.
+"""« Prénom NOM » — la règle d'affichage d'une personne, servie aux deux clients.
 
 ## Pourquoi ce test (31/08/2026)
 
@@ -6,39 +6,17 @@ Le fil affichait « Jean-Baptiste ForT » : la casse telle qu'elle avait été
 tapée. Arbitré à l'écran — *« l'affichage devrait être Prénom NOM => Nom en
 majuscule »*.
 
-La règle est écrite **deux fois** : `app/utils/noms.py` et
-`front/src/lib/noms.ts`. Ce n'est pas un oubli — les contextes de construction
-Docker sont `./api` et `./front`, rien de la racine n'entre dans les images
-(mémoire `project_partage_front_api_impossible`). Le seul motif viable est
-*copie + concordance exécutée*.
-
-⚠️ **Ce fichier est la moitié Python de l'attente.** L'autre moitié est
-`front/scripts/check-noms.mjs`, qui transpile le TypeScript, l'exécute sur les
-MÊMES cas, et vérifie qu'ils sont écrits ici. Les deux implémentations sont
-alors tenues par une seule attente, et l'une ne peut plus se corriger sans
-l'autre — c'est ce qui a manqué à `perimetreLabel` pendant neuf jours.
-
-Toute modification des cas ci-dessous doit être reportée dans `check-noms.mjs`,
-qui échoue sinon.
+La règle n'est écrite qu'**ici**, côté serveur (`app/utils/noms.py`) : le site et
+l'app iOS LISENT le nom servi (`nom_affiche`, `schemas_nom_servi.NomServi`), et
+une personne en cours de saisie est nommée par `POST /noms/affiche` (#2633). Le
+jumeau du front (`nomAffiche`) et sa concordance exécutée sont retirés avec lui.
 """
 
 from __future__ import annotations
 
 from app.utils.noms import nom_affiche
 
-#  🔒 LES CAS DE CONCORDANCE — lus tels quels par `front/scripts/check-noms.mjs`.
-#  Ne pas en changer la forme sans changer son extracteur : il échoue s'il n'en
-#  lit plus assez, plutôt que de conclure au vert sur zéro cas.
-CAS = [
-    #  (prénom, nom, rendu attendu)
-    ("Jean-Baptiste", "ForT", "Jean-Baptiste FORT"),
-    ("Christine", "Verdière", "Christine VERDIÈRE"),
-    ("Marie", "de La Tour", "Marie DE LA TOUR"),
-    ("  Paul  ", "  Durand  ", "Paul DURAND"),
-    ("Anne", "", "Anne"),
-    ("", "Martin", "MARTIN"),
-    ("", "", ""),
-]
+from tests.aides_noms import CAS
 
 
 def test_le_nom_passe_en_capitales_le_prenom_non():

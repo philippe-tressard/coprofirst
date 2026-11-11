@@ -77,6 +77,7 @@
 					photoUrl={$currentUser?.photo_url}
 					prenom={$currentUser?.prenom}
 					nom={$currentUser?.nom}
+					nomComplet={$currentUser?.nom_affiche}
 				/>
 				{#if !$currentUser?.photo_url}
 					<span class="hero-avatar-badge" aria-hidden="true"><Icon name="pencil" size={9} /></span>

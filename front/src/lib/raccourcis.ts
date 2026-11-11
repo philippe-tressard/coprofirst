@@ -2,7 +2,7 @@
  * La rangée de raccourcis du tableau de bord — **une** table, lue par l'écran.
  *
  * Avant #399, chaque pastille portait sa propre condition de visibilité écrite
- * dans le balisage (`{#if $isCS || $isAdmin}`), et son compteur venait d'une
+ * dans le balisage (`{#if $estModerateur || $isAdmin}`), et son compteur venait d'une
  * source différente des autres. Trois pastilles, trois portées incomparables :
  * Tickets comptait ce que le fil affichait **après filtrage par l'utilisateur**,
  * Sondages et Espace CS comptaient côté serveur. Rien ne se voyait à l'écran :
@@ -134,9 +134,9 @@ export const RACCOURCIS: Raccourci[] = [
 		href: '/espace-cs',
 		icone: 'shield-check',
 		variante: 'cs',
-		//  Même règle que le garde de la page elle-même et que le serveur —
-		//  écrite ici, et à un seul endroit côté front.
-		visible: (u) => aRole(u, 'conseil_syndical', 'admin'),
+		//  Le modérateur que le SERVEUR désigne (`est_moderateur`, #2633) — la même
+		//  réponse que le garde de la page et que l'app iOS.
+		visible: (u) => u?.est_moderateur ?? false,
 		compteurs: (s) => [
 			{ valeur: s.validations_cs, ton: 'urgent' },
 			{

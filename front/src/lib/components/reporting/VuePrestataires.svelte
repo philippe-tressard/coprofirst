@@ -9,7 +9,6 @@
 <script lang="ts">
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { fmtNombre } from '#lib/utils.ts';
-	import { nomAffiche } from '#lib/noms.ts';
 	//  ⚠️ Cet écran affichait la valeur BRUTE — `chauffage_collectif` — parce que
 	//  la table des libellés vivait dans `prestataires/+page.svelte` et qu'il n'y
 	//  avait pas accès. Une table qui vit dans UN écran, les autres s'en passent.
@@ -97,9 +96,8 @@
 					<p><strong>Contacts :</strong></p>
 					{#each reportPrestSynth.contacts as c (c)}
 						<p class="retrait">
-							📞 {c.telephone ?? '—'}{#if c.prenom || c.nom}{SEPARATEUR.tiret}{nomAffiche(
-									c,
-								)}{/if}{#if c.fonction}&nbsp;({c.fonction}){/if}{#if c.email}{SEPARATEUR.point}{c.email}{/if}
+							📞 {c.telephone ??
+								'—'}{#if c.nom_affiche}{SEPARATEUR.tiret}{c.nom_affiche}{/if}{#if c.fonction}&nbsp;({c.fonction}){/if}{#if c.email}{SEPARATEUR.point}{c.email}{/if}
 						</p>
 					{/each}
 				{/if}

@@ -13,6 +13,7 @@
 -->
 <script lang="ts">
 	import { annuaireAdmin, type MembreSyndicAdmin } from '#lib/api/index.ts';
+	import { nomsConnus } from '#lib/apercu-nom.ts';
 	import { rapprochementParNom } from '#lib/annuaire-rapprochement.ts';
 	import EnteteSyndic from '#lib/components/EnteteSyndic.svelte';
 	import { type Geste } from '#lib/components/ActionsMembre.svelte';
@@ -40,6 +41,8 @@
 
 	async function charger(): Promise<MembreSyndicForm[]> {
 		const donnees = await annuaireAdmin.getSyndic();
+		//  Les noms servis (`nom_affiche`) : les cartes s'ouvrent nommées, sans attendre (#2633).
+		nomsConnus(donnees.membres ?? []);
 		nomSyndic = donnees.nom_syndic ?? '';
 		nomSyndicSource = donnees.nom_syndic_source ?? 'aucune';
 		adresseSyndic = donnees.adresse ?? '';

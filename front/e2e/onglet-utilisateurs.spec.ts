@@ -10,6 +10,7 @@
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, MEMBRE_CS, simulerApi, test } from './aides';
 import { attendreLisible, forcerTheme } from './contraste-ecran';
+import { nomServi } from './noms-servis';
 
 const ADMIN = { ...MEMBRE_CS, role: 'admin', roles: ['admin'] };
 
@@ -18,6 +19,7 @@ const COMPTES = [
 		id: 21,
 		prenom: 'Jeanne',
 		nom: 'Martin',
+		nom_affiche: nomServi({ prenom: 'Jeanne', nom: 'Martin' }),
 		email: 'jeanne@exemple.test',
 		statut: 'copropriétaire_résident',
 		role: 'résident',
@@ -29,6 +31,7 @@ const COMPTES = [
 		id: 22,
 		prenom: 'Paul',
 		nom: 'Durand',
+		nom_affiche: nomServi({ prenom: 'Paul', nom: 'Durand' }),
 		email: 'paul@exemple.test',
 		statut: 'locataire',
 		role: 'résident',

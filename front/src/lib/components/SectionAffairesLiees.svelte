@@ -53,7 +53,7 @@
 		fusionnerLiees,
 		type AffaireCorrigee,
 	} from '#lib/fusion-affaires.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 
 	/** Les affaires retenues — lié : l'appelant en envoie les `id`. */
 	export let liees: AffaireLiee[] = [];
@@ -86,7 +86,7 @@
 
 	$: resume = liees.length === 0 ? 'aucune' : liees.map((l) => l.numero).join(', ');
 
-	$: fusionOfferte = $isCS && fusionPossible(affaire);
+	$: fusionOfferte = $estModerateur && fusionPossible(affaire);
 	let fusionEnCours = false;
 
 	async function fusionner() {

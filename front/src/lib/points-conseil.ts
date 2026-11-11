@@ -4,7 +4,6 @@
 //  ⚠️ Aucune fonction d'ici ne touche au réseau ni au DOM : les règles (un point
 //  par mode, reprise, non traitées) vivent au serveur, `utils/points_conseil`.
 
-import { nomAffiche } from '#lib/noms.ts';
 import type {
 	CrAffaire,
 	EtatPoint,
@@ -27,18 +26,15 @@ export const GROUPES_PRESENTS: readonly { nature: NaturePresent; libelle: string
 	{ nature: 'invite', libelle: 'Invités' },
 ];
 
-/** Le nom d'un présent : « Prénom NOM » (`nomAffiche`), sinon l'entreprise, sinon « Invité ». */
-export function nomPresent(p: {
-	prenom?: string | null;
-	nom?: string | null;
-	entreprise?: string | null;
-}): string {
-	return nomAffiche(p) || p.entreprise || 'Invité';
+/** Le nom d'un présent : « Prénom NOM » rendu par le serveur (`nom_affiche`, #2633),
+ *  sinon l'entreprise, sinon « Invité » — la règle de `utils/points_conseil.nom_present`. */
+export function nomPresent(p: { nom_affiche?: string | null; entreprise?: string | null }): string {
+	return p.nom_affiche || p.entreprise || 'Invité';
 }
 
 /** Ce qui suit le nom : fonction et entreprise d'un invité ou d'un membre du syndic. */
 export function precisionPresent(p: PresentPoint): string {
-	return [p.fonction, nomAffiche(p) ? p.entreprise : null].filter(Boolean).join(', ');
+	return [p.fonction, p.nom_affiche ? p.entreprise : null].filter(Boolean).join(', ');
 }
 
 /**  Le moyen d'un point à reproposer — un point saisi avant le moyen se lit

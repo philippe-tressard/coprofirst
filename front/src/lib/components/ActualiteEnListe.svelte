@@ -35,7 +35,7 @@
 	} from '#lib/api/index.ts';
 	import { supprimerDocument } from '#lib/gestes-document.ts';
 	import { promouvoirActualite } from '#lib/gestes-actualite.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { OPTIONS_TICKET, type GestesTicket } from '#lib/tickets.ts';
 	import ActionsActualite from './ActionsActualite.svelte';
 	import CarteActualite from './CarteActualite.svelte';
@@ -107,7 +107,7 @@
 	{expanded}
 	variante={archive ? 'historique' : 'fil'}
 	{documents}
-	onRetirerDocument={$isCS && !archive ? retirerDocument : null}
+	onRetirerDocument={$estModerateur && !archive ? retirerDocument : null}
 	formulaireOuvert={mode === 'evolution' || mode === 'options' || mode === 'edition'}
 	{correspondance}
 	onApprocher={chargerFil}

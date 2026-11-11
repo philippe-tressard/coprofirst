@@ -109,8 +109,8 @@ def test_chaque_exception_sert_encore():
 #: afficher — avec leur raison.
 EXCEPTIONS_LECTURE = {
     "routers/bailleur/baux.py": "rapprochement, pas affichage (voir ci-dessus)",
-    "routers/acces/commun.py": "rend le prénom et le nom SÉPARÉMENT au client, qui compose lui-même — "
-    "le front a sa propre `nomAffiche`, éprouvée identique par `lint:noms`.",
+    "routers/acces/commun.py": "rend le prénom et le nom SÉPARÉMENT (le rattachement d'un import) ; "
+    "aucun écran ne les affiche — ce qui s'affiche est servi en `nom_affiche` (#2633).",
 }
 
 

@@ -27,7 +27,7 @@
 		type Notation,
 		type Prestataire,
 	} from '#lib/api/index.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import { contratDepuis, contratVierge } from '#lib/prestataires.ts';
 	import { groupesParEquipement } from '#lib/equipements.ts';
@@ -353,7 +353,7 @@
 					expanded={ouvert === c.id}
 					enRetard={!c.archivee && c.en_retard}
 					documents={contratDocsMap[contrat.id] ?? []}
-					peutModifier={$isCS}
+					peutModifier={$estModerateur}
 					{editContratId}
 					bind:contratForm
 					{prestataires}

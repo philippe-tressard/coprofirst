@@ -11,8 +11,9 @@ du module central).
 from datetime import date, datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
+from app.utils import noms
 from app.models.core import (
     StatutBail,
     StatutObjet,
@@ -69,6 +70,12 @@ class BailOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def locataire_nom_affiche(self) -> str:
+        """« Prénom NOM » du locataire saisi au bail (`utils/noms`) — `''` s'il manque (#2633)."""
+        return noms.nom_affiche(self.locataire_prenom, self.locataire_nom)
 
 
 #  🔴 `BailCreate` A ÉTÉ RETIRÉ le 12/09/2026 (#932), avec l'endpoint qu'il

@@ -81,7 +81,7 @@
 	import SectionDestinataires from './SectionDestinataires.svelte';
 	import ChampSaisiPour from '#lib/components/ChampSaisiPour.svelte';
 	import { nomCopie, saisieDepuis } from '#lib/saisi-pour.ts';
-	import type { SaisieSaisiPour } from '#lib/saisi-pour.ts';
+	import type { ResidentProposable, SaisieSaisiPour } from '#lib/saisi-pour.ts';
 	import type { CleOptionPublication } from '#lib/options-publication.ts';
 	import type { ContexteAssistant } from '#lib/assistant.ts';
 	import type { NatureLue } from '#lib/lecture-ticket.ts';
@@ -148,12 +148,7 @@
 	//  `lint:ordre-sections` vérifie que la rangée reste juste.
 	export let avecSaisiPour = false;
 	/** Les résidents proposables — chargés par l'appelant, qui connaît ses droits. */
-	export let residentsSaisiPour: {
-		id: number;
-		prenom: string;
-		nom: string;
-		email: string;
-	}[] = [];
+	export let residentsSaisiPour: ResidentProposable[] = [];
 	export let erreurResidents = '';
 	export let saisiPour: SaisieSaisiPour = saisieDepuis(null);
 

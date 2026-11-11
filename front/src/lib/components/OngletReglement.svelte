@@ -39,7 +39,7 @@
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { categorieSaisie, saisieFaqVide, type SaisieFaq } from '#lib/faq.ts';
 	import { richEmpty } from '#lib/publications.ts';
-	import { isAdmin, isCS } from '#lib/stores/auth.ts';
+	import { isAdmin, estModerateur } from '#lib/stores/auth.ts';
 	import { SEPARATEUR } from '#lib/separateurs.ts';
 
 	let etat: EtatReglement | null = null;
@@ -160,7 +160,7 @@
 <!--  Deux lecteurs, deux phrases. Celle du copropriétaire est arbitrée mot pour mot
       le 11/10/2026 : le conseil ne répond pas à sa place, un juriste ou le syndic si. -->
 <EncartAvertissement>
-	{#if $isCS}
+	{#if $estModerateur}
 		Les réponses sont un <strong>avis indicatif</strong>, rédigé par l'assistant d'après le texte de
 		travail joint ici : il ne se substitue pas aux actes authentiques, qui seuls font foi.
 		Relisez-le{SEPARATEUR.tiret}et vérifiez les extraits signalés ⚠️{SEPARATEUR.tiret}avant de le
@@ -191,7 +191,7 @@
 				>
 				{#if !etat.disponible}
 					<EncartAvertissement compact>
-						{#if $isCS}
+						{#if $estModerateur}
 							L'assistant n'est pas activé pour cet usage : Admin › Assistant IA › « Question au
 							règlement de copropriété ».
 						{:else}
@@ -226,11 +226,11 @@
 		</section>
 	{/if}
 
-	<h3 class="titre-historique">{$isCS ? 'Questions posées' : 'Vos questions'}</h3>
+	<h3 class="titre-historique">{$estModerateur ? 'Questions posées' : 'Vos questions'}</h3>
 	<EtatListe
 		vide={questions.length === 0}
 		titreVide="Aucune question posée"
-		messageVide={$isCS
+		messageVide={$estModerateur
 			? "Les réponses de l'assistant s'afficheront ici."
 			: "Les réponses de l'assistant s'afficheront ici. Vous seul et le conseil syndical les lisez."}
 	>

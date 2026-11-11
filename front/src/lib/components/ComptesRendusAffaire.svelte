@@ -29,7 +29,7 @@
 	import { fmtDate, fmtDatetime } from '#lib/date.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
-	import { isCS } from '#lib/stores/auth.ts';
+	import { estModerateur } from '#lib/stores/auth.ts';
 	import { enregistrerFichier } from '#lib/fichiers.ts';
 	import { jourIso } from '#lib/date.ts';
 	import { LIBELLE_CS_ET_PRESENTS } from '#lib/points-conseil.ts';
@@ -103,7 +103,7 @@
 								><IconeAction icone="file-text" /> Compte rendu du point (PDF)</button
 							>
 						{/if}
-						{#if $isCS}
+						{#if $estModerateur}
 							<button
 								type="button"
 								class="btn-icon"

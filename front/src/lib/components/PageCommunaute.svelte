@@ -31,7 +31,8 @@
 		type Sondage,
 		type SondageDetail,
 	} from '#lib/api/index.ts';
-	import { currentUser, isCS, isGestionnaire, quandAuthResolue } from '#lib/stores/auth.ts';
+	import { currentUser, estModerateur, isGestionnaire } from '#lib/stores/auth.ts';
+	import { quandAuthResolue } from '#lib/stores/auth.ts';
 	import { toast } from '#lib/components/Toast.svelte';
 	import {
 		getPageConfig,
@@ -225,11 +226,11 @@
 	//  est vide (#1459).
 	let erreurSignalements = '';
 	//  🔴 Pas depuis `onMount` : il précède celui du layout, qui charge
-	//  l'utilisateur. Sur un chargement direct, `$isCS` y était encore faux, et la
+	//  l'utilisateur. Sur un chargement direct, `$estModerateur` y était encore faux, et la
 	//  file n'était JAMAIS demandée — le CS ne la voyait qu'après une navigation.
 	quandAuthResolue(chargerSignalements);
 	async function chargerSignalements() {
-		if (!$isCS) return;
+		if (!$estModerateur) return;
 		[signalements, erreurSignalements] = await essayer(signalementsApi.liste('en_attente'), []);
 	}
 
@@ -238,7 +239,7 @@
 	//  cet écran — recharger la liste de modération quand on est au CS.
 	const signaler = (cibleType: string, cibleId: number) =>
 		signalerContenu(cibleType, cibleId, () => {
-			if ($isCS) chargerSignalements();
+			if ($estModerateur) chargerSignalements();
 		});
 
 	async function resoudreSignalement(id: number, statut: 'traite' | 'rejete') {
@@ -363,9 +364,9 @@
 {:else}
 	<BarreOnglets pageId="communaute" actif={onglet} />
 
-	{#if $isCS && erreurSignalements}
+	{#if $estModerateur && erreurSignalements}
 		<EtatListe compact erreur={erreurSignalements} />
-	{:else if $isCS && signalements.length > 0}
+	{:else if $estModerateur && signalements.length > 0}
 		<PanneauModeration
 			{signalements}
 			on:resoudre={(e) => resoudreSignalement(e.detail.id, e.detail.decision)}
@@ -453,7 +454,7 @@
 			bind:filtreStatut
 			showForm={showFormIdee}
 			currentUserId={$currentUser?.id}
-			estCS={$isCS}
+			estCS={$estModerateur}
 			{statutClass}
 			onVoter={voter}
 			onChangerStatut={changeStatut}

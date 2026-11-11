@@ -30,7 +30,7 @@ from app.utils.comptes import condition_hors_comptes_techniques, est_compte_tech
 from app.utils.lecture import lire_objet
 from app.utils.limiter import LIMITE_RECHERCHE_DE_PERSONNES, limiter
 from app.utils.recuperer import ou_404
-from pydantic import BaseModel
+from app.schemas_nom_servi import NomServi
 
 from .commun import BailCreateMulti, BailOut, BailTerminer, BailUpdate
 from app.utils.acces_bail import adopter_declares, rendre_au_bailleur
@@ -210,7 +210,7 @@ def terminer_bail(
 # ── Recherche locataire inscrit ────────────────────────────────────────────────
 
 
-class LocataireInfo(BaseModel):
+class LocataireInfo(NomServi):
     """Un compte locataire proposé au bailleur — son adresse MASQUÉE (#2153).
 
     L'adresse entière servait d'annuaire : tout copropriétaire balayait `q=aa`,
