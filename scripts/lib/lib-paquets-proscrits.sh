@@ -41,11 +41,16 @@
 #: Règle d'ajout : au moindre doute, le composant est CONSERVÉ. Ni les noyaux, ni
 #: plymouth/initramfs (le démarrage reste inchangé), ni nodejs, build-essential,
 #: mkvtoolnix, bluez : installés à la main ou sans effet nuisible.
+#: La pile CAMÉRA aussi (#2692, 11/11/2026) : venue de l'image, sans caméra ni
+#: dépendant hors d'elle-même, et retenue (kept back) à chaque version de libcamera
+#: — le paquet de la bibliothèque change de nom, et ni `apt upgrade` ni
+#: `noyau-standby.sh` ne posent une mise à jour qui en retire un.
 PAQUETS_PROSCRITS="${PAQUETS_PROSCRITS:-chromium* firefox* vlc* libvlc* realvnc* wayvnc rpi-connect* rpi-imager rpi-userguide
 pocketsphinx* labwc thonny mypy python3-mypy cups* hplip printer-driver-* nfs-common rpcbind
 rpd-* lightdm* pi-greeter lxpanel* wf-panel-pi pcmanfm* libreoffice* geany* claws-mail*
 sense-hat* python3-sense-hat scratch* wolfram* minecraft* sonic-pi* squeekboard* gvfs*
-udisks2 accounts-daemon xserver-xorg* xwayland ffmpeg}"
+udisks2 accounts-daemon xserver-xorg* xwayland ffmpeg
+rpicam-apps* librpicam-app* libcamera* libpisp* libtensorflow-lite*}"
 #: Ce qui est gardé coûte que coûte, même si un motif ci-dessus le désigne : le
 #: démarrage (plymouth). Hors du constat comme hors de l'allègement.
 PAQUETS_GARDES="${PAQUETS_GARDES:-plymouth plymouth-themes rpd-plym-splash}"
