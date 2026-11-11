@@ -2,6 +2,7 @@
 
 import glob
 import os
+import re
 import tarfile
 import tempfile
 from datetime import datetime
@@ -46,16 +47,44 @@ _SUFFIXE_ARCHIVE = ".tar.gz"
 #  secondes : le tri alphabétique reste le tri chronologique (rotation, export), et les
 #  lecteurs par JOUR (`jours_manquants`) lisent la date de Paris, celle du résident.
 SUFFIXE_FUSEAU = "_paris"
+#  🔴 Le nom dit À QUI est l'archive (#2667) : une archive sortie de son dossier
+#  (téléchargée, copiée hors site) ne disait plus de quelle copropriété elle venait.
+#  Entre le préfixe et l'horodatage : `<qui>_`, en `[a-z0-9-]` — jamais `_`, ce qui
+#  laisse au parseur une coupure sans ambiguïté. Il n'est pas un critère de tri ni de
+#  rotation : seuls le dossier et l'horodatage le sont, et une résidence renommée voit
+#  ses anciennes archives tourner sous leur ancien nom.
+_QUI = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")
+LONGUEUR_QUI = 40
 
 
-def nom_archive(instant: datetime, prefixe: str = PREFIXE_ARCHIVE) -> str:
+def qui_nomme_l_archive(session: Session) -> str:
+    """Le nom de la résidence servie, réduit (`site_nom`, Copropriété › Identité) —
+    sinon l'identifiant de sa copropriété (`principale` sur une installation propre).
+
+    Lu en base et dans le contexte, jamais écrit en dur : la garde de #2653 (aucun
+    nom de résidence dans le code) reste vraie.
+    """
+    from app.utils.config_site import config_site
+    from app.utils.slug import en_slug
+
+    #  Pas de repli de NOM ici (`nom_site` le porte) : absent, il n'y a rien à réduire.
+    saisi = config_site(session).get("site_nom")
+    nom = en_slug(saisi)[:LONGUEUR_QUI].strip("-") if saisi else ""
+    return nom if _QUI.fullmatch(nom) else contexte.courante().identifiant
+
+
+def nom_archive(instant: datetime, prefixe: str = PREFIXE_ARCHIVE, qui: str = "") -> str:
     """Le nom d'une archive prise à `instant` (UTC naïf) — à l'heure de Paris.
 
     `prefixe` : celui de la base `plateforme` (`registre/sauvegarde`, #1892) a
-    son propre nom, la convention d'horodatage reste celle-ci.
+    son propre nom, la convention d'horodatage reste celle-ci. `qui` : la résidence
+    (`qui_nomme_l_archive`) ; le registre n'en porte pas.
     """
+    if qui and not _QUI.fullmatch(qui):
+        raise ValueError(f"nom d'archive : {qui!r} n'est pas en [a-z0-9-]")
     heure = horloge.a_paris(instant).strftime(_FORMAT_HORODATAGE)
-    return f"{prefixe}{heure}{SUFFIXE_FUSEAU}{_SUFFIXE_ARCHIVE}"
+    milieu = f"{qui}_" if qui else ""
+    return f"{prefixe}{milieu}{heure}{SUFFIXE_FUSEAU}{_SUFFIXE_ARCHIVE}"
 
 
 def horodatage_archive(
@@ -67,6 +96,8 @@ def horodatage_archive(
     Paris, converti ici) et `…_HHMMSS` (l'ancien, déjà en UTC). Un suffixe de fuseau
     inconnu est refusé : lire autre chose en UTC serait deviner. `prefixe` : un seul,
     ou plusieurs — par défaut ceux de la résidence, l'écrit et l'historique (#2653).
+    Le nom de la résidence (`<qui>_`, #2667) est facultatif : lu s'il est conforme,
+    ignoré pour la date.
 
     Rend None plutôt que de lever : un nom non conforme (fichier déposé à la
     main, archive renommée) ne doit pas faire échouer un contrôle de santé —
@@ -84,6 +115,11 @@ def horodatage_archive(
     paris = brut.endswith(SUFFIXE_FUSEAU)
     if paris:
         brut = brut[: -len(SUFFIXE_FUSEAU)]
+    qui, _, reste = brut.partition("_")
+    if reste.count("_") == 1:  # `<qui>_AAAAMMJJ_HHMMSS` : le qui se lit, puis s'écarte
+        if not _QUI.fullmatch(qui):
+            return None
+        brut = reste
     try:
         lu = datetime.strptime(brut, _FORMAT_HORODATAGE)
     except ValueError:
@@ -165,7 +201,7 @@ def run_backup(history_id: int | None = None):
         try:
             dossier_archives = contexte.dossier_des_sauvegardes()
             os.makedirs(dossier_archives, exist_ok=True)
-            filename = nom_archive(horloge.maintenant())
+            filename = nom_archive(horloge.maintenant(), qui=qui_nomme_l_archive(session))
             dest = os.path.join(dossier_archives, filename)
 
             verdict = _integrite()
