@@ -416,7 +416,7 @@ def _selftest() -> int:
                 mesure_retenue("ci.yml", "e2e-verdict", ""), False))
     cas.append(("sans rupture : tout compte", mesure_retenue("ci.yml", "lint-backend", ""), True))
     cas.append(("chaque rupture nomme un job qui existe",
-                sorted(set(RUPTURES) - {(j["fichier"], j["cle"]) for j in reels}), []))
+                sorted(set(RUPTURES.keys()) - {(j["fichier"], j["cle"]) for j in reels}), []))
     cas.append(("chaque job du dépôt porte un plafond",
                 [f"{j['fichier']}:{j['cle']}" for j in reels if j["plafond"] is None], []))
     echecs = 0
