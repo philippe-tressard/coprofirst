@@ -84,7 +84,7 @@
 	import { pliageDe } from '#lib/pliage.ts';
 	import { SUITE } from '#lib/gestes.ts';
 	import type { AffaireLiee, ApercuDiffusion } from '#lib/api/index.ts';
-	import { perimetreEntree } from '#lib/perimetres/index.ts';
+	import { entreeNommee } from '#lib/apercu-perimetre.ts';
 	import PiedFormulaire from '#lib/components/PiedFormulaire.svelte';
 	import { avecNouvelEtat, type ContexteAssistant } from '#lib/assistant.ts';
 
@@ -279,7 +279,7 @@
 	//  ⚠️ Des affectations plutôt qu'une déstructuration réactive : ESLint 10
 	//  plante sur `$: ({a, b} = f())` (@typescript-eslint/no-unused-vars). Le
 	//  contournement est ici, pas dans une règle désactivée.
-	$: entreePerimetre = perimetreEntree(perimetreCourant, entrees, perimetre, sections.perimetre);
+	$: entreePerimetre = $entreeNommee(perimetreCourant, entrees, perimetre, sections.perimetre);
 	$: perimetreDeclare = entreePerimetre.declare;
 	$: libellePerimetreActuel = entreePerimetre.libelleActuel;
 

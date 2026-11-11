@@ -12,11 +12,14 @@
  */
 import type { Page } from '@playwright/test';
 import { expect, simulerApi, test } from './aides';
+import { lectureServie } from './apercus-lecture';
 
 const LIGNE = {
 	numero: 'TK-109008',
 	categorie: 'panne',
 	statut: 'en_cours',
+	//  L'état en clair est SERVI avec la ligne (`statut_libelle`, #2633).
+	statut_libelle: 'Chez le syndic',
 	priorite: 'haute',
 	//  ⚡ servie par l'API avec la ligne (`urgente`, #2508) : l'écran ne la recalcule pas.
 	urgente: true,
@@ -119,7 +122,19 @@ test('l’auteur se lit en entier sur la dernière ligne', async ({ page }) => {
  *  leur auteur. Les valeurs sont celles que l'API rend (`_enrich` des annonces,
  *  listes de codes) — pas des formes inventées pour le test.
  */
-const CIBLAGE = { perimetre_cible: [], public_cible: ['locataires'], assiste_ia: true };
+const CIBLAGE = {
+	perimetre_cible: [],
+	public_cible: ['locataires'],
+	assiste_ia: true,
+	//  Qui la lit, SERVI avec l'objet (#2633) : un objet ciblé se lit comme une
+	//  actualité réservée à son périmètre (`lecture_pastille.regle.lecture_ciblee`).
+	lecture: lectureServie({
+		categorie: 'actualite',
+		public_cible: ['locataires'],
+		perimetre_cible: [],
+		reserve_perimetre: true,
+	}),
+};
 const COMMUNAUTE: Record<string, unknown> = {
 	'/api/annonces': [
 		{

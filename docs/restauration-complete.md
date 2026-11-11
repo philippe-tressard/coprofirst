@@ -323,7 +323,7 @@ La vraie preuve est la **première bascule** : jusqu'à elle, ce nœud n'a rien 
 
 Sans pair en service, il n'y a ni primaire à copier ni `.env` à recopier : la
 résidence renaît de la **copie hors site** du poste (`scripts/poste/export-hors-site.sh`,
-destination `C:\Backup` par défaut sous Windows, `/Volumes/Data/Backup` sur le Mac). Son archive `sauvegarde_copropriete_*_paris.tar.gz` (`hostachy_backup_*` avant #2653) porte
+destination `C:\Backup` par défaut sous Windows, `/Volumes/Data/Backup` sur le Mac). Son archive `sauvegarde_copropriete_<résidence>_*_paris.tar.gz` (sans `<résidence>_` avant #2667, `hostachy_backup_*` avant #2653) porte
 l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** téléversés
 (`uploads/`). Les gestes vivent dans **un** script,
 `scripts/exploitation/restaurer-copie-hors-site.sh` (#1921) — le premier nœud renaît
@@ -346,7 +346,7 @@ l'**export vérifié** de la base (`base-export.tar.gz`) et les **fichiers** té
    chez la **référence**, celle du registre aussi (`C:\Backup\plateforme\`) ; depuis le Mac,
    `C:/Backup` se lit `/Volumes/Data/Backup` :
    ```bash
-   scp C:/Backup/sauvegarde_copropriete_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/
+   scp C:/Backup/sauvegarde_copropriete_<résidence>_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/
    scp C:/Backup/plateforme/plateforme_backup_<AAAAMMJJ_HHMMSS>_paris.tar.gz ptressard@<IP>:/tmp/
    ```
 5. **Restaurer**, **avant** de poser les crons (sinon `auto-deploy` démarrerait

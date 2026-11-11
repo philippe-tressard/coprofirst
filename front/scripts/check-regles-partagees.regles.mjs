@@ -64,11 +64,8 @@ export const REGLES_PARTAGEES = {
 	etageLabel: {
 		quoi: "l'étage en clair (« RDC », « 2ème étage »)",
 		api: 'api/app/utils/etages.py#etage_label',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"l'annuaire la sert depuis #2505 (`etage_libelle`, avec `suffixe`) ; restent les lots, le profil et l'import (`etage_libelle` dans `LotRead`)",
-		},
+		//  Servie par l'annuaire (#2505), `LotRead` (`etage_libelle`, `etage_libelle_complet`),
+		//  le bail du locataire et le rapprochement d'un nom (#2633).
 	},
 	telephonesDe: {
 		quoi: 'les numéros d’un champ téléphone découpés sur les virgules',
@@ -78,11 +75,8 @@ export const REGLES_PARTAGEES = {
 	perimetreLabel: {
 		quoi: 'le lieu lisible d’un périmètre (🔹, muet pour celui par défaut)',
 		api: 'api/app/utils/perimetres/libelles.py#perimetre_label',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"CR d'AG et carnet le servent depuis #2505, une affaire depuis #2508 (`perimetre_libelle`, `perimetres.perimetre_badge`) ; restent la ligne du fil, qui ne le porte pas encore, et les sélecteurs de périmètre",
-		},
+		//  Servie en `perimetre_libelle` (contenus à badge, ligne du fil), `perimetre_precise_libelle`
+		//  (une Suite), `perimetres_libelle` (un équipement) et par `POST /perimetres/libelle` (#2633).
 	},
 
 	//  ── Communauté, FAQ, Profil, Notifications (#2506) ──────────────────────
@@ -103,20 +97,15 @@ export const REGLES_PARTAGEES = {
 	},
 	lectureDe: {
 		quoi: 'la pastille « qui le lit » d’un contenu',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"tenue contre le serveur par `test_lecture_pastille.py`, sans être servie ; l'aperçu du formulaire d'affaire (`SectionDestinataires`) la calcule sur une saisie non enregistrée : `lecture_libelle` à servir aux listes",
-		},
+		api: 'api/app/utils/lecture_pastille/regle.py#lecture_de',
+		//  Servie en `lecture` (affaire, ligne du fil, Suivi des affaires, annonces,
+		//  idées, sondages) et par `POST /lectures/apercu` pour une saisie (#2633).
 	},
 	peutEditer: {
 		quoi: 'le crayon d’un contenu (auteur, « saisi pour », admin)',
 		api: 'api/app/auth/deps.py#peut_editer',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"servie en `peut_modifier` sur les idées, les annonces (#2506) et les affaires (#2508)  ; l'Historique la lit servie depuis #2646 (`auth/gestes_evolution`) ; la carte d'affaire la recopie encore : son crayon ouvre une correction plus large que le contenu (liées, diffusion, suivi), un geste à servir",
-		},
+		//  Servie en `peut_modifier` (idées, annonces, #2506 ; affaires, #2508), dans
+		//  l'Historique (#2646), et le CRAYON d'une affaire en `peut_corriger` (#2633).
 	},
 	peutCommenter: {
 		quoi: 'le geste « Répondre » d’un contenu',
@@ -230,11 +219,9 @@ export const REGLES_PARTAGEES = {
 	},
 	statutTicketLabel: {
 		quoi: 'le libellé d’un statut d’affaire',
-		migration: {
-			ticket: '#2633',
-			raison:
-				"servi avec l'affaire (`statut_libelle`) et le référentiel (#2508) ; le front l'applique encore aux états du fil et des CR, servis en codes",
-		},
+		api: 'api/app/utils/etat_affaire.py#libelle_etat',
+		//  Servie en `statut_libelle` (l'affaire, la ligne du fil, les affaires liées),
+		//  `nouveau_statut_libelle` (une Suite), `etat_cible_libelle` (un CR) — #2633.
 	},
 	estTicketClos: {
 		quoi: 'une affaire close (résolue ou annulée)',

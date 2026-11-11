@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 
 from app.utils.assiste_ia import AssisteIAEntree
 from app.utils.perimetres import perimetre_defaut_liste
+from app.utils.perimetres.servi import AvecPerimetreLibelle
 
 
 class AnnonceHallBase(BaseModel):
@@ -65,7 +66,7 @@ class AnnonceHallArchive(BaseModel):
     archivee: bool
 
 
-class AnnonceHallRead(BaseModel):
+class AnnonceHallRead(AvecPerimetreLibelle):
     """Une affiche de hall telle que l'Historique la montre, ses gestes compris (#2525)."""
 
     id: int

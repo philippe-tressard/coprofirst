@@ -681,7 +681,8 @@ même décoché, et le `PATCH` refuse de le décocher (#2054).
       local, même correct (`npm run lint:html` le refuse)
 - [ ] Accessibilité : `role`, `tabindex`, `aria-label`, `on:keydown`
 - [ ] Droits : jamais recomposés dans un écran — `$isCS` (il **inclut** admin),
-      `$isProprioOuCS`, `aRole(u, …)`, `peutEditer`/`peutCommenter`. Ils l'étaient
+      `$isProprioOuCS`, `aRole(u, …)`, ou le geste SERVI avec l'objet (`peut_*` ; le
+      crayon d'une affaire : `peut_corriger`, #2633). Ils l'étaient
       **22 fois** avant #1041 (`npm run lint:droits` le refuse)
 - [ ] Un geste d'écriture n'est offert qu'aux rôles que sa route accepte : le prédicat de
       l'écran ne peut pas être plus large que la dépendance de la route (la fiche de la

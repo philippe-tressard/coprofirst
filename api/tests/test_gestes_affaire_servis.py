@@ -148,5 +148,54 @@ def test_sans_lecteur_tous_les_gestes_sont_fermes(session):
             "peut_deplacer_au_kanban",
             "peut_repondre",
             "peut_modifier",
+            "peut_corriger",
         )
     )
+
+
+#  ── ✏️ Le crayon : `peut_corriger` (#2633) ──────────────────────────────────
+
+
+def _crayon_du_front(lu, user) -> bool:
+    """La règle que la carte calculait (`peutEditer`, `#lib/droits`, retirée) :
+    l'administrateur, l'auteur ou le « saisi pour »."""
+    return user.has_role(ADMIN) or user.id in (lu.auteur_id, lu.saisi_pour_user_id)
+
+
+@pytest.mark.parametrize("sorte", SORTES)
+@pytest.mark.parametrize("role", ROLES)
+def test_le_crayon_servi_est_celui_que_la_carte_montrait(session, sorte, role):
+    """Sans régression : sur chaque sorte et chaque rôle, le crayon servi est celui
+    que l'ancien calcul du front montrait — l'écart arbitré se teste à part."""
+    comptes, ticket_id = _monde(session, sorte)
+    user = comptes[role]
+    lu = _lu(session, user, ticket_id)
+    if lu is None:
+        return
+    assert lu.peut_corriger is _crayon_du_front(lu, user), (sorte, role)
+
+
+def test_l_ecart_arbitre_le_conseil_corrige_l_actualite_d_un_autre(session):
+    """Arbitré le 11/11/2026 (#2633) : la route l'accepte depuis #1091, la carte le
+    taisait. Un second membre du conseil reçoit désormais le crayon."""
+    comptes, ticket_id = _monde(session, "actu")
+    autre_membre = _compte(session, role=CS)
+    lu = _lu(session, autre_membre, ticket_id)
+    assert _crayon_du_front(lu, autre_membre) is False
+    assert lu.peut_corriger is True
+    assert _permis(lambda: _corriger(session, autre_membre, ticket_id, titre="Corrigée"))
+
+
+@pytest.mark.parametrize("sorte", SORTES)
+@pytest.mark.parametrize("role", ROLES)
+def test_le_crayon_n_est_jamais_plus_etroit_que_corriger_le_contenu(session, sorte, role):
+    """Le crayon ouvre la correction ; sans lui, la route refuse le contenu."""
+    comptes, ticket_id = _monde(session, sorte)
+    user = comptes[role]
+    lu = _lu(session, user, ticket_id)
+    if lu is None:
+        return
+    if lu.peut_modifier:
+        assert lu.peut_corriger
+    if not lu.peut_corriger:
+        assert not _permis(lambda: _corriger(session, user, ticket_id, titre="Corrigée"))

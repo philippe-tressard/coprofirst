@@ -44,14 +44,13 @@
 	import { sectionsDe } from '#lib/entites/types.ts';
 	import PiecesJointes from './PiecesJointes.svelte';
 	import { safeDescription } from '#lib/sanitize.ts';
-	import { perimetreLabel, estPerimetreParDefaut, relire } from '#lib/utils.ts';
-	import { perimetresStore } from '#lib/stores/perimetres.ts';
 
 	/** La déclaration de l'entité affichée — `TICKET`, puis `ACTUALITE`… */
 	export let entite: EntiteDeclaree;
 
 	//  ── 4. Périmètre ─────────────────────────────────────────────────────────
-	export let perimetre: string[] | null | undefined = [];
+	/** Le lieu SERVI (`perimetre_libelle`, #2633) — vide pour le défaut : rien. */
+	export let perimetreLibelle = '';
 
 	//  ── 6. Description ───────────────────────────────────────────────────────
 	export let description = '';
@@ -69,13 +68,7 @@
 	export let affairesLiees: AffaireLiee[] | null | undefined = [];
 
 	$: sections = sectionsDe(entite, 'affichage');
-	//  🔴 `$perimetresStore` n'est pas lu : il dit à Svelte que ce calcul dépend
-	//  de l'arbre, que `estPerimetreParDefaut` et `perimetreLabel` lisent dans un
-	//  état de MODULE. Sans lui, une fiche ouverte avant l'arrivée de l'arbre
-	//  affiche le code brut, et rien ne revient le corriger (#947).
-	$: textePerimetre = relire($perimetresStore, () =>
-		perimetre?.length && !estPerimetreParDefaut(perimetre) ? perimetreLabel(perimetre) : '',
-	);
+	$: textePerimetre = perimetreLibelle;
 </script>
 
 {#each sections as s (s.id)}

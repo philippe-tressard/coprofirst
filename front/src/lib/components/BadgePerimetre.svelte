@@ -2,58 +2,15 @@
 	/**
 	 * Le badge « 🔹 périmètre » d'une carte — **une seule écriture**.
 	 *
-	 * ## Ce qu'il remplace
-	 *
-	 * Neuf copies du même bloc, identiques à la classe du badge près : annonce,
-	 * actualité, événement, ticket, idée, sondage, fiche de lecture, rangée de
-	 * calendrier, document de résidence. Toutes disaient la même chose —
-	 * *« affiche le périmètre, sauf quand c'est celui par défaut »* — et toutes
-	 * ont hérité du même défaut, ci-dessous.
-	 *
-	 * 🔴 **Le défaut, signalé à l'écran le 13/09/2026 (#947)** : sur le kanban du
-	 * calendrier, les pastilles affichaient `résidence`, `aful`,
-	 * `cheminements/portillon` — les **codes bruts**. Pas toujours : parfois les
-	 * libellés sortaient correctement, sur les mêmes cartes.
-	 *
-	 * `perimetreLabel()` et `estPerimetreParDefaut()` lisent `carte`, un objet de
-	 * portée **module** que `definirPerimetres()` remplit quand la requête revient.
-	 * Svelte ne surveille pas cet objet : il ne réévalue une expression que si
-	 * l'une de ses dépendances **réactives** change. Un écran rendu avant l'arrivée
-	 * de l'arbre gardait donc son repli — le code tel quel — et **plus rien ne
-	 * venait le repeindre**.
-	 *
-	 * Le repli était conçu comme transitoire ; ce qui manquait, c'est ce qui
-	 * revient le corriger.
-	 *
-	 * ## `relire()`, et pas une invention
-	 *
-	 * 🔴 La règle existait déjà, et son propre tableau nommait cette cause :
-	 *
-	 * > *« Sélecteur de périmètre | le périmètre par défaut | `perimetreParDefaut()`
-	 * >   lit un état de module posé au chargement de l'arbre : avant lui, `null`,
-	 * >   et pour toujours »* — `#lib/utils`, `relire()`, 29/08/2026 (#549).
-	 *
-	 * Elle avait été appliquée aux **deux sélecteurs** de périmètre, et à eux
-	 * seuls. Les neuf badges lisaient le même état de module, dans le même piège,
-	 * sans que rien ne les rattache à la règle. Une règle posée sur deux de ses
-	 * occurrences n'est pas déployée, elle est commencée.
-	 *
-	 * ⚠️ `$perimetresStore` n'est pas lu par le calcul : il dit à Svelte de quoi
-	 * ce calcul dépend. Le citer **est** le geste.
+	 * Neuf copies du même bloc l'avaient précédé ; il les a remplacées, puis il a
+	 * cessé de COMPOSER le lieu (#2633, 11/11/2026) : le libellé est SERVI avec
+	 * chaque contenu (`perimetre_libelle`, `api/app/utils/perimetres/servi.py`), que
+	 * l'app iOS lit aussi. Il valait `""` pour le périmètre par défaut, que le badge
+	 * tait. Les écueils d'avant — l'arbre arrivé après la carte, `relire()` (#947) —
+	 * ne se posent plus : il n'y a plus rien à recalculer ici.
 	 */
-	import { estPerimetreParDefaut, perimetreLabel } from '#lib/perimetres/index.ts';
-	import { perimetresStore } from '#lib/stores/perimetres.ts';
-	import { relire } from '#lib/utils.ts';
 
-	/** Les codes à rendre — la liste (`perimetre_cible`) ou la chaîne (`perimetre`). */
-	export let perimetre: string | string[] | null | undefined = null;
-
-	/**
-	 * Le libellé SERVI par l'API (`perimetre_libelle`, `utils/perimetres.perimetre_badge`,
-	 * #2505) — `""` quand le périmètre est celui par défaut. Donné, il remplace le
-	 * calcul : le site montre alors exactement ce que montre l'app iOS. Les écrans
-	 * dont l'API ne sert pas encore le libellé passent `perimetre`.
-	 */
+	/** Le libellé SERVI (`perimetre_libelle`) — `""` : le badge se tait. */
 	export let libelle: string | null | undefined = undefined;
 
 	/**
@@ -68,21 +25,7 @@
 	 */
 	export let ton: 'gray' | 'blue' | 'purple' = 'gray';
 
-	/**
-	 * Dire la portée MÊME quand c'est celle par défaut — le carnet d'entretien :
-	 * un contrat qui couvre toute la résidence apparaît sous « Bât. 3 », et sans
-	 * sa portée il s'y lirait comme propre à ce bâtiment. Ce n'est pas un second
-	 * badge : c'est le même, qui ne tait plus le défaut.
-	 */
-	export let toujours = false;
-
-	//  Un seul calcul, une seule dépendance : le libellé, ou la chaîne vide quand
-	//  il n'y a rien à dire — ni périmètre, ni autre chose que celui par défaut.
-	$: texte =
-		libelle ??
-		relire($perimetresStore, () =>
-			perimetre && (toujours || !estPerimetreParDefaut(perimetre)) ? perimetreLabel(perimetre) : '',
-		);
+	$: texte = libelle ?? '';
 </script>
 
 {#if texte}

@@ -9,9 +9,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from app.models.points_conseil import IdentitePresent
+from app.utils.etat_affaire import libelle_etat
 
 #: Une ligne de bandeau, pas un texte : les champs de l'invité et le lieu.
 COURT = 120
@@ -83,6 +84,12 @@ class CrRead(BaseModel):
     conseil_seul: bool
     etat_cible: Optional[str] = None
     mis_a_jour_le: datetime
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def etat_cible_libelle(self) -> str:
+        """L'état décidé, en clair — vide sans état à la validation (#2633)."""
+        return libelle_etat(self.etat_cible)
 
     class Config:
         from_attributes = True

@@ -14,6 +14,7 @@
  *  et qu'il dit « modifiée » sans message d'erreur.
  */
 import { attendreHydratation, choisirPastille, expect, simulerApi, test } from './aides';
+import { lectureServie } from './apercus-lecture';
 
 const ACTUALITE = {
 	id: 50,
@@ -27,6 +28,14 @@ const ACTUALITE = {
 	auteur_nom: 'CS Témoin',
 	perimetre_cible: ['résidence'],
 	public_cible: [],
+	//  Qui la lit, SERVI avec elle (#2633) : la correction compare cette pastille à
+	//  celle de la saisie pour annoncer le changement de lecteurs.
+	lecture: lectureServie({
+		categorie: 'actualite',
+		statut: 'publie',
+		public_cible: [],
+		perimetre_cible: ['résidence'],
+	}),
 	photos_urls: [],
 	fichiers_urls: [],
 	archivee: false,

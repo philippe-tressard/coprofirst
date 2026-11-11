@@ -20,52 +20,36 @@
   règle au serveur. La pastille est la même : elle a remplacé sur leurs cartes
   le badge orange des destinataires, arbitré par l'utilisateur.
 
-  Le calcul vit dans `#lib/lecture` — tenu contre la règle du serveur par
-  `lint:lecture` et `test_lecture_pastille.py`. Ici, seulement le rendu.
+  La pastille est SERVIE avec l'objet (`lecture`, `api/app/utils/lecture_pastille`,
+  #2633) : tenue contre la règle du serveur par `test_lecture_pastille_servie.py`,
+  et l'app iOS lit la même. Ici, seulement le rendu.
 -->
 <script lang="ts">
 	import ContenuBadge from '#lib/components/ContenuBadge.svelte';
 	import Infobulle from '#lib/components/Infobulle.svelte';
-	import {
-		lectureDuCiblage,
-		lectureDuTicket,
-		type ChampsLecture,
-		type ObjetCible,
-	} from '#lib/lecture-ticket.ts';
-	import { titreLecture } from '#lib/lecture.ts';
-	import { perimetresStore } from '#lib/stores/perimetres.ts';
-	import { relire } from '#lib/utils.ts';
+	import type { Lecture } from '#lib/api/index.ts';
 
-	/** Une affaire — entière, ou telle que le Suivi des affaires la sert (#2089)… */
-	export let ticket: ChampsLecture | null = null;
-	/** … ou un objet ciblé : annonce, idée, sondage. */
-	export let cible: ObjetCible | null = null;
-	/** Un sondage : « Qui le lit », « Lu par… ». */
+	/** La pastille servie avec l'objet — absente (réponse ancienne) : rien. */
+	export let lecture: Lecture | null | undefined;
+	/** Un sondage : « Qui le lit ». */
 	export let masculin = false;
-
-	//  `$perimetresStore` : l'arbre dit si le périmètre est restreint, et il
-	//  arrive après la carte (#947, voir `BadgePerimetre`).
-	$: lecture = relire($perimetresStore, () =>
-		ticket ? lectureDuTicket(ticket) : lectureDuCiblage(cible ?? {}, masculin),
-	);
-	$: titre = titreLecture(lecture);
 </script>
 
-{#if !lecture.parDefaut}
+{#if lecture && !lecture.par_defaut}
 	<span class="pastille-lecture">
 		<Infobulle
-			libelle="Qui {masculin ? 'le' : 'la'} lit : {titre}. {lecture.phrase}"
-			titre="{titre} — {lecture.phrase} {lecture.exclus}"
+			libelle="Qui {masculin ? 'le' : 'la'} lit : {lecture.titre}. {lecture.phrase}"
+			titre="{lecture.titre} — {lecture.phrase} {lecture.exclus}"
 		>
 			<span class="badge badge-blue pastille-lecture-badge">
 				<ContenuBadge
 					icones={lecture.icones}
 					texte={lecture.court}
-					icone={lecture.perimetreReserve ? 'lock' : ''}
+					icone={lecture.perimetre_reserve ? 'lock' : ''}
 				/>
 			</span>
 			<svelte:fragment slot="bulle">
-				<strong>{titre}</strong>
+				<strong>{lecture.titre}</strong>
 				{lecture.phrase}
 				{lecture.exclus}
 			</svelte:fragment>

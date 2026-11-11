@@ -35,6 +35,8 @@ export interface Equipement {
 	pour_affaires: boolean;
 	/** Les codes des périmètres où il se trouve. */
 	perimetres: string[];
+	/** Où il se trouve, nommé — SERVI (`perimetres_libelle`, #2633). */
+	perimetres_libelle?: string;
 }
 
 /**  Une option de sélecteur — la forme qu'attendent `SectionEquipement` et les listes. */

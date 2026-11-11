@@ -45,7 +45,7 @@
 	import { ETATS_VISITE } from '#lib/entretien-periodique.ts';
 	import { motifEvolution } from '#lib/reporting.ts';
 	import { fmtDate } from '#lib/date.ts';
-	import { lienTicket, statutTicketLabel } from '#lib/tickets.ts';
+	import { lienTicket } from '#lib/tickets.ts';
 
 	export let affaires: AffaireOuverte[];
 	/** Le mode « Relancer le syndic » : une case par ligne, et les relances envoyées. */
@@ -156,8 +156,8 @@
 					<td class="affaire">
 						<a href={lienTicket(a.id)} class="titre">{a.titre}</a>
 						<span class="vignettes">
-							<BadgeEtatAffaire statut={a.statut} compact />
-							<PastilleLecture ticket={a} />
+							<BadgeEtatAffaire statut={a.statut} libelle={a.libelle_statut} compact />
+							<PastilleLecture lecture={a.lecture} />
 						</span>
 						{#if a.fusionnees.length}
 							<!--  L'historique de fusion, cité au point (#2083). -->
@@ -172,7 +172,7 @@
 							>
 						{/if}
 						<!--  Le périmètre — tu quand c'est celui par défaut (règle 4). -->
-						<BadgePerimetre perimetre={a.perimetre_cible} />
+						<BadgePerimetre libelle={a.perimetre_libelle} />
 						{#if a.apercu}
 							<p class="descriptif clamp-rapport">
 								{#if a.apercu_ia}<span class="ia-signe" title="Résumé de l’assistant"
@@ -191,7 +191,7 @@
 											teinte="badge-blue"
 											compact
 											title="État posé à la validation du compte rendu"
-											>→ {statutTicketLabel(crs.get(a.id)?.etat_cible)}</Badge
+											>→ {crs.get(a.id)?.etat_cible_libelle}</Badge
 										>
 									{/if}
 									{#if marques.get(a.id)}

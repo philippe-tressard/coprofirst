@@ -112,13 +112,9 @@
 	//  dur, et c'est une fragilité connue »*. Renommer le nœud racine depuis
 	//  l'administration aurait fait réapparaître le badge sur CHAQUE ligne du fil.
 	//
-	//  Le remède annoncé était « côté API, ne pas envoyer le périmètre quand il
-	//  vaut le défaut ». C'était encore mettre la règle au mauvais endroit : le
-	//  serveur aurait décidé d'un rendu. Il envoie les codes, et la règle reste
-	//  là où elle est déjà écrite — `BadgePerimetre`, qui ne rend rien quand il
-	//  n'y a rien à dire. La ligne de méta est celle d'`EnteteCarte`, toujours
-	//  posée : la carte n'a plus à décider si elle s'affiche.
-	$: perimetreCodes = (item.meta?.perimetre_codes as string[] | undefined) ?? [];
+	//  Depuis #2633 (11/11/2026), le serveur SERT le badge de la ligne
+	//  (`meta.perimetre_libelle`, `perimetre_badge`) — vide pour le périmètre par
+	//  défaut, quel que soit le nom de la racine. `BadgePerimetre` le rend, ou se tait.
 </script>
 
 <!--  🗂️ LA CARTE DU SITE (10/10/2026, maquette B du fil, choisie à l'écran) :
@@ -199,7 +195,7 @@
 					{/if}
 				{/each}
 				<!--  `BadgePerimetre` ne rend RIEN quand le périmètre vaut le défaut. -->
-				<BadgePerimetre perimetre={perimetreCodes} />
+				<BadgePerimetre libelle={String(item.meta?.perimetre_libelle ?? '')} />
 				<AuteurCarte nom={auteur} />
 				<MarqueIA assiste={assisteIA} />
 			{/if}

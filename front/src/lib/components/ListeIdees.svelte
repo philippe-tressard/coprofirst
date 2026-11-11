@@ -114,8 +114,8 @@
 				      🔴 PAS D'AUTEUR : arbitré le 27/09/2026, une idée reste anonyme
 				      pour ses lecteurs — aucune API ne l'expose, et l'exposer serait
 				      une décision de données personnelles. `lint:pastilles` le tient. -->
-				<BadgePerimetre perimetre={idee.perimetre_cible} />
-				<PastilleLecture cible={idee} />
+				<BadgePerimetre libelle={idee.perimetre_libelle} />
+				<PastilleLecture lecture={idee.lecture} />
 				<MarqueIA assiste={idee.assiste_ia} />
 			</svelte:fragment>
 			<!--  TOUTES les actions dans l'en-tête, dans l'ordre de la carte d'affaire :

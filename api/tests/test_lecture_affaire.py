@@ -6,23 +6,21 @@ d'accord avec l'écran :
 
 - les profils qui lisent, comparés aux `lecteurs` des cas d'affaire de
   `tests/donnees/lecture_pastille.json` — l'attente commune de l'écran
-  (`npm run lint:lecture`) et du serveur (`test_lecture_pastille.py`) ;
-- les libellés courts, comparés à ceux de `front/src/lib/lecture.ts`.
+  et du serveur (`test_lecture_pastille.py`) ;
+- les libellés courts, comparés à ceux de la pastille SERVIE
+  (`utils/lecture_pastille/vocabulaire`, depuis #2633 : le front n'a plus de copie).
 """
 
 from __future__ import annotations
 
 import json
 import pathlib
-import re
 
 import pytest
 
 from app.models.tickets import StatutTicket, Ticket
 from app.utils.lecture_affaire import NOMMEES, PROFILS, lecture_courte, statuts_lecteurs
 
-RACINE = pathlib.Path(__file__).resolve().parents[2]
-LECTURE_TS = RACINE / "front" / "src" / "lib" / "lecture.ts"
 CAS = json.loads(
     (pathlib.Path(__file__).parent / "donnees" / "lecture_pastille.json").read_text(
         encoding="utf-8"
@@ -59,10 +57,12 @@ def test_les_profils_sont_ceux_de_l_attente_commune(cas):
 
 
 def test_les_libelles_sont_ceux_de_l_ecran():
-    source = LECTURE_TS.read_text(encoding="utf-8")
-    courts = set(re.findall(r"court:\s*'([^']+)'", source))
+    from app.utils.lecture_pastille import vocabulaire as V
+
+    courts = {p.court for p in V.PROFILS} | {v.court for _, v in V.NOMMEES}
+    courts |= {V.CS.court, V.CONCERNE.court}
     ecrits = {c for _, c in PROFILS} | set(NOMMEES.values()) | {"CS", "Concerné"}
-    assert ecrits <= courts, f"libellés absents de lecture.ts : {sorted(ecrits - courts)}"
+    assert ecrits <= courts, f"libellés absents de la pastille servie : {sorted(ecrits - courts)}"
 
 
 def test_le_mot_de_la_pastille():

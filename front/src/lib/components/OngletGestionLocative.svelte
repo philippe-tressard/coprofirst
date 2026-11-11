@@ -42,7 +42,6 @@
 	import { confirmerPuis, SUPPRESSION } from '#lib/confirmation.ts';
 	import { messageErreur, tenter } from '#lib/erreurs.ts';
 	import { toast } from '#lib/components/Toast.svelte';
-	import { etageLabel } from '#lib/utils.ts';
 
 	//  Les routes viennent de la TABLE, jamais écrites ici (`lint:pages`).
 	const ROUTE_BAUX_ACTIFS = routeSousOnglet('mon-lot', 'location', 'actif');
@@ -195,7 +194,7 @@
 		//  ⚠️ SEPTIÈME écriture du libellé d'étage, et quatrième rendu (« Ét. 2 »).
 		//  Trouvée par `lint:etage-libelle`, pas par ma relecture : elle est dans
 		//  une fonction, pas dans le gabarit, et le relevé à la main l'avait sautée.
-		const etiquette = etageLabel(lot.etage);
+		const etiquette = lot.etage_libelle;
 		const etage = etiquette ? ` · ${etiquette}` : '';
 		const surface = lot.superficie ? ` · ${lot.superficie} m²` : '';
 		return `${bat} — ${type} n°${lot.numero}${etage}${surface}`;

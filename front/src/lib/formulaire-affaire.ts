@@ -29,8 +29,7 @@ import type { ConditionInactive, Etat, IdSection, NatureAffaire } from '#lib/ent
 import { motifInactif } from '#lib/entites/types.ts';
 import { TICKET } from '#lib/entites/ticket.ts';
 import { concerneTousLesResidents } from '#lib/destinataires.ts';
-import { lectureDe, titreLecture } from '#lib/lecture.ts';
-import { lectureDuTicket, natureLue, perimetreRestreint } from '#lib/lecture-ticket.ts';
+import { apercuImmediat } from '#lib/apercu-lecture.ts';
 import { depuisChampLocal } from '#lib/date.ts';
 import { lotDepuisSaisie, type SaisieSaisiPour } from '#lib/saisi-pour.ts';
 import { CATEGORIES_TICKET, estActualite, optionsVersTicket } from '#lib/tickets.ts';
@@ -321,18 +320,33 @@ export function pertesAuChangement(avant: Ticket, apres: SaisieAffaire): string[
  * AVANT d'enregistrer. Comparé sur la pastille de lecture — la même phrase
  * que la carte —, jamais sur les champs : une catégorie changée peut changer
  * les lecteurs sans qu'un seul Destinataire ait bougé.
+ *
+ * Les deux pastilles sont SERVIES (#2633) : celle de l'affaire enregistrée
+ * (`lecture`), celle de la saisie par l'aperçu, la même règle. L'aperçu
+ * injoignable n'empêche pas d'enregistrer : l'alerte se tait sur les lecteurs.
  */
-export function changementDeLecture(avant: Ticket, apres: SaisieAffaire): string | null {
-	const ancienne = titreLecture(lectureDuTicket(avant));
-	const nouvelle = titreLecture(
-		lectureDe({
-			...natureLue({ categorie: apres.categorie, statut: apres.statut }),
-			confidentiel: apres.options.brouillon,
-			publicCible: apres.publicCible,
-			perimetreRestreint: perimetreRestreint(apres.perimetreCible),
-			reservePerimetre: apres.reservePerimetre,
-		}),
-	);
+export async function changementDeLecture(
+	avant: Ticket,
+	apres: SaisieAffaire,
+): Promise<string | null> {
+	const ancienne = avant.lecture?.titre;
+	if (!ancienne) return null;
+	let nouvelle: string;
+	try {
+		nouvelle = (
+			await apercuImmediat({
+				categorie: apres.categorie,
+				statut: apres.statut,
+				confidentiel: apres.options.brouillon,
+				public_cible: apres.publicCible,
+				perimetre_cible: apres.perimetreCible,
+				reserve_perimetre: apres.reservePerimetre,
+			})
+		).lecture.titre;
+	} catch (erreur) {
+		console.warn('Aperçu de lecture indisponible', erreur);
+		return null;
+	}
 	return ancienne === nouvelle ? null : `« ${ancienne} » → « ${nouvelle} »`;
 }
 
@@ -340,12 +354,12 @@ export function changementDeLecture(avant: Ticket, apres: SaisieAffaire): string
  * L'alerte d'une correction : ce qu'elle efface (`pertesAuChangement`) et qui
  * lira désormais (`changementDeLecture`) — une seule boîte, `null` si rien.
  */
-export function alerteCorrection(
+export async function alerteCorrection(
 	avant: Ticket,
 	apres: SaisieAffaire,
-): { titre: string; message: string } | null {
+): Promise<{ titre: string; message: string } | null> {
 	const pertes = pertesAuChangement(avant, apres);
-	const lecture = changementDeLecture(avant, apres);
+	const lecture = await changementDeLecture(avant, apres);
 	if (!pertes.length && !lecture) return null;
 	const phrases: string[] = [];
 	if (pertes.length) phrases.push(`Ce changement de catégorie efface ${pertes.join(', ')}.`);

@@ -400,13 +400,18 @@ def test_le_front_porte_la_meme_regle():
     source = jumeau.read_text(encoding="utf-8")
     manquants = [
         nom
-        for nom in ("parentQualifiant", "estGroupeRacine", "cheminOrdre", "SEPARATEUR_GROUPE", "›")
+        for nom in ("parentQualifiant", "estGroupeRacine", "SEPARATEUR_GROUPE", "›")
         if nom not in source
     ]
     assert not manquants, (
         f"Le front ne porte plus : {', '.join(manquants)}. Les deux implémentations "
         "doivent rester d'accord — la copie est le seul pattern viable entre "
         "`./api` et `./front`, et elle se vérifie ici."
+    )
+    #  🔴 Le cas fautif de #2633 : le rendu d'une SÉLECTION recomposé au front. Il
+    #  est servi (`perimetre_label`) ; seul le libellé d'un nœud y reste.
+    assert "export function perimetreLabel(" not in source, (
+        "`perimetreLabel` est revenue dans le front : le lieu d'une sélection est servi"
     )
     assert P.SEPARATEUR_GROUPE.strip() in source, (
         "Le séparateur de groupe diffère entre les deux implémentations : le même "

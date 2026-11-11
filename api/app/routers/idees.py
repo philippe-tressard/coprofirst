@@ -40,11 +40,14 @@ from app.utils.assiste_ia import (
     marquer as marquer_assiste_ia,
 )
 from app.utils.lecture import lire_objet
+from app.utils.lecture_pastille.modele import Lecture
+from app.utils.lecture_pastille.objets import lecture_du_ciblage
 from app.utils.nouveaute import est_nouveau
 from app.utils.recuperer import ou_404
 from app.utils.reponses import (
     notifier_votants_idee,
 )
+from app.utils.perimetres.servi import AvecPerimetreLibelle
 
 router = APIRouter(prefix="/idees", tags=["idées"])
 
@@ -96,7 +99,7 @@ class IdeeUpdate(AssisteIACorrection):
     description: Optional[str] = None
 
 
-class IdeeRead(AssisteIASortie):
+class IdeeRead(AssisteIASortie, AvecPerimetreLibelle):
     """Ce que `GET /idees` rend — lu SUR le modèle par `lire_objet` (#1660).
 
     Ce schéma existait sans que rien le rende : la liste assemblait un dictionnaire
@@ -126,6 +129,8 @@ class IdeeRead(AssisteIASortie):
     #: admet aussi le conseil ; l'écran, plus étroit, ne lui tend pas la
     #: suppression définitive d'une idée et de ses votes.
     peut_supprimer: bool = False
+    #: Qui la lit (`utils/lecture_pastille`, #2633).
+    lecture: Optional[Lecture] = None
 
 
 def _perimetre_liste(brut: Optional[str]) -> list[str]:
@@ -184,6 +189,7 @@ def _enrich(idees: list, user: Utilisateur, session: Session) -> list[dict]:
             nouveau=est_nouveau(idee.cree_le),
             peut_modifier=peut_editer(idee, user),
             peut_supprimer=user.has_role(RoleUtilisateur.admin),
+            lecture=lecture_du_ciblage(idee),
         )
         result.append(lue.model_dump())
     return result

@@ -48,10 +48,21 @@ const entree = (id: number, jour: number, extra: Record<string, unknown>) => ({
 
 export const FIL = [
 	entree(1, 12, { type: 'commentaire', contenu: '<p>Signalée au gardien.</p>' }),
-	entree(2, 13, { type: 'etat', ancien_statut: 'ouvert', nouveau_statut: 'en_cours' }),
+	//  L'état donné, en clair, est SERVI avec la Suite (`nouveau_statut_libelle`, #2633).
+	entree(2, 13, {
+		type: 'etat',
+		ancien_statut: 'ouvert',
+		nouveau_statut: 'en_cours',
+		nouveau_statut_libelle: 'Chez le syndic',
+	}),
 	entree(3, 14, { type: 'commentaire', contenu: '<p>Le plombier passe jeudi.</p>' }),
 	entree(4, 20, { type: 'commentaire', contenu: '<p>Raccord remplacé.</p>' }),
-	entree(5, 21, { type: 'etat', ancien_statut: 'en_cours', nouveau_statut: 'résolu' }),
+	entree(5, 21, {
+		type: 'etat',
+		ancien_statut: 'en_cours',
+		nouveau_statut: 'résolu',
+		nouveau_statut_libelle: 'Résolu',
+	}),
 	entree(6, 21, { type: 'synthese' }),
 ];
 

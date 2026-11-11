@@ -1,6 +1,6 @@
 {
 	"name": "hostachy-front",
-	"version": "3.86.0",
+	"version": "3.87.0",
 	"private": true,
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -32,7 +32,6 @@
 		"lint:perimetres": "node scripts/check-perimetres.mjs",
 		"lint:statuts": "node scripts/check-statuts.mjs --selftest && node scripts/check-statuts.mjs",
 		"lint:libelle-perimetre": "node scripts/check-libelle-perimetre.mjs",
-		"lint:lecture": "node scripts/check-lecture.mjs",
 		"lint:entetes": "node scripts/check-entete-page.mjs",
 		"lint:api-svelte4": "node scripts/check-api-svelte4.mjs",
 		"lint:formulaires": "node scripts/check-formulaire-creation.mjs",
@@ -123,7 +122,6 @@
 		"lint:variables-css": "node scripts/check-variables-css.mjs --selftest && node scripts/check-variables-css.mjs",
 		"lint:styles-en-ligne": "node scripts/check-styles-en-ligne.mjs --selftest && node scripts/check-styles-en-ligne.mjs",
 		"lint:pastilles": "node scripts/check-pastilles.mjs --selftest && node scripts/check-pastilles.mjs",
-		"lint:manuel-pastilles": "node scripts/check-manuel-pastilles.mjs",
 		"lint:chargement": "node scripts/check-chargement.mjs --selftest && node scripts/check-chargement.mjs",
 		"lint:donnees-affichees": "node scripts/check-donnees-affichees.mjs --selftest && node scripts/check-donnees-affichees.mjs",
 		"lint:etage-libelle": "node scripts/check-etage-libelle.mjs",

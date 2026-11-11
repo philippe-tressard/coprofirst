@@ -28,7 +28,6 @@
 	import { contexteCommentaire } from '#lib/assistant.ts';
 	import { richEmpty } from '#lib/publications.ts';
 	import { LIBELLE_CS_ET_PRESENTS } from '#lib/points-conseil.ts';
-	import { statutTicketLabel } from '#lib/tickets.ts';
 	import {
 		pointsConseil,
 		type AffaireOuverte,
@@ -118,7 +117,7 @@
 	/>
 	{#if etats.length}
 		<div class="etat">
-			<p class="actuel">État actuel : <strong>{statutTicketLabel(affaire.statut)}</strong></p>
+			<p class="actuel">État actuel : <strong>{affaire.libelle_statut}</strong></p>
 			<div class="field">
 				<label for="etat-cr-{affaire.id}">État à la validation du compte rendu</label>
 				<select id="etat-cr-{affaire.id}" bind:value={etat}>
