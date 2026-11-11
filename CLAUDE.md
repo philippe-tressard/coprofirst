@@ -293,6 +293,13 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
   (version V), puis le retrait dans une version ultérieure ; une entrée neuve d'une route
   existante est facultative. L'`operationId` vient du chemin (`contrat.identifiant_operation`),
   jamais du nom de la fonction. 🔒 `test_contrat_api.py`.
+- **Les tables du site que l'app iOS génère se publient comme le contrat** (#2634) :
+  `front/tables-clients.json`, GÉNÉRÉE par `node front/scripts/tables-clients.mjs --ecrire`
+  depuis son registre (`tables-clients.registre.mjs` : des constantes LITTÉRALES de `#lib`,
+  lues dans l'arbre syntaxique, rien n'est exécuté), jointe à la release
+  (`lib-contrat-version.sh`) — jamais éditée. Une table que l'app lit vit dans `#lib`,
+  jamais dans un composant ; la retirer ou en changer la forme s'annonce dans `RETRAITS`.
+  🔒 `npm run lint:tables-clients`.
 - **Une règle d'affichage que le site ET l'app iOS montrent se calcule dans l'API** (#2501,
   `standards/09` §8, règle 1) : libellé composé, état dérivé, droit affiché vivent dans
   `app/utils/` (ou un prédicat d'`auth/`), servis en champ que le front LIT — jamais une

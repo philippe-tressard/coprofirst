@@ -1645,6 +1645,13 @@ jobs:
         working-directory: front
         run: npm run lint:regles-partagees
 
+      # L'app iOS génère ses tables (libellés, pastilles, ordres) depuis
+      # `front/tables-clients.json`, joint à la release : la référence suit les
+      # sources, et un retrait ou un changement de forme s'annonce (#2634).
+      - name: Tables publiées aux clients à jour, retraits annoncés
+        working-directory: front
+        run: npm run lint:tables-clients
+
       - name: Onglet réservé masqué sur le prédicat de sa route d'API
         working-directory: front
         run: npm run lint:onglets-reserves

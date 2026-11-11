@@ -1,0 +1,148 @@
+{
+  "format": 1,
+  "version": "1.0.0",
+  "tables": {
+    "civilites": {
+      "source": "front/src/lib/annuaire.ts#CIVILITES",
+      "valeur": [
+        "Mme",
+        "Mlle",
+        "Mr"
+      ]
+    },
+    "classesReleve": {
+      "source": "front/src/lib/courriels-affaires.ts#CLASSES_RELEVE",
+      "valeur": {
+        "rattache": {
+          "libelle": "Rattaché",
+          "ton": "succes"
+        },
+        "cree": {
+          "libelle": "Affaire créée",
+          "ton": "succes"
+        },
+        "ecarte": {
+          "libelle": "Écarté",
+          "ton": "neutre"
+        }
+      }
+    },
+    "dureeToastMs": {
+      "source": "front/src/lib/toast.ts#DUREE_TOAST_MS",
+      "valeur": 4000
+    },
+    "formatsAffiche": {
+      "source": "front/src/lib/annonces-hall.ts#AH_FORMATS",
+      "valeur": [
+        {
+          "val": "auto",
+          "label": "Auto"
+        },
+        {
+          "val": "a4",
+          "label": "A4"
+        },
+        {
+          "val": "a5",
+          "label": "A5"
+        },
+        {
+          "val": "a6",
+          "label": "A6"
+        },
+        {
+          "val": "a7",
+          "label": "A7"
+        }
+      ]
+    },
+    "modesSuivi": {
+      "source": "front/src/lib/reporting.ts#MODES_SUIVI",
+      "valeur": [
+        {
+          "valeur": "suivi",
+          "libelle": "Suivi affaires"
+        },
+        {
+          "valeur": "entretien",
+          "libelle": "Suivi entretiens périodiques"
+        },
+        {
+          "valeur": "relance",
+          "libelle": "Relancer le syndic"
+        }
+      ]
+    },
+    "rolesMisEnAvant": {
+      "source": "front/src/lib/roles.ts#ROLES_MIS_EN_AVANT",
+      "valeur": [
+        "conseil_syndical",
+        "admin"
+      ]
+    },
+    "statutsDelegation": {
+      "source": "front/src/lib/delegations.ts#STATUTS_DELEGATION",
+      "valeur": {
+        "en_attente": {
+          "libelle": "En attente",
+          "badge": "badge-orange"
+        },
+        "active": {
+          "libelle": "Active",
+          "badge": "badge-green"
+        },
+        "revoquee": {
+          "libelle": "Révoquée",
+          "badge": "badge-red"
+        },
+        "expiree": {
+          "libelle": "Expirée",
+          "badge": "badge-gray"
+        }
+      }
+    },
+    "teinteAge": {
+      "source": "front/src/lib/reporting.ts#TEINTE_AGE",
+      "valeur": {
+        "ancienne": "badge-red",
+        "moyenne": "badge-orange",
+        "recente": "badge-gray"
+      }
+    },
+    "teinteDuTon": {
+      "source": "front/src/lib/journal-verdicts.ts#TEINTE_DU_TON",
+      "valeur": {
+        "succes": "badge-green",
+        "info": "badge-blue",
+        "attention": "badge-orange",
+        "danger": "badge-red",
+        "neutre": "badge-gray"
+      }
+    },
+    "verdictsReleve": {
+      "source": "front/src/lib/courriels-affaires.ts#VERDICTS_RELEVE",
+      "valeur": {
+        "accepte": {
+          "libelle": "Ajouté au fil",
+          "ton": "succes"
+        },
+        "relance": {
+          "libelle": "Transmis au conseil",
+          "ton": "info"
+        },
+        "refuse": {
+          "libelle": "Refusé",
+          "ton": "attention"
+        },
+        "ignore": {
+          "libelle": "Ignoré",
+          "ton": "neutre"
+        },
+        "a_classer": {
+          "libelle": "À classer",
+          "ton": "attention"
+        }
+      }
+    }
+  }
+}
