@@ -36,6 +36,7 @@
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import EtatListe from '#lib/components/EtatListe.svelte';
+	import { MORCEAU_NON_CHARGE } from '#lib/chargement.ts';
 
 	/** L'`import()` du composant — appelé une fois, au montage. */
 	export let charger: () => Promise<{ default: T }>;
@@ -52,9 +53,7 @@
 				if (actif) composant = module.default;
 			},
 			() => {
-				if (actif)
-					erreur =
-						'Rechargez la page : une nouvelle version du site a peut-être été publiée entre-temps.';
+				if (actif) erreur = MORCEAU_NON_CHARGE.erreur;
 			},
 		);
 		return () => {
@@ -66,7 +65,7 @@
 {#if composant}
 	{@render contenu(composant)}
 {:else if erreur}
-	<EtatListe {erreur} titreErreur="Cette partie de l’écran n’a pas pu se charger" />
+	<EtatListe {erreur} titreErreur={MORCEAU_NON_CHARGE.titre} />
 {:else}
 	<!--  ⏱ L'attente ne s'annonce qu'au-delà de `--delai-annonce` (12/10/2026) : le morceau
 	      est le plus souvent déjà en cache, et « Chargement… » clignotait une

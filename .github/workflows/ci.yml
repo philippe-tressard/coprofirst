@@ -1408,6 +1408,15 @@ jobs:
         working-directory: front
         run: npm run lint:catch-vide
 
+      # Un `import()` sans destinataire (#2683, 11/11/2026) : son rejet devient une
+      # exception non rattrapée de la page, et WebKit en lève une dès qu'une
+      # navigation interrompt le chargement. La tranche WebKit des e2e tombait
+      # ainsi au hasard (« Importing a module script failed. »). Lu sur l'AST ; le
+      # comportement, c'est `e2e/import-interrompu.spec.ts` qui le juge.
+      - name: Chaque import() a un destinataire
+        working-directory: front
+        run: npm run lint:imports-rattrapes
+
       # Deux incidents le 16/09/2026, à quelques heures d'intervalle, même cause.
       #
       # `pages_order` est une DONNÉE (base, éditable en administration), et un
