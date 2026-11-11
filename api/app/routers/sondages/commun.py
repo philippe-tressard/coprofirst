@@ -15,6 +15,7 @@ from app.utils.assiste_ia import AssisteIACorrection, AssisteIAEntree, AssisteIA
 
 from app.schemas import ListeJson
 from app.schemas_communaute import ReponseCommunauteRead
+from app.utils.perimetres.servi import AvecPerimetreLibelle
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -58,7 +59,7 @@ class GestesSondages(BaseModel):
     peut_creer: bool
 
 
-class SondageRead(AssisteIASortie):
+class SondageRead(AssisteIASortie, AvecPerimetreLibelle):
     id: int
     question: str
     description: Optional[str] = None

@@ -34,7 +34,6 @@ pas qui a le droit de le regarder. Les droits vivent dans `auth/deps`.
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.models.copropriete import Lot
@@ -43,6 +42,7 @@ from app.utils.batiments import libelle_lot
 from app.utils.perimetres import SEPARATEUR_ELEMENT, parse_json_perimetres
 from app.utils.types_acces import TypeAcces
 from app.utils.valeurs import valeur
+from app.utils.perimetres.servi import AvecPerimetreLibelle
 
 
 def libelle_lots(session: Session, type_acces: TypeAcces, objet) -> Optional[str]:
@@ -88,7 +88,7 @@ def libelle_lots(session: Session, type_acces: TypeAcces, objet) -> Optional[str
     return SEPARATEUR_ELEMENT.join(x for x in libelles if x) or None
 
 
-class AccesPorteur(BaseModel):
+class AccesPorteur(AvecPerimetreLibelle):
     """Un accès tel que son PORTEUR a besoin de le voir.
 
     ⚠️ `bail_id` et `chez_locataire` en font partie : un bailleur lit cette même

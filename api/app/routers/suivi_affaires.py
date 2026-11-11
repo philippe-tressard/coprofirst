@@ -43,11 +43,12 @@ from app.utils.points_conseil import point_courant, releve_du_point
 from app.utils.points_conseil_etats import etat_par_defaut
 from app.utils.lecture_pastille.modele import Lecture
 from app.utils.lecture_pastille.objets import lecture_du_ticket
+from app.utils.perimetres.servi import AvecPerimetreLibelle
 
 router = APIRouter(prefix="/suivi-affaires", tags=["suivi-affaires"])
 
 
-class AffaireOuverteRead(BaseModel):
+class AffaireOuverteRead(AvecPerimetreLibelle):
     id: int
     numero: str
     titre: str

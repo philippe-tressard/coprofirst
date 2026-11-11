@@ -31,6 +31,7 @@ from app.utils.categories_ticket import libelle_categorie, ticket_urgent
 from app.utils.fichiers import est_image
 from app.utils.echeance_affaire import echeance
 from app.utils.lecture_pastille.objets import lecture_du_ticket
+from app.utils.perimetres.libelles import perimetre_badge
 from app.utils.nature_affaire import natures
 from app.utils.photos import parse_photos
 
@@ -149,6 +150,8 @@ def pastilles_affaire(ticket) -> dict:
     #  👁 QUI LA LIT — la pastille de la ligne, servie (#2633) : elle dépend de
     #  l'arbre des périmètres, que `TicketRead` seul ne lit pas.
     rendu["lecture"] = lecture_du_ticket(ticket).model_dump()
+    #  🔹 Le lieu de la ligne, servi comme sur la carte (`perimetre_badge`, #2633).
+    rendu["perimetre_libelle"] = perimetre_badge(rendu.get("perimetre_cible") or [])
     return rendu
 
 

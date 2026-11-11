@@ -341,6 +341,9 @@ ATTENDU_EVOLUTION = {
     "assiste_ia": True,
     "ticket_id": 41,
     "perimetre_cible": ["bat-a"],
+    #  Le lieu précisé, nommé par le serveur (#2633) — un code hors de l'arbre se
+    #  rend tel quel (`perimetre_label_un`).
+    "perimetre_precise_libelle": "bat-a",
     "statut_avant": "ouvert",
     #  Sans lecteur ni affaire, aucun geste n'est offert (#2646).
     "peut_modifier": False,
