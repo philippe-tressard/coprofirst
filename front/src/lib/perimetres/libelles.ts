@@ -12,7 +12,7 @@
  * ⚠️ Le paquet réexporte tout : `#lib/perimetres` continue de servir, et aucun
  * import du dépôt n'a changé.
  */
-import { PREFIXE_BATIMENT, carte, cle, normaliser, type Perimetre } from './arbre';
+import { PREFIXE_BATIMENT, carte, cle, type Perimetre } from './arbre';
 
 /** Sépare deux éléments de même niveau : « Bât. 1 · Parking ». */
 export const SEPARATEUR_ELEMENT = ' · ';
