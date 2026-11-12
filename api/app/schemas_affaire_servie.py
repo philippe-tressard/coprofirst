@@ -63,6 +63,9 @@ class AffaireServie(BaseModel):
     #: ✏️ Le CRAYON : ouvrir la correction (`auth/deps.peut_editer`, #2633) — plus
     #: large que `peut_modifier`, qui ne vaut que tant que l'affaire est ouverte.
     peut_corriger: bool = False
+    #: 🛠️ Désigner les prestataires (`gestes_affaire.peut_changer_prestataires`,
+    #: #2704) : le conseil, sur une affaire du bâti ouverte.
+    peut_changer_prestataires: bool = False
 
     @computed_field  # type: ignore[prop-decorator]
     @property

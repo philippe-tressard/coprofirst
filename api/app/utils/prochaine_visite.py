@@ -33,6 +33,7 @@ from sqlmodel import Session
 from app.models.prestataires import ContratEntretien
 from app.models.tickets import CategorieTicket, StatutTicket
 from app.utils.echeance_contrat import ajouter_mois
+from app.utils.prestataires_affaire import prestataires_de
 from app.utils.valeurs import valeur
 
 
@@ -61,7 +62,12 @@ def apres_cloture(ticket, session: Session) -> None:
     if not ticket.contrat_id:
         return  # hors contrat : aucune visite de contrat n'a eu lieu
     retenu = session.get(ContratEntretien, ticket.contrat_id)
-    if retenu is None or not retenu.actif or retenu.prestataire_id != ticket.prestataire_id:
+    #  Le contrat d'UN des prestataires de l'affaire (#2704, Q4).
+    if (
+        retenu is None
+        or not retenu.actif
+        or retenu.prestataire_id not in prestataires_de(session, ticket)
+    ):
         return
     depuis = (
         ticket.debut.date()

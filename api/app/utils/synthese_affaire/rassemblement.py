@@ -32,7 +32,6 @@ from sqlmodel import Session, col, select
 from app.models.copropriete import Copropriete
 from app.models.core import MessageTicket, Ticket, TicketEvolution, Utilisateur
 from app.models.gouvernance import MembreSyndic
-from app.models.prestataires import Prestataire
 from app.models.roles import RoleUtilisateur
 from app.models.tickets import STATUTS_TICKET_CLOS
 from app.utils import horloge
@@ -45,6 +44,7 @@ from app.utils.destinataires import est_adresse_syndic
 from app.utils.jours_ouvres import libelle_jours
 from app.utils.synthese_affaire import metriques as m
 from app.utils.noms import ANCIEN_RESIDENT
+from app.utils.prestataires_affaire import noms, prestataires_de
 from app.utils.equipements import libelle_equipement
 from app.utils.recuperer import ou_rien
 from app.utils.synthese_affaire.lecture import TYPE_SYNTHESE
@@ -252,7 +252,7 @@ def construire_message(
     """Le message envoyé à l'assistant — écrit par le code, chiffres compris."""
     est_syndic = reconnaisseur_syndic(session)
     issue = "résolue" if met["issue"] == "résolu" else "annulée"
-    prestataire = session.get(Prestataire, ticket.prestataire_id) if ticket.prestataire_id else None
+    intervenants = noms(session, prestataires_de(session, ticket))  # tous (#2704)
     tete = [
         f"Affaire {ticket.numero} — « {ticket.titre} »",
         f"Catégorie : {libelle_categorie(ticket.categorie)}"
@@ -273,8 +273,10 @@ def construire_message(
             + ", ".join(a.numero for a in absorbees)
             + " — le fil daté les couvre toutes."
         )
-    if prestataire and prestataire.nom:
-        tete.append(f"Intervenant : {prestataire.nom}")
+    if intervenants:
+        tete.append(
+            f"Intervenant{'s' if len(intervenants) > 1 else ''} : {', '.join(intervenants)}"
+        )
     if met["reouvertures"]:
         tete.append(
             f"L'affaire a été rouverte {met['reouvertures']} fois : la synthèse couvre toute sa vie."

@@ -1,7 +1,7 @@
 """📊 Les affaires d'un prestataire, en chiffres — sur sa fiche (#1646).
 
-Combien d'affaires closes il a eues comme intervenant désigné
-(`Ticket.prestataire_id`), combien de temps elles sont restées « Chez le
+Combien d’affaires closes il a eues parmi les intervenants désignés
+(`utils/prestataires_affaire`, #2704), combien de temps elles sont restées « Chez le
 prestataire » (jours ouvrés), leur durée totale, les relances au syndic — et
 l'évolution d'un exercice comptable à l'autre.
 

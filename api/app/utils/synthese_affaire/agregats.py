@@ -40,16 +40,17 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Optional
 
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, or_, select
 
 from app.models.core import Ticket
 from app.models.prestataires import Prestataire
-from app.models.tickets import STATUTS_TICKET_CLOS, StatutTicket
+from app.models.tickets import STATUTS_TICKET_CLOS, StatutTicket, TicketPrestataire
 from app.utils import horloge
 from app.utils.affaire_absorbee import ouverture_effective, pas_absorbee
 from app.utils.carnet_entretien import contribue_au_carnet
 from app.utils.categories_ticket import libelle_categorie
 from app.utils.jours_ouvres import au_demi_jour
+from app.utils.prestataires_affaire import par_affaire
 from app.utils.synthese_affaire import metriques as m
 from app.utils.synthese_affaire.rassemblement import (
     faits_de,
@@ -84,7 +85,8 @@ class Mesure:
     """Une affaire close, mesurée par `metriques.calculer`."""
 
     categorie: str
-    prestataire_id: Optional[int]
+    #: Les prestataires de l'affaire, dans l'ordre (#2704) — vide sans intervenant.
+    prestataire_ids: tuple[int, ...]
     exercice: Exercice
     issue: str
     metriques: dict
@@ -125,6 +127,7 @@ def mesurer(session: Session, tickets: list[Ticket]) -> list[Mesure]:
     """Chaque affaire, mesurée comme sa synthèse la mesurerait."""
     est_syndic = reconnaisseur_syndic(session)
     mois_debut = mois_debut_exercice(session)
+    prestataires = par_affaire(session, tickets)
     mesures = []
     for t in tickets:
         met = m.calculer(
@@ -136,7 +139,7 @@ def mesurer(session: Session, tickets: list[Ticket]) -> list[Mesure]:
         mesures.append(
             Mesure(
                 categorie=valeur(t.categorie),
-                prestataire_id=t.prestataire_id,
+                prestataire_ids=tuple(prestataires.get(t.id, [])),
                 exercice=exercice_de(horloge.jour_civil(t.ferme_le), mois_debut),
                 issue=met["issue"],
                 metriques=met,
@@ -189,12 +192,17 @@ def plus_lents(session: Session, mesures: list[Mesure]) -> list[dict]:
 
     Seules comptent les affaires où un intervenant était désigné ET qui sont
     passées par cette étape : une affaire réglée sans lui ne le mesure pas.
+
+    Une affaire à plusieurs intervenants compte pour CHACUN (#2704, Q8) : l'étape
+    ne dit pas lequel a traîné. L’écran le dit en note, sous la liste.
     """
     par: dict[int, list[float]] = {}
     for x in mesures:
         jours = jours_d_etape(x, ETAPE_PRESTATAIRE)
-        if x.prestataire_id is not None and jours is not None:
-            par.setdefault(x.prestataire_id, []).append(jours)
+        if jours is None:
+            continue
+        for prestataire_id in x.prestataire_ids:
+            par.setdefault(prestataire_id, []).append(jours)
     lignes = []
     for prestataire_id, jours in par.items():
         p = session.get(Prestataire, prestataire_id)
@@ -262,10 +270,24 @@ def bilan_carnet(session: Session, annee: Optional[int] = None) -> dict:
 def bilan_prestataire(session: Session, prestataire_id: int) -> dict:
     """Les affaires closes d'un prestataire (#1646) : l'ensemble, puis chaque exercice.
 
-    Toutes les affaires où il était l'intervenant désigné (`Ticket.prestataire_id`),
+    Toutes les affaires où il figure parmi les intervenants désignés (#2704, Q8),
     celles du carnet comme les autres — arbitré le 04/10/2026.
     """
-    mesures = mesurer(session, affaires_closes(session, Ticket.prestataire_id == prestataire_id))
+    candidates = affaires_closes(
+        session,
+        or_(
+            col(Ticket.prestataire_id) == prestataire_id,
+            col(Ticket.id).in_(
+                select(TicketPrestataire.ticket_id).where(
+                    TicketPrestataire.prestataire_id == prestataire_id
+                )
+            ),
+        ),
+    )
+    #  La liste EFFECTIVE tranche : une ligne qu'une version antérieure a
+    #  laissée derrière un changement d'intervenant ne compte pas.
+    listes = par_affaire(session, candidates)
+    mesures = mesurer(session, [t for t in candidates if prestataire_id in listes[t.id]])
     return {
         "prestataire_id": prestataire_id,
         "ensemble": resumer(mesures),

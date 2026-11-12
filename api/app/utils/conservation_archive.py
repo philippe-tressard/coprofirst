@@ -35,18 +35,17 @@ import zipfile
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
-from typing import Optional
 
 from sqlmodel import Session, col, select
 
 from app import contexte
 from app.models.conservation import ArchiveAffaires
-from app.models.prestataires import Prestataire
 from app.utils.categories_ticket import libelle_categorie
 from app.utils.conservation_affaires import Contenu, Echeance
 from app.utils.dates_fr import date_courte
 from app.utils.equipements import libelle_equipement
 from app.utils.perimetres import parse_json_perimetres, perimetre_label
+from app.utils.prestataires_affaire import libelle, prestataires_de
 from app.utils.stockage import DOSSIER_PRIVE, stockage
 
 #: Le dossier des archives dans le stockage de la copropriété — privé, jamais servi.
@@ -140,11 +139,6 @@ def pieces_de(contenu: Contenu) -> list[Piece]:
     return pieces
 
 
-def _prestataire(session: Session, prestataire_id: Optional[int]) -> str:
-    p = session.get(Prestataire, prestataire_id) if prestataire_id else None
-    return p.nom if p else ""
-
-
 def _ligne(session: Session, contenu: Contenu, pieces: list[Piece]) -> list[str]:
     """Une affaire, en cellules — jamais un nom de personne."""
     t = contenu.ticket
@@ -156,7 +150,7 @@ def _ligne(session: Session, contenu: Contenu, pieces: list[Piece]) -> list[str]
         date_courte(contenu.cloture),
         perimetre_label(parse_json_perimetres(t.perimetre_cible)),
         libelle_equipement(session, t.equipement),
-        _prestataire(session, t.prestataire_id),
+        libelle(session, prestataires_de(session, t)),  # tous (#2704)
         f"n° {t.contrat_id}" if t.contrat_id else "",
         " · ".join(f"{p.nom} ({p.empreinte[:12]}…)" for p in pieces),
     ]

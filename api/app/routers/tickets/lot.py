@@ -38,6 +38,7 @@ from app.models.prestataires import Prestataire
 from app.models.tickets import CategorieTicket, StatutTicket
 from app.utils.courriel_entrant import nouveau_jeton
 from app.utils.intervenant import FREQUENCES, contrat_valide
+from app.utils.prestataires_affaire import liste_demandee, poser
 from app.utils.perimetres import perimetre_cible_json
 
 from .commun import generer_numero
@@ -58,6 +59,8 @@ class VisiteDuLot(BaseModel):
     debut: datetime
     perimetre_cible: list[str] = []
     prestataire_id: Optional[int] = None
+    #: Plusieurs prestataires, dans l'ordre (#2704, Q9) — mêmes règles qu'une affaire.
+    prestataire_ids: Optional[list[int]] = None
     #: La visite d'un CONTRAT (#1445) : sa fréquence se lit sur lui.
     contrat_id: Optional[int] = None
     frequence_type: Optional[str] = None
@@ -87,38 +90,42 @@ def creer_visites_en_lot(
             raise HTTPException(422, f"Visite {i} : titre vide.")
         if v.frequence_type and v.frequence_type not in FREQUENCES:
             raise HTTPException(422, f"Visite {i} : fréquence inconnue.")
-        if v.prestataire_id is not None and session.get(Prestataire, v.prestataire_id) is None:
+        try:
+            prestataires = liste_demandee(v, []) or []
+        except HTTPException as refus:
+            raise HTTPException(422, f"Visite {i} : {refus.detail}.") from refus
+        if any(session.get(Prestataire, p) is None for p in prestataires):
             raise HTTPException(422, f"Visite {i} : prestataire introuvable.")
         if v.contrat_id is not None:
             try:
-                contrat_valide(session, v.contrat_id, v.prestataire_id)
+                contrat_valide(session, v.contrat_id, prestataires)
             except HTTPException as refus:
                 raise HTTPException(422, f"Visite {i} : {refus.detail}.") from refus
         #  Sous contrat, le rythme est celui du contrat — la règle d'`appliquer_intervenant`.
         rythme = (None, None) if v.contrat_id else (v.frequence_type, v.frequence_valeur)
-        session.add(
-            Ticket(
-                numero=generer_numero(session),
-                jeton_courriel=nouveau_jeton(),
-                titre=v.titre.strip(),
-                #  La description est obligatoire pour une affaire : le titre la porte
-                #  à défaut — c'est ce que faisait la migration des événements (0212).
-                description=v.description or f"<p>{escape(v.titre.strip())}</p>",
-                categorie=CategorieTicket.entretien,
-                statut=StatutTicket.chez_prestataire,
-                priorite="normale",
-                suivi_kanban=True,
-                auteur_id=user.id,
-                perimetre_cible=perimetre_cible_json(v.perimetre_cible),
-                debut=v.debut,
-                prestataire_id=v.prestataire_id,
-                contrat_id=v.contrat_id,
-                frequence_type=rythme[0],
-                frequence_valeur=rythme[1] if rythme[0] else None,
-                cree_le=maintenant,
-                mis_a_jour_le=maintenant,
-            )
+        visite = Ticket(
+            numero=generer_numero(session),
+            jeton_courriel=nouveau_jeton(),
+            titre=v.titre.strip(),
+            #  La description est obligatoire pour une affaire : le titre la porte
+            #  à défaut — c'est ce que faisait la migration des événements (0212).
+            description=v.description or f"<p>{escape(v.titre.strip())}</p>",
+            categorie=CategorieTicket.entretien,
+            statut=StatutTicket.chez_prestataire,
+            priorite="normale",
+            suivi_kanban=True,
+            auteur_id=user.id,
+            perimetre_cible=perimetre_cible_json(v.perimetre_cible),
+            debut=v.debut,
+            contrat_id=v.contrat_id,
+            frequence_type=rythme[0],
+            frequence_valeur=rythme[1] if rythme[0] else None,
+            cree_le=maintenant,
+            mis_a_jour_le=maintenant,
         )
+        session.add(visite)
+        session.flush()  # l'identifiant, que portent les lignes de la liste
+        poser(session, visite, prestataires)
     session.commit()
     return {"crees": len(body.affaires)}
 

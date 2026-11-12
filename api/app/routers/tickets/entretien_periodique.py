@@ -26,6 +26,8 @@ from app.utils import horloge
 from app.utils.affaire_absorbee import pas_absorbee
 from app.utils.entretien_periodique import condition_periodique, etat_visite, jour_de_reference
 from app.utils.lecture import lire_objet
+from app.utils.prestataires_affaire import libelle, par_affaire
+from app.utils.recuperer import precharger
 
 router = APIRouter()
 
@@ -80,9 +82,8 @@ def lister_entretiens_periodiques(
         (t for t in candidates if jour_de_reference(t).year == exercice),
         key=lambda t: (jour_de_reference(t), t.numero),
     )
-    prestataires = _noms(
-        session, Prestataire, {t.prestataire_id for t in visites if t.prestataire_id}, "nom"
-    )
+    listes = par_affaire(session, visites)  # tous les prestataires (#2704)
+    precharger(session, Prestataire, {i for ids in listes.values() for i in ids})
     contrats = _noms(
         session, ContratEntretien, {t.contrat_id for t in visites if t.contrat_id}, "libelle"
     )
@@ -92,7 +93,7 @@ def lister_entretiens_periodiques(
             lire_objet(
                 VisitePeriodique,
                 t,
-                prestataire_nom=prestataires.get(t.prestataire_id),
+                prestataire_nom=libelle(session, listes[t.id]) or None,
                 contrat_libelle=contrats.get(t.contrat_id),
                 etat=etat_visite(t, aujourd_hui),
             )
