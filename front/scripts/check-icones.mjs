@@ -7,7 +7,7 @@
  * `Icon.svelte` rend `icons[name] ?? icons['help-circle']` : un nom inconnu ne
  * lève rien, ne journalise rien, et affiche un point d'interrogation à la place
  * de l'icône voulue. La règle « icône vérifiée dans `icones-svg.json` » était
- * écrite dans la checklist de `CLAUDE.md` — et **aucun script ne lisait le
+ * écrite dans la checklist front (aujourd'hui dans `ux-patterns`) — et **aucun script ne lisait le
  * catalogue** du côté du code du front.
  *
  * Le jour où ce contrôle a été écrit, il a trouvé la faute qu'il décrit :

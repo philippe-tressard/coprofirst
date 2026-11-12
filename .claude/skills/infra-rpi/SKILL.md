@@ -27,8 +27,8 @@ La conduite à tenir est ci-dessous.
 - Conteneurs uniquement sur le RPi actif — vérifier les 2 en cas de doute (`docker ps`)
 - En cas de split-brain (conteneurs sur les 2) : stopper le standby + recréer `.active`
 - `MaJ-Hostachy.sh` refuse de tourner sur le standby ; en root (`sudo bash`), il pose le verrou de bascule sur les DEUX nœuds et prend celui du déploiement (#1999)
-- En cas de site HS : SSH sur le RPi actif → `cd /opt/5hostachy && . scripts/lib/lib-env-role.sh && env_role_appliquer .env actif && docker compose up -d`
-  — le `env_role_appliquer` pose `ORIGIN` public et retire `COOKIE_SECURE` ; démarrer la stack sur un nœud resté en rôle standby sert le public avec une origine locale et un cookie sans drapeau `Secure` (« gap .env du 15/07/2026 », #1077). La règle vit dans `scripts/lib/lib-env-role.sh`, jamais recopiée.
+- En cas de site HS : SSH sur le RPi actif, relire `.active` (il doit nommer ce nœud) et vérifier que sa base est là. Rôle douteux ou base absente → ne rien démarrer : `lib-promotion.sh` (`decider_prise_de_main`) décide, ou `sudo bash scripts/exploitation/MaJ-Hostachy.sh` reprend en main avec sa garde. Sinon → `cd /opt/5hostachy && . scripts/lib/lib-env-role.sh && . scripts/lib/lib-applicatifs.sh && env_role_appliquer .env actif && docker compose up -d --no-recreate $SERVICE_BASE && docker compose up -d $SERVICES_APPLICATIFS` (l'ordre et le `--no-recreate` de `servir_images` : la base n'est que démarrée, jamais recréée ; #2706)
+  — le `env_role_appliquer` pose `ORIGIN` public et retire `COOKIE_SECURE` ; démarrer la stack sur un nœud resté en rôle standby sert le public avec une origine locale et un cookie sans drapeau `Secure` (« gap .env du 15/07/2026 », #1077). La règle vit dans `scripts/lib/lib-env-role.sh`, jamais recopiée. Depuis #1751, `ORIGIN` dit aussi quel nom l'API sert : un actif resté sur son IP répondrait **421** au public. Les quatre chemins de prise de main (bascule, failover, garde au démarrage, reprise en main) passent par `env_role_appliquer`.
 
 ## ⚠️ Règle d'or des données — PostgreSQL : primaire, réplique, promotion (DI-7b, #1781)
 
@@ -645,18 +645,31 @@ fois.
 
 ## Crontabs (sudo root — identiques sur les 2 RPi)
 
-🔴 **Ne pas les recopier ici.** La table qui vivait à cet endroit citait **trois
-scripts sur quatre** — `check-reliability.sh`, celui qui décide d'alerter, n'y
-figurait pas — et donnait une cadence « toutes les 5 minutes » là où l'installé écrit des minutes
-décalées (pour ne pas empiler les deux sondes) — l'horaire ne s'écrit donc plus
-que dans le fichier versionné (#1562). Une table recopiée se périme, et celle-ci
-décrivait un parc qui n'existait plus (#1051).
+**Quand** chacun tourne se lit dans `infra/points-entree/cron-root.crontab` (root) et
+`cron-ptressard.crontab` (`auto-deploy.sh`, seul cron utilisateur), jamais ici : les minutes y
+sont décalées exprès (#1562). Ce que chacun fait :
 
-**La source est versionnée** : `infra/points-entree/cron-root.crontab` (root) et
-`cron-ptressard.crontab` (utilisateur, `auto-deploy.sh`). Le **point 17** du
-pré-check compare l'installé au dépôt avant chaque livraison.
+- `bascule.sh` (quotidien, de nuit) : bascule active/standby, puis le nouveau standby pose sa
+  révision de noyau et toutes ses autres mises à jour — Docker, cloudflared, Node.js…, sauf
+  celles qui ramèneraient un paquet retiré (C35) — et redémarre (`noyau-standby.sh`, #1395,
+  #2198). Une nouvelle série de noyau reste manuelle : C30 la signale avec la commande.
+- `maintenance.sh` (hebdomadaire) : purges demandées à l'API (`POST
+  /admin/maintenance/purges` — jamais `docker exec … python`, #1232) ; sur les deux nœuds,
+  images de base re-tirées — les `FROM` des Dockerfile et les `image:` du compose, PostgreSQL
+  compris (#1379, #1872) : tirer ne redémarre rien, la base prend sa nouvelle image à la
+  bascule, et `auto-deploy` ne la recrée jamais (`--no-recreate`) — et rotation des logs.
+- `health-watch.sh` (toutes les quelques minutes) : failover automatique si le site est HS, et
+  une ligne datée à chaque sonde, site OK compris — son battement, que C31 mesure (#1586).
+- `check-reliability.sh` (quart d'heure) : contrôles numérotés, alerte sur `FAIL`, digest
+  quotidien sur `WARN`, chaque fait envoyé une fois par le nœud qu'il concerne (#1402) ;
+  constats dans Admin › Maintenance (battement à chaque passage, #1805 ; un constat affiché une
+  fois, #1396). Au premier passage après 04:00, il lance l'audit de sécurité nocturne
+  (`audit-securite.sh`, S1–S6, plus bas). La moitié des contrôles vit dans `scripts/lib/` : où
+  vit chacun, `grep -rn "── C[0-9]" scripts/`.
 
-🔒 `npm run lint:consignes` refuse désormais qu'une consigne en énumère une partie.
+« Identique sur les 2 nœuds » est un invariant, pas un constat (faux jusqu'au 06/08/2026) : le
+vérifier fait partie du point 8 du pré-check. `auto-deploy.sh` (cron `ptressard`) relève du
+point 11. 🔒 `npm run lint:consignes` refuse qu'une consigne en énumère une partie.
 
 ## Le standby s'aligne tout seul (#448 — 19/08/2026)
 
@@ -1215,3 +1228,30 @@ revenir à `state: open`. Deux causes cumulées, corrigées :
    mois. **Corrigé** : fenêtre de rattrapage 18h00→21h45 toutes les 15 min (la
    déduplication existante empêche tout doublon), alerte email si la fenêtre se
    ferme sans envoi réussi.
+
+## Les scripts d'infra en CI — job `test-scripts` (venu de `CLAUDE.md`, #2709)
+
+Le job vérifie la syntaxe (`bash -n`) de tous les `.sh` versionnés, les modes git (0b), et
+exécute les **self-tests**. **Toute nouvelle logique de décision d'infra** s'isole en fonction
+**pure** (aucun SSH, docker, écriture ni `sudo`), expose `--selftest`, et s'ajoute au job —
+le seul moyen de tester une décision de bascule sans les deux RPi. Lancer : `bash
+<script>.sh --selftest`.
+
+- **Un processus par fichier est interdit dans ce job** (#2231) : les scans d'octets passent par
+  `scripts/ci/scans_fichiers.py`, les self-tests de l'étape « Self-tests des fonctions de
+  décision » se jouent côte à côte par `scripts/ci/lancer_en_parallele.py` (la liste reste
+  écrite dans `ci.yml`, une commande par ligne — c'est elle que lit
+  `verifier-selftests-branches.sh`). Un self-test est donc pur et indépendant : il n'écrit que
+  dans son dossier jetable.
+- **Un autotest ne lit pas l'horloge réelle contre une date posée** (#2261, #2232) :
+  `scripts/ci/horloge_autotests.py` refuse une constante datée dans un script qui lit `date +%F`
+  (la date s'injecte : `${AUJOURDHUI:-$(date +%F)}`) et un âge calculé à la main ; l'âge se
+  demande à `age_min_epoch` (`lib-horodatage.sh`). Côté pytest, une ancienneté en jours se pose
+  par `tests/aides_horloge.il_y_a_jours(N)` et le fichier se rejoue à l'heure hostile (fixture
+  `heure_hostile`) ; 🔒 `test_anciennete_jours_civils.py`.
+- **Une décision ne se prend jamais sur `producteur | grep -q motif`** (#2298) : sous
+  `pipefail`, grep qui sort au premier appariement tue le producteur (141) et le test dit
+  « non » au hasard. Lire le producteur (`_s=$(… || true)`), puis `grep -q motif <<<"$_s"` —
+  sans le `|| true`, `set -e` tue le script quand le producteur sort non nul.
+  `python scripts/ci/pipe_grep_quiet.py` refuse les deux formes ; son `--selftest` en prouve le
+  mécanisme.

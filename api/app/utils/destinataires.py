@@ -295,7 +295,7 @@ def membres_cs_avec_email(session: Session) -> list[tuple[int, str]]:
     ⚠️ Le critère est le **rôle** `conseil_syndical`, sans notion de périmètre —
     à distinguer de `membres_cs_notifiables()` ci-dessus, qui part de la table
     `MembreCS` et filtre par bâtiment. Les deux coexistent volontairement, et
-    `CLAUDE.md` dit laquelle sert à quoi : celle-ci vise le rôle (publications,
+    la skill `api-scaffold` (§8) dit laquelle sert à quoi : celle-ci vise le rôle (publications,
     sondages, calendrier, tickets), l'autre vise le périmètre (nouvel arrivant,
     annonces de hall).
     """

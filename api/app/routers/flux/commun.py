@@ -134,7 +134,7 @@ def pastilles_affaire(ticket) -> dict:
 
     ⚠️ Par `TicketRead`, pas par une recopie colonne à colonne : ses validateurs
     décodent `perimetre_cible` et `public_cible`, et une copie en oublierait un
-    (CLAUDE.md, « lire un objet pour le RENDRE »). 🔒 `test_flux_pastilles.py`.
+    (skill `api-scaffold` §8, « Lire, refuser, rendre »). 🔒 `test_flux_pastilles.py`.
     """
     rendu = TicketRead.model_validate(ticket).model_dump(mode="json", include=set(CHAMPS_PASTILLES))
     #  🔴 La NATURE (Affaire, Calendrier, Actualité) se DÉRIVE — `natures(ticket)`,

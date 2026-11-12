@@ -5,7 +5,7 @@
  *
  *  ## Pourquoi ce contrôle
  *
- *  `ux-patterns` §7 et la checklist de `CLAUDE.md` posent la règle :
+ *  `ux-patterns` §7 et la checklist de `ux-patterns` posent la règle :
  *
  *    `.clamp-3` → l'aperçu d'une carte de liste · `.clamp-2` → un titre de
  *    carte. (`.clamp-5`, pour un bloc expansible qui n'était pas une carte, est

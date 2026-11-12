@@ -19,7 +19,7 @@ bâtiment concerné.
 - le **courriel** va au CS du **périmètre** du ticket. Ce qui est tolérable dans
   une liste ne l'est pas dans une boîte aux lettres.
 
-C'est la distinction que le tableau « Destinataires CS » de `CLAUDE.md` porte
+C'est la distinction que le tableau « Destinataires » de la skill `api-scaffold` (§8) porte
 depuis le 31/08/2026, et que ce circuit n'appliquait pas.
 
 ⚠️ Ces tests regardent **qui est visé**, pas si `send_email_group` a été appelée.

@@ -1,7 +1,7 @@
 """Un module de `tests/` porte un nom qui dit ce qu'il est (#1604).
 
 Trois noms seulement : `test_*.py` (des tests), `aides_*.py` (une aide partagée —
-CLAUDE.md, « le code de test ne se recopie pas »), `conftest.py`. Le reste est
+skill `api-scaffold` §9, « le code de test ne se recopie pas »), `conftest.py`. Le reste est
 refusé : `purge_test.py` était collecté par le motif par défaut de pytest
 (`*_test.py`) comme s'il portait des tests, alors qu'il n'en portait aucun, et
 `contrats_email.py`, `lib_variables_jinja.py`… ne disaient pas qu'ils étaient des

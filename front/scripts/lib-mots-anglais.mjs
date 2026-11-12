@@ -3,7 +3,7 @@
  *
  * ## 🔴 Pourquoi (#1579, 02/10/2026)
  *
- * La checklist Frontend de `CLAUDE.md` dit « libellés et nommage en français »,
+ * La checklist front (`ux-patterns`) dit « libellés et nommage en français »,
  * et aucun contrôle ne la tenait : `lint:texte` normalise l'Unicode,
  * `check-casse-libelles` juge la casse. Un « Submit » ou un « Loading » écrit par
  * réflexe — un bouton, une infobulle, un toast — passait donc sans un mot.
@@ -167,7 +167,7 @@ export function bilanAnglais(fautifs, exceptionsVues, fichiersLus) {
 			for (const o of f.fautes)
 				console.error(`   ${f.rel}:${o.ligne}  (${o.porte})  « ${o.texte} »`);
 		console.error(
-			'\n  Les libellés sont en FRANÇAIS exclusivement (CLAUDE.md, checklist Frontend).' +
+			'\n  Les libellés sont en FRANÇAIS exclusivement (skill ux-patterns, checklist avant commit).' +
 				'\n  → traduire, ou déclarer l’emplacement dans `EXCEPTIONS_ANGLAIS`' +
 				'\n  (`lib-mots-anglais.mjs`) avec sa raison.\n',
 		);

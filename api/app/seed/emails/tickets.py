@@ -239,7 +239,7 @@ MODELES = [
     #  ⚠️ Il vise le CS du PÉRIMÈTRE, pas tout le conseil : la notification in-app
     #  allait à tout le monde, ce qui est tolérable dans une liste et ne l’est pas
     #  dans une boîte aux lettres. `membres_cs_notifiables(session, batiments)` est
-    #  la fonction prévue pour ça (cf. le tableau « Destinataires CS » de CLAUDE.md).
+    #  la fonction prévue pour ça (cf. le tableau « Destinataires » de la skill api-scaffold §8).
     (
         "ticket_nouveau_cs",
         "Nouvelle affaire — notification du conseil syndical",
