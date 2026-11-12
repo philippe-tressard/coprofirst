@@ -70,7 +70,7 @@
 	$: compactPrests = filteredPrests.length > 7;
 
 	//  Tous les contrats du prestataire, assurances et mandats compris : la carte
-	//  les montre. `contratsDuPrestataire` (`#lib/prestataires`) répond à une
+	//  les montre. `contratsDesPrestataires` (`#lib/prestataires`) répond à une
 	//  autre question — sous quel contrat il peut INTERVENIR — et les écarte.
 	function contratsForPrest(prestId: number): ContratEntretien[] {
 		return contrats.filter((c) => c.prestataire_id === prestId);

@@ -220,9 +220,14 @@ export interface Ticket extends PorteSaisiPourLu {
 	 *   sinon jamais) — `null` pour une affaire suivie, qui se clôt (#1093). */
 	perime_le?: string | null;
 	/**  Section « Intervenant » et récurrence d'un Entretien (#1092, lot 5).
-	 *   `prestataire_nom` est dérivé par le serveur, en lecture seule. */
+	 *   `prestataire_id` et `prestataire_nom` disent le PREMIER des prestataires
+	 *   (clients antérieurs) ; `prestataire_nom` est dérivé, en lecture seule. */
 	prestataire_id?: number | null;
 	prestataire_nom?: string | null;
+	/**  Les prestataires de l'affaire, dans l'ordre de saisie (#2704) — DÉRIVÉ. */
+	prestataires?: { id: number; nom: string }[];
+	/**  À l'ENVOI seulement : la liste entière, dans l'ordre (#2704). */
+	prestataire_ids?: number[];
 	/**  Le cadre de l'intervention (#1445) : le contrat, `null` hors contrat.
 	 *   `contrat` est DÉRIVÉ par le serveur — le rythme pour tous, le libellé
 	 *   et le numéro pour le conseil seul. */
@@ -287,6 +292,8 @@ export interface Ticket extends PorteSaisiPourLu {
 	peut_modifier?: boolean;
 	/** ✏️ Le crayon : ouvrir la correction (`auth/deps.peut_editer`, #2633). */
 	peut_corriger?: boolean;
+	/** 🛠️ Désigner les prestataires (`gestes_affaire.peut_changer_prestataires`, #2704). */
+	peut_changer_prestataires?: boolean;
 	/**  Le ticket paraît-il au KANBAN ? Coché d'office pour « Étude & travaux »,
 	 *   décochable par le conseil (#833).
 	 *

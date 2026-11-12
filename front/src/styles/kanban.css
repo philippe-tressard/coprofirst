@@ -131,11 +131,21 @@
 	line-height: 1.4;
 }
 .kanban-card-prest {
+	display: flex;
+	gap: 0.25rem;
+	min-width: 0;
 	font-size: var(--fs-2xs);
 	color: var(--color-text-muted);
+	white-space: nowrap;
+}
+/*  Le nom s'abrège, « +N » reste entier (#2704). */
+.kanban-card-prest-nom {
 	overflow: hidden;
 	text-overflow: ellipsis;
-	white-space: nowrap;
+}
+.kanban-card-prest-plus {
+	flex: none;
+	font-weight: 700;
 }
 .kanban-card-titre {
 	font-size: var(--fs-sm);

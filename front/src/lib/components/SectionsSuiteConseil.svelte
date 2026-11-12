@@ -57,6 +57,8 @@
 
 	$: conseil = conseilDansLaSuite(ticket, $estModerateur);
 	$: bati = equipementDansLaSuite(ticket, $estModerateur);
+	//  Les prestataires : le geste SERVI (#2704) — une affaire close ne les change plus.
+	$: intervenant = bati && ticket.peut_changer_prestataires !== false;
 
 	let prestataires: { id: number; nom: string; actif?: boolean; specialite?: string | null }[] = [];
 	let contrats: ContratEnCours[] = [];
@@ -72,9 +74,9 @@
 	let equipementVu = $etat.equipement;
 	$: if ($etat.equipement !== equipementVu) {
 		equipementVu = $etat.equipement;
-		const propose = intervenantPropose($etat.equipement, contrats, $etat.prestataireId);
+		const propose = intervenantPropose($etat.equipement, contrats, $etat.prestataireIds);
 		if (propose)
-			[$etat.prestataireId, $etat.contratId] = [propose.prestataireId, propose.contratId];
+			[$etat.prestataireIds, $etat.contratId] = [[propose.prestataireId], propose.contratId];
 	}
 
 	$: options.planification = !conseil
@@ -85,8 +87,9 @@
 				...(bati
 					? {
 							equipement: $etat.equipement || null,
-							prestataire_id: $etat.prestataireId,
-							contrat_id: $etat.contratId,
+							...(intervenant
+								? { prestataire_ids: $etat.prestataireIds, contrat_id: $etat.contratId }
+								: {}),
 						}
 					: {}),
 			};
@@ -100,14 +103,14 @@
 		bind:debut={$etat.debut}
 		bind:fin={$etat.fin}
 	/>
-	{#if bati}
+	{#if intervenant}
 		<SectionIntervenant
 			idPrefixe="suite-{ticket.id}"
 			pliable={pliageDe(TICKET, 'intervenant')}
 			equipement={$etat.equipement}
 			{erreur}
 			bind:prestataires
-			bind:prestataireId={$etat.prestataireId}
+			bind:prestataireIds={$etat.prestataireIds}
 			{contrats}
 			bind:contratId={$etat.contratId}
 		/>

@@ -76,3 +76,31 @@ test('un prestataire sans contrat ne propose pas « hors contrat »', async ({ p
 	await intervenant.locator('select').first().selectOption('2');
 	await expect(intervenant.getByLabel(/Cadre de l.intervention/)).toHaveCount(0);
 });
+
+test('plusieurs prestataires : ajouter, réordonner, retirer — le contrat suit la liste (#2704)', async ({
+	page,
+}) => {
+	const intervenant = await nouvelEntretien(page);
+	const ajouter = intervenant.locator('select').first();
+	const retenus = intervenant.getByRole('list', { name: 'Prestataires retenus' }).locator('li');
+	const cadre = intervenant.getByLabel(/Cadre de l.intervention/);
+
+	await ajouter.selectOption('2');
+	await ajouter.selectOption('1');
+	await expect(retenus).toHaveText([/Plomberie Martin/, /Otis/]);
+	//  Le menu revient à son invite, et n'offre plus ceux qui sont retenus.
+	await expect(ajouter).toHaveValue('');
+	await expect(ajouter.locator('option')).toHaveCount(1);
+	//  Le contrat du SECOND cadre l'intervention (Q4) : le choix s'offre.
+	await expect(cadre).toBeVisible();
+	await cadre.selectOption('10');
+
+	await intervenant.getByRole('button', { name: 'Monter Otis' }).click();
+	await expect(retenus).toHaveText([/Otis/, /Plomberie Martin/]);
+	await expect(intervenant.getByRole('button', { name: 'Monter Otis' })).toBeDisabled();
+
+	//  Otis retiré, son contrat ne cadre plus rien : le choix disparaît.
+	await intervenant.getByRole('button', { name: 'Retirer Otis' }).click();
+	await expect(retenus).toHaveText([/Plomberie Martin/]);
+	await expect(cadre).toHaveCount(0);
+});
