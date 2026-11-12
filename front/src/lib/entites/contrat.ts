@@ -76,7 +76,7 @@ export const CONTRAT: EntiteDeclaree = {
 			//  paraît pas pour autant sous le filtre Calendrier : ce sont les
 			//  entretiens qu'il déclenche qui s'y inscrivent.
 			id: 'quand',
-			objet: 'Début · Durée initiale · Fréquence · Prochaine visite',
+			objet: 'Début · Durée initiale · Fréquence · Prochaine visite · Résilié le · Remplacé par',
 			requis: true,
 		},
 		{

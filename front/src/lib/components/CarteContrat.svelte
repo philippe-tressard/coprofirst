@@ -40,6 +40,7 @@
 	import type { ContratEntretien, Document, Prestataire } from '#lib/api/index.ts';
 	import { fmtDateShort } from '#lib/date.ts';
 	import { safeHtml } from '#lib/sanitize.ts';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
 	import { CONTRAT } from '#lib/entites/contrat.ts';
 	import CarteModifiable from './CarteModifiable.svelte';
 	import ListeDocuments from './ListeDocuments.svelte';
@@ -63,6 +64,8 @@
 	export let editContratId: number | null = null;
 	export let contratForm: FormulaireContratData;
 	export let prestataires: Prestataire[] = [];
+	/**  Les contrats proposables comme suite de celui-ci, passés au formulaire. */
+	export let contratsProposes: ContratEntretien[] = [];
 	export let submitting = false;
 
 	export let onBasculer: (id: number) => void = () => {};
@@ -166,9 +169,31 @@
 		      par carte. Son ÉTAT reste ici, en capsule teintée — le retard, qui
 		      était la couleur de la date —, et la carte sans échéance le dit :
 		      sa gouttière montre alors le DÉBUT du contrat, pas une visite. -->
+		<!--  🔁 Le REMPLACEMENT se lit sur les DEUX cartes (12/11/2026) : l'ancien
+		      contrat dit par qui il est remplacé et dès quand, le nouveau dit qui il
+		      remplace. Le sens inverse n'est pas saisi, il est déduit par l'API
+		      (`utils/remplacement_contrat`) — les deux pastilles ne peuvent pas diverger. -->
+		{#if contrat.remplace_par}
+			<span class="badge badge-gray"
+				>🔁 Remplacé par {contrat.remplace_par.prestataire_nom}{SEPARATEUR.point}dès le {fmtDateShort(
+					contrat.remplace_par.date_debut,
+				)}</span
+			>
+		{:else if contrat.resilie_le}
+			<span class="badge badge-gray"
+				>{contrat.resilie ? 'Résilié le' : 'Résilié au'} {fmtDateShort(contrat.resilie_le)}</span
+			>
+		{/if}
+		{#each contrat.remplace as ancien (ancien.id)}
+			<span class="badge badge-gray"
+				>🔁 Remplace {ancien.prestataire_nom}{ancien.resilie_le
+					? ` (résilié au ${fmtDateShort(ancien.resilie_le)})`
+					: ''}</span
+			>
+		{/each}
 		{#if contrat.prochaine_visite && enRetard}
 			<span class="badge badge-red">⚠️ Visite en retard</span>
-		{:else if !contrat.prochaine_visite}
+		{:else if !contrat.prochaine_visite && !contrat.resilie_le}
 			<span class="badge badge-gray">Sans échéance</span>
 		{/if}
 		{#if contrat.frequence_libelle}
@@ -197,6 +222,7 @@
 		<FormulaireContrat
 			bind:contratForm
 			{prestataires}
+			{contratsProposes}
 			contratId={contrat.id}
 			{documents}
 			onSupprimer={onSupprimerDoc}
@@ -234,6 +260,21 @@
 							>🗓 {fmtDateShort(contrat.prochaine_visite)}</span
 						>
 					</div>{/if}
+				{#if contrat.resilie_le}
+					<div><span class="detail-label">Résilié le</span>{fmtDateShort(contrat.resilie_le)}</div>
+				{/if}
+				{#if contrat.remplace_par}
+					<div>
+						<span class="detail-label">Remplacé par</span>{contrat.remplace_par
+							.libelle}{SEPARATEUR.tiret}{contrat.remplace_par.prestataire_nom}
+					</div>
+				{/if}
+				{#each contrat.remplace as ancien (ancien.id)}
+					<div>
+						<span class="detail-label">Remplace</span
+						>{ancien.libelle}{SEPARATEUR.tiret}{ancien.prestataire_nom}
+					</div>
+				{/each}
 			</div>
 		</div>
 		{#if contrat.notes}

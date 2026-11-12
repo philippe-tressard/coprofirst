@@ -101,6 +101,21 @@ class PrestataireRead(AssisteIASortie):
         return v
 
 
+class ContratLie(BaseModel):
+    """Le contrat à l'autre bout d'un remplacement — ce que la pastille a besoin de dire.
+
+    « Remplacé par Sécurité Alpha · dès le 18/11/2026 », « Remplace Sécurité Beta (résilié
+    au 17/11/2026) » : un nom, une date, et de quoi ouvrir la fiche (12/11/2026).
+    """
+
+    id: int
+    libelle: str
+    prestataire_id: int
+    prestataire_nom: str
+    date_debut: date
+    resilie_le: Optional[date] = None
+
+
 class ContratRead(BaseModel):
     id: int
     copropriete_id: int
@@ -136,6 +151,15 @@ class ContratRead(BaseModel):
     archivee: bool = False
     notes: Optional[str] = None
     document_id: Optional[int] = None
+    #: Le dernier jour du contrat quand il est résilié ; `remplace_par_id` désigne celui
+    #: qui prend la suite (`utils/remplacement_contrat`). Les deux se saisissent ensemble.
+    resilie_le: Optional[date] = None
+    remplace_par_id: Optional[int] = None
+    #: DÉDUITS à la lecture, jamais saisis : la résiliation est passée ; le contrat qui
+    #: prend la suite ; ceux que ce contrat remplace (le sens inverse, non stocké).
+    resilie: bool = False
+    remplace_par: Optional[ContratLie] = None
+    remplace: list[ContratLie] = []
 
     #: L'échéance DÉDUITE, et `reconduit` quand le terme initial est passé.
     #: Non stockées : elles se reportent avec le temps, et une colonne figerait

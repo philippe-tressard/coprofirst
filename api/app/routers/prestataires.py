@@ -55,6 +55,7 @@ from app.routers.prestataires_schemas import (
 )
 from app.utils.carnet_entretien import type_equipement_resolu
 from app.utils.notes_prestataires import note_moyenne
+from app.utils.remplacement_contrat import verifier_remplacement
 
 router = APIRouter(prefix="/prestataires", tags=["prestataires"])
 
@@ -137,6 +138,9 @@ class ContratCreate(BaseModel):
     prochaine_visite: Optional[date] = None
     notes: Optional[str] = None
     document_id: Optional[int] = None
+    #: Résilié, et remplacé par un autre contrat — `utils/remplacement_contrat`.
+    resilie_le: Optional[date] = None
+    remplace_par_id: Optional[int] = None
 
 
 @router.get("/contrats", response_model=list[ContratRead])
@@ -220,6 +224,7 @@ def create_contrat(
     donnees = body.model_dump()
     codes = donnees.pop("perimetre_cible", None)
     c = ContratEntretien(**donnees)
+    verifier_remplacement(session, c, c.resilie_le, c.remplace_par_id)
     _resoudre_equipement(session, c)
     _appliquer_perimetre(c, codes or [])
     session.add(c)
@@ -242,6 +247,14 @@ def update_contrat(
     #  retiré depuis reste modifiable sans qu'on lui en choisisse un autre (#2442).
     if modifications.get("type_equipement", c.type_equipement) != c.type_equipement:
         exiger_equipement(session, modifications["type_equipement"], "contrat")
+    #  Le remplacement se juge sur ce que le contrat SERA : la date et le renvoi
+    #  voyagent ensemble, l'un sans l'autre est refusé (`utils/remplacement_contrat`).
+    verifier_remplacement(
+        session,
+        c,
+        modifications.get("resilie_le", c.resilie_le),
+        modifications.get("remplace_par_id", c.remplace_par_id),
+    )
     for k, v in modifications.items():
         setattr(c, k, v)
     _resoudre_equipement(session, c)

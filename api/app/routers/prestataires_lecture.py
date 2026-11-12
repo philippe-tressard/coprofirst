@@ -16,13 +16,16 @@ from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.models.core import ContratEntretien, Prestataire
-from app.routers.prestataires_schemas import ContratRead, PrestataireRead
+from app.routers.prestataires_schemas import ContratLie, ContratRead, PrestataireRead
 from app.utils.archivage import est_archivable
 from app.utils.carnet_entretien import type_equipement_resolu
 from app.utils.echeance_contrat import poser_echeance
 from app.utils.frequence_contrat import frequence_libelle
+from app.utils.lecture import lire_objet
 from app.utils.notes_prestataires import SANS_AVIS, notes_des_prestataires
 from app.utils.recuperer import ou_rien, precharger
+from app.utils.remplacement_contrat import contrats_lies
+from app.utils.echeance_contrat import resiliation_effective
 
 
 def lire_prestataires(session: Session, prests: list[Prestataire]) -> list[PrestataireRead]:
@@ -37,7 +40,11 @@ def lire_prestataires(session: Session, prests: list[Prestataire]) -> list[Prest
         for c in session.exec(
             select(ContratEntretien).where(ContratEntretien.prestataire_id.in_(ids))  # type: ignore[union-attr]
         ).all():
-            if c.prochaine_visite and not est_archivable("contrat", c):
+            if (
+                c.prochaine_visite
+                and not est_archivable("contrat", c)
+                and not resiliation_effective(c)
+            ):
                 courante = visites.get(c.prestataire_id)
                 if courante is None or c.prochaine_visite < courante:
                     visites[c.prestataire_id] = c.prochaine_visite
@@ -107,7 +114,19 @@ def lire_contrats(session: Session, contrats: list[ContratEntretien]) -> list[Co
     assistant_pret = cfg.pret
     #  Les prestataires des contrats, chargés d'une requête : l'équipement effectif
     #  lit leur spécialité (#1838). La liste est GARDÉE tant que les lectures durent.
-    prestataires = precharger(session, Prestataire, [c.prestataire_id for c in contrats])
+    #  Les contrats à l'autre bout d'un remplacement, lus pour toute la liste, avec le
+    #  prestataire de chacun (`utils/remplacement_contrat`).
+    remplacants, remplaces = contrats_lies(session, contrats)
+    voisins = [*remplacants.values(), *(a for anciens in remplaces.values() for a in anciens)]
+    prestataires = precharger(
+        session, Prestataire, [c.prestataire_id for c in [*contrats, *voisins]]
+    )
+    noms = {p.id: p.nom for p in prestataires}
+
+    def lie(c: ContratEntretien) -> ContratLie:
+        return lire_objet(
+            ContratLie, c, prestataire_nom=noms.get(c.prestataire_id, f"#{c.prestataire_id}")
+        )
 
     lus = []
     for c in contrats:
@@ -119,6 +138,8 @@ def lire_contrats(session: Session, contrats: list[ContratEntretien]) -> list[Co
         lu.frequence_libelle = frequence_libelle(c.frequence_type, c.frequence_valeur)
         prest = ou_rien(session, Prestataire, c.prestataire_id)
         lu.equipement_effectif = type_equipement_resolu(c, prest.specialite if prest else None)
+        lu.remplace_par = lie(remplacants[c.id]) if c.id in remplacants else None
+        lu.remplace = [lie(a) for a in remplaces.get(c.id, [])]
         lus.append(lu)
     del prestataires
     return lus

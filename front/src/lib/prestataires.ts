@@ -397,6 +397,10 @@ export interface FormulaireContratData {
 	frequence_type: string;
 	frequence_valeur: string | number;
 	prochaine_visite: string;
+	/**  Résilié le — vide tant que le contrat court. `remplace_par_id` n'a de sens
+	 *   qu'avec elle (`utils/remplacement_contrat`). */
+	resilie_le: string;
+	remplace_par_id: string;
 	notes: string;
 }
 
@@ -423,6 +427,8 @@ export function contratVierge(perimetreDefaut: string[]): FormulaireContratData 
 		frequence_type: '',
 		frequence_valeur: '',
 		prochaine_visite: '',
+		resilie_le: '',
+		remplace_par_id: '',
 		notes: '',
 	};
 }
@@ -454,6 +460,8 @@ export function contratDepuis(
 		frequence_type: c.frequence_type ?? '',
 		frequence_valeur: c.frequence_valeur ?? '',
 		prochaine_visite: c.prochaine_visite ?? '',
+		resilie_le: c.resilie_le ?? '',
+		remplace_par_id: c.remplace_par_id ? String(c.remplace_par_id) : '',
 		notes: c.notes ?? '',
 	};
 }

@@ -33,7 +33,7 @@
 - **Mes lots & accès** — lots, badges Vigik, télécommandes de parking et gestion locative (baux, locataires, inventaire de remise). Le conseil voit les portes que les lots d'un badge justifient — proposées, jamais posées seules — et les badges qui s'en écartent.
 - **FAQ** — questions fréquentes filtrées par profil.
 - **Communauté** — idées, sondages, petites annonces et avis sur l'application, réservés aux résidents.
-- **Prestataires & Contrats** — annuaire, contrats d'entretien, échéances de visite, notation, synthèse de contrat par l'assistant IA ; une affaire peut désigner plusieurs prestataires, dans l'ordre.
+- **Prestataires & Contrats** — annuaire, contrats d'entretien, échéances de visite, résiliation d'un contrat et prestataire qui le remplace, notation, synthèse de contrat par l'assistant IA ; une affaire peut désigner plusieurs prestataires, dans l'ordre.
 - **Annonces de hall** — affiche PDF aux couleurs de la résidence, diffusable au conseil, au syndic et au groupe WhatsApp.
 - **Reporting CS** — suivi des affaires en cours, relance groupée du syndic et comptes rendus de réunion CS / Syndic validés par les présents, exportables en PDF.
 - **Courriels affaires** — les messages reçus à l'adresse des affaires alimentent les fils, avec leurs pièces jointes (documents et photos, dix au plus, hors signature) ; seuls l'auteur, le conseil et le syndic y écrivent ; le journal garde le verdict de chacun, jamais son texte.
