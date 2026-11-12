@@ -65,11 +65,14 @@ from app.seed import EMAIL_TEMPLATES
 #: ⬇️ Mise à jour le 20/10/2026 (#2082) : `point_conseil_validation` marque les CR
 #: « Modifié en révision N » (`a.marque`) — migration **0303** ; et un modèle AJOUTÉ,
 #: `point_conseil_valide` (le CR validé, PDF joint), posé par le seed.
-EMPREINTE = "a053eab180a4d83d4ff56be610f1a400d69898e4bb92c87782d7568d22e42413"
-NOMBRE_ATTENDU = 36  # + ticket_partage, lien_partage (#1357), adresse_changement_avis (#1549),
+#: Puis deux modèles AJOUTÉS (#2699), `suppression_compte_demandee` et
+#: `suppression_compte_effectuee`, posés par le seed.
+EMPREINTE = "7cc377632907f32030a45cbe897bc5fe1c67d04b3ddbec53cdf8f2f2e3b02401"
+NOMBRE_ATTENDU = 38  # + ticket_partage, lien_partage (#1357), adresse_changement_avis (#1549),
 #  synthese_a_valider (#1643), ticket_copie_auteur, publication_copie_auteur,
 #  compte_inactif_avertissement (#1580), point_conseil_validation (#2042),
-#  point_conseil_valide (#2082) — AJOUTÉS, donc
+#  point_conseil_valide (#2082), suppression_compte_demandee et
+#  suppression_compte_effectuee (#2699) — AJOUTÉS, donc
 #  posés par le seed : aucune migration.
 
 

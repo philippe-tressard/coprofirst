@@ -90,7 +90,7 @@ class DemandeSuppressionRead(BaseModel):
 
 
 class EtatDemandeSuppression(BaseModel):
-    """`GET /auth/me/demande-suppression` : ma demande en cours (ou rien), et ce qu'il faut savoir avant."""
+    """`GET /auth/demande-suppression` : ma demande en cours (ou rien), et ce qu'il faut savoir avant."""
 
     demande: Optional[DemandeSuppressionRead] = None
     delai_annonce_jours: int = DELAI_TRAITEMENT_JOURS
@@ -135,7 +135,7 @@ def etat(session: Session, user: Utilisateur) -> EtatDemandeSuppression:
     )
 
 
-def demander(
+def deposer_demande(
     session: Session,
     user: Utilisateur,
     mot_de_passe: str,

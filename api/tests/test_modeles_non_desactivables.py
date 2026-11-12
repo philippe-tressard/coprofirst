@@ -45,6 +45,11 @@ CONTEXTES = {
         "nouvelle_adresse": "nouvelle@exemple.fr",
         "par_un_administrateur": False,
     },
+    "suppression_compte_demandee": {
+        "destinataire": {"prenom": "Prénom", "nom": "Nom"},
+        "delai_jours": 30,
+    },
+    "suppression_compte_effectuee": {"destinataire": {"prenom": "Prénom", "nom": "Nom"}},
     "alerte_systeme": {
         "problemes": ["Sauvegarde absente"],
         "nb_problemes": 1,

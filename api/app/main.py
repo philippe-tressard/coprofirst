@@ -375,8 +375,6 @@ app.include_router(auth_profil.router)
 #  08/09/2026 : elles ne parlent pas d'authentification, seulement d'une donnée
 #  que le site collecte.
 app.include_router(auth_telemetrie.router)
-#  Idem pour la demande de suppression de SON compte (#2699).
-app.include_router(auth_suppression.router)
 app.include_router(lots.router)
 app.include_router(tickets.router)
 app.include_router(partage.router)  # 🔗 → courriel (#1357)
@@ -397,8 +395,9 @@ app.include_router(compteurs.router)
 app.include_router(prestataires_archivage.router)
 #  Les métriques des affaires d'un prestataire (#1646), même préfixe.
 app.include_router(prestataires_metriques.router)
-#  Les routeurs sans particularité de montage : un `include_router` chacun.
-for _routeur in (sondages, idees, avis, annonces, annonces_hall, courriels_affaires, manuel, noms):
+#  Les routeurs sans particularité de montage (aucun chemin commun) : un `include_router` chacun.
+_SANS_PARTICULARITE = (sondages, idees, avis, annonces, annonces_hall, courriels_affaires)
+for _routeur in (*_SANS_PARTICULARITE, manuel, noms, auth_suppression, uploads, faq, bailleur):
     app.include_router(_routeur.router)
 app.include_router(copropriete.router)
 #  Les bâtiments et les lots — extraits le 22/09/2026 (modularité, rang 1). Même
@@ -407,9 +406,6 @@ app.include_router(copropriete_patrimoine.router)
 #  Le carnet d'entretien : une VUE sur les contrats, les interventions et les
 #  tickets clos. Router à part parce que `copropriete.py` était à 478 lignes.
 app.include_router(carnet.router)
-app.include_router(uploads.router)
-app.include_router(faq.router)
-app.include_router(bailleur.router)
 app.include_router(config.router)
 #  Même préfixe `/config` : l'assistant IA de l'administration (#984).
 app.include_router(config_llm.router)

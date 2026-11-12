@@ -26,7 +26,7 @@ from app.utils.delais_rgpd import DELAI_TRAITEMENT_DEMANDE_JOURS
 from tests.aides_http import base_http, client_http
 
 SECRET = "un-secret-de-test-assez-long"
-ROUTE = "/auth/me/demande-suppression"
+ROUTE = "/auth/demande-suppression"
 
 
 @pytest.fixture(name="moteur")

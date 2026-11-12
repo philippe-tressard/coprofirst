@@ -31,7 +31,7 @@ class DemandeSuppressionCreate(BaseModel):
     motif: Optional[str] = Field(default=None, max_length=1000)
 
 
-@router.get("/me/demande-suppression", response_model=EtatDemandeSuppression)
+@router.get("/demande-suppression", response_model=EtatDemandeSuppression)
 @limiter.limit(LIMITE_LECTURE_AUTHENTIFIEE)
 def ma_demande_suppression(
     request: Request,
@@ -42,7 +42,7 @@ def ma_demande_suppression(
     return regles.etat(session, user)
 
 
-@router.post("/me/demande-suppression", status_code=201, response_model=DemandeSuppressionRead)
+@router.post("/demande-suppression", status_code=201, response_model=DemandeSuppressionRead)
 #  Un mot de passe y est éprouvé : la limite des secrets, pas celle des préférences.
 @limiter.limit(LIMITE_SECRET_EPROUVE)
 def demander_suppression(
@@ -53,11 +53,11 @@ def demander_suppression(
     user: Utilisateur = Depends(get_current_user),
 ):
     """Demande la suppression de mon compte. 400 : mot de passe faux ; 409 : une demande est déjà en cours."""
-    demande = regles.demander(session, user, body.mot_de_passe, body.motif, background_tasks)
+    demande = regles.deposer_demande(session, user, body.mot_de_passe, body.motif, background_tasks)
     return regles.lire(demande)
 
 
-@router.delete("/me/demande-suppression", status_code=204)
+@router.delete("/demande-suppression", status_code=204)
 @limiter.limit(LIMITE_LECTURE_AUTHENTIFIEE)
 def retirer_demande_suppression(
     request: Request,

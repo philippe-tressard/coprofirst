@@ -21,7 +21,7 @@ export interface DemandeSuppression {
 	delai_annonce_jours: number;
 }
 
-/** `GET /auth/me/demande-suppression` : ma demande en cours, ou rien, et ce qu'il faut savoir avant. */
+/** `GET /auth/demande-suppression` : ma demande en cours, ou rien, et ce qu'il faut savoir avant. */
 export interface EtatDemandeSuppression {
 	demande: DemandeSuppression | null;
 	delai_annonce_jours: number;
@@ -46,11 +46,11 @@ export interface DemandeSuppressionTraitee {
 }
 
 export const suppressionCompte = {
-	etat: () => api.get<EtatDemandeSuppression>('/auth/me/demande-suppression'),
+	etat: () => api.get<EtatDemandeSuppression>('/auth/demande-suppression'),
 	/** 400 : mot de passe faux ; 409 : une demande est déjà en cours. */
 	demander: (data: { mot_de_passe: string; motif?: string | null }) =>
-		api.post<DemandeSuppression>('/auth/me/demande-suppression', data),
-	retirer: () => api.delete('/auth/me/demande-suppression'),
+		api.post<DemandeSuppression>('/auth/demande-suppression', data),
+	retirer: () => api.delete('/auth/demande-suppression'),
 	/** La file de l'administration (administrateur seul). */
 	enAttente: () => api.get<DemandeSuppressionEnAttente[]>('/admin/demandes-suppression'),
 	traiter: (id: number) =>

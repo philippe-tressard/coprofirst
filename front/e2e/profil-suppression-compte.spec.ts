@@ -9,7 +9,7 @@
 import type { Page } from '@playwright/test';
 import { attendreHydratation, expect, simulerApi, test } from './aides';
 
-const CHEMIN = '/api/auth/me/demande-suppression';
+const CHEMIN = '/api/auth/demande-suppression';
 const CONSEQUENCES = [
 	'Votre compte et vos données personnelles sont effacés.',
 	'Ce que vous avez écrit dans la vie collective reste, sans votre nom.',
