@@ -80,7 +80,9 @@ def _corriger(session, cs, ticket, evol, **champs):
 def _crayon_du_titre(session, cs, ticket, statut: str) -> None:
     """L'état posé HORS du fil : le `PATCH` de l'affaire écrit une correction, pas
     une transition (`test_correction_pas_transition.py`)."""
-    update_ticket(ticket.id, TicketUpdate(statut=statut), BackgroundTasks(), session=session, user=cs)
+    update_ticket(
+        ticket.id, TicketUpdate(statut=statut), BackgroundTasks(), session=session, user=cs
+    )
     session.expire_all()
 
 
