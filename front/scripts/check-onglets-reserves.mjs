@@ -39,7 +39,7 @@
  * vérifie ce qui est **déclaré** ici, et rien d'autre (`standards/04` §12 — un
  * contrôle borné dit ce qu'il ne couvre pas).
  *
- * Le geste qui reste humain, et qui est écrit dans la checklist de `CLAUDE.md` :
+ * Le geste qui reste humain, et qui est écrit dans la checklist front de `ux-patterns` :
  * en ajoutant un onglet, confronter sa route à la dépendance d'auth de l'API
  * qu'elle appelle, et l'inscrire ici s'il est réservé.
  */

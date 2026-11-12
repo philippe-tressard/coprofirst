@@ -3,7 +3,7 @@
 #  Tout script versionné qui expose `--selftest` doit être LANCÉ par le job
 #  `test-scripts` de la CI (#1574).
 #
-#  POURQUOI. `CLAUDE.md` (« Scripts d'infra ») pose : toute logique de décision
+#  POURQUOI. la skill `infra-rpi` (« Les scripts d'infra en CI ») pose : toute logique de décision
 #  d'infra s'isole en fonction pure, expose `--selftest`, « et l'ajoute au job ».
 #  Le troisième verbe ne manque à personne tant qu'on n'y pense pas :
 #  `durcir-sudoers.sh --selftest` passait au vert, déclarait « TOUS OK » et

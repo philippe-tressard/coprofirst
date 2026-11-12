@@ -71,7 +71,7 @@ def _notifier_cs_creation(
     le courriel au CS du **périmètre** du ticket. Ce qui est tolérable dans une
     liste qu’on parcourt ne l’est pas dans une boîte aux lettres — et
     `membres_cs_notifiables(session, batiments)` est la fonction prévue pour ça
-    (tableau « Destinataires CS » de `CLAUDE.md`).
+    (tableau « Destinataires » de la skill `api-scaffold` §8).
 
     ⚠️ La préférence « e-mails de mon bâtiment / des autres » est appliquée par
     `send_email_group` via `batiments_concernes`, destinataire par destinataire.

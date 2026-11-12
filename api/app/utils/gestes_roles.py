@@ -20,7 +20,7 @@ Un compte inactif n'a aucun geste, et seul un administrateur en a (les routes
 prennent `require_admin`).
 
 ⚠️ « À un copropriétaire » est une règle d'ÉCRAN que les routes n'imposent pas :
-l'écran offre MOINS que la route n'accepte — le sens permis (CLAUDE.md, « un geste
+l'écran offre MOINS que la route n'accepte — le sens permis (checklist de `ux-patterns`, « un geste
 d'écriture n'est offert qu'aux rôles que sa route accepte »), jamais plus. Les deux
 refus de la route, eux, sont ceux d'ici : `refus_operateur` et `titulaires`.
 🔒 `test_gestes_roles.py` confronte chaque geste servi à la réponse de la route.

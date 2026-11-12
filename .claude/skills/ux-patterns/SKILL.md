@@ -2898,8 +2898,119 @@ en `rem` ne s'écrit plus nulle part hors de `socle.css`, composants **et** feui
 
 ## Checklist UX (à vérifier avant commit)
 
-**Une seule liste : `CLAUDE.md` → « Checklist avant commit » → Frontend.** Elle est
-chargée à chaque session, celle-ci seulement quand on ouvre la skill. Les deux ont
-coexisté et divergé : chacune avait des lignes que l'autre n'avait pas, et celle-ci
-enseignait encore « périmètre pas affiché si `'résidence'` » quand le code n'en
-contient plus un seul (claude-config#122, 23/09/2026).
+**La seule liste**, venue de `CLAUDE.md` le 12/11/2026 (#2709) : `CLAUDE.md` n'en garde que
+les quatre règles du front. Presque chaque ligne est tenue par un `npm run lint:*` ; le
+détail de chaque motif est plus haut dans cette skill.
+
+- [ ] Import d'un module de `src/lib` : `#lib/<fichier>.<extension>`, extension obligatoire
+      (un dossier : `#lib/<dossier>/index.ts`) — champ `imports` de `front/package.json`
+      (#2278, `npm run lint:alias-lib`)
+- [ ] Pattern existant réutilisé, pas de variante ad hoc — aucun garde-fou ne le tient : la
+      relecture le porte
+- [ ] Méta visible en mode replié : `EnteteCarte` porte les tags (`npm run lint:entete-carte`)
+- [ ] Carte de liste : `<CarteListe>` — conteneur, gouttière (`quand`, `classe`), geste
+      (`onDeplier`), états (`expanded`, `urgent`, `archive`) ; jamais un `.carte-liste` à la
+      main ni un `<Gouttiere>` rendu par la carte (`npm run lint:carte-liste`)
+- [ ] Corps déplié d'une carte : `class="carte-corps …"` (le fondu de 200 ms) — `npm run
+      lint:entete-carte` l'exige (#1579). Un survol réservé à la souris vit sous
+      `@media (hover: hover) and (pointer: fine)` (§17)
+- [ ] Dernière ligne d'une carte d'affaire, d'actualité ou du fil : `PastillesAffaire`,
+      l'auteur par `AuteurCarte` (« ✍️ Nom ») ; ordre et exceptions au §3 (`npm run
+      lint:pastilles`)
+- [ ] `.clamp-3` sur l'aperçu d'une carte (`.clamp-5` hors carte) ; aucune troncature hors de
+      `normes.css` (`npm run lint:clamp`)
+- [ ] Un assainisseur de `#lib/sanitize` (`safeHtml`, `safeRichContent`, `safeDescription`)
+      sur tout `{@html}`, jamais un helper local
+      (`npm run lint:html`)
+- [ ] Accessibilité : `role`, `tabindex`, `aria-label`, `on:keydown`
+- [ ] Droits jamais recomposés dans un écran : `$estModerateur` (inclut admin ; il LIT
+      `UserRead.est_moderateur`, servi par `auth/deps.est_moderateur`, que l'app iOS lit
+      aussi, #2633), `$isProprioOuCS`, `aRole(u, …)`, ou le geste SERVI avec l'objet
+      (`peut_*` ; le crayon d'une affaire : `peut_corriger`) — `npm run lint:droits`
+- [ ] Un geste d'écriture n'est offert qu'aux rôles que sa route accepte : le prédicat de
+      l'écran n'est jamais plus large que la dépendance de la route (#2096). Un geste neuf se
+      déclare dans `GESTES` de `test_ecran_offre_ce_que_la_route_permet.py`
+- [ ] Ce que l'écran MONTRE est ce qui PART : une case ou une section rendue a son champ dans
+      la charge, et un droit d'écran (`peutDiffuser`, `peutCibler`…) a un défaut **fermé**
+      (#2142). Une case neuve se déclare dans `e2e/case-montree-charge-envoyee.spec.ts`
+- [ ] Onglet réservé à un rôle : `reserve:` sur l'onglet dans `pages.ts`, jamais un masquage
+      dans la page — `BarreOnglets` masque ET refuse la route directe (`npm run
+      lint:onglets-reserves`)
+- [ ] Nom affiché d'un objet « Saisi pour » : `nomProprietaire` (`#lib/saisi-pour`), jamais
+      `objet.auteur_nom` (le rédacteur) ; la case de copie dit `nomCopie` (`npm run
+      lint:nom-proprietaire`)
+- [ ] Section d'un formulaire : déclarée dans `#lib/entites/<entité>`, dans l'ordre de
+      `SECTIONS_ORDRE` (`#lib/entites/types.ts` — la liste et son compte se lisent là,
+      `npm run lint:consignes`) ; pliage *obligatoire → déplié · facultatif → plié*, ou son
+      `exceptionPliage` (`npm run lint:etats`). Un composant qui porte une section la
+      **transmet** (prop `pliable`, `npm run lint:pliage-transmis`), et l'appelant la passe,
+      lue par `pliageDe` (#1329)
+- [ ] Libellé qui NOMME un objet (bouton, titre de boîte, toast, confirmation) : le mot vient
+      de `#lib/entites/<entité>` (`libelle`, `libelleNouveau`, `libelleModifier`). L'écran dit
+      « Affaire » et « Actualité », jamais « Ticket » (`npm run lint:vocabulaire-ecran`)
+- [ ] Séparateur (— · →) entre deux éléments : `{SEPARATEUR.point|tiret|fleche}`
+      (`#lib/separateurs`) — sécable avant, insécable après ; jamais `{#if x}&nbsp;· …` ni
+      `{a} · {b}` entre deux espaces sécables, sauf dans `<option>` et `<title>` (#2360, #2362,
+      `npm run lint:espace-blocs`)
+- [ ] Périmètre par défaut masqué : le badge passe par `BadgePerimetre` (`npm run
+      lint:pictogrammes`)
+- [ ] Archiver (pas supprimer) sur la vue principale — 📦, jamais un 🗑️ intitulé « Archiver » ;
+      la corbeille ne s'offre qu'aux Archives (`test_suppression_aux_archives.py` : une carte
+      qui archive s'y ajoute) ; le titre des archives vient d'une constante (`npm run
+      lint:archives`)
+- [ ] Champ requis : `<EtoileRequis vide={!champ} />`, collée au libellé, rouge tant que le
+      champ est vide (#1121) ; une valeur par défaut active (« Tous ») la rend noire
+      (`e2e/etoile-valeur-defaut`) ; un groupe : `<LibelleGroupe titre="…" requis vide={…}>`,
+      jamais `titre="… *"`. Libellés en MAJUSCULES par le style (`champs.css`), jamais tapés
+      (`npm run lint:champs`)
+- [ ] Valeur d'une énumération (statut, type, catégorie, rôle) rendue par son LIBELLÉ, même
+      derrière `?? '—'` ou dans un champ composé (`lot_type`, `type_lien`, `user_statut`) ;
+      le lien d'un compte à un lot : `#lib/liens-lot` ; un champ qui porte déjà le libellé
+      servi se déclare dans `EXCEPTIONS` (`npm run lint:categorie-brute`)
+- [ ] Libellés en français — les mots d'interface anglais sont refusés par `npm run
+      lint:vocabulaire-ecran` (`lib-mots-anglais.mjs`) ; le reste de la langue n'est pas
+      mesuré
+- [ ] Teinte choisie par donnée : `'var(--fil-rouge)'`, `--teinte-N`, `--kanban-…` — jamais
+      un `#rrggbb` dans un `.ts` ou un script de composant (`npm run lint:couleurs-ts`) ; la
+      valeur vit dans `socle.css`
+- [ ] Couleur et taille : `var(--color-…)`, `var(--fs-…)` (`socle.css`), jamais en dur — à
+      **zéro** pour les deux (`npm run lint:charte-valeurs`) : une couleur neuve est un jeton
+      nommé par l'usage, une taille prend le cran de ce que l'élément EST (hors échelle → cran
+      supérieur) ; un état prend son jeton et ses dérivés `-fond`, `-bordure` ;
+      `--color-warning` ne sert jamais au texte (`--color-warning-texte`) ; une valeur égale à
+      un jeton est refusée aussi (§18)
+- [ ] Thème sombre : un jeton neuf a sa valeur dans `styles/palette-sombre.css` ou se déclare
+      identique, avec sa raison ; aucun écran n'écrit `prefers-color-scheme` ni `data-theme`
+      (`npm run lint:palette-sombre`, paires texte/fond AA). Contour d'un champ :
+      `--color-border-champ` ; texte sur l'or : `--color-sur-accent`. Un aperçu imprimé ou
+      envoyé reste clair : `class="ilot-clair"` (`npm run lint:ilots-clairs`). Le thème choisi
+      ne se décide qu'à `#lib/theme.ts` et ne se choisit qu'au Profil (`ChoixTheme`,
+      `e2e/bascule-theme.spec.ts`)
+- [ ] Style dans le `<style>` du composant ou `src/styles/`, jamais en attribut `style="…"`
+      sauf une valeur tirée des données (`width:{pct}%`) — plafond zéro (`npm run
+      lint:styles-en-ligne`). Si une règle globale plus forte vise l'élément, qualifier le
+      sélecteur
+- [ ] Bloc pliable : un seul déplié à la fois, par `#lib/accordeon`, jamais un `Set`
+      d'ouverture ; exceptions arbitrées : section modifiée, carte en correction (`npm run
+      lint:accordeon`)
+- [ ] Rangée de pastilles qui FILTRE : `compte={<liste affichée>.length}`, montré sur la
+      pastille retenue seulement (§5, `npm run lint:compte-filtres`)
+- [ ] Recherche : `<ChampRecherche dans="…">`, jamais un `<input type="search">` ; la règle
+      d'une liste reçue : `contientTousLesMots` (`#lib/texte`), sans accents (`npm run
+      lint:recherche`)
+- [ ] Attente : `<EtatListe chargement />`, jamais un « Chargement… » à la main (`npm run
+      lint:chargement`)
+- [ ] En-tête de page : `<EntetePage>`, jamais `<div class="page-header">` (§13)
+- [ ] En-tête d'un écran sans session : `<EnteteAuthentification sousTitre="…" />`, jamais
+      `auth-header` ni un émoji (`npm run lint:entete-auth`)
+- [ ] Bouton d'action icône : `<IconeAction icone="…" />`, au trait — jamais un émoji. Une
+      liste en cartes prend `Gouttiere` et `ReglagesListe` (§3, `npm run lint:actions-au-trait`)
+- [ ] Bouton qui lance l'assistant IA : `<IconeIA {enCours} />`, le bouton portant
+      `aria-busy={enCours}` ; ✨ ne se dit que de l'IA (`npm run lint:geste-ia`)
+- [ ] Badge teinté par une table : `<Badge teinte={…}>`, jamais `class="badge {…}"` (`npm run
+      lint:badge`)
+- [ ] Icône vérifiée dans `#lib/icones-svg.json` (`npm run lint:icones` ; un relais d'icône
+      s'appelle `icone`)
+- [ ] Tout champ libellé dans un `.field`, y compris celui dont l'intitulé de section est le
+      libellé ; une étoile dans un `label.field` enveloppant se tient dans un `<span>` avec son
+      texte (#1230, `npm run lint:champs`)
