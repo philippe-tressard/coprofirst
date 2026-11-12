@@ -32,7 +32,7 @@ import { goto } from '$app/navigation';
 import { tickets as ticketsApi, type Ticket, type TicketEvolution } from '#lib/api/index.ts';
 import { basculer } from '#lib/accordeon.ts';
 import { toast } from '#lib/components/Toast.svelte';
-import { ARCHIVAGE, SUPPRESSION, confirmerPuis } from '#lib/confirmation.ts';
+import { ARCHIVAGE, SUPPRESSION, confirmer, confirmerPuis } from '#lib/confirmation.ts';
 import { messageErreur } from '#lib/erreurs.ts';
 import { chargeCorrection, type ChargeUtileEvolution } from '#lib/evolutions.ts';
 import { optionsRapides } from '#lib/options-rapides.ts';
@@ -204,18 +204,43 @@ export function affairesEnListe(liste: Writable<Ticket[]>, reglages: ReglagesAff
 		try {
 			//  🔄 TOUTES les sections d'une Suite se corrigent, Suivi compris
 			//  (01/10/2026) : la charge vient de `chargeCorrection` (#529).
-			await ticketsApi.updateEvolution(
+			const lue = await ticketsApi.updateEvolution(
 				t.id,
 				evolId,
 				chargeCorrection(brut as ChargeUtileEvolution),
 			);
+			//  L'état a pu suivre la Suite : relu au serveur, comme après `evoluer`
+			//  (#2508) — la carte montrait l'état d'avant jusqu'au rechargement.
+			recoudre(await ticketsApi.get(t.id));
 			await chargerFil(t.id);
 			poser({ evolEnEdition: null });
 			toast('success', 'Entrée corrigée');
+			if (lue.affaire_suivie === false) await proposerEtat(t, lue);
 		} catch (err) {
 			toast('error', messageErreur(err));
 		} finally {
 			poser({ correctionEnCours: false });
+		}
+	}
+
+	//  🔄 L'affaire n'a pas suivi la Suite corrigée (#2715) : le serveur dit pourquoi,
+	//  et propose l'état. L'appliquer est le geste du crayon (`PATCH` de l'affaire),
+	//  sous ses droits, revérifiés au serveur — rien ne s'écrase sans qu'on le choisisse.
+	async function proposerEtat(t: Ticket, lue: TicketEvolution) {
+		const message = lue.affaire_suivie_libelle ?? '';
+		if (!lue.etat_propose) return toast('info', message);
+		const appliquer = await confirmer({
+			titre: "L'affaire n'a pas suivi",
+			message,
+			libelleConfirmer: `Passer en « ${lue.etat_propose_libelle} »`,
+			libelleAnnuler: 'Laisser ainsi',
+		});
+		if (!appliquer) return;
+		try {
+			await modifie(await ticketsApi.update(t.id, { statut: lue.etat_propose }));
+			toast('success', 'Statut mis à jour');
+		} catch (err) {
+			toast('error', messageErreur(err));
 		}
 	}
 
