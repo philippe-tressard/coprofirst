@@ -83,3 +83,38 @@ class DemandeModificationProfil(SQLModel, table=True):
     traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
     traite_le: Optional[NaiveDatetime] = None
+
+
+# ──────────────────────────────────────────────
+#  Demandes de suppression de compte (#2699)
+# ──────────────────────────────────────────────
+
+
+class StatutDemandeSuppression(str, Enum):
+    ouverte = "ouverte"
+    traitee = "traitee"
+    retiree = "retiree"
+
+
+class DemandeSuppressionCompte(SQLModel, table=True):
+    """Une personne demande l'effacement de SON compte ; l'administration le traite (#2699).
+
+    Même famille que les deux files ci-dessus : une demande déposée par un
+    résident, qui attend un geste de l'administration. La référence au compte
+    est OBLIGATOIRE : la ligne part avec le compte qu'elle demande d'effacer
+    (`suppression_compte.CONTENUS_PERSONNELS`) — le journal de sécurité garde,
+    lui, la seule trace du traitement. Règles : `utils/demande_suppression`.
+    """
+
+    __tablename__ = "demande_suppression_compte"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    motif: Optional[str] = None  # facultatif, libre ; effacé avec la ligne
+    #  Une chaîne, pas un type énuméré de PostgreSQL : un statut de plus ne
+    #  demande alors aucune migration de type (même choix que `courriel_a_classer`).
+    statut: str = Field(default=StatutDemandeSuppression.ouverte.value, index=True)
+    cree_le: NaiveDatetime = Field(default_factory=horloge.maintenant)
+    traitee_le: Optional[NaiveDatetime] = None
+    traitee_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    retiree_le: Optional[NaiveDatetime] = None

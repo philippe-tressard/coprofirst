@@ -40,6 +40,10 @@ TRANSACTIONNELS = {
     "verification_email",
     "adresse_changement_avis",
     "compte_inactif_avertissement",
+    #  La suppression de son compte (#2699) : l'accusé prévient le titulaire d'un
+    #  compte volé ; le dernier part quand le compte n'existe plus.
+    "suppression_compte_demandee",
+    "suppression_compte_effectuee",
 }
 
 

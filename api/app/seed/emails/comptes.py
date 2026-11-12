@@ -109,4 +109,40 @@ MODELES = [
         "vous n’avez rien à faire.</p>",
         False,
     ),
+    (
+        #  L'accusé de réception d'une demande de suppression de compte (#2699). Il
+        #  part sans `destinataire_id` — aucune préférence ne le coupe : sur un compte
+        #  volé, c'est lui qui prévient le titulaire. Aucun lien à usage unique : la
+        #  demande se retire depuis le profil, après connexion.
+        "suppression_compte_demandee",
+        "Suppression de compte demandée",
+        "Votre demande de suppression de compte — {{ residence.nom }}",
+        titre("Demande de suppression reçue")
+        + BONJOUR
+        + '<p style="margin:0 0 12px">Nous avons bien reçu votre demande de suppression de '
+        "votre compte sur <strong>{{ residence.nom }}</strong>. L’administration de la "
+        "résidence la traite sous <strong>{{ delai_jours }} jours</strong> au plus.</p>"
+        '<p style="margin:0 0 12px">Tant qu’elle n’est pas traitée, vous pouvez la retirer '
+        "depuis <strong>Mon profil</strong>.</p>"
+        f'<p style="margin:0;font-size:13px;color:{GRIS}">Si vous n’êtes pas à l’origine de '
+        "cette demande, retirez-la, changez votre mot de passe sans attendre et prévenez le "
+        "conseil syndical.</p>",
+        False,
+    ),
+    (
+        #  Le dernier courriel (#2699) : le compte n'existe plus, l'adresse a été lue
+        #  avant la purge et n'est gardée nulle part ensuite.
+        "suppression_compte_effectuee",
+        "Compte supprimé",
+        "Votre compte a été supprimé — {{ residence.nom }}",
+        titre("Votre compte a été supprimé")
+        + BONJOUR
+        + '<p style="margin:0 0 12px">Comme vous l’avez demandé, votre compte sur '
+        "<strong>{{ residence.nom }}</strong> et vos données personnelles ont été effacés. "
+        "Ce que vous avez écrit dans la vie collective de la résidence reste, sans votre "
+        "nom.</p>"
+        f'<p style="margin:0;font-size:13px;color:{GRIS}">Pour toute question sur vos '
+        "données, la politique de confidentialité du site indique à qui écrire.</p>",
+        False,
+    ),
 ]

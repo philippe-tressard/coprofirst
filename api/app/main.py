@@ -50,6 +50,7 @@ from app.routers import (
     auth,
     auth_mot_de_passe,
     auth_profil,
+    auth_suppression,
     auth_telemetrie,
     tickets,
     publications,
@@ -374,6 +375,8 @@ app.include_router(auth_profil.router)
 #  08/09/2026 : elles ne parlent pas d'authentification, seulement d'une donnée
 #  que le site collecte.
 app.include_router(auth_telemetrie.router)
+#  Idem pour la demande de suppression de SON compte (#2699).
+app.include_router(auth_suppression.router)
 app.include_router(lots.router)
 app.include_router(tickets.router)
 app.include_router(partage.router)  # 🔗 → courriel (#1357)
