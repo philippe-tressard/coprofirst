@@ -28,6 +28,7 @@ from app.models.core import (
     Ticket,
 )
 from app.routers.copropriete import contrat_de_reference
+from app.utils import demande_suppression
 from app.utils.comptes import nb_comptes_en_attente
 from app.utils.echeance_contrat import echeance_du_contrat
 from app.utils.relance_syndic import conditions_relancable, delai_relance_jours
@@ -188,7 +189,7 @@ def _validations_cs(ctx: ContexteFlux) -> int:
 
 
 def _validations_admin(ctx: ContexteFlux) -> int:
-    """Ce que la pastille « Admin » annonce — les trois files de son écran.
+    """Ce que la pastille « Admin » annonce — les quatre files de son écran.
 
     Elle recouvre `validations_cs` de deux tiers, et c'est voulu : les deux écrans
     montrent réellement ces éléments, chacun annonce donc son propre contenu. Un
@@ -201,7 +202,13 @@ def _validations_admin(ctx: ContexteFlux) -> int:
     """
     if not ctx.user.has_role(RoleUtilisateur.admin):
         return 0
-    return nb_comptes_en_attente(ctx.session) + _nb_commandes_acces(ctx) + _nb_demandes_profil(ctx)
+    return (
+        nb_comptes_en_attente(ctx.session)
+        + _nb_commandes_acces(ctx)
+        + _nb_demandes_profil(ctx)
+        #  La quatrième file de l'onglet « À traiter » (#2699).
+        + demande_suppression.nb_en_attente(ctx.session)
+    )
 
 
 def _relances_syndic(ctx: ContexteFlux) -> int:

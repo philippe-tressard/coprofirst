@@ -1,7 +1,7 @@
 <!--
-  L'onglet **À traiter** de l'administration : les trois files qui attendent un
+  L'onglet **À traiter** de l'administration : les quatre files qui attendent un
   geste de l'administrateur — comptes à valider, commandes d'accès, demandes de
-  modification de profil.
+  modification de profil, et, depuis #2699, demandes de suppression de compte.
 
   ## Pourquoi un onglet, et trois sections (01/10/2026)
 
@@ -29,8 +29,10 @@
 		type CommandeAccesEnAttente,
 		type CompteEnAttenteEnrichi,
 		type DemandeProfil,
+		type DemandeSuppressionEnAttente,
 		type User,
 	} from '#lib/api/index.ts';
+	import DemandesSuppressionATraiter from '#lib/components/DemandesSuppressionATraiter.svelte';
 	import { badgeRole, badgeStatut, libelleRole, LIBELLES_STATUT_ABREGE } from '#lib/roles.ts';
 	import { typeAccesLabel } from '#lib/types-acces.ts';
 	import { basculer } from '#lib/accordeon.ts';
@@ -55,9 +57,12 @@
 	export let demandesProfil: DemandeProfil[] = [];
 	export let demandesProfilLoading = true;
 	export let erreurDemandesProfil = '';
+	export let demandesSuppression: DemandeSuppressionEnAttente[] = [];
+	export let demandesSuppressionLoading = true;
+	export let erreurDemandesSuppression = '';
 	export let batimentsMap: Record<number, string> = {};
 
-	type SectionATraiter = 'comptes' | 'acces' | 'demandes_profil';
+	type SectionATraiter = 'comptes' | 'acces' | 'demandes_profil' | 'suppressions';
 	let ouverte: SectionATraiter | null = null;
 
 	//  Le compteur d'une section : `null` tant qu'on n'a pas regardé, ou si l'on
@@ -69,12 +74,19 @@
 	//  quelque chose à montrer s'ouvre. Toutes vides, tout reste plié — les
 	//  compteurs à zéro disent déjà qu'il n'y a rien.
 	let ouvertureFaite = false;
-	$: if (!ouvertureFaite && !comptesLoading && !commandesLoading && !demandesProfilLoading) {
+	$: if (
+		!ouvertureFaite &&
+		!comptesLoading &&
+		!commandesLoading &&
+		!demandesProfilLoading &&
+		!demandesSuppressionLoading
+	) {
 		ouvertureFaite = true;
 		const aMontrer: [SectionATraiter, boolean][] = [
 			['comptes', comptes.length > 0 || !!erreurComptes],
 			['acces', commandes.length > 0 || !!erreurCommandes],
 			['demandes_profil', demandesProfil.length > 0 || !!erreurDemandesProfil],
+			['suppressions', demandesSuppression.length > 0 || !!erreurDemandesSuppression],
 		];
 		ouverte = aMontrer.find(([, oui]) => oui)?.[0] ?? null;
 	}
@@ -416,6 +428,28 @@
 				</tbody>
 			</table>
 		</div>
+	{/if}
+</SectionRepliee>
+
+<!-- La quatrième file (#2699) : une personne demande l'effacement de son compte. -->
+<SectionRepliee
+	titre="Suppressions de compte"
+	compte={compteDe(demandesSuppression, demandesSuppressionLoading, erreurDemandesSuppression)}
+	ouvert={ouverte === 'suppressions'}
+	surBascule={() => (ouverte = basculer(ouverte, 'suppressions'))}
+	enSerie
+>
+	{#if demandesSuppressionLoading || erreurDemandesSuppression || demandesSuppression.length === 0}
+		<EtatListe
+			chargement={demandesSuppressionLoading}
+			erreur={erreurDemandesSuppression}
+			vide={demandesSuppression.length === 0}
+			titreErreur="Impossible d’afficher les demandes de suppression"
+			titreVide="Aucune demande en attente"
+			messageVide="Toutes les demandes de suppression de compte ont été traitées."
+		/>
+	{:else}
+		<DemandesSuppressionATraiter bind:demandes={demandesSuppression} />
 	{/if}
 </SectionRepliee>
 

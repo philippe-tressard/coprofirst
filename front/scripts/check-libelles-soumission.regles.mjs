@@ -86,6 +86,9 @@ export const EXCEPTIONS = {
 		'propre bouton dans son <form>',
 	'lib/components/ChangementMotDePasse.svelte':
 		'changement de mot de passe — hors périmètre explicite de la règle',
+	'lib/components/SuppressionCompte.svelte':
+		'demande de suppression du compte (#2699) — un geste qui mène à un effacement ' +
+		'définitif se nomme, « Enregistrer » le ferait passer pour une préférence',
 	'routes/auth/connexion/+page.svelte': "écran d'authentification — « Se connecter »",
 	'routes/auth/inscription/+page.svelte': "écran d'authentification — « Créer mon compte »",
 	'routes/auth/mot-de-passe-oublie/+page.svelte':

@@ -11,6 +11,8 @@
 		type CommandeAccesEnAttente,
 		type CompteEnAttenteEnrichi,
 		type DemandeProfil,
+		type DemandeSuppressionEnAttente,
+		suppressionCompte,
 		type TextesLegauxSource,
 		type UtilisateurAdmin,
 	} from '#lib/api/index.ts';
@@ -189,6 +191,19 @@
 		demandesProfilLoading = false;
 	}
 
+	let demandesSuppression: DemandeSuppressionEnAttente[] = [];
+	let demandesSuppressionLoading = true; // suppressions de compte (#2699)
+	let erreurDemandesSuppression = '';
+
+	async function loadDemandesSuppression() {
+		demandesSuppressionLoading = true;
+		[demandesSuppression, erreurDemandesSuppression] = await essayer(
+			suppressionCompte.enAttente(),
+			[],
+		);
+		demandesSuppressionLoading = false;
+	}
+
 	//  Montage
 	//  Après l'authentification : l'opérateur qui n'est pas administrateur ne lit
 	//  rien de la résidence (#2029), ses deux onglets chargent ce qu'ils montrent.
@@ -199,9 +214,13 @@
 		//  (coquille, `/config/admin`, `/config/textes-legaux`) qui ne servent qu'aux
 		//  onglets de réglage : +225 ms à chaque ouverture de l'administration.
 		//  Les quatre files arrivées : les données de l'onglet par défaut (#1846).
-		Promise.all([loadBatiments(), loadComptes(), loadCommandes(), loadDemandesProfil()]).then(() =>
-			marquerDonneesAffichees(),
-		);
+		Promise.all([
+			loadBatiments(),
+			loadComptes(),
+			loadCommandes(),
+			loadDemandesProfil(),
+			loadDemandesSuppression(),
+		]).then(() => marquerDonneesAffichees());
 		//  Les services, pour griser l'onglet de celui qui est coupé. Un échec ne
 		//  grise rien : l'onglet reste ouvrable, et sa ligne d'état dit le vrai.
 		essayer(configApi.services(), []).then(([liste]) => (services = liste));
@@ -330,7 +349,10 @@
 	pageId="admin"
 	actif={onglet}
 	{masques}
-	comptes={{ a_traiter: comptes.length + commandes.length + demandesProfil.length }}
+	comptes={{
+		a_traiter:
+			comptes.length + commandes.length + demandesProfil.length + demandesSuppression.length,
+	}}
 	eteints={ongletsEteints}
 />
 <PorteeOnglet {onglet} />
@@ -346,6 +368,9 @@
 		bind:demandesProfil
 		{demandesProfilLoading}
 		{erreurDemandesProfil}
+		bind:demandesSuppression
+		{demandesSuppressionLoading}
+		{erreurDemandesSuppression}
 		{batimentsMap}
 	/>
 {:else if onglet === 'utilisateurs'}

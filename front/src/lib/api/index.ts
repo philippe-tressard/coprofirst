@@ -78,6 +78,7 @@ export * from './reporting';
 export * from './points-conseil';
 export * from './registre';
 export * from './consignes';
+export * from './suppression-compte';
 export * from './aiguillage';
 
 //  ── Ce que le serveur RENVOIE (#1572) ───────────────────────────────────────────

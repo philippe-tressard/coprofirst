@@ -106,6 +106,9 @@ INTENTIONS_PAR_MODELE: dict[str, str] = {
     #  Rien n'est demandé à qui a fait la demande ; qui ne l'a pas faite trouve
     #  dans le corps ce qu'il doit faire.
     "adresse_changement_avis": "information",
+    #  La suppression de son compte (#2699) : l'accusé, puis l'effacement fait.
+    "suppression_compte_demandee": "information",
+    "suppression_compte_effectuee": "information",
     "ticket_statut_change": "information",
     "ticket_nouveau_message": "information",
     "ticket_partage": "information",

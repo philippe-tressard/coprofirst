@@ -28,6 +28,10 @@ from app.seed.contenus_legaux_cookies import COOKIES
 from app.seed.contenus_legaux_decisions_ag import DECISIONS_AG
 from app.seed.contenus_legaux_etat_descriptif import LECTURE_ETAT_DESCRIPTIF
 from app.seed.contenus_legaux_licence import PARAGRAPHE_LICENCE
+
+#  La phrase du point 6 sur ce qu'un compte fait depuis son profil (#2699) : elle
+#  vit à part, lue aussi par la migration 0332.
+from app.seed.contenus_legaux_suppression import DROITS_DEPUIS_LE_PROFIL
 from app.seed.contenus_legaux_notifications import (
     CONSERVATION_NOTIFICATIONS,
     NOTIFICATIONS_PUSH,
@@ -320,12 +324,6 @@ TELEMETRIE_DERNIERE_VISITE = (
     "pour repérer les comptes qui ne viennent plus\xa0; effacé après <strong>12 mois</strong> "
     "sans visite. Il n'est pas tenu si vous refusez la mesure d'audience, et l'effacement "
     "demandé depuis votre profil l'emporte aussi.</li>"
-)
-#: La phrase du point 6 sur ce qu'un compte fait depuis son profil : il y
-#: exporte et efface sa télémétrie.
-DROITS_DEPUIS_LE_PROFIL = (
-    "Les titulaires d'un compte peuvent aussi passer par la messagerie de "
-    "l'application, ou exporter et effacer leurs données depuis leur profil."
 )
 
 DEFAULT_LEGAL = {

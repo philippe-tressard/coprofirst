@@ -17,6 +17,7 @@ modèles Pydantic et les helpers privés vivent donc auprès des routes qu'ils s
 | `comptes` | validation des comptes en attente, appariement des accès |
 | `utilisateurs` | rôles, modification, suppression, bannissement d'un compte existant |
 | `profils` | workflow des demandes de modification de profil |
+| `demandes_suppression` | la file des demandes de suppression de compte (#2699) |
 | `arrivants` | accueil d'un arrivant, baux locatifs, fiche d'arrivée |
 | `annuaire` | annuaire public, composition du CS et du syndic |
 | `exploitation` | sauvegardes, maintenance planifiée, opérations sûres sur la base |
@@ -61,6 +62,7 @@ from . import (
     communications,
     comptes,
     conservation_affaires,
+    demandes_suppression,
     exploitation,
     export_copropriete,
     inscription,
@@ -79,6 +81,7 @@ for _sous_router in (
     comptes.router,
     utilisateurs.router,
     profils.router,
+    demandes_suppression.router,
     arrivants.router,
     annuaire.router,
     exploitation.router,

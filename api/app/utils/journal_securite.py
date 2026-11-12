@@ -76,6 +76,11 @@ _NIVEAUX: dict[str, int] = {
     "compte_desactive": logging.WARNING,
     "compte_reactive": logging.WARNING,
     "compte_supprime": logging.WARNING,
+    #  La suppression de SON compte demandée par la personne (#2699) : demandée,
+    #  retirée, traitée par l'administration (qui suit, journalisée `compte_supprime`).
+    "suppression_demandee": logging.WARNING,
+    "suppression_retiree": logging.INFO,
+    "suppression_traitee": logging.WARNING,
     #  Une délégation : un tiers qui lit au nom d'un résident. La cible est le
     #  MANDANT — celui dont on lit —, l'aidant va dans le détail.
     "delegation_creee": logging.WARNING,
