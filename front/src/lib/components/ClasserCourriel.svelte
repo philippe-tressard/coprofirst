@@ -7,7 +7,12 @@
   suggérées (mots de l'objet, affaires de l'expéditeur) sont une proposition, jamais
   un choix fait : le serveur ne rattache rien de lui-même (`utils/courriel_a_classer`).
 
-  Écarter efface le message gardé : il se confirme.
+  🔴 UN seul bouton principal, qui nomme sa destination (12/11/2026, même leçon que
+  `TransfertsVerses`). Toucher une proposition rattachait sur-le-champ, et « Créer une
+  affaire » devenait le bouton plein quand rien n'était proposé : le geste qui crée
+  une affaire à part se touchait comme le bon. Désormais une proposition ou un numéro
+  tapé se CHOISIT (`aria-pressed`), et « Rattacher à #… » — inactif tant que rien
+  n'est choisi — conclut. Créer et écarter sont secondaires, et se confirment.
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
@@ -15,14 +20,30 @@
 	import { confirmer } from '#lib/confirmation.ts';
 	import { messageErreur } from '#lib/erreurs.ts';
 	import { toast } from '#lib/components/Toast.svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	import LibelleGroupe from '#lib/components/LibelleGroupe.svelte';
+	import { SEPARATEUR } from '#lib/separateurs.ts';
+	import { termeAffaire } from '#lib/tickets.ts';
 
 	export let message: CourrielAClasser;
 
 	const dispatch = createEventDispatcher<{ classe: void }>();
 
+	/** La proposition retenue — ou rien, si un numéro est tapé. */
+	let retenue: number | null = null;
 	let numero = '';
 	let enCours = false;
+
+	//  Ce que le bouton principal rattachera : le numéro tapé l'emporte, sinon la
+	//  proposition retenue. « #TK-… » se colle tel qu'il s'écrit à l'écran.
+	$: tape = termeAffaire(numero);
+	$: proposee = message.suggestions.find((s) => s.id === retenue) ?? null;
+	$: cible = tape ? { numero: tape, titre: '' } : proposee;
+
+	function retenir(id: number) {
+		retenue = retenue === id ? null : id;
+		numero = '';
+	}
 
 	async function faire(geste: () => Promise<{ bilan: string }>) {
 		enCours = true;
@@ -37,8 +58,22 @@
 		}
 	}
 
-	const rattacher = (n: string) => faire(() => courriels.rattacher(message.id, n));
-	const creer = () => faire(() => courriels.creerAffaire(message.id));
+	function rattacher() {
+		if (!cible || enCours) return;
+		const n = cible.numero;
+		void faire(() => courriels.rattacher(message.id, n));
+	}
+
+	async function creer() {
+		const ok = await confirmer({
+			titre: 'Créer une affaire',
+			message:
+				'Le courriel deviendra une affaire à part, décrite par son message. S’il concerne une affaire existante, rattachez-le plutôt.',
+			libelleConfirmer: 'Créer',
+			libelleAnnuler: 'Revenir',
+		});
+		if (ok) await faire(() => courriels.creerAffaire(message.id));
+	}
 
 	async function ecarter() {
 		const ok = await confirmer({
@@ -46,6 +81,7 @@
 			message:
 				'Rien ne sera ajouté au site, et le message gardé sera effacé. Il reste dans la boîte de réception.',
 			libelleConfirmer: 'Écarter',
+			libelleAnnuler: 'Revenir',
 		});
 		if (ok) await faire(() => courriels.ecarter(message.id));
 	}
@@ -55,53 +91,56 @@
 	{#if message.apercu}
 		<blockquote class="apercu">{message.apercu}</blockquote>
 	{/if}
-	<!--  UN geste, deux façons : une affaire proposée, ou un numéro tapé. Une seule
-	      colonne, un seul bord gauche et droit, une seule hauteur de contrôle. -->
+	<!--  UN geste, deux façons de désigner l'affaire : une proposition, ou un numéro
+	      tapé. Une seule colonne, un seul bord gauche et droit, une seule hauteur. -->
 	<LibelleGroupe titre="Rattacher à une affaire" id="classer-{message.id}" classe="groupe">
-		{#each message.suggestions as s, i (s.id)}
+		{#each message.suggestions as s (s.id)}
 			<button
-				class="btn suggestion"
-				class:btn-primary={i === 0}
-				class:btn-outline={i > 0}
+				class="btn btn-outline suggestion"
 				type="button"
+				aria-pressed={!tape && retenue === s.id}
 				disabled={enCours}
-				on:click={() => rattacher(s.numero)}
-				><span class="numero">#{s.numero}</span><span class="titre-suggestion">{s.titre}</span
-				></button
+				on:click={() => retenir(s.id)}
+				><span class="coche" aria-hidden="true"><Icon name="check" size={16} /></span><span
+					class="numero">#{s.numero}</span
+				><span class="titre-suggestion">{s.titre}</span></button
 			>
 		{/each}
 		<div class="field champ-en-ligne champ-numero">
 			<label for="classer-{message.id}-numero" class="libelle-numero">
 				{message.suggestions.length ? 'Autre affaire' : 'Numéro de l’affaire'}
 			</label>
-			<div class="saisie-numero">
-				<input
-					id="classer-{message.id}-numero"
-					type="text"
-					bind:value={numero}
-					placeholder="TK-123456"
-					autocomplete="off"
-					spellcheck="false"
-					on:keydown={(e) => e.key === 'Enter' && numero.trim() && rattacher(numero)}
-				/>
-				<button
-					class="btn btn-outline"
-					type="button"
-					disabled={enCours || !numero.trim()}
-					on:click={() => rattacher(numero)}>Rattacher</button
-				>
-			</div>
+			<input
+				id="classer-{message.id}-numero"
+				type="text"
+				bind:value={numero}
+				placeholder="TK-123456"
+				autocomplete="off"
+				spellcheck="false"
+				on:keydown={(e) => e.key === 'Enter' && tape && rattacher()}
+			/>
 		</div>
-	</LibelleGroupe>
-	<!--  Les autres issues, séparées : elles ne rattachent rien. -->
-	<div class="autres-issues">
 		<button
-			class="btn"
-			class:btn-primary={!message.suggestions.length}
-			class:btn-outline={message.suggestions.length > 0}
+			class="btn btn-primary rattacher"
 			type="button"
-			disabled={enCours}
-			on:click={creer}>Créer une affaire</button
+			disabled={enCours || !cible}
+			on:click={rattacher}
+		>
+			{#if cible}
+				<span
+					>Rattacher à <span class="numero">#{cible.numero}</span
+					>{#if cible.titre}{SEPARATEUR.point}<span class="titre-suggestion">{cible.titre}</span
+						>{/if}</span
+				>
+			{:else}
+				Rattacher à l’affaire choisie
+			{/if}
+		</button>
+	</LibelleGroupe>
+	<!--  Les autres issues, secondaires et confirmées : elles ne rattachent rien. -->
+	<div class="autres-issues">
+		<button class="btn btn-outline" type="button" disabled={enCours} on:click={creer}
+			>Créer une affaire</button
 		>
 		<button class="btn btn-outline" type="button" disabled={enCours} on:click={ecarter}
 			>Écarter</button
@@ -154,9 +193,31 @@
 		width: 100%;
 		text-align: left;
 	}
+	/*  Retenue : un contour plein et la coche — un changement de teinte seul ne
+	    se distinguerait pas du survol. */
+	.classer .suggestion[aria-pressed='true'] {
+		border-color: var(--color-primary);
+		box-shadow: inset 0 0 0 1px var(--color-primary);
+	}
+	.coche {
+		display: inline-flex;
+		visibility: hidden;
+		color: var(--color-primary);
+	}
+	.suggestion[aria-pressed='true'] .coche {
+		visibility: visible;
+	}
 	.numero {
 		font-weight: 600;
 		font-variant-numeric: tabular-nums;
+	}
+	/*  Le bouton qui conclut prend la colonne : il nomme l'affaire, titre compris. */
+	.classer .rattacher {
+		justify-content: flex-start;
+		flex-wrap: wrap;
+		width: 100%;
+		margin-top: 0.25rem;
+		text-align: left;
 	}
 	.titre-suggestion {
 		font-weight: 400;
@@ -176,22 +237,10 @@
 	.champ-numero {
 		margin-top: 0.5rem;
 	}
-	/*  Le champ et son bouton sont UNE commande : même rangée, même hauteur
-	    (étirement), le bouton à sa largeur naturelle. */
-	.saisie-numero {
-		display: flex;
-		align-items: stretch;
-		gap: 0.5rem;
-		margin-top: 0.25rem;
-	}
-	.saisie-numero input {
-		flex: 1 1 auto;
-		min-width: 0;
+	.champ-numero input {
+		width: 100%;
 		min-height: var(--hauteur-geste);
-		margin: 0;
-	}
-	.saisie-numero .btn {
-		flex: 0 0 auto;
+		margin: 0.25rem 0 0;
 	}
 	.autres-issues {
 		display: flex;

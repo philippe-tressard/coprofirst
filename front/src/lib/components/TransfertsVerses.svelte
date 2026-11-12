@@ -16,9 +16,23 @@
     suivant validé) n'est pas dans la liste (14/10/2026) : il y restait sous
     « Ne peut plus être défait », avec « Valider » pour seul bouton ;
   - `peut_deplacer` : déplacer exige de modérer ;
-  - « Valider le transfert » (13/10/2026) — « si c'est ok et pour faire
-    disparaître ces boutons » : le transfert reste versé, quitte la liste et ne
-    se défait plus. Offert aussi sur un transfert retenu par un suivant.
+  - « Garder ici » (« Valider le transfert » du 13/10/2026 — « si c'est ok et
+    pour faire disparaître ces boutons ») : le transfert reste versé, quitte la
+    liste et ne se défait plus. Offert aussi sur un transfert retenu par un suivant.
+
+  🔴 La QUESTION d'abord, le déplacement en geste principal (12/11/2026). Un
+  courriel « incendie » transféré a créé TK-330672 ; il devait rejoindre
+  TK-E00057. « Valider le transfert » était le bouton plein, en premier — il
+  GARDE le courriel où il est, et pour toujours —, « Déplacer » un bouton
+  discret qui ouvrait une recherche sans bouton pour conclure : le geste
+  définitif a été touché à la place de l'autre. Désormais :
+
+  - « Ce courriel est-il dans la bonne affaire ? » en tête, et le choix d'une
+    autre affaire OUVERT d'emblée — un transfert qui a créé l'affaire le dit ;
+  - le bouton principal, seul plein, NOMME sa destination — « Déplacer vers
+    #TK-… · titre » — et reste inactif tant qu'aucune n'est choisie ;
+  - « Garder ici », « En faire une nouvelle affaire » et « Annuler le
+    transfert » sont secondaires, et chacun se confirme en disant ce qu'il fait.
 
   🔴 Rendu sur la fiche ET dans la carte dépliée de la liste (01/10/2026). Il
   n'était que sur la fiche, « là que mène la notification » — et la carte n'a
@@ -50,9 +64,11 @@
 	/** L'affaire a changé sous les yeux : la page recharge ce qu'elle montre. */
 	const dispatch = createEventDispatcher<{ change: void }>();
 
+	const affaire = TICKET.libelle.toLowerCase();
+
 	let transferts: TransfertVerse[] = [];
-	/** Le transfert dont on choisit l'affaire de destination. */
-	let deplace: number | null = null;
+	/** L'affaire choisie pour chaque transfert : rien ne part avant le bouton. */
+	let cibles: Record<number, AffaireLiee> = {};
 	let enCours = false;
 
 	async function charger() {
@@ -68,11 +84,28 @@
 
 	const suites = (t: TransfertVerse) => `${t.suites} suite${t.suites > 1 ? 's' : ''}`;
 
+	/** « Les 3 suites versées » / « La suite versée » — et le verbe qui s'accorde. */
+	function lesSuites(t: TransfertVerse, pluriel: string, singulier: string): string {
+		return t.suites > 1
+			? `Les ${t.suites} suites versées par ce transfert ${pluriel}`
+			: `La suite versée par ce transfert ${singulier}`;
+	}
+
 	/** Ce qui arrive à l'affaire ouverte, dit avant le geste. */
 	function ceQuiReste(t: TransfertVerse): string {
 		return t.affaire_creee
-			? `Cette ${TICKET.libelle.toLowerCase()}, créée par le transfert, sera archivée.`
-			: `Les ${suites(t)} versées par ce transfert quitteront cette ${TICKET.libelle.toLowerCase()}.`;
+			? `Cette ${affaire}, créée par le transfert, sera archivée.`
+			: `${lesSuites(t, 'quitteront', 'quittera')} cette ${affaire}.`;
+	}
+
+	/** Ce que fera le bouton principal, dit SOUS lui dès qu'une affaire est choisie. */
+	function ceQueFaitDeplacer(t: TransfertVerse, a: AffaireLiee): string {
+		const vers = `${lesSuites(t, 'rejoindront', 'rejoindra')} ${a.numero}, sans doubler ce qui y est déjà.`;
+		return t.affaire_creee ? `${vers} ${ceQuiReste(t)}` : vers;
+	}
+
+	function choisir(t: TransfertVerse, a: AffaireLiee) {
+		cibles = { ...cibles, [t.id]: a };
 	}
 
 	async function geste(appel: () => Promise<AffaireVisee>, fait: string) {
@@ -80,7 +113,7 @@
 		try {
 			const visee = await appel();
 			toast('success', fait);
-			deplace = null;
+			cibles = {};
 			if (visee.ticket_id !== ticketId) {
 				//  Une navigation complète : la fiche charge au montage, et SvelteKit
 				//  garderait ce composant pour un autre identifiant.
@@ -96,6 +129,14 @@
 		}
 	}
 
+	/** Le geste principal : il nomme sa destination, il ne se confirme donc pas. */
+	async function deplacer(t: TransfertVerse, a: AffaireLiee) {
+		await geste(
+			() => ticketsApi.deplacerTransfert(ticketId, t.id, a.id),
+			`Transfert déplacé vers ${a.numero}`,
+		);
+	}
+
 	async function annuler(t: TransfertVerse) {
 		const ok = await confirmer({
 			titre: 'Annuler le transfert',
@@ -107,34 +148,30 @@
 		if (ok) await geste(() => ticketsApi.annulerTransfert(ticketId, t.id), 'Transfert annulé');
 	}
 
-	async function valider(t: TransfertVerse) {
+	/** Garder ici est DÉFINITIF : la confirmation le dit, et dit l'affaire à part. */
+	async function garder(t: TransfertVerse) {
+		const aPart = t.affaire_creee
+			? ` Le courriel restera une ${affaire} à part : il ne pourra plus rejoindre une autre ${affaire}.`
+			: '';
 		const ok = await confirmer({
-			titre: 'Valider le transfert',
-			message: `Le transfert reste dans cette ${TICKET.libelle.toLowerCase()} : il quitte cette liste et ne pourra plus être annulé ni déplacé.`,
-			libelleConfirmer: 'Valider',
+			titre: 'Garder ici',
+			message: `Le courriel reste dans cette ${affaire}.${aPart} C’est définitif : ce transfert quitte cette liste et ne pourra plus être annulé ni déplacé.`,
+			libelleConfirmer: 'Garder ici',
 			libelleAnnuler: 'Revenir',
-		});
-		if (ok) await geste(() => ticketsApi.validerTransfert(ticketId, t.id), 'Transfert validé');
-	}
-
-	async function versAffaire(t: TransfertVerse, a: AffaireLiee) {
-		const ok = await confirmer({
-			titre: 'Déplacer le transfert',
-			message: `${ceQuiReste(t)} Elles rejoindront ${a.numero} — ${a.titre}, sans doubler ce qui y est déjà.`,
-			libelleConfirmer: 'Déplacer',
 		});
 		if (ok)
 			await geste(
-				() => ticketsApi.deplacerTransfert(ticketId, t.id, a.id),
-				`Transfert déplacé vers ${a.numero}`,
+				() => ticketsApi.validerTransfert(ticketId, t.id),
+				`Courriel gardé dans cette ${affaire}`,
 			);
 	}
 
 	async function versNouvelle(t: TransfertVerse) {
 		const ok = await confirmer({
 			titre: TICKET.libelleNouveau,
-			message: `${ceQuiReste(t)} Une ${TICKET.libelle.toLowerCase()} neuve les reçoit, décrite par le premier message, au nom de son auteur.`,
+			message: `${ceQuiReste(t)} Une ${affaire} neuve les reçoit, décrite par le premier message, au nom de son auteur.`,
 			libelleConfirmer: 'Créer',
+			libelleAnnuler: 'Revenir',
 		});
 		if (ok)
 			await geste(
@@ -156,62 +193,87 @@
 			<Icon name="inbox" size={16} /> Transferts de courriel
 		</h2>
 		{#each transferts as t (t.id)}
+			{@const cible = cibles[t.id]}
 			<div class="transfert">
 				<p class="transfert-quoi">
 					{fmtDatetime(t.cree_le)}{SEPARATEUR.tiret}transféré par {t.transfere_par_nom}{SEPARATEUR.point}{suites(
 						t,
-					)}{t.affaire_creee ? ` · ${TICKET.libelle.toLowerCase()} créée` : ''}
+					)}{t.affaire_creee ? ` · ${affaire} créée` : ''}
 				</p>
 				{#if t.bloque}
+					<!--  Retenu par un suivant : rien ne se déplace, seul « Garder ici » reste. -->
 					<p class="aide">Ne se défait pas encore : {t.bloque}.</p>
-				{/if}
-				<div class="transfert-gestes">
-					<button
-						type="button"
-						class="btn btn-primary btn-sm"
-						disabled={enCours}
-						on:click={() => valider(t)}>Valider le transfert</button
-					>
-					{#if !t.bloque}
+					<div class="transfert-gestes">
+						<button
+							type="button"
+							class="btn btn-outline btn-sm"
+							disabled={enCours}
+							on:click={() => garder(t)}>Garder ici</button
+						>
+					</div>
+				{:else}
+					<div class="transfert-decision" role="group" aria-labelledby="transfert-{t.id}-question">
+						<p id="transfert-{t.id}-question" class="transfert-question">
+							Ce courriel est-il dans la bonne {affaire} ?
+						</p>
+						{#if t.affaire_creee}
+							<p class="aide">
+								Ce transfert a créé cette {affaire}. S’il concerne une {affaire} existante, choisissez-la
+								ci-dessous ; sinon, il restera une {affaire} à part.
+							</p>
+						{/if}
+						{#if t.peut_deplacer}
+							<ChoixAffaire
+								id="transfert-{t.id}-cible"
+								libelle="Sinon, la bonne {affaire}"
+								exclure={[ticketId]}
+								sansCloses
+								on:choisir={(e) => choisir(t, e.detail)}
+							/>
+							<button
+								type="button"
+								class="btn btn-primary transfert-deplacer"
+								disabled={enCours || !cible}
+								on:click={() => cible && deplacer(t, cible)}
+							>
+								{#if cible}
+									<Icon name="arrow-right" size={16} />
+									<span
+										>Déplacer vers <span class="numero">#{cible.numero}</span
+										>{SEPARATEUR.point}<span class="titre">{cible.titre}</span></span
+									>
+								{:else}
+									Déplacer vers l’{affaire} choisie
+								{/if}
+							</button>
+							{#if cible}
+								<p class="aide">{ceQueFaitDeplacer(t, cible)}</p>
+							{/if}
+						{/if}
+					</div>
+					<!--  Les autres issues, secondaires : chacune se confirme. -->
+					<div class="transfert-gestes transfert-autres">
+						<button
+							type="button"
+							class="btn btn-outline btn-sm"
+							disabled={enCours}
+							on:click={() => garder(t)}>Garder ici</button
+						>
+						{#if t.peut_deplacer && !t.affaire_creee}
+							<button
+								type="button"
+								class="btn btn-outline btn-sm"
+								disabled={enCours}
+								on:click={() => versNouvelle(t)}>En faire une nouvelle {affaire}</button
+							>
+						{/if}
 						<button
 							type="button"
 							class="btn btn-outline btn-sm"
 							disabled={enCours}
 							on:click={() => annuler(t)}>Annuler le transfert</button
 						>
-						{#if t.peut_deplacer}
-							<button
-								type="button"
-								class="btn btn-outline btn-sm"
-								aria-expanded={deplace === t.id}
-								disabled={enCours}
-								on:click={() => (deplace = deplace === t.id ? null : t.id)}
-								>Déplacer vers une autre {TICKET.libelle.toLowerCase()}</button
-							>
-							{#if !t.affaire_creee}
-								<button
-									type="button"
-									class="btn btn-outline btn-sm"
-									disabled={enCours}
-									on:click={() => versNouvelle(t)}
-									>En faire une nouvelle {TICKET.libelle.toLowerCase()}</button
-								>
-							{/if}
-						{/if}
-					{/if}
-				</div>
-				{#if !t.bloque}
-					{#if deplace === t.id}
-						<div class="transfert-cible">
-							<ChoixAffaire
-								id="transfert-{t.id}-cible"
-								libelle="Vers l’{TICKET.libelle.toLowerCase()}"
-								exclure={[ticketId]}
-								sansCloses
-								on:choisir={(e) => versAffaire(t, e.detail)}
-							/>
-						</div>
-					{/if}
+					</div>
 				{/if}
 			</div>
 		{/each}
@@ -250,12 +312,47 @@
 		color: var(--color-text-muted);
 		margin: 0 0 0.4rem;
 	}
+	/*  La décision tient dans une colonne lisible : la question, le choix, puis
+	    le bouton qui conclut — dans l'ordre où on les lit. */
+	.transfert-decision {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		max-width: 36rem;
+	}
+	.transfert-question {
+		margin: 0;
+		font-weight: 600;
+	}
+	.transfert-decision .aide {
+		margin: 0;
+	}
+	/*  Le bouton principal NOMME sa destination : il prend la colonne, et un
+	    titre long passe à la ligne au lieu de pousser le bord. */
+	.transfert-deplacer {
+		align-self: stretch;
+		justify-content: flex-start;
+		gap: 0.5rem;
+		min-height: 44px;
+		text-align: left;
+	}
+	.transfert-deplacer .numero {
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.transfert-deplacer .titre {
+		font-weight: 400;
+	}
 	.transfert-gestes {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.4rem;
 	}
-	.transfert-cible {
-		margin-top: 0.6rem;
+	/*  Séparées de la décision par un filet : elles ne déplacent rien. */
+	.transfert-autres {
+		margin-top: 0.75rem;
+		padding-top: 0.6rem;
+		border-top: 1px dashed var(--color-border);
+		max-width: 36rem;
 	}
 </style>
