@@ -65,6 +65,8 @@ from app.models.prestataires import ContratEntretien, Prestataire
 from app.models.tickets import CategorieTicket, StatutTicket
 from app.utils.affaire_absorbee import pas_absorbee
 from app.utils.categories_ticket import libelle_categorie
+from app.utils.dates_fr import date_courte
+from app.utils.echeance_contrat import resiliation_effective
 from app.utils.liens import lien_element, lien_ticket
 from app.utils.perimetres import couvre, parse_json_perimetres, perimetre_label
 from app.utils.prestataires_affaire import par_affaire, presents
@@ -267,8 +269,16 @@ def _entrees_contrats(session: Session, perimetre: Optional[str]) -> list[Entree
         detail = prestataire.nom if prestataire and prestataire.nom else "prestataire inconnu"
         if contrat.numero_contrat:
             detail = f"{detail} · contrat {contrat.numero_contrat}"
+        if contrat.resilie_le:
+            detail = f"{detail} · résilié au {date_courte(contrat.resilie_le)}"
 
-        alerte = alerte_visite(_jour(contrat.prochaine_visite), aujourdhui)
+        #  Un contrat dont la résiliation est passée n'attend plus de visite : son alerte
+        #  ne dirait que du bruit (`utils/remplacement_contrat`).
+        alerte = (
+            None
+            if resiliation_effective(contrat, aujourdhui)
+            else alerte_visite(_jour(contrat.prochaine_visite), aujourdhui)
+        )
 
         entrees.append(
             EntreeCarnet(

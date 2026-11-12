@@ -81,6 +81,9 @@ class _Contrat:
         self.date_debut = None
         self.prochaine_visite = None
         self.document_id = None
+        #  Ni résilié ni remplacé : `successeur_en_vigueur` lit ces deux champs.
+        self.resilie_le = None
+        self.remplace_par_id = None
 
 
 #  ── La désignation, et son repli ────────────────────────────────────────────

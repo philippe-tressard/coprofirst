@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Document, Prestataire } from '#lib/api/index.ts';
+	import type { ContratEntretien, Document, Prestataire } from '#lib/api/index.ts';
 	import type { FormulaireContratData } from '#lib/prestataires.ts';
 	/**
 	 * Le formulaire d'un contrat d'entretien — **un seul rendu**, deux enveloppes.
@@ -58,6 +58,8 @@
 	/** L'état du formulaire, lié dans les deux sens par l'appelant. */
 	export let contratForm: FormulaireContratData;
 	export let prestataires: Prestataire[] = [];
+	/**  Les contrats qu'on peut désigner comme SUITE de celui-ci (« Remplacé par »). */
+	export let contratsProposes: ContratEntretien[] = [];
 
 	/**
 	 * L'identifiant du contrat édité, ou `null` en création.
@@ -113,6 +115,8 @@
 	<ChampsContrat
 		bind:contratForm
 		{prestataires}
+		{contratId}
+		{contratsProposes}
 		etat={contratId === null ? 'creation' : 'edition'}
 	/>
 	<!--  ══ 8. DOCUMENTS ══ La section vient APRÈS la description, jamais avant :

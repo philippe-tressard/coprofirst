@@ -72,6 +72,16 @@ export interface Prestataire {
 	prochaine_visite: string | null;
 }
 
+/**  Le contrat à l'autre bout d'un remplacement — `ContratLie` (`routers/prestataires_schemas.py`). */
+export interface ContratLie {
+	id: number;
+	libelle: string;
+	prestataire_id: number;
+	prestataire_nom: string;
+	date_debut: string;
+	resilie_le: string | null;
+}
+
 /**  Un contrat d'entretien — `ContratRead` (`routers/prestataires.py`). */
 export interface ContratEntretien {
 	id: number;
@@ -98,6 +108,14 @@ export interface ContratEntretien {
 	archivee: boolean;
 	notes: string | null;
 	document_id: number | null;
+	/** Le dernier jour du contrat quand il est résilié (`utils/remplacement_contrat`). */
+	resilie_le: string | null;
+	/** Le contrat qui prend la suite — saisi avec la date de résiliation. */
+	remplace_par_id: number | null;
+	/** DÉDUITS à la lecture : la résiliation est passée ; la suite ; ce que ce contrat remplace. */
+	resilie: boolean;
+	remplace_par: ContratLie | null;
+	remplace: ContratLie[];
 	/** L'échéance DÉDUITE (`utils/echeance_contrat.py`), jamais stockée. */
 	date_fin: string | null;
 	reconduit: boolean;

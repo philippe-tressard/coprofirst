@@ -27,7 +27,10 @@ class _Contrat:
     #  `assurance` par défaut : le cas de la reconduction tacite, qui est la
     #  règle. Les cas du mandat de syndic passent le type explicitement — le
     #  lecteur voit alors tout de suite ce qui distingue le test.
-    def __init__(self, debut, valeur=None, unite=None, type_equipement="assurance"):
+    def __init__(
+        self, debut, valeur=None, unite=None, type_equipement="assurance", resilie_le=None
+    ):
+        self.resilie_le = resilie_le
         self.date_debut = debut
         self.duree_initiale_valeur = valeur
         self.duree_initiale_unite = unite

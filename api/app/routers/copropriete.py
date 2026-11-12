@@ -22,6 +22,7 @@ from app.utils.destinataires import syndic_principal
 from app.utils.liens import nom_site
 from app.utils.document_contrat import id_document_designe
 from app.utils.echeance_contrat import echeance_du_contrat
+from app.utils.remplacement_contrat import successeur_en_vigueur
 from app.utils.equipements import ASSURANCE, SYNDIC
 from app.utils.lecture import lire_objet
 from app.utils.recuperer import connu_ou_404, premier_ou_404
@@ -188,7 +189,10 @@ def contrat_de_reference(session: Session, copro: Copropriete, section: str):
     champ_id, type_equipement = SECTIONS_CONTRAT[section]
     contrat_id = getattr(copro, champ_id, None)
     if contrat_id:
-        return session.get(ContratEntretien, contrat_id)
+        #  Désigné puis résilié et remplacé : la fiche montre la SUITE dès que l'ancien
+        #  a cessé, sans qu'on pense à la rediriger à la main (`utils/remplacement_contrat`).
+        contrat = session.get(ContratEntretien, contrat_id)
+        return successeur_en_vigueur(session, contrat) if contrat else None
     return session.exec(
         select(ContratEntretien)
         .where(

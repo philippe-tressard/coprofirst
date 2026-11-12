@@ -74,6 +74,7 @@ class _Contrat(Protocol):
     duree_initiale_valeur: Optional[int]
     duree_initiale_unite: Optional[str]
     type_equipement: object  # le code d'un équipement (`utils/equipements`)
+    resilie_le: Optional[date]  # le dernier jour du contrat, s'il est résilié
 
 
 #: 🔴 LES TYPES QUI NE SE RECONDUISENT PAS TACITEMENT.
@@ -108,6 +109,21 @@ class Echeance(NamedTuple):
     reconduit: bool
     #: Le terme est passé et RIEN ne l'a prolongé — le mandat a cessé.
     echu: bool = False
+    #: Le terme est la RÉSILIATION posée sur le contrat, pas une échéance déduite :
+    #: il ne se reporte pas, et il n'est ni « reconduit » ni « échu » (12/11/2026).
+    resilie: bool = False
+
+
+def resiliation_effective(contrat: _Contrat, aujourdhui: Optional[date] = None) -> bool:
+    """La résiliation est-elle passée ? Le DERNIER jour du contrat court encore.
+
+    Résilié « au 17 novembre » : le 17 le contrat est en vigueur, le 18 il ne l'est
+    plus — et le contrat qui le remplace commence le 18. Même règle que la visite
+    en retard (`visite_en_retard`) : le jour même n'est pas passé.
+    """
+    if not contrat.resilie_le:
+        return False
+    return contrat.resilie_le < (aujourdhui or horloge.aujourd_hui())
 
 
 def ajouter_mois(depart: _D, mois: int) -> _D:
@@ -139,6 +155,11 @@ def echeance_du_contrat(contrat: _Contrat, aujourdhui: Optional[date] = None) ->
     """
     if not contrat.date_debut:
         return None
+
+    #  🔴 Une résiliation POSÉE fixe le terme, avant toute déduction : le contrat
+    #  ne se reconduit plus, quel que soit son type ni sa durée initiale.
+    if contrat.resilie_le:
+        return Echeance(contrat.resilie_le, reconduit=False, resilie=True)
 
     reference = aujourdhui or horloge.aujourd_hui()
     duree = contrat.duree_initiale_valeur
@@ -233,7 +254,15 @@ def poser_echeance(lu, contrat):
         (e.date, e.reconduit, e.echu) if e else (None, False, False)
     )
     #  Ce qui s'en déduit, servi au site et à l'app iOS (#2507).
-    lu.date_preavis = date_preavis(lu.date_fin)
-    lu.urgence_echeance = urgence_echeance(lu.date_fin)
-    lu.en_retard = visite_en_retard(contrat.prochaine_visite)
+    #
+    #  Un contrat RÉSILIÉ a déjà dénoncé : son terme est la date posée, il n'y a plus
+    #  de préavis à relancer, et plus de visite à attendre une fois la résiliation
+    #  passée (12/11/2026).
+    lu.resilie = resiliation_effective(contrat)
+    if contrat.resilie_le:
+        lu.date_preavis, lu.urgence_echeance = None, None
+    else:
+        lu.date_preavis = date_preavis(lu.date_fin)
+        lu.urgence_echeance = urgence_echeance(lu.date_fin)
+    lu.en_retard = not lu.resilie and visite_en_retard(contrat.prochaine_visite)
     return lu

@@ -230,6 +230,10 @@
 			frequence_type: contratForm.frequence_type || null,
 			frequence_valeur: nombreOuNull(contratForm.frequence_valeur),
 			prochaine_visite: contratForm.prochaine_visite || null,
+			//  Le renvoi ne voyage JAMAIS sans sa date : le serveur le refuse, et le
+			//  champ n'est proposé qu'une fois la résiliation saisie.
+			resilie_le: contratForm.resilie_le || null,
+			remplace_par_id: contratForm.resilie_le ? nombreOuNull(contratForm.remplace_par_id) : null,
 		};
 		//  🔴 Lu AVANT la fermeture, qui remet `editContratId` à `null`. Le message
 		//  le lisait après : une modification annonçait donc « Contrat créé ».
@@ -292,6 +296,7 @@
 		<FormulaireContrat
 			bind:contratForm
 			{prestataires}
+			contratsProposes={contrats}
 			contratId={null}
 			documents={[]}
 			bind:fichiersEnAttente={contratFichiersEnAttente}
@@ -357,6 +362,7 @@
 					{editContratId}
 					bind:contratForm
 					{prestataires}
+					contratsProposes={contrats}
 					{submitting}
 					onBasculer={(id) => (ouvert = basculer(ouvert, id))}
 					onModifier={startEditContrat}
