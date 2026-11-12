@@ -191,6 +191,9 @@ OUVERTS_EXPRES: dict[tuple[str, str], str] = {
     ("POST", "/auth/logout"): "un visiteur se déconnecte",
     ("POST", "/auth/refresh"): "la session d'un compte publié se renouvelle",
     ("POST", "/auth/me/demande-modification"): "une demande au conseil, montrée par la démo",
+    ("POST", "/auth/demande-suppression"): "la revue de l'App Store voit le geste aboutir ; "
+    "le traitement n'efface jamais en démo (#2699)",
+    ("DELETE", "/auth/demande-suppression"): "retirer sa demande, montré par la démo",
     ("PATCH", "/auth/me/opt-out-telemetrie"): "le droit d'opposition reste ouvert",
     ("DELETE", "/auth/me/telemetrie"): "le droit d'effacement reste ouvert",
     ("POST", "/admin/utilisateurs/{user_id}/accueil-arrivant"): "geste de l'accueil, montré",

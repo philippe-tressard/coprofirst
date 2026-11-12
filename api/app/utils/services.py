@@ -232,6 +232,8 @@ COURRIELS_DE_SECURITE = frozenset(
         "reinitialisation_mdp",
         "verification_email",
         "adresse_changement_avis",
+        "suppression_compte_demandee",
+        "suppression_compte_effectuee",
         "alerte_systeme",
     }
 )

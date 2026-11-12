@@ -20,6 +20,7 @@
 -->
 <script lang="ts">
 	import TelemetrieRGPD from '#lib/components/TelemetrieRGPD.svelte';
+	import SuppressionCompte from '#lib/components/SuppressionCompte.svelte';
 </script>
 
 <!-- ── RGPD ─────────────────────────────────────────────────────────────── -->
@@ -32,6 +33,9 @@
 	</p>
 
 	<TelemetrieRGPD />
+
+	<!-- La suppression du compte se DEMANDE ici aussi (#2699), en plus de la voie écrite. -->
+	<SuppressionCompte />
 </section>
 
 <style>

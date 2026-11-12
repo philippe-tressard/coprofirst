@@ -97,6 +97,9 @@ CONTENUS_PERSONNELS: dict[tuple[str, str], str] = {
     ("appareil", "utilisateur_id"): "un téléphone qui sonne pour la personne (#2493)",
     ("commande_acces", "user_id"): "une demande de badge de la personne",
     ("demande_modification_profil", "utilisateur_id"): "une demande sur son propre profil",
+    ("demande_suppression_compte", "utilisateur_id"): (
+        "la demande d'effacement elle-même ; le journal de sécurité garde le traitement (#2699)"
+    ),
     ("delegation", "mandant_id"): "une délégation donnée par la personne",
     ("delegation", "aidant_id"): "une délégation reçue par la personne",
     ("mandat", "bailleur_id"): "un mandat de gestion de la personne",

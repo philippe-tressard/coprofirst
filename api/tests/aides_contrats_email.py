@@ -88,6 +88,9 @@ EXPECTED_VARS: dict[str, set[str]] = {
     "verification_email": {"expire_heures", "lien", "prenom"},
     #  L'avis à l'ancienne adresse d'un compte dont l'adresse va changer (#1549).
     "adresse_changement_avis": {"destinataire", "nouvelle_adresse", "par_un_administrateur"},
+    #  La suppression de son compte (#2699) : l'accusé dit le délai, l'effacement rien de plus.
+    "suppression_compte_demandee": {"destinataire", "delai_jours"},
+    "suppression_compte_effectuee": {"destinataire"},
     #  L'avertissement avant la purge d'un compte inactif (#1580) : la date de la
     #  suppression et celle de la dernière activité, rendues en toutes lettres.
     "compte_inactif_avertissement": {"destinataire", "date_suppression", "derniere_activite"},
