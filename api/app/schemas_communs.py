@@ -132,11 +132,29 @@ class ChampsIntervenant(BaseModel):
     quatrième ligne de chaque copie. Les règles vivent dans `utils/intervenant`.
     """
 
+    #: Le PREMIER des prestataires (#2704) — gardé pour les clients antérieurs.
     prestataire_id: Optional[int] = None
     contrat_id: Optional[int] = None  # sous contrat ; `None` hors contrat (#1445)
     frequence_type: Optional[str] = None
     frequence_valeur: Optional[int] = None
     equipement: Optional[str] = None
+
+
+class ChampsIntervenantEntree(ChampsIntervenant):
+    """Ce que création, correction et Suite REÇOIVENT en plus : la liste (#2704).
+
+    `prestataire_ids` remplace la liste entière, dans l'ordre ; `prestataire_id`
+    seul reste accepté d'un client antérieur (`utils/prestataires_affaire`).
+    """
+
+    prestataire_ids: Optional[list[int]] = None
+
+
+class PrestataireDeLAffaire(BaseModel):
+    """Un prestataire de l'affaire, tel qu'on le lit (#2704) — dans l'ordre de saisie."""
+
+    id: int
+    nom: str
 
 
 class EvolutionLue(BaseModel):

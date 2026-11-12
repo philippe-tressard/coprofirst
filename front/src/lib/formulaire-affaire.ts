@@ -145,7 +145,8 @@ export interface SaisieAffaire {
 	envoyerAuteur: boolean;
 	annonceHall: boolean;
 	saisiPour: SaisieSaisiPour;
-	prestataireId: number | null;
+	/** Les prestataires, dans l'ordre (#2704) ; vide sans intervenant. */
+	prestataireIds: number[];
 	/** Le contrat qui cadre l'intervention, `null` hors contrat (#1445). */
 	contratId: number | null;
 	/** Le code d'un équipement, ou `''` — posé par le conseil (#1097). */
@@ -208,7 +209,7 @@ export function chargeUtileAffaire(
 	//  Sous contrat, le rythme est celui du contrat (#1445) : il ne part pas.
 	const entretien = s.categorie === CATEGORIE_ENTRETIEN && s.contratId === null;
 	Object.assign(charge, {
-		prestataire_id: estBati(s.categorie) ? s.prestataireId : null,
+		prestataire_ids: estBati(s.categorie) ? s.prestataireIds : [],
 		contrat_id: estBati(s.categorie) ? s.contratId : null,
 		equipement: estBati(s.categorie) ? s.equipement || null : null,
 		frequence_type: entretien && s.frequenceType ? s.frequenceType : null,
@@ -395,9 +396,9 @@ export function intervenantPropose(
 	contrats: ContratEnCours[],
 	//  Déjà désigné : rien n'est proposé — la règle que les deux appelants
 	//  recopiaient chacun devant l'appel.
-	designe: number | null = null,
+	designe: number[] = [],
 ): { prestataireId: number; contratId: number } | null {
-	if (!equipement || designe !== null) return null;
+	if (!equipement || designe.length) return null;
 	const contrat = contrats.find((c) => c.actif !== false && c.equipement_effectif === equipement);
 	return contrat ? { prestataireId: contrat.prestataire_id, contratId: contrat.id } : null;
 }

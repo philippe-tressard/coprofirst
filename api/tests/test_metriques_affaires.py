@@ -22,7 +22,7 @@ from __future__ import annotations
 from datetime import date, datetime
 
 import pytest
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.utils.categories_ticket import libelle_categorie
 from app.models.copropriete import Copropriete
@@ -310,6 +310,38 @@ def test_la_fiche_prestataire_compte_toutes_ses_affaires_closes_par_exercice(mot
     [courant, precedent] = corps["exercices"]
     assert _etapes(courant)["chez_prestataire"] == (2.0, 2)  # (3 + 1) / 2
     assert precedent["duree_totale"] == 3.0
+
+
+def test_une_affaire_a_deux_intervenants_compte_pour_chacun(moteur):
+    """#2704, Q8 : l'étape « Chez le prestataire » ne dit pas lequel a traîné —
+    sa durée est attribuée à chacun, au bilan du carnet comme sur la fiche."""
+    from app.models.tickets import TicketPrestataire
+
+    jeu = _Jeu(moteur)
+    with Session(moteur) as s:
+        #  G — panne, P2 puis P1 : chez les prestataires 1 j.
+        jeu._affaire(
+            s,
+            "panne",
+            jeu.p2,
+            _utc(2026, 3, 23, 8),
+            [
+                ("etat", _utc(2026, 3, 24, 8), "ouvert", "chez_prestataire", None),
+                ("etat", _utc(2026, 3, 25, 8), "chez_prestataire", "résolu", None),
+            ],
+        )
+        g = s.exec(select(Ticket).where(Ticket.numero == f"MET-{jeu.n:03d}")).one()
+        s.add(TicketPrestataire(ticket_id=g.id, prestataire_id=jeu.p2, rang=0))
+        s.add(TicketPrestataire(ticket_id=g.id, prestataire_id=jeu.p1, rang=1))
+        s.commit()
+    http = _cs(moteur)
+    panne = _par_categorie(http.get(ROUTE_CARNET).json())["panne"]
+    assert [(p["nom"], p["jours"], p["nombre"]) for p in panne["prestataires"]] == [
+        ("Ascenseurs Témoin", 2.0, 2),  # (3 + 1) / 2
+        ("Plomberie Témoin", 1.5, 2),  # (2 + 1) / 2
+    ]
+    #  La fiche du SECOND intervenant compte G : A, D, E, puis G.
+    assert http.get(f"/prestataires/{jeu.p1}/metriques").json()["ensemble"]["nombre"] == 4
 
 
 # ── Les bornes d'exercice ───────────────────────────────────────────────────

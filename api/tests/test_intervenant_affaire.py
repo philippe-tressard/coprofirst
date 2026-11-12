@@ -16,24 +16,21 @@ tests passent par les vraies routes de création et de correction.
 
 from __future__ import annotations
 
-import uuid
 
 import pytest
 from fastapi import BackgroundTasks, HTTPException
 
 from app.models.core import RoleUtilisateur, Ticket
-from app.models.prestataires import ContratEntretien, Prestataire
 from app.models.tickets import StatutTicket
 from app.utils.kanban_tickets import colonne_du_ticket
-from tests.aides_affaire import _compte, _corriger, _creer, session  # noqa: F401
-
-
-def _prestataire(session) -> Prestataire:
-    p = Prestataire(nom=f"Ascenseurs {uuid.uuid4().hex[:4]}", specialite="ascenseur")
-    session.add(p)
-    session.commit()
-    session.refresh(p)
-    return p
+from tests.aides_affaire import (  # noqa: F401
+    _compte,
+    _contrat,
+    _corriger,
+    _creer,
+    _prestataire,
+    session,
+)
 
 
 # ── L'intervenant et la récurrence ──────────────────────────────────────────
@@ -205,24 +202,6 @@ def test_cas_zero_la_correction_d_un_resident_laisse_la_date(session):
 
 
 # ── Sous contrat ou hors contrat (#1445) ────────────────────────────────────
-
-
-def _contrat(session, p: Prestataire, **champs) -> ContratEntretien:
-    defaut = dict(
-        copropriete_id=1,
-        prestataire_id=p.id,
-        libelle="Ascenseur",
-        numero_contrat="C-42",
-        type_equipement="ascenseur",
-        frequence_type="mois",
-        frequence_valeur=3,
-        actif=True,
-    )
-    c = ContratEntretien(**{**defaut, **champs})
-    session.add(c)
-    session.commit()
-    session.refresh(c)
-    return c
 
 
 def test_sous_contrat_le_rythme_est_celui_du_contrat(session):

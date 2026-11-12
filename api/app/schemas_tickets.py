@@ -20,13 +20,13 @@ from typing import List, Optional
 from pydantic import computed_field
 
 from app.models.core import StatutTicket
-from app.schemas_communs import ChampsIntervenant, ChoixConciliation, EvolutionLue, ListeJson
+from app.schemas_communs import ChampsIntervenantEntree, ChoixConciliation, EvolutionLue, ListeJson
 from app.utils.assiste_ia import AssisteIACorrection, AssisteIAEntree
 from app.utils.etat_affaire import libelle_etat
 from app.utils.perimetres.servi import libelle_complet
 
 
-class ChampsSuiteAffaire(ChampsIntervenant):
+class ChampsSuiteAffaire(ChampsIntervenantEntree):
     """Ce qu'une Suite pose sur l'AFFAIRE — à l'ajout comme à la correction.
 
     Partagés par `TicketEvolutionCreate` et `TicketEvolutionUpdate` depuis le
@@ -38,7 +38,7 @@ class ChampsSuiteAffaire(ChampsIntervenant):
     #  Une Suite AJOUTE des affaires liées, elle n'en retire aucune (#1342).
     affaires_liees: Optional[list[int]] = None
     #  Ce que le CONSEIL pose dans une Suite (#1207, 24/09/2026) : « Quand », et
-    #  par `ChampsIntervenant` l'intervenant et l'équipement. Ignorés pour tout
+    #  par `ChampsIntervenantEntree` les prestataires et l'équipement. Ignorés pour tout
     #  autre auteur ; mêmes règles que la correction.
     debut: Optional[datetime] = None
     fin: Optional[datetime] = None

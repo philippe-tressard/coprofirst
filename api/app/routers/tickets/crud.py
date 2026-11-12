@@ -9,6 +9,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlmodel import Session, select
 from app.utils.affaires_liees import poser_liens, supprimer_liens_de
 from app.utils.intervenant import appliquer_intervenant
+from app.utils.prestataires_affaire import supprimer_de as supprimer_prestataires_de
 from app.utils.nature_affaire import (
     est_actualite,
     est_bug,
@@ -329,6 +330,7 @@ def delete_ticket(
     #  Le `flush()` ordonne les DELETE — pourquoi : `utils/suppression_liee.py`.
     enfants = supprimer_lignes_liees(session, ticket.evolutions, ticket.messages)
     supprimer_liens_de(session, ticket_id)  # ses affaires liées (#1342)
+    enfants += supprimer_prestataires_de(session, ticket_id)  # sa liste (#2704)
     docs = supprimer_documents_de(session, "ticket_id", ticket_id)
     flush_si_necessaire(session, enfants, docs)
     session.delete(ticket)

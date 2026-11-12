@@ -15,10 +15,12 @@ import type { Writable } from 'svelte/store';
 import type { Ticket } from '#lib/api/index.ts';
 import { pourChampLocal } from '#lib/date.ts';
 import { estBati, natureDe } from '#lib/formulaire-affaire.ts';
+import { idsDesPrestataires } from '#lib/prestataires.ts';
 
 export interface EtatSuiteConseil {
 	equipement: string;
-	prestataireId: number | null;
+	/** Les prestataires, dans l'ordre (#2704). */
+	prestataireIds: number[];
 	contratId: number | null;
 	debut: string;
 	fin: string;
@@ -50,7 +52,7 @@ export function etatSuite(
 					...e,
 					pret: true,
 					equipement: ticket.equipement ?? '',
-					prestataireId: ticket.prestataire_id ?? null,
+					prestataireIds: idsDesPrestataires(ticket),
 					contratId: ticket.contrat_id ?? null,
 					debut: pourChampLocal(ticket.debut),
 					fin: pourChampLocal(ticket.fin),

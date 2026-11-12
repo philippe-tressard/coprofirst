@@ -39,7 +39,14 @@ from app.models.core import (
 )
 from app.models.prestataires import ContratEntretien, Prestataire
 from app.utils.recuperer import ou_rien
-from app.schemas import AffaireLieeLue, ContratDeLAffaire, TicketEvolutionRead, TicketRead
+from app.schemas import (
+    AffaireLieeLue,
+    ContratDeLAffaire,
+    PrestataireDeLAffaire,
+    TicketEvolutionRead,
+    TicketRead,
+)
+from app.utils.prestataires_affaire import presents
 from app.utils.archivage import est_archivable, perime_le
 from app.utils.lecture import lire_objet
 from app.utils.corrections_texte import expliciter_ancienne
@@ -291,6 +298,7 @@ def ticket_read(
         natures=natures(ticket),
         perime_le=perime_le(ticket, "ticket"),
         prestataire_nom=nom_prestataire(session, ticket.prestataire_id),
+        prestataires=prestataires_lus(session, groupe.prestataires.get(ticket.id, [])),
         contrat=contrat_de_l_affaire(session, ticket.contrat_id, lecteur),
         me_concerne=concerne(lecteur, perimetres) if lecteur else None,
         #  Ce que les deux clients affichent sans le recalculer (#2508) : le lieu
@@ -329,6 +337,11 @@ def nom_prestataire(session: Session, prestataire_id: Optional[int]) -> Optional
     """Le nom de l'intervenant, ou `None` — une ligne effacée ne casse pas la fiche."""
     p = session.get(Prestataire, prestataire_id) if prestataire_id else None
     return p.nom if p else None
+
+
+def prestataires_lus(session: Session, ids: list[int]) -> list[PrestataireDeLAffaire]:
+    """Les prestataires de l'affaire, dans l'ordre (#2704) — préchargés par la liste."""
+    return [PrestataireDeLAffaire(id=p.id, nom=p.nom) for p in presents(session, ids)]
 
 
 def trier_par_activite(session: Session, tickets: list[Ticket]) -> list[Ticket]:

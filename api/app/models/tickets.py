@@ -29,7 +29,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import NaiveDatetime
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 from app.models.evolution import EvolutionMixin
 from app.utils import horloge
@@ -269,6 +269,26 @@ class IntervenantMixin(SQLModel):
     frequence_type: Optional[str] = None  # « semaines » · « mois » · « fois_par_an »
     frequence_valeur: Optional[int] = None
     equipement: Optional[str] = None
+
+
+class TicketPrestataire(SQLModel, table=True):
+    """Les prestataires d'une affaire, dans l'ordre de saisie (#2704, migration 0333).
+
+    `Ticket.prestataire_id` reste, tenu égal au PREMIER de la liste à chaque
+    écriture : un retour à l'image d'avant lit toujours un intervenant (#1757).
+    La liste se lit par `utils/prestataires_affaire.liste_effective`, jamais ici.
+    """
+
+    __tablename__ = "ticket_prestataire"
+    __table_args__ = (
+        UniqueConstraint("ticket_id", "prestataire_id", name="uq_ticket_prestataire"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
+    prestataire_id: int = Field(foreign_key="prestataire.id", index=True)
+    #: L'ordre de saisie : 0 est le premier, celui de `Ticket.prestataire_id`.
+    rang: int = 0
 
 
 class Ticket(SaisiPourMixin, AssisteIAMixin, IntervenantMixin, table=True):

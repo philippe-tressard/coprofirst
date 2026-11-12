@@ -196,8 +196,18 @@ Les deux axes restent distincts.
 | priorite | enum | `normale` \| `haute` \| `urgente` |
 | batiment_id | FK Bâtiment | Optionnel |
 | lot_id | FK Lot | Optionnel |
+| prestataire_id | integer | Optionnel — le PREMIER des prestataires, tenu égal à `ticket_prestataire` de rang 0 (#2704) |
 | cree_le | datetime | — |
 | mis_a_jour_le | datetime | — |
+
+### TicketPrestataire *(les prestataires d'une affaire, dans l'ordre — #2704)*
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| id | integer PK | — |
+| ticket_id | FK Ticket | — |
+| prestataire_id | FK Prestataire | Unique par affaire |
+| rang | integer | Ordre de saisie, 0 = le premier |
 
 ### MessageTicket *(échange sur un ticket)*
 

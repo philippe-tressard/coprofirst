@@ -35,6 +35,7 @@ from app.models.synthese import VALIDEE, SyntheseAffaire
 from app.utils.affaires_liees import index_des_liens
 from app.utils.archivage import seuil_archivage_jours
 from app.utils.photos import parse_photos
+from app.utils.prestataires_affaire import par_affaire
 from app.utils.recuperer import precharger
 
 
@@ -54,6 +55,8 @@ class LectureGroupee:
     seuil_jours: int
     #: Les affaires qu'accompagne une synthèse VALIDÉE (#1643).
     syntheses_validees: frozenset[int]
+    #: Les prestataires de chaque affaire, dans l'ordre (#2704).
+    prestataires: dict[int, list[int]]
     #: Lignes préchargées pour `session.get` : la carte d'identité de la
     #: session ne les retient que faiblement (`recuperer.precharger`).
     retenues: tuple
@@ -121,10 +124,11 @@ def lecture_groupee(session: Session, tickets: list[Ticket]) -> LectureGroupee:
     personnes = precharger(
         session, Utilisateur, {i for t in tickets for i in (t.auteur_id, t.saisi_pour_user_id)}
     )
+    prestataires = par_affaire(session, tickets)
     retenues = (
         *personnes,
         *precharger(session, Batiment, {p.batiment_id for p in personnes}),
-        *precharger(session, Prestataire, {t.prestataire_id for t in tickets}),
+        *precharger(session, Prestataire, {i for ids in prestataires.values() for i in ids}),
         *precharger(session, ContratEntretien, {t.contrat_id for t in tickets}),
     )
     return LectureGroupee(
@@ -134,5 +138,6 @@ def lecture_groupee(session: Session, tickets: list[Ticket]) -> LectureGroupee:
         pieces_du_fil=pieces_du_fil(session, ids),
         seuil_jours=seuil_archivage_jours(session),
         syntheses_validees=syntheses_validees(session, ids),
+        prestataires=prestataires,
         retenues=retenues,
     )

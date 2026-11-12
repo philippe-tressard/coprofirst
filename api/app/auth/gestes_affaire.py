@@ -38,6 +38,8 @@ from typing import Any
 from app.auth.deps import est_moderateur, peut_commenter, peut_editer
 from app.models.core import RoleUtilisateur, StatutTicket, Utilisateur
 from app.models.tickets import CategorieTicket
+from app.utils.carnet_entretien import est_du_bati
+from app.utils.etat_affaire import affaire_close
 from app.utils.nature_affaire import categorie_reservee, est_actualite
 from app.utils.valeurs import valeur
 
@@ -102,6 +104,23 @@ def peut_modifier(ticket: Any, user: Utilisateur) -> bool:
     return valeur(getattr(ticket, "statut", None)) in ETATS_CORRIGEABLES
 
 
+def peut_changer_prestataires(ticket: Any, user: Utilisateur) -> bool:
+    """🛠️ Désigner les prestataires (#2704, Q1) : le conseil, sur une affaire du bâti ouverte.
+
+    `peut_modifier` ne suffit pas : il admet l'auteur, alors que la liste est au
+    conseil seul (`utils/intervenant` ignore celle d'un résident). La route l'accepte
+    aussi sur une affaire close ; l'écran ne l'offre que tant qu'elle est ouverte —
+    arbitré le 12/11/2026, comme `peut_deplacer_au_kanban` restreint sa route.
+    """
+    return (
+        est_moderateur(user)
+        and not _absorbee(ticket)
+        and not est_actualite(ticket)
+        and est_du_bati(getattr(ticket, "categorie", None))
+        and not affaire_close(getattr(ticket, "statut", None))
+    )
+
+
 def categorie_permise(categorie: Any, user: Utilisateur) -> bool:
     """Ce compte peut-il poser cette catégorie (création, correction) ? 403 sinon."""
     return est_moderateur(user) or not categorie_reservee(categorie)
@@ -121,6 +140,7 @@ def gestes_servis(ticket: Any, lecteur: Utilisateur | None) -> dict[str, bool]:
         "peut_repondre": peut_repondre,
         "peut_modifier": peut_modifier,
         "peut_corriger": peut_editer,
+        "peut_changer_prestataires": peut_changer_prestataires,
     }
     return {nom: lecteur is not None and regle(ticket, lecteur) for nom, regle in gestes.items()}
 
@@ -132,6 +152,7 @@ __all__ = [
     "categories_permises",
     "peut_archiver",
     "peut_changer_etat",
+    "peut_changer_prestataires",
     "peut_deplacer_au_kanban",
     "peut_modifier",
     "peut_repondre",
