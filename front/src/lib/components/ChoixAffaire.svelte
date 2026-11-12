@@ -11,6 +11,13 @@
     elle se charge au focus, pas au montage ;
   - champ vide, les affaires ENCORE OUVERTES les plus récentes ; une frappe
     cherche dans toutes — closes comprises, sauf `sansCloses`.
+
+  🔴 La liste se replie APRÈS le geste, jamais pendant (12/11/2026). Elle est dans
+  le flux : repliée au moment où le focus la quitte — l'appui sur un bouton placé
+  dessous —, elle faisait remonter ce bouton sous le pointeur, et le clic tombait
+  à côté. Invisible tant que l'appelant ne posait rien sous elle ; les transferts
+  de courriel y posent désormais leur bouton principal. Elle se replie aussi dès
+  qu'une affaire est choisie : rien ne reste ouvert au-dessus du bouton qui conclut.
 -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
@@ -76,16 +83,39 @@
 		void charger();
 	}
 
-	/** Le focus quitte la zone (champ + liste) : la liste se referme. */
+	/** Un appui est-il en cours ? Le replier attend qu'il finisse. */
+	let appui = false;
+
+	function replierSiSortie() {
+		if (!zone?.contains(document.activeElement)) deroulee = false;
+	}
+
+	/** Le focus quitte la zone (champ + liste) : la liste se referme — après l'appui. */
 	function sortie(e: FocusEvent) {
-		if (!zone?.contains(e.relatedTarget as Node | null)) deroulee = false;
+		if (zone?.contains(e.relatedTarget as Node | null)) return;
+		//  Hors appui (Tab), tout de suite après l'événement : un clic synthétisé
+		//  au doigt arrive dans la même tâche que le changement de focus.
+		if (!appui) setTimeout(replierSiSortie);
+	}
+
+	function finAppui() {
+		appui = false;
+		//  Après le `click` qui suit, dans la même tâche : le bouton visé l'a reçu.
+		setTimeout(replierSiSortie);
 	}
 
 	function choisir(a: AffaireLiee) {
 		dispatch('choisir', a);
 		recherche = '';
+		deroulee = false;
 	}
 </script>
+
+<svelte:window
+	on:pointerdown={() => (appui = true)}
+	on:pointerup={finAppui}
+	on:pointercancel={finAppui}
+/>
 
 <div bind:this={zone} on:focusout={sortie}>
 	<div class="field">

@@ -8,11 +8,17 @@
  *
  *  - aucun bloc quand il n'y a rien à défaire ;
  *  - un transfert retenu par un suivant dit pourquoi, et ne propose que
- *    « Valider » — celui que plus rien ne rouvrira n'est pas servi (14/10/2026) ;
- *  - « Valider le transfert » (13/10/2026) demande confirmation, puis appelle
- *	sa route — sur un transfert défaisable comme sur un bloqué ;
+ *    « Garder ici » — celui que plus rien ne rouvrira n'est pas servi (14/10/2026) ;
+ *  - « Garder ici » (« Valider le transfert » du 13/10/2026) demande une
+ *    confirmation qui dit DÉFINITIF, puis appelle sa route — sur un transfert
+ *    défaisable comme sur un bloqué ;
  *  - « Annuler » demande confirmation, puis appelle la bonne route ;
- *  - « Déplacer » ne propose ni l'affaire ouverte, ni une affaire close ;
+ *  - le choix d'une autre affaire ne propose ni l'affaire ouverte, ni une close ;
+ *  - 🔴 le parcours du 12/11/2026 : un transfert qui a CRÉÉ l'affaire (« incendie »,
+ *    TK-330672, à rattacher à TK-E00057) pose la question, ouvre le choix
+ *    d'emblée, et le SEUL bouton plein est « Déplacer vers #… · titre », inactif
+ *    tant que rien n'est choisi — « Valider le transfert », plein et en premier,
+ *    avait rendu l'affaire autonome, pour toujours ;
  *  - le bloc est AUSSI dans la carte dépliée de la liste, et un geste y relit
  *    l'affaire (01/10/2026 : il n'était que sur la fiche, que la carte n'ouvre
  *    pas — TK-109008 ne se défaisait qu'en retrouvant la notification) ;
@@ -49,6 +55,7 @@ const DEFAISABLE = {
 	bloque: null,
 	peut_deplacer: true,
 };
+const CREEE = { ...DEFAISABLE, id: 12, suites: 1, affaire_creee: true };
 const BLOQUE = {
 	...DEFAISABLE,
 	id: 10,
@@ -106,15 +113,16 @@ test('un transfert se défait d’un geste, un transfert bloqué dit pourquoi', 
 	await expect(premier).toContainText('3 suites');
 	await expect(second).toContainText('Ne se défait pas encore');
 	await expect(second.getByRole('button')).toHaveCount(1);
-	await expect(second.getByRole('button', { name: 'Valider le transfert' })).toBeVisible();
+	await expect(second.getByRole('button', { name: 'Garder ici' })).toBeVisible();
+	//  Retenu : ni question, ni choix d'une autre affaire — rien ne s'y déplace.
+	await expect(second.getByText('Ce courriel est-il dans la bonne affaire ?')).toHaveCount(0);
 
 	await bloc.screenshot({
 		path: `test-results/transferts-verses-${test.info().project.name}.png`,
 	});
 
-	//  Déplacer : ni l'affaire ouverte, ni une affaire close.
-	await premier.getByRole('button', { name: /Déplacer vers une autre affaire/ }).click();
-	await premier.getByLabel('Vers l’affaire').focus();
+	//  Le choix est là d'emblée : ni l'affaire ouverte, ni une affaire close.
+	await premier.getByLabel('Sinon, la bonne affaire').focus();
 	const propositions = premier.locator('.proposition');
 	await expect(propositions).toHaveCount(1);
 	await expect(propositions).toContainText('TK-200001');
@@ -130,29 +138,95 @@ test('un transfert se défait d’un geste, un transfert bloqué dit pourquoi', 
 	await expect.poll(() => appels).toEqual(['POST /api/tickets/7/transferts/11/annuler']);
 });
 
-test('valider un transfert, défaisable ou bloqué, appelle sa route', async ({ page }) => {
+test('garder ici, défaisable ou bloqué, se confirme comme définitif puis appelle sa route', async ({
+	page,
+}) => {
 	await simuler(page, [DEFAISABLE, BLOQUE]);
 	const appels = await intercepterGestes(page);
 
 	await page.goto('/tickets/7');
 	const bloc = page.locator('section.transferts');
 	const [premier, second] = [bloc.locator('.transfert').nth(0), bloc.locator('.transfert').nth(1)];
+	//  Déplacer (inactif), Garder ici, En faire une nouvelle affaire, Annuler.
 	await expect(premier.getByRole('button')).toHaveCount(4);
 
-	await premier.getByRole('button', { name: 'Valider le transfert' }).click();
+	await premier.getByRole('button', { name: 'Garder ici' }).click();
 	const boite = page.getByRole('dialog');
+	await expect(boite).toContainText('définitif');
 	await expect(boite).toContainText('ne pourra plus être annulé ni déplacé');
-	await boite.getByRole('button', { name: 'Valider', exact: true }).click();
+	//  « Revenir » ne fait rien partir.
+	await boite.getByRole('button', { name: 'Revenir' }).click();
+	await expect(boite).toHaveCount(0);
+	expect(appels).toEqual([]);
+
+	await premier.getByRole('button', { name: 'Garder ici' }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Garder ici' }).click();
 	await expect.poll(() => appels).toEqual(['POST /api/tickets/7/transferts/11/valider']);
 
-	await second.getByRole('button', { name: 'Valider le transfert' }).click();
-	await page.getByRole('dialog').getByRole('button', { name: 'Valider', exact: true }).click();
+	await second.getByRole('button', { name: 'Garder ici' }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Garder ici' }).click();
 	await expect
 		.poll(() => appels)
 		.toEqual([
 			'POST /api/tickets/7/transferts/11/valider',
 			'POST /api/tickets/7/transferts/10/valider',
 		]);
+});
+
+test('le parcours du 12/11 : un transfert qui a créé l’affaire se déplace par le bouton principal', async ({
+	page,
+}) => {
+	await simuler(page, [CREEE]);
+	const appels = await intercepterGestes(page);
+	const corps: unknown[] = [];
+	page.on('request', (r) => {
+		if (r.method() === 'POST' && r.url().includes('/transferts/12/deplacer'))
+			corps.push(r.postDataJSON());
+	});
+
+	await page.goto('/tickets/7');
+	const transfert = page.locator('section.transferts .transfert');
+	//  La question en tête, et le choix d'une autre affaire OUVERT d'emblée.
+	await expect(transfert.getByText('Ce courriel est-il dans la bonne affaire ?')).toBeVisible();
+	await expect(transfert).toContainText('Ce transfert a créé cette affaire');
+	const champ = transfert.getByLabel('Sinon, la bonne affaire');
+	await expect(champ).toBeVisible();
+
+	//  UN seul bouton plein — le déplacement —, inactif tant que rien n'est choisi.
+	const principal = transfert.locator('.btn-primary');
+	await expect(principal).toHaveCount(1);
+	await expect(principal).toHaveText(/Déplacer vers/);
+	await expect(principal).toBeDisabled();
+	//  Garder ici et Annuler sont secondaires ; une affaire créée ne se « recrée » pas.
+	await expect(transfert.getByRole('button', { name: 'Garder ici' })).toHaveClass(/btn-outline/);
+	await expect(transfert.getByRole('button', { name: /En faire une nouvelle/ })).toHaveCount(0);
+
+	//  Garder ici le dit : l'affaire restera à part, et c'est définitif.
+	await transfert.getByRole('button', { name: 'Garder ici' }).click();
+	const boite = page.getByRole('dialog');
+	await expect(boite).toContainText('restera une affaire à part');
+	await expect(boite).toContainText('définitif');
+	await boite.getByRole('button', { name: 'Revenir' }).click();
+	expect(appels).toEqual([]);
+
+	//  On choisit l'affaire : le bouton la NOMME, et dit ce qu'il fera.
+	await champ.fill('Portail');
+	await transfert.locator('.proposition', { hasText: 'TK-200001' }).click();
+	const deplacer = transfert.getByRole('button', {
+		name: 'Déplacer vers #TK-200001 · Portail du parking',
+	});
+	await expect(deplacer).toBeEnabled();
+	await expect(transfert).toContainText('La suite versée par ce transfert rejoindra TK-200001');
+	await expect(transfert).toContainText('sera archivée');
+	await transfert.screenshot({
+		path: `test-results/transferts-parcours-12-11-${test.info().project.name}.png`,
+	});
+
+	//  Le bouton nomme sa destination : il part sans boîte de plus.
+	await deplacer.click();
+	await expect.poll(() => appels).toEqual(['POST /api/tickets/7/transferts/12/deplacer']);
+	expect(corps).toEqual([{ ticket_id: 8 }]);
+	await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('la carte dépliée de la liste offre le même geste, et relit l’affaire', async ({ page }) => {
