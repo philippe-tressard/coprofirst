@@ -39,16 +39,23 @@ Création (`crud.py`) et correction (`mise_a_jour.py`) l'appellent : deux
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Sequence
 
 from fastapi import HTTPException
 from sqlmodel import Session
 
-from app.models.prestataires import ContratEntretien, Prestataire
+from app.models.prestataires import ContratEntretien
 from app.models.tickets import CategorieTicket
 from app.utils.carnet_entretien import est_du_bati
 from app.utils.corrections_texte import modification
 from app.utils.equipements import HORS_AFFAIRES, exiger_equipement, libelle_equipement
+from app.utils.prestataires_affaire import (
+    exiger_prestataires,
+    historique,
+    liste_demandee,
+    poser,
+    prestataires_de,
+)
 from app.utils.recuperer import ou_404
 from app.utils.valeurs import valeur
 
@@ -59,6 +66,7 @@ FREQUENCES: tuple[str, ...] = ("semaines", "mois", "fois_par_an", "ans")
 
 CHAMPS: tuple[str, ...] = (
     "prestataire_id",
+    "prestataire_ids",
     "contrat_id",
     "frequence_type",
     "frequence_valeur",
@@ -67,20 +75,21 @@ CHAMPS: tuple[str, ...] = (
 
 
 def contrat_valide(
-    session: Session, contrat_id: int, prestataire_id: int | None
+    session: Session, contrat_id: int, prestataire_ids: Sequence[int]
 ) -> ContratEntretien:
-    """Le contrat dans le cadre duquel le prestataire intervient (#1445).
+    """Le contrat dans le cadre duquel un prestataire de l'affaire intervient (#1445).
 
-    Il doit exister (404), être EN COURS, appartenir au prestataire désigné, et
-    porter sur un équipement — une assurance ou un mandat de syndic ne cadrent
-    pas une intervention (`HORS_AFFAIRES`). Écrit une fois : la création en
-    lot (`routers/tickets/lot.py`) ne passe pas par `appliquer_intervenant`.
+    Il doit exister (404), être EN COURS, appartenir à L'UN des prestataires
+    désignés (#2704, Q4 : un seul contrat par affaire), et porter sur un
+    équipement — une assurance ou un mandat de syndic ne cadrent pas une
+    intervention (`HORS_AFFAIRES`). Écrit une fois : la création en lot
+    (`routers/tickets/lot.py`) ne passe pas par `appliquer_intervenant`.
     """
     contrat = ou_404(session, ContratEntretien, contrat_id, "Contrat")
     if not contrat.actif:
         raise HTTPException(422, "Ce contrat n'est plus en cours")
-    if prestataire_id is None or contrat.prestataire_id != prestataire_id:
-        raise HTTPException(422, "Ce contrat n'est pas celui de l'intervenant désigné")
+    if contrat.prestataire_id not in prestataire_ids:
+        raise HTTPException(422, "Ce contrat n'est pas celui d'un intervenant désigné")
     if valeur(contrat.type_equipement) in HORS_AFFAIRES:
         raise HTTPException(422, "Ce contrat ne cadre pas une intervention")
     return contrat
@@ -89,12 +98,6 @@ def contrat_valide(
 def _envoye(body: Any, champ: str) -> bool:
     """Le corps dit-il quelque chose de ce champ ? (présence, pas non-nullité)"""
     return champ in getattr(body, "model_fields_set", set())
-
-
-def _nom_prestataire(session: Session, prestataire_id: int | None) -> str | None:
-    """Le nom de l'intervenant — ce que la ligne d'historique doit dire, pas son numéro."""
-    prestataire = session.get(Prestataire, prestataire_id) if prestataire_id else None
-    return prestataire.nom if prestataire else None
 
 
 def _libelle_recurrence(type_: str | None, nombre: int | None) -> str | None:
@@ -107,49 +110,43 @@ def _libelle_recurrence(type_: str | None, nombre: int | None) -> str | None:
 def appliquer_intervenant(ticket: Any, body: Any, session: Session, *, est_cs: bool) -> list[str]:
     """Pose l'intervenant et la récurrence ; rend les lignes du journal de correction."""
     changes: list[str] = []
+    #  La liste des prestataires (#2704) : ses règles de liste vivent dans
+    #  `utils/prestataires_affaire` ; ici, le conseil seul et le bâti seul.
+    actuelle = prestataires_de(session, ticket)
     if not est_du_bati(ticket.categorie):
-        if ticket.prestataire_id is not None:
-            changes.append("Intervenant effacé")
+        if actuelle:
+            changes.append("Intervenant effacé" if len(actuelle) == 1 else "Intervenants effacés")
         if ticket.equipement is not None:
             changes.append("Équipement effacé")
         if ticket.contrat_id is not None:
             changes.append("Contrat effacé")
-        ticket.prestataire_id = None
+        poser(session, ticket, [])
         ticket.equipement = None
         ticket.contrat_id = None
     else:
-        if (
-            est_cs
-            and _envoye(body, "prestataire_id")
-            and body.prestataire_id != ticket.prestataire_id
-        ):
-            if body.prestataire_id is not None:
-                ou_404(session, Prestataire, body.prestataire_id, "Prestataire")
-            changes.append(
-                modification(
-                    "de l'intervenant",
-                    _nom_prestataire(session, ticket.prestataire_id),
-                    _nom_prestataire(session, body.prestataire_id),
-                )
-            )
-            ticket.prestataire_id = body.prestataire_id
+        demandee = liste_demandee(body, actuelle) if est_cs else None
+        if demandee is not None and demandee != actuelle:
+            exiger_prestataires(session, demandee, actuelle)
+            changes += historique(session, actuelle, demandee)
+            poser(session, ticket, demandee)
+            actuelle = demandee
         #  Le CADRE de l'intervention (#1445) : sous contrat — lequel —, ou hors
         #  contrat (`None`). APRÈS l'intervenant, qu'il doit suivre.
         if est_cs and _envoye(body, "contrat_id") and body.contrat_id != ticket.contrat_id:
             if body.contrat_id is not None:
-                contrat_valide(session, body.contrat_id, ticket.prestataire_id)
+                contrat_valide(session, body.contrat_id, actuelle)
             ticket.contrat_id = body.contrat_id
             changes.append(
                 "Intervention rattachée à un contrat d'entretien"
                 if body.contrat_id is not None
                 else "Intervention désormais hors contrat"
             )
-        #  Un contrat qui n'est plus celui de l'intervenant — il a changé, ou le
-        #  contrat a été réattribué — ne se garde pas : il dirait « sous contrat »
-        #  d'une intervention qu'aucun contrat ne cadre.
+        #  Un contrat qui n'est plus celui d'un intervenant — la liste a changé, ou
+        #  le contrat a été réattribué — ne se garde pas : il dirait « sous contrat »
+        #  d'une intervention qu'aucun contrat ne cadre (Q4).
         if ticket.contrat_id is not None:
             contrat = session.get(ContratEntretien, ticket.contrat_id)
-            if contrat is None or contrat.prestataire_id != ticket.prestataire_id:
+            if contrat is None or contrat.prestataire_id not in actuelle:
                 ticket.contrat_id = None
                 changes.append("Contrat effacé")
         if (

@@ -19,7 +19,7 @@ from fastapi import HTTPException
 
 from app.models.core import RoleUtilisateur, Ticket
 from app.routers.tickets import crud
-from tests.aides_affaire import _compte, _corriger, _creer, _suite, session  # noqa: F401
+from tests.aides_affaire import _compte, _corriger, _creer, _prestataire, _suite, session  # noqa: F401
 
 CS = RoleUtilisateur.conseil_syndical
 ADMIN = RoleUtilisateur.admin
@@ -149,6 +149,7 @@ def test_sans_lecteur_tous_les_gestes_sont_fermes(session):
             "peut_repondre",
             "peut_modifier",
             "peut_corriger",
+            "peut_changer_prestataires",
         )
     )
 
@@ -199,3 +200,23 @@ def test_le_crayon_n_est_jamais_plus_etroit_que_corriger_le_contenu(session, sor
         assert lu.peut_corriger
     if not lu.peut_corriger:
         assert not _permis(lambda: _corriger(session, user, ticket_id, titre="Corrigée"))
+
+
+#  ── 🛠️ Les prestataires : `peut_changer_prestataires` (#2704) ─────────────────
+
+
+@pytest.mark.parametrize("sorte", SORTES)
+@pytest.mark.parametrize("role", ROLES)
+def test_les_prestataires_servis_ne_sont_jamais_plus_larges_que_la_route(session, sorte, role):
+    """Servi, le geste CHANGE la liste par la route ; la route l'ignore pour un
+    non-modérateur (200 sans effet), d'où une mesure sur l'effet, pas sur le code.
+    Plus étroit que la route sur une affaire close : arbitré le 12/11/2026 (Q1)."""
+    comptes, ticket_id = _monde(session, sorte)
+    user = comptes[role]
+    lu = _lu(session, user, ticket_id)
+    if lu is None or not lu.peut_changer_prestataires:
+        return
+    assert role in ("conseil", "admin"), f"{sorte} : offert à {role}"
+    p = _prestataire(session)
+    corrige = _corriger(session, user, ticket_id, prestataire_ids=[p.id])
+    assert [x.id for x in corrige.prestataires] == [p.id], (sorte, role)

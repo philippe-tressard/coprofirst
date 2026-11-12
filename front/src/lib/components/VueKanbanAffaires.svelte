@@ -36,6 +36,7 @@
 	import InitPrestataires from '#lib/components/InitPrestataires.svelte';
 
 	import { SEPARATEUR } from '#lib/separateurs.ts';
+	import { prestatairesDeLaCarte } from '#lib/prestataires.ts';
 
 	export let tickets: Ticket[] = [];
 	/** Le conseil pré-remplit l'exercice (`InitPrestataires`). Le glissement, lui,
@@ -131,7 +132,16 @@
 							<span class="kb-tag" style="background:{tag.color}">{tag.label}</span>
 						{/each}
 					</div>
-					{#if t.prestataire_nom}<span class="kanban-card-prest">{t.prestataire_nom}</span>{/if}
+					{#if prestatairesDeLaCarte(t).premier}
+						{@const prest = prestatairesDeLaCarte(t)}
+						<!--  Le premier, puis « +N » (#2704) ; la liste entière en infobulle et à l'oreille. -->
+						<span class="kanban-card-prest" title={prest.tous}
+							><span class="kanban-card-prest-nom" aria-hidden="true">{prest.premier}</span
+							>{#if prest.suite}<span class="kanban-card-prest-plus" aria-hidden="true"
+									>+{prest.suite}</span
+								>{/if}<span class="sr-only">{prest.tous}</span></span
+						>
+					{/if}
 					<strong class="kanban-card-titre">{t.titre}</strong>
 					<div class="kanban-card-footer">
 						<span class="kanban-card-type">{t.categorie_libelle}{SEPARATEUR.point}#{t.numero}</span>

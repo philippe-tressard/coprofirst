@@ -132,6 +132,8 @@
 									</tbody>
 								</table>
 							</div>
+							<!--  #2704, Q8 : l'étape ne dit pas lequel a traîné. -->
+							<p class="aide">Une affaire à plusieurs intervenants compte pour chacun.</p>
 						{/if}
 					</section>
 				{/each}

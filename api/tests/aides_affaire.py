@@ -14,13 +14,15 @@ au texte du commentaire près (#1495).
 
 from __future__ import annotations
 
+import uuid
+
 import pytest
 from fastapi import BackgroundTasks
 from sqlmodel import Session, select
 
 from app.database import engine
 from app.models.core import StatutUtilisateur
-from app.models.prestataires import ContratEntretien
+from app.models.prestataires import ContratEntretien, Prestataire
 from app.routers.tickets import crud, evolutions, mise_a_jour
 from app.schemas import TicketCreate, TicketUpdate
 from app.schemas_tickets import TicketEvolutionCreate
@@ -55,6 +57,34 @@ def _compte(session, *, role=None):
         statut=StatutUtilisateur.copropriétaire_résident,
         roles_json=role.value if role else "résident",
     )
+
+
+def _prestataire(session, nom: str | None = None) -> Prestataire:
+    """Un prestataire de l'annuaire — nom tiré au sort sauf s'il est donné."""
+    p = Prestataire(nom=nom or f"Ascenseurs {uuid.uuid4().hex[:4]}", specialite="ascenseur")
+    session.add(p)
+    session.commit()
+    session.refresh(p)
+    return p
+
+
+def _contrat(session, p: Prestataire, **champs) -> ContratEntretien:
+    """Un contrat d'entretien en cours de ce prestataire, sur l'ascenseur."""
+    defaut = dict(
+        copropriete_id=1,
+        prestataire_id=p.id,
+        libelle="Ascenseur",
+        numero_contrat="C-42",
+        type_equipement="ascenseur",
+        frequence_type="mois",
+        frequence_valeur=3,
+        actif=True,
+    )
+    c = ContratEntretien(**{**defaut, **champs})
+    session.add(c)
+    session.commit()
+    session.refresh(c)
+    return c
 
 
 def _creer(session, user, **champs):

@@ -56,6 +56,8 @@
 	export let description = '';
 	/** L'intervenant, déjà composé (`intervenantAffiche`) — vide : rien. */
 	export let intervenant = '';
+	/** Plusieurs prestataires (#2704) : le libellé s'accorde. */
+	export let intervenantsPluriel = false;
 	/** L'équipement, déjà en libellé (`equipLabel`) — vide : rien (#1097). */
 	export let equipement = '';
 
@@ -84,7 +86,9 @@
 		{/if}
 	{:else if s.id === 'intervenant'}
 		{#if intervenant}
-			<p class="fiche-intervenant">Intervenant : <strong>{intervenant}</strong></p>
+			<p class="fiche-intervenant">
+				{intervenantsPluriel ? 'Intervenants' : 'Intervenant'} : <strong>{intervenant}</strong>
+			</p>
 		{/if}
 	{:else if s.id === 'perimetre'}
 		{#if textePerimetre}

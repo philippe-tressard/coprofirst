@@ -16,20 +16,30 @@
   cours — « hors contrat » n'apprendrait rien d'un prestataire qui n'en a aucun
   (arbitré). Liste construite à la volée : un `<select>`, comme le prestataire
   (`ux-patterns` §0, seuil des listes courtes).
+
+  🆕 PLUSIEURS prestataires, dans l'ordre (#2704, 12/11/2026) : une liste qu'on
+  complète (menu « Ajouter »), réordonne (↑ ↓) et allège (✕), sur le modèle des
+  Affaires liées. Le premier mène : c'est lui que lisent les clients antérieurs.
+  Un seul contrat cadre l'intervention, celui de l'UN d'eux (Q4).
 -->
 <script lang="ts">
 	import { nombreOuNull } from '#lib/utils.ts';
 	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
 	import SectionFormulaire from '#lib/components/SectionFormulaire.svelte';
 	import ChargementPartiel from '#lib/components/ChargementPartiel.svelte';
+	import IconeAction from '#lib/components/IconeAction.svelte';
 	import { prestataires as prestatairesApi } from '#lib/api/index.ts';
-	import { contactRenseigne, contratsDuPrestataire } from '#lib/prestataires.ts';
+	import {
+		contactRenseigne,
+		contratsDesPrestataires,
+		deplacerDansLaListe,
+	} from '#lib/prestataires.ts';
 	import { optionsEquipements } from '#lib/equipements.ts';
 	import { equipementsStore } from '#lib/stores/equipements.ts';
 	import { tenter } from '#lib/erreurs.ts';
 
-	/** L'identifiant du prestataire retenu, ou `null`. */
-	export let prestataireId: number | null = null;
+	/** Les prestataires retenus, dans l'ordre — le premier mène (#2704). */
+	export let prestataireIds: number[] = [];
 	/** Les prestataires proposables — chargés par l'appelant, qui connaît ses droits. */
 	export let prestataires: { id: number; nom: string; actif?: boolean }[] = [];
 	/** L'échec de chargement de la liste — un menu vide n'est pas « aucun prestataire ». */
@@ -70,28 +80,35 @@
 				contacts: contactRenseigne(contact) ? [contact] : [],
 			});
 			prestataires = [...prestataires, cree].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
-			prestataireId = cree.id;
+			prestataireIds = [...prestataireIds, cree.id];
 			creation = false;
 			nouveauNom = '';
 			contact = { nom: '', telephone: '', email: '' };
 		}, 'Prestataire créé');
 	}
 
-	//  `<select>` rend des chaînes : la valeur se lit et s'écrit ici, une fois.
-	//  ⚠️ Dans les DEUX sens : l'équipement peut proposer un intervenant depuis
-	//  l'extérieur (#1097). Une liaison `$: prestataireId = …` à sens unique
-	//  l'écrasait aussitôt par le choix affiché.
-	let choix = '';
-	$: choix = prestataireId === null ? '' : String(prestataireId);
-	const choisir = () => {
-		prestataireId = nombreOuNull(choix);
-		//  Un autre intervenant n'a pas ce contrat : le serveur l'effacerait.
-		if (!contratsDuPrestataire(contrats, prestataireId).some((c) => c.id === contratId))
-			contratId = null;
-	};
-	$: retenu = prestataires.find((p) => p.id === prestataireId);
+	//  Un contrat qui n'appartient plus à aucun d'eux : le serveur l'effacerait (Q4).
+	function poser(ids: number[]) {
+		prestataireIds = ids;
+		if (!contratsDesPrestataires(contrats, ids).some((c) => c.id === contratId)) contratId = null;
+	}
+	//  « Ajouter » : un `<select>` qui revient à son invite après chaque choix.
+	let ajout = '';
+	function ajouter() {
+		const id = nombreOuNull(ajout);
+		ajout = '';
+		if (id !== null && !prestataireIds.includes(id)) poser([...prestataireIds, id]);
+	}
+	const retirer = (id: number) => poser(prestataireIds.filter((x) => x !== id));
+	const deplacer = (i: number, sens: -1 | 1) => poser(deplacerDansLaListe(prestataireIds, i, sens));
 
-	$: siens = contratsDuPrestataire(contrats, prestataireId);
+	//  Un archivé déjà retenu reste lisible ; on n'en ajoute pas un neuf (Q3).
+	$: retenus = prestataireIds.map(
+		(id) => prestataires.find((p) => p.id === id) ?? { id, nom: `Prestataire n° ${id}` },
+	);
+	$: proposables = prestataires.filter((p) => p.actif !== false && !prestataireIds.includes(p.id));
+
+	$: siens = contratsDesPrestataires(contrats, prestataireIds);
 	let choixContrat = '';
 	$: choixContrat = contratId === null ? '' : String(contratId);
 	const choisirContrat = () => (contratId = nombreOuNull(choixContrat));
@@ -101,18 +118,53 @@
 <SectionFormulaire
 	titre={SECTIONS_LIBELLE.intervenant}
 	{pliable}
-	resume={retenu ? [retenu.nom, cadre].filter(Boolean).join(' · ') : 'aucun'}
-	valeurModifiee={prestataireId !== null}
+	resume={retenus.length
+		? [retenus.map((p) => p.nom).join(', '), cadre].filter(Boolean).join(' · ')
+		: 'aucun'}
+	valeurModifiee={prestataireIds.length > 0}
 	pour="{idPrefixe}-prestataire"
 >
 	<ChargementPartiel
 		{erreur}
 		consequence="Le menu des prestataires est vide : ce n'est pas qu'il n'en existe aucun."
 	/>
+	{#if retenus.length}
+		<ol class="retenus" aria-label="Prestataires retenus">
+			{#each retenus as p, i (p.id)}
+				<li class="retenu">
+					<span class="retenu-rang">{i + 1}</span>
+					<span class="retenu-nom">{p.nom}</span>
+					<button
+						type="button"
+						class="btn-icon retenu-geste"
+						disabled={i === 0}
+						aria-label="Monter {p.nom}"
+						on:click={() => deplacer(i, -1)}><IconeAction icone="arrow-up" /></button
+					>
+					<button
+						type="button"
+						class="btn-icon retenu-geste"
+						disabled={i === retenus.length - 1}
+						aria-label="Descendre {p.nom}"
+						on:click={() => deplacer(i, 1)}><IconeAction icone="arrow-down" /></button
+					>
+					<button
+						type="button"
+						class="btn-icon retenu-geste"
+						aria-label="Retirer {p.nom}"
+						on:click={() => retirer(p.id)}><IconeAction icone="x" /></button
+					>
+				</li>
+			{/each}
+		</ol>
+	{/if}
 	<div class="field">
-		<select id="{idPrefixe}-prestataire" bind:value={choix} on:change={choisir}>
-			<option value="">— Aucun —</option>
-			{#each prestataires.filter((p) => p.actif !== false || p.id === prestataireId) as p (p.id)}
+		<label for="{idPrefixe}-prestataire"
+			>{retenus.length ? 'Ajouter un prestataire' : 'Prestataire'}</label
+		>
+		<select id="{idPrefixe}-prestataire" bind:value={ajout} on:change={ajouter}>
+			<option value="">{retenus.length ? '— Ajouter —' : '— Aucun —'}</option>
+			{#each proposables as p (p.id)}
 				<option value={String(p.id)}>{p.nom}</option>
 			{/each}
 		</select>
@@ -167,6 +219,46 @@
 </SectionFormulaire>
 
 <style>
+	/*  La liste a l'allure des Affaires liées (`SectionAffairesLiees`) : filet,
+	    rayon, séparateurs ; gestes de 44 px au doigt (`standards/11` §10). */
+	.retenus {
+		list-style: none;
+		margin: 0 0 0.5rem;
+		padding: 0;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		overflow: hidden;
+		background: var(--color-surface);
+	}
+	.retenu + .retenu {
+		border-top: 1px solid var(--color-border);
+	}
+	.retenu {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		min-height: 44px;
+		padding: 0 0.25rem 0 0.75rem;
+	}
+	.retenu-rang {
+		min-width: 1.25rem;
+		font-size: var(--fs-sm);
+		font-weight: 700;
+		color: var(--color-text-muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.retenu-nom {
+		flex: 1;
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+	.retenu-geste {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+	}
 	.ajout-prestataire,
 	.creation-prestataire {
 		margin-top: 0.5rem;

@@ -142,8 +142,7 @@ def pieces(nature: tuple[str, str, bool], avant: Sequence[str], apres: Sequence[
     il garde sa phrase, et ne s'annonce que si rien d'autre n'a bougé.
     """
     un, pluriel, nommees = nature
-    ajoutees = [u for u in apres if u not in avant]
-    retirees = [u for u in avant if u not in apres]
+    ajoutees, retirees = ajouts_retraits(avant, apres)
 
     def phrase(geste: str, urls: Iterable[str]) -> str:
         liste = list(urls)
@@ -158,6 +157,36 @@ def pieces(nature: tuple[str, str, bool], avant: Sequence[str], apres: Sequence[
         phrases.append(phrase("Retrait", retirees))
     if not phrases and list(avant) != list(apres):
         phrases.append(f"Nouvel ordre des {pluriel}")
+    return phrases
+
+
+def ajouts_retraits(avant: Sequence, apres: Sequence) -> tuple[list, list]:
+    """Ce qui entre (dans l'ordre d'arrivée) et ce qui sort (dans l'ordre d'avant).
+
+    Une seule écriture pour les pièces jointes et les prestataires d'une affaire
+    (#2704) : deux listes comparées, deux sens, l'ordre seul n'en est aucun.
+    """
+    return [x for x in apres if x not in avant], [x for x in avant if x not in apres]
+
+
+def prestataires(ajoutes: Sequence[str], retires: Sequence[str], reordonne: bool) -> list[str]:
+    """« Prestataire ajouté : Otis » · « Prestataires retirés : A, B » (#2704).
+
+    Une phrase par sens, comme `pieces` : un remplacement est un retrait et un
+    ajout. Le nouvel ordre ne se dit que si rien d'autre n'a bougé.
+    """
+
+    def phrase(noms: Sequence[str], geste: str) -> str:
+        s = "s" if len(noms) > 1 else ""
+        return f"Prestataire{s} {geste}{s} : {', '.join(noms)}"
+
+    phrases = []
+    if ajoutes:
+        phrases.append(phrase(ajoutes, "ajouté"))
+    if retires:
+        phrases.append(phrase(retires, "retiré"))
+    if not phrases and reordonne:
+        phrases.append("Nouvel ordre des prestataires")
     return phrases
 
 
@@ -225,6 +254,15 @@ def _selftest() -> None:
     ]
     assert pieces(DOCUMENTS, ["a", "b"], ["b", "a"]) == ["Nouvel ordre des documents"]
     assert pieces(DOCUMENTS, ["a"], ["a"]) == []
+    #  3 bis. Les prestataires d'une affaire (#2704) : accord, deux sens, l'ordre seul.
+    assert prestataires(["Otis"], [], False) == ["Prestataire ajouté : Otis"]
+    assert prestataires(["A", "B"], ["C"], False) == [
+        "Prestataires ajoutés : A, B",
+        "Prestataire retiré : C",
+    ]
+    assert prestataires([], [], True) == ["Nouvel ordre des prestataires"]
+    assert prestataires([], [], False) == []
+    assert ajouts_retraits([1, 2], [2, 3]) == ([3], [1])
     #  4. Un texte long se cite par son début, balises retirées.
     long = "<p>" + "mot " * 40 + "</p>"
     assert len(citer(long)) <= APERCU_MAX + 4 and citer(long).endswith("… »")

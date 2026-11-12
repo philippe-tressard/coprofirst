@@ -67,6 +67,7 @@ from app.utils.affaire_absorbee import pas_absorbee
 from app.utils.categories_ticket import libelle_categorie
 from app.utils.liens import lien_element, lien_ticket
 from app.utils.perimetres import couvre, parse_json_perimetres, perimetre_label
+from app.utils.prestataires_affaire import par_affaire, presents
 from app.utils.valeurs import valeur
 from app.utils.visibility import ticket_visible
 
@@ -313,7 +314,9 @@ def _entrees_interventions(
         pas_absorbee(),  # comptée dans sa principale (#1704)
     )
     entrees: list[EntreeCarnet] = []
-    for ticket in session.exec(requete).all():
+    tickets = session.exec(requete).all()
+    listes = par_affaire(session, tickets)
+    for ticket in tickets:
         if not ticket_visible(ticket, lecteur):
             continue
         quand = _jour(ticket.debut) or _jour(ticket.ferme_le)
@@ -322,9 +325,10 @@ def _entrees_interventions(
         codes = _codes_de(ticket.perimetre_cible)
         if not couvre(codes, perimetre):
             continue
-        prestataire = (
-            session.get(Prestataire, ticket.prestataire_id) if ticket.prestataire_id else None
-        )
+        #  Une entrée par affaire ; elle nomme TOUS ses prestataires, et
+        #  l'équipement de repli est la spécialité du PREMIER (#2704, Q7).
+        prestataires = presents(session, listes[ticket.id])
+        prestataire = prestataires[0] if prestataires else None
         contrat = session.get(ContratEntretien, ticket.contrat_id) if ticket.contrat_id else None
         cadre = cadre_intervention(contrat, prestataire is not None)
         entrees.append(
@@ -332,8 +336,8 @@ def _entrees_interventions(
                 date_fait=quand,
                 libelle=ticket.titre,
                 origine="intervention",
-                #  « Otis · sous contrat n° 1234 » / « Otis · hors contrat » (#1445).
-                detail=" · ".join(x for x in (prestataire.nom if prestataire else "", cadre) if x),
+                #  « Otis, Schindler · sous contrat n° 1234 » / « Otis · hors contrat ».
+                detail=" · ".join(x for x in (", ".join(p.nom for p in prestataires), cadre) if x),
                 #  Celui que le conseil a désigné, sinon la spécialité de
                 #  l'intervenant — la règle des contrats, jamais une déduction du titre.
                 equipement=ticket.equipement or (prestataire.specialite if prestataire else None),

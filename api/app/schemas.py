@@ -14,8 +14,10 @@ from app.utils.perimetres import perimetre_defaut_liste
 from app.schemas_communs import (  # noqa: F401
     AffaireLieeLue,
     ChampsIntervenant,
+    ChampsIntervenantEntree,
     ChoixConciliation,
     ContratDeLAffaire,
+    PrestataireDeLAffaire,
     ListeJson as ListeJson,
     liste_depuis_json as liste_depuis_json,
 )
@@ -141,7 +143,7 @@ class UserRead(NomServi):
         return data
 
 
-class TicketCreate(SaisiPourEntree, AssisteIAEntree, ChampsIntervenant):
+class TicketCreate(SaisiPourEntree, AssisteIAEntree, ChampsIntervenantEntree):
     #  Section « Affaires liées » (#1342) : les affaires à lier. En création et
     #  en correction, la liste REMPLACE les liens que l'auteur voit ; en Suite,
     #  elle les complète (`utils/affaires_liees`). Absente : rien ne change.
@@ -295,7 +297,10 @@ class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant, AffaireSer
     #  (#1093, `utils/archivage.perime_le`). `None` pour une affaire suivie :
     #  elle ne périme pas, elle se clôt.
     perime_le: Optional[date] = None
-    prestataire_nom: Optional[str] = None  # dérivé, pour la fiche et la carte
+    prestataire_nom: Optional[str] = None  # dérivé : le PREMIER, pour les clients antérieurs
+    #  Les prestataires de l'affaire, dans l'ordre de saisie (#2704) — dérivé ;
+    #  `prestataire_id` et `prestataire_nom` disent le premier.
+    prestataires: List[PrestataireDeLAffaire] = []
     #  Le contrat qui cadre l'intervention (#1445), dérivé — le rythme pour
     #  tous, le libellé et le numéro pour le conseil seul (`contrat_de_l_affaire`).
     contrat: Optional[ContratDeLAffaire] = None
@@ -326,7 +331,7 @@ class TicketRead(SaisiPourSortie, AssisteIASortie, ChampsIntervenant, AffaireSer
         from_attributes = True
 
 
-class TicketUpdate(SaisiPourEntree, AssisteIACorrection, ChampsIntervenant):
+class TicketUpdate(SaisiPourEntree, AssisteIACorrection, ChampsIntervenantEntree):
     #  Section « Affaires liées » (#1342) : les affaires à lier. En création et
     #  en correction, la liste REMPLACE les liens que l'auteur voit ; en Suite,
     #  elle les complète (`utils/affaires_liees`). Absente : rien ne change.

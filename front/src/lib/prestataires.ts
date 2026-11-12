@@ -139,18 +139,60 @@ export function typePrestataireLabel(val: string | null | undefined): string {
 	return TYPES_PRESTATAIRE.find((t) => t.val === val)?.label ?? val;
 }
 
-/**  Les contrats sous lesquels un prestataire peut intervenir (#1445) : les
- *   siens, en cours, et qui portent sur un ÉQUIPEMENT — une assurance ou un
- *   mandat de syndic ne cadrent pas une intervention. Même règle au serveur :
+/**  Les contrats sous lesquels les prestataires d'une affaire peuvent intervenir
+ *   (#1445) : les leurs, en cours, et qui portent sur un ÉQUIPEMENT — une assurance
+ *   ou un mandat de syndic ne cadrent pas une intervention. Un seul cadre
+ *   l'intervention, celui de L'UN d'eux (#2704, Q4). Même règle au serveur :
  *   `utils/intervenant.contrat_valide`. */
-export function contratsDuPrestataire<
+export function contratsDesPrestataires<
 	C extends { prestataire_id?: number | null; type_equipement?: string | null },
->(contrats: C[], prestataireId: number | null): C[] {
-	if (prestataireId === null) return [];
+>(contrats: C[], prestataireIds: number[]): C[] {
 	return contrats.filter(
 		(c) =>
-			c.prestataire_id === prestataireId && equipement(c.type_equipement)?.pour_affaires !== false,
+			c.prestataire_id != null &&
+			prestataireIds.includes(c.prestataire_id) &&
+			equipement(c.type_equipement)?.pour_affaires !== false,
 	);
+}
+
+/**  La liste, l'élément `i` échangé avec son voisin avant (-1) ou après (+1) ;
+ *   inchangée en bout de liste. L'ordre des prestataires d'une affaire (#2704). */
+export function deplacerDansLaListe<T>(liste: readonly T[], i: number, sens: -1 | 1): T[] {
+	const j = i + sens;
+	if (i < 0 || j < 0 || j >= liste.length) return [...liste];
+	const suite = [...liste];
+	[suite[i], suite[j]] = [suite[j], suite[i]];
+	return suite;
+}
+
+/**  Les identifiants des prestataires d'une affaire, dans l'ordre (#2704) — la liste
+ *   servie, sinon le seul `prestataire_id` d'une réponse antérieure. */
+export function idsDesPrestataires(t: {
+	prestataires?: { id: number }[];
+	prestataire_id?: number | null;
+}): number[] {
+	if (t.prestataires) return t.prestataires.map((p) => p.id);
+	return t.prestataire_id ? [t.prestataire_id] : [];
+}
+
+/**  La carte du kanban (#2704, Q6) : le PREMIER, puis « +N » — elle n'a pas la place
+ *   d'une liste ; `tous` la nomme entière (infobulle, lecteur d'écran). */
+export function prestatairesDeLaCarte(t: {
+	prestataires?: { nom: string }[];
+	prestataire_nom?: string | null;
+}): { premier: string; suite: number; tous: string } {
+	const noms = t.prestataires?.map((p) => p.nom) ?? (t.prestataire_nom ? [t.prestataire_nom] : []);
+	return { premier: noms[0] ?? '', suite: Math.max(noms.length - 1, 0), tous: noms.join(', ') };
+}
+
+/**  « Otis, Schindler » — les noms, dans l'ordre ; le premier seul d'une réponse
+ *   antérieure. Vide sans prestataire. */
+export function nomsDesPrestataires(t: {
+	prestataires?: { nom: string }[];
+	prestataire_nom?: string | null;
+}): string {
+	if (t.prestataires) return t.prestataires.map((p) => p.nom).join(', ');
+	return t.prestataire_nom ?? '';
 }
 
 /**  Un contrat tel que les formulaires d'affaire le chargent — pour proposer
@@ -281,7 +323,7 @@ export const FREQUENCES: readonly { val: string; label: string; nombre?: string 
 	{ val: 'ans', label: 'Tous les X ans', nombre: 'Tous les … ans' },
 ];
 
-/**  L'intervenant d'une affaire, tel que la fiche l'affiche : « Otis · ↺ Mensuel ».
+/**  Les intervenants d'une affaire, tels que la fiche les affiche : « Otis, Schindler · ↺ Mensuel ».
  *   Vide sans intervenant — la ligne ne s'affiche pas (#1092, lot 5).
  *
  *   Sous contrat (#1445), le rythme est celui du contrat, et le cadre se dit :
@@ -291,6 +333,7 @@ export const FREQUENCES: readonly { val: string; label: string; nombre?: string 
  *   Le rythme en clair est SERVI (`frequence_libelle`, #2633) : celui du contrat
  *   fait foi, celui de l'affaire sinon. */
 export function intervenantAffiche(t: {
+	prestataires?: { nom: string }[];
 	prestataire_nom?: string | null;
 	frequence_libelle?: string;
 	contrat?: {
@@ -299,11 +342,10 @@ export function intervenantAffiche(t: {
 		frequence_libelle?: string;
 	} | null;
 }): string {
-	if (!t.prestataire_nom) return '';
+	const noms = nomsDesPrestataires(t);
+	if (!noms) return '';
 	const rythme = (t.contrat ?? t).frequence_libelle ?? '';
-	return [t.prestataire_nom, rythme, t.contrat ? cadreSousContrat(t.contrat) : '']
-		.filter(Boolean)
-		.join(' · ');
+	return [noms, rythme, t.contrat ? cadreSousContrat(t.contrat) : ''].filter(Boolean).join(' · ');
 }
 
 /**  « sous contrat n° C-42 », « sous contrat « Ascenseur » », ou « sous contrat »

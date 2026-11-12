@@ -36,13 +36,15 @@ from app.utils.fichiers import nom_lisible
 from app.utils.noms import nom_auteur
 from app.utils.perimetres import parse_json_perimetres, perimetre_label
 from app.utils.photos import parse_photos
+from app.utils.prestataires_affaire import noms as noms_prestataires
+from app.utils.prestataires_affaire import par_affaire
 from app.utils.recherche_affaires import Texte, correspondance, termes
 from app.utils.equipements import libelle_dans, libelles
 from app.utils.saisi_pour import noms_derives
 from app.utils.visibility import ticket_visible
 from app.utils.visibility.documents import document_visible
 
-from .commun import nom_prestataire, trier_par_activite
+from .commun import trier_par_activite
 
 router = APIRouter()
 
@@ -120,6 +122,7 @@ def rechercher(
         return noms[(uid, qualite)]
 
     equipements = libelles(session)
+    listes = par_affaire(session, affaires)  # tous les prestataires (#2704)
     trouves = []
     for rang, t in enumerate(affaires):
         proprietaire, _ = noms_derives(session, t)
@@ -130,7 +133,7 @@ def rechercher(
             Texte("lieu", perimetre_label(parse_json_perimetres(t.perimetre_cible))),
             Texte("personne", nom(t)),
             Texte("personne", proprietaire or ""),
-            Texte("prestataire", nom_prestataire(session, t.prestataire_id) or ""),
+            *(Texte("prestataire", n) for n in noms_prestataires(session, listes[t.id])),
             #  Le libellé administré (#2442) : on cherche ce que l'écran affiche.
             Texte("equipement", libelle_dans(equipements, t.equipement)),
             Texte("description", texte_brut(t.description)),

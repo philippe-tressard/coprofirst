@@ -197,6 +197,7 @@
 			entite={TICKET}
 			description={ticket.description}
 			intervenant={intervenantAffiche(ticket)}
+			intervenantsPluriel={(ticket.prestataires?.length ?? 0) > 1}
 			equipement={ticket.equipement ? $libelleEquipement(ticket.equipement) : ''}
 			photos={ticket.photos_urls ?? []}
 			documents={ticket.fichiers_urls ?? []}

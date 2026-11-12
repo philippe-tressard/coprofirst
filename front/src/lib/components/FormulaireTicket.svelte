@@ -58,7 +58,7 @@
 	import { lueDuSeulConseil, natureLue } from '#lib/lecture-ticket.ts';
 	import SectionAffairesLiees from '#lib/components/SectionAffairesLiees.svelte';
 	import SectionIntervenant from '#lib/components/SectionIntervenant.svelte';
-	import { contratDeLaSaisie, type ContratEnCours } from '#lib/prestataires.ts';
+	import { contratDeLaSaisie, idsDesPrestataires, type ContratEnCours } from '#lib/prestataires.ts';
 	import ChampFrequence from '#lib/components/ChampFrequence.svelte';
 	import { essayer } from '#lib/chargement.ts';
 	import { pliageDe } from '#lib/pliage.ts';
@@ -159,8 +159,8 @@
 	//  « Au nom de » (CS/admin) — la saisie vit dans `ChampSaisiPour`.
 	let saisiPour = saisieDepuis(ticket);
 	let usersActifs: (ResidentProposable & Nommable)[] = [];
-	//  Section « Intervenant » et récurrence d'un Entretien (#1092, lot 5).
-	let prestataireId: number | null = ticket?.prestataire_id ?? null;
+	//  Intervenant (#1092) : plusieurs prestataires, le premier mène (#2704) — geste SERVI.
+	let prestataireIds: number[] = ticket ? idsDesPrestataires(ticket) : [];
 	let contratId: number | null = ticket?.contrat_id ?? null; // le cadre (#1445)
 	$: duContrat = contratDeLaSaisie(contrats, contratId, ticket?.contrat); // son rythme fait foi
 	let equipement = ticket?.equipement ?? '';
@@ -203,8 +203,8 @@
 	let equipementVu = equipement;
 	$: if (equipement !== equipementVu) {
 		equipementVu = equipement;
-		const propose = intervenantPropose(equipement, contrats, prestataireId);
-		if (propose) ({ prestataireId, contratId } = propose);
+		const propose = intervenantPropose(equipement, contrats, prestataireIds);
+		if (propose) [prestataireIds, contratId] = [[propose.prestataireId], propose.contratId];
 	}
 
 	//  Pas `onMount` : il précède le layout qui charge l'utilisateur (#1486).
@@ -253,7 +253,7 @@
 		envoyerAuteur,
 		annonceHall,
 		saisiPour,
-		prestataireId,
+		prestataireIds,
 		contratId,
 		equipement,
 		frequenceType,
@@ -455,14 +455,14 @@
 				/>
 			{/snippet}
 			{#snippet creneauIntervenant()}
-				{#if sectionPresente(TICKET, etat, 'intervenant')}
+				{#if sectionPresente(TICKET, etat, 'intervenant') && ticket?.peut_changer_prestataires !== false}
 					<SectionIntervenant
 						idPrefixe="ticket"
 						bind:prestataires
 						{equipement}
 						erreur={erreurPrestataires}
 						pliable={pliageDe(TICKET, 'intervenant')}
-						bind:prestataireId
+						bind:prestataireIds
 						{contrats}
 						bind:contratId
 					/>

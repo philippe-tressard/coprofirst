@@ -29,6 +29,7 @@ from app.routers.tickets.commun import generer_numero
 from app.utils.courriel_entrant import nouveau_jeton
 from app.utils.kanban_tickets import suivi_par_defaut
 from app.utils.perimetres import perimetre_cible_json
+from app.utils.prestataires_affaire import poser as poser_prestataires
 
 
 @dataclass(frozen=True)
@@ -53,6 +54,7 @@ def _poser(
     priorite: PrioriteTicket = PrioriteTicket.normale,
     codes: Optional[list[str]] = None,
     suites: tuple[Suite, ...] = (),
+    prestataires: tuple[int, ...] = (),
     **champs,
 ) -> Ticket:
     cree = il_y_a(jours)
@@ -73,6 +75,8 @@ def _poser(
     )
     session.add(ticket)
     session.flush()
+    if prestataires:  # plusieurs intervenants, dans l'ordre (#2704)
+        poser_prestataires(session, ticket, list(prestataires))
     for suite in suites:
         quand = il_y_a(suite.jours)
         auteur_id = comptes[suite.auteur].id
@@ -220,6 +224,23 @@ def poser(
             fin=dans(9, 11),
             prestataire_id=p["ascenseurs"].id,
             contrat_id=k["ascenseurs"].id,
+        ),
+        #  Une affaire à DEUX prestataires (#2704, Q9) : la carte dit « +1 ».
+        _poser(
+            session,
+            comptes,
+            titre="Remise aux normes du local technique du bâtiment A",
+            description="Robinet d'arrêt à remplacer et extincteurs à reposer après les travaux.",
+            categorie=C.entretien,
+            auteur=cs,
+            jours=8,
+            codes=[bat["A"]],
+            prestataires=(p["plomberie"].id, p["incendie"].id),
+            suites=(
+                Suite(
+                    6, cs, "Les deux entreprises interviennent la même semaine.", S.chez_prestataire
+                ),
+            ),
         ),
         _poser(
             session,
