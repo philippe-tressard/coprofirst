@@ -164,6 +164,78 @@ def test_le_motif_voit_les_gestes_du_15_10():
     assert not DEMARRER_NU.search("demarrer_conteneurs() {")
 
 
+# ── Les consignes : une session en urgence recopie la commande qu'elles donnent (#2706) ──
+
+#: Le geste NOMMÉ, sans rien autour — « un `docker compose up -d` complet démarre la
+#: base » : une mention, pas une commande à recopier.
+MENTION_DU_GESTE = re.compile(
+    r"docker\s+compose\s+(?:up|stop|down)(?:\|(?:up|stop|down))*(?:\s+-[-\w]+(?:\s+\d+)?)*",
+    re.IGNORECASE,
+)
+#: Un paragraphe : une apostrophe inverse orpheline ne décale pas tout le fichier.
+PARAGRAPHE = re.compile(r"\n[ \t]*\n")
+BLOC_DE_CODE = re.compile(r"```.*?```", re.DOTALL)
+CODE_EN_LIGNE = re.compile(r"`([^`]+)`")
+
+
+def _consignes() -> list[Path]:
+    trouves = [RACINE / "CLAUDE.md", *sorted((RACINE / ".claude").rglob("*.md"))]
+    assert len(trouves) >= 8, "la portée des consignes a changé : le contrôle ne mesure plus rien"
+    return trouves
+
+
+def _commandes_sans_liste(texte: str) -> list[str]:
+    """Les commandes d'une consigne (bloc de code, ou code en ligne qui fait plus que
+    nommer le geste) qui lancent `docker compose up|stop|down` sans liste. PURE."""
+    fautes = [
+        ligne.strip()
+        for bloc in BLOC_DE_CODE.findall(texte)
+        for ligne in bloc.splitlines()
+        if SANS_LISTE.search(ligne)
+    ]
+    for paragraphe in PARAGRAPHE.split(BLOC_DE_CODE.sub("", texte)):
+        for span in CODE_EN_LIGNE.findall(paragraphe):
+            commande = " ".join(span.split())
+            if SANS_LISTE.search(commande) and not MENTION_DU_GESTE.fullmatch(commande):
+                fautes.append(commande)
+    return fautes
+
+
+def test_aucune_consigne_ne_donne_un_compose_sans_liste():
+    """La procédure « Site HS » de `CLAUDE.md` et d'`infra-rpi` lançait un `up -d` nu
+    (#2706), et le rollback de `mep-precheck` aussi : la règle d'or doit être juste
+    là où on la lit en urgence."""
+    fautes = [
+        f"{p.relative_to(RACINE).as_posix()} : {c}"
+        for p in _consignes()
+        for c in _commandes_sans_liste(p.read_text(encoding="utf-8"))
+    ]
+    assert not fautes, (
+        "une consigne donne un `docker compose up|stop|down` sans liste — nommer les "
+        f"services (`$SERVICES_DU_NOEUD`, `$SERVICES_APPLICATIFS`) : {fautes}"
+    )
+
+
+def test_le_motif_des_consignes_distingue_la_commande_de_la_mention():
+    """Cas zéro du contrôle des consignes (#2706)."""
+    fautive = (
+        "→ `cd /opt/5hostachy && . scripts/lib/lib-env-role.sh && "
+        "env_role_appliquer .env actif && docker compose up -d`"
+    )
+    assert _commandes_sans_liste(fautive)
+    assert _commandes_sans_liste(
+        "`git reset --hard x`, puis `docker compose\nbuild && docker compose up -d`."
+    )
+    assert _commandes_sans_liste("```bash\ndocker compose stop\n```")
+    assert not _commandes_sans_liste("Un `docker compose up -d` complet démarre la base.")
+    assert not _commandes_sans_liste("Jamais `docker compose up|stop|down` sans liste.")
+    #  Une apostrophe inverse orpheline plus haut ne décale pas la lecture.
+    assert _commandes_sans_liste("Un ` seul.\n\n`cd /opt && docker compose up -d`")
+    assert not _commandes_sans_liste("`docker compose up -d $SERVICES_DU_NOEUD`")
+    assert not _commandes_sans_liste("(`docker compose up -d\n  postgres` sur l'actif)")
+    assert not _commandes_sans_liste("")
+
+
 BASCULE = RACINE / "scripts" / "exploitation" / "bascule.sh"
 
 #: Le retour arrière, dans l'ordre : isoler le pair, relire sa base, puis relancer.

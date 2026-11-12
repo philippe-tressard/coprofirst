@@ -326,7 +326,7 @@ export interface ReponseRelance {
 }
 
 /** Message d'un fil de ticket. Vit ici, pas dans la page : le client TypeScript
- *  est la source unique des types d'API (cf. CLAUDE.md, checklist backend). */
+ *  est la source unique des types d'API (cf. skill api-scaffold, checklist finale). */
 export interface TicketMessage {
 	id: number;
 	contenu: string;

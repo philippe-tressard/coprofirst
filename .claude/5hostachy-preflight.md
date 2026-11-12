@@ -15,7 +15,7 @@ une action concrète, et non à une intention.
 │   = tu t'apprêtes à déployer          pre-push le refuse sans sa trace)    │
 │ écrire dans front/src/**             .claude/skills/ux-patterns            │
 │                                      + svelte-patterns                     │
-│ nouveau modèle / route / migration   .claude/skills/api-scaffold           │
+│ écrire dans api/** (modèle, route…)  .claude/skills/api-scaffold           │
 │ toucher aux droits, secrets, à une   .claude/skills/security-audit         │
 │   exposition publique                                                      │
 │ ssh sur un RPi, bascule, incident    .claude/skills/infra-rpi              │

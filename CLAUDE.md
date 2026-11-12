@@ -1,354 +1,159 @@
 # CLAUDE.md — 5Hostachy
 
-Règles de développement à appliquer dans toutes les sessions sur ce projet.
+Ce fichier ne porte que ce qui doit être vrai **à chaque session**. Le détail vit dans
+les skills du projet (`.claude/skills/`), chargées quand la tâche le demande — les ouvrir
+*avant* d'agir. Les pratiques génériques sont dans le socle `~/.claude/standards/`
+(routage : `~/.claude/CLAUDE.md` §1) ; ici, seulement leur instanciation.
 
-## Principe fondamental
-
-Avant toute implémentation : **grep le pattern existant**. Si le pattern existe ≥ 2 fois → l'appliquer à l'identique. Si une demande contredit un pattern établi → signaler le conflit et demander confirmation.
-
-Les références canoniques sont dans `.claude/skills/` (voir le tableau ci-dessous).
-
----
+**Avant toute implémentation, chercher le motif existant.** S'il existe deux fois ou
+plus, l'appliquer à l'identique ; si une demande contredit un motif établi, le dire et
+demander confirmation.
 
 ## Stack
 
-- **Backend** : FastAPI + SQLModel + Alembic (`api/`) — **PostgreSQL 17**, seul moteur : en production (DI-7, répliqué vers le standby), sur une réplique, et pour les tests (CI et poste, `TESTS_BASE_URL`)
+- **Backend** : FastAPI + SQLModel + Alembic (`api/`) — **PostgreSQL 17**, seul moteur :
+  production (répliquée vers le standby) et tests (CI et poste, `TESTS_BASE_URL`)
 - **Documents imprimables** : HTML/CSS → PDF via WeasyPrint (libs système dans `api/Dockerfile`)
 - **Frontend** : SvelteKit v3 + TypeScript strict + Vite 8 + PWA (`front/`)
-- **Infra** : Docker Compose + Caddy + Raspberry Pi 5
-- **Langue** : français exclusif (interface + nommage des champs)
+- **Infra** : Docker Compose + Caddy + 2 Raspberry Pi 5
+- **Langue** : français exclusif (interface et nommage des champs)
 
----
+## Skills du projet
 
-## Consignes chargées à la demande
-
-Ce fichier ne porte que ce qui doit être vrai **en permanence**. Le détail vit dans
-`.claude/skills/`, découvert automatiquement par Claude Code et chargé **seulement
-quand la tâche le demande** — ouvrir la skill *avant* d'agir, jamais après.
-
-| Tâche | Skill à charger |
+| Tâche | Skill |
 |---|---|
-| MEP, déploiement, pré-check, post-check, rollback | `.claude/skills/mep-precheck` |
-| Infra, bascule, RPi, base, WhatsApp, monitoring, incident | `.claude/skills/infra-rpi` |
-| Écran, composant, libellé, pattern d'interface | `.claude/skills/ux-patterns` |
-| Page ou composant SvelteKit, store, appel API côté front | `.claude/skills/svelte-patterns` |
-| Nouveau modèle, schéma, router, migration | `.claude/skills/api-scaffold` |
-| Auth, droits, secrets, exposition publique | `.claude/skills/security-audit` |
-| Documentation utilisateur — manuel **et** `README.md` | `.claude/skills/user-manual` |
-
-Les bonnes pratiques **génériques** — valables pour un autre projet — sont dans le
-socle `~/.claude/standards/`. Ce fichier-ci ne contient que leur **instanciation
-5Hostachy** : chemins, seuils, commandes.
-
-> 📖 **Routage du socle : `~/.claude/CLAUDE.md` §1** (source unique, déjà en contexte
-> — quel standard charger avant quelle tâche). Mode d'emploi, règle de placement et
-> entretien : `standards/INDEX.md`. Une règle générique ne se recopie **jamais** ici :
-> elle s'écrit dans le socle et bénéficie alors aux quatre projets.
+| MEP, rejeu de la CI, pré-check, post-check, rollback, version et images | `mep-precheck` |
+| Infra, bascule, RPi, base, crons, WhatsApp, incident, scripts d'infra en CI | `infra-rpi` |
+| Écran, composant, libellé, checklist front avant commit | `ux-patterns` |
+| Page ou composant SvelteKit, store, appel API côté front, tests Playwright | `svelte-patterns` |
+| Code de l'API : modèle, schéma, routeur, migration, utilitaire, tests pytest | `api-scaffold` |
+| Auth, droits, secrets, téléversement, fichiers servis, exposition publique | `security-audit` |
+| Documentation utilisateur — manuel **et** `README.md` | `user-manual` |
 
 ---
 
-## 🚨 Règle d'or des données (PostgreSQL) — ne dépend d'aucun chargement à la demande
+## Règle d'or des données (PostgreSQL)
 
-La base est un PostgreSQL par nœud : un **primaire** sur l'actif, une **réplique**
-en flux sur le standby (DI-7b, #1781). La lire depuis un autre processus est permis :
-le serveur sert ses lecteurs (`docker exec hostachy_postgres psql`, C37, la
-sauvegarde). Les gestes qui détruisent sont **interdits** :
+La base est un PostgreSQL par nœud : un **primaire** sur l'actif, une **réplique** en
+flux sur le standby (DI-7b, #1781). La lire depuis un autre processus est permis
+(`docker exec hostachy_postgres psql`, C37, la sauvegarde). Les gestes qui détruisent
+sont interdits :
 
-- **Jamais deux primaires.** Un ancien primaire ne se relance JAMAIS tel quel après
-  une promotion : il s'isole, puis se reconstruit en réplique
+- **Jamais deux primaires.** Un ancien primaire ne se relance jamais tel quel après une
+  promotion : il s'isole, puis se reconstruit en réplique
   (`sudo bash scripts/exploitation/reconstruire-replique.sh --oui`, sur le standby, en root).
 - **Jamais une base absente démarrée sur un nœud qui prend la main** : l'image
-  l'initialiserait en primaire VIDE. Un `docker compose up -d` complet sur un standby
-  sans réplique fait exactement cela — passer par `lib-promotion.sh`
-  (`decider_prise_de_main`), comme la bascule, le failover et la garde au démarrage.
-- **Jamais `docker compose up|stop|down` sans liste de services** : sur le
-  standby il arrêterait la réplique, sur un nœud rétrogradé il relancerait un
-  primaire (15/10/2026, #1997). `$SERVICES_APPLICATIFS`, `$SERVICE_BASE`,
-  `$SERVICES_DU_NOEUD` (`lib-applicatifs.sh`). 🔒 `test_applicatifs_source_unique.py`.
-- **Un nœud ne sert que sur un rôle relu à l'instant** : `servir_images`
-  (`lib-servir.sh`, auto-deploy et `MaJ-Hostachy.sh`) relit `.active` avant chaque
-  démarrage, et le failover isole l'ancien actif sous son verrou de déploiement,
-  `.active` réécrit dans le même appel (`lib-failover.sh`, #1997 #2000).
+  l'initialiserait en primaire VIDE. Un `docker compose up -d` complet sur un standby sans
+  réplique fait exactement cela — passer par `lib-promotion.sh` (`decider_prise_de_main`),
+  comme la bascule, le failover et la garde au démarrage.
+- **Jamais `docker compose up|stop|down` sans liste de services** : sur le standby il
+  arrêterait la réplique, sur un nœud rétrogradé il relancerait un primaire (#1997). Les
+  listes : `$SERVICES_APPLICATIFS`, `$SERVICE_BASE`, `$SERVICES_DU_NOEUD`
+  (`lib-applicatifs.sh`). 🔒 `test_applicatifs_source_unique.py` (scripts **et** consignes,
+  #2706).
+- **Un nœud ne sert que sur un rôle relu à l'instant** : `servir_images` (`lib-servir.sh`,
+  auto-deploy et `MaJ-Hostachy.sh`) relit `.active` avant chaque démarrage, et le failover
+  isole l'ancien actif sous son verrou de déploiement, `.active` réécrit dans le même appel
+  (`lib-failover.sh`, #1997 #2000).
 - **Jamais `docker volume rm 5hostachy_pg_data`**, ni une écriture sur la réplique.
 
-🔒 C37 (`lib-replication.sh`) et le point 22 du pré-check disent deux primaires, une
-réplique absente, déconnectée ou en retard. Conduite à tenir : `.claude/skills/infra-rpi`.
+C37 (`lib-replication.sh`) et le point 22 du pré-check disent deux primaires, une réplique
+absente, déconnectée ou en retard. Conduite à tenir : `infra-rpi`.
 
 **Exporter la base** (#1749) : par l'administration — `POST /admin/export-copropriete`
-(archive complète) et `…/verifier` (réimport dans une base jetable) —, qui lisent dans
-le processus de l'API, en une transaction. `python -m app.utils.export_copropriete`
-dans le conteneur ne sert qu'à **importer** une archive dans une base CIBLE neuve.
-
-> 📖 `standards/06-donnees-et-integrite.md` §1 — un état multi-fichiers qu'un
-> processus tient ouvert ne se copie pas à chaud : c'est la règle de l'état
-> d'authentification WhatsApp (24/07/2026, `.claude/skills/infra-rpi`).
+(archive complète) et `…/verifier` (réimport dans une base jetable), dans le processus de
+l'API, en une transaction. `python -m app.utils.export_copropriete` dans le conteneur ne
+sert qu'à **importer** une archive dans une base CIBLE neuve. Un état multi-fichiers
+qu'un processus tient ouvert ne se copie pas à chaud (`standards/06` §1 ; l'état
+d'authentification WhatsApp, `infra-rpi`).
 
 ---
 
-## Front — les quatre règles qui ne se négocient pas
+## Front — les quatre règles
 
-Le détail des patterns est dans `.claude/skills/ux-patterns` et
-`.claude/skills/svelte-patterns` — les charger avant d'écrire un écran.
+Le détail des motifs : `ux-patterns` (et sa checklist avant commit) et `svelte-patterns`.
+Les arbitrages d'interface sont numérotés dans `.claude/skills/ux-patterns/ARBITRAGES.md`
+(exemple : arbitrage n° 21, ✨ ne se dit que de l'IA).
 
-> 📖 `standards/11-interface-et-ux.md` (un pattern par notion, accessibilité,
-> formulaires, archiver ≠ supprimer) · `standards/03-securite.md` §4 (assainissement)
-> · `standards/02-factorisation.md` §2 (pourquoi dates et montants sont les deux
-> récidivistes de la duplication).
+1. **XSS** : jamais `{@html contenu}`, toujours `{@html <assainisseur>(contenu)}`. Les
+   trois assainisseurs, exportés par `#lib/sanitize.ts` et adossés à DOMPurify : `safeHtml`
+   (HTML riche), `safeRichContent` (riche ou texte, sans enveloppe — dans un `<p>`),
+   `safeDescription` (idem, avec enveloppe `<p>`). 🔒 `npm run lint:html` lit leur liste
+   dans `sanitize.ts` et exige que le nom vienne de l'import.
 
-1. **XSS** : jamais `{@html contenu}`, toujours `{@html <assainisseur>(contenu)}`.
-   Ils sont **trois**, tous exportés par `#lib/sanitize.ts` et tous adossés à
-   DOMPurify : `safeHtml` (HTML riche), `safeRichContent` (riche ou texte, **sans**
-   enveloppe — appelé à l'intérieur d'un `<p>`), `safeDescription` (idem, **avec**
-   enveloppe `<p>`). Cette règle ne nommait que le premier alors que les trois
-   étaient en service : c'est ce qui a fait croire à 19 écarts qui n'en étaient pas
-   (#429).
-
-   🔒 **Garde-fou : `npm run lint:html`** (`front/scripts/check-html.mjs`), en CI
-   depuis le 18/08/2026. Il lit la liste des assainisseurs **dans `sanitize.ts`** —
-   une liste recopiée diverge au premier ajout — et exige que le nom vienne de
-   l'**import**, pas de la portée du fichier : une fonction locale homonyme qui ne
-   ferait rien passerait sinon. C'est ainsi qu'a été trouvée `renderContent`
-   (`tickets/[id]`), copie littérale de `safeDescription`, correcte par chance.
-
-   **Deux** exceptions, et deux seulement — relevées par l'audit du 18/08/2026,
-   qui en a trouvé une non déclarée ; elles sont **déclarées dans le contrôle**
-   (`EXCEPTIONS`), qui échoue si l'une d'elles cesse de servir :
-   - `Icon.svelte` — SVG codé en dur côté serveur ;
-   - `QRCode.svelte` — SVG produit **localement** par `qrcode-generator` à partir
-     d'une donnée encodée en modules, jamais interpolée dans le balisage.
-
-   ⚠️ Une exception non écrite n'est pas une exception, c'est un oubli qui
-   ressemble à une décision. Toute nouvelle exception s'ajoute **ici** avec sa
-   raison, sinon la règle devient « sauf quand on a jugé que ça allait ».
-2. **Dates et montants** : ne jamais réimplémenter un format dans une page.
-   `#lib/date.ts` (`fmtDate`, `fmtDatetime`, `fmtMonthYear`…), `#lib/utils.ts`
-   (`fmtMontant`, `fmtOctets`, `fmtNombre`, `perimetreLabel`), et côté API `app/utils/dates_fr.py`. Deux
-   garde-fous échouent en CI : `api/tests/test_dates_fr.py` et `npm run lint:dates`.
-   Un nombre ou un mois que l'API envoie ne se rend pas **brut** non plus : `fmtNombre`,
-   `fmtMonthYear` — une clé `AAAA-MM` se type `MoisIso` (`api/valeurs.ts`). La télémétrie
-   affichait « 27054 », « 3864.9 », « 2026-05 » (#2358) ; 🔒 `lint:dates` le refuse
-   (`check-nombres-bruts.mjs`, ses écarts déclarés : `NON_QUANTITES`, `HOMONYMES`).
+   Deux exceptions, déclarées dans `EXCEPTIONS` du contrôle, qui échoue si l'une cesse de
+   servir : `Icon.svelte` (SVG codé en dur) et `QRCode.svelte` (SVG produit localement par
+   `qrcode-generator`, jamais interpolé). Toute nouvelle exception s'ajoute ici avec sa
+   raison.
+2. **Dates, montants, nombres** : jamais un format réimplémenté dans une page. `#lib/date.ts`
+   (`fmtDate`, `fmtDatetime`, `fmtMonthYear`…), `#lib/utils.ts` (`fmtMontant`, `fmtOctets`,
+   `fmtNombre`, `perimetreLabel`), côté API `app/utils/dates_fr.py`. Un nombre ou un mois que
+   l'API envoie ne se rend pas brut (une clé `AAAA-MM` se type `MoisIso`, `api/valeurs.ts`,
+   #2358). 🔒 `api/tests/test_dates_fr.py`, `npm run lint:dates` (`check-nombres-bruts.mjs`,
+   écarts déclarés : `NON_QUANTITES`, `HOMONYMES`).
 3. **Accessibilité** : tout élément cliquable non-`<button>` porte `role="button"`,
-   `tabindex="0"` et `on:keydown` (Enter/Space) ; `aria-label` sur les boutons
-   icône-seule ; `role="dialog"` + `aria-modal="true"` sur les modales
-   (`standards/11-interface-et-ux.md` §2, seule source générique ; les skills y renvoient).
-4. **Icônes de contexte** : 📍 = lieu physique, 🔹 = périmètre logique — **jamais
-   mélangés**, et le périmètre par défaut ne s'affiche pas — la question se pose à
-   `estPerimetreParDefaut` (`#lib/perimetres`), jamais par un `=== 'résidence'` :
-   le code n'en contient plus un seul, et le nom du périmètre racine est
-   **administrable**.
-
-   🔒 **Garde-fou : `npm run lint:pictogrammes`** (#1045, 24/09/2026). Le badge 🔹
-   ne se rend que par `BadgePerimetre` ; une phrase qui nomme un périmètre et
-   chaque vrai lieu 📍 se **déclarent** dans le contrôle, avec leur nombre
-   d'occurrences. Il a trouvé « 📍 Concerne votre bâtiment » et « 📍 Dépannage ».
-
-   **Côté API, la même règle** vit dans `app/utils/perimetres/arbre.py` :
-   `est_perimetre_par_defaut(codes)` pose la question, `perimetre_cible_json(codes)`
-   écrit une sélection (vide → le défaut ; sans argument, c'est le
-   `default_factory` des colonnes `perimetre_cible`), `perimetre_defaut_liste()`
-   la donne en liste — toutes lisent la racine dans l'arbre (`code_par_defaut`).
-   Le code « résidence » n'est écrit que par le **seed** qui pose le nœud ; il
-   l'était 23 fois avant #1567. 🔒 `test_perimetre_racine_source_unique.py`
-   (exceptions déclarées : la granularité documentaire `Document.perimetre`,
-   autre axe — *qui lit* un fichier, pas *où* se passe un contenu).
+   `tabindex="0"` et `on:keydown` (Enter/Space) ; `aria-label` sur les boutons icône-seule ;
+   `role="dialog"` + `aria-modal="true"` sur les modales (`standards/11` §2).
+4. **Icônes de contexte** : 📍 = lieu physique, 🔹 = périmètre logique, jamais mélangés. Le
+   périmètre par défaut ne s'affiche pas : la question se pose à `estPerimetreParDefaut`
+   (`#lib/perimetres`), jamais par un `=== 'résidence'` (le nom de la racine est
+   administrable). Le badge 🔹 ne se rend que par `BadgePerimetre` (🔒 `npm run
+   lint:pictogrammes`). Côté API : `app/utils/perimetres/arbre.py` —
+   `est_perimetre_par_defaut(codes)`, `perimetre_cible_json(codes)`,
+   `perimetre_defaut_liste()`, qui lisent la racine dans l'arbre (`code_par_defaut`) ; le code
+   « résidence » n'est écrit que par le seed (🔒 `test_perimetre_racine_source_unique.py`,
+   exception déclarée : `Document.perimetre`, autre axe — *qui lit* un fichier).
 
 ---
 
-## Conventions Backend (Python / FastAPI)
+## Backend — les portes uniques
 
-> 📖 `standards/06-donnees-et-integrite.md` §3 (migrations : chaîne linéaire, jamais
-> de f-string SQL, le code et le schéma voyagent ensemble) et §4–5 (suppression
-> logique, montants en entiers) · `standards/03-securite.md` §1–5 (autorisation
-> centralisée, liste blanche, entrées/sorties, session et transport).
+Chaque notion a **une** porte ; le détail, les pièges et les exceptions sont dans
+`api-scaffold` §8–9. Un test refuse la copie.
 
-### Modèle SQLModel
-- Un modèle vit dans le module de **son domaine** sous `app/models/` (`acces`,
-  `communaute`, `prestataires`, `gouvernance`…) — **jamais dans `core.py`**.
-  Repassé sous 500 lignes le 28/09/2026 (#779), le contrôle de modularité ne
-  l'empêche que d'en ressortir : 🔒 `test_core_sans_modele_neuf.py` y refuse une
-  classe de plus ; sa liste — l'utilisateur et ce qui lui est attaché — est
-  close depuis #2316.
-  Un module neuf s'**importe dans `models/__init__.py`** : c'est ce qui enregistre
-  la table auprès de SQLModel — oublié, elle manque à `create_all` sans un mot.
-- `core.py` **ré-exporte** les modèles extraits (imports `# noqa: E402` en milieu
-  de fichier). Ils laissent `from app.models.core import X` valable après chaque
-  extraction — **et ils enregistrent** : `alembic/env.py` n'importe que `core`, et
-  c'est par eux qu'Alembic voit la moitié des tables. Pas un doublon à nettoyer
-  en passant (#1157). 🔒 `test_modeles_enregistres.py` : chaque module de
-  `app/models/` doit être chargé par `import app.models.core`.
-  ⚠️ Déplacer une classe change l'ordre des `DELETE` d'un même flush entre deux
-  tables sans `Relationship` : SQLAlchemy les trie par le nom QUALIFIÉ de la
-  classe (#2316). Supprimer l'enfant, `flush()`, puis le parent — jamais compter
-  sur l'ordre.
-- `__tablename__` = snake_case français
-- Champs en français snake_case : `statut_validation`, `date_debut`
-- Timestamps : suffixe `_le` → `cree_le`, `mis_a_jour_le` ; la valeur par
-  `horloge.maintenant()` (UTC **naïf**, comme la base), jamais `datetime.utcnow()`
-  — déprécié en 3.12, refusé par Ruff `DTZ003` (#1047). Le champ s'annote
-  **`NaiveDatetime`** (pydantic), jamais `datetime` : depuis sqlmodel 0.0.45 ce
-  dernier devient une colonne consciente du fuseau qui refuse la date naïve à
-  l'écriture (#1412). 🔒 `test_horloge.py`
-- Le **jour** du résident (calendrier, échéance, date affichée, `default_factory`
-  d'un champ `date`) : `horloge.aujourd_hui()` — le jour de **Paris**, quel que
-  soit le fuseau du conteneur ; celui d'un instant de la base :
-  `horloge.jour_civil(x)`, son heure murale `horloge.a_paris(x)`, le fuseau
-  `horloge.TZ_PARIS`. Jamais `date.today()`, `datetime.now()` sans fuseau ni
-  `maintenant.date()` — le jour UTC, faux d'un jour entre 0 h et 2 h (#1565).
-  🔒 `test_horloge.py` (forme `default_factory` comprise) et Ruff `DTZ005/011`
-- FK : `{modele}_id = Field(default=None, foreign_key="table.id")`
-- Enums : `class MonEnum(str, Enum)` → slugs français lowercase
-- **Archiver, pas une colonne `actif` par réflexe.** Les objets qui quittent les
-  listes se déclarent dans `utils/archivage.REGLES` — la règle unique, avec son
-  test de concordance. La plupart des tables n'ont ni `actif` ni `archivee`, et
-  c'est voulu : un booléen ajouté à côté ferait une seconde façon de disparaître.
-  🔒 `test_archivage_colonnes_booleennes.py` : toute colonne `actif`/`active`/`archivee`
-  est couverte par `REGLES` ou déclarée référentiel avec son sens (#1568).
-- **Les ressources d'UNE copropriété se demandent à `app/contexte.py`** (#1744,
-  chantier multi-copropriétés) : `contexte.nouvelle_session()` hors requête (une
-  route prend `get_session`), `contexte.moteur()`, et `contexte.courante()` —
-  `url_base`, `racine_fichiers`, `secret`, `expediteur`, `nom_expediteur`. Jamais
-  `engine`, `SessionLocal` ni `settings.database_url|secret_key|uploads_dir|mail_from`.
-  Un cache ou un quota tenu en mémoire se range dans `contexte.etat("nom")`, jamais
-  dans une variable de module : l'utilisateur n° 12 d'une copropriété n'est pas
-  celui d'une autre. La copropriété d'une requête se résout à son ENTRÉE
-  (`contexte.ResolutionCopropriete`, le plus extérieur des intergiciels) ; une
-  tâche hors requête la reçoit de `contexte.dans(copro)`. Une installation COMMUNE
-  déclare ses copropriétés dans un fichier (`COPROPRIETES_FICHIER`), lu par
-  `installation_commune/declaration` et nulle part ailleurs ; son hôte commun ne fait
-  qu'aiguiller (#1894). Hors requête, une installation commune n'a PAS de copropriété
-  courante (`contexte.HorsCopropriete`) : une commande `python -m app…` la nomme par
-  `utils/commande` (`--copropriete`), le dossier des sauvegardes se demande à
-  `contexte.dossier_des_sauvegardes()` (#2053). 🔒 `test_commandes_nomment_leur_copropriete.py`. 🔒 `test_contexte_source_unique.py`,
-  `test_etat_module_par_copropriete.py` (`A_INDEXER` vide, plafond zéro), et
-  `test_etancheite_coproprietes.py` : deux bases aux identifiants identiques, aucune
-  réponse servie pour l'une ne porte les données de l'autre (#1746).
-- **Un lot, selon le règlement** (#2212, spec `specs/architecture/lots-et-perimetres.md`) :
-  sa nature se demande à `utils/designation_lot` (`nature_du_lot`, `est_annexe`), jamais
-  à `lot.nature` — vide tant que l'état descriptif n'est pas importé ; ses périmètres
-  (*situé dans*, *desservi par*) se **dérivent** par `utils/perimetres/lots` et vivent
-  dans `lot_perimetre`. Une **annexe** (cave, place) n'apporte pas son bâtiment à « mes
-  bâtiments » : elle est desservie par une circulation, et ce qui la concerne passe par
-  `mes_batiments.perimetres_desservis` — l'ascenseur, l'escalier, les caves, jamais le
-  bâtiment desservant entier (`perimetre_visible`, #2214). 🔒 `test_nature_lot_source_unique.py`,
-  `test_annexes_hors_mes_batiments.py`, `test_mes_perimetres.py`.
-- Lire un objet ou rendre 404 : `utils/recuperer.ou_404(session, Modele, id,
-  "libellé")` — jamais `session.get` suivi d'un `raise HTTPException(404)`, ni
-  un alias qui fabrique l'exception. Les 404 écrits à la main qui restent se
-  **déclarent un par un**, avec leur raison, dans `EXCEPTIONS` de
-  `api/tests/test_recuperer_source_unique.py` — la liste se lit là ; elle a
-  remplacé le plafond, qui comptait sans nommer (#1571). Le 404 d'un objet
-  qui doit porter son parent (`sous={"bail_id": …}`) passe aussi par lui.
-  Les autres questions du même module : le **fichier absent du disque** —
-  `fichier_ou_404(chemin, "PDF")` —, la **ligne unique** d'une table de réglage —
-  `premier_ou_404(session, Modele, "…non configurée")` —, la **clé d'un registre**
-  du code — `connu_ou_404(TABLE, cle, "Section inconnue")`, jamais pour une liste
-  blanche d'accès — et le **résultat déjà calculé** qui vaut `None` —
-  `present_ou_404(valeur, "…")` (#1571).
-- Lire un objet, puis refuser en **403** si le prédicat de l'entité dit non
-  (`ticket_visible`, `sondage_accessible`…) : `auth/appartenance.exiger_objet_autorise`
-  — jamais `ou_404` suivi d'un `if not visible: raise HTTPException(403)`, qui
-  était écrit à l'identique dans six routeurs (#1564).
-- Deux tables qui portent le même objet (Vigik/Télécommande et leurs deux
-  stagings d'import) : une **classe de base non-table** (`models/acces.py`,
-  `_ObjetAcces`), jamais deux déclarations de colonnes. Un import xlsx déclare
-  son `_traiter_rows` et nomme ses deux importeurs par `import_xlsx.importeurs`.
-- La valeur d'une énumération (`categorie`, `statut`…) : `utils/valeurs.valeur(x)`,
-  jamais `str(x)` — qui rend « CategorieTicket.etude_travaux » — ni un
-  `getattr(x, "value", x)` recopié (il l'était neuf fois ; 🔒 `test_valeur_source_unique`).
-- Une énumération écrite POUR UNE PERSONNE — titre de notification, `context=`
-  d'un courriel — prend son libellé (`libelle_statut`, `libelle_categorie`,
-  `libelle_priorite`, `libelle_type_acces`, `libelle_type_lot`), jamais `x.type`
-  ni `valeur(x.statut)` : « Commande vigik : acceptee » partait en notification
-  (05/11/2026). 🔒 `test_enumerations_en_clair.py` lit les f-strings et les
-  contextes de `send_email` (exceptions déclarées).
-- Lire un objet pour le RENDRE : `Schema.model_validate(objet)`, ou
-  `utils/lecture.lire_objet(Schema, objet, **dérivés)` quand des champs se
-  calculent — jamais une recopie colonne par colonne, où tout oubli part à sa
-  valeur par défaut sans un mot : l'historique d'une affaire a ainsi perdu
-  `assiste_ia` et `contenu_origine` (#1563). 🔒 `test_lecture_colonne_par_colonne`
-  refuse la recopie pour TOUT schéma de l'application (il ne gardait que
-  `TicketRead`, #1092) ; `test_lectures_rendent_le_modele` relit les sorties.
-
-> 🔴 Cette section décrivait jusqu'au 23/09/2026 un backend disparu : « modèle
-> dans `models/core.py` », « trois schémas dans `schemas.py` », « soft delete par
-> `actif` ». Suivre la consigne violait la modularité (rang 1), et ce fichier est
-> relu à chaque session (#1046).
-
-- **Nommage : français, tables, routes et tags compris.** Les noms anglais
-  existants — tables et routes — sont **figés** dans `api/tests/test_nommage_francais.py`
-  (`TABLES_FIGEES`, `ROUTES_FIGEES` : la liste se lit là, pas ici), qui refuse le suivant.
-  Ils sont figés **définitivement** (décision du 30/10/2026, #2314) : on ne les renomme
-  pas — une migration en deux versions par table, le client et les onglets PWA par
-  route, pour un gain invisible. Un nom figé qui viendrait à être renommé sort de la
-  liste, sinon le test échoue. Un **tag** OpenAPI s'écrit en
-  minuscules à tirets (`carnet-entretien`), un **préfixe** de routeur au pluriel (#1056).
-- **Le contrat de l'API ne recule pas sans annonce** (#2456) : l'app iOS génère son
-  client depuis `openapi.json`, joint à chaque release (`scripts/ci/lib-contrat-version.sh`),
-  jamais servi par le site. Une route, un champ de réponse ou une entrée requise qui
-  change se lit dans `api/app/contrat/reference.json`, GÉNÉRÉE par `python
-  scripts/ci/exporter_openapi.py --ecrire-reference`, qui calcule la version du contrat
-  (`GET /config` → `version_contrat`) — jamais éditée. Retirer une route ou un champ se
-  fait en deux temps : `deprecated` et une entrée dans `app/contrat/retraits.RETRAITS`
-  (version V), puis le retrait dans une version ultérieure ; une entrée neuve d'une route
-  existante est facultative. L'`operationId` vient du chemin (`contrat.identifiant_operation`),
-  jamais du nom de la fonction. 🔒 `test_contrat_api.py`.
-- **Les tables du site que l'app iOS génère se publient comme le contrat** (#2634) :
-  `front/tables-clients.json`, GÉNÉRÉE par `node front/scripts/tables-clients.mjs --ecrire`
-  depuis son registre (`tables-clients.registre.mjs` : des constantes LITTÉRALES de `#lib`,
-  lues dans l'arbre syntaxique, rien n'est exécuté), jointe à la release
-  (`lib-contrat-version.sh`) — jamais éditée. Une table que l'app lit vit dans `#lib`,
-  jamais dans un composant, en constante NOMMÉE (une table passée à `parAttribut` se
-  déclare d'abord, puis se bascule : `parAttribut(ATTRIBUTS_ROLE)`), et le code qui la
-  sert la LIT (`aRole($u, ...ROLES_DU_DROIT.cs)`) ; les jetons de la charte et les
-  palettes se publient par leur RÈGLE CSS (`<feuille>.css@<sélecteur>`, un `*` pour une
-  famille) ; la retirer ou en changer la forme s'annonce dans `RETRAITS` — un jeton retiré
-  en est un. 🔒 `npm run lint:tables-clients`.
-- **Une règle d'affichage que le site ET l'app iOS montrent se calcule dans l'API** (#2501,
-  `standards/09` §8, règle 1) : libellé composé, état dérivé, droit affiché vivent dans
-  `app/utils/` (ou un prédicat d'`auth/`), servis en champ que le front LIT — jamais une
-  fonction de `#lib` seule (`libelle_logement`, #2500). Chacune se déclare dans
-  `front/scripts/check-regles-partagees.regles.mjs` ; celles que le front calcule encore y
-  portent leur ticket de migration, OUVERT, et sa raison. L'inventaire, et ce qui reste au
-  front par décision (tables générées par l'app, formats d'une valeur typée), se lit dans #2501.
-  🔒 `npm run lint:regles-partagees` ; le porteur fermé, le point 25 du pré-check (#2633).
-
-### Schémas Pydantic
-- Trois formes par entité exposée : `EntiteCreate` (entrée, sans id ni
-  horodatage), `EntiteRead` (sortie, `class Config: from_attributes = True` —
-  la forme de tout le dépôt), `EntiteUpdate` (tout `Optional`, PATCH partiel).
-- Ils vivent dans le `schemas_<domaine>.py` de l'entité (`schemas_tickets`
-  — actualités comprises —, `schemas_evenement`…), que `schemas.py` ré-exporte.
-- Un schéma **propre à un seul routeur** — le corps d'un geste, la réponse d'un
-  écran — vit à côté de lui (dans le routeur ou son `_schemas.py`). Le mettre
-  dans un fichier partagé créerait un couplage que personne n'a demandé.
-- `schemas_communs.py` n'importe RIEN du projet : c'est ce qui évite le cycle
-  `schemas` ⇄ `schemas_tickets`. Ne pas lui en ajouter.
+- **Modèle** dans le module de son domaine (`app/models/<domaine>.py`), importé par
+  `models/__init__.py` — jamais dans `core.py` (🔒 `test_core_sans_modele_neuf.py`,
+  `test_modeles_enregistres.py`). Champs et tables en français ; noms anglais existants
+  figés (`test_nommage_francais.py`).
+- **Horloge** : `horloge.maintenant()` (UTC naïf, champ `NaiveDatetime`), le jour du résident
+  `horloge.aujourd_hui()` — jamais `datetime.utcnow()`, `date.today()` ni `datetime.now()`
+  sans fuseau (🔒 `test_horloge.py`).
+- **Une copropriété** : `app/contexte.py` (`nouvelle_session`, `moteur`, `courante`,
+  `etat`) — jamais `engine`, `SessionLocal` ni `settings.database_url|secret_key|…`
+  (🔒 `test_contexte_source_unique.py`, `test_etancheite_coproprietes.py`).
+- **Lire ou 404** : `utils/recuperer.ou_404` ; **lire puis 403** :
+  `auth/appartenance.exiger_objet_autorise` ; **rendre** : `Schema.model_validate` ou
+  `utils/lecture.lire_objet`.
+- **Énumération** : `utils/valeurs.valeur(x)` ; écrite pour une personne, son `libelle_*`.
+- **Archiver**, pas de colonne `actif` par réflexe : `utils/archivage.REGLES`.
+- **Lot** : `utils/designation_lot` (nature), `utils/perimetres/lots` (périmètres).
+- **Destinataires** : `app/utils/destinataires.py` ; **diffusion** vers le groupe :
+  `utils/diffusion` ; **service activé ?** : `utils/services.service_actif`.
+- **PDF** : `app/utils/pdf_theme.py`, rendu hors du process par `app/utils/pdf_rendu.py`
+  (enfant `spawn`, jamais `fork`).
+- **Tâches planifiées** : `app/utils/taches.TACHES_PERMANENTES`, enregistrées par copropriété.
+- **Contrat de l'API** (`api/app/contrat/reference.json`) et tables publiées pour l'app iOS
+  (`front/tables-clients.json`) : générés, jamais édités ; un retrait s'annonce dans
+  `RETRAITS`. Une règle d'affichage que le site et l'app montrent se calcule dans l'API.
 
 ### Migrations Alembic
-- **Deux chaînes, deux bases.** `alembic/` migre la base d'une copropriété ;
-  `alembic_plateforme/` migre la base `plateforme` du **registre des installations**
-  (référence seule, spec §4.11), par `python -m app.registre.migrer` — jamais par
-  `alembic upgrade head`. Ses tables ont leurs propres métadonnées
-  (`registre/modeles.registre_plateforme`) et ne vivent jamais sous `app/models/`.
-  🔒 `test_registre_inscription.py` compare la chaîne aux modèles.
-- ID séquentiel 4 chiffres : `0087`, `0088`…
-- **Jamais** modifier une migration existante — créer une nouvelle
-- **Jamais** de f-string dans `op.execute()` pour une **valeur** →
-  `text(...).bindparams(...)`. Un **identifiant** (nom de table ou de colonne)
-  ne se lie pas : il s'interpole depuis une constante du fichier, et on l'écrit
-  en commentaire. 🔒 `test_migrations.py` refuse une f-string non liée ; Ruff
-  `S608` couvre le code vivant (`api/app/`).
-- `start.sh` a `set -e` : une migration qui crash = conteneur bloqué
-- 🔴 **Une migration reste compatible avec la version précédente du code** (#1757,
-  08/10/2026) : revenir en arrière doit n'être qu'un changement d'image, sans
-  restaurer la base. **Ajouter, puis retirer — jamais dans la même version** : une
-  colonne neuve est nullable ou porte un `server_default` ; retirer une table ou
-  une colonne, renommer, passer à `nullable=False` est un **second temps**, annoncé
-  dans `CONTRACTIONS` par le lot où le code cesse d'en dépendre, et fait dans une
-  version ultérieure. Pas de SQL brut qui retire ou renomme. 🔒
-  `test_migrations_compatibles.py` (il vérifie aussi qu'aucun modèle ne déclare plus
-  ce qui est retiré).
+- **Deux chaînes, deux bases** : `alembic/` migre la base d'une copropriété ;
+  `alembic_plateforme/` migre la base `plateforme` du registre des installations, par
+  `python -m app.registre.migrer` — jamais `alembic upgrade head`. Ses tables ont leurs
+  métadonnées (`registre/modeles.registre_plateforme`), jamais sous `app/models/`
+  (🔒 `test_registre_inscription.py`).
+- ID séquentiel à 4 chiffres (`0087`, `0088`…). **Jamais** modifier une migration
+  existante : en créer une nouvelle.
+- **Jamais de f-string dans `op.execute()` pour une valeur** → `text(...).bindparams(...)`.
+  Un identifiant s'interpole depuis une constante du fichier, dit en commentaire.
+  🔒 `test_migrations.py` ; Ruff `S608` sur `api/app/`.
+- `start.sh` a `set -e` : une migration qui plante bloque le conteneur.
+- **Une migration reste compatible avec la version précédente du code** (#1757) : revenir
+  en arrière n'est qu'un changement d'image, sans restaurer la base. **Ajouter, puis
+  retirer — jamais dans la même version** : une colonne neuve est nullable ou porte un
+  `server_default` ; retirer, renommer, passer à `nullable=False` est un second temps,
+  annoncé dans `CONTRACTIONS` par le lot où le code cesse d'en dépendre. Pas de SQL brut
+  qui retire ou renomme. 🔒 `test_migrations_compatibles.py`.
 
 ### Dépendances d'auth
 | Dependency | Usage |
@@ -356,1175 +161,179 @@ Le détail des patterns est dans `.claude/skills/ux-patterns` et
 | `get_current_user` | Tout utilisateur connecté |
 | `require_cs_or_admin` | Création/modification de contenu |
 | `require_admin` | Suppression définitive, config système |
-| `require_operateur` | Supervision technique et base (`/admin/maintenance/sante`, `/admin/db/*`…) — l'**opérateur de la plateforme**, pas l'administrateur de la copropriété (#1750). Sur une instance **commune**, désigné par l'exploitant (`operateurs` de la déclaration), jamais par Admin › Utilisateurs : `auth/operateur.roles_effectifs` |
+| `require_operateur` | Supervision technique et base (`/admin/maintenance/sante`, `/admin/db/*`…) — l'opérateur de la plateforme, pas l'administrateur de la copropriété (#1750). Sur une instance commune, désigné par l'exploitant (`operateurs` de la déclaration) : `auth/operateur.roles_effectifs` |
 | `require_proprietaire` | Fonctions propriétaires |
 | `require_questions_reglement` | Questions au règlement : `require_proprietaire`, puis la case de l'admin qui ouvre l'usage aux copropriétaires (le CS passe toujours) |
 
-Ces six-là **refusent** (elles lèvent un 401 ou un 403). La délégation n'en
-a pas : elle est en **lecture seule** depuis le 02/10/2026 (#1534) — l'aidant
-lit ce que lit la personne aidée, par `utils/delegations_actives`.
-`get_acting_user`, qui figurait ici (« Délégation, header `X-Acting-As` »),
-n'avait **jamais** été prise par une route : l'aidant écrivait sous sa propre
-identité pendant que l'écran disait « Vous agissez pour ».
-🔒 `test_autorisation.py` refuse une dépendance qu'aucune route ne prend ;
-`npm run lint:en-tetes-lus`, un en-tête posé par le front qu'aucune route ne lit. À côté vivent les **prédicats**,
-qui *disent* sans refuser — et qui s'appellent, jamais ne se redérivent :
+Ces six-là refusent (401 ou 403). La délégation n'en a pas : elle est en **lecture seule**
+(#1534) — l'aidant lit ce que lit la personne aidée, par `utils/delegations_actives`.
+🔒 `test_autorisation.py` refuse une dépendance qu'aucune route ne prend. Les
+**prédicats** disent sans refuser ; ils s'appellent, jamais ne se redérivent :
 
 | Prédicat | La question |
 |---|---|
-| `est_moderateur(user)` | conseil syndical **ou** admin — « qui modère » |
-| `est_rattache_au_lot(user, lot_id, comme=…)` | « ce lot est le mien » (lien **actif** exigé) ; `comme` en restreint la nature — donner à bail exige un lien copropriétaire (#1535) |
-| `peut_commenter` / `peut_editer` | l'auteur, le « saisi pour », l'admin (+ le CS pour commenter) ; une **actualité** : le CS et son auteur — l'arrivant corrige son annonce, sans décider qui la lit (#1091) |
+| `est_moderateur(user)` | conseil syndical **ou** admin — « qui modère » (🔒 `test_moderateur_source_unique.py` refuse `has_role(conseil_syndical, admin)` en ligne) |
+| `est_rattache_au_lot(user, lot_id, comme=…)` | « ce lot est le mien » (lien actif exigé) ; `comme` en restreint la nature — donner à bail exige un lien copropriétaire (#1535) |
+| `peut_commenter` / `peut_editer` | l'auteur, le « saisi pour », l'admin (+ le CS pour commenter) ; une actualité : le CS et son auteur (#1091) |
 
-Et les règles d'**appartenance** — « cet objet est-il le mien ? » — vivent dans
-`auth/appartenance.py`, **jamais chez un routeur** : elles ne sont pas des
-`Depends`, donc `test_autorisation.py` ne les voyait pas (#1028).
+Les règles d'**appartenance** — « cet objet est-il le mien ? » — vivent dans
+`auth/appartenance.py`, jamais chez un routeur ; elles ne sont pas fondues en une
+fonction, et c'est voulu (`security-audit` §11). 🔒 `test_appartenance_source_unique.py`.
 
-⚠️ Elles ne sont **pas** fondues en une fonction, et c'est mesuré : le bail d'un
-bailleur refuse en **403** et admet le CS ; l'accès d'un porteur refuse en **404**
-et ne l'admet pas ; l'aidant d'une délégation refuse en 403 sans l'admettre non
-plus. Trois combinaisons pour trois règles — les réunir demanderait quatre
-paramètres de variation. Ce qu'elles gagnent est un **lieu** : côte à côte, on
-voit ce qui diverge et pourquoi. 🔒 `test_appartenance_source_unique.py`.
-
-🔴 **Une route qui reçoit un `lot_id` (chemin, requête, formulaire ou corps) pose
-la question** — `est_rattache_au_lot` ou `exiger_lot_du_bailleur` —, ou se réserve
-au CS/admin, ou se déclare dans `ROUTES_SANS_QUESTION` avec sa raison. Un écran
-qui ne propose que « mes lots » n'est pas un refus : `creer-multi` laissait tout
-propriétaire poser un bail sur le lot d'un voisin, et en porter les badges
-(#1535). 🔒 `test_appartenance_lot_source_unique.py`.
-
-🔒 Écrire `has_role(conseil_syndical, admin)` en ligne est refusé par
-`api/tests/test_moderateur_source_unique.py`. Il l'était **vingt-six fois** avant le
-20/09/2026 — dont trois dans `deps.py` lui-même —, parce que le prédicat existait
-sous le nom `peut_commander` : un nom qui décrivait **un geste** (fixer les champs de
-commandement d'un ticket) n'est appelé que par ce geste, et les vingt-cinq autres
-points d'usage n'ont jamais vu qu'ils posaient la même question (#1028).
-
-🔴 **Une liste qui FILTRE appelle le prédicat du geste qui REFUSE** — jamais sa
-copie. Une règle qui rend `False` (visibilité) ou fait `continue` (une liste) ne
-lève rien, et les contrôles qui reconnaissaient une règle à sa **levée** ou à son
-**nom** ne la voyaient pas : la liste des transferts recopiait
-`exiger_auteur_du_versement` (→ `peut_defaire_le_versement`), celle des
-catégories de documents le profil d'accès de `document_visible`
-(→ `visibility.profil_admet`), et `document_visible` jugeait `ul.actif` à côté
-d'`est_rattache_au_lot` (#1551). Les trois contrôles lisent désormais le
-**contenu** sur l'AST : `roles_autorises` lu hors de `profil_admet`
-(`test_autorisation.py`), un élément de `user_lots` jugé sur `actif` hors
-d'`est_rattache_au_lot` (`test_appartenance_lot_source_unique.py`), un champ que
-`auth/appartenance.py` compare à un utilisateur recomparé ailleurs
-(`test_appartenance_source_unique.py` — les champs sont **lus** dans le module,
-une règle neuve étend le contrôle d'elle-même).
-
-### Documents imprimables (PDF)
-- Thème commun : `app/utils/pdf_theme.py` — logo, palette de la charte, data-URI (image/QR), `html_to_pdf()`.
-  **Ne jamais** redéfinir une palette, un logo ou un moteur PDF ailleurs.
-- Le HTML doit être **autonome** : CSS dans `<style>`, images en data-URI (rendu hors requête HTTP).
-  Le moteur n'ouvre **que** le data-URI (`pdf_rendu.PROTOCOLES_ADMIS`, #1908) : une image `http(s)` ou
-  `file://` est refusée, jamais récupérée par le serveur. 🔒 `test_pdf_hors_reseau.py`.
-- Format de page via `@page { size: A4|A5 }`. Pas d'emoji dans les affiches — logo SVG et aplats de couleur.
-- Documents existants : fiche arrivant (`fiche_arrivant.py`), annonce de hall (`annonce_hall.py`),
-  manuel utilisateur (`manuel_pdf.py`).
-- 🔴 **Le rendu s'exécute hors du process de l'API** (`app/utils/pdf_rendu.py`, 16/09/2026),
-  dans un enfant `spawn` — **jamais `fork`**, qui hériterait des connexions à la base
-  ouvertes par l'API. Un WeasyPrint qui plante ou épuise la mémoire
-  du RPi n'emporte donc plus l'API. Coût assumé : +1,5 à 2 s par document.
-  `api/tests/test_weasyprint_appel_unique.py` refuse tout appel au moteur ailleurs que
-  dans ce module — c'est ce qui empêche le rendu de retomber dans le process, en silence.
-  Il gardait déjà cette porte pour une **autre** raison (la dérogation de sécurité
-  GHSA-jf6q-chmf-3h3v) : ne pas en écrire un second, c'est la même porte.
-  `api/tests/test_pdf_hors_process.py` vérifie, lui, que l'enfant est bien `spawn`.
-  La mécanique de l'enfant (délai, mort détectée, plafond de mémoire) vit dans
-  `app/utils/process_isole.py`, partagée avec les images (#2396) — jamais recopiée.
-
-### Destinataires CS
-
-`app/utils/destinataires.py` est la source unique, et elle porte **deux règles
-distinctes** — les confondre envoie le bon message aux mauvaises personnes :
-
-| Ce qu'on vise | Fonction | Employée par |
-|---|---|---|
-| le CS **concerné par un périmètre** | `membres_cs_notifiables(session, batiment_ids)` (+ `batiments_du_perimetre()`) | nouvel arrivant, annonces de hall |
-| le CS **par le rôle**, sans périmètre | `membres_cs_avec_email(session)` | publications, sondages, calendrier, tickets |
-| le **syndic principal** | `syndic_principal(session)` | ci-dessous, fiche copropriété, arrivants |
-| le **gestionnaire du site** — un administrateur, ou personne (#1505) | `site_manager_user_id(session)` | ce qui renvoie à `/admin` : comptes, alertes, bogues |
-| « **cette personne gère-t-elle le site ?** » — le désigné, sinon tout administrateur | `est_gestionnaire_du_site(session, user)` | répondre aux avis, les retenir et les exporter (#2075) |
-| **syndic puis CS, dédoublonnés** — qui reçoit un e-mail interne | `destinataires_syndic_cs(session, syndic=…, cs=…)` | les quatre entités qui cochent « envoyer au syndic / au CS » |
-| **gestionnaire du site puis CS, dédoublonnés** | `gestionnaire_puis_cs(session)` | la synthèse d'une affaire close à valider (#1643) |
-
-🔴 La dernière ligne a existé en **quatre exemplaires identiques** (tickets,
-calendrier, publications, sondages) jusqu'au 31/08/2026 — et celui des tickets
-affirmait, en toutes lettres, être *« le seul endroit où cette règle s'écrit »*.
-Les trois autres n'avaient aucun commentaire : le seul fichier qui parlait du
-sujet disait que le problème n'existait pas.
-
-🔒 `api/tests/test_destinataires_source_unique.py` refuse une cinquième copie. Il
-laisse passer les notifications **in-app**, qui visent « CS **ou** admin » et
-rendent des `Utilisateur` — autre décision, autre destinataire.
-
-### Prévenir le groupe de la résidence
-
-On **diffuse sur le canal de la résidence**, on n'« envoie pas un WhatsApp » :
-`utils/diffusion` — `config_diffusion(session)` (la configuration du canal, ou
-`None` s'il est éteint) puis `diffuser(background_tasks, config, titre, contenu,
-…)`. Le registre `CANAUX` n'a qu'un canal, WhatsApp, dont le bridge est
-l'adaptateur ; les clés `whatsapp_*` et la table `whatsapp_log` gardent leur nom
-jusqu'au second (#1060). 🔒 `test_diffusion_canal.py` refuse qu'un appelant
-importe les gestes du transport.
-
-### Couper ou rétablir un service
-
-« Ce service est-il activé ? » se demande à `utils/services` —
-`service_actif(cfg, SERVICE_…)`, et `cle_actif(SERVICE_…)` pour nommer la clé —,
-jamais par une lecture de `llm_actif`, `whatsapp_enabled` ou `imap_enabled` :
-elles avaient trois règles, dont une plus large (#1718). Le registre `SERVICES`
-est la seule liste ; l'onglet **Admin › Services** s'en déduit
-(`GET /config/services`). Un service neuf s'y déclare, avec ce qu'on perd en le
-coupant. 🔴 **Les courriels de sécurité ne sont pas un service**
-(`COURRIELS_DE_SECURITE`) : le SMTP y est une infrastructure, sans interrupteur.
-🔒 `test_services_registre.py`, `test_courriels_securite_hors_service.py`.
-Ni la case **Actif** d'un modèle d'e-mail : un modèle `desactivable=False` du seed
-(`seed.emails.NON_DESACTIVABLES`, lu dans le code, jamais dans la colonne) part
-même décoché, et le `PATCH` refuse de le décocher (#2054).
-🔒 `test_modeles_non_desactivables.py`.
-
-### Sécurité
-- JWT HS256 en cookies `httponly=True`, `secure=settings.cookie_secure`, `samesite="strict"`
-- CORS : allowlist explicite, jamais `["*"]` avec `credentials=True`
-- Rate limiting slowapi sur `/auth/*`
-- **Un réglage ne s'écrit par `PUT /config` que s'il est DÉCLARÉ** dans
-  `utils/reglages` (par onglet, familles lues sur leurs registres) ; une clé
-  inconnue, réservée au serveur (`llm_<usage>_reference`) ou qui a sa route
-  dédiée est refusée, et la requête n'écrit rien (#2055). Une clé neuve d'un
-  écran s'y ajoute. **Une clé n'appartient qu'à UN onglet, et un bouton
-  n'enregistre que son onglet** (#2057) : le paramétrage du site s'écrit section
-  par section (`configSite.ECRIVAINS`). Le nom de la résidence n'a qu'une source,
-  `site_nom`, saisie dans Copropriété › Identité (#2056). 🔒
-  `test_reglages_liste_blanche.py` lit aussi les charges du front : une clé non
-  déclarée, ou une charge qui écrit deux onglets, échoue en CI.
-  **Qui règle quoi** se lit dans `docs/carte-reglages.md`, GÉNÉRÉE par
-  `python scripts/ci/carte_reglages.py --ecrire` depuis `utils/reglages_carte` (la
-  notion, son accès, sa route) et les registres — jamais éditée. Un réglage neuf
-  s'y déclare ; 🔒 `test_carte_reglages.py` échoue si le document diffère, si l'accès
-  déclaré n'est pas la dépendance que la route prend (#2061 : la sauvegarde se
-  montrait à l'opérateur et la route acceptait tout administrateur), ou si une
-  variable de `Settings` n'a pas de thème.
-  **Un réglage écrivable est LU** : 🔒 `test_reglages_lus.py` refuse une clé de la liste
-  blanche que nul module de l'API ne nomme (#2059 : « Nom du canal » était écrit par
-  l'onglet et lu par personne ; le journal des envois le lit désormais).
-- **Un jeton se stocke par son empreinte, jamais en clair** — rafraîchissement,
-  mot de passe oublié, vérification d'adresse : `auth/empreinte_jeton.empreinte`
-  (HMAC avec `SECRET_KEY`) à l'écriture ET à la recherche ; le brut ne vit que
-  dans le cookie ou le lien. Une copie de la base donnait des jetons
-  utilisables (#1389). Changer `SECRET_KEY` ferme donc toutes les sessions et
-  invalide les liens en attente — voulu. 🔒 `test_jetons_empreinte.py`.
-- **« Le compte de cette adresse » : une seule porte.** `auth/adresse_compte` —
-  `compte_par_adresse` (insensible à la casse et aux espaces, des deux côtés) et
-  `normaliser_adresse`, la forme sous laquelle une adresse s'écrit ET se cherche.
-  Deux écritures divergeaient sur la casse : un compte à majuscule se connectait
-  mais ne recevait ni lien de vérification ni mot de passe oublié (#1550).
-  🔒 `test_adresse_compte_source_unique.py` refuse une comparaison sur
-  `Utilisateur.email` ou une normalisation d'adresse recopiée.
-- **Changer l'adresse d'un compte est une DEMANDE, jamais une écriture** —
-  `utils/verification_adresse.demander_changement_adresse`, pour le profil comme
-  pour l'administrateur : mot de passe de **qui agit**, lien à la nouvelle
-  adresse (le jeton de l'inscription, qui porte alors `nouvelle_adresse`), avis
-  à l'ancienne, qui reste celle du compte jusqu'au clic, journal. Une session
-  volée suffisait à détourner un compte (#1549). 🔒 `test_changement_adresse.py`
-  refuse aussi `x.email = …` hors de la confirmation du lien.
-- **Journal de sécurité : une seule porte.** Un geste sensible — connexion
-  refusée, mot de passe changé ou réinitialisé, rôle ajouté ou retiré,
-  bannissement, jeton de rafraîchissement rejoué, changement d'adresse demandé
-  ou confirmé ; la liste fait foi dans `GESTES_SENSIBLES` — appelle `utils/journal_securite.journaliser_securite`, et
-  **aucun** n'écrit dans un `logger` local. Rien n'était journalisé avant le
-  20/09/2026 : un compte compromis ou une élévation de rôle ne laissait aucune
-  trace exploitable (#1040). Depuis #1548, le **cycle de vie d'un compte** aussi :
-  validé ou refusé, désactivé ou réactivé, supprimé, et une délégation créée,
-  acceptée ou révoquée. Le geste suivant n'attend pas un audit : 🔒 `test_journal_securite.py`
-  confronte `GESTES_SENSIBLES` à ce que les routeurs **écrivent** (décision sur
-  un compte, rôles, effacement, délégation) et refuse un code absent de `_NIVEAUX`.
-  🔴 **Jamais de donnée personnelle dans une ligne de journal** — un identifiant,
-  jamais une adresse, un mot de passe ou un jeton, même tronqué. Le défaut
-  inverse existe dans ce dépôt (#777, adresses journalisées en clair), et
-  `test_journal_securite.py` le refuse **chez la fonction et chez ses appelants**.
-  ⚠️ `WARNING`, jamais `ERROR` : le point 6 du pré-check compte les
-  `ERROR`/`CRITICAL` (motif `MOTIF_ERREURS_API`), et une faute de frappe sur un
-  mot de passe bloquerait alors la MEP. Cette ligne nommait aussi
-  `check-reliability.sh`, qui ne compte rien de tel (23/09/2026).
-- **Le HTML d'un utilisateur, côté serveur : une seule porte** (#2150) —
-  `utils/html_sur` (`nh3`, liste blanche de `#lib/sanitize.ts`). Le corps d'un
-  courriel **s'échappe** ; un champ riche y entre par `html_riche(…)` au contexte
-  ou par `| safe`, redéfini pour assainir. Un assainissement « côté front » n'est
-  pas une règle : l'API s'appelle sans l'écran. 🔒 `test_html_sur.py` rend chaque
-  modèle avec une charge hostile dans chaque variable, et refuse `Markup(x)` hors
-  de la porte.
-- **Le texte d'un courriel reçu, lu par le modèle : une seule porte** (#2369) —
-  `utils/ia_courriel.lire_un_courriel` le cadre dans l'invite et ajoute après le
-  prompt réglé une consigne de non-obéissance que l'administration ne retire pas ;
-  sa sortie se juge par `sortie_conforme` (aucun mot absent du courriel, aucune
-  marque du cadre, pas plus long), sinon le texte nettoyé sans IA entre. Elle ne
-  rend que du texte : ni envoi, ni diffusion, ni statut ne s'y décident. Un usage
-  neuf qui lit un courriel s'ajoute à `USAGES_QUI_LISENT_UN_COURRIEL` ; un cas
-  piégé neuf, à `ia_courriel_corpus.CORPUS`. 🔒 `test_ia_courriel.py`. Chaque nuit à 05:40,
-  le **canari** (`utils/canari_ia`) fait passer un cas du corpus par la porte même de la
-  relève (`reponse_courriel.lire_et_juger`) : le contrôle de 06:00 dit le modèle qui obéit,
-  la porte percée, ou INCONNU sans mesure récente. 🔒 `test_canari_ia.py`.
-- **Les leurres de l'application : un seul registre** (#2365) — `utils/leurres`
-  (`ROUTES_LEURRES`, `EVENEMENTS_LEURRES`) ; leurs VALEURS (`LEURRE_ADRESSE`,
-  `LEURRE_CLE_MAINTENANCE`) ne vivent que dans le `.env` du nœud, jamais dans ce
-  dépôt public. Une connexion sur le faux compte ou la fausse clé de maintenance
-  rend le même refus qu'une erreur ordinaire et journalise `connexion_leurre` /
-  `cle_maintenance_leurre`, que S6 fait FAIL ; Caddy sert un faux fichier sur les
-  routes leurres, dont la LECTURE se compte sans faire une brèche. 🔒 `test_leurres.py`
-  (le `Caddyfile`, compose et `lib-audit-acces.sh` confrontés au registre).
-- **La clé du bridge ne part que vers le bridge** (#2151) : `whatsapp_api_url` se
-  lit par `whatsapp.adresse_du_bridge` (service Compose ou conteneur, un port, rien
-  d'autre), vérifiée à l'écriture ET à chaque usage. 🔒 `test_adresse_bridge.py`.
-- **Un conteneur de l'application est DURCI** (#2368) : `<<: *conteneur_durci`
-  dans `docker-compose.yml` — aucune capacité hors `cap_add`, chacune déclarée avec
-  sa raison dans le compose ET dans `CONTENEURS_DURCIS` (`lib-audit-conteneurs.sh`),
-  `no-new-privileges`, racine en lecture seule (on n'écrit que dans un volume ou un
-  `tmpfs`). Un service neuf s'y range, ou se déclare dans `CONTENEURS_NON_DURCIS`
-  avec son ticket (vide depuis #2429). PostgreSQL tourne sous `postgres` (`user:`),
-  SANS capacité : sa configuration ne prend effet qu'à la recréation de la base
-  (bascule de nuit, reconstruction), chaque chemin éprouvé sur le banc du standby
-  avant de la changer. Caddy sert sous `caddy` (uid 10002, `USER` de l'image),
-  SANS capacité, :80 par le sysctl de son espace réseau, sur des volumes NEUFS nés
-  à son compte (`caddy_donnees`, `caddy_configuration`, `caddy_journal`, #2430) :
-  rendre à `caddy` les volumes écrits par root casserait le retour à l'image
-  d'avant ; ceux-là restent sur le disque pour lui. Une commande lancée dans l'API prend
-  `-u app` (`docker compose exec -u app api python …`), un `run --entrypoint` aussi —
-  il saute la descente de `start.sh` : son root n'écrit ni ne supprime dans les volumes
-  (démo hors service le 05/11/2026, #2546) ; celle qui écrit chez qui lance le script
-  prend son compte (`-u "$(id -u):$(id -g)"`). 🔒 autotest de S4 (`--selftest`, compose
-  ⇄ liste, dans les deux sens) et `test_conteneurs_non_root.py` (`DESCENTE`,
-  `EXCEPTIONS_COMPTE`).
-- **Téléversement : une seule porte.** Un fichier reçu s'écrit sur disque par
-  `utils/fichiers.enregistrer_fichier_recu` **et nulle part ailleurs** ; les
-  règles — liste blanche de types, plafond de taille, cohérence de la signature —
-  vivent dans `FAMILLES` (image · document · document_prive · tableur). Un
-  routeur **nomme une famille**, il ne redéfinit pas ce qu'il accepte ; s'il en
-  reçoit deux, `famille_du_fichier` la choisit. Un type **indéterminé** (vide,
-  `application/octet-stream` : Windows n'en connaît pas pour `.heic`) se déduit
-  de l'extension dans la famille, puis la signature tranche (`type_annonce`,
-  appliquée par la porte, #2389). 🔒 `test_televersement_type_indetermine.py`.
-  🔒 `test_televersement_source_unique.py` refuse une écriture ailleurs (le PDF
-  d'affiche, qui est **produit** et non reçu, y est déclaré), une liste MIME ou
-  un plafond redéclaré dans un routeur, et une famille qui oublierait l'une des
-  trois règles. `test_signature_fichiers.py` vérifie que **chaque** point de
-  réception appelle la règle — les trois imports de tableur y ont été ajoutés,
-  ils n'avaient aucun contrôle. Un fichier reçu se **lit** par `lire_fichier_recu`
-  (au plus le plafond de sa famille + 1 octet, #2164), et **chaque famille a un
-  appelant** — `document_prive` n'en avait aucun, et le contrôle des trois règles
-  restait vert (#2156). Une pièce jointe ne cite que `photos.DOSSIERS_DES_PIECES_JOINTES`,
-  et la conservation ne retire pas un fichier qu'un autre objet cite (#2157).
-  Le nom stocké passe par `nom_stocke` : préfixe UUID, radical assaini, et
-  **extension dérivée du type**, jamais du nom fourni — `/uploads/*` est servi
-  en statique et Caddy pose le `Content-Type` d'après l'extension sur disque.
-- **Aucune image ne se décode dans le process de l'API** (#2396) : Pillow et ses
-  bibliothèques C (libtiff, libheif…) ne vivent que dans `utils/images_moteur`,
-  exécuté dans un enfant `spawn` par `utils/process_isole` (délai, plafond de
-  mémoire) ; la porte est `utils/images`, qui NOMME le moteur sans l'importer. Un
-  fichier piégé ne coûte qu'une image illisible. La relève des courriels n'ouvre
-  aucune image avant d'avoir autorisé l'expéditeur (`courriel_pieces_jointes.retenir`).
-  🔒 `test_images_hors_process.py`, `test_courriel_pieces_jointes.py`.
-- **Un fichier servi (`/uploads/*`) se lit par son PORTEUR** (#2154) :
-  `utils/visibility/fichiers.exiger_fichier_lisible`, appelée par `/auth/verifier-acces`
-  (le `forward_auth` de Caddy) et par la route de l'installation commune. Le fichier
-  se lit si l'un des objets qui le citent (`PORTEURS`) se lit, par SON prédicat ;
-  sans porteur, par son auteur seul (`FichierRecu`, noté par `enregistrer_fichier_recu`) ;
-  avatars, résidence et logo par toute session (`TOUTE_SESSION`). Une colonne qui cite
-  un fichier se nomme dans `photos.COLONNES_DE_FICHIERS` et a son porteur.
-  🔒 `test_acces_fichiers_porteur.py`.
-- **Un fichier se situe par `utils/stockage`, et nulle part ailleurs** (#1748) :
-  `stockage()` rend le stockage de la copropriété servie — `chemin(clé)`,
-  `fichier_de_url("/uploads/…")`, `url(clé)` ; toute clé est bornée sous la
-  racine. Le fichier d'une **ligne** (document, rapport, affiche) se lit par
-  `cle_de(ligne)`, `fichier_de(ligne)`, `supprimer_de(ligne)` et s'écrit par
-  `**colonnes(clé)` : la ligne garde sa CLÉ (`fichier_cle`, `pdf_cle`), jamais
-  un chemin à relire (#1816 ; le chemin absolu ne sert plus qu'à la version
-  précédente). 🔒 `test_cle_des_fichiers.py`. La
-  racine (`Settings.uploads_dir`) ne se lit que par le contexte ; elle était
-  écrite six fois, puis traduite en `"/app" + url` à trois endroits — un fichier
-  posé hors du volume n'est ni répliqué par `bascule.sh`, ni sauvegardé par
-  `backup.py`. L'écriture du stockage n'est appelée que par `enregistrer_fichier_recu`
-  et les fichiers PRODUITS déclarés (`ECRIVAINS_DU_STOCKAGE`). Le service reste à
-  Caddy (arbitrage du 10/10/2026). 🔒 `test_stockage_source_unique.py`,
-  `test_televersement_source_unique.py`.
-- **Le dépôt est PUBLIC : aucun nom de personne réelle** — ni dans un test, un
-  commentaire, un message de commit, ni dans un ticket. Un nom inventé de même
-  forme (#1493). 🔒 `test_identites_fictives.py` (liste blanche) lit le code,
-  les tests, les **migrations** et les **documents** — ces deux-là depuis
-  #1544, une docstring de migration nommait deux employées du syndic ; ce qu'il
-  ne voit pas : `.claude/skills/security-audit` §8.
-  **Exception assumée** (arbitrage du 06/10/2026, #1581) : l'identifiant SSH
-  d'exploitation et les IP du LAN restent dans les scripts, crontabs et documents —
-  jamais dans l'application ; 🔒 `test_hygiene_depot.py` l'enferme. Même skill, §8.
+- **Une route qui reçoit un `lot_id`** (chemin, requête, formulaire ou corps) pose la
+  question — `est_rattache_au_lot` ou `exiger_lot_du_bailleur` —, ou se réserve au
+  CS/admin, ou se déclare dans `ROUTES_SANS_QUESTION` avec sa raison (#1535).
+  🔒 `test_appartenance_lot_source_unique.py`.
+- **Une liste qui FILTRE appelle le prédicat du geste qui REFUSE**, jamais sa copie : une
+  règle qui rend `False` ou fait `continue` ne lève rien (#1551). Les trois contrôles
+  ci-dessus lisent le contenu sur l'AST (`security-audit` §3 bis).
 
 ---
 
-## Checklist avant commit
+## Sécurité — les portes uniques
 
-### Frontend
-- [ ] Import d'un module de `src/lib` : `#lib/<fichier>.<extension>`, extension obligatoire
-      (un dossier : `#lib/<dossier>/index.ts`) — le champ `imports` de `front/package.json` le
-      résout, l'ancien alias SvelteKit est retiré (#2278, `npm run lint:alias-lib`)
-- [ ] Pattern existant réutilisé (pas de variante ad hoc) — *non mesurable : aucun
-      garde-fou ne le tient, c'est la relecture qui le porte*
-- [ ] Méta toujours visible en mode collapsé — tenue par `EnteteCarte`, qui porte
-      les tags sur la carte repliée (`npm run lint:entete-carte` exige qu'une
-      carte passe par lui)
-- [ ] Carte de liste : `<CarteListe>` — conteneur, gouttière (`quand`, `classe`), geste
-      (`onDeplier`), états (`expanded`, `urgent`, `archive`) ; jamais un `.carte-liste`
-      écrit à la main ni un `<Gouttiere>` rendu par la carte (`npm run lint:carte-liste`,
-      10/10/2026 : quatorze copies, et cinq allures d'archive)
-- [ ] Corps déplié d'une carte : `class="carte-corps …"` — c'est ce qui le fait
-      entrer (fondu 200 ms) ; sans elle il apparaît sec, sans un mot. 🔒 `npm run
-      lint:entete-carte` l'exige de tout fichier qui rend `.carte-liste` (#1579). Un survol
-      qui ne sert qu'à la souris vit sous `@media (hover: hover) and (pointer:
-      fine)` — au doigt, `:hover` reste collé (`ux-patterns` §17)
-- [ ] Dernière ligne d'une carte d'affaire, d'actualité ou du fil : `PastillesAffaire`,
-      l'auteur par `AuteurCarte` (« ✍️ Nom ») — jamais recomposée ; ordre et
-      exceptions dans `ux-patterns` §3 (`npm run lint:pastilles`)
-- [ ] `.clamp-3` sur l'aperçu d'une carte (`.clamp-5` seulement hors carte) ;
-      aucune troncature écrite hors de `normes.css` (`npm run lint:clamp`)
-- [ ] un assainisseur de `#lib/sanitize` sur tout `{@html}` — jamais un helper
-      local, même correct (`npm run lint:html` le refuse)
-- [ ] Accessibilité : `role`, `tabindex`, `aria-label`, `on:keydown`
-- [ ] Droits : jamais recomposés dans un écran — `$estModerateur` (il **inclut** admin ;
-      il LIT `UserRead.est_moderateur`, servi par `auth/deps.est_moderateur` — l'app
-      iOS lit le même champ, #2633), `$isProprioOuCS`, `aRole(u, …)`, ou le geste
-      SERVI avec l'objet (`peut_*` ; le crayon d'une affaire : `peut_corriger`, #2633).
-      Ils l'étaient
-      **22 fois** avant #1041 (`npm run lint:droits` le refuse)
-- [ ] Un geste d'écriture n'est offert qu'aux rôles que sa route accepte : le prédicat de
-      l'écran ne peut pas être plus large que la dépendance de la route (la fiche de la
-      résidence offrait le crayon au conseil, le `PATCH` exigeait l'administrateur : 403,
-      #2096). Un geste neuf se déclare dans `GESTES` de 🔒
-      `test_ecran_offre_ce_que_la_route_permet.py`
-- [ ] Ce que l'écran MONTRE est ce qui PART : une case ou une section rendue a son
-      champ dans la charge, et un droit d'écran (`peutDiffuser`, `peutCibler`…) a un
-      défaut **fermé** — « Répondre » montrait Périmètre, Destinataires et Diffusion
-      qu'aucune route n'emportait (#2142). Une case de formulaire neuve se déclare
-      dans 🔒 `e2e/case-montree-charge-envoyee.spec.ts`, qui lit la requête
-- [ ] Onglet réservé à un rôle : `reserve:` **sur l'onglet** dans `pages.ts`, jamais
-      un masquage écrit dans la page — `BarreOnglets` masque ET refuse la route
-      directe (`npm run lint:onglets-reserves`)
-- [ ] Nom affiché d'un objet « Saisi pour » : `nomProprietaire` (`#lib/saisi-pour`),
-      **jamais** `objet.auteur_nom` — c'est le rédacteur, et le « Saisi pour » s'y
-      substitue (12/09). La case de copie, elle, dit `nomCopie` : deux questions.
-      Il y en avait **13** avant #1104 (`npm run lint:nom-proprietaire` le refuse)
-- [ ] Section d'un formulaire : elle est déclarée dans `#lib/entites/<entité>`,
-      dans l'ordre de `SECTIONS_ORDRE` (`#lib/entites/types.ts`) — la liste ET
-      son compte se lisent là, jamais ici : « treize » y est resté écrit six
-      jours pour quatorze (#1541, `npm run lint:consignes`) — et son **pliage** suit la
-      règle *obligatoire → déplié · facultatif → plié*, ou porte son
-      `exceptionPliage` (`npm run lint:etats` refuse dans les deux sens). Un
-      composant qui **porte** une section au lieu de l'écrire dans la page la
-      **transmet** : sans prop `pliable`, la table a beau dire `pliee`, la
-      section s'ouvre — il y en avait **trois** (`npm run lint:pliage-transmis`).
-      Et l'**appelant** la passe, lue par `pliageDe` : jamais absente ni `pliable`
-      nu — la Suite d'une affaire ouvrait ce que l'Édition pliait (#1329)
-- [ ] Libellé qui NOMME un objet — bouton, titre de boîte, toast, confirmation :
-      le mot vient de `#lib/entites/<entité>` (`libelle`, `libelleNouveau`,
-      `libelleModifier`), **jamais** réécrit dans un écran. « Ticket » est un
-      nom de modèle (« Publication » l'était, jusqu'à sa suppression le
-      30/09/2026, #1177) ; l'écran dit « Affaire » et « Actualité ». Il y en avait **20** avant #1107 (`npm run lint:vocabulaire-ecran`)
-- [ ] Séparateur (— · →) entre deux éléments d'une phrase : `{SEPARATEUR.point|tiret|fleche}`
-      (`#lib/separateurs`) — sécable avant, insécable après : il ne finit jamais une
-      ligne. `{#if x}&nbsp;· …` le collait au mot d'avant (#2360, `npm run lint:espace-blocs`) ;
-      le texte courant aussi, `{a} · {b}` entre deux espaces sécables (#2362, sans exception
-      hors `<option>` et `<title>`, qui ne passent pas à la ligne)
-- [ ] Périmètre : masqué s'il est celui par défaut — le badge passe par
-      `BadgePerimetre`, qui le tait (`npm run lint:pictogrammes`)
-- [ ] Archiver (pas supprimer) sur la vue principale — 📦, jamais un 🗑️ intitulé
-      « Archiver » ; la corbeille ne s'offre qu'aux Archives, et ce qu'on range a
-      son écran (`api/tests/test_suppression_aux_archives.py` : affaires,
-      actualités, prestataires, contrats — une carte qui archive s'y ajoute) ;
-      le titre des archives vient d'une constante (`lint:archives`)
-- [ ] Champs requis : `<EtoileRequis vide={!champ} />` — jamais une astérisque
-      tapée. Elle est **collée** au libellé et **rouge tant que le champ est
-      vide** : c'est son état, pas une décoration (#1121, 22/09/2026). Une
-      **valeur par défaut active** le remplit — « Tous », « aucune
-      restriction » : étoile noire (27/09/2026, `e2e/etoile-valeur-defaut`) — un
-      GROUPE de champs aussi : `<LibelleGroupe titre="…" requis vide={…}>`,
-      jamais `titre="… *"` (#1329, 27/09/2026). Les
-      libellés de champ sont en MAJUSCULES par le style (`champs.css`), comme
-      les intitulés de section — jamais tapées (`npm run lint:champs`)
-- [ ] Valeur d'une énumération — statut, type, catégorie, rôle — rendue par son
-      LIBELLÉ, jamais brute, même derrière un repli `?? '—'` ni dans un champ composé
-      (`lot_type`, `type_lien`, `user_statut`, 06/11/2026) : Admin › Télémétrie
-      affichait « copropriétaire_résident » (05/11/2026). Le lien d'un compte à un lot :
-      `#lib/liens-lot`. Un champ qui porte déjà le
-      libellé servi par l'API se déclare dans `EXCEPTIONS` (`npm run lint:categorie-brute`)
-- [ ] Libellés et nommage en français — 🔒 les mots d'interface anglais sont refusés par
-      `npm run lint:vocabulaire-ecran` (`lib-mots-anglais.mjs`, #1579) ; *le reste de la langue
-      reste non mesurable : `lint:texte` et `lint:champs` ne la jugent pas*
-- [ ] Teinte choisie par donnée (type du fil, périmètre, étape de kanban, tuile
-      d'import) : `'var(--fil-rouge)'`, `--teinte-N`, `--kanban-…` — jamais un
-      `#rrggbb` dans un `.ts` ou le script d'un composant (`npm run
-      lint:couleurs-ts`, #2174 S2) ; la valeur vit dans `socle.css`
-- [ ] Couleur et taille de texte : `var(--color-…)`, `var(--fs-…)` (`socle.css`),
-      jamais une valeur en dur — `npm run lint:charte-valeurs` : couleurs à
-      **zéro** depuis le lot S1 du mode sombre (#2174 — une couleur neuve est un
-      jeton de `socle.css`, nommé par l'usage), tailles à **zéro** aussi depuis
-      #2313 (30/10/2026 — une taille prend le cran de ce que l'élément EST :
-      texte, titre, pictogramme, chiffre). Arbitré sur maquette le 27/09/2026 : une taille
-      hors échelle se range au cran **supérieur**, un état (danger, succès,
-      avertissement) prend son jeton et ses dérivés `-fond`, `-bordure`, et
-      `--color-warning` ne sert jamais au texte (`--color-warning-texte`). Ces
-      valeurs-là sont **refusées**, sans plafond (`ux-patterns` §18) — comme une
-      valeur **égale** à un jeton (`#fff`, `0.8rem`) : 85 étaient revenues (#1571)
-- [ ] Le thème sombre : un jeton de couleur neuf a sa valeur dans
-      `styles/palette-sombre.css` ou se déclare identique, avec sa raison ; aucun
-      écran n'écrit `prefers-color-scheme` ni `data-theme` — `npm run
-      lint:palette-sombre` (couverture, et paires texte/fond à l'AA dans les deux
-      thèmes, #2174 S3). Le contour d'un champ : `--color-border-champ` ; le texte
-      sur l'or : `--color-sur-accent` (`ux-patterns` §18). Un aperçu de support
-      imprimé ou envoyé (affiche, courriel) reste clair : `class="ilot-clair"`
-      (`npm run lint:ilots-clairs`, #2174 S4d). Le thème CHOISI (Automatique, Clair,
-      Sombre — cookie d'appareil `theme`, lu par le serveur qui pose l'attribut) ne
-      se décide qu'à `#lib/theme.ts`, et ne se choisit qu'au Profil (`ChoixTheme`,
-      #2174 S5, `e2e/bascule-theme.spec.ts`)
-- [ ] Un style s'écrit dans le `<style>` du composant ou dans `src/styles/`, jamais
-      en attribut `style="…"` — sauf une valeur tirée des données (`width:{pct}%`).
-      `npm run lint:styles-en-ligne` le refuse : plafond à **zéro** depuis le
-      08/10/2026 (#1571, 524 au départ). Une classe pèse moins qu'un attribut :
-      si une règle globale plus forte vise l'élément, qualifier le sélecteur
-- [ ] Bloc pliable (carte, section, année, `<details>`…) : **un seul déplié à la
-      fois**, par `#lib/accordeon` — jamais un `Set` d'ouverture. Exceptions
-      arbitrées : section modifiée, carte en correction (`npm run lint:accordeon`,
-      30/09/2026)
-- [ ] Rangée de pastilles qui FILTRE une liste : `compte={<liste affichée>.length}` —
-      le nombre se montre sur la pastille **retenue** seulement, jamais un par
-      entrée (maquette J, 10/10/2026 ; `ux-patterns` §5). `npm run lint:compte-filtres`
-- [ ] Champ de recherche : `<ChampRecherche dans="…">` — saisie blanche, loupe,
-      croix, et l'aide « Cherche dans : … » composée par lui ; jamais un
-      `<input type="search">` écrit dans un écran. La règle d'une liste reçue :
-      `contientTousLesMots` (`#lib/texte`), sans accents (`npm run lint:recherche`, #2308)
-- [ ] Attente d'un écran : `<EtatListe chargement />`, jamais un « Chargement… »
-      écrit à la main — il y en avait **23** avant #1045 (`npm run lint:chargement`)
-- [ ] En-tête de page : `<EntetePage>`, jamais `<div class="page-header">`
-      (`ux-patterns` §13)
-- [ ] En-tête d'un écran sans session (connexion, inscription, mot de passe, erreur) :
-      `<EnteteAuthentification sousTitre="…" />` — logo, nom de la résidence, phrase ;
-      jamais `auth-header` ni un émoji écrits dans la page (`npm run lint:entete-auth`, #2357)
-- [ ] Bouton d'action icône : `<IconeAction icone="…" />`, **au trait** — jamais un
-      émoji (✏️ 🗑️ 📦 ↩️…). La page Affaires est le standard du site depuis le
-      10/10/2026 (#1819) : une liste en cartes prend `Gouttiere` (date, puis ce qui
-      classe) et `ReglagesListe` (recherche en tête) — `ux-patterns` §3.
-      `npm run lint:actions-au-trait`
-- [ ] Bouton qui LANCE l'assistant IA : `<IconeIA {enCours} />` — ✨ au repos, ⏳ qui
-      clignote pendant l'appel —, le bouton portant `aria-busy={enCours}`. ✨ ne se
-      dit que de l'IA (`ux-patterns`, arbitrage n° 21 ; `npm run lint:geste-ia`)
-- [ ] Badge dont la teinte vient d'une TABLE (état, rôle, import…) : `<Badge teinte={…}>`,
-      jamais `class="badge {…}"` — une classe interpolée rend l'écran aveugle à
-      `lint:css-orphelin` (25 fichiers l'étaient, #1571). `npm run lint:badge`
-- [ ] Icône vérifiée dans `#lib/icones-svg.json` — un nom inconnu échoue en silence
-      (`npm run lint:icones` le refuse ; un relais d'icône s'appelle `icone`)
-- [ ] Tout champ libellé dans un `.field` — jamais une nomenclature locale
-      (`npm run lint:champs` ; il y en avait **six** avant #413) — **y compris**
-      le champ dont l'intitulé de section est le libellé, et une étoile dans un
-      `label.field` enveloppant se tient dans un `<span>` avec son texte (#1230)
+Le détail de chacune : `security-audit` §11.
 
-### Backend (nouveau endpoint)
-- [ ] Modèle dans le module de **son domaine** (`app/models/<domaine>.py`), importé
-      par `models/__init__.py` — jamais dans `core.py`
-- [ ] Schémas dans `schemas_<domaine>.py` s'ils sont partagés, à côté du routeur sinon
-- [ ] Migration `NNNN_slug.py`, numéro suivant le dernier de `alembic/versions/`
-- [ ] Routeur inclus dans `main.py` ou dans le `__init__.py` de son paquet —
-      `test_routeurs_montes.py` refuse un routeur que personne ne monte : ses URL
-      rendraient 404, et rien d'autre ne le dirait
-- [ ] ⚠️ Dans un paquet, les routes à segment **fixe** s'incluent AVANT celles à
-      paramètre (`/admin/imports/{id}` avant `/admin/{type}/{id}`) : FastAPI retient
-      la première qui correspond. Deux écrans d'import sont morts ainsi (#1151) ;
-      `test_routes_masquees.py` le tient pour `acces`
-- [ ] Lecture d'un objet par `ou_404`, pas `session.get` + 404
-- [ ] Client TypeScript ajouté dans le paquet `front/src/lib/api/` — dans le module de son domaine (`acces`, `patrimoine`, `communaute`…), jamais dans un `api.ts` ressuscité à la racine
-- [ ] …**y compris pour une adresse** — lien de téléchargement, `src` d'image : le
-      client la rend (`documents.downloadUrl`, `manuel.pdfUrl`), et aucune chaîne
-      `/api` ne s'écrit dans un écran (`npm run lint:client-api` ; il en manquait
-      cinq, qu'il ne voyait pas, avant #1578)
-- [ ] …et il **rend le type** de ce que le serveur renvoie, déclaré à côté de lui —
-      jamais `any` qu'un écran retype. Un type d'entité (champ `id`) déclaré dans un
-      écran est refusé (`npm run lint:types-locaux`, #1044 — dette soldée le 06/10/2026,
-      seuls les `id` qui ne sont pas des entités se déclarent, avec leur raison), et
-      **aucun `any` nulle part** : ESLint `no-explicit-any` en erreur sur tout le
-      front (`eslint.config.js` — le client à zéro en v2.105.0, #1572, le reste
-      le 08/10/2026, #1571). Typer sur les types du client, lire un champ dont le
-      nom est une donnée par `champDe` (`#lib/utils`)
-- [ ] `cd api && ruff format .` — la CI refuse un fichier non formaté depuis le
-      24/09/2026 (#1048 ; Ruff **épinglé** dans `ci.yml`, largeur 100, migrations
-      exclues par `api/ruff.toml`). ⚠️ Une ligne coupée emporte son `# noqa` sur
-      une autre ligne : rejouer le contrôle **tel que la CI le passe** —
-      `bash scripts/poste/rejouer-ci.sh lint-backend` —, jamais un `ruff check`
-      nu, qui juge autre chose que la CI (fixtures pytest et ré-exports de `core.py`
-      écartés exprès par `ci.yml`, #1603). Une comparaison SQLAlchemy
-      (`Model.actif == True`) garde `# noqa: E712` — jamais `is True`, qui vide
-      le filtre sans un mot
+- JWT HS256 en cookies `httponly=True`, `secure=settings.cookie_secure`,
+  `samesite="strict"` ; CORS en liste explicite, jamais `["*"]` avec `credentials=True` ;
+  limitation de débit (slowapi) sur `/auth/*`.
+- **Réglages** : `PUT /config` n'écrit qu'une clé déclarée dans `utils/reglages`, une clé
+  n'appartient qu'à un onglet, un réglage écrivable est lu ; qui règle quoi :
+  `docs/carte-reglages.md`, générée (🔒 `test_reglages_liste_blanche.py`,
+  `test_carte_reglages.py`, `test_reglages_lus.py`).
+- **Jetons** stockés par leur empreinte (`auth/empreinte_jeton.empreinte`), jamais en clair
+  (🔒 `test_jetons_empreinte.py`).
+- **Le compte d'une adresse** : `auth/adresse_compte` (🔒
+  `test_adresse_compte_source_unique.py`, qui refuse une comparaison sur `Utilisateur.email`). **Changer d'adresse est une demande** :
+  `utils/verification_adresse.demander_changement_adresse` (🔒 `test_changement_adresse.py`).
+- **Journal de sécurité** : `utils/journal_securite.journaliser_securite` pour tout geste de
+  `GESTES_SENSIBLES`, jamais un `logger` local ; **jamais de donnée personnelle dans une
+  ligne de journal** (un identifiant, jamais une adresse, un mot de passe ou un jeton) ;
+  niveau `WARNING`, jamais `ERROR` (🔒 `test_journal_securite.py`).
+- **HTML d'un utilisateur côté serveur** : `utils/html_sur` (🔒 `test_html_sur.py`).
+  **Courriel reçu lu par le modèle** : `utils/ia_courriel.lire_un_courriel`, qui ne rend
+  que du texte (🔒 `test_ia_courriel.py`, `test_canari_ia.py`).
+- **Leurres** : registre `utils/leurres`, valeurs dans le `.env` du nœud seulement
+  (🔒 `test_leurres.py`). **Clé du bridge** : vers `whatsapp.adresse_du_bridge` seulement
+  (🔒 `test_adresse_bridge.py`).
+- **Conteneurs durcis** : `<<: *conteneur_durci` dans `docker-compose.yml` ; une commande
+  dans l'API prend `-u app` (🔒 `test_conteneurs_non_root.py`, autotest de S4).
+- **Téléversement** : `utils/fichiers.enregistrer_fichier_recu` et nulle part ailleurs ; un
+  routeur nomme une famille de `FAMILLES` (🔒 `test_televersement_source_unique.py`,
+  `test_signature_fichiers.py`). **Aucune image décodée dans le process de l'API**
+  (`utils/images`, 🔒 `test_images_hors_process.py`). **Un fichier servi se lit par son
+  porteur** (`utils/visibility/fichiers.exiger_fichier_lisible`, 🔒
+  `test_acces_fichiers_porteur.py`). **Un fichier se situe par `utils/stockage`**
+  (🔒 `test_stockage_source_unique.py`).
+- **Le dépôt est PUBLIC : aucun nom de personne réelle** — ni test, ni commentaire, ni
+  commit, ni ticket ; un nom inventé de même forme (🔒 `test_identites_fictives.py`).
+  Exception assumée (#1581) : l'identifiant SSH d'exploitation et les IP du LAN restent dans
+  les scripts, crontabs et documents, jamais dans l'application (🔒
+  `test_hygiene_depot.py`, `security-audit` §8).
 
-### Documentation utilisateur — **deux** documents de même rang
-- [ ] `docs/manuel-utilisateur.html` — **comment on s'en sert** : mis à jour dans le
-      même commit dès qu'un écran, un libellé, un geste ou un parcours change
-- [ ] Synchronisé : `Copy-Item docs/manuel-utilisateur.html front/static/manuel-utilisateur.html`
-- [ ] `README.md` — **ce que le produit est** : mis à jour dès qu'un module, un écran
-      de premier niveau ou une capacité est **ajouté, retiré ou renommé**, que la pile
-      change, ou qu'un document du tableau `docs/` bouge
-- [ ] Un lot qui ne touche qu'un seul des deux, c'est possible — mais on **dit** lequel
-      et pourquoi, on ne l'omet pas en silence
+---
 
-> ⚠️ Le manuel ne se modifie **jamais** avec `sed -i` : il est versionné en CRLF, que
-> `sed` réécrit en LF (les dégâts mesurés : `standards/10-encodage-et-fichiers.md` §2). L'écrire en OCTETS, et
-> vérifier `git diff --stat`.
->
-> Le README était vérifié par personne alors que le point **0e** du pré-check le nomme
-> depuis toujours au même rang que le manuel : cette checklist-ci ne citait que le
-> manuel, et c'est la liste la plus courte qui a été suivie (11/08/2026, signalé par
-> l'utilisateur). Détail et déclencheurs : `.claude/skills/user-manual`.
+## Tests et CI — l'essentiel
 
-### Tests préventifs (CI : `api/tests/`, lancés à chaque PR)
-
-> 📖 `standards/05-tests-et-garde-fous.md` — pourquoi un défaut corrigé sans garde-fou
-> revient (trois récidives en deux mois ici), les quatre familles de garde-fous qui
-> marchent, et l'analyse statique quand le couplage entre deux fichiers est implicite.
-
-Garde-fous contre les classes d'erreurs récurrentes de l'historique GitHub :
-- **`test_email_templates.py`** — verrouille les variables Jinja2 de chaque template
-  (`EXPECTED_VARS`, déclaré dans `tests/aides_contrats_email.py`). Complète le **point 9** (réactif) côté template.
-  ⚠️ Si tu modifies les variables d'un template (`seed.EMAIL_TEMPLATES`), **mets à jour
-  `EXPECTED_VARS`** ET vérifie que le `send_email(code=...)` correspondant fournit ces
-  variables — sinon échec silencieux à l'envoi (cf. bug `'destinataire' is undefined`).
-- **`test_migrations.py`** — chaîne Alembic : head unique, base unique, révisions uniques
-  (attrape un `down_revision` erroné qui bloquerait `alembic upgrade head` au démarrage).
-- **Licences tierces** (#1542, #1543) — `scripts/ci/licences_tierces.py` (job
-  `test-backend`) juge chaque dépendance de `front/`, `whatsapp-bridge/` et `api/`
-  contre une liste blanche. Une licence hors liste s'ajoute en **exception nommée**
-  avec son motif dans `scripts/ci/licences_politique.py` — jamais en élargissant la
-  liste ; une exception qui ne sert plus fait échouer. Un paquet qui entre ou
-  change de licence : relire, puis `--ecrire` régénère `docs/licences-tierces.md`,
-  jamais tenu à la main. Un fichier ou un tracé **repris** d'un projet tiers se
-  déclare dans `CONTENUS_TIERS` et dans `REUSE.toml` — `contenus_tiers.py` (job
-  `lint-backend`) le vérifie : `reuse lint` dit qu'une licence est déclarée, pas
-  qu'elle est vraie. Ce que pip ne voit pas (#2389) — un paquet Debian qu'une image
-  ajoute, une roue qui EMBARQUE un binaire interdit (`pillow-heif` se lit BSD et
-  porte x265, GPLv2) — se déclare dans `BIBLIOTHEQUES_SYSTEME`,
-  `INTERDITS_DANS_LES_IMAGES` et `ROUES_A_COMPILER`, que `licences_image.py`
-  confronte aux Dockerfile ; l'image construite, elle, se juge à sa construction
-  (`api/scripts/verifier_heif.py`, amd64 et arm64).
-- **Le code de test ne se recopie pas non plus** (#1495) : la liste des aides et
-  de ce qu'elles remplacent se lit dans `MOTIFS` de
-  🔒 `test_aides_de_tests_source_unique.py` — balayage de `app/`, base en mémoire
-  (la fixture `session` vient du conftest), comptes, migrations, horloge, scripts
-  shell. Seuls `test_*.py`, `aides_*.py` et `conftest` vivent dans `tests/`
-  (`test_nommage_modules_de_tests.py`, `api/pytest.ini`). Une aide partagée vit dans un `tests/aides_*.py`, **jamais** dans un
-  fichier de tests qu'un autre importerait. Il y en avait 162 copies.
-- **Un contrôle front « une notion, une source »** — la forme d'une copie refusée
-  hors du fichier qui porte la notion — s'écrit sur `front/scripts/lib-source-unique.mjs`
-  (cas zéro, témoin qui doit servir, exceptions déclarées, commentaires blanchis) :
-  six contrôles en recopiaient le squelette, et l'un n'avait pas de cas zéro (#779).
-- 🔒 **Aucun état mutable de module de plus** (#1743, chantier multi-copropriétés) :
-  un conteneur de module modifié depuis une fonction, un `global`, un `@lru_cache`
-  fuiraient d'une copropriété à l'autre dans un même processus (spec §4.5).
-  `test_etat_module_par_copropriete.py` les relève sur l'AST ; un état neuf se range
-  en base, ou se déclare dans `DU_PROCESSUS` avec sa raison s'il ne porte aucune
-  donnée de copropriété. Un état de copropriété passe par `contexte.etat(nom)`,
-  la seule porte (`PAR_COPROPRIETE`) ; `A_INDEXER` est soldée depuis #1744.
-- 🐘 **La suite passe sur PostgreSQL, partout** (#1747, D4, check REQUIS) : chaque
-  test reçoit un schéma neuf sur le PostgreSQL que désigne `TESTS_BASE_URL`, retiré
-  à sa fin (`tests/aides_base`). En local, le PostgreSQL 17 du poste :
-  `TESTS_BASE_URL=postgresql+psycopg://…`.
-  **En parallèle, dans un ordre tiré au sort** (#2223) : `scripts/ci/mesure-postgresql.sh`
-  lance `pytest -n` (pytest-xdist, `--dist loadfile`) — workers : `PYTEST_WORKERS`, sinon
-  `workers_suite` (cœurs, `max_connections`, table de verrous, plafond) — et pytest-randomly, dont la
-  **graine** s'affiche et se rejoue (`PYTEST_GRAINE=<n>`). Chaque worker pose SON schéma
-  d'application (`tests/aides_processus` : il héritait de celui du maître, 545 erreurs),
-  et chaque **fichier** le trouve **neuf comme en production** — toutes les tables, aucune
-  ligne (`_base_du_processus_neuve`, `aides_purge.remettre_a_neuf`) : ce qu'un fichier y
-  laisse n'atteint plus le suivant — la dépendance d'ordre du 24/10/2026. Entre les tests
-  d'un MÊME fichier, l'ordre tiré au sort fait sortir ce qui reste. 🔒 Une `Session(moteur_de_test())` jamais
-  fermée, un patrimoine vidé à la main sont refusés (`test_aides_de_tests_source_unique.py`).
-  Le nom d'un schéma jetable porte son heure, son commentaire son **créateur** (pid et hôte),
-  et chaque connexion s'y nomme de lui (`application_name`) : la suite retire au démarrage
-  ceux dont le créateur est mort et ceux de plus de 6 h, jamais celui d'une connexion
-  ouverte — `dialecte.schemas_jetables_a_retirer` (#2399 ; 1 447 orphelins rendaient chaque
-  `create_all` 4,6 fois plus lent sur le poste). Une base injoignable s'écrit `SERVEUR_INJOIGNABLE` : sous
-  Windows, `127.0.0.1:1` attendait le délai du système (130 s pour un test).
-- **Ce qui s'écrit dans la langue du moteur vit dans `app/dialecte.py`** :
-  intégrité, compactage, format SQL d'une date (`dialecte.jour`, `dialecte.mois`),
-  base jetable — derrière un nom qui dit la question posée. Une base NEUVE reçoit le
-  schéma courant d'un coup, marqué à la tête (`utils/schema_initial`, appelé par
-  `start.sh`).
-- 🔒 `test_routeurs_nommes_par_un_test.py` : un routeur de `app/routers/` que
-  **aucun** fichier de `tests/` ne nomme est refusé (#1569).
-- 🔒 **Un module de l'API s'importe seul** (#2241) : `test_imports_sans_cycle.py`
-  relève les cycles d'imports de niveau module et importe chacun de leurs modules en
-  premier, dans un interpréteur neuf — la suite, qui a déjà tout chargé, ne les voit pas.
-  Un cycle se coupe par un import dans la fonction qui s'en sert.
-- 🔒 **Clones Python** (#1564) : `scripts/ci/clones_python.py` (job `lint-backend`,
-  jscpd épinglé) mesure les duplications exactes de `api/app` et échoue **dans les
-  deux sens** — un clone ajouté, ou un retiré sans baisser `PLAFOND_CLONES`. Les
-  six qui restent sont des déclarations que le langage force à répéter (blocs
-  d'imports, signatures), nommées dans l'en-tête du script.
-- 🔒 **Un arbre déjà jugé vert ne se rejoue pas** (#2632) : le job `arbre` saute un job
-  requis de `ci.yml` quand une exécution PRÉCÉDENTE le prouve, relue par l'API — même
-  fichier de workflow et même dépôt, job `success` réellement joué (pytest compris),
-  arbre de son commit RECALCULÉ égal à `HEAD^{tree}`, et pour une PR la base d'alors (lue
-  au journal `activity`) ancêtre de la tête. L'artefact `arbre-vert-<job>-<arbre>` n'est
-  qu'un index, jamais une preuve ; dans le doute, le job joue. La suite PostgreSQL et
-  CodeQL n'en dépendent pas. Un job requis neuf passe par lui ; 🔒
-  `test_ci_arbre_deja_vert.py`, règles et cas forgés : `scripts/ci/arbre_deja_vert.py`.
-- 🔒 **CodeQL juge dès la PR vers `dev`** (#2571) : la configuration par défaut de GitHub
-  ne garde que `main` ; `codeql-avant-dev.yml` refait l'analyse sans l'envoyer et ne bloque
-  que les alertes NEUVES face à la dernière analyse de `main`, au seuil du contrôle de GitHub
-  (`scripts/ci/codeql_nouvelles_alertes.py`). Pas un check requis. 🔒 `test_codeql_avant_dev.py`.
-- 🔒 **apt de la CI : une seule porte, `scripts/ci/apt-ci.sh`** (#2694) — `installer <paquets>`
-  ou `executer -- <commande>`. Un miroir Ubuntu que le résolveur du runner ne connaît plus
-  (11/11/2026 : pytest et WebKit rouges des heures, avant le moindre test) prend un repli DÉCLARÉ :
-  son adresse demandée en DNS-sur-HTTPS (1.1.1.1, 8.8.8.8), posée dans `/etc/hosts` le temps de
-  la commande, puis une nouvelle tentative ; sinon l'étape échoue en disant « panne de miroir ».
-  apt vérifie toujours signatures et empreintes. Aucun `apt-get` ni `--with-deps` ailleurs dans
-  la CI ; décision pure et panne simulée : `bash scripts/ci/apt-ci.sh --selftest`.
-- 🔒 **La CI se rejoue à l'identique** (#1584) : tout `pip install` s'épingle
-  (`test_ci_installations_epinglees.py`) et chaque `uses:` s'écrit par **SHA** avec
-  sa version en commentaire (`test_ci_actions_epinglees.py` — Dependabot suit les
-  deux). Un workflow se mesure comme du code (500 lignes) ; `ci.yml` seul est admis
-  au-dessus, par une **exception nominative** de `scripts-ci-modularite.sh`
-  (`EXCEPTIONS_PLAFOND`, #1547) qui échoue quand elle ne sert plus.
-  Le `timeout-minutes` d'un job tient sa **durée mesurée** : chaque semaine,
-  `plafonds-jobs.yml` le confronte au p95 des exécutions réussies, sous la marge
-  déclarée dans `scripts/ci/plafonds_jobs.py`, et rend compte dans une issue —
-  un check requis coupé à son plafond bloque une PR sans un mot (#2576).
-  L'image de Caddy porte une **mineure explicite** (`FROM caddy:2.11`,
-  `test_image_caddy_epinglee.py`, #1602) : Dependabot propose alors ses montées. Python et
-  Node restent flottants, par choix de `dependabot.yml`.
-  🔒 **Ce que Trivy voit dans une image, `npm audit` et pip-audit ne le voient pas** (#2377) :
-  une image Node d'exécution n'emporte pas npm (`test_images_sans_npm.py` — il embarque ses
-  propres dépendances), une étape Alpine d'exécution fait `apk upgrade`, et Caddy est
-  recompilé depuis sa source tant que le binaire officiel retarde (`Dockerfile.caddy` dit
-  quand y revenir). Le juge est la veille nocturne (`scripts/ci/veille-securite.sh`).
-- Lancer en local (deps requises) : `cd api && pytest tests/ -q -n 8` — ou toute la suite telle que
-  la CI la joue : `bash ../scripts/ci/mesure-postgresql.sh` (6 min 40 au lieu de 12 sur le poste, #2223).
-
-### Scripts d'infra — job CI `test-scripts` (depuis le 30/07/2026)
-Les scripts qui décident d'arrêter la prod (`bascule.sh`, `health-watch.sh`,
-`boot-role-guard.sh`, `check-reliability.sh`…) n'étaient couverts par **aucun**
-test : ni Python ni Svelte, donc hors de portée des trois autres jobs. Le job
-`test-scripts` vérifie à chaque PR la syntaxe (`bash -n`) de tous les `.sh`
-versionnés, les modes git (0b), et exécute les **self-tests**.
-
-🔒 **Un processus par fichier est interdit dans ce job** (#2231) : les scans d'octets (BOM,
-fins de ligne, caractères de contrôle) passent par `scripts/ci/scans_fichiers.py` — une lecture
-pour tous les fichiers, cas zéro compris —, et les self-tests de l'étape « Self-tests des
-fonctions de décision » se jouent côte à côte par `scripts/ci/lancer_en_parallele.py` : la liste
-des commandes reste écrite dans `ci.yml`, une par ligne (c'est elle que lit
-`verifier-selftests-branches.sh`). Un self-test est donc **pur et indépendant** : il n'écrit que
-dans son dossier jetable. Les boucles `for f in $(git ls-files …)` coûtaient 8 à 28 min côte à
-côte sous Cygwin (rejeu du 25/10/2026).
-
-🔒 **Un autotest ne lit pas l'horloge réelle contre une date posée** (#2261, #2232) :
-`scripts/ci/horloge_autotests.py` refuse une constante datée dans un script qui lit `date +%F`
-(la date s'injecte : `${AUJOURDHUI:-$(date +%F)}`) et un âge calculé à la main —
-`$(date +%s) - $(date -d "$ts" +%s)` rend un âge négatif à l'heure double d'octobre ; l'âge se
-demande à `age_min_epoch` (`lib-horodatage.sh`). Côté pytest, une ancienneté en jours se pose par
-`tests/aides_horloge.il_y_a_jours(N)` (midi de Paris) et le fichier se rejoue à l'heure hostile
-(fixture `heure_hostile`) ; 🔒 `test_anciennete_jours_civils.py` refuse une pose en 24 h de plus.
-
-**Règle pour toute nouvelle logique de décision d'infra** : l'isoler en fonction
-**pure** (aucun SSH, docker, écriture ni `sudo`), exposer `--selftest`, et
-l'ajouter au job. C'est le seul moyen de tester une décision de bascule sans les
-deux RPi — pattern inauguré par `boot-role-guard.sh --selftest` (15/07/2026),
-étendu à `health-watch.sh` et `check-reliability.sh` (30/07/2026).
-Lancer en local : `bash <script>.sh --selftest`.
-
-🔒 **Une décision ne se prend jamais sur `producteur | grep -q motif`** (#2298) : sous
-`pipefail`, grep qui sort au premier appariement donne 141 (SIGPIPE) au producteur et le
-test dit « non » à tort, au hasard de la charge — un self-test rouge sur une PR, vert sur
-la suivante, même arbre. On lit le producteur (`_s=$(…)`), puis `grep -q motif <<<"$_s"`.
-`python scripts/ci/pipe_grep_quiet.py` refuse le tube (exceptions déclarées, vides
-aujourd'hui) ; son `--selftest` en prouve le mécanisme avec un producteur sans fin. Il refuse
-aussi la conversion mal faite : sous `set -e`, `x=$(producteur)` nu puis `grep -q … <<<"$x"`
-tue le script quand le producteur sort non nul (`dpkg-query` d'un paquet absent a rendu la
-PR #2322 rouge) — `x=$(producteur || true)`.
-
-### Navigateur — job CI `e2e-frontend` (depuis le 08/09/2026)
-`front/e2e/` porte les tests Playwright — squelette, lien d'évitement, absence de
-défilement horizontal, cibles tactiles — sur les profils **bureau ET mobile**.
-**En tranches** depuis #2632 : quatre tranches Chromium (`--shard`) et une WebKit
-côte à côte ; le check requis « Tests de navigateur (Playwright) » est le job
-d'agrégat `e2e-verdict`, rouge dès qu'une tranche n'est pas verte. 🔒 **Un test
-qui mesure la mise en page se joue aussi sous WebKit** (#2640, le moteur de tous
-les iPhone : #2639 passait Chromium) : son titre finit par `@mise-en-page`
-(`e2e/mise-en-page.ts`) ; une mesure du défilement sans elle est refusée
-(`npm run lint:e2e-mise-en-page`). Le profil se lit par `info.project.use.isMobile`
-ou `hasTouch`, jamais par son nom : `webkit-mobile` n'est pas `mobile`.
-
-🔒 **Un `import()` a toujours un destinataire** (#2683, 11/11/2026) : rattrapé
-(`.catch`, `try`), ou rendu à qui y répond (`charger={() => import(…)}` de `ChargementDiffere`).
-Sous WebKit, une navigation pendant son chargement le fait échouer, et un rejet sans
-destinataire devient une exception de la page — « Importing a module script failed. », qui
-faisait tomber la tranche WebKit au hasard. Les `ECONNREFUSED` du journal n'y sont pour rien :
-c'est le proxy de `/telemetry/collect`, sans API derrière. `npm run lint:imports-rattrapes`
-(AST) ; `e2e/import-interrompu.spec.ts`, étiqueté `@moteur` — l'autre étiquette jouée sous
-WebKit —, retient les modules, navigue, et échoue sans le rattrapage.
-
-🔴 **Ils existaient depuis le 06/09 et ne tournaient dans aucun job** : le dépôt
-contenait les tests, `npm run e2e` les passait sur le poste de qui y pensait, et
-les checks requis restaient verts si l'un d'eux cassait. C'est la même famille que
-#409, #410 et #411 — des contrôles qui existent et ne s'exécutent pas. Écrire un
-test et le **brancher** sont deux gestes, et le second ne manque à personne.
-
-Un écran **authentifié** se rend avec l'**API simulée** (compte témoin, listes
-nécessaires) — `e2e/depot-fichier.spec.ts`, `e2e/ligne-pastilles.spec.ts`. ⚠️ Le
-motif d'interception vise le chemin `/api/` du serveur seulement : sinon il attrape
-les modules source `/src/lib/api/…` et la page tombe en 500 (`standards/05` §13).
-Cette ligne disait jusqu'au 27/09/2026 que ces tests « s'arrêtent aux écrans
-publics » : c'était vrai, et ce n'est plus une limite.
-
-🔒 **Une position ou une taille lue juste après l'ouverture d'une boîte** se mesure par
-`boiteStable` (`e2e/aides.ts`), jamais par `boundingBox()` seul : la boîte entre en 200 ms
-à 96 % de sa taille, et la mesure faussée faisait échouer un test sur trente (#1625).
-
-🔒 **« La page ne défile pas en largeur » se mesure par `attendreSansDefilementHorizontal`**
-(`e2e/defilement.ts`), précédée d'`elargirLeTexte` pour un tableau ou une longue rangée :
-le débordement d'Admin › Lots ne se voyait qu'avec les polices de macOS et d'iOS (#2437).
-Trente specs recopiaient la mesure, lue à l'instant ; `npm run lint:defilement` refuse la suivante.
-
-🔒 **Un spec prend `test` et `expect` dans `./aides`**, jamais dans
-`@playwright/test` (`npm run lint:e2e-test`) : ce `test`-là fait échouer toute
-**exception de la page**. Une réponse simulée qui ne se devine pas au chemin se
-déclare dans `REPONSES_PAR_DEFAUT` (`e2e/aides.ts`), avec le type qu'elle imite.
-Pourquoi — un titre figé par une exception que personne n'écoutait, et quatre
-specs verts qui en cachaient une : `standards/05` §13, #1475.
-
-🔒 **Une lecture qui ne réessaie pas ne juge pas l'instant** (#1830) :
-`count()`, `allTextContents`, `textContent()`, `innerText()`, `isVisible()`
-suivies d'un `expect` vivent dans un `expect.poll`, ou se déclarent avec leur
-raison dans `DECLAREES` (`npm run lint:e2e-lectures`) — presque toujours une
-assertion qui attend le même élément les précède.
-
-🔒 **Le serveur des tests écoute sur `127.0.0.1`, et les tests le visent là**
-(#1732, 08/10/2026). Avec `localhost`, Vite n'écoutait que sur `::1` et le
-navigateur tentait aussi `127.0.0.1` : `ERR_CONNECTION_REFUSED`, ou « Failed to
-fetch dynamically imported module …/app.js », un spec différent à chaque passage
-— une suite complète sur deux échouait sur le poste. `npm run lint:e2e-serveur`
-refuse `localhost` dans `playwright.config.ts`.
-
-Lancer en local : `cd front && npm run e2e`.
-Un délai d'hydratation dépassé se lit avec le bilan **⏱ hydratation** en fin de
-sortie (et `test-results/hydratation.json`) : la durée du test fautif comparée à
-celle des tests verts du même passage (#1475).
-
-🔒 **Aucun rechargement de Vite pendant les tests** (#1421, 28/09/2026). Une
-dépendance chargée par un `import()` dynamique (`dompurify`, l'éditeur `@tiptap`)
-n'est optimisée qu'au premier écran qui l'appelle, et Vite recharge alors toutes
-les pages ouvertes : des e2e tombaient au hasard, quatre rejeux complets sur six.
-Elle se déclare dans `optimizeDeps.include` (`vite.config.ts`) ; l'étape de CI
-échoue en la nommant si une nouvelle venue recharge une page — mais seulement sur
-un cache NEUF : 🔒 `npm run lint:optimize-deps` le refuse dès le source, sur tout
-poste (#1956).
-
-### Rejouer la CI en local — `bash scripts/poste/rejouer-ci.sh` (depuis le 13/08/2026)
-Les jobs ci-dessus se rejouent sur le poste sans rien recopier : le script **extrait**
-les commandes de `.github/workflows/ci.yml`. Une liste tenue à la main divergerait au
-premier job ajouté — et c'est justement le job ajouté, ou celui qu'on ne pense pas à
-lancer, qui échoue (#319 : Ruff, le 12/08).
-
-🔴 **Le rejeu ordinaire s'arrête à la phase rapide ; pytest et les tests de navigateur
-sont CONFIÉS à la CI de la PR** (#2571, 10/11/2026). Elle les joue de toute façon,
-gratuitement et côte à côte, et elle joue ce que le poste saute (le rendu PDF) ; le rejeu
-complet, lui, tenait le verrou une vingtaine de minutes par lot — le seul goulot entre les
-sessions, pour juger une troisième fois le même arbre. L'ordre devient : rejeu → pousser
-la branche → PR → **CI verte** → pré-check → fusion. La trace dit son mode
-(`MODE=rapide`, `CONFIEES=`), et le point 16 ne rend OK sur une trace rapide que si la PR
-de la branche porte le **même arbre** et que tous ses checks sont verts : en cours,
-absente ou illisible, INCONNU (`verdict_suite_complete`, `lib-depot.sh`). `--complet`
-joue tout au poste — pour un lot qui touche le rejeu lui-même, ou sans réseau. Les tests
-du lot se lancent à la main pendant le développement (`pytest tests/<fichier du lot>`,
-`npx playwright test e2e/<spec du lot>`).
-Sa trace (`.git/rejeu-ci.ok`) est lue par le **point 16** du pré-check. Elle porte le sha **et
-l'arbre** (`HEAD^{tree}`) : le rejeu mesure le code, pas l'historique — un reword ou un squash à
-arbre identique ne coûte pas un rejeu (#2245) ; un contenu modifié, une trace d'avant l'arbre ou
-un arbre illisible rendent INCONNU. Son format s'écrit et se lit dans `lib-depot.sh`, une seule fois.
-Un seul job : `bash scripts/poste/rejouer-ci.sh build-frontend` — mais alors aucune trace n'est
-écrite, et le point 16 reste INCONNU.
-
-🔒 **Sur macOS, les outils GNU par une seule porte** (#2419, 01/11/2026). Les scripts du poste
-écrivent la syntaxe GNU (`date -d`, `stat -c`, `sed … t;`, `timeout`, `nproc`), celle de la CI et de
-Git Bash : chaque script de `scripts/poste/` appelle `poste_gnu_poser` (`lib-poste-gnu.sh`), qui met
-en tête du PATH les `gnubin` de Homebrew et son `bash` — celui d'Apple est un 3.2. Le PATH se
-transmet aux étapes et aux autotests. Sans eux, le pré-vol refuse et le pré-check rend INCONNU, avec
-`brew install coreutils findutils gnu-sed grep bash`. Arbitré contre une branche BSD par geste : on ne
-réécrit pas quarante appels, dont la moitié s'exécute sur les nœuds. Ce qui n'a pas d'homonyme GNU a
-sa branche `Darwin` à côté de celle de Windows : l'arbre de processus (`ci_ps_bsd_lire`, `etime`) et
-la charge (`sysctl vm.loadavg`). 🔒 L'autotest de la porte exige que chaque script du poste l'appelle.
-
-🔒 **Pré-vol, puis phases rapide et lente, en couloirs parallèles** (#2224, 24/10/2026).
-Avant la première étape, le rejeu sonde le poste — dépendances du lot, base des tests,
-`front/node_modules` réel, Chromium de Playwright, Node et Python, venv — et **refuse**
-en quelques secondes, avec la commande qui répare : sept rejeux sur 72 avaient fini
-INCONNU au bout de 20 min. 🔒 **Le catalogue de la base des tests se mesure aussi** (#2399,
-31/10/2026 : 140 schémas abandonnés, `pg_attribute` à 7,6 Go, deux suites gelées au-delà de
-45 min) : après la purge, relations, part de tuples morts, place par ligne vivante et
-temps d'un DDL témoin ; au-delà d'un seuil, le pré-vol **compacte d'office** (`VACUUM FULL`
-du catalogue, le rôle `essai` est superutilisateur), puis refuse s'il reste gonflé ou si
-des schémas tenus le chargent ; illisible, il refuse — INCONNU, jamais OK. Seuils et sonde :
-`ci_catalogue_verdict` (`lib-ci-base.sh`). Il joue ensuite les étapes **rapides** de tous les jobs, puis
-les **lentes** — durée **mesurée** au rejeu précédent (`rejeu-ci-durees.tsv`, répertoire
-git commun), jamais une liste —, chaque job dans son couloir, plusieurs couloirs côte à
-côte (`REJEU_PARALLELE`, défaut : cœurs libres / 4, au plus 8 ; `1` = en série). Une
-lente démarre dès qu'un créneau se libère (pytest pendant build-frontend). Un rouge
-arrête le rejeu à la fin de sa phase, **sans trace**, et les lentes déjà parties avec
-lui ; `--tout` joue tout,
-`--reprendre` rejoue d'abord les rouges du rejeu précédent du lot (avec ce qui les
-précède dans leur couloir), `--venv` construit une fois par jeu de dépendances un venv
-aligné sur le lot (`requirements-dev` et chaque `pip install` de `ci.yml`), réutilisé
-par tous les worktrees. Règles pures et exceptions de couloir déclarées :
-`scripts/lib/lib-ci-orchestration.sh` ; pré-vol : `lib-ci-prevol.sh`.
-🔒 **Un rejeu ne se fige plus en silence** (#2270) : une étape au-delà de son plafond
-(4 × sa durée mesurée, 20 min au moins) **et** muette depuis 15 min est arrêtée, INCONNU,
-avec `pg_stat_activity` et la pile des tests bloqués dans sa sortie
-(`scripts/lib/lib-ci-gel.sh`, `faulthandler_timeout` de `mesure-postgresql.sh`).
-🔒 **Un rejeu ne survit pas à sa mort** : sous Windows, `kill -9` du rejeu laisse tout son
-arbre vivant (shells, python, workers xdist) et `taskkill /T` ne retrouve plus des enfants
-dont le père est mort ; `scripts/lib/lib-ci-arbre.sh` retrouve l'arbre par la **fermeture
-des ppid** (Windows garde le père mort ; MSYS donne le vrai père des programmes de Cygwin),
-même racine absente. Sortir du rejeu, arrêter une étape et la mort du lanceur tuent donc
-tout l'arbre ; le pré-vol **tue** les restes d'un rejeu mort (`REJEU_ORPHELINS=signaler`
-pour seulement les nommer) et retire les schémas de test abandonnés — créateur mort,
-quel que soit leur âge, ou inconnu et de plus d'une heure ; jamais celui d'une connexion
-ouverte. Chaque rejeu,
-complet ou non, écrit une ligne par étape et un bilan dans `rejeu-durees.log`
-(répertoire git commun) : `python scripts/poste/mesurer-rejeux.py [--jours N]` en sort
-la part du temps passée dans des rejeux non verts, les dix étapes les plus longues et
-la minute du premier rouge de chaque rejeu.
-
-🔒 **Depuis le 28/09/2026 (#1417), deux choses le rendent INCONNU au lieu d'un faux
-vert** : un poste dont les dépendances installées ne sont pas celles que le lot
-épingle — la ligne `ENV … dépendances` donne l'écart et la commande qui aligne
-(`scripts/poste/verifier-dependances-poste.py`) —, et un second rejeu lancé
-pendant qu'un autre tourne : un verrou dans le répertoire git commun le refuse,
-worktrees compris. Le rejeu de #1415 avait rendu « pytest OK » sur sqlmodel
-0.0.39 pour un lot qui posait 0.0.44.
-
-Un lot qui **monte des dépendances Python** se mesure dans un **venv** en tête de
-PATH (`python -m venv …`, `pip install -r api/requirements-dev.txt` **et** chaque
-outil que `ci.yml` installe hors requirements — `ruff`, `pip-audit`, `reuse`, aux
-versions qu'il épingle —, puis `PATH="/c/…/<venv>/Scripts:$PATH" bash
-scripts/poste/rejouer-ci.sh` : un chemin `C:/…` est coupé en deux par le `:` du
-PATH, et c'est le Python du poste qui répond) — jamais en
-installant ses versions dans le Python du poste, que partagent les sessions
-parallèles : leurs rejeux rendraient INCONNU jusqu'à leur rebase. Le rejeu
-n'expose pas l'interpréteur du venv (`ci_script_a_exposer`) : copié, son lanceur
-perdait `pyvenv.cfg` et tout rendait INCONNU (#2112).
-
-Sur un poste déjà chargé par d'autres sessions, le rejeu passe les e2e à **un
-seul worker** (`E2E_WORKERS`, seuil et mesure dans `rejouer-ci.sh`, règle
-`ci_workers_e2e`) : les workers s'y disputaient la machine et quatre specs
-tombaient en délai d'hydratation (#1665). La CI GitHub garde le défaut.
-pytest, lui, se borne par `PYTEST_WORKERS` (lu par `mesure-postgresql.sh`) ; sans
-elle, `workers_suite` en prend au plus 12, sous ce que `max_connections` admet (#2223) **et
-que la table des verrous porte** (`max_locks_per_transaction` × connexions ÷ `VERROUS_PAR_WORKER`).
-
-🔒 **Aucune transaction de la suite ne tient plus de verrous qu'un worker n'en a** (#2279,
-29/10/2026 : « mémoire partagée épuisée », deux rejeux sur quatre). Un verrou se prend par
-table ET par index et se garde jusqu'au `commit` : `create_all` dans une transaction en tenait
-1 465, `DROP SCHEMA … CASCADE` 1 655, pour une table de 6 400 PARTAGÉE par les douze workers.
-La pose des tables est en AUTOCOMMIT (`aides_base.creer_les_tables`), le retrait par lots de
-`dialecte.TABLES_PAR_LOT` tables (`instructions_de_retrait`, ≈ 230 verrous au pire), la remise
-à neuf en AUTOCOMMIT. Ne pas appeler `create_all` sur un schéma jetable ni `DROP SCHEMA` en
-direct : passer par ces portes. 🔒 `test_verrous_par_transaction.py` mesure `pg_locks`.
-
-🔒 Un worktree dont `front/node_modules` est une **jonction** vers le clone
-principal en partage le cache de Vite : les e2e y tombent au hasard dès qu'une
-autre session lance Vite. Le rejeu les rend alors **INCONNU** et donne la
-commande qui répare — `rmdir` de la jonction (le lien seul) puis `npm ci` dans
-le worktree (#1722, `ci_node_modules_etat`).
-
-🔒 **Un test sauté sur le poste se NOMME** (#1734). Les tests de rendu PDF
-(`@besoin_weasyprint`) ne tournent pas ici — WeasyPrint ne s'installe pas sous
-Windows — et le rejeu rendait « pytest OK » sur un lot qui les cassait : la CI
-de la PR les a vus. L'étape reste OK, mais sa ligne compte et nomme ses sauts par
-raison, et le point 16 du pré-check les reprend (`SAUTS=` dans la trace). Un
-saut annoncé n'est pas une mesure : ces tests-là, **seule la CI de la PR** les
-joue. Mécanisme : le crochet de `api/tests/conftest.py` (`tests/aides_rejeu.py`)
-et `ci_resumer_sauts`.
-
-🔒 **Un e2e tombé sur une cause propre au POSTE est relancé une fois, et cela se
-dit** — « Failed to fetch dynamically imported module » (#1809), et les tampons
-réseau de Windows épuisés au `goto`, `net::ERR_NO_BUFFER_SPACE` (#1989) ; la liste
-fait foi dans `ci_cause_relance`, et chaque relance y nomme sa cause. Quatre rejeux le 10/10/2026 sont tombés sur un
-seul test, un autre à chaque passage, que la CI GitHub n'a jamais vu. Le rejeu
-relance alors les seuls tests tombés : vert, l'étape reste OK et sa ligne les
-nomme, le point 16 les reprend (`RELANCES=`) et chaque relance s'inscrit dans
-`rejeu-e2e-relances.log` (répertoire git commun, avec la charge et la cause) — la mesure qui
-manque pour trouver la cause. Conditions et plafond : `ci_relance_e2e`
-(`lib-ci-e2e.sh`) ; un rechargement de Vite (#1421) n'y ouvre jamais droit.
-
-Le **verrou** du rejeu ne se retire que par son propriétaire, et un verrou dont le
-pid est mort se reprend seul au lancement suivant : ne jamais l'effacer à la main (#1808).
-
-🔒 **Le rejeu se prend à son tour, nommé, et ne survit pas à son lanceur** (#2225,
-24/10/2026 : deux rejeux à la même minute, un hors file, un orphelin qui a tenu le
-verrou 20 min sans que personne sache à qui il était). `rejouer-ci.sh --attendre`
-dépose un ticket dans le répertoire git commun et démarre dans l'ordre d'arrivée ;
-sans `--attendre`, il est refusé tant qu'un rejeu tourne **ou qu'un autre attend**.
-`REJEU_PROPRIETAIRE="<lot> #<ticket>"` le nomme. `bash scripts/poste/etat-rejeu.sh`
-dit qui tient le verrou, l'étape, l'âge du pouls et la file ;
-`bash scripts/poste/file-rejeu.sh` réordonne la file (`devant`, `retirer`, `purger`)
-et reprend un verrou **orphelin** (`reprendre "<motif>"`, journalisé). Un veilleur
-arrête le rejeu dont le shell lanceur a disparu : le lancer en tâche de fond de
-l'outil, jamais détaché (`nohup … &`). Les règles : `scripts/lib/lib-ci-verrou.sh`.
-Un check requis **annulé** par GitHub bloque une PR sans un mot :
-`bash scripts/ci/relancer-annules.sh <n° de PR>`.
+- La CI (`.github/workflows/ci.yml`) joue à chaque PR : pytest sur PostgreSQL, lints du
+  front et du backend, Playwright (bureau et mobile, Chromium et WebKit), self-tests des
+  scripts d'infra. Les checks requis se lisent dans la protection de `main`.
+- **Rejouer la CI en local** : `REJEU_PROPRIETAIRE="<lot> #<ticket>" bash
+  scripts/poste/rejouer-ci.sh --attendre` (sur le Mac, `--venv` et `TESTS_BASE_URL`). Le
+  rejeu s'arrête à la phase rapide ; pytest et Playwright sont confiés à la CI de la PR
+  (#2571). Un seul rejeu à la fois ; son verrou ne s'efface jamais à la main. Détail :
+  `mep-precheck`.
+- Pendant le développement : `cd api && pytest tests/<fichier> -q`, `cd front && npx
+  playwright test e2e/<spec>`.
+- Un correctif s'accompagne du garde-fou qui refuse la récidive, branché dans la CI
+  (`standards/05`). Où vivent les garde-fous : pytest → `api-scaffold` §9 ; Playwright →
+  `svelte-patterns` ; scripts d'infra → `infra-rpi` ; CI elle-même → `mep-precheck`.
 
 ---
 
 ## Infrastructure — l'essentiel
 
 Production **HA sur 2 Raspberry Pi** : rpi1 `192.168.1.222` (PhT-RB5), rpi2
-`192.168.1.223` (PhT-RB5i2). Les conteneurs ne tournent que sur le **RPi actif**
-(`cat /opt/5hostachy/.active`) ; des conteneurs sur les deux = **split-brain**, à
-traiter avant toute autre chose. Site HS : SSH sur l'actif →
-`cd /opt/5hostachy && . scripts/lib/lib-env-role.sh && env_role_appliquer .env actif && docker compose up -d`.
+`192.168.1.223` (PhT-RB5i2). Les conteneurs de l'application ne tournent que sur le **RPi
+actif** (`cat /opt/5hostachy/.active`) ; le standby ne porte que la réplique de la base.
+Des conteneurs applicatifs sur les deux = **split-brain**, à traiter avant toute autre
+chose.
 
-⚠️ **Le `env_role_appliquer` n'est pas décoratif** : deux réglages du `.env`
-dépendent du rôle — `ORIGIN` (nom public pour l'actif, IP locale pour le standby)
-et `COOKIE_SECURE` (**absent** chez l'actif, donc `true` par défaut ; `false` chez
-le standby). Démarrer la stack sur un nœud dont le `.env` est resté en rôle
-standby sert le public avec une origine locale et un cookie de session sans
-drapeau `Secure`. C'est le « gap .env du 15/07/2026 ». La règle vit dans
-`scripts/lib/lib-env-role.sh` et nulle part ailleurs (#1077).
-Depuis #1751, `ORIGIN` dit aussi **quel nom l'API sert** : un nœud actif dont
-l'`ORIGIN` serait resté son IP répondrait **421** au public — le site entier, plus
-seulement un cookie. Les quatre chemins de prise de main passent par
-`env_role_appliquer` (bascule, failover, garde au démarrage, reprise en main).
+**Site HS** : SSH sur l'actif, relire `.active` (il doit nommer ce nœud) et vérifier que sa
+base est là. Rôle douteux ou base absente → ne rien démarrer : `decider_prise_de_main`
+(`lib-promotion.sh`), ou la reprise en main `sudo bash scripts/exploitation/MaJ-Hostachy.sh`.
+Sinon :
+`cd /opt/5hostachy && . scripts/lib/lib-env-role.sh && . scripts/lib/lib-applicatifs.sh && env_role_appliquer .env actif && docker compose up -d --no-recreate $SERVICE_BASE && docker compose up -d $SERVICES_APPLICATIFS`.
 
-> 📇 **Les points d'entrée sont versionnés depuis le 15/08/2026** :
-> `infra/points-entree/` porte les crons et l'unité systemd attendus, et le
-> **point 17** du pré-check compare l'installé au dépôt. C18 ne compare que les
-> nœuds entre eux, donc pas la dérive commune.
+`env_role_appliquer` n'est pas décoratif : `ORIGIN` (nom public pour l'actif, IP locale pour
+le standby) dit quel nom l'API sert (sinon **421** au public, #1751), et `COOKIE_SECURE` est
+absent chez l'actif (`false` chez le standby). La règle vit dans `scripts/lib/lib-env-role.sh`
+seulement (#1077). Bascule manuelle (test), depuis l'actif :
+`sudo bash /opt/5hostachy/scripts/exploitation/bascule.sh`.
 
-**Quand** chacun tourne — jour, heure, minutes — se lit dans
-`infra/points-entree/cron-root.crontab` (et `cron-ptressard.crontab`), jamais ici :
-les minutes y sont **décalées** exprès, et une cadence recopiée dans cette table
-écrivait `*/5` là où le dépôt écrit autre chose (#1562).
+**Avant de suspecter un nœud** : depuis l'autre RPi, `curl http://<actif>/api/health`. S'il
+répond 200, la panne est sur le chemin public (box, DNS, Cloudflare) — ne pas basculer, ne
+pas redémarrer la stack (`standards/04` §10 : deux sondes indépendantes avant toute décision
+destructive).
 
-| Cron root (identique sur les 2 nœuds) | Rôle |
-|---|---|
-| `bascule.sh` (quotidien, de nuit) | bascule active/standby, puis le nouveau standby pose sa **révision** de noyau **et toutes ses autres mises à jour** — Docker, cloudflared, Node.js…, sauf celles qui ramèneraient un paquet retiré (C35) — et redémarre (`noyau-standby.sh`, #1395, #2198) — une nouvelle **série** reste manuelle, C30 la signale avec la commande |
-| `maintenance.sh` (hebdomadaire) | purges **demandées à l'API** (`POST /admin/maintenance/purges` — jamais `docker exec … python`, #1232) ; sur les **deux** nœuds, images de base re-tirées — les `FROM` des Dockerfile **et** les `image:` du compose, PostgreSQL compris (#1379, #1872) : tirer ne redémarre rien, la base prend sa nouvelle image à la bascule, et `auto-deploy` ne la recrée jamais (`--no-recreate`) — et rotation des logs |
-| `health-watch.sh` (toutes les quelques minutes) | failover automatique si le site est HS — et une ligne datée à **chaque** sonde, site OK compris : son battement, que **C31** mesure sur les deux nœuds (#1586). Il se taisait quand tout allait bien, donc rien ne distinguait ce calme d'un failover mort |
-| `check-reliability.sh` (quart d'heure) | contrôles de fiabilité numérotés + alerte e-mail sur `FAIL`, digest quotidien sur `WARN` — chaque fait envoyé **une fois**, par le nœud qu'il concerne (#1402) —, et constats en cours dans **Admin › Maintenance** (rapport sur changement, **battement à chaque passage** qui dit « dernier contrôle » et rafraîchit les chiffres des constats (#1805), et chaque constat affiché **une fois** — sous le nœud qu'il nomme, ou sous « Les deux nœuds » par l'actif, #1396). Au premier passage après 04:00, il lance l'**audit de sécurité nocturne** (`audit-securite.sh`, S1–S6, en root, sur chaque nœud : arbre déployé, comptes, persistance contre une référence acceptée, conteneurs, durcissement servi, journaux de la nuit — tâche `audit_securite` à l'écran, C40 dit s'il a eu lieu ; skill `infra-rpi`). ⚠️ La moitié vit dans les modules de `scripts/lib/`, et greper « C25 » dans le script ne le trouve pas. **Où vit chacun** : `grep -rn "── C[0-9]" scripts/` — cette ligne en tenait la liste, et elle plaçait C27 dans le mauvais module (23/09/2026) |
-
-**Les tâches de l'API**, elles, tournent **dans le process** et se déclarent dans
-`app/utils/taches.TACHES_PERMANENTES` — avec, pour chacune, **ce qu'on perd** si
-elle cesse de tourner. Chacune s'enregistre **par copropriété** :
-`scheduler.add_job(contexte.pour_chaque_copropriete(tache, "id"), …, id="id")`, qui la
-joue dans le contexte de chacune et isole l'échec de l'une ; une tâche de la
-plateforme se déclare dans `TACHES_DE_LA_PLATEFORME` avec sa raison (#1745). Le démarrage compare les tâches réellement enregistrées à
-cette table et journalise tout écart en `WARNING` ; `test_taches_planifiees_declarees.py`
-le vérifie aussi en CI, dans les deux sens. Aucun des deux ne suffit seul : le test
-lit le code, le contrôle au démarrage lit le scheduler (#1047).
-
-⚠️ « Identique sur les 2 nœuds » **est un invariant, pas un constat** : il était faux
-jusqu'au 06/08/2026, rpi2 portant en plus un `check-stack.sh` en échec permanent (récit et
-chiffres : `mep-precheck/HISTORIQUE.md`, à « check-stack »). Le vérifier fait partie du point 8 du pré-check. `auto-deploy.sh` est
-à part : c'est le seul cron **utilisateur** (`ptressard`), et c'est ce qui fait
-l'objet du point 11.
-
-**Réflexe avant de suspecter un nœud** : depuis l'autre RPi, `curl
-http://<actif>/api/health`. S'il répond 200, la panne est sur le **chemin** public
-(box, DNS, Cloudflare) et non sur le nœud — ne pas basculer, ne pas redémarrer la
-stack.
-
-Toute intervention infra — bascule, base, WhatsApp, incident, coupure de courant,
-panne réseau — commence par charger `.claude/skills/infra-rpi` : règle d'or des
-données (primaire, réplique, promotion), panne de chemin ≠ panne de nœud, monitoring
-APScheduler, bridge WhatsApp et risques connus.
-
-> 📖 `standards/04-fiabilite-des-controles.md` §10 — le réflexe ci-dessus généralisé :
-> **deux sondes indépendantes avant toute décision destructive**, pour distinguer la
-> panne d'un composant de celle d'une dépendance partagée · `standards/07-observabilite-et-alertes.md`
-> §6–8 (rotation par motif, maintenance sur **tous** les nœuds, hygiène surveillée).
+Les crons root (`bascule.sh`, `maintenance.sh`, `health-watch.sh`, `check-reliability.sh`) et
+le cron utilisateur `auto-deploy.sh` sont versionnés dans `infra/points-entree/` ; le point
+17 du pré-check compare l'installé au dépôt. Toute intervention infra commence par charger
+`infra-rpi`.
 
 ---
 
 ## Git & MEP — l'essentiel
 
-**Premier réflexe de toute session, avant le moindre commit.** `origin/dev` et
-`origin/main` avancent côté GitHub (PR fusionnées, merges `main → dev`) et ne
-redescendent **jamais** seules : sans fetch explicite, le clone local dérive
-d'exactement le nombre de PR fusionnées depuis le dernier pull manuel.
+**Premier réflexe de toute session, avant le moindre commit** :
 
 ```bash
 git fetch origin && git merge --ff-only origin/dev
 ```
 
-Garde-fou mécanique : `.githooks/pre-commit` refuse un commit dont la branche est en
-retard sur son upstream. Il est versionné mais doit être armé **une fois par clone** :
-`git config core.hooksPath .githooks && git config pull.ff only` — et
-`git config blame.ignoreRevsFile .git-blame-ignore-revs`, pour que `blame` saute
-les reformatages déclarés (règle d'entrée : `mep-precheck`, piège 4). Contournement
-d'urgence : `ALLOW_STALE=1 git commit …`.
+`.githooks/pre-commit` refuse un commit en retard sur son upstream ; il s'arme une fois par
+clone : `git config core.hooksPath .githooks && git config pull.ff only && git config
+blame.ignoreRevsFile .git-blame-ignore-revs`. Contournement d'urgence : `ALLOW_STALE=1 git
+commit …`. Avant de réécrire un fichier partagé : `git worktree list` (`standards/13` §10).
 
-> 📖 `standards/08-git-et-versioning.md` §2–3 — un hook versionné **n'est pas** un
-> hook actif (il a déjà été committé en `100644`, donc inerte), et Windows avale
-> `chmod +x` en silence. Voir aussi la skill globale `avant-commit` : les six
-> contrôles de deux minutes, dont `git diff --stat` et l'encodage.
->
-> ⚠️ `standards/13-outillage-claude-code.md` §10 — avant de réécrire un fichier
-> partagé, regarder `git worktree list` puis `git -C <autre> status` : rien ne
-> signale le travail **non committé** d'une session voisine (vécu le 02/08/2026).
+- `main` = production, protégée (checks requis, `enforce_admins`, ni push direct ni
+  `--force`) : tout passe par une PR depuis `dev`.
+- Préfixes de commit : `feat:` `fix:` `docs:` `refactor:` `test:` `chore:` `perf:`.
+- **Claude crée et fusionne la PR du lot, puis conduit la MEP**, sans validation préalable ;
+  la contrepartie est un **compte rendu après** : la version et les fonctionnalités
+  apportées. Le pré-check remplace la relecture. Aucune MEP sans avoir chargé
+  `mep-precheck`.
+- **Ordre d'un lot** : rejeu → pousser la branche → PR vers `dev` → CI verte → pré-check
+  (`bash scripts/poste/precheck-mep.sh`) → MEP par `bash scripts/poste/conduire-mep.sh`
+  (fusion sur checks verts et état `CLEAN`, version du train, PR `dev → main`, fenêtre de
+  bascule, `dev` recréée, `Déployé:` sur l'actif, `--post-mep`). Après lui, une copie restée
+  sur `dev` se réaligne (`checkout -B dev origin/main`).
+- **La fusion n'est pas la MEP** : `auto-deploy.sh` tire les images de la CI puis
+  redémarre ; attendre `Déployé: <sha>` dans `/var/log/hostachy-deploy.log` **sur l'actif**,
+  puis post-check. Reprise en main : `sudo bash scripts/exploitation/MaJ-Hostachy.sh`, sur
+  l'actif seulement.
+- **Trois règles qui priment sur les contrôles** : un contrôle qui ne peut pas s'exécuter
+  renvoie INCONNU, jamais OK ; ce qui est critique en continu ne se vérifie pas seulement en
+  MEP ; vérifier le fait et le comportement, jamais le symptôme attendu ni l'artefact
+  (`standards/04`, `standards/09`).
+- **Session cloud** (claude.ai/code) : aucun SSH vers les RPi. La MEP s'y enchaîne **sans
+  validation intermédiaire** (arbitré le 25/09/2026) : PR du lot vers `dev` → fusion dès les
+  checks requis verts → PR `dev → main` → fusion → `dev` recréée depuis `main`, comme
+  `conduire-mep.sh` (qui s'arrête faute de SSH à la lecture de l'actif). Le pré-check est
+  INCONNU et la PR le dit ; le post-check P1–P9 reste au poste, et le compte rendu le
+  demande. Les tickets se ferment à la fusion dans `main`, avec l'observation en production
+  restant à faire. Environnement : `.claude/cloud/LISEZMOI.md`.
+- `.env` non versionné · `SECRET_KEY` ≥ 32 caractères · `ENABLE_API_DOCS=false` en prod.
 
-- `main` = production **réellement protégée depuis le 09/08/2026** : les jobs de la
-  CI et la suite sur PostgreSQL (#1747) sont des *checks requis* — leur liste se lit
-  dans la protection (`gh api repos/philippe-tressard/coprofirst/branches/main/protection/required_status_checks`),
-  jamais un compte recopié ici —, `enforce_admins` est actif, le push direct et le
-  `--force` sont refusés. Toute modification passe par une PR depuis `dev`.
-  ⚠️ Cette ligne affirmait « production protégé » alors que GitHub répondait
-  « Branch not protected » : rien n'empêchait de fusionner une CI rouge — ce qui
-  est arrivé trois fois le 08/08. Une consigne fausse est pire qu'absente.
-- Préfixes de commit : `feat:` `fix:` `docs:` `refactor:` `test:` `chore:` `perf:`
-- 🔴 **Claude crée ET fusionne la PR `dev → main`, et conduit la MEP** (28/08/2026).
-  Cette ligne disait le contraire jusque-là — « Claude s'arrête au push sur `dev` » —
-  et c'était l'exemple même de la consigne fausse que le point ci-dessus dénonce.
-  La contrepartie demandée n'est pas une validation *avant*, c'est un **compte rendu
-  après** : à chaque MEP, **la version et les fonctionnalités apportées**.
-  Le pré-check ne s'allège pas pour autant : c'est lui qui remplace la relecture.
-  🔴 **La MEP se conduit par `bash scripts/poste/conduire-mep.sh`** (#2631) — fusion
-  du lot sur checks verts ET état `CLEAN`, version du train posée, une seule PR
-  `dev → main`, fenêtre de bascule respectée, `dev` recréée et les PR qui la visaient
-  ramenées (rouvertes si GitHub les a fermées), `Déployé:` sur l'actif, `--post-mep`.
-  Tué, il se relance avec les mêmes arguments ; `--a-blanc` décide sans rien écrire.
-  Usage et pièges : skill `mep-precheck`. Il ne touche à aucune copie de travail :
-  après lui, une copie restée sur `dev` se réaligne (`checkout -B dev origin/main`).
-- MEP : elle n'est **pas** la fusion. `auto-deploy.sh` (cron utilisateur, toutes les quelques minutes) fait le `git pull`
-  **puis** le build : entre les deux, les points 12 et 18 du pré-check échouent
-  légitimement — le code est à jour, l'image ne l'est pas. Attendre la ligne
-  `Déployé: <sha>` dans `/var/log/hostachy-deploy.log` **sur l'actif**, puis
-  post-check. Ne jamais conclure sur le seul `git log` du nœud.
-  Reprise en main : `sudo bash scripts/exploitation/MaJ-Hostachy.sh` sur le **RPi
-  actif** uniquement (le script bloque sur le standby, et pose le verrou de bascule
-  sur les deux nœuds — d'où root, #1999)
-- **Session cloud** (claude.ai/code) : aucun SSH vers les RPi, et le site public
-  est hors de la politique réseau de la session. 🔴 **La MEP s'y enchaîne SANS
-  validation intermédiaire** (arbitré le 25/09/2026) : PR du lot vers `dev` →
-  fusion dès les checks requis verts → PR `dev → main` → fusion dès ses checks requis
-  verts → **recréer `dev` depuis `main`** — la même chaîne que `conduire-mep.sh`, qui
-  pose la version et s'arrête, faute de SSH, à la lecture du nœud actif : attendu. Une seule demande de l'utilisateur couvre toute la
-  chaîne, et le compte rendu arrive **après** — version et fonctionnalités, comme
-  au poste.
-  Ce qui ne s'improvise pas : le **pré-check** est INCONNU et la PR le dit ; le
-  **post-check** P1–P9 reste au poste (SSH), et le compte rendu le demande. Les
-  tickets du lot se ferment à la fusion dans `main`, avec un commentaire qui dit
-  que l'observation en production reste à faire (P7, P11).
-  ⚠️ Cette ligne disait « le lot s'arrête à une PR vers `dev` » — relayée par la
-  bannière de démarrage (`.claude/env-report.sh`) et par `.claude/cloud/LISEZMOI.md`.
-  Le 25/09/2026, l'utilisateur a donc dû valider **une à une** la fusion vers
-  `dev`, la PR `dev → main`, sa fusion puis la clôture de chaque ticket, deux MEP
-  de suite. Les deux relais renvoient désormais ici au lieu de recopier la règle.
-  Environnement, setup et ce qui y manque : `.claude/cloud/LISEZMOI.md`.
-- `.env` non versionné · `SECRET_KEY` ≥ 32 caractères · `ENABLE_API_DOCS=false` en prod
-- Bascule manuelle (test) : `sudo bash /opt/5hostachy/scripts/exploitation/bascule.sh` depuis le RPi actif
-  (chemin de **relais** ; le script vit dans `scripts/exploitation/` — cf. #337)
+## Versioning
 
-**Aucune MEP sans avoir chargé `.claude/skills/mep-precheck`.** Cette skill porte les
-étapes 0 et 0 bis (poste de développement, exigences sans exception), le **pré-check**
-(`scripts/poste/precheck-mep.sh`), le **post-check P1–P12**, le rollback, la rétrospective du 26/07/2026 et
-l'état de la surveillance continue. Elle porte surtout les trois règles qui priment
-sur la liste des contrôles :
-
-1. **Un contrôle qui ne peut pas s'exécuter renvoie INCONNU, jamais OK.**
-2. **Ce qui est critique en continu ne doit pas être vérifié seulement en MEP.**
-3. **Vérifier le fait, pas le symptôme attendu** — et le comportement, jamais l'artefact.
-
-> 📖 Ces trois règles sont nées ici le 26/07/2026 ; le socle en porte **d'autres**,
-> toutes issues d'incidents : `standards/04-fiabilite-des-controles.md`. Elles valent
-> aussi pour ce projet — notamment le **cas zéro** (§2), le **battement manquant** (§4), le
-> **contrôle sans destinataire** (§7) et **observer la chose, pas son enregistrement**
-> (§14), qui ont tous produit un faux vert ici.
-> Principes de livraison, pré-check générique et post-check :
-> `standards/09-livraison-et-mep.md`.
-
----
-
-## Versioning (`front/package.json`)
-
-> 📖 `standards/08-git-et-versioning.md` §6 — la règle patch/minor/major, le commit
-> dédié, et le bump **d'office** dès qu'une MEP est demandée, sans rappel.
-
-Instanciation 5Hostachy :
-- Le fichier est **`front/package.json`** ; la version s'affiche dans le **pied de
-  page** du site — c'est ce que contrôle **P3** du post-check.
-- …et la version **du projet** dans `front/package-lock.json`, en tête et à la
-  racine (`packages[""]`) : deux lignes, jamais une dépendance. `npm run lint:lock`
-  refuse l'écart en CI — cette ligne ne nommait que `package.json`, et un bump
-  l'a suivie à la lettre le 30/09/2026 (rattrapé au rejeu, pas avant).
-- 🔴 **La version se pose À LA MEP, jamais dans un lot** (#2631) : `conduire-mep.sh` la
-  calcule de `main` et des préfixes des commits du train, et la commit sur `dev`
-  (`chore(version): bump vX.Y.Z`, par `npm version`). Un lot qui porte un bump est
-  refusé par le point 0d ; « outillage seul » ne demande rien de plus — le train
-  le compte en correctif. Trois collisions de numéro le 10/11 venaient de la
-  version posée lot par lot.
-- **Chaque commit de `main` publie ses images, le bump y ajoute le tag** (#1753) :
-  le workflow `images.yml` publie les images signées des quatre services sur
-  `ghcr.io/philippe-tressard/coprofirst-*` (amd64 et arm64, publiques d'office :
-  liées au dépôt public), étiquetées `sha-<commit>` ; une version bumpée reçoit en
-  plus le tag git `vX.Y.Z` (par `scripts/ci/tag-version.sh`, jamais à la main) et
-  l'étiquette d'image `X.Y.Z`. 🔒 `test_images_publiees.py` : la matrice publie
-  exactement ce que `docker-compose.yml` construit.
-- **La référence TIRE ces images, elle ne les construit plus** (#1758) : `auto-deploy.sh`
-  et la bascule passent par `obtenir_images` (`scripts/lib/lib-images-ci.sh`), qui
-  tire `sha-<commit>` et les ré-étiquette sous les noms de Compose ; tant qu'elles
-  ne sont pas publiées, le journal dit « en attente des images de la CI », et au-delà
-  de 30 min le nœud construit en **secours** et alerte (arbitrage du 08/10/2026).
-  ⚠️ La fusion n'est donc plus le build : `Déployé:` arrive après la CI « Images »,
-  une quinzaine de minutes.
-- 🔴 **Une réplique suit son BAIL : canal Urgence ou une version choisie** (#2210,
-  24/10/2026) — la vague (Urgence, Pilote, Standard, Fixe) et la règle vivent dans
-  `registre/versions` et `registre/canaux`, réglées par l'opérateur dans Admin ›
-  Installations. **Chaque version taguée est publiée** (release + archive, job
-  `publier-version` d'« Images ») et la purge nocturne retire releases et images
-  que plus aucune vague ne sert (`purge-paquets.yml`, la même règle exécutée par
-  `python3 -I api/app/registre/versions.py garder`, jamais recopiée en bash).
-  `replica` et la promotion ci-dessous **ne décident plus** ce que reçoit une
-  installation (leurs notes de version restent) ; les retirer est la décision de
-  l'auteur.
-- **La branche `replica` et la PROMOTION** (#1754) :
-  le workflow « Promotion », lancé à la main par l'auteur (`gh workflow run
-  promotion.yml -f version=X.Y.Z`), avance `replica` en avance rapide vers le tag
-  et publie les notes de version (release GitHub). `replica` n'a **aucun commit
-  propre** — un correctif passe par `main` puis se promeut. Ce qui est VERROUILLÉ
-  par les règles du dépôt : `replica` ni supprimée ni réécrite de force, un tag
-  `v*` ni déplacé ni supprimé. Ce qui ne l'est PAS — un dépôt personnel ne peut
-  pas exempter GitHub Actions (`standards/08` §5 bis) : qui avance `replica` et qui
-  pose un tag ; c'est une consigne. Je ne promeus **jamais** de moi-même : c'est la
-  décision de l'auteur, qui choisit la version. Le geste refuse une version de
-  moins de 7 jours (`RODAGE_JOURS`, `scripts/ci/promotion.sh`), sauf `-f
-  urgence=true`, et toute promotion tant qu'une issue `bloque-promotion` est
-  ouverte, sauf urgence. Seule une **X.0.0** part seule, la nuit, à J+7 ; plus aucun
-  rappel de retard n'est émis (#2319 : l'installation suit son canal, le registre
-  alerte). Règles et ce qui a été écarté : spec §4.10, règle 5 (#1934).
-- **Une réplique s'installe par `deploiement/standard/`** (#1755) : la surcouche
-  `compose.images.yml` (`build: !reset`, image publiée à `COPROFIRST_VERSION`)
-  se pose sur le `docker-compose.yml` de la racine, qui reste la **seule**
-  description des services ; le mode d'emploi est son `LISEZMOI.md`, et l'archive
-  de la version est jointe aux notes de version. Les scripts des RPi ne s'y
-  déplacent pas (arbitrage du 08/10/2026 : ils ne partent déjà pas avec une
-  installation). Le contenu de `front/static/` part tel quel chez toutes : il ne
-  nomme jamais la résidence (`npm run lint:nom-residence`, le manuel dit CoproFirst).
-- **Une réplique se met à jour seule chaque nuit** (#1756) :
-  `deploiement/standard/mise-a-jour.sh` — sauvegarde vérifiée AVANT tout geste,
-  retour à l'image précédente puis à la sauvegarde si la santé reste KO, rapport
-  `mise_a_jour` (courriel de 06:00 en cas d'échec, `utils/sante_mise_a_jour`).
-  Ce retour arrière tient parce que `start.sh` **saute les migrations d'une base
-  en avance sur le code** (`utils/revision_base`) : sans lui, l'ancienne image
-  s'arrêtait en boucle sur une révision inconnue.
-- **Le rôle de l'installation** (#1761) : `ROLE_INSTALLATION` (`reference` sur les deux RPi — l'ancien `maitre` n'est plus lu
-  depuis #1892,
-  `replique` posé d'office par `compose.images.yml`) se lit dans `utils/installation` et
-  nulle part ailleurs ; absent → « Inconnu », jamais « Référence ». Le bloc *Installation*
-  d'Admin › Maintenance le montre, avec l'écart au dépôt si le service *Vérification de
-  la version* est activé (coupé par défaut : rien ne sort sans accord).
-- ⚠️ Un onglet PWA resté ouvert peut servir une version en cache : le bandeau de mise
-  à jour (v2.24.0) existe pour ça, et `api/tests/test_pwa_maj.py` le verrouille.
+- La version vit dans `front/package.json` et `front/package-lock.json` (`npm run
+  lint:lock`) ; elle s'affiche au pied de page (P3).
+- **Elle se pose à la MEP, jamais dans un lot** (#2631) : `conduire-mep.sh` la calcule des
+  préfixes des commits du train et la commit sur `dev` ; un lot qui porte un bump est refusé
+  par le point 0d.
+- Chaque commit de `main` publie ses images (`ghcr.io`, `sha-<commit>`) ; une version reçoit
+  le tag `vX.Y.Z` par `scripts/ci/tag-version.sh`, jamais à la main.
+- **Je ne promeus jamais une version vers `replica` de moi-même** : c'est la décision de
+  l'auteur, qui choisit la version (workflow « Promotion »). Images, réplique, promotion et
+  mise à jour des installations : `mep-precheck`.

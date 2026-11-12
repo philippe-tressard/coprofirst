@@ -1,6 +1,6 @@
 ---
 name: security-audit
-description: "Run a complete OWASP Top 10 security audit on the 5Hostachy project (FastAPI + SvelteKit + PostgreSQL). Use when: checking for vulnerabilities, reviewing security posture, before a release, after adding auth/upload/API features."
+description: "Run a complete OWASP Top 10 security audit on the 5Hostachy project (FastAPI + SvelteKit + PostgreSQL). Use when: checking for vulnerabilities, reviewing security posture, before a release, after adding auth/upload/API features, or before touching auth, rights, secrets, tokens, uploads, served files, the security journal or a container (§11: the single security entry points in detail)."
 argument-hint: "Optional: scope the audit (e.g. 'auth only', 'uploads', 'full')"
 ---
 
@@ -103,7 +103,7 @@ première bascule, sans aucun signal.
 
 Une règle d'accès vit dans `auth/deps.py` (dépendances et prédicats),
 `auth/appartenance.py` (« est-ce le vôtre ? ») ou `utils/visibility/` (« qui
-voit quoi ») — la règle d'emplacement est dans `CLAUDE.md`, Backend.
+voit quoi ») — la règle d'emplacement est dans `CLAUDE.md`, « Dépendances d'auth ».
 
 🔴 **Ce que l'audit doit chercher, c'est la règle recopiée qui ne LÈVE pas.**
 Une visibilité rend `False`, une liste fait `continue` : ni l'une ni l'autre ne
@@ -336,6 +336,116 @@ cd front; npm audit
 - `X-Frame-Options: DENY`
 - `Strict-Transport-Security` (HSTS)
 - `Content-Security-Policy`
+
+### 11. Les portes uniques de sécurité — le détail (`CLAUDE.md` en garde la liste courte)
+
+Venu de `CLAUDE.md` (#2709). Une règle de sécurité s'appelle par sa porte ; le test nommé
+refuse la copie.
+
+- **Réglages** (#2055) : `PUT /config` n'écrit qu'une clé DÉCLARÉE dans `utils/reglages`
+  (par onglet, familles lues sur leurs registres). Une clé inconnue, réservée au serveur
+  (`llm_<usage>_reference`) ou dotée d'une route dédiée est refusée, et la requête n'écrit
+  rien. Une clé n'appartient qu'à UN onglet, un bouton n'enregistre que son onglet (#2057,
+  `configSite.ECRIVAINS`). Le nom de la résidence n'a qu'une source, `site_nom` (#2056).
+  🔒 `test_reglages_liste_blanche.py` (lit aussi les charges du front). **Qui règle quoi** :
+  `docs/carte-reglages.md`, GÉNÉRÉE par `python scripts/ci/carte_reglages.py --ecrire` depuis
+  `utils/reglages_carte` — jamais éditée ; 🔒 `test_carte_reglages.py` échoue si le document
+  diffère, si l'accès déclaré n'est pas la dépendance que la route prend (#2061), ou si une
+  variable de `Settings` n'a pas de thème. **Un réglage écrivable est LU** : 🔒
+  `test_reglages_lus.py` (#2059).
+- **Jetons** (#1389) : rafraîchissement, mot de passe oublié, vérification d'adresse se
+  stockent par leur empreinte, `auth/empreinte_jeton.empreinte` (HMAC avec `SECRET_KEY`), à
+  l'écriture ET à la recherche ; le brut ne vit que dans le cookie ou le lien. Changer
+  `SECRET_KEY` ferme toutes les sessions et invalide les liens — voulu.
+  🔒 `test_jetons_empreinte.py`.
+- **Le compte d'une adresse** (#1550) : `auth/adresse_compte` — `compte_par_adresse`
+  (insensible à la casse et aux espaces) et `normaliser_adresse`, la forme sous laquelle une
+  adresse s'écrit ET se cherche. 🔒 `test_adresse_compte_source_unique.py`.
+- **Changer l'adresse d'un compte est une DEMANDE** (#1549) :
+  `utils/verification_adresse.demander_changement_adresse`, pour le profil comme pour
+  l'administrateur — mot de passe de qui agit, lien à la nouvelle adresse (jeton de
+  l'inscription, avec `nouvelle_adresse`), avis à l'ancienne, qui reste celle du compte
+  jusqu'au clic, journal. 🔒 `test_changement_adresse.py` (refuse aussi `x.email = …` hors de
+  la confirmation du lien).
+- **Journal de sécurité** (#1040, #1548) : tout geste de `GESTES_SENSIBLES` (connexion refusée,
+  mot de passe changé ou réinitialisé, rôle ajouté ou retiré, bannissement, jeton rejoué,
+  changement d'adresse, cycle de vie d'un compte, délégation) appelle
+  `utils/journal_securite.journaliser_securite`, jamais un `logger` local. **Jamais de donnée
+  personnelle dans une ligne de journal** — un identifiant, jamais une adresse, un mot de
+  passe ou un jeton, même tronqué (#777). Niveau `WARNING`, jamais `ERROR` : le point 6 du
+  pré-check compte les `ERROR`/`CRITICAL` (`MOTIF_ERREURS_API`). 🔒 `test_journal_securite.py`
+  (confronte `GESTES_SENSIBLES` à ce que les routeurs écrivent, refuse un code absent de
+  `_NIVEAUX`, et la donnée personnelle chez la fonction et ses appelants).
+- **HTML d'un utilisateur côté serveur** (#2150) : `utils/html_sur` (`nh3`, liste blanche de
+  `#lib/sanitize.ts`). Le corps d'un courriel s'échappe ; un champ riche y entre par
+  `html_riche(…)` ou `| safe`, redéfini pour assainir. 🔒 `test_html_sur.py` (charge hostile
+  dans chaque variable de chaque modèle ; `Markup(x)` refusé hors de la porte).
+- **Courriel reçu lu par le modèle** (#2369) : `utils/ia_courriel.lire_un_courriel` cadre le
+  texte et ajoute une consigne de non-obéissance que l'administration ne retire pas ; sa sortie
+  se juge par `sortie_conforme` (aucun mot absent du courriel, aucune marque du cadre, pas plus
+  long), sinon le texte nettoyé sans IA entre. Elle ne rend que du texte : ni envoi, ni
+  diffusion, ni statut. Un usage neuf s'ajoute à `USAGES_QUI_LISENT_UN_COURRIEL`, un cas piégé à
+  `ia_courriel_corpus.CORPUS`. 🔒 `test_ia_courriel.py`. Le **canari** (`utils/canari_ia`, 05:40)
+  passe un cas du corpus par la porte de la relève (`reponse_courriel.lire_et_juger`) ; le
+  contrôle de 06:00 dit modèle qui obéit, porte percée, ou INCONNU. 🔒 `test_canari_ia.py`.
+- **Leurres** (#2365) : registre `utils/leurres` (`ROUTES_LEURRES`, `EVENEMENTS_LEURRES`) ;
+  leurs VALEURS (`LEURRE_ADRESSE`, `LEURRE_CLE_MAINTENANCE`) ne vivent que dans le `.env` du
+  nœud, jamais dans le dépôt. Une connexion leurre rend le refus ordinaire et journalise
+  `connexion_leurre` / `cle_maintenance_leurre` (S6 → FAIL) ; Caddy sert un faux fichier sur les
+  routes leurres. 🔒 `test_leurres.py` (`Caddyfile`, compose et `lib-audit-acces.sh` confrontés
+  au registre).
+- **La clé du bridge ne part que vers le bridge** (#2151) : `whatsapp_api_url` se lit par
+  `whatsapp.adresse_du_bridge` (service Compose ou conteneur, un port), vérifiée à l'écriture ET
+  à chaque usage. 🔒 `test_adresse_bridge.py`.
+- **Conteneurs durcis** (#2368) : `<<: *conteneur_durci` dans `docker-compose.yml` — aucune
+  capacité hors `cap_add` (chacune déclarée avec sa raison dans le compose ET dans
+  `CONTENEURS_DURCIS` de `lib-audit-conteneurs.sh`), `no-new-privileges`, racine en lecture
+  seule (on n'écrit que dans un volume ou un `tmpfs`). Un service neuf s'y range ou se déclare dans `CONTENEURS_NON_DURCIS` avec son ticket
+  (vide depuis #2429). PostgreSQL tourne sous `postgres` (`user:`), sans capacité : sa configuration ne
+  prend effet qu'à la recréation de la base (bascule de nuit, reconstruction), chaque chemin
+  éprouvé sur le banc du standby avant de la changer. Caddy sert sous `caddy` (uid 10002), sans
+  capacité, :80 par le sysctl de son espace réseau, sur des volumes NEUFS (`caddy_donnees`,
+  `caddy_configuration`, `caddy_journal`, #2430) — rendre à `caddy` les volumes écrits par root
+  casserait le retour à l'image d'avant. Une commande dans l'API prend `-u app` (`docker compose
+  exec -u app api python …`), un `run --entrypoint` aussi (#2546) ; celle qui écrit chez qui
+  lance le script prend son compte (`-u "$(id -u):$(id -g)"`). 🔒 autotest de S4
+  (`--selftest`), `test_conteneurs_non_root.py` (`DESCENTE`, `EXCEPTIONS_COMPTE`).
+- **Téléversement**, compléments au §3 : un type indéterminé (vide,
+  `application/octet-stream`) se déduit de l'extension dans la famille, puis la signature
+  tranche (`type_annonce`, #2389, 🔒 `test_televersement_type_indetermine.py`) ; s'il reçoit
+  deux familles, un routeur laisse `famille_du_fichier` choisir. Un fichier reçu se lit par
+  `lire_fichier_recu` (au plus le plafond + 1 octet, #2164) ; chaque famille a un appelant
+  (#2156). Une pièce jointe ne cite que `photos.DOSSIERS_DES_PIECES_JOINTES`, et la
+  conservation ne retire pas un fichier qu'un autre objet cite (#2157).
+- **Aucune image ne se décode dans le process de l'API** (#2396) : Pillow et ses bibliothèques
+  C ne vivent que dans `utils/images_moteur`, exécuté dans un enfant `spawn` par
+  `utils/process_isole` ; la porte est `utils/images`, qui nomme le moteur sans l'importer. La
+  relève des courriels n'ouvre aucune image avant d'avoir autorisé l'expéditeur
+  (`courriel_pieces_jointes.retenir`). 🔒 `test_images_hors_process.py`,
+  `test_courriel_pieces_jointes.py`.
+- **Un fichier servi (`/uploads/*`) se lit par son PORTEUR** (#2154) :
+  `utils/visibility/fichiers.exiger_fichier_lisible`, appelée par `/auth/verifier-acces`
+  (`forward_auth` de Caddy) et par la route de l'installation commune. Le fichier se lit si
+  l'un des objets qui le citent (`PORTEURS`) se lit par son prédicat ; sans porteur, par son
+  auteur seul (`FichierRecu`) ; avatars, résidence et logo par toute session (`TOUTE_SESSION`).
+  Une colonne qui cite un fichier se nomme dans `photos.COLONNES_DE_FICHIERS` et a son porteur.
+  🔒 `test_acces_fichiers_porteur.py`.
+- **Un fichier se situe par `utils/stockage`** (#1748) : `stockage()` — `chemin(clé)`,
+  `fichier_de_url("/uploads/…")`, `url(clé)`. Le fichier d'une ligne se lit par `cle_de(ligne)`,
+  `fichier_de(ligne)`, `supprimer_de(ligne)` et s'écrit par `**colonnes(clé)` : la ligne garde
+  sa CLÉ (`fichier_cle`, `pdf_cle`), jamais un chemin (#1816). L'écriture du stockage n'est
+  appelée que par `enregistrer_fichier_recu` et les fichiers produits déclarés
+  (`ECRIVAINS_DU_STOCKAGE`). Le service reste à Caddy. 🔒 `test_cle_des_fichiers.py`,
+  `test_stockage_source_unique.py`, `test_televersement_source_unique.py`.
+
+#### Les dépendances d'auth : ce qui n'est pas fondu, et pourquoi
+Les règles d'appartenance d'`auth/appartenance.py` ne sont pas réunies en une fonction : le
+bail d'un bailleur refuse en 403 et admet le CS ; l'accès d'un porteur refuse en 404 sans
+l'admettre ; l'aidant d'une délégation refuse en 403 sans l'admettre. Trois combinaisons pour
+trois règles ; ce qu'elles gagnent est un lieu. 🔒 `test_appartenance_source_unique.py`. La
+délégation est en lecture seule depuis #1534 (`utils/delegations_actives`) ; `get_acting_user`
+n'avait jamais été prise par une route. 🔒 `test_autorisation.py` refuse une dépendance qu'aucune
+route ne prend ; `npm run lint:en-tetes-lus`, un en-tête posé par le front qu'aucune route ne lit.
 
 ## Rapport d'audit
 
