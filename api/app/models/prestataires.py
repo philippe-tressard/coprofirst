@@ -126,6 +126,15 @@ class ContratEntretien(SQLModel, table=True):
     actif: bool = True
     notes: Optional[str] = None
     document_id: Optional[int] = Field(default=None, foreign_key="document.id")
+    #: 🔴 Le dernier jour où ce contrat court — sa RÉSILIATION effective (12/11/2026).
+    #: Il fixe le terme : plus de reconduction tacite, plus de préavis à relancer.
+    #: Passé, le contrat est « résilié » (`utils/echeance_contrat.resiliation_effective`).
+    resilie_le: Optional[date] = None
+    #: Le contrat qui PREND LA SUITE de celui-ci, quand un autre prestataire le remplace.
+    #: Saisi ICI, sur l'ancien, avec la date de résiliation : le sens inverse
+    #: (« remplace… ») se DÉDUIT à la lecture (`utils/remplacement_contrat`), il
+    #: n'est stocké nulle part — deux colonnes libres de se contredire.
+    remplace_par_id: Optional[int] = Field(default=None, foreign_key="contrat_entretien.id")
 
     #  ⚠️ Annotation en CHAÎNE : `Copropriete` n'est importée que sous
     #  `TYPE_CHECKING`, donc absente à l'exécution. La forme non citée

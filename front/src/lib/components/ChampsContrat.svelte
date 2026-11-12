@@ -45,7 +45,8 @@
 </script>
 
 <script lang="ts">
-	import type { Prestataire } from '#lib/api/index.ts';
+	import type { ContratEntretien, Prestataire } from '#lib/api/index.ts';
+	import { fmtDateShort } from '#lib/date.ts';
 	import type { FormulaireContratData } from '#lib/prestataires.ts';
 	import { SECTIONS_LIBELLE } from '#lib/entites/types.ts';
 	import SectionEquipement from './SectionEquipement.svelte';
@@ -66,6 +67,14 @@
 	/**  Création ou correction — c'est la DÉCLARATION qui en tire les sections
 	 *   présentes, jamais une condition écrite ici (`lint:etats`). */
 	export let etat: Etat = 'creation';
+	/**  Le contrat corrigé (`null` en création) — il ne peut pas se remplacer lui-même. */
+	export let contratId: number | null = null;
+	/**  Les contrats proposables comme SUITE de celui-ci : ceux de la liste, sauf lui. */
+	export let contratsProposes: ContratEntretien[] = [];
+
+	/**  Le libellé d'un contrat proposé : son titre et son prestataire, comme sur la carte. */
+	const nomPrestataire = (id: number) => prestataires.find((p) => p.id === id)?.nom;
+	$: suites = contratsProposes.filter((c) => c.id !== contratId);
 
 	//  Un identifiant par instance : les deux rendus coexistent dans la même page,
 	//  et deux `id` identiques feraient pointer les deux `aria-labelledby` sur le
@@ -178,6 +187,39 @@
 			bind:frequenceType={contratForm.frequence_type}
 			bind:frequenceValeur={contratForm.frequence_valeur}
 		/>
+		<!--  🔴 LA FIN DU CONTRAT (12/11/2026, demandé à l'écran : « comment préciser
+		      qu'un prestataire est remplacé par un autre ? »). La résiliation et sa
+		      suite se saisissent ICI, sur l'ancien contrat, avec ses autres dates : le
+		      renvoi n'a de sens qu'avec le jour où le contrat s'arrête, donc il ne se
+		      propose qu'une fois ce jour saisi. Le sens inverse (« remplace… ») se lit
+		      sur la carte du nouveau contrat, il ne se saisit pas (`utils/remplacement_contrat`). -->
+		<div class="form-grid">
+			<label class="field"
+				>Résilié le<input
+					type="date"
+					min={contratForm.date_debut}
+					bind:value={contratForm.resilie_le}
+					aria-describedby="{idNotes}-resilie-aide"
+				/><span id="{idNotes}-resilie-aide" class="aide"
+					>Le dernier jour du contrat. Il ne se reconduit plus, et le contrat qui le remplace peut
+					commencer le lendemain.</span
+				></label
+			>
+			{#if contratForm.resilie_le}
+				<label class="field"
+					>Remplacé par<select bind:value={contratForm.remplace_par_id}>
+						<option value="">— Aucun —</option>
+						{#each suites as c (c.id)}
+							<option value={String(c.id)}
+								>{c.libelle}{nomPrestataire(c.prestataire_id)
+									? ` — ${nomPrestataire(c.prestataire_id)}`
+									: ''} (dès le {fmtDateShort(c.date_debut)})</option
+							>
+						{/each}
+					</select></label
+				>
+			{/if}
+		</div>
 	</SectionFormulaire>
 {/if}
 

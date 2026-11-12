@@ -83,7 +83,10 @@ class ReleveRenouvellements(BaseModel):
 
 
 def _contrats(session: Session, annee: int) -> list[ContratARenouveler]:
-    lus = lister_contrats(session, archivees=False)
+    #  Un contrat REMPLACÉ est déjà renouvelé : son successeur porte désormais la
+    #  question, et le relancer ferait deux lignes pour une seule décision
+    #  (`utils/remplacement_contrat`). Résilié SANS suite, il reste : il manque un contrat.
+    lus = [c for c in lister_contrats(session, archivees=False) if c.remplace_par_id is None]
     ids = [c.prestataire_id for c in lus]
     notes = notes_des_prestataires(session, ids)
     noms = {p.id: p.nom for p in precharger(session, Prestataire, ids)}
